@@ -8,6 +8,7 @@
  * 
  *
  *)
+
 import structure Pos        from "../common/Pos"
 import structure Protocol   from "../common/Protocol"
 import structure Color      from "../common/Color"
@@ -15,6 +16,7 @@ import structure Color      from "../common/Color"
 
 signature SNAKE =
 sig
+
     type snake
     type t = snake
 

@@ -1,6 +1,18 @@
+(* Alice Snake 2.0 - Heaps
+ *
+ *  Authors: Benedikt Grundmann / Sebastian Germesin
+ *
+ *  $Revision$
+ *
+ *  Last updated: $Date$ by $Author$
+ * 
+ *
+ *)
+
 
 signature HEAP =
 sig
+
     type heap
     type t = heap
     type elem
@@ -15,4 +27,5 @@ sig
     
     val minimum :   heap -> elem    (* Empty *)
     val remove :    heap -> unit    (* Empty *)
+
 end

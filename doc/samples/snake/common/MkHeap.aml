@@ -1,5 +1,17 @@
-import signature HEAP       from "HEAP-sig"
+(* Alice Snake 2.0 - Heaps (impl)
+ *
+ *  Authors: Benedikt Grundmann / Sebastian Germesin
+ *
+ *  $Revision$
+ *
+ *  Last updated: $Date$ by $Author$
+ * 
+ *
+ *)
+
 import signature ORDERED    from "x-alice:/lib/data/ORDERED-sig"
+
+import signature HEAP       from "HEAP-sig"
 
 
 functor MkHeap (Elem: ORDERED): HEAP =

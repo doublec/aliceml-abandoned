@@ -1,11 +1,25 @@
+(* Alice Snake 2.0 - Participant (impl)
+*
+*  Authors: Benedikt Grundmann / Sebastian Germesin
+*
+*  $Revision$
+*
+*  Last updated: $Date$ by $Author$
+* 
+*
+*)
+
+import structure MkRedBlackMap from "x-alice:/lib/data/MkRedBlackMap"
+
 import signature PARTICIPANT   from "PARTICIPANT-sig"
 import structure Protocol      from "../common/Protocol"
 import structure Color         from "../common/Color"
 import structure Snake         from "Snake"
-import structure MkRedBlackMap from "x-alice:/lib/data/MkRedBlackMap"
+
 
 structure Participant :> PARTICIPANT =
 struct
+
     type id = int
 
     type player_info = {

@@ -17,13 +17,13 @@ import structure Snake    from "Snake"
 import structure Pos      from "../common/Pos"
 import structure Color    from "../common/Color"
 
+
 structure Arena :> ARENA =
 struct
 
     structure P = Protocol
 
     type arena = P.field Array2.array (* MUTABLE *)
-
 
     type config = 
 	{
@@ -41,7 +41,7 @@ struct
             fun testUp (arena, (row, col)) =
                 Array2.alli Array2.RowMajor (fn (r, c, cell) =>
                     case cell of 
-                        Protocol.EMPTY  => true
+                        P.EMPTY  => true
                     |   _               => false) { 
                         base    = arena, 
                         row     = row - 2, 
@@ -54,7 +54,7 @@ struct
             fun testDown (arena, (row, col)) =
                 Array2.alli Array2.RowMajor (fn (r, c, cell) =>
                     case cell of 
-                        Protocol.EMPTY  => true
+                        P.EMPTY  => true
                     |   _               => false) { 
                         base    = arena, 
                         row     = row, 
@@ -67,7 +67,7 @@ struct
             fun testRight (arena, (row, col)) =
                 Array2.alli Array2.RowMajor (fn (r, c, cell) =>
                     case cell of 
-                        Protocol.EMPTY  => true
+                        P.EMPTY  => true
                     |   _               => false) { 
                         base    = arena, 
                         row     = row - 2, 
@@ -80,7 +80,7 @@ struct
             fun testLeft (arena, (row, col)) =
                 Array2.alli Array2.RowMajor (fn (r, c, cell) =>
                     case cell of 
-                        Protocol.EMPTY  => true
+                        P.EMPTY  => true
                     |   _               => false) { 
                         base    = arena, 
                         row     = row - 2, 
@@ -91,10 +91,10 @@ struct
 
             fun test (arena, p, dir) =
                 (case dir of 
-                    Protocol.UP     => testUp (arena, p)
-                |   Protocol.DOWN   => testDown (arena, p)
-                |   Protocol.LEFT   => testLeft (arena, p)
-                |   Protocol.RIGHT  => testRight (arena, p))
+                    P.UP     => testUp (arena, p)
+                |   P.DOWN   => testDown (arena, p)
+                |   P.LEFT   => testLeft (arena, p)
+                |   P.RIGHT  => testRight (arena, p))
                 handle Subscript => false
 
 	    val arena = Array2.array(rows,cols,P.EMPTY)
@@ -126,16 +126,16 @@ struct
                do so by selecting figures
              *)
             val figures = #[
-                [(4, true, Protocol.UP),    
-                 (4, true, Protocol.RIGHT),        
-                 (4, true, Protocol.UP)],
-                [(4, true, Protocol.UP),
-                 (4, true, Protocol.LEFT),
-                 (4, true, Protocol.UP)],
-                [(3, true, Protocol.UP)],
-                [(3, true, Protocol.RIGHT)],
-                [(3, true, Protocol.LEFT)],
-                [(3, true, Protocol.DOWN)]
+                [(4, true, P.UP),    
+                 (4, true, P.RIGHT),        
+                 (4, true, P.UP)],
+                [(4, true, P.UP),
+                 (4, true, P.LEFT),
+                 (4, true, P.UP)],
+                [(3, true, P.UP)],
+                [(3, true, P.RIGHT)],
+                [(3, true, P.LEFT)],
+                [(3, true, P.DOWN)]
             ]
             
             (* [place (f, p)] tries to place figure [f] on the arena [a] at 
@@ -150,8 +150,8 @@ struct
                     fun testPart ((length, false, dir), p) = 
                         let val p' = Pos.moveBy (p, dir, length)
                         in
-                            if test (arena, p', Protocol.UP) andalso 
-                                test (arena, p', Protocol.DOWN) then
+                            if test (arena, p', P.UP) andalso 
+                                test (arena, p', P.DOWN) then
                                 p'
                             else raise InvalidPlace
                         end
@@ -205,8 +205,8 @@ struct
                     val p  = (r + 2, c + 2)
                     val ru = (r, c + 2)
 
-                    fun testSpot p = test (arena, p, Protocol.UP) andalso
-                                        test (arena, p, Protocol.DOWN)
+                    fun testSpot p = test (arena, p, P.UP) andalso
+                                        test (arena, p, P.DOWN)
                 in
                     if testSpot p then p
                     else if testSpot lu then lu
@@ -287,7 +287,7 @@ struct
 		let
 		    val body = Snake.body s
 		in
-		    died := s :: (!died);
+		    died := s :: !died;
 		    List.app 
 		        (fn (r, c) => 
                             Array2.update (a, r, c, P.EMPTY)) body
@@ -295,9 +295,9 @@ struct
 
 	    fun placeHead snake =
 		let
-		    val (r, c) = Snake.head snake
-		    val color = Snake.color snake
-		    val dir   = Snake.direction snake
+		    val (r, c)     = Snake.head snake
+		    val color      = Snake.color snake
+		    val dir        = Snake.direction snake
 		    val collObject = Array2.sub (a, r, c)
 		    fun hitSnake s     nil     = false
 		      | hitSnake s (sn :: slist) = 
@@ -311,27 +311,29 @@ struct
 			
 		    val othersnakes = 
 			    List.filter (fn x => not (snake = x)) snakes
+
 		    val hit = hitSnake snake othersnakes
 		    
                     fun place () = Array2.update(a, r, c, P.SNAKE_HEAD(dir,
 								       color)) 
                 in
 		    if hit
-			then (killHead snake; killBody snake)
+			then (killHead snake;
+			      killBody snake)
 		    else 
 			case collObject of
 			 P.EMPTY    => place () 
 		       | P.GOODY n  => (Snake.eat (snake,n); 
                                         place ();
                                         eaters := snake :: !eaters)
-		       | P.WALL     => killBody snake
+		       | P.WALL               => killBody snake
                        | P.GATE (_, P.CLOSED) => killBody snake
 		       | P.GATE (col, P.OPEN) => 
                             if Color.equal (col, color)
-			        then (fin := snake :: (!fin);
-				        Array2.update (a, r, c, collObject))
+			        then (fin := snake :: !fin;
+				      Array2.update (a, r, c, collObject))
 			    else killBody snake
-		       | P.SNAKE_HEAD(_,col) => 
+		       | P.SNAKE_HEAD (_, col) => 
 				 if not (Color.equal (col, color))
 				     then killBody snake
 				 else ()
@@ -340,9 +342,9 @@ struct
 
 	    fun placeBody snake =
 		let
-                    val headP   = Snake.head snake
-		    val color   = Snake.color snake
-		    val body    = Snake.body snake
+                    val headP       = Snake.head snake
+		    val color       = Snake.color snake
+		    val body        = Snake.body snake
 		    fun thisSnake s = Color.equal (color, Snake.color s)
                     (* have we already died? *)
 		    val dead = List.exists thisSnake (!died)
@@ -356,7 +358,8 @@ struct
                             (Array2.update (a, r, c, P.SNAKE_BODY color);
                              place bodyRest)
                 in
-		    if dead then ()
+		    if dead 
+			then ()
 		    else place body
 		end
 		
@@ -367,7 +370,8 @@ struct
 	end
     
     fun emptyCopy a =
-        let val (rows, cols) = Array2.dimensions a
+        let 
+	    val (rows, cols) = Array2.dimensions a
         in
             Array2.array (rows, cols, P.EMPTY)
         end
@@ -385,10 +389,10 @@ struct
 	let
 	    fun removeSnake s =
 		let
-		    val ps = (Snake.head s)::(Snake.body s)
+		    val ps = (Snake.head s) :: (Snake.body s)
 		in
-		    List.app (fn(r,c) => 
-                        Array2.update(a,r,c,P.EMPTY)) ps
+		    List.app (fn (r, c) => 
+                        Array2.update (a, r, c, P.EMPTY)) ps
 		end
 	in
 	    List.app (fn s => removeSnake s) snakes
@@ -452,37 +456,12 @@ struct
 			       then help ((r + 1, c), xs)
 		            else 
                                help ((r + 1, c),
-                                   ((r,c), Array2.sub (new, r, c)) :: xs)
+                                   ((r, c), Array2.sub (new, r, c)) :: xs)
                         end
       in
-	  help ((0,0), nil)
+	  help ((0, 0), nil)
       end
 
     fun toDiffList a = diff (emptyCopy a, a)
 
 end
-
-(*
-local
-    fun for (low, upp, f) =
-        if low > upp then ()
-        else (f low; for (low + 1, upp, f))
-in
-    fun dump a =
-        let 
-            val (rows, cols)    = Array2.dimensions a 
-        in
-            for (0, rows - 1, fn r => (
-                for (0, cols - 1, fn c => 
-                    TextIO.output1 (TextIO.stdOut, 
-                        case Array2.sub (a, r, c) of
-                            Protocol.EMPTY      => #"."
-                        |   Protocol.WALL       => #"#"
-                        |   Protocol.GOODY  _   => #"C"
-                        |   _                   => #"?")
-                );
-                TextIO.output1 (TextIO.stdOut, #"\n"))
-            )
-        end
-end
-*)

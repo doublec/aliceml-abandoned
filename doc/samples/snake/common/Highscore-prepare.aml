@@ -1,4 +1,4 @@
-(* Alice Snake 2.0 - Operations on Positions
+(* Alice Snake 2.0 - Highscore
  *
  *  Authors: Benedikt Grundmann / Sebastian Germesin
  *
@@ -9,8 +9,9 @@
  *
  *)
 
-import signature HIGHSCORE from "HIGHSCORE-sig"
 import structure OS        from "x-alice:/lib/system/OS"
+
+import signature HIGHSCORE from "HIGHSCORE-sig"
 import structure Color     from "Color"
 
 
@@ -66,7 +67,7 @@ struct
 	    val sorted = List.sort order ((convert p) @ high)
 
 	in
-	    List.take(sorted, 10) handle Subscript => sorted
+	    List.take (sorted, 10) handle Subscript => sorted
 	end
 
     val foldl = List.foldl (* TODO: implementation *)

@@ -21,10 +21,20 @@ import val log              from "../../common/Log"
 
 open Ctrl
 
+
+fun colorToGdkColor c =
+    let
+	val (r, g, b) = Color.rgb c
+	fun conv n = Real.round (65535.0 * n)
+    in
+	Gdk.allocColor (conv r, conv g, conv b)
+    end
+
+
 structure Wait =
 struct
-
     (* the textwindow where the connected player will be listed *)
+
     val playerTextAdjust1 = 
 	ref (Gtk.adjustmentNew (50.0, 0.0, 100.0, 1.0, 1.0, 1.0))
     val playerTextAdjust2 =
@@ -32,7 +42,7 @@ struct
     val playerText = 
 	ref (Gtk.textNew (!playerTextAdjust1, !playerTextAdjust2))
 
-	(* resets the used refs *)
+    (* resets the used refs *)
     fun resetRefs () = 
 	(playerTextAdjust1 := 
 	 (Gtk.adjustmentNew (50.0, 0.0, 100.0, 
@@ -44,17 +54,17 @@ struct
 				     !playerTextAdjust2)))
 
 
-	(* [insert(name, color)] inserts one player with name and color in
-	 connected-players list *)
+    (* [insert(name, color)] inserts one player with name and color in
+     connected-players list *)
     fun insert (name, color) = 
 	let
 	    val font = 
-		Gdk.fontLoad ("-*-times-*-*-*-*-*-*-*-*-*-*-*-*")
+		Gdk.fontLoad ("-*-arial-bold-*-*-*-*-*-*-*-*-*-*-*")
 	    val white = Gdk.allocColor (0xffff, 0xffff, 0xffff)
-	    val black = Gdk.allocColor (0 ,0, 0)
+	    val front = colorToGdkColor color
 	in
-	    Gtk.textInsert(!playerText, font, black, 
-			   white, name^"  "^(Color.toString color)^"\n", ~1)
+	    Gtk.textInsert(!playerText, font, front,
+			   white, name ^ "\n", ~1)
 	end
 
 
@@ -67,7 +77,6 @@ struct
 		 {reset, gameMode}) =>
 		let
 
-		    val _ = log ("WaitWindow", "start")
 		    val waiting          = Gtk.windowNew Gtk.WINDOW_TOPLEVEL
 		    val dialogVBox       = Gtk.vboxNew (false, 0)
 		    val connectedLabel   = Gtk.labelNew "Connected Players : "
@@ -81,8 +90,7 @@ struct
 		    val buttonHBox       = Gtk.hbuttonBoxNew ()
 		    val urlHBox          = Gtk.hboxNew (false, 10)
 		    val urlLabel         = Gtk.labelNew "Server-URL: "
-		    val serverUrl = ref (Gtk.entryNew ())
-		    val _ = log ("WaitWindow", "set all variables")
+		    val serverUrl        = ref (Gtk.entryNew ())
 
 		    (* the mainQuit procedure resets also the used refs *)
 		    fun mainQuit () = 
@@ -104,20 +112,11 @@ struct
 
 			(* fulfills the guiJoin promise, if already fulfilled
 			 exception assert will be raised *)
-		    val _ = log ("WaitWindow", ("starting fulfilling",guiJoin))
 		    val _ = if (Future.isFuture $ Promise.future guiJoin)
 				then Promise.fulfill (guiJoin, {playersJoined,
 							  playerDisconnected,
 							  gameStarted})
 			    else ()
-		    (*
-		    val _ = assert (Future.isFuture $ Promise.future guiJoin) 
-			    do Promise.fulfill (guiJoin, {playersJoined,
-							  playerDisconnected,
-							  gameStarted})
-			    *)
-		    val _ = log ("WaitWindow", ("done fulfilling",guiJoin))
-
 
 		      (* the signal the server gves to start the game,
 		       also resets the refs and destroyes the window *)
@@ -134,20 +133,17 @@ struct
 		in
 
 		    playersJoined alreadyConnected;
-		    log ("WaitWindow", "starting initialising");
 		    Gtk.windowSetModal (waiting, true);
 		    Gtk.windowSetTitle (waiting, "Waiting...");
 		    Gtk.windowSetPosition (waiting, Gtk.WIN_POS_CENTER);
 
 		    (* connects the signals with procedures *)
-		    log ("WaitWindow", "connects signals");
 		    Gtk.signalConnect (waiting, "delete-event", 
 				       fn _ => mainQuit ());
 		    Gtk.signalConnect (startButton, "clicked",
 				       fn _ => start' ());
 		    Gtk.signalConnect (disconnectButton, "clicked", 
 				       fn _ => mainQuit ());
-		    log ("WaitWindow", "done, signalconnecting");
 
 		    (* set some default configurations *)
 		    Gtk.entryPrependText (!serverUrl, serverUrlStr);
@@ -200,6 +196,12 @@ struct
 		    val disconnectButton = Gtk.buttonNewWithLabel "Disconnect"
 		    val buttonHBox       = Gtk.hboxNew (true, 10)
 
+		    fun mainQuit () = 
+			(disconnect ();
+			 resetRefs ();
+			 Gtk.widgetDestroy waiting;
+			 reset NONE)
+
 
 		    val _ = joined := (fn xs => List.app insert xs)
 
@@ -211,18 +213,14 @@ struct
 				   Gtk.widgetDestroy waiting;
 				   gameMode ({disconnect}, mGame, guiGame)))
 
-		    val playerDisconnects = !disconnected
-		    val gameStarts = !started
-		    val playersJoined = !joined
+		    fun playerDisconnects x = !disconnected x
+		    fun gameStarts x = !started x
+		    fun playersJoined x = !joined x
 			(* they haven't to be fulfilled because they where
 			 fulfilled in PlayerSettingsWindow *)
 
 
-		    fun mainQuit () = 
-			(disconnect ();
-			 resetRefs ();
-			 Gtk.widgetDestroy waiting;
-			 reset NONE)
+
 			
 		in
 	    

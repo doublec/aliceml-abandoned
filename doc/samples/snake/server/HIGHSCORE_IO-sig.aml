@@ -12,13 +12,14 @@
 
 import structure Highscore from "../common/Highscore"
 
+
 signature HIGHSCORE_IO =
 sig
 
-    val load:   unit -> Highscore.highscore
+    val load : unit -> Highscore.highscore
     (* load the highscore, create a new one if no highscore exists *)
 
-    val save:   Highscore.highscore -> unit
+    val save : Highscore.highscore -> unit
 
 
 end

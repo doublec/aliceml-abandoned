@@ -12,6 +12,7 @@
 import signature COLOR from "COLOR-sig"
 import structure OS    from "x-alice:/lib/system/OS"
 
+
 structure Color :> COLOR = 
 struct
 

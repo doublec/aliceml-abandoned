@@ -8,18 +8,20 @@
  * 
  *
  *)
+
 import signature SNAKE      from "SNAKE-sig"
 import structure Protocol   from "../common/Protocol"
 import structure Pos        from "../common/Pos"
 import structure Color      from "../common/Color"
 
+
 structure Snake :> SNAKE =
 struct
+
     structure P = Protocol
 
-    
     datatype snake = SN of {
-        direction : Protocol.direction ref,
+        direction : P.direction ref,
         belly :     int ref,
         id :        int,
         color :     Color.color,
@@ -83,7 +85,7 @@ struct
 
     fun head (SN { body = ref b, ... }) = assert not (List.null b) do List.hd b
 
-    fun body (SN { body = ref b, ... }) = assert not (List.null b) do List.tl b 
+    fun body (SN { body = ref b, ... }) = assert not (List.null b) do List.tl b
 
     fun appBody f (SN { body = ref b, ... }) = 
         assert not (List.null b) do List.app f (List.tl b)

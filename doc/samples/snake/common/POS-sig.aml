@@ -9,6 +9,7 @@
  *
  *)
 
+
 signature POS =
 sig 
     (** The type of a position on the arena.

@@ -11,6 +11,7 @@
 
 import structure Protocol from "../common/Protocol"
 
+
 signature CONFIG =
 sig
 
@@ -28,10 +29,10 @@ sig
        levels = LEV
     *)
 
-    val defaultMulti :  config
+    val defaultMulti  : config
 
-    val save :          config -> unit
+    val save          : config -> unit
 
-    val load : unit -> config
-    (** loads config. if no one exists defaultMulti will be loaded *)
+    val load          : unit -> config
+    (** loads config.cs if no one exists defaultMulti will be loaded *)
 end

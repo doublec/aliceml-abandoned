@@ -11,6 +11,7 @@
 
 import signature POS from "POS-sig"
 
+
 structure Pos :> POS =
 struct
     (** The type of a position on the arena.
@@ -26,22 +27,22 @@ struct
       | LEFT
       | RIGHT
 
-    fun row (r,_) = r
+    fun row (r, _) = r
     (** [row = #1] *)
     
-    fun column (_,c) = c
+    fun column (_, c) = c
     (** [columns = #2] *)
 
-    fun above (r,c) = (r-1,c)
+    fun above (r, c) = (r-1, c)
     (** [above (r, c) = (r - 1, c)] *)
     
-    fun below (r,c) = (r+1,c)
+    fun below (r, c) = (r+1, c)
     (** [below (r, c) = (r + 1, c)] *)
     
-    fun left (r,c) = (r,c-1)
+    fun left (r, c) = (r, c - 1)
     (** [left (r, c) = (r, c - 1)] *)
     
-    fun right (r,c) = (r,c+1)
+    fun right (r, c) = (r, c + 1)
     (** [left (r, c) = (r, c + 1)] *)
 
     fun move (p, d) =
@@ -58,10 +59,10 @@ struct
         |   LEFT    => (r, c - l)
         |   RIGHT   => (r, c + l)
 
-    fun inside ((r1,c1),(r2,c2)) (r,c) = 
+    fun inside ((r1, c1),(r2, c2)) (r, c) = 
 	if r1 > r2 orelse 
 	   c1 > c2 orelse 
-	   (r1 = r2 andalso c1 = c2)
+	  (r1 = r2 andalso c1 = c2)
 	    then false 
 	else
 	    (r1 <= r) andalso 

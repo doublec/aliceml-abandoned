@@ -18,13 +18,15 @@ struct
 
     type config = Protocol.config
 
+    val path = "config.cs"
+
     val defaultSingle = 
 	{
          tick           = Time.fromMilliseconds 120,
 	 timeout        = Time.fromSeconds 100,
-	 dimensions     = (50,50),
-	 goodie         = 5,
-	 lives          = SOME 5,
+	 dimensions     = (70,70),
+	 goodie         = 7,
+	 lives          = SOME 7,
 	 maxPlayers     = 1,
 	 goodieProb     = 0.2,   
 	 levels         = NONE,
@@ -44,12 +46,11 @@ struct
          gateTreshold   = 15
 	 }
 
-    val path = OS.Path.currentArc ^ "config.cs"
 
     fun load () = 
 	let
 	    structure C = 
-		unpack (Pickle.load path handle _ => 
+		unpack (Pickle.load path handle _ =>
 			(pack (val c = defaultMulti) :> (val c : config))) 
 		     : (val c : config)
 	in
@@ -61,8 +62,7 @@ struct
 	    fun save () = Pickle.save (path, pack (val c = cfg) 
 				             :> (val c : config))
 	in
-	    save () handle _ => (OS.FileSys.mkDir "config";
-				 save ())
+	    save ()
 	end
 
 

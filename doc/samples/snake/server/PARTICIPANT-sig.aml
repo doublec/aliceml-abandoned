@@ -9,13 +9,16 @@
 *
 *)
 
+import signature MAP      from "x-alice:/lib/data/MAP-sig"
+
 import structure Protocol from "../common/Protocol"
 import structure Color    from "../common/Color"
 import structure Snake    from "Snake"
-import signature MAP      from "x-alice:/lib/data/MAP-sig"
+
 
 signature PARTICIPANT =
 sig
+
     type id = int
 
     type player_info = {

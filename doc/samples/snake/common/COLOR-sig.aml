@@ -11,6 +11,7 @@
 
 signature COLOR = 
 sig
+
     exception Unknown
 
     type color 

@@ -9,15 +9,15 @@
 *
 *)
 
-import structure Gtk       from "x-alice:/lib/gtk/Gtk"
-import structure Gdk       from "x-alice:/lib/gtk/Gdk"
-import structure GtkCanvas from "x-alice:/lib/gtk/GtkCanvas"
+import structure Gtk        from "x-alice:/lib/gtk/Gtk"
+import structure Gdk        from "x-alice:/lib/gtk/Gdk"
+import structure GtkCanvas  from "x-alice:/lib/gtk/GtkCanvas"
 
-import structure Color     from "../../common/Color"
-import structure Config    from "../../server/Config"
+import structure Color      from "../../common/Color"
+import structure Config     from "../../server/Config"
 
-import structure Wait      from "Wait"
-import structure TextWindow      from "TextWindow"
+import structure Wait       from "Wait"
+import structure TextWindow from "TextWindow"
 
 
 import val log              from "../../common/Log"
@@ -161,10 +161,10 @@ struct
 		    fun read adj = 
 			Real.round (Gtk.adjustmentGetFieldValue adj)
 		    
-		    val tick = Time.fromMilliseconds (read tickAdjust)
-		    val timeout = Time.fromSeconds (read timeoutAdj)
+		    val tick       = Time.fromMilliseconds (read tickAdjust)
+		    val timeout    = Time.fromSeconds (read timeoutAdj)
 		    val dimensions = (read xDimAdjust, read yDimAdjust)
-		    val goodie = read goodysAdjust
+		    val goodie     = read goodysAdjust
 		    val lives = 
 			if Gtk.toggleButtonGetActive livesCheckButton
 			    then NONE
@@ -208,12 +208,12 @@ struct
 							    false)
 		    val _ = Gtk.toggleButtonSetActive (levelsCheckButton,
 							    false)
-		    val tick = Time.toReal tick
-		    val timeout = Time.toReal timeout
-		    val xCoord = Real.fromInt x
-		    val yCoord = Real.fromInt y
+		    val tick         = 1000.0 * (Time.toReal tick)
+		    val timeout      = Time.toReal timeout
+		    val xCoord       = Real.fromInt x
+		    val yCoord       = Real.fromInt y
 		    val gateTreshold = Real.fromInt gateTreshold
-		    val goodie = Real.fromInt goodie
+		    val goodie       = Real.fromInt goodie
 		    val lives = 
 			case lives of
 			    SOME l => Real.fromInt l

@@ -1,3 +1,14 @@
+(* Alice Snake 2.0 - Client (impl)
+*
+*  Authors: Benedikt Grundmann / Sebastian Germesin
+*
+*  $Revision$
+*
+*  Last updated: $Date$ by $Author$
+* 
+*
+*)
+
 import structure Protocol   from "../common/Protocol"
 import structure Gui        from "Gui"
 import signature CLIENT     from "CLIENT-sig"

@@ -9,15 +9,23 @@
 *
 *)
 
-import structure Gtk       from "x-alice:/lib/gtk/Gtk"
-import structure Gdk       from "x-alice:/lib/gtk/Gdk"
-import structure GtkCanvas from "x-alice:/lib/gtk/GtkCanvas"
+import structure Gtk        from "x-alice:/lib/gtk/Gtk"
+import structure Gdk        from "x-alice:/lib/gtk/Gdk"
+import structure GtkCanvas  from "x-alice:/lib/gtk/GtkCanvas"
 
-import structure Color     from "../../common/Color"
+import structure Color      from "../../common/Color"
 
-import structure Wait      from "Wait"
-import structure TextWindow      from "TextWindow"
+import structure Wait       from "Wait"
+import structure TextWindow from "TextWindow"
 
+
+fun colorToGdkColor c =
+    let
+	val (r, g, b) = Color.rgb c
+	fun conv n = Real.round (65535.0 * n)
+    in
+	Gdk.allocColor (conv r, conv g, conv b)
+    end
 
 
 structure PlayerSettings =
@@ -51,26 +59,24 @@ struct
 	    val font = 
 		Gdk.fontLoad ("-*-times-*-*-*-*-*-*-*-*-*-*-*-*")
 	    val white = Gdk.allocColor (0xffff, 0xffff, 0xffff)
-	    val black = Gdk.allocColor (0 ,0, 0)
+	    val front = colorToGdkColor color
 	in
-	    Gtk.textInsert(!playerText, font, black, 
-			   white, name^"  "^(Color.toString color)^"\n", ~1);
-	    alreadyConn := (name, color) :: (!alreadyConn)
+	    Gtk.textInsert(!playerText, font, front, 
+			   white, name ^ "\n", ~1);
+	    alreadyConn := (name, color) :: !alreadyConn
 	end
 
  fun removePlayer (name, color) = 
 	let
 	    val font = 
-		Gdk.fontLoad ("-*-times-*-*-*-*-*-*-*-*-*-*-*-*")
+		Gdk.fontLoad ("-*-arial-bold-*-*-*-*-*-*-*-*-*-*-*")
 	    val white = Gdk.allocColor (0xffff, 0xffff, 0xffff)
 	    val black = Gdk.allocColor (0 ,0, 0)
 	in
 	    Gtk.textInsert(!playerText, font, black, 
 			   white, 
-			   name^
-	                   "  "^
-	                   (Color.toString color)^
-	                   " has disconnected"^
+			   name ^
+	                   " has disconnected" ^
 	                   "\n", ~1);
 	    alreadyConn := (name, color) :: (!alreadyConn)
 	end

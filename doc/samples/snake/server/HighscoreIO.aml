@@ -12,17 +12,16 @@
 import signature HIGHSCORE_IO from "HIGHSCORE_IO-sig"
 import structure Highscore    from "../common/Highscore"
 
-import structure Inspector    from "x-alice:/lib/tools/Inspector"
 
 structure HighscoreIO :> HIGHSCORE_IO =
 struct
 
-    val path = OS.Path.currentArc ^ "/highscore.hs"
+    val path = "highscore.hs"
 
     fun load () = 
 	let
 	    structure H = 
-		unpack ((Pickle.load path) handle _ =>
+		unpack (Pickle.load path handle _ =>
 			(pack (val h = Highscore.empty) 
 		           :> (val h : Highscore.highscore))) 
 		     : (val h : Highscore.highscore)
@@ -36,8 +35,7 @@ struct
 	    fun save () = Pickle.save (path, pack (val h = hs) 
 				       :> (val h : Highscore.highscore))
 	in
-	    save () handle _ => (OS.FileSys.mkDir "highscore";
-				 save ())
+	    save ()
 	end
 
 end

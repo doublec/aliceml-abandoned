@@ -9,16 +9,14 @@
 *
 *)
 
-import signature ARENAWIDGET   from "ARENAWIDGET-sig"
 import structure Gtk           from "x-alice:/lib/gtk/Gtk"
 import structure Gdk           from "x-alice:/lib/gtk/Gdk"
 import structure GtkCanvas     from "x-alice:/lib/gtk/GtkCanvas"
 import functor   MkRedBlackMap from "x-alice:/lib/data/MkRedBlackMap"
 import structure Inspector     from "x-alice:/lib/tools/Inspector"
 import structure Config        from "x-alice:/lib/system/Config"
-(*
-import structure GtkBuilder    from "../GtkBuilder"
-*)
+
+import signature ARENAWIDGET   from "ARENAWIDGET-sig"
 import structure Protocol      from "../../common/Protocol"
 import structure Color         from "../../common/Color"
 import structure Pos           from "../../common/Pos"
@@ -84,13 +82,14 @@ end
 
 
 (* some values *)
-val cellSize     = 20
+val cellSize     =  20
 val windowWidth  = 400
 val windowHeight = 300
 
 val backgroundColor = green
 
 structure P = Protocol
+
 
 structure ArenaWidget :> ARENAWIDGET =
 struct
@@ -110,7 +109,7 @@ struct
     fun initialize () = 
 	{
 	 canvas = GtkCanvas.new 0,
-	 state  = ref (Array2.array(1, 1, (Gtk.null () , P.EMPTY)))
+	 state  = ref (Array2.array(0, 0, (Gtk.null (), P.EMPTY)))
 	 }
 	
     fun toObject ({canvas, ... } : arena_widget) : Gtk.object  = canvas
@@ -127,8 +126,8 @@ struct
 		GtkCanvas.itemNew (root, Gtk.RECTANGLE,
 				   [("x1", Gtk.DOUBLE 0.0),
 				    ("y1", Gtk.DOUBLE 0.0),
-				    ("x2", Gtk.DOUBLE (real (cols * cellSize))),
-				    ("y2", Gtk.DOUBLE (real (rows * cellSize))),
+				    ("x2", Gtk.DOUBLE(real (cols * cellSize))),
+				    ("y2", Gtk.DOUBLE(real (rows * cellSize))),
 				    ("fill_color_gdk", Gtk.OBJECT green),
 				    ("outline_color_gdk", Gtk.OBJECT green)])
 	    val arena = Array2.array (rows, cols, (Gtk.null (), P.EMPTY))
@@ -139,7 +138,7 @@ struct
 
     fun insertHead (canvas, x, y, d, snakecol) =
 	let
-	    val (ex1,ey1,ex2,ey2) = 
+	    val (ex1, ey1, ex2, ey2) = 
 		case d of
 		    P.UP    => (2 * cellSize div 10,
 				3 * cellSize div 10,
@@ -195,7 +194,7 @@ struct
 				   GtkCanvas.LINE,
 				   [("points", Gtk.POINTS tonglist),
 				    ("fill_color_gdk", Gtk.OBJECT red),
-				    ("width_pixels", Gtk.INT (cellSize div 10))])
+				    ("width_pixels",Gtk.INT(cellSize div 10))])
 
 	    val leftEye = 
 		GtkCanvas.itemNew (head,
@@ -241,8 +240,8 @@ struct
 	let
 	    val gate = 
 		GtkCanvas.itemNew (canvas, GtkCanvas.GROUP,
-				   [("x",Gtk.DOUBLE (real x)),
-				    ("y",Gtk.DOUBLE (real y))])
+				   [("x", Gtk.DOUBLE (real x)),
+				    ("y", Gtk.DOUBLE (real y))])
 		
 	    val ground = 
 		GtkCanvas.itemNew (gate, GtkCanvas.RECTANGLE,
@@ -260,8 +259,8 @@ struct
 	let
 	    val gate = 
 		GtkCanvas.itemNew (canvas, GtkCanvas.GROUP,
-				   [("x",Gtk.DOUBLE (real x)),
-				    ("y",Gtk.DOUBLE (real y))])
+				   [("x", Gtk.DOUBLE (real x)),
+				    ("y", Gtk.DOUBLE (real y))])
 		
 	    val ground = 
 		GtkCanvas.itemNew (gate, GtkCanvas.RECTANGLE,
@@ -274,7 +273,7 @@ struct
 
 	    val cross = 
 		GtkCanvas.itemNew (gate, GtkCanvas.RECTANGLE,
-				   [("x1",Gtk.DOUBLE 3.0),
+				   [("x1", Gtk.DOUBLE 3.0),
 				    ("y1", Gtk.DOUBLE 3.0),
 				    ("x2", Gtk.DOUBLE (real (cellSize - 3))),
 				    ("y2", Gtk.DOUBLE (real (cellSize - 3))),
@@ -288,8 +287,8 @@ struct
 	let
 	    val wall = 
 		GtkCanvas.itemNew (canvas, GtkCanvas.GROUP,
-				   [("x",Gtk.DOUBLE (real x)),
-				    ("y",Gtk.DOUBLE (real y))])
+				   [("x", Gtk.DOUBLE (real x)),
+				    ("y", Gtk.DOUBLE (real y))])
 		
 	    val ground = 
 		GtkCanvas.itemNew (wall, GtkCanvas.RECTANGLE,
@@ -309,8 +308,8 @@ struct
 	let
 	    val goodie = 
 		GtkCanvas.itemNew (canvas, GtkCanvas.GROUP,
-				   [("x",Gtk.DOUBLE (real x)),
-				    ("y",Gtk.DOUBLE (real y))])
+				   [("x", Gtk.DOUBLE (real x)),
+				    ("y", Gtk.DOUBLE (real y))])
 		
 	    val ground = 
 		GtkCanvas.itemNew (goodie, GtkCanvas.ELLIPSE,
@@ -341,20 +340,23 @@ struct
                     else ();
                     (* place the new one *)
                     case field of
-		        P.EMPTY     => 
+		        P.EMPTY              => 
                             Array2.update (arena, r, c, (Gtk.null (), field))
-                    |   P.WALL      => Array2.update (arena, r, c, 
-                                        (insertWall (can, x, y), field))
-                    | P.GOODY n    => Array2.update (arena, r, c, 
-                                        (insertGoodie (can, x, y, n), field))
-                    | P.GATE (col,P.CLOSED) => Array2.update (arena, r, c, 
-                                        (insertClosedGate (can, x, y, 
-							   color col), 
-					 field))
-                    | P.GATE (col,P.OPEN) => Array2.update (arena, r, c, 
-                                        (insertOpenGate (can, x, y, 
-							 color col), 
-					 field))
+                    |   P.WALL               => 
+			    Array2.update (arena, r, c, 
+					   (insertWall (can, x, y), field))
+                    | P.GOODY n              => 
+			    Array2.update (arena, r, c, 
+					  (insertGoodie (can, x, y, n), field))
+                    | P.GATE (col, P.CLOSED) => 
+			    Array2.update (arena, r, c, 
+					   (insertClosedGate (can, x, y, 
+							      color col),
+					    field))
+                    | P.GATE (col, P.OPEN)   => 
+			    Array2.update (arena, r, c, 
+					   (insertOpenGate (can, x, y, 
+							    color col), field))
                     | P.SNAKE_HEAD (d, col) => 
                         Array2.update (arena, r, c, 
                             (insertHead (can, x, y, d, color col), field))
@@ -379,11 +381,6 @@ struct
 	    List.app insert difflist
 	end 
 	
-    fun clamp (low, upp) v =
-	if v < low then low
-	else if v > upp then upp
-	     else v
-
     fun arenaWidth (a:arena_widget) =
 	let
 	    val (_, cols) = Array2.dimensions (! ( #state a))
@@ -430,52 +427,3 @@ struct
 	end
 
 end
-(*
-fun testfield () =
-    let
-
-	val testfield = Array2.array(30,30,P.EMPTY)
-    in
-	Array2.update(testfield,2,3,
-		      P.SNAKE_HEAD(P.UP,Color.fromString"turquoise"));
-	Array2.update(testfield,2,5,
-		      P.SNAKE_HEAD(P.DOWN,Color.fromString"blue"));
-	Array2.update(testfield,2,7,
-		      P.SNAKE_HEAD(P.LEFT,Color.fromString"yellow"));
-	Array2.update(testfield,4,2,
-		      P.SNAKE_HEAD(P.RIGHT,Color.fromString"violet"));
-	Array2.update(testfield,4,4,
-		      P.SNAKE_BODY(Color.fromString"silver"));
-	Array2.update(testfield,4,6,
-		      P.WALL);
-        Array2.update(testfield,4,5, P.WALL);
-	Array2.update(testfield,4,8,
-		      P.GATE(Color.fromString "brown", P.CLOSED));
-	testfield
-    end
-
-val testfield = testfield ()
-
-fun test () = 
-    let
-	structure A = ArenaWidget
-	val testarena = A.initialize ()
-	val _ = ArenaWidget.initLevel (testarena, {dimensions = (30,30)})
-	val canvas = ArenaWidget.toObject testarena
-	fun deleteHandler _ = OS.Process.exit OS.Process.success
-	val widget = 
-	    GtkBuilder.Toplevel {title = "Snake ArenaWidget Test",
-				 border = 0,
-				 handler = [GtkBuilder.Handler("delete-event",
-							       deleteHandler)],
-				 inner = GtkBuilder.Window canvas}
-    in
-	GtkBuilder.MakeWidget widget;
-	ArenaWidget.update (testarena, Arena.diff(Array2.array(30,30,P.EMPTY),
-						  testfield));
-	ArenaWidget.changeView (testarena,(5,5))
-    end
-
-val _ = test ()
-
-*)

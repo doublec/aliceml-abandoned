@@ -8,6 +8,7 @@
  * 
  *
  *)
+
 import structure Color     from "Color"
 import structure Pos       from "Pos"
 import structure Highscore from "Highscore"
@@ -178,7 +179,7 @@ struct
     signature SERVER_CONNECTOR =
     sig
         val connect :       client_interface -> 
-	                      config * server_interface  (* Protocol *)
+	                     config * server_interface  (* Protocol *)
     end
 
 end

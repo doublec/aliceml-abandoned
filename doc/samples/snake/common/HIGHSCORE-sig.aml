@@ -1,4 +1,4 @@
-(* Alice Snake 2.0 - Operations on Positions
+(* Alice Snake 2.0 - Highscore
  *
  *  Authors: Benedikt Grundmann / Sebastian Germesin
  *
@@ -9,8 +9,8 @@
  *
  *)
 
-
 import structure Color   from "Color"
+
 
 signature HIGHSCORE =
 sig

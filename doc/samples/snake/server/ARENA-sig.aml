@@ -27,14 +27,14 @@ sig
         (* MAGIC NUMBERs ... *)
     }
     
-    val random :    config -> arena * (Pos.pos * Protocol.direction) list
+    val random       : config -> arena * (Pos.pos * Protocol.direction) list
 
-    val emptyCopy : arena -> arena
+    val emptyCopy    : arena -> arena
 
-    val copy : arena -> arena
+    val copy         : arena -> arena
     
     
-    val placeSnakes : arena * Snake.snake list -> 
+    val placeSnakes  : arena * Snake.snake list -> 
         { dead: Snake.snake list, grown: Snake.snake list, 
           finished: Snake.snake list }
     (** places the snakes on the arena, returns all snakes
@@ -48,9 +48,10 @@ sig
     val removeSnakes :  arena * Snake.snake list -> unit
     (** removes all snakes *)
 
-    val diff : arena * arena -> Protocol.diff list
+    val diff         : arena * arena -> Protocol.diff list
 
-    val toDiffList : arena -> Protocol.diff list
+    val toDiffList   : arena -> Protocol.diff list
+
 end
 
 

@@ -19,8 +19,4 @@ client: waitingwindow : eigener name im clientmode net angezeigt
 
 	updaten wird langsamer
 
-	SP: es gibt einen Timeout im SP ???
-
-	SP: spiel divergiert nach 5 mal gestorben
-
 	spiel stürzt ab, wenn timeout fertig
