@@ -20,7 +20,7 @@ sig
     eqtype stamp
     type t = stamp
 
-    val new :		unit   -> stamp
+    val stamp :		unit   -> stamp
     val fromString :	string -> stamp
     val toString :	stamp  -> string
 
