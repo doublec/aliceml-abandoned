@@ -97,11 +97,17 @@ val prom = Promise.promise();
 val fut = Promise.future(prom);
 
 structure List =  Reflect.ReflectType
-    (type t = (string * string Promise.promise) list);
+    (type t = (int * int Promise.promise) vector);
 val list = List.x;
 
-UnsafeInspector.inspect([(fut,prom),(fut,prom),(fut,prom),(fut,prom)],
+UnsafeInspector.inspect(#[(fut,prom),(fut,prom),(fut,prom),(fut,prom)],
 			list);
+
+Promise.fulfill(prom,44);
+
+structure Vec = Reflect.ReflectType (type t = int Promise.promise vector);
+
+UnsafeInspector.inspect(#[prom,prom,prom],Vec.x);
 
 (*  Promise.fulfill(prom,"here I am");  *)
 
