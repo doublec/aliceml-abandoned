@@ -156,10 +156,9 @@ word ConstantPoolEntry::Resolve(ConstantPool *constantPool,
     }
   case CONSTANT_Integer:
   case CONSTANT_Long:
-    return GetArg(0);
   case CONSTANT_Float:
   case CONSTANT_Double:
-    Error("unimplemented constant pool tag"); //--**
+    return GetArg(0);
   case CONSTANT_Long_unusable:
   case CONSTANT_Double_unusable:
     return Store::IntToWord(0); // may never be referenced
@@ -259,8 +258,34 @@ ConstantPoolEntry *ClassFile::ParseConstantPoolEntry(u_int &offset) {
     }
     break;
   case CONSTANT_Float:
+    {
+      ConstantPoolEntry *entry = ConstantPoolEntry::New(tag, 1);
+      union {
+	s_int32 i;
+	u_char s[4];
+      } bytes;
+      bytes.i = GetU4(offset);
+      Float *flt = Float::NewFromNetworkRepresentation(bytes.s);
+      entry->InitArg(0, flt->ToWord());
+      return entry;
+    }
+    break;
   case CONSTANT_Double:
-    Error("unimplemented CONSTANT_tag"); //--**
+    {
+      ConstantPoolEntry *entry = ConstantPoolEntry::New(tag, 1);
+      union {
+	struct {
+	  s_int32 i, j;
+	} x;
+	u_char s[8];
+      } bytes;
+      bytes.x.i = GetU4(offset);
+      bytes.x.j = GetU4(offset);
+      Double *dbl = Double::NewFromNetworkRepresentation(bytes.s);
+      entry->InitArg(0, dbl->ToWord());
+      return entry;
+    }
+    break;
   case CONSTANT_NameAndType:
     {
       ConstantPoolEntry *entry = ConstantPoolEntry::New(tag, 2);
