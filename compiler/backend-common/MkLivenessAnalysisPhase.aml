@@ -60,8 +60,8 @@ functor MkLivenessAnalysisPhase(Switches: SWITCHES) :>
 
 	fun allDefs body =
 	    let
-		val set = IdSet.new ()
-		val shared = StampSet.new ()
+		val set = IdSet.set ()
+		val shared = StampSet.set ()
 	    in
 		allDefsBody (body, set, false, shared);
 		Vector.fromList (IdSet.fold op:: nil set)
@@ -171,8 +171,8 @@ functor MkLivenessAnalysisPhase(Switches: SWITCHES) :>
 
 	fun laIdRefs (idRefs, use, dontKill) =
 	    let
-		val ids = IdSet.new ()
-		val nonlinear = IdSet.new ()
+		val ids = IdSet.set ()
+		val nonlinear = IdSet.set ()
 	    in
 		Vector.app (fn (IdRef id | LastIdRef id) =>
 			       if IdSet.member (ids, id) then
@@ -262,7 +262,7 @@ functor MkLivenessAnalysisPhase(Switches: SWITCHES) :>
 	  | laBody (RecDec (info, idDefExpVec)::stms, shared, dontKill) =
 	    let
 		val (stms, use) = laBody (stms, shared, dontKill)
-		val lastUsesSet = IdSet.new ()
+		val lastUsesSet = IdSet.set ()
 		val idDefExpList =
 		    Vector.foldr
 			(fn ((idDef, exp), rest) =>
@@ -327,14 +327,14 @@ functor MkLivenessAnalysisPhase(Switches: SWITCHES) :>
 	    end
 	  | laBody ([RaiseStm (info, idRef)], _, dontKill) =
 	    let
-		val use = IdSet.new ()
+		val use = IdSet.set ()
 		val idRef = laIdRef (idRef, use, dontKill)
 	    in
 		([RaiseStm (info, idRef)], use)
 	    end
 	  | laBody ([ReraiseStm (info, idRef)], _, dontKill) =
 	    let
-		val use = IdSet.new ()
+		val use = IdSet.set ()
 		val idRef = laIdRef (idRef, use, dontKill)
 	    in
 		([ReraiseStm (info, idRef)], use)
@@ -393,7 +393,7 @@ functor MkLivenessAnalysisPhase(Switches: SWITCHES) :>
 		     end)
 	  | laBody ([ReturnStm (info, exp)], _, dontKill) =
 	    let
-		val use = IdSet.new ()
+		val use = IdSet.set ()
 		val (_, exp) = laExp (exp, use, dontKill)
 	    in
 		([ReturnStm (info, exp)], use)
@@ -402,7 +402,7 @@ functor MkLivenessAnalysisPhase(Switches: SWITCHES) :>
 	    laBody (valOf bodyOpt, shared, dontKill)
 	  | laBody ([ExportStm (info, exp)], _, dontKill) =
 	    let
-		val use = IdSet.new ()
+		val use = IdSet.set ()
 		val (_, exp) = laExp (exp, use, dontKill)
 	    in
 		([ExportStm (info, exp)], use)
@@ -542,7 +542,7 @@ functor MkLivenessAnalysisPhase(Switches: SWITCHES) :>
 	  | laExp (FunExp (info, stamp, flags, idDefArgs, body),
 		   use, dontKill) =
 	    let
-		val (body, use') = laBody (body, StampMap.new (), IdSet.new ())
+		val (body, use') = laBody (body, StampMap.map (), IdSet.set ())
 		val idDefArgs = laIdDefArgs (idDefArgs, use')
 		val lastUses = difference' (use', use, dontKill)
 	    in
@@ -588,8 +588,8 @@ functor MkLivenessAnalysisPhase(Switches: SWITCHES) :>
 
 	fun translate () (_, {imports, body, exports, sign}) =
 	    let
-		val shared = StampMap.new ()
-		val dontKill = IdSet.new ()
+		val shared = StampMap.map ()
+		val dontKill = IdSet.set ()
 		val (body, use) = laBody (body, shared, dontKill)
 		val _ =
 		    Vector.app (fn (_, id) => IdSet.insert (use, id)) exports

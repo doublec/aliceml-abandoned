@@ -26,8 +26,8 @@ import structure UnsafeValue             from "../../lib/system/UnsafeValue"
 import structure Reflect                 from "../../lib/system/Reflect"
 import structure PrettyPrint             from "../../lib/utility/PrettyPrint"
 import structure Assert                  from "../../lib/utility/Assert"
-import signature IMP_MAP                 from "../../lib/utility/IMP_MAP-sig"
-import structure MkHashImpMap            from "../../lib/utility/MkHashImpMap"
+import signature IMP_MAP                 from "../../lib/data/IMP_MAP-sig"
+import structure MkHashImpMap            from "../../lib/data/MkHashImpMap"
 import structure MkDepthFirstSearch from "../../lib/utility/MkDepthFirstSearch"
 import structure Label                   from "../../lib/rtt/Label"
 import structure Crash                   from "../infrastructure/Crash"
@@ -81,17 +81,17 @@ signature SCOPED_IMP_MAP =
 	type 'a map
 	type 'a t = 'a map
 
-	exception Lookup of key
+	exception Unknown of key
 
-	val new: unit -> 'a map
+	val map: unit -> 'a map
 	val clone: 'a map -> 'a map
 	val cloneTop: 'a map -> 'a map
 	val insertScope: 'a map -> unit
 	val deleteScope: 'a map -> unit
 	val insert: 'a map * key * 'a -> unit
-	val insertDeep: 'a map * key * 'a -> unit   (* Lookup *)
+	val insertDeep: 'a map * key * 'a -> unit   (* Unknown *)
 	val lookup: 'a map * key -> 'a option
-	val lookupExistent: 'a map * key -> 'a      (* Lookup *)
+	val lookupExistent: 'a map * key -> 'a      (* Unknown *)
 	val appiScope: (key * 'a -> unit) -> 'a map -> unit
 	val foldi: (key * 'a * 'b -> 'b) -> 'b -> 'a map -> 'b
     end
@@ -103,16 +103,16 @@ functor MkScopedImpMap(ImpMap: IMP_MAP) :>
 	type 'a map = 'a ImpMap.t list ref
 	type 'a t = 'a map
 
-	exception Lookup = ImpMap.Lookup
+	exception Unknown = ImpMap.Unknown
 
-	fun new () = ref [ImpMap.new ()]
+	fun map () = ref [ImpMap.map ()]
 
 	fun clone (ref maps) = ref (List.map ImpMap.clone maps)
 
 	fun cloneTop (ref maps) =
 	    ref (ImpMap.clone (List.hd maps)::List.tl maps)
 
-	fun insertScope r = r := ImpMap.new ()::(!r)
+	fun insertScope r = r := ImpMap.map ()::(!r)
 	fun deleteScope r = r := List.tl (!r)
 
 	fun insert (ref maps, key, entry) =
@@ -136,7 +136,7 @@ functor MkScopedImpMap(ImpMap: IMP_MAP) :>
 	fun lookupExistent (mapsRef, key) =
 	    case lookup (mapsRef, key) of
 		SOME entry => entry
-	      | NONE => raise Lookup key
+	      | NONE => raise Unknown key
 
 	fun appiScope f (ref maps) = ImpMap.appi f (List.hd maps)
 
@@ -232,13 +232,13 @@ functor MkValuePropagationPhase(val isCross: bool
 				labelIdRefVec)
 	  | expToValue (PolyProdExp (_, labelIdRefVec)) =
 	    let
-		val map = LabelMap.new ()
+		val map = LabelMap.map ()
 	    in
 		Vector.app (fn (label, idRef) =>
 			       LabelMap.insertDisjoint
 				   (map, label, idRefToValue idRef))
 			   labelIdRefVec;
-		PolyProdVal (map, Stamp.new ())
+		PolyProdVal (map, Stamp.stamp ())
 	    end
 	  | expToValue (VecExp (_, idRefs)) =
 	    VecVal (Vector.map idRefToValue idRefs)
@@ -268,7 +268,7 @@ functor MkValuePropagationPhase(val isCross: bool
 	    struct
 		type t = env
 
-		val new = IdMap.new
+		val new = IdMap.map
 		val clone = IdMap.clone
 	    end
 
@@ -377,9 +377,9 @@ functor MkValuePropagationPhase(val isCross: bool
 	in
 	    fun sortShared (body, stamp) =
 		let
-		    val edgeMap = StampMap.new ()
-		    val shared = StampMap.new ()
-		    val path = StampSet.new ()
+		    val edgeMap = StampMap.map ()
+		    val shared = StampMap.map ()
+		    val path = StampSet.set ()
 		in
 		    sortSharedBody (body, stamp, edgeMap, shared, path);
 		    (DepthFirstSearch.search edgeMap, shared)
@@ -1056,15 +1056,15 @@ functor MkValuePropagationPhase(val isCross: bool
 
 	fun optimizeRec (info, idDefExpList, stms) =
 	    let
-		val edgeMap = IdMap'.new ()
-		val set = IdSet.new ()
+		val edgeMap = IdMap'.map ()
+		val set = IdSet.set ()
 		val (idDefExpList, idDefExpRest) =
 		    List.partition
 			(fn (IdDef _, ConExp (_, (IdRef _ |
 						  LastIdRef _), _)) => false
 			  | (IdDef id, _) => (IdSet.insert (set, id); true)
 			  | (_, _) => false) idDefExpList
-		val map = IdMap'.new ()
+		val map = IdMap'.map ()
 		val _ =
 		    List.app
 			(fn (IdDef id, exp) =>
@@ -1650,7 +1650,7 @@ functor MkValuePropagationPhase(val isCross: bool
 		IdMap.deleteScope env;
 		(nil, FunExp (info, stamp, flags, args,
 			      patchArgs (args, lazySels) @
-			      patchBody (body, lazySels, StampMap.new ())))
+			      patchBody (body, lazySels, StampMap.map ())))
 	    end
 	  | vpExp (PrimAppExp (info, name, idRefs), env, _, _) =
 	    (nil, vpPrimApp (info, name,
@@ -1729,7 +1729,7 @@ functor MkValuePropagationPhase(val isCross: bool
 				SOME map => map
 			      | NONE => 
 				    let
-					val map = LabelMap.new ()
+					val map = LabelMap.map ()
 				    in
 					IdMap.insert (lazySels, id, map);
 					map
@@ -1815,9 +1815,9 @@ functor MkValuePropagationPhase(val isCross: bool
 (*--** enter values from context into env' *)
 		val _ = Vector.app (declareImport (desc, env')) imports
 		val _ = IdMap.insertScope env'
-		val lazySels = IdMap.new ()
+		val lazySels = IdMap.map ()
 		val body =
-		    vpBodyShared (body, Stamp.new (),
+		    vpBodyShared (body, Stamp.stamp (),
 				  {env = env', isToplevel = true,
 				   export = SOME (env, exports),
 				   lazySels = lazySels})
@@ -1828,7 +1828,7 @@ functor MkValuePropagationPhase(val isCross: bool
 		    patchIdDefs (Vector.map
 				     (fn (id, _, _, _) => IdDef id) imports,
 				 lazySels) @
-		    patchBody (body, lazySels, StampMap.new ())
+		    patchBody (body, lazySels, StampMap.map ())
 	    in
 		{imports = imports, body = body,
 		 exports = exports, sign = sign}
@@ -1841,8 +1841,8 @@ functor MkValuePropagationPhase(val isCross: bool
 			\dumping debug information to vpdebug.txt\n";
 			debug component;
 			case exn of
-			    IdMap.Lookup id =>
-				TextIO.print ("Lookup " ^
+			    IdMap.Unknown id =>
+				TextIO.print ("Unknown " ^
 					      OutputFlatGrammar.idToString id ^
 					      "\n")
 			  | Crash.Crash s => TextIO.print ("Crash " ^ s ^ "\n")

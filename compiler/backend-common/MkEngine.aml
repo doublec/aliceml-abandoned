@@ -40,7 +40,7 @@
 import structure TextIO       from "../../lib/system/TextIO"
 import structure Stamp        from "../common/Stamp"
 import structure Label        from "../../lib/rtt/Label"
-import structure MkHashImpMap from "../../lib/utility/MkHashImpMap"
+import structure MkHashImpMap from "../../lib/data/MkHashImpMap"
 import structure Source       from "../infrastructure/Source"
 import structure Error        from "../infrastructure/Error"
 import structure FlatGrammar  from "FlatGrammar"
@@ -63,7 +63,7 @@ functor MkEngine(val cmd: unit -> string * string list
 	    struct
 		type t = Unix.proc option ref * valref IdMap.t
 
-		fun new () = (ref NONE, IdMap.new ())
+		fun new () = (ref NONE, IdMap.map ())
 
 		fun clone (proc, map) = (proc, IdMap.clone map)
 	    end

@@ -10,8 +10,8 @@
  *   $Revision$
  *)
 
-import structure MkHashImpSet        from "../../lib/utility/MkHashImpSet"
-import structure MkHashImpMap        from "../../lib/utility/MkHashImpMap"
+import structure MkHashImpSet        from "../../lib/data/MkHashImpSet"
+import structure MkHashImpMap        from "../../lib/data/MkHashImpMap"
 import structure Name                from "../../lib/rtt/Name"
 import structure Label               from "../../lib/rtt/Label"
 import structure Type                from "../../lib/rtt/Type"
@@ -32,7 +32,7 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 
 	open I
 
-	fun freshIntermediateId info = Id (info, Stamp.new (), Name.InId)
+	fun freshIntermediateId info = Id (info, Stamp.stamp (), Name.InId)
 
 	fun translateLit (I.IntLit i) = O.IntLit i
 	  | translateLit (I.WordLit w) = O.WordLit w
@@ -407,9 +407,9 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 
 	fun getUsedVars (exp, set) =
 	    let
-		val used = IdSet.new ()
+		val used = IdSet.set ()
 	    in
-		usedVarsExp (exp, set, used, StampSet.new ()); used
+		usedVarsExp (exp, set, used, StampSet.set ()); used
 	    end
 
 	fun rowLabels row =
@@ -425,7 +425,7 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	structure LabelMap = MkHashImpMap(Label)
 
 	val typToArityMap: (Arity.t * int LabelMap.t option) Type.Map.t =
-	    Type.Map.new ()
+	    Type.Map.map ()
 
 	fun rowToArity (row, typ, makeMap) =
 	    let
@@ -445,7 +445,7 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 			    val mapOpt =
 				if makeMap then
 				    let
-					val map = LabelMap.new ()
+					val map = LabelMap.map ()
 				    in
 					List.appi
 					    (fn (i, label) =>

@@ -11,7 +11,7 @@
  *)
 
 import structure Assert               from "../../lib/utility/Assert"
-import structure GlobalStamp          from "../../lib/utility/GlobalStamp"
+import structure GlobalStamp          from "../../lib/data/GlobalStamp"
 import structure Url                  from "../../lib/system/Url"
 import structure Name                 from "../../lib/rtt/Name"
 import structure Label                from "../../lib/rtt/Label"
@@ -82,7 +82,7 @@ functor MkFlatteningPhase(structure Switches: SWITCHES) :> FLATTENING_PHASE =
 	fun share nil = nil
 	  | share (stms as [O.SharedStm (_, _, _)]) = stms
 	  | share (stms as stm::_) =
-	    [O.SharedStm (O.infoStm stm, stms, Stamp.new ())]
+	    [O.SharedStm (O.infoStm stm, stms, Stamp.stamp ())]
 
 	datatype continuation =
 	    Decs of dec list * continuation
@@ -188,7 +188,7 @@ functor MkFlatteningPhase(structure Switches: SWITCHES) :> FLATTENING_PHASE =
 	  | translateLongid (LongId ({region, ...}, longid, Lab (_, label))) =
 	    let
 		val (stms, idRef) = translateLongid longid
-		val id' = O.Id (region, Stamp.new (), Name.InId)
+		val id' = O.Id (region, Stamp.stamp (), Name.InId)
 		val stm =
 		    O.ValDec (region, O.IdDef id',
 			      O.LazyPolySelExp (region, label, idRef))
@@ -576,7 +576,7 @@ functor MkFlatteningPhase(structure Switches: SWITCHES) :> FLATTENING_PHASE =
 		val (body, _) = translateGraph (graph, mapping, #region info)
 	    in
 		checkReachability consequents;
-		f (O.FunExp (#region info, Stamp.new (), nil, args, body))::
+		f (O.FunExp (#region info, Stamp.stamp (), nil, args, body))::
 		translateCont cont
 	    end
 	  | translateExp (AppExp (info, exp1, exp2), f, cont) =
