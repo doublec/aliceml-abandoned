@@ -80,6 +80,7 @@ functor MakeIntermediateGrammar(type lab_info
 	| LazyExp   of exp_info * exp			(* by-need suspension *)
 	| LetExp    of exp_info * dec vector * exp	(* local binding *)
 	| UpExp     of exp_info * exp			(* type abstraction *)
+	| CastExp   of exp_info * exp			(* type unsafe *)
 
     and 'a field = Field of 'a field_info * lab * 'a
 
@@ -125,7 +126,7 @@ functor MakeIntermediateGrammar(type lab_info
 
     (* Components *)
 
-    type comp = (id * sign * Url.t) vector * (exp * sign)
+    type comp = (id * sign * Url.t) vector * dec vector * id field vector * sign
     type t = comp
 
 
@@ -164,6 +165,7 @@ functor MakeIntermediateGrammar(type lab_info
       | infoExp(LazyExp(i,_))		= i
       | infoExp(LetExp(i,_,_))		= i
       | infoExp(UpExp(i,_))		= i
+      | infoExp(CastExp(i,_))		= i
 
     fun infoField(Field(i,_,_))		= i
     fun infoMatch(Match(i,_,_))		= i

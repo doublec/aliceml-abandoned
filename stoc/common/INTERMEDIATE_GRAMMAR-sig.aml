@@ -70,6 +70,7 @@ signature INTERMEDIATE_GRAMMAR =
 	| LazyExp   of exp_info * exp			(* by-need suspension *)
 	| LetExp    of exp_info * dec vector * exp	(* local binding *)
 	| UpExp     of exp_info * exp			(* type abstraction *)
+	| CastExp   of exp_info * exp			(* type unsafe *)
 
     and 'a field = Field of 'a field_info * lab * 'a
 
@@ -115,7 +116,7 @@ signature INTERMEDIATE_GRAMMAR =
 
     (* Components *)
 
-    type comp = (id * sign * Url.t) vector * (exp * sign)
+    type comp = (id * sign * Url.t) vector * dec vector * id field vector * sign
     type t = comp
 
 

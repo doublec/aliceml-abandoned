@@ -182,6 +182,9 @@ struct
       | ppExp(UpExp(i, exp))		= exptree "Up" i (
 					    ppExp exp
 					  )
+      | ppExp(CastExp(i, exp))		= exptree "Cast" i (
+					    ppExp exp
+					  )
 
     and ppMatchs matchs			= vec(Vector.map ppMatch matchs)
     and ppMatch(Match(i, pat, exp))	= tree "Match" (ppMatchInfo i) (
@@ -257,6 +260,7 @@ struct
 
   (* Components *)
 
-    fun ppComp (_, (exp,_)) = ppExp exp ^^ break
+    fun ppComp (_, decs, fields, _)	= ppDecs decs ^/^ ppFields ppId fields
+					  ^^ break
 
 end
