@@ -1929,8 +1929,8 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 				   VId.toString vid' ^ " in signature")
 	in
 	    (case is
-	       of V => O.ValSpec(i, id1', typ')
-	        | _ => O.ConSpec(i, O.Con(i, id1', []), typ')
+	       of V => O.ValSpec(i, id2', typ')
+	        | _ => O.ConSpec(i, O.Con(i, id2', []), typ')
 	    ) :: acc
 	end
 
@@ -2214,7 +2214,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		val  _            = deleteScope E
 		val  inf'         = O.ArrInf(i, id1', inf1', inf2')
 		val  spec'        = O.ModSpec(i, id1', inf')
-		val  _            = insertDisjointFun(E, funid', (i1,stamp1,E1))
+		val  _            = insertDisjointFun(E, funid', (i1,stamp1,E2))
 				    handle CollisionFun _ =>
 				    errorFunId("duplicate functor name ", funid,
 					       " in binding group")
