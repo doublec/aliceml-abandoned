@@ -3,7 +3,7 @@
 //   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
 //
 // Copyright:
-//   Thorsten Brunklaus, 2000
+//   Thorsten Brunklaus, 2000-2001
 //
 // Last Change:
 //   $Date$ by $Author$
@@ -23,7 +23,7 @@ private:
   Set *Enlarge(u_int oldsize, u_int newsize) {
     Block *p = Store::AllocBlock(GENSET_LABEL, newsize);
 
-    std::memcpy(p->GetBase(), GetBase(), oldsize * sizeof(word));
+    std::memcpy(p->GetBase(), GetBase(), oldsize * sizeof(u_int));
     return (Set *) p;
   }
 public:

@@ -3,7 +3,7 @@
 //   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
 //
 // Copyright:
-//   Thorsten Brunklaus, 2000
+//   Thorsten Brunklaus, 2000-2001
 //
 // Last Change:
 //   $Date$ by $Author$
@@ -122,7 +122,7 @@ int main(int argc, char **argv) {
 			    HEADER_CHILDISH_WIDTH)) {
     std::fprintf(stderr, "%s: illegal HEADER parameter selection. Field-Sum must match full width\n",
 	    argv[0]);
-    exit(1);
+    std::exit(1);
   }
 
   if (STORE_GENERATION_NUM > ((1 << HEADER_GEN_GC_MARK_WIDTH) - 1)) {
@@ -161,7 +161,13 @@ int main(int argc, char **argv) {
     std::fprintf(stderr,
 		 "%s: unsupported platform: unable to find appropriate int type\n", argv[0]);
 
-    exit(1);
+    std::exit(1);
+  }
+
+  if (STORE_MEMCHUNK_SIZE % MIN_WIDTH != 0) {
+    std::fprintf(stderr,
+		 "%s: STORE_MEMCHUNK_SIZE must be multiple of MIN_WIDTH=%d\n", argv[0], MIN_WIDTH);
+    std::exit(1);
   }
 
   CreateHeader(f, HEADER_SIZE_WIDTH + ((MIN_WIDTH * 8) - HEADER_FULL_WIDTH));
@@ -171,21 +177,16 @@ int main(int argc, char **argv) {
   std::fprintf(f, "#define STORE_GENERATION_NUM %d\n", (STORE_GENERATION_NUM + 1));
   std::fprintf(f, "#define STORE_GEN_YOUNGEST   %d\n", 0);
   std::fprintf(f, "#define STORE_GEN_OLDEST     %d\n", (STORE_GENERATION_NUM - 1));
-  std::fprintf(f, "#define STORE_GENERATION_NUM %d\n", (STORE_GENERATION_NUM + 1));
   std::fprintf(f, "#define STORE_MEMCHUNK_SIZE  %d\n", STORE_MEMCHUNK_SIZE);
   std::fprintf(f, "#define STORE_INTGENSET_SIZE %d\n", STORE_INITIAL_INTGEN);
   std::fprintf(f, "#define STORE_WKDICTSET_SIZE %d\n", STORE_INITIAL_WKDICT);
   std::fprintf(f, "#define STORE_WORD_WIDTH     %d\n\n", (MIN_WIDTH * 8));
 
-  if (STORE_CHUNKTOP_IN_REG) {
-    std::fprintf(f, "#define STORE_CHUNKTOP_IN_REG 1\n\n");
-  }
-
   std::fprintf(f, "typedef %s s_int;\n", int_val);
   std::fprintf(f, "typedef unsigned %s u_int;\n\n", int_val);
 
   std::fprintf(f, "#endif\n");
-  fclose(f);
+  std::fclose(f);
 
   return 0;
 }
