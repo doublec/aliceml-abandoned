@@ -53,7 +53,7 @@ struct
 	   => newPath (va,t,p,i,d,path)
          | Type.Arrow _ 
 	   =>  createSimple (createValue(va,t,NO_ACTIONS)
-			     ,p,i,"fn",COLOR,setGroup)
+			     ,p,i,"fn",DEFAULT,setGroup)
          | Type.All(var,typ) 
 	   => createGraph (va,typ,p,i,d)
 	 | Type.Exist(var,typ) 
@@ -79,9 +79,11 @@ struct
 				    then ("(","(")
 				else ("{","}")
 	      val (lbraNode,rbraNode) = (createSimple (INTERPUNCT,upperConcat,
-						       0,lbra,COLOR,setGroup),
+						       0,lbra,BRACK_COLOR,
+						       setGroup),
 					 createSimple (INTERPUNCT,upperConcat,
-						       2,rbra,COLOR,setGroup))
+						       2,rbra,BRACK_COLOR,
+						       setGroup))
 	      val container = createContfromRow (va,t,upperConcat,1,d,row, 
 						 UnsafeValue.proj) 
 	      val upperKids = getKids(upperConcat)
@@ -103,14 +105,16 @@ struct
 	    val index     = UnsafeValue.tag(va,l_vector)
 	    val label     = Label.toString(Vector.sub(l_vector,index))
 	    val labelnode =  createSimple (INTERPUNCT,upperConcat,
-					   0,label,COLOR,setGroup)
+					   0,label,LABEL_COLOR,setGroup)
 	    val (lbra,rbra) =  if Type.isTupleRow(row) 
 				   then ("(","(")
 			       else ("{","}")
 	    val (lbraNode,rbraNode) = (createSimple (INTERPUNCT,upperConcat,
-						     1,lbra,COLOR,setGroup),
+						     1,lbra,BRACK_COLOR,
+						     setGroup),
 				       createSimple (INTERPUNCT,upperConcat,
-						     3,rbra,COLOR,setGroup))
+						     3,rbra,BRACK_COLOR,
+						     setGroup))
 	    val typ = #2(List.nth(lt_list,index))
 	    val intyp = if Type.isApply(typ) 
 		        andalso Path.equal(Type.asCon(#1(Type.asApply(typ))),
@@ -184,11 +188,11 @@ struct
 				       Array.array(c_length,Empty),
 				       ~1,~1,setGroup)
 	    val l_node = createSimple (INTERPUNCT,concat,0,label,
-				       COLOR,setGroup)
+				       LABEL_COLOR,setGroup)
 	    val eq_node = createSimple (INTERPUNCT,concat,1," = ",
-					COLOR,setGroup)
+					EQU_COLOR,setGroup)
 	    val sep_node = createSimple (INTERPUNCT,concat,3,", ",
-					 COLOR,setGroup)
+					 SEP_COLOR,setGroup)
 	    val node = createGraph (va,t,concat,2,d+1)
 	    val concat_kids = getKids(concat)
 	in
@@ -209,7 +213,7 @@ struct
 				       Array.array(c_length,Empty),
 				       ~1,~1,setGroup)
 	    val sep_node = createSimple (INTERPUNCT,concat,1,", ",
-					 COLOR,setGroup)
+					 SEP_COLOR,setGroup)
 	    val node = createGraph (va,t,concat,0,d+1)
 	    val concat_kids = getKids(concat)
 	in
@@ -222,7 +226,7 @@ struct
     (* newPath *)
     and newPath (v,t,p,i,d,path) =
         (case PathMap.lookup(pathTable, path) of
-	   NONE => createSimple(INTERPUNCT,p,i,"_",COLOR,setGroup)
+	   NONE => createSimple(INTERPUNCT,p,i,"_",DEFAULT,setGroup)
          | SOME create => let val doc = create (!max_width,d,v,t)
                           in docToNode (doc,p,i,d) 
 			  end )
@@ -230,7 +234,7 @@ struct
     (* docToNode *)
     and docToNode (doc,p,i,d) =
         (case doc of
-           SIMPLE(r) => createSimple (#desc(r),p,i,#rep(r),COLOR,setGroup)
+           SIMPLE(r) => createSimple (#desc(r),p,i,#rep(r),DEFAULT,setGroup)
          | CONCAT(r) => let val na = Array.array(Vector.length(#kids(r)),
 						 Empty)
                             val concat = createConcat(#desc(r),p,i,na,~1,~1,

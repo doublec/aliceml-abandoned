@@ -14,6 +14,7 @@
  *)
 
 import structure PervasiveType from "x-alice:/lib/rtt/PervasiveType"
+import structure MkPathTable from "MkPathTable"
 import structure NewNode from "NewNode"
 import structure CreateDoc from "CreateDoc"
 import signature UNSAFE_INSPECTOR from "UNSAFE_INSPECTOR-sig"

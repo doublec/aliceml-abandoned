@@ -31,7 +31,19 @@ sig
 
    datatype status = CLEAN | DIRTY | DAZZLED
 
-   datatype color_class = COLOR (* wird spaeter ersetzt *)
+   datatype color_class = INT_COLOR 
+                        | REAL_COLOR
+                        | CHAR_COLOR
+                        | STR_COLOR
+                        | WORD_COLOR
+                        | EXN_COLOR
+                        | REF_COLOR
+                        | LABEL_COLOR
+                        | SEP_COLOR
+                        | EQU_COLOR
+                        | LIMIT_COLOR
+                        | BRACK_COLOR
+                        | DEFAULT
 
    datatype node = 
        Simple of {desc : desc, 

@@ -1,10 +1,54 @@
 import structure NewNode from "NewNode";
+import structure Layout from "Layout";
 import structure UnsafeInspector from "UnsafeInspector";
 import structure Reflect from "x-alice:/lib/system/Reflect";
 
 UnsafeInspector.init();
 
+(* Interger *)
 structure SInt = Reflect.ReflectType ( type t = int);
 val t_int = SInt.x;
 
 val test1 = NewNode.newNode(44,t_int);
+
+(* Char *)
+structure Char = Reflect.ReflectType ( type t = char);
+val t_char = Char.x;
+
+val test2 = NewNode.newNode(#"7", t_char);
+
+(* Referenz *)
+structure Ref = Reflect.ReflectType ( type t = string vector ref);
+val t_ref = Ref.x;
+
+val test3 = NewNode.newNode(ref #["hallo"],t_ref);
+
+(* Vector *)
+structure Vec = Reflect.ReflectType ( type t = real vector);
+val t_vec = Vec.x;
+
+val test4 = NewNode.newNode(#[1.0,2.0], t_vec);
+
+(* Matrix *)
+structure Mat = Reflect.ReflectType ( type t = real vector vector);
+val t_mat = Mat.x;
+
+val test5 = NewNode.newNode(#[#[1.0]],t_mat);
+
+(* Array *)
+structure Arr = Reflect.ReflectType ( type t = string array);
+val t_array = Arr.x;
+val my_array = Array.array(2,""); 
+Array.update(my_array,0,"h"); 
+Array.update(my_array,1,"i");
+
+val test6 = NewNode.newNode(my_array, t_array);
+
+(* Layout *)
+Layout.layout test3;
+
+Layout.layout test4;
+
+Layout.layout test5;
+
+Layout.layout test6;
