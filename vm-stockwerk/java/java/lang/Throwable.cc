@@ -34,7 +34,7 @@ DEFINE1(fillInStackTrace) {
 DEFINE1(getStackTraceDepth) {
   DECLARE_OBJECT(_this, x0);
   Assert(_this != INVALID_POINTER);
-  word wBacktrace = _this->GetInstanceField(0);
+  word wBacktrace = _this->GetInstanceField(Throwable::BACKTRACE_INDEX);
   if (wBacktrace == null) RETURN_JINT(0);
   RETURN_JINT(Backtrace::FromWordDirect(wBacktrace)->GetNumberOfElements());
 } END
@@ -43,7 +43,7 @@ DEFINE2(getStackTraceElement) {
   DECLARE_OBJECT(_this, x0);
   Assert(_this != INVALID_POINTER);
   DECLARE_JINT(i, x1);
-  word wBacktrace = _this->GetInstanceField(0);
+  word wBacktrace = _this->GetInstanceField(Throwable::BACKTRACE_INDEX);
   if (wBacktrace == null)
     THROW(NullPointerException, "backtrace");
   Class *stackTraceElementClass = Class::FromWord(wStackTraceElementClass);
