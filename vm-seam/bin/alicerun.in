@@ -69,7 +69,6 @@ then
     ALICE_LOAD="${ALICE_LOAD}${ALICE_LOAD:+@CACHESEP@}${ALICE_LOAD_SUFFIX}"
 fi
 
-echo "Hi guys, here is ALICE_LOAD : ${ALICE_LOAD}"
 
 export ALICE_HOME ALICE_LOAD
 
