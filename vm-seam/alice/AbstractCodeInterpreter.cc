@@ -24,6 +24,7 @@
 #include "generic/Transients.hh"
 #include "generic/Closure.hh"
 #include "alice/Data.hh"
+#include "alice/Types.hh"
 #include "alice/AbstractCode.hh"
 #include "alice/LazySelInterpreter.hh"
 #include "alice/AliceConcreteCode.hh"
@@ -427,7 +428,7 @@ Worker::Result AbstractCodeInterpreter::Run() {
 	       nGlobals);
 	Vector *subst = Vector::New(nGlobals);
 	for (u_int i = nGlobals; i--; )
-	  subst->Init(0, Store::IntToWord(0)); // NONE
+	  subst->Init(0, Store::IntToWord(Types::NONE));
 	abstractCode->Init(1, subst->ToWord());
 	abstractCode->Init(2, template_->Sel(2));
 	abstractCode->Init(3, template_->Sel(3));
@@ -470,7 +471,7 @@ Worker::Result AbstractCodeInterpreter::Run() {
 	Closure *closure = Closure::New(wConcreteCode, nGlobals);
 	for (u_int i = nGlobals; i--; ) {
 	  word value = GetIdRefKill(idRefs->Sub(i), globalEnv, localEnv);
-	  TagVal *some = TagVal::New(1, 1); // SOME ...
+	  TagVal *some = TagVal::New(Types::SOME, 1);
 	  some->Init(0, value);
 	  subst->Init(i, some->ToWord());
 	  closure->Init(i, value);
@@ -784,7 +785,7 @@ Worker::Result AbstractCodeInterpreter::Run() {
 	  Vector *tests = Vector::FromWordDirect(pc->Sel(1));
 	  if (static_cast<u_int>(tag) < tests->GetLength()) {
 	    Tuple *tuple = Tuple::FromWordDirect(tests->Sub(tag));
-	    Assert(tuple->Sel(0) == Store::IntToWord(0)); // NONE
+	    Assert(tuple->Sel(0) == Store::IntToWord(Types::NONE));
 	    pc = TagVal::FromWordDirect(tuple->Sel(1));
 	    goto loop;
 	  }

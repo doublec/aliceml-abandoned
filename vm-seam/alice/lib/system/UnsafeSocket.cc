@@ -186,10 +186,10 @@ DEFINE1(UnsafeSocket_input1) {
       RAISE(Store::IntToWord(0)); //--** IO.Io
     }
   } else if (n == 0) { // EOF
-    RETURN_INT(0); // NONE
+    RETURN_INT(Types::NONE);
   } else {
     Assert(n == 1);
-    TagVal *tagVal = TagVal::New(1, 1); // SOME ...
+    TagVal *tagVal = TagVal::New(Types::SOME, 1);
     tagVal->Init(0, Store::IntToWord(c));
     RETURN(tagVal->ToWord());
   }

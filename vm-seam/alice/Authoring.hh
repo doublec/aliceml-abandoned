@@ -15,13 +15,14 @@
 
 #include "generic/Authoring.hh"
 #include "alice/Data.hh"
+#include "alice/Types.hh"
 #include "alice/PrimitiveTable.hh"
 
 #define DECLARE_BOOL(b, x)				\
   bool b;						\
   {							\
     s_int i = Store::WordToInt(x);			\
-    Assert(i == 0 || i == 1);				\
+    Assert(i == Types::_false || i == Types::_true);	\
     if (i == INVALID_INT) { REQUEST(x); } else b = i;	\
   }
 #define DECLARE_ARRAY(array, x) DECLARE_BLOCKTYPE(Array, array, x)
@@ -41,11 +42,13 @@
   TagVal *tagVal;							\
   { word list = x;							\
     while ((tagVal = TagVal::FromWord(list)) != INVALID_POINTER) {	\
+      Assert(tagVal->GetTag() == Types::cons);				\
       cmd;								\
       length++;								\
       list = tagVal->Sel(1);						\
     }									\
     if (Store::WordToInt(list) == INVALID_INT) { REQUEST(list); }	\
+    Assert(Store::IntToWord(list) == Types::nil);			\
   }									\
   tagVal = TagVal::FromWord(x);
 
@@ -53,7 +56,7 @@
   DECLARE_LIST_ELEMS(tagVal, length, x, ;)
 
 #define RETURN_UNIT RETURN0
-#define RETURN_BOOL(b) RETURN_INT(!!(b));
+#define RETURN_BOOL(b) RETURN_INT((b)? Types::_true: Types::_false);
 #define RETURN_REAL(r) RETURN(Real::New(r)->ToWord());
 
 #define INIT_STRUCTURE(r, s1, s2, f, i, b)			\

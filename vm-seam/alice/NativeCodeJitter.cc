@@ -41,6 +41,7 @@
 #include "alice/JitterAliceData.hh"
 #include "alice/JitterImmediateEnv.hh"
 #include "alice/AliceLanguageLayer.hh"
+#include "alice/Types.hh"
 
 #if PROFILE
 #include "generic/Profiler.hh"
@@ -1428,15 +1429,15 @@ TagVal *NativeCodeJitter::InstrClose(TagVal *pc) {
     if (AbstractCode::GetIdRef(tagVal) == AbstractCode::Global) {
       TagVal *substVal = LookupSubst(Store::DirectWordToInt(tagVal->Sel(0)));
       if (AbstractCode::GetIdRef(substVal) == AbstractCode::Immediate) {
-	TagVal *some = TagVal::New(1, 1); // SOME ...
+	TagVal *some = TagVal::New(Types::SOME, 1);
 	some->Init(0, substVal->Sel(0));
 	subst->Init(i, some->ToWord());
       }
       else
-	subst->Init(i, Store::IntToWord(0)); // NONE
+	subst->Init(i, Store::IntToWord(Types::NONE));
     }
     else
-      subst->Init(i, Store::IntToWord(0)); // NONE
+      subst->Init(i, Store::IntToWord(Types::NONE));
   }
   abstractCode->Init(1, subst->ToWord());
   abstractCode->Init(2, template_->Sel(2));
@@ -1508,7 +1509,7 @@ TagVal *NativeCodeJitter::InstrSpecialize(TagVal *pc) {
   JITAlice::Vector::New(JIT_V1, nGlobals);
   for (u_int i = nGlobals; i--;) {
     jit_pushr_ui(JIT_V1); // save subst vector
-    JITAlice::TagVal::New(JIT_V1, 1, 1); // SOME ...
+    JITAlice::TagVal::New(JIT_V1, Types::SOME, 1);
     u_int Reg = LoadIdRef(JIT_R0, idRefs->Sub(i), (word) 0);
     JITAlice::TagVal::Put(JIT_V1, 0, Reg);
     jit_movr_p(JIT_R0, JIT_V1); // move TagVal (SOME value) to R0
