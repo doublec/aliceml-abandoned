@@ -10,7 +10,7 @@
 //   $Revision$
 //
 
-#include "alice/primitives/Authoring.hh"
+#include "alice/Authoring.hh"
 
 DEFINE2(Ref_assign) {
   DECLARE_CELL(cell, x0);
