@@ -242,6 +242,10 @@ functor MakeMain(structure Composer: COMPOSER'
 	      \Options:\n\
 	      \\t--noimplicitimport\n\
 	      \\t\tDo not make the SML Standard Basis available.\n\
+	      \\t--nortt\n\
+	      \\t\tDo not generate code for runtime types.\n\
+	      \\t--corertt\n\
+	      \\t\tDo only generate code for core runtime types.\n\
 	      \\t--outputassembly\n\
 	      \\t\tWrite an .ozm file with the assembly code.\n\
 	      \\t--noprintcomponentsig\n\
@@ -273,6 +277,10 @@ functor MakeMain(structure Composer: COMPOSER'
 
 	fun options ("--noimplicitimport"::rest) =
 	    (Switches.implicitImport := false; options rest)
+	  | options ("--nortt"::rest) =
+	    (Switches.rttLevel := Switches.NO_RTT; options rest)
+	  | options ("--corertt"::rest) =
+	    (Switches.rttLevel := Switches.CORE_RTT; options rest)
 	  | options ("--outputassembly"::rest) =
 	    (Switches.outputAssembly := true; options rest)
 	  | options ("--noprintcomponentsig"::rest) =
