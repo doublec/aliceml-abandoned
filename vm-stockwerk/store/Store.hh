@@ -60,6 +60,7 @@ protected:
   static Block *ForwardSet(Block *p);
   static s_int CanFinalize(Block *p);
   static void CheneyScan(MemChunk *chunk, char *scan);
+  static void FinalizeCheneyScan(MemChunk *chunk, char *scan);
   static void HandleInterGenerationalPointers(u_int gen);
   static Block *HandleWeakDictionaries();
   static void HandleBlockHashTables();

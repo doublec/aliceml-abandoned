@@ -3,7 +3,7 @@
 //   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
 //
 // Copyright:
-//   Thorsten Brunklaus, 2000-2001
+//   Thorsten Brunklaus, 2000-2002
 //
 // Last Change:
 //   $Date$ by $Author$
@@ -173,7 +173,7 @@ inline Block *Store::CloneBlock(Block *p) {
 }
 
 inline word Store::ForwardWord(word p) {
-  if (!PointerOp::IsInt(p)) {
+  if (PointerOp::IsInt(p) == 0) {
     Block *sp = PointerOp::RemoveTag(p);
     // order is important because moving ptr overwrites gen assignment
     if (GCHelper::AlreadyMoved(sp)) {
@@ -226,8 +226,61 @@ inline void Store::CheneyScan(MemChunk *chunk, char *scan) {
   } while (chunk != NULL);
 }
 
+// to be done: more efficient solution
+static int IsInFromSpace(MemChunk **roots, char *p) {
+  for (u_int i = STORE_GENERATION_NUM - 1; i--;) {
+    MemChunk *chunk = roots[i];
+    while (chunk != NULL) {
+      if ((chunk->GetBase() >= p) && (p <= chunk->GetTop()))
+	return 1;
+      chunk = chunk->GetNext();
+    }
+  }
+  return 0;
+}
+
+// Finalization needs a second cheney scan. This yields the problem
+// that we cannot distinguish the from and the to space for the oldest
+// generation using our generational match. Instead we do explicit
+// checking which is expensive; therefore use finalization with care.
+//
+// to be done: more efficient and better code reusing solution
+inline void Store::FinalizeCheneyScan(MemChunk *chunk, char *scan) {
+  goto have_scan;
+  do {
+    scan = chunk->GetBase();
+  have_scan:
+    while (scan < chunk->GetTop()) {
+      Block *p      = (Block *) scan;
+      u_int cursize = HeaderOp::DecodeSize(p);
+      BlockLabel l  = p->GetLabel();
+      // CHUNK_LABEL and WEAK_DICT_LABEL are the largest possible labels
+      if (l < CHUNK_LABEL) {
+	for (u_int i = cursize; i--;) {
+	  word item = p->GetArg(i);
+	  item = PointerOp::Deref(item);
+	  if (PointerOp::IsInt(item) == 0) {
+	    Block *sp = PointerOp::RemoveTag(item);
+	    if (GCHelper::AlreadyMoved(sp)) {
+	      sp   = GCHelper::GetForwardPtr(sp);
+	      item = PointerOp::EncodeTag(sp, PointerOp::DecodeTag(item)); 
+	    }
+	    else if (IsInFromSpace(roots, (char *) sp)) {
+	      sp   = CloneBlock(sp);
+	      item = PointerOp::EncodeTag(sp, PointerOp::DecodeTag(item)); 
+	    }
+	  }
+	  p->InitArg(i, item);
+	}
+      }
+      scan += BlockMemSize(cursize);
+    }
+    chunk = chunk->GetPrev();
+  } while (chunk != NULL);
+}
+
 void Store::InitStore(u_int mem_max[STORE_GENERATION_NUM],
-  u_int mem_free, u_int mem_tolerance) {
+		      u_int mem_free, u_int mem_tolerance) {
   StatusWord::Init();
   for (u_int i = STORE_GENERATION_NUM; i--;) {
     Store::roots[i]  = new MemChunk(NULL, STORE_MEMCHUNK_SIZE);
@@ -273,7 +326,7 @@ void Store::RegisterWeakDict(WeakDictionary *v) {
 inline void Store::HandleInterGenerationalPointers(u_int gen) {
   Set *intgen_set = intgenSet;
 #if defined(STORE_GC_DEBUG)
-  std::printf("initial intgen_size is %d\n", intgen_set->GetSize());
+  std::fprintf(stderr, "initial intgen_size is %d\n", intgen_set->GetSize());
 #endif
   u_int rs_size = intgen_set->GetSize();
   intgen_set->MakeEmpty();
@@ -333,14 +386,14 @@ inline void Store::HandleInterGenerationalPointers(u_int gen) {
     }
   }
 #if defined(STORE_GC_DEBUG)
-  std::printf("new_intgen_size is %d\n", intgen_set->GetSize());
+  std::fprintf(stderr, "new_intgen_size is %d\n", intgen_set->GetSize());
 #endif
 }
 
 inline Block *Store::HandleWeakDictionaries() {
   Set *wkdict_set = wkDictSet;
 #if defined(STORE_GC_DEBUG)
-  std::printf("initial weakdict_size is %d\n", wkdict_set->GetSize()); 
+  std::fprintf(stderr, "initial weakdict_size is %d\n", wkdict_set->GetSize()); 
   std::fprintf(stderr, "Handling weak dictionaries\n");
 #endif
   // Allocate and initialize Finalisation Set
@@ -481,9 +534,12 @@ inline Block *Store::HandleWeakDictionaries() {
 #if defined(STORE_GC_DEBUG)
   std::fprintf(stderr, "HandleWeakDictionaries: performing cheney scan\n");
 #endif
-  Store::CheneyScan(chunk, scan);
+  if (dstGen == (STORE_GENERATION_NUM - 1))
+    Store::FinalizeCheneyScan(chunk, scan);
+  else
+    Store::CheneyScan(chunk, scan);
 #if defined(STORE_GC_DEBUG)
-  std::printf("new_weakdict_size is %d\n", wkdict_set->GetSize());
+  std::fprintf(stderr, "new_weakdict_size is %d\n", wkdict_set->GetSize());
 #endif
   return finset;
 }
@@ -518,6 +574,9 @@ inline void Store::NextGCLimits() {
   //  u_int wanted = ((GetMemUsage(roots[hdrGen]) * 100) / (100 - memFree));
   u_int wanted;
   switch (hdrGen) {
+  case 0:
+    wanted = GetMemUsage(roots[0]) * 4;
+    break;
   case 1:
     wanted = memMax[1];
     break;
@@ -541,6 +600,8 @@ inline void Store::NextGCLimits() {
   wanted += min(block_dist, ((wanted * memTolerance) / 100));
   memMax[hdrGen] = wanted;
 }
+
+static u_int gcCounter = 0;
 
 inline void Store::DoGC(word &root, const u_int gen) {
   dstGen = (gen + 1);
@@ -593,6 +654,9 @@ inline void Store::DoGC(word &root, const u_int gen) {
   //  u_int wanted = ((GetMemUsage(roots[hdrGen]) * 100) / (100 - memFree));
   u_int wanted;
   switch (hdrGen) {
+  case 0:
+    wanted = GetMemUsage(roots[0]) * 4;
+    break;
   case 1:
     wanted = memMax[1];
     break;
@@ -633,12 +697,13 @@ inline void Store::DoGC(word &root, const u_int gen) {
 
 void Store::DoGC(word &root) {
 #if defined(STORE_DEBUG)
-  std::fprintf(stderr, "GCing...\n");
+  std::fprintf(stderr, "GC Nb %d...\n", gcCounter++);
 #endif
   //MemStat();
 #if defined(STORE_GC_DEBUG)
   std::fprintf(stderr, "Pre-GC checking...\n");
   VerifyGC(root);
+  std::fprintf(stderr, "passed.\n");
 #endif
 #if defined(STORE_PROFILE)
   struct timeval start_t, end_t;
@@ -652,11 +717,10 @@ void Store::DoGC(word &root) {
   }
 
 #if defined(STORE_GC_DEBUG)
-  std::printf("GCing all gens <= %d.\n", gen);
-
-  std::printf("root_set   gen %d\n", HeaderOp::DecodeGeneration(Store::WordToBlock(root)));
-  std::printf("intgen_set gen %d\n", HeaderOp::DecodeGeneration((Block *) intgenSet));
-  std::printf("wkdict_set gen %d\n", HeaderOp::DecodeGeneration((Block *) wkDictSet));
+  std::fprintf(stderr, "GCing all gens <= %d.\n", gen);
+  std::fprintf(stderr, "root_set   gen %d\n", HeaderOp::DecodeGeneration(Store::WordToBlock(root)));
+  std::fprintf(stderr, "intgen_set gen %d\n", HeaderOp::DecodeGeneration((Block *) intgenSet));
+  std::fprintf(stderr, "wkdict_set gen %d\n", HeaderOp::DecodeGeneration((Block *) wkDictSet));
 #endif
 
 #if defined(STORE_PROFILE)
@@ -688,7 +752,6 @@ void Store::DoGC(word &root) {
   //MemStat();
 #if defined(STORE_DEBUG)
   std::fprintf(stderr, "done.\n");
-  std::fflush(stderr); // Thanks to Windows
 #endif
 }
 
@@ -795,7 +858,7 @@ static void Verify(MemChunk **roots, word x) {
   } else {
     Block *p = PointerOp::RemoveTag(x);
     if (p == NULL) {
-      fprintf(stderr, "Verify: null pointer encountered: %x --> %x\n",
+      std::fprintf(stderr, "Verify: null pointer encountered: %x --> %x\n",
 	      (word) p, x);
       PrintFailurePath();
       AssertStore(0);
@@ -896,8 +959,6 @@ void Store::ForceGC(word &root, const u_int gen) {
 #endif
 
 void Store::MemStat() {
-//    std::printf("---\n");
-//    std::printf("ingen_set size: %u\n", intgenSet->GetSize());
   std::fprintf(stderr, "---\n");
   for (u_int i = 0; i < STORE_GENERATION_NUM - 1; i++) {
     MemChunk *chunk = roots[i];
@@ -913,7 +974,6 @@ void Store::MemStat() {
 		 i, used, total, memMax[i]);
   }
   std::fprintf(stderr, "---\n");
-  std::fflush(stderr);
 }
 
 void Store::JITReplaceArg(u_int i, Block *p, word v) {
