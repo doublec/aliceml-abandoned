@@ -725,7 +725,7 @@ struct
 	 *                val (_,x2) = [j]
 	 *            in [x1 : j1 :> x2 = j2]
 	 *)
-	if !Switches.Bootstrap.rttLevel <> Switches.Bootstrap.FULL_RTT then
+	if !Switches.Language.rttLevel <> Switches.Language.FULL_RTT then
 	    trTransCoerceMod(#region i, m, #inf i)
 	else let
 	    val r   = #region i
@@ -975,8 +975,8 @@ struct
 		     * Case 4, manifest, is not identity:
 		     *         use signature value
 		     *)
-		    if not isOpaque orelse !Switches.Bootstrap.rttLevel <>
-					    Switches.Bootstrap.FULL_RTT then
+		    if not isOpaque orelse !Switches.Language.rttLevel <>
+					    Switches.Language.FULL_RTT then
 			(x1, isntIdentity)
 		    else
 			(x2, isntIdentity orelse Option.isNone d)
@@ -1002,8 +1002,8 @@ struct
 		val    l'    = O.Lab(i', a')
 		val    y1    = O.LongId(i1,x1,l')
 		val    y2    = if not isOpaque
-			       orelse !Switches.Bootstrap.rttLevel <>
-				       Switches.Bootstrap.FULL_RTT
+			       orelse !Switches.Language.rttLevel <>
+				       Switches.Language.FULL_RTT
 			       then y1 (*unused*)
 			       else let
 				   val row = Type.asProd'(#typ(O.infoLongid x2))
@@ -1033,8 +1033,8 @@ struct
 		     * Case 4, manifest, is not identity:
 		     *         use signature value
 		     *)
-		    if not isOpaque orelse !Switches.Bootstrap.rttLevel <>
-					    Switches.Bootstrap.FULL_RTT then
+		    if not isOpaque orelse !Switches.Language.rttLevel <>
+					    Switches.Language.FULL_RTT then
 			(x1, isntIdentity)
 		    else
 			(x2, isntIdentity orelse Option.isNone d)
@@ -1066,7 +1066,7 @@ struct
      *)
 
     and trTyp t =
-	if !Switches.Bootstrap.rttLevel = Switches.Bootstrap.NO_RTT then
+	if !Switches.Language.rttLevel = Switches.Language.NO_RTT then
 	    O.FailExp(typInfo(#region(I.infoTyp t), typ_typ))
 	else
 	    trTyp' t
@@ -1165,7 +1165,7 @@ struct
 	raise Crash.Crash "TranslationPhase.trTyp: AbsTyp"
 
     and trTypRep(x, t) =
-	if !Switches.Bootstrap.rttLevel = Switches.Bootstrap.NO_RTT then
+	if !Switches.Language.rttLevel = Switches.Language.NO_RTT then
 	    O.FailExp(typInfo(#region(I.infoTyp t), typ_typ))
 	else
 	    let
@@ -1231,7 +1231,7 @@ struct
   (* Interfaces *)
 
     and trInf j =
-	if !Switches.Bootstrap.rttLevel <> Switches.Bootstrap.FULL_RTT then
+	if !Switches.Language.rttLevel <> Switches.Language.FULL_RTT then
 	    let
 		val i   = I.infoInf j
 		val r   = #region i
@@ -1370,7 +1370,7 @@ struct
 	raise Crash.Crash "TranslationPhase.trInf: AbsInf"
 
     and trInfRep(x, j) =
-	if !Switches.Bootstrap.rttLevel <> Switches.Bootstrap.FULL_RTT then
+	if !Switches.Language.rttLevel <> Switches.Language.FULL_RTT then
 	    let
 		val i = I.infoInf j
 	    in
@@ -1672,7 +1672,7 @@ struct
 	(* [type x = t]' = val $x = Type.unknown(<<kind>>) *)
 	let
 	    val r  = #region i
-	    val e' = if !Switches.Bootstrap.rttLevel = Switches.Bootstrap.NO_RTT
+	    val e' = if !Switches.Language.rttLevel = Switches.Language.NO_RTT
 		     then O.FailExp(typInfo(r, typ_typ))
 		     else typOp(lab_unknown,
 				trKind(r, Type.kind(#typ(I.infoTyp t))))
@@ -1688,7 +1688,7 @@ struct
 	(* [type x = t]' = val _ = Type.fill($x,
 	 *                              [t]_(Path.fromLab(Label.fromString"x")))
 	 *)
-	if !Switches.Bootstrap.rttLevel = Switches.Bootstrap.NO_RTT then
+	if !Switches.Language.rttLevel = Switches.Language.NO_RTT then
 	    ds'
 	else let
 	    val r   = #region i
