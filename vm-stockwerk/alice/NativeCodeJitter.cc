@@ -1980,6 +1980,7 @@ TagVal *NativeCodeJitter::InstrConTest(TagVal *pc) {
   ImmediateEnv::Put(convalSlot, ConVal);
   JITStore::Block::GetLabel(JIT_R0, ConVal);
   jit_insn *nullary_constr = jit_bnei_ui(jit_forward(), JIT_R0, Alice::ConVal);
+  // N-ary Constructor
   JITAlice::ConVal::GetConstructor(JIT_R0, ConVal);
   ImmediateEnv::Put(constrSlot, JIT_R0);
   Vector *tests1 = Vector::FromWordDirect(pc->Sel(2));
