@@ -12,6 +12,10 @@
  *
  *)
 
+(*
+ * Usage: scramble [width [height]]
+ *)
+
 import structure Gtk       from "x-alice:/lib/gtk/Gtk"
 import structure Gdk       from "x-alice:/lib/gtk/Gdk"
 import structure GtkCanvas from "x-alice:/lib/gtk/GtkCanvas"
