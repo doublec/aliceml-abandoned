@@ -88,7 +88,9 @@ functor MkBatchCompiler(structure RecursiveCompiler: RECURSIVE_COMPILER
 	      \<output file>\n" ^ OptionParser.helpText)
 
 	fun stoc' ["--replacesign", infile, signfile, outfile] =
-	    (UnsafePickle.replaceSign (infile,
+	    (RecursiveCompiler.Switches.Language.rttLevel :=
+	     RecursiveCompiler.Switches.Language.NO_RTT;
+	     UnsafePickle.replaceSign (infile,
 				       RecursiveCompiler.compileSign signfile,
 				       outfile);
 	     OS.Process.success)
