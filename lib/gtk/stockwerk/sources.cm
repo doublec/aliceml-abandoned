@@ -14,7 +14,9 @@ Group is
 	MkSpecial.sml
 
 	GENERATOR-sig.sml
+	MkNativeHelper.sml
 	MkNative.sml
+	MkNativeFields.sml
         MkEnums.sml
 	MkUnsafe.sml
 
