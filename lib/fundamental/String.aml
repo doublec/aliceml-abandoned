@@ -15,16 +15,16 @@
  *  Items marked with (**) are extensions to the Standard Basis.
  *)
 
-import structure __pervasive                         from "Pervasive"
+import structure __pervasive                          from "Pervasive"
 import __primitive type char and string and int
-       datatype bool and order and option and list   from "ToplevelTypes"
+       datatype bool and order and option and list    from "ToplevelTypes"
 import __primitive infix 4 = <> < infixr 5 :: infix 6 + - ^
-       val op = and op <> and op < and op + and op - from "ToplevelValues"
-import __primitive structure Char                    from "Char"
-import __primitive structure List                    from "List"
-import __primitive structure StringCvt               from "StringCvt"
-import __primitive structure CharVector              from "CharVector"
-import __primitive signature STRING                  from "STRING-sig"
+       val op = and op <> and op <= and op + and op - from "ToplevelValues"
+import __primitive structure Char                     from "Char"
+import __primitive structure List                     from "List"
+import __primitive structure StringCvt                from "StringCvt"
+import __primitive structure CharVector               from "CharVector"
+import __primitive signature STRING                   from "STRING-sig"
 
 structure String : STRING =
 struct
