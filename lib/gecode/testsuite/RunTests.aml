@@ -23,18 +23,23 @@ structure RunTests =
 
   val testsuite =
       List.map (fn t => t max seeds)
-      [union, inter, subset,
-       noSubset, (* failed! *)
+      [
+       union, (* ok *)
+       unionN 4, (* ok *)
+       inter, (* ok *)
+       interN 4,
+       subset, (* ok *)
+       noSubset, (* ok *)
        superOfInter, (* ok *)
        subOfUnion, (* ok *)
-       diff, (* failed *)
+       diff, (* ok *)
        disjoint, (* ok *)
-       (*distinct,*) (* gecode assertion! *)
+       distinct, (* ok *)
        partition, (* ok *)
        equals, (* ok *)
        convexHull (* failed *)
        ]
 
   val _ = GecodeTest.runTests testsuite
-  val _ = OS.Process.exit OS.Process.success
+(*  val _ = OS.Process.exit OS.Process.success*)
   end

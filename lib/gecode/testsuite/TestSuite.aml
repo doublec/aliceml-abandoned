@@ -17,11 +17,13 @@ import structure Print     from "x-alice:/lib/system/Print"
 import structure GecodeTest from "GecodeTest"
 
 type t = int -> int list -> (string * (unit -> unit) list)
-
+type tn = int -> int -> int list -> (string * (unit -> unit) list)
 structure TestSuite :
   sig
       val union : t
+      val unionN : tn
       val inter : t
+      val interN : tn
       val subset : t
       val noSubset : t
       val superOfInter : t
@@ -40,13 +42,15 @@ structure TestSuite :
 	let
 		val _= assert (i1 >= 0);
 		val diff = i2 - i1
-		val ones = IntInf.<< ((IntInf.fromInt 2),Word.fromInt diff ) - (IntInf.fromInt 1)
+		val ones = IntInf.<<(IntInf.fromInt 2, Word.fromInt diff)
+                           - IntInf.fromInt 1
 	in
-		IntInf.<<(ones, Word.fromInt i1)
+	    IntInf.<< (ones, Word.fromInt i1)
 	end
 	
 	(*Eta forewa! :-) *)
-	val vdom2II = Vector.foldl ( fn (r,a)=> IntInf.orb ((range2II r),a) ) (IntInf.fromInt 0)
+	val vdom2II = Vector.foldl ( fn (r,a)=> IntInf.orb ((range2II r),a) )
+                                   (IntInf.fromInt 0)
 
 	fun vBoolTern v1 (a,b,c) space =
 	let
@@ -62,15 +66,15 @@ structure TestSuite :
             val b = vdom2II ( FS.Reflect.lowerBound (space,b))
 	in
 		v1 (a,b)
-	end
-	
-	fun vBoolN v1 (a,x) space =
+	end	
+	fun vBoolN v1 (x, a) space =
 	let 
             val a = vdom2II ( FS.Reflect.lowerBound (space,a))
-            val x = Vector.map (fn xi=> vdom2II ( FS.Reflect.lowerBound (space,xi))) x
-    in
-    	v1(a,x)
-    end
+            val x = Vector.map
+                        (fn xi=> vdom2II ( FS.Reflect.lowerBound (space,xi))) x
+        in
+    	    v1(x, a)
+        end
                                   
         (*
          * Verifier functions
@@ -79,28 +83,27 @@ structure TestSuite :
 	
 	fun vUnion1 (a,b,c) = (IntInf.orb(b,c) = a)
 	
-	fun vUnionN1 (u,x) = 
+	fun vUnionN1 (x, u) = 
 		(Vector.foldl IntInf.orb (IntInf.fromInt 0) x) = u
 	
 	fun vInter1 (a,b,c) = (IntInf.andb(b,c) = a)
 
-	fun vInterN1 (i,x) = 
+	fun vInterN1 (x, i) = 
 		(Vector.foldl IntInf.andb (Vector.sub (x,0)) x) = i
 
 	(*These two expect lists instead of vectors!*)
 	fun vDisjointN2 (_, nil) = true
 	| vDisjointN2 (u, h::t) =
-		if (IntInf.andb (u,h) = IntInf.fromInt 0) then vDisjointN2( IntInf.orb (u,h),t)
-		else false;
+	  (IntInf.andb (u,h) = IntInf.fromInt 0)
+          andalso vDisjointN2( IntInf.orb (u,h),t)
 
 	fun vPartitionN2 (p,u, nil) = (p = u)
 	| vPartitionN2 (p,u, h::t) =
-		if (IntInf.andb (u,h) = IntInf.fromInt 0) then vPartitionN2(p, IntInf.orb(u,h), t)
-		else false;
-
+	  (IntInf.andb (u,h) = IntInf.fromInt 0)
+          andalso vPartitionN2(p, IntInf.orb(u,h), t)
 
 	fun vSubSet1 (a,b) =
-		IntInf.andb (IntInf.xorb(a,b),a)= IntInf.fromInt 0		
+		IntInf.andb (IntInf.xorb(a,b),a)= IntInf.fromInt 0
 		
 	
 	fun vNoSubSet1 (root2 as (a,b))  = 
@@ -136,9 +139,10 @@ structure TestSuite :
 	    val a = FS.Reflect.lowerBound (space,a)
 	    val b = FS.Reflect.lowerBound (space,b)	    
 	in
-		Pair.fst (Vector.sub (a,0)) = Pair.fst (Vector.sub (b,0)) andalso
-			Pair.snd (Vector.sub (a,(Vector.length a)-1)) = 
-			Pair.snd (Vector.sub (b,(Vector.length b)-1)) 
+	    Pair.fst (Vector.sub (a,0)) = Pair.fst (Vector.sub (b,0))
+            andalso
+	    Pair.snd (Vector.sub (a,(Vector.length a)-1)) = 
+	    Pair.snd (Vector.sub (b,(Vector.length b)-1)) 
 	end
 	
 	fun vConvexHull (a,b) space =
@@ -153,17 +157,17 @@ structure TestSuite :
                 (print "no subset!\n";
                  Print.printVal (FS.Reflect.lowerBound (space,a));
                  print "\n";
-                 Print.printVal (FS.Reflect.lowerBound (space,b));                 
+                 Print.printVal (FS.Reflect.lowerBound (space,b));
                  print "\n";
                  false)
                 else if not ( vSameMinMax (a,b) space )
-                	then (print "no tight hull!\n";
-	                 Print.printVal (FS.Reflect.lowerBound (space,a));
-	                 print "\n";
-    	             Print.printVal (FS.Reflect.lowerBound (space,b));                              
-    	             print "\n";
-        	         false)
-					else true
+                then (print "no tight hull!\n";
+	              Print.printVal (FS.Reflect.lowerBound (space,a));
+	              print "\n";
+    	              Print.printVal (FS.Reflect.lowerBound (space,b));
+    	              print "\n";
+        	      false)
+		else true
 
 
 
@@ -178,10 +182,21 @@ structure TestSuite :
             GecodeTest.ternarySet ("Union",max,seeds,
                                    FS.union,
                                    vBoolTern vUnion1)
+
+        fun unionN arity max seeds =
+            GecodeTest.narySet ("UnionN",max,seeds,arity,
+                                FS.unionN,
+                                vBoolN vUnionN1)
+
         fun inter max seeds =
             GecodeTest.ternarySet ("Intersection",max,seeds,
                                    FS.intersect,
                                    vBoolTern vInter1)
+
+        fun interN arity max seeds =
+            GecodeTest.narySet ("IntersectionN",max,seeds,arity,
+                                FS.intersectN,
+                                vBoolN vInterN1)
 
         fun subset max seeds =
             GecodeTest.binarySet ("Subset",max,seeds,

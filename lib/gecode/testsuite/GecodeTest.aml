@@ -9,12 +9,13 @@
  *   $Date$ by $Author$
  *   $Revision$
  *)
-import structure Test from "x-alice:/lib/test/Test"
 import structure Report from "x-alice:/lib/test/Report"
 
 import structure Space     from "x-alice:/lib/gecode/Space"
 import structure FS        from "x-alice:/lib/gecode/FS"
 import structure Print     from "x-alice:/lib/system/Print"
+
+import structure Explorer  from "x-alice:/tools/Explorer"
 
 structure GecodeTest :
   sig
@@ -28,6 +29,12 @@ structure GecodeTest :
           (Space.space * FS.setvar * FS.setvar * FS.setvar -> unit)
           * (FS.setvar * FS.setvar * FS.setvar -> Space.space -> bool)
           -> (string * (unit -> unit) list)
+      val narySet : 
+          string * int * int list * int *
+          (Space.space * FS.setvar vector * FS.setvar -> unit)
+          * (FS.setvar vector * FS.setvar -> Space.space -> bool)
+          -> (string * (unit -> unit) list)
+
 
       val runTests : (string * (unit -> unit) list) list
                      -> unit
@@ -39,18 +46,21 @@ structure GecodeTest :
   fun testVerify (s,v,f,p) =
       let
 	  fun dfe (s) =(
-	  	  p s;
 	      (case Space.status s of
 		  Space.FAILED => (f (); Space.discard s)
-		| Space.SOLVED => ((*assert (v s);*)
+		| Space.SOLVED => ((*p s;*)
+                                   assert (v s);
 		                   Space.discard s)
 		| Space.BRANCH =>
 		  let
+                      val _ = p s
+                      val desc = Space.description s
 		      val c = Space.clone s
+                      val desc2 = Space.description c
 		  in
-		      Space.commit(s, 1);
-		      Space.commit(c, 2);
+		      Space.commitDescription(s, 1, desc);
 		      (dfe s);
+		      Space.commitDescription(c, 2, desc2);
 		      (dfe c)
 		  end
 		 ))
@@ -60,13 +70,19 @@ structure GecodeTest :
 
   (* What to do when failure is found *)
   exception Error
-  fun testVerifySimple (s, v, p) = testVerify (s, v, (fn () => (print "Space failed!\n";raise Error)), p)	
+  fun testVerifySimple (s, v, p) =
+      testVerify (s, v,
+                  (fn () => (print "Space failed!\n";raise Error)), p)	
   fun testVerifyComplex (s, v, p) = testVerify (s, v, (fn () => ()), p)
+  fun testVerifyGraphical (s, v : FS.setvar vector, _) = (Explorer.exploreAllRoot s v; ())
 
   (* Translate propagator calling convention *)
   fun mkBinary prop = fn (s,#[a,b]) => prop(s,a,b) | _ => raise Subscript
   fun mkTernary prop = fn (s,#[a,b,c]) => prop(s,a,b,c) | _ => raise Subscript
-
+  fun mkNary prop =
+      fn (s, v) =>
+         prop(s,VectorSlice.toVector (VectorSlice.slice(v, 1, NONE)),
+              Vector.sub(v, 0))
                                                                      
   (* A test case for set constraints *)
   fun mkSetTest arity prop max seed =
@@ -77,26 +93,26 @@ structure GecodeTest :
       in
           Vector.app (fn v => FS.subset (space, v, top)) root;
           prop(space, root);
-	  FS.randomBranch(space, root, seed); 
+	  FS.randomBranch(space, root, seed, true);
 	  (*FS.setvarbranch(space, root, FS.FSB_NONE, FS.FSB_MIN);*)
 	  (root, space)
       end
 	
 	
-	(* Space printer from root vector*)
-	fun setPrint root space = 
-		let
-			val rootLB = Vector.map (fn v=> FS.Reflect.lowerBound (space,v)) root
-			val rootUB = Vector.map (fn v=> FS.Reflect.upperBound (space,v)) root			
-		in
-			print "\nUpper bounds:";
-			Print.printVal rootUB;
-			print "\nLower bounds:";
-			Print.printVal rootLB;
-			print "\n"
-		end
-
-	fun fakePrint _ = ()
+  (* Space printer from root vector*)
+  fun setPrint root space = 
+      let
+	  val rootLB = Vector.map (fn v=> FS.Reflect.lowerBound (space,v)) root
+	  val rootUB = Vector.map (fn v=> FS.Reflect.upperBound (space,v)) root
+      in
+	  print "\nUpper bounds:";
+	  Print.printVal rootUB;
+	  print "\nLower bounds:";
+	  Print.printVal rootLB;
+	  print "\n"
+      end
+          
+  fun fakePrint _ = ()
 
   (* Test case generation for binary set constraints *)
   fun binarySet (name, max, seeds, propagator, verifier) =
@@ -106,11 +122,12 @@ structure GecodeTest :
               List.map (fn s => fn () =>
                            let
                                val (root, space) = mkMyTest s
-                               val v = verifier (case root of #[a,b] => (a,b)
-                                                            | _ => raise Subscript)
+                               val v = verifier
+                                           (case root of #[a,b] => (a,b)
+                                                       | _ => raise Subscript)
                            in
-                               testVerifySimple (space, v, setPrint root)
-                               (*testVerifySimple (space, v, fakePrint) *)
+                               (*testVerifySimple (space, v, setPrint root)*)
+                               testVerifySimple (space, v, fakePrint)
                                before Space.discard space
                            end) seeds
       in
@@ -125,8 +142,9 @@ structure GecodeTest :
               List.map (fn s => fn () =>
                            let
                                val (root, space) = mkMyTest s
-                               val v = verifier (case root of #[a,b,c] => (a,b,c)
-                                                            | _ => raise Subscript)
+                               val v = verifier
+                                           (case root of #[a,b,c] => (a,b,c)
+                                                       | _ => raise Subscript)
                            in
                                testVerifySimple (space, v, fakePrint)
                            end) seeds
@@ -134,9 +152,31 @@ structure GecodeTest :
           (name, tests)
       end
 
+  (* Test case generation for n-ary set constraints *)
+  fun narySet (name, max, seeds, arity, propagator, verifier) =
+      let
+          val mkMyTest = mkSetTest arity (mkNary propagator) max
+          val tests = 
+              List.map (fn s => fn () =>
+                let
+                    val (root, space) = mkMyTest s
+                    val v = verifier (VectorSlice.toVector
+                                          (VectorSlice.slice(root,1,NONE)),
+                                          Vector.sub(root,0))
+                in
+                    testVerifySimple (space, v, fakePrint)
+                end) seeds
+      in
+          (name, tests)
+      end
           
   (* running test suites *)
+  val gecodeConfig = {
+	              timeout = Time.fromSeconds (Int.toLarge 600),
+	              separate = false
+                      }
+
   fun runTests testsuite = Report.runAll TextIO.stdOut
-                                         Test.defaultConfig testsuite
+                                         gecodeConfig testsuite
 
   end
