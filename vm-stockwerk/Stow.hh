@@ -47,6 +47,14 @@
 #include "generic/ByneedInterpreter.hh"
 #include "generic/Unpickler.hh"
 #include "generic/Pickler.hh"
+#include "generic/BootLinker.hh"
 #include "generic/Profiler.hh"
+#include "generic/Authoring.hh"
+
+#if defined(__MINGW32__) || defined(_MSC_VER)
+__declspec(dllexport) word InitComponent();
+#else
+word InitComponent();
+#endif
 
 #endif
