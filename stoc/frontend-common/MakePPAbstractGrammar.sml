@@ -345,6 +345,9 @@ struct
     and ppTyp(VarTyp(i, typid))		= typtree "Var" i (
 					    ppTypid typid
 					  )
+      | ppTyp(PrimTyp(i, s))		= typtree "Prim" i (
+					    ppString s
+					  )
       | ppTyp(ConTyp(i, typlongid))	= typtree "Con" i (
 					    ppTyplongid typlongid
 					  )
@@ -386,11 +389,8 @@ struct
       | ppTyp(SingTyp(i, vallongid))	= typtree "Sing" i (
 					    ppVallongid vallongid
 					  )
-      | ppTyp(AbsTyp(i, so))		= typtree "Abs" i (
-					    ppOption ppString so
-					  )
-      | ppTyp(ExtTyp(i, so))		= typtree "Ext" i (
-					    ppOption ppString so
+      | ppTyp(AbsTyp(i, b))		= typtree "Abs" i (
+					    ppBool b
 					  )
 
   (* Modules *)
@@ -444,6 +444,9 @@ struct
 
     and ppInfs infs			= vec(Vector.map ppInf infs)
     and ppInf(TopInf(i))		= inftree "Top" i empty
+      | ppInf(PrimInf(i, s))		= inftree "Prim" i (
+					    ppString s
+					  )
       | ppInf(ConInf(i, inflongid))	= inftree "Con" i (
 					    ppInflongid inflongid
 					  )
@@ -477,9 +480,7 @@ struct
       | ppInf(SingInf(i, mod))		= inftree "Sing" i (
 					    ppMod mod
 					  )
-      | ppInf(AbsInf(i, so))		= inftree "Abs" i (
-					    ppOption ppString so
-					  )
+      | ppInf(AbsInf(i))		= inftree "Abs" i empty
 
   (* Declarations *)
 

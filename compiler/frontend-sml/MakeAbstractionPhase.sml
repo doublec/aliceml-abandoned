@@ -1288,7 +1288,7 @@ functor MakeAbstractionPhase(
 		val  _             = insertScope E
 		val  typids'       = trTyVarSeq E tyvarseq	(* ignore *)
 		val  _             = deleteScope E
-		val  dec'          = O.TypDec(i, typid', O.AbsTyp(i, SOME s))
+		val  dec'          = O.TypDec(i, typid', O.PrimTyp(i,s))
 		val  _             = insertTy(E, tycon',
 						 (i, stamp, BindEnv.new()))
 	   in
@@ -1301,7 +1301,7 @@ functor MakeAbstractionPhase(
 		val  _             = insertScope E
 		val  typids'       = trTyVarSeq E tyvarseq	(* ignore *)
 		val  _             = deleteScope E
-		val  dec'          = O.TypDec(i, typid', O.ExtTyp(i, SOME s))
+		val  dec'          = O.TypDec(i, typid', O.PrimTyp(i,s))
 		val  _             = insertTy(E, tycon',
 						 (i, stamp, BindEnv.new()))
 	   in
@@ -1386,7 +1386,7 @@ functor MakeAbstractionPhase(
 		val  _             = insertScope E
 		val  modid_infs'   = trStrPats E strpats	(* ignore *)
 		val  _             = deleteScope E
-		val  dec'          = O.InfDec(i', infid', O.AbsInf(i, SOME s))
+		val  dec'          = O.InfDec(i', infid', O.PrimInf(i,s))
 		val  _             = insertSig(E, sigid',
 						    (i', stamp, BindEnv.new()))
 	   in
@@ -1821,7 +1821,7 @@ functor MakeAbstractionPhase(
 		val  _             = insertScope E
 		val  typids'       = trTyVarSeq E tyvarseq
 		val  _             = deleteScope E
-		val  funtyp'       = funtyp(typids', O.AbsTyp(i',NONE))
+		val  funtyp'       = funtyp(typids', O.AbsTyp(i',false))
 		val  dec'          = O.TypDec(i, typid', funtyp')
 		val  _             = insertDisjointTy(E', tycon',
 						     (i', stamp, BindEnv.new()))
@@ -1907,7 +1907,7 @@ functor MakeAbstractionPhase(
 		val  _           = insertScope E
 		val  typids'     = trTyVarSeq E tyvarseq
 		val  _           = deleteScope E
-		val  funtyp'     = funtyp(typids', O.ExtTyp(i',NONE))
+		val  funtyp'     = funtyp(typids', O.AbsTyp(i',true))
 		val  dec'        = O.TypDec(i, typid', funtyp')
 	   in
 		trDatBindo_rhs' (E,E', dec'::acc1, acc2) datbindo
@@ -2393,7 +2393,7 @@ functor MakeAbstractionPhase(
 		val  _             = insertScope E
 		val  typids'       = trTyVarSeq E tyvarseq	(* ignore *)
 		val  _             = deleteScope E
-		val  spec'         = O.TypSpec(i, typid', O.AbsTyp(i, SOME s))
+		val  spec'         = O.TypSpec(i, typid', O.PrimTyp(i,s))
 		val  _             = insertTy(E, tycon',
 						 (i, stamp, BindEnv.new()))
 	   in
@@ -2406,7 +2406,7 @@ functor MakeAbstractionPhase(
 		val  _             = insertScope E
 		val  modid_infs'   = trStrPats E strpats	(* ignore *)
 		val  _             = deleteScope E
-		val  spec'         = O.InfSpec(i', infid', O.AbsInf(i, SOME s))
+		val  spec'         = O.InfSpec(i', infid', O.PrimInf(i,s))
 		val  _             = insertSig(E, sigid',
 						    (i', stamp, BindEnv.new()))
 	   in
@@ -2482,7 +2482,7 @@ functor MakeAbstractionPhase(
 		val  _             = insertScope E
 		val  typids'       = trTyVarSeq E tyvarseq
 		val  _             = deleteScope E
-		val  funtyp'       = funtyp(typids', O.AbsTyp(i',NONE))
+		val  funtyp'       = funtyp(typids', O.AbsTyp(i',false))
 		val  spec'         = O.TypSpec(i, typid', funtyp')
 		val  _             = insertDisjointTy(E, tycon',
 						   (i', stamp, BindEnv.new()))
@@ -2569,7 +2569,7 @@ functor MakeAbstractionPhase(
 		val  _          = insertScope E
 		val  typids'    = trTyVarSeq E tyvarseq
 		val  _          = deleteScope E
-		val  funtyp'    = funtyp(typids', O.ExtTyp(i',NONE))
+		val  funtyp'    = funtyp(typids', O.AbsTyp(i',true))
 		val  spec'      = O.TypSpec(i, typid', funtyp')
 	   in
 		trDatDesco_rhs' (E, spec'::acc1, acc2) datdesco
@@ -2724,7 +2724,7 @@ functor MakeAbstractionPhase(
 		val (infid',stamp) = trSigId_bind E sigid
 		val  _             = insertScope E
 		val  modid_infs'   = trStrPats E strpats
-		val  inf'          = funinf(modid_infs', O.AbsInf(i',NONE))
+		val  inf'          = funinf(modid_infs', O.AbsInf(i'))
 		val  _             = deleteScope E
 		val  spec'         = O.InfSpec(i', infid', inf')
 		val  _             = insertDisjointSig(E, sigid',
@@ -2904,7 +2904,7 @@ functor MakeAbstractionPhase(
 		val  _             = insertScope E
 		val  typids'       = trTyVarSeq E tyvarseq
 		val  _             = deleteScope E
-		val  funtyp'       = funtyp(typids', O.AbsTyp(i',NONE))
+		val  funtyp'       = funtyp(typids', O.AbsTyp(i',false))
 		val  desc'         = O.SomeDesc(O.infoTyp funtyp', funtyp')
 		val  imp'          = O.TypImp(i, typid', desc')
 		val  E''           = BindEnv.new()
@@ -3140,7 +3140,7 @@ functor MakeAbstractionPhase(
 		val (infid',stamp) = trSigId_bind E sigid
 		val  _             = insertScope E
 		val  modid_infs'   = trStrPats E strpats
-		val  inf'          = funinf(modid_infs', O.AbsInf(i',NONE))
+		val  inf'          = funinf(modid_infs', O.AbsInf(i'))
 		val  _             = deleteScope E
 		val  desc'         = O.SomeDesc(O.infoInf inf', inf')
 		val  imp'          = O.InfImp(i', infid', desc')

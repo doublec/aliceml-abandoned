@@ -3,6 +3,7 @@ Group
 	structure LabelReflection
 	structure PathReflection
 	structure TypeReflection
+	structure PervasiveTypeReflection
 	structure FixityReflection
 	structure InfReflection
 
@@ -19,6 +20,8 @@ is
 	PathReflection.sml
 	TYPE_REFLECTION.sig
 	TypeReflection.sml
+	PERVASIVE_TYPE_REFLECTION.sig
+	PervasiveTypeReflection.sml
 	FIXITY_REFLECTION.sig
 	FixityReflection.sml
 	INF_REFLECTION.sig

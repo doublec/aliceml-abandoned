@@ -94,6 +94,8 @@ common/PATH_REFLECTION.sig
 common/PathReflection.sml
 common/TYPE_REFLECTION.sig
 common/TypeReflection.sml
+common/PERVASIVE_TYPE_REFLECTION.sig
+common/PervasiveTypeReflection.sml
 common/FIXITY_REFLECTION.sig
 common/FixityReflection.sml
 common/INF_REFLECTION.sig

@@ -779,6 +779,14 @@ struct
 	    Type.kind t
 	end
 
+      | elabTypKind(E, I.PrimTyp(i, s)) =
+	let
+	    val (k,_,_) = PervasiveType.lookup s handle PervasiveType.Lookup =>
+				error(i, E.PervasiveTypUnknown s)
+	in
+	    k
+	end
+
       | elabTypKind(E, I.VarTyp(i, typid)) =
 	let
 	    val (a,_) = elabVarid(E, typid)
@@ -807,6 +815,15 @@ struct
 	    val  t         = Type.inVar a
 	in
 	    ( t, O.VarTyp(typInfo(i,t), typid') )
+	end
+
+      | elabTyp(E, I.PrimTyp(i, s))=
+	let
+	    val c = PervasiveType.lookup s handle PervasiveType.Lookup =>
+			error(i, E.PervasiveTypUnknown s)
+	    val t = Type.inCon c
+	in
+	    ( t, O.PrimTyp(typInfo(i,t), s) )
 	end
 
       | elabTyp(E, I.ConTyp(i, typlongid)) =
@@ -888,7 +905,7 @@ struct
       | elabTyp(E, I.AllTyp(i, typid, typ)) =
 	let
 	    val (a,typid') = elabVarid_bind(E, Type.STAR, typid)
-	    val (t1,typ')  = elabTyp(E, typ)
+	    val (t1,typ')  = elabStarTyp(E, typ)
 	    val  t         = Type.inAll(a,t1)
 	in
 	    ( t, O.AllTyp(typInfo(i,t), typid', typ') )
@@ -897,7 +914,7 @@ struct
       | elabTyp(E, I.ExTyp(i, typid, typ)) =
 	let
 	    val (a,typid') = elabVarid_bind(E, Type.STAR, typid)
-	    val (t1,typ')  = elabTyp(E, typ)
+	    val (t1,typ')  = elabStarTyp(E, typ)
 	    val  t         = Type.inExist(a,t1)
 	in
 	    ( t, O.ExTyp(typInfo(i,t), typid', typ') )
@@ -922,9 +939,6 @@ struct
 
       | elabTyp(E, I.AbsTyp _) =
 	raise Crash.Crash "Elab.elabTyp: AbsTyp"
-
-      | elabTyp(E, I.ExtTyp _) =
-	raise Crash.Crash "Elab.elabTyp: ExtTyp"
 
 
   (* Types in positions where they may not be higher order *)
@@ -960,34 +974,12 @@ struct
 	    ( t, gen, O.FunTyp(typInfo(i,t), typid', typ'), p' )
 	end
 
-      | elabTypRep(E, p, mkKind, I.AbsTyp(i,so))=
+      | elabTypRep(E, p, mkKind, I.AbsTyp(i, isExtensible)) =
 	let
-	    val (t,p') =
-		case so
-		  of NONE =>
-			( Type.inCon(mkKind Type.STAR, Type.CLOSED, p), p )
-		   | SOME s =>
-			let val con = PervasiveType.lookup s in
-			    ( Type.inCon con, #3 con )
-			end handle PervasiveType.Lookup =>
-				   error(i, E.PervasiveTypUnknown s)
+	    val w = if isExtensible then Type.OPEN else Type.CLOSED
+	    val t = Type.inCon(mkKind Type.STAR, w, p)
 	in
-	    ( t, true, O.AbsTyp(typInfo(i,t), so), p' )
-	end
-
-      | elabTypRep(E, p, mkKind, I.ExtTyp(i,so))=
-	let
-	    val (t,p') =
-		case so
-		  of NONE =>
-			( Type.inCon(mkKind Type.STAR, Type.OPEN, p), p )
-		   | SOME s =>
-			let val con = PervasiveType.lookup s in
-			    ( Type.inCon con, #3 con )
-			end handle PervasiveType.Lookup =>
-				   error(i, E.PervasiveTypUnknown s)
-	in
-	    ( t, true, O.ExtTyp(typInfo(i,t), so), p' )
+	    ( t, true, O.AbsTyp(typInfo(i,t), isExtensible), p )
 	end
 
       | elabTypRep(E, p, mkKind, typ) =
@@ -1235,6 +1227,16 @@ struct
 	    ( j, O.TopInf(infInfo(i,j)) )
 	end
 
+      | elabInf(E, I.PrimInf(i, s)) =
+	let
+	    (* No pervasive interfaces yet... *)
+	    val c = (*PervasiveInf.lookup s handle PervasiveInf.Lookup =>*)
+			error(i, E.PervasiveInfUnknown s)
+	    val j = Inf.inCon c
+	in
+	    ( j, O.PrimInf(infInfo(i,j), s) )
+	end
+
       | elabInf(E, I.ConInf(i, inflongid)) =
 	let
 	    val (j,inflongid') = elabInflongid(E, inflongid)
@@ -1367,14 +1369,11 @@ struct
 	    ( j, gen, O.FunInf(infInfo(i,j), modid', inf1', inf2') )
 	end
 
-      | elabInfRep(E, p, mkKind, I.AbsInf(i,so)) =
+      | elabInfRep(E, p, mkKind, I.AbsInf(i)) =
 	let
-	    (*UNFINISHED: pervasive interfaces *)
-	    val j = case so
-		      of NONE => Inf.inCon(mkKind(Inf.inGround()), p)
-		       | SOME s => error(i, E.PervasiveInfUnknown s)
+	    val j = Inf.inCon(mkKind(Inf.inGround()), p)
 	in
-	    ( j, true, O.AbsInf(infInfo(i,j), so) )
+	    ( j, true, O.AbsInf(infInfo(i,j)) )
 	end
 
       | elabInfRep(E, p, mkKind, inf) =

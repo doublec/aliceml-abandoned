@@ -120,6 +120,7 @@ signature ABSTRACT_GRAMMAR =
 
     and typ =
 	  VarTyp    of typ_info * typid		(* variable *)
+	| PrimTyp   of typ_info * string	(* builtin type *)
 	| ConTyp    of typ_info * typlongid	(* constructor *)
 	| FunTyp    of typ_info * typid * typ	(* type function *)
 	| AppTyp    of typ_info * typ * typ	(* constructor application *)
@@ -132,8 +133,7 @@ signature ABSTRACT_GRAMMAR =
 	| ExTyp     of typ_info * typid * typ	(* existential quantification *)
 	| PackTyp   of typ_info * inf		(* package type *)
 	| SingTyp   of typ_info * vallongid	(* singleton type *)
-	| AbsTyp    of typ_info * string option	(* abstract type *)
-	| ExtTyp    of typ_info * string option	(* extensible sum type *)
+	| AbsTyp    of typ_info * bool		(* abstract type (extensible?)*)
 
     (* Modules *)
 
@@ -153,6 +153,7 @@ signature ABSTRACT_GRAMMAR =
 
     and inf =
 	  TopInf    of inf_info			(* top interface *)
+	| PrimInf   of inf_info * string	(* builtin interfaces *)
 	| ConInf    of inf_info * inflongid	(* interface constructor *)
 	| SigInf    of inf_info * spec vector	(* signature *)
 	| FunInf    of inf_info * modid * inf * inf (* interface function *)
@@ -161,7 +162,7 @@ signature ABSTRACT_GRAMMAR =
 	| ArrInf    of inf_info * modid * inf * inf (* functor interface *)
 	| LetInf    of inf_info * dec vector * inf (* let *)
 	| SingInf   of inf_info * mod		(* singleton interface *)
-	| AbsInf    of inf_info * string option	(* abstract interface *)
+	| AbsInf    of inf_info			(* abstract interface *)
 
     (* Declarations *)
 
