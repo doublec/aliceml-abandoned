@@ -51,9 +51,10 @@ functor MkBackendMozart(structure ComponentManager: COMPONENT_MANAGER
 		structure I = FlatGrammar
 		structure O = Target
 
-		fun translate env (desc, component) =
+		fun translate (desc, env, component) =
 		    let
-			val x = CodeGenPhase.translate (env, desc, component)
+			val (env', x) =
+			    CodeGenPhase.translate (desc, env, component)
 		    in
 			case parseUrl (Source.url desc) of
 			    SOME filename =>
@@ -64,13 +65,14 @@ functor MkBackendMozart(structure ComponentManager: COMPONENT_MANAGER
 				    in
 					TextIO.output
 					    (q, CodeGenPhase.dumpTarget x);
-					    TextIO.closeOut q
+					TextIO.closeOut q
 				    end
 				else ()
 			  | NONE => ();   (*--** dump to stdout *)
-			Target.COMPONENT
-			    {component = fn () => CodeGenPhase.component x,
-			     eval = eval x}
+			(env',
+			 Target.COMPONENT
+			     {component = fn () => CodeGenPhase.component x,
+			      eval = eval x})
 		    end
 	    end
 	structure TracingPhase =

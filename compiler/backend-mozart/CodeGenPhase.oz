@@ -216,14 +216,15 @@ define
        fun {$ Label#Id} {TrLabel Label}#{TrId Id} end}#Sign
    end
 
-   fun {Translate Env Desc Component} InFilename in
+   fun {Translate Desc Env Component} InFilename Env2 in
+      Env2 = {Dictionary.clone Env}
       InFilename = case Desc of 'SOME'(U) then {Url.toString U}
 		   [] 'NONE' then ''
 		   end
       case {TrComponent Component} of ComponentTr=_#_#Exports#_ then
 	 case {CodeGen.translate InFilename ComponentTr
-	       {Dictionary.entries Env}}
-	 of F#VS then F#VS#Exports#Env
+	       {Dictionary.entries Env2}}
+	 of F#VS then Env2#(F#VS#Exports#Env2)
 	 end
       end
    end
@@ -246,8 +247,7 @@ define
    end
 
    C =
-   'CodeGenPhase.C'(new: fun {$ unit} {Dictionary.new} end
-		    clone: Dictionary.clone)
+   'CodeGenPhase.C'(empty: {Dictionary.new})
 
    CodeGenPhase =
    'CodeGenPhase'('C$': C
