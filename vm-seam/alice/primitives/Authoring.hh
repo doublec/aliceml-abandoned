@@ -29,8 +29,6 @@
 #define DECLARE_RECORD(record, x) DECLARE_BLOCKTYPE(Record, record, x)
 #define DECLARE_TAGVAL(tagVal, x) DECLARE_BLOCKTYPE(TagVal, tagVal, x)
 #define DECLARE_THREAD(thread, x) DECLARE_BLOCKTYPE(Thread, thread, x)
-#define DECLARE_UNIQUE_STRING(uniqueString, x) \
-  DECLARE_BLOCKTYPE(UniqueString, uniqueString, x)
 #define DECLARE_VECTOR(vector, x) DECLARE_BLOCKTYPE(Vector, vector, x)
 
 //--** does not work for infinite lists
