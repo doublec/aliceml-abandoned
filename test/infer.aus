@@ -420,23 +420,23 @@ val env = let
 
 fun print (SOME x) = TextIO.print (x ^ "\n")
 
-; print (Elab.elab (env, VarExp "one")) ;
+val _ = print (Elab.elab (env, VarExp "one"))
 
-; print (Elab.elab (env, VarExp "true")) ;
+val _ = print (Elab.elab (env, VarExp "true"))
 
-; print (Elab.elab (env, VarExp "false")) ;
+val _ = print (Elab.elab (env, VarExp "false"))
 
-; print (Elab.elab (env, VarExp "id")) ;
+val _ = print (Elab.elab (env, VarExp "id"))
 
-; print (Elab.elab (env, VarExp "before")) ;
+val _ = print (Elab.elab (env, VarExp "before"))
 
-; print (Elab.elab (env, VarExp "o")) ;
+val _ = print (Elab.elab (env, VarExp "o"))
 
-; print (Elab.elab (env, VarExp "pair")) ;
+val _ = print (Elab.elab (env, VarExp "pair"))
 
-; print (Elab.elab (env, VarExp "fst")) ;
+val _ = print (Elab.elab (env, VarExp "fst"))
 
-; print (Elab.elab (env, VarExp "snd")) ;
+val _ = print (Elab.elab (env, VarExp "snd"))
 
 (*   val x = (fn z => val y = fn v => v in y z) in x   *)
 
@@ -444,7 +444,7 @@ val test1 = ValExp ("x", FnExp ("z", ValExp ("y", FnExp ("v", VarExp "v"),
 					     AppExp (VarExp "y", VarExp "z"))),
 		    VarExp "x")
 
-; print (Elab.elab (env, test1)) ;
+val _ = print (Elab.elab (env, test1))
 
 (*   val x = (fn z => val y = fn v => z v in y) in x   *)
 
@@ -453,7 +453,7 @@ val test2 = ValExp ("x", FnExp ("z", ValExp ("y", FnExp ("v",
 								 VarExp "v")),
 					     VarExp "y")), VarExp "x")
 
-; print (Elab.elab (env, test2)) ;
+val _ = print (Elab.elab (env, test2))
 
 (*   val seq = fn com1 => fn com2 => com2 in
  *   val id = fn x => x in
@@ -467,14 +467,14 @@ val test3 =
 				    AppExp (VarExp "id", VarExp "one")),
 			    AppExp (VarExp "id", VarExp "true"))))
 
-; print (Elab.elab (env, test3)) ;
+val _ = print (Elab.elab (env, test3))
 
 (*   fn x => (o fst) (pair x)   *)
 
 val test4 = FnExp ("x", AppExp (AppExp (VarExp "o", VarExp "fst"),
 				AppExp (VarExp "pair", VarExp "x")))
 
-; print (Elab.elab (env, test4)) ;
+val _ = print (Elab.elab (env, test4))
 
 (*   (o fst) ((o snd) ((o pair) before))   *)
 
@@ -483,7 +483,7 @@ val test5 = AppExp (AppExp (VarExp "o", VarExp "fst"),
 			    AppExp (AppExp (VarExp "o", VarExp "pair"),
 				    VarExp "before")))
 
-; print (Elab.elab (env, test5)) ;
+val _ = print (Elab.elab (env, test5))
 
 (*
     val f0 = fn x => fn y => (y x) x in
@@ -514,4 +514,4 @@ in
     val test6 = f 4
 end
 
-; print (Elab.elab (env, test6)) ;
+val _ = print (Elab.elab (env, test6))
