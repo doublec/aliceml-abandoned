@@ -1,4 +1,6 @@
 Stockwerk:
+-- static linker
+-- replace OuptutPickle after bootstrapping by generic Pickle.save
 -- rename Pickle.oz to PrimPickle.oz (what is the relation to UnsafeComponent?)
 -- proxies
 -- non-blocking I/O (Pickle, UnsafeIO, UnsafeSocket, UnsafeComponent)
