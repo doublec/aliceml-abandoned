@@ -70,9 +70,17 @@ streams.dll: examples/streams.aml stoc-com+.x86-win32 Skeleton.il Base.dll.sig
 	stoc -c examples/streams.aml -o $@
 
 clean:
-	@-del /f /q *~ *.pdb
+	@-del /F /Q *.pdb
 
 veryclean: clean
 
 distclean: veryclean
-	@-del /f /q Base.aml $(OBJS) $(INSPECTOR_OBJS) stow.exe
+	@-del /F /Q Base.aml
+	@-del /F /Q $(OBJS)
+	@-del /F /Q $(INSPECTOR_OBJS)
+	@-del /F /Q HashCode.exe
+	@-del /F /Q Skeleton.il
+	@-del /F /Q Base.dll.il Tools.dll.il stow.il streams.dll.il
+	@-del /F /Q streams.dll
+	@-del /F /Q stow.exe
+	@-del /F /Q stoc-com+.x86-win32
