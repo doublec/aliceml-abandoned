@@ -21,20 +21,34 @@ structure ExplorerSearch =
 
   fun initSearch (serve, state : Types.explorer_state option ref,
                   refresh,resetCanvas, s) =
-      let
-          val s' = Space.clone s
-      in
-          case !state of
-              SOME {tree={tree,rootSpace,currentNode,...},...} =>
-              (ExplorerNode.discardTree (!tree);
-               resetCanvas serve state;
-               tree := ExplorerNode.createNode NONE 0;
-               rootSpace := SOME s;
-               currentNode := SOME (!tree);
-               ExplorerNode.setSpace (!tree) (SOME s');
-               refresh (serve, state))
-            | _ => ()
-      end
+      case Space.status s of
+          Space.FAILED =>
+          (case !state of
+               SOME {tree={tree,rootSpace,currentNode,...},...} =>
+               (ExplorerNode.discardTree (!tree);
+                resetCanvas serve state;
+                tree := ExplorerNode.createNode NONE 0;
+                ExplorerNode.setStatus (!tree) Types.FAILED;
+                rootSpace := NONE;
+                currentNode := SOME (!tree);
+                ExplorerNode.setSpace (!tree) NONE;
+                refresh (serve, state))
+             | _ => ())
+        | _ =>
+          let
+              val s' = Space.clone s
+          in
+              case !state of
+                  SOME {tree={tree,rootSpace,currentNode,...},...} =>
+                  (ExplorerNode.discardTree (!tree);
+                   resetCanvas serve state;
+                   tree := ExplorerNode.createNode NONE 0;
+                   rootSpace := SOME s;
+                   currentNode := SOME (!tree);
+                   ExplorerNode.setSpace (!tree) (SOME s');
+                   refresh (serve, state))
+                | _ => ()
+          end
 
   fun searchFrom (serve, state : Types.explorer_state option ref,
                   callBack, refresh, node) =
