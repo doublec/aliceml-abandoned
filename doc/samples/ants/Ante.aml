@@ -132,15 +132,16 @@ struct
 	    let
 		val l1 = newlabel "switch"
 		val l2 = newlabel "switchout"
+		val k' = List.foldri (fn (i,(_,f),k) =>
+			     let
+				 val l = expandlabel i l1
+				 val k' = f (fn z => Goto(expandlabel z l2))
+			     in
+				 fn z => Concat(Label(expandlabel z l, k' z), k z)
+			     end
+			 ) (fn z => Label(expandlabel z l2, k z)) bs
 	    in
-		List.foldri (fn (i,(_,f),k) =>
-		    let
-			val l = expandlabel i l1
-			val k' = f (fn z => Goto(expandlabel z l2))
-		    in
-			fn z => Concat(Label(expandlabel z l, k' z), k z)
-		    end
-		) (fn z => Label(expandlabel z l2, k z)) bs
+		fn z => Concat(Goto(expandlabel z (expandlabel z l1)), k' z)
 	    end)
 
 
