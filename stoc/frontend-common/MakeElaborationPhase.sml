@@ -38,20 +38,20 @@ functor MakeElaborationPhase(
 
   (* Predefined types *)
 
-    fun unitTyp E	= PreboundType.typ_unit
-    fun boolTyp E	= PreboundType.typ_bool
-    fun exnTyp E	= PreboundType.typ_exn
+    fun unitTyp E	= PervasiveType.typ_unit
+    fun boolTyp E	= PervasiveType.typ_bool
+    fun exnTyp E	= PervasiveType.typ_exn
 
     (* UNFINISHED: overloading *)
-    fun wordTyp E	= PreboundType.typ_word
-    fun intTyp E	= PreboundType.typ_int
-    fun charTyp E	= PreboundType.typ_char
-    fun stringTyp E	= PreboundType.typ_string
-    fun realTyp E	= PreboundType.typ_real
+    fun wordTyp E	= PervasiveType.typ_word
+    fun intTyp E	= PervasiveType.typ_int
+    fun charTyp E	= PervasiveType.typ_char
+    fun stringTyp E	= PervasiveType.typ_string
+    fun realTyp E	= PervasiveType.typ_real
 
-    fun refTyp(E,t)	= Type.inApply(PreboundType.typ_ref, t)
-    fun vecTyp(E,t)	= Type.inApply(PreboundType.typ_vec, t)
-    fun listTyp(E,t)	= Type.inApply(PreboundType.typ_list, t)
+    fun refTyp(E,t)	= Type.inApply(PervasiveType.typ_ref, t)
+    fun vecTyp(E,t)	= Type.inApply(PervasiveType.typ_vec, t)
+    fun listTyp(E,t)	= Type.inApply(PervasiveType.typ_list, t)
 
 
   (* Check value restriction *)
@@ -61,6 +61,7 @@ functor MakeElaborationPhase(
 	       | I.VarExp _
 	       | I.TagExp _
 	       | I.ConExp _
+	       | I.RefExp _
 	       | I.SelExp _
 	       | I.CompExp _
 	       | I.FunExp _ )			= true
@@ -79,6 +80,7 @@ functor MakeElaborationPhase(
     and isValueField(I.Field(_, _, exps))	= List.all isValue exps
 
     and isConstr( I.VarExp _
+		| I.RefExp _
 		| I.FunExp _ )			= false
       | isConstr  exp				= isValue exp
 
@@ -855,10 +857,10 @@ functor MakeElaborationPhase(
 	    ( t, O.SingTyp(typInfo(i,t), vallongid') )
 	end
 
-      | elabTyp(E, I.AbsTyp(i)) =
+      | elabTyp(E, I.AbsTyp _) =
 	raise Crash.Crash "Elab.elabTyp: AbsTyp"
 
-      | elabTyp(E, I.ExtTyp(i)) =
+      | elabTyp(E, I.ExtTyp _) =
 	raise Crash.Crash "Elab.elabTyp: ExtTyp"
 
 
@@ -902,18 +904,26 @@ functor MakeElaborationPhase(
 	    ( t, gen, w, O.FunTyp(typInfo(i,t), typid', typ') )
 	end
 
-      | elabTypRep(E, p, buildKind, I.AbsTyp(i))=
+      | elabTypRep(E, p, buildKind, I.AbsTyp(i,so))=
 	let
-	    val t = Type.inCon(buildKind Type.STAR, Type.CLOSED, p)
+	    val t = case so
+		      of NONE => Type.inCon(buildKind Type.STAR, Type.CLOSED, p)
+		       | SOME s => PervasiveType.lookup s
+				   handle PervasiveType.Lookup =>
+					error(i, E.PervasiveTypUnknown s)
 	in
-	    ( t, true, Type.CLOSED, O.AbsTyp(typInfo(i,t)) )
+	    ( t, true, Type.CLOSED, O.AbsTyp(typInfo(i,t), so) )
 	end
 
-      | elabTypRep(E, p, buildKind, I.ExtTyp(i))=
+      | elabTypRep(E, p, buildKind, I.ExtTyp(i,so))=
 	let
-	    val t = Type.inCon(buildKind Type.STAR, Type.OPEN, p)
+	    val t = case so
+		      of NONE => Type.inCon(buildKind Type.STAR, Type.OPEN, p)
+		       | SOME s => PervasiveType.lookup s
+				   handle PervasiveType.Lookup =>
+					error(i, E.PervasiveTypUnknown s)
 	in
-	    ( t, true, Type.OPEN, O.ExtTyp(typInfo(i,t)) )
+	    ( t, true, Type.OPEN, O.ExtTyp(typInfo(i,t), so) )
 	end
 
       | elabTypRep(E, p, buildKind, typ) =
@@ -1258,7 +1268,7 @@ functor MakeElaborationPhase(
 	    ( j', O.SingInf(infInfo(i,j'), mod') )
 	end
 
-      | elabInf(E, I.AbsInf(i)) =
+      | elabInf(E, I.AbsInf _) =
 	    raise Crash.Crash "Elab.elabInf: AbsInf"
 
 
@@ -1295,12 +1305,14 @@ functor MakeElaborationPhase(
 	    ( j, gen, O.FunInf(infInfo(i,j), modid', inf1', inf2') )
 	end
 
-      | elabInfRep(E, p, buildKind, I.AbsInf(i)) =
+      | elabInfRep(E, p, buildKind, I.AbsInf(i,so)) =
 	let
-	    val c = (buildKind(Inf.inGround()), p)
-	    val j = Inf.inCon c
+	    (*UNFINISHED: pervasive interfaces *)
+	    val j = case so
+		      of NONE => Inf.inCon(buildKind(Inf.inGround()), p)
+		       | SOME s => error(i, E.PervasiveInfUnknown s)
 	in
-	    ( j, true, O.AbsInf(infInfo(i,j)) )
+	    ( j, true, O.AbsInf(infInfo(i,j), so) )
 	end
 
       | elabInfRep(E, p, buildKind, inf) =

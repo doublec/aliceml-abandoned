@@ -6,13 +6,10 @@ Group is
 	input-grammar.cm
 	../frontend-common/abstract-grammar.cm
 	../common/name.cm
-	../common/prebound.cm
 	../common/interface.cm
 
 	BIND_ENV.sig
 	BindEnv.sml
-	BIND_ENV0.sig
-	BindEnv0.sml
 	BIND_ENV_FROM_SIG.sig
 	BindEnvFromSig.sml
 

@@ -16,7 +16,7 @@
  *   - removed exception declarations (made into a derived form)
  *   - removed abstype (made into a derived form with local)
  *   - simplified open and fixity declarations to single id (multi ids made DF)
- *   - some hacks to build libraries: primitive value declarations,
+ *   - some hacks to build libraries: primitive declarations,
  *     special eqtype declarations and specifications
  *
  * Extensions and modifications to module language:
@@ -135,8 +135,6 @@ functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
 	  VALDec          of Info * TyVarSeq * ValBind
 	| FUNDec          of Info * TyVarSeq * FvalBind
 	| TYPEDec         of Info * TypBind
-	| EQTYPEDec       of Info * TypBind
-	| EQEQTYPEDec     of Info * TypBind
 	| DATATYPEDec     of Info * DatBind
 	| REPLICATIONDec  of Info * TyCon * LongTyCon
 	| CONSTRUCTORDec  of Info * DconBind
@@ -150,9 +148,13 @@ functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
 	| INFIXRDec       of Info * int * VId
 	| NONFIXDec       of Info * VId
 	| PRIMITIVEVALDec         of Info * Op * VId * Ty * string
+	| PRIMITIVETYPEDec        of Info * TyVarSeq * TyCon * string
+	| PRIMITIVEDATATYPEDec    of Info * TyVarSeq * TyCon * string
+	| PRIMITIVEREFTYPEDec     of Info * TyVar * TyCon * Op * VId * TyVar
 	| PRIMITIVECONSTRUCTORDec of Info * Op * VId * Ty option
 					       * TyVarSeq * LongTyCon * string
 	| PRIMITIVESTRUCTUREDec   of Info * StrId * SigExp * string
+	| PRIMITIVESIGNATUREDec   of Info * SigId * StrPat list * string
 
     (* Bindings *)
 
@@ -262,24 +264,24 @@ functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
     (* Specifications *)
 
     and Spec =
-	  VALSpec          of Info * ValDesc
-	| TYPESpec         of Info * TypDesc
-	| EQTYPESpec       of Info * TypDesc
-	| EQEQTYPESpec     of Info * TypDesc
-	| DATATYPESpec     of Info * DatDesc
-	| REPLICATIONSpec  of Info * TyCon * LongTyCon
-	| CONSTRUCTORSpec  of Info * DconDesc
-	| STRUCTURESpec    of Info * StrDesc
-	| SIGNATURESpec    of Info * SigDesc
-	| INCLUDESpec      of Info * SigExp
-	| EMPTYSpec        of Info
-	| SEQSpec          of Info * Spec * Spec
-	| SHARINGTYPESpec  of Info * Spec * LongTyCon list
+	  VALSpec           of Info * ValDesc
+	| TYPESpec          of Info * TypDesc
+	| DATATYPESpec      of Info * DatDesc
+	| REPLICATIONSpec   of Info * TyCon * LongTyCon
+	| CONSTRUCTORSpec   of Info * DconDesc
+	| STRUCTURESpec     of Info * StrDesc
+	| SIGNATURESpec     of Info * SigDesc
+	| INCLUDESpec       of Info * SigExp
+	| EMPTYSpec         of Info
+	| SEQSpec           of Info * Spec * Spec
+	| SHARINGTYPESpec   of Info * Spec * LongTyCon list
 	| SHARINGSIGNATURESpec of Info * Spec * LongSigId list
-	| SHARINGSpec      of Info * Spec * LongStrId list
-	| INFIXSpec        of Info * int * VId
-	| INFIXRSpec       of Info * int * VId
-	| NONFIXSpec       of Info * VId
+	| SHARINGSpec       of Info * Spec * LongStrId list
+	| INFIXSpec         of Info * int * VId
+	| INFIXRSpec        of Info * int * VId
+	| NONFIXSpec        of Info * VId
+	| PRIMITIVETYPESpec of Info * TyVarSeq * TyCon * string
+	| PRIMITIVESIGNATURESpec of Info * SigId * StrPat list * string
 
     and ValDesc =
 	  NEWValDesc      of Info * Op * VId * Ty * ValDesc option
@@ -309,6 +311,7 @@ functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
           NEWSigDesc      of Info * SigId * StrPat list * SigDesc option
 	| EQUALSigDesc    of Info * SigId * StrPat list * SigExp
 							* SigDesc option
+
     (* Imports *)
 
     and Imp =
@@ -355,7 +358,6 @@ functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
 
     and Ann =
 	  IMPORTAnn   of Info * Imp * string
-	| PREBOUNDAnn of Info * StrId
 	| EMPTYAnn    of Info
 	| SEQAnn      of Info * Ann * Ann
 
@@ -422,8 +424,6 @@ functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
     fun infoDec(VALDec(I,_,_))				= I
       | infoDec(FUNDec(I,_,_))				= I
       | infoDec(TYPEDec(I,_))				= I
-      | infoDec(EQTYPEDec(I,_))				= I
-      | infoDec(EQEQTYPEDec(I,_))			= I
       | infoDec(DATATYPEDec(I,_))			= I
       | infoDec(REPLICATIONDec(I,_,_))			= I
       | infoDec(CONSTRUCTORDec(I,_))			= I
@@ -437,8 +437,12 @@ functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
       | infoDec(INFIXRDec(I,_,_))			= I
       | infoDec(NONFIXDec(I,_))				= I
       | infoDec(PRIMITIVEVALDec(I,_,_,_,_))		= I
+      | infoDec(PRIMITIVETYPEDec(I,_,_,_))		= I
+      | infoDec(PRIMITIVEDATATYPEDec(I,_,_,_))		= I
+      | infoDec(PRIMITIVEREFTYPEDec(I,_,_,_,_,_))	= I
       | infoDec(PRIMITIVECONSTRUCTORDec(I,_,_,_,_,_,_))	= I
       | infoDec(PRIMITIVESTRUCTUREDec(I,_,_,_))		= I
+      | infoDec(PRIMITIVESIGNATUREDec(I,_,_,_))		= I
 
     fun infoValBind(PLAINValBind(I,_,_,_))		= I
       | infoValBind(RECValBind(I,_))			= I
@@ -518,8 +522,6 @@ functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
 
     fun infoSpec(VALSpec(I,_))				= I
       | infoSpec(TYPESpec(I,_))				= I
-      | infoSpec(EQTYPESpec(I,_))			= I
-      | infoSpec(EQEQTYPESpec(I,_))			= I
       | infoSpec(DATATYPESpec(I,_))			= I
       | infoSpec(REPLICATIONSpec(I,_,_))		= I
       | infoSpec(CONSTRUCTORSpec(I,_))			= I
@@ -534,6 +536,8 @@ functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
       | infoSpec(INFIXSpec(I,_,_))			= I
       | infoSpec(INFIXRSpec(I,_,_))			= I
       | infoSpec(NONFIXSpec(I,_))			= I
+      | infoSpec(PRIMITIVETYPESpec(I,_,_,_))		= I
+      | infoSpec(PRIMITIVESIGNATURESpec(I,_,_,_))	= I
 
     fun infoValDesc(NEWValDesc(I,_,_,_,_))		= I
       | infoValDesc(EQUALValDesc(I,_,_,_,_,_))		= I
@@ -588,7 +592,6 @@ functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
       | infoSigItem(DESCSigItem(I,_,_,_))		= I
 
     fun infoAnn(IMPORTAnn(I,_,_))			= I
-      | infoAnn(PREBOUNDAnn(I,_))			= I
       | infoAnn(EMPTYAnn(I))				= I
       | infoAnn(SEQAnn(I,_,_))				= I
 

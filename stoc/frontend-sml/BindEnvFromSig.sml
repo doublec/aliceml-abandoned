@@ -36,7 +36,7 @@ structure BindEnvFromSig :> BIND_ENV_FROM_SIG =
 	else if Type.isApply t then
 	    idStatusFromArity(k, #1(Type.asApply t))
 	else if Type.isCon t
-	andalso Path.equals(#3(Type.asCon t), PreboundType.path_ref) then
+	andalso Path.equals(#3(Type.asCon t), PervasiveType.path_ref) then
 	    R
 	else
 	    C k
@@ -50,13 +50,16 @@ structure BindEnvFromSig :> BIND_ENV_FROM_SIG =
 	else if Type.isMu t then
 	    envFromTyp(I, s, Type.asMu t)
 	else if Type.isCon t
-	andalso Path.equals(#3(Type.asCon t), PreboundType.path_ref) then
+	andalso Path.equals(#3(Type.asCon t), PervasiveType.path_ref) then
 	    let
 		val E   = new()
+		(*UNFINISHED: ref contructor not handled -- anybody cares??
 		val x   = Stamp.new()
-		val vid = VId.fromString(Name.toString(Prebound.valname_ref))
+		val vid = VId.fromString(Name.toString(Pervasive.valid_ref))
+		*)
 	    in
-		insertVal(E, vid, (I,x,R)) ; E
+		(*insertVal(E, vid, (I,x,R)) ;*)
+		E
 	    end
 	else
 	    new()

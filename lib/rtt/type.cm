@@ -1,21 +1,15 @@
 Group
 
-	signature NAME
 	structure Name
-	signature LABEL
 	structure Label
-	signature PATH
 	structure Path
 	structure PathSet
 	structure PathMap
 	signature TYPE
 	structure Type
 
-	signature PREBOUND_TYPE
-	structure PreboundType
+	structure PervasiveType
 
-	signature PP_PATH
-	signature PP_TYPE
 	structure PPPath
 	structure PPType
 
@@ -25,11 +19,13 @@ is
 	../infrastructure/crash.cm
 	name.cm
 	path.cm
-	prebound.cm
 
 	TYPE.sig
 	Type.sml
-	PREBOUND_TYPE.sig
-	PreboundType.sml
+
+	PERVASIVE_TYPE.sig
+	MakePervasiveType.sml
+	PervasiveType.sml
+
 	PP_TYPE.sig
 	PPType.sml

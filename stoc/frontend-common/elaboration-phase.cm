@@ -4,14 +4,11 @@ Group is
 	../infrastructure/sources.cm
 	../common/type.cm
 	../common/interface.cm
-	../common/prebound.cm
 	abstract-grammar.cm
 	typed-grammar.cm
 
 	ENV.sig
 	Env.sml
-	ENV0.sig
-	Env0.sml
 
 	ELABORATION_ERROR.sig
 	ElaborationError.sml

@@ -16,7 +16,7 @@
  *   - removed exception declarations (made into a derived form)
  *   - removed abstype (made into a derived form with local)
  *   - simplified open and fixity declarations to single id (multi ids made DF)
- *   - some hacks to build libraries: primitive value declarations,
+ *   - some hacks to build libraries: primitive declarations,
  *     special eqtype declarations and specifications
  *
  * Extensions and modifications to module language:
@@ -135,8 +135,6 @@ signature INPUT_GRAMMAR =
 	  VALDec          of Info * TyVarSeq * ValBind
 	| FUNDec          of Info * TyVarSeq * FvalBind
 	| TYPEDec         of Info * TypBind
-	| EQTYPEDec       of Info * TypBind
-	| EQEQTYPEDec     of Info * TypBind
 	| DATATYPEDec     of Info * DatBind
 	| REPLICATIONDec  of Info * TyCon * LongTyCon
 	| CONSTRUCTORDec  of Info * DconBind
@@ -150,9 +148,13 @@ signature INPUT_GRAMMAR =
 	| INFIXRDec       of Info * int * VId
 	| NONFIXDec       of Info * VId
 	| PRIMITIVEVALDec         of Info * Op * VId * Ty * string
+	| PRIMITIVETYPEDec        of Info * TyVarSeq * TyCon * string
+	| PRIMITIVEDATATYPEDec    of Info * TyVarSeq * TyCon * string
+	| PRIMITIVEREFTYPEDec     of Info * TyVar * TyCon * Op * VId * TyVar
 	| PRIMITIVECONSTRUCTORDec of Info * Op * VId * Ty option
 					       * TyVarSeq * LongTyCon * string
 	| PRIMITIVESTRUCTUREDec   of Info * StrId * SigExp * string
+	| PRIMITIVESIGNATUREDec   of Info * SigId * StrPat list * string
 
     (* Bindings *)
 
@@ -262,24 +264,24 @@ signature INPUT_GRAMMAR =
     (* Specifications *)
 
     and Spec =
-	  VALSpec          of Info * ValDesc
-	| TYPESpec         of Info * TypDesc
-	| EQTYPESpec       of Info * TypDesc
-	| EQEQTYPESpec     of Info * TypDesc
-	| DATATYPESpec     of Info * DatDesc
-	| REPLICATIONSpec  of Info * TyCon * LongTyCon
-	| CONSTRUCTORSpec  of Info * DconDesc
-	| STRUCTURESpec    of Info * StrDesc
-	| SIGNATURESpec    of Info * SigDesc
-	| INCLUDESpec      of Info * SigExp
-	| EMPTYSpec        of Info
-	| SEQSpec          of Info * Spec * Spec
-	| SHARINGTYPESpec  of Info * Spec * LongTyCon list
+	  VALSpec           of Info * ValDesc
+	| TYPESpec          of Info * TypDesc
+	| DATATYPESpec      of Info * DatDesc
+	| REPLICATIONSpec   of Info * TyCon * LongTyCon
+	| CONSTRUCTORSpec   of Info * DconDesc
+	| STRUCTURESpec     of Info * StrDesc
+	| SIGNATURESpec     of Info * SigDesc
+	| INCLUDESpec       of Info * SigExp
+	| EMPTYSpec         of Info
+	| SEQSpec           of Info * Spec * Spec
+	| SHARINGTYPESpec   of Info * Spec * LongTyCon list
 	| SHARINGSIGNATURESpec of Info * Spec * LongSigId list
-	| SHARINGSpec      of Info * Spec * LongStrId list
-	| INFIXSpec        of Info * int * VId
-	| INFIXRSpec       of Info * int * VId
-	| NONFIXSpec       of Info * VId
+	| SHARINGSpec       of Info * Spec * LongStrId list
+	| INFIXSpec         of Info * int * VId
+	| INFIXRSpec        of Info * int * VId
+	| NONFIXSpec        of Info * VId
+	| PRIMITIVETYPESpec of Info * TyVarSeq * TyCon * string
+	| PRIMITIVESIGNATURESpec of Info * SigId * StrPat list * string
 
     and ValDesc =
 	  NEWValDesc      of Info * Op * VId * Ty * ValDesc option
@@ -356,7 +358,6 @@ signature INPUT_GRAMMAR =
 
     and Ann =
 	  IMPORTAnn   of Info * Imp * string
-	| PREBOUNDAnn of Info * StrId
 	| EMPTYAnn    of Info
 	| SEQAnn      of Info * Ann * Ann
 

@@ -44,6 +44,7 @@ signature ELABORATION_ERROR =
 	| AppTypFunKind		of kind
 	| AppTypArgKind		of kind * kind
 	| RefTypKind		of kind
+	| PervasiveTypUnknown	of string
 	(* Declarations *)
 	| ValDecUnify		of unify_error
 	| ValDecLift		of valid * var
@@ -59,6 +60,7 @@ signature ELABORATION_ERROR =
 	| GroundInfKind		of Inf.kind
 	| CompInfMismatch	of inf_mismatch
 	| SingInfPath
+	| PervasiveInfUnknown	of string
 	(* Imports *)
 	| ValImpUnbound		of lab
 	| ConImpUnbound		of lab

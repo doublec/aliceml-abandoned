@@ -71,6 +71,7 @@ signature DERIVED_FORMS =
 
     type Lab       = Grammar.Lab
     type VId       = Grammar.VId
+    type TyCon     = Grammar.TyCon
     type StrId     = Grammar.StrId
     type LongVId   = Grammar.LongVId
     type LongTyCon = Grammar.LongTyCon
@@ -163,16 +164,23 @@ signature DERIVED_FORMS =
 
     (* Declarations *)
 
-    val FUNDec:		Info * TyVarSeq * FvalBind		-> Dec
-    val DATATYPEDec:	Info * DatBind * TypBind option		-> Dec
-    val ABSTYPEDec:	Info * DatBind * TypBind option * Dec	-> Dec
-    val EXCEPTIONDec:	Info * ExBind				-> Dec
-    val FUNCTORDec:     Info * FunBind                          -> Dec
-    val OPENMULTIDec:	Info * LongStrId list			-> Dec
-    val INFIXMULTIDec:	Info * int option * VId list		-> Dec
-    val INFIXRMULTIDec:	Info * int option * VId list		-> Dec
-    val NONFIXMULTIDec:	Info * VId list				-> Dec
-
+    val FUNDec:		Info * TyVarSeq * FvalBind			-> Dec
+    val EQTYPEDec:	Info * TypBind					-> Dec
+    val EQEQTYPEDec:	Info * TypBind					-> Dec
+    val DATATYPEDec:	Info * DatBind * TypBind option			-> Dec
+    val ABSTYPEDec:	Info * DatBind * TypBind option * Dec		-> Dec
+    val EXCEPTIONDec:	Info * ExBind					-> Dec
+    val FUNCTORDec:     Info * FunBind                  	        -> Dec
+    val OPENMULTIDec:	Info * LongStrId list				-> Dec
+    val INFIXMULTIDec:	Info * int option * VId list			-> Dec
+    val INFIXRMULTIDec:	Info * int option * VId list			-> Dec
+    val NONFIXMULTIDec:	Info * VId list					-> Dec
+    val PRIMITIVEFUNDec: Info * Op * VId * Ty * string			-> Dec
+    val PRIMITIVEEQTYPEDec:	Info * TyVarSeq * TyCon * string	-> Dec
+    val PRIMITIVEEQEQTYPEDec:	Info * TyVarSeq * TyCon * string	-> Dec
+    val PRIMITIVEEXCEPTIONDec:	Info * Op * VId * Ty option * string	-> Dec
+    val PRIMITIVEFUNCTORDec:	Info * StrId * StrPat list * SigExp * string
+								-> Dec
     val NEWExBind:    Info * Op * VId * Ty option * ExBind option    -> ExBind
     val EQUALExBind:  Info * Op * VId * Op * LongVId * ExBind option -> ExBind
 
@@ -204,6 +212,8 @@ signature DERIVED_FORMS =
     (* Specifications *)
 
     val FUNSpec:          Info * ValDesc                           -> Spec
+    val EQTYPESpec:       Info * TypDesc                           -> Spec
+    val EQEQTYPESpec:     Info * TypDesc                           -> Spec
     val DATATYPESpec:     Info * DatDesc * TypDesc option          -> Spec
     val EXCEPTIONSpec:    Info * ExDesc                            -> Spec
     val FUNCTORSpec:      Info * FunDesc                           -> Spec
@@ -212,6 +222,8 @@ signature DERIVED_FORMS =
     val INFIXMULTISpec:   Info * int option * VId list             -> Spec
     val INFIXRMULTISpec:  Info * int option * VId list             -> Spec
     val NONFIXMULTISpec:  Info * VId list                          -> Spec
+    val PRIMITIVEEQTYPESpec:   Info * TyVarSeq * TyCon * string    -> Spec
+    val PRIMITIVEEQEQTYPESpec: Info * TyVarSeq * TyCon * string    -> Spec
 
     val NEWExDesc:        Info * Op * VId * Ty option * ExDesc option -> ExDesc
     val EQUALExDesc:      Info * Op * VId * Op * LongVId
@@ -241,6 +253,8 @@ signature DERIVED_FORMS =
     (* Imports *)
 
     val FUNImp:           Info * ValItem                           -> Imp
+    val EQTYPEImp:        Info * TypItem                           -> Imp
+    val EQEQTYPEImp:      Info * TypItem                           -> Imp
     val EXCEPTIONImp:     Info * ExItem                            -> Imp
     val FUNCTORImp:       Info * FunItem                           -> Imp
     val INFIXMULTIImp:    Info * int option * VId list             -> Imp

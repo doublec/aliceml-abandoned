@@ -159,8 +159,8 @@ functor MakeAbstractGrammar(type fix_info
 	| ExTyp     of typ_info * typid * typ	(* existential quantification *)
 	| PackTyp   of typ_info * inf		(* package type *)
 	| SingTyp   of typ_info * vallongid	(* singleton type *)
-	| AbsTyp    of typ_info			(* abstract type *)
-	| ExtTyp    of typ_info			(* extensible sum type *)
+	| AbsTyp    of typ_info * string option	(* abstract type *)
+	| ExtTyp    of typ_info * string option	(* extensible sum type *)
 
     (* Modules *)
 
@@ -188,7 +188,7 @@ functor MakeAbstractGrammar(type fix_info
 	| ArrInf    of inf_info * modid * inf * inf (* functor interface *)
 	| LetInf    of inf_info * dec list * inf (* let *)
 	| SingInf   of inf_info * mod		(* singleton interface *)
-	| AbsInf    of inf_info			(* abstract interface *)
+	| AbsInf    of inf_info * string option	(* abstract interface *)
 
     (* Declarations *)
 
@@ -309,8 +309,8 @@ functor MakeAbstractGrammar(type fix_info
       | infoTyp(ExTyp(i,_,_))		= i
       | infoTyp(PackTyp(i,_))		= i
       | infoTyp(SingTyp(i,_))		= i
-      | infoTyp(ExtTyp(i))		= i
-      | infoTyp(AbsTyp(i))		= i
+      | infoTyp(ExtTyp(i,_))		= i
+      | infoTyp(AbsTyp(i,_))		= i
 
     fun infoMod(PrimMod(i,_,_))		= i
       | infoMod(VarMod(i,_))		= i
@@ -332,7 +332,7 @@ functor MakeAbstractGrammar(type fix_info
       | infoInf(ArrInf(i,_,_,_))	= i
       | infoInf(LetInf(i,_,_))		= i
       | infoInf(SingInf(i,_))		= i
-      | infoInf(AbsInf(i))		= i
+      | infoInf(AbsInf(i,_))		= i
 
     fun infoDec(ValDec(i,_,_))		= i
       | infoDec(ConDec(i,_,_,_))	= i

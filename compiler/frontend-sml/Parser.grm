@@ -125,12 +125,18 @@
 (*										*)
 (* To avoid hardwiring certain library issues, we further added the following	*)
 (* low-level constructs:							*)
-(*	  dec     ::= __primitive val <op> vid : ty = string			*)
+(*	  dec     ::= __eqeqtype typbind					*)
+(*                ::= __primitive val <op> vid : ty = string			*)
+(*                ::= __primitive type tyvarseq tycon = string			*)
+(*                ::= __primitive eqtype tyvarseq tycon = string		*)
+(*                ::= __primitive __eqeqtype tyvarseq tycon = string		*)
+(*                ::= __primitive __reftype tyvar tycon = <op> vid of tyvar	*)
 (*	          ::= __primitive constructor <op> vid <of ty> : ty = string	*)
 (*	          ::= __primitive structure strid : sigexp = string		*)
-(*	          ::= __eqtype typbind						*)
-(*	  spec    ::= __eqtype typdesc						*)
-(*	  ann     ::= __prebound strid						*)
+(*	  spec    ::= __eqeqtype typdesc					*)
+(*                ::= __primitive type tyvarseq tycon = string			*)
+(*                ::= __primitive eqtype tyvarseq tycon = string		*)
+(*                ::= __primitive __eqeqtype tyvarseq tycon = string		*)
 (*										*)
 (* Notes:									*)
 (*   - Two phrases named Fmatch and Fmrule have been added to factorize		*)
@@ -205,7 +211,7 @@
 	| CONSTRUCTOR | NON | WITHFUN | WITHVAL | DOT | HASHBRACK
 	| ANY | FCT | PACK | UNPACK
 	| IMPORT | FROM
-	| PRIMITIVE | PREBOUND | EQEQTYPE
+	| PRIMITIVE | EQEQTYPE | REFTYPE
 
 	(* Additional reserved words for the modules language *)
 	| EQTYPE | FUNCTOR | INCLUDE | SHARING | SIG
@@ -230,7 +236,7 @@
 	 CONSTRUCTOR NON WITHFUN WITHVAL
 	 ANY FCT PACK UNPACK
 	 IMPORT FROM
-	 PRIMITIVE PREBOUND EQEQTYPE
+	 PRIMITIVE EQEQTYPE REFTYPE
 
 %eop     EOF
 %noshift EOF
@@ -241,7 +247,7 @@
 %right VAL FUN TYPE EQTYPE DATATYPE ABSTYPE CONSTRUCTOR EXCEPTION
        STRUCTURE FUNCTOR SIGNATURE
        IMPORT
-       PRIMITIVE PREBOUND EQEQTYPE
+       PRIMITIVE EQEQTYPE REFTYPE
 %right LOCAL OPEN INFIX INFIXR NONFIX INCLUDE
 %right AND
 %left  DARROW		(* L/R is arbitrary *)
@@ -766,14 +772,43 @@
 	| PRIMITIVE VAL OP_opt vid COLON ty EQUALS STRING
 			( PRIMITIVEVALDec(I(PRIMITIVEleft,STRINGright),
 					  OP_opt, vid, ty, STRING) )
+	| PRIMITIVE FUN OP_opt vid COLON ty EQUALS STRING
+			( PRIMITIVEFUNDec(I(PRIMITIVEleft,STRINGright),
+					  OP_opt, vid, ty, STRING) )
+	| PRIMITIVE TYPE tyvarseq tycon EQUALS STRING
+			( PRIMITIVETYPEDec(I(PRIMITIVEleft,STRINGright),
+					   tyvarseq, tycon, STRING) )
+	| PRIMITIVE EQTYPE tyvarseq tycon EQUALS STRING
+			( PRIMITIVEEQTYPEDec(I(PRIMITIVEleft,STRINGright),
+					     tyvarseq, tycon, STRING) )
+	| PRIMITIVE EQEQTYPE tyvarseq tycon EQUALS STRING
+			( PRIMITIVEEQEQTYPEDec(I(PRIMITIVEleft,STRINGright),
+					       tyvarseq, tycon, STRING) )
+	| PRIMITIVE DATATYPE tyvarseq tycon EQUALS STRING
+			( PRIMITIVEDATATYPEDec(I(PRIMITIVEleft,STRINGright),
+					       tyvarseq, tycon, STRING) )
+	| PRIMITIVE REFTYPE tyvar tycon EQUALS OP_opt vid OF tyvar
+			( PRIMITIVEREFTYPEDec(I(PRIMITIVEleft,tyvar2right),
+					      tyvar1, tycon, OP_opt, vid,
+					      tyvar2) )
 	| PRIMITIVE CONSTRUCTOR OP_opt vid OF_ty_opt COLON tyvarseq longtycon
 	  EQUALS STRING
 			( PRIMITIVECONSTRUCTORDec(I(PRIMITIVEleft,STRINGright),
 						  OP_opt, vid, OF_ty_opt,
 						  tyvarseq, longtycon, STRING) )
+	| PRIMITIVE EXCEPTION OP_opt vid OF_ty_opt EQUALS STRING
+			( PRIMITIVEEXCEPTIONDec(I(PRIMITIVEleft,STRINGright),
+						OP_opt, vid, OF_ty_opt, STRING))
 	| PRIMITIVE STRUCTURE strid COLON sigexp EQUALS STRING
 			( PRIMITIVESTRUCTUREDec(I(PRIMITIVEleft,STRINGright),
 						strid, sigexp, STRING) )
+	| PRIMITIVE FUNCTOR strid strpat_list0 COLON sigexp EQUALS STRING
+			( PRIMITIVEFUNCTORDec(I(PRIMITIVEleft,STRINGright),
+					      strid, strpat_list0, sigexp,
+					      STRING) )
+	| PRIMITIVE SIGNATURE sigid strpat_list0 EQUALS STRING
+			( PRIMITIVESIGNATUREDec(I(PRIMITIVEleft,STRINGright),
+						sigid, strpat_list0, STRING) )
 
      WITHTYPE_typbind_opt:
 	  WITHTYPE typbind	( SOME typbind )
@@ -1702,6 +1737,18 @@
 	| NONFIX vid_list1
 			( NONFIXMULTISpec(I(NONFIXleft,vid_list1right),
 					  vid_list1) )
+	| PRIMITIVE TYPE tyvarseq tycon EQUALS STRING
+			( PRIMITIVETYPESpec(I(PRIMITIVEleft,STRINGright),
+					    tyvarseq, tycon, STRING) )
+	| PRIMITIVE EQTYPE tyvarseq tycon EQUALS STRING
+			( PRIMITIVEEQTYPESpec(I(PRIMITIVEleft,STRINGright),
+					      tyvarseq, tycon, STRING) )
+	| PRIMITIVE EQEQTYPE tyvarseq tycon EQUALS STRING
+			( PRIMITIVEEQEQTYPESpec(I(PRIMITIVEleft,STRINGright),
+						tyvarseq, tycon, STRING) )
+	| PRIMITIVE SIGNATURE sigid strpat_list0 EQUALS STRING
+			( PRIMITIVESIGNATURESpec(I(PRIMITIVEleft,STRINGright),
+						 sigid, strpat_list0, STRING) )
 
      WITHTYPE_typdesc_opt:
 	  WITHTYPE typdesc	( SOME typdesc )
@@ -2179,6 +2226,10 @@
 	  VAL valitem	( VALImp(I(VALleft,valitemright), valitem) )
 	| FUN valitem	( FUNImp(I(FUNleft,valitemright), valitem) )
 	| TYPE typitem	( TYPEImp(I(TYPEleft,typitemright), typitem) )
+	| EQTYPE typitem
+			( EQTYPEImp(I(EQTYPEleft,typitemright), typitem) )
+	| EQEQTYPE typitem
+			( EQEQTYPEImp(I(EQEQTYPEleft,typitemright), typitem) )
 	| DATATYPE datitem
 			( DATATYPEImp(I(DATATYPEleft,datitemright), datitem) )
 	| CONSTRUCTOR dconitem
@@ -2525,9 +2576,6 @@
 	  IMPORT imp FROM STRING
 	  			( IMPORTAnn(I(IMPORTleft,STRINGright),
 					    imp, STRING) )
-	| PREBOUND strid
-				( PREBOUNDAnn(I(PREBOUNDleft,stridright),
-					      strid) )
 	| ann1 ann1 %prec SEMICOLON
 				( SEQAnn(I(ann11left,ann12right),
 					 ann11, ann12) )

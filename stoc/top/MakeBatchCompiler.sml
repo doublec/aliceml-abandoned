@@ -287,9 +287,8 @@ functor MakeMain(structure Composer: COMPOSER'
 				     structure Switches = Switches)
 
 	    fun parse' x     = ParsingPhase.translate () x
-	    fun abstract' x  = AbstractionPhase.translate
-			       (BindEnv.clone BindEnv0.E0) x
-	    fun elab' x      = ElaborationPhase.translate (Env.clone Env0.E0) x
+	    fun abstract' x  = AbstractionPhase.translate (BindEnv.new()) x
+	    fun elab' x      = ElaborationPhase.translate (Env.new()) x
 	    fun translate' x = TranslationPhase.translate () x
 	    fun flatten' x   = BackendCommon.translate () x
 

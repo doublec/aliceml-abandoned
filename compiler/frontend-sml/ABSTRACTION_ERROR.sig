@@ -21,7 +21,6 @@ signature ABSTRACTION_ERROR =
 	| TyVarUnbound		of TyVar
 	| StrIdUnbound		of StrId
 	| SigIdUnbound		of SigId
-	| PreboundFirstClass
 	(* Expressions *)
 	| ExpRowLabDuplicate	of Lab
 	(* Patterns *)

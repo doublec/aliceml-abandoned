@@ -84,6 +84,7 @@ structure DerivedForms :> DERIVED_FORMS =
 
     type Lab       = Grammar.Lab
     type VId       = Grammar.VId
+    type TyCon     = Grammar.TyCon
     type StrId     = Grammar.StrId
     type LongVId   = Grammar.LongVId
     type LongTyCon = Grammar.LongTyCon
@@ -148,10 +149,9 @@ structure DerivedForms :> DERIVED_FORMS =
 
     (* Some helpers *)
 
-    fun strid_PREBOUND(I)	= G.StrId(I, StrId.fromString "")
-    fun longstrid_PREBOUND(I)	= G.SHORTLong(I, strid_PREBOUND(I))
-    fun longvid(I, vid)		= G.DOTLong(I, longstrid_PREBOUND(I), vid)
-    fun longtycon(I, tycon)	= G.DOTLong(I, longstrid_PREBOUND(I), tycon)
+    (*UNFINISHED: how refer to pervasives? *)
+    fun longvid(I, vid)		= G.SHORTLong(I, vid)
+    fun longtycon(I, tycon)	= G.SHORTLong(I, tycon)
 
     fun vid_NIL(I)		= G.VId(I, VId.fromString "nil")
     fun vid_CONS(I)		= G.VId(I, VId.fromString "::")
@@ -436,17 +436,40 @@ structure DerivedForms :> DERIVED_FORMS =
       | TUPLETy(I,  tys) = G.TUPLETy(I, tys)
 
 
+    (* Signature expressions (Part 1) *)
+
+    fun FCTSigExp(I, strpat as G.StrPat(I1, G.StrId(I2, strid'), sigexp1),
+		     sigexp) =
+	if StrId.toString strid' <> "" then
+	    G.FCTSigExp(I, strpat, sigexp)
+	else
+	let
+	    val I3     = G.infoSigExp sigexp
+	    val strid  = G.StrId(I2, StrId.invent())
+
+	    val dec    = G.OPENDec(I3, G.SHORTLong(I3, strid))
+	    val letexp = G.ATSIGEXPSigExp(I3, G.LETAtSigExp(I3, dec, sigexp))
+	in
+	    G.FCTSigExp(I, G.StrPat(I1, strid, sigexp1), letexp)
+	end
+
+
     (* Declarations *)
 
-    val FUNDec       = G.FUNDec
-    val EXCEPTIONDec = G.CONSTRUCTORDec
-    val FUNCTORDec   = G.STRUCTUREDec
-    val FvalBind     = G.FvalBind
-    val EQUALExBind  = G.EQUALDconBind
-    val Fmatch       = G.Match
-    val Fmrule       = G.Mrule
+    val FUNDec			= G.FUNDec
+    val EQTYPEDec		= G.TYPEDec
+    val EQEQTYPEDec		= G.TYPEDec
+    val EXCEPTIONDec		= G.CONSTRUCTORDec
+    val FUNCTORDec		= G.STRUCTUREDec
+    val PRIMITIVEFUNDec		= G.PRIMITIVEVALDec
+    val PRIMITIVEEQTYPEDec	= G.PRIMITIVETYPEDec
+    val PRIMITIVEEQEQTYPEDec	= G.PRIMITIVETYPEDec
+    val FvalBind		= G.FvalBind
+    val EQUALExBind		= G.EQUALDconBind
+    val Fmatch			= G.Match
+    val Fmrule			= G.Mrule
 
-    fun Fpat p       = p
+    fun Fpat p			= p
 
 
     fun DATATYPEDec(I, datbind, NONE)         = G.DATATYPEDec(I, datbind)
@@ -497,6 +520,22 @@ structure DerivedForms :> DERIVED_FORMS =
     fun NONFIXMULTIDec(I, [])                = G.EMPTYDec(I)
       | NONFIXMULTIDec(I, longvid::longvids) =
 	    G.SEQDec(I, G.NONFIXDec(I,longvid), NONFIXMULTIDec(I,longvids))
+
+    fun PRIMITIVEEXCEPTIONDec(I, op_opt, vid, ty_opt, string) =
+	    G.PRIMITIVECONSTRUCTORDec(I, op_opt, vid, ty_opt,
+				      G.Seq(I,[]), longtycon_EXN(I), string)
+
+    fun PRIMITIVEFUNCTORDec(I, strid, strpats, sigexp, string) =
+	let
+	    val I' = G.infoSigExp sigexp
+
+	    fun buildSigExp       []         = sigexp
+	      | buildSigExp(strpat::strpats) =
+		    FCTSigExp(Source.over(G.infoStrPat strpat, I'),
+			      strpat, buildSigExp strpats)
+	in
+	    G.PRIMITIVESTRUCTUREDec(I, strid, buildSigExp strpats, string)
+	end
 
 
     fun NEWExBind(I, op_opt, vid, ty_opt, dconbind_opt) =
@@ -580,11 +619,15 @@ structure DerivedForms :> DERIVED_FORMS =
 
     (* Specifications *)
 
-    val FUNSpec       = G.VALSpec
-    val SHARINGSpec   = G.SHARINGSpec
-    val EXCEPTIONSpec = G.CONSTRUCTORSpec
-    val FUNCTORSpec   = G.STRUCTURESpec
-    val EQUALExDesc   = G.EQUALDconDesc
+    val FUNSpec			= G.VALSpec
+    val EQTYPESpec		= G.TYPESpec
+    val EQEQTYPESpec		= G.TYPESpec
+    val SHARINGSpec		= G.SHARINGSpec
+    val EXCEPTIONSpec		= G.CONSTRUCTORSpec
+    val FUNCTORSpec		= G.STRUCTURESpec
+    val PRIMITIVEEQTYPESpec	= G.PRIMITIVETYPESpec
+    val PRIMITIVEEQEQTYPESpec	= G.PRIMITIVETYPESpec
+    val EQUALExDesc		= G.EQUALDconDesc
 
     fun DATATYPESpec(I, datdesc, NONE)         = G.DATATYPESpec(I, datdesc)
       | DATATYPESpec(I, datdesc, SOME typdesc) =
@@ -638,23 +681,7 @@ structure DerivedForms :> DERIVED_FORMS =
 	end
 
 
-    (* Signature expressions *)
-
-    and FCTSigExp(I, strpat as G.StrPat(I1, G.StrId(I2, strid'), sigexp1),
-		     sigexp) =
-	if StrId.toString strid' <> "" then
-	    G.FCTSigExp(I, strpat, sigexp)
-	else
-	let
-	    val I3     = G.infoSigExp sigexp
-	    val strid  = G.StrId(I2, StrId.invent())
-
-	    val dec    = G.OPENDec(I3, G.SHORTLong(I3, strid))
-	    val letexp = G.ATSIGEXPSigExp(I3, G.LETAtSigExp(I3, dec, sigexp))
-	in
-	    G.FCTSigExp(I, G.StrPat(I1, strid, sigexp1), letexp)
-	end
-
+    (* Signature expressions (Part 2) *)
 
     datatype Rea =
 	  VALRea         of Info * Op * LongVId * Op * LongVId * Rea option
@@ -741,11 +768,13 @@ structure DerivedForms :> DERIVED_FORMS =
 
     (* Imports *)
 
-    val FUNImp       = G.VALImp
-    val EXCEPTIONImp = G.CONSTRUCTORImp
-    val FUNCTORImp   = G.STRUCTUREImp
-    val PLAINExItem  = G.PLAINDconItem
-    val PLAINFunItem = G.PLAINStrItem
+    val FUNImp		= G.VALImp
+    val EQTYPEImp	= G.TYPEImp
+    val EQEQTYPEImp	= G.TYPEImp
+    val EXCEPTIONImp	= G.CONSTRUCTORImp
+    val FUNCTORImp	= G.STRUCTUREImp
+    val PLAINExItem	= G.PLAINDconItem
+    val PLAINFunItem	= G.PLAINStrItem
 
     fun INFIXMULTIImp(I, _, [])          = G.EMPTYImp(I)
       | INFIXMULTIImp(I, NONE, longvids) = INFIXMULTIImp(I, SOME 0, longvids)

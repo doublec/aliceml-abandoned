@@ -30,7 +30,6 @@ structure AbstractionError :> ABSTRACTION_ERROR =
 	| TyVarUnbound		of TyVar
 	| StrIdUnbound		of StrId
 	| SigIdUnbound		of SigId
-	| PreboundFirstClass
 	(* Expressions *)
 	| ExpRowLabDuplicate	of Lab
 	(* Patterns *)
@@ -149,8 +148,6 @@ structure AbstractionError :> ABSTRACTION_ERROR =
 	  ppUnbound(classStrId, strid)
       | ppError(SigIdUnbound sigid) =
 	  ppUnbound(classSigId, sigid)
-      | ppError(PreboundFirstClass) =
-	  textpar["invalid","use","of","pseudo","structure"]
       (* Expressions *)
       | ppError(ExpRowLabDuplicate lab) =
 	  textpar(["duplicate"] @ #2 classLab @ [ppLab lab,"in","record"])

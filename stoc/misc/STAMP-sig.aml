@@ -12,8 +12,6 @@ signature STAMP =
     val new :		unit -> stamp
     val toString :	stamp -> string
 
-    val reset :		unit -> unit
-
     val compare :	stamp * stamp -> order
     val hash :		stamp -> int
 
