@@ -1,0 +1,21 @@
+(*
+ * Authors:
+ *   Guido Tack <tack@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Guido Tack, 2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+signature GTK_METHODS_TABLE =
+  sig
+      val get : string * string -> string
+  end
+
+structure GtkMethodsTable :> GTK_METHODS_TABLE =
+  struct
+      fun get(className, methName) = ""
+  end

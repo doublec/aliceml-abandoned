@@ -1,0 +1,163 @@
+(*
+ * Authors:
+ *   Guido Tack <tack@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Guido Tack, 2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure CodeEmitter from "CodeEmitter"
+import structure AliceXML    from "x-alice:/lib/xml/AliceXML"
+
+signature PARSER =
+  sig
+      exception ParseError of string
+      val parse : string * CodeEmitter.document
+		  * CodeEmitter.document -> unit
+  end
+
+structure Parser :> PARSER =
+  struct
+      open CodeEmitter
+      open AliceXML
+
+      exception ParseError of string
+
+      fun skipTextNodes nil = nil
+	| skipTextNodes (n::nr) =
+	  if (n/>getType) = TEXT_NODE then skipTextNodes nr
+	  else (n::nr)
+
+      fun parseRequires(_, nil) = nil
+	| parseRequires(doc, r::rr) =
+	  if (r/>name) = "widget" then (r::rr)
+	  else if (r/>getType) = TEXT_NODE then parseRequires(doc, rr)
+	  else if (r/>name)= "requires"
+	  then parseRequires(doc, rr)
+	  else raise ParseError ("'requires' required, "^(r/>name)^" found")
+
+      fun parseProperty(doc, p) = (valOf (getProp p "name"),
+				   getOpt(getContent p true, ""))
+      fun parseProperties(doc, nil, acc) = (nil, acc)
+	| parseProperties(doc, p::ps, acc) =
+	  if (p/>getType) = TEXT_NODE then parseProperties(doc,ps,acc)
+	  else if (p/>name) = "property" then
+	      parseProperties(doc,ps,parseProperty(doc,p)::acc)
+	  else (p::ps, acc)
+
+      fun parseAccessibility(doc, nil, acc) = (nil, acc)
+	| parseAccessibility(doc, p::ps, acc) =
+	  if (p/>getType) = TEXT_NODE then parseAccessibility(doc, ps, acc)
+	  else if (p/>name) = "accessibility" then (ps, acc)
+	  else (p::ps,acc)
+
+      fun parseSignal(doc, p) = (valOf (getProp p "name"),
+				 valOf (getProp p "handler"),
+				 getOpt(getProp p "after", "no"))
+      fun parseSignals(doc, nil, acc) = (nil, acc)
+	| parseSignals(doc, p::ps, acc) =
+	  if (p/>getType) = TEXT_NODE then parseSignals(doc, ps, acc)
+	  else if (p/>name) = "signal" then
+	      parseSignals(doc,ps,parseSignal(doc,p)::acc)
+	  else (p::ps,acc)
+
+      fun parseAccelerator(doc, p) = (valOf (getProp p "key"))
+      fun parseAccelerators(doc, nil, acc) = (nil, acc)
+	| parseAccelerators(doc, p::ps, acc) =
+	  if (p/>getType) = TEXT_NODE then parseAccelerators(doc, ps, acc)
+	  else if (p/>name) = "accelerator" then
+	      parseAccelerators(doc,ps,parseAccelerator(doc,p)::acc)
+	  else (p::ps,acc)
+
+      fun parseWidget(doc, sigDoc, w) =
+	  let
+	      val class = valOf(getProp w "class")
+		  handle Option =>
+			 raise ParseError "widget without class found"
+	      val id = valOf(getProp w "id")
+		  handle Option =>
+			 raise ParseError "widget without id found"
+	      val (next, prop)   = parseProperties(doc, w/>children, nil)
+	      val (next, acces)  = parseAccessibility(doc, next, nil)
+	      val (next, sign)   = parseSignals(doc, next, nil)
+	      val (next, accel)  = parseAccelerators(doc, next, nil)
+	      val _ = newObject(doc,class,id,prop,acces,sign,accel)
+	      val children = parseChildren(doc, sigDoc, next)
+	  in
+	      attachChildren(doc, class, id, children);
+	      attachSignals(sigDoc,getStructureName doc,class,id,sign);
+	      id
+	  end
+      and parseChildren(doc, _, nil) = nil
+	| parseChildren(doc, sigDoc, c::cr) =
+	  if (c/>getType) = TEXT_NODE then parseChildren(doc, sigDoc, cr)
+	  else if (c/>name) = "child" then
+	      let
+		  val wp = skipTextNodes (c/>children)
+		  val (child,next) =
+		      case wp of
+			  (w::wr) where ((w/>name)="widget") =>
+			  (parseWidget(doc, sigDoc, w), wr)
+			| (w::wr) where ((w/>name)="placeholder") =>
+			  ("placeholder", wr)
+			| _ => raise ParseError
+					 "widget or placeholder expected"
+		  val wp = skipTextNodes next
+		  val packing =
+		      case wp of
+			  (w::wr) where ((w/>name)="packing") =>
+			  let
+			      val (_,props) = parseProperties(doc, w/>children, nil)
+			  in
+			      case props of
+				  (p::pr) => props
+				| nil   =>
+				  raise
+				    ParseError "packing needs at least one property"
+			  end
+			| nil => nil
+			| _ => raise ParseError "packing or nothing expected"
+	      in
+		  case child of
+		      "placeholder" => parseChildren(doc, sigDoc, cr)
+		    | _ => (child, packing)::parseChildren(doc, sigDoc, cr)
+	      end
+	  else raise ParseError "'child' expected"
+
+      fun parseWidgets(doc, _, nil) = nil
+	| parseWidgets(doc, sigDoc, r::rr) =
+	  if (r/>getType) = TEXT_NODE then parseWidgets(doc, sigDoc, rr)
+	  else if (r/>name) = "widget" then
+	      parseWidget(doc,sigDoc,r)::parseWidgets(doc,sigDoc,rr)
+	  else raise ParseError ("'widget' required, "^(r/>name)^" found")
+
+      fun parseInterface(doc,sigDoc,root) =
+	  if (root/>name) = "glade-interface" then
+	      let
+		  val next = parseRequires(doc, root/>children)
+	      in
+		  preamble(doc);
+		  preambleStruct(doc);
+		  outputHelpers doc;
+		  preamble(sigDoc);
+		  preambleIncl(sigDoc,
+			       getStructureName doc,
+			       getFileName doc);
+		  preambleFunct(sigDoc);
+		  ignore (parseWidgets(doc, sigDoc, next));
+		  postambleStruct(doc);
+		  postambleFunct(sigDoc)
+	      end
+	  else raise ParseError "'glade-interface' expected"
+
+      fun parse(gladeFile, doc, sigDoc) =
+	  let
+	      val xml = AliceXML.parse gladeFile
+	  in
+	      parseInterface(doc, sigDoc, xml)
+	  end
+  end
