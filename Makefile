@@ -250,7 +250,9 @@ libs-seam:
 	(cd tools/lex && make all && make install) || exit 1 ;\
 	(cd lib/sqlite && make depend) || exit 1 ;\
 	(cd lib/sqlite && make all install SQLITEDIR=$(SQLITEDIR)) || exit 1 ;\
-	(cd lib/xml && make all install LIBXMLDIR=$(LIBXMLDIR)) || exit 1
+	(cd lib/xml && make all install LIBXMLDIR=$(LIBXMLDIR)) || exit 1 ;\
+	(cd tools/glade && make depend) || exit 1 ;\
+	(cd tools/glade && make all install) || exit 1
 
 ##
 ## Build Seam
