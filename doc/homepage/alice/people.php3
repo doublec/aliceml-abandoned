@@ -24,17 +24,24 @@
   </P>
 
   <UL>
-    <LI> <A HREF="http://www.ps.uni-sb.de/~gesc/">
-	 Gerhard Schneider</A> </LI>
-    <LI> <A HREF="http://fsinfo.cs.uni-sb.de/~jan/">
-	 Jan Schwinghammer</A> </LI>
+    <LI> <A HREF="/~jan/">Jan Schwinghammer</A> </LI>
+    <LI> <A href="/~augustin/">Andreas Augustin</A> </LI>
+    <LI> <A href="/~lux/">Julia Luxenburger</A> </LI>
+    <LI> <A href="/~pinkel/">Simon Pinkel</A> </LI>
+    <LI> <A href="/~staab/">Eugen Staab</A> </LI>
+    <LI> <A HREF="http://www.czy.de/">Gerhard Schneider</A> (formerly)</LI>
   </UL>
 
 
 <?php section("contact", "contact") ?>
 
   <P>
-    Please send bug reports and other comments to:
+    You can submit bug reports by using our Bugzilla
+    <A href="bugzilla/">bug tracking system</A>.
+  </P>
+
+  <P>
+    Please send other comments to:
   </P>
 
   <UL>
