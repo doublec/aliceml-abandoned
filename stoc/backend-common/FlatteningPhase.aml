@@ -599,32 +599,42 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 	  | derec (pat, _) =
 	    Error.error (infoPat pat, "pattern never matches")
 
-	fun simplifyDec (ValDec (coord, VarPat (_, id), exp)) =
+	fun simplifyDecs (ValDec (coord, VarPat (_, id), exp)::decr) =
 	    (* this is needed to end recursion with introduced WithPats *)
-	    O.OneDec (coord, id, simplifyExp exp)
-	  | simplifyDec (ValDec (coord, pat, exp)) =
+	    O.OneDec (coord, id, simplifyExp exp)::simplifyDecs decr
+	  | simplifyDecs (ValDec (coord, pat, exp)::decr) =
 	    let
 		val ids = patternVariablesOf pat
 		val decExp = O.DecExp (coord, ids)
 		val matches = [(coord, pat, decExp)]
 	    in
 		O.ValDec (coord, ids,
-			  simplifyCase (coord, exp, matches, longid_Bind))
+			  simplifyCase (coord, exp, matches, longid_Bind))::
+		simplifyDecs decr
 	    end
-	  | simplifyDec (RecDec (coord, decs)) =
+	  | simplifyDecs (RecDec (coord, decs)::decr) =
 	    let
+		fun simplifyCon decs =
+		    simplifyDecs
+		    (List.filter (fn dec =>
+				  case dec of
+				      ConDec (_, _, _) => true
+				    | _ => false) decs)
 		fun simplifyRec (ValDec (_, pat, exp), rest) =
 		    derec (pat, exp) @ rest
-		  | simplifyRec (_, _) =
-		    Crash.crash "MatchCompilationPhase.simplifyDec"
+		  | simplifyRec (RecDec (_, decs), rest) =
+		    List.foldr simplifyRec rest decs
+		  | simplifyRec (ConDec (_, _, _), rest) = rest
 		val idsExpList =
 		    List.map (fn (ids, exp) => (ids, simplifyExp exp))
 		    (List.foldr simplifyRec nil decs)
 	    in
-		O.RecDec (coord, idsExpList)
+		simplifyCon decs @
+		O.RecDec (coord, idsExpList)::simplifyDecs decr
 	    end
-	  | simplifyDec (ConDec (coord, id, hasArgs)) =
-	    O.ConDec (coord, id, hasArgs)
+	  | simplifyDecs (ConDec (coord, id, hasArgs)::decr) =
+	    O.ConDec (coord, id, hasArgs)::simplifyDecs decr
+	  | simplifyDecs nil = nil
 	and simplifyTerm (VarExp (_, longid)) = (NONE, longid)
 	  | simplifyTerm exp =
 	    let
@@ -733,7 +743,7 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 		O.HandleExp (coord, simplifyExp exp, id, simplifyExp exp')
 	    end
 	  | simplifyExp (LetExp (coord, decs, exp)) =
-	    O.LetExp (coord, List.map simplifyDec decs, simplifyExp exp)
+	    O.LetExp (coord, simplifyDecs decs, simplifyExp exp)
 	and simplifyIf (AndExp (_, exp1, exp2), thenExp, elseExp) =
 	    let
 		val elseExp' = share elseExp
@@ -835,8 +845,8 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 	    let
 		val subst = mappingsToSubst (mapping0, mapping)
 		val decs' =
-		    List.map (fn dec => simplifyDec (substDec (dec, subst)))
-		    decs
+		    simplifyDecs
+		    (List.map (fn dec => substDec (dec, subst)) decs)
 		val thenExp = simplifyGraph (thenGraph, mapping)
 	    in
 		O.LetExp (coord, decs', thenExp)
@@ -899,5 +909,5 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 	  | simplifyTest ((GuardTest (_, _) | DecTest (_, _, _)), _, _) =
 	    Crash.crash "MatchCompilationPhase.simplifyTest"
 
-	fun simplify (decs, ids) = (List.map simplifyDec decs, ids)
+	fun simplify (decs, ids) = (simplifyDecs decs, ids)
     end
