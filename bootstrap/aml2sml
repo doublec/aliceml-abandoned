@@ -6,9 +6,9 @@ then
     exit 2
 fi
 
-infile=$1
-outdir=`dirname $1`/NJ
-outfile=$outdir/`basename $1 .aml`.sml
+infile=`echo $1 | tr '\\\\' /`
+outdir=`dirname $infile`/NJ
+outfile=$outdir/`basename $infile .aml`.sml
 
 if [ ! -d $outdir ]
 then mkdir $outdir
