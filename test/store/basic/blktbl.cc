@@ -27,6 +27,10 @@ static Chunk *AllocChunk(char *s) {
   return c;
 }
 
+static void ShowItems(word key, word) {
+  fprintf(stderr, "Dict Key %x\n", key);
+}
+
 int main(void) {
   u_int memLimits[STORE_GENERATION_NUM];
   Chunk *k1, *k2;
@@ -65,6 +69,9 @@ int main(void) {
   table = BlockHashTable::FromWordDirect(r->GetArg(2));
   std::fprintf(stderr, "Key %p\n", r->GetArg(0));
   std::fprintf(stderr, "Key %p\n", r->GetArg(1));
+  std::fprintf(stderr, "Dictionary Keys\n");
+  table->Apply((item_apply) ShowItems);
+  std::fprintf(stderr, "---\n");
   if (table->IsMember(r->GetArg(0)) && table->IsMember(r->GetArg(1)))
     std::fprintf(stderr, "BlockHashTable succeeded\n");
   else
@@ -72,7 +79,7 @@ int main(void) {
   std::fprintf(stderr, "Elem k1 = %d\n",
 	       Store::DirectWordToInt(table->GetItem(r->GetArg(0))));
   std::fprintf(stderr, "Elem k2 = %d\n",
-	       Store::DirectWordToInt(table->GetItem(r->GetArg(0))));
+	       Store::DirectWordToInt(table->GetItem(r->GetArg(1))));
   std::printf("Forcing GC again...\n");
   Store::ForceGC(root, 0);
   std::printf("done\n");
