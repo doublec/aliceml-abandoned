@@ -10,13 +10,15 @@
  *   $Revision$
  *)
 
-import structure Assert  from "../utility/Assert"
-import structure Name    from "Name"
-import structure Label   from "Label"
-import structure Path    from "Path"
-import structure PathSet from "PathSet"
-import structure PathMap from "PathMap"
-import signature TYPE    from "TYPE-sig"
+import structure Assert   from "../utility/Assert"
+import functor   MkStamp  from "../utility/MkStamp"
+import functor   MkRefMap from "../utility/MkRefMap"
+import structure Name     from "Name"
+import structure Label    from "Label"
+import structure Path     from "Path"
+import structure PathSet  from "PathSet"
+import structure PathMap  from "PathMap"
+import signature TYPE     from "TYPE-sig"
 
 
 (*******************************************************************************
@@ -97,10 +99,12 @@ type term as well as to the reduced/substituted one.
 
 *******************************************************************************)
 
-structure TypePrivate =
+structure Type :> TYPE =
 struct
 
   (* Types *)
+
+    structure Stamp = MkStamp()
 
     datatype sort = OPEN | CLOSED
     datatype kind = STAR | ARROW of kind * kind		(* [kappa,k] *)
@@ -112,7 +116,6 @@ struct
     datatype typ' =					(* [tau',t'] *)
 	  HOLE   of kind * int	(* variable for inference *)
 	| LINK   of typ		(* forward (needed for unification) *)
-	| MARK   of typ'	(* for traversal *)
 	| FUN    of typ * typ	(* arrow type *)
 	| TUPLE  of typ vector	(* tuple *)
 	| PROD   of row		(* record *)
@@ -131,13 +134,15 @@ struct
 	| RHO   of int ref * row
 	| FIELD of lab * typ * row
 
-    withtype typ = typ' ref				(* [tau,t] *)
-    and      var = typ' ref				(* [alpha,a] *)
+    withtype typ = (typ' * Stamp.t) ref			(* [tau,t] *)
+    and      var = (typ' * Stamp.t) ref			(* [alpha,a] *)
 
     type t = typ
+    type canonical_typ = typ
 
     type path_rea = path PathMap.t
     type typ_rea  = typ PathMap.t
+
 
     (*
      * We establish the following invariants:
@@ -148,22 +153,14 @@ struct
      *)
 
 
-(*DEBUG*)
-    fun pr(FUN _)	= "ARROW"
-      | pr(TUPLE _)	= "TUPLE"
-      | pr(PROD _)	= "PROD"
-      | pr(SUM _)	= "SUM"
-      | pr(CON _)	= "CON"
-      | pr(VAR _)	= "VAR"
-      | pr(ALL _)	= "ALL"
-      | pr(EXIST _)	= "EXIST"
-      | pr(LAMBDA _)	= "LAMBDA"
-      | pr(APPLY _)	= "APPLY"
-      | pr(MU _)	= "MU"
-      | pr(LINK _)	= "LINK"
-      | pr(MARK _)	= "MARK"
-      | pr(HOLE _)	= "HOLE"
-      | pr(ABBREV _)	= "ABBREV"
+  (* Very basic helpers *)
+
+    fun new t'				= ref(t', Stamp.new())
+    fun typ'(ref(t',_))			= t'
+    fun replace(t as ref(_,z), t')	= t := (t',z)
+
+    val same				= op=
+    fun hash(ref(_,z))			= Stamp.hash z
 
 
   (* Level management *)
@@ -190,8 +187,7 @@ struct
       | ranKind STAR		= raise Kind
 
 
-    fun kind(ref t')		= kind' t'
-
+    fun kind t			= kind'(typ' t)
     and kind'(LINK t | MU t)	= kind t
       | kind'(ABBREV(_,t))	= kind t
       | kind'(HOLE(k,_))	= k
@@ -199,13 +195,16 @@ struct
       | kind'(CON(k,_,_))	= k
       | kind'(LAMBDA(a,t))	= ARROW(kind a, kind t)
       | kind'(APPLY(t1,t2))	= ranKind(kind t1)
-      | kind'(MARK t')		= kind' t'
       | kind' _			= STAR
 
     val kindVar			= kind
 
 
   (* Type graph traversal *)
+
+    structure Map = MkRefMap(structure Stamp = Stamp
+			     type t          = typ' * Stamp.t
+			     val stamp       = #2 : 'a * 'b -> 'b)
 
     (* We have two ways to traverse types:
      * - ignoring abbreviations (eg. for closure check)
@@ -226,7 +225,6 @@ struct
       | app1'(( TUPLE ts ), f, b)	= Vector.app f ts
       | app1'(( PROD r
 	      | SUM r ), f, b)		= appRow(r,f)
-      | app1'(( MARK _ ), f, b)		= raise Assert.failure
 
     and appRow(FIELD(_,t,r), f)		= (f t ; appRow(r,f))
       | appRow(RHO(_,r), f)		= appRow(r,f)
@@ -247,103 +245,97 @@ struct
       | foldl1'(( TUPLE ts ), f,c,b)	= Vector.foldl f c ts
       | foldl1'(( PROD r
 		| SUM r ), f,c,b)	= foldlRow(r,f,c)
-      | foldl1'(( MARK _ ), f,c,b)	= raise Assert.failure
 
     and foldlRow(FIELD(_,t,r), f,c)	= foldlRow(r, f, f(t,c))
       | foldlRow(RHO(_,r), f,c)		= foldlRow(r, f, c)
       | foldlRow(NIL, f,c)		= c
 
-
-    fun unmark(t as ref(MARK t')) 	=
-(*ASSERT				  assert t' of non MARK _ => *)
-					  ( t := t' ; app1'(t', unmark, true) )
-      | unmark _	            	= ()
-
-
-    fun appHow b f t =
+    fun appHow(b,f,t) =
 	let
-	    fun app(ref(MARK _)) = ()
-	      | app t =
-		let
-		    val _  = f t
-		    val t' = !t
-		    val _  = t := MARK t'
-		in
-		    app1'(t',app,b)
-		end
+	    val m = Map.new()
+
+	    fun app t = if Map.member(m,t) then () else
+			( f t;
+			  Map.insert(m,t,());
+			  app1'(typ' t, app, b)
+			)
 	in
-	    app t before unmark t handle e => ( unmark t ; raise e )
+	    app t
 	end
 
-    fun app f		= appHow true f
-    fun appNoAbbrevs f	= appHow false f
+    fun app f t          = appHow(true, f, t)
+    fun appNoAbbrevs f t = appHow(false, f, t)
 
-    fun foldlHow b f c t =
+    fun foldlHow(b,f,c,t) =
 	let
-	    fun fold(ref(MARK _), c) = c
-	      | fold(t, c) =
-		let
-		    val c' = f(t,c)
-		    val t' = !t
-		    val _  = t := MARK t'
-		in
-		    foldl1'(t',fold,c',b)
-		end
+	    val m = Map.new()
+
+	    fun fold(t,c) = if Map.member(m,t) then c else
+			    let
+				val c' = f(t,c)
+			    in
+				Map.insert(m,t,());
+				foldl1'(typ' t, fold, c', b)
+			    end
 	in
-	    fold(t,c) before unmark t handle e => ( unmark t ; raise e )
+	    fold(t,c)
 	end
 
-    fun foldl f		= foldlHow true f
-    fun foldlNoAbbrevs f= foldlHow false f
+    fun foldl f b t          = foldlHow(true, f, b, t)
+    fun foldlNoAbbrevs f b t = foldlHow(false, f, b, t)
 
 
   (* Cloning *)
 
-    fun clone t =
+    type clone_state   = typ Map.t
+
+    fun cloneStart()   = Map.new()
+    fun cloneFinish _  = ()
+    fun cloneCont(m,t) =
 	let
 	    (* We want to be able to handle recursive types, so we have to
 	     * implement graph copying here.
 	     *)
 
-	    val trail = ref []
-
-	    fun dupBound(t1 as ref t1') =
-(*ASSERT	assert case t1' of VAR _ => true | _ => false *)
-		if case t1' of VAR _ => false | _ => true
-		then raise Assert.failure else
+	    fun dup t1 =
+(*ASSERT	assert not(Map.member(m,t1)) *)
+		if Map.member(m,t1) then raise Assert.failure else
+		(* Without cycles, this could be
 		let
-		    val _   = trail := (t1,t1') :: !trail
-		    val t2  = ref(MARK t1')
-		    val _   = t1 := LINK t2
+		    val t2 = new(clone'(typ' t1'))
 		in
+		    Map.insert(m,t1,t2);
+		    t2
+		end
+		*)
+		let
+		    val t1' = typ' t1
+		    val t2  = new t1'
+		in
+		    Map.insert(m,t1,t2);
+		    replace(t2, clone' t1');
 		    t2
 		end
 
-	    fun dup(t1 as ref t1') =
-		let
-		    val _   = trail := (t1,t1') :: !trail
-		    val t2  = ref(MARK t1')
-		    val _   = t1 := LINK t2
-		    val t2' = MARK(clone' t1')
-		    val _   = t2 := t2'
-		in
-		    t2
-		end
-
-	    and clone(ref(LINK t))	= clone t
-	      | clone(t as ref(MARK _
-			      |VAR _
-			      |HOLE _))	= t
-	      | clone t			= dup t
+	    and clone t1 =
+		case typ' t1
+		  of LINK t  => clone t
+		   | HOLE _  => t1
+		   | VAR _   => Option.getOpt(Map.lookup(m,t1), t1)
+		   | _       =>
+		case Map.lookup(m,t1)
+		  of SOME t2 => t2
+		   | NONE    => dup t1
 
 	    and clone'(FUN(t1,t2))	= FUN(clone t1, clone t2)
 	      | clone'(TUPLE ts)	= TUPLE(Vector.map clone ts)
 	      | clone'(PROD r)		= PROD(cloneRow r)
 	      | clone'(SUM r)		= SUM(cloneRow r)
-	      | clone'(CON c)		= CON c
-	      | clone'(ALL(a,t))	= ALL(dupBound a, clone t)
-	      | clone'(EXIST(a,t))	= EXIST(dupBound a, clone t)
-	      | clone'(LAMBDA(a,t))	= LAMBDA(dupBound a, clone t)
+	      | clone'(t' as ( CON _
+	      		     | VAR _ ))	= t'
+	      | clone'(ALL(a,t))	= ALL(dup a, clone t)
+	      | clone'(EXIST(a,t))	= EXIST(dup a, clone t)
+	      | clone'(LAMBDA(a,t))	= LAMBDA(dup a, clone t)
 	      | clone'(APPLY(t1,t2))	= APPLY(clone t1, clone t2)
 	      | clone'(MU t)		= MU(clone t)
 	      | clone'(ABBREV(t1,t2))	= ABBREV(clone t1, clone t2)
@@ -352,78 +344,11 @@ struct
 	    and cloneRow(FIELD(a,t,r))	= FIELD(a, clone t, cloneRow r)
 	      | cloneRow(RHO(n,r))	= RHO(ref(!n), cloneRow r)
 	      | cloneRow(NIL)		= NIL
-
-	    val t2 = clone t
 	in
-	    List.app op:= (!trail) ;
-	    unmark t2 ;
-	    t2
+	    clone t
 	end
 
-
-  (* Continuous cloning *)
-
-    type clone_state = { trail: (typ * typ') list ref, typs: typ list ref }
-
-    fun cloneStart() = {trail = ref [], typs = ref []} : clone_state
-    fun cloneFinish({trail,typs} : clone_state) = 
-	( List.app op:= (!trail)
-	; List.app unmark (!typs)
-	)
-
-    fun cloneCont {trail,typs} t =
-	let
-	    fun dupBound(t1 as ref t1') =
-(*ASSERT	assert case t1' of VAR _ => true | _ => false *)
-		if case t1' of VAR _ => false | _ => true
-		then raise Assert.failure else
-		let
-		    val _   = trail := (t1,t1') :: !trail
-		    val t2  = ref(MARK t1')
-		    val _   = t1 := LINK t2
-		in
-		    t2
-		end
-
-	    fun dup(t1 as ref t1') =
-		let
-		    val _   = trail := (t1,t1') :: !trail
-		    val t2  = ref(MARK t1')
-		    val _   = t1 := LINK t2
-		    val t2' = MARK(clone' t1')
-		    val _   = t2 := t2'
-		in
-		    t2
-		end
-
-	    and clone(ref(LINK t))	= clone t
-	      | clone(t as ref(MARK _
-			      |VAR _
-			      |HOLE _))	= t
-	      | clone t			= dup t
-
-	    and clone'(FUN(t1,t2))	= FUN(clone t1, clone t2)
-	      | clone'(TUPLE ts)	= TUPLE(Vector.map clone ts)
-	      | clone'(PROD r)		= PROD(cloneRow r)
-	      | clone'(SUM r)		= SUM(cloneRow r)
-	      | clone'(CON c)		= CON c
-	      | clone'(ALL(a,t))	= ALL(dupBound a, clone t)
-	      | clone'(EXIST(a,t))	= EXIST(dupBound a, clone t)
-	      | clone'(LAMBDA(a,t))	= LAMBDA(dupBound a, clone t)
-	      | clone'(APPLY(t1,t2))	= APPLY(clone t1, clone t2)
-	      | clone'(MU t)		= MU(clone t)
-	      | clone'(ABBREV(t1,t2))	= ABBREV(clone t1, clone t2)
-	      | clone' _		= raise Assert.failure
-
-	    and cloneRow(FIELD(a,t,r))	= FIELD(a, clone t, cloneRow r)
-	      | cloneRow(RHO(n,r))	= RHO(ref(!n), cloneRow r)
-	      | cloneRow(NIL)		= NIL
-
-	    val t2 = clone t
-	in
-	    typs := t2 :: !typs ;
-	    t2
-	end
+    fun clone t = cloneCont(cloneStart(), t)
 
 
   (* Occur check (not used by unification) *)
@@ -442,38 +367,30 @@ struct
 
     (*UNFINISHED: avoid multiple cloning of curried lambdas somehow *)
 
-    fun reduce(t as ref(APPLY(t1,t2))) =
-	let
-	    fun reduceApply(t1 as ref(LAMBDA(a,_)), to) =
-		( t := HOLE(kind a, !level)
-		; case !(clone t1)
-		    of LAMBDA(a,t11) =>
-			( a := LINK t2
-			; t := (case to
-				  of NONE   => LINK t11
-				   | SOME t => ABBREV(ref(APPLY(t,t2)), t11) )
-			; reduce t
-			)
-		    | _ => raise Assert.failure
-		)
-	      | reduceApply(ref(LINK t1), to) =
-		    reduceApply(t1, to)
+    fun reduce t =
+	case typ' t
+	  of APPLY(t1,t2)		=> reduceApply(t, t1, t2, NONE)
+	   | (LINK t1 | ABBREV(_,t1))	=> reduce t1
+	   | _				=> ()
 
-	      | reduceApply(ref(ABBREV(t11,t12)), to) =
-		    reduceApply(t12, SOME(Option.getOpt(to,t11)))
-	      (*
-	      | reduceApply(ref(MU t11), to) =
-		    reduceApply(t11, to)
-	      *)
-	      | reduceApply _ = ()
-	in
-	    reduceApply(t1, NONE)
-	end
-
-      | reduce(ref(LINK t | ABBREV(_,t))) = reduce t
-
-      | reduce _ = ()
-
+    and reduceApply(t, t1, t2, to) =
+	case typ' t1
+	  of LAMBDA(a,_) =>
+	     ( replace(t, HOLE(kind a, !level))
+	     ; case typ'(clone t1)
+		 of LAMBDA(a,t11) =>
+		     ( replace(a, LINK t2)
+		     ; replace(t, case to
+				    of NONE   => LINK t11
+				     | SOME t => ABBREV(new(APPLY(t,t2)), t11))
+		     ; reduce t
+		     )
+		  | _ => raise Assert.failure
+	     )
+	   | LINK t1		=> reduceApply(t, t1, t2, to)
+	   | ABBREV(t11,t12)	=> reduceApply(t, t12, t2,
+					       SOME(Option.getOpt(to,t11)))
+	   | _			=> ()
 
     (*
      * We don't normally do eta-reduction, since it is expensive.
@@ -482,63 +399,57 @@ struct
      * eta-convertible type functions. It's done on demand.
      *)
 
-    fun reduceEta t = reduceEta2(t, false)
-    and reduceEta2(t as ref(LAMBDA _), modified) =
-	let
-	    fun reduceLambda(ref(LAMBDA(a,t1)), vs) =
-		    reduceLambda(t1, a::vs)
+    fun reduceEta t = reduceEta'(t, false)
 
-	      | reduceLambda(ref(APPLY(t1,t2)), a::vs) =
-		    reduceLambda'(t1, t2, a, vs)
+    and reduceEta'(t, modified) =
+	case typ' t
+	  of (LINK t1 | ABBREV(_,t1))	=> reduceEta'(t1, modified)
+	   | LAMBDA _			=> reduceLambda(t, t, [], modified)
+	   | _				=> modified
 
-	      | reduceLambda(t1, []) =
-		    ( t := LINK t1 ; reduceEta2(t1, true) )
+    and reduceLambda(t, t0, vs, modified) =
+	case (typ' t0, vs)
+	  of ((LINK t1 | ABBREV(_,t1)), vs)
+	   				=> reduceLambda(t, t1, vs, modified)
+	   | (LAMBDA(a,t1), vs)		=> reduceLambda(t, t1, a::vs, modified)
+	   | (APPLY(t1,t2), a::vs)	=> reduceLambda'(t,t1,t2,a,vs,modified)
+	   | (_, [])			=> ( replace(t, LINK t0);
+					     reduceEta'(t, true) )
+	   | _				=> modified
 
-	      | reduceLambda(ref(LINK t1), vs) =
-		    reduceLambda(t1, vs)
+    and reduceLambda'(t, t1, t2, a, vs, modified) =
+	case typ' t2
+	  of (LINK t21 | ABBREV(_,t21))	=> reduceLambda'(t,t1,t21,a,vs,modified)
+	   | _				=> reduceLambda''(t,t1,t2,a,vs,modified)
 
-	      | reduceLambda(ref(ABBREV(t1,t2)), vs) =
-		    reduceLambda(t2, vs)
+    and reduceLambda''(t, t1, t2, a, vs, modified) =
+	case typ' a
+	  of LINK b 			=> reduceLambda''(t,t1,t2,b,vs,modified)
+	   | _       			=> if t2 = a andalso not(occurs(a,t1))
+					   then reduceLambda(t,t1, vs, modified)
+					   else modified
 
-	      | reduceLambda _ = modified
-
-	    and reduceLambda'(t1, ref(LINK t2), a, vs) =
-		    reduceLambda'(t1,t2,a,vs)
-	      | reduceLambda'(t1, t2, ref(LINK a), vs) =
-		    reduceLambda'(t1,t2,a,vs)
-	      | reduceLambda'(t1, t2, a, vs) =
-		if t2 = a andalso not(occurs(a,t1)) then
-		    reduceLambda(t1, vs)
-		else
-		    modified
-	in
-	    reduceLambda(t, [])
-	end
-
-      | reduceEta2(ref(LINK t), modified) = reduceEta2(t, modified)
-
-      | reduceEta2(t, modified) = modified
 
 
   (* Creation and injections *)
 
     fun unknown' k	= HOLE(k, !level)
-    fun unknown k	= ref(unknown' k)
+    fun unknown k	= new(unknown' k)
 
-    fun inArrow tt	= ref(FUN tt)
-    fun inTuple ts	= ref(TUPLE ts)
-    fun inProd r	= ref(PROD r)
-    fun inSum r		= ref(SUM r)
+    fun inArrow tt	= new(FUN tt)
+    fun inTuple ts	= new(TUPLE ts)
+    fun inProd r	= new(PROD r)
+    fun inSum r		= new(SUM r)
     fun inVar a		= a
-    fun inCon c		= ref(CON c)
-    fun inAll at	= ref(ALL at)
-    fun inExist at	= ref(EXIST at)
-    fun inLambda at	= ref(LAMBDA at)
-    fun inApply(t1,t2)	= let val t = ref(APPLY(t1,t2)) in reduce t ; t end
-    fun inMu t		= ref(MU t)
-    fun inAbbrev(t1,t2)	= ref(ABBREV(t1,t2))
+    fun inCon c		= new(CON c)
+    fun inAll at	= new(ALL at)
+    fun inExist at	= new(EXIST at)
+    fun inLambda at	= new(LAMBDA at)
+    fun inApply(t1,t2)	= let val t = new(APPLY(t1,t2)) in reduce t ; t end
+    fun inMu t		= new(MU t)
+    fun inAbbrev(t1,t2)	= new(ABBREV(t1,t2))
 
-    fun var k		= ref(VAR(k, !level))
+    fun var k		= new(VAR(k, !level))
 
 
   (* Operations on rows *)
@@ -579,9 +490,9 @@ struct
 					      rowToTup'(r,i+1,t::ts)
 					  ) handle Overflow => raise Row
 
-    fun isTupRow r			= (rowToTup r;true) handle Row => false
+    fun isTupRow r			= (rowToTup r; true) handle Row => false
 
-    fun isEmptyRow(NIL | RHO _)		= true
+    fun isEmptyRow(NIL | RHO(_,NIL))	= true
       | isEmptyRow _			= false
 
     fun isUnknownRow(RHO _)		= true
@@ -607,18 +518,24 @@ struct
 
     exception Type
 
-    fun isAbbrev(ref(LINK t))			= isAbbrev t
-      | isAbbrev(ref(ABBREV _))			= true
-      | isAbbrev _				= false
-    fun asAbbrev(ref(LINK t))			= asAbbrev t
-      | asAbbrev(ref(ABBREV tt))		= tt
-      | asAbbrev _				= raise Type
+    fun canonical(ref(LINK t,_))	= canonical t
+      | canonical t			= t
 
-    fun asType(ref(LINK t))			= asType t
-      | asType(ref(ABBREV(_,t)))		= asType t
-      | asType(t as ref(t' as LAMBDA _))	= if reduceEta t then asType t
-								 else t'
-      | asType(ref t')				= t'
+    fun isAbbrev t			= isAbbrev'(typ' t)
+    and isAbbrev'(LINK t)		= isAbbrev t
+      | isAbbrev'(ABBREV _)		= true
+      | isAbbrev' _			= false
+
+    fun asAbbrev t			= asAbbrev'(typ' t)
+    and asAbbrev'(LINK t)		= asAbbrev t
+      | asAbbrev'(ABBREV tt)		= tt
+      | asAbbrev' _			= raise Type
+
+    fun asType t =
+	case typ' t
+	  of (LINK t | ABBREV(_,t))	=> asType t
+	   | t' as LAMBDA _		=> if reduceEta t then asType t else t'
+	   | t'				=> t'
 
     fun isUnknown t	= case asType t of HOLE _   => true | _ => false
     fun isArrow t	= case asType t of FUN _    => true | _ => false
@@ -650,78 +567,85 @@ struct
     fun asApply t	= case asType t of APPLY tt  => tt | _ => raise Type
     fun asMu t		= case asType t of MU t      => t  | _ => raise Type
 
-    fun isType'(ref(LINK t))			= isType' t
-      | isType'(ref(ABBREV(_,t)))		= isType' t
-      | isType'(t as ref(APPLY _))		= isTypeApply'(t,0)
-      | isType'(ref(MU t))			= isType' t
-      | isType'(t as ref(t' as LAMBDA _))	= if reduceEta t then isType' t
-								 else t'
-      | isType'(ref t')				= t'
-    and isTypeApply'(ref(LINK t1 | MU t1), n)	= isTypeApply''(t1,n)
-      | isTypeApply'(ref(APPLY(t1,t2)), n)	= isTypeApply'(t1,n+1)
-      | isTypeApply'(ref(ABBREV(t1,t2)), n)	= isTypeApply'(t2,n)
-      | isTypeApply'(t, n)			= APPLY(t,t)	(*dummy*)
-    and isTypeApply''(ref(LINK t1 | MU t1), n)	= isTypeApply''(t1,n)
-      | isTypeApply''(ref(ABBREV(t1,t2)), n)	= isTypeApply''(t2,n)
-      | isTypeApply''(ref t', 0)		= t'
-      | isTypeApply''(ref(LAMBDA(a,t1)), n)	= isTypeApply''(t1,n-1)
-      | isTypeApply''(t, n)			= APPLY(t,t)	(*dummy*)
+    fun isType t =
+	case typ' t
+	  of (LINK t1 | MU t1 | ABBREV(_,t1))
+				=> isType t1
+	   | APPLY _		=> isTypeApply(t,0)
+	   | t' as LAMBDA _	=> if reduceEta t then isType t else t'
+	   | t'			=> t'
+    and isTypeApply(t, n) =
+	case typ' t
+	  of (LINK t1 | MU t1)	=> isTypeFunc(t1,n)
+	   | APPLY(t1,t2)	=> isTypeApply(t1,n+1)
+	   | ABBREV(t1,t2)	=> isTypeApply(t2,n)
+	   | _			=> APPLY(t,t)	(*dummy*)
+    and isTypeFunc(t, 0) = typ' t
+      | isTypeFunc(t, n) =
+	case typ' t
+	  of (LINK t1 | MU t1)	=> isTypeFunc(t1,n)
+	   | ABBREV(t1,t2)	=> isTypeFunc(t2,n)
+	   | LAMBDA(a,t1)	=> isTypeFunc(t1,n-1)
+	   | _			=> APPLY(t,t)	(*dummy*)
 
-    fun isUnknown' t	= case isType' t of HOLE _   => true | _ => false
-    fun isArrow' t	= case isType' t of FUN _    => true | _ => false
-    fun isTuple' t	= case isType' t of PROD r   => isTupRow r
-					  | TUPLE _  => true | _ => false
-    fun isProd' t	= case isType' t of PROD _   => true
-					  | TUPLE _  => true | _ => false
-    fun isSum' t	= case isType' t of SUM _    => true | _ => false
-    fun isVar' t	= case isType' t of VAR _    => true | _ => false
-    fun isCon' t	= case isType' t of CON _    => true | _ => false
-    fun isAll' t	= case isType' t of ALL _    => true | _ => false
-    fun isExist' t	= case isType' t of EXIST _  => true | _ => false
-    fun isLambda' t	= case isType' t of LAMBDA _ => true | _ => false
-    fun isApply' t	= case isType' t of APPLY _  => true | _ => false
+    fun isUnknown' t	= case isType t of HOLE _   => true | _ => false
+    fun isArrow' t	= case isType t of FUN _    => true | _ => false
+    fun isTuple' t	= case isType t of PROD r   => isTupRow r
+					 | TUPLE _  => true | _ => false
+    fun isProd' t	= case isType t of PROD _   => true
+					 | TUPLE _  => true | _ => false
+    fun isSum' t	= case isType t of SUM _    => true | _ => false
+    fun isVar' t	= case isType t of VAR _    => true | _ => false
+    fun isCon' t	= case isType t of CON _    => true | _ => false
+    fun isAll' t	= case isType t of ALL _    => true | _ => false
+    fun isExist' t	= case isType t of EXIST _  => true | _ => false
+    fun isLambda' t	= case isType t of LAMBDA _ => true | _ => false
+    fun isApply' t	= case isType t of APPLY _  => true | _ => false
 
-    fun asType'(ref(LINK t))			= asType' t
-      | asType'(ref(ABBREV(_,t)))		= asType' t
-      | asType'(t as ref(t' as APPLY _))	= asTypeApply'(t',t,[])
-      | asType'(ref(MU t))			= asType' t
-      | asType'(t as ref(t' as LAMBDA _))	= if reduceEta t then asType' t
-								 else t'
-      | asType'(ref t')				= t'
+    fun asType t =
+	case typ' t
+	  of (LINK t1 | MU t1 | ABBREV(_,t1))
+					=> asType t1
+	   | t' as APPLY _		=> asTypeApply(t',t,[])
+	   | t' as LAMBDA _		=> if reduceEta t then asType t else t'
+	   | t'				=> t'
     (* Note that we can only legally have a LAMBDA node following an APPLY
        node if there is a MU node inbetween. *)
-    and asTypeApply'(t', ref(LINK t1), ts)	= asTypeApply'(t', t1, ts)
-      | asTypeApply'(t', ref(APPLY(t1,t2)), ts)	= asTypeApply'(t', t1, t2::ts)
-      | asTypeApply'(t', ref(ABBREV(t1,t2)),ts)	= asTypeApply'(t', t2, ts)
-      | asTypeApply'(t', t as ref(MU _), ts)	=
-	let (* unroll *)
-	    val tt = clone t
-	    val t1 = asMu tt
-	in
-	    tt := LINK t; asTypeApply''(t1, ts)
-	end
-      | asTypeApply'(t', _, _)			= t'
-    and asTypeApply''(ref(LINK t1 | MU t1), ts)	= asTypeApply''(t1,ts)
-      | asTypeApply''(ref(ABBREV(t1,t2)), ts)	= asTypeApply''(t2,ts)
-      | asTypeApply''(ref(LAMBDA(a,t1)), t::ts)	= (a := LINK t ;
-						   asTypeApply''(t1, ts))
-      | asTypeApply''(t1, t::ts)		= asTypeApply''
-							(ref(APPLY(t1,t)), ts)
-      | asTypeApply''(ref t', [])		= t'
+    and asTypeApply(t', t, ts) =
+	case typ' t
+	  of (LINK t1 | ABBREV(_,t1))	=> asTypeApply(t', t1, ts)
+	   | APPLY(t1,t2)		=> asTypeApply(t', t1, t2::ts)
+	   | MU _			=> let (* unroll *)
+					       val tt = clone t
+					       val t1 = asMu tt
+					   in
+					       replace(tt, LINK t);
+					       asTypeFunc(t1, ts)
+					   end
+	   | _				=> t'
+    and asTypeFunc(t, []) = typ' t
+      | asTypeFunc(t, t2::ts) =
+	case typ' t
+	  of (LINK t1 | MU t1 | ABBREV(_,t1))
+					=> asTypeFunc(t1,ts)
+	   | LAMBDA(a,t1)		=> ( replace(a, LINK t2);
+					     asTypeFunc(t1, ts)
+					   )
+	   | _				=> asTypeFunc(new(APPLY(t,t2)), ts)
 
-    fun asArrow' t	= case asType' t of FUN tt    => tt | _ => raise Type
-    fun asTuple' t	= case asType' t of PROD r    => (rowToTup r handle Row
-								=> raise Type)
-					  | TUPLE ts  => ts | _ => raise Type
-    fun asProd' t	= case asType' t of TUPLE ts  => tupToRow ts
-					  | PROD r    => r  | _ => raise Type
-    fun asSum' t	= case asType' t of SUM r     => r  | _ => raise Type
-    fun asVar' t	= case asType' t of VAR _     => t  | _ => raise Type
-    fun asCon' t	= case asType' t of CON c     => c  | _ => raise Type
-    fun asAll' t	= case asType' t of ALL at    => at | _ => raise Type
-    fun asExist' t	= case asType' t of EXIST at  => at | _ => raise Type
-    fun asLambda' t	= case asType' t of LAMBDA at => at | _ => raise Type
-    fun asApply' t	= case asType' t of APPLY tt  => tt | _ => raise Type
+    fun asArrow' t	= case asType t of FUN tt    => tt | _ => raise Type
+    fun asTuple' t	= case asType t of PROD r    => (rowToTup r handle Row
+							       => raise Type)
+					 | TUPLE ts  => ts | _ => raise Type
+    fun asProd' t	= case asType t of TUPLE ts  => tupToRow ts
+					 | PROD r    => r  | _ => raise Type
+    fun asSum' t	= case asType t of SUM r     => r  | _ => raise Type
+    fun asVar' t	= case asType t of VAR _     => t  | _ => raise Type
+    fun asCon' t	= case asType t of CON c     => c  | _ => raise Type
+    fun asAll' t	= case asType t of ALL at    => at | _ => raise Type
+    fun asExist' t	= case asType t of EXIST at  => at | _ => raise Type
+    fun asLambda' t	= case asType t of LAMBDA at => at | _ => raise Type
+    fun asApply' t	= case asType t of APPLY tt  => tt | _ => raise Type
 
 
     fun pathCon(_,_,p)	= p
@@ -735,8 +659,11 @@ struct
     fun paths t =
     	let
 	    val s = PathSet.new()
+
+	    fun path t = case typ' t of CON c => PathSet.insert(s, pathCon c)
+				      | _     => ()
 	in
-	    app (fn(ref(CON c)) => PathSet.insert(s, pathCon c) | _ => ()) t ;
+	    app path t;
 	    s
 	end
 
@@ -753,7 +680,7 @@ struct
       | checkClosed' _			= ()
 
     fun isClosed t =
-	( appNoAbbrevs (fn ref t' => checkClosed' t') t ; true )
+	( appNoAbbrevs (fn t => checkClosed'(typ' t)) t ; true )
 	handle Unclosed => false
 
 
@@ -769,89 +696,54 @@ struct
     (*ASSUME that no quantifiers appear under abbreviations
    	(this might break with higher-order polymorphism!) *)
 
-    fun instance'(ref(ALL(a,t)))	= ( a := unknown'(kind a); instance' t )
-      | instance'(ref(EXIST(a,t)))	= instance' t
-      | instance' t			= t
+    fun instance' t =
+	case typ' t
+	  of ALL(a,t)		=> (replace(a, unknown'(kind a)) ; instance' t)
+	   | EXIST(a,t)		=> instance' t
+	   | _			=> t
 
-    fun instance(t as ref(ALL _| EXIST _))	= instance'(clone t)
-      | instance(ref(LINK t))			= instance t
-      | instance t				= t
+    fun instance t =
+	case typ' t
+	  of LINK t		=> instance t
+	   | (ALL _| EXIST _)	=> instance'(clone t)
+	   | _			=> t
 
-    fun skolem'(ref(ALL(a,t)))		= skolem' t
-      | skolem'(ref(EXIST(a,t)))	= ( a := unknown' STAR ; skolem' t )
-      | skolem' t			= t
+    fun skolem' t =
+	case typ' t
+	  of ALL(a,t)		=> skolem' t
+	   | EXIST(a,t)		=> (replace(a, unknown'(kind a)) ; skolem' t)
+	   | _			=> t
 
-    fun skolem(t as ref(ALL _| EXIST _))	= skolem'(clone t)
-      | skolem(ref(LINK t))			= skolem t
-      | skolem t				= t
-
-
-
-  (* Hashing *)
-
-    val same = op=
-
-    fun plusHash(a,b)		= a + b handle Overflow =>
-					if a < b then plusHash(a, b mod a)
-						 else plusHash(a mod b, b)
-
-    fun hash t =
-	let
-	    fun hash(ref t', a)		= plusHash(hash' t', a)
-	    and hash'(HOLE(k,n))	= n
-	      | hash'(VAR(k,n))		= n
-	      | hash'(PROD r)		= hashRow r
-	      | hash'(SUM r)		= hashRow r
-	      | hash'(CON c)		= hashCon c
-	      | hash' _			= 0
-
-	    and hashRow NIL		= 0
-	      | hashRow(RHO(n,r))	= hashRow r
-	      | hashRow(FIELD(a,t,r))	= plusHash(Label.hash a, hashRow r)
-
-	    and hashCon(k,w,p)		= Path.hash p
-	in
-	    foldlNoAbbrevs hash 0 t
-	end
-
+    fun skolem t =
+	case typ' t
+	  of LINK t		=> skolem t
+	   | (ALL _| EXIST _)	=> skolem'(clone t)
+	   | _			=> t
 
 
   (* Closure *)
 
-    fun close t =
-    	let
-	    fun close(a as ref(HOLE(k,n)), f) =
-		if n > !level then
-		    ( a := VAR(k,n) ; fn t => f(inAll(a,t)) )
-		else f
-
-	      | close(a as ref(VAR(k,n)), f) =
-		(* UNFINISHED: rethink this *)
-		(* We have to quantify over VARs as well.
-		 * The reason is that there may be several types being
-		 * closed that share parts of their graphs.
-		 * Note that this means we have to take care to choose
-		 * the correct level when we use VAR for skolem types.
-		 *)
-		if n > !level then
-		    fn t => f(inAll(a,t))
-		else f
-
-	      | close(ref(ALL(a,t) | EXIST(a,t) | LAMBDA(a,t)), f) =
-		( a := MARK(!a) ; f )	(* bit of a hack... *)
-
-	      | close(t as ref(PROD r), f) = ( t := PROD(closeRow r) ; f )
-	      | close(t as ref(SUM r), f)  = ( t := SUM(closeRow r) ; f )
-
-	      | close(_, f) = f
-
-	    and closeRow(r as RHO(n,r')) = if !n > !level then r' else r
-	      | closeRow r               = r
+    fun close ts =
+	let
+	    val generalise =
+		foldl close1 (fn t => t) (inTuple(Vector.fromList ts))
+		(* UNFINISHED: This should better use foldlNoAbbrev, but then
+		 * we had to lift free vars in abbreviations somehow. *)
 	in
-	    (* UNFINISHED: This should better use foldlNoAbbrev, but then
-	     * we had to lift free vars in abbreviations somehow. *)
-	    foldl close (fn t => t) t t
+	    List.map generalise ts
 	end
+
+    and close1(t, f) =
+	case typ' t
+	  of HOLE(k,n)	=> if n <= !level then f else
+			   (replace(t, VAR(k,globalLevel)) ;
+			    fn t2 => f(inAll(t,t2)))
+	   | PROD r	=> (replace(t, PROD(closeRow r)) ; f)
+	   | SUM r	=> (replace(t, SUM(closeRow r)) ; f)
+	   | _		=> f
+
+    and closeRow(r as RHO(n,r')) = if !n <= !level then r else r'
+      | closeRow r               = r
 
 
   (* Lifting a type to the current level *)
@@ -859,17 +751,19 @@ struct
     exception Lift of var
 
     fun lift t = app lift1 t
-    and lift1(t as ref(t' as HOLE(k,n))) =
-	    if n > !level then t := HOLE(k,!level) else ()
-      | lift1(t as ref(VAR(k,n))) =
-	    if n > !level then raise Lift t else ()
-      | lift1(ref(PROD r | SUM r)) = liftRow r
-      | lift1(ref(LAMBDA(a,_) | ALL(a,_) | EXIST(a,_))) =
-(*ASSERT    assert case !a of VAR _ => true | _ => false =>*)
-	    if case !a of VAR _ => false | _ => true
-	    then raise Assert.failure else
-	    a := VAR(kindVar a, globalLevel)
-      | lift1 t = ()
+    and lift1 t =
+	case typ' t
+	  of t' as HOLE(k,n)	=> if n <= !level then () else
+				   replace(t, HOLE(k,!level))
+	  | VAR(k,n)		=> if n <= !level then () else raise Lift t
+	  | (PROD r | SUM r)	=> liftRow r
+	  | (LAMBDA(a,_) | ALL(a,_) | EXIST(a,_)) =>
+(*ASSERT			   assert case typ' a of VAR _ => true
+						   | _ => false =>*)
+				   if case typ' a of VAR _ => false | _ => true
+				   then raise Assert.failure else
+				   replace(a, VAR(kindVar a, globalLevel))
+	  | _			=> ()
 
     and liftRow(RHO(n,r))	= if !n > !level then n := !level else ()
       | liftRow _		= ()
@@ -879,13 +773,15 @@ struct
 
     exception Fill
 
-    fun fill(t1 as ref(HOLE(k,n)), t2)	=
-(*ASSERT		 		= assert k1 = kind t2 =>*)
-if k <> kind t2 then raise Assert.failure else
-(*ASSERT		 		= assert not(isLambda t2) =>*)
-if isLambda t2 then raise Assert.failure else (* should always be MU! *)
-					  t1 := LINK t2
-      | fill    _			= raise Fill
+    fun fill(t1, t2) =
+	case typ' t1
+	  of HOLE(k,n)	=>
+(*ASSERT		   assert k1 = kind t2 =>*)
+			   if k <> kind t2 then raise Assert.failure else
+(*ASSERT		   assert not(isLambda t2) =>*) (* should be MU! *)
+			   if isLambda t2 then raise Assert.failure else
+			   replace(t1, LINK t2)
+	   | _		=> raise Fill
 
 
   (* Unification *)
@@ -895,26 +791,32 @@ if isLambda t2 then raise Assert.failure else (* should always be MU! *)
 
     fun liftAndCheck(n,t1,t2) =
 	let
-	    fun lift(t as ref(t' as HOLE(k,n'))) =
-		    t := MARK(if n' <= n then t' else HOLE(k,n))
-	      | lift(ref(MARK _)) = ()
-	      | lift(t as ref(t' as (PROD r | SUM r))) =
-		    ( liftRow r ; t := MARK t' ; app1'(t', lift, true) )
-	      | lift(t as ref t') = ( t := MARK t' ; app1'(t', lift, true) )
+	    val m = Map.new()
 
-	    and liftRow(RHO(n',r)) = if !n' > n then n' := n else ()
+	    fun lift t =
+		if Map.member(m,t) then () else
+		( Map.insert(m,t,());
+		  case typ' t
+		    of HOLE(k,n') => if n'<=n then () else replace(t, HOLE(k,n))
+		     | t' as (PROD r | SUM r)
+				  => (liftRow r; app1'(t', lift, true))
+		     | t'         => app1'(t', lift, true)
+		)
+
+	    and liftRow(RHO(n',r)) = if !n' <= n then () else n' := n
 	      | liftRow _          = ()
 
-	    fun check(t as ref t') =
-		if t1 = t then
-		    ( unmark t2 ; raise Unify(t1,t2) )
-		else case t'
-		  of HOLE(k,n') => t := MARK(if n' <= n then t' else HOLE(k,n))
-		   | MARK _     => ()
-		   | MU _       => ( t := MARK t' ; app1'(t', lift, true) )
-		   | _          => ( t := MARK t' ; app1'(t', check, true) )
+	    fun check t =
+		if t1 = t then raise Unify(t1,t2) else
+		if Map.member(m,t) then () else
+		( Map.insert(m,t,());
+		  case typ' t
+		    of HOLE(k,n') => if n'<=n then () else replace(t, HOLE(k,n))
+		     | t' as MU _ => app1'(t', lift, true)
+		     | t'         => app1'(t', check, true)
+		)
 	in
-	    check t2 ; unmark t2
+	    check t2
 	end
 
 
@@ -922,61 +824,56 @@ if isLambda t2 then raise Assert.failure else (* should always be MU! *)
 	let
 	    val trail = ref []
 
-	    fun unify(t1, ref(LINK t2)) = unify(t1,t2)
-	      | unify(ref(LINK t1), t2) = unify(t1,t2)
-	      | unify(t1 as ref t1', t2 as ref t2') =
+	    fun unify(t1,t2) =
 		let
+		    val t1' = typ' t1
+		    val t2' = typ' t2
+
 		    fun recur f x =
-			( t1 := LINK t2
+			( replace(t1, LINK t2)
 			; trail := (t1,t1') :: !trail
 			; f x
 			)
 
-		    fun recurBinder(a1 as ref a1', a2, t1, t2) =
-			( a1 := LINK a2
-			; trail := (a1,a1') :: !trail
-			; recur unify (t1,t2)
-			)
+		    fun recurBinder(a1, a2, t1, t2) =
+			let
+			    val a1' = typ' a1
+			in
+			    ( replace(a1, LINK a2)
+			    ; trail := (a1,a1') :: !trail
+			    ; recur unify (t1,t2)
+			    )
+			end
 		in
 		    if t1 = t2 then () else
 		    case (t1',t2')
-		      of (HOLE(k1,n1), HOLE(k2,n2)) =>
+		      of (LINK t11, _) => unify(t11,t2)
+		       | (_, LINK t21) => unify(t1,t21)
+
+		       | (HOLE(k1,n1), HOLE(k2,n2)) =>
 (*ASSERT		 assert k1 = k2 =>*)
-if k1 <> k2 then raise Assert.failure else
-			 if n1 < n2 then t2 := LINK t1
-				    else t1 := LINK t2
+			 if k1 <> k2 then raise Assert.failure else
+			 if n1 < n2 then replace(t2, LINK t1)
+				    else replace(t1, LINK t2)
 
 		       | (HOLE(k1,n), _) =>
 (*ASSERT		 assert k1 = kind' t2' =>*)
-if k1 <> kind' t2' then raise Assert.failure else
+			 if k1 <> kind' t2' then raise Assert.failure else
 (*ASSERT		 assert not(isLambda t2) =>*)
-if isLambda t2 then raise Assert.failure else
-			 ( liftAndCheck(n,t1,t2) ; t1 := LINK t2 )
+			 if isLambda t2 then raise Assert.failure else
+			 ( liftAndCheck(n,t1,t2) ; replace(t1, LINK t2) )
 
 		       | (_, HOLE(k2,n)) =>
 (*ASSERT		 assert kind' t1' = k2 =>*)
-if kind' t1' <> k2 then raise Assert.failure else
+			 if kind' t1' <> k2 then raise Assert.failure else
 (*ASSERT		 assert not(isLambda t1) =>*)
-if isLambda t1 then raise Assert.failure else
-			 ( liftAndCheck(n,t2,t1) ; t2 := LINK t1 )
+			 if isLambda t1 then raise Assert.failure else
+			 ( liftAndCheck(n,t2,t1) ; replace(t2, LINK t1) )
 
-		       | (ABBREV(t11,t12), _) =>
-			 unify (t12,t2)
-
-		       | (_, ABBREV(t21,t22)) =>
-			 unify (t1,t22)
-
-		       | (MU(t11), MU(t21)) =>
-			 recur unify (t11,t21)
-		       (*
-		       | (MU(t11), _) =>
-			 ( t2 := MU(ref t2') ; unify(t1,t2) )
-
-		       | (_, MU(t21)) =>
-			 ( t1 := MU(ref t1') ; unify(t1,t2) )
-		       *)
-		       | (FUN(tt1), FUN(tt2)) =>
-			 recur unifyPair (tt1,tt2)
+		       | (ABBREV(t11,t12), _) => unify (t12,t2)
+		       | (_, ABBREV(t21,t22)) => unify (t1,t22)
+		       | (MU(t11), MU(t21))   => recur unify (t11,t21)
+		       | (FUN(tt1), FUN(tt2)) => recur unifyPair (tt1,tt2)
 
 		       | (TUPLE(ts1), TUPLE(ts2)) =>
 			 (recur unifyVector (ts1,ts2)
@@ -997,7 +894,7 @@ if isLambda t1 then raise Assert.failure else
 			 recur unifyRow (t1, t2, r1, r2, SUM)
 
 		       | (CON(_,_,p1), CON(_,_,p2)) =>
-			 if Path.equals(p1,p2) then t1 := LINK t2
+			 if Path.equals(p1,p2) then replace(t1, LINK t2)
 					       else raise Unify(t1,t2)
 
 		       | (APPLY(tt1), APPLY(tt2)) =>
@@ -1035,7 +932,7 @@ if isLambda t1 then raise Assert.failure else
 		unifyTupleProd'(ts, r, t, i, true)
 	      | unifyTupleProd'(ts, NIL, t, i, b) =
 		if b orelse i = Vector.length ts then
-		    t := TUPLE ts
+		    replace(t, TUPLE ts)
 		else
 		    raise Domain
 	      | unifyTupleProd'(ts, r as FIELD(a,t',r'), t, i, b) =
@@ -1077,11 +974,11 @@ if isLambda t1 then raise Assert.failure else
 			)
 		      | loop _ = raise Unify(t1,t2)
 		in
-		    t2 := PRODorSUM(loop(r1, false, r2, false))
+		    replace(t2, PRODorSUM(loop(r1, false, r2, false)))
 		end
 	in
 	    unify(t1,t2)
-	    handle Unify tt => ( List.app op:= (!trail) ; raise Unify tt )
+	    handle Unify tt => ( List.app replace (!trail) ; raise Unify tt )
 	end
 
 
@@ -1107,31 +1004,38 @@ if isLambda t1 then raise Assert.failure else
 	let
 	    val trail = ref []
 
-	    fun equals(t1, ref(LINK t2)) = equals(t1,t2)
-	      | equals(ref(LINK t1), t2) = equals(t1,t2)
-	      | equals(t1 as ref t1', t2 as ref t2') =
+	    fun equals(t1,t2) =
 		let
+		    val t1' = typ' t1
+		    val t2' = typ' t2
+
 		    fun recur p x =
-			( t1 := LINK t2
+			( replace(t1, LINK t2)
 			; trail := (t1,t1') :: !trail
 			; p x
 			)
 
-		    fun recurBinder(a1 as ref a1', a2, t1, t2) =
-			( a1 := LINK a2
-			; trail := (a1,a1') :: !trail
-			; recur equals (t1,t2)
-			)
+		    fun recurBinder(a1, a2, t1, t2) =
+			let
+			    val a1' = typ' a1
+			in
+			    ( replace(a1, LINK a2)
+			    ; trail := (a1,a1') :: !trail
+			    ; recur equals (t1,t2)
+			    )
+			end
 
 		    fun equalsTupProd(ts, r, t) =
 			let val ts' = rowToTup r in
-			    t := TUPLE ts'; recur equalsVector (ts,ts')
+			    replace(t, TUPLE ts'); recur equalsVector (ts,ts')
 			end
 			handle Row => false
 		in
 		    t1 = t2 orelse
 		    case (t1',t2')
-		      of (ABBREV(t11,t12), _) =>
+		      of (LINK t11, _) => equals(t11,t2)
+		       | (_, LINK t21) => equals(t1,t21)
+		       | (ABBREV(t11,t12), _) =>
 			 equals(t12,t2)
 
 		       | (_, ABBREV(t21,t22)) =>
@@ -1200,19 +1104,20 @@ if isLambda t1 then raise Assert.failure else
 		l1 = l2 andalso equals(t1,t2) andalso equalsRow(r1,r2)
 	      | equalsRow _ = false
 	in
-	    equals(t1,t2) orelse ( List.app op:= (!trail) ; false )
+	    equals(t1,t2) orelse ( List.app replace (!trail) ; false )
 	end
 
 
   (* Realisation *)
 
     fun realisePath(rea, t) = app (realisePath1 rea) t
-    and realisePath1 rea (t as ref(CON(k,s,p))) =
-	( case PathMap.lookup(rea, p)
-	    of SOME p' => t := CON(k,s,p')
-	     | NONE    => ()
-	)
-      | realisePath1 rea t = ()
+    and realisePath1 rea t =
+	case typ' t
+	  of CON(k,s,p)	=> (case PathMap.lookup(rea, p)
+			      of SOME p' => replace(t, CON(k,s,p'))
+			       | NONE    => ()
+			   )
+	   | _		=> ()
 
     (*
      * Realisations need not be idempotent (fully expanded). Would be nice
@@ -1224,14 +1129,15 @@ if isLambda t1 then raise Assert.failure else
 	let
 	    val apps = ref[]
 
-	    fun realise1(t1 as ref(CON(k,s,p))) =
-		(case PathMap.lookup(rea, p)
-		   of SOME t2 => t1 := LINK t2		(* expand *)
-			(*UNFINISHED: do we have to clone t2? *)
-		    | NONE    => ()
-		)
-	      | realise1(t1 as ref(APPLY _)) = apps := t1::(!apps)
-	      | realise1 t1 = ()
+	    fun realise1 t1 =
+		case typ' t1
+		  of CON(k,s,p) => (case PathMap.lookup(rea, p)
+				      of SOME t2 => replace(t1, LINK t2)
+					(*UNFINISHED: do we have to clone t2? *)
+				       | NONE    => ()
+				   )
+	      | APPLY _		=> apps := t1::(!apps)
+	      | _		=> ()
 	in
 	    app realise1 t ; List.app reduce (!apps)
 	end
@@ -1244,83 +1150,4 @@ if isLambda t1 then raise Assert.failure else
     fun intersect(t1:typ, t2:typ) = ()
     (* UNFINISHED *)
 
-
-  (* Synchronisation for thread safety *)
-
-    val lock		= Lock.lock()
-
-    val inApply		= Lock.sync lock inApply
-    val isUnknown	= Lock.sync lock isUnknown
-    val isArrow		= Lock.sync lock isArrow
-    val isTuple		= Lock.sync lock isTuple
-    val isProd		= Lock.sync lock isProd
-    val isSum		= Lock.sync lock isSum
-    val isVar		= Lock.sync lock isVar
-    val isCon		= Lock.sync lock isCon
-    val isAll		= Lock.sync lock isAll
-    val isExist		= Lock.sync lock isExist
-    val isLambda	= Lock.sync lock isLambda
-    val isApply		= Lock.sync lock isApply
-    val isMu		= Lock.sync lock isMu
-    val isAbbrev	= Lock.sync lock isAbbrev
-    val isUnknown'	= Lock.sync lock isUnknown'
-    val isArrow'	= Lock.sync lock isArrow'
-    val isTuple'	= Lock.sync lock isTuple'
-    val isProd'		= Lock.sync lock isProd'
-    val isSum'		= Lock.sync lock isSum'
-    val isVar'		= Lock.sync lock isVar'
-    val isCon'		= Lock.sync lock isCon'
-    val isAll'		= Lock.sync lock isAll'
-    val isExist'	= Lock.sync lock isExist'
-    val isLambda'	= Lock.sync lock isLambda'
-    val isApply'	= Lock.sync lock isApply'
-    val asArrow		= Lock.sync lock asArrow
-    val asTuple		= Lock.sync lock asTuple
-    val asProd		= Lock.sync lock asProd
-    val asSum		= Lock.sync lock asSum
-    val asVar		= Lock.sync lock asVar
-    val asCon		= Lock.sync lock asCon
-    val asAll		= Lock.sync lock asAll
-    val asExist		= Lock.sync lock asExist
-    val asLambda	= Lock.sync lock asLambda
-    val asApply		= Lock.sync lock asApply
-    val asMu		= Lock.sync lock asMu
-    val asAbbrev	= Lock.sync lock asAbbrev
-    val asArrow'	= Lock.sync lock asArrow'
-    val asTuple'	= Lock.sync lock asTuple'
-    val asProd'		= Lock.sync lock asProd'
-    val asSum'		= Lock.sync lock asSum'
-    val asVar'		= Lock.sync lock asVar'
-    val asCon'		= Lock.sync lock asCon'
-    val asAll'		= Lock.sync lock asAll'
-    val asExist'	= Lock.sync lock asExist'
-    val asLambda'	= Lock.sync lock asLambda'
-    val asApply'	= Lock.sync lock asApply'
-
-    val kind		= Lock.sync lock kind
-    val kindVar		= Lock.sync lock kindVar
-    val path		= Lock.sync lock path
-    val paths		= Lock.sync lock paths
-
-    val instance	= Lock.sync lock instance
-    val skolem		= Lock.sync lock skolem
-    val clone		= Lock.sync lock clone
-    val cloneStart	= Lock.sync lock cloneStart
-    val cloneCont	= Lock.sync lock cloneCont
-    val cloneFinish	= Lock.sync lock cloneFinish
-    val realise		= Lock.sync lock realise
-    val realisePath	= Lock.sync lock realisePath
-
-    val fill		= Lock.sync lock fill
-    val unify		= Lock.sync lock unify
-    val intersect	= Lock.sync lock intersect
-    val close		= Lock.sync lock close
-    val isClosed	= Lock.sync lock isClosed
-    val equals		= Lock.sync lock equals
-    val matches		= Lock.sync lock matches
-    val hash		= Lock.sync lock hash
-
 end
-
-
-structure Type : (*DEBUG :>*) TYPE = TypePrivate

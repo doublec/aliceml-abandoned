@@ -10,11 +10,12 @@
  *   $Revision$
  *)
 
-import structure Name    from "Name"
-import structure Label   from "Label"
-import structure Path    from "Path"
-import structure PathSet from "PathSet"
-import structure PathMap from "PathMap"
+import structure Name           from "Name"
+import structure Label          from "Label"
+import structure Path           from "Path"
+import structure PathSet        from "PathSet"
+import structure PathMap        from "PathMap"
+import signature SIMPLE_IMP_MAP from "../utility/SIMPLE_IMP_MAP-sig"
 
 
 signature TYPE =
@@ -36,6 +37,10 @@ sig
 
     type path_rea = path PathMap.t
     type typ_rea  = typ PathMap.t
+
+    type canonical_typ
+    val canonical : typ -> canonical_typ
+    structure Map : SIMPLE_IMP_MAP where type key = canonical_typ
 
 
   (* Kinds *)
@@ -91,6 +96,7 @@ sig
     val isExist' :	typ -> bool
     val isLambda' :	typ -> bool
     val isApply' :	typ -> bool
+
 
   (* Projections *)
 
@@ -153,8 +159,7 @@ sig
 
     type clone_state
     val cloneStart :	unit -> clone_state
-    val cloneCont :	clone_state -> typ -> typ
-    val cloneFinish :	clone_state -> unit
+    val cloneCont :	clone_state * typ -> typ
 
     val realise :	typ_rea  * typ -> unit
     val realisePath :	path_rea * typ -> unit
@@ -168,7 +173,7 @@ sig
     val fill :		typ * typ  -> unit	(* does no occur check! *)
     val unify :		typ * typ  -> unit	(* [Unify] *)
     val intersect :	typ * typ  -> unit
-    val close :		typ -> typ
+    val close :		typ list -> typ list
     val isClosed :	typ -> bool
 
   (* Comparison *)
@@ -185,7 +190,7 @@ sig
 
     exception Lift of var
 
-    val lift :		typ  -> unit			(* [Lift] *)
+    val lift :		typ  -> unit		(* [Lift] *)
     val enterLevel :	unit -> unit
     val exitLevel :	unit -> unit
     val resetLevel :	unit -> unit

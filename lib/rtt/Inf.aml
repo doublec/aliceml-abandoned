@@ -483,7 +483,6 @@ structure InfPrivate =
 	    val cloneState = Type.cloneStart()
 	    val j1         = instanceInf(rea', cloneState, j)
 	in
-	    Type.cloneFinish cloneState ;
 	    realiseT(rea', j1) ;
 	    j1
 	end
@@ -601,7 +600,7 @@ structure InfPrivate =
     and instanceInfDef(r,z, NONE  )	= NONE
       | instanceInfDef(r,z, SOME j)	= SOME(instanceInf(r,z,j))
 
-    and instanceTyp(r,z, t)		= Type.cloneCont z t
+    and instanceTyp(r,z, t)		= Type.cloneCont(z,t)
 					  (* Cannot do 
 						Type.realisePath(r,t')
 					     here! *)
@@ -654,14 +653,7 @@ structure InfPrivate =
      * to the original one.
      *)
 
-    and singleton j =
-	let
-	    val cloneState = Type.cloneStart()
-	    val j1         = singletonInf(cloneState, j)
-	in
-	    Type.cloneFinish cloneState ;
-	    j1
-	end
+    and singleton j = singletonInf(Type.cloneStart(), j)
 
     and singletonInf (z, ref j')		= ref(singletonInf'(z,j'))
     and singletonInf'(z, LINK j)		= singletonInf'(z,!j)
@@ -751,7 +743,7 @@ structure InfPrivate =
     and singletonInfDef(z, NONE  )	= NONE
       | singletonInfDef(z, SOME j)	= SOME(singletonInf(z,j))
 
-    and singletonTyp(z, t)		= Type.cloneCont z t
+    and singletonTyp(z, t)		= Type.cloneCont(z,t)
 
 
   (* Cloning (does not instantiate paths!) *)

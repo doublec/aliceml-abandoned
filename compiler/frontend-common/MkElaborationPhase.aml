@@ -45,9 +45,8 @@ import structure PrettyPrint       from "../../lib/utility/PrettyPrint"
 import structure PPPath            from "../../lib/rtt/PPPath"	(*DEBUG*)
 import structure PPType            from "../../lib/rtt/PPType"	(*DEBUG*)
 import structure PPInf             from "../../lib/rtt/PPInf"	(*DEBUG*)
-*)
-(*DEBUG*)
 import fun print from "../../lib/system/TextIO"
+*)
 
 import structure Crash             from "../infrastructure/Crash"
 import structure Error             from "../infrastructure/Error"
@@ -1510,7 +1509,7 @@ struct
 	let
 	    val  _        = Env.insertScope E
 	    val  _        = Type.enterLevel()
-	    val  _        = enterVarids(E, varids)
+	    val  az       = enterVarids(E, varids)
 	    val  _        = Env.insertScope E
 	    val (t2,exp') = elabExp(E, exp)
 	    val  _        = Env.deleteScope E
@@ -1520,8 +1519,8 @@ struct
 	    val  _        = Type.unify(t1,t2) handle Type.Unify(t3,t4) =>
 				error(i, E.ValDecUnify(t1, t2, t3, t4))
 	    (* UNFINISHED: if pat = x and exp = y then equate x to y *)
-	    val  _        = Env.appVals (generaliseVal
-					(E, s, SOME NONE, isValue exp)) E'
+	    val  _        = if isValue exp then generaliseVals(E, s, az, E')
+					   else liftVals(E, s, az, E')
 	in
 	    O.ValDec(nonInfo(i), pat', exp')
 	end
@@ -1583,16 +1582,15 @@ struct
 	let
 	    val _      = Env.insertScope E
 	    val _      = Type.enterLevel()
-	    val _      = enterVarids(E, varids)
+	    val az     = enterVarids(E, varids)
 	    val tpats' = elabLHSRecDecs(E, s, decs)
 	    val decs'  = elabRHSRecDecs(E, s, ref tpats', decs)
 	    val _      = Type.exitLevel()
 	    val E'     = Env.splitScope E
 	    (* ASSUME that only ValDec or TypDec are under RecDec *)
 	    (* ASSUME that recursive ValDecs are never expansive *)
-	    (* ASSUME that recursive ValDecs are never equatable *)
 	    val _      = Env.appTyps (fn(x,entry)=> Env.insertTyp(E,x,entry)) E'
-	    val _      = Env.appVals (generaliseVal (E, s, SOME NONE, true)) E'
+	    val _      = generaliseVals(E, s, az, E')
 	in
 	    O.RecDec(nonInfo(i), decs')
 	end
@@ -1609,30 +1607,52 @@ struct
 	    O.LocalDec(nonInfo(i), decs')
 	end
 
+    and elabDecs(E, s, decs)          = elabDecs'(E, s, [], decs)
+    and elabDecs'(E, s, varids, decs) =
+	    Vector.map (fn dec => elabDec(E, s, varids, dec)) decs
+
 
     and enterVarids(E, varids) =
-	List.app (fn varid as I.Id(_, stamp, name) =>
+	List.map (fn varid as I.Id(_, stamp, name) =>
 		  (*UNFINISHED: use punning: *)
-		  Env.insertVar(E,stamp,
-		     {id=varid, var=Type.var(Type.STAR), use=ref false})) varids
+		  let
+		      val a = Type.var(Type.STAR)
+		  in
+		      Env.insertVar(E,stamp, {id=varid, var=a, use=ref false});
+		      a
+		  end
+		 ) varids
 
-    and generaliseVal (E,s, poo, isPoly) (x, {id=valid, path=p, typ=t, use=u}) =
+    and liftVals(E, s, az, E') =
+	Env.appVals (fn(x, entry as {id=valid, path=p, typ=t, ...}) =>
+			( Type.lift t handle Type.Lift a =>
+			    error(I.infoId valid, E.ValDecLift(valid, a))
+			; Env.insertVal(E, x, entry)
+			; Inf.extendVal(s, p, t, SOME p)
+			)
+		    ) E'
+
+    and generaliseVals(E, s, az, E') =
 	let
-	    val t' = if isPoly then Type.close t
-			       else (Type.lift t ; t) handle Type.Lift a =>
-				   error(I.infoId valid, E.ValDecLift(valid, a))
-	    val d  = Option.map (fn po => Option.getOpt(po, p)) poo
+	    val xes = Env.foldVals (fn(x,e,xes) => (x,e)::xes) [] E'
+	    val ts  = List.map (#typ o #2) xes
+	    val ts' = Type.close ts
 	in
-	    (*UNFINISHED: use record update: *)
-	    (*insertVal(E, x, {entry where typ=t'}));*)
-	    Env.insertVal(E, x, {id=valid, path=p, typ=t', use=u});
-	    Inf.extendVal(s, p, t', d)
+	    (*UNFINISHED: use record update:
+	    ListPair.app (fn((x,entry), t) =>
+			  let
+			      val t' = List.foldl Type.inAll t az
+			  in
+			     Env.insertVal(E, x, {entry where typ=t'});*)
+	    ListPair.app (fn((x, {id=id, path=p, use=u, ...}), t) =>
+			  let
+			      val t' = List.foldl Type.inAll t az
+			  in
+			     Env.insertVal(E, x, {id=id, path=p, typ=t',use=u});
+			     Inf.extendVal(s, p, t', SOME p)
+			  end
+			 ) (xes,ts')
 	end
-
-
-      and elabDecs(E, s, decs)          = elabDecs'(E, s, [], decs)
-      and elabDecs'(E, s, varids, decs) =
-	    Vector.map (fn dec => elabDec(E, s, varids, dec)) decs
 
 
   (* Recursive declarations *)

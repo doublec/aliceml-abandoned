@@ -1062,12 +1062,12 @@ val _ = TextIO.inputLine(TextIO.stdIn)
 		SOME(O.FailExp(typInfo(r,typ_top)))
 	else if Inf.isCon j2 andalso Inf.isCon j1 then
 	    if not isOpaque then
-		(* Note: If we match transparently and have to constructors
+		(* Note: If we match transparently and have two constructors
 		 * then they are necessarily the same at runtime.
 		 * However, it is not necessarily the case during translation
 		 * because we do transparent ups for functor sig arguments
-		 * even in the opaque, so that no proper substitution has been
-		 * performed to equalize them. Example:
+		 * even in the opaque case, so that no proper substitution has
+		 * been performed to equalize them. Example:
 		 *   fct(signature S) -> ()  :>  fct(signature S) -> ()
 		 * So we cannot put in an assertion here!
 		 *)

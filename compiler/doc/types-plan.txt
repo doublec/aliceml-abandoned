@@ -3,9 +3,11 @@
 - remove indexed labels from signatures by converting hiding to local
 - remove definitionals from signatures by adding singletons
 - remove signature intersection
+- make tuple special case of products/rows
 - separate suspensions from applications
 - separate types from type constructors
 - separate types from type schemes (interferes with HO quantification needed
   in intermediate)
 - get rid of 'con somehow
-- make existential quantifications in interfaces explicit?
+- make quantifications in interfaces explicit
+- clean up VarDec stuff in elaborator

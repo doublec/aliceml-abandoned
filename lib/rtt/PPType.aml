@@ -14,8 +14,7 @@ import structure Assert        from "../utility/Assert"
 
 import structure Label         from "Label"
 import structure Path          from "Path"
-import structure Type
-       structure TypePrivate   from "Type"
+import structure Type          from "Type"
 import structure PervasiveType from "PervasiveType"
 
 import structure PrettyPrint   from "../utility/PrettyPrint"
@@ -29,7 +28,7 @@ struct
 
     (* Import *)
 
-    open TypePrivate
+    open Type
     open PrettyPrint
     open PPMisc
 
@@ -38,11 +37,15 @@ struct
 
     (* Helpers *)
 
-    fun uncurry(ref(APPLY(t1,t2)))	= let val (t,ts) = uncurry t1
-					  in (t,ts@[t2]) end
-      | uncurry(ref(ABBREV(t1,t2)))	= uncurry t1
-      | uncurry t			= (t,[])
-
+    fun uncurry t =
+	if not(isApply t) then (t,[]) else
+	let
+	    val (t1,t2) = asApply t
+	    val (t3,ts) = uncurry t1
+	in
+	    (t3, ts@[t2])
+	end
+	
     fun parenPrec p (p',doc) =
 	if p > p' then
 	    paren doc
@@ -87,8 +90,8 @@ struct
     (* Types *)
 
     (* Precedence:
-     *  0 : sums (con of ty1 | ... | con of tyn), kind annotation (ty : kind)
-     *	1 : binders (LAMBDA ty1 . ty2)
+     *  0 : kind annotation (ty : kind)
+     *	1 : binders (EXIST ty1 . ty2)
      *	2 : function arrow (ty1 -> ty2)
      *	3 : tuple (ty1 * ... * tyn)
      *	4 : constructed type (tyseq tycon)
@@ -96,213 +99,151 @@ struct
 
     fun ppTyp t =
 	let
-	    val trail = ref []
-	    val a     = ref 0
+	    val m = Map.new()
+	    val a = ref 0
 
-	    fun makeVar(isBound, t as ref t') =
-		let
-		    val k = kindVar t
-		    val s = varToString(isBound, !a before a := !a+1)
-		    val c = (k, CLOSED, Path.fromLab(Label.fromString s))
-		    val _ = t := CON c
-		    val _ = if isBound then () else trail := (t,t')::(!trail)
-		in
-		    t'
-		end
+	    fun ppVar isBound = text(varToString(isBound, !a before a := !a+1))
 
 	    fun ppTyp t = fbox(below(ppTypPrec 0 t))
 
-	    and ppTypPrec p (t as ref(HOLE(k,n))) =
-		let
-		    val t'  = makeVar(false, t)
-		    val doc = ppTypPrec' p (!t)
-		in
-		    if k = STAR then
-			doc
-(*DEBUG*)
-^^ text("_" ^ Int.toString n)
-		    else
-			parenPrec p (0, doc ^/^ text ":" ^/^ ppKind k)
-
+	    and ppTypPrec p t =
+		let val t' = canonical t in
+		    case Map.lookup(m,t')
+		      of SOME doc => doc
+		       | NONE     => let val doc = ppTypPrec' p t in
+					 Map.insert(m,t',doc) ; doc
+				     end
 		end
 
-	      | ppTypPrec p (t as ref(MU t1 | MARK(MU t1))) =
-(*DEBUG*)
-(*		if occurs(t,t1) then
-*)		    let
-			val t'  = makeVar(true, t)
+	    and ppTypPrec' p t =
+		if isAbbrev t then
 (*DEBUG
-			val doc = (case t' of MARK _ => text "!MU"
-					    | _      => text "MU") ^/^
-				  abox(
-					hbox(
-					    ppTyp t ^/^
-					    text "."
-					) ^^
-					below(break ^^
-					    ppTypPrec 1 t1
-					)
-				  )
-			val _   = t := t'
-		    in
-			parenPrec p (1, fbox(below(nest(doc))))
+		    paren(
 *)
-		    in
-			ppTypPrec p t1
-			before t := t'
-		    end
-(*		else
-(*(print"not recursive\n";*)
-		    ppTypPrec p t1
+		    ppTypPrec p (#1(asAbbrev t))
+(*
+		    ^/^ text "as" ^/^ ppTypPrec p (#2(asAbbrev t)) )
 *)
-
-	      | ppTypPrec p (t as ref(APPLY _)) =
-	        ( reduce t ;
-(*print("[pp APPLY]");*)
-		  if isApply t then ppTypPrec' p (!t)
-			       else ppTypPrec p t
-		)
-
-	      | ppTypPrec p (ref t') = ppTypPrec' p t'
-(*(*DEBUG*)
-	      | ppTypPrec p (t as ref t') =
-let
-val _=print("[pp " ^ pr t' ^ "]")
-(*val _=TextIO.inputLine TextIO.stdIn*)
-in
-	if foldl1'(t', fn(t1,b) => b orelse occursIllegally(t,t1), false) then
+		else if isUnknown t then
 		    let
-(*DEBUG*)
-val _=print"RECURSIVE!\n"
-			val a'  = makeVar(true, t)
-			val doc = text "MU" ^/^
-				    abox(
-					hbox(
-					    ppTyp t ^/^
-					    text "."
-					) ^^
-					below(break ^^
-					    ppTypPrec' 1 t'
-					)
-				    )
-			val _   = t := a'
+			val k   = kind t
+			val doc = ppVar false
 		    in
-			parenPrec p (1, fbox(below(nest(doc))))
+			if k = STAR
+			then doc
+			else parenPrec p (0, doc ^/^ text ":" ^/^ ppKind k)
+		    end
+		else if isArrow t then
+		    let
+			val (t1,t2) = asArrow t
+			val  doc    = ppTypPrec 3 t1 ^/^ text "->" ^/^
+				      ppTypPrec 2 t2
+		    in
+			parenPrec p (2, doc)
+		    end
+		else if isTuple t then
+		    case asTuple t
+		      of #[] => text "unit"
+		       | ts  => 
+		    let
+			val doc = ppStarList (ppTypPrec 4) (Vector.toList ts)
+		    in
+			parenPrec p (3, fbox(below(nest doc)))
+		    end
+		else if isProd t then
+		    brace(fbox(below(ppRow(",", ":", asProd t))))
+		else if isSum t then
+		    brack(fbox(below(ppRow("|", "of", asSum t))))
+		else if isVar t then
+		    let
+			val k   = kind t
+			val doc = ppVar false ^^ text "?"	(* unbound! *)
+		    in
+			if k = STAR
+			then doc
+			else parenPrec p (0, doc ^/^ text ":" ^/^ ppKind k)
+		    end
+		else if isCon t then
+		    ppCon(asCon t)
+		else if isAll t then
+		    let
+			val (a,t1) = asAll t
+(*DEBUG
+			val doc    = ppBinder("ALL",a,t1)
+		    in
+			parenPrec p (1, fbox(below doc))
+		    end
+*)
+		    in
+			Map.insert(m, canonical(inVar a), ppVar true);
+			ppTyp t1
+		    end
+		else if isExist t then
+		    let
+			val (a,t1) = asExist t
+			val doc    = ppBinder("EX",a,t1)
+		    in
+			parenPrec p (1, fbox(below doc))
+		    end
+		else if isLambda t then
+		    let
+			val (a,t1) = asLambda t
+			val doc    = ppBinder("FN",a,t1)
+		    in
+			parenPrec p (1, fbox(below doc))
+		    end
+		else if isApply t then
+		    let
+			val (t1,t2) = asApply t
+			val (t3,ts) = uncurry t
+		    in
+			fbox(nest(ppSeqPrec ppTypPrec 4 ts ^/^ ppTypPrec 5 t3))
+		    end
+		else if isMu t then
+		    let
+			val t1  = asMu t
+			val doc = ppVar true
+		    in
+			Map.insert(m, canonical t, doc);
+			abox(
+			    hbox(
+				text "MU" ^/^
+				doc ^/^
+				text "."
+			    ) ^^
+			    nest(break ^^
+				ppTyp t1
+			    )
+			)
 		    end
 		else
-		    ppTypPrec' p t'
-end
-*)
+		    raise Assert.failure
 
-	    and ppTypPrec' p (LINK t) =
-(*DEBUG
-text "@" ^^*)
-		    ppTypPrec p t
-
-	      | ppTypPrec' p (ABBREV(t1,t2)) =
-(*DEBUG
-text "(" ^^
-*)
-		    ppTypPrec p t1
-(*^/^ text "as" ^/^ ppTypPrec p t2 ^^ text ")"
-*)
-	      | ppTypPrec' p (MARK t') =
-		    text "!" ^^ ppTypPrec' p t'
-
-	      | ppTypPrec' p (FUN(t1,t2)) =
-		let
-		    val doc = ppTypPrec 3 t1 ^/^ text "->" ^/^ ppTypPrec 2 t2
-		in
-		    parenPrec p (2, doc)
-		end
-
-	      | ppTypPrec' p (TUPLE #[] | PROD NIL) =
-		    text "unit"
-
-	      | ppTypPrec' p (TUPLE ts) =
-		let
-		    val doc = ppStarList (ppTypPrec 4) (Vector.toList ts)
-		in
-		    parenPrec p (3, fbox(below(nest doc)))
-		end
-
-	      | ppTypPrec' p (PROD r) =
-		    brace(fbox(below(ppProd r)))
-
-	      | ppTypPrec' p (SUM r) =
-		    paren(fbox(below(ppSum r)))
-
-	      | ppTypPrec' p (VAR(k,n)) =
-		if k = STAR then
-		    text "'?"
-(*DEBUG*)
-^^ text("[" ^ Int.toString n ^ "]")
+	    and ppRow(sep,ann,r) = ppRow'(text sep, text ann, isUnknownRow r, r)
+	    and ppRow'(sep,ann,unknown,r) =
+		if isEmptyRow r then
+		    if unknown
+		    then text "..."
+		    else empty
 		else
-		    paren (text "'?" ^/^ text ":" ^/^ ppKind k)
+		    let
+			val (l,t) = headRow r
+			val  doc  = ppField(ann,l,t)
+			val  r'   = tailRow r
+		    in
+			if isEmptyRow r' andalso not unknown
+			then doc
+			else doc ^/^ sep ^/^ ppRow'(sep, ann, unknown, r')
+		    end
 
-	      | ppTypPrec' p (CON c) =
-		    ppCon c
-
-	      | ppTypPrec' p (ALL(a,t)) =
-(*DEBUG
-		let
-		    val doc = ppBinder("ALL",a,t)
-		in
-		    parenPrec p (1, fbox(below doc))
-		end
-*)
-		let
-		    val a' = makeVar(true, a)
-		in
-		    ppTyp t before a := a'
-		end
-
-	      | ppTypPrec' p (EXIST(a,t)) =
-		let
-		    val doc = ppBinder("EX",a,t)
-		in
-		    parenPrec p (1, fbox(below doc))
-		end
-
-	      | ppTypPrec' p (LAMBDA(a,t)) =
-		let
-		    val doc = ppBinder("FN",a,t)
-		in
-		    parenPrec p (1, fbox(below doc))
-		end
-
-	      | ppTypPrec' p (t' as APPLY _) =
-		let
-		    val (t,ts) = uncurry(ref t')
-		in
-		    fbox(nest(ppSeqPrec ppTypPrec 4 ts ^/^ ppTypPrec 5 t))
-		end
-
-	      | ppTypPrec' p (HOLE _) =
-		    raise Assert.failure
-
-	      | ppTypPrec' p (MU _) =
-		    raise Assert.failure
-
-
-	    and ppProd NIL		= empty
-	      | ppProd(RHO _)		= text "..."
-	      | ppProd(FIELD(l,t,NIL))	= ppField(l,t)
-	      | ppProd(FIELD(l,t,r))	= ppField(l,t) ^^ text "," ^/^ ppProd r
-
-	    and ppSum NIL		= empty
-	      | ppSum(RHO _)		= text "..."
-	      | ppSum(FIELD(l,t,NIL))	= ppField(l,t)
-	      | ppSum(FIELD(l,t,r))	= ppField(l,t) ^/^ text "|" ^/^ ppSum r
-
-	    and ppField(l,t) =
+	    and ppField(ann,l,t) =
 		if Type.equals(t, PervasiveType.typ_zero) then
 		    ppLab l
 		else
 		    abox(
 			hbox(
 			    ppLab l ^/^
-			    text ":"
+			    ann
 			) ^^
 			nest(break ^^
 			    ppTyp t
@@ -311,29 +252,21 @@ text "(" ^^
 
 	    and ppBinder(s,a,t) =
 		let
-		    val a' = makeVar(true, a)
+		    val doc = ppVar true
 		in
+		    Map.insert(m, canonical(inVar a), doc);
 		    abox(
 			hbox(
 			    text s ^/^
-			    ppTyp a ^/^
-(*DEBUG*)
-(*text"(" ^^ ppTypPrec' 0 a' ^^ text")" ^/^*)
+			    doc ^/^
 			    text "."
 			) ^^
 			nest(break ^^
 			    ppTyp t
 			)
 		    )
-		    before a := a'
 		end
 	in
-	    ppTyp t before List.app op:= (!trail)
+	    ppTyp t
 	end
-
-
-  (* Synchronisation for thread safety *)
-
-    val ppTyp = Lock.sync lock ppTyp
-
 end
