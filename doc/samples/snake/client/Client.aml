@@ -3,7 +3,7 @@ import structure Gui        from "Gui"
 import signature CLIENT     from "CLIENT-sig"
 
 
-structure Client :> CLIENT =
+structure Client (* :> CLIENT *) = 
 struct
     (* [startClient (gui, server)] starts the core client given a server,
        which can be a future

@@ -1,8 +1,10 @@
 import structure Gui        from "Gui"
 import structure Client     from "Client"
+import structure Protocol   from "../common/Protocol"
 import structure Server     from "../server/Server"
 import structure Config     from "../server/Config"
 import structure Ctrl       from "x-alice:/lib/utility/Ctrl"
+import structure Remote     from "x-alice:/lib/distribution/Remote"
 
 open Ctrl
 
@@ -26,9 +28,9 @@ fun proxyClient (c : Protocol.client_interface) : Protocol.client_interface =
 fun main () =
     let
         (* gui callbacks *)
-        val gui_promise = Promise.promise ()    
+        val gui_promise = Promise.promise () : Gui.gui Promise.promise
         val gui         = Promise.future gui_promise
-        val gui_join_p  = Promise.promise ()
+        val gui_join_p  = Promise.promise () : Gui.gui_join Promise.promise
         val gui_join    = Promise.future gui_join_p
  
         (* called when user wants to quit *)
@@ -38,11 +40,11 @@ fun main () =
         fun connect ticket = 
             let
                 (* make physical connection --> take the ticket *)
-                val package     = Remote.take         
+                val package     = Remote.take ticket
                 (* unpack it.  Dynamic type check!
                    may fail with Package.Mismatch exception
                  *)
-                structure Conn  = unpack package : SERVER_CONNECTOR
+                structure Conn  = unpack package : Protocol.SERVER_CONNECTOR
 
                 val serverP     = Promise.promise ()
                 
@@ -67,13 +69,13 @@ fun main () =
             |   IO.Io { name, function, cause } =>
                 (* lowlevel error at Remote.take *)
                 SND ("IO error " ^ name ^ " at " ^ function ^ " cause: " ^
-                        cause) 
+                        exnName cause) 
             |   Package.Mismatch _ =>
                 (* unpack failed! *)
                 SND ("Ticket invalid!  Most probably from a different alice application.")
 
         (* called when user wants to create own server *)
-        fun startServer (player, config) = 
+        fun startServer (player, config : Config.config) = 
             let
                 (* both creation of client and creation of server
                    depends on each other, but Client.startClient
@@ -85,17 +87,24 @@ fun main () =
                 val (client, model_join)    = Client.startClient (gui_join, 
                                                 Promise.future server)
 
-                fun startGame res = 
+                fun startGame res () = 
                     let
                         val server = Promise.future server 
+                        
+                        (* this always holds for servers returned by 
+                           Server.startServer *)
+                        val _ = assert isSome (#startGame server)
                     in
                         (* rpc call. TODO: error handling *)
-                        #startGame server ();
+                        valOf (#startGame server) ();
                         res
                     end
+
+                val (ticket, server')   = Server.startServer (client, config)
             in
                 (* TODO: error handling *)
-                Promise.fulfill (server, Server.startServer (config, client));
+                Promise.fulfill (server, server');
+
                 (* creation was successful return model and gui promise *)
                 case player of
                     NONE        =>  

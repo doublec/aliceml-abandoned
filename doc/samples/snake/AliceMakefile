@@ -51,6 +51,8 @@ FILTERED_SOURCES := $(filter $(FILTER_SOURCES),$(SOURCES))
 export FILTERED_SOURCES
 COMPONENTS := $(addsuffix .$(EXT),$(basename $(FILTERED_SOURCES)))
 export COMPONENTS
+PREPARES := $(subst -prepare.aml,.$(EXT),${filter %-prepare.aml,$(SOURCES)})
+export PREPARES 
 ROOT := $(addsuffix .$(EXT), $(ROOT))
 export ROOT
 
@@ -61,7 +63,7 @@ depend: Makefile.depend
 
 Makefile.depend: $(FILTERED_SOURCES)
 	$(ALICEDEP) $(FILTERED_SOURCES) > Makefile.depend
-
+	
 -include Makefile.depend
 
 components: Makefile.depend $(COMPONENTS)
@@ -78,4 +80,4 @@ library: components
 	$(ALICEC) $< -o $@
 
 clean: 
-	rm -f $(COMPONENTS) $(ROOT) Makefile.depend
+	rm -f $(COMPONENTS) $(PREPARES) $(ROOT) Makefile.depend
