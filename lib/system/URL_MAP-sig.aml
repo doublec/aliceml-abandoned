@@ -14,14 +14,15 @@ import structure Url from "../utility/Url"
 
 signature URL_MAP =
     sig
-	type 'a t
+	type 'a map
+	type 'a t = 'a map
 
 	datatype 'a lookup_result =
 	    EXISTING of 'a
 	  | NEW of 'a Promise.promise
 
-	val new: (Url.t * 'a) vector -> 'a t
+	val new: (Url.t * 'a) vector -> 'a map
 
-	val lookup: 'a t * Url.t -> 'a option
-	val lookupNew: 'a t * Url.t -> 'a lookup_result
+	val lookup: 'a map * Url.t -> 'a option
+	val lookupNew: 'a map * Url.t -> 'a lookup_result
     end

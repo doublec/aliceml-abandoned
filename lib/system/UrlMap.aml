@@ -18,7 +18,8 @@ structure UrlMap :> URL_MAP =
     struct
 	structure UrlMap = MkHashImpMap(Url)
 
-	type 'a t = Lock.lock * 'a UrlMap.t
+	type 'a map = Lock.lock * 'a UrlMap.t
+	type 'a t = 'a map
 
 	datatype 'a lookup_result =
 	    EXISTING of 'a

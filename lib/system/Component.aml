@@ -96,7 +96,9 @@ struct
     functor MkManager() :> COMPONENT_MANAGER where type component = component =
     struct
 	exception Conflict
-	exception Mismatch of Url.t * Url.t option * Inf.mismatch
+	exception Mismatch of {component : Url.t,
+			       request : Url.t option,
+			       cause : Inf.mismatch}
 
 	datatype component = datatype component
 
@@ -128,7 +130,9 @@ struct
 		lazy (trace ("type-checking " ^ message);
 		      (strictTypeCheck (inf, importInf, mod)
 		       handle Inf.Mismatch m =>
-			   raise Mismatch (url, baseUrlOpt, m)) before
+			   raise Mismatch {component = url,
+					   request = baseUrlOpt,
+					   cause = m}) before
 		      trace ("type-checked  " ^ message))
 	    end
 
@@ -173,7 +177,9 @@ struct
 		val inf = inf component
 		val mod' = strictTypeCheck (inf, SOME Sig.x, mod)
 			   handle Inf.Mismatch m =>
-			       raise Mismatch (url, NONE, m)
+			       raise Mismatch {component = url,
+					       request = NONE,
+					       cause = m}
 	    in
 		Reflect.Unreflect(val x = mod' signature S = S)
 	    end
