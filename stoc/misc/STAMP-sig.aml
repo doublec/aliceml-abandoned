@@ -6,12 +6,16 @@
 signature STAMP =
   sig
 
-    eqtype Stamp
+    eqtype stamp
+    type t = stamp
 
-    val new:      unit -> Stamp
-    val toString: Stamp -> string
+    val new :		unit -> stamp
+    val toString :	stamp -> string
 
-    val reset:    unit -> unit
+    val reset :		unit -> unit
+
+    val compare :	stamp * stamp -> order
+    val hash :		stamp -> int
 
   end
-(*DEBUG*) where type Stamp = int
+(*DEBUG where type stamp = int*)

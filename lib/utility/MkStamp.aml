@@ -6,7 +6,8 @@
 functor MakeStamp() :> STAMP =
   struct
 
-    type Stamp = int
+    type stamp = int
+    type t     = stamp
 
     val r = ref 0
 
@@ -14,5 +15,8 @@ functor MakeStamp() :> STAMP =
     fun new()    = (r := !r + 1; !r)
 
     val toString = Int.toString
+    val compare  = Int.compare
+
+    fun hash n   = n
 
   end
