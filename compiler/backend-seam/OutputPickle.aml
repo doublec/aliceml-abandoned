@@ -249,10 +249,10 @@ structure OutputPickle :> OUTPUT_PICKLE =
 	    (outputBlock (context, Label.putVec, 3); outputId (context, id);
 	     outputVector outputIdRef (context, idRefs);
 	     outputInstr (context, instr))
-	  | outputInstr (context, Close (id, idRefs, value, instr)) =
+	  | outputInstr (context, Close (id, idRefs, template, instr)) =
 	    (outputBlock (context, Label.close, 4); outputId (context, id);
 	     outputVector outputIdRef (context, idRefs);
-	     outputValue (context, value); outputInstr (context, instr))
+	     outputTemplate (context, template); outputInstr (context, instr))
 	  | outputInstr (context, Specialize (id, idRefs, template, instr)) =
 	    (outputBlock (context, Label.specialize, 4);
 	     outputId (context, id);
@@ -422,8 +422,6 @@ structure OutputPickle :> OUTPUT_PICKLE =
 	     outputId (context, id))
 	  | outputIdRef (context, Global i) =
 	    (outputBlock (context, Label.global, 1); outputId (context, i))
-	  | outputIdRef (context, Toplevel i) =
-	    (outputBlock (context, Label.toplevel, 1); outputId (context, i))
 	and outputTemplate (context, Template (coord, ntoplevels, localNames,
 					       args, body, liveness)) =
 	    (outputBlock (context, Label.template, 6);
@@ -432,20 +430,11 @@ structure OutputPickle :> OUTPUT_PICKLE =
 	     outputVector outputName (context, localNames);
 	     outputArgs outputIdDef (context, args);
 	     outputInstr (context, body); outputLiveness (context, liveness))
-	and outputAbstractCode (context, Function (coord, nglobals, localNames,
+	and outputAbstractCode (context, Function (coord, globals, localNames,
 						   args, body, liveness)) =
 	    (outputBlock (context, Label.function, 6);
 	     outputCoord (context, coord);
-	     outputInt (context, LargeInt.fromInt nglobals);
-	     outputVector outputName (context, localNames);
-	     outputArgs outputIdDef (context, args);
-	     outputInstr (context, body); outputLiveness (context, liveness))
-	  | outputAbstractCode (context, Specialized (coord, toplevels,
-						      localNames, args, body,
-						      liveness)) =
-	    (outputBlock (context, Label.specialized, 6);
-	     outputCoord (context, coord);
-	     outputVector outputValue (context, toplevels);
+	     outputVector (outputOption outputValue) (context, globals);
 	     outputVector outputName (context, localNames);
 	     outputArgs outputIdDef (context, args);
 	     outputInstr (context, body); outputLiveness (context, liveness))
