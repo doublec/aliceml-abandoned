@@ -72,7 +72,8 @@ struct
 
     datatype InfAssoc  = datatype Infix.Assoc
     type     InfStatus = Infix.InfStatus
-    datatype IdStatus  = V | T of int | C of int | R
+    datatype Arity     = NULLARY | UNARY | NARY
+    datatype IdStatus  = V | T of Arity * TyCon * int | C of Arity | R
 
     datatype Env   = ENV of Ran Map.t
     and      EnvFn = EMPTY
