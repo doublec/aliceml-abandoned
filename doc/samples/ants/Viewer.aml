@@ -150,59 +150,60 @@ struct
             val x       = xc * tileSize + (if yc mod 2 <> 0 then tileSize div 2 else 0)         
             val y       = yc * tileSize
 
-            fun drawRect c = 
+            fun drawRect (gc, pixmap, x, y, c) = 
                 (Gdk.gcSetForeground (gc, c);
                  Gdk.drawRectangle (pixmap, gc, true, x, y, tileSize, tileSize))
 
-            fun drawIRect c =
+            fun drawIRect (gc, pixmap, x, y, c) =
                 (Gdk.gcSetForeground (gc, c);
                  Gdk.drawRectangle (pixmap, gc, true, x + 2, y+2, tileSize-4, tileSize-4))
 
-            fun drawBoring c =
+            fun drawBoring (gc, pixmap, x, y, c) =
                 (* draw a cross *)
                 (Gdk.gcSetForeground (gc, c);
                  Gdk.drawLine (pixmap, gc, x+1, y+1, x+tileSize-3, y+tileSize-3);
                  Gdk.drawLine (pixmap, gc, x+tileSize-3, y+1, x+1, y+tileSize-3))
             
-            fun drawFood c =
+            fun drawFood (gc, pixmap, x, y, c) =
                 (Gdk.gcSetForeground (gc, c);
                 Gdk.drawRectangle (pixmap, gc, false, x+1, y+1, tileSize-3, tileSize-3))
 
-            fun drawTrail c =
+            fun drawTrail (gc, pixmap, x, y, c) =
                 (Gdk.gcSetForeground (gc, c);
                  Gdk.drawPoint (pixmap, gc, x+tileSize div 2, y+tileSize div 2))
 
 
-            fun drawMarkers (m, c) =
+            fun drawMarkers (gc, pixmap, x, y, m, c) =
                 (if Array.sub (m, 4) (* food marker *) then
-                    drawFood c
+                    drawFood (gc, pixmap, x, y, c)
                 else if Array.sub (m, 5) (* boring marker *) then
-                    drawBoring c
+                    drawBoring (gc, pixmap, x, y, c)
                 else if Array.sub (m, 1) orelse Array.sub (m, 2) then
-                    drawTrail c 
+                    drawTrail (gc, pixmap, x, y, c) 
                 else ())
         in
             if #rocky cell then
-                drawRect rockC
+                drawRect (gc, pixmap, x, y, rockC)
             else 
-                (if #redHill cell then drawRect redHillC
-                 else if #blackHill cell then drawRect blackHillC
-                 else drawRect emptySpotC;
+                (if #redHill cell then drawRect (gc, pixmap, x, y, redHillC)
+                 else if #blackHill cell then drawRect (gc, pixmap, x, y, blackHillC)
+                 else drawRect (gc, pixmap, x, y, emptySpotC);
                  if !(#food cell) > 0 then 
-                    drawRect (Vector.sub (foodCs, Int.min (!(#food cell), 10) - 1))
+                    drawRect (gc, pixmap, x, y, 
+                        Vector.sub (foodCs, Int.min (!(#food cell), 10) - 1))
                  else ();
                  (case ! (#ant cell) of
                     NONE    => ()
                  |  SOME a  => 
                     (if !(#hasFood a) then
-                        drawRect (Vector.sub (foodCs, 0))
+                        drawRect (gc, pixmap, x, y, Vector.sub (foodCs, 0))
                      else ();
                     if #color a = Ant.Red then
-                        drawIRect redAntC
+                        drawIRect (gc, pixmap,x , y, redAntC)
                     else 
-                        drawIRect blackAntC));
-                 drawMarkers (#redMarkers cell, redAntC);
-                 drawMarkers (#blackMarkers cell, blackAntC));
+                        drawIRect (gc, pixmap, x, y, blackAntC)));
+                 drawMarkers (gc, pixmap, x, y, #redMarkers cell, redAntC);
+                 drawMarkers (gc, pixmap, x, y, #blackMarkers cell, blackAntC));
                    
             Gtk.widgetQueueDrawArea (area,x, y, tileSize, tileSize)
         end
