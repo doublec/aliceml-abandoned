@@ -1,3 +1,5 @@
+PREFIX = /opt/stockhausen-operette1
+
 STOC_MOZART = STOC_MOZART=../../stoc/backend-mozart/stoc-mozart.exe \
 	sml @SMLload=../../stoc/top/stoc-mozart
 OZHOME = /opt/mozart-1.1.1
@@ -74,11 +76,23 @@ ALLFILES = \
 	$(TOPFILES) $(COMMONFILES) $(FRONTENDCOMMONFILES) $(FRONTENDSMLFILES) \
 	$(BACKENDCOMMONFILES) backend-mozart/CodeGenPhase.ozf.sig top/Main.sml
 
-all: $(ALLFILES) backend-mozart/CodeGenPhase.ozf top/Main.ozf stoc-mozart
+INSTALLDIRS = $(PREFIX) $(PREFIX)/bin $(PREFIX)/lib
+INSTALLFILES0 = stoc.ozf Base.import
+INSTALLBINFILES0 = stoc stow
+INSTALLLIBFILES0 = \
+	Base.ozf $(NATIVESOURCES:%=%.ozf) $(NATIVESOURCES:%=%.ozf.sig)
+INSTALLFILES = \
+	$(INSTALLFILES0:%=$(PREFIX)/%) \
+	$(INSTALLBINFILES0:%=$(PREFIX)/bin/%) \
+	$(INSTALLLIBFILES0:%=$(PREFIX)/lib/%) \
 
-stoc-mozart:
+.PHONY: all install clean
+
+all: $(ALLFILES) backend-mozart/CodeGenPhase.ozf top/Main.ozf stoc.ozf
+
+stoc.ozf:
 	OZ_LOAD=prefix=x-alice\\:/=./:prefix=http\\://www.mozart-oz.org/home-1.1.1/=$(OZHOME)/ \
-	$(OZL) -z9 -v --exclude=.. --include=x-alice:/,../../stoc -x x-alice:/top/Main.ozf -o $@
+	$(OZL) -z9 --include=x-alice: -v x-alice:/top/Main.ozf -o $@
 
 %.ozf: %.oz
 	$(OZC) -c $< -o $@
@@ -134,6 +148,20 @@ backend-common/%: ../../stoc/backend-common/% backend-common/%.header \
 
 %.ozf: %.sig
 	$(STOC_MOZART) $< $@
+
+install: $(INSTALLDIRS) $(INSTALLFILES)
+
+$(INSTALLDIRS):
+	mkdir -p $@
+
+$(PREFIX)/%: %
+	install -c -m 444 $< $@
+
+$(PREFIX)/bin/%: %
+	install -c -m 555 $< $@
+
+$(PREFIX)/lib/%: lib/%
+	install -c -m 444 $< $@
 
 clean:
 	-rm -f $(ALLFILES)
