@@ -10,15 +10,12 @@
  *   $Revision$
  *)
 
-import structure Url         from "Url"
-import structure Socket      from "Socket"
-import structure Http        from "Http"
-import signature HTTP_CLIENT from "HTTP_CLIENT-sig"
-
-(*--** implement persistent connections
- * configurability:
- * - idle time to close a connection: Time.t option
- *)
+import structure MkHashImpMap from "../utility/MkHashImpMap"
+import structure IO           from "IO"
+import structure Socket       from "Socket"
+import structure Url          from "Url"
+import structure Http         from "Http"
+import signature HTTP_CLIENT  from "HTTP_CLIENT-sig"
 
 structure HttpClient :> HTTP_CLIENT =
     struct
@@ -28,15 +25,9 @@ structure HttpClient :> HTTP_CLIENT =
 
 	val userAgent = "Stockhausen/1.0"
 
-	fun charOffset (s, c) = charOffset' (s, c, 0)
-	and charOffset' (s, c, i) =
-	    if i = String.size s then NONE
-	    else if String.sub (s, i) = c then SOME i
-	    else charOffset' (s, c, i + 1)
-
 	fun parseAuthority authority =
-	    case charOffset (authority, #":") of
-		SOME i =>
+	    case CharVector.findi (fn (_, c) => c = #":") authority of
+		SOME (i, _) =>
 		    let
 			val host = String.substring (authority, 0, i)
 			val port = String.extract (authority, i + 1, NONE)
@@ -48,6 +39,41 @@ structure HttpClient :> HTTP_CLIENT =
 		    end
 	      | NONE => (authority, 80)
 
+	structure Connection =
+	    struct
+		structure Map =
+		    MkHashImpMap(type t = string * int
+				 val equal = op=
+				 fun hash (host, port) =
+				     String.hash host + port)
+
+		val map: Socket.t list Map.t = Map.new ()
+		val lock = Lock.lock ()
+
+		fun new' (host, port) =
+		    case Map.lookup (map, (host, port)) of
+			SOME [socket] =>
+			    (Map.deleteExistent (map, (host, port)); socket)
+		      | SOME (socket::rest) =>
+			    (Map.insert (map, (host, port), rest); socket)
+		      | (NONE | SOME nil) => Socket.client (host, port)
+
+		val new = Lock.sync lock new'
+
+		fun idle' (host, port, socket) =
+		    let
+			val sockets =
+			    case Map.lookup (map, (host, port)) of
+				SOME sockets => sockets
+			      | NONE => nil
+		    in
+(*--** spawn thread to close this connection after some idle time *)
+			Map.insert (map, (host, port), socket::sockets)
+		    end
+
+		val idle = Lock.sync lock idle'
+	    end
+
 	fun request (url, request) =
 	    let
 		val authority =
@@ -55,10 +81,20 @@ structure HttpClient :> HTTP_CLIENT =
 			SOME authority => authority
 		      | NONE => raise Authority
 		val (host, port) = parseAuthority authority
-		val socket = Socket.client (host, port)
 	    in
-		Http.writeRequest (socket, request);
-		Http.readResponse socket before Socket.close socket
+		request' (host, port, request)
+	    end
+	and request' (host, port, request) =
+	    let
+		val socket = Connection.new (host, port)
+		val closed =
+		    (Http.writeRequest (socket, request); false)
+		    handle IO.Io {...} => true   (*--** already closed *)
+	    in
+		if closed then request' (host, port, request)
+		else
+		    Http.readResponse socket
+		    before Connection.idle (host, port, socket)
 	    end
 
 	fun localUrl url = Url.setScheme (Url.setAuthority (url, NONE), NONE)
