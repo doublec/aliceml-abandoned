@@ -107,10 +107,10 @@ case "$mode" in
 		exit 0
 		;;
             prefix|exec_prefix|includedir|pkgincludedir|libdir)
-		eval tmp="\$$1" && echo "'$tmp'"
+		eval tmp="\$$1" && echo "$tmp"
                 ;;
 	    seamlibdir)
-		echo \''${libdir}/seam'\'
+		echo '${libdir}/seam'
 		;;
 	    *)
 		echo "$0: unknown config option '$1'." >&2

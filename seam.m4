@@ -289,7 +289,7 @@ AC_DEFUN(AC_PROG_SEAMTOOL,
    if test "${SEAMTOOL}" != "none"; then
       seamlibdir=$(${SEAMTOOL} config seamlibdir)
    else
-      seamlibdir='${libdir}/seam'
+      seamlibdir=${libdir}/seam
    fi
    AC_MSG_RESULT(${seamlibdir})
    AC_SUBST(seamlibdir)
