@@ -126,6 +126,8 @@ MLYACC = ml-yacc
 ## Enumerate All Files Making Up the Source Tree
 ##
 
+VMSOURCES = VMMain.oz
+
 LIBSYSTEMNATIVES0 = \
 	Config IO OS Unix CommandLine Component Debug Socket Rand Reflect
 LIBUTILITYNATIVES0 = \
