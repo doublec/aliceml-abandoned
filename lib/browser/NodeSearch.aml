@@ -69,6 +69,22 @@ struct
 		then SOME(node)
 		    else SOME(getParent(node))
 	else NONE
+      | treeSearch (RelRefNode _ as node,x,y) = if inBoundingBox(node,x,y) 
+						then SOME(node)
+						    else NONE
+      | treeSearch (RelNode(r) as node,x,y) =  (case !(#counter(r)) of
+			  1  =>  treeSearch(!(#content(r)),x,y)
+			| _  =>  let
+				     val labellength =  String.length(#rep(r))
+				     val label_in_bb = x>=0
+					 andalso x < labellength
+					 andalso y = 0
+				 in
+				     if label_in_bb then SOME(node) 
+					 else treeSearch(!(#content(r)),
+							 x - labellength,
+							 y)
+				 end)
       | treeSearch (Concat(r) as node,x,y) =
 	    let
 		val _ = TextIO.print("Concat search with x=" 
