@@ -5,19 +5,22 @@ signature IMP_SET =
     type set
     type t = set
 
-    exception Delete
+    exception Delete    of item
     exception Collision of item
 
-    val new :		int -> set
+    val new :		unit -> set
     val copy :		set -> set
 
-    val delete :	set * item -> unit		(* Delete *)
+    val delete :	set * item -> unit
+    val deleteExistent:	set * item -> unit		(* Delete *)
     val insert :	set * item -> unit
     val insertDisjoint:	set * item -> unit		(* Collision *)
     val union :		set * set  -> unit
     val unionDisjoint :	set * set  -> unit		(* Collision *)
+
+    val deleteWith :	(item -> unit) -> set * item -> unit
     val insertWith :	(item -> unit) -> set * item -> unit
-    val unionWith :	(item -> unit) -> set * set -> unit
+    val unionWith :	(item -> unit) -> set * set  -> unit
 
     val member :	set * item -> bool
     val size :		set -> int

@@ -9,7 +9,7 @@ signature SCOPED_IMP_SET =
     type set
     type t = set
 
-    exception Delete
+    exception Delete    of item
     exception Collision of item
 
     val new :			unit -> set

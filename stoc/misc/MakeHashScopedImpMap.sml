@@ -12,12 +12,10 @@ functor MakeHashScopedImpMap(Key: HASH_KEY) :>
     exception Collision = ImpMap.Collision
 
 
-    val scopeSize = 19
-
-    fun new()			= ref[ImpMap.new scopeSize]
+    fun new()			= ref[ImpMap.new()]
     fun copy(ref ms)		= ref(List.map ImpMap.copy ms)
     fun copyScope(ref ms)	= ref[ImpMap.copy(List.hd ms)]
-    fun insertScope r		= r := ImpMap.new scopeSize :: !r
+    fun insertScope r		= r := ImpMap.new() :: !r
     fun deleteScope r		= r := List.tl(!r)
     fun delete2ndScope r	= r := List.hd(!r)::List.tl(List.tl(!r))
     fun splitScope(r as ref ms)	= ( deleteScope r ; ref[List.hd ms] )

@@ -5,17 +5,20 @@ signature IMP_MAP =
     type 'a map
     type 'a t = 'a map
 
-    exception Delete
+    exception Delete    of key
     exception Collision of key
 
-    val new :		int -> 'a map
+    val new :		unit -> 'a map
     val copy :		'a map -> 'a map
 
-    val delete :	'a map * key -> unit		(* Delete *)
+    val delete :	'a map * key -> unit
+    val deleteExistent:	'a map * key -> unit		(* Delete *)
     val insert :	'a map * key * 'a -> unit
     val insertDisjoint:	'a map * key * 'a -> unit	(* Collision *)
     val union :		'a map * 'a map -> unit
     val unionDisjoint :	'a map * 'a map -> unit		(* Collision *)
+
+    val deleteWith :	(key -> unit) -> 'a map * key -> unit
     val insertWith :	('a * 'a -> 'a) -> 'a map * key * 'a -> unit
     val unionWith :	('a * 'a -> 'a) -> 'a map * 'a map -> unit
     val insertWithi :	(key * 'a * 'a -> 'a) -> 'a map * key * 'a -> unit
@@ -28,6 +31,6 @@ signature IMP_MAP =
     val app :		('a -> unit) -> 'a map -> unit
     val fold :		('a * 'b -> 'b) -> 'b -> 'a map -> 'b
     val appi :		(key * 'a -> unit) -> 'a map -> unit
-    val foldi :		((key * 'a) * 'b -> 'b) -> 'b -> 'a map -> 'b
+    val foldi :		(key * 'a * 'b -> 'b) -> 'b -> 'a map -> 'b
 
   end

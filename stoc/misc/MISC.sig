@@ -7,6 +7,7 @@ signature MISC =
 
     val Option_isNone :	'a option -> bool
     val Option_app :	('a -> unit) -> 'a option -> unit
+    val Option_fold :	('a * 'b -> 'b) -> 'b -> 'a option -> 'b
 
     val ListPair_find :	('a * 'b -> bool) -> 'a list * 'b list -> ('a * 'b) option
 

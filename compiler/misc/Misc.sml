@@ -11,6 +11,9 @@ structure Misc :> MISC =
     fun Option_app f  NONE	= ()
       | Option_app f (SOME x)	= f x
 
+    fun Option_fold f b  NONE	= b
+      | Option_fold f b (SOME a)= f(a,b)
+
 
     fun ListPair_find f (nil,_)	= NONE
       | ListPair_find f (_,nil)	= NONE

@@ -1,59 +1,83 @@
 functor MakeHashImpSet(Item: HASH_KEY) :> IMP_SET where type item = Item.t =
   struct
 
+    open Misc
+
     type item = Item.t
-    type set  = item list array
+    type set  = (int ref * item option array) ref
     type t    = set
 
-    exception Delete
+    exception Delete    of item
     exception Collision of item
 
+    val initialSize		= 19
 
-    fun hash(s,k)		= Item.hash k mod Array.length s
 
-    fun new n			= Array.array(n,[])
+    fun new()			= ref(ref 0, Array.array(initialSize,NONE))
 
-    fun copy s			= let val s' = Array.array(Array.length s, [])
+    fun copy(ref(n,t))		= let val t' = Array.array(Array.length t,NONE)
 				  in
-				      Array.copy{src=s, dst=s', si=0, di=0,
+				      Array.copy{src=t, dst=t', si=0, di=0,
 						 len=NONE} ;
-				      s'
+				      ref(ref(!n), t')
 				  end
 
-    fun isEmpty s		= Misc.Array_all List.null s
-    fun size s			= Array.foldl (fn(is,n) => n+List.length is) 0 s
 
-    fun member(s,i)		= let val is = Array.sub(s, hash(s,i)) in
-				      List.exists (fn i' => i = i') is
-				  end
+    fun size(ref(n,_))		= !n
+    fun isEmpty(ref(n,_))	= !n = 0
 
-    fun delete'( [],   i')	= raise Delete
-      | delete'(i::is, i')	= if i = i' then is : item list
-					    else i::delete'(is,i')
 
-    fun delete(s,i)		= let val n   = hash(s,i)
-				      val is  = Array.sub(s,n)
-				      val is' = delete'(is,i)
+    fun find(t,k)		= find'(t, Item.hash k mod Array.length t, k)
+    and find'(t,i,k)		= case Array.sub(t,i)
+				    of NONE    => (false,i)
+				     | SOME k' =>
+				       if k = k' then (true,i)
+				       else find'(t,(i+1) mod Array.length t, k)
+
+    fun member(ref(_,t),k)	= #1(find(t,k))
+
+
+    fun deleteWith f (ref(n,t), k)
+				= case find(t,k)
+				    of (false,_) => f k
+				     | (true, i) => ( Array.update(t,i,NONE)
+						    ; n := !n-1
+						    )
+
+    val delete			= deleteWith ignore
+    val deleteExistent		= deleteWith (fn k => raise Delete k)
+
+
+    fun reinsert t k		= Array.update(t, #2(find(t,k)), SOME k)
+    fun resize(s as ref(n,t))	= if 3 * !n < 2 * Array.length t then () else
+				  let
+				      val t' = Array.array(2*Array.length t-1,
+							   NONE)
 				  in
-				      Array.update(s, n, is')
+				      Array.app (Option_app(reinsert t')) t ;
+				      s := (n,t')
 				  end
 
-    fun insertWith f (s,i)	= let val n   = hash(s,i)
-				      val is  = Array.sub(s,n)
+
+    fun insertWith f (s,k)	= let val   _   = resize s
+				      val (n,t) = !s
 				  in
-				      if List.exists (fn i' => i = i') is
-				      then f i
-				      else Array.update(s, n, i::is)
+				     case find(t,k)
+				       of (true, _) => f k
+					| (false,i) =>
+					  ( Array.update(t,i,SOME k)
+					  ; n := !n+1
+					  )
 				  end
 
-    val insert			= insertWith(fn i => ())
-    val insertDisjoint		= insertWith(fn i => raise Collision i)
+    val insert			= insertWith ignore
+    val insertDisjoint		= insertWith(fn k => raise Collision k)
 
-    fun app f			= Array.app(List.app f)
-    fun fold f			= Array.foldl(fn(is,a) => List.foldl f a is)
+    fun app f (ref(_,t))	= Array.app (Option_app f) t
+    fun fold f a (ref(_,t))	= Array.foldl (fn(ko,a)=>Option_fold f a ko) a t
 
-    fun union(s1,s2)		= app (fn i => insert(s1,i)) s2
-    fun unionDisjoint(s1,s2)	= app (fn i => insertDisjoint(s1,i)) s2
-    fun unionWith f (s1,s2)	= app (fn i => insertWith f (s1,i)) s2
+    fun union(s1,s2)		= app (fn k => insert(s1,k)) s2
+    fun unionDisjoint(s1,s2)	= app (fn k => insertDisjoint(s1,k)) s2
+    fun unionWith f (s1,s2)	= app (fn k => insertWith f (s1,k)) s2
 
   end

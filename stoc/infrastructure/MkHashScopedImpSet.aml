@@ -14,10 +14,10 @@ functor MakeHashScopedImpSet(Item: HASH_KEY) :>
 
     val scopeSize = 19
 
-    fun new()			= ref[ImpSet.new scopeSize]
+    fun new()			= ref[ImpSet.new()]
     fun copy(ref ss)		= ref(List.map ImpSet.copy ss)
     fun copyScope(ref ss)	= ref[ImpSet.copy(List.hd ss)]
-    fun insertScope r		= r := ImpSet.new scopeSize :: !r
+    fun insertScope r		= r := ImpSet.new() :: !r
     fun deleteScope r		= r := List.tl(!r)
     fun delete2ndScope r	= r := List.hd(!r)::List.tl(List.tl(!r))
     fun splitScope(r as ref ss)	= ( deleteScope r ; ref[List.hd ss] )

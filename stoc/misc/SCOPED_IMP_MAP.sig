@@ -9,7 +9,7 @@ signature SCOPED_IMP_MAP =
     type 'a map
     type 'a t = 'a map
 
-    exception Delete
+    exception Delete    of key
     exception Collision of key
 
     val new :			unit -> 'a map
@@ -56,7 +56,7 @@ signature SCOPED_IMP_MAP =
 
     val fold :			('a * 'b -> 'b) -> 'b -> 'a map -> 'b
     val foldScope :		('a * 'b -> 'b) -> 'b -> 'a map -> 'b
-    val foldi :			((key * 'a) * 'b -> 'b) -> 'b -> 'a map -> 'b
-    val foldiScope :		((key * 'a) * 'b -> 'b) -> 'b -> 'a map -> 'b
+    val foldi :			(key * 'a * 'b -> 'b) -> 'b -> 'a map -> 'b
+    val foldiScope :		(key * 'a * 'b -> 'b) -> 'b -> 'a map -> 'b
 
   end
