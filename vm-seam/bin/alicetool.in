@@ -83,7 +83,11 @@ case "$mode" in
 	exec seamtool ${verbose} compile "${gmpincludes}" -I"${includedir}" "$@"
 	;;
     link)
-	exec seamtool ${verbose} link "$@" "${alicedll}" "${gmplib}"
+    if [[ -n "${alicedll}" ]] ; then
+	  exec seamtool ${verbose} link "$@" "${alicedll}" "${gmplib}";
+    else
+      exec seamtool ${verbose} link "$@" "${gmplib}";
+    fi
 	;;
     *)
 	echo "$0: unknown mode \`$1\'" >&2
