@@ -155,10 +155,10 @@ u_int PrimitiveInterpreter::GetArity() {
 Interpreter::function PrimitiveInterpreter::GetCFunction() {
   return GetFunction();
 }
+
 //
 // Primitive Functions
 //
-
 word Primitive::MakeFunction(const char *name, Interpreter::function function,
 			     u_int arity, bool sited) {
   PrimitiveInterpreter *interpreter =
@@ -181,13 +181,6 @@ word Primitive::MakeClosure(const char *name, Interpreter::function function,
 }
 
 Interpreter::Result Primitive::Execute(Interpreter *interpreter) {
-  PrimitiveInterpreter *primitive =
-    static_cast<PrimitiveInterpreter *>(interpreter);
-  Scheduler::PushFrame(primitive->GetFrame());
-  return PrimitiveInterpreter::Run(primitive);
-}
-
-Interpreter::Result Primitive::ExecuteNoCCC(Interpreter *interpreter) {
   PrimitiveInterpreter *primitive =
     static_cast<PrimitiveInterpreter *>(interpreter);
   Scheduler::PushFrame(primitive->GetFrame());

@@ -30,7 +30,6 @@ public:
 
   // Push a new primitive frame and call primitive directly
   static Interpreter::Result Execute(Interpreter *interpreter);
-  static Interpreter::Result ExecuteNoCCC(Interpreter *interpreter);
 };
 
 #endif
