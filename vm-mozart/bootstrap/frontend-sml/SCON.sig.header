@@ -1,4 +1,0 @@
-import
-    structure WideChar
-    structure WideString
-from "x-alice:/misc/Wide.ozf"

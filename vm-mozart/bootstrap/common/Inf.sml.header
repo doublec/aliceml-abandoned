@@ -3,10 +3,6 @@ import
 from "x-alice:/infrastructure/Crash.ozf"
 
 import
-    structure Misc
-from "x-alice:/misc/Misc.ozf"
-
-import
     structure MakeHashImpMap
 from "x-alice:/misc/MakeHashImpMap.ozf"
 

@@ -1,8 +1,4 @@
 import
-    structure Misc
-from "x-alice:/misc/Misc.ozf"
-
-import
     structure Crash
 from "x-alice:/infrastructure/Crash.ozf"
 

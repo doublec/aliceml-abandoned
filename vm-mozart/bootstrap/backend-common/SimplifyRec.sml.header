@@ -11,10 +11,6 @@ import
 from "x-alice:/infrastructure/Error.ozf"
 
 import
-    structure Misc
-from "x-alice:/misc/Misc.ozf"
-
-import
     structure Label
 from "x-alice:/common/Label.ozf"
 

@@ -3,15 +3,6 @@ import
 from "x-alice:/infrastructure/Crash.ozf"
 
 import
-    structure WideChar
-    structure WideString
-from "x-alice:/misc/Wide.ozf"
-
-import
-    structure Misc
-from "x-alice:/misc/Misc.ozf"
-
-import
     signature Parser_TOKENS
 from "x-alice:/frontend-sml/PARSER.ozf"
 

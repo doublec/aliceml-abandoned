@@ -1,8 +1,3 @@
 import
     signature PARSER_DATA
 from "x-alice:/lib/ml-yacc/base.ozf"
-
-import
-    structure WideChar
-    structure WideString
-from "x-alice:/misc/Wide.ozf"

@@ -7,14 +7,6 @@ import
 from "x-alice:/infrastructure/Source.ozf"
 
 import
-    structure Misc
-from "x-alice:/misc/Misc.ozf"
-
-import
-    structure WideChar
-from "x-alice:/misc/Wide.ozf"
-
-import
     structure Stamp
 from "x-alice:/common/Stamp.ozf"
 

@@ -7,11 +7,6 @@ import
 from "x-alice:/infrastructure/Source.ozf"
 
 import
-    structure WideChar
-    structure WideString
-from "x-alice:/misc/Wide.ozf"
-
-import
     structure SCon
 from "x-alice:/frontend-sml/SCon.ozf"
 
