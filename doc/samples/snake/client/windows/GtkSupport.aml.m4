@@ -97,8 +97,8 @@ struct
      val freeze = Gtk.layoutFreeze
      val thaw   = Gtk.layoutThaw
      fun createGroup (p, x, y) = 
-	 itemNew (p, groupGetType (), [("x", Gtk.REAL x),
-				       ("y", Gtk.REAL y)])
+	 itemNew (p, GROUP, [("x", Gtk.DOUBLE x),
+				       ("y", Gtk.DOUBLE y)])
      fun createEllipse (p, x1, y1, x2, y2, fillColor, outColor) = 
 	 itemNew (p, ELLIPSE,
 		  [("x1", Gtk.DOUBLE x1),
@@ -137,18 +137,26 @@ struct
     val null = Gtk.null ()
     val widgetSetSizeRequest = widgetSetUsize
 
-    val createTextWidget = textNew (null, null)
+    fun createTextWidget () = textNew (null, null)
 			     
     fun textWidgetInsert (widget, text, color) =
 	let
 	    val font = Gdk.fontLoad ("-*-times-bold-*-*-*-12-*-*-*-*-*-*-*")
+	    val stdFont = Gdk.fontLoad ("-*-*-*-*-*-*-*-*-*-*-*-*-*-*")
 	    val white = Gdk.allocColor (65535, 65535, 65535)
 	    val black = Gdk.allocColor (0, 0, 0)
 	in
 	    if font <> null andalso color <> null
-		then textInsert (widget, font, color, white, text)
-	    else textInsert (widget, stdFont, black, white, text)
+		then textInsert (widget, font, color, white, text, ~1)
+	    else textInsert (widget, stdFont, black, white, text, ~1)
 	end
+
+    fun buttonSetLabel (bt, text) =
+        let
+            val lbl = binGetFieldChild bt
+        in
+            labelSetText (lbl, text)
+        end
 end
 
 structure Gdk =

@@ -199,7 +199,7 @@ struct
 			    in 
 				play (name, color)
 			    end
-
+                    
 		in
 		    case return () of 
 			FST game     => 

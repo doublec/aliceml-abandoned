@@ -101,22 +101,19 @@ struct
             val partDescs       = DynArray.array (0, 
                     lazy (raise P.Protocol unknownClientMsg) ) : pdesc DynArray.array
            
-            fun mapFiltered f =
-                DynArray.foldl (fn (desc, res) => 
-                                case f desc of
-                                    NONE    => res
-                                |   SOME d  => d :: res) [] partDescs
-            
-            fun mapPred p f = 
-                mapFiltered (fn (pdesc as PDESC d) => 
-                        if p $ #state d then 
-                            SOME (f pdesc) 
-                        else NONE) 
+            fun mapPlayers (pd, f) = 
+                DynArray.foldl (fn (p as PDESC pd, res) =>
+                    if PState.isPlayer $ #state pd then
+                        f p :: res
+                    else res) [] pd                        
 
             
-            fun mapPlayers f = mapPred PState.isPlayer f
+            fun mapPlayed (pd, f) = 
+                DynArray.foldl (fn (p as PDESC pd, res) =>
+                    if PState.played $ #state pd then
+                        f p :: res
+                    else res) [] pd                        
             
-            fun mapPlayed f  = mapPred PState.played f
 
             val lock            = RWLock.lock ()
 
@@ -173,7 +170,7 @@ struct
                 List.app (fn c => invoke (c, f, a)) clients 
                
             
-            fun synchronize partDescs =
+            fun synchronize (partDescs, config : P.config) =
                 let
                     val syncStepTime    = 10
 
@@ -209,25 +206,26 @@ struct
                     else ()
                 end
                     
-            fun invokeOnAll (f, a) =
+            fun invokeOnAll (partDescs, f, a) =
                 DynArray.app (fn c => invoke (c, f, a)) partDescs
             
-            fun invokeOnAllBut (id, f, a) =
+            fun invokeOnAllBut (partDescs, id, f, a) =
                 DynArray.app (fn (c as PDESC pdesc) => 
                     if PState.id (#state pdesc) = id then ()
                     else invoke (c, f, a)) partDescs
 
             
-            fun computePoints () = 
-                mapPlayed (fn (PDESC pd) => 
+            fun computePoints (partDescs, config : P.config) = 
+                mapPlayed (partDescs, fn (PDESC pd) => 
                         PState.points (#state pd, #lives config)) 
 
             (* for each participant send tick signal *)
-            fun sendTick (pointsChanged, diffs, time) =
+            fun sendTick (pointsChanged, diffs, time, config : P.config,
+                            partDescs) =
                 let
                     val points = 
                         if pointsChanged 
-                            then SOME $ computePoints ()
+                            then SOME $ computePoints (partDescs, config)
                             else NONE
                 in
                     DynArray.app (fn pd =>
@@ -250,7 +248,8 @@ struct
                 - ...
              *)
 
-            val tick        = RWLock.syncWrite lock (fn (arena, ticks) =>
+            val tick        = RWLock.syncWrite lock (fn (arena, ticks, 
+                                    config :P.config, partDescs) =>
                 let
                     val disconns        = ref [] : (string * Color.color) list ref
                     val quitters        = ref [] : (string * Color.color) list ref
@@ -280,8 +279,7 @@ struct
                                 (* priviliged client has disconnected! 
                                    abort the game.
                                  *)
-                                (print "server disconnected!\n";
-                                raise ServerDisconnected)
+                                raise ServerDisconnected
                             else ()
                         end
 
@@ -397,7 +395,8 @@ struct
                             Arena.moveSnakes (arena, !snakes, !snakesInGate)
 
                     fun sendDead [] = ()
-                      | sendDead deads = invokeOnAll (#playersDied, deads)
+                      | sendDead deads = 
+                        invokeOnAll (partDescs, #playersDied, deads)
                 in 
                     (* shall we place a goody ? *)
                     if !goodies < #goodie config andalso 
@@ -475,7 +474,8 @@ struct
                         sendDead
                     else ();
 
-                    sendTick (!pointsChanged, Arena.commit arena, timeLeft);
+                    sendTick (!pointsChanged, Arena.commit arena, timeLeft, 
+                            config, partDescs);
 
                     (* are there still some snakes left on the arena ? 
                        and is there still time left *)
@@ -489,24 +489,24 @@ struct
               executes all levels one after another.
              *)
               
-            fun finishTournament () =
+            fun finishTournament (partDescs, config : P.config)=
                 let
                     val highscore = HighscoreIO.load ()
                     val highscore = Highscore.merge (highscore,
-                                        computePoints (), 0)
+                                        computePoints (partDescs, config), 0)
                 in
                     gameStarted := false;
-                    invokeOnAll (#tournamentFinished, highscore)
+                    invokeOnAll (partDescs, #tournamentFinished, highscore)
                 end
                 
-            fun startMainLoop config =
+            fun startMainLoop (config : P.config, partDescs) =
                 let
-                    fun mainLoop [] = finishTournament ()
+                    fun mainLoop [] = finishTournament (partDescs, config)
                       | mainLoop (l::ls) =
-                        (if executeLevel l then
+                        (if executeLevel (l, partDescs, config) then
                             mainLoop ls
                          else 
-                            finishTournament () )
+                            finishTournament (partDescs, config) )
                 in
                     if !gameStarted 
                         then raise P.Protocol gameStartedMsg
@@ -515,15 +515,16 @@ struct
                     gameStarted := true;
                    
                     (* let the games begin ... ;-) *)
-                    invokeOnAll (#tournamentStarted, ());
+                    invokeOnAll (partDescs, #tournamentStarted, ());
 
                     ispawn (_file_, _line_) mainLoop (computeLevels config)
                 end
 
-            and startLevel (arena, startPos) =
+            and startLevel (arena, startPos, config : P.config,
+                            partDescs) =
                 let
                     (* all players who are allowed to play another level *)
-                    val players     = mapPlayers id
+                    val players     = mapPlayers (partDescs, id)
                     val dims        = #dimensions config 
                     val levelInfo   = {
                             dimensions = dims
@@ -547,11 +548,12 @@ struct
                                     PState.startLevel (state, op* dims, pos, dir)
                                 end) (players, startPos);
             
-                            invokeOnAll (#levelStarted, levelInfo);
+                            invokeOnAll (partDescs, #levelStarted, levelInfo);
                             (* send initial diff list *)
                             let
                                 val diffs   = Arena.commit arena
-                                val pts     = SOME (computePoints ())
+                                val pts     = SOME (computePoints 
+                                                (partDescs, config))
                                 val time    = #timeout config
                             in
                                 ListPair.app (fn (p as PDESC pd, (pos, _)) =>
@@ -562,42 +564,43 @@ struct
                                             (pts, diffs, SOME pos, time) )
                                     end) (players, startPos)
                             end;
-                            countdown 3)
+                            countdown (partDescs, 3))
                 end
 
-            and countdown n =
+            and countdown (partDescs, n) =
                 let
                     val p   = Promise.promise ()
                     
-                    fun loop n =
+                    fun loop (partDescs, n) =
                         if n < 0 
                             then Promise.fulfill (p, true)
                             else (Thread.sleep (Time.fromMilliseconds 990);
-                                  invokeOnAll (#countdown, n);
-                                  loop (n - 1) )
+                                  invokeOnAll (partDescs, #countdown, n);
+                                  loop (partDescs, n - 1) )
                 in
-                    ispawn (_file_, _line_) loop n;
+                    ispawn (_file_, _line_) loop (partDescs, n);
                     Promise.future p
                 end
                 
             and finishLevel (arena) =
                 ()
 
-            and executeLevel (arena, startPos) =
+            and executeLevel ((arena, startPos), partDescs, 
+                                config : P.config) =
                 let
-                    fun ticker (level, ticks) =
+                    fun ticker (level, ticks, config, partDescs) =
                         (* if level not yet done *)
-                        if tick (level, ticks)
+                        if tick (level, ticks, config, partDescs)
                             then 
                                 (* sleep some tick and execute next ticks *)
                                 (Thread.sleep $ #tick config;
-                                 synchronize partDescs;
-                                 ticker (level, ticks + 1))
+                                 synchronize (partDescs, config);
+                                 ticker (level, ticks + 1, config, partDescs))
                             else ()
                 in
-                    if startLevel (arena, startPos) then
-                        (ticker (arena, 0);
-                         finishLevel (arena);
+                    if startLevel (arena, startPos, config, partDescs) then
+                        (ticker (arena, 0, config, partDescs);
+                         finishLevel (arena, partDescs);
                          true)
                         handle ServerDisconnected => false
                     else false
@@ -607,7 +610,8 @@ struct
                [startGame] can only be called by the priviliged client
                (i.e the one that started the server)
              *)
-            val startGame = RWLock.syncWrite lock (fn () => startMainLoop config)
+            val startGame = RWLock.syncWrite lock 
+                            (fn () => startMainLoop (config, partDescs))
 
 
             (**
@@ -677,7 +681,8 @@ struct
                               playerNum := !playerNum + 1;
                               PState.play (state, maxLen, name, color);
                               (* inform the others *)
-                              invokeOnAllBut (id, #playersJoined, [(name, color)]); 
+                              invokeOnAllBut (partDescs,
+                                id, #playersJoined, [(name, color)]); 
                               true)
                         else false 
                 end)
@@ -746,7 +751,7 @@ struct
             val connect     = RWLock.syncWrite lock (fn interface =>
                 let
                     val (allPlayers, allPlayersLook)   = ListPair.unzip $ 
-                        mapPlayers (fn (pdesc as PDESC p) => 
+                        mapPlayers (partDescs, fn (pdesc as PDESC p) => 
                             (pdesc, PState.nameNColor $ #state p) )
 
                     val pdesc as PDESC p    = createParticipant interface
