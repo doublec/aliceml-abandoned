@@ -54,7 +54,9 @@ define
       StoreFeature       = CompilerSupport.storeFeature
       StoreConstant      = CompilerSupport.storeConstant
       StoreInt           = CompilerSupport.storeInt
-      StoreRegisterIndex = CompilerSupport.storeRegisterIndex
+      StoreXRegIndex     = CompilerSupport.storeXRegisterIndex
+      StoreYRegIndex     = CompilerSupport.storeYRegisterIndex
+      StoreGRegIndex     = CompilerSupport.storeGRegisterIndex
       StoreProcedureRef  = CompilerSupport.storeProcedureRef
       StoreRecordArity   = CompilerSupport.storeRecordArity
       StoreGRegRef       = CompilerSupport.storeGRegRef
@@ -63,19 +65,25 @@ define
       StoreBuiltinname   = CompilerSupport.storeBuiltinname
 
       proc {StoreRegister CodeBlock Register}
-	 {StoreRegisterIndex CodeBlock Register.1}
+	 case Register of x(I) then
+	    {StoreXRegIndex CodeBlock I}
+	 [] y(I) then
+	    {StoreYRegIndex CodeBlock I}
+	 [] g(I) then
+	    {StoreGRegIndex CodeBlock I}
+	 end
       end
 
       proc {StoreXRegisterIndex CodeBlock x(Index)}
-	 {StoreRegisterIndex CodeBlock Index}
+	 {StoreXRegIndex CodeBlock Index}
       end
 
       proc {StoreYRegisterIndex CodeBlock y(Index)}
-	 {StoreRegisterIndex CodeBlock Index}
+	 {StoreYRegIndex CodeBlock Index}
       end
 
       proc {StoreGRegisterIndex CodeBlock g(Index)}
-	 {StoreRegisterIndex CodeBlock Index}
+	 {StoreGRegIndex CodeBlock Index}
       end
 
       local
