@@ -10,6 +10,10 @@
  *   $Revision$
  *)
 
+import
+    structure Label
+from "../common/Label"
+
 signature ARITY =
     sig
 	datatype t =

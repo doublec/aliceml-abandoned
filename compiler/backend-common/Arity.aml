@@ -10,6 +10,14 @@
  *   $Revision$
  *)
 
+import
+    structure Label
+from "../common/Label"
+
+import
+    signature ARITY
+from "ARITY-sig"
+
 structure Arity :> ARITY =
     struct
 	datatype t =
