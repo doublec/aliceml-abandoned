@@ -27,7 +27,7 @@ signature SIMPLIFY_MATCH =
 	  | LabTest of Label.t
 	  | VecTest of int
 	  | GuardTest of mapping * I.exp
-	  | DecTest of mapping * I.info * I.dec list
+	  | DecTest of mapping * I.dec list
 	withtype mapping = (pos * I.id) list
 
 	datatype testGraph =
@@ -43,11 +43,11 @@ signature SIMPLIFY_MATCH =
 
 	type consequent = (O.coord * O.body option ref)
 
-	val buildGraph: (I.info * I.pat * O.body) list * O.body ->
+	val buildGraph: (O.coord * I.pat * O.body) list * O.body ->
 	    testGraph * consequent list
 
 	type bodyFun = unit -> O.body
 
-	val buildFunArgs: I.id * (I.info * I.pat * O.body) list * bodyFun ->
+	val buildFunArgs: I.id * (O.coord * I.pat * O.body) list * bodyFun ->
 	    (O.id O.args * testGraph * mapping * consequent list) list
     end

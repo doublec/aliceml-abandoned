@@ -485,7 +485,7 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	     appi (fn (i, id) =>
 		   (emit Dup; emit (LdcI4 i); emitId id; emit StelemRef)) ids;
 	     emit Pop)
-	  | genExp (FunExp (coord, stamp, _, argsBodyList), PREPARE) =
+	  | genExp (FunExp ((coord, _), stamp, _, argsBodyList), PREPARE) =
 	    (emitCoord ("FunExp", coord); emit (Newobj (className stamp, nil));
 	     case checkSingleMethod argsBodyList of
 		 SOME (TupArgs nil, _) =>
@@ -613,9 +613,10 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 		closeMethod ()
 	    end
 	and genArgs (OneArg id) = emitId id
-	  | genArgs (TupArgs ids) = genExp (TupExp (Source.nowhere, ids), BOTH)
-	  | genArgs (RecArgs idExpList) =
-	    genExp (RecExp (Source.nowhere, idExpList), BOTH)
+	  | genArgs (TupArgs ids) =   (*--** type below *)
+	    genExp (TupExp ((Source.nowhere, NONE), ids), BOTH)
+	  | genArgs (RecArgs idExpList) =   (*--** type below *)
+	    genExp (RecExp ((Source.nowhere, NONE), idExpList), BOTH)
 	and genBody (stm::stms) =
 	    (case infoStm stm of
 		 (_, ref (Kill set)) => kill set

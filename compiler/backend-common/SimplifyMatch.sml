@@ -32,7 +32,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	  | LabTest of Label.t
 	  | VecTest of int
 	  | GuardTest of mapping * exp
-	  | DecTest of mapping * O.coord * dec list
+	  | DecTest of mapping * dec list
 	withtype mapping = (pos * id) list
 
 	(* Test Sequences *)
@@ -126,11 +126,11 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	    in
 		(Test (pos, GuardTest (mapping', exp))::rest', mapping')
 	    end
-	  | makeTestSeq (WithPat (coord, pat, decs), pos, rest, mapping) =
+	  | makeTestSeq (WithPat (_, pat, decs), pos, rest, mapping) =
 	    let
 		val (rest', mapping') = makeTestSeq (pat, pos, rest, mapping)
 	    in
-		(Test (pos, DecTest (mapping', coord, decs))::rest', mapping')
+		(Test (pos, DecTest (mapping', decs))::rest', mapping')
 	    end
 
 	(* Test Graphs *)
@@ -401,7 +401,8 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	    fun makeArg (match, argsMatchesList) =
 		insertMatch (argsMatchesList, normalize match, match)
 
-	    fun freshId coord = Id (coord, Stamp.new (), Name.InId)
+	    fun freshId coord = Id ((coord, NONE), Stamp.new (), Name.InId)
+		(*--** specify the type *)
 
 	    fun process (ONE, graph, consequents, id) =
 		(O.OneArg id, graph, [(nil, id)], consequents)

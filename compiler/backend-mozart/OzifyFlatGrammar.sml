@@ -103,8 +103,8 @@ structure OzifyImperativeGrammar :> OZIFY_IMPERATIVE_GRAMMAR =
 		NONE => outputAtom (q, Label.toString lab)
 	      | SOME n => outputInt (q, n)
 
-	fun outputId (q, Id (coord, stamp, name)) =
-	    (f (q, "id"); outputCoord (q, coord); m q;
+	fun outputId (q, Id (info, stamp, name)) =
+	    (f (q, "id"); outputInfo (q, info); m q;
 	     outputStamp (q, stamp); m q;
 	     case name of
 		 Name.ExId s => (f (q, "exId"); outputAtom (q, s); r q)
@@ -188,59 +188,59 @@ structure OzifyImperativeGrammar :> OZIFY_IMPERATIVE_GRAMMAR =
 	  | outputStm (q, ExportStm (info, exp)) =
 	    (f (q, "exportStm"); outputInfo (q, info); m q;
 	     outputExp (q, exp); r q)
-	and outputExp (q, LitExp (coord, lit)) =
-	    (f (q, "litExp"); outputCoord (q, coord); m q;
+	and outputExp (q, LitExp (info, lit)) =
+	    (f (q, "litExp"); outputInfo (q, info); m q;
 	     outputLit (q, lit); r q)
-	  | outputExp (q, PrimExp (coord, string)) =
-	    (f (q, "primExp"); outputCoord (q, coord); m q;
+	  | outputExp (q, PrimExp (info, string)) =
+	    (f (q, "primExp"); outputInfo (q, info); m q;
 	     outputAtom (q, string); r q)
-	  | outputExp (q, NewExp (coord, stringOpt, hasArgs)) =
-	    (f (q, "newExp"); outputCoord (q, coord); m q;
+	  | outputExp (q, NewExp (info, stringOpt, hasArgs)) =
+	    (f (q, "newExp"); outputInfo (q, info); m q;
 	     outputOption outputAtom (q, stringOpt); m q;
 	     outputBool (q, hasArgs); r q)
-	  | outputExp (q, VarExp (coord, id)) =
-	    (f (q, "varExp"); outputCoord (q, coord); m q;
+	  | outputExp (q, VarExp (info, id)) =
+	    (f (q, "varExp"); outputInfo (q, info); m q;
 	     outputId (q, id); r q)
-	  | outputExp (q, ConExp (coord, id, hasArgs)) =
-	    (f (q, "conExp"); outputCoord (q, coord); m q;
+	  | outputExp (q, ConExp (info, id, hasArgs)) =
+	    (f (q, "conExp"); outputInfo (q, info); m q;
 	     outputId (q, id); m q; outputBool (q, hasArgs); r q)
-	  | outputExp (q, RefExp coord) =
-	    (f (q, "refExp"); outputCoord (q, coord); r q)
-	  | outputExp (q, TupExp (coord, ids)) =
-	    (f (q, "tupExp"); outputCoord (q, coord); m q;
+	  | outputExp (q, RefExp info) =
+	    (f (q, "refExp"); outputInfo (q, info); r q)
+	  | outputExp (q, TupExp (info, ids)) =
+	    (f (q, "tupExp"); outputInfo (q, info); m q;
 	     outputList outputId (q, ids); r q)
-	  | outputExp (q, RecExp (coord, labIdList)) =
-	    (f (q, "recExp"); outputCoord (q, coord); m q;
+	  | outputExp (q, RecExp (info, labIdList)) =
+	    (f (q, "recExp"); outputInfo (q, info); m q;
 	     outputList (outputPair (outputLab, outputId)) (q, labIdList); r q)
-	  | outputExp (q, VecExp (coord, ids)) =
-	    (f (q, "vecExp"); outputCoord (q, coord); m q;
+	  | outputExp (q, VecExp (info, ids)) =
+	    (f (q, "vecExp"); outputInfo (q, info); m q;
 	     outputList outputId (q, ids); r q)
-	  | outputExp (q, SelExp (coord, lab)) =
-	    (f (q, "selExp"); outputCoord (q, coord); m q;
+	  | outputExp (q, SelExp (info, lab)) =
+	    (f (q, "selExp"); outputInfo (q, info); m q;
 	     outputLab (q, lab); r q)
-	  | outputExp (q, FunExp (coord, stamp, flags, argsBodyList)) =
-	    (f (q, "funExp"); outputCoord (q, coord); m q;
+	  | outputExp (q, FunExp (info, stamp, flags, argsBodyList)) =
+	    (f (q, "funExp"); outputInfo (q, info); m q;
 	     outputStamp (q, stamp); m q;
 	     outputList outputFunFlag (q, flags); m q;
 	     outputList (outputPair (outputArgs outputId, outputBody))
 	     (q, argsBodyList); r q)
-	  | outputExp (q, AppExp (coord, id, args)) =
-	    (f (q, "appExp"); outputCoord (q, coord); m q;
+	  | outputExp (q, AppExp (info, id, args)) =
+	    (f (q, "appExp"); outputInfo (q, info); m q;
 	     outputId (q, id); m q; outputArgs outputId (q, args); r q)
-	  | outputExp (q, SelAppExp (coord, lab, id)) =
-	    (f (q, "selAppExp"); outputCoord (q, coord); m q;
+	  | outputExp (q, SelAppExp (info, lab, id)) =
+	    (f (q, "selAppExp"); outputInfo (q, info); m q;
 	     outputLab (q, lab); m q; outputId (q, id); r q)
-	  | outputExp (q, ConAppExp (coord, id, args)) =
-	    (f (q, "conAppExp"); outputCoord (q, coord); m q;
+	  | outputExp (q, ConAppExp (info, id, args)) =
+	    (f (q, "conAppExp"); outputInfo (q, info); m q;
 	     outputId (q, id); m q; outputArgs outputId (q, args); r q)
-	  | outputExp (q, RefAppExp (coord, args)) =
-	    (f (q, "refAppExp"); outputCoord (q, coord); m q;
+	  | outputExp (q, RefAppExp (info, args)) =
+	    (f (q, "refAppExp"); outputInfo (q, info); m q;
 	     outputArgs outputId (q, args); r q)
-	  | outputExp (q, PrimAppExp (coord, string, ids)) =
-	    (f (q, "primAppExp"); outputCoord (q, coord); m q;
+	  | outputExp (q, PrimAppExp (info, string, ids)) =
+	    (f (q, "primAppExp"); outputInfo (q, info); m q;
 	     outputAtom (q, string); m q; outputList outputId (q, ids); r q)
-	  | outputExp (q, AdjExp (coord, id1, id2)) =
-	    (f (q, "adjExp"); outputCoord (q, coord); m q;
+	  | outputExp (q, AdjExp (info, id1, id2)) =
+	    (f (q, "adjExp"); outputInfo (q, info); m q;
 	     outputId (q, id1); m q; outputId (q, id2); r q)
 	and outputBody (q, stms) = outputList outputStm (q, stms)
 

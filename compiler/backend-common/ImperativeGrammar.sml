@@ -62,43 +62,44 @@ structure ImperativeGrammar: IMPERATIVE_GRAMMAR =
 	  | Use of StampSet.t   (* internal *)
 	  | Kill of StampSet.t
 
-	type info = coord * livenessInfo ref
+	type stmInfo = coord * livenessInfo ref
+	type expInfo = IntermediateInfo.t
 
 	datatype stm =
-	    ValDec of info * id * exp * isToplevel
-	  | RecDec of info * (id * exp) list * isToplevel
+	    ValDec of stmInfo * id * exp * isToplevel
+	  | RecDec of stmInfo * (id * exp) list * isToplevel
 	    (* all ids distinct *)
-	  | EvalStm of info * exp
-	  | RaiseStm of info * id
-	  | ReraiseStm of info * id
+	  | EvalStm of stmInfo * exp
+	  | RaiseStm of stmInfo * id
+	  | ReraiseStm of stmInfo * id
 	  (* the following must always be last *)
-	  | HandleStm of info * body * id * body * body * shared
-	  | EndHandleStm of info * shared
-	  | TestStm of info * id * test * body * body
-	  | SharedStm of info * body * shared   (* used at least twice *)
-	  | ReturnStm of info * exp
-	  | IndirectStm of info * body option ref
-	  | ExportStm of info * exp
+	  | HandleStm of stmInfo * body * id * body * body * shared
+	  | EndHandleStm of stmInfo * shared
+	  | TestStm of stmInfo * id * test * body * body
+	  | SharedStm of stmInfo * body * shared   (* used at least twice *)
+	  | ReturnStm of stmInfo * exp
+	  | IndirectStm of stmInfo * body option ref
+	  | ExportStm of stmInfo * exp
 	and exp =
-	    LitExp of coord * lit
-	  | PrimExp of coord * string
-	  | NewExp of coord * string option * hasArgs
-	  | VarExp of coord * id
-	  | ConExp of coord * id * hasArgs
-	  | RefExp of coord
-	  | TupExp of coord * id list
-	  | RecExp of coord * (lab * id) list
+	    LitExp of expInfo * lit
+	  | PrimExp of expInfo * string
+	  | NewExp of expInfo * string option * hasArgs
+	  | VarExp of expInfo * id
+	  | ConExp of expInfo * id * hasArgs
+	  | RefExp of expInfo
+	  | TupExp of expInfo * id list
+	  | RecExp of expInfo * (lab * id) list
 	    (* sorted, all labels distinct, no tuple *)
-	  | SelExp of coord * lab
-	  | VecExp of coord * id list
-	  | FunExp of coord * stamp * funFlag list * (id args * body) list
+	  | SelExp of expInfo * lab
+	  | VecExp of expInfo * id list
+	  | FunExp of expInfo * stamp * funFlag list * (id args * body) list
 	    (* all arities distinct; always contains a single OneArg *)
-	  | AppExp of coord * id * id args
-	  | SelAppExp of coord * lab * id
-	  | ConAppExp of coord * id * id args
-	  | RefAppExp of coord * id args
-	  | PrimAppExp of coord * string * id list
-	  | AdjExp of coord * id * id
+	  | AppExp of expInfo * id * id args
+	  | SelAppExp of expInfo * lab * id
+	  | ConAppExp of expInfo * id * id args
+	  | RefAppExp of expInfo * id args
+	  | PrimAppExp of expInfo * string * id list
+	  | AdjExp of expInfo * id * id
 	withtype body = stm list
 
 	type sign = IntermediateGrammar.sign

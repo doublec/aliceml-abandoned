@@ -23,7 +23,7 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	    fun foldli f z xs = foldli' (xs, f, z, 1)
 	end
 
-	fun freshId coord = Id (coord, Stamp.new (), Name.InId)
+	fun freshId info = Id (info, Stamp.new (), Name.InId)
 
 	fun idEq (Id (_, stamp1, _), Id (_, stamp2, _)) = stamp1 = stamp2
 
