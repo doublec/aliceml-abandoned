@@ -26,8 +26,8 @@
 //
 //    Label             Argument
 //    -----             --------
-//    HOLE_LABEL        associated future (or the integer 0 if not created)
-//    FUTURE_LABEL      wait queue
+//    HOLE_LABEL        associated future (or an integer if not created)
+//    FUTURE_LABEL      wait queue (or an integer if not created)
 //    CANCELLED_LABEL   exception
 //    BYNEED_LABEL      closure
 //    REF_LABEL         value
@@ -45,14 +45,20 @@ public:
   void AddToWaitQueue(Thread *thread) {
     thread->SetState(Thread::BLOCKED);
     thread->GetTaskStack()->Purge();
-    Queue::FromWord(GetArg())->Enqueue(thread->ToWord());
+    Queue *waitQueue = Queue::FromWord(GetArg());
+    if (waitQueue == INVALID_POINTER) {
+      waitQueue = Queue::New(2);
+      ReplaceArg(waitQueue->ToWord());
+    }
+    waitQueue->Enqueue(thread->ToWord());
   }
   void ScheduleWaitingThreads() {
     Queue *waitQueue = Queue::FromWord(GetArg());
-    while (!waitQueue->IsEmpty()) {
-      Thread *thread = Thread::FromWord(waitQueue->Dequeue());
-      Scheduler::AddThread(thread);
-    }
+    if (waitQueue != INVALID_POINTER)
+      while (!waitQueue->IsEmpty()) {
+	Thread *thread = Thread::FromWord(waitQueue->Dequeue());
+	Scheduler::AddThread(thread);
+      }
   }
 };
 
@@ -67,21 +73,21 @@ public:
   }
 
   Future *GetFuture() {
-    Transient *transient = Store::WordToTransient(GetArg());
-    if (transient == INVALID_POINTER) {
-      Future *future = Future::New();
+    Future *future = static_cast<Future *>(Store::WordToTransient(GetArg()));
+    if (future == INVALID_POINTER) {
+      future = Future::New();
       ReplaceArg(future->ToWord());
-      return future;
-    } else {
-      return static_cast<Future *>(transient);
     }
+    return future;
   }
   bool Fill(word w) {
     if (Store::WordToTransient(w) == this) // cyclic bind
       return false;
     Transient *future = Store::WordToTransient(GetArg());
-    if (future != INVALID_POINTER) // eliminate associated future (if created)
+    if (future != INVALID_POINTER) { // eliminate associated future
+      static_cast<Future *>(future)->ScheduleWaitingThreads();
       future->Become(REF_LABEL, w);
+    }
     Become(REF_LABEL, w);
     return true;
   }
@@ -95,11 +101,6 @@ public:
     Transient *transient = Store::AllocTransient(BYNEED_LABEL);
     transient->InitArg(w);
     return static_cast<Byneed *>(transient);
-  }
-  static Byneed *FromWord(word w) {
-    Transient *t = Store::WordToTransient(w);
-    Assert(t == INVALID_POINTER || t->GetLabel() == BYNEED_LABEL);
-    return static_cast<Byneed *>(t);
   }
 };
 
