@@ -136,7 +136,8 @@ Class *Class::New(ClassInfo *classInfo) {
   // Count number of static and instance fields:
   Table *fields = classInfo->GetFields();
   u_int i, nStaticFields = 0, nInstanceFields = 0;
-  for (i = fields->GetCount(); i--; ) {
+  u_int nFields = fields->GetCount();
+  for (i = nFields; i--; ) {
     FieldInfo *fieldInfo = FieldInfo::FromWordDirect(fields->Get(i));
     if (fieldInfo->IsStatic())
       nStaticFields++;
@@ -171,9 +172,38 @@ Class *Class::New(ClassInfo *classInfo) {
   b->InitArg(NUMBER_OF_INSTANCE_FIELDS_POS, nInstanceFields);
   b->InitArg(VIRTUAL_TABLE_POS, virtualTable->ToWord());
   b->InitArg(LOCK_POS, Lock::New()->ToWord());
-  for (i = nStaticFields; i--; )
-    //--** initialization incorrect for constantValue and long/float/double
-    b->InitArg(BASE_SIZE + i, Store::IntToWord(0));
+  // Initialize static fields:
+  i = 0, nStaticFields = 0;
+  while (i < nFields) {
+    FieldInfo *fieldInfo = FieldInfo::FromWordDirect(fields->Get(i));
+    if (fieldInfo->IsStatic()) {
+      word initialValue;
+      if (fieldInfo->HasConstantValue())
+	initialValue = fieldInfo->GetConstantValue();
+      else {
+	JavaString *descriptor = fieldInfo->GetDescriptor();
+	switch (descriptor->GetBase()[0]) {
+	case '[': case 'L':
+	  initialValue = null;
+	  break;
+	case 'B': case 'C': case 'I': case 'S': case 'Z':
+	  initialValue = Store::IntToWord(0);
+	  break;
+	case 'J':
+	  initialValue = JavaLong::New(0, 0)->ToWord();
+	  break;
+	case 'D': case 'F':
+	  Error("unsupported static field type"); //--**
+	  break;
+	default:
+	  Error("invalid field descriptor");
+	}
+	b->InitArg(BASE_SIZE + nStaticFields, initialValue);
+      }
+      nStaticFields++;
+    }
+    i++;
+  }
   // Create method closures:
   RuntimeConstantPool *runtimeConstantPool =
     classInfo->GetRuntimeConstantPool();
