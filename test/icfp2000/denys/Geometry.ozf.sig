@@ -24,8 +24,8 @@ signature GEOMETRY_COMPONENT =
 		val normalizeVec: vec -> vec
 
 		val unitMat: mat
-		val translationMat: vec -> mat
-		val scaleMat: vec -> mat
+		val translationMat: real * real * real -> mat
+		val scaleMat: real * real * real -> mat
 		val uscaleMat: real -> mat
 		val rotationXMat: angle -> mat
 		val rotationYMat: angle -> mat
