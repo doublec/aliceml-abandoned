@@ -70,6 +70,9 @@ public:
   static int IsInt(word v) {
     return ((u_int) v & (u_int) INTMASK);
   }
+  static int IsTransient(word v) {
+    return (((u_int) v & TAGMASK) == TRTAG);
+  }
   // int<->Word Conversion
   static word EncodeInt(int v) {
     AssertStore(v >= MIN_VALID_INT);
