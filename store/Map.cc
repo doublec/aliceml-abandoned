@@ -85,7 +85,7 @@ void Map::Rehash() {
   }
 }
 
-void Map::RehashAll(const u_int dstGen) {
+void Map::RehashAll(const u_int gen) {
   word oldMapLs = mapLs;
   mapLs = Store::IntToWord(0);
   while (oldMapLs != Store::IntToWord(0)) {
@@ -94,13 +94,14 @@ void Map::RehashAll(const u_int dstGen) {
     // Get current map ptr
     if (GCHelper::AlreadyMoved(map))
       map = GCHelper::GetForwardPtr(map);
-    else if (HeaderOp::DecodeGeneration(map) < dstGen)
+    else if (HeaderOp::DecodeGeneration(map) < gen)
       map = INVALID_POINTER;
     // Do rehash only if map is alive
     if (map != INVALID_POINTER) {
       Map *newMap = static_cast<Map *>(map);
       newMap->Rehash();
-      ListNode *node = (ListNode *) (Store::GCAlloc(ListNode::GetSize()));
+      ListNode *node =
+	(ListNode *) Store::Alloc(gen, MIN_DATA_LABEL, ListNode::GetSize());
       node->Init(newMap, mapLs);
       mapLs = node->ToWord();
     }

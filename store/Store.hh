@@ -3,7 +3,7 @@
 //   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
 //
 // Copyright:
-//   Thorsten Brunklaus, 2000-2001
+//   Thorsten Brunklaus, 2000-2003
 //
 // Last Change:
 //   $Date$ by $Author$
@@ -21,6 +21,7 @@
 #include "store/HeaderOp.hh"
 #include "store/PointerOp.hh"
 #include "store/StatusWord.hh"
+#include "store/Heap.hh"
 
 #if defined(STORE_PROFILE)
 struct timeval;
@@ -29,7 +30,6 @@ struct timeval;
 class WeakMap;
 class JITStore;
 class Profiler;
-class MemChunk;
 
 #define STORE_NEED_GC_STATUS 0
 
@@ -38,75 +38,44 @@ protected:
   friend class Map;
   friend class JITStore;
   friend class Profiler;
-  static MemChunk *roots[STORE_GENERATION_NUM];
-  static u_int memMax[STORE_GENERATION_NUM];
+  static Heap roots[STORE_GENERATION_NUM];
   static u_int memFree;
   static u_int memTolerance;
-  static MemChunk *curChunk;
-  static char *chunkTop;
-  static char *chunkMax;
-  static u_int hdrGen;
-  static u_int dstGen;
   static u_int nbBlkTables;
 #if defined(STORE_PROFILE)
   static struct timeval *sum_t;
 #endif
-  static u_int BlockMemSize(u_int args) {
-    return (u_int) ((args + 1) * sizeof(u_int));
-  }
-  static void FreeMemChunks(MemChunk *chunk);
-  static Block *CloneBlock(Block *p);
-  static word ForwardWord(word p);
-  static Block *ForwardSet(Block *p);
-  static s_int CanFinalize(Block *p);
-  static void CheneyScan(MemChunk *chunk, char *scan);
-  static void FinalizeCheneyScan(MemChunk *chunk, char *scan);
-  static void HandleInterGenerationalPointers(u_int gen);
-  static Block *HandleWeakDictionaries();
-  static u_int GetMemUsage(MemChunk *chunk);
-  static char *GCAlloc(u_int size, u_int header);
-  static char *GCAlloc(u_int size);
-  static Block *AddToFinSet(Block *p, word value);
-  static void SwitchToChunk(MemChunk *chunk);
-  static void AllocNewMemChunkStd();
-  static void AllocNewMemChunk(u_int size, const u_int gen);
-//    static char *Alloc(u_int size, u_int header) {
-//      for (;;) {
-//        char *p      = curChunk->GetTop();
-//        char *newtop = p + size;
-//        if (newtop >= curChunk->GetMax()) {
-//  	AllocNewMemChunkStd(size);
-//  	continue;
-//        }
-//        curChunk->SetTop(newtop);
-//        ((u_int *) p)[0] = header;
-//        return p;
-//      }
-//    }
-  static char *Alloc(u_int size, u_int header) {
+  static Block *CloneBlock(Block *p, const u_int gen);
+  static word ForwardBlock(word p, const u_int gen);
+  static void CheneyScan(HeapChunk *chunk, char *scan, const u_int gen);
+  static void FinalizeCheneyScan(HeapChunk *chunk, char *scan);
+  static void HandleInterGenerationalPointers(const u_int gen);
+  static Block *HandleWeakDictionaries(const u_int gen);
+  static Block *AddToFinSet(Block *p, word value, const u_int gen);
+  static char *Store::Alloc(const u_int g, const BlockLabel l, const u_int s) {
+    u_int header = HeaderOp::EncodeHeader(l, s,
+					  (g == STORE_GENERATION_NUM - 1) ?
+					  (STORE_GENERATION_NUM - 2) : g);
     for (;;) {
-      char *p = chunkTop;
+      HeapChunk *current = roots[g].GetChain();
+      char *p = current->GetTop();
       ((u_int *) p)[0] = header;
-      char *newtop = p + size;
-      if (newtop >= chunkMax) {
-	AllocNewMemChunkStd();
+      char *newtop = p + SIZEOF_BLOCK(s);
+      if (newtop >= current->GetMax()) {
+	roots[g].Enlarge();
 	continue;
       }
-      chunkTop = newtop;
+      current->SetTop(newtop);
       return p;
     }
   }
-  static Block *InternalAllocBlock(BlockLabel l, u_int s) {
+  static Block *InternalAlloc(u_int g, BlockLabel l, u_int s) {
+    AssertStore(g <= STORE_GEN_OLDEST);
     AssertStore(s <= MAX_BIGBLOCKSIZE);
-    s = HeaderOp::TranslateSize(s);
-    return (Block *) Store::Alloc(BlockMemSize(s),
-				  HeaderOp::EncodeHeader(l, s, 0));
+    return (Block *) Store::Alloc(g, l, HeaderOp::TranslateSize(s));
   }
-  static void NextGCLimits();
-  static void DoGC(word &root, const u_int gen);
+  static Block *GC(word &root, const u_int gen);
 public:
-  static u_int allowGC;
-  static u_int forceGC;
 #if (defined(STORE_DEBUG) || defined(STORE_PROFILE))
   static u_int totalMem;
   static u_int gcLiveMem;
@@ -133,20 +102,20 @@ public:
     return (BlockLabel) l;
   }
   // Allocation Functions
-  static Block *AllocBlock(BlockLabel l, u_int s) {
+  static Block *AllocBlock(BlockLabel l, u_int s, u_int gen = 0) {
     AssertStore(l >= MIN_DATA_LABEL);
     AssertStore(l <= MAX_STORE_LABEL); // to be done
-    return InternalAllocBlock(l, s);
+    return InternalAlloc(gen, l, s);
   }
-  static Chunk *AllocChunk(u_int s) {
+  static Chunk *AllocChunk(u_int s, u_int gen = 0) {
     u_int ws = (1 + (((s + sizeof(u_int)) - 1) / sizeof(u_int)));
-    Block *p = Store::InternalAllocBlock(CHUNK_LABEL, ws);
+    Block *p = Store::InternalAlloc(gen, CHUNK_LABEL, ws);
     ((word *) p)[1] = PointerOp::EncodeInt(s);
     return (Chunk *) p;
   }
   static Transient *AllocTransient(BlockLabel l) {
     AssertStore((l >= MIN_TRANSIENT_LABEL) && (l <= MAX_TRANSIENT_LABEL));
-    return (Transient *) Store::InternalAllocBlock(l, 1);
+    return (Transient *) Store::InternalAlloc(0, l, 1);
   }
   // Conversion Functions
   static word IntToWord(s_int v) {
@@ -195,17 +164,10 @@ public:
     AssertStore(((u_int) x & INTMASK) == INTTAG);
     return PointerOp::DirectDecodeUnmanagedPointer(x);
   }
-  // Calculate Block Size according to given size (used only for assertions)
-  static u_int SizeToBlockSize(u_int size) {
-    return HeaderOp::TranslateSize(size);
-  }
   static void JITReplaceArg(u_int i, Block *p, word v);
   static void MemStat();
 #if defined(STORE_GC_DEBUG)
   static void VerifyGC(word root);
-#endif
-#if defined(STORE_DEBUG)
-  static void ForceGC(word &root, const u_int gen);
 #endif
 #if defined(STORE_PROFILE)
   static void ResetTime();

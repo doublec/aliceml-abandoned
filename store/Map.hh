@@ -34,7 +34,7 @@ protected:
 
   friend class Store;
   void Rehash();
-  static void RehashAll(const u_int dstGen);
+  static void RehashAll(const u_int gen);
 public:
   static void Init();
   static Map *New(u_int size);
