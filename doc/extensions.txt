@@ -6,7 +6,7 @@ Core language:
 - var annotations in types?
 - curried fn? (grammar overhead)
 * more liberal infix syntax in fun
-- more liberal datatype declaration syntax
++ more liberal datatype declaration syntax
 + punning in record expressions
 - record update
 + vector constants and patterns
@@ -14,12 +14,13 @@ Core language:
 * generalized rec
 + pattern guards
 + alternative patterns
-- negated patterns?
+- negated patterns
 + generalized layered patterns
 - with patterns
 * nonlinear patterns? (better not, requires structural equality)
+- matches in valbinds? (val SOME x = exp1 | x = exp2)
 
-* overloaded literals?
+* overloaded literals (allows 4*3.3 and 0wx3f<<6)
 * allow free type variables in strdecs
 * polymorphic records
 * open datatypes, turning exceptions into derived forms
@@ -30,8 +31,8 @@ Module language:
 
 - local around fundecs and sigdecs
 - parenthesized structure and signature expressions
-- more liberal type specification syntax
-- more liberal datatype specification syntax
++ more liberal type specification syntax
++ more liberal datatype specification syntax
 + withtype derived form in signatures
 - open with structure expressions?
 + fixity specs (activated via open)
