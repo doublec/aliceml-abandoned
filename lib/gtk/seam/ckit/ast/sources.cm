@@ -5,10 +5,12 @@ Group is
         $/basis.cm
         (* Compiler, up through 110.25 *)
 (*        host-compiler.cm*)
-#endif
-
 	(* standard library *)
 	$/smlnj-lib.cm
+#else
+	(* standard library *)
+	smlnj-lib.cm
+#endif
 
 	(* parser *)
         ../parser/sources.cm

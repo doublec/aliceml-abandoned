@@ -5,7 +5,6 @@ Group is
         $/basis.cm
         (* Compiler, up through 110.25 *)
 (*        $/host-compiler.cm*)
-#endif
 
 	(* ml-yacc *)
 	$/ml-yacc-lib.cm
@@ -15,7 +14,18 @@ Group is
 
 	(* pretty printer library *)
         $/pp-lib.cm
+#else
 
+	(* ml-yacc *)
+	ml-yacc-lib.cm
+
+	(* standard library *)
+	smlnj-lib.cm
+
+	(* pretty printer library *)
+        pp-lib.cm
+
+#endif
         (* configuration *)
         ../variants/sources.cm
 
