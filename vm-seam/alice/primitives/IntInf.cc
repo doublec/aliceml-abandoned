@@ -199,7 +199,8 @@ DEFINE1(IntInf_ ## op) {          \
   TEST_INTINF(i, x0);             \
   if (i==INVALID_INT) {           \
     DECLARE_INTINF(i, x0);        \
-    RETURN_INTINF(i->bigop());    \
+    BigInt *res = i->bigop();     \
+    RETURN_INTINF(res);           \
   } else {                        \
     RETURN_INT(smallop(i));       \
   }                               \
@@ -218,7 +219,8 @@ DEFINE2(IntInf_ ## op) { \
     if (j==INVALID_INT) {         \
       DECLARE_INTINF(a, x0);      \
       DECLARE_INTINF(b, x1);      \
-      RETURN_INTINF(a->bigop(b)); \
+      BigInt *res = a->bigop(b);  \
+      RETURN_INTINF(res);         \
     } else {                      \
       DECLARE_INTINF(a, x0);      \
       mpz_t jj;                   \
@@ -244,32 +246,40 @@ MKOP2(andb, andb, &);
 #undef MKOP2
 
 // binary operators with integer overflows
-#define MKOP2(op, bigop, inversebigop, smallop) \
-DEFINE2(IntInf_ ## op) {                        \
-  TEST_INTINF(i, x0);                           \
-  TEST_INTINF(j, x1);                           \
-  if (i==INVALID_INT) {                         \
-    if (j==INVALID_INT) {                       \
-      DECLARE_INTINF(a, x0);                    \
-      DECLARE_INTINF(b, x1);                    \
-      RETURN_INTINF(a->bigop(b));               \
-    } else {                                    \
-      DECLARE_INTINF(a, x0);                    \
-      if (j>0)                                  \
-        { RETURN_INTINF(a->bigop(j)); }         \
-      else                                      \
-        { RETURN_INTINF(a->inversebigop(-j)); } \
-    }                                           \
-  } else if (j==INVALID_INT) {                  \
-      DECLARE_INTINF(b, x1);                    \
-      if (i>0)                                  \
-        { RETURN_INTINF(b->bigop(i)); }         \
-      else                                      \
-        { RETURN_INTINF(b->inversebigop(-i)); } \
-  } else {                                      \
-    int res = i smallop j;                      \
-    RETURN_INTINF(BigInt::New(res));            \
-  }                                             \
+#define MKOP2(op, bigop, inversebigop, smallop)         \
+DEFINE2(IntInf_ ## op) {                                \
+  TEST_INTINF(i, x0);                                   \
+  TEST_INTINF(j, x1);                                   \
+  if (i==INVALID_INT) {                                 \
+    if (j==INVALID_INT) {                               \
+      DECLARE_INTINF(a, x0);                            \
+      DECLARE_INTINF(b, x1);                            \
+      BigInt *res = a->bigop(b);                        \
+      RETURN_INTINF(res);                               \
+    } else {                                            \
+      DECLARE_INTINF(a, x0);                            \
+      if (j>0)                                          \
+        { BigInt *res = a->bigop(j);                    \
+          RETURN_INTINF(res); }                         \
+      else                                              \
+        { BigInt *res = a->inversebigop(-j);            \
+          RETURN_INTINF(res); }                         \
+    }                                                   \
+  } else if (j==INVALID_INT) {                          \
+      DECLARE_INTINF(b, x1);                            \
+      if (i>0)                                          \
+        { BigInt *res = b->bigop(i);                    \
+          RETURN_INTINF(res); }                         \
+      else                                              \
+        { BigInt *res = b->inversebigop(-i);            \
+          RETURN_INTINF(res); }                         \
+  } else {                                              \
+    int res = i smallop j;                              \
+    if (res>=MIN_VALID_INT && res <= MAX_VALID_INT) {   \
+      RETURN_INT(res); }                                \
+    MK_INTINF(w, BigInt::New(res));                     \
+    RETURN(w);                                          \
+  }                                                     \
 } END
 MKOP2(opsub, sub, add, -);
 MKOP2(opadd, add, sub, -);
@@ -301,11 +311,13 @@ DEFINE2(IntInf_opmul) {
       RETURN_INTINF(a->mul(b));
     } else {
       DECLARE_INTINF(a, x0);
-      RETURN_INTINF(a->mul(j));
+      BigInt *res = a->mul(j);
+      RETURN_INTINF(res);
     }
   } else if (j==INVALID_INT) {
       DECLARE_INTINF(b, x1);
-      RETURN_INTINF(b->mul(i));
+      BigInt *res = b->mul(i);
+      RETURN_INTINF(res);
   } else {
     if (CheckProduct(i, j)) {
       BigInt *a = BigInt::New(i);
@@ -315,8 +327,7 @@ DEFINE2(IntInf_opmul) {
       int res = i * j;
       RETURN_INT(res);
     }
-  }
-  
+  }  
 } END
 
 DEFINE2(IntInf_pow) {
