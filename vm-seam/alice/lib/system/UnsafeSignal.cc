@@ -25,10 +25,13 @@
 
 enum { ALICE_SIGINT };
 
+// TODO: We currently accept both translated and untranslated signals.
+// TODO: This needs a design.
 static int TranslateSignal(int signal) {
 #if HAVE_CONSOLECTRL
   switch (signal) {
   case ALICE_SIGINT:
+  case CTRL_C_EVENT:
     return CTRL_C_EVENT;
   default:
     Error("Unknown Signal");
@@ -37,6 +40,7 @@ static int TranslateSignal(int signal) {
   switch (signal) {
 #if defined(SIGINT)
   case ALICE_SIGINT:
+  case SIGINT:
     return SIGINT;
 #endif
   default:
