@@ -385,14 +385,14 @@
     </P></DD>
 
     <DT>
-      <TT>Reified.equal (<I>x</I>,<I>y/I>,<I>c</I>)</TT>
+      <TT>Reified.equal (<I>x</I>,<I>y</I>,<I>c</I>)</TT>
     </DT>
     <DD>
       <P><I>c</I> reifies the equality of <I>x</I> and <I>y</I>.
     </P></DD>
 
     <DT>
-      <TT>Reified.partition (<I>vs</I>,<I>is/I>,<I>x</I>,<I>cs</I>)</TT>
+      <TT>Reified.partition (<I>vs</I>,<I>is</I>,<I>x</I>,<I>cs</I>)</TT>
     </DT>
     <DD>
       <P>The propagator partitions the set value <I>x</I>
