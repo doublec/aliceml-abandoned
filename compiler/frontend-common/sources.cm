@@ -11,16 +11,11 @@ is
 	abstract-grammar.cm
 
 	StringMap.sml
-	INF.sig
-	Inf.sml
 	ENV.sig
 	Env.sml
 
 	ENV0.sig
 	Env0.sml
-
-	PP_INF.sig
-	PPInf.sml
 
 	TypedGrammar.sml
 	ELABORATION_ERROR.sig

@@ -5,7 +5,6 @@ signature INF =
 
     type lab   = Label.t
     type name  = Name.t
-    type stamp = Stamp.t
     type path  = Path.t
     type typ   = Type.t
     type tkind = Type.kind

@@ -1909,7 +1909,7 @@ and elabRHSRecSpec' bla =
 			(*UNFINISHED: Handling of IO failure? *)
 	    val imps' = elabImps(E, s, imps)
 	in
-	    O.ImpAnn(nonInfo(i), imps', url)
+	    O.ImpAnn(sigInfo(i,s), imps', url)
 	end
 
     and elabAnns(E, anns) = List.map (fn ann => elabAnn(E, ann)) anns

@@ -11,4 +11,4 @@ structure IntermediateInfo =
   end
 
 structure IntermediateGrammar = MakeIntermediateGrammar(open IntermediateInfo
-							type sign = unit)
+							type sign = Inf.sign)

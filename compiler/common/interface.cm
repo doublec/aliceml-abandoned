@@ -1,0 +1,13 @@
+Group is
+
+	../error/sources.cm
+	../misc/sources.cm
+	path.cm
+	type.cm
+	fixity.cm
+
+	INF.sig
+	Inf.sml
+
+	PP_INF.sig
+	PPInf.sml

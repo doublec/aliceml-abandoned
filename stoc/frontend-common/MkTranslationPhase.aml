@@ -351,11 +351,12 @@ UNFINISHED: obsolete after bootstrapping:
 
     and trAnn(I.ImpAnn(i,is,u),(xsus',ds')) =
 	let
-	    val x'   = O.Id(i, Stamp.new(), Name.InId)
-	    val y'   = O.ShortId(i, x')
+	    val i'   = nonInfo(#region i)
+	    val x'   = O.Id(i', Stamp.new(), Name.InId)
+	    val y'   = O.ShortId(i', x')
 	    val ds'' = trImps(is, y', ds')
 	in
-	    ( (x',(),u)::xsus', ds'' )
+	    ( (x',#sign i,u)::xsus', ds'' )
 	end
 
     and trImps(is, y, ds')		= List.foldr (trImp y) ds' is
@@ -384,8 +385,7 @@ UNFINISHED: obsolete after bootstrapping:
 	    val  i'         = typInfo(#region i,t)
 	    val  exp'       = O.LetExp(i', ds', O.RowExp(i', fs'))
 	in
-	    (*UNFINISHED*)
-	    ( xsus', (exp', () (*#sign i*)) )
+	    ( xsus', (exp', #sign i) )
 	end
 
     fun translate() = trComp

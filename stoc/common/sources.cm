@@ -7,4 +7,5 @@ is
 
 	prebound.cm
 	type.cm
+	interface.cm
 	intermediate-grammar.cm

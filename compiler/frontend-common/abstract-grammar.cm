@@ -16,9 +16,7 @@ is
 	../error/sources.cm
 	../common/prebound.cm
 	../common/name.cm
-
-	FIXITY.sig
-	Fixity.sml
+	../common/fixity.cm
 
 	ABSTRACT_GRAMMAR.sig
 	MakeAbstractGrammar.sml
