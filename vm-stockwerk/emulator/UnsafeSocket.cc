@@ -146,6 +146,7 @@ DEFINE2(UnsafeSocket_client) {
   if (ret < 0) {
     int error = GetLastError();
     if (error == EWOULDBLOCK || error == EINPROGRESS) {
+      //--** also check for exceptions on sock (connection failed)
       Future *future = IOHandler::CheckWritable(sock);
       if (future != INVALID_POINTER) {
 	Scheduler::currentData = future->ToWord();
