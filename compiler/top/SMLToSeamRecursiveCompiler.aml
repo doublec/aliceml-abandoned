@@ -10,85 +10,32 @@
  *   $Revision$
  *)
 
-import
-    structure TextIO
-from "../../lib/system/TextIO"
-
-import
-    structure Url
-from "../../lib/utility/Url"
-
-import
-    structure Crash
-from "../infrastructure/Crash"
-
-import
-    structure Source
-from "../infrastructure/Source"
-
-import
-    structure MkSwitches
-from "../infrastructure/MkSwitches"
-
-import
-    structure MkFrontendCommon
-from "../frontend-common/MkFrontendCommon"
-
-import
-    structure MkFrontendSML
-from "../frontend-sml/MkFrontendSML"
-
-import
-    structure MkBackendCommon
-from "../backend-common/MkBackendCommon"
-
-import
-    structure MkPickleTarget
-    structure MkBackendStockwerk
-from "../backend-mozart/MkBackendStockwerk"
-
-import
-    structure Inf
-from "../../lib/rtt/Inf"
-
-import
-    structure Error
-from "../infrastructure/Error"
-
-import
-    structure Signature
-from "Signature"
-
-import
-    structure Composer
-from "Composer"
-
-import
-    structure MkCompiler
-from "MkCompiler"
-
-import
-    structure MkRecursiveCompiler
-from "MkRecursiveCompiler"
+import structure TextIO              from "../../lib/system/TextIO"
+import structure Signature           from "../../lib/system/Signature"
+import structure ComponentManager    from "../../lib/system/ComponentManager"
+import structure Url                 from "../../lib/utility/Url"
+import structure Crash               from "../infrastructure/Crash"
+import structure Source              from "../infrastructure/Source"
+import structure MkSwitches          from "../infrastructure/MkSwitches"
+import structure MkFrontendCommon    from "../frontend-common/MkFrontendCommon"
+import structure MkFrontendSML       from "../frontend-sml/MkFrontendSML"
+import structure MkBackendCommon     from "../backend-common/MkBackendCommon"
+import structure MkBackendStockwerk  from "../backend-mozart/MkBackendStockwerk"
+import structure Error               from "../infrastructure/Error"
+import structure MkCompiler          from "MkCompiler"
+import structure MkRecursiveCompiler from "MkRecursiveCompiler"
 
 structure SMLToStockwerkRecursiveCompiler =
     let
 	structure Switches = MkSwitches(val logOut = TextIO.stdOut)
 
-	val acquireSignRef: (Source.desc * Url.t -> Composer.Sig.t) ref =
+	val acquireSignRef: (Source.desc * Url.t -> Signature.t) ref =
 	    ref (fn _ =>
 		 raise Crash.Crash
 			   "SMLToStockwerkRecursiveCompiler.acquireSignRef")
 
 	fun loadSign(desc, url) = !acquireSignRef(desc, url)
-	fun loadPlainSign(desc, url) =
-	    Inf.asSig(#2(loadSign(desc, url)))
-	    handle Inf.Interface =>
-		Error.error(Source.nowhere,
-			    "Pickle "^ Url.toString url ^" is not a component")
-
-	structure PickleTarget =
-	    MkPickleTarget(structure Sig = Signature)
+	fun loadPlainSign(desc, url) = Signature.toSig(loadSign(desc, url))
 
 	structure FrontendSML =
 	    MkFrontendSML(val loadSign = loadPlainSign
@@ -103,18 +50,16 @@ structure SMLToStockwerkRecursiveCompiler =
 			    structure Switches = Switches)
 
 	structure BackendStockwerk =
-	    MkBackendStockwerk(structure Switches = Switches
-			       structure PickleTarget = PickleTarget)
+	    MkBackendStockwerk(structure Switches = Switches)
 	structure Compiler =
 	    MkCompiler(structure Switches         = Switches
-		       structure Target           = PickleTarget
 		       structure FrontendSpecific = FrontendSML
 		       structure FrontendCommon   = FrontendCommon
 		       structure BackendCommon    = BackendCommon
 		       structure BackendSpecific  = BackendStockwerk)
 
 	structure RecursiveCompiler =
-	    MkRecursiveCompiler(structure Composer = Composer
+	    MkRecursiveCompiler(structure ComponentManager = ComponentManager
 				structure Compiler = Compiler
 				val extension = "stc")
 
