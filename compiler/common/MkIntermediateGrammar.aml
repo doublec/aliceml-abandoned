@@ -45,9 +45,10 @@ UNFINISHED: obsolete after bootstrapping:
     datatype exp =
 	  LitExp    of exp_info * lit			(* literal *)
 	| PrimExp   of exp_info * string		(* primitive value *)
-	| NewExp    of exp_info * string option * bool	(* new constructor *)
+	| NewExp    of exp_info * bool			(* new constructor *)
 				(* bool : is n-ary *)
 	| VarExp    of exp_info * longid		(* variable *)
+	| TagExp    of exp_info * lab * bool		(* sum injector *)
 	| ConExp    of exp_info * longid * bool		(* constructor *)
 				(* bool : is n-ary *)
 	| RefExp    of exp_info				(* reference *)
@@ -80,9 +81,10 @@ UNFINISHED: obsolete after bootstrapping:
 	  WildPat   of pat_info				(* wildcard *)
 	| LitPat    of pat_info * lit			(* literal *)
 	| VarPat    of pat_info * id			(* variable *)
+	| TagPat    of pat_info * lab * bool		(* sum injector *)
+			(* bool : is n-ary, appears only fully applied *)
 	| ConPat    of pat_info * longid * bool		(* constructed *)
-			(* bool : is n-ary *)
-			(* pat present iff longid has arguments *)
+			(* bool : is n-ary, appears only fully applied *)
 	| RefPat    of pat_info				(* reference *)
 	| TupPat    of pat_info * pat list		(* tuple *)
 	| RowPat    of pat_info * pat field list	(* record *)
@@ -132,8 +134,9 @@ UNFINISHED: obsolete after bootstrapping:
 
     fun infoExp(LitExp(i,_))		= i
       | infoExp(PrimExp(i,_))		= i
-      | infoExp(NewExp(i,_,_))		= i
+      | infoExp(NewExp(i,_))		= i
       | infoExp(VarExp(i,_))		= i
+      | infoExp(TagExp(i,_,_))		= i
       | infoExp(ConExp(i,_,_))		= i
       | infoExp(RefExp(i))		= i
       | infoExp(TupExp(i,_))		= i
@@ -160,6 +163,7 @@ UNFINISHED: obsolete after bootstrapping:
     fun infoPat(WildPat(i))		= i
       | infoPat(LitPat(i,_))		= i
       | infoPat(VarPat(i,_))		= i
+      | infoPat(TagPat(i,_,_))		= i
       | infoPat(ConPat(i,_,_))		= i
       | infoPat(RefPat(i))		= i
       | infoPat(TupPat(i,_))		= i
