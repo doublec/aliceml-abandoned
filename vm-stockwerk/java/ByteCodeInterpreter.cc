@@ -2003,12 +2003,16 @@ Worker::Result ByteCodeInterpreter::Run() {
       break;
     case Instr::JSR:
       {
-	Error("not implemented");
+	JavaDebug::Print("JSR");
+	frame->Push(Store::IntToWord(pc + 3));
+	pc += static_cast<s_int16>(GET_POOL_INDEX());
       }
       break;
     case Instr::JSR_W:
       {
-	Error("not implemented");
+	JavaDebug::Print("JSR_W");
+	frame->Push(Store::IntToWord(pc + 5));
+	pc += static_cast<s_int>(GET_WIDE_INDEX());
       }
       break;
     case Instr::L2D:
@@ -2410,7 +2414,9 @@ Worker::Result ByteCodeInterpreter::Run() {
       break;
     case Instr::RET:
       {
-	Error("not implemented");
+	JavaDebug::Print("RET");
+	u_int index = GET_BYTE_INDEX();
+	pc = Store::DirectWordToInt(frame->GetEnv(index));
       }
       break;
     case Instr::RETURN:
