@@ -19,7 +19,7 @@ struct
     fun byneed f	= f()
 
     fun await x		= x
-    fun awaitQuiet x	= x
+    fun awaitEither(x,_)= x
 
     fun status x	= DETERMINED
     fun isFuture x	= false
