@@ -9,7 +9,7 @@
 
 if [ "$1" = "-global" ]
 then
-   prefix=/opt/stockhausen-operette3
+   prefix=/opt/stockhausen-devel
 else
    prefix=`pwd`/install
 fi
