@@ -288,11 +288,15 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 		(WithPat (info, pat', substDecs (decs, subst'')), subst')
 	    end
 
-	structure IdSet =
-	    MkHashImpSet(type t = O.id
-			 fun hash (O.Id (_, stamp, _)) = Stamp.hash stamp
-			 fun equal (O.Id (_, stamp, _),
-				    O.Id (_, stamp', _)) = stamp = stamp')
+	fun idEq (O.Id (_, stamp1, _), O.Id (_, stamp2, _)) = stamp1 = stamp2
+
+	structure IdKey =
+	    struct
+		type t = O.id
+		val equal = idEq
+		fun hash (O.Id (_, stamp, _)) = Stamp.hash stamp
+	    end
+	structure IdSet = MkHashImpSet(IdKey)
 
 	fun usedVarsId (id, set, used) =
 	    if IdSet.member (set, id) then IdSet.insert (used, id) else ()
@@ -313,6 +317,9 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	    Vector.app (fn id => usedVarsId (id, set, used)) ids
 	  | usedVarsStm (O.ValDec (_, _, exp), set, used, shared) =
 	    usedVarsExp (exp, set, used, shared)
+	  | usedVarsStm (O.RecDec (_, idDefExpVec), set, used, shared) =
+	    Vector.app (fn (_, exp) => usedVarsExp (exp, set, used, shared))
+		       idDefExpVec
 	  | usedVarsStm (O.RefDec (_, _, idRef), set, used, _) =
 	    usedVarsIdRef (idRef, set, used)
 	  | usedVarsStm (O.TupDec (_, _, idRef), set, used, _) =

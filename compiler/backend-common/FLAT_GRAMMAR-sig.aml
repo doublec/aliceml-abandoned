@@ -73,6 +73,7 @@ signature FLAT_GRAMMAR =
 	  (* the following may never be last *)
 	    LastUse of stm_info * id vector
 	  | ValDec of stm_info * idDef * exp
+	  | RecDec of stm_info * (idDef * exp) vector
 	  | RefDec of stm_info * idDef * idRef
 	  | TupDec of stm_info * idDef vector * idRef
 	  | ProdDec of stm_info * (label * idDef) vector * idRef

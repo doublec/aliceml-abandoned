@@ -72,6 +72,8 @@ functor MkLivenessAnalysisPhase(Switches: SWITCHES) :>
 	  | allDefsBody (nil, _, _, _) = ()
 	and allDefsStm (LastUse (_, _), _, _, _) = ()
 	  | allDefsStm (ValDec (_, idDef, _), set, _, _) = ins (set, idDef)
+	  | allDefsStm (RecDec (_, idDefExpVec), set, _, _) =
+	    Vector.app (fn (idDef, exp) => ins (set, idDef)) idDefExpVec
 	  | allDefsStm (RefDec (_, idDef, _), set, _, _) = ins (set, idDef)
 	  | allDefsStm (TupDec (_, idDefs, _), set, _, _) =
 	    Vector.app (fn idDef => ins (set, idDef)) idDefs
@@ -256,6 +258,42 @@ functor MkLivenessAnalysisPhase(Switches: SWITCHES) :>
 				 lastUse (lastUses, stms), use)
 			    end
 			else (stms, use)
+	    end
+	  | laBody (RecDec (info, idDefExpVec)::stms, shared, dontKill) =
+	    let
+		val (stms, use) = laBody (stms, shared, dontKill)
+		val lastUsesSet = IdSet.new ()
+		val idDefExpList =
+		    Vector.foldr
+			(fn ((idDef, exp), rest) =>
+			    let
+				val (lastUses, exp) =
+				    laExp (exp, use, dontKill)
+			    in
+				Vector.app
+				    (fn id => IdSet.insert (lastUsesSet, id))
+				    lastUses;
+				(idDef, exp)::rest
+			    end) nil idDefExpVec
+		val lastUses =
+		    Vector.fromList (IdSet.fold op:: nil lastUsesSet)
+		val idDefExpList =
+		    List.foldr
+			(fn ((idDef, exp), rest) =>
+			    case laIdDef (idDef, use) of
+				idDef as IdDef _ => (idDef, exp)::rest
+			      | Wildcard =>
+				   if !Switches.CodeGen.debugMode
+				      andalso isNamed idDef
+				   then (idDef, exp)::rest
+				   else if sideEffecting exp
+				   then (Wildcard, exp)::rest
+				   else rest) nil idDefExpList
+		val stms = lastUse (lastUses, stms)
+	    in
+		(case idDefExpList of
+		     _::_ => RecDec (info, Vector.fromList idDefExpList)::stms
+		   | nil => stms, use)
 	    end
 	  | laBody (RefDec (info, idDef, idRef)::stms, shared, dontKill) =
 	    (*--** replace by await? *)

@@ -119,6 +119,12 @@ structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
 	    SEQ #[S "last ", SEP (S ", ", Vector.map ID ids)]
 	  | formatStm (ValDec (_, idDef, exp), _) =
 	    SEQ #[S "val ", IDDEF idDef, S " = ", IN, formatExp exp, EX]
+	  | formatStm (RecDec (_, idDefExpVec), _) =
+	    SEQ #[S "val rec", IN,
+		  SEQ (Vector.map (fn (idDef, exp) =>
+				      SEQ #[NL, IDDEF idDef, S " = ", IN,
+					    formatExp exp, EX]) idDefExpVec),
+		  EX]
 	  | formatStm (RefDec (_, idDef, idRef), _) =
 	    SEQ #[S "val ref ", IDDEF idDef, S " = ", IDREF idRef]
 	  | formatStm (TupDec (_, idDefs, idRef), _) =
@@ -143,7 +149,7 @@ structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
 	  | formatStm (EndTryStm (_, body), shared) =
 	    SEQ #[S "(* end try *)", NL, formatBody (body, shared)]
 	  | formatStm (EndHandleStm (_, body), shared) =
-	    SEQ #[S "(* end handle *)", EX, NL, formatBody (body, shared)]
+	    SEQ #[S "(* end handle *)", NL, formatBody (body, shared)]
 	  | formatStm (TestStm (_, idRef, tests, body), shared) =
 	    SEQ #[S "case ", IDREF idRef, S " of", IN, NL,
 		  formatTests (tests, shared),
@@ -211,12 +217,10 @@ structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
 					 labelIdVector),
 		  S "}"]
 	  | formatExp (PolyProdExp (_, labelIdVector)) =
-	    SEQ #[S "{", SEP (S ", ",
-			      Vector.map (fn (label, idRef) =>
+	    SEQ #[S "{", SEQ (Vector.map (fn (label, idRef) =>
 					     SEQ #[S (Label.toString label),
-						   S "=", IDREF idRef])
-					 labelIdVector),
-		  S ", ...}"]
+						   S "=", IDREF idRef, S ", "])
+					 labelIdVector), S "...}"]
 	  | formatExp (VecExp (_, idRefs)) =
 	    SEQ #[S "#[", SEP (S ", ", Vector.map IDREF idRefs), S "]"]
 	  | formatExp (FunExp (_, _, _, args, body)) =

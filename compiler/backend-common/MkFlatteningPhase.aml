@@ -205,41 +205,6 @@ functor MkFlatteningPhase(structure Switches: SWITCHES) :> FLATTENING_PHASE =
 	    Error.error (region, "not admissible")
 	  | decsToIdDefExpList (nil, _) = nil
 
-	fun recToHoles ((idDef, exp)::rest, region, unallocated) =
-	    let
-		val toAllocate = getUsedVars (exp, unallocated)
-		val decs =
-		    case idDef of
-			O.IdDef id =>
-			    if IdSet.member (toAllocate, id)
-			       orelse not (IdSet.member (unallocated, id))
-			    then
-				let
-				    val id' = O.freshId region
-				in
-				    [O.ValDec (region, O.IdDef id', exp),
-				     O.ValDec (region, O.Wildcard,
-					       O.PrimAppExp (region,
-							     "Hole.fill",
-							     #[O.IdRef id,
-							       O.IdRef id']))]
-				end
-			    else
-				(IdSet.delete (unallocated, id);
-				 [O.ValDec (region, idDef, exp)])
-		      | O.Wildcard => [O.ValDec (region, idDef, exp)]
-	    in
-		IdSet.fold
-		(fn (id as O.Id (info, _, _), rest) =>
-		 (IdSet.delete (unallocated, id);
-		  O.ValDec (info, O.IdDef id,
-			    O.PrimAppExp (info, "Hole.hole", #[]))::rest))
-		decs toAllocate
-		::recToHoles (rest, region, unallocated)
-	    end
-	  | recToHoles (nil, _, unallocated) =
-	    (Assert.assert (IdSet.isEmpty unallocated); nil)
-
 	val boolLabels = #[PervasiveType.lab_false, PervasiveType.lab_true]
 
 	fun translateIf (info: exp_info, idRef, thenStms, elseStms, errStms) =
@@ -316,15 +281,8 @@ functor MkFlatteningPhase(structure Switches: SWITCHES) :> FLATTENING_PHASE =
 					     O.IdDef (translateId id), exp'),
 				   Goto decs)) nil idExpList
 		val idDefExpList' = decsToIdDefExpList (decs', region)
-		val unallocated = IdSet.new ()
-		val _ =
-		    List.app (fn (idDef, _) =>
-			      case idDef of
-				  O.IdDef id => IdSet.insert (unallocated, id)
-				| O.Wildcard => ()) idDefExpList'
 		val rest =
-		    List.concat
-			(recToHoles (idDefExpList', region, unallocated)) @
+		    O.RecDec (region, Vector.fromList idDefExpList')::
 		    aliasDecs @ translateCont cont
 		val errStms = share (raisePrim (region, "General.Bind"))
 	    in

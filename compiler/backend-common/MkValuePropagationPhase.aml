@@ -26,7 +26,6 @@ import structure UnsafeValue             from "../../lib/system/UnsafeValue"
 import structure Reflect                 from "../../lib/system/Reflect"
 import structure PrettyPrint             from "../../lib/utility/PrettyPrint"
 import structure Assert                  from "../../lib/utility/Assert"
-import signature HASH_KEY                from "../../lib/utility/HASH_KEY-sig"
 import signature IMP_MAP                 from "../../lib/utility/IMP_MAP-sig"
 import structure MkHashImpMap            from "../../lib/utility/MkHashImpMap"
 import structure MkDepthFirstSearch from "../../lib/utility/MkDepthFirstSearch"
@@ -40,6 +39,7 @@ import structure StampSet                from "../common/StampSet"
 import structure StampMap                from "../common/StampMap"
 import structure Arity                   from "Arity"
 import structure FlatGrammar             from "FlatGrammar"
+import structure IntermediateAux         from "IntermediateAux"
 import structure OutputFlatGrammar       from "OutputFlatGrammar"
 import structure PrimOps                 from "PrimOps"
 import signature VALUE_PROPAGATION_PHASE from "VALUE_PROPAGATION_PHASE-sig"
@@ -146,9 +146,6 @@ functor MkScopedImpMap(ImpMap: IMP_MAP) :>
 	  | foldi' (nil, _, z) = z
     end
 
-functor MkHashScopedImpMap(Key: HASH_KEY) =
-    MkScopedImpMap(MkHashImpMap(Key))
-
 functor MkValuePropagationPhase(val isCross: bool
 				val loadMod:
 				    Source.desc * Url.t -> Reflect.module) :>
@@ -159,13 +156,10 @@ functor MkValuePropagationPhase(val isCross: bool
 
 	open I
 
-	fun idEq (Id (_, stamp1, _), Id (_, stamp2, _)) = stamp1 = stamp2
+	val idEq = IntermediateAux.idEq
 
-	structure IdMap =
-	    MkHashScopedImpMap(type t = id
-			       val equal = idEq
-			       fun hash (Id (_, stamp, _)) =
-				   Stamp.hash stamp)
+	structure IdMap' = MkHashImpMap(IntermediateAux.IdKey)
+	structure IdMap = MkScopedImpMap(IdMap')
 	structure LabelMap = MkHashImpMap(Label)
 
 	(*
@@ -318,6 +312,7 @@ functor MkValuePropagationPhase(val isCross: bool
 
 	    fun sortStm (LastUse (_, _), _, _, _, _) = ()
 	      | sortStm (ValDec (_, _, _), _, _, _, _) = ()
+	      | sortStm (RecDec (_, _), _, _, _, _) = ()
 	      | sortStm (RefDec (_, _, _), _, _, _, _) = ()
 	      | sortStm (TupDec (_, _, _), _, _, _, _) = ()
 	      | sortStm (ProdDec (_, _, _), _, _, _, _) = ()
@@ -425,6 +420,11 @@ functor MkValuePropagationPhase(val isCross: bool
 	fun patchBody ((stm as ValDec (_, idDef, _))::stms, lazySels, shared) =
 	    stm::patchIdDef (idDef, lazySels) @
 	    patchBody (stms, lazySels, shared)
+	  | patchBody ((stm as RecDec (_, idDefExpVec))::stms,
+		       lazySels, shared) =
+	    stm::Vector.foldr (fn ((idDef, _), stms) =>
+				  patchIdDef (idDef, lazySels) @ stms)
+			      (patchBody (stms, lazySels, shared)) idDefExpVec
 	  | patchBody ((stm as RefDec (_, idDef, _))::stms, lazySels, shared) =
 	    stm::patchIdDef (idDef, lazySels) @
 	    patchBody (stms, lazySels, shared)
@@ -1044,6 +1044,85 @@ functor MkValuePropagationPhase(val isCross: bool
 	  | testsNull (SOME (VecTests xs)) = Vector.length xs = 0
 	  | testsNull NONE = true
 
+	structure DepthFirstSearch =
+	    MkDepthFirstSearch(structure Key = IntermediateAux.IdKey
+			       structure Map = IdMap')
+	structure IdSet = IntermediateAux.IdSet
+
+	fun optimizeRec (info, idDefExpList, stms) =
+	    let
+		val edgeMap = IdMap'.new ()
+		val set = IdSet.new ()
+		val (idDefExpList, idDefExpRest) =
+		    List.partition
+			(fn (IdDef _, ConExp (_, (IdRef _ |
+						  LastIdRef _), _)) => false
+			  | (IdDef id, _) => (IdSet.insert (set, id); true)
+			  | (_, _) => false) idDefExpList
+		val map = IdMap'.new ()
+		val _ =
+		    List.app
+			(fn (IdDef id, exp) =>
+			    let
+				val freeVarsSet =
+				    IntermediateAux.getUsedVars (exp, set)
+			    in
+				IdMap'.insert (map, id, (exp, freeVarsSet));
+				IdMap'.insert (edgeMap, id, nil)
+			    end
+			  | (Wildcard, _) =>
+			    raise Crash.Crash
+				      "MkValuePropagationPhase.optimizeRec")
+			idDefExpList
+		val _ =
+		    IdMap'.appi
+		    (fn (id, (_, freeVarsSet)) =>
+			IdSet.app
+			(fn id' =>
+			    IdMap'.insert
+				(edgeMap, id',
+				 id::IdMap'.lookupExistent (edgeMap, id')))
+			freeVarsSet) map
+		val idss = DepthFirstSearch.search edgeMap
+		val toIdDefExpList =
+		    List.foldr
+			(fn (id, idDefExpList) =>
+			    let
+				val (exp, _) = IdMap'.lookupExistent (map, id)
+			    in
+				(IdDef id, exp)::idDefExpList
+			    end)
+	    in
+		if List.null idDefExpRest then
+		    List.foldr
+			(fn ([id], stms) =>
+			    let
+				val (exp, freeVarsSet) =
+				    IdMap'.lookupExistent (map, id)
+			    in
+				if IdSet.member (freeVarsSet, id)
+				then RecDec (info, #[(IdDef id, exp)])::stms
+				else ValDec (info, IdDef id, exp)::stms
+			    end
+			  | (ids, stms) =>
+			    let
+				val idDefExpVec =
+				    Vector.fromList (toIdDefExpList nil ids)
+			    in
+				RecDec (info, idDefExpVec)::stms
+			    end) stms idss
+		else   (* don't try to be smart *)
+		    let
+			val idDefExpList =
+			    List.foldr
+				(fn (ids, idDefExpList) =>
+				    toIdDefExpList idDefExpList ids)
+				idDefExpRest idss
+		    in
+			RecDec (info, Vector.fromList idDefExpList)::stms
+		    end
+	    end
+
 	fun vpBody (ValDec (info, idDef, exp)::stms,
 		    state as {env, isToplevel, lazySels, ...}) =
 	    let
@@ -1051,6 +1130,30 @@ functor MkValuePropagationPhase(val isCross: bool
 	    in
 		declare (env, idDef, (expToValue exp, isToplevel));
 		stms' @ ValDec (info, idDef, exp)::vpBody (stms, state)
+	    end
+	  | vpBody (RecDec (info, idDefExpVec)::stms,
+		    state as {env, isToplevel, lazySels, ...}) =
+	    let
+		val _ =
+		    Vector.app
+			(fn (idDef, exp) =>
+			    declare (env, idDef, (expToValue exp, isToplevel)))
+			idDefExpVec
+		val (stms', idDefExpList) =
+		    Vector.foldr
+			(fn ((idDef, exp), (stms, idDefExpList)) =>
+			    let
+				val (stms', exp) =
+				    vpExp (exp, env, isToplevel, lazySels)
+			    in
+				(stms' @ stms, (idDef, exp)::idDefExpList)
+			    end) (nil, nil) idDefExpVec
+	    in
+		List.app
+		    (fn (idDef, exp) =>
+			declare (env, idDef, (expToValue exp, isToplevel)))
+		    idDefExpList;
+		stms' @ optimizeRec (info, idDefExpList, vpBody (stms, state))
 	    end
 	  | vpBody (RefDec (info, idDef, idRef)::stms,
 		    state as {env, isToplevel, ...}) =
