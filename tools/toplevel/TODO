@@ -6,6 +6,7 @@ TODO list for the Alice IDE
 * overwrapping search
 * replace
 * incremental search
+* history
 * file names as command line arguments
 * general interactive highlighting
 * auto-indentation, indent/outdent commands

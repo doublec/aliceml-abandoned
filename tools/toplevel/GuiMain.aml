@@ -364,7 +364,9 @@ structure GuiMain =
              currentPage := Gtk.notebookGetCurrentPage Gui.notebook1)
 
         fun close () = 
-            (if Buffer.close (getPage(!currentPage)) then
+	     case getCurrentPage() of NONE => ()
+	     			    | SOME id =>
+            (if Buffer.close id then
                  reallyClose (!currentPage)
              else FileDialog.modifiedWarning
                       "File modified. Discard changes and close anyway, or cancel?"

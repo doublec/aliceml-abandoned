@@ -56,7 +56,8 @@ struct
     fun isIdChar c = Char.isAlphaNum c orelse c = #"_"
 
     fun checkReserved (s, y, x1, x2, rs) =
-	if isReserved (Substring.slice (s, x1, SOME (x2-x1)))
+	if Substring.sub (s, x1) = #"_"
+	orelse isReserved (Substring.slice (s, x1, SOME (x2-x1)))
 	then (RESERVED, y,x1, y,x2)::rs
 	else rs
 
