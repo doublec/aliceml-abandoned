@@ -34,13 +34,13 @@ JACKE = ../../yacc/jacke
 .PHONY: all clean distclean copy
 
 
-all: copy $(FILES:%.aml=%.ozf)
+all: copy $(FILES:%.aml=%.alc)
 
 copy:
 	cp ../hose-image* .
 	cp ../../yacc/jacke-image* .
 
-%.ozf: %.aml
+%.alc: %.aml
 	$(ALICEC) $< -o $@
 
 $(H-FILE).aml: $(H-FILE)
@@ -54,7 +54,7 @@ clean:
 
 
 distclean: clean
-	$(RM) $(FILES:%.aml=%.ozf)
+	$(RM) $(FILES:%.aml=%.alc)
 	$(RM) jacke.jacke.aml
 	$(RM) hose.hose.aml
 	$(RM) hose-image.*
