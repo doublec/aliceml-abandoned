@@ -19,9 +19,7 @@
 
 class Element: private Block {
 private:
-  static const u_int POINTER_POS = 0;
-  static const u_int VALUE_POS   = 1;
-  static const u_int SIZE        = 2;
+  enum { POINTER_POS, VALUE_POS, SIZE };
 public:
   using Block::ToWord;
 
