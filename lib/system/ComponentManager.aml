@@ -1,5 +1,5 @@
 (* Dummy replacement for bootstrapping *)
 
-import structure Component from "../../lib/system/Component"
+import structure Component from "Component"
 
 structure ComponentManager = Component.MkManager()
