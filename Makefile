@@ -34,6 +34,8 @@ else
     TIMECOMMAND3 =
 endif
 
+export PREFIX TARGET WINDOWS
+
 .PHONY: clean clean-common clean-mozart clean-seam \
 	install install-prelude install-common install-global install-mozart install-seam \
 	bootstrap-smlnj bootstrap-mozart bootstrap-seam build-seam \
@@ -45,7 +47,7 @@ endif
 ## Do it!
 ##
 install:
-	make TARGET=$(DEFAULT_TARGET) install-rec
+	make PREFIX=$(PREFIX) TARGET=$(DEFAULT_TARGET) install-rec
 install-rec: install-$(TARGET)-rec man
 	@echo -------------------------------------------------------------------------------
 	@echo Installation of Alice for $(PLATFORM) complete.
@@ -129,7 +131,7 @@ distclean: veryclean
 ## Install Alice on Mozart
 ##
 install-mozart:
-	make TARGET=mozart install-mozart-rec
+	make PREFIX=$(PREFIX) TARGET=mozart install-mozart-rec
 install-mozart-rec: install-common bootstrap-mozart libs-mozart
 
 bootstrap-mozart:
@@ -168,11 +170,11 @@ libs-mozart:
 ## Install Alice on Seam
 ##
 install-seam:
-	make TARGET=seam install-seam-rec
+	make PREFIX=$(PREFIX) TARGET=seam install-seam-rec
 install-seam-rec: install-common build-seam bootstrap-seam libs-seam
 
 reinstall-seam:
-	make TARGET=seam reinstall-seam-rec
+	make PREFIX=$(PREFIX) TARGET=seam reinstall-seam-rec
 reinstall-seam-rec: install-common bootstrap-seam libs-seam
 
 bootstrap-seam:
