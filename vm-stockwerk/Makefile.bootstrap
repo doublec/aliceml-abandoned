@@ -646,7 +646,7 @@ INSTALL3DIRS = \
 	build3/install/linker build3/install/depend
 INSTALL3INCLUDEFILES = $(INCLUDES)
 #---**
-INSTALL3TOPFILES = alicec.import alice.import
+INSTALL3TOPFILES = alicec.import alice.import COPYING
 INSTALL3BINFILES = alicerun alice alicec alicelink alicedep alicetool
 INSTALL3LIBFILES = \
 	$(LIBSOURCES0:%.aml=%.stc) \
@@ -706,10 +706,11 @@ build3/%.stc: build3/%.aml
 
 build3/lib/fundamental/LinkedFundamental.stc: \
 	build3/lib/fundamental/Fundamental.stc
-	$(ALICELINK2) $(ALICELINK_OPTS) --rewrite build3/=../../ \
+	$(ALICELINK2) $(ALICELINK_OPTS) \
 	--exclude build3/lib/utility/Unsafe \
 	--exclude build3/lib/system/Unsafe \
 	--include build3 \
+	--rewrite build3/=../../ --rewrite x-alice:/=../../ \
 	build3/lib/fundamental/Fundamental -o $@
 
 build3/compiler/LinkedCompilerMain.stc: build3/compiler/CompilerMain.stc
@@ -760,6 +761,9 @@ build3/install/include/%: %
 	install -c -m 444 $< $@
 
 build3/install/%.import: build3/%.import
+	install -c -m 444 $< $@
+
+build3/install/COPYING: ../COPYING
 	install -c -m 444 $< $@
 
 build3/install/bin/%: bin/%
