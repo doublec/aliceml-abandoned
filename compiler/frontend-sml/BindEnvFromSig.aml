@@ -76,7 +76,8 @@ struct
 	    raise Crash.Crash "BindEnvFromSig: strange constructor field"
 
     and idStatusFromTyp'(t1,t2) =
-	if      Type.isApply' t1 then idStatusFromTyp'(#1(Type.asApply' t1), t2)
+	if Type.isApply' t1 then
+	    idStatusFromTyp'(#1(Type.asApply' t1), t2)
 	else if Type.isSum' t1 then
 	    T(arityFromNatTyp t2)
 	else if Type.equals(t1, PervasiveType.typ_ref) then
