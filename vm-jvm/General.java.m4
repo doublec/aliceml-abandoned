@@ -156,6 +156,7 @@ final public class General {
 		outf=new java.io.FileOutputStream(whereto);
 		out=new PickleOutputStream(outf);
 		out.writeObject(args[1]);
+		outf.flush();
 		out.flush();
 	    } catch (Exception e) {
 		System.err.println(e);
