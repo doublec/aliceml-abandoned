@@ -48,7 +48,8 @@ public:
       // The thread can already have been woken up
       // if it awaited more than one future.
       thread->SetState(Thread::RUNNABLE);
-      AddThread(thread);
+      if (!thread->IsSuspended())
+	AddThread(thread);
     }
   }
   static void SuspendThread(Thread *thread) {
