@@ -1,11 +1,3 @@
 #!/bin/sh
 
-howcalled=$0
-
-if test -z "${STOCKHOME}"
-then
-  dir=`dirname $howcalled`
-  STOCKHOME=`(cd $dir; cd ..; /bin/pwd)`
-fi
-
-exec "$STOCKHOME/bin/alicerun" x-alice:/depend/Main "$@"
+exec $(dirname $0)/alicerun x-alice:/depend/Main "$@"
