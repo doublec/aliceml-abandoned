@@ -8,8 +8,8 @@ all: stoc-mozart.$(PLATFORM)
 
 stoc-mozart.$(PLATFORM):
 	-rm -f $@
-	echo 'use "top/Exec-mozart.sml";' | $(SML)
+	(cd top && echo 'use "Exec-mozart.sml";' | $(SML))
 
 stoc-com+.$(PLATFORM):
 	-rm -f $@
-	echo 'use "top/Exec-com+.sml";' | $(SML)
+	(cd top && echo 'use "top/Exec-com+.sml";' | $(SML))
