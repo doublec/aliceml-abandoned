@@ -19,6 +19,7 @@ signature PROMISE =
 
 	val promise : unit -> 'a promise
 	val fulfill : 'a promise * 'a  -> unit
+	val future : 'a promise -> 'a
     end
 
 structure Promise =
@@ -26,6 +27,10 @@ structure Promise =
 	type 'a promise = 'a Option.option ref
 	type 'a t = 'a promise
 
+	exception Promise
+
 	fun promise () = ref NONE
 	fun fulfill (p, x) = p := SOME x
+	fun future (ref (SOME x)) = x
+	  | future (ref NONE) = raise Promise
     end

@@ -8,7 +8,8 @@ Compiler:
 
 Interactive Toplevel:
 
-* Enable Ctrl-C for interrupting computations.
+* Enable Ctrl-C for interrupting a computation.
+* Enable Ctrl-Z for putting a computation into background.
 
 
 Alice 0.9.3 (Stockhausen Operette 3 Remix 3) - 2004/04/15

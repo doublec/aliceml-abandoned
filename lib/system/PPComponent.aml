@@ -46,6 +46,8 @@ struct
 
   (* Deconstruction helpers *)
 
+    val dummyFuture : Reflect.value = Promise.future(Promise.promise())
+
     fun unlambda  j        = unlambda'(j,[])
     and unlambda'(j,binds) =
 	case Inf.inspect j
@@ -184,7 +186,9 @@ struct
 			val (_,m)   = ppVars vs
 			val    k    = List.length vs
 			val  isExn  = Type.equal(t2, PervasiveType.typ_exn)
-			val    n    = UnsafeValue.conName
+			val    n    = if Future.isFuture str
+				      then Name.InId
+				      else UnsafeValue.conName
 						(UnsafeValue.projPoly(str,l))
 		    in
 			LabelSet.removeAll ls;
@@ -207,7 +211,9 @@ struct
 				)
 			    else
 				text "=" ^/^
-				text(Name.toString n)
+				(if Future.isFuture str
+				 then PPValue.ppVal t dummyFuture
+				 else text(Name.toString n))
 			    )
 			))
 		    end
@@ -222,7 +228,9 @@ struct
 			text ":" ^/^
 			PPType.ppTyp' ([],0,Type.Map.map()) t ^/^
 			text "=" ^/^
-			PPValue.ppVal t (UnsafeValue.projPoly(str,l))
+			PPValue.ppVal t (if Future.isFuture str
+					 then dummyFuture
+					 else UnsafeValue.projPoly(str,l))
 		    )))
 	    end
 	  | Inf.TypItem(p,k) =>

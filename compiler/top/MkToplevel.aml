@@ -14,7 +14,6 @@
 import structure Foreign              from "../../lib/system/Foreign"
 import structure TextIO               from "../../lib/system/TextIO"
 import structure OS                   from "../../lib/system/OS"
-import structure IO                   from "../../lib/system/IO"
 import structure Url                  from "../../lib/system/Url"
 import structure Signal               from "../../lib/system/Signal"
 import structure Config               from "../../lib/system/Config"
@@ -48,24 +47,31 @@ struct
     val prompt     = "- "
     val contPrompt = "  "
 
+    (* Signal handling *)
+
+    fun run ((thread, result), stoppable) =
+	let
+	    val p = Promise.promise ()
+	    fun handler s = Promise.fulfill (p, s) handle Promise.Promise => ()
+	in
+	    (* Signal handlers are currently auto-removed after triggering *)
+	    Signal.register (Signal.SIGINT, handler);
+	    if not stoppable then ()
+	    else Signal.register (Signal.SIGSTOP, handler);
+	    case Future.awaitEither (result, Promise.future p) of
+		FST _ => SOME result
+	      | SND Signal.SIGSTOP where stoppable => SOME result
+	      | SND Signal.SIGINT => (Thread.terminate thread; NONE)
+	      | SND _ => run ((thread, result), stoppable)
+	end
+
+    fun interruptable f = run (Thread.spawnThread f, false)
+    fun stoppableInterruptable f = run (Thread.spawnThread f, true)
+
+
+    (* Use *)
+
     val useFiles: string list ref = ref nil
-    val interruptThread: Thread.t option ref = ref NONE
-
-    fun interruptHandler s =
-	(case Ref.exchange (interruptThread, NONE)
-	  of NONE => ()
-	   | SOME thread => Thread.terminate thread;
-	 Signal.register (s, interruptHandler))  (*--** currently auto-removed *)
-    val _ = Signal.register (Signal.SIGINT, interruptHandler)
-
-    fun interruptable f = (* only one interruptable thread at a time! *)
-	(interruptThread := SOME (Thread.current ());
-	 SOME (f ()) before
-	 interruptThread := NONE
-	) handle ( Thread.Terminate
-		 | IO.Io {cause=Thread.Terminate, ...}
-		 | Component.Failure (_, Component.Eval Thread.Terminate)) =>
-			NONE
 
     fun use filename =
 	let
@@ -99,30 +105,45 @@ struct
 			  (TextIO.output (TextIO.stdErr, Foreign.exnMessage e);
 			   SOME context))
     and eval' compile (printSig, source, context) =
-	(case interruptable (fn _ => compile (context, source)) of
-	     SOME (context', Target.COMPONENT {eval, component, ...}) =>
-		 (case interruptable (eval o baseUrl) of
-		      NONE => NONE
-		    | SOME str =>
-		      if not printSig then SOME context' else
-		      case Component.inf (component ())
-		        of NONE =>
-			       (TextIO.print "[no result signature]\n";
-			        SOME context')
-		         | SOME inf =>
-			       interruptable
-			       (fn _ =>
-				let
-				    val doc = PPComponent.ppComp (str, inf)
-				in
-				    PrettyPrint.output(TextIO.stdOut, doc, 79);
-				    TextIO.print "\n";
-				    context'
-				end))
-	   | SOME (_, Target.FOREIGN _) =>
-		 raise RecursiveCompiler.Crash
-		     "Toplevel.eval: cross-compilation not supported"
-	   | NONE => NONE)
+	(case stoppableInterruptable (fn _ => compile (context, source)) of
+	     NONE => NONE
+	   | SOME contextTarget =>
+	     let
+		 val stopped = Future.isFuture contextTarget
+		 val (context', target) = contextTarget
+	     in
+		 case target of
+		     Target.COMPONENT {eval, component, ...} =>
+		     let
+			 val result = if stopped then
+					  SOME (spawn eval (baseUrl ()))
+				      else
+					  stoppableInterruptable (eval o baseUrl)
+		     in
+			 case result of
+			     NONE => NONE (* interrupted *)
+			   | SOME str => (* completed or stopped *)
+			     if not printSig then SOME context' else
+			     case Component.inf (component ())
+			       of NONE =>
+				      (TextIO.print "[no result signature]\n";
+				       SOME context')
+		        	| SOME inf =>
+				      interruptable
+				      (fn _ =>
+				       let
+					   val doc =
+					       PPComponent.ppComp (str, inf)
+				       in
+					   PrettyPrint.output(TextIO.stdOut, doc, 79);
+					   TextIO.print "\n";
+					   context'
+				       end)
+		     end
+		   | Target.FOREIGN _ =>
+			 raise RecursiveCompiler.Crash
+			     "Toplevel.eval: cross-compilation not supported"
+	     end)
 	handle RecursiveCompiler.Error => SOME context
 	     | RecursiveCompiler.Crash s =>
 		   (TextIO.output (TextIO.stdErr,
