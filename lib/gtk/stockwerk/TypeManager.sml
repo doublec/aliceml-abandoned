@@ -8,6 +8,7 @@ struct
 
     fun removeTypeRefs (POINTER t)     = POINTER (removeTypeRefs t)
       | removeTypeRefs (ARRAY (x,t))   = ARRAY(x, removeTypeRefs t)
+      | removeTypeRefs (LIST  (x,t))   = LIST (x, removeTypeRefs t)
       | removeTypeRefs (TYPEREF (_,t)) = removeTypeRefs t
       | removeTypeRefs t               = t
 

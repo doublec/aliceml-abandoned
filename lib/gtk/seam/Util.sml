@@ -22,7 +22,8 @@ structure Util :> UTIL =
                   (firstLower s)
 
 	fun separator s =
-	    "\n**** "^s^" ***************************************\n\n"
+	    "-- "^s^"...\n"
+(*	    "\n**** "^s^" ***************************************\n\n"*)
 
 	fun indent n = if n = 0 then "" else "    " ^ (indent (n - 1))
 

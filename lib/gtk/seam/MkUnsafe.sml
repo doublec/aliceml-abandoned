@@ -26,7 +26,6 @@ functor MkUnsafe(structure TypeManager : TYPE_MANAGER
 		  "signature ", Util.strUpper unsafeName, " =\n",
 		  "sig\n",
 		  "(**)", sigIndent, "type object = GtkTypes.object\n" ,
-(*		  "(**)", sigIndent, "exception TypeMismatch of string\n",*)
 		  "(**)", sigIndent, "type arg = GtkTypes.arg\n",
 		  sigIndent, "\n"] ,
 	      outro =
@@ -79,40 +78,6 @@ functor MkUnsafe(structure TypeManager : TYPE_MANAGER
 		List.concat (map addEnum (ret::(map getType arglist)))
 	end
 
-        local
-	    val classes = ref nil
-	    exception NoUnref
-	    val deleteObjects = ["_GtkTextIter", "_GtkTreeIter",
-				 "_GdkColor", "_GdkPoint", "_GdkRectangle"]
-
-	    fun buildClassList' (STRUCT (name,(_,t)::_)) =
-		(case removeTypeRefs t of
-		     STRUCTREF sup => ( classes := ((sup,name)::(!classes)) )
-		   | _             => () 
-		)
-	      | buildClassList' _ = ()
-
-	    fun getParentClass name nil = raise NoUnref
-	      | getParentClass name ((sup, n)::cs) = 
-		if n=name then sup else getParentClass name cs
-
-	    fun getUnrefFun' "_GObject"   = ("GtkCore.GObjectRef", false)
-	      | getUnrefFun' "_GtkObject" = ("GtkCore.GtkObjectRef", true)
-	      | getUnrefFun' "_GtkWidget" = ("GtkCore.GtkWidgetRef", true)
-	      | getUnrefFun' name        = 
-		  if Util.contains name deleteObjects
-		      then ("GtkCore.DeleteRef", false)
-		      else getUnrefFun' (getParentClass name (!classes))
-	in
-	    fun buildClassList tree = List.app buildClassList' tree
-	    fun getUnrefFun t = 
-		(case removeTypeRefs t of 
-		     STRUCTREF name => getUnrefFun' name
-		   | _              => raise NoUnref)
-		     handle _ => ("GtkCore.NoRef", false)
-	end
-	    
-
 	(* SIGNATURE CODE GENERATION *)
 	fun sigEntry(funName, ret, arglist, doinout) =
         let
@@ -144,13 +109,14 @@ functor MkUnsafe(structure TypeManager : TYPE_MANAGER
 			(if toNative then ename^"ToReal" else "RealTo"^ename)
 			^" "^vname
 		  | POINTER t'    =>
-			if toNative then vname else 
-			let
-			    val (unref, hasSignals) = getUnrefFun t'
-			in
-			    "GtkCore.addObject("^vname^")"
-			end
-	         | _ => vname)
+			if toNative 
+			    then vname 
+			    else "GtkCore.addObject "^vname
+		  | LIST (_,POINTER t') =>
+			if toNative 
+			    then vname 
+			    else "map GtkCore.addObject "^vname
+		  | _ => vname)
 	in
 	    if generateSimple
 	    then
@@ -206,7 +172,6 @@ functor MkUnsafe(structure TypeManager : TYPE_MANAGER
         fun create tree =
 	let
 	    val _ = print (Util.separator("Generating "^unsafeName))
-	    val _ = buildClassList tree
 	    val myItems' = List.filter (Util.funNot Special.isIgnored) tree
 	    val myItems = Util.filters [isItemOfSpace space, checkItem,
 				        Util.funNot Special.isIgnoredSafe] 

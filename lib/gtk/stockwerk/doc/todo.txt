@@ -2,8 +2,6 @@
 *** Allgemein/Ideen ***
 
 1. zwei seg faults in AliceTour: a) Fehler im GC(!) b) unmittelbar nach condget
-2. object list: richtiger Typ
-3. Ellipsen nehmen nur ein Argument
 
 4. Quellcode aufraeumen
 5. Dokumentation
@@ -11,7 +9,7 @@
 * aktuelles Problem: Finalisierung an falscher Stelle und nur bei GdkPixbuf?
 * Transient from finalStream funktioniert nicht -> finalStream abgeschafft
 
-- install -C ?
+* install -C ?
 * Record bauen - wie? (Zugriff auf Event-Records stuerzt ab)
 * Kernroutinen aus NativeGtkSpecial in eigene DLL tun
 - Komponenten auf hinreichende Modularisierung ueberpruefen

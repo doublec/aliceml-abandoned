@@ -7,23 +7,9 @@
 #include <libgnomecanvas/libgnomecanvas.h>
 
 
-Record *CreateRecord(int size) {
-  Record *record = Record::New(size);
-  return record;
+inline Record *CreateRecord(int size) {
+  return Record::New(size);
 }
-
-/*
-static word wDict;
-
-static void AddObject(GtkObject *object) {
-  static s_int key     = 0;
-  WeakDictionary *dict = WeakDictionary::FromWordDirect(wDict);
-  dict->InsertItem(key++, Store::UnmanagedPointerToWord(object));
-}
-*/
-//  RootSet::Add(wDict);
-//  wDict = WeakDictionary::New(100, new GtkFinalize());
-
 
 /*
 TYPE CHECKING HAS BEEN COMPLETELY DISABLED (SLOW; AND IS DONE BY GTK ANYWAY)
@@ -129,9 +115,6 @@ enum { BOOL, EVENT, INT, LIST, OBJECT, REAL, STRING };
       } );                                                  \
   }
 
-#define __RETURN_STRING(s) \
-  String::New(reinterpret_cast<const char *>(s))->ToWord()
-
 #define __RETURN_LIST_HELP(lname,ltype,convertfun)          \
   word tail = Store::IntToWord(Types::nil);                 \
   for (guint i = ltype##_length(lname); i > 0; i--) {       \
@@ -142,12 +125,18 @@ enum { BOOL, EVENT, INT, LIST, OBJECT, REAL, STRING };
   }                                                         \
   return tail;
 
+#define __RETURN_STRING(s) \
+  String::New(reinterpret_cast<const char *>(s))->ToWord()
+
+#define __RETURN_OBJECT(p) \
+  PointerToObject(p, TYPE_UNKNOWN)
+
 inline word GListToObjectList(GList *list) {
-  __RETURN_LIST_HELP(list, g_list, Store::UnmanagedPointerToWord);
+  __RETURN_LIST_HELP(list, g_list, __RETURN_OBJECT);
 }
 
 inline word GSListToObjectList(GSList *list) {
-  __RETURN_LIST_HELP(list, g_slist, Store::UnmanagedPointerToWord);
+  __RETURN_LIST_HELP(list, g_slist, __RETURN_OBJECT);
 }
 
 inline word GListToStringList(GList *list) {
