@@ -9,16 +9,16 @@
 *
 *)
 
-import signature ARENAWIDGET  from "ARENAWIDGET-sig"
-import structure Gtk          from "x-alice:/lib/gtk/Gtk"
-import structure Gdk          from "x-alice:/lib/gtk/Gdk"
-import structure GtkCanvas    from "x-alice:/lib/gtk/GtkCanvas"
-import functor MkRedBlackMap  from "x-alice:/lib/data/MkRedBlackMap"
-import structure GtkBuilder   from "GtkBuilder"
-import structure Protocol     from "../common/Protocol"
-import structure Color        from "../common/Color"
-import structure Pos          from "../common/Pos"
-import structure Arena        from "../server/Arena"
+import signature ARENAWIDGET   from "ARENAWIDGET-sig"
+import structure Gtk           from "x-alice:/lib/gtk/Gtk"
+import structure Gdk           from "x-alice:/lib/gtk/Gdk"
+import structure GtkCanvas     from "x-alice:/lib/gtk/GtkCanvas"
+import functor   MkRedBlackMap from "x-alice:/lib/data/MkRedBlackMap"
+import structure GtkBuilder    from "GtkBuilder"
+import structure Protocol      from "../common/Protocol"
+import structure Color         from "../common/Color"
+import structure Pos           from "../common/Pos"
+import structure Arena         from "../server/Arena"
 
 (* Overview:
 
@@ -40,36 +40,8 @@ import structure Arena        from "../server/Arena"
 *)
 
 
-structure P = Protocol
-
-open GtkBuilder
-
-datatype event = datatype Gtk.event
-datatype arg   = datatype Gtk.arg
-
-
-val cellSize     = 10
-val windowWidth  = 400
-val windowHeight = 300
-
 fun colorConv n = Real.round (65535.0 * n)
 
-
-structure ArenaWidget :> ARENAWIDGET =
-struct
-
-    type arena_field = Gtk.object * Protocol.field
-	
-    type arena_widget = 
-	{
-	 canvas : Gtk.object,
-	 state  : arena_field Array2.array ref
-	 }
-
-    val cellSize2     = cellSize     div 2
-    val windowHeight2 = windowHeight div 2
-    val windowWidth2  = windowWidth  div 2
-	
 local
 
     val colormap = Gdk.colormapGetSystem ()
@@ -100,15 +72,41 @@ local
 in
     fun color c = CMap.lookupExistent (map, c);
     val black    = convArena (0.0, 0.0, 0.0);
-    val green    = convArena (0.0, 1.0, 0.0);
+    val green    = convArena (0.32, 0.66, 0.17);
     val red      = convArena (1.0, 0.0, 0.0);
     val white    = convArena (1.0, 1.0, 1.0)
 	
 end
 
+
+(* some values *)
+val cellSize     = 20
+val windowWidth  = 400
+val windowHeight = 300
+
+val backgroundColor = green
+
+structure P = Protocol
+
+structure ArenaWidget :> ARENAWIDGET =
+struct
+
+    type arena_field = Gtk.object * Protocol.field
+	
+    type arena_widget = 
+	{
+	 canvas : Gtk.object,
+	 state  : arena_field Array2.array ref
+	 }
+
+    val cellSize2     = cellSize     div 2
+    val windowHeight2 = windowHeight div 2
+    val windowWidth2  = windowWidth  div 2
+	
     fun initialize () = 
-	{canvas = GtkCanvas.new 0,
-	 state  = ref (Array2.array(1, 1, (Gtk.null () , P.EMPTY)))
+	{
+	 canvas = GtkCanvas.new 0,
+	 state  = ref (Array2.array(1, 1, (Gtk.null , P.EMPTY)))
 	 }
 	
     fun toObject ({canvas, ... } : arena_widget) : Gtk.object  = canvas
@@ -120,123 +118,180 @@ end
 					       Real.fromInt(cols * cellSize),
 					       Real.fromInt(rows * cellSize))
 	    val _ = Gtk.widgetSetUsize (canvas, windowWidth, windowHeight)
-	    val arena = Array2.array (rows, cols, (Gtk.null (), P.EMPTY))
+	    val root = GtkCanvas.root canvas
+	    val _ = 
+		GtkCanvas.itemNew (root, Gtk.RECTANGLE,
+				   [("x1", Gtk.DOUBLE 0.0),
+				    ("y1", Gtk.DOUBLE 0.0),
+				    ("x2", Gtk.DOUBLE (real (cols * cellSize))),
+				    ("y2", Gtk.DOUBLE (real (cols * cellSize))),
+				    ("fill_color_gdk", Gtk.OBJECT green),
+				    ("outline_color_gdk", Gtk.OBJECT green)])
+	    val arena = Array2.array (rows, cols, (Gtk.null, P.EMPTY))
 	in
 	    state  := arena
 	end
 	
 
-
-    fun insertWall (canvas, x, y) = 
-	MakeCanvasItem (Rectangle {parent = canvas, 
-				   x1 = Real.fromInt (x - cellSize2), 
-				   y1 = Real.fromInt (y - cellSize2), 
-				   x2 = Real.fromInt (x + cellSize2), 
-				   y2 = Real.fromInt (y + cellSize2),
-				   fill_color = red,
-				   outline_color = black})
-	
-    fun insertHead (canvas, x, y, d, snakecol) = 
+    fun insertHead (canvas, x, y, d, snakecol) =
 	let
-	    fun insertEyes () = 
-		let
-		    val (lx1, ly1, lx2, ly2) = 
-			case d of
-			    P.UP    => (x - 2, y - 3, x - 2, y - 3)
-			  | P.DOWN  => (x - 2, y + 3, x - 2, y + 3)
-			  | P.LEFT  => (x - 3, y + 2, x - 3, y + 2)
-			  | P.RIGHT => (x + 3, y + 2, x + 3, y + 2)
+	    val (ex1,ey1,ex2,ey2) = 
+		case d of
+		    P.UP    => (2 * cellSize div 10,
+				3 * cellSize div 10,
+				5 * cellSize div 10,
+				3 * cellSize div 10)
+		  | P.DOWN  => (2 * cellSize div 10,
+				4 * cellSize div 10,
+				5 * cellSize div 10,
+				4 * cellSize div 10)
+		  | P.LEFT  => (3 * cellSize div 10,
+				2 * cellSize div 10,
+				3 * cellSize div 10,
+				5 * cellSize div 10)
+		  | P.RIGHT => (4 * cellSize div 10,
+				2 * cellSize div 10,
+				4 * cellSize div 10,
+				5 * cellSize div 10)
+		    
+	    val tonglist = 
+		case d of
+		    P.UP    => [(4 * cellSize div 10),
+				(1 * cellSize div 10),
+				(4 * cellSize div 10),
+			       (~3 * cellSize div 10)]
+		  | P.DOWN  => [(4 * cellSize div 10),
+				(8 * cellSize div 10),
+				(4 * cellSize div 10),
+			       (11 * cellSize div 10)]
+		  | P.LEFT  => [(1 * cellSize div 10),
+				(4 * cellSize div 10),
+			       (~3 * cellSize div 10),
+			        (4 * cellSize div 10)]
+		  | P.RIGHT => [(8 * cellSize div 10),
+				(4 * cellSize div 10),
+			       (11 * cellSize div 10),
+				(4 * cellSize div 10)]
 
-		    val (rx1, ry1, rx2, ry2) =
-			case d of
-			    P.UP    => (x + 2, y - 3, x + 2, y - 3)
-			  | P.DOWN  => (x + 2, y + 3, x + 2, y + 3)
-			  | P.LEFT  => (x - 3, y - 2, x - 3, y - 2)
-			  | P.RIGHT => (x + 3, y - 2, x + 3, y - 2)
-		in
-		    MakeCanvasItem (Ellipse {parent = canvas,
-					     x1 = Real.fromInt lx1,
-					     y1 = Real.fromInt ly1,
-					     x2 = Real.fromInt lx2,
-					     y2 = Real.fromInt ly2,
-					     fill_color    = black,
-					     outline_color = black});
-		    MakeCanvasItem (Ellipse {parent = canvas,
-					     x1 = Real.fromInt rx1,
-					     y1 = Real.fromInt ry1,
-					     x2 = Real.fromInt rx2,
-					     y2 = Real.fromInt ry2,
-					     fill_color    = black,
-					     outline_color = black})
-		end
+	    val head = 
+		GtkCanvas.itemNew (canvas, GtkCanvas.GROUP,
+				   [("x", Gtk.DOUBLE (real x)),
+				    ("y", Gtk.DOUBLE (real y))])
+
+	    val ground = 
+		GtkCanvas.itemNew (head, GtkCanvas.ELLIPSE,
+				   [("x1", Gtk.DOUBLE 0.0),
+				    ("y1", Gtk.DOUBLE 0.0),
+				    ("x2", Gtk.DOUBLE (real cellSize)),
+				    ("y2", Gtk.DOUBLE (real cellSize)),
+				    ("fill_color_gdk", Gtk.OBJECT snakecol)])
+
+	    val tongue = 
+		GtkCanvas.itemNew (head, 
+				   GtkCanvas.LINE,
+				   [("points", Gtk.POINTS tonglist),
+				    ("fill_color_gdk", Gtk.OBJECT red),
+				    ("width_pixels", Gtk.INT (cellSize div 10))])
+
+	    val leftEye = 
+		GtkCanvas.itemNew (head,
+				   GtkCanvas.RECTANGLE,
+				   [("x1", Gtk.DOUBLE (real ex1)),
+				    ("y1", Gtk.DOUBLE (real ey1)),
+				    ("x2", Gtk.DOUBLE (real (ex1 + 1))),
+				    ("y2", Gtk.DOUBLE (real (ey1 + 1))),
+				    ("fill_color_gdk", Gtk.OBJECT black)])
 		
-	    fun insertTongue () = 
-		let
-		    val (x1,y1,x2,y2) = 
-			case d of
-			    P.UP    => (x - 1, y - 8, x + 1, y - 5)
-			  | P.DOWN  => (x - 1, y + 5, x + 1, y + 8)
-			  | P.LEFT  => (x - 8, y - 1, x - 5, y + 1)
-			  | P.RIGHT => (x + 5, y - 1, x + 8, y + 1)
-		in
-		    MakeCanvasItem (Ellipse {parent = canvas,
-					     x1 = Real.fromInt x1,
-					     y1 = Real.fromInt y1,
-					     x2 = Real.fromInt x2,
-					     y2 = Real.fromInt y2,
-					     fill_color    = red,
-					     outline_color = red})
-		end
+	    val rightEye = 
+		GtkCanvas.itemNew (head,
+				   GtkCanvas.RECTANGLE,
+				   [("x1", Gtk.DOUBLE (real ex2)),
+				    ("y1", Gtk.DOUBLE (real ey2)),
+				    ("x2", Gtk.DOUBLE (real (ex2 + 1))),
+				    ("y2", Gtk.DOUBLE (real (ey2 + 1))),
+				    ("fill_color_gdk", Gtk.OBJECT black)])
 	in
-	    MakeCanvasItem (Ellipse {parent = canvas,
-				     x1 = Real.fromInt (x - cellSize2),
-				     y1 = Real.fromInt (y - cellSize2),
-				     x2 = Real.fromInt (x + cellSize2),
-				     y2 = Real.fromInt (y + cellSize2),
-				     fill_color = snakecol,
-				     outline_color = snakecol});
-	    insertEyes ();
-	    insertTongue ()
+	    head
 	end
-
 	    
     fun insertBody (canvas, x, y, snakecol) =
-	MakeCanvasItem (Ellipse {parent = canvas,
-				 x1 = Real.fromInt (x - cellSize2),
-				 y1 = Real.fromInt (y - cellSize2),
-				 x2 = Real.fromInt (x + cellSize2),
-				 y2 = Real.fromInt (y + cellSize2),
-				 fill_color = snakecol,
-				 outline_color = snakecol})
+	let
+	    val body = 
+		GtkCanvas.itemNew (canvas, GtkCanvas.GROUP,
+				   [("x",Gtk.DOUBLE (real x)),
+				    ("y",Gtk.DOUBLE (real y))])
 
+	    val ground = 
+		GtkCanvas.itemNew (body, GtkCanvas.ELLIPSE,
+				   [("x1", Gtk.DOUBLE 0.0),
+				    ("y1", Gtk.DOUBLE 0.0),
+				    ("x2", Gtk.DOUBLE (real cellSize)),
+				    ("y2", Gtk.DOUBLE (real cellSize)),
+				    ("fill_color_gdk", Gtk.OBJECT snakecol)])
+		
+	in
+	    body
+	end
 
     fun insertGate (canvas, x, y, gatecol) = 
-	MakeCanvasItem (Rectangle {parent = canvas,
-				   x1 = Real.fromInt (x - cellSize2),
-				   y1 = Real.fromInt (y - cellSize2),
-				   x2 = Real.fromInt (x + cellSize2),
-				   y2 = Real.fromInt (y + cellSize2),
-				   fill_color = gatecol,
-				   outline_color = gatecol})
-
+	let
+	    val gate = 
+		GtkCanvas.itemNew (canvas, GtkCanvas.GROUP,
+				   [("x",Gtk.DOUBLE (real x)),
+				    ("y",Gtk.DOUBLE (real y))])
+		
+	    val ground = 
+		GtkCanvas.itemNew (gate, GtkCanvas.RECTANGLE,
+				   [("x1", Gtk.DOUBLE 0.0),
+				    ("y1", Gtk.DOUBLE 0.0),
+				    ("x2", Gtk.DOUBLE (real cellSize)),
+				    ("y2", Gtk.DOUBLE (real cellSize)),
+				    ("fill_color_gdk", Gtk.OBJECT gatecol),
+				    ("outline_color_gdk", Gtk.OBJECT black)])
+	in
+	    gate
+	end
 
     fun insertWall (canvas, x, y) = 
-	MakeCanvasItem (Rectangle {parent = canvas,
-				 x1 = Real.fromInt (x - cellSize2),
-				 y1 = Real.fromInt (y - cellSize2),
-				 x2 = Real.fromInt (x + cellSize2),
-				 y2 = Real.fromInt (y + cellSize2),
-				 fill_color = red,
-				 outline_color = black})
+	let
+	    val wall = 
+		GtkCanvas.itemNew (canvas, GtkCanvas.GROUP,
+				   [("x",Gtk.DOUBLE (real x)),
+				    ("y",Gtk.DOUBLE (real y))])
+		
+	    val ground = 
+		GtkCanvas.itemNew (wall, GtkCanvas.RECTANGLE,
+				   [("x1", Gtk.DOUBLE 0.0),
+				    ("y1", Gtk.DOUBLE 0.0),
+				    ("x2", Gtk.DOUBLE (real cellSize)),
+				    ("y2", Gtk.DOUBLE (real cellSize)),
+				    ("fill_color_gdk", Gtk.OBJECT black),
+				    ("outline_color_gdk", Gtk.OBJECT red)])
+		
+	in
+	    wall
+	end
 
-    fun insertGoodie (canvas, x, y) =
-	MakeCanvasItem (Ellipse {parent = canvas,
-				 x1 = Real.fromInt (x - cellSize2),
-				 y1 = Real.fromInt (y - cellSize2),
-				 x2 = Real.fromInt (x + cellSize2),
-				 y2 = Real.fromInt (y + cellSize2),
-				 fill_color = red,
-				 outline_color = red})
+    fun insertGoodie (canvas, x, y, n) =
+	(* where n is the amount of a goodie *)
+	let
+	    val goodie = 
+		GtkCanvas.itemNew (canvas, GtkCanvas.GROUP,
+				   [("x",Gtk.DOUBLE (real x)),
+				    ("y",Gtk.DOUBLE (real y))])
+		
+	    val ground = 
+		GtkCanvas.itemNew (goodie, GtkCanvas.ELLIPSE,
+				   [("x1", Gtk.DOUBLE 0.0),
+				    ("y1", Gtk.DOUBLE 0.0),
+				    ("x2", Gtk.DOUBLE (real cellSize)),
+				    ("y2", Gtk.DOUBLE (real cellSize)),
+				    ("fill_color_gdk", Gtk.OBJECT red)])
+		
+	in
+	    goodie
+	end
+
 
     fun update ({canvas, state = ref arena}, difflist) =
 	let
@@ -248,17 +303,17 @@ end
                     val y = cellSize * r
                 in
                     (* destroy old object if existing *)
-                    if oldObj <> Gtk.null () then Gtk.objectDestroy oldObj
+                    if oldObj <> Gtk.null 
+			then Gtk.objectDestroy oldObj
                     else ();
                     (* place the new one *)
                     case field of
 		        P.EMPTY     => 
-                            Array2.update (arena, r, c, (Gtk.null (), field))
+                            Array2.update (arena, r, c, (Gtk.null, field))
                     |   P.WALL      => Array2.update (arena, r, c, 
                                         (insertWall (can, x, y), field))
-                    | P.GOODIE _    => Array2.update (arena, r, c, 
-                                        (insertGoodie (can, x, y), field))
-
+                    | P.GOODIE n    => Array2.update (arena, r, c, 
+                                        (insertGoodie (can, x, y, n), field))
                     | P.GATE col    => Array2.update (arena, r, c, 
                                         (insertGate (can, x, y, color col), 
                                             field))
@@ -283,39 +338,55 @@ end
 	    List.app insert difflist
 	end
 	
-    fun changeView (a, (x, y)) = GtkCanvas.scrollTo(toObject a, 
-						    x * cellSize - windowWidth2, 
-						    y * cellSize - windowHeight2)
+    fun changeView (a, (x, y)) = 
+	GtkCanvas.scrollTo(toObject a, 
+			   x * cellSize - windowWidth2, 
+			   y * cellSize - windowHeight2)
 	
 end
 
+fun testfield () =
+    let
 
-val testfield = Array2.array(10,10,P.EMPTY)
+	val testfield = Array2.array(30,30,P.EMPTY)
+    in
+	Array2.update(testfield,2,3,
+		      P.SNAKE_HEAD(P.UP,Color.fromString"turquoise"));
+	Array2.update(testfield,2,5,
+		      P.SNAKE_HEAD(P.DOWN,Color.fromString"blue"));
+	Array2.update(testfield,2,7,
+		      P.SNAKE_HEAD(P.LEFT,Color.fromString"yellow"));
+	Array2.update(testfield,4,2,
+		      P.SNAKE_HEAD(P.RIGHT,Color.fromString"violet"));
+	Array2.update(testfield,4,4,
+		      P.SNAKE_BODY(Color.fromString"silver"));
+	Array2.update(testfield,4,6,
+		      P.WALL);
+	Array2.update(testfield,4,8,
+		      P.GATE(Color.fromString "brown"));
+	testfield
+    end
 
-val _ = Array2.update(testfield,2,3,P.SNAKE_HEAD(P.UP,Color.fromString"brown"))
-val _ = Array2.update(testfield,2,4,P.SNAKE_HEAD(P.DOWN,Color.fromString"brown"))
-val _ = Array2.update(testfield,2,5,P.SNAKE_HEAD(P.LEFT,Color.fromString"brown"))
-val _ = Array2.update(testfield,2,6,P.SNAKE_HEAD(P.RIGHT,Color.fromString"brown"))
-val _ = Array2.update(testfield,2,7,P.SNAKE_BODY(Color.fromString"brown"))
-val _ = Array2.update(testfield,2,8,P.WALL)
-val _ = Array2.update(testfield,3,2,P.GATE(Color.fromString "brown"))
+val testfield = testfield ()
 
 fun test () = 
     let
 	structure A = ArenaWidget
 	val testarena = A.initialize ()
-	val _ = ArenaWidget.initLevel (testarena, {dimensions = (10,10)});
+	val _ = ArenaWidget.initLevel (testarena, {dimensions = (30,30)})
 	val canvas = ArenaWidget.toObject testarena
 	fun deleteHandler _ = OS.Process.exit OS.Process.success
-	val widget = Toplevel {title = "Snake ArenaWidget Test",
-			       border = 0,
-			       handler = [Handler("delete-event", deleteHandler)],
-			       inner = Window canvas}
+	val widget = 
+	    GtkBuilder.Toplevel {title = "Snake ArenaWidget Test",
+				 border = 0,
+				 handler = [GtkBuilder.Handler("delete-event",
+							       deleteHandler)],
+				 inner = GtkBuilder.Window canvas}
     in
-	MakeWidget widget;
-	ArenaWidget.update (testarena, Arena.diff(Array2.array(10,10,P.EMPTY),testfield));
+	GtkBuilder.MakeWidget widget;
+	ArenaWidget.update (testarena, Arena.diff(Array2.array(30,30,P.EMPTY),
+						  testfield));
 	ArenaWidget.changeView (testarena,(5,5))
-
     end
 
 val _ = test ()
