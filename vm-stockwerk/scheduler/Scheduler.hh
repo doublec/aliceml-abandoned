@@ -52,10 +52,11 @@ public:
     }
   }
   static void SuspendThread(Thread *thread) {
-    //--** remove from runnable queue if it's in there
     thread->Suspend();
     thread->GetTaskStack()->Purge();
-  }
+    if (thread->GetState() == Thread::RUNNABLE)
+      threadQueue->Remove(thread);
+ }
   static void ResumeThread(Thread *thread) {
     if (thread->IsSuspended()) {
       thread->Resume();

@@ -47,6 +47,9 @@ public:
   void Enqueue(Thread *thread) {
     Queue::Enqueue(thread->ToWord());
   }
+  void Remove(Thread *thread) {
+    Queue::Remove(thread->ToWord());
+  }
   void PurgeAll() {
     Blank();
     //--** walk through queue and apply Purge to all elements
