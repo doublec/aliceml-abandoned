@@ -23,9 +23,9 @@ final public class ConValTuple2 implements DMLConVal {
 
     /** Gleichheit der  und Inhalte */
     final public boolean equals(java.lang.Object val) {
-	return (val instanceof ConValTuple5) &&
-	    fst.equals(((ConValTuple5) val).fst) &&
-	    snd.equals(((ConValTuple5) val).snd);
+	return (val instanceof ConValTuple2) &&
+	    fst.equals(((ConValTuple2) val).fst) &&
+	    snd.equals(((ConValTuple2) val).snd);
     }
 
     final public DMLValue getContent() {
