@@ -3,28 +3,17 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 2000-2001
+ *   Leif Kornstaedt, 2000-2002
  *
  * Last change:
  *   $Date$ by $Author$
  *   $Revision$
  *)
 
-import
-    structure StringHashKey
-from "../../lib/utility/StringHashKey"
-
-import
-    structure MkHashImpMap
-from "../../lib/utility/MkHashImpMap"
-
-import
-    structure Arity
-from "Arity"
-
-import
-    signature PRIM_OPS
-from "PRIM_OPS-sig"
+import structure StringHashKey from "../../lib/utility/StringHashKey"
+import structure MkHashImpMap  from "../../lib/utility/MkHashImpMap"
+import structure Arity         from "Arity"
+import signature PRIM_OPS      from "PRIM_OPS-sig"
 
 structure PrimOps :> PRIM_OPS =
     struct
@@ -117,6 +106,7 @@ structure PrimOps :> PRIM_OPS =
 		ins ("Int.quot", SOME (Tuple 2));
 		ins ("Int.rem", SOME (Tuple 2));
 		ins ("List.Empty", NONE);
+		ins ("LargeWord.wordSize", NONE);
 		ins ("Math.acos", SOME Unary);
 		ins ("Math.acosh", SOME Unary);
 		ins ("Math.asin", SOME Unary);
@@ -205,6 +195,8 @@ structure PrimOps :> PRIM_OPS =
 		ins ("Word.andb", SOME (Tuple 2));
 		ins ("Word.div", SOME (Tuple 2));
 		ins ("Word.fromInt'", SOME (Tuple 2));
+		ins ("Word.fromWord'", SOME (Tuple 2));
+		ins ("Word.fromWordX'", SOME (Tuple 2));
 		ins ("Word.mod", SOME (Tuple 2));
 		ins ("Word.notb", SOME Unary);
 		ins ("Word.orb", SOME (Tuple 2));

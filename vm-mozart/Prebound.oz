@@ -307,6 +307,7 @@ prepare
 	       unit
 	    end
 	 end
+      'LargeWord.wordSize': 32
       'List.Empty': {NewUniqueName 'List.Empty'}
       'Math.acos': Acos
       'Math.acosh': Float.acosh
@@ -478,6 +479,10 @@ prepare
 	    end
 	 end
       'Word.fromInt\'': BootWord.make
+      'Word.fromWord\'':
+	 fun {$ N W} {BootWord.make N {BootWord.toInt W}} end
+      'Word.fromWordX\'':
+	 fun {$ N W} {BootWord.make N {BootWord.toIntX W}} end
       'Word.mod':
 	 fun {$ W1 W2}
 	    try
