@@ -395,6 +395,9 @@ functor MkWrapper(structure TypeManager : TYPE_MANAGER
 	     "   fun {ToA BS}\n",
 	     "      {String.toAtom {ByteString.toString BS}}\n",
 	     "   end\n",
+	     "   fun {Null _}\n",
+	     "      {GOZCore.null}\n",
+	     "   end\n",
 	     "   fun {SignalConnect Object Signal Handler}\n",
              "      proc {OzHandler Arg}\n",
              "         {Handler Arg _}\n",
@@ -447,7 +450,8 @@ functor MkWrapper(structure TypeManager : TYPE_MANAGER
 	(* File Init Constant Data *)
 	val gdkInit    = ["   Interface = 'UnsafeGDK'(\n",
 			  "         'allocColor' : AllocColor\n"]
-	val gtkInit    = ["   Interface = 'UnsafeGTK'(\n"]
+	val gtkInit    = ["   Interface = 'UnsafeGTK'(\n",
+			  "         'null' : Null\n"]
 	val canvasInit = ["   Interface = 'UnsafeGTKCANVAS'(\n"]
 
 	(* File End Constant Data *)
