@@ -1,4 +1,4 @@
-INCLUDES = -I$(top_srcdir) -I.
+INCLUDES = -I$(top_srcdir) -I$(top_builddir)
 BUILT_SOURCES = StoreConfig.hh
 
 storeincludedir = '${pkgincludedir}/store'
