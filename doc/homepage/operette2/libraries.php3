@@ -22,6 +22,7 @@
     <LI><A href="#toplevel">the top-level environment</A>
     <LI><A href="#fundamental">the fundamental library</A>
     <LI><A href="#system">the system library</A>
+    <LI><A href="#utility">utilities library</A>
   </UL>
 
   <P>
