@@ -23,16 +23,17 @@ functor MakeLabelSort(type 'a t val get: 'a t -> Label.t) :> LABEL_SORT
 	    Tup of int
 	  | Prod
 
-	fun isTuple (x::xr, i) =
-	    if get x = Label.fromInt i then isTuple (xr, i + 1)
+	fun isTuple (xs, i, n) =
+	    if i = n then SOME n
+	    else if get (Vector.sub (xs, i)) = Label.fromInt (i + 1) then
+		isTuple (xs, i + 1, n)
 	    else NONE
-	  | isTuple (nil, i) = SOME (i - 1)
 
 	fun sort xs =
 	    let
-		val xs' = Sort.sort xs
+		val xs' = Vector.fromList (Sort.sort xs)
 	    in
-		case isTuple (xs', 1) of
+		case isTuple (xs', 0, Vector.length xs') of
 		    SOME i => (xs', Tup i)
 		  | NONE => (xs', Prod)
 	    end

@@ -96,10 +96,10 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 	  | TagVal of label * int * conArity
 	  | ConVal of con * conArity
 	  | RefVal
-	  | TupVal of idDef list
-	  | ProdVal of (label * idDef) list
+	  | TupVal of idDef vector
+	  | ProdVal of (label * idDef) vector
 	  | SelVal of label * int
-	  | VecVal of idDef list
+	  | VecVal of idDef vector
 	  | FunVal of stamp * funFlag list
 	  | TagAppVal of label * int * idDef args
 	  | ConAppVal of con * idDef args
@@ -108,9 +108,9 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 	  | UnknownVal
 
 	fun mapArgs f (OneArg x) = OneArg (f x)
-	  | mapArgs f (TupArgs xs) = TupArgs (List.map f xs)
-	  | mapArgs f (ProdArgs labelXList) =
-	    ProdArgs (List.map (fn (label, x) => (label, f x)) labelXList)
+	  | mapArgs f (TupArgs xs) = TupArgs (Vector.map f xs)
+	  | mapArgs f (ProdArgs labelXVec) =
+	    ProdArgs (Vector.map (fn (label, x) => (label, f x)) labelXVec)
 
 	fun expToValue (LitExp (_, lit)) = LitVal lit
 	  | expToValue (PrimExp (_, name)) = PrimVal name
@@ -120,12 +120,12 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 	    TagVal (label, n, conArity)
 	  | expToValue (ConExp (_, con, conArity)) = ConVal (con, conArity)
 	  | expToValue (RefExp _) = RefVal
-	  | expToValue (TupExp (_, ids)) = TupVal (List.map IdDef ids)
-	  | expToValue (ProdExp (_, labelIdList)) =
-	    ProdVal (List.map (fn (label, id) =>
-			       (label, IdDef id)) labelIdList)
+	  | expToValue (TupExp (_, ids)) = TupVal (Vector.map IdDef ids)
+	  | expToValue (ProdExp (_, labelIdVec)) =
+	    ProdVal (Vector.map (fn (label, id) =>
+				 (label, IdDef id)) labelIdVec)
 	  | expToValue (SelExp (_, label, n)) = SelVal (label, n)
-	  | expToValue (VecExp (_, ids)) = VecVal (List.map IdDef ids)
+	  | expToValue (VecExp (_, ids)) = VecVal (Vector.map IdDef ids)
 	  | expToValue (FunExp (_, stamp, funFlags, _, _)) =
 	    FunVal (stamp, funFlags)
 	  | expToValue (PrimAppExp (_, _, _)) = UnknownVal
@@ -190,22 +190,22 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 			 pred, edgeMap, shared, path) =
 		sortBody (valOf bodyOpt, pred, edgeMap, shared, path)
 	      | sortStm (ExportStm (_, _), _, _, _, _) = ()
-	    and sortTests (LitTests litBodyList, pred, edgeMap, shared, path) =
-		List.app (fn (_, body) =>
-			  sortBody (body, pred, edgeMap, shared, path))
-		litBodyList
-	      | sortTests (TagTests tagBodyList, pred, edgeMap, shared, path) =
-		List.app (fn (_, _, _, body) =>
-			  sortBody (body, pred, edgeMap, shared, path))
-		tagBodyList
-	      | sortTests (ConTests conBodyList, pred, edgeMap, shared, path) =
-		List.app (fn (_, _, body) =>
-			  sortBody (body, pred, edgeMap, shared, path))
-		conBodyList
-	      | sortTests (VecTests vecBodyList, pred, edgeMap, shared, path) =
-		List.app (fn (_, body) =>
-			  sortBody (body, pred, edgeMap, shared, path))
-		vecBodyList
+	    and sortTests (LitTests litBodyVec, pred, edgeMap, shared, path) =
+		Vector.app (fn (_, body) =>
+			    sortBody (body, pred, edgeMap, shared, path))
+		litBodyVec
+	      | sortTests (TagTests tagBodyVec, pred, edgeMap, shared, path) =
+		Vector.app (fn (_, _, _, body) =>
+			    sortBody (body, pred, edgeMap, shared, path))
+		tagBodyVec
+	      | sortTests (ConTests conBodyVec, pred, edgeMap, shared, path) =
+		Vector.app (fn (_, _, body) =>
+			    sortBody (body, pred, edgeMap, shared, path))
+		conBodyVec
+	      | sortTests (VecTests vecBodyVec, pred, edgeMap, shared, path) =
+		Vector.app (fn (_, body) =>
+			    sortBody (body, pred, edgeMap, shared, path))
+		vecBodyVec
 	    and sortBody (stm::stms, pred, edgeMap, shared, path) =
 		(sortStm (stm, pred, edgeMap, shared, path);
 		 sortBody (stms, pred, edgeMap, shared, path))
@@ -246,15 +246,15 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 	fun argsMin (args as OneArg idDef, OneArg idDef') =
 	    if idDefEq (idDef, idDef') then args else OneArg Wildcard
 	  | argsMin (TupArgs idDefs, TupArgs idDefs') =
-	    TupArgs (ListPair.map (fn (idDef, idDef') =>
-				   if idDefEq (idDef, idDef') then idDef
-				   else Wildcard) (idDefs, idDefs'))
-	  | argsMin (ProdArgs labelIdDefList, ProdArgs labelIdDefList') =
-	    ProdArgs (ListPair.map (fn ((label, idDef), (_, idDef')) =>
-				    (label,
+	    TupArgs (VectorPair.map (fn (idDef, idDef') =>
 				     if idDefEq (idDef, idDef') then idDef
-				     else Wildcard))
-		      (labelIdDefList, labelIdDefList'))
+				     else Wildcard) (idDefs, idDefs'))
+	  | argsMin (ProdArgs labelIdDefVec, ProdArgs labelIdDefVec') =
+	    ProdArgs (VectorPair.map (fn ((label, idDef), (_, idDef')) =>
+				      (label,
+				       if idDefEq (idDef, idDef') then idDef
+				       else Wildcard))
+		      (labelIdDefVec, labelIdDefVec'))
 	  | argsMin (_, _) = raise Crash.Crash "ValuePropagationPhase.argsMin"
 
 	fun valueMin (value as LitVal lit, LitVal lit') =
@@ -270,21 +270,21 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 	    if conEq (con, con') then value else UnknownVal
 	  | valueMin (RefVal, RefVal) = RefVal
 	  | valueMin (TupVal idDefs, TupVal idDefs') =
-	    TupVal (ListPair.map (fn (idDef, idDef') =>
-				  if idDefEq (idDef, idDef') then idDef
-				  else Wildcard) (idDefs, idDefs'))
-	  | valueMin (ProdVal labelIdDefList, ProdVal labelIdDefList') =
-	    ProdVal (ListPair.map (fn ((label, idDef), (_, idDef')) =>
-				   (label, if idDefEq (idDef, idDef')
-					   then idDef else Wildcard))
-		     (labelIdDefList, labelIdDefList'))
+	    TupVal (VectorPair.map (fn (idDef, idDef') =>
+				    if idDefEq (idDef, idDef') then idDef
+				    else Wildcard) (idDefs, idDefs'))
+	  | valueMin (ProdVal labelIdDefVec, ProdVal labelIdDefVec') =
+	    ProdVal (VectorPair.map (fn ((label, idDef), (_, idDef')) =>
+				     (label, if idDefEq (idDef, idDef')
+					     then idDef else Wildcard))
+		     (labelIdDefVec, labelIdDefVec'))
 	  | valueMin (value as SelVal (label, _), SelVal (label', _)) =
 	    if label = label' then value else UnknownVal
 	  | valueMin (VecVal idDefs, VecVal idDefs') =
-	    if List.length idDefs = List.length idDefs' then
-		VecVal (ListPair.map (fn (idDef, idDef') =>
-				      if idDefEq (idDef, idDef') then idDef
-				      else Wildcard) (idDefs, idDefs'))
+	    if Vector.length idDefs = Vector.length idDefs' then
+		VecVal (VectorPair.map (fn (idDef, idDef') =>
+					if idDefEq (idDef, idDef') then idDef
+					else Wildcard) (idDefs, idDefs'))
 	    else UnknownVal
 	  | valueMin (value as FunVal (stamp, _), FunVal (stamp', _)) =
 	    if stamp = stamp' then value else UnknownVal
@@ -328,19 +328,19 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 
 	fun derefArgs (OneArg id, env) = OneArg (deref (id, env))
 	  | derefArgs (TupArgs ids, env) =
-	    TupArgs (List.map (fn id => deref (id, env)) ids)
-	  | derefArgs (ProdArgs labelIdList, env) =
-	    ProdArgs (List.map (fn (label, id) => (label, deref (id, env)))
-		      labelIdList)
+	    TupArgs (Vector.map (fn id => deref (id, env)) ids)
+	  | derefArgs (ProdArgs labelIdVec, env) =
+	    ProdArgs (Vector.map (fn (label, id) => (label, deref (id, env)))
+		      labelIdVec)
 
 	fun doSel (info, label, n, id, env) =
 	    case IdMap.lookupExistent (env, id) of
 		(TupVal idDefs, _) =>
-		    (case List.nth (idDefs, n) of
+		    (case Vector.sub (idDefs, n) of
 			 IdDef id => VarExp (info, id)
 		       | Wildcard => SelAppExp (info, label, n, id))
-	      | (ProdVal labelIdDefList, _) =>
-		    (case List.nth (labelIdDefList, n) of
+	      | (ProdVal labelIdDefVec, _) =>
+		    (case Vector.sub (labelIdDefVec, n) of
 			 (_, IdDef id) => VarExp (info, id)
 		       | (_, Wildcard) => SelAppExp (info, label, n, id))
 	      | (_, _) => SelAppExp (info, label, n, id)
@@ -355,28 +355,28 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 	    PrimAppExp (info, name, ids)
 
 	fun primAppExp (info, _, name, Unary, args as OneArg id, _) =
-	    vpPrimApp (info, name, [id])
+	    vpPrimApp (info, name, #[id])
 	  | primAppExp (info, id, name, TupArity _, args as OneArg id', env) =
 	    (case IdMap.lookupExistent (env, id') of
 		 (TupVal idDefs, _) =>
-		     if List.all isId idDefs then
-			 vpPrimApp (info, name, List.map idOf idDefs)
+		     if Vector.all isId idDefs then
+			 vpPrimApp (info, name, Vector.map idOf idDefs)
 		     else VarAppExp (info, id, args)
 	       | (_, _) => VarAppExp (info, id, args))   (*--** *)
 	  | primAppExp (info, id, name, ProdArity _, args as OneArg id', env) =
 	    (case IdMap.lookupExistent (env, id') of
-		 (ProdVal labelIdDefList, _) =>
-		     if List.all (fn (_, idDef) => isId idDef) labelIdDefList
+		 (ProdVal labelIdDefVec, _) =>
+		     if Vector.all (fn (_, idDef) => isId idDef) labelIdDefVec
 		     then
 			 vpPrimApp (info, name,
-				    List.map (fn (_, idDef) => idOf idDef)
-				    labelIdDefList)
+				    Vector.map (fn (_, idDef) => idOf idDef)
+				    labelIdDefVec)
 		     else VarAppExp (info, id, args)
 	       | (_, _) => VarAppExp (info, id, args))   (*--** *)
 	  | primAppExp (info, id, name, TupArity _, TupArgs ids, _) =
 	    vpPrimApp (info, name, ids)
-	  | primAppExp (info, id, name, ProdArity _, ProdArgs labelIdList, _) =
-	    vpPrimApp (info, name, List.map #2 labelIdList)
+	  | primAppExp (info, id, name, ProdArity _, ProdArgs labelIdVec, _) =
+	    vpPrimApp (info, name, Vector.map #2 labelIdVec)
 	  | primAppExp (info, id, _, _, args, _) =
 	    VarAppExp (info, id, args)   (*--** *)
 
@@ -387,14 +387,14 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 	fun aliasArgs (OneArg idDef, OneArg idDef', env, isToplevel) =
 	    alias (idDef, idDef', env, isToplevel)
 	  | aliasArgs (TupArgs idDefs, TupArgs idDefs', env, isToplevel) =
-	    ListPair.app (fn (idDef, idDef') =>
-			  alias (idDef, idDef', env, isToplevel))
+	    VectorPair.app (fn (idDef, idDef') =>
+			    alias (idDef, idDef', env, isToplevel))
 	    (idDefs, idDefs')
-	  | aliasArgs (ProdArgs labelIdDefList, ProdArgs labelIdDefList',
+	  | aliasArgs (ProdArgs labelIdDefVec, ProdArgs labelIdDefVec',
 		       env, isToplevel) =
-	    ListPair.app (fn ((_, idDef), (_, idDef')) =>
-			  alias (idDef, idDef', env, isToplevel))
-	    (labelIdDefList, labelIdDefList')
+	    VectorPair.app (fn ((_, idDef), (_, idDef')) =>
+			    alias (idDef, idDef', env, isToplevel))
+	    (labelIdDefVec, labelIdDefVec')
 	  | aliasArgs (_, _, _, _) =
 	    raise Crash.Crash "ValuePropagationPhase.aliasArgs"
 
@@ -407,11 +407,11 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 	fun declareArgs (env, OneArg idDef, isToplevel) =
 	    declareUnknown (env, idDef, isToplevel)
 	  | declareArgs (env, TupArgs idDefs, isToplevel) =
-	    List.app (fn idDef => declareUnknown (env, idDef, isToplevel))
-	    idDefs
-	  | declareArgs (env, ProdArgs labelIdDefList, isToplevel) =
-	    List.app (fn (_, idDef) => declareUnknown (env, idDef, isToplevel))
-	    labelIdDefList
+	    Vector.app (fn idDef =>
+			declareUnknown (env, idDef, isToplevel)) idDefs
+	  | declareArgs (env, ProdArgs labelIdDefVec, isToplevel) =
+	    Vector.app (fn (_, idDef) =>
+			declareUnknown (env, idDef, isToplevel)) labelIdDefVec
 
 	fun declareConArgs (_, NONE, _) = ()
 	  | declareConArgs (env, SOME args, isToplevel) =
@@ -420,20 +420,20 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 	fun testsAppend (NONE, testsOpt) = testsOpt
 	  | testsAppend (testsOpt, NONE) = testsOpt
 	  | testsAppend (SOME (LitTests xs), SOME (LitTests ys)) =
-	    SOME (LitTests (xs @ ys))
+	    SOME (LitTests (Vector.append (xs, ys)))
 	  | testsAppend (SOME (TagTests xs), SOME (TagTests ys)) =
-	    SOME (TagTests (xs @ ys))
+	    SOME (TagTests (Vector.append (xs, ys)))
 	  | testsAppend (SOME (ConTests xs), SOME (ConTests ys)) =
-	    SOME (ConTests (xs @ ys))
+	    SOME (ConTests (Vector.append (xs, ys)))
 	  | testsAppend (SOME (VecTests xs), SOME (VecTests ys)) =
-	    SOME (VecTests (xs @ ys))
+	    SOME (VecTests (Vector.append (xs, ys)))
 	  | testsAppend (SOME _, SOME _) =
 	    raise Crash.Crash "ValuePropagationPhase.testsAppend"
 
-	fun testsNull (SOME (LitTests xs)) = List.null xs
-	  | testsNull (SOME (TagTests xs)) = List.null xs
-	  | testsNull (SOME (ConTests xs)) = List.null xs
-	  | testsNull (SOME (VecTests xs)) = List.null xs
+	fun testsNull (SOME (LitTests xs)) = Vector.length xs = 0
+	  | testsNull (SOME (TagTests xs)) = Vector.length xs = 0
+	  | testsNull (SOME (ConTests xs)) = Vector.length xs = 0
+	  | testsNull (SOME (VecTests xs)) = Vector.length xs = 0
 	  | testsNull NONE = true
 
 	fun indirect (_, [stm]) = stm
@@ -446,24 +446,24 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 		declare (env, idDef, (expToValue exp, isToplevel));
 		ValDec (info, idDef, exp)
 	    end
-	  | vpStm (RecDec (info, idDefExpList), env, isToplevel, shared) =
+	  | vpStm (RecDec (info, idDefExpVec), env, isToplevel, shared) =
 	    let
 		val _ =
-		    List.app (fn (idDef, exp) =>
-			      declare (env, idDef, (expToValue exp,
-						    isToplevel))) idDefExpList
-		val idDefExpList =
-		    List.map (fn (idDef, exp) =>
-			      let
-				  val exp =
-				      vpExp (exp, env, isToplevel, shared)
-			      in
-				  declare (env, idDef, (expToValue exp,
-							isToplevel));
-				  (idDef, exp)
-			      end) idDefExpList
+		    Vector.app (fn (idDef, exp) =>
+				declare (env, idDef, (expToValue exp,
+						      isToplevel))) idDefExpVec
+		val idDefExpVec =
+		    Vector.map (fn (idDef, exp) =>
+				let
+				    val exp =
+					vpExp (exp, env, isToplevel, shared)
+				in
+				    declare (env, idDef, (expToValue exp,
+							  isToplevel));
+				    (idDef, exp)
+				end) idDefExpVec
 	    in
-		RecDec (info, idDefExpList)
+		RecDec (info, idDefExpVec)
 	    end
 	  | vpStm (RefAppDec (info, idDef, id), env, isToplevel, _) =
 	    let
@@ -479,7 +479,7 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 		val idDefs =
 		    case IdMap.lookupExistent (env, id) of
 			(TupVal idDefs', isToplevel') =>
-			    ListPair.map
+			    VectorPair.map
 			    (fn (idDef, idDef') =>
 			     case (idDef, idDef') of
 				 (IdDef id, IdDef id') =>
@@ -489,18 +489,18 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 			       | (_, _) => idDef) (idDefs, idDefs')
 		      | (_, _) => idDefs
 	    in
-		List.app (fn idDef =>
-			  declareUnknown (env, idDef, isToplevel)) idDefs;
+		Vector.app (fn idDef =>
+			    declareUnknown (env, idDef, isToplevel)) idDefs;
 		IdMap.insert (env, id, (TupVal idDefs, isToplevel));
 		TupDec (info, idDefs, id)
 	    end
-	  | vpStm (ProdDec (info, labelIdDefList, id), env, isToplevel, _) =
+	  | vpStm (ProdDec (info, labelIdDefVec, id), env, isToplevel, _) =
 	    let
 		val id = deref (id, env)
-		val labelIdDefList =
+		val labelIdDefVec =
 		    case IdMap.lookupExistent (env, id) of
-			(ProdVal labelIdDefList', isToplevel') =>
-			    ListPair.map
+			(ProdVal labelIdDefVec', isToplevel') =>
+			    VectorPair.map
 			    (fn ((_, idDef), labelIdDef' as (label, idDef')) =>
 			     case (idDef, idDef') of
 				 (IdDef id, IdDef id') =>
@@ -508,14 +508,14 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 						    (VarVal id', isToplevel'));
 				      (label, Wildcard))
 			       | (_, _) => labelIdDef')
-			    (labelIdDefList, labelIdDefList')
-		      | (_, _) => labelIdDefList
+			    (labelIdDefVec, labelIdDefVec')
+		      | (_, _) => labelIdDefVec
 	    in
-		List.app (fn (_, idDef) =>
-			  declareUnknown (env, idDef, isToplevel))
-		labelIdDefList;
-		IdMap.insert (env, id, (ProdVal labelIdDefList, isToplevel));
-		ProdDec (info, labelIdDefList, id)
+		Vector.app (fn (_, idDef) =>
+			    declareUnknown (env, idDef, isToplevel))
+		labelIdDefVec;
+		IdMap.insert (env, id, (ProdVal labelIdDefVec, isToplevel));
+		ProdDec (info, labelIdDefVec, id)
 	    end
 	  | vpStm (stm as RaiseStm (info, id), env, _, _) =
 	    let
@@ -612,11 +612,11 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 	    vpTestStm (valOf bodyOpt, id, env, isToplevel, shared)
 	  | vpTestStm (body, _, env, isToplevel, shared) =
 	    (NONE, vpBodyScope (body, env, isToplevel, shared))
-	and vpTests (id, LitTests litBodyList,
+	and vpTests (id, LitTests litBodyVec,
 		     elseBody, env, isToplevel, shared) =
 	    let
 		val (litBodyList, elseBody) =
-		    List.foldr
+		    Vector.foldr
 		    (fn ((lit, body), (litBodyList, elseBody)) =>
 		     let
 			 val env = IdMap.cloneTop env
@@ -630,17 +630,18 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 				 if lit = lit' then (nil, body)
 				 else (nil, elseBody)
 			   | _ => ((lit, body)::litBodyList, elseBody)
-		     end) (nil, elseBody) litBodyList
+		     end) (nil, elseBody) litBodyVec
 	    in
 		(case litBodyList of
 		     nil => NONE
-		   | _::_ => SOME (LitTests litBodyList), elseBody)
+		   | _::_ => SOME (LitTests (Vector.fromList litBodyList)),
+		 elseBody)
 	    end
-	  | vpTests (id, TagTests tagBodyList,
+	  | vpTests (id, TagTests tagBodyVec,
 		     elseBody, env, isToplevel, shared) =
 	    let
 		val (tagBodyList, elseBody) =
-		    List.foldr
+		    Vector.foldr
 		    (fn ((label, n, conArgs, body), (tagBodyList, elseBody)) =>
 		     let
 			 val env = IdMap.cloneTop env
@@ -669,17 +670,18 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 				 ((label, n, conArgs,
 				   vpBody (body, env, isToplevel, shared))::
 				  tagBodyList, elseBody)
-		     end) (nil, elseBody) tagBodyList
+		     end) (nil, elseBody) tagBodyVec
 	    in
 		(case tagBodyList of
 		     nil => NONE
-		   | _::_ => SOME (TagTests tagBodyList), elseBody)
+		   | _::_ => SOME (TagTests (Vector.fromList tagBodyList)),
+		 elseBody)
 	    end
-	  | vpTests (id, ConTests conBodyList,
+	  | vpTests (id, ConTests conBodyVec,
 		     elseBody, env, isToplevel, shared) =
 	    let
 		val (conBodyList, elseBody) =
-		    List.foldr
+		    Vector.foldr
 		    (fn ((con, conArgs, body), (conBodyList, elseBody)) =>
 		     let
 			 val con =
@@ -716,17 +718,18 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 				 ((con, conArgs,
 				   vpBody (body, env, isToplevel, shared))::
 				  conBodyList, elseBody)
-		     end) (nil, elseBody) conBodyList
+		     end) (nil, elseBody) conBodyVec
 	    in
 		(case conBodyList of
 		     nil => NONE
-		   | _::_ => SOME (ConTests conBodyList), elseBody)
+		   | _::_ => SOME (ConTests (Vector.fromList conBodyList)),
+		 elseBody)
 	    end
-	  | vpTests (id, VecTests vecBodyList,
+	  | vpTests (id, VecTests vecBodyVec,
 		     elseBody, env, isToplevel, shared) =
 	    let
 		val (vecBodyList, elseBody) =
-		    List.foldr
+		    Vector.foldr
 		    (fn ((idDefs, body), (vecBodyList, elseBody)) =>
 		     let
 			 val env = IdMap.cloneTop env
@@ -737,7 +740,8 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 		     in
 			 case entry of
 			     (VecVal idDefs', _) =>
-				 if List.length idDefs = List.length idDefs'
+				 if Vector.length idDefs =
+				    Vector.length idDefs'
 				 then (nil, vpBody (body, env,
 						    isToplevel, shared))
 				 else (nil, elseBody)
@@ -745,11 +749,12 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 				 ((idDefs,
 				   vpBody (body, env, isToplevel, shared))::
 				  vecBodyList, elseBody)
-		     end) (nil, elseBody) vecBodyList
+		     end) (nil, elseBody) vecBodyVec
 	    in
 		(case vecBodyList of
 		     nil => NONE
-		   | _::_ => SOME (VecTests vecBodyList), elseBody)
+		   | _::_ => SOME (VecTests (Vector.fromList vecBodyList)),
+		 elseBody)
 	    end
 	and vpExp (exp as LitExp (_, _), _, _, _) = exp
 	  | vpExp (exp as PrimExp (info, name), _, _, _) =
@@ -778,16 +783,17 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 	  | vpExp (exp as RefExp _, _, _, _) = exp
 	  | vpExp (TupExp (info, ids), env, _, _) =
 	    (*--** if TupExp took terms instead of ids -> getTerm *)
-	    TupExp (info, List.map (fn id => deref (id, env)) ids)
-	  | vpExp (ProdExp (info, labelIdList), env, _, _) =
+	    TupExp (info, Vector.map (fn id => deref (id, env)) ids)
+	  | vpExp (ProdExp (info, labelIdVec), env, _, _) =
 	    (*--** if ProdExp took terms instead of ids -> getTerm *)
-	    ProdExp (info, List.map (fn (label, id) =>
-				     (label, deref (id, env))) labelIdList)
+	    ProdExp (info, Vector.map (fn (label, id) =>
+				       (label, deref (id, env))) labelIdVec)
 	  | vpExp (exp as SelExp (_, _, _), _, _, _) = exp
 	  | vpExp (VecExp (info, ids), env, _, _) =
 	    (*--** if VecExp took terms instead of ids -> getTerm *)
-	    VecExp (info, List.map (fn id => deref (id, env)) ids)
+	    VecExp (info, Vector.map (fn id => deref (id, env)) ids)
 	  | vpExp (FunExp (info, stamp, flags, args, body), env, _, _) =
+	    (*--** do eta-conversion for TagExp ConExp RefExp SelExp *)
 	    let
 		val _ = IdMap.insertScope env
 		val _ = declareArgs (env, args, false)
@@ -797,7 +803,7 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 		FunExp (info, stamp, flags, args, body)
 	    end
 	  | vpExp (PrimAppExp (info, name, ids), env, _, _) =
-	    vpPrimApp (info, name, List.map (fn id => deref (id, env)) ids)
+	    vpPrimApp (info, name, Vector.map (fn id => deref (id, env)) ids)
 	  | vpExp (VarAppExp (info, id, args), env, _, _) =
 	    let
 		val id = deref (id, env)
@@ -824,9 +830,10 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 			     OneArg id =>
 				 doSel (info, label, n, id, env)
 			   | TupArgs ids =>
-				 VarExp (info, List.nth (ids, n))
-			   | ProdArgs labelIdList =>
-				 VarExp (info, #2 (List.nth (labelIdList, n))))
+				 VarExp (info, Vector.sub (ids, n))
+			   | ProdArgs labelIdVec =>
+				 VarExp (info,
+					 #2 (Vector.sub (labelIdVec, n))))
 		  | (FunVal (stamp, _), true) =>
 			(*--** optimize args conversion *)
 			FunAppExp (info, id, stamp, args)
@@ -900,8 +907,8 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 	    let
 		val env = IdMap.new ()
 		val _ =
-		    List.app (fn (idDef, _, _) =>
-			      declareUnknown (env, idDef, true)) imports
+		    Vector.app (fn (idDef, _, _) =>
+				declareUnknown (env, idDef, true)) imports
 		val topStamp = Stamp.new ()
 		val body' = vpBodyShared (body, topStamp, env, true)
 		val component' = (imports, (body', sign))

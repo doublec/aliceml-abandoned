@@ -51,15 +51,15 @@ signature FLAT_GRAMMAR =
 	datatype arity =
 	    Unary
 	  | TupArity of int
-	  | ProdArity of label list
+	  | ProdArity of label vector
 	    (* sorted, all labels distinct, no tuple *)
 
 	type conArity = arity option
 
 	datatype 'a args =
 	    OneArg of 'a
-	  | TupArgs of 'a list
-	  | ProdArgs of (label * 'a) list
+	  | TupArgs of 'a vector
+	  | ProdArgs of (label * 'a) vector
 	    (* sorted, all labels distinct, no tuple *)
 
 	type 'a conArgs = 'a args option
@@ -67,11 +67,11 @@ signature FLAT_GRAMMAR =
 	datatype stm =
 	  (* the following may never be last *)
 	    ValDec of stm_info * idDef * exp
-	  | RecDec of stm_info * (idDef * exp) list
+	  | RecDec of stm_info * (idDef * exp) vector
 	    (* all ids distinct *)
 	  | RefAppDec of stm_info * idDef * id
-	  | TupDec of stm_info * idDef list * id
-	  | ProdDec of stm_info * (label * idDef) list * id
+	  | TupDec of stm_info * idDef vector * id
+	  | ProdDec of stm_info * (label * idDef) vector * id
 	  (* the following must always be last *)
 	  | RaiseStm of stm_info * id
 	  | ReraiseStm of stm_info * id
@@ -83,10 +83,10 @@ signature FLAT_GRAMMAR =
 	  | IndirectStm of stm_info * body option ref
 	  | ExportStm of stm_info * exp
 	and tests =
-	    LitTests of (lit * body) list
-	  | TagTests of (label * int * idDef conArgs * body) list
-	  | ConTests of (con * idDef conArgs * body) list
-	  | VecTests of (idDef list * body) list
+	    LitTests of (lit * body) vector
+	  | TagTests of (label * int * idDef conArgs * body) vector
+	  | ConTests of (con * idDef conArgs * body) vector
+	  | VecTests of (idDef vector * body) vector
 	and exp =
 	    LitExp of exp_info * lit
 	  | PrimExp of exp_info * string
@@ -95,13 +95,13 @@ signature FLAT_GRAMMAR =
 	  | TagExp of exp_info * label * int * conArity
 	  | ConExp of exp_info * con * conArity
 	  | RefExp of exp_info
-	  | TupExp of exp_info * id list
-	  | ProdExp of exp_info * (label * id) list
+	  | TupExp of exp_info * id vector
+	  | ProdExp of exp_info * (label * id) vector
 	    (* sorted, all labels distinct, no tuple *)
 	  | SelExp of exp_info * label * int
-	  | VecExp of exp_info * id list
+	  | VecExp of exp_info * id vector
 	  | FunExp of exp_info * stamp * funFlag list * idDef args * body
-	  | PrimAppExp of exp_info * string * id list
+	  | PrimAppExp of exp_info * string * id vector
 	  | VarAppExp of exp_info * id * id args
 	  | TagAppExp of exp_info * label * int * id args
 	  | ConAppExp of exp_info * con * id args
@@ -111,8 +111,9 @@ signature FLAT_GRAMMAR =
 	withtype body = stm list
 
 	type sign = IntermediateGrammar.sign
-	type component = (idDef * sign * Url.t) list * (body * sign)
+	type component = (idDef * sign * Url.t) vector * (body * sign)
 	type t = component
 
+	val freshId: id_info -> id
 	val infoStm: stm -> stm_info
     end

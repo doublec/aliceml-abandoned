@@ -15,18 +15,15 @@ signature INTERMEDIATE_AUX =
 	structure I: INTERMEDIATE_GRAMMAR = IntermediateGrammar
 	structure O: FLAT_GRAMMAR = FlatGrammar
 
-	val id_info: I.exp_info -> I.id_info
-	val longid_info: I.exp_info -> I.longid_info
+	val id_info: I.exp_info -> I.dec_info
 
-	val freshId: I.id_info -> I.id
+	val freshIntermediateId: I.id_info -> I.id
 
 	val idEq: I.id * I.id -> bool
 
-	val occursInMatches: I.match list * I.id -> bool
-
 	val patternVariablesOf: I.pat -> I.id list
 
-	type subst = (I.id * I.id) list
+	type subst = (Stamp.t * Stamp.t) list
 
 	val substDec: I.dec * subst -> I.dec
 	val substExp: I.exp * subst -> I.exp
@@ -34,8 +31,10 @@ signature INTERMEDIATE_AUX =
 
 	val separateAlt: I.pat -> I.pat
 
+	val rowLabels: Type.row -> Label.t list
 	val typToArity: Type.t -> O.arity
 	val makeConArity: Type.t * bool -> O.conArity
+	val isZeroTyp: Type.t -> bool
 	val findLabel: O.arity * Label.t -> int option
 	val selIndex: Type.t * Label.t -> int
 	val tagIndex: Type.t * Label.t -> int

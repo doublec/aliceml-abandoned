@@ -19,23 +19,18 @@ signature SIMPLIFY_MATCH =
 	    LABEL of Label.t
 	  | LONGID of Stamp.t * Label.t list
 	type pos = selector list
-	type typ = Type.t
 
-	(*--** These do not need to store the type any more: *)
 	datatype test =
 	    LitTest of I.lit
-	  | TagTest of Label.t * int
-	  | TagAppTest of Label.t * int * typ O.args * O.conArity
-	  | ConTest of I.longid
-	  | ConAppTest of I.longid * typ O.args * O.conArity
-	  | RefAppTest of typ
-	  | TupTest of typ list
-	  | ProdTest of (Label.t * typ) list
+	  | TagTest of Label.t * int * unit O.conArgs * O.conArity
+	  | ConTest of I.longid * unit O.conArgs * O.conArity
+	  | RefTest
+	  | TupTest of int
+	  | ProdTest of Label.t vector
 	    (* sorted, all labels distinct, no tuple *)
-	  | LabTest of Label.t * int * typ
-	  | VecTest of typ list
+	  | VecTest of int
 	  | GuardTest of mapping * I.exp
-	  | DecTest of mapping * I.dec list
+	  | DecTest of mapping * I.dec vector
 	withtype mapping = (pos * I.id) list
 
 	val longidToSelector: I.longid -> selector
@@ -51,10 +46,11 @@ signature SIMPLIFY_MATCH =
 	  | Translated of O.body
 
 	type consequent = Source.region * O.body option ref
+	type mapping' = (pos * O.id) list
 
-	val buildGraph: (Source.region * I.pat * O.body) list * O.body ->
+	val buildGraph: (Source.region * I.pat * O.body) vector * O.body ->
 	    testGraph * consequent list
 
-	val buildFunArgs: (Source.region * I.pat * O.body) list * O.body ->
-	    O.idDef O.args * testGraph * mapping * consequent list
+	val buildFunArgs: (Source.region * I.pat * O.body) vector * O.body ->
+	    O.idDef O.args * testGraph * mapping' * consequent list
     end
