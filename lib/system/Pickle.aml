@@ -71,20 +71,18 @@ struct
 	    X.x
 	end
 
-    signature PV = sig val x : Package.val_package end
-
-    fun save(file, package) =
+    fun saveVal(file, package) =
 	let
 	    structure _ =
-		SaveVal(val file = file signature S = PV
-					structure X = (val x = package))
+		SaveVal(val file = file type t = Package.val_package
+					val x = package)
 	in
 	    ()
 	end
 
-    fun load file =
+    fun loadVal file =
 	let
-	    structure X = LoadVal(val file = file signature S = PV)
+	    structure X = LoadVal(val file = file type t = Package.val_package)
 	in
 	    X.x
 	end
