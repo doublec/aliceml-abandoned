@@ -15,14 +15,12 @@ import signature OS_PROCESS  from "OS_PROCESS-sig"
 
 signature OS =
 sig
-(*TODO
     eqtype syserror
     exception SysErr of string * syserror option
 
     val errorMsg :	syserror -> string
     val errorName :	syserror -> string
     val syserror :	string -> syserror option
-*)
 
     structure Process :	OS_PROCESS
     structure FileSys :	OS_FILE_SYS
