@@ -3,6 +3,6 @@ Group is
     composer.cm
     compiler.cm
 
-    DummyPickle.aml
+    DummyUnsafePickle.aml
     RECURSIVE_COMPILER-sig.aml
     MkRecursiveCompiler.aml

@@ -110,7 +110,8 @@ MLYACC = ml-yacc
 ## Enumerate All Files Making Up the Source Tree
 ##
 
-NATIVECOMPONENTS = IO TextIO OS Unix CommandLine Tools Pickle Debug Socket
+NATIVECOMPONENTS = \
+	IO TextIO OS Unix CommandLine Tools UnsafePickle Debug Socket
 
 LIBFUNDAMENTALSOURCES0 = \
 	RTT.aml Pervasive.aml ToplevelTypes.aml ToplevelValues.aml \
@@ -126,7 +127,7 @@ LIBFUNDAMENTALSOURCES0 = \
 	Position.aml Promise.aml Real.aml Ref.aml String.aml StringCvt.aml \
 	Substring.aml Thread.aml Time.aml Toplevel.aml Vector.aml \
 	VectorPair.aml WideChar.aml WideString.aml Word.aml
-LIBSOURCES0 = $(NATIVECOMPONENTS:%=%.ozf.sig)
+LIBSOURCES0 = $(NATIVECOMPONENTS:%=%.asig)
 MLYACCSOURCES0 = base-sig.aml join.aml lrtable.aml stream.aml parser2.aml
 
 LIBSOURCES = \
@@ -211,7 +212,7 @@ STOCBACKENDCOMMONSOURCES = $(STOCBACKENDCOMMONSOURCES0:%=stoc/backend-common/%)
 
 STOCBACKENDMOZARTSOURCES0 = \
 	Builtins.oz Prebound.oz CodeEmitter.oz CodeStore.oz CodeGen.oz \
-	Assembler.oz CodeGenPhase.oz CodeGenPhase.ozf.sig MkBackendMozart.aml
+	Assembler.oz CodeGenPhase.oz CodeGenPhase.asig MkBackendMozart.aml
 STOCBACKENDMOZARTSOURCES = $(STOCBACKENDMOZARTSOURCES0:%=stoc/backend-mozart/%)
 
 STOCTOPSOURCES0 = Signature.aml Composer.aml COMPILER-sig.aml MkCompiler.aml \
@@ -294,10 +295,10 @@ build1/lib/fundamental/%: ../../lib/fundamental/%
 build1/lib/fundamental/RTT.aml: ../../lib/fundamental/RTTDummy.aml
 	cp $< $@
 
-build1/lib/%.ozf.sig: ../../lib/bootstrap/%.sig Rel1.import
+build1/lib/%.asig: ../../lib/system/%.asig Rel1.import
 	cat Rel1.import $< > $@
 
-build1/lib/ml-yacc/%.aml: ../../lib/bootstrap/ml-yacc/%.aml Rel2.import
+build1/lib/ml-yacc/%.aml: ../../lib/ml-yacc/%.aml Rel2.import
 	cat Rel2.import $< > $@
 
 build1/stoc/misc/%.aml: ../../stoc/misc/%.aml Rel2.import
@@ -338,13 +339,13 @@ build1/stoc/frontend-sml/Parser.aml: build1/stoc/frontend-sml/Parser.grm.sml \
 build1/stoc/backend-common/%.aml: ../../stoc/backend-common/%.aml Rel2.import
 	cat Rel2.import $< > $@
 
-build1/lib/%.ozf.sig: ../../lib/bootstrap/%.sig Rel1.import
+build1/lib/%.asig: ../../lib/system/%.asig Rel1.import
 	cat Rel1.import $< > $@
 
 build1/stoc/backend-mozart/%.aml: ../../stoc/backend-mozart/%.aml Rel2.import
 	cat Rel2.import $< > $@
 
-build1/stoc/backend-mozart/%.ozf.sig: ../../stoc/backend-mozart/%.ozf.sig \
+build1/stoc/backend-mozart/%.asig: ../../stoc/backend-mozart/%.asig \
 	Rel2.import
 	cat Rel2.import $< > $@
 
@@ -427,6 +428,9 @@ INSTALL2FILES = \
 $(BUILD2DIRS):
 	mkdir -p $@
 
+build2/%.aml: build1/%.aml
+	cp $< $@
+
 build2/stow.ozf build2/stoc.ozf: build2/%: build1/%
 	cp $< $@
 
@@ -436,7 +440,7 @@ build2/Default.import: ../../lib/fundamental/Fundamental.import Other.import
 build2/lib/fundamental/RTT.aml: ../../lib/fundamental/RTTDummy.aml
 	cp $< $@
 
-$(NATIVECOMPONENTS:%=build2/lib/%.ozf.sig): build2/%: build1/%
+$(NATIVECOMPONENTS:%=build2/lib/%.asig): build2/%: build1/%
 	cp $< $@
 
 ##
@@ -450,7 +454,7 @@ build2/%.ozf: build2/%.aml
 	$(STOC1) $(STOC_OPTS) -c $< -o $@
 
 $(NATIVECOMPONENTS:%=build2/lib/%.ozf): build2/%.ozf: \
-	build1/%.ozf build2/%.ozf.sig
+	build1/%.ozf build2/%.asig
 	$(STOC1) $(STOC_OPTS) --replacesign $< $@.sig $@
 
 build2/lib/Unix.ozf: build2/lib/TextIO.ozf
@@ -534,7 +538,7 @@ build3/%.ozf: build3/%.aml
 	$(STOC2) $(STOC_OPTS) -c $< -o $@
 
 $(NATIVECOMPONENTS:%=build3/lib/%.ozf): build3/%.ozf: \
-	build1/%.ozf build3/%.ozf.sig build3/lib/fundamental/Fundamental.ozf
+	build1/%.ozf build3/%.asig build3/lib/fundamental/Fundamental.ozf
 	$(STOC2) $(STOC_OPTS) --replacesign $< $@.sig $@
 
 build3/lib/Unix.ozf: build3/lib/TextIO.ozf

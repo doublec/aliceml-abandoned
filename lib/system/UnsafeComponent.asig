@@ -20,9 +20,9 @@ import
 from "../stoc/common/Inf"
 *)
 
-signature PICKLE_COMPONENT =
+signature UNSAFE_PICKLE_COMPONENT =
     sig
-	structure Pickle:
+	structure UnsafePickle:
 	    sig
 		val loadSign: string -> 'a option
 		val replaceSign: string * 'a * string -> unit

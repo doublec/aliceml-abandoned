@@ -19,8 +19,8 @@ import
 from "../../lib/OS"
 
 import
-    structure Pickle
-from "../../lib/Pickle"
+    structure UnsafePickle
+from "../../lib/UnsafePickle"
 
 import
     structure Url
@@ -146,9 +146,9 @@ functor MkBatchCompiler(structure RecursiveCompiler: RECURSIVE_COMPILER
 	      \\t\tDump target code representation.\n")
 
 	fun stoc' ["--replacesign", infile, signfile, outfile] =
-	    (Pickle.replaceSign (infile,
-				 RecursiveCompiler.compileSign signfile,
-				 outfile);
+	    (UnsafePickle.replaceSign (infile,
+				       RecursiveCompiler.compileSign signfile,
+				       outfile);
 	     OS.Process.success)
 	  | stoc' ["--dryrun"] =
 	    let

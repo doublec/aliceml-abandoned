@@ -1,5 +1,5 @@
 OBJS = Alice.dll stow.exe Base.dll IO.dll OS.dll TextIO.dll CommandLine.dll
-SIGS = IO.dll.sig OS.dll.sig TextIO.dll.sig CommandLine.dll.sig
+SIGS = IO.asig OS.asig TextIO.asig CommandLine.asig
 INSPECTOR_OBJS = Win32.dll Canvas.dll Dialog.dll Tools.dll
 
 all: stoc-com+.x86-win32 $(OBJS) $(SIGS) inspector streams.dll
@@ -22,9 +22,6 @@ HashCode.exe: HashCode.cs
 Skeleton.il: HashCode.exe stow.il
 	HashCode stow.il Skeleton.il
 
-Base.aml: ../lib/bootstrap/Bootstrap.aus
-	copy ..\lib\bootstrap\Bootstrap.aus Base.aml
-
 Base.dll: Base.aml stoc-com+.x86-win32 Skeleton.il
 	stoc --no-implicit-import --no-dump-elaboration-sig -c Base.aml -o $@
 
@@ -40,17 +37,17 @@ TextIO.dll: TextIO.cs Alice.dll
 CommandLine.dll: CommandLine.cs Alice.dll
 	csc -nologo -t:library -r:Alice.dll CommandLine.cs
 
-IO.dll.sig: ../lib/bootstrap/IO.sig
-	copy ..\lib\bootstrap\IO.sig IO.dll.sig
+IO.asig: ../lib/system/IO.asig
+	copy ..\lib\system\IO.asig IO.asig
 
-OS.dll.sig: ../lib/bootstrap/OS.sig
-	copy ..\lib\bootstrap\OS.sig OS.dll.sig
+OS.asig: ../lib/system/OS.asig
+	copy ..\lib\system\OS.asig OS.asig
 
-TextIO.dll.sig: ../lib/bootstrap/TextIO.sig
-	copy ..\lib\bootstrap\TextIO.sig TextIO.dll.sig
+TextIO.asig: ../lib/system/TextIO.asig
+	copy ..\lib\system\TextIO.asig TextIO.asig
 
-CommandLine.dll.sig: ../lib/bootstrap/CommandLine.sig
-	copy ..\lib\bootstrap\CommandLine.sig CommandLine.dll.sig
+CommandLine.asig: ../lib/system/CommandLine.asig
+	copy ..\lib\system\CommandLine.asig CommandLine.asig
 
 inspector: $(INSPECTOR_OBJS)
 
@@ -63,10 +60,10 @@ Canvas.dll: Canvas.cs Win32.dll Alice.dll
 Dialog.dll: Dialog.cs Win32.dll Alice.dll
 	csc -nologo -t:library -r:Win32.dll -r:Alice.dll Dialog.cs
 
-Tools.dll: Tools.aml stoc-com+.x86-win32 Skeleton.il Base.dll.sig
+Tools.dll: Tools.aml stoc-com+.x86-win32 Skeleton.il Base.asig
 	stoc --no-dump-elaboration-sig -c Tools.aml -o $@
 
-streams.dll: examples/streams.aml stoc-com+.x86-win32 Skeleton.il Base.dll.sig
+streams.dll: examples/streams.aml stoc-com+.x86-win32 Skeleton.il Base.asig
 	stoc --no-dump-elaboration-sig -c examples/streams.aml -o $@
 
 clean:

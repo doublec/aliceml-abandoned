@@ -23,8 +23,8 @@ import
 from "../../lib/OS"
 
 import
-    structure Pickle
-from "../../lib/Pickle"
+    structure UnsafePickle
+from "../../lib/UnsafePickle"
 
 import
     structure Url
@@ -136,7 +136,7 @@ functor MkRecursiveCompiler(structure Composer: COMPOSER
 		SOME url =>
 		    parseUrl url =
 		    parseUrl (Url.fromString (stockhome () ^ "lib/Base." ^
-					      extension ^ ".sig"))
+					      ".asig"))
 	      | NONE => false
 
 	fun processBasic process (desc, s) =
@@ -258,7 +258,7 @@ functor MkRecursiveCompiler(structure Composer: COMPOSER
 	 * ceil(A)        component known to composer, get signature
 	 * A              pickled component, read signature from pickle
 	 * ceil(A)        pickled component, read signature from pickle
-	 * ceil(A).sig    compile as signature for native component
+	 * floor(A).asig  compile as signature for native component
 	 * floor(A).aml   compile as new component, write to ceil(A)
 	 * floor(A).sml   compile as new component, write to ceil(A)
 	 * floor(A).sig   compile as new component, write to ceil(A)
@@ -281,7 +281,7 @@ functor MkRecursiveCompiler(structure Composer: COMPOSER
 		case Composer.sign (urlCeil url) of
 		    SOME sign => sign
 		  | NONE =>
-		case Pickle.loadSign (Url.toString url) of
+		case UnsafePickle.loadSign (Url.toString url) of
 		    (* this also looks for url ^ ext *)
 		    SOME sign =>
 			(TextIO.print ("### loaded signature from " ^
@@ -293,7 +293,7 @@ functor MkRecursiveCompiler(structure Composer: COMPOSER
 	and acquireFromSource url =
 	    let
 		val targetFilename = parseUrl url
-		val sigFilename = pathCeil targetFilename ^ ".sig"
+		val sigFilename = pathFloor targetFilename ^ ".asig"
 	    in
 		if existsFile sigFilename then
 		    let

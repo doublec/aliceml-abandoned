@@ -6,9 +6,9 @@ Dependency graph for the steps outlined below - for Operette 2:
              \   \ |
               \----4
                   / \
-                 5   7
+                 5   6
                  |
-                 6
+                 7
                  |
                  8
                  |
@@ -200,11 +200,24 @@ steps 3 and 4):
    lib/fundamental/Fundamental.import.  The component lib/fundamental/RTT
    is copied from RTTDummy for now.
 
+6. Provide a new place for all files formerly in lib/bootstrap. (LK)
+
+   We adopt the convention to name signatures for native components
+   as Component.asig instead of Component.<extension>.sig.
+
+   This means that TextIO.sig (et al.) are moved to lib/system.
+   The Pickle component needs Url, which also should move to system.
+   Pickle itself should be renamed to UnsafePickle.
+   The vm-mozart/bootstrap/Makefile needs to be adapted.
+
+   Bootstrap.aus has to be moved to vm-com+/Base.aml, since that runtime
+   still needs it.
+
 ======
  TODO
 ======
 
-6. Compiler uses lib (utility/rtt). (LK)
+7. Compiler uses lib (utility/rtt). (LK)
 
    Currently we have two copies of some modules - one for the
    Alice codebase, one as the SML/NJ source.  This is the
@@ -213,16 +226,6 @@ steps 3 and 4):
    aml2sml. Need to update import URI accordingly.
 
    Move stoc/misc/BootstrapGlobalStamp to bootstrap/GlobalStamp.
-
-7. Provide a new place for all files formerly in lib/bootstrap. (LK)
-
-   This means that TextIO.sig (et al.) are moved to lib/system.
-   The Pickle component needs Url, which also should move to system.
-   Pickle itself should be renamed to UnsafePickle.
-   The vm-mozart/bootstrap/Makefile needs to be adapted.
-
-   Bootstrap.aus has to be moved to vm-com+, since that runtime
-   still needs it.
 
 8. Implement pass 2. (AR)
 
