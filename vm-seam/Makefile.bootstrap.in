@@ -190,7 +190,8 @@ LIBSYSTEMSOURCES0 = \
 	RESOLVER_HANDLER-sig.aml RESOLVER-sig.aml Resolver.aml \
 	URL_MAP-sig.aml UrlMap.aml COMPONENT_MANAGER-sig.aml \
 	ComponentManager.aml Boot.aml PP_VALUE-sig.aml PPValue.aml \
-	PP_COMPONENT-sig.aml PPComponent.aml
+	PP_COMPONENT-sig.aml PPComponent.aml \
+	UnsafeDebugger.asig DEBUGGER-sig.aml Debugger.aml
 LIBUTILITYSOURCES0 = \
 	$(LIBUTILITYNATIVES0:%=Unsafe%.asig) \
 	ASSERT-sig.aml Assert.aml \
@@ -219,6 +220,13 @@ LIBSOURCES0 = \
 LIBSOURCES = \
 	$(LIBFUNDAMENTALSOURCES0:%=lib/fundamental/%) \
 	$(LIBSOURCES0:%=lib/%)
+
+DEBUGGERSOURCES0 = \
+	DEBUGGER_CONTROLS-sig.aml DebuggerControls.aml VIEW-sig.aml \
+	EnvView.aml SourceView.aml TextView.aml EVENTLISTENER-sig.aml \
+	Eventlistener.aml MODEL-sig.aml Model.aml STREAM-sig.aml Stream.aml
+
+DEBUGGERSOURCES = $(DEBUGGERSOURCES0:%=debugger/%)
 
 COMPILERINFRASTRUCTURESOURCES0 = \
 	CRASH-sig.aml Crash.aml SOURCE-sig.aml Source.aml ERROR-sig.aml \
@@ -604,8 +612,10 @@ build2/lib/rtt/LinkedRTT.stc: build2/lib/rtt/RTT.stc
 ### BUILD 3
 ########################################################################
 
-BUILD3DIRS = build3 $(SOURCEDIRS:%=build3/%)
-BUILD3SOURCES = $(ALLSOURCES:%=build3/%)
+BUILD3DIRS = build3 $(SOURCEDIRS:%=build3/%) build3/lib/debugger
+BUILD3SOURCES0 = $(ALLSOURCES:%=build3/%)
+BUILD3DEBUGGERSOURCES0 = $(DEBUGGERSOURCES:%=build3/lib/%)
+BUILD3SOURCES = $(BUILD3SOURCES0) $(BUILD3DEBUGGERSOURCES0)
 
 INSTALL3DIRS = \
 	build3/install \
@@ -617,6 +627,7 @@ INSTALL3DIRS = \
 	build3/install/lib \
 	build3/install/lib/fundamental \
 	build3/install/lib/data \
+	build3/install/lib/debugger \
 	build3/install/lib/system \
 	build3/install/lib/utility \
 	build3/install/lib/rtt \
@@ -628,6 +639,7 @@ INSTALL3DIRS = \
 INSTALL3TOPFILES = alicec.import alice.import COPYING
 INSTALL3LIBFILES = \
 	$(LIBSOURCES0:%.aml=%.stc) \
+	$(DEBUGGERSOURCES:%.aml=%.stc) \
 	fundamental/Pervasive.stc fundamental/Core.stc \
 	fundamental/PACKAGE-sig.stc fundamental/Package.stc
 INSTALL3COMPILERFILES = CompilerMain.stc ToplevelMain.stc
@@ -648,8 +660,11 @@ INSTALL3FILES = \
 $(BUILD3DIRS):
 	mkdir -p $@
 
-$(BUILD3SOURCES): build3/%: build1/%
+$(BUILD3SOURCES0): build3/%: build1/%
 	cp $< $@
+
+build3/lib/debugger/%.aml: lib/debugger/%.aml Rel2.import
+	cat Rel2.import $< > $@
 
 ##
 ## Performing Build 3
@@ -788,6 +803,7 @@ INSTALLDIRS = \
 	${pkgdatadir}/lib \
 	${pkgdatadir}/lib/fundamental \
 	${pkgdatadir}/lib/data \
+	${pkgdatadir}/lib/debugger \
 	${pkgdatadir}/lib/system \
 	${pkgdatadir}/lib/utility \
 	${pkgdatadir}/lib/rtt \
