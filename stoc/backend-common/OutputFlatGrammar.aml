@@ -81,7 +81,7 @@ structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
 			val n = ref (!indent)
 		    in
 			append "\n";
-			while !n > 4 do (append "\t"; n := !n - 4);
+			while !n >= 4 do (append "\t"; n := !n - 4);
 			while !n > 0 do (append "  "; n := !n - 1)
 		    end
 		  | format' (ID id) = append (idToString id)
