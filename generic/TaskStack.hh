@@ -12,18 +12,18 @@
 //   $Revision$
 //
 
-#ifndef __EMULATOR__TASKSTACK_HH__
-#define __EMULATOR__TASKSTACK_HH__
+#ifndef __GENERIC__TASK_STACK_HH__
+#define __GENERIC__TASK_STACK_HH__
 
 #if defined(INTERFACE)
-#pragma interface "emulator/TaskStack.hh"
+#pragma interface "generic/TaskStack.hh"
 #endif
 
 #include "adt/Stack.hh"
-#include "emulator/Interpreter.hh"
-#include "emulator/StackFrame.hh"
+#include "generic/Interpreter.hh"
+#include "generic/StackFrame.hh"
 
-class TaskStack : private Stack {
+class TaskStack: private Stack {
 private:
   static const u_int INITIAL_SIZE = 16; // to be checked
 public:
