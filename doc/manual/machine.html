@@ -75,6 +75,16 @@ environment variables:</P>
       <LI>If that fails, and <TT>ALICE_LOAD_SUFFIX</TT> is set, its methods
 	are tried at this point.
     </OL>
+    <P></P>
+  <DT><P><TT>ALICE_TRACE_BOOT_LINKER</TT></P>
+  <DD><P>if set (its value does not matter), causes trace messages to be
+    printed on standard error about linking Alice components required to
+    boot the machine.</P>
+  <?php if ($platform == "stockwerk") { ?>
+  <DT><P><TT>ALICE_JIT_MODE</TT></P>
+  <DD><P>if set to <TT>0</TT>, disables the run-time compiler.  By default,
+    it is enabled.</P>
+  <?php } ?>
 </DL>
 
 
