@@ -67,7 +67,7 @@ public:
     self = new BuildClassWorker();
   }
 
-  static void PushFrame(ClassInfo *classInfo);
+  static void PushFrame(ClassLoader *classLoader, ClassInfo *classInfo);
 
   virtual Result Run();
   virtual const char *Identify();
@@ -76,13 +76,14 @@ public:
 
 class BuildClassFrame: private StackFrame {
 protected:
-  enum { CLASS_INFO_POS, SIZE };
+  enum { CLASS_LOADER_POS, CLASS_INFO_POS, SIZE };
 public:
   using Block::ToWord;
 
-  static BuildClassFrame *New(ClassInfo *classInfo) {
+  static BuildClassFrame *New(ClassLoader *classLoader, ClassInfo *classInfo) {
     StackFrame *frame =
       StackFrame::New(BUILD_CLASS_FRAME, BuildClassWorker::self, SIZE);
+    frame->InitArg(CLASS_LOADER_POS, classLoader->ToWord());
     frame->InitArg(CLASS_INFO_POS, classInfo->ToWord());
     return static_cast<BuildClassFrame *>(frame);
   }
@@ -92,6 +93,9 @@ public:
     return static_cast<BuildClassFrame *>(frame);
   }
 
+  ClassLoader *GetClassLoader() {
+    return ClassLoader::FromWordDirect(GetArg(CLASS_LOADER_POS));
+  }
   ClassInfo *GetClassInfo() {
     return ClassInfo::FromWordDirect(GetArg(CLASS_INFO_POS));
   }
@@ -99,8 +103,9 @@ public:
 
 BuildClassWorker *BuildClassWorker::self;
 
-void BuildClassWorker::PushFrame(ClassInfo *classInfo) {
-  Scheduler::PushFrame(BuildClassFrame::New(classInfo)->ToWord());
+void BuildClassWorker::PushFrame(ClassLoader *classLoader,
+				 ClassInfo *classInfo) {
+  Scheduler::PushFrame(BuildClassFrame::New(classLoader, classInfo)->ToWord());
 }
 
 Worker::Result BuildClassWorker::Run() {
@@ -129,10 +134,16 @@ Worker::Result BuildClassWorker::Run() {
   }
   if (!classInfo->Verify())
     Error("VerifyError"); //--** raise VerifyError
+  word theClass = classInfo->Prepare()->ToWord();
   Scheduler::PopFrame();
   Scheduler::nArgs = Scheduler::ONE_ARG;
-  Scheduler::currentArgs[0] = classInfo->Prepare()->ToWord();
-  //--** run static initializer <clinit>
+  Scheduler::currentArgs[0] = theClass;
+  // Run static initializer:
+  JavaString *name = JavaString::New("<clinit>");
+  JavaString *descriptor = JavaString::New("()V");
+  word methodRef =
+    frame->GetClassLoader()->ResolveMethodRef(theClass, name, descriptor);
+  //--** run methodRef
   return Worker::CONTINUE;
 }
 
@@ -236,19 +247,20 @@ Worker::Result ResolveInterpreter::Run() {
   switch (frame->GetResolveType()) {
   case RESOLVE_CLASS:
     {
+      ClassLoader *classLoader = frame->GetClassLoader();
       JavaString *name = frame->GetName();
       std::fprintf(stderr, "resolving class %s\n", name->ExportC());
       JavaString *filename = name->Concat(JavaString::New(".class"));
       ClassFile *classFile = ClassFile::NewFromFile(filename);
       if (classFile == INVALID_POINTER)
 	Error("NoClassDefFoundError"); //--** raise NoClassDefFoundError
-      ClassInfo *classInfo = classFile->Parse(frame->GetClassLoader());
+      ClassInfo *classInfo = classFile->Parse(classLoader);
       if (classInfo == INVALID_POINTER)
 	Error("ClassFormatError"); //--** raise ClassFormatError
       if (!classInfo->GetName()->Equals(name))
 	Error("NoClassDefFoundError"); //--** raise NoClassDefFoundError
       Scheduler::PopFrame();
-      BuildClassWorker::PushFrame(classInfo);
+      BuildClassWorker::PushFrame(classLoader, classInfo);
       return Worker::CONTINUE;
     }
   case RESOLVE_FIELD:
@@ -460,39 +472,38 @@ word ClassLoader::ResolveType(JavaString *name) {
   return wClass;
 }
 
-word ClassLoader::ResolveFieldRef(JavaString *className, JavaString *name,
+word ClassLoader::ResolveFieldRef(word theClass, JavaString *name,
 				  JavaString *descriptor) {
   ConcreteCode *concreteCode = ConcreteCode::New(ResolveInterpreter::self, 0);
   Closure *closure = Closure::New(concreteCode->ToWord(), 5);
   closure->Init(0, ToWord());
   closure->Init(1, Store::IntToWord(ResolveInterpreter::RESOLVE_FIELD));
-  closure->Init(2, ResolveClass(className));
+  closure->Init(2, theClass);
   closure->Init(3, name->ToWord());
   closure->Init(4, descriptor->ToWord());
   return Byneed::New(closure->ToWord())->ToWord();
 }
 
-word ClassLoader::ResolveMethodRef(JavaString *className, JavaString *name,
+word ClassLoader::ResolveMethodRef(word theClass, JavaString *name,
 				   JavaString *descriptor) {
   ConcreteCode *concreteCode = ConcreteCode::New(ResolveInterpreter::self, 0);
   Closure *closure = Closure::New(concreteCode->ToWord(), 5);
   closure->Init(0, ToWord());
   closure->Init(1, Store::IntToWord(ResolveInterpreter::RESOLVE_METHOD));
-  closure->Init(2, ResolveClass(className));
+  closure->Init(2, theClass);
   closure->Init(3, name->ToWord());
   closure->Init(4, descriptor->ToWord());
   return Byneed::New(closure->ToWord())->ToWord();
 }
 
-word ClassLoader::ResolveInterfaceMethodRef(JavaString *className,
-					    JavaString *name,
+word ClassLoader::ResolveInterfaceMethodRef(word theClass, JavaString *name,
 					    JavaString *descriptor) {
   ConcreteCode *concreteCode = ConcreteCode::New(ResolveInterpreter::self, 0);
   Closure *closure = Closure::New(concreteCode->ToWord(), 5);
   closure->Init(0, ToWord());
   u_int resolveType = ResolveInterpreter::RESOLVE_INTERFACE_METHOD;
   closure->Init(1, Store::IntToWord(resolveType));
-  closure->Init(2, ResolveClass(className));
+  closure->Init(2, theClass);
   closure->Init(3, name->ToWord());
   closure->Init(4, descriptor->ToWord());
   return Byneed::New(closure->ToWord())->ToWord();
