@@ -184,12 +184,7 @@ public:
     }
   }
   bool IsEmpty() {
-    for (u_int i = GetSize(); i--;) {
-      HashNode *node = HashNode::FromWord(GetArg(i));
-      if (!node->IsEmpty())
-	return true;
-    }
-    return false;
+    return GetCounter() == 0;
   }
 
   static WeakDictionary *New(u_int size) {
