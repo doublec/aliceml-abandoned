@@ -18,6 +18,7 @@
 #include "java/ClassLoader.hh"
 
 enum CONSTANT_tag {
+  // Constant pool entries as defined by the JVM specification
   CONSTANT_Class              = 7,
   CONSTANT_Fieldref           = 9,
   CONSTANT_Methodref          = 10,
@@ -28,7 +29,10 @@ enum CONSTANT_tag {
   CONSTANT_Long               = 5,
   CONSTANT_Double             = 6,
   CONSTANT_NameAndType        = 12,
-  CONSTANT_Utf8               = 1
+  CONSTANT_Utf8               = 1,
+  // Unusable constant pool entries
+  CONSTANT_Long_unusable      = -1,
+  CONSTANT_Double_unusable    = -2
 };
 
 //
@@ -148,6 +152,9 @@ word ConstantPoolEntry::Resolve(ConstantPool *constantPoolS,
   case CONSTANT_Long:
   case CONSTANT_Double:
     Error("unimplemented CONSTANT_tag"); //--**
+  case CONSTANT_Long_unusable:
+  case CONSTANT_Double_unusable:
+    return Store::IntToWord(0); // may never be referenced
   case CONSTANT_NameAndType:
   case CONSTANT_Utf8:
     return Store::IntToWord(0); // may only be referenced from constant pool
@@ -184,8 +191,18 @@ ConstantPool *ClassFile::ParseConstantPool(u_int &offset) {
     if (entry == INVALID_POINTER) return INVALID_POINTER;
     constantPoolS->Init(i, entry);
     CONSTANT_tag tag = entry->GetTag();
-    if (tag == CONSTANT_Long || tag == CONSTANT_Double)
-      i++; // these take up two entries in the constant pool table
+    switch (tag) { // fix constants that take up two constant pool entries
+    case CONSTANT_Long:
+      constantPoolS->Init(++i,
+			  ConstantPoolEntry::New(CONSTANT_Long_unusable, 0));
+      break;
+    case CONSTANT_Double:
+      constantPoolS->Init(++i,
+			  ConstantPoolEntry::New(CONSTANT_Double_unusable, 0));
+      break;
+    default:
+      break;
+    }
   }
   return constantPoolS;
 }
