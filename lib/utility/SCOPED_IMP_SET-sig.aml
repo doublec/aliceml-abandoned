@@ -1,10 +1,21 @@
 (*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(*
  * A stateful scoped map (a stateful stack of stateful maps).
  *)
 
 signature SCOPED_IMP_SET =
-  sig
-
+sig
     type item
     type set
     type t = set
@@ -56,5 +67,4 @@ signature SCOPED_IMP_SET =
 
     val find :			(item -> bool) -> set -> item option
     val findScope :		(item -> bool) -> set -> item option
-
-  end
+end
