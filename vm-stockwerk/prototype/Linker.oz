@@ -42,6 +42,8 @@ define
 
    Trace = {NewCell {OS.getEnv 'ALICE_TRACE_BOOT_LINKER'} \= false}
 
+   AliceHome = {Property.get 'alice.home'}
+
    ModuleTable = {NewDictionary}
 
    {Property.put 'alice.getInitialTable'
@@ -55,7 +57,6 @@ define
 
    local
       ModuleManager = {New Module.manager init}
-      AliceHome = {Property.get 'alice.home'}
    in
       for Url in Natives do OzModule Module in
 	 OzModule = {ModuleManager link(url: AliceHome#Url#'.ozf' $)}
@@ -70,7 +71,7 @@ define
 	 if {Access Trace} then
 	    {System.showError '[boot-linker] loading '#Url}
 	 end
-	 case {Pickle.load Url#'.stc'} of tag(!EVALUATED Sign X) then
+	 case {Pickle.load AliceHome#Url#'.stc'} of tag(!EVALUATED Sign X) then
 	    ModuleTable.Key := Sign#Module
 	    Module = X
 	 [] tag(!UNEVALUATED BodyClosure Imports Sign) then N Modules in
