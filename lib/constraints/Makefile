@@ -32,7 +32,7 @@ STODEP = sml @SMLload=$(BOOTSTRAPDIR)/alicedep
 
 OZSOURCES = UnsafeFD.oz UnsafeFS.oz UnsafeSpace.oz UnsafeExplorer.oz
 ALICESOURCES = FD-sig.aml FD.aml FS-sig.aml FS.aml SPACE-sig.aml Space.aml \
-               SEARCH-sig.aml Search.aml
+               SEARCH-sig.aml Search.aml EXPLORER-sig.aml Explorer.aml
 
 COMPONENTS = \
 	$(OZSOURCES:%.oz=%.ozf) \
