@@ -87,8 +87,7 @@ struct
 	      NONE => iterMove(dict,dy,i+1,highest_i)
             | SOME (node,line) 
 	      => ( Services.moveGroup(getGroup(node),0,dy)
-		 ;  Services.yPosSepRel(line,dy)
-		       (* let
+		 ;  let
 		       val dy' =(Real.fromInt
 				 (Services.fontHeight() * dy))
 		       val _ = TextIO.print(" dy' is "
@@ -97,9 +96,9 @@ struct
 					    ^ Int.toString(i)
 					    ^ "\n")
 		   in
-		    (* Services.yPosSepLine(line,getGroup(node)) *)
-		      Services.yPosSepRel(line,dy) 
-		   end *)
+		     Services.yPosSepLine(line,getGroup(node)) 
+		     (*  Services.yPosSepRel(line,dy)  *)
+		   end 
 		  ; iterMove (dict,dy,i+1,highest_i) )
 		  
     (* update *)
