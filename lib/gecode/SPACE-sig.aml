@@ -16,6 +16,10 @@ sig
     type 'problem fdvar
     type 'problem boolvar
 
+    (* Exception thrown by all operations on spaces *)
+    (* if the space has been discarded *)
+    exception InvalidSpace
+
     datatype status = BRANCH | FAILED | SOLVED
     val status  : 'p space -> status
     val commit  : 'p space * int -> unit

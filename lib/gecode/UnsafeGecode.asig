@@ -13,6 +13,8 @@
 signature GC_SIG =
    sig
        structure UnsafeGecode : sig
+	   exception InvalidSpace
+
 	   val makeSpace : unit -> 'space
 
 	   val fdvar : 'space * (int * int) vector -> 'fdvar

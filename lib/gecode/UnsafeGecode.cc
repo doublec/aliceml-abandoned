@@ -46,6 +46,10 @@
     word x4 = Scheduler::currentArgs[4];                \
     word x5 = Scheduler::currentArgs[5];
 
+
+static word InvalidSpaceConstructor;
+#define CHECK_SPACE(s) if (!s) RAISE(InvalidSpaceConstructor);
+
 namespace UnsafeGecode {
 
 
@@ -143,6 +147,7 @@ DEFINE0(gc_makespace) {
 
 DEFINE2(gc_fdvar) {
   DECLARE_SPACE(s, x0);
+  CHECK_SPACE(s);
   DECLARE_VECTOR(v, x1);
 
   int noOfPairs = v->GetLength();
@@ -162,6 +167,7 @@ DEFINE2(gc_fdvar) {
 
 DEFINE3(gc_fdvarr) {
   DECLARE_SPACE(s, x0);
+  CHECK_SPACE(s);
   DECLARE_VECTOR(v, x1);
   DECLARE_INT(boolVar, x2);
 
@@ -183,6 +189,7 @@ DEFINE3(gc_fdvarr) {
 
 DEFINE1(gc_boolvar) {
   DECLARE_SPACE(s, x0);
+  CHECK_SPACE(s);
 
   int newVar = s->AddBoolVariable();
   RETURN_INT(newVar);
@@ -190,18 +197,23 @@ DEFINE1(gc_boolvar) {
 
 DEFINE2(gc_getmin) {
   DECLARE_SPACE(s, x0);
+  CHECK_SPACE(s);
+
   DECLARE_INT(var, x1);
   RETURN_INT(s->vmin(var));
 } END
 
 DEFINE2(gc_getmax) {
   DECLARE_SPACE(s, x0);
+  CHECK_SPACE(s);
+
   DECLARE_INT(var, x1);
   RETURN_INT(s->vmax(var));
 } END
 
 DEFINE3(gc_dom) {
   DECLARE_SPACE(s, x0);
+  CHECK_SPACE(s);
   DECLARE_INT(i, x1);
   DECLARE_VECTOR(v, x2);
 
@@ -223,6 +235,7 @@ DEFINE3(gc_dom) {
 
 DEFINE4(gc_domr) {
   DECLARE_SPACE(s, x0);
+  CHECK_SPACE(s);
   DECLARE_INT(i, x1);
   DECLARE_VECTOR(v, x2);
   DECLARE_INT(boolvar, x3);
@@ -245,6 +258,7 @@ DEFINE4(gc_domr) {
 
 DEFINE4(gc_rel) {
   DECLARE_SPACE(s, x0);
+  CHECK_SPACE(s);
   DECLARE_INT(i, x1);
   DECLARE_INT(rel, x2);
   DECLARE_INT(j, x3);
@@ -253,6 +267,7 @@ DEFINE4(gc_rel) {
 
 DEFINE4(gc_reli) {
   DECLARE_SPACE(s, x0);
+  CHECK_SPACE(s);
   DECLARE_INT(i, x1);
   DECLARE_INT(rel, x2);
   DECLARE_INT(j, x3);
@@ -261,6 +276,7 @@ DEFINE4(gc_reli) {
 
 DEFINE5(gc_relr) {
   DECLARE_SPACE(s, x0);
+  CHECK_SPACE(s);
   DECLARE_INT(i, x1);
   DECLARE_INT(rel, x2);
   DECLARE_INT(j, x3);
@@ -270,6 +286,7 @@ DEFINE5(gc_relr) {
 
 DEFINE5(gc_relir) {
   DECLARE_SPACE(s, x0);
+  CHECK_SPACE(s);
   DECLARE_INT(i, x1);
   DECLARE_INT(rel, x2);
   DECLARE_INT(j, x3);
@@ -279,6 +296,7 @@ DEFINE5(gc_relir) {
 
 DEFINE4(gc_eq) {
   DECLARE_SPACE(s, x0);
+  CHECK_SPACE(s);
   DECLARE_INT(i, x1);
   DECLARE_INT(j, x2);
   DECLARE_INT(cl, x3);
@@ -287,6 +305,7 @@ DEFINE4(gc_eq) {
 
 DEFINE4(gc_eqv) {
   DECLARE_SPACE(s, x0);
+  CHECK_SPACE(s);
   DECLARE_VECTOR(v, x1);
   DECLARE_INT(cl, x2);
   int noOfVars = v->GetLength();
@@ -301,6 +320,7 @@ DEFINE4(gc_eqv) {
 
 DEFINE5(gc_eqr) {
   DECLARE_SPACE(s, x0);
+  CHECK_SPACE(s);
   DECLARE_INT(i, x1);
   DECLARE_INT(j, x2);
   DECLARE_INT(cl, x3);
@@ -310,6 +330,7 @@ DEFINE5(gc_eqr) {
 
 DEFINE5(gc_eqvr) {
   DECLARE_SPACE(s, x0);
+  CHECK_SPACE(s);
   DECLARE_VECTOR(v, x1);
   DECLARE_INT(cl, x2);
   DECLARE_INT(boolVar, x4);
@@ -326,6 +347,7 @@ DEFINE5(gc_eqvr) {
 
 DEFINE3(gc_distinct) {
   DECLARE_SPACE(s, x0);
+  CHECK_SPACE(s);
   DECLARE_VECTOR(v, x1);
   DECLARE_INT(cl, x2);
 
@@ -341,6 +363,7 @@ DEFINE3(gc_distinct) {
 
 DEFINE3(gc_distincti) {
   DECLARE_SPACE(s, x0);
+  CHECK_SPACE(s);
   DECLARE_VECTOR(v, x1);
   DECLARE_INT(cl, x2);
 
@@ -361,6 +384,7 @@ DEFINE3(gc_distincti) {
 
 DEFINE5(gc_linear) {
   DECLARE_SPACE(s, x0);
+  CHECK_SPACE(s);
   DECLARE_VECTOR(v, x1);
   DECLARE_INT(rel, x2);
   DECLARE_INT(c, x3);
@@ -382,6 +406,7 @@ DEFINE5(gc_linear) {
 
 DEFINE6(gc_linearr) {
   DECLARE_SPACE(s, x0);
+  CHECK_SPACE(s);
   DECLARE_VECTOR(v, x1);
   DECLARE_INT(rel, x2);
   DECLARE_INT(c, x3);
@@ -404,6 +429,7 @@ DEFINE6(gc_linearr) {
     
 DEFINE3(gc_bool_not) {
   DECLARE_SPACE(s, x0);
+  CHECK_SPACE(s);
   DECLARE_INT(a, x1);
   DECLARE_INT(b, x2);
   s->tbool_not(a, b);
@@ -411,6 +437,7 @@ DEFINE3(gc_bool_not) {
 
 DEFINE4(gc_bool_and) {
   DECLARE_SPACE(s, x0);
+  CHECK_SPACE(s);
   DECLARE_INT(a, x1);
   DECLARE_INT(b, x2);
   DECLARE_INT(c, x3);
@@ -419,6 +446,7 @@ DEFINE4(gc_bool_and) {
 
 DEFINE4(gc_bool_or) {
   DECLARE_SPACE(s, x0);
+  CHECK_SPACE(s);
   DECLARE_INT(a, x1);
   DECLARE_INT(b, x2);
   DECLARE_INT(c, x3);
@@ -427,6 +455,7 @@ DEFINE4(gc_bool_or) {
 
 DEFINE4(gc_bool_imp) {
   DECLARE_SPACE(s, x0);
+  CHECK_SPACE(s);
   DECLARE_INT(a, x1);
   DECLARE_INT(b, x2);
   DECLARE_INT(c, x3);
@@ -435,6 +464,7 @@ DEFINE4(gc_bool_imp) {
 
 DEFINE4(gc_bool_eq) {
   DECLARE_SPACE(s, x0);
+  CHECK_SPACE(s);
   DECLARE_INT(a, x1);
   DECLARE_INT(b, x2);
   DECLARE_INT(c, x3);
@@ -443,6 +473,7 @@ DEFINE4(gc_bool_eq) {
 
 DEFINE4(gc_bool_xor) {
   DECLARE_SPACE(s, x0);
+  CHECK_SPACE(s);
   DECLARE_INT(a, x1);
   DECLARE_INT(b, x2);
   DECLARE_INT(c, x3);
@@ -451,6 +482,7 @@ DEFINE4(gc_bool_xor) {
 
 DEFINE3(gc_bool_andv) {
   DECLARE_SPACE(s, x0);
+  CHECK_SPACE(s);
   DECLARE_VECTOR(v, x1);
   DECLARE_INT(b, x2);
 
@@ -466,6 +498,7 @@ DEFINE3(gc_bool_andv) {
 
 DEFINE3(gc_bool_orv) {
   DECLARE_SPACE(s, x0);
+  CHECK_SPACE(s);
   DECLARE_VECTOR(v, x1);
   DECLARE_INT(b, x2);
 
@@ -480,6 +513,7 @@ DEFINE3(gc_bool_orv) {
 
 DEFINE4(gc_branch) {
   DECLARE_SPACE(s, x0);
+  CHECK_SPACE(s);
   DECLARE_VECTOR(v, x1);
   DECLARE_INT(varsel, x2);
   DECLARE_INT(valsel, x3);
@@ -498,8 +532,15 @@ DEFINE4(gc_branch) {
 
 DEFINE1(gc_getsearchengine) {
   DECLARE_SPACE(s, x0);
+  CHECK_SPACE(s);
 
-  GecodeSpace *c = static_cast<GecodeSpace *>(s->clone());
+  s->enter();
+  GecodeSpace *c;
+  if(s->failed()) {
+    c = static_cast<GecodeSpace *>(s);
+  } else {
+    c = static_cast<GecodeSpace *>(s->clone());
+  }
 
   Search<GecodeSpace> *se =
     new Search<GecodeSpace>(c);
@@ -532,9 +573,18 @@ DEFINE1(gc_next) {
 
 DEFINE1(gc_getsearchbestengine) {
   DECLARE_SPACE(s, x0);
-  SearchBestExplCallback *se =
-    new SearchBestExplCallback
-    (s->clone());
+  CHECK_SPACE(s);
+
+  s->enter();
+
+  GecodeSpace *c;
+  if(s->failed()) {
+    c = static_cast<GecodeSpace *>(s);
+  } else {
+    c = static_cast<GecodeSpace *>(s->clone());
+  }
+  
+  SearchBestExplCallback *se = new SearchBestExplCallback(c);
 
   ConcreteRepresentation *cr =
     ConcreteRepresentation::New(UnsafeGecode::gecodeHandler,2);
@@ -594,6 +644,7 @@ DEFINE1(gc_nextbest) {
 
 DEFINE1(gc_status) {
   DECLARE_SPACE(s, x0);
+  CHECK_SPACE(s);
   switch(s->status()) {
   case SS_BRANCH:
     RETURN_INT(0);
@@ -607,6 +658,7 @@ DEFINE1(gc_status) {
 
 DEFINE2(gc_commit) {
   DECLARE_SPACE(s, x0);
+  CHECK_SPACE(s);
   DECLARE_INT(i, x1);
   s->commit(i);
   RETURN_UNIT;
@@ -614,6 +666,7 @@ DEFINE2(gc_commit) {
 
 DEFINE1(gc_clone) {
   DECLARE_SPACE(s, x0);
+  CHECK_SPACE(s);
 
   ConcreteRepresentation *cr =
     ConcreteRepresentation::New(UnsafeGecode::gecodeHandler,2);
@@ -643,6 +696,7 @@ DEFINE1(gc_alive) {
 
 DEFINE6(gc_countii) {
   DECLARE_SPACE(s, x0);
+  CHECK_SPACE(s);
   DECLARE_VECTOR(v, x1);
   DECLARE_INT(rel, x2);
   DECLARE_INT(i, x3);
@@ -663,6 +717,7 @@ DEFINE6(gc_countii) {
 
 DEFINE6(gc_countvi) {
   DECLARE_SPACE(s, x0);
+  CHECK_SPACE(s);
   DECLARE_VECTOR(v, x1);
   DECLARE_INT(rel, x2);
   DECLARE_INT(i, x3);
@@ -683,6 +738,7 @@ DEFINE6(gc_countvi) {
 
 DEFINE6(gc_countiv) {
   DECLARE_SPACE(s, x0);
+  CHECK_SPACE(s);
   DECLARE_VECTOR(v, x1);
   DECLARE_INT(rel, x2);
   DECLARE_INT(i, x3);
@@ -703,6 +759,7 @@ DEFINE6(gc_countiv) {
 
 DEFINE6(gc_countvv) {
   DECLARE_SPACE(s, x0);
+  CHECK_SPACE(s);
   DECLARE_VECTOR(v, x1);
   DECLARE_INT(rel, x2);
   DECLARE_INT(i, x3);
@@ -723,6 +780,7 @@ DEFINE6(gc_countvv) {
 
 DEFINE4(gc_element) {
   DECLARE_SPACE(s, x0);
+  CHECK_SPACE(s);
   DECLARE_VECTOR(v, x1);
   DECLARE_INT(i, x2);
   DECLARE_INT(j, x3);
@@ -740,6 +798,7 @@ DEFINE4(gc_element) {
 
 DEFINE4(gc_elementi) {
   DECLARE_SPACE(s, x0);
+  CHECK_SPACE(s);
   DECLARE_VECTOR(v, x1);
   DECLARE_INT(i, x2);
   DECLARE_INT(j, x3);
@@ -757,6 +816,7 @@ DEFINE4(gc_elementi) {
 
 DEFINE4(gc_lex) {
   DECLARE_SPACE(s, x0);
+  CHECK_SPACE(s);
   DECLARE_VECTOR(v1, x1);
   DECLARE_INT(rel, x2);
   DECLARE_VECTOR(v2, x3);
@@ -781,6 +841,7 @@ DEFINE4(gc_lex) {
 
 DEFINE3(gc_min) {
   DECLARE_SPACE(s, x0);
+  CHECK_SPACE(s);
   DECLARE_VECTOR(v, x1);
   DECLARE_INT(i, x2);
   int noOfVars = v->GetLength();
@@ -796,6 +857,7 @@ DEFINE3(gc_min) {
 
 DEFINE3(gc_max) {
   DECLARE_SPACE(s, x0);
+  CHECK_SPACE(s);
   DECLARE_VECTOR(v, x1);
   DECLARE_INT(i, x2);
   int noOfVars = v->GetLength();
@@ -811,6 +873,7 @@ DEFINE3(gc_max) {
 
 DEFINE4(gc_abs) {
   DECLARE_SPACE(s, x0);
+  CHECK_SPACE(s);
   DECLARE_INT(i, x1);
   DECLARE_INT(j, x2);
   DECLARE_INT(cl, x3);
@@ -822,6 +885,7 @@ DEFINE4(gc_abs) {
 
 DEFINE4(gc_mult) {
   DECLARE_SPACE(s, x0);
+  CHECK_SPACE(s);
   DECLARE_INT(i, x1);
   DECLARE_INT(j, x2);
   DECLARE_INT(k, x3);
@@ -833,6 +897,7 @@ DEFINE4(gc_mult) {
 
 DEFINE3(gc_assign) {
   DECLARE_SPACE(s, x0);
+  CHECK_SPACE(s);
   DECLARE_VECTOR(v, x1);
   DECLARE_INT(avalsel, x2);
 
@@ -851,8 +916,16 @@ DEFINE3(gc_assign) {
 word InitComponent() {
   UnsafeGecode::gecodeFinalizationSet = new UnsafeGecode::GecodeFinalizationSet();
   UnsafeGecode::gecodeHandler = new UnsafeGecode::GecodeHandler();
+  
+  InvalidSpaceConstructor =
+    UniqueConstructor::New("InvalidSpace",
+			   "UnsafeGecode.InvalidSpace")->ToWord();
+  RootSet::Add(InvalidSpaceConstructor);
 
-  Record *record = Record::New(51);
+  Record *record = Record::New(53);
+
+  record->Init("'InvalidSpace", InvalidSpaceConstructor);
+  record->Init("InvalidSpace", InvalidSpaceConstructor);
 
   INIT_STRUCTURE(record, "UnsafeGecode", "makeSpace",
 		 gc_makespace, 0);
