@@ -1,0 +1,33 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure __pervasive              from "Pervasive"
+import type int and string datatype order from "ToplevelTypes"
+import infix 4 = val op =                 from "ToplevelValues"
+import structure String                   from "String"
+import signature UNIQUE_STRING            from "UNIQUE_STRING-sig"
+
+structure UniqueString :> UNIQUE_STRING where (*String = String*)type String.string = String.string =		(**)
+struct
+    structure String = String
+
+    eqtype unique_string
+    type t = unique_string
+
+    __primitive val unique : string -> unique_string = "UniqueString.unique"
+    __primitive val string : unique_string -> string = "UniqueString.string"
+    __primitive val hash :   unique_string -> int    = "UniqueString.hash"
+
+    val equal		= op =
+    fun compare(s1,s2)	= if s1 = s2 then EQUAL
+			  else String.compare(string s1, string s2)
+end
