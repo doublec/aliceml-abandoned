@@ -202,7 +202,7 @@ class DllExport ObjectArray: private Block {
 protected:
   enum {
     TYPE_POS, // ObjectArrayType
-    SIZE_POS, // int
+    LENGTH_POS, // int
     BASE_SIZE
     // ... elements
   };
@@ -213,7 +213,7 @@ public:
     //--** support multiple dimensions
     Block *b = Store::AllocBlock(JavaLabel::ObjectArray, BASE_SIZE + length);
     b->InitArg(TYPE_POS, type->ToWord());
-    b->InitArg(SIZE_POS, Store::IntToWord(length));
+    b->InitArg(LENGTH_POS, Store::IntToWord(length));
     for (u_int i = length; i--; ) b->InitArg(BASE_SIZE + i, null);
     return static_cast<ObjectArray *>(b);
   }
@@ -229,7 +229,7 @@ public:
   }
 
   u_int GetLength() {
-    return Store::DirectWordToInt(GetArg(SIZE_POS));
+    return Store::DirectWordToInt(GetArg(LENGTH_POS));
   }
   void Init(u_int index, word value) {
     Assert(index < GetLength());
