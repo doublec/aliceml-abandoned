@@ -36,8 +36,9 @@
  * tuple ::= 0x08 label number term term*number // subtrees in reverse order
  * list ::= 0x09 label term (list | 0x01 term)
  *
- * extension ::= 0x24 label bytestring
+ * extension ::= 0x24 label (bytestring | word)
  * bytestring ::= 0x03 string
+ * word ::= 0x08 number number // width, value
  *
  * cell ::= 0x2E label term
  *
@@ -50,7 +51,7 @@ structure PickleOutStream :> PICKLE_OUT_STREAM =
 	open LargeWord
 	open Word8Array
 
-	infix <<
+	infix << ~>>
 
 	val versionString = "3#2"
 
@@ -71,6 +72,7 @@ structure PickleOutStream :> PICKLE_OUT_STREAM =
 
 	(* Extension IDs *)
 	val EX_BYTESTRING = 0wx03: Word8.word
+	val EX_WORD       = 0wx08: Word8.word
 
 	val initialSize = 256
 
@@ -215,6 +217,16 @@ structure PickleOutStream :> PICKLE_OUT_STREAM =
 	    in
 		dec1 q; outputByte (q, EXTENSION); marshalNumber (q, label);
 		outputByte (q, EX_BYTESTRING); marshalString (q, s); label
+	    end
+
+	fun outputWord (q, i, w) =
+	    let
+		val label = newLabel q
+		val n = Word.fromInt (Int.- (wordSize, i))
+	    in
+		dec1 q; outputByte (q, EXTENSION); marshalNumber (q, label);
+		outputByte (q, EX_WORD); marshalNumber (q, fromInt i);
+		marshalNumber (q, (w << n) ~>> n); label
 	    end
 
 	fun outputRef outputX (q, ref x) =

@@ -30,6 +30,7 @@ signature PICKLE_OUT_STREAM =
 	val outputBool: outstream * bool -> label
 	val outputUnit: outstream -> label
 	val outputString: outstream * string -> label
+	val outputWord: outstream * int * LargeWord.word -> label
 	val outputRef: (outstream * 'a -> 'b) -> outstream * 'a ref -> label
 	val outputShared: outstream * label -> unit
     end
