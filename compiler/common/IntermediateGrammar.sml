@@ -1,2 +1,2 @@
 structure IntermediateGrammar =
-		MakeIntermediateGrammar(type info = Source.position)
+		MakeIntermediateGrammar(type info = Source.region)
