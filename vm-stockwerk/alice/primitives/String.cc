@@ -5,7 +5,7 @@
 //
 // Copyright:
 //   Thorsten Brunklaus, 2000
-//   Leif Kornstaedt, 2000
+//   Leif Kornstaedt, 2000-2002
 //
 // Last Change:
 //   $Date$ by $Author$
@@ -13,7 +13,7 @@
 //
 
 #include <cstring>
-#include "emulator/Authoring.hh"
+#include "alice/primitives/Authoring.hh"
 
 DEFINE2(String_opconcat) {
   DECLARE_STRING(string1, x0);
