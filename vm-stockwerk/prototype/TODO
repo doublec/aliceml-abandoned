@@ -1,5 +1,4 @@
 Stockwerk:
--- static linker
 -- replace OuptutPickle after bootstrapping by generic Pickle.save
 -- rename Pickle.oz to PrimPickle.oz (what is the relation to UnsafeComponent?)
 -- proxies
@@ -26,6 +25,16 @@ Alice Library:
 
 Alice Compiler:
 -- bug in type inference for open records: see linker/Link.aml
+-- ValuePropagationPhase: unless we make isToplevel more powerful,
+   we can remove it entirely (is taken over by JITter)
+-- AbstractCodeGrammar should have idRef = ... | Immediate of value,
+   can remove PutConst then
+
+JITter:
+-- two working modes: compile a function, or compile a closure
+   (the latter can make much stronger assumptions and thus, optimizations)
+-- compiling a closure assumes that the function in the closure is
+   referenced exactly once in the heap (and that reference is in the closure)
 
 Mozart:
 -- Ozcar-Bug: wenn man ein 'unleash' macht und dabei eine
