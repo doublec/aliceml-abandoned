@@ -57,6 +57,10 @@ public:
   static Thread *GetCurrentThread() {
     return currentThread;
   }
+  static u_int GetCurrentStackTop() {
+    word *base = (word *) currentTaskStack->GetFrameBase();
+    return static_cast<u_int>(stackTop - base);
+  }
 
   // Scheduler Thread Functions
   static Thread *NewThread(u_int nArgs, word args) {
@@ -95,25 +99,24 @@ public:
   }
   // Scheduler Task Stack Functions
   static void EnlargeTaskStack() {
-    u_int top =
-      static_cast<u_int>(stackTop - (word *) currentTaskStack->GetFrame(0));
+    u_int top = GetCurrentStackTop();
     currentTaskStack = currentTaskStack->Enlarge();
-    stackTop = (word *) currentTaskStack->GetFrame(top);
-    stackMax = (word *) currentTaskStack->GetFrame(currentTaskStack->GetSize());
+    word *base = (word *) currentTaskStack->GetFrameBase();
+    stackTop = base + top;
+    stackMax = base + currentTaskStack->GetSize();
   }
   static StackFrame *PushFrame(u_int size) {
   loop:
-    word *top    = stackTop;
-    word *newTop = top + size;
+    word *newTop = stackTop + size;
     if (newTop >= stackMax) {
       Scheduler::EnlargeTaskStack();
       goto loop;
     }
     stackTop = newTop;
-    return (StackFrame *) (newTop - 1);
+    return (StackFrame *) newTop;
   }
   static StackFrame *GetFrame() {
-    return (StackFrame *) (stackTop - 1);
+    return (StackFrame *) stackTop;
   }
   // We need two PopFrame's: one for known frame size and generic
   static void PopFrame(u_int size) {
@@ -125,7 +128,7 @@ public:
     stackTop -= size;
   }
   static void PushHandler(word data) {
-    u_int top = stackTop - (word *) currentTaskStack->GetFrame(0);
+    u_int top = GetCurrentStackTop();
     currentThread->PushHandler(top, data);
   }
   static void PopHandler() {

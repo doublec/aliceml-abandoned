@@ -76,7 +76,7 @@ namespace Generic {
     static void SetCurrentBacktrace(u_int Value) {
       Put(&::Scheduler::currentBacktrace, Value);
     }
-    // Side Effect: Scratches JIT_R0, JIT_FP
+    // Side Effect: Scratches JIT_R0
     static void PushFrame(u_int Dest, u_int size) {
 #if defined(JIT_ASSERT_INDEX)
       JITStore::SaveAllRegs();
@@ -88,23 +88,19 @@ namespace Generic {
       jit_ldi_p(Dest, &JITStore::loadedWord);
 #else
       Assert(Dest != JIT_R0);
-      Assert(Dest != JIT_FP);
       jit_insn *loop = jit_get_label();
-      jit_ldi_p(JIT_R0, &::Scheduler::stackTop);
-      jit_addi_p(JIT_R0, JIT_R0, size * sizeof(word));
-      jit_ldi_p(JIT_FP, &::Scheduler::stackMax);
-      jit_insn *succeeded = jit_bltr_p(jit_forward(), JIT_R0, JIT_FP);
+      jit_ldi_p(Dest, &::Scheduler::stackTop);
+      jit_addi_p(Dest, Dest, size * sizeof(word));
+      jit_ldi_p(JIT_R0, &::Scheduler::stackMax);
+      jit_insn *succeeded = jit_bltr_p(jit_forward(), Dest, JIT_R0);
       JITStore::Prepare();
       JITStore::Call(0, (void *) ::Scheduler::EnlargeTaskStack);
       JITStore::Finish();
       drop_jit_jmpi(loop);
       jit_patch(succeeded);
-      jit_sti_p(&::Scheduler::stackTop, JIT_R0);
-      jit_movr_p(Dest, JIT_R0);
-      jit_subi_p(Dest, Dest, sizeof(word));
+      jit_sti_p(&::Scheduler::stackTop, Dest);
 #endif
     }
-    // Side Effect: Scratches JIT_R0
     static void PushFrameNoCheck(u_int Dest, u_int size) {
 #if defined(JIT_ASSERT_INDEX)
       JITStore::SaveAllRegs();
@@ -115,33 +111,10 @@ namespace Generic {
       JITStore::RestoreAllRegs();
       jit_ldi_p(Dest, &JITStore::loadedWord);
 #else
-      Assert(Dest != JIT_R0);
-      jit_ldi_p(JIT_R0, &::Scheduler::stackTop);
-      jit_addi_p(JIT_R0, JIT_R0, size * sizeof(word));
-      jit_sti_p(&::Scheduler::stackTop, JIT_R0);
-      jit_movr_p(Dest, JIT_R0);
-      jit_subi_p(Dest, Dest, sizeof(word));
+      jit_ldi_p(Dest, &::Scheduler::stackTop);
+      jit_addi_p(Dest, Dest, size * sizeof(word));
+      jit_sti_p(&::Scheduler::stackTop, Dest);
 #endif
-    }
-    // Side Effect: Scratches JIT_R0, JIT_FP
-    static void PushFrameReg(u_int Dest, u_int Size) {
-      Assert(Dest != JIT_R0);
-      Assert(Dest != JIT_FP);
-      Assert(Size != JIT_R0);
-      Assert(Size != JIT_FP);
-      jit_insn *loop = jit_get_label();
-      jit_ldi_p(JIT_R0, &::Scheduler::stackTop);
-      jit_addr_p(JIT_R0, JIT_R0, Size);
-      jit_ldi_p(JIT_FP, &::Scheduler::stackMax);
-      jit_insn *succeeded = jit_bltr_p(jit_forward(), JIT_R0, JIT_FP);
-      JITStore::Prepare();
-      JITStore::Call(0, (void *) ::Scheduler::EnlargeTaskStack);
-      JITStore::Finish();
-      drop_jit_jmpi(loop);
-      jit_patch(succeeded);
-      jit_sti_p(&::Scheduler::stackTop, JIT_R0);
-      jit_movr_p(Dest, JIT_R0);
-      jit_subi_p(Dest, Dest, sizeof(word));
     }
     // Side-Effect: Scratches JIT_R0, JIT_FP
     static void GetFrame(u_int This) {
@@ -153,7 +126,6 @@ namespace Generic {
       jit_ldi_p(This, &JITStore::loadedWord);
 #else
       jit_ldi_p(This, &::Scheduler::stackTop);
-      jit_subi_p(This, This, sizeof(word));
 #endif
     }
     static void PopFrame(u_int size) {
@@ -166,21 +138,15 @@ namespace Generic {
       jit_subr_p(JIT_R0, JIT_R0, Reg);
       jit_sti_p(&::Scheduler::stackTop, JIT_R0);
     }
-    // Side Effect: Scratches JIT_R0
     static void PopAndPushFrame(u_int Dest, u_int oldSize, u_int newSize) {
       if (oldSize == newSize) {
 	jit_ldi_p(Dest, &::Scheduler::stackTop);
-	jit_subi_p(Dest, Dest, sizeof(word));
       }
       else {
 	Assert(oldSize >= newSize);
-	jit_ldi_p(JIT_R0, &::Scheduler::stackTop);
-	jit_subi_p(JIT_R0, JIT_R0, ((oldSize - newSize) * sizeof(word)));
-	jit_sti_p(&::Scheduler::stackTop, JIT_R0);
-	if (Dest != JIT_R0) {
-	  jit_movr_p(Dest, JIT_R0);
-	}
-	jit_subi_p(Dest, Dest, sizeof(word));
+	jit_ldi_p(Dest, &::Scheduler::stackTop);
+	jit_subi_p(Dest, Dest, ((oldSize - newSize) * sizeof(word)));
+	jit_sti_p(&::Scheduler::stackTop, Dest);
       }
     }
   };
