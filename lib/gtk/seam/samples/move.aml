@@ -17,6 +17,10 @@ import structure GnomeCanvas  from "../GnomeCanvas"
 import structure GtkBuilder from "GtkBuilder"
 
 local
+(** warum muss erst GdkUnsafe geladen werden? **)
+    val _ = Gdk.colorNew(0,0,0) 
+    val _ = Gtk.windowNew Gtk.WINDOW_TOPLEVEL
+
     open GtkBuilder
 
     (* Create Canvas and obtain the Root Group *)
@@ -58,32 +62,6 @@ local
 	val pressed = ref false
 	val buttonx = ref (0.0)
 	val buttony = ref (0.0) 
-(*
-	datatype event =
-	    EVENT_BUTTON_PRESS of   { button:int, x:real, y:real }
-	  | EVENT_BUTTON_RELEASE of { button:int, x:real, y:real }
-	  | EVENT_MOTION_NOTIFY of {x:real, y:real}
-	  | EVENT_UNKNOWN*)
-(****)
-(*	fun getEvent ev =
-	    (case Gdk.eventAnyGetFieldType ev of
-		Gdk.BUTTON_PRESS => 
-		    EVENT_BUTTON_PRESS 
-		    { button=(Gdk.eventButtonGetFieldButton ev),
-		      x=(Gdk.eventButtonGetFieldX ev),
-		      y=(Gdk.eventButtonGetFieldY ev) }
-	      | Gdk.BUTTON_RELEASE =>
-		    EVENT_BUTTON_RELEASE
-		    { button=(Gdk.eventButtonGetFieldButton ev),
-		      x=(Gdk.eventButtonGetFieldX ev),
-		      y=(Gdk.eventButtonGetFieldY ev) }
-	      | Gdk.MOTION_NOTIFY =>
-		    EVENT_MOTION_NOTIFY
-		    { x=(Gdk.eventMotionGetFieldX ev),
-		      y=(Gdk.eventMotionGetFieldY ev) }
-	      | _ => EVENT_UNKNOWN )
-*)
-(****)
     in
 	fun rectangleHandler(item, event) =
 	    (case event of

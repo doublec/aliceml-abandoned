@@ -33,29 +33,16 @@ functor MkSpecial(val space : Util.spaces) :> SPECIAL =
         (* specialFuns: generate asig, but no code for: *)
 	val specialFuns = case space of
 	    Util.GTK => 
-		[FUNC("gtk_init", VOID, nil),
-		 FUNC("gtk_get_event_stream", POINTER VOID, nil),
-		 FUNC("gtk_signal_connect", NUMERIC (false, false, LONG), 
-		      [POINTER VOID, STRING true, BOOL]),
-		 FUNC("gtk_signal_disconnect", VOID, 
-		      [POINTER VOID, NUMERIC (false, false, LONG)]),
-		 FUNC("gtk_null", POINTER VOID, nil),
-		 FUNC("gtk_gtk_true", NUMERIC(true, false, INT), nil),
-		 FUNC("gtk_gtk_false", NUMERIC(true, false, INT), nil),
-		 FUNC("gtk_text_iter_new", POINTER (STRUCTREF "_GtkTextIter"), 
+		[FUNC("gtk_text_iter_new", POINTER (STRUCTREF "_GtkTextIter"), 
 		      nil),
 		 FUNC("gtk_tree_iter_new", POINTER (STRUCTREF "_GtkTreeIter"), 
 		      nil),
 		 FUNC("gtk_tree_store_new", POINTER VOID, nil),
 		 FUNC("gtk_tree_view_get_selected_string", 
-		      STRING true, [POINTER VOID]),
-		 FUNC("gtk_g_object_ref", POINTER VOID, [POINTER VOID]),
-		 FUNC("gtk_g_object_unref", VOID, [POINTER VOID]),
-		 FUNC("gtk_delete_unref", VOID, [POINTER VOID])]
+		      STRING true, [POINTER VOID])]
 
 	 | Util.GDK =>
-	       [FUNC("gdk_init", VOID, nil),
-	        FUNC("gdk_pixbuf_new_from_xpm_data", POINTER VOID,
+	       [FUNC("gdk_pixbuf_new_from_xpm_data", POINTER VOID,
 		     [ARRAY (NONE, STRING true)]),
 		FUNC("gdk_color_new", POINTER (STRUCTREF "_GdkColor"), 
 		     [NUMERIC (false,false,INT),

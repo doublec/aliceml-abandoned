@@ -16,6 +16,9 @@ import structure Gtk       from "../Gtk"
 import structure GnomeCanvas from "../GnomeCanvas"
 
 local
+(** warum muss erst GdkUnsafe geladen werden? **)
+    val _ = Gdk.colorNew(0,0,0) 
+
     fun Delete _ = OS.Process.exit OS.Process.success
     val Window   = Gtk.windowNew Gtk.WINDOW_TOPLEVEL
     val _        = Gtk.signalConnect (Window, "delete-event", Delete)
@@ -50,13 +53,13 @@ local
     fun show s = print (s^"\n")
     fun showDelta (x,y) = 
 	print ("(x: "^(Real.toString x)^
-	      ", y: "^(Real.toString y)^")\n ")
+	      ", y: "^(Real.toString y)^")\n")
 
     fun canvasEvent (_, [Gdk.EVENT event]) =
 	(case event of
 	     Gdk.EVENT_EXPOSE          _ => show "Got Expose Event"
-	   | Gdk.EVENT_MOTION_NOTIFY a => 
-		 (showDelta (#x(a),#y(a));show "Got Motion Event")
+	   | Gdk.EVENT_MOTION_NOTIFY {x,y,...} =>
+		 (showDelta (x,y) ; show "Got Motion Event")
 	   | Gdk.EVENT_BUTTON_PRESS    _ => show "Got ButtonPress Event"
 	   | Gdk.EVENT_2BUTTON_PRESS   _ => show "Got Button2Press Event"
 	   | Gdk.EVENT_3BUTTON_PRESS   _ => show "Got Button3Press Event"

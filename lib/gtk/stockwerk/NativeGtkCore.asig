@@ -1,0 +1,27 @@
+signature NATIVE_GTK_CORE_COMPONENT =
+sig
+    structure NativeGtkCore :
+    sig
+        exception TypeMismatch of string
+	
+	val init : unit -> unit
+	val eventsPending : unit -> bool
+	val mainIteration : unit -> unit
+
+	val null : unit -> 'object
+	val gtkTrue : unit -> int
+	val gtkFalse : unit -> int
+	
+	val widgetRef : 'object -> 'object
+	val widgetUnref : 'object -> unit
+	val objectRef : 'object -> 'object
+	val objectUnref : 'object -> unit
+	val gObjectRef : 'object -> 'object
+	val gObjectUnref : 'object -> unit
+	val deleteUnref : 'object -> unit
+
+	val getEventStream : unit -> 'object
+        val signalConnect : 'object * string * bool -> int
+        val signalDisconnect : 'object * int -> unit
+    end
+end
