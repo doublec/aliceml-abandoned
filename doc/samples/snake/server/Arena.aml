@@ -358,6 +358,14 @@ struct
             Array2.array (rows, cols, P.EMPTY)
         end
 
+    fun copy a = 
+	let
+	    val (rows, cols) = Array2.dimensions a
+	in 
+	    Array2.tabulate Array2.RowMajor (rows, cols, 
+					     fn (r, c) => Array2.sub (a, r, c))
+	end
+
         
     fun removeSnakes (a,snakes) = 
 	let
@@ -395,8 +403,7 @@ struct
 				(P.SNAKE_HEAD _ | P.SNAKE_BODY _) =>
 				    Array2.update (old, r, c, P.EMPTY)
 			    |   _ => ();
-		            if Array2.sub (old, r, c) = 
-			             Array2.sub (new, r, c)
+		            if f = Array2.sub (new, r, c)
 			       then help ((r + 1, c), xs)
 		            else 
                                help ((r + 1, c),
@@ -406,7 +413,7 @@ struct
 	  help ((0,0), nil)
       end
 
-    fun toDiffList a = diff (a, emptyCopy a)
+    fun toDiffList a = diff (emptyCopy a, a)
 
 end
 

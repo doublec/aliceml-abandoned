@@ -127,7 +127,7 @@ struct
 				   [("x1", Gtk.DOUBLE 0.0),
 				    ("y1", Gtk.DOUBLE 0.0),
 				    ("x2", Gtk.DOUBLE (real (cols * cellSize))),
-				    ("y2", Gtk.DOUBLE (real (cols * cellSize))),
+				    ("y2", Gtk.DOUBLE (real (rows * cellSize))),
 				    ("fill_color_gdk", Gtk.OBJECT green),
 				    ("outline_color_gdk", Gtk.OBJECT green)])
 	    val arena = Array2.array (rows, cols, (Gtk.null, P.EMPTY))
@@ -344,10 +344,40 @@ struct
 	    List.app insert difflist
 	end 
 	
-    fun changeView (a, (x, y)) = 
-	GtkCanvas.scrollTo(toObject a, 
-			   x * cellSize - windowWidth2, 
-			   y * cellSize - windowHeight2)
+    fun clamp (low, upp) v =
+	if v < low then low
+	else if v > upp then upp
+	     else v
+
+    fun arenaWidth (a:arena_widget) =
+	let
+	    val (_, cols) = Array2.dimensions (! ( #state a))
+	in
+	    cols * cellSize
+	end
+
+
+    fun arenaHeight (a:arena_widget) =
+	let
+	    val (rows, _) = Array2.dimensions (! ( #state a))
+	in
+	    rows * cellSize
+	end
+
+
+    fun changeView (a, (x, y)) =
+	let
+	    val minX = windowWidth2
+	    val maxX = arenaWidth a - windowWidth2
+	    val minY = windowHeight2
+	    val maxY = arenaHeight a - windowHeight2
+	    val x    = x * cellSize - windowWidth2
+	    val y    = y * cellSize - windowHeight2
+	in 
+	    GtkCanvas.scrollTo(toObject a,
+			       clamp (minX, maxX) x, 
+			       clamp (minY, maxY) y)
+	end
 	
 end
 (*

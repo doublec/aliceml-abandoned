@@ -308,13 +308,15 @@ struct
             )
 
            
-            fun startNextLevel (levels, oldArena, newArena, startPos) =
+            fun startNextLevel (levels, arena, startPos) =
                 let
                     (* get all players who can play another level *)
                     val p   = allPossiblePlayers ()
 
                     (* dimensions of the new level *)
-                    val dims    = Array2.dimensions newArena
+                    val dims    = Array2.dimensions arena
+		    val oldArena= Arena.copy arena
+		    val diffs   = Arena.toDiffList arena
                 in
                     (* set players state to playing and place snake *)
                     assert List.length p <= List.length startPos do
@@ -335,14 +337,13 @@ struct
 		    log ("Server", "sending levelStarted");
                     invokeSeveral (_file_, _line_) 
                         (allConnected (), #levelStarted,{ dimensions = dims });
-		    log ("Server", "sending initial Difflist");
-                    invokeSeveral (_file_, _line_) (allConnected (), #update, 
-                        Arena.toDiffList newArena);
-                    (levels, oldArena, newArena)
+		    log ("Server", (">>>>sending initial Difflist<<<<<<", diffs));
+                    invokeSeveral (_file_, _line_) (allConnected (), #update, diffs);
+                    (levels, oldArena, arena)
                 end
             
             
-            fun finishLevel (levels, oldArena, newArena) =
+            fun finishLevel (levels) =
                 (* called when no players are left *)
                 let
                     val _   = assert null (allPlayers ())
@@ -355,7 +356,7 @@ struct
                         []  =>      (* no more levels -- tournament ended *)
                         finishTournament ()
                     |   (arena, startPos) :: ls =>
-                        startNextLevel (ls, newArena, arena, startPos)
+                        startNextLevel (ls, arena, startPos)
                 end
                 
                 
@@ -465,7 +466,7 @@ struct
                     case allPlayers () of
                         []  => (
                         log ("Server", "no more players left");
-                        finishLevel (levels, newArena, oldArena))
+                        finishLevel levels)
                     |   _   => ( 
                         (* swap old & new arena *)
                         log ("Server", "players left --> play next round");
@@ -475,9 +476,8 @@ struct
 
             fun ticker () = 
                 let
-                    val (arena, pos)= assert not (List.null levels) do 
-                                        List.hd levels 
-                    val oldArena    = Arena.emptyCopy arena
+		    val (arena, pos)  = assert not (null levels) do
+			                  List.hd levels
 
                     fun loop (levels, old, new) =
                         let 
@@ -487,10 +487,10 @@ struct
                             loop (levels, old, new)
                         end
         
-                    val (levels, oldA, newA) = startNextLevel (List.tl levels, 
-                            oldArena, arena, pos) 
-                in
-                    loop (List.tl levels, oldArena, arena) 
+                    val (levels, oldA, newA) = startNextLevel 
+			    (List.tl levels, arena, pos)
+		in
+                    loop (List.tl levels, oldA, newA) 
                 end handle  TournamentFinished  => ()
 
                 
