@@ -76,13 +76,13 @@ define
 	    {Scheduler.object run()}
 	    ModuleTable.Key := Sign#Module
 	 end
-      elseof M then Module = M
+      elseof _#M then Module = M
       end
    end
 
    fun {GetInitialTable}
       {List.toTuple vector
-       {Map {Dictionary.items ModuleTable}
+       {Map {Dictionary.entries ModuleTable}
 	fun {$ Key#(Sign#Module)}
 	   tuple({ByteString.make Key} Sign Module)
 	end}}
