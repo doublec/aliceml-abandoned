@@ -19,7 +19,6 @@
 #include <cstdio>
 #include "generic/Closure.hh"
 #include "generic/ConcreteCode.hh"
-#include "generic/TaskStack.hh"
 #include "generic/Scheduler.hh"
 #include "generic/RootSet.hh"
 #include "generic/StackFrame.hh"
@@ -29,9 +28,9 @@
 #include "alice/AliceLanguageLayer.hh"
 
 // Primitive Frame
-class PrimitiveFrame : private StackFrame {
+class PrimitiveFrame: private StackFrame {
 private:
-  static const u_int SIZE = 0;
+  enum { SIZE };
 public:
   using Block::ToWord;
   using StackFrame::GetInterpreter;
@@ -49,7 +48,7 @@ public:
 };
 
 // PrimitiveInterpreter: An interpreter that runs primitives
-class PrimitiveInterpreter : public Interpreter {
+class PrimitiveInterpreter: public Interpreter {
 private:
   const char *name;
   Primitive::function function;
@@ -63,14 +62,13 @@ public:
     frame = PrimitiveFrame::New(this)->ToWord();
     RootSet::Add(frame);
   }
-  static Interpreter::Result Run(PrimitiveInterpreter *interpreter,
-				 TaskStack *taskStack);
+  static Interpreter::Result Run(PrimitiveInterpreter *interpreter);
   // Handler Methods
   virtual Block *GetAbstractRepresentation(Block *blockWithHandler);
   // Frame Handling
-  virtual void PushCall(TaskStack *taskStack, Closure *closure);
+  virtual void PushCall(Closure *closure);
   // Execution
-  virtual Result Run(TaskStack *taskStack);
+  virtual Result Run();
   // Debugging
   virtual const char *Identify();
   virtual void DumpFrame(word frame);
@@ -80,14 +78,13 @@ public:
 // PrimitiveInterpreter Functions
 //
 inline Interpreter::Result
-PrimitiveInterpreter::Run(PrimitiveInterpreter *interpreter,
-			  TaskStack *taskStack) {
+PrimitiveInterpreter::Run(PrimitiveInterpreter *interpreter) {
   switch (interpreter->arity) {
   case 0:
     if (Scheduler::nArgs == Scheduler::ONE_ARG) {
       Transient *t = Store::WordToTransient(Scheduler::currentArgs[0]);
       if (t == INVALID_POINTER) { // is determined
-	return interpreter->function(taskStack);
+	return interpreter->function();
       } else { // need to request
 	Scheduler::currentData = Scheduler::currentArgs[0];
 	return Interpreter::REQUEST;
@@ -95,14 +92,14 @@ PrimitiveInterpreter::Run(PrimitiveInterpreter *interpreter,
     }
   case 1:
     interpreter->Construct();
-    return interpreter->function(taskStack);
+    return interpreter->function();
   default:
     if (interpreter->Deconstruct()) {
       // Deconstruct has set Scheduler::currentData as a side-effect
       return Interpreter::REQUEST;
     } else {
       Assert(Scheduler::nArgs == interpreter->arity);
-      return interpreter->function(taskStack);
+      return interpreter->function();
     }
   }
 }
@@ -117,14 +114,14 @@ PrimitiveInterpreter::GetAbstractRepresentation(Block *blockWithHandler) {
   }
 }
 
-void PrimitiveInterpreter::PushCall(TaskStack *taskStack, Closure *closure) {
+void PrimitiveInterpreter::PushCall(Closure *closure) {
   Assert(ConcreteCode::FromWord(closure->GetConcreteCode())->
 	 GetInterpreter() == this); closure = closure;
-  taskStack->PushFrame(frame);
+  Scheduler::PushFrame(frame);
 }
 
-Interpreter::Result PrimitiveInterpreter::Run(TaskStack *taskStack) {
-  return Run(this, taskStack);
+Interpreter::Result PrimitiveInterpreter::Run() {
+  return Run(this);
 }
 
 const char *PrimitiveInterpreter::Identify() {
@@ -163,10 +160,9 @@ word Primitive::MakeClosure(const char *name, Primitive::function function,
   return Closure::New(concreteCode, 0)->ToWord();
 }
 
-Interpreter::Result
-Primitive::Execute(Interpreter *interpreter, TaskStack *taskStack) {
+Interpreter::Result Primitive::Execute(Interpreter *interpreter) {
   PrimitiveInterpreter *primitive =
     static_cast<PrimitiveInterpreter *>(interpreter);
-  taskStack->PushFrame(PrimitiveFrame::New(primitive)->ToWord());
-  return PrimitiveInterpreter::Run(primitive, taskStack);
+  Scheduler::PushFrame(PrimitiveFrame::New(primitive)->ToWord());
+  return PrimitiveInterpreter::Run(primitive);
 }

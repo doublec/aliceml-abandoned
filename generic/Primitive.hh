@@ -23,7 +23,7 @@
 
 class Primitive {
 public:
-  typedef Interpreter::Result (*function)(TaskStack *);
+  typedef Interpreter::Result (*function)();
 
   static word MakeFunction(const char *name, function function,
 			   u_int arity, bool sited = false);
@@ -31,8 +31,7 @@ public:
 			  u_int arity, bool sited = false);
 
   // Push a new primitive frame and call primitive directly
-  static Interpreter::Result Execute(Interpreter *interpreter,
-				     TaskStack *taskStack);
+  static Interpreter::Result Execute(Interpreter *interpreter);
 };
 
 #endif
