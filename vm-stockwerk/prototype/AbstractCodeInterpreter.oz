@@ -159,6 +159,7 @@ define
    end
 
    fun {Emulate Instr Closure L TaskStack}
+      %--** preemption
       case Instr of tag(!Kill Ids NextInstr) then
 	 for I in 1..{Width Ids} do
 	    L.(Ids.I) := killed
@@ -553,11 +554,9 @@ define
       run: Run
       handle: Handle
       pushCall:
-	 fun {$ Closure TaskStack}
-	    case Closure
-	    of closure(function(_ _ _ NL IdDefArgs BodyInstr) ...) then
+	 fun {$ Closure=closure(Function ...) TaskStack}
+	    case Function of function(_ _ _ NL IdDefArgs BodyInstr) then L in
 	       L = {NewArray 0 NL - 1 uninitialized}
-	    in
 	       frame(Me IdDefArgs BodyInstr Closure L)|TaskStack
 	    end
 	 end
