@@ -5,7 +5,7 @@
 //
 // Copyright:
 //   Thorsten Brunklaus, 2002
-//   Leif Kornstaedt, 2002
+//   Leif Kornstaedt, 2002-2003
 //
 // Last Change:
 //   $Date$ by $Author$
@@ -30,7 +30,6 @@
 #include "generic/Primitive.hh"
 #include "generic/Unpickler.hh"
 #include "generic/Pickler.hh"
-#include "generic/BootLinker.hh"
 #include "generic/Properties.hh"
 #include "generic/PushCallWorker.hh"
 #include "generic/BindFutureWorker.hh"
@@ -38,6 +37,7 @@
 #include "generic/Profiler.hh"
 #endif
 #include "alice/AliceLanguageLayer.hh"
+#include "alice/BootLinker.hh"
 
 #if !(defined(__MINGW32__) || defined(_MSC_VER))
 #include <cstdio>
@@ -121,11 +121,11 @@ DllExport int StockwerkMain(char *home, u_int argc, char *argv[]) {
   Pickler::Init();
   // Set up Alice Language Layer:
   AliceLanguageLayer::Init();
+  BootLinker::Init(nativeComponents);
   // Setup Alice exceptions used in lower Layers:
   //--** should not be here
   Unpickler::InitExceptions();
   Pickler::InitExceptions();
-  BootLinker::Init(nativeComponents);
   // Link and execute boot component:
   BootLinker::Link(String::New("lib/system/Boot")); //--** to be done
   return Scheduler::Run();

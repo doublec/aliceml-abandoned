@@ -5,7 +5,7 @@
 //
 // Copyright:
 //   Thorsten Brunklaus, 2002
-//   Leif Kornstaedt, 2002
+//   Leif Kornstaedt, 2002-2003
 //
 // Last Change:
 //   $Date$ by $Author$
@@ -13,11 +13,10 @@
 //
 
 #if defined(INTERFACE)
-#pragma implementation "generic/BootLinker.hh"
+#pragma implementation "alice/BootLinker.hh"
 #endif
 
 #include <cstdio>
-#include "generic/BootLinker.hh"
 #include "generic/RootSet.hh"
 #include "generic/Tuple.hh"
 #include "generic/Worker.hh"
@@ -25,8 +24,9 @@
 #include "generic/Scheduler.hh"
 #include "generic/Unpickler.hh"
 #include "generic/Properties.hh"
-#include "alice/Data.hh" //--** avoid Alice dependencies
-#include "alice/Types.hh" //--** avoid Alice dependencies
+#include "alice/BootLinker.hh"
+#include "alice/Data.hh"
+#include "alice/Types.hh"
 
 // Tracing
 static bool traceFlag;

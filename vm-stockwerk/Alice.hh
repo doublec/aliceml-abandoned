@@ -3,7 +3,7 @@
 //   Leif Kornstaedt <kornstae@ps.uni-sb.de>
 //
 // Copyright:
-//   Leif Kornstaedt, 2002
+//   Leif Kornstaedt, 2002-2003
 //
 // Last Change:
 //   $Date$ by $Author$
@@ -27,5 +27,6 @@
 #include "alice/PrimitiveTable.hh"
 #include "alice/AliceLanguageLayer.hh"
 #include "alice/Authoring.hh"
+#include "alice/BootLinker.hh"
 
 #endif

@@ -3,7 +3,7 @@
 //   Leif Kornstaedt <kornstae@ps.uni-sb.de>
 //
 // Copyright:
-//   Leif Kornstaedt, 2002
+//   Leif Kornstaedt, 2002-2003
 //
 // Last Change:
 //   $Date$ by $Author$
@@ -54,7 +54,6 @@
 #include "generic/BindFutureWorker.hh"
 #include "generic/Unpickler.hh"
 #include "generic/Pickler.hh"
-#include "generic/BootLinker.hh"
 #include "generic/Profiler.hh"
 #include "generic/Authoring.hh"
 

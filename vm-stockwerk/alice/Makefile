@@ -39,7 +39,7 @@ LIB_DISTRIBUTION_MODULES = Remote
 SOURCES = \
 	Data.cc Guid.cc AbstractCode.cc PrimitiveTable.cc \
 	LazySelInterpreter.cc AbstractCodeInterpreter.cc AliceConcreteCode.cc \
-	AliceLanguageLayer.cc \
+	AliceLanguageLayer.cc BootLinker.cc \
 	$(LIGHTNING_SOURCES) \
 	$(PRIMITIVE_MODULES:%=primitives/%.cc) \
 	$(LIB_SYSTEM_MODULES:%=lib/system/Unsafe%.cc) \

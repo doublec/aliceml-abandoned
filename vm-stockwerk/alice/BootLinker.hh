@@ -5,7 +5,7 @@
 //
 // Copyright:
 //   Thorsten Brunklaus, 2002
-//   Leif Kornstaedt, 2002
+//   Leif Kornstaedt, 2002-2003
 //
 // Last Change:
 //   $Date$ by $Author$
@@ -16,7 +16,7 @@
 #define __GENERIC__BOOT_LINKER_HH__
 
 #if defined(INTERFACE)
-#pragma interface "generic/BootLinker.hh"
+#pragma interface "alice/BootLinker.hh"
 #endif
 
 #include "adt/ChunkMap.hh"

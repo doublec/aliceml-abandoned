@@ -22,10 +22,10 @@
 #include "generic/RootSet.hh"
 #include "generic/Tuple.hh"
 #include "generic/RootSet.hh"
-#include "generic/BootLinker.hh"
 #include "generic/Unpickler.hh"
 #include "generic/Pickler.hh"
 #include "alice/Authoring.hh"
+#include "alice/BootLinker.hh"
 
 static word NotFoundConstructor;
 static word MismatchConstructor;
