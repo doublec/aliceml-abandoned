@@ -1,24 +1,27 @@
 (*
- * Global stamp generator.
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
  *)
 
+import signature GLOBAL_STAMP from "GLOBAL_STAMP-sig"
 
-structure GlobalStamp :> GLOBAL_STAMP  =
-  struct
 
-    datatype stamp		= GEN of int * Posix.ProcEnv.pid | STR of string
-    type     t			= stamp
+structure GlobalStamp :> GLOBAL_STAMP (*TODO: where __primitive ... *)  =
+struct
+    eqtype stamp
+    type t = stamp
 
-    val r			= ref 0
+    __primitive val new :	unit -> stamp		= "GlobalStamp.new"
+    __primitive val fromString:	string -> stamp		= "GlobalStamp.fromString"
+    __primitive val toString :	stamp -> string		= "GlobalStamp.toString"
 
-    fun new()			= (r := !r + 1; GEN(!r, Posix.ProcEnv.getpid()))
-
-    fun fromString s		= STR s
-
-    fun toString(GEN(n,_))	= Int.toString n
-      | toString(STR s)		= s
-
-    fun hash(GEN(n,_))		= n
-      | hash(STR s)		= StringHashKey.hash s
-
-  end
+    __primitive val compare :	stamp * stamp -> order	= "GlobalStamp.compare"
+    __primitive val hash :	stamp -> int		= "GlobalStamp.hash"
+end

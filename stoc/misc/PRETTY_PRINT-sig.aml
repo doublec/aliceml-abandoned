@@ -1,4 +1,16 @@
 (*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(*
  * A generic pretty printer.
  *
  * Based on:
@@ -13,8 +25,7 @@
  *)
 
 signature PRETTY_PRINT =
-  sig
-
+sig
     eqtype doc
 
     val empty :		doc			(* empty document *)
@@ -37,5 +48,4 @@ signature PRETTY_PRINT =
 
     val toString :	doc * int -> string
     val output :	TextIO.outstream * doc * int -> unit
-
-  end
+end

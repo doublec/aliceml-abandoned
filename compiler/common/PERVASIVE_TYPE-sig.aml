@@ -1,6 +1,23 @@
-signature PERVASIVE_TYPE =
-  sig
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
 
+import structure Name  from "Name"
+import structure Label from "Label"
+import structure Path  from "Path"
+import structure Type  from "Type"
+
+
+signature PERVASIVE_TYPE =
+sig
     type lab		= Label.t
     type name		= Name.t
     type path		= Path.t
@@ -61,5 +78,4 @@ signature PERVASIVE_TYPE =
 
     exception Lookup
     val lookup :	string -> con	(* [Lookup] *)
-
-  end
+end

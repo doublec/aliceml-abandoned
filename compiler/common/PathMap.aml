@@ -1,1 +1,16 @@
-structure PathMap = MakeHashImpMap(Path)
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure MkHashImpMap from "../utility/MkHashImpMap"
+import structure Path         from "Path"
+
+structure PathMap = MkHashImpMap(Path)

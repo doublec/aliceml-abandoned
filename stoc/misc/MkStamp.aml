@@ -1,11 +1,20 @@
 (*
- * Stamp generator.
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
  *)
+
+import signature STAMP from "STAMP-sig"
 
 
 functor MakeStamp() :> STAMP =
-  struct
-
+struct
     type stamp = int
     type t     = stamp
 
@@ -18,5 +27,4 @@ functor MakeStamp() :> STAMP =
     val compare  = Int.compare
 
     fun hash n   = n
-
-  end
+end

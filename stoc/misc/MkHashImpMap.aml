@@ -1,5 +1,21 @@
-functor MakeHashImpMap(Key: HASH_KEY) :> IMP_MAP where type key = Key.t =
-  struct
+(*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature HASH_KEY from "HASH_KEY-sig"
+import signature IMP_MAP  from "IMP_MAP-sig"
+
+
+functor MkHashImpMap(Key: HASH_KEY) :> IMP_MAP where type key = Key.t =
+struct
 
     type key    = Key.t
     type 'a map = (key * 'a) list array ref * int ref
@@ -119,4 +135,4 @@ functor MakeHashImpMap(Key: HASH_KEY) :> IMP_MAP where type key = Key.t =
     fun unionWith f		= union'(insertWith f)
     fun unionWithi f		= union'(insertWithi f)
 
-  end
+end

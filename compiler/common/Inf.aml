@@ -1,3 +1,26 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Assert       from "../utility/Assert"
+import functor   MkHashImpMap from "../utility/MkHashImpMap"
+import structure Name         from "Name"
+import structure Label        from "Label"
+import structure Path         from "Path"
+import structure PathMap      from "PathMap"
+import structure Type         from "Type"
+import structure Fixity       from "Fixity"
+import signature INF          from "INF-sig"
+
+
 (* Interfaces contain state. This means that they must be instantiated
    at each occurance. *)
 
@@ -20,9 +43,9 @@ structure InfPrivate =
 
     datatype space = VAL' | TYP' | MOD' | INF' | FIX'
 
-    structure Map = MakeHashImpMap(struct type t = space * lab
-					  val equals = op=
-					  fun hash(_,l) = Label.hash l end)
+    structure Map = MkHashImpMap(struct type t = space * lab
+					val equals = op=
+					fun hash(_,l) = Label.hash l end)
 
 
     datatype inf' =
@@ -1139,15 +1162,15 @@ structure InfPrivate =
 
       | intersect'(rea, ref(FUN(p1,j11,j12)), ref(FUN(p2,j21,j22))) =
 	(*UNFINISHED*)
-	    raise Crash.Crash "Inf.intersect: FUN"
+	    raise Assert.failure
 
       | intersect'(rea, ref(LAMBDA(p1,j11,j12)), ref(LAMBDA(p2,j21,j22))) =
 	(*UNFINISHED*)
-	    raise Crash.Crash "Inf.intersect: LAMBDA"
+	    raise Assert.failure
 
       | intersect'(rea, j1 as ref(APPLY(j11,p1,j12)), ref(APPLY(j21,p2,j22))) =
 	(*UNFINISHED*)
-	    raise Crash.Crash "Inf.intersect: APPLY"
+	    raise Assert.failure
 
       | intersect'(rea, ref(LINK j1), j2)	= intersect'(rea, j1, j2)
       | intersect'(rea, j1, ref(LINK j2))	= intersect'(rea, j1, j2)

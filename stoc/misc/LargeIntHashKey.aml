@@ -1,6 +1,20 @@
-structure LargeIntHashKey : HASH_KEY =
-  struct
+(*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
 
+import signature HASH_KEY from "HASH_KEY-sig"
+
+
+structure LargeIntHashKey : HASH_KEY =
+struct
     type t = LargeInt.int
 
     val equals = op=
@@ -13,5 +27,4 @@ structure LargeIntHashKey : HASH_KEY =
 		LargeInt.toInt(n' mod LargeInt.fromInt(valOf(Int.maxInt)))
 			(* maxInt must exist if we get an overflow *)
 	end
-    
-  end
+end

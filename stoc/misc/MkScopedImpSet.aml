@@ -1,6 +1,22 @@
-functor MakeScopedImpSet(ImpSet: IMP_SET) :>
-  SCOPED_IMP_SET where type item = ImpSet.item =
-  struct
+(*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature IMP_SET        from "IMP_SET-sig"
+import signature SCOPED_IMP_SET from "SCOPED_IMP_SET-sig"
+
+
+functor MkScopedImpSet(ImpSet: IMP_SET) :>
+    SCOPED_IMP_SET where type item = ImpSet.item =
+struct
 
     type item = ImpSet.item
     type set  = ImpSet.t list ref
@@ -74,4 +90,4 @@ functor MakeScopedImpSet(ImpSet: IMP_SET) :>
     fun unionDisjoint x		= union' ImpSet.unionDisjoint x
     fun unionWith f		= union'(ImpSet.unionWith f)
 
-  end
+end

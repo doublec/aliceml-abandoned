@@ -1,11 +1,17 @@
 (*
- * Stamp generator.
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
  *)
 
-
 signature STAMP =
-  sig
-
+sig
     eqtype stamp
     type t = stamp
 
@@ -14,5 +20,4 @@ signature STAMP =
 
     val compare :	stamp * stamp -> order
     val hash :		stamp -> int
-
-  end
+end

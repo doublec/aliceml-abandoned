@@ -1,9 +1,25 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure LargeIntHashKey from "../utility/LargeIntHashKey"
+import structure StringHashKey   from "../utility/StringHashKey"
+import structure Name            from "Name"
+import signature LABEL           from "LABEL-sig"
+
+
 structure Label :> LABEL =
-  struct
-
-    datatype lab = NUM of LargeInt.int | ALPHA of string	(* [lab,l] *)
-    type     t   = lab
-
+struct
+    datatype lab			= NUM of LargeInt.int | ALPHA of string
+    type     t				= lab
 
     (* Conversions *)
 
@@ -25,7 +41,6 @@ structure Label :> LABEL =
     fun toLargeInt(NUM n)		= SOME n
       | toLargeInt(ALPHA s)		= NONE
 
-
     (* Ordering and hashing *)
 
     fun compare(NUM n1,   NUM n2)	= LargeInt.compare(n1,n2)
@@ -35,5 +50,4 @@ structure Label :> LABEL =
 
     fun hash(NUM n)			= LargeIntHashKey.hash n
       | hash(ALPHA s)			= StringHashKey.hash s
-
-  end
+end

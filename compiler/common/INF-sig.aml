@@ -1,6 +1,25 @@
-signature INF =
-  sig
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
 
+import structure Name    from "Name"
+import structure Label   from "Label"
+import structure Path    from "Path"
+import structure PathMap from "PathMap"
+import structure Type    from "Type"
+import structure Fixity  from "Fixity"
+
+
+signature INF =
+sig
   (* Types *)
 
     type lab   = Label.t
@@ -185,5 +204,4 @@ signature INF =
     val match :		inf * inf -> rea		(* Mismatch *)
     val intersect :	inf * inf -> inf		(* Mismatch *)
     val equaliseKind :	kind * kind -> unit		(* Mismatch *)
-
-  end
+end

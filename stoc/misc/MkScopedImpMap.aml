@@ -1,6 +1,22 @@
-functor MakeScopedImpMap(ImpMap: IMP_MAP) :>
+(*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature IMP_MAP        from "IMP_MAP-sig"
+import signature SCOPED_IMP_MAP from "SCOPED_IMP_MAP-sig"
+
+
+functor MkScopedImpMap(ImpMap: IMP_MAP) :>
   SCOPED_IMP_MAP where type key = ImpMap.key =
-  struct
+struct
 
     type key    = ImpMap.key
     type 'a map = 'a ImpMap.t list ref
@@ -97,4 +113,4 @@ functor MakeScopedImpMap(ImpMap: IMP_MAP) :>
     fun unionWith f		= union'(ImpMap.unionWith f)
     fun unionWithi f		= union'(ImpMap.unionWithi f)
 
-  end
+end
