@@ -38,6 +38,9 @@ fun not_yet_implemented s =
     log ("Server", "TODO: " ^ s ^ " not yet implemented.")
 
 
+fun pointsForGoodies l = l - 3  (*FIXME: do not use hardcoded initial length *)
+
+
 structure Event =
 struct
     type t = int * Protocol.diff option * Protocol.diff option
@@ -498,6 +501,8 @@ struct
                             Arena.placeSnakes (newArena, 
                                          List.map Part.snake players) 
 
+                    val pointsChanged   = ref false
+
                     (* open gates if necessary *)
                     val gates   =   List.foldl (fn (sn, res) =>
                         let val part    = PMap.lookupExistent 
@@ -505,8 +510,14 @@ struct
                             val info    = Part.playerInfo part
                             val pos     = !(#gatePos info)
                             val color   = #color info
+                            val len     = Snake.length sn + Snake.belly sn
                         in
-                            if Snake.belly sn >= #gateTreshold config then
+                            (* adjust gamePoints *)
+                            #gamePoints info := pointsForGoodies len;
+                            pointsChanged := true;
+                            
+                            (* open gate? *)
+                            if len >= #gateTreshold config then
                                 (* Note: gate might already be open, but we
                                    do not bother to keep track and update 
                                    anyway.
@@ -550,7 +561,6 @@ struct
 
                     val _   = List.app (fn ((r, c), p) =>
                                     Array2.update (oldArena, r, c, p)) diffOld
-                    val pointsChanged   = ref false
                 in
                     (* broadcast differences *)
                     log ("Server", "broadcasting differences");
