@@ -47,7 +47,7 @@ extern word UnsafeRand(void);
 extern word UnsafeValue(void);
 extern word UnsafeReflect(void);
 extern word UnsafeCell(void);
-//extern word UnsafeAddr(void); //--** missing
+extern word UnsafeAddr(void);
 extern word UnsafeRemote(void);
 
 static NativeComponent nativeComponents[] = {
@@ -63,7 +63,7 @@ static NativeComponent nativeComponents[] = {
   {"lib/system/UnsafeValue",        UnsafeValue},
   {"lib/system/UnsafeReflect",      UnsafeReflect},
   {"lib/utility/UnsafeCell",        UnsafeCell},
-//{"lib/utility/UnsafeAddr",        UnsafeAddr}, //--** missing
+  {"lib/utility/UnsafeAddr",        UnsafeAddr},
   {"lib/distribution/UnsafeRemote", UnsafeRemote},
   {NULL, NULL}
 };
