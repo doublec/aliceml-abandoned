@@ -21,6 +21,7 @@ OBJS = lex.yy.o           \
        Interpreter.o      \
        Main.o
 
+
 all: scheme.bison.tab.c lex.yy.c $(OBJS)
 	$(CXX) $(CXXFLAGS) -L$(TOPDIR)/store -L$(TOPDIR)/adt -o scheme $(OBJS) -lstore -ladt
 
@@ -36,6 +37,9 @@ lex.yy.c: Nodes.hh scheme.flex
 Environment.cc: Environment.hh
 Parser.cc: Parser.hh
 Decorator.cc: Decorator.hh
+
+store:
+	cd ../../../store && $(MAKE) distclean && $(MAKE)
 
 clean:
 	rm -f scheme scheme.bison.tab.h scheme.bison.tab.c scheme.bison.output lex.yy.c $(OBJS)

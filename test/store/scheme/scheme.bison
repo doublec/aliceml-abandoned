@@ -14,6 +14,7 @@
 %token TK_ID
 %token TK_STRING
 %token TK_NIL
+%token TK_TAIL
 
 %%
 
@@ -89,7 +90,13 @@ expr:		TK_ID
 		{
 			word exarr = ConsCell::FromWord($2)->ToArray(T_EXPRARR)->ToWord();
 
-			$$ = ApplicationNode::New(exarr)->ToWord();
+			$$ = ApplicationNode::New(exarr, 0)->ToWord();
+		}
+	|	TK_OPARENT TK_TAIL exprlist TK_CPARENT
+		{
+			word exarr = ConsCell::FromWord($2)->ToArray(T_EXPRARR)->ToWord();
+
+			$$ = ApplicationNode::New(exarr, 1)->ToWord();
 		}
 	|	TK_OPARENT TK_BEGIN exprlist TK_CPARENT
 		{

@@ -28,6 +28,7 @@ static char *CutQuotes(char *s) {
 <init>"define"		{ yylval = NULL; return TK_DEFINE; }
 <init>"let"		{ yylval = NULL; return TK_LET; }
 <init>"lambda"		{ yylval = NULL; return TK_LAMBDA; }
+<init>"tail"		{ yylval = NULL; return TK_TAIL; }
 <init>"begin"		{ yylval = NULL; return TK_BEGIN; }
 <init>"if"		{ yylval = NULL; return TK_IF; }
 <init>"("		{ yylval = NULL; return TK_OPARENT; }
