@@ -10,6 +10,8 @@
 //   $Revision$
 //
 
+#if LIGHTNING
+
 #if defined(INTERFACE)
 #pragma implementation "store/JITStore.hh"
 #endif
@@ -167,5 +169,7 @@ void JITStore::LogSetArg(u_int pos, u_int Value) {
   JITStore::RestoreAllRegs();
   JIT_END_COND();
 }
+
+#endif
 
 #endif
