@@ -84,11 +84,10 @@ define
    loadInterpreter(
       run:
 	 fun {$ _ TaskStack}
-	    case TaskStack of loadFrame(_ Key)|Rest then
-	       %--** interpreter
+	    case TaskStack of Frame=(loadFrame(_ Key))|Rest then
 	       {Trace '[boot-linker] loading '#Key}
-	       continue(arg({Pickle.load AliceHome#Key#'.stc'})
-			linkFrame(LinkInterpreter Key)|Rest)
+	       {Pickle.load AliceHome#Key#'.stc'
+		Frame|linkFrame(LinkInterpreter Key)|Rest}
 	    end
 	 end
       handle:

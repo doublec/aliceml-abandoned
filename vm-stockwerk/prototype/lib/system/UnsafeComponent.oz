@@ -81,7 +81,7 @@ define
 	 if {IsOzScheme URL} orelse {IsNative URL} then
 	    tag(EVALUATED NONE {Module.link [HU]}.1)
 	 else
-	    try continue(arg({Pickle.load HU}) TaskStack.2)
+	    try {Pickle.load HU TaskStack}
 	    catch E=system(os(os ...) ...) then
 	       try continue(arg({Pickle.load HU#'.'#Extension}) TaskStack.2)
 	       catch system(os(os ...) ...) then
