@@ -1,12 +1,33 @@
 (*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(*
  * Standard ML infix resolution
  *
  * Definition, section 2.6
  *)
 
+import structure Crash            from "../infrastructure/Crash"
+import structure Source           from "../infrastructure/Source"
+import structure ParsingError     from "ParsingError"
+import structure AbstractionError from "AbstractionError"
+import structure VId              from "Ids"
+import signature INPUT_GRAMMAR    from "INPUT_GRAMMAR-sig"
+import structure InputGrammar     from "InputGrammar"
+import signature INFIX            from "INFIX-sig"
+
 
 structure Infix :> INFIX =
-  struct
+struct
 
   (* Import *)
 
@@ -181,4 +202,4 @@ structure Infix :> INFIX =
     val pat = parse(ATPATPat, APPPat, PARAtPat, TUPLEAtPat, LONGVIDAtPat,
 		    infoPat, infoAtPat, categoriseAtPat, flattenPat)
 
-  end
+end
