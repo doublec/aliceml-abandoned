@@ -488,7 +488,7 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 		val args' = translateArgs translateIdDef (args, env)
 		val bodyInstr = translateBody (body, env)
 		val liveness = Liveness.analyze (args', bodyInstr)
-		val (globalIds, nlocals) = endFn env
+		val (globalIds, localNames) = endFn env
 		val kills = IdSet.new ()
 		val instr =
 		    case instr of
@@ -516,7 +516,7 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 		    let
 			val template =
 			    O.Template (coord, Vector.length globalIdRefs,
-					nlocals, args', bodyInstr, liveness)
+					localNames, args', bodyInstr, liveness)
 		    in
 			O.Specialize (id, globalIdRefs, template, instr)
 		    end
@@ -524,7 +524,7 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 		    let
 			val abstractCode =
 			    O.Function (coord, Vector.length globalIdRefs,
-					nlocals, args', bodyInstr, liveness)
+					localNames, args', bodyInstr, liveness)
 			val concreteCode = V.concreteCode abstractCode
 		    in
 			O.Close (id, globalIdRefs, concreteCode, instr)
@@ -679,7 +679,7 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 		    Vector.map (fn (id, _, _) => O.IdDef (declare (env, id)))
 			       imports
 		val instr = translateBody (body, env)
-		val nlocals = endTop env
+		val localNames = endTop env
 		val elseInstr =
 		    O.Raise (O.Immediate (V.prim "General.Match"))
 		val args = O.OneArg (O.IdDef formalId)
@@ -688,7 +688,7 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 			       #[(idDefs, instr)], elseInstr)
 		val liveness = Liveness.analyze (args, bodyInstr)
 		val abstractCode =
-		    O.Function ((filename, 0, 0), 0, nlocals,
+		    O.Function ((filename, 0, 0), 0, localNames,
 				args, bodyInstr, liveness)
 		val concreteCode = V.concreteCode abstractCode
 		val exportDesc =

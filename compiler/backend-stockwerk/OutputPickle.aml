@@ -180,6 +180,9 @@ structure OutputPickle :> OUTPUT_PICKLE =
 	fun outputLabel (context, label) =
 	    ignore (outputUniqueString (context, label))
 
+	fun outputName (context, string) =
+	    ignore (outputString (context, string))
+
 	fun outputValue (context, V.Prim name) =
 	    (outputTransform (context, "Alice.primitive.value");
 	     outputBlock (context, Label.TAG 0, 1);
@@ -421,29 +424,29 @@ structure OutputPickle :> OUTPUT_PICKLE =
 	    (outputBlock (context, Label.global, 1); outputId (context, i))
 	  | outputIdRef (context, Toplevel i) =
 	    (outputBlock (context, Label.toplevel, 1); outputId (context, i))
-	and outputTemplate (context, Template (coord, ntoplevels, nlocals,
+	and outputTemplate (context, Template (coord, ntoplevels, localNames,
 					       args, body, liveness)) =
 	    (outputBlock (context, Label.template, 6);
 	     outputCoord (context, coord);
 	     outputInt (context, LargeInt.fromInt ntoplevels);
-	     outputInt (context, LargeInt.fromInt nlocals);
+	     outputVector outputName (context, localNames);
 	     outputArgs outputIdDef (context, args);
 	     outputInstr (context, body); outputLiveness (context, liveness))
-	and outputAbstractCode (context, Function (coord, nglobals, nlocals,
+	and outputAbstractCode (context, Function (coord, nglobals, localNames,
 						   args, body, liveness)) =
 	    (outputBlock (context, Label.function, 6);
 	     outputCoord (context, coord);
 	     outputInt (context, LargeInt.fromInt nglobals);
-	     outputInt (context, LargeInt.fromInt nlocals);
+	     outputVector outputName (context, localNames);
 	     outputArgs outputIdDef (context, args);
 	     outputInstr (context, body); outputLiveness (context, liveness))
 	  | outputAbstractCode (context, Specialized (coord, toplevels,
-						      nlocals, args, body,
+						      localNames, args, body,
 						      liveness)) =
 	    (outputBlock (context, Label.specialized, 6);
 	     outputCoord (context, coord);
 	     outputVector outputValue (context, toplevels);
-	     outputInt (context, LargeInt.fromInt nlocals);
+	     outputVector outputName (context, localNames);
 	     outputArgs outputIdDef (context, args);
 	     outputInstr (context, body); outputLiveness (context, liveness))
 

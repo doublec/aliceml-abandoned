@@ -29,6 +29,7 @@ functor MkEnvironment(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 
 	type entry = {scope: scope,
 		      localIndex: index,
+		      localNames: string list,
 		      globalIndex: index,
 		      globalIds: ids,
 		      isSpecialize: bool}
@@ -38,6 +39,7 @@ functor MkEnvironment(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 		  stack: entry list ref,
 		  scope: scope ref,
 		  localIndex: index ref,
+		  localNames: string list ref,
 		  globalIndex: index ref,
 		  globalIds: ids ref,
 		  isSpecialize: bool ref,
@@ -51,12 +53,13 @@ functor MkEnvironment(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 	fun startTop (filename, context) =
 	    {filename = filename, context = context,
 	     stack = ref nil, scope = ref (StampMap.new ()),
-	     localIndex = ref 0, globalIndex = ref 0, globalIds = ref nil,
+	     localIndex = ref 0, localNames = ref nil,
+	     globalIndex = ref 0, globalIds = ref nil,
 	     isSpecialize = ref false, shared = StampMap.new ()}
 
-	fun endTop ({stack = ref nil, localIndex = ref localIndex,
+	fun endTop ({stack = ref nil, localNames = ref localNames,
 		     globalIds = ref nil, ...}: t) =
-	    localIndex
+	    Vector.fromList (List.rev localNames)
 	  | endTop {stack, globalIds, ...} =
 	    if List.null (!stack) then
 		let
@@ -67,19 +70,20 @@ functor MkEnvironment(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 		end
 	    else raise Crash.Crash "MkEnvironment.endTop: stack"
 
-	fun startFn ({stack, scope, localIndex,
+	fun startFn ({stack, scope, localIndex, localNames,
 		      globalIndex, globalIds, isSpecialize, ...}: t,
 		     isSpecialize') =
 	    let
 		val entry = {scope = !scope,
 			     localIndex = !localIndex,
+			     localNames = !localNames,
 			     globalIndex = !globalIndex,
 			     globalIds = !globalIds,
 			     isSpecialize = !isSpecialize}
 	    in
 		stack := entry::(!stack);
 		scope := StampMap.new ();
-		localIndex := 0;
+		localIndex := 0; localNames := nil;
 		globalIndex := 0; globalIds := nil;
 		isSpecialize := isSpecialize'
 	    end
@@ -88,20 +92,21 @@ functor MkEnvironment(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 
 	fun startSpecialize env = startFn (env, true)
 
-	fun endFn ({stack, scope, localIndex,
+	fun endFn ({stack, scope, localIndex, localNames,
 		    globalIndex, globalIds, isSpecialize, ...}: t) =
 	    let
 		val result =
 		    (Vector.fromList (List.rev (!globalIds)),
-		     !localIndex)
+		     Vector.fromList (List.rev (!localNames)))
 		val {scope = scope',
 		     localIndex = localIndex',
+		     localNames = localNames',
 		     globalIndex = globalIndex',
 		     globalIds = globalIds',
 		     isSpecialize = isSpecialize'} = List.hd (!stack)
 	    in
 		stack := List.tl (!stack); scope := scope';
-		localIndex := localIndex';
+		localIndex := localIndex'; localNames := localNames';
 		globalIndex := globalIndex'; globalIds := globalIds';
 		isSpecialize := isSpecialize';
 		result
@@ -109,8 +114,11 @@ functor MkEnvironment(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 
 	fun filename ({filename, ...}: t) = filename
 
-	fun declare ({scope, localIndex, ...}: t,
-		     FlatGrammar.Id (_, stamp, _)) =
+	fun nameToString (Name.ExId s) = s
+	  | nameToString Name.InId = ""
+
+	fun declare ({scope, localIndex, localNames, ...}: t,
+		     FlatGrammar.Id (_, stamp, name)) =
 	    case StampMap.lookup (!scope, stamp) of
 		SOME (AbstractCodeGrammar.Local id) => id
 	      | SOME (AbstractCodeGrammar.Immediate _ |
@@ -123,16 +131,17 @@ functor MkEnvironment(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 			val id = !localIndex
 		    in
 			localIndex := id + 1;
+			localNames := nameToString name::(!localNames);
 			StampMap.insertDisjoint
 			    (!scope, stamp, AbstractCodeGrammar.Local id);
 			id
 		    end
 
-	fun fresh ({localIndex, ...}: t) =
+	fun fresh ({localIndex, localNames, ...}: t) =
 	    let
 		val id = !localIndex
 	    in
-		localIndex := id + 1; id
+		localIndex := id + 1; localNames := ""::(!localNames); id
 	    end
 
 	fun idRefId (FlatGrammar.IdRef id) = id
