@@ -14,6 +14,18 @@ package de.uni_sb.ps.dml.runtime;
 
 /** This class is the representation of reference cells. It implements the
  *  mobile protocol when used in an distributed environment.
+ *  SYNCHRONIZATION:<code>
+ *  let
+ *     val r1 = ref 0
+ *     val r2 = ref 0
+ *  in
+ *     spawn (fn () => (r1 := 1; r2 := 2);
+ *     (!r1, !r2)
+ *  end
+ *  </code>
+ *  Darf: (0, 0), (1, 0), (1, 2)
+ *  Nicht: (0, 2);
+ *  To avoid the second case, access methods have to be synchronized.
  */
 final public class Reference implements DMLConVal, DMLReference {
 
@@ -25,13 +37,13 @@ final public class Reference implements DMLConVal, DMLReference {
 	this.content=content;
     }
 
-    final public DMLValue release() {
+    final synchronized public DMLValue release() {
 	DMLValue t = content;
 	content = null;
 	return t;
     }
 
-    final public DMLValue get0() throws java.rmi.RemoteException {
+    final synchronized public DMLValue get0() throws java.rmi.RemoteException {
 	if (content==null) {
 	    content=mgr.request(cmgr);
 	}
@@ -43,7 +55,7 @@ final public class Reference implements DMLConVal, DMLReference {
     }
 
 
-    final public DMLValue get1() throws java.rmi.RemoteException {
+    final synchronized public DMLValue get1() throws java.rmi.RemoteException {
 	if (content==null) {
 	    content=mgr.request(cmgr);
 	}
@@ -53,7 +65,7 @@ final public class Reference implements DMLConVal, DMLReference {
 	    throw new ArrayIndexOutOfBoundsException(); 
     }
 
-    final public DMLValue get2() throws java.rmi.RemoteException {
+    final synchronized public DMLValue get2() throws java.rmi.RemoteException {
 	if (content==null) {
 	    content=mgr.request(cmgr);
 	}
@@ -63,7 +75,7 @@ final public class Reference implements DMLConVal, DMLReference {
 	    throw new ArrayIndexOutOfBoundsException(); 
     }
 
-    final public DMLValue get3() throws java.rmi.RemoteException {
+    final synchronized public DMLValue get3() throws java.rmi.RemoteException {
 	if (content==null) {
 	    content=mgr.request(cmgr);
 	}
@@ -73,7 +85,7 @@ final public class Reference implements DMLConVal, DMLReference {
 	    throw new ArrayIndexOutOfBoundsException(); 
     }
 
-    final public DMLValue get4() throws java.rmi.RemoteException {
+    final synchronized public DMLValue get4() throws java.rmi.RemoteException {
 	if (content==null) {
 	    content=mgr.request(cmgr);
 	}
@@ -83,7 +95,7 @@ final public class Reference implements DMLConVal, DMLReference {
 	    throw new ArrayIndexOutOfBoundsException(); 
     }
 
-    final public DMLValue getContent() throws java.rmi.RemoteException {
+    final synchronized public DMLValue getContent() throws java.rmi.RemoteException {
 	if (content==null) {
 	    content=mgr.request(cmgr);
 	}
@@ -91,7 +103,7 @@ final public class Reference implements DMLConVal, DMLReference {
     }
 
     /** setzt Wert auf val und gibt alten Wert zurueck */
-    final public DMLValue assign(DMLValue val) throws java.rmi.RemoteException {
+    final synchronized public DMLValue assign(DMLValue val) throws java.rmi.RemoteException {
 	if (content==null) {
 	    content=mgr.request(cmgr);
 	}
