@@ -27,7 +27,7 @@ type 'a vector		= 'a __pervasive.Vector.vector
 type 'a array		= 'a __pervasive.Array.array
 
 datatype exn		= datatype __pervasive.exn
-datatype ref		= datatype __pervasive.Ref.ref
+datatype ref		= datatype __pervasive.ref
 
 datatype bool		= false | true
 datatype order		= LESS | EQUAL | GREATER
