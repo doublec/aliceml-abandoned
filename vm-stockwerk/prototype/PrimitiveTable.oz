@@ -32,6 +32,10 @@ define
    GREATER = 1
    LESS    = 2
 
+   BLOCKED    = 0
+   RUNNABLE   = 1
+   TERMINATED = 2
+
    fun {C2F S}
       case {ByteString.toString S} of [A B C D E F G H] then
 	 {FloatChunk.toOz A B C D E F G H}
@@ -287,7 +291,7 @@ define
 			  [] transient(TransientState2) then
 			     case {Access TransientState2} of future(Ts) then
 				for T in Ts do
-				   {Scheduler.object enqueue(T)}
+				   {Scheduler.object wakeup(T)}
 				end
 				{Assign TransientState2 NewTransientState}
 			     end
@@ -313,7 +317,7 @@ define
 				case {Access TransientState2}
 				of future(Ts) then
 				   for T in Ts do
-				      {Scheduler.object enqueue(T)}
+				      {Scheduler.object wakeup(T)}
 				   end
 				   {Assign TransientState2 NewTransientState}
 				end
@@ -523,22 +527,49 @@ define
 		 end#rrr_t
 	      'String.str': fun {$ C} {ByteString.make [C]} end#r_v
 	      'Thread.Terminate': value({NewUniqueName 'Thread.Terminate'})
+	      'Thread.Terminated': value({NewUniqueName 'Thread.Terminated'})
 	      'Thread.current':
 		 fun {$} {Scheduler.object getCurrentThread($)} end#n_v
-	      'Thread.isSuspended': missing('Thread.isSuspended')   %--**
-	      'Thread.raiseIn': missing('Thread.raiseIn')   %--**
-	      'Thread.resume': missing('Thread.resume')   %--**
-	      'Thread.state': missing('Thread.state')   %--**
-/*
+	      'Thread.isSuspended': fun {$ T} {T isSuspended($)} end#r_b
+	      'Thread.raiseIn':
+		 fun {$ T Exn TaskStack}
+		    if T == {Scheduler.object getCurrentThread($)} then
+		       exception(nil Exn TaskStack.2)
+		    elsecase {T getState($)} of terminated then
+		       exception(nil Table.'Thread.Terminated' TaskStack.2)
+		    elseof State then OtherTaskStack NewFrame in
+		       {T getTaskStack(?OtherTaskStack)}
+		       NewFrame = raiseIn(ThreadRaiseInInterpreter Exn)
+		       {T setArgsAndTaskStack(args() NewFrame|OtherTaskStack)}
+		       case State of blocked then
+			  {Scheduler.object wakeup(T)}
+		       [] runnable then skip
+		       end
+		       continue(args() TaskStack.2)
+		    end
+		 end#ri_t
+	      'Thread.resume':
+		 fun {$ T}
+		    {T setSuspend(false)}
+		    {Scheduler.object condEnqueue(T)}
+		    tuple()
+		 end#r_v
 	      'Thread.state':
 		 fun {$ T}
-		    case {Thread.state T} of runnable then 'RUNNABLE'
-		    [] blocked then 'BLOCKED'
-		    [] terminated then 'TERMINATED'
+		    case {T getState($)} of runnable then RUNNABLE
+		    [] blocked then BLOCKED
+		    [] terminated then TERMINATED
 		    end
-		 end
-*/
-	      'Thread.suspend': missing('Thread.suspend')   %--**
+		 end#r_v
+	      'Thread.suspend':
+		 fun {$ T TaskStack}
+		    {T setSuspend(true)}
+		    if T == {Scheduler.object getCurrentThread($)} then
+		       preempt(args() TaskStack.2)
+		    else
+		       continue(args() TaskStack.2)
+		    end
+		 end#r_t
 	      'Thread.yield':
 		 fun {$ TaskStack} preempt(args() TaskStack.2) end#n_t
 	      'Unsafe.Array.sub': Array.get#rr_v
@@ -668,6 +699,25 @@ define
 				end
 			     pushCall: VectorTabulateInterpreterPushCall)
 
+   fun {ThreadRaiseInInterpreterPushCall _ _}
+      {Exception.raiseError threadRaiseInInterpreterPushCall} unit
+   end
+
+   ThreadRaiseInInterpreter =
+   threadRaiseInInterpreter(run:
+			       fun {$ _ TaskStack}
+				  case TaskStack of raiseIn(_ Exn)|Rest then
+				     exception(nil Exn Rest)
+				  end
+			       end
+			    handle:
+				fun {$ Debug Exn TaskStack}
+				   case TaskStack of Frame|Rest then
+				      exception(Frame|Debug Exn Rest)
+				   end
+				end
+			    pushCall: ThreadRaiseInInterpreterPushCall)
+
    fun {PrimitiveInterpreterRun Args TaskStack}
       case TaskStack of primitive(_ F Spec)|Rest then
 	 case Spec of n_t then {F TaskStack}
@@ -706,6 +756,15 @@ define
 	       case {Deref T.2} of Transient=transient(_) then
 		  request(Transient args(T.1 Transient) TaskStack)
 	       elseof T2 then {F T.1 T2 TaskStack}
+	       end
+	    end
+	 [] ri_t then
+	    case {Deconstruct Args} of Transient=transient(_) then
+	       request(Transient Args TaskStack)
+	    elseof T then
+	       case {Deref T.1} of Transient=transient(_) then
+		  request(Transient args(Transient T.2) TaskStack)
+	       elseof T1 then {F T1 T.2 TaskStack}
 	       end
 	    end
 	 [] ri_v then
