@@ -110,6 +110,11 @@ Das Oz-System ist in hohem Masse dynamisch und kann deshalb zu sehr grossen Teil
 [noch mehr? Leif?]
 
 
+Weiterentwicklung des Komponentenmodells
+
+[Komponenten als Webserver, abstrakte URIs, Projektverwaltung, Authentifizierung]
+
+
 Reimplementierung der virtuellen Maschine
 
 []
