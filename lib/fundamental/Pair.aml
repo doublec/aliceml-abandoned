@@ -14,9 +14,9 @@
  *  Items marked with (**) are extensions to the Standard Basis.
  *)
 
-import structure __pervasive from "Pervasive"
-import datatype order        from "ToplevelTypes"
-import signature PAIR        from "PAIR-sig"
+import structure __pervasive      from "Pervasive"
+import __primitive datatype order from "ToplevelTypes"
+import __primitive signature PAIR from "PAIR-sig"
 
 
 structure Pair : PAIR =							(**)

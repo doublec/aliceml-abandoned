@@ -14,9 +14,9 @@
  *  Items marked with (**) are extensions to the Standard Basis.
  *)
 
-import structure __pervasive              from "Pervasive"
-import datatype bool and order and option from "ToplevelTypes"
-import signature OPTION                   from "OPTION-sig"
+import structure __pervasive                          from "Pervasive"
+import __primitive datatype bool and order and option from "ToplevelTypes"
+import __primitive signature OPTION                   from "OPTION-sig"
 
 
 structure Option :> OPTION =

@@ -10,9 +10,9 @@
  *   $Revision$
  *)
 
-import structure __pervasive from "Pervasive"
-import type package          from "ToplevelTypes"
-import signature PACKAGE     from "PACKAGE-sig"
+import structure __pervasive         from "Pervasive"
+import __primitive type package      from "ToplevelTypes"
+import __primitive signature PACKAGE from "PACKAGE-sig"
 
 structure Package :> PACKAGE where type package = package =
 struct
