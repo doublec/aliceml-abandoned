@@ -3,64 +3,26 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 1999-2000
+ *   Leif Kornstaedt, 1999-2001
  *
  * Last change:
  *   $Date$ by $Author$
  *   $Revision$
  *)
 
-import
-    structure Label
-from "../../lib/rtt/Label"
-
-import
-    structure Type
-from "../../lib/rtt/Type"
-
-import
-    structure Crash
-from "../infrastructure/Crash"
-
-import
-    structure Source
-from "../infrastructure/Source"
-
-import
-    structure Stamp
-from "../common/Stamp"
-
-import
-    signature INTERMEDIATE_GRAMMAR
-from "../common/INTERMEDIATE_GRAMMAR-sig"
-
-import
-    structure IntermediateGrammar
-from "../common/IntermediateGrammar"
-
-import
-    structure MkLabelSort
-from "MkLabelSort"
-
-import
-    structure Arity
-from "Arity"
-
-import
-    signature FLAT_GRAMMAR
-from "FLAT_GRAMMAR-sig"
-
-import
-    structure FlatGrammar
-from "FlatGrammar"
-
-import
-    structure IntermediateAux
-from "IntermediateAux"
-
-import
-    signature SIMPLIFY_MATCH
-from "SIMPLIFY_MATCH-sig"
+import structure Label                from "../../lib/rtt/Label"
+import structure Type                 from "../../lib/rtt/Type"
+import structure Crash                from "../infrastructure/Crash"
+import structure Source               from "../infrastructure/Source"
+import structure Stamp                from "../common/Stamp"
+import signature INTERMEDIATE_GRAMMAR from "../common/INTERMEDIATE_GRAMMAR-sig"
+import structure IntermediateGrammar  from "../common/IntermediateGrammar"
+import structure MkLabelSort          from "MkLabelSort"
+import structure Arity                from "Arity"
+import signature FLAT_GRAMMAR         from "FLAT_GRAMMAR-sig"
+import structure FlatGrammar          from "FlatGrammar"
+import structure IntermediateAux      from "IntermediateAux"
+import signature SIMPLIFY_MATCH       from "SIMPLIFY_MATCH-sig"
 
 structure SimplifyMatch :> SIMPLIFY_MATCH =
     struct
@@ -79,8 +41,8 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 
 	datatype test =
 	    LitTest of lit
-	  | TagTest of Label.t * int * unit O.conArgs * Arity.t option
-	  | ConTest of I.longid * unit O.conArgs * Arity.t option
+	  | TagTest of Label.t * int * unit O.args * Arity.t
+	  | ConTest of I.longid * unit O.args * Arity.t
 	  | RefTest
 	  | TupTest of int
 	  | ProdTest of Label.t vector
@@ -138,27 +100,29 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 		     LabelSort.Tup n)
 		end
 
-	fun makeAppConArgs (TupPat (_, pats), true, pos) =
+	fun makeConArgs (_, Arity.Tuple 0, _) = (#[], O.TupArgs #[])
+	    (*--** this looks irregular *)
+	  | makeConArgs (TupPat (_, pats), Arity.Tuple _, pos) =
 	    (Vector.mapi (fn (i, pat) =>
 			  (LABEL (Label.fromInt (i + 1))::pos, pat))
 	     (pats, 0, NONE),
-	     SOME (O.TupArgs (Vector.map ignore pats)))
-	  | makeAppConArgs (pat as ProdPat (info, patFields), true, pos) =
+	     O.TupArgs (Vector.map ignore pats))
+	  | makeConArgs (ProdPat (info, patFields), Arity.Product _, pos) =
 	    (case getRow (#typ info) of
 		 (_, LabelSort.Tup n) =>
 		     (Vector.map (fn Field (_, Lab (_, label), pat) =>
 				  (LABEL label::pos, pat)) patFields,
-		      SOME (O.TupArgs (Vector.tabulate (n, ignore))))
+		      O.TupArgs (Vector.tabulate (n, ignore)))
 	       | (labels, LabelSort.Prod) =>
 		     (Vector.map (fn Field (_, Lab (_, label), pat) =>
 				  (LABEL label::pos, pat)) patFields,
-		      SOME (O.ProdArgs (Vector.map (fn label => (label, ()))
-					labels))))
-	  | makeAppConArgs (pat, _, pos) = (#[(pos, pat)], SOME (O.OneArg ()))
+		      O.ProdArgs (Vector.map (fn label =>
+					      (label, ())) labels)))
+	  | makeConArgs (pat, _, pos) = (#[(pos, pat)], O.OneArg ())
 
-	fun patToConArity (StrictPat (_, pat)) =
+	fun patToArity (StrictPat (_, pat)) =
 	    (typToArity (#typ (infoPat pat)), pat)
-	  | patToConArity pat = (SOME Arity.Unary, pat)
+	  | patToArity pat = (Arity.Unary, pat)
 
 	fun makeTestSeq (JokPat _, _, rest, mapping) = (rest, mapping)
 	  | makeTestSeq (LitPat (_, lit), pos, rest, mapping) =
@@ -169,32 +133,24 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 			 pos, rest, mapping) =
 	    let
 		val (_, n) = labelToIndex (#typ info, label)
-		val (conArity, pat') = patToConArity pat
-		val (posPatVector, conArgs) =
-		    case conArity of
-			NONE => (#[], NONE)
-		      | SOME arity =>
-			    makeAppConArgs (pat', arity <> Arity.Unary,
-					    LABEL label::pos)
+		val (arity, pat') = patToArity pat
+		val (posPatVector, args) =
+		    makeConArgs (pat', arity, LABEL label::pos)
 	    in
 		Vector.foldl (fn ((pos, pat), (rest, mapping)) =>
 			      makeTestSeq (pat, pos, rest, mapping))
-		(Test (pos, TagTest (label, n, conArgs, conArity))::rest,
+		(Test (pos, TagTest (label, n, args, arity))::rest,
 		 mapping) posPatVector
 	    end
 	  | makeTestSeq (ConPat (info, longid, pat), pos, rest, mapping) =
 	    let
-		val (conArity, pat') = patToConArity pat
-		val (posPatVector, conArgs) =
-		    case conArity of
-			NONE => (#[], NONE)
-		      | SOME arity =>
-			    makeAppConArgs (pat', arity <> Arity.Unary,
-					    longidToSelector longid::pos)
+		val (arity, pat') = patToArity pat
+		val (posPatVector, args) =
+		    makeConArgs (pat', arity, longidToSelector longid::pos)
 	    in
 		Vector.foldl (fn ((pos, pat), (rest, mapping)) =>
 			      makeTestSeq (pat, pos, rest, mapping))
-		(Test (pos, ConTest (longid, conArgs, conArity))::rest,
+		(Test (pos, ConTest (longid, args, arity))::rest,
 		 mapping) posPatVector
 	    end
 	  | makeTestSeq (RefPat (_, pat), pos, rest, mapping) =
@@ -294,20 +250,17 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	  | litToString (RealLit r) = LargeReal.toString r
 
 	fun testToString (LitTest lit) = "lit " ^ litToString lit
-	  | testToString (TagTest (label, n, NONE, _)) =
-	    "tag0 " ^ Label.toString label ^ "/" ^ Int.toString n
-	  | testToString (TagTest (label, n, SOME (O.OneArg _), _)) =
+	  | testToString (TagTest (label, n, O.OneArg _, _)) =
 	    "tag " ^ Label.toString label ^ "/" ^ Int.toString n ^ " one"
-	  | testToString (TagTest (label, n, SOME (O.TupArgs xs), _)) =
+	  | testToString (TagTest (label, n, O.TupArgs xs, _)) =
 	    "tag " ^ Label.toString label ^ "/" ^ Int.toString n ^
 	    " tup " ^ Int.toString (Vector.length xs)
-	  | testToString (TagTest (label, n, SOME (O.ProdArgs _), _)) =
+	  | testToString (TagTest (label, n, O.ProdArgs _, _)) =
 	    "tag " ^ Label.toString label ^ "/" ^ Int.toString n ^ " prod"
-	  | testToString (ConTest (_, NONE, _)) = "con0"
-	  | testToString (ConTest (_, SOME (O.OneArg _), _)) = "con"
-	  | testToString (ConTest (_, SOME (O.TupArgs xs), _)) =
+	  | testToString (ConTest (_, O.OneArg _, _)) = "con"
+	  | testToString (ConTest (_, O.TupArgs xs, _)) =
 	    "con tup " ^ Int.toString (Vector.length xs)
-	  | testToString (ConTest (_, SOME (O.ProdArgs _), _)) = "con prod"
+	  | testToString (ConTest (_, O.ProdArgs _, _)) = "con prod"
 	  | testToString RefTest = "ref"
 	  | testToString (TupTest n) = "tup " ^ Int.toString n
 	  | testToString (ProdTest labelTyplist) = "prod"
@@ -367,20 +320,17 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 
 	(* Construction of Backtracking Test Trees *)
 
-	fun conArgsEq (NONE, NONE) = true
-	  | conArgsEq (SOME (O.OneArg _), SOME (O.OneArg _)) = true
-	  | conArgsEq (SOME (O.TupArgs _), SOME (O.TupArgs _)) = true
-	  | conArgsEq (SOME (O.ProdArgs _), SOME (O.ProdArgs _)) = true
-	  | conArgsEq (_, _) = false
+	fun argsEq (O.OneArg _, O.OneArg _) = true
+	  | argsEq (O.TupArgs _, O.TupArgs _) = true
+	  | argsEq (O.ProdArgs _, O.ProdArgs _) = true
+	  | argsEq (_, _) = false
 
 	fun testEq (LitTest lit1, LitTest lit2) = O.litEq (lit1, lit2)
-	  | testEq (TagTest (_, n1, conArgs1, _),
-		    TagTest (_, n2, conArgs2, _)) =
-	    n1 = n2 andalso conArgsEq (conArgs1, conArgs2)
-	  | testEq (ConTest (longid1, conArgs1, _),
-		    ConTest (longid2, conArgs2, _)) =
+	  | testEq (TagTest (_, n1, args1, _), TagTest (_, n2, args2, _)) =
+	    n1 = n2 andalso argsEq (args1, args2)
+	  | testEq (ConTest (longid1, args1, _), ConTest (longid2, args2, _)) =
 	    longidToSelector longid1 = longidToSelector longid2 andalso
-	    conArgsEq (conArgs1, conArgs2)
+	    argsEq (args1, args2)
 	  | testEq (TupTest _, TupTest _) = true
 	  | testEq (ProdTest _, ProdTest _) = true
 	  | testEq (VecTest n1, VecTest n2) = n1 = n2
@@ -665,10 +615,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 		let
 		    val info = infoPat (#2 (Vector.sub (matches, 0)))
 		    val arity =
-			if checkMatches matches then
-			    case typToArity (#typ info) of
-				SOME arity => arity
-			      | NONE => Arity.Unary (*--** *)
+			if checkMatches matches then typToArity (#typ info)
 			else Arity.Unary
 		    val (graph, consequents) = buildGraph (matches, errStms)
 		in
