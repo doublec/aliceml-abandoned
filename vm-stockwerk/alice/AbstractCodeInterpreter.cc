@@ -822,7 +822,7 @@ Worker::Result AbstractCodeInterpreter::Run() {
 	pc = TagVal::FromWordDirect(pc->Sel(3));
       }
       break;
-    case AbstractCode::CompactTagTest: // of idRef * tagTests * instr
+    case AbstractCode::CompactTagTest: // of idRef * tagTests * instr option
       {
 	word requestWord = GetIdRef(pc->Sel(0), globalEnv, localEnv);
 	TagVal *tagVal = TagVal::FromWord(requestWord);
@@ -855,7 +855,8 @@ Worker::Result AbstractCodeInterpreter::Run() {
 	    goto loop;
 	  }
 	}
-	pc = TagVal::FromWordDirect(pc->Sel(2));
+	TagVal *someElseInstr = TagVal::FromWordDirect(pc->Sel(2));
+	pc = TagVal::FromWordDirect(someElseInstr->Sel(0));
       }
       break;
     case AbstractCode::ConTest:
