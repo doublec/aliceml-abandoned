@@ -35,7 +35,7 @@ public:
   Interpreter() {}
   // Handler Methods
   virtual void PrepareForGC(Block *p);
-  virtual Block *GetAbstractRepresentation();
+  virtual Block *GetAbstractRepresentation(Block *blockWithHandler);
   // Argument Creation
   static inline word EmptyArg() {
     Block *p = Store::AllocBlock(EMPTYARG_LABEL, 1);

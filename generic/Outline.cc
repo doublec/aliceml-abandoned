@@ -12,6 +12,7 @@
 
 #if defined(INTERFACE)
 #pragma implementation "emulator/Backtrace.hh"
+#pragma implementation "emulator/Transform.hh"
 #pragma implementation "emulator/ConcreteCode.hh"
 #pragma implementation "emulator/Closure.hh"
 #pragma implementation "emulator/Thread.hh"
@@ -20,6 +21,7 @@
 #endif
 
 #include "emulator/Backtrace.hh"
+#include "emulator/Transform.hh"
 #include "emulator/ConcreteCode.hh"
 #include "emulator/Closure.hh"
 #include "emulator/Thread.hh"

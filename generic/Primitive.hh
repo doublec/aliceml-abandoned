@@ -22,6 +22,8 @@
 #include "emulator/Interpreter.hh"
 
 class Primitive {
+private:
+  static word aliceTransformName;
 public:
   // Primitive C Type
   typedef Interpreter::Result (*function)(word, TaskStack *);
@@ -30,6 +32,8 @@ public:
 			   u_int arity, bool sited = false);
   static word MakeClosure(const char *name, function value,
 			  u_int arity, bool sited = false);
+  // Primitive Static Constructor
+  static void Init();
 };
 
 #endif
