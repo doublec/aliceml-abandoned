@@ -18,17 +18,19 @@ TOPDIR = ..
 include $(TOPDIR)/Makefile.vars
 include $(TOPDIR)/Makefile.rules
 
+LIGHTNING_SOURCES0 = JITStore.cc
+
 ifdef LIGHTNING
-EXTRA_SRCS = JITStore.cc
+LIGHTNING_SOURCES = $(LIGHTNING_SOURCES0)
 else
-EXTRA_SRCS =
+LIGHTNING_SOURCES =
 endif
 
-SRCS = WeakDictionary.cc \
-       Memory.cc \
-       Store.cc \
-       $(EXTRA_SRCS)
-OBJS = $(SRCS:%.cc=%.o)
+SOURCES = \
+	WeakDictionary.cc Memory.cc Store.cc \
+	$(LIGHTNING_SOURCES)
+
+OBJS = $(SOURCES:%.cc=%.o)
 
 .PHONY: all clean distclean adt
 
@@ -51,7 +53,7 @@ $(OBJS): StoreConfig.hh
 
 clean:
 	rm -f StoreConfig.o StoreConfig StoreConfig.exe
-	rm -f $(OBJS) libstore.a
+	rm -f $(OBJS) $(LIGHTNING_SOURCES0:%.cc=%.o) libstore.a
 
 veryclean: clean
 	rm -f test StoreConfig.hh libstore.a
@@ -59,7 +61,7 @@ veryclean: clean
 distclean: veryclean
 	rm -f Makefile.deps
 
-Makefile.deps: Makefile StoreConfig.hh $(SRCS)
-	$(MAKEDEPEND) $(SRCS) StoreConfig.cc > Makefile.deps
+Makefile.deps: Makefile StoreConfig.hh $(SOURCES)
+	$(MAKEDEPEND) $(SOURCES) StoreConfig.cc > Makefile.deps
 
 include Makefile.deps
