@@ -14,6 +14,7 @@
 #pragma implementation "java/ClassFile.hh"
 #endif
 
+#include <cstdio>
 #include "java/ClassFile.hh"
 #include "java/ClassLoader.hh"
 
@@ -469,7 +470,17 @@ void ClassFile::SkipAttributes(u_int &offset) {
 }
 
 ClassFile *ClassFile::NewFromFile(char *filename) {
-  //--**
+  FILE *f = std::fopen(filename, "rb");
+  if (std::fseek(f, 0, SEEK_END)) {
+    std::fclose(f);
+    return INVALID_POINTER;
+  }
+  u_int n = std::ftell(f);
+  std::rewind(f);
+  Chunk *data = Store::AllocChunk(n);
+  std::fread(data->GetBase(), 1, n, f);
+  std::fclose(f);
+  return static_cast<ClassFile *>(data);
 }
 
 ClassInfo *ClassFile::Parse(ClassLoader *classLoader) {
