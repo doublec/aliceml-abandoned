@@ -81,16 +81,17 @@ DEFINE3(NativeGtk_treeModelGetStringAt) {
 DEFINE1(NativeGtk_treeViewGetSelectedString) {
   DECLARE_UNMANAGED_POINTER(t, x0);
   GtkTreeView *tree = static_cast<GtkTreeView*>(t);
-  GtkTreeIter *iter;
+  GtkTreeIter iter;
   GValue val;
   memset(&val, 0, sizeof(GValue));
   char *result = "";
-  if (gtk_tree_selection_get_selected(gtk_tree_view_get_selection(tree), 
-				      NULL, iter)) {
-    gtk_tree_model_get_value(gtk_tree_view_get_model(tree), iter, 0, &val);
+  if (tree && 
+      gtk_tree_selection_get_selected(gtk_tree_view_get_selection(tree), 
+				      NULL, &iter)) {
+    gtk_tree_model_get_value(gtk_tree_view_get_model(tree), &iter, 0, &val);
     if (G_VALUE_TYPE(&val) == G_TYPE_STRING)
       result = g_value_dup_string(&val);
-    g_value_unset(&val);
+      g_value_unset(&val);
   }
   RETURN(String::New(reinterpret_cast<const char*>(result))->ToWord());
 } END

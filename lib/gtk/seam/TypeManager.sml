@@ -160,6 +160,9 @@ struct
 	Util.checkPrefix (Util.spaceStructPrefix(space)) n
       | isItemOfSpace _ _ = false
 	
+(**)fun workAround (STRUCT ("_GtkFileSelection",_)) = true
+(**)  | workAround s = isItemOfSpace Util.GDK s
+
     fun checkItem (FUNC (n,ret,arglist)) =
     let
 	fun error s = ( print ("function "^n^" ignored: "^s^"\n") ; false )
@@ -169,7 +172,7 @@ struct
 	   EStruct   => error "struct in arglist or retval"
 	 | EUnion    => error "union in arglist or retval"
     end		    
-(**   | checkItem (s as (STRUCT _)) = isItemOfSpace Util.GDK s *)
+(**)  | checkItem (s as (STRUCT _)) = workAround s
       | checkItem _ = true
 
     fun checkStructMember (_,TYPEREF ("gconstpointer", _)) = false

@@ -25,10 +25,10 @@ fuer GtkObjects gilt:
 * Dateien komplett umbenennen
 * libgnomecanvas statt GtkCanvas installieren
 * GnomeCanvas-Bindings
-* get/set-Funktionen
+- get/set-Funktionen - auch fuer Gtk!
 - Windows
 - Namespace-Aufteilung: Gtk.Button.new ...
-- eigene Native-Hilfsfunktionen besser benennen
+X eigene Native-Hilfsfunktionen besser benennen
 
 * stockwerk-gtk-binding in den CVS main trunk
 * stockhausen neu bauen -> Problem!!

@@ -112,7 +112,7 @@ functor MkUnsafe(structure TypeManager : TYPE_MANAGER
 			^" "^vname
 		  | POINTER _     =>
 			if toNative then vname else 
-			    ("GtkCore.addObject("^vname^",0)")
+			    ("GtkCore.addObject("^vname^",fn _ => (),false)")
 	         | _ => vname)
 	in
 	    if generateSimple
