@@ -1,3 +1,8 @@
+(* TODO:
+   - add primitive constructors
+   - reset type level on error
+*)
+
 (*
  * Note: We assume complete binding analysis and alpha conversion has been
  * performed on the input program. So we would not need to bother with scoping.
@@ -1571,7 +1576,7 @@ print "\n") andthen
 	    val  _    = Type.unify(t, Type.inRec(Type.unknown k))
 			handle Type.Unify _ => Crash.crash "Elab.elabLHSRecSpec"
 	in
-	    insertTyp(E, I.stamp id, (id,t))
+	    ()
 	end
 
       | elabLHSRecSpec(E, I.DatSpec(i, id, typ)) =
@@ -1581,7 +1586,7 @@ print "\n") andthen
 	    val  _    = Type.unify(t, Type.inRec(Type.unknown k))
 			handle Type.Unify _ => Crash.crash "Elab.elabLHSRecSpec"
 	in
-	    insertTyp(E, I.stamp id, (id,t))
+	    ()
 	end
 
       | elabLHSRecSpec(E, I.RecSpec(i, specs)) =
