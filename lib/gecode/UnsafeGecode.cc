@@ -76,6 +76,11 @@ const conlevel int2cl[] =
     CL_DOM_EX, CL_OTR, CL_VAL, CL_VAL_EX
   };
 
+const AvalSel int2avalsel[] =
+  {
+    AVAL_MAX, AVAL_MED, AVAL_MIN
+  };
+
 class GecodeHandler : public ConcreteRepresentationHandler {
   Transform
   *GecodeHandler::GetAbstractRepresentation(ConcreteRepresentation *) {
@@ -228,6 +233,7 @@ DEFINE4(gc_eqv) {
   }
 
   s->teq(vars, noOfVars, UnsafeGecode::int2cl[cl]);
+  delete vars;
 } END
 
 DEFINE5(gc_eqr) {
@@ -254,6 +260,7 @@ DEFINE5(gc_eqvr) {
   }
 
   s->teqR(vars, noOfVars, boolVar, UnsafeGecode::int2cl[cl]);
+  delete vars;
 } END
 
 DEFINE3(gc_distinct) {
@@ -582,11 +589,235 @@ DEFINE1(gc_alive) {
   RETURN_BOOL(Store::WordToInt(cr->Get(0))!=0);
 } END
 
+DEFINE6(gc_countii) {
+  DECLARE_SPACE(s, x0);
+  DECLARE_VECTOR(v, x1);
+  DECLARE_INT(rel, x2);
+  DECLARE_INT(i, x3);
+  DECLARE_INT(rel2, x4);
+  DECLARE_INT(j, x5);
+
+  int noOfVars = v->GetLength();
+  int *vars = new int[noOfVars];
+  for (int i=noOfVars; i--;) {
+    DECLARE_INT(tmp, v->Sub(i));
+    vars[i] = tmp;
+  }
+
+  s->tcountii(vars, noOfVars, UnsafeGecode::int2reltype[rel],
+	      i, UnsafeGecode::int2reltype[rel2], j);
+  RETURN_UNIT;
+} END
+
+DEFINE6(gc_countvi) {
+  DECLARE_SPACE(s, x0);
+  DECLARE_VECTOR(v, x1);
+  DECLARE_INT(rel, x2);
+  DECLARE_INT(i, x3);
+  DECLARE_INT(rel2, x4);
+  DECLARE_INT(j, x5);
+
+  int noOfVars = v->GetLength();
+  int *vars = new int[noOfVars];
+  for (int i=noOfVars; i--;) {
+    DECLARE_INT(tmp, v->Sub(i));
+    vars[i] = tmp;
+  }
+
+  s->tcountvi(vars, noOfVars, UnsafeGecode::int2reltype[rel],
+	      i, UnsafeGecode::int2reltype[rel2], j);
+
+  RETURN_UNIT;
+} END
+
+DEFINE6(gc_countiv) {
+  DECLARE_SPACE(s, x0);
+  DECLARE_VECTOR(v, x1);
+  DECLARE_INT(rel, x2);
+  DECLARE_INT(i, x3);
+  DECLARE_INT(rel2, x4);
+  DECLARE_INT(j, x5);
+
+  int noOfVars = v->GetLength();
+  int *vars = new int[noOfVars];
+  for (int i=noOfVars; i--;) {
+    DECLARE_INT(tmp, v->Sub(i));
+    vars[i] = tmp;
+  }
+
+  s->tcountiv(vars, noOfVars, UnsafeGecode::int2reltype[rel],
+	      i, UnsafeGecode::int2reltype[rel2], j);
+
+  RETURN_UNIT;
+} END
+
+DEFINE6(gc_countvv) {
+  DECLARE_SPACE(s, x0);
+  DECLARE_VECTOR(v, x1);
+  DECLARE_INT(rel, x2);
+  DECLARE_INT(i, x3);
+  DECLARE_INT(rel2, x4);
+  DECLARE_INT(j, x5);
+
+  int noOfVars = v->GetLength();
+  int *vars = new int[noOfVars];
+  for (int i=noOfVars; i--;) {
+    DECLARE_INT(tmp, v->Sub(i));
+    vars[i] = tmp;
+  }
+
+  s->tcountvv(vars, noOfVars, UnsafeGecode::int2reltype[rel],
+	      i, UnsafeGecode::int2reltype[rel2], j);
+
+  delete vars;
+  RETURN_UNIT;
+} END
+
+DEFINE4(gc_element) {
+  DECLARE_SPACE(s, x0);
+  DECLARE_VECTOR(v, x1);
+  DECLARE_INT(i, x2);
+  DECLARE_INT(j, x3);
+
+  int noOfVars = v->GetLength();
+  int *vars = new int[noOfVars];
+  for (int i=noOfVars; i--;) {
+    DECLARE_INT(tmp, v->Sub(i));
+    vars[i] = tmp;
+  }
+
+  s->telement(vars, noOfVars, i, j);
+
+  delete vars;
+  RETURN_UNIT;
+} END
+
+DEFINE4(gc_elementi) {
+  DECLARE_SPACE(s, x0);
+  DECLARE_VECTOR(v, x1);
+  DECLARE_INT(i, x2);
+  DECLARE_INT(j, x3);
+
+  int noOfArgs = v->GetLength();
+  int *args = new int[noOfArgs];
+  for (int i=noOfArgs; i--;) {
+    DECLARE_INT(tmp, v->Sub(i));
+    args[i] = tmp;
+  }
+
+  s->telementi(args, noOfArgs, i, j);
+
+  delete args;
+  RETURN_UNIT;
+} END
+
+DEFINE4(gc_lex) {
+  DECLARE_SPACE(s, x0);
+  DECLARE_VECTOR(v1, x1);
+  DECLARE_INT(rel, x2);
+  DECLARE_VECTOR(v2, x3);
+
+  int noOfVars1 = v1->GetLength();
+  int *vars1 = new int[noOfVars1];
+  for (int i=noOfVars1; i--;) {
+    DECLARE_INT(tmp, v1->Sub(i));
+    vars1[i] = tmp;
+  }
+
+  int noOfVars2 = v2->GetLength();
+  int *vars2 = new int[noOfVars2];
+  for (int i=noOfVars2; i--;) {
+    DECLARE_INT(tmp, v2->Sub(i));
+    vars2[i] = tmp;
+  }
+
+  s->tlex(vars1, noOfVars1, UnsafeGecode::int2reltype[rel], vars2, noOfVars2);
+
+  delete vars1;
+  delete vars2;
+  RETURN_UNIT;
+} END
+
+DEFINE3(gc_min) {
+  DECLARE_SPACE(s, x0);
+  DECLARE_VECTOR(v, x1);
+  DECLARE_INT(i, x2);
+  int noOfVars = v->GetLength();
+  int *vars = new int[noOfVars];
+  for (int i=noOfVars; i--;) {
+    DECLARE_INT(tmp, v->Sub(i));
+    vars[i] = tmp;
+  }
+
+  s->tmin(vars, noOfVars, i);
+
+  delete vars;
+  RETURN_UNIT;
+} END
+
+DEFINE3(gc_max) {
+  DECLARE_SPACE(s, x0);
+  DECLARE_VECTOR(v, x1);
+  DECLARE_INT(i, x2);
+  int noOfVars = v->GetLength();
+  int *vars = new int[noOfVars];
+  for (int i=noOfVars; i--;) {
+    DECLARE_INT(tmp, v->Sub(i));
+    vars[i] = tmp;
+  }
+
+  s->tmax(vars, noOfVars, i);
+
+  delete vars;
+  RETURN_UNIT;
+} END
+
+DEFINE4(gc_abs) {
+  DECLARE_SPACE(s, x0);
+  DECLARE_INT(i, x1);
+  DECLARE_INT(j, x2);
+  DECLARE_INT(cl, x3);
+
+  s->tabs(i, j, UnsafeGecode::int2cl[cl]);
+
+  RETURN_UNIT;
+} END
+
+DEFINE4(gc_mult) {
+  DECLARE_SPACE(s, x0);
+  DECLARE_INT(i, x1);
+  DECLARE_INT(j, x2);
+  DECLARE_INT(k, x3);
+
+  s->tmult(i, j, k);
+
+  RETURN_UNIT;
+} END
+
+DEFINE3(gc_assign) {
+  DECLARE_SPACE(s, x0);
+  DECLARE_VECTOR(v, x1);
+  DECLARE_INT(avalsel, x2);
+
+  int noOfVars = v->GetLength();
+  int *vars = new int[noOfVars];
+  for (int i=noOfVars; i--;) {
+    DECLARE_INT(tmp, v->Sub(i));
+    vars[i] = tmp;
+  }
+
+  s->tassign(vars, noOfVars, UnsafeGecode::int2avalsel[avalsel]);
+
+  delete vars;
+  RETURN_UNIT;
+} END
+
+
 word InitComponent() {
   UnsafeGecode::gecodeFinalizationSet = new UnsafeGecode::GecodeFinalizationSet();
   UnsafeGecode::gecodeHandler = new UnsafeGecode::GecodeHandler();
 
-  Record *record = Record::New(37);
+  Record *record = Record::New(49);
 
   INIT_STRUCTURE(record, "UnsafeGecode", "makeSpace",
 		 gc_makespace, 0);
@@ -663,6 +894,31 @@ word InitComponent() {
 		 gc_discard, 1);
   INIT_STRUCTURE(record, "UnsafeGecode", "alive",
 		 gc_alive, 1);
+
+  INIT_STRUCTURE(record, "UnsafeGecode", "countII",
+		 gc_countii, 6);
+  INIT_STRUCTURE(record, "UnsafeGecode", "countVI",
+		 gc_countvi, 6);
+  INIT_STRUCTURE(record, "UnsafeGecode", "countIV",
+		 gc_countiv, 6);
+  INIT_STRUCTURE(record, "UnsafeGecode", "countVV",
+		 gc_countvv, 6);
+  INIT_STRUCTURE(record, "UnsafeGecode", "element",
+		 gc_element, 4);
+  INIT_STRUCTURE(record, "UnsafeGecode", "elementI",
+		 gc_elementi, 4);
+  INIT_STRUCTURE(record, "UnsafeGecode", "lex",
+		 gc_lex, 4);
+  INIT_STRUCTURE(record, "UnsafeGecode", "min",
+		 gc_min, 3);
+  INIT_STRUCTURE(record, "UnsafeGecode", "max",
+		 gc_max, 3);
+  INIT_STRUCTURE(record, "UnsafeGecode", "abs",
+		 gc_abs, 4);
+  INIT_STRUCTURE(record, "UnsafeGecode", "mult",
+		 gc_mult, 4);
+  INIT_STRUCTURE(record, "UnsafeGecode", "assign",
+		 gc_assign, 3);
 
   RETURN_STRUCTURE("UnsafeGecode$", record);
 }

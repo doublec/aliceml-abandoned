@@ -193,6 +193,62 @@ void GecodeSpace::tlinearR(int coefficients[], int vars[], int noOfVars,
 	   static_cast<BoolVar>(is[boolVar].core()), cl);
 }
 
+// Counting constraints
+void GecodeSpace::tcountii(int vars[], int noOfVars, reltype rel,
+			   int i, reltype rel2, int j) {
+  makeintvararray(a, vars, noOfVars);
+  enter();
+  if (!failed())
+    count(a, rel, i, rel2, j);
+}
+void GecodeSpace::tcountiv(int vars[], int noOfVars, reltype rel,
+			   int i, reltype rel2, int j) {
+  makeintvararray(a, vars, noOfVars);
+  enter();
+  if (!failed())
+    count(a, rel, i, rel2, is[j]);
+}
+void GecodeSpace::tcountvi(int vars[], int noOfVars, reltype rel,
+			   int i, reltype rel2, int j) {
+  makeintvararray(a, vars, noOfVars);
+  enter();
+  if (!failed())
+    count(a, rel, is[i], rel2, j);
+}
+void GecodeSpace::tcountvv(int vars[], int noOfVars, reltype rel,
+			   int i, reltype rel2, int j) {
+  makeintvararray(a, vars, noOfVars);
+  enter();
+  if (!failed())
+    count(a, rel, is[i], rel2, is[j]);
+}
+
+
+// Access constraints
+
+void GecodeSpace::telement(int vars[], int noOfVars, int i, int j) {
+  makeintvararray(a, vars, noOfVars);
+  enter();
+  if(!failed())
+    element(a, is[i], is[j]);
+}
+void GecodeSpace::telementi(int args[], int noOfArgs, int i, int j) {
+  enter();
+  if(!failed())
+    element(args, noOfArgs, is[i], is[j]);
+}
+void GecodeSpace::tlex(int vars1[], int noOfVars1, reltype rel,
+		       int vars2[], int noOfVars2) {
+  makeintvararray(a, vars1, noOfVars1);
+  makeintvararray(b, vars2, noOfVars2);
+  enter();
+  if(!failed())
+    lex(a, rel, b);
+}
+
+
+// Boolean constraints
+
 void GecodeSpace::tbool_not(int a, int b) {
   enter();
   if (!failed())
@@ -247,6 +303,40 @@ void GecodeSpace::tbool_or(int vars[], int noOfVars, int b) {
     bool_or(a, intvar2boolvar(is[b]));
 }
 
+
+// Arithmetic constraints
+
+void GecodeSpace::tmin(int vars[], int noOfVars, int i) {
+  makeintvararray(a, vars, noOfVars);
+  enter();
+  if(!failed())
+    min(a, is[i]);
+}
+void GecodeSpace::tmax(int vars[], int noOfVars, int i) {
+  makeintvararray(a, vars, noOfVars);
+  enter();
+  if(!failed())
+    max(a, is[i]);
+}
+void GecodeSpace::tabs(int i, int j, conlevel cl) {
+  enter();
+  if(!failed())
+    abs(is[i], is[j], cl);
+}
+void GecodeSpace::tmult(int i, int j, int k) {
+  enter();
+  if(!failed())
+    mult(is[i], is[j], is[k]);
+}
+
+// Value assignment
+
+void GecodeSpace::tassign(int vars[], int noOfVars, AvalSel as) {
+  makeintvararray(a, vars, noOfVars);
+  enter();
+  if(!failed())
+    assign(a, as);
+}
 
 void GecodeSpace::tbranch(int vars[], int noOfVars,
 			 BvarSel varSel, BvalSel valSel) {

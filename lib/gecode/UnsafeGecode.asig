@@ -25,6 +25,20 @@ signature GC_SIG =
 	   val distinct : 'space * 'intvar vector * 'conlevel -> unit
 	   val distinctI : 'space * (int * 'intvar) vector * 'conlevel -> unit
 
+	   val countII : 'space * 'intvar vector * 'relation *
+			 int * 'relation * int -> unit
+	   val countVI : 'space * 'intvar vector * 'relation *
+			 'intvar * 'relation * int -> unit
+	   val countIV : 'space * 'intvar vector * 'relation *
+			 int * 'relation * 'intvar -> unit
+	   val countVV : 'space * 'intvar vector * 'relation *
+			 'intvar * 'relation * 'intvar -> unit
+
+	   val element : 'space * 'intvar vector * 'intvar * 'intvar -> unit
+	   val elementI : 'space * int vector * 'intvar * 'intvar -> unit
+	   val lex : 'space * 'intvar vector * 'relation *
+		     'intvar vector -> unit
+
 	   val rel : 'space * 'intvar * 'relation * 'intvar -> unit
 	   val relI : 'space * 'intvar * 'relation * 'int -> unit
 	   val relR : 'space * 'intvar * 'relation * 'intvar * 'boolvar -> unit
@@ -39,6 +53,11 @@ signature GC_SIG =
 	   val linearR : 'space * (int * 'intvar) vector * 'relation * 
 			 int * 'boolvar * 'conlevel -> unit
 
+	   val min : 'space * 'intvar vector * 'intvar -> unit
+	   val max : 'space * 'intvar vector * 'intvar -> unit
+	   val abs : 'space * 'intvar * 'intvar * 'conlevel -> unit
+	   val mult: 'space * 'intvar * 'intvar * 'intvar -> unit
+
 	   val bool_not : 'space * 'boolvar * 'boolvar -> unit
 	   val bool_and : 'space * 'boolvar * 'boolvar * 'boolvar -> unit
 	   val bool_or  : 'space * 'boolvar * 'boolvar * 'boolvar -> unit
@@ -50,6 +69,8 @@ signature GC_SIG =
 
 	   val branch : 'space * 'intvar vector * 
 			'b_var_sel * 'b_val_sel -> unit
+
+	   val assign : 'space * 'intvar vector * 'avalsel -> unit
 
 	   val getSearchEngine : 'space -> 'searchengine
 	   val next : 'searchengine -> 'space option

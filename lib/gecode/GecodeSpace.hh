@@ -17,14 +17,14 @@
 #include "gecode-int.hh"
 #include "gecode-search.hh"
 
-#define makeintvararray(a,vars,noofvars)               \
+#define makeintvararray(a,vars,noOfVars)               \
   IntVarArray a(noOfVars);                             \
 { for (int i=noOfVars; i--;) a[i] = is[vars[i]]; }
 
 #define intvar2boolvar(intvar)                \
   static_cast<BoolVar>(intvar.core())
 
-#define makeboolvararray(a,vars,noofvars)               \
+#define makeboolvararray(a,vars,noOfVars)               \
   BoolVarArray a(noOfVars);                             \
 { for (int i=noOfVars; i--;) a[i] = intvar2boolvar(is[vars[i]]); }
 
@@ -94,6 +94,24 @@ public:
   void tlinearR(int coefficients[], int vars[], int noOfVars, reltype rel,
 		int constant, int boolVar, conlevel cl);
 
+
+  // Counting constraints
+  void tcountii(int vars[], int noOfVars, reltype rel,
+	       int i, reltype rel2, int j);
+  void tcountiv(int vars[], int noOfVars, reltype rel,
+	       int i, reltype rel2, int j);
+  void tcountvi(int vars[], int noOfVars, reltype rel,
+	       int i, reltype rel2, int j);
+  void tcountvv(int vars[], int noOfVars, reltype rel,
+	       int i, reltype rel2, int j);
+
+  // Access constraints
+
+  void telement(int vars[], int noOfVars, int i, int j);
+  void telementi(int vars[], int noOfVars, int i, int j);
+  void tlex(int vars1[], int noOfVars1, reltype rel,
+	    int vars2[], int noOfVars2);
+
   // Boolean constraints
   void tbool_not(int, int);
   void tbool_and(int, int, int);
@@ -105,6 +123,16 @@ public:
   void tbool_and(int[], int, int);
   void tbool_or(int[], int, int);
 
+  // Arithmetic constraints
+
+  void tmin(int vars[], int noOfVars, int i);
+  void tmax(int vars[], int noOfVars, int i);
+  void tabs(int i, int j, conlevel cl);
+  void tmult(int i, int j, int k);
+
+  // Value assignment
+
+  void tassign(int vars[], int noOfVars, AvalSel as);
 
   // Branching
   void tbranch(int vars[], int noOfVars, BvarSel, BvalSel);
