@@ -16,7 +16,8 @@ import signature PRIM_IO from "PRIM_IO-sig"
 structure TextPrimIO :> PRIM_IO
     where type array = CharArray.array
       and type vector = CharVector.vector
-      and type elem = char =
+      and type elem = char
+      and type pos = Position.int (*--** *) =
     PrimIO(structure A = CharArray
 	   structure V = CharVector
 	   val someElem = #"\000"
