@@ -1,6 +1,6 @@
 import structure Protocol       from "../common/Protocol"
 import structure Participant    from "Participant"
-
+import structure Remote         from "x-alice:/lib/distribution/Remote"
 
 structure Server =
 struct
@@ -39,12 +39,57 @@ struct
     
     val pc_id           = 0
     
-
+    (* print a message on stderr *)
+    fun log msg =
+        TextIO.output (TextIO.stdErr, "Server: " ^ msg ^ "\n")
+    
     fun startServer client =
         let
+            structure Part  = Participant
+
             val lock        = Lock.lock ()
             
-           fun disconnect id = Lock.sync ((fn () => 
+            val timeout     = Time.fromMilliseconds 100
+            
+            (* RPC call.  
+               - Synchronized so that there can always be
+                 only one call to a given client.
+               - If an exception is raised the RPC has failed
+                 and the client is removed from the connection 
+                 queue!
+               - Does nothing if the client is already disconnected.
+             *)
+            fun invoke ((client, state_ref), f, a) =
+                let
+                    (* we use this promise as a lock *)
+                    val p       = Promise.promise () 
+                    
+                    val state   = Ref.exchange (state_ref, Promise.future p)
+                in
+                    (case state of
+                    |   Part.DISCONNECTED   => ()
+                    |   _                   => 
+                        f client a);
+                    (* call was successful. state hasn't changed.
+                       must fulfill the promise anyway to release
+                       the lock. *)
+                    Promise.fulfill (p, state)
+                end handle e => (
+                    (* call failed! *)
+                    log ("RPC failed: " ^ exnName e);
+                    (* change state to disconnected *)
+                    Promise.fulfill (p, Part.DISCONNECTED)
+                )
+                
+            (* Invoke f a on several clients simultaneously.
+               Returns immediately -- without waiting for the
+               calls to finish.
+             *)
+            fun invokeSeveral (clients, f, a) = 
+                List.app (fn c => spawn (invoke (c, f, a))) clients 
+                
+            
+            fun disconnect id = Lock.sync ((fn () => 
                 ) handle PMap.Unknown id => 
                     raise Protocol ("disconnect: unknown client " ^ 
                             Int.toString id))
@@ -104,19 +149,27 @@ struct
                     }
                 end)
             
-        (* create PC representation & return special
-           PC interface
-         *)
+        (* create PC representation *)
             val pc  =   (client, ref CONNECTED)
+            val pc_server_interface = 
+                {   disconnect  = disconnect pc_id,
+                    play        = play pc_id,
+                    turn        = turn pc_id,
+                    changeView  = changeView pc_id,
+                    giveUp      = giveUp pc_id,
+                    startGame   = SOME startGame
+                }
+            (* add server to the participant map *)
+            val _ = PMap.insertDisjoint (participants, pc_id, pc)
+
+            (* offer the connect procedure to allow other clients
+               (UCs) to connect
+             *)
+            val package = pack (val connect = connect) :> Protocol.SERVER_CONNECTOR
+            val ticket  = Remote.offer package
         in
-            PMap.insertDisjoint (participants, pc_id, pc);
-            {   disconnect  = disconnect pc_id,
-                play        = play pc_id,
-                turn        = turn pc_id,
-                changeView  = changeView pc_id,
-                giveUp      = giveUp pc_id,
-                startGame   = SOME startGame
-            }
+            (* return ticket and server interface *)
+            (ticket, pc_server_interface)
         end
         
 end
