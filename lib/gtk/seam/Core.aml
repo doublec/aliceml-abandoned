@@ -205,12 +205,11 @@ struct
     end
 
     (* init core module *)
-    fun init () = if NativeCore.isLoaded() then () else
+    val _ =
 	let
-	    val eventStream : (int * object * arg list) list = 
-	                                     NativeCore.getEventStream()
+	    val eventStream : (int * object * arg list) list =
+		NativeCore.getEventStream()
 	in
-	    NativeCore.init ();
 	    spawn (listener eventStream);
 	    spawn (mainLoop initPoll)
 	end

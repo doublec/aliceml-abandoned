@@ -112,5 +112,4 @@ sig
 (**)val forceGC : unit -> unit
 
 (**)val addObject : object -> object
-(**)val init : unit -> unit
 end

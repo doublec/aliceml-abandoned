@@ -18,8 +18,9 @@ import signature GTK from "GTK-sig"
 
 structure Gtk :> GTK =
 struct
+    (* Gdk/Gtk Lowlevel must be initialized first *)
+    val _ = Future.await Core.signalConnect
     open Core
-    val _ = init()
     open GtkEnums 
     open GtkUnsafe
 end

@@ -26,13 +26,12 @@ static word eventStream;
 static word weakDict;
 static word signalMap;
 static word signalMap2;
-static bool had_events = false;
-static gboolean loaded = FALSE;
+static bool had_events;
 
 ///////////////////////////////////////////////////////////////////////
 
 // push a word to the front of a list and return the new list
-word push_front(word list, word value) {
+static word push_front(word list, word value) {
   TagVal *cons = TagVal::New(0,2);
   cons->Init(0,value);
   cons->Init(1,list);
@@ -40,7 +39,7 @@ word push_front(word list, word value) {
 }
 
 // convert a pointer to an object, and add it to the weak map if necessary
-inline word PointerToObjectRegister(void *p, int type) {
+static inline word PointerToObjectRegister(void *p, int type) {
   if (!p)
     return OBJECT_TO_WORD(p);
   WeakMap *wd = WeakMap::FromWordDirect(weakDict);
@@ -209,7 +208,7 @@ static inline word SimpleEvent(int label) {
   return t->ToWord();
 }
 
-word GdkEventToDatatype(GdkEvent *event) {
+static word GdkEventToDatatype(GdkEvent *event) {
   enum { EVENT_2BUTTON_PRESS, EVENT_3BUTTON_PRESS, 
 	   EVENT_BUTTON_PRESS, EVENT_BUTTON_RELEASE, 
 	 EVENT_CLIENT_EVENT,
@@ -282,7 +281,7 @@ word GdkEventToDatatype(GdkEvent *event) {
 }
 
 // put a word on a stream
-inline void put_on_stream(word *stream, word value) {
+static inline void put_on_stream(word *stream, word value) {
   Future *f = static_cast<Future*>(Store::WordToTransient(*stream));
   *stream = (Future::New())->ToWord();  
   f->ScheduleWaitingThreads();
@@ -290,19 +289,19 @@ inline void put_on_stream(word *stream, word value) {
 }
 
 // construct an arg value
-inline word create_param(int tag, word value) {
+static inline word create_param(int tag, word value) {
   TagVal *param = TagVal::New(tag,1);
   param->Init(0, value);
   return param->ToWord();
 }
 
 // convert a pointer to an object with the correct type information
-word create_object(GType t, gpointer p) {
-  static const GType G_LIST_TYPE = g_type_from_name("GList");
-  static const GType G_SLIST_TYPE = g_type_from_name("GSList");
-  static const GType GDK_EVENT_TYPE = gdk_event_get_type();
-  static const GType GTK_OBJECT_TYPE = g_type_from_name("GtkObject");
+static GType G_LIST_TYPE;
+static GType G_SLIST_TYPE;
+static GType GDK_EVENT_TYPE;
+static GType GTK_OBJECT_TYPE;
 
+static word create_object(GType t, gpointer p) {
   int tag = gtkOBJECT;
   word value;
   if (g_type_is_a(t, G_LIST_TYPE)) {
@@ -329,9 +328,8 @@ word create_object(GType t, gpointer p) {
 }
 
 // main function that puts arguments on event stream
-void sendArgsToStream(gint connid, guint n_param_values, 
-		      const GValue *param_values) {
-
+static void
+sendArgsToStream(gint connid, guint n_param_values, const GValue *param_values) {
   word paramlist = INT_TO_WORD(Types::nil);
   gpointer widget = NULL;
 
@@ -412,9 +410,9 @@ void sendArgsToStream(gint connid, guint n_param_values,
 
 // the generic_marshaller is attached to every GObject (instead of the
 // the alice callback function, which cannot be invoked in C)
-void generic_marshaller(GClosure *closure, GValue *return_value, 
-			guint n_param_values, const GValue *param_values, 
-			gpointer, gpointer marshal_data) {
+static void generic_marshaller(GClosure *closure, GValue *return_value, 
+			       guint n_param_values, const GValue *param_values, 
+			       gpointer, gpointer marshal_data) {
 
   gint connid = GPOINTER_TO_INT(marshal_data);
 
@@ -453,10 +451,6 @@ DEFINE2(NativeCore_signalDisconnect) {
 } END
 
 DEFINE0(NativeCore_getEventStream) {
-  if (!eventStream) {
-    eventStream = (Future::New())->ToWord();
-    RootSet::Add(eventStream);
-  }
   RETURN(eventStream);
 } END
 
@@ -552,30 +546,24 @@ DEFINE1(NativeCore_hasSignals) {
 //////////////////////////////////////////////////////////////////////
 // INIT AND MAIN LOOP FUNCTIONS
 
-DEFINE0(NativeCore_isLoaded) {
-  RETURN(BOOL_TO_WORD(loaded));
-} END
-
-
-void __die(char *s) {
+static void __die(char *s) {
   g_warning(s);
   exit(0);
 }
 
-DEFINE0(NativeCore_init) {
-  loaded = TRUE;
-  if (!signalMap) {
-    signalMap = Map::New(256)->ToWord();
-    RootSet::Add(signalMap);
-  }
-  if (!signalMap2) {
-    signalMap2 = Map::New(256)->ToWord();
-    RootSet::Add(signalMap2);
-  }
-  if (!weakDict) {
-    weakDict = WeakMap::New(256, new MyFinalization())->ToWord();
-    RootSet::Add(weakDict);
-  }
+
+static void Init() {
+  static const u_int INITIAL_MAP_SIZE = 256; // TODO: find appropriate size
+  // Init global data
+  eventStream = (Future::New())->ToWord();
+  RootSet::Add(eventStream);
+  weakDict = WeakMap::New(INITIAL_MAP_SIZE, new MyFinalization())->ToWord();
+  RootSet::Add(weakDict);
+  signalMap = Map::New(INITIAL_MAP_SIZE)->ToWord();
+  RootSet::Add(signalMap);
+  signalMap2 = Map::New(INITIAL_MAP_SIZE)->ToWord();
+  RootSet::Add(signalMap2);
+  had_events = false;
 
   /*
    * On Windows, Gdk blocks on stdin during init if input redirection is used,
@@ -600,8 +588,12 @@ DEFINE0(NativeCore_init) {
   if (!SetStdHandle(STD_INPUT_HANDLE, stdInHandle))
     __die("error during init: cannot reverse stdin redirecting");
 #endif
-  RETURN_UNIT;
-} END
+  // Init types
+  G_LIST_TYPE = g_type_from_name("GList");
+  G_SLIST_TYPE = g_type_from_name("GSList");
+  GDK_EVENT_TYPE = gdk_event_get_type();
+  GTK_OBJECT_TYPE = g_type_from_name("GtkObject");
+}
 
 DEFINE0(NativeCore_handlePendingEvents) {
   while (gtk_events_pending())
@@ -629,7 +621,8 @@ DEFINE0(NativeCore_forceGC) {
 ////////////////////////////////////////////////////////////////////////
 
 word InitComponent() {
-  Record *record = Record::New(20);
+  Record *record = Record::New(18);
+  Init();
   INIT_STRUCTURE(record, "NativeCore", "null", 
 		 NativeCore_null, 0);
   INIT_STRUCTURE(record, "NativeCore", "gtkTrue", 
@@ -665,10 +658,6 @@ word InitComponent() {
   INIT_STRUCTURE(record, "NativeCore", "hasSignals", 
 		 NativeCore_hasSignals, 1);
 
-  INIT_STRUCTURE(record, "NativeCore", "isLoaded",
-		 NativeCore_isLoaded, 0);
-  INIT_STRUCTURE(record, "NativeCore", "init", 
-		 NativeCore_init, 0);
   INIT_STRUCTURE(record, "NativeCore", "handlePendingEvents", 
 		 NativeCore_handlePendingEvents, 0);
 

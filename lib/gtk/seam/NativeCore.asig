@@ -1,3 +1,16 @@
+(*
+ * Authors:
+ *   Robert Grabowski <grabow@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Robert Grabowski, 2003
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
 signature NATIVE_CORE_COMPONENT =
 sig
     structure NativeCore :
@@ -22,8 +35,6 @@ sig
 	val unrefObject : 'object -> unit
 	val hasSignals : 'object -> bool
 
-	val isLoaded : unit -> bool
-	val init : unit -> unit
 	val handlePendingEvents : unit -> bool
 
 	val printObject : 'object -> unit

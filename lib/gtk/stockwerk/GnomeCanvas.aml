@@ -18,8 +18,9 @@ import signature GNOME_CANVAS from "GNOME_CANVAS-sig"
 
 structure GnomeCanvas :> GNOME_CANVAS =
 struct
+    (* Gdk/Gtk Lowlevel must be initialized first *)
+    val _ = Future.await Core.signalConnect
     open Core
-    val _ = init()
     open GnomeCanvasEnums 
     open GnomeCanvasUnsafe
 

@@ -18,8 +18,9 @@ import signature GDK from "GDK-sig"
 
 structure Gdk :> GDK =
 struct
+    (* Gdk/Gtk Lowlevel must be initialized first *)
+    val _ = Future.await Core.signalConnect
     open Core
-    val _ = init()
     open GdkEnums 
     open GdkUnsafe
 end
