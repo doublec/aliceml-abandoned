@@ -487,13 +487,9 @@ structure InfPrivate =
 
     and instanceSig(r,z, (ref items,_)) =
 	let
-	    val s as (itemsr, ref mapo) = empty()
-	    val map = Option.valOf mapo
+	    val s as (itemsr, _) = empty()
 
-	    fun extendSig(space_l, item) =
-		( itemsr := item :: !itemsr
-		; Map.insertWith (flip op@) (map, space_l, [item])
-		)
+	    fun extendSig(space_l, item) = itemsr := item :: !itemsr
 
 	    fun instanceItem(ref item') = instanceItem' item'
 
@@ -646,13 +642,9 @@ structure InfPrivate =
 
     and singletonSig(z, (ref items,_)) =
 	let
-	    val s as (itemsr, ref mapo) = empty()
-	    val map = Option.valOf mapo
+	    val s as (itemsr, _) = empty()
 
-	    fun extendSig(space_l, item) =
-		( itemsr := item :: !itemsr
-		; Map.insertWith (flip op@) (map, space_l, [item])
-		)
+	    fun extendSig(space_l, item) = itemsr := item :: !itemsr
 
 	    fun singletonItem(ref item') = singletonItem' item'
 
@@ -734,13 +726,9 @@ structure InfPrivate =
 
     and cloneSig (ref items, _)	=
 	let
-	    val s as (itemsr, ref mapo) = empty()
-	    val map = Option.valOf mapo
+	    val s as (itemsr, _) = empty()
 
-	    fun extendSig(space_l, item) =
-		( itemsr := item :: !itemsr
-		; Map.insertWith (flip op@) (map, space_l, [item])
-		)
+	    fun extendSig(space_l, item) = itemsr := item :: !itemsr
 
 	    fun cloneItem(ref item') = cloneItem' item'
 	    and cloneItem'(item' as VAL(x,t,w,d)) =
