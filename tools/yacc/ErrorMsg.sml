@@ -6,6 +6,8 @@ sig
     val linePos : int list ref
     val sourceStream : TextIO.instream ref
     val error : int -> string -> unit
+    val warning : int -> string -> unit
+    val posToString : int -> string
     exception Error
     val impossible : string -> 'a   (* raises Error *)
     val reset : unit -> unit
@@ -28,6 +30,19 @@ struct
 
   exception Error
 
+  fun posToString pos =
+      let fun look(a::rest,n) =
+                if a<pos then String.concat 
+		    [Int.toString n,
+		     ".",
+		     Int.toString (pos-a),
+		     ":"]
+		else look(rest,n-1)
+            | look _ = "0.0"
+      in
+	  look(!linePos,!lineNum)
+      end
+
   fun error pos (msg:string) =
       let fun look(a::rest,n) =
                 if a<pos then app print [":",
@@ -37,9 +52,24 @@ struct
                        else look(rest,n-1)
             | look _ = print "0.0"
        in anyErrors := true;
-          print (!fileName);
+          print ("Error in "^(!fileName));
           look(!linePos,!lineNum);
-          print ":";
+          print ": ";
+          print msg;
+          print "\n"
+      end
+
+  fun warning pos (msg:string) =
+      let fun look(a::rest,n) =
+                if a<pos then app print [":",
+                                       Int.toString n,
+                                       ".",
+                                       Int.toString (pos-a)]
+                       else look(rest,n-1)
+            | look _ = print "0.0"
+       in print ("Warning in "^(!fileName));
+          look(!linePos,!lineNum);
+          print ": ";
           print msg;
           print "\n"
       end
