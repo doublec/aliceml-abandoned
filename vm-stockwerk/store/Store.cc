@@ -161,7 +161,7 @@ inline Block *Store::PushToFinSet(Block *p, Handler *h, word value, u_int dst_ge
 }
 
 void Store::AllocNewMemChunk() {
-  Block *p = ((Block **) (storeChunkMax + storeChunkTop))[0];
+  Block *p = (Block *) (storeChunkMax + storeChunkTop);
   AllocNewMemChunk(HeaderOp::DecodeSize(p), HeaderOp::DecodeGeneration(p));
 }
 
