@@ -10,7 +10,6 @@
 //   $Revision$
 //
 
-#include "generic/Debug.hh"
 #include "java/Authoring.hh"
 
 DEFINE0(registerNatives) {
@@ -18,9 +17,18 @@ DEFINE0(registerNatives) {
 } END
 
 DEFINE1(getClass) {
-  DECLARE_OBJECT(_this, x0);
-  Assert(_this != INVALID_POINTER);
-  RETURN(_this->GetClass()->GetClassObject()->ToWord());
+  Transient *transient = Store::WordToTransient(x0);
+  if (transient != INVALID_POINTER) REQUEST(x0);
+  Block *b = Store::WordToBlock(x0);
+  switch (b->GetLabel()) {
+  case JavaLabel::Object:
+    RETURN(static_cast<Object *>(b)->GetClass()->GetClassObject()->ToWord());
+  case JavaLabel::ObjectArray:
+  case JavaLabel::BaseArray:
+    Error("arrays not supported yet"); //--**
+  default:
+    Error("invalid object");
+  }
 } END
 
 DEFINE1(hashCode) {
