@@ -18,8 +18,7 @@ export
    '$TextIO': TextIO
    Print
 define
-   class TextFile from Open.file Open.text
-   end
+   class TextFile from Open.file Open.text end
 
    fun {TextIOInputAll F}
       case {F getS($)} of false then ""
@@ -41,6 +40,12 @@ define
 	 end
       'inputAll':
 	 fun {$ F} {ByteString.make {TextIOInputAll F}} end
+      'inputLine':
+	 fun {$ F}
+	    case {F getS($)} of false then {ByteString.make ""}
+	    elseof S then {ByteString.make S#'\n'}
+	    end
+	 end
       'closeIn':
 	 fun {$ F} {F close()} '#' end
       'stdOut':
@@ -55,6 +60,8 @@ define
 	 fun {$ F#S} {F write(vs: S)} '#' end
       'output1':
 	 fun {$ F#C} {F write(vs: [C])} '#' end
+      'flushOut':
+	 fun {$ F} {F flush()} end   %--** not supported for files?
       'closeOut':
 	 fun {$ F} {F close()} '#' end
       'print': Print)
