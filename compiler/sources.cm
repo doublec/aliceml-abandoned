@@ -1,10 +1,3 @@
-Group
+Group is
 
-	structure SMLToMozartMain
-	structure SMLToComPlusMain
-	structure SMLToStockwerkMain
-	structure Main
-
-is
-
-	top/sources.cm
+    top/sources.cm
