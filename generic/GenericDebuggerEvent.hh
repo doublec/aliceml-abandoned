@@ -23,7 +23,9 @@
 
 class SeamDll GenericEventAccessor : public EventAccessor {
 private:
-  GenericEventAccessor() {}
+  GenericEventAccessor() {
+    return;
+  }
   enum { THREAD_POS, TYPE_POS, EXN_POS, SIZE };
 public:
 
