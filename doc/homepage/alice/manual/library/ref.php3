@@ -13,7 +13,8 @@
   </P>
 
   <P>
-    The type <TT>alt</TT> and its constructors are available in the
+    The type <TT>ref</TT> and its constructors, as well as the
+    functions <TT>!</TT>, <TT>:=</TT> and <TT>:=:</TT> are available in the
     <A href="toplevel.php3">top-level environment</A>.
   </P>
 
