@@ -310,7 +310,7 @@ struct
 		    else 
 			case collObject of
 			 P.EMPTY    => ()
-		       | P.GOODIE n => Snake.eat (snake,n)
+		       | P.GOODY n  => Snake.eat (snake,n)
 		       | P.WALL     => killSnake snake
 		       | P.GATE col => 
 			     if col = color andalso Snake.length snake = 1
@@ -379,7 +379,7 @@ struct
 	in
 	    List.app (fn s => removeSnake s) snakes
 	end
-    (** removes all snakes *)
+
 
     fun diff (old,new) =
         let
@@ -400,6 +400,7 @@ struct
 			    val f = Array2.sub (old, r, c)
 			in
 			    case f of
+                                (* remove snakes from the old field *)
 				(P.SNAKE_HEAD _ | P.SNAKE_BODY _) =>
 				    Array2.update (old, r, c, P.EMPTY)
 			    |   _ => ();
@@ -433,7 +434,7 @@ in
                         case Array2.sub (a, r, c) of
                             Protocol.EMPTY      => #"."
                         |   Protocol.WALL       => #"#"
-                        |   Protocol.GOODIE _   => #"C"
+                        |   Protocol.GOODY  _   => #"C"
                         |   _                   => #"?")
                 );
                 TextIO.output1 (TextIO.stdOut, #"\n"))

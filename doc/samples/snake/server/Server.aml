@@ -17,6 +17,7 @@ import structure Participant    from "Participant"
 import structure Remote         from "x-alice:/lib/distribution/Remote"
 import structure MkHashImpMap   from "x-alice:/lib/data/MkHashImpMap"
 import structure Arena          from "Arena"
+import structure Random         from "x-alice:/lib/utility/Random"
 import structure Snake          from "Snake"
 import structure Config         from "Config"
 import structure Remote         from "x-alice:/lib/distribution/Remote"
@@ -224,6 +225,8 @@ struct
 
                     |   Part.CONNECTED  =>
                         case nextStartPos () of
+                            (* there is place for another player 
+                                on this map ;-) *)
                             SOME (pos, dir) =>
                             let
                                 val playerState = {
@@ -310,7 +313,7 @@ struct
            
             fun startNextLevel (levels, arena, startPos) =
                 let
-                    (* get all players who can play another level *)
+                    (* get all players who are allowed to play another level *)
                     val p   = allPossiblePlayers ()
 
                     (* dimensions of the new level *)
@@ -359,7 +362,26 @@ struct
                         startNextLevel (ls, arena, startPos)
                 end
                 
+            fun findEmptySpot (arena, nTriesLeft) =
+                if nTriesLeft <= 0 then NONE
+                else
+                    let
+                        val (rows, cols) = Array2.dimensions arena
+                        val row = Random.int (rows - 2) + 1
+                        val col = Random.int (cols - 2) + 1
+                    in
+                        if Array2.sub (arena, row, col) = P.EMPTY 
+                            then SOME (row, col) 
+                        else
+                            findEmptySpot (arena, nTriesLeft - 1)
+                    end
+
+               
+            fun mayPlaceGoody (arena, g) = 
+                Option.app 
+                    (fn (r, c) => Array2.update (arena, r, c, P.GOODY 5)) g
                 
+                            
             val tick    = Lock.sync lock (fn (levels, oldArena, newArena) =>
                 let
                     val _       = log ("Server", "tick")
@@ -373,7 +395,7 @@ struct
                             Snake.move (snake, !(#nextDir info));
 			    (p, Snake.head snake) :: moved
                         end
-                        
+                       
                     (* move all still playing snakes *)
                     val newHeadPos = List.foldl movePlayer [] players 
                     
@@ -381,11 +403,18 @@ struct
                     val (deadSnakes, halfFinishedSnakes, finishedSnakes) =
                         Arena.placeSnakes (newArena, 
                             List.map Part.snake players) 
+                   
+                    (* shall we place another goody? *)
+                    val goodiePos   =   if Random.real 1.0 <= #goodieProb config 
+                                            then findEmptySpot (newArena, 3)
+                                        else NONE
+
+                    val _   = mayPlaceGoody (newArena, goodiePos)
 
                     val _   = log ("Server", ("calculating differences", oldArena, newArena))
                     val changes = Arena.diff (oldArena, newArena)
                     val _   = log ("Server", ("differences", changes))
-                
+                    val _   = mayPlaceGoody (oldArena, goodiePos)
                 in
                     (* broadcast differences *)
                     log ("Server", "broadcasting differences");

@@ -26,7 +26,7 @@ struct
 	 goodie         = 5,
 	 lives          = NONE,
 	 maxPlayers     = 1,
-	 goodieFrequency = 1,
+	 goodieProb     = 0.2,   
 	 levels         = NONE
 	 }
 
@@ -38,7 +38,7 @@ struct
 	 goodie         = 5,
 	 lives          = SOME 5,
 	 maxPlayers     = 16,
-	 goodieFrequency = 3,
+	 goodieProb     = 0.3,
 	 levels         = SOME 6
 	 }
 

@@ -59,7 +59,7 @@ struct
         maxPlayers :    int, 
 	(* how many clients can actively participate in the tournament *)
 	 
-        goodieFrequency : int, (* how often goodies appear *)
+        goodieProb :    real, (* probabilty of a goodie *)
 
 	levels :       int option
     }
@@ -75,7 +75,7 @@ struct
         EMPTY
       | WALL
       | GATE of Color.color (* only snakes of this color can pass this gate *)
-      | GOODIE of int       (* number of elements the snake will increase by *)
+      | GOODY of int       (* number of elements the snake will increase by *)
       | SNAKE_HEAD of direction * Color.color
       | SNAKE_BODY of Color.color
 
