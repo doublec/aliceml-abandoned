@@ -18,7 +18,7 @@
 #include <gtk/gtk.h>
 #include <libgnomecanvas/libgnomecanvas.h>
 
-DEFINE3(NativeGnomeCanvas_pointsSetCoords) {
+DEFINE3(NativeCanvas_pointsSetCoords) {
   DECLARE_OBJECT(points,x0);
   DECLARE_INT(num,x1);
   DECLARE_INT(value,x2);
@@ -26,7 +26,7 @@ DEFINE3(NativeGnomeCanvas_pointsSetCoords) {
   RETURN_UNIT;
 } END
 
-DEFINE2(NativeGnomeCanvas_itemNew) {
+DEFINE2(NativeCanvas_itemNew) {
   DECLARE_OBJECT(parent,x0);
   DECLARE_INT(type,x1);
   GnomeCanvasItem *ret = gnome_canvas_item_new(
@@ -37,7 +37,7 @@ DEFINE2(NativeGnomeCanvas_itemNew) {
   RETURN(item);
 } END
 
-DEFINE2(NativeGnomeCanvas_setBackgroundColor) {
+DEFINE2(NativeCanvas_setBackgroundColor) {
   DECLARE_OBJECT(canvas,x0);
   DECLARE_OBJECT(color,x1);
   GtkStyle *style=gtk_style_copy(gtk_widget_get_default_style());

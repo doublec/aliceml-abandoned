@@ -29,7 +29,7 @@ structure Util :> UTIL =
 
 	fun spaceName GDK         = "Gdk"
 	  | spaceName GTK         = "Gtk"
-	  | spaceName GNOMECANVAS = "GnomeCanvas"
+	  | spaceName GNOMECANVAS = "Canvas"
 	  | spaceName PANGO       = "Pango"
 
 	fun spaceFuncPrefix GDK       = "gdk_"

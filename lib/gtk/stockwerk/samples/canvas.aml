@@ -13,21 +13,22 @@
 
 import structure Gdk       from "../Gdk"
 import structure Gtk       from "../Gtk"
-import structure GnomeCanvas from "../GnomeCanvas"
+import structure Canvas    from "../Canvas"
+
 
 local
     fun Delete _ = OS.Process.exit OS.Process.success
     val Window   = Gtk.windowNew Gtk.WINDOW_TOPLEVEL
     val _        = Gtk.signalConnect (Window, "delete-event", Delete)
-    val _        = Gtk.windowSetTitle(Window,"GnomeCanvas")
+    val _        = Gtk.windowSetTitle(Window,"Canvas")
 
     val map      = Gdk.colormapGetSystem ()
     val black    = Gdk.colorNew (0,0,0)
     val white    = Gdk.colorNew (65535,65535,65535)
     val _        = Gdk.colormapAllocColor (map, black, false, true)
     val _        = Gdk.colormapAllocColor (map, white, false, true)
-    val MyCanvas = GnomeCanvas.new()
-    val root     = GnomeCanvas.root MyCanvas
+    val MyCanvas = Canvas.new()
+    val root     = Canvas.root MyCanvas
 
     val rargs = 
 	[("x1", Gtk.REAL 10.0),
@@ -36,7 +37,7 @@ local
          ("y2", Gtk.REAL 380.0),
 	 ("fill_color_gdk", Gtk.OBJECT white),
 	 ("outline_color_gdk", Gtk.OBJECT black)]
-    val ritem = GnomeCanvas.itemCreate (root, GnomeCanvas.rectGetType(), rargs)
+    val ritem = Canvas.itemCreate (root, Canvas.rectGetType(), rargs)
 
     val cargs =
        [("fill_color", Gtk.STRING "yellow"),
@@ -45,7 +46,7 @@ local
 	("y1", Gtk.REAL 120.0),
 	("x2", Gtk.REAL 170.0),
 	("y2", Gtk.REAL 200.0)]
-    val citem = GnomeCanvas.itemCreate(root,GnomeCanvas.ellipseGetType(),cargs)
+    val citem = Canvas.itemCreate(root,Canvas.ellipseGetType(),cargs)
 
 
     fun show s = print (s^"\n")
@@ -92,10 +93,10 @@ local
 	     
     val pargs =
 	 [("points", 
-	     Gtk.OBJECT (GnomeCanvas.makePoints [20, 20, 380, 200, 20, 380])),
+	     Gtk.OBJECT (Canvas.makePoints [20, 20, 380, 200, 20, 380])),
 	  ("fill_color_gdk", Gtk.OBJECT black),
 	  ("width_pixels", Gtk.INT 2)]
-    val pitem = GnomeCanvas.itemCreate (root, GnomeCanvas.lineGetType(), pargs)
+    val pitem = Canvas.itemCreate (root, Canvas.lineGetType(), pargs)
 
     val targs =
 	[("text", Gtk.STRING "Dies ist ein Test"),
@@ -104,7 +105,7 @@ local
 	 ("font", Gtk.STRING "Sans 10"),
 	     (*"-adobe-helvetica-medium-r-normal--12-*-72-72-p-*-iso8859-1"*)
 	 ("fill_color_gdk", Gtk.OBJECT black)]
-    val titem = GnomeCanvas.itemCreate (root, GnomeCanvas.textGetType(), targs)
+    val titem = Canvas.itemCreate (root, Canvas.textGetType(), targs)
 
     val _ = Gtk.signalConnect (pitem, "event", canvasEvent)
     val _ = Gtk.signalConnect (citem, "event", canvasEvent)
@@ -113,7 +114,7 @@ local
 in
     val _ = (Gtk.containerSetBorderWidth (Window, 10);
 	     Gtk.widgetSetSizeRequest(MyCanvas, 400, 400);
-	     GnomeCanvas.setScrollRegion(MyCanvas, 0.0, 0.0, 400.0, 400.0);
+	     Canvas.setScrollRegion(MyCanvas, 0.0, 0.0, 400.0, 400.0);
 	     Gtk.containerAdd (Window, MyCanvas);
 	     Gtk.widgetShowAll Window)
 end

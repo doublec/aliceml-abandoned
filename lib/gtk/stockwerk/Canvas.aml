@@ -12,17 +12,17 @@
  *)
 
 import structure Core from "Core"
-import structure GnomeCanvasEnums from "GnomeCanvasEnums"
-import structure GnomeCanvasUnsafe from "GnomeCanvasUnsafe"
-import signature GNOME_CANVAS from "GNOME_CANVAS-sig"
+import structure CanvasEnums from "CanvasEnums"
+import structure CanvasUnsafe from "CanvasUnsafe"
+import signature CANVAS from "CANVAS-sig"
 
-structure GnomeCanvas :> GNOME_CANVAS =
+structure Canvas :> CANVAS =
 struct
     (* Gdk/Gtk Lowlevel must be initialized first *)
     val _ = Future.await Core.signalConnect
     open Core
-    open GnomeCanvasEnums 
-    open GnomeCanvasUnsafe
+    open CanvasEnums 
+    open CanvasUnsafe
 
     (* Create a GnomeCanvasItem *)
     fun itemCreate (root, ty, arglist) =

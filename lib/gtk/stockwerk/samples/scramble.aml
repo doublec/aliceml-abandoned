@@ -13,7 +13,7 @@
 
 import structure Gtk       from "../Gtk"
 import structure Gdk       from "../Gdk"
-import structure GnomeCanvas from "../GnomeCanvas"
+import structure Canvas from "../Canvas"
 import structure Random    from "x-alice:/lib/utility/Random"
 
 local
@@ -90,12 +90,12 @@ local
 
     fun createCanvas () =
 	let
-	    val canvas = GnomeCanvas.new()
+	    val canvas = Canvas.new()
 	    val xDim   = (pieceSize * 4 + 1)
 	    val yDim   = (pieceSize * 4 + 1)
 	in
 	    (Gtk.widgetSetSizeRequest(canvas, xDim, yDim);
-	     GnomeCanvas.setScrollRegion(canvas, 0.0, 0.0,
+	     Canvas.setScrollRegion(canvas, 0.0, 0.0,
 				       Real.fromInt xDim, Real.fromInt yDim);
 	     canvas)
 	end
@@ -146,13 +146,13 @@ local
 	    val tX = Real.+(X1, 25.0)
 	    val tY = Real.+(Y1, 25.0)
 
-	    val group = GnomeCanvas.itemCreate(GnomeCanvas.root canvas,
-			    GnomeCanvas.groupGetType(),
+	    val group = Canvas.itemCreate(Canvas.root canvas,
+			    Canvas.groupGetType(),
 			    [("x", Gtk.REAL X1),
 			     ("y", Gtk.REAL Y1)])
 			 
-	    val box = GnomeCanvas.itemCreate(group,
-			  GnomeCanvas.rectGetType(),
+	    val box = Canvas.itemCreate(group,
+			  Canvas.rectGetType(),
 			  [("x1", Gtk.REAL 0.0),
 			   ("y1", Gtk.REAL 0.0),
 			   ("x2", Gtk.REAL (ItR pieceSize)),
@@ -161,8 +161,8 @@ local
 			   ("outline_color_gdk", Gtk.OBJECT black),
 			   ("width_pixels", Gtk.INT 0)])
 
-	    val text = GnomeCanvas.itemCreate(group, 
-		           GnomeCanvas.textGetType(),
+	    val text = Canvas.itemCreate(group, 
+		           Canvas.textGetType(),
 			   [("text", Gtk.STRING (Int.toString (i+1))),
 			    ("x", Gtk.REAL 25.0),
 			    ("y", Gtk.REAL 25.0),
@@ -174,15 +174,15 @@ local
 	        (fn () =>
 		     (case event of
 			  Gdk.EVENT_ENTER_NOTIFY _ =>
-			      (GnomeCanvas.itemSetValist(text,
+			      (Canvas.itemSetValist(text,
 							 "fill_color_gdk",
 							 [Gtk.OBJECT white]);
-			       GnomeCanvas.updateNow canvas)
+			       Canvas.updateNow canvas)
 			| Gdk.EVENT_LEAVE_NOTIFY _ =>
-			      (GnomeCanvas.itemSetValist(text,
+			      (Canvas.itemSetValist(text,
 							 "fill_color_gdk",
 							 [Gtk.OBJECT black]);
-			       GnomeCanvas.updateNow canvas)
+			       Canvas.updateNow canvas)
 			| Gdk.EVENT_BUTTON_PRESS _ =>
 			  let
 			      val pos = Array.sub(posArr, i)
@@ -204,8 +204,8 @@ local
 					Array.update(itemArr, pos, NONE);
 					Array.update(itemArr, newpos, 
 						     SOME group);
-					GnomeCanvas.itemMove(group, mx, my);
-					GnomeCanvas.updateNow canvas;
+					Canvas.itemMove(group, mx, my);
+					Canvas.updateNow canvas;
 					checkVictory(posArr, 0); ())
 				   end)
 			  end
@@ -269,8 +269,8 @@ local
 		      Array.update(itemArr, oldpos, NONE);
 		      Array.update(posArr, posIndex, oldpos);
 		      Array.update(posArr, oldposIndex, pos);
-		      GnomeCanvas.itemMove(valOf item, dx, dy);
-		      GnomeCanvas.updateNow canvas;
+		      Canvas.itemMove(valOf item, dx, dy);
+		      Canvas.updateNow canvas;
 		      moveSpot (canvas, board, (i + 1), oldpos))
 		 end)
 

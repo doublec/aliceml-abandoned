@@ -227,7 +227,7 @@ functor MkNativeHelper(structure TypeManager : TYPE_MANAGER
 	    val (_, initFun, addEntries) = Special.includeFile
 	    val header = 
 		["word InitComponent() {\n",
-		 wrIndent, "Record *record = Record::New(", 
+		 wrIndent, "Record *record = Record::New((unsigned)", 
 		 Int.toString ((length initLines)+addEntries), ");\n",
 		 wrIndent, "InitLocalInstance();\n"] @
 		(if initFun = "" 

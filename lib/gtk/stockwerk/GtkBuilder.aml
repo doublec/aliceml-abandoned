@@ -13,7 +13,7 @@
 
 import structure Gtk         from "Gtk"
 import structure Gdk         from "Gdk"
-import structure GnomeCanvas from "GnomeCanvas"
+import structure Canvas      from "Canvas"
 import signature GTK_BUILDER from "GTK_BUILDER-sig"
 
 local
@@ -235,19 +235,19 @@ in
 		let
 		    val args = [("x", Gtk.REAL y), ("y", Gtk.REAL y)]
 		in
-		    GnomeCanvas.itemCreate(parent,
-					   GnomeCanvas.groupGetType(), args)
+		    Canvas.itemCreate(parent,
+					   Canvas.groupGetType(), args)
 		end
 	    and MakeCanvasLine({parent=parent, coords=coords,
 				width_pixels=width, fill_color=fill}) =
 		let
 		    val args = [("points", 
-				   Gtk.OBJECT (GnomeCanvas.makePoints coords)),
+				   Gtk.OBJECT (Canvas.makePoints coords)),
 				("fill_color_gdk", Gtk.OBJECT fill),
 				("width_pixels", Gtk.INT width)]
 		in
-		    GnomeCanvas.itemCreate(parent, 
-					   GnomeCanvas.lineGetType(), args)
+		    Canvas.itemCreate(parent, 
+					   Canvas.lineGetType(), args)
 		end
 	    and MakeCanvasRectangle({parent=parent,
 				     x1=x1, y1=y1, x2=x2, y2=y2,
@@ -258,8 +258,8 @@ in
 				("fill_color_gdk", Gtk.OBJECT fill),
 				("outline_color_gdk", Gtk.OBJECT outline)]
 		in
-		    GnomeCanvas.itemCreate(parent, 
-					   GnomeCanvas.rectGetType(), args)
+		    Canvas.itemCreate(parent, 
+					   Canvas.rectGetType(), args)
 		end
 	    and MakeCanvasEllipse({parent=parent,
 				   x1=x1, y1=y1, x2=x2, y2=y2,
@@ -270,8 +270,8 @@ in
 				("fill_color_gdk", Gtk.OBJECT fill),
 				("outline_color_gdk", Gtk.OBJECT outline)]
 		in
-		    GnomeCanvas.itemCreate(parent, 
-					   GnomeCanvas.ellipseGetType(), args)
+		    Canvas.itemCreate(parent, 
+					   Canvas.ellipseGetType(), args)
 		end
 	    and MakeCanvasText({parent=parent, x=x, y=y, text=text, font=font,
 				fill_color=fill, anchor=anchor}) =
@@ -282,8 +282,8 @@ in
 				("fill_color_gdk", Gtk.OBJECT fill),
 				("anchor", Gtk.INT (Gtk.GtkAnchorTypeToInt anchor))]
 		in
- 		    GnomeCanvas.itemCreate(parent, 
-					   GnomeCanvas.textGetType(), args)
+ 		    Canvas.itemCreate(parent, 
+					   Canvas.textGetType(), args)
 		end
 	    and MakeCanvasItem item =
 		(case item of
@@ -294,10 +294,10 @@ in
 		   | CText params     => MakeCanvasText params)
 	    and MakeCanvasWidget({pic=pic, width=width, height=height}) =
 		let
-		    val canvas = GnomeCanvas.new ()
+		    val canvas = Canvas.new ()
 		in
 		    (Gtk.widgetSetSizeRequest(canvas, width, height);
-		     GnomeCanvas.setScrollRegion(canvas, 0.0, 0.0,
+		     Canvas.setScrollRegion(canvas, 0.0, 0.0,
 					       Real.fromInt width,
 					       Real.fromInt height);
 		     canvas)

@@ -11,7 +11,7 @@
  *
  *)
 
-import structure GnomeCanvas from "../GnomeCanvas"
+import structure Canvas from "../Canvas"
 import structure Gtk       from "../Gtk"
 
 local
@@ -37,8 +37,8 @@ local
 
     val serve = newServer ()
 
-    val MyCanvas = GnomeCanvas.new()
-    val root     = GnomeCanvas.root MyCanvas
+    val MyCanvas = Canvas.new()
+    val root     = Canvas.root MyCanvas
 
     val image = Gtk.imageNewFromFile("logo.png")
     val ibox = Gtk.eventBoxNew()
@@ -55,7 +55,7 @@ local
 	 ("width", Gtk.REAL (Real.fromInt ximagesize)),
 	 ("height", Gtk.REAL (Real.fromInt yimagesize))]
 
-    val item = GnomeCanvas.itemCreate(root,GnomeCanvas.widgetGetType(),args)
+    val item = Canvas.itemCreate(root,Canvas.widgetGetType(),args)
 
     fun move(x,y,xdelta,ydelta) = fn () =>
         let
@@ -69,8 +69,8 @@ local
 			    else ~ydelta
 	in
 	    (sleep 10;
-	     GnomeCanvas.itemMove(item, Real.fromInt xdnew,Real.fromInt ydnew);
-	     GnomeCanvas.updateNow MyCanvas;
+	     Canvas.itemMove(item, Real.fromInt xdnew,Real.fromInt ydnew);
+	     Canvas.updateNow MyCanvas;
 	     serve (move(x+xdnew, y+ydnew, xdnew, ydnew)))
 	end
    
@@ -85,7 +85,7 @@ in
     val _ = (Gtk.windowSetTitle (window, "Alice Logo Demo");
 	     Gtk.containerSetBorderWidth (window, 10);
 	     Gtk.widgetSetSizeRequest(MyCanvas, xcanvassize, ycanvassize);
-	     GnomeCanvas.setScrollRegion(MyCanvas, 0.0, 0.0, 
+	     Canvas.setScrollRegion(MyCanvas, 0.0, 0.0, 
 		    Real.fromInt xcanvassize, Real.fromInt ycanvassize);
 	     Gtk.signalConnect(window, "delete-event", delete);
 	     Gtk.signalConnect(ibox, "button_press_event", toBlue);

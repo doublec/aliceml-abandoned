@@ -15,16 +15,16 @@ import structure Core from "Core"
 import structure PangoEnums from "PangoEnums"
 import structure GdkEnums from "GdkEnums"
 import structure GtkEnums from "GtkEnums"
-import structure GnomeCanvasEnums from "GnomeCanvasEnums"
+import structure CanvasEnums from "CanvasEnums"
 
-signature GNOME_CANVAS =
+signature CANVAS =
 sig
 
     type object = Core.object
 
 <<< "CORE-sig.aml" >>>
-<<< "GNOME_CANVAS_ENUMS-sig.aml" >>>
-<<< "GNOME_CANVAS_UNSAFE-sig.aml" >>>
+<<< "CANVAS_ENUMS-sig.aml" >>>
+<<< "CANVAS_UNSAFE-sig.aml" >>>
 
     val itemCreate : object * int * (string * arg) list -> object
     val makePoints : int list -> object

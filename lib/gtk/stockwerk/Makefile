@@ -2,8 +2,8 @@
 # GTK+ 2.0 Interface for Alice - Makefile
 
 # The generator creates full code for the following name spaces
-COMPS = Gdk Gtk GnomeCanvas
-COMPSCAP = GDK GTK GNOME_CANVAS
+COMPS = Gdk Gtk Canvas
+COMPSCAP = GDK GTK CANVAS
 
 # The generator creates only enum components for the following name spaces
 ENUMCOMPS = Pango

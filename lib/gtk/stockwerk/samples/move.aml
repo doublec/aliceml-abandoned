@@ -13,7 +13,7 @@
 
 import structure Gdk        from "../Gdk"
 import structure Gtk        from "../Gtk"
-import structure GnomeCanvas  from "../GnomeCanvas"
+import structure Canvas  from "../Canvas"
 import structure GtkBuilder from "../GtkBuilder"
 
 local
@@ -21,7 +21,7 @@ local
 
     (* Create Canvas and obtain the Root Group *)
     val canvas = MakeWidget (Canvas {pic=0, width=600, height=360})
-    val root   = GnomeCanvas.root canvas
+    val root   = Canvas.root canvas
 
     (* Set up the Colors
      * 1. Obtain the system colormap
@@ -52,9 +52,9 @@ local
     (* Create Rectangle Handler *)
     local
 	fun toggleColor(item, fill, outline) =
-	    (GnomeCanvas.itemSet(item, "fill_color_gdk", Gtk.OBJECT fill);
-	     GnomeCanvas.itemSet(item, "outline_color_gdk",Gtk.OBJECT outline);
-	     GnomeCanvas.updateNow canvas)
+	    (Canvas.itemSet(item, "fill_color_gdk", Gtk.OBJECT fill);
+	     Canvas.itemSet(item, "outline_color_gdk",Gtk.OBJECT outline);
+	     Canvas.updateNow canvas)
 
 	val pressed = ref false
 	val buttonx = ref (0.0)
@@ -76,8 +76,8 @@ local
 			      val newx = Real.- (x, !buttonx)
 			      val newy = Real.- (y, !buttony)
 			  in
-			      (GnomeCanvas.itemMove(item, newx, newy);
-			       GnomeCanvas.updateNow canvas;
+			      (Canvas.itemMove(item, newx, newy);
+			       Canvas.updateNow canvas;
 			       buttonx := x;
 			       buttony := y)
 			  end
