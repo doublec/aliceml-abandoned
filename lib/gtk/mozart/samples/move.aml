@@ -23,7 +23,7 @@ local
     open GtkBuilder
 
     (* Create Canvas and obtain the Root Group *)
-    val canvas = MakeWidget (Canvas {width=600, height=360})
+    val canvas = MakeWidget (Canvas {pic=0, width=600, height=360})
     val root   = GtkCanvas.root canvas
 
     (* Set up the Colors
