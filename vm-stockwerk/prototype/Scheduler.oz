@@ -129,6 +129,10 @@ define
 	    %--** display the stack
 	    {System.showError
 	     'uncaught exception: '#{Value.toVirtualString Exn 5 5}}
+	    {ForAll {Reverse Debug}
+	     proc {$ Frame}
+		{System.showError {Frame.1.display Frame}}
+	     end}
 	    {Application.exit 1}
 	 end
       end
