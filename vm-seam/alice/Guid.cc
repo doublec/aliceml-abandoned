@@ -31,9 +31,9 @@
 word Guid::vmGuid;
 
 void Guid::Init() {
+  srand(0);
   vmGuid = Guid::New()->ToWord();
   RootSet::Add(vmGuid);
-  srand(0);
 }
 
 #if defined(__MINGW32__) || defined(_MSC_VER)
