@@ -20,11 +20,8 @@
 #include "generic/RootSet.hh"
 #include "generic/TaskStack.hh"
 #include "generic/Interpreter.hh"
-#include "generic/PushCallInterpreter.hh"
 #include "generic/Scheduler.hh"
 #include "generic/Backtrace.hh"
-#include "generic/ConcreteCode.hh"
-#include "generic/Closure.hh"
 #include "generic/Properties.hh"
 #include "generic/Debug.hh"
 
@@ -38,19 +35,19 @@ public:
   // EmptyTaskInterpreter Constructor
   EmptyTaskInterpreter(): Interpreter() {}
   // Execution
-  virtual Result Run(TaskStack *taskStack);
-  virtual Result Handle(TaskStack *taskStack);
+  virtual Result Run();
+  virtual Result Handle();
   // Debugging
   virtual const char *Identify();
   virtual void DumpFrame(word frame);
 };
 
-Interpreter::Result EmptyTaskInterpreter::Run(TaskStack *) {
+Interpreter::Result EmptyTaskInterpreter::Run() {
   Scheduler::nArgs = 0;
   return Interpreter::TERMINATE;
 }
 
-Interpreter::Result EmptyTaskInterpreter::Handle(TaskStack *taskStack) {
+Interpreter::Result EmptyTaskInterpreter::Handle() {
   if (Properties::atExn == Store::IntToWord(0)) {
     fprintf(stderr, "uncaught exception:\n");
     Debug::Dump(Scheduler::currentData);
@@ -58,7 +55,7 @@ Interpreter::Result EmptyTaskInterpreter::Handle(TaskStack *taskStack) {
     Scheduler::currentBacktrace->Dump();
     exit(1);
   } else {
-    return taskStack->PushCall(Properties::atExn);
+    return Scheduler::PushCall(Properties::atExn);
   }
 }
 
@@ -80,57 +77,35 @@ void TaskStack::Init() {
   RootSet::Add(emptyTask);
 }
 
-Interpreter::Result TaskStack::PushCall(word closureWord) {
-  Assert(Store::WordToInt(closureWord) == INVALID_INT);
-  Transient *transient = Store::WordToTransient(closureWord);
-  if (transient == INVALID_POINTER) { // Closure is determined
-    Closure *closure = Closure::FromWord(closureWord);
-    Assert(closure != INVALID_POINTER);
-    word concreteCodeWord = closure->GetConcreteCode();
-    transient = Store::WordToTransient(concreteCodeWord);
-    if (transient == INVALID_POINTER) { // ConcreteCode is determined
-      ConcreteCode *concreteCode = ConcreteCode::FromWord(concreteCodeWord);
-      Assert(concreteCode != INVALID_POINTER);
-      concreteCode->GetInterpreter()->PushCall(this, closure);
-#if PROFILE
-      StackFrame *frame = StackFrame::FromWordDirect(GetFrame());
-      Profiler::IncCalls(frame);
-#endif
-      return Interpreter::CONTINUE;
-    } else { // Request ConcreteCode
-      PushCallInterpreter::PushFrame(this, closureWord);
-      Scheduler::currentData = transient->ToWord();
-      return Interpreter::REQUEST;
-    }
-  } else { // Request Closure
-    PushCallInterpreter::PushFrame(this, closureWord);
-    Scheduler::currentData = transient->ToWord();
-    return Interpreter::REQUEST;
+TaskStack *TaskStack::Enlarge() {
+  u_int size = GetSize();
+  u_int newSize = size * 3 / 2;
+  TaskStack *newTaskStack = TaskStack::New(newSize);
+  std::memcpy(newTaskStack->GetBase(), GetBase(), size * sizeof(u_int));
+  return newTaskStack;
+}
+
+void TaskStack::Purge(u_int nFrames) {
+  // Shrink stack to a reasonable size:
+  u_int size = GetSize();
+  Assert(nFrames <= size);
+  u_int newSize = nFrames + INITIAL_SIZE;
+  if (newSize < size) {
+    size = newSize;
+    HeaderOp::EncodeSize(this, size);
+  }
+  for (u_int i = nFrames; i < size; i++)
+    InitArg(i, 0);
+  // Purge all frames:
+  for (u_int i = nFrames; i--; ) {
+    StackFrame *frame = StackFrame::FromWordDirect(GetArg(i));
+    frame->GetInterpreter()->PurgeFrame(frame->ToWord());
   }
 }
 
-Interpreter::Result
-TaskStack::PushCall(TaskStack *taskStack, word closureWord) {
-  return taskStack->PushCall(closureWord);
-}
-
-void TaskStack::Purge() {
-  Blank(INITIAL_SIZE);
-  u_int size = GetStackSize();
-  for (u_int i = size; i--; ) {
-    word frame = GetAbsoluteArg(i);
-    Interpreter *interpreter =
-      StackFrame::FromWordDirect(frame)->GetInterpreter();
-    interpreter->PurgeFrame(frame);
-  }
-}
-
-void TaskStack::Dump() {
-  u_int size = GetStackSize();
-  for (u_int i = size; i--; ) {
-    word frame = GetAbsoluteArg(i);
-    Interpreter *interpreter =
-      StackFrame::FromWordDirect(frame)->GetInterpreter();
-    interpreter->DumpFrame(frame);
+void TaskStack::Dump(u_int nFrames) {
+  for (u_int i = nFrames; i--; ) {
+    StackFrame *frame = StackFrame::FromWordDirect(GetArg(i));
+    frame->GetInterpreter()->DumpFrame(frame->ToWord());
   }
 }
