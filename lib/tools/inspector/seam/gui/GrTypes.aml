@@ -116,7 +116,7 @@ fun getDepth (Simple {depth, ...} | Prefix {depth, ...}
 fun getDesc (Prefix {tree, ...}) = getDesc (!tree)
   | getDesc (Simple {desc, ...} | Container {desc, ...}) = desc
 
-fun getGroup (Simple {textItem,...}) = Canvas.canvasItemGetFieldParent textItem
+fun getGroup (Simple {textItem,...}) = Gtk.objectGetObject(textItem, "parent")
   | getGroup (Prefix {group, ...} | Container {group, ...}) = group
 
 fun getStatus (Container {status, ...}) = status
@@ -139,7 +139,7 @@ fun getSize (Simple {width, suffixWidth, height, ...}) =
     end
 
 fun getDelta (Simple {textItem, delta, ...}) =
-                        (Canvas.canvasItemGetFieldParent textItem, delta)
+                        (Gtk.objectGetObject(textItem, "parent"), delta)
   | getDelta (Prefix {group, delta, ...} |
               Container {group, delta, ...}) = (group, delta)
 

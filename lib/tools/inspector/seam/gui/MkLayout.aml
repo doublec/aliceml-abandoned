@@ -3,6 +3,7 @@ import signature LAYOUT        from "LAYOUT-sig"
 import structure GrTypes       from "GrTypes"
 import signature CANVAS_DRIVER from "CANVAS_DRIVER-sig"
 import structure Canvas        from "x-alice:/lib/gtk/Canvas"
+import structure Gtk           from "x-alice:/lib/gtk/Gtk"
 
 functor MkLayout (Driver : CANVAS_DRIVER)
 		 (QueuePut : Common.QUEUE_PUT) :> LAYOUT =
@@ -220,7 +221,7 @@ fun layout' (Container {status, kids, mode, delta, width, height, group, ...},
            let
              val xpos0 = Int.max (0, !delta)
 	     val xpos = Int.max (0, delta')
-             val group = Canvas.canvasItemGetFieldParent textItem
+             val group = Gtk.objectGetObject(textItem,"parent")
              val _ = if xpos0 = 0
                        then (assert delta' <= 0 ;
                              mvElement (group, delta', delta, mode'))

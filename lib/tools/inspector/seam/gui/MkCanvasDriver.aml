@@ -82,7 +82,7 @@ struct
 					     Gtk.REAL (real y))
 
 
-   val getParent = Cn.canvasItemGetFieldParent
+   fun getParent n = Gtk.objectGetObject(n, "parent")
    val hide = Cn.itemHide
 	      
 
@@ -99,10 +99,10 @@ struct
 					[("text", testString),
 					 ("anchor", anchor),
 					 ("font", Gtk.STRING font)])
-	 val height = Cn.canvasTextGetFieldHeight testGlyph
+	 val height = Gtk.objectGetDouble(testGlyph, "text-height")
        in
 	 Gtk.objectDestroy testGlyph ;
-	 maxHeight := Int.max (!maxHeight, height)
+	 maxHeight := Int.max (!maxHeight, Real.round height)
        end
 
    fun initStyle ({font, usefont, ...} : Prefs.style) =
@@ -115,7 +115,9 @@ struct
    val _ = initFonts ()
 
    (**** TEXT ITEMS ****)
-   fun getWidth item = Int.max (1, Cn.canvasTextGetFieldMaxWidth item)
+   fun getWidth item = Int.max (1,
+                                Real.round
+                                    (Gtk.objectGetDouble(item, "text-width")))
 
    fun styleItem (item, ({font, usefont, colorClass, ...} : Prefs.style)) =
        let
@@ -123,7 +125,7 @@ struct
 	 val _ = Cn.itemSet (item, "font", Gtk.STRING font)
 	 val _ = Cn.itemSet (item, "fill_color_gdk", Gtk.OBJECT (!colorClass))
 	 val width  = getWidth item
-	 val height = Int.max (1, Cn.canvasTextGetFieldHeight item)
+	 val height = Int.max (1, Real.round (Gtk.objectGetDouble(item, "text-height")))
        in
 	 if height >= !maxHeight then (item, width, height)
          else (Cn.itemSet (item, "y-offset",
