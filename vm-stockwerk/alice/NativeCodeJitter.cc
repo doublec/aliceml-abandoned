@@ -28,6 +28,7 @@
 #include "generic/ConcreteCode.hh"
 #include "generic/Transients.hh"
 #include "generic/Transform.hh"
+#include "generic/Primitive.hh"
 #include "alice/Data.hh"
 #include "alice/AbstractCode.hh"
 #include "alice/LazySelInterpreter.hh"
@@ -608,22 +609,12 @@ void NativeCodeJitter::PushCall(u_int Closure) {
   RETURN();
 }
 
-static Interpreter::Result
-CDirectCall(TaskStack *taskStack, word closureWord, Interpreter *interpreter) {
-  Assert(Store::WordToInt(closureWord) == INVALID_INT);
-  Assert(Store::WordToTransient(closureWord) == INVALID_POINTER);
-  Closure *closure = Closure::FromWordDirect(closureWord);
-  interpreter->PushCall(taskStack, closure);
-  return interpreter->Run(taskStack);
-}
-
-void NativeCodeJitter::DirectCall(u_int Closure, Interpreter *interpreter) {
-  jit_movi_p(JIT_R0, interpreter);
-  jit_pushr_ui(JIT_R0);
-  jit_pushr_ui(Closure);
+void NativeCodeJitter::DirectCall(Interpreter *interpreter) {
   NativeCodeFrame::GetTaskStack(JIT_R0, JIT_V2);
   jit_pushr_ui(JIT_R0);
-  JITStore::Call(3, (void *) CDirectCall);
+  jit_movi_p(JIT_R0, interpreter);
+  jit_pushr_ui(JIT_R0);
+  JITStore::Call(2, (void *) Primitive::Execute);
   RETURN();
 }
 
@@ -1108,14 +1099,14 @@ TagVal *NativeCodeJitter::InstrAppPrim(TagVal *pc) {
   ConcreteCode *concreteCode =
     ConcreteCode::FromWord(closure->GetConcreteCode());
   Interpreter *interpreter = concreteCode->GetInterpreter();
-  u_int i1 = ImmediateEnv::Register(closure->ToWord());
-  ImmediateSel(JIT_V1, JIT_V2, i1);
   if (idDefInstrOpt != INVALID_POINTER)
     KillVariables(contPC);
 #if defined(ALICE_PROFILE)
+  u_int i1 = ImmediateEnv::Register(closure->ToWord());
+  ImmediateSel(JIT_V1, JIT_V2, i1);
   PushCall(JIT_V1);
 #else
-  DirectCall(JIT_V1, interpreter);
+  DirectCall(interpreter);
 #endif
   return INVALID_POINTER;
 }

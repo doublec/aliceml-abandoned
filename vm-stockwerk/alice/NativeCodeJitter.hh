@@ -61,7 +61,7 @@ protected:
   static void SaveRegister();
   static void RestoreRegister();
   static void PushCall(u_int Closure);
-  static void DirectCall(u_int Closure, Interpreter *interpreter);
+  static void DirectCall(Interpreter *interpreter);
   static void TailCall(u_int Closure);
   static void BranchToOffset(u_int wOffset);
   static u_int GetRelativePC();
