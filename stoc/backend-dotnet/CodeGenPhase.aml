@@ -349,12 +349,12 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 		emit (Ldsfld (StockWerk.Prebound, id, ty))
 	    end
 	  | genExp (NewExp (_, NONE, _), PREPARE) =
-	    emit (Newobj (StockWerk.GenericConstructor, nil))
+	    emit (Newobj (StockWerk.GenerativeCon, nil))
 	  | genExp (NewExp (_, SOME s, _), PREPARE) =
 	    (emit (Ldstr s);
-	     emit (Call (false, StockWerk.NongenericConstructor, "Make",
+	     emit (Call (false, StockWerk.NongenerativeCon, "Make",
 			 [System.StringTy],
-			 StockWerk.NongenericConstructorTy)))
+			 StockWerk.NongenerativeConTy)))
 	  | genExp (VarExp (_, id), PREPARE) = emitId id
 	  | genExp (ConExp (_, id as Id (_, stamp, _), _), PREPARE) = emitId id
 	  | genExp (RefExp _, PREPARE) =

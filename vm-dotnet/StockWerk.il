@@ -22,7 +22,7 @@
 //    then fall back to StockWert::GetObjectData.  Global implements
 //    IObjectReference, replacing itself upon deserialization by the unique
 //    representation of the entity if it was already present in the system
-// -- NongenericConstructor and GenericConstructor extend Global,
+// -- NongenerativeCon and GenerativeCon extend Global,
 //    the first using a string, the second a Guid as identifier
 // -- Transient overrides GetObjectData to request itself, then to fall back
 //    to StockWert::GetObjectData.  Transient implements IObjectReference to
@@ -41,7 +41,7 @@
   .class sealed public Prebound extends System.Object {
     .field static public initonly class StockWerk.StockWert ref
     .field static public initonly class StockWerk.StockWert unit
-    // Nongeneric Constructors
+    // Nongenerative Constructors
     .field static public initonly class StockWerk.StockWert EQUAL
     .field static public initonly class StockWerk.StockWert GREATER
     .field static public initonly class StockWerk.StockWert LESS
@@ -186,95 +186,95 @@
     .field static public initonly class StockWerk.StockWert Word$toString
     .field static public initonly class StockWerk.StockWert Word$xorb
     .method public static void .cctor() {
-      newobj instance void StockWerk.RefConstructor::.ctor()
+      newobj instance void StockWerk.RefCon::.ctor()
       stsfld class StockWerk.StockWert StockWerk.Prebound::ref
       ldstr "()"
-      call class StockWerk.NongenericConstructor StockWerk.NongenericConstructor::Make(class System.String)
+      call class StockWerk.NongenerativeCon StockWerk.NongenerativeCon::Make(class System.String)
       stsfld class StockWerk.StockWert StockWerk.Prebound::unit
       // Names, Constructors, and Exceptions
       ldstr "EQUAL"
-      call class StockWerk.NongenericConstructor StockWerk.NongenericConstructor::Make(class System.String)
+      call class StockWerk.NongenerativeCon StockWerk.NongenerativeCon::Make(class System.String)
       stsfld class StockWerk.StockWert StockWerk.Prebound::EQUAL
       ldstr "GREATER"
-      call class StockWerk.NongenericConstructor StockWerk.NongenericConstructor::Make(class System.String)
+      call class StockWerk.NongenerativeCon StockWerk.NongenerativeCon::Make(class System.String)
       stsfld class StockWerk.StockWert StockWerk.Prebound::GREATER
       ldstr "LESS"
-      call class StockWerk.NongenericConstructor StockWerk.NongenericConstructor::Make(class System.String)
+      call class StockWerk.NongenerativeCon StockWerk.NongenerativeCon::Make(class System.String)
       stsfld class StockWerk.StockWert StockWerk.Prebound::LESS
       ldstr "::"
-      call class StockWerk.NongenericConstructor StockWerk.NongenericConstructor::Make(class System.String)
+      call class StockWerk.NongenerativeCon StockWerk.NongenerativeCon::Make(class System.String)
       stsfld class StockWerk.StockWert StockWerk.Prebound::cons
       ldstr "false"
-      call class StockWerk.NongenericConstructor StockWerk.NongenericConstructor::Make(class System.String)
+      call class StockWerk.NongenerativeCon StockWerk.NongenerativeCon::Make(class System.String)
       stsfld class StockWerk.StockWert StockWerk.Prebound::false
       ldstr "nil"
-      call class StockWerk.NongenericConstructor StockWerk.NongenericConstructor::Make(class System.String)
+      call class StockWerk.NongenerativeCon StockWerk.NongenerativeCon::Make(class System.String)
       stsfld class StockWerk.StockWert StockWerk.Prebound::nil
       ldstr "true"
-      call class StockWerk.NongenericConstructor StockWerk.NongenericConstructor::Make(class System.String)
+      call class StockWerk.NongenerativeCon StockWerk.NongenerativeCon::Make(class System.String)
       stsfld class StockWerk.StockWert StockWerk.Prebound::true
       ldstr "Assembler.UnknownMember"
-      call class StockWerk.NongenericConstructor StockWerk.NongenericConstructor::Make(class System.String)
+      call class StockWerk.NongenerativeCon StockWerk.NongenerativeCon::Make(class System.String)
       stsfld class StockWerk.StockWert StockWerk.Prebound::Assembler$UnknownMember
       ldstr "Assembler.UnknownType"
-      call class StockWerk.NongenericConstructor StockWerk.NongenericConstructor::Make(class System.String)
+      call class StockWerk.NongenerativeCon StockWerk.NongenerativeCon::Make(class System.String)
       stsfld class StockWerk.StockWert StockWerk.Prebound::Assembler$UnknownType
       ldstr "Component.Component"
-      call class StockWerk.NongenericConstructor StockWerk.NongenericConstructor::Make(class System.String)
+      call class StockWerk.NongenerativeCon StockWerk.NongenerativeCon::Make(class System.String)
       stsfld class StockWerk.StockWert StockWerk.Prebound::Component$Component
       ldstr "General.Bind"
-      call class StockWerk.NongenericConstructor StockWerk.NongenericConstructor::Make(class System.String)
+      call class StockWerk.NongenerativeCon StockWerk.NongenerativeCon::Make(class System.String)
       stsfld class StockWerk.StockWert StockWerk.Prebound::General$Bind
       ldstr "General.Char"
-      call class StockWerk.NongenericConstructor StockWerk.NongenericConstructor::Make(class System.String)
+      call class StockWerk.NongenerativeCon StockWerk.NongenerativeCon::Make(class System.String)
       stsfld class StockWerk.StockWert StockWerk.Prebound::General$Chr
       ldstr "General.Div"
-      call class StockWerk.NongenericConstructor StockWerk.NongenericConstructor::Make(class System.String)
+      call class StockWerk.NongenerativeCon StockWerk.NongenerativeCon::Make(class System.String)
       stsfld class StockWerk.StockWert StockWerk.Prebound::General$Div
       ldstr "General.Domain"
-      call class StockWerk.NongenericConstructor StockWerk.NongenericConstructor::Make(class System.String)
+      call class StockWerk.NongenerativeCon StockWerk.NongenerativeCon::Make(class System.String)
       stsfld class StockWerk.StockWert StockWerk.Prebound::General$Domain
       ldstr "General.Fail"
-      call class StockWerk.NongenericConstructor StockWerk.NongenericConstructor::Make(class System.String)
+      call class StockWerk.NongenerativeCon StockWerk.NongenerativeCon::Make(class System.String)
       stsfld class StockWerk.StockWert StockWerk.Prebound::General$Fail
       ldstr "General.Match"
-      call class StockWerk.NongenericConstructor StockWerk.NongenericConstructor::Make(class System.String)
+      call class StockWerk.NongenerativeCon StockWerk.NongenerativeCon::Make(class System.String)
       stsfld class StockWerk.StockWert StockWerk.Prebound::General$Match
       ldstr "General.Overflow"
-      call class StockWerk.NongenericConstructor StockWerk.NongenericConstructor::Make(class System.String)
+      call class StockWerk.NongenerativeCon StockWerk.NongenerativeCon::Make(class System.String)
       stsfld class StockWerk.StockWert StockWerk.Prebound::General$Overflow
       ldstr "General.Size"
-      call class StockWerk.NongenericConstructor StockWerk.NongenericConstructor::Make(class System.String)
+      call class StockWerk.NongenerativeCon StockWerk.NongenerativeCon::Make(class System.String)
       stsfld class StockWerk.StockWert StockWerk.Prebound::General$Size
       ldstr "General.Span"
-      call class StockWerk.NongenericConstructor StockWerk.NongenericConstructor::Make(class System.String)
+      call class StockWerk.NongenerativeCon StockWerk.NongenerativeCon::Make(class System.String)
       stsfld class StockWerk.StockWert StockWerk.Prebound::General$Span
       ldstr "General.Subscript"
-      call class StockWerk.NongenericConstructor StockWerk.NongenericConstructor::Make(class System.String)
+      call class StockWerk.NongenerativeCon StockWerk.NongenerativeCon::Make(class System.String)
       stsfld class StockWerk.StockWert StockWerk.Prebound::General$Subscript
       ldstr "General.TypeError"
-      call class StockWerk.NongenericConstructor StockWerk.NongenericConstructor::Make(class System.String)
+      call class StockWerk.NongenerativeCon StockWerk.NongenerativeCon::Make(class System.String)
       stsfld class StockWerk.StockWert StockWerk.Prebound::General$TypeError
       ldstr "List.Empty"
-      call class StockWerk.NongenericConstructor StockWerk.NongenericConstructor::Make(class System.String)
+      call class StockWerk.NongenerativeCon StockWerk.NongenerativeCon::Make(class System.String)
       stsfld class StockWerk.StockWert StockWerk.Prebound::List$Empty
       ldstr "Option.Option"
-      call class StockWerk.NongenericConstructor StockWerk.NongenericConstructor::Make(class System.String)
+      call class StockWerk.NongenerativeCon StockWerk.NongenerativeCon::Make(class System.String)
       stsfld class StockWerk.StockWert StockWerk.Prebound::Option$Option
       ldstr "Pickle.Pickle"
-      call class StockWerk.NongenericConstructor StockWerk.NongenericConstructor::Make(class System.String)
+      call class StockWerk.NongenerativeCon StockWerk.NongenerativeCon::Make(class System.String)
       stsfld class StockWerk.StockWert StockWerk.Prebound::Pickle$Pickle
       ldstr "Transient.ByNeed"
-      call class StockWerk.NongenericConstructor StockWerk.NongenericConstructor::Make(class System.String)
+      call class StockWerk.NongenerativeCon StockWerk.NongenerativeCon::Make(class System.String)
       stsfld class StockWerk.StockWert StockWerk.Prebound::Transient$ByNeed
       ldstr "Transient.Fulfill"
-      call class StockWerk.NongenericConstructor StockWerk.NongenericConstructor::Make(class System.String)
+      call class StockWerk.NongenerativeCon StockWerk.NongenerativeCon::Make(class System.String)
       stsfld class StockWerk.StockWert StockWerk.Prebound::Transient$Fulfill
       ldstr "Transient.Future"
-      call class StockWerk.NongenericConstructor StockWerk.NongenericConstructor::Make(class System.String)
+      call class StockWerk.NongenerativeCon StockWerk.NongenerativeCon::Make(class System.String)
       stsfld class StockWerk.StockWert StockWerk.Prebound::Transient$Future
       ldstr "Transient.Promise"
-      call class StockWerk.NongenericConstructor StockWerk.NongenericConstructor::Make(class System.String)
+      call class StockWerk.NongenerativeCon StockWerk.NongenerativeCon::Make(class System.String)
       stsfld class StockWerk.StockWert StockWerk.Prebound::Transient$Promise
       // Builtins
       newobj instance void StockWerk.Builtins.show::.ctor()
@@ -1343,7 +1343,7 @@
   // Names, Constructors, and Constructed Values
   //
 
-  .class sealed public NongenericConstructor extends StockWerk.Global {
+  .class sealed public NongenerativeCon extends StockWerk.Global {
     .method private void .ctor(class System.String) {
       ldarg.0
       call instance void StockWerk.Global::.ctor()
@@ -1352,12 +1352,12 @@
       stfld class System.Object StockWerk.Global::Guid
       ret
     }
-    .method public static class StockWerk.NongenericConstructor Make(class System.String) {
+    .method public static class StockWerk.NongenerativeCon Make(class System.String) {
       ldarg.0
       ldarg.0
-      newobj instance void StockWerk.NongenericConstructor::.ctor(class System.String)
+      newobj instance void StockWerk.NongenerativeCon::.ctor(class System.String)
       call class StockWerk.StockWert StockWerk.Global::Localize(class System.Object, class StockWerk.StockWert)
-      castclass StockWerk.NongenericConstructor
+      castclass StockWerk.NongenerativeCon
       ret
     }
     .method virtual public class StockWerk.StockWert Apply(class StockWerk.StockWert) {
@@ -1376,7 +1376,7 @@
     }
   }
 
-  .class sealed public GenericConstructor extends StockWerk.Global {
+  .class sealed public GenerativeCon extends StockWerk.Global {
     .method public void .ctor() {
       ldarg.0
       /*tail.*/ call instance void StockWerk.Global::.ctor()
@@ -1451,7 +1451,7 @@
     }
   }
 
-  .class sealed public RefConstructor extends StockWerk.StockWert {
+  .class sealed public RefCon extends StockWerk.StockWert {
     .method public void .ctor() {
       ldarg.0
       /*tail.*/ call instance void StockWerk.StockWert::.ctor()
@@ -1465,7 +1465,7 @@
     .method virtual public bool Equals(class System.Object) {
     retry:
       ldarg.1
-      isinst StockWerk.RefConstructor
+      isinst StockWerk.RefCon
       brfalse.s testTransient
       ldc.i4.1
       ret
