@@ -46,5 +46,4 @@
 
   <P align="CENTER"> <IMG src="mozart_cartoon.jpg"> </P>
 
-
 <?php footing() ?>
