@@ -3,7 +3,7 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 2001
+ *   Leif Kornstaedt, 2001-2002
  *
  * Last change:
  *   $Date$ $Author$
@@ -14,10 +14,10 @@ import structure Reflect           from "Reflect"
 import structure Url               from "Url"
 import structure Component         from "Component"
 import signature COMPONENT_MANAGER from "COMPONENT_MANAGER-sig"
+import structure ComponentManager  from "ComponentManager"
 
 fun boot url =
     let
-	structure ComponentManager = Component.MkManager()
 	val componentManagerUrl =
 	    Url.fromString "x-alice:/lib/system/ComponentManager"
 (*
@@ -31,14 +31,13 @@ fun boot url =
 						 (structure ComponentManager =
 						      ComponentManager))
 *)
-	structure Str = Reflect.Reflect(signature S =
-					    (structure ComponentManager:
-						 COMPONENT_MANAGER
-						 where type component =
-							    Component.t)
-					structure X =
-					    (structure ComponentManager =
-						 ComponentManager))
+	structure Str =
+	    Reflect.Reflect(signature S =
+				(structure ComponentManager: COMPONENT_MANAGER
+				     where type component = Component.t)
+			    structure X =
+				(structure ComponentManager =
+				     ComponentManager))
 	val component = Component.load componentManagerUrl
 (*
 	structure Sig = Reflect.ReflectSig(signature S =
