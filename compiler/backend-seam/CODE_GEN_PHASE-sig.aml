@@ -10,19 +10,19 @@
  *   $Revision$
  *)
 
-import structure Source         from "../infrastructure/Source"
-import signature CONTEXT        from "../infrastructure/CONTEXT-sig"
-import structure EmptyContext   from "../infrastructure/EmptyContext"
-import signature FLAT_GRAMMAR   from "../backend-common/FLAT_GRAMMAR-sig"
-import structure FlatGrammar    from "../backend-common/FlatGrammar"
-import signature PICKLE_GRAMMAR from "PICKLE_GRAMMAR-sig"
-import structure PickleGrammar  from "PickleGrammar"
+import structure Source                from "../infrastructure/Source"
+import signature CONTEXT               from "../infrastructure/CONTEXT-sig"
+import structure EmptyContext          from "../infrastructure/EmptyContext"
+import signature FLAT_GRAMMAR         from "../backend-common/FLAT_GRAMMAR-sig"
+import structure FlatGrammar           from "../backend-common/FlatGrammar"
+import signature ABSTRACT_CODE_GRAMMAR from "ABSTRACT_CODE_GRAMMAR-sig"
+import structure AbstractCodeGrammar   from "AbstractCodeGrammar"
 
 signature CODE_GEN_PHASE =
     sig
 	structure C: CONTEXT = EmptyContext
 	structure I: FLAT_GRAMMAR = FlatGrammar
-	structure O: PICKLE_GRAMMAR = PickleGrammar
+	structure O: ABSTRACT_CODE_GRAMMAR = AbstractCodeGrammar
 
 	val translate: C.t -> Source.desc * I.component -> O.t
     end

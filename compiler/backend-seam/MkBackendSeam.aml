@@ -18,14 +18,14 @@ import structure EmptyContext   from "../infrastructure/EmptyContext"
 import structure Target         from "../infrastructure/Target"
 import structure FlatGrammar    from "../backend-common/FlatGrammar"
 import structure PrimPickle     from "PrimPickle"
-import structure PickleGrammar  from "PickleGrammar"
+import structure Value          from "Value"
 import structure OutputPickle   from "OutputPickle"
 import structure CodeGenPhase   from "CodeGenPhase"
 
 functor MkBackendStockwerk(structure Switches: SWITCHES): PHASE =
     let
-	fun sign (PickleGrammar.TaggedValue
-		      (_, #[_, _, PickleGrammar.Sign exportSign])) = exportSign
+	fun sign (Value.TaggedValue (_, #[_, _, Value.Sign exportSign])) =
+	    exportSign
 	  | sign _ = raise Crash.Crash "MkBackendStockwerk.sign"
 
 	fun save value filename =

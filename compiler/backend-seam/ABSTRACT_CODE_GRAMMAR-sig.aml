@@ -10,12 +10,14 @@
  *   $Revision$
  *)
 
-import structure Stamp          from "../common/Stamp"
-import structure FlatGrammar    from "../backend-common/FlatGrammar"
-import signature PICKLE_GRAMMAR from "PICKLE_GRAMMAR-sig"
+import structure Stamp       from "../common/Stamp"
+import structure FlatGrammar from "../backend-common/FlatGrammar"
+import signature VALUE       from "VALUE-sig"
 
-structure PickleGrammar :> PICKLE_GRAMMAR =
-    struct
+signature ABSTRACT_CODE_GRAMMAR =
+    sig
+	structure Value: VALUE
+
 	type sign = FlatGrammar.sign
 
 	type id = int
@@ -27,6 +29,7 @@ structure PickleGrammar :> PICKLE_GRAMMAR =
 	datatype idRef =
 	    Local of id
 	  | Global of int
+	(*--** | Immediate of value *)
 
 	datatype 'a args =
 	    OneArg of 'a
@@ -34,18 +37,9 @@ structure PickleGrammar :> PICKLE_GRAMMAR =
 
 	type coord = string * int * int
 
-	datatype value =
-	    Prim of string
-	  | Int of LargeInt.int
-	  | String of String.string
-	  | WideString of WideString.string
-	  | Real of Real.real
-	  | TaggedValue of LargeInt.int * value vector
-	  | Tuple of value vector
-	  | Vector of value vector
-	  | Closure of function * value vector
-	  | Sign of sign
-	and function = Function of coord * int * int * idDef args * instr
+	type value
+
+	datatype function = Function of coord * int * int * idDef args * instr
 	and instr =
 	    Kill of id vector * instr
 	  | PutConst of id * value * instr

@@ -10,16 +10,16 @@
  *   $Revision$
  *)
 
-import structure Crash         from "../infrastructure/Crash"
-import structure Stamp         from "../common/Stamp"
-import structure StampMap      from "../common/StampMap"
-import structure FlatGrammar   from "../backend-common/FlatGrammar"
-import structure PickleGrammar from "PickleGrammar"
-import signature ENVIRONMENT   from "ENVIRONMENT-sig"
+import structure Crash               from "../infrastructure/Crash"
+import structure Stamp               from "../common/Stamp"
+import structure StampMap            from "../common/StampMap"
+import structure FlatGrammar         from "../backend-common/FlatGrammar"
+import structure AbstractCodeGrammar from "AbstractCodeGrammar"
+import signature ENVIRONMENT         from "ENVIRONMENT-sig"
 
 structure Environment :> ENVIRONMENT =
     struct
-	type scope = PickleGrammar.idRef StampMap.t
+	type scope = AbstractCodeGrammar.idRef StampMap.t
 	type globals = FlatGrammar.id list
 	type index = int
 
@@ -29,7 +29,7 @@ structure Environment :> ENVIRONMENT =
 		  localIndex: index ref,
 		  globalIndex: index ref,
 		  globals: globals ref,
-		  shared: PickleGrammar.instr StampMap.t}
+		  shared: AbstractCodeGrammar.instr StampMap.t}
 
 	fun new filename =
 	    {filename = filename,
@@ -61,16 +61,16 @@ structure Environment :> ENVIRONMENT =
 	fun declare ({scope, localIndex, ...}: t,
 		     FlatGrammar.Id (_, stamp, _)) =
 	    case StampMap.lookup (!scope, stamp) of
-		SOME (PickleGrammar.Local i) => i
-	      | SOME (PickleGrammar.Global _) =>
+		SOME (AbstractCodeGrammar.Local i) => i
+	      | SOME (AbstractCodeGrammar.Global _) =>
 		    raise Crash.Crash "Environment.declare"
 	      | NONE =>
 			let
 			    val i = !localIndex
 			in
 			    localIndex := i + 1;
-			    StampMap.insertDisjoint (!scope, stamp,
-						     PickleGrammar.Local i);
+			    StampMap.insertDisjoint
+			       (!scope, stamp, AbstractCodeGrammar.Local i);
 			    i
 			end
 
@@ -89,7 +89,7 @@ structure Environment :> ENVIRONMENT =
 	      | NONE =>
 		    let
 			val i = !globalIndex
-			val idRef = PickleGrammar.Global i
+			val idRef = AbstractCodeGrammar.Global i
 		    in
 			globals := id::(!globals);
 			globalIndex := i + 1;

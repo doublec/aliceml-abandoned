@@ -10,9 +10,9 @@
  *   $Revision$
  *)
 
-import structure Stamp         from "../common/Stamp"
-import structure FlatGrammar   from "../backend-common/FlatGrammar"
-import structure PickleGrammar from "PickleGrammar"
+import structure Stamp               from "../common/Stamp"
+import structure FlatGrammar         from "../backend-common/FlatGrammar"
+import structure AbstractCodeGrammar from "AbstractCodeGrammar"
 
 signature ENVIRONMENT =
     sig
@@ -22,10 +22,10 @@ signature ENVIRONMENT =
 	val filename: t -> string
 	val startFn: t -> unit
 	val endFn: t -> FlatGrammar.id vector * int
-	val declare: t * FlatGrammar.id -> PickleGrammar.id
-	val fresh: t -> PickleGrammar.id
-	val lookup: t * FlatGrammar.id -> PickleGrammar.idRef
-	val lookupStamp: t * Stamp.t -> PickleGrammar.idRef option
-	val lookupShared: t * Stamp.t -> PickleGrammar.instr option
-	val declareShared: t * Stamp.t * PickleGrammar.instr -> unit
+	val declare: t * FlatGrammar.id -> AbstractCodeGrammar.id
+	val fresh: t -> AbstractCodeGrammar.id
+	val lookup: t * FlatGrammar.id -> AbstractCodeGrammar.idRef
+	val lookupStamp: t * Stamp.t -> AbstractCodeGrammar.idRef option
+	val lookupShared: t * Stamp.t -> AbstractCodeGrammar.instr option
+	val declareShared: t * Stamp.t * AbstractCodeGrammar.instr -> unit
     end
