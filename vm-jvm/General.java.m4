@@ -259,7 +259,7 @@ final public class General {
     }
     _BINOP(minus,-);
     static {
-	Builtin.builtins.put("-",plus);
+	Builtin.builtins.put("-",minus);
     }
     _BINOP(div,/);
     static {
