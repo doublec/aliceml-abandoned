@@ -68,6 +68,7 @@ files = $(CLASSROOT)$(RUNTIME)Array.class \
 	$(CLASSROOT)$(RUNTIME)ServerManager.class \
 	$(CLASSROOT)$(RUNTIME)String.class \
 	$(CLASSROOT)$(RUNTIME)StringCvt.class \
+	$(CLASSROOT)$(RUNTIME)TextIO.class \
 	$(CLASSROOT)$(RUNTIME)Thread.class \
 	$(CLASSROOT)$(RUNTIME)Tuple.class \
 	$(CLASSROOT)$(RUNTIME)Tuple1.class \

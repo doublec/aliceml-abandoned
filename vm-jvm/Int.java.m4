@@ -38,7 +38,7 @@ final public class Int extends SCon {
      *  @return java.lang.String java.lang.Stringdarstellung des Wertes
      */
     final public java.lang.String toString() {
-	return value+": int or char";
+	return value+": int";
     }
 
     /** Den Java-Wert des Int auslesen.
