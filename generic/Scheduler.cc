@@ -93,116 +93,114 @@ inline void Scheduler::FlushThread() {
   }
 }
 
-void Scheduler::Run(bool waitForever = false) {
- retry:
-  while ((currentThread = threadQueue->Dequeue()) != INVALID_POINTER) {
-    SwitchToThread();
-    for (bool nextThread = false; !nextThread; ) {
+void Scheduler::Run() {
+  while (true) {
+    while ((currentThread = threadQueue->Dequeue()) != INVALID_POINTER) {
+      SwitchToThread();
+      for (bool nextThread = false; !nextThread; ) {
 #if PROFILE
-      Profiler::SampleHeap();
+	Profiler::SampleHeap();
 #endif
-      StackFrame *frame = StackFrame::FromWordDirect(GetFrame());
-      Interpreter *interpreter = frame->GetInterpreter();
-      Interpreter::Result result = interpreter->Run();
+	StackFrame *frame = StackFrame::FromWordDirect(GetFrame());
+	Interpreter *interpreter = frame->GetInterpreter();
+	Interpreter::Result result = interpreter->Run();
 #if PROFILE
-      Profiler::AddHeap(frame);
+	Profiler::AddHeap(frame);
 #endif
-    interpretResult:
-      switch (result) {
-      case Interpreter::CONTINUE:
-	Assert(nArgs == ONE_ARG || nArgs < maxArgs);
-	break;
-      case Interpreter::PREEMPT:
-	FlushThread();
-	threadQueue->Enqueue(currentThread);
-	nextThread = true;
-	break;
-      case Interpreter::SUSPEND:
-	FlushThread();
-	currentThread->Purge();
-	currentThread->Suspend();
-	nextThread = true;
-	break;
-      case Interpreter::RAISE:
-	{
-	raise:
+      interpretResult:
+	switch (result) {
+	case Interpreter::CONTINUE:
+	  Assert(nArgs == ONE_ARG || nArgs < maxArgs);
+	  break;
+	case Interpreter::PREEMPT:
+	  FlushThread();
+	  threadQueue->Enqueue(currentThread);
+	  nextThread = true;
+	  break;
+	case Interpreter::SUSPEND:
+	  FlushThread();
+	  currentThread->Purge();
+	  currentThread->Suspend();
+	  nextThread = true;
+	  break;
+	case Interpreter::RAISE:
+	  {
+	  raise:
 #if PROFILE
-	  Profiler::SampleHeap();
+	    Profiler::SampleHeap();
 #endif
-	  frame = StackFrame::FromWordDirect(GetFrame());
-	  interpreter = frame->GetInterpreter();
-	  result = interpreter->Handle();
+	    frame = StackFrame::FromWordDirect(GetFrame());
+	    interpreter = frame->GetInterpreter();
+	    result = interpreter->Handle();
 #if PROFILE
-	  Profiler::AddHeap(frame);
+	    Profiler::AddHeap(frame);
 #endif
-	  goto interpretResult;
-	}
-      case Interpreter::REQUEST:
-	{
-	  Transient *transient = Store::WordToTransient(currentData);
-	  Assert(transient != INVALID_POINTER);
-	  switch (transient->GetLabel()) {
-	  case HOLE_LABEL:
-	    currentData = Hole::holeExn;
-	    goto raise;
-	  case FUTURE_LABEL:
-	    {
-	      FlushThread();
-	      currentThread->Purge();
-	      Future *future = static_cast<Future *>(transient);
-	      future->AddToWaitQueue(currentThread);
-	      currentThread->BlockOn(transient->ToWord());
-	      nextThread = true;
-	    }
-	    break;
-	  case CANCELLED_LABEL:
-	    currentData = transient->GetArg();
-	    goto raise;
-	  case BYNEED_LABEL:
-	    {
-	      Thread *newThread = NewThread(0, Store::IntToWord(0));
-	      ByneedInterpreter::PushFrame(newThread, transient);
-	      PushCallInterpreter::PushFrame(newThread, transient->GetArg());
-	      // The future's argument is an empty wait queue:
-	      transient->Become(FUTURE_LABEL, Store::IntToWord(0));
-	      FlushThread();
-	      currentThread->Purge();
-	      Future *future = static_cast<Future *>(transient);
-	      future->AddToWaitQueue(currentThread);
-	      currentThread->BlockOn(transient->ToWord());
-	      nextThread = true;
-	    }
-	    break;
-	  default:
-	    Error("Scheduler::Run: invalid transient label");
-	    break;
+	    goto interpretResult;
 	  }
+	case Interpreter::REQUEST:
+	  {
+	    Transient *transient = Store::WordToTransient(currentData);
+	    Assert(transient != INVALID_POINTER);
+	    switch (transient->GetLabel()) {
+	    case HOLE_LABEL:
+	      currentData = Hole::holeExn;
+	      goto raise;
+	    case FUTURE_LABEL:
+	      {
+		FlushThread();
+		currentThread->Purge();
+		Future *future = static_cast<Future *>(transient);
+		future->AddToWaitQueue(currentThread);
+		currentThread->BlockOn(transient->ToWord());
+		nextThread = true;
+	      }
+	      break;
+	    case CANCELLED_LABEL:
+	      currentData = transient->GetArg();
+	      goto raise;
+	    case BYNEED_LABEL:
+	      {
+		Thread *newThread = NewThread(0, Store::IntToWord(0));
+		ByneedInterpreter::PushFrame(newThread, transient);
+		PushCallInterpreter::PushFrame(newThread, transient->GetArg());
+		// The future's argument is an empty wait queue:
+		transient->Become(FUTURE_LABEL, Store::IntToWord(0));
+		FlushThread();
+		currentThread->Purge();
+		Future *future = static_cast<Future *>(transient);
+		future->AddToWaitQueue(currentThread);
+		currentThread->BlockOn(transient->ToWord());
+		nextThread = true;
+	      }
+	      break;
+	    default:
+	      Error("Scheduler::Run: invalid transient label");
+	      break;
+	    }
+	  }
+	  break;
+	case Interpreter::TERMINATE:
+	  FlushThread();
+	  currentThread->SetTerminated();
+	  nextThread = true;
+	  break;
 	}
-	break;
-      case Interpreter::TERMINATE:
-	FlushThread();
-	currentThread->SetTerminated();
-	nextThread = true;
-	break;
       }
+      if (Store::NeedGC()) {
+	threadQueue->Purge();
+	IOHandler::Purge();
+	root = threadQueue->ToWord();
+	RootSet::DoGarbageCollection();
+	threadQueue = ThreadQueue::FromWordDirect(root);
+      }
+      if (SignalHandler::GetSignalStatus())
+	SignalHandler::HandlePendingSignals();
+      IOHandler::Poll();
+      StatusWord::ClearStatus();
     }
-    if (Store::NeedGC()) {
-      threadQueue->Purge();
-      IOHandler::Purge();
-      root = threadQueue->ToWord();
-      RootSet::DoGarbageCollection();
-      threadQueue = ThreadQueue::FromWordDirect(root);
-    }
-    if (SignalHandler::GetSignalStatus())
-      SignalHandler::HandlePendingSignals();
-    IOHandler::Poll();
-    StatusWord::ClearStatus();
-  }
-  // Check for both incoming signals and io
-  if (waitForever) {
+    // Check for both incoming signals and I/O
     IOHandler::Block();
     SignalHandler::HandlePendingSignals();
-    goto retry;
   }
 }
 
