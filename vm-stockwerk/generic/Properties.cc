@@ -20,6 +20,7 @@
 #include <cstring>
 #include "generic/Properties.hh"
 #include "generic/RootSet.hh"
+#include "generic/String.hh"
 
 word Properties::aliceHome;
 word Properties::rootUrl;
@@ -32,16 +33,16 @@ void Properties::Init() {
   RootSet::Add(commandLineArguments);
   RootSet::Add(atExn);
 
-  char *home = getenv("STOCKHOME");
+  char *home = std::getenv("STOCKHOME");
   if (home == NULL) {
     Error("could not determine installation directory");
   }
-  u_int n = strlen(home);
-  Chunk *homeChunk = Store::AllocChunk(n + 1);
-  char *homeChunkBase = homeChunk->GetBase();
-  std::memcpy(homeChunkBase, home, n);
-  homeChunkBase[n] = '/';
-  aliceHome = homeChunk->ToWord();
+  u_int n = std::strlen(home);
+  String *homeString = String::New(n + 1);
+  u_char *p = homeString->GetValue();
+  std::memcpy(p, home, n);
+  p[n] = '/';
+  aliceHome = homeString->ToWord();
 
   rootUrl = Store::IntToWord(0);
   commandLineArguments = Store::IntToWord(0);
