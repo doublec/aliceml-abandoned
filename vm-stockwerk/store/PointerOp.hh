@@ -98,14 +98,6 @@ public:
     AssertStore((u_int) v & INTMASK);
     return DirectDecodeUnmanagedPointer(v);
   }
-  static void EncodeHandler(Block *p, Handler *h) {
-    AssertStore(HeaderOp::DecodeLabel(p) == HANDLERBLOCK_LABEL);
-    ((word *) p)[1] = PointerOp::EncodeUnmanagedPointer((void *) h);
-  }
-  static Handler *DecodeHandler(Block *p) {
-    AssertStore(HeaderOp::DecodeLabel(p) == HANDLERBLOCK_LABEL);
-    return (Handler *) PointerOp::DecodeUnmanagedPointer(((word *) p)[1]);
-  }
   // Deref Function
   static word Deref(word v) {
   loop:
