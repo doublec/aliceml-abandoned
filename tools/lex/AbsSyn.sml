@@ -4,8 +4,15 @@ structure AbsSyn :> ABS_SYN=
 	type position = int * int
 
 
+	exception Error of string
+
+	(* resulting string must be something usable within an identifier
+	 * because it is used to generate lexer-names for regcases
+	 *)
 	fun posToString (a, b) = if a = b then  Int.toString a
 				 else Int.toString a ^ "_" ^ Int.toString b
+
+	val errorFile = ref "?"
 
 
 	datatype regexp = 

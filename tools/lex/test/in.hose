@@ -27,7 +27,6 @@ and hexword    = "0wx" hexdigit +
 and exp        = "E" | "e"
 and real       = ( decint "." digit + ( exp  decint )?) |
                ( decint  exp  decint )
-
 and numericlab = ["1-9"] digit *
 and alphanumid =  letter ( letter  |  digit  | ["_'"])*
 and symbolicid =  symbol +
@@ -49,8 +48,6 @@ and char       = "#\"" gap * stringchar  gap *"\""
 val EOF = ref false
 
 val nesting = ref 0
-
-
 
 lexer lex =
     formatting 	=> (print yytext )

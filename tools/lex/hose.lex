@@ -13,20 +13,12 @@ val pos = ref 0
 
 fun ++ x = ( x := !x + 1; !x)
 
-exception Error of string
-
 fun error (e, pos) =
-    (print("Lex Error in line " ^ (Int.toString pos) ^ ": " ^ e ^ "\n");
-     raise Error e)
+    raise AbsSyn.Error ("Lex Error in line " ^ (Int.toString pos) ^ ": "
+			^ e ^ "\n")
 
 val eof = fn () => if !nesting = 0 then Tokens.EOF(!pos,!pos)
 		   else error ("unclosed comment", !pos)
-
-fun count (x::xs,n) = if Char.isDigit x
-			  then count (xs,10*n + Char.ord x - Char.ord #"0")
-		      else if x = #"," then (xs,n)
-			   else error("bad repetition",!pos)
-  | count y = y
 
 (* used by: hose.lex
  * countlines : string -> unit
@@ -35,24 +27,12 @@ fun count (x::xs,n) = if Char.isDigit x
 fun countlines s =
     let
 	val cs = explode s
-	fun count nil         = ()
-	  | count (#"\n"::cs) = (++ pos; count cs)
-	  | count ( _   ::cs) = count cs
+	fun countNext nil         = ()
+	  | countNext (#"\n"::cs) = (++ pos; countNext cs)
+	  | countNext ( _   ::cs) = countNext cs
     in
-	count cs
+	countNext cs
     end
-
-
-fun makePair s = let
-		     val cs = explode s
-		     val (ds,first) = count (cs,0)
-		     val (_,second) = case ds of
-			 nil => (nil,first) 
-		       | _   => count (ds,0)
-		 in
-		     if first<=second then (first,second)
-		     else error ("bad repetition",!pos)
-		 end			   
 
 
 %%
@@ -149,6 +129,7 @@ mlId       = "'"?[A-Za-z][A-Za-z0-9_'.]*;
 <COMMENT>"*)"                => (nesting := !nesting-1;
 				 if !nesting=0 then YYBEGIN INITIAL else ();
 				     lex());
-<COMMENT>"\n"                => (++ pos;lex());
+<COMMENT>"\n"                => (++ pos; lex());
 <COMMENT>.                   => (lex());
-<INITIAL>.                   => (error ("bad character "^yytext,!pos));
+<INITIAL>.                   => (error ("bad character '"
+					^ yytext ^ "'" , !pos));

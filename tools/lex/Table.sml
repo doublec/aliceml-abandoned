@@ -12,16 +12,14 @@ structure Table :> TABLE =
 	fun ++ x = ( x := !x + 1; !x)
 
 
-	exception Error of string
-
-
-	fun tError e = (print("Internal Error in structure Table: " ^ e ^ "\n");
-			raise Error e)
+	fun tError e =
+	    raise Error ("Internal Error in structure Table in file "
+			 ^ (!errorFile) ^ ": " ^ e ^ "\n")
 
 	fun tpError (e, po) =
-	    (print("Internal Error in structure Table in position "
-		   ^ posToString po ^ ": " ^ e ^ "\n");
-	     raise Error e)
+	    raise Error ("Internal Error in structure Table in file "
+			 ^ (!errorFile) ^ "\nin line(s) "
+			 ^ posToString po ^ ": " ^ e ^ "\n")
 
 
 	(* nullable: regexp -> bool

@@ -10,4 +10,5 @@ signature TABLE =
 	 * and the actions for each automaton
 	 *)
 	val makeAuto : Extract.lex_map -> auto_map
+ 
     end

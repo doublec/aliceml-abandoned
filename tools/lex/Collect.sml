@@ -4,14 +4,9 @@ structure Collect :> COLLECT =
 	open AbsSyn
 
 
-	exception Error of string
-
-	val errorFile = ref "?"
-
 	fun cError (e, po) =
-	    (print(  "Error in file " ^ (!errorFile)
-		   ^ " in line " ^ posToString po ^ ": " ^ e ^ "\n");
-	     raise Error e)
+	    raise Error ("Error in structure Collect in file " ^ (!errorFile)
+			 ^ "\nin line(s) " ^ posToString po ^ ": " ^ e ^ "\n")
 
 
 	(* lookup : StringMap.map * string * position -> regexp
@@ -151,12 +146,11 @@ structure Collect :> COLLECT =
 	  | substLruleList' ( _ , map, result) = (rev result, map)
 		
 
-	(* collect : lex list * string -> lex list
-	 * replaces all regids with there value and removes their declaration
+	(* collect : lex list -> lex list
+	 * replaces all regids with their value and removes their declaration
 	 *)
-	fun collect (lexlist, fileName) = 
+	fun collect lexlist = 
 	    let
-		val _ = errorFile := fileName
 		val eofVector = BoolVector.tabulate(257, fn x => x = 256)
 		val eofChar = CHARS (eofVector, 0, (~1, ~1))
 		val eofMap = StringMap.singleton ("eof", (eofChar, (~1, ~1)) )

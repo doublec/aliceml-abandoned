@@ -10,19 +10,27 @@ structure Hose :> HOSE =
 			 OS.Process.exit OS.Process.failure)
 
 
+	fun handleEx (AbsSyn.Error s) = printEx s
+	  | handleEx exn =
+	    printEx ("Hose: unhandled internal exception: "
+		     ^ General.exnName exn ^ "\n")
+
+
 	fun hose () =
 	    let 
 		    
+		val _ = AbsSyn.errorFile := !inFile
+
 		val lexList =
 		    let
 			val inputStream = TextIO.openIn (!inFile)
 			val input = TextIO.inputAll inputStream
 			val _ = TextIO.closeIn inputStream
 		    in
-			Collect.collect (Parse.parse input, !inFile)
+			Collect.collect (Parse.parse input)
 		    end
 
-		val lexMap  = Extract.extract (lexList, !inFile)
+		val lexMap  = Extract.extract (lexList)
 
 		val autoMap = Table.makeAuto lexMap
 
@@ -70,7 +78,6 @@ structure Hose :> HOSE =
 	    printEx "invalid output file\n"
 	     | (IO.Io {name,function="inputAll",cause}) =>
 	    printEx "input file seems to be a directory\n"
-	     | exn => printEx ("Hose: unhandled internal exception: "
-			       ^ General.exnName exn ^ "\n")
+	     | exn => handleEx exn
        
     end

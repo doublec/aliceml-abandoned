@@ -4,9 +4,15 @@ signature ABS_SYN =
 	type position = int * int
 
 
-	(* make position printable *)
+	exception Error of string
 
+
+	(* make position printable *)
 	val posToString : position -> string
+
+
+	(* stores the actual filename for error-messages *)
+	val errorFile : string ref
 
 
 	datatype regexp = 

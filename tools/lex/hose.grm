@@ -1,10 +1,8 @@
 open AbsSyn
 
-exception Error of string
-
 fun pError (e, po) =
-    (print ("Parse Error in position " ^ posToString po ^ ": " ^ e ^ "\n");
-     raise Error e)
+    raise Error ("Parse Error in file " ^ (!errorFile)
+		 ^ "\nin line(s) " ^ posToString po ^ ": " ^ e ^ "\n")
 
 (* makeVector : bool array -> BoolVector.vector
  * converts array to Vector
@@ -136,9 +134,10 @@ fun makeRep (r, n, m, p) =
 	fun alt (0, dat) = dat 
 	  | alt (1, AbsSyn.EPS) = AbsSyn.ALT (AbsSyn.EPS, r, p) 
 	  | alt (x, dat) =
-	    alt (x-1, AbsSyn.CAT (dat, AbsSyn.ALT (r, AbsSyn.EPS, p), p))
+	    if x < 0 then pError ("bad repetition", p)
+	    else alt (x-1, AbsSyn.CAT (dat, AbsSyn.ALT (r, AbsSyn.EPS, p), p))
     in
-	alt (i,t)
+	alt (i, t)
     end
 
 

@@ -4,13 +4,10 @@ structure Output :> OUTPUT =
 	open AbsSyn
 	
 	
-	exception Error of string
-
-
 	fun oError(e, po) =
-	    (print ("Internal Error in structure Output in position "
-		    ^ posToString po ^ ": " ^ e ^ "\n");
-	     raise Error e)
+	    raise Error ("Internal Error in structure Output in file "
+			 ^ (!errorFile) ^ "\nin line(s) "
+			 ^ posToString po ^ ": " ^ e ^ "\n")
 
 
 	fun ++ x = ( x := !x + 1; !x)

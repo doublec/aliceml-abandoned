@@ -5,10 +5,12 @@ structure BoolVector :> MONO_VECTOR where type elem = bool =
 	type vector = bool vector 
     end
 
-structure IntSet = RedBlackSetFn (type ord_key = int val compare = Int.compare)
+structure IntSet =
+    RedBlackSetFn (type ord_key = int val compare = Int.compare)
     
     
-structure IntMap = RedBlackMapFn (type ord_key = int val compare = Int.compare)
+structure IntMap =
+    RedBlackMapFn (type ord_key = int val compare = Int.compare)
     
     
 structure StringMap =

@@ -3,20 +3,19 @@ structure Extract :> EXTRACT=
 
 	open AbsSyn
 
+
 	type lex_map = (regexp * atexp IntMap.map) StringMap.map
 
-	exception Error of string
-
-	val errorFile = ref "?"
 
 	fun eError (e, po) =
-	    (print("Error in file " ^ (!errorFile)
-		   ^ " in line " ^ posToString po ^ ": " ^ e ^ "\n");
-	     raise Error e)
+	    raise Error ("Error in structure Extract in file " ^ (!errorFile)
+			 ^ "\nin line(s) " ^ posToString po ^ ": " ^ e ^ "\n")
+
+
 	fun ieError (e, po) =
-	    (print("Internal Error in structure Extract in position: "
-		   ^ posToString po ^ ": " ^ e ^ "\n");
-	     raise Error e)
+	    raise Error ("Internal Error in structure Extract in file "
+			 ^ (!errorFile) ^ "\nin line(s) "
+			 ^ posToString po ^ ": " ^ e ^ "\n")
 
 
 	(* getLexer : lex list * lmatch StringMap.map -> lmatch StringMap.map
@@ -139,9 +138,8 @@ structure Extract :> EXTRACT=
 	 * returns a map containing for each key (found lex-id) the pair of
 	 * regexp and finishing-action-map
 	 *)
-	fun extract (ll, fileName) = 
+	fun extract ll = 
 	    let
-		val _ = errorFile := fileName
 		val map = StringMap.empty
 		val map' = getLexer(ll, map)
 	    in
