@@ -60,20 +60,20 @@ environment variables:</P>
   <DD><P>specify resolving methods to use when trying to access components.
     Components are resolved with the following methods, in order:</P>
     <OL><!--** mozart -->
-      <LI><P>If <TT>ALICE_LOAD_PREFIX</TT> is set, its methods are tried
-	before any of the following.</P>
-      <LI><P>The URL is tried below the <TT>.alice/cache</TT>
+      <LI>If <TT>ALICE_LOAD_PREFIX</TT> is set, its methods are tried
+	before any of the following.
+      <LI>The URL is tried below the <TT>.alice/cache</TT>
 	directory in the user's home directory, in a <A
 	href="library/resolver-handler.html#cache">cache-style</A>
-	structure.</P>
-      <LI><P>If the URL uses the <TT>x-oz</TT> scheme, it is tried as-is,
-	for compatibility with Oz.</P>
-      <LI><P>Otherwise, the URL is tried with the platform's default component
-	extension appended, which is <TT>.ozf</TT>.</P>
-      <LI><P>If that fails, the URL is tried as-is, for compatibility
-	with Oz.</P>
-      <LI><P>If that fails, and <TT>ALICE_LOAD_SUFFIX</TT> is set, its methods
-	are tried at this point.</P>
+	structure.
+      <LI>If the URL uses the <TT>x-oz</TT> scheme, it is tried as-is,
+	for compatibility with Oz.
+      <LI>Otherwise, the URL is tried with the platform's default component
+	extension appended, which is <TT>.ozf</TT>.
+      <LI>If that fails, the URL is tried as-is, for compatibility
+	with Oz.
+      <LI>If that fails, and <TT>ALICE_LOAD_SUFFIX</TT> is set, its methods
+	are tried at this point.
     </OL>
 </DL>
 
