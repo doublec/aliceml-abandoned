@@ -491,7 +491,8 @@ structure LargeInt =
     type t	= int
 
     val equal	= op =
-    fun hash i	= toInt(abs i mod valOf maxInt) handle Overflow => 0
+    fun hash i	= toInt(abs i mod fromInt(valOf Int.maxInt))
+                  handle Overflow => 0
   end
 
 structure Position =
@@ -501,7 +502,8 @@ structure Position =
     type t	= int
 
     val equal	= op =
-    fun hash i	= toInt(abs i mod valOf maxInt) handle Overflow => 0
+    fun hash i	= toInt(abs i mod fromInt(valOf Int.maxInt))
+	          handle Overflow => 0
   end
 
 

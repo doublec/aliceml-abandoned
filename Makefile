@@ -112,11 +112,11 @@ install-mozart: install-common bootstrap-mozart libs-mozart
 bootstrap-mozart:
 	unset ALICE_HOME ;\
 	(cd vm-mozart && make depend) || exit 1 ;\
-	(cd vm-mozart && /usr/bin/time -po $(TIMEDIR)1 \
+	(cd vm-mozart && /usr/bin/time -p 2>$(TIMEDIR)1 \
 		make ALICEC_EXTRA_OPTS="$(OPTS1)" build1-install) || exit 1 ;\
 	(cd vm-mozart && \
 		make ALICEC_EXTRA_OPTS="$(OPTS2)" build2-all) || exit 1 ;\
-	(cd vm-mozart && /usr/bin/time -po $(TIMEDIR)3 \
+	(cd vm-mozart && /usr/bin/time -p 2>$(TIMEDIR)3 \
 		make ALICEC_EXTRA_OPTS="$(OPTS3)" build3-install) || exit 1 ;\
 	(cd vm-mozart && make PREFIX=$(PREFIX) install) || exit 1
 
@@ -148,12 +148,12 @@ bootstrap-seam: build-seam
 	unset ALICE_HOME ;\
 	export TIMEDIR ;\
 	(cd vm-seam && make -f Makefile.bootstrap depend) || exit 1 ;\
-	(cd vm-seam && /usr/bin/time -po $(TIMEDIR)1 \
+	(cd vm-seam && /usr/bin/time -p 2>$(TIMEDIR)1 \
 		make -f Makefile.bootstrap ALICEC_EXTRA_OPTS="$(OPTS1)" \
 			build1-install) || exit 1 ;\
 	(cd vm-seam && make -f Makefile.bootstrap ALICEC_EXTRA_OPTS="$(OPTS2)" \
 			build2-install) || exit 1 ;\
-	(cd vm-seam && /usr/bin/time -po $(TIMEDIR)3 \
+	(cd vm-seam && /usr/bin/time -p 2>$(TIMEDIR)3 \
 		make -f Makefile.bootstrap ALICEC_EXTRA_OPTS="$(OPTS3)" \
 			build3-install) || exit 1 ;\
 	(cd vm-seam && make -f Makefile.bootstrap install) || exit 1
