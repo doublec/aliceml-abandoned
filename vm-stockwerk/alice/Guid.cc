@@ -37,12 +37,15 @@ void Guid::Init() {
 }
 
 #if defined(__MINGW32__) || defined(_MSC_VER)
-
 # ifdef __GNUC__
 typedef long long verylong;
 # else
 typedef long verylong;
 # endif
+
+static int GetProcessId() {
+  return GetCurrentProcessId();
+}
 
 static verylong GetTimeStamp() {
   SYSTEMTIME st;
@@ -53,8 +56,10 @@ static verylong GetTimeStamp() {
   verylong x2 = x1 + (u_int) ft.dwLowDateTime;
   return x2 / 10000;
 }
-
 #else
+static int GetProcessId() {
+  return getpid();
+}
 
 static int GetTimeStamp() {
   struct tms buffer;
@@ -62,7 +67,6 @@ static int GetTimeStamp() {
   double t2 = t * 1000.0 / static_cast<double>(sysconf(_SC_CLK_TCK));
   return static_cast<int>(t2);
 }
-
 #endif
 
 struct GuidComponents {
@@ -71,7 +75,7 @@ struct GuidComponents {
 
 Guid *Guid::New() {
   GuidComponents gcs;
-  gcs.pid = static_cast<int>(getpid());
+  gcs.pid = static_cast<int>(GetProcessId());
   gcs.time = static_cast<int>(time(0));
   gcs.stamp = GetTimeStamp();
   gcs.rand = rand();
