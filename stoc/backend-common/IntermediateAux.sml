@@ -121,9 +121,9 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 
 	fun substDecs (decs, subst as _::_) = substDecs' (decs, subst)
 	  | substDecs (decs, nil) = decs
-	fun substDec (dec, subst as _::_) = substDec (dec, subst)
+	fun substDec (dec, subst as _::_) = substDec' (dec, subst)
 	  | substDec (dec, nil) = dec
-	fun substExp (exp, subst as _::_) = substExp (exp, subst)
+	fun substExp (exp, subst as _::_) = substExp' (exp, subst)
 	  | substExp (exp, nil) = exp
 
 	(* If the same test occurs in two patterns at the same position,

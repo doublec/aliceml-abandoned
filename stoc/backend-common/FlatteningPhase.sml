@@ -234,14 +234,10 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 		    SimplifyRec.derec (Vector.toList decs)
 		val aliasDecs =
 		    List.map (fn (fromId, toId, info) =>
-			      let
-				  val fromId = translateId fromId
-				  val toId = translateId toId
-				  val toExp = O.VarExp (id_info info, toId)
-			      in
-				  O.ValDec (stm_info (#region info),
-					    O.IdDef fromId, toExp)
-			      end) aliases
+			      O.ValDec (stm_info (#region info),
+					O.IdDef (translateId fromId),
+					O.VarExp (id_info info,
+						  translateId toId))) aliases
 		val subst =
 		    List.map (fn (Id (_, stamp1, _), Id (_, stamp2, _), _) =>
 			      (stamp1, stamp2)) aliases
