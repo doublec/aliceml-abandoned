@@ -90,9 +90,14 @@ final public class ConVal3 implements DMLConVal {
 	if (level<1) {
 	    return "...";
 	} else {
-	    return constructor.toString(level-1)+"("+fst.toString(level-1)+", "+snd.toString(level-1)+", "+thr.toString(level-1)+") : constructed value";
+	    return constructor.toString(level-1)+
+		"("+fst.toString(level-1)+", "+
+		snd.toString(level-1)+", "+
+		thr.toString(level-1) +
+		") : constructed value";
 	}
     }
+
     final public void set(DMLValue v0) throws RemoteException {
 	if (v0 instanceof Tuple3) {
 	    Tuple3 t = (Tuple3) v0;

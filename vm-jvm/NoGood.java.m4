@@ -29,6 +29,7 @@ final public class NoGood implements DMLValue {
 	throws java.io.ObjectStreamException {
 	Object o = GName.gNames.get(gName);
 	if (o == null) {
+	    GName.gNames.put(gName,this);
 	    return this;
 	} else {
 	    return o;

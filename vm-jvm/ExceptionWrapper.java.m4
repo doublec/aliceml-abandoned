@@ -36,6 +36,10 @@ final public class ExceptionWrapper extends RuntimeException {
      *  @return java.lang.String java.lang.Stringdarstellung des ExceptionWrappers
      */
     final public java.lang.String toString() {
-	return "\n\t"+value+" as exception";
+	try {
+	    return "\n\t"+value.toString(3)+" as exception";
+	} catch (java.rmi.RemoteException r) {
+	    return null;
+	}
     }
 }
