@@ -1,0 +1,18 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature SELECT from "SELECT-sig"
+
+signature SELECT_COMPONENT =
+sig
+    structure Select : SELECT
+end

@@ -1,0 +1,399 @@
+import structure Tag     from "Tag"
+import structure Meaning from "Meaning"
+import structure Doc     from "Doc"
+
+import structure FD      from "x-alice:/lib/constraints/FD"
+import structure FS      from "x-alice:/lib/constraints/FS"
+import structure Space   from "x-alice:/lib/constraints/Space"
+import structure Select  from "constraints/Select"
+
+import structure ListSort from "x-alice:/lib/utility/ListSort"
+
+
+signature SMURF =
+sig
+    val smurf : Meaning.meaning * int -> Doc.doc list
+	(* Calculates a stream of solutions concurrently.
+	 * Each element in the stream is strictly better than
+	 * all preceeding elements. If the stream terminates,
+	 * the last element is an optimal solution.
+	 *)
+end
+
+structure Smurfette : SMURF =
+struct
+
+    type fd = FD.fd
+    type fs = FS.fs
+
+  (* Attributes *)
+
+    val boolRange		= (1,2)
+    fun boolToFD false		= FD.fromInt 1
+      | boolToFD true		= FD.fromInt 2
+
+    val underlineRange		= (1,4)
+    fun underlineToFD n		= FD.fromInt(n+1)
+
+    val sizeRange		= (1,11)
+    fun sizeToFD ~1		= FD.fromInt 11
+      | sizeToFD n		= FD.fromInt(n+1)
+
+    val colorRange		= (1,9)
+    fun colorToFD(Tag.R)	= FD.fromInt 1
+      | colorToFD(Tag.G)	= FD.fromInt 2
+      | colorToFD(Tag.B')	= FD.fromInt 3
+      | colorToFD(Tag.C)	= FD.fromInt 4
+      | colorToFD(Tag.M)	= FD.fromInt 5
+      | colorToFD(Tag.Y)	= FD.fromInt 6
+      | colorToFD(Tag.K)	= FD.fromInt 7
+      | colorToFD(Tag.W)	= FD.fromInt 8
+      | colorToFD(Tag.UNKNOWN)	= FD.fromInt 9
+
+    datatype ems = N | EM | S
+
+    fun ems(false, false)	= N
+      | ems(true,  false)	= EM
+      | ems(_,     true)	= S
+
+    val emsRange		= (1,3)
+    fun emsToFD N		= FD.fromInt 1
+      | emsToFD EM		= FD.fromInt 2
+      | emsToFD S		= FD.fromInt 3
+
+    datatype attrib = B | EMS | I | TT | U | SIZE | COLOR
+
+    type attribs =
+	{b : fd, ems : fd, i : fd, tt : fd, u : fd, size : fd, color : fd}
+
+    val defaultAttribs =
+	{b	= boolToFD false,
+	 ems	= emsToFD N,
+	 i	= boolToFD false,
+	 tt	= boolToFD false,
+	 u	= underlineToFD 0,
+	 size	= sizeToFD ~1,
+	 color	= colorToFD(Tag.UNKNOWN)}
+
+    fun tagAttribs() =
+	{b	= FD.range boolRange,
+	 ems	= FD.range emsRange,
+	 i	= FD.range boolRange,
+	 tt	= FD.range boolRange,
+	 u	= FD.range underlineRange,
+	 size	= FD.range sizeRange,
+	 color	= FD.range colorRange}
+
+    fun textAttribs(property, spacy) =
+	{b	= if spacy then FD.range boolRange else boolToFD(#b property),
+	 ems	= if spacy then FD.range emsRange
+		  else emsToFD(ems(#em property, #s property)),
+	 i	= if spacy then FD.range boolRange else boolToFD(#i property),
+	 tt	= boolToFD(#tt property),
+	 u	= underlineToFD(#u property),
+	 size	= sizeToFD(#size property),
+	 color	= colorToFD(#color property)}
+
+    fun boolToInt false = 0
+      | boolToInt true  = 1
+
+    fun minDepth {b, em, i, s, tt, u, size, color} =
+	let val c = Meaning.initialProperty in
+	    boolToInt(b <> #b c) +
+	    boolToInt(i <> #i c) +
+	    boolToInt(em <> #em c orelse s <> #s c) +
+	    boolToInt(tt <> #tt c) +
+	    abs(u - #u c) +
+	    boolToInt(size <> #size c) +
+	    boolToInt(color <> #color c)
+	end
+
+
+  (* Tag descriptors *)
+
+    type tag_desc = {tag : Tag.tag option, at : attrib * fd * fd -> unit}
+
+    fun nopTagAt (a,x1,x2) = FD.equal(x2,x1)
+    fun boolTagAt a' (a,x1,x2) =
+	FD.equal(x2, if a = a' then boolToFD true else x1)
+    fun emTagAt (a,x1,x2) =
+	if a = EMS
+	then Select.fd([FD.fromInt 2, FD.fromInt 1, FD.fromInt 3], x1, x2)
+	else FD.equal(x2,x1)
+    fun sTagAt (a,x1,x2) =
+	FD.equal(x2, if a = S then emsToFD S else x1)
+    fun underlineTagAt (a,x1,x2) =
+	if a = U then FD.plus(x1, FD.fromInt 1, x2) else FD.equal(x2,x1)
+    fun plTagAt (a,x1,x2) =
+	FD.equal(x2, case a of (EMS | I | TT | U) => boolToFD false | _ => x1)
+    fun sizeTagAt n (a,x1,x2) =
+	FD.equal(x2, if a = SIZE then sizeToFD n else x1)
+    fun colorTagAt c (a,x1,x2) =
+	FD.equal(x2, if a = COLOR then colorToFD c else x1)
+
+    val tagDesc =
+	#[
+	    {tag = NONE,			at = nopTagAt},
+	    {tag = SOME(Tag.B),			at = boolTagAt B},
+	    {tag = SOME(Tag.EM),		at = emTagAt},
+	    {tag = SOME(Tag.I),			at = boolTabAt I},
+	    {tag = SOME(Tag.PL),		at = plTabAt},
+	    {tag = SOME(Tag.S),			at = sTagAt},
+	    {tag = SOME(Tag.TT),		at = boolTagAt TT},
+	    {tag = SOME(Tag.U),			at = undelineTagAt},
+	    {tag = SOME(Tag.SIZE 0),		at = sizeTagAt 0},
+	    {tag = SOME(Tag.SIZE 1),		at = sizeTagAt 1},
+	    {tag = SOME(Tag.SIZE 2),		at = sizeTagAt 2},
+	    {tag = SOME(Tag.SIZE 3),		at = sizeTagAt 3},
+	    {tag = SOME(Tag.SIZE 4),		at = sizeTagAt 4},
+	    {tag = SOME(Tag.SIZE 5),		at = sizeTagAt 5},
+	    {tag = SOME(Tag.SIZE 6),		at = sizeTagAt 6},
+	    {tag = SOME(Tag.SIZE 7),		at = sizeTagAt 7},
+	    {tag = SOME(Tag.SIZE 8),		at = sizeTagAt 8},
+	    {tag = SOME(Tag.SIZE 9),		at = sizeTagAt 9},
+	    {tag = SOME(Tag.COLOR Tag.R),	at = colorTagAt Tag.R},
+	    {tag = SOME(Tag.COLOR Tag.G),	at = colorTagAt Tag.G},
+	    {tag = SOME(Tag.COLOR Tag.B'),	at = colorTagAt Tag.B'},
+	    {tag = SOME(Tag.COLOR Tag.C),	at = colorTagAt Tag.C},
+	    {tag = SOME(Tag.COLOR Tag.M),	at = colorTagAt Tag.M},
+	    {tag = SOME(Tag.COLOR Tag.Y),	at = colorTagAt Tag.Y},
+	    {tag = SOME(Tag.COLOR Tag.K),	at = colorTagAt Tag.K},
+	    {tag = SOME(Tag.COLOR Tag.W),	at = colorTagAt Tag.W},
+	]
+
+    val maxTag = Vector.length tagDesc - 1
+
+    val tagCosts = Vector.map (fn NONE => 0 | SOME t => Tag.cost t) tagDesc
+
+
+  (* Node descriptors *)
+
+    datatype kind = ROOT | TAG of fd | TEXT of string list
+
+    type node =
+	{kind :		kind,
+	 attribs :	attribs,
+	 mother :	fd,
+	 daughters :	fs,
+	 down :		fs,
+	 eqdown :	fs,
+	 scope :	fs,
+	 depth :	fd,
+	 minDepth :	fd}
+
+    fun fsEmpty()			= FS.emptyValue()
+    fun fsSingleton i			= FS.singletonValue i
+    fun fsValue range			= FS.value #[FD.RANGE range]
+    fun fsUpperBound range		= FS.fs(SOME(#[], #[FD.RANGE range]))
+
+    fun forall (lo,hi) f where (lo>hi)	= ()
+      | forall (lo,hi) f		= (f lo ; forall (lo+1,hi) f)
+
+    infix !!
+    val op!! = Vector.sub
+
+
+    fun constrain(meaning, sourceCost) =
+	let
+	    val numTags		= sourceCost div Tag.minCost
+	    val numTexts	= List.length meaning
+	    val numNodes	= 1 + numTags + numTexts
+	    val root		= 1
+	    val tag1		= root + 1
+	    val tagN		= root + numTags
+	    val text1		= tagN + 1
+	    val textM		= tagN + numTexts
+	    val innerNodes	= (root,tagN)
+	    val tagNodes	= (tag1,tagN)
+	    val textNodes	= (text1,textN)
+	    val nonRootNodes	= (tag1,textN)
+	    val nodes		= (root,textN)
+
+	    fun rootNode() =
+		{kind =		ROOT,
+		 attribs =	defaultAttribs,
+		 mother =	FD.fromInt 0,		(* don't care *)
+		 daughters =	fsUpperBound nonRootNodes,
+		 down =		fsUpperBound nonRootNodes,
+		 eqdown =	fsValue nodes,
+		 scope =	fsUpperBound textNodes,
+		 depth =	FD.fromInt 0,
+		 minDepth =	FD.fromInt 0}
+
+	    fun tagNode i =
+		{kind =		TAG(FD.range(1,maxTag)),
+		 attribs =	tagAttribs(),
+		 mother =	FD.range innerNodes,
+		 daughters =	fsUpperBound nonRootNodes,
+		 down =		fsUpperBound nonRootNodes,
+		 eqdown =	fsUpperBound nonRootNodes,
+		 scope =	fsUpperBound textNodes,
+		 depth =	FD.range(1,numTags),
+		 minDepth =	FD.fromInt 1}
+
+	    val meaning' = Vector.fromList meaning
+
+	    fun textNode i =
+		let val (text,spacy,property) = meaning'!!(i-text1) in
+		{kind =		TEXT text,
+		 attribs =	textAttribs(property,spacy),
+		 mother =	FD.range innerNodes,
+		 daughters =	fsEmpty(),
+		 down =		fsEmpty(),
+		 eqdown =	fsSingleton i,
+		 scope =	fsSingleton i,
+		 depth =	FD.range(1, numTags+1),
+		 minDepth =	FD.range(minDepth property, numTags+1)}
+		end
+
+	    val v = Vector.tabulate(numNodes, fn i =>
+			if      i = root  then rootNode()
+			else if i <= tagN then tagNode i
+			else                   textNode i
+		    )
+
+	    val vTags   = Vector.extract(v, tag1, SOME numTags)
+	    val vTexts  = Vector.extract(v, text1, SOME numTexts)
+
+	    val eqdowns = Vector.map #eqdown v
+	    val scopes  = Vector.map #scope v
+	    val depths  = Vector.map #depth v
+
+	    val cost = FD.range(0, sourceCost)
+
+	    (* Distribution *)
+
+	    fun distribute() =
+		let
+		    val _ = Space.waitStable()
+		    val mothers = List.map #mother
+				     (List.filter
+					(fn w => FS.isDet(#down w) andalso
+						 not(FD.isDet(#mother w)))
+					(Vector.toList v)
+				     ) 
+		in
+		    case mothers
+		      of [] =>
+			 FD.distribute(FD.FIRSTFAIL,
+			    Vector.concat [Vector.map #mother vTags,
+					   Vector.map #mother vTexts,
+					   Vector.map (fn{kind=TAG t,...} => t)
+						      vTags]
+			 )
+		       | _ =>
+			 let
+			     val mother = ????
+			 in
+			     FD.distribute(FD.FIRSTFAIL, #[mother]);
+			     distribute()
+			 end
+		end
+	in
+	    (* Treeness *)
+
+	    forall nonRootNodes (fn i =>
+	    let val w = v!!i in
+		FD.notequal(#mother w, FD.fromInt i);
+		Select.union(eqdowns, #daughters w, #down w);
+		FS.partition(#[fsSingleton i, #down w], #eqdown w)
+	    end);
+
+	    forall innerNodes (fn i1 =>
+	    let val w1 = v!!i1 in
+		forall nonRootNodes (fn i2 =>
+		if i1 = i2 then () else
+		let val w2 = v!!i2 in
+		    FD.notequal(FD.??, FS.Reified.isIn(i2, #daughters w1))
+		end)
+	    end);
+
+	    (* Attributes *)
+
+	    forall ???
+
+	    (* Scope *)
+
+	    forall innerNodes (fn i =>
+	    let val w = v!!i in
+		FS.Int.convex(#scope W);	(* not for root? *)
+		Select.union(scopes, #daughters w, #scope w)
+	    end);
+
+	    (* Placement of unused elements *)
+
+	    forall tagNodes (fn i =>
+	    let val w = v!!i in
+		??
+	    end);
+
+	    (* Breaking depth symmetries *)
+
+	    forall tagNodes (fn i =>
+	    let val w = v!!i in
+		Select.fd(depths, #mother w, ???);
+		FD.plus(??, FD.fromInt 1, #depth w);
+		if i < tagN then FD.lessEq(#depth w, #depth(v!!(i+1))) else ()
+	    end);
+
+	    (* Minimal depth *)
+
+	    forall innerNodes (fn i1 =>
+	    let val w1 = v!!i1 in
+		forall nonRootNodes (fn i2 =>
+		if i1 = i2 then () else
+		let val w2 = v!!i2 in
+		    FD.lessEq(FS.Reified.isIn(i2, #daughers w1),
+			      ????)
+		end)
+	    end);
+
+	    (* Cost *)
+
+	    FD.sum(Vector.map ??? vTags, FD.EQUAL, cost);
+
+	    (* Proceed *)
+
+	    distribute();
+	    (v, FD.toInt cost)
+	end
+
+    fun script(meaning, sourceCost) =
+	let
+	    val meaning' = List.rev meaning
+	in
+	    fn() => constrain(meaning', sourceCost)
+	end
+
+    fun pruner((_,oldCost), (_,newCost)) = FD.greater(oldCost, newCost)
+
+    fun leftmost({scope, ...} : node) =
+	case FS.Reflect.lowerBound scope
+	  of [] => 0
+	   | FD.SINGLE i => i
+	   | FD.RANGE(i1,i2) => i1
+
+    fun toDoc v = toDoc'(v, #daughters(v!!0))
+    and toDoc'(v, daughters) =
+	List.foldr (fn(i, doc) =>
+		    case #kind(v!!i)
+		    of TEXT text   => Doc.TEXT text :: doc
+		     | TAG NONE    => doc
+		     | TAG(SOME t) => Doc.TAGGED(t, toDoc'(v, #daughters(v!!i)))
+		     | ROOT        => raise Fail "Smurfette.toDoc"
+		   ) []
+		   (ListSort.sort (fn(i1,i2) =>
+				   leftmost(v!!i1) < leftmost(v!!i2)) ??)
+
+    fun smurf(meaning, sourceCost) =
+	let
+	    val ?? = Search.searchBest(script, pruner)
+	in
+	    spawn smurf' ??
+	end
+    and smurf' ?? =
+	case ???
+	  of []    => []
+	   | x::xs => toDoc(#1 x) :: (spawn smurf' ??)
+
+end

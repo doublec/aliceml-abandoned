@@ -1,0 +1,25 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure FD from "FD"
+import structure FS from "FS"
+
+signature SELECT =
+sig
+    val the :		FS.fs * FD.fd -> unit
+    val fd :		FD.fd vector * FD.fd * FD.fd -> unit
+    val fs :		FS.fs vector * FD.fd * FS.fs -> unit
+    val union :		FS.fs vector * FS.fs * FS.fs -> unit
+    val intersect :	FS.fs vector * FS.fs * FS.fs -> unit
+    val seqUnion :	FS.fs vector * FS.fs * FS.fs -> unit
+    val indexedUnion :	(FD.fd * FS.fs) vector * FS.fs * FS.fs -> unit
+end
