@@ -63,8 +63,7 @@ struct
     type arena_widget = 
 	{
 	 canvas : Gtk.object,
-	 state  : arena_field Array2.array ref,
-	 view   : Pos.pos ref
+	 state  : arena_field Array2.array ref
 	 }
 
     val cellSize2     = cellSize     div 2
@@ -109,13 +108,12 @@ end
 
     fun initialize () = 
 	{canvas = GtkCanvas.new 0,
-	 state  = ref (Array2.array(1, 1, (Gtk.null () , P.EMPTY))),
-	 view   = ref (0,0)
+	 state  = ref (Array2.array(1, 1, (Gtk.null () , P.EMPTY)))
 	 }
 	
     fun toObject ({canvas, ... } : arena_widget) : Gtk.object  = canvas
 	
-    fun initLevel ({canvas, state, view}, {dimensions = dim} : P.level_info) =
+    fun initLevel ({canvas, state}, {dimensions = dim} : P.level_info) =
 	let
 	    val (rows, cols) = dim
 	    val _ = GtkCanvas.setScrollRegion (canvas, 0.0, 0.0,
@@ -123,10 +121,8 @@ end
 					       Real.fromInt(rows * cellSize))
 	    val _ = Gtk.widgetSetUsize (canvas, windowWidth, windowHeight)
 	    val arena = Array2.array (rows, cols, (Gtk.null (), P.EMPTY))
-	    val middle = (rows div 2, cols div 2)
 	in
-	    state  := arena;
-	    view   := middle
+	    state  := arena
 	end
 	
 
@@ -242,58 +238,37 @@ end
 				 fill_color = red,
 				 outline_color = red})
 
-    fun update ({canvas, state = ref arena, view}, difflist) =
+    fun update ({canvas, state = ref arena}, difflist) =
 	let
             val can = GtkCanvas.root canvas
 
             fun changeField (oldObj:Gtk.object, r, c, field) =
-                (if oldObj <> Gtk.null () then Gtk.objectDestroy oldObj
-                 else ();
-                 case field of
-		    P.EMPTY              => Array2.update (arena, r, c, 
-                                                            (Gtk.null (), 
-								 field))
-                  | P.WALL               => Array2.update (arena, 
-                                                           r, 
-                                                           c, 
-                                                           (insertWall (can,
-                                                                        r, 
-                                                                        c),
-                                                            field))
-                  | P.GOODIE _           => Array2.update (arena,
-                                                           r,
-                                                           c,
-                                                          (insertGoodie (can,
-                                                                         r,
-                                                                         c),
-                                                           field))
+                let
+                    val x = cellSize * c
+                    val y = cellSize * r
+                in
+                    (* destroy old object if existing *)
+                    if oldObj <> Gtk.null () then Gtk.objectDestroy oldObj
+                    else ();
+                    (* place the new one *)
+                    case field of
+		        P.EMPTY     => 
+                            Array2.update (arena, r, c, (Gtk.null (), field))
+                    |   P.WALL      => Array2.update (arena, r, c, 
+                                        (insertWall (can, x, y), field))
+                    | P.GOODIE _    => Array2.update (arena, r, c, 
+                                        (insertGoodie (can, x, y), field))
 
-                  | P.GATE col           => Array2.update (arena, 
-                                                           r, 
-                                                           c, 
-                                                           (insertGate (can,
-                                                                        r, 
-                                                                        c, 
-                                                                        color col),
-                                                            field))
-                  | P.SNAKE_HEAD (d, col) => Array2.update (arena, 
-                                                           r, 
-                                                           c, 
-                                                           (insertHead (can,
-                                                                        r, 
-                                                                        c, 
-                                                                        d, 
-                                                                        color col),
-                                                            field))
-                  | P.SNAKE_BODY col      => Array2.update (arena, 
-                                                           r, 
-                                                           c, 
-                                                           (insertBody (can,
-                                                                        r, 
-                                                                        c, 
-                                                                        color col),
-                                                            field)))
-
+                    | P.GATE col    => Array2.update (arena, r, c, 
+                                        (insertGate (can, x, y, color col), 
+                                            field))
+                    | P.SNAKE_HEAD (d, col) => 
+                        Array2.update (arena, r, c, 
+                            (insertHead (can, x, y, d, color col), field))
+                    | P.SNAKE_BODY col      => 
+                        Array2.update (arena, r, c, 
+                            (insertBody (can, x, y, color col), field))
+                end
 
 	    fun insert ((r, c), field) = 
 		let
@@ -343,3 +318,4 @@ fun test () =
 
     end
 
+val _ = test ()
