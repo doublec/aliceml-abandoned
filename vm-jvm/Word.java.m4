@@ -8,7 +8,7 @@ final public class DMLWord extends DMLSCon {
     return (val instanceof DMLWord) && (((DMLWord)val).value==this.value);
   }
 
-  public DMLWord(int value) {
+  public DMLWord(long value) {
     this.value=value;
   }
 
