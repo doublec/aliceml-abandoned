@@ -1,11 +1,6 @@
 #!/bin/sh
 ###
-### Bootstrap the Alice-to-Seam compiler.
-###
-### To install globally:
-###   prefix=/opt/stockhausen-devel
-### To install locally:
-###   prefix=`pwd`/install
+### Bootstrap Alice-on-Seam.
 ###
 
 ##
@@ -28,7 +23,7 @@ then
 else
    prefix=`pwd`/install
 fi
-echo Trying to install Stockhausen on Seam to $prefix...
+echo Trying to install Alice-on-Seam to $prefix...
 
 case `uname -s` in
     CYGWIN*)
