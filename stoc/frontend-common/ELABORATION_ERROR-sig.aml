@@ -3,6 +3,8 @@ signature ELABORATION_ERROR =
 
     type typ    = Type.t
     type kind   = Type.kind
+    type inf	= Inf.t
+    type id     = AbstractGrammar.id
     type longid = AbstractGrammar.longid
 
     type unify_error = typ * typ * typ * typ
@@ -43,8 +45,15 @@ signature ELABORATION_ERROR =
 	(* Specifications *)
 	| TypSpecUnify		of unify_error
 	| DatSpecUnify		of unify_error
+	(* Long ids *)
+	| ModLongidInf		of longid * inf
+	(* Modules *)
+	| SelModInf		of inf
 
+    datatype warning =
+	  NotGeneralized	of id * typ
 
     val error :	Source.position * error -> 'a
+    val warn :	Source.position * warning -> unit
 
   end

@@ -11,6 +11,8 @@ structure ElaborationError :> ELABORATION_ERROR =
 
     type typ    = Type.t
     type kind   = Type.kind
+    type inf	= Inf.t
+    type id     = AbstractGrammar.id
     type longid = AbstractGrammar.longid
 
     type unify_error = typ * typ * typ * typ
@@ -51,18 +53,24 @@ structure ElaborationError :> ELABORATION_ERROR =
 	(* Specifications *)
 	| TypSpecUnify		of unify_error
 	| DatSpecUnify		of unify_error
+	(* Long ids *)
+	| ModLongidInf		of longid * inf
+	(* Modules *)
+	| SelModInf		of inf
+
+    datatype warning =
+	  NotGeneralized	of id * typ
 
 
     (* Pretty printing *)
 
     fun ppLab'(AbstractGrammar.Lab(_,l)) = l
 
-    fun ppId'(AbstractGrammar.Id(_,_, AbstractGrammar.ExId x)) = x
-      | ppId'(AbstractGrammar.Id(_,_, AbstractGrammar.InId))   = "?"
+    fun ppId'(AbstractGrammar.Id(_,_,name)) = Name.toString name
+    fun ppId x = "`" ^ ppId' x ^ "'"
 
     fun ppLongid'(AbstractGrammar.ShortId(_,x))  = ppId' x
       | ppLongid'(AbstractGrammar.LongId(_,y,l)) = ppLongid' y ^ "." ^ ppLab' l
-
     fun ppLongid y = "`" ^ ppLongid' y ^ "'"
 
 
@@ -86,114 +94,127 @@ structure ElaborationError :> ELABORATION_ERROR =
 	    nest(break ^^ below(PPType.ppType t4))
 	)
 
-    fun pp(VecExpUnify ue) =
+    fun ppError(VecExpUnify ue) =
 	ppUnify2(
 	  par["inconsistent","types","in","vector","expression:"],
 	  par["does","not","agree","with","previous","element","type"], ue)
-      | pp(AppExpFunUnify ue) =
+      | ppError(AppExpFunUnify ue) =
 	ppUnify2(
 	  par["applied","value","is","not","a","function:"],
 	  par["does","not","match","function","type"], ue)
-      | pp(AppExpArgUnify ue) =
+      | ppError(AppExpArgUnify ue) =
 	ppUnify4(
 	  par["argument","type","mismatch:"],
 	  par["does","not","match","argument","type"], ue)
-      | pp(AndExpUnify ue) =
+      | ppError(AndExpUnify ue) =
 	ppUnify2(
 	  par["operand","of","`andalso'","is","not","a","boolean:"],
 	  par["does","not","match","type"], ue)
-      | pp(OrExpUnify ue) =
+      | ppError(OrExpUnify ue) =
 	ppUnify2(
 	  par["operand","of","`orelse'","is","not","a","boolean:"],
 	  par["does","not","match","type"], ue)
-      | pp(IfExpCondUnify ue) =
+      | ppError(IfExpCondUnify ue) =
 	ppUnify2(
 	  par["operand","of","`if'","is","not","a","boolean:"],
 	  par["does","not","match","type"], ue)
-      | pp(IfExpBranchUnify ue) =
+      | ppError(IfExpBranchUnify ue) =
 	ppUnify4(
 	  par["inconsistent","types","in","branches","of","`if':"],
 	  par["does","not","agree","with","type"], ue)
-      | pp(WhileExpCondUnify ue) =
+      | ppError(WhileExpCondUnify ue) =
 	ppUnify2(
 	  par["operand","of","`while'","is","not","a","boolean:"],
 	  par["does","not","match","type"], ue)
-      | pp(RaiseExpUnify ue) =
+      | ppError(RaiseExpUnify ue) =
 	ppUnify2(
 	  par["operand","of","`raise'","is","not","an","exception:"],
 	  par["does","not","match","type"], ue)
-      | pp(HandleExpUnify ue) =
+      | ppError(HandleExpUnify ue) =
 	ppUnify4(
 	  par["inconsistent","types","in","branches","of","`handle':"],
 	  par["does","not","agree","with","type"], ue)
-      | pp(AnnExpUnify ue) =
+      | ppError(AnnExpUnify ue) =
 	ppUnify4(
 	  par["expression","does","not","match","annotation:"],
 	  par["does","not","match","type"], ue)
-      | pp(MatchPatUnify ue) =
+      | ppError(MatchPatUnify ue) =
 	ppUnify4(
 	  par["inconsistent","types","in","`case'","patterns:"],
 	  par["does","not","agree","with","previous","type"], ue)
-      | pp(MatchExpUnify ue) =
+      | ppError(MatchExpUnify ue) =
 	ppUnify4(
 	  par["inconsistent","types","in","branches","of","`case':"],
 	  par["does","not","agree","with","previous","type"], ue)
-      | pp(ConPatFewArgs y) =
+      | ppError(ConPatFewArgs y) =
 	  par["missing","argument","to","constructor",ppLongid y,"in","pattern"]
-      | pp(ConPatManyArgs y) =
+      | ppError(ConPatManyArgs y) =
 	  par["surplus","argument","to","constructor",ppLongid y,"in","pattern"]
-      | pp(ConPatUnify ue) =
+      | ppError(ConPatUnify ue) =
 	ppUnify4(
 	  par["ill-typed","constructor","argument:"],
 	  par["does","not","match","argument","type"], ue)
-      | pp(VecPatUnify ue) =
+      | ppError(VecPatUnify ue) =
 	ppUnify2(
 	  par["inconsistent","types","in","vector","pattern:"],
 	  par["does","not","agree","with","previous","element","type"], ue)
-      | pp(AsPatUnify ue) =
+      | ppError(AsPatUnify ue) =
 	ppUnify4(
 	  par["inconsistent","types","in","`as'","pattern:"],
 	  par["does","not","agree","with","type"], ue)
-      | pp(AltPatUnify ue) =
+      | ppError(AltPatUnify ue) =
 	ppUnify4(
 	  par["inconsistent","types","in","pattern","alternatives:"],
 	  par["does","not","agree","with","previous","type"], ue)
-      | pp(GuardPatUnify ue) =
+      | ppError(GuardPatUnify ue) =
 	ppUnify2(
 	  par["pattern","guard","is","not","a","boolean:"],
 	  par["does","not","match","type"], ue)
-      | pp(AnnPatUnify ue) =
+      | ppError(AnnPatUnify ue) =
 	ppUnify4(
 	  par["pattern","does","not","match","annotation:"],
 	  par["does","not","match","type"], ue)
-      | pp(StarTypKind k) =
+      | ppError(StarTypKind k) =
 	  par["missing","arguments","in","type","expression"]
-      | pp(AppTypFunKind k) =
+      | ppError(AppTypFunKind k) =
 	  par["type","expression","is","not","a","type","function"]
-      | pp(AppTypArgKind(k1,k2)) =
+      | ppError(AppTypArgKind(k1,k2)) =
 	  par["missing","arguments","in","type","expression"]
-      | pp(RefTypKind k) =
+      | ppError(RefTypKind k) =
 	  par["missing","arguments","in","type","expression"]
-      | pp(ValDecUnify ue) =
+      | ppError(ValDecUnify ue) =
 	ppUnify4(
 	  par["expression","does","not","match","pattern","type:"],
 	  par["does","not","match","type"], ue)
-      | pp(TypDecUnify ue) =
+      | ppError(TypDecUnify ue) =
 	  par["missing","arguments","in","type","expression",
 	      "in","type","declaration"]
-      | pp(DatDecUnify ue) =
+      | ppError(DatDecUnify ue) =
 	  par["missing","arguments","in","type","expression",
 	      "in","datatype","declaration"]
-      | pp(TypSpecUnify ue) =
+      | ppError(TypSpecUnify ue) =
 	  par["missing","arguments","in","type","expression",
 	      "in","type","specification"]
-      | pp(DatSpecUnify ue) =
+      | ppError(DatSpecUnify ue) =
 	  par["missing","arguments","in","type","expression",
 	      "in","datatype","specification"]
+      | ppError(ModLongidInf(y,j)) =
+	  par["module",ppLongid y,"is","not","a","structure"]
+      | ppError(SelModInf j) =
+	  par["module","expression","is","not","a","structure"]
+
+    fun ppWarning(NotGeneralized(x,t)) =
+	vbox(
+	    par["type","of",ppId x,"cannot","be","generalized","due","to",
+		"value","restriction:"] ^^
+	    nest(break ^^ below(PPType.ppType t))
+	)
 
 
-    fun toString err = PrettyPrint.toString(pp err, 75)
+    fun errorToString err = PrettyPrint.toString(ppError err, 75)
+    fun warningToString w = PrettyPrint.toString(ppWarning w, 75)
 
-    fun error(i, err) = Error.error(i, toString err)
+    fun error(i, err) = Error.error(i, errorToString err)
+    fun warn(i, w)    = Error.warn(i, warningToString w)
 
   end

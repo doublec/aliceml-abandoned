@@ -5,7 +5,7 @@ signature ENV =
     type id    = AbstractGrammar.id
     type typ   = Type.t
     type alpha = Type.alpha
-    type inf   = unit
+    type inf   = Inf.t
 
     type env
     type t = env

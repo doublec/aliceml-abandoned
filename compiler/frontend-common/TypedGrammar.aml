@@ -1,6 +1,6 @@
 structure TypedInfo =
   struct
-    datatype annotation = NON | TYP of Type.t | INF of unit (*UNFINISHED*)
+    datatype annotation = NON | TYP of Type.t | INF of Inf.t
     type     info       = Source.position * annotation
   end
 

@@ -18,10 +18,10 @@ structure InfPrivate =
 	  GROUND				(* ordinary interface *)
 	| DEP of path * inf * kind		(* dependent *)
 
-    withtype inf  = inf' ref			(* [jota,j] *)
-    and      kind = kind' ref			(* [kappa,k] *)
-    and      con  = kind' ref * path		(* [chi,c] *)
-    and      sign = (inf, kind' ref) Sign.t	(* [sigma,s] *)
+    withtype inf  = inf' ref				(* [jota,j] *)
+    and      kind = kind' ref				(* [kappa,k] *)
+    and      con  = kind' ref * path			(* [chi,c] *)
+    and      sign = (inf' ref, kind' ref) Sign.t	(* [sigma,s] *)
 
     type t = inf
 
@@ -147,6 +147,12 @@ structure InfPrivate =
 
     fun pathCon(_,p)	= p
     fun path j		= pathCon(asCon j)
+
+
+  (* Kinds *)
+
+    fun inGround ()	= ref GROUND
+    fun inDependent pjk	= ref(DEP pjk)
 
 
   (* Strengthening *)

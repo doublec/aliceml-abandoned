@@ -5,7 +5,7 @@ structure Env :> ENV =
     type id    = AbstractGrammar.id
     type typ   = Type.t
     type alpha = Type.alpha
-    type inf   = unit
+    type inf   = Inf.t
 
 
     (* The map implementing the environment *)

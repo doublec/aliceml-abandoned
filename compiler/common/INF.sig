@@ -49,4 +49,9 @@ signature INF =
     val realise :	rea  * inf -> unit
     val strengthen :	path * inf -> unit
 
+  (* Kinds *)
+
+    val inGround :	unit -> kind
+    val inDependent :	path * inf * kind -> kind
+
   end
