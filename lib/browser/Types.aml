@@ -20,7 +20,7 @@ import signature TYPES from "TYPES-sig"
 
 structure Types :> TYPES = 
 struct
-
+    
     datatype actions = NO_ACTIONS (* wird spaeter erweitert *)
     
     datatype desc =
@@ -101,6 +101,6 @@ struct
      | LIMIT of {desc : desc, 
 		 sort : limit }
        
-     | EMBEDDED of Reflect.value * Type.t   
+     | EMBEDDED of Reflect.value * Type.t  
 
 end

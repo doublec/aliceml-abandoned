@@ -14,12 +14,14 @@
  *)
 
 import structure PervasiveType from "x-alice:/lib/rtt/PervasiveType"
-import structure MkPathTable from "MkPathTable"
-import structure NewNode from "NewNode"
+import structure Gdk from "x-alice:/lib/gtk/Gdk"
+import structure Types from "Types"
+import structure MkColorTable from "MkColorTable"
 import structure CreateDoc from "CreateDoc"
+import structure NewNode from "NewNode"
 import signature UNSAFE_INSPECTOR from "UNSAFE_INSPECTOR-sig"
 
-open CreateDoc
+open Types MkColorTable CreateDoc Gdk
 
 structure UnsafeInspector :> UNSAFE_INSPECTOR = 
 struct
@@ -38,7 +40,21 @@ struct
 	          ; registerType(PervasiveType.path_exn, createExn)
 	          ; registerType(PervasiveType.path_ref, createRef)
 	          ; registerType(PervasiveType.path_vec, createVector)
-	          ; registerType(PervasiveType.path_array, createArray) )
+	          ; registerType(PervasiveType.path_array, createArray) 
+		  
+		  ; registerColor(INT_COLOR,  allocColor(0,65535,0))
+                  ; registerColor(REAL_COLOR, allocColor(0,65535,0))
+                  ; registerColor(CHAR_COLOR, allocColor(0,40000,0))     
+                  ; registerColor(STR_COLOR, allocColor(0,40000,0)) 
+                  ; registerColor(WORD_COLOR, allocColor(0,65535,0))
+                  ; registerColor(EXN_COLOR,  allocColor (65535,65535,0))
+                  ; registerColor(REF_COLOR, allocColor(0,0,0))
+                  ; registerColor(LABEL_COLOR, allocColor (0,0,65535))
+                  ; registerColor(SEP_COLOR, allocColor(0,0,0))
+                  ; registerColor(EQU_COLOR, allocColor(0,0,0))
+                  ; registerColor(LIMIT_COLOR, allocColor (65535,0,0))
+                  ; registerColor(BRACK_COLOR, allocColor (0,0,65535))
+                  ; registerColor(DEFAULT, allocColor(0,0,0)) )
 	
     val _  = init ()
 
