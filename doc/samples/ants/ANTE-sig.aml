@@ -17,8 +17,6 @@ sig
 
     exception Malformed of string
 
-    val freshlabel : unit -> label
-
     val on	: 'a -> 'b -> 'a * 'b
 
     infixr ++
@@ -28,6 +26,7 @@ sig
     val nop	: stmt
     val fail	: stmt
 
+    val letlabel: (label -> stmt) -> stmt
     val label	: label -> stmt
     val mark	: marker -> stmt
     val unmark	: marker -> stmt
