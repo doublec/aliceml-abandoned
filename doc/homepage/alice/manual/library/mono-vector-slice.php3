@@ -163,7 +163,7 @@
       <P>Returns the pair of slices <TT>(<I>sl1</I>, <I>sl2</I>)</TT>,
       where <TT><I>sl1</I></TT> contains the first <TT><I>i</I></TT> characters
       of <TT><I>sl</I></TT> and <TT><I>sl2</I></TT> contains the rest, assuming
-      0 &le; <TT><I>i</I></TT> &le; <TT>size <I>sl</I><TT>. Otherwise, it
+      0 &le; <TT><I>i</I></TT> &le; <TT>size <I>sl</I></TT>. Otherwise, it
       raises <TT>Subscript</TT>.</P>
     </DD>
 
@@ -242,7 +242,7 @@
       <P>Returns <TT>true</TT> if the element <TT><I>a</I></TT> does not occur in the
       slice <TT><I>sl</I></TT>, with respect to the element equality
       <TT><I>eq</I></TT>; otherwise <TT>false</TT>.
-      Equivalent to <TT>not(contains <I>sl a</I>)</TT>.</P>
+      Equivalent to <TT>not(contains <I>eq</I> <I>sl a</I>)</TT>.</P>
     </DD>
 
     <DT>

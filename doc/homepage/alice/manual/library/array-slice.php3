@@ -167,7 +167,7 @@
       <P>Returns the pair of slices <TT>(<I>sl1</I>, <I>sl2</I>)</TT>,
       where <TT><I>sl1</I></TT> contains the first <TT><I>i</I></TT> characters
       of <TT><I>sl</I></TT> and <TT><I>sl2</I></TT> contains the rest, assuming
-      0 &le; <TT><I>i</I></TT> &le; <TT>size <I>sl</I><TT>. Otherwise, it
+      0 &le; <TT><I>i</I></TT> &le; <TT>size <I>sl</I></TT>. Otherwise, it
       raises <TT>Subscript</TT>.</P>
     </DD>
 
