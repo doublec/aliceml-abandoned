@@ -33,14 +33,11 @@
 #include "generic/RootSet.hh"
 #include "generic/Closure.hh"
 #include "generic/Properties.hh"
+#include "generic/Profiler.hh"
 #if LIGHTNING && defined(INSTRUCTION_COUNTS)
 #include "alice/NativeCodeJitter.hh"
 #endif
-#include "alice/primitives/Authoring.hh"
-
-#if PROFILE
-#include "generic/Profiler.hh"
-#endif
+#include "alice/Authoring.hh"
 
 static word wBufferString;
 

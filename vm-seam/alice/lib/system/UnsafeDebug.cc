@@ -13,7 +13,7 @@
 //
 
 #include "generic/Debug.hh"
-#include "alice/primitives/Authoring.hh"
+#include "alice/Authoring.hh"
 
 DEFINE1(UnsafeDebug_print) {
   Debug::Dump(x0);

@@ -15,7 +15,7 @@
 #include "generic/BootLinker.hh"
 #include "generic/Unpickler.hh"
 #include "generic/Pickler.hh"
-#include "alice/primitives/Authoring.hh"
+#include "alice/Authoring.hh"
 
 DEFINE0(UnsafeComponent_getInitialTable) {
   static word result = Store::IntToWord(0);

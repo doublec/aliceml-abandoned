@@ -11,7 +11,7 @@
 //
 
 #include "generic/Tuple.hh"
-#include "alice/primitives/Authoring.hh"
+#include "alice/Authoring.hh"
 
 DEFINE1(UnsafeValue_cast) {
   RETURN(x0);

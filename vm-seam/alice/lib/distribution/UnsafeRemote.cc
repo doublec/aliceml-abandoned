@@ -21,7 +21,7 @@
 #include "generic/RootSet.hh"
 #include "generic/Pickler.hh"
 #include "generic/Unpickler.hh"
-#include "alice/primitives/Authoring.hh"
+#include "alice/Authoring.hh"
 
 DEFINE0(UnsafeRemote_getLocalIP) {
 #if defined(__MINGW32__) || defined(_MSC_VER)

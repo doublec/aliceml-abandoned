@@ -41,7 +41,7 @@
 #include "generic/Scheduler.hh"
 #include "generic/IOHandler.hh"
 #include "generic/Transients.hh"
-#include "alice/primitives/Authoring.hh"
+#include "alice/Authoring.hh"
 
 static word IoConstructor;
 static word ClosedStreamConstructor;

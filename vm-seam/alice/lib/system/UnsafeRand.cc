@@ -12,7 +12,7 @@
 
 #include <cstdlib>
 #include "generic/Tuple.hh"
-#include "alice/primitives/Authoring.hh"
+#include "alice/Authoring.hh"
 
 DEFINE0(UnsafeRand_rand) {
   RETURN_INT(rand());
