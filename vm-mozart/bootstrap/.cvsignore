@@ -3,4 +3,4 @@ FrontendCommon.aus
 FrontendSMLLexer.aus FrontendSML.aus FrontendSMLParser.aus FrontendSMLMain.aus
 BackendCommon.aus BackendMozart.aus Main.aus
 *.ozf
-stoc-mozart
+boot-stoc stoc-mozart

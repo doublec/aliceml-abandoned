@@ -230,9 +230,16 @@ COMPONENTS = \
 %.ozf: %.oz
 	$(OZC) -c $< -o $@
 
-all: stoc-mozart
+all: boot-stoc
+
+bootstrap:
+	make STOC='ozengine ../Init.ozf boot-stoc' stoc-mozart
 
 stoc-mozart: $(COMPONENTS:%=%.ozf)
+	$(OZL) $(OZLFLAGS) -v --exclude=.. --include=.,../../stoc \
+	-x Test.ozf -o $@
+
+boot-stoc: $(COMPONENTS:%=%.ozf)
 	$(OZL) $(OZLFLAGS) -v --exclude=.. --include=.,../../stoc \
 	-x Test.ozf -o $@
 
@@ -270,4 +277,4 @@ clean:
 	-rm -rf $(COMPONENTS:%=%.ozf)
 
 veryclean: clean
-	-rm -rf stoc-mozart
+	-rm -rf boot-stoc stoc-mozart
