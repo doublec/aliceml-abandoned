@@ -170,12 +170,11 @@ functor MkRecursiveCompiler(structure ComponentManager: COMPONENT_MANAGER
 			    Target.COMPONENT {component, ...} =>
 				valOf (Component.inf (component ()))
 			  | Target.FOREIGN {inf, ...} => inf
-		    val inf = (Inf.asSingKind
-			       (#2 (Inf.asInfItem
-				    (List.hd (Inf.items (Inf.asSig inf')))))
-			      handle Future.Future e => raise Future.innerExn e)
+		    val inf = Inf.asSingKind
+			      (#2 (Inf.asInfItem
+				   (List.hd (Inf.items (Inf.asSig inf')))))
 			      handle e as ( Inf.Interface | Inf.Kind | Inf.Item
-			             | List.Empty | Option.Option) =>
+					  | List.Empty | Option.Option) =>
 				 error ("signature file " ^ sigFilename ^
 					" does not contain a proper\
 					\ signature declaration")
@@ -271,11 +270,9 @@ functor MkRecursiveCompiler(structure ComponentManager: COMPONENT_MANAGER
 	val sigTable: Inf.sign UrlMap.t = UrlMap.new ()
 
 	fun loadSig url =
-	    (case Component.inf (ComponentManager.link url) of
+	    case Component.inf (ComponentManager.link url) of
 		SOME inf => inf
 	      | NONE => raise Component.Corrupt
-	    )
-	    handle e => raise Future.innerExn e
 
 	fun acquireSig (desc, url) =
 	    let

@@ -23,7 +23,6 @@
   <PRE>
 	structure Future :
 	sig
-	    exception Future of exn
 	    exception Cyclic
 
 	    val concur :	(unit -> 'a) -> 'a
@@ -53,9 +52,9 @@
     that is different from the future, this future is globally replaced with
     the result. If the application terminates with an exception <I>e</I>, the
     future is marked as failed and all operations accessing it will
-    raise <TT>Future(</TT><I>e</I><TT>)</TT>. If the application terminates
+    raise <I>e</I>. If the application terminates
     returning the future itself, the future is marked as failed and all
-    operations accessing it will raise <TT>Future(Cyclic)</TT>.
+    operations accessing it will raise <TT>Cyclic</TT>.
   <P>
 
   <P>
@@ -256,7 +255,7 @@
   <P>
     to the promise. If a promise is failed with exception <I>e</I>, any
     subsequent attempt to access its future will cause the exception
-    <TT>Future(</TT><I>e</I><TT>)</TT> to be raised. If the promise already
+    <I>e</I> to be raised. If the promise already
     had been fulfilled or failed, <TT>fail</TT> will raise the exception
     <TT>Promise</TT>.
   </P>

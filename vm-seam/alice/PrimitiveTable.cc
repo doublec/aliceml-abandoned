@@ -26,7 +26,6 @@
 word PrimitiveTable::valueTable;
 word PrimitiveTable::functionTable;
 
-word PrimitiveTable::Future_Future;
 word PrimitiveTable::General_Chr;
 word PrimitiveTable::General_Div;
 word PrimitiveTable::General_Overflow;
@@ -44,7 +43,6 @@ void PrimitiveTable::Init() {
   functionTable = HashTable::New(HashTable::BLOCK_KEY, 240)->ToWord();
   RootSet::Add(valueTable);
   RootSet::Add(functionTable);
-  RootSet::Add(PrimitiveTable::Future_Future);
   RootSet::Add(PrimitiveTable::General_Chr);
   RootSet::Add(PrimitiveTable::General_Div);
   RootSet::Add(PrimitiveTable::General_Overflow);
