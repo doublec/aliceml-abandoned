@@ -532,9 +532,11 @@ struct
    
     (* createFutureNode *)
     and createFutureNode (va,t,p,i,d) = 
-	let val desc = createValue(va,t,NO_ACTIONS)
+	let val _ = TextIO.print("CREATE_FUTURE_NODE: wurde gestarted!\n")
+	    val desc = createValue(va,t,NO_ACTIONS)
             val fut = UnsafeValue.cast va
-	    val simple =  createSimple (desc,p,i,d,"Future",DEFAULT,setGroup)
+	    val str = if Future.isLazy fut then "_byneed_" else "future"
+	    val simple =  createSimple (desc,p,i,d,str,DEFAULT,setGroup)
 	in ( case TransientDictionary.iterLookup  
 	                   (transdict, 
 			    fn (vv,li) 
@@ -551,48 +553,6 @@ struct
 		  ; Update.watcher(fut,va,createGraph,createGraphInf) ; ())
           ; simple )
 	end 	
-(*
-    and createTransient (va,t,p,i,d,tt) = 
-	let val prom = castPromise va
-	    val future = Promise.future prom
-	    val desc = createValue(va,t,NO_ACTIONS) 
-            val indesc = createValue(va,tt,NO_ACTIONS) 
-	    val concat = createConcat(desc,p,i,d,Array.array(3,Empty),setGroup)
- 	    val first = createSimple(INTERPUNCT,concat,0,d,"promise {|", 
-				     DEFAULT,setGroup) 
-            val middle =  
-		if Future.isDetermined future  
-		    then createGraph (va,tt,concat,1,d)  
-		else if d <= !max_depth 
-			 then createSimple(indesc,concat,1,d,"future", 
-					    DEFAULT,setGroup) 
-		     else createLimit(indesc,DEPTH_LIMIT,concat,1,d+1, 
-				      setGroup) 
-            val last = createSimple(INTERPUNCT,concat,2,d,"|}",DEFAULT,
-				    setGroup)
-	in (Array.update(getKids(concat),0,first) 
-	    ; Array.update(getKids(concat),1,middle) 
-	    ; Array.update(getKids(concat),2,last) 
-	    ; if Future.isDetermined(future)
-		  then ()
-	      else
-	      case TransientDictionary.iterLookup  
-	               (transdict, 
-			fn (vv,li) 
-			=> List.exists(fn n  
-				       => UnsafeValue.same  
-				       (getValue(getDesc(n)),va))  
-			li 
-		        handle General.Match => false) of 
-	      SOME ((vv,li),i)   
-	      => TransientDictionary.update(transdict,  
-					 (i,(vv,List.append(li,[concat]))))  
-            | NONE  
-	      => (TransientDictionary.insertI(transdict,(va,[concat]))
-		 ; Update.watcher(future,va,createGraph,createGraphInf) ; () )
-	   ; concat)    
-	end  
-*)
   
 (* entsprechende Funktionen zur internen Darstellung von Strukturen und
    Funktoren - analog zu newNode, createGraph und createUsualGraph (s.o.) *)
