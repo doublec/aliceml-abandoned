@@ -1,9 +1,9 @@
 Group is
 
+    ../../bootstrap/component.cm
     ../infrastructure/crash.cm
-    composer.cm
     compiler.cm
 
-    DummyUnsafePickle.aml
+    SignTable.aml
     RECURSIVE_COMPILER-sig.aml
     MkRecursiveCompiler.aml
