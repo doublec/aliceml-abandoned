@@ -296,4 +296,9 @@ sig
     val DECProgram:       Info * Dec * Program option -> Program
     val EXPProgram:       Info * Exp * Program option -> Program
 
+
+    (* Gert hack *)
+
+    val PACKExp:	Info * LongStrId * LongSigId -> Exp
+    val UNPACKStrExp:	Info * InfExp * SigExp -> StrExp
 end

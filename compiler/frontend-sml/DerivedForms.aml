@@ -87,7 +87,8 @@ import structure Source        from "../infrastructure/Source"
 import structure Lab           from "Lab"
 import structure VId
        structure TyCon
-       structure StrId         from "Ids"
+       structure StrId
+       structure SigId         from "Ids"
 import signature INPUT_GRAMMAR from "INPUT_GRAMMAR-sig"
 import structure InputGrammar  from "InputGrammar"
 import structure ParsingError  from "ParsingError"
@@ -884,4 +885,73 @@ struct
 	    G.Program(I, dec, program_opt)
 	end
 
+
+    (* Gert hack (This is not proper! Doing it right would require
+     * putting a lot of stuff into __pervasive - and somehow resolving the
+     * resulting circularity.) *)
+
+    fun PACKExp(I, longstrid, longsigid) =
+	(* pack <longstrid> :> <longsigid> -->
+	 * let structure P = Package.Pack(signature S = <longsigid>
+	 *                                structure X = <longstrid>)
+	 * in P.package end
+	 *)
+	let
+	    val I1          = G.infoLong longstrid
+	    val I2          = G.infoLong longsigid
+	    val strid       = G.StrId(I1, StrId.fromString "X")
+	    val strexp      = G.ATSTREXPStrExp(I1,
+				G.LONGSTRIDAtStrExp(I1, longstrid))
+	    val strdec      = G.STRUCTUREDec(I1,
+				G.StrBind(I1, strid, strexp, NONE))
+	    val sigid       = G.SigId(I2, SigId.fromString "S")
+	    val sigexp      = G.ATSIGEXPSigExp(I2,
+				G.LONGSIGIDAtSigExp(I2, longsigid))
+	    val sigdec      = G.SIGNATUREDec(I2,
+				G.SigBind(I2, sigid, [], sigexp, NONE))
+	    val argatstrexp = DECAtStrExp(I, G.SEQDec(I, sigdec, strdec))
+	    val packlongid  = G.DOTLong(I,
+				G.SHORTLong(I,
+				    G.StrId(I, StrId.fromString "Package")),
+				G.StrId(I, StrId.fromString "Pack"))
+	    val packstrexp  = G.ATSTREXPStrExp(I,
+				G.LONGSTRIDAtStrExp(I, packlongid))
+	    val appstrexp   = G.APPStrExp(I, packstrexp, argatstrexp)
+	    val strid       = G.StrId(I, StrId.fromString "P")
+	    val longvid     = G.DOTLong(I, G.SHORTLong(I, strid),
+					G.VId(I, VId.fromString "package"))
+	    val dec         = G.STRUCTUREDec(I,
+				G.StrBind(I, strid, appstrexp, NONE))
+	    val exp         = G.ATEXPExp(I,
+				G.LONGVIDAtExp(I, G.WITHOp, longvid))
+	in
+	    G.ATEXPExp(I, G.LETAtExp(I, dec, exp))
+	end
+
+    fun UNPACKStrExp(I, exp, sigexp) =
+	(* unpack <exp> : <sigexp> -->
+	 * Package.Unpack(val package = <exp>
+	 *                signature S = <sigexp)
+	 *)
+	let
+	    val I1        = G.infoExp exp
+	    val I2        = G.infoSigExp sigexp
+	    val longvid   = G.SHORTLong(I,
+				G.VId(I, VId.fromString "package"))
+	    val pat       = G.ATPATPat(I1, G.LONGVIDAtPat(I1, G.WITHOp,longvid))
+	    val valdec    = G.VALDec(I1, G.Seq(I1, []),
+				G.PLAINValBind(I1, pat, exp, NONE))
+	    val sigid     = G.SigId(I2, SigId.fromString "S")
+	    val sigdec    = G.SIGNATUREDec(I2,
+				G.SigBind(I2, sigid, [], sigexp, NONE))
+	    val atstrexp  = DECAtStrExp(I, G.SEQDec(I, valdec, sigdec))
+	    val strlongid = G.DOTLong(I,
+				G.SHORTLong(I,
+				    G.StrId(I, StrId.fromString "Package")),
+				G.StrId(I, StrId.fromString "Unpack"))
+	    val strexp    = G.ATSTREXPStrExp(I,
+				G.LONGSTRIDAtStrExp(I, strlongid))
+	in
+	    G.APPStrExp(I, strexp, atstrexp)
+	end
 end
