@@ -32,5 +32,5 @@ signature TYPE_MANAGER =
 	                            -> string * TypeTree.ty * TypeTree.ty list
 	val getEnumSpace :        string -> Util.spaces
 	
-	val getClassList :        TypeTree.tree -> TypeTree.tree
+(*	val getClassList :        TypeTree.tree -> TypeTree.tree*)
    end
