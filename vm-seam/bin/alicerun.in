@@ -60,6 +60,17 @@ add_to_alice_load "cache=${libdir}/@PACKAGE@/cache"
 add_to_alice_load "pattern=?{x}=?{x}.stc"
 add_to_alice_load "pattern=?{x}=?{x}.dll"
 
+if [ ! -z "$ALICE_LOAD_PREFIX" ]
+then
+    ALICE_LOAD="${ALICE_LOAD_PREFIX}${ALICE_LOAD:+@CACHESEP@}${ALICE_LOAD}"
+fi
+if [ ! -z "$ALICE_LOAD_SUFFIX" ]
+then
+    ALICE_LOAD="${ALICE_LOAD}${ALICE_LOAD:+@CACHESEP@}${ALICE_LOAD_SUFFIX}"
+fi
+
+echo "Hi guys, here is ALICE_LOAD : ${ALICE_LOAD}"
+
 export ALICE_HOME ALICE_LOAD
 
 ## To use the GUI debugger on Windows/Cygwin:
