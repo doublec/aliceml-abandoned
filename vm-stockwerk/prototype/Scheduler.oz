@@ -14,7 +14,7 @@ functor
 import
    System(showError)
    Application(exit)
-   PrimitiveTable(table)
+   PrimitiveTable(values)
    ByneedInterpreter(interpreter)
 export
    Object
@@ -142,7 +142,7 @@ define
 	 [] request(Transient=transient(TransientState) Args TaskStack) then
 	    case {Access TransientState} of hole(_) then
 	       %--** currently an Alice-specific exception:
-	       Scheduler, Handle(nil PrimitiveTable.table.'Hole.Hole'
+	       Scheduler, Handle(nil PrimitiveTable.values.'Hole.Hole'
 				 TaskStack)
 	    [] future(Ts) then
 	       {@CurrentThread setArgsAndTaskStack(Args TaskStack)}
