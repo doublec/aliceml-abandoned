@@ -15,6 +15,19 @@ AC_INIT(Seam, 1.0, stockhausen@ps.uni-sb.de)
 AC_CONFIG_SRCDIR(Seam.hh)
 AC_CONFIG_SUBDIRS([store adt generic])
 
+AC_ARG_WITH([lightning],
+	    AC_HELP_STRING([--with-lightning],
+			   [use GNU Lightning to enable run-time
+			    native code generation]),
+	    LIGHTNING=1, LIGHTNING=0)
+AC_SUBST(LIGHTNING)
+
+AC_ARG_ENABLE([profiler],
+	      AC_HELP_STRING([--enable-profiler],
+			     [build with user-level profiling support]),
+	      PROFILE=1, PROFILE=0)
+AC_SUBST(PROFILE)
+
 dnl     checks for programs
 AC_PROG_MAKE_SET
 AC_PROG_CXX
