@@ -14,7 +14,7 @@ sig
     datatype cone_face     = ConeBase | ConeSide
 
     type 'face surface =
-	    'face * real * real ->
+	    'face -> point ->
 	    { color :    color
 	    , diffuse :  real
 	    , specular : real
@@ -22,7 +22,7 @@ sig
 
     datatype object =
 	      Plane      of plane_face surface * point * vector
-	    | Sphere     of sphere_face surface * point * vector
+	    | Sphere     of sphere_face surface * point * real
 	    | Ellipsoid  of sphere_face surface * point * stretch
 	    | Cube       of cube_face surface * point * stretch     (* Tier 2 *)
 	    | Cylinder   of cylinder_face surface * point * stretch (* Tier 2 *)
@@ -37,12 +37,12 @@ sig
 	    | Spot        of color * point * point * angle * real   (* Tier 3 *)
 
     val render :
-	    { ambient :   real
-	    , lights :    light vector
+	    { ambient :   color
+	    , lights :    light list
 	    , scene :     object
 	    , vision :    angle
 	    , width :     int
 	    , height :    int
 	    , depth :     int
-	    , outstream : outstream } -> unit
+	    , outstream : BinIO.outstream } -> unit
 end
