@@ -24,7 +24,7 @@ structure Value (*: VALUE*) =
 	  | TaggedValue of LargeInt.int * 'a t vector
 	  | Tuple of 'a t vector
 	  | Vector of 'a t vector
-	  | Function of 'a
+	  | ConcreteCode of 'a
 	  | Closure of 'a t * 'a t vector
 	  | Sign of FlatGrammar.sign option
 
@@ -36,7 +36,7 @@ structure Value (*: VALUE*) =
 	fun taggedValue (i, values) = TaggedValue (i, values)
 	fun tuple values = Tuple values
 	fun vector values = Vector values
-	fun function function = Function function
-	fun closure (function, values) = Closure (function, values)
+	fun concreteCode function = ConcreteCode function
+	fun closure (concreteCode, values) = Closure (concreteCode, values)
 	fun sign sign = Sign sign
     end

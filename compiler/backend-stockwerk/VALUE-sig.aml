@@ -24,7 +24,7 @@ signature VALUE =
 	val taggedValue: LargeInt.int * 'a t vector -> 'a t
 	val tuple: 'a t vector -> 'a t
 	val vector: 'a t vector -> 'a t
-	val function: 'a -> 'a t
+	val concreteCode: 'a -> 'a t
 	val closure: 'a t * 'a t vector -> 'a t
 	val sign: FlatGrammar.sign option -> 'a t
     end
