@@ -19,7 +19,6 @@
 #include "generic/RootSet.hh"
 #include "generic/Backtrace.hh"
 #include "java/ThrowWorker.hh"
-#include "java/StackFrame.hh"
 #include "java/ClassInfo.hh"
 #include "java/ClassLoader.hh"
 
@@ -30,22 +29,19 @@ class ThrowFrame: private StackFrame {
 protected:
   enum { CLASS_POS, METHOD_REF_POS, MESSAGE_POS, SIZE };
 public:
-  using Block::ToWord;
+  using StackFrame::Clone;
 
   static ThrowFrame *New(word wClass, word wMethodRef, JavaString *message) {
-    StackFrame *frame =
-      StackFrame::New(THROW_FRAME, ThrowWorker::self, SIZE);
+    NEW_STACK_FRAME(frame, ThrowWorker::self, SIZE);
     frame->InitArg(CLASS_POS, wClass);
     frame->InitArg(METHOD_REF_POS, wMethodRef);
     frame->InitArg(MESSAGE_POS, message->ToWord());
     return static_cast<ThrowFrame *>(frame);
   }
-  static ThrowFrame *FromWordDirect(word x) {
-    StackFrame *frame = StackFrame::FromWordDirect(x);
-    Assert(frame->GetLabel() == THROW_FRAME);
-    return static_cast<ThrowFrame *>(frame);
-  }
 
+  u_int GetSize() {
+    return StackFrame::GetSize() + SIZE;
+  }
   word GetClass() {
     return GetArg(CLASS_POS);
   }
@@ -112,13 +108,18 @@ void ThrowWorker::Init() {
 }
 
 void ThrowWorker::PushFrame(Throwable &throwable, JavaString *message) {
-  ThrowFrame *frame =
-    ThrowFrame::New(throwable.wClass, throwable.wMethodRef, message);
-  Scheduler::PushFrame(frame->ToWord());
+  ThrowFrame::New(throwable.wClass, throwable.wMethodRef, message);
 }
 
-Worker::Result ThrowWorker::Run() {
-  ThrowFrame *frame = ThrowFrame::FromWordDirect(Scheduler::GetFrame());
+u_int ThrowWorker::GetFrameSize(StackFrame *sFrame) {
+  ThrowFrame *frame = static_cast<ThrowFrame *>(sFrame);
+  Assert(sFrame->GetWorker() == this);
+  return frame->GetSize();
+}
+
+Worker::Result ThrowWorker::Run(StackFrame *sFrame) {
+  ThrowFrame *frame = static_cast<ThrowFrame *>(sFrame);
+  Assert(sFrame->GetWorker() == this);
   word wMethodRef = frame->GetMethodRef();
   MethodRef *methodRef = MethodRef::FromWord(wMethodRef);
   if (methodRef == INVALID_POINTER) {
@@ -129,9 +130,10 @@ Worker::Result ThrowWorker::Run() {
   Assert(theClass != INVALID_POINTER);
   Object *object = Object::New(theClass);
   //--** invoke constructor method
-  Scheduler::PopFrame();
+  word wFrame = frame->Clone();
+  Scheduler::PopFrame(frame->GetSize());
   Scheduler::currentData = object->ToWord();
-  Scheduler::currentBacktrace = Backtrace::New(frame->ToWord());
+  Scheduler::currentBacktrace = Backtrace::New(wFrame);
   return RAISE;
 }
 
@@ -139,8 +141,9 @@ const char *ThrowWorker::Identify() {
   return "ThrowWorker";
 }
 
-void ThrowWorker::DumpFrame(word wFrame) {
-  ThrowFrame *frame = ThrowFrame::FromWordDirect(wFrame);
+void ThrowWorker::DumpFrame(StackFrame *sFrame) {
+  ThrowFrame *frame = static_cast<ThrowFrame *>(sFrame);
+  Assert(sFrame->GetWorker() == this);
   Class *theClass = Class::FromWord(frame->GetClass());
   std::fprintf(stderr, "Throw %s\n",
 	       theClass == INVALID_POINTER? "(unknown class)":

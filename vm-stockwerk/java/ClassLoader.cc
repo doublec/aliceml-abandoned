@@ -24,7 +24,6 @@
 #include "generic/ConcreteCode.hh"
 #include "generic/Backtrace.hh"
 #include "generic/Interpreter.hh"
-#include "java/StackFrame.hh"
 #include "java/ThrowWorker.hh"
 #include "java/ClassLoader.hh"
 #include "java/ClassFile.hh"
@@ -73,28 +72,24 @@ public:
 
   static void PushFrame(Thread *thread);
 
-  virtual Result Run();
+  virtual u_int GetFrameSize(StackFrame *sFrame);
+  virtual Result Run(StackFrame *sFrame);
   virtual const char *Identify();
-  virtual void DumpFrame(word wFrame);
+  virtual void DumpFrame(StackFrame *sFrame);
 };
 
 class PreloadFrame: private StackFrame {
 protected:
   enum { HOLE_POS, SIZE };
 public:
-  using Block::ToWord;
-
-  static PreloadFrame *New() {
-    StackFrame *frame =
-      StackFrame::New(PRELOAD_FRAME, PreloadWorker::self, SIZE);
-    return static_cast<PreloadFrame *>(frame);
-  }
-  static PreloadFrame *FromWordDirect(word x) {
-    StackFrame *frame = StackFrame::FromWordDirect(x);
-    Assert(frame->GetLabel() == PRELOAD_FRAME);
+  static PreloadFrame *New(Thread *thread) {
+    NEW_THREAD_STACK_FRAME(frame, thread, PreloadWorker::self, SIZE);
     return static_cast<PreloadFrame *>(frame);
   }
 
+  u_int GetSize() {
+    return StackFrame::GetSize() + SIZE;
+  }
   void SetHole(Hole *hole) {
     ReplaceArg(HOLE_POS, hole->ToWord());
   }
@@ -108,11 +103,18 @@ PreloadWorker *PreloadWorker::self;
 static word wPreloadQueue;
 
 void PreloadWorker::PushFrame(Thread *thread) {
-  thread->PushFrame(PreloadFrame::New()->ToWord());
+  PreloadFrame::New(thread);
 }
 
-Worker::Result PreloadWorker::Run() {
-  PreloadFrame *frame = PreloadFrame::FromWordDirect(Scheduler::GetFrame());
+u_int PreloadWorker::GetFrameSize(StackFrame *sFrame) {
+  PreloadFrame *frame = static_cast<PreloadFrame *>(sFrame);
+  Assert(sFrame->GetWorker() == this);
+  return frame->GetSize();
+}
+
+Worker::Result PreloadWorker::Run(StackFrame *sFrame) {
+  PreloadFrame *frame = static_cast<PreloadFrame *>(sFrame);
+  Assert(sFrame->GetWorker() == this);
   if (Scheduler::nArgs == Scheduler::ONE_ARG) {
     Class *theClass = Class::FromWord(Scheduler::currentArgs[0]);
     Assert(theClass != INVALID_POINTER);
@@ -122,7 +124,7 @@ Worker::Result PreloadWorker::Run() {
   }
   Queue *preloadQueue = Queue::FromWordDirect(wPreloadQueue);
   if (preloadQueue->IsEmpty()) {
-    Scheduler::PopFrame();
+    Scheduler::PopFrame(frame->GetSize());
     Scheduler::nArgs = 0;
     return CONTINUE;
   }
@@ -150,7 +152,7 @@ const char *PreloadWorker::Identify() {
   return "PreloadWorker";
 }
 
-void PreloadWorker::DumpFrame(word) {
+void PreloadWorker::DumpFrame(StackFrame *) {
   std::fprintf(stderr, "Preload classes\n");
 }
 
@@ -169,29 +171,25 @@ public:
 
   static void PushFrame(ClassInfo *classInfo);
 
-  virtual Result Run();
+  virtual u_int GetFrameSize(StackFrame *sFrame);
+  virtual Result Run(StackFrame *sFrame);
   virtual const char *Identify();
-  virtual void DumpFrame(word wFrame);
+  virtual void DumpFrame(StackFrame *sFrame);
 };
 
 class BuildClassFrame: private StackFrame {
 protected:
   enum { CLASS_INFO_POS, SIZE };
 public:
-  using Block::ToWord;
-
   static BuildClassFrame *New(ClassInfo *classInfo) {
-    StackFrame *frame =
-      StackFrame::New(BUILD_CLASS_FRAME, BuildClassWorker::self, SIZE);
+    NEW_STACK_FRAME(frame, BuildClassWorker::self, SIZE);
     frame->InitArg(CLASS_INFO_POS, classInfo->ToWord());
     return static_cast<BuildClassFrame *>(frame);
   }
-  static BuildClassFrame *FromWordDirect(word x) {
-    StackFrame *frame = StackFrame::FromWordDirect(x);
-    Assert(frame->GetLabel() == BUILD_CLASS_FRAME);
-    return static_cast<BuildClassFrame *>(frame);
-  }
 
+  u_int GetSize() {
+    return StackFrame::GetSize() + SIZE;
+  }
   ClassInfo *GetClassInfo() {
     return ClassInfo::FromWordDirect(GetArg(CLASS_INFO_POS));
   }
@@ -200,12 +198,18 @@ public:
 BuildClassWorker *BuildClassWorker::self;
 
 void BuildClassWorker::PushFrame(ClassInfo *classInfo) {
-  Scheduler::PushFrame(BuildClassFrame::New(classInfo)->ToWord());
+  BuildClassFrame::New(classInfo);
 }
 
-Worker::Result BuildClassWorker::Run() {
-  BuildClassFrame *frame =
-    BuildClassFrame::FromWordDirect(Scheduler::GetFrame());
+u_int BuildClassWorker::GetFrameSize(StackFrame *sFrame) {
+  BuildClassFrame *frame = static_cast<BuildClassFrame *>(sFrame);
+  Assert(sFrame->GetWorker() == this);
+  return frame->GetSize();
+}
+
+Worker::Result BuildClassWorker::Run(StackFrame *sFrame) {
+  BuildClassFrame *frame = static_cast<BuildClassFrame *>(sFrame);
+  Assert(sFrame->GetWorker() == this);
   ClassInfo *classInfo = frame->GetClassInfo();
   word wSuper = classInfo->GetSuper();
   if (Store::WordToTransient(wSuper) != INVALID_POINTER) {
@@ -227,7 +231,7 @@ Worker::Result BuildClassWorker::Run() {
     //--** superinterfaces of C is not in fact an interface, loading
     //--** throws an IncompatibleClassChangeError
   }
-  Scheduler::PopFrame();
+  Scheduler::PopFrame(frame->GetSize());
   if (!classInfo->Verify()) {
     ThrowWorker::PushFrame(ThrowWorker::VerifyError, classInfo->GetName());
     Scheduler::nArgs = 0;
@@ -242,8 +246,9 @@ const char *BuildClassWorker::Identify() {
   return "BuildClassWorker";
 }
 
-void BuildClassWorker::DumpFrame(word wFrame) {
-  BuildClassFrame *frame = BuildClassFrame::FromWordDirect(wFrame);
+void BuildClassWorker::DumpFrame(StackFrame *sFrame) {
+  BuildClassFrame *frame = static_cast<BuildClassFrame *>(sFrame);
+  Assert(sFrame->GetWorker() == this);
   std::fprintf(stderr, "Build class %s\n",
 	       frame->GetClassInfo()->GetName()->ExportC());
 }
@@ -267,10 +272,11 @@ public:
     traceFlag = std::getenv("JAVA_TRACE_RESOLVER") != NULL;
   }
 
-  virtual Result Run();
+  virtual u_int GetFrameSize(StackFrame *sFrame);
+  virtual Result Run(StackFrame *sFrame);
   virtual u_int GetInArity(ConcreteCode *concreteCode);
   virtual const char *Identify();
-  virtual void DumpFrame(word wFrame);
+  virtual void DumpFrame(StackFrame *sFrame);
   virtual void PushCall(Closure *closure);
 };
 
@@ -281,11 +287,8 @@ protected:
     SIZE
   };
 public:
-  using Block::ToWord;
-
   static ResolveFrame *New(ClassLoader *classLoader, JavaString *name) {
-    StackFrame *frame =
-      StackFrame::New(RESOLVE_FRAME, ResolveInterpreter::self, SIZE);
+    NEW_STACK_FRAME(frame, ResolveInterpreter::self, SIZE);
     frame->InitArg(CLASS_LOADER_POS, classLoader->ToWord());
     frame->InitArg(RESOLVE_TYPE_POS, ResolveInterpreter::RESOLVE_CLASS);
     frame->InitArg(NAME_POS, name->ToWord());
@@ -295,8 +298,7 @@ public:
 			   ResolveInterpreter::type resolveType,
 			   word theClass, JavaString *name,
 			   JavaString *descriptor) {
-    StackFrame *frame =
-      StackFrame::New(RESOLVE_FRAME, ResolveInterpreter::self, SIZE);
+    NEW_STACK_FRAME(frame, ResolveInterpreter::self, SIZE);
     frame->InitArg(CLASS_LOADER_POS, classLoader->ToWord());
     frame->InitArg(RESOLVE_TYPE_POS, resolveType);
     frame->InitArg(CLASS_POS, theClass);
@@ -304,12 +306,10 @@ public:
     frame->InitArg(DESCRIPTOR_POS, descriptor->ToWord());
     return static_cast<ResolveFrame *>(frame);
   }
-  static ResolveFrame *FromWordDirect(word x) {
-    StackFrame *frame = StackFrame::FromWordDirect(x);
-    Assert(frame->GetLabel() == RESOLVE_FRAME);
-    return static_cast<ResolveFrame *>(frame);
-  }
 
+  u_int GetSize() {
+    return StackFrame::GetSize() + SIZE;
+  }
   ClassLoader *GetClassLoader() {
     return ClassLoader::FromWordDirect(GetArg(CLASS_LOADER_POS));
   }
@@ -337,8 +337,15 @@ public:
 ResolveInterpreter *ResolveInterpreter::self;
 bool ResolveInterpreter::traceFlag;
 
-Worker::Result ResolveInterpreter::Run() {
-  ResolveFrame *frame = ResolveFrame::FromWordDirect(Scheduler::GetFrame());
+u_int ResolveInterpreter::GetFrameSize(StackFrame *sFrame) {
+  ResolveFrame *frame = static_cast<ResolveFrame *>(sFrame);
+  Assert(sFrame->GetWorker() == this);
+  return frame->GetSize();
+}
+
+Worker::Result ResolveInterpreter::Run(StackFrame *sFrame) {
+  ResolveFrame *frame = static_cast<ResolveFrame *>(sFrame);
+  Assert(sFrame->GetWorker() == this);
   ClassLoader *classLoader = frame->GetClassLoader();
   switch (frame->GetResolveType()) {
   case RESOLVE_CLASS:
@@ -400,7 +407,7 @@ Worker::Result ResolveInterpreter::Run() {
 	    return REQUEST;
 	  }
 	}
-	Scheduler::PopFrame();
+	Scheduler::PopFrame(frame->GetSize());
 	Scheduler::nArgs = Scheduler::ONE_ARG;
 	Scheduler::currentArgs[0] = ArrayType::New(componentType)->ToWord();
 	return CONTINUE;
@@ -424,7 +431,7 @@ Worker::Result ResolveInterpreter::Run() {
 	Scheduler::nArgs = 0;
 	return CONTINUE;
       }
-      Scheduler::PopFrame();
+      Scheduler::PopFrame(frame->GetSize());
       BuildClassWorker::PushFrame(classInfo);
       return CONTINUE;
     }
@@ -453,7 +460,7 @@ Worker::Result ResolveInterpreter::Run() {
 	FieldInfo *fieldInfo = FieldInfo::FromWordDirect(fields->Get(i));
 	if (fieldInfo->IsTheField(name, descriptor)) {
 	  u_int nSlots = fieldInfo->GetNumberOfRequiredSlots();
-	  Scheduler::PopFrame();
+	  Scheduler::PopFrame(frame->GetSize());
 	  Scheduler::nArgs = Scheduler::ONE_ARG;
 	  Scheduler::currentArgs[0] = fieldInfo->IsStatic()?
 	    StaticFieldRef::New(theClass, sIndex, nSlots)->ToWord():
@@ -501,7 +508,7 @@ Worker::Result ResolveInterpreter::Run() {
 	word wMethodRef = methodChunkMap->Get(wKey);
 	//--** is the method is abstract, but C is not abstract,
 	//--** throw AbstractMethodError
-	Scheduler::PopFrame();
+	Scheduler::PopFrame(frame->GetSize());
 	Scheduler::nArgs = Scheduler::ONE_ARG;
 	Scheduler::currentArgs[0] = wMethodRef;
 	return CONTINUE;
@@ -546,7 +553,7 @@ Worker::Result ResolveInterpreter::Run() {
 	//--** throw AbstractMethodError
 	Assert(MethodRef::FromWordDirect(wMethodRef)->GetLabel() ==
 	       JavaLabel::InterfaceMethodRef);
-	Scheduler::PopFrame();
+	Scheduler::PopFrame(frame->GetSize());
 	Scheduler::nArgs = Scheduler::ONE_ARG;
 	Scheduler::currentArgs[0] = wMethodRef;
 	return CONTINUE;
@@ -573,13 +580,12 @@ void ResolveInterpreter::PushCall(Closure *closure) {
     (Store::DirectWordToInt(closure->Sub(1)));
   if (resolveType == ResolveInterpreter::RESOLVE_CLASS) {
     JavaString *name = JavaString::FromWordDirect(closure->Sub(2));
-    Scheduler::PushFrame(ResolveFrame::New(classLoader, name)->ToWord());
+    ResolveFrame::New(classLoader, name);
   } else {
     word theClass = closure->Sub(2);
     JavaString *name = JavaString::FromWordDirect(closure->Sub(3));
     JavaString *descriptor = JavaString::FromWordDirect(closure->Sub(4));
-    Scheduler::PushFrame(ResolveFrame::New(classLoader, resolveType, theClass,
-					   name, descriptor)->ToWord());
+    ResolveFrame::New(classLoader, resolveType, theClass, name, descriptor);
   }
 }
 
@@ -587,8 +593,9 @@ const char *ResolveInterpreter::Identify() {
   return "ResolveInterpreter";
 }
 
-void ResolveInterpreter::DumpFrame(word wFrame) {
-  ResolveFrame *frame = ResolveFrame::FromWordDirect(wFrame);
+void ResolveInterpreter::DumpFrame(StackFrame *sFrame) {
+  ResolveFrame *frame = static_cast<ResolveFrame *>(sFrame);
+  Assert(sFrame->GetWorker() == this);
   std::fprintf(stderr, "Resolve class %s\n", frame->GetName()->ExportC());
 }
 

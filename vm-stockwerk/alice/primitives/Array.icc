@@ -13,7 +13,6 @@
 //
 
 #include <cstdio>
-#include "alice/StackFrame.hh"
 #include "alice/Authoring.hh"
 
 #define STRINGIFY(x) #x
@@ -41,33 +40,30 @@ public:
   }
 
   static void PushFrame(XArray *array, word closure, u_int i, u_int n);
-  virtual Result Run();
+  virtual u_int GetFrameSize(StackFrame *sFrame);
+  virtual Result Run(StackFrame *sFrame);
   virtual const char *Identify();
-  virtual void DumpFrame(word frame);
+  virtual void DumpFrame(StackFrame *sFrame);
 };
 
 class ArrayTabulateFrame: private StackFrame {
 private:
   enum { ARRAY_POS, CLOSURE_POS, INDEX_POS, NUMBEROFELEMENTS_POS, SIZE };
 public:
-  using StackFrame::ToWord;
-
   static ArrayTabulateFrame *New(Worker *worker, XArray *array,
 				 word closure, u_int index,
 				 u_int numberOfElements) {
-    StackFrame *frame = StackFrame::New(ARRAY_TABULATE_FRAME, worker, SIZE);
+    NEW_STACK_FRAME(frame, worker, SIZE);
     frame->InitArg(ARRAY_POS, array->ToWord());
     frame->InitArg(CLOSURE_POS, closure);
     frame->InitArg(INDEX_POS, index);
     frame->InitArg(NUMBEROFELEMENTS_POS, numberOfElements);
     return static_cast<ArrayTabulateFrame *>(frame);
   }
-  static ArrayTabulateFrame *FromWordDirect(word frame) {
-    StackFrame *p = StackFrame::FromWordDirect(frame);
-    Assert(p->GetLabel() == ARRAY_TABULATE_FRAME);
-    return static_cast<ArrayTabulateFrame *>(p);
-  }
 
+  u_int GetSize() {
+    return StackFrame::GetSize() + SIZE;
+  }
   XArray *GetArray() {
     return XArray::FromWord(GetArg(ARRAY_POS));
   }
@@ -89,14 +85,18 @@ ArrayTabulateWorker *ArrayTabulateWorker::self;
 
 void ArrayTabulateWorker::PushFrame(XArray *array,
 				    word closure, u_int i, u_int n) {
-  ArrayTabulateFrame *frame =
-    ArrayTabulateFrame::New(self, array, closure, i, n);
-  Scheduler::PushFrame(frame->ToWord());
+  ArrayTabulateFrame::New(self, array, closure, i, n);
 }
 
-Worker::Result ArrayTabulateWorker::Run() {
-  ArrayTabulateFrame *frame =
-    ArrayTabulateFrame::FromWordDirect(Scheduler::GetFrame());
+u_int ArrayTabulateWorker::GetFrameSize(StackFrame *sFrame) {
+  ArrayTabulateFrame *frame = static_cast<ArrayTabulateFrame *>(sFrame);
+  Assert(sFrame->GetWorker() == this);
+  return frame->GetSize();
+}
+
+Worker::Result ArrayTabulateWorker::Run(StackFrame *sFrame) {
+  ArrayTabulateFrame *frame = static_cast<ArrayTabulateFrame *>(sFrame);
+  Assert(sFrame->GetWorker() == this);
   XArray *array = frame->GetArray();
   word closure    = frame->GetClosure();
   u_int i         = frame->GetIndex();
@@ -111,7 +111,7 @@ Worker::Result ArrayTabulateWorker::Run() {
 #endif
   array->Update(i, wValue);
   if (++i == n) {
-    Scheduler::PopFrame();
+    Scheduler::PopFrame(frame->GetSize());
     Scheduler::nArgs = Scheduler::ONE_ARG;
     Scheduler::currentArgs[0] = array->ToWord();
     return Worker::CONTINUE;
@@ -127,8 +127,9 @@ const char *ArrayTabulateWorker::Identify() {
   return "ArrayTabulateWorker";
 }
 
-void ArrayTabulateWorker::DumpFrame(word frameWord) {
-  ArrayTabulateFrame *frame = ArrayTabulateFrame::FromWordDirect(frameWord);
+void ArrayTabulateWorker::DumpFrame(StackFrame *sFrame) {
+  ArrayTabulateFrame *frame = static_cast<ArrayTabulateFrame *>(sFrame);
+  Assert(sFrame->GetWorker() == this);
   std::fprintf(stderr, STRINGIFY(XArray)".tabulate %d of %d\n",
 	       frame->GetIndex(), frame->GetNumberOfElements());
 }

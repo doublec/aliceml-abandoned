@@ -31,12 +31,13 @@ public:
 
   virtual Transform *GetAbstractRepresentation(ConcreteRepresentation *);
 
-  virtual Result Run();
+  virtual u_int GetFrameSize(StackFrame *sFrame);
+  virtual Result Run(StackFrame *sFrame);
   virtual Result Handle(word data);
   virtual u_int GetInArity(ConcreteCode *concreteCode);
   virtual void PushCall(Closure *closure);
   virtual const char *Identify();
-  virtual void DumpFrame(word frame);
+  virtual void DumpFrame(StackFrame *sFrame);
 #if PROFILE
   virtual word GetProfileKey(StackFrame *frame);
   virtual word GetProfileKey(ConcreteCode *concreteCode);

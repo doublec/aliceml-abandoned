@@ -13,7 +13,6 @@
 #include <cstdio>
 
 #include "generic/RootSet.hh"
-#include "java/StackFrame.hh"
 #include "java/ClassLoader.hh"
 #include "java/ClassInfo.hh"
 #include "java/Authoring.hh"
@@ -36,34 +35,29 @@ public:
 
   static void PushFrame(ObjectArray *array, Class *theClass, Type *classType);
 
-  virtual Result Run();
+  virtual u_int GetFrameSize(StackFrame *sFrame);
+  virtual Result Run(StackFrame *sFrame);
   virtual const char *Identify();
-  virtual void DumpFrame(word wFrame);
+  virtual void DumpFrame(StackFrame *sFrame);
 };
 
 class ReflectConstructorsFrame: private StackFrame {
 protected:
   enum { ARRAY_POS, INDEX_POS, CLASS_POS, CLASS_TYPE_POS, SIZE };
 public:
-  using Block::ToWord;
-
   static ReflectConstructorsFrame *New(ObjectArray *array, Class *theClass,
 				       Type *classType) {
-    StackFrame *frame =
-      StackFrame::New(REFLECT_CONSTRUCTORS_FRAME,
-		      ReflectConstructorsWorker::self, SIZE);
+    NEW_STACK_FRAME(frame, ReflectConstructorsWorker::self, SIZE);
     frame->InitArg(ARRAY_POS, array->ToWord());
     frame->InitArg(INDEX_POS, 0);
     frame->InitArg(CLASS_POS, theClass->ToWord());
     frame->InitArg(CLASS_TYPE_POS, classType->ToWord());
     return static_cast<ReflectConstructorsFrame *>(frame);
   }
-  static ReflectConstructorsFrame *FromWordDirect(word x) {
-    StackFrame *frame = StackFrame::FromWordDirect(x);
-    Assert(frame->GetLabel() == REFLECT_CONSTRUCTORS_FRAME);
-    return static_cast<ReflectConstructorsFrame *>(frame);
-  }
 
+  u_int GetSize() {
+    return StackFrame::GetSize() + SIZE;
+  }
   ObjectArray *GetArray() {
     return ObjectArray::FromWordDirect(GetArg(ARRAY_POS));
   }
@@ -85,20 +79,26 @@ ReflectConstructorsWorker *ReflectConstructorsWorker::self;
 
 void ReflectConstructorsWorker::PushFrame(ObjectArray *array,
 					  Class *theClass, Type *classType) {
-  ReflectConstructorsFrame *frame =
-    ReflectConstructorsFrame::New(array, theClass, classType);
-  Scheduler::PushFrame(frame->ToWord());
+  ReflectConstructorsFrame::New(array, theClass, classType);
 }
 
-Worker::Result ReflectConstructorsWorker::Run() {
+u_int ReflectConstructorsWorker::GetFrameSize(StackFrame *sFrame) {
   ReflectConstructorsFrame *frame =
-    ReflectConstructorsFrame::FromWordDirect(Scheduler::GetFrame());
+    static_cast<ReflectConstructorsFrame *>(sFrame);
+  Assert(sFrame->GetWorker() == this);
+  return frame->GetSize();
+}
+
+Worker::Result ReflectConstructorsWorker::Run(StackFrame *sFrame) {
+  ReflectConstructorsFrame *frame =
+    static_cast<ReflectConstructorsFrame *>(sFrame);
+  Assert(sFrame->GetWorker() == this);
   ObjectArray *array = frame->GetArray();
   Class *theClass = frame->GetClass();
   u_int index = frame->GetIndex();
   Assert(Scheduler::nArgs == 0);
   if (index == array->GetLength()) {
-    Scheduler::PopFrame();
+    Scheduler::PopFrame(frame->GetSize());
     Scheduler::nArgs = Scheduler::ONE_ARG;
     Scheduler::currentArgs[0] = array->ToWord();
     return CONTINUE;
@@ -137,9 +137,10 @@ const char *ReflectConstructorsWorker::Identify() {
   return "ReflectConstructorsWorker";
 }
 
-void ReflectConstructorsWorker::DumpFrame(word wFrame) {
+void ReflectConstructorsWorker::DumpFrame(StackFrame *sFrame) {
   ReflectConstructorsFrame *frame =
-    ReflectConstructorsFrame::FromWordDirect(wFrame);
+    static_cast<ReflectConstructorsFrame *>(sFrame);
+  Assert(sFrame->GetWorker() == this);
   std::fprintf(stderr, "Reflect constructor %d/%d of class %s\n",
 	       frame->GetIndex(), frame->GetArray()->GetLength(),
 	       frame->GetClass()->GetClassInfo()->GetName()->ExportC());
@@ -172,7 +173,7 @@ DEFINE3(forName0) {
   if (!theClass->IsInitialized() && initialize) {
     Future *future = theClass->GetLock()->Acquire();
     Assert(future == INVALID_POINTER); future = future;
-    Scheduler::PushFrameNoCheck(prim_self);
+    PUSH_PRIM_SELF();
     return theClass->RunInitializer();
   }
   RETURN(theClass->GetClassObject()->ToWord());

@@ -20,7 +20,6 @@
 #include "generic/Worker.hh"
 #include "generic/Properties.hh"
 #include "generic/Scheduler.hh"
-#include "java/StackFrame.hh"
 #include "java/ThrowWorker.hh"
 #include "java/ClassLoader.hh"
 #include "java/Startup.hh"
@@ -37,29 +36,25 @@ public:
 
   static void PushFrame(Thread *thread, word wMethodRef);
 
-  virtual Result Run();
+  virtual u_int GetFrameSize(StackFrame *sFrame);
+  virtual Result Run(StackFrame *sFrame);
   virtual const char *Identify();
-  virtual void DumpFrame(word wFrame);
+  virtual void DumpFrame(StackFrame *sFrame);
 };
 
 class RunMainFrame: private StackFrame {
 protected:
   enum { METHOD_REF_POS, SIZE };
 public:
-  using Block::ToWord;
-
-  static RunMainFrame *New(word wMethodRef) {
-    StackFrame *frame =
-      StackFrame::New(RUN_MAIN_FRAME, RunMainWorker::self, SIZE);
+  static RunMainFrame *New(Thread *thread, word wMethodRef) {
+    NEW_THREAD_STACK_FRAME(frame, thread, RunMainWorker::self, SIZE);
     frame->InitArg(METHOD_REF_POS, wMethodRef);
     return static_cast<RunMainFrame *>(frame);
   }
-  static RunMainFrame *FromWordDirect(word x) {
-    StackFrame *frame = StackFrame::FromWordDirect(x);
-    Assert(frame->GetLabel() == RUN_MAIN_FRAME);
-    return static_cast<RunMainFrame *>(frame);
-  }
 
+  u_int GetSize() {
+    return StackFrame::GetSize() + SIZE;
+  }
   word GetMethodRef() {
     return GetArg(METHOD_REF_POS);
   }
@@ -68,11 +63,18 @@ public:
 RunMainWorker *RunMainWorker::self;
 
 void RunMainWorker::PushFrame(Thread *thread, word wMethodRef) {
-  thread->PushFrame(RunMainFrame::New(wMethodRef)->ToWord());
+  RunMainFrame::New(thread, wMethodRef);
 }
 
-Worker::Result RunMainWorker::Run() {
-  RunMainFrame *frame = RunMainFrame::FromWordDirect(Scheduler::GetFrame());
+u_int RunMainWorker::GetFrameSize(StackFrame *sFrame) {
+  RunMainFrame *frame = static_cast<RunMainFrame *>(sFrame);
+  Assert(sFrame->GetWorker() == this);
+  return frame->GetSize();
+}
+
+Worker::Result RunMainWorker::Run(StackFrame *sFrame) {
+  RunMainFrame *frame = static_cast<RunMainFrame *>(sFrame);
+  Assert(sFrame->GetWorker() == this);
   word wMethodRef = frame->GetMethodRef();
   MethodRef *methodRef = MethodRef::FromWord(wMethodRef);
   if (methodRef == INVALID_POINTER) {
@@ -87,7 +89,7 @@ Worker::Result RunMainWorker::Run() {
   }
   StaticMethodRef *staticMethodRef =
     static_cast<StaticMethodRef *>(methodRef);
-  Scheduler::PopFrame();
+  Scheduler::PopFrame(frame->GetSize());
   Closure *closure =
     staticMethodRef->GetClass()->GetStaticMethod(staticMethodRef->GetIndex());
   //--** pass string array as argument
@@ -98,7 +100,7 @@ const char *RunMainWorker::Identify() {
   return "RunMainWorker";
 }
 
-void RunMainWorker::DumpFrame(word) {
+void RunMainWorker::DumpFrame(StackFrame *) {
   std::fprintf(stderr, "Run `void main(String[] args)'\n");
 }
 

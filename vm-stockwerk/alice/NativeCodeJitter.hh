@@ -64,7 +64,6 @@ protected:
   static Tuple *assignment;
   static Vector *globalSubst;
   static word inlineTable;
-  static word defaultContinuation;
   static u_int currentNLocals;
   static TagVal *currentArgs;
   // Environment Accessors
@@ -77,8 +76,6 @@ protected:
   static TagVal *LookupSubst(u_int index);
   static void LazySelClosureNew(u_int Record, UniqueString *label);
   // StackFrame Accessors
-  static void Prepare();
-  static void Finish();
   static void ResetRegister();
   static void SaveRegister();
   static void RestoreRegister();
@@ -155,9 +152,6 @@ public:
   // NativeCodeJitter Methods
   static word GetInitialPC() {
     return initialPC;
-  }
-  static word GetDefaultContinuation() {
-    return defaultContinuation;
   }
   static NativeConcreteCode *Compile(TagVal *abstractCode);
   static void PrintPC(const char *instr);

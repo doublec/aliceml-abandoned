@@ -25,7 +25,7 @@ JAVA_SECURITY_SOURCES = AccessController.cc
 SUN_MISC_SOURCES = Unsafe.cc AtomicLong.cc
 SUN_REFLECT_SOURCES = Reflection.cc NativeConstructorAccessorImpl.cc
 SOURCES = \
-	Outline.cc Data.cc ThrowWorker.cc ClassLoader.cc JavaByteCode.cc \
+	Data.cc ThrowWorker.cc ClassLoader.cc JavaByteCode.cc \
 	ClassInfo.cc NativeMethodTable.cc ClassFile.cc ByteCodeInterpreter.cc \
 	Startup.cc JavaLanguageLayer.cc \
 	Dump.cc \

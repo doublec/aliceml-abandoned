@@ -22,10 +22,14 @@ DEFINE1(fillInStackTrace) {
   Assert(_this != INVALID_POINTER);
   Backtrace *backtrace = Backtrace::New();
   TaskStack *taskStack = Scheduler::currentTaskStack;
-  for (u_int i = Scheduler::nFrames; i--; ) {
-    StackFrame *frame = StackFrame::FromWordDirect(taskStack->GetArg(i));
-    if (frame->GetWorker() == ByteCodeInterpreter::self)
-      backtrace->Enqueue(frame->ToWord());
+  word *base = (word *) taskStack->GetFrame(0);
+  word *top  = (word *) taskStack->GetFrame(taskStack->GetTop());
+  while (top > base) {
+    StackFrame *frame = (StackFrame *) (top - 1);
+    Worker *worker = frame->GetWorker();
+    if (worker == ByteCodeInterpreter::self)
+      backtrace->Enqueue(frame->Clone());
+    top -= worker->GetFrameSize(frame);
   }
   _this->PutInstanceField(Throwable::BACKTRACE_INDEX, backtrace->ToWord());
   RETURN(_this->ToWord());

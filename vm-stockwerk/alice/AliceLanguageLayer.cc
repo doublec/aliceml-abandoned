@@ -94,9 +94,9 @@ void AliceLanguageLayer::Init() {
   NativeCodeInterpreter::Init();
   // to be done: Memory should be enlarged dynamically
 #if defined(JIT_STORE_DEBUG)
-  u_int codeSizeInChunks = 40;
+  u_int codeSizeInChunks = 100;
 #else
-  u_int codeSizeInChunks = 20;
+  u_int codeSizeInChunks = 100; // was 40
 #endif
   NativeCodeJitter::Init(codeSizeInChunks * STORE_MEMCHUNK_SIZE);
 

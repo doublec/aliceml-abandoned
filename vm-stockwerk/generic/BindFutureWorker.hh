@@ -37,12 +37,13 @@ public:
   }
   // Frame Handling
   static void PushFrame(Thread *thread, Transient *future);
+  virtual u_int GetFrameSize(StackFrame *sFrame);
   // Execution
-  virtual Result Run();
+  virtual Result Run(StackFrame *sFrame);
   virtual Result Handle(word data);
   // Debugging
   virtual const char *Identify();
-  virtual void DumpFrame(word frame);
+  virtual void DumpFrame(StackFrame *sFrame);
 };
 
 #endif

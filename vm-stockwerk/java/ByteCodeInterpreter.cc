@@ -23,7 +23,6 @@
 
 #include "java/Opcodes.hh"
 #include "java/Data.hh"
-#include "java/StackFrame.hh"
 #include "java/ThrowWorker.hh"
 #include "java/JavaByteCode.hh"
 #include "java/ByteCodeInterpreter.hh"
@@ -122,6 +121,7 @@ static bool IsInstanceOf(word value, Type *type) {
 class ByteCodeFrame : public StackFrame {
 protected:
   enum {
+    SIZE_POS,
     PC_POS,
     CONT_PC_POS,
     TOP_POS,
@@ -138,9 +138,10 @@ protected:
     return Store::DirectWordToInt(StackFrame::GetArg(TOP_POS));
   }
 public:
-  using Block::ToWord;
-
   // ByteCodeFrame Accessors
+  u_int GetSize() {
+    return Store::DirectWordToInt(StackFrame::GetArg(SIZE_POS));
+  }
   s_int GetPC() {
     return Store::DirectWordToInt(StackFrame::GetArg(PC_POS));
   }
@@ -196,8 +197,8 @@ public:
     u_int maxLocals   = byteCode->GetMaxLocals();
     u_int maxStack    = byteCode->GetMaxStack();
     u_int frSize      = BASE_SIZE + maxLocals + maxStack;
-    StackFrame *frame =
-      StackFrame::New(JAVA_BYTE_CODE_FRAME, interpreter, frSize);
+    NEW_STACK_FRAME(frame, interpreter, frSize);
+    frame->InitArg(SIZE_POS, frame->GetSize() + frSize);
     frame->InitArg(PC_POS, pc);
     frame->InitArg(CONT_PC_POS, contPC);
     frame->InitArg(TOP_POS, BASE_SIZE + maxLocals);
@@ -205,12 +206,6 @@ public:
     frame->InitArg(POOL_POS, runtimeConstantPool);
     frame->InitArg(BYTE_CODE_POS, byteCode->ToWord());
     return static_cast<ByteCodeFrame *>(frame);
-  }
-  // ByteCodeFrame Untagging
-  static ByteCodeFrame *FromWordDirect(word frame) {
-    StackFrame *p = StackFrame::FromWordDirect(frame);
-    Assert(p->GetLabel() == JAVA_BYTE_CODE_FRAME);
-    return static_cast<ByteCodeFrame *>(p);
   }
 };
 
@@ -226,12 +221,13 @@ public:
   }
 
   static void PushFrame(Lock *lock);
-  static void Release();
+  static void Release(StackFrame *sFrame);
   
-  virtual Result Run();
+  virtual u_int GetFrameSize(StackFrame *sFrame);
+  virtual Result Run(StackFrame *sFrame);
   virtual Result Handle(word data);
   virtual const char *Identify();
-  virtual void DumpFrame(word frame);
+  virtual void DumpFrame(StackFrame *sFrame);
 };
 
 UnlockWorker *UnlockWorker::self;
@@ -242,45 +238,48 @@ protected:
     LOCK_POS, SIZE
   };
 public:
-  using Block::ToWord;
-  
   // UnlockFrame Accessors
+  u_int GetSize() {
+    return StackFrame::GetSize() + SIZE;
+  }
   Lock *GetLock() {
     return Lock::FromWordDirect(StackFrame::GetArg(LOCK_POS));
   }
   // UnlockFrame Constructor
   static UnlockFrame *New(Worker *worker, Lock *lock) {
-    StackFrame *frame = StackFrame::New(UNLOCK_FRAME, worker, SIZE);
+    NEW_STACK_FRAME(frame, worker, SIZE);
     frame->InitArg(LOCK_POS, lock->ToWord());
     return static_cast<UnlockFrame *>(frame);
-  }
-  // UnlockFrame Untagging
-  static UnlockFrame *FromWordDirect(word frame) {
-    StackFrame *p = StackFrame::FromWordDirect(frame);
-    Assert(p->GetLabel() == UNLOCK_FRAME);
-    return static_cast<UnlockFrame *>(p);
   }
 };
 
 void UnlockWorker::PushFrame(Lock *lock) {
-  Scheduler::PushFrame(UnlockFrame::New(UnlockWorker::self, lock)->ToWord());
+  UnlockFrame::New(UnlockWorker::self, lock);
   Scheduler::PushHandler(Store::IntToWord(0));
 }
 
-void UnlockWorker::Release() {
-  UnlockFrame *frame = UnlockFrame::FromWordDirect(Scheduler::GetAndPopFrame());
+void UnlockWorker::Release(StackFrame *sFrame) {
+  UnlockFrame *frame = static_cast<UnlockFrame *>(sFrame);
+  Assert(sFrame->GetWorker() == UnlockWorker::self);
   Scheduler::PopHandler();
   Lock *lock = frame->GetLock();
+  Scheduler::PopFrame(frame->GetSize());
   lock->Release();
 }
 
-Worker::Result UnlockWorker::Run() {
-  Release();
+u_int UnlockWorker::GetFrameSize(StackFrame *sFrame) {
+  UnlockFrame *frame = static_cast<UnlockFrame *>(sFrame);
+  Assert(sFrame->GetWorker() == this);
+  return frame->GetSize();
+}
+
+Worker::Result UnlockWorker::Run(StackFrame *sFrame) {
+  Release(sFrame);
   return Worker::CONTINUE;
 }
 
 Worker::Result UnlockWorker::Handle(word) {
-  Release();
+  Release(Scheduler::GetFrame());
   return Worker::RAISE;
 }
 
@@ -288,7 +287,7 @@ const char *UnlockWorker::Identify() {
   return "UnlockWorker";
 }
 
-void UnlockWorker::DumpFrame(word) {
+void UnlockWorker::DumpFrame(StackFrame *) {
   std::fprintf(stderr, "Unlock\n");
 }
 
@@ -389,9 +388,10 @@ public:
 }
 
 #define RAISE_EXCEPTION(exn) { \
-  Scheduler::PopFrame(); \
+  word wFrame = frame->Clone(); \
+  Scheduler::PopFrame(frame->GetSize()); \
   Scheduler::currentData = exn; \
-  Scheduler::currentBacktrace = Backtrace::New(frame->ToWord()); \
+  Scheduler::currentBacktrace = Backtrace::New(wFrame); \
   return Worker::RAISE; \
 }
 
@@ -464,17 +464,22 @@ ByteCodeInterpreter::GetAbstractRepresentation(ConcreteRepresentation *) {
 void ByteCodeInterpreter::PushCall(Closure *closure) {
   JavaByteCode *concreteCode =
     JavaByteCode::FromWord(closure->GetConcreteCode());
-  ByteCodeFrame *frame =
-    ByteCodeFrame::New(ByteCodeInterpreter::self,
-		       -1,
-		       0,
-		       concreteCode,
-		       closure->Sub(0)); // RuntimeConstantPool
-  Scheduler::PushFrame(frame->ToWord());
+  ByteCodeFrame::New(ByteCodeInterpreter::self,
+		     -1,
+		     0,
+		     concreteCode,
+		     closure->Sub(0)); // RuntimeConstantPool
 }
 
-Worker::Result ByteCodeInterpreter::Run() {
-  ByteCodeFrame *frame = ByteCodeFrame::FromWordDirect(Scheduler::GetFrame());
+u_int ByteCodeInterpreter::GetFrameSize(StackFrame *sFrame) {
+  ByteCodeFrame *frame = static_cast<ByteCodeFrame *>(sFrame);
+  Assert(sFrame->GetWorker() == this);
+  return frame->GetSize();
+}
+
+Worker::Result ByteCodeInterpreter::Run(StackFrame *sFrame) {
+  ByteCodeFrame *frame = static_cast<ByteCodeFrame *>(sFrame);
+  Assert(sFrame->GetWorker() == this);
   s_int pc = frame->GetPC();
   u_int8 *code = reinterpret_cast<u_int8 *>(frame->GetCode()->GetBase());
   RuntimeConstantPool *pool = frame->GetRuntimeConstantPool();
@@ -775,7 +780,7 @@ Worker::Result ByteCodeInterpreter::Run() {
 	JavaDebug::Print("(A|F|I)RETURN");
 	Scheduler::nArgs          = Scheduler::ONE_ARG;
 	Scheduler::currentArgs[0] = frame->Pop();
-	Scheduler::PopFrame();
+	Scheduler::PopFrame(frame->GetSize());
 	CHECK_PREEMPT();
       }
       break;
@@ -786,7 +791,7 @@ Worker::Result ByteCodeInterpreter::Run() {
 	Scheduler::nArgs          = 2;
 	Scheduler::currentArgs[1] = frame->Pop();
 	Scheduler::currentArgs[0] = frame->Pop();
-	Scheduler::PopFrame();
+	Scheduler::PopFrame(frame->GetSize());
 	CHECK_PREEMPT();
       }
       break;
@@ -2309,7 +2314,7 @@ Worker::Result ByteCodeInterpreter::Run() {
       {
 	JavaDebug::Print("RETURN");
 	Scheduler::nArgs = 0;
-	Scheduler::PopFrame();
+	Scheduler::PopFrame(frame->GetSize());
 	CHECK_PREEMPT();
       }
       break;
@@ -2419,7 +2424,9 @@ Worker::Result ByteCodeInterpreter::Run() {
 }
 
 Interpreter::Result ByteCodeInterpreter::Handle(word) {
-  ByteCodeFrame *frame = ByteCodeFrame::FromWordDirect(Scheduler::GetFrame());
+  StackFrame *sFrame = Scheduler::GetFrame();
+  Assert(sFrame->GetWorker() == this);
+  ByteCodeFrame *frame = static_cast<ByteCodeFrame *>(sFrame);
   s_int pc             = frame->GetPC();
   Table *table         = frame->GetExceptionTable();
   u_int count          = table->GetCount();
@@ -2446,8 +2453,9 @@ Interpreter::Result ByteCodeInterpreter::Handle(word) {
       }
     }
   }
-  Scheduler::PopFrame();
-  Scheduler::currentBacktrace->Enqueue(frame->ToWord());
+  word wFrame = frame->Clone();
+  Scheduler::PopFrame(frame->GetSize());
+  Scheduler::currentBacktrace->Enqueue(wFrame);
   return Worker::RAISE;
 }
 
@@ -2462,8 +2470,9 @@ const char *ByteCodeInterpreter::Identify() {
   return "ByteCodeInterpreter";
 }
 
-void ByteCodeInterpreter::DumpFrame(word wFrame) {
-  ByteCodeFrame *frame = ByteCodeFrame::FromWordDirect(wFrame);
+void ByteCodeInterpreter::DumpFrame(StackFrame *sFrame) {
+  ByteCodeFrame *frame = static_cast<ByteCodeFrame *>(sFrame);
+  Assert(sFrame->GetWorker() == this);
   MethodInfo *info     = frame->GetMethodInfo();
   std::fprintf(stderr, "%s#%s%s\n", info->GetClassName()->ExportC(),
 	       info->GetName()->ExportC(), info->GetDescriptor()->ExportC());
@@ -2471,7 +2480,12 @@ void ByteCodeInterpreter::DumpFrame(word wFrame) {
 
 void ByteCodeInterpreter::FillStackTraceElement(word wFrame, 
 						Object *stackTraceElement) {
-  ByteCodeFrame *frame = ByteCodeFrame::FromWordDirect(wFrame);
+  // to be done: Hack Alert
+  u_int size = Store::DirectWordToBlock(wFrame)->GetSize();
+  StackFrame *sFrame = Scheduler::PushFrame(size);
+  StackFrame::New(sFrame, size, wFrame);
+  ByteCodeFrame *frame = static_cast<ByteCodeFrame *>(sFrame);
+  Assert(sFrame->GetWorker() == ByteCodeInterpreter::self);
   JavaString *className = frame->GetMethodInfo()->GetClassName();
   JavaString *name = frame->GetMethodInfo()->GetName();
   stackTraceElement->InitInstanceField

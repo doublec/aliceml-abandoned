@@ -22,7 +22,6 @@
 #include "generic/Transients.hh"
 #include "generic/Transform.hh"
 #include "alice/Data.hh"
-#include "alice/StackFrame.hh"
 #include "alice/AbstractCode.hh"
 #include "alice/NativeConcreteCode.hh"
 #include "alice/NativeCodeInterpreter.hh"
@@ -35,13 +34,14 @@
 class NativeCodeFrame : public StackFrame {
 protected:
   enum {
-    PC_POS, CODE_POS, CLOSURE_POS, IMMEDIATE_ARGS_POS, CONTINUATION_POS,
-    BASE_SIZE
+    SIZE_POS, PC_POS, CODE_POS, CLOSURE_POS, IMMEDIATE_ARGS_POS,
+    CONTINUATION_POS, BASE_SIZE
   };
 public:
-  using Block::ToWord;
-
   // NativeCodeFrame Accessors
+  u_int GetSize() {
+    return Store::DirectWordToInt(StackFrame::GetArg(SIZE_POS));
+  }
   u_int GetPC() {
     return (u_int) Store::DirectWordToInt(StackFrame::GetArg(PC_POS));
   }
@@ -74,41 +74,15 @@ public:
 			      Tuple *immediateArgs,
 			      word continuation,
 			      u_int nbLocals) {
-    u_int frSize      = BASE_SIZE + nbLocals;
-    StackFrame *frame = StackFrame::New(NATIVE_CODE_FRAME, interpreter, frSize);
+    u_int frSize = BASE_SIZE + nbLocals;
+    NEW_STACK_FRAME(frame, interpreter, frSize);
+    frame->InitArg(SIZE_POS, Store::IntToWord(frame->GetSize() + frSize));
     frame->InitArg(PC_POS, pc);
     frame->InitArg(CODE_POS, code->ToWord());
     frame->InitArg(CLOSURE_POS, closure->ToWord());
     frame->InitArg(IMMEDIATE_ARGS_POS, immediateArgs->ToWord());
     frame->InitArg(CONTINUATION_POS, continuation);
     return static_cast<NativeCodeFrame *>(frame);
-  }
-  // NativeCodeFrame Untagging
-  static NativeCodeFrame *FromWordDirect(word frame) {
-    StackFrame *p = StackFrame::FromWordDirect(frame);
-    Assert(p->GetLabel() == NATIVE_CODE_FRAME);
-    return static_cast<NativeCodeFrame *>(p);
-  }
-};
-
-class NativeCodeHandlerFrame : public StackFrame {
-protected:
-  enum { PC_POS, FRAME_POS, BASE_SIZE };
-public:
-  using Block::ToWord;
-
-  // NativeCodeHandlerFrame Accessors
-  u_int GetPC() {
-    return (u_int) Store::DirectWordToInt(StackFrame::GetArg(PC_POS));
-  }
-  NativeCodeFrame *GetCodeFrame() {
-    return NativeCodeFrame::FromWordDirect(StackFrame::GetArg(FRAME_POS));
-  }
-  // NativeCodeHandlerFrame Untagging
-  static NativeCodeHandlerFrame *FromWordDirect(word frame) {
-    StackFrame *p = StackFrame::FromWordDirect(frame);
-    Assert(p->GetLabel() == NATIVE_CODE_HANDLER_FRAME);
-    return static_cast<NativeCodeHandlerFrame *>(p);
   }
 };
 
@@ -117,31 +91,26 @@ public:
 //
 NativeCodeInterpreter *NativeCodeInterpreter::self;
 
-static inline word MakeNativeFrame(word continuation, Closure *closure) {
+static inline StackFrame *MakeNativeFrame(word continuation, Closure *closure) {
   NativeConcreteCode *concreteCode =
     NativeConcreteCode::FromWord(closure->GetConcreteCode());
   Assert(concreteCode->GetInterpreter() == NativeCodeInterpreter::self);
   u_int nLocals        = concreteCode->GetNLocals();
   Chunk *code          = concreteCode->GetNativeCode();
   Tuple *immediateArgs = concreteCode->GetImmediateArgs();
-  return NativeCodeFrame::New(NativeCodeInterpreter::self,
-			      NativeCodeJitter::GetInitialPC(),
-			      code, closure, immediateArgs,
-			      continuation, nLocals)->ToWord();
+  NativeCodeFrame *frame =
+    NativeCodeFrame::New(NativeCodeInterpreter::self,
+			 NativeCodeJitter::GetInitialPC(),
+			 code, closure, immediateArgs,
+			 continuation, nLocals);
+  for (u_int i = nLocals; i--;)
+    frame->InitLocalEnv(i, Store::IntToWord(0));
+  return static_cast<StackFrame *>(frame);
 }
 
-word NativeCodeInterpreter::FastPushCall(word continuation, Closure *closure) {
-  word frame = MakeNativeFrame(continuation, closure);
-  Scheduler::PushFrame(frame);
-  return frame;
-}
-
-word NativeCodeInterpreter::TailPushCall(Closure *closure) {
-  word frame =
-    MakeNativeFrame(NativeCodeJitter::GetDefaultContinuation(), closure);
-  Scheduler::PopFrame();
-  Scheduler::PushFrameNoCheck(frame);
-  return frame;
+StackFrame *NativeCodeInterpreter::FastPushCall(word continuation,
+						Closure *closure) {
+  return MakeNativeFrame(continuation, closure);
 }
 
 Transform *
@@ -149,30 +118,28 @@ NativeCodeInterpreter::GetAbstractRepresentation(ConcreteRepresentation *b) {
   return static_cast<NativeConcreteCode *>(b)->GetAbstractRepresentation();
 }
 
-void NativeCodeInterpreter::PushCall(Closure *closure) {
-  word frame =
-    MakeNativeFrame(NativeCodeJitter::GetDefaultContinuation(), closure);
-  Scheduler::PushFrame(frame);
+u_int NativeCodeInterpreter::GetFrameSize(StackFrame *sFrame) {
+  NativeCodeFrame *frame = static_cast<NativeCodeFrame *>(sFrame);
+  Assert(sFrame->GetWorker() == this);
+  return frame->GetSize();
 }
 
-Worker::Result NativeCodeInterpreter::Run() {
-  NativeCodeFrame *frame =
-    NativeCodeFrame::FromWordDirect(Scheduler::GetFrame());
-#if 0
-  Block *p = (Block *) frame;
-  if (!HeaderOp::IsChildish(p)) {
-    Store::AddToIntgenSet(p);
-  }
-#endif
-  Assert(frame->GetWorker() == this);
+void NativeCodeInterpreter::PushCall(Closure *closure) {
+  MakeNativeFrame(Store::IntToWord(0), closure);
+}
+
+Worker::Result NativeCodeInterpreter::Run(StackFrame *sFrame) {
+  NativeCodeFrame *frame = static_cast<NativeCodeFrame *>(sFrame);
+  Assert(sFrame->GetWorker() == this);
   Chunk *code        = frame->GetCode();
   native_fun execute = (native_fun) code->GetBase();
   return execute(frame);
 }
 
 Worker::Result NativeCodeInterpreter::Handle(word data) {
-  NativeCodeFrame *frame =
-    NativeCodeFrame::FromWordDirect(Scheduler::GetFrame());
+  StackFrame *sFrame = Scheduler::GetFrame();
+  NativeCodeFrame *frame = static_cast<NativeCodeFrame *>(sFrame);
+  Assert(sFrame->GetWorker() == this);
   frame->SetPC(Store::DirectWordToInt(data));
   Tuple *package = Tuple::New(2);
   word exn = Scheduler::currentData;
@@ -205,22 +172,12 @@ const char *NativeCodeInterpreter::Identify() {
   return "NativeCodeInterpreter";
 }
 
-void NativeCodeInterpreter::DumpFrame(word frame) {
-  Block *p = Store::DirectWordToBlock(frame);
-  Assert(p->GetLabel() == (BlockLabel) NATIVE_CODE_FRAME ||
-	 p->GetLabel() == (BlockLabel) NATIVE_CODE_HANDLER_FRAME);
-  NativeCodeFrame *codeFrame;
+void NativeCodeInterpreter::DumpFrame(StackFrame *sFrame) {
+  NativeCodeFrame *codeFrame = static_cast<NativeCodeFrame *>(sFrame);
+  Assert(sFrame->GetWorker() == this);
   const char *frameType;
-  if (p->GetLabel() == (BlockLabel) NATIVE_CODE_FRAME) {
-    codeFrame = NativeCodeFrame::FromWordDirect(frame);
-    frameType = "function";
-  }
-  else {
-    NativeCodeHandlerFrame *handlerFrame =
-      NativeCodeHandlerFrame::FromWordDirect(frame);
-    codeFrame = handlerFrame->GetCodeFrame();
-    frameType = "handler";
-  }
+  frameType = "function";
+  // to be done: frameType = "handler";
   // Print closure information
   Closure *closure = codeFrame->GetClosure();
   NativeConcreteCode *concreteCode =
@@ -271,19 +228,10 @@ MakeProfileName(NativeConcreteCode *concreteCode, const char *type) {
 }
 
 String *NativeCodeInterpreter::GetProfileName(StackFrame *frame) {
-  Block *p = (Block *) frame;
-  NativeCodeFrame *codeFrame;
+  NativeCodeFrame *codeFrame = NativeCodeFrame::FromWordDirect(frame->ToWord());
   const char *frameType;
-  if (p->GetLabel() == (BlockLabel) NATIVE_CODE_FRAME) {
-    codeFrame = NativeCodeFrame::FromWordDirect(frame->ToWord());
-    frameType = "function";
-  }
-  else {
-    NativeCodeHandlerFrame *handlerFrame =
-      NativeCodeHandlerFrame::FromWordDirect(frame->ToWord());
-    codeFrame = handlerFrame->GetCodeFrame();
-    frameType = "handler";
-  }
+  frameType = "function";
+  // to be done: frameType = "handler";
   Closure *closure = codeFrame->GetClosure();
   NativeConcreteCode *nativeConcreteCode =
     NativeConcreteCode::FromWord(closure->GetConcreteCode());

@@ -100,11 +100,12 @@ public:
   }
   // Frame Handling
   static void PushFrame(String *key, word closure, Vector *imports);
+  virtual u_int GetFrameSize(StackFrame *sFrame);
   // Execution
-  virtual Result Run();
+  virtual Result Run(StackFrame *sFrame);
   // Debugging
   virtual const char *Identify();
-  virtual void DumpFrame(word frame);
+  virtual void DumpFrame(StackFrame *sFrame);
 };
 
 class EnterWorker: public Worker {
@@ -119,11 +120,12 @@ public:
   }
   // Frame Handling
   static void PushFrame(String *key, word sign);
+  virtual u_int GetFrameSize(StackFrame *sFrame);
   // Execution
-  virtual Result Run();
+  virtual Result Run(StackFrame *sFrame);
   // Debugging
   virtual const char *Identify();
-  virtual void DumpFrame(word frame);
+  virtual void DumpFrame(StackFrame *sFrame);
 };
 
 class LinkWorker: public Worker {
@@ -138,11 +140,12 @@ public:
   }
   // Frame Handling
   static void PushFrame(String *key);
+  virtual u_int GetFrameSize(StackFrame *sFrame);
   // Execution
-  virtual Result Run();
+  virtual Result Run(StackFrame *sFrame);
   // Debugging
   virtual const char *Identify();
-  virtual void DumpFrame(word frame);
+  virtual void DumpFrame(StackFrame *sFrame);
 };
 
 class LoadWorker: public Worker {
@@ -158,11 +161,12 @@ public:
   // Frame Handling
   static void PushFrame(String *key);
   static void PushFrame(Thread *thread, String *key);
+  virtual u_int GetFrameSize(StackFrame *sFrame);
   // Execution
-  virtual Result Run();
+  virtual Result Run(StackFrame *sFrame);
   // Debugging
   virtual const char *Identify();
-  virtual void DumpFrame(word frame);
+  virtual void DumpFrame(StackFrame *sFrame);
 };
 
 class BootWorker: public Worker {
@@ -177,11 +181,12 @@ public:
   }
   // Frame Handling
   static void PushFrame(Thread *thread, String *key);
+  virtual u_int GetFrameSize(StackFrame *sFrame);
   // Execution
-  virtual Result Run();
+  virtual Result Run(StackFrame *sFrame);
   // Debugging
   virtual const char *Identify();
-  virtual void DumpFrame(word frame);
+  virtual void DumpFrame(StackFrame *sFrame);
 };
 
 //
@@ -191,8 +196,10 @@ class ApplyFrame: private StackFrame {
 private:
   enum { KEY_POS, CLOSURE_POS, IMPORTS_POS, SIZE };
 public:
-  using Block::ToWord;
   // ApplyFrame Accessors
+  u_int GetSize() {
+    return StackFrame::GetSize() + SIZE;
+  }
   String *GetKey() {
     return String::FromWordDirect(StackFrame::GetArg(KEY_POS));
   }
@@ -205,17 +212,11 @@ public:
   // ApplyFrame Constructor
   static ApplyFrame *New(Worker *worker, String *key,
 			 word closure, Vector *imports) {
-    StackFrame *frame = StackFrame::New(APPLY_FRAME, worker, SIZE);
+    NEW_STACK_FRAME(frame, worker, SIZE);
     frame->InitArg(KEY_POS, key->ToWord());
     frame->InitArg(CLOSURE_POS, closure);
     frame->InitArg(IMPORTS_POS, imports->ToWord());
     return static_cast<ApplyFrame *>(frame);
-  }
-  // ApplyFrame Untagging
-  static ApplyFrame *FromWordDirect(word frame) {
-    StackFrame *p = StackFrame::FromWordDirect(frame);
-    Assert(p->GetLabel() == APPLY_FRAME);
-    return static_cast<ApplyFrame *>(p);
   }
 };
 
@@ -223,8 +224,10 @@ class EnterFrame: private StackFrame {
 private:
   enum { KEY_POS, SIGN_POS, SIZE };
 public:
-  using Block::ToWord;
   // EnterFrame Accessors
+  u_int GetSize() {
+    return StackFrame::GetSize() + SIZE;
+  }
   String *GetKey() {
     return String::FromWordDirect(StackFrame::GetArg(KEY_POS));
   }
@@ -233,16 +236,10 @@ public:
   }
   // EnterFrame Constructor
   static EnterFrame *New(Worker *worker, String *key, word sign) {
-    StackFrame *frame = StackFrame::New(ENTER_FRAME, worker, SIZE);
+    NEW_STACK_FRAME(frame, worker, SIZE);
     frame->InitArg(KEY_POS, key->ToWord());
     frame->InitArg(SIGN_POS, sign);
     return static_cast<EnterFrame *>(frame);
-  }
-  // EnterFrame Untagging
-  static EnterFrame *FromWordDirect(word frame) {
-    StackFrame *p = StackFrame::FromWordDirect(frame);
-    Assert(p->GetLabel() == ENTER_FRAME);
-    return static_cast<EnterFrame *>(p);
   }
 };
 
@@ -250,22 +247,18 @@ class LinkFrame: private StackFrame {
 private:
   enum { KEY_POS, SIZE };
 public:
-  using Block::ToWord;
   // LinkFrame Accessors
+  u_int GetSize() {
+    return StackFrame::GetSize() + SIZE;
+  }
   String *GetKey() {
     return String::FromWordDirect(StackFrame::GetArg(KEY_POS));
   }
   // LinkFrame Constructor
   static LinkFrame *New(Worker *worker, String *key) {
-    StackFrame *frame = StackFrame::New(LINK_FRAME, worker, SIZE);
+    NEW_STACK_FRAME(frame, worker, SIZE);
     frame->InitArg(KEY_POS, key->ToWord());
     return static_cast<LinkFrame *>(frame);
-  }
-  // LinkFrame Untagging
-  static LinkFrame *FromWordDirect(word frame) {
-    StackFrame *p = StackFrame::FromWordDirect(frame);
-    Assert(p->GetLabel() == LINK_FRAME);
-    return static_cast<LinkFrame *>(p);
   }
 };
 
@@ -273,22 +266,23 @@ class LoadFrame: private StackFrame {
 private:
   enum { KEY_POS, SIZE };
 public:
-  using Block::ToWord;
   // LoadFrame Accessors
+  u_int GetSize() {
+    return StackFrame::GetSize() + SIZE;
+  }
   String *GetKey() {
     return String::FromWordDirect(StackFrame::GetArg(KEY_POS));
   }
   // LoadFrame Constructor
   static LoadFrame *New(Worker *worker, String *key) {
-    StackFrame *frame = StackFrame::New(LOAD_FRAME, worker, SIZE);
+    NEW_STACK_FRAME(frame, worker, SIZE);
     frame->InitArg(KEY_POS, key->ToWord());
     return static_cast<LoadFrame *>(frame);
   }
-  // LoadFrame Untagging
-  static LoadFrame *FromWordDirect(word frame) {
-    StackFrame *p = StackFrame::FromWordDirect(frame);
-    Assert(p->GetLabel() == LOAD_FRAME);
-    return static_cast<LoadFrame *>(p);
+  static LoadFrame *New(Thread *thread, Worker *worker, String *key) {
+    NEW_THREAD_STACK_FRAME(frame, thread, worker, SIZE);
+    frame->InitArg(KEY_POS, key->ToWord());
+    return static_cast<LoadFrame *>(frame);
   }
 };
 
@@ -296,22 +290,18 @@ class BootFrame: private StackFrame {
 private:
   enum { KEY_POS, SIZE };
 public:
-  using Block::ToWord;
   // BootFrame Accessors
+  u_int GetSize() {
+    return StackFrame::GetSize() + SIZE;
+  }
   String *GetKey() {
     return String::FromWordDirect(StackFrame::GetArg(KEY_POS));
   }
   // BootFrame Constructor
-  static BootFrame *New(Worker *worker, String *key) {
-    StackFrame *frame = StackFrame::New(BOOT_FRAME, worker, SIZE);
+  static BootFrame *New(Thread *thread, Worker *worker, String *key) {
+    NEW_THREAD_STACK_FRAME(frame, thread, worker, SIZE);
     frame->InitArg(KEY_POS, key->ToWord());
     return static_cast<BootFrame *>(frame);
-  }
-  // BootFrame Untagging
-  static BootFrame *FromWordDirect(word frame) {
-    StackFrame *p = StackFrame::FromWordDirect(frame);
-    Assert(p->GetLabel() == BOOT_FRAME);
-    return static_cast<BootFrame *>(p);
   }
 };
 
@@ -322,14 +312,22 @@ public:
 ApplyWorker *ApplyWorker::self;
 
 void ApplyWorker::PushFrame(String *key, word closure, Vector *imports) {
-  Scheduler::PushFrame(ApplyFrame::New(self, key, closure, imports)->ToWord());
+  ApplyFrame::New(self, key, closure, imports);
 }
 
-Worker::Result ApplyWorker::Run() {
-  ApplyFrame *frame = ApplyFrame::FromWordDirect(Scheduler::GetAndPopFrame());
+u_int ApplyWorker::GetFrameSize(StackFrame *sFrame) {
+  ApplyFrame *frame = static_cast<ApplyFrame *>(sFrame);
+  Assert(sFrame->GetWorker() == this);
+  return frame->GetSize();
+}
+
+Worker::Result ApplyWorker::Run(StackFrame *sFrame) {
+  ApplyFrame *frame = static_cast<ApplyFrame *>(sFrame);
+  Assert(sFrame->GetWorker() == this);
   String *key = frame->GetKey();
   word closure = frame->GetClosure();
   Vector *imports = frame->GetImports(); // (string * sign) vector
+  Scheduler::PopFrame(frame->GetSize());
   Trace("applying", key);
   u_int n = imports->GetLength();
   Vector *strs = Vector::New(n);
@@ -351,8 +349,9 @@ const char *ApplyWorker::Identify() {
   return "ApplyWorker";
 }
 
-void ApplyWorker::DumpFrame(word wFrame) {
-  ApplyFrame *frame = ApplyFrame::FromWordDirect(wFrame);
+void ApplyWorker::DumpFrame(StackFrame *sFrame) {
+  ApplyFrame *frame = static_cast<ApplyFrame *>(sFrame);
+  Assert(sFrame->GetWorker() == this);
   String *key = frame->GetKey();
   std::fprintf(stderr, "Apply %.*s\n", (int) key->GetSize(), key->GetValue());
 }
@@ -361,13 +360,21 @@ void ApplyWorker::DumpFrame(word wFrame) {
 EnterWorker *EnterWorker::self;
 
 void EnterWorker::PushFrame(String *key, word sign) {
-  Scheduler::PushFrame(EnterFrame::New(self, key, sign)->ToWord());
+  EnterFrame::New(self, key, sign);
 }
 
-Worker::Result EnterWorker::Run() {
-  EnterFrame *frame = EnterFrame::FromWordDirect(Scheduler::GetAndPopFrame());
+u_int EnterWorker::GetFrameSize(StackFrame *sFrame) {
+  EnterFrame *frame = static_cast<EnterFrame *>(sFrame);
+  Assert(sFrame->GetWorker() == this);
+  return frame->GetSize();
+}
+
+Worker::Result EnterWorker::Run(StackFrame *sFrame) {
+  EnterFrame *frame = static_cast<EnterFrame *>(sFrame);
+  Assert(sFrame->GetWorker() == this);
   String *key = frame->GetKey();
   word sign = frame->GetSign();
+  Scheduler::PopFrame(frame->GetSize());
   Trace("entering", key);
   Worker::Construct();
   BootLinker::EnterComponent(key, sign, Scheduler::currentArgs[0]);
@@ -378,8 +385,9 @@ const char *EnterWorker::Identify() {
   return "EnterWorker";
 }
 
-void EnterWorker::DumpFrame(word wFrame) {
-  EnterFrame *frame = EnterFrame::FromWordDirect(wFrame);
+void EnterWorker::DumpFrame(StackFrame *sFrame) {
+  EnterFrame *frame = static_cast<EnterFrame *>(sFrame);
+  Assert(sFrame->GetWorker() == this);
   String *key = frame->GetKey();
   std::fprintf(stderr, "Enter %.*s\n", (int) key->GetSize(), key->GetValue());
 }
@@ -388,12 +396,20 @@ void EnterWorker::DumpFrame(word wFrame) {
 LinkWorker *LinkWorker::self;
 
 void LinkWorker::PushFrame(String *key) {
-  Scheduler::PushFrame(LinkFrame::New(self, key)->ToWord());
+  LinkFrame::New(self, key);
 }
 
-Worker::Result LinkWorker::Run() {
-  LinkFrame *frame = LinkFrame::FromWordDirect(Scheduler::GetAndPopFrame());
+u_int LinkWorker::GetFrameSize(StackFrame *sFrame) {
+  LinkFrame *frame = static_cast<LinkFrame *>(sFrame);
+  Assert(sFrame->GetWorker() == this);
+  return frame->GetSize();
+}
+
+Worker::Result LinkWorker::Run(StackFrame *sFrame) {
+  LinkFrame *frame = static_cast<LinkFrame *>(sFrame);
+  Assert(sFrame->GetWorker() == this);
   String *key = frame->GetKey();
+  Scheduler::PopFrame(frame->GetSize());
   Trace("linking", key);
   Worker::Construct();
   TagVal *tagVal = TagVal::FromWord(Scheduler::currentArgs[0]);
@@ -442,8 +458,9 @@ const char *LinkWorker::Identify() {
   return "LinkWorker";
 }
 
-void LinkWorker::DumpFrame(word wFrame) {
-  LinkFrame *frame = LinkFrame::FromWordDirect(wFrame);
+void LinkWorker::DumpFrame(StackFrame *sFrame) {
+  LinkFrame *frame = static_cast<LinkFrame *>(sFrame);
+  Assert(sFrame->GetWorker() == this);
   String *key = frame->GetKey();
   std::fprintf(stderr, "Link %.*s\n", (int) key->GetSize(), key->GetValue());
 }
@@ -452,23 +469,31 @@ void LinkWorker::DumpFrame(word wFrame) {
 LoadWorker *LoadWorker::self;
 
 void LoadWorker::PushFrame(String *key) {
-  Scheduler::PushFrame(LoadFrame::New(self, key)->ToWord());
+  LoadFrame::New(self, key);
 }
 
 void LoadWorker::PushFrame(Thread *thread, String *key) {
-  thread->PushFrame(LoadFrame::New(self, key)->ToWord());
+  LoadFrame::New(thread, self, key);
 }
 
-Worker::Result LoadWorker::Run() {
-  LoadFrame *frame = LoadFrame::FromWordDirect(Scheduler::GetAndPopFrame());
+u_int LoadWorker::GetFrameSize(StackFrame *sFrame) {
+  LoadFrame *frame = static_cast<LoadFrame *>(sFrame);
+  Assert(sFrame->GetWorker() == this);
+  return frame->GetSize();
+}
+
+Worker::Result LoadWorker::Run(StackFrame *sFrame) {
+  LoadFrame *frame = static_cast<LoadFrame *>(sFrame);
+  Assert(sFrame->GetWorker() == this);
   String *key = frame->GetKey();
+  Scheduler::PopFrame(frame->GetSize());
   if (BootLinker::LookupComponent(key) != INVALID_POINTER) {
     Scheduler::nArgs = 0;
     return Worker::CONTINUE;
   }
   Trace("loading", key);
   LinkWorker::PushFrame(key);
-  Scheduler::PushFrame(frame->ToWord()); //--** what is this good for?
+  LoadWorker::PushFrame(key); //--** what is this good for?
   return Unpickler::Load(Localize(key));
 }
 
@@ -476,8 +501,9 @@ const char *LoadWorker::Identify() {
   return "LoadWorker";
 }
 
-void LoadWorker::DumpFrame(word wFrame) {
-  LoadFrame *frame = LoadFrame::FromWordDirect(wFrame);
+void LoadWorker::DumpFrame(StackFrame *sFrame) {
+  LoadFrame *frame = static_cast<LoadFrame *>(sFrame);
+  Assert(sFrame->GetWorker() == this);
   String *key = frame->GetKey();
   std::fprintf(stderr, "Load %.*s\n", (int) key->GetSize(), key->GetValue());
 }
@@ -486,12 +512,20 @@ void LoadWorker::DumpFrame(word wFrame) {
 BootWorker *BootWorker::self;
 
 void BootWorker::PushFrame(Thread *thread, String *key) {
-  thread->PushFrame(BootFrame::New(self, key)->ToWord());
+  BootFrame::New(thread, self, key);
 }
 
-Worker::Result BootWorker::Run() {
-  BootFrame *frame = BootFrame::FromWordDirect(Scheduler::GetAndPopFrame());
+u_int BootWorker::GetFrameSize(StackFrame *sFrame) {
+  BootFrame *frame = static_cast<BootFrame *>(sFrame);
+  Assert(sFrame->GetWorker() == this);
+  return frame->GetSize();
+}
+
+Worker::Result BootWorker::Run(StackFrame *sFrame) {
+  BootFrame *frame = static_cast<BootFrame *>(sFrame);
+  Assert(sFrame->GetWorker() == this);
   String *key = frame->GetKey();
+  Scheduler::PopFrame(frame->GetSize());
   Component *component = BootLinker::LookupComponent(key);
   Assert(component != INVALID_POINTER);
   Record *record = Record::FromWord(component->GetStr());
@@ -499,6 +533,7 @@ Worker::Result BootWorker::Run() {
   word boot = record->PolySel(UniqueString::New(String::New("boot")));
   Scheduler::nArgs = Scheduler::ONE_ARG;
   Scheduler::currentArgs[0] = Properties::rootUrl;
+  // t2;
   return Scheduler::PushCall(boot);
 }
 
@@ -506,8 +541,9 @@ const char *BootWorker::Identify() {
   return "BootWorker";
 }
 
-void BootWorker::DumpFrame(word wFrame) {
-  BootFrame *frame = BootFrame::FromWordDirect(wFrame);
+void BootWorker::DumpFrame(StackFrame *sFrame) {
+  BootFrame *frame = static_cast<BootFrame *>(sFrame);
+  Assert(sFrame->GetWorker() == this);
   String *key = frame->GetKey();
   std::fprintf(stderr, "Boot %.*s\n", (int) key->GetSize(), key->GetValue());
 }

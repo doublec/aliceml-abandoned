@@ -27,22 +27,17 @@ class BindFutureFrame: private StackFrame {
 private:
   enum { FUTURE_POS, SIZE };
 public:
-  using Block::ToWord;
-
   // BindFutureFrame Constructor
-  static BindFutureFrame *New(Worker *worker, Transient *future) {
-    StackFrame *frame = StackFrame::New(BYNEED_FRAME, worker, SIZE);
+  static BindFutureFrame *New(Thread *thread,
+			      Worker *worker, Transient *future) {
+    NEW_THREAD_STACK_FRAME(frame, thread, worker, SIZE);
     frame->InitArg(FUTURE_POS, future->ToWord());
     return static_cast<BindFutureFrame *>(frame);
   }
-  // BindFutureFrame Untagging
-  static BindFutureFrame *FromWordDirect(word frame) {
-    StackFrame *p = StackFrame::FromWordDirect(frame);
-    Assert(p->GetLabel() == BYNEED_FRAME);
-    return static_cast<BindFutureFrame *>(p);
-  }
-
   // BindFutureFrame Accessors
+  u_int GetSize() {
+    return StackFrame::GetSize() + SIZE;
+  }
   Future *GetFuture() {
     Transient *transient =
       Store::WordToTransient(StackFrame::GetArg(FUTURE_POS));
@@ -58,7 +53,7 @@ public:
 BindFutureWorker *BindFutureWorker::self;
 
 void BindFutureWorker::PushFrame(Thread *thread, Transient *future) {
-  thread->PushFrame(BindFutureFrame::New(self, future)->ToWord());
+  BindFutureFrame::New(thread, self, future);
   thread->PushHandler(Store::IntToWord(0));
 }
 
@@ -66,11 +61,18 @@ static inline bool IsCyclic(word x, Future *future) {
   return static_cast<Future *>(Store::WordToTransient(x)) == future;
 }
 
-Worker::Result BindFutureWorker::Run() {
-  BindFutureFrame *frame =
-    BindFutureFrame::FromWordDirect(Scheduler::GetAndPopFrame());
+u_int BindFutureWorker::GetFrameSize(StackFrame *sFrame) {
+  BindFutureFrame *frame = static_cast<BindFutureFrame *>(sFrame);
+  Assert(sFrame->GetWorker() == this);
+  return frame->GetSize();
+}
+
+Worker::Result BindFutureWorker::Run(StackFrame *sFrame) {
+  BindFutureFrame *frame = static_cast<BindFutureFrame *>(sFrame);
+  Assert(sFrame->GetWorker() == this);
   Scheduler::PopHandler();
   Future *future = frame->GetFuture();
+  Scheduler::PopFrame(frame->GetSize());
   future->ScheduleWaitingThreads();
   Construct();
   word arg = Scheduler::currentArgs[0];
@@ -88,8 +90,11 @@ Worker::Result BindFutureWorker::Run() {
 }
 
 Worker::Result BindFutureWorker::Handle(word) {
-  Future *future =
-    BindFutureFrame::FromWordDirect(Scheduler::GetAndPopFrame())->GetFuture();
+  StackFrame *sFrame = Scheduler::GetFrame();
+  BindFutureFrame *frame = static_cast<BindFutureFrame *>(sFrame);
+  Assert(sFrame->GetWorker() == this);
+  Future *future = frame->GetFuture();
+  Scheduler::PopFrame(frame->GetSize());
   future->ScheduleWaitingThreads();
   future->Become(CANCELLED_LABEL, Scheduler::currentData);
   Scheduler::nArgs = Scheduler::ONE_ARG;
@@ -101,6 +106,6 @@ const char *BindFutureWorker::Identify() {
   return "BindFutureWorker";
 }
 
-void BindFutureWorker::DumpFrame(word) {
+void BindFutureWorker::DumpFrame(StackFrame *) {
   std::fprintf(stderr, "Bind future\n");
 }

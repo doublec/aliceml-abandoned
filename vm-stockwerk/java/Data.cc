@@ -20,7 +20,6 @@
 #include "generic/String.hh"
 #include "generic/Backtrace.hh"
 #include "java/ClassInfo.hh"
-#include "java/StackFrame.hh"
 #include "java/NativeMethodTable.hh"
 
 //
@@ -38,32 +37,30 @@ public:
 
   static void PushFrame(Class *theClass, u_int nArgs, word args);
 
-  virtual Result Run();
+  virtual u_int GetFrameSize(StackFrame *sFrame);
+  virtual Result Run(StackFrame *sFrame);
   virtual Result Handle(word data);
   virtual const char *Identify();
-  virtual void DumpFrame(word wFrame);
+  virtual void DumpFrame(StackFrame *sFrame);
 };
 
 class InitializeClassFrame: private StackFrame {
 protected:
   enum { CLASS_POS, NARGS_POS, ARGS_POS, SIZE };
 public:
-  using Block::ToWord;
+  using StackFrame::Clone;
 
   static InitializeClassFrame *New(Class *theClass, u_int nArgs, word args) {
-    StackFrame *frame = StackFrame::New(INITIALIZE_CLASS_FRAME,
-					InitializeClassWorker::self, SIZE);
+    NEW_STACK_FRAME(frame, InitializeClassWorker::self, SIZE);
     frame->InitArg(CLASS_POS, theClass->ToWord());
     frame->InitArg(NARGS_POS, nArgs);
     frame->InitArg(ARGS_POS, args);
     return static_cast<InitializeClassFrame *>(frame);
   }
-  static InitializeClassFrame *FromWordDirect(word x) {
-    StackFrame *frame = StackFrame::FromWordDirect(x);
-    Assert(frame->GetLabel() == INITIALIZE_CLASS_FRAME);
-    return static_cast<InitializeClassFrame *>(frame);
-  }
 
+  u_int GetSize() {
+    return StackFrame::GetSize() + SIZE;
+  }
   Class *GetClass() {
     return Class::FromWordDirect(GetArg(CLASS_POS));
   }
@@ -90,30 +87,38 @@ InitializeClassWorker *InitializeClassWorker::self;
 
 void InitializeClassWorker::PushFrame(Class *theClass, u_int nArgs,
 				      word args) {
-  InitializeClassFrame *frame =
-    InitializeClassFrame::New(theClass, nArgs, args);
-  Scheduler::PushFrame(frame->ToWord());
+  InitializeClassFrame::New(theClass, nArgs, args);
   Scheduler::PushHandler(Store::IntToWord(0));
 }
 
-Worker::Result InitializeClassWorker::Run() {
-  InitializeClassFrame *frame =
-    InitializeClassFrame::FromWordDirect(Scheduler::GetAndPopFrame());
+u_int InitializeClassWorker::GetFrameSize(StackFrame *sFrame) {
+  InitializeClassFrame *frame = static_cast<InitializeClassFrame *>(sFrame);
+  Assert(sFrame->GetWorker() == this);
+  return frame->GetSize();
+}
+
+Worker::Result InitializeClassWorker::Run(StackFrame *sFrame) {
+  InitializeClassFrame *frame = static_cast<InitializeClassFrame *>(sFrame);
+  Assert(sFrame->GetWorker() == this);
   Scheduler::PopHandler();
   frame->GetClass()->GetLock()->Release();
   frame->RestoreArgs();
+  Scheduler::PopFrame(frame->GetSize());
   return CONTINUE;
 }
 
 Worker::Result InitializeClassWorker::Handle(word) {
-  InitializeClassFrame *frame =
-    InitializeClassFrame::FromWordDirect(Scheduler::GetAndPopFrame());
+  StackFrame *sFrame = Scheduler::GetFrame();
+  Assert(sFrame->GetWorker() == this);
+  InitializeClassFrame *frame = static_cast<InitializeClassFrame *>(sFrame);
   Class *theClass = frame->GetClass();
   theClass->GetLock()->Release();
   Scheduler::currentBacktrace->Dump();
   Error("static initializer raised an exception");
   //--** mark theClass as unusable (initialization failed)
-  Scheduler::currentBacktrace->Enqueue(frame->ToWord());
+  word wFrame = frame->Clone();
+  Scheduler::PopFrame(frame->GetSize());
+  Scheduler::currentBacktrace->Enqueue(wFrame);
   return RAISE;
 }
 
@@ -121,8 +126,9 @@ const char *InitializeClassWorker::Identify() {
   return "InitializeClassWorker";
 }
 
-void InitializeClassWorker::DumpFrame(word wFrame) {
-  InitializeClassFrame *frame = InitializeClassFrame::FromWordDirect(wFrame);
+void InitializeClassWorker::DumpFrame(StackFrame *sFrame) {
+  InitializeClassFrame *frame = static_cast<InitializeClassFrame *>(sFrame);
+  Assert(sFrame->GetWorker() == this);
   Class *theClass = frame->GetClass();
   std::fprintf(stderr, "Initialize class %s\n",
 	       theClass->GetClassInfo()->GetName()->ExportC());

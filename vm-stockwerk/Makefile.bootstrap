@@ -376,7 +376,7 @@ GENERICINCLUDES0 = \
 	PushCallWorker.hh BindFutureWorker.hh Unpickler.hh Pickler.hh \
 	BootLinker.hh Profiler.hh Authoring.hh
 ALICEINCLUDES0 = \
-	Guid.hh Data.hh StackFrame.hh Types.hh AbstractCode.hh \
+	Guid.hh Data.hh Types.hh AbstractCode.hh \
 	AbstractCodeInterpreter.hh AliceConcreteCode.hh \
 	NativeCodeInterpreter.hh LivenessInformation.hh \
 	NativeConcreteCode.hh PrimitiveTable.hh AliceLanguageLayer.hh \

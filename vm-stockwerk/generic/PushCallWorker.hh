@@ -35,11 +35,12 @@ public:
   // Frame Handling
   static void PushFrame(word closure);
   static void PushFrame(Thread *thread, word closure);
+  virtual u_int GetFrameSize(StackFrame *sFrame);
   // Execution
-  virtual Result Run();
+  virtual Result Run(StackFrame *sFrame);
   // Debugging
   virtual const char *Identify();
-  virtual void DumpFrame(word frame);
+  virtual void DumpFrame(StackFrame *sFrame);
 };
 
 #endif

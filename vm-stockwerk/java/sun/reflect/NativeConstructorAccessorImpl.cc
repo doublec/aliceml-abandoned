@@ -13,7 +13,6 @@
 #include <cstdio>
 
 #include "generic/RootSet.hh"
-#include "java/StackFrame.hh"
 #include "java/ClassInfo.hh"
 #include "java/ClassLoader.hh"
 #include "java/Authoring.hh"
@@ -35,29 +34,25 @@ public:
 
   static void PushFrame(Object *instance);
 
-  virtual Result Run();
+  virtual u_int GetFrameSize(StackFrame *sFrame);
+  virtual Result Run(StackFrame *sFrame);
   virtual const char *Identify();
-  virtual void DumpFrame(word wFrame);
+  virtual void DumpFrame(StackFrame *sFrame);
 };
 
 class ReturnInstanceFrame: private StackFrame {
 protected:
   enum { INSTANCE_POS, SIZE };
 public:
-  using Block::ToWord;
-
   static ReturnInstanceFrame *New(Object *instance) {
-    StackFrame *frame =
-      StackFrame::New(RETURN_INSTANCE_FRAME, ReturnInstanceWorker::self, SIZE);
+    NEW_STACK_FRAME(frame, ReturnInstanceWorker::self, SIZE);
     frame->InitArg(INSTANCE_POS, instance->ToWord());
     return static_cast<ReturnInstanceFrame *>(frame);
   }
-  static ReturnInstanceFrame *FromWordDirect(word x) {
-    StackFrame *frame = StackFrame::FromWordDirect(x);
-    Assert(frame->GetLabel() == RETURN_INSTANCE_FRAME);
-    return static_cast<ReturnInstanceFrame *>(frame);
-  }
 
+  u_int GetSize() {
+    return StackFrame::GetSize() + SIZE;
+  }
   Object *GetInstance() {
     return Object::FromWordDirect(GetArg(INSTANCE_POS));
   }
@@ -66,14 +61,21 @@ public:
 ReturnInstanceWorker *ReturnInstanceWorker::self;
 
 void ReturnInstanceWorker::PushFrame(Object *instance) {
-  Scheduler::PushFrame(ReturnInstanceFrame::New(instance)->ToWord());
+  ReturnInstanceFrame::New(instance);
 }
 
-Worker::Result ReturnInstanceWorker::Run() {
-  ReturnInstanceFrame *frame =
-    ReturnInstanceFrame::FromWordDirect(Scheduler::GetAndPopFrame());
+u_int ReturnInstanceWorker::GetFrameSize(StackFrame *sFrame) {
+  ReturnInstanceFrame *frame = static_cast<ReturnInstanceFrame *>(sFrame);
+  Assert(sFrame->GetWorker() == this);
+  return frame->GetSize();
+}
+
+Worker::Result ReturnInstanceWorker::Run(StackFrame *sFrame) {
+  ReturnInstanceFrame *frame = static_cast<ReturnInstanceFrame *>(sFrame);
+  Assert(sFrame->GetWorker() == this);
   Scheduler::nArgs = Scheduler::ONE_ARG;
   Scheduler::currentArgs[0] = frame->GetInstance()->ToWord();
+  Scheduler::PopFrame(frame->GetSize());
   return CONTINUE;
 }
 
@@ -81,8 +83,9 @@ const char *ReturnInstanceWorker::Identify() {
   return "ReturnInstanceWorker";
 }
 
-void ReturnInstanceWorker::DumpFrame(word wFrame) {
-  ReturnInstanceFrame *frame = ReturnInstanceFrame::FromWordDirect(wFrame);
+void ReturnInstanceWorker::DumpFrame(StackFrame *sFrame) {
+  ReturnInstanceFrame *frame = static_cast<ReturnInstanceFrame *>(sFrame);
+  Assert(sFrame->GetWorker() == this);
   Class *theClass = frame->GetInstance()->GetClass();
   std::fprintf(stderr, "Return instance of class %s\n",
 	       theClass->GetClassInfo()->GetName()->ExportC());

@@ -22,7 +22,13 @@ jit_state lightning;
 //
 // Logging Helper Functions
 //
+#if defined(JIT_ASSERT_INDEX)
+word JITStore::loadedWord;
+#endif
+
 #if defined(JIT_STORE_DEBUG)
+#include <string.h>
+
 static FILE *execLog;
 
 static const char *RegToString(u_int Reg) {
@@ -49,6 +55,7 @@ static const char *RegToString(u_int Reg) {
 }
 
 static void SaveContext() {
+  jit_pushr_ui(JIT_FP);
   jit_pushr_ui(JIT_R0);
   jit_pushr_ui(JIT_R1);
   jit_pushr_ui(JIT_R2);
@@ -64,6 +71,7 @@ static void RestoreContext() {
   jit_popr_ui(JIT_R2);
   jit_popr_ui(JIT_R1);
   jit_popr_ui(JIT_R0);
+  jit_popr_ui(JIT_FP);
 }
 
 static void ShowMessage(const char *info) {
@@ -102,11 +110,25 @@ void JITStore::InitLoggging() {
 #endif
 }
 
+u_int jitDebug = 0;
+
+#define JIT_BEG_COND() \
+  jit_pushr_ui(JIT_R0); \
+  jit_ldi_ui(JIT_R0, &jitDebug); \
+  jit_insn *no_debug = jit_beqi_ui(jit_forward(), JIT_R0, 0); \
+
+#define JIT_END_COND() \
+  jit_patch(no_debug); \
+  jit_popr_ui(JIT_R0);
+  
+
 void JITStore::LogMesg(const char *info) {
 #if defined(JIT_STORE_DEBUG)
+  JIT_BEG_COND();
   SaveContext();
   CompileMessage(info);
   RestoreContext();
+  JIT_END_COND();
 #else
   // Avoid compiler warnings
   info = info;
@@ -115,9 +137,11 @@ void JITStore::LogMesg(const char *info) {
 
 void JITStore::LogReg(u_int Value) {
 #if defined(JIT_STORE_DEBUG)
+  JIT_BEG_COND();
   SaveContext();
   CompileRegister(Value);
   RestoreContext();
+  JIT_END_COND();
 #else
   // Avoid compiler warnings
   Value = Value;
@@ -126,11 +150,13 @@ void JITStore::LogReg(u_int Value) {
 
 void JITStore::DumpReg(u_int Value, value_plotter plotter) {
 #if defined(JIT_STORE_DEBUG)
+  JIT_BEG_COND();
   SaveContext();
   CompileRegister(Value);
   jit_pushr_ui(Value);
   Call(1, (void *) plotter);
   RestoreContext();
+  JIT_END_COND();
 #else
   // Avoid compiler warnings
   Value = Value;
@@ -140,6 +166,7 @@ void JITStore::DumpReg(u_int Value, value_plotter plotter) {
 
 void JITStore::LogRead(u_int Dest, u_int Ptr, u_int Index) {
 #if defined(JIT_STORE_DEBUG)
+  JIT_BEG_COND();
   static char buffer[256];
   SaveContext();
   CompileRegister(Ptr);
@@ -147,6 +174,7 @@ void JITStore::LogRead(u_int Dest, u_int Ptr, u_int Index) {
 	  RegToString(Dest), RegToString(Ptr), Index);
   CompileMessage(strdup(buffer));
   RestoreContext();
+  JIT_END_COND();
 #else
   // Avoid Compiler warnings
   Dest  = Dest;
@@ -157,6 +185,7 @@ void JITStore::LogRead(u_int Dest, u_int Ptr, u_int Index) {
 
 void JITStore::LogWrite(u_int Ptr, u_int index, u_int Value) {
 #if defined(JIT_STORE_DEBUG)
+  JIT_BEG_COND();
   static char buffer[256];
   SaveContext();
   CompileMessage("---\n");
@@ -168,6 +197,7 @@ void JITStore::LogWrite(u_int Ptr, u_int index, u_int Value) {
 	  RegToString(Ptr), index, RegToString(Value));
   CompileMessage(strdup(buffer));
   RestoreContext();
+  JIT_END_COND();
 #else
   // Avoid compiler warnings
   Ptr   = Ptr;
@@ -178,6 +208,7 @@ void JITStore::LogWrite(u_int Ptr, u_int index, u_int Value) {
 
 void JITStore::LogSetArg(u_int pos, u_int Value) {
 #if defined(JIT_STORE_DEBUG)
+  JIT_BEG_COND();
   static char buffer[256];
   SaveContext();
   CompileMessage("---\n");
@@ -186,6 +217,7 @@ void JITStore::LogSetArg(u_int pos, u_int Value) {
 	  pos, RegToString(Value));
   CompileMessage(strdup(buffer));
   RestoreContext();
+  JIT_END_COND();
 #else
   pos = pos;
   Value = Value;

@@ -11,7 +11,7 @@
 //   $Revision$
 //
 
-#include "NewPickle.hh"
+#include "generic/NewPickle.hh"
 
 #include <sys/time.h>
 #include <time.h>
@@ -474,23 +474,18 @@ class NewPickleFrame: private StackFrame {
 private:
   enum { STACK_POS, SIZE };
 public:
-  using Block::ToWord;
-
+  using StackFrame::Clone;
   // NewPickleFrame Constructor
   static NewPickleFrame *New(Worker *worker,
 			     NewPickleStack *pstack) {
-    StackFrame *frame = StackFrame::New(PICKLING_FRAME, worker, SIZE);
+    NEW_STACK_FRAME(frame, worker, SIZE);
     frame->InitArg(STACK_POS, pstack->ToWord());
     return static_cast<NewPickleFrame *>(frame);
   }
-  // NewPickleFrame Untagging
-  static NewPickleFrame *FromWordDirect(word frame) {
-    StackFrame *p = StackFrame::FromWordDirect(frame);
-    Assert(p->GetLabel() == PICKLING_FRAME);
-    return static_cast<NewPickleFrame *>(p);
-  }
-
   // NewPickleFrame Accessors
+  u_int GetSize() {
+    return StackFrame::GetSize() + SIZE;
+  }
   NewPickleStack *GetStack() {
     return NewPickleStack::FromWordDirect(StackFrame::GetArg(STACK_POS));
   }
@@ -510,11 +505,12 @@ public:
   }
   // Frame Handling
   static void PushFrame(word data);
+  virtual u_int GetFrameSize(StackFrame *sFrame);
   // Execution
-  virtual Result Run();
+  virtual Result Run(StackFrame *sFrame);
   // Debugging
   virtual const char *Identify();
-  virtual void DumpFrame(word frame);
+  virtual void DumpFrame(StackFrame *sFrame);
 };
 
 
@@ -526,8 +522,7 @@ NewPickleWorker *NewPickleWorker::self;
 void NewPickleWorker::PushFrame(word data) {
   NewPickleStack *nps = NewPickleStack::New();
   nps->Push(data, 0, -1);
-
-  Scheduler::PushFrame(NewPickleFrame::New(self, nps)->ToWord());
+  NewPickleFrame::New(self, nps);
 }
 
 #define NCONTINUE() {				\
@@ -537,9 +532,15 @@ void NewPickleWorker::PushFrame(word data) {
     return Worker::CONTINUE;			\
 }
 
-Worker::Result NewPickleWorker::Run() {
-  NewPickleFrame *frame =
-    NewPickleFrame::FromWordDirect(Scheduler::GetFrame());
+u_int NewPickleWorker::GetFrameSize(StackFrame *sFrame) {
+  NewPickleFrame *frame = static_cast<NewPickleFrame *>(sFrame);
+  Assert(sFrame->GetWorker() == this);
+  return frame->GetSize();
+}
+
+Worker::Result NewPickleWorker::Run(StackFrame *sFrame) {
+  NewPickleFrame *frame = static_cast<NewPickleFrame *>(sFrame);
+  Assert(sFrame->GetWorker() == this);
 
   NewPickleStack *nps = frame->GetStack();
   OutputBuffer *outputBuffer = NewPickleArgs::GetOutputBuffer();
@@ -555,7 +556,7 @@ Worker::Result NewPickleWorker::Run() {
     int fr = nps->GetTopFrame();
 
     if (fr < 0) {
-      Scheduler::PopFrame();
+      Scheduler::PopFrame(frame->GetSize());
       NCONTINUE();
     }
   
@@ -708,7 +709,7 @@ Worker::Result NewPickleWorker::Run() {
     case TASKSTACK_LABEL:
     case IODESC_LABEL:
       Scheduler::currentData      = Pickler::Sited;
-      Scheduler::currentBacktrace = Backtrace::New(frame->ToWord());
+      Scheduler::currentBacktrace = Backtrace::New(frame->Clone());
       return Worker::RAISE;
     case CHUNK_LABEL:
       {
@@ -748,7 +749,7 @@ Worker::Result NewPickleWorker::Run() {
 	Block *ablock = static_cast<Block *>(abstract);
 	if (abstract == INVALID_POINTER) {
 	  Scheduler::currentData      = Pickler::Sited;
-	  Scheduler::currentBacktrace = Backtrace::New(frame->ToWord());
+	  Scheduler::currentBacktrace = Backtrace::New(frame->Clone());
 	  return Worker::RAISE;
 	} else {
 	  seen->Add(ablock, NewSeen::NOT_WRITTEN);
@@ -763,7 +764,7 @@ Worker::Result NewPickleWorker::Run() {
       {
 	// must not occur anywhere but under a CONCRETE which is handled above
 	Scheduler::currentData      = Pickler::Sited;
-	Scheduler::currentBacktrace = Backtrace::New(frame->ToWord());
+	Scheduler::currentBacktrace = Backtrace::New(frame->Clone());
 	return Worker::RAISE;
       
       }
@@ -786,7 +787,7 @@ const char *NewPickleWorker::Identify() {
   return "NewPickleWorker";
 }
 
-void NewPickleWorker::DumpFrame(word) {
+void NewPickleWorker::DumpFrame(StackFrame *) {
   std::fprintf(stderr, "Pickle Task\n");
 }
 
@@ -795,18 +796,14 @@ class NewPickleSaveFrame: private StackFrame {
 private:
   enum { SIZE };
 public:
-  using Block::ToWord;
-
   // NewPickleSaveFrame Constructor
   static NewPickleSaveFrame *New(Worker *worker) {
-    StackFrame *frame = StackFrame::New(PICKLE_SAVE_FRAME, worker, SIZE);
+    NEW_STACK_FRAME(frame, worker, SIZE);
     return static_cast<NewPickleSaveFrame *>(frame);
   }
-  // NewPickleSaveFrame Untagging
-  static NewPickleSaveFrame *FromWordDirect(word frame) {
-    StackFrame *p = StackFrame::FromWordDirect(frame);
-    Assert(p->GetLabel() == PICKLE_SAVE_FRAME);
-    return static_cast<NewPickleSaveFrame *>(p);
+  // NewPickleSaveFrame Accessors
+  u_int GetSize() {
+    return StackFrame::GetSize() + SIZE;
   }
 };
 
@@ -827,11 +824,12 @@ public:
   }
   // Frame Handling
   static void PushFrame();
+  virtual u_int GetFrameSize(StackFrame *sFrame);
   // Execution
-  virtual Result Run();
+  virtual Result Run(StackFrame *sFrame);
   // Debugging
   virtual const char *Identify();
-  virtual void DumpFrame(word frame);
+  virtual void DumpFrame(StackFrame *sFrame);
 };
 
 //
@@ -840,7 +838,7 @@ public:
 NewPickleSaveWorker *NewPickleSaveWorker::self;
 
 void NewPickleSaveWorker::PushFrame() {
-  Scheduler::PushFrame(NewPickleSaveFrame::New(self)->ToWord());
+  NewPickleSaveFrame::New(self);
 }
 
 void NewPickleSaveWorker::WriteToStream(OutputBuffer *obf,
@@ -884,8 +882,16 @@ void NewPickleSaveWorker::WriteToStream(OutputBuffer *obf,
   outputStream->PutByte(NewPickle::ENDOFSTREAM);
 }
 
-Worker::Result NewPickleSaveWorker::Run() {
-  Scheduler::PopFrame();
+u_int NewPickleSaveWorker::GetFrameSize(StackFrame *sFrame) {
+  NewPickleSaveFrame *frame = static_cast<NewPickleSaveFrame *>(sFrame);
+  Assert(sFrame->GetWorker() == this);
+  return frame->GetSize();
+}
+
+Worker::Result NewPickleSaveWorker::Run(StackFrame *sFrame) {
+  NewPickleSaveFrame *frame = static_cast<NewPickleSaveFrame *>(sFrame);
+  Assert(sFrame->GetWorker() == this);
+  Scheduler::PopFrame(frame->GetSize());
 
   OutputBuffer *obf = NewPickleArgs::GetOutputBuffer();
 
@@ -897,7 +903,6 @@ Worker::Result NewPickleSaveWorker::Run() {
   
   outputStream->Close();
   Scheduler::nArgs = 0;
-
   return Worker::CONTINUE;
 }
 
@@ -905,7 +910,7 @@ const char *NewPickleSaveWorker::Identify() {
   return "NewPickleSaveWorker";
 }
 
-void NewPickleSaveWorker::DumpFrame(word) {
+void NewPickleSaveWorker::DumpFrame(StackFrame *) {
   std::fprintf(stderr, "Pickle Save\n");
 }
 
@@ -914,18 +919,14 @@ class NewPicklePackFrame: private StackFrame {
 private:
   enum { SIZE };
 public:
-  using Block::ToWord;
-
-  // NewPickleSaveFrame Constructor
+  // NewPicklePackFrame Constructor
   static NewPicklePackFrame *New(Worker *worker) {
-    StackFrame *frame = StackFrame::New(PICKLE_PACK_FRAME, worker, SIZE);
+    NEW_STACK_FRAME(frame, worker, SIZE);
     return static_cast<NewPicklePackFrame *>(frame);
   }
-  // NewPickleSaveFrame Untagging
-  static NewPicklePackFrame *FromWordDirect(word frame) {
-    StackFrame *p = StackFrame::FromWordDirect(frame);
-    Assert(p->GetLabel() == PICKLE_PACK_FRAME);
-    return static_cast<NewPicklePackFrame *>(p);
+  // NewPicklePackFrame Accessors
+  u_int GetSize() {
+    return StackFrame::GetSize() + SIZE;
   }
 };
 
@@ -942,11 +943,12 @@ public:
   }
   // Frame Handling
   static void PushFrame();
+  virtual u_int GetFrameSize(StackFrame *sFrame);
   // Execution
-  virtual Result Run();
+  virtual Result Run(StackFrame *sFrame);
   // Debugging
   virtual const char *Identify();
-  virtual void DumpFrame(word frame);
+  virtual void DumpFrame(StackFrame *sFrame);
 };
 
 //
@@ -955,11 +957,19 @@ public:
 NewPicklePackWorker *NewPicklePackWorker::self;
 
 void NewPicklePackWorker::PushFrame() {
-  Scheduler::PushFrame(NewPicklePackFrame::New(self)->ToWord());
+  NewPicklePackFrame::New(self);
 }
 
-Worker::Result NewPicklePackWorker::Run() {
-  Scheduler::PopFrame();
+u_int NewPicklePackWorker::GetFrameSize(StackFrame *sFrame) {
+  NewPicklePackFrame *frame = static_cast<NewPicklePackFrame *>(sFrame);
+  Assert(sFrame->GetWorker() == this);
+  return frame->GetSize();
+}
+
+Worker::Result NewPicklePackWorker::Run(StackFrame *sFrame) {
+  NewPicklePackFrame *frame = static_cast<NewPicklePackFrame *>(sFrame);
+  Assert(sFrame->GetWorker() == this);
+  Scheduler::PopFrame(frame->GetSize());
 
   OutputBuffer *obf = NewPickleArgs::GetOutputBuffer();
 
@@ -979,7 +989,6 @@ const char *NewPicklePackWorker::Identify() {
   return "NewPicklePackWorker";
 }
 
-void NewPicklePackWorker::DumpFrame(word) {
+void NewPicklePackWorker::DumpFrame(StackFrame *) {
   std::fprintf(stderr, "Pickle Pack\n");
 }
-

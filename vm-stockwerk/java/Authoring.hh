@@ -56,7 +56,7 @@
 #define DRETURN(x) RETURN2(x, null)
 
 #define THROW(Class, message) {						\
-  Scheduler::PushFrameNoCheck(prim_self);				\
+  PUSH_PRIM_SELF();				\
   ThrowWorker::PushFrame(ThrowWorker::Class, JavaString::New(message));	\
   RETURN_VOID;								\
 }

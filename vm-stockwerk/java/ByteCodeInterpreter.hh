@@ -28,12 +28,13 @@ public:
 
   virtual Transform *GetAbstractRepresentation(ConcreteRepresentation *);
 
-  virtual Result Run();
+  virtual u_int GetFrameSize(StackFrame *sFrame);
+  virtual Result Run(StackFrame *sFrame);
   virtual Result Handle(word data);
   virtual u_int GetInArity(ConcreteCode *concreteCode);
   virtual void PushCall(Closure *closure);
   virtual const char *Identify();
-  virtual void DumpFrame(word wFrame);
+  virtual void DumpFrame(StackFrame *sFrame);
 
   //--** move this to the JavaLanguageLayer?:
   static void FillStackTraceElement(word wFrame, Object *stackTraceElement);

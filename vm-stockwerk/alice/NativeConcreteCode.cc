@@ -20,7 +20,6 @@
 #include "generic/RootSet.hh"
 #include "generic/Interpreter.hh"
 #include "generic/Transients.hh"
-#include "alice/StackFrame.hh"
 #include "alice/AbstractCode.hh"
 #include "alice/NativeCodeJitter.hh"
 #include "alice/AliceConcreteCode.hh"
@@ -31,25 +30,19 @@ class LazyCompileFrame : private StackFrame {
 private:
   enum { CLOSURE_POS, SIZE };
 public:
-  using Block::ToWord;
-
   // LazyCompileFrame Accessors
+  u_int GetSize() {
+    return StackFrame::GetSize() + SIZE;
+  }
   Closure *GetClosure() {
     return Closure::FromWordDirect(StackFrame::GetArg(CLOSURE_POS));
   }
   // LazyCompileFrame Constructor
   static LazyCompileFrame *New(Interpreter *interpreter,
 			       Closure *closure) {
-    StackFrame *frame =
-      StackFrame::New(LAZY_COMPILE_FRAME,interpreter, SIZE);
+    NEW_STACK_FRAME(frame, interpreter, SIZE);
     frame->InitArg(CLOSURE_POS, closure->ToWord());
     return static_cast<LazyCompileFrame *>(frame);
-  }
-  // LazyCompileFrame Untagging
-  static LazyCompileFrame *FromWordDirect(word frame) {
-    StackFrame *p = StackFrame::FromWordDirect(frame);
-    Assert(p->GetLabel() == LAZY_COMPILE_FRAME);
-    return static_cast<LazyCompileFrame *>(p);
   }
 };
 
@@ -66,13 +59,20 @@ void LazyCompileInterpreter::Init() {
 }
 
 void LazyCompileInterpreter::PushCall(Closure *closure) {
-  Scheduler::PushFrame(LazyCompileFrame::New(self, closure)->ToWord());
+  LazyCompileFrame::New(self, closure);
 }
 
-Worker::Result LazyCompileInterpreter::Run() {
-  LazyCompileFrame *frame =
-    LazyCompileFrame::FromWordDirect(Scheduler::GetAndPopFrame());
-  Closure *closure     = frame->GetClosure();
+u_int LazyCompileInterpreter::GetFrameSize(StackFrame *sFrame) {
+  LazyCompileFrame *frame = static_cast<LazyCompileFrame *>(sFrame);
+  Assert(sFrame->GetWorker() == this);
+  return frame->GetSize();
+}
+
+Worker::Result LazyCompileInterpreter::Run(StackFrame *sFrame) {
+  LazyCompileFrame *frame = static_cast<LazyCompileFrame *>(sFrame);
+  Assert(sFrame->GetWorker() == this);
+  Closure *closure = frame->GetClosure();
+  Scheduler::PopFrame(frame->GetSize());
   TagVal *abstractCode = TagVal::FromWordDirect(closure->Sub(0));
   NativeCodeJitter::currentConcreteCode = closure->Sub(1);
   Scheduler::nArgs          = Scheduler::ONE_ARG;
@@ -88,7 +88,7 @@ const char *LazyCompileInterpreter::Identify() {
   return "LazyCompileInterpreter";
 }
 
-void LazyCompileInterpreter::DumpFrame(word) {
+void LazyCompileInterpreter::DumpFrame(StackFrame *) {
   std::fprintf(stderr, "LazyCompile");
 }
 

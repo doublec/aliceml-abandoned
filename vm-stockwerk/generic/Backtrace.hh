@@ -22,6 +22,7 @@
 #include "adt/Queue.hh"
 #include "generic/Worker.hh"
 #include "generic/StackFrame.hh"
+#include "generic/Scheduler.hh"
 
 class DllExport Backtrace: private Queue {
 private:
@@ -45,11 +46,15 @@ public:
   }
 
   void Dump() {
+    // to be done: Hack Alert
     while (!IsEmpty()) {
-      word frame = Dequeue();
-      Worker *worker =
-	StackFrame::FromWordDirect(frame)->GetWorker();
+      word wFrame = Dequeue();
+      u_int size = Store::DirectWordToBlock(wFrame)->GetSize();
+      StackFrame *frame = Scheduler::PushFrame(size);
+      StackFrame::New(frame, size, wFrame);
+      Worker *worker = frame->GetWorker();
       worker->DumpFrame(frame);
+      Scheduler::PopFrame(size);
     }
   }
 };

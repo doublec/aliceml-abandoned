@@ -15,7 +15,6 @@
 
 #include "Stockwerk.hh"
 #include "java/Data.hh"
-#include "java/StackFrame.hh"
 #include "java/ThrowWorker.hh"
 #include "java/NativeMethodTable.hh"
 #include "java/Table.hh"

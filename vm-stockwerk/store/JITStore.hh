@@ -86,7 +86,6 @@ public:
     jit_movi_p(JIT_R0, proc);
     PerformCall(nbArgs);
   }
-protected:
   static void Prepare() {
     jit_pushr_ui(JIT_R1);
     jit_pushr_ui(JIT_R2);
@@ -95,7 +94,26 @@ protected:
     jit_popr_ui(JIT_R2);
     jit_popr_ui(JIT_R1);
   }
-  static void AllocNewHeapChunk() {
+  static void SaveAllRegs() {
+    jit_pushr_ui(JIT_R0);
+    jit_pushr_ui(JIT_R1);
+    jit_pushr_ui(JIT_R2);
+    jit_pushr_ui(JIT_V0);
+    jit_pushr_ui(JIT_V1);
+    jit_pushr_ui(JIT_V2);
+    jit_pushr_ui(JIT_FP);
+  }
+  static void RestoreAllRegs() {
+    jit_popr_ui(JIT_FP);
+    jit_popr_ui(JIT_V2);
+    jit_popr_ui(JIT_V1);
+    jit_popr_ui(JIT_V0);
+    jit_popr_ui(JIT_R2);
+    jit_popr_ui(JIT_R1);
+    jit_popr_ui(JIT_R0);
+  }
+protected:
+  static void AllocHeapChunk() {
     Store::roots[0].Enlarge();
   }
   // Output: Ptr holds Allocated Block
@@ -114,7 +132,7 @@ protected:
     jit_ldxi_p(JIT_FP, JIT_R0, sizeof(word));
     jit_insn *succeeded = jit_bltr_p(jit_forward(), Ptr, JIT_FP);
     Prepare();
-    Call(0, (void *) JITStore::AllocNewHeapChunk);
+    Call(0, (void *) JITStore::AllocHeapChunk);
     Finish();
     drop_jit_jmpi(loop);
     jit_patch(succeeded);
@@ -159,7 +177,7 @@ public:
   static void InitLoggging();
   static void LogMesg(const char *mesg);
   static void LogReg(u_int Value);
-   static void DumpReg(u_int Value, value_plotter plotter);
+  static void DumpReg(u_int Value, value_plotter plotter);
   static void LogRead(u_int Dest, u_int Ptr, u_int Index);
   static void LogWrite(u_int Ptr, u_int index, u_int Value);
   static void LogSetArg(u_int pos, u_int Value);
@@ -209,52 +227,68 @@ public:
   //
   // Block Field Access
   //
-  static void GetArg(u_int Dest, u_int Ptr, u_int Index) {
-#if defined(JIT_STORE_DEBUG)
-    LogRead(Dest, Ptr, Index);
-    jit_ldxi_p(Dest, Ptr, (Index + 1) * sizeof(word));
-    LogMesg("passed; Value is\n");
-    LogReg(Dest);
+#if defined(JIT_ASSERT_INDEX)
+  static word loadedWord;
+  static void SecureGetArg(u_int pos, ::Block *b) {
+    Assert(b != INVALID_POINTER);
+    loadedWord = b->GetArg(pos);
+  }
+  static void SecureInitArg(u_int pos, ::Block *b, word value) {
+    b->InitArg(pos, value);
+  }
+  static void SecureReplaceArg(u_int pos, ::Block *b, word value) {
+    b->ReplaceArg(pos, value);
+  }
+#endif
+  static void GetArg(u_int Dest, u_int Ptr, u_int index) {
+#if defined(JIT_ASSERT_INDEX)
+    SaveAllRegs();
+    jit_pushr_ui(Ptr);
+    jit_movi_ui(JIT_R0, index);
+    jit_pushr_ui(JIT_R0);
+    Call(2, (void *) SecureGetArg);
+    RestoreAllRegs();
+    jit_ldi_p(Dest, &JITStore::loadedWord);
 #else
-    jit_ldxi_p(Dest, Ptr, (Index + 1) * sizeof(word));
+    jit_ldxi_p(Dest, Ptr, (index + 1) * sizeof(word));
 #endif
   }
-  static void InitArg(u_int Ptr, u_int Index, u_int Value) {
-#if defined(JIT_STORE_DEBUG)
-    LogWrite(Ptr, Index, Value);
-    jit_stxi_p((Index + 1) * sizeof(word), Ptr, Value);
-    LogMesg("passed\n");
+  static void InitArg(u_int Ptr, u_int index, u_int Value) {
+#if defined(JIT_ASSERT_INDEX)
+    SaveAllRegs();
+    jit_pushr_ui(Value);
+    jit_pushr_ui(Ptr);
+    jit_movi_ui(JIT_R0, index);
+    jit_pushr_ui(JIT_R0);
+    Call(3, (void *) SecureInitArg);
+    RestoreAllRegs();
 #else
-    jit_stxi_p((Index + 1) * sizeof(word), Ptr, Value);
+    jit_stxi_p((index + 1) * sizeof(word), Ptr, Value);
 #endif
   }
-  static void ReplaceArg(u_int Ptr, u_int Index, u_int Value) {
+  static void ReplaceArg(u_int Ptr, u_int index, u_int Value) {
+#if defined(JIT_ASSERT_INDEX)
+    SaveAllRegs();
+    jit_pushr_ui(Value);
+    jit_pushr_ui(Ptr);
+    jit_movi_ui(JIT_R0, index);
+    jit_pushr_ui(JIT_R0);
+    Call(3, (void *) SecureReplaceArg);
+    RestoreAllRegs();
+#else
     if (STORE_GENERATION_NUM == 2) {
-      jit_stxi_p((Index + 1) * sizeof(word), Ptr, Value);
+      jit_stxi_p((index + 1) * sizeof(word), Ptr, Value);
     } 
     else {
-#if 0
-      jit_stxi_p((Index + 1) * sizeof(word), Ptr, Value);
-      jit_ldr_p(JIT_R0, &Store::intgenPtr);
-      jit_insn *can_store = jit_bnei_p(jit_forward(), JIT_R0, intgenMax);
-      jit_movi_ui(JIT_R0, 1);
-      jit_sti_ui(&Store::forceMajorGC, JIT_R0);
-      jit_insn *skip_store = jit_jmpi(jit_forward());
-      jit_patch(can_store);
-      jit_str_p(JIT_R0, Ptr);
-      jit_addi_p(JIT_R0, JIT_R0, sizeof(word));
-      jit_sti_p(&Store::intgenPtr, JIT_R0);
-      jit_patch(skip_store);
-#else
       Prepare();
       jit_pushr_ui(Value);
       jit_pushr_ui(Ptr);
-      jit_movi_ui(JIT_R0, Index);
+      jit_movi_ui(JIT_R0, index);
       jit_pushr_ui(JIT_R0);
       Call(3, (void *) Store::JITReplaceArg);
       Finish();
-#endif
     }
+#endif
   }
   //
   // Store Allocation

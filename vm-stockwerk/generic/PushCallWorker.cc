@@ -24,22 +24,21 @@ class PushCallFrame: private StackFrame {
 private:
   enum { CLOSURE_POS, SIZE };
 public:
-  using Block::ToWord;
-
   // PushCallFrame Constructor
   static PushCallFrame *New(Worker *worker, word closure) {
-    StackFrame *frame = StackFrame::New(PUSHCALL_FRAME, worker, SIZE);
+    NEW_STACK_FRAME(frame, worker, SIZE);
     frame->InitArg(CLOSURE_POS, closure);
     return static_cast<PushCallFrame *>(frame);
   }
-  // PushCallFrame Untagging
-  static PushCallFrame *FromWordDirect(word frame) {
-    StackFrame *p = StackFrame::FromWordDirect(frame);
-    Assert(p->GetLabel() == PUSHCALL_FRAME);
-    return static_cast<PushCallFrame *>(p);
+  static PushCallFrame *New(Thread *thread, Worker *worker, word closure) {
+    NEW_THREAD_STACK_FRAME(frame, thread, worker, SIZE);
+    frame->InitArg(CLOSURE_POS, closure);
+    return static_cast<PushCallFrame *>(frame);
   }
-
   // PushCallFrame Accessors
+  u_int GetSize() {
+    return StackFrame::GetSize() + SIZE;
+  }
   word GetClosure() {
     return StackFrame::GetArg(CLOSURE_POS);
   }
@@ -51,23 +50,31 @@ public:
 PushCallWorker *PushCallWorker::self;
 
 void PushCallWorker::PushFrame(word closure) {
-  Scheduler::PushFrame(PushCallFrame::New(self, closure)->ToWord());
+  PushCallFrame::New(self, closure);
 }
 
 void PushCallWorker::PushFrame(Thread *thread, word closure) {
-  thread->PushFrame(PushCallFrame::New(self, closure)->ToWord());
+  PushCallFrame::New(thread, self, closure);
 }
 
-Worker::Result PushCallWorker::Run() {
-  PushCallFrame *frame =
-    PushCallFrame::FromWordDirect(Scheduler::GetAndPopFrame());
-  return Scheduler::PushCall(frame->GetClosure());
+u_int PushCallWorker::GetFrameSize(StackFrame *sFrame) {
+  PushCallFrame *frame = static_cast<PushCallFrame *>(sFrame);
+  Assert(sFrame->GetWorker() == this);
+  return frame->GetSize();
+}
+
+Worker::Result PushCallWorker::Run(StackFrame *sFrame) {
+  PushCallFrame *frame = static_cast<PushCallFrame *>(sFrame);
+  Assert(sFrame->GetWorker() == this);
+  word wClosure = frame->GetClosure();
+  Scheduler::PopFrame(frame->GetSize());
+  return Scheduler::PushCall(wClosure);
 }
 
 const char *PushCallWorker::Identify() {
   return "PushCallWorker";
 }
 
-void PushCallWorker::DumpFrame(word) {
+void PushCallWorker::DumpFrame(StackFrame *) {
   std::fprintf(stderr, "Push Call\n");
 }

@@ -34,11 +34,12 @@ public:
     self = new LazySelInterpreter();
   }
 
-  virtual Result Run();
+  virtual u_int GetFrameSize(StackFrame *sFrame);
+  virtual Result Run(StackFrame *sFrame);
   virtual u_int GetInArity(ConcreteCode *concreteCode);
   virtual void PushCall(Closure *closure);
   virtual const char *Identify();
-  virtual void DumpFrame(word frame);
+  virtual void DumpFrame(StackFrame *sFrame);
 };
 
 class LazySelClosure: public Closure {

@@ -20,7 +20,6 @@
 #endif
 
 #include "generic/Worker.hh"
-#include "java/StackFrame.hh"
 #include "java/ClassLoader.hh"
 #include "java/Authoring.hh"
 
@@ -92,32 +91,28 @@ public:
 
   static void PushFrame(Object *object, word wMethodRef, Property *properties);
 
-  virtual Result Run();
+  virtual u_int GetFrameSize(StackFrame *sFrame);
+  virtual Result Run(StackFrame *sFrame);
   virtual const char *Identify();
-  virtual void DumpFrame(word wFrame);
+  virtual void DumpFrame(StackFrame *sFrame);
 };
 
 class PutPropertiesFrame: private StackFrame {
 protected:
   enum { OBJECT_POS, METHOD_REF_POS, PROPERTIES_POS, SIZE };
 public:
-  using Block::ToWord;
-
   static PutPropertiesFrame *New(Object *object, word wMethodRef,
 				 Property *properties) {
-    StackFrame *frame =
-      StackFrame::New(PUT_PROPERTIES_FRAME, PutPropertiesWorker::self, SIZE);
+    NEW_STACK_FRAME(frame, PutPropertiesWorker::self, SIZE);
     frame->InitArg(OBJECT_POS, object->ToWord());
     frame->InitArg(METHOD_REF_POS, wMethodRef);
     frame->InitArg(PROPERTIES_POS, Store::UnmanagedPointerToWord(properties));
     return static_cast<PutPropertiesFrame *>(frame);
   }
-  static PutPropertiesFrame *FromWordDirect(word x) {
-    StackFrame *frame = StackFrame::FromWordDirect(x);
-    Assert(frame->GetLabel() == PUT_PROPERTIES_FRAME);
-    return static_cast<PutPropertiesFrame *>(frame);
-  }
 
+  u_int GetSize() {
+    return StackFrame::GetSize() + SIZE;
+  }
   Object *GetObject() {
     return Object::FromWordDirect(GetArg(OBJECT_POS));
   }
@@ -137,14 +132,18 @@ PutPropertiesWorker *PutPropertiesWorker::self;
 
 void PutPropertiesWorker::PushFrame(Object *object, word wMethodRef,
 				    Property *properties) {
-  PutPropertiesFrame *frame =
-    PutPropertiesFrame::New(object, wMethodRef, properties);
-  Scheduler::PushFrame(frame->ToWord());
+  PutPropertiesFrame::New(object, wMethodRef, properties);
 }
 
-Worker::Result PutPropertiesWorker::Run() {
-  PutPropertiesFrame *frame =
-    PutPropertiesFrame::FromWordDirect(Scheduler::GetFrame());
+u_int PutPropertiesWorker::GetFrameSize(StackFrame *sFrame) {
+  PutPropertiesFrame *frame = static_cast<PutPropertiesFrame *>(sFrame);
+  Assert(sFrame->GetWorker() == this);
+  return frame->GetSize();
+}
+
+Worker::Result PutPropertiesWorker::Run(StackFrame *sFrame) {
+  PutPropertiesFrame *frame = static_cast<PutPropertiesFrame *>(sFrame);
+  Assert(sFrame->GetWorker() == this);
   word wMethodRef = frame->GetMethodRef();
   MethodRef *methodRef = MethodRef::FromWord(wMethodRef);
   if (methodRef == INVALID_POINTER) {
@@ -162,7 +161,7 @@ Worker::Result PutPropertiesWorker::Run() {
   Object *object = frame->GetObject();
   Property *properties = frame->GetProperties();
   if (properties->name == NULL) {
-    Scheduler::PopFrame();
+    Scheduler::PopFrame(frame->GetSize());
     Scheduler::nArgs = Scheduler::ONE_ARG;
     Scheduler::currentArgs[0] = object->ToWord();
     return CONTINUE;
@@ -180,7 +179,7 @@ const char *PutPropertiesWorker::Identify() {
   return "PutPropertiesWorker";
 }
 
-void PutPropertiesWorker::DumpFrame(word) {
+void PutPropertiesWorker::DumpFrame(StackFrame *) {
   std::fprintf(stderr, "Initialize system properties\n");
 }
 
