@@ -4,7 +4,7 @@ import
    FS
    Search
    Space
-   Select at 'Select.ozf'
+   Select at 'x-ozlib://duchier/cp/Select.ozf'
    TagComponent('Tag$': Tag) at 'Tag.ozf'
 export
    'Smurf$': SmurfModule

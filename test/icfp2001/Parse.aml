@@ -25,16 +25,7 @@ struct
 
     val splitCost = 40
 
-    val initial =
-	{ b	= false
-	, em	= false
-	, i	= false
-	, s	= false
-	, tt	= false
-	, u	= 0
-	, size	= ~1		(* skolem *)
-	, color	= Tag.UNKNOWN	(* skolem *)
-	}
+    val initial = Meaning.initialProperty
 
     fun modify(context, Tag.B)  = {context where b = true}
       | modify(context, Tag.EM) = if #s context then context : context else

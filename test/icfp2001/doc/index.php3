@@ -158,6 +158,11 @@
     we use the best solution we found so far.
   </P>
 
+  <P>
+    In summary, we concentrated much too strongly on our constraint formulation
+    - because we found that being the only really interesting thing - and
+    completely neglected other important aspects of the program.
+  </P>
 
 
 <?php section("sources", "sources") ?>

@@ -13,6 +13,17 @@ struct
 	, color :	Tag.color
 	}
 
+    val initialProperty =
+	{ b	= false
+	, em	= false
+	, i	= false
+	, s	= false
+	, tt	= false
+	, u	= 0
+	, size	= ~1		(* skolem *)
+	, color	= Tag.UNKNOWN	(* skolem *)
+	}
+
     (* All lists are reversed! *)
 
     type item = string list * bool * property
