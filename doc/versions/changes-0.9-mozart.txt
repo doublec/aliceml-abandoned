@@ -1,0 +1,22 @@
+Alice 0.9 (Stockhausen Operette 3) - 2002/12/20
+-----------------------------------------------
+
+First public release.
+
+
+Stockhausen Operette 3 Draft Scores - 2002/04/25
+------------------------------------------------
+
+Technology preview release.
+
+
+Stockhausen Operette 2 - 2001/04/19
+-----------------------------------
+
+Second internal prototype release.
+
+
+Stockhausen Operette 1 - 2000/06/16
+-----------------------------------
+
+First internal prototype release.
