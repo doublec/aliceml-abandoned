@@ -42,6 +42,7 @@
     <TR> <TD><A href="resolver.php3">RESOLVER</A></TD> </TR>
     <TR> <TD><A href="resolver-handler.php3">RESOLVER_HANDLER</A></TD> </TR>
     <TR> <TD><A href="ref.php3">REF</A></TD> </TR>
+    <TR> <TD><A href="socket.php3">SOCKET</A></TD> </TR>
     <TR> <TD><A href="string.php3">STRING</A></TD> </TR>
     <TR> <TD><A href="substring.php3">SUBSTRING</A></TD> </TR>
     <TR> <TD><A href="thread.php3">THREAD</A></TD> </TR>
