@@ -19,7 +19,7 @@ import structure Label               from "../common/Label"
 import structure Fixity              from "../common/Fixity"
 
 import structure PrettyPrint         from "../misc/PrettyPrint"
-import structure PPMisc              from "../misc/PPMisc"
+import structure PPMisc              from "../infrastructure/PPMisc"
 import structure Url                 from "../misc/Url"
 
 

@@ -2,6 +2,7 @@ Group is
 
 	../misc/sources.cm
 	../infrastructure/crash.cm
+	../infrastructure/pp-misc.cm
 	path.cm
 	type.cm
 	fixity.cm

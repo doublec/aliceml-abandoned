@@ -16,6 +16,7 @@ is
 
 	../misc/sources.cm
 	../infrastructure/crash.cm
+	../infrastructure/pp-misc.cm
 	name.cm
 
 	PATH-sig.aml

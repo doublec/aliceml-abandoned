@@ -5,8 +5,8 @@ Group is
 	../common/type.cm
 	../common/interface.cm
 	../common/intermediate-grammar.cm
-	../common/reflection.cm
 	../common/check.cm
+	reflection.cm
 	typed-grammar.cm
 
 	TRANSLATION_PHASE-sig.aml

@@ -3,6 +3,7 @@ Group is
 	ml-yacc-lib.cm
 	../misc/sources.cm
 	../infrastructure/sources.cm
+	../infrastructure/pp-misc.cm
 
 	input-grammar.cm
 

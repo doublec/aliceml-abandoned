@@ -19,7 +19,7 @@ import structure Inf               from "../common/Inf"
 import structure AbstractGrammar   from "AbstractGrammar"
 
 import structure PrettyPrint       from "../misc/PrettyPrint"
-import structure PPMisc            from "../misc/PPMisc"
+import structure PPMisc            from "../infrastructure/PPMisc"
 import structure PPPath            from "../common/PPPath"
 import structure PPType            from "../common/PPType"
 import structure PPInf             from "../common/PPInf"

@@ -19,7 +19,7 @@ import structure Type
 import structure PervasiveType from "PervasiveType"
 
 import structure PrettyPrint   from "../misc/PrettyPrint"
-import structure PPMisc        from "../misc/PPMisc"
+import structure PPMisc        from "../infrastructure/PPMisc"
 import structure PPPath        from "PPPath"
 import signature PP_TYPE       from "PP_TYPE-sig"
 

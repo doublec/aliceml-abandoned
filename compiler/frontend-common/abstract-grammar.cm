@@ -1,6 +1,7 @@
 Group is
 
 	../infrastructure/source.cm
+	../infrastructure/pp-misc.cm
 	../common/id-stamp.cm
 	../common/name.cm
 	../common/fixity.cm

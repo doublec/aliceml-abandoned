@@ -14,7 +14,7 @@ import structure Stamp       from "Stamp"
 import structure Name        from "Name"
 import structure Label       from "Label"
 import structure PrettyPrint from "../misc/PrettyPrint"
-import structure PPMisc      from "../misc/PPMisc"
+import structure PPMisc      from "../infrastructure/PPMisc"
 
 import signature INTERMEDIATE_GRAMMAR    from "INTERMEDIATE_GRAMMAR-sig"
 import signature PP_INTERMEDIATE_GRAMMAR from "PP_INTERMEDIATE_GRAMMAR-sig"

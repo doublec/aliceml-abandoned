@@ -23,7 +23,7 @@ import structure Source            from "../infrastructure/Source"
 import structure Error             from "../infrastructure/Error"
 import structure Url               from "../misc/Url"
 import structure PrettyPrint       from "../misc/PrettyPrint"
-import structure PPMisc            from "../misc/PPMisc"
+import structure PPMisc            from "../infrastructure/PPMisc"
 import signature ABSTRACTION_ERROR from "ABSTRACTION_ERROR-sig"
 
 

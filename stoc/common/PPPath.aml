@@ -16,7 +16,7 @@ import structure Path
        structure PathPrivate from "Path"
 
 import structure PrettyPrint from "../misc/PrettyPrint"
-import structure PPMisc      from "../misc/PPMisc"
+import structure PPMisc      from "../infrastructure/PPMisc"
 import signature PP_PATH     from "PP_PATH-sig"
 
 
