@@ -25,6 +25,6 @@ static inline s_int GetPlatform() {
 word UnsafeConfig() {
   Record *record = Record::New(2);
   record->Init("platform", Store::IntToWord(GetPlatform()));
-  record->Init("vm", String::New("stockwerk")->ToWord());
+  record->Init("vm", String::New("seam")->ToWord());
   RETURN_STRUCTURE("UnsafeConfig$", record);
 }
