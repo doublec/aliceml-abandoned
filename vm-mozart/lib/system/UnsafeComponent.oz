@@ -2,6 +2,9 @@
 %%% Author:
 %%%   Leif Kornstaedt <kornstae@ps.uni-sb.de>
 %%%
+%%% Contributor:
+%%%   Andreas Rossberg <rossberg@ps.uni-sb.de>
+%%%
 %%% Copyright:
 %%%   Leif Kornstaedt, 2000-2002
 %%%
@@ -27,7 +30,8 @@ export
    %% For use by Alice programs:
    'UnsafeComponent$': Component
 define
-   SitedInternalException = {NewUniqueName 'Component.SitedInternal'}
+   SitedInternalException = {NewUniqueName 'UnsafeComponent.SitedInternal'}
+   CorruptInternalException = {NewUniqueName 'UnsafeComponent.CorruptInternal'}
    SitedException    = {NewUniqueName 'Component.Sited'}
    CorruptException  = {NewUniqueName 'Component.Corrupt'}
    NotFoundException = {NewUniqueName 'Component.NotFound'}
@@ -189,6 +193,8 @@ define
    Component =
    'Component'('SitedInternal': SitedInternalException
 	       '\'SitedInternal': SitedInternalException
+	       'CorruptInternal': CorruptInternalException
+	       '\'CorruptInternal': CorruptInternalException
 	       'Sited': SitedException
 	       '\'Sited': SitedException
 	       'Corrupt': CorruptException

@@ -2,6 +2,9 @@
 // Author:
 //   Leif Kornstaedt <kornstae@ps.uni-sb.de>
 //
+// Contributor:
+//   Andreas Rossberg <rossberg@ps.uni-sb.de>
+//
 // Copyright:
 //   Leif Kornstaedt, 2002-2003
 //
@@ -17,6 +20,7 @@
 #include "alice/BootLinker.hh"
 
 static word SitedConstructor;
+static word CorruptConstructor;
 static word NotFoundConstructor;
 static word MismatchConstructor;
 static word EvalConstructor;
@@ -133,31 +137,36 @@ DEFINE1(UnsafeComponent_unpack_) {
 
 AliceDll word UnsafeComponent() {
   SitedConstructor =
-    UniqueConstructor::New("Sited", "UnsafeComponent.Sited")->ToWord();
+    UniqueConstructor::New("Sited", "Component.Sited")->ToWord();
   RootSet::Add(SitedConstructor);
+  CorruptConstructor =
+    UniqueConstructor::New("Corrupt", "Component.Corrupt")->ToWord();
+  RootSet::Add(CorruptConstructor);
   NotFoundConstructor =
-    UniqueConstructor::New("NotFound", "UnsafeComponent.NotFound")->ToWord();
+    UniqueConstructor::New("NotFound", "Component.NotFound")->ToWord();
   RootSet::Add(NotFoundConstructor);
   MismatchConstructor =
-    UniqueConstructor::New("Mismatch", "UnsafeComponent.Mismatch")->ToWord();
+    UniqueConstructor::New("Mismatch", "Component.Mismatch")->ToWord();
   RootSet::Add(MismatchConstructor);
   EvalConstructor =
-    UniqueConstructor::New("Eval", "UnsafeComponent.Eval")->ToWord();
+    UniqueConstructor::New("Eval", "Component.Eval")->ToWord();
   RootSet::Add(EvalConstructor);
   FailureConstructor =
-    UniqueConstructor::New("Failure", "UnsafeComponent.Failure")->ToWord();
+    UniqueConstructor::New("Failure", "Component.Failure")->ToWord();
   RootSet::Add(FailureConstructor);
   NativeConstructor =
-    UniqueConstructor::New("Native", "UnsafeComponent.Native")->ToWord();
+    UniqueConstructor::New("Native", "Component.Native")->ToWord();
   RootSet::Add(NativeConstructor);
 
-  Record *record = Record::New(23);
-  record->Init("'Sited", SitedConstructor);
-  record->Init("Sited", SitedConstructor);
+  Record *record = Record::New(25);
   record->Init("'SitedInternal", Pickler::Sited);
   record->Init("SitedInternal", Pickler::Sited);
-  record->Init("'Corrupt", Unpickler::Corrupt);
-  record->Init("Corrupt", Unpickler::Corrupt);
+  record->Init("'CorruptInternal", Unpickler::Corrupt);
+  record->Init("CorruptInternal", Unpickler::Corrupt);
+  record->Init("'Sited", SitedConstructor);
+  record->Init("Sited", SitedConstructor);
+  record->Init("'Corrupt", CorruptConstructor);
+  record->Init("Corrupt", CorruptConstructor);
   record->Init("'NotFound", NotFoundConstructor);
   record->Init("NotFound", NotFoundConstructor);
   record->Init("'Mismatch", MismatchConstructor);

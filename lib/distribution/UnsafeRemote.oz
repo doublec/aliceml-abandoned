@@ -2,6 +2,9 @@
 %%% Author:
 %%%   Leif Kornstaedt <kornstae@ps.uni-sb.de>
 %%%
+%%% Contributor:
+%%%   Andreas Rossberg <rossberg@ps.uni-sb.de>
+%%%
 %%% Copyright:
 %%%   Leif Kornstaedt, 2001-2002
 %%%
@@ -20,7 +23,8 @@ import
 export
    'UnsafeRemote$' : Remote
 define
-   SitedInternalException = {NewUniqueName 'Remote.SitedInternal'}
+   SitedInternalException = {NewUniqueName 'UnsafeRemote.SitedInternal'}
+   CorruptInternalException = {NewUniqueName 'UnsafeRemote.CorruptInternal'}
    SitedArgumentException = {NewUniqueName 'Remote.SitedArgument'}
    SitedResultException = {NewUniqueName 'Remote.SitedResult'}
    ProxyException = {NewUniqueName 'Remote.Proxy'}
@@ -29,6 +33,8 @@ define
    Remote =
    'Remote'('SitedInternal': SitedInternalException
 	    '\'SitedInternal': SitedInternalException
+	    'CorruptInternal': CorruptInternalException
+	    '\'CorruptInternal': CorruptInternalException
 	    'SitedArgument': SitedArgumentException
 	    '\'SitedArgument': SitedArgumentException
 	    'SitedResult': SitedResultException
@@ -61,5 +67,11 @@ define
 		  end
 		  %--** should handle pickle:resources for holes
 	       end
-	    unpackValue: Pickle.unpack)
+	    unpackValue:
+	       fun {$ X}
+		  try {Pickle.unpack X}
+		  catch error(dp(generic ...) ...) then
+		     {Exception.raiseError alice(CorruptInternalException)) unit
+		  end
+	       end)
 end

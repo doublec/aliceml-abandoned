@@ -2,6 +2,9 @@
  * Author:
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
+ * Contributor:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
  * Copyright:
  *   Leif Kornstaedt, 2000-2002
  *
@@ -18,6 +21,7 @@ signature UNSAFE_COMPONENT_COMPONENT =
 	structure UnsafeComponent:
 	    sig
 		exception SitedInternal
+		exception CorruptInternal
 		exception Sited
 		exception Corrupt
 		exception NotFound
@@ -37,10 +41,10 @@ signature UNSAFE_COMPONENT_COMPONENT =
 		val save: string * 'component -> unit   (* OS.SysErr,
 							   SitedInternal *)
 		val load: string -> 'component          (* OS.SysErr, NotFound,
-							   Corrupt *)
+							   CorruptInternal *)
 		val linkNative: string -> 'component    (* Native *)
 
 		val pack_: 'component -> string         (* SitedInternal *)
-		val unpack_: string -> 'component       (* Corrupt *)
+		val unpack_: string -> 'component       (* CorruptInternal *)
 	    end
     end

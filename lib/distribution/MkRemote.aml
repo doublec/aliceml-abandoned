@@ -1,6 +1,10 @@
-        (*
+(*
  * Author:
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Contributors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *   Benedikt Grundmann <bgrund@ps.uni-sb.de>
  *
  * Copyright:
  *   Leif Kornstaedt, 2001-2002
@@ -190,7 +194,7 @@ struct
             val packedResult = RemotePort.call (url, packedArgument)
                                handle e => raise Proxy e
             val unpackedResult = UnsafeRemote.unpackValue packedResult
-                                 handle _ =>
+                                 handle UnsafeRemote.CorruptInternal =>
                                     raise Proxy (IO.Io
                                                  {name = "Remote",
                                                   function = "proxy",
@@ -214,10 +218,11 @@ struct
                 let
                     val unpackedArgument =
                         UnsafeRemote.unpackValue packedArgument
-                        handle _ => raise Proxy (IO.Io
-                                                 {name = "Remote",
-                                                  function = "proxy",
-                                                  cause = Pickle.Corrupt})
+                        handle UnsafeRemote.CorruptInternal =>
+			    raise Proxy (IO.Io
+					 {name = "Remote",
+					  function = "proxy",
+					  cause = Pickle.Corrupt})
                     val unpackedResult = RETURN (f unpackedArgument)
                 in
                     UnsafeRemote.packValue unpackedResult
@@ -249,6 +254,11 @@ struct
             val packedValue = RemotePort.download (Url.fromString ticket)
         in
             UnsafeRemote.unpackValue packedValue
+	    handle UnsafeRemote.CorruptInternal =>
+		raise Proxy (IO.Io
+			     {name = "Remote",
+			      function = "take",
+			      cause = Pickle.Corrupt})
         end
 
     functor Offer(signature S structure X: S) =

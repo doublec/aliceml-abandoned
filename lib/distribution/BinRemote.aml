@@ -11,9 +11,7 @@
  *   $Revision$
  *)
 
-import structure Unix              from "x-alice:/lib/system/Unix"
 import structure Url               from "x-alice:/lib/system/Url"
-import signature REMOTE            from "REMOTE-sig"
 import structure UnsafeRemote      from "UnsafeRemote"
 import structure Socket		   from "x-alice:/lib/system/Socket"
 import structure MkHashImpMap	   from "x-alice:/lib/data/MkHashImpMap"

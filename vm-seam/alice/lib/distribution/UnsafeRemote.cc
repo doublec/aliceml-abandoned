@@ -2,6 +2,9 @@
 // Author:
 //   Leif Kornstaedt <kornstae@ps.uni-sb.de>
 //
+// Contributor:
+//   Andreas Rossberg <rossberg@ps.uni-sb.de>
+//
 // Copyright:
 //   Leif Kornstaedt, 2002
 //
@@ -95,22 +98,23 @@ static word SitedConstructor;
 
 AliceDll word UnsafeRemote() {
   SitedArgumentConstructor =
-    UniqueConstructor::New("SitedArgument",
-			   "UnsafeRemote.SitedArgument")->ToWord();
+    UniqueConstructor::New("SitedArgument", "Remote.SitedArgument")->ToWord();
   RootSet::Add(SitedArgumentConstructor);
   SitedResultConstructor =
-    UniqueConstructor::New("SitedResult", "UnsafeRemote.SitedResult")->ToWord();
+    UniqueConstructor::New("SitedResult", "Remote.SitedResult")->ToWord();
   RootSet::Add(SitedResultConstructor);
   ProxyConstructor =
-    UniqueConstructor::New("Proxy", "UnsafeRemote.Proxy")->ToWord();
+    UniqueConstructor::New("Proxy", "Remote.Proxy")->ToWord();
   RootSet::Add(ProxyConstructor);
   ProtocolConstructor =
-    UniqueConstructor::New("Protocol", "UnsafeRemote.Protocol")->ToWord();
+    UniqueConstructor::New("Protocol", "Remote.Protocol")->ToWord();
   RootSet::Add(ProtocolConstructor);
 
-  Record *record = Record::New(14);
+  Record *record = Record::New(16);
   record->Init("'SitedInternal", Pickler::Sited);
   record->Init("SitedInternal", Pickler::Sited);
+  record->Init("'CorruptInternal", Unpickler::Corrupt);
+  record->Init("CorruptInternal", Unpickler::Corrupt);
   record->Init("'SitedArgument", SitedArgumentConstructor);
   record->Init("SitedArgument", SitedArgumentConstructor);
   record->Init("'SitedResult", SitedResultConstructor);

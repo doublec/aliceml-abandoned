@@ -93,20 +93,24 @@ struct
 	case Resolver.localize resolver url of
 	    SOME (Resolver.FILE name) =>
 		(UnsafeComponent.load name
-		 handle Corrupt =>
+		 handle UnsafeComponent.CorruptInternal =>
 		     UnsafeComponent.linkNative name
 		     handle cause as UnsafeComponent.Native msg =>
 			    (trace (logStream, "linkNative: " ^ msg);
 			     raise IO.Io {name, function = "load", cause})
-			  | cause as Corrupt =>
+			  | UnsafeComponent.CorruptInternal =>
 			    (trace (logStream,
 				    "linkNative: could not resolve symbol");
-			     raise IO.Io {name, function = "load", cause}))
+			     raise IO.Io {name, function = "load",
+					  cause = Corrupt}))
 	  | SOME (Resolver.STRING string) =>
 		(UnsafeComponent.unpack_ string
-		 handle cause =>
-		     raise IO.Io {name = Url.toStringRaw url,
-				  function = "load", cause})
+		 handle UnsafeComponent.CorruptInternal =>
+		            raise IO.Io {name = Url.toStringRaw url,
+					 function = "load", cause = Corrupt}
+		      | cause =>
+			    raise IO.Io {name = Url.toStringRaw url,
+					 function = "load", cause})
 	  | NONE => raise IO.Io {name = Url.toStringRaw url,
 				 function = "load", cause = NotFound}
 

@@ -10,14 +10,10 @@
  *   $Revision$
  *)
 
-import signature COMPONENT_MANAGER
-    from "x-alice:/lib/system/COMPONENT_MANAGER-sig"
-import structure Unix              from "x-alice:/lib/system/Unix"
 import structure Url               from "x-alice:/lib/system/Url"
 import structure Http              from "x-alice:/lib/system/Http"
 import structure HttpServer        from "x-alice:/lib/system/HttpServer"
 import structure HttpClient        from "x-alice:/lib/system/HttpClient"
-import signature REMOTE            from "REMOTE-sig"
 import structure UnsafeRemote      from "UnsafeRemote"
 import signature REMOTE_PORT
        structure MkRemote          from "MkRemote"
