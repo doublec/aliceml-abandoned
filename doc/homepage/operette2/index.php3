@@ -7,7 +7,7 @@
 <?php section("overview", "overview") ?>
 
   <P>
-    We proudly present the first internal prototype release of the Stockhausen
+    We proudly present the second internal prototype release of the Stockhausen
     system. We call it <I>"Operette&nbsp;2"</I>.
   </P>
 
