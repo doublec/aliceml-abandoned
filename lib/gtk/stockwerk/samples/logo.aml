@@ -74,9 +74,9 @@ local
 	end
    
     fun toBlue    _ = 
-	serve (fn () => (Gtk.imageSetFromFile(image, "logo-blue.jpg")))
+	Gtk.imageSetFromFile(image, "logo-blue.jpg")
     fun toRainbow _ = 
-	serve (fn () => Gtk.imageSetFromFile(image, "logo.jpg"))
+	Gtk.imageSetFromFile(image, "logo.jpg")
 
     fun delete _  = OS.Process.exit OS.Process.success
     val window    = Gtk.windowNew Gtk.WINDOW_TOPLEVEL
