@@ -674,7 +674,6 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 		val abstractCode =
 		    O.Function ((filename, 0, 0), #[], localNames,
 				args, bodyInstr, liveness)
-		val concreteCode = V.concreteCode abstractCode
 		val exports =
 		    Vector.map (fn (label, Id (_, stamp, _)) => (stamp, label))
 			       exports
@@ -682,10 +681,14 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 		(* This is an instance of the component type
 		 * defined in lib/system/Component.aml:
 		 *)
-		(V.taggedValue (LargeInt.fromInt 1,           (* UNEVALUATED *)
-				#[V.closure (concreteCode, #[]), (* body     *)
-				  V.vector imports',             (* imports  *)
-				  V.sign (SOME sign)]),          (* sign     *)
+		(V.taggedValue (#[Label.fromString "EVALUATED",
+				  Label.fromString "UNEVALUATED"], 1,
+				#[(Label.fromString "body",
+				   V.closure (abstractCode, #[])),
+				  (Label.fromString "imports",
+				   V.vector imports'),
+				  (Label.fromString "sign",
+				   V.sign (SOME sign))]),
 		 exports)
 	    end
     end

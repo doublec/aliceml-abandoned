@@ -13,7 +13,7 @@
 import structure FlatGrammar from "../backend-common/FlatGrammar"
 import signature VALUE       from "VALUE-sig"
 
-structure Value (*: VALUE*) =
+structure Value (* : VALUE - must be transparent *) =
     struct
 	datatype 'a t =
 	    Prim of string
@@ -24,19 +24,19 @@ structure Value (*: VALUE*) =
 	  | TaggedValue of LargeInt.int * 'a t vector
 	  | Tuple of 'a t vector
 	  | Vector of 'a t vector
-	  | ConcreteCode of 'a
-	  | Closure of 'a t * 'a t vector
+	  | Closure of 'a * 'a t vector
 	  | Sign of FlatGrammar.sign option
 
-	fun prim name = Prim name
-	fun int i = Int i
-	fun string s = String s
-	fun wideString s = WideString s
-	fun real r = Real r
-	fun taggedValue (i, values) = TaggedValue (i, values)
-	fun tuple values = Tuple values
-	fun vector values = Vector values
-	fun concreteCode function = ConcreteCode function
-	fun closure (concreteCode, values) = Closure (concreteCode, values)
-	fun sign sign = Sign sign
+	val prim = Prim
+	val int = Int
+	val string = String
+	val wideString = WideString
+	val real = Real
+	fun taggedValue (_, i, labelValueVec) =
+	    TaggedValue (LargeInt.fromInt i,
+			 Vector.map (fn (_, value) => value) labelValueVec)
+	val tuple = Tuple
+	val vector = Vector
+	val closure = Closure
+	val sign = Sign
     end

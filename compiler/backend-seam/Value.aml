@@ -10,33 +10,21 @@
  *   $Revision$
  *)
 
-import signature VALUE from "VALUE-sig"
+import structure UnsafeValue from "../../lib/system/UnsafeValue"
+import signature VALUE       from "VALUE-sig"
 
-structure Value =
+structure Value: VALUE =
     struct
 	type 'a t
 
-	__primitive val cast: 'b -> 'a t = "Unsafe.cast"
-	__primitive val getPrimitiveByName: string -> 'a t =
-	    "Unsafe.getPrimitiveByName"
-	__primitive val makeTaggedValue: int * 'a t vector -> 'a t =
-	    "Unsafe.makeTaggedValue"
-	__primitive val makeTuple: 'a t vector -> 'a t =
-	    "Unsafe.makeTuple"
-	__primitive val makeConcreteCode: 'a -> 'a t =
-	    "Unsafe.makeConcreteCode"
-	__primitive val makeClosure: 'a t * 'a t vector -> 'a t =
-	    "Unsafe.makeClosure"
-
-	val prim = getPrimitiveByName
-	val int = cast
-	val string = cast
-	val wideString = cast
-	val real = cast
-	val taggedValue = makeTaggedValue
-	val tuple = makeTuple
-	val vector = cast
-	val closure = makeClosure
-	val concreteCode = makeConcreteCode
-	val sign = cast
+	val prim = UnsafeValue.prim
+	val int = UnsafeValue.cast
+	val string = UnsafeValue.cast
+	val wideString = UnsafeValue.cast
+	val real = UnsafeValue.cast
+	val taggedValue = UnsafeValue.tagged
+	val tuple = UnsafeValue.tuple
+	val vector = UnsafeValue.cast
+	val closure = UnsafeValue.closure
+	val sign = UnsafeValue.cast
     end

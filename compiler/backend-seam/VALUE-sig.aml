@@ -10,6 +10,7 @@
  *   $Revision$
  *)
 
+import structure Label       from "../../lib/rtt/Label"
 import structure FlatGrammar from "../backend-common/FlatGrammar"
 
 signature VALUE =
@@ -21,10 +22,9 @@ signature VALUE =
 	val string: String.string -> 'a t
 	val wideString: WideString.string -> 'a t
 	val real: Real.real -> 'a t
-	val taggedValue: LargeInt.int * 'a t vector -> 'a t
+	val taggedValue: Label.t vector * int * (Label.t * 'a t) vector -> 'a t
 	val tuple: 'a t vector -> 'a t
 	val vector: 'a t vector -> 'a t
-	val concreteCode: 'a -> 'a t
-	val closure: 'a t * 'a t vector -> 'a t
+	val closure: 'a * 'a t vector -> 'a t
 	val sign: FlatGrammar.sign option -> 'a t
     end

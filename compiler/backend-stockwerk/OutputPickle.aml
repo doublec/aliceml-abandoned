@@ -202,12 +202,10 @@ structure OutputPickle :> OUTPUT_PICKLE =
 	    (outputBlock (context, Label.VECTOR, Vector.length values + 1);
 	     outputInt (context, LargeInt.fromInt (Vector.length values));
 	     Vector.app (fn value => outputValue (context, value)) values)
-	  | outputValue (context, V.ConcreteCode abstractCode) =
-	    (outputTransform (context, "Alice.function");
-	     outputAbstractCode (context, abstractCode))
-	  | outputValue (context, V.Closure (concreteCode, values)) =
+	  | outputValue (context, V.Closure (abstractCode, values)) = 
 	    (outputClosure (context, 1 + Vector.length values);
-	     outputValue (context, concreteCode);
+	     outputTransform (context, "Alice.function");
+	     outputAbstractCode (context, abstractCode);
 	     Vector.app (fn value => outputValue (context, value)) values)
 	  | outputValue (context, V.Sign _) =
 	    outputInt (context, 0) (*--** i.e., `NONE' *)
