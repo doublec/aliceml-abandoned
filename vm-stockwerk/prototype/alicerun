@@ -8,8 +8,8 @@ then
   STOCKHOME=`(cd $dir; /bin/pwd)`
 fi
 
-ALICE_LOAD=pattern=x-alice:/?{x}=$STOCKHOME/?{x}.stc
+ALICE_LOAD=pattern=x-alice:/?{x}="$STOCKHOME"/?{x}.stc
 
 export ALICE_LOAD
 
-exec ozengine $STOCKHOME/Main.ozf -- "$@"
+exec ozengine "$STOCKHOME"/Main.ozf -- "$@"
