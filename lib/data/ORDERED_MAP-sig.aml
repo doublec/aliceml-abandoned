@@ -1,0 +1,28 @@
+(*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001-2003
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+signature ORDERED_MAP =
+sig
+    include MAP
+
+    val get :		'a map -> ('a * 'a map) option
+    val geti :		'a map -> (key * 'a * 'a map) option
+
+    val appr :		('a -> unit) -> 'a map -> unit
+    val appri :		(key * 'a -> unit) -> 'a map -> unit
+    val foldl :		('a * 'b -> 'b) -> 'b -> 'a map -> 'b
+    val foldli :	(key * 'a * 'b -> 'b) -> 'b -> 'a map -> 'b
+    val foldr :		('a * 'b -> 'b) -> 'b -> 'a map -> 'b
+    val foldri :	(key * 'a * 'b -> 'b) -> 'b -> 'a map -> 'b
+
+    val collate :	('a * 'a -> order) -> 'a map * 'a map -> order
+end

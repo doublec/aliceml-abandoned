@@ -1,0 +1,21 @@
+(*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001-2003
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+signature ORDERED_SET =
+sig
+    include SET
+
+    val get :		set -> (item * set) option
+    val appr :		(item -> unit) -> set -> unit
+    val foldl :		(item * 'a -> 'a) -> 'a -> set -> 'a
+    val foldr :		(item * 'a -> 'a) -> 'a -> set -> 'a
+end
