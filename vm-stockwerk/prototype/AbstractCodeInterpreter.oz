@@ -560,11 +560,14 @@ define
 	 end
       toString:
 	 fun {$ Frame}
-	    case Frame
-	    of frame(_ _ _ closure(function(_ F#L#C _ _ _ _) ...) _) then
-	       'Alice function '#F#', line '#L#', column '#C
-	    [] handler(_ _ _ _ closure(function(_ F#L#C _ _ _ _) ...) _) then
-	       'Alice handler '#F#', line '#L#', column '#C
+	    case Frame of frame(_ _ _ closure(Function ...) _) then
+	       case {Deref Function} of function(_ F#L#C _ _ _ _) then
+		  'Alice function '#F#', line '#L#', column '#C
+	       end
+	    [] handler(_ _ _ _ closure(Function ...) _) then
+	       case Function of function(_ F#L#C _ _ _ _) then
+		  'Alice handler '#F#', line '#L#', column '#C
+	       end
 	    end
 	 end)
 end
