@@ -94,11 +94,28 @@ prepare
 	       unit
 	    end
 	 end
+      'Array.extract':
+	 fun {$ A I N} V in
+	    if 0 =< I andthen 0 =< N andthen I + N =< {Array.high A} + 1 then
+	       V = {Tuple.make '#[]' N}
+	       {Record.forAllInd V fun {$ J} A.(I + J - 1) end}
+	       V
+	    else
+	       {Exception.raiseError alice(BuiltinTable.'General.Subscript')}
+	       unit
+	    end
+	 end
       'Array.fromList':
 	 fun {$ Xs} N A in
 	    N = {Length Xs}
 	    A = {Array.new 0 N - 1 unit}
 	    {List.forAllInd Xs proc {$ I X} {Array.put A I - 1 X} end}
+	    A
+	 end
+      'Array.fromVector':
+	 fun {$ V} A in
+	    A = {Array.new 0 {Width V} - 1 unit}
+	    {For 1 {Width V} 1 proc {$ I} {Array.put A I - 1 V.I} end}
 	    A
 	 end
       'Array.length':
@@ -112,6 +129,20 @@ prepare
 	       {Exception.raiseError alice(BuiltinTable.'General.Subscript')}
 	       unit
 	    end
+	 end
+      'Array.tabulate':
+	 fun {$ N F} A in
+	    try
+	       A = {Array.new 0 N - 1 unit}
+	    catch _ then
+	       {Exception.raiseError alice(BuiltinTable.'General.Size')}
+	    end
+	    {For 0 N - 1 1 proc {$ I} A.I := {F I} end}
+	    A
+	 end
+      'Array.toList':
+	 fun {$ A}
+	    {ForThread {Array.high A} 0 ~1 fun {$ Xs I} A.I|Xs end nil}
 	 end
       'Array.update':
 	 fun {$ A I X}
@@ -158,11 +189,28 @@ prepare
 	       unit
 	    end
 	 end
+      'CharArray.extract':
+	 fun {$ A I N}
+	    if 0 =< I andthen 0 =< N andthen I + N =< {Array.high A} + 1 then
+	       {ByteString.make {ForThread I + N - 1 I ~1
+	        		 fun {$ Xs I} {BootWord.toInt A.I}|Xs end nil}}
+	    else
+	       {Exception.raiseError alice(BuiltinTable.'General.Subscript')}
+	       unit
+	    end
+	 end
       'CharArray.fromList':
 	 fun {$ Xs} N A in
 	    N = {Length Xs}
 	    A = {Array.new 0 N - 1 unit}
 	    {List.forAllInd Xs proc {$ I X} {Array.put A I - 1 X} end}
+	    A
+	 end
+      'CharArray.fromVector':
+	 fun {$ V} A in
+	    A = {Array.new 0 {ByteString.width V} - 1 unit}
+	    {For 0 {ByteString.width V} 1
+	     proc {$ I} {Array.put A I {ByteString.get V I}} end}
 	    A
 	 end
       'CharArray.length':
@@ -177,6 +225,20 @@ prepare
 	       unit
 	    end
 	 end
+      'CharArray.tabulate':
+	 fun {$ N F} A in
+	    try
+	       A = {Array.new 0 N - 1 unit}
+	    catch _ then
+	       {Exception.raiseError alice(BuiltinTable.'General.Size')}
+	    end
+	    {For 0 N - 1 1 proc {$ I} A.I := {F I} end}
+	    A
+	 end
+      'CharArray.toList':
+	 fun {$ A}
+	    {ForThread {Array.high A} 0 ~1 fun {$ Xs I} A.I|Xs end nil}
+	 end
       'CharArray.update':
 	 fun {$ A I X}
 	    try
@@ -188,6 +250,15 @@ prepare
 	 end
       'CharVector.concat':
 	 fun {$ Ss} {ByteString.make {List.toTuple '#' Ss}} end
+      'CharVector.extract':
+	 fun {$ V I N}
+	    try
+	       {ByteString.slice V I I + N}
+	    catch system(kernel('ByteString.slice' ...) ...) then
+	       {Exception.raiseError alice(BuiltinTable.'General.Subscript')}
+	       unit
+	    end
+	 end
       'CharVector.fromList': ByteString.make
       'CharVector.maxLen': 0x1FFFFFFF
       'CharVector.length': ByteString.length
@@ -209,6 +280,11 @@ prepare
 	    end
 	    {For 1 N 1 proc {$ I} V.I = [{F I - 1}] end}
 	    {ByteString.make V}
+	 end
+      'CharVector.toList':
+	 fun {$ V}
+	    {ForThread {ByteString.width V} - 1 0 ~1
+	     fun {$ Xs I} {ByteString.get V I}|Xs end nil}
 	 end
       'Future.alarm\'':
 	 fun {$ X} !!{Alarm (X + 500) div 1000} end
@@ -472,18 +548,8 @@ prepare
       'String.>=':
 	 fun {$ S1 S2} {StringCompare S1 S2} \= 'LESS' end
       'String.compare': StringCompare
-      'String.explode': ByteString.toString
       'String.hash': StringHash
       'String.maxSize': 0x7FFFFFFF
-      'String.substring':
-	 fun {$ S I J}
-	    try
-	       {ByteString.slice S I I + J}
-	    catch system(kernel('ByteString.slice' ...) ...) then
-	       {Exception.raiseError alice(BuiltinTable.'General.Subscript')}
-	       unit
-	    end
-	 end
       'String.str':
 	 fun {$ C} {ByteString.make [C]} end
       'Thread.Terminate': kernel(terminate)
@@ -556,8 +622,19 @@ prepare
 		 fun {$ In V0}
 		    {Record.forAllInd V0 proc {$ I X} V.(In + I) = X end}
 		    In + {Width V0}
-		 end 1}
+		 end 0}
 	    V
+	 end
+      'Vector.extract':
+	 fun {$ V I N} V2 in
+	    if 0 =< I andthen 0 =< N andthen I + N =< {Width V} then
+	       V2 = {Tuple.make '#[]' N}
+	       {Record.forAllInd V2 fun {$ J} V.(I + J) end}
+	       V2
+	    else
+	       {Exception.raiseError alice(BuiltinTable.'General.Subscript')}
+	       unit
+	    end
 	 end
       'Vector.fromList':
 	 fun {$ Xs} {List.toTuple '#[]' Xs} end
@@ -581,6 +658,10 @@ prepare
 	    end
 	    {For 1 N 1 proc {$ I} V.I = {F I - 1} end}
 	    V
+	 end
+      'Vector.toList':
+	 fun {$ V}
+	    {ForThread {Width V} 1 ~1 fun {$ Xs I} V.I|Xs end nil}
 	 end
       'Word8.+': BootWord.'+'
       'Word8.-': BootWord.'-'
@@ -636,11 +717,30 @@ prepare
 	       unit
 	    end
 	 end
+      'Word8Array.extract':
+	 fun {$ A I N}
+	    if 0 =< I andthen 0 =< N andthen I + N =< {Array.high A} + 1 then
+	       {ByteString.make {ForThread I + N - 1 I ~1
+	        		 fun {$ Xs I} {BootWord.toInt A.I}|Xs end nil}}
+	    else
+	       {Exception.raiseError alice(BuiltinTable.'General.Subscript')}
+	       unit
+	    end
+	 end
       'Word8Array.fromList':
 	 fun {$ Xs} N A in
 	    N = {Length Xs}
 	    A = {Array.new 0 N - 1 unit}
 	    {List.forAllInd Xs proc {$ I X} {Array.put A I - 1 X} end}
+	    A
+	 end
+      'Word8Array.fromVector':
+	 fun {$ V} A in
+	    A = {Array.new 0 {ByteString.width V} - 1 unit}
+	    {For 0 {ByteString.width V} 1
+	     proc {$ I}
+		{Array.put A I {BootWord.make 8 {ByteString.get V I}}}
+	     end}
 	    A
 	 end
       'Word8Array.length':
@@ -655,6 +755,21 @@ prepare
 	       unit
 	    end
 	 end
+      'Word8Array.tabulate':
+	 fun {$ N F} A in
+	    try
+	       A = {Array.new 0 N - 1 unit}
+	    catch _ then
+	       {Exception.raiseError alice(BuiltinTable.'General.Size')}
+	    end
+	    {For 0 N - 1 1 proc {$ I} A.I := {F I} end}
+	    A
+	 end
+      'Word8Array.toList':
+	 fun {$ A}
+	    {ForThread {Array.high A} 0 ~1
+	     fun {$ Xs I} {BootWord.make 8 A.I}|Xs end nil}
+	 end
       'Word8Array.update':
 	 fun {$ A I X}
 	    try
@@ -666,6 +781,15 @@ prepare
 	 end
       'Word8Vector.concat':
 	 fun {$ Ss} {ByteString.make {List.toTuple '#' Ss}} end
+      'Word8Vector.extract':
+	 fun {$ V I N}
+	    try
+	       {ByteString.slice V I I + N}
+	    catch system(kernel('ByteString.slice' ...) ...) then
+	       {Exception.raiseError alice(BuiltinTable.'General.Subscript')}
+	       unit
+	    end
+	 end
       'Word8Vector.fromList':
 	 fun {$ Xs} {ByteString.make {List.map Xs BootWord.toInt}} end
       'Word8Vector.maxLen': 0x1FFFFFFF
@@ -688,6 +812,11 @@ prepare
 	    end
 	    {For 1 N 1 proc {$ I} V.I = [{BootWord.toInt {F I - 1}}] end}
 	    {ByteString.make V}
+	 end
+      'Word8Vector.toList':
+	 fun {$ V}
+	    {ForThread {ByteString.width V} - 1 0 ~1
+	     fun {$ Xs I} {BootWord.make 8 {ByteString.get V I}}|Xs end nil}
 	 end
       'Word31.+': BootWord.'+'
       'Word31.-': BootWord.'-'
