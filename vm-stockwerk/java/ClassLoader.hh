@@ -33,6 +33,11 @@ public:
   static void Init();
 
   static ClassLoader *New();
+  static ClassLoader *FromWordDirect(word x) {
+    Block *b = Store::DirectWordToBlock(x);
+    Assert(b->GetLabel() == JavaLabel::ClassLoader);
+    return static_cast<ClassLoader *>(b);
+  }
 
   word ResolveType(JavaString *name); // Type or Future
   word ResolveFieldRef(JavaString *className, JavaString *name,

@@ -14,9 +14,12 @@
 #pragma implementation "java/ClassLoader.hh"
 #endif
 
+#include <cstdio>
 #include "adt/HashTable.hh"
 #include "generic/Transients.hh"
+#include "generic/ConcreteCode.hh"
 #include "generic/Interpreter.hh"
+#include "java/StackFrame.hh"
 #include "java/ClassLoader.hh"
 
 class ClassTable: private HashTable {
@@ -67,16 +70,59 @@ public:
   virtual void PushCall(Closure *closure);
 };
 
-//
-// ResolveClassClosure
-//
-
-class ResolveClassClosure: private Closure {
+class ResolveClassFrame: private StackFrame {
+protected:
+  enum { CLASS_LOADER_POS, NAME_POS, SIZE };
 public:
   using Block::ToWord;
 
-  static ResolveClassClosure *New(JavaString *name);
+  static ResolveClassFrame *New(ClassLoader *classLoader, JavaString *name) {
+    StackFrame *frame =
+      StackFrame::New(RESOLVE_CLASS_FRAME,
+		      ResolveClassInterpreter::self, SIZE);
+    frame->InitArg(CLASS_LOADER_POS, classLoader->ToWord());
+    frame->InitArg(NAME_POS, name->ToWord());
+    return static_cast<ResolveClassFrame *>(frame);
+  }
+  static ResolveClassFrame *FromWordDirect(word x) {
+    StackFrame *frame = StackFrame::FromWordDirect(x);
+    Assert(frame->GetLabel() == RESOLVE_CLASS_FRAME);
+    return static_cast<ResolveClassFrame *>(frame);
+  }
+
+  ClassLoader *GetClassLoader() {
+    return ClassLoader::FromWordDirect(GetArg(CLASS_LOADER_POS));
+  }
+  JavaString *GetName() {
+    return JavaString::FromWordDirect(GetArg(NAME_POS));
+  }
 };
+
+Worker::Result ResolveClassInterpreter::Run() {
+  ResolveClassFrame *frame =
+    ResolveClassFrame::FromWordDirect(Scheduler::GetAndPopFrame());
+  Scheduler::nArgs = Scheduler::ONE_ARG;
+  Scheduler::currentArgs[0] =
+    frame->GetClassLoader()->ResolveType(frame->GetName());
+  return Worker::CONTINUE;
+}
+
+void ResolveClassInterpreter::PushCall(Closure *closure) {
+  ClassLoader *classLoader = ClassLoader::FromWordDirect(closure->Sub(0));
+  JavaString *name = JavaString::FromWordDirect(closure->Sub(1));
+  Scheduler::PushFrame(ResolveClassFrame::New(classLoader, name)->ToWord());
+}
+
+const char *ResolveClassInterpreter::Identify() {
+  return "ResolveClassInterpreter";
+}
+
+void ResolveClassInterpreter::DumpFrame(word frame) {
+  ResolveClassFrame *resolveClassFrame =
+    ResolveClassFrame::FromWordDirect(frame);
+  std::fprintf(stderr, "Resolve class %s\n",
+	       resolveClassFrame->GetName()->ExportC());
+}
 
 //
 // ClassLoader Method Implementations
@@ -97,7 +143,12 @@ ClassTable *ClassLoader::GetClassTable() {
 }
 
 word ClassLoader::ResolveClass(JavaString *name) {
-  Byneed *byneed = Byneed::New(ResolveClassClosure::New(name)->ToWord());
+  ConcreteCode *concreteCode =
+    ConcreteCode::New(ResolveClassInterpreter::self, 2);
+  concreteCode->Init(0, ToWord());
+  concreteCode->Init(1, name->ToWord());
+  Closure *closure = Closure::New(concreteCode->ToWord(), 0);
+  Byneed *byneed = Byneed::New(closure->ToWord());
   return byneed->ToWord();
 }
 
@@ -143,7 +194,7 @@ word ClassLoader::ResolveType(JavaString *name) {
 	  u_int i = 0;
 	  while (p[i++] != ';');
 	  n -= i + 1;
-	  word classType = ResolveClass(JavaString::New(p, i));
+	  word classType = ResolveClass(JavaString::New(p - 1, i + 2));
 	  wClass = ObjectArrayType::New(classType, dimensions)->ToWord();
 	  break;
 	}
@@ -154,7 +205,7 @@ word ClassLoader::ResolveType(JavaString *name) {
       u_int i = 0;
       while (p[i++] != ';');
       n -= i + 1;
-      wClass = ResolveClass(JavaString::New(p, i));
+      wClass = ResolveClass(JavaString::New(p - 1, i + 2));
     }
     Assert(n == 0);
     classTable->Insert(name, wClass);

@@ -42,9 +42,9 @@ public:
   static const BlockLabel ObjectArrayType     = (BlockLabel) (base + 9);
   static const BlockLabel BaseArrayType       = (BlockLabel) (base + 10);
   // Data layer
-  static const BlockLabel Lock                = (BlockLabel) (base + 12);
-  static const BlockLabel Object              = (BlockLabel) (base + 13);
-  static const BlockLabel ObjectArray         = (BlockLabel) (base + 11);
+  static const BlockLabel Lock                = (BlockLabel) (base + 11);
+  static const BlockLabel Object              = (BlockLabel) (base + 12);
+  static const BlockLabel ObjectArray         = (BlockLabel) (base + 13);
 };
 
 //
@@ -177,6 +177,16 @@ public:
     if (string->GetLength() != length) return false;
     return !std::memcmp(GetBase(), string->GetBase(),
 			length * sizeof(u_wchar));
+  }
+
+  char *ExportC() {
+    u_int n = GetLength();
+    Chunk *chunk = Store::AllocChunk(n + 1);
+    char *p = chunk->GetBase();
+    u_wchar *q = GetBase();
+    for (u_int i = n; i--; ) p[i] = q[i];
+    p[n] = '\0';
+    return p;
   }
 };
 
