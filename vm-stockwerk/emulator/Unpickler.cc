@@ -156,7 +156,7 @@ public:
   // FileInputStream Constructor
   FileInputStream(char *filename) : InputStream() {
     rdBuf = reinterpret_cast<u_char *>(std::malloc(sizeof(u_char) * rdSize));
-    file = std::fopen(filename, "r");
+    file = std::fopen(filename, "rb");
     exception = (file == NULL);
   }
   // FileInputStream Functions
