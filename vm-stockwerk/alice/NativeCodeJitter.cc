@@ -986,6 +986,7 @@ u_int NativeCodeJitter::CompilePrimitive(INLINED_PRIMITIVE primitive,
   case INT_OPPLUS:
     {
       // to be done: exploit immediate knowledge
+      // to be done: check for overflow
       word instrPC = Store::IntToWord(GetRelativePC());
       u_int x1 = LoadIdRef(JIT_V1, actualIdRefs->Sub(0), instrPC);
       u_int x2 = LoadIdRef(JIT_V1, actualIdRefs->Sub(1), instrPC);
@@ -1002,6 +1003,7 @@ u_int NativeCodeJitter::CompilePrimitive(INLINED_PRIMITIVE primitive,
   case INT_OPSUB:
     {
       // to be done: exploit immediate knowledge
+      // to be done: check for overflow
       word instrPC = Store::IntToWord(GetRelativePC());
       u_int x1 = LoadIdRef(JIT_V1, actualIdRefs->Sub(0), instrPC);
       u_int x2 = LoadIdRef(JIT_V1, actualIdRefs->Sub(1), instrPC);
@@ -1018,6 +1020,7 @@ u_int NativeCodeJitter::CompilePrimitive(INLINED_PRIMITIVE primitive,
   case INT_OPMUL:
     {
       // to be done: exploit immediate knowledge
+      // to be done: check for overflow
       word instrPC = Store::IntToWord(GetRelativePC());
       u_int x1 = LoadIdRef(JIT_V1, actualIdRefs->Sub(0), instrPC);
       u_int x2 = LoadIdRef(JIT_V1, actualIdRefs->Sub(1), instrPC);
