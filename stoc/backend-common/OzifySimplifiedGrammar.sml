@@ -104,7 +104,7 @@ structure OzifySimplified :> OZIFYSIMPLIFIED =
 	fun outputDec (q, ValDec (coord, id, exp)) =
 	    (f (q, "valDec"); outputCoord (q, coord); m q;
 	     outputId (q, id); m(q); outputExp (q, exp); r q)
-	  | outputDec (q, ValRecDec (coord, ids, exp)) =
+	  | outputDec (q, ValRecDec (coord, ids, exp, _)) =
 	    (f (q, "valDec"); outputCoord (q, coord); m q;
 	     outputList outputId (q, ids); m q; outputExp (q, exp); r q)
 	  | outputDec (q, ConDec (coord, id, hasArgs)) =
@@ -134,7 +134,7 @@ structure OzifySimplified :> OZIFYSIMPLIFIED =
 	     outputLab (q, lab); r q)
 	  | outputExp (q, FunExp (coord, string, id, exp)) =
 	    (f (q, "funExp"); outputCoord (q, coord); m q;
-	     outputString (q, string); m q; outputId (q, id); m q;
+	     outputAtom (q, string); m q; outputId (q, id); m q;
 	     outputExp (q, exp); r q)
 	  | outputExp (q, AppExp (coord, exp1, exp2)) =
 	    (f (q, "appExp"); outputCoord (q, coord); m q;

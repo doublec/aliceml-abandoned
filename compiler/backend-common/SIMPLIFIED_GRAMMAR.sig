@@ -48,7 +48,8 @@ signature SIMPLIFIED =
 
 	datatype dec =
 	    ValDec of coord * id * exp
-	  | ValRecDec of coord * id list * exp   (* all ids distinct *)
+	  | ValRecDec of coord * id list * exp * bool
+	    (* all ids distinct, is recursive *)
 	  | ConDec of coord * id * bool   (* has args *)
 	and exp =
 	    LitExp of coord * lit

@@ -321,8 +321,8 @@ structure Simplify :> SIMPLIFY =
 	fun makeShared (exp, ref 1) = exp
 	  | makeShared (exp, ref _) = share exp
 
-	fun simplifyDec (ValDec (coord, ids, exp)) =
-	    S.ValRecDec (coord, ids, simplifyExp exp)
+	fun simplifyDec (ValDec (coord, ids, exp, isRecursive)) =
+	    S.ValRecDec (coord, ids, simplifyExp exp, isRecursive)
 	  | simplifyDec (ConDec (coord, id, hasArgs)) =
 	    S.ConDec (coord, id, hasArgs)
 	and simplifyExp (LitExp (coord, lit)) =
