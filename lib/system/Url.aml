@@ -400,19 +400,8 @@ structure Url :> URL =
 	val toString = toStringEncode (encode isPathChar)
 	val toStringRaw = toStringEncode General.id
 
-	fun toLocalFile ({scheme = SOME "x-alice", authority = NONE,
-			  device = NONE, path, ...}: url) =
-	    let
-		val windows = Config.platform = Config.WIN32
-		val slash = if windows then "\\" else "/"
-		val l = List.foldr (fn (s, nil) => [s]
-				     | (s, rest) => s::slash::rest)
-				   nil path
-	    in
-		String.concat (Config.homeDir ()::slash::l)
-	    end
-	  | toLocalFile {scheme = (NONE | SOME "file"), authority,
-			 device, absolute, path, ...} =
+	fun toLocalFile ({scheme = (NONE | SOME "file"), authority,
+			 device, absolute, path, ...}: url) =
 	    let
 		val windows = Config.platform = Config.WIN32
 		val slash = if windows then "\\" else "/"
@@ -436,6 +425,20 @@ structure Url :> URL =
 	    in
 		String.concat l
 	    end
+(* The following creates incorrect dependencies in alicedep.
+ * Besides, nobody should use this feature. *)
+(*	  | toLocalFile ({scheme = SOME "x-alice", authority = NONE,
+			  device = NONE, path, ...}: url) =
+	    let
+		val windows = Config.platform = Config.WIN32
+		val slash = if windows then "\\" else "/"
+		val l = List.foldr (fn (s, nil) => [s]
+				     | (s, rest) => s::slash::rest)
+				   nil path
+	    in
+		String.concat (Config.homeDir ()::slash::l)
+	    end *)
+
 	  | toLocalFile _ = raise NotLocal
 
 	fun isAbsolute ({scheme, device, absolute, path, ...}: url) =
