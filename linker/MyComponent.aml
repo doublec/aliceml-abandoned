@@ -57,7 +57,7 @@ struct
       | imports (EVALUATED {...}) = #[]
 
     fun body (UNEVALUATED {body, ...}) = body
-      | body (EVALUATED {mod, ...}) = fn #[] => mod
+      | body (EVALUATED {mod, ...}) = fn _ => mod
 
     fun inf (UNEVALUATED {inf, ...}) = inf
       | inf (EVALUATED {inf, ...}) = inf
