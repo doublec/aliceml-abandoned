@@ -22,7 +22,8 @@
 #include "store/Handler.hh"
 #include "store/PointerOp.hh"
 
-class MemChunk;
+#include "store/Memory.hh"
+
 class Set;
 #if (defined(STORE_DEBUG) || defined(STORE_PROFILE))
 struct timeval;
@@ -39,8 +40,6 @@ private:
   static u_int memMax[STORE_GENERATION_NUM];
   static u_int memFree;
   static u_int memTolerance;
-  static char *curChunkMax;
-  static s_int curChunkTop;
   static MemChunk *curChunk;
   static u_int hdrGen;
   static u_int dstGen;
@@ -51,17 +50,20 @@ private:
 #if (defined(STORE_DEBUG) || defined(STORE_PROFILE))
   static struct timeval *sum_t;
 #endif
-
+#if defined(STORE_GC_DEBUG)
+  static void CheckAlive(char *p);
+#else
+  static void CheckAlive(char *p) { p = p; }
+#endif
   static u_int BlockMemSize(u_int args) {
     return (u_int) ((args + 1) * sizeof(u_int));
   }
-
   static void FreeMemChunks(MemChunk *chunk, const u_int threshold);
   static Block *CloneBlock(Block *p);
   static word ForwardWord(word p);
   static Block *ForwardSet(Block *p);
   static s_int CanFinalize(Block *p);
-  static void CheneyScan(MemChunk *chunk, Block *scan);
+  static void CheneyScan(MemChunk *chunk, char *scan);
   static void HandleInterGenerationalPointers(u_int gen);
   static Block *HandleWeakDictionaries();
   static u_int GetMemUsage(MemChunk *chunk);
@@ -69,27 +71,26 @@ private:
   static char *GCAlloc(u_int size);
   static Block *AddToFinSet(Block *p, word value);
   static void SwitchToChunk(MemChunk *chunk);
-  static void AllocNewMemChunk();
+  static void AllocNewMemChunk(u_int size);
   static void AllocNewMemChunk(u_int size, const u_int gen);
-  
   static char *Alloc(u_int size, u_int header) {
     for (;;) {
-      char *p      = (curChunkMax + curChunkTop);
-      s_int newtop = (curChunkTop + size);
-
-      ((u_int *) p)[-1] = header;
-      if (newtop >= 0) {
-	AllocNewMemChunk();
+      char *p      = curChunk->GetTop();
+      char *newtop = p + size;
+      if (newtop >= curChunk->GetMax()) {
+	AllocNewMemChunk(size);
 	continue;
       }
-      curChunkTop = newtop;
+      curChunk->SetTop(newtop);
+      ((u_int *) p)[0] = header;
       return p;
     }
   }
   static Block *InternalAllocBlock(BlockLabel l, u_int s) {
     AssertStore(s >= MIN_BLOCKSIZE);
     AssertStore(s <= MAX_BIGBLOCKSIZE);
-    return (Block *) Store::Alloc(BlockMemSize(s), HeaderOp::EncodeHeader(l, s, 0));
+    return (Block *) Store::Alloc(BlockMemSize(s),
+				  HeaderOp::EncodeHeader(l, s, 0));
   }
   static void DoGC(word &root, const u_int gen);
 public:
@@ -98,7 +99,8 @@ public:
   static u_int gcLiveMem;
 #endif
   // Init Functions
-  static void InitStore(u_int mem_max[STORE_GENERATION_NUM], u_int mem_free, u_int mem_tolerance);
+  static void InitStore(u_int mem_max[STORE_GENERATION_NUM],
+			u_int mem_free, u_int mem_tolerance);
   static void CloseStore();
 
   // GC Related Functions
@@ -128,8 +130,7 @@ public:
   static Chunk *AllocChunk(u_int s) {
     u_int ws = (1 + (((s + sizeof(u_int)) - 1) / sizeof(u_int)));
     Block *p = Store::InternalAllocBlock(CHUNK_LABEL, ws);
-
-    ((word *) p)[0] = PointerOp::EncodeInt(s);
+    ((word *) p)[1] = PointerOp::EncodeInt(s);
     return (Chunk *) p;
   }
   static Transient *AllocTransient(BlockLabel l) {
@@ -139,7 +140,7 @@ public:
   static Block *AllocBlockWithHandler(u_int s, Handler *h) {
     Block *t = Store::InternalAllocBlock(HANDLERBLOCK_LABEL, s);
     AssertStore(s >= 1);
-    ((word *) t)[0] = PointerOp::EncodeUnmanagedPointer((void *) h);
+    ((word *) t)[1] = PointerOp::EncodeUnmanagedPointer((void *) h);
     return t;
   }
   // Conversion Functions
@@ -150,13 +151,19 @@ public:
     return PointerOp::DecodeInt(PointerOp::Deref(v));
   }
   static Block *WordToBlock(word v) {
-    return PointerOp::DecodeBlock(PointerOp::Deref(v));
+    Block *p = PointerOp::DecodeBlock(PointerOp::Deref(v));
+    Store::CheckAlive((char *) p);
+    return p;
   }
   static Transient *WordToTransient(word v) {
-    return PointerOp::DecodeTransient(PointerOp::Deref(v));
+    Transient *p = PointerOp::DecodeTransient(PointerOp::Deref(v));
+    Store::CheckAlive((char *) p);
+    return p;
   }
   static Chunk *WordToChunk(word v) {
-    return PointerOp::DecodeChunk(PointerOp::Deref(v));
+    Chunk *p = PointerOp::DecodeChunk(PointerOp::Deref(v));
+    Store::CheckAlive((char *) p);
+    return p;
   }
   static word UnmanagedPointerToWord(void *v) {
     return PointerOp::EncodeUnmanagedPointer(v);
@@ -170,10 +177,14 @@ public:
   }
   static Block *DirectWordToBlock(word x) {
     AssertStore(((u_int) x & TAGMASK) == BLKTAG);
-    return PointerOp::DecodeBlock(x);
+    Block *p = PointerOp::DecodeBlock(x);
+    Store::CheckAlive((char *) p);
+    return p;
   }
   static Chunk *DirectWordToChunk(word x) {
-    return PointerOp::DecodeChunk(x);
+    Chunk *p = PointerOp::DecodeChunk(x);
+    Store::CheckAlive((char *) p);
+    return p;
   }
   static void *DirectWordToUnmanagedPointer(word x) {
     AssertStore(((u_int) x & TAGMASK) == BLKTAG);
@@ -194,6 +205,7 @@ public:
   static struct timeval *ReadTime();
 #endif
 #if defined(STORE_DEBUG)
+  static void Verify(word x);
   static void ForceGC(word &root, const u_int gen);
 #endif
 };
