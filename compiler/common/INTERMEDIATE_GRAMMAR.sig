@@ -29,7 +29,7 @@ signature INTERMEDIATE =
     datatype exp =
 	  LitExp    of info * lit
 	| VarExp    of info * longid
-	| ConExp    of info * longid
+	| ConExp    of info * longid * exp option
 	| RefExp    of info
 	| TupExp    of info * exp list
 	| RecExp    of info * exp field list
@@ -64,7 +64,7 @@ signature INTERMEDIATE =
 	| AltPat    of info * pat list
 	| NegPat    of info * pat
 	| GuardPat  of info * pat * exp
-	| LetPat    of info * dec * pat
+	| WithPat   of info * pat * dec
 
     (* Declarations *)
 

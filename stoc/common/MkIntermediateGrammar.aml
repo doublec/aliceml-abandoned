@@ -31,7 +31,7 @@ functor Intermediate(type info
     datatype exp =
 	  LitExp    of info * lit
 	| VarExp    of info * longid
-	| ConExp    of info * longid
+	| ConExp    of info * longid * exp option
 	| RefExp    of info
 	| TupExp    of info * exp list
 	| RecExp    of info * exp field list
@@ -66,7 +66,7 @@ functor Intermediate(type info
 	| AltPat    of info * pat list
 	| NegPat    of info * pat
 	| GuardPat  of info * pat * exp
-	| LetPat    of info * dec * pat
+	| WithPat   of info * pat * dec
 
     (* Declarations *)
 
@@ -83,7 +83,7 @@ functor Intermediate(type info
 
     fun info_exp(LitExp(i,_))		= i
       | info_exp(VarExp(i,_))		= i
-      | info_exp(ConExp(i,_))		= i
+      | info_exp(ConExp(i,_,_))		= i
       | info_exp(RefExp(i))		= i
       | info_exp(TupExp(i,_))		= i
       | info_exp(RecExp(i,_))		= i
@@ -114,7 +114,7 @@ functor Intermediate(type info
       | info_pat(AltPat(i,_))		= i
       | info_pat(NegPat(i,_))		= i
       | info_pat(GuardPat(i,_,_))	= i
-      | info_pat(LetPat(i,_,_))		= i
+      | info_pat(WithPat(i,_,_))	= i
 
     fun info_dec(ValDec(i,_,_))		= i
       | info_dec(ConDec(i,_,_))		= i
@@ -210,9 +210,10 @@ functor Intermediate(type info
 					  ; output_info(q,i) ; m(q)
 					  ; output_longid(q,y) ; r(q)
 					  )
-      | output_exp(q, ConExp(i,y))	= ( f(q,"ConExp")
+      | output_exp(q, ConExp(i,y,eo))	= ( f(q,"ConExp")
 					  ; output_info(q,i) ; m(q)
-					  ; output_longid(q,y) ; r(q)
+					  ; output_longid(q,y) ; m(q)
+					  ; output_option output_exp(q,eo); r(q)
 					  )
       | output_exp(q, RefExp(i))	= ( f(q,"RefExp")
 					  ; output_info(q,i) ; r(q)
@@ -346,10 +347,10 @@ functor Intermediate(type info
 					  ; output_pat(q,p) ; m(q)
 					  ; output_exp(q,e) ; r(q)
 					  )
-      | output_pat(q, LetPat(i,d,p))	= ( f(q,"LetPat")
+      | output_pat(q, WithPat(i,p,d))	= ( f(q,"WithPat")
 					  ; output_info(q,i) ; m(q)
-					  ; output_dec(q,d) ; m(q)
-					  ; output_pat(q,p) ; r(q)
+					  ; output_pat(q,p) ; m(q)
+					  ; output_dec(q,d) ; r(q)
 					  )
 
     and output_dec(q, ValDec(i,xs,e))	= ( f(q,"ValDec")
