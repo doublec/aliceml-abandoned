@@ -7,6 +7,14 @@ import
 from "x-alice:/lib/IO.ozf"
 
 import
+    structure OS
+from "x-alice:/lib/OS.ozf"
+
+import
+    structure CommandLine
+from "x-alice:/lib/CommandLine.ozf"
+
+import
     structure Crash
 from "x-alice:/error/Crash.ozf"
 
@@ -221,3 +229,11 @@ fun acquireSign url =
     end
 
 val _ = Composer.setAcquisitionMethod acquireSign
+
+local
+    fun stoc [infile, outfile] =
+	(compileForMozart (infile, outfile); OS.Process.success)
+      | stoc _ = OS.Process.failure
+in
+    val _ = OS.Process.exit (stoc (CommandLine.arguments ()))
+end
