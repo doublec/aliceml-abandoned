@@ -29,6 +29,7 @@ public:
 
   using Chunk::ToWord;
   using Chunk::GetSize;
+  using Chunk::Hash;
 
   static String *New(u_int len) {
     return static_cast<String *>(Store::AllocChunk(len));
