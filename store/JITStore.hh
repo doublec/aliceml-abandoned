@@ -144,7 +144,7 @@ public:
   static void LogReg(u_int Value);
    static void DumpReg(u_int Value, value_plotter plotter);
   static void LogRead(u_int Dest, u_int Ptr, u_int Index);
-  static void LogWrite(u_int Ptr, u_int Index, u_int Value);
+  static void LogWrite(u_int Ptr, u_int index, u_int Value);
   static void LogSetArg(u_int pos, u_int Value);
   // Input: word ptr
   // Output: derefed word ptr and jmp to the corresponding path
