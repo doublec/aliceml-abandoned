@@ -2026,6 +2026,9 @@ signature HOLE =
 
     val fill :		'a * 'a  -> unit	(* Hole *)
     val fail :		'a * exn -> unit	(* Hole *)
+
+    val isHole :	'a -> bool
+    val isFailed :	'a -> bool
   end
 
 
@@ -2038,6 +2041,10 @@ structure Hole : HOLE =
 
     __primitive val fill :	'a * 'a  -> unit	= "Transient.fulfill"
     __primitive val fail :	'a * exn -> unit	= "Transient.fail"
+
+    __primitive val isHole :	'a -> bool		= "Transient.isHole"
+
+    fun isFailed x = false	(*UNFINISHED*)
   end
 
 
