@@ -26,6 +26,14 @@ prepare
    GREATER = 1
    LESS    = 2
 
+   fun {Deref X}
+      case X of transient(TransientState) then
+	 case {Access TransientState} of ref(Y) then {Deref Y}
+	 else X
+	 end
+      end
+   end
+
    fun {NumberCompare I J}
       if I == J then EQUAL
       elseif I < J then LESS
@@ -51,8 +59,6 @@ prepare
 	  {ByteString.length S1} {ByteString.length S2} 0}
       end
    end
-
-   FutureException = {NewUniqueName 'Future.Future'}
 
    Primitives =
    primitives('=':
@@ -126,28 +132,20 @@ prepare
 		 fun {$ C} if {Char.isUpper C} then 1 else 0 end end
 	      'Char.toLower': Char.toLower
 	      'Char.toUpper': Char.toUpper
-	      'Future.Future': FutureException
-	      'Future.alarm\'': missing('Future.alarm\'')
+	      'Future.Future': {NewUniqueName 'Future.Future'}
+	      'Future.alarm\'': missing('Future.alarm\'')   %--**
 %		 fun {$ X} !!{Alarm (X + 500) div 1000} end
-	      'Future.await': missing('Future.await')
-%		 fun {$ X} {Wait X} X end
+	      'Future.await':
+		 fun {$ X0}
+		    case {Deref X0} of Transient=transient(_) then
+		       request(Transient)
+		    elseof X then X
+		    end
+		 end
 	      'Future.awaitOne': missing('Future.awaitOne')   %--**
 %		 fun {$ X Y} {WaitOr X Y} X end
-	      'Future.byneed': missing('Future.byneed')   %--**
-/*
-	      fun {$ P}
-		 {ByNeed fun {$}
-			    try
-			       {P unit}
-			    catch error(AliceE=alice(InnerE ...) ...) then
-			       {Value.byNeedFail
-				error({AdjoinAt AliceE 1 FutureException(InnerE)})}
-			    [] error(InnerE ...) then
-			       {Value.byNeedFail error(FutureException(InnerE))}
-			    end
-			 end}
-	      end
-*/
+	      'Future.byneed':
+		 fun {$ Closure} transient({NewCell byneed(Closure)}) end
 	      'Future.concur': missing('Future.concur')   %--**
 /*
 	      fun {$ P}
@@ -163,7 +161,15 @@ prepare
 		   end
 	      end
 */
-	      'Future.isFailed': fun {$ X} 0 end   %--** unimplemented
+	      'Future.isFailed':
+		 fun {$ X}
+		    case {Deref X0} of transient(TransientState) then
+		       case {Access TransientState} of cancelled(_) then 1
+		       else 0
+		       end
+		    else 0
+		    end
+		 end
 	      'Future.isFuture':
 		 fun {$ X}
 		    if {IsFuture X} then 1 else 0 end
@@ -517,28 +523,19 @@ prepare
    primitiveInterpreter(run:
 			   fun {$ Args TaskStack}
 			      case TaskStack of primitive(_ F)|Rest then
-				 case {Procedure.arity F} of 1 then
-				    case {F} of exception(Exn) then
-				       exception(nil Exn Rest)
-				    elseof Res then continue(arg(Res) Rest)
-				    end
-				 [] 2 then
-				    case {F {Construct Args}}
-				    of exception(Exn) then
-				       exception(nil Exn Rest)
-				    elseof Res then continue(arg(Res) Rest)
-				    end
-				 [] 3 then T = {Deconstruct Args} in
-				    case {F T.1 T.2} of exception(Exn) then
-				       exception(nil Exn Rest)
-				    elseof Res then continue(arg(Res) Rest)
-				    end
-				 [] 4 then T = {Deconstruct Args} in
-				    case {F T.1 T.2 T.3}
-				    of exception(Exn) then
-				       exception(nil Exn Rest)
-				    elseof Res then continue(arg(Res) Rest)
-				    end
+				 Res = case {Procedure.arity F} of 1 then {F}
+				       [] 2 then {F {Construct Args}}
+				       [] 3 then T = {Deconstruct Args} in
+					  {F T.1 T.2}
+				       [] 4 then T = {Deconstruct Args} in
+					  {F T.1 T.2 T.3}
+				       end
+			      in
+				 case Res of exception(Exn) then
+				    exception(nil Exn Rest)
+				 [] request(Transient) then
+				    request(Transient Args TaskStack)
+				 elseof Res then continue(arg(Res) Rest)
 				 end
 			      end
 			   end
@@ -558,8 +555,7 @@ prepare
    fun {ImportOzModule Module}
       {Record.map Module
        fun {$ X}
-	  if {IsProcedure X} then
-	     closure(primitive(Interpreter X))
+	  if {IsProcedure X} then closure(primitive(Interpreter X))
 	  else X
 	  end
        end}

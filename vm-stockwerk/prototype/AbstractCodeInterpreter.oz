@@ -62,6 +62,14 @@ define
    Con       = 0
    StaticCon = 1
 
+   fun {Deref X}
+      case X of transient(TransientState) then
+	 case {Access TransientState} of ref(Y) then {Deref Y}
+	 else X
+	 end
+      end
+   end
+
    fun {LitCase I N X YInstrVec ElseInstr}
       if I > N then ElseInstr
       elsecase YInstrVec.I of tuple(!X ThenInstr) then ThenInstr
@@ -236,26 +244,34 @@ define
 	    NewFrame = frame(Me IdDefArgs NextInstr Closure L)
 	    continue(Args {Op.1.1.pushCall Op NewFrame|TaskStack})
 	 end
-      [] tag(!GetRef Id IdRef NextInstr) then R in
-	 R = case IdRef of tag(!Local Id2) then L.Id2
-	     [] tag(!Global I) then Closure.(I + 1)
-	     end
-	 %--** request R if necessary
-	 L.Id := {Access R}
-	 {Emulate NextInstr Closure L TaskStack}
-      [] tag(!GetTup IdDefs IdRef NextInstr) then T N in
-	 T = case IdRef of tag(!Local Id) then L.Id
-	     [] tag(!Global I) then Closure.(I + 1)
-	     end
-	 %--** request T if necessary
-	 N = {Width IdDefs}
-	 for J in 1..N do
-	    case IdDefs.J of tag(!IdDef Id) then
-	       L.Id := T.J
-	    [] !Wildcard then skip
-	    end
+      [] tag(!GetRef Id IdRef NextInstr) then R0 in
+	 R0 = case IdRef of tag(!Local Id2) then L.Id2
+	      [] tag(!Global I) then Closure.(I + 1)
+	      end
+	 case {Deref R0} of Transient=transient(_) then NewFrame in
+	    NewFrame = frame(Me tag(TupArgs vector()) Instr Closure L)
+	    request(Transient args() NewFrame|TaskStack)
+	 elseof R then
+	    L.Id := {Access R}
+	    {Emulate NextInstr Closure L TaskStack}
 	 end
-	 {Emulate NextInstr Closure L TaskStack}
+      [] tag(!GetTup IdDefs IdRef NextInstr) then T0 in
+	 T0 = case IdRef of tag(!Local Id) then L.Id
+	      [] tag(!Global I) then Closure.(I + 1)
+	      end
+	 case {Deref T0} of Transient=transient(_) then NewFrame in
+	    NewFrame = frame(Me tag(TupArgs vector()) Instr Closure L)
+	    request(Transient args() NewFrame|TaskStack)
+	 elseof T then N in
+	    N = {Width IdDefs}
+	    for J in 1..N do
+	       case IdDefs.J of tag(!IdDef Id) then
+		  L.Id := T.J
+	       [] !Wildcard then skip
+	       end
+	    end
+	    {Emulate NextInstr Closure L TaskStack}
+	 end
       [] tag(!Raise IdRef) then Exn in
 	 Exn = case IdRef of tag(!Local Id) then L.Id
 	       [] tag(!Global I) then Closure.(I + 1)
@@ -277,94 +293,115 @@ define
 	 end
       [] tag(!EndHandle NextInstr) then
 	 {Emulate NextInstr Closure L TaskStack}
-      [] tag(!IntTest IdRef IntInstrVec ElseInstr) then I ThenInstr in
-	 I = case IdRef of tag(!Local Id) then L.Id
+      [] tag(!IntTest IdRef IntInstrVec ElseInstr) then I0 in
+	 I0 = case IdRef of tag(!Local Id) then L.Id
 	     [] tag(!Global J) then Closure.(J + 1)
 	     end
-	 %--** request I if necessary
-	 ThenInstr = {LitCase 1 {Width IntInstrVec} I IntInstrVec ElseInstr}
-	 {Emulate ThenInstr Closure L TaskStack}
-      [] tag(!RealTest IdRef RealInstrVec ElseInstr) then F ThenInstr in
-	 F = case IdRef of tag(!Local Id) then L.Id
-	     [] tag(!Global I) then Closure.(I + 1)
-	     end
-	 %--** request F if necessary
-	 ThenInstr = {LitCase 1 {Width RealInstrVec} F RealInstrVec ElseInstr}
-	 {Emulate ThenInstr Closure L TaskStack}
-      [] tag(!StringTest IdRef StringInstrVec ElseInstr) then S ThenInstr in
-	 S = case IdRef of tag(!Local Id) then L.Id
-	     [] tag(!Global I) then Closure.(I + 1)
-	     end
-	 %--** request S if necessary
-	 ThenInstr = {LitCase 1 {Width StringInstrVec}
-		      S StringInstrVec ElseInstr}
-	 {Emulate ThenInstr Closure L TaskStack}
-/*--**
-      [] tag(!WideStringTest IdRef _ ElseInstr) then
-	 %--**
-	 {Emulate ElseInstr Closure L TaskStack}
-*/
-      [] tag(!TagTest IdRef NullaryCases NAryCases ElseInstr) then T in
-	 T = case IdRef of tag(!Local Id) then L.Id
-	     [] tag(!Global I) then Closure.(I + 1)
-	     end
-	 %--** request T if necessary
-	 if {IsInt T} then ThenInstr in
-	    ThenInstr = {LitCase 1 {Width NullaryCases}
-			 T NullaryCases ElseInstr}
+	 case {Deref I0} of Transient=transient(_) then NewFrame in
+	    NewFrame = frame(Me tag(TupArgs vector()) Instr Closure L)
+	    request(Transient args() NewFrame|TaskStack)
+	 elseof I then ThenInstr in
+	    ThenInstr = {LitCase 1 {Width IntInstrVec} I IntInstrVec ElseInstr}
 	    {Emulate ThenInstr Closure L TaskStack}
-	 elsecase {TagCase 1 {Width NAryCases} T.1 NAryCases}
-	 of tuple(_ IdDefs ThenInstr) then N in
-	    N = {Width IdDefs}
-	    for J in 1..N do
-	       case IdDefs.J of tag(!IdDef Id) then
-		  L.Id := T.(J + 1)
-	       [] !Wildcard then skip
-	       end
-	    end
-	    {Emulate ThenInstr Closure L TaskStack}
-	 [] unit then
-	    {Emulate ElseInstr Closure L TaskStack}
 	 end
-      [] tag(!ConTest IdRef NullaryCases NAryCases ElseInstr) then C in
-	 C = case IdRef of tag(!Local Id) then L.Id
-	     [] tag(!Global I) then Closure.(I + 1)
-	     end
-	 %--** request C if necessary
-	 if {IsName C} then ThenInstr in
-	    ThenInstr = {NullaryConCase 1 {Width NullaryCases}
-			 C NullaryCases Closure L ElseInstr}
+      [] tag(!RealTest IdRef RealInstrVec ElseInstr) then F0 in
+	 F0 = case IdRef of tag(!Local Id) then L.Id
+	      [] tag(!Global I) then Closure.(I + 1)
+	      end
+	 case {Deref F0} of Transient=transient(_) then NewFrame in
+	    NewFrame = frame(Me tag(TupArgs vector()) Instr Closure L)
+	    request(Transient args() NewFrame|TaskStack)
+	 elseof F then ThenInstr in
+	    ThenInstr = {LitCase 1 {Width RealInstrVec}
+			 F RealInstrVec ElseInstr}
 	    {Emulate ThenInstr Closure L TaskStack}
-	 elsecase {NAryConCase 1 {Width NAryCases} C.1 NAryCases Closure L}
-	 of tuple(_ IdDefs ThenInstr) then N in
-	    N = {Width IdDefs}
-	    for J in 1..N do
-	       case IdDefs.J of tag(!IdDef Id) then
-		  L.Id := C.(J + 1)
-	       [] !Wildcard then skip
-	       end
-	    end
-	    {Emulate ThenInstr Closure L TaskStack}
-	 [] unit then
-	    {Emulate ElseInstr Closure L TaskStack}
 	 end
-      [] tag(!VecTest IdRef IdDefsInstrVec ElseInstr) then V in
-	 V = case IdRef of tag(!Local Id) then L.Id
+      [] tag(!StringTest IdRef StringInstrVec ElseInstr) then S0 in
+	 S0 = case IdRef of tag(!Local Id) then L.Id
 	     [] tag(!Global I) then Closure.(I + 1)
 	     end
-	 %--** request V if necessary
-	 case {VecCase 1 {Width IdDefsInstrVec} {Width V} IdDefsInstrVec}
-	 of tuple(IdDefs ThenInstr) then N in
-	    N = {Width IdDefs}
-	    for J in 1..N do
-	       case IdDefs.J of tag(!IdDef Id) then
-		  L.Id := V.J
-	       [] !Wildcard then skip
-	       end
-	    end
+	 case {Deref S0} of Transient=transient(_) then NewFrame in
+	    NewFrame = frame(Me tag(TupArgs vector()) Instr Closure L)
+	    request(Transient args() NewFrame|TaskStack)
+	 elseof S then ThenInstr in
+	    ThenInstr = {LitCase 1 {Width StringInstrVec}
+			 S StringInstrVec ElseInstr}
 	    {Emulate ThenInstr Closure L TaskStack}
-	 [] unit then
-	    {Emulate ElseInstr Closure L TaskStack}
+	 end
+%--** [] tag(!WideStringTest IdRef _ ElseInstr) then
+      [] tag(!TagTest IdRef NullaryCases NAryCases ElseInstr) then T0 in
+	 T0 = case IdRef of tag(!Local Id) then L.Id
+	      [] tag(!Global I) then Closure.(I + 1)
+	      end
+	 case {Deref T0} of Transient=transient(_) then NewFrame in
+	    NewFrame = frame(Me tag(TupArgs vector()) Instr Closure L)
+	    request(Transient args() NewFrame|TaskStack)
+	 elseof T then
+	    if {IsInt T} then ThenInstr in
+	       ThenInstr = {LitCase 1 {Width NullaryCases}
+			    T NullaryCases ElseInstr}
+	       {Emulate ThenInstr Closure L TaskStack}
+	    elsecase {TagCase 1 {Width NAryCases} T.1 NAryCases}
+	    of tuple(_ IdDefs ThenInstr) then N in
+	       N = {Width IdDefs}
+	       for J in 1..N do
+		  case IdDefs.J of tag(!IdDef Id) then
+		     L.Id := T.(J + 1)
+		  [] !Wildcard then skip
+		  end
+	       end
+	       {Emulate ThenInstr Closure L TaskStack}
+	    [] unit then
+	       {Emulate ElseInstr Closure L TaskStack}
+	    end
+	 end
+      [] tag(!ConTest IdRef NullaryCases NAryCases ElseInstr) then C0 in
+	 C0 = case IdRef of tag(!Local Id) then L.Id
+	      [] tag(!Global I) then Closure.(I + 1)
+	      end
+	 case {Deref C0} of Transient=transient(_) then NewFrame in
+	    NewFrame = frame(Me tag(TupArgs vector()) Instr Closure L)
+	    request(Transient args() NewFrame|TaskStack)
+	 elseof C then
+	    if {IsName C} then ThenInstr in
+	       ThenInstr = {NullaryConCase 1 {Width NullaryCases}
+			    C NullaryCases Closure L ElseInstr}
+	       {Emulate ThenInstr Closure L TaskStack}
+	    elsecase {NAryConCase 1 {Width NAryCases} C.1 NAryCases Closure L}
+	    of tuple(_ IdDefs ThenInstr) then N in
+	       N = {Width IdDefs}
+	       for J in 1..N do
+		  case IdDefs.J of tag(!IdDef Id) then
+		     L.Id := C.(J + 1)
+		  [] !Wildcard then skip
+		  end
+	       end
+	       {Emulate ThenInstr Closure L TaskStack}
+	    [] unit then
+	       {Emulate ElseInstr Closure L TaskStack}
+	    end
+	 end
+      [] tag(!VecTest IdRef IdDefsInstrVec ElseInstr) then V0 in
+	 V0 = case IdRef of tag(!Local Id) then L.Id
+	      [] tag(!Global I) then Closure.(I + 1)
+	      end
+	 case {Deref V0} of Transient=transient(_) then NewFrame in
+	    NewFrame = frame(Me tag(TupArgs vector()) Instr Closure L)
+	    request(Transient args() NewFrame|TaskStack)
+	 elseof V then
+	    case {VecCase 1 {Width IdDefsInstrVec} {Width V} IdDefsInstrVec}
+	    of tuple(IdDefs ThenInstr) then N in
+	       N = {Width IdDefs}
+	       for J in 1..N do
+		  case IdDefs.J of tag(!IdDef Id) then
+		     L.Id := V.J
+		  [] !Wildcard then skip
+		  end
+	       end
+	       {Emulate ThenInstr Closure L TaskStack}
+	    [] unit then
+	       {Emulate ElseInstr Closure L TaskStack}
+	    end
 	 end
       [] tag(!Shared _ NextInstr) then
 	 {Emulate NextInstr Closure L TaskStack}
@@ -388,29 +425,34 @@ define
    end
 
    fun {Run Args TaskStack}
-      case TaskStack of frame(_ IdDefArgs Instr Closure L)|Rest then
-	 case IdDefArgs of tag(!OneArg IdDef0) then
-	    case IdDef0 of tag(!IdDef Id) then
-	       L.Id := case Args of arg(X) then X
-		       [] args(...) then {Adjoin Args tuple}   % construct
-		       end
-	    [] !Wildcard then skip
-	    end
-	 [] tag(!TupArgs IdDefs) then T N in
-	    T = case Args of arg(X) then
-		   %--** request X if necessary
-		   X   % deconstruct
-		[] args(...) then Args
-		end
-	    N = {Width IdDefs}
-	    for J in 1..N do
-	       case IdDefs.J of tag(!IdDef Id) then
-		  L.Id := T.J
+      try
+	 case TaskStack of frame(_ IdDefArgs Instr Closure L)|Rest then
+	    case IdDefArgs of tag(!OneArg IdDef0) then
+	       case IdDef0 of tag(!IdDef Id) then
+		  L.Id := case Args of arg(X) then X
+			  [] args(...) then {Adjoin Args tuple}   % "construct"
+			  end
 	       [] !Wildcard then skip
 	       end
+	    [] tag(!TupArgs IdDefs) then T N in
+	       T = case Args of arg(X0) then
+		      case {Deref X0} of Transient=transient(_) then
+			 raise request(Transient Args TaskStack) end
+		      elseof X then X   % "deconstruct"
+		      end
+		   [] args(...) then Args
+		   end
+	       N = {Width IdDefs}
+	       for J in 1..N do
+		  case IdDefs.J of tag(!IdDef Id) then
+		     L.Id := T.J
+		  [] !Wildcard then skip
+		  end
+	       end
 	    end
+	    {Emulate Instr Closure L Rest}
 	 end
-	 {Emulate Instr Closure L Rest}
+      catch Request=request(_ _ _) then Request
       end
    end
 

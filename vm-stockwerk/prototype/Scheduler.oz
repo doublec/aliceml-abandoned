@@ -14,7 +14,7 @@ functor
 import
    System(showError)
    Application(exit)
-   Primitives(table)
+   PrimitiveTable(table)
 export
    Object
 define
@@ -67,7 +67,6 @@ define
 	 end
       end
       meth Result(Res)
-	 %--** add a `request' result
 	 case Res of continue(Args TaskStack) then
 	    Scheduler, Run(Args TaskStack)
 	 [] preempt(Args TaskStack) then
@@ -75,6 +74,35 @@ define
 				'thread'(args: Args stack: TaskStack)})
 	 [] exception(Debug Exn TaskStack) then
 	    Scheduler, Handle(Debug Exn TaskStack)
+	 [] request(transient(TransientState) Args TaskStack) then
+	    case {Access TransientState} of hole(_) then
+	       %--** currently an Alice-specific exception:
+	       Scheduler, Handle(nil PrimitiveTable.table.'Hole.Hole'
+				 TaskStack)
+	    [] future(Ts) then
+	       {Assign TransientState
+		future({Adjoin @CurrentThread
+			'thread'(args: Args stack: TaskStack)}|Ts)}
+	    [] byneed(Closure) then
+	       {Assign TransientState
+		future([{Adjoin @CurrentThread
+			 'thread'(args: Args stack: TaskStack)}])}
+	       Scheduler, Byneed(TransientState Closure)
+	    [] cancelled(Exn) then
+	       Scheduler, Handle(nil Exn TaskStack)
+	    end
+	 end
+      end
+      meth Byneed(TransientState Closure)
+	 case Closure of closure(Function ...) then
+	    TaskStack0 = nil
+	    %--** push a handler task (TransientState := cancelled(...))
+	    %--** push a new task (TransientState := ref(...))
+	    TaskStack = {Function.1.pushCall Closure TaskStack0}
+	 in
+	    Scheduler, Enqueue('thread'(args: args()
+					stack: TaskStack
+					result: _))
 	 end
       end
    end
