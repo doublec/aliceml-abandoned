@@ -1,3 +1,9 @@
+(*
+import
+val show: 'a -> {}
+from "../../vm-mozart/Debug.ozf"
+*)
+
 infix  7  * / div mod
 infix  6  + - ^
 infixr 5  :: @
@@ -8,6 +14,7 @@ infix  0  before
 __prebound Prebound
 
 type     int    = Prebound.int
+type     bool   = Prebound.bool
 type     string = Prebound.string
 datatype list   = datatype Prebound.list
 datatype ref    = datatype Prebound.ref
@@ -20,8 +27,12 @@ exception Future
 exception Fulfill
 exception ByNeed of exn
 
+__primitive val op=  : ''a * ''a -> bool = "="
+
 __primitive val op+ : int * int -> int = "+"
 __primitive val op- : int * int -> int = "-"
+__primitive val op* : int * int -> int = "*"
+__primitive val op< : int * int -> bool = "<"
 
 __primitive val exchange: 'a ref * 'a -> 'a = "General.exchange"
 
@@ -34,15 +45,31 @@ __primitive val fulfill: 'a * 'a -> unit = "Transient.fulfill"
 __primitive val await: 'a -> 'a = "Transient.await"
 __primitive val byNeed: (unit -> 'a) -> 'a = "Transient.byNeed"
 
-__primitive val exit: int -> 'a = "Application.exit"
+structure TextIO =
+    struct
+	type outstream
 
-__primitive val show: (unit -> 'a) -> 'a = "show"
+	__primitive val openOut: string -> outstream = "TextIO.openOut"
+	__primitive val output: outstream * string -> unit = "TextIO.output"
+	__primitive val closeOut: outstream -> unit = "TextIO.closeOut"
+    end
 
-__primitive val save: ('a * string) -> unit = "Pickle.save"
-__primitive val load: string -> 'a = "Pickle.load"
+structure Connection =
+    struct
+	type ticket = string
 
-val _ = show "pickling"
-val _ = save (nil, "pickle")
-val _ = show "done"
+	__primitive val offer: 'a -> ticket = "Connection.offer"
+	__primitive val take: ticket -> 'a = "Connection.take"
+    end
 
-val _ = show (load "pickle")
+__primitive val show: 'a -> unit = "show"
+
+val ticket = Connection.offer (fn () => ())
+
+val _ = show ticket
+
+val q = TextIO.openOut "ticket"
+val _ = TextIO.output (q, ticket)
+val _ = TextIO.closeOut q
+
+val _ = sleep 20000
