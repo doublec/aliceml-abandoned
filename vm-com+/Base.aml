@@ -919,7 +919,7 @@ structure Char : CHAR =
       | toString #"\f" = "\\f"
       | toString #"\r" = "\\r"
       | toString c where (c < #" ") =
-	String_implode [#"\\", chr (ord c + ord #"@")]
+	String_implode [#"\\", #"^", chr (ord c + ord #"@")]
       | toString c =   (*UNFINISHED: does not work properly for WideChar *)
 	let
 	    val n = ord c
