@@ -68,6 +68,10 @@ public:
     INT_KEY,
     BLOCK_KEY
   };
+  // this is to allow inlining
+  u_int GetTableSize() {
+    return (u_int) Store::WordToBlock(GetArg(TABLE_POS))->GetSize();
+  }
 private:
   static const u_int SIZE        = 4;
   static const u_int COUNTER_POS = 1;
@@ -115,9 +119,6 @@ public:
 
   u_int GetSize() {
     return (u_int) Store::WordToInt(GetArg(COUNTER_POS));
-  }
-  u_int GetTableSize() {
-    return (u_int) Store::WordToBlock(GetArg(TABLE_POS))->GetSize();
   }
   void Clear() {
     Block *arr = Store::WordToBlock(GetArg(TABLE_POS));
