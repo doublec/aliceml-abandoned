@@ -55,6 +55,7 @@
     .field static public initonly class StockWerk.StockWert Fulfill
     .field static public initonly class StockWerk.StockWert ByNeed
     .field static public initonly class StockWerk.StockWert Pickle
+    .field static public initonly class StockWerk.StockWert Component
     // Builtins
     .field static public initonly class StockWerk.StockWert show
     .field static public initonly class StockWerk.StockWert eq
@@ -170,6 +171,9 @@
       ldstr "Pickle"
       newobj instance void StockWerk.NamedName::.ctor(class System.String)
       stsfld class StockWerk.StockWert StockWerk.Prebound::Pickle
+      ldstr "Component"
+      newobj instance void StockWerk.NamedName::.ctor(class System.String)
+      stsfld class StockWerk.StockWert StockWerk.Prebound::Component
       // Builtins
       newobj instance void StockWerk.Builtins.show::.ctor()
       stsfld class StockWerk.StockWert StockWerk.Prebound::show
@@ -233,7 +237,9 @@
     .field public initonly class StockWerk.StockWert Value
     .method public void .ctor(class StockWerk.StockWert) {
       ldarg.0
-      call instance void System.RuntimeException::.ctor()
+      ldarg.1
+      callvirt instance class System.String System.Object::ToString()
+      call instance void System.RuntimeException::.ctor(class System.String)
       ldarg.0
       ldarg.1
       stfld class StockWerk.StockWert StockWerk.ExceptionWrapper::Value
@@ -253,6 +259,42 @@
       ldarg.0
       ldarg.1
       stfld class StockWerk.StockWert StockWerk.ExceptionWrapper::Value
+      ret
+    }
+  }
+
+  .class public sealed Komponist extends System.Object {
+    .field private class System.Collections.Hashtable Table
+    .method public void .ctor() {
+      ldarg.0
+      call instance void System.Object::.ctor()
+      ldarg.0
+      newobj instance void System.Collections.Hashtable::.ctor()
+      stfld class System.Collections.Hashtable StockWerk.Komponist::Table
+      ret
+    }
+    .method public class StockWerk.StockWert Import(class System.String) {
+      .locals(class StockWerk.StockWert)
+      ldarg.0
+      ldfld class System.Collections.Hashtable StockWerk.Komponist::Table
+      ldarg.1
+      call class System.Object System.Collections.Hashtable::get$Item(class System.Object)
+      dup
+      brfalse.s load
+      ret
+    load:
+      pop
+      ldarg.0
+      ldfld class System.Collections.Hashtable StockWerk.Komponist::Table
+      ldarg.1
+      ldarg.0
+      ldarg.1
+      newobj instance void StockWerk.Builtins.Internal.Component$load::.ctor(class StockWerk.Komponist, class System.String)
+      newobj instance void StockWerk.ByNeed::.ctor(class StockWerk.StockWert)
+      dup
+      stloc.0
+      call instance void System.Collections.Hashtable::Add(class System.Object, class System.Object)
+      ldloc.0
       ret
     }
   }
@@ -2921,4 +2963,68 @@
       ret
     }
   }
+}
+
+.namespace StockWerk.Builtins.Internal {
+  .class public sealed Component$load extends StockWerk.Procedure0 {
+    .field private class System.String Whence
+    .field private class StockWerk.Komponist Komponist
+    .method public void .ctor(class StockWerk.Komponist, class System.String) {
+      ldarg.0
+      call instance void StockWerk.Procedure0::.ctor()
+      ldarg.0
+      ldarg.1
+      stfld class StockWerk.Komponist StockWerk.Builtins.Internal.Component$load::Komponist
+      ldarg.0
+      ldarg.2
+      stfld class System.String StockWerk.Builtins.Internal.Component$load::Whence
+      ret
+    }
+    .method public virtual class StockWerk.StockWert Apply0() {
+      ldarg.0
+      ldfld class System.String StockWerk.Builtins.Internal.Component$load::Whence
+      call class System.Reflection.Module System.Reflection.Module::GetModule(class System.String)
+      dup
+      brfalse.s raise
+      ldstr "Main"
+      callvirt instance class System.Type System.Reflection.Module::GetType(class System.String)
+      dup
+      brfalse.s raise
+      ldstr "main"
+      callvirt instance class System.Reflection.MethodInfo System.Type::GetMethod(class System.String)
+      dup
+      brfalse.s raise
+      ldnull
+      ldc.i4.1
+      newarr value class System.Variant
+      dup
+      ldc.i4.0
+      ldelema System.Variant
+      dup
+      initobj System.Variant
+      ldarg.0
+      ldfld class StockWerk.Komponist StockWerk.Builtins.Internal.Component$load::Komponist
+      call instance void System.Variant::.ctor(class System.Object)
+      callvirt instance value class System.Variant System.Reflection.MethodInfo::Invoke(class System.Object, value class System.Variant[])
+      call class System.Object System.Variant::$widen(value class System.Variant)
+      castclass StockWerk.StockWert
+      ret
+    raise:
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::Component
+      newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
+      throw
+    }
+  }
+}
+
+.method public static void main() {
+  .entrypoint
+  newobj instance void StockWerk.Komponist::.ctor()
+  call class System.String[] System.Runtime::GetCommandLineArgs()
+  ldc.i4.1
+  ldelem.ref
+  call instance class StockWerk.StockWert StockWerk.Komponist::Import(class System.String)
+  callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+  pop
+  ret
 }

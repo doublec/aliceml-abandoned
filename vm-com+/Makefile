@@ -1,12 +1,12 @@
-.SUFFIXES: .il .dll
+.SUFFIXES: .il .exe
 
-.il.dll:
-	ilasm /dll $<
+.il.exe:
+	ilasm $<
 
-all: StockWerk.dll
+all: StockWerk.exe
 
-verify: StockWerk.dll
-	peverify StockWerk.dll
+verify: StockWerk.exe
+	peverify StockWerk.exe
 
 clean:
-	@-del StockWerk.dll
+	@-del StockWerk.exe
