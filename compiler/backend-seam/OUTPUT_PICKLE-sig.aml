@@ -10,10 +10,10 @@
  *   $Revision$
  *)
 
-import structure PrimPickle    from "PrimPickle"
-import structure PickleGrammar from "PickleGrammar"
+import structure PrimPickle          from "PrimPickle"
+import structure AbstractCodeGrammar from "AbstractCodeGrammar"
 
 signature OUTPUT_PICKLE =
     sig
-	val output: PrimPickle.outstream * PickleGrammar.value -> unit
+	val output: PrimPickle.outstream * AbstractCodeGrammar.value -> unit
     end
