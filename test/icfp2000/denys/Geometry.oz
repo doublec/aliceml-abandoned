@@ -1,19 +1,11 @@
 functor
 import
-   BootValue(byNeedFail: ByNeedFail) at 'x-oz://boot/Value'
    NativeGeometry at 'Geometry.so{native}'
 export
-   'Geometry$': Geometry
+   '$Geometry': Geometry
 define
-   NoType = {ByNeedFail noTypeInGeometryModule}   %--**
-
    Geometry =
    'Geometry'(
-      '$angle': NoType
-      '$vec': NoType
-      '$point': NoType
-      '$mat': NoType
-
       vec: NativeGeometry.vector_new
       getX: fun {$ V} {NativeGeometry.vector_get V 1} end
       getY: fun {$ V} {NativeGeometry.vector_get V 2} end
