@@ -103,6 +103,16 @@ functor MakeTranslationPhase(structure Switches: SWITCHES):> TRANSLATION_PHASE =
 				      O.AppExp(typInfo(r, typ_row), e1', e')
 				  end
 
+    fun trKind r (Type.STAR) =
+	    O.TagExp(typInfo(r,typ_kind),
+		     O.Lab(nonInfo r, lab_star), false)
+      | trKind r (Type.ARROW(k1,k2)) =
+	    O.AppExp(typInfo(r,typ_kind),
+		     O.TagExp(typInfo(r,typ_kindkindToKind),
+			      O.Lab(nonInfo r, lab_arrow), true),
+		     O.TupExp(typInfo(r,typ_kindkind),
+			      [trKind r k1, trKind r k2]))
+
 
 
   (* Names and labels *)
@@ -197,7 +207,7 @@ functor MakeTranslationPhase(structure Switches: SWITCHES):> TRANSLATION_PHASE =
 		in
 		    Type.extendRow(trModLabel l, #[infToTyp j], r)
 		end
-	    else
+	    else (*UNFINISHED: interfaces*)
 		r
 	end
 
@@ -227,14 +237,14 @@ functor MakeTranslationPhase(structure Switches: SWITCHES):> TRANSLATION_PHASE =
      * identity function - the coercion is a no-op.
      *)
 
-    fun upInf(x,j1,j2, r,t1,t2) =
+    fun upInf(abs, x,j1,j2, r,t1,t2) =
 	if Inf.isSig j2 andalso Inf.isSig j1 then
 	    let
 		val s1 = Inf.asSig j1
 		val s2 = Inf.asSig j2
 		val b  = Inf.size s1 <> Inf.size s2
 	    in
-		case upItems(r, x, Inf.items s2, s1, b, [])
+		case upItems(abs, r, x, Inf.items s2, s1, b, [])
 		  of NONE        => NONE
 		   | SOME fields => SOME(O.ProdExp(typInfo(r,t2), fields))
 	    end
@@ -251,7 +261,8 @@ functor MakeTranslationPhase(structure Switches: SWITCHES):> TRANSLATION_PHASE =
 		val y  = O.ShortId(typInfo(r, SOME t21), y')
 		val z  = O.ShortId(typInfo(r, SOME t12), z')
 	    in
-		case (upInf(y,j21,j11, r,t21,t11), upInf(z,j12,j22, r,t12,t22))
+		case (upInf(false, y,j21,j11, r,t21,t11),
+		      upInf(abs, z,j12,j22, r,t12,t22))
 		  of (SOME exp1, SOME exp2) =>
 		     let
 			val xexp   = O.VarExp(typInfo(r,t1), x)
@@ -288,9 +299,9 @@ functor MakeTranslationPhase(structure Switches: SWITCHES):> TRANSLATION_PHASE =
 	else
 	    NONE
 
-    and upItems(r, x, [], s1, false, fields) = NONE
-      | upItems(r, x, [], s1, true,  fields) = SOME fields
-      | upItems(r, x, item::items, s1, b, fields) =
+    and upItems(abs, r, x, [], s1, false, fields) = NONE
+      | upItems(abs, r, x, [], s1, true,  fields) = SOME fields
+      | upItems(abs, r, x, item::items, s1, b, fields) =
 	if Inf.isValItem item then
 	    let
 		val (a,t,w2,_) = Inf.asValItem item
@@ -317,7 +328,34 @@ functor MakeTranslationPhase(structure Switches: SWITCHES):> TRANSLATION_PHASE =
 				 end
 		val  exp' = O.LazyExp(i,exp)
 	    in
-		upItems(r, x, items, s1, b', O.Field(i',l',exp')::fields)
+		upItems(abs, r, x, items, s1, b', O.Field(i',l',exp')::fields)
+	    end
+	else if Inf.isTypItem item then
+	    let
+		val (a,k,w,d) = Inf.asTypItem item
+		val    i      = typInfo(r, typ_typ)
+		val    i'     = nonInfo r
+		val    l'     = O.Lab(i', trTypLabel a)
+		val    y      = O.LongId(typInfo(r,NONE), x, l')
+		val (exp,b')  =
+		    if not abs orelse Option.isSome d then
+			(O.VarExp(i,y), b)
+		    else let
+			val l'  = O.Lab(i', case w of Type.CLOSED => lab_closed
+						    | Type.OPEN   => lab_open)
+			val e1' = trKind r k
+			val e2' = O.TagExp(typInfo(r,typ_sort), l', false)
+			val lit = O.StringLit(String.toWide(Label.toString a))
+			val e3' = pathOp(lab_fromLab,
+				   labOp(lab_fromString,
+					 O.LitExp(typInfo(r,typ_string), lit)))
+			val e'  = O.TupExp(typInfo(r,typ_con),[e1',e2',e2'])
+		    in
+			(typOp(lab_inCon, e'), true)
+		    end
+		val exp' = O.LazyExp(i,exp)
+	    in
+		upItems(abs, r, x, items, s1, b', O.Field(i',l',exp')::fields)
 	    end
 	else if Inf.isModItem item then
 	    let
@@ -329,15 +367,15 @@ functor MakeTranslationPhase(structure Switches: SWITCHES):> TRANSLATION_PHASE =
 		val    i'    = nonInfo r
 		val    l'    = O.Lab(i', trModLabel a)
 		val    y     = O.LongId(typInfo(r, SOME t2), x, l')
-		val (exp,b') = case upInf(y,j1,j2, r,t1,t2)
+		val (exp,b') = case upInf(abs, y,j1,j2, r,t1,t2)
 				 of NONE     => (O.VarExp(i,y), b)
 				  | SOME exp => (exp, true)
 		val  exp'    = O.LazyExp(i,exp)
 	    in
-		upItems(r, x, items, s1, b', O.Field(i',l',exp')::fields)
+		upItems(abs, r, x, items, s1, b', O.Field(i',l',exp')::fields)
 	    end
-	else (*UNFINISHED: types and interfaces*)
-	    upItems(r, x, items, s1, b, fields)
+	else (*UNFINISHED: interfaces*)
+	    upItems(abs, r, x, items, s1, b, fields)
 
 
 
@@ -426,7 +464,7 @@ UNFINISHED: obsolete after bootstrapping:
       | idsDec xs' (I.TypDec(i,x,t))	= idsId trTypid xs' x (typ_typ)
       | idsDec xs' (I.ModDec(i,x,m))	= idsId trModid xs' x
 						(infToTyp(#inf(I.infoMod m)))
-      | idsDec xs' (I.InfDec(i,x,j))	= ()
+      | idsDec xs' (I.InfDec(i,x,j))	= () (*UNFINISHED*)
       | idsDec xs' (I.FixDec(i,x,q))	= ()
       | idsDec xs' (I.VarDec(i,x,d))	= idsDec xs' d
       | idsDec xs' (I.RecDec(i,ds))	= idsDecs xs' ds
@@ -570,15 +608,15 @@ UNFINISHED: obsolete after bootstrapping:
 					      val j12 = #3(Inf.asArrow j1)
 					  in
 					      O.AppExp(trInfInfo i, trMod m1,
-						       trUpMod(i2,m2,j12))
+						       trUpMod(false,i2,m2,j12))
 					  end
-      | trMod(I.AnnMod(i,m,j))		= trUpMod(i, m, #inf(I.infoInf j))
-      | trMod(I.UpMod(i,m,j))		= trUpMod(i, m, #inf(I.infoInf j))
+      | trMod(I.AnnMod(i,m,j))		= trUpMod(false,i, m, #inf(I.infoInf j))
+      | trMod(I.UpMod(i,m,j))		= trUpMod(true, i, m, #inf(I.infoInf j))
       | trMod(I.LetMod(i,ds,m))		= O.LetExp(trInfInfo i, trDecs ds,
 								trMod m)
       | trMod(I.UnpackMod(i,e,j))	= trExp e
 
-    and trUpMod(i,m,j) =
+    and trUpMod(abs,i,m,j) =
 	let
 	    val j1 = #inf(I.infoMod m)
 	    val j2 = #inf i
@@ -594,7 +632,7 @@ UNFINISHED: obsolete after bootstrapping:
 	    val x' = O.Id(i2, Stamp.new(), Name.InId)
 	    val x  = O.ShortId(typInfo(r, SOME t1), x')
 	in
-	    case upInf(x,j1,j2, r,t1,t2)
+	    case upInf(abs, x,j1,j2, r,t1,t2)
 	      of NONE    => e1
 	       | SOME e2 =>
 		 let
@@ -607,16 +645,6 @@ UNFINISHED: obsolete after bootstrapping:
 
 
   (* Types *)
-
-    and trKind r (Type.STAR)         = O.TagExp(typInfo(r,typ_kind),
-						O.Lab(nonInfo r, lab_star),
-						false)
-      | trKind r (Type.ARROW(k1,k2)) = O.AppExp(typInfo(r,typ_kind),
-					O.TagExp(typInfo(r,typ_kindkindToKind),
-						 O.Lab(nonInfo r, lab_arrow),
-						 true),
-					O.TupExp(typInfo(r,typ_kindkind),
-						 [trKind r k1, trKind r k2]))
 
     and trVarTyp r x =
 	(* [a] = {[a]} *)
@@ -741,7 +769,10 @@ UNFINISHED: obsolete after bootstrapping:
 	    val l'  = O.Lab(nonInfo r, lab_closed)
 	    val e1' = trKind r (Type.kind(#typ i))
 	    val e2' = O.TagExp(typInfo(r, typ_sort), l', false)
-	    val e3' = pathOp(lab_invent, O.TupExp(typInfo(r,typ_unit), []))
+	    val a   = Path.toLab(#3(Type.asCon(#typ i)))
+	    val lit = O.StringLit(String.toWide(Label.toString a))
+	    val e3' = pathOp(lab_fromLab, labOp(lab_fromString,
+					O.LitExp(typInfo(r,typ_string), lit)))
 	    val e'  = O.TupExp(typInfo(r, typ_con), [e1',e2',e2'])
 	in
 	    typOp(lab_inCon, e')
@@ -754,7 +785,10 @@ UNFINISHED: obsolete after bootstrapping:
 	    val l'  = O.Lab(nonInfo r, lab_open)
 	    val e1' = trKind r (Type.kind(#typ i))
 	    val e2' = O.TagExp(typInfo(r, typ_sort), l', false)
-	    val e3' = pathOp(lab_invent, O.TupExp(typInfo(r,typ_unit), []))
+	    val a   = Path.toLab(#3(Type.asCon(#typ i)))
+	    val lit = O.StringLit(String.toWide(Label.toString a))
+	    val e3' = pathOp(lab_fromLab, labOp(lab_fromString,
+					O.LitExp(typInfo(r,typ_string), lit)))
 	    val e'  = O.TupExp(typInfo(r, typ_con), [e1',e2',e2'])
 	in
 	    typOp(lab_inCon, e')
@@ -822,7 +856,7 @@ UNFINISHED: obsolete after bootstrapping:
 					      O.ValDec(i, O.VarPat(typInfo(r,t),
 							trModid x), e') :: ds'
 					  end
-      | trDec(I.InfDec(i,x,j), ds')	= ds'
+      | trDec(I.InfDec(i,x,j), ds')	= ds' (*UNFINISHED*)
       | trDec(I.FixDec(i,x,q), ds')	= ds'
       | trDec(I.VarDec(i,x,d), ds')	= trDec(d, ds')
       | trDec(I.RecDec(i,ds), ds')	= O.RecDec(i, trDecs ds) :: ds'
@@ -882,11 +916,11 @@ UNFINISHED: obsolete after bootstrapping:
       | trImp y t (I.ConImp(i,x,d,k),ds')
 					= idToDec(trId x, y, t,
 						  #typ(I.infoDesc d)) :: ds'
-      | trImp y t (I.TypImp(i,x,d),ds')	= ds'
+      | trImp y t (I.TypImp(i,x,d),ds')	= idToDec(trTypid x, y, t, typ_typ)::ds'
       | trImp y t (I.ModImp(i,x,d),ds')	= idToDec(trModid x, y, t,
 						  infToTyp(#inf(I.infoDesc d)))
 					  :: ds'
-      | trImp y t (I.InfImp(i,x,d),ds')	= ds'
+      | trImp y t (I.InfImp(i,x,d),ds')	= ds' (*UNFINISHED*)
       | trImp y t (I.FixImp(i,x,d),ds')	= ds'
       | trImp y t (I.RecImp(i,is), ds')	= trImps(is, y, t, ds')
 
