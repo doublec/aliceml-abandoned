@@ -104,7 +104,7 @@ ALICEC1 = STOCKHOME=build1/install build1/install/bin/alicec
 ALICEC2 = STOCKHOME=build2/install build2/install/bin/alicec
 
 ALICEC_OPTS = \
-	--no-dump-elaboration-sig --no-implicit-import $(ALICEC_EXTRA_OPTS)
+	--no-dump-elaboration-sig --implicit-import-file - $(ALICEC_EXTRA_OPTS)
 ALICEC_EXTRA_OPTS = --dump-target
 
 ALICELINK0 = OZ_LOAD=pattern='?{x}'='?{x}'.ozf:cache=$(OZHOME)/cache/ ozl
@@ -484,7 +484,7 @@ INSTALL2DIRS = build2/install build2/install/bin \
 	build2/install/lib/system build2/install/lib/utility \
 	build2/install/lib/rtt build2/install/lib/ml-yacc \
 	build2/install/compiler
-INSTALL2TOPFILES = VMMain.ozf Default.import
+INSTALL2TOPFILES = VMMain.ozf alicec.import
 INSTALL2BINFILES = alicerun alicec alicelink
 INSTALL2LIBFILES = rtt/RTT.ozf
 INSTALL2COMPILERFILES = CompilerMain.ozf
@@ -514,7 +514,7 @@ build2/LinkedVMMain.ozf build2/compiler/LinkedCompilerMain.ozf: build2/%: \
 	build1/%
 	cp $< $@
 
-build2/Default.import: lib/fundamental/Fundamental.import lib/Other.import
+build2/alicec.import: lib/fundamental/Fundamental.import lib/Other.import
 	cat $^ > $@
 
 $(LIBNATIVES:%=build2/%): build2/%: build1/%
@@ -550,7 +550,7 @@ $(INSTALL2DIRS):
 build2/install/VMMain.ozf: build1/install/VMMain.ozf
 	install -c -m 444 $< $@
 
-build2/install/Default.import: build2/Default.import
+build2/install/%.import: build2/%.import
 	install -c -m 444 $< $@
 
 $(INSTALL2BINFILES:%=build2/install/bin/%): build2/%: build1/%
@@ -575,7 +575,7 @@ INSTALL3DIRS = build3/install build3/install/bin \
 	build3/install/lib/system build3/install/lib/utility \
 	build3/install/lib/rtt build3/install/lib/ml-yacc \
 	build3/install/compiler build3/install/compiler/top
-INSTALL3TOPFILES = $(INSTALL2TOPFILES)
+INSTALL3TOPFILES = $(INSTALL2TOPFILES) alice.import
 INSTALL3BINFILES = $(INSTALL2BINFILES) alice
 INSTALL3LIBFILES = \
 	$(filter %.ozf, $(LIBSOURCES0:%.aml=%.ozf)) \
@@ -626,7 +626,11 @@ $(LIBNATIVES:%=build3/%): \
 	build3/lib/%.ozf: lib/%.oz
 	$(OZC) -c $< -o $@
 
-build3/Default.import: lib/fundamental/Fundamental.import lib/Other.import
+build3/alicec.import: lib/fundamental/Fundamental.import lib/Other.import
+	cat $^ > $@
+
+build3/alice.import: lib/fundamental/Fundamental.import lib/Other.import \
+		compiler/top/Toplevel.import
 	cat $^ > $@
 
 build3/lib/system/Unix.ozf: build3/lib/system/TextIO.ozf
@@ -678,7 +682,7 @@ $(INSTALL3DIRS):
 build3/install/VMMain.ozf: build3/LinkedVMMain.ozf
 	install -c -m 444 $< $@
 
-build3/install/Default.import: build3/Default.import
+build3/install/%.import: build3/%.import
 	install -c -m 444 $< $@
 
 build3/install/bin/%.bat: %.bat
