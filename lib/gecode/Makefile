@@ -4,14 +4,11 @@ NATIVES = UnsafeGecode
 
 SOURCES = \
 	UnsafeGecode.cc \
-	GecodeSpace.cc \
-	GecodeBAB.cc
+	GecodeSpace.cc
 
 TARGETS = \
 	FD-sig.stc \
 	FD.stc \
-	PROBLEM-sig.stc \
-	MkProblem.stc \
 	SPACE-sig.stc \
 	Space.stc \
 	SEARCH-sig.stc \
