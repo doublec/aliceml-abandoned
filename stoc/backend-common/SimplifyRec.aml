@@ -28,7 +28,7 @@ structure SimplifyRec :> SIMPLIFY_REC =
 	  | ConPat of info * longid * pat option
 	  | RefPat of info * pat
 	  | TupPat of info * pat list
-	  | RowPat of info * pat field list * bool
+	  | RowPat of info * pat field list
 	  | VecPat of info * pat list
 	  | AsPat of info * id * pat
 
@@ -38,7 +38,7 @@ structure SimplifyRec :> SIMPLIFY_REC =
 	  | infoPat (ConPat (info, _, _)) = info
 	  | infoPat (RefPat (info, _)) = info
 	  | infoPat (TupPat (info, _)) = info
-	  | infoPat (RowPat (info, _, _)) = info
+	  | infoPat (RowPat (info, _)) = info
 	  | infoPat (VecPat (info, _)) = info
 	  | infoPat (AsPat (info, _, _)) = info
 
@@ -91,7 +91,7 @@ structure SimplifyRec :> SIMPLIFY_REC =
 	    in
 		(TupPat (info, pats'), TupExp (info, exps'))
 	    end
-	  | patToExp (RowPat (info, patFields, false)) =
+	  | patToExp (RowPat (info, patFields)) =
 	    let
 		val (patFields', expFields') =
 		    List.foldr (fn (Field (info, lab, pat),
@@ -103,11 +103,8 @@ structure SimplifyRec :> SIMPLIFY_REC =
 				     Field (info, lab, exp)::expFields)
 				end) (nil, nil) patFields
 	    in
-		(RowPat (info, patFields', false), RowExp (info, expFields'))
+		(RowPat (info, patFields'), RowExp (info, expFields'))
 	    end
-	  | patToExp (RowPat (info, patFields, true)) =
-	    (*--** record patterns with dots must be resolved using the rhs *)
-	    raise Crash.Crash "SimplifyRec.patToExp: not implemented"
 	  | patToExp (VecPat (info, pats)) =
 	    let
 		val (pats', exps') = ListPair.unzip (List.map patToExp pats)
@@ -152,13 +149,11 @@ structure SimplifyRec :> SIMPLIFY_REC =
 			  (cs @ cr, idsExps @ idsExpr)
 		      end) (nil, nil) (pats, expFields')
 	       | (_, FieldSort.Rec) =>
-		     raise Crash.Crash "SimplifyRec.derec' 1")
-	  | derec' (RowPat (info, _, false), TupExp (_, _)) =
-	    raise Crash.Crash "SimplifyRec.derec' 2"
-	  | derec' (RowPat (info, patFields, true), TupExp (_, exps)) =
-	    raise Crash.Crash   (*--** *)
-		"SimplifyRec.derec': not implemented 1"
-	  | derec' (RowPat (info, patFields, false), RowExp (_, expFields)) =
+		     raise Crash.Crash
+			 "SimplifyRec.derec' 1 type inconsistency")
+	  | derec' (RowPat (info, _), TupExp (_, _)) =
+	    raise Crash.Crash "SimplifyRec.derec' 2 type inconsistency"
+	  | derec' (RowPat (info, patFields), RowExp (_, expFields)) =
 	    let
 		val (expFields', _) = FieldSort.sort expFields
 	    in
@@ -169,13 +164,6 @@ structure SimplifyRec :> SIMPLIFY_REC =
 		 in
 		     (cs @ cr, idsExpr @ idsExpr)
 		 end) (nil, nil) (patFields, expFields')
-	    end
-	  | derec' (RowPat (info, patFields, true), RowExp (_, expFields)) =
-	    let
-		val (expFields', _) = FieldSort.sort expFields
-	    in
-		raise Crash.Crash   (*--** *)
-		    "SimplifyRec.derec': not implemented 2"
 	    end
 	  | derec' (VecPat (info, pats), VecExp (_, exps)) =
 	    ListPair.foldr (fn (pat, exp, (cr, idsExpr)) =>
@@ -200,7 +188,7 @@ structure SimplifyRec :> SIMPLIFY_REC =
 			end
 	    end
 	  | derec' (pat, _) =
-	    raise Crash.Crash "SimplifyRec.derec' 3"
+	    raise Crash.Crash "SimplifyRec.derec' 3 internal error"
 
 	fun unify (WildPat _, pat2) = (nil, pat2)
 	  | unify (pat1, WildPat _) = (nil, pat1)
@@ -238,12 +226,10 @@ structure SimplifyRec :> SIMPLIFY_REC =
 	    in
 		(constraints, TupPat (info, pats))
 	    end
-	  | unify (TupPat (_, _), RowPat (_, _, true)) =
-	    raise Crash.Crash "SimplifyRec.unify: not implemented 1"   (*--** *)
-	  | unify (pat1 as RowPat (_, _, _), pat2 as TupPat (_, _)) =
+	  | unify (pat1 as RowPat (_, _), pat2 as TupPat (_, _)) =
 	    unify (pat2, pat1)
-	  | unify (RowPat (_, _, _), RowPat (_, _, _)) =
-	    raise Crash.Crash "SimplifyRec.unify: not implemented 2"   (*--** *)
+	  | unify (RowPat (_, _), RowPat (_, _)) =
+	    raise Crash.Crash "SimplifyRec.unify: not implemented"   (*--** *)
 	  | unify (VecPat (info, pats1), VecPat (_, pats2)) =
 	    if length pats1 = length pats2 then
 		let
@@ -299,26 +285,37 @@ structure SimplifyRec :> SIMPLIFY_REC =
 	    end
 	  | preprocess (I.RowPat (info, patFields)) =
 	    let
-		val hasDots = true   (*--** deduce from info type *)
-		val (patFields', arity) = FieldSort.sort patFields
-		val (constraints, patFields'') =
+		val row = Type.asRow (valOf (IntermediateInfo.typ info))
+		fun convert row =
+		    if Type.isEmptyRow row then
+			if Type.isUnknownRow row then
+			    raise Crash.Crash
+				"SimplifyRec.preprocess type inconsistency"
+			else nil
+		    else Type.headRow row::convert (Type.tailRow row)
+		fun adjoin (labelTyp as (label, _), patFields as
+			    (Field (_, Lab (_, label'), _)::rest)) =
+		    if label = label' then patFields
+		    else adjoin (labelTyp, rest)
+		  | adjoin ((label, typ), nil) =
+		    [Field (info, Lab (info, label), I.WildPat info)]
+		val patFields' = List.foldr adjoin patFields (convert row)
+		val (patFields'', arity) = FieldSort.sort patFields'
+		val (constraints, patFields''') =
 		    List.foldr (fn (Field (info, lab, pat), (cr, fieldr)) =>
 				let
 				    val (cs, pat') = preprocess pat
 				in
 				    (cs @ cr, Field (info, lab, pat')::fieldr)
-				end) (nil, nil) patFields'
+				end) (nil, nil) patFields''
 		val pat' =
 		    case arity of
 			FieldSort.Tup i =>
-			    if hasDots then
-				RowPat (info, patFields'', true)
-			    else
-				TupPat (info,
-					List.map (fn Field (_, _, pat) => pat)
-					patFields'')
+			    TupPat (info,
+				    List.map (fn Field (_, _, pat) => pat)
+				    patFields''')
 		      | FieldSort.Rec =>
-			    RowPat (info, patFields'', hasDots)
+			    RowPat (info, patFields''')
 	    in
 		(constraints, pat')
 	    end

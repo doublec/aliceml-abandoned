@@ -14,8 +14,6 @@ signature INTERMEDIATE_AUX =
     sig
 	structure Intermediate: INTERMEDIATE_GRAMMAR = IntermediateGrammar
 
-	val foldli: (int * 'a * 'b -> 'b) -> 'b -> 'a list -> 'b
-
 	val freshId: Intermediate.info -> Intermediate.id
 
 	val idEq: Intermediate.id * Intermediate.id -> bool

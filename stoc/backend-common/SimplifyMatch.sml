@@ -69,8 +69,9 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	    makeTestSeq (pat, Label.fromString ""::pos,
 			 Test (pos, RefTest (typPat pat))::rest, mapping)
 	  | makeTestSeq (TupPat (_, pats), pos, rest, mapping) =
-	    foldli (fn (i, pat, (rest, mapping)) =>
-		    makeTestSeq (pat, Label.fromInt i::pos, rest, mapping))
+	    Misc.List_foldli
+	    (fn (i, pat, (rest, mapping)) =>
+	     makeTestSeq (pat, Label.fromInt (i + 1)::pos, rest, mapping))
 	    (Test (pos, TupTest (List.map typPat pats))::rest, mapping)
 	    pats
 	  | makeTestSeq (RowPat (info, patFields), pos, rest, mapping) =
@@ -113,8 +114,9 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 		    end
 	    end
 	  | makeTestSeq (VecPat (_, pats), pos, rest, mapping) =
-	    foldli (fn (i, pat, (rest, mapping)) =>
-		    makeTestSeq (pat, Label.fromInt i::pos, rest, mapping))
+	    Misc.List_foldli
+	    (fn (i, pat, (rest, mapping)) =>
+	     makeTestSeq (pat, Label.fromInt (i + 1)::pos, rest, mapping))
 	    (Test (pos, VecTest (List.map typPat pats))::rest, mapping)
 	    pats
 	  | makeTestSeq (AsPat (_, pat1, pat2), pos, rest, mapping) =
@@ -171,6 +173,8 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	  | longidEq (LongId (_, longid1, lab1), LongId (_, longid2, lab2)) =
 	    longidEq (longid1, longid2) andalso labEq (lab1, lab2)
 	  | longidEq (_, _) = false
+
+	(*--** the following can be rewritten to assume type consistency *)
 
 	fun testEq (LitTest lit1, LitTest lit2) = lit1 = lit2
 	  | testEq (ConTest (longid1, hasArgs1), ConTest (longid2, hasArgs2)) =
@@ -378,91 +382,114 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 			 (optimizeGraph graph, consequents))
 	    end
 
+	(*
+	 * Check whether the match rules of a function define
+	 * a cartesian n-ary function; if it is, convert it
+	 * to one represented explicitly as such.
+	 *
+	 * This is the case if no pattern binds the whole argument
+	 * to a variable; furthermore, the first pattern must not
+	 * be a wildcard in the presence of transients: it could
+	 * then perform some computation before requesting the
+	 * actual tuple or record.
+	 *)
+
 	type bodyFun = unit -> O.body
 
 	local
-	    datatype args =
+	    datatype arity =
 		ONE
-	      | TUP of int
-	      | REC of Label.t list
+	      | TUP of typ list
+	      | REC of (Label.t * typ) list
 
-	    exception NonArgable
+	    exception MustBeUnary
 
 	    structure LabelSort =
-		MakeLabelSort(type 'a t = Label.t fun get x = x)
+		MakeLabelSort(type 'a t = Label.t * 'a
+			      fun get (label, _) = label)
 
-	    fun normalize (_, LitPat (_, _), _) = ONE
-	      | normalize (_, ConPat (_, _, _, _), _) = ONE
-	      | normalize (_, RefPat (_, _), _) = ONE
-	      | normalize (_, TupPat (_, pats), _) = TUP (List.length pats)
-	      | normalize (_, RowPat (info, _), _) =
-		let
-		    val row = Type.asRow (valOf (IntermediateInfo.typ info))
-		    fun convert row =
-			if Type.isEmptyRow row then
-			    if Type.isUnknownRow row then raise NonArgable
-			    else nil
-			else #1 (Type.headRow row)::convert (Type.tailRow row)
-		in
-		    case LabelSort.sort (convert row) of
-			(_, LabelSort.Tup i) => TUP i
-		      | (labels', LabelSort.Rec) => REC labels'
-		end
-	      | normalize (_, VecPat (_, _), _) = ONE
-	      | normalize (_, _, _) = raise NonArgable
+	    fun typToArity typ =
+		if Type.isTuple typ then TUP (Type.asTuple typ)
+		else if Type.isRow typ then
+		    let
+			fun convert row =
+			    if Type.isEmptyRow row then
+				if Type.isUnknownRow row then raise MustBeUnary
+				else nil
+			    else
+				(case Type.headRow row of
+				     (label, [typ]) => (label, typ)
+				   | (_, _) => raise MustBeUnary)::
+				convert (Type.tailRow row)
+		    in
+			case LabelSort.sort (convert (Type.asRow typ)) of
+			    (labelTypList, LabelSort.Tup _) =>
+				TUP (List.map #2 labelTypList)
+			  | (labelTypList, LabelSort.Rec) => REC labelTypList
+		    end handle MustBeUnary => ONE
+		else ONE
 
-	    fun insertMatch ((ONE, matches)::rest, ONE, match) =
-		(ONE, match::matches)::rest
-	      | insertMatch (argsMatchesList, ONE, match) =
-		(ONE, [match])::argsMatchesList
-	      | insertMatch ((args, matches)::rest, args', match) =
-		if args = args' then (args, match::matches)::rest
-		else (args, matches)::insertMatch (rest, args', match)
-	      | insertMatch (nil, args', match) = [(args', [match])]
+	    fun isManifest (WildPat _, wild) = wild
+	      | isManifest (VarPat (_, _), _) = false
+	      | isManifest (TupPat (_, _), _) = true
+	      | isManifest (RowPat (_, _), _) = true
+	      | isManifest (AsPat (_, pat1, pat2), wild) =
+		isManifest (pat1, wild) andalso isManifest (pat2, wild)
+	      | isManifest (AltPat (_, pats), wild) =
+		List.all (fn pat => isManifest (pat, wild)) pats
+	      | isManifest (NegPat (_, pat), wild) = isManifest (pat, wild)
+	      | isManifest (GuardPat (_, pat, _), wild) =
+		isManifest (pat, wild)
+	      | isManifest (WithPat (_, pat, _), wild) = isManifest (pat, wild)
+	      | isManifest (_, _) =
+		raise Crash.Crash "SimplifyMatch.normalize type inconsistency"
 
-	    fun makeArg (match, argsMatchesList) =
-		insertMatch (argsMatchesList, normalize match, match)
+	    fun checkMatches ((_, pat, _)::matches, wild) =
+		isManifest (pat, wild) andalso checkMatches (matches, true)
+	      | checkMatches (nil, _) = true
 
-	    fun freshId coord = Id ((coord, NONE), Stamp.new (), Name.InId)
-		(*--** specify the type *)
+	    fun freshId info = Id (info, Stamp.new (), Name.InId)
 
 	    fun process (ONE, graph, consequents, id) =
 		(O.OneArg id, graph, [(nil, id)], consequents)
-	      | process (TUP i, Node (nil, TupTest _, ref graph, _, _),
+	      | process (TUP typs, Node (nil, TupTest _, ref graph, _, _),
 			 consequents, _) =
 		let
-		    val intIdList =
-			List.tabulate
-			(i, fn i => (i + 1, freshId Source.nowhere))
-		    val ids = List.map #2 intIdList
+		    val ids =
+			List.map (fn typ => freshId (Source.nowhere, SOME typ))
+			typs
+		    val labelIdList =
+			Misc.List_mapi (fn (i, id) =>
+					(Label.fromInt (i + 1), id)) ids
 		    val mapping =
-			List.foldr (fn ((i, id), mapping) =>
-				    ([Label.fromInt i], id)::mapping)
-			nil intIdList
+			List.foldr (fn ((label, id), mapping) =>
+				    ([label], id)::mapping) nil labelIdList
 		in
 		    (O.TupArgs ids, graph, mapping, consequents)
 		end
-	      | process (REC labs, Node (nil, RecTest _, ref graph, _, _),
+	      | process (REC labelTypList,
+			 Node (nil, RecTest _, ref graph, _, _),
 			 consequents, _) =
 		let
-		    val labIdList =
-			List.map (fn lab => (lab, freshId Source.nowhere)) labs
+		    val labelIdList =
+			List.map (fn (label, typ) =>
+				  (label, freshId (Source.nowhere, SOME typ)))
+			labelTypList
 		    val mapping =
 			List.foldr (fn ((lab, id), mapping) =>
-				    ([lab], id)::mapping) nil labIdList
+				    ([lab], id)::mapping) nil labelIdList
 		in
-		    (O.RecArgs labIdList, graph, mapping, consequents)
+		    (O.RecArgs labelIdList, graph, mapping, consequents)
 		end
 	      | process (_, _, _, _) =
 		raise Crash.Crash "SimplifyMatch.process 3"
 	in
-	    fun buildFunArgs (id, matches, errStmsFun) =
+	    fun buildFunArgs (id, matches as (_, pat, _)::_, errStmsFun) =
 		let
 		    val argsMatchesList =
-			(List.map (fn (args, matches) =>
-				   (args, List.rev matches))
-			 (List.foldl makeArg nil matches))
-			handle NonArgable => [(ONE, matches)]
+			if checkMatches (matches, false) then
+			    [(typToArity (typPat pat), matches)]
+			else [(ONE, matches)]
 		in
 		    List.map (fn (args, matches) =>
 			      let
@@ -472,5 +499,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 				  process (args, graph, consequents, id)
 			      end) argsMatchesList
 		end
+	      | buildFunArgs (_, nil, _) =
+		raise Crash.Crash "SimplifyMatch.buildFunArgs"
 	end
     end

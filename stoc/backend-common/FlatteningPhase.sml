@@ -589,8 +589,9 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 		    List.map (fn typ => freshId (Source.nowhere, SOME typ))
 		    typs
 		val mapping' =
-		    foldli (fn (i, id, mapping) =>
-			    (Label.fromInt i::pos, id)::mapping) mapping ids
+		    Misc.List_foldli
+		    (fn (i, id, mapping) =>
+		     (Label.fromInt (i + 1)::pos, id)::mapping) mapping ids
 	    in
 		(nil, O.TupTest ids, mapping')
 	    end
@@ -620,8 +621,9 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 		    List.map (fn typ => freshId (Source.nowhere, SOME typ))
 		    typs
 		val mapping' =
-		    foldli (fn (i, id, mapping) =>
-			    (Label.fromInt i::pos, id)::mapping) mapping ids
+		    Misc.List_foldli
+		    (fn (i, id, mapping) =>
+		     (Label.fromInt (i + 1)::pos, id)::mapping) mapping ids
 	    in
 		(nil, O.VecTest ids, mapping')
 	    end

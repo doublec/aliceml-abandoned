@@ -15,14 +15,6 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	structure Intermediate = IntermediateGrammar
 	open Intermediate
 
-	local
-	    fun foldli' (x::xr, f, z, i) =
-		foldli' (xr, f, f (i, x, z), i + 1)
-	      | foldli' (nil, _, z, _) = z
-	in
-	    fun foldli f z xs = foldli' (xs, f, z, 1)
-	end
-
 	fun freshId info = Id (info, Stamp.new (), Name.InId)
 
 	fun idEq (Id (_, stamp1, _), Id (_, stamp2, _)) = stamp1 = stamp2
