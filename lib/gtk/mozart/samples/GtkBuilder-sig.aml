@@ -47,7 +47,7 @@ in
 	      | Button      of string * GtkSignalHandler list
 	      | CheckButton of string * GtkSignalHandler list
 	      | Text        of {xdim:real, ydim:real, text:string list}
-	      | Canvas      of {width:int, height:int}
+	      | Canvas      of {pic:int, width:int, height:int}
 	      | Calendar    of GtkSignalHandler list
 	      | Notebook    of bool * ({label:string, note:GtkWidget} list)
 	      | Tree        of GtkTreeItem list * (string * string -> unit)
