@@ -80,9 +80,8 @@ structure PrimPickle :> PRIM_PICKLE =
 			insertString (q, s, id);
 			outputByte (q, tCHUNK);
 			outputUInt (q, fromInt (String.size s));
-			List.app (fn c =>
-				  outputByte (q, Word8.fromInt (Char.ord c)))
-			(String.explode s);
+			CharVector.app
+			(fn c => outputByte (q, Word8.fromInt (Char.ord c))) s;
 			id
 		    end
 
