@@ -1,3 +1,4 @@
+- don't use instance structures for runtime interfaces
 - complete verifier for intermediate language
 - remove indexed labels from signatures by converting hiding to local
 - remove definitionals from signatures by adding singletons
