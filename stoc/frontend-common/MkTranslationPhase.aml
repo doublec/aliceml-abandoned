@@ -828,7 +828,7 @@ struct
 	in
 	    O.FunExp(i', #[O.Match(nonInfo r, p', e')])
 	end
-	handle Type.Type => raise Crash.Crash "trPrimMod: Unpack")
+	handle (Type.Type | Type.Row) => raise Crash.Crash "trPrimMod: Unpack")
 
       | trPrimMod(i,s,j) =
 	O.PrimExp(trModInfo i, s)
