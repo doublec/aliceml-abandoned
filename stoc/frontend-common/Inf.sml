@@ -205,7 +205,7 @@ structure InfPrivate =
       | reduce _			= ()
 
     and reduceApp(j, j1 as ref(LAM _), p, j2) =
-	( case !(clone j1)
+	( case !(instance j1)
 	    of LAM(p1, j11, j12) =>
 		(*UNFINISHED: do realisation *)
 		(*Path.replace(p1, p)*)
@@ -247,7 +247,7 @@ structure InfPrivate =
 
     and realiseCon(rea, kp as (k,p)) =
 	( case PathMap.lookup(#inf_rea rea, p)
-	    of SOME j => LINK(clone j)
+	    of SOME j => LINK(instance j)
 	     | NONE   => ( realiseKind(rea, k) ; CON kp )
 	)
 
@@ -279,31 +279,35 @@ structure InfPrivate =
     and realiseTyp(rea, t) = Type.realise(#typ_rea rea, t)
 
 
-  (* Cloning *)
+  (* Instantiation *)
 
-    and clone j = cloneInf(PathMap.new(), j)
+    and instance j = instanceInf(PathMap.new(), j)
 
-    and cloneInf(rea, ref j')	= ref(cloneInf'(rea, j'))
-    and cloneInf'(rea, LINK j)	= cloneInf'(rea, !j)
-      | cloneInf'(rea, ANY)	= ANY
-      | cloneInf'(rea, CON c)	= CON(cloneCon(rea, c))
-      | cloneInf'(rea, SIG s)	= SIG(cloneSig(rea, s))
-      | cloneInf'(rea, ARR(p,j1,j2)) =
-	    ARR(clonePathBinder(rea, p), cloneInf(rea, j1), cloneInf(rea, j2))
-      | cloneInf'(rea, LAM(p,j1,j2)) =
-	    LAM(clonePathBinder(rea, p), cloneInf(rea, j1), cloneInf(rea, j2) )
-      | cloneInf'(rea, APP(j1,p,j2)) =
-	    APP(cloneInf(rea, j1), clonePath(rea, p), cloneInf(rea, j2) )
+    and instanceInf(rea, ref j')	= ref(instanceInf'(rea, j'))
+    and instanceInf'(rea, LINK j)	= instanceInf'(rea, !j)
+      | instanceInf'(rea, ANY)		= ANY
+      | instanceInf'(rea, CON c)	= CON(instanceCon(rea, c))
+      | instanceInf'(rea, SIG s)	= SIG(instanceSig(rea, s))
+      | instanceInf'(rea, ARR(p,j1,j2)) =
+	    ARR(instancePathBinder(rea, p),
+		instanceInf(rea, j1), instanceInf(rea, j2))
+      | instanceInf'(rea, LAM(p,j1,j2)) =
+	    LAM(instancePathBinder(rea, p),
+		instanceInf(rea, j1), instanceInf(rea, j2) )
+      | instanceInf'(rea, APP(j1,p,j2)) =
+	    APP(instanceInf(rea, j1),
+		instancePath(rea, p), instanceInf(rea, j2) )
 
-    and cloneCon(rea, (k,p))	= (cloneKind(rea, k), clonePath(rea, p))
-    and clonePath(rea, p)	= Path.cloneFree PathMap.lookup (rea, p)
+    and instanceCon(rea, (k,p))	= (instanceKind(rea, k), instancePath(rea, p))
+    and instancePath(rea, p)	= Path.cloneFree PathMap.lookup (rea, p)
 
-    and cloneKind (rea, ref k')	= ref(cloneKind'(rea, k'))
-    and cloneKind'(rea, GROUND)	= GROUND
-      | cloneKind'(rea, DEP(p,j,k)) =
-	    DEP(clonePathBinder(rea, p), cloneInf(rea, j), cloneKind(rea, k))
+    and instanceKind (rea, ref k')	= ref(instanceKind'(rea, k'))
+    and instanceKind'(rea, GROUND)	= GROUND
+      | instanceKind'(rea, DEP(p,j,k)) =
+	    DEP(instancePathBinder(rea, p),
+		instanceInf(rea, j), instanceKind(rea, k))
 
-    and clonePathBinder(rea, p) =
+    and instancePathBinder(rea, p) =
 	let
 	    val p' = Path.cloneBinder PathMap.lookup (rea, p)
 	in
@@ -311,7 +315,7 @@ structure InfPrivate =
 	    p'
 	end
 
-    and cloneSig(rea, (ref items,_)) =
+    and instanceSig(rea, (ref items,_)) =
 	let
 	    val s as (itemsr,map) = empty()
 
@@ -320,65 +324,109 @@ structure InfPrivate =
 		; Map.insertWith (fn(l1,l2) => l2 @ l1) (map, doml, [item])
 		)
 
-	    fun cloneItem(ref(VAL((p,l,n), t, w, d))) =
+	    fun instanceItem(ref(VAL((p,l,n), t, w, d))) =
 		let
-		    val p'   = clonePathBinder(rea, p)
-		    val t'   = cloneTyp(rea, t)
-		    val d'   = clonePathDef(rea, d)
+		    val p'   = instancePathBinder(rea, p)
+		    val t'   = instanceTyp(rea, t)
+		    val d'   = instancePathDef(rea, d)
 		    val item = ref(VAL((p',l,n), t', w, d'))
 		in
 		    extendSig((VAL',l), item)
 		end
 
-	      | cloneItem(ref(TYP((p,l,n), k, w, d))) =
+	      | instanceItem(ref(TYP((p,l,n), k, w, d))) =
 		let
-		    val p'   = clonePathBinder(rea, p)
-		    val d'   = cloneTypDef(rea, d)
+		    val p'   = instancePathBinder(rea, p)
+		    val d'   = instanceTypDef(rea, d)
 		    val item = ref(TYP((p',l,n), k, w, d'))
 		in
 		    extendSig((TYP',l), item)
 		end
 
-	      | cloneItem(ref(MOD((p,l,n), j, d))) =
+	      | instanceItem(ref(MOD((p,l,n), j, d))) =
 		let
-		    val p'   = clonePathBinder(rea, p)
-		    val j'   = cloneInf(rea, j)
-		    val d'   = clonePathDef(rea, d)
+		    val p'   = instancePathBinder(rea, p)
+		    val j'   = instanceInf(rea, j)
+		    val d'   = instancePathDef(rea, d)
 		    val item = ref(MOD((p',l,n), j', d'))
 		in
 		    extendSig((MOD',l), item)
 		end
 
-	      | cloneItem(ref(INF((p,l,n), k, d))) =
+	      | instanceItem(ref(INF((p,l,n), k, d))) =
 		let
-		    val p'   = clonePathBinder(rea, p)
-		    val k'   = cloneKind(rea, k)
-		    val d'   = cloneInfDef(rea, d)
+		    val p'   = instancePathBinder(rea, p)
+		    val k'   = instanceKind(rea, k)
+		    val d'   = instanceInfDef(rea, d)
 		    val item = ref(INF((p',l,n), k', d'))
 		in
 		    extendSig((INF',l), item)
 		end
 	in
-	    Misc.List_appr cloneItem items ;
+	    Misc.List_appr instanceItem items ;
 	    s
 	end
 
-    and clonePathDef(rea,      NONE  )	= NONE
-      | clonePathDef(rea, d as SOME p)	= case PathMap.lookup(rea, p)
-					    of NONE => d
-					     | d'   => d'
-    and cloneTypDef(rea, NONE  )	= NONE
-      | cloneTypDef(rea, SOME t)	= SOME(cloneTyp(rea, t))
+    and instancePathDef(rea,      NONE  )	= NONE
+      | instancePathDef(rea, d as SOME p)	= case PathMap.lookup(rea, p)
+						    of NONE => d
+						     | d'   => d'
+    and instanceTypDef(rea, NONE  )		= NONE
+      | instanceTypDef(rea, SOME t)		= SOME(instanceTyp(rea, t))
 
-    and cloneInfDef(rea, NONE  )	= NONE
-      | cloneInfDef(rea, SOME j)	= SOME(cloneInf(rea, j))
+    and instanceInfDef(rea, NONE  )		= NONE
+      | instanceInfDef(rea, SOME j)		= SOME(instanceInf(rea, j))
 
-    and cloneTyp(rea, t) =
+    and instanceTyp(rea, t) =
 	let
 	    val t' = Type.clone t
 	in
 	    Type.realisePath(rea, t') ;
 	    t'
+	end
+
+
+  (* Cloning (does not instantiate paths!) *)
+
+    fun clone(ref j')		= ref(clone' j')
+    and clone'(LINK j)		= clone'(!j)
+      | clone'(ANY)		= ANY
+      | clone'(CON c)		= CON(cloneCon c)
+      | clone'(SIG s)		= SIG(cloneSig s)
+      | clone'(ARR(p,j1,j2))	= ARR(p, clone j1, clone j2)
+      | clone'(LAM(p,j1,j2))	= LAM(p, clone j1, clone j2)
+      | clone'(APP(j1,p,j2))	= APP(clone j1, p, clone j2)
+
+    and cloneCon (k,p)		= (cloneKind k, p)
+
+    and cloneKind (ref k')	= ref(cloneKind' k')
+    and cloneKind'(GROUND)	= GROUND
+      | cloneKind'(DEP(p,j,k))	= DEP(p, clone j, cloneKind k)
+
+    and cloneSig (ref items, _)	=
+	let
+	    val s as (itemsr,map) = empty()
+
+	    fun extendSig(doml, item) =
+		( itemsr := item :: !itemsr
+		; Map.insertWith (fn(l1,l2) => l2 @ l1) (map, doml, [item])
+		)
+
+	    fun cloneItem(ref(item' as VAL(x,t,w,d))) =
+		    extendSig((VAL', idLab x), ref item')
+	      | cloneItem(ref(item' as TYP(x,k,w,d))) =
+		    extendSig((TYP', idLab x), ref item')
+	      | cloneItem(ref(MOD(x,j,d))) =
+		let val item' = MOD(x, clone j, d) in
+		    extendSig((MOD', idLab x), ref item')
+		end
+	      | cloneItem(ref(INF(x,k,d))) =
+		let val item' = INF(x, cloneKind k, Option.map clone d) in
+		    extendSig((INF', idLab x), ref item')
+		end
+	in
+	    Misc.List_appr cloneItem items ;
+	    s
 	end
 
 
@@ -491,8 +539,6 @@ structure InfPrivate =
       | kind'(APP(j1,p,j2))	= (*UNFINISHED*) inGround()
       | kind'(LINK j)		= kind j
 
-
-  (* Building matching realisations *)
 
   (* Matching *)
 
@@ -661,6 +707,8 @@ structure InfPrivate =
 
   (* Intersection *)
 
+    (* UNFINISHED: does ignore dependencies on second argument signature *)
+
 (*(**)
     fun intersectDef (sel, equals, err) (rea, l, p1, NONE, p2, NONE)   = ()
       | intersectDef (sel, equals, err) (rea, l, p1, NONE, p2, SOME z) =
@@ -802,4 +850,4 @@ structure InfPrivate =
   end
 
 
-structure Inf :> INF = InfPrivate
+structure Inf : INF = InfPrivate

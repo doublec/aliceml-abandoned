@@ -5,7 +5,7 @@ signature PP_TYPE =
     type typ  = Type.typ
     type kind = Type.kind
 
-    val ppType :	typ -> doc
+    val ppTyp :		typ -> doc
     val ppKind :	kind -> doc
 
   end

@@ -639,43 +639,6 @@ signature ORD_MAP =
 (* binary-map-fn.sml
  *
  * COPYRIGHT (c) 1993 by AT&T Bell Laboratories.  See COPYRIGHT file for details.
- *
- * This code was adapted from Stephen Adams' binary tree implementation
- * of applicative integer sets.
- *
- *   Copyright 1992 Stephen Adams.
- *
- *    This software may be used freely provided that:
- *      1. This copyright notice is attached to any copy, derived work,
- *         or work including all or part of this software.
- *      2. Any derived work must contain a prominent notice stating that
- *         it has been altered from the original.
- *
- *
- *   Name(s): Stephen Adams.
- *   Department, Institution: Electronics & Computer Science,
- *      University of Southampton
- *   Address:  Electronics & Computer Science
- *             University of Southampton
- *           Southampton  SO9 5NH
- *           Great Britian
- *   E-mail:   sra@ecs.soton.ac.uk
- *
- *   Comments:
- *
- *     1.  The implementation is based on Binary search trees of Bounded
- *         Balance, similar to Nievergelt & Reingold, SIAM J. Computing
- *         2(1), March 1973.  The main advantage of these trees is that
- *         they keep the size of the tree in the node, giving a constant
- *         time size operation.
- *
- *     2.  The bounded balance criterion is simpler than N&R's alpha.
- *         Simply, one subtree must not have more than `weight' times as
- *         many elements as the opposite subtree.  Rebalancing is
- *         guaranteed to reinstate the criterion for weight>2.23, but
- *         the occasional incorrect behaviour for weight=2 is not
- *         detrimental to performance.
- *
  *)
 
 functor BinaryMapFn (K : ORD_KEY) : ORD_MAP =

@@ -83,29 +83,29 @@ structure ElaborationError :> ELABORATION_ERROR =
     fun ppUnify2(d1, d2, (t1,t2,t3,t4)) =
 	vbox(
 	    d1 ^^
-	    nest(break ^^ below(PPType.ppType t1)) ^/^
+	    nest(break ^^ below(PPType.ppTyp t1)) ^/^
 	    d2 ^^
-	    nest(break ^^ below(PPType.ppType t2))
+	    nest(break ^^ below(PPType.ppTyp t2))
 	)
 
     fun ppUnify4(d1, d2, (t1,t2,t3,t4)) =
 	if t3 = t1 andalso t4 = t2 then
 	vbox(
 	    d1 ^^
-	    nest(break ^^ below(PPType.ppType t1)) ^/^
+	    nest(break ^^ below(PPType.ppTyp t1)) ^/^
 	    d2 ^^
-	    nest(break ^^ below(PPType.ppType t2))
+	    nest(break ^^ below(PPType.ppTyp t2))
 	)
 	else
 	vbox(
 	    d1 ^^
-	    nest(break ^^ below(PPType.ppType t1)) ^/^
+	    nest(break ^^ below(PPType.ppTyp t1)) ^/^
 	    d2 ^^
-	    nest(break ^^ below(PPType.ppType t2)) ^/^
+	    nest(break ^^ below(PPType.ppTyp t2)) ^/^
 	    par["because","type"] ^^
-	    nest(break ^^ below(PPType.ppType t3)) ^/^
+	    nest(break ^^ below(PPType.ppTyp t3)) ^/^
 	    par["does","not","unify","with"] ^^
-	    nest(break ^^ below(PPType.ppType t4))
+	    nest(break ^^ below(PPType.ppTyp t4))
 	)
 
     fun ppMismatch(d, im) =
@@ -273,7 +273,7 @@ structure ElaborationError :> ELABORATION_ERROR =
 	vbox(
 	    par["type","of",ppId x,"cannot","be","generalized","due","to",
 		"value","restriction:"] ^^
-	    nest(break ^^ below(PPType.ppType t))
+	    nest(break ^^ below(PPType.ppTyp t))
 	)
 
 

@@ -63,6 +63,7 @@ signature INF =
   (* Cloning etc. *)
 
     val clone :		inf -> inf
+    val instance :	inf -> inf
     val realise :	rea  * inf -> unit
     val strengthen :	path * inf -> unit
     val strengthenSig :	path * sign -> unit

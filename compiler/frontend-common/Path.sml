@@ -63,7 +63,7 @@ structure PathPrivate =
     (* Strengthening has to be used carefully, as it results in a new
      * hash value, thereby invalidating eventual hash maps and sets! *)
 
-    fun strengthen(p1, pln) = p1 := DOT pln
+    fun strengthen(p1, (p,l,n)) = p := DOT(p1,l,n)
 
 
   (* Cloning *)

@@ -129,28 +129,32 @@ structure ElaborationPhase :> ELABORATION_PHASE =
 
     fun elabValId_bind(E, sort, id as I.Id(i, stamp, name)) =
 	let
-(*DEBUG*)
+(*DEBUG
 val x=case Name.toString(I.name id) of "?" => "?" | x => x
 val _=print("-- insert val " ^ x ^ "(" ^ Stamp.toString stamp ^ ")")
+*)
 	    val t = Type.unknown(Type.STAR)
 	    val _ = insertVal(E, stamp, (id,t,sort))
 		    handle Collision _ =>	(* val rec or alt pat *)
 			Type.unify(t, #2(lookupVal(E, stamp)))
 before (print" (* found : ";
-PrettyPrint.output(TextIO.stdOut, PPType.ppType t, 600);
+PrettyPrint.output(TextIO.stdOut, PPType.ppTyp t, 60);
 print" *)")
+(*
 val _=print "\n"
+*)
 	in
 	    ( t, O.Id(typInfo(i,t), stamp, name) )
 	end
 
     fun elabValId(E, id as I.Id(i, stamp, name)) =
 	let
-(*DEBUG*)
+(*DEBUG
 val x=case Name.toString(I.name id) of "?" => "?" | x => x
 val _=print("-- lookup val " ^ x ^ "(" ^ Stamp.toString stamp ^ ") : ")
-val _=PrettyPrint.output(TextIO.stdOut, PPType.ppType(#2(lookupVal(E, stamp))), 600)
+val _=PrettyPrint.output(TextIO.stdOut, PPType.ppTyp(#2(lookupVal(E, stamp))), 60)
 val _=print "\n"
+*)
 	    val t  = #2(lookupVal(E, stamp))
 	in
 	    ( t, O.Id(typInfo(i,t), stamp, name) )
@@ -621,11 +625,12 @@ val _=print "\n"
 
     and elabVarId(E, id as I.Id(i, stamp, name)) =
 	let
-(*DEBUG*)
+(*DEBUG
 val x=case Name.toString(I.name id) of "?" => "?" | x => x
 val _=print("-- lookup type variable " ^ x ^ "(" ^ Stamp.toString stamp ^ ") = ")
-val _=PrettyPrint.output(TextIO.stdOut, PPType.ppType(Type.inVar(#2(lookupVar(E, stamp)))), 600)
+val _=PrettyPrint.output(TextIO.stdOut, PPType.ppTyp(Type.inVar(#2(lookupVar(E, stamp)))), 60)
 val _=print "\n"
+*)
 	    val a = #2(lookupVar(E, stamp))
 	in
 	    ( a, O.Id(nonInfo(i), stamp, name) )
@@ -637,7 +642,7 @@ val _=print "\n"
 (*DEBUG*)
 val x=case Name.toString(I.name id) of "?" => "?" | x => x
 val _=print("-- insert type " ^ x ^ "(" ^ Stamp.toString stamp ^ ") = ")
-val _=PrettyPrint.output(TextIO.stdOut, PPType.ppType t, 600)
+val _=PrettyPrint.output(TextIO.stdOut, PPType.ppTyp t, 60)
 val _=print "\n"
 	    val _ = insertTyp(E, stamp, (id,t,sort))
 	in
@@ -646,11 +651,12 @@ val _=print "\n"
 
     and elabTypId(E, id as I.Id(i, stamp, name)) =
 	let
-(*DEBUG*)
+(*DEBUG
 val x=case Name.toString(I.name id) of "?" => "?" | x => x
 val _=print("-- lookup type " ^ x ^ "(" ^ Stamp.toString stamp ^ ") = ")
-val _=PrettyPrint.output(TextIO.stdOut, PPType.ppType(#2(lookupTyp(E, stamp))), 600)
+val _=PrettyPrint.output(TextIO.stdOut, PPType.ppTyp(#2(lookupTyp(E, stamp))), 60)
 val _=print "\n"
+*)
 	    val t = #2(lookupTyp(E, stamp))
 	in
 	    ( t, O.Id(typInfo(i,t), stamp, name) )
@@ -938,6 +944,11 @@ val _=print "\n"
 
     and elabModId_bind(E, j, id as I.Id(i, stamp, name)) =
 	let
+(*DEBUG*)
+val x=case Name.toString(I.name id) of "?" => "?" | x => x
+val _=print("-- insert module " ^ x ^ "(" ^ Stamp.toString stamp ^ ") :\n")
+val _=PrettyPrint.output(TextIO.stdOut, PPInf.ppInf j, 75)
+val _=print "\n"
 	    val _ = insertMod(E, stamp, (id,j))
 	in
 	    O.Id(infInfo(i,j), stamp, name)
@@ -945,6 +956,12 @@ val _=print "\n"
 
     and elabModId(E, id as I.Id(i, stamp, name)) =
 	let
+(*DEBUG
+val x=case Name.toString(I.name id) of "?" => "?" | x => x
+val _=print("-- lookup module " ^ x ^ "(" ^ Stamp.toString stamp ^ ") :\n")
+val _=PrettyPrint.output(TextIO.stdOut, PPInf.ppInf(#2(lookupMod(E, stamp))), 75)
+val _=print "\n"
+*)
 	    val j = #2(lookupMod(E, stamp))
 	in
 	    ( j, O.Id(infInfo(i,j), stamp, name) )
@@ -1031,7 +1048,7 @@ val _=print "\n"
 	    val (j1,mod1')  = elabMod(E, mod1)
 	    val (j2,mod2')  = elabMod(E, mod2)
 	    val (p,j11,j12) = if Inf.isArrow j1 then
-				 Inf.asArrow(Inf.clone j1)
+				 Inf.asArrow(Inf.instance j1)
 			      else
 				 error(I.infoMod mod1, E.AppModFunMismatch j1)
 	    val  p2         = Path.invent()
@@ -1050,10 +1067,10 @@ val _=print "\n"
 	let
 	    val (j1,mod') = elabMod(E, mod)
 	    val (j2,inf') = elabGroundInf(E, inf)
-	    val  j        = Inf.clone j2
-	    val  _        = Inf.match(j1, j)
+	    val  _        = Inf.match(j1, j2)
 			    handle Inf.Mismatch mismatch =>
 				error(i, E.AnnModMismatch mismatch)
+	    val  j        = j2
 	in
 	    ( j, O.AnnMod(infInfo(i,j), mod', inf') )
 	end
@@ -1062,10 +1079,10 @@ val _=print "\n"
 	let
 	    val (j1,mod') = elabMod(E, mod)
 	    val (j2,inf') = elabGroundInf(E, inf)
-	    val  _        = Inf.match(j1, Inf.clone j2)
+	    val  j        = Inf.instance j2	(* opaque *)
+	    val  _        = Inf.match(j1, j2)
 			    handle Inf.Mismatch mismatch =>
 				error(i, E.AnnModMismatch mismatch)
-	    val  j        = Inf.clone j2	(* opaque *)
 	in
 	    ( j, O.UpMod(infInfo(i,j), mod', inf') )
 	end
@@ -1088,6 +1105,11 @@ val _=print "\n"
 
     and elabInfId_bind(E, j, id as I.Id(i, stamp, name)) =
 	let
+(*DEBUG*)
+val x=case Name.toString(I.name id) of "?" => "?" | x => x
+val _=print("-- insert interface " ^ x ^ "(" ^ Stamp.toString stamp ^ ") =\n")
+val _=PrettyPrint.output(TextIO.stdOut, PPInf.ppInf j, 75)
+val _=print "\n"
 	    val _ = insertInf(E, stamp, (id,j))
 	in
 	    O.Id(infInfo(i,j), stamp, name)
@@ -1095,10 +1117,12 @@ val _=print "\n"
 
     and elabInfId(E, id as I.Id(i, stamp, name)) =
 	let
-(*DEBUG*)
+(*DEBUG
 val x=case Name.toString(I.name id) of "?" => "?" | x => x
-val _=print("-- lookup interface " ^ x ^ "(" ^ Stamp.toString stamp ^ ")")
+val _=print("-- lookup interface " ^ x ^ "(" ^ Stamp.toString stamp ^ ") =\n")
+val _=PrettyPrint.output(TextIO.stdOut, PPInf.ppInf(#2(lookupInf(E, stamp))), 75)
 val _=print "\n"
+*)
 	    val j = #2(lookupInf(E, stamp))
 	in
 	    ( j, O.Id(infInfo(i,j), stamp, name) )
@@ -1143,8 +1167,9 @@ val _=print "\n"
       | elabInf(E, I.ConInf(i, longid)) =
 	let
 	    val (j,longid') = elabInfLongid(E, longid)
+	    val  j'         = Inf.instance j
 	in
-	    ( j, O.ConInf(infInfo(i,j), longid') )
+	    ( j', O.ConInf(infInfo(i,j'), longid') )
 	end
 
       | elabInf(E, I.SigInf(i, specs)) =
@@ -1163,6 +1188,7 @@ val _=print "\n"
 	    val  j1'       = Inf.clone j1
 	    val  p         = Path.fromLab(Lab.fromName(I.name id))
 	    val  _         = Inf.strengthen(p, j1')
+	    (* UNFINISHED: revert renaming of paths somehow *)
 	    val  id'       = elabModId_bind(E, j1', id)
 	    val (j2,inf2') = elabInf(E, inf2)
 	    val  _         = deleteScope E
@@ -1294,7 +1320,7 @@ val _=print "\n"
 (*DEBUG*)
 val x=case Name.toString(I.name id) of "?" => "?" ^ Stamp.toString(I.stamp id) | x => x
 val _=print("type " ^ x ^ " = ")
-val _=PrettyPrint.output(TextIO.stdOut, PPType.ppType t, 600)
+val _=PrettyPrint.output(TextIO.stdOut, PPType.ppTyp t, 60)
 val _=print "\n"
 	in
 	    O.TypDec(nonInfo(i), id', typ')
@@ -1314,7 +1340,7 @@ val _=print "\n"
 (*DEBUG*)
 val x= case Name.toString(I.name id) of "?" => "?" ^ Stamp.toString(I.stamp id) | x => x
 val _= print("datatype " ^ x ^ " = ")
-val _=PrettyPrint.output(TextIO.stdOut, PPType.ppType t, 600)
+val _=PrettyPrint.output(TextIO.stdOut, PPType.ppTyp t, 60)
 val _=print "\n"
 	    val  id'         = elabTypId_bind(E, t, w, id)
 	    val  _           = Inf.extendTyp(s, p, k, w, SOME t)
@@ -1400,7 +1426,7 @@ val _=print "\n"
 (*DEBUG*);
 let val x= case Name.toString(I.name id) of "?" => "?" ^ Stamp.toString x | x => x
 in print("val " ^ x ^ " : ") end;
-PrettyPrint.output(TextIO.stdOut, PPType.ppType t', 600);
+PrettyPrint.output(TextIO.stdOut, PPType.ppTyp t', 60);
 print(if sort = Inf.CONSTRUCTOR then " (* constructor *)\n" else if isPoly then "\n" else " (* not generalised *)\n")
 	end
 
@@ -1458,7 +1484,7 @@ print(if sort = Inf.CONSTRUCTOR then " (* constructor *)\n" else if isPoly then 
 (*DEBUG*)
 val x= case Name.toString(I.name id) of "?" => "?" ^ Stamp.toString(I.stamp id) | x => x
 val _= print("datatype " ^ x ^ " = ")
-val _=PrettyPrint.output(TextIO.stdOut, PPType.ppType t, 600)
+val _=PrettyPrint.output(TextIO.stdOut, PPType.ppTyp t, 60)
 val _=print "\n"
 	in
 	    O.DatDec(nonInfo(i), id', typ')
@@ -1536,7 +1562,10 @@ val _=print "\n"
 	let
 	    val  p       = Inf.newMod(s, Lab.fromName(I.name id))
 	    val (j,inf') = elabGroundInf(E, inf)
-	    val  id'     = elabModId_bind(E, j, id)
+	    val  j'      = Inf.clone j
+	    val  _       = Inf.strengthen(p, j')
+	    (* UNFINISHED: revert renaming of paths somehow *)
+	    val  id'     = elabModId_bind(E, j', id)
 	    (* UNFINISHED: treat singleton infs *)
 	    val  p       = Inf.extendMod(s, p, j, NONE)
 	in

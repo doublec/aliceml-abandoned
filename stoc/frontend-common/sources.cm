@@ -30,9 +30,9 @@ is
 	PPPath.sml
 	PP_TYPE.sig
 	PPType.sml
-(*	PP_INF.sig
+	PP_INF.sig
 	PPInf.sml
-*)
+
 	TypedGrammar.sml
 	ELABORATION_ERROR.sig
 	ElaborationError.sml
