@@ -714,6 +714,8 @@ Worker::Result ByteCodeInterpreter::Run() {
 	    case JavaLabel::ArrayType:
 	      //--** to be done
 	      break;
+	    default:
+	      Error("unknown type");
 	    }
 	    array->Store(index, value);
 	  }
