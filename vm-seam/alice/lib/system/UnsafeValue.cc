@@ -285,17 +285,14 @@ DEFINE1(UnsafeValue_conName) {
 } END
 
 DEFINE1(UnsafeValue_inArity) {
-  Closure *closure = Closure::FromWord(x0);
-  if (closure == INVALID_POINTER)
-    RETURN_INT(-2);
+  DECLARE_CLOSURE(closure, x0);
   word wConcreteCode = closure->GetConcreteCode();
   ConcreteCode *concreteCode = ConcreteCode::FromWord(wConcreteCode);
   if (concreteCode == INVALID_POINTER) REQUEST(wConcreteCode);
   Interpreter *interpreter = concreteCode->GetInterpreter();
   u_int arity = interpreter->GetInArity(concreteCode);
-  if (arity == static_cast<u_int>(INVALID_INT))
-    RETURN_INT(-2);
-  RETURN_INT(arity == Scheduler::ONE_ARG? -1: static_cast<s_int>(arity));
+  RETURN_INT(arity == static_cast<u_int>(INVALID_INT)? -2:
+	     arity == Scheduler::ONE_ARG? -1: static_cast<s_int>(arity));
 } END
 
 DEFINE1(UnsafeValue_outArity) {
