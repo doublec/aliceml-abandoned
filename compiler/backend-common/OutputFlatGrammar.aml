@@ -16,8 +16,8 @@ import structure Label               from "../../lib/rtt/Label"
 import structure Stamp               from "../common/Stamp"
 import structure StampSet            from "../common/StampSet"
 import signature FLAT_GRAMMAR        from "FLAT_GRAMMAR-sig"
-import structure FlatGrammar         from "FlatGrammar"
 import structure Arity               from "Arity"
+import structure FlatGrammar         from "FlatGrammar"
 import signature OUTPUT_FLAT_GRAMMAR from "OUTPUT_FLAT_GRAMMAR-sig"
 
 structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =

@@ -19,7 +19,7 @@ import structure Source              from "../infrastructure/Source"
 import structure Stamp               from "../common/Stamp"
 import structure StampSet            from "../common/StampSet"
 import structure IntermediateGrammar from "../common/IntermediateGrammar"
-import structure Arity               from "../backend-common/Arity"
+import structure Arity               from "Arity"
 
 signature FLAT_GRAMMAR =
     sig

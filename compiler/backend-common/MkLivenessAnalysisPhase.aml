@@ -450,7 +450,7 @@ functor MkLivenessAnalysisPhase(Switches: SWITCHES) :>
 	    in
 		TagTests (labels, tests)
 	    end
-	  | laTests(ConTests tests, use, shared, dontKill) =
+	  | laTests (ConTests tests, use, shared, dontKill) =
 	    let
 		val testUseVec =
 		    Vector.map

@@ -96,7 +96,7 @@ functor MkFlatteningPhase(structure Switches: SWITCHES) :> FLATTENING_PHASE =
 	fun makeArrowType (argTyp, resultTyp) =
 	    case Type.inspect resultTyp of
 		Type.All (var, typ) =>
-		Type.all (var, makeArrowType (argTyp, typ))
+		    Type.all (var, makeArrowType (argTyp, typ))
 	      | _ => Type.arrow (argTyp, resultTyp)
 
 	fun getResultType typ =
@@ -127,13 +127,13 @@ functor MkFlatteningPhase(structure Switches: SWITCHES) :> FLATTENING_PHASE =
 	    case Type.inspect typ of
 		(Type.Prod _ | Type.Apply _ | Type.Unknown _) => NONE
 	      | Type.Con path =>
-		if PathSet.member (nonProdTypesSet, path) then
-		    SOME Arity.Unary
-		else NONE
+		    if PathSet.member (nonProdTypesSet, path) then
+			SOME Arity.Unary
+		    else NONE
 	      | (Type.Var _ | Type.Arrow _ | Type.Sum _) => SOME Arity.Unary
 	      | Type.Mu typ => typToOutArity typ
 	      | (Type.All _ | Type.Exist _ | Type.Lambda _) =>
-		raise Crash.Crash "MkFlatteningPhase.typToOutArity"
+		    raise Crash.Crash "MkFlatteningPhase.typToOutArity"
 
 	(* Matching arity up with args *)
 
