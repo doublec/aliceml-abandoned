@@ -10,6 +10,7 @@
 //   $Revision$
 //
 
+#include "generic/FinalizationSet.hh"
 #include "alice/Authoring.hh"
 
 #include <gmp.h>
@@ -44,7 +45,7 @@
  *
  */
 
-class GMPHandler : public ConcreteRepresentationHandler {
+class AliceDll GMPHandler : public ConcreteRepresentationHandler {
 public:
   // Define the format of the external representation
   static const size_t nails = 0; // don't ignore leading stuff
@@ -97,7 +98,7 @@ public:
 
 ConcreteRepresentationHandler *PrimitiveTable::gmpHandler;
 
-class GMPFinalizationSet: public FinalizationSet {
+class AliceDll GMPFinalizationSet: public FinalizationSet {
 public:
   virtual void Finalize(word value);
 };
