@@ -835,22 +835,57 @@ Worker::Result ByteCodeInterpreter::Run() {
       break;
     case Instr::DUP_X2:
       {
-	Error("not implemented");
+	// Always match form 1
+	word v1 = frame->Pop();
+	word v2 = frame->Pop();
+	word v3 = frame->Pop();
+	word v4 = frame->Pop();
+	frame->Push(v2);
+	frame->Push(v1);
+	frame->Push(v4);
+	frame->Push(v3);
+	frame->Push(v2);
+	frame->Push(v1);
+	pc += 1;
       }
       break;
     case Instr::DUP2:
       {
-	Error("not implemented");
+	// Always match from 1
+	word v1 = frame->Pop();
+	word v2 = frame->Pop();
+	frame->Push(v2);
+	frame->Push(v1);
+	frame->Push(v2);
+	frame->Push(v1);
       }
       break;
     case Instr::DUP2_X1:
       {
-	Error("not implemented");
+	// Always match form 1
+	word v1 = frame->Pop();
+	word v2 = frame->Pop();
+	word v3 = frame->Pop();
+	frame->Push(v2);
+	frame->Push(v1);
+	frame->Push(v3);
+	frame->Push(v2);
+	frame->Push(v1);
       }
       break;
     case Instr::DUP2_X2:
       {
-	Error("not implemented");
+	// Always match form 1
+	word v1 = frame->Pop();
+	word v2 = frame->Pop();
+	word v3 = frame->Pop();
+	word v4 = frame->Pop();
+	frame->Push(v2);
+	frame->Push(v1);
+	frame->Push(v4);
+	frame->Push(v3);
+	frame->Push(v2);
+	frame->Push(v1);
       }
       break;
     case Instr::F2D:
