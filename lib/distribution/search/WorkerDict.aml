@@ -12,21 +12,12 @@
  *)
 
 import structure Packer       from "x-alice:/lib/distribution/Packer"
-import signature HASH_KEY     from "x-alice:/lib/utility/HASH_KEY-sig"
 import structure MkHashImpMap from "x-alice:/lib/utility/MkHashImpMap"
 import signature WORKER_DICT  from "WORKER_DICT-sig"
 
 structure WorkerDict :> WORKER_DICT =
     struct
-	structure Key :> HASH_KEY where type t = int =
-	    struct
-		type t = int
-		    
-		fun equals(x, y) = (x = y)
-		fun hash x : t = x : int
-	    end
-
-	structure Map = MkHashImpMap(Key)
+	structure Map = MkHashImpMap(Int)
 
 	type dict = Packer.package Map.map
 
