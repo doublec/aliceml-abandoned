@@ -112,6 +112,7 @@ ALICELINK_OPTS = -v
 ALICEDEP = sml @SMLload=$(BOOTSTRAPDIR)/alicedep
 
 OZC = $(OZHOME)/bin/ozc
+OZL = $(OZHOME)/bin/ozl
 MLLEX = ml-lex
 MLYACC = ml-yacc
 M4 = m4 -DFUTURE_AWAIT_EITHER_IS_PRIMITIVE
@@ -120,7 +121,7 @@ M4 = m4 -DFUTURE_AWAIT_EITHER_IS_PRIMITIVE
 ## Enumerate All Files Making Up the Source Tree
 ##
 
-VMSOURCES = VMMain.oz
+VMSOURCES = VMMain.oz Prebound.oz
 
 LIBSYSTEMNATIVES0 = \
         Config IODesc OS Unix CommandLine Component Debug Socket Rand Reflect \
@@ -284,7 +285,7 @@ COMPILERBACKENDCOMMONSOURCES = \
 	$(COMPILERBACKENDCOMMONSOURCES0:%=compiler/backend-common/%)
 
 COMPILERBACKENDMOZARTSOURCES0 = \
-	Prebound.oz CodeGen.oz CodeGenPhase.oz \
+	CodeGen.oz CodeGenPhase.oz \
 	CodeGenPhase.asig MkBackendMozart.aml
 COMPILERBACKENDMOZARTSOURCES = \
 	$(COMPILERBACKENDMOZARTSOURCES0:%=compiler/backend-mozart/%)
@@ -533,6 +534,9 @@ build1/%.ozf: build1/%.aml
 	$(ALICEC0) $(ALICEC_OPTS) --recursive-compilation \
 	--trace-component-access --no-rtt -c $< -o $@
 
+build1/LinkedVMMain.ozf: $(VMSOURCES:%.oz=build1/%.ozf)
+	$(OZL) build1/VMMain.ozf $(VMSOURCES:%.oz=--include=build1/%.ozf) -o $@
+
 ##
 ## Installing Build 1
 ##
@@ -662,7 +666,7 @@ build3-all: build2-all $(BUILD3DIRS) $(BUILD3SOURCES) \
 	build3/compiler/LinkedCompileServerMain.ozf \
 	build3/compiler/LinkedToplevelMain.ozf \
 	build3/compiler/top/LinkedSMLToMozartRecursiveCompiler.ozf \
-	build3/VMMain.ozf
+	build3/LinkedVMMain.ozf
 
 build3/lib/fundamental/RTT.ozf: build2/lib/rtt/LinkedRTT.ozf
 	cp $< $@
@@ -682,6 +686,9 @@ build3/alice.import: lib/fundamental/Fundamental.import lib/Other.import \
 
 build3/%.ozf: build3/%.aml
 	$(ALICEC2) $(ALICEC_OPTS) -c $< -o $@
+
+build3/LinkedVMMain.ozf: $(VMSOURCES:%.oz=build3/%.ozf)
+	$(OZL) build3/VMMain.ozf $(VMSOURCES:%.oz=--include=build3/%.ozf) -o $@
 
 build3/lib/fundamental/LinkedPervasive.ozf: \
 	build3/lib/fundamental/Pervasive.ozf
@@ -714,8 +721,7 @@ build3/compiler/LinkedToplevelMain.ozf: build3/compiler/ToplevelMain.ozf
 build3/compiler/top/LinkedSMLToMozartRecursiveCompiler.ozf: \
 	build3/compiler/top/SMLToMozartRecursiveCompiler.ozf \
 	build3/compiler/backend-mozart/CodeGenPhase.ozf \
-	build3/compiler/backend-mozart/CodeGen.ozf \
-	build3/compiler/backend-mozart/Prebound.ozf
+	build3/compiler/backend-mozart/CodeGen.ozf
 	$(ALICELINK2) $(ALICELINK_OPTS) --rewrite "build3/?{x}"="../../?{x}" \
 	--include build3/compiler \
 	build3/compiler/top/SMLToMozartRecursiveCompiler -o $@
@@ -745,7 +751,7 @@ build3-install: build3-all $(INSTALL3DIRS) $(INSTALL3FILES)
 $(INSTALL3DIRS):
 	mkdir -p $@
 
-build3/install/VMMain.ozf: build3/VMMain.ozf
+build3/install/VMMain.ozf: build3/LinkedVMMain.ozf
 	install -c -m 444 $< $@
 
 build3/install/%.import: build3/%.import

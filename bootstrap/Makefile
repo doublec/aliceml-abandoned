@@ -22,9 +22,6 @@ OZLFLAGS =
 
 FUNCTORS = Prebound.ozf CodeGen.ozf Main.ozf
 
-%.ozf: $(SRCDIR)/compiler/backend-mozart/%.oz
-	$(OZC) $(OZCFLAGS) -c $< -o $@
-
 .PHONY: all clean
 
 all: alicedep.$(PLATFORM) alicec-mozart.exe \
@@ -33,7 +30,12 @@ all: alicedep.$(PLATFORM) alicec-mozart.exe \
 alicec-mozart.exe: $(FUNCTORS)
 	$(OZL) $(OZLFLAGS) -x Main.ozf -o $@
 
+%.ozf: $(SRCDIR)/compiler/backend-mozart/%.oz
+	$(OZC) $(OZCFLAGS) -c $< -o $@
+
 CodeStore.ozf: $(SRCDIR)/compiler/backend-mozart/CodeEmitter.oz
+Prebound.ozf: $(SRCDIR)/vm-mozart/Prebound.oz
+	$(OZC) $(OZCFLAGS) -c $< -o $@
 
 alicedep.$(PLATFORM):
 	-rm -f $@

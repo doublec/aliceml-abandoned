@@ -14,9 +14,12 @@ functor
 import
    System(eq printName show)
    Error(printException)
+   Property(get)
 export
    'UnsafeValue$': UnsafeValue
 define
+   BuiltinTable = {Property.get 'alice.builtinTable'}
+
    fun {Handle F E X}
       {System.show F}
       {Error.printException E}
@@ -126,7 +129,7 @@ define
 	      end
 	   'prim':
 	      fun {$ Name}
-		 {Handle prim(Name) notImplemented 0}   %--**
+		 BuiltinTable.{String.toAtom {ByteString.toString Name}}
 	      end
 	   'conName':
 	      fun {$ Value}

@@ -19,12 +19,14 @@ import
    Narrator('class')
    ErrorListener('class')
    Compiler(codeStoreClass assemble)
-   Prebound(builtinTable: BuiltinTable
-	    raiseAliceException: RaiseAliceException
-	    unwrapAliceException: UnwrapAliceException)
+   Property(get)
 export
    Translate
 define
+   BuiltinTable = {Property.get 'alice.builtinTable'}
+   RaiseAliceException = {Property.get 'alice.raiseException'}
+   UnwrapAliceException = {Property.get 'alice.unwrapException'}
+
    fun {TestBuiltin Builtinname Regs ThenVInstr ElseVInstr State} Reg VInter in
       {State.cs newReg(?Reg)}
       VInter = vTestBool(_ Reg ThenVInstr ElseVInstr nil unit nil)

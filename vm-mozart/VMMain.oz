@@ -21,6 +21,9 @@ import
    DefaultURL(functorExt ozScheme nameToUrl)
    URL(toString)
    Pickle(load)
+   Prebound(builtinTable: BuiltinTable
+	    raiseAliceException: RaiseAliceException
+	    unwrapAliceException: UnwrapAliceException)
 define
    {Error.registerFormatter alice
     fun {$ E} T in
@@ -43,6 +46,10 @@ define
 		items: [line(oz(E))])
        end
     end}
+
+   {Property.put 'alice.builtinTable' BuiltinTable}
+   {Property.put 'alice.raiseException' RaiseAliceException}
+   {Property.put 'alice.unwrapException' UnwrapAliceException}
 
    {Property.put 'alice.atExnActions'
     {NewCell [fun {$ E}

@@ -1,4 +1,4 @@
-### -*- Makefile -*-
+P### -*- Makefile -*-
 ###
 ### Author:
 ###   Leif Kornstaedt <kornstae@ps.uni-sb.de>
@@ -292,7 +292,7 @@ COMPILERBACKENDCOMMONSOURCES = \
 	$(COMPILERBACKENDCOMMONSOURCES0:%=compiler/backend-common/%)
 
 COMPILERBACKENDMOZARTSOURCES0 = \
-	Prebound.oz CodeGen.oz CodeGenPhase.oz \
+	CodeGen.oz CodeGenPhase.oz \
 	CodeGenPhase.asig MkBackendMozart.aml
 COMPILERBACKENDMOZARTSOURCES = \
 	$(COMPILERBACKENDMOZARTSOURCES0:%=compiler/backend-mozart/%)

@@ -20,9 +20,16 @@ import
    Pickle(load saveWithCells)
    Module(apply)
    CodeGen(translate)
+   Prebound(builtinTable: BuiltinTable
+	    raiseAliceException: RaiseAliceException
+	    unwrapAliceException: UnwrapAliceException)
 prepare
    OptSpecs = record(help(rightmost char: "h?" default: false))
 define
+   {Property.put 'alice.builtinTable' BuiltinTable}
+   {Property.put 'alice.raiseException' RaiseAliceException}
+   {Property.put 'alice.unwrapException' UnwrapAliceException}
+
    class TextFile from Open.file Open.text end
 
    fun {ReadCommand File}
