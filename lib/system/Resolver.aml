@@ -293,6 +293,7 @@ structure Resolver: RESOLVER =
 			 else NONE
 		     end handle _ => NONE)
 	      | (SOME "file" | NONE) =>
+		    (*--** check that authority is empty *)
 		    (let
 			 val s = Url.toStringRaw (Url.setScheme (url, NONE))
 		     in
