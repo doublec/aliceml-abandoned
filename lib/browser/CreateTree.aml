@@ -73,11 +73,9 @@ struct
 
      (*** creates a new tree ***)
 
-     fun newTree (va,t,i,root) = createTree (NONE,va,t,Empty,i,0,root)
-
      (* checking mode / construction in RELATION MODE *)
 
-     and createTree (opt,va,t,p,i,d,root) =
+     fun createTree (opt,va,t,p,i,d,root) =
 	 if !relmode (* RELATION MODE *)
 	     andalso not(isAtomType(t)) 
 	     (* atomar values are always represented as in tree mode *)
@@ -611,8 +609,6 @@ struct
      (*** analogous tree creation for modules ***)
  
      (*** creates a new tree ***)
-
-     and newTreeInf (va,t,i,root) = createTreeInf (va,t,Empty,i,0,root)
 
      (* checking mode / construction in RELATION MODE *)
 

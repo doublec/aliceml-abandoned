@@ -138,7 +138,6 @@ val b = ref 1;
 UnsafeInspector.inspect({gulp = (a,a,[1,2,3]),
 			 gnup = (b,b,ref 1, ref 1)},similarities);
 
-
 (****************************************************)
 
 (*** structure Gtk ***)

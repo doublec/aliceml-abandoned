@@ -374,10 +374,14 @@ struct
 
      (***             Update Handler            ***)
 		
-     fun update_reinspect n = (
-	 Update.reinspect(n,
-			  CreateTree.createTree,
-			  CreateTree.createTreeInf,!canvasroot))
+     fun update_reinspect n = 
+	 Server.serve (fn()
+		       =>( Update.reinspect(n,
+					    CreateTree.createTree,
+					    CreateTree.createTreeInf,
+					    !canvasroot)
+			  ; destroySelectionMarkings()
+			  ; selection :=NONE) )
 	 
      (* handles reinspect request *)
      fun handleReinspect node = 
@@ -388,35 +392,41 @@ struct
   
      (* handles shrink request *)	 
      fun handleShrinkSelection _  = 
-	 let
-	 val update_shrink 
-	     = fn n  => 
-	     let 
-		 val diff = getDepth(n) - 
-		     Update.findHighestDepth n
-	     in 
-		 if diff >= 0 
-		     then ()
-		 else Update.foldDepth(n,diff-1,
-				       CreateTree.createTree,
-				       CreateTree.createTreeInf,
-				       !canvasroot)
-			    end
-	 in
-	     update_shrink (getSelectionNode())
-	 end
+	 Server.serve
+	 ( fn () 
+	   => let
+		  val update_shrink = fn n  
+		      => let 
+			     val diff = getDepth(n) - 
+				 Update.findHighestDepth n
+			 in 
+			     if diff >= 0 
+				 then ()
+			     else Update.foldDepth(n,diff-1,
+						   CreateTree.createTree,
+						   CreateTree.createTreeInf,
+						   !canvasroot)
+			 end
+	      in
+		  ( update_shrink (getSelectionNode())
+		   ; destroySelectionMarkings()
+		   ; selection := NONE )
+	      end)
 
      (* handles expand request *)
      fun handleExpandSelection _  = 
-	 let
-	     val update_expand =  fn n 
-			     => Update.foldDepth(n,1,
-						 CreateTree.createTree,
-						 CreateTree.createTreeInf,
-						 !canvasroot)
-	 in
-	     (update_expand (getSelectionNode()))
-	 end
+	 Server.serve (fn () 
+		       =>let
+			     val update_expand =  fn n 
+				 => Update.foldDepth(n,1,
+						     CreateTree.createTree,
+						     CreateTree.createTreeInf,
+						     !canvasroot)
+			 in
+			     (update_expand (getSelectionNode())
+			      ; destroySelectionMarkings()
+			      ; selection := NONE)
+			 end)
 
      (* folds width *)
      fun handleWidth node =  
@@ -1069,8 +1079,7 @@ struct
 	    
 
 
-
-	(***         Inspection            ***)
+	(*******         Inspection            *******)
 
 	fun inspect(v,t) = 
 	    let
@@ -1082,7 +1091,7 @@ struct
 			    ;!canvasroot)
 		val save_settings = (!Settings.max_width,!Settings.max_depth)
 		val n = (stopButtonSetActive(true)
-			 ;CreateTree.newTree(va,t,i,root))		
+			 ;CreateTree.createTree(NONE,va,t,Empty,i,0,root))
 		val line = (stopButtonSetActive(false)
 			    ; if !stopflag 
 				  then ( Settings.set_width(#1(save_settings))
@@ -1114,7 +1123,7 @@ struct
 			;!canvasroot)
 	    val save_settings = (!Settings.max_width,!Settings.max_depth)
 	    val n = (stopButtonSetActive(true)
-		     ;CreateTree.newTreeInf(va,t,i,root))
+		     ;CreateTree.createTreeInf(va,t,Empty,i,0,root))
             val line =(stopButtonSetActive(false) 
 		       ; if !stopflag 
 			      then ( Settings.set_width(#1(save_settings))
