@@ -29,7 +29,8 @@ functor MkSignature(structure TypeManager : TYPE_MANAGER
 	    TextIO.openOut((case space of
 				"gdk"        => "GDK_INTERFACE.aml"
 			      | "gtk"        => "GTK_INTERFACE.aml"
-			      | "gtk_canvas" => "GTK_CANVAS_INTERFACE.aml"))
+			      | "gtk_canvas" => "GTK_CANVAS_INTERFACE.aml"
+			      | _            => raise Match))
 	    
 	(* Printing abstractions *)
 	fun ps s   = TextIO.output(file, s)
@@ -42,6 +43,7 @@ functor MkSignature(structure TypeManager : TYPE_MANAGER
 	local
 	    fun getOutType "int"    = "int"
 	      | getOutType "double" = "real"
+	      | getOutType _        = raise Match
 
 	    fun getInType "gboolean"     = "bool" (* Hack Alert; was int *)
 	      | getInType "gchar"        = "int"
@@ -166,7 +168,8 @@ functor MkSignature(structure TypeManager : TYPE_MANAGER
 	    val prefix = (case space of
 			      "gdk"        => "gdk"
 			    | "gtk"        => "gtk"
-			    | "gtk_canvas" => "gtk") (* was gtkCanvas *)
+			    | "gtk_canvas" => "gtk"
+			    | _            => raise Match) (* was gtkCanvas *)
 
 	    fun emitField' p {field, ptrs, alias} =
 		let
@@ -195,7 +198,8 @@ functor MkSignature(structure TypeManager : TYPE_MANAGER
 	    val prefix = (case space of
 			      "gdk"        => "GDK_"
 			    | "gtk"        => "GTK_"
-			    | "gtk_canvas" => "GTK_CANVAS_")
+			    | "gtk_canvas" => "GTK_CANVAS_"
+			    | _            => raise Match)
 		
 	    fun makeName field =
 		(case Util.cutPrefix (prefix, field) of
@@ -234,7 +238,8 @@ functor MkSignature(structure TypeManager : TYPE_MANAGER
 		   | "gtk"        => ("UnsafeGTK",
 				      "UNSAFE_GTK_COMPONENT", gtkInits)
 		   | "gtk_canvas" => ("UnsafeGTKCANVAS",
-				      "UNSAFE_GTK_CANVAS_COMPONENT", nil))
+				      "UNSAFE_GTK_CANVAS_COMPONENT", nil)
+		   | _            => raise Match)
 	in
 	    val filePrefix = defs
 

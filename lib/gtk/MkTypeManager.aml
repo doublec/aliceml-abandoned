@@ -181,7 +181,8 @@ functor MkTypeManager(val types :
 		(case t of
 		     FUNCTION _  => splitTypes'(tr, (t::ms, fs, cs))
 		   | STRUCTURE _ => splitTypes'(tr, (ms, t::fs, cs))
-		   | ENUM _      => splitTypes'(tr, (ms, fs, t::cs)))
+		   | ENUM _      => splitTypes'(tr, (ms, fs, t::cs))
+		   | _           => raise Match)
 	in
 	    fun splitTypes ts = splitTypes'(ts, (nil, nil, nil))
 	end

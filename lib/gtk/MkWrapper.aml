@@ -27,7 +27,8 @@ functor MkWrapper(structure TypeManager : TYPE_MANAGER
 	val file = TextIO.openOut ((case space of
 					"gdk"        => "UnsafeGDK.oz"
 				      | "gtk"        => "UnsafeGTK.oz"
-				      | "gtk_canvas" => "UnsafeGTKCANVAS.oz"))
+				      | "gtk_canvas" => "UnsafeGTKCANVAS.oz"
+				      | _            => raise Match))
 
 	(* Printing abstractions *)
 	fun ps s   = TextIO.output(file, s)
@@ -41,7 +42,8 @@ functor MkWrapper(structure TypeManager : TYPE_MANAGER
 	    val module = (case space of
 			      "gdk"        => "GdkNative."
 			    | "gtk"        => "GtkNative."
-			    | "gtk_canvas" => "GtkCanvasNative.")
+			    | "gtk_canvas" => "GtkCanvasNative."
+			    | _            => raise Match)
 	in
 	    fun computeFuncName str = (module ^ (Util.translateName str))
 	end
@@ -254,7 +256,8 @@ functor MkWrapper(structure TypeManager : TYPE_MANAGER
 		(case space of
 		     "gdk"        => ("GdkFieldNative.gdk", "gdk")
 		   | "gtk"        => ("GtkFieldNative.gtk", "gtk")
-		   | "gtk_canvas" => ("GtkCanvasFieldNative.gtk", "gtkCanvas"))
+		   | "gtk_canvas" => ("GtkCanvasFieldNative.gtk", "gtkCanvas")
+		   | _            => raise Match)
 
 	    fun emitFieldDecl' p  {field, ptrs, alias} =
 		let
@@ -315,7 +318,8 @@ functor MkWrapper(structure TypeManager : TYPE_MANAGER
 	    val prefix = (case space of
 			      "gdk"        => "GDK_"
 			    | "gtk"        => "GTK_"
-			    | "gtk_canvas" => "GTK_CANVAS_")
+			    | "gtk_canvas" => "GTK_CANVAS_"
+			    | _            => raise Match)
 
 	    fun makeName field =
 		(case Util.cutPrefix (prefix, field) of
@@ -470,7 +474,8 @@ functor MkWrapper(structure TypeManager : TYPE_MANAGER
 		    (case space of
 			 "gdk"        => (gdkPrefix, gdkInit, gdkEnd)
 		       | "gtk"        => (gtkPrefix, gtkInit, gtkEnd)
-		       | "gtk_canvas" => (canvasPrefix, canvasInit, canvasEnd))
+		       | "gtk_canvas" => (canvasPrefix, canvasInit, canvasEnd)
+		       | _            => raise Match)
 	    in
 		(psl filePrefix;
 		 List.app emit funcs;

@@ -28,7 +28,7 @@ HAVE_CANVAS = @HAVE_CANVAS@
 CANVASDIR   = @CANVASDIR@
 
 ALICEC         = alicec
-ALICEC_OPTS    =
+ALICEC_OPTS    = --no-warn-conventions
 ALICELINK      = alicelink
 ALICELINK_OPTS = -v
 

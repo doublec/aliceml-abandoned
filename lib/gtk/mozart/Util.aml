@@ -48,6 +48,7 @@ structure Util :> UTIL =
 	fun firstLower Xs = firstLower'(String.explode Xs)
 
 	fun firstUpper'(X::Xr) = String.implode ((Char.toUpper X)::Xr)
+	  | firstUpper' nil    = ""
 	    
 	fun firstUpper Xs = firstUpper'(String.explode Xs)
 
@@ -76,9 +77,8 @@ structure Util :> UTIL =
 	fun computeWrapperName (space, str) =
 	    let
 		val prefix = (case space of
-				  "gdk"        => "gdk"
-				| "gtk"        => "gtk"
-				| "gtk_canvas" => "gtkCanvas")
+				  "gtk_canvas" => "gtkCanvas"
+				| _            => space)
 		in
 		    cutPrefix(prefix, translateName str)
 	    end
