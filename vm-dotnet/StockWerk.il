@@ -14,7 +14,7 @@
   .class abstract public StockWert extends System.Object {
     .method public void .ctor() {
       ldarg.0
-      call instance void System.Object::.ctor()
+      tail. call instance void System.Object::.ctor()
       ret
     }
     .method abstract virtual public class StockWerk.StockWert Apply(class StockWerk.StockWert) {}
@@ -24,7 +24,7 @@
   .class public TypeError extends System.RuntimeException {
     .method public void .ctor() {
       ldarg.0
-      call instance void System.RuntimeException::.ctor()
+      tail. call instance void System.RuntimeException::.ctor()
       ret
     }
   }
@@ -64,7 +64,7 @@
   .class public Name extends StockWerk.StockWert {
     .method public void .ctor() {
       ldarg.0
-      call instance void StockWerk.StockWert::.ctor()
+      tail. call instance void StockWerk.StockWert::.ctor()
       ret
     }
     .method virtual public class StockWerk.StockWert Apply(class StockWerk.StockWert) {
@@ -98,7 +98,7 @@
   .class public Constructor extends StockWerk.StockWert {
     .method public void .ctor() {
       ldarg.0
-      call instance void StockWerk.StockWert::.ctor()
+      tail. call instance void StockWerk.StockWert::.ctor()
       ret
     }
     .method virtual public class StockWerk.StockWert Apply(class StockWerk.StockWert) {
@@ -163,7 +163,7 @@
       ldfld class StockWerk.StockWert StockWerk.ConVal::Val
       ldarg.0
       ldfld class StockWerk.StockWert StockWerk.ConVal::Val
-      callvirt instance bool StockWerk.StockWert::Equals(class StockWerk.StockWert)
+      tail. callvirt instance bool StockWerk.StockWert::Equals(class StockWerk.StockWert)
       ret
     retFalse:
       ldc.i4 0
