@@ -2,8 +2,7 @@ Group is
 
 	../../lib/utility/sources.cm
 	../../lib/rtt/type.cm
-	../infrastructure/crash.cm
-	../infrastructure/source.cm
+	../infrastructure/sources.cm
 	intermediate-grammar.cm
 	id-stamp.cm
 
