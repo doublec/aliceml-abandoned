@@ -31,4 +31,4 @@ structure Word: WORD
 
 structure LargeWord: WORD
 
-from "Word.ozf"
+from "../Word.ozf"
