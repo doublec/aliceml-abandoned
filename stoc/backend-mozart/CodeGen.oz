@@ -175,12 +175,14 @@ define
 	 end
 	 VTl = nil
       [] returnStm(_ Exp) then {TranslateExp Exp ReturnReg VHd VTl State}
-      [] exportStm(_ Ids) then Ari in
-	 Ari = {Arity {List.toRecord 'export'
-		       {Map Ids fun {$ id(_ _ exId(PN))} PN#unit end}}}
-	 VHd = vEquateRecord(_ 'export' Ari ReturnReg
-			     {Map Ids
-			      fun {$ Id} value({GetReg Id State}) end} VTl)
+      [] exportStm(_ Ids) then Export in
+	 Export = {List.toRecord 'export'
+		   {Map Ids
+		    fun {$ Id=id(_ _ exId(PN))}
+		       PN#value({GetReg Id State})
+		    end}}
+	 VHd = vEquateRecord(_ 'export' {Arity Export} ReturnReg
+			     {Record.toList Export} VTl)
       end
    end
 
