@@ -19,19 +19,33 @@
 
 class Pickle {
 public:
-  typedef enum {
+  enum con {
     Con, StaticCon
-  } con_label;
+  };
 
-  typedef enum {
+  enum args {
     OneArg, TupArgs
-  } args_label;
+  };
 
-  typedef enum {
+  enum function {
+    Function
+  };
+
+  enum instr {
     AppPrim, AppVar, ConTest, GetTup, IntTest, Kill, PutCon, PutConst,
     PutFun, PutGlobal, PutNew, PutRef, PutSel, PutTag, PutTup, PutVec,
-    Raise, RealTest, Reraise, Return, StringTest, TagTest, VecTest
-  } instr_label;
+    RealTest, Return, StringTest, TagTest, VecTest
+  };
+
+  static con GetCon(TagVal *tagVal) {
+    return static_cast<con>(tagVal->GetTag());
+  }
+  static args GetArgs(TagVal *tagVal) {
+    return static_cast<args>(tagVal->GetTag());
+  }
+  static instr GetInstr(TagVal *tagVal) {
+    return static_cast<instr>(tagVal->GetTag());
+  }
 };
 
 #endif
