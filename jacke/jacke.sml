@@ -25,8 +25,14 @@ struct
           fun parseerror(s,p1,p2) = ErrorMsg.error p1 s
           val lexer = LrParser.Stream.streamify (Lex.makeLexer get)
           val (absyn, _) = jackeP.parse(30,lexer,parseerror,())
-       in TextIO.closeIn file;
+       in TextIO.closeIn file;	   
            absyn
       end handle LrParser.ParseError => raise ErrorMsg.Error
-end
 
+  fun try filename =
+      let val p = parse filename
+	  val yaccGrammar = Translate.translate (NormalForm.toNormalForm p)
+      in
+	  MakeLrTable.mkTable (yaccGrammar,true)
+      end
+end

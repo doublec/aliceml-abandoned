@@ -70,12 +70,31 @@ struct
       | flatten (A.Alt l) = A.Alt (map flatten l)
       | flatten (A.Symbol s) = A.Symbol s
 
+    (* remove unnecessary alternatives *)
+    fun flattenAlt [] = []
+      | flattenAlt ((A.Alt l)::l') =
+	let val l = flattenAlt l
+	    val l' = flattenAlt l'
+	in l@l' end
+      | flattenAlt (x::l) = (flatten1 x)::(flattenAlt l)
+    and flatten1 (A.Seq l) = A.Seq (map flatten1 l)
+      | flatten1 (A.Skip) = A.Skip
+      | flatten1 (A.As (s,bnf)) = A.As (s, flatten1 bnf)
+      | flatten1 (A.Prec (bnf,s)) = A.Prec (flatten1 bnf,s)
+      | flatten1 (A.Transform (bnf,c)) = A.Transform (flatten1 bnf,c)
+      | flatten1 (A.Alt l) = A.Alt (flattenAlt l)
+      | flatten1 (A.Symbol s) = A.Symbol s
+
+
     (* introduce toplevel transformations *)
     fun toSeq (A.Seq l) = A.Seq l
       | toSeq b = A.Seq [b]
 
     fun semAction (A.Transform (t,c)) = A.Transform (toSeq t,c)
-      | semAction (A.Prec (bnf,s)) = A.Prec (semAction bnf, s)
+      | semAction (A.Prec (A.Transform (bnf,c),s)) = 
+	A.Prec (A.Transform (toSeq bnf,c), s)
+      | semAction (A.Prec (bnf,s)) = 
+		A.Prec (A.Transform (toSeq bnf, [tupling(names bnf)]),s)
       | semAction bnf = A.Transform (toSeq bnf, [tupling(names bnf)])
  
     (* normalization *)
@@ -95,7 +114,7 @@ struct
 	    (A.Seq a, rs)
 	end
     and normalize (name,ty,bnf) = 
-	let val (bnf',rs) = norm (semAction (nameTopLevel (flatten bnf)))
+	let val (bnf',rs) = norm (semAction (nameTopLevel ((flatten (flatten1 bnf)))))
 	    in 
 		(name,ty,bnf')::rs
 	end
@@ -126,4 +145,9 @@ struct
 	    ((A.As (s,A.Symbol r))::a, r'@rs)
 	end
 
+    fun toNormalForm p =
+	let val h = List.concat o (List.map normalize)
+	in 
+	    List.map (fn A.RuleDec l => A.RuleDec (h l) | x => x) p
+	end     
 end

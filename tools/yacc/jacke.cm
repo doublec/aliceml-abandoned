@@ -9,5 +9,18 @@ ErrorMsg.sml
 Set.sml
 AbsSyn.sml
 NormalForm.sml
+Translate.sml
+
+utils.sig
+utils.sml
+sigs.sml
+grammar.sml
+core.sml
+coreutils.sml
+graph.sml
+look.sml
+lalr.sml
+mklrtable.sml
+
 jacke.sml
 
