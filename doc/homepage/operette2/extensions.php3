@@ -385,9 +385,17 @@
   </PRE>
 
   <P>
+    is understood as an abbreviation for
+  </P>
+
+  <PRE>
+	fun f {a = a, b = b, c = c} = {a = a, b = b}
+  </PRE>
+
+  <P>
     While SML allows punning in record patterns (so that the left hand side of
-    the example is legal), it does not allow punning in record expressions.
-    Alice straightens this through a simple derived form (dualing
+    the former example is legal), it does not allow punning in record
+    expressions. Alice straightens this through a simple derived form (dualing
     the derived form for patterns):
   </P>
 
@@ -405,6 +413,11 @@
       <TD> </TD>
     </TR>
   </TABLE>
+
+  <P>
+    This means that eg. the expression <TT>{a, b : int, c}</TT> abbreviates
+    <TT>{a = a, b = b : int, c = c}</TT>.
+  </P>
 
   <P>
     The second extension is a syntax for functional record update:
