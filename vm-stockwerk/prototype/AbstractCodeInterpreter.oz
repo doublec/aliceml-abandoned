@@ -38,25 +38,26 @@ define
    GetTup         = 7
    IntTest        = 8
    Kill           = 9
-   PutCon         = 10
-   PutConst       = 11
-   PutFun         = 12
-   PutNew         = 13
-   PutRef         = 14
-   PutTag         = 15
-   PutTup         = 16
-   PutVar         = 17
-   PutVec         = 18
-   Raise          = 19
-   RealTest       = 20
-   Reraise        = 21
-   Return         = 22
-   Shared         = 23
-   StringTest     = 24
-   TagTest        = 25
-   Try            = 26
-   VecTest        = 27
-   WideStringTest = 28
+   LazySel        = 10
+   PutCon         = 11
+   PutConst       = 12
+   PutFun         = 13
+   PutNew         = 14
+   PutRef         = 15
+   PutTag         = 16
+   PutTup         = 17
+   PutVar         = 18
+   PutVec         = 19
+   Raise          = 20
+   RealTest       = 21
+   Reraise        = 22
+   Return         = 23
+   Sel            = 24
+   Shared         = 25
+   StringTest     = 26
+   TagTest        = 27
+   Try            = 28
+   VecTest        = 29
 
    Con       = 0
    StaticCon = 1
@@ -281,6 +282,29 @@ define
 	    end
 	    {Emulate NextInstr Closure L TaskStack}
 	 end
+      [] tag(!Sel Id IdRef I NextInstr) then T0 in
+	 T0 = case IdRef of tag(!Local Id) then L.Id
+	      [] tag(!Global I) then Closure.(I + 2)
+	      end
+	 case {Deref T0} of Transient=transient(_) then NewFrame in
+	    NewFrame = frame(Me tag(TupArgs vector()) Instr Closure L)
+	    request(Transient args() NewFrame|TaskStack)
+	 elseof T then
+	    L.Id := T.(I + 1)
+	    {Emulate NextInstr Closure L TaskStack}
+	 end
+      [] tag(!LazySel Id IdRef I NextInstr) then T0 in
+	 %--** make it lazy
+	 T0 = case IdRef of tag(!Local Id) then L.Id
+	      [] tag(!Global I) then Closure.(I + 2)
+	      end
+	 case {Deref T0} of Transient=transient(_) then NewFrame in
+	    NewFrame = frame(Me tag(TupArgs vector()) Instr Closure L)
+	    request(Transient args() NewFrame|TaskStack)
+	 elseof T then
+	    L.Id := T.(I + 1)
+	    {Emulate NextInstr Closure L TaskStack}
+	 end
       [] tag(!Raise IdRef) then Exn in
 	 Exn = case IdRef of tag(!Local Id) then L.Id
 	       [] tag(!Global I) then Closure.(I + 2)
@@ -337,9 +361,6 @@ define
 			 S StringInstrVec ElseInstr}
 	    {Emulate ThenInstr Closure L TaskStack}
 	 end
-      [] tag(!WideStringTest IdRef StringInstrVec ElseInstr) then
-	 {Emulate tag(StringTest IdRef StringInstrVec ElseInstr)
-	  Closure L TaskStack}
       [] tag(!TagTest IdRef NullaryCases NAryCases ElseInstr) then T0 in
 	 T0 = case IdRef of tag(!Local Id) then L.Id
 	      [] tag(!Global I) then Closure.(I + 2)
