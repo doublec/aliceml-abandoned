@@ -88,20 +88,22 @@ PerformDump(FILE *file, word x, u_int index, u_int level, u_int depth) {
     PerformDump(file, p->GetArg(0), 0, level + 2, depth + 1);
     std::fprintf(file, "%*cENDTRANSIENT\n", level, ' ');
   }
-  else if ((w.pc = Store::WordToChunk(x)) != INVALID_POINTER) {
-    std::fprintf(file, "%*cCHUNK(%d)[%d]='%.*s'\n", level, ' ',
-		 w.pc->GetSize(), index,
-		 (int) w.pc->GetSize(), w.pc->GetBase());
-  }
   else if ((w.pb = Store::WordToBlock(x)) != INVALID_POINTER) {
-    u_int size  = w.pb->GetSize();
-    std::fprintf(file, "%*cBLOCK(%s=%d, %d)[%d]\n", level, ' ',
-		 TransLabel(w.pb->GetLabel()), w.pb->GetLabel(), size, index);
-    u_int showSize = (size <= Debug::maxWidth ? size : Debug::maxWidth);
-    for (u_int i = 0; i < showSize; i++) {
-      PerformDump(file, w.pb->GetArg(i), i, level + 2, depth + 1);
+    if (w.pb->GetLabel() == CHUNK_LABEL) {
+      std::fprintf(file, "%*cCHUNK(%d)[%d]='%.*s'\n", level, ' ',
+		   w.pc->GetSize(), index,
+		   (int) w.pc->GetSize(), w.pc->GetBase());
+    } else {
+      u_int size  = w.pb->GetSize();
+      std::fprintf(file, "%*cBLOCK(%s=%d, %d)[%d]\n", level, ' ',
+		   TransLabel(w.pb->GetLabel()), w.pb->GetLabel(),
+		   size, index);
+      u_int showSize = (size <= Debug::maxWidth ? size : Debug::maxWidth);
+      for (u_int i = 0; i < showSize; i++) {
+	PerformDump(file, w.pb->GetArg(i), i, level + 2, depth + 1);
+      }
+      std::fprintf(file, "%*cENDBLOCK\n", level, ' ');
     }
-    std::fprintf(file, "%*cENDBLOCK\n", level, ' ');
   }
 }
 
