@@ -44,15 +44,6 @@ val step =
     sense here foodmarker ifyes become_worker ++
     move ifnot (blocked (goto "guard") ++ goto "guard")
 
-val guard =
-    proc "guard" 
-        move_to_border ++
-        loop step
-
-val explorer =
-    proc "explorer"
-        loop nop
-
 fun is_explorer succ =
     sense leftahead home ifnot (turn left ++ succ) ++
     sense ahead home ifnot succ ++
@@ -62,7 +53,9 @@ fun is_explorer succ =
     sense ahead home ifnot succ 
     
 val toplevel =
-    is_explorer (goto explorer) ++
-    guard
+    is_explorer (goto "explorer") ++
+    goto "guard" ++
+    proc "explorer" (loop nop) ++
+    proc "guard" (move_to_border ++ loop step)
         
 val ant = toplevel
