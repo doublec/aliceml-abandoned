@@ -13,7 +13,6 @@
  *)
 
 import structure Name  from "../rtt/Name"
-import structure Label from "../rtt/Label"
 
 signature UNSAFE_VALUE_COMPONENT =
     sig
@@ -27,30 +26,30 @@ signature UNSAFE_VALUE_COMPONENT =
 
 		(* Projections *)
 
-		val proj: 'prod_value * Label.t vector * int -> 'value
+		val proj: 'prod_value * 'lab vector * int -> 'value
 		val projTuple: 'tuple_value * int * int -> 'value
 
-		val tag: 'sum_value * Label.t vector -> int
-		val projTagged: 'sum_value * Label.t vector * int -> 'value
+		val tag: 'sum_value * 'lab vector -> int
+		val projTagged: 'sum_value * 'lab vector * int -> 'value
 		val projTaggedTuple: 'sum_value * int * int -> 'value
 
 		val con: 'ext_value -> 'con_value
-		val projConstructed: 'ext_value * Label.t vector * int -> 'value
+		val projConstructed: 'ext_value * 'lab vector * int -> 'value
 		val projConstructedTuple: 'ext_value * int * int -> 'value
 
-		val projPoly: 'prod_value * Label.t -> 'value
+		val projPoly: 'prod_value * 'lab -> 'value
 
 		(* Construction *)
 
 		val tuple: 'value vector -> 'tuple_value
-		val prod: (Label.t * 'value) vector -> 'prod_value
+		val prod: ('lab * 'value) vector -> 'prod_value
 
-		val tagged: Label.t vector * int *
-			    (Label.t * 'value) vector -> 'sum_value
-		val taggedTuple: Label.t vector * int *
+		val tagged: 'lab vector * int *
+			    ('lab * 'value) vector -> 'sum_value
+		val taggedTuple: 'lab vector * int *
 				 'value vector -> 'sum_value
 
-		val prodPoly: (Label.t * 'value) vector -> 'prod_value
+		val prodPoly: ('lab * 'value) vector -> 'prod_value
 
 		val closure: 'code * 'value vector -> 'closure_value
 

@@ -14,11 +14,11 @@
 import structure NativeCore from "NativeCore"
 import signature CORE from "CORE-sig"
 
-structure Core :> CORE =
+structure Core : CORE =
 struct
     (* object is an abstract type for pointers to Gtk structures *)
-    type object
-    type group
+    __primitive type object = "Gtk.object"
+    __primitive type group = "Gtk.group"
 
     (* event represents a GdkEvent *)
     datatype event =
