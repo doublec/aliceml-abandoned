@@ -81,7 +81,8 @@ struct
 
     fun link {root, boundary, rewrite = handlers, verbose} =
 	let
-	    val boundary = INCLUDE (Url.toString root) :: boundary
+	    val boundary = EXCLUDE "x-alice:" :: INCLUDE (Url.toString root)
+			   :: boundary
 	    val rewrite = rewrite handlers
 	    val includes = UrlMap.map ()
 	    val excludes = UrlMap.map ()
