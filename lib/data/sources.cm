@@ -2,24 +2,35 @@ Group is
 
 	ASSERT-sig.aml
 	Assert.aml
+
+	STAMP-sig.aml
+	MkStamp.aml
+
 	GLOBAL_STAMP-sig.aml
-(*
-	GlobalStamp.aml
-*)
+	../../bootstrap/GlobalStamp.aml
+
+	LIST_SORT-sig.aml
+	MkListSort.aml
+
 	HASH_KEY-sig.aml
+	LargeIntHashKey.aml
+	StringHashKey.aml
+
 	IMP_MAP-sig.aml
 	IMP_SET-sig.aml
-	LargeIntHashKey.aml
 	MkHashImpMap.aml
 	MkHashImpSet.aml
-	MkScopedImpMap.aml
-	MkScopedImpSet.aml
-	MkStamp.aml
-	PRETTY_PRINT-sig.aml
-	PrettyPrint.aml
+
 	SCOPED_IMP_MAP-sig.aml
 	SCOPED_IMP_SET-sig.aml
-	STAMP-sig.aml
-	StringHashKey.aml
+	MkScopedImpMap.aml
+	MkScopedImpSet.aml
+
+	DEPTH_FIRST_SEARCH-sig.aml
+	MkDepthFirstSearch.aml
+
+	PRETTY_PRINT-sig.aml
+	PrettyPrint.aml
+
 	URL-sig.aml
 	Url.aml
