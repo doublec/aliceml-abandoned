@@ -29,28 +29,22 @@ DEFINE2(Thread_raiseIn) {
   if (thread == Scheduler::GetCurrentThread()) {
     RAISE(x1);
   } else {
-    switch (thread->GetState()) {
-    case Thread::BLOCKED:
-      Scheduler::WakeupThread(thread);
-      // fall through
-    case Thread::RUNNABLE:
-      {
-	TaskStack *otherTaskStack = thread->GetTaskStack();
-	int nargs = otherTaskStack->GetInt(0);
-	int frameSize = nargs == -1? 2: nargs + 1;
-	otherTaskStack->PopFrame(frameSize);
-	otherTaskStack->
-	  PushCall(Closure::FromWordDirect(GlobalPrimitives::Internal_raise));
-	otherTaskStack->PushFrame(2);
-	otherTaskStack->PutWord(1, x1);
-	otherTaskStack->PutInt(0, 1);
-	break;
-      }
-    case Thread::TERMINATED:
-      break;
+    Thread::state state = thread->GetState();
+    if (state != Thread::TERMINATED) {
+      TaskStack *otherTaskStack = thread->GetTaskStack();
+      int nargs = otherTaskStack->GetInt(0);
+      int frameSize = nargs == -1? 2: nargs + 1;
+      otherTaskStack->PopFrame(frameSize);
+      otherTaskStack->
+	PushCall(Closure::FromWordDirect(GlobalPrimitives::Internal_raise));
+      otherTaskStack->PushFrame(2);
+      otherTaskStack->PutWord(1, x1);
+      otherTaskStack->PutInt(0, 1);
+      if (state == Thread::BLOCKED)
+	Scheduler::WakeupThread(thread);
     }
+    RETURN_UNIT;
   }
-  RETURN_UNIT;
 } END
 
 DEFINE1(Thread_resume) {
@@ -75,7 +69,11 @@ DEFINE1(Thread_state) {
 DEFINE1(Thread_suspend) {
   DECLARE_THREAD(thread, x0);
   Scheduler::SuspendThread(thread);
-  RETURN_UNIT;
+  if (thread == Scheduler::GetCurrentThread()) {
+    return Interpreter::Result(Interpreter::Result::PREEMPT, 0);
+  } else {
+    RETURN_UNIT;
+  }
 } END
 
 DEFINE0(Thread_yield) {
