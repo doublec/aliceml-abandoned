@@ -14,12 +14,7 @@
  *  Items marked with (**) are extensions to the Standard Basis.
  *)
 
-import structure __pervasive             from "Pervasive"
-import __primitive datatype ref and list from "ToplevelTypes"
-import __primitive infixr 5 ::           from "ToplevelValues"
-import __primitive structure Ref         from "Ref"
-import __primitive structure Promise     from "Promise"
-import __primitive signature STREAM      from "STREAM-sig"
+import signature STREAM from "STREAM-sig"
 
 structure Stream :> STREAM =
     struct
@@ -51,4 +46,11 @@ structure Stream :> STREAM =
 		Promise.fulfill (old, nil);
 		Promise.fulfill (new, Promise.future old)
 	    end handle Promise.Promise => ()
+
+	fun isClosed stream =
+	    let
+		val xs = Promise.future (!stream)
+	    in
+		Future.isDetermined xs andalso List.null xs
+	    end
     end

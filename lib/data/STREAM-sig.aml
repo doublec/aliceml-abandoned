@@ -14,9 +14,6 @@
  *  Items marked with (**) are extensions to the Standard Basis.
  *)
 
-import structure __pervasive          from "Pervasive"
-import __primitive type unit and list from "ToplevelTypes"
-
 signature STREAM =					(**)
     sig
 	type 'a stream
@@ -27,4 +24,5 @@ signature STREAM =					(**)
 	val stream: unit -> 'a stream * 'a list
 	val send: 'a stream * 'a -> unit	(* Closed *)
 	val close: 'a stream -> unit
+	val isClosed: 'a stream -> bool
     end
