@@ -100,7 +100,7 @@ struct
                             raise e
                         ))
             
-            fun locked name f = Lock.sync lock f
+ (*           fun locked name f = Lock.sync lock f *)
         in
             (* return locked but not yet proxied client interface! *)
             ({

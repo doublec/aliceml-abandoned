@@ -177,7 +177,8 @@ struct
                     fun isSynced partDescs =
                         DynArray.all (fn PDESC pd => 
                             !(#disconnected $ #event pd) orelse
-                                Channel.length (#rpcs pd) = 0) partDescs
+                            PState.isDisconnected (#state pd) orelse
+                            Channel.length (#rpcs pd) = 0) partDescs
 
                     fun killSlowClients partDescs =
                         DynArray.appi (fn (id, PDESC pd) =>
@@ -267,21 +268,26 @@ struct
                          PState.giveUp (#state pdesc))
                         
                     fun actualDisconnect (disconns, p as PDESC pdesc) =
-                        let
-                            val nc  = PState.nameNColor (#state pdesc)
-                        in
-                            disconns := nc :: !disconns;
-                            if PState.played (#state pdesc) then
-                                cancelGame p
-                            else ();
-                            
-                            if PState.id (#state pdesc) = pcId then 
-                                (* priviliged client has disconnected! 
-                                   abort the game.
-                                 *)
-                                raise ServerDisconnected
-                            else ()
-                        end
+                        ((* remember that we processed this event *)
+                        #disconnected (#event pdesc) := false;
+                        if PState.played (#state pdesc) then
+                            (if PState.isPlaying (#state pdesc) orelse
+                                    PState.hasEnteredGate (#state pdesc) then
+                                Arena.removeSnake (arena,
+                                    PState.snake $ #state pdesc)
+                             else ();
+                             disconns := PState.nameNColor (#state pdesc)
+                                            :: ! disconns;
+                             cancelGame p)
+                        else ();
+                        PState.disconnect (#state pdesc);
+
+                        if PState.id (#state pdesc) = pcId then 
+                            (* priviliged client has disconnected! 
+                               abort the game.
+                             *)
+                            raise ServerDisconnected
+                        else ())
 
                     fun giveUp (p as PDESC pdesc) =
                         let
@@ -510,7 +516,7 @@ struct
                 in
                     if !gameStarted 
                         then raise P.Protocol gameStartedMsg
-                        else ();
+                        else print "game started.\n";
 
                     gameStarted := true;
                    
@@ -648,11 +654,33 @@ struct
             fun changeView id = updateEvent1 (id, fn (id, ev, chv) =>
                 #changedView ev := SOME chv)
 
-            fun disconnect id = updateEvent0 (id, fn (id, ev) =>
-                #disconnected ev := true)
-
-            fun giveUp id = updateEvent0 (id, fn (id, ev) =>
+             fun giveUp id = updateEvent0 (id, fn (id, ev) =>
                 #giveUp ev := true)
+
+           
+            fun disconnect id = RWLock.syncWrite lock (fn () =>
+                let
+                    val PDESC pdesc = DynArray.sub (partDescs, id)
+                    val state       = #state pdesc
+                    val ev          = #event pdesc
+                in
+                    if PState.isDisconnected state then
+                        ()
+                    else if not (!gameStarted) then
+                        (* game not yet started. If this is a player
+                           we must inform the others *)
+                        (print (Int.toString id ^ " disconnected\n");
+                         if PState.isPlayer state then
+                            invokeOnAllBut (partDescs, id, 
+                                #playerDisconnected, 
+                                PState.nameNColor state)
+                         else ();
+                         Channel.destroy (#rpcs pdesc);
+                         PState.disconnect state)
+                    else 
+                        #disconnected ev := true
+                end)
+
 
             (**
               [play (name, color)] is called by the client when he has

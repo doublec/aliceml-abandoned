@@ -45,7 +45,10 @@ sig
     val canEnterGate :      pstate * int -> bool
 
     val isConnected :       pstate -> bool
-    
+    val isDisconnected :    pstate -> bool
+
+    val disconnect :        pstate -> unit
+
     val played :            pstate -> bool
     val hasEnteredGate :    pstate -> bool
     val isPlayer :          pstate -> bool

@@ -40,7 +40,7 @@ struct
       | DEAD            of player_info * id option ref
       | BURIED          of player_info * id option ref
       | WATCHING        of id option ref
-
+      | DISCONNECTED    
 
     type pstate = { 
         id:             id,
@@ -193,7 +193,15 @@ struct
         case ! (#state p) of    
             CONNECTED       => true
         |   _               => false
+    
+    fun isDisconnected (p:pstate) =
+        case ! (#state p) of
+            DISCONNECTED    => true
+        |   _               => false
 
+
+    fun disconnect (p: pstate) =
+        #state p := DISCONNECTED
 
     fun played (p:pstate) =
         case ! (#state p) of
