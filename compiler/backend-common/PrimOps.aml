@@ -77,6 +77,10 @@ structure PrimOps :> PRIM_OPS =
 		ins ("CharVector.sub", SOME (Tuple 2));
 		ins ("CharVector.tabulate", SOME (Tuple 2));
 		ins ("CharVector.toList", SOME Unary);
+		ins ("Exn.catch", SOME (Tuple 2));
+		ins ("Exn.dumpTrace", SOME (Tuple 2));
+		ins ("Exn.name", SOME Unary);
+		ins ("Exn.reraise", SOME (Tuple 2));
 		ins ("Future.Cyclic", NONE);
 		ins ("Future.alarm'", SOME Unary);
 		ins ("Future.await", SOME Unary);
@@ -96,7 +100,6 @@ structure PrimOps :> PRIM_OPS =
 		ins ("General.Size", NONE);
 		ins ("General.Span", NONE);
 		ins ("General.Subscript", NONE);
-		ins ("General.exnName", SOME Unary);
 		ins ("GlobalStamp.new", SOME (Tuple 0));
 		ins ("GlobalStamp.fromString", SOME Unary);
 		ins ("GlobalStamp.toString", SOME Unary);

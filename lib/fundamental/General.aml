@@ -41,7 +41,7 @@ struct
     __primitive exception Subscript		= "General.Subscript"
     exception Unordered
 
-    __primitive val exnName : exn -> string	= "General.exnName"
+    __primitive val exnName : exn -> string	= "Exn.name"
     val exnMessage				= exnName
 
     datatype order				= datatype order

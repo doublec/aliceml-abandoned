@@ -316,6 +316,38 @@ prepare
 	    {ForThread {ByteString.width V} - 1 0 ~1
 	     fun {$ Xs I} {ByteString.get V I}|Xs end nil}
 	 end
+      'Exn.catch':
+	 fun {$ Handler F}
+	    try
+	       {F unit}
+	    catch error(alice(Exn ...) debug:Debug) then
+	       {Handler E Debug}
+	    end
+	 end
+      'Exn.dumpTrace':
+	 fun {$ _ _}
+	    unit %--**
+	 end
+      'Exn.name':
+	 fun {$ N}
+	    case {VirtualString.toString {Value.toVirtualString {Label N} 0 0}}
+	    of "<N>" then {ByteString.make "_unknown"}
+	    elseof &<|&N|&:|& |&'|Rest then
+	       case {Reverse Rest} of &>|Rest then
+		  {ByteString.make {DropDotReverse Rest nil}}
+	       end
+	    elseof &<|&N|&:|& |Rest then
+	       case {Reverse Rest} of &>|Rest then
+		  {ByteString.make {DropDotReverse Rest nil}}
+	       end
+	    elseof S then {ByteString.make S}
+	    end
+	 end
+      'Exn.reraise':
+	 fun {$ Exn Debug}
+	    {Exception.'raise' error(alice(Exn) debug:Debug)}
+	    unit
+	 end
       'Future.Cyclic': {NewUniqueName 'Future.Cyclic'}
       'Future.alarm\'':
 \ifdef OLD_BYNEED
@@ -413,21 +445,6 @@ prepare
       'General.Size': {NewUniqueName 'General.Size'}
       'General.Span': {NewUniqueName 'General.Span'}
       'General.Subscript': {NewUniqueName 'General.Subscript'}
-      'General.exnName':
-	 fun {$ N}
-	    case {VirtualString.toString {Value.toVirtualString {Label N} 0 0}}
-	    of "<N>" then {ByteString.make "_unknown"}
-	    elseof &<|&N|&:|& |&'|Rest then
-	       case {Reverse Rest} of &>|Rest then
-		  {ByteString.make {DropDotReverse Rest nil}}
-	       end
-	    elseof &<|&N|&:|& |Rest then
-	       case {Reverse Rest} of &>|Rest then
-		  {ByteString.make {DropDotReverse Rest nil}}
-	       end
-	    elseof S then {ByteString.make S}
-	    end
-	 end
       'GlobalStamp.new':
 	 fun {$ unit} {NewName} end
       'GlobalStamp.fromString':

@@ -1,0 +1,31 @@
+(*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure __pervasive            from "Pervasive"
+import __primitive type unit and string from "ToplevelTypes"
+
+signature EXN =
+sig
+    exttype exn
+    type t = exn
+    type packet
+
+    val name :       exn -> string
+    val message :    exn -> string
+
+    val catch :      (packet -> 'a) -> (unit -> 'a) -> 'a
+    val reraise :    packet -> 'a
+    val dumpTrace :  packet -> unit
+
+    val fromPacket : packet -> exn
+    val update :     packet * exn -> packet
+end

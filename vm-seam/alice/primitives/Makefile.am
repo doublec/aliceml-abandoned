@@ -7,6 +7,7 @@ libprimitives_a_SOURCES = \
 	Array.cc \
 	Byte.cc \
 	Char.cc \
+	Exn.cc \
 	Future.cc \
 	General.cc \
 	GlobalStamp.cc \

@@ -23,7 +23,6 @@ import structure OS                from "OS"
 import structure Reflect           from "Reflect"
 import structure Url               from "Url"
 import structure Resolver          from "Resolver"
-import structure UnsafeValue       from "UnsafeValue"
 import structure UnsafeComponent   from "UnsafeComponent"
 import structure DynMatch          from "DynMatch"
 import structure UrlMap            from "UrlMap"
@@ -191,6 +190,8 @@ struct
 	fun infToString NONE = "(none)"
 	  | infToString (SOME inf) = PrettyPrint.toString (PPInf.ppInf inf, 80)
 
+	fun reraiseAs (packet, exn) = Exn.reraise (Exn.update (packet, exn))
+
 	fun typeCheck (inf, rea, importInf, mod, url, baseUrlOpt) : mod =
 	    let
 		val url' = Url.toString url
@@ -200,9 +201,9 @@ struct
 					| NONE => " linked explicitly")
 	    in
 		trace (!logStream, "type-checking " ^ message);
-		UnsafeValue.catch
-		  (fn (exn, bt) =>
-		   case exn of
+		Exn.catch
+		  (fn packet =>
+		   case Exn.fromPacket packet of
 		     Inf.Mismatch m =>
 		     (trace (!logStream, "type-checking failed");
 		      trace (!logStream, "signature expected" ^
@@ -220,21 +221,21 @@ struct
 					     pathToString path ^ " ->\n" ^
 					     infToString (SOME inf)^ "\n" ^ s)
 					  "" (#inf_rea rea)) (#typ_rea rea));
-		      UnsafeValue.reraise
-		      (Failure (url, Mismatch {component = url,
-					       request = baseUrlOpt,
-					       cause = m}), bt))
+		      reraiseAs
+		      (packet, Failure (url, Mismatch {component = url,
+						       request = baseUrlOpt,
+						       cause = m})))
 		   | Failure (url', e) =>
 		     (trace (!logStream, "exception " ^ exnName e ^
 					 " propagated from " ^
 					 Url.toString url' ^
 					 " during type-checking");
-		      UnsafeValue.reraise (Failure (url, e), bt))
+		      reraiseAs (packet, Failure (url, e)))
 		   | e =>
 		     (trace (!logStream, "internal exception " ^ exnName e ^
 					 " during type-checking");
-		      UnsafeValue.reraise (Failure (url, Internal e), bt)),
-		   fn _ => matchWith (rea, inf, importInf));
+		      reraiseAs (packet, Failure (url, Internal e))))
+		  (fn _ => matchWith (rea, inf, importInf));
 		trace (!logStream, "type-checked  " ^ message);
 		mod
 	    end
@@ -247,11 +248,13 @@ struct
 	      | UrlMap.NEW p =>
 		    let
 			val result =
-			    lazy eval' (url, UnsafeValue.catch
-					     (fn (e, bt) =>
-						 UnsafeValue.reraise
-						 (Failure (url, e), bt),
-					      fn _ => load url))
+			    lazy eval' (url, Exn.catch
+					     (fn packet =>
+						 reraiseAs
+						 (packet,
+						  Failure
+						  (url, Exn.fromPacket packet)))
+					     (fn _ => load url))
 			val entry = (lazy #1 result, lazy #2 result)
 		    in
 			Promise.fulfill (p, entry); entry
@@ -297,16 +300,16 @@ val _ = trace (!logStream, "linking " ^ Url.toString baseUrl ^ "...")
 					      importInf, SOME baseUrl))
 			       imports
 		val _ = trace (!logStream, "evaluating " ^ Url.toString baseUrl)
-		val mod = UnsafeValue.catch
-			  (fn (e as Failure _, bt) =>
-			      UnsafeValue.reraise (e, bt)
-			    | (e, bt) =>
+		val mod = Exn.catch
+			  (fn packet =>
+			   case Exn.fromPacket packet of
+			      Failure _ => Exn.reraise packet
+			    | e =>
 			      (trace (!logStream,
 				      "evaluation failed in " ^
 				      Url.toString baseUrl);
-			       UnsafeValue.reraise (Failure (baseUrl, Eval e),
-						    bt)),
-			   fn _ => body imports')
+			       reraiseAs (packet, Failure (baseUrl, Eval e))))
+			  (fn _ => body imports')
 		val _ = trace (!logStream, "evaluated  " ^ Url.toString baseUrl)
 		val dynInf =
 		    case inf of

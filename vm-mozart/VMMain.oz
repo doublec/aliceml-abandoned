@@ -68,10 +68,10 @@ define
     proc {$ E}
        case E of system(kernel(terminate) ...) then
 	  skip
-       [] error(alice(Exn ...) ...) then
+       [] error(alice(Exn ...) debug:Debug) then
 	  {ForAll {Access {Property.get 'alice.atExnActions'}}
 	   proc {$ P}
-	      try {P Exn _} catch _ then skip end
+	      try {P Exn Debug} catch _ then skip end
 	   end}
        else
 	  {Error.printException E}

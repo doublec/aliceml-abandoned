@@ -61,6 +61,8 @@ Library:
   trace destinations. Preconfigurable through value of ALICE_TRACE_COMPONENT.
   Trace messages are more informative, particularly wrt signature mismatches.
   Also added exception Internal.
+* Exn: new structure for dealing with exceptions and backtraces.
+* OS.Process: atExn takes an Exn.packet now.
 * Hole: fixed semantics of synchronisation on holes.
 * Hole: future now simply returns argument if not a hole (no exception).
 * Promise: fulfilling with a cycle no longer fails the promise.

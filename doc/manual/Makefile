@@ -46,6 +46,7 @@ INSTALLFILES_LIBRARY_0 = \
 	alt.html array.html array2.html array-slice.html atom.html \
 	bin-io.html bool.html byte.html \
 	char.html command-line.html \
+	exn.html \
 	future.html \
 	general.html \
 	hashable.html hole.html \

@@ -27,5 +27,5 @@ sig
     val getEnv :	string -> string option
     val sleep :		Time.time -> unit
 
-    val atExn :		(exn -> unit) -> unit			(**)
+    val atExn :		(Exn.packet -> unit) -> unit			(**)
 end

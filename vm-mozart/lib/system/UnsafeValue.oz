@@ -163,9 +163,5 @@ define
 		 else ~2
 		 end
 	      end
-	   'outArity': fun {$ _} ~2 end
-	   'dumpBacktrace': fun {$ _}
-			       %--**
-			       {Handle 'dumpBacktrace' notImplemented unit}
-			    end)
+	   'outArity': fun {$ _} ~2 end)
 end

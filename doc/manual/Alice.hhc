@@ -159,6 +159,10 @@
 			<param name="Local" value="library/config.html">
 			</OBJECT>
 		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Exn">
+			<param name="Local" value="library/exn.html">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="Explorer">
 			<param name="Local" value="library/explorer.html">
 			</OBJECT>

@@ -2846,7 +2846,7 @@ word
 NativeCodeJitter::Compile(LazyCompileClosure *lazyCompileClosure) {
   TagVal *abstractCode = lazyCompileClosure->GetAbstractCode();
   word concreteCode    = lazyCompileClosure->GetByneed();
-#if 0
+#if 1
   // Diassemble AbstractCode
   Tuple *coord1 = Tuple::FromWordDirect(abstractCode->Sel(0));
   char *filename = String::FromWordDirect(coord1->Sel(0))->ExportC();

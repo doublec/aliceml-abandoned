@@ -34,6 +34,7 @@ private:
   static void RegisterArray();
   static void RegisterByte();
   static void RegisterChar();
+  static void RegisterExn();
   static void RegisterFuture();
   static void RegisterGeneral();
   static void RegisterGlobalStamp();

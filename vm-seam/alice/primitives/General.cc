@@ -14,25 +14,6 @@
 
 #include "alice/Authoring.hh"
 
-DEFINE1(General_exnName) {
-  DECLARE_BLOCK(conVal, x0);
-  String *name;
- retry:
-  switch (conVal->GetLabel()) {
-  case UNIQUESTRING_LABEL:
-    name = UniqueString::FromWordDirect(conVal->ToWord())->ToString();
-    break;
-  case Alice::ConVal:
-    conVal = ConVal::FromWordDirect(conVal->ToWord())->GetConstructor();
-    goto retry;
-  default:
-    name = Constructor::FromWordDirect(conVal->ToWord())->GetName();
-    break;
-  }
-  //--** drop prefix
-  RETURN(name->ToWord());
-} END
-
 void PrimitiveTable::RegisterGeneral() {
   PrimitiveTable::General_Chr =
     UniqueConstructor::New("Chr", "General.Chr")->ToWord();
@@ -58,5 +39,4 @@ void PrimitiveTable::RegisterGeneral() {
   Register("General.Size", PrimitiveTable::General_Size);
   RegisterUniqueConstructor("Span", "General.Span");
   Register("General.Subscript", PrimitiveTable::General_Subscript);
-  Register("General.exnName", General_exnName, 1);
 }
