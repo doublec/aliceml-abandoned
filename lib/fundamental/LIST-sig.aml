@@ -64,7 +64,7 @@ sig
     val tabulate :	int * (int -> 'a) -> 'a list
 
     val equal :		('a * 'a -> bool) -> 'a list * 'a list -> bool	(**)
-    val compare :	('a * 'a -> order) -> 'a list * 'a list -> order (**)
+    val collate :	('a * 'a -> order) -> 'a list * 'a list -> order
 
     val isSorted :	('a * 'a -> order) -> 'a list -> bool		(**)
     val sort :		('a * 'a -> order) -> 'a list -> 'a list	(**)

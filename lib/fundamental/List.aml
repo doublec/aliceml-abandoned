@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg, 2001-2002
  *
  * Last change:
  *   $Date$ by $Author$
@@ -169,12 +169,12 @@ struct
       | equal'(eq, x::xs, y::ys)	= eq(x,y) andalso equal'(eq,xs,ys)
       | equal' _			= false
 
-    fun compare  cmp (xs,ys)		= compare'(cmp,xs,ys)		(**)
-    and compare'(cmp, [], [])		= EQUAL
-      | compare'(cmp, [], _ )		= LESS
-      | compare'(cmp, _,  [])		= GREATER
-      | compare'(cmp, x::xs, y::ys)	= case cmp(x,y)
-					    of EQUAL => compare'(cmp,xs,ys)
+    fun collate  compare (xs,ys)	= collate'(compare,xs,ys)
+    and collate'(compare, [], [])	= EQUAL
+      | collate'(compare, [], _ )	= LESS
+      | collate'(compare, _,  [])	= GREATER
+      | collate'(compare, x::xs, y::ys)	= case compare(x,y)
+					    of EQUAL => collate'(compare,xs,ys)
 					     | other => other
 
     fun isSorted  compare xs		= isSorted'(compare, xs)	(**)
