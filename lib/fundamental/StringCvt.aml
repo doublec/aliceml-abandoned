@@ -38,36 +38,36 @@ struct
 
     infix 6 ^
     __primitive val ^ :              string * string -> string = "String.^"
-    __primitive val String_size :    string -> int        = "CharVector.length"
-    __primitive val String_sub :     string * int -> char = "Unsafe.String.sub"
-    __primitive val String_implode : char list -> string
+    __primitive val string_size :    string -> int        = "CharVector.length"
+    __primitive val string_sub :     string * int -> char = "Unsafe.String.sub"
+    __primitive val string_implode : char list -> string
 						= "CharVector.fromList"
-    __primitive val String_tabulate : int * (int -> char) -> string
+    __primitive val string_tabulate : int * (int -> char) -> string
 						= "CharVector.tabulate"
-    __primitive val Char_isSpace :   char -> bool         = "Char.isSpace"
+    __primitive val char_isSpace :   char -> bool         = "Char.isSpace"
 
     fun padLeft c i s		= if i <= 0 then s else
-				  String_tabulate(i, fn _=> c) ^ s
+				  string_tabulate(i, fn _=> c) ^ s
     fun padRight c i s		= if i <= 0 then s else
-				  s ^ String_tabulate(i, fn _=> c)
+				  s ^ string_tabulate(i, fn _=> c)
 
     fun splitl p f src		= splitl'(p, f, src, nil)
     and splitl'(p, f, src, cs)	= case f src
  				    of NONE =>
-				       (String_implode(List.rev cs), src)
+				       (string_implode(List.rev cs), src)
 				     | SOME (c, src') =>
 				       if p c
 				       then splitl'(p, f, src', c::cs)
-				       else (String_implode(List.rev cs), src)
+				       else (string_implode(List.rev cs), src)
 
     fun takel p f s		= #1(splitl p f s)
     fun dropl p f s		= #2(splitl p f s)
-    fun skipWS f s		= dropl Char_isSpace f s
+    fun skipWS f s		= dropl char_isSpace f s
 
     fun scanString scan s =
 	let
-	    fun get i where (i = String_size s) = NONE
-	      | get i                           = SOME(String_sub(s,i), i+1)
+	    fun get i where (i = string_size s) = NONE
+	      | get i                           = SOME(string_sub(s,i), i+1)
 	in
 	    case scan get 0 of NONE      => NONE
 			     | SOME(x,_) => SOME x
