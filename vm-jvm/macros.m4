@@ -434,3 +434,25 @@ define(_COMPARECHAR,`
     static {
 	Builtin.builtins.put("Char.$2",$1);
     }')
+dnl
+dnl fuer JObject
+dnl
+define(MAPBACK,` // ERFOLGREICH !
+		// jetzt zurückmappen von java-Objekten nach DML
+		// System.out.println($1);
+		if ($1 instanceof Boolean)
+		    if (((Boolean) $1).booleanValue())
+			return Constants.dmltrue;
+		    else
+			return Constants.dmlfalse;
+		else if ($1 instanceof java.lang.Integer)
+		    return new Int(((java.lang.Integer) $1).intValue());
+		else if ($1 instanceof Long)
+		    return new Word((int) ((Long) $1).longValue());
+		else if ($1 instanceof Float)
+		    return new Real(((Float) $1).floatValue());
+		else if ($1 instanceof java.lang.String)
+		    return new STRING ((java.lang.String) $1);
+		else
+		    return new JObject($1)
+')
