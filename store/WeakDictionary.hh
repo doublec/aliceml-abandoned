@@ -3,7 +3,7 @@
 //   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
 //
 // Copyright:
-//   Thorsten Brunklaus, 2000
+//   Thorsten Brunklaus, 2000-2002
 //
 // Last Change:
 //   $Date$ by $Author$
@@ -18,69 +18,71 @@
 
 #include "store/Store.hh"
 
+class Finalization {
+public:
+  virtual void Finalize(word value) = 0;
+};
+
 class HashNode : private Block {
 private:
-  static const u_int SIZE    = 2;
-  static const u_int KEY_POS = 0;
-  static const u_int VAL_POS = 1;
+  static const u_int KEY_POS   = 0;
+  static const u_int VALUE_POS = 1;
+  static const u_int NEXT_POS  = 2;
+  static const u_int SIZE      = 3;
 
   void SetLabel(BlockLabel l) {
     HeaderOp::EncodeLabel((Transient *) this, l);
   }
+  BlockLabel GetLabel() {
+    return HeaderOp::DecodeLabel(this);
+  }
 public:
   using Block::ToWord;
 
-  void MakeEmpty() {
-    InitArg(KEY_POS, 0);
-    InitArg(VAL_POS, 0);
-    SetLabel(EMPTYHASHNODE_LABEL);
-  }
-  int IsEmpty() {
-    return (HeaderOp::DecodeLabel(this) == EMPTYHASHNODE_LABEL);
-  }
   int IsHandled() {
-    return (HeaderOp::DecodeLabel(this) == HANDLEDHASHNODE_LABEL);
+    return (GetLabel() == HANDLEDHASHNODE_LABEL);
   }
   word GetKey() {
     return GetArg(KEY_POS);
   }
-  int GetIntKey() {
-    return Store::WordToInt(GetKey());
-  }
-  Block *GetBlockKey() {
-    return Store::WordToBlock(GetKey());
-  }
   word GetValue() {
-    return GetArg(VAL_POS);
+    return GetArg(VALUE_POS);
+  }
+  word GetNext() {
+    return GetArg(NEXT_POS);
   }
   void SetValue(word value) {
-    ReplaceArg(VAL_POS, value);
+    ReplaceArg(VALUE_POS, value);
+  }
+  void SetNext(word next) {
+    ReplaceArg(NEXT_POS, next);
+  }
+  void SetNextDirect(word next) {
+    InitArg(NEXT_POS, next);
   }
   void Fill(word key, word value) {
     ReplaceArg(KEY_POS, key);
-    ReplaceArg(VAL_POS, value);
-    SetLabel(FILLEDHASHNODE_LABEL);
+    ReplaceArg(VALUE_POS, value);
   }
   void MarkHandled() {
     SetLabel(HANDLEDHASHNODE_LABEL);
   }
   void MarkNormal() {
-    SetLabel(FILLEDHASHNODE_LABEL);
+    SetLabel(HASHNODE_LABEL);
   }
 
-  static HashNode *New() {
-    Block *p = Store::AllocBlock(EMPTYHASHNODE_LABEL, SIZE);
-
-    p->InitArg(KEY_POS, 0);
-    p->InitArg(VAL_POS, 0);
-
+  static HashNode *New(word key, word value, word next) {
+    Block *p = Store::AllocBlock(HASHNODE_LABEL, SIZE);
+    p->InitArg(KEY_POS, key);
+    p->InitArg(VALUE_POS, value);
+    p->InitArg(NEXT_POS, next);
     return (HashNode *) p;
   }
-  static HashNode *FromWord(word x) {
+  static HashNode *FromWordDirect(word x) {
     Block *p = Store::DirectWordToBlock(x);
-
     Assert((p == INVALID_POINTER) ||
-	   ((p->GetLabel() >= EMPTYHASHNODE_LABEL) && (p->GetLabel() <= HANDLEDHASHNODE_LABEL)));
+	   ((p->GetLabel() == HASHNODE_LABEL) ||
+	    (p->GetLabel() == HANDLEDHASHNODE_LABEL)));
     return (HashNode *) p;
   }
 };
@@ -89,19 +91,20 @@ class WeakDictionary : private Block {
 public:
   enum hashkeytype {
     INT_KEY,
-    BLOCK_KEY
+    BLOCK_KEY,
+    WORD_KEY
   };
   // this is to allow inlining
   u_int GetTableSize() {
     return (u_int) Store::DirectWordToBlock(GetArg(TABLE_POS))->GetSize();
   }
 protected:
-  static const u_int SIZE        = 5;
   static const u_int HANDLER_POS = 0;
   static const u_int COUNTER_POS = 1;
   static const u_int PERCENT_POS = 2;
   static const u_int TYPE_POS    = 3;
   static const u_int TABLE_POS   = 4;
+  static const u_int SIZE        = 5;
   //
   // Adjust these two values to optimize runtime behaviour
   //
@@ -110,14 +113,15 @@ protected:
 
   friend class Store;
 
-  static u_int IncKey(u_int key, u_int size);
-  static u_int NextPrime(u_int p);
-
-  u_int FindKey(u_int i);
-  u_int FindKey(Block *b);
-  u_int FindKey(word key);
+  u_int HashInt(u_int i);
+  u_int HashBlock(Block *b);
+  u_int HashKey(word key);
+  HashNode *FindKey(word key, word nodes, word & prev);
   void Resize();
 
+  word GetHandler() {
+    return GetArg(HANDLER_POS);
+  }
   u_int GetCounter() {
     return (u_int) Store::DirectWordToInt(GetArg(COUNTER_POS));
   }
@@ -139,22 +143,24 @@ protected:
   void SetTable(word t) {
     InitArg(TABLE_POS, t);
   }
-  HashNode *GetEntry(u_int i) {
+  word GetEntry(u_int i) {
     Assert(i < GetTableSize());
-    return HashNode::FromWord(GetTable()->GetArg(i));
+    return GetTable()->GetArg(i);
   }
-  void RemoveEntry(HashNode *node) {
-    node->MakeEmpty();
-    SetCounter(GetCounter() - 1);
+  void SetEntry(u_int i,  word entry) {
+    Assert(i < GetTableSize());
+    GetTable()->ReplaceArg(i, entry);
   }
 
   void InsertItem(word key, word value);
+  void RemoveEntry(u_int i, word prev, HashNode *node);
   void DeleteItem(word key);
 
   int IsMember(word key);
   word GetItem(word key); // must be member
 
-  static WeakDictionary *New(hashkeytype type, BlockLabel l, u_int size);
+  static WeakDictionary *New(hashkeytype type, BlockLabel l, u_int size,
+			     Finalization *handler);
 public:
   using Block::ToWord;
 
@@ -180,30 +186,80 @@ public:
     
     SetCounter(0);
     for (u_int i = size; i--;) {
-      HashNode::FromWord(arr->GetArg(i))->MakeEmpty();
+      arr->InitArg(i, 0);
     }
   }
   bool IsEmpty() {
     return GetCounter() == 0;
   }
 
-  static WeakDictionary *New(u_int size) {
-    WeakDictionary *d = WeakDictionary::New(INT_KEY, WEAK_DICT_LABEL, size);
-
+  static WeakDictionary *New(u_int size, Finalization *handler) {
+    WeakDictionary *d =
+      WeakDictionary::New(INT_KEY, WEAK_DICT_LABEL, size, handler);
     Store::RegisterWeakDict(d);
     return d;
   } 
   static WeakDictionary *FromWord(word x) {
     Block *p = Store::WordToBlock(x);
-
     Assert((p == INVALID_POINTER) || (p->GetLabel() == WEAK_DICT_LABEL));
     return (WeakDictionary *) p;
   }
   static WeakDictionary *FromWordDirect(word x) {
     Block *p = Store::DirectWordToBlock(x);
-
     Assert((p == INVALID_POINTER) || (p->GetLabel() == WEAK_DICT_LABEL));
     return (WeakDictionary *) p;
+  }
+};
+
+class BlockHashTableFinalizer : public Finalization {
+public:
+  BlockHashTableFinalizer() {}
+
+  virtual void Finalize(word value);
+};
+
+class BlockHashTable : public WeakDictionary {
+protected:
+  friend class Store;
+  static word tables;
+  static int nbTables;
+  void Rehash();
+public:
+
+  void InsertItem(word key, word value) {
+    WeakDictionary::InsertItem(key, value);
+  }
+  void DeleteItem(word key) {
+    WeakDictionary::DeleteItem(key);
+  }
+  int IsMember(word key) {
+    return WeakDictionary::IsMember(key);
+  }
+  word GetItem(word key) {
+    return WeakDictionary::GetItem(key); // must be member
+  }
+
+  static void Init() {
+    nbTables = 0;
+    tables   = WeakDictionary::New(4, new BlockHashTableFinalizer())->ToWord();
+  }
+
+  static BlockHashTable *New(u_int size) {
+    Finalization *handler = new BlockHashTableFinalizer();
+    BlockHashTable *t = (BlockHashTable *)
+      WeakDictionary::New(WORD_KEY, BLOCKHASHTABLE_LABEL, size, handler);
+    WeakDictionary::FromWordDirect(tables)->InsertItem(nbTables++, t->ToWord());
+    return t;
+  }
+  static BlockHashTable *FromWord(word x) {
+    Block *p = Store::WordToBlock(x);
+    Assert((p == INVALID_POINTER) || (p->GetLabel() == BLOCKHASHTABLE_LABEL));
+    return (BlockHashTable *) p;
+  }
+  static BlockHashTable *FromWordDirect(word x) {
+    Block *p = Store::DirectWordToBlock(x);
+    Assert(p->GetLabel() == BLOCKHASHTABLE_LABEL);
+    return (BlockHashTable *) p;
   }
 };
 
