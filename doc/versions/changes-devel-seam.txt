@@ -1,14 +1,17 @@
+Alice 1.0 (Kraftwerk Album 1) - 2004/12/22
+------------------------------------------
+
 Runtime system:
 
-* Completely new VM called Seam (Simple Efficient Abstract Machine).
+* Completely new VM called SEAM (Simple Efficient Abstract Machine).
   It uses just-in-time compilation and a 3-generation garbage collector,
   rendering it up to 5 times faster than Alice on Mozart.
-* Completely new, extended constraint library based on Gecode
+* Completely new, extended constraint library based on GECODE
   (Generic Constraint Development Environment). It provides advanced
   global constraints (like global cardinality, sortedness, counting,
   lexicographic ordering) not found in Mozart, set selection
-  constraints, and batch recomputation. The new library gives a
-  considerable gain in performance (typically one order of magnitude).
+  constraints, and batch recomputation. The new library is more than
+  10 times faster than constraints in the Mozart-based versions of Alice.
 * Mozart is no longer required to run Alice (and no longer compatible with it).
 
 Language:
@@ -55,16 +58,13 @@ Library:
 
 * Constraint library now based on Gecode.
   - State-of-the-art global constraints for finite domain integers
-    (All-distinct, global cardinality, sortedness, lexicographic
-    ordering)
+    (all-distinct, global cardinality, sortedness, lexicographic ordering)
   - Finite set selection constraints
   - More reified constraints for finite sets
-  - Supports batch recomputation, improving the performance of search
+  - Support for batch recomputation, improving the performance of search
     engines considerably
-  - Performance improvements due to complete re-design and
-    re-implementation of the library
-  - Interface changes: computation spaces are now explicit
-  - Rewritten explorer and search engines
+  - Significant interface changes; in particular, computation spaces are now
+    explicit
 * Component:
   - Added fromPackage.
   - Create now takes a functor as argument to support unevaluated components.
