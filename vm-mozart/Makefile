@@ -125,8 +125,7 @@ MLYACC = ml-yacc
 ##
 
 LIBSYSTEMNATIVES0 = \
-	Config IO TextIO OS Unix CommandLine Component Debug Socket Rand \
-	Reflect
+	Config IO OS Unix CommandLine Component Debug Socket Rand Reflect
 LIBUTILITYNATIVES0 = \
 	MkRefMap Addr
 LIBNATIVES = \
@@ -144,14 +143,16 @@ LIBFUNDAMENTALSOURCES0 = \
 	VECTOR_PAIR-sig.aml WORD-sig.aml Alt.aml Array.aml Bool.aml \
 	Char.aml Future.aml General.aml Hole.aml IEEEReal.aml Int.aml \
 	LargeInt.aml LargeReal.aml LargeWord.aml List.aml ListPair.aml \
-	Lock.aml Math.aml Option.aml Pair.aml Position.aml Promise.aml \
-	Real.aml Ref.aml String.aml StringCvt.aml Substring.aml Thread.aml \
-	Time.aml Toplevel.aml Vector.aml VectorPair.aml WideChar.aml \
-	WideString.aml Word.aml PACKAGE-sig.aml Package.aml ByNeed.aml
+	Lock.aml Math.aml MkWord.aml Option.aml Pair.aml Position.aml \
+	Promise.aml Real.aml Ref.aml String.aml StringCvt.aml Substring.aml \
+	Thread.aml Time.aml Toplevel.aml Vector.aml VectorPair.aml \
+	WideChar.aml WideString.aml Word.aml Word8.aml PACKAGE-sig.aml \
+	Package.aml ByNeed.aml
 LIBSYSTEMSOURCES0 = \
 	$(LIBSYSTEMNATIVES0:%=Unsafe%.asig) \
-	CONFIG-sig.aml IO-sig.aml TEXT_IO-sig.aml OS_FILE_SYS-sig.aml \
-	OS_PROCESS-sig.aml OS-sig.aml UNIX-sig.aml COMMAND_LINE-sig.aml \
+	CONFIG-sig.aml IO-sig.aml BIN_IO-sig.aml BinIO.aml \
+	TEXT_IO-sig.aml TextIO.aml OS_FILE_SYS-sig.aml OS_PROCESS-sig.aml \
+	OS-sig.aml UNIX-sig.aml COMMAND_LINE-sig.aml \
 	COMPONENT_MANAGER-sig.aml COMPONENT-sig.aml DEBUG-sig.aml \
 	SOCKET-sig.aml REFLECT-sig.aml URL_MAP-sig.aml UrlMap.aml \
 	$(LIBSYSTEMNATIVES0:%=%.aml) \
@@ -267,15 +268,25 @@ COMPILERBACKENDDOTNETSOURCES0 = \
 COMPILERBACKENDDOTNETSOURCES = \
 	$(COMPILERBACKENDDOTNETSOURCES0:%=compiler/backend-dotnet/%)
 
+COMPILERBACKENDSTOCKWERKSOURCES0 = \
+	PRIM_PICKLE-sig.aml PrimPickle.aml PICKLE_GRAMMAR-sig.aml \
+	PickleGrammar.aml OUTPUT_PICKLE-sig.aml OutputPickle.aml \
+	ENVIRONMENT-sig.aml Environment.aml CODE_GEN_PHASE-sig.aml \
+	CodeGenPhase.aml MkBackendStockwerk.aml
+COMPILERBACKENDSTOCKWERKSOURCES = \
+	$(COMPILERBACKENDSTOCKWERKSOURCES0:%=compiler/backend-stockwerk/%)
+
 COMPILERTOPSOURCES0 = \
 	COMPILER-sig.aml MkCompiler.aml SignTable.aml \
 	RECURSIVE_COMPILER-sig.aml MkRecursiveCompiler.aml \
 	SMLToMozartRecursiveCompiler.aml \
 	SMLToDotNetRecursiveCompiler.aml \
+	SMLToStockwerkRecursiveCompiler.aml \
 	OPTION_PARSER-sig.aml MkOptionParser.aml \
 	BATCH_COMPILER-sig.aml MkBatchCompiler.aml \
 	SMLToMozartBatchCompiler.aml \
 	SMLToDotNetBatchCompiler.aml \
+	SMLToStockwerkBatchCompiler.aml \
 	INTERACTIVE_TOPLEVEL-sig.aml MkToplevel.aml \
 	SMLToMozartToplevel.aml
 COMPILERTOPSOURCES = $(COMPILERTOPSOURCES0:%=compiler/top/%)
@@ -285,8 +296,8 @@ COMPILERSOURCES = \
 	$(COMPILERINFRASTRUCTURESOURCES) $(COMPILERCOMMONSOURCES) \
 	$(COMPILERFRONTENDCOMMONSOURCES) $(COMPILERFRONTENDSMLSOURCES) \
 	$(COMPILERBACKENDCOMMONSOURCES) $(COMPILERBACKENDMOZARTSOURCES) \
-	$(COMPILERBACKENDDOTNETSOURCES) $(COMPILERTOPSOURCES) \
-	$(COMPILERSOURCES0:%=compiler/%)
+	$(COMPILERBACKENDDOTNETSOURCES) $(COMPILERBACKENDSTOCKWERKSOURCES) \
+	$(COMPILERTOPSOURCES) $(COMPILERSOURCES0:%=compiler/%)
 ALLSOURCES = VMMain.oz $(LIBSOURCES) $(COMPILERSOURCES)
 
 SOURCEDIRS = \
@@ -294,7 +305,7 @@ SOURCEDIRS = \
 	compiler compiler/infrastructure compiler/common compiler/top \
 	compiler/frontend-common compiler/frontend-sml \
 	compiler/backend-common compiler/backend-mozart \
-	compiler/backend-dotnet
+	compiler/backend-dotnet compiler/backend-stockwerk
 
 ##
 ## Main Target and Generally Applicable Rules
@@ -419,6 +430,10 @@ build1/compiler/backend-mozart/%.asig: compiler/backend-mozart/%.asig \
 build1/compiler/backend-dotnet/%.aml: compiler/backend-dotnet/%.aml Rel2.import
 	cat Rel2.import $< > $@
 
+build1/compiler/backend-stockwerk/%.aml: compiler/backend-stockwerk/%.aml \
+	Rel2.import
+	cat Rel2.import $< > $@
+
 build1/compiler/top/%.aml: compiler/top/%.aml Rel2.import
 	cat Rel2.import $< > $@
 
@@ -432,7 +447,9 @@ build1/%.oz: %.oz
 ## Performing Build 1
 ##
 
-build1-all: $(BUILD1DIRS) $(BUILD1SOURCES) \
+build1-src: $(BUILD1DIRS) $(BUILD1SOURCES)
+
+build1-all: build1-src \
 	build1/LinkedVMMain.ozf build1/compiler/LinkedCompilerMain.ozf \
 	build1/compiler/LinkedCompileServerMain.ozf
 
@@ -524,8 +541,7 @@ build2/%.asig: build1/%.asig
 	cp $< $@
 
 build2/LinkedVMMain.ozf build2/compiler/LinkedCompilerMain.ozf \
-			build2/compiler/LinkedCompileServerMain.ozf: build2/%: \
-	build1/%
+	build2/compiler/LinkedCompileServerMain.ozf: build2/%: build1/%
 	cp $< $@
 
 build2/alicec.import: lib/fundamental/Fundamental.import lib/Other.import
@@ -546,8 +562,6 @@ build2-all: build1-install $(BUILD2DIRS) $(BUILD2SOURCES) \
 
 build2/%.ozf: build2/%.aml
 	$(ALICEC1) $(ALICEC_OPTS) --no-rtt -c $< -o $@
-
-build2/lib/system/Unix.ozf: build2/lib/system/TextIO.ozf
 
 build2/lib/rtt/LinkedRTT.ozf: build2/lib/rtt/RTT.ozf
 	$(ALICELINK1) $(ALICELINK_OPTS) --include=.. $< -o $@
@@ -651,10 +665,8 @@ build3/alicec.import: lib/fundamental/Fundamental.import lib/Other.import
 	cat $^ > $@
 
 build3/alice.import: lib/fundamental/Fundamental.import lib/Other.import \
-		compiler/top/Toplevel.import
+	compiler/top/Toplevel.import
 	cat $^ > $@
-
-build3/lib/system/Unix.ozf: build3/lib/system/TextIO.ozf
 
 build3/%.ozf: build3/%.aml
 	$(ALICEC2) $(ALICEC_OPTS) -c $< -o $@
