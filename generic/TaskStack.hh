@@ -65,6 +65,7 @@ public:
   //   PushCall requires that Scheduler::nArgs and Scheduler::currentArgs
   //   have already been set:
   Interpreter::Result PushCall(word closure);
+  static Interpreter::Result PushCall(TaskStack *taskStack, word closure);
   void Purge();
   void Dump();
 };

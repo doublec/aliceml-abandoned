@@ -28,6 +28,10 @@
 #include "generic/Properties.hh"
 #include "generic/Debug.hh"
 
+#if defined(ALICE_PROFILE)
+#include "generic/Profiler.hh"
+#endif
+
 // Empty Interpreter
 class EmptyTaskInterpreter : public Interpreter {
 public:
@@ -89,6 +93,10 @@ Interpreter::Result TaskStack::PushCall(word closureWord) {
       ConcreteCode *concreteCode = ConcreteCode::FromWord(concreteCodeWord);
       Assert(concreteCode != INVALID_POINTER);
       concreteCode->GetInterpreter()->PushCall(this, closure);
+#if defined(ALICE_PROFILE)
+      StackFrame *frame = StackFrame::FromWordDirect(GetFrame());
+      Profiler::IncCalls(frame);
+#endif
       return Interpreter::CONTINUE;
     } else { // Request ConcreteCode
       PushCallInterpreter::PushFrame(this, closureWord);
@@ -100,6 +108,11 @@ Interpreter::Result TaskStack::PushCall(word closureWord) {
     Scheduler::currentData = transient->ToWord();
     return Interpreter::REQUEST;
   }
+}
+
+Interpreter::Result
+TaskStack::PushCall(TaskStack *taskStack, word closureWord) {
+  return taskStack->PushCall(closureWord);
 }
 
 void TaskStack::Purge() {

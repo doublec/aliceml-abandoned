@@ -24,6 +24,10 @@
 #include "generic/ByneedInterpreter.hh"
 #include "generic/IOHandler.hh"
 
+#if defined(ALICE_PROFILE)
+#include "generic/Profiler.hh"
+#endif
+
 word Scheduler::root;
 ThreadQueue *Scheduler::threadQueue;
 Thread *Scheduler::currentThread;
@@ -98,8 +102,16 @@ void Scheduler::Run() {
     bool nextThread = false;
     while (!nextThread) {
       preempt = false;
+#if defined(ALICE_PROFILE)
+      Profiler::SampleHeap();
+      StackFrame *frame = StackFrame::FromWordDirect(taskStack->GetFrame());
+      Interpreter *interpreter = frame->GetInterpreter();
+      Interpreter::Result result = interpreter->Run(taskStack);
+      Profiler::AddHeap(frame);
+#else
       Interpreter *interpreter = taskStack->GetInterpreter();
       Interpreter::Result result = interpreter->Run(taskStack);
+#endif
     interpretResult:
       switch (result) {
       case Interpreter::CONTINUE:
@@ -114,9 +126,18 @@ void Scheduler::Run() {
       case Interpreter::RAISE:
 	{
 	raise:
+#if defined(ALICE_PROFILE)
+	  Profiler::SampleHeap();
+	  frame = StackFrame::FromWordDirect(taskStack->GetFrame());
+	  interpreter = frame->GetInterpreter();
+	  result =
+	    interpreter->Handle(currentData, currentBacktrace, taskStack);
+	  Profiler::AddHeap(frame);
+#else
 	  interpreter = taskStack->GetInterpreter();
 	  result =
 	    interpreter->Handle(currentData, currentBacktrace, taskStack);
+#endif
 	  goto interpretResult;
 	}
       case Interpreter::REQUEST:

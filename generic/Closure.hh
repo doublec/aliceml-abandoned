@@ -20,7 +20,7 @@
 #include "store/Store.hh"
 
 class Closure: private Block {
-private:
+protected:
   static const u_int CONCRETE_CODE_POS = 0;
   static const u_int BASE_SIZE         = 1;
 public:
