@@ -1697,9 +1697,11 @@
 
      spec1:
 	  spec1'	( spec1' )
+	| SEMICOLON	( EMPTYSpec(I(SEMICOLONleft,SEMICOLONleft)) )
 	| spec1 spec1' %prec SEMICOLON
 			( SEQSpec(I(spec1left,spec1'right), spec1, spec1') )
-	| SEMICOLON	( EMPTYSpec(I(SEMICOLONleft,SEMICOLONleft)) )
+	| spec1 SEMICOLON %prec SEMICOLON
+			( spec1 )
 	| SHARING TYPE longtycon_EQUALS_list2
 			( SHARINGTYPESpec(I(SHARINGleft,
 					    longtycon_EQUALS_list2right),
