@@ -15,6 +15,7 @@ import structure MkHashImpSet          from "../../lib/utility/MkHashImpSet"
 import structure MkHashImpMap          from "../../lib/utility/MkHashImpMap"
 import structure Url                   from "../../lib/utility/Url"
 import structure Name                  from "../../lib/rtt/Name"
+import structure Label                 from "../../lib/rtt/Label"
 import structure Crash                 from "../infrastructure/Crash"
 import structure EmptyContext          from "../infrastructure/EmptyContext"
 import structure Source                from "../infrastructure/Source"
@@ -148,6 +149,10 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 	    if isIdInVec (idRefs, id') then USED
 	    else detup' (detup (instr, id'),
 			 fn instr => O.PutTup (id, idRefs, instr))
+	  | detup (O.PutPolyRec (id, labels, idRefs, instr), id') =
+	    if isIdInVec (idRefs, id') then USED
+	    else detup' (detup (instr, id'),
+			 fn instr => O.PutPolyRec (id, labels, idRefs, instr))
 	  | detup (O.PutVec (id, idRefs, instr), id') =
 	    if isIdInVec (idRefs, id') then USED
 	    else detup' (detup (instr, id'),
@@ -178,10 +183,10 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 	    if isId (idRef, id') then USED
 	    else detup' (detup (instr, id'),
 			 fn instr => O.Sel (id, idRef, i, instr))
-	  | detup (O.LazySel (id, idRef, i, instr), id') =
+	  | detup (O.LazyPolySel (id, idRef, label, instr), id') =
 	    if isId (idRef, id') then USED
 	    else detup' (detup (instr, id'),
-			 fn instr => O.LazySel (id, idRef, i, instr))
+			 fn instr => O.LazyPolySel (id, idRef, label, instr))
 	  | detup (O.Raise idRef, id) =
 	    if isId (idRef, id) then USED else KILLED
 	  | detup (O.Reraise idRef, id) =
@@ -200,6 +205,31 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 	  | detup (O.Shared (_, _), _) = UNKNOWN
 	  | detup (O.Return idRefArgs, id) =
 	    if isIdInArgs (idRefArgs, id) then USED else KILLED
+
+	fun translateLabel label = UniqueString.unique (Label.toString label)
+
+	fun translatePolyProd (labelIdRefVec, env) =
+	    let
+		val n = Vector.length labelIdRefVec
+		val layout = Array.new (n, NONE)
+
+		fun insertPolyProd (label, idRef) =
+		    insertPolyProd' (UniqueString.hash label mod n,
+				     (label, idRef))
+		and insertPolyProd' (i, entry) =
+		    case Array.sub (layout, i) of
+			SOME _ => insertPolyProd' ((i + 1) mod n, entry)
+		      | NONE => Array.update (layout, i, SOME entry)
+	    in
+		Vector.app (fn (label, idRef) =>
+			       insertPolyProd (translateLabel label,
+					       translateIdRef (idRef, env)))
+			   labelIdRefVec;
+		(Vector.tabulate
+		     (n, fn i => #1 (Option.valOf (Array.sub (layout, i)))),
+		 Vector.tabulate
+		     (n, fn i => #2 (Option.valOf (Array.sub (layout, i)))))
+	    end
 
 	fun translateBody ([stm], env) = translateStm (stm, env)
 	  | translateBody ((stm as ValDec (_, IdDef id, exp))::
@@ -406,6 +436,12 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 	  | translateExp (ProdExp (info, labelIdRefVec), id, instr, env) =
 	    translateExp (TupExp (info, Vector.map #2 labelIdRefVec),
 			  id, instr, env)
+	  | translateExp (PolyProdExp (info, labelIdRefVec), id, instr, env) =
+	    let
+		val (labels, idRefs) = translatePolyProd (labelIdRefVec, env)
+	    in
+		O.PutPolyRec (id, labels, idRefs, instr)
+	    end
 	  | translateExp (VecExp (_, idRefs), id, instr, env) =
 	    O.PutVec (id, translateIdRefs (idRefs, env), instr)
 	  | translateExp (FunExp (region, _, flags, args, body),
@@ -468,10 +504,11 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 	    translateVarAppExp O.AppVar (idRef, args, id, instr, env)
 	  | translateExp (RefExp (_, idRef), id, instr, env) =
 	    O.PutRef (id, translateIdRef (idRef, env), instr)
-	  | translateExp (SelAppExp (_, _, _, i, idRef), id, instr, env) =
+	  | translateExp (SelExp (_, _, _, i, idRef), id, instr, env) =
 	    O.Sel (id, translateIdRef (idRef, env), i, instr)
-	  | translateExp (LazySelAppExp (_, _, _, i, idRef), id, instr, env) =
-	    O.LazySel (id, translateIdRef (idRef, env), i, instr)
+	  | translateExp (LazyPolySelExp (_, label, idRef), id, instr, env) =
+	    O.LazyPolySel (id, translateIdRef (idRef, env),
+			   translateLabel label, instr)
 	  | translateExp (FunAppExp (info, idRef, _, args), id, instr, env) =
 	    translateVarAppExp O.DirectAppVar (idRef, args, id, instr, env)
 	  | translateExp (FailExp info, id, instr, env) = (*--** implement *)
@@ -500,6 +537,7 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 	  | translateIgnore (RefExp (_, _), instr, _) = instr
 	  | translateIgnore (TupExp (_, _), instr, _) = instr
 	  | translateIgnore (ProdExp (_, _), instr, _) = instr
+	  | translateIgnore (PolyProdExp (_, _), instr, _) = instr
 	  | translateIgnore (VecExp (_, _), instr, _) = instr
 	  | translateIgnore (FunExp (_, _, _, _, _), instr, _) = instr
 	  | translateIgnore (PrimAppExp (_, name, idRefs), instr, env) =
@@ -509,10 +547,10 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 	    O.AppVar (translateIdRef (idRef, env),
 		      translateArgs translateIdRef (args, env),
 		      SOME (O.OneArg O.Wildcard, instr))
-	  | translateIgnore (SelAppExp (_, _, _, _, idRef), instr, env) =
+	  | translateIgnore (SelExp (_, _, _, _, idRef), instr, env) =
 	    O.AppPrim (V.prim "Future.await", #[translateIdRef (idRef, env)],
 		       SOME (O.Wildcard, instr))
-	  | translateIgnore (LazySelAppExp (_, _, _, _, _), instr, _) = instr
+	  | translateIgnore (LazyPolySelExp (_, _, _), instr, _) = instr
 	  | translateIgnore (FunAppExp (info, idRef, _, args), instr, env) =
 	    O.DirectAppVar (translateIdRef (idRef, env),
 			    translateArgs translateIdRef (args, env),

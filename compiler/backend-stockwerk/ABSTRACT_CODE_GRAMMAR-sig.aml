@@ -34,6 +34,8 @@ signature ABSTRACT_CODE_GRAMMAR =
 
 	type liveness = int vector
 
+	type label = UniqueString.t
+
 	datatype instr =
 	    Kill of id vector * instr
 	  | PutVar of id * idRef * instr
@@ -42,6 +44,7 @@ signature ABSTRACT_CODE_GRAMMAR =
 	  | PutCon of id * idRef * idRef vector * instr
 	  | PutRef of id * idRef * instr
 	  | PutTup of id * idRef vector * instr
+	  | PutPolyRec of id * label vector * idRef vector * instr
 	  | PutVec of id * idRef vector * instr
 	  | Close of id * idRef vector * value * instr
 	  | Specialize of id * idRef vector * template * instr
@@ -51,7 +54,7 @@ signature ABSTRACT_CODE_GRAMMAR =
 	  | GetRef of id * idRef * instr
 	  | GetTup of idDef vector * idRef * instr
 	  | Sel of id * idRef * int * instr
-	  | LazySel of id * idRef * int * instr
+	  | LazyPolySel of id * idRef * label * instr
 	  | Raise of idRef
 	  | Reraise of idRef
 	  | Try of instr * idDef * idDef * instr

@@ -11,6 +11,7 @@
  *)
 
 import structure Reflect             from "../../lib/system/Reflect"
+import structure MkHashImpMap        from "../../lib/utility/MkHashImpMap"
 import structure Crash               from "../infrastructure/Crash"
 import structure Stamp               from "../common/Stamp"
 import structure StampMap            from "../common/StampMap"
@@ -24,12 +25,15 @@ structure OutputPickle :> OUTPUT_PICKLE =
 	structure V = Value
 	open AbstractCodeGrammar
 
+	structure LabelMap = MkHashImpMap(UniqueString)
+
 	structure Label =
 	    struct
 		datatype t =
 		    ARRAY
 		  | CELL
 		  | CON_VAL
+		  | RECORD
 		  | VECTOR
 		  | TAG of LargeInt.int
 
@@ -55,25 +59,26 @@ structure OutputPickle :> OUTPUT_PICKLE =
 		val getTup         = TAG 10
 		val intTest        = TAG 11
 		val kill           = TAG 12
-		val lazySel        = TAG 13
+		val lazyPolySel    = TAG 13
 		val putCon         = TAG 14
 		val putNew         = TAG 15
 		val putRef         = TAG 16
 		val putTag         = TAG 17
 		val putTup         = TAG 18
-		val putVar         = TAG 19
-		val putVec         = TAG 20
-		val raise_         = TAG 21
-		val realTest       = TAG 22
-		val reraise        = TAG 23
-		val return         = TAG 24
-		val sel            = TAG 25
-		val shared         = TAG 26
-		val specialize     = TAG 27
-		val stringTest     = TAG 28
-		val tagTest        = TAG 29
-		val try            = TAG 30
-		val vecTest        = TAG 31
+		val putPolyRec     = TAG 19
+		val putVar         = TAG 20
+		val putVec         = TAG 21
+		val raise_         = TAG 22
+		val realTest       = TAG 23
+		val reraise        = TAG 24
+		val return         = TAG 25
+		val sel            = TAG 26
+		val shared         = TAG 27
+		val specialize     = TAG 28
+		val stringTest     = TAG 29
+		val tagTest        = TAG 30
+		val try            = TAG 31
+		val vecTest        = TAG 32
 
 		val global       = TAG 0
 		val immediate    = TAG 1
@@ -89,12 +94,14 @@ structure OutputPickle :> OUTPUT_PICKLE =
 		fun toInt ARRAY   = 0
 		  | toInt CELL    = 1
 		  | toInt CON_VAL = 2
-		  | toInt VECTOR  = 3
-		  | toInt (TAG i) = 4 + i
+		  | toInt RECORD  = 3
+		  | toInt VECTOR  = 4
+		  | toInt (TAG i) = 5 + i
 	    end
 
 	type context = {outstream: PrimPickle.outstream,
-			shared: PrimPickle.id StampMap.t}
+			shared: PrimPickle.id StampMap.t,
+			labels: PrimPickle.id LabelMap.t}
 
 	fun outputInt ({outstream, ...}: context, i) =
 	    PrimPickle.outputInt (outstream, i)
@@ -170,6 +177,18 @@ structure OutputPickle :> OUTPUT_PICKLE =
 		()
 	    end
 
+	fun outputLabel (context as {labels, ...}: context, label) =
+	    case LabelMap.lookup (labels, label) of
+		SOME id => outputReference (context, id)
+	      | NONE =>
+		    let
+			val id =
+			    outputTransform (context, "Alice.uniqueString")
+		    in
+			outputString (context, UniqueString.string label);
+			LabelMap.insert (labels, label, id)
+		    end
+
 	fun outputValue (context, V.Prim name) =
 	    (outputTransform (context, "Alice.primitive.value");
 	     outputBlock (context, Label.TAG 0, 1);
@@ -226,6 +245,12 @@ structure OutputPickle :> OUTPUT_PICKLE =
 	    (outputBlock (context, Label.putTup, 3); outputId (context, id);
 	     outputVector outputIdRef (context, idRefs);
 	     outputInstr (context, instr))
+	  | outputInstr (context, PutPolyRec (id, labels, idRefs, instr)) =
+	    (outputBlock (context, Label.putPolyRec, 4);
+	     outputId (context, id);
+	     outputVector outputLabel (context, labels);
+	     outputVector outputIdRef (context, idRefs);
+	     outputInstr (context, instr))
 	  | outputInstr (context, PutVec (id, idRefs, instr)) =
 	    (outputBlock (context, Label.putVec, 3); outputId (context, id);
 	     outputVector outputIdRef (context, idRefs);
@@ -279,11 +304,10 @@ structure OutputPickle :> OUTPUT_PICKLE =
 	     outputId (context, id); outputIdRef (context, idRef);
 	     outputInt (context, LargeInt.fromInt i);
 	     outputInstr (context, instr))
-	  | outputInstr (context, LazySel (id, idRef, i, instr)) =
-	    (outputBlock (context, Label.lazySel, 4);
+	  | outputInstr (context, LazyPolySel (id, idRef, label, instr)) =
+	    (outputBlock (context, Label.lazyPolySel, 4);
 	     outputId (context, id); outputIdRef (context, idRef);
-	     outputInt (context, LargeInt.fromInt i);
-	     outputInstr (context, instr))
+	     outputLabel (context, label); outputInstr (context, instr))
 	  | outputInstr (context, Raise idRef) =
 	    (outputBlock (context, Label.raise_, 1);
 	     outputIdRef (context, idRef))
@@ -431,6 +455,7 @@ structure OutputPickle :> OUTPUT_PICKLE =
 	     outputInstr (context, body); outputLiveness (context, liveness))
 
 	fun output (outstream, value) =
-	    outputValue ({outstream = outstream, shared = StampMap.new ()},
-			 value)
+	    outputValue ({outstream = outstream,
+			  shared = StampMap.new (),
+			  labels = LabelMap.new ()}, value)
     end

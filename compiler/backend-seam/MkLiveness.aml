@@ -70,6 +70,8 @@ functor MkLiveness(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR): LIVENESS =
 		    lId (id, lIdRef (idRef, lInstr (instr, i) + 1))
 		  | lInstr (PutTup (id, idRefs, instr), i) =
 		    lId (id, lIdRefs (idRefs, lInstr (instr, i) + 1))
+		  | lInstr (PutPolyRec (id, _, idRefs, instr), i) =
+		    lId (id, lIdRefs (idRefs, lInstr (instr, i) + 1))
 		  | lInstr (PutVec (id, idRefs, instr), i) =
 		    lId (id, lIdRefs (idRefs, lInstr (instr, i) + 1))
 		  | lInstr (Close (id, idRefs, _, instr), i) =
@@ -104,7 +106,7 @@ functor MkLiveness(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR): LIVENESS =
 		    lIdDefs (idDefs, lIdRef (idRef, lInstr (instr, i) + 1))
 		  | lInstr (Sel (id, idRef, _, instr), i) =
 		    lId (id, lIdRef (idRef, lInstr (instr, i) + 1))
-		  | lInstr (LazySel (id, idRef, _, instr), i) =
+		  | lInstr (LazyPolySel (id, idRef, _, instr), i) =
 		    lId (id, lIdRef (idRef, lInstr (instr, i) + 1))
 		  | lInstr (Raise idRef, i) = lIdRef (idRef, i) + 1
 		  | lInstr (Reraise idRef, i) = lIdRef (idRef, i) + 1
