@@ -34,6 +34,7 @@ DEFINE1(Array_fromList) {
     array->Init(i++, tagVal->Sel(0));
     tagVal = TagVal::FromWord(tagVal->Sel(1));
   }
+  Assert(i == length);
   RETURN(array->ToWord());
 } END
 

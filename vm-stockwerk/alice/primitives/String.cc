@@ -92,6 +92,7 @@ DEFINE1(String_implode) {
     base[i++] = Store::WordToInt(tagVal->Sel(0));
     tagVal = TagVal::FromWord(tagVal->Sel(1));
   }
+  Assert(i == length);
   RETURN(string->ToWord());
 } END
 
