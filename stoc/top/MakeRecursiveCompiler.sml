@@ -45,6 +45,15 @@ functor MakeRecursiveCompiler(structure Composer: COMPOSER
 		  | SOME home => home
 	end
 
+	fun resolveWrtCwd url =
+	    let
+		val base =
+		    Url.setScheme (Url.fromString (OS.FileSys.getDir () ^ "/"),
+				   SOME "file")
+	    in
+		Url.resolve base url
+	    end
+
 	fun parseUrl url =
 	    case (Url.getScheme url, Url.getAuthority url) of
 		(NONE, NONE) =>
@@ -89,11 +98,7 @@ functor MakeRecursiveCompiler(structure Composer: COMPOSER
 
 	fun processFile process filename =
 	    let
-		val url = Url.fromString filename
-		val base =
-		    Url.setScheme (Url.fromString (OS.FileSys.getDir () ^ "/"),
-				   SOME "file")
-		val url = Url.resolve base url
+		val url = resolveWrtCwd (Url.fromString filename)
 	    in
 		processBasic process (Source.urlDesc url,
 				      readFile (parseUrl url))
@@ -102,12 +107,10 @@ functor MakeRecursiveCompiler(structure Composer: COMPOSER
 	local
 	    fun compileSign' (desc, s) =
 		let
-		    val _ = TextIO.print ("### reading signature" ^
-					  (case Source.url desc of
-					       SOME url =>
-						   " from " ^
-						   Url.toString url ^ "\n"
-					     | NONE => "\n"))
+		    val _ =
+			TextIO.print ("### reading signature from " ^
+				      Url.toString (valOf (Source.url desc)) ^
+				      "\n")
 		    val (_, target) =
 			Compiler.compile (Compiler.empty, desc,
 					  Source.fromString s)
@@ -209,7 +212,7 @@ functor MakeRecursiveCompiler(structure Composer: COMPOSER
 		val url =
 		    case Source.url desc of
 			SOME base => Url.resolve base url
-		      | NONE => url
+		      | NONE => resolveWrtCwd url
 	    in
 		case Composer.sign url of
 		    SOME sign => sign
