@@ -1,9 +1,11 @@
 //
 // Author:
 //   Marco Kuhlmann <kuhlmann@ps.uni-sb.de>
+//   Guido Tack <tack@ps.uni-sb.de>
 // 
 // Copyright:
 //   Marco Kuhlmann, 2003
+//   Guido Tack, 2003
 // 
 // Last change:
 //   $Date$ by $Author$
@@ -93,7 +95,7 @@ int my_regexec (regex_t* compiled,
   nmatch = (size_t) 0;
   matchptr = (regmatch_t*) NULL;
 
-  while ((nmatch == 0) || (nmatch >= max_nmatch)) {
+  while ((nmatch == 0) || (nmatch >= (max_nmatch - 1))) {
     max_nmatch = max_nmatch * 3/2;
     matchptr = (regmatch_t*) malloc (sizeof (regmatch_t) * max_nmatch);
 
@@ -103,16 +105,18 @@ int my_regexec (regex_t* compiled,
       free (matchptr);
       return retval;
     } else {
-      while (needsupdate && (nmatch < max_nmatch)) {
-	nmatch++;
-	if (matchptr[nmatch].rm_so == -1)
+      while (needsupdate && (nmatch < (max_nmatch - 1))) {
+	if (matchptr[nmatch + 1].rm_so == -1) {
 	  needsupdate = false;
+	} else {
+	  nmatch++;
+	}
       }
       free (matchptr);
     }
   }
 
-  nmatch--;
+  nmatch++;
   matchptr = (regmatch_t*) malloc (sizeof (regmatch_t) * nmatch);
   return (regexec (compiled, match_against, nmatch, matchptr, eflags));
 }
