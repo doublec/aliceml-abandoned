@@ -5,8 +5,8 @@ This file describes how to install and run Alice for NGWS.
 
       Alice\doc\index.html
 
-2. Adapt the installation path in vars.bat to the directory
-   you unpacked Alice.zip into, and invoke vars.bat.
+2. IMPORTANT: Adapt the installation path in vars.bat to the
+   directory you unpacked Alice.zip into, and invoke vars.bat.
 
 3. To run the precompiled demo do:
 
