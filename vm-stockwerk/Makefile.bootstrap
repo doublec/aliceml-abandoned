@@ -123,7 +123,7 @@ M4 = m4
 ## Enumerate All Files Making Up the Source Tree
 ##
 
-SEAMFILES = seam.dll alice.dll alice.exe
+SEAMFILES = seam.exe seam.dll alice.dll
 
 LIBSYSTEMNATIVES0 = \
 	Config IODesc OS Unix CommandLine Component Debug Foreign Socket Rand \

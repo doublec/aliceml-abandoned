@@ -101,7 +101,7 @@ LIBS = -L$(SUPPORTDIR)/lib $(EXTRA_LIBS) -lz
 
 .PHONY: clean-local veryclean-local distclean-local $(SUBDIRS)
 
-all: seam.exe alice.exe java.exe
+all: seam.exe alice.dll java.dll
 
 $(SUBDIRS): %:
 	(cd $@ && $(MAKE) all)
@@ -112,19 +112,13 @@ seam.dll: Base.o InitSeam.o store adt generic
 seam.exe: SeamMain.o seam.dll
 	$(LD) $(LDFLAGS) -o $@ $< seam.dll
 
-alice.dll: seam.dll alice
+alice.dll: AliceMain.o seam.dll alice
 	$(LD) $(LDFLAGS) $(ALICE_DLL_EXTRA_LDFLAGS) \
-	-shared -o $@ $(ALICE_OBJS) seam.dll $(LIBS)
+	-shared -o $@ AliceMain.o $(ALICE_OBJS) seam.dll $(LIBS)
 
-alice.exe: AliceMain.o alice.dll
-	$(LD) $(LDFLAGS) -o $@ $< alice.dll seam.dll
-
-java.dll: seam.dll java
+java.dll: JavaMain.o seam.dll java
 	$(LD) $(LDFLAGS) $(JAVA_DLL_EXTRA_LDFLAGS) \
-	-shared -o $@ $(JAVA_OBJS) seam.dll $(LIBS)
-
-java.exe: JavaMain.o java.dll
-	$(LD) $(LDFLAGS) -o $@ $< java.dll seam.dll
+	-shared -o $@ JavaMain.o $(JAVA_OBJS) seam.dll $(LIBS)
 
 clean: clean-local
 	for i in $(SUBDIRS); do (cd $$i && $(MAKE) clean) || exit 1; done

@@ -13,7 +13,8 @@
 //
 
 #include <cstdio>
-#include "Alice.hh"
+#include "alice/AliceLanguageLayer.hh"
+#include "alice/BootLinker.hh"
 
 extern word UnsafeConfig();
 extern word UnsafeIODesc();
@@ -50,22 +51,30 @@ static NativeComponent nativeComponents[] = {
   {NULL, NULL}
 };
 
-int main(int argc, char *argv[]) {
+static void InitAlice(int argc, const char *argv[]) {
+  static bool initialized = false;
+  if (!initialized) {
+    char *home = std::getenv("ALICE_HOME");
+    if (home == NULL) {
+      Error("could not determine installation directory");
+    }
+    AliceLanguageLayer::Init(home, argc, argv);
+    initialized = true;
+  }
+}
+
+void Start(int argc, const char *argv[]) {
   if (argc < 2) {
     std::fprintf(stderr, "usage: %s <component> <args...>\n", argv[0]);
-    return 2;
+    std::exit(2);
   }
-
-  char *home = std::getenv("ALICE_HOME");
-  if (home == NULL) {
-    Error("could not determine installation directory");
-  }
-
-  InitSeam();
-  // Set up Alice Language Layer:
-  AliceLanguageLayer::Init(home, argc, argv);
+  InitAlice(argc, argv);
   BootLinker::Init(nativeComponents);
-  // Link and execute boot component:
   BootLinker::Link(String::New("lib/system/Boot")); //--** to be done
-  return Scheduler::Run();
+}
+
+Worker::Result Load(String *name) {
+  const char *argv[] = {""};
+  InitAlice(1, argv);
+  Error("alice.dll: Load not implemented");   //--** to be done
 }

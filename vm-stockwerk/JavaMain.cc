@@ -13,18 +13,29 @@
 //
 
 #include <cstdio>
-#include "Java.hh"
+#include <cstdlib>
+#include "Seam.hh"
+#include "java/JavaLanguageLayer.hh"
+#include "java/Startup.hh"
 
-int main(int argc, char *argv[]) {
+static void InitJava() {
+  static bool initialized = false;
+  if (!initialized) {
+    JavaLanguageLayer::Init();
+    initialized = true;
+  }
+}
+
+void Start(int argc, char *argv[]) {
   if (argc < 2) {
     std::fprintf(stderr, "usage: %s <classfile> <args...>\n", argv[0]);
-    return 2;
+    std::exit(2);
   }
-
-  InitSeam();
-  // Set up Java Language Layer:
-  JavaLanguageLayer::Init();
-  // Link and execute boot component:
+  InitJava();
   Startup(argc, argv);
-  return Scheduler::Run();
+}
+
+Worker::Result Load(String *name) {
+  InitJava();
+  Error("java.dll: Load not implemented");   //--** to be done
 }

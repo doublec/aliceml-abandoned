@@ -56,11 +56,11 @@ fi
 export ALICE_HOME ALICE_LOAD
 
 ## To use the GUI debugger on Windows/Cygwin:
-#echo run "$@"
-#exec insight "$ALICE_HOME"/alice.exe
+#echo run alice "$@"
+#exec insight "$ALICE_HOME"/seam.exe
 
 ## To use the debugger on Unix:
-#(echo "break Base.cc:22"; echo "tty /dev/pts/4"; echo run "$@"; cat) |
-#exec gdb "$ALICE_HOME"/alice.exe
+#(echo "break Base.cc:22"; echo "tty /dev/pts/4"; echo run alice "$@"; cat) |
+#exec gdb "$ALICE_HOME"/seam.exe
 
-exec "$ALICE_HOME"/alice.exe "$@"
+exec "$ALICE_HOME"/seam.exe alice "$@"
