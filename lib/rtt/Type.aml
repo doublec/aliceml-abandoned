@@ -56,7 +56,8 @@ the following example:
 	IntList = Nil | Cons(Int, IntList)
 
 Maybe this can be made a bit more permissive, but in general it seems
-impossible to have non-uniform datatypes as well as arbitrary recursive types.
+impossible to have non-uniform datatypes as well as arbitrary recursive types -
+type checking would become undecidable.
 
 It is also unclear to me whether some sort of hash-consing can be applied to
 recursive types or even recursive type functions.

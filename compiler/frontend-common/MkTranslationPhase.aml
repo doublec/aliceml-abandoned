@@ -11,10 +11,12 @@ structure TranslationPhase :> TRANSLATION_PHASE =
   (* Recognize sum type constructors (tags) *)
 
     fun isTagType t =
-	Type.isArrow t andalso isTagType(#2(Type.asArrow t)) orelse
-	Type.isAll t   andalso isTagType(#2(Type.asAll t))   orelse
-	Type.isExist t andalso isTagType(#2(Type.asExist t)) orelse
-	Type.isMu t    andalso isTagType(Type.asMu t)        orelse
+	Type.isArrow t  andalso isTagType(#2(Type.asArrow t))  orelse
+	Type.isAll t    andalso isTagType(#2(Type.asAll t))    orelse
+	Type.isExist t  andalso isTagType(#2(Type.asExist t))  orelse
+	Type.isLambda t andalso isTagType(#2(Type.asLambda t)) orelse
+	Type.isApply t  andalso isTagType(#1(Type.asApply t))  orelse
+	Type.isMu t     andalso isTagType(Type.asMu t)         orelse
 	Type.isSum t
 
 
@@ -347,13 +349,27 @@ UNFINISHED: obsolete after bootstrapping:
     and trEqCon(i,x,y',ds')		= O.ValDec(nonInfo(#region i),
 						   O.VarPat(i,trId x),
 						   O.VarExp(i,y')) :: ds'
-    and trNewCon(i,x,k,ds')		= O.ValDec(nonInfo(#region i),
-						   O.VarPat(i,trId x),
-						   O.NewExp(i,k>1)) :: ds'
-    and trTagCon(i,x,k,ds')		= O.ValDec(nonInfo(#region i),
-						   O.VarPat(i,trId x),
-						   O.TagExp(i,trLab(I.idToLab x)
-							     ,k>1)) :: ds'
+    and trNewCon(i,x,k,ds')		= let val r  = #region i
+					      val _  = Type.enterLevel()
+					      val t  = Type.instance(#typ i)
+					      val _  = Type.exitLevel()
+					      val _  = Type.close t
+					      val i' = typInfo(r,t)
+					  in O.ValDec(nonInfo r,
+						      O.VarPat(i',trId x),
+						      O.NewExp(i',k>1)) :: ds'
+					  end
+    and trTagCon(i,x,k,ds')		= let val r  = #region i
+					      val _  = Type.enterLevel()
+					      val t  = Type.instance(#typ i)
+					      val _  = Type.exitLevel()
+					      val _  = Type.close t
+					      val i' = typInfo(r,t)
+					  in O.ValDec(nonInfo r,
+						O.VarPat(i',trId x),
+						O.TagExp(i',trLab(I.idToLab x)
+							   ,k>1)) :: ds'
+					  end
 
 
   (* Imports and annotations *)
