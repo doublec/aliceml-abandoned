@@ -23,6 +23,8 @@
 // Opcodes
 class AbstractCode {
 public:
+  static const u_int functionWidth = 6;
+
   //
   // All constructors here must be lexicographically ordered
   // so that the right integer tags are computed.

@@ -230,13 +230,13 @@ void AbstractCodeInterpreter::PushCall(TaskStack *taskStack,
 				       Closure *closure) {
   AliceConcreteCode *concreteCode =
     AliceConcreteCode::FromWord(closure->GetConcreteCode());
-  // Function of coord * int * int * idDef args * instr
+  // Function of coord * int * int * idDef args * instr * liveness
   TagVal *abstractCode = concreteCode->GetAbstractCode();
   switch (AbstractCode::GetAbstractCode(abstractCode)) {
   case AbstractCode::Function:
   case AbstractCode::Specialized:
     {
-      abstractCode->AssertWidth(5);
+      abstractCode->AssertWidth(AbstractCode::functionWidth);
       int nlocals = Store::WordToInt(abstractCode->Sel(2));
       AbstractCodeFrame *frame =
 	AbstractCodeFrame::New(this, abstractCode->Sel(4), closure,
@@ -415,8 +415,10 @@ Interpreter::Result AbstractCodeInterpreter::Run(TaskStack *taskStack) {
     case AbstractCode::Specialize: // of id * idRef vector * template * instr
       {
 	// Construct new abstract code by instantiating template:
-	TagVal *abstractCode = TagVal::New(AbstractCode::Specialized, 5);
+	TagVal *abstractCode = TagVal::New(AbstractCode::Specialized,
+					   AbstractCode::functionWidth);
 	TagVal *template_ = TagVal::FromWordDirect(pc->Sel(2));
+	template_->AssertWidth(AbstractCode::functionWidth);
 	abstractCode->Init(0, template_->Sel(0));
 	Vector *idRefs = Vector::FromWordDirect(pc->Sel(1));
 	u_int nToplevels = idRefs->GetLength();
@@ -427,6 +429,7 @@ Interpreter::Result AbstractCodeInterpreter::Run(TaskStack *taskStack) {
 	abstractCode->Init(2, template_->Sel(2));
 	abstractCode->Init(3, template_->Sel(3));
 	abstractCode->Init(4, template_->Sel(4));
+	abstractCode->Init(5, template_->Sel(5));
 	// Construct concrete code from abstract code:
 	AliceConcreteCode *concreteCode = AliceConcreteCode::New(abstractCode);
 	// Construct closure from concrete code:

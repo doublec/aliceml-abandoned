@@ -20,6 +20,7 @@
 #include "alice/AliceLanguageLayer.hh"
 
 AliceConcreteCode *AliceConcreteCode::New(TagVal *abstractCode) {
+  abstractCode->AssertWidth(AbstractCode::functionWidth);
   ConcreteCode *concreteCode =
     ConcreteCode::New(AbstractCodeInterpreter::self, SIZE);
   Chunk *name =
