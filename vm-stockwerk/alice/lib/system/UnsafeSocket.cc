@@ -44,6 +44,8 @@ typedef int socklen_t;
   } while (res < 0 && GetLastError() == EINTR);
 #endif
 
+//--** finalization of sockets to be done
+
 static int SetNonBlocking(int sock, bool flag) {
   unsigned long arg = flag;
   return ioctlsocket(sock, FIONBIO, &arg);
