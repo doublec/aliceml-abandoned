@@ -14,6 +14,7 @@ functor
 import
    BootName(newUnique: NewUniqueName) at 'x-oz://boot/Name'
    System(show printInfo)
+   Application(exit)
 export
    BuiltinTable
    Env
@@ -96,6 +97,37 @@ define
 	    end
 	 end
       '<>': fun {$ X1#X2} X1 \= X2 end
+      'Application.exit':
+	 fun {$ I} {Application.exit I} '#' end
+      'Array.array':
+	 fun {$ N#Init} {Array.new 0 N - 1 Init} end
+      'Array.fromList':
+	 fun {$ Xs} Xs2 N A in
+	    Xs2 = {ImportList Xs}
+	    N = {Length Xs2}
+	    A = {Array.new 0 N - 1 unit}
+	    {List.forAllInd Xs2 proc {$ I X} {Array.put A I - 1 X} end}
+	    A
+	 end
+      'Array.length':
+	 fun {$ A} {Array.high A} + 1 end
+      'Array.sub':
+	 fun {$ A#I}
+	    try
+	       {Array.get A I}
+	    catch _ then
+	       {Exception.raiseError BuiltinTable.'General.Subscript'} '#'
+	    end
+	 end
+      'Array.update':
+	 fun {$ A#I#X}
+	    try
+	       {Array.put A I X}
+	    catch _ then
+	       {Exception.raiseError BuiltinTable.'General.Subscript'}
+	    end
+	    '#'
+	 end
       'Char.ord': fun {$ C} C end
       'Char.chr':
 	 fun {$ C}
@@ -111,6 +143,8 @@ define
       'General.Chr': {NewUniqueName 'General.Chr'}
       'General.Div': {NewUniqueName 'General.Div'}
       'General.Domain': {NewUniqueName 'General.Domain'}
+      'General.exchange':
+	 fun {$ C#New} {Exchange C $ New} end
       'General.Fail': {NewUniqueName 'General.Fail'}
       'General.Overflow': {NewUniqueName 'General.Overflow'}
       'General.Size': {NewUniqueName 'General.Size'}
@@ -167,35 +201,20 @@ define
 		'::'('#'(C Cr))
 	     end nil}
 	 end
-      'Array.array':
-	 fun {$ N#Init} {Array.new 0 N - 1 Init} end
-      'Array.fromList':
-	 fun {$ Xs} Xs2 N A in
-	    Xs2 = {ImportList Xs}
-	    N = {Length Xs2}
-	    A = {Array.new 0 N - 1 unit}
-	    {List.forAllInd Xs2 proc {$ I X} {Array.put A I - 1 X} end}
-	    A
-	 end
-      'Array.length':
-	 fun {$ A} {Array.high A} + 1 end
-      'Array.sub':
-	 fun {$ A#I}
-	    try
-	       {Array.get A I}
-	    catch _ then
-	       {Exception.raiseError BuiltinTable.'General.Subscript'} '#'
-	    end
-	 end
-      'Array.update':
-	 fun {$ A#I#X}
-	    try
-	       {Array.put A I X}
-	    catch _ then
-	       {Exception.raiseError BuiltinTable.'General.Subscript'}
-	    end
-	    '#'
-	 end
+      'Thread.spawn':
+	 fun {$ P} thread {P '#' _} end '#' end
+      'Thread.sleep':
+	 fun {$ N} {Delay N} '#' end
+      'Transient.await':
+	 fun {$ X} {Wait X} X end
+      'Transient.byNeed':
+	 fun {$ P} {ByNeed fun {$} {P '#'} end} end
+      'Transient.fulfill':
+	 fun {$ P#X} P = X '#' end
+      'Transient.future':
+	 fun {$ P} !!P end
+      'Transient.promise':
+	 fun {$ '#'} _ end
       'Vector.fromList':
 	 fun {$ Xs} {List.toTuple vector {ImportList Xs}} end
       'Vector.sub':
