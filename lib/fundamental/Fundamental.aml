@@ -54,8 +54,9 @@ import structure Int		from "Int"
 import structure LargeInt	from "LargeInt"
 import structure Position	from "Position"
 import signature WORD		from "WORD-sig"
-import structure Word		from "Word"
 import structure Word8		from "Word8"
+import structure Word31		from "Word31"
+import structure Word		from "Word"
 import structure LargeWord	from "LargeWord"
 
 import signature REAL		from "REAL-sig"
@@ -142,8 +143,9 @@ structure Int		= Int
 structure LargeInt	= LargeInt
 structure Position	= Position
 signature WORD		= WORD
-structure Word		= Word
 structure Word8		= Word8
+structure Word31	= Word31
+structure Word		= Word
 structure LargeWord	= LargeWord
 
 signature REAL		= REAL
