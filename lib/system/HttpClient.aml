@@ -53,7 +53,7 @@ structure HttpClient :> HTTP_CLIENT =
 		fun new' (host, port) =
 		    case Map.lookup (map, (host, port)) of
 			SOME [socket] =>
-			    (Map.deleteExistent (map, (host, port)); socket)
+			    (Map.removeExistent (map, (host, port)); socket)
 		      | SOME (socket::rest) =>
 			    (Map.insert (map, (host, port), rest); socket)
 		      | (NONE | SOME nil) => Socket.client (host, port)
