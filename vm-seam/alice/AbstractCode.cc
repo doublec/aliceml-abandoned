@@ -14,6 +14,7 @@
 #pragma implementation "alice/AbstractCode.hh"
 #endif
 
+#include "store/Map.hh"
 #include "adt/Stack.hh"
 #include "adt/Queue.hh"
 #include "generic/Tuple.hh"
@@ -120,7 +121,7 @@ private:
 
   std::FILE *file;
   Stack *todo;
-  BlockHashTable *done;
+  Map *done;
   Queue *immediates;
   TagVal *pc;
   u_int operand;
@@ -233,7 +234,7 @@ public:
   Disassembler(std::FILE *f, TagVal *pc): file(f) {
     todo = Stack::New(initialSize);
     todo->SlowPush(pc->ToWord());
-    done = BlockHashTable::New(initialSize);
+    done = Map::New(initialSize);
     immediates = Queue::New(initialSize);
   }
 
@@ -246,7 +247,7 @@ void Disassembler::Start() {
     pc = TagVal::FromWordDirect(todo->Pop());
     if (done->IsMember(pc->ToWord()))
       continue;
-    done->InsertItem(pc->ToWord(), Store::IntToWord(0));
+    done->Put(pc->ToWord(), Store::IntToWord(0));
     operand = 0;
     std::fprintf(file, "%p %s", pc, AbstractCode::GetOpcodeName(pc));
     switch (AbstractCode::GetInstr(pc)) {
