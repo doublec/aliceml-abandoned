@@ -306,12 +306,30 @@ functor MakeMain(structure Composer: COMPOSER'
 
 	(*DEBUG*)
 	local
-	    structure AbstractionPhase = MakeAbstractionPhase(Composer)
+	    structure AbstractionPhase =
+		  MakeDumpingPhase(
+			structure Phase    = MakeAbstractionPhase(Composer)
+			structure Switches = Switches
+			val header = "Abstract Syntax"
+			val pp     = PPAbstractGrammar.ppComp
+			val switch = Switches.Debug.dumpAbstractionResult
+		  )
 	    structure ElaborationPhase =
-		MakeElaborationPhase(structure Composer = Composer
-				     structure Switches = Switches)
+		  MakeDumpingPhase(
+			structure Phase    = MakeElaborationPhase(Composer)
+			structure Switches = Switches
+			val header = "Component Signature"
+			val pp     = PPInf.ppSig o #sign o TypedGrammar.infoComp
+			val switch = Switches.Debug.dumpElaborationSig
+		  )
 	    structure TranslationPhase =
-		MakeTranslationPhase(structure Switches = Switches)
+		  MakeDumpingPhase(
+			structure Phase    = MakeTranslationPhase(Switches)
+			structure Switches = Switches
+			val header = "Intermediate Syntax"
+			val pp     = PPIntermediateGrammar.ppComp
+			val switch = Switches.Debug.dumpIntermediate
+		  )
 
 	    fun parse' x     = ParsingPhase.translate () x
 	    fun abstract' x  = AbstractionPhase.translate (BindEnv.new()) x
@@ -319,14 +337,15 @@ functor MakeMain(structure Composer: COMPOSER'
 	    fun translate' x = TranslationPhase.translate () x
 	    fun flatten' x   = BackendCommon.translate () x
 
-	    fun (f o g) (desc, x) = f (desc, g (desc, x))
+	    infix 3 oo
+	    fun (f oo g) (desc, x) = f (desc, g (desc, x))
 
 	    fun source (_, s) = Source.fromString s
-	    val parse         = parse' o source
-	    val abstract      = abstract' o parse
-	    val elab          = elab' o abstract
-	    val translate     = translate' o elab
-	    val flatten       = flatten' o translate
+	    val parse         = parse' oo source
+	    val abstract      = abstract' oo parse
+	    val elab          = elab' oo abstract
+	    val translate     = translate' oo elab
+	    val flatten       = flatten' oo translate
 	in
 	    val parseString	= processString parse
 	    val parseFile	= processFile parse
