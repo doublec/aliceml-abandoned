@@ -77,7 +77,7 @@ define
 
    if OptRec.help then
       {System.printError
-       'Usage: '#{Property.get 'application.url'}#' [--help] [--debug]\n'}
+       'Usage: '#{Property.get 'application.url'}#' [--help]\n'}
       {Application.exit 0}
    end
 
