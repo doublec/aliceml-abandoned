@@ -10,6 +10,8 @@
  *   $Revision$
  *)
 
+import structure Config                   from "../lib/system/Config"
+import structure TextIO                   from "../lib/system/TextIO"
 import structure OS                       from "../lib/system/OS"
 import structure CommandLine              from "../lib/system/CommandLine"
 import structure SMLToMozartBatchCompiler from "top/SMLToMozartBatchCompiler"
@@ -19,11 +21,21 @@ import structure SMLToStockwerkBatchCompiler
 
 val _ =
     case CommandLine.arguments () of
-	"--dotnet"::args =>
-	    OS.Process.exit (SMLToDotNetBatchCompiler.main args)
-      | "--mozart"::args =>
+	"--mozart"::args =>
 	    OS.Process.exit (SMLToMozartBatchCompiler.main args)
       | "--stockwerk"::args =>
 	    OS.Process.exit (SMLToStockwerkBatchCompiler.main args)
+      | "--dotnet"::args =>
+	    OS.Process.exit (SMLToDotNetBatchCompiler.main args)
       | args =>
-	    OS.Process.exit (SMLToMozartBatchCompiler.main args)
+	    case Config.vm of
+		"mozart" =>
+		    OS.Process.exit (SMLToMozartBatchCompiler.main args)
+	      | "stockwerk" =>
+		    OS.Process.exit (SMLToStockwerkBatchCompiler.main args)
+	      | "dotnet" =>
+		    OS.Process.exit (SMLToDotNetBatchCompiler.main args)
+	      | _ =>
+		    (TextIO.output (TextIO.stdErr,
+				    "alicec: unknown runtime environment\n");
+		     OS.Process.exit OS.Process.failure)
