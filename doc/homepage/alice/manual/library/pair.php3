@@ -117,7 +117,7 @@
 <?php section("also", "see also") ?>
 
   <DL><DD>
-    <A href="alt.php3">Alt</A>
+    <A href="alt.php3"><TT>Alt</TT></A>
   </DD></DL>
 
 <?php footing() ?>

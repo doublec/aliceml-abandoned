@@ -166,8 +166,8 @@
 <?php section("also", "see also") ?>
 
   <DL><DD>
-    <A href="option.php3">Option</A>,
-    <A href="pair.php3">Pair</A>
+    <A href="option.php3"><TT>Option</TT></A>,
+    <A href="pair.php3"><TT>Pair</TT></A>
   </DD></DL>
 
 <?php footing() ?>

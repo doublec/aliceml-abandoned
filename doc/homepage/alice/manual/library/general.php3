@@ -141,7 +141,7 @@
 <?php section("also", "see also") ?>
 
   <DL><DD>
-    <A href="ref.php3">Ref</A>
+    <A href="ref.php3"><TT>Ref</TT></A>
   </DD></DL>
 
 <?php footing() ?>

@@ -39,7 +39,7 @@
 <?php section("also", "see also") ?>
 
   <DL><DD>
-    <A href="resolver.php3">Resolver</A>
+    <A href="resolver.php3"><TT>Resolver</TT></A>
   </DD></DL>
 
 <?php footing() ?>

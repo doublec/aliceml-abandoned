@@ -39,8 +39,8 @@
 <?php section("also", "see also") ?>
 
   <DL><DD>
-    <A href="resolver-handler.php3">RESOLVER_HANDLER</A>,
-    <A href="component.php3">Component</A>
+    <A href="resolver-handler.php3"><TT>RESOLVER_HANDLER</TT></A>,
+    <A href="component.php3"><TT>Component</TT></A>
   </DD></DL>
 
 <?php footing() ?>

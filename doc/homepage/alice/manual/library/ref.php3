@@ -13,7 +13,7 @@
   </P>
 
   <P>
-    The type <TT>ref</TT> and its constructors, as well as the
+    The type <TT>ref</TT> and its constructor, as well as the
     functions <TT>!</TT>, <TT>:=</TT> and <TT>:=:</TT> are available in the
     <A href="toplevel.php3">top-level environment</A>.
   </P>
@@ -128,7 +128,7 @@
 <?php section("also", "see also") ?>
 
   <DL><DD>
-    <A href="general.php3">General</A>
+    <A href="general.php3"><TT>General</TT></A>
   </DD></DL>
 
 <?php footing() ?>

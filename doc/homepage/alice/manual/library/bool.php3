@@ -58,7 +58,7 @@
       <TT>type t = bool</TT>
     </DT>
     <DD>
-      <P>A synonym for type <TT>bool</TT>.</P>
+      <P>A local synonym for type <TT>bool</TT>.</P>
     </DD>
 
     <DT>

@@ -151,8 +151,8 @@
 <?php section("also", "see also") ?>
 
   <DL><DD>
-    <A href="component-manager.php3">COMPONENT_MANAGER</A>,
-    <A href="resolver.php3">Resolver</A>
+    <A href="component-manager.php3"><TT>COMPONENT_MANAGER</TT></A>,
+    <A href="resolver.php3"><TT>Resolver</TT></A>
   </DD></DL>
 
 <?php footing() ?>

@@ -204,7 +204,7 @@
 <?php section("also", "see also") ?>
 
   <DL><DD>
-    <A href="future.php3">Future</A>
+    <A href="future.php3"><TT>Future</TT></A>
   </DD></DL>
 
 <?php footing() ?>

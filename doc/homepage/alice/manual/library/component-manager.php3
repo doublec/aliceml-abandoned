@@ -51,7 +51,7 @@
 <?php section("also", "see also") ?>
 
   <DL><DD>
-    <A href="component.php3">Component</A>
+    <A href="component.php3"><TT>Component</TT></A>
   </DD></DL>
 
 <?php footing() ?>

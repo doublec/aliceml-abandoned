@@ -69,7 +69,7 @@
       <TT>type t = option</TT>
     </DT>
     <DD>
-      <P>A synonym for type <TT>option</TT>.</P>
+      <P>A local synonym for type <TT>option</TT>.</P>
     </DD>
 
     <DT>
@@ -126,7 +126,7 @@
 <?php section("also", "see also") ?>
 
   <DL><DD>
-    <A href="pair.php3">Alt</A>
+    <A href="alt.php3"><TT>Alt</TT></A>
   </DD></DL>
 
 <?php footing() ?>
