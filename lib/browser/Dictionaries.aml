@@ -13,18 +13,33 @@
  *
  *)
 
-import structure MainDictionary from "MainDictionary"
-import structure RelManDictionary from "RelManDictionary"
-import structure ReinspectedRelDict from "ReinspectedRelDict"
-import structure TransientDictionary from "TransientDictionary"
+import structure Reflect from "x-alice:/lib/system/Reflect"
+
+import structure MkDictionary from "MkDictionary"
+import structure Node from "Node"
+import structure GtkSupport from "GtkSupport"
+
 import signature DICTIONARIES from "DICTIONARIES-sig"
 
-structure Dictionaries :> DICTIONARIES =
+structure Dictionaries : DICTIONARIES =
 struct
-    
-    val dict = MainDictionary.empty
-    val reldict = RelManDictionary.empty
-    val ri_reldict = ReinspectedRelDict.empty
-    val transdict = TransientDictionary.empty
+
+    structure Main = MkDictionary(type t =  Node.node * GtkSupport.tag)
+
+    structure RelMan = MkDictionary(type t = Node.node list)
+
+    structure ReinspectedRel = MkDictionary(type t = Node.node list)
+
+    structure Transient = MkDictionary(type t = Reflect.value * Node.node list)
+
+    type main = Main.dictionary
+    type relman = RelMan.dictionary
+    type reinspected = ReinspectedRel.dictionary
+    type transient = Transient.dictionary
 	
+    val maindict = Main.empty
+    val reldict = RelMan.empty
+    val ri_reldict = ReinspectedRel.empty
+    val transdict = Transient.empty
+
 end

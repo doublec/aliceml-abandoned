@@ -26,7 +26,9 @@ struct
     val max_y = ref 0.0 
 
     val relmode = ref false
-    val relnumber = ref 0
+(* 
+    val relnumber = ref 0   
+*)   
     val tokenmode = ref false
 
     val fontname = ref "-*-*-medium-r-normal--14-*-*-*-m-*-iso8859-1"

@@ -19,58 +19,55 @@ import structure Type from "x-alice:/lib/rtt/Type"
 import structure Path from "x-alice:/lib/rtt/Path"
 import structure Reflect from "x-alice:/lib/system/Reflect"
 import structure Gtk from "x-alice:/lib/gtk/Gtk"
-import structure Types from "Types"
+
+import structure Node from "Node"
+import structure GtkSupport from "GtkSupport"
 
 local 
-    open Types 
+    open Node
 in
 
 signature NEW_NODE_HELPER =
 sig
+
+    datatype 'a list_desc = Det of 'a list * bool (* ohne Future *)
+                          | Indet of 'a list * 'a list (* mit Future *)
     
+   (* Hilfsfunktionen zur Bestimmung und Zerlegung von "Apply"-Typen *)
+
+    val isApply: Type.desc -> bool	
+    val unApply: Type.desc -> Type.desc * Type.t list 
+
     val itemToLabel: Inf.item -> Label.lab
-    
-    val setGroup: node -> Gtk.object
-
-(* low-level-Konstruktion der verschiedenen node-Arten *)
-    val createSimple: 
-        desc * node * int * int * string * color_class * (node -> Gtk.object) 
-	-> node
-    
-    val createConcat: 
-	desc * node * int * int * node array * (node -> Gtk.object) -> node
-	
-    val createContainer: 
-	desc * node * int * int * node array * (node -> Gtk.object) -> node
-    
-    val createLimit: desc * limit * node * int * int * (node -> Gtk.object) 
-	-> node
-
-    val createRelNode : 
-	desc * node * node * int * int * string * node list * 
-	(node -> Gtk.object) -> node
-   
-    val createRelRefNode : 
-	desc * node * int * int * string * node * (node -> Gtk.object) -> node
 
     val queryDepth: 
 	Reflect.value * Type.t * node * int * int * Type.row * 
-        (Reflect.value * Type.t * node * int * int * Type.row -> node)
-	-> node
+        (Reflect.value * Type.t * node * int * int * Type.row * GtkSupport.tag 
+	 -> node) * GtkSupport.tag -> node
 
     val queryDepthL: 
 	Reflect.value * Type.t * node * int * int * 'a list_desc * 
-	(Reflect.value * Type.t * node * int * int * 'a list_desc -> node)
-	-> node
+	(Reflect.value * Type.t * node * int * int * 'a list_desc * GtkSupport.tag 
+	 -> node) * GtkSupport.tag -> node
 
-(* Behandlung von Listen *)
+  (* Behandlung von Listen *)
+	
+    val compList : Type.t
+
     val inspectList : int * 'a list  -> 'a list_desc 
     val castList : 'a -> 'b list
-    
-    val coreSign: Inf.sign
-    val packageSign: Inf.sign
 
-    val lookupPath: Inf.sign * string * string -> Path.path
+   (* Operationen auf Rows *)
+    val row2list : Type.row -> (Label.lab * Type.typ) list
+    val labelvector : (Label.lab * Type.typ) list -> Label.lab Vector.vector
+
+    (* Operationen auf Arrays *)
+    val copyArray: 'a Array.array * 'a Array.array  -> unit
+
+    (* Hilfsfunktion fuer Strings *)
+    val iterTake : string -> string   
+
+    val appi_break: (int * 'a -> 'b) * int * 'a list -> unit	
 
 end
 

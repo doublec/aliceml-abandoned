@@ -13,28 +13,16 @@
  *
  *)
 
-(* please note: this structure was created due to a suggestion originating 
- * from Thorsten Brunklaus, who also suggested the name. Two former 
- * structures are merged here: 
- * one containing support for creating Gtk windows
- * and one containing support for drawing and handling Canvas objects
- * 
- * may they rest in peace *)
-
+import structure TextIO from "x-alice:/lib/system/TextIO"
 import structure UnsafeValue from "x-alice:/lib/system/UnsafeValue"
 import structure Gtk from "x-alice:/lib/gtk/Gtk"
 import structure Gdk from "x-alice:/lib/gtk/Gdk"
 import structure GtkCanvas from "x-alice:/lib/gtk/GtkCanvas"
 import structure Inspector from "x-alice:/lib/tools/Inspector"
-import structure Settings from "Settings"
-import structure MkColorTable from "MkColorTable" 
-import structure MainDictionary from "MainDictionary"
-import structure ColorMap from "ColorMap"
-import structure Types from "Types"
+
+import structure Settings from "Settings" 
+
 import signature GTK_SUPPORT from "GTK_SUPPORT-sig"
-
-
-import structure TextIO from "x-alice:/lib/system/TextIO"
  
 structure GtkSupport :> GTK_SUPPORT =
     struct
@@ -177,7 +165,7 @@ fun createRadioButtons li =
     in
 	(List.foldl create uglyNULL li; box)
     end
-
+(*
 fun copyArray' (a,b,i) = if i < Array.length(b) 
 			     then
 				 (Array.update(b,i,Array.sub(a,i))
@@ -186,7 +174,7 @@ fun copyArray' (a,b,i) = if i < Array.length(b)
 				     
 fun copyArray(a,b) = if Array.length(a) = Array.length(b) 
 			 then copyArray' (a,b,0)
-		     else ()
+		     else () *)
 
 fun connect item = (fn Handler(str,handler) 
 		    => (Gtk.signalConnect (item,str, handler);()))
@@ -318,6 +306,18 @@ fun changeFontSize i = let
 (******************** Canvas Items ***************************)
 
  exception MissingColor
+
+ val map  = Gdk.colormapGetSystem ()
+
+ fun allocColor (r,g,b) = 
+	let val c =  Gdk.allocColor (r,g,b)
+	    val _ = Gdk.colormapAllocColor (map, c, 
+					    false (* 0 *), 
+					    true (* 1 *))
+	in
+	    c
+	end
+    
 		  
  fun fontHeight() = !Settings.fontHeight 
      
@@ -327,29 +327,15 @@ fun changeFontSize i = let
      GtkCanvas.itemNew(parent, 
 		       GtkCanvas.GROUP,
 		       [("x", Gtk.DOUBLE y), 
-			("y", Gtk.DOUBLE y)])
-		   
-		  
-	
-(*	   
- fun printXY (str,group,x,y,c,fontname) =  
-     GtkCanvas.itemNew(group, 
-		       GtkCanvas.TEXT, 
-		       [("text", Gtk.STRING str),
-			("font", Gtk.STRING fontname),
-			("x", Gtk.DOUBLE(x)), ("y", Gtk.DOUBLE(y)),
-			("fill_color_gdk", Gtk.OBJECT(c) ),
-			("anchor", Gtk.INT(2))])  *)
-		   
+			("y", Gtk.DOUBLE y)])		   
 		
- fun print00 (str,group,c,fontname) = 
+ fun print00 (str,group,color,fontname) = 
      GtkCanvas.itemNew(group, 
 		       GtkCanvas.TEXT, 
 		      [("text", Gtk.STRING str),
 		       ("font", Gtk.STRING fontname),
 		       ("fill_color_gdk", 
-			Gtk.OBJECT(valOf(
-		     ColorMap.lookup(MkColorTable.colorTable,c))) ),
+			Gtk.OBJECT(color) ),
 		       ("anchor", Gtk.INT(2))]) 
 
    
@@ -441,17 +427,19 @@ fun changeFontSize i = let
 				   [("points", 
 				     Gdk.POINTS ([0, linepos, mx, linepos])),
 				    ("fill_color_gdk", 
-		 Gdk.OBJECT(MkColorTable.allocColor(40000,40000,50000)) ),
+		 Gdk.OBJECT(allocColor(40000,40000,50000)) ),
 		       	    ("line_style",Gdk.INT(Gdk.LINE_ON_OFF_DASH)),
 		 ("width_pixels", Gdk.INT 1)])  
 		       end
 	       else uglyNULL 
 
+(* DRINGEND ERFORDERLICH! -> Widget *)
  
  fun  resizeSepLinesIterate(dict,x,i,highest_i) =
      if i > highest_i 
 	 then ()
-     else
+     else ()
+(*
 	 (case MainDictionary.lookup(dict,i) of
 	      NONE =>
 		  resizeSepLinesIterate(dict,x,i+1,highest_i)
@@ -472,14 +460,16 @@ fun changeFontSize i = let
 					     Gdk.POINTS ([0, y1, x, y1]))
 			      ;  resizeSepLinesIterate(dict,x,i+1,highest_i))
 		      end)
+*)
+fun resizeSepLines (dict,rx) = ()
 
- fun resizeSepLines (dict,rx) = 
-     let
+ (*fun resizeSepLines (dict,rx) = 
+     let 
 	 val x = Real.trunc rx
 	 val highest_i = MainDictionary.getHighestIndexAssigned(dict)
      in
 	 resizeSepLinesIterate(dict,x,0,highest_i)
-     end
+     end *)
 
 
 		
@@ -528,13 +518,13 @@ fun changeFontSize i = let
      ((x2 * v) div 8 + v_off)::translate(xr,h,v,h_off,v_off)
    | translate _ = raise Match
      
- fun createArrow(group,points) = 
-     let
-		   val color = case ColorMap.lookup(MkColorTable.colorTable,
-						    Types.LIMIT_COLOR) of 
+ fun createArrow(group,points,color) = 
+  (*   let
+		     val color = case ColorMap.lookup(MkColorTable.colorTable,
+						    Node.LIMIT_COLOR) of 
 		       SOME x => x
-		     | NONE   => raise MissingColor
-     in
+		     | NONE   => raise MissingColor 
+     in *)
 	 GtkCanvas.itemNew(group,
 			   GtkCanvas.POLYGON,
 			   [("points", 
@@ -542,12 +532,12 @@ fun changeFontSize i = let
 			    ("fill_color_gdk",
 			     Gtk.OBJECT(color)),
 			    ("outline_color_gdk",
-			     Gdk.OBJECT(MkColorTable.allocColor(0,0,0))),
+			     Gdk.OBJECT(allocColor(0,0,0))),
 			    ("width_pixels", Gdk.INT 1)])
-     end
+   (*  end *)
 
-	       
- fun createArrowRight(group) = 
+ 	       
+ fun createArrowRight(group,color) = 
      let
 	 val w = (fontWidth() * 3) div 2
 	 val h = fontHeight()  
@@ -555,10 +545,10 @@ fun changeFontSize i = let
 	 val points' = translate(points,w,h,0,0)
 	 val group' = newTag(group,0.5,0.5)
      in
-	 createArrow(group',points')
+	 createArrow(group',points',color)
      end
 
- fun createArrowDown(group) = 
+ fun createArrowDown(group,color) = 
      let
 	 val w = (fontWidth() * 3) div 2
 	 val h = fontHeight() 
@@ -566,7 +556,7 @@ fun changeFontSize i = let
 	 val points' = translate(points,w,h,0,0)
 	 val group' = newTag(group,0.5,0.5)
      in
-	 createArrow(group',points')
+	 createArrow(group',points',color)
      end
 
 fun createRectangle (group,x1,y1,x2,y2) = 
@@ -578,9 +568,9 @@ fun createRectangle (group,x1,y1,x2,y2) =
       ("x2", Gtk.DOUBLE x2),
       ("y2", Gtk.DOUBLE y2),
       ("fill_color_gdk", 
-       Gtk.OBJECT(MkColorTable.allocColor(65000,50000,50000))),
+       Gtk.OBJECT(allocColor(65000,50000,50000))),
       ("outline_color_gdk", 
-       Gtk.OBJECT (MkColorTable.allocColor(65000,50000,50000)))]) 
+       Gtk.OBJECT (allocColor(65000,50000,50000)))]) 
 
 	     
 

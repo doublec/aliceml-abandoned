@@ -25,7 +25,9 @@ sig
     val max_y : real ref
 
     val relmode: bool ref
+(*  
     val relnumber: int ref
+*)  
     val tokenmode: bool ref
 
     val fontname: string ref

@@ -13,9 +13,8 @@
  *
  *)
 
-import structure MainDictionary from "MainDictionary"
+
 import structure Gtk from "x-alice:/lib/gtk/Gtk"
-import structure Types from "Types"
 
 signature GTK_SUPPORT = 
     sig
@@ -53,10 +52,9 @@ signature GTK_SUPPORT =
 
 	val createRadioItem : RadioButtonObj * Gtk.object -> Gtk.object
 	val createRadioButtons : RadioButtonObj list -> Gtk.object
-
-	val copyArray' : 'a Array.array * 'a Array.array * int -> unit
+(*
 	val copyArray : 'a Array.array * 'a Array.array -> unit
-
+*)
 	val createButton : ButtonObj -> Gtk.object
 	val createButtonBox: {buttons: ButtonObj list, borderwidth: int}
 	    -> Gtk.object
@@ -81,23 +79,24 @@ signature GTK_SUPPORT =
 	
 (* Canvas Items & Handling *)
 
+	val allocColor : int * int * int -> tag
 	val fontWidth     : unit -> int
         val fontHeight    : unit -> int
 	val newTag        : tag * real * real -> tag
 	val move          : tag * real * real -> unit   
-(*	val printXY       : string * tag * real * real * color * string -> tag *)
-	val print00       : string * tag * Types.color_class * string -> tag
+	val print00       : string * tag * tag * string -> tag
 	val positionGroup : tag * real * real -> unit
 	val moveGroup     : tag * int * int  -> unit
 	val getCoordinates: tag  -> int * int * int * int 
 	val getPosition   : tag  -> int * int
 	val itemMoveTo    : tag * real * real -> unit
 	val createSepLine : tag * int -> tag
-	val resizeSepLines: MainDictionary.dictionary * real -> unit
-	val yPosSepLine   : tag * tag -> unit
+(* -> Widget *)
+(*	val resizeSepLines: MainDictionary.dictionary * real -> unit *)
+	val yPosSepLine   : tag * tag -> unit 
 (*	val yPosSepRel    : tag * int -> unit   *)
-	val createArrowRight: tag  -> tag
-	val createArrowDown: tag  -> tag
+	val createArrowRight: tag * tag  -> tag
+	val createArrowDown: tag * tag -> tag
 	val createRectangle: Gtk.object * real * real * real * real 
 	    -> Gtk.object
 

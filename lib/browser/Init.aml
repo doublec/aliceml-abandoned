@@ -15,19 +15,18 @@
 
 import structure PervasiveType from "x-alice:/lib/rtt/PervasiveType"
 import structure UnsafeValue from "x-alice:/lib/system/UnsafeValue"
-import structure Types from "Types"
-import structure Helper from "Helper"
+
+import structure Node from "Node"
+import structure Doc from "Doc"
 import structure Settings from "Settings"
-import structure CreateDoc from "CreateDoc"
 import structure NewNode from "NewNode"
 import structure NewNodeHelper from "NewNodeHelper"
-import structure MkColorTable from "MkColorTable"
-import structure Window from "Window"
 import structure Update from "Update"
+
 import signature INIT from "INIT-sig"
 
 local 
-    open Types CreateDoc MkColorTable NewNode NewNodeHelper
+    open Node Doc GtkSupport PervasiveType
 in
    
 structure Init :> INIT = 
@@ -40,15 +39,15 @@ struct
     val path_val_package = lookupPath(packageSign,"Package","val_package")  
  
     (* init *)
-    fun init () = ( registerType(PervasiveType.path_int, createInt)
-		   ; registerType(PervasiveType.path_string, createString)
-		   ; registerType(PervasiveType.path_char, createChar)
-		   ; registerType(PervasiveType.path_word, createWord)
-		   ; registerType(PervasiveType.path_real, createReal)
-		   ; registerType(PervasiveType.path_exn, createExn)
-		   ; registerType(PervasiveType.path_ref, createRef)
-		   ; registerType(PervasiveType.path_vec, createVector)
-		   ; registerType(PervasiveType.path_array, createArray)
+    fun init () = (  registerType(path_int, createInt)
+		   ; registerType(path_string, createString)
+		   ; registerType(path_char, createChar)
+		   ; registerType(path_word, createWord)
+		   ; registerType(path_real, createReal)
+		   ; registerType(path_exn, createExn)
+		   ; registerType(path_ref, createRef)
+		   ; registerType(path_vec, createVector)
+		   ; registerType(path_array, createArray)
                    ; registerType(path_promise, createPromise)
                    ; registerType(path_package, createPackage)  
 		   ; registerType(path_val_package, createValPackage) 

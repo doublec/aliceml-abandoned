@@ -14,30 +14,40 @@
  *)
 
 import structure Inf from "x-alice:/lib/rtt/Inf"
+import structure Path from "x-alice:/lib/rtt/Path"
 import structure Type from "x-alice:/lib/rtt/Type"
 import structure Reflect from "x-alice:/lib/system/Reflect"
-import structure Types from "Types"
+
+import structure Node from "Node"
+import structure GtkSupport from "GtkSupport"
 
 local
 
-open Types 
+open Node
 
 in
 
 signature NEW_NODE =
 sig
     
+    val coreSign: Inf.sign
+    val packageSign: Inf.sign
+
+    val lookupPath: Inf.sign * string * string -> Path.path
+
     (* interne Repraesentation von Werten (ausser Strukturen) *)
 
-    val newNode: 'a * Type.t -> node
+    val newNode: 'a * Type.t * int * GtkSupport.tag -> node
 
-    val createGraph: Reflect.value * Type.t  * node * int * int -> node 
+    val createGraph: Reflect.value * Type.t  * node * int * int * GtkSupport.tag 
+	-> node 
 
     (* interne Repraesentation von Strukturen *)
 
-    val newNodeInf: 'a * Inf.t -> Types.node
+    val newNodeInf: 'a * Inf.t * int * GtkSupport.tag -> node
 
-    val createGraphInf: Reflect.module * Inf.t  * node * int * int -> node
+    val createGraphInf: Reflect.module * Inf.t  * node * int * int * GtkSupport.tag 
+	-> node
 
 end
 

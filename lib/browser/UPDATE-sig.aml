@@ -16,33 +16,43 @@
 import structure Inf from "x-alice:/lib/rtt/Inf"
 import structure Type from "x-alice:/lib/rtt/Type"
 import structure Reflect from "x-alice:/lib/system/Reflect"
-import structure Types from "Types"
+
+import structure Node from "Node"
+import structure GtkSupport from "GtkSupport"
 
 local
-    open Types
+    open Node
 in
 
 signature UPDATE = 
     sig
+           
+        (* Operationen, die auf die Funktionalitaet von Widget zurueckgreifen
+           - werden beim Starten des Inspectors "gefuellt" *)
+	val incrActLine: (int -> unit) ref
+	val resize:      (unit -> unit) ref
 
         (* constraint watcher *) 
         val watcher: 
 	    'a  * Reflect.value * 
-	    (Reflect.value * Type.t  * node * int * int -> node) * 
-	    (Reflect.module * Inf.t  * node * int * int -> node)
-	    -> Thread.thread
+	    (Reflect.value * Type.t  * node * int * int * GtkSupport.tag -> node) * 
+	    (Reflect.module * Inf.t  * node * int * int * GtkSupport.tag -> node) *
+	    GtkSupport.tag -> Thread.thread
 
 	val reinspect:
-	    node * (Reflect.value * Type.t * node * int * int -> node) * 
-	    (Reflect.module* Inf.t * node * int * int -> node) -> unit
+	    node * (Reflect.value * Type.t * node * int * int * GtkSupport.tag -> node) * 
+	    (Reflect.module* Inf.t * node * int * int * GtkSupport.tag -> node) *
+	    GtkSupport.tag -> unit
 
 	val foldDepth: 
-	    node * int * (Reflect.value * Type.t * node * int * int -> node) *
-	    (Reflect.module * Inf.t * node * int * int -> node) -> unit
+	    node * int * (Reflect.value * Type.t * node * int * int  * GtkSupport.tag -> node) *
+	    (Reflect.module * Inf.t * node * int * int * GtkSupport.tag -> node) *
+	    GtkSupport.tag -> unit
 
 	val foldWidth: 
-	    node * int * (Reflect.value * Type.t * node * int * int -> node) *
-	    (Reflect.module * Inf.t * node * int * int -> node) -> unit
+	    node * int * (Reflect.value * Type.t * node * int * int  * GtkSupport.tag -> node) *
+	    (Reflect.module * Inf.t * node * int * int * GtkSupport.tag -> node) *
+	    GtkSupport.tag -> unit
 
        (* wird in Init bei "shrink" benoetigt *)
 	val findHighestDepth: node -> int

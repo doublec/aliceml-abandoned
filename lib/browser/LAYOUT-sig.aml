@@ -13,19 +13,15 @@
  *
  *)
 
-import structure MainDictionary from "MainDictionary"
-import structure Types from "Types"
+import structure Dictionaries from "Dictionaries"
+import structure Node from "Node"
 
-local
-    open Types
-in
-    signature LAYOUT =
-	sig
-		
-	    val layout : node -> int * int * int
-		
-	    val calcMaxXDim: MainDictionary.dictionary * int 
-		-> int 
-	    val setVisible: int * int -> unit
-	end
+signature LAYOUT =
+sig
+    
+    val layout : Node.node -> int * int * int
+	
+    val calcMaxXDim: Dictionaries.main * int -> int 
+    val setVisible: int * int -> unit 
+
 end

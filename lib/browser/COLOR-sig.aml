@@ -13,12 +13,19 @@
  *
  *)
 
-import structure Types from "Types"
+import signature MkHashImpMap from "x-alice:/lib/utility/MkHashImpMap"
+
+import structure Node from "Node"
+import structure GtkSupport from "GtkSupport"
 
 signature COLOR = 
-sig
-    type t = Types.color_class
-    val equal : t * t -> bool
-    val hash : t -> int
-end;
+sig 
+  
+    type ''a map
+    val colorTable:  GtkSupport.tag  map
+
+    val registerColor: Node.color_class * GtkSupport.tag -> unit
+    val lookupColor: Node.color_class -> GtkSupport.tag
+
+end
 

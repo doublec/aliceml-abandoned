@@ -13,17 +13,13 @@
  *
  *)
 
-import structure Types from "Types"
-import structure Helper from "Helper"
-import structure MainDictionary from "MainDictionary"
+import structure Node from "Node"
 import structure Dictionaries from "Dictionaries"
-(* import structure Window from "Window" *)
 import structure Settings from "Settings"
+
 import signature LAYOUT from "LAYOUT-sig"
 
-import structure Inspector from "x-alice:/lib/tools/Inspector"
-
-open Types Helper
+open Node
 
 structure Layout :> LAYOUT = 
 struct
@@ -38,8 +34,7 @@ struct
     (* layout *)
 
     fun layout (Concat(r) as n) = 
-	( (* Window.testIfStop() *) ()
-	 ;let 
+	(let 
 	    val no_kids = Array.length(#kids(r))
 	    val li = List.tabulate(no_kids, 
 				   (fn i => layout(Array.sub(#kids(r),i))))
@@ -144,14 +139,15 @@ struct
    
    (* calcMaxXDim *) 
    fun calcMaxXDim (dict,i)  = 
-       if i > MainDictionary.getHighestIndexAssigned(dict) 
+       if i > Dictionaries.Main.getHighestIndexAssigned(dict) 
 	   then 0
-       else
-	   case MainDictionary.lookup(dict,i) of
+       else 
+	   case Dictionaries.Main.lookup(dict,i) of
 	       NONE => calcMaxXDim(dict,i+1)
-	     | SOME (node,_) => Int.max( get_xdim(node),calcMaxXDim(dict,i+1)) 
-				
-    (* setVisible *) 
+	     | SOME  (node,_)  => Int.max( get_xdim(node)  ,calcMaxXDim(dict,i+1)) 
+		
+		
+    (* setVisible *) (*** nach Widget!!! ***)
     fun setVisible (x,y) = let
 			       val w = !Settings.fontWidth
 			       val h = !Settings.fontHeight
@@ -162,10 +158,10 @@ struct
 				    then Settings.max_x := rx 
 				else Settings.max_x := 
 				    Real.fromInt(w * 
-				    calcMaxXDim (Dictionaries.dict,0))
+				    calcMaxXDim (Dictionaries.maindict,0))
 				    ; Settings.max_y 
 				    := Real.+(!Settings.max_y,ry))
-			   end
+			   end 
 
 end
 

@@ -12,9 +12,12 @@
  *   $Revision$
  *
  *)
-import structure Types from "Types"
 
-open Types
+import structure Node from "Node"
+
+local open Node
+
+in
 
 signature DRAW_NODES =
     sig
@@ -50,3 +53,5 @@ signature DRAW_NODES =
 	    -> int * int 
        
     end
+
+end

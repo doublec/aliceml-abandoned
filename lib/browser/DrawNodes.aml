@@ -15,18 +15,20 @@
 
 import structure Inspector from "x-alice:/lib/tools/Inspector"
 import structure TextIO from "x-alice:/lib/system/TextIO"
-import structure GtkSupport from "GtkSupport"
-import structure Types from "Types"
-import structure Helper from "Helper"
-import structure Layout from "Layout"
-import signature DRAW_NODES from "DRAW_NODES-sig"
-import structure ColorMap from "ColorMap"
-import structure Settings from "Settings"
-import structure MkColorTable from "MkColorTable"
 import structure Gtk from "x-alice:/lib/gtk/Gtk"
 import structure GtkCanvas from "x-alice:/lib/gtk/GtkCanvas"
 
-open Types Helper Layout 
+import structure Node from "Node"
+import structure GtkSupport from "GtkSupport"
+import structure Color from "Color"
+import structure Layout from "Layout"
+import structure Settings from "Settings"
+
+import signature DRAW_NODES from "DRAW_NODES-sig"
+
+local open Node Layout 
+
+in
 
 structure DrawNodes :> DRAW_NODES =
 struct
@@ -55,7 +57,7 @@ struct
 		       end
 
     fun move(n,x,y) = (move'(n,x,y)
-		       ;(x+ Helper.get_l_xdim(n),
+		       ;(x+ Node.get_l_xdim(n),
 			 y+get_ydim(n)-1)) (* maybe get_l_xdim 
 					    is 
 					    not sufficient ! *)
@@ -66,32 +68,34 @@ struct
 	     then if move' (node,x,y)
 		      then (GtkSupport.print00(getRep(node),
 					     getGroup(node),
-					     getColor(node),
+					     Color.lookupColor(getColor(node)),
 					     !Settings.fontname);())
 		  else ()
 	 else (groupToPosition(node,x,y)
 	       ;GtkSupport.print00 (getRep(node),
 				  getGroup(node),
-				  getColor(node),
+				  Color.lookupColor(getColor(node)),
 				  !Settings.fontname)
 		       ; ())
-	     ;getStatus(node) := Types.CLEAN
+	     ;getStatus(node) := CLEAN
 	     ;(x+String.size(getRep(node)),y))
    
     (* drawLimit *)
     fun drawLimit (node,x,y,upd) = 
 	let 
-	    val createArrow = if getSort(node) = Types.DEPTH_LIMIT
+	    val createArrow = if getSort(node) = DEPTH_LIMIT
 				  then GtkSupport.createArrowDown
 			      else GtkSupport.createArrowRight
 	in
 	    (if upd 
 		 then if move'(node,x,y)
-			  then (createArrow(getGroup(node));())
+			  then (createArrow(getGroup(node),
+					    Color.lookupColor(LIMIT_COLOR));())
 		      else ()
 	     else (groupToPosition(node,x,y)
-		   ;createArrow(getGroup(node));())
-		   ;getStatus(node) := Types.CLEAN 
+		   ;createArrow(getGroup(node),
+		         	Color.lookupColor(LIMIT_COLOR));())
+		   ;getStatus(node) := CLEAN 
 		   ;(x+2,y))
 	end
     
@@ -106,7 +110,7 @@ struct
 	   in 
 	       (if upd then (move'(n,x,y);()) 
 		else groupToPosition(n,x,y)
-		; getStatus(n) := Types.CLEAN
+		; getStatus(n) := CLEAN
 		(* ; TextIO.print("Draw Concat returns: x=" 
 		 ^ Int.toString(new_x+x)
 		 ^ " y="
@@ -143,7 +147,7 @@ struct
 				    then (new_x2,new_y' -1)
 				else  (new_x',new_y') 
 	in
-	    (getStatus(n) := Types.CLEAN
+	    (getStatus(n) := CLEAN
 	     ;if upd then (move'(n,x,y);()) 
 	      else groupToPosition(n,x,y)
 	      ; () (*TextIO.print("Draw Container returns: x=" 
@@ -171,7 +175,7 @@ struct
 				val _ = if move'(n,x,y) 
 				    then (GtkSupport.print00 (#rep(r),
 						 getGroup(n),
-					         getColor(n),
+					         Color.lookupColor(getColor(n)),
 				       	     !Settings.fontname);()) 
 					else ()
 			  val content = !(#content(r))
@@ -185,7 +189,7 @@ struct
 		else (groupToPosition(n,x,y)
 		      ; GtkSupport.print00 (#rep(r),
 					    getGroup(n),
-					    getColor(n),
+					    Color.lookupColor(getColor(n)),
 					    !Settings.fontname)
 		      ;let
 			   val content = !(#content(r))
@@ -196,40 +200,7 @@ struct
 		       in
 			   (x+x2, y+y2)
 		       end)
-(* Version from Okt 22nd *)
- (*  and drawRelNode (n,x,y,upd) = case n of
-	RelNode(r) 
-	=> (let val _ = () (* TextIO.print("Entering drawRelNode \n") *)
-	    in (if upd then (move'(n,x,y);()) (* important: move' needs to be a tester *) 
-		else groupToPosition(n,x,y)
-	       ; if !(#counter(r)) = 1 orelse isSimple(!(#content(r)))
-		     then let
-			   (*   val _ = GtkSupport.print00 ("_",
-				  getGroup(n),
-				  getColor(n),
-				  !Settings.fontname) *)
-			      val (new_x,new_y) = draw (!(#content(r)),0,0,upd)
-			  in
-			      (x+new_x,y+new_y)
-			  end
-		 else let 
-			  (* val (new_x,_) = atomDraw 
-			      (n,0,0,upd) *)
-			  val _ = GtkSupport.print00 (#rep(r),
-				  getGroup(n),
-				  getColor(n),
-				  !Settings.fontname)
-			  val content = !(#content(r))
-			  val (x2,y2) = draw (content,
-					      String.size(#rep(r))
-					      ,0
-					      ,upd)
-		      in
-			  (x + (* String.size(#rep(r)) + *) x2   
-			   (* Helper.get_l_xdim(content) *), (* was lxdim *)
-			   y + (* Helper.get_ydim(n)-1 *) y2)
-		      end  )
-	    end) *)
+
       | _ => raise DrawError
 
     
@@ -271,8 +242,9 @@ struct
 		      else ( move(n,x,y) 
 				   ;( case !(#counter(r)) of
 				   1 => (x+get_xdim(!(#content(r))),
-					 y+get_ydim(!(#content(r))))
+					 y+get_ydim(!(#content(r))))				 
 				 | _ => (x+get_xdim(n),y+get_ydim(n)) )))
+
 			     handle MissingColor => (Inspector.inspect ("MissingColor");(0,0))
 	         handle DrawError => (Inspector.inspect ("DrawError");(0,0))
 		     handle General.Subscript =>
@@ -281,9 +253,9 @@ struct
 			 handle General.Match =>
 			     (Inspector.inspect ("General.Match");(0,0))
 			     handle _ =>  (Inspector.inspect ("sth. else")
-					  ; (0,0)))
-       | draw  (Empty,x,y,upd) =  (x,y)
+					  ; (0,0))   )  
+      | draw  (Empty,x,y,upd) =  (x,y)
      
-
-end
+end (* structure *)
        
+end

@@ -13,32 +13,57 @@
  *
  *)
 
-import structure Types from "Types"
+import structure MkHashImpMap from "x-alice:/lib/utility/MkHashImpMap"
+
+import structure Node from "Node"
+import structure GtkSupport from "GtkSupport"
+
 import signature COLOR from "COLOR-sig"
 
-open Types 
+local open Node
+
+in 
 
 structure Color :> COLOR =
-struct 
-   
-    type t  = color_class
-    
-    fun  equal (c1,c2) = c1 = c2
+struct
 
-    fun hash (INT_COLOR) = 0
-      | hash (REAL_COLOR)  = 1
-      | hash (CHAR_COLOR) = 2
-      | hash (STR_COLOR) = 3
-      | hash (WORD_COLOR) = 4
-      | hash (EXN_COLOR) = 5
-      | hash (REF_COLOR) = 6 
-      | hash (LABEL_COLOR) = 7
-      | hash (SEP_COLOR) = 8
-      | hash (EQU_COLOR) = 9
-      | hash (LIMIT_COLOR) = 10
-      | hash (BRACK_COLOR) = 11
-      | hash (REL_COLOR) = 12
-(*      | hash (TRANS_COLOR) = 13 *)
-      | hash (DEFAULT) = 14
-                   
+ structure ColorMap = 
+	MkHashImpMap(struct 
+			 
+			 type t  = color_class
+			     
+			 fun  equal (c1,c2) = c1 = c2
+			     
+			 fun hash (INT_COLOR) = 0
+			   | hash (REAL_COLOR)  = 1
+			   | hash (CHAR_COLOR) = 2
+			   | hash (STR_COLOR) = 3
+			   | hash (WORD_COLOR) = 4
+			   | hash (EXN_COLOR) = 5
+			   | hash (REF_COLOR) = 6 
+			   | hash (LABEL_COLOR) = 7
+			   | hash (SEP_COLOR) = 8
+			   | hash (EQU_COLOR) = 9
+			   | hash (LIMIT_COLOR) = 10
+			   | hash (BRACK_COLOR) = 11
+			   | hash (REL_COLOR) = 12
+       		    (*     | hash (TRANS_COLOR) = 13   *)
+			   | hash (DEFAULT) = 14
+			     
+		     end)
+    
+    type ''a map = ''a ColorMap.map
+
+    val colorTable = ColorMap.new()
+       
+    fun registerColor(col_class,gtk_color) = 
+	ColorMap.insert(colorTable,col_class,gtk_color)
+
+    fun lookupColor(col_class) = 
+	case ColorMap.lookup(colorTable,col_class)
+	    of SOME x => x
+             | NONE => GtkSupport.allocColor(0,0,0)
+
+end (* structure *)
+
 end

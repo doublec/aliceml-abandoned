@@ -13,15 +13,26 @@
  *
  *)
 
-import structure MainDictionary from "MainDictionary"
-import structure RelManDictionary from "RelManDictionary"
-import structure ReinspectedRelDict from "ReinspectedRelDict"
-import structure TransientDictionary from "TransientDictionary"
+import structure Node from "Node"
+import structure GtkSupport from "GtkSupport"
+
+import signature MK_DICTIONARY from "MK_DICTIONARY-sig"
 
 signature DICTIONARIES = 
-sig 
-    val dict: MainDictionary.dictionary
-    val reldict: RelManDictionary.dictionary
-    val ri_reldict: ReinspectedRelDict.dictionary
-    val transdict: TransientDictionary.dictionary
+sig
+    structure Main: MK_DICTIONARY
+    structure RelMan: MK_DICTIONARY
+    structure ReinspectedRel: MK_DICTIONARY  	
+    structure Transient: MK_DICTIONARY 
+
+    type main = Main.dictionary
+    type relman = RelMan.dictionary
+    type reinspected = ReinspectedRel.dictionary
+    type transient = Transient.dictionary
+
+    val maindict: main  
+    val reldict: relman
+    val ri_reldict: reinspected
+    val transdict: transient
+
 end
