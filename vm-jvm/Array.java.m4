@@ -491,7 +491,7 @@ final public class Array implements DMLValue {
 	    public DMLValue fun = null;
 	    public Appi1(DMLValue f) { fun=f; }
 	    _APPLY(val) {
-		_sfromTuple(args,val,3,"Array.appi1");
+		_fromTuple(args,val,3,"Array.appi1");
 	    }
 	    _VAPPLY3(v) {
 		try {
