@@ -243,9 +243,10 @@ structure DerivedForms :> DERIVED_FORMS =
 
     (* Functions to handle rewriting of withtype specifications *)
 
-    fun rewriteConDesc typbind (G.ConDesc(I, vid, ty_opt, condesc_opt))=
-	    G.ConDesc(I, vid, Option.map (rewriteTy typbind) ty_opt,
-			      Option.map (rewriteConDesc typbind) condesc_opt)
+    fun rewriteConDesc typbind (G.ConDesc(I, op_opt, vid, ty_opt, condesc_opt))=
+	    G.ConDesc(I, op_opt, vid,
+			 Option.map (rewriteTy typbind) ty_opt,
+			 Option.map (rewriteConDesc typbind) condesc_opt)
 
     fun rewriteDatDesc typbind (G.CLOSEDDatDesc(I, tyvarseq, tycon, condesc,
 							      datdesc_opt)) =
@@ -545,8 +546,8 @@ structure DerivedForms :> DERIVED_FORMS =
 
     val tycon_EXN = TyCon.fromString "exn"
 
-    fun NEWExDesc(I, vid, ty_opt, dcondesc_opt) =
-	    G.NEWDconDesc(I, vid, ty_opt, G.Seq(I,[]),
+    fun NEWExDesc(I, op_opt, vid, ty_opt, dcondesc_opt) =
+	    G.NEWDconDesc(I, op_opt, vid, ty_opt, G.Seq(I,[]),
 			  G.SHORTLong(I, G.TyCon(I, tycon_EXN)), dcondesc_opt)
 
     fun SPECFunDesc(I, funid, spec, sigexp, fundesc_opt) =

@@ -1807,7 +1807,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
     and trValDesco' (E,acc) =
 	fn NONE => acc
 
-	 | SOME(ValDesc(_, vid as VId(i',vid'), ty, valdesco)) =>
+	 | SOME(ValDesc(_, _, vid as VId(i',vid'), ty, valdesco)) =>
 	   let
 		val  i          = Source.over(i', infoTy ty)
 		val (id',stamp) = trVId_bind E vid
@@ -1922,7 +1922,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
     and trConDesco'(E,E',acc) =
 	fn NONE => acc
 
-	 | SOME(ConDesc(i, vid as VId(i',vid'), tyo, condesco)) =>
+	 | SOME(ConDesc(i, _, vid as VId(i',vid'), tyo, condesco)) =>
 	   let
 		val (id',stamp) = trVId_bind E vid
 		val  typs'      = trTyo E tyo
@@ -1940,7 +1940,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
     and trDconDesco' (E,acc) =
 	fn NONE => acc
 
-	 | SOME(NEWDconDesc(_, vid as VId(i',vid'), tyo, tyvarseq, longtycon,
+	 | SOME(NEWDconDesc(_, _, vid as VId(i',vid'), tyo, tyvarseq, longtycon,
 								 dcondesco)) =>
 	   let
 		val  i          = Source.over(i', infoLong longtycon)
@@ -1962,7 +1962,8 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		trDconDesco' (E, spec'::acc) dcondesco
 	   end
 
-	 | SOME(EQUALDconDesc(_, vid as VId(i',vid'), longvid, dcondesco)) =>
+	 | SOME(EQUALDconDesc(_, _, vid as VId(i',vid'), _, longvid,
+								dcondesco)) =>
 	   let
 		val  i           = Source.over(i', infoLong longvid)
 		val (id',stamp)  = trVId_bind E vid

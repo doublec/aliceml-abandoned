@@ -24,6 +24,7 @@
  *   - sharing and where for signatures
  *   - definitional structure specifications
  *   - fixity directives in signatures
+ *   - op keyword in signatures
  *
  * Notes:
  *   For easier interfacing with the back end we keep several derived forms:
@@ -246,7 +247,7 @@ functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
 	| NONFIXSpec      of Info * VId
 
     and ValDesc =
-	  ValDesc         of Info * VId * Ty * ValDesc option
+	  ValDesc         of Info * Op * VId * Ty * ValDesc option
 
     and TypDesc =
 	  NEWTypDesc      of Info * TyVarSeq * TyCon * TypDesc option
@@ -257,12 +258,12 @@ functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
 	| OPENDatDesc     of Info * TyVarSeq * TyCon * DatDesc option
 
     and ConDesc =
-	  ConDesc         of Info * VId * Ty option * ConDesc option
+	  ConDesc         of Info * Op * VId * Ty option * ConDesc option
 
     and DconDesc =
-	  NEWDconDesc     of Info * VId * Ty option * TyVarSeq * LongTyCon
+	  NEWDconDesc     of Info * Op * VId * Ty option * TyVarSeq * LongTyCon
 			 				      * DconDesc option
-	| EQUALDconDesc   of Info * VId * LongVId * DconDesc option
+	| EQUALDconDesc   of Info * Op * VId * Op * LongVId * DconDesc option
 
     and StrDesc =
           NEWStrDesc      of Info * StrId * SigExp * StrDesc option
@@ -428,7 +429,7 @@ functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
       | infoSpec(INFIXRSpec(I,_,_))			= I
       | infoSpec(NONFIXSpec(I,_))			= I
 
-    fun infoValDesc(ValDesc(I,_,_,_))			= I
+    fun infoValDesc(ValDesc(I,_,_,_,_))			= I
 
     fun infoTypDesc(NEWTypDesc(I,_,_,_))		= I
       | infoTypDesc(EQUALTypDesc(I,_,_,_,_))		= I
@@ -436,10 +437,10 @@ functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
     fun infoDatDesc(CLOSEDDatDesc(I,_,_,_,_))		= I
       | infoDatDesc(OPENDatDesc(I,_,_,_))		= I
 
-    fun infoConDesc(ConDesc(I,_,_,_))			= I
+    fun infoConDesc(ConDesc(I,_,_,_,_))			= I
 
-    fun infoDconDesc(NEWDconDesc(I,_,_,_,_,_))		= I
-      | infoDconDesc(EQUALDconDesc(I,_,_,_))		= I
+    fun infoDconDesc(NEWDconDesc(I,_,_,_,_,_,_))	= I
+      | infoDconDesc(EQUALDconDesc(I,_,_,_,_,_))	= I
 
     fun infoStrDesc(NEWStrDesc(I,_,_,_))		= I
       | infoStrDesc(EQUALStrDesc(I,_,_,_,_))		= I

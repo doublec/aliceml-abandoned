@@ -171,8 +171,9 @@ signature DERIVED_FORMS =
     val INFIXRMULTISpec:  Info * int option * VId list             -> Spec
     val NONFIXMULTISpec:  Info * VId list                          -> Spec
 
-    val NEWExDesc:        Info * VId * Ty option * ExDesc option   -> ExDesc
-    val EQUALExDesc:      Info * VId * LongVId * ExDesc option     -> ExDesc
+    val NEWExDesc:        Info * Op * VId * Ty option * ExDesc option -> ExDesc
+    val EQUALExDesc:      Info * Op * VId * Op * LongVId * ExDesc option
+								   -> ExDesc
 
     val SPECFunDesc:      Info * FunId * Spec * SigExp * FunDesc option
 								   -> FunDesc

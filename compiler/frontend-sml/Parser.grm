@@ -45,6 +45,12 @@
 (*        sigexp ::= ( sigexp )							*)
 (*   - fun keyword in signatures (derived form):				*)
 (*	  spec ::= fun valdesc							*)
+(*   - op keyword in signatures:						*)
+(*	  valdesc  ::= <op> vid : ty <and valdesc>				*)
+(*	  condesc  ::= <op> vid <of ty> <| condesc>				*)
+(*	  exdesc   ::= <op> vid <of ty> <and exdesc>				*)
+(*	  dcondesc ::= <op> vid <of ty> : tyvarseq longtycon <and dcondesc>	*)
+(*		   ::= <op> vid = <op> longvid <and dcondesc>			*)
 (*   - withtype in signatures (derived form):					*)
 (*	  spec ::= datatype datdesc <withtype syndesc>				*)
 (*   - fixity directives in signatures:						*)
@@ -1277,9 +1283,9 @@
   (* Modules: Descriptions *)
 
   valdesc:
-	  vid' COLON ty AND_valdesc_opt
-	  		( ValDesc(I(vid'left,AND_valdesc_optright),
-				  vid', ty, AND_valdesc_opt) )
+	  OP_opt vid' COLON ty AND_valdesc_opt
+	  		( ValDesc(I(OP_optleft,AND_valdesc_optright),
+				  OP_opt, vid', ty, AND_valdesc_opt) )
      AND_valdesc_opt:
 	  AND valdesc	( SOME valdesc )
 	| (*empty*)	( NONE )
@@ -1324,33 +1330,35 @@
 	| (*empty*)	( NONE )
 
   condesc:
-	  vid' OF_ty_opt BAR_condesc_opt
-			( ConDesc(I(vid'left,BAR_condesc_optright),
-				  vid', OF_ty_opt, BAR_condesc_opt) )
+	  OP_opt vid' OF_ty_opt BAR_condesc_opt
+			( ConDesc(I(OP_optleft,BAR_condesc_optright),
+				  OP_opt, vid', OF_ty_opt, BAR_condesc_opt) )
      BAR_condesc_opt:
 	  BAR condesc	( SOME condesc )
 	| (*empty*)	( NONE )
 
   dcondesc:
-	  vid' OF_ty_opt COLON tyvarseq longtycon AND_dcondesc_opt
-			( NEWDconDesc(I(vid'left,AND_dcondesc_optright),
-				      vid', OF_ty_opt, tyvarseq, longtycon,
-				      AND_dcondesc_opt) )
-	| vid' EQUALS longvid AND_dcondesc_opt
-			( EQUALDconDesc(I(vid'left,AND_dcondesc_optright),
-					vid', longvid, AND_dcondesc_opt) )
+	  OP_opt vid' OF_ty_opt COLON tyvarseq longtycon AND_dcondesc_opt
+			( NEWDconDesc(I(OP_optleft,AND_dcondesc_optright),
+				      OP_opt, vid', OF_ty_opt,
+				      tyvarseq, longtycon, AND_dcondesc_opt) )
+	| OP_opt vid' EQUALS OP_opt longvid AND_dcondesc_opt
+			( EQUALDconDesc(I(OP_opt1left,AND_dcondesc_optright),
+					OP_opt1, vid', OP_opt2, longvid,
+					AND_dcondesc_opt) )
      AND_dcondesc_opt:
 	  AND dcondesc	( SOME dcondesc )
 	| (*empty*)	( NONE )
 
 
   exdesc:
-	  vid' OF_ty_opt AND_exdesc_opt
-	  		( NEWExDesc(I(vid'left,AND_exdesc_optright),
-	  			    vid', OF_ty_opt, AND_exdesc_opt) )
-	| vid' EQUALS longvid AND_exdesc_opt
-			( EQUALExDesc(I(vid'left,AND_exdesc_optright),
-				      vid', longvid, AND_exdesc_opt) )
+	  OP_opt vid' OF_ty_opt AND_exdesc_opt
+	  		( NEWExDesc(I(OP_optleft,AND_exdesc_optright),
+	  			    OP_opt, vid', OF_ty_opt, AND_exdesc_opt) )
+	| OP_opt vid' EQUALS OP_opt longvid AND_exdesc_opt
+			( EQUALExDesc(I(OP_opt1left,AND_exdesc_optright),
+				      OP_opt1, vid', OP_opt2, longvid,
+				      AND_exdesc_opt) )
      AND_exdesc_opt:
 	  AND exdesc	( SOME exdesc )
 	| (*empty*)	( NONE )
