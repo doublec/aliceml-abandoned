@@ -1699,7 +1699,7 @@ TextIO.print("i = "^Int.toString i^"\n");
 				  | SOME n => fn t => lift'(n,t)
 
 	    fun unifyFields(j, [], k) =
-		    (Vector.appi (lift o #2) (ts1,j,NONE) ; k)
+		    (VectorSlice.app lift (VectorSlice.slice(ts1,j,NONE)) ; k)
 	      | unifyFields(j, lts2 as (l,t2)::lts2', k) =
 		    if j = Vector.length ts1 then fail() else
 		    case Label.toInt l
