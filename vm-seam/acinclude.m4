@@ -429,9 +429,11 @@ AC_DEFUN([AC_SEAM_ARG_ENABLE_DEBUGGER],
       AC_MSG_NOTICE([You have chosen to build with user-level debugging. ])
       AC_MSG_NOTICE([Please note that this will only work, if SEAM was   ])
       AC_MSG_NOTICE([also build with user-level debugging support.       ])
+      AC_SEAM_ADD_TO_CXXFLAGS_SEAMTOOL([-DDEBUGGER=1])
       AC_DEFINE(DEBUGGER, 1)
    else
       AC_MSG_RESULT(no)
+      AC_SEAM_ADD_TO_CXXFLAGS_SEAMTOOL([-DDEBUGGER=0])
       AC_DEFINE(DEBUGGER, 0)
    fi])dnl
 
