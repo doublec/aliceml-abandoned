@@ -130,8 +130,8 @@ signature INPUT_GRAMMAR =
 	| DATATYPEDec     of Info * DatBind
 	| REPLICATIONDec  of Info * TyCon * LongTyCon
 	| CONSTRUCTORDec  of Info * DconBind
-	| STRUCTUREDec    of Info * StrBind
 	| PREBOUNDDec     of Info * StrId
+	| STRUCTUREDec    of Info * StrBind
 	| SIGNATUREDec    of Info * SigBind
 	| FUNCTORDec      of Info * FunBind
 	| LOCALDec        of Info * Dec * Dec
@@ -247,6 +247,7 @@ signature INPUT_GRAMMAR =
 	| DATATYPESpec     of Info * DatDesc
 	| REPLICATIONSpec  of Info * TyCon * LongTyCon
 	| CONSTRUCTORSpec  of Info * DconDesc
+	| PREBOUNDSpec     of Info * StrId
 	| STRUCTURESpec    of Info * StrDesc
 	| SIGNATURESpec    of Info * SigDesc
 	| FUNCTORSpec      of Info * FunDesc

@@ -972,15 +972,6 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		decs'
 	   end
 
-	 | STRUCTUREDec(i, strbind) =>
-	   let
-		val E'    = Env.new()
-		val decs' = trStrBindo' (E,E',acc) (SOME strbind)
-		val  _    = union(E,E')
-	   in
-		decs'
-	   end
-
 	 | PREBOUNDDec(i, strid as StrId(i',strid')) =>
 	   let
 		val  _           = trStrId_bind E strid
@@ -988,6 +979,15 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		val  _           = insertStr(E, strid', (i',stamp,E'))
 	   in
 		acc
+	   end
+
+	 | STRUCTUREDec(i, strbind) =>
+	   let
+		val E'    = Env.new()
+		val decs' = trStrBindo' (E,E',acc) (SOME strbind)
+		val  _    = union(E,E')
+	   in
+		decs'
 	   end
 
 	 | SIGNATUREDec(i, sigbind) =>
@@ -1839,6 +1839,15 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 
 	 | CONSTRUCTORSpec(i, dcondesc) =>
 		trDconDesco' (E,acc) (SOME dcondesc)
+
+	 | PREBOUNDSpec(i, strid as StrId(i',strid')) =>
+	   let
+		val  _           = trStrId_bind E strid
+		val (_,stamp,E') = prebound E
+		val  _           = insertStr(E, strid', (i',stamp,E'))
+	   in
+		acc
+	   end
 
 	 | STRUCTURESpec(i, strdesc) =>
 		trStrDesco' (E,acc) (SOME strdesc)

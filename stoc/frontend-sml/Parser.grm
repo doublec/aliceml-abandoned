@@ -97,6 +97,7 @@
 (*	          ::= __instance scon with longtycon				*)
 (*	          ::= __eqtype typbind						*)
 (*	  spec    ::= __eqtype typdesc						*)
+(*	          ::= __prebound strid						*)
 (*	          ::= __overload <op> vid with tyvar : ty			*)
 (*	          ::= __instance <op> vid with longtycon = longvid		*)
 (*	          ::= __instance scon with longtycon				*)
@@ -673,10 +674,10 @@
 					 dconbind) )
 	| EXCEPTION exbind
 			( EXCEPTIONDec(I(EXCEPTIONleft,exbindright), exbind) )
-	| STRUCTURE strbind
-			( STRUCTUREDec(I(STRUCTUREleft,strbindright), strbind) )
 	| PREBOUND strid
 			( PREBOUNDDec(I(PREBOUNDleft,stridright), strid) )
+	| STRUCTURE strbind
+			( STRUCTUREDec(I(STRUCTUREleft,strbindright), strbind) )
 	| SIGNATURE sigbind
 			( SIGNATUREDec(I(SIGNATUREleft,sigbindright), sigbind) )
 	| FUNCTOR funbind
@@ -1288,6 +1289,8 @@
 					  dcondesc) )
 	| EXCEPTION exdesc
 			( EXCEPTIONSpec(I(EXCEPTIONleft,exdescright), exdesc) )
+	| PREBOUND strid
+			( PREBOUNDSpec(I(PREBOUNDleft,stridright), strid) )
 	| STRUCTURE strdesc
 			( STRUCTURESpec(I(STRUCTUREleft,strdescright), strdesc))
 	| SIGNATURE sigdesc
