@@ -38,12 +38,8 @@ functor MkOptionParser(Switches: SWITCHES) :> OPTION_PARSER =
 	    \\t\tMake imported entities part of the component.\n\
 	    \\t--implicit-import-file <import file>|-\n\
 	    \\t\tSpecify file containing implicit import annotations.\n\
-	    \\t--rtt-level=no\n\
-	    \\t\tDo not generate code for runtime types.\n\
-	    \\t--rtt-level=core\n\
-	    \\t\tDo only generate code for core runtime types.\n\
-	    \\t--rtt-level=full\n\
-	    \\t\tFull support for runtime types.\n\
+	    \\t--(no-)rtt\n\
+	    \\t\tWhether to generate code for runtime types.\n\
 	    \\t--(no-)silent-fail\n\
 	    \\t\tWhether FailExp's should be translated to failed futures.\n\
 	    \Debug options:\n\
@@ -87,6 +83,7 @@ functor MkOptionParser(Switches: SWITCHES) :> OPTION_PARSER =
 	     ("trace-component-access", Global.traceComponentAccess),
 	     ("warn-shadowing", Warn.shadowing),
 	     ("warn-unused-import", Warn.unusedImport),
+	     ("rtt", Language.supportRtt),
 	     ("reexport-import", Language.reexportImport),
 	     ("retain-full-import", Language.retainFullImport),
 	     ("silent-fail", Language.silentFailExp),
@@ -120,15 +117,6 @@ functor MkOptionParser(Switches: SWITCHES) :> OPTION_PARSER =
 
 	fun parse ("--version"::rest) =
 	    (TextIO.output (TextIO.stdOut, version ^ "\n");
-	     parse rest)
-	  | parse ("--rtt-level=no"::rest) =
-	    (Language.rttLevel := Language.NO_RTT;
-	     parse rest)
-	  | parse ("--rtt-level=core"::rest) =
-	    (Language.rttLevel := Language.CORE_RTT;
-	     parse rest)
-	  | parse ("--rtt-level=full"::rest) =
-	    (Language.rttLevel := Language.FULL_RTT;
 	     parse rest)
 	  | parse ("--implicit-import-file"::file::rest) =
 	    (Language.implicitImportFile :=
