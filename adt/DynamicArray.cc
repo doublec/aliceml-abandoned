@@ -85,10 +85,9 @@ void DynamicArray::EnlargeArray(int upTo) {
   for (int i=length; i--;) {
     newA->InitArg(i, a->GetArg(i));
   }
-  if (initElem != INVALID_ARRAY_ELEM) {
-    for (int i=length; i<newLength; i++) {
-      newA->InitArg(i, initElem);
-    }
+
+  for (int i=length; i<newLength; i++) {
+    newA->InitArg(i, initElem);
   }
 
   ReplaceArg(ARRAY_POS, newA->ToWord());

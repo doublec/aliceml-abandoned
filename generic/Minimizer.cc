@@ -41,7 +41,7 @@ public:
   void DecrementIncoming(int edge);
   int GetIncoming(int edge);
   int SizeOfIncoming();
-  void PutCompleteOnAgenda(u_int blockNo, Stack *agenda);
+  void PutCompleteOnAgenda(int blockNo, Stack *agenda);
   void PutOnAgenda(int edge);
   bool IsOnAgenda();
   bool IsOnAgenda(int edge);
@@ -52,7 +52,8 @@ PBlock *PBlock::New(int start, int end) {
   Assert(start >= 0);
   Assert(end == 0 || end>= start);
 
-  DynamicArray *p = DynamicArray::New(SIZE+2);
+  DynamicArray *p = DynamicArray::NewInit(SIZE+2,
+                                          DynamicArray::INVALID_ARRAY_ELEM);
   
   p->Update(START_INDEX_POS, Store::IntToWord(start));
   p->Update(END_INDEX_POS, Store::IntToWord(end));
@@ -210,9 +211,11 @@ void PBlock::RemoveFromAgenda(int edge) {
 
 }
 
-void PBlock::PutCompleteOnAgenda(u_int blockNo, Stack *agenda) {
+void PBlock::PutCompleteOnAgenda(int blockNo, Stack *agenda) {
   // Pushes the block on the agenda and marks every incoming edge
   // as being on the agenda
+
+  Assert(blockNo >= 0);
 
   bool flag = false;
 
@@ -252,13 +255,13 @@ public:
   static PNode *FromWordDirect(word x);
   int GetBlock();
   int GetNum();
-  void SetNum(u_int num);
+  void SetNum(int num);
   void SetBlock(PBlock* newBlock, int newBlockNo);
   void ChangeBlock(PBlock* oldBlock, PBlock* newBlock, int newBlockNo);
   void AddParent(int egde, int parent);
   word GetNode();
-  u_int GetPredCount();
-  word Pred(u_int index);
+  int GetPredCount();
+  word Pred(int index);
   int Compare(PNode *pn);
 };
 
@@ -283,8 +286,8 @@ int PNode::compareSize(::Block *v, ::Block *w) {
 int PNode::compareChildren(::Block *v, ::Block *w) {
   // This comparison only looks for integers as children
   u_int vs = v->GetSize();
-
-   for (int i=vs; i--; ) {
+  
+  for (int i=vs; i--; ) {
     int cv = Store::WordToInt(v->GetArg(i));
     int cw = Store::WordToInt(w->GetArg(i));
 
@@ -379,7 +382,7 @@ int PNode::compare(PNode *n1, PNode *n2) {
   word a = n1->GetNode();
   word b = n2->GetNode();
   
-  if (a==b) return 0;
+  if (PointerOp::Deref(a)==PointerOp::Deref(b)) return 0;
   
   // no integers should occur!!!
 
@@ -431,12 +434,12 @@ public:
 
   int InitNext(PNode *pn);
   int GetCount();
-  void Update(u_int index, PNode *pn);
-  PNode *Sub(u_int index);
-  PNode *LookUpSub(u_int index);
-  void LookUpSwap(u_int i, u_int j);
-  void Swap(u_int i, u_int j);
-  u_int LookUp(u_int i);
+  void Update(int index, PNode *pn);
+  PNode *Sub(int index);
+  PNode *LookUpSub(int index);
+  void LookUpSwap(int i, int j);
+  void Swap(int i, int j);
+  int LookUp(int i);
   void Sort();
 };
 
@@ -532,38 +535,46 @@ int DynNodeArray::GetCount() {
   return Store::DirectWordToInt(GetArg(COUNT_POS));
 }
 
-void DynNodeArray::Update(u_int index, PNode *pn) {
+void DynNodeArray::Update(int index, PNode *pn) {
+  Assert(index >= 0);
   DynamicArray *na = DynamicArray::FromWordDirect(GetArg(ARRAY_POS));
   na->Update(index, pn->ToWord());
 }
  
-PNode *DynNodeArray::Sub(u_int index) {
+PNode *DynNodeArray::Sub(int index) {
+  Assert(index >= 0);
   DynamicArray *na = DynamicArray::FromWordDirect(GetArg(ARRAY_POS));
   return PNode::FromWordDirect(na->Sub(index));
 }
 
-PNode *DynNodeArray::LookUpSub(u_int index) {
+PNode *DynNodeArray::LookUpSub(int index) {
   // Translates index according to permutation,
   // then does a sub of the translated index
+  Assert(index >= 0);
   DynamicArray *lua = DynamicArray::FromWordDirect(GetArg(LUA_ARRAY_POS));
   return Sub(Store::WordToInt(lua->Sub(index)));
 }
 
-void DynNodeArray::LookUpSwap(u_int i, u_int j) {
+void DynNodeArray::LookUpSwap(int i, int j) {
   // Translated both i and j according to permutation,
   // then does a swap of the translated indices
+  Assert(i >= 0);
+  Assert(j >= 0);
   DynamicArray *lua = DynamicArray::FromWordDirect(GetArg(LUA_ARRAY_POS));
   Swap(Store::WordToInt(lua->Sub(i)),
        Store::WordToInt(lua->Sub(j)));
 }
 
-u_int DynNodeArray::LookUp(u_int i) {
+int DynNodeArray::LookUp(int i) {
   // returns the translated index
+  Assert(i >= 0);
   DynamicArray *lua = DynamicArray::FromWordDirect(GetArg(LUA_ARRAY_POS));
   return Store::WordToInt(lua->Sub(i));
 }
 
-void DynNodeArray::Swap(u_int i, u_int j) {
+void DynNodeArray::Swap(int i, int j) {
+  Assert(i >= 0);
+  Assert(j >= 0);
   // wrapper for swap
   DynamicArray *na = DynamicArray::FromWordDirect(GetArg(ARRAY_POS));
   DynamicArray *lua = DynamicArray::FromWordDirect(GetArg(LUA_ARRAY_POS));
@@ -609,8 +620,9 @@ int PNode::GetNum() {
   return Store::DirectWordToInt(DynamicArray::Sub(NUM_POS));
 }
 
-void PNode::SetNum(u_int num) {
+void PNode::SetNum(int num) {
   // Sets the initial index of this node in the partition array
+  Assert(num >= 0);
   DynamicArray::Update(NUM_POS, Store::IntToWord(num));
 }
 
@@ -641,11 +653,11 @@ void PNode::ChangeBlock(PBlock *oldBlock, PBlock *newBlock, int newBlockNo) {
   
 }
 
-void PNode::AddParent(int egde, int parent) {
+void PNode::AddParent(int edge, int parent) {
   // Adds node with no. parent to the array of parent
   // nodes at edge label edge
   Tuple *t = Tuple::New(2);
-  t->Init(0,Store::IntToWord(egde));
+  t->Init(0,Store::IntToWord(edge));
   t->Init(1,Store::IntToWord(parent));
 
   int count = Store::WordToInt(DynamicArray::Sub(PRED_COUNT_POS));
@@ -658,12 +670,13 @@ word PNode::GetNode() {
   return DynamicArray::Sub(NODE_POS);
 }
 
-word PNode::Pred(u_int i) {
+word PNode::Pred(int i) {
+  Assert(i >= 0);
   // Returns the predecessor at index i
   return DynamicArray::Sub(SIZE+i);
 }
 
-u_int PNode::GetPredCount() {
+int PNode::GetPredCount() {
   // Returns the no. of direct predecessors of this node
   return Store::WordToInt(DynamicArray::Sub(PRED_COUNT_POS));
 }
@@ -714,17 +727,18 @@ void Partition::InitBlocks() {
   DynamicArray *ba = DynamicArray::FromWordDirect(GetArg(BA_POS));
 
   int count = na->GetCount();
-  int blockCount = Store::DirectWordToInt(GetArg(BLOCK_COUNT_POS));
+  int blockCount = 0;
   
   na->Sort();
-  
+
   PBlock *newBlock = PBlock::New(0,0);
   PNode *lastItem = na->Sub(0);
   lastItem->SetBlock(newBlock, blockCount);
   PNode *curItem;
   for (int i=1; i<count; i++) {
     curItem = na->Sub(i);
-    if(curItem->Compare(lastItem) != 0) {
+    Assert(curItem->Compare(lastItem) != -1);
+    if(curItem->Compare(lastItem) == 1) {
       newBlock->SetEnd(i-1);
       newBlock->SetSplitIndex(i-1);
       ba->Update(blockCount, newBlock->ToWord());
@@ -741,8 +755,9 @@ void Partition::InitBlocks() {
   ReplaceArg(BLOCK_COUNT_POS, blockCount);
 }
 
-bool Partition::splitBlockAtNode(u_int block, int nodeIndex) {
+bool Partition::splitBlockAtNode(int block, int nodeIndex) {
   // Marks block "block" as to be split at node with index nodeIndex
+  Assert(block >= 0);
 
   DynamicArray *ba = DynamicArray::FromWordDirect(GetArg(BA_POS));
   PBlock *b = PBlock::FromWordDirect(ba->Sub(block));
@@ -751,9 +766,17 @@ bool Partition::splitBlockAtNode(u_int block, int nodeIndex) {
   int si = b->GetSplitIndex();
   int end = b->GetEnd();
 
+  if (end - b->GetStart() == 0) {
+    // Don't split singleton blocks
+    return false;
+  }
+
+  Assert(nodeIndex <= end);
+  Assert(si <= end);
+
   bool result=false;
 
-  if (si >= end) {
+  if (si == end) {
     // push block on toDo, because it has not been split yet
     // in this iteration
     word head = GetArg(TO_DO_POS);
@@ -790,16 +813,15 @@ void Partition::DoSplits(Stack *q) {
   DynamicArray *ba = DynamicArray::FromWordDirect(GetArg(BA_POS));
   DynNodeArray *na = DynNodeArray::FromWordDirect(GetArg(NA_POS));
   int blockCount = Store::DirectWordToInt(GetArg(BLOCK_COUNT_POS));
-
   word toDo = GetArg(TO_DO_POS);
   while (Store::WordToInt(toDo)==INVALID_INT) {
     Block *tv = Store::DirectWordToBlock(toDo);
     
-    u_int blockNo = Store::WordToInt(tv->GetArg(0));
+    int blockNo = Store::WordToInt(tv->GetArg(0));
+    Assert(blockNo >= 0);
     PBlock *pb = PBlock::FromWordDirect(ba->Sub(blockNo));
     PBlock *newBlock;
     if (pb->HasToBeSplit()) {
-      //      fprintf(stderr, "\tBlock no %d has to be split!\n", blockNo);
       int newEnd = pb->GetEnd();
       int newStart = pb->GetSplitIndex()+1;
       pb->SetEnd(newStart-1);
@@ -816,7 +838,7 @@ void Partition::DoSplits(Stack *q) {
 	
 	int pbInc = pb->GetIncoming(i);
 	int nbInc = newBlock->GetIncoming(i);
-
+	
 	if (pb->IsOnAgenda(i)) {
 	  //	  fprintf(stderr, "block %d was on agenda, putting new block %d with edge %d\n",
 	  //		  blockNo, blockCount, i);
@@ -864,10 +886,12 @@ void Partition::InitAgenda(Stack *agenda) {
   
 }
 
-void Partition::FollowBack(u_int block, u_int edge) {
+void Partition::FollowBack(int block, int edge) {
   // for each node in this block:
   //   follow their parent links and mark their
   //   parents' blocks as to be split
+  Assert(block >= 0);
+  Assert(edge >= 0);
 
   DynamicArray *ba = DynamicArray::FromWordDirect(GetArg(BA_POS));
   DynNodeArray *na = DynNodeArray::FromWord(GetArg(NA_POS));
@@ -876,25 +900,46 @@ void Partition::FollowBack(u_int block, u_int edge) {
   int start = pb->GetStart();
   int end = pb->GetEnd();
 
+  // Collect splits that happen in the current block
+  // to prevent items in this block from being swapped under
+  // our feet
+  word ownSplit = Store::IntToWord(1); // nil
+
   for (int i=start; i<=end; i++) {
     PNode *pn = na->Sub(i);
-    //    DynamicArray *pred = pn->GetPred();
     for (int j=pn->GetPredCount(); j--; ) {
       Tuple *tu = Tuple::FromWordDirect(pn->Pred(j));
-      u_int tu_edge = Store::WordToInt(tu->Sel(0));
-      int parent = Store::WordToInt(tu->Sel(1));
-      int realParent = na->LookUp(parent);
+      int tu_edge = Store::WordToInt(tu->Sel(0));
       if (tu_edge == edge) {
+	int parent = Store::WordToInt(tu->Sel(1));
+	int realParent = na->LookUp(parent);
 	PNode *parentNode = na->Sub(realParent);
 	int parentBlock = parentNode->GetBlock();
-	if (parentBlock != -1)
+	Assert(parentBlock != -1);
+	if (parentBlock == block) {
+	  // postpone splitting of this block
+	  Tuple *cons = Tuple::New(2);
+	  cons->Init(0, Store::IntToWord(realParent));
+	  cons->Init(1, ownSplit);
+	  ownSplit = cons->ToWord();
+	} else {
 	  splitBlockAtNode(parentBlock, realParent);
+	}
       }
     }
   }
+
+  // if this block was split, perform the postponed split operations
+  while (Store::DirectWordToInt(ownSplit) == INVALID_INT) {
+    Tuple *cons = Tuple::FromWordDirect(ownSplit);
+    splitBlockAtNode(block, Store::DirectWordToInt(cons->Sel(0)));
+    ownSplit = cons->Sel(1);
+  }
+
 }
 
-PBlock *Partition::GetBlock(u_int blockNo) {
+PBlock *Partition::GetBlock(int blockNo) {
+  Assert(blockNo >= 0);
   DynamicArray *ba = DynamicArray::FromWordDirect(GetArg(BA_POS));
   return PBlock::FromWordDirect(ba->Sub(blockNo));
 }
@@ -920,15 +965,17 @@ void Partition::ReduceGraph() {
   if (root != rbStart) {
     na->LookUpSwap(0, rbStart->GetNum());
   }
-  
+
   for (int i=blockCount; i--;) {
     PBlock *pb = PBlock::FromWordDirect(ba->Sub(i));
     int start = pb->GetStart();
     int end = pb->GetEnd();
+    Assert(start <= end);
     PNode *leaderNode = na->Sub(start);
     word leader = leaderNode->GetNode();
     PNode *curNode;
     int predCount;
+
     for (int j=start+1; j<=end; j++) {
       curNode = na->Sub(j);
       predCount = curNode->GetPredCount();
@@ -960,7 +1007,7 @@ void Partition::Minimize() {
     int blockNo = Store::DirectWordToInt(agenda->Pop());
     PBlock *pb = GetBlock(blockNo);
     int pbSize = pb->SizeOfIncoming();
-    
+
     while (pb->IsOnAgenda()) {
       for (int edge=0; edge<=pbSize; edge++) {
 	if (pb->IsOnAgenda(edge)) {

@@ -30,10 +30,10 @@ private:
 	BLOCK_COUNT_POS, SIZE};  
 
   void InitBlocks();
-  PBlock *GetBlock(u_int blockNo);
+  PBlock *GetBlock(int blockNo);
   void InitAgenda(Stack *agenda);
-  bool splitBlockAtNode(u_int block, int nodeIndex);
-  void FollowBack(u_int block, u_int edge);
+  bool splitBlockAtNode(int block, int nodeIndex);
+  void FollowBack(int block, int edge);
   void DoSplits(Stack *q);
   void ReduceGraph();
 

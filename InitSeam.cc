@@ -23,6 +23,7 @@
 #include "generic/Primitive.hh"
 #include "generic/Unpickler.hh"
 #include "generic/Pickler.hh"
+#include "generic/Minimizer.hh"
 #include "generic/PushCallWorker.hh"
 #include "generic/BindFutureWorker.hh"
 #include "generic/Time.hh"
@@ -66,6 +67,7 @@ extern "C" SeamDll void InitSeam() {
   BindFutureWorker::Init();
   Unpickler::Init();
   Pickler::Init();
+  PartitionLoader::Init();
   Hole::Init();
   Broker::Init();
 #if DEBUGGER
