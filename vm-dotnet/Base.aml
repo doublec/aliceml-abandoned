@@ -336,7 +336,6 @@ structure String =
 	type string = string
 
 	__primitive val op^ : string * string -> string = "String.^"
-	__primitive val toCString : string -> string = "String.toCString"
 	__primitive val str : char -> string = "String.str"
 	__primitive val size : string -> int = "String.size"
 	__primitive val substring : string * int * int -> string =
@@ -349,6 +348,9 @@ structure String =
 
 	fun concat l = List.foldr (fn (s, rest) => s ^ rest) "" l
 
+	fun toCString s =
+		List.foldr (fn (c, rest) => Char.toCString c ^ rest) "" (explode s)
+
 	fun implode l = concat (List.map str l)
 
 	fun map f s = implode (List.map f (explode s))
@@ -356,6 +358,30 @@ structure String =
 	__primitive val compare : string * string -> order = "String.compare"
 
 	fun s < t = compare (s, t) = LESS
+
+	local
+	    fun token (c::cr, f) =
+		if f c then
+		    let
+			val (cs, rest) = token (cr, f)
+		    in
+			(c::cs, rest)
+		    end
+		else (nil, cr)
+	      | token (nil, _) = (nil, nil)
+
+	    fun tokens' (c::cr, f) =
+		if f c then tokens' (cr, f)
+		else
+		    let
+			val (cs, rest) = token (cr, f)
+		    in
+			implode (c::cs)::tokens' (rest, f)
+		    end
+	      | tokens' (nil, _) = nil
+	in
+	    fun tokens f s = tokens' (explode s, f)
+	end
     end
 
 
