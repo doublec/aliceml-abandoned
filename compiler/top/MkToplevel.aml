@@ -11,8 +11,8 @@
  *   $Revision$
  *)
 
-import structure TextIO from "../../lib/system/TextIO"
-import structure OS     from "../../lib/system/OS"
+import structure TextIO               from "../../lib/system/TextIO"
+import structure OS                   from "../../lib/system/OS"
 
 import structure Error                from "../infrastructure/Error"
 import structure MkOptionParser       from "MkOptionParser"
@@ -28,7 +28,7 @@ struct
     fun usage() = TextIO.output(TextIO.stdErr, "Usage: alice [options]\n" ^
 						OptionParser.helpText)
 
-    val header     = "Stockhausen Operette 2\n"
+    val banner     = "Alice (Stockhausen Operette 2)\n"
     val prompt     = "> "
     val contPrompt = "  "
 
@@ -115,6 +115,7 @@ struct
 
     fun main arguments =
 	let
+	    val _ = TextIO.print banner
 	    open RecursiveCompiler.Switches
 	in
 	    Debug.dumpElaborationSig := true;
