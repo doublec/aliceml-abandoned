@@ -1332,6 +1332,8 @@
 			( LETAtSigExp(I(LETleft,ENDright), dec, sigexp) )
 	| LPAR sigexp RPAR
 			( PARAtSigExp(I(LPARleft,RPARright), sigexp) )
+	| LPAR spec RPAR
+			( SPECAtSigExp(I(LPARleft,RPARright), spec) )
   appsigexp:
 	  atsigexp	( ATSIGEXPSigExp(I(atsigexpleft,atsigexpright),
 					 atsigexp) )

@@ -119,6 +119,7 @@ structure DerivedForms :> DERIVED_FORMS =
     type StrPat    = Grammar.StrPat
     type StrBind   = Grammar.StrBind
     type FunBind   = Grammar.StrBind
+    type AtSigExp  = Grammar.AtSigExp
     type AppSigExp = Grammar.SigExp
     type SigExp    = Grammar.SigExp
     type Spec      = Grammar.Spec
@@ -456,6 +457,8 @@ structure DerivedForms :> DERIVED_FORMS =
 
 
     (* Signature expressions (Part 1) *)
+
+    val SPECAtSigExp = G.SIGAtSigExp
 
     fun FCTSigExp(I, strpat as G.StrPat(I1, G.StrId(I2, strid'), sigexp1),
 		     sigexp) =

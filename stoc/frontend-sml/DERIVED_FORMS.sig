@@ -105,6 +105,7 @@ signature DERIVED_FORMS =
     type StrExp    = Grammar.StrExp
     type StrPat    = Grammar.StrPat
     type StrBind   = Grammar.StrBind
+    type AtSigExp  = Grammar.AtSigExp
     type AppSigExp = Grammar.SigExp
     type SigExp    = Grammar.SigExp
     type Spec      = Grammar.Spec
@@ -234,6 +235,8 @@ signature DERIVED_FORMS =
 
     (* Signature expressions *)
 
+    val SPECAtSigExp:     Info * Spec                              -> AtSigExp
+    val FCTSigExp:        Info * StrPat * SigExp                   -> SigExp
     val WHEREREASigExp:   Info * SigExp * Rea                      -> SigExp
     val WHERELONGSTRIDSigExp:
 			  Info * SigExp * LongStrId * LongStrId    -> SigExp
