@@ -75,17 +75,13 @@ structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
 
 	fun outputLiveness (ref (Unknown | LoopStart | LoopEnd)) = NULL
 	  | outputLiveness (ref (Use set)) =
-	    if StampSet.isEmpty set then SEQ [S "(* use *)", NL]
-	    else
-		SEQ [S (List.foldl (fn (stamp, s) =>
-				    s ^ " " ^ Stamp.toString stamp)
-			"(* use" (sort set)), S " *)", NL]
+	    SEQ [S (List.foldl (fn (stamp, s) =>
+				s ^ " " ^ Stamp.toString stamp)
+		    "(* use" (sort set)), S " *)", NL]
 	  | outputLiveness (ref (Kill set)) =
-	    if StampSet.isEmpty set then SEQ [S "(* kill *)", NL]
-	    else
-		SEQ [S (List.foldl (fn (stamp, s) =>
-				    s ^ " " ^ Stamp.toString stamp)
-			"(* kill" (sort set)), S "*)", NL]
+	    SEQ [S (List.foldl (fn (stamp, s) =>
+				s ^ " " ^ Stamp.toString stamp)
+		    "(* kill" (sort set)), S " *)", NL]
 
 	fun outputInfo ({liveness, ...}: stm_info) = outputLiveness liveness
 
