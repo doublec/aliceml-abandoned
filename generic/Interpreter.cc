@@ -86,10 +86,12 @@ void Interpreter::PurgeFrame(TaskStack *taskStack) {
   return;
 }
 
-Interpreter::Result Interpreter::Handle(word args, TaskStack *taskStack) {
+Interpreter::Result Interpreter::Handle(word exn, word /*debug*/,
+					TaskStack *taskStack) {
   // Default Handler: Clear Frame until Handler is found
+  //--** construct backtrace
   taskStack->PopFrame();
-  Scheduler::currentArgs = args;
+  Scheduler::currentData = exn;
   return Interpreter::RAISE;
 }
 

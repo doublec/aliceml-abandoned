@@ -33,7 +33,6 @@ public:
   static void PushFrame(TaskStack *taskStack, word closure);
   // Execution
   virtual Result Run(word args, TaskStack *taskStack);
-  virtual Result Handle(word args, TaskStack *taskStack);
   // Debugging
   virtual const char *Identify();
   virtual const char *ToString(word args, TaskStack *taskStack);

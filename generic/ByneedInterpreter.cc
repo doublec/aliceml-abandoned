@@ -87,14 +87,14 @@ Interpreter::Result ByneedInterpreter::Run(word args, TaskStack *taskStack) {
   }
 }
 
-Interpreter::Result ByneedInterpreter::Handle(word args, TaskStack *taskStack) {
+Interpreter::Result ByneedInterpreter::Handle(word exn, word /*debug*/,
+					      TaskStack *taskStack) {
   Transient *future =
     ByneedFrame::FromWord(taskStack->GetFrame())->GetTransient();
   Assert(future != INVALID_POINTER);
   taskStack->PopFrame();
   ((Future *) future)->ScheduleWaitingThreads();
-  // Current Exception is stored in Scheduler::currentData
-  future->Become(CANCELLED_LABEL, Scheduler::currentData);
+  future->Become(CANCELLED_LABEL, exn);
   Scheduler::currentData = future->ToWord();
   Scheduler::currentArgs = Interpreter::OneArg(Scheduler::currentData);
   return Interpreter::CONTINUE;
