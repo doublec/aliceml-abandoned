@@ -221,7 +221,7 @@ define
       'Thread.sleep':
 	 fun {$ N} {Delay N} unit end
       'Thread.spawn':
-	 fun {$ P} thread _ = {P unit} end unit end
+	 fun {$ P} thread {P unit} end end
       'Thread.suspend':
 	 fun {$ T} {Thread.suspend T} unit end
       'Transient.await':
