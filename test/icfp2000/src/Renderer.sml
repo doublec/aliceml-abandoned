@@ -16,21 +16,43 @@ structure Renderer :> RENDERER =
 	    {color: color, diffuse: real, specular: real, phong: real}
 
 	datatype object =
-	    Plane      of mat * mat * plane_face surface
-	  | Sphere     of mat * mat * sphere_face surface
-	  | Cube       of mat * mat * cube_face surface           (* Tier 2 *)
-	  | Cylinder   of mat * mat * cylinder_face surface       (* Tier 2 *)
-	  | Cone       of mat * mat * cone_face surface           (* Tier 2 *)
+	    Plane      of plane_face surface
+	  | Sphere     of sphere_face surface
+	  | Cube       of cube_face surface
+	  | Cylinder   of cylinder_face surface
+	  | Cone       of cone_face surface
 	  | Union      of object * object
-	  | Intersect  of object * object                         (* Tier 3 *)
-	  | Difference of object * object                         (* Tier 3 *)
+	  | Intersect  of object * object
+	  | Difference of object * object
+	  | Transform  of mat * mat * object
 
 	datatype light =
 	    Directional of color * vec
-	  | Point       of color * point                          (* Tier 2 *)
-	  | Spot        of color * point * point * angle * real   (* Tier 3 *)
+	  | Point       of color * point
+	  | Spot        of color * point * point * angle * real
+
+	datatype object' =
+	    Plane'      of mat * mat * plane_face surface
+	  | Sphere'     of mat * mat * sphere_face surface
+	  | Union'      of object' * object'
+	  | Intersect'  of object' * object'
+	  | Difference' of object' * object'
 
 	exception Crash
+
+	fun preprocess (Plane surface, o2w, w2o) = Plane' (o2w, w2o, surface)
+	  | preprocess (Sphere surface, o2w, w2o) = Sphere' (o2w, w2o, surface)
+	  | preprocess (Cube surface, o2w, w2o) = raise Crash (*TODO*)
+	  | preprocess (Cylinder surface, o2w, w2o) = raise Crash (*TODO*)
+	  | preprocess (Cone surface, o2w, w2o) = raise Crash (*TODO*)
+	  | preprocess (Union (o1, o2), o2w, w2o) =
+	    Union' (preprocess (o1, o2w, w2o), preprocess (o2, o2w, w2o))
+	  | preprocess (Intersect (o1, o2), o2w, w2o) =
+	    Intersect' (preprocess (o1, o2w, w2o), preprocess (o2, o2w, w2o))
+	  | preprocess (Difference (o1, o2), o2w, w2o) =
+	    Difference' (preprocess (o1, o2w, w2o), preprocess (o2, o2w, w2o))
+	  | preprocess (Transform (o2w', w2o', obj), o2w, w2o) =
+	    preprocess (obj, mulMat (o2w', o2w), mulMat (w2o, w2o'))
 
 	datatype intersection = Entry | Exit
 	datatype which = A | B
@@ -77,7 +99,7 @@ structure Renderer :> RENDERER =
 	  | diff (nil, _) = nil
 	  | diff (_, _) = raise Crash
 
-	fun intersect (Plane (o2w, w2o, surface), base, dir) =
+	fun intersect (Plane' (o2w, w2o, surface), base, dir) =
 	    let
 		val (_, dy, _) = mulMatVec (w2o, dir)
 	    in
@@ -92,7 +114,7 @@ structure Renderer :> RENDERER =
 			  Entry)]
 		    end
 	    end
-	  | intersect (Sphere (o2w, w2o, surface), base, dir) =
+	  | intersect (Sphere' (o2w, w2o, surface), base, dir) =
 	    let
 		val base' = mulMatPoint (w2o, base)
 		val dir' = mulMatVec (w2o, dir)
@@ -118,10 +140,8 @@ structure Renderer :> RENDERER =
 			    end
 		    end
 	    end
-	  | intersect (Cube (o2w, w2o, surface), base, dir) =
-	    raise Crash   (*UNFINISHED*)
-	  | intersect (Cylinder (o2w, w2o, surface), base, dir) =
-	    raise Crash   (*UNFINISHED*)
+(*
+	  | intersect (Cylinder' (o2w, w2o, surface), base, dir) =
 	    (* Possibilities:
 	     *    2 intersections with bottom (dy = 0)
 	     *    1 intersection with bottom
@@ -139,7 +159,6 @@ structure Renderer :> RENDERER =
 	     *              1 intersections with side (tangential)
 	     *              0 intersections with side
 	     *)
-(*
 	    let
 		val base' as (x, y, z) = mulMatPoint (w2o, base)
 		val dir' as (dx, dy, dz) = mulMatVec (w2o, dir)
@@ -170,15 +189,13 @@ structure Renderer :> RENDERER =
 		    end
 	    end
 *)
-	  | intersect (Cone (o2w, w2o, surface), base, dir) =
-	    raise Crash   (*UNFINISHED*)
-	  | intersect (Union (obj1, obj2), base, dir) =
+	  | intersect (Union' (obj1, obj2), base, dir) =
 	    union (merge (intersect (obj1, base, dir),
 			  intersect (obj2, base, dir)), Outside)
-	  | intersect (Intersect (obj1, obj2), base, dir) =
+	  | intersect (Intersect' (obj1, obj2), base, dir) =
 	    inter (merge (intersect (obj1, base, dir),
 			  intersect (obj2, base, dir)), Outside)
-	  | intersect (Difference (obj1, obj2), base, dir) =
+	  | intersect (Difference' (obj1, obj2), base, dir) =
 	    diff (merge (intersect (obj1, base, dir),
 			 intersect (obj2, base, dir)), Outside)
 
@@ -197,7 +214,7 @@ structure Renderer :> RENDERER =
 		else
 		    let
 			val dist = absVec dir
-			val attenuation = 100.0 / (99.0 + dist * dist * dist)
+			val attenuation = 100.0 / (99.0 + dist * dist)
 		    in
 			SOME (Color.scale (attenuation, color),
 			      normalizeVec dir)
@@ -219,7 +236,7 @@ structure Renderer :> RENDERER =
 			val negUnitDir = negVec unitDir
 			val attenuation1 =
 			    Math.pow (mulVec (unitSpotDir, negUnitDir), exp)
-			val attenuation2 = 100.0 / (99.0 + dist * dist * dist)
+			val attenuation2 = 100.0 / (99.0 + dist * dist)
 		    in
 			SOME (Color.scale (attenuation1 * attenuation2, color),
 			      unitDir)
@@ -280,26 +297,22 @@ structure Renderer :> RENDERER =
 
 	fun mkRender {ambient, lights, scene, vision, width, height, depth} =
 	    let
+		val scene' = preprocess scene
 		val w = 2.0 * Math.tan (0.5 * vision)
 		val delta = w / Real.fromInt width
 		val h = delta * height
-		val top = h / 2.0
-		val left = w / 2.0
+		val top = (h + delta) / 2.0
+		val left = (w + delta) / 2.0
 		val base = (0.0, 0.0, ~1.0)
-		fun render' (x, y) =
-		    let
-			val dir = (left + Real.fromInt x * delta,
-				   top - Real.fromInt y * delta,
-				   1.0)
-		    in
-			Color.clamp (trace (base, dir,
-					    ambient, lights, scene, depth))
-		    end
 	    in
-		render'
+		fn (x, y) =>
+		let
+		    val dir = (left + delta * Real.fromInt x,
+			       top - delta * Real.fromInt y,
+			       1.0)
+		    val c = trace (base, dir, ambient, lights, scene', depth)
+		in
+		    Color.clamp c
+		end
 	    end
-
-	fun render {ambient, lights, scene, vision, width, height, depth,
-		    outstream = q} = ()
-	    (*UNFINISHED*)
     end
