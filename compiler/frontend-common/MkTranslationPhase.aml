@@ -308,7 +308,7 @@ struct
 	    val exp1    = O.VarExp(typInfo(r,t2), longid2)
 	    val (t3,t4) = Type.asArrow t2
 	in
-	    (*ASSERT Type.equals(t3,#typ(infoExp exp2)) *)
+	    (*ASSERT Type.equal(t3,#typ(infoExp exp2)) *)
 	    O.AppExp(typInfo(r,t4), exp1, exp2)
 	end
 
@@ -1061,8 +1061,8 @@ struct
 		 * been performed to equalize them. Example:
 		 *   fct(signature S) -> ()  :>  fct(signature S) -> ()
 		 * So we cannot put in an assertion here!
-		(*ASSERT assert Path.equals(#2 j1, #2 j2) => *)
-		if not(Path.equals(#2(Inf.asAbs' j1), #2(Inf.asAbs' j2')))
+		(*ASSERT assert Path.equal(#2 j1, #2 j2) => *)
+		if not(Path.equal(#2(Inf.asAbs' j1), #2(Inf.asAbs' j2')))
 		then raise Assert.failure else
 		 *)
 		NONE
@@ -1212,7 +1212,7 @@ struct
 		val  ll'   = O.Lab(i',l')
 		val  y1    = O.LongId(typInfo(r,t1), x1, ll')
 		val  exp   = O.VarExp(typInfo(r,t2), y1)
-		val isntIdentity' = isntIdentity orelse not(Type.equals(t1,t2))
+		val isntIdentity' = isntIdentity orelse not(Type.equal(t1,t2))
 	    in
 		coerceStr(E, r, x1,s1, x2o,items,s2', isntIdentity',
 			  O.Fld(i',ll',exp)::flds, Type.extendRow(l',t2,row))
