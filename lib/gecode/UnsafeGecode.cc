@@ -329,6 +329,8 @@ DEFINE4(gc_eqv) {
   DECLARE_INT(cl, x2);
   int noOfVars = v->GetLength();
 
+  if (noOfVars==0) RETURN_UNIT;
+
   IntArgs vars(noOfVars);
   for (int i=noOfVars; i--;) {
     DECLARE_VAR(tmp, stamp, pstamp, v->Sub(i));
@@ -357,6 +359,9 @@ DEFINE5(gc_eqvr) {
   DECLARE_VAR(boolVar, stamp, pstamp, x4);
 
   int noOfVars = v->GetLength();
+
+  if (noOfVars==0) RETURN_UNIT; /** make boolvar true? **/
+
   IntArgs vars(noOfVars);
   for (int i=noOfVars; i--;) {
     DECLARE_VAR(tmp, stamp, pstamp, v->Sub(i));
@@ -374,6 +379,9 @@ DEFINE3(gc_distinct) {
   DECLARE_INT(cl, x2);
 
   int noOfVars = v->GetLength();
+
+  if (noOfVars==0) RETURN_UNIT;
+
   IntArgs vars(noOfVars);
   for (int i=noOfVars; i--;) {
     DECLARE_VAR(tmp, stamp, pstamp, v->Sub(i));
@@ -390,6 +398,9 @@ DEFINE3(gc_distincti) {
   DECLARE_INT(cl, x2);
 
   int noOfVars = v->GetLength();
+
+  if (noOfVars==0) RETURN_UNIT;
+
   IntArgs vars(noOfVars);
   IntArgs offsets(noOfVars);
 
@@ -413,6 +424,9 @@ DEFINE5(gc_linear) {
   DECLARE_INT(cl, x4);
 
   int noOfVars = v->GetLength();
+
+  if (noOfVars==0) RETURN_UNIT;
+
   IntArgs vars(noOfVars);
   IntArgs offsets(noOfVars);
   for (int i=noOfVars; i--;) {
@@ -437,6 +451,9 @@ DEFINE6(gc_linearr) {
   DECLARE_INT(cl, x5);
 
   int noOfVars = v->GetLength();
+
+  if (noOfVars==0) RETURN_UNIT; /** post boolvar=true? **/
+
   IntArgs vars(noOfVars);
   IntArgs offsets(noOfVars);
   for (int i=noOfVars; i--;) {
@@ -517,6 +534,8 @@ DEFINE3(gc_bool_andv) {
   DECLARE_VAR(b, stamp, pstamp, x2);
 
   int noOfVars = v->GetLength();
+  if (noOfVars==0) RETURN_UNIT;
+
   IntArgs vars(noOfVars);
 
   for (int i=noOfVars; i--;) {
@@ -534,6 +553,8 @@ DEFINE3(gc_bool_orv) {
   DECLARE_VAR(b, stamp, pstamp, x2);
 
   int noOfVars = v->GetLength();
+  if (noOfVars==0) RETURN_UNIT;
+
   IntArgs vars(noOfVars);
   for (int i=noOfVars; i--;) {
     DECLARE_VAR(tmp1, stamp, pstamp, v->Sub(i));
@@ -551,6 +572,8 @@ DEFINE4(gc_branch) {
   DECLARE_INT(valsel, x3);
 
   int noOfVars = v->GetLength();
+  if (noOfVars==0) RETURN_UNIT;
+
   IntArgs vars(noOfVars);
 
   for (int i=noOfVars; i--;) {
@@ -630,6 +653,8 @@ DEFINE6(gc_countii) {
   DECLARE_INT(j, x5);
 
   int noOfVars = v->GetLength();
+  if (noOfVars==0) RETURN_UNIT;
+
   IntArgs vars(noOfVars);
   for (int i=noOfVars; i--;) {
     DECLARE_VAR(tmp, stamp, pstamp, v->Sub(i));
@@ -651,6 +676,8 @@ DEFINE6(gc_countvi) {
   DECLARE_INT(j, x5);
 
   int noOfVars = v->GetLength();
+  if (noOfVars==0) RETURN_UNIT; /** is this correct? **/
+
   IntArgs vars(noOfVars);
   for (int i=noOfVars; i--;) {
     DECLARE_VAR(tmp, stamp, pstamp, v->Sub(i));
@@ -672,6 +699,8 @@ DEFINE6(gc_countiv) {
   DECLARE_VAR(j, stamp, pstamp, x5);
 
   int noOfVars = v->GetLength();
+  if (noOfVars==0) RETURN_UNIT; /** is this correct? **/
+
   IntArgs vars(noOfVars);
   for (int i=noOfVars; i--;) {
     DECLARE_VAR(tmp, stamp, pstamp, v->Sub(i));
@@ -693,6 +722,8 @@ DEFINE6(gc_countvv) {
   DECLARE_VAR(j, stamp, pstamp, x5);
 
   int noOfVars = v->GetLength();
+  if (noOfVars==0) RETURN_UNIT; /** is this correct? **/
+
   IntArgs vars(noOfVars);
   for (int i=noOfVars; i--;) {
     DECLARE_VAR(tmp, stamp, pstamp, v->Sub(i));
@@ -712,6 +743,8 @@ DEFINE4(gc_element) {
   DECLARE_VAR(j, stamp, pstamp, x3);
 
   int noOfVars = v->GetLength();
+  if (noOfVars==0) RETURN_UNIT; /** is this correct? **/
+
   IntArgs vars(noOfVars);
   for (int i=noOfVars; i--;) {
     DECLARE_VAR(tmp, stamp, pstamp, v->Sub(i));
@@ -730,6 +763,8 @@ DEFINE4(gc_elementi) {
   DECLARE_VAR(j, stamp, pstamp, x3);
 
   int noOfArgs = v->GetLength();
+  if (noOfArgs==0) RETURN_UNIT; /** is this correct? **/
+
   IntArgs args(noOfArgs);
   for (int i=noOfArgs; i--;) {
     DECLARE_INT(tmp, v->Sub(i));
@@ -748,6 +783,8 @@ DEFINE4(gc_lex) {
   DECLARE_VECTOR(v2, x3);
 
   int noOfVars1 = v1->GetLength();
+  if (noOfVars1==0) RETURN_UNIT; /** is this correct? **/
+
   IntArgs vars1(noOfVars1);
   for (int i=noOfVars1; i--;) {
     DECLARE_VAR(tmp, stamp, pstamp, v1->Sub(i));
@@ -755,6 +792,8 @@ DEFINE4(gc_lex) {
   }
 
   int noOfVars2 = v2->GetLength();
+  if (noOfVars2==0) RETURN_UNIT; /** is this correct? **/
+
   IntArgs vars2(noOfVars2);
   for (int i=noOfVars2; i--;) {
     DECLARE_VAR(tmp, stamp, pstamp, v2->Sub(i));
@@ -771,6 +810,8 @@ DEFINE3(gc_min) {
   DECLARE_VECTOR(v, x1);
   DECLARE_VAR(i, stamp, pstamp, x2);
   int noOfVars = v->GetLength();
+  if (noOfVars==0) RETURN_UNIT; /** is this correct? **/
+
   IntArgs vars(noOfVars);
   for (int i=noOfVars; i--;) {
     DECLARE_VAR(tmp, stamp, pstamp, v->Sub(i));
@@ -787,6 +828,8 @@ DEFINE3(gc_max) {
   DECLARE_VECTOR(v, x1);
   DECLARE_VAR(i, stamp, pstamp, x2);
   int noOfVars = v->GetLength();
+  if (noOfVars==0) RETURN_UNIT; /** is this correct? **/
+
   IntArgs vars(noOfVars);
   for (int i=noOfVars; i--;) {
     DECLARE_VAR(tmp, stamp, pstamp, v->Sub(i));
@@ -828,6 +871,8 @@ DEFINE3(gc_assign) {
   DECLARE_INT(avalsel, x2);
 
   int noOfVars = v->GetLength();
+  if (noOfVars==0) RETURN_UNIT; /** is this correct? **/
+
   IntArgs vars(noOfVars);
   for (int i=noOfVars; i--;) {
     DECLARE_VAR(tmp, stamp, pstamp, v->Sub(i));
