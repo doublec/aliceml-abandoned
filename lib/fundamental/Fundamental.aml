@@ -86,6 +86,9 @@ import signature PACKAGE	from "PACKAGE-sig"
 import structure Package	from "Package"
 import functor   ByNeed		from "ByNeed"
 
+import signature LOCK		from "LOCK-sig"
+import structure Lock		from "Lock"
+
 
 open Toplevel
 
@@ -158,3 +161,6 @@ structure Thread	= Thread
 signature PACKAGE	= PACKAGE
 structure Package	= Package
 structure ByNeed	= ByNeed
+
+signature LOCK		= LOCK
+structure Lock		= Lock
