@@ -65,6 +65,11 @@
       The first kind returns a list of solutions as the engines, whereas
       the second kind returns a list of succeeded spaces. 
    </P>
+   <P>
+     To get an idea on how search engines are programmed in Alice,
+     take a look at the example given
+     <A HREF="http://www.ps.uni-sb.de/alice/manual/library/space.php3">here</A>.
+   </P>
 
 <?php section("import", "import"); ?>
 
