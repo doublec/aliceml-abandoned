@@ -63,13 +63,18 @@ structure OutputImperativeGrammar :> OUTPUT_IMPERATIVE_GRAMMAR =
 	end
 
 	fun outputInfo (_, ref (Unknown | LoopStart | LoopEnd)) = NULL
-	  | outputInfo (_, ref (Use set)) = SEQ [S "use ...", NL]
-	  | outputInfo (_, ref (Kill set)) =
-	    if StampSet.isEmpty set then NULL
+	  | outputInfo (_, ref (Use set)) =
+	    if StampSet.isEmpty set then SEQ [S "(* use *)", NL]
 	    else
 		SEQ [S (StampSet.fold (fn (stamp, s) =>
 				       s ^ " " ^ Stamp.toString stamp)
-			"kill" set), NL]
+			"(* use" set), S " *)", NL]
+	  | outputInfo (_, ref (Kill set)) =
+	    if StampSet.isEmpty set then SEQ [S "(* kill *)", NL]
+	    else
+		SEQ [S (StampSet.fold (fn (stamp, s) =>
+				       s ^ " " ^ Stamp.toString stamp)
+			"(* kill" set), S "*)", NL]
 
 	fun outputLit (WordLit w) = "word " ^ LargeWord.toString w
 	  | outputLit (IntLit i) = "int " ^ LargeInt.toString i
@@ -120,7 +125,7 @@ structure OutputImperativeGrammar :> OUTPUT_IMPERATIVE_GRAMMAR =
 		  S "catch ", ID id, IN, NL, outputBody body2, EX, NL,
 		  S "cont", IN, NL, outputBody body3, EX])
 	  | outputStm (EndHandleStm (_, ref i)) =
-	    CO ("leave " ^ Int.toString i)
+	    S ("(* leave " ^ Int.toString i ^ " *)")
 	  | outputStm (TestStm (_, id, test, body1, body2)) =
 	    SEQ [S "case ", ID id, S " of ", IN, outputTest test, NL,
 		 outputBody body1, EX, NL, S "else", IN, NL, outputBody body2,
@@ -136,7 +141,7 @@ structure OutputImperativeGrammar :> OUTPUT_IMPERATIVE_GRAMMAR =
 	  | outputStm (ReturnStm (_, exp)) =
 	    SEQ [S "return ", IN, outputExp exp, EX]
 	  | outputStm (IndirectStm (_, ref bodyOpt)) =
-	    outputBody (valOf bodyOpt)
+	    SEQ [S "indirect", NL, outputBody (valOf bodyOpt)]
 	  | outputStm (ExportStm (_, exp)) =
 	    SEQ [S "export ", IN, outputExp exp, EX]
 	and outputExp (LitExp (_, lit)) = S (outputLit lit)
