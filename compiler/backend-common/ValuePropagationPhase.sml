@@ -667,7 +667,6 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 		val topStamp = Stamp.new ()
 		val body' = vpBodyShared (body, topStamp, env, true)
 		val component' = (imports, (body', sign))
-val _ = debug component'
 	    in
 		component'
 	    end
