@@ -14,17 +14,19 @@ struct
 
     rule exp : int = 
         NUM 
-      | n1 as exp, oper, n2 as exp => (oper(n1,n2))
-    and oper =
+      | n1 as exp, oper1, n2 as exp => (oper1(n1,n2)) prec PLUS
+      | n1 as exp, oper2, n2 as exp => (oper2(n1,n2)) prec TIMES
+    and oper1 =
         PLUS  => (op+)
       | MINUS => (op-)
-      | TIMES => (op*)
+    and oper2 =
+	TIMES => (op*)
 
     parser eval = exp
-        parser eval2 = oper(* *)
+    parser eval2 = exp
     
     val lexer = 
-	let val t = [NUM 5, PLUS, NUM 3, TIMES, NUM (~2)]
+	let val t = [NUM 5, MINUS, NUM 3, TIMES, NUM (2)]
 	    fun f x = (SOME x,1,1)
 	    val t = ref (map f t)
 	in fn () =>

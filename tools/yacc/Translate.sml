@@ -5,6 +5,10 @@ struct
     structure G = Grammar
     structure A = AbsSyn 
     structure N = NormalForm
+    open Array
+
+    val DEBUG = true
+    val error = fn s => print s
 
     datatype translate = TRANSLATE of {grammar :G.grammar,
 				       stringToTerm :string -> G.term,
@@ -37,10 +41,6 @@ struct
      - start nonterm not in any rhs
      - higher prec means tighter binding 
      *)
-    (*
-    val eop = "EOP"
-    val start = "NewStartSymbol"    
-    *)
 
     (* tl: new tokens to distinguish between different parsers *)
     (* eop to the end *) 
@@ -120,7 +120,7 @@ struct
 	List.map (fn (A.As (_,A.Symbol s)) => stringToSymbol td ntd s)
 
     fun translateRule td ntd i (x,_,A.Prec(A.Transform(A.Seq r,c),s)) =
-	let val precedence = NONE (* SOME (stringToTerm td s) *)
+	let val precedence = SOME (stringToTerm td s)
 	    val lhs = stringToNonterm ntd x
 	    val rhs = translateSeq td ntd r
 	    val rulenum = i
@@ -149,6 +149,65 @@ struct
     fun removePrec (A.Prec (bnf,_)) = removePrec bnf
       | removePrec bnf = bnf
 
+
+    (* from ML-Yacc, deal with associativities *)
+    val termPrec = fn (numTerms,termToString,stringToTerm,parsetree) =>
+	let val precData = array(numTerms, NONE : int option)
+	    val addPrec = fn termPrec => fn term as (G.T i) =>
+		case sub(precData,i)
+		   of SOME _ =>
+		      error ("multiple precedences specified for terminal " ^
+				(termToString term))
+		 | NONE => update(precData,i,termPrec)
+	    val termPrec = 
+		fn ((A.AssoclDec slist), i) => List.map (fn s => (s,i)) slist
+		 | ((A.AssocrDec slist), i) => List.map (fn s => (s,i+2)) slist
+		 | ((A.NonassocDec slist), i) => List.map (fn s => (s,i+1)) slist
+	    val assoclist = 
+		let val assocs = List.rev (List.filter (fn A.AssoclDec _ => true
+	                                                 | A.AssocrDec _ => true
+							 | A.NonassocDec _ => true
+							 | _ => false) parsetree)
+		    fun compAssocs ([],i) = []
+		      | compAssocs (h::t,i) = termPrec (h,i) ::(compAssocs (t,i+3))
+		in 
+		    List.concat (compAssocs (assocs,0))  (* rev ? *)
+		end
+	    val _ = List.app (fn (s,i) => addPrec (SOME i) (stringToTerm s)) assoclist
+	in fn (G.T i) =>
+	    if  DEBUG andalso (i < 0 orelse i >= numTerms) then
+		NONE
+	    else sub(precData,i)
+	end
+
+    (* from ML-Yacc: deal with rule precedences *)
+    val elimAssoc =  fn i => (i - (i mod 3) + 1)
+    val rulePrec = fn termPrec =>
+	let fun findRightTerm (nil,r) = r
+	      | findRightTerm (G.TERM t :: tail,r) =
+	    findRightTerm(tail,SOME t)
+	      | findRightTerm (_ :: tail,r) = findRightTerm(tail,r)
+	in fn rhs =>
+	    case findRightTerm(rhs,NONE)
+		of NONE => NONE
+	      | SOME term => 
+		    case termPrec term
+		       of SOME i => SOME  (elimAssoc i)
+		     | a => a
+	end
+    
+    val grammarRules = fn termPrec => fn rules =>
+	let val conv = fn {lhs,rhs,precedence,rulenum} =>
+	    {lhs=lhs,rhs =rhs,precedence=
+	     case precedence
+		 of SOME t => (case termPrec t
+				   of SOME i => SOME(elimAssoc i)
+				 | a => a)
+	       | _ => rulePrec termPrec rhs,
+		     rulenum=rulenum}
+	in map conv rules
+	end
+
     fun translate y = 
 	let val (ts,x1) = mkParsers y
 	    val parsers = List.length ts (* number of parsers in file *)
@@ -169,8 +228,8 @@ struct
 	    val (origRules,rules) = mkRules td ntd x
 	    val origRules = map 
 		(fn (s,t,bnf) => (s,t,removePrec bnf)) origRules
-	    val precedence = fn t => NONE
-	    val grammar = G.GRAMMAR {rules=rules,
+	    val precedence = termPrec (terms,termToString,stringToTerm,y)
+	    val grammar = G.GRAMMAR {rules=grammarRules precedence rules,
 				     terms=terms,
 				     nonterms=nonterms,
 				     start=start,
@@ -180,7 +239,14 @@ struct
 				     termToString=termToString,
 				     nontermToString=nontermToString
 				     }
-	in TRANSLATE {grammar=grammar, 
+	    fun prPrec i = if i<terms 
+			   then ((termToString (G.T i))^": "
+				       ^(case (precedence (G.T i)) of SOME j => Int.toString j
+			     | NONE => "%")
+				       ^"\n"^ (prPrec (i+1))) 
+		       else ""
+	in if DEBUG then print (prPrec 0) else ();
+	    TRANSLATE {grammar=grammar, 
 		      stringToTerm = stringToTerm,
 		      stringToNonterm = stringToNonterm,
 		      termlist = termlist,
