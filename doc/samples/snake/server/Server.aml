@@ -199,11 +199,13 @@ struct
             fun allPossiblePlayers () = allParticipants
                     (fn (_, p) =>
                         case !(Part.state p) of
-                            Part.PLAYING _      => true
-                        |   Part.FINISHED _     => true
-                        |   Part.HALF_FINISHED _ => true
-                        |   Part.DEAD _         => true
-                        |   _                   => false)
+                            Part.PLAYING _                      => true
+                        |   Part.FINISHED _                     => true
+                        |   Part.HALF_FINISHED _                => true
+                        |   Part.DEAD ({deathCount,...},_)  
+                           where (isSome (#lives config) orelse
+                            !deathCount < valOf (#lives config))=> true
+                        |   _                                   => false)
 
 
             val lock        = Lock.lock ()
@@ -580,7 +582,8 @@ struct
                             val points      = ! $ #points playerInfo
                         in
                             (Part.state part) := Part.DEAD (playerInfo, ref ~1); (*FIXME*)
-                            
+                            #deathCount playerInfo := !(#deathCount playerInfo) 
+                                                        + 1;
                             (* reset gamepoints to zero, points are not changed
                                as the snake died before entering the gate *)
                             if !(#gamePoints playerInfo) <> 0 then (
