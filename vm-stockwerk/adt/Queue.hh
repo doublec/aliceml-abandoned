@@ -17,11 +17,8 @@
 #pragma interface "adt/Queue.hh"
 #endif
 
-#include "store/store.hh"
+#include "store/Store.hh"
 #include <cstring>
-
-#define QueueLabel Store::MakeLabel(0) //--**
-#define QueueArrayLabel Store::MakeLabel(0) //--**
 
 class Queue: private Block {
 private:
@@ -31,19 +28,19 @@ private:
   static const u_int ARRAY_POS = 3;
 
   u_int GetWriteIndex() {
-    return Store::WordToInt(GetArg(WRITE_INDEX_POS));
+    return Store::UnsafeWordToInt(GetArg(WRITE_INDEX_POS));
   }
   void SetWriteIndex(u_int writeIndex) {
-    ReplaceArg(WRITE_INDEX_POS, Store::IntToWord(writeIndex));
+    ReplaceArg(WRITE_INDEX_POS, writeIndex);
   }
   u_int GetReadIndex() {
-    return Store::WordToInt(GetArg(READ_INDEX_POS));
+    return Store::UnsafeWordToInt(GetArg(READ_INDEX_POS));
   }
   void SetReadIndex(u_int readIndex) {
-    ReplaceArg(READ_INDEX_POS, Store::IntToWord(readIndex));
+    ReplaceArg(READ_INDEX_POS, readIndex);
   }
   Block *GetArray() {
-    return Store::WordToBlock(GetArg(ARRAY_POS));
+    return Store::UnsafeWordToBlock(GetArg(ARRAY_POS));
   }
   void SetArray(Block *array) {
     ReplaceArg(ARRAY_POS, array->ToWord());
@@ -53,7 +50,7 @@ private:
     Block *oldArray = GetArray();
     u_int oldSize = oldArray->GetSize();
     u_int newSize = oldSize + threshold;
-    Block *newArray = Store::AllocBlock(QueueArrayLabel, newSize);
+    Block *newArray = Store::AllocBlock(QUEUEARRAY_LABEL, newSize);
     u_int index = GetReadIndex();
     Assert(index == GetWriteIndex());
     word *oldBase = oldArray->GetBase();
@@ -83,16 +80,16 @@ public:
   using Block::ToWord;
 
   static Queue *New(u_int initialSize) {
-    Block *b = Store::AllocBlock(QueueLabel, SIZE);
-    Block *array = Store::AllocBlock(QueueArrayLabel, initialSize);
-    b->InitArg(WRITE_INDEX_POS, Store::IntToWord(0));
-    b->InitArg(READ_INDEX_POS, Store::IntToWord(0));
+    Block *b = Store::AllocBlock(QUEUE_LABEL, SIZE);
+    Block *array = Store::AllocBlock(QUEUEARRAY_LABEL, initialSize);
+    b->InitArg(WRITE_INDEX_POS, 0);
+    b->InitArg(READ_INDEX_POS, 0);
     b->InitArg(ARRAY_POS, array->ToWord());
     return static_cast<Queue *>(b);
   }
   static Queue *FromWord(word x) {
     Block *b = Store::WordToBlock(x);
-    Assert(b == INVALID_POINTER || b->GetLabel() == QueueLabel);
+    Assert(b == INVALID_POINTER || b->GetLabel() == QUEUE_LABEL);
     return static_cast<Queue *>(b);
   }
 
@@ -149,12 +146,12 @@ public:
     }
     if (readIndex < writeIndex) {
       for (u_int i = writeIndex + 1; i <= newSize; i++)
-	array->ReplaceArg(i, Store::IntToWord(0));
+	array->ReplaceArg(i, 0);
       for (u_int i = 1; i <= readIndex; i++)
-	array->ReplaceArg(i, Store::IntToWord(0));
+	array->ReplaceArg(i, 0);
     } else {
       for (u_int i = writeIndex + 1; i <= readIndex; i++)
-	array->ReplaceArg(i, Store::IntToWord(0));
+	array->ReplaceArg(i, 0);
     }
   }
 };

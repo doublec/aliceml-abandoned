@@ -16,7 +16,7 @@
 #pragma interface "adt/Stack.hh"
 #endif
 
-#include "store/store.hh"
+#include "store/Store.hh"
 #include <cstring>
 
 class Stack : private Block {
