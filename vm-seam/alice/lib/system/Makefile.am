@@ -11,12 +11,12 @@ libsystem_a_SOURCES = \
 	UnsafeComponent.cc \
 	UnsafeDebug.cc \
 	UnsafeDebugger.cc \
-	UnsafeMinimizer.cc \
 	UnsafeSignal.cc \
 	UnsafeSocket.cc \
 	UnsafeRand.cc \
 	UnsafeValue.cc \
 	UnsafeReflect.cc \
+	UnsafeStore.cc \
 	UnsafeForeign.cc \
 	UnsafeDate.cc \
 	UnsafeTime.cc

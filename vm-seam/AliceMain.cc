@@ -32,12 +32,12 @@ extern word UnsafeSocket();
 extern word UnsafeRand();
 extern word UnsafeValue();
 extern word UnsafeReflect();
+extern word UnsafeStore();
 extern word UnsafeCell();
 extern word UnsafeAddr();
 extern word UnsafeRemote();
 extern word UnsafeTime();
 extern word UnsafeDate();
-extern word UnsafeMinimizer();
 
 static NativeComponent nativeComponents[] = {
   {"lib/system/UnsafeConfig",       UnsafeConfig},
@@ -57,8 +57,8 @@ static NativeComponent nativeComponents[] = {
   {"lib/system/UnsafeRand",         UnsafeRand},
   {"lib/system/UnsafeValue",        UnsafeValue},
   {"lib/system/UnsafeReflect",      UnsafeReflect},
+  {"lib/system/UnsafeStore",        UnsafeStore},
   {"lib/system/UnsafeTime",	    UnsafeTime},
-  {"lib/system/UnsafeMinimizer",    UnsafeMinimizer},
   {"lib/utility/UnsafeCell",        UnsafeCell},
   {"lib/utility/UnsafeAddr",        UnsafeAddr},
   {"lib/distribution/UnsafeRemote", UnsafeRemote},

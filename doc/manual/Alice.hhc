@@ -261,10 +261,6 @@
 			<param name="Local" value="library/math.html">
 			</OBJECT>
 		<LI> <OBJECT type="text/sitemap">
-			<param name="Name" value="Minimizer">
-			<param name="Local" value="library/minimizer.html">
-			</OBJECT>
-		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="MONO_ARRAY">
 			<param name="Local" value="library/mono-array.html">
 			</OBJECT>
@@ -363,6 +359,10 @@
 		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="Space">
 			<param name="Local" value="library/space.html">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Store">
+			<param name="Local" value="library/store.html">
 			</OBJECT>
 		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="STREAM_IO">

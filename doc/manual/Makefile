@@ -62,7 +62,7 @@ INSTALLFILES_LIBRARY_0 = \
 	ieee-real.html imp-map.html imp-set.html imperative-io.html \
 	integer.html int-inf.html io.html \
 	list.html list-pair.html lock.html \
-	map.html math.html minimizer.html mono-array.html \
+	map.html math.html mono-array.html \
 	mono-array-slice.html \
 	mono-vector.html mono-vector-slice.html \
 	option.html ordered.html os.html os-file-sys.html os-io.html \
@@ -70,7 +70,7 @@ INSTALLFILES_LIBRARY_0 = \
 	package.html pair.html pickle.html prim-io.html print.html \
 	promise.html \
 	real.html ref.html ref-map.html \
-	set.html stack.html stamp.html stream-io.html string.html \
+	set.html stack.html stamp.html store.html stream-io.html string.html \
 	string-cvt.html substring.html \
 	text.html text-io.html text-stream-io.html time.html timer.html \
 	toplevel.html \

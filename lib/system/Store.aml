@@ -1,0 +1,44 @@
+(*
+ * Author:
+ *   Guido Tack <tack@ps.uni-sb.de>
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Guido Tack, 2005
+ *   Andreas Rossberg, 2005
+ * 
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *) 
+
+import signature STORE             from "STORE-sig"
+import structure UnsafeStore      from "UnsafeStore"
+import structure UnsafeValue      from "UnsafeValue"
+
+structure Store : STORE =
+    struct
+        val same = UnsafeValue.same
+
+        fun minimize a = let
+            val b = UnsafeStore.newPartition()
+            val _ = UnsafeStore.loadGraph(b, a)
+        in
+            UnsafeStore.minimize b;
+	    a
+        end
+
+        fun op==(a, b) = same(a,b) orelse
+            let
+                val x = (a,b)
+		val y = minimize x
+            in
+                same(#1 y, #2 y)
+            end
+
+        val collect = UnsafeStore.collect
+        val size = UnsafeStore.size
+        val sizeQuiet = UnsafeStore.sizeQuiet
+
+    end

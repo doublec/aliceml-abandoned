@@ -1,0 +1,26 @@
+(*
+ * Author:
+ *   Guido Tack <tack@ps.uni-sb.de>
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Guido Tack, 2005
+ *   Andreas Rossberg, 2005
+ * 
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *) 
+
+signature STORE =
+  sig
+      val op==      : 'a * 'a -> bool
+      val same      : 'a * 'a -> bool
+      val collect   : int -> unit
+      val minimize  : 'a -> 'a
+      val size      : 'a -> {nodes : int, words : int,
+                             byneeds : int, futures : int, transients : int}
+      val sizeQuiet : 'a -> {nodes : int, words : int,
+                             byneeds : int, futures : int, transients : int}
+  end

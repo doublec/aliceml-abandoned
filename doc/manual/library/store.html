@@ -1,0 +1,98 @@
+<?php include("macros.php3"); ?>
+<?php heading("The Store structure", "The <TT>Store</TT> structure") ?>
+
+<?php section("synopsis", "synopsis") ?>
+
+  <PRE>
+    signature STORE
+    structure Store : STORE
+  </PRE>
+
+  <P>
+    The <TT>Store</TT> structure provides an interface to the Alice
+    store that holds all data at runtime. 
+  </P>
+
+<?php section("import", "import") ?>
+
+  <P>
+    Imported implicitly.
+  </P>
+
+<?php section("interface", "interface") ?>
+
+  <PRE>
+signature STORE =
+  sig
+      val op==      : 'a * 'a -> bool
+      val same      : 'a * 'a -> bool
+      val collect   : int -> unit
+      val minimize  : 'a -> 'a
+      val size      : 'a -> {nodes : int, words : int,
+                             byneeds : int, futures : int, transients : int}
+      val sizeQuiet : 'a -> {nodes : int, words : int,
+                             byneeds : int, futures : int, transients : int}
+  end
+  </PRE>
+
+<?php section("description", "description") ?>
+
+
+  <DL>
+
+    <DT>
+      <TT>same(<I>x</I>, <I>y</I>)</TT>
+    </DT>
+    <DD>
+      <P>Tests whether <I>x</I> and <I>y</I> are physically
+      represented as the same object in the store.
+      </P>
+    </DD>
+
+    <DT>
+      <TT><I>x</I> == <I>y</I></TT>
+    </DT>
+    <DD>
+      <P>Tests whether <I>x</I> and <I>y</I> represent the same
+      infinite trees, i.e. whether their respective graphs in the
+      store are structurally equivalent. 
+      </P>
+    </DD>
+
+    <DT>
+      <TT>collect <I>gen</I></TT>
+    </DT>
+    <DD>
+      <P>Triggers a garbage collection up to generation <I>gen</I> (if
+      the system features a generational garbage collector).
+      </P>
+    </DD>
+
+    <DT>
+      <TT>minimize <I>x</I></TT>
+    </DT>
+    <DD>
+      <P>Minimizes the store representation of <I>x</I> by computing
+      the minimal representation for <I>x</I> that is structurally
+      equivalent to the original.
+      </P>
+    </DD>
+
+    <DT>
+      <TT>size <I>x</I></TT> <BR>
+      <TT>sizeQuiet <I>x</I></TT>
+    </DT>
+    <DD>
+      <P>Computes the number of store nodes <I>x</I> uses, the number
+      of lazy futures, concurrent futures and other futures it
+      consists of, and the number of words <I>x</I> takes up in the
+      store. <TT>size</TT> is strict, i.e. it forces all futures in
+      <I>x</I>. <TT>sizeQuiet</TT> does not force futures but computes
+      the size of e.g. the closure that is used for computing their
+      result.
+      </P>
+    </DD>
+
+  </DL>
+
+<?php footing() ?>
