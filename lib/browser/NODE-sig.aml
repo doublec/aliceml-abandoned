@@ -1,0 +1,214 @@
+(*
+ * Authors:
+ *   Bernadette Blum <blum@ps.uni-sb.de>
+ *   Marvin Schiller <schiller@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Bernadette Blum, 2002
+ *   Marvin Schiller, 2002
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
+import structure Inf from "x-alice:/lib/rtt/Inf"
+import structure Type from "x-alice:/lib/rtt/Type"
+import structure Reflect from "x-alice:/lib/system/Reflect" 
+
+import structure GtkSupport from "GtkSupport"
+
+signature NODE = 
+sig
+    datatype actions = NO_ACTIONS (* herausnehmen!!! *)
+	
+    datatype desc = 
+	INTERPUNCT
+      | VALUE of {value : Reflect.value,
+		  typ : Type.typ,
+		  actions : actions}
+      | I_VALUE of {value : Reflect.module,
+		    typ : Inf.t,
+		    actions : actions} 
+
+    datatype limit = DEPTH_LIMIT | WIDTH_LIMIT
+	
+    datatype status = CLEAN | DIRTY | DAZZLED | DEAD
+	
+    datatype color_class = INT_COLOR 
+                         | REAL_COLOR
+                         | CHAR_COLOR
+                         | STR_COLOR
+                         | WORD_COLOR
+                         | EXN_COLOR
+                         | REF_COLOR
+                         | LABEL_COLOR
+                         | SEP_COLOR
+                         | EQU_COLOR
+                         | LIMIT_COLOR
+                         | BRACK_COLOR
+                         | REL_COLOR
+                         | DEFAULT
+
+    datatype node = 
+	Simple of {desc : desc, 
+		   parent : node,
+		   index : int,
+		   depth : int,
+		   rep : string,
+		   width : int ref,
+		   color : color_class, 
+		   status : status ref,
+		   group : GtkSupport.tag}
+	
+      | Concat of {desc : desc, 
+		   parent : node,
+		   index : int,
+		   depth : int,
+		   kids : node array, 
+		   width : int ref,
+		   l_width: int ref,
+		   height : int ref,
+		   status : status ref,
+		   group : GtkSupport.tag}
+	
+      | Container of {desc : desc, 
+		      parent : node,
+		      index : int,
+		      depth : int,
+		      kids : node array, 
+		      width : int ref,
+		      height : int ref,
+		      l_width : int ref,
+		      status : status ref,
+		      group : GtkSupport.tag}
+	
+      | Limit of {desc : desc,
+		  sort : limit, 
+		  parent : node,
+		  index : int,
+		  depth : int,
+		  status : status ref,
+		  group : GtkSupport.tag}
+	
+      | RelNode of {desc : desc, 
+		    content : node ref,
+		    parent : node,  
+		    index : int, 
+		    depth : int,
+		    counter : int ref, 
+		    rep : string, 
+		    relman : node list ref, 
+		    width : int ref,
+		    height : int ref,
+		    color : color_class, 
+		    status : status ref, 
+		    group : GtkSupport.tag }  
+	
+      | RelRefNode of {desc : desc, 
+		       parent : node, 
+		       index : int,
+		       depth : int,
+		       rep : string, 
+		       relnode : node, 
+		       width : int ref, 
+		       color : color_class, 
+		       status : status ref,  
+		       group : GtkSupport.tag}  
+	
+      | Empty
+
+    val relnumber: int ref
+
+    (* Operationen auf desc *)
+
+    val createValue  :  Reflect.value * Type.t * actions -> desc
+    val createIValue :  Reflect.module * Inf.t * actions -> desc
+	
+    val getValue : desc -> Reflect.value
+    val getInfValue : desc -> Reflect.module
+
+    val getTyp : desc -> Type.typ
+    val getInf : desc -> Inf.t
+	
+    (* Operationen auf node *)
+
+    (* boolsche Tests auf nodes *)
+
+    val isSimple : node -> bool
+    val isRelNode : node -> bool
+    val isRelRefNode : node -> bool
+    val isLimit : node -> bool
+
+    val setsVertical : node -> bool (* nur bei Container moeglich! *)  
+
+    (* Rueckgabe des Inhalts bestimmter node-Felder *)
+
+    val getDesc : node -> desc
+    val getParent : node -> node
+    val getIndex : node -> int
+    val getDepth : node -> int
+
+    val getRep : node -> string
+    val getKids : node -> node Array.array
+    val getContent : node -> node
+
+    val getStatus : node -> status ref
+    val getGroup : node -> GtkSupport.tag
+    val getColor : node -> color_class
+
+    val getSort : node -> limit
+
+    val getReflectValue : node -> Reflect.value
+    
+    val get_xdim : node -> int
+    val get_ydim : node -> int
+    val get_l_xdim : node -> int
+
+    (* Zugriff auf bestimmte "Vorfahren" bzw. deren Felder *)
+
+    val getValueAnc : node -> node
+    val getNoRelAnc : node -> node * int
+    val getAncIndex : node -> int    
+
+    (* Operationen auf RelNodes *)
+
+    val setContent : node * node -> unit
+    val incrCounter : node -> node
+
+    (* Erzeugung einer Gtk-Gruppe fuer eine node *)
+	
+    val setGroup:  GtkSupport.tag * node -> GtkSupport.tag
+
+    (* low-level-Konstruktion der verschiedenen node-Arten *)
+
+    val createSimple: 
+        desc * node * int * int * string * color_class * GtkSupport.tag 
+	-> node
+    
+    val createConcat: 
+	desc * node * int * int * node array * GtkSupport.tag 
+	-> node
+	
+    val createContainer: 
+	desc * node * int * int * node array * GtkSupport.tag 
+	-> node
+    
+    val createLimit: desc * limit * node * int * int * GtkSupport.tag 
+	-> node
+
+    val createRelNode : 
+	desc * node * node * int * int * string * node list * GtkSupport.tag 
+	-> node
+   
+    val createRelRefNode : 
+	desc * node * int * int * string * node * GtkSupport.tag 
+	-> node
+
+    (* Hilfsfunktion zur Bestimmung, ob eine node eine byneed-Future
+       repraesentiert *)
+
+    val isByneed: node -> bool 
+
+end

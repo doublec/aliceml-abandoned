@@ -1,0 +1,27 @@
+(*
+ * Authors:
+ *   Bernadette Blum <blum@ps.uni-sb.de>
+ *   Marvin Schiller <schiller@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Bernadette Blum, 2002
+ *   Marvin Schiller, 2002
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
+import structure Type from "x-alice:/lib/rtt/Type"
+import structure Inf from "x-alice:/lib/rtt/Inf"
+
+signature WIDGET =
+sig
+    (* Inspizieren *)
+    val inspect: 'a * Type.t -> unit
+    val inspectInf: 'a * Inf.t -> unit
+    (* Initialisierung *)
+    val init: unit -> unit
+
+end

@@ -1,0 +1,462 @@
+(*
+ * Authors:
+ *   Bernadette Blum <blum@ps.uni-sb.de>
+ *   Marvin Schiller <schiller@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Bernadette Blum, 2002
+ *   Marvin Schiller, 2002
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
+import structure Inf from "x-alice:/lib/rtt/Inf"
+import structure Type from "x-alice:/lib/rtt/Type"
+import structure Reflect from "x-alice:/lib/system/Reflect" 
+import structure UnsafeValue from "x-alice:/lib/system/UnsafeValue"
+
+import structure GtkSupport from "GtkSupport"
+
+import signature NODE from "NODE-sig"
+
+structure Node :> NODE = 
+struct
+    
+    datatype actions = NO_ACTIONS (* herausnehmen!!! *)
+	
+    datatype desc =
+	INTERPUNCT
+      | VALUE of {value : Reflect.value,
+		  typ : Type.t,
+		  actions : actions}
+      | I_VALUE of {value : Reflect.module,
+		    typ : Inf.t,
+		    actions : actions} 
+
+    datatype limit = DEPTH_LIMIT | WIDTH_LIMIT
+	
+    datatype status = CLEAN | DIRTY | DAZZLED | DEAD
+
+    datatype color_class = INT_COLOR 
+                         | REAL_COLOR
+                         | CHAR_COLOR
+                         | STR_COLOR
+                         | WORD_COLOR
+                         | EXN_COLOR
+                         | REF_COLOR
+                         | LABEL_COLOR
+                         | SEP_COLOR
+                         | EQU_COLOR
+                         | LIMIT_COLOR
+                         | BRACK_COLOR
+                         | REL_COLOR
+                         | DEFAULT
+
+    datatype node = 
+	Simple of {desc : desc, 
+		   parent : node,
+		   index : int,
+		   depth : int,
+		   rep : string, 
+		   width : int ref,
+		   color : color_class, 
+		   status : status ref,
+		   group : GtkSupport.tag}
+	
+      | Concat of {desc : desc, 
+		   parent : node,
+		   index : int,
+		   depth : int,
+		   kids : node array, 
+		   width : int ref,
+		   l_width: int ref,
+		   height : int ref,
+		   status : status ref,
+		   group : GtkSupport.tag}
+	
+      | Container of {desc : desc, 
+		      parent : node,
+		      index : int,
+		      depth : int,
+		      kids : node array, 
+		      width : int ref,
+		      height : int ref,
+		      l_width : int ref,
+		      status : status ref,
+		      group : GtkSupport.tag}
+	
+      | Limit of {desc : desc, 
+		  sort : limit,
+		  parent : node,
+		  index : int, 
+		  depth : int,
+		  status : status ref,
+		  group : GtkSupport.tag}
+	
+      | RelNode of {desc : desc, 
+		    content : node ref,
+		    parent : node,  
+		    index : int, 
+		    depth : int,
+		    counter : int ref, 
+		    rep : string, 
+		    relman : node list ref, 
+		    width : int ref,
+		    height : int ref,
+		    color : color_class, 
+		    status : status ref, 
+		    group : GtkSupport.tag}  
+	
+      | RelRefNode of {desc : desc, 
+		       parent : node, 
+		       index : int, 
+		       depth : int,
+		       rep : string, 
+		       relnode : node, 
+		       width : int ref, 
+		       color : color_class, 
+		       status : status ref,  
+		       group : GtkSupport.tag}  
+	
+      | Empty 
+
+    val relnumber = ref 0
+
+   (* Operationen auf desc *)
+
+    (* Erzeugung *)
+	
+    fun createValue(va,t,act) = VALUE{value = va,
+				      typ = t,
+				      actions = act}
+	
+    fun createIValue(va,t,act) = I_VALUE{value = va,
+					 typ = t,
+					 actions = act}
+
+    (* Wert *) 
+	
+    fun getValue desc = case desc of VALUE(r) => #value(r)
+                                   | _ => raise Match
+	
+    fun getInfValue desc = case desc of I_VALUE(r) => #value(r)
+	                              | _ => raise Match
+
+    (* Typ *)
+
+    fun getTyp desc = case desc of VALUE(r) => #typ(r)
+                                 | _ => raise Match
+
+    fun getInf desc = case desc of I_VALUE(r) => #typ(r)
+                                 | _ => raise Match
+
+    (* Operationen auf node *)
+
+    (* boolsche Funktionen auf node *)
+
+    fun isSimple n = case n of
+	Simple _ => true
+      | _ => false
+
+    fun isRelNode n = case n of
+	RelNode _ => true
+      | _ => false
+
+    fun isRelRefNode n = case n of
+	RelRefNode _ => true
+      | _ => false
+
+    fun isLimit n = case n of
+	Limit _ => true
+      | _ => false
+
+    (* Test, ob Container vertikal anordnet *)
+
+    fun setsVertical n = case n of
+	Container(r) 
+        => checkContKids (#kids(r),0)
+	   orelse ( case Array.sub(#kids(r),0) of
+		    Simple(rr) => String.equal("struct",#rep(rr))
+		  | _ => false )
+      | _ => false
+	                  			 
+    and checkContKids (a,i) = if i >=  Array.length(a) 
+				  then false
+			      else (case Array.sub(a,i) of
+				    Concat(r) 
+				    => if checkConcKids (#kids(r),0)
+	                                 then true
+				       else checkContKids (a,i+1)
+			   	  | RelNode(r) 
+			            => ( case !(#content(r)) of 
+					 Concat(rr)  
+					 => checkConcKids (#kids(rr),0) 
+					    orelse checkContKids (a,i+1) 
+				       | Container(rr) => true 
+				       | _ => checkContKids (a,i+1) ) 
+				  | _ => checkContKids (a,i+1) )
+
+    and checkConcKids (a,i) = if i >=  Array.length(a) 
+				  then false 
+			      else (case Array.sub(a,i) of
+				    Container(r) => true
+                                  | Concat(r) 
+				    => checkConcKids(#kids(r),0)
+				       orelse checkConcKids (a,i+1)
+				  | RelNode(r) 
+				    => ( case !(#content(r)) of 
+					 Concat(rr)  
+					 => checkConcKids (#kids(rr),0)  
+					    orelse checkConcKids (a,i+1) 
+				       | Container(rr) => true 
+				       | _ => checkConcKids (a,i+1) )
+                                  | _ => checkConcKids (a,i+1) )
+
+    (* Rueckgabe des Inhalts bestimmter node-Felder *)
+
+    fun getDesc n = case n of Simple(r) => #desc(r)
+                            | Concat(r) => #desc(r)
+                            | Container(r) => #desc(r) 
+                            | Limit(r) => #desc(r)
+                            | RelNode(r) => #desc(r)
+                            | RelRefNode(r) => #desc(r)
+                            | Empty => INTERPUNCT	
+
+    fun getParent n = case n of Concat(r) => #parent(r)
+                              | Container(r) => #parent(r)
+                              | Simple(r) => #parent(r) 
+                              | Limit(r) => #parent(r)
+                              | RelNode(r) => #parent(r)
+                              | RelRefNode(r) => #parent(r)
+                              | _ => raise Match  
+
+    fun getIndex n = case n of Concat(r) => #index(r)
+                             | Container(r) => #index(r)
+                             | Simple(r) => #index(r)
+                             | Limit(r) => #index(r)
+                             | RelNode(r) => #index(r) 
+                             | RelRefNode(r) => #index(r)
+                             | _ => raise Match
+
+    fun getDepth n = case n of Limit(r) => #depth(r)
+                             | Concat(r) => #depth(r)
+                             | Container(r) => #depth(r)
+                             | Simple(r) => #depth(r)
+                             | RelNode(r) => #depth(r)
+                             | RelRefNode(r) => #depth(r)
+                             | _ => raise Match
+
+    fun getRep (Simple(r))     = #rep(r)
+      | getRep (RelNode(r))    = #rep(r)
+      | getRep (RelRefNode(r)) =  #rep(r)
+      | getRep _               = ""
+	
+    fun getKids n = case n of Concat(r) => #kids(r)
+                            | Container(r) => #kids(r)
+			    | _ => (Array.array(0,Empty))
+
+    fun getContent (RelNode(r)) = !(#content(r))
+      | getContent _ = raise Match
+
+    fun getStatus (Concat(r))     = #status(r)
+      | getStatus (Container(r))  = #status(r)
+      | getStatus (Simple(r))     = #status(r) 
+      | getStatus (Limit(r))      = #status(r)
+      | getStatus (RelNode(r))    = #status(r)
+      | getStatus (RelRefNode(r)) = #status(r)
+      | getStatus  _ = raise Match
+
+    fun getGroup n = case n of Concat(r) => #group(r)
+                              | Container(r) => #group(r)
+                              | Simple(r) => #group(r) 
+                              | Limit(r) => #group(r)
+                              | RelNode(r) => #group(r)
+                              | RelRefNode(r) => #group(r)
+                              | _ => raise Match
+
+    fun getColor (Simple(r))     = #color(r) 
+      | getColor (RelNode(r))    = #color(r)
+      | getColor (RelRefNode(r)) = #color(r)
+      | getColor  _ = raise Match
+
+    fun getSort (Limit(r)) = #sort(r)
+      | getSort _  = raise Match
+
+    fun getReflectValue n = case getDesc(n) of
+	                    INTERPUNCT => raise Match
+			  | VALUE(r) => #value(r) 
+			  | I_VALUE(r) => UnsafeValue.cast (#value(r))
+
+    fun get_xdim n = case n of Simple(r) => !(#width(r))
+                             | Concat(r) => !(#width(r))
+                             | Container(r) => !(#width(r))
+                             | RelNode(r) => !(#width(r))
+                             | RelRefNode(r) => !(#width(r))
+			     | Limit(_) => 2
+                             | Empty => 0
+
+    fun get_ydim n = case n of Concat(r) => !(#height(r))
+                             | Container(r) => !(#height(r))
+                             | RelNode(r) => !(#height(r))
+                             | Empty => 0
+                             | _ => 1
+
+    fun get_l_xdim (Container(r)) = !(#l_width(r))
+      | get_l_xdim (Concat(r))  =  !(#l_width(r))
+      | get_l_xdim (RelNode(r)) = (get_l_xdim(
+					    !(#content(r)))) + 
+				(if isSimple (!(#content(r)))
+				     orelse !(#counter(r)) = 1 
+				     then 0 
+				 else String.size(#rep(r)))
+      | get_l_xdim node = get_xdim node
+
+
+   (* Zugriff auf bestimmte "Vorfahren" bzw. deren Felder *)   
+
+    fun getValueAnc n = let val p = getParent(n) 
+			in if p = Empty 
+			       then n  
+			   else if getDesc(p) = INTERPUNCT
+				    then getValueAnc(p)  
+				else p
+			end 
+
+    fun getNoRelAnc n = let val p = getParent(n) 
+			in case p of RelNode _ => getNoRelAnc p 
+		                   | _ => (p,getIndex(n)) 
+			end  
+
+    fun getAncIndex n = if n = Empty  
+			    then raise Match 
+			else if getParent n = Empty  
+				 then getIndex n
+			     else getAncIndex (getParent(n)) 
+
+    (* Operationen auf RelNodes *)
+
+    fun setContent (n,c) = case n of RelNode(r) => #content(r) := c
+                                   | _ => ()
+                                        
+    fun incrCounter n = case n of RelNode(r) 
+	                          => (#counter(r) := !(#counter(r)) + 1; n)
+                                | _ => n
+
+    (* setGroup *) 
+
+    fun setGroup (root,pnode) = case pnode of 
+	Simple(r)    => GtkSupport.newTag(#group(r),0.0,0.0) 
+      | Container(r) => GtkSupport.newTag(#group(r),0.0,0.0) 
+      | Concat(r)    => GtkSupport.newTag(#group(r),0.0,0.0) 
+      | Limit(r)     => GtkSupport.newTag(#group(r),0.0,0.0) 
+      | RelNode(r) => GtkSupport.newTag(#group(r),0.0,0.0) 
+      | RelRefNode(r) => GtkSupport.newTag(#group(r),0.0,0.0) 
+      | Empty        => (* let  val _ = Window.new()
+			in  *) GtkSupport.newTag(root,0.0,0.0)
+      | RelNode(r) => GtkSupport.newTag(#group(r),0.0,0.0) 
+      | RelRefNode(r) => GtkSupport.newTag(#group(r),0.0,0.0) 
+
+
+   (* low-level-Konstruktion der verschiedenen node-Arten *)
+
+   (* createSimple *) 
+
+    fun createSimple (desc,p,i,d,str,color,root) = Simple {desc = desc, 
+							   parent = p,
+							   index = i,
+							   depth = d,
+							   rep = str,
+							   width = 
+							   ref(String.size
+							       (str)), 
+							   color = color, 
+							   status = ref DAZZLED,
+							   group = setGroup(root,p)}
+	
+    (* createConcat *)
+
+    fun createConcat (desc,p,i,d,na,root) =  Concat {desc = desc,
+						       parent = p,
+						       index  = i,
+						       depth = d,
+						       kids = na, 
+						       width  = ref ~1,
+						       l_width = ref ~1,
+						       height = ref ~1,
+						       status = ref DAZZLED,
+						       group = setGroup(root,p)}
+
+    (* createContainer *)
+
+    fun createContainer (desc,p,i,d,na,root) =  
+	Container {desc = desc, 
+		   parent = p,
+		   index = i,
+		   depth = d,
+		   kids = na, 
+		   width = ref ~1,
+		   height = ref ~1,
+		   l_width = ref ~1,
+		   status = ref DAZZLED,
+		   group = setGroup(root,p)}
+
+    (* createLimit *)
+
+    fun createLimit (desc,sort,p,i,d,root) =  Limit  {desc = desc,
+							sort = sort, 
+							parent = p,
+							index  = i,
+							depth = d,
+							status = ref DAZZLED,
+							group = setGroup(root,p)}
+
+    (* createRelNode *)
+
+    fun createRelNode (desc,c,p,i,d,str,rman,root) = 
+	let val node = RelNode {desc = desc, 
+				content = ref c,
+				parent = p,  
+				index = i, 
+				depth = d,
+				counter = ref 1, 
+				rep = str, 
+				relman = ref rman, 
+				width = ref ~1,
+				height = ref ~1,
+				color = REL_COLOR  , 
+				status = ref DAZZLED, 
+				group = setGroup(root,p)}
+	    val _ = relnumber := (!relnumber) + 1
+	in node
+	end
+
+    (* createRelRefNode *)
+
+    fun createRelRefNode (desc,p,i,d,str,rnode,root) = 
+	RelRefNode {desc = desc, 
+ 		    parent = p, 
+		    index = i, 
+		    depth = d,
+		    rep = str, 
+		    relnode = rnode,
+		    width = ref(String.size(str)), 
+		    color = REL_COLOR, 
+		    status = ref DAZZLED,  
+		    group = setGroup(root,p)}
+ 
+    (* Hilfsfunktion zur Bestimmung, ob eine node eine byneed-Future
+       repraesentiert *)
+
+    fun isByneed n = let
+			 val future = case getDesc(n) of
+			     VALUE(r) => UnsafeValue.cast (#value(r)) 
+			   | I_VALUE(r) => UnsafeValue.cast (#value(r)) 
+			   | INTERPUNCT => raise Match
+		     in
+			 (Future.isLazy(future)) handle _ => false
+		     end
+
+end

@@ -1,0 +1,327 @@
+(*
+ * Authors:
+ *   Bernadette Blum <blum@ps.uni-sb.de>
+ *   Marvin Schiller <schiller@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Bernadette Blum, 2002
+ *   Marvin Schiller, 2002
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
+import structure Inf from "x-alice:/lib/rtt/Inf"
+import structure Name from "x-alice:/lib/rtt/Name"
+import structure Type from "x-alice:/lib/rtt/Type"
+import structure PathMap from "x-alice:/lib/rtt/PathMap"
+import structure Reflect from "x-alice:/lib/system/Reflect" 
+import structure UnsafeValue from "x-alice:/lib/system/UnsafeValue"
+
+import structure Node from "Node"
+import structure Settings from "Settings" (* !!! *)
+
+import signature DOC from "DOC-sig"
+
+local open Node
+
+in
+
+structure Doc :> DOC =
+struct
+
+    datatype doc = 
+	
+	SIMPLE of {desc : desc, 
+		   rep : string, 
+		   color : color_class }
+	
+      | CONCAT of {desc : desc, 
+		   kids : doc vector }
+	
+      | CONTAINER of {desc : desc, 
+		      kids : doc vector }
+	
+      | LIMIT of {desc : desc, 
+		  sort : limit }
+	
+      | EMBEDDED of Reflect.value * Type.t 
+	
+      | EMBEDDED_INF of Reflect.module * Inf.t  
+
+    type doc_creator = int * int * Reflect.value * Type.t -> doc  
+
+    (* Map fuer doc-creator-Funktionen *)
+
+    val pathTable = PathMap.new() 
+
+    fun castVector value  = UnsafeValue.cast value : 'a vector
+ 
+    fun castArray value  = UnsafeValue.cast value : 'a array 
+
+    fun handlePackages (d,va,t,inner_doc) = 
+	let val descr = createValue(va,t,NO_ACTIONS)
+	in if d > !(Settings.max_depth)
+	       then LIMIT{desc = descr,
+			  sort = DEPTH_LIMIT}
+	   else CONCAT{desc = descr, 
+		       kids = 
+		       #[SIMPLE{desc = INTERPUNCT,
+				rep = "Package{|",
+				color = DEFAULT},
+			 inner_doc,
+			 SIMPLE{desc = INTERPUNCT,
+				rep = "|}",
+				color = DEFAULT}]}
+	end 
+
+    fun registerType (path, f) = PathMap.insert (pathTable, path, f) 
+
+    (* doc-creator-Funktionen *)
+
+    (* createInt *)
+
+    fun createInt (m_width,d,va,t) = 
+	let val descr = createValue(va,t,NO_ACTIONS)
+	in if d > !(Settings.max_depth)
+	       then LIMIT{desc = descr, 
+			  sort = DEPTH_LIMIT}
+	   else SIMPLE{desc = descr,
+		       rep = Int.toString(UnsafeValue.cast va : int), 
+		       color = INT_COLOR}
+	end
+    
+    (* createString *)
+
+    fun createString (m_width,d,va,t) = 
+    let val descr = createValue(va,t,NO_ACTIONS)
+	in if d > !(Settings.max_depth)
+	   then LIMIT{desc = descr, 
+		      sort = DEPTH_LIMIT}
+	   else SIMPLE{desc = descr,
+			   rep = String.concat["\"",
+					       UnsafeValue.cast va : string,
+					       "\""],
+			   color = STR_COLOR}
+    end
+ 
+    (* createChar *)
+
+    fun createChar (m_width,d,va,t) = 
+	 let val descr = createValue(va,t,NO_ACTIONS)
+	 in if d > !(Settings.max_depth)	
+		then LIMIT{desc = descr, 
+			   sort = DEPTH_LIMIT}
+	    else SIMPLE{desc = descr,
+			rep = String.concat["#\"",
+					       Char.toString
+					       (UnsafeValue.cast va : char),
+					       "\""],
+			    color = CHAR_COLOR}
+	 end
+
+    (* createWord *)
+
+    fun createWord (m_width,d,va,t) = 
+        let val descr = createValue(va,t,NO_ACTIONS)
+	in if d > !(Settings.max_depth)     
+	       then  LIMIT{desc = descr, 
+			   sort = DEPTH_LIMIT}
+	   else let val int_w = Word.toInt(UnsafeValue.cast va : word)
+		in SIMPLE{desc = descr,
+			  rep = String.concat["0w",
+					      Int.toString(int_w)],
+			  color = WORD_COLOR}
+		end
+	end	  
+
+    (* createReal *)
+
+    fun createReal (m_width,d,va,t) = 
+        let val descr = createValue(va,t,NO_ACTIONS)
+	in if d > !(Settings.max_depth)
+	       then  LIMIT{desc = descr, 
+			   sort = DEPTH_LIMIT}
+	   else SIMPLE{desc = descr,
+		       rep = Real.toString(UnsafeValue.cast va : real), 
+		       color = REAL_COLOR}
+	end    
+
+    (* createExn *)
+
+    fun createExn (m_width,d,va,t) =
+        let val descr = createValue(va,t,NO_ACTIONS)
+	in if d > !(Settings.max_depth)
+	       then  LIMIT{desc = descr, 
+			   sort = DEPTH_LIMIT}
+	   else let val conname = UnsafeValue.conName(va)
+		    val str = case conname of Name.ExId(n) => n
+		                            | Name.InId => ""
+		in SIMPLE {desc = descr,
+			   rep = String.concat["<exception> : ",
+					       str],
+			   color = EXN_COLOR}
+		end
+	end     
+    
+    (* createRef *)
+
+    fun createRef (m_width,d,va,t) =
+        let val descr = createValue(va,t,NO_ACTIONS)
+	in if d > !(Settings.max_depth)
+	       then LIMIT{desc = descr, 
+			  sort = DEPTH_LIMIT}
+	   else let val deref = !(UnsafeValue.cast(va))
+                    val ref_value = UnsafeValue.cast deref : Reflect.value
+                    val ref_typ = #2(Type.asApply t)
+                    val conc1 = SIMPLE{desc = INTERPUNCT,
+				       rep = "ref ",
+                                       color = REF_COLOR}
+                    val conc2 = EMBEDDED(ref_value,ref_typ) 
+                in CONCAT{desc = descr,
+                          kids = #[conc1,conc2]}
+		end 
+	end
+    
+    (* createVector *)
+
+    fun createVector (m_width,d,va,t) = 
+	let val descr = createValue(va,t,NO_ACTIONS)
+	in if d > !(Settings.max_depth)
+	       then LIMIT{desc = descr, 
+			  sort = DEPTH_LIMIT}
+	   else let val vec = castVector va
+                    val l = Vector.length(vec)
+                    val vec_typ = #2(Type.asApply t)
+		    val cont_kids = 
+		        Vector.tabulate
+			(if l > m_width then m_width + 1 else l,
+			 fn i => 
+			 if i = m_width
+				     then LIMIT{desc = INTERPUNCT,
+						sort = WIDTH_LIMIT}
+			 else if i = l - 1
+				  then EMBEDDED
+				      (Vector.sub(vec,i),
+				       vec_typ)
+			      else CONCAT{desc = INTERPUNCT,
+					  kids = 
+					  #[EMBEDDED
+					    (Vector.sub(vec,i),vec_typ),
+					    SIMPLE{desc = INTERPUNCT,
+						   rep = ", ",
+						   color = SEP_COLOR}]} )
+                    val cont = CONTAINER{desc = INTERPUNCT,
+					 kids = cont_kids}
+		in CONCAT{desc = descr,
+			  kids = #[SIMPLE{desc = INTERPUNCT,
+                                          rep = "#[",
+					  color = BRACK_COLOR},
+				   cont,
+				   SIMPLE{desc = INTERPUNCT,
+					  rep = "]",
+					  color = BRACK_COLOR}] }
+		end
+	end
+                                               
+    (* createArray *)
+
+    fun createArray (m_width,d,va,t) = 
+        let val descr = createValue(va,t,NO_ACTIONS)
+	in if d > !(Settings.max_depth)
+	       then LIMIT{desc = descr, 
+			  sort = DEPTH_LIMIT}
+	   else let val arr = castArray va
+                    val l = Array.length(arr)
+                    val arr_typ = #2(Type.asApply t)
+		    val cont_kids = 
+		        Vector.tabulate
+			(if l > m_width then m_width + 1 else l,
+			 fn i => 
+			 if i = m_width
+				     then LIMIT{desc = INTERPUNCT,
+						sort = WIDTH_LIMIT}
+			 else if i = l - 1
+				  then CONCAT{desc = INTERPUNCT, 
+					      kids = 
+					      #[SIMPLE{desc = INTERPUNCT,
+						       rep = Int.toString(i),
+						       color = LABEL_COLOR},
+						SIMPLE{desc = INTERPUNCT,
+						       rep = " = ",
+						       color = EQU_COLOR},
+						EMBEDDED(Array.sub(arr,i),
+							 arr_typ)] }
+			      else CONCAT{desc = INTERPUNCT,
+					  kids = 
+					  #[SIMPLE{desc = INTERPUNCT,
+						   rep = Int.toString(i),
+						   color = LABEL_COLOR},
+					    SIMPLE{desc = INTERPUNCT,
+						   rep = " = ",
+						   color = EQU_COLOR},
+					    EMBEDDED
+					    (Array.sub(arr,i),arr_typ),
+					    SIMPLE{desc = INTERPUNCT,
+						   rep = ", ",
+						   color = SEP_COLOR}]} )
+                    val cont = CONTAINER{desc = INTERPUNCT,
+					 kids = cont_kids}
+		in CONCAT{desc = descr,
+			  kids = #[SIMPLE{desc = INTERPUNCT,
+                                          rep = "<array> : {",
+					  color = BRACK_COLOR},
+				   cont,
+				   SIMPLE{desc = INTERPUNCT,
+					  rep = "}",
+					  color = BRACK_COLOR}] }
+		end
+	end 
+
+    (* createPromise *)
+
+    and createPromise (m_width,d,va,t) = 
+	let val descr = createValue(va,t,NO_ACTIONS)
+	in if d > !(Settings.max_depth)
+	       then LIMIT{desc = descr, 
+			  sort = DEPTH_LIMIT}
+	   else let val prom = UnsafeValue.cast va
+		    val fut = Promise.future prom
+		    val inva = UnsafeValue.cast fut : Reflect.value
+		    val inty = #2(Type.asApply(t))
+		in CONCAT{desc = INTERPUNCT, 
+			  kids = 
+			  #[SIMPLE{desc = INTERPUNCT,
+				   rep = "Promise{|",
+				   color = DEFAULT},
+			    EMBEDDED(inva,inty),
+			    SIMPLE{desc = INTERPUNCT,
+				   rep = "|}",
+				   color = DEFAULT}]}
+		end
+	end 
+
+
+    (* createPackage *)
+
+    fun createPackage (m_width,d,va,t) = 
+	let val (inva,inty) = Reflect.reflectPackage
+	                      (UnsafeValue.cast va : Package.package)
+	    val inner_doc = EMBEDDED_INF(inva,inty)
+	in handlePackages (d,va,t,inner_doc)
+	end 
+
+    (* createValPackage *)
+
+    fun createValPackage (m_width,d,va,t) = 
+	let val (inva,inty) = Reflect.reflectValPackage
+	                     (UnsafeValue.cast va: Package.val_package)
+	    val inner_doc = EMBEDDED(inva,inty)
+	in handlePackages (d,va,t,inner_doc) 
+	end 
+
+end (* structure *)
+
+end
