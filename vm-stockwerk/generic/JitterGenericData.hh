@@ -140,6 +140,23 @@ namespace Generic {
       jit_subr_p(JIT_R0, JIT_R0, Reg);
       jit_sti_p(&::Scheduler::stackTop, JIT_R0);
     }
+    // Side Effect: Scratches JIT_R0
+    static void PopAndPushFrame(u_int Dest, u_int oldSize, u_int newSize) {
+      if (oldSize == newSize) {
+	jit_ldi_p(Dest, &::Scheduler::stackTop);
+	jit_subi_p(Dest, Dest, sizeof(word));
+      }
+      else {
+	Assert(oldSize >= newSize);
+	jit_ldi_p(JIT_R0, &::Scheduler::stackTop);
+	jit_subi_p(JIT_R0, JIT_R0, ((oldSize - newSize) * sizeof(word)));
+	jit_sti_p(&::Scheduler::stackTop, JIT_R0);
+	if (Dest != JIT_R0) {
+	  jit_movr_p(Dest, JIT_R0);
+	}
+	jit_subi_p(Dest, Dest, sizeof(word));
+      }
+    }
   };
 
   class StackFrame : public ::StackFrame {
@@ -167,6 +184,10 @@ namespace Generic {
       jit_movi_p(JIT_R0, Store::UnmanagedPointerToWord(worker));
       InitArg(This, WORKER_POS, JIT_R0);
     }
+    static void PutWorker(u_int Dest, Worker *worker) {
+      jit_movi_p(JIT_R0, Store::UnmanagedPointerToWord(worker));
+      InitArg(Dest, WORKER_POS, JIT_R0);
+    }
     static void Sel(u_int Dest, u_int This, u_int pos) {
       GetArg(Dest, This, BASE_SIZE + pos);
     }
@@ -177,7 +198,7 @@ namespace Generic {
       InitArg(This, BASE_SIZE + pos, Value);
     }
   };
-
+    
 
   class Transform : public ::Transform {
   public:
@@ -265,8 +286,6 @@ namespace Generic {
       Scheduler::PutZeroArg(Value);
       jit_movi_ui(JIT_R0, ::Scheduler::ONE_ARG);
       Scheduler::PutNArgs(JIT_R0);
-      jit_movi_ui(JIT_R0, Worker::CONTINUE);
-      jit_ret();
     }
   };
 };
