@@ -33,8 +33,8 @@ public:
   static void RegisterHandler(String *name, handler handler);
 
   // Unpickler Functions
-  static Interpreter::Result Unpack(String *string, TaskStack *taskStack);
-  static Interpreter::Result Load(String *filename, TaskStack *taskStack);
+  static Interpreter::Result Unpack(String *string);
+  static Interpreter::Result Load(String *filename);
 };
 
 #endif
