@@ -51,15 +51,19 @@ functor MakeMozartTarget(structure Switches: SWITCHES
 	    (MozartEngine.buildFunctor engine component)
     end
 
-functor MakeBackendMozart
-    (MozartTarget: TARGET where type t = string * FlatGrammar.t): PHASE =
-    struct
-	structure C = EmptyContext
-	structure I = FlatGrammar
-	structure O = MozartTarget
+functor MakeBackendMozart(structure Switches: SWITCHES
+			  structure MozartTarget: TARGET
+			      where type t = string * FlatGrammar.t): PHASE =
+    MakeTracingPhase(structure Phase =
+			 struct
+			     structure C = EmptyContext
+			     structure I = FlatGrammar
+			     structure O = MozartTarget
 
-	fun translate () (desc, component) =
-	    (case Source.url desc of
-		 SOME url => Url.toString url
-	       | NONE => "", component)
-    end
+			     fun translate () (desc, component) =
+				 (case Source.url desc of
+				      SOME url => Url.toString url
+				    | NONE => "", component)
+			 end
+		     structure Switches = Switches
+		     val name = "Assembling")
