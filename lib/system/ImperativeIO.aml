@@ -19,9 +19,10 @@ functor ImperativeIO(structure StreamIO: STREAM_IO
 			   and type elem = StreamIO.elem
 		     structure Array: MONO_ARRAY
 			 where type Vector.vector = StreamIO.vector
-			   and type Vector.elem = StreamIO.elem
-			   and type elem = StreamIO.elem):
-    IMPERATIVE_IO where structure StreamIO = StreamIO =
+			   and type Vector.elem = StreamIO.elem) :>
+    IMPERATIVE_IO
+	where type StreamIO.vector = StreamIO.vector
+	  and type StreamIO.elem = StreamIO.elem =
     struct
 	structure StreamIO = StreamIO
 
