@@ -213,19 +213,19 @@ private:
 public:
   using Block::ToWord;
 
-  static String *New(int len) {
+  static String *New(u_int len) {
     Block *b = Store::AllocChunk(WORDS_NEEDED(len, char) + 1);
     b->InitArg(LEN_POS, Store::IntToWord(len));
     return static_cast<String *>(b);
   }
   static String *New(const char *str) {
-    int len  = strlen(str);
+    u_int len  = strlen(str);
     Block *b = Store::AllocChunk(WORDS_NEEDED(len, char) + 1);
     b->InitArg(LEN_POS, Store::IntToWord(len));
     memcpy(reinterpret_cast<char *>(b->GetBase() + 1), str, len);
     return static_cast<String *>(b);
   }
-  static String *New(const char *str, int len) {
+  static String *New(const char *str, u_int len) {
     Block *b = Store::AllocChunk(WORDS_NEEDED(len, char) + 1);
     b->InitArg(LEN_POS, Store::IntToWord(len));
     memcpy(reinterpret_cast<char *>(b->GetBase() + 1), str, len);
@@ -240,7 +240,7 @@ public:
   char *GetValue() {
     return reinterpret_cast<char *>(GetBase() + 1);
   }
-  int GetLength() {
+  u_int GetLength() {
     return Store::WordToInt(GetArg(LEN_POS));
   }
 };
@@ -261,7 +261,7 @@ public:
   }
 
   u_int GetTag() {
-    return static_cast<int>(GetLabel());
+    return static_cast<u_int>(GetLabel());
   }
   u_int GetWidth() {
     return GetSize();
@@ -331,7 +331,7 @@ private:
 public:
   using Block::ToWord;
 
-  static WideString *New(w_char *str, int len) {
+  static WideString *New(w_char *str, u_int len) {
     Block *b = Store::AllocChunk(WORDS_NEEDED(len, w_char) + 1);
     b->InitArg(LEN_POS, Store::IntToWord(len));
     memcpy(reinterpret_cast<char *>(b->GetBase() + 1), str,
