@@ -193,7 +193,8 @@ structure IL :> IL =
 		    val i = !size - n
 		in
 		    if i < 0 then
-			Crash.crash ("stack underflow by " ^ Int.toString (~i))
+			raise Crash.Crash ("stack underflow by " ^
+					   Int.toString (~i))
 		    else size := i
 		end
 
@@ -217,10 +218,11 @@ structure IL :> IL =
 		    SOME n =>
 			if !size = n then ()
 			else
-			    Crash.crash ("inconsistent stack size for label " ^
-					 Int.toString label ^ ": " ^
-					 Int.toString (!size) ^ " <> " ^
-					 Int.toString n)
+			    raise Crash.Crash ("inconsistent stack size " ^
+					       "for label " ^
+					       Int.toString label ^ ": " ^
+					       Int.toString (!size) ^ " <> " ^
+					       Int.toString n)
 		  | NONE => Map.insertDisjoint (!map, label, !size)
 
 	fun catch label = Map.insertDisjoint (!map, label, 1)
@@ -230,9 +232,9 @@ structure IL :> IL =
 	fun return () =
 	    if !size = ~1 orelse !size = !returnSize then ()
 	    else
-		Crash.crash ("non-empty stack on return: " ^
-			     Int.toString (!size) ^ " <> " ^
-			     Int.toString (!returnSize))
+		raise Crash.Crash ("non-empty stack on return: " ^
+				   Int.toString (!size) ^ " <> " ^
+				   Int.toString (!returnSize))
 
 	fun eval (Add | AddOvf) = (pop 2; push 1)
 	  | eval And = (pop 2; push 1)
@@ -300,7 +302,7 @@ structure IL :> IL =
 	fun outputDottedname (q, [id]) = outputId (q, id)
 	  | outputDottedname (q, id::idr) =
 	    (outputId (q, id); output1 (q, #"."); outputDottedname (q, idr))
-	  | outputDottedname (_, nil) = Crash.crash "IL.outputDottedname"
+	  | outputDottedname (_, nil) = raise Crash.Crash "IL.outputDottedname"
 
 	fun outputClassAttr (q, (isPublic, inheritance)) =
 	    (if isPublic then output (q, "public ")
@@ -559,7 +561,7 @@ structure IL :> IL =
 	    in
 		(id::namespace, id')
 	    end
-	  | splitNamespace nil = Crash.crash "IL.splitNamespace"
+	  | splitNamespace nil = raise Crash.Crash "IL.splitNamespace"
 
 	local
 	    fun outputDottednames (q, dottedname::dottednames) =

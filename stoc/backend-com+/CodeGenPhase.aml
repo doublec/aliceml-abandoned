@@ -450,7 +450,7 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	    (case argsBodyList of
 		 (OneArg id, body)::rest =>
 		     (genFunBody (stamp, id, body, rest); emit Pop)
-	       | _ => Crash.crash "CodeGenPhase.genExp")
+	       | _ => raise Crash.Crash "CodeGenPhase.genExp")
 	  | genExp (AppExp (_, id1, OneArg id2), BOTH) =
 	    (emitId id1; emitId id2;
 	     emit (Callvirt (StockWerk.StockWert, "Apply",
@@ -495,12 +495,12 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 			 [StockWerk.StockWertTy], VoidTy)))
 	  | genExp (PrimAppExp (_, name, ids), BOTH) =
 	    (*--** *)
-	    Crash.crash "CodeGenPhase.genExp: PrimAppExp"
+	    raise Crash.Crash "CodeGenPhase.genExp: PrimAppExp"
 	  | genExp (AdjExp (_, id1, id2), BOTH) =
 	    (*--** *)
-	    Crash.crash "CodeGenPhase.genExp: AdjExp"
+	    raise Crash.Crash "CodeGenPhase.genExp: AdjExp"
 	  | genExp (exp, PREPARE) =
-	    Crash.crash "CodeGenPhase.genExp: not admissible"
+	    raise Crash.Crash "CodeGenPhase.genExp: not admissible"
 	  | genExp (_, FILL) = emit Pop
 	  | genExp (exp, BOTH) =
 	    (genExp (exp, PREPARE); emit Dup; genExp (exp, FILL))
@@ -510,7 +510,7 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 		    List.map
 		    (fn (args, body) =>
 		     case args of
-			 OneArg _ => Crash.crash "CodeGen.genFunBody"
+			 OneArg _ => raise Crash.Crash "CodeGen.genFunBody"
 		       | TupArgs (ids as (nil | [_, _] | [_, _, _])) =>
 			     let
 				 val name =

@@ -91,7 +91,7 @@ structure CodeStore :> CODE_STORE =
 		case Map.lookup (!classes, stamp) of
 		    SOME (classAttrRef, _, classDeclsRef) =>
 			if Option.isSome (!classAttrRef) then
-			    Crash.crash "CodeStore.defineClass"
+			    raise Crash.Crash "CodeStore.defineClass"
 			else
 			    (classAttrRef := classAttr;
 			     classDeclsRef := ctor::(!classDeclsRef))
@@ -156,7 +156,7 @@ structure CodeStore :> CODE_STORE =
 			     reg
 			 end)
 	      | lookup (nil, stamp) =
-		Crash.crash ("CodeStore.lookup: " ^ Stamp.toString stamp)
+		raise Crash.Crash ("CodeStore.lookup: " ^ Stamp.toString stamp)
 	in
 	    fun emitStamp stamp =
 		case lookup (!env, stamp) of
@@ -184,7 +184,7 @@ structure CodeStore :> CODE_STORE =
 		emit (Comment ("store " ^ Stamp.toString stamp));
 		case ScopedMap.lookup (scope, stamp) of
 		    SOME (Loc i) => emit (Stloc i)
-		  | SOME _ => Crash.crash "CodeStore.declareLocal"
+		  | SOME _ => raise Crash.Crash "CodeStore.declareLocal"
 		  | NONE =>
 			let
 			    val i =
@@ -267,7 +267,7 @@ structure CodeStore :> CODE_STORE =
 		    in
 			classDeclsRef := method::newClassDecls
 		    end
-	      | nil => Crash.crash "CodeStore.closeMethod"
+	      | nil => raise Crash.Crash "CodeStore.closeMethod"
 
 	fun close () =
 	    let
@@ -281,7 +281,7 @@ structure CodeStore :> CODE_STORE =
 					    StockWerk.StockWertTy,
 					    (args n, false),
 					    List.rev instrs)])
-		      | _ => Crash.crash "CodeStore.close"
+		      | _ => raise Crash.Crash "CodeStore.close"
 	    in
 		Map.foldi
 		(fn (stamp, (ref classAttr, scope, ref classDecls), program) =>
