@@ -37,7 +37,7 @@ struct
     val vm = "smlnj"
 
     fun homeDir () =
-	case OS.Process.getEnv "STOCKHOME" of
+	case OS.Process.getEnv "ALICE_HOME" of
 	    SOME s => s
 	  | NONE => OS.FileSys.getDir ()
 
