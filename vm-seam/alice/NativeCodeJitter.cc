@@ -10,8 +10,6 @@
 //   $Revision$
 //
 
-#if LIGHTNING
-
 #if defined(INTERFACE)
 #pragma implementation "alice/NativeCodeJitter.hh"
 #pragma implementation "alice/NativeConcreteCode.hh"
@@ -31,6 +29,8 @@
 #include "alice/JitterImmediateEnv.hh"
 #include "alice/AliceLanguageLayer.hh"
 #include "alice/Types.hh"
+
+#if HAVE_LIGHTNING
 
 static inline u_int GetArity(TagVal *args) {
   switch (AbstractCode::GetArgs(args)) {

@@ -13,6 +13,8 @@
 #ifndef __ALICE__NATIVE_CODE_JITTER_HH_
 #define __ALICE__NATIVE_CODE_JITTER_HH_
 
+#if HAVE_LIGHTNING
+
 #if defined(INTERFACE)
 #pragma interface "alice/NativeCodeJitter.hh"
 #endif
@@ -167,5 +169,7 @@ public:
   static void DumpInstructionCounts();
 #endif
 };
+
+#endif
 
 #endif

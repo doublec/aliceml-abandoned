@@ -17,8 +17,9 @@
 #pragma interface "alice/NativeCodeInterpreter.hh"
 #endif
 
-#include "Seam.hh"
 #include "alice/Base.hh"
+
+#if HAVE_LIGHTNING
 
 typedef Worker::Result (*native_fun)(class NativeCodeFrame *);
 
@@ -53,5 +54,7 @@ public:
   virtual String *GetProfileName(ConcreteCode *concreteCode);
 #endif
 };
+
+#endif
 
 #endif

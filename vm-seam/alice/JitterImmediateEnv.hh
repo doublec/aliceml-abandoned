@@ -13,7 +13,9 @@
 #ifndef __ALICE_JITTER_IMMEDIATE_ENV_HH__
 #define __ALICE_JITTER_IMMEDIATE_ENV_HH__
 
-#include "Seam.hh"
+#include "alice/Base.hh"
+
+#if HAVE_LIGHTNING
 
 class ImmediateEnv {
 protected:
@@ -51,5 +53,7 @@ public:
     return values->ToWord();
   }
 };
+
+#endif
 
 #endif

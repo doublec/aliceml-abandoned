@@ -20,6 +20,8 @@
 #include "alice/Data.hh"
 #include "alice/NativeCodeInterpreter.hh"
 
+#if HAVE_LIGHTNING
+
 class LazyCompileInterpreter : public Interpreter {
 private:
   LazyCompileInterpreter(): Interpreter() {}
@@ -87,5 +89,7 @@ public:
     return (NativeConcreteCode *) concreteCode;
   }
 };
+
+#endif
 
 #endif

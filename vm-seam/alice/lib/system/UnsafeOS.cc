@@ -31,9 +31,7 @@
 #define GetLastError() errno
 #endif
 
-#if LIGHTNING && defined(INSTRUCTION_COUNTS)
 #include "alice/NativeCodeJitter.hh"
-#endif
 #include "alice/Authoring.hh"
 
 static word wBufferString;
@@ -284,7 +282,7 @@ DEFINE1(UnsafeOS_Process_terminate) {
 #if PROFILE
   Profiler::DumpInfo();
 #endif
-#if LIGHTNING && defined(INSTRUCTION_COUNTS)
+#if HAVE_LIGHTNING && defined(INSTRUCTION_COUNTS)
   NativeCodeJitter::DumpInstructionCounts();
 #endif
   EXIT(code);

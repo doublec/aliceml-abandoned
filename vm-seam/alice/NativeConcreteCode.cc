@@ -10,8 +10,6 @@
 //   $Revision$
 //
 
-#if LIGHTNING
-
 #if defined(INTERFACE)
 #pragma implementation "alice/NativeConcreteCode.hh"
 #endif
@@ -19,6 +17,8 @@
 #include "alice/AbstractCode.hh"
 #include "alice/NativeCodeJitter.hh"
 #include "alice/AliceLanguageLayer.hh"
+
+#if HAVE_LIGHTNING
 
 // LazyCompile Frame
 class LazyCompileFrame : private StackFrame {

@@ -10,8 +10,6 @@
 //   $Revision$
 //
 
-#if LIGHTNING
-
 #if defined(INTERFACE)
 #pragma implementation "alice/NativeCodeInterpreter.hh"
 #endif
@@ -22,6 +20,8 @@
 #include "alice/NativeConcreteCode.hh"
 #include "alice/NativeCodeInterpreter.hh"
 #include "alice/NativeCodeJitter.hh"
+
+#if HAVE_LIGHTNING
 
 //
 // Interpreter StackFrames

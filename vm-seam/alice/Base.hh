@@ -13,6 +13,8 @@
 #ifndef __ALICE__BASE_HH__
 #define __ALICE__BASE_HH__
 
+#include "Seam.hh"
+
 #if defined(__MINGW32__) || defined(_MSC_VER)
 # if defined(ALICE_FOREIGN)
 #  define AliceDll __declspec(dllimport)
@@ -23,7 +25,7 @@
 # define AliceDll
 #endif
 
-#if LIGHTNING
+#if HAVE_LIGHTNING
 #define ALICE_USE_JITTER 1
 #endif
 
