@@ -69,23 +69,35 @@ struct
             fun disconnect () = #disconnect server ()
             
             val lock = Lock.lock ()
+
+            fun locked name f =
+                Lock.sync lock (fn a => 
+                      let   val _   = Inspector.inspect ("calling: " ^ name, a); 
+                            val res = f a
+                        in
+                            Inspector.inspect ("leaving: " ^ name);
+                            res
+                        end handle e => (
+                            Inspector.inspect ("leaving: " ^ name ^ " with exception", e);
+                            raise e
+                        ))
         in
             (* return locked but not yet proxied client interface! *)
             ({
-               playersJoined        = Lock.sync lock playersJoined,
-               tournamentStarted    = Lock.sync lock tournamentStarted,
-               levelStarted         = Lock.sync lock levelStarted,
-               playerDisconnected   = Lock.sync lock playerDisconnected,
-               abort                = Lock.sync lock abort,
-               countdown            = Lock.sync lock countdown,
-               update               = Lock.sync lock update,
-	       headPosition         = Lock.sync lock headPosition,
-               tick                 = Lock.sync lock tick,
-               playersDied          = Lock.sync lock playersDied,
-               playersFinished      = Lock.sync lock playersFinished,
-               levelFinished        = Lock.sync lock levelFinished,
-               tournamentFinished   = Lock.sync lock tournamentFinished,
-               updatePoints         = Lock.sync lock updatePoints
+               playersJoined        = locked "playersJoined" playersJoined,
+               tournamentStarted    = locked "tournamentStarted" tournamentStarted,
+               levelStarted         = locked "levelStarted" levelStarted,
+               playerDisconnected   = locked "playerDisconnected" playerDisconnected,
+               abort                = locked "abort" abort,
+               countdown            = locked "countdown" countdown,
+               update               = locked "update" update,
+	       headPosition         = locked "headPosition" headPosition,
+               tick                 = locked "tick" tick,
+               playersDied          = locked "playersDied" playersDied,
+               playersFinished      = locked "playersFinished" playersFinished,
+               levelFinished        = locked "levelFinished" levelFinished,
+               tournamentFinished   = locked "tournamentFinished" tournamentFinished,
+               updatePoints         = locked "updatePoints"  updatePoints
             },
             {   play                = play,
                 watch               = watch,
