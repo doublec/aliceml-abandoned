@@ -1,3 +1,3 @@
 #!/bin/sh
 
-exec ./install-mozart.sh
+exec ./install-mozart.sh $@
