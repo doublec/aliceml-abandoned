@@ -7,7 +7,7 @@ import
 from "../infrastructure/SWITCHES"
 
 import
-    structure ComposePhases
+    structure ComposePhases'
 from "../infrastructure/ComposePhases"
 
 import
@@ -17,10 +17,6 @@ from "../infrastructure/MakeTracingPhase"
 import
     structure MakeDumpingPhase
 from "../infrastructure/MakeDumpingPhase"
-
-import
-    structure EmptyContext
-from "../infrastructure/EmptyContext"
 
 import
     structure OutputFlatGrammar

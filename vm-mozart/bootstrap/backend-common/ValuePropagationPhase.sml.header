@@ -32,8 +32,8 @@ import
 from "../infrastructure/Error"
 
 import
-    structure EmptyContext
-from "../infrastructure/EmptyContext"
+    signature CONTEXT
+from "../infrastructure/CONTEXT"
 
 import
     structure Stamp

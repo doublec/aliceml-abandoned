@@ -7,10 +7,6 @@ import
 from "../infrastructure/CONTEXT"
 
 import
-    structure EmptyContext
-from "../infrastructure/EmptyContext"
-
-import
     signature FLAT_GRAMMAR
 from "FLAT_GRAMMAR"
 
