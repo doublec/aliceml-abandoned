@@ -1,4 +1,16 @@
 local
+    structure SGDK = MkSpecial (val space = Util.GDK)
+
+    structure UGDK = MkNative(structure TypeManager = TypeManager
+			      structure Special = SGDK
+			      val space = Util.GDK)
+    structure CGDK = MkUnsafe(structure TypeManager = TypeManager
+		 	      structure Special = SGDK
+			      val space = Util.GDK)
+    structure EGDK = MkEnums(structure TypeManager = TypeManager
+		 	     structure Special = SGDK
+			     val space = Util.GDK)
+
     structure SGTK = MkSpecial (val space = Util.GTK)
 
     structure UGTK = MkNative(structure TypeManager = TypeManager
@@ -11,19 +23,19 @@ local
 		 	     structure Special = SGTK
 			     val space = Util.GTK)
 
-    structure SGDK = MkSpecial (val space = Util.GDK)
+    structure SGC  = MkSpecial (val space = Util.GNOMECANVAS)
 
-    structure UGDK = MkNative(structure TypeManager = TypeManager
-			      structure Special = SGDK
-			      val space = Util.GDK)
-    structure CGDK = MkUnsafe(structure TypeManager = TypeManager
-		 	      structure Special = SGDK
-			      val space = Util.GDK)
-    structure EGDK = MkEnums(structure TypeManager = TypeManager
-		 	     structure Special = SGDK
-			     val space = Util.GDK)
-in
-    fun main dir =
+    structure UGC  = MkNative(structure TypeManager = TypeManager
+			      structure Special = SGC
+			      val space = Util.GNOMECANVAS)
+    structure CGC  = MkUnsafe(structure TypeManager = TypeManager
+		 	      structure Special = SGC
+			      val space = Util.GNOMECANVAS)
+    structure EGC  = MkEnums(structure TypeManager = TypeManager
+		 	     structure Special = SGC
+			     val space = Util.GNOMECANVAS)
+
+    fun main' dir =
     let
 	val tree = Parser.parse "gtkclean.c"
     in
@@ -33,15 +45,21 @@ in
 	 EGTK.create tree ;
 	 UGDK.create tree ;
 	 CGDK.create tree ;
-	 EGDK.create tree )
+	 EGDK.create tree ;
+	  UGC.create tree ;
+	  CGC.create tree ;
+	  EGC.create tree )
     end
 
-    fun depend (file, me, names) =
+    fun main _ =
     let
-	val f = TextIO.openAppend file
+	val args = SMLofNJ.getArgs()
+	val dir = if null args then "." else hd args
     in
-	( TextIO.output (f, me^": "^(Util.makeTuple " \\\n " "" names)^"\n") ;
-	  TextIO.closeOut f )
+        ( main' dir ;
+ 	  OS.Process.exit OS.Process.success )
     end
-        handle _ => ()
+      handle _ => OS.Process.exit OS.Process.failure
+in
+    fun compile() = SMLofNJ.exportFn("GtkBinding", main)
 end

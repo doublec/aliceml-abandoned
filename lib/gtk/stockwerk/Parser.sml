@@ -7,9 +7,6 @@ struct
     exception EMessage of string
     exception EParseError
 
-    fun printSeparator s =
-	print ("\n**** "^s^" ***************************************\n\n")
-
     fun generateAst file =
     (* generates abstract syntax tree from file *)
     let
@@ -17,9 +14,9 @@ struct
 	val _ = 
 	   case (#warningCount tree, #errorCount tree) of
 	       (0,0) => ()
-	     | (w,0) => printSeparator("WARNINGS: "^Int.toString(w))
-	     | (w,e) => ( printSeparator("ERRORS: "^Int.toString(e)^", "^
-					 "WARNINGS: "^Int.toString(w)) ;
+	     | (w,0) => print (Util.separator("WARNINGS: "^Int.toString(w)))
+	     | (w,e) => (print (Util.separator("ERRORS: "^Int.toString(e)^", "^
+					       "WARNINGS: "^Int.toString(w))) ;
 			 raise EParseError )
     in
 	tree
@@ -203,12 +200,12 @@ struct
     (* main parse function *)
     fun parse file =
     let
-	val _ = printSeparator "GENERATING AST"
+	val _ = print (Util.separator "GENERATING AST")
 	val astTree = generateAst file
-	val _ = printSeparator "GENERATING TYPE TREE"
+	val _ = print (Util.separator "GENERATING TYPE TREE")
 	val result = parseDecls (filterCoreDecls (#ast astTree)) 
                                 (#tidtab astTree)
-	val _ = printSeparator "FINISHED"
+	val _ = print (Util.separator "FINISHED")
     in
 	result
     end

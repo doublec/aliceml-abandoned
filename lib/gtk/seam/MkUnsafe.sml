@@ -139,12 +139,12 @@ functor MkUnsafe(structure TypeManager : TYPE_MANAGER
         (* main function for creating unsafe files *)
         fun create tree =
 	let
+	    val _ = print (Util.separator("Generating "^unsafeName))
 	    val myItems' = List.filter (Util.funNot Special.isIgnored) tree
 	    val myItems = Util.filters [isItemOfSpace space, checkItem,
 				        Util.funNot Special.isIgnoredSafe] 
 		            (myItems'@Special.changedFuns@Special.specialFuns)
 
-	    val _ = print ("Generating "^unsafeName^"\n")
 	    val s = Util.openFile siginfo
 	    val w = Util.openFile wrapperinfo
 

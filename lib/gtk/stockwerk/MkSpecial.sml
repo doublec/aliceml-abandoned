@@ -7,7 +7,7 @@ functor MkSpecial(val space : Util.spaces) :> SPECIAL =
 	    case space of
 		Util.GTK => ["NativeGtkSpecial.hh"]
 	      | Util.GDK => ["NativeGdkSpecial.hh"]
-	      | _        => nil
+	      | Util.GNOMECANVAS => nil
 
         (* ignoreFuns: do not generate any code for: *)
 	val ignoreFuns = 
@@ -20,7 +20,8 @@ functor MkSpecial(val space : Util.spaces) :> SPECIAL =
 			     "gdk_init_check",
 			     "gdk_pixbuf_new_from_xpm_data",
 			     "gdk_keymap_get_direction" (**)]
-	      | _        => nil
+	      | Util.GNOMECANVAS => ["gnome_canvas_join_gdk_to_art", (**)
+				     "gnome_canvas_cap_gdk_to_art" (**)]
 
         (* specialFuns: generate asig, but no code for: *)
 	val specialFuns = case space of

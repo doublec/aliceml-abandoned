@@ -1,0 +1,14 @@
+import structure GtkTypes from "GtkTypes"
+import structure GdkEnums from "GdkEnums"
+
+signature GNOME_CANVAS =
+sig
+
+    type object = GtkTypes.object
+    exception TypeMismatch of string
+    type arg = GtkTypes.arg
+
+<<< "GNOME_CANVAS_ENUMS-sig.aml" >>>
+<<< "GNOME_CANVAS_UNSAFE-sig.aml" >>>
+
+end

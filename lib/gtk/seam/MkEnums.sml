@@ -63,37 +63,24 @@ functor MkEnums(structure TypeManager : TYPE_MANAGER
 	(* SIGNATURE AND WRAPPER ENTRIES *)
 	fun processItem (ENUM (name,members)) = 
 	let
-(*	    val comment = ["\n", sigIndent, "(* ", name, " *)\n"]
-	    fun isTooBig n = Int.maxInt <> NONE andalso 
-		             LargeInt.fromInt(valOf(Int.maxInt)) < n
-	    fun sigEntry (mem,num) = 
-		if isTooBig num then ["(* ", mem, " is too big *)\n"] else
-		[sigIndent,"val ",Util.computeEnumName (space,mem), " : int\n"]
-	    fun wrapperEntry (mem, num) = 
-		if isTooBig num then nil else
-		[wrIndent, "val ",Util.computeEnumName (space,mem), " = ", 
-		 LargeInt.toString num, "\n"]*)
 	    val members' = map (fn (name,num) => 
 				(Util.computeEnumName (space,name), 
 				LargeInt.toString num)) members
 	in
-(*	    ( List.concat (comment::(map sigEntry members)) , 
-	      List.concat (map wrapperEntry members) 
-	    )*)
 	    if null members 
 		then ( nil, nil )
 		else ( sigEntry (name,members'), wrapperEntry (name,members') )
 	end
 	  | processItem _ = ( nil , nil )
 
-        (* main function for creating safe files *)
+        (* main function for creating enums files *)
         fun create tree =
 	let
+	    val _ = print (Util.separator("Generating "^safeName))
 	    val myItems = Util.filters [Util.funNot Special.isIgnored, 
 					isItemOfSpace space, checkItem,
 					Util.funNot Special.isIgnoredSafe] tree
 
-	    val _ = print ("Generating "^safeName^"\n")
 	    val s = Util.openFile siginfo
 	    val w = Util.openFile wrapperinfo
 

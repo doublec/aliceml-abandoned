@@ -21,24 +21,26 @@ structure Util :> UTIL =
                                else (Char.toString (Char.toUpper c)))
                   (firstLower s)
 
+	fun separator s =
+	    "\n**** "^s^" ***************************************\n\n"
+
 	fun indent n = if n = 0 then "" else "    " ^ (indent (n - 1))
 
         fun makeTuple sep e nil     = e
 	  | makeTuple sep e [x]     = x
-	  | makeTuple sep e (x::xr) = x ^ sep ^
-	                              (makeTuple sep e xr)
-	
-        datatype spaces = GDK | GTK | GTKCANVAS
+	  | makeTuple sep e (x::xr) = x ^ sep ^ (makeTuple sep e xr)	
 
-	val allSpaces = [GDK, GTK, GTKCANVAS]
+        datatype spaces = GDK | GTK | GNOMECANVAS
 
-	fun spaceName GDK       = "Gdk"
-	  | spaceName GTK       = "Gtk"
-	  | spaceName GTKCANVAS = "GtkCanvas"
+	val allSpaces = [GDK, GTK, GNOMECANVAS]
+
+	fun spaceName GDK         = "Gdk"
+	  | spaceName GTK         = "Gtk"
+	  | spaceName GNOMECANVAS = "GnomeCanvas"
 
 	fun spaceFuncPrefix GDK       = "gdk_"
 	  | spaceFuncPrefix GTK       = "gtk_"
-	  | spaceFuncPrefix GTKCANVAS = "gtk_canvas_"
+	  | spaceFuncPrefix GNOMECANVAS = "gnome_canvas_"
 
 	fun spaceEnumPrefix space = spaceName space
 	   

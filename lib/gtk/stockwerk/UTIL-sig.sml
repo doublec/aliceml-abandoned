@@ -20,7 +20,7 @@ signature UTIL =
         val replaceChar : char * string -> string -> string
 
         (* Namespace and prefix stuff *)
-        datatype spaces = GDK | GTK | GTKCANVAS
+        datatype spaces = GDK | GTK | GNOMECANVAS
 	val allSpaces : spaces list
 
 	val spaceName : spaces -> string
@@ -37,6 +37,7 @@ signature UTIL =
 	(* Compute Enum Name : GTK_WINDOW_TOPLEVEL -> WINDOW_TOPLEVEL *)
 	val computeEnumName : spaces * string -> string
 
+	val separator : string -> string
 	(* Code generation *)
 	val indent : int -> string
 	val makeTuple : string -> string -> string list -> string

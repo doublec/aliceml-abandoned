@@ -1,0 +1,14 @@
+
+import structure GtkTypes from "GtkTypes"
+import structure GtkCore from "GtkCore"
+import structure GnomeCanvasEnums from "GnomeCanvasEnums"
+import structure GnomeCanvasUnsafe from "GnomeCanvasUnsafe"
+import signature GNOME_CANVAS from "GNOME_CANVAS-sig"
+
+structure GnomeCanvas :> GNOME_CANVAS =
+struct
+    open GtkTypes
+    val _ = GtkCore.init()
+    open GnomeCanvasEnums 
+    open GnomeCanvasUnsafe
+end

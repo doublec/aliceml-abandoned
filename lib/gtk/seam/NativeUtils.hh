@@ -4,6 +4,7 @@
 #include "Alice.hh"
 #include "MyNativeAuthoring.hh"
 #include <gtk/gtk.h>
+#include <libgnomecanvas/libgnomecanvas.h>
 
 typedef struct { 
   int initCount;   

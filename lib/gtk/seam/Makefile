@@ -1,8 +1,10 @@
 
-COMPS = Gdk Gtk
-COMPSCAP = GDK GTK
+COMPS = Gdk Gtk GnomeCanvas
+COMPSCAP = GDK GTK GNOME_CANVAS
 NATIVES = $(COMPS:%=Native%)
+LIBS = gtk+-2.0 libgnomecanvas-2.0
 
+GENERATOR = GtkBinding.x86-linux
 ENUMS = $(COMPSCAP:%=%_ENUMS-sig.aml) $(COMPS:%=%Enums.aml)
 UNSAFE = $(COMPSCAP:%=%_UNSAFE-sig.aml) $(COMPS:%=%Unsafe.aml)
 GENNATIVES = $(NATIVES:%=%.asig) $(NATIVES:%=%.cc)
@@ -17,6 +19,7 @@ MAINFILES = $(COMPS:%=%.aml)
 CPPSOURCES = $(NATIVES:%=%.cc)
 ALICESOURCES = $(COMMON) $(ENUMS) $(UNSAFE) $(GENSIGS) $(MAINFILES)
 
+SML = sml
 ALICEC = alicec --dump-phases
 ALICETOOL = alicetool
 INSTALL = install -C -v -m 666
@@ -25,20 +28,20 @@ INSTALL = install -C -v -m 666
 
 all: compile
 
-# setenv ALICE_TRACE_COMPONENT 1
-# setenv ALICE_TRACE_RESOLVER 1
-
 #################################################
 
 $(GENFILES): $(LASTGENERATE)
 
-$(LASTGENERATE) generate: gtkclean.c
+$(LASTGENERATE) generate: gtkclean.c $(GENERATOR)
 	if test ! -d $(OUTDIR) ; then mkdir $(OUTDIR) ; fi
-	echo 'CM.make();main "$(OUTDIR)";' | sml
+	$(SML) @SMLload=$(GENERATOR) $(OUTDIR)
 	$(INSTALL) $(GENFILES:%=$(OUTDIR)/%) .
 	rm -f $(OUTDIR)/*
 	rmdir $(OUTDIR)
 	touch $(LASTGENERATE)
+
+$(GENERATOR):
+	echo 'CM.make(); compile();' | $(SML)
 
 gtkclean.c:
 	(cd prepare ; $(MAKE) )
@@ -51,10 +54,10 @@ gtkclean.c:
 compile: $(NATIVES:%=%.dll) $(COMPS:%=%.stc)
 
 %.dll: %.o
-	$(ALICETOOL) -v ld -Wl,-S `pkg-config --libs gtk+-2.0` $< -o $@
+	$(ALICETOOL) -v ld -Wl,-S `pkg-config --libs $(LIBS)` $< -o $@
 
 %.o: %.cc
-	$(ALICETOOL) -v cc `pkg-config --cflags gtk+-2.0` -c $< -o $@
+	$(ALICETOOL) -v cc `pkg-config --cflags $(LIBS)` -c $< -o $@
 
 %.stc: %.aml
 	$(ALICEC) $< -o $@
@@ -64,11 +67,10 @@ compile: $(NATIVES:%=%.dll) $(COMPS:%=%.stc)
 depend: Makefile.depend
 
 Makefile.depend: Makefile $(CPPSOURCES) $(ALICESOURCES)
-	gcc -M -I ../../../vm-stockwerk `pkg-config --cflags gtk+-2.0` \
+	gcc -M -I ../../../vm-stockwerk `pkg-config --cflags $(LIBS)` \
 	    $(CPPSOURCES) > Makefile.depend
-	echo  \
-         'CM.make();depend("Makefile.depend","$$(LASTGENERATE)",CM.names());' \
-         | sml
+	echo 'use "smldepend.sml"; depend("Makefile.depend","$$(GENERATOR)");'\
+                                                                   | $(SML)
 	gawk -f alicedepend.awk $(ALICESOURCES) >> Makefile.depend
 #	alicedep --stockwerk $(ALICESOURCES) >> Makefile.depend
 
@@ -82,6 +84,7 @@ docs:
 #################################################
 
 clean:
+	rm -f $(GENERATOR)
 	rm -f $(GENFILES)
 	rm -f $(GENSIGS)
 	rm -f *.stc

@@ -257,11 +257,11 @@ functor MkNative(structure TypeManager : TYPE_MANAGER
         (* main function for creating native files *)
         fun create tree =
 	let
+	    val _ = print (Util.separator("Generating "^nativeName))
 	    val myItems' = List.filter (Util.funNot Special.isIgnored) tree
 	    val myItems = Util.filters [isItemOfSpace space, checkItem] 
 			    (myItems'@Special.changedFuns@Special.specialFuns)
 
-	    val _ = print ("Generating "^nativeName^"\n")
 	    val s = Util.openFile siginfo
 	    val w = Util.openFile wrapperinfo
 
