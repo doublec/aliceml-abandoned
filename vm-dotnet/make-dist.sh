@@ -43,4 +43,12 @@ do
     cp examples/$i $dist/examples
 done
 
-cp -r SML Alice/SML
+mkdir Alice/SML
+for i in readme.html run.x86-win32.exe sml.bat sml.x86-win32
+do
+    cp SML/$i Alice/SML/$i
+done
+
+rm -f Alice.zip
+zip -r -D Alice.zip Alice
+rm -rf Alice
