@@ -1,5 +1,7 @@
 INCLUDES = -I$(top_srcdir)
 
+genericincludedir = '${pkgincludedir}/generic'
+
 noinst_LTLIBRARIES = \
 	libgeneric.la
 
@@ -29,48 +31,48 @@ libgeneric_la_SOURCES = \
 	Unpickler.cc \
 	Worker.cc
 
-nobase_dist_pkginclude_HEADERS = \
-	generic/Authoring.hh \
-	generic/Backtrace.hh \
-	generic/BindFutureWorker.hh \
-	generic/Broker.hh \
-	generic/Closure.hh \
-	generic/ConcreteCode.hh \
-	generic/ConcreteRepresentationHandler.hh \
-	generic/ConcreteRepresentation.hh \
-	generic/DebuggerEvent.hh \
-	generic/Debugger.hh \
-	generic/Debug.hh \
-	generic/DebugWorker.hh \
-	generic/DllLoader.hh \
-	generic/Double.hh \
-	generic/FinalizationSet.hh \
-	generic/Float.hh \
-	generic/GenericDebuggerEvent.hh \
-	generic/Interpreter.hh \
-	generic/IODesc.hh \
-	generic/IOHandler.hh \
-	generic/JitterGenericData.hh \
-	generic/Pickle.hh \
-	generic/Pickler.hh \
-	generic/Primitive.hh \
-	generic/Profiler.hh \
-	generic/PushCallWorker.hh \
-	generic/RootSet.hh \
-	generic/Scheduler.hh \
-	generic/SignalHandler.hh \
-	generic/StackFrame.hh \
-	generic/Stream.hh \
-	generic/String.hh \
-	generic/TaskStack.hh \
-	generic/Thread.hh \
-	generic/ThreadQueue.hh \
-	generic/Transform.hh \
-	generic/Transients.hh \
-	generic/Tuple.hh \
-	generic/UniqueString.hh \
-	generic/Unpickler.hh \
-	generic/Worker.hh
+nobase_dist_genericinclude_HEADERS = \
+	Authoring.hh \
+	Backtrace.hh \
+	BindFutureWorker.hh \
+	Broker.hh \
+	Closure.hh \
+	ConcreteCode.hh \
+	ConcreteRepresentationHandler.hh \
+	ConcreteRepresentation.hh \
+	DebuggerEvent.hh \
+	Debugger.hh \
+	Debug.hh \
+	DebugWorker.hh \
+	DllLoader.hh \
+	Double.hh \
+	FinalizationSet.hh \
+	Float.hh \
+	GenericDebuggerEvent.hh \
+	Interpreter.hh \
+	IODesc.hh \
+	IOHandler.hh \
+	JitterGenericData.hh \
+	Pickle.hh \
+	Pickler.hh \
+	Primitive.hh \
+	Profiler.hh \
+	PushCallWorker.hh \
+	RootSet.hh \
+	Scheduler.hh \
+	SignalHandler.hh \
+	StackFrame.hh \
+	Stream.hh \
+	String.hh \
+	TaskStack.hh \
+	Thread.hh \
+	ThreadQueue.hh \
+	Transform.hh \
+	Transients.hh \
+	Tuple.hh \
+	UniqueString.hh \
+	Unpickler.hh \
+	Worker.hh
 
 dist_noinst_HEADERS = \
 	ZLib.hh

@@ -1,6 +1,8 @@
 INCLUDES = -I$(top_srcdir) -I.
 BUILT_SOURCES = StoreConfig.hh
 
+storeincludedir = '${pkgincludedir}/store'
+
 # StoreConfig
 
 noinst_PROGRAMS = \
@@ -30,23 +32,23 @@ nodist_libstore_la_SOURCES = \
 
 # Header files
 
-dist_pkginclude_HEADERS = \
-	store/Base.hh \
-	store/BaseMap.hh \
-	store/HeaderOp.hh \
-	store/Heap.hh \
-	store/JITStore.hh \
-	store/Map.hh \
-	store/MapNode.hh \
-	store/PointerOp.hh \
-	store/StatusWord.hh \
-	store/Store.hh \
-	store/Types.hh \
-	store/Value.hh \
-	store/WeakMap.hh
+dist_storeinclude_HEADERS = \
+	Base.hh \
+	BaseMap.hh \
+	HeaderOp.hh \
+	Heap.hh \
+	JITStore.hh \
+	Map.hh \
+	MapNode.hh \
+	PointerOp.hh \
+	StatusWord.hh \
+	Store.hh \
+	Types.hh \
+	Value.hh \
+	WeakMap.hh
 
-nodist_pkginclude_HEADERS = \
-	store/StoreConfig.hh
+nodist_storeinclude_HEADERS = \
+	StoreConfig.hh
 
 dist_noinst_HEADERS = \
 	GCHelper.hh \
