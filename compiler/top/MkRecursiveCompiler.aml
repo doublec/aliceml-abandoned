@@ -39,6 +39,7 @@ functor MkRecursiveCompiler(structure ComponentManager: COMPONENT_MANAGER
 			    val extension: string): RECURSIVE_COMPILER =
     struct
 	structure Switches = Compiler.Switches
+	val isCrossCompiler = Compiler.isCrossCompiler
 
 	exception Error = Compiler.Error
 

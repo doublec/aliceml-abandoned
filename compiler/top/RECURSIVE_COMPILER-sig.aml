@@ -20,6 +20,7 @@ import structure Target    from "../infrastructure/Target"
 signature RECURSIVE_COMPILER =
     sig
 	structure Switches: SWITCHES
+	val isCrossCompiler: bool
 
 	exception Error
 
