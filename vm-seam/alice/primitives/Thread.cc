@@ -16,6 +16,7 @@
 #include "emulator/Scheduler.hh"
 #include "emulator/Authoring.hh"
 #include "emulator/StackFrame.hh"
+#include "emulator/Transients.hh"
 
 class RaiseFrame: private StackFrame {
 private:
@@ -105,7 +106,10 @@ DEFINE2(Thread_raiseIn) {
       RaiseInterpreter::PushFrame(thread->GetTaskStack(), x1);
       thread->SetArgs(Interpreter::EmptyArg());
       if (state == Thread::BLOCKED) {
-	thread->Unregister();
+	Future *future = reinterpret_cast<Future *>
+	  (Store::WordToTransient(thread->GetTransient()));
+	Assert(future != INVALID_POINTER);
+	future->RemoveFromWaitQueue(thread);
 	Scheduler::WakeupThread(thread);
       }
       RETURN_UNIT;

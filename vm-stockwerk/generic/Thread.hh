@@ -31,17 +31,17 @@ public:
     BLOCKED, RUNNABLE, TERMINATED
   };
 private:
-  static const u_int PRIORITY_POS = 0;
-  static const u_int TASK_STACK_POS = 1;
-  static const u_int STATE_POS = 2;
+  static const u_int PRIORITY_POS     = 0;
+  static const u_int TASK_STACK_POS   = 1;
+  static const u_int STATE_POS        = 2;
   static const u_int IS_SUSPENDED_POS = 3;
-  static const u_int ARGS_POS = 4;
-  static const u_int BLOCK_POS = 5;
-  static const u_int SIZE = 6;
+  static const u_int ARGS_POS         = 4;
+  static const u_int FUTURE_POS       = 5;
+  static const u_int SIZE             = 6;
 
   void SetState(state s) {
     InitArg(STATE_POS, s);
-    InitArg(BLOCK_POS, 0);
+    InitArg(FUTURE_POS, 0);
   }
   void Suspend() {
     ReplaceArg(IS_SUSPENDED_POS, true);
@@ -65,7 +65,7 @@ public:
     return static_cast<state>(Store::DirectWordToInt(GetArg(STATE_POS)));
   }
   word GetTransient() {
-    return GetArg(BLOCK_POS);
+    return GetArg(FUTURE_POS);
   }
   bool IsSuspended() {
     return Store::DirectWordToInt(GetArg(IS_SUSPENDED_POS));
@@ -79,15 +79,13 @@ public:
   void SetTerminated() {
     SetState(TERMINATED);
   }
-  void Block(word transient) {
+  void Block(word future) {
     SetState(BLOCKED);
-    ReplaceArg(BLOCK_POS, transient);
+    ReplaceArg(FUTURE_POS, future);
   }
   void Wakeup() {
+    ReplaceArg(FUTURE_POS, 0);
     SetState(RUNNABLE);
-  }
-  void Unregister() {
-    Error("Thread::Unregister not implemented"); //--** to be done
   }
   // Thread Constructor
   static Thread *New(word args, TaskStack *taskstack) {
