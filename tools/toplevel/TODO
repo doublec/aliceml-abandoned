@@ -3,7 +3,9 @@ TODO list for the Alice IDE
 
 Bugs:
 
-* feed inactive for first editor buffer
+* Feeding before interpreter has initialised hangs it
+* Reconsider implicit imports
+* Feeding paragraph does not select initial whitespace on first line
 * Cut&Paste with other apps
 * Gtk.textIterFree produces segfaults, so at the moment it seems we can't properly free iterators :-(
 
