@@ -28,6 +28,7 @@ signature FLAT_GRAMMAR =
 	(* Statements and Expressions *)
 
 	datatype lit = datatype IntermediateGrammar.lit
+	(*--** do not use IntermediateGrammar.lit - need to annotate widths *)
 
 	type stamp = Stamp.t
 	type name = Name.t
