@@ -110,6 +110,7 @@ signature UNSAFE_FD_COMPONENT =
 		val reflect_dom : 'a
 		val reflect_domList : 'a
 		val reflect_nbSusps : 'a
+		val reflect_eq : 'a
 
 		(* Watching *)
 		val watch_min : 'a
@@ -117,5 +118,20 @@ signature UNSAFE_FD_COMPONENT =
 		val watch_size : 'a
 
 		val distribute : 'a
+
+		(* Scheduling *)
+		val schedule_cumulative : 'a
+		val schedule_cumulativeEF : 'a
+		val schedule_cumulativeTI : 'a
+		val schedule_cumulativeUp : 'a
+		val schedule_disjoint : 'a
+		val schedule_firstsDist : 'a
+		val schedule_lastsDist : 'a
+		val schedule_firstsLastsDist : 'a
+		val schedule_taskIntervalsDistP : 'a
+		val schedule_taskIntervalsDistO : 'a
+		val schedule_serializedDisj : 'a
+		val schedule_serialized : 'a
+		val schedule_taskIntervals : 'a
 	    end
     end
