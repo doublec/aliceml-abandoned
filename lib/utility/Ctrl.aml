@@ -1,0 +1,47 @@
+(*
+ * Author:
+ *   Benedikt Grundmann <bgrund@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Benedikt Grundmann, 2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature CTRL   from "CTRL-sig"
+import structure OS     from "x-alice:/lib/system/OS"
+import structure TextIO from "x-alice:/lib/system/TextIO"
+
+
+structure Ctrl :> CTRL =
+struct
+    infix 3 ++
+    infix 3 $
+
+    fun a ++ f = f a
+
+    fun f $ a = f a
+
+    fun for (lower, upper, f) =
+        if lower > upper then ()
+        else (f lower; for (lower + 1, upper, f))
+
+    fun repeat (n, f) = for (0, n - 1, f)
+
+    fun ispawn f a = 
+        let
+            (* print error message and terminate process *)
+            fun crashWith exn =
+                (TextIO.output (TextIO.stdErr,
+                    "ispawn failed with exception " ^ exnName exn ^ "\n");
+                 OS.Process.exit OS.Process.failure)
+        in
+            (* spawn process.  returned unit is a future, discard it *)
+            spawn ( (f a) handle e => crashWith e); 
+            (* and return a strict one. *)
+            ()  
+        end
+end
+
