@@ -15,11 +15,10 @@ import structure UnsafeGecode from "UnsafeGecode"
 
 structure Space :> SPACE =
 struct
-    type 'problem space
-    type 'problem fdvar
-    type 'problem boolvar
+    type space
 
     datatype status = BRANCH | FAILED | SOLVED
 
     open UnsafeGecode
+    val new = makeSpace
 end

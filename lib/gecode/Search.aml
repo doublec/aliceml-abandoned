@@ -12,46 +12,46 @@
 
 import signature SEARCH       from "SEARCH-sig"
 import structure Space        from "Space"
-import structure UnsafeGecode from "UnsafeGecode"
 
 structure Search :> SEARCH =
 struct
-    open UnsafeGecode
-
-    datatype 'p searchbestresult =
-	     SB_CONSTRAIN of 'p Space.space * 'p Space.space
-	   | SB_DONE
-	   | SB_SOLUTION of 'p Space.space
 
     fun searchAll s =
 	let
-	    val se = getSearchEngine s
-	    fun lazy nextSol () = 
-		     let
-			 val n = next se
-		     in
-			 case n of
-			     NONE => nil
-			   | SOME s' => s'::nextSol()
-		     end
+	    fun dfe s =
+		case Space.status s of
+		    Space.FAILED => (Space.discard s; nil)
+		  | Space.SOLVED => [s]
+		  | Space.BRANCH =>
+		    let
+			val c = Space.clone s
+		    in
+			Space.commit(s, 1);
+			Space.commit(c, 2);
+			(dfe s)@(dfe c)
+		    end
 	in
-	    nextSol()
+	    dfe (Space.clone s)
 	end
 
-    fun searchOne s = next (getSearchEngine s)
-
-    fun searchBest (s, constrain) =
+    fun searchOne s =
 	let
-	    val se = getSearchBestEngine s
-	    fun nextSol () =
-		case nextBest se of
-		    SB_DONE => nil
-		  | SB_SOLUTION s' => s'::(lazy nextSol())
-		  | SB_CONSTRAIN(s1, s2) =>
-		    (constrain(s1, s2);
-		     nextSol())
+	    exception Found of Space.space
+	    fun dfe s =
+		case Space.status s of
+		    Space.FAILED => Space.discard s
+		  | Space.SOLVED => raise (Found s)
+		  | Space.BRANCH =>
+		    let
+			val c = Space.clone s
+		    in
+			Space.commit(s, 1);
+			Space.commit(c, 2);
+			dfe s;
+			dfe c
+		    end
 	in
-	    lazy nextSol()
+	    (dfe (Space.clone s); NONE) handle (Found s) => SOME s
 	end
 
     fun bab (space, constrain) =
