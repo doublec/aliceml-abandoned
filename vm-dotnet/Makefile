@@ -5,10 +5,10 @@ SIGS = IO.asig OS_FileSys.asig OS_Process.asig TextIO.asig CommandLine.asig
 SRCS = OS_FILE_SYS-sig.aml OS_PROCESS-sig.aml OS-sig.aml OS.aml TEXT_IO-sig.aml
 INSPECTOR_OBJS = Win32.dll Canvas.dll Dialog.dll Tools.dll
 
-all: stoc-com+.x86-win32 $(OBJS) $(SIGS) $(SRCS) $(INSPECTOR_OBJS)
+all: stoc-dotnet.x86-win32 $(OBJS) $(SIGS) $(SRCS) $(INSPECTOR_OBJS)
 
-stoc-com+.x86-win32: ../bootstrap/stoc-com+.x86-win32
-	copy "..\bootstrap\stoc-com+.x86-win32" "stoc-com+.x86-win32"
+stoc-dotnet.x86-win32: ../bootstrap/stoc-dotnet.x86-win32
+	copy "..\bootstrap\stoc-dotnet.x86-win32" "stoc-dotnet.x86-win32"
 
 Alice.dll: Alice.cs
 	csc -nologo -t:library -r:System.dll Alice.cs
@@ -25,7 +25,7 @@ HashCode.exe: HashCode.cs
 Skeleton.il: HashCode.exe stow.il
 	HashCode stow.il Skeleton.il
 
-Base.dll: Base.aml stoc-com+.x86-win32 Skeleton.il
+Base.dll: Base.aml stoc-dotnet.x86-win32 Skeleton.il
 	stoc --no-implicit-import --no-dump-elaboration-sig -c Base.aml -o $@
 
 IO.dll: IO.cs
@@ -37,7 +37,8 @@ OS_FileSys.dll: OS_FileSys.cs Alice.dll
 OS_Process.dll: OS_Process.cs Alice.dll
 	csc -nologo -t:library -r:Alice.dll OS_Process.cs
 
-OS.dll:
+OS.dll: OS.aml OS_Process.asig OS_FileSys.asig \
+	OS_PROCESS-sig.aml OS_FILE_SYS-sig.aml OS-sig.aml
 	stoc --no-dump-elaboration-sig -c OS.aml -o $@
 
 TextIO.dll: TextIO.cs Alice.dll
@@ -85,7 +86,7 @@ Canvas.dll: Canvas.cs Win32.dll Alice.dll
 Dialog.dll: Dialog.cs Win32.dll Alice.dll
 	csc -nologo -t:library -r:Win32.dll -r:Alice.dll Dialog.cs
 
-Tools.dll: Tools.aml stoc-com+.x86-win32 Skeleton.il Base.asig
+Tools.dll: Tools.aml stoc-dotnet.x86-win32 Skeleton.il Base.asig
 	stoc --no-dump-elaboration-sig -c Tools.aml -o $@
 
 clean:
@@ -95,8 +96,6 @@ veryclean: clean
 	@-del /F /Q HashCode.exe stow.il Skeleton.il
 	@-del /F /Q Base.dll.il Tools.dll.il
 	@-del /F /Q $(OBJS) $(SIGS) $(SRCS) $(INSPECTOR_OBJS)
-	@-del /F /Q stow.exe stoc-com+.x86-win32
-	@-del /F /Q concfib.dll.il hamming.dll.il infer.dll.il inflist.dll.il
-	@-del /F /Q concfib.dll hamming.dll infer.dll inflist.dll
+	@-del /F /Q stow.exe stoc-dotnet.x86-win32
 
 distclean: veryclean
