@@ -10,9 +10,6 @@
  *   $Revision$
  *)
 
-(*DEBUG*)
-import "x-alice:/lib/tools/Inspector"
-
 structure PackageSample =
 struct
     (*
