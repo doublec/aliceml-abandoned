@@ -12,6 +12,7 @@
 
 import structure TextIO    from "TextIO"
 import structure Component from "Component"
+import structure Inf       from "../rtt/Inf"
 
 signature COMPILER =
 sig
@@ -30,6 +31,9 @@ sig
     val evalWith	: env * string -> env * package
     val evalFile	: string -> package
     val evalFileWith	: env * string -> env * package
+
+    val prepareWith	: env * string -> env * (unit -> package) * Inf.t
+    val prepareFileWith	: env * string -> env * (unit -> package) * Inf.t
 
     val withTraceStream	: TextIO.StreamIO.outstream -> ('a -> 'b) -> 'a -> 'b
     val withOutStream	: TextIO.StreamIO.outstream -> ('a -> 'b) -> 'a -> 'b

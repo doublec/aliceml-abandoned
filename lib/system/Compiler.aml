@@ -10,13 +10,12 @@
  *   $Revision$
  *)
 
-import structure OS               from "OS"
-import structure IO               from "IO"
-import structure TextIO           from "TextIO"
-import structure TextPrimIO       from "TextPrimIO"
-import structure Url              from "Url"
-import structure Component        from "Component"
-import structure ComponentManager from "ComponentManager"
+import structure OS         from "OS"
+import structure IO         from "IO"
+import structure TextIO     from "TextIO"
+import structure TextPrimIO from "TextPrimIO"
+import structure Url        from "Url"
+import structure Component  from "Component"
 
 import structure SMLToSeamRecursiveCompiler from "../../compiler/top/SMLToSeamRecursiveCompiler"
 
@@ -39,7 +38,7 @@ struct
 		       "-- " ^ s ^
 		       (case fileOpt of NONE => "" | SOME name => " " ^ name) ^
 		       "...\n")
-    fun traceDone () = TextIO.output (traceStream, "-- Ready\n")
+    fun traceDone () = TextIO.output (traceStream, "-- Done\n")
 
 
     (* Environment *)
@@ -58,7 +57,12 @@ struct
     exception Error = RecursiveCompiler.Error
 
     fun handleCompileError f x =
-	f x
+	(case f x
+	 of (env, RecursiveCompiler.FOREIGN _) =>
+	    raise RecursiveCompiler.Crash "attempt to cross-compile"
+          | (env, RecursiveCompiler.COMPONENT {component, eval, ...}) =>
+	    (env, component (), eval)
+	)
 	handle RecursiveCompiler.Crash s =>
 		(TextIO.output (errStream, "internal failure at " ^ s ^ "\n");
 		 raise Error)
@@ -137,31 +141,23 @@ struct
 
     fun compileWith' (env, source) =
 	(trace ("Compiling", NONE);
-	 (case handleCompileError RecursiveCompiler.compileString (env, source)
-	  of (_, RecursiveCompiler.FOREIGN _) =>
-		raise RecursiveCompiler.Crash "cross-compilation not supported"
-	   | (_, RecursiveCompiler.COMPONENT {component, ...}) => component ()
-	 ) finally
-	 traceDone ()
-	)
+	 #2 (handleCompileError RecursiveCompiler.compileString (env, source)))
+	finally traceDone ()
 
-    fun compileFileWith' (env, infilename, outfilenameOpt) =
+    fun compileFileWith' (env, infile, outfileOpt) =
 	let
-	    val outfilename =
-		case outfilenameOpt
-		 of SOME name => name
-		  | NONE => OS.Path.joinBaseExt {base = OS.Path.base infilename,
+	    val outfile =
+		case outfileOpt
+		 of SOME file => file
+		  | NONE => OS.Path.joinBaseExt {base = OS.Path.base infile,
 	    					 ext = SOME Component.extension}
+	    val _ = trace ("Compiling", SOME infile)
+	    val (_, component, _) =
+		handleCompileError RecursiveCompiler.compileFile (env, infile)
 	in
-	    trace ("Compiling", SOME infilename);
-	    (case handleCompileError RecursiveCompiler.compileFile (env, infilename)
-	     of (_, RecursiveCompiler.FOREIGN _) =>
-		    raise RecursiveCompiler.Crash "cross-compilation not supported"
-	      | (_, RecursiveCompiler.COMPONENT {component, ...}) =>
-		    Component.save (outfilename, component ())
-	    ) finally
-	    traceDone ()
+	    Component.save (outfile, component)
 	end
+        finally traceDone ()
 
     fun compile source =
 	standalone compileWith' (emptyEnv, source)
@@ -175,50 +171,53 @@ struct
 
     (* Evaluation *)
 
-    fun evalWith' (env, source) =
-	(trace ("Compiling", NONE);
-	 (case handleCompileError RecursiveCompiler.compileString (env, source)
-	  of (env', RecursiveCompiler.FOREIGN _) =>
-		raise RecursiveCompiler.Crash "cross-compilation not supported"
-	   | (env', RecursiveCompiler.COMPONENT {eval, ...}) =>
-	     let
-		val baseUrl =
-		    Url.setScheme (Url.fromString (OS.FileSys.getDir () ^ "/"),
-				   SOME "file")
-	     in
-		trace ("Evaluating", NONE);
-		(env', handleEvalError eval baseUrl)
-	     end
-	 ) finally
-	 traceDone ()
-	)
+    fun baseUrl () =
+	Url.setScheme (Url.fromString (OS.FileSys.getDir () ^ "/"), SOME "file")
 
-    fun evalFileWith' (env, filename) =
-	(trace ("Compiling", SOME filename);
-	 (case handleCompileError RecursiveCompiler.compileFile (env, filename)
-	  of (env', RecursiveCompiler.FOREIGN _) =>
-		raise RecursiveCompiler.Crash "cross-compilation not supported"
-	   | (env', RecursiveCompiler.COMPONENT {eval, ...}) =>
-	     let
-		val baseUrl =
-		    Url.setScheme (Url.fromString (OS.Path.dir filename ^ "/"),
-				   SOME "file")
-	     in
-		trace ("Evaluating", SOME filename);
-		(env', handleEvalError eval baseUrl)
-	     end
-	 ) finally
-	 traceDone ()
-	)
+    fun returnEvaluated (env, component, eval) =
+	(env, handleEvalError eval (baseUrl ()))
+	finally traceDone ()
+
+    fun returnUnevaluated (env, component, eval) =
+	let
+	    val inf = Option.valOf (Component.inf component)
+	in
+	    (env, handleEvalError eval o baseUrl, inf)
+	end
+
+    fun evalWith' (return, env, source) =
+	let
+	    val _ = trace ("Compiling", NONE)
+	    val result =
+		handleCompileError RecursiveCompiler.compileString (env, source)
+	in
+	    trace ("Evaluating", NONE);
+	    return result
+	end
+
+    fun evalFileWith' (return, env, file) =
+	let
+	    val _ = trace ("Compiling", SOME file)
+	    val result =
+		handleCompileError RecursiveCompiler.compileFile (env, file)
+	in
+	    trace ("Evaluating", SOME file);
+	    return result
+	end
 
     fun eval source =
-	#2 (standalone evalWith' (emptyEnv, source))
+	#2 (standalone evalWith' (returnEvaluated, emptyEnv, source))
     fun evalFile filename =
-	#2 (standalone evalFileWith' (emptyEnv, filename))
+	#2 (standalone evalFileWith' (returnEvaluated, emptyEnv, filename))
     fun evalWith (env, source) =
-	incremental evalWith' (env, source)
+	incremental evalWith' (returnEvaluated, env, source)
     fun evalFileWith (env, filename) =
-	incremental evalFileWith' (env, filename)
+	incremental evalFileWith' (returnEvaluated, env, filename)
+
+    fun prepareWith (env, source) =
+	incremental evalWith' (returnUnevaluated, env, source)
+    fun prepareFileWith (env, filename) =
+	incremental evalFileWith' (returnUnevaluated, env, filename)
 
 
     (* Synchronisation *)
@@ -234,6 +233,9 @@ struct
     val evalWith	= Lock.sync lock evalWith
     val evalFile	= Lock.sync lock evalFile
     val evalFileWith	= Lock.sync lock evalFileWith
+
+    val prepareWith	= Lock.sync lock prepareWith
+    val prepareFileWith	= Lock.sync lock prepareFileWith
 
 (*
     val withOutStream	= Lock.sync lock withOutStream
@@ -282,12 +284,13 @@ struct
 	    val null       = TextIO.StreamIO.mkOutstream
 				(TextPrimIO.nullWr (), IO.NO_BUF)
 	in
+	    Global.traceComponentAccess := true;
 	    TextIO.setOutstream (traceStream, null);
 	    Debug.dumpPhases := false;
 	    Language.unsafeImport := true;
 	    Promise.fulfill (initialEnvPromise,
 			     #1 (incremental' (SOME implicitImport)
-				 evalWith' (emptyEnv, "")));
+				 evalWith' (returnEvaluated, emptyEnv, "")));
 	    Language.unsafeImport := false;
 	    Debug.dumpPhases := dumpPhases
 	end
