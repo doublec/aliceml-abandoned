@@ -209,6 +209,13 @@ structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
 						   S "=", IDREF idRef])
 					 labelIdVector),
 		  S "}"]
+	  | formatExp (PolyProdExp (_, labelIdVector)) =
+	    SEQ #[S "{", SEP (S ", ",
+			      Vector.map (fn (label, idRef) =>
+					     SEQ #[S (Label.toString label),
+						   S "=", IDREF idRef])
+					 labelIdVector),
+		  S ", ...}"]
 	  | formatExp (VecExp (_, idRefs)) =
 	    SEQ #[S "#[", SEP (S ", ", Vector.map IDREF idRefs), S "]"]
 	  | formatExp (FunExp (_, _, _, args, body)) =
@@ -219,12 +226,11 @@ structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
 		  SEP (S ", ", Vector.map IDREF idRefs), S ")"]
 	  | formatExp (VarAppExp (_, idRef, args)) =
 	    SEQ #[IDREF idRef, S " ", formatArgs IDREF args]
-	  | formatExp (SelAppExp (_, _, label, n, idRef)) =
+	  | formatExp (SelExp (_, _, label, n, idRef)) =
 	    SEQ #[S "#", S (Label.toString label),
 		  S "/", I n, S " ", IDREF idRef]
-	  | formatExp (LazySelAppExp (_, _, label, n, idRef)) =
-	    SEQ #[S "lazy#", S (Label.toString label),
-		  S "/", I n, S " ", IDREF idRef]
+	  | formatExp (LazyPolySelExp (_, label, idRef)) =
+	    SEQ #[S "lazy#", S (Label.toString label), S " ", IDREF idRef]
 	  | formatExp (FunAppExp (_, idRef, _, args)) =
 	    SEQ #[S "funapp ", IDREF idRef, S " ", formatArgs IDREF args]
 	  | formatExp (FailExp _) = S "fail"
