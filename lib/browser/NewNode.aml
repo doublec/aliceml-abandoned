@@ -809,12 +809,13 @@ struct
 	       ; conc)
 	   end
 
-(* Registrierung der Fkt. zum Reinspizieren von Werten beim WindowManager *)
+(* Registrierung der update-Funktionen von Werten beim WindowManager *)
    
     val _ = !WindowManager.register("reinspect",
-				    fn (n,_) => Update.reinspect(n,
-							     createGraph,
-							     createGraphInf))
+				    fn (n,_) 
+				    => Update.reinspect(n,
+							createGraph,
+							createGraphInf))
 
     val _ = !WindowManager.register("width",
 			 fn (n,i) => TextIO.print("Changing width by " 
@@ -825,8 +826,7 @@ struct
 					     ^ Int.toString(i)
 					     ^ "\n"))
 
-    val _ = !WindowManager.register("shrink",
-		    fn (n,_) => TextIO.print("Shrinking!\n"))
+    val _ = !WindowManager.register("shrink",fn (n,_) => Update.shrink n)
 
     val _ = !WindowManager.register("expand",
 				    fn (n,_) => TextIO.print("Expanding!\n"))

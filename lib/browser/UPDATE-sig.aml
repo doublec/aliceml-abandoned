@@ -49,6 +49,7 @@ signature UPDATE =
 	    node * (Reflect.value * Type.t * node * int * int -> node) * 
 	    (Reflect.value * Inf.t * node * int * int -> node) -> unit
 
+	val shrink: node -> unit
 
 end
 

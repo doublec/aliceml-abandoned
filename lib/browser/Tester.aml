@@ -24,7 +24,6 @@ exception Error;
 
 UnsafeInspector.inspect ((111,5.0,"hi",0w17,Error,#"d"),s_tuple);
 
-
 (* Record mit Referenz, Vektor und Array - zum Testen des RelModus mit
    struktureller Gleichheit geeignet *)
 
@@ -63,7 +62,7 @@ UnsafeInspector.inspect (C (C (B [ref 55,ref 88])),data_type);
 UnsafeInspector.inspect (D [{1 = #[#["hi","du"],#["guck","mal"]], 
 			     2 = #[#[0,8,1,5],#[4,7,1,1]]},
 			    {1 = #[#["ich","kann"],#["Listen","zeichnen"]], 
-			     2 = #[#[0,8,1,5],#[4,7,1,1]] } ],
+			     2 = #[#[0,8,1,5],#[4,7,1,1]]}                  ],
 			 data_type);
 
 structure Test = Reflect.ReflectType (type t = int vector list);

@@ -7,7 +7,7 @@
  *   Marvin Schiller, 2002
  *
  * Last Change:
- datatype intention = DRAW | SEARCH of int * int *   $Date$ by $Author$
+ * $Date$ by $Author$
  *   $Revision$
  *
  *)
@@ -105,7 +105,7 @@ struct
 					   val _ = (* TextIO.print("curx is "
 						   ^ Int.toString(c)
 						   ^ "\n") *) ()
-					       in
+						  in
 					   (case a of
 						Container(r) => 
 						    if setsVertical(a) 
