@@ -15,7 +15,8 @@ expressiveness in the system (SML/NJ has higher-order functors while retaining
 separate namespaces, but at the cost of treating functors only semi-first-class
 in the module language, requiring them to be wrapped into structures when
 passed around - I do not consider this very elegant, and it introduces further
-complications).
+complications). Another minor incompatibility is that the mutliple `include'
+derived form can longer be supported - this should not be critical.
 
 Structure declarations can now introduce higher-order modules (ie. functors). I
 decided to keep the keyword `structure' (and the syntactic classes strid,
@@ -48,6 +49,10 @@ structures. Most of this is already implemented in the elaborator (as it is
 quite simple) and it regains the ability to express structure sharing as in
 SML'90 as well as eg. exception sharing which sometimes is desirable.
 
+Last but not least I was forced to introduce `let' for signature expressions -
+otherwise there is no way to explain certain derived forms after generalizing to
+higher-order functors.
+
 
 Structures
 ----------
@@ -72,6 +77,7 @@ Signatures
 atsigexp ::=	`any'				top
 		`sig' spec `end'		ground signature
 		longsigid			signature identifier
+		`let' dec `in' sigexp `end'	local declarations
 		`(' sigexp `)'			parentheses
 appsigexp ::=	atsigexp
 		appsigexp atstrexp		application of param. signature
@@ -105,7 +111,7 @@ strexp ::=	...
 		`unpack' atexp `:' sigexp	package elimination
 
 exp ::=		...
-		`pack' atstrexp			package introduction
+		`pack' longstrid		package introduction
 
 ty ::=		...
 		`pack' longsigid		package type
@@ -123,12 +129,12 @@ dec:		`functor' fstrbind
 strbind:	`_' <`:' sigexp> `=' strexp <`and' strbind>
 fstrbind:	strid strpat_1 ... strpat_n `=' strexp <`and' fstrbind>	(n>=1)
 
-sigexp:		sigexp `where' `val' longvid `=' longvid
-		sigexp `where' `constructor' longvid `=' longvid
-		sigexp `where' `type' tyvarseq longtycon `=' ty
-		sigexp `where' `structure' longstrid `=' longstrid
-		sigexp `where' `signature' longsigid strpat_1 ... strpat_n
-				`=' sigexp				(n>=0)
+sigexp:		sigexp `where' rea
+rea:		`val' longvid `=' longvid
+		`constructor' longvid `=' longvid
+		`type' tyvarseq longtycon `=' ty
+		`structure' longstrid `=' longstrid
+		`signature' longsigid strpat_1 ... strpat_n `=' sigexp	(n>=0)
 
 Discussion: Should we have a derived form for functor specifications? Like
 
@@ -145,9 +151,9 @@ patdesc:	`(' vid_1 `:' ty_1 `,' ... `,' vid_n `:' ty_n `)'	(n>=1)
 to describe functions, although it seems like a bit of an overkill. To be
 really complete one could even imagine
 
-sigexp:		sigexp `where' `fun' longvid `=' longvid
-		sigexp `where' `functor' longstrid `=' longstrid
-		sigexp `where' `exception' longvid `=' longvid
+rea:		`fun' longvid `=' longvid
+		`functor' longstrid `=' longstrid
+		`exception' longvid `=' longvid
 
 It is also worth considering
 
