@@ -377,6 +377,18 @@ public:
     return Worker::CONTINUE;			\
 }
 
+class JavaDebug {
+public:
+#if defined(STORE_DEBUG)
+  static void Print(const char *s) {
+    fprintf(stderr, "%s\n", s);
+  }
+#else
+  static void Print(char *) {}
+#endif
+};
+
+
 //
 // Interpreter Functions
 //
@@ -430,6 +442,7 @@ Worker::Result ByteCodeInterpreter::Run() {
     case Instr::LALOAD:
     case Instr::SALOAD:
       {
+	JavaDebug::Print("(A|D||F|I|L|S)ASTORE");
 	u_int index        = JavaInt::FromWord(frame->Pop());
 	ObjectArray *array = ObjectArray::FromWord(frame->Pop());
 	if (array != INVALID_POINTER) {
@@ -449,12 +462,14 @@ Worker::Result ByteCodeInterpreter::Run() {
       break;
     case Instr::AASTORE:
       {
+	JavaDebug::Print("AASTORE");
 	word value         = frame->Pop();
 	u_int index        = Store::DirectWordToInt(frame->Pop());
 	ObjectArray *array = ObjectArray::FromWord(frame->Pop());
 	if (array != INVALID_POINTER) {
 	  if (index < array->GetLength()) {
 	    Object *object = Object::FromWord(value);
+	    Assert(object != INVALID_POINTER);
 	    // to be done: array->GetType();
 	    Type *type     = INVALID_POINTER;
 	    if ((type->GetLabel() == JavaLabel::Class) &&
@@ -483,6 +498,7 @@ Worker::Result ByteCodeInterpreter::Run() {
     case Instr::LASTORE:
     case Instr::SASTORE:
       {
+	JavaDebug::Print("(D|F|I|L|S)ASTORE");
 	word value         = frame->Pop();
 	u_int index        = Store::DirectWordToInt(frame->Pop());
 	ObjectArray *array = ObjectArray::FromWord(frame->Pop());
@@ -503,6 +519,7 @@ Worker::Result ByteCodeInterpreter::Run() {
       break;
     case Instr::ACONST_NULL:
       {
+	JavaDebug::Print("ACONST_NULL");
 	frame->Push(null);
 	pc += 1;
       }
@@ -513,6 +530,7 @@ Worker::Result ByteCodeInterpreter::Run() {
     case Instr::ILOAD:
     case Instr::LLOAD:
       {
+	JavaDebug::Print("(A|D|F|I|L)LOAD");
 	frame->Push(frame->GetEnv((u_int) GET_BYTE_INDEX()));
 	pc += 2;
       }
@@ -523,6 +541,7 @@ Worker::Result ByteCodeInterpreter::Run() {
     case Instr::ILOAD_0:
     case Instr::LLOAD_0:
       {
+	JavaDebug::Print("(A|D|F|I|L)LOAD_0");
 	frame->Push(frame->GetEnv(0));
 	pc += 1;
       }
@@ -533,6 +552,7 @@ Worker::Result ByteCodeInterpreter::Run() {
     case Instr::ILOAD_1:
     case Instr::LLOAD_1:
       {
+	JavaDebug::Print("(A|D|F|I|L)LOAD_1");
 	frame->Push(frame->GetEnv(1));
 	pc += 1;
       }
@@ -543,6 +563,7 @@ Worker::Result ByteCodeInterpreter::Run() {
     case Instr::ILOAD_2:
     case Instr::LLOAD_2:
       {
+	JavaDebug::Print("(A|D|F|I|L)LOAD_2");
 	frame->Push(frame->GetEnv(2));
 	pc += 1;
       }
@@ -553,12 +574,14 @@ Worker::Result ByteCodeInterpreter::Run() {
     case Instr::ILOAD_3:
     case Instr::LLOAD_3:
       {
+	JavaDebug::Print("(A|D|F|I|L)LOAD_3");
 	frame->Push(frame->GetEnv(3));
 	pc += 1;
       }
       break;
     case Instr::ANEWARRAY:
       {
+	JavaDebug::Print("ANEWARRAY");
 	word wType = GET_POOL_VALUE(GET_POOL_INDEX());
 	Type *type = Type::FromWord(wType);
 	if (type == INVALID_POINTER)
@@ -585,6 +608,7 @@ Worker::Result ByteCodeInterpreter::Run() {
     case Instr::IRETURN:
     case Instr::LRETURN:
       {
+	JavaDebug::Print("(A|D|F|I|L)RETURN");
 	Scheduler::nArgs          = Scheduler::ONE_ARG;
 	Scheduler::currentArgs[0] = frame->Pop();
 	Scheduler::PopFrame();
@@ -593,6 +617,7 @@ Worker::Result ByteCodeInterpreter::Run() {
       break;
     case Instr::ARRAYLENGTH:
       {
+	JavaDebug::Print("ARRAYLENGTH");
 	ObjectArray *arr = ObjectArray::FromWord(frame->Pop());
 	if (arr != INVALID_POINTER) {
 	  frame->Push(Store::IntToWord(arr->GetLength()));
@@ -610,6 +635,7 @@ Worker::Result ByteCodeInterpreter::Run() {
     case Instr::ISTORE:
     case Instr::LSTORE:
       {
+	JavaDebug::Print("(A|D|F|I|L)STORE");
 	frame->SetEnv(GET_BYTE_INDEX(), frame->Pop());
 	pc += 2;
       }
@@ -620,6 +646,7 @@ Worker::Result ByteCodeInterpreter::Run() {
     case Instr::ISTORE_0:
     case Instr::LSTORE_0:
       {
+	JavaDebug::Print("(A|D|F|I|L)STORE_0");
 	frame->SetEnv(0, frame->Pop());
 	pc += 1;
       }
@@ -630,6 +657,7 @@ Worker::Result ByteCodeInterpreter::Run() {
     case Instr::ISTORE_1:
     case Instr::LSTORE_1:
       {
+	JavaDebug::Print("(A|D|F|I|L)STORE_1");
 	frame->SetEnv(1, frame->Pop());
 	pc += 1;
       }
@@ -640,6 +668,7 @@ Worker::Result ByteCodeInterpreter::Run() {
     case Instr::ISTORE_2:
     case Instr::LSTORE_2:
       {
+	JavaDebug::Print("(A|D|F|I|L)STORE_2");
 	frame->SetEnv(2, frame->Pop());
 	pc += 1;
       }
@@ -650,18 +679,20 @@ Worker::Result ByteCodeInterpreter::Run() {
     case Instr::ISTORE_3:
     case Instr::LSTORE_3:
       {
+	JavaDebug::Print("(A|D|F|I|L)STORE_3");
 	frame->SetEnv(3, frame->Pop());
 	pc += 1;
       }
       break;
     case Instr::ATHROW:
       {
-	// to be done
+	Error("not implemented");
       }
       break;
     case Instr::BALOAD:
     case Instr::CALOAD:
       {
+	JavaDebug::Print("(B|C)ALOAD");	
 	u_int index    = Store::DirectWordToInt(frame->Pop());
 	Chunk *byteArr = Store::DirectWordToChunk(frame->Pop());
 	if (index < byteArr->GetSize()) {
@@ -676,6 +707,7 @@ Worker::Result ByteCodeInterpreter::Run() {
     case Instr::BASTORE:
     case Instr::CASTORE:
       {
+	JavaDebug::Print("(B|C)ÁSTORE");
 	u_int value    = Store::DirectWordToInt(frame->Pop());
 	u_int index    = Store::DirectWordToInt(frame->Pop());
 	Chunk *byteArr = Store::DirectWordToChunk(frame->Pop());
@@ -690,12 +722,14 @@ Worker::Result ByteCodeInterpreter::Run() {
       break;
     case Instr::BIPUSH:
       {
+	JavaDebug::Print("BIPUSH");
 	frame->Push(Store::IntToWord((int) (char) GET_BYTE_INDEX()));
 	pc += 2;
       }
       break;
     case Instr::CHECKCAST:
       {
+	JavaDebug::Print("CHECKCAST");
 	word wType = GET_POOL_VALUE(GET_POOL_INDEX());
 	Type *type = Type::FromWord(wType);
 	if (type == INVALID_POINTER)
@@ -706,6 +740,7 @@ Worker::Result ByteCodeInterpreter::Run() {
 	  {
 	    Class *classObj = static_cast<Class *>(type);
 	    Block *p = Store::WordToBlock(wObject);
+	    Assert(p != INVALID_POINTER);
 	    if ((p->GetLabel() != JavaLabel::Object) ||
 		(!(Object::FromWordDirect(wObject)->IsInstanceOf(classObj)))) {
 	      // to be done: raise CastClassException
@@ -797,6 +832,7 @@ Worker::Result ByteCodeInterpreter::Run() {
       break;
     case Instr::DUP:
       {
+	JavaDebug::Print("DUP");
 	word value = frame->Pop();
 	frame->Push(value);
 	frame->Push(value);
@@ -805,6 +841,7 @@ Worker::Result ByteCodeInterpreter::Run() {
       break;
     case Instr::DUP_X1:
       {
+	JavaDebug::Print("DUP_X1");
 	word v1 = frame->Pop();
 	word v2 = frame->Pop();
 	frame->Push(v1);
@@ -815,6 +852,7 @@ Worker::Result ByteCodeInterpreter::Run() {
       break;
     case Instr::DUP_X2:
       {
+	JavaDebug::Print("DUP_X2");
 	// Always match form 1
 	word v1 = frame->Pop();
 	word v2 = frame->Pop();
@@ -831,6 +869,7 @@ Worker::Result ByteCodeInterpreter::Run() {
       break;
     case Instr::DUP2:
       {
+	JavaDebug::Print("DUP2");
 	// Always match from 1
 	word v1 = frame->Pop();
 	word v2 = frame->Pop();
@@ -843,6 +882,7 @@ Worker::Result ByteCodeInterpreter::Run() {
       break;
     case Instr::DUP2_X1:
       {
+	JavaDebug::Print("DUP2_X1");
 	// Always match form 1
 	word v1 = frame->Pop();
 	word v2 = frame->Pop();
@@ -857,6 +897,7 @@ Worker::Result ByteCodeInterpreter::Run() {
       break;
     case Instr::DUP2_X2:
       {
+	JavaDebug::Print("DUP2_x2");
 	// Always match form 1
 	word v1 = frame->Pop();
 	word v2 = frame->Pop();
@@ -943,6 +984,7 @@ Worker::Result ByteCodeInterpreter::Run() {
       break;
     case Instr::GETFIELD:
       {
+	JavaDebug::Print("GETFIELD");
 	word wObject = frame->Pop();
 	if (wObject != null) {
 	  word wFieldRef             = GET_POOL_VALUE(GET_POOL_INDEX());
@@ -950,6 +992,7 @@ Worker::Result ByteCodeInterpreter::Run() {
 	  if (fieldRef == INVALID_POINTER)
 	    REQUEST(wFieldRef);
 	  Object *object = Object::FromWord(wObject);
+	  Assert(object != INVALID_POINTER);
 	  frame->Push(object->GetInstanceField(fieldRef->GetIndex()));
 	}
 	else {
@@ -961,28 +1004,33 @@ Worker::Result ByteCodeInterpreter::Run() {
       break;
     case Instr::GETSTATIC:
       {
+	JavaDebug::Print("GETSTATIC");
 	word wFieldRef           = GET_POOL_VALUE(GET_POOL_INDEX());
 	StaticFieldRef *fieldRef = StaticFieldRef::FromWord(wFieldRef);
 	if (fieldRef == INVALID_POINTER)
 	  REQUEST(wFieldRef);
 	Class *classObj = fieldRef->GetClass();
+	Assert(classObj != INVALID_POINTER);
 	frame->Push(classObj->GetStaticField(fieldRef->GetIndex()));
 	pc += 3;
       }
       break;
     case Instr::GOTO:
       {
+	JavaDebug::Print("GOTO");
 	pc += (short int) GET_POOL_INDEX();
       }
       break;
     case Instr::GOTO_W:
       {
+	JavaDebug::Print("GOTO_W");
 	pc += (int) GET_WIDE_INDEX();
       }
       break;
     case Instr::I2B:
     case Instr::I2C: // to be done
       {
+	JavaDebug::Print("I2(B|C)");
 	int i = JavaInt::FromWord(frame->Pop());
 	frame->Push(Store::IntToWord((int) ((char) i)));
 	pc += 1;
@@ -1010,6 +1058,7 @@ Worker::Result ByteCodeInterpreter::Run() {
       break;
     case Instr::IADD:
       {
+	JavaDebug::Print("IADD");
 	int v2 = JavaInt::FromWord(frame->Pop());
 	int v1 = JavaInt::FromWord(frame->Pop());
 	frame->Push(JavaInt::ToWord(v1 + v2));
@@ -1018,6 +1067,7 @@ Worker::Result ByteCodeInterpreter::Run() {
       break;
     case Instr::IAND:
       {
+	JavaDebug::Print("IAND");
 	int v2 = JavaInt::FromWord(frame->Pop());
 	int v1 = JavaInt::FromWord(frame->Pop());
 	frame->Push(JavaInt::ToWord(v1 & v2));
@@ -1026,48 +1076,56 @@ Worker::Result ByteCodeInterpreter::Run() {
       break;
     case Instr::ICONST_M1:
       {
+	JavaDebug::Print("ICONST_M1");
 	frame->Push(JavaInt::ToWord(-1));
 	pc += 1;
       }
       break;
     case Instr::ICONST_0:
       {
+	JavaDebug::Print("ICONST_0");
 	frame->Push(JavaInt::ToWord(0));
 	pc += 1;
       }
       break;
     case Instr::ICONST_1:
       {
+	JavaDebug::Print("ICONST_1");
 	frame->Push(JavaInt::ToWord(1));
 	pc += 1;
       }
       break;
     case Instr::ICONST_2:
       {
+	JavaDebug::Print("ICONST_2");
 	frame->Push(JavaInt::ToWord(2));
 	pc += 1;
       }
       break;
     case Instr::ICONST_3:
       {
+	JavaDebug::Print("ICONST_3");
 	frame->Push(JavaInt::ToWord(3));
 	pc += 1;
       }
       break;
     case Instr::ICONST_4:
       {
+	JavaDebug::Print("ICONST_4");
 	frame->Push(JavaInt::ToWord(4));
 	pc += 1;
       }
       break;
     case Instr::ICONST_5:
       {
+	JavaDebug::Print("ICONST_5");
 	frame->Push(JavaInt::ToWord(5));
 	pc += 1;
       }
       break;
     case Instr::IDIV:
       {
+	JavaDebug::Print("IDIV");
 	int v2 = JavaInt::FromWord(frame->Pop());
 	int v1 = JavaInt::FromWord(frame->Pop());
 	if (v2 != 0)
@@ -1082,6 +1140,7 @@ Worker::Result ByteCodeInterpreter::Run() {
     case Instr::IF_ACMPEQ:
     case Instr::IF_ICMPEQ:
       {
+	JavaDebug::Print("IF_(A|I)CMPEQ");
 	word v2 = frame->Pop();
 	word v1 = frame->Pop();
 	if (v1 == v2)
@@ -1093,6 +1152,7 @@ Worker::Result ByteCodeInterpreter::Run() {
     case Instr::IF_ACMPNE:
     case Instr::IF_ICMPNE:
       {
+	JavaDebug::Print("IF_(A|I)CMPNE");
 	word v2 = frame->Pop();
 	word v1 = frame->Pop();
 	if (v1 != v2)
@@ -1103,6 +1163,7 @@ Worker::Result ByteCodeInterpreter::Run() {
       break;
     case Instr::IF_ICMPLT:
       {
+	JavaDebug::Print("IF_ICMPLT");
 	int v2 = JavaInt::FromWord(frame->Pop());
 	int v1 = JavaInt::FromWord(frame->Pop());
 	if (v1 < v2)
@@ -1113,6 +1174,7 @@ Worker::Result ByteCodeInterpreter::Run() {
       break;
     case Instr::IF_ICMPGE:
       {
+	JavaDebug::Print("IF_ICMPGE");
 	int v2 = JavaInt::FromWord(frame->Pop());
 	int v1 = JavaInt::FromWord(frame->Pop());
 	if (v1 >= v2)
@@ -1123,6 +1185,7 @@ Worker::Result ByteCodeInterpreter::Run() {
       break;
     case Instr::IF_ICMPGT:
       {
+	JavaDebug::Print("IF_ICMPGT");
 	int v2 = JavaInt::FromWord(frame->Pop());
 	int v1 = JavaInt::FromWord(frame->Pop());
 	if (v1 > v2)
@@ -1133,6 +1196,7 @@ Worker::Result ByteCodeInterpreter::Run() {
       break;
     case Instr::IF_ICMPLE:
       {
+	JavaDebug::Print("IF_ICMPLE");
 	int v2 = JavaInt::FromWord(frame->Pop());
 	int v1 = JavaInt::FromWord(frame->Pop());
 	if (v1 <= v2)
@@ -1143,6 +1207,7 @@ Worker::Result ByteCodeInterpreter::Run() {
       break;
     case Instr::IFEQ:
       {
+	JavaDebug::Print("IFEQ");
 	if (JavaInt::Deref(frame->Pop()) == JavaInt::Zero())
 	  pc += (short) GET_POOL_INDEX();
 	else
@@ -1151,6 +1216,7 @@ Worker::Result ByteCodeInterpreter::Run() {
       break;
     case Instr::IFNE:
       {
+	JavaDebug::Print("IFNE");
 	if (JavaInt::Deref(frame->Pop()) != JavaInt::Zero())
 	  pc += (short) GET_POOL_INDEX();
 	else
@@ -1159,6 +1225,7 @@ Worker::Result ByteCodeInterpreter::Run() {
       break;
     case Instr::IFLT:
       {
+	JavaDebug::Print("IFLT");
 	if (JavaInt::FromWord(frame->Pop()) < 0)
 	  pc += (short) GET_POOL_INDEX();
 	else
@@ -1167,6 +1234,7 @@ Worker::Result ByteCodeInterpreter::Run() {
       break;
     case Instr::IFGE:
       {
+	JavaDebug::Print("IFGE");
 	if (JavaInt::FromWord(frame->Pop()) >= 0)
 	  pc += (short) GET_POOL_INDEX();
 	else
@@ -1175,6 +1243,7 @@ Worker::Result ByteCodeInterpreter::Run() {
       break;
     case Instr::IFGT:
       {
+	JavaDebug::Print("IFGT");
 	if (JavaInt::FromWord(frame->Pop()) > 0)
 	  pc += (short) GET_POOL_INDEX();
 	else
@@ -1183,6 +1252,7 @@ Worker::Result ByteCodeInterpreter::Run() {
       break;
     case Instr::IFLE:
       {
+	JavaDebug::Print("IFLE");
 	if (JavaInt::FromWord(frame->Pop()) <= 0)
 	  pc += (short) GET_POOL_INDEX();
 	else
@@ -1191,6 +1261,7 @@ Worker::Result ByteCodeInterpreter::Run() {
       break;
     case Instr::IFNONNULL:
       {
+	JavaDebug::Print("IFNONNULL");
 	if (frame->Pop() != null)
 	  pc += (short) GET_POOL_INDEX();
 	else
@@ -1199,6 +1270,7 @@ Worker::Result ByteCodeInterpreter::Run() {
       break;
     case Instr::IFNULL:
       {
+	JavaDebug::Print("IFNULL");
 	if (frame->Pop() == null)
 	  pc += (short) GET_POOL_INDEX();
 	else
@@ -1207,6 +1279,7 @@ Worker::Result ByteCodeInterpreter::Run() {
       break;
     case Instr::IINC:
       {
+	JavaDebug::Print("IINC");
 	u_int index = GET_BYTE_INDEX();
 	int v       = JavaInt::FromWord(frame->GetEnv(index));
 	v += static_cast<int>(code[pc + 2]);
@@ -1216,6 +1289,7 @@ Worker::Result ByteCodeInterpreter::Run() {
       break;
     case Instr::IMUL:
       {
+	JavaDebug::Print("IMUL");
 	int v2 = JavaInt::FromWord(frame->Pop());
 	int v1 = JavaInt::FromWord(frame->Pop());
 	frame->Push(JavaInt::ToWord(v1 * v2));
@@ -1224,6 +1298,7 @@ Worker::Result ByteCodeInterpreter::Run() {
       break;
     case Instr::INEG:
       {
+	JavaDebug::Print("INEG");
 	int v = JavaInt::FromWord(frame->Pop());
 	frame->Push(JavaInt::ToWord(0-v));
 	pc += 1;
@@ -1231,6 +1306,7 @@ Worker::Result ByteCodeInterpreter::Run() {
       break;
     case Instr::INSTANCEOF:
       {
+	JavaDebug::Print("INSTANCEOF");
 	word wType = GET_POOL_VALUE(GET_POOL_INDEX());
 	Type *type = Type::FromWord(wType);
 	if (type == INVALID_POINTER)
@@ -1242,6 +1318,7 @@ Worker::Result ByteCodeInterpreter::Run() {
 	  {
 	    Class *classObj = static_cast<Class *>(type);
 	    Block *p = Store::WordToBlock(wObject);
+	    Assert(p != INVALID_POINTER);
 	    result = (p->GetLabel() == JavaLabel::Object &&
 		      Object::FromWordDirect(wObject)->IsInstanceOf(classObj));
 	  }
@@ -1270,6 +1347,7 @@ Worker::Result ByteCodeInterpreter::Run() {
       break;
     case Instr::INVOKESPECIAL:
       {
+	JavaDebug::Print("INVOKESPECIAL");
 	word wMethodRef             = GET_POOL_VALUE(GET_POOL_INDEX());
 	VirtualMethodRef *methodRef = VirtualMethodRef::FromWord(wMethodRef);
 	if (methodRef == INVALID_POINTER)
@@ -1286,12 +1364,15 @@ Worker::Result ByteCodeInterpreter::Run() {
 	  Scheduler::currentArgs[i] = frame->Pop();
 	// to be done: where is the closure to be found; assuming static ref
 	Class *classObj  = methodRef->GetClass();
+	Assert(classObj != INVALID_POINTER);
 	Closure *closure = classObj->GetVirtualMethod(methodRef->GetIndex());
+	Assert(closure != INVALID_POINTER);
 	return Scheduler::PushCall(closure->ToWord());
       }
       break;
     case Instr::INVOKESTATIC:
       {
+	JavaDebug::Print("INVOKESTATIC");
 	word wMethodRef            = GET_POOL_VALUE(GET_POOL_INDEX());
 	StaticMethodRef *methodRef = StaticMethodRef::FromWord(wMethodRef);
 	if (methodRef == INVALID_POINTER)
@@ -1305,13 +1386,16 @@ Worker::Result ByteCodeInterpreter::Run() {
 	Scheduler::nArgs = nArgs;
 	for (u_int i = nArgs; i--;)
 	  Scheduler::currentArgs[i] = frame->Pop();
-	Class *classObj  = methodRef->GetClass();
+	Class *classObj = methodRef->GetClass();
+	Assert(classObj != INVALID_POINTER);
 	Closure *closure = classObj->GetStaticMethod(methodRef->GetIndex());
+	Assert(closure != INVALID_POINTER);
 	return Scheduler::PushCall(closure->ToWord());
       }
       break;
     case Instr::INVOKEVIRTUAL:
       {
+	JavaDebug::Print("INVOKEVIRTUAL");
 	word wMethodRef             = GET_POOL_VALUE(GET_POOL_INDEX());
 	VirtualMethodRef *methodRef = VirtualMethodRef::FromWord(wMethodRef);
 	if (methodRef == INVALID_POINTER)
@@ -1329,11 +1413,13 @@ Worker::Result ByteCodeInterpreter::Run() {
 	Object *object = Object::FromWord(Scheduler::currentArgs[0]);
 	Assert(object != INVALID_POINTER);
 	Closure *closure = object->GetVirtualMethod(methodRef->GetIndex());
+	Assert(closure != INVALID_POINTER);
 	return Scheduler::PushCall(closure->ToWord());
       }
       break;
     case Instr::IOR:
       {
+	JavaDebug::Print("IOR");
 	int v2 = JavaInt::FromWord(frame->Pop());
 	int v1 = JavaInt::FromWord(frame->Pop());
 	frame->Push(JavaInt::ToWord(v1 || v2));
@@ -1342,6 +1428,7 @@ Worker::Result ByteCodeInterpreter::Run() {
       break;
     case Instr::IREM:
       {
+	JavaDebug::Print("IREM");
 	int v2 = JavaInt::FromWord(frame->Pop());
 	int v1 = JavaInt::FromWord(frame->Pop());
 	if (v2 != 0)
@@ -1355,6 +1442,7 @@ Worker::Result ByteCodeInterpreter::Run() {
       break;
     case Instr::ISHL:
       {
+	JavaDebug::Print("ISHL");
 	int v2 = JavaInt::FromWord(frame->Pop());
 	int v1 = JavaInt::FromWord(frame->Pop());
 	frame->Push(JavaInt::ToWord(v1 << v2));
@@ -1363,6 +1451,7 @@ Worker::Result ByteCodeInterpreter::Run() {
       break;
     case Instr::ISHR:
       {
+	JavaDebug::Print("IHSR");
 	int v2 = JavaInt::FromWord(frame->Pop());
 	int v1 = JavaInt::FromWord(frame->Pop());
 	frame->Push(JavaInt::ToWord(v1 >> v2));
@@ -1371,6 +1460,7 @@ Worker::Result ByteCodeInterpreter::Run() {
       break;
     case Instr::ISUB:
       {
+	JavaDebug::Print("ISUB");
 	int v2 = JavaInt::FromWord(frame->Pop());
 	int v1 = JavaInt::FromWord(frame->Pop());
 	frame->Push(JavaInt::ToWord(v1 - v2));
@@ -1384,6 +1474,7 @@ Worker::Result ByteCodeInterpreter::Run() {
       break;
     case Instr::IXOR:
       {
+	JavaDebug::Print("IXOR");
 	int v2 = JavaInt::FromWord(frame->Pop());
 	int v1 = JavaInt::FromWord(frame->Pop());
 	frame->Push(JavaInt::ToWord(v1 ^ v2));
@@ -1441,6 +1532,7 @@ Worker::Result ByteCodeInterpreter::Run() {
       break;
     case Instr::LDC:
       {
+	JavaDebug::Print("LDC");
 	frame->Push(GET_POOL_VALUE(GET_BYTE_INDEX()));
 	pc += 2;
       }
@@ -1513,6 +1605,7 @@ Worker::Result ByteCodeInterpreter::Run() {
       break;
     case Instr::MULTIANEWARRAY:
       {
+	JavaDebug::Print("MULTIANEWARRAY");
 	word wType = GET_POOL_VALUE(GET_POOL_INDEX());
 	Type *type = Type::FromWord(wType);
 	if (type == INVALID_POINTER)
@@ -1534,6 +1627,7 @@ Worker::Result ByteCodeInterpreter::Run() {
       break;
     case Instr::NEW:
       {
+	JavaDebug::Print("NEW");
 	word wType = GET_POOL_VALUE(GET_POOL_INDEX());
 	Type *type = Type::FromWord(wType);
 	if (type == INVALID_POINTER)
@@ -1562,6 +1656,7 @@ Worker::Result ByteCodeInterpreter::Run() {
       break;
     case Instr::NEWARRAY:
       {
+	JavaDebug::Print("NEWARRAY");
 	pc++; // Ignore ATYPE indicator
 	int count = Store::DirectWordToInt(frame->Pop());
 	Type *type = INVALID_POINTER; // to be done
@@ -1571,17 +1666,20 @@ Worker::Result ByteCodeInterpreter::Run() {
       break;
     case Instr::NOP:
       {
+	JavaDebug::Print("NOP");
 	pc += 1;
       }
       break;
     case Instr::POP:
       {
+	JavaDebug::Print("POP");
 	frame->Pop();
 	pc += 1;
       }
       break;
     case Instr::POP2:
       {
+	JavaDebug::Print("POP2");
 	// Always match from 1
 	frame->Pop();
 	frame->Pop();
@@ -1590,23 +1688,27 @@ Worker::Result ByteCodeInterpreter::Run() {
       break;
     case Instr::PUTFIELD:
       {
+	JavaDebug::Print("PUTFIELD");
 	word wFieldRef             = GET_POOL_VALUE(GET_POOL_INDEX());
 	InstanceFieldRef *fieldRef = InstanceFieldRef::FromWord(wFieldRef);
 	if (fieldRef == INVALID_POINTER)
 	  REQUEST(wFieldRef);
 	word value = frame->Pop();
 	Object *object = Object::FromWord(frame->Pop());
+	Assert(object != INVALID_POINTER);
 	object->PutInstanceField(fieldRef->GetIndex(), value);
 	pc += 3;
       }
       break;
     case Instr::PUTSTATIC:
       {
+	JavaDebug::Print("PUTSTATIC");
 	word wFieldRef           = GET_POOL_VALUE(GET_POOL_INDEX());
 	StaticFieldRef *fieldRef = StaticFieldRef::FromWord(wFieldRef);
 	if (fieldRef == INVALID_POINTER)
 	  REQUEST(wFieldRef);
 	Class *classObj = fieldRef->GetClass();
+	Assert(classObj != INVALID_POINTER);
 	classObj->PutStaticField(fieldRef->GetIndex(), frame->Pop());
 	pc += 3;
       }
@@ -1618,6 +1720,7 @@ Worker::Result ByteCodeInterpreter::Run() {
       break;
     case Instr::RETURN:
       {
+	JavaDebug::Print("RETURN");
 	Scheduler::nArgs = 0;
 	Scheduler::PopFrame();
 	CHECK_PREEMPT();
@@ -1625,12 +1728,14 @@ Worker::Result ByteCodeInterpreter::Run() {
       break;
     case Instr::SIPUSH:
       {
+	JavaDebug::Print("SIPUSH");
 	short value = GET_POOL_INDEX();
 	frame->Push(JavaInt::ToWord(value));
 	pc += 3;
       }
     case Instr::SWAP:
       {
+	JavaDebug::Print("SWAP");
 	word v1 = frame->Pop();
 	word v2 = frame->Pop();
 	frame->Push(v1);
@@ -1645,6 +1750,7 @@ Worker::Result ByteCodeInterpreter::Run() {
       break;
     case Instr::WIDE:
       {
+	JavaDebug::Print("WIDE");
 	switch (static_cast<Instr::Opcode>(code[++pc])) {
 	case Instr::ILOAD:
 	case Instr::FLOAD:
@@ -1702,6 +1808,7 @@ Interpreter::Result ByteCodeInterpreter::Handle() {
   Table *table         = frame->GetExceptionTable();
   u_int count          = table->GetCount();
   Object *object       = Object::FromWord(Scheduler::currentData);
+  Assert(object != INVALID_POINTER);
   for (u_int i = 0; i < count; i++) {
     ExceptionTableEntry *entry =
       ExceptionTableEntry::FromWordDirect(table->Get(i));
