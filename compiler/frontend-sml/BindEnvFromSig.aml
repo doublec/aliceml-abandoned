@@ -93,12 +93,16 @@ struct
 		(*UNFINISHED: constructor currently gets the same name
 		 * as the tycon, because we have no way of knowing its
 		 * real name. HACK, ref is still broken... *)
-		val E   = new()
-		val x   = Stamp.new()
-		val n   = Label.toName(Path.toLab(#3(Type.asCon t)))
-		val vid = VId.fromString(Name.toString n)
+		val  E     = new()
+		val  z     = Stamp.new()
+		val  z'    = Stamp.new()
+		val  name  = Label.toString(Path.toLab(#3(Type.asCon t)))
+		val  name' = "'" ^ name
+		val  vid   = VId.fromString name
+		val  vid'  = VId.fromString name'
 	    in
-		insertVal(E, vid, (I,x,R)) ;
+		insertVal(E, vid', (I,z',V)) ;
+		insertVal(E, vid, (I,z,R)) ;
 		E
 	    end
 	else
