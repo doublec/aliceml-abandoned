@@ -38,7 +38,6 @@ private:
   static void RegisterGlobalStamp();
   static void RegisterHole();
   static void RegisterInt();
-  static void RegisterLargeWord();
   static void RegisterList();
   static void RegisterMath();
   static void RegisterOption();
@@ -49,7 +48,9 @@ private:
   static void RegisterUniqueString();
   static void RegisterUnsafe();
   static void RegisterVector();
-  static void RegisterWord();
+  static void RegisterWord8();
+  static void RegisterWord8Vector();
+  static void RegisterWord31();
   static word Lookup(word table, Chunk *name);
 public:
   static word General_Chr;

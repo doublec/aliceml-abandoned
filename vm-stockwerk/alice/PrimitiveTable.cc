@@ -38,10 +38,10 @@ word PrimitiveTable::Thread_Terminated;
 
 void PrimitiveTable::Init() {
   // The following values have been derived from the count of
-  // 158 functions, 186 values (see the fprintf below)
+  // 190 functions, 217 values (see the fprintf below)
   // with a fill ratio of ca. 2/3
-  valueTable    = HashTable::New(HashTable::BLOCK_KEY, 280)->ToWord();
-  functionTable = HashTable::New(HashTable::BLOCK_KEY, 240)->ToWord();
+  valueTable    = HashTable::New(HashTable::BLOCK_KEY, 325)->ToWord();
+  functionTable = HashTable::New(HashTable::BLOCK_KEY, 285)->ToWord();
   RootSet::Add(valueTable);
   RootSet::Add(functionTable);
   RootSet::Add(PrimitiveTable::General_Chr);
@@ -61,7 +61,6 @@ void PrimitiveTable::Init() {
   RegisterGlobalStamp();
   RegisterHole();
   RegisterInt();
-  RegisterLargeWord();
   RegisterList();
   RegisterMath();
   RegisterOption();
@@ -72,10 +71,12 @@ void PrimitiveTable::Init() {
   RegisterUniqueString();
   RegisterUnsafe();
   RegisterVector();
-  RegisterWord();
-  //  fprintf(stderr, "%d functions, %d values\n",
-  //	  HashTable::FromWordDirect(functionTable)->GetSize(),
-  //	  HashTable::FromWordDirect(valueTable)->GetSize());
+  RegisterWord8();
+  RegisterWord8Vector();
+  RegisterWord31();
+  //  std::fprintf(stderr, "%d functions, %d values\n",
+  //	       HashTable::FromWordDirect(functionTable)->GetSize(),
+  //	       HashTable::FromWordDirect(valueTable)->GetSize());
 }
 
 void PrimitiveTable::Register(const char *name, word value) {
