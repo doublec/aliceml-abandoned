@@ -1,0 +1,32 @@
+\section{Introduction}
+This article presents a
+simple, efficient, extensible, platform-independent
+framework for the execution and interoperation of multiple languages
+in an open system.
+\subsection{State of the Art}
+\begin{enumerate}
+\item Current vm do not scale well on different platforms. Java uses
+different implementations (HotSpot Server, PC)
+\item Hard-Wired bytecode representation
+optimized for one host language (eg, JAVA, c\#)
+\item Other Language ports need to fit into the architecture.
+\item Fitting involves large overheads (eg. dml, mozart.net, sml.java)
+\item Bad extensibility with respect to languages and services
+\end{enumerate}
+\subsection{Our Goals}
+\begin{enumerate}
+\item Simple
+\item Widely Platform indepedenent (many platforms types: PC, SERVER, PDA)
+\item Open multi-language platform
+\item Ability to plug-in interpreters during runtime
+\item Result: simple but extremly powerful
+\item Language Interpreter might optimize like crazy. Tradeoffs only for
+interop case.
+\item competitive performance to mozart/alice, maybe mozart/oz. other bytecode
+based environments?
+\item Extensibility wrt. languages and services
+\item Concept: express services simple and in cooperation with the system
+primitives (Interpreter)
+\end{enumerate}
+
+
