@@ -1,0 +1,6 @@
+signature GTK_UTILS =
+    sig
+	type object
+	exception TypeMismatch of string
+	val init : unit -> unit
+    end

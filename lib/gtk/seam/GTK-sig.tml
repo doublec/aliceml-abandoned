@@ -1,0 +1,19 @@
+import structure GtkUtils from "GtkUtils"
+
+signature GTK =
+sig
+
+<<< "GTK_CORE-sig.aml" >>>
+<<< "GTK_ENUMS-sig.aml" >>>
+
+    val NULL : GtkUtils.object
+    val TRUE : int
+    val FALSE : int
+
+    type callBackFunction = object * object list -> unit
+    val signalConnect      : object * string * callBackFunction -> int
+    val signalConnectAfter : object * string * callBackFunction -> int
+
+    val signalDisconnect       : object * int -> unit
+    val signalDisconnectByFunc : object * callBackFunction -> unit
+end
