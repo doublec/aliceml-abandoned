@@ -61,9 +61,6 @@ define
    Try            = 28
    VecTest        = 29
 
-   Con       = 0
-   StaticCon = 1
-
    LazySelInterpreter =
    lazySelInterpreter(
       run:
@@ -109,12 +106,9 @@ define
 
    fun {NullaryConCase I N C Cases Closure L ElseInstr}
       if I > N then ElseInstr
-      elsecase Cases.I of tuple(Con0 ThenInstr) then C2 in
-	 C2 = case Con0 of tag(!Con IdRef) then
-		 case IdRef of tag(!Local Id) then L.Id
-		 [] tag(!Global J) then Closure.(J + 2)
-		 end
-	      [] tag(!StaticCon X) then X
+      elsecase Cases.I of tuple(IdRef ThenInstr) then C2 in
+	 C2 = case IdRef of tag(!Local Id) then L.Id
+	      [] tag(!Global J) then Closure.(J + 2)
 	      end
 	 case {Deref C2} of Transient=transient(_) then request(Transient)
 	 elseof C3 then
@@ -127,12 +121,9 @@ define
 
    fun {NAryConCase I N C Cases Closure L}
       if I > N then unit
-      elsecase Cases.I of Case=tuple(Con0 _ _) then C2 in
-	 C2 = case Con0 of tag(!Con IdRef) then
-		 case IdRef of tag(!Local Id) then L.Id
-		 [] tag(!Global J) then Closure.(J + 2)
-		 end
-	      [] tag(!StaticCon X) then X
+      elsecase Cases.I of Case=tuple(IdRef _ _) then C2 in
+	 C2 = case IdRef of tag(!Local Id) then L.Id
+	      [] tag(!Global J) then Closure.(J + 2)
 	      end
 	 case {Deref C2} of Transient=transient(_) then request(Transient)
 	 elseof C3 then
@@ -180,14 +171,11 @@ define
 	 end
 	 L.Id := T
 	 {Emulate NextInstr Closure L TaskStack}
-      [] tag(!PutCon Id Con0 IdRefs NextInstr) then N T in
+      [] tag(!PutCon Id IdRef IdRefs NextInstr) then N T in
 	 N = {Width IdRefs}
 	 T = {MakeTuple con N + 1}
-	 T.1 = case Con0 of tag(!Con IdRef) then
-		  case IdRef of tag(!Local Id2) then L.Id2
-		  [] tag(!Global I) then Closure.(I + 2)
-		  end
-	       [] tag(!StaticCon X) then X
+	 T.1 = case IdRef of tag(!Local Id2) then L.Id2
+	       [] tag(!Global I) then Closure.(I + 2)
 	       end
 	 for J in 1..N do
 	    T.(J + 1) = case IdRefs.J of tag(!Local Id2) then L.Id2
