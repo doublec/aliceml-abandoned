@@ -65,7 +65,8 @@
     "CONCRETE", \
     "TRANSFORM", \
     "ARGS", \
-    "IODESC" \
+    "IODESC", \
+    "DEBUG_ENVIRONMENT" \
   }
 
 #endif
