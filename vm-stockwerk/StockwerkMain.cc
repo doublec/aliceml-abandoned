@@ -13,11 +13,16 @@
 //
 
 #include <cstdio>
+#if defined(__MINGW32__) || defined(_MSC_VER)
+#include <winsock.h>
+#endif
+
 #include "generic/RootSet.hh"
 #include "generic/UniqueString.hh"
 #include "generic/Transients.hh"
 #include "generic/TaskStack.hh"
 #include "generic/IOHandler.hh"
+#include "generic/IODesc.hh"
 #include "generic/SignalHandler.hh"
 #include "generic/Scheduler.hh"
 #include "generic/Primitive.hh"
@@ -27,11 +32,10 @@
 #include "generic/Properties.hh"
 #include "generic/PushCallWorker.hh"
 #include "generic/BindFutureWorker.hh"
-#include "alice/AliceLanguageLayer.hh"
-
 #if PROFILE
 #include "generic/Profiler.hh"
 #endif
+#include "alice/AliceLanguageLayer.hh"
 
 extern word UnsafeConfig();
 extern word UnsafeIO();
@@ -71,6 +75,13 @@ static u_int mb(u_int n) {
 }
 
 DllExport int StockwerkMain(char *home, u_int argc, char *argv[]) {
+#if defined(__MINGW32__) || defined(_MSC_VER)
+  WSADATA wsa_data;
+  WORD req_version = MAKEWORD(1, 1);
+  if (WSAStartup(req_version, &wsa_data) != 0)
+    Error("no usable WinSock DLL found");
+#endif
+
   // Set up the store:
   u_int memLimits[STORE_GENERATION_NUM];
   memLimits[0] = mb(16);
@@ -87,6 +98,7 @@ DllExport int StockwerkMain(char *home, u_int argc, char *argv[]) {
   }
   TaskStack::Init();
   IOHandler::Init();
+  IODesc::Init();
   SignalHandler::Init();
   Scheduler::Init();
 #if PROFILE

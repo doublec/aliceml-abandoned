@@ -675,11 +675,6 @@ word UnsafeIO() {
   IOWorker::Init();
   int handle;
 #if defined(__MINGW32__) || defined(_MSC_VER)
-  // to be done: Windows need sockets here; moved from UnsafeSocket
-  WSADATA wsa_data;
-  WORD req_version = MAKEWORD(1, 1);
-  if (WSAStartup(req_version, &wsa_data) != 0)
-    Error("no usable WinSock DLL found");
   // We need select on stdin
   int sv[2];
   if (IOSupport::SocketPair(PF_UNIX, SOCK_STREAM, 0, sv) == -1)
