@@ -3,7 +3,7 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 1999-2000
+ *   Leif Kornstaedt, 2001
  *
  * Last change:
  *   $Date$ by $Author$
@@ -23,7 +23,7 @@ local
 	      | _ => args
 	end
 
-    fun main _ = OS.Process.exit (SMLToMozartMain.stoc (getArgs ()))
+    fun main _ = OS.Process.exit (SMLToMozartEmacsToplevel.stot (getArgs ()))
 in
-    val _ = SMLofNJ.exportFn ("../stoc-mozart", main)
+    val _ = SMLofNJ.exportFn ("../stot-mozart", main)
 end;
