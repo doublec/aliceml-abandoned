@@ -66,6 +66,14 @@ fun cycleTurns 0 t = t
 
 fun turnHome n = turnHome' (cycleTurns n turns)
 
+fun turnTo 0 n = (#1 (cycleTurns n turns))()
+  | turnTo 1 n = (#2 (cycleTurns n turns))()
+  | turnTo 2 n = (#3 (cycleTurns n turns))()
+  | turnTo 3 n = (#4 (cycleTurns n turns))()
+  | turnTo 4 n = (#5 (cycleTurns n turns))()
+  | turnTo 5 n = (#6 (cycleTurns n turns))()
+  | turnTo _ _       = raise Match
+
 (* if we are on a vector, turn to the indicated direction *)
 (* if we are not, set a mark looking opposite to our direction *)
 
@@ -76,6 +84,9 @@ fun direct() =
     ) ifnot (
       switch (List.tabulate(6,markWithState))
     )
+
+fun head n =
+    switch (List.tabulate(6,turnTo n))
 end
 
 fun domove otherwise evadeaction =
@@ -95,42 +106,91 @@ fun domove otherwise evadeaction =
 
 
 fun gohome trailaction homeaction =
+    let
+        val d = direct ()
+    in
     letlabel (fn exit =>
-	direct() ++
+	d ++
 	domove otherwise (
 	    todo
 	)
     )
+    end
+
+(* val fetch_food = *)
+(*     loop ( *)
+(* 	turnto (marker foodmarker) ifnot ( *)
+(* 	    turnto food ifnot nop *)
+(* 	) ++ *)
+(* 	domove otherwise nop *)
+(*     ) *)
 
 
-val fetch_food =
-    loop (
-	turnto (marker foodmarker) ifnot (
-	    turnto food ifnot nop
-	) ++
-	domove otherwise nop
-    )
-
-(*
 val deliver_food =
-    gohome (mark (marker foodmarker))
-           (drop ++ times 3 (turn left) ++ fetch_food)
-*)
+    gohome (mark foodmarker)
+           (drop ++ lost)
 
-val d1 = direct()
-val d2 = direct()
-val d3 = direct()
-val t1 = turn left
-val t2 = turn left
-val ant =  loopx (fn break =>
-             d1 ++
-             flip 6 ifyes t1 ++             
-             domove otherwise t2 ++
-             flip 40 ifyes (d2 ++ break)
-           ) ++
-           loopx (fn break =>
-             sense here home ifyes break ++
-             d3 ++
-             mark foodmarker ++
-             move ifnot nop
-           )
+(* Pioneer, build straight streets *)
+(* should only be some ants on the edge of the hill *)
+fun pioneer explorer =
+    let
+        val direct1 = direct()
+    in
+        loopx (fn break =>
+                  direct1 ++
+                  domove otherwise explorer
+              )
+    end
+
+fun myturnto tl1 tl2 tr1 tr2 c ifyes b =
+	letlabel (fn l1 =>
+	letlabel (fn l2 => 
+	    sensen [
+		on(ahead, c) nop
+	    ,
+		on(leftahead, c) tl1
+	    ,
+		on(rightahead, c) tr1
+	    ] otherwise (goto l2) ++
+	    label l1 ++ b ++
+	    label l2
+	))
+  | myturnto tl1 tl2 tr1 tr2 c ifnot b =
+	    sensen [
+		on(ahead, c) nop
+	    ,
+		on(leftahead, c) tl2
+	    ,
+		on(rightahead, c) tr2
+	    ] otherwise b
+
+(* Explorer, run around wildly and seek food *)
+fun explorer (probTurn) collector =
+    let
+        val direct1 = direct()
+        val turn1 = turn left
+        val turn2 = turn left
+        val tl1 = turn left
+        val tl2 = turn left
+        val tr1 = turn right
+        val tr2 = turn right
+        val ttf = myturnto tl1 tl2 tr1 tr2 food ifyes collector
+    in
+        loopx (fn break =>
+                  direct1 ++
+                  ttf ++
+                  flip probTurn ifyes turn1 ++             
+                  domove otherwise turn2
+              )
+    end
+
+(* Collector, follow streets with food marker and bring food home *)
+fun collector explorer =
+    domove otherwise explorer ++
+    pick ifnot explorer ++
+    deliver_food
+
+val ant =
+    proc "pioneer" (pioneer (goto "explorer")) ++
+    proc "explorer" (explorer 15 (goto "collector")) ++
+    proc "collector" (collector (goto "explorer"))
