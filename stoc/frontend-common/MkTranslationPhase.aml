@@ -11,10 +11,11 @@
  *)
 
 (*DEBUG*)
-(*
+
 import "../../lib/system/TextIO"
 import "../../lib/utility/PrettyPrint"
 import "../../lib/rtt/PPInf"
+(*
 import "../../../../install/lib/tools/Inspector"
 *)
 
@@ -694,10 +695,17 @@ struct
 					      val i2  = I.infoMod m2
 					      val j11 = #2(Inf.asArrow(#inf i1))
 					      val j11'= Inf.instance j11
-					  in Inf.match(#inf(I.infoMod m2),j11');
-					     O.AppExp(trModInfo i, trMod m1,
-						      trTransCoerceMod
-							(#region i2, m2, j11'))
+					      val e1' = trMod m1
+					      val t11 = #1(Type.asArrow
+							(#typ(O.infoExp e1')))
+					      val i2' = typInfo(#region i2, t11)
+					      val  _  = Inf.match(
+							    #inf(I.infoMod m2),
+							    j11')
+					      val e2' = O.UpExp(i2',
+							  trTransCoerceMod
+							   (#region i2,m2,j11'))
+					  in O.AppExp(trModInfo i, e1', e2')
 					  end
       | trMod(I.AnnMod(i,m,j))		= trTransCoerceMod(#region i, m, #inf i)
       | trMod(I.UpMod(i,m,j))		= trOpaqCoerceMod(i,m,j)
@@ -815,7 +823,8 @@ val _ = TextIO.inputLine(TextIO.stdIn)
 
       | trPrimMod(i,"Pack",j) =
 	(* Pack : (interface I; module X : I) -> (x : package) *)
-	(* = fn {[X]=x1,[I]=x2} -> {[x']=cast (x1,x2)} *)
+	(* = fn {[X]=x1,[I]=x2} -> {[x']=cast (CoerceOpaq (?,x2) x1,x2)} *)
+	(*UNFINISHED*)
 	(let
 	    val  i'     = trModInfo i
 	    val  r      = #region i'
@@ -843,7 +852,7 @@ val _ = TextIO.inputLine(TextIO.stdIn)
 	(* Unpack : (x : package; interface I) -> I *)
 	(* = fn {[x]=x1,[S]=x2} -> let (x11,x12) = cast x1 in
 	 *                             Inf.match(x12,x2);
-	 *                             Coerce (x12,x2) x11
+	 *                             CoerceTrans (x12,x2) x11
 	 *                         end *)
 	(let
 	    val  i'     = trModInfo i
@@ -1003,8 +1012,20 @@ val _ = TextIO.inputLine(TextIO.stdIn)
      *)
 
     and upInf(isOpaque, isntIdentity, x1,j1,x2,j2, r,t1,t2) =
-	if Inf.isTop j2 andalso Inf.isTop j1 then
-	    NONE
+	if Inf.isTop j2 then
+	    if Inf.isTop j1 then
+		NONE
+	    else
+		SOME(trUnit r)
+	else if Inf.isCon j2 andalso Inf.isCon j1 then
+	    if not isOpaque then
+(*ASSERT	assert Path.equals(#2(Inf.asCon j1), #2(Inf.asCon)) => *)
+		if not (Path.equals(#2(Inf.asCon j1), #2(Inf.asCon j2)))
+		then raise Assert.failure else
+		NONE
+	    else
+		(*UNFINISHED: do runtime abstraction (__perv.Coerce.Opaque?) *)
+		NONE
 	else if Inf.isSig j2 andalso Inf.isSig j1 then
 	    let
 		val s1 = Inf.asSig j1
@@ -1068,14 +1089,15 @@ val _ = TextIO.inputLine(TextIO.stdIn)
 		     end
 		   | (NONE, NONE) => NONE
 	    end
-	else (* j1 is sig or arrow, j2 is top *)
-	    SOME(trUnit r)
+	else
 (*DEBUG*)
-(*
-before (print "###DEBUG### upInf: module cast to unit (press Return to continue)";
-Inspector.inspect{j1,j2};
-TextIO.inputLine(TextIO.stdIn))
-*)
+(print"j1 = \n";
+PrettyPrint.output(TextIO.stdOut, PPInf.ppInf j1, 79);
+print"\nj2 = \n";
+PrettyPrint.output(TextIO.stdOut, PPInf.ppInf j2, 79);
+print"\n";
+	    raise Assert.failure
+)
 
     and upItems(isOpaque, isntIdentity, x1, s1, x2, [], r, fields) =
 	    (Vector.fromList fields, isntIdentity)
