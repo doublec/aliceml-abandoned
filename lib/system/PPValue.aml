@@ -269,7 +269,7 @@ struct
 		val w       = #width fm
 		val (n',ds) = if n <= w then (n,[]) else (w,[ellDoc])
 		val fm'     = elem fm
-		val docs'   = VectorSlice.foldli
+		val docs'   = VectorSlice.foldri
 				(fn(i,t',docs) =>
 				 let
 				    val l    = Vector.sub(ls,i)
