@@ -693,7 +693,7 @@ const char *UnpickleWorker::Identify() {
 
 void UnpickleWorker::DumpFrame(word frameWord) {
   UnpickleFrame *frame = UnpickleFrame::FromWordDirect(frameWord);
-  std::fprintf(stderr, "Unpickling Task %d of %d\n",
+  std::fprintf(stderr, "Unpickle subnode %d of %d\n",
 	       frame->GetIndex(), frame->GetNumberOfElements());
 }
 
