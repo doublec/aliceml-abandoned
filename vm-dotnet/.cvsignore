@@ -1,1 +1,2 @@
-*.dll 
+*.dll *.DLL
+*.exe *.EXE
