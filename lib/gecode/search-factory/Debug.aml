@@ -16,6 +16,7 @@ struct
     val dbClone  = newDB 2 (* Clones. *)
     val dbBaB    = newDB 3 (* Branch and Bound. *)
     val dbSearch = newDB 4 (* Search. *)
+    val dbSlow   = newDB 5 (* Slow Search. *)
 
     val dbZero = Word31.fromInt 0 (* Empty mask *)
     val dbNone = dbZero

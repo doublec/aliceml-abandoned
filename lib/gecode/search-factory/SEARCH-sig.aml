@@ -7,7 +7,7 @@ sig
   exception NotAssigned
     
   (* Optional: sets the top node of the search (root-node by default) *)
-  (* Raise Fail if the search has already begun. *)
+  (* Raise Fail if the search has already begun and is not finished yet. *)
   val init : path -> unit
 
   (* Get next solved space *)
@@ -33,4 +33,8 @@ sig
    * usually the highest available in the tree 
    * Thread-safe. *)
   val getUnexploredPath : unit -> path option
+
+  (* Stop the search. 
+   * Thread-safe *)
+  val stopSearch : unit -> unit
 end

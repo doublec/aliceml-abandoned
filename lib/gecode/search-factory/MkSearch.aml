@@ -9,66 +9,95 @@ functor MkSearch (TreeNode : TREENODE)
   :> SEARCH where type path = TreeNode.solution Path.t =
 struct
 
-  fun print msg = Debug.dbPrint (Debug.dbSearch, TreeNode.mask, msg)
+  open Debug
+
+  fun print msg = dbPrint (dbSearch, TreeNode.mask, msg)
   fun printPath n = Path.toString (TreeNode.getPath n) ^ "\n"
+
+  (* Sleep for t milliseconds *)        
+  fun sleepms t = Thread.sleep (Time.fromMilliseconds (Int.toLarge t))
+
+  (* Be slow for the demo ! *)
+  val slow = not(Word31.compare (dbZero, TreeNode.mask && dbSlow) = EQUAL)
 
   type path = TreeNode.solution Path.t
   exception NotAssigned
 
-  val started = lazy () (* Tells whether the search has already started. *)
-  val finished = ref false (* Tells if the search is finished. *)
-  fun isFinished () = !finished
+  datatype status = Stopped | Running | StopIt of unit Promise.promise
+  val status = ref Stopped
 
-  val root = TreeNode.root
-  val unexplored = ref [root]
+  fun isFinished () = !status = Stopped
 
-  fun init path =
-    if Future.isDetermined started then raise (Fail "MkSearch.init")
-    else
-      (print "Search : new root path" ;
-       unexplored := [TreeNode.fromPath path]) (* See (1) below *)
-
-  (* Atomically update the list of unexplored nodes. 
+  (* Atomically update the given reference.
    * The argument f is such that f(old) returns (new, res)
    * Where 'new' is the new list and 'res' is returned as a result. *)
-  fun updateNodes f =
+  fun updateRef r f =
     let
       val p = Promise.promise ()
-      val l = Ref.exchange (unexplored, Promise.future p)
-      val (ll, res) = f l
+      val old = Ref.exchange (r, Promise.future p)
+      val (new, res) = f old
     in
-      Promise.fulfill (p, ll) ;
+      Promise.fulfill (p, new) ;
       res
     end
 
+  fun stopSearch () =
+    (Future.await (updateRef status
+                        (fn st => case st of
+                                    Stopped => (st, ())
+                                  | StopIt p => (st, Promise.future p)
+                                  | Running => 
+                                      let val p = Promise.promise ()
+                                      in  (StopIt p, Promise.future p) end)) ;
+     print "Search stopped.\n")
+
+  val root = TreeNode.root
+  val unexplored = ref [root]
+  fun updateNodes f = updateRef unexplored f
+
+  fun init path =
+    if updateRef status (fn st => if st <> Stopped then (st, false)
+                                  else
+                                    (print "Search : new root path\n" ;
+                                     unexplored := [TreeNode.fromPath path] ;
+                                     (st, true)))
+      then ()
+    else raise (Fail "MkSearch.init")
+
   fun getNode () = updateNodes (fn [] => ([], NONE) | x :: xs => (xs, SOME x))
   fun addNode nd = updateNodes (fn l => (nd :: l, ()))
-  
+ 
   fun nextStep () =
-    (started ;
-     case getNode () of
-       NONE => (finished := true ; NONE)
-     | SOME n => 
-         case TreeNode.status n of
-           Space.FAILED => (print ("A failure at path " ^ (printPath n)); NONE)
-         | Space.SOLVED => (print ("A solution at path " ^ (printPath n));
-                            SOME (TreeNode.getSpace n))
-         | Space.BRANCH desc =>
-             let
-               val _ = print ("A branch at path " ^ (printPath n))
-               val left = TreeNode.getLeft n
-               val right = TreeNode.getRight n
-             in
-               addNode right ;
-               addNode left ;
-               NONE
-             end)
+    case updateRef status
+      (fn StopIt p => (Promise.fulfill (p,()) ; (Stopped, NONE))
+        | (Stopped | Running ) =>
+                    let val anode = getNode ()
+                    in (if anode = NONE then Stopped else Running, anode) end)
+      of
+        NONE   => NONE
+      | SOME n =>
+          case TreeNode.status n of
+            Space.FAILED => (print ("A failure at path " ^ (printPath n)); NONE)
+          | Space.SOLVED => (print ("A solution at path " ^ (printPath n));
+                             SOME (TreeNode.getSpace n))
+          | Space.BRANCH desc =>
+              let
+                val _ = print ("A branch at path " ^ (printPath n))
+                val left = TreeNode.getLeft n
+                val right = TreeNode.getRight n
+              in
+                addNode right ;
+                addNode left ;
+                NONE
+              end
            
   fun nextSolved () =
     case nextStep () of
-      NONE => if !finished then NONE else nextSolved ()
+      NONE => if isFinished ()
+                then (print "Search finished.\n" ; NONE)
+                else (if slow then sleepms 550 else () ; nextSolved ())
     | s    => s      
-
+ 
   (* This is not called often. It does not have to be efficient. *)
   fun getLast (accu, []) = assert false
     | getLast (accu, x :: []) = (List.rev accu, SOME (TreeNode.getPath x))
@@ -91,8 +120,3 @@ struct
   fun getAllSolutions read = getAll (wrap read, [])
     
 end
-
-
-(* (1) There is no race condition at this point _because_ getUnexploredPath
- *     returns None when there is only one element in the queue. *)
-

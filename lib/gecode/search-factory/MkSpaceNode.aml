@@ -276,7 +276,7 @@ struct
         case pbest of
           NONE => node
         | SOME sol =>
-            if setBestIfCond (sol, fn (best, _) => Policy.compare (sol, best))
+            if setBestIfCond (sol, fn (best, _) => Policy.compare (best, sol))
               then 
                 let val Node rnode = node 
                 in
@@ -287,6 +287,6 @@ struct
     end
 
   fun addSolution sol =
-    ignore(setBestIfCond (sol, fn (best, _) => Policy.compare (sol, best)))
+    ignore(setBestIfCond (sol, fn (best, _) => Policy.compare (best, sol)))
 
 end

@@ -12,7 +12,7 @@ sig
   type sol
   val readSolution : Space.space -> sol
   val bound : (Space.space * sol -> unit) option (* bound the given space *)
-  val compare : sol * sol -> bool (* true if sol-1 better than sol-2. See (a) *)
+  val compare : sol * sol -> bool (* true if sol-2 better than sol-1. See (a) *)
 
   (* Debug level *)
   val mask : Debug.db_mask
