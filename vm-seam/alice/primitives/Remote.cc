@@ -14,7 +14,7 @@
 
 DEFINE2(Remote_dynamicCall) {
   if (AliceLanguageLayer::remoteCallback == Store::IntToWord(0)) {
-    RAISE(PrimitiveTable::Hole_Hole); //--** to be done
+    RAISE(PrimitiveTable::Hole_Hole); //--** to be done: force loading of Remote
   } else {
     Scheduler::SetNArgs(2);
     Scheduler::SetCurrentArg(0, x0);
