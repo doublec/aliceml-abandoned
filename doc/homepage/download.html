@@ -52,21 +52,23 @@ where <TT>&lt;alice-dir&gt;</TT>denotes the Alice installation directory. This w
   components Alice consists of, or use the source rpms to build Alice
   for a different platform. You can find the necessary packages <A
   HREF="download/rpm">in the rpm download directory</A>.</LI>
-  <LI>On newer rpm-based distributions, you may need to install
-  <TT>compat-libstdc++</TT> packages.
+  <LI>On newer RPM-based distributions, you may need to install
+  <TT>compat-libstdc++</TT> packages.</LI>
 </UL>
 
 <P>For Debian Linux:</P>
 
 <UL>
-  <LI>Add <TT>deb http://www.ps.uni-sb.de/alice/download/debian
-  testing</TT> to your <TT>/etc/apt/sources.list</TT>. You need to apt-get the
+  <LI>Please add
+  <PRE>deb http://www.ps.uni-sb.de/alice/download/debian testing</PRE>
+  to your <TT>/etc/apt/sources.list</TT>. You need to apt-get the
   package <TT>alice-runtime</TT>.</LI>
   <LI>Alternatively, use <TT>deb-src</TT> to retrieve and install
   source packages. Please note that we cannot provide a source package
   for Gecode at the moment, as it is not yet released. You will have
   to either use the binary version or install <TT>alice-runtime</TT>
   using the <TT>--force-depends</TT> command line option.
+</LI>
 </UL>
 
 <P>For other Linuces:</P>
@@ -86,27 +88,28 @@ where <TT>&lt;alice-dir&gt;</TT>denotes the Alice installation directory. This w
 
 <P>For Mac OS X:</P>
 
-<P>Please note that the Mac OS version currently does not contain the
-just-in-time native code compiler - it will therefore run considerably
-slower than Alice on x86.</P>
-
-<P>You need the <A HREF="http://fink.sourceforge.net/">Fink</A>
+<UL>
+<LI>You need the <A HREF="http://fink.sourceforge.net/">Fink</A>
 system, which provides Mac OS packages of many common Unix
-applications. The Alice packages depend on the gtk libraries, libxml2,
-and libgmp.</P>
+applications. The Alice packages depend on the Gtk libraries, libxml2,
+and libgmp.</LI>
 
-<P>
-Please add <TT>deb http://www.ps.uni-sb.de/alice/download/fink ./</TT>
+<LI>Please add
+<PRE>deb http://www.ps.uni-sb.de/alice/download/fink ./</PRE>
 to your <TT>/sw/etc/apt/sources.list</TT>. You need to install the
-  package <TT>alice-runtime</TT>, e.g. using the Fink Commander.</LI>
-</P>
+package <TT>alice-runtime</TT>, e.g. using the Fink Commander.</LI>
 
-<P>
-We provide <A HREF="download/AliceLauncher.dmg">a Mac OS X launcher
-application</A> that will start X11 and launch the GUI of the
+<LI>
+Additionally, we provide <A HREF="download/AliceLauncher.dmg">a Mac OS X launcher
+application</A> that will start X11 and launch the
 interactive toplevel. Note that this application does not contain the
-Alice system iteself.
-</P>
+Alice system itself.
+</LI>
+</UL>
+
+<P><B>Note:</B> The Mac OS version currently does not contain the
+just-in-time native code compiler. It will therefore run considerably
+slower than Alice on x86.</P>
 
 <?php subsection("license", "License") ?>
 
@@ -114,8 +117,8 @@ Alice system iteself.
 href="download/COPYING">license</A> for details.</P>
 
 <P>
-Some binary packages (especially the Windows builds) contain versions
-of the Gtk, Sqlite3, and libxml2 libraries. Please see the
+Some binary packages (especially the Windows build) contain versions
+of the Gtk, SQLite3, and libxml2 libraries. Please see the
 corresponding web sites for license information.
 </P>
 
