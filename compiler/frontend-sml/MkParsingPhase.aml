@@ -1,4 +1,35 @@
-functor MakeParsingPhase(Switches : SWITCHES) :> PARSING_PHASE =
+(*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature SOURCE          from "../infrastructure/SOURCE-sig"
+import structure Source          from "../infrastructure/Source"
+import signature CONTEXT         from "../infrastructure/CONTEXT-sig"
+import structure EmptyContext    from "../infrastructure/EmptyContext"
+import signature SWITCHES        from "../infrastructure/SWITCHES-sig"
+import signature INPUT_GRAMMAR   from "INPUT_GRAMMAR-sig"
+import structure InputGrammar    from "InputGrammar"
+
+import functor   MkLexer         from "Lexer.lex"
+import functor   MkCountPosLexer from "MkCountPosLexer"
+import structure LrParser        from "../lib/ml-yacc/parser2"
+import functor   Join            from "../lib/ml-yacc/join"
+import functor   MkLrVals        from "Parser"
+import structure DerivedForms    from "DerivedForms"
+import functor   MkLexerError    from "MkLexerError"
+import structure ParsingError    from "ParsingError"
+import signature PARSING_PHASE   from "PARSING_PHASE-sig"
+
+
+functor MkParsingPhase(Switches : SWITCHES) :> PARSING_PHASE =
 struct
 
     (* Import *)
@@ -11,25 +42,25 @@ struct
 
     (* Build Yacc parser *)
 
-    structure LrVals = LrVals(structure Token        = LrParser.Token
-			      structure DerivedForms = DerivedForms)
+    structure LrVals = MkLrVals(structure Token        = LrParser.Token
+				structure DerivedForms = DerivedForms)
 
-    structure LexerError = LexerError(structure Tokens = LrVals.Tokens
-				      type error       = ParsingError.error)
+    structure LexerError = MkLexerError(structure Tokens = LrVals.Tokens
+					type error       = ParsingError.error)
 
-    structure Lexer  = Lexer (structure Tokens     = LrVals.Tokens
-			      structure LexerError = LexerError)
+    structure Lexer  = MkLexer(structure Tokens     = LrVals.Tokens
+			       structure LexerError = LexerError)
 
-    structure Lexer' = CountPosLexer(structure Lexer      = Lexer
-				     structure LexerError = LexerError
-				     val error            = ParsingError.error
-				     val startLine =
-					if !Switches.Bootstrap.implicitImport
-					then 0 else 1)
+    structure Lexer' = MkCountPosLexer(structure Lexer      = Lexer
+				       structure LexerError = LexerError
+				       val error            = ParsingError.error
+				       val startLine =
+					   if !Switches.Bootstrap.implicitImport
+					   then 0 else 1)
 
-    structure Parser = Join  (structure LrParser   = LrParser
-			      structure ParserData = LrVals.ParserData
-			      structure Lex        = Lexer')
+    structure Parser = Join(structure LrParser   = LrParser
+			    structure ParserData = LrVals.ParserData
+			    structure Lex        = Lexer')
 
 
     (* The actual parsing function *)
