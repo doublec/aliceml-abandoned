@@ -134,7 +134,7 @@ struct
                             andalso 0 <= y andalso y < 100
             val cell    = World.getCellAt (world, (x, y))
         in
-            tilePlot' (td, x, y, cell)
+            tilePlot' (td, x, y, cell) 
         end
 
         
@@ -189,7 +189,7 @@ struct
                  else if #blackHill cell then drawRect blackHillC
                  else drawRect emptySpotC;
                  if !(#food cell) > 0 then 
-                    drawRect (Vector.sub (foodCs, !(#food cell) - 1))
+                    drawRect (Vector.sub (foodCs, Int.min (!(#food cell), 10) - 1))
                  else ();
                  (case ! (#ant cell) of
                     NONE    => ()
