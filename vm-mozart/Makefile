@@ -300,10 +300,10 @@ Rel1.import: lib/fundamental/Fundamental.import
 Rel2.import: lib/fundamental/Fundamental.import
 	sed 's|x-alice:/|../../|g' < $< > $@
 
-build1/lib/fundamental/%.aml: lib/fundamental/%.aml
+build1/lib/fundamental/RTT.aml: lib/fundamental/DummyRTT.aml
 	cp $< $@
 
-build1/lib/fundamental/RTT.aml: lib/fundamental/DummyRTT.aml
+build1/lib/fundamental/%.aml: lib/fundamental/%.aml
 	cp $< $@
 
 build1/%.oz: vm-mozart/%.oz
@@ -363,7 +363,7 @@ build1/stoc/top/%.aml: stoc/top/%.aml Rel2.import
 build1/stoc/%.aml: stoc/%.aml Rel1.import
 	cat Rel1.import $< > $@
 
-build1/%: %
+build1/%.oz: %.oz
 	cp $< $@
 
 ##
@@ -517,8 +517,8 @@ INSTALL3DIRS = build3/install build3/install/bin \
 INSTALL3TOPFILES = $(INSTALL2TOPFILES)
 INSTALL3BINFILES = $(INSTALL2BINFILES) stol stot
 INSTALL3LIBFILES = \
-	$(LIBSOURCES0:%.aml=%.ozf) \
-	$(LIBSOURCES0:%.asig=%.ozf) \
+	$(filter %.ozf, $(LIBSOURCES0:%.aml=%.ozf)) \
+	$(filter %.ozf, $(LIBSOURCES0:%.asig=%.ozf)) \
 	fundamental/RTT.ozf
 INSTALL3STOCFILES = $(INSTALL2STOCFILES) StotMain.ozf \
 	top/SMLToMozartRecursiveCompiler.ozf
