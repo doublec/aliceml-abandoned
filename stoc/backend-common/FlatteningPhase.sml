@@ -75,13 +75,13 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 		      makeTestSeq (pat, Int.toString i::pos, rest, mapping))
 	    (Test (pos, TupTest (List.length pats))::rest, mapping)
 	    pats
-	  | makeTestSeq (RecPat (_, patFields, true), pos, rest, mapping) =
+	  | makeTestSeq (RowPat (_, patFields, true), pos, rest, mapping) =
 	    List.foldl (fn (Field (_, Lab (_, s), pat), (rest, mapping)) =>
 			makeTestSeq (pat, s::pos, rest, mapping))
 	    (List.foldl (fn (Field (_, Lab (_, s), _), rest) =>
 			 Test (pos, LabTest s)::rest) rest patFields,
 	     mapping) patFields
-	  | makeTestSeq (RecPat (_, patFields, false), pos, rest, mapping) =
+	  | makeTestSeq (RowPat (_, patFields, false), pos, rest, mapping) =
 	    let
 		val labs =
 		    List.map (fn Field (_, Lab (_, s), _) => s) patFields
@@ -400,7 +400,7 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 	    if length pats1 = length pats2 then
 		TupPat (coord, ListPair.map unify (pats1, pats2))
 	    else Error.error (coord, "pattern never matches")
-	  | unify (TupPat (coord, pats), RecPat (_, fieldPats, hasDots)) =
+	  | unify (TupPat (coord, pats), RowPat (_, fieldPats, hasDots)) =
 	    (case PatFieldSort.sort fieldPats of
 		 (_, PatFieldSort.Tup i) =>
 		     if i = length pats then
@@ -414,10 +414,10 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 			 Crash.crash
 			 "MatchCompilationPhase.unify: not yet implemented 1"
 		     else Error.error (coord, "pattern never matches"))
-	  | unify (pat1 as RecPat (_, _, _), pat2 as TupPat (_, _)) =
+	  | unify (pat1 as RowPat (_, _, _), pat2 as TupPat (_, _)) =
 	    unify (pat2, pat1)
-	  | unify (RecPat (coord, fieldPats1, false),
-		   RecPat (_, fieldPats2, false)) =
+	  | unify (RowPat (coord, fieldPats1, false),
+		   RowPat (_, fieldPats2, false)) =
 	    let
 		val (fieldPats1', _) = PatFieldSort.sort fieldPats1
 		val (fieldPats2', _) = PatFieldSort.sort fieldPats2
@@ -425,13 +425,13 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 		Crash.crash
 		"MatchCompilationPhase.unify: not yet implemented 2"
 	    end
-	  | unify (RecPat (coord, fieldPats1, true),
-		   RecPat (_, fieldPats2, false)) =
+	  | unify (RowPat (coord, fieldPats1, true),
+		   RowPat (_, fieldPats2, false)) =
 	    Crash.crash "MatchCompilationPhase.unify: not yet implemented 3"
-	  | unify (pat1 as RecPat (_, _, false), pat2 as RecPat (_, _, true)) =
+	  | unify (pat1 as RowPat (_, _, false), pat2 as RowPat (_, _, true)) =
 	    unify (pat2, pat1)
-	  | unify (RecPat (coord, fieldPats1, true),
-		   RecPat (_, fieldPats2, true)) =
+	  | unify (RowPat (coord, fieldPats1, true),
+		   RowPat (_, fieldPats2, true)) =
 	    Crash.crash "MatchCompilationPhase.unify: not yet implemented 4"
 	  | unify (AsPat (_, pat1, pat2), pat3) =
 	    unify (unify (pat1, pat2), pat3)
@@ -462,8 +462,8 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 	    ConPat (coord, longid, SOME (tame pat))
 	  | tame (RefPat (coord, pat)) = RefPat (coord, tame pat)
 	  | tame (TupPat (coord, pats)) = TupPat (coord, List.map tame pats)
-	  | tame (RecPat (coord, patFields, hasDots)) =
-	    RecPat (coord,
+	  | tame (RowPat (coord, patFields, hasDots)) =
+	    RowPat (coord,
 		    List.map (fn Field (coord, lab, pat) =>
 			      Field (coord, lab, tame pat)) patFields, hasDots)
 	  | tame (pat as AsPat (coord, VarPat (_, _), _)) = pat
@@ -481,15 +481,14 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 	fun patToExp (WildPat _) = Crash.crash "MatchCompilationPhase.patToExp"
 	  | patToExp (LitPat (coord, lit)) = LitExp (coord, lit)
 	  | patToExp (VarPat (coord, id)) = VarExp (coord, ShortId (coord, id))
-	  | patToExp (ConPat (coord, longid, NONE)) =
-	    ConExp (coord, longid, NONE)
+	  | patToExp (ConPat (coord, longid, NONE)) = ConExp (coord, longid)
 	  | patToExp (ConPat (coord, longid, SOME pat)) =
-	    ConExp (coord, longid, SOME (patToExp pat))
+	    AppExp (coord, ConExp (coord, longid), patToExp pat)
 	  | patToExp (RefPat (coord, pat)) =
-	    RefExp (coord, SOME (patToExp pat))
+	    AppExp (coord, RefExp coord, patToExp pat)
 	  | patToExp (TupPat (coord, pats)) =
 	    TupExp (coord, List.map patToExp pats)
-	  | patToExp (RecPat (coord, patFields, hasDots)) =
+	  | patToExp (RowPat (coord, patFields, hasDots)) =
 	    (*--** record patterns with dots must be resolved using the rhs *)
 	    Crash.crash "MatchCompilationPhase.patToExp"
 	  | patToExp (AsPat (coord, pat as VarPat (_, _), _)) = patToExp pat
@@ -501,20 +500,21 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 	    if lit1 = lit2 then nil
 	    else Error.error (coord, "pattern never matches")
 	  | derec (VarPat (_, id), exp) = [([id], exp)]
-	  | derec (ConPat (coord, longid1, NONE), ConExp (_, longid2, NONE)) =
+	  | derec (ConPat (coord, longid1, NONE), ConExp (_, longid2)) =
 	    if longidEq (longid1, longid2) then nil   (*--** too restrictive *)
 	    else Error.error (coord, "pattern never matches")
 	  | derec (ConPat (coord, longid1, SOME pat),
-		   ConExp (_, longid2, SOME exp)) =
+		   AppExp (_, ConExp (_, longid2), exp)) =
 	    if longidEq (longid1, longid2) then derec (pat, exp)
 	    else Error.error (coord, "pattern never matches")
-	  | derec (RefPat (_, pat), RefExp (_, SOME exp)) = derec (pat, exp)
+	  | derec (RefPat (_, pat), AppExp (_, RefExp _, exp)) =
+	    derec (pat, exp)
 	  | derec (TupPat (coord, pats), TupExp (_, exps)) =
 	    if length pats = length exps then
 		ListPair.foldr (fn (pat, exp, rest) =>
 				derec (pat, exp) @ rest) nil (pats, exps)
 	    else Error.error (coord, "pattern never matches")
-	  | derec (TupPat (coord, pats), RecExp (_, expFields)) =
+	  | derec (TupPat (coord, pats), RowExp (_, expFields)) =
 	    (case ExpFieldSort.sort expFields of
 		 (_, ExpFieldSort.Tup n) =>
 		     if length pats = n then
@@ -527,7 +527,7 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 		     else Error.error (coord, "pattern never matches")
 	       | (_, ExpFieldSort.Rec) =>
 		     Error.error (coord, "pattern never matches"))
-	  | derec (RecPat (coord, patFields, hasDots), TupExp (_, exps)) =
+	  | derec (RowPat (coord, patFields, hasDots), TupExp (_, exps)) =
 	    let
 		val (patFields', arity) = PatFieldSort.sort patFields
 		val n = length exps
@@ -553,7 +553,7 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 		      | PatFieldSort.Rec =>
 			    Error.error (coord, "pattern never matches")
 	    end
-	  | derec (RecPat (coord, patFields, hasDots), RecExp (_, expFields)) =
+	  | derec (RowPat (coord, patFields, hasDots), RowExp (_, expFields)) =
 	    let
 		val (patFields', _) = PatFieldSort.sort patFields
 		val (expFields', _) = ExpFieldSort.sort expFields
@@ -628,31 +628,11 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 	    in
 		(SOME dec', ShortId (coord, id'))
 	    end
-	and simplifyExp (LitExp (coord, lit)) =
-	    O.LitExp (coord, lit)
-	  | simplifyExp (VarExp (coord, longid)) =
-	    O.VarExp (coord, longid)
-	  | simplifyExp (ConExp (coord, longid, SOME exp)) =
-	    let
-		val (decOpt, longid) = simplifyTerm exp
-		val exp' = O.ConExp (coord, longid, SOME longid)
-	    in
-		case decOpt of
-		    NONE => exp'
-		  | SOME dec' => O.LetExp (infoExp exp, [dec'], exp')
-	    end
-	  | simplifyExp (ConExp (coord, longid, NONE)) =
+	and simplifyExp (LitExp (coord, lit)) = O.LitExp (coord, lit)
+	  | simplifyExp (VarExp (coord, longid)) = O.VarExp (coord, longid)
+	  | simplifyExp (ConExp (coord, longid)) =
 	    O.ConExp (coord, longid, NONE)
-	  | simplifyExp (RefExp (coord, SOME exp)) =
-	    let
-		val (decOpt, longid) = simplifyTerm exp
-		val exp' = O.ConExp (coord, longid_ref, SOME longid)
-	    in
-		case decOpt of
-		    NONE => exp'
-		  | SOME dec' => O.LetExp (infoExp exp, [dec'], exp')
-	    end
-	  | simplifyExp (RefExp (coord, NONE)) =
+	  | simplifyExp (RefExp coord) =
 	    O.ConExp (coord, longid_ref, NONE)
 	  | simplifyExp (TupExp (coord, exps)) =
 	    let
@@ -672,7 +652,7 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 		    nil => exp'
 		  | _::_ => O.LetExp (coord, decs', exp')
 	    end
-	  | simplifyExp (RecExp (coord, expFields)) =
+	  | simplifyExp (RowExp (coord, expFields)) =
 	    let
 		val (decs', fields) =
 		    List.foldr
@@ -697,10 +677,7 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 		    nil => exp'
 		  | _::_ => O.LetExp (coord, decs', exp')
 	    end
-	  | simplifyExp (SelExp (coord, lab, NONE)) =
-	    O.SelExp (coord, lab, NONE)
-	  | simplifyExp (SelExp (coord, lab, SOME exp)) =
-	    O.SelExp (coord, lab, SOME (simplifyExp exp))
+	  | simplifyExp (SelExp (coord, lab)) = O.SelExp (coord, lab, NONE)
 	  | simplifyExp (FunExp (coord, id, exp)) =
 	    (*--** name propagation, multiple argument optimization *)
 	    O.FunExp (coord, "", [(O.OneArg id, simplifyExp exp)])

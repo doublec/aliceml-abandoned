@@ -38,7 +38,7 @@ structure PartialEvaluationPhase :> PARTIAL_EVALUATION_PHASE =
 	  | Rec of (string * valRep option) list
 	    (* sorted, all labels distinct, no tuple *)
 	  | Fun of arity list * inline option
-	  | Sel of string
+	  | Sel of lab
 	  | Builtin of string
 	  | Top
 	withtype valRep = id * valDesc
@@ -166,8 +166,8 @@ structure PartialEvaluationPhase :> PARTIAL_EVALUATION_PHASE =
 	    in
 		(RecExp (coord, labLongIdList'), Rec labValRepOptList)
 	    end
-	  | evalExp (exp as SelExp (_, Lab (_, s), NONE), state) =
-	    (exp, Sel s)
+	  | evalExp (exp as SelExp (_, lab, NONE), state) =
+	    (exp, Sel lab)
 	  | evalExp (SelExp (coord, lab as Lab (_, s), SOME exp), state) =
 	    let
 		val (exp', valDesc) = evalExp (exp, state)
@@ -194,18 +194,36 @@ structure PartialEvaluationPhase :> PARTIAL_EVALUATION_PHASE =
 					RecArity (List.map (fn (s, _) => s)
 						  stringIdList)::rest)
 		    nil argExpList
-		val inline = NONE   (*--** *)
+		val inlineOpt = NONE   (*--** *)
 	    in
 		(*--** compute print name *)
 		(*--** descend *)
-		(exp, Fun (immediate, inline))
+		(exp, Fun (immediate, inlineOpt))
 	    end
+(*
+	  | evalExp (AppExp (coord, longid, exp, isTailRef), state) =
+	    let
+		val (longid', valRepOpt) = evalLongId (longid, state)
+	    in
+		case valRepOpt of
+		    SOME (Fun (immediate, inlineOpt)) =>   (*--** *)
+		  | SOME (Sel lab) =>
+			evalExp (SelExp (coord, lab, SOME exp), state)
+		  | SOME (Builtin s) =>   (*--** *)
+		  | NONE =>
+			let
+			    val (exp', _) = evalExp (exp, state)
+			in
+			    AppExp (coord, longid', exp', isTailRef)
+			end
+	    end
+*)
 	  | evalExp (exp, state) = (exp, Top)   (*--** *)
 
 (*--**
 	datatype exp =
 	    ...
-	  | AppExp of coord * exp * exp
+	  | AppExp of coord * longid * exp * bool ref
 	  | AdjExp of coord * exp * exp
 	  | WhileExp of coord * exp * exp
 	  | SeqExp of coord * exp list

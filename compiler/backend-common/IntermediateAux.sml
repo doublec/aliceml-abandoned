@@ -42,7 +42,7 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 		patternVariablesOf' (pat, ids)
 	      | patternVariablesOf' (TupPat (_, pats), ids) =
 		foldr patternVariablesOf' ids pats
-	      | patternVariablesOf' (RecPat (_, fieldPats, _), ids) =
+	      | patternVariablesOf' (RowPat (_, fieldPats, _), ids) =
 		foldr (fn (Field (_, _, pat), ids) =>
 		       patternVariablesOf' (pat, ids)) ids fieldPats
 	      | patternVariablesOf' (AsPat (_, pat1, pat2), ids) =
@@ -77,23 +77,16 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	and substExp (exp as LitExp (_, _), _) = exp
 	  | substExp (VarExp (coord, longid), subst) =
 	    VarExp (coord, substLongId (longid, subst))
-	  | substExp (exp as ConExp (_, _, NONE), _) = exp
-	  | substExp (ConExp (coord, longid, SOME exp), subst) =
-	    ConExp (coord, substLongId (longid, subst),
-		    SOME (substExp (exp, subst)))
-	  | substExp (exp as RefExp (_, NONE), _) = exp
-	  | substExp (RefExp (coord, SOME exp), subst) =
-	    RefExp (coord, SOME (substExp (exp, subst)))
+	  | substExp (exp as ConExp (_, _), _) = exp
+	  | substExp (exp as RefExp _, _) = exp
 	  | substExp (TupExp (coord, exps), subst) =
 	    TupExp (coord, List.map (fn exp => substExp (exp, subst)) exps)
-	  | substExp (RecExp (coord, expFields), subst) =
-	    RecExp (coord,
+	  | substExp (RowExp (coord, expFields), subst) =
+	    RowExp (coord,
 		    List.map (fn Field (coord, lab, exp) =>
 			      Field (coord, lab, substExp (exp, subst)))
 		    expFields)
-	  | substExp (exp as SelExp (_, _, NONE), _) = exp
-	  | substExp (SelExp (coord, lab, SOME exp), subst) =
-	    SelExp (coord, lab, SOME (substExp (exp, subst)))
+	  | substExp (exp as SelExp (_, _), _) = exp
 	  | substExp (FunExp (coord, id, exp), subst) =
 	    FunExp (coord, id, substExp (exp, subst))
 	  | substExp (AppExp (coord, exp1, exp2), subst) =
@@ -137,8 +130,8 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	    RefPat (coord, substPat (pat, subst))
 	  | substPat (TupPat (coord, pats), subst) =
 	    TupPat (coord, List.map (fn pat => substPat (pat, subst)) pats)
-	  | substPat (RecPat (coord, patFields, hasDots), subst) =
-	    RecPat (coord,
+	  | substPat (RowPat (coord, patFields, hasDots), subst) =
+	    RowPat (coord,
 		    List.map (fn Field (coord, lab, pat) =>
 			      Field (coord, lab, substPat (pat, subst)))
 		    patFields, hasDots)
@@ -220,7 +213,7 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	    in
 		(TupPat (coord, pats'), subst')
 	    end
-	  | relax (RecPat (coord, patFields, hasDots), subst) =
+	  | relax (RowPat (coord, patFields, hasDots), subst) =
 	    let
 		val (patFields', subst') =
 		    List.foldr
@@ -231,7 +224,7 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 			 (Field (coord, lab, pat')::patFields, subst')
 		     end) (nil, subst) patFields
 	    in
-		(RecPat (coord, patFields', hasDots), subst')
+		(RowPat (coord, patFields', hasDots), subst')
 	    end
 	  | relax (AsPat (coord, pat1, pat2), subst) =
 	    let

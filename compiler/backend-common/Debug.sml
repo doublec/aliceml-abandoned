@@ -57,7 +57,7 @@ structure Debug :> DEBUG =
 	  | patToString (RefPat (_, pat)) = "(ref " ^ patToString pat ^ ")"
 	  | patToString (TupPat (_, pats)) =
 	    "(" ^ listToString patToString pats ^ ")"
-	  | patToString (RecPat (_, patFields, hasDots)) =
+	  | patToString (RowPat (_, patFields, hasDots)) =
 	    "{" ^
 	    listToString (fn Field (_, lab, pat) =>
 			  labToString lab ^ ": " ^ patToString pat) patFields ^
