@@ -31,6 +31,11 @@ define
       vCallBuiltin(_ Builtinname {Append Regs [Reg]} unit VInter)
    end
 
+   proc {InitReg Stamp State ?Reg}
+      {State.cs newReg(?Reg)}
+      {Dictionary.put State.regDict Stamp Reg}
+   end
+
    proc {MakeReg IdDef State ?Reg}
       case IdDef of 'IdDef'('Id'(_ Stamp _)) then
 	 case {Dictionary.condGet State.regDict Stamp unit} of unit then
@@ -554,11 +559,10 @@ define
       end
    end
 
-   fun {Translate Filename Import#Body#_#Sign IdValueList}
+   fun {Translate Filename Import#Body#_#Sign StampValueList}
       NarratorObject Reporter CS ImportReg ExportReg
-      State VInstr VInter GRegs Code NLiveRegs
+      State RegToValueMapping VInstr VInter GRegs Code NLiveRegs
    in
-%--** assign regs for IdValueList
       NarratorObject = {New Narrator.'class' init(?Reporter)}
       _ = {New ErrorListener.'class' init(NarratorObject)}
       CS = {New CodeStore.'class'
@@ -568,13 +572,19 @@ define
       {CS newReg(?ExportReg)}
       State = state(regDict: {NewDictionary} shareDict: {NewDictionary} cs: CS
 		    filename: {VirtualString.toAtom Filename})
+      RegToValueMapping = {Dictionary.new}
+      {ForAll StampValueList
+       proc {$ Stamp Value} Reg in
+	  Reg = {InitReg Stamp State}
+	  {Dictionary.put RegToValueMapping Reg Value}
+       end}
       {Record.foldLInd Import
        proc {$ I VHd IdDef#_#_ VTl}
 	  VHd = vInlineDot(_ ImportReg I {MakeReg IdDef State} false unit VTl)
        end VInstr VInter}
       VInter = {TranslateBody Body State ExportReg [false]}
       {CS endDefinition(VInstr [ImportReg ExportReg] nil
-			?GRegs=nil/*--**/ ?Code ?NLiveRegs)}
+			?GRegs ?Code ?NLiveRegs)}
       case Code of Code1#Code2 then StartLabel EndLabel Res P VS in
 	 StartLabel = {NewName}
 	 EndLabel = {NewName}
@@ -586,8 +596,10 @@ define
 			  NLiveRegs)
 		      unit {List.mapInd GRegs fun {$ I _} g(I) end} Code1)|
 	   endDefinition(StartLabel)|
-	   {Append Code2 [lbl(EndLabel) unify(x(0) g(0)) return]})
-	  Res|nil%--**include other globals, deduced from GRegs
+	   {Append Code2 [lbl(EndLabel) unify(x(0) g({Length GRegs})) return]})
+	  {Append {Map GRegs
+		   fun {$ Reg} {Dictionary.get RegToValueMapping Reg} end}
+	   [Res]}
 	  switches/*--**(profile: true)*/ ?P ?VS}
 	 {P}
 	 {Functor.new
