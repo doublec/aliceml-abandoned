@@ -116,9 +116,6 @@ struct
 								      d,str,m,
 								      setGroup)
 				          | SOME no => if getDesc(no) = desc
-					         andalso getParent(no) = p
-						 andalso getIndex(no) = i
-						 andalso getDepth(no) = d
 							   then no
 						       else createRelRefNode
 							   (desc,p,i,d,str,m,

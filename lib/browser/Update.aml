@@ -98,12 +98,12 @@ struct
 		  ; iterMove (dict,dy,i+1,highest_i) )
 		  
     (* update *)
-    and update (node,va,f,g) = 
+    and update (no,va,f,g) = 
 	(TextIO.print("started update") 
 	 ; let val  n = if !(Settings.relmode) 
-	                    andalso isRelNode(getParent(node))
-			    then getParent(node)
-			else node
+	                    andalso isRelNode(getParent(no))
+			    then getParent(no)
+			else no
 	       val ind = getAncIndex n 
 	       val (anc,ancline) = valOf(MainDictionary.lookup 
 			       (Dictionaries.dict,ind)) 
@@ -128,16 +128,17 @@ struct
 	   in ( setDazzled n
 	       ; Gtk.objectDestroy(getGroup(n))
 	       ; if !(Settings.relmode) 
-		     then let val rn_list = getRelNodeList new
-			      val ri_rel =  
-			      case ReinspectedRelDict.lookup 
-				  (Dictionaries.ri_reldict,ind)  
-				   of SOME x => x 
-				    | NONE => [] 
+		     then let val rn_list = getRelNodeList node
 			  in List.app (fn n 
-				      => ReinspectedRelDict.update
-				       (Dictionaries.ri_reldict,
-					(ind, [n]@ri_rel)) ) rn_list 
+				      => let val ri_rel = 
+				             case ReinspectedRelDict.lookup 
+						 (Dictionaries.ri_reldict,ind)
+					     of SOME x => x 
+					      | NONE => []
+					 in  ReinspectedRelDict.update
+					     (Dictionaries.ri_reldict,
+					      (ind, [n]@ri_rel))
+					 end) rn_list
 			  end  
 		 else () 
                ; Layout.layout(node) 
