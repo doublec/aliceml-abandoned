@@ -13,4 +13,4 @@
 import structure __pervasive from "Pervasive"
 import structure MkWord      from "MkWord"
 
-structure Word8 = MkWord(val wordSize = 8)
+structure Word8 = MkWord(type word val wordSize = 8)
