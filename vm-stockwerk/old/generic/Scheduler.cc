@@ -104,7 +104,7 @@ void Scheduler::Run() {
 	      //--** Perform application
 	      break;
 	    default:
-	      Error("invalid transient label");
+	      Error("Scheduler::Run: invalid transient label");
 	      break;
 	    }
 	  }
