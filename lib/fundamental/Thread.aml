@@ -4,25 +4,22 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 1999-2000
- *   Andreas Rossberg, 2001
+ *   Leif Kornstaedt and Andreas Rossberg, 1999-2002
  *
  * Last change:
  *   $Date$ by $Author$
  *   $Revision$
  *)
 
-
 (*
  *  Items marked with (**) are extensions to the Standard Basis.
  *)
 
-import structure __pervasive      from "Pervasive"
-import type unit and bool and exn from "ToplevelTypes"
-import structure Future           from "Future"
-import structure Promise          from "Promise"
-import signature THREAD           from "THREAD-sig"
-
+import structure __pervasive                  from "Pervasive"
+import __primitive type unit and bool and exn from "ToplevelTypes"
+import __primitive structure Future           from "Future"
+import __primitive structure Promise          from "Promise"
+import __primitive signature THREAD           from "THREAD-sig"
 
 structure Thread : THREAD =				(**)
 struct
