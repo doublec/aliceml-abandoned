@@ -4,26 +4,26 @@ open Ante
 
 fun seek_food deliver_food =
     loop (
-	sense here home onno (
-	    pick onyes (
-		times 3 (fn _ => turn left) ++
+	sense here home ifnot (
+	    pick ifyes (
+		times 3 (turn left) ++
 		deliver_food
 	    ) ++
-	    turnto food onno (nop ())
+	    turnto food ifnot nop
 	) ++
 	mark 0 ++
-	move onno (turn left)
+	move ifnot (turn left)
     )
 
 fun deliver_food seek_food =
     loopx (fn break =>
 	unmark 0 ++
-	sense here home onyes break ++
-	turnto (marker 0) onno (nop ()) ++
-	move onno (nop ())
+	sense here home ifyes break ++
+	turnto (marker 0) ifnot nop ++
+	move ifnot nop
     ) ++
-    drop () ++
-    times 3 (fn _ => turn left) ++
+    drop ++
+    times 3 (turn left) ++
     seek_food
 
 val ant =

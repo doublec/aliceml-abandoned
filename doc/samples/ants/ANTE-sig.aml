@@ -9,7 +9,7 @@ sig
 			  food | rock | marker of marker | foemarker |
 			  home | foehome
 
-    datatype yesno	= onyes | onno
+    datatype yesno	= ifyes | ifnot
     datatype otherwise	= otherwise
     type label		= string
     type stmt
@@ -25,14 +25,14 @@ sig
     val ++	: stmt * stmt -> stmt
 
     val goto	: label -> stmt
-    val nop	: unit -> stmt
-    val fail	: unit -> stmt
+    val nop	: stmt
+    val fail	: stmt
 
     val label	: label -> stmt
     val mark	: marker -> stmt
     val unmark	: marker -> stmt
     val turn	: side -> stmt
-    val drop	: unit -> stmt
+    val drop	: stmt
 
     val move	: yesno -> stmt -> stmt
     val pick	: yesno -> stmt -> stmt
@@ -47,7 +47,7 @@ sig
     val sensen	: (dir * condition) branch list -> otherwise -> stmt -> stmt
     val loop	: stmt -> stmt
     val loopx	: (stmt -> stmt) -> stmt
-    val times	: int -> (unit -> stmt) -> stmt
+    val times	: int -> stmt -> stmt
     val repeat	: int -> stmt -> stmt
     val try	: (stmt -> stmt) -> otherwise -> stmt -> stmt
 
