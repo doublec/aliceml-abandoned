@@ -1,6 +1,34 @@
-structure AbstractionError :> ABSTRACTION_ERROR =
-  struct
+(*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
 
+import structure Lab   from "Lab"
+import structure VId
+       structure TyVar
+       structure TyCon
+       structure SigId
+       structure StrId from "Ids"
+import structure Label             from "../common/Label"
+import structure Name              from "../common/Name"
+import structure AbstractGrammar   from "../frontend-common/AbstractGrammar"
+import structure Source            from "../infrastructure/Source"
+import structure Error             from "../infrastructure/Error"
+import structure Url               from "../misc/Url"
+import structure PrettyPrint       from "../misc/PrettyPrint"
+import structure PPMisc            from "../misc/PPMisc"
+import signature ABSTRACTION_ERROR from "ABSTRACTION_ERROR-sig"
+
+
+structure AbstractionError :> ABSTRACTION_ERROR =
+struct
   (* Pretty printer *)
 
     open PrettyPrint
@@ -10,94 +38,84 @@ structure AbstractionError :> ABSTRACTION_ERROR =
 
   (* Types *)
 
-    type Lab	= Lab.t
-    type VId	= VId.t
-    type TyVar	= TyVar.t
-    type TyCon	= TyCon.t
-    type StrId	= StrId.t
-    type SigId	= SigId.t
-    type typid	= AbstractGrammar.typid
-    type infid	= AbstractGrammar.infid
-    type modid	= AbstractGrammar.modid
-
     datatype error =
 	(* Infix *)
-	  InfixMisplaced	of VId
-	| AssocConflict		of VId * VId
+	  InfixMisplaced	of VId.t
+	| AssocConflict		of VId.t * VId.t
 	(* Identifiers *)
-	| VIdUnbound		of VId
-	| TyConUnbound		of TyCon
-	| TyVarUnbound		of TyVar
-	| StrIdUnbound		of StrId
-	| SigIdUnbound		of SigId
+	| VIdUnbound		of VId.t
+	| TyConUnbound		of TyCon.t
+	| TyVarUnbound		of TyVar.t
+	| StrIdUnbound		of StrId.t
+	| SigIdUnbound		of SigId.t
 	(* Expressions *)
 	| ExpConArgSuperfluous
-	| ExpRowLabDuplicate	of Lab
+	| ExpRowLabDuplicate	of Lab.t
 	(* Patterns *)
 	| PatConArgMissing
 	| PatConArgSuperfluous
-	| PatVIdDuplicate	of VId
-	| WithPatVIdDuplicate	of VId
+	| PatVIdDuplicate	of VId.t
+	| WithPatVIdDuplicate	of VId.t
 	| PatLongVIdVar
-	| PatRowLabDuplicate	of Lab
+	| PatRowLabDuplicate	of Lab.t
 	| AppPatNonCon
 	| AltPatInconsistent
 	(* Types *)
-	| TyRowLabDuplicate	of Lab
-	| TyVarSeqDuplicate	of TyVar
-	| ValTyVarSeqDuplicate	of TyVar
+	| TyRowLabDuplicate	of Lab.t
+	| TyVarSeqDuplicate	of TyVar.t
+	| ValTyVarSeqDuplicate	of TyVar.t
 	(* Declarations and bindings *)
-	| FvalBindDuplicate	of VId
+	| FvalBindDuplicate	of VId.t
 	| FvalBindArityInconsistent
 	| FvalBindArityZero
-	| FvalBindNameInconsistent of VId
+	| FvalBindNameInconsistent of VId.t
 	| FvalBindNameMissing
-	| FvalBindNameCon	of VId
+	| FvalBindNameCon	of VId.t
 	| FvalBindPatInvalid
-	| TypBindDuplicate	of TyCon
-	| DatBindDuplicate	of TyCon
-	| DatBindConDuplicate	of VId
-	| ConBindDuplicate	of VId
-	| DconBindDuplicate	of VId
+	| TypBindDuplicate	of TyCon.t
+	| DatBindDuplicate	of TyCon.t
+	| DatBindConDuplicate	of VId.t
+	| ConBindDuplicate	of VId.t
+	| DconBindDuplicate	of VId.t
 	| DconBindNonCon
-	| StrBindDuplicate	of StrId
-	| SigBindDuplicate	of SigId
+	| StrBindDuplicate	of StrId.t
+	| SigBindDuplicate	of SigId.t
 	(* Specifications and descriptions *)
-	| SpecFixDuplicate	of VId
-	| SpecVIdDuplicate	of VId
-	| SpecTyConDuplicate	of TyCon
-	| SpecStrIdDuplicate	of StrId
-	| SpecSigIdDuplicate	of SigId
-	| ConDescDuplicate	of VId
+	| SpecFixDuplicate	of VId.t
+	| SpecVIdDuplicate	of VId.t
+	| SpecTyConDuplicate	of TyCon.t
+	| SpecStrIdDuplicate	of StrId.t
+	| SpecSigIdDuplicate	of SigId.t
+	| ConDescDuplicate	of VId.t
 	| DconDescNonCon
 	(* Imports and items *)
-	| ImpFixDuplicate	of VId
-	| ImpVIdDuplicate	of VId
-	| ImpTyConDuplicate	of TyCon
-	| ImpStrIdDuplicate	of StrId
-	| ImpSigIdDuplicate	of SigId
-	| ConItemDuplicate	of VId
-	| ValItemUnbound	of VId
-	| TypItemUnbound	of TyCon
-	| DatItemUnbound	of TyCon
-	| ConItemUnbound	of VId
-	| DconItemUnbound	of VId
-	| StrItemUnbound	of StrId
-	| SigItemUnbound	of SigId
-	| ConItemNonCon		of VId
-	| DconItemNonCon	of VId
+	| ImpFixDuplicate	of VId.t
+	| ImpVIdDuplicate	of VId.t
+	| ImpTyConDuplicate	of TyCon.t
+	| ImpStrIdDuplicate	of StrId.t
+	| ImpSigIdDuplicate	of SigId.t
+	| ConItemDuplicate	of VId.t
+	| ValItemUnbound	of VId.t
+	| TypItemUnbound	of TyCon.t
+	| DatItemUnbound	of TyCon.t
+	| ConItemUnbound	of VId.t
+	| DconItemUnbound	of VId.t
+	| StrItemUnbound	of StrId.t
+	| SigItemUnbound	of SigId.t
+	| ConItemNonCon		of VId.t
+	| DconItemNonCon	of VId.t
 	(* Sharing translation *)
-	| SharingExternalTy	of typid
-	| SharingExternalSig	of infid
-	| SharingExternalStr	of modid
+	| SharingExternalTy	of AbstractGrammar.typid
+	| SharingExternalSig	of AbstractGrammar.infid
+	| SharingExternalStr	of AbstractGrammar.modid
 
     datatype warning =
 	(* Shadowing *)
-	  VIdShadowed		of VId
-	| TyConShadowed		of TyCon
-	| TyVarShadowed		of TyVar
-	| StrIdShadowed		of StrId
-	| SigIdShadowed		of SigId
+	  VIdShadowed		of VId.t
+	| TyConShadowed		of TyCon.t
+	| TyVarShadowed		of TyVar.t
+	| StrIdShadowed		of StrId.t
+	| SigIdShadowed		of SigId.t
 
 
   (* Pretty printing *)
@@ -303,5 +321,4 @@ structure AbstractionError :> ABSTRACTION_ERROR =
 
     fun error(region, e)  = Error.error(region, errorToString e)
     fun warn(region, w)   = Error.warn(region, warningToString w)
-
-  end
+end

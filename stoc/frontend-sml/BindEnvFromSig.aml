@@ -1,7 +1,41 @@
+(*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Assert        from "../misc/Assert"
+import structure Crash         from "../infrastructure/Crash"
+import structure Source        from "../infrastructure/Source"
+import structure Stamp         from "../common/Stamp"
+import structure Name          from "../common/Name"
+import structure Label         from "../common/Label"
+import structure Fixity        from "../common/Fixity"
+import structure Path          from "../common/Path"
+import structure Type          from "../common/Type"
+import structure Inf           from "../common/Inf"
+import structure PervasiveType from "../common/PervasiveType"
+import structure VId
+       structure TyCon
+       structure SigId
+       structure StrId         from "Ids"
+import structure Infix         from "Infix"
+import structure BindEnv       from "BindEnv"
+import signature BIND_ENV_FROM_SIG from "BIND_ENV_FROM_SIG-sig"
+
+
 structure BindEnvFromSig :> BIND_ENV_FROM_SIG =
-  struct
+struct
 
     open BindEnv
+
+    type sign = Inf.sign
 
 
     (*
@@ -193,4 +227,4 @@ structure BindEnvFromSig :> BIND_ENV_FROM_SIG =
 	else
 	     raise Crash.Crash "BindEnvFromSig.insertItem: unknown item"
 
-  end
+end

@@ -1,4 +1,16 @@
 (*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(*
  * Standard ML derived forms
  *
  * Definition, Appendix A
@@ -71,8 +83,19 @@
  *)
 
 
+import structure Source        from "../infrastructure/Source"
+import structure Lab           from "Lab"
+import structure VId
+       structure TyCon
+       structure StrId         from "Ids"
+import signature INPUT_GRAMMAR from "INPUT_GRAMMAR-sig"
+import structure InputGrammar  from "InputGrammar"
+import structure ParsingError  from "ParsingError"
+import signature DERIVED_FORMS from "DERIVED_FORMS-sig"
+
+
 structure DerivedForms :> DERIVED_FORMS =
-  struct
+struct
 
     (* Import *)
 
@@ -861,4 +884,4 @@ structure DerivedForms :> DERIVED_FORMS =
 	    G.Program(I, dec, program_opt)
 	end
 
-  end
+end

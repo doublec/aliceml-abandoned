@@ -1,3 +1,15 @@
+(*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
 (*******************************************************************************
 
 The binding environment just contains the information necessary to do
@@ -20,9 +32,19 @@ environment (ignoring signature parameters).
 
 *******************************************************************************)
 
-signature BIND_ENV =
-  sig
+import structure Source from "../infrastructure/Source"
+import structure Stamp  from "../common/Stamp"
+import structure Lab    from "Lab"
+import structure VId
+       structure TyVar
+       structure TyCon
+       structure SigId
+       structure StrId  from "Ids"
+import structure Infix  from "Infix"
 
+
+signature BIND_ENV =
+sig
     type Lab   = Lab.t
     type VId   = VId.t
     type TyVar = TyVar.t
@@ -127,5 +149,4 @@ signature BIND_ENV =
     val foldiSigs :		(SigId * Sig * 'a -> 'a) -> 'a -> Env -> 'a
 
     val infEnv :		Env -> VId -> InfStatus
-
-  end
+end

@@ -1,4 +1,17 @@
 (*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+
+(*
  * Standard ML derived forms
  *
  * Definition, Appendix A
@@ -60,8 +73,12 @@
  *)
 
 
+import signature INPUT_GRAMMAR from "INPUT_GRAMMAR-sig"
+import structure InputGrammar  from "InputGrammar"
+
+
 signature DERIVED_FORMS =
-  sig
+sig
 
     (* Import *)
 
@@ -279,4 +296,4 @@ signature DERIVED_FORMS =
     val DECProgram:       Info * Dec * Program option -> Program
     val EXPProgram:       Info * Exp * Program option -> Program
 
-  end
+end
