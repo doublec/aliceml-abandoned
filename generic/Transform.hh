@@ -17,11 +17,9 @@
 
 #include "store/Store.hh"
 
-class Transform : private Block {
+class Transform: private Block {
 protected:
-  static const u_int NAME_POS     = 0;
-  static const u_int ARGUMENT_POS = 1;
-  static const u_int SIZE         = 2;
+  enum { NAME_POS, ARGUMENT_POS, SIZE };
 public:
   using Block::ToWord;
 
