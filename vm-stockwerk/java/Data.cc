@@ -16,6 +16,11 @@
 
 #include "java/ClassInfo.hh"
 
+bool Class::IsInterface() {
+  ClassInfo *classInfo = ClassInfo::FromWordDirect(GetArg(CLASS_INFO_POS));
+  return classInfo->IsInterface();
+}
+
 Class *Class::GetSuperClass() {
   ClassInfo *classInfo = ClassInfo::FromWordDirect(GetArg(CLASS_INFO_POS));
   word wSuper = classInfo->GetSuper();

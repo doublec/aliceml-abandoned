@@ -173,6 +173,10 @@ protected:
     CONSTANT_POOL_POS, // Table(word)
     SIZE
   };
+private:
+  u_int GetAccessFlags() {
+    return Store::DirectWordToInt(GetArg(ACCESS_FLAGS_POS));
+  }
 public:
   using Block::ToWord;
 
@@ -201,6 +205,9 @@ public:
     return static_cast<ClassInfo *>(b);
   }
 
+  bool IsInterface() {
+    return (GetAccessFlags() & ACC_INTERFACE) != 0;
+  }
   JavaString *GetName() {
     return JavaString::FromWordDirect(GetArg(NAME_POS));
   }

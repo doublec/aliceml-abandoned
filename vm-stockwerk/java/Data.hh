@@ -81,6 +81,7 @@ public:
     return static_cast<Class *>(b);
   }
 
+  bool IsInterface();
   Class *GetSuperClass();
   u_int GetNumberOfInstanceFields() {
     return Store::DirectWordToInt(GetArg(NUMBER_OF_INSTANCE_FIELDS_POS));
@@ -169,6 +170,15 @@ public:
 
   Class *GetClass() {
     return Class::FromWordDirect(GetArg(CLASS_POS));
+  }
+  bool IsInstanceOf(Class *aClass) {
+    Assert(!aClass->IsInterface());
+    Class *theClass = GetClass();
+  loop:
+    if (theClass == aClass) return true;
+    theClass = theClass->GetSuperClass();
+    if (theClass == INVALID_POINTER) return false;
+    goto loop;
   }
   word GetInstanceField(u_int index) {
     return GetArg(BASE_SIZE + index);
