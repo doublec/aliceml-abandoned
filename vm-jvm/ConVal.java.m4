@@ -1,14 +1,14 @@
 /*
- * Author: 
+ * Author:
  *      Daniel Simon, <dansim@ps.uni-sb.de>
- * 
+ *
  * Copyright:
  *      Daniel Simon, 1999
  *
  * Last change:
  *    $Date$ by $Author$
  * $Revision$
- * 
+ *
  */
 package de.uni_sb.ps.dml.runtime;
 
@@ -59,7 +59,7 @@ final public class ConVal implements DMLConVal {
     }
 
     /** Gleichheit der  und Inhalte */
-    final public boolean equals(java.lang.Object val) {
+    final public boolean equals(Object val) {
 	try {
 	return (val instanceof DMLConVal) &&
 	    (constructor == ((DMLConVal)val).getConstructor()) &&
@@ -68,19 +68,6 @@ final public class ConVal implements DMLConVal {
 	    System.err.println(r);
 	    r.printStackTrace();
 	    return false;
-	}
-    }
-
-    final public void setContent(DMLValue val) {
-	if (content == null) {
-	    content=val;
-	} else {
-	    try {
-		_RAISE(runtimeError, new STRING ("cannot set content twice"));
-	    } catch (java.rmi.RemoteException r) {
-		System.err.println(r);
-		r.printStackTrace();
-	    }
 	}
     }
 

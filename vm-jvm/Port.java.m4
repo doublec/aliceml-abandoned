@@ -1,14 +1,14 @@
 /*
- * Author: 
+ * Author:
  *      Daniel Simon, <dansim@ps.uni-sb.de>
- * 
+ *
  * Copyright:
  *      Daniel Simon, 1999
  *
  * Last change:
  *    $Date$ by $Author$
  * $Revision$
- * 
+ *
  */
 package de.uni_sb.ps.dml.runtime;
 
@@ -26,11 +26,16 @@ final public class Port extends UnicastRemoteObject
 	first = last;
     }
 
+    public Port(LVar f) throws RemoteException {
+	first = f;
+	last = f;
+    }
+
     final public DMLValue send(DMLValue msg) throws RemoteException {
 	LVar newLast = new LVar();
 	synchronized (last) {
-	    last.bind(new Cons(msg,newLast));
-	    last=newLast;
+	    last.bind(new Cons(msg, new Future(newLast)));
+	    last = newLast;
 	}
 	return Constants.dmlunit;
     }
@@ -58,7 +63,10 @@ final public class Port extends UnicastRemoteObject
 	}
 	_SAPPLY0 {
 	    try {
-		return new Port();
+		LVar np = new LVar();
+		Future captain = new Future(np);
+		Port p = new Port(np);
+		return new Tuple2(p,captain);
 	    } catch (RemoteException r) {
 		System.err.println(r);
 		return null;
@@ -89,23 +97,23 @@ final public class Port extends UnicastRemoteObject
     }
     /** val send : port * value -> unit */
     _FIELD(Port,send);
-
-    _BUILTIN(Recieve) {
-	_NOAPPLY0;_NOAPPLY2;_NOAPPLY3;_NOAPPLY4;
-	_APPLY(val) {
-	    // _FROMSINGLE(val,"Port.recieve");
-	    if (!(val instanceof DMLPort)) {
-		_RAISENAME(General.Match);
-	    }
-	    DMLPort port = (DMLPort) val;
-	    try {
-	    return port.recieve();
-	    } catch (RemoteException r) {
-		System.err.println(r);
-		return null;
-	    }
-	}
-    }
-    /** val recieve : port -> value */
-    _FIELD(Port,recieve);
+dnl
+dnl    _BUILTIN(Recieve) {
+dnl     _NOAPPLY0;_NOAPPLY2;_NOAPPLY3;_NOAPPLY4;
+dnl     _APPLY(val) {
+dnl         // _FROMSINGLE(val,"Port.recieve");
+dnl         if (!(val instanceof DMLPort)) {
+dnl             _RAISENAME(General.Match);
+dnl         }
+dnl         DMLPort port = (DMLPort) val;
+dnl         try {
+dnl         return port.recieve();
+dnl         } catch (RemoteException r) {
+dnl             System.err.println(r);
+dnl             return null;
+dnl         }
+dnl     }
+dnl    }
+dnl    /** val recieve : port -> value */
+dnl    _FIELD(Port,recieve);
 }

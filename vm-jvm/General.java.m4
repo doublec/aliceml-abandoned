@@ -391,7 +391,7 @@ final public class General {
 	_BUILTIN(SelFunInt) {
 	    int i = -1;
 	    public SelFunInt(int idx) {
-		i = idx;
+		i = idx - 1;
 	    }
 	    _NOAPPLY0;_NOAPPLY2;_NOAPPLY3;_NOAPPLY4;
 	    _APPLY(val) {

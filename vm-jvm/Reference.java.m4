@@ -1,14 +1,14 @@
 /*
- * Author: 
+ * Author:
  *      Daniel Simon, <dansim@ps.uni-sb.de>
- * 
+ *
  * Copyright:
  *      Daniel Simon, 1999
  *
  * Last change:
  *    $Date$ by $Author$
  * $Revision$
- * 
+ *
  */
 package de.uni_sb.ps.dml.runtime;
 
@@ -62,7 +62,7 @@ final public class Reference implements DMLConVal {
 	if (content instanceof DMLTuple) {
 	    return ((DMLTuple) content).get1();
 	} else
-	    throw new ArrayIndexOutOfBoundsException(); 
+	    throw new ArrayIndexOutOfBoundsException();
     }
 
     final synchronized public DMLValue get2() throws java.rmi.RemoteException {
@@ -72,7 +72,7 @@ final public class Reference implements DMLConVal {
 	if (content instanceof DMLTuple)
 	    return ((DMLTuple) content).get2();
 	else
-	    throw new ArrayIndexOutOfBoundsException(); 
+	    throw new ArrayIndexOutOfBoundsException();
     }
 
     final synchronized public DMLValue get3() throws java.rmi.RemoteException {
@@ -82,7 +82,7 @@ final public class Reference implements DMLConVal {
 	if (content instanceof DMLTuple)
 	    return ((DMLTuple) content).get3();
 	else
-	    throw new ArrayIndexOutOfBoundsException(); 
+	    throw new ArrayIndexOutOfBoundsException();
     }
 
     final synchronized public DMLValue get4() throws java.rmi.RemoteException {
@@ -92,7 +92,7 @@ final public class Reference implements DMLConVal {
 	if (content instanceof DMLTuple)
 	    return ((DMLTuple) content).get4();
 	else
-	    throw new ArrayIndexOutOfBoundsException(); 
+	    throw new ArrayIndexOutOfBoundsException();
     }
 
     final synchronized public DMLValue getContent() throws java.rmi.RemoteException {
@@ -120,7 +120,7 @@ final public class Reference implements DMLConVal {
 	} else {
 	    return content+" : ref";
 	}
-	//	return (content==null?"remote":content.toString())+" : ref";
+	//      return (content==null?"remote":content.toString())+" : ref";
     }
 
     final public Constructor getConstructor() {
@@ -141,8 +141,9 @@ final public class Reference implements DMLConVal {
 	try {
 	    if (mgr==null) {
 		ClientManager CMGR=null;
-		if (cmgr==null)
+		if (cmgr==null) {
 		    CMGR = new ClientManager(this);
+		}
 		ServerManager MGR = new ServerManager(CMGR);
 		mgr=MGR;
 		DMLValue t = content;

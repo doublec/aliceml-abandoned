@@ -1,14 +1,14 @@
 /*
- * Author: 
+ * Author:
  *      Daniel Simon, <dansim@ps.uni-sb.de>
- * 
+ *
  * Copyright:
  *      Daniel Simon, 1999
  *
  * Last change:
  *    $Date$ by $Author$
  * $Revision$
- * 
+ *
  */
 package de.uni_sb.ps.dml.runtime;
 
@@ -35,14 +35,27 @@ final public class Future extends UnicastRemoteObject
 	}
     }
 
-    final synchronized public DMLValue getValue() throws java.rmi.RemoteException { // gibt Wert zurück ohne blockieren
+    /** Gleichheit der referenzierten Werte, blockiert auf beiden Werten */
+    final public boolean equals(Object val) {
+	try {
+	    return (val instanceof Future) &&
+		val.equals(request());
+	} catch (java.rmi.RemoteException r) {
+	    System.err.println(r);
+	    return false;
+	}
+    }
+
+    final synchronized public DMLValue getValue()
+	throws java.rmi.RemoteException { // gibt Wert zurück ohne blockieren
 	if (ref instanceof DMLTransient) {
 	    ref = ((DMLTransient) ref).getValue();
 	}
 	return ref;
     }
 
-    final synchronized public DMLValue request() throws java.rmi.RemoteException { // gibt Wert zurück wenn verfügbar
+    final synchronized public DMLValue request()
+	throws java.rmi.RemoteException { // gibt Wert zurück wenn verfügbar
 	if (ref instanceof DMLTransient) {
 	    ref = ((DMLTransient) ref).request();
 	}
@@ -50,8 +63,9 @@ final public class Future extends UnicastRemoteObject
     }
 
     /** bind ist nicht erlaubt und wirft RuntimeError */
-    final public DMLValue bind(DMLValue v)  throws java.rmi.RemoteException {
-	_RAISE(runtimeError,new STRING ("cannot bind future to "+v));
+    final public DMLValue bind(DMLValue v)
+	throws java.rmi.RemoteException {
+	_RAISENAME(Future.Rebind);
     }
 
     final public java.lang.String toString() {
@@ -86,4 +100,7 @@ final public class Future extends UnicastRemoteObject
 	throws java.rmi.RemoteException {
 	return ref.apply4(v1,v2,v3,v4);
     }
+
+    final public static Name Fulfill = new UniqueName("LVar.Fullfil");
+    final public static Name Rebind = new UniqueName("LVar.Rebind");
 }

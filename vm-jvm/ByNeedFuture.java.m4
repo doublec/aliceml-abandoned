@@ -1,14 +1,14 @@
 /*
- * Author: 
+ * Author:
  *      Daniel Simon, <dansim@ps.uni-sb.de>
- * 
+ *
  * Copyright:
  *      Daniel Simon, 1999
  *
  * Last change:
  *    $Date$ by $Author$
  * $Revision$
- * 
+ *
  */
 package de.uni_sb.ps.dml.runtime;
 
@@ -37,7 +37,8 @@ final public class ByNeedFuture extends UnicastRemoteObject
 	return ref.getValue();
     }
 
-    final synchronized public DMLValue request() throws java.rmi.RemoteException {
+    final synchronized public DMLValue request()
+	throws java.rmi.RemoteException {
 	if (state == 2) {
 	    return ref.request();
 	}
@@ -51,8 +52,7 @@ final public class ByNeedFuture extends UnicastRemoteObject
 
 		while (v instanceof DMLTransient) {
 		    if (v == this) { // we detect a self-cycle
-			hasSelfRef = true;
-			break;
+			_RAISENAME(LVar.Fulfill);
 		    }
 		    DMLValue vv = ((DMLTransient) v).getValue();
 		    if (v == vv) { // we run into an unbound variable
@@ -62,32 +62,23 @@ final public class ByNeedFuture extends UnicastRemoteObject
 			v = vv;
 		    }
 		}
-		if (!hasSelfRef) {
-		    ref.bind(v);
-		}
-	    } catch (ExceptionWrapper t) {
-		if (t.value == LVar.Fulfill ||
-		    hasSelfRef) {
-		    throw new ExceptionWrapper(ByNeedFuture.ByNeed.apply(LVar.Fulfill));
-		} else {
-		    throw t;
-		}
-	    }
-
-	    if (hasSelfRef) {
-		state = 1; // error
-		throw new ExceptionWrapper(ByNeedFuture.ByNeed.apply(LVar.Fulfill));
-	    } else {
+		ref.bind(v);
+		state = 2; // now the variable is bound
 		return ref.request();
+	    } catch (ExceptionWrapper t) {
+		state = 1; // error
+		closure = t.value;
+		throw new ExceptionWrapper(ByNeedFuture.ByNeed.apply(closure));
 	    }
 	} else { // state == 1
-		    throw new ExceptionWrapper(ByNeedFuture.ByNeed.apply(LVar.Fulfill));
+	    throw new ExceptionWrapper(ByNeedFuture.ByNeed.apply(closure));
 	}
     }
 
     /** bind ist nicht erlaubt und wirft RuntimeError */
-    final public DMLValue bind(DMLValue v)  throws java.rmi.RemoteException {
-	_RAISE(runtimeError,new STRING ("cannot bind byNeedFuture to "+v));
+    final public DMLValue bind(DMLValue v)
+	throws java.rmi.RemoteException {
+	_RAISENAME(ByNeedFuture.Rebind);
     }
 
     final public java.lang.String toString() {
@@ -124,4 +115,5 @@ final public class ByNeedFuture extends UnicastRemoteObject
     }
 
     final public static Constructor ByNeed = new UniqueConstructor("ByNeed");
+    final public static Constructor Rebind = new UniqueConstructor("ByNeedFuture.Rebind");
 }
