@@ -5,6 +5,7 @@ Group is
     ../infrastructure/sources.cm
     ../common/id-stamp.cm
     ../backend-common/flat-grammar.cm
+    ../backend-common/intermediate-aux.cm
 
     abstract-code-grammar.cm
 

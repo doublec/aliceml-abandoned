@@ -143,6 +143,14 @@ define
       [] 'ValDec'(_ IdDef Exp)|Body then VInter in
 	 VHd = {TranslateExp Exp {MakeReg IdDef State} VInter State}
 	 VInter = {TranslateBody Body State ReturnReg IsTry}
+      [] 'RecDec'(_ IdDefExpVec)|Body then
+	 {Record.forAll IdDefExpVec
+	  proc {$ IdDef#_} _ = {MakeReg IdDef State} end}
+	 {Record.foldL IdDefExpVec
+	  proc {$ VHd IdDef#Exp VTl}
+	     VHd = {TranslateExp Exp {MakeReg IdDef State} VTl State}
+	  end VHd VInter}
+	 VInter = {TranslateBody Body State ReturnReg IsTry}
       [] 'RefDec'(Region IdDef IdRef)|Body then Reg VInter1 VInter2 in
 	 Reg = {GetReg IdRef VHd VInter1 State}
 	 VInter1 = vCallBuiltin(_ 'Cell.access'

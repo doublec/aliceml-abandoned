@@ -151,6 +151,11 @@ structure PickleFlatGrammar :> CODE
 	  | outputStm (q, ValDec (info, idDef, exp)) =
 	    (outputTuple (q, "ValDec", 3); outputExp (q, exp);
 	     outputIdDef (q, idDef); outputStmInfo (q, info))
+	  | outputStm (q, RecDec (info, idDefExpVec)) =
+	    (outputTuple (q, "RecDec", 2);
+	     outputVector (outputPair (outputIdDef, outputExp))
+			  (q, idDefExpVec);
+	     outputStmInfo (q, info))
 	  | outputStm (q, RefDec (info, idDef, idRef)) =
 	    (outputTuple (q, "RefDec", 3); outputIdRef (q, idRef);
 	     outputIdDef (q, idDef); outputStmInfo (q, info))

@@ -83,6 +83,11 @@ define
 	 Hd = 'LastUse'(Info {Record.map Ids TrId})|Tl
       [] 'ValDec'(Info IdDef Exp) then
 	 Hd = 'ValDec'(Info {TrIdDef IdDef} {TrExp Exp ShareDict})|Tl
+      [] 'RecDec'(Info IdDefExpVec) then
+	 Hd = 'RecDec'(Info {Record.map IdDefExpVec
+			     fun {$ IdDef#Exp}
+				{TrIdDef IdDef}#{TrExp Exp}
+			     end})
       [] 'RefDec'(Info IdDef IdRef) then
 	 Hd = 'RefDec'(Info {TrIdDef IdDef} {TrIdRef IdRef})|Tl
       [] 'TupDec'(Info IdDefs IdRef) then

@@ -61,22 +61,23 @@
  * annotiert werden.
  *)
 
-import structure Url            from "../../lib/system/Url"
-import structure Name           from "../../lib/rtt/Name"
-import structure Label          from "../../lib/rtt/Label"
-import structure IntMap         from "../infrastructure/IntMap"
-import structure Crash          from "../infrastructure/Crash"
-import structure Source         from "../infrastructure/Source"
-import structure EmptyContext   from "../infrastructure/EmptyContext"
-import structure Stamp          from "../common/Stamp"
-import structure StampMap       from "../common/StampMap"
-import structure FlatGrammar    from "../backend-common/FlatGrammar"
-import structure IL             from "IL"
-import structure System         from "System"
-import structure Alice          from "Alice"
-import structure Builtins       from "Builtins"
-import structure CodeStore      from "CodeStore"
-import signature CODE_GEN_PHASE from "CODE_GEN_PHASE-sig"
+import structure Url             from "../../lib/system/Url"
+import structure Name            from "../../lib/rtt/Name"
+import structure Label           from "../../lib/rtt/Label"
+import structure IntMap          from "../infrastructure/IntMap"
+import structure Crash           from "../infrastructure/Crash"
+import structure Source          from "../infrastructure/Source"
+import structure EmptyContext    from "../infrastructure/EmptyContext"
+import structure Stamp           from "../common/Stamp"
+import structure StampMap        from "../common/StampMap"
+import structure FlatGrammar     from "../backend-common/FlatGrammar"
+import structure IntermediateAux from "../backend-common/IntermediateAux"
+import structure IL              from "IL"
+import structure System          from "System"
+import structure Alice           from "Alice"
+import structure Builtins        from "Builtins"
+import structure CodeStore       from "CodeStore"
+import signature CODE_GEN_PHASE  from "CODE_GEN_PHASE-sig"
 
 structure CodeGenPhase :> CODE_GEN_PHASE =
     struct
@@ -171,8 +172,20 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	val sharedLabels: O.label StampMap.t = StampMap.new ()
 	val handlerCont: (O.label * I.body) option ref = ref NONE
 
+	structure IdSet = IntermediateAux.IdSet
+
 	fun genStm (LastUse (_, ids)) = kill ids
 	  | genStm (ValDec (_, idDef, exp)) = (genExp exp; declareLocal idDef)
+	  | genStm (RecDec (_, idDefExpVec)) =
+	    let
+		val unallocated = IdSet.new ()
+		val forward = IdSet.new ()
+	    in
+		Vector.app (fn (IdDef id, _) =>
+			       IdSet.insertDisjoint (unallocated, id)
+			     | (Wildcard, _) => ()) idDefExpVec;
+		genRec (Vector.toList idDefExpVec, unallocated, forward)
+	    end
 	  | genStm (RefDec (_, idDef, idRef)) =
 	    (emitIdRef idRef; emitAwait (); emit (Castclass Alice.CellTy);
 	     emit (Ldfld (Alice.Cell, "Value", ObjectTy));
@@ -237,6 +250,34 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	  | genStm (ReturnStm (_, exp)) = (genExp exp; emit Ret)
 	  | genStm (IndirectStm (_, ref bodyOpt)) = genBody (valOf bodyOpt)
 	  | genStm (ExportStm (_, exp)) = (genExp exp; emit Ret)
+	and genRec ((idDef, exp)::rest, unallocated, forward) =
+	    let
+		val toAllocate = IntermediateAux.getUsedVars (exp, unallocated)
+	    in
+		IdSet.app
+		    (fn id =>
+			(IdSet.deleteExistent (unallocated, id);
+			 IdSet.insertDisjoint (forward, id);
+			 emit (Call (false, Builtins.lookupClass "Hole.hole",
+				     "StaticApply", #[], ObjectTy));
+			 declareLocal (IdDef id))) toAllocate;
+		case idDef of
+		    IdDef id =>
+			(IdSet.delete (unallocated, id);
+			 if IdSet.member (forward, id) then
+			     (emitIdRef (IdRef id);
+			      genExp exp;
+			      emit (Call (false,
+					  Builtins.lookupClass "Hole.fill",
+					  "StaticApply",
+					  #[ObjectTy, ObjectTy], ObjectTy));
+			      emit Pop)
+			 else (genExp exp; declareLocal idDef))
+		  | Wildcard => (genExp exp; emit Pop);
+		genRec (rest, unallocated, forward)
+	    end
+	  | genRec (nil, unallocated, _) =
+	    Assert.assert (IdSet.isEmpty unallocated)
 	and genTests (LitTests #[], elseBody) = genBody elseBody
 	  | genTests (LitTests litBodyVec, elseBody) =
 	    (case Vector.sub (litBodyVec, 0) of

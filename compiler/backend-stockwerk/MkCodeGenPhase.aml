@@ -21,6 +21,7 @@ import structure EmptyContext          from "../infrastructure/EmptyContext"
 import structure Source                from "../infrastructure/Source"
 import structure IntMap                from "../infrastructure/IntMap"
 import structure FlatGrammar           from "../backend-common/FlatGrammar"
+import structure IntermediateAux       from "../backend-common/IntermediateAux"
 import signature ABSTRACT_CODE_GRAMMAR from "ABSTRACT_CODE_GRAMMAR-sig"
 import structure MkCodeGenContext      from "MkCodeGenContext"
 import structure MkEnvironment         from "MkEnvironment"
@@ -256,6 +257,8 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 	  | lazyPolySel (id, idRef, label, instr) =
 	    O.LazyPolySel (#[id], idRef, #[label], instr)
 
+	structure IdSet' = IntermediateAux.IdSet
+
 	fun translateBody ([stm], env) = translateStm (stm, env)
 	  | translateBody ((stm as ValDec (_, IdDef id, exp))::
 			   (stms as [RaiseStm (_, LastIdRef id')]), env) =
@@ -275,6 +278,9 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 	and doDec (LastUse (_, _), _) = ()
 	  | doDec (ValDec (_, IdDef id, _), env) = ignore (declare (env, id))
 	  | doDec (ValDec (_, Wildcard, _), _) = ()
+	  | doDec (RecDec (_, idDefExpVec), env) =
+	    Vector.app (fn (IdDef id, _) => ignore (declare (env, id))
+			 | (Wildcard, _) => ()) idDefExpVec
 	  | doDec (RefDec (_, IdDef id, _), env) = ignore (declare (env, id))
 	  | doDec (RefDec (_, Wildcard, _), _) = ()
 	  | doDec (TupDec (_, idDefs, _), env) =
@@ -307,6 +313,17 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 	    translateExp (exp, declare (env, id), instr, env)
 	  | translateDec (ValDec (_, Wildcard, exp), instr, env) =
 	    translateIgnore (exp, instr, env)
+	  | translateDec (RecDec (_, #[]), instr, _) = instr
+	  | translateDec (RecDec (_, idDefExpVec), instr, env) =
+	    let
+		val unallocated = IdSet'.new ()
+	    in
+		Vector.app (fn (IdDef id, _) =>
+			       IdSet'.insertDisjoint (unallocated, id)
+			     | (Wildcard, _) => ()) idDefExpVec;
+		recToHoles (Vector.toList idDefExpVec, env, unallocated,
+			    IdSet'.new (), instr)
+	    end
 	  | translateDec (RefDec (_, IdDef id, idRef), instr, env) =
 	    O.GetRef (declare (env, id), translateIdRef (idRef, env), instr)
 	  | translateDec (RefDec (_, Wildcard, idRef), instr, env) =
@@ -328,8 +345,47 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 			   SharedStm (_, _, _) | ReturnStm (_, _) |
 			   IndirectStm (_, _) | ExportStm (_, _)), _, _) =
 	    raise Crash.Crash "CodeGenPhase.translateDec"
-	and translateStm ((LastUse (_, _) |
-			   ValDec (_, _, _) | RefDec (_, _, _) |
+	and recToHoles ((idDef, exp)::rest, env, unallocated, forward, instr) =
+	    let
+		val toAllocate = IntermediateAux.getUsedVars (exp, unallocated)
+		val _ =
+		    IdSet'.app (fn id =>
+				   (IdSet'.deleteExistent (unallocated, id);
+				    IdSet'.insertDisjoint (forward, id)))
+			       toAllocate
+		val _ = case idDef of
+			    IdDef id => IdSet'.delete (unallocated, id)
+			  | Wildcard => ()
+		val instr = recToHoles (rest, env, unallocated, forward, instr)
+		val instr =
+		    case idDef of
+			IdDef id =>
+			    if IdSet'.member (forward, id) then
+				let
+				    val id' = fresh env
+				    val instr =
+					O.AppPrim (V.prim "Hole.fill",
+						   #[O.Local
+							 (declare (env, id)),
+						     O.LastUseLocal id'],
+						   SOME (O.Wildcard, instr))
+				in
+				    translateExp (exp, id', instr, env)
+				end
+			    else translateExp (exp, declare (env, id),
+					       instr, env)
+		      | Wildcard => translateIgnore (exp, instr, env)
+	    in
+		IdSet'.fold
+		    (fn (id, instr) =>
+			O.AppPrim (V.prim "Hole.hole", #[],
+				   SOME (O.IdDef (declare (env, id)), instr)))
+		    instr toAllocate
+	    end
+	  | recToHoles (nil, _, unallocated, _, instr) =
+	    (Assert.assert (IdSet'.isEmpty unallocated); instr)
+	and translateStm ((LastUse (_, _) | ValDec (_, _, _) |
+			   RecDec (_, _) | RefDec (_, _, _) |
 			   TupDec (_, _, _) | ProdDec (_, _, _)), _) =
 	    raise Crash.Crash "CodeGenPhase.translateStm"
 	  | translateStm (RaiseStm (_, idRef), env) =
