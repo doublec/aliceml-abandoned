@@ -26,6 +26,9 @@
     <TR> <TD><A href="component.php3">COMPONENT</A></TD> </TR>
     <TR> <TD><A href="component-manager.php3">COMPONENT_MANAGER</A></TD> </TR>
     <TR> <TD><A href="general.php3">GENERAL</A></TD> </TR>
+    <TR> <TD><A href="http.php3">HTTP</A></TD> </TR>
+    <TR> <TD><A href="http-client.php3">HTTP_CLIENT</A></TD> </TR>
+    <TR> <TD><A href="http-server.php3">HTTP_SERVER</A></TD> </TR>
     <TR> <TD><A href="ieee-real.php3">IEEE_REAL</A></TD> </TR>
     <TR> <TD><A href="integer.php3">INTEGER</A></TD> </TR>
     <TR> <TD><A href="list.php3">LIST</A></TD> </TR>
@@ -64,6 +67,9 @@
     <TR> <TD><A href="component.php3">Component</A></TD> </TR>
     <TR> <TD><A href="config.php3">Config</A></TD> </TR>
     <TR> <TD><A href="general.php3">General</A></TD> </TR>
+    <TR> <TD><A href="http.php3">Http</A></TD> </TR>
+    <TR> <TD><A href="http-client.php3">HttpClient</A></TD> </TR>
+    <TR> <TD><A href="http-server.php3">HttpServer</A></TD> </TR>
     <TR> <TD><A href="ieee-real.php3">IEEEReal</A></TD> </TR>
     <TR> <TD><A href="integer.php3">Int</A></TD> </TR>
     <TR> <TD><A href="integer.php3">LargeInt</A></TD> </TR>

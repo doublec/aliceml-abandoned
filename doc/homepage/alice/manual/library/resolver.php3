@@ -18,6 +18,13 @@
   </P>
 
   <P>
+    The current implementation knows how to access resources under URLs
+    with no scheme, the <TT>file</TT> scheme, or the <TT>http</TT> scheme.
+    For the latter, it uses the functions of the <TT><A href="http-client.php3"
+    >HttpClient</A></TT> structure.
+  </P>
+
+  <P>
     If the environment variable <TT>ALICE_TRACE_RESOLVER</TT> is set,
     then every localization act will output trace messages about what
     handlers were called on what resource and with what result.
@@ -136,7 +143,8 @@
 
   <DL><DD>
     <A href="resolver-handler.php3"><TT>RESOLVER_HANDLER</TT></A>,
-    <A href="component.php3"><TT>Component</TT></A>
+    <A href="component.php3"><TT>Component</TT></A>,
+    <A href="http-client.php3"><TT>HttpClient</TT></A>
   </DD></DL>
 
 <?php footing() ?>
