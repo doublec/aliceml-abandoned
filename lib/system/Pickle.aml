@@ -20,7 +20,8 @@ import signature PICKLE           from "PICKLE-sig"
 
 structure Pickle : PICKLE =
 struct
-    val extension = Component.extension
+    exception Sited = Component.Sited
+    val extension   = Component.extension
 
     functor Save(val file : string signature S structure X : S) =
 	let
