@@ -33,7 +33,7 @@ structure ToJasmin =
 	fun realToString r = if Real.<(r,0.0) then "-"^Real.toString(~r) else Real.toString r
 
 	datatype jump = Got | Ret | IRet | ARet
-	datatype branchinst = Lab of string | Jump of jump | Non
+	datatype branchinst = Lab of string * bool | Jump of jump | Non
 	datatype registerOps = Load of (int * INSTRUCTION) | Store
 
 	structure LabelMerge =
@@ -57,7 +57,7 @@ structure ToJasmin =
 	    fun directJump lab' =
 		case StringHash.lookup(!labelMerge, lab') of
 		    NONE => "goto "^lab'
-		  | SOME (Lab lab'') => directJump lab''
+		  | SOME (Lab (lab'', _)) => directJump lab''
 		  | SOME (Jump Ret) => "return"
 		  | SOME (Jump ARet) => "areturn"
 		  | SOME (Jump IRet) => "ireturn"
@@ -66,7 +66,7 @@ structure ToJasmin =
 	    (* return the real label for this jump *)
 	    fun condJump lab' =
 		case StringHash.lookup(!labelMerge, lab') of
-		    SOME (Lab lab'') => condJump lab''
+		    SOME (Lab (lab'', _)) => condJump lab''
 		  | _ => lab'
 
 		(* For several branches to the same address, stack size has
@@ -314,33 +314,45 @@ structure ToJasmin =
 	    let
 		fun deadCode (last, (c as Comment _)::rest) =
 		    c :: deadCode (last, rest)
-		  | deadCode (Lab lab',Label lab''::rest) =
+		  | deadCode (Lab (lab', dropMode),Label lab''::rest) =
 		    let
-			val l'' = Lab lab''
+			val l'' = Lab (lab'', dropMode)
 		    in
 			LabelMerge.merge(lab', l'');
 			deadCode (l'', rest)
 		    end
-		  | deadCode (Lab lab', Goto lab''::rest) =
-		    (LabelMerge.merge (lab', Lab lab'');
-		     Goto lab'' ::
-		     deadCode (Jump Got, rest))
-		  | deadCode (Lab lab', Areturn::rest) =
+		  | deadCode (Lab (lab', dropMode), Goto lab''::rest) =
+		    (LabelMerge.merge (lab', Lab (lab'', false));
+		     if !OPTIMIZE >= 4 andalso dropMode then
+			 deadCode (Jump Got, rest)
+		     else
+			 Goto lab'' ::
+			 deadCode (Jump Got, rest))
+		  | deadCode (Lab (lab', dropMode), Areturn::rest) =
 		    (LabelMerge.merge (lab', Jump ARet);
-		     Label lab' ::
-		     Areturn ::
-		     deadCode (Jump ARet, rest))
-		  | deadCode (Lab lab', Return::rest) =
+		     if !OPTIMIZE >= 4 andalso dropMode then
+			 deadCode (Jump ARet, rest)
+		     else
+			 Label lab' ::
+			 Areturn ::
+			 deadCode (Jump ARet, rest))
+		  | deadCode (Lab (lab', dropMode), Return::rest) =
 		    (LabelMerge.merge (lab', Jump Ret);
-		     Label lab' ::
-		     Return ::
-		     deadCode (Jump Ret, rest))
-		  | deadCode (Lab lab', Ireturn::rest) =
+		     if !OPTIMIZE >= 4 andalso dropMode then
+			 deadCode (Jump Ret, rest)
+		     else
+			 Label lab' ::
+			 Return ::
+			 deadCode (Jump Ret, rest))
+		  | deadCode (Lab (lab', dropMode), Ireturn::rest) =
 		    (LabelMerge.merge (lab', Jump IRet);
-		     Label lab' ::
-		     Ireturn ::
-		     deadCode (Jump IRet, rest))
-		  | deadCode (Lab l', rest) =
+		     if !OPTIMIZE >= 4 andalso dropMode then
+			 deadCode (Jump IRet, rest)
+		     else
+			 Label lab' ::
+			 Ireturn ::
+			 deadCode (Jump IRet, rest))
+		  | deadCode (Lab (l', _), rest) =
 		    Label l' :: deadCode (Non, rest)
 		    (* In codegeneration we ensure that backward jumps
 		     only occur to labels that can be reached from before.
@@ -350,13 +362,13 @@ structure ToJasmin =
 		  | deadCode (i as Jump _, Label lab''::rest) =
 		    deadCode
 		    (if LabelMerge.isReachable lab''
-			 then Lab lab''
+			 then Lab (lab'', true)
 		     else i,
 			 rest)
 		  | deadCode (i as Jump _, _::rest) =
 			 deadCode (i, rest)
 		  | deadCode (Non, Label lab'::rest) =
-			 deadCode (Lab lab', rest)
+			 deadCode (Lab (lab', false), rest)
 		  | deadCode (Non, Goto lab''::rest) =
 			 Goto lab'' :: deadCode (Jump Got, rest)
 		  | deadCode (Non, Areturn::rest) =
