@@ -10,14 +10,14 @@
  *   $Revision$
  *)
 
-import structure Name           from "Name"
-import structure Label          from "Label"
-import structure Path           from "Path"
-import structure PathSet        from "PathSet"
-import structure PathMap        from "PathMap"
-import structure Type           from "Type"
-import structure Fixity         from "Fixity"
-import signature SIMPLE_IMP_MAP from "../utility/SIMPLE_IMP_MAP-sig"
+import structure Name    from "Name"
+import structure Label   from "Label"
+import structure Path    from "Path"
+import structure PathSet from "PathSet"
+import structure PathMap from "PathMap"
+import structure Type    from "Type"
+import structure Fixity  from "Fixity"
+import signature IMP_MAP from "../utility/IMP_MAP-sig"
 
 signature INF =
 sig
@@ -36,8 +36,8 @@ sig
     type mod						(* [mod] *)
     type t = inf
 
-    structure Map :	SIMPLE_IMP_MAP where type key = inf
-    structure KindMap :	SIMPLE_IMP_MAP where type key = kind
+    structure Map :	IMP_MAP where type key = inf
+    structure KindMap :	IMP_MAP where type key = kind
 
 
   (* Realisations *)
