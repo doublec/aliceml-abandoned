@@ -45,18 +45,26 @@ typedef enum {
   NORMAL_CALL,
   SELF_CALL,
   NATIVE_CALL,
-  NATIVE_REQUEST_CALL,
-#if defined(JIT_APPLY_STATISTIC)
-  POLY_SEL_CALL
-#endif
+  PRIMITIVE_CALL,
+} CALL_TYPE;
+
+typedef enum {
+  MODE_REQUEST_CONCRETE_CODE,
+  MODE_REQUEST_ALL,
+  MODE_NO_REQUEST,
+  MODE_INLINE_PRIMITIVE,
+  MODE_CALL_PRIMITIVE
 } CALL_MODE;
 
 typedef struct {
+  CALL_TYPE type;
   CALL_MODE mode;
   u_int pc;
   u_int closure;
   u_int nLocals;
+  u_int inArity;
   u_int outArity;
+  Interpreter *interpreter;
 } CallInfo;
 
 #define ALICE_REGISTER_NB 3
@@ -208,7 +216,9 @@ protected:
 			   u_int outArity, u_int nLocals = 0);
   void LoadArguments(Vector *actualIdRefs);
   TagVal *CheckBoolTest(word pos, u_int Result, word next);
-  TagVal *Apply(TagVal *pc, word wClosure);
+  void AnalyzeApply(CallInfo *info, TagVal *pc, word wClosure);
+  TagVal *CompileApplyPrimitive(CallInfo *info, TagVal *pc);
+  TagVal *CompileApply(CallInfo *info, TagVal *pc);
   void CompileConsequent(word conseq, u_int tagSel, u_int TagValue);
   void NullaryBranches(u_int Tag, Vector *tests);
   void NonNullaryBranches(u_int Tag, u_int tagSel, Vector *tests);

@@ -653,9 +653,8 @@ void NativeCodeJitter::PushCall(CallInfo *info) {
   JITStore::Finish((void *) Scheduler::PushCall);
   RETURN();
 #else
-  switch (info->mode) {
+  switch (info->type) {
   case NATIVE_CALL:
-  case NATIVE_REQUEST_CALL:
     {
       if (currentStack >= info->nLocals)
 	NativeCodeFrame_NewNoCheck(JIT_V1, info->nLocals);
@@ -664,7 +663,7 @@ void NativeCodeJitter::PushCall(CallInfo *info) {
       ImmediateSel(JIT_R0, JIT_V2, info->closure);
       NativeCodeFrame_PutClosure(JIT_V1, JIT_R0);
       jit_movr_p(JIT_V2, JIT_V1); // Move to new frame
-      if (info->mode == NATIVE_REQUEST_CALL) {
+      if (info->mode == MODE_REQUEST_CONCRETE_CODE) {
 	// Invariant: Requested ConcreteCode is on the stack
 	jit_popr_ui(JIT_V1);
       }
@@ -709,7 +708,7 @@ void NativeCodeJitter::PushCall(CallInfo *info) {
     }
     break;
   default:
-    Error("NativeCodeJitter::PushCall: invalid call info");
+    Error("NativeCodeJitter::PushCall: invalid call type");
   }
 #endif
 }
@@ -738,9 +737,8 @@ void NativeCodeJitter::TailCall(CallInfo *info) {
   JITStore::Finish((void *) ::Scheduler::PushCall);
   RETURN();
 #else
-  switch (info->mode) {
+  switch (info->type) {
   case NATIVE_CALL:
-  case NATIVE_REQUEST_CALL:
     {
       u_int nLocals = info->nLocals;
       ImmediateSel(JIT_R0, JIT_V2, info->closure);
@@ -766,7 +764,7 @@ void NativeCodeJitter::TailCall(CallInfo *info) {
       jit_popr_ui(JIT_R0);
     reuse:
       NativeCodeFrame_PutClosure(JIT_V2, JIT_R0);
-      if (info->mode == NATIVE_REQUEST_CALL) {
+      if (info->mode == MODE_REQUEST_CONCRETE_CODE) {
 	// Invariant: Requested ConcreteCode is on the stack
 	jit_popr_ui(JIT_V1);
       }
@@ -801,7 +799,7 @@ void NativeCodeJitter::TailCall(CallInfo *info) {
     }
     break;
   default:
-    Error("NativeCodeJitter::TailCall: illegal call info");
+    Error("NativeCodeJitter::TailCall: invalid call type");
   }
 #endif
 }
@@ -1128,7 +1126,7 @@ u_int NativeCodeJitter::InlinePrimitive(word wPrimitive, Vector *actualIdRefs) {
 #endif
   default:
     Result = JIT_R0;
-    Error("CompilePrimitive: illegal inline");
+    Error("InlinePrimitive: illegal inline");
   }
   return Result;
 } 
@@ -1247,166 +1245,10 @@ void DumpApplyStatistics() {
 #endif
 
 // AppVar of idRef * idRef vector * bool * (idDef vector * instr) option
-TagVal *NativeCodeJitter::Apply(TagVal *pc, word wClosure) {
-  JIT_APPLY_COUNT(applyCountedTotal);
-  Closure *closure   = Closure::FromWord(wClosure);
-  Vector *actualArgs = Vector::FromWordDirect(pc->Sel(1));
-  u_int isDirectIn   = Store::DirectWordToInt(pc->Sel(2));
-  bool request       = true;
-  CallInfo info;
-  info.mode     = NORMAL_CALL;
-  info.pc       = Store::DirectWordToInt(initialPC);
-  info.nLocals  = 0;
-  info.outArity = INVALID_INT;
-  if (closure != INVALID_POINTER) {
-    word wConcreteCode         = closure->GetConcreteCode();
-    ConcreteCode *concreteCode = ConcreteCode::FromWord(wConcreteCode);
-    if (wConcreteCode == currentConcreteCode) {
-      JIT_APPLY_COUNT(applySelf);
-      info.mode    = SELF_CALL;
-      info.closure = ImmediateEnv::Register(closure->ToWord());
-      if (SkipCCC(isDirectIn, actualArgs, currentArgs))
-	info.pc = Store::DirectWordToInt(initialNoCCCPC);
-      info.nLocals  = currentNLocals;
-      info.outArity = currentOutArity;
-      request = false;
-      goto check_request;
-    } else if (concreteCode != INVALID_POINTER) {
-      Interpreter *interpreter = concreteCode->GetInterpreter();
-      void *cFunction          = (void *) interpreter->GetCFunction();
-      u_int calleeArity        = interpreter->GetInArity(concreteCode);
-      u_int actualArity        = GetInArity(actualArgs);
-      info.outArity = interpreter->GetOutArity(concreteCode);
-      if (interpreter == NativeCodeInterpreter::self) {
-	NativeConcreteCode *nativeCode =
-	  STATIC_CAST(NativeConcreteCode *, concreteCode);
-	closure->SetConcreteCode(concreteCode->ToWord());
-	JIT_APPLY_COUNT(applyNative);
-	info.mode    = NATIVE_CALL;
-	info.closure = ImmediateEnv::Register(closure->ToWord());
-	info.nLocals = nativeCode->GetNLocals();
-	if ((isDirectIn == Types::_true) || (calleeArity == actualArity))
-	  info.pc = nativeCode->GetSkipCCCPC();
-	request = false;
-	goto check_request;
-      }
-      if (cFunction != NULL) {
-	IntMap *inlineMap = IntMap::FromWordDirect(inlineTable);
-	word wCFunction = Store::UnmanagedPointerToWord(cFunction);
-	JIT_APPLY_COUNT(applyPrim);
-	if (((isDirectIn == Types::_true) || (calleeArity == actualArity)) &&
-	    inlineMap->IsMember(wCFunction)) {
-	  Vector *actualIdRefs   = actualArgs;
-	  u_int Result           = InlinePrimitive(wCFunction, actualIdRefs);
-	  TagVal *idDefsInstrOpt = TagVal::FromWord(pc->Sel(3));
-	  if (idDefsInstrOpt != INVALID_POINTER) {
-	    Tuple *idDefsInstr = Tuple::FromWordDirect(idDefsInstrOpt->Sel(0));
-	    Vector *idDefs     = Vector::FromWordDirect(idDefsInstr->Sel(0));
-	    calleeArity        = GetInArity(idDefs);
-	    // to be done: Output CCC
-	    switch (calleeArity) {
-	    case 1:
-	      {
-		TagVal *idDef = TagVal::FromWord(idDefs->Sub(0));
-		if (idDef != INVALID_POINTER) {
-		  if (boolTest)
-		    return CheckBoolTest(idDef->Sel(0), Result,
-					 idDefsInstr->Sel(1));
-		  else
-		    LocalEnvPut(JIT_V2, idDef->Sel(0), Result);
-		}
-	      }
-	      break;
-	    case 0:
-	      // to be done: request unit
-	      break;
-	    default:
-	      Error("Apply: unable to inline multi return values\n");
-	    }
-	    return TagVal::FromWordDirect(idDefsInstr->Sel(1));
-	  } else {
-	    Primitive_Return1(Result);
-	    u_int size = NativeCodeFrame_GetFrameSize(currentNLocals);
-	    Scheduler_PopFrame(size);
-	    jit_movi_ui(JIT_R0, Worker::CONTINUE);
-	    RETURN();
-	    return INVALID_POINTER;
-	  }
-	} else {
-	  LoadArguments(actualArgs);
-	  if ((isDirectIn == Types::_false) && (calleeArity != actualArity))
-	    CompileCCC(calleeArity);
-	  TagVal *idDefsInstrOpt = TagVal::FromWord(pc->Sel(3));
-#if PROFILE
-	  u_int i1 = ImmediateEnv::Register(closure->ToWord());
-	  ImmediateSel(JIT_V1, JIT_V2, i1);
-	  if (idDefsInstrOpt != INVALID_POINTER) {
-	    SetRelativePC(CompileContinuation(idDefsInstrOpt, info.outArity));
-	    KillVariables();
-	  }
-	  else {
-	    u_int size = NativeCodeFrame_GetFrameSize(currentNLocals);
-	    Scheduler_PopFrame(size);
-	  }
-	  // "Leaf" position
-	  JITStore::Prepare(1, false);
-	  jit_pusharg_ui(JIT_V1); // closure
-	  JITStore::Finish((void *) Scheduler::PushCall);
-	  RETURN();
-#else
-	  if (idDefsInstrOpt != INVALID_POINTER) {
-	    SetRelativePC(CompileContinuation(idDefsInstrOpt, info.outArity));
-	    KillVariables();
-	    DirectCall(interpreter);
-	  } else {
-	    // Optimize Primitive Tail Call
-	    // Invariant: we have enough space on the stack
-	    u_int size = NativeCodeFrame_GetFrameSize(currentNLocals);
-	    Scheduler_PopAndPushFrame(JIT_V2, size, 1);
-	    StackFrame_PutWorker(JIT_V2, interpreter);
-	    // "Leaf" position
-	    JITStore::Prepare(0, false);
-	    JITStore::Finish(cFunction);
-	    RETURN();
-	  }
-#endif
-	  return INVALID_POINTER;
-	}
-      }
-    } else {
-      Transient *transient = Store::WordToTransient(wConcreteCode);
-      if ((transient != INVALID_POINTER) &&
-	  (transient->GetLabel() == BYNEED_LABEL)) {
-	Closure *byneedClosure = STATIC_CAST(Byneed *, transient)->GetClosure();
-	wConcreteCode = byneedClosure->GetConcreteCode();
-	if (wConcreteCode == LazyCompileInterpreter::concreteCode) {
-	  LazyCompileClosure *lazyCompileClosure =
-	    LazyCompileClosure::FromWordDirect(byneedClosure->ToWord());
-	  TagVal *abstractCode = lazyCompileClosure->GetAbstractCode();
-	  s_int nLocals        = lazyCompileClosure->GetNLocals();
-	  if (nLocals == -1) {
-	    Tuple *assignment;
-	    RegisterAllocator::Run(&nLocals, &assignment, abstractCode);
-	    lazyCompileClosure->SetNLocals(nLocals);
-	    lazyCompileClosure->SetAssignment(assignment);
-	  }
-	  JIT_APPLY_COUNT(applyNativeRequest);
-	  info.mode     = NATIVE_REQUEST_CALL;
-	  info.nLocals  = nLocals;
-	  info.closure  = ImmediateEnv::Register(closure->ToWord());
-	  info.outArity = NativeCodeInterpreter::GetOutArity(abstractCode);
-	  word instrPC  = Store::IntToWord(GetRelativePC());
-	  ImmediateSel(JIT_R0, JIT_V2, info.closure);
-	  Closure_GetConcreteCode(JIT_V1, JIT_R0);
-	  Await(JIT_V1, instrPC);
-	  jit_pushr_ui(JIT_V1); // Save derefed ConcreteCode
-	  request = false;
-	  goto check_request;
-	}
-      }
-    }
-  } else {
-#if defined(JIT_APPLY_STATISTIC)
+void NativeCodeJitter::AnalyzeApply(CallInfo *info, TagVal *pc, word wClosure) {
+  Closure *closure;
+ repeat:
+  if ((closure = Closure::FromWord(wClosure)) == INVALID_POINTER) {
     Transient *transient = Store::WordToTransient(wClosure);
     if ((transient != INVALID_POINTER) &&
 	(transient->GetLabel() == BYNEED_LABEL)) {
@@ -1415,49 +1257,214 @@ TagVal *NativeCodeJitter::Apply(TagVal *pc, word wClosure) {
 	ConcreteCode::FromWord(byneedClosure->GetConcreteCode());
       if ((concreteCode != INVALID_POINTER) &&
 	  (concreteCode->GetInterpreter() == LazySelInterpreter::self)) {
-	JIT_APPLY_COUNT(applyPolySel);
-	info.mode = POLY_SEL_CALL;
-	goto no_normal;
+	Record *record = Record::FromWord(byneedClosure->Sub(0));
+	if (record != INVALID_POINTER) {
+	  UniqueString *label =
+	    UniqueString::FromWordDirect(byneedClosure->Sub(1));
+	  wClosure = record->PolySel(label);
+	  goto repeat;
+	}
       }
     }
-#endif
+  } else {
+    Vector *actualArgs = Vector::FromWordDirect(pc->Sel(1));
+    u_int isDirectIn   = Store::DirectWordToInt(pc->Sel(2));
+    word wConcreteCode = closure->GetConcreteCode();
+    if (wConcreteCode == currentConcreteCode) {
+      info->type     = SELF_CALL;
+      info->mode     = MODE_NO_REQUEST;
+      info->closure  = ImmediateEnv::Register(closure->ToWord());
+      if (SkipCCC(isDirectIn, actualArgs, currentArgs))
+	info->pc = Store::DirectWordToInt(initialNoCCCPC);
+      info->nLocals  = currentNLocals;
+      info->outArity = currentOutArity;
+    } else {
+      ConcreteCode *concreteCode = ConcreteCode::FromWord(wConcreteCode);
+      if (concreteCode != INVALID_POINTER) {
+	Interpreter *interpreter = concreteCode->GetInterpreter();
+	u_int calleeArity        = interpreter->GetInArity(concreteCode);
+	u_int actualArity        = GetInArity(actualArgs);
+	info->outArity = interpreter->GetOutArity(concreteCode);
+	if (interpreter == NativeCodeInterpreter::self) {
+	  NativeConcreteCode *nativeCode =
+	    STATIC_CAST(NativeConcreteCode *, concreteCode);
+	  closure->SetConcreteCode(concreteCode->ToWord());
+	  info->type    = NATIVE_CALL;
+	  info->mode    = MODE_NO_REQUEST;
+	  info->closure = ImmediateEnv::Register(closure->ToWord());
+	  info->nLocals = nativeCode->GetNLocals();
+	  if ((isDirectIn == Types::_true) || (calleeArity == actualArity))
+	    info->pc = nativeCode->GetSkipCCCPC();
+	} else {
+	  void *cFunction = (void *) interpreter->GetCFunction();
+	  if (cFunction != NULL) {
+	    IntMap *inlineMap = IntMap::FromWordDirect(inlineTable);
+	    word wCFunction   = Store::UnmanagedPointerToWord(cFunction);
+	    info->type = PRIMITIVE_CALL;
+	    if (((isDirectIn == Types::_true) || (calleeArity == actualArity)) &&
+		inlineMap->IsMember(wCFunction)) {
+	      info->mode    = MODE_INLINE_PRIMITIVE;
+	      info->closure = reinterpret_cast<u_int>(wCFunction);
+	    } else {
+	      info->mode        = MODE_CALL_PRIMITIVE;
+	      info->closure     = reinterpret_cast<u_int>(cFunction);
+	      info->interpreter = interpreter;
+	      info->inArity     = calleeArity;
+	      info->pc = 
+		((isDirectIn == Types::_false) && (calleeArity != actualArity));
+	    }
+	  }
+	}
+      } else {
+	Transient *transient = Store::WordToTransient(wConcreteCode);
+	if ((transient != INVALID_POINTER) &&
+	    (transient->GetLabel() == BYNEED_LABEL)) {
+	  Closure *byneedClosure =
+	    STATIC_CAST(Byneed *, transient)->GetClosure();
+	  wConcreteCode = byneedClosure->GetConcreteCode();
+	  if (wConcreteCode == LazyCompileInterpreter::concreteCode) {
+	    LazyCompileClosure *lazyCompileClosure =
+	      LazyCompileClosure::FromWordDirect(byneedClosure->ToWord());
+	    TagVal *abstractCode = lazyCompileClosure->GetAbstractCode();
+	    s_int nLocals        = lazyCompileClosure->GetNLocals();
+	    if (nLocals == -1) {
+	      Tuple *assignment;
+	      RegisterAllocator::Run(&nLocals, &assignment, abstractCode);
+	      lazyCompileClosure->SetNLocals(nLocals);
+	      lazyCompileClosure->SetAssignment(assignment);
+	    }
+	    info->type     = NATIVE_CALL;
+	    info->mode     = MODE_REQUEST_CONCRETE_CODE;
+	    info->nLocals  = nLocals;
+	    info->closure  = ImmediateEnv::Register(closure->ToWord());
+	    info->outArity = NativeCodeInterpreter::GetOutArity(abstractCode);
+	  }
+	}
+      }
+    }
   }
-#if defined(JIT_APPLY_STATISTIC)
-  JIT_APPLY_COUNT(applyNormal);
- no_normal:
-#endif
- check_request:
+}
+
+// AppVar of idRef * idRef vector * bool * (idDef vector * instr) option
+TagVal *NativeCodeJitter::CompileApplyPrimitive(CallInfo *info, TagVal *pc) {
   TagVal *idDefsInstrOpt = TagVal::FromWord(pc->Sel(3));
-  word contPC = 0;
-  if (idDefsInstrOpt != INVALID_POINTER)
-    contPC = CompileContinuation(idDefsInstrOpt, info.outArity, info.nLocals);
-  if (request) {
-    word instrPC  = Store::IntToWord(GetRelativePC());
-    u_int closure = LoadIdRef(JIT_V1, pc->Sel(0), instrPC);
-#if HAVE_JIT_FP
-    jit_movr_p(JIT_FP, closure); // Save closure
-#endif
-    Closure_GetConcreteCode(JIT_V1, closure);
-    Await(JIT_V1, instrPC);
-    Assert(info.mode == NORMAL_CALL);
-    JITStore::Prepare(2, false);
-#if HAVE_JIT_FP
-    jit_pusharg_ui(JIT_FP); // Derefed Closure
-#else
-    closure = ReloadIdRef(JIT_R0, pc->Sel(0));
-    jit_pusharg_ui(closure); // Derefed Closure
-#endif
-    jit_pusharg_ui(JIT_V1); // Derefed ConcreteCode
+  Vector *actualArgs     = Vector::FromWordDirect(pc->Sel(1));
+  switch (info->mode) {
+  case MODE_INLINE_PRIMITIVE:
+    {
+      word wCFunction = reinterpret_cast<word>(info->closure);
+      u_int Result    = InlinePrimitive(wCFunction, actualArgs);
+      if (idDefsInstrOpt != INVALID_POINTER) {
+	Tuple *idDefsInstr = Tuple::FromWordDirect(idDefsInstrOpt->Sel(0));
+	Vector *idDefs     = Vector::FromWordDirect(idDefsInstr->Sel(0));
+	u_int calleeArity  = GetInArity(idDefs);
+	// to be done: Output CCC
+	switch (calleeArity) {
+	case 1:
+	  {
+	    TagVal *idDef = TagVal::FromWord(idDefs->Sub(0));
+	    if (idDef != INVALID_POINTER) {
+	      if (boolTest)
+		return CheckBoolTest(idDef->Sel(0), Result, idDefsInstr->Sel(1));
+	      else
+		LocalEnvPut(JIT_V2, idDef->Sel(0), Result);
+	    }
+	  }
+	  break;
+	case 0:
+	  // to be done: request unit
+	  break;
+	default:
+	  Error("CompileApplyPrimitive: unable to inline multi return values\n");
+	}
+	return TagVal::FromWordDirect(idDefsInstr->Sel(1));
+      } else {
+	Primitive_Return1(Result);
+	u_int size = NativeCodeFrame_GetFrameSize(currentNLocals);
+	Scheduler_PopFrame(size);
+	jit_movi_ui(JIT_R0, Worker::CONTINUE);
+	RETURN();
+	return INVALID_POINTER;
+      }
+    }
+    break;
+  case MODE_CALL_PRIMITIVE:
+    {
+      void *cFunction   = reinterpret_cast<void *>(info->closure);
+      u_int calleeArity = info->inArity;
+      LoadArguments(actualArgs);
+      if (info->pc)
+	CompileCCC(calleeArity);
+      if (idDefsInstrOpt != INVALID_POINTER) {
+	SetRelativePC(CompileContinuation(idDefsInstrOpt, info->outArity));
+	KillVariables();
+	DirectCall(info->interpreter);
+      } else {
+	// Optimize Primitive Tail Call
+	// Invariant: we have enough space on the stack
+	u_int size = NativeCodeFrame_GetFrameSize(currentNLocals);
+	Scheduler_PopAndPushFrame(JIT_V2, size, 1);
+	StackFrame_PutWorker(JIT_V2, info->interpreter);
+	// "Leaf" position
+	JITStore::Prepare(0, false);
+	JITStore::Finish(cFunction);
+	RETURN();
+      }
+      return INVALID_POINTER;
+    }
+  default:
+    Error("CompileApplyPrimitive: unknown mode");
   }
+}
+
+// AppVar of idRef * idRef vector * bool * (idDef vector * instr) option
+TagVal *NativeCodeJitter::CompileApply(CallInfo *info, TagVal *pc) {
+  TagVal *idDefsInstrOpt = TagVal::FromWord(pc->Sel(3));
+  word contPC            = Store::IntToWord(0);
+  if (idDefsInstrOpt != INVALID_POINTER)
+    contPC = CompileContinuation(idDefsInstrOpt, info->outArity, info->nLocals);
+  switch (info->mode) {
+  case MODE_REQUEST_CONCRETE_CODE:
+    {
+      word instrPC  = Store::IntToWord(GetRelativePC());
+      ImmediateSel(JIT_R0, JIT_V2, info->closure);
+      Closure_GetConcreteCode(JIT_V1, JIT_R0);
+      Await(JIT_V1, instrPC);
+      jit_pushr_ui(JIT_V1); // Save derefed ConcreteCode
+    }
+    break;
+  case MODE_REQUEST_ALL:
+    {
+      word instrPC  = Store::IntToWord(GetRelativePC());
+      u_int closure = LoadIdRef(JIT_V1, pc->Sel(0), instrPC);
+#if HAVE_JIT_FP
+      jit_movr_p(JIT_FP, closure); // Save closure
+#endif
+      Closure_GetConcreteCode(JIT_V1, closure);
+      Await(JIT_V1, instrPC);
+      Assert(info->type == NORMAL_CALL);
+      JITStore::Prepare(2, false);
+#if HAVE_JIT_FP
+      jit_pusharg_ui(JIT_FP); // Derefed Closure
+#else
+      closure = ReloadIdRef(JIT_R0, pc->Sel(0));
+      jit_pusharg_ui(closure); // Derefed Closure
+#endif
+      jit_pusharg_ui(JIT_V1); // Derefed ConcreteCode
+    }
+    break;
+  default:
+    break;
+  }
+  Vector *actualArgs = Vector::FromWordDirect(pc->Sel(1));
   LoadArguments(actualArgs);
   KillIdRef(pc->Sel(0));
   if (idDefsInstrOpt != INVALID_POINTER) {
     SetRelativePC(contPC); // Store Continuation Address
     KillVariables();
-    PushCall(&info);
-  }
-  else
-    TailCall(&info);
+    PushCall(info);
+  } else
+    TailCall(info);
   return INVALID_POINTER;
 }
 
@@ -1878,7 +1885,17 @@ TagVal *NativeCodeJitter::InstrAppVar(TagVal *pc) {
     wClosure = Store::IntToWord(0);
     break;
   }
-  return Apply(pc, wClosure);
+  CallInfo info;
+  info.type     = NORMAL_CALL;
+  info.mode     = MODE_REQUEST_ALL;
+  info.pc       = Store::DirectWordToInt(initialPC);
+  info.nLocals  = 0;
+  info.outArity = INVALID_INT;
+  AnalyzeApply(&info, pc, wClosure);
+  if (info.type == PRIMITIVE_CALL)
+    return CompileApplyPrimitive(&info, pc);
+  else
+    return CompileApply(&info, pc);
 }
 
 // GetRef of id * idRef * instr
