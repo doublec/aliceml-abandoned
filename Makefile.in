@@ -130,6 +130,8 @@ Makefile: Makefile.in config.status
 	./config.status
 Makefile.vars: Makefile.vars.in config.status
 	./config.status
+seamtool: seamtool.in config.status
+	./config.status
 
 Makefile.depend: Makefile $(SOURCES) store/StoreConfig.hh
 	$(MAKEDEPEND) $(SOURCES:%=$(srcdir)/%) > Makefile.depend
