@@ -24,6 +24,13 @@
   </P>
 
   <P>
+    If the environment variable <TT>ALICE_TRACE_COMPONENT</TT> is set,
+    then trace messages concerning link failures of native components
+    and type-checking and evaluation of components will be printed to
+    the standard error output stream <TT>TextIO.stdErr</TT>.
+  </P>
+
+  <P>
     See also:
     <A href="component-manager.php3"><TT>COMPONENT_MANAGER</TT></A>,
     <A href="resolver.php3"><TT>Resolver</TT></A>,
