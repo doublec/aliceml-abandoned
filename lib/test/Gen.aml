@@ -62,7 +62,10 @@ struct
     fun char n		= Char.chr (Random.int (Char.maxOrd + 1))
     fun string n	= String.tabulate (n, char) 
     fun int n		= if bool 0 then Random.int n else ~ (Random.int n)
+    fun largeInt n      = IntInf.* (IntInf.fromInt (int n), 
+				    IntInf.fromInt (int n))
     fun word n		= Word.fromInt (Random.int n)
+    fun word8 n         = Word8.fromInt (Random.int n)
     fun real n		= Random.real (Real.fromInt n)
     fun cardinal n	= Random.int n
 

@@ -45,11 +45,13 @@ sig
 
     (* Standard generators *)
     val word:	    word gen
+    val word8:      Word8.word gen
     val real:	    real gen
     val bool:	    bool gen
     val string:	    string gen
     val char:	    char gen
     val int:	    int gen
+    val largeInt:   IntInf.int gen
     val cardinal:   int gen
 end
 
