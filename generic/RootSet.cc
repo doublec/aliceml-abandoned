@@ -69,8 +69,7 @@ public:
     for (u_int i = GetNumberOfElements(); i--; ) {
       Element *element = Element::FromWordDirect(GetNthElement(i));
       if (element->GetPointer() == &root) {
-	//--** inefficient: use some method Queue::RemoveNthElement
-  	Queue::Remove(element->ToWord());
+	Queue::RemoveNthElement(i);
   	break;
       }
     }
