@@ -109,14 +109,6 @@ DEFINE1(Word_toIntX) {
   RETURN_WORD(i);
 } END
 
-DEFINE1(Word_toString) {
-  //--** inelegant; string is traversed twice
-  static char buf[20];
-  DECLARE_WORD(i, x0);
-  std::sprintf(buf, "%x", i);
-  RETURN(String::New(buf)->ToWord());
-} END
-
 WORD_WORD_TO_WORD_OP(Word_xorb, ^)
 
 void PrimitiveTable::RegisterWord() {
@@ -140,7 +132,6 @@ void PrimitiveTable::RegisterWord() {
   Register("Word.orb", Word_orb, 2);
   Register("Word.toInt", Word_toInt, 1);
   Register("Word.toIntX", Word_toIntX, 1);
-  Register("Word.toString", Word_toString, 1);
   Register("Word.wordSize", Store::IntToWord(31));
   Register("Word.xorb", Word_xorb, 2);
 }
