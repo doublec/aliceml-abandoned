@@ -44,6 +44,13 @@
 // We surely have a ms compiler (-Ze option enabled)
 #if defined(_MSC_EXTENSIONS)
 #define SeamMemberDll
+
+#ifndef _WIN32_WINNT
+#define _WIN32_WINNT 0x0510
+#endif
+
+#include <windows.h>
+
 #else
 #define SeamMemberDll SeamDll
 #endif

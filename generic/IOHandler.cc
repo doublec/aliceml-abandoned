@@ -67,7 +67,7 @@ namespace {
   private:
     static const u_int initialQueueSize = 8; //--** to be checked
   public:
-    using Block::ToWord;
+    using Queue::ToWord;
     using Queue::Blank;
 
     static Set *New() {

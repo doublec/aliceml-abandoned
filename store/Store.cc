@@ -428,6 +428,7 @@ void Store::HandleWeakDictionaries(const u_int gen) {
 #endif
 }
 
+#undef min
 static inline u_int min(u_int a, u_int b) {
   return ((a <= b) ? a : b);
 }

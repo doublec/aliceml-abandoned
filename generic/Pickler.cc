@@ -253,8 +253,8 @@ void StringOutputStream::PutBytes(u_char *buf, u_int size) {
 }
 
 word StringOutputStream::Close() {
-  ::Block *str = static_cast< ::Block *>(GetString());
-  HeaderOp::EncodeSize(str, GetPos());
+  ::Block *str = Store::DirectWordToBlock(GetString()->ToWord());
+  HeaderOp::EncodeSize(str, GetPos()); //--** wrong size
   return str->ToWord();
 }
 
@@ -957,7 +957,7 @@ Worker::Result PickleWorker::Run(StackFrame *sFrame) {
 	  static_cast<ConcreteRepresentation *>(v);
 	Transform *abstract =
 	  concrete->GetHandler()->GetAbstractRepresentation(concrete);
-	Block *ablock = static_cast<Block *>(abstract);
+	Block *ablock = Store::DirectWordToBlock(abstract->ToWord());
 	if (abstract == INVALID_POINTER) {
 	  Scheduler::currentData      = Pickler::Sited;
 	  Scheduler::currentBacktrace = Backtrace::New(frame->Clone());

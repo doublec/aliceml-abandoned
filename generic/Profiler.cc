@@ -240,10 +240,10 @@ void Profiler::DumpInfo() {
   if ((logFile = std::fopen("profile_log.txt", "w")) == NULL)
     Error("Profiler:DumpInfo: unable to open log file");
   t->Apply((item_apply) PrintInfo);
-  fprintf(logFile, "0, 0, 0, 0, 0, 0.00, total %d, acc %d, gc %d\n",
-	  static_cast<u_int>(endTime - startTime),
-	  totalLogTime,
-	  static_cast<u_int>(Scheduler::gcTime));
+  std::fprintf(logFile, "0, 0, 0, 0, 0, 0.00, total %d, acc %d, gc %d\n",
+	       static_cast<u_int>(endTime - startTime),
+	       totalLogTime,
+	       static_cast<u_int>(Scheduler::gcTime));
   std::fclose(logFile);
 }
 

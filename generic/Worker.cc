@@ -57,7 +57,8 @@ u_int Worker::Deconstruct() {
       if (t == INVALID_POINTER) { // is determined
 	Tuple *tuple = Tuple::FromWord(arg);
 	Assert(tuple != INVALID_POINTER);
-	Scheduler::nArgs = static_cast<Block *>(tuple)->GetSize(); //--**
+	Scheduler::nArgs =
+	  Store::DirectWordToBlock(tuple->ToWord())->GetSize(); //--**
 	Assert(Scheduler::nArgs <= Scheduler::maxArgs);
 	for (u_int i = Scheduler::nArgs; i--; )
 	  Scheduler::currentArgs[i] = tuple->Sel(i);

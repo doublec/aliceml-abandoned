@@ -28,9 +28,9 @@ union Endianness {
 enum floatEndianness { littleEndian, bigEndian, badSize, nonIEC };
 
 static floatEndianness CheckFloatEndianness() {
-  static char littleOne[4] =
+  static unsigned char littleOne[4] =
     { 0x00, 0x00, 0x80, 0x3F };
-  static char bigOne[4] =
+  static unsigned char bigOne[4] =
     { 0x3F, 0x80, 0x00, 0x00 };
   Endianness x;
   x.f = 1.0;
@@ -44,9 +44,9 @@ static floatEndianness CheckFloatEndianness() {
 }
 
 static floatEndianness CheckDoubleEndianness() {
-  static char littleOne[8] =
+  static unsigned char littleOne[8] =
     { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xF0, 0x3F };
-  static char bigOne[8] =
+  static unsigned char bigOne[8] =
     { 0x3F, 0xF0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
   Endianness x;
   x.d = 1.0;

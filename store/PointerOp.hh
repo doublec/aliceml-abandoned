@@ -16,7 +16,7 @@
 #pragma interface "store/PointerOp.hh"
 #endif
 
-class SeamDll PointerOp {
+class SeamMemberDll PointerOp {
 public:
   // Core Tag Operations
   static word EncodeTag(Block *p, u_int tag) {
