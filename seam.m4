@@ -568,6 +568,7 @@ AC_DEFUN([AC_SEAM_ENABLE_LIGHTNING],
                         lightning/fp.h:lightning/$cpu_subdir/fp.h
                         lightning/funcs.h:lightning/$cpu_subdir/funcs.h, , [
                         ])
+        AC_SEAM_CHECK_CXXFLAG_SEAMTOOL(-fno-operator-names)
         else
           AC_MSG_ERROR(cannot find GNU lightning platform specific headers.)
         fi
