@@ -271,7 +271,8 @@ functor MakeTranslationPhase(structure Switches: SWITCHES):> TRANSLATION_PHASE =
     fun updatePervasive(I.Id(i,z,n), j) =
 	if n <> name_pervasive then () else
 	    longidr_pervasive := SOME(
-		O.ShortId(typInfo(#region i, SOME(infToTyp j)), O.Id(i,z,n))
+		O.ShortId(typInfo(#region i, SOME(infToTyp j)),
+			  O.Id(i,z, trModName n))
 	    )
 
 
@@ -1010,7 +1011,7 @@ UNFINISHED: obsolete after bootstrapping:
 	    ( (x',s,u)::xsus', ds'' )
 	end
 
-    and trImps(is, y, t, ds')		= List.rev(List.foldl(trImp y t) ds' is)
+    and trImps(is, y, t, ds')		= List.foldl(trImp y t) ds' is
     and trImp y t (I.ValImp(i,x,d),ds')	= idToDec(trId x, y, t,
 						  #typ(I.infoDesc d)) :: ds'
       | trImp y t (I.ConImp(i,x,d,k),ds')
@@ -1032,7 +1033,7 @@ UNFINISHED: obsolete after bootstrapping:
     fun trComp(I.Comp(i,a_s,ds)) =
 	let
 	    val  ids' = ids ds
-	    val (xsus',ds') = trAnns'(a_s, trDecs ds)
+	    val (xsus',ds') = trAnns'(a_s, trDecs'(ds,[]))
 	    val  fs'  = List.map idToField ids'
 	    val  t    = Type.inProd(List.foldl idToRow (Type.emptyRow()) ids')
 	    val  i'   = typInfo(#region i,t)
