@@ -15,6 +15,7 @@
 #endif
 
 #include <cstdio>
+#include <cmath>
 #include "generic/Scheduler.hh"
 #include "generic/Backtrace.hh"
 #include "generic/Closure.hh"
@@ -1176,7 +1177,16 @@ Worker::Result ByteCodeInterpreter::Run() {
     case Instr::DREM:
       {
 	JavaDebug::Print("DREM");
-	Error("not implemented");
+	DECLARE_DOUBLE(v2);
+	DECLARE_DOUBLE(v1);
+	if (v2 != 0.0) {
+	  double d = v1 / v2;
+	  PUSH_DOUBLE(v1 - v2 * floor(d));
+	}
+	else {
+	  PUSH_DOUBLE(0.0); // to be done: handle zero case
+	}
+	pc += 1;
       }
       break;
     case Instr::DSUB:
@@ -1379,7 +1389,18 @@ Worker::Result ByteCodeInterpreter::Run() {
     case Instr::FREM:
       {
 	JavaDebug::Print("FREM");
-	Error("not implemented");
+	Float *f2 = JavaFloat::FromWord(frame->Pop());
+	Float *f1 = JavaFloat::FromWord(frame->Pop());
+	float v2 = f2->GetValue();
+	float v1 = f1->GetValue();
+	if (v1 != 0.0) {
+	  float d = v1 / v2;
+	  frame->Push(Float::New(v1 - v2 * floor(d))->ToWord());
+	}
+	else {
+	  frame->Push(Float::New(0.0)->ToWord());// to be done: handle zero case
+	}
+	pc += 1;
       }
       break;
     case Instr::FSUB:
@@ -2129,7 +2150,16 @@ Worker::Result ByteCodeInterpreter::Run() {
       break;
     case Instr::LREM:
       {
-	Error("not implemented");
+	JavaDebug::Print("LREM");
+	DECLARE_LONG(v2);
+	DECLARE_LONG(v1);
+	if (v2 != 0) {
+	  PUSH_LONG(v1 % v2);
+	}
+	else {
+	  PUSH_LONG(static_cast<s_int64>(0)); // to be done: handle zero case
+	}
+	pc += 1;
       }
       break;
     case Instr::LSHL:
