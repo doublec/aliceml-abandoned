@@ -11,7 +11,7 @@ structure Simulator :
                       'a Instructions.ant * 
                       'a Instructions.ant *
                       Ant.id -> unit
-           fun simulate : bool * bool * bool * bool * bool * int *
+           fun simulate : bool * bool * bool * bool * bool * int * int *
                           string * string * string -> unit
                                                       ) =
   struct
@@ -98,8 +98,8 @@ structure Simulator :
       else ()
 
   fun simulate(showStatus, showWorlds, showAnts, drawWorlds,
-                visualize,
-               rounds,
+               visualize,
+               delay, rounds,
                redAnt, blackAnt, world) =
       let
           val _ =
@@ -123,6 +123,7 @@ structure Simulator :
           if showStatus then
               (print ("Starting with "^Int.toString noOfAnts^" ants\n");
                print (Int.toString rounds^" rounds.\n");
+               print (Int.toString delay^" s delay.\n");
                print ("\t red player: "^redAnt^"\n");
                print ("\t black player: "^blackAnt^"\n"))
           else ();
@@ -135,9 +136,12 @@ structure Simulator :
                     if showWorlds then printWorld world else ();
                     if drawWorlds then drawWorld world else ();
                     if showStatus then
-                        if r mod 1000 = 0 
+                        if r mod 1 = 0 
                         then print ("round "^Int.toString r^"\n")
                         else ()
+                    else ();
+                    if delay>0 then
+                        Future.await(Future.alarm(Time.fromMilliseconds delay))
                     else ();
                     loop noOfAnts
                          (fn i => step(world, redBrain, blackBrain, i))));
