@@ -54,6 +54,9 @@ class JITStore : protected LightningState {
 protected:
   u_int nbArgs;
   bool saveCallerSavedRegs;
+  jit_insn *sharedReturn;
+  s_int stackFrameSize;
+  enum { NV_JIT_V2, NV_JIT_V1, NV_JIT_V0, NV_JIT_FP, NV_TOTAL };
 public:
   // Stack Abstraction
   void PushStack(u_int Reg) {
@@ -63,20 +66,31 @@ public:
     jit_popr_ui(Reg);
   }
   // Enter subroutine
-  void Prolog(u_int nbArgs) {
-    jit_prolog(nbArgs);
-  }
-  // Extract arguments
-  void GetSubroutineArg(u_int Reg) {
-    int arg1 = jit_arg_p();
-    jit_getarg_p(Reg, arg1);
+  void Prolog() {
+    sharedReturn   = INVALID_POINTER;
+    stackFrameSize = NV_TOTAL * sizeof(word);
+    jit_subi_p(JIT_SP, JIT_SP, stackFrameSize);
+    jit_stxi_p(NV_JIT_FP * sizeof(word), JIT_SP, JIT_FP);
+    jit_stxi_p(NV_JIT_V0 * sizeof(word), JIT_SP, JIT_V0);
+    jit_stxi_p(NV_JIT_V1 * sizeof(word), JIT_SP, JIT_V1);
+    jit_stxi_p(NV_JIT_V2 * sizeof(word), JIT_SP, JIT_V2);
   }
   // Return from subroutine: Result is taken from JIT_R0
   void Return() {
     if (JIT_RET != JIT_R0) {
       jit_movr_p(JIT_RET, JIT_R0);
     }
-    jit_ret();
+    if (sharedReturn == INVALID_POINTER) {
+      sharedReturn = jit_get_label();
+      jit_ldxi_p(JIT_FP, JIT_SP, NV_JIT_FP * sizeof(word));
+      jit_ldxi_p(JIT_V0, JIT_SP, NV_JIT_V0 * sizeof(word));
+      jit_ldxi_p(JIT_V1, JIT_SP, NV_JIT_V1 * sizeof(word));
+      jit_ldxi_p(JIT_V2, JIT_SP, NV_JIT_V2 * sizeof(word));
+      jit_addi_p(JIT_SP, JIT_SP, stackFrameSize);
+      RET_();
+    } else {
+      jit_jmpi(sharedReturn);
+    }
   }
   // Save caller-saved registers and initialize argument bank
   void Prepare(u_int nbArgs, bool saveCallerSavedRegs = true) {
