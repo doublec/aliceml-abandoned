@@ -351,6 +351,7 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 	  | arityMatches (_, _) = false
 
 	fun vpPrimApp (info, name, ids) =   (*--** evaluate partially *)
+	    (*--** assertion about arity *)
 	    PrimAppExp (info, name, ids)
 
 	fun primAppExp (info, _, name, Unary, args as OneArg id, _) =
@@ -475,6 +476,18 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 	  | vpStm (TupDec (info, idDefs, id), env, isToplevel, _) =
 	    let
 		val id = deref (id, env)
+		val idDefs =
+		    case IdMap.lookupExistent (env, id) of
+			(TupVal idDefs', isToplevel') =>
+			    ListPair.map
+			    (fn (idDef, idDef') =>
+			     case (idDef, idDef') of
+				 (IdDef id, IdDef id') =>
+				     (IdMap.insert (env, id,
+						    (VarVal id', isToplevel'));
+				      Wildcard)
+			       | (_, _) => idDef) (idDefs, idDefs')
+		      | (_, _) => idDefs
 	    in
 		List.app (fn idDef =>
 			  declareUnknown (env, idDef, isToplevel)) idDefs;
@@ -484,6 +497,19 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 	  | vpStm (ProdDec (info, labelIdDefList, id), env, isToplevel, _) =
 	    let
 		val id = deref (id, env)
+		val labelIdDefList =
+		    case IdMap.lookupExistent (env, id) of
+			(ProdVal labelIdDefList', isToplevel') =>
+			    ListPair.map
+			    (fn ((_, idDef), labelIdDef' as (label, idDef')) =>
+			     case (idDef, idDef') of
+				 (IdDef id, IdDef id') =>
+				     (IdMap.insert (env, id,
+						    (VarVal id', isToplevel'));
+				      (label, Wildcard))
+			       | (_, _) => labelIdDef')
+			    (labelIdDefList, labelIdDefList')
+		      | (_, _) => labelIdDefList
 	    in
 		List.app (fn (_, idDef) =>
 			  declareUnknown (env, idDef, isToplevel))
