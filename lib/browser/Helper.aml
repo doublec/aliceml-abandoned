@@ -139,6 +139,14 @@ struct
                               | RelNode(r) => #group(r)
                               | RelRefNode(r) => #group(r)
                               | _ => raise Match
+
+    fun getValueAnc n = let val p = getParent(n) 
+			in if p = Empty 
+			       then n 
+			   else if getDesc(p) = INTERPUNCT
+				    then getValueAnc(p) 
+				else p
+			end
 	                  			 
     fun checkContKids (a,i) = if i >=  Array.length(a) 
 				  then false

@@ -52,6 +52,6 @@ signature DRAW_NODES =
 
 	val move: node * int * int -> int * int * node option
 
-	val draw : node * int * int * intention-> int * int * node option
+	val draw : node * int * int * intention -> int * int * node option
        
     end

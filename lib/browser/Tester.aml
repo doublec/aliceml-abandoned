@@ -5,6 +5,9 @@ import structure Reflect from "x-alice:/lib/system/Reflect";
 
 UnsafeInspector.init();
 
+structure IntList = Reflect.ReflectType(type t = int list);
+UnsafeInspector.inspect([4,5],IntList.x);
+
 (*** Einstellungen von max. Tiefe, max. Breite und Modus koennen im
      Inspectormenu veraendert werden ***)
 
@@ -57,22 +60,6 @@ val rec l = (3,4)::l;
 
 UnsafeInspector.inspect (l,int_list); *)
 
-datatype foo = A
-             | B of int ref list
-             | C of foo 
-             | D of (string vector vector * int vector vector) list;
-structure DataType = Reflect.ReflectType (type t = foo);
-val data_type = DataType.x;
-val same = ref 44; (* zum Testen des " Relation Mode - Token Equality" *)
-
-UnsafeInspector.inspect (A,data_type);
-UnsafeInspector.inspect (B [same,same,same],data_type);
-UnsafeInspector.inspect (C (C (B [ref 55,ref 88])),data_type);
-UnsafeInspector.inspect (D [{1 = #[#["hi","du"],#["guck","mal"]], 
-			     2 = #[#[0,8,1,5],#[4,7,1,1]]},
-			    {1 = #[#["ich","kann"],#["Listen","zeichnen"]], 
-			     2 = #[#[0,8,1,5],#[4,7,1,1]] } ],
-			 data_type);
 
 (* Futures *)
 structure Fut = Reflect.ReflectType (type t = int vector Promise.promise list);
@@ -87,5 +74,6 @@ UnsafeInspector.inspect([future1,future2,future1,future1],fut);
 Promise.fulfill(prom1,#[1,2]);
 
 Promise.fulfill(prom2,#[2,3,4,5,6]);
+
 
 

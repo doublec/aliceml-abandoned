@@ -47,17 +47,17 @@ struct
 	
     (* updateChild *)
     fun updateChild (p,i,n) = case p of
-	Concat(r) => (Array.update(getKids(p),i,n)
+	Concat(r) => (Array.update(#kids(r),i,n)
 		      ; if not(getParent(n) = Empty)
-			    then updateChild(getParent(p),getIndex(p),p)
+			    then updateChild(#parent(r),getIndex(p),p)
 			else () )
-      | Container(r) => (Array.update(getKids(p),i,n)
+      | Container(r) => (Array.update(#kids(r),i,n)
 			 ; if not(getParent(n) = Empty)
-			       then updateChild(getParent(p),getIndex(p),p)
+			       then updateChild(#parent(r),getIndex(p),p)
 			   else () )
       | RelNode(r) => (#content(r) := n
 		       ; if not(getParent(n) = Empty)
-			     then updateChild(getParent(p),getIndex(p),p) 
+			     then updateChild(#parent(r),getIndex(p),p) 
 			 else () )
       | Empty => () 
       | _ => raise UpdateError
@@ -95,6 +95,7 @@ struct
 	 ; let val ind = getAncIndex n 
 	       val anc = valOf(MainDictionary.lookup 
 			       (Dictionaries.dict,ind)) 
+               val _ = Inspector.inspect anc
 	       val li = MainDictionary.dict2list(Dictionaries.dict,ind-1)
 	       val y_pos = Layout.sum_up(li,fn n 
 					 => if n = Empty then 0
@@ -108,7 +109,8 @@ struct
 	   in ( Gtk.objectDestroy(getGroup(n)) 
 	       ; updateChild(getParent(n),getIndex(n),new) 
 	       ; Layout.layout(node)
-	       ; MainDictionary.update(Dictionaries.dict, (ind,node))
+	       ; Inspector.inspect node
+	       ; MainDictionary.update(Dictionaries.dict, (ind,node))  
                ; DrawNodes.draw(node,0,y_pos,DrawNodes.DRAW) 
 	       ; TextIO.print ("UPDATE: drawing with y = "
 			       ^Int.toString(y_pos)^"\n")

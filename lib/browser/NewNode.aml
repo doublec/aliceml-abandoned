@@ -217,8 +217,8 @@ struct
 						"[",BRACK_COLOR,setGroup)
 		       val rbra = createSimple (INTERPUNCT,concat,2,d,
 						"]",BRACK_COLOR,setGroup)
-		       val cont = createContainer (desc,concat,1,d,na,~1,~1,~1,
-						   setGroup)	   
+		       val cont = createContainer (INTERPUNCT,concat,1,d,
+						   na,~1,~1,~1,setGroup)
 		       val nodearray = listElemArray(List.take(l,length-1),
 						     length-1,inty,cont,d,b)
 		       val last = let val inva = UnsafeValue.cast(List.last(l))

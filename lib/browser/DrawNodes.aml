@@ -158,14 +158,11 @@ struct
     and drawSimple (n,x,y,intent) = 
 	case n of
 	    Simple(r) => (case intent of 
-			      DRAW => if !(#status(r)) = DIRTY
-					  then 
-					      let
-						  val (x2,y2) = atomDraw (n,x,y)
-					      in
-						  (x2,y2,NONE)
-					      end
-				      else (x+get_xdim(n),y+get_ydim(n),NONE)
+			      DRAW => let
+					  val (x2,y2) = atomDraw (n,x,y)
+				      in
+					  (x2,y2,NONE)
+				      end
 			    | SEARCH _ => atomSearch (n,x,y,intent))
 	  | _ => raise DrawError
 		
@@ -173,14 +170,11 @@ struct
     (* drawLimit *)
     and drawLimit (n,x,y,intent) = case n of
 	Limit(r) => (case intent of
-        	     DRAW => if !(#status(r)) = Types.DIRTY 
-				 then 
-				     let
-					 val (x2,y2) = atomDraw (n,x,y)
-				     in
-					 (x2,y2,NONE)
-				     end
-				 else (x + get_xdim(n),y + get_ydim(n),NONE)
+        	     DRAW => let
+				 val (x2,y2) = atomDraw (n,x,y)
+			     in
+				 (x2,y2,NONE)
+			     end
 		   | SEARCH _ => atomSearch (n,x,y,intent))
       | _ => raise DrawError
 	    
@@ -196,7 +190,7 @@ struct
 		   andalso sy >= y 
 		   andalso sy < y + !(#height(r))
 	   in
-	       if !(#status(r)) = DIRTY orelse search 
+	       if (*!(#status(r)) = DIRTY *) true  orelse search 
 		   then if Array.length(#kids(r)) = 0
 			    then (x,y,if in_bounding_box then SOME(n) 
 				      else NONE)
@@ -259,7 +253,7 @@ struct
 		   andalso sy >= y 
 		   andalso sy < y + !(#height(r))
 	   in
-	       if !(#status(r)) = DIRTY orelse search 
+	       if (* !(#status(r)) = DIRTY *) true orelse search 
 		   then if Array.length(#kids(r)) = 0
 			    then (x,y,if in_bounding_box then SOME(n) 
 				      else NONE)
@@ -392,13 +386,11 @@ struct
 						     !Settings.font)
 	    val dx = x - old_x
 	    val dy = y - old_y
-            (*
-	    val _ = TextIO.print("moving from (" ^ Int.toString(old_x) 
-				 ^ "/" ^ Int.toString(old_y)
-				 ^ ") to ("
-				 ^ Int.toString(x) ^ "/"
+	    val _ = TextIO.print("moving from (" ^ Int.toString(old_x)  
+				 ^ "/" ^ Int.toString(old_y) 
+				 ^ ") to ("   
+				 ^ Int.toString(x) ^ "/" 
 				 ^ Int.toString(y) ^ ") \n")
-		*)
 	in
 	    (Services.moveGroup(group,dx,dy,!Settings.font)
 	     ;(x+get_xdim(n),y+get_ydim(n)-1,NONE))
@@ -406,31 +398,33 @@ struct
     
     (* draw *)
     and draw (n,x,y,intent) = 
-		case n of
+      ( TextIO.print ("DRAW: drawing with y = "^Int.toString(y)^"\n")
+        ;
+	case n of
 	Simple(r) => (case intent of 
 			  DRAW =>
-			      if true (* !(#status(r)) = DIRTY *)
+			      if  !(#status(r)) = DIRTY 
 				  then drawSimple (n,x,y,intent)
 			      else move(n,x,y)  	
 			| SEARCH _ =>  drawSimple (n,x,y,intent))
       | Concat(r) => (case intent of 
-			  DRAW => if true (* !(#status(r)) = DIRTY *)
+			  DRAW => if  !(#status(r)) = DIRTY 
 			 then drawConcat (n,x,y,intent)
 			     else move(n,x,y)  
 			  | SEARCH _ => drawConcat (n,x,y,intent))
       | Container(r) => (case intent of
-			     DRAW => if true (* !(#status(r)) = DIRTY *)
+			     DRAW => if  !(#status(r)) = DIRTY 
 			    then drawContainer (n,x,y,intent)
 			else move(n,x,y) 
 		| SEARCH _ => drawContainer(n,x,y,intent))	     
       | Limit(r) => (case intent of
-			 DRAW => if true (* !(#status(r)) = DIRTY *)
+			 DRAW => if  !(#status(r)) = DIRTY 
 			then drawLimit (n,x,y,intent)
 		    else  move(n,x,y) 
 		       | SEARCH _ => drawLimit (n,x,y,intent))
       | RelNode(r) 
 	    => (case intent of
-		    DRAW => (if true (* !(#status(r)) = DIRTY *)
+		    DRAW => (if !(#status(r)) = DIRTY 
 				 then drawRelNode (n,x,y,intent)
 			     else ( move(n,x,y) 
 				   ;( case !(#counter(r)) of
@@ -440,12 +434,12 @@ struct
 				 | _ => (x+get_xdim(n),y+get_ydim(n),NONE) )))
 		  | SEARCH _ =>  drawRelNode (n,x,y,intent))
 	  | RelRefNode(r) => (case intent of
-			      DRAW => if true (* !(#status(r)) = DIRTY *)
+			      DRAW => if !(#status(r)) = DIRTY 
 					  then drawRelRefNode (n,x,y,intent)
 				      else  move(n,x,y) 
 			    | SEARCH _ =>  drawRelRefNode (n,x,y,intent))
 	  | Empty => (x,y,NONE)
-     
+      )
 
 end
        

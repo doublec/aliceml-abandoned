@@ -56,6 +56,7 @@ sig
     val getTyp : desc -> Type.typ
     val getDepth : node -> int
     val getGroup : node -> Gtk.object
+    val getValueAnc : node -> node
 
     val checkContKids : node array * int -> bool
     val checkConcKids : node array * int -> bool
