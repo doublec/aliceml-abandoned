@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg, 2001-2002
  *
  * Last change:
  *   $Date$ by $Author$
@@ -31,6 +31,8 @@ sig
     val foldr :		('a * 'b * 'c ->'c) -> 'c -> 'a vector * 'b vector -> 'c
     val all :		('a * 'b -> bool) -> 'a vector * 'b vector -> bool
     val exists :	('a * 'b -> bool) -> 'a vector * 'b vector -> bool
+    val find :		('a * 'b -> bool) -> 'a vector * 'b vector
+					  -> ('a * 'b) option
 
     val appi :		(int * 'a * 'b -> unit) ->
 			   'a vector * 'b vector * int * int option -> unit
@@ -42,7 +44,6 @@ sig
 			   'a vector * 'b vector * int * int option -> 'c
     val foldri :	(int * 'a * 'b * 'c -> 'c) -> 'c ->
 			   'a vector * 'b vector * int * int option -> 'c
-
-    val find :		('a * 'b -> bool) -> 'a vector * 'b vector
-					  -> ('a * 'b) option
+    val findi :		(int 'a * 'b -> bool) -> 'a vector * 'b vector
+					      -> (int * 'a * 'b) option
 end
