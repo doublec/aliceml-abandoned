@@ -102,8 +102,8 @@ PerformDump(FILE *file, word x, u_int index, u_int level, u_int depth) {
 }
 
 // Implementation of class Debug
-u_int Debug::maxWidth = 190;
-u_int Debug::maxDepth = 6;
+u_int Debug::maxWidth = 3;
+u_int Debug::maxDepth = 4;
 
 void Debug::Dump(word x) {
   PerformDump(stderr, x, 0, 2, 0);
