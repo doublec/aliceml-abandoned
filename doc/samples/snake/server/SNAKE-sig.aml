@@ -20,9 +20,10 @@ sig
     type snake
     type t = snake
 
-    val snake :     int * Color.color * Pos.pos * Protocol.direction -> snake
-    (** [snake (id, c, p, d)] returns a snake of length 1 (just the head) 
-        at position [p] with an empty belly looking into direction [d]. *)
+    val snake :     int * int * Color.color * Pos.pos * Protocol.direction -> snake
+    (** [snake (capacity id, c, p, d)] returns a snake of length 1 (just the head) 
+        and maximum length [capacity] at position [p] with an empty belly 
+        looking into direction [d]. *)
 
     val belly :     snake -> int
 

@@ -1,0 +1,29 @@
+signature IMP_QUEUE =
+sig
+    type 'a queue 
+
+    exception Empty
+    exception Full
+
+    val queue :     int -> 'a queue
+
+    val head :      'a queue -> 'a          (* Empty *)
+    (* last inserted item *)
+
+    val tail :      'a queue -> 'a          (* Empty *)
+    (* next item to be removed *)
+
+    val add :       'a queue * 'a -> unit   (* Full *)
+
+    val remove :    'a queue -> 'a          (* Empty *)
+
+    val size :      'a queue -> int
+
+    val capacity :  'a queue -> int
+
+    val app :       ('a -> unit) -> 'a queue -> unit
+
+    val fold :      ('a * 'b -> 'b) -> 'b -> 'a queue -> 'b
+    
+    val isEmpty :   'a queue -> bool 
+end

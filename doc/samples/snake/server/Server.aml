@@ -352,7 +352,8 @@ struct
                                         gatePos     = ref pos,
                                         nextDir     = ref dir
                                     }
-                                val snake   = Snake.snake (id, color, pos, dir)
+                                val maxSize = op* (#dimensions config)
+                                val snake   = Snake.snake (maxSize, id, color, pos, dir)
                             in
                                 (Part.state part) := Part.PLAYING 
                                                         (playerState, snake);
@@ -467,8 +468,9 @@ struct
                                 val info        = Part.playerInfo part
                                 val (name,color)= Part.nameNColor part
                                 val id          = Part.id part
+                                val maxSize     = op* (#dimensions config)
                                 val snake       = Snake.snake 
-                                                    (id, color, pos, dir)
+                                                (maxSize, id, color, pos, dir)
                                 val g           = (pos, P.GATE (color, 
                                                         P.CLOSED))
                             in

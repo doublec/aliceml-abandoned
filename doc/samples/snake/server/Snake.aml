@@ -13,32 +13,40 @@ import signature SNAKE      from "SNAKE-sig"
 import structure Protocol   from "../common/Protocol"
 import structure Pos        from "../common/Pos"
 import structure Color      from "../common/Color"
+import structure ImpQueue   from "ImpQueue"
 
 
 structure Snake :> SNAKE =
 struct
 
     structure P = Protocol
+    structure Q = ImpQueue
 
     datatype snake = SN of {
         direction : P.direction ref,
         belly :     int ref,
         id :        int,
         color :     Color.color,
-        body :      Pos.pos list ref
+        body :      Pos.pos Q.queue 
     }
 
     type t = snake
     
     val startSize = 3
 
-    fun snake (id, c, pos, d) = SN { 
-            direction   = ref d, 
-            belly       = ref (startSize - 1), 
-            color       = c,
-            id          = id,
-            body        = ref [pos]
-        }
+    fun snake (capacity, id, c, pos, d) = 
+        let
+            val q = Q.queue capacity
+        in
+            Q.add (q, pos);
+            SN { 
+                direction   = ref d, 
+                belly       = ref (startSize - 1), 
+                color       = c,
+                id          = id,
+                body        = q
+            }
+        end
 
     fun color (SN { color = c, ... }) = c
     
@@ -52,7 +60,7 @@ struct
 
     fun move (SN {  direction = direction as ref old_dir, 
                     belly,
-                    body = body_ref as ref body,
+                    body,
                     ...
                  }, new_dir) =
         let 
@@ -60,9 +68,9 @@ struct
                if requested turn is impossible (ie.e new-dir 180° old-dir)
                then do not turn at all. 
              *)
-            val head    = assert not (List.null body) do List.hd body
+            val head    = Q.head body
 
-            val (new_head, dir) = 
+            val (newHead, dir) = 
                case (old_dir, new_dir) of
                     ((P.UP, P.DOWN) |    
                      (non P.DOWN, P.UP)) =>
@@ -77,19 +85,31 @@ struct
                      (non P.LEFT, P.RIGHT)) =>
                     (Pos.right head, P.RIGHT)
         in
-            body_ref := (if !belly > 0 then 
-                            (belly := !belly - 1; new_head :: body)
-                        else new_head :: (List.rev (List.tl (List.rev body))));
+            Q.add (body, newHead);
+            if !belly > 0 
+                then belly := !belly - 1
+                else (Q.remove body; ());
+
             direction := dir
         end
 
-    fun head (SN { body = ref b, ... }) = assert not (List.null b) do List.hd b
+    fun head (SN { body, ... }) = Q.head body
 
-    fun body (SN { body = ref b, ... }) = assert not (List.null b) do List.tl b
+    fun body (SN { body, ... }) = 
+        let val l = Q.fold op:: [] body
+        in
+            List.tl l
+        end
 
-    fun appBody f (SN { body = ref b, ... }) = 
-        assert not (List.null b) do List.app f (List.tl b)
+    fun appBody f (SN { body,  ... }) = 
+        let
+            val skippedHead = ref false
+        in
+            Q.app (fn x => if !skippedHead 
+                                then f x 
+                                else skippedHead := true)  body
+        end
 
-    fun length (SN { body = ref b, ... }) = List.length b
+    fun length (SN { body, ... }) = Q.size body
 
 end
