@@ -14,10 +14,12 @@
 #pragma implementation "scheduler/Scheduler.hh"
 #endif
 
+#include "scheduler/RootSet.hh"
 #include "scheduler/Transients.hh"
 #include "scheduler/Interpreter.hh"
 #include "builtins/GlobalPrimitives.hh"
 
+word Scheduler::root;
 ThreadQueue *Scheduler::threadQueue;
 Thread *Scheduler::currentThread;
 bool Scheduler::preempt;
@@ -28,6 +30,7 @@ void Scheduler::Timer() {
 
 void Scheduler::Init() {
   threadQueue = ThreadQueue::New();
+  RootSet::Add(root);
 }
 
 //--** document representation of inactive threads (invariants)
@@ -146,12 +149,11 @@ void Scheduler::Run() {
       }
     }
     if (Store::NeedGC()) {
-      //--** add Primitive::table
       //--** add threads waiting for I/O as well as properties
       threadQueue->PurgeAll();
-      word w = threadQueue->ToWord();
-      Store::DoGC(w);
-      threadQueue = ThreadQueue::FromWordDirect(w);
+      root = threadQueue->ToWord();
+      RootSet::DoGarbageCollection();
+      threadQueue = ThreadQueue::FromWordDirect(root);
     }
   }
   //--* select(...)

@@ -10,6 +10,7 @@
 //   $Revision$
 //
 
+#include "scheduler/RootSet.hh"
 #include "scheduler/Scheduler.hh"
 #include "builtins/Primitive.hh"
 #include "builtins/GlobalPrimitives.hh"
@@ -22,9 +23,10 @@ int main(int argc, char *argv[]) {
   }
   Store::InitStore(memLimits);
 
+  RootSet::Init();
+  Scheduler::Init();
   Primitive::Init();
   GlobalPrimitives::Init();
-  Scheduler::Init();
   //--** enqueue the ur-thread
   Scheduler::Run();
   exit(0);

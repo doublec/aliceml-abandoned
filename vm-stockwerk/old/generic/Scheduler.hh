@@ -26,6 +26,7 @@
 
 class Scheduler {
 private:
+  static word root;
   static ThreadQueue *threadQueue;
   static Thread *currentThread;
   static bool preempt;

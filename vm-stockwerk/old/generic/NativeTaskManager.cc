@@ -15,6 +15,7 @@
 #endif
 
 #include <cstdio>
+#include "scheduler/RootSet.hh"
 #include "scheduler/Closure.hh"
 #include "scheduler/TaskStack.hh"
 #include "builtins/Primitive.hh"
@@ -96,10 +97,11 @@ PrimitiveInterpreter::Run(TaskStack *taskStack, int nargs) {
 // Implementation of `Primitive' methods
 //
 
-HashTable *Primitive::table;
+word Primitive::table;
 
 void Primitive::Init() {
-  table = HashTable::New(HashTable::BLOCK_KEY, 19);
+  table = HashTable::New(HashTable::BLOCK_KEY, 19)->ToWord();
+  RootSet::Add(table);
   RegisterInternal();
   RegisterUnqualified();
   RegisterArray();
@@ -121,7 +123,8 @@ void Primitive::Init() {
 }
 
 void Primitive::Register(const char *name, word value) {
-  table->InsertItem(String::New(name)->ToWord(), value);
+  HashTable::FromWordDirect(table)->
+    InsertItem(String::New(name)->ToWord(), value);
 }
 
 void Primitive::Register(const char *name, function value, u_int arity,
@@ -144,11 +147,12 @@ void Primitive::RegisterUniqueConstructor(const char *name) {
 
 word Primitive::Lookup(String *name) {
   word key = name->ToWord();
-  if (!table->IsMember(key)) {
+  HashTable *t = HashTable::FromWordDirect(table);
+  if (!t->IsMember(key)) {
     char message[80 + name->GetSize()];
     sprintf(message, "Primitive::Lookup: unknown primitive `%.*s'",
 	    static_cast<int>(name->GetSize()), name->GetValue());
     Error(message);
   }
-  return table->GetItem(key);
+  return t->GetItem(key);
 }

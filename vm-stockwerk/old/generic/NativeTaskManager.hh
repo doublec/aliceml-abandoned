@@ -25,7 +25,7 @@ class TaskStack;
 
 class Primitive {
 private:
-  static HashTable *table; //--** include in GC roots
+  static word table;
 
   typedef Interpreter::Result (*function)(TaskStack *);
 
