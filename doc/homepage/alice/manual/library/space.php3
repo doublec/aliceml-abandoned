@@ -26,13 +26,13 @@
 	eqtype 'a space
 	    
 	datatype state =
-	  | MERGED
+	    MERGED
 	  | FAILED
 	  | SUCCEEDED
 	  | ALTERNATIVES of int
 
 	datatype verbose_state =
-          | VERBOSE_SUSPENDED of verbose_state
+            VERBOSE_SUSPENDED of verbose_state
 	  | VERBOSE_MERGED
 	  | VERBOSE_FAILED
 	  | VERBOSE_SUCCEEDED_STUCK
