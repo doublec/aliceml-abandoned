@@ -36,8 +36,8 @@ struct
     fun matches((g1,s1), (g2,s2)) =
 	g1 = g2 orelse
 	let
-	    val j1 = Inf.inSig s1
-	    val j2 = Inf.instance(Inf.inSig s2)
+	    val j1 = Inf.sign s1
+	    val j2 = Inf.sign s2
 	in
 	    (Inf.match(j1,j2); true)
 	    handle Inf.Mismatch _ => false
