@@ -1,0 +1,8 @@
+import structure NativeGtk from "NativeGtk"
+import signature GTK_TYPES from "GTK_TYPES-sig"
+
+structure GtkTypes :> GTK_TYPES =
+struct
+    type object
+    exception TypeMismatch of string
+end

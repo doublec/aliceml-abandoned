@@ -47,12 +47,7 @@ DEFINE0(NativeGtk_gtkFalse) {
   RETURN(Store::IntToWord(FALSE));
 } END
 
-void push_front(word *paramlist, word value) {
-  TagVal *cons = TagVal::New(0,2);
-  cons->Init(0,value);
-  cons->Init(1,*paramlist);
-  *paramlist = cons->ToWord();
-}
+////////////////////////////////////////////////////////////////////////
 
 static word tail = 0;
 
@@ -61,6 +56,13 @@ DEFINE1(NativeGtk_setEventStream) {
   RootSet::Add(tail);
   RETURN_UNIT;
 } END
+
+void push_front(word *paramlist, word value) {
+  TagVal *cons = TagVal::New(0,2);
+  cons->Init(0,value);
+  cons->Init(1,*paramlist);
+  *paramlist = cons->ToWord();
+}
 
 void generic_marshaller(GClosure *closure, GValue *return_value, 
 			guint n_param_values, const GValue *param_values, 

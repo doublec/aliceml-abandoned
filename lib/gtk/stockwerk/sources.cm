@@ -15,8 +15,8 @@ Group is
 
 	GENERATOR-sig.sml
 	MkNative.sml
-	MkCore.sml
         MkEnums.sml
+	MkUnsafe.sml
 
         PARSER-sig.sml
 	Parser.sml

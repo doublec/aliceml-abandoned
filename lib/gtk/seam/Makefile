@@ -11,7 +11,7 @@ GENFILES = $(GENNATIVES) $(ENUMS) $(UNSAFE)
 GENSIGS = $(COMPSCAP:%=%-sig.aml) 
 OUTDIR = output
 
-COMMON = GTK_UTILS-sig.aml GtkUtils.aml
+COMMON = GTK_TYPES-sig.aml GtkTypes.aml GTK_CORE-sig.aml GtkCore.aml
 MAINFILES = $(COMPS:%=%.aml)
 
 COMPFILES = $(COMMON) $(ENUMS) $(UNSAFE) $(GENSIGS) $(MAINFILES)

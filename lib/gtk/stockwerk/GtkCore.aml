@@ -1,0 +1,8 @@
+import structure NativeGtk from "NativeGtk"
+import signature GTK_CORE from "GTK_CORE-sig"
+
+structure GtkCore :> GTK_CORE =
+struct
+    val _ = NativeGtk.init ()
+    fun init () = ()
+end

@@ -21,7 +21,7 @@ Record *CreateRecord(includeData data[], int size, int baseCount) {
   Record *record = Record::New(total);
 
   TypeMismatchConstructor =
-    UniqueConstructor::New(String::New("GtkLib.TypeMismatch"))->ToWord();
+    UniqueConstructor::New(String::New("GtkTypes.TypeMismatch"))->ToWord();
   RootSet::Add(TypeMismatchConstructor);
   
   for (int i = 0; i < size; i++)

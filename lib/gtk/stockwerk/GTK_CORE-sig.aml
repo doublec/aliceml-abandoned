@@ -1,0 +1,4 @@
+signature GTK_CORE =
+    sig
+	val init : unit -> unit
+    end
