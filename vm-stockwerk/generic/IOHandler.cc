@@ -59,7 +59,6 @@ public:
 };
 
 class Set: private Queue {
-  //--** Purge before GC
 private:
   static const u_int initialQueueSize = 8; //--** to be checked
 public:
