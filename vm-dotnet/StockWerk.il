@@ -1821,7 +1821,7 @@
     found:
       ret
     }
-    .method virtual public class System.String ToString() synchronized {
+    .method virtual public class System.String ToString() {
       .locals(class StockWerk.StockWert[], int32, int32)
       ldarg.0
       ldfld class StockWerk.StockWert[] StockWerk.Tuple::Values
@@ -2700,6 +2700,15 @@
 
   .class sealed public Vector extends StockWerk.StockWert {
     .field public class StockWerk.StockWert[] Values
+    .method assembly void .ctor(int32) {
+      ldarg.0
+      call instance void StockWerk.StockWert::.ctor()
+      ldarg.0
+      ldarg.1
+      newarr class StockWerk.StockWert
+      stfld class StockWerk.StockWert[] StockWerk.Vector::Values
+      ret
+    }
     .method public void .ctor(class StockWerk.StockWert[]) {
       ldarg.0
       call instance void StockWerk.StockWert::.ctor()
@@ -2759,6 +2768,43 @@
       ret
     retTrue:
       ldc.i4.1
+      ret
+    }
+    .method virtual public class System.String ToString() {
+      .locals(class StockWerk.StockWert[], int32, int32)
+      ldarg.0
+      ldfld class StockWerk.StockWert[] StockWerk.Tuple::Values
+      stloc.0
+      ldloc.0
+      ldlen
+      stloc.1
+      ldc.i4.1
+      stloc.2
+      ldstr "#["
+      newobj instance void System.StringBuilder::.ctor(class System.String)
+      ldloc.0
+      ldc.i4.0
+      ldelem.ref
+      call instance class System.StringBuilder System.StringBuilder::Append(class System.Object)
+    loop:
+      ldloc.1
+      ldloc.2
+      beq.s return
+      ldstr ", "
+      call instance class System.StringBuilder System.StringBuilder::Append(class System.String)
+      ldloc.0
+      ldloc.2
+      ldelem.ref
+      call instance class System.StringBuilder System.StringBuilder::Append(class System.Object)
+      ldloc.2
+      ldc.i4.1
+      add
+      stloc.2
+      br.s loop
+    return:
+      ldstr "]"
+      call instance class System.StringBuilder System.StringBuilder::Append(class System.String)
+      call instance class System.String System.StringBuilder::ToString()
       ret
     }
   }
@@ -6409,6 +6455,10 @@
 	ldsfld class StockWerk.StockWert StockWerk.Prebound::General$Subscript
 	newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
 	throw
+      } catch System.ArgumentException {   //--** not documented
+	ldsfld class StockWerk.StockWert StockWerk.Prebound::General$Subscript
+	newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
+	throw
       }
     return:
       ret
@@ -6454,7 +6504,6 @@
       ldarg.3
       isinst StockWerk.Int
       brfalse.s testTransient3
-      newobj instance void StockWerk.String::.ctor(class System.String)
       .try {
 	ldarg.1
 	castclass StockWerk.String
@@ -6466,6 +6515,7 @@
 	castclass StockWerk.Int
 	ldfld int32 StockWerk.Int::Value
 	call instance class System.String System.String::Substring(int32, int32)
+	newobj instance void StockWerk.String::.ctor(class System.String)
 	leave.s return
       } catch System.ArgumentOutOfRangeException {
 	ldsfld class StockWerk.StockWert StockWerk.Prebound::General$Subscript
@@ -6594,7 +6644,7 @@
       loop:
 	ldloc.1
 	ldloc.0
-	callvirt instance wchar System.IO.Stream::ReadChar()
+	callvirt instance unsigned int8 System.IO.Stream::ReadByte()
 	call instance class System.StringBuilder System.StringBuilder::Append(wchar)
 	pop
 	br.s loop
