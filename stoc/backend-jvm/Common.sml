@@ -13,9 +13,9 @@
 structure Common=
     struct
 	(* Intermediate Representation: *)
+	open IntermediateGrammar
 	open ImperativeGrammar
 	open Prebound
-	open Prebound'
 	open Main
 
 	open JVMInst
@@ -23,6 +23,8 @@ structure Common=
 
 	(* falls was böses passiert, wird eine Error-exception mit sinnvollem Inhalt 'geraist' *)
 	exception Error of string
+
+	exception Mitch
 
 	(* xxx For Debugging: *)
 	datatype deb=B of bool

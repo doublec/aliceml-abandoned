@@ -207,22 +207,22 @@ structure Backend=
 	    if LargeInt.>= (i, Int.toLarge ~1) andalso LargeInt.<= (i, Int.toLarge 5)
 		then Iconst (Int.fromLarge i) else
 		    if LargeInt.>= (i, Int.toLarge ~128)
-			andalso LargeInt.<= (i, Int.toLarge 127)
+			andalso LargeInt.>= (Int.toLarge 127, i)
 			then Bipush (Int.fromLarge i) else
 			    if LargeInt.>= (i, Int.toLarge ~32768)
-				andalso LargeInt.<= (i, Int.toLarge 32767)
+				andalso LargeInt.>= (Int.toLarge 32767, i)
 				then Sipush (Int.fromLarge i)
 			    else Ldc (JVMInt i)
 
 	fun atCodeWord (i:Word32.word) =
 	    if LargeWord.>= (i, Word.toLargeWord (Word.fromInt ~1)) andalso
-		LargeWord.<= (i, Word.toLargeWord (Word.fromInt 5))
+		LargeWord.>= (Word.toLargeWord (Word.fromInt 5), i)
 		then Iconst (Int.fromLarge (LargeWord.toLargeInt i)) else
 		    if LargeWord.>= (i, Word.toLargeWord(Word.fromInt ~128))
-			andalso LargeWord.<= (i, Word.toLargeWord(Word.fromInt 127))
+			andalso LargeWord.>= (Word.toLargeWord(Word.fromInt 127), i)
 			then Bipush (Int.fromLarge (LargeWord.toLargeInt i)) else
 			    if LargeWord.>= (i, Word.toLargeWord(Word.fromInt ~32768))
-				andalso LargeWord.<= (i, Word.toLargeWord (Word.fromInt 32767))
+				andalso LargeWord.>= (Word.toLargeWord (Word.fromInt 32767), i)
 				then Sipush (Int.fromLarge (LargeWord.toLargeInt i))
 			    else Ldc (JVMWord i)
 

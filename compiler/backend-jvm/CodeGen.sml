@@ -31,7 +31,7 @@ structure CodeGen =
 				    ". insert free: "^(Stamp.toString stamp')^"\n")
 			 else ();
 
-			 if stamp'=stamp_builtin orelse
+			 if (*stamp'=stamp_builtin orelse*)
 			     Lambda.isSelfCall stamp'
 			     then ()
 			 else
@@ -295,9 +295,9 @@ structure CodeGen =
 			    if stamp'=stamp_cons then (Getstatic CCons,true) else
 				if stamp'=stamp_ref then (Getstatic CRef,true) else
 				    if stamp'=stamp_Bind then (Getstatic CBind,true) else
-					if stamp'=stamp_eq then (Getstatic CEquals,true) else
+					(*if stamp'=stamp_eq then (Getstatic CEquals,true) else
 					    if stamp'=stamp_assign then (Getstatic CAssign,true) else
-						if stamp'=stamp_builtin then (Getstatic CBuilt,true) else
+						if stamp'=stamp_builtin then (Getstatic CBuilt,true) else*)
 						    (Nop,false)
 
 	and dcl (d, akku) = Multi (decCode d) :: akku
@@ -540,7 +540,7 @@ structure CodeGen =
 					     number::switchlist,
 					     lab :: labelList,
 					     b', t'', b'')
-					  | _ => raise Match
+					  | _ => raise Mitch
 				else
 				    let
 					val behind = Label.new ()
@@ -1026,14 +1026,14 @@ structure CodeGen =
 
 	and
 	    expCode (AppExp(_,id' as Id(_,stamp',_),ida'')) =
-	    if stamp'=stamp_builtin then
+	    (*if stamp'=stamp_builtin then
 		idArgCode
 		(ida'',
 		 Invokestatic (CBuiltin, "getBuiltin",
 			       ([Classsig CStr],
 				[Classsig CVal])) ::
 		 nil)
-		else
+		else*)
 		    [Ifstatic
 		     (stamp',
 		      idArgCode

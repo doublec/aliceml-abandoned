@@ -61,7 +61,7 @@ structure ToJasmin =
 		  | SOME (Jump Ret) => "return"
 		  | SOME (Jump ARet) => "areturn"
 		  | SOME (Jump IRet) => "ireturn"
-		  | SOME _ => raise Match
+		  | SOME _ => raise Mitch
 
 	    (* return the real label for this jump *)
 	    fun condJump lab' =

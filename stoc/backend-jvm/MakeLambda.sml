@@ -67,7 +67,7 @@ functor MakeLambda(structure StampSet:IMP_SET
 	fun getFun () = hd (!lambdaIdsStack)
 	fun getOuterFun () = case !lambdaIdsStack of
 	    _::id'::_ => id'
-	  | _ => raise Match
+	  | _ => raise Mitch
 
 	fun setId () =
 	    StampHash.insert(lambdas,top(),hd(!lambdaIdsStack))
