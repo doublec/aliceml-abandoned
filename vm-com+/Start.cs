@@ -5,14 +5,13 @@ class Start {
 	Alice.Komponist k = new Alice.Komponist();
 	Alice.Komponist.global_k = k;
 	
-	íf (args.Length < 2) {
+	if (args.Length < 2) {
 	    Console.Write("usage: ");
 	    Console.Write(args[0]);
 	    Console.WriteLine(" dll progargs");
 	}
 	else {
-	    k.Import(args[1]);
-	    // (AliceFuture) k.Import(args[i])).Await();
+	    Alice.Builtins.Future_await.StaticApply(k.Import(args[1]));
 	}
     }
 }

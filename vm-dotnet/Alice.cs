@@ -149,11 +149,11 @@ namespace Alice {
 		}
 	    }
 	}
-	public class Future : Procedure {
-	    private Object Ref;
-	    Future() {
-		Ref = null;
-	    }
+	public abstract class Transient : Procedure {
+	    public abstract Object Deref();
+	    public abstract Object Await();
+	    public abstract bool IsVariantOf(Transient t);
+	    public abstract bool IsFailed();
 	    public override Object Apply(Object obj) {
 		return ((Procedure) Await()).Apply(obj);
 	    }
@@ -184,24 +184,172 @@ namespace Alice {
 					 Object f, Object g, Object h, Object i) {
 		return ((Procedure) Await()).Apply(a, b, c, d, e, f, g, h, i);
 	    }
-	    public virtual Object Await() {
-		//  	    lock (this) {
-		//  		if (Ref == null) {
-		//  		    Wait();
-		//  		}
-		//  	    }
-		return Ref;
+	}
+	public class FailedTransient : Transient {
+	    private Object Exn;
+	    public FailedTransient(Object exn) {
+		Exn = exn;
 	    }
-	    public virtual Object Bind(Object o) {
+	    public override Object Deref() {
+		return this;
+	    }
+	    public override Object Await() {
+		throw new Exception(Exn);
+	    }
+	    public override bool IsVariantOf(Transient t) {
+		return false;
+	    }
+	    public override bool IsFailed() {
+		return true;
+	    }
+	}
+	public class Hole : Transient {
+	    private Object Ref;
+	    public Hole() {
+		Ref = null;
+	    }
+	    public override Object Deref() {
 		lock (this) {
 		    if (Ref == null) {
-			Ref = o;
+			return this;
+		    }
+		    else if (Ref is Transient) {
+			return ((Transient) Ref).Deref();
 		    }
 		    else {
-			throw new Exception(Prebound.Future_future);
+			return Ref;
 		    }
 		}
-		return Prebound.unit;
+	    }
+	    public override Object Await() {
+		throw new Exception(Prebound.Hole_Hole);
+	    }
+	    public Object AwaitInternal() {
+		lock (this) {
+		    if (Ref == null) {
+			System.Threading.Monitor.Wait(this);
+		    }
+		    if (Ref is Transient) {
+			return ((Transient) Ref).Await();
+		    }
+		    else {
+			return Ref;
+		    }
+		}
+	    }
+	    public override bool IsVariantOf(Transient t) {
+		lock (this) {
+		    return
+			this == t ||
+			Ref != null &&
+			Ref is Transient &&
+			((Transient) Ref).IsVariantOf(t);
+		}
+	    }
+	    public override bool IsFailed() {
+		lock (this) {
+		    return
+			Ref != null &&
+			Ref is Transient &&
+			((Transient) Ref).IsFailed();
+		}
+	    }
+	    public void Fill(Object x) {
+		lock (this) {
+		    if (Ref == null) {
+			if (x is Transient && ((Transient) x).IsVariantOf(this)) {
+			    throw new Exception(Prebound.Hole_Hole);
+			}
+			Ref = x;
+			System.Threading.Monitor.PulseAll(this);
+		    }
+		    else {
+			throw new Exception(Prebound.Hole_Hole);
+		    }
+		}
+	    }
+	}
+	public class Future : Transient {
+	    private Hole Ref;
+	    public Future(Hole hole) {
+		Ref = hole;
+	    }
+	    public override Object Deref() {
+		Object r = Ref.Deref();
+		if (r == Ref) {
+		    return this;
+		}
+		else {
+		    return r;
+		}
+	    }
+	    public override Object Await() {
+		return Ref.AwaitInternal();
+	    }
+	    public override bool IsVariantOf(Transient t) {
+		return Ref.IsVariantOf(t);
+	    }
+	    public override bool IsFailed() {
+		return Ref.IsFailed();
+	    }
+	}
+	public class Byneed : Transient {
+	    private enum ByneedState { Fresh, Bound, Failed };
+	    private ByneedState State;
+	    private Object Ref;
+	    public Byneed(Procedure proc) {
+		State = ByneedState.Fresh;
+		Ref = proc;
+	    }
+	    public override Object Deref() {
+		lock (this) {
+		    switch (State) {
+		    case ByneedState.Bound:
+			return Ref;
+		    case ByneedState.Failed:
+			throw new Exception(Ref);
+		    default:
+			return this;
+		    }
+		}
+	    }
+	    public override Object Await() {
+		lock (this) {
+		    switch (State) {
+		    case ByneedState.Bound:
+			return Ref;
+		    case ByneedState.Failed:
+			throw new Exception(Ref);
+		    default:
+			try {
+			    Object r = ((Procedure) Ref).Apply();
+			    if (r is Transient) {
+				Transient t = (Transient) r;
+				if (t.IsVariantOf(this)) {
+				    throw new Exception(null);   // to be determined
+				}
+				State = ByneedState.Bound;
+				Ref = t.Await();
+			    }
+			    else {
+				State = ByneedState.Bound;
+				Ref = r;
+			    }
+			}
+			catch (Values.Exception exn) {
+			    State = ByneedState.Failed;
+			    Ref = new ConVal(Prebound.Future_Future, exn);
+			    throw new Exception(Ref);
+			}
+			return Ref;
+		    }
+		}
+	    }
+	    public override bool IsVariantOf(Transient t) {
+		return this == t;
+	    }
+	    public override bool IsFailed() {
+		return State == ByneedState.Failed;
 	    }
 	}
 	public class TagVal {
@@ -292,8 +440,8 @@ namespace Alice {
     }
     class CommonOp {
 	public static Object Sync(Object obj) {
-	    if (obj is Future) {
-		return ((Future) obj).Await();
+	    if (obj is Transient) {
+		return ((Transient) obj).Await();
 	    }
 	    else {
 		return obj;
@@ -680,7 +828,14 @@ namespace Alice {
 	}
 	public class Future_alarmQuote : Procedure {
 	    public static Object StaticApply(Object obj) {
-		return obj; // to be Determined
+		Hole hole = new Hole();
+		int msecs = (Int32) CommonOp.Sync(obj);
+		//--** spawn a thread that does the following:
+		{
+		    Thread.Sleep((msecs + 500) / 1000);
+		    hole.Fill(Prebound.unit);
+		}
+		return new Future(hole);
 	    }
 	    public override Object Apply(Object obj) {
 		return StaticApply(obj);
@@ -688,7 +843,12 @@ namespace Alice {
 	}
 	public class Future_await : Procedure {
 	    public static Object StaticApply(Object obj) {
-		return obj; // to be Determined
+		if (obj is Transient) {
+		    return ((Transient) obj).Await();
+		}
+		else {
+		    return obj;
+		}
 	    }
 	    public override Object Apply(Object obj) {
 		return StaticApply(obj);
@@ -704,7 +864,7 @@ namespace Alice {
 	}
 	public class Future_byneed : Procedure {
 	    public static Object StaticApply(Object obj) {
-		return obj; // to be Determined
+		return new Byneed((Procedure) CommonOp.Sync(obj));
 	    }
 	    public override Object Apply(Object obj) {
 		return StaticApply(obj);
@@ -720,7 +880,8 @@ namespace Alice {
 	}
 	public class Future_isFailed : Procedure {
 	    public static Object StaticApply(Object obj) {
-		return obj; // to be Determined
+		return CommonOp.BtI(obj is Transient &&
+				    ((Transient) obj).IsFailed());
 	    }
 	    public override Object Apply(Object obj) {
 		return StaticApply(obj);
@@ -728,7 +889,14 @@ namespace Alice {
 	}
 	public class Future_isFuture : Procedure {
 	    public static Object StaticApply(Object obj) {
-		return obj; // to be Determined
+		if (obj is Transient) {
+		    obj = ((Transient) obj).Deref();
+		    return CommonOp.BtI(obj is Future || obj is Byneed ||
+					obj is FailedTransient);
+		}
+		else {
+		    return (Int32) 0;
+		}
 	    }
 	    public override Object Apply(Object obj) {
 		return StaticApply(obj);
@@ -787,18 +955,34 @@ namespace Alice {
 	}
 	public class Hole_fail : Procedure2 {
 	    public static Object StaticApply(Object a, Object b) {
-		// to be determined
-		return a;
+		if (a is Transient) {
+		    a = ((Transient) a).Deref();
+		}
+		if (a is Hole) {
+		    Object exn = new ConVal(Prebound.Future_Future, b);
+		    ((Hole) a).Fill(new FailedTransient(exn));
+		}
+		else {
+		    throw new Values.Exception(Prebound.Hole_Hole);
+		}
+		return Prebound.unit;
 	    }
 	    public override Object Apply(Object a, Object b) {
 		return StaticApply(a, b);
 	    }
-	
 	}
 	public class Hole_fill : Procedure2 {
 	    public static Object StaticApply(Object a, Object b) {
-		// to be determined
-		return a;
+		if (a is Transient) {
+		    a = ((Transient) a).Deref();
+		}
+		if (a is Hole) {
+		    ((Hole) a).Fill(b);
+		}
+		else {
+		    throw new Values.Exception(Prebound.Hole_Hole);
+		}
+		return Prebound.unit;
 	    }
 	    public override Object Apply(Object a, Object b) {
 		return StaticApply(a, b);
@@ -806,34 +990,45 @@ namespace Alice {
 	}
 	public class Hole_future : Procedure {
 	    public static Object StaticApply(Object a) {
-		// to be determined
-		return a;
+		if (a is Transient) {
+		    a = ((Transient) a).Deref();
+		}
+		if (a is Hole) {
+		    return new Future((Hole) a);
+		}
+		else {
+		    return a;
+		}
 	    }
 	    public override Object Apply(Object a) {
 		return StaticApply(a);
 	    }
 	}
-	public class Hole_hole : Procedure {
-	    public static Object StaticApply(Object a) {
-		// to be determined
-		return a;
+	public class Hole_hole : Procedure0 {
+	    public static Object StaticApply() {
+		return new Values.Hole();
 	    }
-	    public override Object Apply(Object a) {
-		return StaticApply(a);
+	    public override Object Apply() {
+		return StaticApply();
 	    }
 	}
 	public class Hole_isFailed : Procedure {
 	    public static Object StaticApply(Object a) {
-		return (Int32) 0; // not implemented
+		return CommonOp.BtI(a is Transient &&
+				    ((Transient) a).IsFailed());
 	    }
 	    public override Object Apply(Object a) {
 		return StaticApply(a);
 	    }
 	}
-	public class Hole_isFree : Procedure {
+	public class Hole_isHole : Procedure {
 	    public static Object StaticApply(Object a) {
-		// to be determined
-		return a;
+		if (a is Transient) {
+		    return CommonOp.BtI(((Transient) a).Deref() is Hole);
+		}
+		else {
+		    return (Int32) 0;
+		}
 	    }
 	    public override Object Apply(Object a) {
 		return StaticApply(a);
@@ -2153,7 +2348,7 @@ namespace Alice {
     }
     public class Prebound {
 	public static Object unit = null;
-	public static Object Future_future = "Future.Future";
+	public static Object Future_Future     = "Future.Future";
 	public static Object Future_alarmQuote = new Future_alarmQuote();
 	public static Object Future_await      = new Future_await();
 	public static Object Future_awaitOne   = new Future_awaitOne();
@@ -2212,7 +2407,7 @@ namespace Alice {
 	public static Object General_exnName   = new General_exnName();
 	public static Object General_ref      = new RefConstructor();
 
-	public static Object Option_option  = "Option.Option";
+	public static Object Option_Option  = "Option.Option";
 	public static Object Option_NONE    = (Int32) 0;
 	public static Object Option_SOME    = (Int32) 1;
 
@@ -2222,12 +2417,13 @@ namespace Alice {
 	public static Object GlobalStamp_compare    = new GlobalStamp_compare();
 	public static Object GlobalStamp_hash       = new GlobalStamp_hash();
 
-	public static Object Hole_hole     = "Hole.Hole";
+	public static Object Hole_Hole     = "Hole.Hole";
 	public static Object Hole_fail     = new Hole_fail();
 	public static Object Hole_fill     = new Hole_fill();
+	public static Object Hole_hole     = new Hole_hole();
 	public static Object Hole_future   = new Hole_future();
 	public static Object Hole_isFailed = new Hole_isFailed();
-	public static Object Hole_isFree   = new Hole_isFree();
+	public static Object Hole_isHole   = new Hole_isHole();
 
 	public static Object Int_minInt      = Int32.MinValue;
 	public static Object Int_maxInt      = Int32.MaxValue;
@@ -2379,13 +2575,17 @@ namespace Alice {
     public class Komponist {
 	static public Komponist global_k          = null;
 	static System.Collections.Hashtable table = new System.Collections.Hashtable();
-	class link : Procedure {
-	    public static Object StaticApply(Object obj) {
-		Module mod  = Assembly.LoadFrom((System.String) obj).GetModule((System.String)obj);
+	class link : Procedure0 {
+	    private System.String Url;
+	    public link(System.String url) {
+		Url = url;
+	    }
+	    public override Object Apply() {
+		Module mod  = Assembly.LoadFrom(Url).GetModule(Url);
 		Type type   = mod.GetType("Execute");
 		if (mod == null) {
 		    Console.Write("Hmm, unable to obtain Module ");
-		    Console.WriteLine(obj);
+		    Console.WriteLine(Url);
 		    return null;
 		}
 		else if (type == null) {
@@ -2399,16 +2599,13 @@ namespace Alice {
 		    return minf.Invoke(null, args);
 		}
 	    }
-	    public override Object Apply(Object obj) {
-		return StaticApply(obj);
-	    }
 	}
 	public Object Import(System.String url) {
 	    if (table.ContainsKey(url)) {
 		return table[url];
 	    }
 	    else {
-		Object val = link.StaticApply(url);
+		Object val = new Byneed(new link(url));
 		table.Add(url, val);
 		return val;
 	    }
