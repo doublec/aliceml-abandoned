@@ -1,3 +1,0 @@
-import val print from "x-alice:/TextIO"
-
-val _ = print "Hello, world\n"
