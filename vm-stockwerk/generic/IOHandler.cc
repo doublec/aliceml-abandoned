@@ -14,10 +14,15 @@
 #pragma implementation "generic/IOHandler.hh"
 #endif
 
+#include <errno.h>
 #if defined(__MINGW32__) || defined(_MSC_VER)
 #include <winsock.h>
+
+#define GetLastError() WSAGetLastError()
 #else
 #include <sys/select.h>
+
+#define GetLastError() errno
 #endif
 
 #include "adt/Queue.hh"
@@ -102,7 +107,10 @@ public:
 
 static word Readable, Writable;
 
+int IOHandler::defaultFD;
+
 void IOHandler::Init() {
+  defaultFD = -1;
   Readable = Set::New()->ToWord();
   Writable = Set::New()->ToWord();
   RootSet::Add(Readable);
@@ -116,7 +124,7 @@ void IOHandler::Poll() {
   int maxRead = ReadableSet->EnterIntoFDSet(&readFDs);
   int maxWrite = WritableSet->EnterIntoFDSet(&writeFDs);
   int max = maxRead > maxWrite? maxRead: maxWrite;
-  if (max > 0) {
+  if (max >= 0) {
     struct timeval timeout;
     timeout.tv_sec = 0;
     timeout.tv_usec = 0;
@@ -137,14 +145,40 @@ void IOHandler::Block() {
   int maxRead = ReadableSet->EnterIntoFDSet(&readFDs);
   int maxWrite = WritableSet->EnterIntoFDSet(&writeFDs);
   int max = maxRead > maxWrite? maxRead: maxWrite;
-  if (max > 0) {
-    int ret = select(max + 1, &readFDs, &writeFDs, NULL, NULL);
-    if (ret < 0) {
-      Error("IOHandler::Block");
+  struct timeval *ptimeout = NULL;
+  // Timer Events and signals must be fulfilled; therefore wait on stdin
+  // to be done: better solution?
+  if (!FD_ISSET(defaultFD, &readFDs)) {
+    FD_SET(defaultFD, &readFDs);
+    max = max > defaultFD ? max : defaultFD;
+  }
+#if defined(__MINGW32__) || defined(_MSC_VER)
+  // Windows sockets no longer support WSACancelBlockingCall
+  // Pending Events therefore require polling after some time
+  // to be done: better solution?
+  struct timeval timeout;
+  timeout.tv_sec  = 0;
+  timeout.tv_usec = 10;
+  ptimeout = &timeout;
+#endif
+  if (max >= 0) {
+    int ret = select(max + 1, &readFDs, &writeFDs, NULL, ptimeout);
+    if (ret > 0) {
+      ReadableSet->Schedule(&readFDs);
+      WritableSet->Schedule(&writeFDs);
+      return;
     }
-    Assert(ret > 0);
-    ReadableSet->Schedule(&readFDs);
-    WritableSet->Schedule(&writeFDs);
+    else if (ret == 0) {
+      return;
+    }
+    else {
+      switch (GetLastError()) {
+      case EINTR:
+	return;
+      default:
+	Error("IOHandler::Block");
+      }
+    }
   }
 }
 
