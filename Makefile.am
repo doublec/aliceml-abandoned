@@ -1,6 +1,8 @@
 SUBDIRS = libltdl store adt generic lightning debian
 INCLUDES = $(LTDLINCL)
 
+EXTRA_DIST = Makefile.cvs Makefile.lightning.am
+
 # SEAM library
 
 lib_LTLIBRARIES = \
