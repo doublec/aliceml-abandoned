@@ -389,7 +389,7 @@ structure AliceIde =
                 Gtk.textIterSetLine(enditer, row'-1);
                 Gtk.textIterSetLineOffset(startiter, col);
                 Gtk.textIterSetLineOffset(enditer, col');
-                Gtk.textBufferSelectRange(buf, startiter, enditer);
+                Buffer.selectRange(buf, startiter, enditer);
                 Gtk.widgetGrabFocus (!curtextview)
             end
 

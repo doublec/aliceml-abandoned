@@ -231,8 +231,9 @@ libs-seam:
 	(cd lib/postscript && make all install) || exit 1 ;\
 	(cd lib/tools/explorer/seam && touch ExplorerGUI.aml ExplorerGUISignals.aml) || exit 1 ;\
 	(cd lib/tools/explorer/seam && make depend) || exit 1 ;\
-	(cd lib/tools/explorer/seam && make all install) || exit 1
-
+	(cd lib/tools/explorer/seam && make all install) || exit 1 ;\
+	(cd tools/ide && make depend) || exit 1 ;\
+	(cd tools/ide && make install) || exit 1
 
 ##
 ## Build Seam

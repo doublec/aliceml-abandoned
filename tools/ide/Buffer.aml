@@ -73,6 +73,10 @@ structure Buffer =
               iter
           end
 
+      fun selectRange(buf, startiter, enditer) =
+	  (Gtk.textBufferMoveMarkByName(buf, "insert", startiter);
+	   Gtk.textBufferMoveMarkByName(buf, "selection_bound", enditer))
+
       fun modifiedChanged id _ =
           let
               val {fileLabel,file,buf,...} = BufferMap.lookupExistent(bufferMap, id)
@@ -116,7 +120,8 @@ structure Buffer =
               val _ = Gtk.containerAdd(scrolledwindow2,newSource)
               val label1 = Gtk.labelNew (shortName fileName)
               val _ = Gtk.widgetShow label1
-              val page = Gtk.notebookAppendPage(parent, scrolledwindow2, label1)
+	      val _ = Gtk.notebookAppendPage(parent, scrolledwindow2, label1)
+              val page = Gtk.notebookGetCurrentPage parent
               val _ = Gtk.notebookSetCurrentPage(parent, page)
 
               val ret = {id=id,file=ref file,
@@ -217,7 +222,7 @@ structure Buffer =
                   val iter' = Gtk.textIterCopy iter
               in
                   Gtk.textIterForwardChars(iter',size txt);
-                  Gtk.textBufferSelectRange(buf,iter,iter')
+                  selectRange(buf,iter,iter')
               end
           else if Gtk.textIterForwardChar iter then
               find buf iter (off+1) txt caseSensitive
