@@ -118,13 +118,22 @@ struct
     fun alli  f (xs,ys)			= alli'(f,0,xs,ys,true)
     fun alliEq f (xs,ys)		= alli'(f,0,xs,ys,false)
 
-    fun exists'(f, x::xs, y::ys) 	= f(x,y) orelse exists'(f,xs,ys)
-      | exists'(f,   _,     _  ) 	= false
-    fun exists  f (xs,ys)        	= exists'(f,xs,ys)
+    fun exists'(f, x::xs, y::ys,b) 	= f(x,y) orelse exists'(f,xs,ys,b)
+      | exists'(f, nil  ,  nil ,_ ) 	= false
+      | exists'(f,  _   ,  nil ,true)   = raise UnequalLengths
+      | exists'(f, nil  ,   _  ,true)   = raise UnequalLengths
+      | exists'(f,  _   ,   _  ,_)      = false
+    fun exists  f (xs,ys)        	= exists'(f,xs,ys,false)
+    fun existsEq f (xs,ys)              = exists'(f,xs,ys,true)
 
-    fun existsi'(f, i, x::xs, y::ys) 	= f(i,x,y) orelse existsi'(f,i+1,xs,ys)
-      | existsi'(f, i,   _,     _  ) 	= false
-    fun existsi  f (xs,ys)        	= existsi'(f,0,xs,ys)
+    fun existsi'(f,i,x::xs,y::ys,b) 	= f(i,x,y) orelse 
+					     existsi'(f,i+1,xs,ys,b)
+      | existsi'(f,i, nil , nil ,_)     = false
+      | existsi'(f,i, nil ,  _  ,true)  = raise UnequalLengths
+      | existsi'(f,i,  _  , nil ,true)  = raise UnequalLengths
+      | existsi'(f,i,  _  ,  _  ,_) 	= false
+    fun existsi  f (xs,ys)        	= existsi'(f,0,xs,ys,false)
+    fun existsiEq  f (xs,ys)            = existsi'(f,0,xs,ys,true)
 
     fun find'(f, x::xs, y::ys) 		= if f(x,y) then SOME (x,y)
 					  else find'(f,xs,ys)

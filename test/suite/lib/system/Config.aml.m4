@@ -16,6 +16,7 @@ import signature TESTSUITE from "../../src/TESTSUITE-sig"
 import structure Gen       from "x-alice:/lib/test/Gen"
 import structure Test      from "../../src/Test"
 
+import structure Time      from "x-alice:/lib/system/Time"
 import structure Date      from "x-alice:/lib/system/Date"
 import structure Config    from "x-alice:/lib/system/Config"
 
@@ -25,7 +26,7 @@ struct
     val randomize = Gen.randomize
 
     fun testPlatform () =
-	ifdef([[WINDOWS]],[[
+	ifdef([[PLATFORM_WINDOWS]],[[
 	      Test.test (fn x => x = Config.WIN32) Config.platform
 	      ]],[[
 	      Test.test (fn x => x = Config.UNIX) Config.platform
@@ -35,17 +36,21 @@ struct
 	ifdef([[SEAM]],[[
 	      Test.test (fn s => s = "seam") Config.vm
 	      ]],[[
-	      Test.test (fn s => s <> "seam") Config.vm 
-	      (*TODO: better differentationss? *)
+	      Test.test (fn s => s <> "seam" andalso s <> "") Config.vm 
 	      ]])
 
-    (* testBuildDate only tests, if Config.buildDate gives a valid date *)
+    (* testBuildDate only tests, if Config.buildDate gives a valid date > now*)
     fun testBuildDate () =
-	Test.test (fn x => (Date.toTime x; true) 
-		         handle Date => false) Config.buildDate
+	Test.test (fn x => 
+		      let
+			val r = Date.compare (Date.fromTimeLocal (Time.now ()),
+					      x)
+		      in
+			  r <> LESS
+		      end) Config.buildDate
 
     fun testPathEscape () =
-	ifdef([[WINDOWS]],[[
+	ifdef([[PLATFORM_WINDOWS]],[[
 	      Test.test (fn x => Option.isNone x) Config.pathEscape
 	      ]],[[
 	      Test.test (fn x => valOf x = #"\\"
@@ -55,7 +60,7 @@ struct
     fun testPathEscape () = () (* TODO: how to implement? *)
 
     fun testPathSeparator () =
-	ifdef([[WINDOWS]],[[
+	ifdef([[PLATFORM_WINDOWS]],[[
 	      Test.test (fn x => x = #";") Config.pathSeparator
 	      ]],[[
 	      Test.test (fn x => x = #":") Config.pathSeparator

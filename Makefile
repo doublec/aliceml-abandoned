@@ -49,11 +49,11 @@ endif
 
 export PREFIX TARGET WINDOWS GECODEDIR
 
-.PHONY: clean clean-common clean-mozart clean-seam \
+.PHONY: clean clean-common clean-mozart clean-seam clean-test\
 	install install-prelude install-common install-global install-mozart install-seam \
 	bootstrap-smlnj bootstrap-mozart bootstrap-seam build-seam \
 	libs-mozart libs-seam \
-	doc man
+	doc man test
 
 
 ##
@@ -91,6 +91,12 @@ bootstrap-smlnj:
 	(cd bootstrap && make $(TARGET)) || exit 1
 
 ##
+## Testsuite
+##
+test:
+	(cd test/suite && ./run.sh VM=SEAM) || exit 1
+
+##
 ## Documentation
 ##
 doc:
@@ -104,6 +110,9 @@ man:
 ## Clean-up
 ##
 clean: clean-$(DEFAULT_TARGET)
+
+clean-test:
+	(cd test/suite && make clean)
 
 clean-mozart: clean-common
 	rm -f bootstrap/alicec-mozart.$(PLATFORM) #bootstrap/alicedep.$(PLATFORM)

@@ -31,6 +31,7 @@ import structure TestListPair    from "lib/fundamental/ListPair"
 import structure TestArray       from "lib/fundamental/Array"
 import structure TestArray2      from "lib/fundamental/Array2"
 import structure TestVector      from "lib/fundamental/Vector"
+import structure TestVectorPair  from "lib/fundamental/VectorPair"
 import structure TestPair        from "lib/fundamental/Pair"
 import structure TestRef         from "lib/fundamental/Ref"
 import structure TestConfig      from "lib/system/Config"
@@ -48,6 +49,7 @@ fun randomizeTests () =
 			TestChar.randomize,
 			TestArray.randomize,
 			TestVector.randomize,
+			TestVectorPair.randomize,
 			TestGeneral.randomize,
 			TestOption.randomize, 
 			TestString.randomize,
@@ -69,7 +71,7 @@ fun randomizeTests () =
 	List.app (fn x => x ()) allTests
     end
 
-val allTests = [(*TestRegressions.suite,*)
+val allTests = [TestRegressions.suite,
 		TestCompiler.suite,
 		TestPair.suite,
 		TestRef.suite,
@@ -77,11 +79,12 @@ val allTests = [(*TestRegressions.suite,*)
 		TestBool.suite,
 		TestGeneral.suite,
 		TestOption.suite, 
-		(*TestList.suite,*)
+		TestList.suite,
 		TestListPair.suite,
-		TestArray2.suite,
-		(*TestArray.suite,*)
+(*		TestArray2.suite,*)
+		TestArray.suite,
 		TestVector.suite,
+		TestVectorPair.suite,
 		TestChar.suite,
 		TestString.suite,
 		TestIEEEReal.suite,

@@ -50,6 +50,7 @@
 	val all :           ('a * 'b -> bool) -> 'a list * 'b list -> bool
 	val allEq :         ('a * 'b -> bool) -> 'a list * 'b list -> bool
 	val exists :        ('a * 'b -> bool) -> 'a list * 'b list -> bool
+	val existsEq :      ('a * 'b -> bool) -> 'a list * 'b list -> bool
 	val find :          ('a * 'b -> bool) -> 'a list * 'b list -> ('a * 'b) option
 	val filter :        ('a * 'b -> bool) -> 'a list * 'b list -> ('a * 'b) list
 	val filterEq :      ('a * 'b -> bool) -> 'a list * 'b list -> ('a * 'b) list
@@ -69,6 +70,7 @@
 	val alli :          (int * 'a * 'b -> bool) -> 'a list * 'b list -> bool
 	val alliEq :        (int * 'a * 'b -> bool) -> 'a list * 'b list -> bool
 	val existsi :       (int * 'a * 'b -> bool) -> 'a list * 'b list -> bool
+	val existsiEq :     (int * 'a * 'b -> bool) -> 'a list * 'b list -> bool
 	val findi :         (int * 'a * 'b -> bool) -> 'a list * 'b list -> (int * 'a * 'b) option
 	val filteri :       (int * 'a * 'b -> bool) -> 'a list * 'b list -> (int * 'a * 'b) list
 	val filteriEq :     (int * 'a * 'b -> bool) -> 'a list * 'b list -> (int * 'a * 'b) list
@@ -186,14 +188,16 @@
     </DD>
 
     <DT>
-      <TT>alliEq <I>f</I> (<I>l1</I>, <I>l2</I>)</TT>
+      <TT>alliEq <I>f</I> (<I>l1</I>, <I>l2</I>)</TT> <BR>
+      <TT>existsiEq <I>f</I> (<I>l1</I>, <I>l2</I>)</TT>
     </DT>
     <DD>
-      <P>Indexed version of the function <TT>allEq</TT>.
+      <P>Indexed version of the functions <TT>allEq</TT> and <TT>existsEq</TT>.
       The index of each pair of elemente (starting from 0) is passed to <TT><I>f</I></TT>
       as an additional argument. The following equivalence hold:</P>
       <PRE>
-        allEq <I>f</I> (<I>l1</I>, <I>l2</I>) = alliEq (<I>f</I> o <I>g</I>) (<I>l1</I>, <I>l2</I>)</PRE>
+        allEq <I>f</I> (<I>l1</I>, <I>l2</I>)    = alliEq (<I>f</I> o <I>g</I>) (<I>l1</I>, <I>l2</I>)
+        existsEq <I>f</I> (<I>l1</I>, <I>l2</I>) = existsiEq (<I>f</I> o <I>g</I>) (<I>l1</I>, <I>l2</I>)</PRE>
       <P>where</P>
       <PRE>
         <I>g</I> = fn (<I>i</I>,<I>a</I>,<I>b</I>) => <I>f</I>(<I>a</I>,<I>b</I>)<PRE>

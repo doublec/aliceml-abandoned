@@ -4,7 +4,7 @@ endif
 export SOURCES
 
 ifndef PLATFORM
-    PLATFORM := WINDOWS # to change for specific platoform
+    PLATFORM := PLATFORM_UNIX # to change for specific platoform
 endif
 export PLATFORM
 

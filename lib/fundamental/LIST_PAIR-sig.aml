@@ -37,6 +37,7 @@ sig
     val all :		('a * 'b -> bool) -> 'a list * 'b list -> bool
     val allEq :		('a * 'b -> bool) -> 'a list * 'b list -> bool
     val exists :	('a * 'b -> bool) -> 'a list * 'b list -> bool
+    val existsEq :	('a * 'b -> bool) -> 'a list * 'b list -> bool
 
     (**)
     val appr :		('a * 'b -> unit) -> 'a list * 'b list -> unit
@@ -45,6 +46,7 @@ sig
     val mapPartialEq :	('a * 'b -> 'c option) -> 'a list * 'b list -> 'c list
     val find :		('a * 'b -> bool) -> 'a list * 'b list -> ('a*'b) option
     val filter :	('a * 'b -> bool) -> 'a list * 'b list -> ('a*'b) list
+    val filterEq :	('a * 'b -> bool) -> 'a list * 'b list -> ('a*'b) list
 
     val appi :		(int * 'a * 'b -> unit) -> 'a list * 'b list -> unit
     val appiEq :	(int * 'a * 'b -> unit) -> 'a list * 'b list -> unit
@@ -67,8 +69,11 @@ sig
     val alli :		(int * 'a * 'b -> bool) -> 'a list * 'b list -> bool
     val alliEq :	(int * 'a * 'b -> bool) -> 'a list * 'b list -> bool
     val existsi :	(int * 'a * 'b -> bool) -> 'a list * 'b list -> bool
+    val existsiEq :	(int * 'a * 'b -> bool) -> 'a list * 'b list -> bool
     val findi :		(int * 'a * 'b -> bool) -> 'a list * 'b list
 					        -> (int * 'a * 'b) option
     val filteri :	(int * 'a * 'b -> bool) -> 'a list * 'b list
+						-> (int * 'a * 'b) list
+    val filteriEq :     (int * 'a * 'b -> bool) -> 'a list * 'b list
 						-> (int * 'a * 'b) list
 end
