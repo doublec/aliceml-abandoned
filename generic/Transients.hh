@@ -34,6 +34,8 @@
 //
 
 class Future : public Transient {
+private:
+  static const u_int initialWaitQueueSize = 2;
 public:
   // Future Static Data
   static word cyclicExn;
@@ -41,7 +43,7 @@ public:
   void AddToWaitQueue(Thread *thread) {
     Queue *waitQueue = Queue::FromWord(GetArg());
     if (waitQueue == INVALID_POINTER) {
-      waitQueue = Queue::New(2);
+      waitQueue = Queue::New(initialWaitQueueSize);
       ReplaceArg(waitQueue->ToWord());
     }
     waitQueue->Enqueue(thread->ToWord());

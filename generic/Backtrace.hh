@@ -24,6 +24,8 @@
 #include "emulator/StackFrame.hh"
 
 class Backtrace : private Queue {
+private:
+  static const u_int initialBacktraceSize = 16; // to be checked
 public:
   using Queue::ToWord;
   using Queue::Enqueue;
@@ -37,7 +39,7 @@ public:
   }
   // Backtrace Constuctor
   static Backtrace *New(word frame) {
-    Queue *trace = Queue::New(256);
+    Queue *trace = Queue::New(initialBacktraceSize);
     trace->Enqueue(frame);
     return static_cast<Backtrace *>(trace);
   }

@@ -449,6 +449,7 @@ void LoadInterpreter::DumpFrame(word frameWord) {
 // BootLinker Functions
 //
 static const u_int INITIAL_TABLE_SIZE = 16; // to be checked
+static const u_int INITIAL_QUEUE_SIZE = 16; // to be checked
 
 word BootLinker::componentTable;
 word BootLinker::keyQueue;
@@ -459,7 +460,7 @@ void BootLinker::Init(prim_table *builtins) {
   componentTable = HashTable::New(HashTable::BLOCK_KEY,
 				  INITIAL_TABLE_SIZE)->ToWord();
   RootSet::Add(componentTable);
-  keyQueue = Queue::New(135)->ToWord(); // to be done
+  keyQueue = Queue::New(INITIAL_QUEUE_SIZE)->ToWord();
   RootSet::Add(keyQueue);
   numberOfEntries = 0;
   // Initialize Interpreters
