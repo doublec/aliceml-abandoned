@@ -69,7 +69,10 @@ define(_BINOP,`
 	    } else if (number1 instanceof Word) {
 		_REQUESTDEC(DMLValue number2,args[1]);
 		if (number2 instanceof Word) {
-		    return new Word(((Word) number1).value $2 ((Word) number2).value);
+		    long ago = ((Word) number1).value;
+		    long day = ((Word) number2).value;
+		    long way = (ago $2 day) & 0x7fffffff;
+		    return new Word((int) way);
 		} else {
 		    _error("arguments of different number type",val);
 		}
