@@ -44,7 +44,6 @@ functor MkCodeGenPhase(structure AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR
 	structure Liveness = MkLiveness(AbstractCodeGrammar)
 
 	structure IdSet = MkHashImpSet(Int)
-	structure IntMap = MkHashImpMap(Int)
 
 	open I
 	open Environment
