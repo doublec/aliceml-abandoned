@@ -151,7 +151,7 @@ define
 	 {TranslateBody Body1 ?ThenVInstr nil State ReturnReg}
 	 {TranslateBody Body2 ?ElseVInstr nil State ReturnReg}
       [] raiseStm(Coord Id) then
-	 VHd = vCallBuiltin(_ 'Exception.raise' [{GetReg Id State}]
+	 VHd = vCallBuiltin(_ 'Exception.raiseError' [{GetReg Id State}]
 			    {TranslateCoord Coord} VTl)
       [] sharedStm(_ Body I) then
 	 if {Dictionary.member State.shareDict I} then
@@ -183,6 +183,18 @@ define
 	 VHd = vUnify(_ Reg {GetReg Id State} VTl)
       [] conExp(_ Id false) then
 	 VHd = vUnify(_ Reg {GetReg Id State} VTl)
+      [] conExp(Coord Id=id(_ ref _) true) then
+	 Pos PredId NLiveRegs ArgReg ResReg VInstr GRegs Code
+      in
+	 Pos = {TranslateCoord Coord}
+	 PredId = pid({GetPrintName Id} 2 Pos nil NLiveRegs)
+	 {State.cs startDefinition()}
+	 {State.cs newReg(?ArgReg)}
+	 {State.cs newReg(?ResReg)}
+	 VInstr = vCallBuiltin(_ 'Cell.new' [ArgReg ResReg] Pos nil)
+	 {State.cs
+	  endDefinition(VInstr [ArgReg ResReg] nil ?GRegs ?Code ?NLiveRegs)}
+	 VHd = vDefinition(_ Reg PredId unit GRegs Code VTl)
       [] conExp(Coord Id true) then
 	 Pos PredId NLiveRegs ArgReg TmpReg ResReg
 	 VInstr NameReg VInter1 VInter2 GRegs Code
@@ -235,9 +247,21 @@ define
       [] selAppExp(Coord Lab Id) then
 	 VHd = vInlineDot(_ {GetReg Id State} {TranslateLab Lab} Reg false
 			  {TranslateCoord Coord} VTl)
+      [] conAppExp(Coord id(_ ref _) Id) then
+	 VHd = vCallBuiltin(_ 'Cell.new' [{GetReg Id State} Reg]
+			    {TranslateCoord Coord} VTl)
       [] conAppExp(Coord Id1 Id2) then
-	 VHd = vCall(_ {GetReg Id1 State} [{GetReg Id2 State} Reg]
-		     {TranslateCoord Coord} VTl)
+	 Pos VInter1 NameReg TmpReg ResReg VInter2 VInter3
+      in
+	 Pos = {TranslateCoord Coord}
+	 VHd = vEquateConstant(_ 1 TmpReg VInter1)
+	 NameReg = {GetReg Id1 State}
+	 {State.cs newReg(?TmpReg)}
+	 {State.cs newReg(?ResReg)}
+	 VInter1 = vCallBuiltin(_ 'Tuple.make' [NameReg TmpReg ResReg]
+				Pos VInter2)
+	 VInter2 = vInlineDot(_ ResReg 1 {GetReg Id2 State} false Pos VInter3)
+	 VInter3 = vUnify(_ Reg ResReg VTl)
       [] buitinAppExp(Coord Builtinname Ids) then Value Regs in
 	 Value = Prebound.builtinTable.Builtinname
 	 Regs = {FoldR Ids fun {$ Id Regs} {GetReg Id State}|Regs end [Reg]}

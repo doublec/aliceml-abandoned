@@ -183,7 +183,6 @@ define
 	     'true': true
 	     'nil': nil
 	     'cons': '|'
-	     'ref': fun {$ X} {NewCell X} end
 	     'Match': Match
 	     'Bind': Bind
 	     'eq': fun {$ X#Y} X == Y end
