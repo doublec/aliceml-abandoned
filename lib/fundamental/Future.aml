@@ -45,21 +45,18 @@ struct
 	fun awaitEither (a, b) =
 	    let
 		val c  = Hole.hole ()
-		val f  = Hole.future c
 		val t1 = Hole.hole ()
 		val t2 = Hole.hole ()
 	    in
 		spawn (Hole.fill (t1, currentThread ());
 		       (await a; ()) handle _ => ();
 		       Hole.fill (c, FST a) handle Hole.Hole => ();
-		       raiseIn (t2, Terminate)
-			   handle (Hole.Hole|Terminated) => ());
+		       raiseIn (t2, Terminate));
 		spawn (Hole.fill (t2, currentThread ());
 		       (await b; ()) handle _ => ();
 		       Hole.fill (c, SND b) handle Hole.Hole => ();
-		       raiseIn (t1, Terminate)
-			   handle (Hole.Hole|Terminated) => ());
-		await f
+		       raiseIn (t1, Terminate));
+		await (Hole.future c)
 	    end
     end
 
