@@ -500,8 +500,6 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 			   translateCont cont);
 		stms1
 	    end
-	  | translateExp (UpExp (_, exp), f, cont) =
-	    translateExp (exp, f, cont)   (*--** UpExp *)
 	  | translateExp (AndExp (info, exp1, exp2), f, cont) =
 	    translateExp (IfExp (info, exp1, exp2, exp_false info), f, cont)
 	  | translateExp (OrExp (info, exp1, exp2), f, cont) =

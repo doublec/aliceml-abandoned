@@ -60,7 +60,6 @@ UNFINISHED: obsolete after bootstrapping:
 	| FunExp    of exp_info * match list		(* function / functor *)
 	| AppExp    of exp_info * exp * exp		(* application *)
 	| AdjExp    of exp_info * exp * exp		(* record adjunction *)
-	| UpExp     of exp_info * exp			(* up cast *)
 	| AndExp    of exp_info * exp * exp		(* conjunction *)
 	| OrExp     of exp_info * exp * exp		(* disjunction *)
 	| IfExp     of exp_info * exp * exp * exp	(* conditional *)
@@ -147,7 +146,6 @@ UNFINISHED: obsolete after bootstrapping:
       | infoExp(FunExp(i,_))		= i
       | infoExp(AppExp(i,_,_))		= i
       | infoExp(AdjExp(i,_,_))		= i
-      | infoExp(UpExp(i,_))		= i
       | infoExp(AndExp(i,_,_))		= i
       | infoExp(OrExp(i,_,_))		= i
       | infoExp(IfExp(i,_,_,_))		= i

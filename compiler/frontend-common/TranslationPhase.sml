@@ -1,3 +1,7 @@
+(*
+ * UNFINISHED: maintain sharing on transformed interfaces.
+ *)
+
 structure TranslationPhase :> TRANSLATION_PHASE =
   struct
 
@@ -106,6 +110,140 @@ structure TranslationPhase :> TRANSLATION_PHASE =
 
     fun trInfo {region,inf} = { region = region, typ = infToTyp inf }
     (*UNFINISHED: use punning*)
+
+
+  (* Signature coercions *)
+
+    (*
+     * We use the following transformation rules:
+     *
+     *	[x : sig item1* end :> sig item2* end] =
+     *	   struct [x . item1 :> item2]* end
+     *	[x : fct(x1:j11)->j12 :> fct(x2:j21)->j22] =
+     *	   fct(y:j21) => let z = x([y : j21 :> j11]) in [z : j12 :> j22] end
+     *	[x : j1 :> j2] = x
+     *
+     *	[x . val y:t1 :> val y:t2] = val y = lazy x.y
+     *	[x . constructor y:t1 :> val y:t2] = val y = lazy (x.y)
+     *	[x . structure y:j1 :> structure y:j2] =
+     *	   structure y = lazy [x.y : j1 :> j2]
+     *
+     * Moreover, we apply the optimization that - if the transformation is the
+     * identity function - the coercion is a no-op.
+     *)
+
+    fun upInf(x,j1,j2, r,t1,t2) =
+	if Inf.isSig j2 andalso Inf.isSig j1 then
+	    let
+		val s1 = Inf.asSig j1
+		val s2 = Inf.asSig j2
+		val b  = Inf.size s1 <> Inf.size s2
+	    in
+		case upItems(r, x, Inf.items s2, s1, b, [])
+		  of NONE        => NONE
+		   | SOME fields => SOME(O.ProdExp(typInfo(r,t2), fields))
+	    end
+	else if Inf.isArrow j2 andalso Inf.isArrow j1 then
+	    let
+		val (p1,j11,j12) = Inf.asArrow j1
+		val (p2,j21,j22) = Inf.asArrow j2
+		val    (t11,t12) = Type.asArrow t1
+		val    (t21,t22) = Type.asArrow t2
+
+		val i' = nonInfo r
+		val y' = O.Id(i', Stamp.new(), Name.InId)
+		val z' = O.Id(i', Stamp.new(), Name.InId)
+		val y  = O.ShortId(i', y')
+		val z  = O.ShortId(i', z')
+	    in
+		case (upInf(y,j21,j11, r,t21,t11), upInf(z,j12,j22, r,t12,t22))
+		  of (SOME exp1, SOME exp2) =>
+		     let
+			val xexp   = O.VarExp(typInfo(r,t1), x)
+			val ypat   = O.VarPat(typInfo(r,t21), y')
+			val zpat   = O.VarPat(typInfo(r,t12), z')
+			val appexp = O.AppExp(typInfo(r,t12), xexp, exp1)
+			val dec    = O.ValDec(i', zpat, appexp)
+			val letexp = O.LetExp(typInfo(r,t22), [dec], exp2)
+		     in
+			SOME(O.FunExp(typInfo(r,t2), [O.Match(i',ypat,letexp)]))
+		     end
+		   | (NONE, SOME exp2) =>
+		     let
+			val xexp   = O.VarExp(typInfo(r,t1), x)
+			val yexp   = O.VarExp(typInfo(r,t21), y)
+			val ypat   = O.VarPat(typInfo(r,t21), y')
+			val zpat   = O.VarPat(typInfo(r,t12), z')
+			val appexp = O.AppExp(typInfo(r,t12), xexp, yexp)
+			val dec    = O.ValDec(i', zpat, appexp)
+			val letexp = O.LetExp(typInfo(r,t22), [dec], exp2)
+		     in
+			SOME(O.FunExp(typInfo(r,t2), [O.Match(i',ypat,letexp)]))
+		     end
+		   | (SOME exp1, NONE) =>
+		     let
+			val xexp   = O.VarExp(typInfo(r,t1), x)
+			val ypat   = O.VarPat(typInfo(r,t21), y')
+			val appexp = O.AppExp(typInfo(r,t12), xexp, exp1)
+		     in
+			SOME(O.FunExp(typInfo(r,t2), [O.Match(i',ypat,appexp)]))
+		     end
+		   | (NONE, NONE) => NONE
+	    end
+	else
+	    NONE
+
+    and upItems(r, x, [], s1, false, fields) = NONE
+      | upItems(r, x, [], s1, true,  fields) = SOME fields
+      | upItems(r, x, item::items, s1, b, fields) =
+	if Inf.isValItem item then
+	    let
+		val (a,t,w2,_) = Inf.asValItem item
+		val      w1    = Inf.lookupValSort(s1,a)
+		val      i     = typInfo(r,t)
+		val      i'    = nonInfo r
+		val      a'    = O.Lab(i',a)
+		val      y     = O.LongId(i',x,a')
+		val  (exp,b')  = if w1 = w2 then
+				     (O.VarExp(i,y), b)
+				 else let
+				     val n = case w1
+					       of Inf.CONSTRUCTOR k => k > 0
+						| Inf.VALUE =>
+						  raise Crash.Crash
+						    "TranslationPhase.upItems: \
+						    \funny arity (hoho)"
+				 in
+				     (if isTagType t then
+					 O.TagExp(i,a',n)
+				      else
+					 O.ConExp(i,y,n)
+				     , true)
+				 end
+		val  exp' = O.LazyExp(i,exp)
+	    in
+		upItems(r, x, items, s1, b', O.Field(i',a',exp')::fields)
+	    end
+	else if Inf.isModItem item then
+	    let
+		val (a,j2,_) = Inf.asModItem item
+		val    j1    = Inf.lookupMod(s1,a)
+		val    t1    = infToTyp j1
+		val    t2    = infToTyp j2
+		val    i     = typInfo(r,t2)
+		val    i'    = nonInfo r
+		val    a'    = O.Lab(i',a)
+		val    y     = O.LongId(i',x,a')
+		val (exp,b') = case upInf(y,j1,j2, r,t1,t2)
+				 of NONE     => (O.VarExp(i,y), b)
+				  | SOME exp => (exp, true)
+		val  exp'    = O.LazyExp(i,exp)
+	    in
+		upItems(r, x, items, s1, b', O.Field(i',a',exp')::fields)
+	    end
+	else (*UNFINISHED: types and interfaces*)
+	    upItems(r, x, items, s1, b, fields)
+
 
 
   (* Create fields for all structures and values in an environment *)
@@ -312,11 +450,45 @@ UNFINISHED: obsolete after bootstrapping:
 					      val m' = O.Match(nonInfo r,p',e')
 					      in O.FunExp(i', [m'])
 					  end
-      | trMod(I.AppMod(i,m1,m2))	= O.AppExp(trInfo i, trMod m1, trMod m2)
-      | trMod(I.AnnMod(i,m,j))		= O.UpExp(trInfo i, trMod m)
-      | trMod(I.UpMod(i,m,j))		= O.UpExp(trInfo i, trMod m)
+      | trMod(I.AppMod(i,m1,m2))	= let val i1  = I.infoMod m1
+					      val i2  = I.infoMod m2
+					      val j1  = #inf i1
+					      val j12 = #3(Inf.asArrow j1)
+					  in
+					      O.AppExp(trInfo i, trMod m1,
+						       trUpMod(i2,m2,j12))
+					  end
+      | trMod(I.AnnMod(i,m,j))		= trUpMod(i, m, #inf(I.infoInf j))
+      | trMod(I.UpMod(i,m,j))		= trUpMod(i, m, #inf(I.infoInf j))
       | trMod(I.LetMod(i,ds,m))		= O.LetExp(trInfo i, trDecs ds, trMod m)
       | trMod(I.UnpackMod(i,e,j))	= trExp e
+
+    and trUpMod(i,m,j) =
+	let
+	    val j1 = #inf(I.infoMod m)
+	    val j2 = #inf i
+
+	    val i' = trInfo i
+	    val r  = #region i
+
+	    val e1 = trMod m
+	    val t1 = #typ(O.infoExp e1)
+	    val t2 = #typ i'
+
+	    val i2 = nonInfo r
+	    val x' = O.Id(i2, Stamp.new(), Name.InId)
+	    val x  = O.ShortId(i2, x')
+	in
+	    case upInf(x,j1,j2, r,t1,t2)
+	      of NONE    => e1
+	       | SOME e2 =>
+		 let
+		     val p = O.VarPat(typInfo(r,t1), x')
+		     val d = O.ValDec(i2,p,e1)
+		 in
+		     O.LetExp(typInfo(r,t2), [d], e2)
+		 end
+	end
 
 
   (* Declarations *)

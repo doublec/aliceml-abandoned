@@ -164,15 +164,6 @@ backend-common/MakeEngine.sml
 backend-common/BackendCommon.sml
 backend-mozart/OzifyFlatGrammar.sml
 backend-mozart/MozartGenerationPhase.sml
-backend-com+/IL.sig
-backend-com+/IL.sml
-backend-com+/StockWerk.sml
-backend-com+/BUILTINS.sig
-backend-com+/Builtins.sml
-backend-com+/CODE_STORE.sig
-backend-com+/CodeStore.sml
-backend-com+/CODE_GEN_PHASE.sig
-backend-com+/CodeGenPhase.sml
 top/Signature.sml
 top/Composer.sml
 top/COMPILER.sig

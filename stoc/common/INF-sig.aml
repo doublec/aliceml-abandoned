@@ -104,6 +104,7 @@ signature INF =
 
   (* Signature inspection *)
 
+    val size :		sign -> int
     val items :		sign -> item list
 
     exception Item

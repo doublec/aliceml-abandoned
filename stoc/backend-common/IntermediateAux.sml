@@ -47,7 +47,6 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	    occursInExp (exp1, id) orelse occursInExp (exp2, id)
 	  | occursInExp (AdjExp (_, exp1, exp2), id) =
 	    occursInExp (exp1, id) orelse occursInExp (exp2, id)
-	  | occursInExp (UpExp (_, exp), id) = occursInExp (exp, id)
 	  | occursInExp (AndExp (_, exp1, exp2), id) =
 	    occursInExp (exp1, id) orelse occursInExp (exp2, id)
 	  | occursInExp (OrExp (_, exp1, exp2), id) =
@@ -174,8 +173,6 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	    AppExp (info, substExp (exp1, subst), substExp (exp2, subst))
 	  | substExp (AdjExp (info, exp1, exp2), subst) =
 	    AdjExp (info, substExp (exp1, subst), substExp (exp2, subst))
-	  | substExp (UpExp (info, exp), subst) =
-	    UpExp (info, substExp (exp, subst))
 	  | substExp (AndExp (info, exp1, exp2), subst) =
 	    AndExp (info, substExp (exp1, subst), substExp (exp2, subst))
 	  | substExp (OrExp (info, exp1, exp2), subst) =

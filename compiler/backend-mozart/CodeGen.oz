@@ -55,7 +55,7 @@ define
       {Dictionary.get State.regDict Stamp}
    end
 
-   fun {GetPrintName id(L#C#_#_ _ Name) State}
+   fun {GetPrintName id((L#C)#_ _ Name) State}
       case Name of inId then
 	 {VirtualString.toAtom
 	  'File '#State.filename#', line '#L#', column '#C}

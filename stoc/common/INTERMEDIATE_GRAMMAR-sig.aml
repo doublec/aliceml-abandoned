@@ -53,7 +53,6 @@ UNFINISHED: obsolete after bootstrapping:
 	| FunExp    of exp_info * match list		(* function / functor *)
 	| AppExp    of exp_info * exp * exp		(* application *)
 	| AdjExp    of exp_info * exp * exp		(* record adjunction *)
-	| UpExp     of exp_info * exp			(* up cast *)
 	| AndExp    of exp_info * exp * exp		(* conjunction *)
 	| OrExp     of exp_info * exp * exp		(* disjunction *)
 	| IfExp     of exp_info * exp * exp * exp	(* conditional *)

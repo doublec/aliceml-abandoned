@@ -159,6 +159,7 @@ structure InfPrivate =
 
     exception Item
 
+    fun size (_, map)       = Map.size map
     fun items(ref items, _) = List.filter (fn item => itemIndex item = 0) items
 
     fun isValItem(ref(VAL _))		= true
