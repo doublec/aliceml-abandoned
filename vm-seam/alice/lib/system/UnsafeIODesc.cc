@@ -13,7 +13,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#if defined(__MINGW32__) || defined(_MSC_VER)
+#if USE_WINSOCK
 #include <windows.h>
 #else
 #include <unistd.h>
@@ -316,7 +316,7 @@ DEFINE1(UnsafeIODesc_canOutput) {
 
 DEFINE1(UnsafeIODesc_openIn) {
   DECLARE_STRING(name, x0);
-#if defined(__MINGW32__) || defined(_MSC_VER)
+#if USE_WINSOCK
   HANDLE hFile = CreateFile(name->ExportC(), GENERIC_READ, FILE_SHARE_READ,
 			    NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
   if (hFile == INVALID_HANDLE_VALUE) RAISE_SYS_ERR();
@@ -330,7 +330,7 @@ DEFINE1(UnsafeIODesc_openIn) {
 
 DEFINE1(UnsafeIODesc_openOut) {
   DECLARE_STRING(name, x0);
-#if defined(__MINGW32__) || defined(_MSC_VER)
+#if USE_WINSOCK
   HANDLE hFile = CreateFile(name->ExportC(), GENERIC_WRITE, 0,
 			    NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
   if (hFile == INVALID_HANDLE_VALUE) RAISE_SYS_ERR();
@@ -345,7 +345,7 @@ DEFINE1(UnsafeIODesc_openOut) {
 
 DEFINE1(UnsafeIODesc_openAppend) {
   DECLARE_STRING(name, x0);
-#if defined(__MINGW32__) || defined(_MSC_VER)
+#if USE_WINSOCK
   HANDLE hFile = CreateFile(name->ExportC(), GENERIC_WRITE, 0,
 			    NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
   if (hFile == INVALID_HANDLE_VALUE) RAISE_SYS_ERR();
