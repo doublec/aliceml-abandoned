@@ -14,7 +14,7 @@ final public class RecordArity implements java.io.Serializable {
     public RecordArity(Label[] labels) {
 	hashtable = new java.util.Hashtable(); // size?
 	int l = labels.length;
-	this labels = labels;
+	this.labels = labels;
 
 	for(int i=0; i<l; i++) {
 	    hashtable.put(labels[i],new Integer(i)); // really?
@@ -51,7 +51,7 @@ final public class RecordArity implements java.io.Serializable {
     final public int hashCode() {
 	int l=labels.length;
 	int hc=0;
-	for(i=0; i<l; i++)
+	for(int i=0; i<l; i++)
 	    hc=(hc+labels[i].hashCode()%0x3fffffff)%0x3fffffff;
 	return hc;
     }

@@ -6,7 +6,7 @@
 
 package de.uni_sb.ps.dml.runtime;
 
-import de.uni_sb.ps.dml.builtin.DMLArray;
+import de.uni_sb.ps.dml.builtin.Array;
 import java.rmi.server.*;
 
 /** This is the OutputStream used to create pickles.
@@ -120,7 +120,7 @@ final public class PickleOutputStream extends java.io.ObjectOutputStream {
 		else
 		    obj = ((LVar) obj).getValue();
 		return obj;
-	    } else if (obj instanceof DMLArray) {
+	    } else if (obj instanceof Array) {
 		return Constants.
 		    runtimeError.apply(new de.uni_sb.ps.dml.runtime.String("cannot pickle DMLArray")).raise();
 	    } else if (obj instanceof Thread) {

@@ -19,7 +19,7 @@ final public class Record extends Tuple {
 	super(null);
 	java.lang.Object ar=null;
 	this.vals=vals;
-	arity=new RecordArity(ls, vals);
+	arity=new RecordArity(ls);
 	ar=arityHash.get(arity);
 	if (ar==null)
 	    arityHash.put(arity,arity);
