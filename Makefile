@@ -127,8 +127,6 @@ clean-seam: clean-common
 	rm -f bootstrap/alicec-seam.$(PLATFORM) #bootstrap/alicedep.$(PLATFORM)
 	(cd vm-seam && make clean WINDOWS=$(WINDOWS)) || exit
 	(cd vm-seam && make -f Makefile.bootstrap distclean) || exit 1
-	(cd lib/gecode && make distclean) || exit 1
-	(cd lib/gecode/search-factory && make distclean) || exit 1
 	(cd lib/distribution && make TARGET=seam distclean) || exit 1
 	(cd lib/test && make distclean) || exit 1
 	(cd lib/gtk/seam && make distclean) || exit 1
@@ -136,6 +134,9 @@ clean-seam: clean-common
 	(cd tools/toplevel && make distclean) || exit 1
 	(cd tools/lex && make distclean) || exit 1
 	(cd tools/yacc && make distclean) || exit 1
+	(cd lib/sqlite && make distclean) || exit 1
+	(cd lib/xml && make distclean) || exit 1
+	(cd tools/glade && make distclean) || exit 1
 	(cd lib/gecode/ && make distclean) || exit 1
 	(cd lib/gecode/search-factory && make distclean) || exit 1
 	(cd lib/gecode/distributed-search && make distclean) || exit 1
@@ -255,6 +256,7 @@ libs-seam:
 	(cd tools/lex && make all && make install) || exit 1 ;\
 	(cd lib/sqlite && make depend) || exit 1 ;\
 	(cd lib/sqlite && make all install SQLITEDIR=$(SQLITEDIR)) || exit 1 ;\
+	(cd lib/xml && make depend) || exit 1 ;\
 	(cd lib/xml && make all install LIBXMLDIR=$(LIBXMLDIR)) || exit 1 ;\
 	(cd tools/glade && make depend) || exit 1 ;\
 	(cd tools/glade && make all install) || exit 1
