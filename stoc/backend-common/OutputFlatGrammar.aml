@@ -78,7 +78,7 @@ structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
 
 	val sort = StampSet.fold insert nil
 
-	fun outputLiveness (ref (Unknown | LoopStart | LoopEnd)) = NULL
+	fun outputLiveness (ref Unknown) = NULL
 	  | outputLiveness (ref (Use set)) =
 	    SEQ #[S (List.foldl (fn (stamp, s) =>
 				 s ^ " " ^ Stamp.toString stamp)

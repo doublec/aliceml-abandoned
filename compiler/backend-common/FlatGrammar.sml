@@ -16,8 +16,6 @@ structure FlatGrammar :> FLAT_GRAMMAR =
 
 	datatype livenessInfo =
 	    Unknown
-	  | LoopStart   (* internal *)
-	  | LoopEnd   (* internal *)
 	  | Use of StampSet.t   (* internal *)
 	  | Kill of StampSet.t
 

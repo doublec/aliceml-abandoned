@@ -98,8 +98,7 @@ structure LivenessAnalysisPhase :> LIVENESS_ANALYSIS_PHASE =
 	  | union (lset as (Copy set), set') =
 	    (StampSet.union (set, set'); lset)
 
-	fun setInfo ({liveness = r as ref (Unknown | LoopStart | LoopEnd),
-		      ...}: stm_info, set) =
+	fun setInfo ({liveness = r as ref Unknown, ...}: stm_info, set) =
 	    r := Use set
 	  | setInfo ({liveness = ref (Use _), ...}, _) = ()
 	  | setInfo ({liveness = ref (Kill _), ...}, _) =
@@ -211,20 +210,12 @@ structure LivenessAnalysisPhase :> LIVENESS_ANALYSIS_PHASE =
 	  | scanBody [SharedStm (i as {liveness = r as ref Unknown, ...},
 				 body, _)] =
 	    let
-		val _ = r := LoopStart
 		val set = lazyValOf (scanBody body)
 	    in
 		setInfo (i, set);
 		Orig set
 	    end
-	  | scanBody [SharedStm (i as {liveness = r as ref LoopStart, ...},
-				 body, _)] =
-	    (r := LoopEnd; scanBody body)
-	  | scanBody [SharedStm ({liveness = r as ref LoopEnd, ...},
-				 _, _)] =
-	    Copy (StampSet.new ())
-	  | scanBody [SharedStm ({liveness = ref (Use set'), ...},
-				 _, _)] =
+	  | scanBody [SharedStm ({liveness = ref (Use set'), ...}, _, _)] =
 	    Orig set'
 	  | scanBody [SharedStm ({liveness = ref (Kill _), ...}, _, _)] =
 	    raise Crash.Crash "LivenessAnalysisPhase.scanStm 1"
@@ -396,7 +387,7 @@ structure LivenessAnalysisPhase :> LIVENESS_ANALYSIS_PHASE =
 	  | initExp _ = ()
 	and initBody (stm::stms, defSet) =
 	    (case #liveness (infoStm stm) of
-		 ref (Unknown | LoopStart | LoopEnd) =>
+		 ref Unknown =>
 		     raise Crash.Crash "LivenessAnalysisPhase.initBody"
 	       | r as ref (Use useSet) =>
 		     let

@@ -188,10 +188,9 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 	 * means that we have to build an abstract control-flow graph
 	 * containing only the SharedStms as nodes and having edges from
 	 * a node n to a node m iff there is a control-flow branch leading
-	 * from n to m (ignoring loops in the control-flow graph).
-	 * If we analyze SharedStms in an order conforming with the
-	 * topological ordering of the graph's nodes, then the minimal
-	 * environments (as defined above) are correctly computed.
+	 * from n to m.  If we analyze SharedStms in an order conforming
+	 * with the topological ordering of the graph's nodes, then the
+	 * minimal environments (as defined above) are correctly computed.
 	 *
 	 * sortShared computes an appropriate ordering on the SharedStms.
 	 *)
@@ -236,10 +235,8 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 		(StampMap.insert (shared, stamp,
 				  if StampMap.member (shared, stamp)
 				  then SHARED else UNIQUE);
-		 if StampSet.member (path, stamp) then ()   (* ignore loops *)
-		 else
-		     (edge (edgeMap, pred, stamp);
-		      sortSharedBody (body, stamp, edgeMap, shared, path)))
+		 edge (edgeMap, pred, stamp);
+		 sortSharedBody (body, stamp, edgeMap, shared, path))
 	      | sortStm (ReturnStm (_, _), _, _, _, _) = ()
 	      | sortStm (IndirectStm (_, ref bodyOpt),
 			 pred, edgeMap, shared, path) =
