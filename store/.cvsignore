@@ -1,2 +1,9 @@
 autom4te*.cache
 Makefile.in
+*.lo
+StoreConfig
+StoreConfig.hh
+Makefile
+.libs
+.deps
+libstore.la

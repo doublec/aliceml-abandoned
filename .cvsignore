@@ -1,5 +1,7 @@
 aclocal.m4
 autom4te*.cache
+config.log
+config.status
 config.guess
 config.sub
 configure
@@ -11,3 +13,12 @@ Makefile.in
 missing
 mkinstalldirs
 TODO
+.deps
+.libs
+*.lo
+libltdl
+libseam.la
+libtool
+seam
+seamtool
+Makefile

@@ -1,1 +1,7 @@
 autom4te*.cache
+*.lo
+.deps
+.libs
+Makefile
+Makefile.in
+libgeneric.la
