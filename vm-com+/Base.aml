@@ -2360,11 +2360,12 @@ structure Cell :> CELL =
 signature HOLE =
   sig
     exception Hole
+    exception Cyclic
 
     val hole :		unit -> 'a
     val future :	'a -> 'a
 
-    val fill :		'a * 'a  -> unit	(* Hole *)
+    val fill :		'a * 'a  -> unit	(* Hole, Cyclic *)
     val fail :		'a * exn -> unit	(* Hole *)
 
     val isHole :	'a -> bool
@@ -2375,6 +2376,7 @@ signature HOLE =
 structure Hole : HOLE =
   struct
     __primitive constructor Hole : exn			= "Hole.Hole"
+    __primitive constructor Cyclic : exn		= "Hole.Cyclic"
 
     __primitive val hole :	unit -> 'a		= "Hole.hole"
     __primitive val future :	'a -> 'a		= "Hole.future"
@@ -2395,6 +2397,7 @@ structure Hole : HOLE =
 signature FUTURE =
   sig
     exception Future of exn
+    exception Cyclic
 
     val concur :	(unit -> 'a) -> 'a
     val byneed :	(unit -> 'a) -> 'a
@@ -2411,6 +2414,7 @@ signature FUTURE =
 structure Future : FUTURE =
   struct
     __primitive constructor Future of exn : exn		= "Future.Future"
+    constructor Cyclic = Hole.Cyclic
 
     __primitive val concur :	(unit -> 'a) -> 'a	= "Future.concur"
     __primitive val byneed :	(unit -> 'a) -> 'a	= "Future.byneed"
@@ -2438,7 +2442,7 @@ signature PROMISE =
     val promise :	unit -> 'a promise
     val future :	'a promise -> 'a
 
-    val fulfill :	'a promise * 'a  -> unit	(* Promise *)
+    val fulfill :	'a promise * 'a  -> unit	(* Promise, Cyclic *)
     val fail :		'a promise * exn -> unit	(* Promise *)
   end
 
@@ -2596,5 +2600,8 @@ val round	= Real.round
 __primitive val use : string -> unit = "use"
 *)
 
-val byneed	= Future.byneed
-val concur	= Future.concur
+exception Future = Future.Future				(**)
+exception Cyclic = Future.Cyclic				(**)
+
+val byneed	= Future.byneed					(**)
+val concur	= Future.concur					(**)

@@ -112,6 +112,9 @@ import
 
     (*MISSING: use*)
 
+    exception Future
+    exception Cyclic
+
     val byneed
     val concur
 

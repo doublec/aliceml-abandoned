@@ -24,6 +24,7 @@
 	structure Future:
 	    sig
 		exception Future of exn
+		exception Cyclic
 
 		val concur:	(unit -> 'a) -> 'a
 		val byneed:	(unit -> 'a) -> 'a
@@ -52,7 +53,9 @@
     that is different from the future, this future is globally replaced with
     the result. If the application terminates with an exception <I>e</I>, the
     future is marked as failed and all operations accessing it will
-    raise <TT>Future(</TT><I>e</I><TT>)</TT>.
+    raise <TT>Future(</TT><I>e</I><TT>)</TT>. If the application terminates
+    returning the future itself, the future is marked as failed and all
+    operations accessing it will raise <TT>Future(Cyclic)</TT>.
   <P>
 
   <P>
@@ -210,7 +213,8 @@
     to the promise. It globally replaces the future with the right argument,
     provided the left and right argument are not variants of the same future.
     If the promise has already been fulfilled (or failed, see below),
-    the exception <TT>Promise</TT> is raised.
+    the exception <TT>Promise</TT> is raised. If the left and right arguments
+    are variants of the same future the exception <TT>Cyclic</TT> is raised.
   </P>
 
   <P>
