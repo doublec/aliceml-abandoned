@@ -806,6 +806,10 @@ public:
   static JavaString *New(const char *s) {
     return New(s, std::strlen(s));
   }
+  static JavaString *New(String *s) {
+    return New(reinterpret_cast<char *>(s->GetValue()), s->GetSize());
+  }
+
   static JavaString *FromWord(word x) {
     return static_cast<JavaString *>(Object::FromWord(x));
   }
