@@ -129,7 +129,6 @@ struct
 	       | I.FailExp _ )			= true
       | isValue( I.TagExp(_, _, _, exp)
 	       | I.ConExp(_, _, exp)
-	       | I.RefExp(_, exp)
 	       | I.SelExp(_, _, exp)
 	       | I.AnnExp(_, exp, _) )		= isValue exp
       | isValue( I.TupExp(_, exps)
@@ -143,7 +142,8 @@ struct
       | isValue( I.IfExp (_, exp1, exp2, exp3))	= isValue exp1 andalso
 						  isValue exp2 andalso
 						  isValue exp3
-      | isValue( I.AppExp _
+      | isValue( I.RefExp _
+	       | I.AppExp _
 	       | I.SeqExp _
 	       | I.CaseExp _
 	       | I.RaiseExp _
