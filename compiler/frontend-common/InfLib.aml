@@ -113,12 +113,6 @@ struct
     val _		= Inf.asLambda : inf -> path * inf * inf (* verify *)
     val lab_asApply	= vallab "asApply"
     val _		= Inf.asApply : inf -> inf * mod	(* verify *)
-    val lab_asCon'	= vallab "asCon'"
-    val _		= Inf.asCon' : inf -> path		(* verify *)
-    val lab_asSig'	= vallab "asSig'"
-    val _		= Inf.asSig' : inf -> sign		(* verify *)
-    val lab_asArrow'	= vallab "asArrow'"
-    val _		= Inf.asArrow' : inf -> path * inf * inf (* verify *)
 
     val lab_groundKind	= vallab "groundKind"
     val _		= Inf.groundKind : unit -> kind		(* verify *)

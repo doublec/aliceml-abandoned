@@ -1134,7 +1134,7 @@ TextIO.print "\n";
     and elabModlongid_sig(E, modlongid as I.ShortId(i, modid)) =
 	let
 	    val (j,use,modid') = elabModid(E, modid)
-	    val  s             = Inf.asSig' j handle Inf.Interface =>
+	    val  s             = Inf.asSig j handle Inf.Interface =>
 					error(i, E.ModlongidInf(modlongid, j))
 	in
 	    ( s, !use, O.ShortId(infInfo(i,j), modid') )
@@ -1145,7 +1145,7 @@ TextIO.print "\n";
 	    val (s,use,modlongid') = elabModlongid_sig(E, modlongid)
 	    val (l,modlab')        = elabLab(E, modlab)
 	    val  j                 = Inf.sing(Inf.lookupMod'(s, l))
-	    val  s                 = Inf.asSig' j handle Inf.Interface =>
+	    val  s                 = Inf.asSig j handle Inf.Interface =>
 					error(i, E.ModlongidInf(modlongid0, j))
 	    val use' =
 		case use
@@ -1195,7 +1195,7 @@ TextIO.print "\n";
 	let
 	    val (l,modlab') = elabLab(E, modlab)
 	    val (j1,mod')   = elabMod(E, NONE, mod)
-	    val  s          = Inf.asSig' j1 handle Inf.Interface =>
+	    val  s          = Inf.asSig j1 handle Inf.Interface =>
 				error(I.infoMod mod, E.SelModInf j1)
 	    val  j          = Inf.sing(Inf.lookupMod'(s, l))
 	in
@@ -1225,7 +1225,7 @@ TextIO.print "\n";
 	    val (j1,mod1')  = elabMod(E, NONE, mod1)
 	    val (m2,mod2')  = elabMod'(E, mod2)
 	    val (p2,j2)     = Inf.asMod m2
-	    val (p,j11,j12) = Inf.asArrow' j1 handle Inf.Interface =>
+	    val (p,j11,j12) = Inf.asArrow j1 handle Inf.Interface =>
 				error(I.infoMod mod1, E.AppModFunMismatch j1)
 (*DEBUG
 val _ =
@@ -1278,6 +1278,17 @@ TextIO.print "\n";
 	    val  j        = Inf.narrow(j1,j2)
 (*DEBUG*) handle e => raise e
 	in
+(*DEBUG
+TextIO.print "ElabMod AnnMod: j1 = \n";
+PrettyPrint.output(TextIO.stdErr, PPInf.ppInf j1, 80);
+TextIO.print "\n";
+TextIO.print "ElabMod AnnMod: j2 = \n";
+PrettyPrint.output(TextIO.stdErr, PPInf.ppInf j2, 80);
+TextIO.print "\n";
+TextIO.print "ElabMod AnnMod: j = \n";
+PrettyPrint.output(TextIO.stdErr, PPInf.ppInf j, 80);
+TextIO.print "\n";
+*)
 	    ( j, O.AnnMod(infInfo(i,j), mod', inf') )
 	end
 
@@ -1681,20 +1692,17 @@ TextIO.print "\n";
 	    val decs'  = elabDecs(E, s', SOME p', decs)
 	    val s''    = Inf.emptySig()
 	in
-	    List.appr (fn item =>
-			  let val (p,k) = Inf.asTypItem item in
-			      case Type.inspectKind k
-			       of Type.SingKind _ => ()
-			        | _               => Inf.extendTyp(s'',p,k)
-			  end handle Inf.Item =>
-			  let val (p,j) = Inf.asModItem item in
-			      if Inf.isSing j then () else
-			      Inf.extendMod(s'',p,j)
-			  end handle Inf.Item =>
-			  let val (p,k) = Inf.asInfItem item in
-			      if Inf.isSingKind k then () else
-			      Inf.extendInf(s'',p,k)
-			  end handle Inf.Item => ()
+	    List.appr (fn item => case Inf.inspectItem item
+		       of Inf.TypItem(p,k) =>
+			  if Type.isSingKind k then ()
+			  else Inf.extendTyp(s'',p,k)
+			| Inf.ModItem(p,j) =>
+			  if Inf.isSing j then ()
+			  else Inf.extendMod(s'',p,j)
+			| Inf.InfItem(p,k) =>
+			  if Inf.isSingKind k then ()
+			  else Inf.extendInf(s'',p,k)
+			| _ => ()
 		      ) (Inf.items s');
 	    if List.null(Inf.items s'') then ()
 	    else Inf.extendHiddenMod(s, p', Inf.sign s'');
@@ -2284,7 +2292,7 @@ TextIO.print "\n";
     (* Now this is real ugly... *)
 
     and stripInf(UseEnv.FULL,       j) = j
-      | stripInf(UseEnv.PARTIAL UE, j) = Inf.sign(stripSig(UE, Inf.asSig' j))
+      | stripInf(UseEnv.PARTIAL UE, j) = Inf.sign(stripSig(UE, Inf.asSig j))
 
     and stripSig(UE, s) =
 	let
@@ -2295,38 +2303,23 @@ TextIO.print "\n";
 	end
 
     and stripItem (UE,s,s') item =
-	(if Inf.isValItem item then
-	    let
-		val (l,t) = Inf.asValItem item
-	    in
-		if not(UseEnv.lookupVal(UE, l)) then () else
-		    Inf.extendVal(s', l, t)
-	    end
-	else if Inf.isTypItem item then
-	    let
-		val (p,k) = Inf.asTypItem item
-	    in
-		if not(UseEnv.lookupTyp(UE, Path.toLab p)) then () else
-		    Inf.extendTyp(s', p, k)
-	    end
-	else if Inf.isModItem item then
-	    let
-		val (p,j) = Inf.asModItem item
-	    in
-		case UseEnv.lookupMod(UE, Path.toLab p)
-		  of NONE     => ()
-		   | SOME use => Inf.extendMod(s', p, stripInf(use, j))
-	    end
-	else if Inf.isInfItem item then
-	    let
-		val (p,k) = Inf.asInfItem item
-	    in
-		if not(UseEnv.lookupInf(UE, Path.toLab p)) then () else
-		    Inf.extendInf(s', p, k)
-	    end
-	else (* FixItem *)
-	    ()
-	) handle Path.Path => ()	(* hidden item *)
+	case Inf.inspectItem item
+	 of (Inf.FixItem _ | Inf.HiddenItem _) =>
+		()
+	  | Inf.ValItem(l,t) =>
+		if not(UseEnv.lookupVal(UE, l)) then ()
+		else Inf.extendVal(s', l, t)
+	  | Inf.TypItem(p,k) =>
+		if not(UseEnv.lookupTyp(UE, Path.toLab p)) then ()
+		else Inf.extendTyp(s', p, k)
+	  | Inf.ModItem(p,j) =>
+		(case UseEnv.lookupMod(UE, Path.toLab p)
+		 of NONE     => ()
+		  | SOME use => Inf.extendMod(s', p, stripInf(use, j))
+		)
+	  | Inf.InfItem(p,k) =>
+		if not(UseEnv.lookupInf(UE, Path.toLab p)) then ()
+		else Inf.extendInf(s', p, k)
 
 
   (* Components *)
