@@ -1,4 +1,4 @@
-structure Abbrev : ABBREV  =
+structure Abbrev : Abbrev  =
     struct
 	val CBind          = ("de/uni_sb/ps/DML/DMLRuntime/DMLConstants/dmlbind","de/uni_sb/ps/DML/DMLRuntime/DMLExName")
 	val CMatch         = ("de/uni_sb/ps/DML/DMLRuntime/DMLConstants/dmlmatch","de/uni_sb/ps/DML/DMLRuntime/DMLExName")

@@ -1,4 +1,4 @@
-structure JVMInst : JVMINST =
+structure JVMInst : JVMInst =
     struct
 	type label = string
 	and classname = string
@@ -24,10 +24,12 @@ structure JVMInst : JVMINST =
 	    INSTRUCTION =
 	    Astore of int
 	  | Aastore
+	  | Aaload
 	  | Aconst_null
 	  | Aload of int
 	  | Anewarray of classname
 	  | Areturn
+	  | Arraylength
 	  | Athrow
 	  | Bipush of int
 	  | Catch of classname * label * label * label
@@ -42,14 +44,18 @@ structure JVMInst : JVMINST =
 	  | Ifacmpeq of label
 	  | Ifacmpne of label
 	  | Ifeq  of label
+	  | Ificmplt of label
 	  | Ifneq of label
 	  | Ifnull of label
-	  | Ireturn
+	  | Iinc of int * int
+	  | Iload of int
 	  | Instanceof of classname
 	  | Invokeinterface of classname * methodname * (ARG list * ARG)
 	  | Invokespecial of classname * methodname * (ARG list * ARG)
 	  | Invokestatic of classname * methodname * (ARG list * ARG)
 	  | Invokevirtual of classname * methodname * (ARG list * ARG)
+	  | Ireturn
+	  | Istore of int
 	  | Label of label
 	  | Ldc of JVMBASETYPE
 	  | New of classname

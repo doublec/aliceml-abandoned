@@ -1,4 +1,4 @@
-structure CodeGen : CODEGEN =
+structure CodeGen : CodeGen =
     struct
 
 	open JVMInst
@@ -85,6 +85,7 @@ structure CodeGen : CODEGEN =
 	(* Wie lautet die aktuelle Klasse, in der wir sind? Stack weil verschachtelte Lambdas. *)
 	local
 	    val stack = ref [""]
+	    val initial = ref ""
 	in
 	    val rec
 		getCurrentClass = fn () => case !stack of (x::xs) => x | _ => raise Error("getCurrentClass kapuutt")
@@ -93,24 +94,41 @@ structure CodeGen : CODEGEN =
 	    and
 		popClass  = fn () =>  case !stack of (x::xs) => stack := xs | _ => raise Error("popClass kapuutt")
 	    and
-		initialClass = fn name => stack := [name]
+		setInitialClass = fn name => ((stack := [name]); initial := name)
+	    and
+		getInitialClass = fn () => (!initial)
 	end
 
 	(* Just another mad function *)
 	val rec flatten = fn x::xs => x@flatten(xs) | nil => nil
 
 	(* Einstiegspunkt *)
-	val rec genProgramCode = fn (name,Dec dec) => (initialClass name; decCode (dec))
-
+	val rec genProgramCode = fn (name,Dec dec) =>
+	    (setInitialClass name;
+	     let
+		 val insts = decCode dec
+		 val stack = stackneeddec dec
+		 val mapply = Method([MPublic],"mapply",([Classsig CVal],Classsig CVal),
+				     Limits(Persistent.maxLocals()+1,Reuse.maxLocals(),stack),
+				     insts @
+				     [Aload 0,
+				      Aload 1,
+				      Invokevirtual (getInitialClass(), "apply",([Classsig CVal],Classsig CVal)),
+				      Pop,
+				      Return])
+	     in
+		schreibsDran(getInitialClass(),methodToJasmin mapply )
+	     end
+	     )
 	and
 	    decListCode = fn decs : DEC list => flatten (map decCode decs)
 
 	and
 	    decCode =
-	    fn (Local (localdecs, decs)) =>
+	    fn Local (localdecs, decs) =>
 	    decListCode(localdecs)@decListCode(decs)
 
-	     | (Valbind(patexplist)) =>
+	     | Valbind patexplist =>
 	    let
 		val faillabel  = aNewLabel()
 		val endlabel   = aNewLabel()
@@ -134,7 +152,19 @@ structure CodeGen : CODEGEN =
 	    in
 		part1 @ part2
 	    end
-
+	     | Andrec patexplist =>
+	    let
+		val initClosure = fn
+		    (Patvid(Shortvid(_, Defining loc)), Fn(JVMString name,_,_)) =>
+			[New name,
+			 Dup,
+			 Invokespecial (name,"<init>",([],Voidsig)),
+			 Astore (loc:=Persistent.nextFreeLocal(); !loc)]
+		  | _ => raise Error "Andrec initClosure"
+		val iC = flatten (map initClosure patexplist)
+	    in
+		iC @ decCode (Valbind patexplist)
+	    end
 	and
 	    expCode =
 	    fn (Andalso(exp1,exp2)) =>
@@ -250,7 +280,15 @@ structure CodeGen : CODEGEN =
 		    [Invokespecial (name, "<init>", (i, Voidsig)),
 		     Comment ("end of lambda "^name^"}")]
 	    in
+		pushLabel();
+		Reuse.pushLocals();
+		Persistent.pushLocals();
+		pushClass(name);
 		expCodeClass(lambda);
+		Reuse.popLocals();
+		Persistent.popLocals();
+		popClass();
+		popLabel();
 		result
 	    end
 
@@ -778,7 +816,6 @@ structure CodeGen : CODEGEN =
 	    expCodeClass =
 	    fn Fn (JVMString name,freevars,match) =>
 	    let
-		val access = [CPublic]
 		val rec fields = fn
 		    (JVMString var)::vars =>
 			(Field ([FPrivate],var, Classtype CVal))::(fields(vars))
@@ -786,93 +823,101 @@ structure CodeGen : CODEGEN =
 		  | _ => raise Error "fields in expcodeclass"
 		val fieldlist = fields freevars
 		val rec args = fn _::vars => (Classsig CVal)::args(vars) | nil => nil
-		val rec initbody = fn
-		    (nil,_) => [Return]
-		  | ((JVMString var)::nil,i) =>
-			[Aload i,
-			 Putfield (name^"/"^var, CVal),
-			 Return]
-		  | ((JVMString var)::vars,i) =>
-			[Dup,
-			 Aload i,
-			 Putfield (name^"/"^var, CVal)]@
-			initbody(vars,i+1)
-		  | _ => raise Error "initbody"
-		val k = length freevars
-		val init = Method([MPublic],"<init>",(args(freevars), Voidsig),Limits (k,0, 3),
-				  (if k=0
-				       then [Aload 0]
-				   else [(Aload 0),Dup])@
-				       Invokespecial (CFcnClosure,"<init>",([],Voidsig))::
-				       initbody(freevars,1))
+		local
+		    val rec closureBody = fn
+			(nil,_) => [Return]
+		      | ((JVMString var)::nil,i) =>
+			    [Aload i,
+			     Putfield (name^"/"^var, CVal),
+			     Return]
+		      | ((JVMString var)::vars,i) =>
+			    [Dup,
+			     Aload i,
+			     Putfield (name^"/"^var, CVal)]@
+			    closureBody(vars,i+1)
+		      | _ => raise Error "closureBody"
+		    val k = length freevars
+		in
+		    val makeClosure = Method([MPublic],"makeClosure",(args(freevars), Voidsig),Limits (k,0, 3),
+					     (if k=0
+						  then [Aload 0]
+					      else [(Aload 0),Dup])@
+						  closureBody(freevars,1))
+		end
 		val mcm = matchCode match
 		val rec
 		    initializeLocals = fn
 		    0 => nil
 		  | x => [Aconst_null, Astore (x+1)]@(initializeLocals (x-1))
 		val iL = initializeLocals (Persistent.maxLocals())
-		val stack = if name="main" then Int.max(stackneed match + 1,6) else stackneed match + 1
-		val applY = if name="main"
-				then
-				    let
-					val eins = Reuse.aNewLabel()
-					val zwei = Reuse.aNewLabel()
-					val drei = Reuse.aNewLabel()
-				    in
-					Method ([MPublic, MStatic],"main",([Arraysig,Classsig CString], Voidsig),
-						Limits (Persistent.maxLocals(),Reuse.maxLocals(),stack),
-						[Iconst 0,
-						 Istore eins,
-						 Aload 0,
-						 Arraylength,
-						 Anewarray CLabel,
-						 Astore zwei,
-						 Aload 0,
-						 Arraylength,
-						 Anewarray CVal,
-						 Astore drei,
-						 Iconst 0,
-						 Istore eins,
-						 Goto zweiE,
-						 Label dreizehn,
-						 Aload zwei,
-						 Iload eins,
-						 New CLabel,
-						 Dup,
-						 Iload eins,
-						 Invokespecial (CLabel,"<init>",([Intsig], Voidsig)),
-						 Aastore,
-						 Aload drei,
-						 Iload eins,
-						 New CStr,
-						 Dup,
-						 Aload 0,
-						 Iload eins,
-						 Aaload,
-						 Invokespecial (CStr,"<init>",([Classsig CString], Voidsig)),
-						 Aastore,
-						 Iinc (eins,1),
-						 Iload eins,
-						 Aload 0,
-						 Arraylength,
-						 If_icmplt dreizehn]@
-						iL @ mcm @ [Return])
-				    end
-			    else
-				Method ([MPublic],"apply",([Classsig CVal], Classsig CVal),
-					Limits (Persistent.maxLocals()+1,Reuse.maxLocals(),stack),
-					(Aload 1) :: iL @ mcm @ [Areturn])
+		val stack = stackneed match + 1
+		val main = if name="main"
+			       then
+				   let
+				       val dreizehn = aNewLabel()
+				       val zweiE = aNewLabel()
+				       val (eins,zwei,drei) = (1,2,3)
+				   in
+				       [Method ([MPublic, MStatic],"main",([Arraysig,Classsig CString], Voidsig),
+					       Limits (4,0,7),
+					       [New (getInitialClass()),
+						Dup,
+						Invokespecial (getInitialClass(), "<init>",([], Voidsig)),
+						Dup,
+						Invokevirtual (getInitialClass(), "makeClosure",(args freevars,Voidsig)),
+						Comment "[String nach DMLRecord",
+						Iconst 0,
+						Istore eins,
+						Aload 0,
+						Arraylength,
+						Anewarray CLabel,
+						Astore zwei,
+						Aload 0,
+						Arraylength,
+						Anewarray CVal,
+						Astore drei,
+						Iconst 0,
+						Istore eins,
+						Goto zweiE,
+						Label dreizehn,
+						Aload zwei,
+						Iload eins,
+						New CLabel,
+						Dup,
+						Iload eins,
+						Invokespecial (CLabel,"<init>",([Intsig], Voidsig)),
+						Aastore,
+						Aload drei,
+						Iload eins,
+						New CStr,
+						Dup,
+						Aload 0,
+						Iload eins,
+						Aaload,
+						Invokespecial (CStr,"<init>",([Classsig CString], Voidsig)),
+						Aastore,
+						Iinc (eins,1),
+						Iload eins,
+						Aload 0,
+						Arraylength,
+						Ificmplt dreizehn,
+						New CRecord,
+						Dup,
+						Aload zwei,
+						Aload drei,
+						Invokespecial (CRecord, "<init>", ([Arraysig, Classsig CLabel, Arraysig, Classsig CVal],Voidsig)),
+						Invokevirtual (getInitialClass(), "mapply",([Classsig CVal],Classsig CVal)),
+						Return])]
+				   end
+			   else
+			       nil
+		val applY =Method ([MPublic],"apply",([Classsig CVal], Classsig CVal),
+				   Limits (Persistent.maxLocals()+1,Reuse.maxLocals(),stack),
+				   (Aload 1) :: iL @ mcm @ [Areturn])
 	    in
-		pushLabel();
-		Reuse.pushLocals();
-		Persistent.pushLocals();
-		pushClass(name);
-		schreibs(name,classToJasmin(Class(access,name,CFcnClosure,fieldlist,[init,applY])));
-		Reuse.popLocals();
-		Persistent.popLocals();
-		popClass();
-		popLabel();
-		()
+		schreibs(if name="main" then getInitialClass() else name,
+			     classToJasmin(Class([CPublic],name,CFcnClosure,fieldlist,
+						 [makeClosure,applY]@main)))
 	    end
 
 	     | _ => raise Error "expCodeClass"

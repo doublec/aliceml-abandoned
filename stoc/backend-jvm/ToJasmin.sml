@@ -1,4 +1,4 @@
-structure ToJasmin : TOJASMIN =
+structure ToJasmin : ToJasmin =
     struct
 
 	open JVMInst
@@ -61,6 +61,7 @@ structure ToJasmin : TOJASMIN =
 				  else "astore "^Int.toString j
 			       end
 		 | Aastore  => "aastore"
+		 | Aaload => "aaload"
 		 | Aconst_null => "aconst_null"
 		 | Aload i  => let val j=if i<0 then (!perslocals-i) else i
 			       in if j<4 then "aload_"^Int.toString j
@@ -68,6 +69,7 @@ structure ToJasmin : TOJASMIN =
 			       end
 		 | Anewarray cn => "anewarray "^cn
 		 | Areturn => "areturn"
+		 | Arraylength => "arraylength"
 		 | Athrow => "athrow"
 		 | Bipush i => "bipush "^Int.toString i
 		 | Catch(cn,from,to,use) => ".catch "^cn^" from "^from^" to "^to^" using "^use
@@ -82,8 +84,17 @@ structure ToJasmin : TOJASMIN =
 		 | Ifacmpeq l => "if_acmpeq "^l
 		 | Ifacmpne l => "if_acmpne "^l
 		 | Ifeq l => "ifeq "^l
+		 | Ificmplt l => "if_icmplt "^l
 		 | Ifneq l => "ifne "^l
 		 | Ifnull l => "ifnull "^l
+		 | Iload i =>let val j=if i<0 then (!perslocals-i) else i
+			     in if j<4 then "iload_"^Int.toString j
+				else "iload "^Int.toString j
+			     end
+		 | Istore i =>let val j=if i<0 then (!perslocals-i) else i
+			      in if j<4 then "istore_"^Int.toString j
+				 else "istore "^Int.toString j
+			      end
 		 | Ireturn => "ireturn"
 		 | Instanceof cn => "instanceof "^cn
 		 | Invokeinterface(cn,mn,ms as (arg,ret)) => "invokeinterface "^cn^"/"^mn^
@@ -139,25 +150,22 @@ structure ToJasmin : TOJASMIN =
 		 | nil => ""
 	end
 
-	local
-	    val methodToJasmin =
-		fn Method(access,methodname,methodsig,Limits (perslocs, reuselocals,stack), instructions) =>
-		let
-		    val mcc = mAccessToString access
-		in
-		    perslocals := perslocs;
-		    ".method "^methodname^(descriptor2string methodsig)^"\n"^
-		    ".limit locals "^Int.toString(perslocs+reuselocals+1)^"\n"^
-		    ".limit stack "^Int.toString(stack)^"\n"^
-		    instructionsToJasmin(instructions)^"\n"^
-		    ".end method\n"
-		end
-	in
-	    val rec
-		methodsToJasmin =
-		fn m::ms => (methodToJasmin m)^(methodsToJasmin ms)
-		 | nil => ""
-	end
+	val methodToJasmin =
+	    fn Method(access,methodname,methodsig,Limits (perslocs, reuselocals,stack), instructions) =>
+	    let
+		val mcc = mAccessToString access
+	    in
+		perslocals := perslocs;
+		".method "^methodname^(descriptor2string methodsig)^"\n"^
+		".limit locals "^Int.toString(perslocs+reuselocals+1)^"\n"^
+		".limit stack "^Int.toString(stack)^"\n"^
+		instructionsToJasmin(instructions)^"\n"^
+		".end method\n"
+	    end
+	val rec
+	    methodsToJasmin =
+	    fn m::ms => (methodToJasmin m)^(methodsToJasmin ms)
+	     | nil => ""
 
 	val classToJasmin =
 	    fn Class(access,name,super,fields,methods) =>
@@ -178,4 +186,14 @@ structure ToJasmin : TOJASMIN =
 		TextIO.output(bla,was);
 		TextIO.closeOut bla
 	    end
+
+	val schreibsDran =
+	    fn (wohin,was) =>
+	    let
+		val bla=TextIO.openAppend wohin
+	    in
+		TextIO.output(bla,was);
+		TextIO.closeOut bla
+	    end
+
     end
