@@ -152,18 +152,20 @@
 
     fun put ((putr, getr), x) =
         let
-            val p' = promise ()
+            val p = promise ()
         in
-            fulfill (Ref.exchange (putr, p'), x :: future p')
+            fulfill (Ref.exchange (putr, p), x :: future p)
         end
 
     fun get (putr, getr) =
 	let
-            val p' = promise ()
-	    val xs = Ref.exchange (getr, future p')
+            val p  = promise ()
+	    val xs = Ref.exchange (getr, future p)
         in
-            fulfill (p', tl xs); hd xs
+            fulfill (p, tl xs); hd xs
         end
+
+    fun close (putr, getr) = fulfill (!putr, nil)
   </PRE>
 
 <?php footing() ?>
