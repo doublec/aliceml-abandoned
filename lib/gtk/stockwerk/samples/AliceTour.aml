@@ -130,7 +130,7 @@ local
 	    val entries = [TableSimple {x=0, y=0, item=Window textv},
 			   TableSimple {x=1, y=0, item=Window vs}]
 
-	    val map   = Gdk.colormapGetSystem ()
+	    val map = Gdk.colormapGetSystem ()
 	    val black = Gdk.colorNew(0, 0, 0)
 	    val white = Gdk.colorNew(65535, 65535, 65535)
 	    val kcol  = !textcolor
@@ -155,6 +155,8 @@ local
 
     fun displayFile () =
 	let
+	    val _ = print "start\n"
+	    val _ = TextIO.flushOut TextIO.stdOut
 	    val note   = valOf(!curwin)
 	    val window = fileToWindow (!curfile)
 	    val align  = MakeWidget(Alignment {xalign=0.0,
@@ -164,7 +166,10 @@ local
 	in
 	    (Gtk.notebookRemovePage(note, 0);
 	     Gtk.widgetShowAll(align);
-	     Gtk.notebookAppendPage(note, align, label))
+	     Gtk.notebookAppendPage(note, align, label);
+	     print "end\n";
+	     TextIO.flushOut TextIO.stdOut
+	    )
 	end
 
     local

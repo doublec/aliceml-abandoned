@@ -42,9 +42,6 @@ functor MkNative(structure TypeManager : TYPE_MANAGER
         local
 	    val classes = ref nil
 	    exception NoUnref
-	    val deleteObjects = nil
-(*		["_GtkTextIter", "_GtkTreeIter",
-				 "_GdkColor", "_GdkPoint", "_GdkRectangle"]*)
 
 	    fun buildClassList' (STRUCT (name,(_,t)::_)) =
 		(case removeTypeRefs t of
@@ -59,11 +56,8 @@ functor MkNative(structure TypeManager : TYPE_MANAGER
 
 	    fun getUnrefFun' "_GObject"   = "TYPE_G_OBJECT"
 	      | getUnrefFun' "_GtkObject" = "TYPE_GTK_OBJECT"
-	      | getUnrefFun' "_GtkWidget" = "TYPE_GTK_WIDGET"
 	      | getUnrefFun' name        = 
-		  if Util.contains name deleteObjects
-		      then "TYPE_OWN"
-		      else getUnrefFun' (getParentClass name (!classes))
+		      getUnrefFun' (getParentClass name (!classes))
 	in
 	    fun buildClassList tree = List.app buildClassList' tree
 	    fun getTypeInfo t = 

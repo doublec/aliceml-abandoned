@@ -218,7 +218,7 @@
   void *pointer = NULL;                                          \
   if (Store::WordToTransient(pointer##__tmp) != INVALID_POINTER) \
         { REQUEST(pointer##__tmp); }                             \
-  else { pointer = Store::WordToUnmanagedPointer(pointer##__tmp); }     
+  else { pointer = Store::WordToUnmanagedPointer(pointer##__tmp); }
 
 #define DECLARE_UNMANAGED_POINTER_TYPE(pointer, type, x)         \
   DECLARE_TUPLE(pointer##__tup,x);                               \
@@ -227,7 +227,7 @@
   void *pointer = NULL;                                          \
   if (Store::WordToTransient(pointer##__tmp) != INVALID_POINTER) \
         { REQUEST(pointer##__tmp); }                             \
-  else { pointer = Store::WordToUnmanagedPointer(pointer##__tmp); }     
+  else { pointer = Store::WordToUnmanagedPointer(pointer##__tmp); }
 
 
 //#define DECLARE_UNMANAGED_POINTER(pointer, x)                       \

@@ -18,7 +18,7 @@ struct
     fun doSignalConnect (obj,signame,callback,after) =
 	let
 	    val connid = NativeGtkCore.signalConnect (obj,signame,after)
-	    val _      = NativeGtkCore.signalMapAdd(connid,callback)
+	    val _      = NativeGtkCore.signalMapAdd (connid,callback,obj)
 	in
 	    connid
 	end
@@ -48,6 +48,7 @@ struct
 
     (* finalization handling *)
     local
+
 	fun addDestroyEvent obj =
 	    let
                 (* - Gtk ruft "destroy", damit Anwendung alle (Gtk-)Referenzen
@@ -62,12 +63,9 @@ struct
 		     auch die Gtk-Referenz
 		   - die Gtk-Hauptschleife entdeckt irgendwann, dass es keine
 		     Gtk-Referenz mehr gibt, und entfernt das Objekt komplett*)
-		fun event _ =
-		    let val x = ref obj
-			val ids = nil (* NativeGtkCore.signalMapGetIds *)
-		    in	(!x) ; 
-			List.app NativeGtkCore.signalMapRemove ids
-		    end
+
+		fun event _ = List.app NativeGtkCore.signalMapRemove
+		                       (NativeGtkCore.signalMapGetConnIds obj)
 	    in
 		( doSignalConnect(obj,"destroy",event,true) ; () )
 	    end
@@ -84,9 +82,14 @@ struct
 	    end 
     in
 	fun addObject obj =
-	    if obj = NULL orelse NativeGtkCore.weakMapIsMember obj
-		 then obj
-	         else newObject obj
+	    if obj = NULL then obj else
+	    let
+		val obj' = NativeGtkCore.weakMapCondGet(obj,NULL)
+		val _ = print "condget done.\n"
+		val _ = TextIO.flushOut TextIO.stdOut
+	    in
+		if obj' = NULL then newObject obj else obj'
+	    end 
     end
 
     (* main loop *)

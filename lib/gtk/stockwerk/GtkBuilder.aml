@@ -307,8 +307,8 @@ in
 	      | MakeTextContents (x::xs) = x^"\n"^(MakeTextContents xs)
 	    and MakeTextWidget ({xdim=xdim, ydim=ydim, text=ts}) =
 		let
-		    val l = Gtk.labelNew "abc"
-		    val _ = GtkCore.printObject l
+(*		    val l = Gtk.labelNew "abc"
+		    val _ = GtkCore.printObject l*)
 		    val buf = Gtk.textBufferNew Gtk.NULL
 		    val s = MakeTextContents ts
 		    val _ = Gtk.textBufferSetText(buf, s, size s)

@@ -26,8 +26,9 @@ sig
         val weakMapIsMember : 'object -> bool
         val weakMapCondGet : 'object * 'object -> 'object
 
-	val signalMapAdd : 'connid * 'callback -> unit
+	val signalMapAdd : 'connid * 'callback * 'object -> unit
 	val signalMapRemove : 'connid -> unit
 	val signalMapCondGet : 'connid * 'callback -> 'callback
+	val signalMapGetConnIds : 'object -> 'connid list
     end
 end

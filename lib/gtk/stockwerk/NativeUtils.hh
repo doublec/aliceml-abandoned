@@ -60,8 +60,7 @@ word createExn(void *pointer, const gchar *tname, const gchar* funname,
 #endif
 */
 
-enum { TYPE_GTK_OBJECT, TYPE_GTK_WIDGET, TYPE_G_OBJECT, 
-       TYPE_OWN, TYPE_UNKNOWN };
+enum { TYPE_GTK_OBJECT, TYPE_G_OBJECT, TYPE_OWN, TYPE_UNKNOWN };
 
 /***********************************************************************/
 

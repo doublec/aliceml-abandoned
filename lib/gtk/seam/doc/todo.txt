@@ -1,26 +1,30 @@
 
 *** Allgemein/Ideen ***
 
-- aktuelles Problem: Finalisierung an falscher Stelle und nur bei GdkPixbuf?
-- Transient from finalStream funktioniert nicht
+1. zwei seg faults in AliceTour: a) Fehler im GC(!) b) unmittelbar nach condget
+2. object list: richtiger Typ
+3. Ellipsen nehmen nur ein Argument
+
+* aktuelles Problem: Finalisierung an falscher Stelle und nur bei GdkPixbuf?
+* Transient from finalStream funktioniert nicht -> finalStream abgeschafft
 
 - install -C ?
-- Record bauen - wie? (Zugriff auf Event-Records stuerzt ab)
-- Kernroutinen aus NativeGtkSpecial in eigene DLL tun
+* Record bauen - wie? (Zugriff auf Event-Records stuerzt ab)
+* Kernroutinen aus NativeGtkSpecial in eigene DLL tun
 - Komponenten auf hinreichende Modularisierung ueberpruefen
 
 
 Garbage Collection:
 fuer alle Objekte gilt:
-- beim Erstellen im WeakDictionary abspeichern (falls nicht schon da?) + ref()
-- falls auf Alice-Seite keine Referenz mehr besteht, wird C-Funktion
+* beim Erstellen im WeakDictionary abspeichern (falls nicht schon da?) + ref()
+* falls auf Alice-Seite keine Referenz mehr besteht, wird C-Funktion
   aufgerufen, die Objekt aus Dictionary entfernt und unref()
 
 fuer GtkObjects gilt:
-- beim Erstellen eigenen destroy-event-handler registrieren (nicht delete)
+* beim Erstellen eigenen destroy-event-handler registrieren (nicht delete)
   Event-Handler-Funktion enthaelt Pointer, Referenz ist also immer vorhanden
-- soll das Objekt zerstoert werden, wird destroy-event emitted
-- destroy-event-handler loescht daraufhin sich selbst aus der Signaltabelle
+* soll das Objekt zerstoert werden, wird destroy-event emitted
+* destroy-event-handler loescht daraufhin sich selbst aus der Signaltabelle
   (keine Referenz mehr), ruft alle user-defined destroy-handler auf und
   loescht alle Handler, die an das Objekt gebunden sind
 
@@ -29,7 +33,7 @@ fuer GtkObjects gilt:
 * bestimmte Structs (z.B. GdkPoint) bekommen welche
 
 * Enums
-- GC (Weak Dictionary)
+* GC (Weak Dictionary)
 * datatypes/Signals bauen
 * Dateien komplett umbenennen
 * libgnomecanvas statt GtkCanvas installieren
@@ -61,8 +65,6 @@ Ideen fuer GtkTreeTypes:
 CLASSES... enthaelt *alle* Klassen
   nur fuer STRUCTUREs, die auch in CLASSES sind, gibt es get/set-Funktionen 
 
-
-aktuelles Stockhausen vom: 17.10.02 12:00
 
 setenv ALICE_TRACE_COMPONENT 1
 setenv ALICE_TRACE_RESOLVER 1
@@ -151,15 +153,15 @@ X ...und veraenderte Parameterliste als neue gueltige hinbekommen? -> nein.
 
 *** SafeGtk ***
 
-- GC: Weak dictionary: Zugriff auf C-dictionary wird moeglich sein
-- immer, wenn eine Funktion ein object rausschmeisst (bzw. object auf stream
+* GC: Weak dictionary: Zugriff auf C-dictionary wird moeglich sein
+* immer, wenn eine Funktion ein object rausschmeisst (bzw. object auf stream
   geschrieben wird) nachsehen, ob object in dictionary. wenn nein:
   hinzufuegen + gtk-ref aufrufen
-- finalizer thread ruft fuer ankommende objects auf eigenem Strom gtk-unref auf
+X finalizer thread ruft fuer ankommende objects auf eigenem Strom gtk-unref auf
 
 
 * warum wird callback function erst beim zweiten Event aufgerufen?
-- callback-Funktionen in Hashtable abspeichern
+* callback-Funktionen in Hashtable abspeichern
 * sleep-Funktion ist zu provisorisch?
 
 
