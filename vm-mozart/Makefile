@@ -160,7 +160,7 @@ LIBFUNDAMENTALSOURCES0 = \
 LIBSYSTEMSOURCES0 = \
 	$(LIBSYSTEMNATIVES0:%=Unsafe%.asig) UnsafeValue.asig \
 	UnsafeIODesc.asig \
-	CONFIG-sig.aml IO-sig.aml PRIM_IO-sig.aml PrimIO.aml \
+	CONFIG-sig.aml IO-sig.aml PRIM_IO-sig.aml PrimIO.aml BinPrimIO.aml \
 	STREAM_IO-sig.aml StreamIO.aml IMPERATIVE_IO-sig.aml \
 	ImperativeIO.aml BIN_IO-sig.aml BinIO.aml TEXT_IO-sig.aml TextIO.aml \
 	OS_FILE_SYS-sig.aml OS_PROCESS-sig.aml OS_IO-sig.aml OS-sig.aml \
