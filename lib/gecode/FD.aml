@@ -48,8 +48,7 @@ struct
 	   | B_MIN
 	   | B_SPLIT_MAX
 	   | B_SPLIT_MIN
-	   | B_VAL
-
+	   
     exception NotAssigned
               
     type domain = (int * int) vector
@@ -71,6 +70,7 @@ struct
    fun boolvarVec(space,n) = Vector.tabulate (n, fn _ => boolvar space)
 		 
    fun intvar2boolvar(space,d) = (UnsafeGecode.int_dom(space,d,#[(0,1)]); d)
+   val boolvar2intvar = fn x => x
 
    fun dListFromList' nil _ = nil
      | dListFromList' ([x]) min = [(min,x)]
@@ -172,7 +172,6 @@ struct
 		   else min
 	       end
 
-	   val boolvar2intvar = fn x => x
 
 	   fun boolVal v = value(boolvar2intvar v)=1
        end

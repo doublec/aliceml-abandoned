@@ -375,7 +375,7 @@ fun booltermVec(s,n) = Vector.map (fn b=>BV b) (FD.boolvarVec (s,n))
 	fun stripCNF(s,cnf) = List.map (List.map (groundToVar s)) cnf
 		
 	fun getTrue(s)= let val b=FD.boolvar(s) 
-		in FD.relI(s, FD.Reflect.boolvar2intvar b, FD.EQ, 1); b end
+		in FD.relI(s, FD.boolvar2intvar b, FD.EQ, 1); b end
 
 	(*Rough version, especially if failed spaces allow post-mortem introspection*)
 	fun fail(s) = let val b = FD.intvar(s,#[(42,42)]) in FD.relI(s,b,FD.EQ,57) end

@@ -38,6 +38,7 @@ sig
     (* Constraining an intvar to a boolvar *)
 
     val intvar2boolvar : space * intvar -> boolvar
+    val boolvar2intvar : boolvar -> intvar
 
     (* Value assignment *)
 
@@ -143,7 +144,6 @@ sig
             val med : space * intvar -> int
 	    val value : space * intvar -> int (* NotAssigned *)
 	    val boolVal : space * boolvar -> bool (* NotAssigned *)
-	    val boolvar2intvar : boolvar -> intvar
 (*	    val mid : space * intvar -> int *)
 (*	    val nextLarger : space * fd * int -> int *)
 (*	    val nextSmaller : space * fd * int -> int *)
@@ -175,7 +175,6 @@ sig
 	   | B_MIN
 	   | B_SPLIT_MAX
 	   | B_SPLIT_MIN
-	   | B_VAL
 
     val branch : space * intvar vector * b_var_sel *
 		 b_val_sel -> unit
