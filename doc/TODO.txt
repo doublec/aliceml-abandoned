@@ -269,7 +269,7 @@ steps 3 and 4):
 
 14. Adapt inspector, gtk, constraints to new build procedure. (LK/TB)
 
-15. Factorize vm-mozart/boostrap/Makefile into vm-specific and generic stuff.
+15. Factorize vm-mozart/bootstrap/Makefile into vm-specific and generic stuff.
 
    A new file Makefile.vars will contain all vm-specific stuff.
    BACKENDMOZARTSOURCES0 will be renamed to BACKENDSPECIFICSOURCES0
