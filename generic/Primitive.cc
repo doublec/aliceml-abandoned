@@ -93,11 +93,15 @@ PrimitiveInterpreter::Run(PrimitiveInterpreter *interpreter) {
     if (Scheduler::nArgs == Scheduler::ONE_ARG) {
       Transient *t = Store::WordToTransient(Scheduler::currentArgs[0]);
       if (t == INVALID_POINTER) { // is determined
+	Scheduler::nArgs = 0;
 	return interpreter->function();
       } else { // need to request
 	Scheduler::currentData = Scheduler::currentArgs[0];
 	return Interpreter::REQUEST;
       }
+    } else {
+      Assert(Scheduler::nArgs == 0);
+      return interpreter->function();
     }
   case 1:
     interpreter->Construct();
