@@ -1,7 +1,0 @@
-import
-    signature INITIAL_CONTEXT
-from "x-alice:/infrastructure/INITIAL_CONTEXT.ozf"
-
-import
-    structure BindEnv
-from "x-alice:/frontend-sml/BindEnv.ozf"

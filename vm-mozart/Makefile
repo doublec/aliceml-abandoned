@@ -31,8 +31,7 @@ INFRASTRUCTURESOURCES = \
 	CRASH.sig Crash.sml SOURCE.sig Source.sml ERROR.sig Error.sml \
 	SWITCHES.sig MakeSwitches.sml CONTEXT.sig REPRESENTATION.sig \
 	PHASE.sig PHASE_ERROR.sig ComposePhases.sml EmptyContext.sml \
-	SIGNATURE.sig COMPOSER.sig TARGET.sig INITIAL_CONTEXT.sig \
-	InitialEmptyContext.sml
+	SIGNATURE.sig COMPOSER.sig TARGET.sig
 INFRASTRUCTUREFILES = $(INFRASTRUCTURESOURCES:%=infrastructure/%)
 
 COMMONSOURCES = \
@@ -49,7 +48,7 @@ FRONTENDCOMMONSOURCES = \
 	AbstractGrammar.sml TypedGrammar.sml ENV.sig Env.sml \
 	ELABORATION_ERROR.sig ElaborationError.sml ELABORATION_PHASE.sig \
 	MakeElaborationPhase.sml TRANSLATION_PHASE.sig TranslationPhase.sml \
-	MakeFrontendCommon.sml FrontendCommonInitialContext.sml
+	MakeFrontendCommon.sml
 FRONTENDCOMMONFILES = $(FRONTENDCOMMONSOURCES:%=frontend-common/%)
 
 FRONTENDSMLSOURCES = \
@@ -61,7 +60,7 @@ FRONTENDSMLSOURCES = \
 	ABSTRACTION_PHASE.sig MakeAbstractionPhase.sml DERIVED_FORMS.sig \
 	PARSER.sig Parser.sml DerivedForms.sml LEXER_ERROR.sig \
 	LexerError.sml Lexer.lex.sml CountPosLexer.sml PARSING_PHASE.sig \
-	ParsingPhase.sml MakeFrontendSML.sml FrontendSMLInitialContext.sml
+	ParsingPhase.sml MakeFrontendSML.sml
 FRONTENDSMLFILES = $(FRONTENDSMLSOURCES:%=frontend-sml/%)
 
 BACKENDCOMMONSOURCES = \
@@ -79,7 +78,7 @@ BACKENDMOZARTSOURCES = CodeGenPhase.ozf.sig MakeBackendMozart.sml
 BACKENDMOZARTFILES = $(BACKENDMOZARTSOURCES:%=backend-mozart/%)
 
 TOPSOURCES = Signature.sml Composer.sml COMPILER.sig MakeCompiler.sml \
-	MAIN.sig MakeMain.sml SMLToMozartCompiler.sml
+	MAIN.sig MakeMain.sml Main.sml SMLToMozartCompiler.sml
 TOPFILES = $(TOPSOURCES:%=top/%)
 
 ALLFILES = \

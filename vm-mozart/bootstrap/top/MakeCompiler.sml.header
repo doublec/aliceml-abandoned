@@ -15,9 +15,5 @@ import
 from "x-alice:/infrastructure/TARGET.ozf"
 
 import
-    signature INITIAL_CONTEXT
-from "x-alice:/infrastructure/INITIAL_CONTEXT.ozf"
-
-import
     signature COMPILER
 from "x-alice:/top/COMPILER.ozf"

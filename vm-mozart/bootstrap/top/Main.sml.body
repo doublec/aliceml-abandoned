@@ -21,10 +21,6 @@ import
 from "x-alice:/lib/CommandLine.ozf"
 
 import
-    structure InitialEmptyContext
-from "x-alice:/infrastructure/InitialEmptyContext.ozf"
-
-import
     structure Composer
 from "x-alice:/top/Composer.ozf"
 
@@ -39,7 +35,6 @@ from "x-alice:/top/MakeMain.ozf"
 structure SMLToMozartMain =
     MakeMain(structure Composer = Composer
 	     structure Compiler = SMLToMozartCompiler
-	     structure TargetInitialContext = InitialEmptyContext
 	     val executableHeader = "#!/bin/sh\nexec stow $0 \"$@\"\n")
 
 val _ = OS.Process.exit (SMLToMozartMain.stoc (CommandLine.arguments ()))

@@ -1,3 +1,0 @@
-import
-    signature INITIAL_CONTEXT
-from "x-alice:/infrastructure/INITIAL_CONTEXT.ozf"

@@ -35,10 +35,6 @@ import
 from "x-alice:/infrastructure/COMPOSER.ozf"
 
 import
-    signature INITIAL_CONTEXT
-from "x-alice:/infrastructure/INITIAL_CONTEXT.ozf"
-
-import
     structure Path
 from "x-alice:/common/Path.ozf"
 
