@@ -12,11 +12,11 @@
 //   $Revision$
 //
 
-#ifndef __EMULATOR__BOOTLINKER_HH__
-#define __EMULATOR__BOOTLINKER_HH__
+#ifndef __GENERIC__BOOT_LINKER_HH__
+#define __GENERIC__BOOT_LINKER_HH__
 
 #if defined(INTERFACE)
-#pragma interface "emulator/BootLinker.hh"
+#pragma interface "generic/BootLinker.hh"
 #endif
 
 #include "adt/HashTable.hh"
