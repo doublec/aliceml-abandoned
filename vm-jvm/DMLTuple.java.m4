@@ -30,5 +30,4 @@ public interface DMLTuple extends DMLValue {
     /** gibt den i-ten Eintrag des Tuples oder Records*/
     public DMLValue get(int i);
     public DMLValue get(java.lang.String i);
-    public DMLValue get(Label label);
 }

@@ -47,7 +47,6 @@ files = $(CLASSROOT)$(RUNTIME)Array.class \
 	$(CLASSROOT)$(RUNTIME)Int.class \
 	$(CLASSROOT)$(RUNTIME)JObject.class \
 	$(CLASSROOT)$(RUNTIME)LVar.class \
-	$(CLASSROOT)$(RUNTIME)Label.class \
 	$(CLASSROOT)$(RUNTIME)List.class \
 	$(CLASSROOT)$(RUNTIME)Math.class \
 	$(CLASSROOT)$(RUNTIME)Name.class \

@@ -21,7 +21,7 @@ final public class Record extends Tuple {
 
     final public RecordArity arity;
 
-    public Record (Label[] ls, DMLValue[] vals) {
+    public Record (java.lang.String[] ls, DMLValue[] vals) {
 	super(vals);
 	RecordArity ra = new RecordArity(ls);
 	Object ar=arityHash.get(ra);
@@ -63,7 +63,7 @@ final public class Record extends Tuple {
     }
 
     final public DMLValue get(int i) {
-	int index = arity.getIndexOfLabel(new Label(i));
+	int index = arity.getIndexOfLabel(java.lang.String.valueOf(i));
 	if (index > -1)
 	    return vals[index];
 	else
@@ -71,22 +71,14 @@ final public class Record extends Tuple {
     }
 
     final public DMLValue get(java.lang.String s) {
-	int index = arity.getIndexOfLabel(new Label(s));
+	int index = arity.getIndexOfLabel(s);
 	if (index > -1)
 	    return vals[index];
 	else
 	    return null;
     }
 
-    final public DMLValue get(Label label) {
-	int index = arity.getIndexOfLabel(label);
-	if (index > -1)
-	    return vals[index];
-	else
-	    return null;
-    }
-
-    final public DMLValue[] checkArity(Label[] lab) {
+    final public DMLValue[] checkArity(java.lang.String[] lab) {
 	RecordArity ar = new RecordArity(lab);
 	Object cmp = arityHash.get(ar);
 	if (cmp == arity) {

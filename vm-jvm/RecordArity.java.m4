@@ -14,10 +14,10 @@ package de.uni_sb.ps.dml.runtime;
 
 final public class RecordArity implements java.io.Serializable {
 
-    final public Label[] labels;
+    final public java.lang.String[] labels;
     final protected java.util.Hashtable hashtable;
 
-    public RecordArity(Label[] labels) {
+    public RecordArity(java.lang.String[] labels) {
 	int l = labels.length;
 	hashtable = new java.util.Hashtable(l); // hashtable with default size l
 	this.labels = labels;
@@ -27,7 +27,7 @@ final public class RecordArity implements java.io.Serializable {
 	}
     }
 
-    final public int getIndexOfLabel(Label l) {
+    final public int getIndexOfLabel(java.lang.String l) {
 	java.lang.Object idx=hashtable.get(l);
 	if (idx==null)
 	    return -1;
@@ -36,7 +36,7 @@ final public class RecordArity implements java.io.Serializable {
     }
 
     /** gibt den i-ten Label zurueck */
-    final public Label getLabel(int i) {
+    final public java.lang.String getLabel(int i) {
 	return labels[i];
     }
 
