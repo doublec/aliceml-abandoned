@@ -364,7 +364,7 @@ public:
   void Init(u_int index, word value) {
     InitArg(BASE_SIZE + index, value);
   }
-  void Replace(u_int index, word value) {
+  void LateInit(u_int index, word value) {
     // This is only meant to be called by Vector.tabulate.
     ReplaceArg(BASE_SIZE + index, value);
   }
