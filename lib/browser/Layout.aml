@@ -24,6 +24,8 @@ import structure Settings from "Settings"
 import structure Services from "Services"
 import signature LAYOUT from "LAYOUT-sig"
 
+import structure Inspector from "x-alice:/lib/tools/Inspector"
+
 open Types Helper
 
 structure Layout :> LAYOUT = 
@@ -76,8 +78,8 @@ struct
 			     then iterFindLX (seclast)
 				 + sum_up(#2(List.partition 
 					     (fn i => i = seclast) li),
-					  get_xdim)
-			 else get_xdim(n)
+					  iterFindLX)
+			 else sum_up(li,iterFindLX)
 	   in
 	       l_x
 	   end
@@ -107,11 +109,50 @@ let val li = Array.toList(#kids(r))
       | _ => #1(layout n) *)
 
     (* layout *)
+
     and layout n = 
 	let val f = fn n => #1(layout n)
 	    val g = fn n => #2(layout n)
 	    val h = fn n => #3(layout n)
 	in (case n of
+	    Concat(r)
+		=> let 
+		       val no_kids = Array.length(#kids(r))
+		       val li = List.tabulate(no_kids, 
+			    (fn i => layout(Array.sub(#kids(r),i))))
+		       val _ = Inspector.inspect li
+		       val (xdim,l_xdim) = case no_kids of
+			   0 => (0,0)
+			 | 1 => (#1(hd(li)),#3(hd(li)))
+			 | _ => 
+			   let 
+			       val seclast = Array.sub(#kids(r),
+						       no_kids -2)
+			       val li' = List.take(li,List.length(li)-1)
+			       val sumx = (fn ((x,y,lx),s) => x+s)
+			       val sumlx =  (fn ((x,y,lx),s) => lx+s)
+			       val xd = if setsVertical(seclast)
+					    then 
+					    if 
+				 Int.>=((#3(List.nth(li,no_kids -2))),
+				      	(#1(List.nth(li,no_kids -2))))
+						     then 
+					    List.foldl sumx 0 li'
+						 else List.foldl sumx 0 li
+					else  List.foldl sumx 0 li
+			       val lx = List.foldl sumlx 0 li
+			   in
+			       (xd,lx)
+			   end
+		       val ydim = List.foldl 
+			   (fn ((x,y,lx),m) => Int.max(y,m)) 0 li
+		   in
+		    (#width(r) := xdim  
+		     ; #height(r) := ydim
+		     ; #status(r) := DIRTY
+		     ; (xdim,ydim,l_xdim))   
+		   end 
+	       (*
 	    Concat(r) 
 	    => if !(#status(r)) = DAZZLED
 		   then let val li = Array.toList(#kids(r))
@@ -134,8 +175,8 @@ let val li = Array.toList(#kids(r))
 					     then h (seclast)
 						 + sum_up(#1(List.partition 
 						 (fn i => i = seclast) li),
-							 get_xdim)
-						 else x_d
+							 iterFindLX)
+						 else sum_up(li,iterFindLX)
 				in 
 				    (x_d,l_x)
 				end
@@ -143,7 +184,10 @@ let val li = Array.toList(#kids(r))
 			in (#width(r) := xdim  
 			    ; #height(r) := ydim
 			    ; #status(r) := DIRTY
-			    ; (xdim,ydim,l_xdim) )
+			    ; (xdim,ydim,l_xdim)
+			    ;TextIO.print("Leaving Layout Concat with l_xdim ="
+				   ^ Int.toString(l_xdim) ^ "\n")
+			    ; (xdim,ydim,l_xdim))
 			end
 	       else let 
 			val li = Array.toList(#kids(r))
@@ -156,8 +200,11 @@ let val li = Array.toList(#kids(r))
 					      get_xdim)
 			     else get_xdim(n)
 		    in
-		   (get_xdim(n),get_ydim(n),l_x)
-	       end
+		   ((get_xdim(n),get_ydim(n),l_x)
+		    ; TextIO.print("Leaving Layout Concat with l_x ="
+				   ^ Int.toString(l_x) ^ "\n")
+		    ; (get_xdim(n),get_ydim(n),l_x))
+	       end *)
 	  | Container(r)
 	    => if !(#status(r)) = DAZZLED
 		   then let val li = Array.toList(#kids(r))
@@ -167,16 +214,18 @@ let val li = Array.toList(#kids(r))
 			    val ydim = if setsVertical n 
 					   then sum_up (li,g)
 				       else max (li,g)
-			    val l_xdim = if List.null(li)
-					     then 0
-					 else if (setsVertical n) 
+			    val l_xdim = if (setsVertical n) 
 					     then h(List.last(li))
-						 else xdim
+						 else xdim 
 			in (#width(r) := xdim  
 			    ; #height(r) := ydim
 			    ; #l_width(r) := l_xdim
 			    ; #status(r) := DIRTY
-			    ; (xdim,ydim,l_xdim) )   
+			    ; (xdim,ydim,l_xdim)
+			    ; TextIO.print("Leaving Layout Container" 
+                                  ^ " with l_xdim ="
+				   ^ Int.toString(l_xdim) ^ "\n")
+			    ; (xdim,ydim,l_xdim))   
 			end
 	       else (get_xdim(n),get_ydim(n),get_l_xdim(n)) 
 	  | Simple(r) => (if !(#status(r)) = DAZZLED
