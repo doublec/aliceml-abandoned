@@ -76,7 +76,7 @@ struct
 
     fun compare(w1,w2) =
 	if w1 < w2 then LESS
-	else if w1 < w2 then GREATER
+	else if w1 > w2 then GREATER
 	else EQUAL
 
     val w0 = fromInt 0
