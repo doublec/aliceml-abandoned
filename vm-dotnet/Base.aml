@@ -367,6 +367,8 @@ structure String =
 
 	fun implode l = concat (List.map str l)
 
+	fun map f s = implode (List.map f (explode s))
+
 	fun compare (s, t) =
 	    let
 		__primitive compare' : string * string -> int = "String.compare'"
