@@ -1,8 +1,8 @@
 Group is
 
-	flat-grammar.cm
-	flattening-phase.cm
-	liveness-analysis-phase.cm
-	output-flat-grammar.cm
-	engine.cm
-
+    flat-grammar.cm
+    flattening-phase.cm
+    value-propagation-phase.cm
+    liveness-analysis-phase.cm
+    output-flat-grammar.cm
+    engine.cm

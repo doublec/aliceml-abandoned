@@ -1,0 +1,14 @@
+Group
+
+    structure ValuePropagationPhase
+
+is
+
+    ../infrastructure/crash.cm
+    ../infrastructure/phase.cm
+    ../misc/sources.cm
+    ../common/id-stamp.cm
+    flat-grammar.cm
+
+    VALUE_PROPAGATION_PHASE.sig
+    ValuePropagationPhase.sml
