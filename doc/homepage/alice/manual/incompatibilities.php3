@@ -367,25 +367,15 @@ href="http://SML.sourceforge.net/Basis/">Standard ML Basis Library</A>. This may
 change the meaning of programs that open library structures, or use library
 signatures.</P>
 
-<?php subsection("library-example", "Example") ?>
+<?php subsection("library-example", "Examples") ?>
+
+<P>In the following snippet, the referenced function <TT>equal</TT> will be
+shadowed by the <TT>open</TT> declaration:</TT>
 
 <PRE class=code>
-signature A =
-sig
-    type t
-end
-
-signature B =
-sig
-    datatype t = C
-end
-
-signature S =
-sig
-    structure A : A
-    structure B : B
-    sharing type A.t = B.t	(* error: types incompatible *)
-end</PRE>
+fun equal (a : 'a -> 'b, b : 'a -> 'b) = true
+open Int
+val b = equal (op+, op-)	(* error: type mismatch *)</PRE>
 
 <?php subsection("library-fix", "Workaround") ?>
 
