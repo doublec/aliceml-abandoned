@@ -154,7 +154,7 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 			    O.TupExp (coord,
 				      List.map (fn (_, exp') => exp') fields')
 		      | (fields', FieldLabelSort.Rec) =>
-			    O.RecExp (coord, fields)
+			    O.RecExp (coord, fields')
 	    in
 		case decs' of
 		    nil => exp'
