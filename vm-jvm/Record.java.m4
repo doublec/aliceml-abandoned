@@ -19,7 +19,7 @@ final public class Record extends Tuple {
 
     static private java.util.Hashtable arityHash = new java.util.Hashtable();
 
-    final protected RecordArity arity;
+    final public RecordArity arity;
 
     public Record (Label[] ls, DMLValue[] vals) {
 	super(vals);
