@@ -297,7 +297,7 @@ structure Renderer :> RENDERER =
 
 	fun mkRender {ambient, lights, scene, vision, width, height, depth} =
 	    let
-		val scene' = preprocess scene
+		val scene' = preprocess (scene, unitMat, unitMat)
 		val w = 2.0 * Math.tan (0.5 * vision)
 		val delta = w / Real.fromInt width
 		val h = delta * height
