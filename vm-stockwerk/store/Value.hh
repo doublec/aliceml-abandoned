@@ -110,4 +110,31 @@ public:
   }
 };
 
+class Chunk : private Block {
+private:
+  static const u_int BYTESIZE_POS = 1;
+public:
+  using Block::ToWord;
+
+  char *GetBase() {
+    return (char *) (Block::GetBase() + 1);
+  }
+  u_int GetSize() {
+    return Store::DirectWordToInt(GetArg(BYTESIZE_POS));
+  }
+
+  static Chunk *FromWord(word x) {
+    Block *p = Store::WordToBlock(x);
+
+    AssertStore((p == INVALID_POINTER) || (p->GetLabel() == CHUNK_LABEL));
+    return (Chunk *) p;
+  }
+  static Chunk *FromWordDirect(word x) {
+    Block *p = Store::DirectWordToBlock(x);
+    
+    AssertStore((p == INVALID_POINTER) || (p->GetLabel() == CHUNK_LABEL));
+    return (Chunk *) p;
+  }
+};
+
 #endif __STORE__VALUE_HH__

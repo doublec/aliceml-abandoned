@@ -102,8 +102,12 @@ public:
     AssertStore(l <= MAX_HELPER_LABEL);
     return InternalAllocBlock(l, s);
   }
-  static Block *AllocChunk(u_int s) {
-    return Store::InternalAllocBlock(CHUNK_LABEL, s);
+  static Chunk *AllocChunk(u_int s) {
+    u_int ws = (1 + (s / sizeof(u_int)) + (((s % sizeof(u_int)) == 0) ? 0 : 1));
+    Block *p = Store::InternalAllocBlock(CHUNK_LABEL, ws);
+
+    ((word *) p)[1] = PointerOp::EncodeInt(s);
+    return (Chunk *) p;
   }
   static Transient *AllocTransient(BlockLabel l) {
     AssertStore((l >= MIN_TRANSIENT_LABEL) && (l <= MAX_TRANSIENT_LABEL));
