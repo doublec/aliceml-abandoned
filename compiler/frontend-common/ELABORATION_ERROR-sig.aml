@@ -31,43 +31,43 @@ sig
     type valid     = AbstractGrammar.valid
     type modlongid = AbstractGrammar.modlongid
 
-    type unify_error  = typ * typ * typ * typ
+    type typ_mismatch = typ * typ * typ * typ
     type inf_mismatch = Inf.mismatch
 
     datatype error =
 	(* Expressions *)
 	  NewExpTyp		of typ
 	| NewExpResTyp		of typ
-	| VecExpUnify		of unify_error
+	| VecExpMismatch	of typ_mismatch
 	| TagExpLab		of lab
-	| TagExpArgUnify	of unify_error
-	| TagExpRowUnify	of unify_error
-	| ConExpConUnify	of unify_error
-	| ConExpArgUnify	of unify_error
-	| UpdExpUnify		of unify_error
-	| SelExpUnify		of unify_error
-	| AppExpFunUnify	of unify_error
-	| AppExpArgUnify	of unify_error
-	| AndExpUnify		of unify_error
-	| OrExpUnify		of unify_error
-	| IfExpCondUnify	of unify_error
-	| IfExpBranchUnify	of unify_error
-	| RaiseExpUnify		of unify_error
-	| HandleExpUnify	of unify_error
-	| AnnExpUnify		of unify_error
-	| MatPatUnify		of unify_error
-	| MatExpUnify		of unify_error
+	| TagExpArgMismatch	of typ_mismatch
+	| TagExpRowMismatch	of typ_mismatch
+	| ConExpConMismatch	of typ_mismatch
+	| ConExpArgMismatch	of typ_mismatch
+	| UpdExpMismatch	of typ_mismatch
+	| SelExpMismatch	of typ_mismatch
+	| AppExpFunMismatch	of typ_mismatch
+	| AppExpArgMismatch	of typ_mismatch
+	| AndExpMismatch	of typ_mismatch
+	| OrExpMismatch		of typ_mismatch
+	| IfExpCondMismatch	of typ_mismatch
+	| IfExpBranchMismatch	of typ_mismatch
+	| RaiseExpMismatch	of typ_mismatch
+	| HandleExpMismatch	of typ_mismatch
+	| AnnExpMismatch	of typ_mismatch
+	| MatPatMismatch	of typ_mismatch
+	| MatExpMismatch	of typ_mismatch
 	(* Patterns *)
 	| TagPatLab		of lab
-	| TagPatArgUnify	of unify_error
-	| TagPatRowUnify	of unify_error
-	| ConPatConUnify	of unify_error
-	| ConPatArgUnify	of unify_error
-	| VecPatUnify		of unify_error
-	| AsPatUnify		of unify_error
-	| AltPatUnify		of unify_error
-	| GuardPatUnify		of unify_error
-	| AnnPatUnify		of unify_error
+	| TagPatArgMismatch	of typ_mismatch
+	| TagPatRowMismatch	of typ_mismatch
+	| ConPatConMismatch	of typ_mismatch
+	| ConPatArgMismatch	of typ_mismatch
+	| VecPatMismatch	of typ_mismatch
+	| AsPatMismatch		of typ_mismatch
+	| AltPatMismatch	of typ_mismatch
+	| GuardPatMismatch	of typ_mismatch
+	| AnnPatMismatch	of typ_mismatch
 	(* Types *)
 	| JokTyp
 	| JokTypRow
@@ -77,7 +77,7 @@ sig
 	| RefTypKind		of kind
 	| PervasiveTypUnknown	of string
 	(* Declarations *)
-	| ValDecUnify		of unify_error
+	| ValDecMismatch	of typ_mismatch
 	| ValDecLift		of valid * var
 	(* Long ids *)
 	| ModlongidInf		of modlongid * inf
@@ -92,7 +92,8 @@ sig
 	| AppInfFunMismatch	of inf
 	| AppInfArgMismatch	of inf_mismatch
 	| InterInfMismatch	of inf_mismatch
-	| SingInfPath
+	| LetInfGenerative	of inf
+	| SingInfNonSing	of inf
 	| PervasiveInfUnknown	of string
 	(* Imports *)
 	| ImpMismatch		of inf_mismatch
