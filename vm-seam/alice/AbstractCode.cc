@@ -88,32 +88,33 @@ const char *AbstractCode::GetOpcodeName(TagVal *pc) {
 
 #define INSTR             Instr(pc->Sel(operand++));
 #define LASTINSTR         LastInstr(pc->Sel(operand++));
-#define INSTRS            VECTOR(pc->Sel(operand++), Instr)
+#define LASTINSTROPT      OPT(pc->Sel(operand++), LastInstr);
+#define INSTRS            VECTOR(pc->Sel(operand++), Instr);
 #define INT               Int(pc->Sel(operand++));
 #define STRING            Value(pc->Sel(operand++));
 #define VALUE             Value(pc->Sel(operand++));
 #define TEMPLATE          Template(pc->Sel(operand++));
 #define STAMP             Int(pc->Sel(operand++));
 #define ID                Int(pc->Sel(operand++));
-#define IDS               VECTOR(pc->Sel(operand++), Int)
+#define IDS               VECTOR(pc->Sel(operand++), Int);
 #define IDREF             IdRef(pc->Sel(operand++));
-#define IDREFS            VECTOR(pc->Sel(operand++), IdRef)
-#define IDREFARGS         ARGS(pc->Sel(operand++), IdRef)
+#define IDREFS            VECTOR(pc->Sel(operand++), IdRef);
+#define IDREFARGS         ARGS(pc->Sel(operand++), IdRef);
 #define IDDEF             IdDef(pc->Sel(operand++));
-#define IDDEFS            VECTOR(pc->Sel(operand++), IdDef)
-#define IDDEFINSTROPT     OPT(pc->Sel(operand++), IdDefInstr)
-#define IDDEFARGSINSTROPT OPT(pc->Sel(operand++), IdDefArgsInstr)
+#define IDDEFS            VECTOR(pc->Sel(operand++), IdDef);
+#define IDDEFINSTROPT     OPT(pc->Sel(operand++), IdDefInstr);
+#define IDDEFARGSINSTROPT OPT(pc->Sel(operand++), IdDefArgsInstr);
 #define LABEL             Label(pc->Sel(operand++));
-#define LABELS            VECTOR(pc->Sel(operand++), Label)
-#define INTINSTRVEC       VECTOR(pc->Sel(operand++), IntInstr)
-#define REALINSTRVEC      VECTOR(pc->Sel(operand++), RealInstr)
-#define STRINGINSTRVEC    VECTOR(pc->Sel(operand++), StringInstr)
+#define LABELS            VECTOR(pc->Sel(operand++), Label);
+#define INTINSTRVEC       VECTOR(pc->Sel(operand++), IntInstr);
+#define REALINSTRVEC      VECTOR(pc->Sel(operand++), RealInstr);
+#define STRINGINSTRVEC    VECTOR(pc->Sel(operand++), StringInstr);
 #define NULLARYTAGTESTS   INTINSTRVEC
-#define NARYTAGTESTS      VECTOR(pc->Sel(operand++), NaryTagTest)
-#define IDDEFSOPTINSTRVEC VECTOR(pc->Sel(operand++), IdDefsOptInstr)
-#define NULLARYCONTESTS   VECTOR(pc->Sel(operand++), IdRefInstr)
-#define NARYCONTESTS      VECTOR(pc->Sel(operand++), IdRefIdDefsInstr)
-#define IDDEFSINSTRVEC    VECTOR(pc->Sel(operand++), IdDefsInstr)
+#define NARYTAGTESTS      VECTOR(pc->Sel(operand++), NaryTagTest);
+#define IDDEFSOPTINSTRVEC VECTOR(pc->Sel(operand++), IdDefsOptInstr);
+#define NULLARYCONTESTS   VECTOR(pc->Sel(operand++), IdRefInstr);
+#define NARYCONTESTS      VECTOR(pc->Sel(operand++), IdRefIdDefsInstr);
+#define IDDEFSINSTRVEC    VECTOR(pc->Sel(operand++), IdDefsInstr);
 
 class Disassembler {
 private:
@@ -308,7 +309,7 @@ void Disassembler::Start() {
     case AbstractCode::TagTest:
       IDREF NULLARYTAGTESTS NARYTAGTESTS LASTINSTR break;
     case AbstractCode::CompactTagTest:
-      IDREF IDDEFSOPTINSTRVEC LASTINSTR break;
+      IDREF IDDEFSOPTINSTRVEC LASTINSTROPT break;
     case AbstractCode::ConTest:
       IDREF NULLARYCONTESTS NARYCONTESTS LASTINSTR break;
     case AbstractCode::VecTest:
