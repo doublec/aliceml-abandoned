@@ -284,7 +284,7 @@ functor MkRecursiveCompiler(structure ComponentManager: COMPONENT_MANAGER
 		  | NONE =>
 		    let
 			val inf = valOf (loadSig url')
-			    handle exn as (IO.Io {...} | Option.Option) =>
+			    handle exn as Component.Failure (_, _) =>
 				acquireFromSigFile (url', exn)
 			val _ = trace ("loaded signature from " ^
 				       Url.toString url')
