@@ -7,13 +7,12 @@ signature PERVASIVE_TYPE =
     type con		= Type.con
     type typ		= Type.typ
 
-    val stamp_pervasive : Stamp.t
-
     val lab_false :	lab
     val lab_true :	lab
     val lab_nil :	lab
     val lab_cons :	lab
 
+    val name_pervasive:	name
     val name_ref :	name
     val name_match :	name
     val name_bind :	name

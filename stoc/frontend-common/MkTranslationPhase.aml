@@ -50,12 +50,49 @@ functor MakeTranslationPhase(structure Switches: SWITCHES):> TRANSLATION_PHASE =
 	Type.isSum t
 
 
+  (* Names and labels *)
+
+    fun trName' f (Name.ExId s)	= Name.ExId(f s)
+      | trName' f  n		= n
+
+    fun trName  n		= n
+    val trTypName		= trName'(fn s => "$" ^ s)
+    val trModName		= trName'(fn s => s ^ "$")
+    val trInfName		= trName'(fn s => "$" ^ s ^ "$")
+
+    fun trLabel a		= Label.fromName(trName(Label.toName a))
+    fun trTypLabel a		= Label.fromName(trTypName(Label.toName a))
+    fun trModLabel a		= Label.fromName(trModName(Label.toName a))
+    fun trInfLabel a		= Label.fromName(trInfName(Label.toName a))
+
+
   (* Auxiliaries for reflection *)
 
     open PervasiveType
     open LabelReflection
     open PathReflection
     open TypeReflection
+
+    val modname_label'		= trModName modname_label
+    val modname_path'		= trModName modname_path
+    val modname_type'		= trModName modname_type
+    val lab_label'		= Label.fromName modname_label'
+    val lab_path'		= Label.fromName modname_path'
+    val lab_type'		= Label.fromName modname_type'
+
+    val longidr_pervasive	= ref(NONE : O.longid option)
+    fun longid_pervasive()	= case !longidr_pervasive
+				    of SOME y => y
+				     | NONE => raise Crash.Crash
+					"TranslationPhase.longid_pervasive"
+
+    fun info_pervasiveDot a	= let val i = O.infoLongid(longid_pervasive())
+				      val r = Type.asProd(valOf(#typ i))
+				      val t = Vector.sub(Type.lookupRow(r,a), 0)
+				  in typInfo(#region i, SOME t) end
+    fun info_label()		= info_pervasiveDot lab_label'
+    fun info_path()		= info_pervasiveDot lab_path'
+    fun info_type()		= info_pervasiveDot lab_type'
 
     val typ_typtyp		= Type.inTuple #[typ_typ, typ_typ]
     val typ_vartyp		= Type.inTuple #[typ_var, typ_typ]
@@ -64,25 +101,19 @@ functor MakeTranslationPhase(structure Switches: SWITCHES):> TRANSLATION_PHASE =
     val typ_kindToVar		= Type.inArrow(typ_kind, typ_var)
     val typ_kindkindToKind	= Type.inArrow(typ_kindkind, typ_kind)
 
-    (*UNFINISHED: how exactly access pervasives? *)
     val info_nowhere		= nonInfo(Source.nowhere)
     val info_nowhere'		= typInfo(Source.nowhere, NONE : typ option)
-    val info_pervasive		= info_nowhere' (*UNFINISHED*)
-    val id_pervasive		= O.Id(info_nowhere, stamp_pervasive, Name.InId)
-    val longid_pervasive	= O.ShortId(info_pervasive, id_pervasive)
-    fun longid_pervasiveDot i n	= O.LongId(i, longid_pervasive,
+    fun longid_pervasiveDot i n	= O.LongId(i, longid_pervasive(),
     					  O.Lab(info_nowhere, Label.fromName n))
 
-    val longid_ref		= longid_pervasiveDot info_nowhere' name_ref
-    val info_label		= info_nowhere' (*UNFINISHED*)
-    val longid_label		= longid_pervasiveDot info_label modname_label
-    val info_path		= info_nowhere' (*UNFINISHED*)
-    val longid_path		= longid_pervasiveDot info_path modname_path
-    val info_type		= info_nowhere' (*UNFINISHED*)
-    val longid_type		= longid_pervasiveDot info_type modname_type
-    fun longid_labelDot l'	= O.LongId(info_nowhere', longid_label, l')
-    fun longid_pathDot l'	= O.LongId(info_nowhere', longid_path, l')
-    fun longid_typeDot l'	= O.LongId(info_nowhere', longid_type, l')
+    fun longid_ref()		= longid_pervasiveDot info_nowhere' name_ref
+    fun longid_label()		= longid_pervasiveDot(info_label())
+						      modname_label'
+    fun longid_path()		= longid_pervasiveDot(info_path()) modname_path'
+    fun longid_type()		= longid_pervasiveDot(info_type()) modname_type'
+    fun longid_labelDot l'	= O.LongId(info_nowhere', longid_label(), l')
+    fun longid_pathDot l'	= O.LongId(info_nowhere', longid_path(), l')
+    fun longid_typeDot l'	= O.LongId(info_nowhere', longid_type(), l')
 
     fun labOp(a,e')		= let val r   = #region(O.infoExp e')
 				      val l'  = O.Lab(nonInfo r, a)
@@ -150,22 +181,6 @@ functor MakeTranslationPhase(structure Switches: SWITCHES):> TRANSLATION_PHASE =
 		     O.TupExp(typInfo(r,typ_kindkind),
 			      [trKind r k1, trKind r k2]))
 
-
-
-  (* Names and labels *)
-
-    fun trName' f (Name.ExId s)	= Name.ExId(f s)
-      | trName' f  n		= n
-
-    fun trName  n		= n
-    val trTypName		= trName'(fn s => "$" ^ s)
-    val trModName		= trName'(fn s => s ^ "$")
-    val trInfName		= trName'(fn s => "$" ^ s ^ "$")
-
-    fun trLabel a		= Label.fromName(trName(Label.toName a))
-    fun trTypLabel a		= Label.fromName(trTypName(Label.toName a))
-    fun trModLabel a		= Label.fromName(trModName(Label.toName a))
-    fun trInfLabel a		= Label.fromName(trInfName(Label.toName a))
 
 
   (* Transformation of type info *)
@@ -252,6 +267,12 @@ functor MakeTranslationPhase(structure Switches: SWITCHES):> TRANSLATION_PHASE =
     fun trLongidInfo {region}        = {region=region, typ=NONE}
     fun trModlongidInfo {region,inf} = {region=region, typ=SOME(infToTyp inf)}
     fun trInfInfo {region,inf}       = {region=region, typ=infToTyp inf}
+
+    fun updatePervasive(I.Id(i,z,n), j) =
+	if n <> name_pervasive then () else
+	    longidr_pervasive := SOME(
+		O.ShortId(typInfo(#region i, SOME(infToTyp j)), O.Id(i,z,n))
+	    )
 
 
   (* Signature coercions *)
@@ -806,7 +827,7 @@ UNFINISHED: obsolete after bootstrapping:
 	    val lit = O.StringLit(String.toWide(Label.toString a))
 	    val e3' = pathOp(lab_fromLab, labOp(lab_fromString,
 					O.LitExp(typInfo(r,typ_string), lit)))
-	    val e'  = O.TupExp(typInfo(r, typ_con), [e1',e2',e2'])
+	    val e'  = O.TupExp(typInfo(r, typ_con), [e1',e2',e3'])
 	in
 	    typOp(lab_inCon, e')
 	end
@@ -822,7 +843,7 @@ UNFINISHED: obsolete after bootstrapping:
 	    val lit = O.StringLit(String.toWide(Label.toString a))
 	    val e3' = pathOp(lab_fromLab, labOp(lab_fromString,
 					O.LitExp(typInfo(r,typ_string), lit)))
-	    val e'  = O.TupExp(typInfo(r, typ_con), [e1',e2',e2'])
+	    val e'  = O.TupExp(typInfo(r, typ_con), [e1',e2',e3'])
 	in
 	    typOp(lab_inCon, e')
 	end
@@ -867,8 +888,8 @@ UNFINISHED: obsolete after bootstrapping:
 
   (* Declarations *)
 
-    and trDecs ds			= trDecs'(ds, [])
-    and trDecs'(ds, ds')		= List.foldr trDec ds' ds
+    and trDecs ds			= List.rev(trDecs'(ds, []))
+    and trDecs'(ds, ds')		= List.foldl trDec ds' ds
     and trDec(I.ValDec(i,p,e), ds')	= O.ValDec(i, trPat p, trExp e) :: ds'
       | trDec(I.ConDec(i,x,t,k), ds')	= let val i' = I.infoTyp t in
 					      case t of I.SingTyp(_,y) =>
@@ -890,6 +911,8 @@ UNFINISHED: obsolete after bootstrapping:
 					  in O.ValDec(i, O.VarPat(typInfo(r,t),
 							 trModid x), e')
 					  end :: ds'
+					  before
+					  updatePervasive(x, #inf(I.infoMod m))
       | trDec(I.InfDec(i,x,j), ds')	= ds' (*UNFINISHED*)
       | trDec(I.FixDec(i,x,q), ds')	= ds'
       | trDec(I.VarDec(i,x,d), ds')	= trDec(d, ds')
@@ -899,14 +922,14 @@ UNFINISHED: obsolete after bootstrapping:
       | trDec(I.LocalDec(i,ds), ds')	= trDecs'(ds, ds')
 
 
-    and trRecDecs ds			= trRecDecs'(ds, [])
-    and trRecDecs'(ds, ds')		= List.foldr trRecDec ds' ds
+    and trRecDecs ds			= List.rev(trRecDecs'(ds, []))
+    and trRecDecs'(ds, ds')		= List.foldl trRecDec ds' ds
     and trRecDec(I.TypDec(i,x,t), ds')	= ds'
       | trRecDec(d,ds')			= trDec(d,ds')
 
 
-    and trLHSRecDecs ds			= trLHSRecDecs'(ds, [])
-    and trLHSRecDecs'(ds, ds')		= List.foldr trLHSRecDec ds' ds
+    and trLHSRecDecs ds			= List.rev(trLHSRecDecs'(ds, []))
+    and trLHSRecDecs'(ds, ds')		= List.foldl trLHSRecDec ds' ds
     and trLHSRecDec(I.TypDec(i,x,t), ds')
 					= let val r  = #region i
 					      val i' = typInfo(r, typ_typ)
@@ -921,8 +944,8 @@ UNFINISHED: obsolete after bootstrapping:
 					  end :: ds'
       | trLHSRecDec(_, ds')		= ds'
 
-    and trRHSRecDecs ds			= trRHSRecDecs'(ds, [])
-    and trRHSRecDecs'(ds, ds')		= List.foldr trRHSRecDec ds' ds
+    and trRHSRecDecs ds			= List.rev(trRHSRecDecs'(ds, []))
+    and trRHSRecDecs'(ds, ds')		= List.foldl trRHSRecDec ds' ds
     and trRHSRecDec(I.TypDec(i,x,t), ds')
 					= if !Switches.rttLevel=Switches.NO_RTT
 					  then ds' else
@@ -970,7 +993,10 @@ UNFINISHED: obsolete after bootstrapping:
 
   (* Imports and annotations *)
 
-    fun trAnns'(a_s, ds') = List.foldr trAnn ([],ds') a_s
+    fun trAnns'(a_s, ds') =
+	let val (xsus',ds') = List.foldl trAnn ([],ds') a_s in
+	    ( List.rev xsus', List.rev ds' )
+	end
     and trAnn(I.ImpAnn(i,is,u),(xsus',ds')) =
 	let
 	    val r    = #region i
@@ -984,7 +1010,7 @@ UNFINISHED: obsolete after bootstrapping:
 	    ( (x',s,u)::xsus', ds'' )
 	end
 
-    and trImps(is, y, t, ds')		= List.foldr (trImp y t) ds' is
+    and trImps(is, y, t, ds')		= List.rev(List.foldl(trImp y t) ds' is)
     and trImp y t (I.ValImp(i,x,d),ds')	= idToDec(trId x, y, t,
 						  #typ(I.infoDesc d)) :: ds'
       | trImp y t (I.ConImp(i,x,d,k),ds')
@@ -994,6 +1020,8 @@ UNFINISHED: obsolete after bootstrapping:
       | trImp y t (I.ModImp(i,x,d),ds')	= idToDec(trModid x, y, t,
 						  infToTyp(#inf(I.infoDesc d)))
 					  :: ds'
+					  before
+					  updatePervasive(x, #inf(I.infoDesc d))
       | trImp y t (I.InfImp(i,x,d),ds')	= ds' (*UNFINISHED*)
       | trImp y t (I.FixImp(i,x,d),ds')	= ds'
       | trImp y t (I.RecImp(i,is), ds')	= trImps(is, y, t, ds')

@@ -17,4 +17,5 @@ structure PervasiveType = MakePervasiveType(val labid_false	= "false"
 					    val typid_prom	= "promise"
 					    val valid_match	= "Match"
 					    val valid_bind	= "Bind"
+					    val modid_pervasive	= "__pervasive"
 					   )

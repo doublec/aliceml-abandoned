@@ -17,6 +17,7 @@ functor MakePervasiveType(val labid_false :	string
 			  val typid_prom :	string
 			  val valid_match :	string
 			  val valid_bind :	string
+			  val modid_pervasive :	string
 			 ) :> PERVASIVE_TYPE =
   struct
 
@@ -29,13 +30,12 @@ functor MakePervasiveType(val labid_false :	string
     datatype kind	= datatype Type.kind
     datatype sort	= datatype Type.sort
 
-    val stamp_pervasive	= Stamp.new()
-
     val lab_false	= Label.fromString labid_false
     val lab_true	= Label.fromString labid_true
     val lab_nil		= Label.fromString labid_nil
     val lab_cons	= Label.fromString labid_cons
 
+    val name_pervasive	= Name.ExId modid_pervasive
     val name_bool	= Name.ExId typid_bool
     val name_list	= Name.ExId typid_list
     val name_int	= Name.ExId typid_int
