@@ -20,7 +20,7 @@ signature MAIN =
     val translateString :	string -> IntermediateGrammar.t
     val translateFile :		string -> IntermediateGrammar.t
 
-    val flattenString :		string -> FlatGrammar.component
-    val flattenFile :		string -> FlatGrammar.component
+    val flattenString :		string -> FlatGrammar.t
+    val flattenFile :		string -> FlatGrammar.t
 
   end
