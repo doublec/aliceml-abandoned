@@ -151,10 +151,10 @@
   </P>
 
   <P class=note>
-    Note: In Operette 1, failed futures are not supported, due to limitations
-    of the Mozart virtual machine. Instead of raising the exception
-    <TT>Future</TT>, all operations accessing a failed future will block.
-    Similarly, <TT>isFailed</TT> will always deliver <TT>false</TT>.
+    Note: In Operette 1, the operation <TT>isFuture</TT> does return
+    <TT>true</TT> for failed futures, due to limitations
+    of the Mozart virtual machine. Similarly, <TT>isFailed</TT> will always
+    deliver <TT>false</TT>.
   </P>
 
 

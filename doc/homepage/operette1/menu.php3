@@ -4,7 +4,6 @@
   Alice, the Language:<BR>
   <A href="laziness.php3">Laziness</A><BR>
   <A href="futures.php3">Futures</A><BR>
-  <A href="threads.php3">Threads</A><BR>
   <A href="components.php3">Components</A><BR>
   <A href="modules.php3">Higher-Order Modules</A><BR>
   <A href="extensions.php3">Other ML Extensions</A><BR>

@@ -13,7 +13,7 @@
 
   <P>
     Stockhausen implements the language <I>Alice</I>, which integrates
-    features from <A href="http://www.mozart-oz.org/">Mozart</A> with the
+    features from <A href="http://www.mozart-oz.org/">Oz/Mozart</A> with the
     language
     <A href="http://cm.bell-labs.com/cm/cs/what/smlnj/sml.html">Standard ML</A>.
     Moreover, Alice includes other interesting features found in neither of
