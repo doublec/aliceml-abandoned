@@ -27,12 +27,12 @@ define
       meth newThread(Closure Args ?Res) TaskStack in
 	 case Closure of closure(Function ...) then
 	    TaskStack = {Function.1.pushCall Closure nil}
-	    Scheduler, Enqueue('thread'(args: Args
+	    Scheduler, enqueue('thread'(args: Args
 					stack: TaskStack
 					result: Res))
 	 end
       end
-      meth Enqueue(T) Tl Rest in
+      meth enqueue(T) Tl Rest in
 	 Tl = (QueueTl <- Rest)
 	 Tl = T|Rest
       end
@@ -70,7 +70,7 @@ define
 	 case Res of continue(Args TaskStack) then
 	    Scheduler, Run(Args TaskStack)
 	 [] preempt(Args TaskStack) then
-	    Scheduler, Enqueue({Adjoin @CurrentThread
+	    Scheduler, enqueue({Adjoin @CurrentThread
 				'thread'(args: Args stack: TaskStack)})
 	 [] exception(Debug Exn TaskStack) then
 	    Scheduler, Handle(Debug Exn TaskStack)
@@ -100,7 +100,7 @@ define
 	    %--** push a new task (TransientState := ref(...))
 	    TaskStack = {Function.1.pushCall Closure TaskStack0}
 	 in
-	    Scheduler, Enqueue('thread'(args: args()
+	    Scheduler, enqueue('thread'(args: args()
 					stack: TaskStack
 					result: _))
 	 end
