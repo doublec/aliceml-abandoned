@@ -1,9 +1,10 @@
 (*
  * Author:
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 2001
+ *   Leif Kornstaedt and Andreas Rossberg, 2001-2002
  *
  * Last change:
  *   $Date$ by $Author$
@@ -14,12 +15,12 @@
  *  Items marked with (**) are extensions to the Standard Basis.
  *)
 
-import structure __pervasive  from "Pervasive"
-import type unit datatype ref from "ToplevelTypes"
-import structure Ref          from "Ref"
-import structure Promise      from "Promise"
-import structure Future       from "Future"
-import signature LOCK         from "LOCK-sig"
+import structure __pervasive              from "Pervasive"
+import __primitive type unit datatype ref from "ToplevelTypes"
+import __primitive structure Ref          from "Ref"
+import __primitive structure Promise      from "Promise"
+import __primitive structure Future       from "Future"
+import __primitive signature LOCK         from "LOCK-sig"
 
 structure Lock :> LOCK =					(**)
     struct
