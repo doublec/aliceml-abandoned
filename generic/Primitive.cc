@@ -26,6 +26,7 @@
 #include "generic/Transform.hh"
 #include "generic/Primitive.hh"
 #include "alice/Data.hh"
+#include "alice/AliceLanguageLayer.hh"
 
 // Primitive Frame
 class PrimitiveFrame : private StackFrame {
@@ -128,19 +129,18 @@ void PrimitiveInterpreter::DumpFrame(word) {
 //
 // Primitive Functions
 //
-word Primitive::aliceTransformName;
 
 word Primitive::MakeFunction(const char *name, Primitive::function function,
 			     u_int arity, bool sited) {
   PrimitiveInterpreter *interpreter =
     new PrimitiveInterpreter(name, function, arity, sited);
   ConcreteCode *concreteCode = ConcreteCode::New(interpreter, 1);
-  //--** use a more direct representation:
+  //--** use a more direct representation and avoid Alice dependency:
   TagVal *tagVal = TagVal::New(0, 1);
   tagVal->Init(0, String::New(name)->ToWord());
+  word transformName = AliceLanguageLayer::TransformNames::primitiveFunction;
   Transform *transform =
-    Transform::New(Store::DirectWordToChunk(aliceTransformName),
-		   tagVal->ToWord());
+    Transform::New(Store::DirectWordToChunk(transformName), tagVal->ToWord());
   concreteCode->Init(0, transform->ToWord());
   return concreteCode->ToWord();
 }
@@ -149,10 +149,4 @@ word Primitive::MakeClosure(const char *name, Primitive::function function,
 			    u_int arity, bool sited) {
   word concreteCode = MakeFunction(name, function, arity, sited);
   return Closure::New(concreteCode, 0)->ToWord();
-}
-
-void Primitive::Init() {
-  //--** this is an Alice dependency:
-  RootSet::Add(aliceTransformName);
-  aliceTransformName = String::New("Alice.primitive.function")->ToWord();
 }
