@@ -42,7 +42,7 @@ struct
 	    Gtk.signalConnect (textWindow , "delete-event", 
 			       fn _ => Gtk.widgetDestroy textWindow);
 	    Gtk.signalConnect (closeButton, "clicked", 
-			       fn _ => Gtk.widgetDestroy textWindow));
+			       fn _ => Gtk.widgetDestroy textWindow);
 
 	    Gtk.boxPackStart (buttonHBox, closeButton, false, false, 5);
 	    Gtk.boxPackStart (dialogVBox, label, false, false, 5);
