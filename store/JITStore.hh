@@ -3,7 +3,7 @@
 //   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
 //
 // Copyright:
-//   Thorsten Brunklaus, 2002
+//   Thorsten Brunklaus, 2002-2004
 //
 // Last Change:
 //   $Date$ by $Author$
@@ -54,44 +54,22 @@ class JITStore : protected LightningState {
 protected:
   u_int nbArgs;
   bool saveCallerSavedRegs;
-
-  // Position independent procedure call and restore caller-saved registers
-  // Side-Effect: Result is returned in JIT_R0
-  void Call(u_int nbArgs, void *proc) {
-    (void) jit_movi_p(JIT_R0, proc);
-    if (nbArgs != 0) {
-      jit_callr(JIT_R0);
-      // TODO: Find correct platform test
-#if HAVE_JIT_FP
-      // Remove arguments from the stack
-      jit_addi_ui(JIT_SP, JIT_SP, nbArgs * sizeof(word));
-#endif
-    }
-    else {
-      jit_callr(JIT_R0);
-    }
-    // Move the return value to JIT_R0
-    jit_retval(JIT_R0);
-  }
 public:
-  // Save caller-saved registers and initialize argument bank
-  void Prepare(u_int nbArgs, bool saveCallerSavedRegs = true) {
-    JITStore::saveCallerSavedRegs = saveCallerSavedRegs;
-    if (saveCallerSavedRegs) {
-      jit_pushr_ui(JIT_R1);
-      jit_pushr_ui(JIT_R2);
-    }
-    JITStore::nbArgs = nbArgs;
-    if (nbArgs != 0) {
-      jit_prepare(nbArgs);
-    }
+  // Stack Abstraction
+  void PushStack(u_int Reg) {
+    jit_pushr_ui(Reg);
   }
-  void Finish(void *proc) {
-    Call(nbArgs, proc);
-    if (saveCallerSavedRegs) {
-      jit_popr_ui(JIT_R2);
-      jit_popr_ui(JIT_R1);
-    }
+  void PopStack(u_int Reg) {
+    jit_popr_ui(Reg);
+  }
+  // Enter subroutine
+  void Prolog(u_int nbArgs) {
+    jit_prolog(nbArgs);
+  }
+  // Extract arguments
+  void GetSubroutineArg(u_int Reg) {
+    int arg1 = jit_arg_p();
+    jit_getarg_p(Reg, arg1);
   }
   // Return from subroutine: Result is taken from JIT_R0
   void Return() {
@@ -100,27 +78,62 @@ public:
     }
     jit_ret();
   }
-  void SaveAllRegs() {
-    jit_pushr_ui(JIT_R0);
-    jit_pushr_ui(JIT_R1);
-    jit_pushr_ui(JIT_R2);
-    jit_pushr_ui(JIT_V0);
-    jit_pushr_ui(JIT_V1);
-    jit_pushr_ui(JIT_V2);
+  // Save caller-saved registers and initialize argument bank
+  void Prepare(u_int nbArgs, bool saveCallerSavedRegs = true) {
+    JITStore::saveCallerSavedRegs = saveCallerSavedRegs;
+    if (saveCallerSavedRegs) {
+      PushStack(JIT_R1);
+      PushStack(JIT_R2);
+    }
+    JITStore::nbArgs = nbArgs;
+    if (nbArgs != 0) {
+      jit_prepare(nbArgs);
+    }
+  }
+  // Write argument
+  void PushArg(u_int Reg) {
+    jit_pusharg_ui(Reg);
+  }
+  // Position independent procedure call and restore caller-saved registers
+  // Side-Effect: Result is returned in JIT_R0
+  void Finish(void *proc) {
+    (void) jit_movi_p(JIT_R0, proc);
+    jit_callr(JIT_R0);
+    // TODO: Find correct platform test
 #if HAVE_JIT_FP
-    jit_pushr_ui(JIT_FP);
+    if (nbArgs != 0) {
+      // Remove arguments from the stack
+      jit_addi_ui(JIT_SP, JIT_SP, nbArgs * sizeof(word));
+    }
+#endif
+    // Move the return value to JIT_R0
+    jit_retval(JIT_R0);
+    if (saveCallerSavedRegs) {
+      PopStack(JIT_R2);
+      PopStack(JIT_R1);
+    }
+  }
+  void SaveAllRegs() {
+    PushStack(JIT_R0);
+    PushStack(JIT_R1);
+    PushStack(JIT_R2);
+    PushStack(JIT_V0);
+    PushStack(JIT_V1);
+    PushStack(JIT_V2);
+#if HAVE_JIT_FP
+    PushStack(JIT_FP);
 #endif
   }
   void RestoreAllRegs() {
 #if HAVE_JIT_FP
-    jit_popr_ui(JIT_FP);
+    PopStack(JIT_FP);
 #endif
-    jit_popr_ui(JIT_V2);
-    jit_popr_ui(JIT_V1);
-    jit_popr_ui(JIT_V0);
-    jit_popr_ui(JIT_R2);
-    jit_popr_ui(JIT_R1);
-    jit_popr_ui(JIT_R0);
+    PopStack(JIT_V2);
+    PopStack(JIT_V1);
+    PopStack(JIT_V0);
+    PopStack(JIT_R2);
+    PopStack(JIT_R1);
+    PopStack(JIT_R0);
   }
 protected:
 #if defined(JIT_STORE_DEBUG)
@@ -140,7 +153,7 @@ protected:
       Error("JITStore::Alloc: Ptr is JIT_R1\n");
     }
 #if !HAVE_JIT_FP
-    jit_pushr_ui(JIT_MYFP);
+    PushStack(JIT_MYFP);
 #endif
     // Allocation Loop
     jit_insn *loop = jit_get_label();
@@ -158,7 +171,7 @@ protected:
     jit_str_p(JIT_R0, Ptr);
     jit_subi_p(Ptr, Ptr, size);
 #if !HAVE_JIT_FP
-    jit_popr_ui(JIT_MYFP);
+    PopStack(JIT_MYFP);
 #endif
   }
 public:
@@ -186,11 +199,11 @@ public:
   }
   void SaveDeref(u_int Ptr) {
     if (Ptr == JIT_R0) {
-      jit_pushr_ui(JIT_V1);
+      PushStack(JIT_V1);
       jit_movr_ui(JIT_V1, JIT_R0);
       Deref(JIT_V1);
       jit_movr_ui(JIT_R0, JIT_V1);
-      jit_popr_ui(JIT_V1);
+      PopStack(JIT_V1);
     }
     else
       Deref(Ptr);
@@ -439,7 +452,7 @@ public:
       Error("JITStore::Block_GetSize: Dest is JIT_R1\n");
     }
 #if !HAVE_JIT_FP
-    jit_pushr_ui(JIT_MYFP);
+    PushStack(JIT_MYFP);
 #endif
     // Compute Size
     jit_ldr_ui(Dest, This);
@@ -449,7 +462,7 @@ public:
     jit_andi_ui(JIT_MYFP, JIT_MYFP, SIZESHIFT_MASK);
     jit_lshr_ui(Dest, Dest, JIT_MYFP);
 #if !HAVE_JIT_FP
-    jit_popr_ui(JIT_MYFP);
+    PopStack(JIT_MYFP);
 #endif
   }
   // Dest = This->GetLabel()

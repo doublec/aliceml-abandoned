@@ -96,7 +96,7 @@ public:
     JITStore::SaveAllRegs();
     JITStore::Prepare(1);
     jit_movi_ui(JIT_R0, size);
-    jit_pusharg_ui(JIT_R0);
+    JITStore::PushArg(JIT_R0);
     JITStore::Finish((void *) Scheduler::PushFrame);
     jit_sti_p(&JITStore::loadedWord, JIT_R0);
     JITStore::RestoreAllRegs();
@@ -120,7 +120,7 @@ public:
     JITStore::SaveAllRegs();
     JITStore::Prepare(1);
     jit_movi_ui(JIT_R0, size);
-    jit_pusharg_ui(JIT_R0);
+    JITStore::PushArg(JIT_R0);
     JITStore::Finish((void *) Scheduler::PushFrame);
     jit_sti_p(&JITStore::loadedWord, JIT_R0);
     JITStore::RestoreAllRegs();
