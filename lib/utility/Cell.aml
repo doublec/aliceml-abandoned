@@ -37,9 +37,9 @@ struct
 	val size		= UnsafeCell.Map.size
 	val isEmpty		= UnsafeCell.Map.isEmpty
 	val lookup		= UnsafeCell.Map.lookup
-	val deleteAll		= UnsafeCell.Map.deleteAll
+	val removeAll		= UnsafeCell.Map.removeAll
 
-	fun deleteWith f (m,c)	= UnsafeCell.Map.deleteWith(f,m,c)
+	fun removeWith f (m,c)	= UnsafeCell.Map.removeWith(f,m,c)
 	fun insertWithi	f (m,c,x) = UnsafeCell.Map.insertWithi(f,m,c,x)
 	fun app f m		= UnsafeCell.Map.app(f,m)
 	fun appi f m		= UnsafeCell.Map.appi(f,m)
@@ -68,8 +68,8 @@ struct
 						    | NONE   => raise Unknown c
 
 	fun member(m,c)		= Option.isSome(lookup(m,c))
-	fun delete(m,c)		= deleteWith ignore (m,c)
-	fun deleteExistent(m,c)	= deleteWith(fn c => raise Unknown c) (m,c)
+	fun remove(m,c)		= removeWith ignore (m,c)
+	fun removeExistent(m,c)	= removeWith(fn c => raise Unknown c) (m,c)
 	fun insertWith f	= insertWithi(fn(c,x1,x2) => f(x1,x2))
 	fun insert(m,c,x)	= insertWithi #3 (m,c,x)
 	fun insertDisjoint ar	= insertWithi(fn(c,_,_) => raise Collision c) ar
@@ -105,9 +105,9 @@ struct
 	fun modifyi f m		= List.app (fn(k,a) =>
 					    insert(m,k,f(k,a))) (toList m)
 	fun filter f m		= List.app (fn(k,a) => if f a then () else
-					    deleteExistent(m,k)) (toList m)
+					    removeExistent(m,k)) (toList m)
 	fun filteri f m		= List.app (fn(k,a) => if f(k,a) then () else
-					    deleteExistent(m,k)) (toList m)
+					    removeExistent(m,k)) (toList m)
     end
 end
 
@@ -173,8 +173,8 @@ struct
 		val clone :	'b ran map' -> 'b ran map'
 
 		val insertWithi:(t * 'b ran * 'b ran -> 'b ran) * 'b ran map' * t cell' * 'b ran -> unit
-		val deleteWith:	(t -> unit) * 'b ran map' * t cell' -> unit
-		val deleteAll :	'b ran map' -> unit
+		val removeWith:	(t -> unit) * 'b ran map' * t cell' -> unit
+		val removeAll :	'b ran map' -> unit
 
 		val lookup :	'b ran map' * t cell' -> 'b ran option
 		val isEmpty :	'b ran map' -> bool
@@ -306,20 +306,20 @@ struct
 	     print "m' = {\n"; printUnsafeMap m'; print "}\n";
 	     raise e)
 
-	fun deleteAll(m',m) =
-	    (check "deleteAll 1" (m',m);
-	     UnsafeCell.Map.deleteAll m';
-	     Map.deleteAll m;
-	     check "deleteAll 2" (m',m))
+	fun removeAll(m',m) =
+	    (check "removeAll 1" (m',m);
+	     UnsafeCell.Map.removeAll m';
+	     Map.removeAll m;
+	     check "removeAll 2" (m',m))
 
-	fun deleteWith f ((m',m), q as (c,_,_)) =
-	    (check "deleteWith 1" (m',m);
-	     UnsafeCell.Map.deleteWith(fn _ => f q,m',c);
-	     Map.deleteWith f (m,q);
-	     check "deleteWith 2" (m',m)
-	     handle e => (print "deleteWith "; printCell q; print"\n"; raise e);
+	fun removeWith f ((m',m), q as (c,_,_)) =
+	    (check "removeWith 1" (m',m);
+	     UnsafeCell.Map.removeWith(fn _ => f q,m',c);
+	     Map.removeWith f (m,q);
+	     check "removeWith 2" (m',m)
+	     handle e => (print "removeWith "; printCell q; print"\n"; raise e);
 	     ignore(lookup((m',m),q))
-	     handle e => (print "deleteWith 3\n"; raise e))
+	     handle e => (print "removeWith 3\n"; raise e))
 
 	fun insertWithi	f _ = raise Crunk "insertWithi (unsupported)"
 
@@ -379,8 +379,8 @@ struct
 						    | NONE   => raise Unknown q
 
 	fun member(m,q)		= Option.isSome(lookup(m,q))
-	fun delete(m,q)		= deleteWith ignore (m,q)
-	fun deleteExistent(m,q)	= deleteWith(fn q' => if Addr.addr q<>Addr.addr q' then raise Assert.failure else raise Delete q) (m,q)
+	fun remove(m,q)		= removeWith ignore (m,q)
+	fun removeExistent(m,q)	= removeWith(fn q' => if Addr.addr q<>Addr.addr q' then raise Assert.failure else raise Unknown q) (m,q)
 	fun insertWith f	= raise Crunk "insertWith (unsupported)"
 
 	fun insert((m',m), q as (c,_,_), x) =
