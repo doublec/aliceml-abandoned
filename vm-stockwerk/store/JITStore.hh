@@ -97,6 +97,7 @@ protected:
     jit_popr_ui(JIT_R1);
   }
   // Output: Ptr holds Allocated Block
+  // Side-Effect: Scratches JIT_R0, JIT_FP
   static void Alloc(u_int Ptr, u_int size, u_int header) {
     Assert(Ptr != JIT_R0);
     Assert(Ptr != JIT_FP);
@@ -118,6 +119,7 @@ protected:
   }
   // Input: word ptr
   // Output: derefed word ptr
+  // Side-Effect: Scratches JIT_R0
   static void Deref(u_int Ptr) {
     Assert(Ptr != JIT_R0);
     // Main deref loop
@@ -148,6 +150,7 @@ public:
   static void LogSetArg(u_int pos, u_int Value);
   // Input: word ptr
   // Output: derefed word ptr and jmp to the corresponding path
+  // Side-Effect: Scratches JIT_R0
   static void Deref3(u_int Ptr, jit_insn *ref[2]) {
     Assert(Ptr != JIT_R0);
     // Main deref loop
@@ -168,6 +171,7 @@ public:
   }
   // Input: word ptr
   // Output: derefed word ptr and jmp to the corresponding path
+  // Side-Effect: JIT_R0
   static void DerefItem(u_int Ptr, jit_insn *ref[2]) {
     Assert(Ptr != JIT_R0);
     // Main deref loop
@@ -349,19 +353,19 @@ public:
   //
   class Block {
   public:
-    // Dest = Ptr->GetSize()
-    static void GetSize(u_int Dest, u_int Ptr) {
+    // Dest = This->GetSize()
+    static void GetSize(u_int Dest, u_int This) {
       // Compute Size
-      jit_ldr_ui(Dest, Ptr);
+      jit_ldr_ui(Dest, This);
       jit_movr_ui(JIT_FP, Dest);
       jit_andi_ui(Dest, Dest, SIZE_MASK);
       jit_rshi_ui(Dest, Dest, SIZE_SHIFT);
       jit_andi_ui(JIT_FP, JIT_FP, SIZESHIFT_MASK);
       jit_lshr_ui(Dest, Dest, JIT_FP);
     }
-    // Dest = Ptr->GetLabel()
-    static void GetLabel(u_int Dest, u_int Ptr) {
-      jit_ldr_ui(Dest, Ptr);
+    // Dest = This->GetLabel()
+    static void GetLabel(u_int Dest, u_int This) {
+      jit_ldr_ui(Dest, This);
       jit_andi_ui(Dest, Dest, TAG_MASK);
       jit_rshi_ui(Dest, Dest, TAG_SHIFT);
     }
@@ -369,13 +373,13 @@ public:
 
   class Chunk {
   public:
-    // Dest = Ptr->GetSize() (in bytes)
-    static void GetSize(u_int Dest, u_int Ptr) {
-      GetArg(Dest, Ptr, 0);
+    // Dest = This->GetSize() (in bytes)
+    static void GetSize(u_int Dest, u_int This) {
+      GetArg(Dest, This, 0);
     }
-    // Dest = Ptr->GetBase();
-    static void GetBase(u_int Dest, u_int Ptr) {
-      jit_movr_ui(Dest, Ptr);
+    // Dest = This->GetBase();
+    static void GetBase(u_int Dest, u_int This) {
+      jit_movr_ui(Dest, This);
       jit_addi_ui(Dest, Dest, 2 * sizeof(word));
     }
   };
