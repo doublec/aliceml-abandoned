@@ -1577,7 +1577,7 @@ functor MkValuePropagationPhase(val isCross: bool
 	  | vpExp (exp as VarExp (info, Prim name), _, _, _) =
 	    (PrimOps.getArity name
 	     handle PrimOps.UnknownPrim =>
-		 Error.error (info, "unknown primitive " ^ name);
+		 Error.error' (info, "unknown primitive " ^ name);
 	     (nil, exp))
 	  | vpExp (VarExp (info, idRef), env, _, _) =
 	    (nil, varExp (info, idRef, env))

@@ -109,7 +109,7 @@ functor MkEngine(val cmd: unit -> string * string list
 		case TextIO.inputLine (instream proc) of
 		    "\n" => nil
 		  | "" =>
-			Error.error
+			Error.error'
 			(Source.nowhere, "Ouch!! Subprocess crashed!")
 		  | s =>
 			case String.sub (s, 0) of

@@ -202,7 +202,7 @@ functor MkFlatteningPhase(structure Switches: SWITCHES) :> FLATTENING_PHASE =
 	    decsToIdDefExpList (valOf bodyOpt, region) @
 	    decsToIdDefExpList (rest, region)
 	  | decsToIdDefExpList (_::_, region) =
-	    Error.error (region, "not admissible")
+	    Error.error' (region, "not admissible")
 	  | decsToIdDefExpList (nil, _) = nil
 
 	val boolLabels = #[PervasiveType.lab_false, PervasiveType.lab_true]
@@ -768,7 +768,7 @@ functor MkFlatteningPhase(structure Switches: SWITCHES) :> FLATTENING_PHASE =
 	and checkReachability consequents =
 	    List.app (fn (region, ref bodyOpt) =>
 		      if isSome bodyOpt then ()
-		      else Error.warn (region, "unreachable expression"))
+		      else Error.warn' (region, "unreachable expression"))
 	    consequents
 	and simplifyCase (region, exp, matches, raiseExp) =
 	    let
