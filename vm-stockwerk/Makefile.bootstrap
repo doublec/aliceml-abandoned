@@ -351,12 +351,13 @@ GENERICINCLUDES0 = \
 	Pickle.hh Debug.hh RootSet.hh UniqueString.hh Properties.hh \
 	TaskStack.hh IOHandler.hh SignalHandler.hh Scheduler.hh \
 	Transients.hh Interpreter.hh Primitive.hh PushCallInterpreter.hh \
-	ByneedInterpreter.hh Unpickler.hh Pickler.hh Profiler.hh \
-	Authoring.hh
+	ByneedInterpreter.hh Unpickler.hh Pickler.hh BootLinker.hh \
+	Profiler.hh Authoring.hh
 ALICEINCLUDES0 = \
 	Guid.hh Data.hh AbstractCode.hh AbstractCodeInterpreter.hh \
 	AliceConcreteCode.hh NativeCodeInterpreter.hh LivenessInformation.hh \
-	NativeConcreteCode.hh PrimitiveTable.hh AliceLanguageLayer.hh
+	NativeConcreteCode.hh PrimitiveTable.hh AliceLanguageLayer.hh \
+	Authoring.hh
 INCLUDES = \
 	$(TOPINCLUDES0) \
 	$(STOREINCLUDES0:%=store/%) \
