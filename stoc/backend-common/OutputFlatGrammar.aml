@@ -69,34 +69,33 @@ structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
 	fun format f =
 	    let
 		val indent = ref 0
-		fun format' (SEQ fs) =
-		    String.concat (Vector.toList (Vector.map format' fs))
-		  | format' (S s) = s
-		  | format' (I n) = Int.toString n
-		  | format' IN = (indent := !indent + 1; "")
-		  | format' EX = (indent := !indent - 1; "")
+		val r = ref nil
+		fun append s = r := s::(!r)
+		fun format' (SEQ fs) = Vector.app format' fs
+		  | format' (S s) = append s
+		  | format' (I n) = append (Int.toString n)
+		  | format' IN = indent := !indent + 1
+		  | format' EX = indent := !indent - 1
 		  | format' NL =
 		    let
-			val n = !indent * 2
-			val ntabs = n div 8
-			val nspaces = n mod 8
+			val n = ref (!indent)
 		    in
-			"\n" ^
-			String.concat (List.tabulate (ntabs, fn _ => "\t")) ^
-			String.concat (List.tabulate (nspaces, fn _ => " "))
+			append "\n";
+			while !n > 4 do (append "\t"; n := !n - 4);
+			while !n > 0 do (append "  "; n := !n - 1)
 		    end
-		  | format' (ID id) = idToString id
-		  | format' (IDDEF (IdDef id)) = format' (ID id)
-		  | format' (IDDEF Wildcard) = "_"
-		  | format' (CO s) = "   (* " ^ s ^ " *)"
-		  | format' NULL = ""
-		  | format' (SEP (f, #[])) = ""
+		  | format' (ID id) = append (idToString id)
+		  | format' (IDDEF (IdDef id)) = append (idToString id)
+		  | format' (IDDEF Wildcard) = append "_"
+		  | format' (CO s) = (append "   (* "; append s; append " *)")
+		  | format' NULL = ()
+		  | format' (SEP (f, #[])) = ()
 		  | format' (SEP (f, fs)) =
-		    Vector.foldli
-		    (fn (_, fi, rest) => rest ^ format' f ^ format' fi)
-		    (format' (Vector.sub (fs, 0))) (fs, 1, NONE)
+		    (format' (Vector.sub (fs, 0));
+		     Vector.appi (fn (_, fi) => (format' f; format' fi))
+		     (fs, 1, NONE))
 	    in
-		format' f
+		format' f; String.concat (List.rev (!r))
 	    end
 
 	fun visit (stamp, shared) =
