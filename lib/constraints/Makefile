@@ -26,7 +26,7 @@ VPATH = $(SRCDIR)
 
 OZC = ozc
 OZCOPTS = -z9
-STOC = stoc
+STOC = alicec
 STOCOPTS = --no-dump-elaboration-sig
 STODEP = sml @SMLload=$(BOOTSTRAPDIR)/stodep
 
@@ -79,7 +79,7 @@ $(PREFIX)/lib/constraints/%.ozf: %.ozf
 ##
 
 clean:
-	-rm -f $(OZSOURCES:%.oz=Untyped%.ozf) $(COMPONENTS)
+	o-rm -f $(OZSOURCES:%.oz=Untyped%.ozf) $(COMPONENTS)
 
 veryclean: clean
 
