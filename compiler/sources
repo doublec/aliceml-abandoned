@@ -175,11 +175,11 @@ backend-common/PrimOps.sml
 backend-common/VALUE_PROPAGATION_PHASE.sig
 backend-common/ValuePropagationPhase.sml
 backend-common/LIVENESS_ANALYSIS_PHASE.sig
-backend-common/LivenessAnalysisPhase.sml
+backend-common/MakeLivenessAnalysisPhase.sml
 backend-common/CODE.sig
 backend-common/ENGINE.sig
 backend-common/MakeEngine.sml
-backend-common/BackendCommon.sml
+backend-common/MakeBackendCommon.sml
 backend-mozart/OzifyFlatGrammar.sml
 backend-mozart/MakeBackendMozart.sml
 top/Signature.sml
