@@ -136,13 +136,19 @@ square and cubic numbers:</P>
 <P align=center><IMG src="inspector-1.jpg" border=0 alt="Alice Inspector"></P>
 
 <P>When you inspect additional values, they will be displayed in the same
-Inspector window. The inspector can show arbitrary data structures:</P>
+Inspector window. The inspector can be used to browse arbitrary data
+structures:</P>
 
 <PRE class=code>
 inspect (3 + 8, SOME Math.pi, {hello = "hello, world"}, [true, 4 < 3])
 <I>val it : unit = ()</I></PRE>
 
 <P align=center><IMG src="inspector-2.jpg" border=0 alt="Alice Inspector"></P>
+
+<P class=note><EM>Note:</EM> If the size of the inspected data structure
+exceeds certain configurable limits, parts of the output will be hidden. Those
+parts are represented by arrows, which can be interactively unfolded if
+desired.</P>
 
 <!--
 <P>The Inspector concurrently watches the data structures it shows. If they
@@ -175,7 +181,7 @@ updated automatically:</P>
 
 <?php section("laziness", "laziness") ?>
 
-<P>While Standard ML is a fully strict (eager) language, Alice ML provides
+<P>While Standard ML is a fully eager (strict) language, Alice ML provides
 support for optional lazy evaluation. Any expression can be evaluated lazily by
 preceeding it with the <TT>lazy</TT> keyword:</P>
 
@@ -185,16 +191,23 @@ val x = lazy 4+5
 
 <P>Lazy suspensions are represented by the <TT>lazy</TT> keyword in the
 interpreter's output, as shown above. The value of <TT>x</TT> will not be
-calculated before it is actually required. For example,</P>
+computed before it is actually required. For example,</P>
 
 <PRE class=code>
+(x,x)
+<I>val it : int * int = (lazy, lazy)</I>
+x
+<I>val it : int = lazy</I>
 x > 10
 <I>val it : bool = false</I>
 x
 <I>val it : int = 9</I></PRE>
 
-<P>The comparison operator <TT>></TT> is strict in its arguments and hence
-forces evaluation of <TT>x</TT>.</P>
+<P>Tupling is parametric in its components and does not trigger <TT>x</TT>. The
+comparison operator <TT>></TT> is strict in its arguments, however, and hence
+forces evaluation of <TT>x</TT>. Likewise, pattern matching, arithmetic
+operations, comparison (<TT>op=</TT>) or similar operations can force a
+value.</P>
 
 <P>As a simple example of a lazy function, consider a generator for lazy
 streams of numbers:</P>
@@ -219,11 +232,11 @@ fun mapy f xs = lazy (case xs of nil    => nil
                                | x::xs' => f x :: mapy f xs')
 <I>val mapy : ('a -> 'b) -> 'a list -> 'b list = fn</I></PRE>
 
-<P>Note that the <TT>case</TT> expression must be inside the <TT>lazy</TT>
-expression - otherwise applying <TT>mapy</TT> would trigger evaluation of the
-head of the list, to perform the necessary pattern matching. Function
-declarations support syntactic sugar that allows expressing the same definition
-more elegantly:</P>
+<P>Note that the <TT>case</TT> expression must be nested inside the
+<TT>lazy</TT> expression - otherwise applying <TT>mapy</TT> would trigger
+evaluation of the head of the list, to perform the necessary pattern matching.
+Function declarations support syntactic sugar that allows expressing the same
+definition more elegantly:</P>
 
 <PRE class=code>
 fun lazy mapy f nil     = nil
@@ -273,7 +286,7 @@ List.nth (fibs, 10)
 <I>val it : int list =
    1 :: 1 :: 2 :: 3 :: 5 :: 8 :: 13 :: 21 :: 34 :: 55 :: 89 :: lazy</I></PRE>
 
-<P>For more interesting applications of laziness, see the standard literature
+<P>For more practical applications of laziness, see the standard literature
 on lazy functional programming. Last but not least, note that Alice ML allows
 laziness to be freely combined with side effects:</P>
 
