@@ -553,7 +553,6 @@ Interpreter::Result AbstractCodeInterpreter::Run(TaskStack *taskStack) {
 	pc = TagVal::FromWord(pc->Sel(2));
       }
       break;
-    //--** WideStringTest
     case AbstractCode::TagTest:
       // of idRef * (int * instr) vector
       //          * (int * idDef vector * instr) vector * instr
