@@ -388,9 +388,10 @@ public:
     Init(index, value);
   }
   word Sub(u_int index) {
-    s_int i = GetValue()[index];
-    s_int nonbits_exp = 1 << (STORE_WORD_WIDTH - 8);
-    return Store::IntToWord(mydiv(i * nonbits_exp, nonbits_exp));
+//     s_int i = GetValue()[index];
+//     s_int nonbits_exp = 1 << (STORE_WORD_WIDTH - 8);
+//     return Store::IntToWord(mydiv(i * nonbits_exp, nonbits_exp));
+    return Store::IntToWord(GetValue()[index]);
   }
 };
 
@@ -425,9 +426,10 @@ public:
     Init(index, value);
   }
   word Sub(u_int index) {
-    s_int i = GetValue()[index];
-    s_int nonbits_exp = 1 << (STORE_WORD_WIDTH - 8);
-    return Store::IntToWord(mydiv(i * nonbits_exp, nonbits_exp));
+//     s_int i = GetValue()[index];
+//     s_int nonbits_exp = 1 << (STORE_WORD_WIDTH - 8);
+//     return Store::IntToWord(mydiv(i * nonbits_exp, nonbits_exp));
+    return Store::IntToWord(GetValue()[index]);
   }
 };
 
