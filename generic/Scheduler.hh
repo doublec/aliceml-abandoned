@@ -62,6 +62,7 @@ public:
   }
   static u_int GetCurrentStackTop() {
     word *base = (word *) currentTaskStack->GetFrameBase();
+    Assert(stackTop < stackMax);
     return STATIC_CAST(u_int, stackTop - base);
   }
 
@@ -123,6 +124,8 @@ public:
   }
   // We need two PopFrame's: one for known frame size and generic
   static void PopFrame(u_int size) {
+    Assert((u_int) (stackTop - 1 - size) >= 
+	   (u_int) currentTaskStack->GetFrameBase());
     stackTop -= size;
   }
   static void PopFrame() {
