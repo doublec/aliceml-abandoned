@@ -12,8 +12,7 @@
 
 #if 0
 #include <windows.h>
-#include <cstdio>
-#include "alice/primitives/Authoring.hh"
+#include "alice/Authoring.hh"
 
 // to be done: proper platform support (non-windows)
 typedef long long verylong;

@@ -16,7 +16,7 @@
 #include "generic/Scheduler.hh"
 #include "generic/StackFrame.hh"
 #include "generic/Transients.hh"
-#include "alice/primitives/Authoring.hh"
+#include "alice/Authoring.hh"
 
 class RaiseFrame: private StackFrame {
 private:
