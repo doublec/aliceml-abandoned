@@ -33,30 +33,23 @@ TARGETS = \
 	LINEAR-sig.stc \
 	Linear.stc
 
-EXTRA_LIBS =
-EXTRA_INCLUDES = -I../..
-
 MAKEDEPEND = alicetool makedepend
 
-GECODEOBJ = \
-	set/.libs/libgecodeset.a \
-	int/.libs/libgecodeint.a \
-	kernel/.libs/libgecodekernel.a
+GECODEOBJ = -lgecodeset -lgecodeint -lgecodekernel
 
-CXXFLAGS=-O2 -Dforceinline=inline -DNDEBUG -pipe
-#CXXFLAGS=-Dforceinline=inline -pipe -g
+MY_CXXFLAGS=-O2 -Dforceinline=inline -DNDEBUG -pipe -DHAVE_CONFIG_H
 
 all: $(NATIVES:%=%.dll) $(TARGETS)
 
-UnsafeGecode.dll: $(SOURCES:%.cc=%.o) $(GECODEOBJ:%=../../%)
+UnsafeGecode.dll: $(SOURCES:%.cc=%.o)
 
 %.o: %.cc
-	alicetool -v compile $(EXTRA_INCLUDES) $(CXXFLAGS) \
+	alicetool -v compile $(EXTRA_INCLUDES) $(CXXFLAGS) $(MY_CXXFLAGS) \
 	-c  $< -o $@
 
 %.dll: %.o
-	alicetool -v link -g $(LDFLAGS) $(SOURCES:%.cc=%.o) $(GECODEOBJ:%=../../%) \
-	$(EXTRA_LIBS) -o $@
+	alicetool -v link $(LDFLAGS) $(SOURCES:%.cc=%.o) \
+	$(GECODEOBJ) $(EXTRA_LIBS) -o $@
 
 %.stc: %.aml
 	alicec -c $< -o $@
@@ -74,7 +67,8 @@ distclean: veryclean
 
 depend:
 	alicedep *.aml > Makefile.depend
-	$(MAKEDEPEND) $(EXTRA_INCLUDES) $(SOURCES) >> Makefile.depend
+	$(MAKEDEPEND) $(EXTRA_INCLUDES) $(MY_CXXFLAGS) $(CXXFLAGS) $(SOURCES) \
+	>> Makefile.depend
 
 install: all
 	install -d $(INSTALLTO)
