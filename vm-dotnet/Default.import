@@ -11,6 +11,8 @@ import
     infix  3  := :=: o
     infix  0  before
 
+    structure __pervasive
+
     type unit
     type int
     type word
