@@ -185,16 +185,18 @@ struct
 		end
 	in
 	    ( loop r ; E' )
-	    handle (**)e as (Inf.Lookup | Type.Type | Type.Unify _) => new()
+	    handle (**)e as (Inf.Lookup | Type.Type | Type.Mismatch _) => new()
 	end
 
 
     fun explodePath p =
 	if Path.isDot p then
 	    let val (p',l) = Path.asDot p
-	    in explodePath'(p', [], sigidFromLabel l) end
+	    in SOME(explodePath'(p', [], sigidFromLabel l)) end
+	else if Path.isName p then
+	    SOME(p, [], sigidFromLabel(Path.toLab p))
 	else
-	    (p, [], sigidFromLabel(Path.toLab p))
+	    NONE
     and explodePath'(p, strids, sigid) =
 	if Path.isDot p then
 	    let val (p',l) = Path.asDot p
@@ -211,13 +213,13 @@ struct
     and envfnFromInf'(I,pm,j) =
 	if Inf.isTop' j then
 	    EMPTY
-	else if Inf.isAbs' j then
+	else if Inf.isCon' j then
+	    case explodePath(Inf.asCon' j)
+	     of NONE => EMPTY
+	      | SOME(p',strids,sigid) =>
 	    let
-		val  p                = Inf.asAbs' j
-		val (p',strids,sigid) = explodePath p
-		val  z                = case PathMap.lookup(pm,p')
-					  of SOME z => z
-					   | NONE   => Stamp.new()
+		val z = case PathMap.lookup(pm,p') of SOME z => z
+						    | NONE   => Stamp.new()
 	    in
 		ABSTR(z,strids,sigid,[])
 	    end
@@ -247,9 +249,10 @@ struct
 	    end
 	else if Inf.isApply j then
 	    let
-		val (j1,(_,j2)) = Inf.asApply j
-		val  F1         = envfnFromInf'(I,pm,j1)
-		val  F2         = envfnFromInf'(I,pm,j2)
+		val (j1,m) = Inf.asApply j
+		val (_,j2) = Inf.asMod m
+		val  F1    = envfnFromInf'(I,pm,j1)
+		val  F2    = envfnFromInf'(I,pm,j2)
 	    in
 		apply(F1,F2)
 	    end
@@ -292,7 +295,7 @@ struct
 				Type.unify(t12, t12);
 				C(arityFromTyp t11')
 			    end
-			    handle (Inf.Lookup | Type.Unify _) => V
+			    handle (Inf.Lookup | Type.Mismatch _) => V
 	    in
 		insertDisjointVal(E, vid, (I,x,is))
 	    end
@@ -340,7 +343,6 @@ struct
 		PathMap.insert(pm,p,z);
 		insertDisjointSig(E, sigidFromLabel l, (I,x,F))
 	    end
-	else
+	else (* hidden *)
 	     ()
-
 end
