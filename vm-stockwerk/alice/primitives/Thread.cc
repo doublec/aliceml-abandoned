@@ -160,8 +160,8 @@ DEFINE0(Thread_yield) {
 void PrimitiveTable::RegisterThread() {
   RaiseWorker::Init();
   PrimitiveTable::Thread_Terminated =
-    UniqueConstructor::New(String::New("Thread.Terminated"))->ToWord();
-  RegisterUniqueConstructor("Thread.Terminate");
+    UniqueConstructor::New("Terminated", "Thread.Terminated")->ToWord();
+  RegisterUniqueConstructor("Terminate", "Thread.Terminate");
   Register("Thread.Terminated", PrimitiveTable::Thread_Terminated);
   Register("Thread.current", Thread_current, 0);
   Register("Thread.isSuspended", Thread_isSuspended, 1);
