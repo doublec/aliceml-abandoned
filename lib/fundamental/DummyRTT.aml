@@ -3,13 +3,12 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg, 2001-2002
  *
  * Last change:
  *   $Date$ by $Author$
  *   $Revision$
  *)
-
 
 (* Needed to bootstrap the library. *)
 
