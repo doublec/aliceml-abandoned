@@ -18,6 +18,7 @@ import structure Type                from "../../lib/rtt/Type"
 import structure PervasiveType       from "../../lib/rtt/PervasiveType"
 import structure PathMap             from "../../lib/rtt/PathMap"
 import structure Stamp               from "Stamp"
+import structure StampMap            from "StampMap"
 
 import structure PPPath              from "../../lib/rtt/PPPath"
 import structure PPType              from "../../lib/rtt/PPType"
@@ -25,8 +26,7 @@ import structure PrettyPrint         from "../../lib/utility/PrettyPrint"
 import structure TextIO              from "../../lib/system/TextIO"
 
 import structure Crash               from "../infrastructure/Crash"
-import functor   MkHashScopedImpMap  from "../infrastructure/MkHashScopedImpMap"
-import functor   FromEqHashKey       from "../../lib/utility/HASH_KEY-sig"
+import functor   MkScopedImpMap      from "../../lib/utility/MkScopedImpMap"
 import signature CHECK_INTERMEDIATE  from "CHECK_INTERMEDIATE-sig"
 
 (*DEBUG*)
@@ -34,7 +34,7 @@ import structure TextIO from "../../lib/system/TextIO"
 
 structure CheckIntermediate :> CHECK_INTERMEDIATE =
 struct
-    structure Env = MkHashScopedImpMap(FromEqHashKey(Stamp))
+    structure Env = MkScopedImpMap(StampMap)
 
     open IntermediateGrammar
 
@@ -108,7 +108,7 @@ struct
 	    val (l2,t2) = Type.hdRow r2
 	in
 	    case Label.compare(l1,l2)
-	      of EQUAL   => Type.equals(t1,t2) andalso
+	      of EQUAL   => Type.equal(t1,t2) andalso
 			    matchesRow(Type.tlRow r1, Type.tlRow r2)
 	       | LESS    => false
 	       | GREATER => matchesRow(r1, Type.tlRow r2)
@@ -181,7 +181,7 @@ end
 	    val t' = checked Env.lookupExistent(E, z)
 		     (i, "Id unknown", #[ID(z,n), TYPE t])
 	in
-	    check (Type.equals(t',t))
+	    check (Type.equal(t',t))
 		  (i, "Id type", #[ID(z,n), TYPE_PAIR(t',t)]);
 	    t
 	end
@@ -209,7 +209,7 @@ end
 		val t  = #typ i
 		val t' = chId E id
 	   in
-		check (Type.equals(t',t))
+		check (Type.equal(t',t))
 		      (i, "ShortId type",
 			  #[ID(stamp id, name id), TYPE_PAIR(t',t)]);
 		t
@@ -229,7 +229,7 @@ end
 		val t' = checked Type.lookupRow(r,l)
 			 (i, "LongId label", #[LAB l, TYPE t1])
 	   in
-		check (Type.equals(t',t))
+		check (Type.equal(t',t))
 		      (i, "LongId type", #[LAB l, TYPE_PAIR(t',t)]);
 		t
 	   end
@@ -271,7 +271,7 @@ end
 		val t  = #typ i
 		val t' = chLit E lit
 	   in
-		check (Type.equals(t',t))
+		check (Type.equal(t',t))
 		      (i, "LitExp type", #[TYPE_PAIR(t',t)]);
 		t
 	   end
@@ -302,7 +302,7 @@ end
 		val (t1,t2)  = checked Type.asArrow t3
 			      (i, "NewExp type", #[TYPE t3])
 	   in
-		check (Type.equals(t', PervasiveType.typ_conarrow))
+		check (Type.equal(t', PervasiveType.typ_conarrow))
 		      (i, "NewExp conarrow", #[TYPE t']);
 		check (Type.isExtKind(Type.kind t2))
 		      (i, "NewExp kind", #[KIND(Type.kind t2)]);
@@ -337,7 +337,7 @@ end
 		val t1  = checked Type.lookupRow(r,l)
 			  (i, "TagExp label", #[LAB l, TYPE t])
 	   in
-		check (Type.equals(t1,t'))
+		check (Type.equal(t1,t'))
 		      (i, "TagExp argument type", #[TYPE_PAIR(t1,t')]);
 		t
 	   end
@@ -357,7 +357,7 @@ end
 		val (t2',t') = checked Type.asArrow t3
 			       (i, "ConExp constructor type", #[TYPE t1])
 	   in
-		check (Type.equals(t4, PervasiveType.typ_conarrow))
+		check (Type.equal(t4, PervasiveType.typ_conarrow))
 		      (i, "ConExp conarrow", #[TYPE t4]);
 		check (Type.isExtKind(Type.kind t))
 		      (i, "ConExp constructor kind", #[KIND(Type.kind t)]);
@@ -378,7 +378,7 @@ end
 		val t' = chExp E exp
 		val t1 = Type.apply(PervasiveType.typ_ref, t')
 	   in
-		check (Type.equals(t1,t))
+		check (Type.equal(t1,t))
 		      (i, "RefExp type", #[TYPE_PAIR(t1,t)]);
 		t
 	   end
@@ -392,7 +392,7 @@ end
 		val t  = #typ i
 		val ts = chExps E exps
 	   in
-		check (Type.equals(Type.tuple ts, t))
+		check (Type.equal(Type.tuple ts, t))
 		      (i, "TupExp type", #[TYPE_PAIR(Type.tuple ts, t)]);
 		t
 	   end
@@ -406,7 +406,7 @@ end
 		val t = #typ i
 		val r = chFlds chExp E flds
 	   in
-		check (Type.equals(Type.prod r, t))
+		check (Type.equal(Type.prod r, t))
 		      (i, "ProdExp type", #[TYPE_PAIR(Type.prod r, t)]);
 		t
 	   end
@@ -425,7 +425,7 @@ end
 		val t1 = checked Type.lookupRow(r,l)
 			 (i, "SelExp label", #[LAB l, TYPE t'])
 	   in
-		check (Type.equals(t1,t))
+		check (Type.equal(t1,t))
 		      (i, "SelExp field type", #[LAB l, TYPE_PAIR(t1,t)]);
 		t
 	   end
@@ -441,9 +441,9 @@ end
 		val (t1,t2) = checked Type.asApply t
 			      (i, "VecExp type", #[TYPE t])
 	   in
-		check (Type.equals(t1, PervasiveType.typ_vec))
+		check (Type.equal(t1, PervasiveType.typ_vec))
 		      (i, "VecExp type constructor", #[TYPE t1]);
-		check (Vector.all (fn t' => Type.equals(t',t2)) ts)
+		check (Vector.all (fn t' => Type.equal(t',t2)) ts)
 		      (i, "VecExp component type", #[TYPE t2]);
 		t
 	   end
@@ -460,7 +460,7 @@ end
 	   in
 		check (not(Type.isVar t' orelse Type.isAbs t'))
 		      (i, "StrictExp arg type", #[TYPE t']);
-		check (Type.equals(t1,t))
+		check (Type.equal(t1,t))
 		      (i, "StrictExp type", #[TYPE_PAIR(t1,t)]);
 		t
 	   end
@@ -477,7 +477,7 @@ end
 		val  tts    = chMats E mats
 	   in
 		check (Vector.all (fn(t1',t2') =>
-			Type.equals(t1',t1) andalso Type.equals(t2',t2)) tts)
+			Type.equal(t1',t1) andalso Type.equal(t2',t2)) tts)
 		      (i, "FunExp match types", #[TYPE t]);
 		t
 	   end
@@ -494,9 +494,9 @@ end
 		val (t1,t2) = checked Type.asArrow t0
 			      (i, "AppExp function type", #[TYPE t0])
 	   in
-		check (Type.equals(t1,t'))
+		check (Type.equal(t1,t'))
 		      (i, "AppExp argument type", #[TYPE_PAIR(t1,t')]);
-		check (Type.equals(t2,t))
+		check (Type.equal(t2,t))
 		      (i, "AppExp type", #[TYPE_PAIR(t2,t)]);
 		t
 	   end
@@ -511,11 +511,11 @@ end
 		val t1 = chExp E exp1
 		val t2 = chExp E exp2
 	   in
-		check (Type.equals(t1, PervasiveType.typ_bool))
+		check (Type.equal(t1, PervasiveType.typ_bool))
 		      (i, "AndExp left operand type", #[TYPE t1]);
-		check (Type.equals(t2, PervasiveType.typ_bool))
+		check (Type.equal(t2, PervasiveType.typ_bool))
 		      (i, "AndExp right operand type", #[TYPE t2]);
-		check (Type.equals(t,  PervasiveType.typ_bool))
+		check (Type.equal(t,  PervasiveType.typ_bool))
 		      (i, "AndExp type", #[TYPE t]);
 		t
 	   end
@@ -530,11 +530,11 @@ end
 		val t1 = chExp E exp1
 		val t2 = chExp E exp2
 	   in
-		check (Type.equals(t1, PervasiveType.typ_bool))
+		check (Type.equal(t1, PervasiveType.typ_bool))
 		      (i, "OrExp left operand type", #[TYPE t1]);
-		check (Type.equals(t2, PervasiveType.typ_bool))
+		check (Type.equal(t2, PervasiveType.typ_bool))
 		      (i, "OrExp right operand type", #[TYPE t2]);
-		check (Type.equals(t,  PervasiveType.typ_bool))
+		check (Type.equal(t,  PervasiveType.typ_bool))
 		      (i, "OrExp type", #[TYPE t]);
 		t
 	   end
@@ -550,11 +550,11 @@ end
 		val t2 = chExp E exp2
 		val t3 = chExp E exp3
 	   in
-		check (Type.equals(t1, PervasiveType.typ_bool))
+		check (Type.equal(t1, PervasiveType.typ_bool))
 		      (i, "IfExp condition type", #[TYPE t1]);
-		check (Type.equals(t2, t))
+		check (Type.equal(t2, t))
 		      (i, "IfExp then branch type", #[TYPE_PAIR(t2,t)]);
-		check (Type.equals(t3, t))
+		check (Type.equal(t3, t))
 		      (i, "IfExp else branch type", #[TYPE_PAIR(t3,t)]);
 		t
 	   end
@@ -569,7 +569,7 @@ end
 		val t1 = chExp E exp1
 		val t2 = chExp E exp2
 	   in
-		check (Type.equals(t2,t))
+		check (Type.equal(t2,t))
 		      (i, "SeqExp type", #[TYPE_PAIR(t2,t)]);
 		t
 	   end
@@ -585,7 +585,7 @@ end
 		val tts = chMats E mats
 	   in
 		check (Vector.all (fn(t1,t2) =>
-			Type.equals(t1,t') andalso Type.equals(t2,t)) tts)
+			Type.equal(t1,t') andalso Type.equal(t2,t)) tts)
 		      (i, "CaseExp match types", #[TYPE(Type.arrow(t',t))]);
 		t
 	   end
@@ -600,7 +600,7 @@ end
 		val t' = chExp E exp
 		val k  = Type.kind t
 	   in
-		check (Type.equals(t', PervasiveType.typ_exn))
+		check (Type.equal(t', PervasiveType.typ_exn))
 		      (i, "RaiseExp argument type", #[TYPE t']);
 		check (Type.isStarKind k)
 		      (i, "RaiseExp kind", #[KIND k, TYPE t]);
@@ -617,11 +617,11 @@ end
 		val t'  = chExp E exp
 		val tts = chMats E mats
 	   in
-		check (Type.equals(t',t))
+		check (Type.equal(t',t))
 		      (i, "HandleExp type", #[TYPE_PAIR(t',t)]);
 		check (Vector.all (fn(t1,t2) =>
-			Type.equals(t1, PervasiveType.typ_exn) andalso
-			Type.equals(t2,t)) tts)
+			Type.equal(t1, PervasiveType.typ_exn) andalso
+			Type.equal(t2,t)) tts)
 		      (i, "HandleExp match types", #[TYPE t]);
 		t
 	   end
@@ -649,7 +649,7 @@ end
 		val t  = #typ i
 		val t' = chExp E exp
 	   in
-		check (Type.equals(t',t))
+		check (Type.equal(t',t))
 		      (i, "LazyExp type", #[TYPE_PAIR(t',t)]);
 		t
 	   end
@@ -663,7 +663,7 @@ end
 		val t  = #typ i
 		val t' = chExp E exp
 	   in
-		check (Type.equals(t',t))
+		check (Type.equal(t',t))
 		      (i, "SpawnExp type", #[TYPE_PAIR(t',t)]);
 		t
 	   end
@@ -680,7 +680,7 @@ end
 		val t' = chExp E exp
 		val _  = Env.deleteScope E
 	   in
-		check (Type.equals(t',t))
+		check (Type.equal(t',t))
 		      (i, "LetExp type", #[TYPE_PAIR(t',t)]);
 		t
 	   end
@@ -757,7 +757,7 @@ end
 		val t  = #typ i
 		val t' = chLit E lit
 	   in
-		check (Type.equals(t',t))
+		check (Type.equal(t',t))
 		      (i, "LitPat type", #[TYPE_PAIR(t',t)]);
 		t
 	   end
@@ -791,7 +791,7 @@ end
 		val t1  = checked Type.lookupRow(r,l)
 			  (i, "TagPat label", #[LAB l, TYPE t])
 	   in
-		check (Type.equals(t1,t'))
+		check (Type.equal(t1,t'))
 		      (i, "TagPat argument type", #[TYPE_PAIR(t1,t')]);
 		t
 	   end
@@ -811,7 +811,7 @@ end
 		val (t2',t') = checked Type.asArrow t3
 			       (i, "ConPat constructor type", #[TYPE t1])
 	   in
-		check (Type.equals(t4, PervasiveType.typ_conarrow))
+		check (Type.equal(t4, PervasiveType.typ_conarrow))
 		      (i, "ConExp conarrow", #[TYPE t4]);
 		check (Type.isExtKind(Type.kind t))
 		      (i, "ConPat constructor kind", #[KIND(Type.kind t)]);
@@ -849,7 +849,7 @@ end
 		val t' = chPat E pat
 		val t1 = Type.apply(PervasiveType.typ_ref, t')
 	   in
-		check (Type.equals(t1,t))
+		check (Type.equal(t1,t))
 		      (i, "RefPat type", #[TYPE_PAIR(t1,t)]);
 		t
 	   end
@@ -863,7 +863,7 @@ end
 		val t  = #typ i
 		val ts = chPats E pats
 	   in
-		check (Type.equals(Type.tuple ts, t))
+		check (Type.equal(Type.tuple ts, t))
 		      (i, "TupPat type", #[TYPE_PAIR(Type.tuple ts, t)]);
 		t
 	   end
@@ -895,9 +895,9 @@ end
 		val (t1,t2) = checked Type.asApply t
 			      (i, "VecPat type", #[TYPE t])
 	   in
-		check (Type.equals(t1, PervasiveType.typ_vec))
+		check (Type.equal(t1, PervasiveType.typ_vec))
 		      (i, "VecPat type constructor", #[TYPE t1]);
-		check (Vector.all (fn t' => Type.equals(t',t2)) ts)
+		check (Vector.all (fn t' => Type.equal(t',t2)) ts)
 		      (i, "VecPat component type", #[TYPE t2]);
 		t
 	   end
@@ -914,7 +914,7 @@ end
 	   in
 		check (not(Type.isVar t' orelse Type.isAbs t'))
 		      (i, "StrictPat arg type", #[TYPE t']);
-		check (Type.equals(t1,t))
+		check (Type.equal(t1,t))
 		      (i, "StrictPat type", #[TYPE_PAIR(t1,t)]);
 		t
 	   end
@@ -929,9 +929,9 @@ end
 		val t1 = chPat E pat1
 		val t2 = chPat E pat2
 	   in
-		check (Type.equals(t1,t))
+		check (Type.equal(t1,t))
 		      (i, "AsPat left operand type", #[TYPE_PAIR(t1,t)]);
-		check (Type.equals(t2,t))
+		check (Type.equal(t2,t))
 		      (i, "AsPat right operand type", #[TYPE_PAIR(t2,t)]);
 		t
 	   end
@@ -949,9 +949,9 @@ end
 		val _  = Env.insertScope E
 		val t2 = chPat E pat2
 	   in
-		check (Type.equals(t1,t))
+		check (Type.equal(t1,t))
 		      (infoPat pat1, "AltPat left type", #[TYPE_PAIR(t1,t)]);
-		check (Type.equals(t2,t))
+		check (Type.equal(t2,t))
 		      (infoPat pat1, "AltPat right type", #[TYPE_PAIR(t2,t)]);
 		check (Env.sizeScope E' = Env.sizeScope E)
 		      (i, "AltPat bindings", #[INT(Env.sizeScope E'),
@@ -960,7 +960,7 @@ end
 		    (fn(z,t1) =>
 			let val t2 = checked Env.lookupExistent(E,z)
 				     (i, "AltPat bindings", #[ID(z, Name.InId)])
-			in check (Type.equals(t1,t2))
+			in check (Type.equal(t1,t2))
 				 (i, "AltPat binding types",
 				     #[ID(z, Name.InId), TYPE_PAIR(t1,t2)])
 			end
@@ -980,7 +980,7 @@ end
 		val t' = chPat E pat
 		val _  = Env.deleteScope E
 	   in
-		check (Type.equals(t',t))
+		check (Type.equal(t',t))
 		      (i, "NegPat type", #[TYPE_PAIR(t',t)]);
 		t
 	   end
@@ -995,9 +995,9 @@ end
 		val t' = chPat E pat
 		val t2 = chExp E exp
 	   in
-		check (Type.equals(t2, PervasiveType.typ_bool))
+		check (Type.equal(t2, PervasiveType.typ_bool))
 		      (i, "GuardPat condition type", #[TYPE t2]);
-		check (Type.equals(t',t))
+		check (Type.equal(t',t))
 		      (i, "GuardPat type", #[TYPE_PAIR(t',t)]);
 		t
 	   end
@@ -1012,7 +1012,7 @@ end
 		val t' = chPat E pat
 	   in
 		chDecs E decs;
-		check (Type.equals(t',t))
+		check (Type.equal(t',t))
 		      (i, "WithPat type", #[TYPE_PAIR(t',t)]);
 		t
 	   end
@@ -1033,7 +1033,7 @@ end
 	   in
 		chExp E exp;
 		chPat E pat;
-		check' (Type.equals(t1,t2))
+		check' (Type.equal(t1,t2))
 		       (i, "ValDec lhs/rhs type", #[TYPE_PAIR(t1,t2)])
 	   end
 
