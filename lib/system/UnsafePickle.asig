@@ -27,11 +27,12 @@ signature UNSAFE_PICKLE_COMPONENT =
 	structure UnsafePickle:
 	    sig
 		exception Corrupt
+		exception Sited
 
 		val extension : string
 
-		val load: string -> 'inf * 'module  (* IO.Io, Corrupt *)
-		val save: string * 'inf * 'module -> unit
+		val load: string -> 'inf * 'module        (* IO.Io, Corrupt *)
+		val save: string * 'inf * 'module -> unit (* IO.Io, Sited *)
 
 		val loadSign: string -> 'signature option   (* IO.Io *)
 		val replaceSign: string * 'signature * string -> unit

@@ -20,7 +20,8 @@ export
    'UnsafePickle$': UnsafePickle_Module
 define
    IoException = {NewUniqueName 'IO.Io'}
-   CorruptException = {NewUniqueName 'UnsafePickle.Corrupt'}
+   CorruptException = {NewUniqueName 'Pickle.Corrupt'}
+   SitedException = {NewUniqueName 'Pickle.Sited'}
 
    Extension = {ByteString.make
 		case {VirtualString.toString DefaultURL.functorExt}
@@ -55,6 +56,8 @@ define
    UnsafePickle_Module =
    'UnsafePickle'('Corrupt': CorruptException
 		  '\'Corrupt': CorruptException
+		  'Sited': SitedException
+		  '\'Sited': SitedException
 		  'extension': Extension
 		  'load':
 		     fun {$ URL}
@@ -72,7 +75,7 @@ define
 			    {Functor.new 'import' sig({NewName}#Type)
 			     fun {$ _} Value end} Filename '' 9}
 			catch error(dp(generic 'pickle:nogoods' ...) ...) then
-			   {Exception.raiseError alice(CorruptException)}
+			   {Exception.raiseError alice(SitedException)}
 			end
 			unit
 		     end
