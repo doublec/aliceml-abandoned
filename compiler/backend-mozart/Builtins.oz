@@ -499,7 +499,7 @@ prepare
 		imods: nil
 		doesNotReturn: true
 	)
-'Exception.raise':
+'Exception.\'raise\'':
 	builtin(
 		types: ['value']
 		det: [any]
