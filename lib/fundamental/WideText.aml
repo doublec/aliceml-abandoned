@@ -14,19 +14,23 @@
  *  Items marked with (**) are extensions to the Standard Basis.
  *)
 
-import structure __pervasive                 from "Pervasive"
-import __primitive structure WideChar        from "WideChar"
-import __primitive structure WideString      from "WideString"
-import __primitive structure WideSubstring   from "WideSubstring"
-import __primitive structure WideCharVector  from "WideCharVector"
-import __primitive structure WideCharArray   from "WideCharArray"
-import __primitive signature TEXT            from "TEXT-sig"
+import structure __pervasive                     from "Pervasive"
+import __primitive structure WideChar            from "WideChar"
+import __primitive structure WideString          from "WideString"
+import __primitive structure WideSubstring       from "WideSubstring"
+import __primitive structure WideCharVector      from "WideCharVector"
+import __primitive structure WideCharArray       from "WideCharArray"
+import __primitive structure WideCharVectorSlice from "WideCharVectorSlice"
+import __primitive structure WideCharArraySlice  from "WideCharArraySlice"
+import __primitive signature TEXT                from "TEXT-sig"
 
 structure WideText : TEXT =
 struct
-    structure Char	= WideChar
-    structure String	= WideString
-    structure Substring	= WideSubstring
-    structure CharVector = WideCharVector
-    structure CharArray	= WideCharArray
+    structure Char		= WideChar
+    structure String		= WideString
+    structure Substring		= WideSubstring
+    structure CharVector	= WideCharVector
+    structure CharArray		= WideCharArray
+    structure CharVectorSlice	= WideCharVectorSlice
+    structure CharArraySlice	= WideCharArraySlice
 end

@@ -4,7 +4,7 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg and Leif Kornstaedt, 1999-2002
+ *   Andreas Rossberg and Leif Kornstaedt, 1999-2003
  *
  * Last change:
  *   $Date$ by $Author$
@@ -87,7 +87,7 @@ sig
     val realFloor :	real -> real
     val realCeil :	real -> real
     val realTrunc :	real -> real
-    val realRound :	real -> real					(**)
+    val realRound :	real -> real
 
 (*TODO
     val nextAfter :	real * real -> real

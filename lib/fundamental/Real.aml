@@ -4,7 +4,7 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg and Leif Kornstaedt, 1999-2002
+ *   Andreas Rossberg and Leif Kornstaedt, 1999-2003
  *
  * Last change:
  *   $Date$ by $Author$
@@ -104,7 +104,7 @@ struct
     __primitive val realCeil :	real -> real	= "Real.realCeil"
     __primitive val realFloor :	real -> real	= "Real.realFloor"
     __primitive val realTrunc :	real -> real	= "Real.realTrunc"
-    __primitive val realRound :	real -> real	= "Real.realRound"	(**)
+    __primitive val realRound :	real -> real	= "Real.realRound"
 
     __primitive val fromInt :	int -> real	= "Real.fromInt"
 
