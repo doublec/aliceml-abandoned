@@ -65,7 +65,8 @@ structure OzifyImperativeGrammar :> OZIFY_IMPERATIVE_GRAMMAR =
 	     output1 (q, #"]"))
 
 	fun outputPair (outputA, outputB) (q, (a, b)) =
-	    (outputA (q, a); output1 (q, #"#"); outputB (q, b))
+	    (output1 (q, #"("); outputA (q, a);
+	     output1 (q, #"#"); outputB (q, b); output1 (q, #")"))
 
 	fun outputCoord (q, (l, r)) =
 	    (output (q, Int.toString l);
@@ -137,16 +138,18 @@ structure OzifyImperativeGrammar :> OZIFY_IMPERATIVE_GRAMMAR =
 	     outputList (outputPair (outputAtom, outputX))
 	     (q, stringIdList); r q)
 
-	fun outputStm (q, ValDec (coord, id, exp)) =
+	fun outputStm (q, ValDec (coord, id, exp, isToplevel)) =
 	    (f (q, "valDec"); outputCoord (q, coord); m q;
-	     outputId (q, id); m q; outputExp (q, exp); r q)
-	  | outputStm (q, RecDec (coord, idsExpList)) =
+	     outputId (q, id); m q; outputExp (q, exp); m q;
+	     outputBool (q, isToplevel); r q)
+	  | outputStm (q, RecDec (coord, idsExpList, isToplevel)) =
 	    (f (q, "recDec"); outputCoord (q, coord); m q;
 	     outputList (outputPair (outputList outputId, outputExp))
-	     (q, idsExpList); r q)
-	  | outputStm (q, ConDec (coord, id, hasArgs)) =
+	     (q, idsExpList); m q; outputBool (q, isToplevel); r q)
+	  | outputStm (q, ConDec (coord, id, hasArgs, isToplevel)) =
 	    (f (q, "conDec"); outputCoord (q, coord); m q;
-	     outputId (q, id); m q; outputBool (q, hasArgs); r q)
+	     outputId (q, id); m q; outputBool (q, hasArgs); m q;
+	     outputBool (q, isToplevel); r q)
 	  | outputStm (q, EvalStm (coord, exp)) =
 	    (f (q, "evalStm"); outputCoord (q, coord); m q;
 	     outputExp (q, exp); r q)
@@ -201,18 +204,15 @@ structure OzifyImperativeGrammar :> OZIFY_IMPERATIVE_GRAMMAR =
 	     outputAtom (q, string); m q;
 	     outputList (outputPair (outputArgs outputId, outputBody))
 	     (q, argsBodyList); r q)
-	  | outputExp (q, AppExp (coord, id1, id2)) =
+	  | outputExp (q, AppExp (coord, id, args)) =
 	    (f (q, "appExp"); outputCoord (q, coord); m q;
-	     outputId (q, id1); m q; outputId (q, id2); r q)
+	     outputId (q, id); m q; outputArgs outputId (q, args); r q)
 	  | outputExp (q, SelAppExp (coord, lab, id)) =
 	    (f (q, "conAppExp"); outputCoord (q, coord); m q;
 	     outputLab (q, lab); m q; outputId (q, id); r q)
 	  | outputExp (q, ConAppExp (coord, id1, id2)) =
 	    (f (q, "conAppExp"); outputCoord (q, coord); m q;
 	     outputId (q, id1); m q; outputId (q, id2); r q)
-	  | outputExp (q, DirectAppExp (coord, id, args)) =
-	    (f (q, "directAppExp"); outputCoord (q, coord); m q;
-	     outputId (q, id); m q; outputArgs outputId (q, args); r q)
 	  | outputExp (q, BuiltinAppExp (coord, string, ids)) =
 	    (f (q, "builtinAppExp"); outputCoord (q, coord); m q;
 	     outputAtom (q, string); m q; outputList outputId (q, ids); r q)

@@ -69,9 +69,9 @@ define
    end
 
    proc {TranslateStm Stm VHd VTl State ReturnReg}
-      case Stm of valDec(_ Id Exp) then
+      case Stm of valDec(_ Id Exp _) then
 	 {TranslateExp Exp {MakeReg Id State} VHd VTl State}
-      [] recDec(_ IdsExpList) then
+      [] recDec(_ IdsExpList _) then
 	 {ForAll IdsExpList
 	  proc {$ Ids#_}
 	     case Ids of Id|Idr then Reg in
@@ -87,10 +87,10 @@ define
 		   end
 	     {TranslateExp Exp Reg VHd VTl State}
 	  end VHd VTl}
-      [] conDec(Coord Id false) then
+      [] conDec(Coord Id false _) then
 	 VHd = vCallBuiltin(_ 'Name.new' [{MakeReg Id State}]
 			    {TranslateCoord Coord} VTl)
-      [] conDec(Coord Id true) then
+      [] conDec(Coord Id true _) then
 	 Reg Pos NameReg VInter PredId NLiveRegs ArgReg TmpReg ResReg
 	 VInstr VInter1 VInter2 GRegs Code
       in
@@ -224,15 +224,15 @@ define
 	     endDefinition(VInstr FormalRegs nil ?GRegs ?Code ?NLiveRegs)}
 	    VHd = vDefinition(_ Reg PredId unit GRegs Code VTl)
 	 end
-      [] appExp(Coord Id1 Id2) then
-	 VHd = vCall(_ {GetReg Id1 State} [{GetReg Id2 State} Reg]
-		     {TranslateCoord Coord} VTl)
+      [] appExp(Coord Id1 Args) then
+	 case Args of oneArg(Id2) then   %--** support others
+	    VHd = vCall(_ {GetReg Id1 State} [{GetReg Id2 State} Reg]
+			{TranslateCoord Coord} VTl)
+	 end
       [] selAppExp(Coord Lab Id) then
 	 VHd = vInlineDot(_ {GetReg Id State} {TranslateLab Lab} Reg false
 			  {TranslateCoord Coord} VTl)
       [] conAppExp(_ _ _) then
-	 VHd = VTl   %--**
-      [] directAppExp(_ _ _) then
 	 VHd = VTl   %--**
       [] buitinAppExp(Coord Builtinname Ids) then
 	 VHd = vCallBuiltin(_ BuiltinTable.Builtinname

@@ -62,7 +62,8 @@ structure ImperativePhase :> IMPERATIVE_PHASE =
 	    let
 		val (stms, id) = translateLongid longid
 		val id' = freshId coord
-		val stm = O.ValDec (coord, id', O.SelAppExp (coord, lab, id))
+		val stm =
+		    O.ValDec (coord, id', O.SelAppExp (coord, lab, id), false)
 	    in
 		(stms @ [stm], id')
 	    end
@@ -93,7 +94,8 @@ structure ImperativePhase :> IMPERATIVE_PHASE =
 	  | translateCont (Share (ref (SOME stms), _)) = stms
 	  | translateCont (Export ids) = [O.ExportStm (Source.nowhere, ids)]
 	and translateDec (OneDec (coord, id, exp), cont) =
-	    translateExp (exp, fn exp' => O.ValDec (coord, id, exp'), cont)
+	    translateExp (exp,
+			  fn exp' => O.ValDec (coord, id, exp', false), cont)
 	  | translateDec (ValDec (_, _, exp), cont) =
 	    translateExp (exp,
 			  fn _ => Crash.crash "ImperativePhase.translateDec 1",
@@ -108,10 +110,10 @@ structure ImperativePhase :> IMPERATIVE_PHASE =
 			       Crash.crash "ImperativePhase.translateDec 2")
 			      handle Result exp' => (ids, exp')) idsExpList
 	    in
-		O.RecDec (coord, idsExpList')::translateCont cont
+		O.RecDec (coord, idsExpList', false)::translateCont cont
 	    end
 	  | translateDec (ConDec (coord, id, hasArgs), cont) =
-	    O.ConDec (coord, id, hasArgs)::translateCont cont
+	    O.ConDec (coord, id, hasArgs, false)::translateCont cont
 	and translateExp (LitExp (coord, lit), f, cont) =
 	    f (O.LitExp (coord, lit))::translateCont cont
 	  | translateExp (VarExp (coord, longid), f, cont) =
@@ -185,7 +187,8 @@ structure ImperativePhase :> IMPERATIVE_PHASE =
 		val (stms, id1) = translateLongid longid
 		val coord' = coordOf exp
 		val id2 = freshId coord'
-		val stms' = f (O.AppExp (coord, id1, id2))::translateCont cont
+		val stms' =
+		    f (O.AppExp (coord, id1, O.OneArg id2))::translateCont cont
 	    in
 		stms @ translateDec (OneDec (coord', id2, exp), Goto stms')
 	    end

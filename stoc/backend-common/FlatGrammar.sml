@@ -28,6 +28,9 @@ structure ImperativeGrammar :> IMPERATIVE_GRAMMAR =
 
 	type shared = int ref
 
+	type isToplevel = bool
+	type hasArgs = bool
+
 	datatype test =
 	    LitTest of lit
 	  | ConTest of id * id option
@@ -39,10 +42,11 @@ structure ImperativeGrammar :> IMPERATIVE_GRAMMAR =
 	datatype args = datatype SimplifiedGrammar.args
 
 	datatype stm =
-	    ValDec of coord * id * exp
-	  | RecDec of coord * (id list * exp) list   (* all ids distinct *)
+	    ValDec of coord * id * exp * isToplevel
+	  | RecDec of coord * (id list * exp) list * isToplevel
+	    (* all ids distinct *)
 	    (*--** replace id list above by id *)
-	  | ConDec of coord * id * bool   (* has args *)
+	  | ConDec of coord * id * hasArgs * isToplevel
 	  | EvalStm of coord * exp
 	  (* the following must always be last *)
 	  | HandleStm of coord * body * id * body
@@ -62,10 +66,9 @@ structure ImperativeGrammar :> IMPERATIVE_GRAMMAR =
 	  | SelExp of coord * lab
 	  | FunExp of coord * string * (id args * body) list
 	    (* all arities distinct; always contains a single OneArg *)
-	  | AppExp of coord * id * id
+	  | AppExp of coord * id * id args
 	  | SelAppExp of coord * lab * id
 	  | ConAppExp of coord * id * id
-	  | DirectAppExp of coord * id * id args
 	  | BuiltinAppExp of coord * string * id list
 	  | AdjExp of coord * id * id
 	withtype body = stm list
