@@ -76,10 +76,6 @@ structure DeadCodeEliminationPhase :> DEAD_CODE_ELIMINATION_PHASE =
 				 ValDec (info, Wildcard, exp)::rest
 			   | NONE => (elim (info, rest); rest))
 	    end
-	  | liveBody (RecDec (info, idDefExpVec)::rest) =
-	    RecDec (info, Vector.map (fn (idDef, exp) =>
-				      (idDef, liveExp exp)) idDefExpVec)::
-	    liveBody rest
 	  | liveBody (RefAppDec (info, idDef, id)::rest) =
 	    let
 		val rest = liveBody rest

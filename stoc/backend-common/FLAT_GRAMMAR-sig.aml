@@ -62,8 +62,6 @@ signature FLAT_GRAMMAR =
 	datatype stm =
 	  (* the following may never be last *)
 	    ValDec of stm_info * idDef * exp
-	  | RecDec of stm_info * (idDef * exp) vector
-	    (* all ids distinct *)
 	  | RefAppDec of stm_info * idDef * id
 	  | TupDec of stm_info * idDef vector * id
 	  | ProdDec of stm_info * (label * idDef) vector * id

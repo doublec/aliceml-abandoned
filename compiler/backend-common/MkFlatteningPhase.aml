@@ -185,6 +185,41 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 	    Error.error (region, "not admissible")
 	  | decsToIdDefExpList (nil, _) = nil
 
+	fun recToHoles ((idDef, exp)::rest, region, unallocated) =
+	    let
+		val toAllocate = getUsedVars (exp, unallocated)
+		val decs =
+		    case idDef of
+			O.IdDef id =>
+			    if IdSet.member (toAllocate, id)
+			       orelse not (IdSet.member (unallocated, id))
+			    then
+				let
+				    val id' = O.freshId {region = region}
+				in
+				    [O.ValDec (stm_info region, O.IdDef id',
+					       exp),
+				     O.ValDec (stm_info region, O.Wildcard,
+					       O.PrimAppExp ({region = region},
+							     "Hole.fill",
+							     #[id, id']))]
+				end
+			    else
+				(IdSet.delete (unallocated, id);
+				 [O.ValDec (stm_info region, idDef, exp)])
+		      | O.Wildcard => [O.ValDec (stm_info region, idDef, exp)]
+	    in
+		IdSet.fold
+		(fn (id as O.Id (info, _, _), rest) =>
+		 (IdSet.delete (unallocated, id);
+		  O.ValDec (stm_info (#region info), O.IdDef id,
+			    O.PrimAppExp (info, "Hole.hole", #[]))::rest))
+		decs toAllocate
+		::recToHoles (rest, region, unallocated)
+	    end
+	  | recToHoles (nil, _, unallocated) =
+	    (Assert.assert (IdSet.isEmpty unallocated); nil)
+
 	fun translateIf (info: exp_info, id, thenStms, elseStms, errStms) =
 	    [O.TestStm (stm_info (#region info), id,
 			O.TagTests #[(PervasiveType.lab_true, 1, NONE,
@@ -251,9 +286,15 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 					     O.IdDef (translateId id), exp'),
 				   Goto decs)) nil idExpList
 		val idDefExpList' = decsToIdDefExpList (decs', #region info)
+		val unallocated = IdSet.new ()
+		val _ =
+		    List.app (fn (idDef, _) =>
+			      case idDef of
+				  O.IdDef id => IdSet.insert (unallocated, id)
+				| O.Wildcard => ())idDefExpList'
 		val rest =
-		    O.RecDec (stm_info (#region info),
-			      Vector.fromList idDefExpList')::
+		    List.concat (recToHoles (idDefExpList', #region info,
+					     unallocated)) @
 		    aliasDecs @ translateCont cont
 		val errStms = share (raisePrim (#region info, "General.Bind"))
 	    in

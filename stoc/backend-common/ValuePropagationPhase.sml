@@ -212,7 +212,6 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 		end
 
 	    fun sortStm (ValDec (_, _, _), _, _, _, _) = ()
-	      | sortStm (RecDec (_, _), _, _, _, _) = ()
 	      | sortStm (RefAppDec (_, _, _), _, _, _, _) = ()
 	      | sortStm (TupDec (_, _, _), _, _, _, _) = ()
 	      | sortStm (ProdDec (_, _, _), _, _, _, _) = ()
@@ -504,25 +503,6 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 	    in
 		declare (env, idDef, (expToValue exp, isToplevel));
 		ValDec (info, idDef, exp)
-	    end
-	  | vpStm (RecDec (info, idDefExpVec), env, isToplevel, shared) =
-	    let
-		val _ =
-		    Vector.app (fn (idDef, exp) =>
-				declare (env, idDef, (expToValue exp,
-						      isToplevel))) idDefExpVec
-		val idDefExpVec =
-		    Vector.map (fn (idDef, exp) =>
-				let
-				    val exp =
-					vpExp (exp, env, isToplevel, shared)
-				in
-				    declare (env, idDef, (expToValue exp,
-							  isToplevel));
-				    (idDef, exp)
-				end) idDefExpVec
-	    in
-		RecDec (info, idDefExpVec)
 	    end
 	  | vpStm (RefAppDec (info, idDef, id), env, isToplevel, _) =
 	    let

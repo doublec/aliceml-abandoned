@@ -61,8 +61,6 @@ structure FlatGrammar :> FLAT_GRAMMAR =
 	datatype stm =
 	  (* the following may never be last *)
 	    ValDec of stm_info * idDef * exp
-	  | RecDec of stm_info * (idDef * exp) vector
-	    (* all ids distinct *)
 	  | RefAppDec of stm_info * idDef * id
 	  | TupDec of stm_info * idDef vector * id
 	  | ProdDec of stm_info * (label * idDef) vector * id
@@ -113,7 +111,6 @@ structure FlatGrammar :> FLAT_GRAMMAR =
 	fun freshId info = Id (info, Stamp.new (), Name.InId)
 
 	fun infoStm (ValDec (info, _, _)) = info
-	  | infoStm (RecDec (info, _)) = info
 	  | infoStm (RefAppDec (info, _, _)) = info
 	  | infoStm (TupDec (info, _, _)) = info
 	  | infoStm (ProdDec (info, _, _)) = info

@@ -26,6 +26,10 @@ signature INTERMEDIATE_AUX =
 
 	val separateAlt: I.pat -> I.pat
 
+	structure IdSet: IMP_SET where type item = O.id
+
+	val getUsedVars: O.exp * IdSet.t -> IdSet.t
+
 	val rowLabels: Type.row -> Label.t list
 	val typToArity: Type.t -> Arity.t
 	val makeConArity: Type.t * bool -> Arity.t option

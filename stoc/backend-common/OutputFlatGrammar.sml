@@ -110,12 +110,6 @@ structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
 
 	fun outputStm (ValDec (_, idDef, exp), _) =
 	    SEQ #[S "val ", IDDEF idDef, S " = ", IN, outputExp exp, EX]
-	  | outputStm (RecDec (_, idDefExpVector), _) =
-	    SEQ #[S "rec", IN,
-		  SEQ (Vector.map (fn (idDef, exp) =>
-				   SEQ #[NL, S "val ", IDDEF idDef, S " = ",
-					 IN, outputExp exp, EX])
-		       idDefExpVector), EX]
 	  | outputStm (RefAppDec (_, idDef, id'), _) =
 	    SEQ #[S "val ref ", IDDEF idDef, S " = ", ID id']
 	  | outputStm (TupDec (_, idDefs, id), _) =

@@ -252,6 +252,114 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 		(WithPat (info, pat', substDecs (decs, subst'')), subst')
 	    end
 
+	structure IdSet =
+	    MakeHashImpSet(type t = O.id
+			   fun hash (O.Id (_, stamp, _)) = Stamp.hash stamp
+			   fun equals (O.Id (_, stamp, _),
+				       O.Id (_, stamp', _)) = stamp = stamp')
+
+	fun usedVarsId (id, set, used) =
+	    if IdSet.member (set, id) then IdSet.insert (used, id) else ()
+
+	fun usedVarsCon (O.Con id, set, used) = usedVarsId (id, set, used)
+	  | usedVarsCon (O.StaticCon _, _, _) = ()
+
+	fun usedVarsArgs (O.OneArg id, set, used) =
+	    usedVarsId (id, set, used)
+	  | usedVarsArgs (O.TupArgs ids, set, used) =
+	    Vector.app (fn id => usedVarsId (id, set, used)) ids
+	  | usedVarsArgs (O.ProdArgs labelIdVec, set, used) =
+	    Vector.app (fn (_, id) => usedVarsId (id, set, used))
+	    labelIdVec
+
+	fun usedVarsStm (O.ValDec (_, _, exp), set, used, shared) =
+	    usedVarsExp (exp, set, used, shared)
+	  | usedVarsStm (O.RefAppDec (_, _, id), set, used, _) =
+	    usedVarsId (id, set, used)
+	  | usedVarsStm (O.TupDec (_, _, id), set, used, _) =
+	    usedVarsId (id, set, used)
+	  | usedVarsStm (O.ProdDec (_, _, id), set, used, _) =
+	    usedVarsId (id, set, used)
+	  | usedVarsStm (O.RaiseStm (_, id), set, used, _) =
+	    usedVarsId (id, set, used)
+	  | usedVarsStm (O.ReraiseStm (_, id), set, used, _) =
+	    usedVarsId (id, set, used)
+	  | usedVarsStm (O.TryStm (_, tryBody, _, handleBody),
+			 set, used, shared) =
+	    (usedVarsBody (tryBody, set, used, shared);
+	     usedVarsBody (handleBody, set, used, shared))
+	  | usedVarsStm (O.EndTryStm (_, body), set, used, shared) =
+	    usedVarsBody (body, set, used, shared)
+	  | usedVarsStm (O.EndHandleStm (_, body), set, used, shared) =
+	    usedVarsBody (body, set, used, shared)
+	  | usedVarsStm (O.TestStm (_, id, tests, body), set, used, shared) =
+	    (usedVarsId (id, set, used);
+	     case tests of
+		 O.LitTests vec =>
+		     Vector.app (fn (_, body) =>
+				 usedVarsBody (body, set, used, shared)) vec
+	       | O.TagTests vec =>
+		     Vector.app (fn (_, _, _, body) =>
+				 usedVarsBody (body, set, used, shared)) vec
+	       | O.ConTests vec =>
+		     Vector.app (fn (_, _, body) =>
+				 usedVarsBody (body, set, used, shared)) vec
+	       | O.VecTests vec =>
+		     Vector.app (fn (_, body) =>
+				 usedVarsBody (body, set, used, shared)) vec;
+	     usedVarsBody (body, set, used, shared))
+	  | usedVarsStm (O.SharedStm (_, body, stamp), set, used, shared) =
+	    if StampSet.member (shared, stamp) then ()
+	    else
+		(StampSet.insert (shared, stamp);
+		 usedVarsBody (body, set, used, shared))
+	  | usedVarsStm (O.ReturnStm (_, exp), set, used, shared) =
+	    usedVarsExp (exp, set, used, shared)
+	  | usedVarsStm (O.IndirectStm (_, ref bodyOpt), set, used, shared) =
+	    usedVarsBody (valOf bodyOpt, set, used, shared)
+	  | usedVarsStm (O.ExportStm (_, exp), set, used, shared) =
+	    usedVarsExp (exp, set, used, shared)
+	and usedVarsExp (O.LitExp (_, _), _, _, _) = ()
+	  | usedVarsExp (O.PrimExp (_, _), _, _, _) = ()
+	  | usedVarsExp (O.NewExp _, _, _, _) = ()
+	  | usedVarsExp (O.VarExp (_, id), set, used, _) =
+	    usedVarsId (id, set, used)
+	  | usedVarsExp (O.TagExp (_, _, _), _, _, _) = ()
+	  | usedVarsExp (O.ConExp (_, _), _, _, _) = ()
+	  | usedVarsExp (O.TupExp (_, ids), set, used, _) =
+	    Vector.app (fn id => usedVarsId (id, set, used)) ids
+	  | usedVarsExp (O.ProdExp (_, labelIdVec), set, used, _) =
+	    Vector.app (fn (_, id) => usedVarsId (id, set, used)) labelIdVec
+	  | usedVarsExp (O.VecExp (_, ids), set, used, _) =
+	    Vector.app (fn id => usedVarsId (id, set, used)) ids
+	  | usedVarsExp (O.FunExp (_, _, _, _, body), set, used, shared) =
+	    usedVarsBody (body, set, used, shared)
+	  | usedVarsExp (O.PrimAppExp (_, _, ids), set, used, _) =
+	    Vector.app (fn id => usedVarsId (id, set, used)) ids
+	  | usedVarsExp (O.VarAppExp (_, id, args), set, used, _) =
+	    (usedVarsId (id, set, used); usedVarsArgs (args, set, used))
+	  | usedVarsExp (O.TagAppExp (_, _, _, args), set, used, _) =
+	    usedVarsArgs (args, set, used)
+	  | usedVarsExp (O.ConAppExp (_, con, args), set, used, _) =
+	    (usedVarsCon (con, set, used); usedVarsArgs (args, set, used))
+	  | usedVarsExp (O.RefAppExp (_, id), set, used, _) =
+	    usedVarsId (id, set, used)
+	  | usedVarsExp (O.SelAppExp (_, _, _, _, id), set, used, _) =
+	    usedVarsId (id, set, used)
+	  | usedVarsExp (O.FunAppExp (_, id, _, args), set, used, _) =
+	    (usedVarsId (id, set, used); usedVarsArgs (args, set, used))
+	and usedVarsBody (stm::stms, set, used, shared) =
+	    (usedVarsStm (stm, set, used, shared);
+	     usedVarsBody (stms, set, used, shared))
+	  | usedVarsBody (nil, _, _, _) = ()
+
+	fun getUsedVars (exp, set) =
+	    let
+		val used = IdSet.new ()
+	    in
+		usedVarsExp (exp, set, used, StampSet.new ()); used
+	    end
+
 	fun rowLabels row =
 	    if Type.isEmptyRow row then
 		if Type.isUnknownRow row then

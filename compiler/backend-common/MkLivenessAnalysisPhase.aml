@@ -88,162 +88,87 @@ structure LivenessAnalysisPhase1 :> LIVENESS_ANALYSIS_PHASE =
 	fun insVec (lset, ids) =
 	    Vector.foldl (fn (id, lset) => ins (lset, id)) lset ids
 
-	fun union (Orig set, set') =
-	    let
-		val set'' = StampSet.clone set
-	    in
-		StampSet.union (set'', set');
-		Copy set''
-	    end
-	  | union (lset as (Copy set), set') =
-	    (StampSet.union (set, set'); lset)
+	fun union (lset as (Copy set), lset') =
+	    (StampSet.union (set, lazyValOf lset'); lset)
+	  | union (lset', lset as (Copy set)) =
+	    (StampSet.union (set, lazyValOf lset'); lset)
+	  | union (Orig set, lset') =
+	    union (Copy (StampSet.clone set), lset')
 
-	fun setInfo ({liveness = r as ref Unknown, ...}: stm_info, set) =
-	    r := Use set
-	  | setInfo ({liveness = ref (Use _), ...}, _) = ()
-	  | setInfo ({liveness = ref (Kill _), ...}, _) =
-	    raise Crash.Crash "LivenessAnalysisPhase.setInfo"
+	fun setInfo ({liveness = r as ref Unknown, ...}: stm_info, lset) =
+	    let
+		val set = lazyValOf lset
+	    in
+		r := Use set; Orig set
+	    end
+	  | setInfo (_, _) = raise Crash.Crash "LivenessAnalysisPhase.setInfo"
 
-	fun scanBody (ValDec (i, idDef, exp)::stms) =
+	fun scanBody (ValDec (info, idDef, exp)::stms) =
+	    setInfo (info, scanExp (exp, delDef (scanBody stms, idDef)))
+	  | scanBody (RefAppDec (info, idDef, id)::stms) =
+	    setInfo (info, ins (delDef (scanBody stms, idDef), id))
+	  | scanBody (TupDec (info, idDefs, id)::stms) =
 	    let
-		val lset = scanBody stms
-		val set = lazyValOf (scanExp (exp, delDef (lset, idDef)))
-	    in
-		setInfo (i, set);
-		Orig set
-	    end
-	  | scanBody (RecDec (i, idDefExpVec)::stms) =
-	    let
-		val lset = scanBody stms
-		val lset' =
-		    Vector.foldl (fn ((_, exp), lset) => scanExp (exp, lset))
-		    lset idDefExpVec
-		val set = lazyValOf lset'
-	    in
-		setInfo (i, set);
-		Vector.foldl (fn ((idDef, _), lset) => delDef (lset, idDef))
-		(Copy (StampSet.clone set)) idDefExpVec
-	    end
-	  | scanBody (RefAppDec (i, idDef, id)::stms) =
-	    let
-		val lset = scanBody stms
-		val set = lazyValOf (ins (delDef (lset, idDef), id))
-	    in
-		setInfo (i, set);
-		Orig set
-	    end
-	  | scanBody (TupDec (i, idDefs, id)::stms) =
-	    let
-		val lset = scanBody stms
-		val lset' =
+		val lset =
 		    Vector.foldr (fn (idDef, lset) => delDef (lset, idDef))
-		    lset idDefs
-		val set = lazyValOf (ins (lset', id))
+		    (scanBody stms) idDefs
 	    in
-		setInfo (i, set);
-		Orig set
+		setInfo (info, ins (lset, id))
 	    end
-	  | scanBody (ProdDec (i, labelIdDefVec, id)::stms) =
+	  | scanBody (ProdDec (info, labelIdDefVec, id)::stms) =
 	    let
-		val lset = scanBody stms
-		val lset' =
+		val lset =
 		    Vector.foldr
 		    (fn ((_, idDef), lset) => delDef (lset, idDef))
-		    lset labelIdDefVec
-		val set = lazyValOf (ins (lset', id))
+		    (scanBody stms) labelIdDefVec
 	    in
-		setInfo (i, set);
-		Orig set
+		setInfo (info, ins (lset, id))
 	    end
-	  | scanBody [RaiseStm (i, Id (_, stamp, _))] =
+	  | scanBody [RaiseStm (info, Id (_, stamp, _))] =
 	    let
 		val set = StampSet.new ()
 		val _ = StampSet.insert (set, stamp)
 	    in
-		setInfo (i, set);
-		Orig set
+		setInfo (info, Copy set)
 	    end
-	  | scanBody [ReraiseStm (i, Id (_, stamp, _))] =
+	  | scanBody [ReraiseStm (info, Id (_, stamp, _))] =
 	    let
 		val set = StampSet.new ()
 		val _ = StampSet.insert (set, stamp)
 	    in
-		setInfo (i, set);
-		Orig set
+		setInfo (info, Copy set)
 	    end
-	  | scanBody [TryStm (i, tryBody, idDef, handleBody)] =
+	  | scanBody [TryStm (info, tryBody, idDef, handleBody)] =
 	    let
 		val lset1 = scanBody tryBody
-		val lset2 = scanBody handleBody
-		val set2 = lazyValOf (delDef (lset2, idDef))
-		val set = lazyValOf (union (lset1, set2))
+		val lset2 = delDef (scanBody handleBody, idDef)
 	    in
-		setInfo (i, set);
-		Orig set
+		setInfo (info, union (lset1, lset2))
 	    end
-	  | scanBody [EndTryStm (i, body)] =
-	    let
-		val set = lazyValOf (scanBody body)
-	    in
-		setInfo (i, set);
-		Orig set
-	    end
-	  | scanBody [EndHandleStm (i, body)] =
-	    let
-		val set = lazyValOf (scanBody body)
-	    in
-		setInfo (i, set);
-		Orig set
-	    end
-	  | scanBody [TestStm (i, id, tests, body)] =
-	    let
-		val lset1 = scanTests tests
-		val lset2 = scanBody body
-		val lset1' = ins (union (lset1, lazyValOf lset2), id)
-		val set = lazyValOf lset1'
-	    in
-		setInfo (i, set);
-		Orig set
-	    end
-	  | scanBody [SharedStm (i as {liveness = r as ref Unknown, ...},
+	  | scanBody [EndTryStm (info, body)] =
+	    setInfo (info, scanBody body)
+	  | scanBody [EndHandleStm (info, body)] =
+	    setInfo (info, scanBody body)
+	  | scanBody [TestStm (info, id, tests, body)] =
+	    setInfo (info, ins (union (scanTests tests, scanBody body), id))
+	  | scanBody [SharedStm (info as {liveness = r as ref Unknown, ...},
 				 body, _)] =
-	    let
-		val set = lazyValOf (scanBody body)
-	    in
-		setInfo (i, set);
-		Orig set
-	    end
+	    setInfo (info, scanBody body)
 	  | scanBody [SharedStm ({liveness = ref (Use set'), ...}, _, _)] =
 	    Orig set'
 	  | scanBody [SharedStm ({liveness = ref (Kill _), ...}, _, _)] =
 	    raise Crash.Crash "LivenessAnalysisPhase.scanStm 1"
-	  | scanBody [ReturnStm (i, exp)] =
-	    let
-		val set = lazyValOf (scanExp (exp, Copy (StampSet.new ())))
-	    in
-		setInfo (i, set);
-		Orig set
-	    end
-	  | scanBody [IndirectStm (i, ref bodyOpt)] =
-	    let
-		val set = lazyValOf (scanBody (valOf bodyOpt))
-	    in
-		setInfo (i, set);
-		Orig set
-	    end
-	  | scanBody [ExportStm (i, exp)] =
-	    let
-		val set = lazyValOf (scanExp (exp, Copy (StampSet.new ())))
-	    in
-		setInfo (i, set);
-		Orig set
-	    end
+	  | scanBody [ReturnStm (info, exp)] =
+	    setInfo (info, scanExp (exp, Copy (StampSet.new ())))
+	  | scanBody [IndirectStm (info, ref bodyOpt)] =
+	    setInfo (info, scanBody (valOf bodyOpt))
+	  | scanBody [ExportStm (info, exp)] =
+	    setInfo (info, scanExp (exp, Copy (StampSet.new ())))
 	  | scanBody nil = Copy (StampSet.new ())
 	  | scanBody _ = raise Crash.Crash "LivenessAnalysisPhase.scanStm 2"
 	and scanTests (LitTests litBodyVec) =
 	    (*--** this and the following folds can be improved *)
-	    Vector.foldl (fn ((_, body), lset) =>
-			  union (lset, lazyValOf (scanBody body)))
+	    Vector.foldl (fn ((_, body), lset) => union (lset, scanBody body))
 	    (Copy (StampSet.new ())) litBodyVec
 	  | scanTests (TagTests tagBodyVec) =
 	    Vector.foldl (fn ((_, _, conArgs, body), lset) =>
@@ -255,7 +180,7 @@ structure LivenessAnalysisPhase1 :> LIVENESS_ANALYSIS_PHASE =
 					  processArgs (args, lset', delDef)
 				    | NONE => lset'
 			  in
-			      union (lset, lazyValOf lset'')
+			      union (lset, lset'')
 			  end) (Copy (StampSet.new ())) tagBodyVec
 	  | scanTests (ConTests conBodyVec) =
 	    Vector.foldl (fn ((_, conArgs, body), lset) =>
@@ -267,7 +192,7 @@ structure LivenessAnalysisPhase1 :> LIVENESS_ANALYSIS_PHASE =
 					  processArgs (args, lset', delDef)
 				    | NONE => lset'
 			  in
-			      union (lset, lazyValOf lset'')
+			      union (lset, lset'')
 			  end) (Copy (StampSet.new ())) conBodyVec
 	  | scanTests (VecTests vecBodyVec) =
 	    Vector.foldl (fn ((idDefs, body), lset) =>
@@ -275,7 +200,7 @@ structure LivenessAnalysisPhase1 :> LIVENESS_ANALYSIS_PHASE =
 			      val lset' = scanBody body
 			      val lset'' = delDefVec (lset, idDefs)
 			  in
-			      union (lset, lazyValOf lset'')
+			      union (lset, lset'')
 			  end) (Copy (StampSet.new ())) vecBodyVec
 	and scanExp (LitExp (_, _), lset) = lset
 	  | scanExp (PrimExp (_, _), lset) = lset
@@ -289,11 +214,7 @@ structure LivenessAnalysisPhase1 :> LIVENESS_ANALYSIS_PHASE =
 	    Vector.foldl (fn ((_, id), lset) => ins (lset, id)) lset labIdVec
 	  | scanExp (VecExp (_, ids), lset) = insVec (lset, ids)
 	  | scanExp (FunExp (_, _, _, args, body), lset) =
-	    let
-		val set = lazyValOf (scanBody body)
-	    in
-		processArgs (args, union (lset, set), delDef)
-	    end
+	    processArgs (args, union (lset, scanBody body), delDef)
 	  | scanExp (PrimAppExp (_, _, ids), lset) = insVec (lset, ids)
 	  | scanExp (VarAppExp (_, id, args), lset) =
 	    processArgs (args, ins (lset, id), ins)
@@ -337,9 +258,6 @@ structure LivenessAnalysisPhase2 :> LIVENESS_ANALYSIS_PHASE =
 
 	fun initStm (ValDec (_, idDef, exp), set) =
 	    (insDef (set, idDef); initExp exp)
-	  | initStm (RecDec (_, idDefExpVec), set) =
-	    Vector.app (fn (idDef, exp) => (insDef (set, idDef); initExp exp))
-	    idDefExpVec
 	  | initStm (RefAppDec (_, idDef, _), set) = insDef (set, idDef)
 	  | initStm (TupDec (_, idDefs, _), set) =
 	    Vector.app (fn idDef => insDef (set, idDef)) idDefs
