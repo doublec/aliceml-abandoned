@@ -1,9 +1,10 @@
 (*
  * Author:
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 2002
+ *   Leif Kornstaedt and Andreas Rossberg, 2002-2003
  *
  * Last change:
  *   $Date$ by $Author$
@@ -16,12 +17,22 @@ import signature STREAM_IO from "STREAM_IO-sig"
 
 functor StreamIO(structure PrimIO: PRIM_IO
 		 structure Vector: MONO_VECTOR
-				       where type elem = PrimIO.elem
-					 and type vector = PrimIO.vector
+			   where type elem = PrimIO.elem
+			     and type vector = PrimIO.vector
 		 structure Array: MONO_ARRAY
-				      where type array = PrimIO.array
-					and type vector = PrimIO.vector
-					and type elem = PrimIO.elem
+			   where type elem = PrimIO.elem
+			     and type vector = PrimIO.vector
+			     and type array = PrimIO.array
+		 structure VectorSlice: MONO_VECTOR_SLICE
+			   where type elem = PrimIO.elem
+			     and type vector = PrimIO.vector
+			     and type slice = PrimIO.vector_slice
+		 structure ArraySlice: MONO_ARRAY_SLICE
+			   where type elem = PrimIO.elem
+			     and type vector = PrimIO.vector
+			     and type array = PrimIO.array
+			     and type vector_slice = PrimIO.vector_slice
+			     and type slice = PrimIO.array_slice
 		 val someElem: PrimIO.elem) :>
 	STREAM_IO
 	    where type elem = PrimIO.elem
@@ -39,31 +50,19 @@ functor StreamIO(structure PrimIO: PRIM_IO
 	datatype history' =
 	    READER of reader * (vector * int) option
 	  | BUFFER of vector * history
-	  | TRUNCATED of string
+	  | TRUNCATED of string * reader
+	  | CLOSED_IN of string
 	withtype history = history' ref
 
 	type instream = history * int
 
 	datatype outstream' =
 	    WRITER of writer * PrimIO.array * int ref * IO.buffer_mode
-	  | TERMINATED of string
+	  | TERMINATED of string * writer * IO.buffer_mode
+	  | CLOSED_OUT of string * IO.buffer_mode
 	withtype outstream = outstream' ref
 
 	type out_pos = outstream * pos
-
-	fun vector_extract (v, i, SOME n) =
-	    Vector.tabulate (n, fn j => Vector.sub (v, i + j))
-	  | vector_extract (v, i, NONE) =
-	    vector_extract (v, i, SOME (Vector.length v - i))
-	fun array_copyVecSlice' (src, si, dst, di, 0) = ()
-	  | array_copyVecSlice' (src, si, dst, di, len) =
-	    (Array.update (dst, di, Vector.sub (src, si));
-	     array_copyVecSlice' (src, si + 1, dst, di + 1, len - 1))
-	fun array_copyVecSlice {src, si, dst, di, len} =
-	    if si < 0 orelse di < 0 orelse si + len > Vector.length src
-				    orelse di + len > Array.length dst
-	    then raise General.Subscript
-	    else array_copyVecSlice' (src, si, dst, di, len)
 
 	fun blocking NONE = raise IO.BlockingNotSupported
 	  | blocking (SOME f) = f
@@ -120,7 +119,7 @@ functor StreamIO(structure PrimIO: PRIM_IO
 		  | BUFFER (v, history') =>
 			(Promise.fulfill (p, state);
 			 (v, offset, (history', 0)))
-		  | TRUNCATED _ =>
+		  | (TRUNCATED _ | CLOSED_IN _) =>
 			(Promise.fulfill (p, state);
 			 (Vector.fromList nil, 0, f))
 	    end
@@ -129,7 +128,7 @@ functor StreamIO(structure PrimIO: PRIM_IO
 	    let
 		val (v, offset, f') = input' (f, Vector.maxLen, "input")
 	    in
-		(vector_extract (v, offset, NONE), f')
+		(VectorSlice.vector (VectorSlice.slice (v, offset, NONE)), f')
 	    end
 
 	fun input1 f =
@@ -142,6 +141,7 @@ functor StreamIO(structure PrimIO: PRIM_IO
 
 	fun inputN (f, n) where (n < 0 orelse n > Vector.maxLen) =
 	    raise General.Size
+	  | inputN (f, 0) = (Vector.fromList [], f)
 	  | inputN (f, n) =
 	    let
 		val (vs, f') = inputN' (f, n)
@@ -155,12 +155,14 @@ functor StreamIO(structure PrimIO: PRIM_IO
 	    in
 		if k = 0 then (nil, f')
 		else if k >= n then
-		    ([vector_extract (v, offset, SOME n)], f')
+		    ([VectorSlice.vector
+		      (VectorSlice.slice (v, offset, SOME n))], f')
 		else
 		    let
 			val (vs, f'') = inputN' (f, n - k)
 		    in
-			(vector_extract (v, offset, NONE)::vs, f'')
+			(VectorSlice.vector
+			 (VectorSlice.slice (v, offset, NONE))::vs, f'')
 		    end
 	    end
 
@@ -181,7 +183,8 @@ functor StreamIO(structure PrimIO: PRIM_IO
 		    let
 			val (vs, f'') = inputAll' f'
 		    in
-			(vector_extract (v, offset, SOME k)::vs, f'')
+			(VectorSlice.vector
+			 (VectorSlice.slice (v, offset, SOME k))::vs, f'')
 		    end
 	    end
 
@@ -205,7 +208,7 @@ functor StreamIO(structure PrimIO: PRIM_IO
 		  | (READER (_, SOME (v, _)) | BUFFER (v, _)) =>
 			(Promise.fulfill (p, state);
 			 return (Vector.length v - offset))
-		  | TRUNCATED _ =>
+		  | (TRUNCATED _ | CLOSED_IN _) =>
 			(Promise.fulfill (p, state); return 0)
 	    end
 
@@ -218,13 +221,15 @@ functor StreamIO(structure PrimIO: PRIM_IO
 		case state of
 		    READER (reader as PrimIO.RD {name, close, ...}, bufOpt) =>
 			let
-			    val history' = TRUNCATED name
+			    val history' = CLOSED_IN name
 			    val history' =
 				case bufOpt of
 				    NONE => history'
 				  | SOME (_, 0) => history'
 				  | SOME (v, i) =>
-					BUFFER (vector_extract (v, 0, SOME i),
+					BUFFER (VectorSlice.vector
+						(VectorSlice.slice
+						 (v, 0, SOME i)),
 						ref history')
 			in
 			    Promise.fulfill (p, history');
@@ -234,7 +239,12 @@ functor StreamIO(structure PrimIO: PRIM_IO
 			end
 		  | BUFFER (_, f') =>
 			(Promise.fulfill (p, state); closeIn' f')
-		  | TRUNCATED _ =>
+		  | TRUNCATED (name, PrimIO.RD {close, ...}) =>
+			(Promise.fulfill (p, CLOSED_IN name);
+			 close ()
+			 handle cause =>
+			     raise IO.Io {name, function = "closeIn", cause})
+		  | CLOSED_IN _ =>
 			(Promise.fulfill (p, state); ())
 	    end
 
@@ -254,22 +264,25 @@ functor StreamIO(structure PrimIO: PRIM_IO
 		case state of
 		    READER (reader as PrimIO.RD {name, ...}, bufOpt) =>
 			let
-			    val history' = TRUNCATED name
+			    val history' = TRUNCATED (name, reader)
 			    val (history', v) =
 				case bufOpt of
 				    NONE => (history', Vector.fromList nil)
 				  | SOME (v, 0) => (history', v)
 				  | SOME (v, i) =>
-					(BUFFER (vector_extract (v, 0, SOME i),
+					(BUFFER (VectorSlice.vector
+						 (VectorSlice.slice
+						  (v, 0, SOME i)),
 						 ref history'),
-					 vector_extract (v, i, NONE))
+					 VectorSlice.vector
+					 (VectorSlice.slice (v, i, NONE)))
 			in
 			    Promise.fulfill (p, history');
 			    (reader, v)
 			end
 		  | BUFFER (_, f') =>
 			(Promise.fulfill (p, state); getReader' f')
-		  | TRUNCATED name =>
+		  | (TRUNCATED (name, _) | CLOSED_IN name) =>
 			(Promise.fulfill (p, state);
 			 raise IO.Io {name, function = "getReader",
 				      cause = IO.ClosedStream})
@@ -277,11 +290,10 @@ functor StreamIO(structure PrimIO: PRIM_IO
 
 (*--** if write raises an exception, adjust stillFree accordingly *)
 (*--** implement IO.NO_BUF such that always the whole vector is output *)
-(*--** getReader/getWriter should always return the non-augmented rd/wr *)
 
 	fun writeBuffer (buf, i, len, writeArr) =
 	    let
-		val k = writeArr {buf, i, sz = SOME len}
+		val k = writeArr (ArraySlice.slice (buf, i, SOME len))
 	    in
 		if k = len then ()
 		else writeBuffer (buf, i + k, len - k, writeArr)
@@ -325,7 +337,7 @@ functor StreamIO(structure PrimIO: PRIM_IO
 			 handle cause =>
 			     (Promise.fulfill (p, state);
 			      raise IO.Io {name, function = "output", cause}))
-		  | TERMINATED name =>
+		  | (TERMINATED (name, _, _) | CLOSED_OUT (name, _)) =>
 			(Promise.fulfill (p, state);
 			 raise IO.Io {name, function = "output",
 				      cause = IO.ClosedStream})
@@ -353,7 +365,7 @@ functor StreamIO(structure PrimIO: PRIM_IO
 		val vStart' = vStart + k
 		val vLen' = vLen - k
 	    in
-		array_copyVecSlice {src = v, si = vStart, len = k,
+		ArraySlice.copyVec {src = VectorSlice.slice (v, vStart, SOME k),
 				    dst = buf, di = bufLen - free};
 		if free' > 0 andalso buffered then stillFree := free'
 		else
@@ -394,7 +406,7 @@ functor StreamIO(structure PrimIO: PRIM_IO
 					      else free');
 			    Promise.fulfill (p, state)
 			end
-		  | TERMINATED name =>
+		  | (TERMINATED (name, _, _) | CLOSED_OUT (name, _)) =>
 			(Promise.fulfill (p, state);
 			 raise IO.Io {name, function = "output1",
 				      cause = IO.ClosedStream})
@@ -413,7 +425,7 @@ functor StreamIO(structure PrimIO: PRIM_IO
 			     (Promise.fulfill (p, state);
 			      raise IO.Io {name, function="flushOut", cause});
 			 Promise.fulfill (p, state))
-		  | TERMINATED _ => Promise.fulfill (p, state)
+		  | (TERMINATED _ | CLOSED_OUT _) => Promise.fulfill (p, state)
 	    end
 
 	fun closeOut f =
@@ -423,15 +435,20 @@ functor StreamIO(structure PrimIO: PRIM_IO
 	    in
 		case state of
 		    WRITER (PrimIO.WR {name, writeArr, close, ...},
-			    buf, stillFree, _) =>
-			(Promise.fulfill (p, TERMINATED name);
-			 flush (buf, stillFree, blocking writeArr)
+			    buf, stillFree, bufferMode) =>
+			(flush (buf, stillFree, blocking writeArr)
 			 handle cause =>
 			     raise IO.Io {name, function="closeOut", cause};
+			 Promise.fulfill (p, CLOSED_OUT (name, bufferMode));
 			 close ()
 			 handle cause =>
 			     raise IO.Io {name, function="closeOut", cause})
-		  | TERMINATED _ => Promise.fulfill (p, state)
+		  | TERMINATED (name, PrimIO.WR {close, ...}, bufferMode) =>
+			(Promise.fulfill (p, CLOSED_OUT (name, bufferMode));
+			 close ()
+			 handle cause =>
+			     raise IO.Io {name, function="closeOut", cause})
+		  | CLOSED_OUT _ => Promise.fulfill (p, state)
 	    end
 
 	fun setBufferMode (f, bufferMode) =
@@ -442,7 +459,6 @@ functor StreamIO(structure PrimIO: PRIM_IO
 		case state of
 		    WRITER (writer as PrimIO.WR {name, writeArr, ...},
 			    buf, stillFree, _) =>
-(*--** what should happen when we switch from BLOCK_BUF to LINE_BUF? *)
 			(if bufferMode = IO.NO_BUF then
 			     flush (buf, stillFree, blocking writeArr)
 			     handle cause =>
@@ -452,10 +468,10 @@ functor StreamIO(structure PrimIO: PRIM_IO
 			 else ();
 			 Promise.fulfill
 			     (p, WRITER (writer, buf, stillFree, bufferMode)))
-		  | TERMINATED name =>
-			(Promise.fulfill (p, state);
-			 raise IO.Io {name, function = "setBufferMode",
-				      cause = IO.ClosedStream})
+		  | TERMINATED (name, writer, _) =>
+			Promise.fulfill (p, TERMINATED (name, writer, bufferMode))
+		  | CLOSED_OUT (name, _) =>
+			Promise.fulfill (p, CLOSED_OUT (name, bufferMode))
 	    end
 
 	fun getBufferMode f =
@@ -466,15 +482,14 @@ functor StreamIO(structure PrimIO: PRIM_IO
 		case state of
 		    WRITER (_, _, _, bufferMode) =>
 			(Promise.fulfill (p, state); bufferMode)
-		  | TERMINATED name =>
-			(Promise.fulfill (p, state);
-			 raise IO.Io {name, function = "getBufferMode",
-				      cause = IO.ClosedStream})
+		  | (TERMINATED (_, _, bufferMode) |
+		     CLOSED_OUT (_, bufferMode)) =>
+			(Promise.fulfill (p, state); bufferMode)
 	    end
 
 (*--** if chunkSize = 1, do not allocate a buffer at all (always unbuffered) *)
 	fun mkOutstream (writer as PrimIO.WR {chunkSize, ...}, bufferMode) =
-	    ref (WRITER (PrimIO.augmentWriter writer,
+	    ref (WRITER (writer,
 			 Array.array (chunkSize, someElem),
 			 ref chunkSize, bufferMode))
 
@@ -486,13 +501,15 @@ functor StreamIO(structure PrimIO: PRIM_IO
 		case state of
 		    WRITER (writer as PrimIO.WR {name, writeArr, ...},
 			    buf, stillFree, bufferMode) =>
-			(Promise.fulfill (p, TERMINATED name);
-			 flush (buf, stillFree, blocking writeArr)
+			(flush (buf, stillFree, blocking writeArr)
 			 handle cause =>
 			     raise IO.Io
 				 {name, function = "getWriter", cause};
+			 Promise.fulfill (p, TERMINATED (name, writer, bufferMode));
 			 (writer, bufferMode))
-		  | TERMINATED name =>
+		  | TERMINATED (_, writer, bufferMode) =>
+			(Promise.fulfill (p, state); (writer, bufferMode))
+		  | CLOSED_OUT (name, _) =>
 			(Promise.fulfill (p, state);
 			 raise IO.Io {name, function = "getWriter",
 				      cause = IO.ClosedStream})
@@ -517,7 +534,7 @@ functor StreamIO(structure PrimIO: PRIM_IO
 			     (Promise.fulfill (p, state);
 			      raise IO.Io
 				  {name, function = "getPosOut", cause}))
-		  | TERMINATED name =>
+		  | (TERMINATED (name, _, _) | CLOSED_OUT (name, _)) =>
 			(Promise.fulfill (p, state);
 			 raise IO.Io {name, function = "getPosOut",
 				      cause = IO.ClosedStream})
@@ -542,7 +559,7 @@ functor StreamIO(structure PrimIO: PRIM_IO
 			      raise IO.Io
 				  {name, function = "setPosOut", cause});
 			 Promise.fulfill (p, state); f)
-		  | TERMINATED name =>
+		  | (TERMINATED (name, _, _) | CLOSED_OUT (name, _)) =>
 			(Promise.fulfill (p, state);
 			 raise IO.Io {name, function = "setPosOut",
 				      cause = IO.ClosedStream})
