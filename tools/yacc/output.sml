@@ -2,7 +2,6 @@
 structure Output =
 struct
     structure A = AbsSyn
-    structure P = PrintStruct
 
     fun cr s = s^"\n"
     fun blank i = if i<0 then "" else " "^(blank (i-1))
@@ -18,7 +17,7 @@ struct
 	    cr ("\ndatatype token = "^toString l)
 	end
 
-    (* to be done: code for parser with start symbol*)
+    (* to be done: code for parser *)
     fun parserDecToString [] = ""
       | parserDecToString ((name,ty,sr)::ds) =
 	let val prefix = case ty of
@@ -28,12 +27,39 @@ struct
 	    cr (prefix^" = fn lexer => lexer\n")
 	end
 
-    fun absSynToString (A.TokenDec l) = tokenDecToString l
-      | absSynToString (A.MLCode l) = List.foldr (fn (x,r) => x^" "^r) "" l
-      | absSynToString (A.ParserDec l) = parserDecToString l
-      | absSynToString _ = "" (* remove assocDecs, ruleDecs *)
+    fun removeRuleDecs _ [] = []
+      | removeRuleDecs true ((r as (A.RuleDec _))::l) = 
+	r ::(removeRuleDecs false l)
+      | removeRuleDecs false ((A.RuleDec _)::l) = 
+	removeRuleDecs false l
+      | removeRuleDecs first (x::l) = x::(removeRuleDecs first l)
 
-    fun toString p = 
-	List.foldr (fn (x,r) => x^" "^r) "\n" (List.map absSynToString p)
+    fun absSynToString _ (A.TokenDec l) = tokenDecToString l
+      | absSynToString _ (A.MLCode l) = List.foldr (fn (x,r) => x^" "^r) "" l
+      | absSynToString _ (A.ParserDec l) = parserDecToString l
+      | absSynToString lrTable (A.RuleDec l) =
+	"\nlocal structure Table =\nstruct\nopen LrTable\n\n"
+	^lrTable
+	^"end\nin val generatedLrTable = Table.generatedLrTable end\n\n"
+      | absSynToString _ _ = "" (* remove assocDecs *)
+
+    fun mkPrint init =
+	let val str = ref init
+	    val print = fn s => str := (!str)^s
+	in (str, print) end
+ 
+    fun output filename = 
+	let val (r,print) = mkPrint ""
+	    val p = Parse.parse filename
+	    val yaccGrammar = Translate.translate (NormalForm.toNormalForm p)
+	    val (table,_,_,_) = MakeLrTable.mkTable (yaccGrammar,true)
+	    val lrTable = (PrintStruct.makeStruct {table=table,
+						   name="generatedLrTable",
+						   print=print,
+						   verbose=false}; !r)
+	    val code = List.map (absSynToString lrTable)(removeRuleDecs true p)
+	in
+	    List.foldr (fn (x,r) => x^" "^r) "\n" code
+	end
 
 end
