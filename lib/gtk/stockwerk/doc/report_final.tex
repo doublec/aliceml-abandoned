@@ -8,6 +8,10 @@
 \usepackage{shortvrb}
 \MakeShortVerb{\§}
 
+\usepackage{graphics}
+\newcommand{\showimage}[1]{\begin{center}\includegraphics{#1.eps}\end{center}}
+%\newcommand{\showimage}[1]{\begin{picture}(100,100)\end{picture}}
+
 \begin{document}
 
 \begin{titlepage}
@@ -238,7 +242,7 @@ Garbage Collection, welche im n"achsten Abschnitt erkl"art werden.
 Abbildung \ref{EventsC} zeigt den Kontrollfluss eines in C
 geschriebenen GTK-Programms. Dabei laufen die folgenden Schritte ab:
 \begin{figure}
-\begin{picture}(100,100)\end{picture}
+\showimage{events-c}
 \caption{Ereignisbehandlung in C}
 \label{EventsC}
 \end{figure}
@@ -274,7 +278,7 @@ sichergestellt.
 
 Abbildung \ref{EventsAlice} zeigt, wie die Probleme in Alice gel"ost werden.
 \begin{figure}
-\begin{picture}(100,100)\end{picture}
+\showimage{events-alice}
 \caption{Ereignisbehandlung in Alice}
 \label{EventsAlice}
 \end{figure}
@@ -354,7 +358,7 @@ hindert.
 \subsection{Allgemeiner Aufbau der Schnittstelle}
 
 \begin{figure}
-\begin{picture}(100,100)\end{picture}
+\showimage{layout}
 \caption{Aufbau der Schnittstelle}
 \label{Layout}
 \end{figure}
@@ -369,7 +373,7 @@ und umgekehrt sorgt das Foreign Function Interface (FFI) von Alice.
 \subsection{Generator}
 
 \begin{figure}
-\begin{picture}(100,100)\end{picture}
+\showimage{generator}
 \caption{Generierungs-Phasen}
 \label{Generator}
 \end{figure}
