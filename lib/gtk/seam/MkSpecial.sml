@@ -5,7 +5,7 @@ functor MkSpecial(val space : Util.spaces) :> SPECIAL =
 
 	val includeFile =
 	    case space of
-		Util.GTK => ("NativeGtkSpecial.hh", "NativeGtkSpecialInit", 2)
+		Util.GTK => ("NativeGtkSpecial.hh", "", 0)
 	      | Util.GDK => ("NativeGdkSpecial.hh", "", 0)
 	      | Util.GNOMECANVAS => ("NativeGnomeCanvasSpecial.hh", "", 0)
 	      | _ => ("", "", 0)

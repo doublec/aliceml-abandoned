@@ -3,6 +3,7 @@ sig
     structure NativeGtkCore :
     sig
         exception TypeMismatch of string
+	val isLoaded : unit -> bool
 	
 	val init : unit -> unit
 	val eventsPending : unit -> bool

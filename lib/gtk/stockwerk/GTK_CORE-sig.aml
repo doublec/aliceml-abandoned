@@ -3,7 +3,6 @@ import structure GtkTypes from "GtkTypes"
 signature GTK_CORE =
 sig
 (**)type object = GtkTypes.object
-(**)exception TypeMismatch of string
 (**)type arg = GtkTypes.arg
 
     val NULL : object

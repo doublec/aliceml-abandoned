@@ -173,8 +173,7 @@ in
     local
 	fun MakeHandler s = fn _ => (*Inspector.inspect*) print s
 
-(*	val w = Promise.promise ()  *)
-    	val w = ref Gtk.NULL     
+	val w = Promise.promise ()  
 
 	fun updateDate(cal, _) =
 	    let
@@ -183,8 +182,7 @@ in
 		    ((Int.toString (month + 1)) ^ "/" ^
 		     (Int.toString day) ^ "/" ^ (Int.toString year))
 	    in
-(*		Gtk.windowSetTitle(Promise.future w, "Calendar: " ^ date) *)
-  		Gtk.windowSetTitle(!w, "Calendar: " ^ date)      
+		Gtk.windowSetTitle(Promise.future w, "Calendar: " ^ date)
 	    end
 
 	val child   =
@@ -202,9 +200,7 @@ in
 				       MakeHandler "Toplevel::delete")],
 		      inner=child}
     in
-(*	val _ = Promise.fulfill(w, MakeWidget widget)
-	val _ = Gtk.windowSetTitle(Promise.future w, "abcdef")*)
-  	val _ = ( w := MakeWidget widget )   
+	val _ = Promise.fulfill(w, MakeWidget widget)
     end
 
     local

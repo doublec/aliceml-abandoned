@@ -17,10 +17,6 @@ import structure GnomeCanvas  from "../GnomeCanvas"
 import structure GtkBuilder from "GtkBuilder"
 
 local
-(** warum muss erst GdkUnsafe geladen werden? **)
-    val _ = Gdk.colorNew(0,0,0) 
-    val _ = Gtk.windowNew Gtk.WINDOW_TOPLEVEL
-
     open GtkBuilder
 
     (* Create Canvas and obtain the Root Group *)

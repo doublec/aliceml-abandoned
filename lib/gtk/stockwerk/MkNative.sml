@@ -20,8 +20,7 @@ functor MkNative(structure TypeManager : TYPE_MANAGER
 		  "signature ", Util.strUpper nativeName, "_COMPONENT =\n",
 		  "sig\n",
 		  Util.indent 1, "structure ", nativeName, " :\n",
-		  Util.indent 1, "sig\n",
-		  sigIndent, "exception TypeMismatch of string\n"] ,
+		  Util.indent 1, "sig\n"] ,
 	     outro = 
 		 [Util.indent 1, "end\n",
 		  "end\n\n"]
@@ -92,16 +91,16 @@ functor MkNative(structure TypeManager : TYPE_MANAGER
 		    let
 			val i = xcinc()
 			val d = [wrIndent,inDeclare(t),"(",name,",x",i,");\n"]
-			val c = if getAliceType t <> "object" then nil else
+(*			val c = if getAliceType t <> "object" then nil else
 			        case t of
 				    POINTER t' => 
 				      [wrIndent,"CHECK_TYPE(",
 				       name,",\"",getCType(t'),"\",\"",
  	                               Util.computeWrapperName(space,funName),
 				       "\",",i,");\n"]
-				  | _ => nil
+				  | _ => nil*)
 		    in
-			d@c
+			d
 		    end
 	    end
 

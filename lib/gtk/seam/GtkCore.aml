@@ -9,7 +9,6 @@ struct
     val FALSE = NativeGtkCore.gtkFalse()
 
     type object = GtkTypes.object
-    exception TypeMismatch = GtkTypes.TypeMismatch
     type arg = GtkTypes.arg
     type callBackFunction = object * arg list -> unit
 
@@ -84,20 +83,19 @@ struct
 		     auf Objekt loswird
                    - durch die Konstruktion der event-Funktion besteht bis
 		     zum "destroy" eine (Alice-)Referenz auf das Objekt
-		   - die event-Funktion entfernt alle Alice-Referenzen, die
-                     sie kennt
+		   - die event-Funktion entfernt alle bisher registrierten
+		     Signale des Objekts aus der Tabelle und damit alle
+		     Alice-Referenzen, die sie kennt 
+		     (disconnecten macht Gtk selbst)
 		   - sind alle Alice-Referenzen weg, entfernt der finalizer
 		     auch die Gtk-Referenz
 		   - die Gtk-Hauptschleife entdeckt irgendwann, dass es keine
 		     Gtk-Referenz mehr gibt, und entfernt das Objekt komplett*)
-		val sigid = Promise.promise()
 		fun event _ =
 		    case obj of (p, _, ref ids) =>
-			( List.app removeFromSignalTable ids ;
-			  signalDisconnect(p, Promise.future sigid) )
+			  List.app removeFromSignalTable ids
 	    in
-		Promise.fulfill(sigid, 
-				doSignalConnect(p,"destroy",event,false))
+		( doSignalConnect(p,"destroy",event,true) ; () )
 	    end
 
 	fun newObject (p,refInfo,hasSignals) =
@@ -113,7 +111,6 @@ struct
 		 then () 
 	         else newObject (p,refInfo,hasSignals) ; 
              p)
-(*	fun addObject (p, _, _) = p*)
     end
 
 
@@ -140,18 +137,15 @@ struct
 		 mainLoop sTimeNew)
 	end
 
-    fun init () = 
-    let
-	val eventStream : (int * object * arg list) list = 
+    (* Init Core Module *)
+ 
+    fun init () = if NativeGtkCore.isLoaded() then () else
+	let
+	    val eventStream : (int * object * arg list) list = 
 	                                     NativeGtkCore.getEventStream()
-	val _ = NativeGtkCore.init ()
-	val _ = spawn (listener eventStream)
-	val _ = spawn (mainLoop initPoll)
-(*	val _ = print "Init called\n"
-        val _ = TextIO.flushOut TextIO.stdOut*)
-    in
-	()
-    end
-      handle _ => ()
-
+	in
+	    NativeGtkCore.init ();
+	    spawn (listener eventStream);
+	    spawn (mainLoop initPoll)
+	end
 end

@@ -5,7 +5,6 @@ import structure PangoEnums from "PangoEnums"
 signature GTK =
 sig
     type object = GtkTypes.object
-    exception TypeMismatch of string
 
 <<< "GTK_TYPES-sig.aml" >>>
 <<< "GTK_CORE-sig.aml" >>>

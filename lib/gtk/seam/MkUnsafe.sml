@@ -26,7 +26,7 @@ functor MkUnsafe(structure TypeManager : TYPE_MANAGER
 		  "signature ", Util.strUpper unsafeName, " =\n",
 		  "sig\n",
 		  "(**)", sigIndent, "type object = GtkTypes.object\n" ,
-		  "(**)", sigIndent, "exception TypeMismatch of string\n",
+(*		  "(**)", sigIndent, "exception TypeMismatch of string\n",*)
 		  "(**)", sigIndent, "type arg = GtkTypes.arg\n",
 		  sigIndent, "\n"] ,
 	      outro =
@@ -50,7 +50,6 @@ functor MkUnsafe(structure TypeManager : TYPE_MANAGER
 		 Util.strUpper unsafeName, " =\n",
 		 Util.indent 1, "struct\n",
 		 wrIndent, "type object = GtkTypes.object\n",
-		 wrIndent, "exception TypeMismatch = GtkTypes.TypeMismatch\n",
 		 wrIndent, "type arg = GtkTypes.arg\n\n",
 		 wrIndent, "open GtkEnums\n",
 		 wrIndent, "open GdkEnums\n",

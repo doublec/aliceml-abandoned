@@ -1,5 +1,11 @@
 #include "NativeUtils.hh"
 
+static word eventStream = 0;
+
+DEFINE0(NativeGtkCore_isLoaded) {
+  RETURN(BOOL_TO_WORD(eventStream != 0));
+} END
+
 DEFINE0(NativeGtkCore_init) {
   gtk_init(NULL,NULL);
   RETURN_UNIT;
@@ -67,20 +73,18 @@ DEFINE1(NativeGtkCore_deleteUnref) {
   RETURN_UNIT; 
 } END
 
-static word tail = 0;
-
 DEFINE0(NativeGtkCore_getEventStream) {
-  if (tail) {
+  /*
+  if (eventStream) {
     ConVal *conVal =
       ConVal::New(Constructor::FromWordDirect(TypeMismatchConstructor), 1);
     conVal->Init(0, String::New("stream exists")->ToWord());     
     RAISE(conVal->ToWord());
   }
-  else {
-    tail = (Future::New())->ToWord();
-    RootSet::Add(tail);
-    RETURN(tail);
-  }
+  */
+  eventStream = (Future::New())->ToWord();
+  RootSet::Add(eventStream);
+  RETURN(eventStream);
 } END
 
 ////////////////////////////////////////////////////////////////////////
@@ -378,9 +382,9 @@ word create_object(GType t, gpointer p) {
 
 void sendArgsToStream(gint connid, guint n_param_values, 
 		      const GValue *param_values) {
-  Future *oldfuture = static_cast<Future*>(Store::WordToTransient(tail));
-  tail = (Future::New())->ToWord();
-  word stream = tail;
+  Future *oldfuture =static_cast<Future*>(Store::WordToTransient(eventStream));
+  eventStream = (Future::New())->ToWord();
+  word stream = eventStream;
   word paramlist = Store::IntToWord(Types::nil);
   gpointer widget = NULL;
 
@@ -507,7 +511,9 @@ DEFINE2(NativeGtkCore_signalDisconnect) {
 //////////////////////////////////////////////////////////////////////
 
 word InitComponent() {
-  Record *record = CreateRecord(16);
+  Record *record = CreateRecord(17);
+  INIT_STRUCTURE(record, "NativeGtkCore", "isLoaded",
+		 NativeGtkCore_isLoaded, 0);
   INIT_STRUCTURE(record, "NativeGtkCore", "init", 
 		 NativeGtkCore_init, 0);
   INIT_STRUCTURE(record, "NativeGtkCore", "eventsPending", 

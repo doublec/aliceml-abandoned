@@ -7,8 +7,14 @@
 #include <libgnomecanvas/libgnomecanvas.h>
 
 
-static word wDict;
+Record *CreateRecord(int size) {
+  Record *record = Record::New(size);
+  return record;
+}
+
 /*
+static word wDict;
+
 static void AddObject(GtkObject *object) {
   static s_int key     = 0;
   WeakDictionary *dict = WeakDictionary::FromWordDirect(wDict);
@@ -19,15 +25,14 @@ static void AddObject(GtkObject *object) {
 //  wDict = WeakDictionary::New(100, new GtkFinalize());
 
 
+/*
+TYPE CHECKING HAS BEEN COMPLETELY DISABLED (SLOW; AND IS DONE BY GTK ANYWAY)
+
 static word TypeMismatchConstructor;
 
-Record *CreateRecord(int size) {
-  Record *record = Record::New(size);
   TypeMismatchConstructor =
     UniqueConstructor::New(String::New("GtkTypes.TypeMismatch"))->ToWord();
   RootSet::Add(TypeMismatchConstructor);
-  return record;
-}
 
 word createExn(void *pointer, const gchar *tname, const gchar* funname, 
 	       int argno) {
@@ -42,6 +47,7 @@ word createExn(void *pointer, const gchar *tname, const gchar* funname,
   return conVal->ToWord();
 }
 
+
 #ifdef DEBUG
 #define CHECK_TYPE(pointer, tname, funname, argno) {                         \
   if (G_IS_OBJECT(pointer) &&                                                \
@@ -49,8 +55,10 @@ word createExn(void *pointer, const gchar *tname, const gchar* funname,
       { RAISE(createExn(pointer,tname,funname,argno)); }                     \
   }
 #else
+
 #define CHECK_TYPE(pointer, tname, funname, argno) ;
 #endif
+*/
 
 /***********************************************************************/
 

@@ -3,7 +3,6 @@ import structure GdkEnums from "GdkEnums"
 signature GTK_TYPES =
 sig
 (**)type object
-(**)exception TypeMismatch of string
 
     datatype event =
 	EVENT_NOTHING

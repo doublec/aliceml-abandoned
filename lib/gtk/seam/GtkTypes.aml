@@ -4,7 +4,6 @@ import structure GdkEnums from "GdkEnums"
 structure GtkTypes :> GTK_TYPES =
 struct
     type object
-    exception TypeMismatch of string
 
     datatype event =
 	EVENT_NOTHING
