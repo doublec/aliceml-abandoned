@@ -1362,7 +1362,7 @@ functor MakeElaborationPhase(
 				  of I.SingTyp(_, vallongid) =>
 					SOME(elabVallongid_path(E,vallongid))
 				   | _ => NONE
-	    val  _            = Type.unify(t,t0)
+	    val  _            = Type.fill(t0,t)
 	    val  _            = Inf.extendVal(s, p, t, Inf.CONSTRUCTOR k, d)
 	in
 	    O.ConDec(nonInfo(i), valid', typ', k)
@@ -1488,7 +1488,7 @@ functor MakeElaborationPhase(
 	let
 	    val p = Inf.newTyp(s, Label.fromName(I.name typid))
 	    val k = elabTypKind(E, typ)
-	    val t = Type.inMu(Type.unknown k)
+	    val t = Type.unknown k
 	    val _ = elabTypid_bind(E, p, t, Type.CLOSED, typid)
 			(* Type sort is updated in elabRHSRecDec *)
 	in
@@ -1521,7 +1521,7 @@ functor MakeElaborationPhase(
 	    val (t0,p,_,typid') = elabTypid(E, typid)
 	    val (t,_,w,typ',p') = elabTypRep(E, p, fn k'=>k', typ)
 	    val  t1             = #2(Type.asAbbrev t0)
-	    val  _              = Type.unify(Type.inMu t, t1)
+	    val  _              = Type.fill(t1, Type.inMu t)
 	    val  _              = elabTypid_bind(E, p', t1, w, typid)
 				  (* Updates type sort *)
 	    val  _              = Inf.extendTyp(s, p', Type.kind t1, w, SOME t1)
@@ -1551,7 +1551,7 @@ functor MakeElaborationPhase(
 				  of I.SingTyp(_, vallongid) =>
 					SOME(elabVallongid_path(E,vallongid))
 				   | _ => NONE
-	    val  _            = Type.unify(t,t0)
+	    val  _            = Type.fill(t0,t)
 	    val  _            = Inf.extendVal(s, p, t, Inf.VALUE, d)
 	in
 	    O.ValSpec(nonInfo(i), valid', typ')
@@ -1566,7 +1566,7 @@ functor MakeElaborationPhase(
 				  of I.SingTyp(_, vallongid) =>
 					SOME(elabVallongid_path(E,vallongid))
 				   | _ => NONE
-	    val  _            = Type.unify(t,t0)
+	    val  _            = Type.fill(t0,t)
 	    val  _            = Inf.extendVal(s, p, t, Inf.CONSTRUCTOR k, d)
 	in
 	    O.ConSpec(nonInfo(i), valid', typ', k)
@@ -1657,7 +1657,7 @@ functor MakeElaborationPhase(
 	let
 	    val p = Inf.newTyp(s, Label.fromName(I.name typid))
 	    val k = elabTypKind(E, typ)
-	    val t = Type.inMu(Type.unknown k)
+	    val t = Type.unknown k
 	    val _ = elabTypid_bind(E, p, t, Type.CLOSED, typid)
 			(* Type sort is updated in elabRHSRecSpec *)
 	in
@@ -1685,7 +1685,7 @@ functor MakeElaborationPhase(
 	    val (t0,p,_,typid')   = elabTypid(E, typid)
 	    val (t,gen,w,typ',p') = elabTypRep(E, p, fn k'=>k', typ)
 	    val  t1               = #2(Type.asAbbrev t0)
-	    val  _                = Type.unify(Type.inMu t, t1)
+	    val  _                = Type.fill(t1, Type.inMu t)
 	    val  _                = elabTypid_bind(E, p', t1, w, typid)
 				  (* Updates type sort *)
 	    val  _                = Inf.extendTyp(s, p', Type.kind t1, w,
@@ -1732,7 +1732,7 @@ functor MakeElaborationPhase(
 				      else
 					  error(i, E.ValImpMismatch(a,t2,t1))
 				   end
-	    val  _            = Type.unify(t2,t0)
+	    val  _            = Type.fill(t0,t2)
 	in
 	    O.ValImp(nonInfo(i), valid', desc')
 	end
@@ -1757,7 +1757,7 @@ functor MakeElaborationPhase(
 				      else
 					  error(i, E.ValImpMismatch(a,t2,t1))
 				   end
-	    val  _            = Type.unify(t2,t0)
+	    val  _            = Type.fill(t0,t2)
 	in
 	    O.ConImp(nonInfo(i), valid', desc', k)
 	end
