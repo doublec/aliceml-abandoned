@@ -38,7 +38,7 @@ if [ "x${AUTOMAKE}" != "x" ]; then
 		patch -p1 < ../automake-${amversion}.seam.patch
 		patch -p1 < ../automake2automake-seam.patch
 		echo "### - reconfiguring the source" >&2
-		aclocal; automake; autoconf
+		libtoolize --automake && aclocal && automake && autoconf &&
 		./configure --prefix="${prefix}" &&
 		echo "### - building and installing" >&2
 		make all install
