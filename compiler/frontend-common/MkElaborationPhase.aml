@@ -143,6 +143,8 @@ struct
 
   (* Predefined types *)
 
+    val localName	= "_local"
+
     fun boolTyp E	= PervasiveType.typ_bool
     fun exnTyp E	= PervasiveType.typ_exn
 
@@ -566,7 +568,7 @@ struct
 	let
 	    val  _       = Env.insertScope E
 	    val  s       = Inf.emptySig()
-	    val  p       = Path.invent()
+	    val  p       = Path.fromString localName
 	    val  decs'   = elabDecs(E, s, SOME p, decs)
 	    val (t,exp') = elabExp(E, exp)
 	    val  _       = Env.removeScope E
@@ -1259,7 +1261,7 @@ prInf "j" j;
 
     and elabMod(E, po, I.PrimMod(i, s, inf)) =
 	let
-	    val  p       = case po of SOME p => p | NONE => Path.invent()
+	    val  p       = case po of SOME p => p | NONE => Path.fromString s
 	    val (j,inf') = elabGroundInf(E, SOME p, inf)
 	in
 	    ( j, O.PrimMod(infInfo(i,j), s, inf') )
@@ -1423,7 +1425,7 @@ prInf "j2" j2;
       | elabMod(E, po, I.LetMod(i, decs, mod)) =
 	let
 	    val  _        = Env.insertScope E
-	    val  p        = Path.invent()
+	    val  p        = Path.fromString localName
 	    val  s        = Inf.emptySig()
 	    val  decs'    = elabDecs(E, s, SOME p, decs)
 	    val  j1       = Inf.sign s
@@ -1460,7 +1462,7 @@ prInf "j" j;
 
     and elabMod'(E, mod) =
 	let
-	    val  p       = Path.invent()
+	    val  p       = Path.fromString localName
 	    val (j,mod') = elabMod(E, SOME p, mod)
 	    val  m       = if Inf.isSing j then Inf.asSing j
 			   else Inf.mod(p,j)
@@ -1611,7 +1613,7 @@ TextIO.print "\n";
       | elabInf(E, po, I.LetInf(i, decs, inf)) =
 	let
 	    val  _        = Env.insertScope E
-	    val  p        = Path.invent()
+	    val  p        = Path.fromString localName
 	    val  s        = Inf.emptySig()
 	    val  decs'    = elabDecs(E, s, SOME p, decs)
 	    val  j1       = Inf.sign s
@@ -1830,7 +1832,7 @@ prInf "j'" j';
 
       | elabDec(E, s,po,varids, I.LocalDec(i, decs)) =
 	let
-	    val p'     = Path.invent()
+	    val p'     = Path.fromString localName
 	    val s'     = Inf.emptySig()
 	    val decs'  = elabDecs(E, s', SOME p', decs)
 	    val s''    = Inf.emptySig()
