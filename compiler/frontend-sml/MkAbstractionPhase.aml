@@ -531,7 +531,7 @@ struct
       | unguardedTyVarsValBind E (RECValBind(_, valbind)) =
 	    unguardedTyVarsValBind E valbind
 
-    and unguardedTyVarsFvalBind E (FvalBind(_, match, fvalbind_opt)) =
+    and unguardedTyVarsFvalBind E (FvalBind(_, _, match, fvalbind_opt)) =
 	    unguardedTyVarsMatch E match @
 	    ?unguardedTyVarsFvalBind E fvalbind_opt
 
@@ -1713,7 +1713,7 @@ struct
 
     and trFvalBindo_lhs'(E,E',acc) =
 	fn NONE => acc
-	 | SOME(FvalBind(i, fmatch, fvalbindo)) =>
+	 | SOME(FvalBind(i, _, fmatch, fvalbindo)) =>
 	   let
 		val valid' = trFmatch_lhs (E,E') fmatch
 	   in
@@ -1796,21 +1796,21 @@ struct
 
     and trFvalBindo_rhs'(E,acc) =
 	fn NONE => acc
-	 | SOME(FvalBind(i, fmatch, fvalbindo)) =>
+	 | SOME(FvalBind(i, laz, fmatch, fvalbindo)) =>
 	   let
-		val exp' = trFmatch_rhs E fmatch
+		val exp' = trFmatch_rhs (E,laz) fmatch
 	   in
 		trFvalBindo_rhs' (E, exp'::acc) fvalbindo
 	   end
 
-    and trFmatch_rhs E (Match(i, fmrule, fmatcho)) =
+    and trFmatch_rhs (E,laz) (Match(i, fmrule, fmatcho)) =
 	   let
 		val (mat',arity) = trFmrule_rhs E fmrule
 		val  mats'       = Vector.fromList
 				     (mat' :: trFmatcho_rhs (E,arity) fmatcho)
 		val  i'          = O.infoMat mat'
 	   in
-		if arity = 1 then
+		if arity = 1 andalso laz = SANSLazy then
 		    O.FunExp(i', mats')
 		else
 		    let
@@ -1821,8 +1821,12 @@ struct
 					  valids'
 			val tupexp'  = tupexp(i', exps')
 			val caseexp' = O.CaseExp(i', tupexp', mats')
+			val exp'     = case laz
+					 of SANSLazy  => caseexp'
+					  | WITHLazy  => O.LazyExp(i', caseexp')
+					  | WITHSpawn => O.LazyExp(i', caseexp')
 		    in
-			funexp(Vector.toList valids', caseexp')
+			funexp(Vector.toList valids', exp')
 		    end
 	   end
 
