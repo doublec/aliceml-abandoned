@@ -12,7 +12,8 @@ functor MakeFrontendSML(
 	structure Phase2 =
 		  MakeTracingPhase(
 			structure Phase    =
-			    MakeAbstractionPhase(val loadSign = loadSign)
+			    MakeAbstractionPhase(val loadSign = loadSign
+						 structure Switches = Switches)
 			structure Switches = Switches
 			val name = "Abstraction"
 		  )

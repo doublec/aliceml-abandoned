@@ -75,6 +75,7 @@ of type identifiers.
 
 functor MakeAbstractionPhase(
 		val loadSign: Source.desc * Url.t -> Inf.sign
+		structure Switches : SWITCHES
 	) :> ABSTRACTION_PHASE =
   struct
 
@@ -254,8 +255,10 @@ functor MakeAbstractionPhase(
 	    val id'   = idId id
 	    val name  = toString id'
 	    val stamp = Stamp.new()
-	    val _     = if not(Option.isSome(lookup(E, id'))) then () else
+	    val _     = if !Switches.Warn.shadowing
+			andalso Option.isSome(lookup(E, id')) then
 			   warn(i, Shadowed id')
+			else ()
 	in
 	    ( O.Id(i, stamp, Name.ExId name), stamp )
 	end
