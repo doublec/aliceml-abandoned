@@ -21,6 +21,7 @@ import structure NewNode from "NewNode"
 import structure Layout from "Layout"
 import structure WindowManager from "WindowManager"
 import structure DrawNodes from "DrawNodes"
+import structure Settings from "Settings"
 import signature UNSAFE_INSPECTOR from "UNSAFE_INSPECTOR-sig"
 
 open Types MkColorTable CreateDoc
@@ -39,9 +40,9 @@ struct
 			    ; (!WindowManager.show) () )
 			end
 			    
-    fun set_width w = NewNode.max_width := w
+    fun set_width w = Settings.max_width := w
 
-    fun set_depth d = NewNode.max_depth := d
+    fun set_depth d = Settings.max_depth := d
 
     fun set_relmode b = NewNode.relmode := b
 

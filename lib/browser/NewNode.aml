@@ -25,20 +25,20 @@ import structure Helper from "Helper"
 import structure MainDictionary from "MainDictionary"
 import structure RelManDictionary from "RelManDictionary"
 import structure MkPathTable from "MkPathTable"
+import structure Settings from "Settings"
 import signature NEW_NODE from "NEW_NODE-sig"
 
 local
     open Types
     open Helper
     open MkPathTable
+    open Settings
 
 in	
     
 structure NewNode :> NEW_NODE =
 struct
     
-    val max_width = ref 15
-    val max_depth = ref 5 
     val relmode = ref false
 
     val dict = MainDictionary.empty

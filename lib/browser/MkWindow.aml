@@ -13,10 +13,17 @@
  *
  *)
 
+import structure UnsafeValue from "x-alice:/lib/system/UnsafeValue"
 import structure Gtk from "x-alice:/lib/gtk/Gtk"
 import structure MkDrawingArea from "MkDrawingArea"
-import structure UnsafeValue from "x-alice:/lib/system/UnsafeValue"
+import structure WindowHelper from "WindowHelper"
+import structure Inspector from "x-alice:/lib/tools/Inspector"
+import structure Settings from "Settings"
 import signature MK_WINDOW from "MK_WINDOW-sig"
+
+local 
+open WindowHelper
+in
 
 
 functor MkWindow () :> MK_WINDOW =
@@ -27,8 +34,8 @@ struct
     val uglyNULL = UnsafeValue.cast () : Gtk.object
 	
     val window = Gtk.windowNew Gtk.WINDOW_TOPLEVEL
-    val _  = (Gtk.windowSetTitle (window, "Alice Browser V 0.1")
-	      ; Gtk.widgetSetUsize (window, 600, 400)   )
+    val _  = (Gtk.windowSetTitle (window, "Some kind of window")
+	      ; Gtk.widgetSetUsize (window, 600, 400)    )
   
     val alive = ref true
 
@@ -37,72 +44,112 @@ struct
 
 
     val vbox = Gtk.vboxNew( 0 ,4)
-   
 
-	val bar = Gtk.menuBarNew()
-	    
-	    val item1 = Gtk.menuItemNewWithLabel("Inspector")
-	    val item2 = Gtk.menuItemNewWithLabel("Selection")
-	    val item3 = Gtk.menuItemNewWithLabel("Options")	
+    fun about _ = 
+	let
+	    val dialog = Gtk.dialogNew()
+	    val _ = Gtk.widgetSetUsize(dialog,200,150)
+	    val _ = Gtk.windowSetTitle(dialog,"information")
+	    val ok = Gtk.buttonNewWithLabel("OK")
+	    val l = Gtk.labelNew("Alice Browser \n Created by \n Bernadette Blum & Marvin Schiller")
+	    fun ddialog _ = Gtk.widgetDestroy(dialog)
+	    val _ = Gtk.signalConnect(ok,"clicked",ddialog) 
+	    val _ = Gtk.containerAdd((Gtk.dialogGetFieldActionArea(dialog)),ok)
+	    val _ = Gtk.containerAdd((Gtk.dialogGetFieldVbox(dialog)),l)
+	    val _ = Gtk.widgetShowAll(dialog)
+	in
+	    ()
+	end
+			   
+    
 
-		val _ = Gtk.menuBarAppend(bar,item1)
-		val _ = Gtk.menuBarAppend(bar,item2)
-		val _ = Gtk.menuBarAppend(bar,item3)
+    fun Preferences _ = 
+				 let	
+				     val vbox = Gtk.vboxNew(0,4)
+				     (* val ck_button = Gtk.checkButtonNewWithLabel("hello") *)
 
-		    val menu1 = Gtk.menuNew()
-		    val menu2 = Gtk.menuNew()
-		    val menu3 = Gtk.menuNew()
-
-		    val _ = Gtk.menuItemSetSubmenu(item1,menu1)
-		    val _ = Gtk.menuItemSetSubmenu(item2,menu2)
-		    val _ = Gtk.menuItemSetSubmenu(item3,menu3)
-
-		    val item11 = Gtk.menuItemNewWithLabel("about")
-		    val item12 = Gtk.menuItemNewWithLabel("close")
-		    val item13 = Gtk.menuItemNewWithLabel("iconify")
+				     val inner_vbox = Gtk.vboxNew(0,4)
+				     val inner_hbox1 = Gtk.hboxNew(0,4)
+				     val width_lab = Gtk.labelNew("Set Width Limit to...")
+				     val a = Gtk.adjustmentNew(10.0, 0.0, 100.0, 1.0, 0.0, 0.0)
+				     val width_s = Gtk.spinButtonNew(a,1.0,0)
+				     val handlerChangeWidth = 
+					 fn _ => Settings.max_width := 
+					 Gtk.spinButtonGetValueAsInt(width_s)
+				     val _ = Gtk.signalConnect(width_s,"changed",handlerChangeWidth)
+				     val _ = Gtk.boxPackStart(inner_hbox1,width_lab,0,0,0)
+				     val _ = Gtk.boxPackStart(inner_hbox1,width_s,0,0,0)
+				     val inner_hbox2 = Gtk.hboxNew(0,4)
+				     val depth_lab = Gtk.labelNew("Set Depth Limit to...")
+				     val a2 = Gtk.adjustmentNew(5.0, 0.0, 100.0, 1.0, 0.0, 0.0)	
+				     val depth_s = Gtk.spinButtonNew(a2,1.0,0)
+				     val handlerChangeDepth = 
+					 fn _ => Settings.max_depth := 
+					 Gtk.spinButtonGetValueAsInt(depth_s)
+				     val _ = Gtk.signalConnect(depth_s,"changed",handlerChangeDepth)
+				     val _ = Gtk.boxPackStart(inner_hbox2,depth_lab,0,0,0)
+				     val _ = Gtk.boxPackStart(inner_hbox2,depth_s,0,0,0)
+				     val _ = Gtk.boxPackStart(inner_vbox,inner_hbox1,0,0,0)
+				     val _ = Gtk.boxPackStart(inner_vbox,inner_hbox2,0,0,0)
+				     (* Gtk.SHADOW_IN
+				      Gtk.SHADOW_OUT
+				      Gtk.SHADOW_ETCHED_IN
+				      Gtk.SHADOW_ETCHED_OUT *)
+				     val text1 = Gtk.labelNew("Structure")
+				     val radio = createRadioButtons [RBObj("eins",[]),
+								     RBObj("zwei",[]),
+								     RBObj("drei",[]),
+								     RBObj("vier",[]),
+								     RBObj("fuenf",[])]
+				     val text3 = Gtk.labelNew("Range")  
+				     val bbox = Gtk.hbuttonBoxNew()
+				     val _ = Gtk.containerSetBorderWidth(bbox,10)
+				     val _ = Gtk.buttonBoxSetLayout(bbox,Gtk.BUTTONBOX_END)
+				     val ok_button = Gtk.buttonNewWithLabel("OK")
+				     val apply_button = Gtk.buttonNewWithLabel("APPLY")
+				     val cancel_button = Gtk.buttonNewWithLabel("CANCEL")
+				     val _ = Gtk.containerAdd(bbox,ok_button)
+				     val _ = Gtk.containerAdd(bbox,apply_button)
+				     val _ = Gtk.containerAdd(bbox,cancel_button)
+				     val n = createNotebook[("Width & Depth Limit Settings",inner_vbox),
+							    ("Appearance",radio),
+							    ("Range", text3)] 
+				     val w = Gtk.windowNew Gtk.WINDOW_TOPLEVEL
+				     val _  = Gtk.signalConnect (cancel_button, "clicked", 
+								 fn _ => Gtk.widgetDestroy(w) )
+				     val _ = Gtk.windowSetTitle (w, "Preferences")
+				     val _ = Gtk.boxPackStart(vbox,n,0,0,0)
+				     val _ = Gtk.boxPackEnd(vbox,bbox,0,0,0)
+				     val _ = Gtk.containerAdd(w,vbox)
+				     val _  = Gtk.signalConnect (w, "delete-event", 
+								 fn _ => Gtk.widgetDestroy(w) )
+				 in
+				     Gtk.widgetShowAll(w)
+				 end
 			
-		    val _  = Gtk.signalConnect (item12,"activate", Delete)
+     val bar = WindowHelper.createMenu[ WindowHelper.MenuObj{title = "Inspector",
+					items = [(LABEL "About...",
+						   [WindowHelper.Handler("activate",about)]),
+						  (SEP,[]),
+						  (LABEL "Close",
+						   [WindowHelper.Handler("activate",Delete)])]},
+				        WindowHelper.MenuObj{title = "Selection",
+					items = [(LABEL "Expand",
+						  []),
+						 (LABEL "Shrink",
+						  []),
+						 (SEP, []),
+						 (LABEL "Reinspect",
+						  [])] }   ,
+				        WindowHelper.MenuObj{title = "Options",
+					items = [(LABEL "Preferences...",
+						  [WindowHelper.Handler("activate",Preferences)])] }]  
 			
-
-		    fun about _ = let
-			
-				      val dialog = Gtk.dialogNew()
-				      val _ = Gtk.widgetSetUsize(dialog,200,150)
-				      val _ = Gtk.windowSetTitle(dialog,"important information")
-				      val ok = Gtk.buttonNewWithLabel("OK")
-				      val l = Gtk.labelNew("Alice Browser \n Created by \n Bernadette Blum & Marvin Schiller")
-					  
-				      fun ddialog _ = Gtk.widgetDestroy(dialog)
-				      val _ = Gtk.signalConnect(ok,"clicked",ddialog) 
-				      val _ = Gtk.containerAdd((Gtk.dialogGetFieldActionArea(dialog)),ok)
-				      val _ = Gtk.containerAdd((Gtk.dialogGetFieldVbox(dialog)),l)
-				      val _ = Gtk.widgetShowAll(dialog)
-				  in
-				      ()
-				  end
-		    val _  = Gtk.signalConnect (item11,"activate", about)
-			
-			
-		    val _ = Gtk.menuAppend(menu1,item11)
-		    val _ = Gtk.menuAppend(menu1,item12)
-		    val _ = Gtk.menuAppend(menu1,item13)
-			
-			
-		    val _ = Gtk.boxPackStart(vbox,bar,0,0,0)    
-	
-			
-		    val status = Gtk.statusbarNew()
-    val st_context = Gtk.statusbarGetContextId(status,"st")
-    val id = Gtk.statusbarPush(status,st_context,"Inspector Window started successfully")
-	
-	
-    val _ = Gtk.boxPackEnd(vbox,status,0,0,0)
-
-
-
-
-   
-
+     val _ = Gtk.boxPackStart(vbox,bar,0,0,0)    
+     val status = Gtk.statusbarNew()
+     val st_context = Gtk.statusbarGetContextId(status,"st")
+     val id = Gtk.statusbarPush(status,st_context,"Inspector Window started successfully")
+     val _ = Gtk.boxPackEnd(vbox,status,0,0,0)
 
     structure A = 
 	struct
@@ -114,21 +161,40 @@ struct
     structure DA  =  MkDrawingArea(structure AreaArgs = A) 	
 
     val scrolled = Gtk.scrolledWindowNew(uglyNULL,uglyNULL)
+
+ fun showButtonPressEvent args = (Inspector.inspect "button_press_event"; Inspector.inspect args)
+    fun showDragBeginEvent args = (Inspector.inspect "drag_begin"; Inspector.inspect args)
+    fun showDragEndEvent args = (Inspector.inspect "drag_end"; Inspector.inspect args)
+    fun showDragMotionEvent args = (Inspector.inspect "drag_motion"; Inspector.inspect args)
+
+
+	val _ = Gtk.signalConnect(window,"button_press_event",showButtonPressEvent)
+	val _ = Gtk.signalConnect(window,"drag_begin",showDragBeginEvent)
+       val _ = Gtk.signalConnect (window,"drag_end",showDragEndEvent) 
+       val _ = Gtk.signalConnect (window,"drag_motion",showDragMotionEvent) 
+
     val _ = Gtk.scrolledWindowSetPolicy(scrolled,Gtk.POLICY_ALWAYS,Gtk.POLICY_ALWAYS)
 	
     val _ = Gtk.boxPackStart(vbox,scrolled,Gtk.EXPAND,Gtk.FILL,0) 
 
     val _ = Gtk.scrolledWindowAddWithViewport(scrolled,DA.canvas)
 	
+	
     val _ = Gtk.containerAdd(window,vbox)
 	
 
     val canvas = DA.canvas
+
+   
+
     val canvasroot = DA.root
 
 
     fun show() = if !alive then Gtk.widgetShowAll(window) else ()
+
 	
 end
+
+end (* Window Helper End *)
 
 
