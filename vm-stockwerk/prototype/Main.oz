@@ -32,6 +32,7 @@ define
    end
 
    case Args.1 of RootUrl|Rest then
+      {Property.put 'stockwerk.rootUrl' RootUrl}
       {Property.put 'stockwerk.args' Rest}
       case {BootLinker.link Args.booturl} of tuple(Closure) then
 	 {Scheduler.object newThread(closure: Closure
