@@ -2,6 +2,8 @@
 
 import
 
+__prebound Prebound0
+
 type unit = {}
 datatype bool = true | false
 type int
@@ -9,9 +11,9 @@ type word
 type real
 type string
 type char
-datatype 'a list = :: of 'a * 'a list | nil
-datatype 'a ref = ref of 'a
-datatype exn
+datatype list = datatype Prebound0.list
+datatype ref = datatype Prebound0.ref
+datatype exn = datatype Prebound0.exn
 
 exception Match
 exception Bind
