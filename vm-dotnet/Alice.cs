@@ -2145,6 +2145,15 @@ namespace Alice {
 		return StaticApply(a);
 	    }
 	}
+	public class print : Procedure {
+	    public static Object StaticApply(Object a) {
+		Console.WriteLine((System.String) CommonOp.Sync(a));
+		return Prebound.unit;
+	    }
+	    public override Object Apply(Object a) {
+		return StaticApply(a);
+	    }
+	}
     }
     public class CommandLine {
 	public class name : Procedure {
@@ -2412,6 +2421,7 @@ namespace Alice {
 	    public static Object output1   = new Alice.TextIO.output1();
 	    public static Object flushOut  = new Alice.TextIO.flushOut();
 	    public static Object closeOut  = new Alice.TextIO.closeOut();
+	    public static Object print     = new Alice.TextIO.print();
 	}
 	public class Unsafe {
 	    public class Array {
