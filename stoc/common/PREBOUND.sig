@@ -19,6 +19,7 @@ signature PREBOUND =
     val stamp_char :	stamp
     val stamp_list :	stamp
     val stamp_vec :	stamp
+    val stamp_tref :	stamp
     val stamp_exn :	stamp
 
   end
