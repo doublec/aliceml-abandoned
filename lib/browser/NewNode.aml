@@ -12,7 +12,7 @@
  *   $Revision$
  *
  *)
-
+import structure TextIO from "x-alice:/lib/system/TextIO"
 import structure Gdk           from "x-alice:/lib/gtk/Gdk"
 import structure Gtk           from "x-alice:/lib/gtk/Gtk"
 import structure GtkCanvas           from "x-alice:/lib/gtk/GtkCanvas"
@@ -62,6 +62,7 @@ struct
       | RelRefNode(r) => createGroupItem(#group(r),0.0,0.0) 
       | Empty        => let 
 			    val _ = WindowManager.new()
+			    val _ = TextIO.print(" Creating Group with EMpty Parent")
 			in
 			    createGroupItem(!WindowManager.canvasroot,0.0,0.0)
 			end
@@ -120,7 +121,7 @@ struct
 			 end     
 		    | SOME n => let val rep = ( case n of 
 					        RelNode(rr) => #rep(rr)
-					      | _ => "")
+					      | _ => "_")
 				    val str = iterTake rep	
 				    val m = incrCounter n 
 				    val node = 
@@ -303,7 +304,7 @@ struct
 				      then ("(",")")
 				   else ("{","}")
 			       end
-			       handle Type.Type => ("","")
+			       handle Type.Type => ("_","_")
 	    val (lbraNode,rbraNode) = (createSimple (INTERPUNCT,upperConcat,
 						     1,d,lbra,BRACK_COLOR,
 						     setGroup),
@@ -385,8 +386,11 @@ struct
 				       LABEL_COLOR,setGroup)
 	    val eq_node = createSimple (INTERPUNCT,concat,1,d," = ",
 					EQU_COLOR,setGroup)
-	    val sep_node = createSimple (INTERPUNCT,concat,3,d,", ",
-					 SEP_COLOR,setGroup)
+	    val sep_node = if last 
+			       then Empty
+			   else createSimple (INTERPUNCT,
+					      concat,3,d,", ",
+					      SEP_COLOR,setGroup)
 	    val node = createGraph (va,t,concat,2,d+1)
 	    val concat_kids = getKids(concat)
 	in
@@ -403,11 +407,15 @@ struct
 	let 
 	    val last = if i = l-1 then true else false
 	    val c_length = if last then 1 else 2
-	    val concat = createConcat (INTERPUNCT,p,i,d,
+	    val concat = if last then Empty
+			 else createConcat (INTERPUNCT,p,i,d,
 				       Array.array(c_length,Empty),
 				       ~1,~1,setGroup)
-	    val sep_node = createSimple (INTERPUNCT,concat,1,d,", ",
-					 SEP_COLOR,setGroup)
+	    val sep_node = if last 
+			       then Empty 
+				   else createSimple (INTERPUNCT,
+						      concat,1,d,", ",
+						      SEP_COLOR,setGroup)
 	    val node = createGraph (va,t,if last then p else concat,
 				    if last then i else 0,d+1)
 	    val concat_kids = getKids(concat)
