@@ -94,10 +94,11 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	    let
 		val label = newLabel ()
 	    in
-		emit Dup; emit (Isinst Alice.FutureTy);
+		emit Dup; emit (Isinst Alice.TransientTy);
 		emit (B (FALSE, label));
-		emit (Castclass Alice.FutureTy);
-		emit (Callvirt (Alice.Future, "Await", nil, System.ObjectTy));
+		emit (Castclass Alice.TransientTy);
+		emit (Callvirt (Alice.Transient, "Await",
+				nil, System.ObjectTy));
 		emit (Label label)
 	    end
 
@@ -590,8 +591,13 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	  | genBody nil = ()
 
 	fun translate () (desc, component as (imports, (body, exportSign))) =
-	    (init ["Test"];
-	     Assert.assert (List.length imports = 0);   (*--** implement *)
+	    (init nil;
+	     List.app (fn (id, _, url) =>
+		       (emit (Ldarg 0); emit (Castclass Alice.KomponistTy);
+			emit (Ldstr (Url.toString url));
+			emit (Call (true, Alice.Komponist, "Import",
+				    [System.StringTy], System.ObjectTy));
+			declareLocal id)) imports;
 	     genBody body;
 	     (close(), exportSign))
     end

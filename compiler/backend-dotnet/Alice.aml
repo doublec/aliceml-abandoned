@@ -34,8 +34,8 @@ structure Alice =
 	val Procedure9Ty = IL.ClassTy Procedure9
 	val Cell = ["Alice", "Values", "Cell"]
 	val CellTy = IL.ClassTy Cell
-	val Future = ["Alice", "Values", "Future"]
-	val FutureTy = IL.ClassTy Future
+	val Transient = ["Alice", "Values", "Transient"]
+	val TransientTy = IL.ClassTy Transient
 	val TagVal = ["Alice", "Values", "TagVal"]
 	val TagValTy = IL.ClassTy TagVal
 	val ConVal = ["Alice", "Values", "ConVal"]
@@ -48,4 +48,6 @@ structure Alice =
 	val ConConstructorTy = IL.ClassTy ConConstructor
 	val Selector = ["Alice", "Values", "Selector"]
 	val SelectorTy = IL.ClassTy Selector
+	val Komponist = ["Alice", "Komponist"]
+	val KomponistTy = IL.ClassTy Komponist
     end
