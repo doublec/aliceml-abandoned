@@ -12,17 +12,20 @@ Extended Basis Library:
 -- raised exceptions should always be evaluated
    (Thread.raiseIn, Hole.fail, Raise instruction)
 -- yield should always operate on the current thread
+
+Alice Library:
 -- document that pickling of a stateful data structure requires
    it to be locked until the pickling operation is finished (else
    concurrent modifications can cause an inconsistent data structure
    to be made persistent)
-
-Library:
 -- add to signature PICKLE:
       val pickleToFun: (Word8Vector.vector -> unit) -> package -> unit
       val unpickleFromFun: (unit -> Word8Vector.vector) -> package
    The Mozart backend can implement the first one by only calling the
    function once.
+
+Alice Compiler:
+-- bug in type inference for open records: see linker/Link.aml
 
 Mozart:
 -- Ozcar-Bug: wenn man ein 'unleash' macht und dabei eine
