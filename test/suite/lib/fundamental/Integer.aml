@@ -64,7 +64,7 @@ struct
 
     fun testArithmetic () = 
 	let
-	    fun tS (x1, x2) = if x2 = 0 then x1 < 0
+	    fun tS (x1, x2) = if x2 = 0 then Int.sameSign (x1, ~1)
 			      else x1 div x2 = 0
 	    fun tE (x1, 0) = x1 = 0
 	      | tE (x1, x2) = (x1 div x2 = 1 orelse x1 div x2 = ~1)
@@ -96,14 +96,15 @@ struct
 	let
 	    (* very ugly... TODO: some more faster way *)
 	    fun t (x, y, r, i) = if i > Int.abs(x) then false
-				 else if x = y * i + r then true 
+				 else if x = y * i + r andalso 
+					 Int.sameSign (y, r) then true 
 				     else t (x, y, r, i + 1)
 	    fun getInt i = (Gen.int i) div 1000
 	    fun h i = let val a = Gen.int i
 			  val b = Gen.int i
-			  val b = if b <> 0 then b else 1
 		      in
 			  t (a, b, a mod b, ~ (Int.abs a))
+			    handle Div => b = 0
 		      end
 	in
 	    Gen.try 5 getInt (Test.test h)
@@ -190,14 +191,15 @@ struct
 	let
 	    (* very ugly... TODO: some more faster way *)
 	    fun t (x, y, r, i) = if y * i > Int.abs(x) then false
-				 else if x = y * i + r then true 
+				 else if x = y * i + r andalso 
+					 Int.sameSign (x, r) then true 
 				     else t (x, y, r, i + 1)
 	    fun getInt i = (Gen.int i) div 1000
 	    fun h i = let val a = Gen.int i
 			  val b = Gen.int i
-			  val b = if b <> 0 then b else 1
 		      in
-			  t (a, b, Int.rem(a, b), ~ (Int.abs a))
+			  t (a, b, Int.rem(a, b), ~ (Int.abs a)) 
+			    handle Div => b = 0
 		      end
 	in
 	    Gen.try 5 getInt (Test.test h)
@@ -232,8 +234,7 @@ struct
 
     fun testDiv () =
 	let
-	    fun t (a, b) = if b <> 0 then a = b * (a div b) + (a mod b)
-			   else true
+	    fun t (a, b) = a = b * (a div b) + (a mod b) handle Div => b = 0
 	in
 	    Gen.try 10 (Gen.pair (Gen.int, Gen.int)) (Test.test t)
 	end
@@ -261,6 +262,16 @@ struct
 	    Gen.try 10000 (Gen.pair (Gen.int, Gen.int)) (Test.test t'')
 	end
 
+    fun testNeg () =
+	let
+	    fun t x = ~x = x - (2 * x) handle Overflow => x = valOf Int.minInt
+	in
+	    Gen.try 1000 Gen.int (Test.test t);
+	    Test.test t (valOf Int.maxInt);
+	    Test.test t (valOf Int.minInt);
+	    Test.test t 0
+	end
+
 
     val suite = ("Integer", [("hash", testHash),
 			     ("minInt", testMinInt),
@@ -270,6 +281,7 @@ struct
 			     ("arithmetic", testArithmetic),
 			     ("compare", testCompare),
 			     ("mod", testMod),
+			     ("~", testNeg),
 			     ("sign", testSign),
 			     ("toFromLarge", testToFromLarge),
 			     ("sameSign", testSameSign),
@@ -284,3 +296,4 @@ struct
 			     ("fmt", testFmt),
 			     ("max", testMax)])
 end
+
