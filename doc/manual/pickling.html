@@ -6,52 +6,51 @@
 
 <P>A <EM>pickle</EM> is a serialized and closed representation of a value,
 stored in a file. Pickles can be used to exchange arbitrary data structures
-between processes. Pickles may contain higher-order values (i.e. functions) as
-well as complete module (e.g. abstract type implementations). Pickling is
-type-safe: a pickle in fact is a <A href="packages.html">package</A>, a pair of
-a value and its type. Types are checked during unpickling.</P>
+between processes. Pickles may contain higher-order values (i.e., functions)
+as well as complete modules (e.g., implementations of abstract types).
+Pickling is type-safe: a pickle is in fact a serialized representation
+of a <A href="packages.html">package</A>, a pair of a value and its type.
+Types are checked at unpickling time.</P>
 
 
 <?php section("semantics", "semantics") ?>
 
-<P>Most values can be pickled. There are some semantic implications
-and necessary restrictions, though. We distinguish three sorts of values:</P>
+<P>When a value is pickled, this comprehends the transitive closure of all
+objects referenced by that value. We distinguish three sorts of values:</P>
 
 <UL>
 <LI> <I>Functional</I>
-     values do not contain any stateful objects. They can be
-     freely pickled and unpickled. After putting a functional object in
-     a pickle and reextracting it it is indistinguishable from the original
-     object. </LI>
+     values do not contain any mutable objects.  Functional values can
+     be pickled. Unpickling a functional value results in an object
+     indistinguishable from the original object. </LI>
 
 <LI> <I>Stateful</I>
-     values do contain mutable objects like references or arrays. Stateful
-     data can also be pickled freely. However, pickling of stateful objects
-     has a copying semantics: each time such an object is extracted from
-     a pickle a fresh copy of the object is created. Sharing between
-     stateful object is maintained inside a pickle, though. </LI>
+     values do contain mutable objects like references or arrays.  Stateful
+     values can also be pickled. In contrast to functional values, unpickling
+     a stateful value always returns a fresh copy of state the object was
+     in at pickling time.  Sharing between stateful objects within a single
+     pickle is maintained. </LI>
 
 <LI> <I>Sited</I>
-     objects are connected to a parent process. They refer to
-     resources that are not available outside the process. Examples
-     are input streams of open files or first-class threads.
-     Sited objects may not be pickled.
-     Any attempt to pickle values containing sited objects will result
-     in a runtime exception. </LI>
+     values contain resources.  A resource is an object which cannot be
+     meaningfully interpreted outside of the process it was created in.
+     Sited values may not be pickled: any attempt to pickle a sited value
+     results in a runtime exception. </LI>
 </UL>
 
-<P>Higher-order values (i.e. function closures) may contain stateful or sited
-data without showing in their type. Moreover, functions that create sited
-objects are also sited. Special care has to be taken to avoid runtime errors
-from attempts of pickling such objects. This is particularly important when
-pickling modules.</P>
+<P>Special care must be taken to avoid runtime errors from attempts to
+pickle sited values.  Resources may be operating system handles (for example,
+open files) or computational resources (for example, first-class threads).
+Higher-order values may be sited without this being visible in their
+type, for instance, when a function closure references a sited object.
+Moreover, all functions that create resources are themselves sited.</P>
 
-<P><A href="futures.html">Futures</A> are not pickled. Instead, the pickling
-operation will <A href="futures.html#request">request</A> all futures that
-contained in the closure of the value to be pickled.</P>
+<P><A href="futures.html">Futures</A> are never pickled. Instead, pickling
+<A href="futures.html#request">requests</A> all futures in the value to be
+pickled.</P>
 
 
-<?php section("export", "exporting and importing modules") ?>
+<?php section("export", "persistent modules") ?>
 
 <P>Pickling is available through the structure <A
 href="library/pickle.html"><TT>Pickle</TT></A>. The canonical operation to
@@ -66,14 +65,19 @@ follows:</P>
 <PRE class=code>
 Pickle.save("Int." ^ Pickle.extension, pack Int :> INTEGER)</PRE>
 
-<P>The package will be written into a file with the specified name. The string
-<TT>Pickle.extension</TT> gives the file extension usually used for pickles on
-the target platform. If the module contained references to any sited
-objects, an <A href="library/io.html"><TT>IO.Io</TT></A> exception would be
-raised, with <TT>Sited</TT> indicating the cause of the
+<P>The package will be serialized to a file with the specified name. The string
+<TT>Pickle.extension</TT> gives the file extension idiomatically used for
+pickles on the current platform. If the module contained references to any
+sited objects, an <A href="library/io.html"><TT>IO.Io</TT></A> exception
+would be raised, with <TT>Sited</TT> indicating the cause of the
 failure (<TT>Int</TT> is not sited, however).</P>
 
-<P>The inverse operation is unpickling. For example:</P>
+<P>The inverse operation is unpickling, available through the operation</P>
+
+<PRE class=code>
+load : string -> package</PRE>
+
+<P>For example:</P>
 
 <PRE class=code>
 structure Int' = unpack Pickle.load("Int." ^ Pickle.extension) : INTEGER</PRE>
