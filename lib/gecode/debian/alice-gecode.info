@@ -8,5 +8,6 @@ License: BSD
 Description: Alice Language Layer, Gecode binding
 Source-MD5: INSERTMD5HERE
 Depends: alice (= %v-%r)
-CompileScript: make compiledll
+BuildDepends: gecode
+CompileScript: make compiledll GECODEDIR=%p
 InstallScript: make installdll INSTALLDIR=%i/share/alice/lib/gecode

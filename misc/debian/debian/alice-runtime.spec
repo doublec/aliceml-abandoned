@@ -8,7 +8,7 @@ Source: %{name}-%{version}.tar.gz
 Vendor: The Alice Project
 URL: http://www.ps.uni-sb.de/alice/
 Packager: Guido Tack <tack@ps.uni-sb.de>
-Requires: alice >= 1.0.1
+Requires: alice >= 1.0.1, alice-gtk >= 1.0.1, alice-gecode >= 1.0.1
 BuildArchitectures: noarch
 BuildRoot: %{_tmppath}/%{name}-%{version}
 
@@ -42,8 +42,7 @@ rm -rf %{buildroot}
 %files
 %defattr(-, root, root)
 %doc AUTHORS ChangeLog COPYING NEWS README
-%{_bindir}/*
-%{_datadir}/%{name}
+%{_datadir}/alice
 
 %changelog
 * Wed Apr 14 2004 Guido Tack <tack@ps.uni-sb.de>
