@@ -120,7 +120,7 @@ public:
     return String::FromWordDirect(GetArg(NAME_POS));
   }
   u_int GetChunkSize();
-  void Close();
+  result Close();
 
   bool SupportsDoBlock();
   result DoBlock();
@@ -131,13 +131,13 @@ public:
   bool SupportsEndPos();
   result EndPos(u_int &out);
   result GetNumberOfAvailableBytes(int &out);
-  result Read(const char *buf, int n, int &out);
-  result Write(const char *buf, int n, int &out);
+  result Read(u_char *buf, int n, int &out);
+  result Write(const u_char *buf, int n, int &out);
   bool SupportsNonblocking();
   result CanInput(bool &out);
   result CanOutput(bool &out);
-  result ReadNonblocking(const char *buf, int n, int &out);
-  result WriteNonblocking(const char *buf, int n, int &out);
+  result ReadNonblocking(u_char *buf, int n, int &out);
+  result WriteNonblocking(const u_char *buf, int n, int &out);
 };
 
 #endif

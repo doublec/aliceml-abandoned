@@ -189,7 +189,7 @@ DWORD __stdcall IOForwarder::WriterThread(void *p) {
 // IODescFinalizationSet Implementation
 //
 void IODescFinalizationSet::Finalize(word value) {
-  IODesc::FromWordDirect(value)->Close();
+  IODesc::FromWordDirect(value)->Close(); // ignore result
 }
 
 //
@@ -314,24 +314,26 @@ u_int IODesc::GetChunkSize() {
   }
 }
 
-void IODesc::Close() {
+IODesc::result IODesc::Close() {
   u_int flags = GetFlags();
+  result res = result_ok;
   switch (flags & TYPE_MASK) {
   case TYPE_CLOSED: break;
   case TYPE_FD:
-    closesocket(GetFD());
+    if (closesocket(GetFD())) res = result_socket_error;
     break;
 #if defined(__MINGW32__) || defined(_MSC_VER)
   case TYPE_HANDLE:
-    CloseHandle(GetHandle());
+    if (CloseHandle(GetHandle()) == FALSE) res = result_system_error;
     break;
   case TYPE_FORWARDED:
-    closesocket(GetFD());
-    CloseHandle(GetHandle());
+    if (closesocket(GetFD())) res = result_socket_error;
+    if (CloseHandle(GetHandle()) == FALSE) res = result_system_error;
     break;
 #endif
   }
   InitArg(FLAGS_POS, (flags & ~TYPE_MASK) | TYPE_CLOSED);
+  return res;
 }
 
 bool IODesc::SupportsDoBlock() {
@@ -393,8 +395,7 @@ bool IODesc::IsFile() {
     {
       struct stat info;
       Interruptible(res, fstat(GetFD(), &info));
-      if (res) return result_system_error;
-      return S_ISREG(info.st_mode);
+      return !res && S_ISREG(info.st_mode);
     }
 #endif
   default:
@@ -515,7 +516,8 @@ IODesc::result IODesc::GetNumberOfAvailableBytes(int &out) {
   }
 }
 
-IODesc::result IODesc::Read(const char *buf, int n, int &out) {
+IODesc::result IODesc::Read(u_char *buf, int n, int &out) {
+  char *sys_buf = (char *) buf;
   Assert(n > 0);
   switch (GetType()) {
   case TYPE_CLOSED:
@@ -526,7 +528,7 @@ IODesc::result IODesc::Read(const char *buf, int n, int &out) {
     {
       int sock = GetFD();
     retry:
-      out = recv(sock, const_cast<char *>(buf), n, 0);
+      out = recv(sock, sys_buf, n, 0);
       if (out == SOCKET_ERROR)
 	if (WSAGetLastError() == WSAEWOULDBLOCK) {
 	  Future *future = IOHandler::WaitReadable(sock);
@@ -541,7 +543,7 @@ IODesc::result IODesc::Read(const char *buf, int n, int &out) {
   case TYPE_HANDLE:
     {
       DWORD nRead;
-      if (ReadFile(GetHandle(), const_cast<char *>(buf) , n, &nRead, NULL))
+      if (ReadFile(GetHandle(), sys_buf, n, &nRead, NULL) == FALSE)
 	return result_system_error;
       out = nRead;
       return result_ok;
@@ -551,7 +553,7 @@ IODesc::result IODesc::Read(const char *buf, int n, int &out) {
     {
       int fd = GetFD();
     retry:
-      Interruptible(res, read(fd, const_cast<char *>(buf), n));
+      Interruptible(res, read(fd, sys_buf, n));
       out = res;
       if (res == -1)
 	if (errno == EWOULDBLOCK) {
@@ -570,7 +572,8 @@ IODesc::result IODesc::Read(const char *buf, int n, int &out) {
   }
 }
 
-IODesc::result IODesc::Write(const char *buf, int n, int &out) {
+IODesc::result IODesc::Write(const u_char *buf, int n, int &out) {
+  const char *sys_buf = (const char *) buf;
   Assert(n > 0);
   switch (GetType()) {
   case TYPE_CLOSED:
@@ -581,7 +584,7 @@ IODesc::result IODesc::Write(const char *buf, int n, int &out) {
     {
       int sock = GetFD();
     retry:
-      out = send(sock, buf, n, 0);
+      out = send(sock, sys_buf, n, 0);
       if (out == SOCKET_ERROR)
 	if (WSAGetLastError() == WSAEWOULDBLOCK) {
 	  Future *future = IOHandler::WaitWritable(sock);
@@ -596,7 +599,7 @@ IODesc::result IODesc::Write(const char *buf, int n, int &out) {
   case TYPE_HANDLE:
     {
       DWORD nWritten;
-      if (WriteFile(GetHandle(), buf, n, &nWritten, NULL))
+      if (WriteFile(GetHandle(), sys_buf, n, &nWritten, NULL) == FALSE)
 	return result_system_error;
       out = nWritten;
       return result_ok;
@@ -606,7 +609,7 @@ IODesc::result IODesc::Write(const char *buf, int n, int &out) {
     {
       int fd = GetFD();
     retry:
-      Interruptible(res, write(fd, buf, n));
+      Interruptible(res, write(fd, sys_buf, n));
       out = res;
       if (res == -1)
 	if (errno == EWOULDBLOCK) {
@@ -686,7 +689,8 @@ IODesc::result IODesc::CanOutput(bool &out) {
   }
 }
 
-IODesc::result IODesc::ReadNonblocking(const char *buf, int n, int &out) {
+IODesc::result IODesc::ReadNonblocking(u_char *buf, int n, int &out) {
+  char *sys_buf = (char *) buf;
   Assert(n > 0);
   switch (GetType()) {
   case TYPE_CLOSED:
@@ -694,7 +698,7 @@ IODesc::result IODesc::ReadNonblocking(const char *buf, int n, int &out) {
 #if defined(__MINGW32__) || defined(_MSC_VER)
   case TYPE_FD:
   case TYPE_FORWARDED:
-    out = recv(GetFD(), const_cast<char *>(buf), n, 0);
+    out = recv(GetFD(), sys_buf, n, 0);
     return out == SOCKET_ERROR?
       (WSAGetLastError() == WSAEWOULDBLOCK?
        result_would_block: result_socket_error): result_ok;
@@ -702,7 +706,7 @@ IODesc::result IODesc::ReadNonblocking(const char *buf, int n, int &out) {
     Error("non-blocking reads not supported for files");
 #else
   case TYPE_FD:
-    Interruptible(res, read(GetFD(), const_cast<char *>(buf), n));
+    Interruptible(res, read(GetFD(), sys_buf, n));
     out = res;
     return res == -1?
       (errno == EWOULDBLOCK?
@@ -713,7 +717,8 @@ IODesc::result IODesc::ReadNonblocking(const char *buf, int n, int &out) {
   }
 }
 
-IODesc::result IODesc::WriteNonblocking(const char *buf, int n, int &out) {
+IODesc::result IODesc::WriteNonblocking(const u_char *buf, int n, int &out) {
+  const char *sys_buf = (const char *) buf;
   Assert(n > 0);
   switch (GetType()) {
   case TYPE_CLOSED:
@@ -721,7 +726,7 @@ IODesc::result IODesc::WriteNonblocking(const char *buf, int n, int &out) {
 #if defined(__MINGW32__) || defined(_MSC_VER)
   case TYPE_FD:
   case TYPE_FORWARDED:
-    out = send(GetFD(), const_cast<char *>(buf), n, 0);
+    out = send(GetFD(), sys_buf, n, 0);
     return out == SOCKET_ERROR?
       (WSAGetLastError() == WSAEWOULDBLOCK?
        result_would_block: result_socket_error): result_ok;
@@ -729,7 +734,7 @@ IODesc::result IODesc::WriteNonblocking(const char *buf, int n, int &out) {
     Error("non-blocking writes not supported for files");
 #else
   case TYPE_FD:
-    Interruptible(res, write(GetFD(), const_cast<char *>(buf), n));
+    Interruptible(res, write(GetFD(), sys_buf, n));
     out = res;
     return res == -1?
       (errno == EWOULDBLOCK?
