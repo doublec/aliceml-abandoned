@@ -253,7 +253,7 @@ structure CodeGenPhase: CODE_GEN_PHASE =
 	  | translateStm (RaiseStm (_, id), env) =
 	    O.Raise (lookup (env, id))
 	  | translateStm (ReraiseStm (_, id), env) =
-	    O.Reraise (lookup (env, id)) (*--** wrong *)
+	    O.Reraise (lookup (env, id))
 	  | translateStm (TryStm (_, tryBody, idDef1, idDef2, handleBody),
 			  env) =
 	    O.Try (translateBody (tryBody, env),
