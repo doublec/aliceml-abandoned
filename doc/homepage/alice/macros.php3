@@ -56,7 +56,7 @@
 	$bar .= "_";
     };
 
-    echo("<H2><A name=" . $tag . ">" . $name . " " . $bar .
+    echo("<H2><A name=" . $tag . ">" . $name . "&nbsp;" . $bar .
 	 "</A></H2> <BR><BR>");
   };
 ?>
