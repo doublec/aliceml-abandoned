@@ -37,7 +37,7 @@ define
 	 {Scheduler.object newThread(closure: Closure
 				     args: arg({ByteString.make RootUrl}))}
 	 {Scheduler.object run()}
-	 {Application.exit 1}
+	 {Application.exit 0}
       end
    else
       {System.showError
