@@ -46,13 +46,14 @@ functor MkBackendDotNet(structure Switches: SWITCHES): BACKEND_SPECIFIC =
 				   structure I = FlatGrammar
 				   structure O = Target
 
-				   fun translate () x =
+				   fun translate x =
 				       let
-					   val program =
-					       CodeGenPhase.translate () x
+					   val (context, program) =
+					       CodeGenPhase.translate x
 				       in
-					   Target.FOREIGN {save = save program,
-							   inf = inf program}
+					   (context,
+					    Target.FOREIGN {save = save program,
+							    inf = inf program})
 				       end
 			       end
 			   structure Switches = Switches
