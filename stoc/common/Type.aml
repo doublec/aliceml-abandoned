@@ -61,6 +61,12 @@ impossible to have non-uniform datatypes as well as arbitrary recursive types.
 It is also unclear to me whether some sort of hash-consing can be applied to
 recursive types or even recursive type functions.
 
+On Type Abbreviations:
+
+We try to maintain type abbreviations to generate more user friendly output.
+This is managed through a special node ABBREV, which refers to the original
+type term as well as to the reduced/substituted one.
+
 *******************************************************************************)
 
 structure TypePrivate =
@@ -76,20 +82,21 @@ structure TypePrivate =
     type con  = kind * sort * path			(* [chi,c] *)
 
     datatype typ' =					(* [tau',t'] *)
-	  HOLE  of kind * int	(* variable for inference *)
-	| LINK  of typ		(* forward (needed for unification) *)
-	| MARK  of typ'		(* for traversal *)
-	| FUN   of typ * typ	(* arrow type *)
-	| TUPLE of typ list	(* tuple *)
-	| PROD  of row		(* record *)
-	| SUM   of row		(* sum type (datatype) *)
-	| VAR   of kind * int	(* bound variable or skolem types *)
-	| CON   of con		(* constructor (of arbitrary kind) *)
-	| ALL   of var * typ	(* universal quantification *)
-	| EXIST of var * typ	(* existential quantification *)
+	  HOLE   of kind * int	(* variable for inference *)
+	| LINK   of typ		(* forward (needed for unification) *)
+	| MARK   of typ'	(* for traversal *)
+	| FUN    of typ * typ	(* arrow type *)
+	| TUPLE  of typ list	(* tuple *)
+	| PROD   of row		(* record *)
+	| SUM    of row		(* sum type (datatype) *)
+	| VAR    of kind * int	(* bound variable or skolem types *)
+	| CON    of con		(* constructor (of arbitrary kind) *)
+	| ALL    of var * typ	(* universal quantification *)
+	| EXIST  of var * typ	(* existential quantification *)
 	| LAMBDA of var * typ	(* abstraction (type function) *)
-	| APPLY of typ * typ	(* application *)
-	| MU    of typ		(* recursive type barrier *)
+	| APPLY  of typ * typ	(* application *)
+	| MU     of typ		(* recursive type barrier *)
+	| ABBREV of typ * typ	(* abbreviations *)
 
     and row =						(* [rho,r] *)
 	  NIL
@@ -128,16 +135,17 @@ structure TypePrivate =
       | pr(LINK _)	= "LINK"
       | pr(MARK _)	= "MARK"
       | pr(HOLE _)	= "HOLE"
+      | pr(ABBREV _)	= "ABBREV"
 
 
   (* Level management *)
 
-    val globalLevel = 0
-    val level       = ref(globalLevel+1)
+    val globalLevel	= 0
+    val level		= ref(globalLevel+1)
 
-    fun enterLevel() = level := !level+1
-    fun exitLevel()  = level := !level-1
-    fun resetLevel() = level := 1
+    fun enterLevel()	= level := !level+1
+    fun exitLevel()	= level := !level-1
+    fun resetLevel()	= level := 1
 
 
   (* Follow a path of links (performing path compression on the fly) *)
@@ -163,6 +171,7 @@ structure TypePrivate =
     fun kind(ref t')		= kind' t'
 
     and kind'(LINK t | MU t)	= kind t
+      | kind'(ABBREV(_,t))	= kind t
       | kind'(HOLE(k,_))	= k
       | kind'(VAR(k,_))		= k
       | kind'(CON(k,_,_))	= k
@@ -185,7 +194,8 @@ structure TypePrivate =
 	      | EXIST(_,t)
 	      | LAMBDA(_,t)), f)	= f t
       | app1'(( FUN(t1,t2)
-	      | APPLY(t1,t2)), f)	= ( f t1 ; f t2 )
+	      | APPLY(t1,t2)
+	      | ABBREV(t1,t2)), f)	= ( f t1 ; f t2 )
       | app1'(( TUPLE ts ), f)		= List.app f ts
       | app1'(( PROD r
 	      | SUM r ), f)		= appRow(r,f)
@@ -205,7 +215,8 @@ structure TypePrivate =
 		| EXIST(_,t)
 		| LAMBDA(_,t)), f, a)	= f(t,a)
       | foldl1'(( FUN(t1,t2)
-		| APPLY(t1,t2)), f, a)	= f(t2, f(t1,a))
+		| APPLY(t1,t2)
+		| ABBREV(t1,t2)), f, a)	= f(t2, f(t1,a))
       | foldl1'(( TUPLE ts ), f, a)	= List.foldl f a ts
       | foldl1'(( PROD r
 		| SUM r ), f, a)	= foldlRow(r,f,a)
@@ -301,6 +312,7 @@ structure TypePrivate =
 	      | clone'(LAMBDA(a,t))	= LAMBDA(dup' a, clone t)
 	      | clone'(APPLY(t1,t2))	= APPLY(clone t1, clone t2)
 	      | clone'(MU t)		= MU(clone t)
+	      | clone'(ABBREV(t1,t2))	= ABBREV(clone t1, clone t2)
 	      | clone' _		= raise Crash.Crash "Type.clone"
 
 	    and cloneRow(FIELD(l,ts,r))	= FIELD(l,List.map clone ts, cloneRow r)
@@ -363,6 +375,7 @@ structure TypePrivate =
 	      | clone'(LAMBDA(a,t))	= LAMBDA(dup' a, clone t)
 	      | clone'(APPLY(t1,t2))	= APPLY(clone t1, clone t2)
 	      | clone'(MU t)		= MU(clone t)
+	      | clone'(ABBREV(t1,t2))	= ABBREV(clone t1, clone t2)
 	      | clone' _		= raise Crash.Crash "Type.clone"
 
 	    and cloneRow(FIELD(l,ts,r))	= FIELD(l,List.map clone ts, cloneRow r)
@@ -394,26 +407,33 @@ structure TypePrivate =
 
     fun reduce(t as ref(APPLY(t1,t2))) =
 	let
-	    fun reduceApply(t1 as ref(LAMBDA(a,_)), r) =
+	    fun reduceApply(t1 as ref(LAMBDA(a,_)), to) =
 		( t := HOLE(kind a, !level)
 		; case !(clone t1)
 		    of LAMBDA(a,t11) =>
 			( a := LINK t2
-			; t := (if r then MU else LINK) t11
+			; t := (case to
+				  of NONE   => LINK t11
+				   | SOME t => ABBREV(ref(APPLY(t,t2)), t11) )
 			; reduce t
 			)
 		    | _ => raise Crash.Crash "Type.reduceApply"
 		)
-	      | reduceApply(ref(LINK t11), r) =
-		    reduceApply(follow t11, r)
+	      | reduceApply(ref(LINK t11), to) =
+		    reduceApply(follow t11, to)
+
+	      | reduceApply(ref(ABBREV(t11,t12)), to) =
+		    reduceApply(follow t12, SOME(Option.getOpt(to,t11)))
 	      (*
-	      | reduceApply(ref(MU t11), r) =
-		    reduceApply(follow t11, true)
+	      | reduceApply(ref(MU t11), to) =
+		    reduceApply(follow t11, to)
 	      *)
 	      | reduceApply _ = ()
 	in
-	    reduceApply(t1, false)
+	    reduceApply(t1, NONE)
 	end
+
+      | reduce(ref(LINK t | ABBREV(_,t))) = reduce t
 
       | reduce _ = ()
 
@@ -447,6 +467,9 @@ structure TypePrivate =
 	      | reduceLambda(ref(LINK t1), vs) =
 		    reduceLambda(t1, vs)
 
+	      | reduceLambda(ref(ABBREV(t1,t2)), vs) =
+		    reduceLambda(t2, vs)
+
 	      | reduceLambda _ = ()
 	in
 	    reduceLambda(t, [])
@@ -473,6 +496,7 @@ structure TypePrivate =
     fun inLambda at	= ref(LAMBDA at)
     fun inApply(t1,t2)	= let val t = ref(APPLY(t1,t2)) in reduce t ; t end
     fun inMu t		= ref(MU t)
+    fun inAbbrev(t1,t2)	= ref(ABBREV(t1,t2))
 
     fun var k		= ref(VAR(k, !level))
 
@@ -481,7 +505,8 @@ structure TypePrivate =
 
     exception Type
 
-    fun asType(ref(LINK t | MU t))	= asType t
+    fun asType(ref(LINK t))		= asType t
+      | asType(ref(ABBREV(_,t)))	= asType t
       | asType(ref t')			= t'
 
     fun isUnknown t	= case asType t of HOLE _   => true | _ => false
@@ -495,6 +520,7 @@ structure TypePrivate =
     fun isExist t	= case asType t of EXIST _  => true | _ => false
     fun isLambda t	= case asType t of LAMBDA _ => true | _ => false
     fun isApply t	= case asType t of APPLY _  => true | _ => false
+    fun isMu t		= case asType t of MU _     => true | _ => false
 
     fun asArrow t	= case asType t of FUN tt    => tt | _ => raise Type
     fun asTuple t	= case asType t of TUPLE ts  => ts | _ => raise Type
@@ -506,6 +532,7 @@ structure TypePrivate =
     fun asExist t	= case asType t of EXIST at  => at | _ => raise Type
     fun asLambda t	= case asType t of LAMBDA at => at | _ => raise Type
     fun asApply t	= case asType t of APPLY tt  => tt | _ => raise Type
+    fun asMu t		= case asType t of MU t      => t  | _ => raise Type
 
     fun pathCon(_,_,p)	= p
     fun path t		= pathCon(asCon t)
@@ -560,7 +587,7 @@ structure TypePrivate =
       | instance' t			= t
 
     fun instance(t as ref(ALL _| EXIST _))	= instance'(clone t)
-      | instance(ref(LINK t))			= instance t
+      | instance(ref(LINK t | ABBREV(_,t)))	= instance t
       | instance t				= t
 
     fun skolem'(ref(ALL(a,t)))		= skolem' t
@@ -568,7 +595,7 @@ structure TypePrivate =
       | skolem' t			= t
 
     fun skolem(t as ref(ALL _| EXIST _))	= skolem'(clone t)
-      | skolem(ref(LINK t))			= skolem t
+      | skolem(ref(LINK t | ABBREV(_,t)))	= skolem t
       | skolem t				= t
 
 
@@ -798,6 +825,12 @@ if kind' t1' <> k2 then raise Assert.failure else
 		       | (EXIST(a1,t11), EXIST(a2,t21)) =>
 			 raise Crash.Crash "Type.unify: existential quantifier"
 
+		       | (ABBREV(t11,t12), _) =>
+			 unify (t12,t2)
+
+		       | (_, ABBREV(t21,t22)) =>
+			 unify (t1,t22)
+
 		       | _ => raise Unify(t1,t2)
 		end
 
@@ -946,6 +979,12 @@ end*)
 		       | ( (ALL(a1,t11),   ALL(a2,t21))
 			 | (EXIST(a1,t11), EXIST(a2,t21)) ) =>
 			 recurBinder(a1, a2, t11, t21)
+
+		       | (ABBREV(t11,t12), _) =>
+			 equals (t12,t2)
+
+		       | (_, ABBREV(t21,t22)) =>
+			 equals (t1,t22)
 
 		       | _ => false
 		end

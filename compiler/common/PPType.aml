@@ -12,9 +12,10 @@ structure PPType :> PP_TYPE =
 
     (* Helpers *)
 
-    fun uncurry(ref(APPLY(t1,t2))) = let val (t,ts) = uncurry t1
-				     in (t,ts@[t2]) end
-      | uncurry t		   = (t,[])
+    fun uncurry(ref(APPLY(t1,t2)))	= let val (t,ts) = uncurry t1
+					  in (t,ts@[t2]) end
+      | uncurry(ref(ABBREV(t1,t2)))	= uncurry t1
+      | uncurry t			= (t,[])
 
     fun parenPrec p (p',doc) =
 	if p > p' then
@@ -168,6 +169,9 @@ end
 (*DEBUG
 text "@" ^^*)
 		    ppTypPrec p t
+
+	      | ppTypPrec' p (ABBREV(t1,t2)) =
+		    ppTypPrec p t1
 
 	      | ppTypPrec' p (MARK t') =
 		    text "!" ^^ ppTypPrec' p t'

@@ -33,6 +33,7 @@ signature TYPE =
     val inLambda :	var * typ -> typ
     val inApply :	typ * typ -> typ
     val inMu :		typ       -> typ
+    val inAbbrev :	typ * typ -> typ
 
     val var :		kind -> var
 
@@ -49,6 +50,7 @@ signature TYPE =
     val isExist :	typ -> bool
     val isLambda :	typ -> bool
     val isApply :	typ -> bool
+    val isMu :		typ -> bool
 
   (* Projections *)
 
@@ -64,6 +66,7 @@ signature TYPE =
     val asExist :	typ -> var * typ		(* Type *)
     val asLambda :	typ -> var * typ		(* Type *)
     val asApply :	typ -> typ * typ		(* Type *)
+    val asMu :		typ -> typ			(* Type *)
 
   (* Complex extractions *)
 
