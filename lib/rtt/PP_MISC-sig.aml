@@ -22,10 +22,13 @@ sig
 
     val nest:		doc -> doc
 
+    val contain:	string * string -> doc -> doc
     val quote:		doc -> doc
     val paren:		doc -> doc
     val brace:		doc -> doc
     val brack:		doc -> doc
+
+    val apply:		doc * doc list -> doc
 
     val ppCommaList:	('a -> doc) -> 'a list -> doc
     val ppStarList:	('a -> doc) -> 'a list -> doc
