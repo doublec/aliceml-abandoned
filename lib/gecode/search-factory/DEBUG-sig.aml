@@ -8,7 +8,7 @@ sig
   val && : db_mask * db_mask -> db_mask
   val || : db_mask * db_mask -> db_mask
 
-  val newDB : int -> db_mask
+  val newDB : unit -> db_mask
 
   val dbExc    : db_mask
   val dbRecomp : db_mask

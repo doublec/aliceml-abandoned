@@ -10,15 +10,24 @@ struct
     fun a && b = Word31.andb (a,b)  (* AND two masks *)
     fun a || b = Word31.orb (a,b)   (* OR two masks *)
 
-    (* Creates a new debug mask. *)
-    fun newDB i = Word31.<< (Word.fromInt 1, Word.fromInt i)
+    val counter = ref 0
 
-    val dbExc    = newDB 0 (* Exceptions. *)
-    val dbRecomp = newDB 1 (* Recomputation. *)
-    val dbClone  = newDB 2 (* Clones. *)
-    val dbBaB    = newDB 3 (* Branch and Bound. *)
-    val dbSearch = newDB 4 (* Search. *)
-    val dbSlow   = newDB 5 (* Slow Search. *)
+    (* Creates a new debug mask. *)
+    fun newDB () =
+	let val mask = Word31.<< (Word.fromInt 1, Word.fromInt (!counter))
+	in
+          if !counter = 31 then raise (Fail "Debug.newDB: counter too big.")
+	  else () ;
+	  counter := !counter + 1 ;
+	  mask
+	end
+
+    val dbExc    = newDB () (* Exceptions. *)
+    val dbRecomp = newDB () (* Recomputation. *)
+    val dbClone  = newDB () (* Clones. *)
+    val dbBaB    = newDB () (* Branch and Bound. *)
+    val dbSearch = newDB () (* Search. *)
+    val dbSlow   = newDB () (* Slow Search. *)
 
     val dbZero = Word31.fromInt 0 (* Empty mask *)
     val dbNone = dbZero
