@@ -10,7 +10,6 @@ Group is
 	IMP_MAP-sig.aml
 	IMP_SET-sig.aml
 	LargeIntHashKey.aml
-	Makefile
 	MkHashImpMap.aml
 	MkHashImpSet.aml
 	MkScopedImpMap.aml
