@@ -169,9 +169,6 @@ define
 	    vTestBool(OccsRS Reg CodeStore, Deref(Addr1 $)
 		      CodeStore, Deref(Addr2 $) CodeStore, Deref(Addr3 $)
 		      Coord CodeStore, Share(Cont $))
-	 [] vTestBuiltin(OccsRS Builtinname Regs Addr1 Addr2 Cont) then
-	    vTestBuiltin(OccsRS Builtinname Regs CodeStore, Deref(Addr1 $)
-			 CodeStore, Deref(Addr2 $) CodeStore, Share(Cont $))
 	 [] vTestConstant(OccsRS Reg NumOrLit Addr1 Addr2 Coord Cont) then
 	    vTestConstant(OccsRS Reg NumOrLit CodeStore, Deref(Addr1 $)
 			  CodeStore, Deref(Addr2 $) Coord
@@ -293,17 +290,6 @@ define
 	       {BitArray.disj RS RS1}
 	       {BitArray.disj RS RS2}
 	       {BitArray.disj RS RS3}
-	    [] vTestBuiltin(_ _ Regs Addr1 Addr2 Cont) then RS1 RS2 in
-	       CodeStore, ComputeOccs(Addr1 ?RS1)
-	       CodeStore, ComputeOccs(Addr2 ?RS2)
-	       case Cont of vShared(_ InitsRS _ _) then
-		  InitsRS = {BitArray.clone RS1}
-		  {BitArray.disj InitsRS RS2}
-	       [] nil then skip
-	       end
-	       CodeStore, RegOccs(Regs RS)
-	       {BitArray.disj RS RS1}
-	       {BitArray.disj RS RS2}
 	    [] vTestConstant(_ Reg _ Addr1 Addr2 _ Cont) then RS1 RS2 in
 	       CodeStore, ComputeOccs(Addr1 ?RS1)
 	       CodeStore, ComputeOccs(Addr2 ?RS2)
@@ -411,13 +397,6 @@ define
 	       CodeStore, AddRegOccs(Addr1 AddRS2)
 	       CodeStore, AddRegOccs(Addr2 AddRS2)
 	       CodeStore, AddRegOccs(Addr3 AddRS2)
-	       case Cont of vShared(_ InitsRS _ _) then
-		  {BitArray.conj InitsRS AddRS2}
-	       [] nil then skip
-	       end
-	    [] vTestBuiltin(_ _ _ Addr1 Addr2 Cont) then
-	       CodeStore, AddRegOccs(Addr1 AddRS2)
-	       CodeStore, AddRegOccs(Addr2 AddRS2)
 	       case Cont of vShared(_ InitsRS _ _) then
 		  {BitArray.conj InitsRS AddRS2}
 	       [] nil then skip

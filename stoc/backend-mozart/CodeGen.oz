@@ -25,6 +25,15 @@ import
 export
    Translate
 define
+   fun {TestBuiltin Builtinname Regs ThenVInstr ElseVInstr State}
+      Reg VHd VInter
+   in
+      {State.cs newReg(?Reg)}
+      VHd = vCallBuiltin(_ Builtinname {Append Regs [Reg]} unit VInter)
+      VInter = vTestBool(_ Reg ThenVInstr ElseVInstr nil unit nil)
+      VHd
+   end
+
    proc {MakeReg IdDef State ?Reg}
       case IdDef of idDef(id(_ Stamp _)) then
 	 case {Dictionary.condGet State.regDict Stamp unit} of unit then
@@ -161,9 +170,9 @@ define
       in
 	 {State.cs newReg(?TmpReg)}
 	 VHd = vEquateConstant(_ {ByteString.make S} TmpReg VInter)
-	 VInter = vTestBuiltin(_ 'Value.\'==\''
-			       [{GetReg Id State} TmpReg {State.cs newReg($)}]
-			       ThenVInstr ElseVInstr VTl=nil)
+	 VInter = {TestBuiltin 'Value.\'==\'' [{GetReg Id State} TmpReg]
+		   ThenVInstr ElseVInstr State}
+	 VTl = nil
 	 {TranslateBody Body ?ThenVInstr nil State ReturnReg}
 	 {TranslateStm testStm(Region Id litTests(Rest) ElseBody)
 	  ElseVInstr nil State ReturnReg}
@@ -219,17 +228,17 @@ define
       in
 	 Reg = {GetReg Id State}
 	 case Con#ConArgs of con(Id)#none then
-	    VHd = vTestBuiltin(_ 'Value.\'==\''
-			       [Reg {GetReg Id State} {State.cs newReg($)}]
-			       ThenVInstr ElseVInstr VTl=nil)
+	    VHd = {TestBuiltin 'Value.\'==\'' [Reg {GetReg Id State}]
+		   ThenVInstr ElseVInstr State}
+	    VTl = nil
 	 [] con(Id)#some(tupArgs(nil)) then
-	    VHd = vTestBuiltin(_ 'Value.\'==\''
-			       [Reg {GetReg Id State} {State.cs newReg($)}]
-			       ThenVInstr ElseVInstr VTl=nil)
+	    VHd = {TestBuiltin 'Value.\'==\'' [Reg {GetReg Id State}]
+		   ThenVInstr ElseVInstr State}
+	    VTl = nil
 	 [] con(Id)#some(Args) then ThenVInstr0 Coord in
-	    VHd = vTestBuiltin(_ 'Record.testLabel'
-			       [Reg {GetReg Id State} {State.cs newReg($)}]
-			       ThenVInstr0 ElseVInstr VTl=nil)
+	    VHd = {TestBuiltin 'Record.testLabel' [Reg {GetReg Id State}]
+		   ThenVInstr0 ElseVInstr State}
+	    VTl = nil
 	    Coord = {TranslateRegion Region State}
 	    case Args of oneArg(IdDef) then
 	       ThenVInstr0 = vInlineDot(_ Reg 1 {MakeReg IdDef State} true
