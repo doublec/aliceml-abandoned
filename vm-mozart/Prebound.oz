@@ -122,7 +122,7 @@ define
       'General.Size': {NewUniqueName 'General.Size'}
       'General.Span': {NewUniqueName 'General.Span'}
       'General.Subscript': {NewUniqueName 'General.Subscript'}
-      'GlobalStamp.new': {NewName}
+      'GlobalStamp.new': NewName
       'GlobalStamp.fromString':
 	 fun {$ S} {NewUniqueName {VirtualString.toAtom S}} end
       'GlobalStamp.toString':
