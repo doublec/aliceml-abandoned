@@ -6,6 +6,19 @@
 ##   Marco Kuhlmann, 2003
 ## 
 
+## no interfaces changed, only implementation (good):
+##    increment REVISION
+## 
+## interfaces added, none removed (good):
+##    increment CURRENT, increment AGE, set REVISION to 0
+## 
+## interfaces removed (bad, breaks upwards compatibility):
+##    increment CURRENT, set AGE and REVISION to 0
+
+LIBSEAM_LT_CURRENT	= 0
+LIBSEAM_LT_REVISION = 0
+LIBSEAM_LT_AGE = 1
+
 ## 
 ## The installation procedure is pretty straightforward, except for two
 ## complications:
@@ -30,7 +43,7 @@ seam_LDADD = libseam.la
 
 bin_SCRIPTS = seamtool
 
-nobase_include_HEADERS = \
+nobase_dist_pkginclude_HEADERS = \
 	Base.hh Seam.hh \
 	store/Base.hh store/Types.hh store/HeaderOp.hh store/PointerOp.hh \
 	store/StatusWord.hh store/Value.hh store/Map.hh store/WeakMap.hh \
@@ -51,7 +64,7 @@ nobase_include_HEADERS = \
 	generic/BindFutureWorker.hh generic/Unpickler.hh \
 	generic/Pickler.hh generic/Profiler.hh generic/Broker.hh \
 	generic/Authoring.hh generic/JitterGenericData.hh
-nobase_nodist_include_HEADERS = \
+nobase_nodist_pkginclude_HEADERS = \
 	store/StoreConfig.hh
 
 lib_LTLIBRARIES = libseam.la
