@@ -19,12 +19,14 @@
 #pragma interface "generic/Debug.hh"
 #endif
 
+#include <cstdio>
 #include "store/Store.hh"
 
 class Debug {
 public:
   static u_int maxWidth, maxDepth;
   static void Dump(word x);
+  static void DumpTo(FILE *file, word x);
 };
 
 #endif
