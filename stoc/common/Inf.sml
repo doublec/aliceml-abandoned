@@ -208,35 +208,35 @@ structure InfPrivate =
   (* Signature lookup *)
 
     fun selectVal'(VAL(x, t, w, d))	= t
-      | selectVal' _			= raise Crash.Crash "Inf.selectVal'"
+      | selectVal' _			= raise Assert.failure
 
     fun selectVal(VAL(x, t, w, SOME p))	= p
       | selectVal(VAL(x, t, w, NONE))	= idPath x
-      | selectVal _			= raise Crash.Crash "Inf.selectVal"
+      | selectVal _			= raise Assert.failure
 
     fun selectTyp(TYP(x, k, w, SOME t))	= t
       | selectTyp(TYP(x, k, w, NONE))	= Type.inCon(k, w, idPath x)
-      | selectTyp _			= raise Crash.Crash "Inf.selectTyp"
+      | selectTyp _			= raise Assert.failure
 
     fun selectMod'(MOD(x, j, d))	= j
-      | selectMod' _			= raise Crash.Crash "Inf.selectMod'"
+      | selectMod' _			= raise Assert.failure
 
     fun selectMod(MOD(x, j, SOME p))	= p
       | selectMod(MOD(x, j, NONE))	= idPath x
-      | selectMod _			= raise Crash.Crash "Inf.selectMod"
+      | selectMod _			= raise Assert.failure
 
     fun selectInf(INF(x, k, SOME j))	= j
       | selectInf(INF(x, k, NONE))	= ref(CON(k, idPath x))	(* inCon *)
-      | selectInf _			= raise Crash.Crash "Inf.selectInf"
+      | selectInf _			= raise Assert.failure
 
     fun selectFix(FIX(x, f))		= f
-      | selectFix _			= raise Crash.Crash "Inf.selectFix"
+      | selectFix _			= raise Assert.failure
 
     fun selectValSort(VAL(x, t, w, d))	= w
-      | selectValSort _			= raise Crash.Crash "Inf.selectValSort"
+      | selectValSort _			= raise Assert.failure
 
     fun selectTypSort(TYP(x, k, w, d))	= w
-      | selectTypSort _			= raise Crash.Crash "Inf.selectTypSort"
+      | selectTypSort _			= raise Assert.failure
 
 
     exception Lookup
@@ -331,7 +331,7 @@ structure InfPrivate =
 			( j := LINK j12
 			; reduce j
 			)
-		    | _ => raise Crash.Crash "Inf.reduceApply"
+		    | _ => raise Assert.failure
 		)
 	      | reduceApply(ref(LINK j11), jo) =
 		    reduceApply(follow j11, jo)
@@ -941,7 +941,7 @@ structure InfPrivate =
 	      ; match'(rea, j12, j22) handle Mismatch mismatch =>
 		    raise Mismatch(MismatchRan mismatch)
 	      )
-	    | _ => raise Crash.Crash "Inf.match: funny instantiation"
+	    | _ => raise Assert.failure
 	)
 
       | match'(rea, ref(LAMBDA(p1,j11,j12)), ref(LAMBDA(p2,j21,j22))) =
@@ -1047,7 +1047,7 @@ structure InfPrivate =
 	let val l = idLab x2 in
 	    matchFix(l, q1, q2)
 	end
-      | matchItem' _ = raise Crash.Crash "Inf.matchItem"
+      | matchItem' _ = raise Assert.failure
 
     and matchTyp(l,t1,t2) =
 	if Type.matches(t1,t2) then () else
@@ -1206,13 +1206,13 @@ structure InfPrivate =
 	      | pair1(b, FIX(x1,q1), FIX(x2,q2)) =
 		    true
 	      | pair1 _ =
-		    raise Crash.Crash "Inf.intersectSig: pairing"
+		    raise Assert.failure
 
 	    and pair(m1, [], pairs, left) = ( List.rev pairs, List.rev left )
 	      | pair(m1, item2::items, pairs, left) =
 		case Map.lookup(m1, (itemSpace item2, itemLab item2))
 		  of NONE => pair(m1, items, pairs, item2::left)
-		   | SOME [] => raise Crash.Crash "Inf.intersectSig: lookup"
+		   | SOME [] => raise Assert.failure
 		   | SOME(item1::_) =>
 		     (* Nested structures are already realised.
 		      * We would loop during realisation if we inserted
@@ -1289,7 +1289,7 @@ structure InfPrivate =
 	in
 	    FIX(x1,q)
 	end
-      | intersectItem' _ = raise Crash.Crash "Inf.intersectItem"
+      | intersectItem' _ = raise Assert.failure
 
     and intersectTyp(l,t1,t2) =
 	( Type.intersect(t1,t2) ; t1 )
