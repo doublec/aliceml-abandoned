@@ -12,11 +12,6 @@
 
 #include <cstdio>
 #include <cstring>
-#if !HAVE_DLOPEN
-#include <windows.h>
-#else
-#include <dlfcn.h>
-#endif
 
 #include "alice/Authoring.hh"
 #include "alice/BootLinker.hh"
@@ -31,27 +26,7 @@ static word NativeConstructor;
 // Error Handling
 //
 static word MakeNativeError() {
-#if !HAVE_DLOPEN
-  DWORD errorCode = GetLastError();
-  char *lpMsgBuf;
-  int n = FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER |
-			FORMAT_MESSAGE_IGNORE_INSERTS |
-			FORMAT_MESSAGE_FROM_SYSTEM |
-			FORMAT_MESSAGE_MAX_WIDTH_MASK, NULL, errorCode,
-			MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-			(LPTSTR) &lpMsgBuf, 0, NULL);
-  String *s;
-  if (!n) {
-    static char buffer[32];
-    std::sprintf(buffer, "Error code %ld", errorCode);
-    s = String::New(buffer);
-  } else
-    s = String::New(lpMsgBuf, n);
-  LocalFree(lpMsgBuf);
-#else
-  char *msg = dlerror();
-  String *s = String::New(msg? msg: "no error");
-#endif
+  String *s = DllLoader::GetLastError();
   ConVal *conVal =
     ConVal::New(Store::DirectWordToBlock(NativeConstructor), 1);
   conVal->Init(0, s->ToWord());
@@ -128,25 +103,16 @@ DEFINE1(UnsafeComponent_load) {
 
 DEFINE1(UnsafeComponent_linkNative) {
   DECLARE_STRING(filename, x0);
-#if !HAVE_DLOPEN
-  //--** this can produce the error message "... is not a valid Windows image."
-  HMODULE hModule = LoadLibrary(filename->ExportC());
-  if (hModule == NULL) RAISE(MakeNativeError());
-  word (*InitComponent)() =
-    reinterpret_cast<word (*)()>(GetProcAddress(hModule, "InitComponent"));
-  if (InitComponent == NULL) {
-    FreeLibrary(hModule);
-    RAISE(Unpickler::Corrupt);
-  }
-#else
-  void *handle = dlopen(filename->ExportC(), RTLD_NOW | RTLD_GLOBAL);
+  DllLoader::libhandle handle = DllLoader::OpenLibrary(filename);
   if (handle == NULL) RAISE(MakeNativeError());
-  word (*InitComponent)() = (word (*)()) dlsym(handle, "InitComponent");
+
+  word (*InitComponent)() = (word (*)())
+    DllLoader::GetSymbol(handle, String::New("InitComponent"));
+
   if (InitComponent == NULL) {
-    dlclose(handle);
+    DllLoader::CloseLibrary(handle);
     RAISE(Unpickler::Corrupt);
   }
-#endif
   TagVal *component = TagVal::New(Types::EVALUATED, 2);        // EVALUATED {
   component->Init(Types::inf1, Store::IntToWord(Types::NONE)); //   inf = NONE,
   component->Init(Types::mod, InitComponent());                //   mod = ... }
