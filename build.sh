@@ -44,7 +44,7 @@ if [ "x${AUTOMAKE}" != "x" ]; then
 		make all install
 		echo "### - linking local and global ac dir" >&2
 		if which aclocal; then
-		    aclocal --print-ac-dir > "${prefix}/share/aclocal/dirlist"
+		    aclocal --print-ac-dir > "${prefix}/share/aclocal-1.7/dirlist"
 		fi
 	    )
 	)
