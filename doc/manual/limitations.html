@@ -11,12 +11,14 @@ the Alice system.</P>
 <?php section("language", "language") ?>
 
 <DL>
-  <DT>Equality</DT><!--mozart-->
+  <?php if ($platform != "stockwerk") { ?>
+  <DT>Equality</DT>
   <DD><P>The <TT>=</TT> operator is <A href="futures.html#request">strict</A>.
       Accordingly, in order to test two futures for equality, both have to
       be requested. The current implementation will not request futures if
       they are physically equal.</P>
   </DD>
+  <?php } ?>
 
   <DT>Equality types</DT>
   <DD><P>The equality attribute of types is ignored. The <TT>=</TT> operator
@@ -46,10 +48,12 @@ the Alice system.</P>
       argument (record).</P>
   </DD>
 
-  <DT>Holes</DT><!--mozart-->
+  <?php if ($platform != "stockwerk") { ?>
+  <DT>Holes</DT>
   <DD><P>Accessing a <A href="library/hole.html">hole</A> does not raise an
       exception as it should.  Instead, it blocks until the hole is filled.</P>
   </DD>
+  <?php } ?>
 
   <DT>Signature inclusion</DT>
   <DD><P>Signatures containing <TT>include</TT> specifications cannot be
