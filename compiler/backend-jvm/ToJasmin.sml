@@ -245,7 +245,7 @@ structure ToJasmin =
 			     "invokevirtual "^cn^"/"^mn^(descriptor2string ms)
 	      | instructionToJasmin (Label l,_) = l^": "
 	      | instructionToJasmin (Lcmp,_) = "lcmp"
-	      | instructionToJasmin (Ldc(JVMString s),_) = "ldc \""^s^"\""
+	      | instructionToJasmin (Ldc(JVMString s),_) = "ldc \""^String.toCString s^"\""
 	      | instructionToJasmin (Ldc(JVMFloat r),_) = "ldc "^realToString r
 	      | instructionToJasmin (Ldc(JVMInt i),_) = "ldc "^int32ToString i
 	      | instructionToJasmin (Ldc(JVMWord w),_) = "ldc "^word32ToString w
@@ -294,18 +294,23 @@ structure ToJasmin =
 				      else else',
 					  need, max);
 				     recurse (is, !stackneed,!stackmax))
-			      | _ => ((if noStack i
-					   then ()
-				       else
-					   (if !DEBUG>=1
+			      | _ =>
+				    let
+					val ins = instructionToJasmin (i, staticapply)
+				    in
+					if noStack i
+					    then ()
+					else
+					    if !DEBUG>=1
 						then (TextIO.output (ziel,"\t\t.line "^line());
 						      TextIO.output (ziel,"\t; Stack: "^Int.toString need^
 								     " Max: "^Int.toString max^"\n"))
-					    else ()));
-					   TextIO.output (ziel,instructionToJasmin (i, staticapply)^"\n");
-					   (if nd<=0 then
-						recurse (is, nd+need, max)
-					    else recurse (is, nd+need, (Int.max (nd+need,max)))))
+					    else ();
+					    if ins <> "" then TextIO.output (ziel,ins^"\n") else ();
+						if nd<=0 then
+						    recurse (is, nd+need, max)
+						else recurse (is, nd+need, (Int.max (nd+need,max)))
+				    end
 			end
 		      | recurse (nil,need,max) =
 			(stackneed:= need;
