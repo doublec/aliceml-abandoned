@@ -27,25 +27,44 @@ public class ByNeedFuture extends Future {
     }
 
     synchronized public DMLValue request() throws java.rmi.RemoteException {
-	if (closure==null) {
-	    if (ref instanceof DMLLVar) {
-		return ((DMLLVar) ref).request();
-	    } else {
-		return ref;
-	    }
+	if (closure == null) {
+	    return ref.request();
 	}
 	else {
 	    DMLValue temp = closure;
+	    DMLValue v = null;
 	    closure = null;
+	    boolean hasSelfRef = false;
 	    try {
-		ref.bind(temp.apply(Constants.dmlunit));
+		v = temp.apply(Constants.dmlunit);
+
+		while (v instanceof DMLLVar) {
+		    if (v == this) { // we detect a self-cycle
+			hasSelfRef = true;
+			break;
+		    }
+		    DMLValue vv = ((DMLLVar) v).getValue();
+		    if (v == vv) { // we run into an unbound variable
+			// hasSelfRef = false;
+			break;
+		    } else {
+			v = vv;
+		    }
+		}
+		if (hasSelfRef) {
+		    _RAISENAME(LVar.Fulfill);
+		} else {
+		    ref.bind(v);
+		}
 	    } catch (Throwable t) {
 		System.err.println(t);
 	    }
-	    if (ref instanceof DMLLVar) {
-		return ((DMLLVar) ref).request();
+
+	    if (hasSelfRef) {
+		closure = temp;
+		return this;
 	    } else {
-		return ref;
+		return ref.request();
 	    }
 	}
     }
