@@ -55,8 +55,8 @@ DEFINE5(arraycopy) {
     if (srcLabel == JavaLabel::BaseArray) {
       BaseArray *destArray = static_cast<BaseArray *>(destBlock);
       BaseArray *srcArray = static_cast<BaseArray *>(srcBlock);
-      BaseType::type destType = destArray->GetBaseType();
-      BaseType::type srcType = srcArray->GetBaseType();
+      PrimitiveType::type destType = destArray->GetElementType();
+      PrimitiveType::type srcType = srcArray->GetElementType();
       if (destType == srcType) {
 	if (srcPos < 0)
 	  THROW(IndexOutOfBoundsException, "srcPos is negative");
