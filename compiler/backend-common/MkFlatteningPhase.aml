@@ -665,7 +665,9 @@ functor MkFlatteningPhase(val loadSign:
 		f (O.FailExp {region = #region info})::translateCont cont
 	  | translateExp (LazyExp (_, exp as VarExp (_, _)), f, cont) =
 	    translateExp (exp, f, cont)
-	  | translateExp (LazyExp (info, UpExp (_, exp)), f, cont) =
+	  | translateExp (LazyExp (info, AbsExp (_, exp)), f, cont) =
+	    translateExp (LazyExp (info, exp), f, cont)
+	  | translateExp (LazyExp (info, UnabsExp (_, exp)), f, cont) =
 	    translateExp (LazyExp (info, exp), f, cont)
 	  | translateExp (LazyExp (info as {region, typ}, exp), f, cont) =
 	    let
@@ -684,7 +686,9 @@ functor MkFlatteningPhase(val loadSign:
 	    end
 	  | translateExp (SpawnExp (_, exp as VarExp (_, _)), f, cont) =
 	    translateExp (exp, f, cont)
-	  | translateExp (SpawnExp (info, UpExp (_, exp)), f, cont) =
+	  | translateExp (SpawnExp (info, AbsExp (_, exp)), f, cont) =
+	    translateExp (SpawnExp (info, exp), f, cont)
+	  | translateExp (SpawnExp (info, UnabsExp (_, exp)), f, cont) =
 	    translateExp (SpawnExp (info, exp), f, cont)
 	  | translateExp (SpawnExp (info as {region, typ}, exp), f, cont) =
 	    let
@@ -707,9 +711,9 @@ functor MkFlatteningPhase(val loadSign:
 	    in
 		translateCont (Decs (Vector.toList decs, Goto stms))
 	    end
-	  | translateExp (UpExp (_, exp), f, cont) =
+	  | translateExp (AbsExp (_, exp), f, cont) =
 	    translateExp (exp, f, cont)
-	  | translateExp (CastExp (_, exp), f, cont) =
+	  | translateExp (UnabsExp (_, exp), f, cont) =
 	    translateExp (exp, f, cont)
 	and simplifyIf (AndExp (_, exp1, exp2), thenStms, elseStms) =
 	    let
