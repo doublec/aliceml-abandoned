@@ -21,6 +21,9 @@
 #define MAX_VALID_INT     static_cast<s_int>((1 << (INT_PRECISION - 1)) - 1)
 #define MIN_BLOCKSIZE 0
 
+#define SIZEOF_BLOCK(s) \
+  (u_int) ((s + 1) * sizeof(u_int))
+
 // Word Datatype
 typedef struct {
   s_int *dummy_entry;

@@ -72,7 +72,6 @@ extern "C" {
 typedef void (*value_plotter)(word);
 
 class JITStore {
-protected:
 public:
   static void ClearStack(u_int nbArgs) {
     if (nbArgs != 0) {
@@ -96,26 +95,31 @@ protected:
     jit_popr_ui(JIT_R2);
     jit_popr_ui(JIT_R1);
   }
+  static void AllocNewHeapChunk() {
+    Store::roots[0].Enlarge();
+  }
   // Output: Ptr holds Allocated Block
   // Side-Effect: Scratches JIT_R0, JIT_FP
+  // to be done: more efficient solution
   static void Alloc(u_int Ptr, u_int size, u_int header) {
     Assert(Ptr != JIT_R0);
     Assert(Ptr != JIT_FP);
     // Allocation Loop
     jit_insn *loop = jit_get_label();
-    jit_ldi_p(Ptr, &Store::chunkTop);
-    jit_movi_ui(JIT_R0, header);
-    jit_str_ui(Ptr, JIT_R0);
-    jit_movr_p(JIT_R0, Ptr);
-    jit_addi_p(JIT_R0, JIT_R0, size);
-    jit_ldi_p(JIT_FP, &Store::chunkMax);
-    jit_insn *succeeded = jit_bltr_p(jit_forward(), JIT_R0, JIT_FP);
+    jit_ldi_p(JIT_R0, Store::roots);
+    jit_ldr_p(Ptr, JIT_R0);
+    jit_movi_ui(JIT_FP, header);
+    jit_str_ui(Ptr, JIT_FP);
+    jit_addi_p(Ptr, Ptr, size);
+    jit_ldxi_p(JIT_FP, JIT_R0, sizeof(word));
+    jit_insn *succeeded = jit_bltr_p(jit_forward(), Ptr, JIT_FP);
     Prepare();
-    Call(0, (void *) Store::AllocNewMemChunkStd);
+    Call(0, (void *) JITStore::AllocNewHeapChunk);
     Finish();
     drop_jit_jmpi(loop);
     jit_patch(succeeded);
-    jit_sti_p(&Store::chunkTop, JIT_R0);
+    jit_str_p(JIT_R0, Ptr);
+    jit_subi_p(Ptr, Ptr, size);
   }
   // Input: word ptr
   // Output: derefed word ptr
@@ -259,7 +263,7 @@ public:
   static void AllocBlock(u_int Ptr, BlockLabel label, u_int size) {
     size = HeaderOp::TranslateSize(size);
     u_int header = HeaderOp::EncodeHeader(label, size, 0);
-    Alloc(Ptr, Store::BlockMemSize(size), header);
+    Alloc(Ptr, SIZEOF_BLOCK(size), header);
   }
   // Output: Ptr = chunk ptr
   static void AllocChunk(u_int Ptr, u_int size) {
