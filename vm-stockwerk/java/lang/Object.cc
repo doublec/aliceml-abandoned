@@ -13,11 +13,25 @@
 #include "generic/Debug.hh"
 #include "java/Authoring.hh"
 
-DEFINE1(dump) {
+DEFINE1(dump_I) {
+  DECLARE_INT(i, x0);
+  std::printf("%d\n", i);
+  RETURN0;
+} END
+
+DEFINE1(dump_Object) {
   Debug::Dump(x0);
   RETURN0;
 } END
 
+DEFINE1(dump_String) {
+  DECLARE_JAVA_STRING(string, x0);
+  std::printf("%s\n", string->ExportC());
+  RETURN0;
+} END
+
 void NativeMethodTable::java_lang_Object(JavaString *className) {
-  Register(className, "dump", "()V", dump, 1, true);
+  Register(className, "dump", "(I)V", dump_I, 1, false);
+  Register(className, "dump", "(Ljava/lang/Object;)V", dump_Object, 1, false);
+  Register(className, "dump", "(Ljava/lang/String;)V", dump_String, 1, false);
 }
