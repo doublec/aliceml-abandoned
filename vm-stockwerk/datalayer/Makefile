@@ -1,20 +1,18 @@
-CC     = g++
-CFLAGS = -Wall -I ../store -DDEBUG_CHECK -ggdb #-DINTERFACE -finline-functions -fno-implement-inlines -O6
+TOPDIR = ..
 
-SRCS = alicedata.cc
+include $(TOPDIR)/Makefile.vars
+include $(TOPDIR)/Makefile.rules
 
 OBJS = alicedata.o
 
-all: $(OBJS)
-	ld -shared -o libdatalayer.so $(OBJS)
+all: libdatalayer.a
 
-%.o : %.cc
-	$(CC) $(CFLAGS) -c -o $@ $<
+libdatalayer.a: $(OBJS)
+	ar rcs $@ $(OBJS)
 
-alicedata.cc: alicedata.hh
+alicedata.o: alicedata.cc alicedata.hh
 
 clean:
-	rm -rf $(OBJS) libdatalayer.so
+	rm -f $(OBJS) libdatalayer.a
 
 distclean: clean
-	rm -rf *.s *~

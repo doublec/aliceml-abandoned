@@ -1,43 +1,36 @@
-CC     = g++
-CFLAGS = -DDEBUG_CHECK -Wall -ggdb #-DINTERFACE -finline-functions -fno-implement-inlines -O6
-CFLAGS = -DDEBUG_CHECK -Wall -W -Wpointer-arith -Wbad-function-cast -Wcast-qual \
-	    -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations \
-	    -Wnested-externs -Wsynth \
-	    -Winline \
-	    -Wno-unused -Wno-reorder -Wno-uninitialized -Wno-sign-compare
+TOPDIR = ..
+
+include $(TOPDIR)/Makefile.vars
+include $(TOPDIR)/Makefile.rules
 
 SRCS = store.cc
+OBJS = $(SRCS:%.cc=%.o)
 
-OBJS = store.o
-
-LIBPATH = /home/thor/devel/stockhausen/vm-stockwerk/store
-
-.PHONY: header
+.PHONY: all header clean distclean
 
 HEADERWIDTH      = 31
 TAGWIDTH         = 16
 SIZEWIDTH        = 11
 GENERATIONSWIDTH = 2
 
-all: lib
+all: libstore.a #test
 
-%.o : %.cc base.hh types.hh headerdef.hh
-	$(CC) $(CFLAGS) -c -o $@ $<
+libstore.a: $(OBJS)
+	ar rcs libstore.a $(OBJS)
 
-lib: $(OBJS)
-	ld -shared -o libstore.so $(OBJS)
+test: test.o
+	$(CXX) $(CXXFLAGS) -o $@ $< -L../store -lstore
 
-test: test.cc
-	$(CC) $(CFLAGS) -o test test.cc $(LIBPATH)/libstore.so
-
-store.cc: memchunk.hh store.hh headerop.hh pointerop.hh dataset.hh gchelper.hh
-
-header:
-	$(CC) $(CFLAGS) -o headerdef headerdef.cc
+header: headerdef
 	./headerdef $(HEADERWIDTH) $(TAGWIDTH) $(SIZEWIDTH) $(GENERATIONSWIDTH)
 
-clean:
-	rm -rf test $(OBJS) libstore.so
+headerdef: headerdef.o
+	$(CXX) $(CXXFLAGS) -o $@ $<
 
-distclean: clean
-	rm -rf *.s *~
+clean:
+	rm -f $(OBJS)
+
+veryclean:
+	rm -f test libstore.a
+
+distclean: veryclean
