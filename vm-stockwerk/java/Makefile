@@ -17,11 +17,15 @@ include $(TOPDIR)/Makefile.rules
 
 JAVA_LANG_SOURCES = \
 	Class.cc Object.cc Throwable.cc System.cc Float.cc Double.cc
+JAVA_IO_SOURCES = FileDescriptor.cc FileOutputStream.cc
+JAVA_SECURITY_SOURCES = AccessController.cc
 SOURCES = \
 	Outline.cc Data.cc ThrowWorker.cc ClassLoader.cc JavaByteCode.cc \
 	ClassInfo.cc NativeMethodTable.cc ClassFile.cc ByteCodeInterpreter.cc \
 	Startup.cc JavaLanguageLayer.cc \
-	$(JAVA_LANG_SOURCES:%=lang/%)
+	$(JAVA_LANG_SOURCES:%=lang/%) \
+	$(JAVA_IO_SOURCES:%=io/%) \
+	$(JAVA_SECURITY_SOURCES:%=security/%)
 
 OBJS = $(SOURCES:%.cc=%.o)
 
