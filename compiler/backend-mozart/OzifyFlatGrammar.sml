@@ -45,7 +45,15 @@ structure OzifyImperativeGrammar :> OZIFY_IMPERATIVE_GRAMMAR =
 	     output (q, String.toCString s);
 	     output1(q, #"'"))
 
-	fun outputStamp (q, n) = output (q, Stamp.toString n)
+	fun outputStamp (q, stamp) =
+	    if stamp = Prebound.stamp_false then outputAtom (q, "false")
+	    else if stamp = Prebound.stamp_true then outputAtom (q, "true")
+	    else if stamp = Prebound.stamp_nil then outputAtom (q, "nil")
+	    else if stamp = Prebound.stamp_cons then outputAtom (q, "cons")
+	    else if stamp = Prebound.stamp_ref then outputAtom (q, "ref")
+	    else if stamp = Prebound.stamp_Match then outputAtom (q, "Match")
+	    else if stamp = Prebound.stamp_Bind then outputAtom (q, "Bind")
+	    else output (q, Stamp.toString stamp)
 
 	fun outputOption _ (q, NONE) =
 	    (f (q, "none"); r q)
@@ -62,21 +70,19 @@ structure OzifyImperativeGrammar :> OZIFY_IMPERATIVE_GRAMMAR =
 		      (outputX (q, x); case xr of nil => () | _ =>  m q)) xs;
 	     output1 (q, #"]"))
 
+	fun outputChar (q, c) = output (q, Int.toString (Char.ord c))
+
 	fun outputString (q, s) =
-	    outputList (fn (q, c) => output (q, Int.toString (Char.ord c)))
-	    (q, String.explode s)
+	    outputList outputChar (q, String.explode s)
 
 	fun outputPair (outputA, outputB) (q, (a, b)) =
 	    (output1 (q, #"("); outputA (q, a);
 	     output1 (q, #"#"); outputB (q, b); output1 (q, #")"))
 
 	fun outputCoord (q, ((ll, lc), (rl, rc))) =
-	    (output (q, Int.toString ll);
-	     output1 (q, #"#");
-	     output (q, Int.toString lc);
-	     output1 (q, #"#");
-	     output (q, Int.toString rl);
-	     output1 (q, #"#");
+	    (output (q, Int.toString ll); output1 (q, #"#");
+	     output (q, Int.toString lc); output1 (q, #"#");
+	     output (q, Int.toString rl); output1 (q, #"#");
 	     output (q, Int.toString rc))
 
 	fun outputInfo (q, (coord, _)) = outputCoord (q, coord)   (*--** *)
@@ -86,7 +92,7 @@ structure OzifyImperativeGrammar :> OZIFY_IMPERATIVE_GRAMMAR =
 	  | outputLit (q, IntLit n) =
 	    (f (q, "intLit"); outputLargeInt (q, n); r q)
 	  | outputLit (q, CharLit c) =
-	    (f (q, "charLit"); output (q, Int.toString (Char.ord c)); r q)
+	    (f (q, "charLit"); outputChar (q, c); r q)
 	  | outputLit (q, StringLit s) =
 	    (f (q, "stringLit"); outputString (q, s); r q)
 	  | outputLit (q, RealLit x) =
@@ -99,14 +105,7 @@ structure OzifyImperativeGrammar :> OZIFY_IMPERATIVE_GRAMMAR =
 
 	fun outputId (q, Id (coord, stamp, name)) =
 	    (f (q, "id"); outputCoord (q, coord); m q;
-	     if stamp = Prebound.stamp_false then outputAtom (q, "false")
-	     else if stamp = Prebound.stamp_true then outputAtom (q, "true")
-	     else if stamp = Prebound.stamp_nil then outputAtom (q, "nil")
-	     else if stamp = Prebound.stamp_cons then outputAtom (q, "cons")
-	     else if stamp = Prebound.stamp_ref then outputAtom (q, "ref")
-	     else if stamp = Prebound.stamp_Match then outputAtom (q, "Match")
-	     else if stamp = Prebound.stamp_Bind then outputAtom (q, "Bind")
-	     else outputStamp (q, stamp); m q;
+	     outputStamp (q, stamp); m q;
 	     case name of
 		 ExId s => (f (q, "exId"); outputAtom (q, s); r q)
 	       | InId => output (q, "inId");
@@ -154,7 +153,7 @@ structure OzifyImperativeGrammar :> OZIFY_IMPERATIVE_GRAMMAR =
 	    (f (q, "evalStm"); outputInfo (q, info); m q;
 	     outputExp (q, exp); r q)
 	  | outputStm (q, HandleStm (info, body1, id, body2, body3, shared)) =
-	    (shared := gen();
+	    (shared := gen ();
 	     f (q, "handleStm"); outputInfo (q, info); m q;
 	     outputBody (q, body1); m q; outputId (q, id); m q;
 	     outputBody (q, body2); m q; outputBody (q, body3); m q;
