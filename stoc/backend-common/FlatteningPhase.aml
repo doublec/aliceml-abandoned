@@ -650,11 +650,14 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 	    let
 		val region = #region info
 		val info' = {region = region}
+		val unitId = freshId info'
 		val holeId = freshId info'
 		val exnId = freshId info'
 	    in
+		O.ValDec (stm_info region, O.IdDef unitId,
+			  O.TupExp (info', nil))::
 		O.ValDec (stm_info region, O.IdDef holeId,
-			  O.PrimAppExp (info', "Hole.hole", nil))::
+			  O.PrimAppExp (info', "Hole.hole", [unitId]))::
 		O.ValDec (stm_info region, O.IdDef exnId,
 			  O.PrimExp (info', "Hole.Hole"))::
 		O.ValDec (stm_info region, O.Wildcard,
