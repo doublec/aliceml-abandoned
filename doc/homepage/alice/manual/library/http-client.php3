@@ -104,7 +104,45 @@
     <A href="url.php3"><TT>Url</TT></A>,
     <A href="http.php3"><TT>Http</TT></A>,
     <A href="http-server.php3"><TT>HttpServer</TT></A>,
-    <A href="resolver.php3"><TT>Resolver</TT></A>
+    <A href="resolver.php3"><TT>Resolver</TT></A>,
+    <A href="socket.php3"><TT>Socket</TT></A>
   </DD></DL>
+
+<?php section("examples", "examples") ?>
+
+  <P>
+    The following example implements a simple stand-alone application
+    that takes a URL on its command line, issues a corresponding
+    <TT>GET</TT> request, and dumps the response status and headers
+    to <TT>TextIO.stdErr</TT> and the document to <TT>TextIO.stdOut</TT>.
+  </P>
+
+  <P><A href="HttpClientExample.aml">Download full source code</A></P>
+
+<PRE>
+fun usage () =
+    TextIO.output (TextIO.stdErr,
+		   "Usage: " ^ CommandLine.name () ^ " <url>\n")
+
+fun main [url] =
+    let
+	val response = HttpClient.get (Url.fromString url)
+    in
+	TextIO.output
+	    (TextIO.stdErr, Int.toString (#statusCode response) ^ " " ^
+			    #reasonPhrase response ^ "\n");
+	Http.StringMap.appi
+	    (fn (name, value) =>
+		TextIO.output (TextIO.stdErr,
+			       name ^ ": " ^ value ^ "\n"))
+	    (#headers response);
+	TextIO.output (TextIO.stdErr, "\n");
+	TextIO.print (#body response);
+	OS.Process.success
+    end
+  | main _ = (usage (); OS.Process.failure)
+
+val _ = OS.Process.exit (main (CommandLine.arguments ()))
+</PRE>
 
 <?php footing() ?>

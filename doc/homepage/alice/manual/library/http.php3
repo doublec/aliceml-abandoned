@@ -186,4 +186,12 @@
     <A href="http-server.php3"><TT>HttpServer</TT></A>
   </DD></DL>
 
+<?php section("examples", "examples") ?>
+
+  <P>
+    Examples regarding the use of this structure can be found in
+    <A href="http-client.php3#examples"><TT>HttpClient</TT></A> and
+    <A href="http-server.php3#examples"><TT>HttpServer</TT></A>.
+  </P>
+
 <?php footing() ?>

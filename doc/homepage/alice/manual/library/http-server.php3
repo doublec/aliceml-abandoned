@@ -68,7 +68,44 @@
   <DL><DD>
     <A href="url.php3"><TT>Url</TT></A>,
     <A href="http.php3"><TT>Http</TT></A>,
-    <A href="http-client.php3"><TT>HttpClient</TT></A>
+    <A href="http-client.php3"><TT>HttpClient</TT></A>,
+    <A href="socket.php3"><TT>Socket</TT></A>
   </DD></DL>
+
+<?php section("examples", "examples") ?>
+
+  <P>
+    The following demonstrates how to start a simple HTTP server which
+    interprets all requested URLs as files under a <EM>document root</EM>;
+    it just returns the file with type <TT>text/plain</TT>.  If the file
+    could not be found, it returns a <TT>404 Not Found</TT> response.
+  </P>
+
+  <P><A href="HttpServerExample.aml">Download full source code</A></P>
+
+<PRE>
+val documentRoot = "/tmp/httproot"
+
+val notFoundDocument = "The requested document could not be found\n"
+
+fun documentHandler (request: Http.request) =
+    let
+	val relFile = Url.toString (Url.setQuery (#uri request, NONE))
+	val file = TextIO.openIn (documentRoot ^ relFile)
+	val body = TextIO.inputAll file
+    in
+	TextIO.closeIn file;
+	Http.makeResponse
+	    {statusCode = 200, contentType = "text/plain", body}
+    end handle IO.Io {...} =>
+	Http.makeResponse
+	    {statusCode = 404, contentType = "text/plain",
+	     body = notFoundDocument}
+
+val port = HttpServer.start NONE
+val _ = HttpServer.register (Url.empty, documentHandler)
+val _ = TextIO.print ("started server at port " ^
+		      Int.toString port ^ "\n")
+</PRE>
 
 <?php footing() ?>
