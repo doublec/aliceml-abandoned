@@ -19,6 +19,7 @@
 #endif
 
 #include "java/Data.hh"
+#include "java/ClassLoader.hh"
 
 class DllExport Table: private Block {
 protected:
@@ -238,6 +239,7 @@ public:
   };
 protected:
   enum {
+    CLASS_LOADER_POS, // ClassLoader
     ACCESS_FLAGS_POS, // access_flags
     NAME_POS, // JavaString
     SUPER_POS, // Class | int(0)
@@ -250,15 +252,16 @@ protected:
 public:
   using Block::ToWord;
 
-  static ClassInfo *New(u_int accessFlags, JavaString *name,
-			word super, Table *interfaces, Table *fields,
-			Table *methods, Table *constantPool) {
+  static ClassInfo *New(ClassLoader *classLoader, u_int accessFlags,
+			JavaString *name, word super, Table *interfaces,
+			Table *fields, Table *methods, Table *constantPool) {
     Assert(((accessFlags & ACC_INTERFACE) == 0 &&
 	    ((accessFlags & ACC_FINAL) != 0) +
 	    ((accessFlags & ACC_ABSTRACT) != 0) <= 1) ||
 	   (accessFlags & ACC_ABSTRACT) != 0);
     Assert(accessFlags & ACC_SUPER); // not supported by this implementation
     Block *b = Store::AllocBlock(JavaLabel::ClassInfo, SIZE);
+    b->InitArg(CLASS_LOADER_POS, classLoader->ToWord());
     b->InitArg(ACCESS_FLAGS_POS, accessFlags);
     b->InitArg(NAME_POS, name->ToWord());
     b->InitArg(SUPER_POS, super);
@@ -283,6 +286,9 @@ public:
   Table *GetInterfaces() {
     return Table::FromWordDirect(GetArg(INTERFACES_POS));
   }
+
+  bool Verify();
+  Class *Prepare();
 };
 
 #endif

@@ -105,17 +105,25 @@ Worker::Result BuildClassWorker::Run() {
   ClassInfo *classInfo = frame->GetClassInfo();
   word wSuper = classInfo->GetSuper();
   if (Store::WordToTransient(wSuper) != INVALID_POINTER) {
+    //--** detect ClassCircularityError
     Scheduler::currentData = wSuper;
     return Worker::REQUEST;
   }
+  //--** if the class or interface named as the direct superclass of C is
+  //--** in fact an interface, loading throws an IncompatibleClassChangeError
   Table *interfaces = classInfo->GetInterfaces();
   for (u_int i = interfaces->GetCount(); i--; ) {
+    //--** detect ClassCircularityError
     word wInterface = interfaces->Get(i);
     if (Store::WordToTransient(wInterface) != INVALID_POINTER) {
       Scheduler::currentData = wInterface;
       return Worker::REQUEST;
     }
+    //--** if any of the classes or interfaces named as direct
+    //--** superinterfaces of C is not in fact an interface, loading
+    //--** throws an IncompatibleClassChangeError
   }
+  //--** if (!classInfo->Verify()) raise VerifyError
   Scheduler::PopFrame();
   Scheduler::nArgs = Scheduler::ONE_ARG;
   Scheduler::currentArgs[0] =

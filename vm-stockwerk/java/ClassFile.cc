@@ -511,6 +511,6 @@ ClassInfo *ClassFile::Parse(ClassLoader *classLoader) {
   Table *methods = ParseMethods(offset, constantPoolS, constantPoolR);
   if (methods == INVALID_POINTER) return INVALID_POINTER;
   SkipAttributes(offset);
-  return ClassInfo::New(accessFlags, name,
+  return ClassInfo::New(classLoader, accessFlags, name,
 			super, interfaces, fields, methods, constantPoolR);
 }
