@@ -16,11 +16,10 @@
  * Usage: scramble [width [height]]
  *)
 
-import structure Gtk       from "x-alice:/lib/gtk/Gtk"
-import structure Gdk       from "x-alice:/lib/gtk/Gdk"
-import structure Canvas    from "x-alice:/lib/gtk/Canvas"
-import structure Random    from "x-alice:/lib/utility/Random"
-
+import structure Gtk    from "x-alice:/lib/gtk/Gtk"
+import structure Gdk    from "x-alice:/lib/gtk/Gdk"
+import structure Canvas from "x-alice:/lib/gtk/Canvas"
+import structure Random from "x-alice:/lib/utility/Random"
 
 local
     (* A simple server abstraction *)
