@@ -1,0 +1,219 @@
+exception Mis = Package.Mismatch
+
+fun boo s = print(s ^ " failed\n")
+
+signature S	= (type t; val x : t)
+signature S'	= S where type t = int
+signature T	= (type t)
+signature T'	= T where type t = int
+signature U	= ()
+signature V	= any
+
+structure X	= (type t = int; val x = 0)
+structure XS	= X :> S
+structure XS'	= X :> S'
+structure XT	= X :> T
+structure XT'	= X :> T'
+structure XU	= X :> U
+structure XV	= X :> V
+
+val pXS		= pack X :> S
+val pXS'	= pack X :> S'
+val pXT		= pack X :> T
+val pXT'	= pack X :> T'
+val pXU		= pack X :> U
+val pXV		= pack X :> V
+val pXSS	= pack XS :> S
+val pXST	= pack XS :> T
+val pXSU	= pack XS :> U
+val pXSV	= pack XS :> V
+val pXS'S	= pack XS' :> S
+val pXS'S'	= pack XS' :> S'
+val pXS'T	= pack XS' :> T
+val pXS'T'	= pack XS' :> T'
+val pXS'U	= pack XS' :> U
+val pXS'V	= pack XS' :> V
+val pXTT	= pack XT :> T
+val pXTU	= pack XT :> U
+val pXTV	= pack XT :> V
+val pXT'T	= pack XT' :> T
+val pXT'T'	= pack XT' :> T'
+val pXT'U	= pack XT' :> U
+val pXT'V	= pack XT' :> V
+val pXUU	= pack XU :> U
+val pXUV	= pack XU :> V
+val pXVV	= pack XV :> V
+
+val _ = let structure XSS	= unpack pXS : S in () end handle Mis _ => boo "XSS"
+val _ = let structure XSS'	= unpack pXS : S' in boo "XSS'" end handle Mis _ => ()
+val _ = let structure XST	= unpack pXS : T in () end handle Mis _ => boo "XST"
+val _ = let structure XST' 	= unpack pXS : T' in boo "XST'" end handle Mis _ => ()
+val _ = let structure XSU	= unpack pXS : U in () end handle Mis _ => boo "XSU"
+val _ = let structure XSV	= unpack pXS : V in () end handle Mis _ => boo "XSV"
+val _ = let structure XS'S	= unpack pXS' : S in () end handle Mis _ => boo "XS'S"
+val _ = let structure XS'S'	= unpack pXS' : S' in () end handle Mis _ => boo "XS'S'"
+val _ = let structure XS'T	= unpack pXS' : T in () end handle Mis _ => boo "XS'T"
+val _ = let structure XS'T'	= unpack pXS' : T' in () end handle Mis _ => boo "XS'T'"
+val _ = let structure XS'U	= unpack pXS' : U in () end handle Mis _ => boo "XS'U"
+val _ = let structure XS'V	= unpack pXS' : V in () end handle Mis _ => boo "XS'V"
+val _ = let structure XTS 	= unpack pXT : S  in boo "XTS"  end handle Mis _ => ()
+val _ = let structure XTS'	= unpack pXT : S' in boo "XTS'" end handle Mis _ => ()
+val _ = let structure XTT	= unpack pXT : T in () end handle Mis _ => boo "XTT"
+val _ = let structure XTT'	= unpack pXT : T' in boo "XTT'" end handle Mis _ => ()
+val _ = let structure XTU	= unpack pXT : U in () end handle Mis _ => boo "XTU"
+val _ = let structure XTV	= unpack pXT : V in () end handle Mis _ => boo "XTV"
+val _ = let structure XT'S	= unpack pXT' : S  in boo "XT'S"  end handle Mis _ => ()
+val _ = let structure XT'S'	= unpack pXT' : S' in boo "XT'S'" end handle Mis _ => ()
+val _ = let structure XT'T	= unpack pXT' : T in () end handle Mis _ => boo "XT'T"
+val _ = let structure XT'T'	= unpack pXT' : T' in () end handle Mis _ => boo "XT'T'"
+val _ = let structure XT'U	= unpack pXT' : U in () end handle Mis _ => boo "XT'U"
+val _ = let structure XT'V	= unpack pXT' : V in () end handle Mis _ => boo "XT'V"
+val _ = let structure XUS	= unpack pXU : S  in boo "XUS"  end handle Mis _ => ()
+val _ = let structure XUS'	= unpack pXU : S' in boo "XUS'" end handle Mis _ => ()
+val _ = let structure XUT	= unpack pXU : T  in boo "XUT"  end handle Mis _ => ()
+val _ = let structure XUT'	= unpack pXU : T' in boo "XUT'" end handle Mis _ => ()
+val _ = let structure XUU	= unpack pXU : U in () end handle Mis _ => boo "XUU"
+val _ = let structure XUV	= unpack pXU : V in () end handle Mis _ => boo "XUV"
+val _ = let structure XVS	= unpack pXV : S  in boo "XVS"  end handle Mis _ => ()
+val _ = let structure XVS'	= unpack pXV : S' in boo "XVS'" end handle Mis _ => ()
+val _ = let structure XVT	= unpack pXV : T  in boo "XVT"  end handle Mis _ => ()
+val _ = let structure XVT'	= unpack pXV : T' in boo "XVT'" end handle Mis _ => ()
+val _ = let structure XVU	= unpack pXV : U  in boo "XVU"  end handle Mis _ => ()
+val _ = let structure XVV	= unpack pXV : V in () end handle Mis _ => boo "XVV"
+
+structure Xs = unpack pXS : S
+structure Xt = unpack pXT : T
+
+signature Ss = S where type t = Xs.t
+signature St = S where type t = Xt.t
+signature Ts = T where type t = Xs.t
+signature Tt = T where type t = Xt.t
+
+val pXsS	= pack Xs :> S
+val pXsSs	= pack Xs :> Ss
+val pXsT	= pack Xs :> T
+val pXsTs	= pack Xs :> Ts
+val pXsU	= pack Xs :> U
+val pXsV	= pack Xs :> V
+val pXtT	= pack Xt :> T
+val pXtTt	= pack Xt :> Tt
+val pXtU	= pack Xt :> U
+val pXtV	= pack Xt :> V
+(* Commented-out lines do not work yet due to implementation limitation.
+val _ = let structure XSSs	= unpack pXS : Ss in () end handle Mis _ => boo "XSSs"
+val _ = let structure XSSt	= unpack pXS : St in boo "XSSt" end handle Mis _ => ()
+val _ = let structure XSTs	= unpack pXS : Ts in () end handle Mis _ => boo "XSTs"
+val _ = let structure XSTt 	= unpack pXS : Tt in boo "XSTt" end handle Mis _ => ()
+val _ = let structure XS'Ss	= unpack pXS' : Ss in boo "XS'Ss" end handle Mis _ => ()
+val _ = let structure XS'St	= unpack pXS' : St in boo "XS'St" end handle Mis _ => ()
+val _ = let structure XS'Ts	= unpack pXS' : Ts in boo "XS'Ts" end handle Mis _ => ()
+val _ = let structure XS'Tt	= unpack pXS' : Tt in boo "XS'Tt" end handle Mis _ => ()
+val _ = let structure XTSs	= unpack pXT : Ss in boo "XTSs" end handle Mis _ => ()
+val _ = let structure XTSt	= unpack pXT : St in boo "XTSt" end handle Mis _ => ()
+val _ = let structure XTTs	= unpack pXT : Ts in boo "XTTs" end handle Mis _ => ()
+val _ = let structure XTTt	= unpack pXT : Tt in () end handle Mis _ => boo "XTTt"
+val _ = let structure XT'Ss	= unpack pXT' : Ss in boo "XT'Ss" end handle Mis _ => ()
+val _ = let structure XT'St	= unpack pXT' : St in boo "XT'St" end handle Mis _ => ()
+val _ = let structure XT'Ts	= unpack pXT' : Ts in boo "XT'Ts" end handle Mis _ => ()
+val _ = let structure XT'Tt	= unpack pXT' : Tt in boo "XT'Tt" end handle Mis _ => ()
+*)
+val _ = let structure XsSS	= unpack pXsS : S in () end handle Mis _ => boo "XsSS"
+val _ = let structure XsSS'	= unpack pXsS : S' in boo "XsSS'" end handle Mis _ => ()
+val _ = let structure XsSSs	= unpack pXsS : Ss in boo "XsSSs" end handle Mis _ => ()
+val _ = let structure XsSSt	= unpack pXsS : St in boo "XsSSt" end handle Mis _ => ()
+val _ = let structure XsST	= unpack pXsS : T in () end handle Mis _ => boo "XsST"
+val _ = let structure XsST' 	= unpack pXsS : T' in boo "XsST'" end handle Mis _ => ()
+val _ = let structure XsSTs 	= unpack pXsS : Ts in boo "XsSTs" end handle Mis _ => ()
+val _ = let structure XsSTt 	= unpack pXsS : Tt in boo "XsSTt" end handle Mis _ => ()
+val _ = let structure XsSU	= unpack pXsS : U in () end handle Mis _ => boo "XsSU"
+val _ = let structure XsSV	= unpack pXsS : V in () end handle Mis _ => boo "XsSV"
+val _ = let structure XsSsS	= unpack pXsSs : S in () end handle Mis _ => boo "XsSsS"
+(*val _ = let structure XsSsS'	= unpack pXsSs : S' in boo "XsSsS'" end handle Mis _ => ()
+*)val _ = let structure XsSsSs	= unpack pXsSs : Ss in () end handle Mis _ => boo "XsSsSs"
+(*val _ = let structure XsSsSt	= unpack pXsSs : St in boo "XsSsSt" end handle Mis _ => ()
+*)val _ = let structure XsSsT	= unpack pXsSs : T in () end handle Mis _ => boo "XsSsT"
+(*val _ = let structure XsSsT' 	= unpack pXsSs : T' in boo "XsSsT'" end handle Mis _ => ()
+*)val _ = let structure XsSsTs 	= unpack pXsSs : Ts in () end handle Mis _ => boo "XsSsTs"
+(*val _ = let structure XsSsTt 	= unpack pXsSs : Tt in boo "XsSsTt" end handle Mis _ => ()
+*)val _ = let structure XsSsU	= unpack pXsSs : U in () end handle Mis _ => boo "XsSsU"
+val _ = let structure XsSsV	= unpack pXsSs : V in () end handle Mis _ => boo "XsSsV"
+val _ = let structure XsTS	= unpack pXsT : S in boo "XsTS" end handle Mis _ => ()
+val _ = let structure XsTS'	= unpack pXsT : S' in boo "XsTS'" end handle Mis _ => ()
+val _ = let structure XsTSs	= unpack pXsT : Ss in boo "XsTSs" end handle Mis _ => ()
+val _ = let structure XsTSt	= unpack pXsT : St in boo "XsTSt" end handle Mis _ => ()
+val _ = let structure XsTT	= unpack pXsT : T in () end handle Mis _ => boo "XsTT"
+val _ = let structure XsTT' 	= unpack pXsT : T' in boo "XsTT'" end handle Mis _ => ()
+val _ = let structure XsTTs 	= unpack pXsT : Ts in boo "XsTTs" end handle Mis _ => ()
+val _ = let structure XsTTt 	= unpack pXsT : Tt in boo "XsTTt" end handle Mis _ => ()
+val _ = let structure XsTU	= unpack pXsT : U in () end handle Mis _ => boo "XsTU"
+val _ = let structure XsTV	= unpack pXsT : V in () end handle Mis _ => boo "XsTV"
+val _ = let structure XsTsS	= unpack pXsTs : S in boo "XsTsS" end handle Mis _ => ()
+val _ = let structure XsTsS'	= unpack pXsTs : S' in boo "XsTsS'" end handle Mis _ => ()
+val _ = let structure XsTsSs	= unpack pXsTs : Ss in boo "XsTsSs" end handle Mis _ => ()
+val _ = let structure XsTsSt	= unpack pXsTs : St in boo "XsTsSt" end handle Mis _ => ()
+val _ = let structure XsTsT	= unpack pXsTs : T in () end handle Mis _ => boo "XsTsT"
+(*val _ = let structure XsTsT' 	= unpack pXsTs : T' in boo "XsTsT'" end handle Mis _ => ()
+*)val _ = let structure XsTsTs 	= unpack pXsTs : Ts in () end handle Mis _ => boo "XsTsTs"
+(*val _ = let structure XsTsTt 	= unpack pXsTs : Tt in boo "XsTsTt" end handle Mis _ => ()
+*)val _ = let structure XsTsU	= unpack pXsTs : U in () end handle Mis _ => boo "XsTsU"
+val _ = let structure XsTsV	= unpack pXsTs : V in () end handle Mis _ => boo "XsTsV"
+val _ = let structure XsUS	= unpack pXsU : S in boo "XsUS" end handle Mis _ => ()
+val _ = let structure XsUS'	= unpack pXsU : S' in boo "XsUS'" end handle Mis _ => ()
+val _ = let structure XsUSs	= unpack pXsU : Ss in boo "XsUSs" end handle Mis _ => ()
+val _ = let structure XsUSt	= unpack pXsU : St in boo "XsUSt" end handle Mis _ => ()
+val _ = let structure XsUT	= unpack pXsU : T in boo "XsUT" end handle Mis _ => ()
+val _ = let structure XsUT' 	= unpack pXsU : T' in boo "XsUT'" end handle Mis _ => ()
+val _ = let structure XsUTs 	= unpack pXsU : Ts in boo "XsUTs" end handle Mis _ => ()
+val _ = let structure XsUTt 	= unpack pXsU : Tt in boo "XsUTt" end handle Mis _ => ()
+val _ = let structure XsUU	= unpack pXsU : U in () end handle Mis _ => boo "XsUU"
+val _ = let structure XsUV	= unpack pXsU : V in () end handle Mis _ => boo "XsUV"
+val _ = let structure XsVS	= unpack pXsV : S in boo "XsVS" end handle Mis _ => ()
+val _ = let structure XsVS'	= unpack pXsV : S' in boo "XsVS'" end handle Mis _ => ()
+val _ = let structure XsVSs	= unpack pXsV : Ss in boo "XsVSs" end handle Mis _ => ()
+val _ = let structure XsVSt	= unpack pXsV : St in boo "XsVSt" end handle Mis _ => ()
+val _ = let structure XsVT	= unpack pXsV : T in boo "XsVT" end handle Mis _ => ()
+val _ = let structure XsVT' 	= unpack pXsV : T' in boo "XsVT'" end handle Mis _ => ()
+val _ = let structure XsVTs 	= unpack pXsV : Ts in boo "XsVTs" end handle Mis _ => ()
+val _ = let structure XsVTt 	= unpack pXsV : Tt in boo "XsVTt" end handle Mis _ => ()
+val _ = let structure XsVU	= unpack pXsV : U in boo "XsVU" end handle Mis _ => ()
+val _ = let structure XsVV	= unpack pXsV : V in () end handle Mis _ => boo "XsVV"
+val _ = let structure XtTS	= unpack pXtT : S in boo "XtTS" end handle Mis _ => ()
+val _ = let structure XtTS'	= unpack pXtT : S' in boo "XtTS'" end handle Mis _ => ()
+val _ = let structure XtTSs	= unpack pXtT : Ss in boo "XtTSs" end handle Mis _ => ()
+val _ = let structure XtTSt	= unpack pXtT : St in boo "XtTSt" end handle Mis _ => ()
+val _ = let structure XtTT	= unpack pXtT : T in () end handle Mis _ => boo "XtTT"
+val _ = let structure XtTT' 	= unpack pXtT : T' in boo "XtTT'" end handle Mis _ => ()
+val _ = let structure XtTTs 	= unpack pXtT : Ts in boo "XtTTs" end handle Mis _ => ()
+val _ = let structure XtTTt 	= unpack pXtT : Tt in boo "XtTTt" end handle Mis _ => ()
+val _ = let structure XtTU	= unpack pXtT : U in () end handle Mis _ => boo "XtTU"
+val _ = let structure XtTV	= unpack pXtT : V in () end handle Mis _ => boo "XtTV"
+val _ = let structure XtTtS	= unpack pXtTt : S in boo "XtTtS" end handle Mis _ => ()
+val _ = let structure XtTtS'	= unpack pXtTt : S' in boo "XtTtS'" end handle Mis _ => ()
+val _ = let structure XtTtSs	= unpack pXtTt : Ss in boo "XtTtSs" end handle Mis _ => ()
+val _ = let structure XtTtSt	= unpack pXtTt : St in boo "XtTtSt" end handle Mis _ => ()
+val _ = let structure XtTtT	= unpack pXtTt : T in () end handle Mis _ => boo "XtTtT"
+(*val _ = let structure XtTtT' 	= unpack pXtTt : T' in boo "XtTtT'" end handle Mis _ => ()
+val _ = let structure XtTtTs 	= unpack pXtTt : Ts in boo "XtTtTs" end handle Mis _ => ()
+*)val _ = let structure XtTtTt 	= unpack pXtTt : Tt in () end handle Mis _ => boo "XtTtTt"
+val _ = let structure XtTtU	= unpack pXtTt : U in () end handle Mis _ => boo "XtTtU"
+val _ = let structure XtTtV	= unpack pXtTt : V in () end handle Mis _ => boo "XtTtV"
+val _ = let structure XtUS	= unpack pXtU : S in boo "XtUS" end handle Mis _ => ()
+val _ = let structure XtUS'	= unpack pXtU : S' in boo "XtUS'" end handle Mis _ => ()
+val _ = let structure XtUSs	= unpack pXtU : Ss in boo "XtUSs" end handle Mis _ => ()
+val _ = let structure XtUSt	= unpack pXtU : St in boo "XtUSt" end handle Mis _ => ()
+val _ = let structure XtUT	= unpack pXtU : T in boo "XtUT" end handle Mis _ => ()
+val _ = let structure XtUT' 	= unpack pXtU : T' in boo "XtUT'" end handle Mis _ => ()
+val _ = let structure XtUTs 	= unpack pXtU : Ts in boo "XtUTs" end handle Mis _ => ()
+val _ = let structure XtUTt 	= unpack pXtU : Tt in boo "XtUTt" end handle Mis _ => ()
+val _ = let structure XtUU	= unpack pXtU : U in () end handle Mis _ => boo "XtUU"
+val _ = let structure XtUV	= unpack pXtU : V in () end handle Mis _ => boo "XtUV"
+val _ = let structure XtVS	= unpack pXtV : S in boo "XtVS" end handle Mis _ => ()
+val _ = let structure XtVS'	= unpack pXtV : S' in boo "XtVS'" end handle Mis _ => ()
+val _ = let structure XtVSs	= unpack pXtV : Ss in boo "XtVSs" end handle Mis _ => ()
+val _ = let structure XtVSt	= unpack pXtV : St in boo "XtVSt" end handle Mis _ => ()
+val _ = let structure XtVT	= unpack pXtV : T in boo "XtVT" end handle Mis _ => ()
+val _ = let structure XtVT' 	= unpack pXtV : T' in boo "XtVT'" end handle Mis _ => ()
+val _ = let structure XtVTs 	= unpack pXtV : Ts in boo "XtVTs" end handle Mis _ => ()
+val _ = let structure XtVTt 	= unpack pXtV : Tt in boo "XtVTt" end handle Mis _ => ()
+val _ = let structure XtVU	= unpack pXtV : U in boo "XtVU" end handle Mis _ => ()
+val _ = let structure XtVV	= unpack pXtV : V in () end handle Mis _ => boo "XtVV"
