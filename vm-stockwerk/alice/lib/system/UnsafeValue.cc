@@ -16,6 +16,12 @@ DEFINE1(UnsafeValue_cast) {
   RETURN(x0);
 } END
 
+DEFINE2(UnsafeValue_same) {
+  x0 = PointerOp::Deref(x0);
+  x1 = PointerOp::Deref(x1);
+  RETURN_BOOL(x0 == x1);
+} END
+
 DEFINE3(UnsafeValue_proj) {
   DECLARE_TUPLE(record, x0);
   x1 = x1; // ignored
@@ -70,6 +76,8 @@ word UnsafeValue() {
   Record *record = Record::New(7);
   INIT_STRUCTURE(record, "UnsafeValue", "cast",
 		 UnsafeValue_cast, 1, true);
+  INIT_STRUCTURE(record, "UnsafeValue", "same",
+		 UnsafeValue_same, 2, true);
   INIT_STRUCTURE(record, "UnsafeValue", "proj",
 		 UnsafeValue_proj, 3, true);
   INIT_STRUCTURE(record, "UnsafeValue", "tag",
