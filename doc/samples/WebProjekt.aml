@@ -1,0 +1,124 @@
+(* Inspector *)
+
+inspect {x = 5}
+
+val x = List.tabulate (20, fn i => i)
+val _ = inspect (x, x, x)
+
+val rec x = 1::2::3::4::5::x
+val _ = inspect x
+
+
+
+(* Bedarfsgetriebene Auswertung *)
+
+val fibs =
+    let
+	fun fib (n, m) =
+	    byneed (fn () => n::fib (m, n + m))
+    in
+	fib (1, 1)
+    end
+
+inspect fibs
+
+inspect (List.nth (fibs, 5))
+
+inspect (List.nth (fibs, 80))
+
+
+
+(* Nebenläufigkeit *)
+
+fun sleep n = Future.await (Future.alarm (Time.fromSeconds 1))
+
+local
+    val active = ref true
+    fun counter i =
+	if !active then
+	    (inspect i;
+	     sleep 1;
+	     counter (i + 1))
+	else ()
+in
+    fun start () = (active := true; concur (fn () => counter 0))
+    fun stop () = active := false
+end
+
+val _ = start ()
+
+val _ = stop ()
+
+
+
+(* Synchronisation *)
+
+open Promise Future
+
+val p = promise ()
+val f = future p
+val _ = inspect ("Die Future:", f)
+
+inspect ("Der Thread:",
+	 concur (fn () => (await f; inspect "the future has been bound")))
+
+fulfill (p, 4)
+
+
+
+inspect (alarm (Time.fromSeconds 4));
+
+
+
+signature STREAM =
+sig
+    type 'a stream
+
+    val new: unit -> 'a stream * 'a list
+    val send: 'a stream * 'a -> unit
+    val close: 'a stream -> unit
+end
+
+structure Stream :> STREAM =
+struct
+    type 'a stream = 'a list promise ref
+
+    fun new () =
+	let
+	    val p = promise()
+	in
+	    (ref p, future p)
+	end
+
+    fun send (r, x) =
+	let
+	    val p' = promise()
+	    val p = Ref.exchange (r, p')
+	in
+	    fulfill(p, x::future p')
+	end
+
+    fun close r = fulfill(!r, nil)
+end
+
+val (stream, xs) = Stream.new ()
+
+inspect xs
+
+Stream.send (stream, 17);
+
+Stream.send (stream, 7);
+
+let
+    fun counter i =
+	(Stream.send (stream, i); sleep 1; counter (i + 1))
+	handle _ => ()
+in
+    concur (fn () => counter 0)
+end
+
+Stream.close stream
+
+
+
+(* Komponenten *)
