@@ -13,14 +13,15 @@
 functor
 import
    Application(getArgs exit)
-   System(showError show)
+   System(showError)
    Property(get put)
    URL(make resolve toString)
    Linker(link)
    PrimitiveTable(values)
    Scheduler(object)
 define
-   Args = {Application.getArgs record()}
+   Spec = record(booturl(single type: string default: 'lib/system/Boot'))
+   Args = {Application.getArgs Spec}
 
    local
       U = {URL.make {Property.get 'application.url'}}
@@ -28,16 +29,13 @@ define
       {Property.put 'alice.home' {URL.toString {URL.resolve U ''}}}
    end
 
-   case Args.1 of ComponentName|Rest then
-      Transient = {Linker.link ComponentName}
-      AwaitClosure = PrimitiveTable.values.'Future.await'
-      Res
-   in
+   case Args.1 of RootUrl|Rest then
       {Property.put 'stockwerk.args' Rest}
-      {Scheduler.object newThread(AwaitClosure arg(Transient) ?Res)}
-      {Scheduler.object run()}
-      {System.show Res}
-      {Application.exit 1}
+      case {Linker.link Args.booturl} of tuple(Closure) then
+	 {Scheduler.object newThread(Closure arg({ByteString.make RootUrl}) _)}
+	 {Scheduler.object run()}
+	 {Application.exit 1}
+      end
    else
       {System.showError
        'Usage: '#{Property.get 'application.url'}#' <component>'}
