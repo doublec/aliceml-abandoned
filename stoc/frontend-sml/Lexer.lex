@@ -100,9 +100,9 @@
 		      case String.sub(s,1)
 			of #"b" => toInt'(String.extract(s,2,NONE), BIN, i)
 			 | #"x" => toInt'(String.extract(s,2,NONE), HEX, i)
-			 |   _  => toInt'(s, HEX, i)
+			 |   _  => toInt'(s, DEC, i)
 		     )
-	   |   _  => toInt'(s, HEX, i)
+	   |   _  => toInt'(s, DEC, i)
 
     and toInt'(s,b,i) = valOf(scanString (Int.scan b) s)
 			handle Overflow =>
