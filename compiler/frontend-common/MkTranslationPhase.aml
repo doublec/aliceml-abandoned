@@ -779,12 +779,14 @@ struct
 	    let
 		val s1 = Inf.asSig j1
 		val s2 = Inf.asSig j2
+		val (fields,isntIdentity') =
+		    upItems(isOpaque, isntIdentity,
+			    x1, s1, x2, Inf.items s2, r, [])
 	    in
-		case upItems(isOpaque,
-			     isntIdentity orelse Inf.size s1 <> Inf.size s2,
-			     x1, s1, x2, Inf.items s2, r, [])
-		  of NONE        => NONE
-		   | SOME fields => SOME(O.ProdExp(typInfo(r,t2), fields))
+		if isntIdentity' orelse Inf.size s1 <> Inf.size s2 then
+		    SOME(O.ProdExp(typInfo(r,t2), fields))
+		else
+		    NONE
 	    end
 	else if Inf.isArrow j2 andalso Inf.isArrow j1 then
 	    let
@@ -839,9 +841,8 @@ struct
 	else (* j1 is sig or arrow, j2 is top *)
 	    SOME(trUnit r)
 
-    and upItems(isOpaque, false, x1, s1, x2, [], r, fields) = NONE
-      | upItems(isOpaque, true,  x1, s1, x2, [], r, fields) =
-	    SOME(Vector.fromList fields)
+    and upItems(isOpaque, isntIdentity, x1, s1, x2, [], r, fields) =
+	    (Vector.fromList fields, isntIdentity)
       | upItems(isOpaque, isntIdentity, x1, s1, x2, item::items, r, fields) =
 	if Inf.isValItem item then
 	    let
