@@ -89,5 +89,14 @@ public class Thread extends java.lang.Thread implements DMLValue {
 	}
     }
 
+    final public boolean equals(Object val) {
+	if (this == val) {
+	    return true;
+	} else if (val instanceof DMLTransient) {
+	    return val.equals(this);
+	} else {
+	    return false;
+	}
+    }
     _apply_fails ;
 }

@@ -28,12 +28,12 @@ final public class LVar extends UnicastRemoteObject
 	    if (ref instanceof DMLTransient) {
 		ref = ((DMLTransient) ref).getValue();
 	    }
-	}
 	return ref;
+	}
     }
 
     final synchronized public DMLValue request() throws java.rmi.RemoteException { // gibt Wert zurück wenn verfügbar
-	while (ref==null) {
+	while (ref == null) {
 	    try {
 		this.wait();
 	    } catch (java.lang.InterruptedException e) {
