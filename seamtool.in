@@ -1,70 +1,88 @@
 #!/bin/sh
-# @configure_input@
+# 
+# Authors:
+#   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+#   Marco Kuhlmann <kuhlmann@ps.uni-sb.de>
+# 
+# Copyright:
+#   Leif Kornstaedt, 2003
+#   Marco Kuhlmann, 2003
+# 
+# $Id$
+# 
 
 prefix=@prefix@
 exec_prefix=@exec_prefix@
-libseam=@libseam@
+includedir=@includedir@
+pkgincludedir=@includedir@/@PACKAGE@
+libdir=@libdir@
 
-if [ $# -lt 1 ]; then
-    echo "usage: $0 [--verbose|-v] (makedepend|c++|ld) <option> ..." >&2
-    exit 2
-fi
+DEFAULT_INCLUDES="-I. -I${pkgincludedir}"
 
-mode=$1; shift
-case "$mode" in
-    --verbose|-v)
-	verbose=1
-	mode=$1; shift
-	;;
-    *)
-	verbose=0
-	;;
-esac
+function usage () {
+    echo "Usage: $0 [OPTION]... MODE [MODE-ARG]...                   " >&2
+    echo "Compilation utility for SEAM                               " >&2
+    echo "                                                           " >&2
+    echo "Generic options:                                           " >&2
+    echo "  -h, --help       display this message and exit           " >&2
+    echo "  -v, --verbose    enable verbose shell tracing            " >&2
+    echo "  -V, --version    show version information and exit       " >&2
+    echo "                                                           " >&2
+    echo "MODE must be one of the following:                         " >&2
+    echo "  compile          compile a source file                   " >&2
+    echo "  link             create a library or an executable       " >&2
+    echo "                                                           " >&2
+    echo "MODE-ARGs vary depending on the MODE.                      " >&2
+}
 
-cmd() {
-    if [ "$verbose" -ne 0 ]; then echo "$@"; fi
+function version () {
+    echo "$0 (SEAM compilation utility) @PACKAGE_VERSION@" >&2
+    echo "                                                           " >&2
+    echo "Copyright (C) 2003  Programming Systems Lab                " >&2
+    echo "See the source for copying conditions.                     " >&2
+}
+
+function cmd () {
+    if [ $verbose -ne 0 ]; then echo "$@"; fi
     "$@" || exit $?
 }
 
+if [ $# -lt 1 ]; then
+    usage
+    exit 2 # TODO: Is this the right exit code?
+fi
+
+case "$1" in
+    -h|--help)
+	usage
+	exit 0
+	;;
+    -V|--version)
+	version
+	exit 0
+	;;
+    -v|--verbose)
+	verbose=1
+	shift
+	;;
+esac
+
+mode=$1
+shift
+
 case "$mode" in
     makedepend)
-	cmd @CXX@ -M @DEFS@ -I@includedir@ @INCLUDES@ @CPPFLAGS@ "$@"
+	cmd @CXX@ -M @DEFS@ ${DEFAULT_INCLUDES} @INCLUDES@ @CPPFLAGS@ "$@"
 	;;
-    c++)
-	cmd @CXX@ @DEFS@ -I@includedir@ @INCLUDES@ @CPPFLAGS@ \
-	    @CXXFLAGS@ "$@"
+    compile)
+	cmd @CXX@ @DEFS@ ${DEFAULT_INCLUDES} @INCLUDES@ @CPPFLAGS@ @CXXFLAGS@ "$@"
 	;;
-    ld)
-	outputfile=""
-	ldflags="@LDFLAGS@"
-	libs=""
-	fileargs=""
-	while [ $# -gt 0 ]; do
-	    case $1 in
-		-o)
-		    if [ -z "$outputfile" ]; then
-			outputfile="$2"; shift; shift
-		    else
-			echo $0: option -o given more than once >&2
-			exit 2
-		    fi
-		    ;;
-		-s)
-		    ldflags="$ldflags $1"; shift
-		    ;;
-		-l*|-L*|*.dll)
-		    libs="$libs $1"; shift
-		    ;;
-		*)
-		    fileargs="$fileargs $1"; shift
-		    ;;
-	    esac
-	done
-	cmd @CXX@ -shared $ldflags -o $outputfile $fileargs $libs\
-	    -L@libdir@ $libseam
+    link)
+	cmd @CXX@ @CXXFLAGS@ @LDFLAGS@ "$@" -shared -L${libdir} -lseam
 	;;
     *)
-	echo $0: unknown mode \`$1\' >&2
+	echo "$0: unknown mode `$mode'" >&2
+	echo "Try `$0 --help' for more information." >&2
 	exit 2
 	;;
 esac
