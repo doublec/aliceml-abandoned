@@ -362,9 +362,9 @@ functor PrimIO(structure V: MONO_VECTOR
 				  val n = len (V.length buf, i, sz)
 				  val a = A.array (n, someElem)
 			      in
-				  A.copyVec {src = buf, si = 0, len = SOME n,
+				  A.copyVec {src = buf, si = i, len = SOME n,
 					     dst = a, di = 0};
-				  valOf writeArr {buf = a, i, sz}
+				  valOf writeArr {buf = a, i = 0, sz = NONE}
 			      end)
 		    else if isSome block then (*--** first write, then block *)
 			if isSome writeVecNB then
@@ -378,9 +378,10 @@ functor PrimIO(structure V: MONO_VECTOR
 				      val n = len (V.length buf, i, sz)
 				      val a = A.array (n, someElem)
 				  in
-				      A.copyVec {src=buf, si=0, len=SOME n,
+				      A.copyVec {src=buf, si=i, len=SOME n,
 						 dst = a, di = 0};
-				      valOf (valOf writeArrNB {buf = a, i, sz})
+				      valOf (valOf writeArrNB
+					  {buf = a, i = 0, sz = SOME n})
 				  end)
 			else NONE
 		    else NONE
@@ -389,7 +390,8 @@ functor PrimIO(structure V: MONO_VECTOR
 		    else if isSome writeVec then
 			SOME (fn {buf, i, sz} =>
 			      valOf writeVec
-				  {buf = A.extract (buf, i, sz), i, sz})
+				  {buf = A.extract (buf, i, sz),
+				   i = 0, sz = NONE})
 		    else if isSome block then (*--** first write, then block *)
 			if isSome writeArrNB then
 			    SOME (fn {buf, i, sz} =>
@@ -399,7 +401,8 @@ functor PrimIO(structure V: MONO_VECTOR
 			    SOME (fn {buf, i, sz} =>
 				  (valOf block ();
 				   valOf (valOf writeVecNB
-				       {buf = A.extract (buf, i, sz), i, sz})))
+				       {buf = A.extract (buf, i, sz),
+					i = 0, sz = NONE})))
 			else NONE
 		    else NONE
 		val writeVecNB' =
@@ -410,9 +413,10 @@ functor PrimIO(structure V: MONO_VECTOR
 				  val n = len (V.length buf, i, sz)
 				  val a = A.array (n, someElem)
 			      in
-				  A.copyVec {src = buf, si = 0, len = SOME n,
+				  A.copyVec {src = buf, si = i, len = SOME n,
 					     dst = a, di = 0};
-				  valOf writeArrNB {buf = a, i, sz}
+				  valOf writeArrNB
+				      {buf = a, i = 0, sz = SOME n}
 			      end)
 		    else if isSome canOutput then
 			if isSome writeVec then
@@ -427,9 +431,10 @@ functor PrimIO(structure V: MONO_VECTOR
 					  val n = len (V.length buf, i, sz)
 					  val a = A.array (n, someElem)
 				      in
-					  A.copyVec {src=buf, si=0, len=SOME n,
+					  A.copyVec {src=buf, si=i, len=SOME n,
 						     dst=a, di=0};
-					  SOME (valOf writeArr {buf=a, i, sz})
+					  SOME (valOf writeArr
+						    {buf=a, i=0, sz=NONE})
 				      end
 				  else NONE)
 			else NONE
@@ -439,7 +444,7 @@ functor PrimIO(structure V: MONO_VECTOR
 		    else if isSome writeVecNB then
 			SOME (fn {buf, i, sz} =>
 			      valOf writeVecNB
-				  {buf = A.extract (buf, i, sz), i, sz})
+				  {buf = A.extract (buf, i, sz), i=0, sz=NONE})
 		    else if isSome canOutput then
 			if isSome writeArr then
 			    SOME (fn {buf, i, sz} =>
@@ -450,7 +455,8 @@ functor PrimIO(structure V: MONO_VECTOR
 			    SOME (fn {buf, i, sz} =>
 				  if valOf canOutput () then
 				      SOME (valOf (valOf writeVecNB
-					  {buf=A.extract (buf, i, sz), i, sz}))
+					  {buf = A.extract (buf, i, sz),
+					   i = 0, sz = NONE}))
 				  else NONE)
 			else NONE
 		    else NONE
