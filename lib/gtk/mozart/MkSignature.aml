@@ -43,7 +43,7 @@ functor MkSignature(structure TypeManager : TYPE_MANAGER
 	    fun getOutType "int"    = "int"
 	      | getOutType "double" = "real"
 
-	    fun getInType "gboolean"     = "int" (* Hack Alert *)
+	    fun getInType "gboolean"     = "bool" (* Hack Alert; was int *)
 	      | getInType "gchar"        = "int"
 	      | getInType "guchar"       = "int"
 	      | getInType "gint"         = "int"

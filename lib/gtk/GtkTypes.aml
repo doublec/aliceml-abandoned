@@ -12,7 +12,7 @@
  *)
 
 local
-    type bool = int
+    type bool = bool
 in
     structure GtkTypes =
 	struct
@@ -128,7 +128,8 @@ in
 		LINE | RECTANGLE | ELLIPSE | POLYGON
 
 	    datatype arg =
-		INT    of int
+     	        BOOL   of bool
+	      | INT    of int
 	      | DOUBLE of real
 	      | STRING of string
 	      | OBJECT of object
