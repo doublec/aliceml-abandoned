@@ -29,15 +29,15 @@
     RETURN(Real::New(op(real1->GetValue(), real2->GetValue()))->ToWord()); \
   } END
 
-double asinh(double x) {
+static inline double Asinh(double x) {
   return log(x + sqrt(x * x + 1.0));
 }
 
-double acosh(double x) {
+static inline double Acosh(double x) {
   return log(x + sqrt(x * x - 1.0));
 }
 
-double atanh(double x) {
+static inline double Atanh(double x) {
   if (fabs(x) > 1.0) {
     return asin(2.0);
   } else {
@@ -46,11 +46,11 @@ double atanh(double x) {
 }
 
 REAL_TO_REAL(Math_acos, std::acos)
-REAL_TO_REAL(Math_acosh, acosh)
+REAL_TO_REAL(Math_acosh, Acosh)
 REAL_TO_REAL(Math_asin, std::asin)
-REAL_TO_REAL(Math_asinh, asinh)
-REAL_TO_REAL(Math_atan, std::atanh)
-REAL_TO_REAL(Math_atanh, atanh)
+REAL_TO_REAL(Math_asinh, Asinh)
+REAL_TO_REAL(Math_atan, std::atan)
+REAL_TO_REAL(Math_atanh, Atanh)
 REAL_REAL_TO_REAL(Math_atan2, std::atan2);
 REAL_TO_REAL(Math_cos, std::cos)
 REAL_TO_REAL(Math_cosh, std::cosh)

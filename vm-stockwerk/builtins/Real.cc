@@ -93,7 +93,7 @@ DEFINE1(Real_fromInt) {
 REAL_TO_REAL(Real_realCeil, std::ceil)
 REAL_TO_REAL(Real_realFloor, std::floor)
 
-double rint(double x) {
+static inline double Rint(double x) {
   double fx = floor(x);
   double diff = x - fx;
   if (diff > 0.5)
@@ -106,10 +106,10 @@ double rint(double x) {
   return fx;
 }
 
-REAL_TO_REAL(Real_realRound, rint)
+REAL_TO_REAL(Real_realRound, Rint)
 REAL_TO_REAL(Real_realTrunc, Trunc)
 REAL_REAL_TO_INT(Real_rem, std::fmod)
-REAL_TO_INT(Real_round, std::rint)
+REAL_TO_INT(Real_round, Rint)
 
 DEFINE1(Real_toString) {
   //--** not elegant; string is traversed twice
