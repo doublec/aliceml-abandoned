@@ -48,8 +48,8 @@ structure Abbrev  =
 	val CStr           = "de/uni_sb/ps/dml/runtime/String"
 	val CTuple         = "de/uni_sb/ps/dml/runtime/Tuple"
 	val CBuiltin       = "de/uni_sb/ps/dml/runtime/Builtin"
-	val CSelString     = "de/uni_sb/ps/dml/runtime/General$SelFunString"
-	val CSelInt        = "de/uni_sb/ps/dml/runtime/General$SelFunInt"
+	val CSelString     = "de/uni_sb/ps/dml/runtime/General$Sel$SelFunString"
+	val CSelInt        = "de/uni_sb/ps/dml/runtime/General$Sel$SelFunInt"
 	val CReference     = "de/uni_sb/ps/dml/runtime/Reference"
 	fun cTuple n       = CTuple^(if n=1 orelse n >= 5 then "" else Int.toString n)
 
