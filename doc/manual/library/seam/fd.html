@@ -12,7 +12,7 @@
     and propagators.
   </P>
   <P>
-    Finite domain variables are variables whose values are non-negative integers.
+    Finite domain variables are variables whose values are integers.
   </P>
   <P>
     If a propagator is invoked, it tries to narrow the domains of the
@@ -24,8 +24,10 @@
     solution of the modeled constraint. But due to efficiency reasons,
     most propagators provide only interval propagation,
     i. e. only the bounds of domains are narrowed.
-    For some propagators, there is an operational semantics in between
-    both schemes. 
+    Even faster to perform, but even less strict is value propagation, 
+    which is performed only when one of the variables is determined.
+    Some propagators take a "consistency level" argument to determine 
+    the desired mode of operation.
   </P>
   <P>
     A propagator ceases to exist if all the variables
@@ -36,11 +38,6 @@
     to exist if the current upper bound
     of <I>x</I> is smaller than or equal to the current lower bound of <I>y</I>.
   </P>
-  <P>
-    Note that every propagator creation
-    can raise a <TT>Tell</TT> exception if it is performed on toplevel and
-    the constraint is inconsistent with other constraints.
-  </P>
 
   <P>See also:
     <A href="fs.html"><TT>FS</TT></A>,
@@ -50,940 +47,393 @@
 <?php section("import", "import"); ?>
 
   <PRE>
-    import signature FD from "x-alice:/lib/constraints/FD-sig"
-    import structure FD from "x-alice:/lib/constraints/FD"</PRE>
+    import signature FD from "x-alice:/lib/gecode/FD-sig"
+    import structure FD from "x-alice:/lib/gecode/FD"</PRE>
 
 <?php section("interface", "interface"); ?>
 
   <PRE>
-     signature FD =
-     sig
-	type fd
-	type bin = fd
+signature FD =
+sig
+    type space
+    type intvar
+    type boolvar
 
-	exception Tell of {cause : exn}
-	    
-	datatype domain_element =
-	    SINGLE of int
-	  | RANGE  of int * int
-	    
-	type domain = domain_element vector
-	    
-	datatype relation =
-	    LESS
-	  | LESSEQ
-	  | EQUAL
-	  | NOTEQUAL
-	  | GREATER
-	  | GREATEREQ
+    exception NotAssigned
+		       
+    type domain = (int*int) vector
+    exception InvalidDomain
+    (* Exception thrown by all domain tells *)
+    (* if something that is no proper domain is used *)
 
-	datatype dist_mode =
-	    NAIVE
-	  | FIRSTFAIL
-	  | SPLIT_MIN
-	  | SPLIT_MAX
-	  | NBSUSPS
+    val domainFromList : int list -> domain
 
-	datatype assign =
-	    MIN
-	  | MID
-	  | MAX
-	    
-	(* Implementation dependent fd limits *)
-	val inf : int
-	val sup : int
+    (* Allocation of finite domain variables *)
+    val intvar :  space * domain -> intvar
+    val intvarVec :  space * int * domain -> intvar vector
+    val range :  space * (int * int) -> intvar
+    val rangeVec :  space * int * (int * int) -> intvar vector
 
-	(* Allocation Functions *)
-	val fd : domain option -> fd (* Domain, Overflow *)
-	val fdVec : int * domain -> fd vector (* Domain, Overflow *)
-	val range : int * int -> fd (* Domain, Overflow *)
-	val rangeVec : int * (int * int) -> fd vector (* Domain, Overflow *)
-	val bin : unit -> bin
-	val binVec : int -> bin
-	    
-	(* Assignment *)
-	val assign : assign * fd vector -> unit
+    (* Allocation of boolean (0/1) finite domain variables *)
+    val boolvar :  space -> boolvar
+    val boolvarVec :  space * int -> boolvar vector
 
-	(* Conversion *)
-	val toInt : fd -> int
-	val future : fd -> int
-	val fromInt : int -> fd
-	val isBin : fd -> bool
+    (* Constraining an intvar to a boolvar *)
 
-	(* Standards Sums *)
-	val sum : fd vector * relation * fd -> unit
-	val sumC : (int * fd) vector * relation * fd -> unit
-	val sumAC : (int * fd) vector * relation * fd -> unit
-	val sumCN : (int * fd vector) vector * relation * fd -> unit
-	val sumACN : (int * fd vector) vector * relation * fd -> unit
-	val sumD : fd vector * relation * fd -> unit
-	val sumCD : (int * fd) vector * relation * fd -> unit
+    val intvar2boolvar : space * intvar -> boolvar
 
-	(* Standard Propagators; Interval propagation *)
-	val plus : fd * fd * fd -> unit (* X + Y =: Z *)
-	val minus : fd * fd * fd -> unit (* X - Y =: Z *)
-	val times : fd * fd * fd -> unit (* X * Y =: Z *)
-	val power : fd * int * fd -> unit (* pow(X, I) =: Z *)
-	val divI : fd * int * fd -> unit (* X divI I =: Z *)
-	val modI : fd * int * fd -> unit (* X modI I =: Z *)
+    (* Value assignment *)
 
-	(* Standard Propagators; Domain propagation *)
-	val plusD : fd * fd * fd -> unit (* X + Y =: Z *)
-	val minusD : fd * fd * fd -> unit (* X - Y =: Z *)
-	val timesD : fd * fd * fd -> unit (* X * Y =: Z *)
-	val divD : fd * int * fd -> unit (* X divD I =: Z *)
-	val modD : fd * int * fd -> unit (* X modD I =: Z *)
+    datatype avalsel = AVAL_MIN | AVAL_MED | AVAL_MAX
 
-	val min : fd * fd * fd -> unit (* min(X, Y) =: Z *)
-	val max : fd * fd * fd -> unit (* max(X, Y) =: Z *)
+    val assign : space * intvar vector * avalsel -> unit
 
-	val equal : fd * fd -> unit (* X =: Y *)
-	val notequal : fd * fd -> unit (* X \=: Y *)
-	val distance : fd * fd * relation * fd -> unit
-	val less : fd * fd -> unit (* X &lt;: Y *)
-	val lessEq : fd * fd -> unit (* X &lt;=: Y *)
-	val greater : fd * fd -> unit (* X >: Y *)
-	val greaterEq : fd * fd -> unit (* X >=: Y *)
-	val disjoint : fd * int * fd * int -> unit
-	val disjointC : fd * int * fd * int * bin -> unit
-	val tasksOverlap : fd * int * fd * int * bin -> unit
+    (* Domain constraints *)
+    val dom :  space * intvar * (int * int) vector -> unit
 
-	(* Non-Linear Propagators *)
-	val distinct : fd vector -> unit
-	val distinctOffset : (fd * int) vector -> unit
-	val distinct2 : ((fd * int) * (fd * int)) vector -> unit
-	val atMost : fd * fd vector * int -> unit
-	val atLeast : fd * fd vector * int -> unit
-	val exactly : fd * fd vector * int -> unit
-	val element : fd * int vector * fd -> unit
 
-	(* 0/1 Propagators *)
-	val conj : bin * bin * bin -> unit
-	val disj : bin * bin * bin -> unit
-	val exor : bin * bin * bin -> unit
-	val nega : bin * bin -> unit
-	val impl : bin * bin * bin -> unit
-	val equi : bin * bin * bin -> unit
+    (* debugging *)
+    (*val varStamp : intvar -> int*)
 
-	(* Reified Constraints *)
-	structure Reified :
-	    sig
-		(* Reified Variable is returned *)
-		val fd : domain * bin -> fd (* Domain, Overflow *)
-		(* Reified Vector of Variables is returned *)
-		val fdVec : int * domain * bin -> fd vector (* Domain, Overflow *)
-		(* Same as in Oz *)
-		val card : int * bin vector * int * bin -> unit
-		val distance : fd * fd * relation * fd * bin -> unit
-		val sum : fd vector * relation * fd * bin -> unit
-		val sumC : (int * fd) vector * relation * fd * bin -> unit
-		val sumAC : (int * fd) vector * relation * fd * bin -> unit
-		val sumCN : (int * fd vector) vector * relation * fd * bin -> unit
-		val sumACN : (int * fd vector) vector * relation * fd * bin -> unit
-	    end
+    (* *********** *)
+    (* PROPAGATORS *)
+    (* *********** *)
 
-	(* Reflection *)
-	structure Reflect :
-	    sig
-		val min : fd -> int
-		val max : fd -> int
-		val mid : fd -> int
-		val nextLarger : fd * int -> int
-		val nextSmaller : fd * int -> int
-		val size : fd -> int
-		val dom : fd -> domain
-		val domList : fd -> int list
-		val nbSusps : fd -> int
-		val eq : fd * fd -> bool (* token eq *)
-	    end
+    (* Relations *)
 
-	(* Watching *)
-	structure Watch :
-	    sig
-		val min : fd * int -> bool
-		val max : fd * int -> bool
-		val size : fd * int -> bool
-	    end
+    datatype relation =
+	     EQ (* Equality         == *)
+	   | NQ (* Disequality      != *)
+	   | LQ (* Less or equal    <= *)
+	   | LE (* Less             <  *)
+	   | GQ (* Greater or equal >= *)
+	   | GR (* Greater          >  *)
+	     
+    datatype conlevel = 
+	     BND | DEF | DOM | VAL
 
-	(* Distribution *)
-	val distribute : dist_mode * fd vector -> unit
-	val choose : dist_mode * fd vector -> fd * domain
+    val rel  :  space * intvar * relation * intvar -> unit
+    val relI :  space * intvar * relation * int -> unit
 
-	(* Scheduling Stuff *)
-	structure Schedule :
-	    sig
-		type tasks  = (string * string list) vector
-		type starts = (string * fd) vector
-		type specs  = (string * int) vector
+    val equal  : space * intvar * intvar * conlevel -> unit
+    val equalV : space * intvar vector * conlevel -> unit
 
-		val cumulative : tasks * starts * specs * specs * specs -> unit
-		val cumulativeEF : tasks * starts * specs * specs * specs -> unit
-		val cumulativeTI : tasks * starts * specs * specs * specs -> unit
-		val cumulativeUp : tasks * starts * specs * specs * specs -> unit
-		val disjoint : fd * int * fd * int -> unit
-		val firstsDist : tasks * starts * specs -> unit
-		val lastsDist : tasks * starts * specs -> unit
-		val firstsLastsDist : tasks * starts * specs -> unit
-		val taskIntervalsDistP : tasks * starts * specs -> unit
-		val taskIntervalsDistO : tasks * starts * specs -> unit
-		val serializedDisj : tasks * starts * specs -> unit
-		val serialized : tasks * starts * specs -> unit
-		val taskIntervals : tasks * starts * specs -> unit
-	    end
-     end</PRE>
+    (* Distinct constraints *)
+    val distinct : space * intvar vector * conlevel -> unit
+    val distinctOffset : space * (int * intvar) vector *
+			 conlevel -> unit
+
+    (* Counting constraints *)
+    val countII : space * intvar vector * relation *
+		  int * relation * int -> unit
+    val countVI : space * intvar vector * relation *
+		 intvar * relation * int -> unit
+    val countIV : space * intvar vector * relation *
+		  int * relation * intvar -> unit
+    val countVV : space * intvar vector * relation *
+		 intvar * relation * intvar -> unit
+
+    (* Access constraints *)
+    val element : space * intvar vector * intvar *
+		 intvar -> unit
+    val elementI : space * int vector * intvar *
+		  intvar -> unit
+    val lex : space * intvar vector * relation *
+	     intvar vector -> unit
+			       
+    (* Boolean constraints *)			     
+    val nega  : space * boolvar * boolvar -> unit
+    val conj  : space * boolvar * boolvar * boolvar -> unit
+    val disj  : space * boolvar * boolvar * boolvar -> unit
+    val impl  : space * boolvar * boolvar * boolvar -> unit
+    val equi  : space * boolvar * boolvar * boolvar -> unit
+    val exor  : space * boolvar * boolvar * boolvar -> unit
+    val conjV : space * boolvar vector * boolvar -> unit
+    val disjV : space * boolvar vector * boolvar -> unit
+
+    (* Linear equations *)
+    val linear : space * (int * intvar) vector * relation *
+		 int * conlevel -> unit
+
+    (* Arithmetic constraints *)					
+    val min : space * intvar vector * intvar -> unit
+    val max : space * intvar vector * intvar -> unit
+    val abs : space * intvar * intvar * conlevel -> unit
+    val mult: space * intvar * intvar * intvar -> unit
+(*    val power: space * intvar * intvar * intvar -> unit*)
+
+    structure Reified :
+	sig
+	    val intvar : space * domain * boolvar -> intvar
+	    val intvarVec : space * int * domain * boolvar ->
+			    intvar vector
+	    val dom : space * intvar * (int * int) vector *
+		      boolvar -> unit
+	    val rel : space * intvar * relation * intvar *
+		      boolvar -> unit
+	    val relI : space * intvar * relation * int *
+		       boolvar -> unit
+(*	    val equal : space * intvar * intvar *
+			boolvar * conlevel -> unit*)
+	    val linear : space * (int * intvar) vector * relation *
+			 int * boolvar * conlevel -> unit
+	end
+
+    structure Reflect :
+	sig
+	    val min : space * intvar -> int
+	    val max : space * intvar -> int
+            val med : space * intvar -> int
+	    val value : space * intvar -> int (* NotAssigned *)
+	    val boolVal : space * boolvar -> bool (* NotAssigned *)
+	    val boolvar2intvar : boolvar -> intvar
+(*	    val mid : space * intvar -> int *)
+(*	    val nextLarger : space * fd * int -> int *)
+(*	    val nextSmaller : space * fd * int -> int *)
+	    val size : space * intvar -> int
+	    val dom : space * intvar -> domain
+            val assigned : space * intvar -> bool
+            val range : space * intvar -> bool
+(*	    val domList : fd -> int list *)
+(*	    val nbSusps : fd -> int *)
+(*	    val eq : fd * fd -> bool (* token eq *) *)
+	end
+						  
+    (* Branching strategies *)
+
+    datatype b_var_sel =
+	     B_DEGREE_MAX
+	   | B_DEGREE_MIN
+	   | B_MAX_MAX
+	   | B_MAX_MIN
+	   | B_MIN_MAX
+	   | B_MIN_MIN
+	   | B_NONE
+	   | B_SIZE_MAX
+	   | B_SIZE_MIN
+	     
+    datatype b_val_sel =
+	     B_MAX
+	   | B_MED
+	   | B_MIN
+	   | B_SPLIT_MAX
+	   | B_SPLIT_MIN
+	   | B_VAL
+
+    val branch : space * intvar vector * b_var_sel *
+		 b_val_sel -> unit
+
+end</PRE>
 
 <?php section("description", "description"); ?>
 
   <DL>
-    <DT>
-      <TT>type fd</TT><BR>
-      <TT>type bin = fd</TT> 
-    </DT>
-    <DD>
-      <P>The type of finite domain variables. The type <TT>bin</TT> is used
-         to indicate boolean 0/1 variables.
-    </P></DD>
-
-    <DT>
-      <TT>exception Tell</TT>
-    </DT>
-    <DD>
-      <P>is raised when a propagator is created on toplevel and is inconsistent
-         with other constraints.
-    </P></DD>
-
-    <DT>
-      <TT>datatype domain_element = SINGLE of int | RANGE of int * int</TT><BR>
-      <TT>type domain = domain_element vector</TT>
-    </DT>
-    <DD>
-      <P>The type of finite domains. Use <TT>SINGLE i</TT> to specify a single
-         integer <TT>i</TT> and <TT>RANGE(il, ih)</TT> to specify a value
-         domain <TT>[il, il + 1, ..., ih]</TT>, presuming that
-         <TT>ih</TT> is greater than or equal to <TT>il</TT>.
-      <P>For example, the value <TT>#[SINGLE(5), RANGE(7, 10)]</TT>
-         specifies the domain <TT>[5,7,8,9,10]</TT>.
-    </P></DD>
-
-    <DT>
-      <TT>datatype relation = LESS | LESSEQ | EQUAL | NOTEQUAL | GREATER | GREATEREQ</TT>
-    </DT>
-    <DD>
-      <P>This is the datatype to denote a arithmetic relation which is
-         given to generic propagators as an argument.
-    </P></DD>
-
-    <DT>
-      <TT>datatype dist_mode = NAIVE | FIRSTFAIL | SPLIT_MIN | SPLIT_MAX | NBSUSPS</TT>
-    </DT>
-    <DD>
-      <P>This datatype is used to denote the distribution stragety which is
-         given to the <TT>FD.distribute</TT> function.
-    </P></DD>
-
-    <DT>
-      <TT>datatype assign = MIN | MID | MAX</TT>
-    </DT>
-    <DD>
-      <P>This datatype is used to assign implementation dependent values to
-         finite domain variables. <TT>MIN</TT> denotes the minimal integer
-         value, <TT>MAX</TT> denotes the maximal integer value and <TT>MID</TT>
-         the medium value.
-    </P></DD>
-
-    <DT>
-      <TT>inf</TT>
-    </DT>
-    <DD>
-      <P>denotes the implementation dependent lower bound of a fd variable.
-    </P></DD>
-
-    <DT>
-      <TT>sup</TT>
-    </DT>
-    <DD>
-      <P>denotes the implementation dependent upper bound of a fd variable.
-    </P></DD>
-
-    <DT>
-      <TT>fd <I>dom</I></TT>
-    </DT>
-    <DD>
-      <P>returns a freshly created finite domain variable initialized with
-         the given domain <I>dom</I>. In case <I>dom</I> equals to
-         <TT>NONE</TT>, the maximal domain <TT>[MIN, MIN + 1, ..., MAX]</TT>
-         is used.
-    </P></DD>
-
-    <DT>
-      <TT>fdVec (<I>n</I>, <I>dom</I>)</TT>
-    </DT>
-    <DD>
-      <P>returns a vector of freshly created finite domain variables.
-         The vector has size <I>n</I> and all variables are initialized
-         with the domain denoted by <I>dom</I>.
-    </P></DD>
-
-    <DT>
-      <TT>range (<I>il</I>, <I>ih</I>)</TT>
-    </DT>
-    <DD>
-      <P>convenience abbreviation for <TT>fd (SOME (#[RANGE(il, ih)]))</TT>.
-    </P></DD>
-
-    <DT>
-      <TT>rangeVec (<I>n</I>, <I>il</I>, <I>ih</I>)</TT>
-    </DT>
-    <DD>
-      <P>convenience abbreviation for
-         <TT>fdVec (n,#[RANGE(il, ih)])</TT>.
-    </P></DD>
-
-    <DT>
-      <TT>bin ()</TT>
-    </DT>
-    <DD>
-      <P>convenience abbreviation for <TT>fd (SOME (#[RANGE(0, 1)]))</TT>.
-    </P></DD>
-
-    <DT>
-      <TT>binVec <I>n</I></TT>
-    </DT>
-    <DD>
-      <P>convenience abbreviation for <TT>fdVec (n,#[RANGE(0, 1)])</TT>.
-    </P></DD>
-
-    <DT>
-      <TT>assign (<I>as</I>, <I>v</I>)</TT>
-    </DT>
-    <DD>
-      <P>Every finite domain variable contained in vector <I>v</I> is assigned
-         the value denoted by <I>as</I>, that is, either the minimal, medium or
-         maximal value possible.
-    </P></DD>
-
-    <DT>
-      <TT>toInt <I>f</I></TT>
-    </DT>
-    <DD>
-      <P>returns the integer value i denoted
-         by the finite domain variable is returned, presuming
-         that <I>f</I> has a singleton domain.
-    </P></DD>
-
-    <DT>
-      <TT>future <I>f</I></TT>
-    </DT>
-    <DD>
-      <P>returns the integer value i denoted
-         by the finite domain variable is returned, presuming
-         that <I>f</I> has a singleton domain.
-    </P></DD>
-
-    <DT>
-      <TT>fromInt <I>i</I></TT>
-    </DT>
-    <DD>
-      <P>returns a freshly created finite domain variable
-         initialized with the singleton domain <TT>#[SINGLE i]</TT>.
-    </P></DD>
-
-    <DT>
-      <TT>isBin <I>f</I></TT>
-    </DT>
-    <DD>
-      <P>returns <TT>true</TT> iff <I>f</I> is 0/1 variable,
-         <TT>false</TT> otherwise.
-    </P></DD>
-
-    <DT>
-      <TT>sum (<I>v</I>, <I>rel</I>, <I>r</I>)</TT>
-    </DT>
-    <DD>
-      <P>creates a propagator for
-      <PRE>
-        v1 + ... + vn - r <I>rel</I> 0</PRE>
-      <P>For the precise operational semantics, see
-         <A href="http://www.mozart-oz.org/documentation/system/node21.html#section.fd.arithmetic">here</A>.
-      <P>In case, <I>rel</I> denotes <TT>NOTEQUAL</TT>,
-         the propagator waits until at most one non-determined
-         variable is left. Then the appropriate value is discarded
-         from the variable's domain.
-         For the other relations, the propagator does interval propagation. 
-    </P></DD>
-
-    <DT>
-      <TT>sumC (<I>v</I>, <I>rel</I>, <I>r</I>)</TT>
-    </DT>
-    <DD>
-      <P>creates a propagator for
-      <PRE>
-        i1 * v1 + ... + in * vn - r <I>rel</I> 0</PRE>
-      <P>For the precise operational semantics, see
-         <A href="http://www.mozart-oz.org/documentation/system/node21.html#section.fd.arithmetic">here</A>.
-    </P></DD>
-
-    <DT>
-      <TT>sumAC (<I>v</I>, <I>rel</I>, <I>r</I>)</TT>
-    </DT>
-    <DD>
-      <P>creates a propagator for the absolute value of the scalar product
-      <PRE>
-        |iv * v| = |i1 * v1 + ... + in * vn| <I>rel</I> r</PRE>
-      <P>For the precise operational semantics, see
-         <A href="http://www.mozart-oz.org/documentation/system/node21.html#section.fd.arithmetic">here</A>.
-    </P></DD>
-
-    <DT>
-      <TT>sumCN (<I>v</I>, <I>rel</I>, <I>r</I>)</TT>
-    </DT>
-    <DD>
-      <P>creates a propagator for
-      <PRE>
-        i1 * v1 * ... * v1m1 + ... + in * vn1 * ... *vnmn - r <I>rel</I> 0</PRE>
-      <P>For the precise operational semantics, see
-         <A href="http://www.mozart-oz.org/documentation/system/node21.html#section.fd.arithmetic">here</A>.
-    </P></DD>
-
-    <DT>
-      <TT>sumACN (<I>v</I>, <I>rel</I>, <I>r</I>)</TT>
-    </DT>
-    <DD>
-      <P>creates a propagator for
-      <PRE>
-        |i1 * v1 * ... * v1m1 + ... + in * vn1 * ... *vnmn| <I>rel</I> r</PRE>
-      <P>For the precise operational semantics, see
-         <A href="http://www.mozart-oz.org/documentation/system/node21.html#section.fd.arithmetic">here</A>.
-    </P></DD>
-
-    <DT>
-      <TT>sumD (<I>v</I>, <I>rel</I>, <I>r</I>)</TT>
-    </DT>
-    <DD>
-      <P>creates a propagator analogous to <TT>sum</TT> but performs
-         domain propagation. Note that only equality (<TT>EQUAL</TT>) and
-         non-equality are supported (<TT>NOTEQUAL</TT>),
-         as for inequalities domain and bounds propagation are equivalent
-    </P></DD>
-
-    <DT>
-      <TT>sumCD (<I>v</I>, <I>rel</I>, <I>r</I>)</TT>
-    </DT>
-    <DD>
-      <P>creates a propagator analogous to <TT>sumC</TT> but performs
-         domain propagation. Note that only equality (<TT>EQUAL</TT>) and
-         non-equality are supported (<TT>NOTEQUAL</TT>),
-         as for inequalities domain and bounds propagation are equivalent
-    </P></DD>
-
-    <DT>
-      <TT>plus (<I>x</I>, <I>y</I>, <I>z</I>)</TT>
-    </DT>
-    <DD>
-      <P><I>z</I> is the sum of <I>x</I> and <I>y</I>. The propagator
-         constraints its arguments as <TT>X + Y = Z</TT>.
-    </P></DD>
-
-    <DT>
-      <TT>minus (<I>x</I>, <I>y</I>, <I>z</I>)</TT>
-    </DT>
-    <DD>
-      <P><I>z</I> is the difference of <I>x</I> and <I>y</I>. The propagator
-         constraints its arguments as <TT>X - Y = Z</TT>.
-    </P></DD>
-
-    <DT>
-      <TT>times (<I>x</I>, <I>y</I>, <I>z</I>)</TT>
-    </DT>
-    <DD>
-      <P><I>z</I> is the product of <I>x</I> and <I>y</I>. Coreferences are
-         exploited. If the store entails <TT>X = Z</TT>,
-         the propagator ceases to exist and the constraint <TT>Y = 1</TT>
-         is imposed. If the store entails <TT>Y = Z</TT>,
-         the propagator ceases to exist and the constraint <TT>X = 1</TT>
-         is imposed. If the store entails <TT>X = Y</TT>,
-         the propagator ceases to exist and a propagator is imposed instead,
-         which constrains the variables <TT>X</TT> and <TT>Y</TT> as
-         described <A HREF="http://www.mozart-oz.org/documentation/system/node25.html#section.fd.misc">here</A>.
-    </P></DD>
-
-    <DT>
-      <TT>power (<I>x</I>, <I>i</I>, <I>z</I>)</TT>
-    </DT>
-    <DD>
-      <P><I>z</I> is the result of <I>x</I> raised to the power of <I>i</I>.
-         The propagator constrains the variables <I>X</I> and <I>Y</I> as
-         described <A HREF="http://www.mozart-oz.org/documentation/system/node25.html#section.fd.misc">here</A>.
-    </P></DD>
-
-    <DT>
-      <TT>divI (<I>x</I>, <I>i</I>, <I>z</I>)</TT>
-    </DT>
-    <DD>
-      <P><I>z</I> is the result of the integer division of <I>x</I> by <I>i</I>.
-      <P>A domain bound is discarded from the domain of one variable,
-         if there is no value between the lower and upper bound of
-         the domain of the other variable, such that the constraint holds.
-         Additionally, if <TT>x = z</TT>, the propagator is replaced by
-         <TT>I = 1</TT>. 
-    </P></DD>
-
-    <DT>
-      <TT>modI (<I>x</I>, <I>i</I>, <I>z</I>)</TT>
-    </DT>
-    <DD>
-      <P><I>z</I> is the result of <I>x</I> modulus <I>i</I>.
-      <P>A domain bound is discarded from the domain of one variable,
-         if there is no value between the lower and upper bound of
-         the domain of the other variable, such that the constraint holds.
-         Additionally, if <TT>x = z</TT>, the propagator is replaced by
-         <TT>x &lt; i</TT>.  If the current upper bound of <I>x</I>
-         is less than <I>i</I>, the propagator is replaced by <TT>x=z</TT>. 
-    </P></DD>
-
-    <DT>
-      <TT>plusD (<I>x</I>, <I>y</I>, <I>z</I>)</TT>
-    </DT>
-    <DD>
-      <P><I>z</I> is the sum of <I>x</I> and <I>y</I>. The propagator
-         constraints its arguments as <TT>X + Y = Z</TT>.
-      <P>Does domain propagation, which can be very expensive.
-    </P></DD>
-
-    <DT>
-      <TT>minusD (<I>x</I>, <I>y</I>, <I>z</I>)</TT>
-    </DT>
-    <DD>
-      <P><I>z</I> is the difference of <I>x</I> and <I>y</I>. The propagator
-         constraints its arguments as <TT>X - Y = Z</TT>.
-      <P>Does domain propagation, which can be very expensive.
-    </P></DD>
-
-    <DT>
-      <TT>timesD (<I>x</I>, <I>y</I>, <I>z</I>)</TT>
-    </DT>
-    <DD>
-      <P><I>z</I> is the product of <I>x</I> and <I>y</I>.
-      <P>Does domain propagation, which can be very expensive.
-    </P></DD>
-
-    <DT>
-      <TT>divD (<I>x</I>, <I>i</I>, <I>z</I>)</TT>
-    </DT>
-    <DD>
-      <P><I>z</I> is the result of the integer division of <I>x</I> by <I>i</I>.
-      <P>Does domain propagation, which can be very expensive.
-    </P></DD>
-
-    <DT>
-      <TT>modD (<I>x</I>, <I>i</I>, <I>z</I>)</TT>
-    </DT>
-    <DD>
-      <P><I>z</I> is the result of <I>x</I> modulus <I>i</I>.
-      <P>Does domain propagation, which can be very expensive.
-    </P></DD>
-
-    <DT>
-      <TT>min (<I>x</I>, <I>y</I>, <I>z</I>)</TT>
-    </DT>
-    <DD>
-      <P><I>z</I> is the minimum of <I>x</I> modulus <I>y</I>.
-      <P>For precise operational semantics, see
-         <A HREF="http://www.mozart-oz.org/documentation/system/node25.html#section.fd.misc">here</A>.
-    </P></DD>
-
-    <DT>
-      <TT>max (<I>x</I>, <I>y</I>, <I>z</I>)</TT>
-    </DT>
-    <DD>
-      <P><I>z</I> is the maximum of <I>x</I> and <I>y</I>.
-      <P>For precise operational semantics, see
-         <A HREF="http://www.mozart-oz.org/documentation/system/node25.html#section.fd.misc">here</A>.
-    </P></DD>
-
-    <DT>
-      <tt>equal (<I>x</I>, <I>y</I>)</TT>
-    </DT>
-    <DD>
-      <P>Post the constraint that <I>x</I> equals <I>y</I>.
-    </P></DD>
-
-    <DT>
-      <tt>notequal (<I>x</I>, <I>y</I>)</TT>
-    </DT>
-    <DD>
-      <P>Post the constraint that <I>x</I> does not equal <I>y</I>.
-    </P></DD>
-
-    <DT>
-      <tt>distance (<I>x</I>, <I>y</I>, <I>rel</I>, <I>z</I>)</TT>
-    </DT>
-    <DD>
-      <P>creates a propagator for
-      <PRE>
-        |x - y| rel z</PRE>
-     <P>May cut holes into domains.
-     <P>This propagator is equivalent to
-        <TT>sumAC(#[(1, x), (~1, y)], rel, z)</TT> but is more efficient.
-    </P></DD>
-
-    <DT>
-      <tt>less (<I>x</I>, <I>y</I>)</TT>
-    </DT>
-    <DD>
-      <P>Post the constraint that <I>x</I> is less than <I>y</I>.
-    </P></DD>
-
-    <DT>
-      <tt>lessEq (<I>x</I>, <I>y</I>)</TT>
+       <DT
+      <TT>type space</TT>
     </DT>
     <DD>
-      <P>Post the constraint that <I>x</I> is less than or equal to <I>y</I>.
+      <P>The type of the first class comutational space. Usually equal to <TT>SPACE.space</TT>.
     </P></DD>
 
-    <DT>
-      <tt>greater (<I>x</I>, <I>y</I>)</TT>
-    </DT>
-    <DD>
-      <P>Post the constraint that <I>x</I> is greater than <I>y</I>.
-    </P></DD>
-
-    <DT>
-      <tt>greaterEq (<I>x</I>, <I>y</I>)</TT>
-    </DT>
-    <DD>
-      <P>Post the constraint that <I>x</I> is greater than or equal to <I>y</I>.
-    </P></DD>
-
-    <DT>
-      <tt>disjoint (<I>x</I>, <I>i1</I>, <I>y</I>, <I>i2</I>)</TT>
-    </DT>
-    <DD>
-      <P>creates a propagator for
-      <PRE>
-        x + i1 &lt;= y or y + i2 &lt;= x</PRE>
-      <P>May cut holes into the domains.
-      <P>For precise operational semantics, see
-         <A HREF="http://www.mozart-oz.org/documentation/system/node25.html#section.fd.misc">here</A>.
-    </P></DD>
-
-    <DT>
-      <tt>disjointC (<I>x</I>, <I>i1</I>, <I>y</I>, <I>i2</I>, <I>c</I>)</TT>
-    </DT>
-    <DD>
-      <P>creates a propagator for
-      <PRE>
-        ((x + i1 &lt;= y) and (c = 0)) or ((y + i2 &lt;= x) and (c = 1))</PRE>
-      <P>May cut holes into the domains.
-      <P>For precise operational semantics, see
-         <A HREF="http://www.mozart-oz.org/documentation/system/node25.html#section.fd.misc">here</A>.
-    </P></DD>
-
-    <DT>
-      <tt>tasksOverlap (<I>x</I>, <I>i1</I>, <I>y</I>, <I>i2</I>, <I>c</I>)</TT>
-    </DT>
-    <DD>
-      <P>For operational semantics, see
-         <A HREF="http://www.mozart-oz.org/documentation/system/node25.html#section.fd.misc">here</A>.
-    </P></DD>
-
-    <DT>
-      <tt>distinct <I>v</I></TT>
-    </DT>
-    <DD>
-      <P>All elements in <I>v</I> are pairwise distinct.
-         If one element becomes determined,
-         the remaining elements are constrained to be different from it.
-         If two variables become equal, the propagator fails, e. g.
-         <TT>FD.distinct #[a,a, b]</TT> will fail even if <I>a</I> 
-         is not determined. 
-    </P></DD>
-
-    <DT>
-      <tt>distinctOffset <I>v</I></TT>
-    </DT>
-    <DD>
-      <P>All sums <TT>di + ii</TT> are pairwise distinct.
-        If one becomes determined, the remaining elements <TT>dj</TT>
-        are constrained to be different from <TT>di + ii - ij</TT>. 
-    </P></DD>
-
-    <DT>
-      <tt>distinct2 <I>v</I></TT>
+    <DT
+      <TT>type intvar</TT> 
     </DT>
     <DD>
-      <P>For operational semantics, see
-         <A HREF="http://www.mozart-oz.org/documentation/system/node22.html#label182">here</A>.
+      <P>The type of finite domain variables.
     </P></DD>
 
-    <DT>
-      <TT>atMost (<I>x</I>, <I>v</I>, <I>i</I>)</TT>
-    </DT>
-    <DD>
-      <P>Post the constraint that at most <I>x</I> elements of <I>v</I>
-         are equal to <I>i</I>.
-      <P>For precise operational semantics, see
-         <A HREF="http://www.mozart-oz.org/documentation/system/node22.html#label182">here</A>.
-    </P></DD>
-
-    <DT>
-      <TT>atLeast (<I>x</I>, <I>v</I>, <I>i</I>)</TT>
-    </DT>
-    <DD>
-      <P>Post the constraint that at least <I>x</I> elements of <I>v</I>
-         are equal to <I>i</I>.
-      <P>For precise operational semantics, see
-         <A HREF="http://www.mozart-oz.org/documentation/system/node22.html#label182">here</A>.
-    </P></DD>
-
-    <DT>
-      <TT>exactly (<I>x</I>, <I>v</I>, <I>i</I>)</TT>
-    </DT>
-    <DD>
-      <P>Post the constraint that exactly <I>x</I> elements of <I>v</I>
-         are equal to <I>i</I>.
-      <P>For precise operational semantics, see
-         <A HREF="http://www.mozart-oz.org/documentation/system/node22.html#label182">here</A>.
-    </P></DD>
-
-    <DT>
-      <TT>element (<I>x</I>, <I>v</I>, <I>z</I>)</TT>
-    </DT>
-    <DD>
-      <P>Post the constraint that the <I>x</I>th element of <I>v</I>
-         is <I>z</I>.
-
-      <P>It propagates as follows. For each integer <I>i</I>
-         in the domain of <I>x</I>, the i-th element of <I>v</I>
-         is in the domain of <I>z</I>; and no other values.
-         For each value j in the domain of <I>z</I>,
-         all positions where j occurs in <I>v</I>
-         are in the domain of <I>x</I>; and no other values.
-    </P></DD>
-
-    <DT>
-      <TT>conj (<I>x</I>, <I>y</I>, <I>z</I>)</TT>
+    <DT
+      <TT>type boolvar</TT> 
     </DT>
     <DD>
-      <P><I>z</I> is the conjunction of <I>x</I> and <I>y</I>.
-
-      <P>For operational semantics, see
-         <A HREF="http://www.mozart-oz.org/documentation/system/node23.html#label202">here</A>.
+      <P>The type of boolean constraint variables.
+      Fundamentally, they are FD variables constrained to the 0-1 domain.
     </P></DD>
 
-    <DT>
-      <TT>disj (<I>x</I>, <I>y</I>, <I>z</I>)</TT>
-    </DT>
-    <DD>
-      <P><I>z</I> is the disjunction of <I>x</I> and <I>y</I>.
-    </P></DD>
 
     <DT>
-      <TT>exor (<I>x</I>, <I>y</I>, <I>z</I>)</TT>
+      <TT>exception NotAssigned</TT>
     </DT>
     <DD>
-      <P><I>z</I> is the exclusive disjunction of <I>x</I> and <I>y</I>.
+      <P>is raised when a reflection operation intended for determined values only is performed 
+      on a variable in a space where its domain is not yet narrowed to a single value.
     </P></DD>
 
-    <DT>
-      <TT>nega (<I>x</I>, <I>y</I>)</TT>
-    </DT>
-    <DD>
-      <P><I>y</I> is the negation of <I>x</I>.
-    </P></DD>
 
     <DT>
-      <TT>impl (<I>x</I>, <I>y</I>, <I>z</I>)</TT>
+      <TT>type domain = (int*int) vector</TT>
     </DT>
     <DD>
-      <P><I>z</I> is the implication of <I>x</I> by <I>y</I> (x -> y).
+      <P>The type of domain descriptions. 
+      Used to define variable bounds at variable creation or later, in value declaration, and reflection.
+      It is an ordered, non-overlapping, non-contingous vector of ordered integer pairs. 
+      For example the set of all primes between 1 and 10 is #[(2,3),(5,5),(7,7)] <BR>
+      Observe that #[(1,2),(3,4)] is an invalid domain: contigous ranges, use #[(1,4)] instead <BR>
+      #[(1,3),(3,4)] is even more so.<BR>
+      #[(3,2)] is also invalid, the range is ill-defined.<BR>
+      #[(4,5),(1,2)] is nonconformant in pair ordering, #[(1,2),(4,5)] is fine.
     </P></DD>
 
     <DT>
-      <TT>equi (<I>x</I>, <I>y</I>, <I>z</I>)</TT>
+      <TT>exception InvalidDomain</TT>
     </DT>
     <DD>
-      <P><I>z</I> is the equivalence of <I>x</I> by <I>y</I> (x <-> y).
+      <P>Exception thrown by all variable creation and domain tell operations
+      on receipt of a domain description not conforming to the above rules.
     </P></DD>
 
     <DT>
-      <TT>Reified.fd (<I>dom</I>, <I>c</I>)</TT>
+      <TT>domainFromList <I>l</I></TT>
     </DT>
     <DD>
-      <P>returns a freshly created finite domain variable
-         which is initialized with <I>dom</I> and reified into <I>c</I>.
+      <P>Returns a valid domain description containing the same integers as <I>l</I> does.
     </P></DD>
 
     <DT>
-      <TT>Reified.fdVec (<I>n</I>, <I>dom</I>, <I>c</I>)</TT>
+      <TT>intvar (<I>s, d</I>)</TT>
     </DT>
     <DD>
-      <P>returns a vector of size <I>n</I> of finite domain variables.
-         Each variable is initialized with <I>dom</I> and reified into <I>c</I>.
+      <P>Returns a fresh FD variable valid in <I>s</I> and all its descendents 
+      not originating from a child created earlier than the introduction of the variable.<BR>
+      The fresh variable is already constrained to be in <I>d</I>.
     </P></DD>
 
     <DT>
-      <TT>Reified.card (<I>i1</I>, <I>v</I>, <I>i2</I>, <I>c</I>)</TT>
+      <TT>intvarVec (<I>s, n, d</I>)</TT>
     </DT>
     <DD>
-      <P>For detailed documentation, see
-         <A HREF="http://www.mozart-oz.org/documentation/system/node24.html#label216">here</A>.
+      <P>Returns <I>n<\I> FD variables freshly created in <I>s</I>.
+      They are already constrained to be in <I>d</I>.
     </P></DD>
 
     <DT>
-      <TT>Reified.sum (<I>v</I>, <I>rel</I>, <I>r</I>, <I>c</I>)</TT>
+      <TT>range (<I>s, (min, max)</I>)</TT>
     </DT>
     <DD>
-      <P>Reifies <TT>sum(v, rel, r)</TT> into <I>c</I>.
+      <P>Returns an FD variable freshly created in <I>s</I>.
+      It is already constrained to be between <I>min</I> and <I>max</I>, inclusive.
     </P></DD>
 
     <DT>
-      <TT>Reified.sumC (<I>v</I>, <I>rel</I>, <I>r</I>, <I>c</I>)</TT>
+      <TT>rangeVec (<I>s, n, (min, max)</I>)</TT>
     </DT>
     <DD>
-      <P>Reifies <TT>sumC(v, rel, r)</TT> into <I>c</I>.
+      <P>Returns <I>n<\I> FD variables freshly created in <I>s</I>.
+      They are already constrained to be between <I>min</I> and <I>max</I>, inclusive.
     </P></DD>
 
     <DT>
-      <TT>Reified.sumAC (<I>v</I>, <I>rel</I>, <I>r</I>, <I>c</I>)</TT>
+      <TT>boolvar <I>s</I></TT>
     </DT>
     <DD>
-      <P>Reifies <TT>sumAC(v, rel, r)</TT> into <I>c</I>.
+      <P>Returns an FD variable freshly created in <I>s</I>.
+      It is already constrained to be either 0 or 1.
     </P></DD>
 
     <DT>
-      <TT>Reified.sumCN (<I>v</I>, <I>rel</I>, <I>r</I>, <I>c</I>)</TT>
+      <TT>boolvarVec (<I>s, n</I>)</TT>
     </DT>
     <DD>
-      <P>Reifies <TT>sumCN(v, rel, r)</TT> into <I>c</I>.
+      <P>Returns <I>n<\I> FD variables freshly created in <I>s</I>.
+      They are already constrained to be either 0 or 1.
     </P></DD>
 
     <DT>
-      <TT>Reflect.min <I>x</I></TT>
+      <TT>intvar2boolvar (<I>s, x</I>)</TT>
     </DT>
     <DD>
-      <P>returns the current lower bound of <I>x</I>.
+      <P> Constrains <I>x</I> to the (0,1) range, 
+      and returns a reference to it as a boolvar.
     </P></DD>
 
     <DT>
-      <TT>Reflect.max <I>x</I></TT>
+      <TT>datatype avalsel</TT>
     </DT>
     <DD>
-      <P>returns the current upper bound of <I>x</I>.
+      <P>Type to identify a value assignments strategy.<BR>
+      <TT>AVAL_MIN</TT>: Pick the smallest possible value.<BR>
+      <TT>AVAL_MAX</TT>: Pick the largest possible value.<BR>
+      <TT>AVAL_MED</TT>: Pick the median of the available values.
     </P></DD>
 
     <DT>
-      <TT>Reflect.mid <I>x</I></TT>
+      <TT>assign (<I>s, v, strategy</I>)</TT>
     </DT>
     <DD>
-      <P>returns the integer which is closest to the middle
-         of the current domain (the arithmetical means of the lower
-         and upper bound of <I>x</I>).
-         In case of ties, the smaller element is selected. 
+      <P> Determines all elements of <I>v</I> in <I>s</I> 
+      following the <I>strategy</I> provided.
     </P></DD>
 
     <DT>
-      <TT>Reflect.nextLarger (<I>x</I>, <I>i</I>)</TT>
+      <TT>dom (<I>s, x, (min,max)</I>)</TT>
     </DT>
     <DD>
-      <P>returns the smallest integer in the domain of <I>x</I>
-         which is larger than <I>i</I>.
+      <P> Constrains <I>x</I> in <I>s</I> 
+      to the range <I>(min,max)</I>.
     </P></DD>
 
     <DT>
-      <TT>Reflect.nextSmaller (<I>x</I>, <I>i</I>)</TT>
+      <TT>datatype relation</TT>
     </DT>
     <DD>
-      <P>returns the largest integer in the domain of <I>x</I>
-         which is smaller than <I>i</I>.
+      <P>Type to identify an arithmetic relation in constraints.<BR>
+      <TT>EQ</TT>: Equal.<BR>
+      <TT>NQ</TT>: Not equal.<BR>
+      <TT>LQ</TT>: Less or equal.<BR>
+      <TT>LE</TT>: Less.<BR>
+      <TT>GQ</TT>: Greater or equal.<BR>
+      <TT>GE</TT>: Greater.
     </P></DD>
 
     <DT>
-      <TT>Reflect.size <I>x</I></TT>
+      <TT>datatype conlevel</TT>
     </DT>
     <DD>
-      <P>returns the size of the current domain of <I>x</I>.
+      <P>Type to identify the eagerness of propagation. 
+      When the required level is not implemented for a propagator,
+      the closest, stricter version is used.<BR>
+      <TT>DOM</TT>: Domain Proagatin. Strictest.<BR>      
+      <TT>BND</TT>: Bounds Propagation.<BR>
+      <TT>VAL</TT>: Value Propagation. Most loose. <BR>
+      <BR>
+      <TT>DEF</TT>: The default for the propagator.<BR>      
     </P></DD>
 
     <DT>
-      <TT>Reflect.dom <I>x</I></TT>
+      <TT>rel (<I>s, x, relation, y</I>)</TT>
     </DT>
     <DD>
-      <P>returns the the current domain of <I>x</I>.
+      <P> Creates a propagator to constrain <I>x</I> and <I>y</I> in <I>s</I> 
+      to be in the given <I>relation</I>.
     </P></DD>
 
     <DT>
-      <TT>Reflect.domList <I>x</I></TT>
+      <TT>relI (<I>s, x, relation, n</I>)</TT>
     </DT>
     <DD>
-      <P>returns the the current domain of <I>x</I> as an ordered list of
-         integers.
+      <P> Constrains <I>x</I> in <I>s</I> 
+      to be in the given <I>relation</I> with <I>n</I>.
     </P></DD>
 
     <DT>
-      <TT>Reflect.nbSusps <I>x</I></TT>
+      <TT>equal (<I>s, x, y, level</I>)</TT>
     </DT>
     <DD>
-      <P>returns the the current number of suspensions on <I>x</I>.
+      <P> Creates a propagator to constrain <I>x</I> and <I>y</I> in <I>s</I> 
+      to be equal. As gecode currently uses a propagator to enforce this, 
+      a performance increase might be achieved by 
+      eliminating the need for this constraint with smarter modeling.
     </P></DD>
 
     <DT>
-      <TT>Reflect.eq (<I>x</I>, <I>y</I>)</TT>
+      <TT>equalV (<I>s, v, level</I>)</TT>
     </DT>
     <DD>
-      <P>returns <TT>true</TT> iff <I>x</I> and <I>y</I>
-         denote the same variable, <TT>false</TT> otherwise.
+      <P> Creates a propagator to constrain <I>x</I> and <I>y</I> in <I>s</I> 
+      to be equal.
     </P></DD>
 
-    <DT>
-      <TT>distribute (<I>spec</I>, <I>v</I>)</TT>
-    </DT>
-    <DD>
-      <P><I>v</I> is distributed according to the distribution spec <I>spec</I>:
-      </P>
-      <UL>
-        <LI><TT>NAIVE</TT> considers only non-determined elements of <I>v</I>.
-            Chooses the leftmost variable <I>x</I> in <I>v</I> and creates
-            a choice point for <TT>x = l</TT> and <TT>x &lt;&gt; l</TT> where
-	    <I>l</I> is the lower bound of <I>x</I>.
-        <LI><TT>FIRSTFAIL</TT> considers only non-determined
-            elements of <I>v</I>.
-            Chooses the leftmost variable <I>x</I> in <I>v</I>,
-            whose domain is minimal and creates
-            a choice point for <TT>x = l</TT> and
-            <TT>x &lt;&gt; l</TT> where <I>l</I> is the lower bound
-	    of <I>x</I>.
-        <LI><TT>SPLIT_MIN</TT> considers only non-determined
-            elements of <I>v</I>.
-            Chooses the leftmost variable <I>x</I> in <I>v</I>,
-            whose domain size is minimal and creates
-            a choice point for <TT>x = m</TT> and
-            <TT>x &lt;&gt; m</TT> where <I>m</I>
-            is the middle of the domain of <I>x</I> (see <TT>Reflect.mid</TT>).
-        <LI><TT>SPLIT_MAX</TT> considers only non-determined
-            elements of <I>v</I>.
-            Chooses the leftmost variable <I>x</I> in <I>v</I>,
-            whose domain size is maximal and creates
-            a choice point for <TT>x = m</TT> and
-            <TT>x &lt;&gt; m</TT> where <I>m</I>
-            is the middle of the domain of <I>x</I> (see <TT>Reflect.mid</TT>).
-        <LI><TT>NBSUSPS</TT> selects the variable with the largest number
-            of suspensions. If several variables suspend on the maximal
-            number of constraints, the leftmost variable
-            whose domain is minimal is selected.
-      </UL>
-      <P></P>
-    </DD>
 
-    <DT>
-      <TT>choose (<I>spec</I>, <I>v</I>)</TT>
-    </DT>
-    <DD>
-      <P>selects a element <I>e</i> from <I>v</I> according to the
-         distribution spec <I>spec</I> and returns a tuple
-         consisting of <I>e</I> and its specification according to <I>spec</I>.
-      <P>
-    </DD>
   </DL>
 
 <?php footing() ?>
