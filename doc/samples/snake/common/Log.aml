@@ -37,7 +37,7 @@ in
             val format  = { depth = 256, width = 512, prec = 4 }
         in
            
-	    Inspector.inspect(part, value);(*
+(*	    Inspector.inspect(part, value);
 	    Stream.send (stream, c (cb (c (P.text part, P.text ":"),
 	    PPValue.ppVal' t format value), P.text "\n"))
 	    *)

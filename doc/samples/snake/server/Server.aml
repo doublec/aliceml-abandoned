@@ -23,6 +23,8 @@ import structure Config         from "Config"
 import structure Remote         from "x-alice:/lib/distribution/Remote"
 import structure Highscore      from "../common/Highscore"
 import signature SERVER         from "SERVER-sig"
+import structure MkHeap         from "../common/MkHeap"
+
 (*
 import val dummyClient          from "DummyClient"
 *)
@@ -33,6 +35,46 @@ open Ctrl
 
 fun not_yet_implemented s =
     log ("Server", "TODO: " ^ s ^ " not yet implemented.")
+
+
+structure Event =
+struct
+    type t = int * Protocol.diff option * Protocol.diff option
+
+    fun compare ((a,_,_), (b,_,_)) = Int.compare (a, b)
+
+    fun equal ((a,_,_), (b,_,_)) = a = b
+    
+    fun time (t, _, _)  = t
+end
+
+structure Events =
+struct
+    structure Heap  = MkHeap (Event)
+    
+    type t = int ref * Heap.heap
+    
+    fun events () = (ref 0, Heap.heap ())
+
+    fun add ((ref time, h), offset, e1, e2 ) = 
+        Heap.insert (h, (time + offset, e1, e2))
+        
+    fun tick (r, h) =
+        let 
+            fun gather (res1, res2) =
+                if not (Heap.isEmpty h) andalso
+                        Event.time (Heap.minimum h) = !r then
+                    case Heap.minimum h before Heap.remove h of
+                        (_, NONE, NONE)     => gather (res1, res2)
+                    |   (_, NONE, SOME e)   => gather (res1, e :: res2)
+                    |   (_, SOME e, NONE)   => gather (e :: res1, res2)
+                    |   (_, SOME e1, SOME e2) => gather (e1 :: res1, e2 ::res2)
+                else (res1, res2)
+        in
+            r := !r + 1;
+            gather ([], [])
+        end
+end
 
 
 structure Server :> SERVER =
@@ -101,6 +143,7 @@ struct
             val participants    = PMap.map () : Participant.participant PMap.map
 
             val state           = ref ST_JOIN
+            val events          = ref (Events.events ())
             val pc_id           = 0
    
             val levels          = computeLevels config
@@ -119,14 +162,26 @@ struct
                                     (PMap.toList participants))
             
             (* [allPlayers ()] returns all snakes which are either
-               still playing or have entered a gate but are not yet
-               completely inside it.
+               still playing.
              *)
             fun allPlayers ()   = allParticipants 
                     (fn (_, p) =>
                         case !(Part.state p) of
                             Part.PLAYING _              => true
-                        |   Part.FINISHED (_, _, false) => true
+                        |   _                           => false)
+            
+            fun allHalfFinished ()  = allParticipants 
+                    (fn (_, p) => 
+                        case !(Part.state p) of 
+                            Part.HALF_FINISHED _        => true
+                        |   _                           => false)
+
+
+            fun allNonFinished ()   = allParticipants 
+                    (fn (_, p) =>
+                        case !(Part.state p) of
+                            Part.PLAYING _              => true
+                        |   Part.HALF_FINISHED _        => true
                         |   _                           => false)
 
 
@@ -142,6 +197,7 @@ struct
                         case !(Part.state p) of
                             Part.PLAYING _      => true
                         |   Part.FINISHED _     => true
+                        |   Part.HALF_FINISHED _ => true
                         |   Part.DEAD _         => true
                         |   _                   => false)
 
@@ -314,6 +370,7 @@ struct
            
             fun startNextLevel (levels, arena, startPos) =
                 let
+                    val _   = events := Events.events ()
                     (* get all players who are allowed to play another level *)
                     val p   = allPossiblePlayers ()
 
@@ -333,12 +390,14 @@ struct
                                 val id          = Part.id part
                                 val snake       = Snake.snake 
                                                     (id, color, pos, dir)
+                                val g           = (pos, P.GATE (color, 
+                                                        P.CLOSED))
                             in
                                 (#nextDir info) := dir;
                                 (#gatePos info) := pos;
                                 state := Part.PLAYING (info, snake);
-                                Array2.update (oldArena, #1 pos, #2 pos,
-                                        P.GATE (color, P.CLOSED))
+                                Events.add (!events, Snake.belly snake + 2, 
+                                                SOME g, SOME g)
                             end
                         ) (p, startPos);
 
@@ -409,8 +468,7 @@ struct
                     val newHeadPos = List.foldl movePlayer [] players 
                     
                     (* place them on the newArena *)
-                    val (deadSnakes, grownSnakes, halfFinishedSnakes, 
-                            finishedSnakes) =
+                    val (deadSnakes, grownSnakes, finishedSnakes) =
                         Arena.placeSnakes (newArena, 
                             List.map Part.snake players) 
 
@@ -436,6 +494,11 @@ struct
                             else res
                         end) [] grownSnakes;
                     
+                    (* handle events *)
+                    val (diffNew, diffOld)  = Events.tick (!events)
+                    val _       = List.app (fn ((r,c), p) => 
+                                    Array2.update (newArena, r, c, p)) diffNew
+
                     (* shall we place another goody? *)
                     val goodiePos   =   if Random.real 1.0 <= #goodieProb config 
                                             then findEmptySpot (newArena, 3)
@@ -450,6 +513,9 @@ struct
 
                     val _   = List.app (fn ((r,c), g) => 
                                 Array2.update (oldArena, r, c, g)) gates
+
+                    val _   = List.app (fn ((r, c), p) =>
+                                    Array2.update (oldArena, r, c, p)) diffOld
                 in
                     (* broadcast differences *)
                     log ("Server", "broadcasting differences");
@@ -482,43 +548,43 @@ struct
 			         invoke (part, #headPosition, p)) newHeadPos;
  
                     (* change state of participants whose snakes are 
-                       finished to FINISHED *)
+                       finished to HALF_FINISHED, as soon as their
+                       snake has entered the gate completely we change
+                       it to FINISHED *)
                     log ("Server", "check for finished snakes");
                     List.app (fn sn =>
                         let val id          = Snake.id sn
                             val part        = PMap.lookupExistent 
                                                 (participants, id)
                             val playerInfo  = Part.playerInfo part
+                            val length      = Snake.length sn - 1
+                            val body        = Snake.body sn
+                            val color       = Snake.color sn
+                            
+                            fun addPlaceBodyEvent t =
+                                List.app (fn p =>
+                                    Events.add (!events, t, SOME (p, P.SNAKE_BODY color), NONE))
+                                    (List.take (body, length - t + 1))
                         in
-                            (* as long as this snake is not YET
-                               completely in the gate, the player must
-                               watch himself.
-                             *)
-                            (Part.state part) := Part.FINISHED (playerInfo, 
-                                                    ref id, false)
-                        end) halfFinishedSnakes;
+                            (Part.state part) := Part.HALF_FINISHED 
+                                        (playerInfo, ref length);
+                            for (1, length, addPlaceBodyEvent)
+                        end) finishedSnakes;
                         
                     (* inform the snakes *)
                     (* TODO *)
                     
-                    (* change state of participants whose snake 
-                       are completely finished from FINISHED 
-                       (_, ownId, false) to (_, otherId, true) *)
+                    (* check for completely finished participants 
+                     *)
                     log ("Server", "check for completely finished snakes");
-                    List.app (fn sn =>
-                        let val id          = Snake.id sn
-                            val part        = PMap.lookupExistent 
-                                                (participants, id)
-                        in
-                            case !(Part.state part) of
-                                Part.FINISHED (info, ref ownId, false) 
-                                        where (id = ownId) =>
-                                (Part.state part) := Part.FINISHED (info, 
-                                                        ref ~1, true) 
-                                (* FIXME *)
-                            |   _           =>
-                                assert false
-                        end) halfFinishedSnakes;
+                    List.app (fn part =>
+                        case !(Part.state part) of
+                            Part.HALF_FINISHED (info, ref 0) =>
+                                Part.state part := Part.FINISHED (info, ref ~1) 
+                                    (*FIXME: find snake to watch *)
+                        |   Part.HALF_FINISHED (info, n) => n := !n - 1
+                        |   _           => assert false
+                    ) (allHalfFinished ());
                         
                     (* send tick signal *)
                     log ("Server", "send tick signal");
@@ -526,7 +592,7 @@ struct
                         (_file_, _line_) (allConnected (), #tick, NONE);
   
                     (* test wether there are any living snakes left *)
-                    case allPlayers () of
+                    case allNonFinished () of
                         []  => (
                         log ("Server", "no more players left");
                         finishLevel levels)

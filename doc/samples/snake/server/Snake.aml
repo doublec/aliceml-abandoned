@@ -28,7 +28,7 @@ struct
 
     type t = snake
     
-    val startSize = 0
+    val startSize = 3
 
     fun snake (id, c, pos, d) = SN { 
             direction   = ref d, 

@@ -34,11 +34,9 @@ sig
     val copy : arena -> arena
 
     val placeSnakes : arena * Snake.snake list -> 
-            Snake.snake list * Snake.snake list * Snake.snake list * 
-            Snake.snake list
+            Snake.snake list * Snake.snake list * Snake.snake list 
     (** places the snakes on the arena, returns all snakes
-       which died, have eaten a goodie, are half-finished and are
-       all totally finished.
+       which died, have eaten a goodie, are half-finished.
        
        PRE: arena contains NO snakes 
        POST: arena contains NO snake which is contained

@@ -21,10 +21,8 @@ struct
     datatype state =
 	CONNECTED
       | PLAYING  of player_info * Snake.snake
-      | FINISHED of player_info * id ref * bool     
-        (* third component = true ==> completely finished
-           may change it's viewState now
-         *)
+      | HALF_FINISHED of player_info * int ref
+      | FINISHED of player_info * id ref 
       | DEAD     of player_info * id ref
       | WATCHING of id ref
       | DISCONNECTED    (* TODO: Do we need it? *)
@@ -36,10 +34,11 @@ struct
     fun participant (id, interface) =
         (id, interface, ref CONNECTED)
 
-    fun playerInfo (_, _, ref (PLAYING (st, _)))       = st
-    |   playerInfo (_, _, ref (FINISHED (st, _, _)))   = st
-    |   playerInfo (_, _, ref (DEAD (st, _)))          = st
-    |   playerInfo _                                   = assert false
+    fun playerInfo (_, _, ref (PLAYING (st, _)))        = st
+    |   playerInfo (_, _, ref (HALF_FINISHED (st, _)))  = st
+    |   playerInfo (_, _, ref (FINISHED (st, _)))       = st
+    |   playerInfo (_, _, ref (DEAD (st, _)))           = st
+    |   playerInfo _                                    = assert false
 
 
     fun snake (_, _, ref (PLAYING (_, sn)))        = sn

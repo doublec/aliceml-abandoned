@@ -271,7 +271,6 @@ struct
     fun placeSnakes (a,snakes) =
 	let
 	    val died    = ref nil
-	    val halffin = ref nil
 	    val fin     = ref nil
             val eaters  = ref nil
 
@@ -316,14 +315,10 @@ struct
 		       | P.WALL     => killSnake snake
                        | P.GATE (_, P.CLOSED) => killSnake snake
 		       | P.GATE (col, P.OPEN) => 
-			     if col = color andalso Snake.length snake = 1
-				 then (fin := snake::(!fin);
-				       Array2.update(a,r,c,collObject))
-			     else
-				 if col = color
-				     then (halffin := snake::(!halffin);
-					   Array2.update(a,r,c,collObject))
-				 else killSnake snake
+                            if col = color
+			        then (fin := snake::(!fin);
+				        Array2.update(a,r,c,collObject))
+			    else killSnake snake
 		       | P.SNAKE_HEAD(_,col) => 
 				 if col <> color 
 				     then killSnake snake
@@ -333,26 +328,30 @@ struct
 
 	    fun placeBody snake =
 		let
-		    val color = Snake.color snake
-		    val body =  Snake.body snake
-		    fun stillDied s = color = Snake.color s
-		    val stilldied = List.exists stillDied (!died)
-		in
-		    if stilldied
-			then ()
-		    else 
-			List.app 
-			    (fn(r,c) => Array2.update(a,
-						      r,
-						      c,
-						      P.SNAKE_BODY(color)))
-			         body
+                    val headP   = Snake.head snake
+		    val color   = Snake.color snake
+		    val body    = Snake.body snake
+		    fun thisSnake s = color = Snake.color s
+                    (* have we already died? *)
+		    val dead = List.exists thisSnake (!died)
+		
+                    fun place [] = ()
+                      | place ((r,c) :: bodyRest) =
+                        if (r,c) = headP then 
+                            (* ouch! our head has hit ourself! *)
+                            killSnake snake
+                        else
+                            (Array2.update (a, r, c, P.SNAKE_BODY color);
+                             place bodyRest)
+                in
+		    if dead then ()
+		    else place body
 		end
 		
 	in
 	    List.app placeHead snakes;
 	    List.app placeBody snakes;
-	    (!died, !eaters, !halffin, !fin)
+	    (!died, !eaters, !fin)
 	end
     
     fun emptyCopy a =
