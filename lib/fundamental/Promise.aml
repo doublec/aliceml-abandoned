@@ -17,37 +17,37 @@
 
 import structure __pervasive from "Pervasive"
 import datatype bool         from "ToplevelTypes"
-import structure Cell        from "Cell"
+import structure Ref         from "Ref"
 import structure Hole        from "Hole"
 import signature PROMISE     from "PROMISE-sig"
 
 
 structure Promise :> (PROMISE (*TODO where __primitive type 'a promise = "promise"*)) =	(**)
 struct
-    open Cell
+    open Ref
 
-    type 'a promise	= bool cell * 'a
+    type 'a promise	= bool ref * 'a
 
     exception Promise	= Hole.Hole
 
-    fun promise()	= (cell false, Hole.hole())
+    fun promise()	= (ref false, Hole.hole())
     fun future(_,h)	= Hole.future h
 
-    fun fulfill((c,h), x) =
+    fun fulfill((r,h), x) =
 	let
 	    val b = Hole.hole()
 	in
-	    if exchange(c,b) then
+	    if exchange(r,b) then
 	        (Hole.fill(b,true); raise Promise)
 	    else
 	        (Hole.fill(h,x); Hole.fill(b,true))
 	end
 
-    fun fail((c,h), e) =
+    fun fail((r,h), e) =
 	let
 	    val b = Hole.hole()
 	in
-	    if exchange(c,b) then
+	    if exchange(r,b) then
 	        (Hole.fill(b,true); raise Promise)
 	    else
 	        (Hole.fail(h,e); Hole.fill(b,true))

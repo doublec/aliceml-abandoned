@@ -72,8 +72,6 @@ import structure Array		from "Array"
 import signature TIME		from "TIME-sig"
 import structure Time		from "Time"
 
-import signature CELL		from "CELL-sig"
-import structure Cell		from "Cell"
 import signature HOLE		from "HOLE-sig"
 import structure Hole		from "Hole"
 import signature FUTURE		from "FUTURE-sig"
@@ -147,8 +145,6 @@ structure Array		= Array
 signature TIME		= TIME
 structure Time		= Time
 
-signature CELL		= CELL
-structure Cell		= Cell
 signature HOLE		= HOLE
 structure Hole		= Hole
 signature FUTURE	= FUTURE

@@ -21,6 +21,7 @@ import structure __pervasive      from "Pervasive"
 import type unit and bool and exn from "ToplevelTypes"
 import structure Time             from "Time"
 import structure Hole             from "Hole"
+import structure Ref              from "Ref"
 import signature FUTURE           from "FUTURE-sig"
 
 
@@ -38,4 +39,18 @@ struct
 
     __primitive val isFuture :	'a -> bool		= "Future.isFuture"
     __primitive val isFailed :	'a -> bool		= "Future.isFailed"
+
+    fun mkLock() =
+	let
+	    val r = Ref.ref()
+	in
+	    fn f => fn x =>
+	    let
+		val new = Hole.hole()
+		val old = Ref.exchange(r, new)
+	    in
+		await old;
+		#1 (f x, Hole.fill(new, ()))	(* f x before fill(new, ()) *)
+	    end
+	end
 end
