@@ -83,7 +83,7 @@ static void CreateLabel(FILE *f, unsigned long size) {
   std::fprintf(f, "\n  MAX_HELPER_LABEL    = 0x%lx,\n", (size - 8));
   std::fprintf(f, "  MIN_STORE_LABEL     = 0x%lx,\n", (size - 7));
   std::fprintf(f, "  WEAK_DICT_LABEL     = 0x%lx,\n", (size - 7));
-  std::fprintf(f, "  HANDLERBLOCK_LABEL  = 0x%lx,\n", (size - 6));
+  //  std::fprintf(f, "  HANDLERBLOCK_LABEL  = 0x%lx,\n", (size - 6));
   std::fprintf(f, "  CHUNK_LABEL         = 0x%lx,\n", (size - 5));
   std::fprintf(f, "  HOLE_LABEL          = 0x%lx,\n", (size - 4));
   std::fprintf(f, "  MIN_TRANSIENT_LABEL = 0x%lx,\n", (size - 4)); 
