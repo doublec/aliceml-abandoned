@@ -51,7 +51,8 @@ functor MkEnvironment(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 	fun endTop ({stack = ref nil, localIndex = ref localIndex,
 		     globalIds = ref nil, ...}: t) =
 	    localIndex
-	  | endTop _ = raise Crash.Crash "MkEnvironment.endTop"
+	  | endTop {stack, globalIds, ...} =
+	    raise Crash.Crash "MkEnvironment.endTop"
 
 	fun startFn ({stack, scope, localIndex,
 		      globalIndex, globalIds, isSpecialize, ...}: t,
@@ -100,6 +101,7 @@ functor MkEnvironment(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 	    case StampMap.lookup (!scope, stamp) of
 		SOME (AbstractCodeGrammar.Local id) => id
 	      | SOME (AbstractCodeGrammar.Immediate _ |
+		      AbstractCodeGrammar.LastUseLocal _ |
 		      AbstractCodeGrammar.Global _ |
 		      AbstractCodeGrammar.Toplevel _) =>
 		    raise Crash.Crash "MkEnvironment.declare"
@@ -120,27 +122,43 @@ functor MkEnvironment(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 		localIndex := id + 1; id
 	    end
 
+	fun idRefId (FlatGrammar.IdRef id) = id
+	  | idRefId (FlatGrammar.LastIdRef id) = id
+
+	fun idStamp (FlatGrammar.Id (_, stamp, _)) = stamp
+
+	fun isLast (FlatGrammar.IdRef _) = false
+	  | isLast (FlatGrammar.LastIdRef _) = true
+
 	fun lookup ({context, scope,
-		     globalIndex, globalIds, isSpecialize, ...}: t,
-		    id as FlatGrammar.Id (_, stamp, _)) =
-	    case StampMap.lookup (context, stamp) of
-		SOME value => AbstractCodeGrammar.Immediate value
-	      | NONE =>
-	    case StampMap.lookup (!scope, stamp) of
-		SOME idRef => idRef
-	      | NONE =>
-		    let
-			val i = !globalIndex
-			val idRef =
-			    if !isSpecialize
-			    then AbstractCodeGrammar.Toplevel i
-			    else AbstractCodeGrammar.Global i
-		    in
-			globalIds := id::(!globalIds);
-			globalIndex := i + 1;
-			StampMap.insertDisjoint (!scope, stamp, idRef);
-			idRef
-		    end
+		     globalIndex, globalIds, isSpecialize, ...}: t, idRef) =
+	    let
+		val id = idRefId idRef
+		val stamp = idStamp id
+	    in
+		case StampMap.lookup (context, stamp) of
+		    SOME value => AbstractCodeGrammar.Immediate value
+		  | NONE =>
+		case StampMap.lookup (!scope, stamp) of
+		    SOME (AbstractCodeGrammar.Local id) =>
+			if isLast idRef then
+			    AbstractCodeGrammar.LastUseLocal id
+			else AbstractCodeGrammar.Local id
+		  | SOME idRef => idRef
+		  | NONE =>
+			let
+			    val i = !globalIndex
+			    val idRef =
+				if !isSpecialize
+				then AbstractCodeGrammar.Toplevel i
+				else AbstractCodeGrammar.Global i
+			in
+			    globalIds := id::(!globalIds);
+			    globalIndex := i + 1;
+			    StampMap.insertDisjoint (!scope, stamp, idRef);
+			    idRef
+			end
+	    end
 
 	fun lookupStamp ({scope, shared, ...}: t, stamp) =
 	    StampMap.lookup (!scope, stamp)
