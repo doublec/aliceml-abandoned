@@ -25,6 +25,22 @@ structure GtkBinding :> GTK_BINDING =
 
 	fun filterSpaces tree =
 	    let
+	        (* Gtk offers plenty of signal functions which cannot be used *)
+	        fun supportedFunc (FUNCTION("gtk_signal_connect", _))    = true
+		  | supportedFunc (FUNCTION("gtk_signal_disconnect", _)) = true
+		  | supportedFunc (FUNCTION("gtk_signal_handler_block", _)) =
+		    true
+		  | supportedFunc (FUNCTION("gtk_signal_handler_unblock", _)) =
+		    true
+		  | supportedFunc (FUNCTION("gtk_signal_emit", _))       = true
+		  | supportedFunc (FUNCTION(name, _)) =
+		    if Util.checkPrefix("gtk_signal_connect", name) orelse
+		       Util.checkPrefix("gtk_signal_disconnect", name) orelse
+		       Util.checkPrefix("gtk_signal_handler", name) orelse
+		       Util.checkPrefix("gtk_signal_emit", name) then false
+		    else true
+		  | supportedFunc _ = true
+ 
 		fun canvas (FUNCTION(name, _))  =
 		    Util.checkPrefix("gtk_canvas_", name)
 		  | canvas (ENUM(name, _))      =
@@ -54,7 +70,7 @@ structure GtkBinding :> GTK_BINDING =
 		val (gdkFuncs, _)       = List.partition gdk tree
 	    in
 		[("gdk", gdkFuncs),
-		 ("gtk", gtkFuncs),
+		 ("gtk", List.filter supportedFunc gtkFuncs),
 		 ("gtk_canvas", canvasFuncs)]
 	    end
 
