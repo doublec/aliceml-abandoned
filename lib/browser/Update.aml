@@ -31,6 +31,7 @@ import structure Settings from "Settings"
 import signature UPDATE from "UPDATE-sig"
 
 import structure TextIO from "x-alice:/lib/system/TextIO"
+import structure Inspector from "x-alice:/lib/tools/Inspector"
 
 local
     open Types Helper 
@@ -94,23 +95,28 @@ struct
 	 ; let val ind = getAncIndex n 
 	       val anc = valOf(MainDictionary.lookup 
 			       (Dictionaries.dict,ind)) 
+	   (*    val (_,y) = 
+	         Services.getPosition(getGroup(anc),!(Settings.font))  *)
+	       val li = MainDictionary.dict2list(Dictionaries.dict,ind-1)
+	       val y_pos = Layout.sum_up(li,fn n 
+					 => if n = Empty then 0
+					    else Layout.get_ydim(n)+1)
+               val m_li = List.map Layout.get_ydim li
 	       val old_ydim = Layout.get_ydim(anc)
 	       val t = getTyp(getDesc(n)) 
 		   handle General.Match => raise UpdateError
 	       val new = f(va,t,getParent(n), getIndex(n),getDepth(n)) 
 	       val node = if getParent(n) = Empty then new else  anc
-	       val (_,y) = Services.getPosition(getGroup(node),
-						!(Settings.font))
 	   in ( Gtk.objectDestroy(getGroup(n)) 
 	       ; updateChild(getParent(n),getIndex(n),new) 
 	       ; Layout.layout(node)
-	       ; MainDictionary.update(Dictionaries.dict, (ind,node))
-               ; let val li = MainDictionary.dict2list(Dictionaries.dict,ind-1)
-		     val y_pos = y+Layout.sum_up(li,fn n 
+               ; Inspector.inspect (Layout.sum_up(li,fn n 
 						 => if n = Empty then 0
-						    else Layout.get_ydim(n)+1)
-		 in DrawNodes.draw(node,0,y_pos,DrawNodes.DRAW)
-		 end
+						    else Layout.get_ydim(n)+1))
+	       ; MainDictionary.update(Dictionaries.dict, (ind,node))
+               ; DrawNodes.draw(node,0,y_pos,DrawNodes.DRAW) 
+	       ; TextIO.print ("UPDATE: drawing with y = "
+			       ^Int.toString(y_pos)^"\n")
 	       ; let val dy =  Layout.get_ydim(node) - old_ydim
 		 in ( WindowManager.incr_act_line dy
 		     ; iterMove (Dictionaries.dict,dy,getIndex(node) + 1,

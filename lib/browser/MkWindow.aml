@@ -69,17 +69,17 @@ struct
       | selectHandler "shrink"    = Array.sub(handlers,3)
       | selectHandler "expand"    = Array.sub(handlers,4)
 
-    fun register (str,handler) = let
-				     val i = case str of "reinspect" => 0
-				                       | "width" =>  1 
-						       | "depth" =>  2
-						       | "shrink" => 3
-						       | "expand" => 4
-				 in
-				     Array.update(handlers,i,handler)
-				 end
-					 
-
+    fun register (str,handler) = 
+	let
+	    val i = case str of "reinspect" => 0
+	  | "width" =>  1 
+	  | "depth" =>  2
+	  | "shrink" => 3
+	  | "expand" => 4
+	in
+	    Array.update(handlers,i,handler)
+	end
+    
     (* "About..."-WindowHandler *)
     fun about _ = serve (fn () =>  
 	let
@@ -231,27 +231,26 @@ struct
 	end
 
      val _ = setSelectionMenuSensitive (bar,false)  
-	
-    val _ = Gtk.boxPackStart(vbox,bar,0,0,0)    
-    val status = Gtk.statusbarNew()
+	 
+     val _ = Gtk.boxPackStart(vbox,bar,0,0,0)    
+     val status = Gtk.statusbarNew()
      val st_context = Gtk.statusbarGetContextId(status,"st")
      val id = Gtk.statusbarPush(status,st_context,"Inspector Window started successfully")
      val _ = Gtk.boxPackEnd(vbox,status,0,0,0)
-    
-    structure DA  =  MkDrawingArea(val xsize = !Settings.max_x 
-				   val ysize = !Settings.max_y) 	
-
-    val scrolled = Gtk.scrolledWindowNew(uglyNULL,uglyNULL)
-
-    val _ = Gtk.scrolledWindowSetPolicy(scrolled,
-					Gtk.POLICY_ALWAYS,
-					Gtk.POLICY_ALWAYS)
-	
-
-    val hadj = Gtk.scrolledWindowGetHadjustment(scrolled)
-    val vadj = Gtk.scrolledWindowGetVadjustment(scrolled)
-
-    fun handleResize _ = serve (fn () => let
+	 
+     structure DA  =  MkDrawingArea(val xsize = !Settings.max_x 
+				    val ysize = !Settings.max_y) 	
+	 
+     val scrolled = Gtk.scrolledWindowNew(uglyNULL,uglyNULL)
+	 
+     val _ = Gtk.scrolledWindowSetPolicy(scrolled,
+					 Gtk.POLICY_ALWAYS,
+					 Gtk.POLICY_ALWAYS)
+	 
+     val hadj = Gtk.scrolledWindowGetHadjustment(scrolled)
+     val vadj = Gtk.scrolledWindowGetVadjustment(scrolled)
+	 
+     fun handleResize _ = serve (fn () => let
 	                     val page_sh = Gtk.adjustmentGetFieldPageSize(hadj)
 			     val upperh = Gtk.adjustmentGetFieldUpper(hadj)
 			     val upperv = Gtk.adjustmentGetFieldUpper(vadj)
@@ -320,8 +319,7 @@ struct
 	  | SOME(_,rect) => Gtk.objectDestroy(rect)  
 		
 	fun handleReinspect node = 
-	    fn _ =>
-	    (TextIO.print("reinspect"); (selectHandler("reinspect")) node)
+	    fn _ => (selectHandler("reinspect")) node
 
  fun handleEvent [Gdk.EVENT(event)] = serve (fn () =>
      let

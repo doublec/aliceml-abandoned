@@ -33,13 +33,6 @@ UnsafeInspector.inspect ({ref = ref "hallo",vec1 = #[(4,5),(6,7)],
                           vec2 = #[(6,7),(4,5)], arr = my_array},rva_rec); 
 
 (* Datentyp *)
-import structure NewNode from "NewNode";
-import structure Layout from "Layout";
-import structure UnsafeInspector from "UnsafeInspector";
-import structure Reflect from "x-alice:/lib/system/Reflect";
-
-UnsafeInspector.init();
-
 datatype foo = A 
              | B of int ref list
              | C of foo 
@@ -55,13 +48,7 @@ UnsafeInspector.inspect (D [{1 = #[#["hi","du"],#["guck","mal"]],
 			     2 = #[#[0,8,1,5],#[4,7,1,1]]},
 			    {1 = #[#["ich","kann"],#["Listen","zeichnen"]], 
 			     2 = #[#[0,8,1,5],#[4,7,1,1]] } ],
-		import structure NewNode from "NewNode";
-import structure Layout from "Layout";
-import structure UnsafeInspector from "UnsafeInspector";
-import structure Reflect from "x-alice:/lib/system/Reflect";
-
-UnsafeInspector.init();
-	 data_type);
+			 data_type);
 
 (*
 structure IntList = Reflect.ReflectType (type t = (int * int) list);
