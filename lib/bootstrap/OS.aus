@@ -1,0 +1,20 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2000
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+structure OS =
+    struct
+	structure Process =
+	    struct
+		__primitive val getEnv: string -> string option =
+		    "OS.Process.getEnv"
+	    end
+    end
