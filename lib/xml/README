@@ -7,7 +7,7 @@ After a successful bootstrap ;-) just type "make" in this
 
 Installation:
 Change the Makefile according to your needs. If you installed SEAM by
-typing "./install-stockwerk" in the alice root directory, the first
+typing "./install-seam.sh" in the alice root directory, the first
 line should be appropriate. If you did the bootstrapping manually, you
 might want to choose the second line for INSTALLDIR.
 
