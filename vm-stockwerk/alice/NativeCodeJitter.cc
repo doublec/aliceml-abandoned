@@ -46,6 +46,30 @@
 #include "generic/Profiler.hh"
 #endif
 
+namespace Outline {
+  namespace Backtrace {
+    static ::Backtrace *New(word frame) {
+      return ::Backtrace::New(frame);
+    }
+  };
+  namespace Scheduler {
+    static void PushFrame(word frame) {
+      ::Scheduler::PushFrame(frame);
+    }
+  };
+  namespace Constructor {
+    static ::Constructor *New(String *name) {
+      return ::Constructor::New(name);
+    }
+  };
+  namespace Record {
+    static word PolySel(::Record *record, UniqueString *label) {
+      Assert((::Record::FromWordDirect(record->ToWord()), true));
+      return record->PolySel(label);
+    }
+  };
+};
+
 // NativeCodeFrame
 class NativeCodeFrame : private Generic::StackFrame {
 protected:
@@ -645,7 +669,7 @@ void NativeCodeJitter::PushCall(u_int Closure, CallInfo *info) {
       NativeCodeFrame::New(JIT_V1, currentNLocals);
       Prepare();
       jit_pushr_ui(JIT_V1);
-      JITStore::Call(1, (void *) Scheduler::PushFrame);
+      JITStore::Call(1, (void *) Outline::Scheduler::PushFrame);
       Finish();
       jit_popr_ui(JIT_R0); // Restore Closure
       NativeCodeFrame::PutClosure(JIT_V1, JIT_R0);
@@ -1279,8 +1303,7 @@ TagVal *NativeCodeJitter::InstrPutNew(TagVal *pc) {
   // DirectWordToBlock(JIT_R0) does nothing
   Prepare();
   jit_pushr_ui(JIT_R0);
-  void *ptr = (void *) static_cast<Constructor *(*)(String *)>
-    (&Constructor::New);
+  void *ptr = (void *) Outline::Constructor::New;
   JITStore::Call(1, ptr); // Constructor resides in JIT_RET
   Finish();
   LocalEnvPut(JIT_V2, pc->Sel(0), JIT_RET);
@@ -1644,13 +1667,12 @@ TagVal *NativeCodeJitter::InstrLazyPolySel(TagVal *pc) {
     jit_movr_p(JIT_V1, WRecord);
   for (u_int i = ids->GetLength(); i--; ) {
     Prepare();
-    jit_pushr_ui(JIT_V1); // record
     u_int labelIndex = ImmediateEnv::Register(labels->Sub(i));
     ImmediateSel(JIT_R0, JIT_V2, labelIndex);
     // UniqueString::FromWordDirect does nothing
-    jit_pushr_ui(JIT_R0);
-    void *ptr = (void *)
-      static_cast<word (*)(::UniqueString *, ::Record *)>(&::Record::PolySel);
+    jit_pushr_ui(JIT_R0); // label
+    jit_pushr_ui(JIT_V1); // record
+    void *ptr = (void *) Outline::Record::PolySel;
     JITStore::Call(2, ptr);
     Finish();
     LocalEnvPut(JIT_V2, ids->Sub(i), JIT_R0);
@@ -1666,7 +1688,7 @@ TagVal *NativeCodeJitter::InstrRaise(TagVal *pc) {
   Generic::Scheduler::SetCurrentData(Reg);
   Prepare();
   jit_pushr_ui(JIT_V2); // Frame ptr
-  JITStore::Call(1, (void *) Backtrace::New);
+  JITStore::Call(1, (void *) Outline::Backtrace::New);
   Finish();
   Generic::Scheduler::SetCurrentBacktrace(JIT_RET);
   jit_movi_ui(JIT_RET, Interpreter::RAISE);
