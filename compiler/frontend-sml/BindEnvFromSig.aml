@@ -188,19 +188,14 @@ struct
 
 
     fun explodePath p =
-	if Path.isDot p then
-	    let val (p',l) = Path.asDot p
-	    in SOME(explodePath'(p', [], sigidFromLabel l)) end
-	else if Path.isName p then
-	    SOME(p, [], sigidFromLabel(Path.toLab p))
-	else
-	    NONE
+	case Path.inspect p
+	 of Path.Name n    => SOME(p, [], sigidFromLabel(Label.fromName n))
+	  | Path.Hidden _  => NONE
+	  | Path.Dot(p',l) => SOME(explodePath'(p', [], sigidFromLabel l))
     and explodePath'(p, strids, sigid) =
-	if Path.isDot p then
-	    let val (p',l) = Path.asDot p
-	    in explodePath'(p', stridFromLabel l :: strids, sigid) end
-	else
-	    (p, strids, sigid)
+	case Path.inspect p
+	 of Path.Dot(p',l) => explodePath'(p', stridFromLabel l::strids, sigid)
+	  | _              => (p, strids, sigid)
 
     fun selectSig(PLAIN E, [l])   = #3(valOf(lookupSig(E, sigidFromLabel l)))
       | selectSig(PLAIN E, l::ls) =
@@ -209,10 +204,11 @@ struct
 
     fun envfnFromInf(I,j) = envfnFromInf'(I, PathMap.new(), j)
     and envfnFromInf'(I,pm,j) =
-	if Inf.isTop' j then
-	    EMPTY
-	else if Inf.isCon' j then
-	    case explodePath(Inf.asCon' j)
+	case Inf.inspect j
+	 of Inf.Top =>
+		EMPTY
+	  | Inf.Con p =>
+	    (case explodePath p
 	     of NONE => EMPTY
 	      | SOME(p',strids,sigid) =>
 	    let
@@ -220,42 +216,49 @@ struct
 						    | NONE   => Stamp.new()
 	    in
 		ABSTR(z,strids,sigid,[])
-	    end
-	else if Inf.isSig' j then
-	    PLAIN(envFromSig'(I, pm, Stamp.new(), Inf.asSig' j))
-	else if Inf.isArrow' j then
+	    end)
+	  | Inf.Sig s =>
+		PLAIN(envFromSig'(I, pm, Stamp.new(), s))
+	  | Inf.Arrow(p,j1,j2) =>
 	    let
-		val (p,j1,j2) = Inf.asArrow' j
-		val  z        = Stamp.new()
-		val  zo       = PathMap.lookup(pm,p)
+		val z  = Stamp.new()
+		val zo = PathMap.lookup(pm,p)
 	    in
 		PathMap.insert(pm,p,z);
 		PARAM(z, envfnFromInf'(I,pm,j2))
 		before
 		(case zo of NONE => () | SOME z' => PathMap.insert(pm,p,z'))
 	    end
-	else if Inf.isLambda j then
+	  | Inf.Lambda(p,j1,j2) =>
 	    let
-		val (p,j1,j2) = Inf.asLambda j
-		val  z        = Stamp.new()
-		val  zo       = PathMap.lookup(pm,p)
+		val z  = Stamp.new()
+		val zo = PathMap.lookup(pm,p)
 	    in
 		PathMap.insert(pm,p,z);
 		PARAM(z, envfnFromInf'(I,pm,j2))
 		before
 		(case zo of NONE => () | SOME z' => PathMap.insert(pm,p,z'))
 	    end
-	else if Inf.isApply j then
+	  | Inf.Apply(j1,m) =>
 	    let
-		val (j1,m) = Inf.asApply j
 		val (_,j2) = Inf.asMod m
 		val  F1    = envfnFromInf'(I,pm,j1)
 		val  F2    = envfnFromInf'(I,pm,j2)
 	    in
 		apply(F1,F2)
 	    end
-	else
-	    raise Crash.Crash "BindEnvFromSig.envFromInf: unknown interface"
+	  | Inf.Sing m =>
+		envfnFromInf'(I,pm, #2(Inf.asMod m))
+	  | Inf.Exist(p,j1,j2) =>
+	    let
+		val z  = Stamp.new()
+		val zo = PathMap.lookup(pm,p)
+	    in
+		PathMap.insert(pm,p,z);
+		envfnFromInf'(I,pm,j2)
+		before
+		(case zo of NONE => () | SOME z' => PathMap.insert(pm,p,z'))
+	    end
 
     and envFromSig (I,s)    = envFromSig'(I, PathMap.new(), Stamp.new(), s)
     and envFromSig'(I,pm,z,s) =
@@ -272,13 +275,13 @@ struct
 	end
 
     and insertValItem (E,I,s) item =
-	if Inf.isValItem item then
+	case Inf.inspectItem item
+	 of Inf.ValItem(l,t) =>
 	    let
-		val (l,t) = Inf.asValItem item
-		val  name = Label.toString l
-		val  vid  = vidFromLabel l
-		val  x    = Stamp.new()
-		val  is   = if String.sub(name,0) = #"'" then V else
+		val name = Label.toString l
+		val vid  = vidFromLabel l
+		val x    = Stamp.new()
+		val is   = if String.sub(name,0) = #"'" then V else
 			    let
 				val l'        = Label.fromString("'" ^ name)
 				val t'        = Inf.lookupVal(s,l')
@@ -298,51 +301,49 @@ struct
 	    in
 		insertDisjointVal(E, vid, (I,x,is))
 	    end
-	else
-	    ()
+	  | _ => ()
 
     and insertItem (E,I,pm,z,s) item =
-	if Inf.isFixItem item then
+	case Inf.inspectItem item
+	 of Inf.FixItem(l,f) =>
 	    let
-		val (l,f) = Inf.asFixItem item
-		val  is   = infFromFix f
+		val is = infFromFix f
 	    in
 		insertInf(E, vidFromLabel l, (I,is))
 	    end
-	else if Inf.isTypItem item then
+	  | Inf.ValItem _ =>
+		()
+	  | Inf.TypItem(p,k) =>
 	    let
-		val (p,k) = Inf.asTypItem item
-		val  l    = Path.toLab p
-		val  x    = Stamp.new()
-		val  E'   = case Type.inspectKind k
-			     of Type.SingKind t =>
+		val l  = Path.toLab p
+		val x  = Stamp.new()
+		val E' = case Type.inspectKind k
+			  of Type.SingKind t =>
 				envFromTyp(I, E,s, t,
 					   TyCon.fromString(Label.toString l))
-			      | _ => new()
+			   | _ => new()
 	    in
 		insertDisjointTy(E, tyconFromLabel l, (I,x,E'));
 		appiVals (fn(vid,x) => insertVal(E, vid, x)) E'
 	    end
-	else if Inf.isModItem item then
+	  | Inf.ModItem(p,j) =>
 	    let
-		val (p,j) = Inf.asModItem item
-		val  l    = Path.toLab p
-		val  F    = envfnFromInf'(I,pm,j)
-		val  x    = case F of PLAIN E' => Option.valOf(lookupSelf E')
-				    | _        => Stamp.new()
+		val l = Path.toLab p
+		val F = envfnFromInf'(I,pm,j)
+		val x = case F of PLAIN E' => Option.valOf(lookupSelf E')
+				| _        => Stamp.new()
 	    in
 		insertDisjointStr(E, stridFromLabel l, (I,x,F))
 	    end
-	else if Inf.isInfItem item then
+	  | Inf.InfItem(p,k) =>
 	    let
-		val (p,k) = Inf.asInfItem item
-		val  l    = Path.toLab p
-		val  F    = envfnFromInf'(I, pm, Inf.lookupInf'(s,l))
-		val  x    = Stamp.new()
+		val l = Path.toLab p
+		val F = envfnFromInf'(I, pm, Inf.lookupInf'(s,l))
+		val x = Stamp.new()
 	    in
 		PathMap.insert(pm,p,z);
 		insertDisjointSig(E, sigidFromLabel l, (I,x,F))
 	    end
-	else (* hidden *)
-	     ()
+	  | Inf.HiddenItem _ =>
+		()
 end
