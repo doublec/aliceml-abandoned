@@ -19,6 +19,6 @@ define
       {Application.exit 2}
    end
 
-   {Main.ozifyFileToStdOut Args.'in'}
+   {Main.ozifyFileToStdOut Args.'in' _}
    {Application.exit 0}
 end
