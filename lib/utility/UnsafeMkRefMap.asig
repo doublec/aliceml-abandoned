@@ -14,15 +14,20 @@ signature UNSAFE_DICTIONARY_COMPONENT =
 sig
     structure UnsafeDictionary :
     sig
-	val new :	unit -> 'map
-	val clone :	'map -> 'map
+	val new :	unit -> 'a_map
+	val clone :	'map -> 'a_map
 
-	val insert :	'map * 'key * 'a -> unit
-	val delete :	'map * 'key -> unit
-	val deleteAll :	'map -> unit
+	val insert :	'a_map * 'key * 'a -> unit
+	val delete :	'a_map * 'key -> unit
+	val deleteAll :	'a_map -> unit
 
-	val lookup :	'map * 'key -> 'a option
-	val member :	'map * 'key -> bool
-	val isEmpty :	'map -> bool
+	val lookup :	'a_map * 'key -> 'a option
+	val member :	'a_map * 'key -> bool
+	val isEmpty :	'a_map -> bool
+
+	val app :	('a -> unit) * 'a_map -> unit
+	val appi :	('key * 'a -> unit) * 'a_map -> unit
+	val fold :	('a * 'b -> 'b) * 'b * 'a_map -> 'b
+	val foldi :	('key * 'a * 'b -> 'b) * 'b * 'a_map -> 'b
     end
 end

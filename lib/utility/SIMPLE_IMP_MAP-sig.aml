@@ -25,4 +25,9 @@ sig
     val lookup :	'a map * key -> 'a option
     val member :	'a map * key -> bool
     val isEmpty :	'a map -> bool
+
+    val app :		('a -> unit) -> 'a map -> unit
+    val appi :		(key * 'a -> unit) -> 'a map -> unit
+    val fold :		('a * 'b -> 'b) -> 'b -> 'a map -> 'b
+    val foldi :		(key * 'a * 'b -> 'b) -> 'b -> 'a map -> 'b
 end

@@ -63,4 +63,32 @@ struct
       | lookup'(_::es, r) = lookup'(es, r)
 
     fun member(m,r) = Option.isSome(lookup(m,r))
+
+    fun app f m =
+	let
+	    val ff = List.app (fn(_,x) => f x)
+	in
+	    UnsafeDictionary.app(fn r => ff(!r), m)
+	end
+
+    fun appi f m =
+	let
+	    val ff = List.app f
+	in
+	    UnsafeDictionary.app(fn r => ff(!r), m)
+	end
+
+    fun fold f y m =
+	let
+	    val ff = List.foldl (fn((_,x),y) => f(x,y))
+	in
+	    UnsafeDictionary.fold(fn(r,y) => ff y (!r), y, m)
+	end
+
+    fun foldi f y m =
+	let
+	    val ff = List.foldl (fn((k,x),y) => f(k,x,y))
+	in
+	    UnsafeDictionary.fold(fn(r,y) => ff y (!r), y, m)
+	end
 end
