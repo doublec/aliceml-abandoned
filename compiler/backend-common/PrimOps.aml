@@ -157,6 +157,7 @@ structure PrimOps :> PRIM_OPS =
 		ins ("String.>=", SOME (Tuple 2));
 		ins ("String.compare", SOME (Tuple 2));
 		ins ("String.explode", SOME Unary);
+		ins ("String.hash", SOME Unary);
 		ins ("String.implode", SOME Unary);
 		ins ("String.maxSize", NONE);
 		ins ("String.size", SOME Unary);

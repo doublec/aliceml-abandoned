@@ -3,7 +3,7 @@
 %%%   Leif Kornstaedt <kornstae@ps.uni-sb.de>
 %%%
 %%% Copyright:
-%%%   Leif Kornstaedt, 1999-2001
+%%%   Leif Kornstaedt, 1999-2002
 %%%
 %%% Last change:
 %%%   $Date$ by $Author$
@@ -53,6 +53,30 @@ prepare
       fun {StringCompare S1 S2}
 	 {StringCompareSub S1 S2
 	  {ByteString.length S1} {ByteString.length S2} 0}
+      end
+   end
+
+   local
+      W = 32
+      W4 = {BootWord.make W 4}
+      W24 = {BootWord.make W 24}
+      FourHOBits = {BootWord.'<<' {BootWord.make W 0xF0} W24}
+   in
+      fun {StringHash S}
+	 N = {ByteString.length S}
+	 fun {Iter I H}
+	    if I == N then H
+	    else
+	       C = {ByteString.get S I}
+	       H2 = {BootWord.'+' {BootWord.'<<' H W4} {BootWord.make W C}}
+	       G = {BootWord.andb H2 FourHOBits}
+	       H3 = {BootWord.xorb {BootWord.xorb H2 {BootWord.'>>' G W24}} G}
+	    in
+	       {Iter I + 1 H3}
+	    end
+	 end
+      in
+	 {BootWord.toInt {Iter 0 {BootWord.make W 0}}}
       end
    end
 
@@ -384,6 +408,7 @@ prepare
 	 fun {$ S1 S2} {StringCompare S1 S2} \= 'LESS' end
       'String.compare': StringCompare
       'String.explode': ByteString.toString
+      'String.hash': StringHash
       'String.implode': ByteString.make
       'String.maxSize': 0x7FFFFFFF
       'String.size': ByteString.length
