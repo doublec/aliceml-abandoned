@@ -30,9 +30,10 @@ static inline void Show(const char *s) {
 static inline void InitStore() {
   u_int limits[STORE_GENERATION_NUM];
   
-  for (u_int i = 0; i < STORE_GENERATION_NUM; i++) {
-    limits[i] = (i + 1);
-  }
+
+  limits[0] = 1;
+  limits[1] = 2;
+  limits[2] = limits[3] = 5;
   Store::InitStore(limits);
 }
 
