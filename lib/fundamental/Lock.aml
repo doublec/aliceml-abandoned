@@ -4,7 +4,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt and Andreas Rossberg, 2001-2002
+ *   Leif Kornstaedt and Andreas Rossberg, 2001-2004
  *
  * Last change:
  *   $Date$ by $Author$
@@ -32,10 +32,13 @@ structure Lock :> LOCK =					(**)
 	fun sync lock f x =
 	    let
 		val p = Promise.promise ()
-		val u = Ref.exchange (lock, Promise.future p)
-		val _ = Future.await u
-		val y = f x handle e => (Promise.fulfill (p, ()); raise e)
 	    in
-		Promise.fulfill (p, ()); y
+		let
+		    val _ = Future.await (Ref.exchange (lock, Promise.future p))
+		    val y = f x
+		in
+		    Promise.fulfill (p, ()); y
+		end
+		handle e => (Promise.fulfill (p, ()); raise e)
 	    end
     end
