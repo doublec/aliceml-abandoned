@@ -9,4 +9,6 @@ structure Url :> URL =
 	fun toString s = s
 	fun resolve _ s = s
 	fun isAbsolute _ = true
+	val compare = String.compare
+	val hash = StringHashKey.hash
     end
