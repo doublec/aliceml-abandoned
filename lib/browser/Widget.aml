@@ -287,14 +287,34 @@ struct
 	NONE => Node.Empty
       | SOME(n,_,_) => n  
 
-    (* handles the user's request to shut the window *)
-    fun DeleteWindow _ = (widgetHideAll(window)
-		    ;Update.screen_max_x := 0
-		    ;Dictionaries.Main.dumpAll(Dictionaries.maindict)
-		    ;Dictionaries.RelMan.dumpAll(Dictionaries.reldict)
-		    ;act_line := 0
-		    ;alive:= false)
+    fun emptyAllDictionaries() = 
+	(Dictionaries.Main.dumpAll(Dictionaries.maindict)
+	 ;Dictionaries.RelMan.dumpAll(Dictionaries.reldict)
+	 ;Dictionaries.Transient.dumpAll(Dictionaries.transdict))
 
+    (* handles the user's request to shut the window *)
+    fun DeleteWindow _ = 
+	(widgetHideAll(window)
+	 ;Update.screen_max_x := 0
+	 ;emptyAllDictionaries()
+	 ;act_line := 0
+	 ;alive:= false)
+	
+    (* handles user request to clear everything *)
+    fun handleClear _ = 
+	let
+	    val li = Dictionaries.Main.dict2list(Dictionaries.maindict)
+	in 
+	    (List.app (fn (n,sep) => 
+		       (objectDestroy(getGroup(n))
+			; if not(sep = uglyNULL) 
+			      then objectDestroy(sep)
+			  else () )) li
+	     ;emptyAllDictionaries()
+	     ;Update.screen_max_x := 0
+	     ;act_line := 0
+	     ;(!resize)())
+	end
     
     (* needed to keep Gtk going when using MS Windows *)
     fun freezeThaw(x) = (layoutFreeze(x)
@@ -671,6 +691,10 @@ struct
 			   (LABEL "About...",
 			    [Handler("activate",
 				   fn _ => Server.serve (aboutWindow) )],true),
+			   EntryObj
+			   (LABEL "Clear",
+			    [Handler("activate",
+				   fn _ => Server.serve (handleClear) )],true),
 			   EntryObj(SEP,[],true),
 			   EntryObj(LABEL "Close",
 				    [Handler("activate",
