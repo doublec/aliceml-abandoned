@@ -29,9 +29,10 @@ typedef enum {
 } EventLabel;
 
 
-class EventAccessor{
+class EventAccessor {
 public:
   EventAccessor() {}
+
   virtual EventLabel GetLabel() = 0;
   virtual word GetEvent(word event) = 0;
 };
@@ -50,8 +51,6 @@ public:
     return static_cast<DebuggerEvent *>(b);
   }
 
-  static DebuggerEvent *FromWord(word w);
-  static DebuggerEvent *FromWordDirect(word w);
   EventAccessor *GetAccessor() {
     return static_cast<EventAccessor *>
       (Store::WordToUnmanagedPointer(Block::GetArg(ACCESSOR_POS)));
@@ -60,6 +59,9 @@ public:
   word GetEvent() {
     return GetAccessor()->GetEvent(Block::GetArg(EVENT_POS));
   }
+
+  static DebuggerEvent *FromWord(word w);
+  static DebuggerEvent *FromWordDirect(word w);
 };
 #endif
 #endif
