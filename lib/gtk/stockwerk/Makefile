@@ -5,11 +5,11 @@ NATIVES = $(COMPS:%=Native%)
 
 ENUMS = $(COMPSCAP:%=%_ENUMS-sig.aml) $(COMPS:%=%Enums.aml)
 UNSAFE = $(COMPSCAP:%=%_UNSAFE-sig.aml) $(COMPS:%=%Unsafe.aml)
-
 GENNATIVES = $(NATIVES:%=%.asig) $(NATIVES:%=%.cc)
 GENFILES = $(GENNATIVES) $(ENUMS) $(UNSAFE)
 GENSIGS = $(COMPSCAP:%=%-sig.aml) 
 OUTDIR = output
+LASTGENERATE = lastgenerate
 
 COMMON = GTK_TYPES-sig.aml GtkTypes.aml GTK_CORE-sig.aml GtkCore.aml
 MAINFILES = $(COMPS:%=%.aml)
@@ -21,51 +21,52 @@ ALICEC = alicec --dump-phases
 ALICETOOL = alicetool
 INSTALL = install -C -v -m 666
 
+.PHONY: generate compile depend docs clean veryclean distclean
 
-
-all: generate depend compile
+all: compile
 
 #################################################
 
-generate: rungenerator $(GENSIGS)
+generate: $(GENFILES) $(GENSIGS)
 
-gtkclean.c:
-	(cd prepare ; $(MAKE) )
+$(GENFILES): $(LASTGENERATE)
 
-rungenerator $(GENFILES): gtkclean.c
+$(LASTGENERATE) dogenerate: gtkclean.c
 	if test ! -d $(OUTDIR) ; then mkdir $(OUTDIR) ; fi
 	echo 'CM.make();main "$(OUTDIR)";' | sml
 	$(INSTALL) $(GENFILES:%=$(OUTDIR)/%) .
 	rm -f $(OUTDIR)/*
 	rmdir $(OUTDIR)
+	touch $(LASTGENERATE)
+
+gtkclean.c:
+	(cd prepare ; $(MAKE) )
 
 %-sig.aml: %-sig.tml %_UNSAFE-sig.aml %_ENUMS-sig.aml
 	gawk -f includesig.awk -v filename=includesig.awk $< > $@
 
 #################################################
 
-
 compile: $(NATIVES:%=%.dll) $(COMPS:%=%.stc)
-
-%.o: %.cc
-	$(ALICETOOL) -v cc `pkg-config --cflags gtk+-2.0` -c $< -o $@
 
 %.dll: %.o
 	$(ALICETOOL) -v ld -Wl,-S `pkg-config --libs gtk+-2.0` $< -o $@
+
+%.o: %.cc
+	$(ALICETOOL) -v cc `pkg-config --cflags gtk+-2.0` -c $< -o $@
 
 %.stc: %.aml
 	$(ALICEC) $< -o $@
 
 #################################################
 
-depend: Makefile.depend
-
-Makefile.depend: Makefile $(CPPSOURCES) $(ALICESOURCES)
+depend: Makefile $(CPPSOURCES) $(ALICESOURCES)
 	gcc -M -I ../../../vm-stockwerk `pkg-config --cflags gtk+-2.0` \
 	    $(CPPSOURCES) > Makefile.depend
-#	echo 'CM.make();depend("Makefile.depend","$$(GENFILES)",CM.names());' \
-#             | sml
-	gawk -f alicedepend.awk -v outfile=Makefile.depend $(MAINFILES)
+	echo  \
+         'CM.make();depend("Makefile.depend","$$(LASTGENERATE)",CM.names());' \
+         | sml
+	gawk -f alicedepend.awk $(ALICESOURCES) >> Makefile.depend
 
 include Makefile.depend
 
@@ -84,6 +85,7 @@ clean:
 	rm -f *.stc
 	rm -f *.o
 	rm -f *~
+	rm -f $(LASTGENERATE)
 
 cmclean:
 	for i in `find -type d | xargs echo`; do     \
