@@ -684,6 +684,8 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 	    in
 		translateCont (Decs (decs, Goto stms))
 	    end
+	  | translateExp (UpExp (_, exp), f, cont) =
+	    translateExp (exp, f, cont)
 	and simplifyIf (AndExp (_, exp1, exp2), thenStms, elseStms) =
 	    let
 		val elseStms' = share elseStms
