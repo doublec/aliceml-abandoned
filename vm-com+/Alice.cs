@@ -7,6 +7,11 @@ using Alice;
 using Alice.Values;
 using Alice.Builtins;
 
+class UnmanagedIO {
+    [sysimport(dll="io.dll")]
+	public static extern String readline();
+}
+
 namespace Alice {
     namespace Values {
 	public class Array {
@@ -2273,7 +2278,7 @@ namespace Alice {
 		StreamWrapper wrapper = (StreamWrapper) CommonOp.Sync(a);
 		StreamReader r        = (StreamReader) wrapper.stream;
 		try {
-		    return r.ReadAll();
+		    return r.ReadToEnd();
 		}
 		catch (System.Exception e) {
 		    Object[] ar = new Object[3];
@@ -2293,7 +2298,7 @@ namespace Alice {
 		StreamWrapper wrapper = (StreamWrapper) CommonOp.Sync(a);
 		StreamReader r        = (StreamReader) wrapper.stream;
 		try {
-		    System.String line = r.ReadLine();
+		    System.String line = UnmanagedIO.readline();
 
 		    if (line == "") {
 			return line;
@@ -2738,7 +2743,7 @@ namespace Alice {
 			else {
 			    Object val;
 
-			    Console.Write("Komponist: Inovking ");
+			    Console.Write("Komponist: Invoking ");
 			    Console.Write(Url);
 			    Console.WriteLine("/class Execute::Main");
 			    val = minf.Invoke(null, args);
