@@ -2,6 +2,35 @@ Stockwerk:
 -- Rename Pickle.oz to PrimPickle.oz
 
 Extended Basis Library:
+-- awaitOne muss nicht primitiv sein:
+
+   local
+       type thread
+       __primitive val await: 'a -> 'a = "Future.await"
+       __primitive val currentThread: unit -> thread = "Thread.current"
+       __primitive val raiseIn: thread * exn -> unit = "Thread.raiseIn"
+       __primitive exception Terminate = "Thread.Terminate"
+   in
+       fun awaitOne (a, b) =
+	   let
+	       val c  = Hole.hole ()
+	       val t1 = Hole.hole ()
+	       val t2 = Hole.hole ()
+	   in
+	       spawn (Hole.fill (t1, currentThread ());
+		      ignore (await a) handle _ => ();
+		      Hole.fill (c, ()) handle Hole.Hole => ();
+		      raiseIn (t2, Terminate)
+			  handle (Hole.Hole|Terminated) => ());
+	       spawn (Hole.fill (t2, currentThread ());
+		      ignore (await b) handle _ => ();
+		      Hole.fill (c, ()) handle Hole.Hole => ();
+		      raiseIn (t1, Terminate)
+			  handle (Hole.Hole|Terminated) => ());
+	       await c; a
+	   end
+   end
+
 -- Future.byneed and Future.concur suspend on their argument
 -- geworfene Exceptions sollen immer evaluiert sein
 -- yield sollte immer auf currentThread operieren
