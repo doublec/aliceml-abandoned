@@ -10,7 +10,8 @@ LEXER-PARSER-TRALLALA
 	->Folgefehler: man muss ds* so klammern: d(s)* oder d(s*)
 
 
-*OK* keine Moeglichkeit gefunden, explist ohne '@' zu machen, da in exp ( ) vorkommt
+*OK* keine Moeglichkeit gefunden, explist ohne '@' zu machen, da in exp ( )
+     vorkommt
      -Baumstruktur
 
 
@@ -43,9 +44,9 @@ LEXER-PARSER-TRALLALA
 
 
 *OK* -Keywords hinzugefuegt:
-	       construktor
-	       exttype
-	       import
+               construktor
+               exttype
+               import
 
 
 *fixed* -was tun, wenn file nicht mit MLKEY beginnt?
@@ -61,12 +62,13 @@ LEXER-PARSER-TRALLALA
 
 *fixed* -Fehlermeldungen zeigen die falschen Zeilen an
 
-*nein, syntax verkehrt* -darf 'val x = [regexp a = "b"]' einen Fehler werfen, oder auch als MLKEY deklarieren? { } analog
-			ansonsten muessten mehrere PAREXP deklariert werden
+*nein, syntax verkehrt* -darf 'val x = [regexp a = "b"]' einen Fehler werfen,
+                         oder auch als MLKEY deklarieren? { } analog
+                         ansonsten muessten mehrere PAREXP deklariert werden
 
 
 
------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
 
 
 
@@ -75,22 +77,26 @@ AUTOMAT
 
 *OK* -regids in einer map speichern
 
-*OK* -sollen regids ueber Strukturen und ueber Klammerungen hinweg gueltig sein? aktuell: ja
+*OK* -sollen regids ueber Strukturen und ueber Klammerungen hinweg gueltig sein?
+      aktuell: ja
 
-*OK* -alle REGs werden beim ersten Durchlauf von Collect.substLexList geloescht, korrekt?
+*OK* -alle REGs werden beim ersten Durchlauf von Collect.substLexList geloescht,
+      korrekt?
 
 *ja* - ' "a" "a"? | "b" "c" '  ist: {"a", "aa", "bc"}?
 
-*nein, falsche Annahme* -Algorithmus scheinbar besser als angenommen, bekomme nur minimierte Automaten. Gegenbeispiel?
+*nein, falsche Annahme* -Algorithmus scheinbar besser als angenommen,
+                         bekomme nur minimierte Automaten. Gegenbeispiel?
 
-*ja, muss 'i' statt 'j' heissen* -S.168 Fehler in der Beschreibung eines NEA ohne epsilon-Uebergaenge
+*ja, muss 'i' statt 'j' heissen* -S.168 Fehler in der Beschreibung eines NEA
+                                  ohne epsilon-Uebergaenge
 
 *uninteressant* -Tabellenkompaktierung?
 
 
 
 
------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
 
 
 
@@ -109,7 +115,8 @@ TO-DO!
 
 *OK* -Signaturen erstellen
 
-*255* geht der Zeichensatz immer bis 255, oder muss die Automatendarstellung auch mit 127 funktionieren?
+*255* geht der Zeichensatz immer bis 255, oder muss die Automatendarstellung
+      auch mit 127 funktionieren?
 
 *nein* unclosed comment: (* ... "(*" ... *) wie in ml oder "besser"?
 
@@ -152,33 +159,31 @@ TO-DO!
 
 *OK* Fehlermeldungen umbenennen/vereinheitlichen!
 
-*eingefuegt* signatur fuer structure Lexer sinnvoll? (im Moment auskommentiert)			  
-
-
+*eingefuegt* signatur fuer structure Lexer sinnvoll? (im Moment auskommentiert)
 
 *OK* -Komandozeilen bekommt zu parsendes File, opt. Ausgabefile
-	       Hose.sml / HOSE-sig.sml anpassen
-	       hose <infile> [-o <outfile>]
-	       usage-message, if not matched
-	       SMLofNJ.exportFn - Doku
-	       hilfreiche dateien von hamlet:
-			  wrap-smlnj.sml
-			  Main.sml
-			  hamlet
+               Hose.sml / HOSE-sig.sml anpassen
+               hose <infile> [-o <outfile>]
+               usage-message, if not matched
+               SMLofNJ.exportFn - Doku
+               hilfreiche dateien von hamlet:
+                          wrap-smlnj.sml
+                          Main.sml
+                          hamlet
 
 *OK* -IO.Io exception handeln
 
-*under construction!* -typ: unit -> string option,
-		          also quasi in Lexer.sml string durch getString ersetzen
-			  vom alten string muss der Rest uebernommen werden, der noch keine Action gab
-			  wenn einmal NONE kam, darf die Funktion nicht wieder aufgerufen werden
-			  helfen koennte hose.lex.sml
+-typ: unit -> string option,
+   also quasi in Lexer.sml string durch getString ersetzen
+   vom alten string muss der Rest uebernommen werden,
+   der noch keine Action gab
+   wenn einmal NONE kam, darf die Funktion nicht wieder aufgerufen werden
+   helfen koennte hose.lex.sml
 
-*offline fixed in Lexer.sml* -EOF wandert nach rechts, wenn es mehrmals gefunden wird
+-EOF wandert nach rechts, wenn es mehrmals gefunden wird
 
 
------------------------------------------------------------------------------------
-
+--------------------------------------------------------------------------------
 
 
 
@@ -208,63 +213,3 @@ FEATURES
 
 
 
------------------------------------------------------------------------------------
-
-
-
-OFF TOPIC
-=========
-
--warum beachtet CM.make() hose.sml nicht mehr?
-=====
-weil nichts gebunden wird, ist aber nicht ganz klar, weil es jetzt doch wieder beachtet wird
-=====
-
-
--Simulation eines BoolVectors:
-======
-structure BoolVector :> MONO_VECTOR where type elem = bool = struct open Vector type elem = bool type vector = bool vector end;
-======
-
-
--wie kann ich die Anzeigetiefe verstellen?
-======
-Compiler.Control.Print.printDepth : int ref
-Compiler.Control.Print.printLength : int ref
-Compiler.Control.Print.stringDepth : int ref
-======
-
-
--zweidimensionale Arrays in SML:
-======
-Array2
-======
-
-
--sml library
-======
-:/usr/share/smlnj/src/smlnj-lib/Util/
-======
-
-
--files lesen, dateinamen ...
-=====
-OS.FileSys ...
-OS.Path ...
-=====
-
-
--Emacs
-======
-C-q C-j : \n in regexps
-======
-
-
--CVS
-=====
-cvs add [file ...]    : meldet neue Datei(en) an (Verzeichnisse werden direkt committed)
-cvs rm [file ...]     : meldet alte Datei(en) ab
-cvs up [file ...]     : laedt alles neue vom Server
-cvs commit [file ...] : einchecken der Datei(en)  (CheckIn)
-cvs diff [file ...]   : zeigt Modifikation an
-=====
