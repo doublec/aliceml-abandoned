@@ -19,9 +19,9 @@ BOOTSTRAPDIR = $(SRCTOP)/bootstrap
 
 # No configuration needed from here
 
-STOC = alicec
-STODEP =  sml @SMLload=$(BOOTSTRAPDIR)/alicedep
-STOCOPTS = --rtt-level=no
+ALICEC = alicec
+ALICEDEP = alicedep
+ALICEC_OPTS = --rtt-level=no
 
 SOURCES = SERVER-sig.aml Server.aml \
           WORKER_DICT-sig.aml WorkerDict.aml \
@@ -48,10 +48,10 @@ INSTALLFILES = $(COMPONENTS:%=$(PREFIX)/lib/distribution/search/%)
 all: $(COMPONENTS)
 
 depend:
-	$(STODEP) $(ALICESOURCES) > Makefile.depend
+	$(ALICEDEP) $(ALICESOURCES) > Makefile.depend
 
 $(COMPONENTS): %.ozf: %.aml
-	$(STOC) $(STOCOPTS) -c $< -o $@
+	$(ALICEC) $(ALICEC_OPTS) -c $< -o $@
 
 ##
 ## Installing
