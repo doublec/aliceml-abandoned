@@ -28,11 +28,11 @@ define
 
    local
       fun {StringCompareSub S1 S2 L1 L2 N}
-	 if N >= L1 then
+	 if N == L1 then
 	    if L1 == L2 then 'EQUAL'
 	    else 'LESS'
 	    end
-	 elseif N >= L2 then 'GREATER'
+	 elseif N == L2 then 'GREATER'
 	 elsecase {NumberCompare {ByteString.get S1 N} {ByteString.get S2 N}}
 	 of 'EQUAL' then {StringCompareSub S1 S2 L1 L2 N + 1}
 	 elseof X then X
@@ -95,7 +95,8 @@ define
       'Char.>': Value.'>'
       'Char.<=': Value.'=<'
       'Char.>=': Value.'>='
-      'Char.ord': fun {$ C} C end
+      'Char.ord':
+	 fun {$ C} C end
       'Char.chr':
 	 fun {$ C}
 	    if {Char.is C} then C
@@ -139,7 +140,8 @@ define
 	    false   %--** unimplemented
 	 end
       'Future.isFuture': IsFuture   %--** wrong for failed futures
-      'General.:=': fun {$ X Y} {Assign X Y} unit end
+      'General.:=':
+	 fun {$ X Y} {Assign X Y} unit end
       'General.Bind': {NewUniqueName 'General.Bind'}
       'General.Chr': {NewUniqueName 'General.Chr'}
       'General.Div': {NewUniqueName 'General.Div'}
@@ -160,6 +162,7 @@ define
 	       case {Reverse Rest} of &>|Rest then
 		  {ByteString.make {Reverse Rest}}
 	       end
+	    elseof S then {ByteString.make S}
 	    end
 	 end
       'GlobalStamp.new':
@@ -243,7 +246,16 @@ define
 	 fun {$ X1 X2}
 	    try A in
 	       A = X1 mod X2
-	       if A < 0 then A + X2 else A end
+	       if A == 0 then A
+	       elseif A < 0 then
+		  if X2 =< 0 then A
+		  else A + X2
+		  end
+	       else   % A > 0
+		  if X2 < 0 then A + X2
+		  else A
+		  end
+	       end
 	    catch _ then
 	       {Exception.raiseError BuiltinTable.'General.Div'} unit
 	    end
@@ -385,9 +397,10 @@ define
       'Unsafe.String.sub': ByteString.get
       'Unsafe.Vector.sub':
 	 fun {$ V I} V.(I + 1) end
-      'Unsafe.cast': fun {$ X} X end
+      'Unsafe.cast':
+	 fun {$ X} X end
       'Vector.fromList':
-	 fun {$ Xs} {List.toTuple '#' Xs} end
+	 fun {$ Xs} {List.toTuple '#[]' Xs} end
       'Vector.maxLen': 0x7FFFFFF
       'Vector.length': Width
       'Vector.sub':
