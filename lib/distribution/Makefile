@@ -14,6 +14,8 @@
 
 # Configurable directories
 
+TARGET = mozart
+
 #PREFIX=/opt/stockhausen-devel
 
 SRCTOP = ../..
@@ -24,22 +26,26 @@ BOOTSTRAPDIR = $(SRCTOP)/bootstrap
 SRCDIR = $(SRCTOP)/lib/constraints
 VPATH = $(SRCDIR)
 
-OZC = ozc
-OZCOPTS = -z9
 ALICEC = alicec
 ALICEC_OPTS = 
 ALICEDEP = alicedep
 ALICELINK = alicelink
 ALICELINK_OPTS = -v
+ifeq ($(TARGET), stockwerk)
+NATIVES = 
+STC = stc
+else
+NATIVES = Remote
+OZC = ozc
+OZCOPTS = -z9
 STC = ozf
+endif
 
 ALICESOURCES = \
 	HttpServerMain.aml HttpClientMain.aml \
 	REMOTE-sig.aml Remote.aml \
 	TestServer.aml TestClient.aml \
 	RemoteServer.aml
-
-NATIVES = Remote
 
 OZSOURCES = $(NATIVES:%=Unsafe%.oz)
 
@@ -56,7 +62,7 @@ INSTALLFILES = $(ALICESOURCES:%.aml=$(PREFIX)/lib/distribution/%.$(STC))
 ## Building
 ##
 
-all: $(COMPONENTS) $(ALICECOMPONENTS)
+all: $(COMPONENTS)
 
 depend:
 	$(ALICEDEP) $(ALICESOURCES) > Makefile.depend
