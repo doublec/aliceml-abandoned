@@ -86,4 +86,34 @@ structure Common=
 
 	val dummyCoord:ImperativeGrammar.coord = (0,0)
 	val dummyPos:Source.position = (0,0)
+
+	(* Functionclosures are represented by Stamps.
+	  This is the toplevel environment: *)
+	 val toplevel = Stamp.new()
+
+	 (* A dummy stamp/id we sometimes write but should never read *)
+	 val illegalStamp = Stamp.new()
+	 val illegalId = Id (dummyPos, illegalStamp, InId)
+
+	 (* compiler options *)
+	 val DEBUG = ref 0
+	 val VERBOSE = ref 0
+	 val OPTIMIZE = ref 0
+
+	 (* Stamps and Ids for formal Method Parameters. *)
+	 val parm1Stamp = Stamp.new ()
+	 val parm2Stamp = Stamp.new ()
+	 val parm3Stamp = Stamp.new ()
+	 val parm4Stamp = Stamp.new ()
+	 val parm1Id = Id (dummyPos, parm1Stamp, InId)
+	 val parm2Id = Id (dummyPos, parm2Stamp, InId)
+	 val parm3Id = Id (dummyPos, parm3Stamp, InId)
+	 val parm4Id = Id (dummyPos, parm4Stamp, InId)
+	 val parmIds = #[nil, [parm1Id],[parm1Id,parm2Id],
+			 [parm1Id,parm2Id,parm3Id],
+			 [parm1Id,parm2Id,parm3Id,parm4Id]]
+
+	 (* Stamp and Id for 'this'-Pointer *)
+	 val thisStamp = Stamp.new ()
+	 val thisId = Id (dummyPos, thisStamp, InId)
     end

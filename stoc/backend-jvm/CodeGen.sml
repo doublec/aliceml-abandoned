@@ -307,7 +307,12 @@ structure CodeGen =
 			    if stamp'=stamp_cons then (Getstatic CCons,true) else
 				if stamp'=stamp_ref then (Getstatic CRef,true) else
 				    if stamp'=stamp_Bind then (Getstatic CBind,true) else
-					(Nop,false)
+					if stamp'=parm1Stamp then (Aload 1, true) else
+					    if stamp'=parm2Stamp then (Aload 2, true) else
+						if stamp'=parm3Stamp then (Aload 3, true) else
+						    if stamp'=parm4Stamp then (Aload 4, true) else
+							if stamp'=thisStamp then (Aload 0, true) else
+							    (Nop,false)
 
 	and dcl (d, akku) = Multi (decCode d) :: akku
 
@@ -1185,16 +1190,19 @@ structure CodeGen =
 			     init
 		       | _ => raise Mitch)
 		else
-		    New CTuple ::
-		    Dup ::
-		    atCodeInt (Int.toLarge arity) ::
-		    Anewarray CVal ::
-		    f (ids,
-		       0,
-		       Invokespecial (CTuple, "<init>",
-				      ([Arraysig, Classsig CVal],
-				       [Voidsig])) ::
-		       init)
+		    if arity = 0 then
+			Getstatic CUnit::init
+		    else
+			New CTuple ::
+			Dup ::
+			atCodeInt (Int.toLarge arity) ::
+			Anewarray CVal ::
+			f (ids,
+			   0,
+			   Invokespecial (CTuple, "<init>",
+					  ([Arraysig, Classsig CVal],
+					   [Voidsig])) ::
+			   init)
 	    end
 	and
 	    createRecord (labid,init) =
@@ -1254,8 +1262,9 @@ structure CodeGen =
 		    Invokestatic (classNameFromStamp (Lambda.getLambda stamp'),
 				  "s"^name, (valList count, [Classsig CVal]))
 		else
-		    Invokevirtual (classNameFromStamp (Lambda.getLambda stamp'),
-				   name, (valList count, [Classsig CVal]))
+		    Invokeinterface (CVal,
+				     name,
+				     (valList count, [Classsig CVal]))
 	    end
 
 	and
@@ -1629,13 +1638,12 @@ structure CodeGen =
 			    (valList vals, [Classsig CVal]),
 			    Locals (Register.max() +vals),
 			    (case insts of
-				 nil => [New CExWrap,
-					 Dup,
-					 Getstatic CMatch,
-					 Invokespecial(CExWrap,"<init>",
-						       ([Classsig CVal],
-							[Voidsig])),
-					 Athrow]
+				 nil =>
+				     Multi
+				     (normalAppExp
+				      (AppExp (dummyPos, thisId,
+					       TupArgs (Vector.sub(parmIds,vals))))) ::
+				     normalReturn [Areturn]
 			       | _ => insts),
 				 handles)
 

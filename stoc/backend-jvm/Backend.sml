@@ -36,19 +36,6 @@ structure Backend=
 	 (* Sets of Stamps. Used for computation of free variables *)
 	 structure StampSet = MakeHashImpSet(type t=stamp val hash=Stamp.hash)
 
-	 (* Functionclosures are represented by Stamps.
-	  This is the toplevel environment: *)
-	 val toplevel = Stamp.new()
-
-	 (* A dummy stamp/id we sometimes write but should never read *)
-	 val illegalStamp = Stamp.new()
-	 val illegalId = Id ((0,0), illegalStamp, InId)
-
-	 (* compiler options *)
-	 val DEBUG = ref 0
-	 val VERBOSE = ref 0
-	 val OPTIMIZE = ref 0
-
 	 structure Lambda = MakeLambda(structure StampSet=StampSet
 				       structure StampHash=StampHash
 				       val toplevel=toplevel)
@@ -111,8 +98,13 @@ structure Backend=
 	structure Register =
 	    struct
 		local
-		    (* number of the highest register in use. *)
-		    val localscount = ref 1
+		    (* number of the highest register in use.
+		     In virtual Methods, Register 0 is reserved for
+		     'this'-Pointer. Our apply functions have up to
+		     4 parameters, so we use Register 1-4 as parameter
+		     registers. Keep in mind that these registers will
+		     be reused due lifeness analysis when possible *)
+		    val localscount = ref 4
 
 		    (* map stamps to registers *)
 		    val register: int StampHash.t ref   = ref (StampHash.new ())
@@ -135,7 +127,7 @@ structure Backend=
 
 		    (* enter a subfunction *)
 		    fun push () = (stack := (!localscount, !register)::(!stack);
-				   localscount := 1;
+				   localscount := 4;
 				   register := StampHash.new())
 
 		    (* leave a subfunction*)
