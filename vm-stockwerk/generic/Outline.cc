@@ -13,6 +13,7 @@
 #if defined(INTERFACE)
 #pragma implementation "generic/Backtrace.hh"
 #pragma implementation "generic/Transform.hh"
+#pragma implementation "generic/ConcreteRepresentation.hh"
 #pragma implementation "generic/ConcreteCode.hh"
 #pragma implementation "generic/Closure.hh"
 #pragma implementation "generic/Thread.hh"
@@ -26,6 +27,7 @@
 
 #include "generic/Backtrace.hh"
 #include "generic/Transform.hh"
+#include "generic/ConcreteRepresentation.hh"
 #include "generic/ConcreteCode.hh"
 #include "generic/Closure.hh"
 #include "generic/Thread.hh"
