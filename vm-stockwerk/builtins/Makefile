@@ -1,5 +1,5 @@
 CC     = g++
-CFLAGS = -I../store -I../datalayer -DDEBUG_CHECK -ggdb #-DINTERFACE -m486 -finline-functions -fno-implement-inlines -O6
+CFLAGS = -Wall -I../store -I../datalayer -DDEBUG_CHECK -ggdb #-DINTERFACE -m486 -finline-functions -fno-implement-inlines -O6
 
 SRCS = Array.cc       \
        Char.cc        \

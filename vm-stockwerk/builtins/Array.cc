@@ -58,12 +58,12 @@ namespace Builtins {
     word sub(word a, word i) {
       a = CommonOp::Sync(a);
       i = CommonOp::Sync(i);
-      return ((::Array *) Store::WordToBlock(a))->GetValue(Store::WordToInt(i));
+      return ((::Array *) Store::WordToBlock(a))->GetArg(Store::WordToInt(i));
     }
     word update(word a, word i, word x) {
       a = CommonOp::Sync(a);
       i = CommonOp::Sync(i);
-      ((::Array *) Store::WordToBlock(a))->SetValue(Store::WordToInt(i), x);
+      ((::Array *) Store::WordToBlock(a))->SetArg(Store::WordToInt(i), x);
       return Store::IntToWord(0); // to be determined
     }
   }

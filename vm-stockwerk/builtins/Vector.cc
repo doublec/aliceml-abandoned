@@ -39,7 +39,7 @@ namespace Builtins {
     word sub(word v, word i) {
       v = CommonOp::Sync(v);
       i = CommonOp::Sync(i);
-      return ((::Vector *) Store::WordToBlock(v))->GetValue(Store::WordToInt(i));
+      return ((::Vector *) Store::WordToBlock(v))->GetArg(Store::WordToInt(i));
     }
   }
 }

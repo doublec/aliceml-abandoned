@@ -13,7 +13,7 @@
 #include "alicedata.hh"
 #include "Prebound.hh"
 
-typedef word (*FUNPTR)(...);
+typedef void *(*FUNPTR)();
 
 namespace Builtins {
   namespace Prebound {

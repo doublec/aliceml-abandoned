@@ -17,8 +17,6 @@
 #include "ListOp.hh"
 #include "TextIO.hh"
 
-#define MAX(a, b) ((a) < (b) ? (b) : (a))
-
 class FilePtr : private Block {
 private:
   static const int SIZE     = 1;
