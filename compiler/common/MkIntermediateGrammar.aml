@@ -132,8 +132,9 @@ struct
 
     (* Components *)
 
-    type comp = (id * sign * Url.t) vector * dec vector * id fld vector * sign
-    type t = comp
+    type imp  = id * sign * Url.t * bool (* is compile time *)
+    type comp = imp vector * dec vector * id fld vector * sign
+    type t    = comp
 
 
     (* Projections *)
