@@ -1,7 +1,10 @@
 (* ML-Yacc Parser Generator (c) 1989 Andrew W. Appel, David R. Tarditi 
  *
  * $Log$
- * Revision 1.2  1999-11-02 15:52:03  rossberg
+ * Revision 1.3  1999-11-15 12:21:54  rossberg
+ * Reverted to original state because we can deal with sharing now.
+ *
+ * Revision 1.2  1999/11/02 15:52:03  rossberg
  * Replaced sharing constraints by where constraints. I marked the original
  * code with (*SHAR ...*).
  *
@@ -107,8 +110,7 @@ signature LR_PARSER =
 	structure Stream: STREAM
 	structure LrTable : LR_TABLE
 	structure Token : TOKEN
-			  where LrTable = LrTable
-(*SHAR	sharing LrTable = Token.LrTable*)
+	sharing LrTable = Token.LrTable
 
 	exception ParseError
 
@@ -208,8 +210,7 @@ signature PARSER_DATA =
 
 	structure LrTable : LR_TABLE
 	structure Token : TOKEN
-			  where LrTable = LrTable
-(*SHAR	sharing Token.LrTable = LrTable*)
+	sharing Token.LrTable = LrTable
 
 	(* structure Actions contains the functions which mantain the
 	   semantic values stack in the parser.  Void is used to provide

@@ -1,7 +1,10 @@
 (* ML-Yacc Parser Generator (c) 1989 Andrew W. Appel, David R. Tarditi 
  *
  * $Log$
- * Revision 1.3  1999-11-02 16:09:35  rossberg
+ * Revision 1.4  1999-11-15 12:21:54  rossberg
+ * Reverted to original state because we can deal with sharing now.
+ *
+ * Revision 1.3  1999/11/02 16:09:35  rossberg
  * Ups.
  *
  * Revision 1.2  1999/11/02 15:52:03  rossberg
@@ -29,19 +32,13 @@
 
 functor Join(structure Lex : LEXER
 	     structure ParserData: PARSER_DATA
-		where type svalue = Lex.UserDeclarations.svalue
-		where type pos    = Lex.UserDeclarations.pos
-		where type ('a,'b) Token.token =
-			   ('a,'b) Lex.UserDeclarations.token
 	     structure LrParser : LR_PARSER
-		where LrTable = ParserData.LrTable
-		where Token   = ParserData.Token
-(*SHAR	     sharing ParserData.LrTable = LrParser.LrTable
+	     sharing ParserData.LrTable = LrParser.LrTable
 	     sharing ParserData.Token = LrParser.Token
 	     sharing type Lex.UserDeclarations.svalue = ParserData.svalue
 	     sharing type Lex.UserDeclarations.pos = ParserData.pos
 	     sharing type Lex.UserDeclarations.token = ParserData.Token.token
-*))
+)
 		 : PARSER =
 struct
     structure Token = ParserData.Token
@@ -80,19 +77,13 @@ end
 
 functor JoinWithArg(structure Lex : ARG_LEXER
 	     structure ParserData: PARSER_DATA
-		where type svalue = Lex.UserDeclarations.svalue
-		where type pos    = Lex.UserDeclarations.pos
-		where type ('a,'b) Token.token =
-			   ('a,'b) Lex.UserDeclarations.token
 	     structure LrParser : LR_PARSER
-		where LrTable = ParserData.LrTable
-		where Token   = ParserData.Token
-(*SHAR	     sharing ParserData.LrTable = LrParser.LrTable
+	     sharing ParserData.LrTable = LrParser.LrTable
 	     sharing ParserData.Token = LrParser.Token
 	     sharing type Lex.UserDeclarations.svalue = ParserData.svalue
 	     sharing type Lex.UserDeclarations.pos = ParserData.pos
 	     sharing type Lex.UserDeclarations.token = ParserData.Token.token
-*))
+)
 		 : ARG_PARSER  =
 struct
     structure Token = ParserData.Token
