@@ -8,13 +8,12 @@ Group is
 	../../bootstrap/GlobalStamp.sml
 
 	ORDERED-sig.aml
+	HASHABLE-sig.aml
 
 	MAP-sig.aml
 	SET-sig.aml
 	MkRedBlackMap.aml
 	MkRedBlackSet.aml
-
-	HASHABLE-sig.aml
 
 	IMP_MAP-sig.aml
 	IMP_SET-sig.aml
