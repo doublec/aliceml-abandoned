@@ -48,8 +48,6 @@
 
 import structure Unsafe            from "../../lib/system/Unsafe"
 	(*--** does not exist *)
-import structure MkHashImpMap      from "../../lib/utility/MkHashImpMap"
-import structure StringHashKey     from "../../lib/utility/StringHashKey"
 import structure Crash             from "../infrastructure/Crash"
 import structure StringMap         from "../infrastructure/StringMap"
 import structure Crc               from "Crc"

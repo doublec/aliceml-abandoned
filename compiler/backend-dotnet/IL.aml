@@ -15,8 +15,8 @@ import
 from "../../lib/system/TextIO"
 
 import
-    structure MkHashImpMap
-from "../../lib/utility/MkHashImpMap"
+    structure IntMap
+from "../infrastructure/IntMap"
 
 import
     structure Crash
@@ -210,10 +210,7 @@ structure IL :> IL =
 
 	(* Compute Stack Size, Peephole Optimizer, Dead Code Elimination *)
 
-	structure Map =
-	    MkHashImpMap(type t = label
-			 val equals = op=
-			 fun hash label = label)
+	structure Map = IntMap
 
 	val size = ref 0
 	val maxSize = ref 0
