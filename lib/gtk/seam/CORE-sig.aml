@@ -108,6 +108,9 @@ sig
     val signalConnectAfter : object * string * callback_function -> int
     val signalDisconnect   : object * int -> unit
 
+    val latin1ToUtf8 : string -> string
+    val utf8ToLatin1 : string -> string
+
 (**)val printObject : object -> unit
 (**)val forceGC : unit -> unit
 end

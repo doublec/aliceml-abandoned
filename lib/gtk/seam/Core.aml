@@ -167,6 +167,12 @@ struct
         List.app NativeCore.signalMapRemove  
 		 (NativeCore.signalMapGetConnIds obj)
 
+
+    (* Character set conversion *)
+    val latin1ToUtf8 = NativeCore.latin1ToUtf8
+    val utf8ToLatin1 = NativeCore.utf8ToLatin1
+
+
     (* debug functions *)
     val printObject = NativeCore.printObject
     val forceGC = NativeCore.forceGC

@@ -649,10 +649,38 @@ DEFINE0(NativeCore_forceGC) {
   RETURN_UNIT;
 } END
 
+DEFINE1(NativeCore_latin1ToUtf8) {
+  DECLARE_STRING(str, x0);
+  gsize written;
+  GError *error = NULL;
+  gchar *ret = g_convert_with_fallback(str->ExportC(),
+                                       str->GetSize(),
+                                       "UTF-8","ISO-8859-1",
+                                       "X", NULL, &written,
+                                       &error);
+  if (error != NULL)
+    RETURN1(String::New("")->ToWord());
+  RETURN1(STRING_TO_WORD(ret));
+} END
+
+DEFINE1(NativeCore_utf8ToLatin1) {
+  DECLARE_STRING(str, x0);
+  gsize written;
+  GError *error = NULL;
+  gchar *ret = g_convert_with_fallback(str->ExportC(),
+                                       str->GetSize(),
+                                       "ISO-8859-1","UTF-8", 
+                                       "X", NULL, &written,
+                                       &error);
+  if (error != NULL)
+    RETURN1(String::New("")->ToWord());
+  RETURN1(STRING_TO_WORD(ret));
+} END
+
 ////////////////////////////////////////////////////////////////////////
 
 word InitComponent() {
-  Record *record = Record::New(14);
+  Record *record = Record::New(16);
   Init();
   INIT_STRUCTURE(record, "NativeCore", "null", 
 		 NativeCore_null, 0);
@@ -687,6 +715,10 @@ word InitComponent() {
 		 NativeCore_printObject, 1);
   INIT_STRUCTURE(record, "NativeCore", "forceGC",
 		 NativeCore_forceGC, 0);
+  INIT_STRUCTURE(record, "NativeCore", "latin1ToUtf8",
+		 NativeCore_latin1ToUtf8, 1);
+  INIT_STRUCTURE(record, "NativeCore", "utf8ToLatin1",
+		 NativeCore_utf8ToLatin1, 1);
 
   RETURN_STRUCTURE("NativeCore$", record);
 }

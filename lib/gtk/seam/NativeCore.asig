@@ -34,5 +34,8 @@ sig
 
 	val printObject : 'object -> unit
 	val forceGC : unit -> unit
+
+        val latin1ToUtf8 : string -> string
+        val utf8ToLatin1 : string -> string
     end
 end
