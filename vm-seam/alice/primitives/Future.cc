@@ -16,7 +16,7 @@
 #include "generic/PushCallInterpreter.hh"
 #include "generic/Scheduler.hh"
 #include "generic/SignalHandler.hh"
-#include "alice/primitives/Authoring.hh"
+#include "alice/Authoring.hh"
 
 DEFINE1(Future_alarmQuote) {
   DECLARE_INT(microseconds, x0);
