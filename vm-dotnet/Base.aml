@@ -1042,20 +1042,6 @@ structure String : STRING =
     __primitive val op >= :	string * string -> bool  = "String.>="
     __primitive val compare :	string * string -> order = "String.compare"
 
-    fun collate cmp (s1,s2) =
-	let
-	    val n1 = size s1
-	    val n2 = size s2
-
-	    fun collate' i where (i = n1) = if n1 = n2 then EQUAL else LESS
-	      | collate' i where (i = n2) = GREATER
-	      | collate' i                = case cmp(sub'(s1,i), sub'(s2,i))
-					      of EQUAL => collate'(i+1)
-					       | other => other
-	in
-	    collate' 0
-	end
-
     fun collate  cmp (s1,s2)		= collate'(cmp,s1,s2,0)
     and collate'(cmp,s1,s2,i) where (i = size s1)
 					= if size s1 = size s2 then EQUAL
