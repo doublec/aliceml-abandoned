@@ -21,8 +21,8 @@
 class HashNode : private Block {
 private:
   static const u_int SIZE    = 2;
-  static const u_int KEY_POS = 1;
-  static const u_int VAL_POS = 2;
+  static const u_int KEY_POS = 0;
+  static const u_int VAL_POS = 1;
 public:
   using Block::ToWord;
 
@@ -80,11 +80,11 @@ public:
   }
 protected:
   static const u_int SIZE        = 5;
-  static const u_int HANDLER_POS = 1;
-  static const u_int COUNTER_POS = 2;
-  static const u_int PERCENT_POS = 3;
-  static const u_int TYPE_POS    = 4;
-  static const u_int TABLE_POS   = 5;
+  static const u_int HANDLER_POS = 0;
+  static const u_int COUNTER_POS = 1;
+  static const u_int PERCENT_POS = 2;
+  static const u_int TYPE_POS    = 3;
+  static const u_int TABLE_POS   = 4;
   //
   // Adjust these two values to optimize runtime behaviour
   //
@@ -123,8 +123,7 @@ protected:
     InitArg(TABLE_POS, t);
   }
   HashNode *GetEntry(u_int i) {
-    Assert(i >= 1);
-    Assert(i <= GetTableSize());
+    Assert(i < GetTableSize());
     return HashNode::FromWord(GetTable()->GetArg(i));
   }
   void RemoveEntry(HashNode *node) {
@@ -138,7 +137,7 @@ protected:
   int IsMember(word key);
   word GetItem(word key); // must be member
 
-  static WeakDictionary *New(hashkeytype type, BlockLabel l, u_int size, word handler);
+  static WeakDictionary *New(hashkeytype type, BlockLabel l, u_int size, Handler *handler);
 public:
   using Block::ToWord;
 
@@ -163,12 +162,12 @@ public:
     u_int size = arr->GetSize();
     
     SetCounter(0);
-    for (u_int i = 1; i <= size; i++) {
+    for (u_int i = size; i--;) {
       HashNode::FromWord(arr->GetArg(i))->MakeEmpty();
     }
   }
 
-  static WeakDictionary *New(u_int size, word handler) {
+  static WeakDictionary *New(u_int size, Handler *handler) {
     WeakDictionary *d = WeakDictionary::New(INT_KEY, WEAK_DICT_LABEL, size, handler);
 
     Store::RegisterWeakDict(d);

@@ -18,11 +18,10 @@
 
 class Block {
 private:
-  static const u_int HANDLER_POS = 1;
-  word ar[2];
+  static const u_int HANDLER_POS = 0;
 public:
   word *GetBase() {
-    return (ar + 1);
+    return (word *) this;
   }
   BlockLabel GetLabel() {
     return HeaderOp::DecodeLabel(this);
@@ -33,12 +32,12 @@ public:
   word GetArg(u_int f) {
     AssertStore(f > INVALID_FIELD);
     AssertStore(f <= GetSize());
-    return ar[f];
+    return (word) ((u_int *) this)[f];
   }
   void InitArg(u_int f, word v) {
     AssertStore(f > INVALID_FIELD);
     AssertStore(f <= GetSize());
-    ar[f] = v;
+    ((word *) this)[f] = v;
   }
   void InitArg(u_int f, int v) {
     InitArg(f, Store::IntToWord(v));
@@ -50,17 +49,17 @@ public:
       u_int valgen = HeaderOp::DecodeGeneration(PointerOp::RemoveTag(v));
       u_int mygen  = HeaderOp::DecodeGeneration(this);
       
-      if ((valgen < mygen) && (!HeaderOp::HasIntgenMark(this))) {
+      if ((valgen < mygen) && (!HeaderOp::IsChildish(this))) {
 	Store::AddToIntgenSet(this);
       }
     }
-    ar[f] = v;
+    ((word *) this)[f] = v;
   }
   void ReplaceArg(u_int f, int v) {
     InitArg(f, Store::IntToWord(v));
   }
   Handler *GetHandler() {
-    return ((HeaderOp::HasHandlerMark(this)) ?
+    return ((GetLabel() == HANDLERBLOCK_LABEL) ?
 	    PointerOp::DecodeHandler(this) : (Handler *) INVALID_POINTER);
   }
   word ToWord() {
@@ -70,7 +69,7 @@ public:
 
 class Transient : private Block {
 private:
-  static const u_int REF_POS = 1;
+  static const u_int REF_POS = 0;
 public:
   using Block::GetLabel;
 
@@ -78,7 +77,7 @@ public:
     return PointerOp::EncodeTransient(this);
   }
   word GetArg() {
-    return Block::GetArg(1);
+    return Block::GetArg(REF_POS);
   }
   void InitArg(word w) {
     Block::InitArg(REF_POS, w);
@@ -112,12 +111,13 @@ public:
 
 class Chunk : private Block {
 private:
-  static const u_int BYTESIZE_POS = 1;
+  static const u_int BYTESIZE_POS = 0;
 public:
+  using Block::GetLabel;
   using Block::ToWord;
 
   char *GetBase() {
-    return (char *) (Block::GetBase() + 1);
+    return (char *) ((char *) this + sizeof(u_int));
   }
   u_int GetSize() {
     return Store::DirectWordToInt(GetArg(BYTESIZE_POS));

@@ -22,8 +22,8 @@
 class Stack : private Block {
 private:
   static const u_int SIZE    = 2;
-  static const u_int TOP_POS = 1;
-  static const u_int ARR_POS = 2;
+  static const u_int TOP_POS = 0;
+  static const u_int ARR_POS = 1;
 protected:
   u_int GetTop() {
     return Store::DirectWordToInt(GetArg(TOP_POS));
@@ -53,7 +53,7 @@ public:
     u_int size = (top + fsize);
 
     SetTop(size);
-    if (size > max) {
+    if (size >= max) {
       Stack::Enlarge(max, ((size * 3) >> 1));
     }
   }
@@ -64,6 +64,7 @@ public:
 
     Assert(top > fsize);
     SetTop(newtop);
+    // Need to move more than one argument
     a->InitArg((newtop - 1), a->GetArg(top - 1));
   }
   void AllocFrame(u_int fsize) {
@@ -71,7 +72,7 @@ public:
     u_int max  = GetArray()->GetSize();
     u_int size = (top + fsize);
 
-    if (size > max) {
+    if (size >= max) {
       Stack::Enlarge(max, ((size * 3) >> 1));
     }
   }
@@ -85,14 +86,14 @@ public:
   void Push(word v) {
     u_int top = GetTop();
 
-    Assert(top <= GetArray()->GetSize());
+    Assert(top < GetArray()->GetSize());
     SetTop((top + 1));
     GetArray()->ReplaceArg(top, v);
   }
   void Push(int v) {
     u_int top = GetTop();
 
-    Assert(top <= GetArray()->GetSize());
+    Assert(top < GetArray()->GetSize());
     SetTop((top + 1));
     GetArray()->InitArg(top, v);
   }
@@ -104,7 +105,7 @@ public:
     Assert(a->GetLabel() == STACKARRAY_LABEL);
 
     SetTop((top + 1));
-    if (top <= max) {
+    if (top < max) {
       a->ReplaceArg(top, v);
     }
     else {
@@ -120,7 +121,7 @@ public:
     Assert(a->GetLabel() == STACKARRAY_LABEL);
 
     SetTop((top + 1));
-    if (top <= max) {
+    if (top < max) {
       a->InitArg(top, v);
     }
     else {
@@ -160,7 +161,7 @@ public:
     u_int top  = (GetTop() - 1);
     Block *a   = GetArray();
 
-    Assert(top >= 1);
+    // Assert(top >= 0);
     Assert(a->GetLabel() == STACKARRAY_LABEL);
     word value = a->GetArg(top);
 
@@ -168,7 +169,7 @@ public:
     return value;
   }
   int IsEmpty() {
-    return (GetTop() == 1);
+    return (GetTop() == 0);
   }
   void Blank(u_int threshold) {
     u_int top    = GetTop();
@@ -178,7 +179,7 @@ public:
 
     newmax = ((newmax <= max) ? newmax : max);
 
-    for (u_int i = top; i <= newmax; i++) {
+    for (u_int i = top; i < newmax; i++) {
       a->InitArg(i, 0);
     }
     HeaderOp::EncodeSize(a, newmax);
@@ -187,7 +188,7 @@ public:
     Block *p = Store::AllocBlock(STACK_LABEL, SIZE);
     Block *a = Store::AllocBlock(STACKARRAY_LABEL, s);
     
-    p->InitArg(TOP_POS, 1);
+    p->InitArg(TOP_POS, 0);
     p->InitArg(ARR_POS, a->ToWord());
 
     return (Stack *) p;

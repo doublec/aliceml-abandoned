@@ -49,11 +49,13 @@ int main(void) {
   
   std::printf("Enter\n");
   p = Store::AllocBlock(Store::MakeLabel(0), 1);
-  p->InitArg(1, 667);
-  //printf("%d\n", Store::WordToInt(p->GetArg(1)));
+  std::printf("Leave\n");
+  p->InitArg(0, 667);
+  std::printf("Leave\n");
+  printf("%d\n", Store::WordToInt(p->GetArg(0)));
   std::printf("Leave\n");
 
-  p->InitArg(1, Stack::New(2)->ToWord());
+  p->InitArg(0, Stack::New(2)->ToWord());
   //  p->InitArg(2, Store::AllocBlock((BlockLabel) 0, 1024)->ToWord());
   //  p->InitArg(3, Store::AllocBlock((BlockLabel) 0, 1024)->ToWord());
 
@@ -72,7 +74,7 @@ int main(void) {
 #endif
 
   for (u_int i = 0; i <= COUNT_LIMIT; i++) {
-    Stack *s = Stack::FromWord(Store::WordToBlock(root)->GetArg(1));
+    Stack *s = Stack::FromWord(Store::WordToBlock(root)->GetArg(0));
 
     std::printf("Pushing: %d\n", i);
     s->SlowPush(Store::IntToWord(i));
@@ -92,14 +94,14 @@ int main(void) {
 #endif
 
   for (u_int i = 0; i <= COUNT_LIMIT; i++) {
-    Stack *s = Stack::FromWord(Store::WordToBlock(root)->GetArg(1));
+    Stack *s = Stack::FromWord(Store::WordToBlock(root)->GetArg(0));
     int v    = Store::WordToInt(s->Pop());
     std::printf("Popped: %d\n", v);
   }
 
 #if defined(STORE_DEBUG)
-  Store::ForceGCGen(0);
-  std::printf("GCing gen 0...\n");
+  Store::ForceGCGen(STORE_GEN_OLDEST); // formerly 0
+  std::printf("GCing gen 0,1,2...\n");
   Store::DoGC(root);
   Store::MemStat();
 #else

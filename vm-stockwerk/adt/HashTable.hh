@@ -44,7 +44,7 @@ public:
 
   static HashTable *New(hashkeytype type, u_int size) {
     return (HashTable *) WeakDictionary::New((WeakDictionary::hashkeytype) type,
-					     HASHTABLE_LABEL, size, Store::IntToWord(0));
+					     HASHTABLE_LABEL, size, INVALID_POINTER);
   }
   static HashTable *FromWord(word x) {
     Block *p = Store::WordToBlock(x);
