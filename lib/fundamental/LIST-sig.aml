@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2002
+ *   Andreas Rossberg, 2001-2003
  *
  * Last change:
  *   $Date$ by $Author$
@@ -37,6 +37,7 @@ sig
     val sub :		'a list * int -> 'a				(**)
     val take :		'a list * int -> 'a list
     val drop :		'a list * int -> 'a list
+    val split :		'a list * int -> 'a list * 'a list		(**)
 
     val rev :		'a list -> 'a list
     val op @ :		'a list * 'a list -> 'a list

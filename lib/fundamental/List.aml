@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2002
+ *   Andreas Rossberg, 2001-2003
  *
  * Last change:
  *   $Date$ by $Author$
@@ -93,6 +93,13 @@ struct
     and drop'(0, xs)		= xs
       | drop'(i, x::xs)		= drop'(i-1,xs)
       | drop'(i, nil)		= raise General.Subscript
+
+    fun split(xs,i) where (i<0)	= raise General.Subscript
+      | split(xs,i)		= split'(i,xs)
+    and split'(0, xs)		= (nil,xs)
+      | split'(i, x::xs)	= let val (ys,zs) = split'(i-1,xs)
+				  in (x::ys,zs) end
+      | split'(i, nil)		= raise General.Subscript
 
     fun app  f  xs		= app'(f,xs)
     and app'(f, nil)		= ()
@@ -216,9 +223,9 @@ struct
 				= cmp(x1,x2) <> GREATER
 				  andalso isSorted'(cmp,xs)
 
-    fun split nil		= (nil,nil)
-      | split(xs as _::nil)	= (xs,nil)
-      | split(x1::x2::xs)	= let val (xs1,xs2) = split xs
+    fun split2 nil		= (nil,nil)
+      | split2(xs as _::nil)	= (xs,nil)
+      | split2(x1::x2::xs)	= let val (xs1,xs2) = split2 xs
 				  in (x1::xs1, x2::xs2) end
     fun sort cmp =							(**)
     let
@@ -231,7 +238,7 @@ struct
 				     | GREATER => y::merge(xs,ys')
 	fun sort nil		= nil
 	  | sort(xs as _::nil)	= xs
-	  | sort xs		= let val (ys,zs) = split xs
+	  | sort xs		= let val (ys,zs) = split2 xs
 				  in merge(sort ys, sort zs) end
     in
 	sort
