@@ -2,6 +2,13 @@
 
 import
 
+structure Assert:
+    sig
+	exception Assert of string * int * int
+	val failure: exn
+	val assert: bool -> unit
+    end
+
 ###misc/HASH_KEY.sig
 structure StringHashKey: HASH_KEY
 

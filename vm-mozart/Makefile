@@ -27,6 +27,7 @@ MISC_FILES = \
 	Base.import \
 	Word.import \
 	TextIO.import \
+	$(STOC_DIR)/misc/Assert.sml \
 	$(STOC_DIR)/misc/HASH_KEY.sig \
 	$(STOC_DIR)/misc/StringHashKey.sml \
 	$(STOC_DIR)/misc/Wide.sml \
@@ -80,6 +81,7 @@ FRONTEND_COMMON_FILES = \
 	Error.import \
 	Common.import \
 	$(STOC_DIR)/frontend-common/StringMap.sml \
+	$(STOC_DIR)/frontend-common/StampMap.sml \
 	$(STOC_DIR)/frontend-common/NAME.sig \
 	$(STOC_DIR)/frontend-common/Name.sml \
 	$(STOC_DIR)/frontend-common/ABSTRACT_GRAMMAR.sig \

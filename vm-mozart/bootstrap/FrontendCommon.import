@@ -2,6 +2,8 @@
 
 import
 
+structure StampMap: IMP_MAP
+
 ###frontend-common/NAME.sig
 structure Name: NAME
 
