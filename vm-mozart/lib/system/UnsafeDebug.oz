@@ -18,6 +18,6 @@ export
    '$$Show': Show
 define
    fun {Show X}
-      {System.show X} '#'
+      {System.show X} unit
    end
 end
