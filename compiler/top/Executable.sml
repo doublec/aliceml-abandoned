@@ -25,7 +25,7 @@ local
 	hdl Main.ozifyFileToStdOut infile
       | stoc (_, [infile, outfile]) =
 	hdl Main.ozifyFileToFile (infile, outfile)
-      | stoc (_, _) = 2
+      | stoc (_, _) = OS.Process.failure
 in
     val _ = SMLofNJ.exportFn ("stoc-frontend", stoc)
 end;
