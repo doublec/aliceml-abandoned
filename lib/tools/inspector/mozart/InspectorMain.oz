@@ -126,21 +126,34 @@ define
       RelationNodes    = [int#int word#word float#float atom#atom name#name procedure#procedure
 			  hashtuple#tupleGr pipetuple#listGr
 			  labeltuple#vectorGr record#recordGr
-			  fdint#fdIntGr cell#cell
+			  fdint#fdIntGr cell#cellGr
 			  fset#fsValGr fsvar#fsVarGr free#freeGr future#futureGr
 			  byteString#byteString]
       NormalIndNodes   = [int#int word#word float#float atom#atom name#name
 			  procedure#procedure hashtuple#tupleInd
 			  pipetuple#list labeltuple#vectorInd record#recordInd
-			  fdint#fdInt cell#cell
+			  fdint#fdInt cell#cellInd
 			  fset#fsVal fsvar#fsVar free#free future#future
 			  byteString#byteString]
       RelationIndNodes = [int#int word#word float#float atom#atom name#name procedure#procedure
 			  hashtuple#tupleGrInd pipetuple#listGr
 			  labeltuple#vectorGrInd record#recordGrInd
-			  cell#cell fdint#fdIntGr
+			  cell#cellGrInd fdint#fdIntGr
 			  fset#fsValGr fsvar#fsVarGr free#freeGr future#futureGr
 			  byteString#byteString]
+
+      fun {IsAtomic V}
+	 case {Value.status V}
+	 of det(Type) then
+	    case Type
+	    of tuple  then false
+	    [] record then false
+	    [] cell   then false
+	    else true
+	    end
+	 else false
+	 end
+      end
    in
       {Inspector.configure widgetTreeWidth 50}
       {Inspector.configure widgetTreeDepth 15}
@@ -149,6 +162,7 @@ define
       {Inspector.configure widgetNodesContainer TreeNodes}
       {Inspector.configure widgetNodeSets ((NormalNodes|RelationNodes)#
 					   (NormalIndNodes|RelationIndNodes))}
+      {Inspector.configure widgetAtomicTest IsAtomic}
    end
 
    %% Specify Default Colors
@@ -193,6 +207,10 @@ define
       DepthList = [1 5 10 0 ~1 ~5 ~10]
       
       ContainerMenus = [
+			cellMenu # menu(nil
+					nil
+					nil
+					['Reinspect'(reinspect)])
 			tupleMenu # menu(WidthList
 					 DepthList
 					 nil

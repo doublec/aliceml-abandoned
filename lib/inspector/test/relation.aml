@@ -20,7 +20,10 @@ val c = B(A 1, A 1)
 val r = {a = b, b = b}
 val ls = [1,2]
 val foos = [ls, ls, ls]
+val bref = ref (1, 2)
+
 val _ = Inspector.inspect r
 val _ = Inspector.inspect ls
 val _ = Inspector.inspect c
 val _ = Inspector.inspect foos
+val _ = Inspector.inspect {a=bref, b=bref}

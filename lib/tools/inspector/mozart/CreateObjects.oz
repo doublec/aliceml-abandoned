@@ -22,6 +22,7 @@ export
    wordCreateObject        : WordCreateObject
    byteStringCreateObject  : ByteStringCreateObject
    cellCreateObject        : CellCreateObject
+   cellGrCreateObject      : CellGrCreateObject
    tupleCreateObject       : TupleCreateObject
    tupleGrCreateObject     : TupleGrCreateObject
    vectorCreateObject      : VectorCreateObject
@@ -42,18 +43,19 @@ define
    local
       CreateObjects = TreeNodes.'create'
    in
-      CreateObject            = CreateObjects.createObject
-      OzIntCreateObject       = CreateObjects.intCreateObject
-      OzRecordCreateObject    = CreateObjects.recordCreateObject
-      PipeTupleCreateObject   = CreateObjects.pipeTupleCreateObject
-      LabelTupleCreateObject  = CreateObjects.labelTupleCreateObject
-      OzRecordGrCreateObject  = CreateObjects.recordGrCreateObject
-      PipeTupleGrCreateObject = CreateObjects.pipeTupleGrCreateObject
-      OzFreeGrCreateObject    = CreateObjects.freeGrCreateObject
-      OzFutureGrCreateObject  = CreateObjects.futureGrCreateObject
-      OzFDIntGrCreateObject   = CreateObjects.fdIntGrCreateObject
-      OzFSValGrCreateObject   = CreateObjects.fsValGrCreateObject
-      OzFSVarGrCreateObject   = CreateObjects.fsVarGrCreateObject
+      CreateObject             = CreateObjects.createObject
+      OzIntCreateObject        = CreateObjects.intCreateObject
+      OzRecordCreateObject     = CreateObjects.recordCreateObject
+      PipeTupleCreateObject    = CreateObjects.pipeTupleCreateObject
+      LabelTupleCreateObject   = CreateObjects.labelTupleCreateObject
+      LabelTupleGrCreateObject = CreateObjects.labelTupleGrCreateObject
+      OzRecordGrCreateObject   = CreateObjects.recordGrCreateObject
+      PipeTupleGrCreateObject  = CreateObjects.pipeTupleGrCreateObject
+      OzFreeGrCreateObject     = CreateObjects.freeGrCreateObject
+      OzFutureGrCreateObject   = CreateObjects.futureGrCreateObject
+      OzFDIntGrCreateObject    = CreateObjects.fdIntGrCreateObject
+      OzFSValGrCreateObject    = CreateObjects.fsValGrCreateObject
+      OzFSVarGrCreateObject    = CreateObjects.fsVarGrCreateObject
    end
 
    %%
@@ -99,6 +101,7 @@ define
    %% Container Objects
    %%
 
+
    class CellCreateObject from LabelTupleCreateObject
       attr
 	 savedValue %% Saved value before Transformation
@@ -114,6 +117,34 @@ define
 	 value <- ref({Access Value})
 	 %% Was ContainerCreateObject before
 	 CellCreateObject, adjustWidth({Visual getWidth($)} 1)
+      end
+      meth adjustWidth(CurWidth I)
+	 width <- {Min CurWidth @maxWidth}
+	 {self performInsertion(I @value {@visual getStopVar($)})}
+      end
+   end
+   
+   class CellGrCreateObject from LabelTupleGrCreateObject
+      attr
+	 savedValue %% Saved value before Transformation
+      meth gcr(Entry Value Parent Index Visual Depth)
+	 @entry      = Entry {Entry awake(self)}
+	 @savedValue = Value
+	 CellGrCreateObject, create(ref({Access Value}) Parent Index Visual Depth)
+	 CellGrCreateObject, handleMode({Entry getEqualStr($)} Visual)
+      end
+      meth createContainer
+	 Visual = @visual
+      in
+	 @maxWidth = 1
+	 @type     = cell
+	 @label    = {New Helper.ozAtom create('ref ' self 0 Visual internal)}
+	 @brace    = {New Helper.empty create(self)}
+	 %% Was ContainerCreateObject before
+	 CellGrCreateObject, adjustWidth({Visual getWidth($)} 1)
+      end
+      meth handleMode(RefStr Visual)
+	 @mode = {New Helper.marker create('R'#RefStr ' as 'self Visual)}
       end
       meth adjustWidth(CurWidth I)
 	 width <- {Min CurWidth @maxWidth}

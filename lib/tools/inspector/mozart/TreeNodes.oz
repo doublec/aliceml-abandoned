@@ -37,7 +37,8 @@ define
 		byteString # [a(byteString) a(byteString) base]
 		word       # [a(word) a(word) base]
 		cell       # [a(cell) labelTuple labelTuple]
-
+		cellInd    # [a(cell) labelTupleInd labelTupleInd]
+		
 		%% Container Nodes
 		tuple     # [a(tuple) a(tuple) labelTuple]
 		tupleInd  # [a(tuple) a(tupleInd) labelTupleInd]
@@ -61,7 +62,11 @@ define
 		
 		%% Relation Mode Helper
 		variableRef # [variableRef variableRef variableRef]
-		
+
+		%% Atomic Nodes
+		cellGr      # [a(cellGr) labelTupleGr labelTupleGr]
+		cellGrInd   # [a(cellGr) labelTupleGrInd labelTupleGrInd]
+
 		%% Container Nodes
 		tupleGr      # [a(tupleGr) a(tupleGr) labelTupleGr]
 		tupleGrInd   # [a(tupleGr) a(tupleGrInd) labelTupleGrInd]
