@@ -131,7 +131,7 @@
     <TABLE class=dyptic>
       <TR><TH>Alice Library Type<TH>Oz Representation
       <TR><TD><TT>array</TT><TD>Array
-      <TR><TD><TT>vector</TT><TD>Tuple with label <TT>'#'</TT>
+      <TR><TD><TT>vector</TT><TD>Tuple with label <TT>'#[]'</TT>
       <TR><TD><TT>Cell.cell</TT><TD>Cell
       <TR><TD><TT>Thread.thread</TT><TD>Thread
       <TR>
