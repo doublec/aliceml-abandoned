@@ -1,0 +1,16 @@
+import "x-alice:/lib/system/Component"
+
+import val it : int from "/tmp/pack"
+
+val _ = print "[int,bool,string]? "
+val p = case valOf(TextIO.inputLine TextIO.stdIn) of
+    "int\n"    => pack (type t = int  val it = 5)  : (type t val it : t)
+  | "bool\n"   => pack (type t = bool val it = true) : (type t val it : t)
+  | "string\n" => pack (type t = string val it = "huh") : (type t val it : t)
+  |  _         => pack (type t = unit val it = ()) :> (type t val it : t)
+
+val _ = Pickle.save("/tmp/pack", p)
+
+val _ = print ("OK, " ^ Int.toString it ^ "\n"
+		handle Component.Failure _ => "Ouch!\n")
+val _ = OS.Process.exit OS.Process.success

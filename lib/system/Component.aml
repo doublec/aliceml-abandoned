@@ -1,9 +1,10 @@
 (*
  * Author:
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 2001-2002
+ *   Leif Kornstaedt and Andreas Rossberg, 2001-2004
  *
  * Last change:
  *   $Date$ by $Author$
@@ -20,6 +21,7 @@ import structure Reflect           from "Reflect"
 import structure Url               from "Url"
 import structure Resolver          from "Resolver"
 import structure UnsafeComponent   from "UnsafeComponent"
+import structure DynMatch          from "DynMatch"
 import structure UrlMap            from "UrlMap"
 import signature COMPONENT         from "COMPONENT-sig"
 
@@ -45,11 +47,14 @@ struct
     exception Mismatch = UnsafeComponent.Mismatch
     exception Eval     = UnsafeComponent.Eval
     exception Failure  = UnsafeComponent.Failure
+    exception Internal of exn
 
     val extension = UnsafeComponent.extension
 
     fun trace (NONE, s)   = ()
-      | trace (SOME f, s) = TextIO.output (f, "[component manager] " ^ s ^ "\n")
+      | trace (SOME f, s) =
+	(TextIO.output (f, "[component manager] " ^ s ^ "\n");
+	 TextIO.flushOut f)
 
     val defaultLogStream =
 	Option.map (fn "" => TextIO.stdErr
@@ -60,7 +65,7 @@ struct
 			      TextIO.stdErr))
 		   (OS.Process.getEnv "ALICE_TRACE_COMPONENT")
 
-    fun create (inf, mod) = cast (EVALUATED {inf, mod})
+    fun create (mod, inf) = cast (EVALUATED {inf, mod})
 
     functor Create(signature S structure X: S) =
 	let
@@ -68,7 +73,7 @@ struct
 	    structure Mod = Reflect.Reflect(signature S = S
 					    structure X = X)
 	in
-	    (val component = create (SOME Sig.x, Mod.x))
+	    (val component = create (Mod.x, SOME Sig.x))
 	end
 
     val defaultResolver =
@@ -153,29 +158,28 @@ struct
 
 	val logStream = ref defaultLogStream
 
-	val map: (inf * mod) UrlMap.t =
+	val map: (mod * inf) UrlMap.t =
 	    lazy UrlMap.map (Vector.map (fn (s, inf, mod) =>
 					 (Url.fromString ("x-alice:/" ^ s),
-					  (inf, mod)))
+					  (mod, inf)))
 			     initialTable)
 
-	fun strictTypeCheck (SOME inf, SOME importInf, mod) =
-	    (Inf.match (inf, importInf); mod) (*--** coercion *)
-	  | strictTypeCheck (NONE, SOME _, mod) =
-	    (trace (!logStream,
-		    "warning: no export signature, accepted unchecked"); mod)
-	  | strictTypeCheck (SOME _, NONE, mod) =
-	    (trace (!logStream,
-		    "warning: no import signature, accepted unchecked"); mod)
-	  | strictTypeCheck (NONE, NONE, mod) =
-	    (trace (!logStream,
-		    "warning: no import/export signatures, accepted unchecked");
-	     mod)
+	fun matchWith (rea, SOME inf, SOME importInf) =
+	    Inf.matchWith (rea, inf, importInf)
+	  | matchWith (rea, NONE, SOME _) =
+	    trace (!logStream,
+		   "warning: no export signature, accepted unchecked")
+	  | matchWith (rea, SOME _, NONE) =
+	    trace (!logStream,
+		   "warning: no import signature, accepted unchecked")
+	  | matchWith (rea, NONE, NONE) =
+	    trace (!logStream,
+		   "warning: no import/export signatures, accepted unchecked")
 
 	fun infToString NONE = "(none)"
 	  | infToString (SOME inf) = PrettyPrint.toString (PPInf.ppInf inf, 80)
 
-	fun lazyTypeCheck (inf, importInf, mod, url, baseUrlOpt) =
+	fun typeCheck (inf, rea, importInf, mod, url, baseUrlOpt) : mod =
 	    let
 		val url' = Url.toString url
 		val baseUrlOpt' = Option.map Url.toString baseUrlOpt
@@ -183,47 +187,64 @@ struct
 					  SOME s => " imported by " ^ s
 					| NONE => " linked explicitly")
 	    in
-		lazy (trace (!logStream, "type-checking " ^ message);
-		      (strictTypeCheck (inf, importInf, mod)
-		       handle Inf.Mismatch m =>
-			   (trace (!logStream, "type-checking failed");
-			    trace (!logStream, "signature expected" ^
-					       (case baseUrlOpt' of
-						    NONE => ""
-						  | SOME s => " by " ^ s) ^
-			    		       ":\n" ^ infToString importInf);
-			    trace (!logStream, "signature found in " ^ url' ^
-					       ":\n" ^ infToString inf);
-			    raise Failure (url,
-					   Mismatch {component = url,
-						     request = baseUrlOpt,
-						     cause = m})))
-		      before trace (!logStream, "type-checked  " ^ message))
+		trace (!logStream, "type-checking " ^ message);
+		matchWith (rea, inf, importInf)
+		handle Inf.Mismatch m =>
+		     (trace (!logStream, "type-checking failed");
+		      trace (!logStream, "signature expected" ^
+					 (case baseUrlOpt' of
+					      NONE => ""
+					    | SOME s => " by " ^ s) ^
+			    		 ":\n" ^ infToString importInf);
+		      trace (!logStream, "signature found in " ^ url' ^
+					 ":\n" ^ infToString inf);
+		      raise Failure (url,
+				     Mismatch {component = url,
+					       request = baseUrlOpt,
+					       cause = m}))
+		   | Failure (url', e) =>
+		     (trace (!logStream, "exception " ^ exnName e ^
+					 " propagated from " ^
+					 Url.toString url' ^
+					 " during type-checking");
+		      raise Failure (url, e))
+		   | e =>
+		     (trace (!logStream, "internal exception " ^ exnName e ^
+					 " during type-checking");
+		      raise Failure (url, Internal e));
+		trace (!logStream, "type-checked  " ^ message);
+		mod
 	    end
 
 	val load = load' (!logStream, resolver)
 
-	fun link' url =
+	fun lazyLink url : mod * inf =
 	    case UrlMap.lookupNew (map, url) of
 		UrlMap.EXISTING entry => entry
 	      | UrlMap.NEW p =>
 		    let
-			val component =
-			    lazy (load url handle e => raise Failure (url, e))
-			val inf = lazy inf component
-			val mod = lazy eval' (url, component)
-			val entry = (inf, mod)
+			val result =
+			    lazy eval' (url, load url handle e =>
+						      raise Failure (url, e))
+			val entry = (lazy #1 result, lazy #2 result)
 		    in
 			Promise.fulfill (p, entry); entry
 		    end
-	and typedLink (url, importInf, baseUrlOpt) =
+	and typedLink (url, rea, importInf, baseUrlOpt) : mod =
 	    let
-		val (inf, mod) = link' url
+		val (mod, inf) = lazyLink url
+		val rea' = Inf.cloneRea rea
+		val mod' = lazy typeCheck (inf, rea', importInf, mod,
+					   url, baseUrlOpt)
 	    in
-		lazyTypeCheck (inf, importInf, mod, url, baseUrlOpt)
+		case importInf of
+		    NONE => ()
+		  | SOME inf' => DynMatch.matchWith (rea, mod', inf');
+		mod'
 	    end
 	and eval' (baseUrl, component) = eval'' (baseUrl, cast component)
-	and eval'' (baseUrl, UNEVALUATED {imports, body, ...}) =
+	and eval'' (_, EVALUATED {mod, inf}) = (Future.await mod, inf)
+	  | eval'' (baseUrl, UNEVALUATED {imports, body, inf}) =
 	    let
 		fun resolve s =
 		    let
@@ -233,22 +254,28 @@ struct
 		    in
 			Url.resolve baseUrl url
 		    end
+		val rea = Inf.rea ()
 		val imports' =
 		    Vector.map (fn (importUrlS, importInf) =>
-				   typedLink (resolve importUrlS,
+				   typedLink (resolve importUrlS, rea,
 					      importInf, SOME baseUrl))
 			       imports
+		val _ = trace (!logStream, "evaluating " ^ Url.toString baseUrl)
+		val mod = body imports'
+			 handle e as (non (Failure (_, _))) =>
+			     (trace (!logStream,
+				     "evaluation failed in " ^
+				     Url.toString baseUrl);
+			      raise Failure (baseUrl, Eval e))
+		val _ = trace (!logStream, "evaluated  " ^ Url.toString baseUrl)
+		val dynInf =
+		    case inf of
+			NONE => NONE
+		      | SOME inf' =>
+			SOME (lazy DynMatch.strengthenWith (rea, mod, inf'))
 	    in
-		trace (!logStream, "evaluating " ^ Url.toString baseUrl);
-		(body imports'
-		 handle e as (non (Failure (_, _))) =>
-		     (trace (!logStream,
-			     "evaluation failed in " ^ Url.toString baseUrl);
-		      raise Failure (baseUrl, Eval e)))
-		before
-		trace (!logStream, "evaluated  " ^ Url.toString baseUrl)
+		(mod, dynInf)
 	    end
-	  | eval'' (_, EVALUATED {mod, ...}) = Future.await mod
 
 	fun validate url =
 	    let
@@ -265,21 +292,19 @@ struct
 	    let
 		structure Sig = Reflect.ReflectSig(signature S = S)
 		val url = validate url
-		val mod = eval' (url, component)
-		val inf = inf component
-		val mod' = strictTypeCheck (inf, SOME Sig.x, mod)
-			   handle Inf.Mismatch m =>
-			       raise Mismatch {component = url,
-					       request = NONE,
-					       cause = m}
+		val (mod, inf) = eval' (url, component)
+		val _ = matchWith (Inf.rea (), inf, SOME Sig.x)
+			handle Inf.Mismatch m =>
+			    raise Mismatch
+				  {component = url, request = NONE, cause = m}
 	    in
-		Reflect.Reify(val x = mod' signature S = S)
+		Reflect.Reify(val x = mod signature S = S)
 	    end
 
 	functor Link(val url: Url.t signature S): S =
 	    let
 		structure Sig = Reflect.ReflectSig(signature S = S)
-		val mod = typedLink (validate url, SOME Sig.x, NONE)
+		val mod = typedLink (validate url, Inf.rea (), SOME Sig.x, NONE)
 	    in
 		Reflect.Reify(val x = mod signature S = S)
 	    end
@@ -293,28 +318,26 @@ struct
 		    case UrlMap.lookupNew (map, validate url) of
 			UrlMap.EXISTING _ => raise Conflict
 		      | UrlMap.NEW p =>
-			    Promise.fulfill (p, (SOME Sig.x, Mod.x))
+			    Promise.fulfill (p, (Mod.x, SOME Sig.x))
 	    in
 		()
 	    end
 
-	fun eval (url, component) = eval' (validate url, component)
+	fun eval (url, component) = #1 (eval' (validate url, component))
 
-	fun link url = create (link' (validate url))
+	fun link url = create (lazyLink (validate url))
 
 	fun enter (url', component) withval url = validate url' end =
 	    case UrlMap.lookupNew (map, url) of
 		UrlMap.EXISTING _ => raise Conflict
-	      | UrlMap.NEW p =>
-		    Promise.fulfill (p, (inf component,
-					 lazy eval' (url, component)))
+	      | UrlMap.NEW p => Promise.fulfill (p, lazy eval' (url, component))
 
 	fun lookup url =
 	    case UrlMap.lookup (map, validate url) of
-		SOME (inf, mod) => SOME (create (inf, mod))
+		SOME entry => SOME (create entry)
 	      | NONE => NONE
 
 	fun start url' withval url = validate url' end =
-	    ignore (eval' (url, create (link' url)))
+	    ignore (eval' (url, create (lazyLink url)))
     end
 end

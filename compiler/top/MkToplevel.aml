@@ -187,6 +187,15 @@ struct
 				   "failure loading \"" ^
 				   Url.toString url ^ "\"\n");
 		    SOME context)
+	     | Component.Failure (url, Component.Internal exn) =>
+		   (TextIO.output (TextIO.stdErr,
+				   "internal exception " ^
+				   General.exnName exn ^
+				   (if String.isSuffix "/" (Url.toString url)
+				    then "\n"
+				    else " while linking \"" ^
+					 Url.toString url ^ "\"\n"));
+		    SOME context)
 	     | Component.Failure (url, exn) =>
 		   (TextIO.output (TextIO.stdErr,
 				   "unknown failure " ^

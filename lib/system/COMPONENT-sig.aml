@@ -30,6 +30,7 @@ signature COMPONENT =
 			       cause : Inf.mismatch}
 	exception Eval of exn
 	exception Failure of Url.t * exn
+	exception Internal of exn
 
 	val extension: string
 
@@ -38,8 +39,8 @@ signature COMPONENT =
 	functor Create(signature S
 		       structure X: S): (val component: component)
 
-	val create: Inf.t option * Reflect.module -> component
-	    (*--** unsafe! intended for use by lib/system/Boot.aml only *)
+	val create: Reflect.module * Inf.t option -> component
+	    (*--** unsafe! intended for use by lib/system/Pickle only *)
 	val load: Url.t -> component                      (* IO.Io *)
 	val save: string * component -> unit              (* IO.Io *)
 	val inf: component -> Inf.t option

@@ -56,7 +56,7 @@ struct
     fun save(file, package) =
 	let
 	    val (m,j) = Reflect.reflectPackage package
-	    val component = Component.create(SOME j, m)
+	    val component = Component.create(m, SOME j)
 	in
 	    Component.save(file, component)
 	end
