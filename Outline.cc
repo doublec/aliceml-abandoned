@@ -30,6 +30,9 @@
 #pragma implementation "generic/Pickle.hh"
 #pragma implementation "generic/Float.hh"
 #pragma implementation "generic/Double.hh"
+#if DEBUGGER
+#pragma implementation "generic/DebuggerEvent.hh"
+#endif
 #endif
 
 #include "adt/IntMap.hh"
@@ -51,5 +54,8 @@
 #include "generic/Pickle.hh"
 #include "generic/Float.hh"
 #include "generic/Double.hh"
+#if DEBUGGER
+#include "generic/DebuggerEvent.hh"
+#endif
 
 template class BaseMap<IntKey>;
