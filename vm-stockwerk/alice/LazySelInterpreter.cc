@@ -18,8 +18,8 @@
 
 #include <cstdio>
 #include "generic/Scheduler.hh"
-#include "alice/StackFrame.hh"
 #include "alice/Data.hh"
+#include "alice/StackFrame.hh"
 #include "alice/LazySelInterpreter.hh"
 
 // LazySel Frame
