@@ -10,7 +10,7 @@
  *   $Revision$
  *)
 
-import structure Core  from "x-alice:/lib/gtk/Core"
+import structure Gtk  from "x-alice:/lib/gtk/Gtk"
 import structure Space from "x-alice:/lib/gecode/Space"
 
 structure Types =
@@ -26,23 +26,23 @@ structure Types =
 		    dirty  : bool ref,
 		    hasSolBelow : bool ref,
 		    shape : (int * int) list ref,
-		    vNode : Core.object option ref,
+		    vNode : Gtk.object option ref,
 		    space : Space.space option ref,
 		    ownBest : Space.space option ref,
 		    alternative : int,
-		    connection : Core.object option ref}
+		    connection : Gtk.object option ref}
 		   
   datatype tree = N of node_info * tree option ref * tree vector ref
 
-  type explorer_state = {gtk : {canvas : Core.object,
-                                rootGroup : Core.object ref,
-			        actionGroup : Core.object ref,
-			        shadowGroup : Core.object ref,
+  type explorer_state = {gtk : {canvas : Gtk.object,
+                                rootGroup : Gtk.object ref,
+			        actionGroup : Gtk.object ref,
+			        shadowGroup : Gtk.object ref,
                                 actionHandler : int ref,
                                 scale : real ref,
-                                window : Core.object,
+                                window : Gtk.object,
 			        menu : {inspectionActions :
-                                        Core.object ref},
+                                        Gtk.object ref},
                                 contextId : int ref },
                          tree : {tree : tree ref,
                                  rootSpace : Space.space option ref,

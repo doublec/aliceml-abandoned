@@ -11,7 +11,6 @@
  *)
 
 import structure Gtk   from "x-alice:/lib/gtk/Gtk"
-import structure Core  from "x-alice:/lib/gtk/Core"
 import structure PS from "x-alice:/lib/postscript/PS"
 import structure Types          from "Types"
 
@@ -98,7 +97,7 @@ structure SaveWindow =
       let
           val md = Gtk.messageDialogNew(sw, Gtk.DIALOG_MODAL,
                                         Gtk.MESSAGE_ERROR, Gtk.BUTTONS_CLOSE,
-                                        msg, Core.LIST nil)
+                                        msg, Gtk.LIST nil)
       in
           Gtk.dialogRun md;
           Gtk.widgetDestroy md
