@@ -59,7 +59,7 @@ struct
     fun ppInf(ref j') = fbox(below(ppInf' j'))
 
     and ppInf'(TOP) =
-	    text "TOP"
+	    text "any"
 
       | ppInf'(CON c) =
 	    ppCon c
@@ -218,7 +218,7 @@ text "(" ^^ PPPath.ppPath p ^^ text ")" ^/^*)
       | ppItem'(INF((p,l,0), k, d), doc) =
 	if Option.isNone d
 	orelse let val j = Option.valOf d
-	       in isCon j andalso Path.equals(#2(asCon j), p) end then
+	       in isCon j andalso Path.equals(#2(asCon j), p) end then          
 	    abox(
 		hbox(
 		    text "signature" ^/^
