@@ -322,7 +322,7 @@
       <tt>Int.min (<I>x</I>,<I>y</I>)</TT>
     </DT>
     <DD>
-      <P><I>y></I> is constrained to denote the minimal element of <I>x</I>.
+      <P><I>y</I> is constrained to denote the minimal element of <I>x</I>.
     </P></DD>
 
     <DT>
