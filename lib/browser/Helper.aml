@@ -20,6 +20,7 @@ import structure Type      from "x-alice:/lib/rtt/Type"
 import structure Label     from "x-alice:/lib/rtt/Label"
 import structure Types     from "Types"
 import structure Window    from "Window"
+import structure WindowManager from "WindowManager"
 import signature HELPER    from "HELPER-sig"
 
 open Types
@@ -46,7 +47,7 @@ struct
       | Container(r) => createGroupItem(#group(r),0.0,0.0) 
       | Concat(r)    => createGroupItem(#group(r),0.0,0.0) 
       | Limit(r)     => createGroupItem(#group(r),0.0,0.0) 
-      | Empty        => createGroupItem(GtkCanvas.root(Window.canvas),0.0,0.0)
+      | Empty        => createGroupItem(!WindowManager.canvasroot,0.0,0.0)
     
     fun isApply t = case t of Type.Apply(_,_) => true
                            | _ => false 

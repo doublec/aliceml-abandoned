@@ -1,0 +1,25 @@
+(*
+ * Authors:
+ *   Bernadette Blum <blum@ps.uni-sb.de>
+ *   Marvin Schiller <schiller@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Bernadette Blum, 2002
+ *   Marvin Schiller, 2002
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
+import signature MK_WINDOW from "MK_WINDOW-sig"
+import functor MkWindow from "MkWindow"
+import signature WINDOW_MANAGER from "WINDOW_MANAGER-sig"
+
+structure WindowManager :> WINDOW_MANAGER =
+    struct
+	 structure W = MkWindow() :MK_WINDOW
+	val canvasroot = ref W.canvasroot
+	val window     = ref W.window
+end
