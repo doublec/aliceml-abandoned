@@ -54,196 +54,6 @@ structure GuiMain =
             case !currentPage of ~1 => NONE
                                | i => SOME (getPage i)
 	fun findPage id = Option.map #1 (List.findi (fn (_,i) => i=id) (!pages))
-
-        (* Evaluation *)
-
-        val evalSignal = ref NONE
-
-        fun eval echo "" = ()
-	  | eval echo text =
-            case (!evalSignal) of NONE =>
-	    let
-                val signalP = Promise.promise()
-		val signal = Promise.future signalP
-		val text = if String.sub (text, String.size text - 1) = #"\n"
-			   then text else text ^ "\n"
-                fun find(i ,str) =
-                    if i=String.size str then "\n"
-                    else if Char.isSpace (String.sub(str,i)) then
-                        find(i+1, str)
-                    else String.extract(str, i, NONE)
-	    in
-                evalSignal := SOME signalP;
-		if echo then TextIO.StreamIO.output (OutputWriters.compilerIn, find(0,text))
-                else ();
-		spawn (Evaluator.eval (text, signal);
-                       evalSignal := NONE)
-	    end
-                                | SOME _ =>
-                                  FileDialog.message "Still evaluating."
-
-        fun feedFile() =
-            case (!curtextview) of BUFFER view =>
-            let
-                val buf = Gtk.textViewGetBuffer view
-		val str = Lock.sync Gtk.lock
-		    (fn () => let
-		     val startiter = Gtk.textIterNew()
-		     val _ = Gtk.textBufferGetStartIter(buf,startiter)
-		     val enditer = Gtk.textIterNew()
-		     val _ = Gtk.textBufferGetEndIter(buf,enditer)
-		     in Gtk.textBufferGetText(buf, startiter, enditer, false)
-		     end) ()
-                val str = Gtk.utf8ToLatin1 str
-            in
-                eval true str
-            end
-                                 | _ => ()
-
-        fun addSpace(line, col, str) =
-            String.tabulate(line-1, fn _ => #"\n") ^
-	    String.tabulate(col, fn _ => #" ") ^ str
-
-        fun feedSelection() =
-            case (!curtextview) of BUFFER view =>
-            let
-                val buf = Gtk.textViewGetBuffer view
-
-		val (sel, txt, line, col) =
-		    Lock.sync Gtk.lock
-		    (fn () =>
-		     let
-		     val startiter = Gtk.textIterNew()
-		     val enditer = Gtk.textIterNew()
-		     in
-			 (Gtk.textBufferGetSelectionBounds(buf,
-                                                           startiter,enditer),
-			  Gtk.textBufferGetText(buf, startiter, enditer, false),
-			  Buffer.getLine startiter,
-			  Buffer.getColumn startiter)
-		     end) ()
-            in
-                if sel
-                then eval true (addSpace(line, col,
-					 Gtk.utf8ToLatin1 txt))
-                else ()
-            end
-           | _ => ()
-
-        fun feedLine() =
-            case (!curtextview) of BUFFER view =>
-            let
-                val buf = Gtk.textViewGetBuffer view
-		    
-		val (startline, str) = Lock.sync Gtk.lock
-		    (fn () =>
-		     let
-			 val startiter = Buffer.getCursorIter buf
-			 val enditer = Gtk.textIterCopy(startiter)
-		     in
-			 Gtk.textIterSetLineOffset(startiter, 0);
-			 Gtk.textIterForwardToLineEnd(enditer);
-			 (Buffer.getLine startiter,
-			  Gtk.textBufferGetText(buf,
-						startiter, enditer, false))
-		     end) ()
-                val str = addSpace(startline, 0,
-                                   Gtk.utf8ToLatin1 str)
-            in
-                eval true str
-            end
-                                 | _ => ()
-
-        fun findNextEOL iter next =
-            if next iter then
-                let
-                    val c = chr (Gtk.textIterGetChar iter)
-                in
-                    if c = #"\n" then ()
-                    else if Char.isSpace c then findNextEOL iter next
-                    else findEOP iter next
-                end
-            else ()
-        and findEOP iter next =
-            let
-                val c = Gtk.textIterGetChar iter
-            in
-                if c=0 then ()
-                else
-                    if c=ord #"\n" then
-                        findNextEOL iter next
-                    else if next iter then
-                        findEOP iter next
-                    else ()
-            end
-
-        fun findNonWS iter next =
-            let
-                val c = Gtk.textIterGetChar iter
-            in
-                if c=0 then ()
-                else if Char.isSpace (chr c) then
-                    (next iter; findNonWS iter next)
-                else ()
-            end
-
-        fun eolBeforeNonWS acc iter next =
-            let
-                val c = Gtk.textIterGetChar iter
-            in
-                if c=0 then acc
-                else if Char.isSpace (chr c) then
-                    (next iter;
-                     eolBeforeNonWS (acc + (if c = ord #"\n" then 1 else 0)) iter next)
-                else acc
-            end
-
-        fun paragraphIters(buf) =
-            let
-                val startiter = Buffer.getCursorIter buf
-                val c = Gtk.textIterGetChar startiter
-                val _ = if c = ord #"\n" orelse c=0 then
-                            Gtk.textIterBackwardChar startiter else false
-                val enditer = Gtk.textIterCopy(startiter)
-                val _ = findEOP startiter Gtk.textIterBackwardChar
-                val _ = findEOP enditer Gtk.textIterForwardChar
-                val _ = findNonWS startiter Gtk.textIterForwardChar
-                val _ = findNonWS enditer Gtk.textIterBackwardChar
-                val _ = Gtk.textIterForwardChar enditer (* end is exclusive! *)
-		val _ = Gtk.textIterSetLineOffset(startiter, 0)
-            in
-                (startiter, enditer)
-            end
-
-        fun feedRegion() =
-            case (!curtextview) of BUFFER view =>
-            let
-                val buf = Gtk.textViewGetBuffer view
-
-		val (str, line, col) = Lock.sync Gtk.lock
-		    (fn () =>
-		     let
-		     val startiter = Gtk.textIterNew()
-		     val enditer = Gtk.textIterNew()
-		     val (startiter, enditer) = 
-			 if Gtk.textBufferGetSelectionBounds(buf, startiter, enditer)
-			     then (startiter, enditer)
-			 else let val (start,endd) = paragraphIters(buf)
-			      in Buffer.selectRange(buf, start, endd);
-				  (start,endd)
-			      end
-		     in
-			 (Gtk.textBufferGetText(buf, startiter, enditer, false),
-			  Buffer.getLine startiter,
-			  Buffer.getColumn startiter)
-		     end) ()
-
-                val str = addSpace(line, col, Gtk.utf8ToLatin1 str)
-            in
-                eval true (str^"\n")
-            end
-	  | COMPILER => OutputWriters.feedCurrentInput ()
-	  | _ => ()
             
         fun undo() =
             case getCurrentPage() of NONE => ()
@@ -496,6 +306,232 @@ structure GuiMain =
                                      if Buffer.save id then ()
                                      else saveFileAs()
 
+        (* Evaluation *)
+
+        val evalSignal = ref NONE
+
+        fun eval (echo,withDir) "" = ()
+	  | eval (echo,withDir) text =
+            (* FIXME: race condition, use promises and Ref.exchange! *)
+	    case (!evalSignal) of NONE =>
+	    let
+                val signalP = Promise.promise()
+		val signal = Promise.future signalP
+		val text = if String.sub (text, String.size text - 1) = #"\n"
+			   then text else text ^ "\n"
+                fun find(i ,str) =
+                    if i=String.size str then "\n"
+                    else if Char.isSpace (String.sub(str,i)) then
+                        find(i+1, str)
+                    else String.extract(str, i, NONE)
+		val dir = OS.FileSys.getDir()
+		val srcDir = if not withDir then NONE else
+			     case getCurrentPage()
+			       of NONE => NONE
+			        | SOME id =>
+			     case !(#file(Buffer.Map.lookupExistent(Buffer.bufferMap, id)))
+			       of NONE => NONE
+				| SOME p => SOME(OS.Path.getParent p)
+					    handle OS.Path.Path => NONE
+	    in
+                evalSignal := SOME signalP;
+		if echo then TextIO.StreamIO.output (OutputWriters.compilerIn, find(0,text))
+                else ();
+		spawn (Option.app OS.FileSys.chDir srcDir;
+		       Evaluator.eval (text, signal);
+                       (* Hack: this fails when the feeded code cd'ed to
+		        * its own directory... *)
+		       Option.app (fn dir' => if dir' <> OS.FileSys.getDir() then ()
+					      else OS.FileSys.chDir dir) srcDir;
+		       evalSignal := NONE)
+	    end
+                                | SOME _ =>
+                                  FileDialog.message "Still evaluating."
+
+        fun feedFile() =
+            (* FIXME: race condition, use promises and Ref.exchange! *)
+            case (!evalSignal) of
+	        SOME _ => FileDialog.message "Still evaluating."
+	      | NONE =>
+            case getCurrentPage() of NONE => ()
+                                   | SOME id =>
+            let
+                val _ = saveFile ()
+		val file = Buffer.getFileName id
+            in
+                case file of
+                    NONE => ()
+                  | SOME f =>
+		    let
+                	val signalP = Promise.promise()
+			val signal = Promise.future signalP
+		    in
+                	evalSignal := SOME signalP;
+			spawn (Evaluator.evalFile (f, signal);
+			       evalSignal := NONE)
+		    end
+            end
+(*
+            case (!curtextview) of BUFFER view =>
+            let
+                val buf = Gtk.textViewGetBuffer view
+		val str = Lock.sync Gtk.lock
+		    (fn () => let
+		     val startiter = Gtk.textIterNew()
+		     val _ = Gtk.textBufferGetStartIter(buf,startiter)
+		     val enditer = Gtk.textIterNew()
+		     val _ = Gtk.textBufferGetEndIter(buf,enditer)
+		     in Gtk.textBufferGetText(buf, startiter, enditer, false)
+		     end) ()
+                val str = Gtk.utf8ToLatin1 str
+            in
+                eval (true,true) str
+            end
+                                 | _ => ()
+*)
+        fun addSpace(line, col, str) =
+            String.tabulate(line-1, fn _ => #"\n") ^
+	    String.tabulate(col, fn _ => #" ") ^ str
+
+        fun feedSelection() =
+            case (!curtextview) of BUFFER view =>
+            let
+                val buf = Gtk.textViewGetBuffer view
+
+		val (sel, txt, line, col) =
+		    Lock.sync Gtk.lock
+		    (fn () =>
+		     let
+		     val startiter = Gtk.textIterNew()
+		     val enditer = Gtk.textIterNew()
+		     in
+			 (Gtk.textBufferGetSelectionBounds(buf,
+                                                           startiter,enditer),
+			  Gtk.textBufferGetText(buf, startiter, enditer, false),
+			  Buffer.getLine startiter,
+			  Buffer.getColumn startiter)
+		     end) ()
+            in
+                if sel
+                then eval (true,true) (addSpace(line, col, Gtk.utf8ToLatin1 txt))
+                else ()
+            end
+           | _ => ()
+
+        fun feedLine() =
+            case (!curtextview) of BUFFER view =>
+            let
+                val buf = Gtk.textViewGetBuffer view
+		    
+		val (startline, str) = Lock.sync Gtk.lock
+		    (fn () =>
+		     let
+			 val startiter = Buffer.getCursorIter buf
+			 val enditer = Gtk.textIterCopy(startiter)
+		     in
+			 Gtk.textIterSetLineOffset(startiter, 0);
+			 Gtk.textIterForwardToLineEnd(enditer);
+			 (Buffer.getLine startiter,
+			  Gtk.textBufferGetText(buf,
+						startiter, enditer, false))
+		     end) ()
+                val str = addSpace(startline, 0, Gtk.utf8ToLatin1 str)
+            in
+                eval (true, true) str
+            end
+                                 | _ => ()
+
+        fun findNextEOL iter next =
+            if next iter then
+                let
+                    val c = chr (Gtk.textIterGetChar iter)
+                in
+                    if c = #"\n" then ()
+                    else if Char.isSpace c then findNextEOL iter next
+                    else findEOP iter next
+                end
+            else ()
+        and findEOP iter next =
+            let
+                val c = Gtk.textIterGetChar iter
+            in
+                if c=0 then ()
+                else
+                    if c=ord #"\n" then
+                        findNextEOL iter next
+                    else if next iter then
+                        findEOP iter next
+                    else ()
+            end
+
+        fun findNonWS iter next =
+            let
+                val c = Gtk.textIterGetChar iter
+            in
+                if c=0 then ()
+                else if Char.isSpace (chr c) then
+                    (next iter; findNonWS iter next)
+                else ()
+            end
+
+        fun eolBeforeNonWS acc iter next =
+            let
+                val c = Gtk.textIterGetChar iter
+            in
+                if c=0 then acc
+                else if Char.isSpace (chr c) then
+                    (next iter;
+                     eolBeforeNonWS (acc + (if c = ord #"\n" then 1 else 0)) iter next)
+                else acc
+            end
+
+        fun paragraphIters(buf) =
+            let
+                val startiter = Buffer.getCursorIter buf
+                val c = Gtk.textIterGetChar startiter
+                val _ = if c = ord #"\n" orelse c=0 then
+                            Gtk.textIterBackwardChar startiter else false
+                val enditer = Gtk.textIterCopy(startiter)
+                val _ = findEOP startiter Gtk.textIterBackwardChar
+                val _ = findEOP enditer Gtk.textIterForwardChar
+                val _ = findNonWS startiter Gtk.textIterForwardChar
+                val _ = findNonWS enditer Gtk.textIterBackwardChar
+                val _ = Gtk.textIterForwardChar enditer (* end is exclusive! *)
+		val _ = Gtk.textIterSetLineOffset(startiter, 0)
+            in
+                (startiter, enditer)
+            end
+
+        fun feedRegion() =
+            case (!curtextview) of BUFFER view =>
+            let
+                val buf = Gtk.textViewGetBuffer view
+
+		val (str, line, col) = Lock.sync Gtk.lock
+		    (fn () =>
+		     let
+		     val startiter = Gtk.textIterNew()
+		     val enditer = Gtk.textIterNew()
+		     val (startiter, enditer) = 
+			 if Gtk.textBufferGetSelectionBounds(buf, startiter, enditer)
+			     then (startiter, enditer)
+			 else let val (start,endd) = paragraphIters(buf)
+			      in Buffer.selectRange(buf, start, endd);
+				  (start,endd)
+			      end
+		     in
+			 (Gtk.textBufferGetText(buf, startiter, enditer, false),
+			  Buffer.getLine startiter,
+			  Buffer.getColumn startiter)
+		     end) ()
+
+                val str = addSpace(line, col, Gtk.utf8ToLatin1 str)
+            in
+                eval (true,true) (str^"\n")
+            end
+	  | COMPILER => OutputWriters.feedCurrentInput ()
+	  | _ => ()
+
         fun compile () =
             case getCurrentPage() of NONE => ()
                                    | SOME id =>
@@ -505,7 +541,7 @@ structure GuiMain =
             in
                 case file of
                     NONE => ()
-                  | SOME f => Evaluator.compile f
+                  | SOME f => Evaluator.compileFile f
             end
 
         fun reallyClose p =
@@ -772,7 +808,7 @@ structure GuiMain =
              Gtk.signalConnect(Gui.progout, "focus-in-event",
                                changeFocus STDSTREAMS);
 	     Promise.fulfill(notebookSwitchEventIdP, notebookSwitchEventId);
-	     OutputWriters.makeWriters (eval false);
+	     OutputWriters.makeWriters (eval (false, false));
 	     History.set (Config.loadHistory());
 	     Gtk.textViewSetEditable(Gui.compilerout, false);
 	     Gtk.windowSetDefaultSize(Gui.mainwidget,

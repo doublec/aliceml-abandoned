@@ -5,6 +5,7 @@ Bugs:
 
 * Text fields in search dialog should span full window
 * Reconsider implicit imports
+* Proper treatment of relative import/cwd
 * Gtk.textIterFree produces segfaults, so at the moment it seems we can't properly free iterators :-(
 
 Missing Features:

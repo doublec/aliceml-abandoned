@@ -16,6 +16,7 @@ sig
 
     val init		: unit -> unit
     val eval		: string * signal -> unit
+    val evalFile	: string * signal -> unit
     val use		: string -> unit
 
     val outWidth	: int ref

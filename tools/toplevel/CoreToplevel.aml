@@ -219,9 +219,10 @@ struct
 	    val old = Ref.exchange (useFiles, Promise.future new)
 	in
 	    case old
-	     of filename::rest =>
+	     of file::rest =>
 		(Promise.fulfill (new, rest);
-		 case evalFile (true, env, filename, signal)
+		TextIO.output (outStream, "### evaluating file " ^ file ^ "\n");
+		 case evalFile (true, env, file, signal)
 		   of SOME env' => loopUses (env', signal)
 		    | NONE      => (useFiles := nil; env)
 		)
@@ -238,6 +239,15 @@ struct
 	      | SOME env' => Promise.fulfill (p, loopUses (env', signal))
 	end
 
+    fun evalFile (file, signal) =
+	let
+	    val p   = Promise.promise ()
+	    val env = Ref.exchange (currentEnv, Promise.future p)
+	in
+	    useFiles := [file];
+	    Promise.fulfill (p, loopUses (env, signal))
+	end
+
 
     (* Texts *)
 
@@ -248,7 +258,7 @@ struct
     val version    = major ^ "." ^ minor ^
 		     (if revision = "0" then "" else "." ^ revision)
     val banner     = "Alice " ^ version ^ " (\"" ^ Config.codename ^ "\") " ^
-		     (*"mastered " ^ Date.fmt "%Y/%m/%d" Config.buildDate ^*) "\n"
+		     "mastered " ^ Date.fmt "%Y/%m/%d" Config.buildDate ^ "\n"
     val bye        = "That's all, said Humpty Dumpty. Good-bye.\n"
 
     val prompt     = "- "

@@ -21,7 +21,7 @@ structure Buffer =
    struct
       open Config
 
-      structure BufferMap = MkHashImpMap(Int)
+      structure Map = MkHashImpMap(Int)
 
       datatype undo = INSERT of (int * int)
                     | DELETE of (int * string)
@@ -42,7 +42,7 @@ structure Buffer =
 		     highlightActive : bool ref,
 		     highlight: int option Promise.promise ref}
 
-      val bufferMap : buffer BufferMap.map = BufferMap.map()
+      val bufferMap : buffer Map.map = Map.map()
 
       fun shortName s =
           let
@@ -97,7 +97,7 @@ structure Buffer =
 
       fun scrollToCursor id =
           let
-              val {view,buf,...} = BufferMap.lookupExistent(bufferMap, id)
+              val {view,buf,...} = Map.lookupExistent(bufferMap, id)
 	  in
               Gtk.textViewScrollToMark(view, Gtk.textBufferGetInsert buf,
                                        0.1, false, 0.0, 0.0)
@@ -109,7 +109,7 @@ structure Buffer =
 
       fun modifiedChanged id _ =
           let
-              val {fileLabel,file,buf,...} = BufferMap.lookupExistent(bufferMap, id)
+              val {fileLabel,file,buf,...} = Map.lookupExistent(bufferMap, id)
               val fileName = shortName (Option.getOpt(!file, "New file "^Int.toString id))
           in
               if Gtk.textBufferGetModified buf then
@@ -120,7 +120,7 @@ structure Buffer =
 
       fun deleteText id (buf,[Gtk.INT off, Gtk.INT _, Gtk.STRING txt]) =
           let
-              val {undo,highlight,...} = BufferMap.lookupExistent(bufferMap, id)
+              val {undo,highlight,...} = Map.lookupExistent(bufferMap, id)
           in
               case (!undo) of
                   ((WAIT_INSERT _ | WAIT_DELETE _)::ur) =>
@@ -150,7 +150,7 @@ structure Buffer =
 
       fun insertText' (id, (buf,[Gtk.INT off, Gtk.STRING txt, Gtk.INT length])) =
           let
-              val {undo,highlight,...} = BufferMap.lookupExistent(bufferMap, id)
+              val {undo,highlight,...} = Map.lookupExistent(bufferMap, id)
           in
               case (!undo) of
                   ((WAIT_INSERT _ | WAIT_DELETE _)::ur) =>
@@ -177,7 +177,7 @@ structure Buffer =
 
       fun userAction (id,begin) _ =
           let
-              val {undo,...} = BufferMap.lookupExistent(bufferMap, id)
+              val {undo,...} = Map.lookupExistent(bufferMap, id)
 	      val action = if begin then BEGIN_ACTION else END_ACTION
           in
 	      undo := action::(!undo)
@@ -185,7 +185,7 @@ structure Buffer =
 
       fun getSelection id =
           let
-              val {buf,...} = BufferMap.lookupExistent(bufferMap, id)
+              val {buf,...} = Map.lookupExistent(bufferMap, id)
 	      val (txt,equal) = Lock.sync Gtk.lock
 		  (fn () =>
 		   let
@@ -275,7 +275,7 @@ structure Buffer =
 	  Lock.sync Gtk.lock
 	  (fn () =>
 	  let
-              val {buf,...} = BufferMap.lookupExistent(bufferMap, id)
+              val {buf,...} = Map.lookupExistent(bufferMap, id)
 	      val _ = selectWholeLines buf
               val startiter = Gtk.textIterNew()
               val enditer = Gtk.textIterNew()
@@ -358,28 +358,28 @@ structure Buffer =
 
       fun undo id =
 	  let
-              val {undo=undoBuf,buf,...} = BufferMap.lookupExistent(bufferMap, id)
+              val {undo=undoBuf,buf,...} = Map.lookupExistent(bufferMap, id)
 	  in
 	      Lock.sync Gtk.lock undo' (undoBuf, buf, false);
 	      scrollToCursor id
 	  end
 
       fun getFileName id =
-          !(#file (BufferMap.lookupExistent(bufferMap, id)))
+          !(#file (Map.lookupExistent(bufferMap, id)))
 
       fun getBuffer id =
-          #buf (BufferMap.lookupExistent(bufferMap, id))
+          #buf (Map.lookupExistent(bufferMap, id))
 
       fun getSyntaxHighlighting id =
-          !(#highlightActive (BufferMap.lookupExistent(bufferMap, id)))
+          !(#highlightActive (Map.lookupExistent(bufferMap, id)))
 
       fun forallBuffers f =
-	  BufferMap.all f bufferMap
+	  Map.all f bufferMap
 
       fun setSyntaxHighlighting(id, active) =
 	  let
 	      val {buf,highlightActive,highlight,...} =
-		  BufferMap.lookupExistent(bufferMap, id)
+		  Map.lookupExistent(bufferMap, id)
 	  in
 	      highlightActive := active;
 	      if active then
@@ -401,21 +401,21 @@ structure Buffer =
 	  end
 
       fun getBufferByName f =
-	  case BufferMap.find
+	  case Map.find
 	      (fn {file,...} => case !file of SOME f' => f' = f | _ => false) bufferMap of
 	      NONE => (NONE, ~1)
 	    | SOME {buf,id,...} => (SOME buf, id)
 
       fun getView id =
-          #view (BufferMap.lookupExistent(bufferMap, id))
+          #view (Map.lookupExistent(bufferMap, id))
 
       fun getFileNames () =
-	  BufferMap.fold (fn ({file,...},fs) => 
+	  Map.fold (fn ({file,...},fs) => 
 			  case !file of NONE => fs
 			   | SOME f => f::fs) nil bufferMap
 
       fun haveModified () =
-	  BufferMap.exists (fn {buf,...} => Gtk.textBufferGetModified buf)
+	  Map.exists (fn {buf,...} => Gtk.textBufferGetModified buf)
 	  bufferMap
 
       fun buffer {notebook,id,file,loadFile} =
@@ -497,7 +497,7 @@ structure Buffer =
               Gtk.signalConnect(buf, "insert-text", insertText id);
               Gtk.signalConnect(buf, "begin-user-action", userAction(id,true));
               Gtk.signalConnect(buf, "end-user-action", userAction(id,false));
-              BufferMap.insertDisjoint(bufferMap, id, ret);
+              Map.insertDisjoint(bufferMap, id, ret);
 	      spawn highlightGuard (buf, #plain(#tags ret),
 				    #highlight ret, #highlightActive ret);
               ret
@@ -505,24 +505,24 @@ structure Buffer =
 
       fun canClose id =
           let
-              val {buf,...} = BufferMap.lookupExistent(bufferMap, id)
+              val {buf,...} = Map.lookupExistent(bufferMap, id)
 	  in
               not (Gtk.textBufferGetModified buf)
           end
 
       fun close id =
           let
-              val {file,buf,highlight,...} = BufferMap.lookupExistent(bufferMap, id)
+              val {file,buf,highlight,...} = Map.lookupExistent(bufferMap, id)
 	      val prom = Promise.promise()
           in
-              (BufferMap.removeExistent(bufferMap, id);
+              (Map.removeExistent(bufferMap, id);
                Promise.fulfill(prom, NONE);
 	       highlight := prom)
           end
 
       fun save id =
           let
-              val {id,file,buf,undo,...} = BufferMap.lookupExistent(bufferMap, id)
+              val {id,file,buf,undo,...} = Map.lookupExistent(bufferMap, id)
               val modified = Gtk.textBufferGetModified buf
           in
               case !file of NONE => false
@@ -553,7 +553,7 @@ structure Buffer =
 
       fun saveAs (id, fileName) =
           let
-              val {id,file,fileLabel,buf,...} = BufferMap.lookupExistent(bufferMap, id)
+              val {id,file,fileLabel,buf,...} = Map.lookupExistent(bufferMap, id)
           in
               file := SOME fileName;
               Gtk.labelSetText(fileLabel, shortName fileName);
@@ -597,7 +597,7 @@ structure Buffer =
 	  Lock.sync Gtk.lock
 	  (fn () =>
           let
-              val {view,buf,lastSearchPos,...} = BufferMap.lookupExistent(bufferMap, id)
+              val {view,buf,lastSearchPos,...} = Map.lookupExistent(bufferMap, id)
               val iter = getCursorIter buf
               val off = Gtk.textIterGetOffset iter
               val off = if (off = (!lastSearchPos)) andalso Gtk.textIterForwardChar iter
@@ -621,7 +621,7 @@ structure Buffer =
 	  Lock.sync Gtk.lock
 	  (fn () =>
           let
-              val {buf,...} = BufferMap.lookupExistent(bufferMap, id)
+              val {buf,...} = Map.lookupExistent(bufferMap, id)
               val startiter = Gtk.textIterNew()
               val enditer = Gtk.textIterNew()
           in
@@ -633,11 +633,10 @@ structure Buffer =
           end) ()
 
       fun changeFonts() =
-          BufferMap.app (fn {view,...} =>
+          Map.app (fn {view,...} =>
                             Gtk.widgetModifyFont(view, !Config.stdFont))
                         bufferMap
 
       fun changeColors() =
-	  BufferMap.app
-	  (fn {buf,...} => Config.changeColors buf) bufferMap
+	  Map.app (fn {buf,...} => Config.changeColors buf) bufferMap
    end
