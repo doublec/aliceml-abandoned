@@ -52,9 +52,10 @@ static void InitAliceEnvironment() {
   SetEnv("ALICE_LOAD", strdup(buffer));
 }
 
-static int usage() {
+static char *usage() {
   fprintf(stderr, "Usage: alicerun <name> <args> ...\n");
   exit(1);
+  return 0;
 }
 
 int main(int argc, char *argv[]) {
