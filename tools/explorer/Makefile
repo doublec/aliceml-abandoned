@@ -32,6 +32,8 @@ SOURCES= \
 	VisualNode.aml \
 	Search.aml \
 	ExplorerNode.aml \
+	OptionsWindow.aml \
+	ExplorerInspect.aml \
 	$(GLADE_TARGETS)
 
 TARGETS= $(SOURCES:%.aml=%.stc)
