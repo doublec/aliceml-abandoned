@@ -76,8 +76,8 @@
 	    
 	val space : (unit -> 'a) -> 'a space
 	    
-	val ask : 'a space -> status
-        val askVerbose : 'a space -> verbose_status
+	val ask : 'a space -> state
+        val askVerbose : 'a space -> verbose_state
 	val clone : 'a space -> 'a space
 	val commit : 'a space * choice -> unit
 	val inject : 'a space * ('a -> unit) -> unit
@@ -139,7 +139,7 @@
     </DT>
     <DD>
       <P>waits until <I>s</I> becomes stable or merged and then returns the
-         status of <I>s</I>.
+         state of <I>s</I>.
       </P>
       <P>If <I>s</I> is merged, <TT>MERGED</TT> is returned.
       </P>
@@ -155,7 +155,7 @@
       </P>
       <P>Synchronizes on stability of <I>s</I>.
       </P>
-      <P>Raises a runtime error if the current space is not addmissible for
+      <P>Raises a runtime error if the current space is not admissible for
         <I>s</I>.
       </P>
     </DD>
@@ -164,14 +164,14 @@
       <TT>askVerbose <I>s</I></TT>
     </DT>
     <DD>
-      <P>returns the status of <I>s</I> in verbose form. Reduces immediately,
-         even if is <I>s</I> not yet stable.
+      <P>returns the state of <I>s</I> in verbose form. Reduces immediately,
+         even if <I>s</I> is not yet stable.
       </P>
       <P>If <I>s</I> becomes merged, <TT>VERBOSE_MERGED</TT> is returned.
       </P>
-      <P>IF <I>s</I> becomes suspended (that is, blocked but not stable),
+      <P>If <I>s</I> becomes suspended (that is, blocked but not stable),
          <TT>VERBOSE_SUSPENDED <I>t</I></TT> is returned. <I>t</I> is a future
-         that is bound to the verbose status of <I>s</I> when <I>s</I>
+         that is bound to the verbose state of <I>s</I> when <I>s</I>
          becomes stable again.
       </P>
       <P>If <I>s</I> is stable and failed, <TT>VERBOSE_FAILED</TT> is returned.
@@ -189,7 +189,7 @@
       </P>
       <P>Does not synchronize on stability of <I>s</I>.
       </P>
-      <P>Raises a runtime error if the current space is not addmissible for
+      <P>Raises a runtime error if the current space is not admissible for
         <I>s</I>.
       </P>
     </DD>
@@ -204,7 +204,7 @@
       <P>Synchronizes on stability of <I>s</I>. 
       </P>
       <P>Raises a runtime error if <I>s</I> is already merged,
-         or if the current space is not addmissible for <I>s</I>. 
+         or if the current space is not admissible for <I>s</I>. 
       </P>
     </DD>
 
@@ -227,7 +227,7 @@
       </P>
       <P>Raises a runtime error, if <I>s</I> has been merged already,
          if there exists no selected choice in <I>s</I>,
-         or if the current space is not addmissible for <I>s</I>.
+         or if the current space is not admissible for <I>s</I>.
       </P>
     </DD>
 
@@ -241,7 +241,7 @@
       <P>Does not synchronize on stability of <I>s</I>. 
       </P>
       <P>Raises a runtime error if <I>s</I> is already merged,
-         or if the current space is not addmissible for <I>s</I>.
+         or if the current space is not admissible for <I>s</I>.
       </P>
     </DD>
 
@@ -255,7 +255,7 @@
       <P>Does not synchronizes on stability of <I>s</I>. 
       </P>
       <P>Raises a runtime error if <I>s</I> is already merged,
-         or if the current space is not addmissible for <I>s</I>.
+         or if the current space is not admissible for <I>s</I>.
       </P>
     </DD>
 
