@@ -400,6 +400,7 @@ final public class General {
     _FIELD(General,neq);
     static {
 	Builtin.builtins.put("<>",neq);
+	Builtin.builtins.put("Int.<>",neq);
     }
     _BUILTIN(Sel) {
 	_NOAPPLY0;_NOAPPLY2;_NOAPPLY3;_NOAPPLY4;
