@@ -1,0 +1,219 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001-2002
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(*
+ *  Items marked with (**) are extensions to the Standard Basis.
+ *)
+
+import structure __pervasive			from "Pervasive"
+
+import __primitive structure Toplevel		from "Toplevel"
+import __primitive signature GENERAL		from "GENERAL-sig"
+import __primitive structure General		from "General"
+import __primitive signature REF		from "REF-sig"
+import __primitive structure Ref		from "Ref"
+
+import __primitive signature BOOL		from "BOOL-sig"
+import __primitive structure Bool		from "Bool"
+import __primitive signature PAIR		from "PAIR-sig"
+import __primitive structure Pair		from "Pair"
+import __primitive signature ALT		from "ALT-sig"
+import __primitive structure Alt		from "Alt"
+import __primitive signature OPTION		from "OPTION-sig"
+import __primitive structure Option		from "Option"
+import __primitive signature LIST		from "LIST-sig"
+import __primitive structure List		from "List"
+import __primitive signature LIST_PAIR		from "LIST_PAIR-sig"
+import __primitive structure ListPair		from "ListPair"
+
+import __primitive signature CHAR		from "CHAR-sig"
+import __primitive structure Char		from "Char"
+import __primitive structure WideChar		from "WideChar"
+import __primitive signature STRING		from "STRING-sig"
+import __primitive structure String		from "String"
+import __primitive structure WideString		from "WideString"
+import __primitive signature SUBSTRING		from "SUBSTRING-sig"
+import __primitive structure Substring		from "Substring"
+import __primitive structure WideSubstring	from "WideSubstring"
+import __primitive signature UNIQUE_STRING	from "UNIQUE_STRING-sig"
+import __primitive structure UniqueString	from "UniqueString"
+import __primitive structure WideUniqueString	from "WideUniqueString"
+import __primitive signature STRING_CVT		from "STRING_CVT-sig"
+import __primitive structure StringCvt		from "StringCvt"
+import __primitive signature TEXT		from "TEXT-sig"
+import __primitive structure Text		from "Text"
+
+import __primitive signature INTEGER		from "INTEGER-sig"
+import __primitive structure Int		from "Int"
+import __primitive structure LargeInt		from "LargeInt"
+import __primitive structure Position		from "Position"
+import __primitive signature WORD		from "WORD-sig"
+import __primitive structure Word8		from "Word8"
+import __primitive structure Word31		from "Word31"
+import __primitive structure Word		from "Word"
+import __primitive structure LargeWord		from "LargeWord"
+
+import __primitive signature REAL		from "REAL-sig"
+import __primitive structure Real		from "Real"
+import __primitive structure LargeReal		from "LargeReal"
+import __primitive signature MATH		from "MATH-sig"
+import __primitive structure Math		from "Math"
+import __primitive signature IEEE_REAL		from "IEEE_REAL-sig"
+import __primitive structure IEEEReal		from "IEEEReal"
+import __primitive signature PACK_REAL		from "PACK_REAL-sig"
+
+import __primitive signature VECTOR		from "VECTOR-sig"
+import __primitive structure Vector		from "Vector"
+import __primitive signature VECTOR_PAIR	from "VECTOR_PAIR-sig"
+import __primitive structure VectorPair		from "VectorPair"
+import __primitive signature VECTOR_SLICE	from "VECTOR_SLICE-sig"
+import __primitive structure VectorSlice	from "VectorSlice"
+import __primitive signature MONO_VECTOR	from "MONO_VECTOR-sig"
+import __primitive structure CharVector		from "CharVector"
+import __primitive structure Word8Vector	from "Word8Vector"
+import __primitive signature MONO_VECTOR_SLICE	from "MONO_VECTOR_SLICE-sig"
+import __primitive structure CharVectorSlice	from "CharVectorSlice"
+import __primitive structure Word8VectorSlice	from "Word8VectorSlice"
+import __primitive signature ARRAY		from "ARRAY-sig"
+import __primitive structure Array		from "Array"
+import __primitive signature ARRAY_SLICE	from "ARRAY_SLICE-sig"
+import __primitive structure ArraySlice		from "ArraySlice"
+import __primitive signature MONO_ARRAY		from "MONO_ARRAY-sig"
+import __primitive structure CharArray		from "CharArray"
+import __primitive structure Word8Array		from "Word8Array"
+import __primitive signature MONO_ARRAY_SLICE	from "MONO_ARRAY_SLICE-sig"
+import __primitive structure CharArraySlice	from "CharArraySlice"
+import __primitive structure Word8ArraySlice	from "Word8ArraySlice"
+import __primitive signature BYTE		from "BYTE-sig"
+import __primitive structure Byte		from "Byte"
+
+import __primitive signature TIME		from "TIME-sig"
+import __primitive structure Time		from "Time"
+
+import __primitive signature HOLE		from "HOLE-sig"
+import __primitive structure Hole		from "Hole"
+import __primitive signature FUTURE		from "FUTURE-sig"
+import __primitive structure Future		from "Future"
+import __primitive signature PROMISE		from "PROMISE-sig"
+import __primitive structure Promise		from "Promise"
+
+import __primitive signature THREAD		from "THREAD-sig"
+import __primitive structure Thread		from "Thread"
+
+import __primitive functor   ByNeed		from "ByNeed"
+
+import __primitive signature LOCK		from "LOCK-sig"
+import __primitive structure Lock		from "Lock"
+import __primitive signature STREAM		from "STREAM-sig"
+import __primitive structure Stream		from "Stream"
+
+
+open Toplevel
+
+signature GENERAL		= GENERAL
+structure General		= General
+signature REF			= REF
+structure Ref			= Ref
+
+signature BOOL			= BOOL
+structure Bool			= Bool
+signature PAIR			= PAIR
+structure Pair			= Pair
+signature ALT			= ALT
+structure Alt			= Alt
+signature OPTION		= OPTION
+structure Option		= Option
+signature LIST			= LIST
+structure List			= List
+signature LIST_PAIR		= LIST_PAIR
+structure ListPair		= ListPair
+
+signature CHAR			= CHAR
+structure Char			= Char
+structure WideChar		= WideChar
+signature STRING		= STRING
+structure String		= String
+structure WideString		= WideString
+signature SUBSTRING		= SUBSTRING
+structure Substring		= Substring
+structure WideSubstring		= WideSubstring
+signature UNIQUE_STRING		= UNIQUE_STRING
+structure UniqueString		= UniqueString
+structure WideUniqueString	= WideUniqueString
+signature STRING_CVT		= STRING_CVT
+structure StringCvt		= StringCvt
+signature TEXT			= TEXT
+structure Text			= Text
+
+signature INTEGER		= INTEGER
+structure Int			= Int
+structure LargeInt		= LargeInt
+structure Position		= Position
+signature WORD			= WORD
+structure Word8			= Word8
+structure Word31		= Word31
+structure Word			= Word
+structure LargeWord		= LargeWord
+
+signature REAL			= REAL
+structure Real			= Real
+structure LargeReal		= LargeReal
+signature MATH			= MATH
+structure Math			= Math
+signature IEEE_REAL		= IEEE_REAL
+structure IEEEReal		= IEEEReal
+signature PACK_REAL		= PACK_REAL
+
+signature VECTOR		= VECTOR
+structure Vector		= Vector
+signature VECTOR_PAIR		= VECTOR_PAIR
+structure VectorPair		= VectorPair
+signature VECTOR_SLICE		= VECTOR_SLICE
+structure VectorSlice		= VectorSlice
+signature MONO_VECTOR		= MONO_VECTOR
+structure CharVector		= CharVector
+structure Word8Vector		= Word8Vector
+signature MONO_VECTOR_SLICE	= MONO_VECTOR_SLICE
+structure CharVectorSlice	= CharVectorSlice
+structure Word8VectorSlice	= Word8VectorSlice
+signature ARRAY			= ARRAY
+structure Array			= Array
+signature ARRAY_SLICE		= ARRAY_SLICE
+structure ArraySlice		= ArraySlice
+signature MONO_ARRAY		= MONO_ARRAY
+structure CharArray		= CharArray
+structure Word8Array		= Word8Array
+signature MONO_ARRAY_SLICE	= MONO_ARRAY_SLICE
+structure CharArraySlice	= CharArraySlice
+structure Word8ArraySlice	= Word8ArraySlice
+signature BYTE			= BYTE
+structure Byte			= Byte
+
+signature TIME			= TIME
+structure Time			= Time
+
+signature HOLE			= HOLE
+structure Hole			= Hole
+signature FUTURE		= FUTURE
+structure Future		= Future
+signature PROMISE		= PROMISE
+structure Promise		= Promise
+
+signature THREAD		= THREAD
+structure Thread		= Thread
+
+structure ByNeed		= ByNeed
+
+signature LOCK			= LOCK
+structure Lock			= Lock
+signature STREAM		= STREAM
+structure Stream		= Stream
