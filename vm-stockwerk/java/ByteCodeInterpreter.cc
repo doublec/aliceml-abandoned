@@ -812,17 +812,11 @@ Worker::Result ByteCodeInterpreter::Run() {
 	if (p != INVALID_POINTER) {
 	  u_int length;
 	  switch (p->GetLabel()) {
-	  case JavaLabel::ObjectArray:
-	    {
-	      ObjectArray *array = static_cast<ObjectArray *>(p);
-	      length = array->GetLength();
-	    }
+	  case CHUNK_LABEL:
+	    length = static_cast<BaseArray *>(p)->GetLength();
 	    break;
-	  case JavaLabel::BaseArray:
-	    {
-	      BaseArray *array = static_cast<BaseArray *>(p);
-	      length = array->GetLength();
-	    }
+	  case JavaLabel::ObjectArray:
+	    length = static_cast<ObjectArray *>(p)->GetLength();
 	    break;
 	  default:
 	    Error("unkown type");
