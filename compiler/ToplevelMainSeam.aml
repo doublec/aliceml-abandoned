@@ -4,16 +4,17 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt and Andreas Rossberg, 2002
+ *   Leif Kornstaedt, 2002-2003
+ *   Andreas Rossberg, 2002
  *
  * Last change:
  *   $Date$ by $Author$
  *   $Revision$
  *)
 
-import structure OS                     from "../lib/system/OS"
-import structure CommandLine            from "../lib/system/CommandLine"
-import structure SMLToStockwerkToplevel from "top/SMLToStockwerkToplevel"
+import structure OS                from "../lib/system/OS"
+import structure CommandLine       from "../lib/system/CommandLine"
+import structure SMLToSeamToplevel from "top/SMLToSeamToplevel"
 
-val use = SMLToStockwerkToplevel.use
-val _ = spawn OS.Process.exit(SMLToStockwerkToplevel.main(CommandLine.arguments()))
+val use = SMLToSeamToplevel.use
+val _ = spawn OS.Process.exit(SMLToSeamToplevel.main(CommandLine.arguments()))
