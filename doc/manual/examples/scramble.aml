@@ -4,7 +4,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg and Thorsten Brunklaus, 2000-2002
+ *   Andreas Rossberg and Thorsten Brunklaus, 2000-2003
  *
  * Last Change:
  *   $Date$ by $Author$
@@ -171,17 +171,17 @@ local
     and checkPiece (PIECE {num, ...}, n) =
 	if num = n then () else raise NoVictory
 
-    fun pieceHandler (board as BOARD {spot,...}) (pos, text) [Gtk.EVENT event] =
+    fun pieceHandler (board as BOARD {spot,...}) (pos, text) events =
         serve
 	(fn () =>
-	 case event of
-	    Gtk.GDK_ENTER_NOTIFY _ =>
+	 case events of
+	    Gtk.EVENT (Gtk.GDK_ENTER_NOTIFY _) :: _ =>
 		GtkCanvas.itemSet(text, "fill_color_gdk",
 				  Gtk.OBJECT white)
-	  | Gtk.GDK_LEAVE_NOTIFY _ =>
+	  | Gtk.EVENT (Gtk.GDK_LEAVE_NOTIFY _) :: _ =>
 		GtkCanvas.itemSet(text, "fill_color_gdk",
 				  Gtk.OBJECT black)
-	  | Gtk.GDK_BUTTON_PRESS _ =>
+	  | Gtk.EVENT (Gtk.GDK_BUTTON_PRESS _) :: _ =>
 	    let
 		val (x, y)   = !spot
 		val (x', y') = !pos
@@ -193,6 +193,7 @@ local
 	    end
 	  | _ => ()
 	)
+
 
     (* Creating a board *)
 
@@ -297,6 +298,7 @@ local
       | main [s]     = let val w = valOf (Int.fromString s) in main' (w, w) end
       | main [s1,s2] = main' (valOf (Int.fromString s1),
 			      valOf (Int.fromString s2))
+      | main _       = usage ()
 in
     val _ = main (CommandLine.arguments ()) handle _ => usage ()
 end
