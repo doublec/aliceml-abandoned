@@ -53,14 +53,14 @@ DEFINE1(Future_isByneed) {
 DEFINE1(Future_status) {
   Transient *transient = Store::WordToTransient(x0);
   if (transient == INVALID_POINTER)
-    RETURN_INT(0); // DETERMINED
+    RETURN_INT(Types::DETERMINED);
   switch (transient->GetLabel()) {
   case HOLE_LABEL:
   case FUTURE_LABEL:
   case BYNEED_LABEL:
-    RETURN_INT(2); // FUTURE
+    RETURN_INT(Types::FUTURE);
   case CANCELLED_LABEL:
-    RETURN_INT(1); // FAILED
+    RETURN_INT(Types::FAILED);
   default:
     Error("invalid transient label");
   }
