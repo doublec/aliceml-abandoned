@@ -65,6 +65,7 @@ Library:
 * Alt: added mapBoth.
 * Pair: added mapBoth.
 * VectorSlice: fixed toVector.
+* StringCvt: fixed pad{Left,Right}.
 * ByNeed: moved to Future structure.
 * Future: added ByNeed and Concur functors.
 * Channel: new module for concurrent message channels.
