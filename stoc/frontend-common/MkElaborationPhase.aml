@@ -411,8 +411,8 @@ struct
 	    val  _         = Type.unify(t1,t1') handle Type.Unify(t3,t4) =>
 				error(I.infoExp exp1,
 				      E.AppExpFunUnify(t1, t1', t3, t4))
-	    val  _         = Type.unify(t11,t2) handle Type.Unify(t3,t4) =>
-				error(i, E.AppExpArgUnify(t11, t2, t3, t4))
+	    val  _         = Type.unify(t2,t11) handle Type.Unify(t3,t4) =>
+				error(i, E.AppExpArgUnify(t2, t11, t3, t4))
 	in
 	    ( t12, O.AppExp(typInfo(i,t12), exp1', exp2') )
 	end
