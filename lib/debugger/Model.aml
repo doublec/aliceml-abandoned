@@ -11,11 +11,13 @@
  *)
 
 import structure Stream        from "Stream"
-import structure Debugger      from "x-alice:/lib/system/Debugger"
-import structure Debug         from "x-alice:/lib/system/Debug"
-import structure Reflect       from "x-alice:/lib/system/Reflect"
-import structure Type          from "x-alice:/lib/rtt/Type"
-import structure PervasiveType from "x-alice:/lib/rtt/PervasiveType"
+import structure Debugger      from "../../lib/system/Debugger"
+import structure Debug         from "../../lib/system/Debug"
+import structure Reflect       from "../../lib/system/Reflect"
+import structure Type          from "../../lib/rtt/Type"
+import structure PervasiveType from "../../lib/rtt/PervasiveType"
+import structure TextIO        from "../../lib/system/TextIO"
+import structure Vector        from "../../lib/fundamental/Vector"
 import signature MODEL         from "MODEL-sig"
 
 structure Model :> MODEL =
@@ -386,7 +388,7 @@ structure Model :> MODEL =
 				      | Type.Con _    => [typ]
 				      | Type.Apply _  => [typ]
 				      | Type.Arrow _  => [typ]
-				      | Type.Sum row  => (print "Sum type\n"; raise InvalidType)
+				      | Type.Sum row  => (TextIO.print "Sum type\n"; raise InvalidType)
                (* Row Records*)	      | Type.Prod row => Vector.toList(Type.asTupleRow row)
 		                      | _             => raise InvalidType
 			    in
@@ -407,12 +409,10 @@ structure Model :> MODEL =
 	                          | Type.All(_, typ )     => getTupArgTypes typ
 				  | _                     => raise InvalidType
 			    end
-			val listvalues = case values of
-			    Debugger.OneArg x => [x]
-			  | Debugger.TupArg x => Vector.toList x
-			val types = case values of 
-			    Debugger.OneArg _ => getOneArgTypes typ
-			  | Debugger.TupArg _ => getTupArgTypes typ
+			val listvalues = Vector.toList values
+			val types = case listvalues of 
+			    [x] => getOneArgTypes typ
+			  |  _  => getTupArgTypes typ
 			val _ = if List.length listvalues = List.length types
 				    then ()
 				else TextIO.output(TextIO.stdErr, "mismatch of Listlength\n" ^
@@ -423,19 +423,19 @@ structure Model :> MODEL =
 		    end
 		  | stepPoint2Stackstp(Debugger.Conditional(value, typ)) = 
 		    COND(value, typ)
-		  | stepPoint2Stackstp(Debugger.Handler e) = HANDLER(e, PervasiveType.typ_exn)
-		  | stepPoint2Stackstp(Debugger.Raise e)   = RAISE(e, PervasiveType.typ_exn)
-		  | stepPoint2Stackstp(Debugger.Spawn)     = SPAWN
+		  | stepPoint2Stackstp(Debugger.Handler e) = 
+		    HANDLER(e, PervasiveType.typ_exn)
+		  | stepPoint2Stackstp(Debugger.Raise e)   = 
+		    RAISE(e, PervasiveType.typ_exn)
+		  | stepPoint2Stackstp(Debugger.Spawn)     = 
+		    SPAWN
 		(* Registers a new thread at the model *)
-		fun registerThread thread_list_entry =
-		    let 
-		    in
+		fun registerThread (thread_list_entry as (thread, _, _, _, _)) =
 			if List.exists 
-			    (fn entry => (#1 entry) = (#1 thread_list_entry)) 
+			    (fn (thr, _, _, _, _) => thr = thread)
 			    (!thread_list)
 			    then ()
 			else thread_list := thread_list_entry :: (!thread_list)
-		    end
 
 		(* Removes the topmost finished frame from the stack. If there 
 		 * is none nothing is done 

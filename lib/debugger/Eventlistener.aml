@@ -12,9 +12,10 @@
 
 import structure Model from "Model"
 import structure Stream from "Stream"
+import structure TextIO from "../../lib/system/TextIO"
 import signature EVENTLISTENER from "EVENTLISTENER-sig"
 
-import structure Debugger from "x-alice:/lib/system/Debugger"
+import structure Debugger from "../../lib/system/Debugger"
 
 structure Eventlistener :> EVENTLISTENER =
     struct
@@ -44,9 +45,9 @@ structure Eventlistener :> EVENTLISTENER =
 			 consumeSystemStream new_stream)
 		    end
 		val _ = (spawn (consumeUserStream (Stream.read user_event_stream)
-				handle e => print ("Userevent sind tot "^ General.exnName e^ "\n"));
+				handle e => TextIO.print ("Userevent sind tot "^ General.exnName e^ "\n"));
 			 spawn (consumeSystemStream system_event_stream 
-				handle e => print ("SystemEvents sind tot "^ General.exnName e^ "\n")))
+				handle e => TextIO.print ("SystemEvents sind tot "^ General.exnName e^ "\n")))
 	    in
 		eventlistener
 	    end

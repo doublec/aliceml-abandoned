@@ -11,11 +11,12 @@
  *)
 
 import structure Model       from "Model"
-import structure Debug       from "x-alice:/lib/system/Debug"
 import signature VIEW        from "VIEW-sig"
-import structure Socket      from "x-alice:/lib/system/Socket"
-import structure PPValue     from "x-alice:/lib/system/PPValue"
-import structure PrettyPrint from "x-alice:/lib/utility/PrettyPrint"
+import structure Debug       from "../../lib/system/Debug"
+import structure Socket      from "../../lib/system/Socket"
+import structure PPValue     from "../../lib/system/PPValue"
+import structure TextIO      from "../../lib/system/TextIO"
+import structure PrettyPrint from "../../lib/utility/PrettyPrint"
 
 structure TextView :> VIEW =
     struct
@@ -128,9 +129,9 @@ structure TextView :> VIEW =
 	    let 
 		val thread_list = map (threadToString (!model)) (!threads)
 	    in
-		(print header;
-		 map print thread_list;
-		 print footer)
+		(TextIO.print header;
+		 map TextIO.print thread_list;
+		 TextIO.print footer)
 	    end
 
 	fun update (view as (model_ref, thread_list, socket)) thread =

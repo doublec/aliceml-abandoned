@@ -12,11 +12,12 @@
 
 import signature VIEW        from "VIEW-sig"
 import structure Model       from "Model"
-import structure Socket      from "x-alice:/lib/system/Socket"
-import structure Type        from "x-alice:/lib/rtt/Type"
-import structure PrettyPrint from "x-alice:/lib/utility/PrettyPrint"
-import structure PPValue     from "x-alice:/lib/system/PPValue"
-import structure PPType      from "x-alice:/lib/rtt/PPType"
+import structure Socket      from "../../lib/system/Socket"
+import structure Type        from "../../lib/rtt/Type"
+import structure PrettyPrint from "../../lib/utility/PrettyPrint"
+import structure PPValue     from "../../lib/system/PPValue"
+import structure PPType      from "../../lib/rtt/PPType"
+import structure OS          from "../../lib/system/OS"
 
 
 

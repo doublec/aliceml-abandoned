@@ -1,4 +1,4 @@
-import structure Socket from "x-alice:/lib/system/Socket"
+import structure Socket from "../../lib/system/Socket"
 
 
 fun run port = 
@@ -6,8 +6,10 @@ fun run port =
 	val socket = Socket.client("localhost", port)
 	fun show() = 
 	    let
-		val line = Socket.inputLine socket	
-		val _ = print line
+		val lineopt = Socket.inputLine socket	
+		val _ = (case lineopt of 
+		    SOME(line) => print line
+		  | NONE       => ())
 	    in 
 		show () 
 	    end

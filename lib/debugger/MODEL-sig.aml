@@ -10,9 +10,9 @@
  *   $Revision$
  *)
 
-import structure Debugger from "x-alice:/lib/system/Debugger"
-import structure Reflect  from "x-alice:/lib/system/Reflect"
-import structure Type     from "x-alice:/lib/rtt/Type"
+import structure Debugger from "../../lib/system/Debugger"
+import structure Reflect  from "../../lib/system/Reflect"
+import structure Type     from "../../lib/rtt/Type"
 
 signature MODEL =
     sig

@@ -16,8 +16,8 @@ import structure Eventlistener     from "Eventlistener"
 import structure TextView          from "TextView"
 import structure EnvView           from "EnvView"
 import structure SourceView        from "SourceView"
-import structure Type              from "x-alice:/lib/rtt/Type"
-import structure Debugger          from "x-alice:/lib/system/Debugger"
+import structure Type              from "../../lib/rtt/Type"
+import structure Debugger          from "../../lib/system/Debugger"
 import signature DEBUGGER_CONTROLS from "DEBUGGER_CONTROLS-sig"
 
 structure DebuggerControls :> DEBUGGER_CONTROLS =

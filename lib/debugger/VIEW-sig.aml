@@ -11,7 +11,7 @@
  *)
 
 import structure Model from "Model"
-import structure Type  from "x-alice:/lib/rtt/Type"
+import structure Type  from "../../lib/rtt/Type"
 
 signature VIEW =
     sig

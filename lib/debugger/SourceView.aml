@@ -12,7 +12,8 @@
 
 import signature VIEW   from "VIEW-sig"
 import structure Model  from "Model"
-import structure Socket from "x-alice:/lib/system/Socket"
+import structure Socket from "../../lib/system/Socket"
+import structure TextIO from "../../lib/system/TextIO"
 
 structure SourceView :> VIEW =
     struct
@@ -26,7 +27,7 @@ structure SourceView :> VIEW =
 			then ()
 		    else socketList := socket :: (!socketList)
 		val (serversocket, port) = Socket.server(SOME 5555, serve)
-		val _ = print ("Server Port: " ^ (Int.toString port))
+		val _ = TextIO.print ("Server Port: " ^ (Int.toString port))
 	    in
 		(socketList, ref (Model.new()))
 	    end

@@ -12,7 +12,7 @@
 
 import structure Stream from "Stream"
 import structure Model from "Model"
-import structure Debugger from "x-alice:/lib/system/Debugger"
+import structure Debugger from "../../lib/system/Debugger"
 
 signature EVENTLISTENER = 
     sig

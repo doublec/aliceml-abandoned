@@ -23,7 +23,7 @@ SRCDIR = $(SRCTOP)/lib/constraints
 VPATH = $(SRCDIR)
 
 ALICEC = alicec
-ALICEC_OPTS = --dump-phases
+ALICEC_OPTS = --dump-phases --no-warn-conventions
 ALICEDEP = alicedep
 ALICELINK = alicelink
 ALICELINK_OPTS = -v
@@ -37,7 +37,7 @@ COMPONENTS = \
 	$(ALICESOURCES:%.aml=%.stc)
 
 INSTALLDIRS = $(PREFIX)/lib/debugger
-INSTALL3DIRS = ../../vm-stockwerk/build3/install/lib/debugger
+INSTALL3DIRS = /c/Programme/SEAM/share/alice/lib/debugger
 INSTALLFILES = $(ALICESOURCES:%.aml=$(INSTALLDIRS)/%.stc)
 INSTALL3FILES = $(ALICESOURCES:%.aml=$(INSTALL3DIRS)/%.stc)
 
