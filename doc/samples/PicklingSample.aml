@@ -11,7 +11,6 @@
  *)
 
 import structure Pickle from "x-alice:/lib/system/Pickle"
-import structure Url    from "x-alice:/lib/utility/Url"
 import signature URL    from "x-alice:/lib/utility/URL-sig"
 
 structure PicklingSample =
@@ -159,19 +158,21 @@ struct
      * component's content as a structure.
      * A structure pickle can be used as a component. It is a special case of
      * a component because its content is completely evaluated.
+     * Note that unpickling an evaluated component produces new abstract
+     * types! (so Url'.Url.t below is incompatible to the lib's Url.t)
      *)
 
     val file = "Url." ^ Pickle.extension
     val comp = "x-alice:/lib/utility/" ^ file
 
-    signature S = (structure Url : URL (*where type url = Url.t*))
-
-    structure Url' = Pickle.Load(val file = comp signature S = S)
+    structure Url' = Pickle.Load(val file = comp
+				 signature S = (structure Url : URL))
 
     val _ = print(Url'.Url.toString(Url'.Url.fromString comp) ^ "\n")
 
     structure _ = Pickle.Save(val file = file
-			      structure X = Url' signature S = S)
+			      structure X = Url'
+			      signature S = (structure Url : URL))
 
     (*
      * Part ultimo:
