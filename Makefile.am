@@ -44,43 +44,95 @@ seam_LDADD = libseam.la
 bin_SCRIPTS = seamtool
 
 nobase_dist_pkginclude_HEADERS = \
-	Base.hh Seam.hh \
-	store/Base.hh store/Types.hh store/HeaderOp.hh store/PointerOp.hh \
-	store/StatusWord.hh store/Value.hh store/Map.hh store/WeakMap.hh \
-	store/Store.hh store/BaseMap.hh store/BaseMap.cc store/MapNode.hh \
-	store/Heap.hh store/JITStore.hh \
-	adt/IntMap.hh adt/ChunkMap.hh adt/Queue.hh adt/Stack.hh \
-	generic/FinalizationSet.hh generic/Transform.hh \
+	Base.hh \
+	Seam.hh \
+	store/Base.hh \
+	store/Types.hh \
+	store/HeaderOp.hh \
+	store/PointerOp.hh \
+	store/StatusWord.hh \
+	store/Value.hh \
+	store/Map.hh \
+	store/WeakMap.hh \
+	store/Store.hh \
+	store/BaseMap.hh \
+	store/BaseMap.cc \
+	store/MapNode.hh \
+	store/Heap.hh \
+	store/JITStore.hh \
+	adt/IntMap.hh \
+	adt/ChunkMap.hh \
+	adt/Queue.hh \
+	adt/Stack.hh \
+	generic/FinalizationSet.hh \
+	generic/Transform.hh \
 	generic/ConcreteRepresentationHandler.hh \
-	generic/ConcreteRepresentation.hh generic/ConcreteCode.hh \
-	generic/Closure.hh generic/Thread.hh generic/ThreadQueue.hh \
-	generic/Tuple.hh generic/String.hh generic/StackFrame.hh \
-	generic/Backtrace.hh generic/Pickle.hh generic/Float.hh \
-	generic/Double.hh generic/Debug.hh generic/RootSet.hh \
-	generic/UniqueString.hh generic/TaskStack.hh generic/IOHandler.hh \
-	generic/IODesc.hh generic/SignalHandler.hh generic/Scheduler.hh \
-	generic/Transients.hh generic/Worker.hh generic/Interpreter.hh \
-	generic/Primitive.hh generic/PushCallWorker.hh \
-	generic/BindFutureWorker.hh generic/Unpickler.hh \
-	generic/Pickler.hh generic/Profiler.hh generic/Broker.hh \
-	generic/Authoring.hh generic/JitterGenericData.hh
+	generic/ConcreteRepresentation.hh \
+	generic/ConcreteCode.hh \
+	generic/Closure.hh \
+	generic/Thread.hh \
+	generic/ThreadQueue.hh \
+	generic/Tuple.hh \
+	generic/String.hh \
+	generic/StackFrame.hh \
+	generic/Backtrace.hh \
+	generic/Pickle.hh \
+	generic/Float.hh \
+	generic/Double.hh \
+	generic/Debug.hh \
+	generic/RootSet.hh \
+	generic/UniqueString.hh \
+	generic/TaskStack.hh \
+	generic/IOHandler.hh \
+	generic/IODesc.hh \
+	generic/SignalHandler.hh \
+	generic/Scheduler.hh \
+	generic/Transients.hh \
+	generic/Worker.hh \
+	generic/Interpreter.hh \
+	generic/Primitive.hh \
+	generic/PushCallWorker.hh \
+	generic/BindFutureWorker.hh \
+	generic/Unpickler.hh \
+	generic/Pickler.hh \
+	generic/Profiler.hh \
+	generic/Broker.hh \
+	generic/Authoring.hh \
+	generic/JitterGenericData.hh
 nobase_nodist_pkginclude_HEADERS = \
 	store/StoreConfig.hh
 
 lib_LTLIBRARIES = libseam.la
 
 libseam_la_SOURCES = \
-	Base.cc InitSeam.cc Outline.cc \
-	store/Map.cc store/WeakMap.cc store/Heap.cc store/Store.cc \
+	Base.cc \
+	InitSeam.cc \
+	Outline.cc \
+	store/Map.cc \
+	store/WeakMap.cc \
+	store/Heap.cc \
+	store/Store.cc \
 	store/JITStore.cc \
 	adt/ChunkMap.cc \
-	generic/Debug.cc generic/RootSet.cc generic/UniqueString.cc \
-	generic/StackFrame.cc generic/TaskStack.cc generic/IOHandler.cc \
-	generic/IODesc.cc generic/SignalHandler.cc generic/Scheduler.cc \
-	generic/Transients.cc generic/Worker.cc generic/Interpreter.cc \
-	generic/Primitive.cc generic/PushCallWorker.cc \
-	generic/BindFutureWorker.cc generic/Unpickler.cc \
-	generic/Pickler.cc generic/Profiler.cc generic/Broker.cc
+	generic/Debug.cc \
+	generic/RootSet.cc \
+	generic/UniqueString.cc \
+	generic/StackFrame.cc \
+	generic/TaskStack.cc \
+	generic/IOHandler.cc \
+	generic/IODesc.cc \
+	generic/SignalHandler.cc \
+	generic/Scheduler.cc \
+	generic/Transients.cc \
+	generic/Worker.cc \
+	generic/Interpreter.cc \
+	generic/Primitive.cc \
+	generic/PushCallWorker.cc \
+	generic/BindFutureWorker.cc \
+	generic/Unpickler.cc \
+	generic/Pickler.cc \
+	generic/Profiler.cc \
+	generic/Broker.cc
 nodist_libseam_la_SOURCES = \
 	store/StoreConfig.hh
 libseam_la_LDFLAGS = $(EXTRA_LDFLAGS)
