@@ -32,6 +32,8 @@ local
 
     fun stoc nil =   (* for testing bootstrapping *)
 	hdl Main.ozifyStringToStdOut (TextIO.inputAll TextIO.stdIn)
+      | stoc ([infile, "-o", outfile] | ["-c", infile, "-o", outfile]) =
+	hdl Main.compileForMozart (infile, outfile)
       | stoc [infile, outfile] =
 	hdl Main.compileForMozart (infile, outfile)
       | stoc _ = OS.Process.failure
