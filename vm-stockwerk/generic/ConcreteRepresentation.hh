@@ -20,7 +20,7 @@
 #include "store/Store.hh"
 #include "generic/ConcreteRepresentationHandler.hh"
 
-class ConcreteRepresentation: private Block {
+class DllExport ConcreteRepresentation: private Block {
 protected:
   enum { HANDLER_POS, BASE_SIZE };
 public:

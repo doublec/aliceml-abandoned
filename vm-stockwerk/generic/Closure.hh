@@ -19,7 +19,7 @@
 
 #include "store/Store.hh"
 
-class Closure: private Block {
+class DllExport Closure: private Block {
 protected:
   enum { CONCRETE_CODE_POS, BASE_SIZE };
 public:
