@@ -14,6 +14,7 @@ functor
 import
 System(showError)
    URL(resolve toVirtualString toAtom)
+   Module(manager)
    OzPickle at 'x-oz://boot/Pickle'
    Pickle at 'Pickle.ozf'
    PrimitiveTable(importOzModule)
@@ -22,6 +23,12 @@ export
    Link
 define
    ModuleTable = {NewDictionary}
+
+   local
+      ModuleManager = {New Module.manager init}
+   in
+      fun {ApplyOzFunctor F} {ModuleManager apply(F $)} end
+   end
 
    proc {DoLink Url ?Module}
       Component = try {Pickle.load Url}
@@ -46,11 +53,13 @@ define
 	 case {Dictionary.condGet ModuleTable {URL.toAtom Url#'.stc'} unit}
 	 of unit then
 	    {System.showError 'unpickling '#Url}
-	    try
-	       Functor = {OzPickle.load Url}
-	       case {Module.link [Functor]} of [OzModule] then
-		  Module = {PrimitiveTable.importOzModule OzModule}
-	       end
+	    try OzFunctor OzModule in
+	       OzFunctor = try {OzPickle.load Url}
+			   catch _ then%error(dp(generic ...) ...) then
+			      {OzPickle.load Url#'.ozf'}
+			   end
+	       OzModule = {ApplyOzFunctor OzFunctor}
+	       Module = {PrimitiveTable.importOzModule OzModule.module}
 	    catch error(url(load ...) ...) then {DoLink Url Module}
 	    [] error(dp(generic ...) ...) then {DoLink Url Module}
 	    end
