@@ -66,11 +66,36 @@ struct
 	in "("^(seq l)^")" end
     
     (* introduce explicit names for toplevel expressions where necessary *)
-    fun naming (A.As (a,bnf)) = A.As (a,bnf)
-      | naming (A.Symbol s) = A.As (s, A.Symbol s)
-      | naming (A.Seq l) = A.Seq (map naming l)
-      | naming A.Skip = A.Skip
-      | naming bnf = A.As (newIdname(), bnf) 
+    (* deal with multiple occurrences: introduce fresh names, 
+     ie. ones not usable in code, where necessary *)
+    val explnames = 
+	(List.map (fn (A.As (s,_)) => s | _ => "")) 
+	o (List.filter (fn A.As _ => true | _ => false)) 
+
+    fun multTokens seq =
+	let val l = List.filter (fn A.Symbol _ => true | _ => false) seq
+	    val sorted = sort (List.map (fn (A.Symbol s) => s) l)
+	    fun mult (s::s'::r) = if s=s' then s::(mult r) else mult r
+	      | mult _ = []
+	in mult sorted  end
+
+	    (* TO DO *) 
+    fun naming bnf =
+	let fun naming u (A.As (a,bnf)) = A.As (a,bnf)
+	      | naming u (A.Symbol s) = 
+	    if List.exists (fn s' => s=s') u 
+		then A.As (newIdname(), A.Symbol s)
+	    else A.As (s,A.Symbol s)
+	      | naming u (A.Seq l) = 
+	    let val explnames = explnames l
+		val multnames = multTokens l
+	    in 
+		A.Seq (map (naming (explnames@multnames)) l)
+	    end
+	      | naming u A.Skip = A.As (newIdname(),A.Skip)
+	      | naming u bnf = A.As (newIdname(), bnf) 
+	in naming [] bnf
+	end
 
     fun nameTopLevel (A.Prec (bnf,s)) = A.Prec (nameTopLevel bnf,s)
       | nameTopLevel (A.Transform (bnf,c)) = A.Transform (naming bnf,c)
@@ -107,7 +132,7 @@ struct
       | flatten1 (A.Symbol s) = A.Symbol s
 
 
-    (* introduce toplevel transformations *)
+    (* introduce toplevel transformations on named expressions *)
     fun toSeq (A.Seq l) = A.Seq l
       | toSeq b = A.Seq [b]
 
@@ -145,10 +170,12 @@ struct
 	in
 	    (x::a,rs)
 	end
-      | normalizeSubexps (A.Skip::xs) =
+      | normalizeSubexps ((A.As (s,A.Skip))::xs) =
 	let val (a,rs) =normalizeSubexps xs
+	    val r = newRulename()
+	    val r' = (r,NONE,A.Transform(A.Seq[],["()"]))
 	in
-	    (A.Skip ::a,rs)
+	    (A.As (s,A.Symbol r)::a, r'::rs)
 	end
       | normalizeSubexps ((A.As (s,A.Alt l))::xs) = 
 	let val (a,rs) = normalizeSubexps xs

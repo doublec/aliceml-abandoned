@@ -47,7 +47,7 @@ fun lookup "bogus" = 10000
 %name jacke
 
 %keyword LET LOCAL IN END IF THEN ELSE AND TOKEN OF AS 
-         ASSOCL ASSOCR NONASSOC RULE PARSER PREC
+         ASSOCL ASSOCR NONASSOC RULE PARSER PREC SKIP
 
 
 %prefer THEN ELSE LPAREN
@@ -59,6 +59,7 @@ fun lookup "bogus" = 10000
 (* precedence annotations *)
 %nonassoc EQ
 %left AND
+%left SKIP
 %left BAR
 %left MAPSTO
 %left PREC

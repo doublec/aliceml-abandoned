@@ -102,7 +102,7 @@ struct
 	    ^"      "^(cases terms)
 	end
 
-    fun printActions stringToNonterm rules =
+    fun printActions stringToNonterm rules = 
 	let fun printActions n ((r as (lhs,t,A.Transform(bnf,code)))::rs) = 
 	    let fun mkPat rulenum rhs = 
 		let fun prRhs first [] = "rest671"
@@ -120,10 +120,12 @@ struct
 		    (blank 44)^"val "^s^" = "^s^" ()\n"
 		    ^(mkMatch rhs)
 		val A.Seq rhs = bnf
-		val code = foldr (fn (s,r) => s^r) "" code
-		val leftpos = let val A.As(name,_) = List.last rhs 
-			      in name^"left" end
-		val rightpos = let val A.As(name,_) = List.hd rhs
+		val code = foldr (fn (s,r) => s^" "^r) "" code
+		val leftpos = if List.null rhs then "defPos"
+			      else let val A.As(name,_) = List.last rhs 
+			      in name^"left" end 
+		val rightpos = if List.null rhs then "defPos"
+			       else let val A.As(name,_) = List.hd rhs
 			       in name^"right" end
 	    in
 		(blank 1)^(mkPat n (List.rev rhs))
