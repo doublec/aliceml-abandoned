@@ -1,3 +1,2 @@
 structure IntermediateGrammar =
-		MakeIntermediateGrammar(type info = Source.position
-					val dummy = Source.nowhere)
+		MakeIntermediateGrammar(type info = Source.position)

@@ -4,7 +4,7 @@
  *   does not support it.
  *)
 
-functor MakeIntermediateGrammar(type info val dummy: info) :>
+functor MakeIntermediateGrammar(type info) :>
   INTERMEDIATE_GRAMMAR where type info = info =
   struct
 
@@ -23,12 +23,8 @@ functor MakeIntermediateGrammar(type info val dummy: info) :>
 
     (* Identifiers *)
 
-    type stamp      = int
-
-    datatype name   = ExId of string | InId
-
     datatype lab    = Lab     of info * string
-    datatype id     = Id      of info * stamp * name
+    datatype id     = Id      of info * Name.t
     datatype longid = ShortId of info * id
 		    | LongId  of info * longid * id
 
@@ -94,43 +90,10 @@ functor MakeIntermediateGrammar(type info val dummy: info) :>
     type program = dec list
 
 
-    (* Predefined *)
-
-    val stamp_false	= ~1
-    val stamp_true	= ~2
-    val stamp_nil	= ~3
-    val stamp_cons	= ~4
-    val stamp_ref	= ~5
-    val stamp_Match	= ~6
-    val stamp_Bind	= ~7
-    val stamp_eq	= ~8
-    val stamp_assign	= ~9
-
-    val id_false	= Id(dummy, stamp_false, ExId "false")
-    val id_true		= Id(dummy, stamp_true,  ExId "true")
-    val id_nil		= Id(dummy, stamp_nil,   ExId "nil")
-    val id_cons		= Id(dummy, stamp_cons,  ExId "::")
-    val id_ref		= Id(dummy, stamp_ref,   ExId "ref")
-    val id_Match	= Id(dummy, stamp_Match, ExId "Match")
-    val id_Bind		= Id(dummy, stamp_Bind,  ExId "Bind")
-    val id_eq		= Id(dummy, stamp_eq,    ExId "=")
-    val id_assign	= Id(dummy, stamp_assign,ExId ":=")
-
-    val longid_false	= ShortId(dummy, id_false)
-    val longid_true	= ShortId(dummy, id_true)
-    val longid_nil	= ShortId(dummy, id_nil)
-    val longid_cons	= ShortId(dummy, id_cons)
-    val longid_ref	= ShortId(dummy, id_ref)
-    val longid_Match	= ShortId(dummy, id_Match)
-    val longid_Bind	= ShortId(dummy, id_Bind)
-    val longid_eq	= ShortId(dummy, id_eq)
-    val longid_assign	= ShortId(dummy, id_assign)
-
-
     (* Projections *)
 
     fun infoLab(Lab(i,_))		= i
-    fun infoId(Id(i,_,_))		= i
+    fun infoId(Id(i,_))			= i
     fun infoLongid(ShortId(i,_))	= i
       | infoLongid(LongId(i,_,_))	= i
 

@@ -1,12 +1,18 @@
 Group
 
+	signature NAME
+	structure Name
 	signature INTERMEDIATE_GRAMMAR
 	structure IntermediateGrammar
-	structure Stamp
+	signature PREBOUND
+	structure Prebound
 
 is
 
 	../misc/sources.cm
+	../error/sources.cm
+
 	intermediate-grammar.cm
 
-	Stamp.sml
+	PREBOUND.sig
+	Prebound.sml

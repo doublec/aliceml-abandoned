@@ -1,11 +1,21 @@
 Group
 
+	signature NAME
+	functor   MakeName
+	structure Name
 	signature INTERMEDIATE_GRAMMAR
 	structure IntermediateGrammar
 
 is
 
 	../misc/sources.cm
+	../error/sources.cm
+
+	Stamp.sml
+
+	NAME.sig
+	MakeName.sml
+	Name.sml
 
 	INTERMEDIATE_GRAMMAR.sig
 	MakeIntermediateGrammar.sml
