@@ -1061,7 +1061,7 @@ end
   (* Components *)
 
     fun chImps E imps = Vector.app (chImp E) imps
-    and chImp E (id, s, url) = ignore(chBindId E id)
+    and chImp E (id, s, url, b) = ignore(chBindId E id)
 
     fun check (imps, decs, flds, s) =
 	(* |- imps => E    E |- decs => E'    E' |- flds => r
