@@ -1,0 +1,25 @@
+(* Alice Snake 2.0 - Logging (debug) functions
+ *
+ *  Authors: Benedikt Grundmann / Sebastian Germesin
+ *
+ *  $Revision$
+ *
+ *  Last updated: $Date$ by $Author$
+ * 
+ *
+ *)
+
+import structure PPValue        from "x-alice:/lib/system/PPValue"
+import structure PrettyPrint    from "x-alice:/lib/utility/PrettyPrint"
+
+fun log' t (part, value) =
+    let
+        structure P = PrettyPrint
+        val cb      = P.^/^
+        val c       = P.^^
+    in
+        P.output (TextIO.stdErr, c (cb (c (P.text part, P.text ":"), 
+            PPValue.ppVal t value), P.text "\n"), 70)
+    end
+
+__overload 'a log : string * 'a -> unit = log'

@@ -1,9 +1,12 @@
-import structure Inspector from "x-alice:/lib/tools/Inspector"
 import structure Protocol  from "../common/Protocol"
+import val log'            from "../common/Log"
 
 
 local
-    fun mkInspector name a = Inspector.inspect (name, a)
+    fun mkInspector t fname a = log' t ("Client", (fname, a))
+       
+    __overload 'a mkInspector: string -> 'a -> unit = mkInspector
+
 in
     val dummyClient = {
         playersJoined       = mkInspector "playersJoined",

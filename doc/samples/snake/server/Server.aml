@@ -20,9 +20,8 @@ import structure Config         from "Config"
 import structure Remote         from "x-alice:/lib/distribution/Remote"
 import structure Highscore      from "../common/Highscore"
 import signature SERVER         from "SERVER-sig"
-import structure Inspector      from "x-alice:/lib/tools/Inspector"
-
 import val dummyClient          from "DummyClient"
+import val log                  from "../common/Log"
 
 
 structure Server :> SERVER =
@@ -59,13 +58,6 @@ struct
 
    
     
-    (* print a message on stderr *)
-    fun log msg =
-        Inspector.inspect msg
-(*
-        TextIO.output (TextIO.stdErr, "Server: " ^ msg ^ "\n")
-*)  
-
     fun tabulateStream (n, f) =
         let
             fun lazy endless i = 
@@ -176,7 +168,7 @@ struct
                     Promise.fulfill (p, state))
                 handle e => (
                     (* call failed! *)
-                    log ("RPC failed: " ^ exnName e);
+                    log ("Server", "RPC failed: " ^ exnName e);
                     (* change state to disconnected *)
                     Promise.fulfill (p, Part.DISCONNECTED))
                 end 
@@ -345,14 +337,14 @@ struct
                 
             val tick    = Lock.sync lock (fn (levels, oldArena, newArena) =>
                 let
-                    val _       = log ("tick")
+                    val _       = log ("Server", "tick")
                     val players = allPlayers ()
 
                     fun movePlayer p =
                         let val snake   = Part.snake p
                             val info    = Part.playerInfo p
                         in
-                            log ("moving player " ^ Int.toString (Part.id p));
+                            log ("Server", "moving player " ^ Int.toString (Part.id p));
                             Snake.move (snake, !(#nextDir info))
                         end
                         
@@ -364,16 +356,16 @@ struct
                         Arena.placeSnakes (newArena, 
                             List.map Part.snake players);
 
-                    val _   = log ("calculating differences", oldArena, newArena)
+                    val _   = log ("Server", ("calculating differences", oldArena, newArena))
                     val changes = Arena.diff (oldArena, newArena)
-                    val _   = log ("differences", changes)
+                    val _   = log ("Server", ("differences", changes))
                 in
                     (* broadcast differences *)
-                    log "broadcasting differences";
+                    log ("Server", "broadcasting differences");
                     invokeSeveral (allConnected (), #update, changes); 
                     
                     (* change state of participants whose snake died to DEAD. *)
-                    log ("registering dead snakes");
+                    log ("Server", "registering dead snakes");
                     List.app (fn sn =>
                         let val part        = PMap.lookupExistent 
                                                 (participants, Snake.id sn)        

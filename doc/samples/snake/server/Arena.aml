@@ -385,8 +385,8 @@ struct
 		    if r = rows
 		        then help ((0, c + 1), xs)
 		    else
-		        if Array2.sub (old, rows, cols) = 
-			        Array2.sub (new, rows, cols)
+		        if Array2.sub (old, r, c) = 
+			        Array2.sub (new, r, c)
 			    then help ((r + 1, c), xs)
 		        else 
                             help ((r + 1, c),
