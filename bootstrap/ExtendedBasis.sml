@@ -455,6 +455,8 @@ signature LIST_PAIR =
   sig
     include LIST_PAIR
 
+    val allEq :		('a * 'b -> bool) -> 'a list * 'b list -> bool
+
     val mapPartial :	('a * 'b -> 'c option) -> 'a list * 'b list -> 'c list
     val appr :		('a * 'b -> unit) -> 'a list * 'b list -> unit
     val appi :		(int * 'a * 'b -> unit) -> 'a list * 'b list -> unit
@@ -471,6 +473,10 @@ signature LIST_PAIR =
 structure ListPair : LIST_PAIR =
   struct
     open ListPair
+
+    fun allEq f (x::xs, y::ys)		= f(x,y) andalso allEq f (xs,ys)
+      | allEq f (nil,   nil)		= true
+      | allEq f (  _,     _)		= false
 
     fun mapPartial  f (xs,ys)		= mapPartial'(f,xs,ys)
     and mapPartial'(f,  nil,    _  )	= nil
