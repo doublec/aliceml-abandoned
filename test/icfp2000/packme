@@ -1,0 +1,9 @@
+#!/bin/sh
+
+sources="Color.sml Geometry.sml Lexer.lex Machine.sml Main.sml PPMFile.sml Parser.grm RENDERER.sml Renderer.sml build.sml sources.cm"
+files="README buildme runme src"
+
+mkdir src
+cp $sources src
+tar -czf helikopter.tar.gz $files
+rm -r src
