@@ -103,10 +103,10 @@ struct
 
     fun fmt radix 0	= "0"
       | fmt radix i	= if i > 0
-			  then String.implode(fmt'(base radix, i, []))
-			  else String.implode(#"~" :: fmt'(base radix, ~i, []))
+			  then String.implode(fmt'(base radix, ~i, []))
+			  else String.implode(#"~" :: fmt'(base radix, i, []))
     and fmt'(b, 0, cs)	= cs
-      | fmt'(b, i, cs)	= fmt'(b, i div b, digit(i mod b) :: cs)
+      | fmt'(b, i, cs)	= fmt'(b, quot(i,b), digit(~(rem(i,b))) :: cs)
 
 
     (* Scanning *)
