@@ -97,8 +97,8 @@ struct
         <|> reserved "rightahead" >> return I.RightAhead
     
     and leftOrRight () =
-            reserved "left" >> return I.LEFT
-        <|> reserved "right" >> return I.RIGHT
+            reserved "left" >> return I.Left
+        <|> reserved "right" >> return I.Right
 
     and condition () =
             reserved "friendwithfood" >> return I.FriendWithFood

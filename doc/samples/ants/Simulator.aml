@@ -1,0 +1,92 @@
+import structure Ant from "Ant"
+import structure Instructions from "Instructions"
+import structure World from "World"
+
+structure Simulator : (fun step : World.world *
+                                  'a Instructions.ant * 
+                                  'a Instructions.ant *
+                                  Ant.id -> unit) =
+  struct
+
+  open Ant
+  open Instructions
+  open World
+
+  fun randStream seed =
+      lazy Word.toInt ((seed div 0w65536) mod 0w16384 ) ::
+           randStream ((seed * 0w22695477)+0w1)
+  fun randInit () = tl(tl(tl(tl(randStream 0w12345))))
+                    
+  local
+      val rands = ref (randInit())
+  in
+  fun randomInt n = (hd (!rands)) mod n before rands:=tl (!rands)
+  end
+
+  fun instr(Sense(sensedir,st1,st2,cond,_),
+            w,id,p,a) =
+      let val p' = sensedCell(p, #direction a, sensedir)
+          val st = if cellMatches(w, p', cond, #color a) then st1 else st2
+      in
+          setState(w,p,a,st)
+      end
+    | instr(Mark(i,st,_),
+            w,id,p,a) =
+      (setMarkerAt(w,p, #color a, i);
+       setState(w,p,a,st))
+    | instr(Unmark(i, st, _),
+            w,id,p,a) =
+      (clearMarkerAt(w,p, #color a, i);
+       setState(w,p,a,st))
+    | instr(PickUp(st1, st2, _),
+            w,id,p,a) =
+      if #hasFood a orelse foodAt(w, p)=0 then
+          setState(w,p,a,st2)
+      else (setFoodAt(w,p,foodAt(w, p)-1);
+            setHasFood(w,p,a,true);
+            setState(w,p,a,st1))
+    | instr(Drop(st, _),
+            w,id,p,a) =
+      (if #hasFood a then
+           (setFoodAt(w,p, foodAt(w,p)+1);
+            setHasFood(w,p,a,false))
+       else ();
+       setState(w,p,a,st))
+    | instr(Turn(lr, st, _),
+            w,id,p,a) =
+      (setDirection(w,p,a, turn(lr, #direction a));
+       setState(w,p,a,st))
+    | instr(Move(st1, st2, _),
+            w,id,p,a) =
+      let val newp = adjacentCell(p, #direction a) in
+          if rocky(w, newp) orelse someAntIsAt(w, newp) then
+              setState(w,p,a,st2)
+          else
+              (clearAntAt(w, p);
+               setAntAt(w, newp, a);
+               setState(w,p,a,st1);
+               setResting(w,p,a,14);
+               checkForSurroundedAnts(w, newp))
+      end
+    | instr(Flip(n, st1, st2, _),
+            w,id,p,a) =
+      let val st = if randomInt n = 0 then st1 else st2 in
+          setState(w,p,a,st)
+      end
+
+  fun step(w, redAnt, blackAnt, id) =
+      if antIsAlive(w, id) then
+      let val p = findAnt(w, id)
+          val a = antAt(w, p)
+      in
+          if #resting a > 0 then
+              setResting(w, p, a, #resting a - 1)
+          else instr (getInstruction(case #color a of Red => redAnt
+                                                    | _ => blackAnt,
+                                     #state a),
+                      w, id, p, a)
+      end
+      else ()
+
+
+  end

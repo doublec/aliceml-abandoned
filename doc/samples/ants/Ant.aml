@@ -6,6 +6,7 @@ structure Ant =
   type id = int
 
   datatype direction =  E | SE | SW | W | NW | NE
+  val directions = [E, SE, SW, W, NW, NE]
 
   datatype color = Red | Black
 
