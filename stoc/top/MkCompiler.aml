@@ -7,7 +7,7 @@
 functor MakeCompiler(
 	structure Switches:         SWITCHES
 	structure Target:           TARGET
-	structure FrontendSpecific: PHASE where I = Source
+	structure FrontendSpecific: PHASE where type I.t = Source.t
 	structure FrontendCommon:   PHASE where I = FrontendSpecific.O
 	structure BackendCommon:    PHASE where I = FrontendCommon.O
 	structure BackendSpecific:  PHASE where I = BackendCommon.O
