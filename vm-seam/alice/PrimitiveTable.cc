@@ -36,8 +36,6 @@ word PrimitiveTable::Hole_Cyclic;
 word PrimitiveTable::Hole_Hole;
 word PrimitiveTable::Thread_Terminated;
 
-word PrimitiveTable::inlineTable;
-
 void PrimitiveTable::Init() {
   // The following values have been derived from the count of
   // 158 functions, 186 values (see the fprintf below)
@@ -75,7 +73,6 @@ void PrimitiveTable::Init() {
   RegisterUnsafe();
   RegisterVector();
   RegisterWord();
-  InitInlines();
   //  fprintf(stderr, "%d functions, %d values\n",
   //	  HashTable::FromWordDirect(functionTable)->GetSize(),
   //	  HashTable::FromWordDirect(valueTable)->GetSize());
@@ -118,24 +115,4 @@ word PrimitiveTable::LookupValue(Chunk *name) {
 
 word PrimitiveTable::LookupFunction(Chunk *name) {
   return Lookup(functionTable, name);
-}
-
-static const char *inlineNames[] = {
-  "Future.byneed",
-  "Char.ord",
-  "Int.+",
-  "Int.*",
-  "Int.<",
-  NULL};
-
-void PrimitiveTable::InitInlines() {
-  BlockHashTable *table = BlockHashTable::New(10);
-  u_int i = 0;
-  do {
-    Chunk *name = static_cast<Chunk *>(String::New(inlineNames[i]));
-    word value  = LookupValue(name);
-    table->InsertItem(value, Store::IntToWord(i++));
-  } while (inlineNames[i] != NULL);
-  inlineTable = table->ToWord();
-  RootSet::Add(inlineTable);
 }
