@@ -48,44 +48,46 @@ local
 *)
 
     fun show s = print (s^"\n")
-    fun showDelta event = 
-	print ("(x: "^(Real.toString (Gdk.eventMotionGetFieldX event))^
-	      ", y: "^(Real.toString (Gdk.eventMotionGetFieldY event))^") ")
+    fun showDelta (x,y) = 
+	print ("(x: "^(Real.toString x)^
+	      ", y: "^(Real.toString y)^")\n ")
 
-    fun canvasEvent (_, [Gtk.EVENT (Gtk.UNSUPPORTED event)]) =
-	(case Gdk.eventAnyGetFieldType event of
-	     Gdk.EXPOSE            => show "Got Expose Event"
-	   | Gdk.MOTION_NOTIFY     => (showDelta event;show "Got Motion Event")
-	   | Gdk.BUTTON_PRESS      => show "Got ButtonPress Event"
-	   | Gdk.GDK_2BUTTON_PRESS => show "Got Button2Press Event"
-	   | Gdk.GDK_3BUTTON_PRESS => show "Got Button3Press Event"
-	   | Gdk.BUTTON_RELEASE    => show "Got ButtonRelease Event"
-	   | Gdk.KEY_PRESS         => show "Got KeyPress Event"
-	   | Gdk.KEY_RELEASE       => show "Got KeyRelease Event"
-	   | Gdk.ENTER_NOTIFY      => show "Got Enter Event"
-	   | Gdk.LEAVE_NOTIFY      => show "Got Leave Event"
-	   | Gdk.FOCUS_CHANGE      => show "Got Focus Event"
-	   | Gdk.CONFIGURE         => show "Got Configure Event"
-	   | Gdk.NO_EXPOSE         => show "Got NoExpose Event"
-	   | Gdk.NOTHING           => show "Got Nothing Event"
-	   | Gdk.DELETE            => show "Got Delete Event"
-	   | Gdk.DESTROY           => show "Got Destroy Event"
-	   | Gdk.MAP               => show "Got Map Event"
-	   | Gdk.UNMAP             => show "Got Unmap Event"
-	   | Gdk.PROPERTY_NOTIFY   => show "Got Property Event"
-	   | Gdk.SELECTION_CLEAR   => show "Got SelecitonClear Event"
-	   | Gdk.SELECTION_REQUEST => show "Got SelectionRequest Event"
-	   | Gdk.SELECTION_NOTIFY  => show "Got SelectionNotify Event"
-	   | Gdk.PROXIMITY_IN      => show "Got ProximityIn Event"
-	   | Gdk.PROXIMITY_OUT     => show "Got ProximityOut Event"
-	   | Gdk.DRAG_ENTER        => show "Got DragEnter Event"
-	   | Gdk.DRAG_LEAVE        => show "Got DragLeave Event"
-	   | Gdk.DRAG_MOTION       => show "Got DrawMotion Event"
-	   | Gdk.DRAG_STATUS       => show "Got DragStatus Event"
-	   | Gdk.DROP_START        => show "Got DropStart Event"
-	   | Gdk.DROP_FINISHED     => show "Got DropFinished Event"
-	   | Gdk.CLIENT_EVENT      => show "Got Client Event"
-	   | _                     => show "Got Strange Event")
+    fun canvasEvent (_, [Gdk.EVENT event]) =
+	(case event of
+	     Gdk.EVENT_EXPOSE          _ => show "Got Expose Event"
+	   | Gdk.EVENT_MOTION_NOTIFY a => 
+		 (showDelta (#x(a),#y(a));show "Got Motion Event")
+	   | Gdk.EVENT_BUTTON_PRESS    _ => show "Got ButtonPress Event"
+	   | Gdk.EVENT_2BUTTON_PRESS   _ => show "Got Button2Press Event"
+	   | Gdk.EVENT_3BUTTON_PRESS   _ => show "Got Button3Press Event"
+	   | Gdk.EVENT_BUTTON_RELEASE  _ => show "Got ButtonRelease Event"
+	   | Gdk.EVENT_KEY_PRESS       _ => show "Got KeyPress Event"
+	   | Gdk.EVENT_KEY_RELEASE     _ => show "Got KeyRelease Event"
+	   | Gdk.EVENT_ENTER_NOTIFY    _ => show "Got Enter Event"
+	   | Gdk.EVENT_LEAVE_NOTIFY    _ => show "Got Leave Event"
+	   | Gdk.EVENT_FOCUS_CHANGE    _ => show "Got Focus Event"
+	   | Gdk.EVENT_CONFIGURE       _ => show "Got Configure Event"
+	   | Gdk.EVENT_NO_EXPOSE       _ => show "Got NoExpose Event"
+	   | Gdk.EVENT_NOTHING           => show "Got Nothing Event"
+	   | Gdk.EVENT_DELETE            => show "Got Delete Event"
+	   | Gdk.EVENT_DESTROY           => show "Got Destroy Event"
+	   | Gdk.EVENT_MAP               => show "Got Map Event"
+	   | Gdk.EVENT_UNMAP             => show "Got Unmap Event"
+	   | Gdk.EVENT_PROPERTY_NOTIFY   => show "Got Property Event"
+	   | Gdk.EVENT_SELECTION_CLEAR   => show "Got SelecitonClear Event"
+	   | Gdk.EVENT_SELECTION_REQUEST    => 
+		 show "Got SelectionRequest Event"
+	   | Gdk.EVENT_SELECTION_NOTIFY  => show "Got SelectionNotify Event"
+	   | Gdk.EVENT_PROXIMITY_IN      => show "Got ProximityIn Event"
+	   | Gdk.EVENT_PROXIMITY_OUT     => show "Got ProximityOut Event"
+	   | Gdk.EVENT_DRAG_ENTER        => show "Got DragEnter Event"
+	   | Gdk.EVENT_DRAG_LEAVE        => show "Got DragLeave Event"
+	   | Gdk.EVENT_DRAG_MOTION       => show "Got DrawMotion Event"
+	   | Gdk.EVENT_DRAG_STATUS       => show "Got DragStatus Event"
+	   | Gdk.EVENT_DROP_START        => show "Got DropStart Event"
+	   | Gdk.EVENT_DROP_FINISHED     => show "Got DropFinished Event"
+	   | Gdk.EVENT_CLIENT_EVENT      => show "Got Client Event"
+	   | _                           => show "Got Strange Event")
 	     
     val pargs =
 	 [("points", 

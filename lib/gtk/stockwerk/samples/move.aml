@@ -58,14 +58,14 @@ local
 	val pressed = ref false
 	val buttonx = ref (0.0)
 	val buttony = ref (0.0) 
-
+(*
 	datatype event =
 	    EVENT_BUTTON_PRESS of   { button:int, x:real, y:real }
 	  | EVENT_BUTTON_RELEASE of { button:int, x:real, y:real }
 	  | EVENT_MOTION_NOTIFY of {x:real, y:real}
-	  | EVENT_UNKNOWN
+	  | EVENT_UNKNOWN*)
 (****)
-	fun getEvent ev =
+(*	fun getEvent ev =
 	    (case Gdk.eventAnyGetFieldType ev of
 		Gdk.BUTTON_PRESS => 
 		    EVENT_BUTTON_PRESS 
@@ -82,18 +82,19 @@ local
 		    { x=(Gdk.eventMotionGetFieldX ev),
 		      y=(Gdk.eventMotionGetFieldY ev) }
 	      | _ => EVENT_UNKNOWN )
+*)
 (****)
     in
 	fun rectangleHandler(item, event) =
-	    (case getEvent event of
-		 EVENT_BUTTON_PRESS {button=button, x=x, y=y, ...}  =>
+	    (case event of
+		 Gdk.EVENT_BUTTON_PRESS {button=button, x=x, y=y, ...}  =>
 		     (case button of
 			  1 => (toggleColor(item, white, black);
 				pressed := true; buttonx := x; buttony := y)
 			| _ => ())
-	       | EVENT_BUTTON_RELEASE _                             =>
+	       | Gdk.EVENT_BUTTON_RELEASE _                             =>
 		     (toggleColor(item, black, white); pressed := false)
-	       | EVENT_MOTION_NOTIFY {x=x, y=y, ...} =>
+	       | Gdk.EVENT_MOTION_NOTIFY {x=x, y=y, ...} =>
 		     (case !pressed of
 		      true  =>
 			  let
@@ -113,7 +114,7 @@ local
      * All Events are passed via the Event Field of the event.
      *)
     val _ = Gtk.signalConnect(rectItem, "event",
-			      fn (_,[Gtk.EVENT (Gtk.UNSUPPORTED event)]) =>
+			      fn (_,[Gdk.EVENT event]) =>
 			      rectangleHandler(rectItem, event))
 
     fun deleteHandler _ = OS.Process.exit OS.Process.success

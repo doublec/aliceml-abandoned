@@ -170,7 +170,7 @@ local
 			    ("anchor", Gtk.INT 0(*Gtk.ANCHOR_CENTER*)),
 			    ("fill_color_gdk", Gtk.OBJECT black)])
 			 
-	    fun pieceEvent (_, [Gtk.EVENT (Gtk.UNSUPPORTED event)]) = serve
+	    fun pieceEvent (_, [Gdk.EVENT (Gdk.EVENT_UNSUPPORTED event)]) = serve
 	        (fn () =>
 		     (case Gdk.eventAnyGetFieldType(event) of
 			  Gdk.ENTER_NOTIFY =>
