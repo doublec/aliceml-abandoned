@@ -294,8 +294,11 @@ Worker::Result ResolveInterpreter::Run() {
 	}
       }
       word wSuper = classInfo->GetSuper();
-      if (wSuper == Store::IntToWord(0))
-	Error("NoSuchField"); //--** raise
+      if (wSuper == null) {
+	ThrowWorker::PushFrame(ThrowWorker::NoSuchFieldError, name);
+	Scheduler::nArgs = 0;
+	return CONTINUE;
+      }
       frame->SetClass(Class::FromWord(wSuper));
       return CONTINUE;
     }
@@ -347,9 +350,8 @@ Worker::Result ResolveInterpreter::Run() {
 	}
       }
       word wSuper = classInfo->GetSuper();
-      if (wSuper == Store::IntToWord(0)) {
-	JavaString *s = name->Concat(descriptor);
-	ThrowWorker::PushFrame(ThrowWorker::NoSuchMethodError, s);
+      if (wSuper == null) {
+	ThrowWorker::PushFrame(ThrowWorker::NoSuchMethodError, name);
 	Scheduler::nArgs = 0;
 	return CONTINUE;
       }
