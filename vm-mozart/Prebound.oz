@@ -243,11 +243,15 @@ define
       'Int.compare': NumberCompare
       'Int.div':
 	 fun {$ X1 X2}
-	    try
-	       if {Int.isNat X1} == {Int.isNat X2} then
+	    try B1 B2 in
+	       B1 = {Int.isNat X1}
+	       B2 = {Int.isNat X2}
+	       if B1 == B2 then
 		  X1 div X2
-	       else
+	       elseif B2 then
 		  (X1 - X2 + 1) div X2
+	       else
+		  (X1 - X2 - 1) div X2
 	       end
 	    catch _ then
 	       {Exception.raiseError BuiltinTable.'General.Div'} unit
