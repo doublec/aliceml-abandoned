@@ -94,7 +94,7 @@ int main(int argc, char *argv[]) {
   // Parse command line
   if (argc < 2) {
     fprintf(stderr, "usage: %s component\n", argv[0]);
-    exit(0);
+    exit(2);
   }
   else {
     String *rootUrl     = String::New(argv[1]);
