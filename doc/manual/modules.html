@@ -378,10 +378,15 @@ effect, and does not return any interesting result.</P>
 <PRE class=code>
 functor F (_ : S) = struct (* don't actually need argument *) end</PRE>
 
-<P>This is particularly useful in signatures:</P>
+<P>They are also allowed in signatures:</P>
 
 <PRE class=code>
 signature FF = fct (_ : A) -> B</PRE>
+
+<P>However, the same signature may be written more compactly as:</P>
+
+<PRE class=code>
+signature FF = A -> B</PRE>
 
 
 <?php subsection("sugar-withtype", "Recursion using <TT>withtype</TT>") ?>
