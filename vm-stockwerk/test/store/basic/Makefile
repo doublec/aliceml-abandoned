@@ -4,26 +4,29 @@ include $(TOPDIR)/Makefile.vars
 include $(TOPDIR)/Makefile.rules
 
 SRCS = test.cc \
-#       perf.cc \
        wk.cc \
        blktbl.cc \
-       future.cc
+       future.cc \
+       big.cc
+#       perf.cc \
 
 OBJS = $(SRCS:%.cc=%.o)
+EXES = $(OBJS:%.o=%.exe)
 
-all: $(OBJS)
-	cd $(TOPDIR)/adt && make distclean all
-	$(LD) $(CXXFLAGS) -o test test.o -L$(TOPDIR)/adt -L$(TOPDIR)/store -lstore -ladt
-#	$(LD) $(CXXFLAGS) -o perf perf.o -L$(TOPDIR)/adt -L$(TOPDIR)/store -lstore -ladt
-	$(LD) $(CXXFLAGS) -o wk wk.o -L$(TOPDIR)/adt -L$(TOPDIR)/store -lstore -ladt
-	$(LD) $(CXXFLAGS) -o blktbl blktbl.o -L$(TOPDIR)/adt -L$(TOPDIR)/store -lstore -ladt
-	$(LD) $(CXXFLAGS) -o future future.o -L$(TOPDIR)/adt -L$(TOPDIR)/store -lstore -ladt
+%.exe: %.o
+	$(LD) $(CXXFLAGS) -o $@ $< -L$(TOPDIR)/adt -L$(TOPDIR)/store -lstore -ladt
+
+
+all: $(OBJS) $(EXES)
 
 store:
 	cd ../../../store && $(MAKE) distclean && $(MAKE)
 
+adt:
+	cd ../../../adt && $(MAKE) distclean && $(MAKE)
+
 clean:
-	rm -f test perf wk $(OBJS)
+	rm -f $(OBJS) $(EXES)
 
 distclean: clean
 	rm -rf *~
