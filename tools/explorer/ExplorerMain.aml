@@ -32,6 +32,7 @@ signature EXPLORER =
 
       val initScript' : Type.typ -> (Space.space -> 'a) -> explorer
       val exploreAllScript' : Type.typ -> (Space.space -> 'a) -> explorer
+      val exploreAllRoot' : Type.typ -> Space.space -> 'a -> explorer
       val exploreOneScript' : Type.typ -> (Space.space -> 'a) -> explorer
   end
 structure ExplorerMain :> EXPLORER =
@@ -174,6 +175,14 @@ structure ExplorerMain :> EXPLORER =
           val space = Space.new()
           val root = script space
           val e = exploreOne space
+      in
+          addInfoAction(e, ExplorerInspect.inspect t root, "default");
+          e
+      end
+
+  fun exploreAllRoot' t space root =
+      let
+          val e = exploreAll space
       in
           addInfoAction(e, ExplorerInspect.inspect t root, "default");
           e

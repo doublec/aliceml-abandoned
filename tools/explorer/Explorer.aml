@@ -4,6 +4,8 @@ import structure Space           from "x-alice:/lib/gecode/Space"
 structure Explorer =
   struct
     type explorer = ExplorerMain.explorer
+    
+    val exploreAll : Space.space -> explorer = ExplorerMain.exploreAll
 
   __overload 'a initScript : (Space.space -> 'a) -> explorer =
      ExplorerMain.initScript'
@@ -11,4 +13,6 @@ structure Explorer =
      ExplorerMain.exploreAllScript'
   __overload 'a exploreOneScript : (Space.space -> 'a) -> explorer =
      ExplorerMain.exploreOneScript'
+  __overload 'a exploreAllRoot : Space.space -> 'a -> explorer =
+     ExplorerMain.exploreAllRoot'
   end
