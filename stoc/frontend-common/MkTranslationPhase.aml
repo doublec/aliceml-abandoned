@@ -1,4 +1,30 @@
 (*
+import structure Source			from "Source"
+import structure TypedInfo		from "TypedGrammar"
+import structure TypedGrammar		from "TypedGrammar"
+import structure IntermediateGrammar	from "IntermediateGrammar"
+import structure EmptyContext		from "EmptyContext"
+import structure StringMap		from "StringMap"
+
+import structure Stamp			from "Stamp"
+import structure Name			from "Name"
+import structure Label			from "Label"
+import structure Type			from "Type"
+import structure Inf			from "Inf"
+
+import structure PerasiveType		from "PervasiveType"
+import structure LabelReflection	from "LabelReflection"
+import structure PathReflection		from "PathReflection"
+import structure TypeReflection		from "TypeReflection"
+import structure InfReflection		from "InfReflection"
+
+import signature SWITCHES		from "SWITCHES"
+import signature TRANSLATION_PHASE	from "TRANSLATION_PHASE"
+
+import structure Crash			from "Crash"
+*)
+
+(*
  * UNFINISHED: maintain sharing on transformed interfaces.
  *)
 
@@ -333,8 +359,9 @@ functor MakeTranslationPhase(structure Switches: SWITCHES):> TRANSLATION_PHASE =
 						    "TranslationPhase.upItems: \
 						    \funny arity (hoho)"
 		    in
-			(if isTagType t then O.TagExp(i,l',n)
-				        else O.ConExp(i,y,n), true)
+			(if isTagType(Inf.lookupVal(s1,a))
+			 then O.TagExp(i,l',n)
+			 else O.ConExp(i,y,n), true)
 		    end
 		val  exp' = O.LazyExp(i,exp)
 	    in
