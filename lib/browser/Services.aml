@@ -46,6 +46,7 @@ import signature SERVICES from "SERVICES-sig"
 	       fun positionGroup (group,x,y) = (GtkCanvas.itemSet(group,"x", Gtk.DOUBLE x) 
 					       ;GtkCanvas.itemSet(group,"y", Gtk.DOUBLE y))
 					      
+		   (*
 
 	       fun moveGroup (group,x,y,font) = let
 						    val w = WindowHelper.fontWidth(font)
@@ -54,7 +55,17 @@ import signature SERVICES from "SERVICES-sig"
 						    val ry = Real.fromInt(y * h)
 						in
 						    positionGroup(group,rx,ry)
+						end *)
+		   
+	       fun moveGroup (group,x,y,font) = let
+						    val w = WindowHelper.fontWidth(font)
+						    val h = WindowHelper.fontHeight(font)
+						    val rx = Real.fromInt(x * w)
+						    val ry = Real.fromInt(y * h)
+						in
+						    Canvas.itemMove(group,rx,ry)
 						end
+
 			     
 	   fun getCoordinates (group,font) = let
 						val w = WindowHelper.fontWidth(font)
