@@ -26,6 +26,9 @@ struct
 
     open GnomeCanvas
 
+    fun new _ = GnomeCanvas.new ()
+    fun newAa _ = GnomeCanvas.newAa ()
+
     fun freeze _ = ()
     fun thaw   _ = ()
     fun createGroup (p, x, y) = 
@@ -52,16 +55,18 @@ struct
 			     [("points", Gtk.OBJECT (makePoints points)),
 			      ("fill_color_gdk", Gtk.OBJECT fillColor),
 			      ("width_pixels", Gtk.INT width)])
-     fun createText (p, text, font, x, y, fillColor, anchor) = 
+    fun createText (p, text, font, x, y, fillColor, anchor) = 
 		 itemCreate (p, textGetType (),
 			     [("text", STRING text),
 			      ("font", STRING font),
 			      ("x", REAL x),
 			      ("y", REAL y),
 			      ("fill_color_gdk", OBJECT fillColor),
-			      ("anchor", INT anchor)])
+			      ("anchor", INT (Gtk.GtkAnchorTypeToInt anchor))])
 
      fun requestRedraw _ = ()
+
+     fun getScrollOffsets (object, _, _) = GnomeCanvas.getScrollOffsets object
 
 
 end
@@ -98,7 +103,7 @@ struct
      val thaw   = Gtk.layoutThaw
      fun createGroup (p, x, y) = 
 	 itemNew (p, GROUP, [("x", Gtk.DOUBLE x),
-				       ("y", Gtk.DOUBLE y)])
+			     ("y", Gtk.DOUBLE y)])
      fun createEllipse (p, x1, y1, x2, y2, fillColor, outColor) = 
 	 itemNew (p, ELLIPSE,
 		  [("x1", Gtk.DOUBLE x1),
@@ -129,6 +134,9 @@ struct
 		   ("fill_color_gdk", OBJECT fillColor),
 		   ("anchor", INT anchor)])
 
+     fun windowToWorld (can, w, h) = 
+	            GtkCanvas.windowToWorld (can, w, h, 0.0, 0.0)
+
 end
 
 structure Gtk =
@@ -141,8 +149,8 @@ struct
 			     
     fun textWidgetInsert (widget, text, color) =
 	let
-	    val font = Gdk.fontLoad ("-*-times-bold-*-*-*-12-*-*-*-*-*-*-*")
-	    val stdFont = Gdk.fontLoad ("-*-*-*-*-*-*-*-*-*-*-*-*-*-*")
+	    val font = Gdk.fontLoad "-*-times-bold-*-*-*-12-*-*-*-*-*-*-*"
+	    val stdFont = Gdk.fontLoad "-*-*-*-*-*-*-*-*-*-*-*-*-*-*"
 	    val white = Gdk.allocColor (65535, 65535, 65535)
 	    val black = Gdk.allocColor (0, 0, 0)
 	in
@@ -151,12 +159,24 @@ struct
 	    else textInsert (widget, stdFont, black, white, text, ~1)
 	end
 
-    fun buttonSetLabel (bt, text) =
+    fun buttonSetLabel (bt, text) = 
         let
-            val lbl = binGetFieldChild bt
+	    val lbl = Gtk.buttonGetFieldChild bt
         in
-            labelSetText (lbl, text)
-        end
+	    labelSetText (lbl, text)
+ 	end
+
+    val radioButtonGetGroup = radioButtonGetFieldGroup
+
+    fun windowGetSize obj =
+        let
+	    val alloc  = widgetGetFieldAllocation obj
+	    val width  = allocationGetFieldWidth alloc
+  	    val height = allocationGetFieldHeight alloc
+	in
+	   (width, height)
+	end
+
 end
 
 structure Gdk =
