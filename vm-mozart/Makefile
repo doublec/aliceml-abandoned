@@ -171,7 +171,7 @@ LIBUTILITYSOURCES0 = \
 	$(LIBUTILITYNATIVES0:%=Unsafe%.asig) \
 	ASSERT-sig.aml Assert.aml STAMP-sig.aml MkStamp.aml \
 	GLOBAL_STAMP-sig.aml GlobalStamp.aml URL-sig.aml Url.aml \
-	HASH_KEY-sig.aml IntHashKey.aml LargeIntHashKey.aml StringHashKey.aml \
+	HASH_KEY-sig.aml \
 	IMP_SET-sig.aml MkHashImpSet.aml IMP_MAP-sig.aml MkHashImpMap.aml \
 	SIMPLE_IMP_MAP-sig.aml \
 	SCOPED_IMP_SET-sig.aml MkScopedImpSet.aml SCOPED_IMP_MAP-sig.aml \
@@ -206,7 +206,7 @@ COMPILERINFRASTRUCTURESOURCES0 = \
 	ComposePhases.aml MkTracingPhase.aml MkResultDumpingPhase.aml \
 	MkContextDumpingPhase.aml EmptyContext.aml TARGET-sig.aml \
 	Target.aml MkHashScopedImpSet.aml MkHashScopedImpMap.aml \
-	StringMap.aml PP_MISC-sig.aml PPMisc.aml
+	IntMap.aml StringMap.aml PP_MISC-sig.aml PPMisc.aml
 COMPILERINFRASTRUCTURESOURCES = \
 	$(COMPILERINFRASTRUCTURESOURCES0:%=compiler/infrastructure/%)
 
