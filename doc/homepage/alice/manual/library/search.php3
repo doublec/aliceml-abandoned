@@ -7,10 +7,64 @@
     signature SEARCH
     structure Search : SEARCH</PRE>
 
-  <P>
-    The <TT>Search</TT> structure gives access to predefined inference
-    engines, including one solution, all solution and best solution search.
-  </P>
+   <P>This section describes the search engines found in the structure
+      <TT>Search</TT>. All of these engines support recomputation,
+       the possibility to stop their execution and various kinds of output. 
+   </P>
+   <P>Scripts which create a large number of variables or
+      propagators or scripts for which the search tree is very deep might
+      use too much memory to be feasible. The search engines described
+      in this section feature support for so-called <EM>recomputation</EM>.
+      Recomputation reduces the space requirements for these scripts
+      in that it trades space for time. 
+   </P>
+   <P>Search engines that do not use recomputation, create a copy of
+      a computation space in each distribution step.
+      This copy is needed such that the engine is able to follow more
+      than one alternative of a choice. 
+   </P>
+   <P>If, for instance, a single solution search engine finds a
+      solution after 200 distribution steps (i. e. the search tree has
+      a depth of 201), 200 copies are created and stored by the engine. 
+   </P>
+   <P>Recomputation reduces the number of copies needed:
+      Instead of creating a copy in each distribution step,
+      only every <I>n</I>-th distribution step a copy is created.
+      A space for which no copy has been created can be recomputed
+      from a copy located higher above in the search tree by
+      recomputing some distribution steps. In the worst case, <I>n</I>-1
+      distribution steps have to be recomputed. The parameter <I>n</I>
+      is the so-called <EM>recomputation distance</EM>.
+      A recomputation distance of <I>n</I> means that
+      the space needed decreases by a factor of <I>n</I>
+      and that the time needed increases by a factor of <I>n</I>. 
+   </P>
+   <P>The following search engines take the recomputation distance
+      as an argument (it is denoted by <I>rcd</I>).
+      A value of <I>2</I> for <I>rcd</I> means that
+      only each second distribution step a copy is created.
+      The value <I>1</I> for <I>rcd</I> means that in each
+      distrbution step a copy is created, that is no recomputation is used.
+      Values less than <I>1</I> mean that none but an initial copy is created:
+      from this initial copy all other spaces are recomputed. 
+   </P>
+   <P>Recomputation can also <EM>reduce</EM> both space and time requirements.
+      Searching a single solution of a script which features a good heuristic
+      (i. e. there are only very few failures) creates copies which are
+      not used. Recomputation avoids this, resulting in improvement
+      with respect to both space and time. 
+   </P>
+   <P>Recomputation requires that the distribution strategy used in the
+      script be <EM>deterministic</EM>. Deterministic means that the
+      created choices and their order are identical in repeated runs of
+      the script. This is true for all strategies in the finite
+      domain structure, but for example not for strategies with
+      randomized components.
+   </P>
+   <P>Each of the engines is provided with two different types of output.
+      The first kind returns a list of solutions as the engines, whereas
+      the second kind returns a list of succeeded spaces. 
+   </P>
 
 <?php section("import", "import"); ?>
 
@@ -20,55 +74,300 @@
 
 <?php section("interface", "interface"); ?>
   <PRE>
-    signature SEARCH =
+signature SEARCH =
     sig
-	type 'a pruner = 'a * 'a -> unit
+	type 'a order = 'a * 'a -> unit
 
 	val searchOne : (unit -> 'a) -> 'a option
+	val searchOneDepth : (unit -> 'a) * int -> 'a option
+	val searchOneDepthS : (unit -> 'a) * int -> 'a Space.space option
+	val searchOneBound : (unit -> 'a) * int * int -> 'a option
+	val searchOneBoundS : (unit -> 'a) * int * int -> 'a Space.space option
+	val searchOneIter : (unit -> 'a) * int -> 'a option
+	val searchOneIterS : (unit -> 'a) * int -> 'a Space.space option
+	val searchOneLDS : (unit -> 'a) * int -> 'a option
+	val searchOneLDSS : (unit -> 'a) * int -> 'a Space.space option
+
 	val searchAll : (unit -> 'a) -> 'a list
-	val searchBest : (unit -> 'a) * 'a pruner -> 'a option
+	val searchAllDepth : (unit -> 'a) * int -> 'a list
+	val searchAllDepthS : (unit -> 'a) * int -> 'a Space.space list
+
+	val searchBest : (unit -> 'a) * 'a order -> 'a option
+	val searchBestBAB : (unit -> 'a) * 'a order * int -> 'a option
+	val searchBestBABS : (unit -> 'a) * 'a order * int -> 'a Space.space option
+	val searchBestRestart : (unit -> 'a) * 'a order * int -> 'a option
+	val searchBestRestartS : (unit -> 'a) * 'a order * int -> 'a Space.space option
     end</PRE>
 
 <?php section("description", "description"); ?>
 
   <DL>
     <DT>
-      <TT>type 'a pruner = 'a * 'a -> unit</TT>
+      <TT>type 'a order = 'a * 'a -> unit</TT>
     </DT>
     <DD>
-      <P>Pruning function type.
+      <P>This type denotes the order used for branch and bound and best solution
+        search.
       </P>
     </DD>
 
     <DT>
-      <TT>searchOne <I>p</I></TT>
+      <TT>searchOne <I>s</I></TT>
     </DT>
     <DD>
-      <P>This inference engine takes a constraint
-         problem script <I>p</I> and returns a solution of the problem.
+      <P>returns the first solution of script <I>s</I> obtained by depth-first
+         search. If no solution exists, <TT>NONE</TT> is returned.
+      </P>
+    </DD>
+
+    <DT>
+      <TT>searchOneDepth (<I>s</I>,<I>rcd</I>)</TT>
+    </DT>
+    <DD>
+      <P>returns the first solution of script <I>s</I> obtained by depth-first
+         search with recomputation distance <I>rcd</I>.
          If no solution exists, <TT>NONE</TT> is returned.
       </P>
     </DD>
 
     <DT>
-      <TT>searchAll <I>p</I></TT>
+      <TT>searchOneDepthS (<I>s</I>,<I>rcd</I>)</TT>
     </DT>
     <DD>
-      <P>This inference engine takes a constraint
-         problem script <I>p</I> and returns a list containing all
-         solutions of the problem. If no solution exists, the empty list
-         is returned.
+      <P>returns the first succeeded space of script <I>s</I>
+         obtained by depth-first search with recomputation distance <I>rcd</I>.
+         If no solution exists, <TT>NONE</TT> is returned.
       </P>
     </DD>
 
     <DT>
-      <TT>searchBest (<I>p</I>, <I>o</I>)</TT>
+      <TT>searchOneBound (<I>s</I>,<I>bound<I>,<I>rcd</I>)</TT>
     </DT>
     <DD>
-      <P>This inference engine takes a constraint
-         problem script <I>p</I> together with a ordering function <I>o</I>
-         and returns the best solutions of the problem according to
-         the given order. If no solutions exists, <TT>NONE</TT> is returned.
+      <P>returns the first solution of script <I>s</I> obtained by depth-first
+         search with recomputation distance <I>rcd</I>, where the depth of
+         the search tree explored is less than or equal to <I>bound<I>.
+      </P>
+      <P>If there is no solution in a depth less than or equal
+         to <I>bound</I>, but there might be solutions deeper in the tree,
+         <TT>CUT</TT> is returned.
+         In case the entire search tree has a depth less than
+         <I>bound<I> and no solution exists, <I>NONE</I> is returned.
+      </P>
+    </DD>
+
+    <DT>
+      <TT>searchOneBoundS (<I>s</I>,<I>bound<I>,<I>rcd</I>)</TT>
+    </DT>
+    <DD>
+      <P>returns the first succeeded space of script <I>s</I>
+         obtained by depth-first
+         search with recomputation distance <I>rcd</I>, where the depth of
+         the search tree explored is less than or equal to <I>bound<I>.
+      </P>
+      <P>If there is no solution in a depth less than or equal
+         to <I>bound</I>, but there might be solutions deeper in the tree,
+         <TT>CUT</TT> is returned.
+         In case the entire search tree has a depth less than
+         <I>bound<I> and no solution exists, <I>NONE</I> is returned.
+      </P>
+    </DD>
+
+    <DT>
+      <TT>searchOneIter (<I>s</I>,<I>rcd</I>)</TT>
+    </DT>
+    <DD>
+      <P>returns the first solution of script <I>s</I> obtained by iterative
+         deepening depth-first
+         search with recomputation distance <I>rcd</I>.
+         If no solution exists, <TT>NONE</TT> is returned.
+      </P>
+    </DD>
+
+    <DT>
+      <TT>searchOneIterS (<I>s</I>,<I>rcd</I>)</TT>
+    </DT>
+    <DD>
+      <P>returns the first succeeded space of script <I>s</I>
+         obtained by iterative deepening depth-first
+         search with recomputation distance <I>rcd</I>.
+         If no solution exists, <TT>NONE</TT> is returned.
+      </P>
+    </DD>
+
+    <DT>
+      <TT>searchOneLDS (<I>s</I>,<I>m</I>)</TT>
+    </DT>
+    <DD>
+      <P>returns the first solution of script <I>s</I> obtained by limited
+         discrepancy search allowing <I>m</I> discrepancies.
+         If no solution exists, <TT>NONE</TT> is returned.
+      </P>
+      <P>Typically, distribution strategies follow a heuristics that has been
+         carefully desgined to suggest most often "good" alternatives leading
+         to a solution. This is taken into account by limited discrepancy
+         search (LDS).
+      </P>
+      <P>
+        Exploring against the heuristic ist called a <EM>discrepancy</EM>.
+        LDS explores the search tree with no allowed discrepancy first,
+        then allowing 1,2,... discrepancies until a solution is found,
+        or a given limit for the discrepancies is reached.
+      </P>
+      <P>
+        Additionally, LDS makes a discrepancy first at the root of the search
+        tree. This takes into account that it is more likely for a heuristic
+        to make a wrong decision near the root of a tree where only little
+        information is available. If no solution is found, discrepancies
+        are made further down in the tree.
+      </P>
+    </DD>
+
+    <DT>
+      <TT>searchOneLDSS (<I>s</I>,<I>m</I>)</TT>
+    </DT>
+    <DD>
+      <P>returns the first succeeded space containing the
+         solution of script <I>s</I> obtained by limited
+         discrepancy search allowing <I>m</I> discrepancies.
+         If no solution exists, <TT>NONE</TT> is returned.
+      </P>
+      <P>Typically, distribution strategies follow a heuristics that has been
+         carefully desgined to suggest most often "good" alternatives leading
+         to a solution. This is taken into account by limited discrepancy
+         search (LDS).
+      </P>
+      <P>
+        Exploring against the heuristic ist called a <EM>discrepancy</EM>.
+        LDS explores the search tree with no allowed discrepancy first,
+        then allowing 1,2,... discrepancies until a solution is found,
+        or a given limit for the discrepancies is reached.
+      </P>
+      <P>
+        Additionally, LDS makes a discrepancy first at the root of the search
+        tree. This takes into account that it is more likely for a heuristic
+        to make a wrong decision near the root of a tree where only little
+        information is available. If no solution is found, discrepancies
+        are made further down in the tree.
+      </P>
+    </DD>
+
+    <DT>
+      <TT>searchAll <I>s</I></TT>
+    </DT>
+    <DD>
+      <P>returns a list of all solutions of the
+         script <I>s</I> obtained by depth-first search.
+         If no solution exists, the empty list is returned.
+      </P>
+    </DD>
+
+    <DT>
+      <TT>searchAllDepth (<I>s</I>,<I>rcd</I>)</TT>
+    </DT>
+    <DD>
+      <P>returns a list of all solutions of the
+         script <I>s</I> obtained by depth-first search with
+         recomputation distance <I>rcd</I>.
+         If no solution exists, the empty list is returned.
+      </P>
+    </DD>
+
+    <DT>
+      <TT>searchAllDepthS (<I>s</I>,<I>rcd</I>)</TT>
+    </DT>
+    <DD>
+      <P>returns a list of all succeeded spaces of the
+         script <I>s</I> obtained by depth-first search with
+         recomputation distance <I>rcd</I>.
+         If no solution exists, the empty list is returned.
+      </P>
+    </DD>
+
+    <DT>
+      <TT>searchBest (<I>s</I>, <I>o</I>)</TT>
+    </DT>
+    <DD>
+      <P>returns the best solution with respect to
+         a order <I>o</I> of script <I>s</I>.
+         If no solutions exists, <TT>NONE</TT> is returned.
+      </P>
+    </DD>
+
+    <DT>
+      <TT>searchBestBAB (<I>s</I>, <I>o</I>, <I>rcd<(I>)</TT>
+    </DT>
+    <DD>
+      <P>returns the best solution with respect to
+         a order <I>o</I> of script <I>s</I> obtained by branch and bound
+         search with recomputation distance <I>rcd</I>.
+         If no solutions exists, <TT>NONE</TT> is returned.
+      </P>
+      <P>The branch and bound strategy works as follows.
+         When a solution is found, all the remaining alternatives
+         are constrained to be better with respect to the order <I>o</I>.
+         The binary function <I>o</I> is applied with
+         its first argument being the previous solution,
+         and its second argument the root variable of a space
+         for one of the remaining alternatives. 
+      </P>
+    </DD>
+
+    <DT>
+      <TT>searchBestBABS (<I>s</I>, <I>o</I>, <I>rcd<(I>)</TT>
+    </DT>
+    <DD>
+      <P>returns the succeed space containing the best solution
+         with respect to
+         a order <I>o</I> of script <I>s</I> obtained by branch and bound
+         search with recomputation distance <I>rcd</I>.
+         If no solutions exists, <TT>NONE</TT> is returned.
+      </P>
+      <P>The branch and bound strategy works as follows.
+         When a solution is found, all the remaining alternatives
+         are constrained to be better with respect to the order <I>o</I>.
+         The binary function <I>o</I> is applied with
+         its first argument being the previous solution,
+         and its second argument the root variable of a space
+         for one of the remaining alternatives. 
+      </P>
+    </DD>
+
+    <DT>
+      <TT>searchBestRestart (<I>s</I>, <I>o</I>, <I>rcd<(I>)</TT>
+    </DT>
+    <DD>
+      <P>returns the best solution with respect to
+         a order <I>o</I> of script <I>s</I> obtained by branch and bound
+         search with recomputation distance <I>rcd</I>.
+         If no solutions exists, <TT>NONE</TT> is returned.
+      </P>
+      <P>The restart strategy works as follows.
+         When a solution is found, search is restarted for <I>s</I>
+         with the additional constraint stating that the solution
+         must be better with respect to the order <I>o</I>.
+         The binary procedure <I>o</I> is applied with the previous solution
+         as first argument, and the root variable of the script <I>s</I>
+         as its second argument.
+      </P>
+    </DD>
+
+    <DT>
+      <TT>searchBestRestartS (<I>s</I>, <I>o</I>, <I>rcd<(I>)</TT>
+    </DT>
+    <DD>
+      <P>returns the succeed space containing the best solution with respect to
+         a order <I>o</I> of script <I>s</I> obtained by branch and bound
+         search with recomputation distance <I>rcd</I>.
+         If no solutions exists, <TT>NONE</TT> is returned.
+      </P>
+      <P>The restart strategy works as follows.
+         When a solution is found, search is restarted for <I>s</I>
+         with the additional constraint stating that the solution
+         must be better with respect to the order <I>o</I>.
+         The binary procedure <I>o</I> is applied with the previous solution
+         as first argument, and the root variable of the script <I>s</I>
+         as its second argument.
       </P>
     </DD>
   </DL>
