@@ -556,6 +556,14 @@ define
 			       [{GetReg Id State} LabelReg Reg]
 			       {TranslateRegion Region State} VTl)
 	 vEquateConstant(_ Label LabelReg VInter)
+      [] 'FunAppExp'(Region Id1 _ 'OneArg'(Id2)) then
+	 vCall(_ {GetReg Id1 State} [{GetReg Id2 State} Reg]
+	       {TranslateRegion Region State} VTl)
+      [] 'FunAppExp'(Region Id _ 'TupArgs'(Ids)) andthen {Width Ids} > 0 then
+	 vCall(_ {GetReg Id State}
+	       {Record.foldR Ids
+		fun {$ Id Rest} {GetReg Id State}|Rest end [Reg]}
+	       {TranslateRegion Region State} VTl)
       [] 'FunAppExp'(Region Id _ Args) then
 	 {TranslateExp 'VarAppExp'(Region Id Args) Reg VTl State}
       [] 'FailExp'(Region) then Coord in
