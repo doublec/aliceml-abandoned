@@ -66,6 +66,10 @@ define
       {Space.kill S}
       unit
    end
+   fun {WaitStableFun S}
+      {Space.waitStable S}
+      unit
+   end
    
    %% Export Interface
    UnsafeSpace = 'UnsafeSpace'('space'      : SpaceFun
@@ -75,5 +79,6 @@ define
 			       'commit'     : CommitFun
 			       'inject'     : InjectFun
 			       'merge'      : MergeFun
-			       'kill'       : KillFun)
+			       'kill'       : KillFun
+			       'waitStable' : WaitStableFun)
 end

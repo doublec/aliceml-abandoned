@@ -24,5 +24,6 @@ signature UNSAFE_SPACE_COMPONENT =
 		    val inject : 'a
 		    val merge : 'a
 		    val kill : 'a
+		    val waitStable : 'a
 		end
     end

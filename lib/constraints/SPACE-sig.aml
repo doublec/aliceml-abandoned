@@ -42,4 +42,5 @@ signature SPACE =
 	val inject : 'a space * ('a -> unit) -> unit
 	val merge : 'a space -> 'a
 	val kill : 'a space -> unit
+	val waitStable : 'a space -> unit
     end
