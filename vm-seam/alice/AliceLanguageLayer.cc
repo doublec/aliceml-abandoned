@@ -23,11 +23,17 @@
 #include "alice/LazySelInterpreter.hh"
 #include "alice/AbstractCodeInterpreter.hh"
 #include "alice/AliceConcreteCode.hh"
+#if LIGHTNING
+#include "alice/NativeCodeJitter.hh"
+#include "alice/NativeCodeInterpreter.hh"
+#endif
 
 word AliceLanguageLayer::TransformNames::primitiveValue;
 word AliceLanguageLayer::TransformNames::primitiveFunction;
 word AliceLanguageLayer::TransformNames::function;
 word AliceLanguageLayer::TransformNames::constructor;
+
+concrete_constructor AliceLanguageLayer::concreteCodeConstructor;
 
 static word AlicePrimitiveValueHandler(word x) {
   TagVal *tagVal = TagVal::FromWordDirect(x);
@@ -44,7 +50,8 @@ static word AlicePrimitiveFunctionHandler(word x) {
 }
 
 static word AliceFunctionHandler(word x) {
-  return AliceConcreteCode::New(TagVal::FromWordDirect(x))->ToWord();
+  TagVal *abstractCode = TagVal::FromWordDirect(x);
+  return AliceLanguageLayer::concreteCodeConstructor(abstractCode);
 }
 
 static word AliceConstructorHandler(word x) {
@@ -81,7 +88,19 @@ void AliceLanguageLayer::Init() {
   Guid::Init();
   LazySelInterpreter::Init();
   AbstractCodeInterpreter::Init();
+#if LIGHTNING
+  NativeCodeInterpreter::Init();
+  // to be done: Memory should be enlarged dynamically
+  NativeCodeJitter::Init(20 * STORE_MEMCHUNK_SIZE);
 
+  char *jitMode = getenv("ALICE_JIT_MODE");
+  if ((jitMode != NULL) && !strcmp(jitMode, "0"))
+    concreteCodeConstructor = (concrete_constructor) AliceConcreteCode::New;
+  else
+    concreteCodeConstructor = (concrete_constructor) NativeConcreteCode::New;
+#else
+  concreteCodeConstructor = (concrete_constructor) AliceConcreteCode::New;
+#endif
   Hole::InitExceptions(); //--** should not be here
   PrimitiveTable::Init();
 }
