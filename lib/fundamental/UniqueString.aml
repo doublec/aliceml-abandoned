@@ -16,12 +16,9 @@ import infix 4 = val op =                 from "ToplevelValues"
 import structure String                   from "String"
 import signature UNIQUE_STRING            from "UNIQUE_STRING-sig"
 
-structure UniqueString :> UNIQUE_STRING (*where String = String*)	(**)
-			  where type String.string    = String.string
-			  where type String.Char.char = String.Char.char =
+structure UniqueString :> UNIQUE_STRING where type string = string =	(**)
 struct
-    structure String = String
-
+    type string = string
     eqtype unique_string
     type t = unique_string
 
