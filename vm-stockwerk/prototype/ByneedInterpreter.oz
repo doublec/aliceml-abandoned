@@ -69,6 +69,14 @@ define
       end
    end
 
+/*--** this may be useful for debugging (seeing a full stack trace):
+   fun {ByneedInterpreterHandle Debug Exn TaskStack}
+      case TaskStack of Frame|Rest then
+	 exception(Frame|Debug Exn Rest)
+      end
+   end
+*/
+
    Me = byneedInterpreter(run: ByneedInterpreterRun
 			  handle: ByneedInterpreterHandle
 			  toString: fun {$ _} 'Byneed' end)
