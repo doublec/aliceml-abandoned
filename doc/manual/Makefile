@@ -1,4 +1,4 @@
-PHP = php4
+PHP = php
 
 ifeq ($(STOCKWERK), 1)
 INTEROP =
