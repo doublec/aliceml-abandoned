@@ -12,6 +12,7 @@ is
 
     flat-grammar.cm
     arity.cm
+    intermediate-aux.cm
     output-flat-grammar.cm
 
     PRIM_OPS-sig.aml
