@@ -994,10 +994,7 @@ UNFINISHED: obsolete after bootstrapping:
 
   (* Imports and annotations *)
 
-    fun trAnns'(a_s, ds') =
-	let val (xsus',ds') = List.foldl trAnn ([],ds') a_s in
-	    ( List.rev xsus', List.rev ds' )
-	end
+    fun trAnns'(a_s, ds') = List.foldl trAnn ([],ds') a_s
     and trAnn(I.ImpAnn(i,is,u),(xsus',ds')) =
 	let
 	    val r    = #region i
@@ -1033,15 +1030,16 @@ UNFINISHED: obsolete after bootstrapping:
     fun trComp(I.Comp(i,a_s,ds)) =
 	let
 	    val  ids' = ids ds
-	    val (xsus',ds') = trAnns'(a_s, trDecs'(ds,[]))
+	    val (xsus',ds') = trAnns'(a_s, [])
+	    val  ds'' = List.rev(trDecs'(ds,ds'))
 	    val  fs'  = List.map idToField ids'
 	    val  t    = Type.inProd(List.foldl idToRow (Type.emptyRow()) ids')
 	    val  i'   = typInfo(#region i,t)
-	    val  exp' = O.LetExp(i', ds', O.ProdExp(i', fs'))
+	    val  exp' = O.LetExp(i', ds'', O.ProdExp(i', fs'))
 	    val  s    = #sign i
 	    val  _    = Inf.stripSig s
 	in
-	    ( xsus', (exp',s) )
+	    ( List.rev xsus', (exp',s) )
 	end
 
     fun translate () (desc, component) = trComp component
