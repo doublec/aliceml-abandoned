@@ -104,13 +104,21 @@ public:
   }
 
   void Insert(int key, word value) {
+    HashTable *hashTable = HashTable::FromWordDirect(GetArg(HASHTABLE_POS));
+    word wKey = Store::IntToWord(key);
+    if (hashTable->IsMember(wKey)) {
+      Entry *entry = Entry::FromWordDirect(hashTable->GetItem(wKey));
+      hashTable->DeleteItem(wKey);
+      word result = entry->Unlink();
+      if (result != Store::IntToWord(1))
+	ReplaceArg(HEAD_POS, result);
+    }
     word head = GetArg(HEAD_POS);
     Entry *headEntry = head == Store::IntToWord(0)?
       INVALID_POINTER: Entry::FromWordDirect(head);
     Entry *entry = Entry::New(key, value, headEntry);
     ReplaceArg(HEAD_POS, entry->ToWord());
-    HashTable *hashTable = HashTable::FromWordDirect(GetArg(HASHTABLE_POS));
-    hashTable->InsertItem(Store::IntToWord(key), entry->ToWord());
+    hashTable->InsertItem(wKey, entry->ToWord());
   }
   void Delete(int key) {
     word wKey = Store::IntToWord(key);
