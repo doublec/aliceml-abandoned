@@ -28,7 +28,7 @@ OZC = ozc
 OZCOPTS = -z9
 ALICEC = alicec
 ALICECOPTS = 
-ALICEDEP = sml @SMLload=$(BOOTSTRAPDIR)/alicedep
+ALICEDEP = alicedep
 ALICELINK = alicelink
 ALICELINK_OPTS = -v
 
