@@ -58,6 +58,14 @@ public:
   void ReplaceArg(u_int f, int v) {
     InitArg(f, Store::IntToWord(v));
   }
+  Handler *GetHandler() {
+    if (GetLabel() != HANDLER_BLOCK_LABEL) {
+      return INVALID_POINTER;
+    }
+    else {
+      return (Handler *) Store::DirectWordToUnmanagedPointer(GetArg(1));
+    }
+  }
   word ToWord() {
     return PointerOp::EncodeBlock(this);
   }
