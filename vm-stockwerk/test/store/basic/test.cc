@@ -3,7 +3,7 @@
 //   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
 //
 // Copyright:
-//   Thorsten Brunklaus, 2000
+//   Thorsten Brunklaus, 2000-2001
 //
 // Last Change:
 //   $Date$ by $Author$
@@ -45,7 +45,7 @@ int main(void) {
 
   printf("SIZE_MASK is %x\n", StringToHexValue("00011111111111111110000000000000"));
   
-  Store::InitStore(memLimits);
+  Store::InitStore(memLimits, 75);
   
   std::printf("Allocating...\n");
   p = Store::AllocBlock(Store::MakeLabel(0), 1);
@@ -116,6 +116,13 @@ int main(void) {
   }
   else {
     std::printf("It Failed\n");
+  }
+
+  if (Store::WordToInt((word) HeaderOp::EncodeHeader(REF_LABEL, 0, 0)) != INVALID_INT) {
+    std::printf("Magic Header is Integer: %x\n", HeaderOp::EncodeHeader(REF_LABEL, 0, 0));
+  }
+  else {
+    std::printf("Magic Header is no Integer!\n");
   }
 
   return 0;
