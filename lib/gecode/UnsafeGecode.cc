@@ -16,24 +16,37 @@
 #include "GecodeBAB.hh"
 #include "gecode-int.hh"
 
-#define DECLARE_SPACE(s, x)                       \
-  GecodeSpace *s;                                                  \
-  if (Store::WordToTransient(x) != INVALID_POINTER) { REQUEST(x); } \
-  { ConcreteRepresentation *cr = ConcreteRepresentation::FromWordDirect(x); \
-    s = (GecodeSpace *) Store::WordToUnmanagedPointer(cr->Get(0)); }
+// STAMPS
+// 
+// Spaces are stamped uniquely. This makes it possible to know in which space
+// a variable was introduced, and in which spaces it may be used:
+//
+// A space created by gc_makespace gets the stamps (-1, <newStamp>)
+// As soon as this space is cloned, the -1 is replaced by a <newStamp>
+// If a space s with stamps (st1, st2) is cloned, the clone will get the
+// stamps (<newStamp>, st2)
+//
+// Variables that are created in a space with stamps (st1, st2) get st1, unless
+// st1==-1, in which case they get st2 as their stamp.
+//
+// Interpretation:
+// A variable may be used 
+//   * in the space where it was create
+//   * or if it was created in a root space
+//     (one obtained through gc_makespace), in any space
+//     obtained by cloning that root space
 
-#define DECLARE_ENGINE(se, x)                       \
-  Search<GecodeSpace> *se;                                                  \
-  if (Store::WordToTransient(x) != INVALID_POINTER) { REQUEST(x); } \
-  { ConcreteRepresentation *cr = ConcreteRepresentation::FromWordDirect(x); \
-    se = (Search<GecodeSpace> *) Store::WordToUnmanagedPointer(cr->Get(0)); }
+#define RETURN_IPAIR(i,j) RETURN2(Store::IntToWord(i), Store::IntToWord(j));
 
-#define DECLARE_BESTENGINE(se, x)                                           \
-  SearchBestExplCallback *se;                                  \
+#define DECLARE_SPACE(s, stamp, pstamp, x)                                  \
+  GecodeSpace *s;                                                           \
+  int stamp, pstamp;                                                        \
   if (Store::WordToTransient(x) != INVALID_POINTER) { REQUEST(x); }         \
   { ConcreteRepresentation *cr = ConcreteRepresentation::FromWordDirect(x); \
-    se = (SearchBestExplCallback *)                            \
-        Store::WordToUnmanagedPointer(cr->Get(0)); }
+    s = (GecodeSpace *) Store::WordToUnmanagedPointer(cr->Get(0));          \
+    stamp = Store::DirectWordToInt(cr->Get(1));                             \
+    pstamp = Store::DirectWordToInt(cr->Get(2));                            \
+  }
 
 #define DEFINE6(name)					\
   static Worker::Result name() {			\
@@ -49,6 +62,21 @@
 
 static word InvalidSpaceConstructor;
 #define CHECK_SPACE(s) if (!s) RAISE(InvalidSpaceConstructor);
+
+static s_int SpaceStamp = 0;
+
+static word InvalidVarConstructor;
+
+#define DECLARE_VAR(v, stamp, pstamp, x)                \
+ u_int v;                                               \
+ {                                                      \
+   DECLARE_TUPLE(varIntern, x);                         \
+   s_int myStamp = Store::DirectWordToInt(varIntern->Sel(1)); \
+   if (myStamp != stamp && myStamp != pstamp)           \
+     RAISE(InvalidVarConstructor);                      \
+   v = Store::DirectWordToInt(varIntern->Sel(0));             \
+ }
+
 
 namespace UnsafeGecode {
 
@@ -106,30 +134,8 @@ static GecodeFinalizationSet *gecodeFinalizationSet;
 void GecodeFinalizationSet::Finalize(word value) {
   ConcreteRepresentation *cr = ConcreteRepresentation::FromWordDirect(value);
   word ptr = cr->Get(0);
-  int type = Store::DirectWordToInt(cr->Get(1));
-  switch(type) {
-  case 0:
-    {
-      GecodeSpace *s = (GecodeSpace *)Store::WordToUnmanagedPointer(ptr);
-      delete s;
-    }
-    break;
-  case 1:
-    {
-      Search<GecodeSpace> *s =
-	(Search<GecodeSpace> *)Store::WordToUnmanagedPointer(ptr);
-      delete s;
-    }
-    break;
-  case 2:
-    {
-      SearchBestExplCallback *s =
-	(SearchBestExplCallback *)
-	Store::WordToUnmanagedPointer(ptr);
-      delete s;
-    }
-    break;
-  }
+  GecodeSpace *s = (GecodeSpace *)Store::WordToUnmanagedPointer(ptr);
+  delete s;
 }
 
 }
@@ -138,16 +144,20 @@ DEFINE0(gc_makespace) {
   GecodeSpace *s = new GecodeSpace();
 
   ConcreteRepresentation *cr =
-    ConcreteRepresentation::New(UnsafeGecode::gecodeHandler,2);
+    ConcreteRepresentation::New(UnsafeGecode::gecodeHandler,3);
   cr->Init(0, Store::UnmanagedPointerToWord(s));
-  cr->Init(1, Store::IntToWord(0));
+  cr->Init(1, Store::IntToWord(-1));
+  cr->Init(2, Store::IntToWord(SpaceStamp++));
   UnsafeGecode::gecodeFinalizationSet->Register(cr->ToWord());
   RETURN(cr->ToWord());
 } END
 
 DEFINE2(gc_fdvar) {
-  DECLARE_SPACE(s, x0);
+  DECLARE_SPACE(s, stamp, pstamp, x0);
   CHECK_SPACE(s);
+  
+  if (stamp==-1) stamp=pstamp;
+
   DECLARE_VECTOR(v, x1);
 
   int noOfPairs = v->GetLength();
@@ -162,14 +172,17 @@ DEFINE2(gc_fdvar) {
   }
   DomSpec ds(pairs, noOfPairs);
   int newVar = s->AddIntVariable(ds);
-  RETURN_INT(newVar);
+  RETURN_IPAIR(newVar, stamp);
 } END
 
 DEFINE3(gc_fdvarr) {
-  DECLARE_SPACE(s, x0);
+  DECLARE_SPACE(s, stamp, pstamp, x0);
   CHECK_SPACE(s);
+  
+  if (stamp==-1) stamp=pstamp;
+
   DECLARE_VECTOR(v, x1);
-  DECLARE_INT(boolVar, x2);
+  DECLARE_VAR(boolVar, stamp, pstamp, x2);
 
   int noOfPairs = v->GetLength();
   int pairs[noOfPairs][2];
@@ -184,48 +197,50 @@ DEFINE3(gc_fdvarr) {
   
   DomSpec ds(pairs, noOfPairs);
   int newVar = s->AddIntVariableR(ds, boolVar);
-  RETURN_INT(newVar);
+  RETURN_IPAIR(newVar, stamp);
 } END
 
 DEFINE1(gc_boolvar) {
-  DECLARE_SPACE(s, x0);
+  DECLARE_SPACE(s, stamp, pstamp, x0);
   CHECK_SPACE(s);
 
+  if (stamp==-1) stamp=pstamp;
+
   int newVar = s->AddBoolVariable();
-  RETURN_INT(newVar);
+  RETURN_IPAIR(newVar, stamp);
 } END
 
 DEFINE2(gc_getmin) {
-  DECLARE_SPACE(s, x0);
+  DECLARE_SPACE(s, stamp, pstamp, x0);
   CHECK_SPACE(s);
 
-  DECLARE_INT(var, x1);
+  DECLARE_VAR(var, stamp, pstamp, x1);
   RETURN_INT(s->vmin(var));
 } END
 
 DEFINE2(gc_getmax) {
-  DECLARE_SPACE(s, x0);
+  DECLARE_SPACE(s, stamp, pstamp, x0);
   CHECK_SPACE(s);
 
-  DECLARE_INT(var, x1);
+  DECLARE_VAR(var, stamp, pstamp, x1);
   RETURN_INT(s->vmax(var));
 } END
 
 DEFINE3(gc_dom) {
-  DECLARE_SPACE(s, x0);
+  DECLARE_SPACE(s, stamp, pstamp, x0);
   CHECK_SPACE(s);
-  DECLARE_INT(i, x1);
+  DECLARE_VAR(i, stamp, pstamp, x1);
   DECLARE_VECTOR(v, x2);
 
   int noOfPairs = v->GetLength();
   int pairs[noOfPairs][2];
 
-  for (int i=noOfPairs; i--;) {
+  for (int j=noOfPairs; j--;) {
     DECLARE_TUPLE(tmp, v->Sub(i));
     DECLARE_INT(tmp0, tmp->Sel(0));
     DECLARE_INT(tmp1, tmp->Sel(1));
-    pairs[i][0] = tmp0;
-    pairs[i][1] = tmp1;
+    pairs[j][0] = tmp0;
+    pairs[j][1] = tmp1;
   }
 
   DomSpec ds(pairs, noOfPairs);
@@ -234,11 +249,11 @@ DEFINE3(gc_dom) {
 } END
 
 DEFINE4(gc_domr) {
-  DECLARE_SPACE(s, x0);
+  DECLARE_SPACE(s, stamp, pstamp, x0);
   CHECK_SPACE(s);
-  DECLARE_INT(i, x1);
+  DECLARE_VAR(i, stamp, pstamp, x1);
   DECLARE_VECTOR(v, x2);
-  DECLARE_INT(boolvar, x3);
+  DECLARE_VAR(boolvar, stamp, pstamp, x3);
 
   int noOfPairs = v->GetLength();
   int pairs[noOfPairs][2];
@@ -257,19 +272,19 @@ DEFINE4(gc_domr) {
 } END
 
 DEFINE4(gc_rel) {
-  DECLARE_SPACE(s, x0);
+  DECLARE_SPACE(s, stamp, pstamp, x0);
   CHECK_SPACE(s);
-  DECLARE_INT(i, x1);
+  DECLARE_VAR(i, stamp, pstamp, x1);
   DECLARE_INT(rel, x2);
-  DECLARE_INT(j, x3);
+  DECLARE_VAR(j, stamp, pstamp, x3);
   s->trel(i, UnsafeGecode::int2reltype[rel], j);
   RETURN_UNIT;
 } END
 
 DEFINE4(gc_reli) {
-  DECLARE_SPACE(s, x0);
+  DECLARE_SPACE(s, stamp, pstamp, x0);
   CHECK_SPACE(s);
-  DECLARE_INT(i, x1);
+  DECLARE_VAR(i, stamp, pstamp, x1);
   DECLARE_INT(rel, x2);
   DECLARE_INT(j, x3);
   s->treli(i, UnsafeGecode::int2reltype[rel], j);
@@ -277,39 +292,39 @@ DEFINE4(gc_reli) {
 } END
 
 DEFINE5(gc_relr) {
-  DECLARE_SPACE(s, x0);
+  DECLARE_SPACE(s, stamp, pstamp, x0);
   CHECK_SPACE(s);
-  DECLARE_INT(i, x1);
+  DECLARE_VAR(i, stamp, pstamp, x1);
   DECLARE_INT(rel, x2);
-  DECLARE_INT(j, x3);
-  DECLARE_INT(boolVar, x4);
+  DECLARE_VAR(j, stamp, pstamp, x3);
+  DECLARE_VAR(boolVar, stamp, pstamp, x4);
   s->trelR(i, UnsafeGecode::int2reltype[rel], j, boolVar);
   RETURN_UNIT;
 } END
 
 DEFINE5(gc_relir) {
-  DECLARE_SPACE(s, x0);
+  DECLARE_SPACE(s, stamp, pstamp, x0);
   CHECK_SPACE(s);
-  DECLARE_INT(i, x1);
+  DECLARE_VAR(i, stamp, pstamp, x1);
   DECLARE_INT(rel, x2);
   DECLARE_INT(j, x3);
-  DECLARE_INT(boolVar, x4);
+  DECLARE_VAR(boolVar, stamp, pstamp, x4);
   s->treliR(i, UnsafeGecode::int2reltype[rel], j, boolVar);
   RETURN_UNIT;
 } END
 
 DEFINE4(gc_eq) {
-  DECLARE_SPACE(s, x0);
+  DECLARE_SPACE(s, stamp, pstamp, x0);
   CHECK_SPACE(s);
-  DECLARE_INT(i, x1);
-  DECLARE_INT(j, x2);
+  DECLARE_VAR(i, stamp, pstamp, x1);
+  DECLARE_VAR(j, stamp, pstamp, x2);
   DECLARE_INT(cl, x3);
   s->teq(i, j, UnsafeGecode::int2cl[cl]);
   RETURN_UNIT;
 } END
 
 DEFINE4(gc_eqv) {
-  DECLARE_SPACE(s, x0);
+  DECLARE_SPACE(s, stamp, pstamp, x0);
   CHECK_SPACE(s);
   DECLARE_VECTOR(v, x1);
   DECLARE_INT(cl, x2);
@@ -317,7 +332,7 @@ DEFINE4(gc_eqv) {
 
   IntArgs vars(noOfVars);
   for (int i=noOfVars; i--;) {
-    DECLARE_INT(tmp, v->Sub(i));
+    DECLARE_VAR(tmp, stamp, pstamp, v->Sub(i));
     vars[i] = tmp;
   }
   s->teq(vars, UnsafeGecode::int2cl[cl]);
@@ -325,27 +340,27 @@ DEFINE4(gc_eqv) {
 } END
 
 DEFINE5(gc_eqr) {
-  DECLARE_SPACE(s, x0);
+  DECLARE_SPACE(s, stamp, pstamp, x0);
   CHECK_SPACE(s);
-  DECLARE_INT(i, x1);
-  DECLARE_INT(j, x2);
+  DECLARE_VAR(i, stamp, pstamp, x1);
+  DECLARE_VAR(j, stamp, pstamp, x2);
   DECLARE_INT(cl, x3);
-  DECLARE_INT(boolVar, x4);
+  DECLARE_VAR(boolVar, stamp, pstamp, x4);
   s->teqR(i, j, boolVar, UnsafeGecode::int2cl[cl]);
   RETURN_UNIT;
 } END
 
 DEFINE5(gc_eqvr) {
-  DECLARE_SPACE(s, x0);
+  DECLARE_SPACE(s, stamp, pstamp, x0);
   CHECK_SPACE(s);
   DECLARE_VECTOR(v, x1);
   DECLARE_INT(cl, x2);
-  DECLARE_INT(boolVar, x4);
+  DECLARE_VAR(boolVar, stamp, pstamp, x4);
 
   int noOfVars = v->GetLength();
   IntArgs vars(noOfVars);
   for (int i=noOfVars; i--;) {
-    DECLARE_INT(tmp, v->Sub(i));
+    DECLARE_VAR(tmp, stamp, pstamp, v->Sub(i));
     vars[i] = tmp;
   }
 
@@ -354,7 +369,7 @@ DEFINE5(gc_eqvr) {
 } END
 
 DEFINE3(gc_distinct) {
-  DECLARE_SPACE(s, x0);
+  DECLARE_SPACE(s, stamp, pstamp, x0);
   CHECK_SPACE(s);
   DECLARE_VECTOR(v, x1);
   DECLARE_INT(cl, x2);
@@ -362,7 +377,7 @@ DEFINE3(gc_distinct) {
   int noOfVars = v->GetLength();
   IntArgs vars(noOfVars);
   for (int i=noOfVars; i--;) {
-    DECLARE_INT(tmp, v->Sub(i));
+    DECLARE_VAR(tmp, stamp, pstamp, v->Sub(i));
     vars[i] = tmp;
   }
   s->tdistinct(vars, UnsafeGecode::int2cl[cl]);
@@ -370,7 +385,7 @@ DEFINE3(gc_distinct) {
 } END
 
 DEFINE3(gc_distincti) {
-  DECLARE_SPACE(s, x0);
+  DECLARE_SPACE(s, stamp, pstamp, x0);
   CHECK_SPACE(s);
   DECLARE_VECTOR(v, x1);
   DECLARE_INT(cl, x2);
@@ -383,7 +398,7 @@ DEFINE3(gc_distincti) {
     DECLARE_TUPLE(t, v->Sub(i));
     DECLARE_INT(tmp1, t->Sel(0));
     offsets[i] = tmp1;
-    DECLARE_INT(tmp2, t->Sel(1));
+    DECLARE_VAR(tmp2, stamp, pstamp, t->Sel(1));
     vars[i] = tmp2;
   }
   s->tdistinct(offsets, vars, UnsafeGecode::int2cl[cl]);
@@ -391,7 +406,7 @@ DEFINE3(gc_distincti) {
 } END
 
 DEFINE5(gc_linear) {
-  DECLARE_SPACE(s, x0);
+  DECLARE_SPACE(s, stamp, pstamp, x0);
   CHECK_SPACE(s);
   DECLARE_VECTOR(v, x1);
   DECLARE_INT(rel, x2);
@@ -405,7 +420,7 @@ DEFINE5(gc_linear) {
     DECLARE_TUPLE(t, v->Sub(i));
     DECLARE_INT(tmp1, t->Sel(0));
     offsets[i] = tmp1;
-    DECLARE_INT(tmp2, t->Sel(1));
+    DECLARE_VAR(tmp2, stamp, pstamp, t->Sel(1));
     vars[i] = tmp2;
   }
   s->tlinear(offsets, vars, UnsafeGecode::int2reltype[rel], c,
@@ -414,12 +429,12 @@ DEFINE5(gc_linear) {
 } END
 
 DEFINE6(gc_linearr) {
-  DECLARE_SPACE(s, x0);
+  DECLARE_SPACE(s, stamp, pstamp, x0);
   CHECK_SPACE(s);
   DECLARE_VECTOR(v, x1);
   DECLARE_INT(rel, x2);
   DECLARE_INT(c, x3);
-  DECLARE_INT(boolVar, x4);
+  DECLARE_VAR(boolVar, stamp, pstamp, x4);
   DECLARE_INT(cl, x5);
 
   int noOfVars = v->GetLength();
@@ -429,7 +444,7 @@ DEFINE6(gc_linearr) {
     DECLARE_TUPLE(t, v->Sub(i));
     DECLARE_INT(tmp1, t->Sel(0));
     offsets[i] = tmp1;
-    DECLARE_INT(tmp2, t->Sel(1));
+    DECLARE_VAR(tmp2, stamp, pstamp, t->Sel(1));
     vars[i] = tmp2;
   }
   s->tlinearR(offsets, vars, UnsafeGecode::int2reltype[rel], c,
@@ -438,75 +453,75 @@ DEFINE6(gc_linearr) {
 } END
     
 DEFINE3(gc_bool_not) {
-  DECLARE_SPACE(s, x0);
+  DECLARE_SPACE(s, stamp, pstamp, x0);
   CHECK_SPACE(s);
-  DECLARE_INT(a, x1);
-  DECLARE_INT(b, x2);
+  DECLARE_VAR(a, stamp, pstamp, x1);
+  DECLARE_VAR(b, stamp, pstamp, x2);
   s->tbool_not(a, b);
   RETURN_UNIT;
 } END
 
 DEFINE4(gc_bool_and) {
-  DECLARE_SPACE(s, x0);
+  DECLARE_SPACE(s, stamp, pstamp, x0);
   CHECK_SPACE(s);
-  DECLARE_INT(a, x1);
-  DECLARE_INT(b, x2);
-  DECLARE_INT(c, x3);
+  DECLARE_VAR(a, stamp, pstamp, x1);
+  DECLARE_VAR(b, stamp, pstamp, x2);
+  DECLARE_VAR(c, stamp, pstamp, x3);
   s->tbool_and(a, b, c);
   RETURN_UNIT;
 } END
 
 DEFINE4(gc_bool_or) {
-  DECLARE_SPACE(s, x0);
+  DECLARE_SPACE(s, stamp, pstamp, x0);
   CHECK_SPACE(s);
-  DECLARE_INT(a, x1);
-  DECLARE_INT(b, x2);
-  DECLARE_INT(c, x3);
+  DECLARE_VAR(a, stamp, pstamp, x1);
+  DECLARE_VAR(b, stamp, pstamp, x2);
+  DECLARE_VAR(c, stamp, pstamp, x3);
   s->tbool_or(a, b, c);
   RETURN_UNIT;
 } END
 
 DEFINE4(gc_bool_imp) {
-  DECLARE_SPACE(s, x0);
+  DECLARE_SPACE(s, stamp, pstamp, x0);
   CHECK_SPACE(s);
-  DECLARE_INT(a, x1);
-  DECLARE_INT(b, x2);
-  DECLARE_INT(c, x3);
+  DECLARE_VAR(a, stamp, pstamp, x1);
+  DECLARE_VAR(b, stamp, pstamp, x2);
+  DECLARE_VAR(c, stamp, pstamp, x3);
   s->tbool_imp(a, b, c);
   RETURN_UNIT;
 } END
 
 DEFINE4(gc_bool_eq) {
-  DECLARE_SPACE(s, x0);
+  DECLARE_SPACE(s, stamp, pstamp, x0);
   CHECK_SPACE(s);
-  DECLARE_INT(a, x1);
-  DECLARE_INT(b, x2);
-  DECLARE_INT(c, x3);
+  DECLARE_VAR(a, stamp, pstamp, x1);
+  DECLARE_VAR(b, stamp, pstamp, x2);
+  DECLARE_VAR(c, stamp, pstamp, x3);
   s->tbool_eq(a, b, c);
   RETURN_UNIT;
 } END
 
 DEFINE4(gc_bool_xor) {
-  DECLARE_SPACE(s, x0);
+  DECLARE_SPACE(s, stamp, pstamp, x0);
   CHECK_SPACE(s);
-  DECLARE_INT(a, x1);
-  DECLARE_INT(b, x2);
-  DECLARE_INT(c, x3);
+  DECLARE_VAR(a, stamp, pstamp, x1);
+  DECLARE_VAR(b, stamp, pstamp, x2);
+  DECLARE_VAR(c, stamp, pstamp, x3);
   s->tbool_xor(a, b, c);
   RETURN_UNIT;
 } END
 
 DEFINE3(gc_bool_andv) {
-  DECLARE_SPACE(s, x0);
+  DECLARE_SPACE(s, stamp, pstamp, x0);
   CHECK_SPACE(s);
   DECLARE_VECTOR(v, x1);
-  DECLARE_INT(b, x2);
+  DECLARE_VAR(b, stamp, pstamp, x2);
 
   int noOfVars = v->GetLength();
   IntArgs vars(noOfVars);
 
   for (int i=noOfVars; i--;) {
-    DECLARE_INT(tmp1, v->Sub(i));
+    DECLARE_VAR(tmp1, stamp, pstamp, v->Sub(i));
     vars[i] = tmp1;
   }
   s->tbool_and(vars, b);
@@ -514,15 +529,15 @@ DEFINE3(gc_bool_andv) {
 } END
 
 DEFINE3(gc_bool_orv) {
-  DECLARE_SPACE(s, x0);
+  DECLARE_SPACE(s, stamp, pstamp, x0);
   CHECK_SPACE(s);
   DECLARE_VECTOR(v, x1);
-  DECLARE_INT(b, x2);
+  DECLARE_VAR(b, stamp, pstamp, x2);
 
   int noOfVars = v->GetLength();
   IntArgs vars(noOfVars);
   for (int i=noOfVars; i--;) {
-    DECLARE_INT(tmp1, v->Sub(i));
+    DECLARE_VAR(tmp1, stamp, pstamp, v->Sub(i));
     vars[i] = tmp1;
   }
   s->tbool_or(vars, b);
@@ -530,7 +545,7 @@ DEFINE3(gc_bool_orv) {
 } END
 
 DEFINE4(gc_branch) {
-  DECLARE_SPACE(s, x0);
+  DECLARE_SPACE(s, stamp, pstamp, x0);
   CHECK_SPACE(s);
   DECLARE_VECTOR(v, x1);
   DECLARE_INT(varsel, x2);
@@ -540,7 +555,7 @@ DEFINE4(gc_branch) {
   IntArgs vars(noOfVars);
 
   for (int i=noOfVars; i--;) {
-    DECLARE_INT(tmp1, v->Sub(i));
+    DECLARE_VAR(tmp1, stamp, pstamp, v->Sub(i));
     vars[i] = tmp1;
   }
   s->tbranch(vars, UnsafeGecode::int2bvarsel[varsel],
@@ -548,120 +563,8 @@ DEFINE4(gc_branch) {
   RETURN_UNIT;
 } END
 
-DEFINE1(gc_getsearchengine) {
-  DECLARE_SPACE(s, x0);
-  CHECK_SPACE(s);
-
-  s->enter();
-  GecodeSpace *c;
-  if(s->failed()) {
-    c = static_cast<GecodeSpace *>(s);
-  } else {
-    c = static_cast<GecodeSpace *>(s->clone());
-  }
-
-  Search<GecodeSpace> *se =
-    new Search<GecodeSpace>(c);
-
-  ConcreteRepresentation *cr =
-    ConcreteRepresentation::New(UnsafeGecode::gecodeHandler,2);
-  cr->Init(0, Store::UnmanagedPointerToWord(se));
-  cr->Init(1, Store::IntToWord(1));
-  UnsafeGecode::gecodeFinalizationSet->Register(cr->ToWord());
-  RETURN(cr->ToWord());
-} END
-
-DEFINE1(gc_next) {
-  DECLARE_ENGINE(se, x0);
-  GecodeSpace *sol = se->next();
-  if(sol) {
-    ConcreteRepresentation *cr =
-      ConcreteRepresentation::New(UnsafeGecode::gecodeHandler,2);
-    cr->Init(0, Store::UnmanagedPointerToWord(sol));
-    cr->Init(1, Store::IntToWord(0));
-    UnsafeGecode::gecodeFinalizationSet->Register(cr->ToWord());
-
-    TagVal *t = TagVal::New(1,1);
-    t->Init(0, cr->ToWord());
-    RETURN(t->ToWord());
-  } else {
-    RETURN_INT(0);
-  }
-} END
-
-DEFINE1(gc_getsearchbestengine) {
-  DECLARE_SPACE(s, x0);
-  CHECK_SPACE(s);
-
-  s->enter();
-
-  GecodeSpace *c;
-  if(s->failed()) {
-    c = static_cast<GecodeSpace *>(s);
-  } else {
-    c = static_cast<GecodeSpace *>(s->clone());
-  }
-  
-  SearchBestExplCallback *se = new SearchBestExplCallback(c);
-
-  ConcreteRepresentation *cr =
-    ConcreteRepresentation::New(UnsafeGecode::gecodeHandler,2);
-  cr->Init(0, Store::UnmanagedPointerToWord(se));
-  cr->Init(1, Store::IntToWord(2));
-  UnsafeGecode::gecodeFinalizationSet->Register(cr->ToWord());
-  RETURN(cr->ToWord());
-} END
-
-DEFINE1(gc_nextbest) {
-  DECLARE_BESTENGINE(se, x0);
-  Space *s1;
-  Space *s2;
-
-  switch(se->next(&s1, &s2)) {
-  case SB_CONSTRAIN:
-    {
-      ConcreteRepresentation *cr1 =
-	ConcreteRepresentation::New(UnsafeGecode::gecodeHandler,2);
-      cr1->Init(0, Store::UnmanagedPointerToWord(s1));
-      cr1->Init(1, Store::IntToWord(0));
-      UnsafeGecode::gecodeFinalizationSet->Register(cr1->ToWord());
-
-      ConcreteRepresentation *cr2 =
-	ConcreteRepresentation::New(UnsafeGecode::gecodeHandler,2);
-      cr2->Init(0, Store::UnmanagedPointerToWord(s2));
-      cr2->Init(1, Store::IntToWord(0));
-      UnsafeGecode::gecodeFinalizationSet->Register(cr2->ToWord());
-
-      TagVal *t = TagVal::New(SB_CONSTRAIN,2);
-      t->Init(0, cr1->ToWord());
-      t->Init(1, cr2->ToWord());
-      RETURN(t->ToWord());      
-    }
-    break;
-  case SB_DONE:
-    {
-      RETURN_INT(SB_DONE);
-    }
-    break;
-  case SB_SOLUTION:
-    {
-      ConcreteRepresentation *cr =
-	ConcreteRepresentation::New(UnsafeGecode::gecodeHandler,2);
-      cr->Init(0, Store::UnmanagedPointerToWord(s1));
-      cr->Init(1, Store::IntToWord(0));
-      UnsafeGecode::gecodeFinalizationSet->Register(cr->ToWord());
-
-      TagVal *t = TagVal::New(SB_SOLUTION,1);
-      t->Init(0, cr->ToWord());
-      RETURN(t->ToWord());      
-    }
-    break;
-  }
-  RETURN_UNIT;
-} END
-
 DEFINE1(gc_status) {
-  DECLARE_SPACE(s, x0);
+  DECLARE_SPACE(s, stamp, pstamp, x0);
   CHECK_SPACE(s);
   switch(s->status()) {
   case SS_BRANCH:
@@ -675,7 +578,7 @@ DEFINE1(gc_status) {
 } END
 
 DEFINE2(gc_commit) {
-  DECLARE_SPACE(s, x0);
+  DECLARE_SPACE(s, stamp, pstamp, x0);
   CHECK_SPACE(s);
   DECLARE_INT(i, x1);
   s->commit(i);
@@ -683,13 +586,19 @@ DEFINE2(gc_commit) {
 } END
 
 DEFINE1(gc_clone) {
-  DECLARE_SPACE(s, x0);
+  DECLARE_SPACE(s, stamp, pstamp, x0);
   CHECK_SPACE(s);
 
+  if (stamp==-1) {
+    ConcreteRepresentation *cr = ConcreteRepresentation::FromWordDirect(x0);
+    cr->Replace(1, Store::IntToWord(SpaceStamp++));
+  }
+
   ConcreteRepresentation *cr =
-    ConcreteRepresentation::New(UnsafeGecode::gecodeHandler,2);
+    ConcreteRepresentation::New(UnsafeGecode::gecodeHandler,3);
   cr->Init(0, Store::UnmanagedPointerToWord(s->clone()));
-  cr->Init(1, Store::IntToWord(0));
+  cr->Init(1, Store::IntToWord(SpaceStamp++));
+  cr->Init(2, Store::IntToWord(pstamp));
   UnsafeGecode::gecodeFinalizationSet->Register(cr->ToWord());
   RETURN(cr->ToWord());
 } END
@@ -713,7 +622,7 @@ DEFINE1(gc_alive) {
 } END
 
 DEFINE6(gc_countii) {
-  DECLARE_SPACE(s, x0);
+  DECLARE_SPACE(s, stamp, pstamp, x0);
   CHECK_SPACE(s);
   DECLARE_VECTOR(v, x1);
   DECLARE_INT(rel, x2);
@@ -724,7 +633,7 @@ DEFINE6(gc_countii) {
   int noOfVars = v->GetLength();
   IntArgs vars(noOfVars);
   for (int i=noOfVars; i--;) {
-    DECLARE_INT(tmp, v->Sub(i));
+    DECLARE_VAR(tmp, stamp, pstamp, v->Sub(i));
     vars[i] = tmp;
   }
 
@@ -734,18 +643,18 @@ DEFINE6(gc_countii) {
 } END
 
 DEFINE6(gc_countvi) {
-  DECLARE_SPACE(s, x0);
+  DECLARE_SPACE(s, stamp, pstamp, x0);
   CHECK_SPACE(s);
   DECLARE_VECTOR(v, x1);
   DECLARE_INT(rel, x2);
-  DECLARE_INT(i, x3);
+  DECLARE_VAR(i, stamp, pstamp, x3);
   DECLARE_INT(rel2, x4);
   DECLARE_INT(j, x5);
 
   int noOfVars = v->GetLength();
   IntArgs vars(noOfVars);
   for (int i=noOfVars; i--;) {
-    DECLARE_INT(tmp, v->Sub(i));
+    DECLARE_VAR(tmp, stamp, pstamp, v->Sub(i));
     vars[i] = tmp;
   }
 
@@ -755,18 +664,18 @@ DEFINE6(gc_countvi) {
 } END
 
 DEFINE6(gc_countiv) {
-  DECLARE_SPACE(s, x0);
+  DECLARE_SPACE(s, stamp, pstamp, x0);
   CHECK_SPACE(s);
   DECLARE_VECTOR(v, x1);
   DECLARE_INT(rel, x2);
   DECLARE_INT(i, x3);
   DECLARE_INT(rel2, x4);
-  DECLARE_INT(j, x5);
+  DECLARE_VAR(j, stamp, pstamp, x5);
 
   int noOfVars = v->GetLength();
   IntArgs vars(noOfVars);
   for (int i=noOfVars; i--;) {
-    DECLARE_INT(tmp, v->Sub(i));
+    DECLARE_VAR(tmp, stamp, pstamp, v->Sub(i));
     vars[i] = tmp;
   }
 
@@ -776,18 +685,18 @@ DEFINE6(gc_countiv) {
 } END
 
 DEFINE6(gc_countvv) {
-  DECLARE_SPACE(s, x0);
+  DECLARE_SPACE(s, stamp, pstamp, x0);
   CHECK_SPACE(s);
   DECLARE_VECTOR(v, x1);
   DECLARE_INT(rel, x2);
-  DECLARE_INT(i, x3);
+  DECLARE_VAR(i, stamp, pstamp, x3);
   DECLARE_INT(rel2, x4);
-  DECLARE_INT(j, x5);
+  DECLARE_VAR(j, stamp, pstamp, x5);
 
   int noOfVars = v->GetLength();
   IntArgs vars(noOfVars);
   for (int i=noOfVars; i--;) {
-    DECLARE_INT(tmp, v->Sub(i));
+    DECLARE_VAR(tmp, stamp, pstamp, v->Sub(i));
     vars[i] = tmp;
   }
 
@@ -797,16 +706,16 @@ DEFINE6(gc_countvv) {
 } END
 
 DEFINE4(gc_element) {
-  DECLARE_SPACE(s, x0);
+  DECLARE_SPACE(s, stamp, pstamp, x0);
   CHECK_SPACE(s);
   DECLARE_VECTOR(v, x1);
-  DECLARE_INT(i, x2);
-  DECLARE_INT(j, x3);
+  DECLARE_VAR(i, stamp, pstamp, x2);
+  DECLARE_VAR(j, stamp, pstamp, x3);
 
   int noOfVars = v->GetLength();
   IntArgs vars(noOfVars);
   for (int i=noOfVars; i--;) {
-    DECLARE_INT(tmp, v->Sub(i));
+    DECLARE_VAR(tmp, stamp, pstamp, v->Sub(i));
     vars[i] = tmp;
   }
 
@@ -815,11 +724,11 @@ DEFINE4(gc_element) {
 } END
 
 DEFINE4(gc_elementi) {
-  DECLARE_SPACE(s, x0);
+  DECLARE_SPACE(s, stamp, pstamp, x0);
   CHECK_SPACE(s);
   DECLARE_VECTOR(v, x1);
-  DECLARE_INT(i, x2);
-  DECLARE_INT(j, x3);
+  DECLARE_VAR(i, stamp, pstamp, x2);
+  DECLARE_VAR(j, stamp, pstamp, x3);
 
   int noOfArgs = v->GetLength();
   IntArgs args(noOfArgs);
@@ -833,7 +742,7 @@ DEFINE4(gc_elementi) {
 } END
 
 DEFINE4(gc_lex) {
-  DECLARE_SPACE(s, x0);
+  DECLARE_SPACE(s, stamp, pstamp, x0);
   CHECK_SPACE(s);
   DECLARE_VECTOR(v1, x1);
   DECLARE_INT(rel, x2);
@@ -842,14 +751,14 @@ DEFINE4(gc_lex) {
   int noOfVars1 = v1->GetLength();
   IntArgs vars1(noOfVars1);
   for (int i=noOfVars1; i--;) {
-    DECLARE_INT(tmp, v1->Sub(i));
+    DECLARE_VAR(tmp, stamp, pstamp, v1->Sub(i));
     vars1[i] = tmp;
   }
 
   int noOfVars2 = v2->GetLength();
   IntArgs vars2(noOfVars2);
   for (int i=noOfVars2; i--;) {
-    DECLARE_INT(tmp, v2->Sub(i));
+    DECLARE_VAR(tmp, stamp, pstamp, v2->Sub(i));
     vars2[i] = tmp;
   }
 
@@ -858,14 +767,14 @@ DEFINE4(gc_lex) {
 } END
 
 DEFINE3(gc_min) {
-  DECLARE_SPACE(s, x0);
+  DECLARE_SPACE(s, stamp, pstamp, x0);
   CHECK_SPACE(s);
   DECLARE_VECTOR(v, x1);
-  DECLARE_INT(i, x2);
+  DECLARE_VAR(i, stamp, pstamp, x2);
   int noOfVars = v->GetLength();
   IntArgs vars(noOfVars);
   for (int i=noOfVars; i--;) {
-    DECLARE_INT(tmp, v->Sub(i));
+    DECLARE_VAR(tmp, stamp, pstamp, v->Sub(i));
     vars[i] = tmp;
   }
 
@@ -874,14 +783,14 @@ DEFINE3(gc_min) {
 } END
 
 DEFINE3(gc_max) {
-  DECLARE_SPACE(s, x0);
+  DECLARE_SPACE(s, stamp, pstamp, x0);
   CHECK_SPACE(s);
   DECLARE_VECTOR(v, x1);
-  DECLARE_INT(i, x2);
+  DECLARE_VAR(i, stamp, pstamp, x2);
   int noOfVars = v->GetLength();
   IntArgs vars(noOfVars);
   for (int i=noOfVars; i--;) {
-    DECLARE_INT(tmp, v->Sub(i));
+    DECLARE_VAR(tmp, stamp, pstamp, v->Sub(i));
     vars[i] = tmp;
   }
 
@@ -890,10 +799,10 @@ DEFINE3(gc_max) {
 } END
 
 DEFINE4(gc_abs) {
-  DECLARE_SPACE(s, x0);
+  DECLARE_SPACE(s, stamp, pstamp, x0);
   CHECK_SPACE(s);
-  DECLARE_INT(i, x1);
-  DECLARE_INT(j, x2);
+  DECLARE_VAR(i, stamp, pstamp, x1);
+  DECLARE_VAR(j, stamp, pstamp, x2);
   DECLARE_INT(cl, x3);
 
   s->tabs(i, j, UnsafeGecode::int2cl[cl]);
@@ -902,11 +811,11 @@ DEFINE4(gc_abs) {
 } END
 
 DEFINE4(gc_mult) {
-  DECLARE_SPACE(s, x0);
+  DECLARE_SPACE(s, stamp, pstamp, x0);
   CHECK_SPACE(s);
-  DECLARE_INT(i, x1);
-  DECLARE_INT(j, x2);
-  DECLARE_INT(k, x3);
+  DECLARE_VAR(i, stamp, pstamp, x1);
+  DECLARE_VAR(j, stamp, pstamp, x2);
+  DECLARE_VAR(k, stamp, pstamp, x3);
 
   s->tmult(i, j, k);
 
@@ -914,7 +823,7 @@ DEFINE4(gc_mult) {
 } END
 
 DEFINE3(gc_assign) {
-  DECLARE_SPACE(s, x0);
+  DECLARE_SPACE(s, stamp, pstamp, x0);
   CHECK_SPACE(s);
   DECLARE_VECTOR(v, x1);
   DECLARE_INT(avalsel, x2);
@@ -922,7 +831,7 @@ DEFINE3(gc_assign) {
   int noOfVars = v->GetLength();
   IntArgs vars(noOfVars);
   for (int i=noOfVars; i--;) {
-    DECLARE_INT(tmp, v->Sub(i));
+    DECLARE_VAR(tmp, stamp, pstamp, v->Sub(i));
     vars[i] = tmp;
   }
 
@@ -930,6 +839,16 @@ DEFINE3(gc_assign) {
   RETURN_UNIT;
 } END
 
+
+// These are only for debugging purposes
+DEFINE1(gc_stamps) {
+  DECLARE_SPACE(s, stamp, pstamp, x0);
+  RETURN_IPAIR(stamp, pstamp);
+} END
+DEFINE1(gc_varStamp) {
+  DECLARE_TUPLE(var, x0);
+  RETURN(var->Sel(1));
+} END
 
 word InitComponent() {
   UnsafeGecode::gecodeFinalizationSet = new UnsafeGecode::GecodeFinalizationSet();
@@ -940,10 +859,18 @@ word InitComponent() {
 			   "UnsafeGecode.InvalidSpace")->ToWord();
   RootSet::Add(InvalidSpaceConstructor);
 
-  Record *record = Record::New(53);
+  InvalidVarConstructor =
+    UniqueConstructor::New("InvalidVar",
+			   "UnsafeGecode.InvalidVar")->ToWord();
+  RootSet::Add(InvalidVarConstructor);
+
+  Record *record = Record::New(52);
 
   record->Init("'InvalidSpace", InvalidSpaceConstructor);
   record->Init("InvalidSpace", InvalidSpaceConstructor);
+
+  record->Init("'InvalidVar", InvalidVarConstructor);
+  record->Init("InvalidVar", InvalidVarConstructor);
 
   INIT_STRUCTURE(record, "UnsafeGecode", "makeSpace",
 		 gc_makespace, 0);
@@ -1005,14 +932,6 @@ word InitComponent() {
 
   INIT_STRUCTURE(record, "UnsafeGecode", "branch",
 		 gc_branch, 4);
-  INIT_STRUCTURE(record, "UnsafeGecode", "getSearchEngine",
-		 gc_getsearchengine, 1);
-  INIT_STRUCTURE(record, "UnsafeGecode", "next",
-		 gc_next, 1);
-  INIT_STRUCTURE(record, "UnsafeGecode", "getSearchBestEngine",
-		 gc_getsearchbestengine, 1);
-  INIT_STRUCTURE(record, "UnsafeGecode", "nextBest",
-		 gc_nextbest, 1);
 
   INIT_STRUCTURE(record, "UnsafeGecode", "status",
 		 gc_status, 1);
@@ -1049,6 +968,11 @@ word InitComponent() {
 		 gc_mult, 4);
   INIT_STRUCTURE(record, "UnsafeGecode", "assign",
 		 gc_assign, 3);
+
+  INIT_STRUCTURE(record, "UnsafeGecode", "stamps",
+		 gc_stamps, 1);
+  INIT_STRUCTURE(record, "UnsafeGecode", "varStamp",
+		 gc_varStamp, 1);
 
   RETURN_STRUCTURE("UnsafeGecode$", record);
 }

@@ -14,6 +14,7 @@ signature GC_SIG =
    sig
        structure UnsafeGecode : sig
 	   exception InvalidSpace
+	   exception InvalidVar
 
 	   val makeSpace : unit -> 'space
 
@@ -77,17 +78,14 @@ signature GC_SIG =
 
 	   val assign : 'space * 'fdvar vector * 'avalsel -> unit
 
-	   val getSearchEngine : 'space -> 'searchengine
-	   val next : 'searchengine -> 'space option
-
-	   val getSearchBestEngine : 'space -> 'searchbestengine
-	   val nextBest : 'searchbestengine -> 'searchbestresult
-
 	   val status  : 'space -> 'status
 	   val commit  : 'space * int -> unit
 	   val clone   : 'space -> 'space
 	   val discard : 'space -> unit
 	   val alive   : 'space -> unit
+
+	   val stamps : 'space -> int * int
+	   val varStamp : 'var -> int
 
        end
    end
