@@ -328,6 +328,75 @@ public:
 };
 
 //
+// Unlock Worker
+//
+class UnlockWorker : public Worker {
+public:
+  static void PushFrame(Lock *lock);
+  static void ReleaseLock();
+  
+  virtual Result Run();
+  virtual Result Handle();
+  virtual const char *Identify();
+  virtual void DumpFrame(word frame);
+};
+
+class UnlockFrame : public StackFrame {
+protected:
+  enum {
+    LOCK_POS, SIZE
+  };
+public:
+  using Block::ToWord;
+  
+  // UnlockFrame Accessors
+  Lock *GetLock() {
+    return Lock::FromWordDirect(StackFrame::GetArg(LOCK_POS));
+  }
+  // UnlockFrame Constructor
+  static UnlockFrame *New(Worker *worker, Lock *lock) {
+    StackFrame *frame = StackFrame::New(UNLOCK_FRAME, worker, SIZE);
+    frame->InitArg(LOCK_POS, lock->ToWord());
+    return static_cast<UnlockFrame *>(frame);
+  }
+  // UnlockFrame Untagging
+  static UnlockFrame *FromWordDirect(word frame) {
+    StackFrame *p = StackFrame::FromWordDirect(frame);
+    Assert(p->GetLabel() == UNLOCK_FRAME);
+    return static_cast<UnlockFrame *>(p);
+  }
+};
+
+void UnlockWorker::PushFrame(Lock *lock) {
+  static UnlockWorker *self = new UnlockWorker();
+  Scheduler::PushFrame(UnlockFrame::New(self, lock)->ToWord());
+}
+
+void UnlockWorker::ReleaseLock() {
+  UnlockFrame *frame = UnlockFrame::FromWordDirect(Scheduler::GetAndPopFrame());
+  Lock *lock = frame->GetLock();
+  lock->ReleaseLock();
+}
+
+Worker::Result UnlockWorker::Run() {
+  ReleaseLock();
+  return Worker::CONTINUE;
+}
+
+Worker::Result UnlockWorker::Handle() {
+  ReleaseLock();
+  return Worker::RAISE;
+}
+
+const char *UnlockWorker::Identify() {
+  return "UnlockWorker";
+}
+
+void UnlockWorker::DumpFrame(word) {
+  std::fprintf(stderr, "UnlockWorker");
+}
+
+//
 // Interpreter Types
 //
 class Word {
@@ -421,7 +490,6 @@ public:
   }
 };
 
-
 //
 // Helper Stuff
 //
@@ -477,7 +545,6 @@ public:
   static void Print(char *) {}
 #endif
 };
-
 
 //
 // Interpreter Functions
@@ -1575,6 +1642,12 @@ Worker::Result ByteCodeInterpreter::Run() {
 	StaticMethodRef *methodRef = StaticMethodRef::FromWord(wMethodRef);
 	if (methodRef == INVALID_POINTER)
 	  REQUEST(wMethodRef);
+	Class *classObj = methodRef->GetClass();
+	Assert(classObj != INVALID_POINTER);
+	Lock *lock = classObj->GetLock();
+	Future *future = lock->AcquireLock();
+	if (future != INVALID_POINTER)
+	  REQUEST(future->ToWord());
 	// Set continuation
 	frame->SetPC(-2);
 	frame->SetContPC(pc + 3);
@@ -1584,10 +1657,9 @@ Worker::Result ByteCodeInterpreter::Run() {
 	Scheduler::nArgs = nArgs;
 	for (u_int i = nArgs; i--;)
 	  Scheduler::currentArgs[i] = frame->Pop();
-	Class *classObj = methodRef->GetClass();
-	Assert(classObj != INVALID_POINTER);
 	Closure *closure = classObj->GetStaticMethod(methodRef->GetIndex());
 	Assert(closure != INVALID_POINTER);
+	UnlockWorker::PushFrame(lock);
 	return Scheduler::PushCall(closure->ToWord());
       }
       break;
@@ -1835,9 +1907,14 @@ Worker::Result ByteCodeInterpreter::Run() {
 	case JavaLabel::Class:
 	  {
 	    Class *classObj = static_cast<Class *>(type);
+	    Lock *lock = classObj->GetLock();
+	    Future *future = lock->AcquireLock();
+	    if (future != INVALID_POINTER)
+	      REQUEST(future->ToWord());
 	    Object *object = Object::New(classObj);
 	    Assert(object != INVALID_POINTER);
 	    frame->Push(object->ToWord());
+	    lock->ReleaseLock();
 	  }
 	  break;
 	case JavaLabel::BaseType:
@@ -1927,7 +2004,12 @@ Worker::Result ByteCodeInterpreter::Run() {
 	  REQUEST(wFieldRef);
 	Class *classObj = fieldRef->GetClass();
 	Assert(classObj != INVALID_POINTER);
+	Lock *lock = classObj->GetLock();
+	Future *future = lock->AcquireLock();
+	if (future != INVALID_POINTER)
+	  REQUEST(future->ToWord());
 	classObj->PutStaticField(fieldRef->GetIndex(), frame->Pop());
+	lock->ReleaseLock();
 	pc += 3;
       }
       break;
