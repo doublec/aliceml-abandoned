@@ -54,8 +54,6 @@ signature IMPERATIVE_GRAMMAR =
 	  | RecArgs of (lab * 'a) list
 	    (* sorted, all labels distinct, no tuple *)
 
-	structure StampSet: IMP_SET
-
 	datatype livenessInfo =
 	    Unknown
 	  | LoopStart   (* internal *)

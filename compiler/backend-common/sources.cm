@@ -4,7 +4,6 @@ Group is
     ../common/name.cm
     ../common/type.cm
     ../error/sources.cm
-    ../misc/sources.cm
 
     imperative-grammar.cm
 

@@ -2,6 +2,7 @@ Group is
 
     ../error/sources.cm
     ../common/sources.cm
+    ../common/id-stamp.cm
     ../misc/sources.cm
 
     IMPERATIVE_GRAMMAR.sig

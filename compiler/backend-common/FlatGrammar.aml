@@ -55,10 +55,6 @@ structure ImperativeGrammar: IMPERATIVE_GRAMMAR =
 	  | RecArgs of (lab * 'a) list
 	    (* sorted, all labels distinct, no tuple *)
 
-	structure StampSet =
-	    MakeHashImpSet(type t = stamp
-			   val hash = Stamp.hash)
-
 	datatype livenessInfo =
 	    Unknown
 	  | LoopStart   (* internal *)

@@ -43,7 +43,7 @@ signature CODE_STORE =
 	val emit: IL.instr -> unit
 	val emitId: ImperativeGrammar.id -> unit
 	val declareLocal: ImperativeGrammar.id -> unit
-	val kill: ImperativeGrammar.StampSet.t -> unit
+	val kill: StampSet.t -> unit
 	val saveRegState: unit -> savedRegState
 	val restoreRegState: savedRegState -> unit
 	val closeMethod: unit -> unit

@@ -14,8 +14,7 @@ structure CodeStore :> CODE_STORE =
     struct
 	open IL
 
-	type stamp = ImperativeGrammar.stamp
-	structure StampSet = ImperativeGrammar.StampSet
+	type stamp = Stamp.t
 
 	datatype id = datatype ImperativeGrammar.id
 
@@ -29,12 +28,8 @@ structure CodeStore :> CODE_STORE =
 
 	type class = stamp
 
-	structure Map =
-	    MakeHashImpMap(type t = class
-			   val hash = Stamp.hash)
-	structure ScopedMap =
-	    MakeHashScopedImpMap(type t = stamp
-				 val hash = Stamp.hash)
+	structure Map = StampMap
+	structure ScopedMap = MakeHashScopedImpMap(Stamp)
 
 	type classAttrState = (extends * implements) option ref
 	type scope = reg ScopedMap.t
