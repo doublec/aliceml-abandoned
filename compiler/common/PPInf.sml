@@ -113,11 +113,15 @@ text "@" ^^*)
 
     and ppItem(ref item', doc) = ppItem'(item', doc)
 
-    and ppItem'(VAL((p,l,0), t, w, d), doc) =
+    and ppItem'(VAL((p,l,0), t, d), doc) =
 	    abox(
 		hbox(
-		    text(if w = VALUE then "val" else "constructor") ^/^
-		    ppLab l ^/^
+		    (if String.sub(Label.toString l,0) <> #"'" then
+			 text "val" ^/^ ppLab l
+		     else
+			 text "constructor" ^/^
+			 text(String.extract(Label.toString l, 1, NONE))
+		    ) ^/^
 (*DEBUG
 text "(" ^^ PPPath.ppPath p ^^ text ")" ^/^*)
 		    text ":"
@@ -132,10 +136,10 @@ text "(" ^^ PPPath.ppPath p ^^ text ")" ^/^*)
 		))
 	    ) ^/^ doc
 
-      | ppItem'(TYP((p,l,0), k, w, d), doc) =
+      | ppItem'(TYP((p,l,0), k, d), doc) =
 	    abox(
 		hbox(
-		    text(if w = CLOSED then "type" else "datatype") ^/^
+		    text "type" ^/^
 		    ppLab l ^/^
 (*DEBUG
 text "(" ^^ PPPath.ppPath p ^^ text ")" ^/^*)
