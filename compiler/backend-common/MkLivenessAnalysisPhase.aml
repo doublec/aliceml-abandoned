@@ -125,13 +125,12 @@ functor MkLivenessAnalysisPhase(Switches: SWITCHES) :>
 				if IdSet.member (set2, id) then rest
 				else id::rest) nil set1)
 
-	fun difference' (uses, set) =
-	    let
-		val set' = IdSet.new ()
-	    in
-		Vector.app (fn id => IdSet.insert (set', id)) uses;
-		difference (set', set)
-	    end
+	fun difference' (set1, set2, dontKill) =
+	    Vector.fromList
+		(IdSet.fold (fn (id, rest) =>
+				if IdSet.member (set2, id) then rest
+				else if IdSet.member (dontKill, id) then rest
+				else id::rest) nil set1)
 
 	fun union (set1, set2) =
 	    let
@@ -504,7 +503,7 @@ functor MkLivenessAnalysisPhase(Switches: SWITCHES) :>
 	    let
 		val (body, use') = laBody (body, StampMap.new (), IdSet.new ())
 		val idDefArgs = laIdDefArgs (idDefArgs, use')
-		val lastUses = difference (use', use)
+		val lastUses = difference' (use', use, dontKill)
 	    in
 		IdSet.union (use, use');
 		(lastUses, FunExp (info, stamp, flags, idDefArgs, body))
