@@ -29,5 +29,5 @@ define
 		P = {New TextPipe init(cmd: Cmd args: Args)} in P#P
 	     end#rr_v
 	 I_streamsOf:
-	     fun {$ Instream#Outstream} tuple(Instream Outstream) end#rr_v)
+	     fun {$ Instream#Outstream} tuple(Instream Outstream) end#r_v)
 end
