@@ -353,7 +353,7 @@ public:
 
 #define DROP_SLOT() { \
   word value = frame->Pop(); \
-  Assert(value == null); \
+  Assert(value == null); value = value; \
 }
 
 #define DECLARE_LONG(v) \

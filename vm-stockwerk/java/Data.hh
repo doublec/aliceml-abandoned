@@ -465,27 +465,24 @@ public:
     b->InitArg(CLASS_POS, theClass->ToWord());
     b->InitArg(LOCK_POS, null);
     char *p = instanceFieldTypes->GetBase();
-    for (u_int i = size; i--; ) {
-      word value;
+    for (u_int i = size; i--; )
       switch (static_cast<Class::instanceFieldType>(p[i])) {
       case Class::t_int:
-	value = JavaInt::ToWord(0);
+	b->InitArg(BASE_SIZE + i, JavaInt::ToWord(0));
 	break;
       case Class::t_long:
-	value = JavaLong::New(0, 0)->ToWord();
+	b->InitArg(BASE_SIZE + i, JavaLong::New(0, 0)->ToWord());
 	break;
       case Class::t_float:
-	value = Float::New(0.0)->ToWord();
+	b->InitArg(BASE_SIZE + i, Float::New(0.0)->ToWord());
 	break;
       case Class::t_double:
-	value = Double::New(0.0L)->ToWord();
+	b->InitArg(BASE_SIZE + i, Double::New(0.0L)->ToWord());
 	break;
       case Class::t_object:
-	value = null;
+	b->InitArg(BASE_SIZE + i, null);
 	break;
       }
-      b->InitArg(BASE_SIZE + i, value);
-    }
     return static_cast<Object *>(b);
   }
   static Object *FromWord(word x) {
