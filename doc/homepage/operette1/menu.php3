@@ -4,6 +4,8 @@
   <A href="index.php3">Home</A><BR>
   <BR>
   Alice, the Language:<BR>
+  <A href="transients.php3">Transients</A><BR>
+  <A href="threads.php3">Threads</A><BR>
   <A href="components.php3">Components</A><BR>
   <A href="modules.php3">Higher-order Modules</A><BR>
   <A href="extensions.php3">Other ML Extensions</A><BR>

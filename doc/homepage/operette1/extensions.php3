@@ -28,7 +28,7 @@
 
   <P>
     Besides <A href="modules.php3">extensions to the SML module system</A>,
-    Stockhausen also extends the core language with several features:
+    Stockhausen also extends the SML core language with several features:
   </P>
 
   <UL>
@@ -39,6 +39,12 @@
     <LI> <A href="#records">sugar for records</A> </LI>
   </UL>
 
+  <P>
+    Other important features of Stockhausen, like
+    <A href="transients.php3">transients</A> and 
+    <A href="threads.php3">threads</A>, show up as
+    <A href="library.php3">library</A> primitives only.
+  </P>
 
 
   <H2><A name=opendata>open datatypes _____________________</A></H2>
@@ -315,7 +321,7 @@
   <BR><BR>
 
   <P>
-    Following SML/NJ, Stockhausen provides vector expressions and patterns:
+    Following SML/NJ, Alice provides vector expressions and patterns:
   </P>
 
   <PRE>
@@ -375,7 +381,7 @@
   <P>
     While SML allows punning in record patterns (so that the left hand side of
     the example is legal), it does not allow punning in record expressions.
-    Stockhausen straightens this through a simple derived form (dualing
+    Alice straightens this through a simple derived form (dualing
     the derived form for patterns):
   </P>
 

@@ -27,16 +27,25 @@
   <BR><BR>
 
   <P>
-    Most Stockhausen extensions to SML'97 are conservative. There are some
+    Most Alice extensions to SML'97 are conservative. There are some
     incompatibilies to SML'97 however. Most of them are quite pathological,
     caught on compile time, and can easily be fixed in an SML compatible way.
+  </P>
+
+  <P>
+    Another limitation of Stockhausen Operette 1 is the lack of support
+    for overloading: the toplevel arithmetic operators are only defined for
+    type <TT>int</TT>. Moreover, Stockhausen currently does not distinguish
+    equality types: equality is permitted on any type. Both features will
+    probably be subsumed when we add something similar to type classes
+    to the language in a later step.
   </P>
 
   <H2><A name=keywords>reserved words _____________________</A></H2>
   <BR><BR>
 
   <P>
-    The following are reserved words in Stockhausen and may not be used as
+    The following are reserved words in Alice and may not be used as
     identifiers:
   </P>
 
@@ -135,7 +144,7 @@
 
   <P>
     This is legal in SML'97 (though it was not in SML'90 and SML/NJ for example
-    does not allow it either). In Stockhausen it produces a type clash
+    does not allow it either). In Alice it produces a type clash
     (due to the extended <TT>val</TT> <TT>rec</TT>).
   </P>
 
@@ -261,7 +270,7 @@
   <BR><BR>
 
   <P>
-    Stockhausen provides higher-order functors. To integrate them smoothly into
+    Alice provides higher-order functors. To integrate them smoothly into
     the language it was necessary to give up the separation between namespaces
     for structures and those for functors - both are modules.
   </P>
@@ -313,7 +322,7 @@
   <P>
     Because of syntactic ambiguity with uses of
     <A href="modules.php3#paramsig">parameterized signatures</A>,
-    Stockhausen does not support the multiple include derived form.
+    Alice does not support the multiple include derived form.
   </P>
 
   <P>
@@ -353,13 +362,13 @@
   <BR><BR>
 
   <P>
-    In Stockhausen, datatypes are not generative, but are just structural types
+    In Alice, datatypes are not generative, but are just structural types
     similar to records. This has an impact on the use of sharing constraints,
     which require flexible (ie. generative) type constructors.
   </P>
 
   <P>
-    Stockhausen relaxes the rules for sharing constraints and allows sharing of
+    Alice relaxes the rules for sharing constraints and allows sharing of
     type constructors as long as one of the following conditions holds:
   </P>
 
@@ -438,7 +447,7 @@
     <LI>
       <P>
         In general, we consider sharing constraints an obsolete feature of SML.
-        Use <TT>where</TT> constraints instead (Stockhausen as well as SML/NJ
+        Use <TT>where</TT> constraints instead (Alice as well as SML/NJ
 	support <TT>where</TT> constraints for whole structures).
       </P>
     </LI>

@@ -40,9 +40,12 @@
   </P>
 
   <UL>
-    <LI> concurrency and distribution </LI>
-    <LI> logic variables and lazy computations (<I>transients</I>) </LI>
-    <LI> type-safe dynamic loading of modules (via <I>pickling</I>) </LI>
+    <LI> logic variables and lazy computations
+         (<A href="transients.php3"><I>transients</I></A>) </LI>
+    <LI> concurrency and distribution
+         (<A href="threads.php3"><I>threads</I></A>) </LI>
+    <LI> type-safe dynamic loading of modules
+         (<A href="components.php3"><I>components</I></A>) </LI>
   </UL>
 
   <P>

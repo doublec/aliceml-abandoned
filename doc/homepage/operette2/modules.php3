@@ -27,7 +27,7 @@
   <BR><BR>
 
   <P>
-    Stockhausen extends the SML module system in various ways, by providing:
+    Alice extends the SML module system in various ways, by providing:
   </P>
 
   <UL>
@@ -44,6 +44,9 @@
 
   <P>
     Items marked with (*) are not fully implemented in Operette 1.
+  </P>
+
+  <P>
     The last item includes allowing <TT>op</TT> in signatures, having
     a <TT>withtype</TT> derived form in signatures (analoguous to
     declarations), and allowing redundant parentheses in structure and
@@ -60,7 +63,7 @@
   <BR><BR>
 
   <P>
-    Stockhausen discards SML's separation between core declarations
+    Alice discards SML's separation between core declarations
     (<I>dec</I>), structure declarations (<I>strdec</I>), and toplevel
     declarations (<I>topdec</I>). As a consequence, structures can be
     declared local to an expression (via <TT>let</TT>) and functors as well
@@ -87,35 +90,35 @@
   </P>
 
   <PRE>
-	functor F(X: S1) =
+	functor F(X:S1) =
 	    struct
-	        functor G(Y: S2) = struct (* ... *) end
+	        functor G(Y:S2) = struct (* ... *) end
 	    end
 
 	structure M = let structure Z = F(X) in G(Y) end
   </PRE>
 
   <P>
-    This is exactly how SML/NJ introduces higher-order functors. Stockhausen
+    This is exactly how SML/NJ introduces higher-order functors. Alice
     provides higher-order functors in a more first-class fashion. The above
     example can be written more directly as:
   </P>
 
   <PRE>
-	functor F(X: S1)(Y: S2) = struct (* ... *) end
+	functor F(X:S1)(Y:S2) = struct (* ... *) end
 
 	structure M = F(X)(Y)
   </PRE>
 
   <P>
-    Stockhausen has real functor expressions.
-    Similar to <TT>fun</TT> declarations, <TT>functor</TT> declarations became
+    Alice has real functor expressions.
+    Similar to <TT>fun</TT> declarations, <TT>functor</TT> declarations are
     mere derived forms. The declaration for <TT>F</TT> above is just sugar
     for:
   </P>
 
   <PRE>
-	structure F = fct(X: S1) => fct(Y: S2) => struct (* ... *) end
+	structure F = fct(X:S1) => fct(Y:S2) => struct (* ... *) end
   </PRE>
 
   <P>
@@ -139,7 +142,7 @@
   </P>
 
   <PRE>
-	structure F : fct(X: S1) -> fct(Y: S2) -> sig (* ... *) end
+	structure F : fct(X:S1) -> fct(Y:S2) -> sig (* ... *) end
   </PRE>
 
   <P>
@@ -148,7 +151,7 @@
   </P>
 
   <PRE>
-	functor F(X: S1)(Y: S2) : sig (* ... *) end
+	functor F(X:S1)(Y:S2) : sig (* ... *) end
   </PRE>
 
   <P><A name=top>
@@ -198,7 +201,7 @@
 
   <FONT size = "-1">
   <P>
-    Note that this feature renders the type system of Stockhausen undecidable
+    Note that this feature renders the type system of Alice undecidable
     (the same is true for O'Caml, which has a very similar module language).
     We do not consider this a problem in practice, however, since the simplest
     program to make the type checker loop already is highly artificial:
@@ -238,7 +241,7 @@
 
   <P>
     Functors often require putting <TT>where</TT> constraints on signatures
-    to denote exact return types. This can become quite tedious. Stockhausen
+    to denote exact return types. This can become quite tedious. Alice
     provides an alternative by generalizing signature identifiers to signature
     constructors, parameterized over structure values:
   </P>
