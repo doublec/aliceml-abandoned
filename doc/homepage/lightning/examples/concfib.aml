@@ -1,8 +1,0 @@
-import structure TextIO from "x-alice:TextIO.dll"
-
-fun fib 0 = 1
-  | fib 1 = 1
-  | fib n = fib'(n-1) + fib'(n-2)
-and fib' n = concur(fn() => fib n)
-
-val _ = TextIO.print(Int.toString(fib 12) ^ "\n")
