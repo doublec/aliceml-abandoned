@@ -46,7 +46,9 @@ structure MainWindow :> MAINWINDOW =
 
   fun updateInspectionActionsMenu
           (actionsList, serve,
-	   state as ref (SOME {menu={inspectionActions=inspectionActions},...})
+	   state as
+                 ref (SOME {gtk={menu={inspectionActions},
+                                 ...},...})
 	   : explorer_state option ref) =
     let
 	val sub = Gtk.menuNew()
@@ -89,10 +91,11 @@ structure MainWindow :> MAINWINDOW =
 	  val state = ref NONE
 	  val xDim = 40000
 	  val yDim = 25000
-	  val canvas = CanvasHelper.createCanvas (state, serve, xDim, yDim)
+	  val (canvas, rootGroup, shadowGroup, actionGroup, actionHandler) =
+	      CanvasHelper.createCanvas (state, serve, xDim, yDim)
 
           val w = ExplorerGUI.aliceexplorer
-          val _ = Gtk.containerAdd(ExplorerGUI.scrolledwindow, #canvas canvas)
+          val _ = Gtk.containerAdd(ExplorerGUI.scrolledwindow, canvas)
 
           val cid = Gtk.statusbarGetContextId(ExplorerGUI.statusbar,
                                               "Alice explorer")
@@ -144,32 +147,38 @@ structure MainWindow :> MAINWINDOW =
 	  Gtk.widgetShowAll w;
           Gtk.statusbarPush(ExplorerGUI.statusbar,cid,
                             "Ready.");
-	  state := SOME {canvas=canvas, window=w,
-			 menu={inspectionActions=ref ExplorerGUI.inspection1},
-			 scale=ref Defaults.defScale,
-			 tree=ref (ExplorerNode.createNode NONE 0),
-                         rootSpace=ref NONE,
+	  state := SOME {gtk={canvas=canvas,
+                              rootGroup=rootGroup,
+                              shadowGroup=shadowGroup,
+                              actionGroup=actionGroup,
+                              actionHandler=actionHandler,
+			      scale=ref Defaults.defScale,
+                              window=w,
+                              menu={inspectionActions=
+                                    ref ExplorerGUI.inspection1},
+                              contextId=ref cid},
+                         tree={tree=ref (ExplorerNode.createNode NONE 0),
+                               rootSpace=ref NONE,
+			       currentNode=ref NONE},
 			 inspect=ref nil,
                          curInspAction=ref "",
-			 currentNode=ref NONE,
                          refreshAfter=ref 1,
                          breakAfter=ref 0,
                          hideFailed=ref true,
+                         cancelSearch=ref false,
                          debug=ref false,
                          status={choice=ref 0,
                                  solved=ref 0,
-                                 failed=ref 0,
-                                 contextId=ref cid},
-                         cancelSearch=ref false
+                                 failed=ref 0}
 			 };
 	  state
       end
 
-  and refresh (serve, state as ref (SOME {tree=ref tree,...})) =
+  and refresh (serve, state as ref (SOME {tree={tree=ref tree,...},...})) =
       EventHandler.refreshAfterSearch (tree, createMainWindow) (serve, state)
     | refresh _ = ()
   and setStatusMsg (state as
-                          ref (SOME {status={contextId=contextId,...},...}) :
+                          ref (SOME {gtk={contextId=contextId,...},...}) :
                     Types.explorer_state option ref,
                     msg, push) =
       if push then

@@ -36,16 +36,15 @@ structure CanvasHelper =
 				       Real.fromInt xDim, Real.fromInt yDim);
 	   GnomeCanvas.setPixelsPerUnit(canvas, 1.0);
 	   GnomeCanvas.setBackgroundColor(canvas, GtkNode.white);
-	   {canvas=canvas, rootGroup=ref rootGroup,
-            shadowGroup=ref shadowGroup, actionGroup=ref actionGroup,
-            actionHandler=ref actionHandler}
+	   (canvas, ref rootGroup,ref shadowGroup, ref actionGroup,
+            ref actionHandler)
       end
 
   fun resetCanvas serve (s as
-			   (ref (SOME {canvas={rootGroup=rootGroup,
-				               actionGroup=actionGroup,
-                                               actionHandler=actionHandler,
-				               canvas=canvas,...},...}
+			   (ref (SOME {gtk={rootGroup=rootGroup,
+				            actionGroup=actionGroup,
+                                            actionHandler=actionHandler,
+				            canvas=canvas,...},...}
 				 : Types.explorer_state option)))=
       (Gtk.signalDisconnect(!actionGroup, !actionHandler);
        Gtk.objectDestroy (!rootGroup);
@@ -57,8 +56,8 @@ structure CanvasHelper =
     | resetCanvas _ _ = ()
 
   fun scaleCanvasHandler (serve,
-			  ref (SOME({canvas={canvas=canvas,...},
-                                     scale=scale,...}
+			  ref (SOME({gtk={canvas,scale,...},
+                                     ...}
 				    : Types.explorer_state)),
 			  scaleWidget) _ =
       (serve (fn () =>

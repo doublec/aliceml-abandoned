@@ -33,30 +33,32 @@ structure Types =
 		   
   datatype tree = N of node_info * tree option ref * tree vector ref
 
-  type explorer_state = {canvas : {canvas : Core.object,
-                                   rootGroup : Core.object ref,
-			           actionGroup : Core.object ref,
-			           shadowGroup : Core.object ref,
-                                   actionHandler : int ref},
-			 tree : tree ref,
-                         rootSpace : Space.space option ref,
+  type explorer_state = {gtk : {canvas : Core.object,
+                                rootGroup : Core.object ref,
+			        actionGroup : Core.object ref,
+			        shadowGroup : Core.object ref,
+                                actionHandler : int ref,
+                                scale : real ref,
+                                window : Core.object,
+			        menu : {inspectionActions :
+                                        Core.object ref},
+                                contextId : int ref },
+                         tree : {tree : tree ref,
+                                 rootSpace : Space.space option ref,
+			         currentNode : tree option ref},
 			 inspect : ((Space.space -> unit) * string) list ref,
                          curInspAction : string ref,
-			 currentNode : tree option ref,
                          refreshAfter : int ref,
                          breakAfter : int ref,
                          hideFailed : bool ref,
+                         cancelSearch : bool ref,
                          debug : bool ref,
-			 window : Core.object,
-			 menu : {inspectionActions : Core.object ref},
                          status : {choice : int ref,
                                    failed : int ref,
-                                   solved : int ref,
-                                   contextId : int ref},
-                         cancelSearch : bool ref,
-			 scale : real ref}
+                                   solved : int ref } }
 
-  fun setTree (ref (SOME ({tree=tree,...}: explorer_state))) newTree =
+  fun setTree (ref (SOME ({tree={tree=tree,...},...}:
+                          explorer_state))) newTree =
       tree:=newTree
     | setTree _ _ = ()
 

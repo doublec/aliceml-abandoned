@@ -25,7 +25,7 @@ structure ExplorerSearch =
           val s' = Space.clone s
       in
           case !state of
-              SOME {tree,rootSpace,currentNode,...} =>
+              SOME {tree={tree,rootSpace,currentNode,...},...} =>
               (ExplorerNode.discardTree (!tree);
                resetCanvas serve state;
                tree := ExplorerNode.createNode NONE 0;
@@ -45,7 +45,8 @@ structure ExplorerSearch =
   fun search (serve, state : Types.explorer_state option ref,
               refresh, setStatusMsg, breakAfter, root) =
       case !state of
-          SOME {refreshAfter=ref refreshAfter,tree=ref tree,...} =>
+          SOME {refreshAfter=ref refreshAfter,
+                tree={tree=ref tree,...},...} =>
           let
               val found = ref 0
               val found2 = ref 0

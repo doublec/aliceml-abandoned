@@ -86,7 +86,8 @@ structure VisualNode =
       end
 
           
-  fun toggleHide (ref (SOME ({currentNode=ref (SOME v),tree=tree,...}
+  fun toggleHide (ref (SOME ({tree={currentNode=ref (SOME v),
+                                    tree=tree,...},...}
 			     : Types.explorer_state))) =
       (case v of
 	   Types.N(_,_,ref #[]) => ()

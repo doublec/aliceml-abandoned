@@ -168,7 +168,7 @@ struct
       end
 
   fun connect
-	  (state as ({canvas={rootGroup=ref rootGroup,...},...}
+	  (state as ({gtk={rootGroup=ref rootGroup,...},...}
                      : Types.explorer_state),
 	   hidden, myStatus, parentStatus, myX, myY, momX, momY) =
       let
@@ -222,9 +222,9 @@ struct
       end
 
   fun drawNode 
-	  (state as {canvas={canvas=canvas,rootGroup=rootGroup,
-                             actionGroup=actionGroup,...},
-                     scale=scale,...}
+	  (state as {gtk={canvas=canvas,rootGroup=rootGroup,
+                          actionGroup=actionGroup,scale=scale,...},
+                     ...}
 	   : Types.explorer_state,
 	   momX, momY,
 	   TreeNode.N({offset=offset,status=ref status,
@@ -249,9 +249,9 @@ struct
 	      else Vector.app (fn c => drawNode (state, myX, myY, c)) children
 	  end
 
-  fun markNode (state as {canvas={canvas=canvas,rootGroup=rootGroup,
-                                  actionGroup=actionGroup,...},
-                          scale=scale,...}
+  fun markNode (state as {gtk={canvas=canvas,rootGroup=rootGroup,
+                               actionGroup=actionGroup,scale=scale,...},
+                          ...}
 	        : Types.explorer_state)
 	       (TreeNode.N({offset=offset,status=ref status,
                             hidden=ref hidden,dirty=dirty,
@@ -278,9 +278,9 @@ struct
                  | NONE => ()
 
   fun drawShadow
-	  (state as {canvas={canvas=canvas,rootGroup=rootGroup,
-                             shadowGroup=shadowGroup,...},
-                     scale=scale,...}
+	  (state as {gtk={canvas=canvas,rootGroup=rootGroup,
+                          shadowGroup=shadowGroup,scale=scale,...},
+                     ...}
 	   : Types.explorer_state,
 	   myX, myY,
 	   TreeNode.N({offset=offset,status=ref status,
@@ -310,7 +310,7 @@ struct
 					     connection:=NONE));
 	   Vector.app undrawSubtree (!children))
 
-  fun moveNode ({scale=ref scale,...}: Types.explorer_state,
+  fun moveNode ({gtk={scale=ref scale,...},...}: Types.explorer_state,
 	        v, myByX) =
 	       GnomeCanvas.itemMove(v, (Real.fromInt myByX)*TreeNode.defScale,
                                     0.0)
