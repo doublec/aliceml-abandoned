@@ -1,7 +1,10 @@
 (* ML-Yacc Parser Generator (c) 1989 Andrew W. Appel, David R. Tarditi 
  *
  * $Log$
- * Revision 1.2  1999-11-02 15:52:03  rossberg
+ * Revision 1.3  1999-11-02 16:09:35  rossberg
+ * Ups.
+ *
+ * Revision 1.2  1999/11/02 15:52:03  rossberg
  * Replaced sharing constraints by where constraints. I marked the original
  * code with (*SHAR ...*).
  *
@@ -28,7 +31,8 @@ functor Join(structure Lex : LEXER
 	     structure ParserData: PARSER_DATA
 		where type svalue = Lex.UserDeclarations.svalue
 		where type pos    = Lex.UserDeclarations.pos
-		where type ('a,'b) token = ('a,'b) Lex.UserDeclarations.token
+		where type ('a,'b) Token.token =
+			   ('a,'b) Lex.UserDeclarations.token
 	     structure LrParser : LR_PARSER
 		where LrTable = ParserData.LrTable
 		where Token   = ParserData.Token
@@ -78,7 +82,8 @@ functor JoinWithArg(structure Lex : ARG_LEXER
 	     structure ParserData: PARSER_DATA
 		where type svalue = Lex.UserDeclarations.svalue
 		where type pos    = Lex.UserDeclarations.pos
-		where type ('a,'b) token = ('a,'b) Lex.UserDeclarations.token
+		where type ('a,'b) Token.token =
+			   ('a,'b) Lex.UserDeclarations.token
 	     structure LrParser : LR_PARSER
 		where LrTable = ParserData.LrTable
 		where Token   = ParserData.Token
