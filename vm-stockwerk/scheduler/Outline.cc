@@ -12,30 +12,16 @@
 
 #if defined(INTERFACE)
 #pragma implementation "scheduler/ConcreteCode.hh"
-#endif
-#include "scheduler/ConcreteCode.hh"
-
-#if defined(INTERFACE)
 #pragma implementation "scheduler/Closure.hh"
-#endif
-#include "scheduler/Closure.hh"
-
-#if defined(INTERFACE)
 #pragma implementation "scheduler/TaskStack.hh"
-#endif
-#include "scheduler/TaskStack.hh"
-
-#if defined(INTERFACE)
 #pragma implementation "scheduler/Thread.hh"
-#endif
-#include "scheduler/Thread.hh"
-
-#if defined(INTERFACE)
 #pragma implementation "scheduler/ThreadQueue.hh"
-#endif
-#include "scheduler/ThreadQueue.hh"
-
-#if defined(INTERFACE)
 #pragma implementation "scheduler/Transients.hh"
 #endif
+
+#include "scheduler/ConcreteCode.hh"
+#include "scheduler/Closure.hh"
+#include "scheduler/TaskStack.hh"
+#include "scheduler/Thread.hh"
+#include "scheduler/ThreadQueue.hh"
 #include "scheduler/Transients.hh"
