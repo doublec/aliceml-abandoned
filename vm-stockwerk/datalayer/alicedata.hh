@@ -28,12 +28,11 @@ class Alice {
 public:
   enum label {
     MIN_LABEL    = MIN_DATALABELSIZE,
-    MAX_LABEL    = MAX_DATALABELSIZE - 12,
+    MAX_LABEL    = MAX_DATALABELSIZE - 11,
 
-    Array        = MAX_DATALABELSIZE - 11,
-    ArrayZero    = MAX_DATALABELSIZE - 10,
-    Cell         = MAX_DATALABELSIZE - 9,
-    Closure      = MAX_DATALABELSIZE - 8,
+    Array        = MAX_DATALABELSIZE - 10,
+    ArrayZero    = MAX_DATALABELSIZE - 9,
+    Cell         = MAX_DATALABELSIZE - 8,
     Constructor  = MAX_DATALABELSIZE - 7,
     ConVal       = MAX_DATALABELSIZE - 6,
     Real         = MAX_DATALABELSIZE - 5,
