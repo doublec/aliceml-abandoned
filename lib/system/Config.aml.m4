@@ -4,7 +4,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt and Andreas Rossberg, 2001-2002
+ *   Leif Kornstaedt and Andreas Rossberg, 2001-2003
  *
  * Last change:
  *   $Date$ by $Author$
@@ -22,7 +22,8 @@ struct
     val platform = UnsafeConfig.platform
     val vm = UnsafeConfig.vm
 
-    val homeDir = OS.Process.getEnv "STOCKHOME"
+(*--** obtain from UnsafeConfig; normalize *)
+    fun homeDir () = Option.valOf (OS.Process.getEnv "STOCKHOME")
 
     val pathEscape =
 	case platform of
