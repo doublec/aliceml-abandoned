@@ -53,9 +53,9 @@ case $(uname) in
     *)
 	if [ -z "$LD_LIBRARY_PATH" ]
 	then
-	    LD_LIBRARY_PATH=$SEAM_HOME/bin:$ALICE_HOME
+	    LD_LIBRARY_PATH="$SEAM_HOME/bin:$ALICE_HOME"
 	else
-	    LD_LIBRARY_PATH=$SEAM_HOME/bin:$ALICE_HOME:$LD_LIBRARY_PATH
+	    LD_LIBRARY_PATH="$SEAM_HOME/bin:$ALICE_HOME:$LD_LIBRARY_PATH"
 	fi
 	export LD_LIBRARY_PATH
 	sep=:
@@ -66,11 +66,11 @@ ALICE_LOAD=cache=~/.alice/cache${sep}pattern=?{x}=?{x}.stc${sep}pattern=?{x}=?{x
 
 if [ ! -z "$ALICE_LOAD_PREFIX" ]
 then
-    ALICE_LOAD=$ALICE_LOAD_PREFIX${sep}$ALICE_LOAD
+    ALICE_LOAD="$ALICE_LOAD_PREFIX${sep}$ALICE_LOAD"
 fi
 if [ ! -z "$ALICE_LOAD_SUFFIX" ]
 then
-    ALICE_LOAD=$ALICE_LOAD${sep}$ALICE_LOAD_SUFFIX
+    ALICE_LOAD="$ALICE_LOAD${sep}$ALICE_LOAD_SUFFIX"
 fi
 
 export ALICE_HOME ALICE_LOAD
