@@ -4,7 +4,8 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt and Andreas Rossberg, 2001
+ *   Leif Kornstaedt, 2001-2002
+ *   Andreas Rossberg, 2001
  *
  * Last change:
  *   $Date$ by $Author$
@@ -38,7 +39,52 @@ structure OS :> OS =
 	    struct
 		eqtype status
 
-		open UnsafeOS.Process
+		val success = UnsafeOS.Process.success
+		val failure = UnsafeOS.Process.failure
+
+		fun isSuccess status = status = success
+
+		val system = UnsafeOS.Process.system
+
+		val actions = ref nil
+		val inAtExit = ref false
+
+		fun atExit f =
+		    if !inAtExit then ()
+		    else
+			let
+			    val p = Promise.promise ()
+			    val rest = Ref.exchange (actions, Promise.future p)
+			in
+			    Promise.fulfill (p, f::rest)
+			end
+
+		fun executeActions () =
+		    let
+			val p = Promise.promise ()
+			val actions = Ref.exchange (actions, Promise.future p)
+		    in
+			case actions of
+			    action::rest =>
+				(Promise.fulfill (p, rest);
+				 action () handle _ => ();
+				 executeActions ())
+			  | nil => Promise.fulfill (p, nil)
+		    end
+
+		val terminate = UnsafeOS.Process.terminate
+
+		fun exit status =
+		    (inAtExit := true;
+		     executeActions ();
+		     inAtExit := false;
+		     terminate status)
+
+		val getEnv = UnsafeOS.Process.getEnv
+
+		fun sleep t = Future.await (Future.alarm t)
+
+		val atExn = UnsafeOS.Process.atExn
 	    end
 
 	structure IO =
