@@ -39,6 +39,10 @@ import
 from "../../lib/rtt/PervasiveType"
 
 import
+    structure Inf
+from "../../lib/rtt/Inf"
+
+import
     structure Crash
 from "../infrastructure/Crash"
 
@@ -1039,6 +1043,7 @@ functor MkFlatteningPhase(val loadSign:
 		    Goto [O.ExportStm (stm_info Source.nowhere, exportExp)]
 		val body' = translateCont (Decs (Vector.toList decs, cont))
 	    in
-		(imports', body', exports', (GlobalStamp.new (), sign))
+		(imports', body', exports', (GlobalStamp.new (),
+					     Inf.inSig sign)) (*--** *)
 	    end
     end
