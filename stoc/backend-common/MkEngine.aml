@@ -91,6 +91,32 @@ functor MakeEngine(val cmd: unit -> string * string list
 	  | STRING of string
 	  | LABEL of Label.t
 
+	local
+	    fun split (#":"::cs) = SOME (nil, cs)
+	      | split (c::cs) =
+		(case split cs of
+		     SOME (name, value) => SOME (c::name, value)
+		   | NONE => NONE)
+	      | split nil = NONE
+	in
+	    fun parseResult proc =
+		case TextIO.inputLine (instream proc) of
+		    "\n" => nil
+		  | s =>
+			case String.sub (s, 0) of
+			    #"%" => (TextIO.print s; parseResult proc)
+			  | _ =>
+			case split (String.explode s) of
+			    SOME ([#"D", #"e", #"b", #"u", #"g"], s) =>
+				(TextIO.print (String.implode s);
+				 parseResult proc)
+			  | SOME (name, value) =>
+				(String.implode name, String.implode value)::
+				parseResult proc
+			  | NONE =>
+				(TextIO.print s; parseResult proc)
+	end
+
 	fun sendCommand (proc, args) =
 	    let
 		val q = outstream proc
@@ -122,53 +148,44 @@ functor MakeEngine(val cmd: unit -> string * string list
 				   TextIO.output (q, Label.toString label);
 				   TextIO.output1 (q, #"\n"))) args;
 		TextIO.output1 (q, #"\n");
-		TextIO.flushOut q
+		TextIO.flushOut q;
+		parseResult proc
+		before
+		List.app (fn arg =>
+			  case arg of
+			      CODE code => Code.cleanup code
+			    | _ => ()) args
 	    end
 
-	local
-	    fun split (#":"::cs) = SOME (nil, cs)
-	      | split (c::cs) =
-		(case split cs of
-		     SOME (name, value) => SOME (c::name, value)
-		   | NONE => NONE)
-	      | split nil = NONE
-	in
-	    fun parseResult proc =
-		case TextIO.inputLine (instream proc) of
-		    "\n" => nil
-		  | s =>
-			case String.sub (s, 0) of
-			    #"%" => (TextIO.print s; parseResult proc)
-			  | _ =>
-			case split (String.explode s) of
-			    SOME ([#"D", #"e", #"b", #"u", #"g"], s) =>
-				(TextIO.print (String.implode s);
-				 parseResult proc)
-			  | SOME (name, value) =>
-				(String.implode name, String.implode value)::
-				parseResult proc
-			  | NONE =>
-				(TextIO.print s; parseResult proc)
-	end
-
 	fun link (proc, map) code =
-	    (sendCommand (proc,
-			  COMMAND "link"::
-			  CODE code::
-			  IdMap.foldi (fn (id, valref, rest) =>
-				       ID id::VALREF valref::rest) nil map);
-	     case parseResult proc of
-		 [("Valref", s)] => valOf (Int.fromString s)
-	       | [("Error", s)] => raise Format ("link (engine): " ^ s)
-	       | _ => raise Format "link: could not parse result")
+	    let
+		val result =
+		    sendCommand (proc,
+				 COMMAND "link"::
+				 CODE code::
+				 IdMap.foldi (fn (id, valref, rest) =>
+					      ID id::VALREF valref::rest)
+				 nil map)
+	    in
+		case result of
+		    [("Valref", s)] => valOf (Int.fromString s)
+		  | [("Error", s)] => raise Format ("link (engine): " ^ s)
+		  | _ => raise Format "link: could not parse result"
+	    end
 
 	fun save (proc, _) (valref, filename) =
-	    (sendCommand (proc,
-			  [COMMAND "save", VALREF valref, STRING filename]);
-	     case parseResult proc of
-		 nil => ()
-	       | [("Error", s)] => raise Format ("save (engine): " ^ s)
-	       | _ => raise Format "save: could not parse result")
+	    let
+		val result =
+		    sendCommand (proc,
+				 [COMMAND "save",
+				  VALREF valref,
+				  STRING filename])
+	    in
+		case result of
+		    nil => ()
+		  | [("Error", s)] => raise Format ("save (engine): " ^ s)
+		  | _ => raise Format "save: could not parse result"
+	    end
 
 	fun extendEnv (("Valref", valref)::args, (_, id)::exportDesc, map) =
 	    (IdMap.insert (map, id, valOf (Int.fromString valref));
@@ -182,10 +199,15 @@ functor MakeEngine(val cmd: unit -> string * string list
 	    raise Format "apply: wrong number of results"
 
 	fun apply (proc, map) (valref, exportDesc) =
-	    (sendCommand (proc,
-			  COMMAND "apply"::
-			  VALREF valref::
-			  Vector.foldr (fn ((label, _), rest) =>
-					LABEL label::rest) nil exportDesc);
-	     extendEnv (parseResult proc, Vector.toList exportDesc, map))
+	    let
+		val result =
+		    sendCommand (proc,
+				 COMMAND "apply"::
+				 VALREF valref::
+				 Vector.foldr (fn ((label, _), rest) =>
+					       LABEL label::rest)
+				 nil exportDesc)
+	    in
+		extendEnv (result, Vector.toList exportDesc, map)
+	    end
     end

@@ -26,35 +26,23 @@ functor MakeMozartTarget(structure Switches: SWITCHES
 	structure C = MozartEngine.C
 	structure Sig = Sig
 
-	type t = string * FlatGrammar.t
+	type t = Source.desc * string option ref * FlatGrammar.t
 
-	fun sign (_, (_, _, _, exportSign)) = exportSign
+	fun sign (_, _, (_, _, _, exportSign)) = exportSign
 
-	fun save context targetFilename (sourceFilename, component) =
+	fun save context targetFilename code =
 	    MozartEngine.save context
-	    (MozartEngine.link context (sourceFilename, component),
-	     targetFilename)
+	    (MozartEngine.link context code, targetFilename)
 
-	fun apply context (sourceFilename,
-			   component as (_, _, exportDesc, _)) =
+	fun apply context (code as (_, _, (_, _, exportDesc, _))) =
 	    MozartEngine.apply context
-	    (MozartEngine.link context (sourceFilename, component), exportDesc)
+	    (MozartEngine.link context code, exportDesc)
     end
-
-fun parseDesc desc =
-    case Source.url desc of
-	SOME url =>
-	    (case (Url.getScheme url, Url.getAuthority url) of
-		 (NONE, NONE) =>
-		     Url.toString url
-	       | (SOME "file", NONE) =>
-		     Url.toString (Url.setScheme (url, NONE))
-	       | _ => raise Crash.Crash "MakeBackendMozart.parseUrl")
-      | NONE => OS.FileSys.tmpName ()
 
 functor MakeBackendMozart(structure Switches: SWITCHES
 			  structure MozartTarget: TARGET
-			      where type t = string * FlatGrammar.t): PHASE =
+			      where type t = Source.desc * string option ref *
+					     FlatGrammar.t): PHASE =
     MakeTracingPhase(structure Phase =
 			 struct
 			     structure C = EmptyContext
@@ -62,7 +50,7 @@ functor MakeBackendMozart(structure Switches: SWITCHES
 			     structure O = MozartTarget
 
 			     fun translate () (desc, component) =
-				 (parseDesc desc, component)
+				 (desc, ref NONE, component)
 			 end
 		     structure Switches = Switches
 		     val name = "Assembling")

@@ -12,11 +12,12 @@
  *   $Revision$
  *)
 
-structure PickleFlatGrammar :> CODE where type t = string * FlatGrammar.t =
+structure PickleFlatGrammar :> CODE
+    where type t = Source.desc * string option ref * FlatGrammar.t =
     struct
 	open FlatGrammar
 
-	type t = string * FlatGrammar.t
+	type t = Source.desc * string option ref * FlatGrammar.t
 
 	open PickleOutStream
 
@@ -272,10 +273,30 @@ structure PickleFlatGrammar :> CODE where type t = string * FlatGrammar.t =
 	     outputStamp (q, stamp); outputId (q, id); outputExpInfo (q, info))
 	and outputBody (q, stms) = outputList outputStm (q, stms)
 
-	fun toString (code as (filename, _)) =
+	fun parseDesc desc =
+	    case Source.url desc of
+		SOME url =>
+		    (case (Url.getScheme url, Url.getAuthority url) of
+			 (NONE, NONE) =>
+			     SOME (Url.toString url)
+		       | (SOME "file", NONE) =>
+			     SOME (Url.toString (Url.setScheme (url, NONE)))
+		       | _ => raise Crash.Crash "PickleFlatGrammar.parseDesc")
+	      | NONE => NONE
+
+	fun toString (desc, tmpOptRef, component) =
 	    let
 		val q = openOut ()
-		val filename' = filename ^ ".ozp"
+		val (sourcename, filename') =
+		    case parseDesc desc of
+			SOME filename => (filename, filename ^ ".ozp")
+		      | NONE =>
+			    let
+				val filename = OS.FileSys.tmpName ()
+			    in
+				tmpOptRef := SOME filename;
+				("", filename)
+			    end
 		val outstream = BinIO.openOut filename'
 	    in
 		StampMap.deleteAll visited;
@@ -288,9 +309,14 @@ structure PickleFlatGrammar :> CODE where type t = string * FlatGrammar.t =
 					     outputVector
 					     (outputPair (outputLabel,
 							  outputId)),
-					     outputUnit')) (q, code);
+					     outputUnit'))
+		(q, (sourcename, component));
 		BinIO.output (outstream, closeOut q);
 		BinIO.closeOut outstream;
 		OS.FileSys.fullPath filename'
 	    end
+
+	fun cleanup (_, ref (SOME tmpFilename), _) =
+	    (OS.FileSys.remove tmpFilename handle _ => ())
+	  | cleanup (_, ref NONE, _) = ()
     end

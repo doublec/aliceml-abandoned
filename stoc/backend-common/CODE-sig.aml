@@ -15,4 +15,5 @@ signature CODE =
 	type t
 
 	val toString: t -> string
+	val cleanup: t -> unit
     end
