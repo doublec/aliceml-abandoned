@@ -18,7 +18,7 @@ import structure Source               from "../infrastructure/Source"
 import structure Error                from "../infrastructure/Error"
 import signature INTERMEDIATE_GRAMMAR from "../common/INTERMEDIATE_GRAMMAR-sig"
 import structure IntermediateGrammar  from "../common/IntermediateGrammar"
-import structure MkLabelSort          from "MkLabelSort"
+import structure LabelSort            from "LabelSort"
 import structure FlatGrammar          from "FlatGrammar"
 import structure IntermediateAux      from "IntermediateAux"
 import signature SIMPLIFY_REC         from "SIMPLIFY_REC-sig"
@@ -58,9 +58,7 @@ structure SimplifyRec :> SIMPLIFY_REC =
 	  | infoPat (VecPat (info, _)) = info
 	  | infoPat (AsPat (info, _, _)) = info
 
-	structure FieldSort =
-	    MkLabelSort(type 'a t = 'a fld
-			fun get (Fld (_, Lab (_, label), _)) = label)
+	fun getFieldLabel (Fld (_, Lab (_, label), _)) = label
 
 	fun select (Fld (_, Lab (_, s), x)::fldr, s') =
 	    if s = s' then SOME x else select (fldr, s')
@@ -173,8 +171,8 @@ structure SimplifyRec :> SIMPLIFY_REC =
 				  (cs @ cr, idsExps @ idsExpr)
 			      end) (nil, nil) (pats, exps)
 	  | derec' (TupPat (_, pats), ProdExp (_, expFlds)) =
-	    (case FieldSort.sort (Vector.toList expFlds) of
-		 (expFlds', FieldSort.Tup _) =>
+	    (case LabelSort.sort getFieldLabel (Vector.toList expFlds) of
+		 (expFlds', LabelSort.Tup _) =>
 		     VectorPair.foldr
 		     (fn (pat, Fld (_, _, exp), (cr, idsExpr)) =>
 		      let
@@ -182,14 +180,15 @@ structure SimplifyRec :> SIMPLIFY_REC =
 		      in
 			  (cs @ cr, idsExps @ idsExpr)
 		      end) (nil, nil) (pats, expFlds')
-	       | (_, FieldSort.Prod) =>
+	       | (_, LabelSort.Prod) =>
 		     raise Crash.Crash
 			 "SimplifyRec.derec' 1 type inconsistency")
 	  | derec' (ProdPat (_, _), TupExp (_, _)) =
 	    raise Crash.Crash "SimplifyRec.derec' 2 type inconsistency"
 	  | derec' (ProdPat (_, patFlds), ProdExp (_, expFlds)) =
 	    let
-		val (expFlds', _) = FieldSort.sort (Vector.toList expFlds)
+		val (expFlds', _) =
+		    LabelSort.sort getFieldLabel (Vector.toList expFlds)
 	    in
 		VectorPair.foldr
 		(fn (Fld (_, _, pat), Fld (_, _, exp), (cr, idsExpr)) =>
@@ -368,7 +367,7 @@ structure SimplifyRec :> SIMPLIFY_REC =
 		    end
 		val patFlds' =
 		    List.foldr adjoin (Vector.toList patFlds) labelTypList
-		val (patFlds'', arity) = FieldSort.sort patFlds'
+		val (patFlds'', arity) = LabelSort.sort getFieldLabel patFlds'
 		val (constraints, patFlds''') =
 		    Vector.foldr
 		    (fn (Fld (info, label, pat), (cr, fldr)) =>
@@ -380,9 +379,9 @@ structure SimplifyRec :> SIMPLIFY_REC =
 		val patFlds'''' = Vector.fromList patFlds'''
 		val pat' =
 		    case arity of
-			FieldSort.Tup i =>
+			LabelSort.Tup i =>
 			    TupPat (info, Vector.map getField patFlds'''')
-		      | FieldSort.Prod =>
+		      | LabelSort.Prod =>
 			    ProdPat (info, patFlds'''')
 	    in
 		(constraints, pat')
