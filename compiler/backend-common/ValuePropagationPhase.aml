@@ -672,12 +672,12 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 	    Vector.all (fn idRef => isNonlocal (idRef, env)) idRefs
 	  | isSimple (_, _) = false
 
-	fun vpPrimApp (info, "Future.byneed", idRefs as #[idRef], env) =
+	fun vpPrimApp (info, "Future.concur", idRefs as #[idRef], env) =
 	    (case lookupEnv (env, idRef) of
 		 (FunVal (_, _, [ReturnStm (_, exp)]), _) =>
 		     if isSimple (exp, env) then exp
-		     else PrimAppExp (info, "Future.byneed", idRefs)
-	       | (_, _) => PrimAppExp (info, "Future.byneed", idRefs))
+		     else PrimAppExp (info, "Future.concur", idRefs)
+	       | (_, _) => PrimAppExp (info, "Future.concur", idRefs))
 	  | vpPrimApp (info, name, idRefs, _) =
 	    (*--** assertion about arity; evaluate application partially? *)
 	    PrimAppExp (info, name, idRefs)
