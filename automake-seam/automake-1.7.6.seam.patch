@@ -187,8 +187,8 @@ diff -rNu automake1.7-1.7.6.orig/lib/am/seamlibs.am automake1.7-1.7.6/lib/am/sea
 +
 +if %?INSTALL%
 +am__installdirs += $(DESTDIR)$(%NDIR%dir)
-+?BASE?%DIR%SEAMLIBRARIES_INSTALL = $(INSTALL_DATA)
-+?!BASE?%DIR%SEAMLIBRARIES_INSTALL = $(install_sh_DATA)
++?BASE?%DIR%SEAMLIBRARIES_INSTALL = $(INSTALL)
++?!BASE?%DIR%SEAMLIBRARIES_INSTALL = $(install_sh_PROGRAM)
 +?EXEC?.PHONY install-exec-am: install-%DIR%SEAMLIBRARIES
 +?!EXEC?.PHONY install-data-am: install-%DIR%SEAMLIBRARIES
 +install-%DIR%SEAMLIBRARIES: $(%DIR%_SEAMLIBRARIES)
