@@ -12,15 +12,18 @@
  *   $Revision$
  *)
 
+import signature CONTEXT   from "CONTEXT-sig"
+import signature SIGNATURE from "SIGNATURE-sig"
+
 signature TARGET =
-  sig
-    structure C: CONTEXT
+sig
+    structure C:   CONTEXT
     structure Sig: SIGNATURE
 
     type t
 
     val sign: t -> Sig.t
 
-    val save: C.t -> string -> t -> unit
+    val save:  C.t -> string -> t -> unit
     val apply: C.t -> t -> unit
-  end
+end

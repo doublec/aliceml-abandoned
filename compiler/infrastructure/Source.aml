@@ -1,11 +1,23 @@
 (*
- * A source file
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
  *)
+
+(* A source file *)
+
+import structure Url    from "../misc/Url"
+import signature SOURCE from "SOURCE-sig"
 
 
 structure Source :> SOURCE =
-  struct
-
+struct
     type source	= string
     type t	= source
 
@@ -34,5 +46,4 @@ structure Source :> SOURCE =
     val stringDesc = NONE
     val urlDesc    = SOME
     fun url d      = d
-
-  end
+end

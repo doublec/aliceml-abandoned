@@ -1,6 +1,17 @@
-signature SWITCHES =
-  sig
+(*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
 
+signature SWITCHES =
+sig
     structure Warn :
     sig
 	val shadowing :				bool ref
@@ -35,5 +46,4 @@ signature SWITCHES =
 	val dumpDeadCodeEliminationResult :	bool ref
 	val dumpTarget :			bool ref
     end
-
-  end
+end
