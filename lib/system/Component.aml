@@ -18,21 +18,21 @@ import structure OS                from "OS"
 import structure Reflect           from "Reflect"
 import structure Resolver          from "Resolver"
 import structure UnsafeComponent   from "UnsafeComponent"
-import structure Signature         from "Signature"
 import structure UrlMap            from "UrlMap"
 import signature COMPONENT_MANAGER from "COMPONENT_MANAGER-sig"
 import signature COMPONENT         from "COMPONENT-sig"
 
 structure Component :> COMPONENT =
 struct
-    type sign = Signature.t option
-    type str = Reflect.value
+    nonfix mod
+    type inf = Inf.t option
+    type mod = Reflect.value
 
     datatype component =
-	UNEVALUATED of { imports: (string * sign) vector,
-			 body:    str vector -> str,
-			 sign:    sign }
-      | EVALUATED of sign * str
+	UNEVALUATED of { imports: (string * inf) vector,
+			 body:    mod vector -> mod,
+			 inf:     inf }
+      | EVALUATED of { inf: inf, mod: mod }
     type t = component
 
     exception Sited    = UnsafeComponent.Sited
@@ -40,19 +40,16 @@ struct
 
     val extension = UnsafeComponent.extension
 
-    fun signFromInf inf = SOME (Signature.fromSig (lazy Inf.asSig inf))
+    fun create (inf, mod) = EVALUATED {inf, mod}
 
     functor Create(signature S structure X: S) =
 	let
 	    structure Sig = Reflect.ReflectSig(signature S = S)
-	    val sign = signFromInf Sig.x
-	    structure Str = Reflect.Reflect(signature S = S
+	    structure Mod = Reflect.Reflect(signature S = S
 					    structure X = X)
 	in
-	    (val component = EVALUATED (sign, Str.x))
+	    (val component = EVALUATED {inf = SOME Sig.x, mod = Mod.x})
 	end
-
-    fun create (sign, str) = EVALUATED (sign, str)
 
     val localize =
 	let
@@ -80,13 +77,13 @@ struct
 
     val save = UnsafeComponent.save
 
-    fun sign (UNEVALUATED {sign, ...}) = sign
-      | sign (EVALUATED (sign, _)) = sign
+    fun inf (UNEVALUATED {inf, ...}) = inf
+      | inf (EVALUATED {inf, ...}) = inf
 
     functor MkManager() :> COMPONENT_MANAGER where type component = component =
     struct
 	exception Conflict
-	exception Mismatch
+	exception Mismatch of Url.t * Url.t option * Inf.mismatch
 
 	datatype component = datatype component
 
@@ -99,19 +96,23 @@ struct
 		else ()
 	end
 
-	val map: (sign * str) UrlMap.t =
-	    UrlMap.new (Vector.map (fn (s, sign, str) =>
+	val map: (inf * mod) UrlMap.t =
+	    UrlMap.new (Vector.map (fn (s, inf, mod) =>
 				       (Url.fromString ("x-alice:/" ^ s),
-					(sign, str)))
+					(inf, mod)))
 				   (UnsafeComponent.getInitialTable ()))
 
-	fun strictTypeCheck (SOME sign, SOME importSign, str) =
-	    (case Signature.match (sign, importSign, str) of
-		 SOME str => str
-	       | NONE => raise Mismatch)
-	  | strictTypeCheck (_, _, str) = str
+	fun strictTypeCheck (SOME inf, SOME importInf, mod) =
+	    (Inf.match (inf, importInf); mod) (*--** coercion *)
+	  | strictTypeCheck (NONE, SOME _, mod) =
+	    (trace ("warning: no export signature, accepted unchecked"); mod)
+	  | strictTypeCheck (SOME _, NONE, mod) =
+	    (trace ("warning: no import signature, accepted unchecked"); mod)
+	  | strictTypeCheck (NONE, NONE, mod) =
+	    (trace ("warning: no import/export signatures, accepted unchecked");
+	     mod)
 
-	fun lazyTypeCheck (signOpt, importSignOpt, str, url, baseUrlOpt) =
+	fun lazyTypeCheck (inf, importInf, mod, url, baseUrlOpt) =
 	    let
 		val message =
 		    Url.toString url ^
@@ -121,7 +122,9 @@ struct
 		       | NONE => "")
 	    in
 		lazy (trace ("type-checking " ^ message);
-		      strictTypeCheck (signOpt, importSignOpt, str) before
+		      (strictTypeCheck (inf, importInf, mod)
+		       handle Inf.Mismatch m =>
+		           raise Mismatch (url, baseUrlOpt, m)) before
 		      trace ("type-checked  " ^ message))
 	    end
 
@@ -131,64 +134,63 @@ struct
 	      | UrlMap.NEW p =>
 		    let
 			val component = lazy load url
-			val sign = lazy sign component
-			val str = lazy eval (url, component)
-			val entry = (sign, str)
+			val inf = lazy inf component
+			val mod = lazy eval (url, component)
+			val entry = (inf, mod)
 		    in
 			Promise.fulfill (p, entry); entry
 		    end
-	and link url = EVALUATED (link' url)
-	and typedLink (url, importSign, baseUrlOpt) =
+	and link url = create (link' url)
+	and typedLink (url, importInf, baseUrlOpt) =
 	    let
-		val (sign, str) = link' url
+		val (inf, mod) = link' url
 	    in
-		lazyTypeCheck (sign, importSign, str, url, baseUrlOpt)
+		lazyTypeCheck (inf, importInf, mod, url, baseUrlOpt)
 	    end
 	and eval (baseUrl, UNEVALUATED {imports, body, ...}) =
 	    let
 		fun resolve s = Url.resolve baseUrl (Url.fromString s)
 		val imports' =
-		    Vector.map (fn (importUrlS, importSign) =>
+		    Vector.map (fn (importUrlS, importInf) =>
 				   typedLink (resolve importUrlS,
-					      importSign, SOME baseUrl))
+					      importInf, SOME baseUrl))
 			       imports
 	    in
 		trace ("evaluating " ^ Url.toString baseUrl);
 		body imports' before
 		trace ("evaluated  " ^ Url.toString baseUrl)
 	    end
-	  | eval (_, EVALUATED (_, str)) = Future.await str
-
-	fun signFromInf inf = SOME (Signature.fromSig (Inf.asSig inf))
+	  | eval (_, EVALUATED {mod, ...}) = Future.await mod
 
 	functor Eval(val component: component val url: Url.t signature S): S =
 	    let
 		structure Sig = Reflect.ReflectSig(signature S = S)
-		val str = eval (url, component)
-		val sign = sign component
-		val str' = strictTypeCheck (sign, signFromInf Sig.x, str)
+		val mod = eval (url, component)
+		val inf = inf component
+		val mod' = strictTypeCheck (inf, SOME Sig.x, mod)
+			   handle Inf.Mismatch m =>
+			       raise Mismatch (url, NONE, m)
 	    in
-		Reflect.Unreflect(val x = str' signature S = S)
+		Reflect.Unreflect(val x = mod' signature S = S)
 	    end
 
 	functor Link(val url: Url.t signature S): S =
 	    let
 		structure Sig = Reflect.ReflectSig(signature S = S)
-		val str = typedLink (url, signFromInf Sig.x, NONE)
+		val mod = typedLink (url, SOME Sig.x, NONE)
 	    in
-		Reflect.Unreflect(val x = str signature S = S)
+		Reflect.Unreflect(val x = mod signature S = S)
 	    end
 
 	functor Enter(val url: Url.t signature S structure X: S) =
 	    let
 		structure Sig = Reflect.ReflectSig(signature S = S)
-		val sign = signFromInf Sig.x
-		structure Str = Reflect.Reflect(signature S = S
+		structure Mod = Reflect.Reflect(signature S = S
 						structure X = X)
 		val _ =
 		    case UrlMap.lookupNew (map, url) of
 			UrlMap.EXISTING _ => raise Conflict
-		      | UrlMap.NEW p => Promise.fulfill (p, (sign, Str.x))
+		      | UrlMap.NEW p => Promise.fulfill (p, (SOME Sig.x, Mod.x))
 	    in
 		()
 	    end
@@ -197,12 +199,12 @@ struct
 	    case UrlMap.lookupNew (map, url) of
 		UrlMap.EXISTING _ => raise Conflict
 	      | UrlMap.NEW p =>
-		    Promise.fulfill (p, (sign component,
+		    Promise.fulfill (p, (inf component,
 					 lazy eval (url, component)))
 
 	fun lookup url =
 	    case UrlMap.lookup (map, url) of
-		SOME (sign, str) => SOME (EVALUATED (sign, str))
+		SOME (inf, mod) => SOME (EVALUATED {inf, mod})
 	      | NONE => NONE
 
 	fun start url = ignore (eval (url, link url))
