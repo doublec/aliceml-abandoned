@@ -1,0 +1,28 @@
+(*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+signature SIMPLE_IMP_MAP =
+sig
+    type key
+    type 'a map
+    type 'a t = 'a map
+
+    val new :		unit -> 'a map
+
+    val insert :	'a map * key * 'a -> unit
+    val delete :	'a map * key -> unit
+    val deleteAll :	'a map -> unit
+
+    val lookup :	'a map * key -> 'a option
+    val member :	'a map * key -> bool
+    val isEmpty :	'a map -> bool
+end
