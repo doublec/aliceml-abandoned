@@ -141,16 +141,22 @@ struct
 	    SOME "x-alice:/alice.import"
 
     fun main arguments =
-	let
-	    val _ = TextIO.print banner
-	    open RecursiveCompiler.Switches
-	in
-	    defaults ();
-	    Debug.dumpPhases := false;
-	    Language.allowUnclosedComponents := true;
-	    Language.reexportImport := true;
-	    Language.retainFullImport := true;
-	    Global.traceComponentAccess := true;
-	    main'(OptionParser.parse arguments)
-	end
+	if RecursiveCompiler.isCrossCompiler then
+	    (TextIO.output (TextIO.stdErr,
+			    "Cross-compilation not supported in \
+			    \interactive toplevel\n");
+	     OS.Process.failure)
+	else
+	    let
+		val _ = TextIO.print banner
+		open RecursiveCompiler.Switches
+	    in
+		defaults ();
+		Debug.dumpPhases := false;
+		Language.allowUnclosedComponents := true;
+		Language.reexportImport := true;
+		Language.retainFullImport := true;
+		Global.traceComponentAccess := true;
+		main'(OptionParser.parse arguments)
+	    end
 end
