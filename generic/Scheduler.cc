@@ -17,7 +17,6 @@
 #endif
 
 #include <cstdio>
-#include "unistd.h"
 #include "generic/RootSet.hh"
 #include "generic/ConcreteCode.hh"
 #include "generic/Closure.hh"
