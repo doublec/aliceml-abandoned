@@ -19,7 +19,6 @@ import structure Layout from "Layout"
 import structure WindowManager from "WindowManager"
 import structure DrawNodes from "DrawNodes"
 import structure Settings from "Settings"
-import structure WindowHelper from "WindowHelper"
 import structure Init from "Init"
 import signature UNSAFE_INSPECTOR from "UNSAFE_INSPECTOR-sig"
 

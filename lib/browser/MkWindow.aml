@@ -24,7 +24,7 @@ import structure Gtk from "x-alice:/lib/gtk/Gtk"
 import structure Gdk from "x-alice:/lib/gtk/Gdk"
 import structure GtkCanvas from "x-alice:/lib/gtk/GtkCanvas"
 import structure MkDrawingArea from "MkDrawingArea"
-import structure WindowHelper from "WindowHelper"
+import structure GtkSupport from "GtkSupport"
 import structure Settings from "Settings"
 import structure Dictionaries from "Dictionaries"
 import structure RelManDictionary from "RelManDictionary"
@@ -32,12 +32,11 @@ import structure NodeSearch from "NodeSearch"
 import structure DrawNodes from "DrawNodes"
 import structure Layout from "Layout"
 import structure Server from "Server"
-import structure Services from "Services"
 import structure Helper from "Helper"  
 import signature MK_WINDOW from "MK_WINDOW-sig"
 
 local 
-open WindowHelper
+open GtkSupport
 
 val serve' = Server.newServer () 
 
@@ -232,7 +231,7 @@ fun handleResize (scrolled,hadj,vadj,resize) = (fn _ =>  serve' (fn () => let
 					 then !(Settings.max_y) else page_sv
 			   in
 			       (resize(h,v,scrolled,valueh,valuev  )
-				; Services.resizeSepLines(Dictionaries.dict,
+				; GtkSupport.resizeSepLines(Dictionaries.dict,
 							  h))
 			 end))
 
@@ -455,7 +454,7 @@ struct
 	 (selectHandler("force evaluation")) (getSelectionNode(),0)
 
 	 (* Menu-Bar *)
-     val bar = WindowHelper.createMenu
+     val bar = GtkSupport.createMenu
 	 (BarObj[MenuObj
 		 {title = "Inspector",
 		  items = [EntryObj
@@ -517,8 +516,8 @@ struct
     
      fun handleEvent [Gdk.EVENT(event)] = serve (fn () =>
      let
-	 val font_width = Services.fontWidth()
-	 val font_height = Services.fontHeight()  
+	 val font_width = GtkSupport.fontWidth()
+	 val font_height = GtkSupport.fontHeight()  
      in
 	case event of
 	  Gdk.GDK_BUTTON_PRESS({button = b, ...} as r) => 

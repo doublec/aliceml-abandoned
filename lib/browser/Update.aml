@@ -24,11 +24,10 @@ import structure ReinspectedRelDict from "ReinspectedRelDict"
 import structure TransientDictionary from "TransientDictionary"
 import structure Dictionaries from "Dictionaries"
 import structure Layout from "Layout"
-import structure WindowHelper from "WindowHelper"
 import structure WindowManager from "WindowManager"
 import structure DrawNodes from "DrawNodes"
 import structure Server from "Server"
-import structure Services from "Services"
+import structure GtkSupport from "GtkSupport"
 import structure Settings from "Settings"
 import structure NewNodeHelper from "NewNodeHelper"
 import signature UPDATE from "UPDATE-sig"
@@ -93,8 +92,8 @@ struct
 	      case MainDictionary.lookup(dict,i) of
 	      NONE => iterMove(dict,dy,i+1,highest_i)
             | SOME (node,line) 
-	      => ( Services.moveGroup(getGroup(node),0,dy)
-		 ;  Services.yPosSepLine(line,getGroup(node)) 
+	      => ( GtkSupport.moveGroup(getGroup(node),0,dy)
+		 ;  GtkSupport.yPosSepLine(line,getGroup(node)) 
 		  ; iterMove (dict,dy,i+1,highest_i) )
 		  
     (* update *)
@@ -121,7 +120,7 @@ struct
 	       val _ = if isRelRefNode new
 			   then findRelNode(node,va)
 		       else ()
-	       val (_,y_pos) = Services.getPosition(getGroup(anc))
+	       val (_,y_pos) = GtkSupport.getPosition(getGroup(anc))
 	   in ( Gtk.objectDestroy(getGroup(n))
 	       ; if isRelNode new 
 		     then let val ri_rel = 
@@ -258,7 +257,7 @@ struct
 		  | I_VALUE(r) => g (va_inf,#typ(r),p,index,getDepth(n))
 	    val _ = updateChild(p,index,new)  
 	    val node = if getParent(new) = Empty then new else anc
-	    val (_,y_pos) = Services.getPosition(getGroup(anc))
+	    val (_,y_pos) = GtkSupport.getPosition(getGroup(anc))
 	in ( Gtk.objectDestroy(getGroup(n))
 	    ; Layout.layout(node)
 	    ; MainDictionary.update(Dictionaries.dict, (ind,(node,ancline)))

@@ -34,10 +34,10 @@ import structure TransientDictionary from "TransientDictionary"
 import structure Dictionaries from "Dictionaries"
 import structure Update from "Update"
 import structure MkPathTable from "MkPathTable"
-import structure Services from "Services"
 import structure Settings from "Settings"
 import structure NewNodeHelper from "NewNodeHelper"
 import structure WindowManager from "WindowManager"
+import structure GtkSupport from "GtkSupport"
 import signature NEW_NODE from "NEW_NODE-sig"
 
 local
@@ -58,7 +58,7 @@ struct
 			    val _ = RelManDictionary.update(reldict,(i,nil))
                             val _ = relnumber := 0
 			    val node =  createGraph (va,t,Empty,i,0)
-			    val line = Services.createSepLine
+			    val line = GtkSupport.createSepLine
 				(!WindowManager.canvasroot,
 				 !WindowManager.act_line)
 			in (MainDictionary.insertI(dict,(node,line)) ; node)
@@ -571,7 +571,7 @@ struct
 			       val _ = RelManDictionary.update(reldict,(i,nil))
 			       val _ = Settings.relnumber := 0 
 			       val node = createGraphInf (va,t,Empty,i,0)
-			       val line = Services.createSepLine
+			       val line = GtkSupport.createSepLine
 				(!WindowManager.canvasroot,
 				 !WindowManager.act_line)
 			   in (MainDictionary.insertI(dict,(node,line)) 

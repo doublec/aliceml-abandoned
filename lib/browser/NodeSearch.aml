@@ -17,10 +17,7 @@ import structure Types from "Types"
 import structure MainDictionary from "MainDictionary"
 import structure Layout from "Layout"
 import structure Helper from "Helper"
-import structure WindowHelper from "WindowHelper"
 import structure Settings from "Settings"
-import structure DrawNodes from "DrawNodes"
-import structure Services from "Services"
 import signature NODE_SEARCH from "NODE_SEARCH-sig"
 
 local
@@ -191,10 +188,10 @@ struct
     fun search (dict,real_x, real_y) = 
 	let
 	    val int_x = (Real.trunc(real_x))
-	    val font_width = Services.fontWidth()
+	    val font_width = !Settings.fontWidth
 	    val x = int_x div font_width
 	    val int_y = (Real.trunc(real_y))
-	    val font_height = Services.fontHeight()
+	    val font_height = !Settings.fontHeight
 	    val y = int_y div font_height
 	    val highest_i = MainDictionary.getHighestIndexAssigned(dict)
 	    val _ = () (* TextIO.print("searching for x:" 

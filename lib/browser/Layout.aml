@@ -18,7 +18,6 @@ import structure Helper from "Helper"
 import structure MainDictionary from "MainDictionary"
 import structure Dictionaries from "Dictionaries"
 import structure Settings from "Settings"
-import structure Services from "Services"
 import signature LAYOUT from "LAYOUT-sig"
 
 import structure Inspector from "x-alice:/lib/tools/Inspector"
@@ -178,8 +177,8 @@ struct
 				
     (* setVisible *) 
     fun setVisible (x,y) = let
-			       val w = Services.fontWidth()
-			       val h = Services.fontHeight()
+			       val w = !Settings.fontWidth
+			       val h = !Settings.fontHeight
 			       val rx =  Real.fromInt(w * x)
 			       val ry =  Real.fromInt(h * y)
 			   in

@@ -15,13 +15,12 @@
 
 import structure Inspector from "x-alice:/lib/tools/Inspector"
 import structure TextIO from "x-alice:/lib/system/TextIO"
-import structure Services from "Services"
+import structure GtkSupport from "GtkSupport"
 import structure Types from "Types"
 import structure Helper from "Helper"
 import structure Layout from "Layout"
 import signature DRAW_NODES from "DRAW_NODES-sig"
 import structure ColorMap from "ColorMap"
-import structure WindowHelper from "WindowHelper"
 import structure Settings from "Settings"
 import structure MkColorTable from "MkColorTable"
 import structure Gtk from "x-alice:/lib/gtk/Gtk"
@@ -36,14 +35,14 @@ struct
     exception DrawError
     exception NodeFound of int * int * node
     	   
-    fun groupToPosition (node,x,y) = Services.moveGroup(getGroup(node),x,y)
+    fun groupToPosition (node,x,y) = GtkSupport.moveGroup(getGroup(node),x,y)
 				      
     fun move'(n,x,y) = let
 			   val group = getGroup(n)
 			   val (old_x,
 				old_y,
 				old_x2,
-				old_y2) = Services.getCoordinates group 
+				old_y2) = GtkSupport.getCoordinates group 
 			   val needs_printing =  old_x = 0 
 			                         andalso old_y = 0
 			                         andalso old_x2 = 0
@@ -51,7 +50,7 @@ struct
 			   val dx = x-old_x
 			   val dy = y-old_y
 		       in
-			   (Services.moveGroup(group,dx,dy)
+			   (GtkSupport.moveGroup(group,dx,dy)
 			    ; needs_printing)
 		       end
 
@@ -65,13 +64,13 @@ struct
     fun atomDraw (node,x,y,upd) = 
 	(if upd 
 	     then if move' (node,x,y)
-		      then (Services.print00(getRep(node),
+		      then (GtkSupport.print00(getRep(node),
 					     getGroup(node),
 					     getColor(node),
 					     !Settings.fontname);())
 		  else ()
 	 else (groupToPosition(node,x,y)
-	       ;Services.print00 (getRep(node),
+	       ;GtkSupport.print00 (getRep(node),
 				  getGroup(node),
 				  getColor(node),
 				  !Settings.fontname)
@@ -83,8 +82,8 @@ struct
     fun drawLimit (node,x,y,upd) = 
 	let 
 	    val createArrow = if getSort(node) = Types.DEPTH_LIMIT
-				  then Services.createArrowDown
-			      else Services.createArrowRight
+				  then GtkSupport.createArrowDown
+			      else GtkSupport.createArrowRight
 	in
 	    (if upd 
 		 then if move'(node,x,y)
@@ -176,7 +175,7 @@ struct
 					      new_x,0,upd)
 		      in
 			  (x + String.size(#rep(r)) +   
-			   Layout.get_l_xdim(content),
+			   Layout.get_l_xdim(content), (* was lxdim *)
 			   y + Layout.get_ydim(n)-1)
 		      end )
 	    end)
