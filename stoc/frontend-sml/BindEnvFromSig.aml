@@ -52,13 +52,15 @@ structure BindEnvFromSig :> BIND_ENV_FROM_SIG =
 	else if Type.isCon t
 	andalso Path.equals(#3(Type.asCon t), PervasiveType.path_ref) then
 	    let
+		(*UNFINISHED: constructor currently gets the same name
+		 * as the tycon, because we have no way of knowing its
+		 * real name. HACK, ref is still broken... *)
 		val E   = new()
-		(*UNFINISHED: ref contructor not handled -- anybody cares??
 		val x   = Stamp.new()
-		val vid = VId.fromString(Name.toString(Pervasive.valid_ref))
-		*)
+		val n   = Label.toName(Path.toLab(#3(Type.asCon t)))
+		val vid = VId.fromString(Name.toString n)
 	    in
-		(*insertVal(E, vid, (I,x,R)) ;*)
+		insertVal(E, vid, (I,x,R)) ;
 		E
 	    end
 	else

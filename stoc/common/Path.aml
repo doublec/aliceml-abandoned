@@ -30,7 +30,7 @@ structure PathPrivate =
 				   ref(PLAIN n))
 
     fun toLab (_, ref(PLAIN n))	= Label.fromName n
-      | toLab   _		= raise Crash.Crash "Path.toLab"
+      | toLab (_, ref(DOT pln))	= #2 pln
 
     fun isDot (_, ref(DOT _))	= true
       | isDot   _		= false
