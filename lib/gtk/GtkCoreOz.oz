@@ -12,6 +12,8 @@
 
 functor
 import
+   Property(put)
+   OS(srand rand)
    System(show)
    Signal at 'GtkSignal.so{native}'
    Native at 'x-oz://system/GTK.so{native}'
@@ -20,6 +22,9 @@ export
 define
    Dispatcher
 
+   {Property.put 'errors.depth' 1000}
+   {Property.put 'errors.width' 1000}
+   
    local
       Table = {Dictionary.new}
    in
@@ -70,6 +75,19 @@ define
    end
 
    local
+      fun {CreateList Xs L}
+	 case Xs
+	 of X|Xr then {CreateList Xr {Signal.gListAppend L X}}
+	 [] nil  then {PointerToObject L}
+	 end
+      end
+   in
+      fun {CreateGList Xs}
+	 {CreateList Xs {Signal.null}}
+      end
+   end
+
+   local
       fun {Id X}
 	 X
       end
@@ -98,8 +116,7 @@ define
 	 {List.forAllInd FeatS proc {$ I X#F} GdkEvent.X = {F Event.I} end} GdkEvent
       end
    in
-      fun {GetGdkEvent Event}
-	 GdkEvent = {Signal.getGdkEvent {ObjectToPointer Event}}
+      fun {GetGdkEvent GdkEvent}
 	 GdkLabel = {Label GdkEvent}
       in
 	 case GdkLabel
@@ -127,10 +144,9 @@ define
    
    local
       local
-	 PollingIntervall = 50
-	 NewSignalId      = {NewName}
-	 FillStream       = {NewName}
-	 Dispatch         = {NewName}
+	 NewSignalId = {NewName}
+	 FillStream  = {NewName}
+	 Dispatch    = {NewName}
       in
 	 class DispatcherObject
 	    attr
@@ -148,14 +164,25 @@ define
 	       %% Tell C side about signal port
 	       {Signal.initializeSignalPort SignalPort}
 	       %% Fetch Events
-	       thread @threadId = {Thread.this} DispatcherObject, FillStream end
+	       %% Initial Polling Interval is 50ms
+	       thread @threadId = {Thread.this} DispatcherObject, FillStream(50) end
 	       %% Call Event Handlers
-	       thread DispatcherObject, Dispatch(Stream) end
+	       thread
+		  try DispatcherObject, Dispatch(Stream)
+		  catch Ex then
+		     {System.show Ex}
+		     DispatcherObject, exit
+		  end
+	       end
 	    end
-	    meth !FillStream
-	       {Native.handlePendingEvents}
-	       {Time.delay PollingIntervall}
-	       DispatcherObject, FillStream
+	    meth !FillStream(PollInterval)
+	       NewPollInterval = if {Signal.handlePendingEvents}
+				 then 10 %% Rapid Event testing for reactivity
+				 else {Min (PollInterval + 5) 50}
+				 end
+	    in
+	       {Time.delay NewPollInterval}
+	       DispatcherObject, FillStream(NewPollInterval)
 	    end
 	    meth !NewSignalId($)
 	       signalId <- (@signalId + 1)
@@ -172,7 +199,7 @@ define
 	    meth !Dispatch(Stream)
 	       case Stream
 	       of event(Id Data)|Tail then
-		  _ = {{Dictionary.get @handlerDict Id} {PointerToObject Data}}
+		  _ = {{Dictionary.get @handlerDict Id} Data}
 		  DispatcherObject, Dispatch(Tail)
 	       [] _ then skip
 	       end
@@ -212,6 +239,35 @@ define
 			      freeGdkColor         : FreeGdkColor
 			      getGdkEvent          : GetGdkEvent
 			      freeGdkRectangle     : FreeGdkRectangle
+			      createGList          : CreateGList
+			      comboGetEntry        : Signal.comboGetEntry
+			      comboGetList         : Signal.comboGetList
+			      fileSelectionGetOkButton : Signal.fileSelectionGetOkButton
+			      fileSelectionGetCancelButton : Signal.fileSelectionGetCancelButton
+			      colorSelectionSetColor : Signal.colorSelectionSetColor
+			      colorSelectionGetColor : Signal.colorSelectionGetColor
+			      widgetSizeRequest : Signal.widgetSizeRequest
+			      widgetGetChildRequisition : Signal.widgetGetSizeRequisition
+			      widgetGetPointer : Signal.widgetGetPointer
+			      buttonBoxGetChildSizeDefault : Signal.buttonBoxGetChildSizeDefault
+			      buttonBoxGetChildIpaddingDefault :
+				 Signal.buttonBoxGetChildIpaddingDefault
+			      buttonBoxGetChildSize : Signal.buttonBoxGetChildSize
+			      buttonBoxGetChildIpadding : Signal.buttonBoxGetChildIpadding
+			      clistGetText : Signal.clistGetText
+			      clistGetPixmap : Signal.clistGetPixmap
+			      clistGetPixtest : Signal.clistGetPixtext
+			      clistGetSelectionInfo : Signal.clistGetSelectionInfo
+			      ctreeNodeGetText : Signal.ctreeNodeGetText
+			      ctreeNodeGetPixmap : Signal.ctreeNodeGetPixmap
+			      ctreeNodeGetPixtext : Signal.ctreeNodeGetPixtext
+			      ctreeGetNodeInfo : Signal.ctreeGetNodeInfo
+			      gtkImageGet : Signal.gtkImageGet
+			      realToString : fun {$ R}
+					    {ByteString.make {Float.toString R}}
+					     end
+			      srand                : fun {$ I} {OS.srand I} unit end
+			      rand                 : fun {$ _} {OS.rand} end
 			      exit                 : Exit)
       
       %% Start dispatcher

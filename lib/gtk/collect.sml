@@ -28,7 +28,9 @@ structure Collect : COLLECT =
 	  | FUNCARGS of CType * (ARGVAL list)
 	  | FUNCTION of string * CType
 	  | CONSTANT of string * string
+	  | MEMBER   of string * CType
 	  | ENUM     of CType list
+	  | STRUCT   of string * CType list
 	  | IGNORED
 	and ARGVAL = ARG of CType * int
 
@@ -76,6 +78,22 @@ structure Collect : COLLECT =
 	fun collectEnumValues(nil, t)        = nil
 	  | collectEnumValues((m, v)::xr, t) = collectEnumEntry(m, v)::collectEnumValues(xr, t)
 
+	fun collectStructEntry({name=s, kind=STRUCTmem, ctype=ctype, ...} : Ast.member, t) =
+	    MEMBER(Symbol.name s, transform(ctype, t))
+	  | collectStructEntry _                                                          = IGNORED
+
+	fun collectUnionEntry({name=s, kind=UNIONmem, ctype=ctype, ...} : Ast.member, t) =
+	    MEMBER(Symbol.name s, transform(ctype, t))
+	  | collectUnionEntry _                                                           = IGNORED
+
+	fun collectStructValues(nil, t)                 = nil
+	  | collectStructValues((_, SOME m, _)::xr, t)  =
+	    collectStructEntry(m, t)::collectStructValues(xr, t)
+	  | collectStructValues(_::xr, t)               = collectStructValues(xr, t)
+
+	fun collectUnionValues(nil, t)        = nil
+	  | collectUnionValues((_, m)::xr, t) = collectUnionEntry(m, t)::collectUnionValues(xr, t)
+
 	fun collectType(i, tab) =
 	    (case Tidtab.find(tab, i) of
 		 SOME({ntype=SOME(Enum(_, vl)), ...} : tidBinding) =>
@@ -84,6 +102,20 @@ structure Collect : COLLECT =
 			 val fes = List.filter (fn IGNORED => false | _ => true) es
 		     in
 			 ENUM(fes)
+		     end
+	       | SOME({ntype=SOME(Struct(n, vl)), ...} : tidBinding) =>
+		     let
+			 val ss  = collectStructValues(vl, tab)
+			 val fss = List.filter (fn IGNORED => false | _ => true) ss
+		     in
+			 STRUCT(tidToString(n, tab), fss)
+		     end
+	       | SOME({ntype=SOME(Union(n, vl)), ...} : tidBinding) =>
+		     let
+			 val ss  = collectUnionValues(vl, tab)
+			 val fss = List.filter (fn IGNORED => false | _ => true) ss
+		     in
+			 STRUCT(tidToString(n, tab), fss)
 		     end
 	       | _                                                 => IGNORED)
 
@@ -150,6 +182,7 @@ structure Collect : COLLECT =
 	  | glbFilter(FUNCTION("gtk_exit", _))                   = false
 	  | glbFilter(FUNCTION("gtk_main", _))                   = false
 	  | glbFilter(FUNCTION("gtk_main_quit", _))              = false
+	  | glbFilter(FUNCTION("gtk_object_getv", _))            = false
 	  | glbFilter _                                          = true
 
 	fun createName (nil)    = ""
@@ -173,6 +206,7 @@ structure Collect : COLLECT =
 		val defs          = collect'(ast, tab)
 		val cnsts         = List.filter (fn (ENUM(_)) => true | _ => false) defs
 		val funcs         = List.filter (fn (FUNCTION(_, _)) => true | _ => false) defs
+		val structs       = List.filter (fn (STRUCT _) => true | _ => false) defs
 		val gtkrfl        = fn x => hasPrefix(["gtk"], x)
 		val cvsfl         = fn x => hasPrefix(["gtk", "canvas"], x)
 		val gtkrcfl       = fn x => hasPrefix(["GTK"], x)
@@ -190,7 +224,8 @@ structure Collect : COLLECT =
 		 map (fn x => transName((fn "gdk" => false | _ => true), x)) gdkfs,
 		 map (fn x => transEnumName(1, x)) gdkcs,
 		 map (fn x => transName(filCanvas, x)) cvfs,
-		 map (fn x => transEnumName(2, x)) cvcs)
+		 map (fn x => transEnumName(2, x)) cvcs,
+		 structs)
 	    end
 
 	val ptrLs          = ["char", "unsigned char",
@@ -212,7 +247,8 @@ structure Collect : COLLECT =
 		 EQUAL => true
 	       | _     => false)
 		     
-	fun isObjectPtr (POINTER(VALUE(s))) = not (List.exists (fn x => compare(s, x)) ptrLs)
+	fun isObjectPtr (VALUE("gpointer")) = true
+	  | isObjectPtr (POINTER(VALUE(s))) = not (List.exists (fn x => compare(s, x)) ptrLs)
 	  | isObjectPtr _                   = false
 		 
 	fun isStringPtr (POINTER(VALUE(s))) = List.exists (fn x => compare(s, x)) strLs
@@ -345,6 +381,7 @@ structure Collect : COLLECT =
              "           end\n",
              "in\n",
 	     "   {Native.itemSet {ObjectToPointer A0} {ByteString.toString A1} A2New}\n",
+	     "   unit\n",
 	     "end\n"
 	     ]
 
@@ -359,6 +396,69 @@ structure Collect : COLLECT =
 	     "end\n"
 	     ]
 	    
+	val gtkWrapperComboNew =
+	    [
+	     "fun {ComboNew _}\n",
+	     "  {PointerToObject {Native.comboNew}}\n",
+	     "end\n",
+	     "fun {ComboGetEntry A0}\n",
+	     "  {PointerToObject {GtkCore.comboGetEntry {ObjectToPointer A0}}}\n",
+	     "end\n",
+	     "fun {ComboGetList A0}\n",
+	     "  {PointerToObject {GtkCore.comboGetList {ObjectToPointer A0}}}\n",
+	     "end\n"
+	     ]
+
+	val gtkWrapperFileSelectionNew =
+	    [
+	     "fun {FileSelectionNew A0}\n",
+	     "   {PointerToObject {Native.fileSelectionNew A0}}\n",
+	     "end\n",
+	     "fun {FileSelectionGetOkButton A0}\n",
+	     "   {PointerToObject {GtkCore.fileSelectionGetOkButton {ObjectToPointer A0}}}\n",
+	     "end\n",
+	     "fun {FileSelectionGetCancelButton A0}\n",
+	     "   {PointerToObject {GtkCore.fileSelectionGetCancelButton {ObjectToPointer A0}}}\n",
+	     "end\n"
+	     ]
+
+	val gtkWrapperColorSelectionSetColor =
+	    [
+	     "fun {ColorSelectionSetColor A0 A1 A2 A3 A4}\n",
+	     "  {GtkCore.colorSelectionSetColor {ObjectToPointer A0} A1 A2 A3 A4}\n",
+	     "  unit\n",
+	     "end\n"
+	     ]
+
+	val gtkWrapperColorSelectionGetColor =
+	    [
+	     "fun {ColorSelectionGetColor A0}\n",
+	     "  {GtkCore.colorSelectionGetColor {ObjectToPointer A0}}\n",
+	     "end\n"
+	     ]
+
+	val gtkWrapperWidgetSizeRequest =
+	    [
+	     "fun {WidgetSizeRequest A0 A1 A2}\n",
+	     "   {GtkCore.widgetSizeRequest {ObjectToPointer A0} A1 A2}\n",
+	     "   unit\n",
+	     "end\n"
+	     ]
+
+	val gtkWrapperWidgetGetChildRequisition =
+	    [
+	     "fun {WidgetGetChildRequisition A0}\n",
+	     "   {GtkCore.widgetGetChildRequisition {ObjectToPointer A0}}\n",
+	     "end\n"
+	     ]
+
+	val gtkWrapperWidgetGetPointer =
+	    [
+	     "fun {WidgetGetPointer A0}\n",
+	     "   {GtkCore.widgetGetPointer {ObjectToPointer A0}}\n",
+	     "end\n"
+	     ]
+
 	fun emitWrapperInterface(ps, is, sis, "Canvas", FUNCTION("ItemNew", _))                   =
 	    (app ps canvasWrapperItemNew;
 	     sis ("                val itemNew : T.object * int * T.va_arg list -> T.object\n");
@@ -373,6 +473,135 @@ structure Collect : COLLECT =
 	     sis ("                val pointsPut : T.object * int * int -> unit\n");
 	     is "         pointsNew : PointsNew\n";
 	     is "         pointsPut : PointsPut\n")
+	  | emitWrapperInterface(ps, is, sis, "gtk", FUNCTION("ComboNew", _))                     =
+	    (app ps gtkWrapperComboNew;
+	     sis ("                val comboNew : unit -> T.object\n");
+	     sis ("                val comboGetEntry : T.object -> T.object\n");
+	     sis ("                val comboGetList : T.object -> T.object\n");
+	     is "         comboNew : ComboNew\n";
+	     is "         comboGetEntry : ComboGetEntry\n";
+	     is "         comboGetList : ComboGetList\n")
+	  | emitWrapperInterface(ps, is, sis, "gtk", FUNCTION("FileSelectionNew", _))             =
+	    (app ps gtkWrapperFileSelectionNew;
+	     sis ("                val fileSelectionNew : string -> T.object\n");
+	     sis ("                val fileSelectionGetOkButton : T.object -> T.object\n");
+	     sis ("                val fileSelectionGetCancelButton : T.object -> T.object\n");
+	     is "         fileSelectionNew : FileSelectionNew\n";
+	     is "         fileSelectionGetOkButton : FileSelectionGetOkButton\n";
+	     is "         fileSelectionGetCancelButton : FileSelectionGetCancelButton\n")
+	  | emitWrapperInterface(ps, is, sis, "gtk", FUNCTION("ColorSelectionSetColor", _))       =
+	    (app ps gtkWrapperColorSelectionSetColor;
+	     sis ("                val colorSelectionSetColor : T.object * real * real * real * real-> unit\n");
+	     is "         colorSelectionSetColor : ColorSelectionSetColor\n")
+	  | emitWrapperInterface(ps, is, sis, "gtk", FUNCTION("ColorSelectionGetColor", _))       =
+	    (app ps gtkWrapperColorSelectionGetColor;
+	     sis ("                val colorSelectionGetColor : T.object -> real * real * real * real\n");
+	     is "         colorSelectionGetColor : ColorSelectionGetColor\n")
+	  | emitWrapperInterface(ps, is, sis, "gtk", FUNCTION("WidgetSizeRequest", _))            =
+	    (app ps gtkWrapperWidgetSizeRequest;
+	     sis ("                val widgetSizeRequest : T.object * int * int -> unit\n");
+	     is "         widgetSizeRequest : WidgetSizeRequest\n")
+	  | emitWrapperInterface(ps, is, sis, "gtk", FUNCTION("WidgetGetChildRequisition", _))    =
+	    (app ps gtkWrapperWidgetGetChildRequisition;
+	     sis ("                val widgetGetChildRequisition : T.object -> int * int\n");
+	     is "         widgetGetChildRequisition : WidgetGetChildRequisition\n")
+	  | emitWrapperInterface(ps, is, sis, "gtk", FUNCTION("WidgetGetPointer", _))             =
+	    (app ps gtkWrapperWidgetGetPointer;
+	     sis ("                val widgetGetPointer : T.object -> int * int\n");
+	     is "         widgetGetPointer : WidgetGetPointer\n")
+	  | emitWrapperInterface(ps, is, sis, "gtk", FUNCTION("ButtonBoxChildSizeDefault", _))    =
+	    (ps "fun {ButtonBoxChildSizeDefault _}\n";
+	     ps "   {GtkCore.buttonBoxGetChildSizeDefault}\n";
+	     ps "end\n";
+	     sis ("                val buttonBoxGetChildSizeDefault : unit -> int * int\n");
+	     is "         buttonBoxGetChildSizeDefault : ButtonBoxChildSizeDefault\n")
+	  | emitWrapperInterface(ps, is, sis, "gtk", FUNCTION("ButtonBoxChildIpaddingDefault", _))    =
+	    (ps "fun {ButtonBoxChildIpaddingDefault _}\n";
+	     ps "   {GtkCore.buttonBoxGetChildIpaddingDefault}\n";
+	     ps "end\n";
+	     sis ("                val buttonBoxGetIpaddingDefault : unit -> int * int\n");
+	     is "         buttonBoxGetChildIpaddingDefault : ButtonBoxChildIpaddingDefault\n")
+	  | emitWrapperInterface(ps, is, sis, "gtk", FUNCTION("ButtonBoxGetChildSize", _))    =
+	    (ps "fun {ButtonBoxGetChildSize A0}\n";
+	     ps "   {GtkCore.buttonBoxGetChildSize {ObjectToPointer A0}}\n";
+	     ps "end\n";
+	     sis ("                val buttonBoxGetChildSize : T.object -> int * int\n");
+	     is "         buttonBoxGetChildSize : ButtonBoxGetChildSize\n")
+	  | emitWrapperInterface(ps, is, sis, "gtk", FUNCTION("ButtonBoxGetChildIpadding", _))    =
+	    (ps "fun {ButtonBoxGetChildIpadding A0}\n";
+	     ps "   {GtkCore.buttonBoxGetChildIpadding {ObjectToPointer A0}}\n";
+	     ps "end\n";
+	     sis ("                val buttonBoxGetChildIpadding : T.object -> int * int\n");
+	     is "         buttonBoxGetChildIpadding : ButtonBoxGetChildIpadding\n")
+	  | emitWrapperInterface(ps, is, sis, "gtk", FUNCTION("ClistGetText", _))                 =
+	    (ps "fun {ClistGetText A0 A1 A2}\n";
+	     ps "   {GtkCore.clistGetText {ObjectToPointer A0} A1 A2}\n";
+	     ps "end\n";
+	     sis ("                val clistGetText : T.object * int * int -> string * int\n");
+	     is "         clistGetText : ClistGetText\n")
+	  | emitWrapperInterface(ps, is, sis, "gtk", FUNCTION("ClistGetPixmap", _))               =
+	    (ps "fun {ClistGetPixmap A0 A1 A2}\n";
+	     ps "   case {GtkCore.clistGetPixmap {ObjectToPointer A0} A1 A2}\n";
+	     ps "   of '#'(P1 P2 I) then '#'({PointerToObject P1} {PointerToObject P2} I)\n";
+	     ps "   end\n";
+	     ps "end\n";
+	     sis ("                val clistGetPixmap : T.object * int * int -> T.object * T.object * int\n");
+	     is "         clistGetPixmap : ClistGetPixmap\n")
+	  | emitWrapperInterface(ps, is, sis, "gtk", FUNCTION("ClistGetPixtext", _))              =
+	    (ps "fun {ClistGetPixtext A0 A1 A2}\n";
+	     ps "   case {GtkCore.clistGetPixtext {ObjectToPointer A0} A1 A2}\n";
+	     ps "   of '#'(T I1 P1 P2 I2) then '#'(T I1 {PointerToObject P1} {PointerToObject P2} I2)\n";
+	     ps "   end\n";
+	     ps "end\n";
+	     sis ("                val clistGetPixtext : T.object * int * int -> string * int * T.object * T.object * int\n");
+	     is "         clistGetPixtext : ClistGetPixtext\n")
+	  | emitWrapperInterface(ps, is, sis, "gtk", FUNCTION("ClistGetSelectionInfo", _))        =
+	    (ps "fun {ClistGetSelectionInfo A0 A1 A2}\n";
+	     ps "   {GtkCore.clistGetSelectionInfo {ObjectToPointer A0} A1 A2}\n";
+	     ps "end\n";
+	     sis ("                val clistGetSelectionInfo : T.object * int * int -> int * int * int\n");
+	     is "         clistGetSelectionInfo : ClistGetSelectionInfo\n")
+	  | emitWrapperInterface(ps, is, sis, "gtk", FUNCTION("CtreeNodeGetText", _))             =
+	    (ps "fun {CtreeNodeGetText A0 A1 A2}\n";
+	     ps "   {GtkCore.ctreeNodeGetText {ObjectToPointer A0} {ObjectToPointer A1} A2}\n";
+	     ps "end\n";
+	     sis ("                val ctreeNodeGetText : T.object * T.object * int -> string * int\n");
+	     is "         ctreeNodeGetText : CtreeNodeGetText\n")
+	  | emitWrapperInterface(ps, is, sis, "gtk", FUNCTION("CtreeNodeGetPixmap", _))           =
+	    (ps "fun {CtreeNodeGetPixmap A0 A1 A2}\n";
+	     ps "   case {GtkCore.ctreeNodeGetPixmap {ObjectToPointer A0} {ObjectToPointer A1} A2}\n";
+	     ps "   of '#'(P1 P2 I) then '#'({PointerToObject P1} {PointerToObject P2} I)\n";
+	     ps "   end\n";
+	     ps "end\n";
+	     sis ("                val ctreeNodeGetPixmap : T.object * T.object * int -> T.object * T.object * int\n");
+	     is "         ctreeNodeGetPixmap : CtreeNodeGetPixmap\n")
+	  | emitWrapperInterface(ps, is, sis, "gtk", FUNCTION("CtreeNodeGetPixtext", _))          =
+	    (ps "fun {CtreeNodeGetPixtext A0 A1 A2}\n";
+	     ps "   case {GtkCore.ctreeNodePixtext {ObjectToPointer A0} {ObjectToPointer A1} A2}\n";
+	     ps "   of '#'(S I1 P1 P2 I2) then '#'(S I1 {PointerToObject P1} {PointerToObject P2} I2)\n";
+	     ps "   end\n";
+	     ps "end\n";
+	     sis ("                val ctreeNodeGetPixtext : T.object * T.object * int -> string * int * T.object * T.object * int\n");
+	     is "         ctreeNodeGetPixtext : CtreeNodeGetPixtext\n")
+	  | emitWrapperInterface(ps, is, sis, "gtk", FUNCTION("CtreeGetNodeInfo", _))          =
+	    (ps "fun {CtreeGetNodeInfo A0 A1}\n";
+	     ps "   case {GtkCore.ctreeGetNodeInfo {ObjectToPointer A0} {ObjectToPointer A1}}\n";
+	     ps "   of '#'(S I1 P1 P2 P3 P4 B1 B2 I2) then\n";
+	     ps "      '#'(S I1 {PointerToObject P1} {PointerToObject P2}\n";
+	     ps "          {PointerToObject P3} {PointerToObject P4} B1 B2 I2)\n";
+	     ps "   end\n";
+	     ps "end\n";
+	     sis ("                val ctreeGetNodeInfo : T.object * T.object -> string * int * T.object * T.object * T.object * T.object * bool * bool * int\n");
+	     is "         ctreeGetNodeInfo : CtreeGetNodeInfo\n")
+	  | emitWrapperInterface(ps, is, sis, "gtk", FUNCTION("ImageGet", _))                     =
+	    (ps "fun {ImageGet A0}\n";
+	     ps "   case {GtkCore.gtkImageGet {ObjectToPointer A0}}\n";
+	     ps "   of '#'(P1 P2) then\n";
+	     ps "     '#'({PointerToObject P1} {PointerToObject P2})\n";
+	     ps "   end\n";
+	     ps "end\n";
+	     sis ("                val imageGet : T.object -> T.object * T.object\n");
+	     is "         imageGet : ImageGet\n")
 	  | emitWrapperInterface(ps, is, sis, _, FUNCTION("CalendarGetDate", FUNCARGS(rt, args))) =
 	    (ps "fun {CalendarGetDate A0}\n";
              ps "   A1 A2 A3\n";
@@ -844,15 +1073,126 @@ structure Collect : COLLECT =
 		 TextIO.closeOut os)
 	    end
 
+	val dataHeader =
+	    [
+	     "/* This file is auto-generated. Please do not edit. */\n\n",
+	     "#include <mozart.h>\n",
+	     "#include <gtk/gtk.h>\n\n",
+	     "/* Define Struct Accessor builtins */\n"
+	     ]
+
+	val dataInterface =
+	    ["\n/* Define Interface */\n\n",
+	     "static OZ_C_proc_interface oz_interface[] = {\n"]
+
+	val dataInit =
+	    ["\t{0, 0, 0, 0}\n",
+	     "};\n\n",
+	     "OZ_C_proc_interface *oz_init_module() {\n",
+	     "\treturn oz_interface;\n",
+	     "}\n"]
+
+	fun cutUnderscore name =
+	    (case String.explode name of
+		 #"_"::sr => String.implode sr
+	       | _        => name)
+
+	fun createDataConstructor(ps, name) =
+	    let
+		val biName = cutUnderscore name
+	    in
+		(ps "\nOZ_BI_define (alice_MemberNew"; ps biName; ps ", 0, 1) {\n";
+		 ps "\tOZ_out(0) = OZ_makeForeignPointer(malloc(sizeof(struct ";
+		 ps name; ps ")))\n";
+		 ps "\treturn OZ_ENTAILED;\n";
+		 ps "} OZ_BI_end\n";
+		 ps "\nOZ_BI_define (alice_MemberDelete"; ps biName; ps ", 1, 0) {\n";
+		 ps "\tOZ_declareForeignType(0, arg, struct "; ps name; ps "*)\n";
+		 ps "\tfree(arg);\n";
+		 ps "\t return OZ_ENTAILED;\n";
+		 ps "} OZ_BI_end\n")
+	    end
+
+	fun createDataBuiltins(ps, name, nil)                  = ()
+	  | createDataBuiltins(ps, name, MEMBER(sym, typ)::mr) =
+	    let
+		val biName = ((cutUnderscore name) ^ (firstUpper sym))
+		val biType = ("struct " ^ name ^ "*")
+	    in
+		(ps "\nOZ_BI_define (alice_MemberGet"; ps biName; ps ", 1, 1) {\n";
+		 ps "\tOZ_declareForeignType(0, arg, "; ps biType; ps ");\n";
+		 ps "\tOZ_out(0) = OZ_makeForeignPointer(arg->"; ps sym; ps ");\n";
+		 ps "\treturn OZ_ENTAILED;\n";
+		 ps "} OZ_BI_end\n";
+		 ps "\nOZ_BI_define (alice_MemberPut"; ps biName; ps ", 2, 0) {\n";
+		 ps "\tOZ_declareForeignType(0, arg, struct "; ps name; ps "*);\n";
+		 ps "\tOZ_declareForeignType(1, val, "; ps (argToString typ); ps ");\n";
+		 ps "\targ->"; ps sym; ps " = val;\n";
+		 ps "\treturn OZ_ENTAILED;\n";
+		 ps "} OZ_BI_end\n";
+		 createDataBuiltins(ps, name, mr))
+	    end
+	  | createDataBuiltins(ps, name, _::mr)                = createDataBuiltins(ps, name, mr)
+
+	fun createMemberDataInterfaces(ps, name, nil)                = ()
+	  | createMemberDataInterfaces(ps, name, MEMBER(sym, _)::mr) =
+	    let
+		val memName = (name ^ (firstUpper sym))
+	    in
+		(ps "\t{memberGet"; ps memName;
+		 ps ", 1, 1, alice_MemberGet"; ps memName; ps "},\n";
+		 ps "\t{memberPut"; ps memName;
+		 ps ", 2, 0, alice_MemberPut"; ps memName; ps "},\n";
+		 createMemberDataInterfaces(ps, name, mr))
+	    end
+	  | createMemberDataInterfaces(ps, name, _)                  = ()
+
+	fun createDataInterfaces(ps, name, ms) =
+	    let
+		val biName = cutUnderscore name
+	    in
+		(ps "\t{memberNew"; ps biName; ps ", 0, 1, alice_MemberNew"; ps biName; ps "},\n";
+		 ps "\t{memberDelete"; ps biName; ps ", 1, 0, alice_MemberDelete";
+		 ps biName; ps "},\n";
+		 createMemberDataInterfaces(ps, biName, ms))
+	    end
+
+	fun createDataBinding ss =
+	    let
+		fun isValid (STRUCT(name, _)) =
+		    (case String.explode name of
+			 (#"_")::(#"G")::(#"t")::(#"k")::_ => true
+		       | (#"_")::(#"G")::(#"d")::(#"k")::_ => true
+		       | (#"t")::v::_                      => Char.isDigit v
+		       | _                                 => false)
+		  | isValid _                 = false
+
+		val newss = List.filter isValid ss
+		val os    = TextIO.openOut "GtkData.c"
+		val ps    = fn s => TextIO.output(os, s)
+
+		fun handleBuiltins (STRUCT(name, ms)) =
+		    (createDataConstructor(ps, name);
+		     createDataBuiltins(ps, name, ms))
+		  | handleBuiltins _                  = ()
+	    in
+		(app ps dataHeader;
+		 app handleBuiltins newss;
+		 app ps dataInterface;
+		 app (fn STRUCT(name, ms) => createDataInterfaces(ps, name, ms) | _ => ()) newss;
+		 app ps dataInit;
+		 TextIO.closeOut os)
+	    end
+
 	fun alicegtk [inFile] =
 	    let
-		val (gtks, gtkcs, gdks, gdkcs, gcvs, gcvcs) = collect inFile
-		val ws                                      = ref (TextIO.openOut wrpGTKFile)
-		val is                                      = ref (TextIO.openOut expGTKFile)
-		val ss                                      = ref (TextIO.openOut sigGTKFile)
-		val pws                                     = fn s => TextIO.output(!ws, s)
-		val pis                                     = fn s => TextIO.output(!is, s)
-		val sis                                     = fn s => TextIO.output(!ss, s)
+		val (gtks, gtkcs, gdks, gdkcs, gcvs, gcvcs, strs) = collect inFile
+		val ws                                            = ref (TextIO.openOut wrpGTKFile)
+		val is                                            = ref (TextIO.openOut expGTKFile)
+		val ss                                            = ref (TextIO.openOut sigGTKFile)
+		val pws                                           = fn s => TextIO.output(!ws, s)
+		val pis                                           = fn s => TextIO.output(!is, s)
+		val sis                                           = fn s => TextIO.output(!ss, s)
 	    in
 		writeText(pws, wrpGTKPrefix);
 		writeText(pis, expGTKPrefix);

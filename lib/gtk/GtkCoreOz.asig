@@ -32,6 +32,10 @@ in
 		    val allocateGdkColor : int * int * int -> T.object
 		    val freeGdkColor : T.object -> unit
 		    val getGdkEvent : T.object -> T.event
+		    val createGList : string list -> T.object
+		    val realToString : real -> string
+		    val srand : int -> unit
+		    val rand : unit -> int
 		    val exit : unit -> unit
 		end
 	end

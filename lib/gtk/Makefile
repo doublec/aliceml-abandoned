@@ -56,15 +56,19 @@ INSTALLFILES = $(COMPONENTS:%=$(PREFIX)/lib/gtk/%) \
                $(ALICECOMPONENTS:%=$(PREFIX)/lib/gtk/%) \
                $(NATIVECOMPONENTS:%=$(PREFIX)/lib/gtk/%)
 
-CXXFLAGS = $(CPPFLAGS)
+CXXFLAGS = $(CPPFLAGS) \
+           -I/home/thor/devel/mozart/platform/emulator \
+           -I/home/thor/devel/build/platform/emulator
 
 NATIVESOURCES = GtkSignal.c GtkCanvas.c
 NATIVEOBJS = $(NATIVESOURCES:%.c=%.o)
 NATIVECOMPONENTS = $(NATIVESOURCES:%.c=%.so-$(OZPLATFORM))
 
+NATIVEIMLIB = $(SRCDIR)/build/lib/libgdk_imlib.a
 NATIVECANVAS = $(SRCDIR)/build/lib/libgtk-canvas.a
 
 NATIVEFLAGS = $(SRCDIR)/build/lib/libgtk-canvas.a \
+              $(SRCDIR)/build/lib/libgdk_imlib.a \
               $(SRCDIR)/build/lib/libart_lgpl.a \
               -lg -lgdk -lgtk
 
@@ -74,7 +78,8 @@ NATIVEFLAGS = $(SRCDIR)/build/lib/libgtk-canvas.a \
 ## Building
 ##
 
-all: $(ALICETYPECOMPONENTS) $(COMPONENTS) $(ALICECOMPONENTS) $(NATIVECANVAS) $(NATIVECOMPONENTS) 
+all: $(ALICETYPECOMPONENTS) $(COMPONENTS) $(ALICECOMPONENTS) \
+     $(NATIVEIMLIB) $(NATIVECANVAS) $(NATIVECOMPONENTS) 
 
 depend:
 	touch Makefile.depend
@@ -132,8 +137,14 @@ Gdk.ozf: GtkCore.ozf
 UntypedCanvas.ozf: CanvasWrapper.oz CanvasExport.oz
 Canvas.ozf: GtkCore.ozf
 
+$(NATIVEIMLIB): gtk-canvas/imlib/config.log
+	(cd gtk-canvas/imlib && $(MAKE) all install) || exit 1
+
 $(NATIVECANVAS): gtk-canvas/config.log
 	(cd gtk-canvas && $(MAKE) all install) || exit 1
+
+gtk-canvas/imlib/config.log:
+	(cd gtk-canvas/imlib && ./configure --prefix=$(BUILDDIR)/build) || exit 1
 
 gtk-canvas/config.log:
 	(cd gtk-canvas && ./configure --prefix=$(BUILDDIR)/build) || exit 1
