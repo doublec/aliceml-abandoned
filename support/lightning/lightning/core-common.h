@@ -193,6 +193,11 @@ typedef union jit_code {
 #define jit_notr_s(d, rs)		jit_xori_s((d), (rs), 65535)
 #define jit_notr_us(d, rs)		jit_xori_s((d), (rs), 65535)
 
+// to be done: use platforms long
+#ifndef SIZEOF_LONG
+#define SIZEOF_LONG 4
+#endif
+
 #if SIZEOF_LONG != 4
 #define jit_notr_i(d, rs)		jit_xori_i((d), (rs), 0xFFFFFFFF)
 #define jit_notr_ui(d, rs)		jit_xori_i((d), (rs), 0xFFFFFFFF)
