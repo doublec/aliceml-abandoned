@@ -1,3 +1,10 @@
+import
+    val inspect
+    val makeBasicType
+    val makeTupleType
+from "Canvas.dll"
+
+
 signature TOOLS =
     sig
 	type label = string
@@ -9,7 +16,8 @@ signature TOOLS =
 	  | ArrayTy of ty | VectorTy of ty
 	  | ArrowTy
 
-	val toString: 'a  * ty -> string
+	val toString: 'a * ty -> string
+	val inspect:  'a * ty -> unit
     end
 
 structure Tools :> TOOLS =
@@ -22,6 +30,18 @@ structure Tools :> TOOLS =
 	  | SumTy of (label * ty option) vector
 	  | ArrayTy of ty | VectorTy of ty
 	  | ArrowTy
+
+
+	fun tyToTy IntTy	= makeBasicType "int"
+	  | tyToTy WordTy	= makeBasicType "word"
+	  | tyToTy CharTy	= makeBasicType "char"
+	  | tyToTy StringTy	= makeBasicType "string"
+	  | tyToTy RealTy	= makeBasicType "real"
+	  | tyToTy(TupleTy tys)	= makeTupleType(Vector.map tyToTy tys)
+	  | tyToTy _		= raise Domain
+
+	val inspect = fn(x,ty) => inspect(x, tyToTy ty)
+
 
 	__primitive val cast: 'a -> 'b = "Unsafe.cast"
 	__primitive val getTag: 'a -> int = "Unsafe.getTag"
@@ -71,11 +91,10 @@ structure Tools :> TOOLS =
 	    "[|" ^ sep1 (fn y => toString (y, ty), cast x) ^ "|]"
 	  | toString' (x, VectorTy ty) =
 	    "#[" ^ sep1 (fn y => toString (y, ty), cast x) ^ "]"
-	  | toString' (x, ArrowTy) = cast x
-	and toString (x, ty) =
-	    if Future.isFuture x then
-		if Future.isFailed x then "<Failed>"
-		else "<Future>"
-	    else if Hole.isHole x then "<Hole>"
-	    else toString' (x, ty)
+	  | toString' (x, ArrowTy) = "<Fun>"
+
+	and toString (x, ty) where (Future.isFuture x) =
+		if Future.isFailed x then "<Failed>" else "<Future>"
+	  | toString (x, ty) where (Hole.isHole x) = "<Hole>"
+	  | toString (x, ty) = toString' (x, ty)
     end
