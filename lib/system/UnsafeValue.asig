@@ -22,12 +22,17 @@ signature UNSAFE_VALUE_COMPONENT =
 	    sig
 		val cast: 'a_value -> 'a
 		val same: 'a * 'a -> bool
+
 		val proj: 'prod_value * Label.t vector * int -> 'value
 		val projTuple: 'tuple_value * int * int -> 'value
+
 		val tag: 'sum_value * Label.t vector -> Label.t
 		val projTagged: 'sum_value * Label.t vector * int -> 'value
+		val projTaggedTuple: 'sum_value * int * int -> 'value
+
 		val con: 'ext_value -> 'con_value * Type.t
 		val projConstructed: 'ext_value * Label.t vector * int -> 'value
+		val projConstructedTuple: 'ext_value * int * int -> 'value
 		val conName: 'con_value -> Name.t
 	    end
     end
