@@ -512,7 +512,7 @@ INSTALL3DIRS = build3/install build3/install/bin \
 	build3/install/lib build3/install/lib/fundamental \
 	build3/install/lib/system build3/install/lib/utility \
 	build3/install/lib/rtt build3/install/lib/ml-yacc \
-	build/install/stoc build3/install/stoc/top
+	build3/install/stoc build3/install/stoc/top
 INSTALL3TOPFILES = $(INSTALL2TOPFILES)
 INSTALL3BINFILES = $(INSTALL2BINFILES) stol stot stot-emacs
 INSTALL3LIBFILES = \
