@@ -109,10 +109,8 @@ LazyCompileClosure *LazyCompileClosure::New(TagVal *abstractCode) {
 NativeConcreteCode *NativeConcreteCode::NewInternal(TagVal *abstractCode,
 						    Chunk *code,
 						    word immediateEnv,
-#if defined(ALICE_IMPLICIT_KILL)
-						    word livenessInfo,
-#endif
-						    word nbLocals) {
+						    word nbLocals,
+						    word skipCCCPC) {
   ConcreteCode *concreteCode =
     (ConcreteCode *) ConcreteCode::New(NativeCodeInterpreter::self, SIZE);
   Chunk *name =
@@ -122,9 +120,7 @@ NativeConcreteCode *NativeConcreteCode::NewInternal(TagVal *abstractCode,
   concreteCode->Init(NATIVE_CODE_POS, code->ToWord());
   concreteCode->Init(IMMEDIATE_ENV_POS, immediateEnv);
   concreteCode->Init(NLOCALS_POS, nbLocals);
-#if defined(ALICE_IMPLICIT_KILL)
-  concreteCode->Init(LIVENESS_INFO_POS, livenessInfo);
-#endif
+  concreteCode->Init(SKIP_CCC_PC_POS, skipCCCPC);
   return (NativeConcreteCode *) concreteCode;
 }
 
