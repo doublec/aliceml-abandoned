@@ -13,19 +13,29 @@
 #ifndef __INTERPRETER_HH__
 #define __INTERPRETER_HH__
 
-#include "store/store.hh"
+#include "scheduler/ConcreteCode.hh"
 
-class Thread;
 class TaskStack;
 
 class Interpreter {
 public:
-  typedef enum {
-    CONTINUE, EXCEPTION, PREEMPT, SUSPEND, TERMINATE
-  } result;
+  enum result {
+    CONTINUE, // out = nargs; nargs == -1: OneArg / nargs >= 0: TupArgs
+    PREEMPT,  // out = nargs; nargs == -1: OneArg / nargs >= 0: TupArgs
+    RAISE,    // out = exn
+    REQUEST,  // out = #vars (placed on stack)
+    TERMINATE // (out unused)
+  };
 
-  virtual result Run(int nargs, TaskStack *&taskStack, word &data) = 0;
-  virtual Thread *NewThread(word code) = 0;
+  // Handling code:
+  virtual ConcreteCode *Prepare(word abstractCode) = 0;
+
+  // Handling stack frames:
+  virtual void PushCall(TaskStack *taskStack, word closure) = 0;
+  virtual void PopFrame(TaskStack *taskStack) = 0;
+
+  // Execution:
+  virtual result Run(TaskStack *taskStack, int nargs, word &out) = 0;
 };
 
 #endif __INTERPRETER_HH__
