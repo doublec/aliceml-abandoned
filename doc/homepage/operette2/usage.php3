@@ -5,9 +5,15 @@
 <?php section("overview", "overview") ?>
   <P>The interface to the Alice system features:</P>
   <UL>
-    <LI><A href="#compiler">the compiler</A>
+    <LI><A href="#stot">the interactive toplevel</A>
+    <LI><A href="#compiler">the batch compiler</A>
     <LI><A href="#vm">the virtual machine</A>
+    <LI><A href="#linker">the static linker</A>
   </UL>
+
+<?php section("stot", "toplevel") ?>
+
+<!--** missing -->
 
 <?php section("compiler", "compiler") ?>
   <P>The Alice compiler can be invoked in one of the following ways:</P>
@@ -40,17 +46,37 @@
     times are not checked.</P>
   <P>Per default, the <A href="libraries.php3#toplevel">SML Standard Basis
     top-level environment</A> is available for compiling source files.</P>
-  <P>The following extra options may be given:</P>
+  <P>The following warning options may be given:</P>
   <DL>
-    <DT><TT>--noimplicitimport</TT></DT>
+    <DT><TT>--(no-)warn-shadowing</TT></DT>
+    <DD><P>Whether to warn about shadowing of identifiers.</P></DD>
+  </DL>
+  <P>The following language options may be given:</P>
+  <DL>
+    <DT><TT>--no-reexport-import</TT></DT>
+    <DD><P>Make imported entities part of the component.</P></DD>
+    <DT><TT>--no-implicit-import</TT></DT>
     <DD><P>Do not make the SML Standard Basis top-level environment available
       to source files.  This option is necessary for bootstrapping the
       top-level environment itself.</P></DD>
-    <DT><TT>--outputassembly</TT></DT>
-    <DD><P>Write a file <I>&lt;output file&gt;</I><TT>.ozm</TT> containing
-      the assembly code for the compiled component.</P></DD>
-    <DT><TT>--noprintcomponentsig</TT></DT>
-    <DD><P>Omit output of component signatures.</P></DD>
+    <DT><TT>--implicit-import-file</TT> <I>&lt;file&gt;</I></DT>
+    <DD><P>Name a file containing import announcements that is automatically
+      prepended to any Alice source file before compilation.</P></DD>
+    <DT><TT>--rtt-level=no</TT></DT>
+    <DD><P>Do not generate code for runtime types.</P></DD>
+    <DT><TT>--rtt-level=core</TT></DT>
+    <DD><P>Only generate code for core runtime types.</P></DD>
+    <DT><TT>--rtt-level=full</TT></DT>
+    <DD><P>Full support for runtime types.</P></DD>
+  </DL>
+  <P>The following debugging options may be given:</P>
+  <DL>
+    <DT><TT>--version</TT></DT>
+    <DD><P>Print compiler version.</P></DD>
+    <DT><TT>--(no-)dump-phases</TT></DT>
+    <DD><P>Trace the running phases.</P></DD>
+    <DT><TT>--(no-)dump-elaboration-sig</TT></DT>
+    <DD><P>Output of component signatures.</P></DD>
   </DL>
 
 <?php section("vm", "vm") ?>
@@ -67,11 +93,17 @@
       <I>&lt;application url&gt;</I>, denoting a compiled or executable
       component.
   </DL>
+  <P>The application can access the remaining command line arguments via
+    the <A href="libraries.php3#command-line"><TT>CommandLine</TT></A>
+    component.  To terminate an application, the <TT>OS.Process.terminate</TT>
+    function must be invoked.</P>
 <!--
   <P>(<TT>stow</TT> is short for <I>Stockwerk</I>, the name of the virtual
     machine.)</P>
 -->
-  <P>To terminate an application, the <TT>OS.Process.terminate</TT>
-    function must be invoked.</P>
+
+<?php section("linker", "linker") ?>
+
+<!--** missing -->
 
 <?php footing() ?>

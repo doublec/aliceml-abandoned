@@ -96,7 +96,7 @@
       </TT>
     </LI>
     <LI>
-      <TT>structure
+      <TT><A name="command-line">structure</A>
       <A href="http://www.dina.kvl.dk/~sestoft/sml/command-line.html">CommandLine</A>
       </TT>
       (import from <TT>"x-alice:/lib/system/CommandLine"</TT>)
