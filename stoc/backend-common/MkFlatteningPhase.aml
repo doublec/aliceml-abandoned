@@ -481,9 +481,10 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 	fun patToExp (WildPat _) = Crash.crash "MatchCompilationPhase.patToExp"
 	  | patToExp (LitPat (coord, lit)) = LitExp (coord, lit)
 	  | patToExp (VarPat (coord, id)) = VarExp (coord, ShortId (coord, id))
-	  | patToExp (ConPat (coord, longid, NONE)) = ConExp (coord, longid)
+	  | patToExp (ConPat (coord, longid, NONE)) =
+	    ConExp (coord, longid, false)
 	  | patToExp (ConPat (coord, longid, SOME pat)) =
-	    AppExp (coord, ConExp (coord, longid), patToExp pat)
+	    AppExp (coord, ConExp (coord, longid, true), patToExp pat)
 	  | patToExp (RefPat (coord, pat)) =
 	    AppExp (coord, RefExp coord, patToExp pat)
 	  | patToExp (TupPat (coord, pats)) =
@@ -500,11 +501,11 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 	    if lit1 = lit2 then nil
 	    else Error.error (coord, "pattern never matches")
 	  | derec (VarPat (_, id), exp) = [([id], exp)]
-	  | derec (ConPat (coord, longid1, NONE), ConExp (_, longid2)) =
+	  | derec (ConPat (coord, longid1, NONE), ConExp (_, longid2, false)) =
 	    if longidEq (longid1, longid2) then nil   (*--** too restrictive *)
 	    else Error.error (coord, "pattern never matches")
 	  | derec (ConPat (coord, longid1, SOME pat),
-		   AppExp (_, ConExp (_, longid2), exp)) =
+		   AppExp (_, ConExp (_, longid2, true), exp)) =
 	    if longidEq (longid1, longid2) then derec (pat, exp)
 	    else Error.error (coord, "pattern never matches")
 	  | derec (RefPat (_, pat), AppExp (_, RefExp _, exp)) =
@@ -660,7 +661,7 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 	    end
 	and simplifyExp (LitExp (coord, lit)) = O.LitExp (coord, lit)
 	  | simplifyExp (VarExp (coord, longid)) = O.VarExp (coord, longid)
-	  | simplifyExp (ConExp (coord, longid)) =
+	  | simplifyExp (ConExp (coord, longid, _)) =
 	    O.ConExp (coord, longid, NONE)
 	  | simplifyExp (RefExp coord) =
 	    O.ConExp (coord, longid_ref, NONE)
@@ -711,11 +712,10 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 	  | simplifyExp (FunExp (coord, id, exp)) =
 	    (*--** name propagation, multiple argument optimization *)
 	    O.FunExp (coord, "", [(O.OneArg id, simplifyExp exp)])
-	  | simplifyExp (AppExp (coord, ConExp (_, longid), exp)) =
+	  | simplifyExp (AppExp (coord, ConExp (_, longid, true), exp)) =
 	    let
 		val (decOpt, longid') = simplifyTerm exp
-		val exp' =
-		    O.ConExp (coord, longid, SOME longid')
+		val exp' = O.ConExp (coord, longid, SOME longid')
 	    in
 		case decOpt of
 		    NONE => exp'
@@ -724,8 +724,7 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 	  | simplifyExp (AppExp (coord, RefExp _, exp)) =
 	    let
 		val (decOpt, longid) = simplifyTerm exp
-		val exp' =
-		    O.ConExp (coord, longid_ref, SOME longid)
+		val exp' = O.ConExp (coord, longid_ref, SOME longid)
 	    in
 		case decOpt of
 		    NONE => exp'

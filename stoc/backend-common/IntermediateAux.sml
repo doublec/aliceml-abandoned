@@ -81,7 +81,7 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	and substExp (exp as LitExp (_, _), _) = exp
 	  | substExp (VarExp (coord, longid), subst) =
 	    VarExp (coord, substLongId (longid, subst))
-	  | substExp (exp as ConExp (_, _), _) = exp
+	  | substExp (exp as ConExp (_, _, _), _) = exp
 	  | substExp (exp as RefExp _, _) = exp
 	  | substExp (TupExp (coord, exps), subst) =
 	    TupExp (coord, List.map (fn exp => substExp (exp, subst)) exps)
