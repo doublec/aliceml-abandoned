@@ -69,10 +69,19 @@ structure CodeGen =
 			 (hd (!freeStack));
 			 freeStack := tl (!freeStack))
 		end
+
+	    fun argApp (f, OneArg id') =
+		f id'
+	      | argApp (f, TupArgs ids) =
+		app f ids
+	      | argApp (f, RecArgs labids) =
+		app (fn (_, id') => f id') labids
 	in
 	    fun freeVarsExp (LitExp _) = ()
 	      | freeVarsExp (VarExp (_, id')) = fV.insert id'
-	      | freeVarsExp (ConAppExp (_, id', id'')) = (fV.insert id'; fV.insert id'')
+	      | freeVarsExp (ConAppExp (_, id', idargs)) =
+		(fV.insert id';
+		 argApp (fV.insert,idargs))
 	      | freeVarsExp (TupExp (_,ids)) = app fV.insert ids
 	      | freeVarsExp (RecExp (_,labids)) = app (fn (lab, id') => fV.insert id') labids
 	      | freeVarsExp (SelExp _) = ()
@@ -95,7 +104,16 @@ structure CodeGen =
 				 (stamp',name')
 			   | InId => ();
 			 fV.exit())
-		      | freeVarsFun _ = () (* xxx noch bearbeiten! xxx *)
+		      | freeVarsFun ((args,body')::idbodys') =
+			(fV.enter();
+			 freeVarsDecs body';
+			 argApp (fV.delete,args);
+			 argApp
+			 (fn (Id (_, stamp', _)) =>
+			  FreeVars.setVars (stamp', fV.get ()),
+			  args);
+			 fV.exit();
+			 freeVarsFun idbodys')
 		in
 		    freeVarsFun idbodys
 		end
@@ -104,12 +122,7 @@ structure CodeGen =
 		 fV.insert id'')
 	      | freeVarsExp (AppExp(_,id', idargs')) =
 		(fV.insert id';
-		 case idargs' of
-		     OneArg id'' => fV.insert id''
-		   | TupArgs ids => app fV.insert ids
-		   | RecArgs stringids => app
-			 (fn (_,id') => fV.insert id') stringids
-			 )
+		 argApp (fV.insert, idargs'))
 	      | freeVarsExp (ConExp(_, id', _)) = fV.insert id'
 	      | freeVarsExp (SelAppExp(_,_,id')) = fV.insert id'
 	      | freeVarsExp (PrimExp (_, name)) = ()
@@ -341,18 +354,22 @@ structure CodeGen =
 	    (* RecDec of coord * (id * exp) list * isTopLevel *)
 	    (* 1. create a new object for each id and store it into a new register. *)
 	    (* 2. evaluate the expression and pop the result *)
-	    (* !! The closure is made on evaluation of the expressions *)
+	    (* !! The closure is built on evaluation of the expressions *)
 	    let
 		(* 1st step *)
 		local
 		    fun init ((id',exp'),akku) =
 			let
 			    val loc = Register.assign(id',Register.nextFree())
-			    fun funList ((OneArg id'',_)::rest) =
+			    (* The first entry is always a OneArg.
+			     We use the stamp of this OneArg for identification
+			     of the function. Therefore, we ignore the other
+				 args here. *)
+			    fun funList ((OneArg id'',_)::_) =
 				let
 				    val className = classNameFromId id''
-				    (* the formal parameter of a function can always be found
-				in register 1. *)
+				    (* the formal parameter of a function
+				     can always be found in register 1. *)
 				    val _ = Register.assign(id'',1)
 				    val _ = Register.assignLambda(id'', loc)
 				in
@@ -361,9 +378,30 @@ structure CodeGen =
 				    Invokespecial (className, "<init>",
 						   ([],[Voidsig])) ::
 				    Astore loc ::
-				    funList rest
+				    nil
 				end
 			      | funList nil = nil
+
+			    fun specTups (id' :: rest) =
+				idCode id' ::
+				specTups rest
+			      | specTups nil = nil
+
+			    fun normalConAppExp (_,id',idargs) =
+				New CConVal ::
+				Dup ::
+				idCode id' ::
+				Invokespecial (CConVal, "<init>",
+					       ([Classsig CConstructor],
+						[Voidsig])) ::
+				Dup ::
+				Astore loc ::
+				idArgCode
+				(idargs,
+				 Invokeinterface (CConVal, "setContent",
+						  ([Classsig CVal],
+						   [Voidsig])) ::
+				 nil)
 
 			    val one = case exp' of
 				(* user defined function *)
@@ -371,20 +409,43 @@ structure CodeGen =
 				    funList idexplist
 
 			      (* constructor application *)
-			      | ConAppExp (_,id',id'') =>
-				    New CConVal ::
-				    Dup ::
-				    idCode id' ::
-				    Invokespecial (CConVal, "<init>",
-						   ([Classsig CConstructor],
-						    [Voidsig])) ::
-				    Dup ::
-				    Astore loc ::
-				    idCode id'' ::
-				    Invokeinterface (CConVal, "setContent",
-						     ([Classsig CVal],
-						      [Voidsig])) ::
-				    nil
+			      | ConAppExp (parms as
+					   (_,id', (TupArgs ids))) =>
+				    (case length ids of
+					 0 => [Getstatic CUnit]
+				       | 2 => New CConVal2 ::
+					     Dup ::
+					     Multi (specTups ids) ::
+					     Invokespecial
+					     (CConVal2, "<init>",
+					      ([Classsig CVal,
+						Classsig CVal],
+					       [Voidsig])) ::
+					     nil
+				       | 3 => New CConVal3 ::
+					     Dup ::
+					     Multi (specTups ids) ::
+					     Invokespecial
+					     (CConVal3, "<init>",
+					      ([Classsig CVal,
+						Classsig CVal,
+						Classsig CVal],
+					       [Voidsig])) ::
+					     nil
+				       | 4 => New CConVal4 ::
+					     Dup ::
+					     Multi (specTups ids) ::
+					     Invokespecial
+					     (CConVal4, "<init>",
+					      ([Classsig CVal,
+						Classsig CVal,
+						Classsig CVal,
+						Classsig CVal],
+					       [Voidsig])) ::
+					     nil
+				       | _ => normalConAppExp parms)
+
+			      | ConAppExp parms => normalConAppExp parms
 
 			      | VarExp (_, id') =>
 				    idCode id' ::
@@ -885,9 +946,9 @@ structure CodeGen =
 		(* tailcall applikation *)
 		if Lambda.isSelfCall stamp' then
 		    idArgCode
-		    (arg',
-		     [Astore 1,
-		      Goto alpha])
+		     (arg',
+		      [Astore 1,
+		       Goto alpha])
 		else
 		    normalReturn
 		    [Multi (expCode ap),
@@ -1269,11 +1330,13 @@ structure CodeGen =
 	  | expCode (ConExp (_, id', _)) =
 			  [idCode id']
 
-	  | expCode (ConAppExp (_, id', id'')) =
-			  [idCode id',
-			   idCode id'',
-			   Invokeinterface (CVal, "apply",
-					    ([Classsig CVal], [Classsig CVal]))]
+	  | expCode (ConAppExp (_, id', idargs)) =
+			  idCode id' ::
+			  idArgCode
+			  (idargs,
+			   [Invokeinterface (CVal, "apply",
+					    ([Classsig CVal],
+					     [Classsig CVal]))])
 
 	  | expCode (SelAppExp (_, label', id')) =
 			  let

@@ -256,13 +256,14 @@ structure Backend=
 		    (Class.getLiteralName()^"/"^(fieldname number), [Arraysig, Classsig CLabel])
 
 		(* Hinzufügen einer Recordarity *)
-		fun insert (strings as (s::rest)) =
-		     case StringListHash.lookup (arity, strings) of
+		fun insert (strings as (s::_)) =
+		     (case StringListHash.lookup (arity, strings) of
 			 NONE => (
 				  number := ((!number)+1);
 				  StringListHash.insert (arity, strings, !number);
 				  staticfield (!number))
-		       | SOME number' => staticfield number'
+		       | SOME number' => staticfield number')
+		  | insert _ = raise Mitch
 
 		(* Generieren aller Recordarities zur Übersetzungszeit *)
 		fun generate () =
