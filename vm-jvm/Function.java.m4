@@ -8,6 +8,15 @@ package de.uni_sb.ps.dml.runtime;
 
 abstract public class Function implements DMLValue {
 
+    static public boolean DEBUG = false;
+    _BUILTIN(Debug) {
+	_APPLY(val) {
+	    DEBUG=true;
+	    return null;
+	}
+    }
+    _FIELD(Function,debug);
+
     public Function() {
 	super();
     }
@@ -20,8 +29,4 @@ abstract public class Function implements DMLValue {
     final public java.lang.String toString() {
 	return "compiled function: "+this.getClass();
     }
-
-    _request_id ;
-    _getValue_id ;
-    _raise ;
 }
