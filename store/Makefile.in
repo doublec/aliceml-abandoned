@@ -23,19 +23,19 @@ include $(BUILDTOP)/Makefile.vars
 include $(SRCTOP)/Makefile.rules
 
 SOURCES = Map.cc WeakMap.cc Heap.cc Store.cc JITStore.cc
-OBJS = $(SOURCES:%.cc=%.o)
+OBJS = $(SOURCES:%.cc=%.$(OBJEXT))
 
 all: StoreConfig.hh $(OBJS)
 
 StoreConfig.hh: StoreConfig.exe
 	./$<
 
-StoreConfig.exe: StoreConfig.o
+StoreConfig.exe: StoreConfig.$(OBJEXT)
 	$(LD) $(LDFLAGS) -o $@ $<
 
 clean:
-	rm -f StoreConfig.o StoreConfig StoreConfig.exe
-	rm -f $(OBJS) $(LIGHTNING_SOURCES0:%.cc=%.o)
+	rm -f StoreConfig.$(OBJEXT) StoreConfig StoreConfig.exe
+	rm -f $(OBJS) $(LIGHTNING_SOURCES0:%.cc=%.$(OBJEXT))
 
 veryclean: clean
 

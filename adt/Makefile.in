@@ -21,7 +21,7 @@ include $(BUILDTOP)/Makefile.vars
 include $(SRCTOP)/Makefile.rules
 
 SOURCES = ChunkMap.cc Outline.cc
-OBJS = $(SOURCES:%.cc=%.o)
+OBJS = $(SOURCES:%.cc=%.$(OBJEXT))
 
 all: $(OBJS)
 
