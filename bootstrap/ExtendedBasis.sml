@@ -750,6 +750,9 @@ signature WORD =
     type t = word
 
     val ~ : word -> word
+    val fromLarge : LargeWord.word -> word
+    val toLarge : word -> LargeWord.word
+    val toLargeX : word -> LargeWord.word
     val equal :	word * word -> bool
     val hash :	word -> int
   end
@@ -759,11 +762,44 @@ structure Word : WORD =
   struct
     open Word
 
-    type t	= word
+    type t	  = word
 
-    fun ~w	= 0w0-w
-    val equal	= op =
-    fun hash w	= abs(toInt w) handle Overflow => 0
+    fun ~w	  = 0w0-w
+    val fromLarge = fromLargeWord
+    val toLarge   = toLargeWord
+    val toLargeX  = toLargeWordX
+    val equal	  = op =
+    fun hash w	  = abs(toInt w) handle Overflow => 0
+  end
+
+
+structure Word8 : WORD =
+  struct
+    open Word8
+
+    type t	  = word
+
+    fun ~w	  = 0w0-w
+    val fromLarge = fromLargeWord
+    val toLarge   = toLargeWord
+    val toLargeX  = toLargeWordX
+    val equal	  = op =
+    fun hash w	  = abs(toInt w) handle Overflow => 0
+  end
+
+
+structure Word32 : WORD =
+  struct
+    open Word32
+
+    type t	  = word
+
+    fun ~w	  = 0w0-w
+    val fromLarge = fromLargeWord
+    val toLarge   = toLargeWord
+    val toLargeX  = toLargeWordX
+    val equal	  = op =
+    fun hash w	  = abs(toInt w) handle Overflow => 0
   end
 
 
@@ -771,11 +807,14 @@ structure LargeWord : WORD =
   struct
     open LargeWord
 
-    type t	= word
+    type t	  = word
 
-    fun ~w	= 0w0-w
-    val equal	= op =
-    fun hash w	= abs(toInt w) handle Overflow => 0
+    fun ~w	  = 0w0-w
+    val fromLarge = fromLargeWord
+    val toLarge   = toLargeWord
+    val toLargeX  = toLargeWordX
+    val equal	  = op =
+    fun hash w	  = abs(toInt w) handle Overflow => 0
   end
 
 
