@@ -66,7 +66,7 @@ DEFINE3(UnsafeValue_projConstructed) {
 DEFINE1(UnsafeValue_conName) {
   DECLARE_CONSTRUCTOR(constructor, x0);
   String *name = constructor->GetName();
-  TagVal *exId = TagVal::New(0, 1); // ExId ...
+  TagVal *exId = TagVal::New(Types::ExId, 1);
   exId->Init(0, name->ToWord());
   RETURN(exId->ToWord());
 } END
@@ -75,13 +75,13 @@ DEFINE2(UnsafeValue_projPoly) {
   DECLARE_RECORD(record, x0);
   DECLARE_TAGVAL(tagVal, x1);
   switch (tagVal->GetTag()) {
-  case 0: // ALPHA
+  case Types::ALPHA:
     {
       word wLabel = tagVal->Sel(0);
       DECLARE_STRING(label, wLabel);
       RETURN(record->PolySel(UniqueString::New(label)));
     }
-  case 1: // NUM
+  case Types::NUM:
     Error("UnsafeValue.projPoly: numeric labels not supported");
   default:
     Error("UnsafeValue.projPoly: unknown tag");
