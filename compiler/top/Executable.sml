@@ -14,12 +14,12 @@ SMLofNJ.Internals.GC.messages false;
 CM.make();
 local
     fun stoc (_, []) =
-	((Main.ozifyStringToStdOut (TextIO.inputAll TextIO.stdIn); 0)
-	 handle _ => 1)
+	(Main.ozifyStringToStdOut (TextIO.inputAll TextIO.stdIn)
+	;OS.Process.success)
       | stoc (_, [infile]) =
-	((Main.ozifyFileToStdOut infile; 0) handle _ => 1)
+	(Main.ozifyFileToStdOut infile; OS.Process.success)
       | stoc (_, [infile, outfile]) =
-	((Main.ozifyFileToFile (infile, outfile); 0) handle _ => 1)
+	(Main.ozifyFileToFile (infile, outfile); OS.Process.success)
       | stoc (_, _) = 2
 in
     val _ = SMLofNJ.exportFn ("stoc-frontend", stoc)
