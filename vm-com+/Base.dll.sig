@@ -111,9 +111,9 @@ infix  0  before
 
 structure __pervasive :
   sig
-    __primitive type zero		= "zero"
-    __primitive type 'a succ		= "succ"
-    __primitive type ('a,'b) conarrow	= "conarrow"
+    type zero		= __pervasive.zero
+    type succ		= __pervasive.succ
+    type conarrow	= __pervasive.conarrow
 
     structure Label :
     sig
@@ -150,26 +150,26 @@ structure __pervasive :
     sig
     end
 
-    __primitive datatype exn = "exn"
-    datatype 'a list = nil | op:: of 'a * 'a list
+    type exn = __pervasive.exn
+    datatype list = datatype __pervasive.list
 
-    structure Int	: sig __primitive eqtype int	= "int"     end
-    structure LargeInt	: sig               type int	= Int.int   end
-    structure Word	: sig __primitive eqtype word	= "word"    end
-    structure LargeWord	: sig               type word	= Word.word end
-    structure Real	: sig __primitive eqtype real	= "real"    end
-    structure LargeReal	: sig               type real	= Real.real end
-    structure Char	: sig __primitive eqtype char	= "char"    end
-    structure WideChar	: sig               type char	= Char.char end
-    structure String	: sig __primitive eqtype string	= "string"  end
-    structure WideString: sig               type string	= String.string end
-    structure Vector	: sig __primitive eqtype 'a vector	= "vector"  end
-    structure Array	: sig __primitive __eqeqtype 'a array	= "array"   end
-    structure Ref	: sig __primitive __reftype 'a ref	= ref of 'a end
-    structure General	: sig __primitive datatype exn		= "exn"     end
+    structure Int	: sig type int     = __pervasive.Int.int           end
+    structure LargeInt	: sig type int     =             Int.int           end
+    structure Word	: sig type word    = __pervasive.Word.word         end
+    structure LargeWord	: sig type word    =             Word.word         end
+    structure Real	: sig type real    = __pervasive.Real.real         end
+    structure LargeReal	: sig type real    =             Real.real         end
+    structure Char	: sig type char    = __pervasive.Char.char         end
+    structure WideChar	: sig type char    =             Char.char         end
+    structure String	: sig type string  = __pervasive.String.string     end
+    structure WideString: sig type string  =             String.string     end
+    structure Vector	: sig type vector  = __pervasive.Vector.vector     end
+    structure Array	: sig type array   = __pervasive.Array.array       end
+    structure Ref	: sig datatype ref = datatype __pervasive.Ref.ref  end
+    structure General	: sig type exn     = exn                           end
 (*
-    structure Time	: sig __primitive eqtype time	= "time"    end
-    structure Promise	: sig __primitive type 'a promise	= "promise" end
+    structure Time	: sig type time    = __pervasive.Time.time         end
+    structure Promise	: sig type promise = __pervasive.Promise.promise   end
 *)
   end
 
@@ -1048,6 +1048,42 @@ signature VECTOR =
 
 structure Vector : VECTOR where type 'a vector = 'a vector
 
+
+
+(*****************************************************************************
+ * VectorPair
+ *****************************************************************************)
+
+signature VECTOR_PAIR =							(**)
+  sig
+    val zip :		'a vector * 'b vector -> ('a * 'b) vector
+    val unzip :		('a * 'b) vector -> 'a vector * 'b vector
+
+    val app :		('a * 'b -> unit) -> 'a vector * 'b vector -> unit
+    val appr :		('a * 'b -> unit) -> 'a vector * 'b vector -> unit
+    val map :		('a * 'b -> 'c) -> 'a vector * 'b vector -> 'c vector
+    val foldl :		('a * 'b * 'c ->'c) -> 'c -> 'a vector * 'b vector -> 'c
+    val foldr :		('a * 'b * 'c ->'c) -> 'c -> 'a vector * 'b vector -> 'c
+    val all :		('a * 'b -> bool) -> 'a vector * 'b vector -> bool
+    val exists :	('a * 'b -> bool) -> 'a vector * 'b vector -> bool
+
+    val appi :		(int * 'a * 'b -> unit) ->
+			   'a vector * 'b vector * int * int option -> unit
+    val appri :		(int * 'a * 'b -> unit) ->
+			   'a vector * 'b vector * int * int option -> unit
+    val mapi :		(int * 'a * 'b -> 'c) ->
+			   'a vector * 'b vector * int * int option -> 'c vector
+    val foldli :	(int * 'a * 'b * 'c -> 'c) -> 'c ->
+			   'a vector * 'b vector * int * int option -> 'c
+    val foldri :	(int * 'a * 'b * 'c -> 'c) -> 'c ->
+			   'a vector * 'b vector * int * int option -> 'c
+
+    val find :		('a * 'b -> bool) -> 'a vector * 'b vector
+					  -> ('a * 'b) option
+  end
+
+
+structure VectorPair : VECTOR_PAIR					(**)
 
 
 (*****************************************************************************
