@@ -40,17 +40,11 @@ struct
 
     (* Helpers *)
 
-    fun uncurry j =
-	case inspect j
-	 of Apply(j1,m) =>
-	    let
-		val (p,_)   = asMod m
-		val (j',ps) = uncurry j1
-	    in
-		(j',ps@[p])
-	    end
-	  | _ =>
-	    (j,[])
+    fun unapply  t     = unapply'(t,[])
+    and unapply'(t,ps) =
+	case inspect t
+	 of Apply(j',m) => unapply'(j',#1(asMod m)::ps)
+	  | _           => (t,ps)
 
 
     (* Simple objects *)
@@ -96,7 +90,7 @@ struct
 	  | Lambda(p,j1,j2) => fbox(below(ppBinder("fn",ps,p,j1,j2)))
 	  | Apply _ =>
 	    let
-		val (j',ps') = uncurry j
+		val (j',ps') = unapply j
 	    in
 		fbox(nest(List.foldl
 				(fn(p,d) => d ^/^ paren(PPPath.ppPath' ps p))
@@ -240,7 +234,7 @@ struct
 				 val (p',j') = asMod(asSing j)
 			     in
 				 abox(ppInf'(p::ps,j')) ^/^
-				 abox(text "=" ^/^ PPPath.ppPath' ps p')
+				 hbox(text "=" ^/^ PPPath.ppPath' ps p')
 			     end
 			 else
 			     abox(ppInf'(p::ps,j))
@@ -296,7 +290,7 @@ struct
 
     (* Kinds *)
 
-    and ppKind k = fbox(below(ppKind' k))
+    and ppKind(ps,k) = fbox(below(ppKind'(ps,k)))
 
     and ppKind'(ps,k) =
 	case inspectKind k

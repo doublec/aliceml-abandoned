@@ -31,13 +31,21 @@ struct
 
     val nest = nest 3
 
-    fun quote doc  = text "`" ^^ doc ^^ text "'"
-    fun paren doc  = text "(" ^^ fbox(below doc) ^^ text ")"
-    fun brace doc  = text "{" ^^ fbox(below doc) ^^ text "}"
-    fun brack doc  = text "[" ^^ fbox(below doc) ^^ text "]"
+    fun contain (l,r) doc = text l ^^ abox(below doc) ^^ text r
+    val quote = contain("`","'")
+    val paren = contain("(",")")
+    val brace = contain("{","}")
+    val brack = contain("[","]")
+
+    fun apply(doc, docs) =
+	abox(doc ^^
+	    nest(break ^^
+		 List.foldr (op ^/^) empty docs
+	    )
+	)
 
     fun indent doc = nest(break ^^ below doc) ^^ break
-    val par        = fbox o List.foldr (fn(doc',doc) => doc' ^/^ doc) empty
+    val par        = fbox o List.foldr (op ^/^) empty
     val textpar    = fbox o List.foldr (fn(s,doc) => text s ^/^ doc) empty
 
     fun ppCommaList ppX   []    = empty

@@ -37,6 +37,12 @@ struct
 
     (* Helpers *)
 
+    fun unapply  t     = unapply'(t,[])
+    and unapply'(t,ts) =
+	case inspect t
+	 of Apply(t1,t2) => unapply'(t1,t2::ts)
+	  | _            => (t,ts)
+
     fun unarg t =
 	case inspect t
 	 of Apply(t1,t2) =>
@@ -50,16 +56,6 @@ struct
 	    )
 	  | _ => SOME t
 
-    fun uncurry t =
-	case inspect t
-	 of Apply(t1,t2) =>
-	    let
-		val (t3,ts) = uncurry t1
-	    in
-		(t3, ts@[t2])
-	    end
-	  | _ => (t,[])
-	
     fun parenPrec p (p',doc) =
 	if p > p' then
 	    paren doc
@@ -226,7 +222,7 @@ struct
 		    end
 		  | Apply(t1,t2) =>
 		    let
-			val (t3,ts) = uncurry t
+			val (t3,ts) = unapply t
 		    in
 			fbox(nest(ppSeqPrec ppTypPrec 4 ts ^/^ ppTypPrec 5 t3))
 		    end
