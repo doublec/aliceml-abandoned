@@ -77,9 +77,18 @@ define
    PrimAppExp = BackendCommon.'$ImperativeGrammar'.'PrimAppExp'
    AdjExp = BackendCommon.'$ImperativeGrammar'.'AdjExp'
 
+   local
+      C = {NewCell 0}
+   in
+      proc {Gen ?N}
+	 N = {Access C} + 1
+	 {Assign C N}
+      end
+   end
+
    fun {TrOption Opt Tr}
       case Opt of !NONE then none
-      [] SOME(X) then SOME({Tr X})
+      [] SOME(X) then some({Tr X})
       end
    end
 
@@ -182,12 +191,15 @@ define
       [] TestStm(Info#Id#Test#Body1#Body2) then
 	 testStm({TrInfo Info} {TrId Id} {TrTest Test}
 		 {TrBody Body1} {TrBody Body2})
-      [] SharedStm(Info#Body#Shared) then
-	 if {IsInt {Access Shared}} then
-	    {Assign Shared
-	     sharedStm({TrInfo Info} {TrBody Body} {Access Shared})}
+      [] SharedStm(Info#Body#Shared) then X in
+	 X = {Access Shared}
+	 if {IsInt X} then NewStm NewBody in
+	    NewStm = sharedStm({TrInfo Info} NewBody {Gen})
+	    {Assign Shared NewStm}
+	    NewBody = {TrBody Body}
+	    NewStm
+	 else X
 	 end
-	 {Access Shared}
       [] ReturnStm(Info#Exp) then returnStm({TrInfo Info} {TrExp Exp})
       [] IndirectStm(_#BodyOptRef) then
 	 case {Access BodyOptRef} of SOME(Body) then {TrBody Body} end
