@@ -179,7 +179,7 @@ structure PrimOps :> PRIM_OPS =
 		ins ("Unsafe.cast", SOME Unary);
 		ins ("Unsafe.getPrimitiveByName", SOME Unary);
 		ins ("Unsafe.makeClosure", SOME (Tuple 2));
-		ins ("Unsafe.makeFunction", SOME Unary);
+		ins ("Unsafe.makeConcreteCode", SOME Unary);
 		ins ("Unsafe.makeTaggedValue", SOME (Tuple 2));
 		ins ("Unsafe.makeTuple", SOME Unary);
 		ins ("Unsafe.selTuple", SOME (Tuple 2));
