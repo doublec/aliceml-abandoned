@@ -30,6 +30,9 @@ typedef short s_int16; //--** ensure that this is always 16-bit
 typedef unsigned short u_int16; //--** ensure that this is always 16-bit
 typedef s_int s_int32; //--** ensure that this is always 32-bit
 typedef u_int u_int32; //--** ensure that this is always 32-bit
+typedef signed long long s_int64; //--** ensure that this is always 64-bit
+typedef unsigned long long u_int64; //--** ensure that this is always 64-bit
+
 typedef u_int16 u_wchar;
 
 class JavaLabel {
@@ -215,6 +218,13 @@ public:
     p[4] = low >> 24; p[5] = low >> 16; p[6] = low >> 8; p[7] = low;
     return static_cast<JavaLong *>(chunk);
   }
+  static JavaLong *New(s_int64 v) {
+    Chunk *chunk = Store::AllocChunk(8);
+    char *p = chunk->GetBase();
+    p[0] = v >> 56; p[1] = v >> 48; p[2] = v >> 40; p[3] = v >> 32;
+    p[4] = v >> 24; p[5] = v >> 16; p[6] = v >> 8; p[7] = v;
+    return static_cast<JavaLong *>(chunk);
+  }
   static JavaLong *New(u_char *p) {
     Chunk *chunk = Store::AllocChunk(8);
     std::memcpy(chunk->GetBase(), p, 8);
@@ -227,6 +237,12 @@ public:
     return static_cast<JavaLong *>(Store::DirectWordToChunk(x));
   }
 
+  s_int64 GetValue() {
+    u_char *p = reinterpret_cast<u_char *>(GetBase());
+    s_int64 x = (p[0] << 24) | (p[1] << 16) | (p[2] << 8) | p[3];
+    x <<= 32;
+    return (x | (p[4] << 24) | (p[5] << 16) | (p[6] << 8) | p[7]);
+  }
   u_char *GetNetworkRepresentation() {
     return reinterpret_cast<u_char *>(GetBase());
   }
