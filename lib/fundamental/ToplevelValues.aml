@@ -4,7 +4,7 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg and Leif Kornstaedt, 1999-2002
+ *   Andreas Rossberg and Leif Kornstaedt, 1999-2004
  *
  * Last change:
  *   $Date$ by $Author$
@@ -41,8 +41,8 @@ fun (r1 as ref x1) :=: (r2 as ref x2)		= (r1 := x2 ; r2 := x1)	(**)
 
 (* Generic and overloaded Identifiers (but we don't overload them :-P) *)
 
-__primitive val op =  :	''a * ''a -> bool	= "="
-__primitive val op <> :	''a * ''a -> bool	= "<>"
+__primitive val op =  :	''a * ''a -> bool	= "op="
+__primitive val op <> :	''a * ''a -> bool	= "op<>"
 
 __primitive val ~ :	int -> int		= "Int.~"
 __primitive val op + :	int * int -> int	= "Int.+"

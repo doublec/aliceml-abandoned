@@ -130,6 +130,6 @@ DEFINE2(opnoteq) {
 } END
 
 void PrimitiveTable::RegisterUnqualified() {
-  Register("=", opeq, 2);
-  Register("<>", opnoteq, 2);
+  Register("op=", opeq, 2);
+  Register("op<>", opnoteq, 2);
 }

@@ -148,8 +148,8 @@ datatype 'a list	= nil | op:: of 'a * 'a list
 
 (* Generic and overloaded Identifiers (but we don't overload them :-P) *)
 
-__primitive val op =  :	''a * ''a -> bool	= "="
-__primitive val op <> :	''a * ''a -> bool	= "<>"
+__primitive val op =  :	''a * ''a -> bool	= "op="
+__primitive val op <> :	''a * ''a -> bool	= "op<>"
 
 __primitive val ~ :	int -> int		= "Int.~"
 __primitive val op + :	int * int -> int	= "Int.+"

@@ -99,13 +99,13 @@ prepare
 
    BuiltinTable =
    builtinTable(
-      '=':
+      'op=':
 	 fun {$ X Y}
 	    {Wait X} % approximates proper behaviour for Alice equality
 	    {Wait Y} % (nested futures may still compare prematurely)
 	    X == Y
 	 end
-      '<>':
+      'op<>':
 	 fun {$ X Y}
 	    {Wait X} % approximates proper behaviour for Alice inequality
 	    {Wait Y} % (nested futures may still compare prematurely)

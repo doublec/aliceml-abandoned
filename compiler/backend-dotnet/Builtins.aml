@@ -26,8 +26,8 @@ structure Builtins :> BUILTINS =
 	    let
 		val map = Map.map ()
 	    in
-		Map.insert (map, "=", "op_Equality");
-		Map.insert (map, "<>", "op_Inequality");
+		Map.insert (map, "op=", "op_Equality");
+		Map.insert (map, "op<>", "op_Inequality");
 		Map.insert (map, "Char.<", "Char_op_LessThan");
 		Map.insert (map, "Char.>", "Char_op_GreaterThan");
 		Map.insert (map, "Char.<=", "Char_op_LessThanOrEqual");

@@ -26,8 +26,8 @@ structure PrimOps :> PRIM_OPS =
 		fun ins (name, arityOpt) =
 		    StringMap.insertDisjoint (map, name, arityOpt)
 	    in
-		ins ("=", SOME (Tuple 2));
-		ins ("<>", SOME (Tuple 2));
+		ins ("op=", SOME (Tuple 2));
+		ins ("op<>", SOME (Tuple 2));
 		ins ("Array.array", SOME (Tuple 2));
 		ins ("Array.extract", SOME (Tuple 3));
 		ins ("Array.fromList", SOME Unary);
