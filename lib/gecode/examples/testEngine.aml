@@ -1,0 +1,62 @@
+(*
+ * Author:
+ *   Guido Tack <tack@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Guido Tack, 2003
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Space     from "x-alice:/lib/gecode/Space"
+import structure FS        from "x-alice:/lib/gecode/FS"
+
+	(**
+	* Asserts v holds for all solutions, performs f if failed node met.
+	*)
+	
+    fun testVerify s v f =
+	let
+	    fun dfe s =
+		case Space.status s of
+		    Space.FAILED => f ()
+		  | Space.SOLVED => assert (v s)
+		  | Space.BRANCH =>
+		    let
+			val c = Space.clone s
+		    in
+			Space.commit(s, 1);
+			Space.commit(c, 2);
+			(dfe s);
+			(dfe c)
+		    end
+	in
+	    dfe (Space.clone s)
+	end
+
+	fun testVerifySimple s v = testVerify s v (fn () => assert false)	
+	fun testVerifyComplex s v = testVerify s v (fn () => ())	
+	
+	fun unionTest () =
+	let
+		val space = Space.new()
+		val root as #[a,b,c] = FS.setvarVec (space, 3)
+		val top = FS.Value.make (space,#[(0,3)])
+	in
+		FS.subset (space, a, top);
+		FS.subset (space, b, top);
+		FS.subset (space, c, top);				
+		FS.union (space, a, b, c);
+        FS.setvarbranch(space, root, FS.FSB_NONE, FS.FSB_MIN);
+		(root, space)
+	end
+	
+	fun fakeVerify _ = true
+	
+	
+	val (root, space)= unionTest ()
+	val _ = testVerifySimple space fakeVerify
+	val _ = print "done.\n";
+	val _ = OS.Process.exit OS.Process.success
