@@ -47,19 +47,20 @@ define
 	    {Record.foldR V Cons nil}
 	 end
       end
-      fun {ListToVector Ls}
-	 V = {MakeTuple '#[]' {Length Ls}}
-      in
-	 {List.forAllInd Ls proc {$ X I}
-			       V.I = X
-			    end}
-      end
+%       fun {ListToVector Ls}
+% 	 V = {MakeTuple '#[]' {Length Ls}}
+%       in
+% 	 {List.forAllInd Ls proc {$ X I}
+% 			       V.I = X
+% 			    end}
+% 	 V
+%       end
       fun {AlicePropToOzProp P}
 	 case P
 	 of 'LESS'      then '<:'
 	 [] 'LESSEQ'    then '=<:'
 	 [] 'EQUAL'     then '=:'
-	 [] 'NOTEQUAL'  then '\=:'
+	 [] 'NOTEQUAL'  then '\\=:'
 	 [] 'GREATER'   then '>:'
 	 [] 'GREATEREQ' then '>=:'
 	 end
@@ -114,11 +115,11 @@ define
       unit
    end
    fun {SumCNFun IV XVV P Y}
-      {FD.sumCN {VectorToList IV} {Map {VectorToList XV} VectorToList} {AlicePropToOzProp P} Y}
+      {FD.sumCN {VectorToList IV} {Map {VectorToList XVV} VectorToList} {AlicePropToOzProp P} Y}
       unit
    end
    fun {SumACNFun IV XVV P Y}
-      {FD.sumACN {VectorToList IV} {Map {VectorToList XV} VectorToList} {AlicePropToOzProp P} Y}
+      {FD.sumACN {VectorToList IV} {Map {VectorToList XVV} VectorToList} {AlicePropToOzProp P} Y}
       unit
    end
    fun {SumDFun XV P Y}
@@ -209,7 +210,7 @@ define
      {FD.impl X Y Z}
       unit
    end
-   fun {equiFun X Y Z}
+   fun {EquiFun X Y Z}
      {FD.equi X Y Z}
       unit
    end

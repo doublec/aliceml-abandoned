@@ -19,12 +19,12 @@ signature FD_COMPONENT =
 		type bool
 
 		datatype domain_element =
-		    SINGLE of fdint
-		  | RANGE  of fdint * fdint
+		    SINGLE of int
+		  | RANGE  of int * int
 
 		type domain = domain_element vector
 
-		datatype propagator
+		datatype propagator =
 		    LESS
 		  | LESSEQ
 		  | EQUAL

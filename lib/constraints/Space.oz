@@ -27,7 +27,7 @@ define
 		    Root = {P unit}
 		 end}
    end
-   fun {StatusFun S}
+   fun {AskFun S}
       case {Space.status S}
       of failed          then 'FAILED'
       [] succeeded       then 'SUCCEEDED'
@@ -40,7 +40,7 @@ define
    fun {CommitFun S C}
       case C
       of 'SINGLE'(N)  then {Space.commit S N}
-      [] 'RANGE'(L U) then {Space.commit S L#N}
+      [] 'RANGE'(L U) then {Space.commit S L#U}
       end
       unit
    end
@@ -61,6 +61,7 @@ define
 			'$status' : StatusType
 			'$choice' : ChoiceType
 			'space'   : SpaceFun
+			'ask'     : AskFun
 			'clone'   : CloneFun
 			'commit'  : CommitFun
 			'inject'  : InjectFun

@@ -1,4 +1,5 @@
-open FD;
+import structure FD from "FD.ozf"
+open FD
 
 fun Money () =
     let
