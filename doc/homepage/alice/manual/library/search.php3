@@ -141,7 +141,7 @@ signature SEARCH =
     </DD>
 
     <DT>
-      <TT>searchOneBound (<I>s</I>,<I>bound<I>,<I>rcd</I>)</TT>
+      <TT>searchOneBound (<I>s</I>,<I>bound</I>,<I>rcd</I>)</TT>
     </DT>
     <DD>
       <P>returns the first solution of script <I>s</I> obtained by depth-first
@@ -157,19 +157,19 @@ signature SEARCH =
     </DD>
 
     <DT>
-      <TT>searchOneBoundS (<I>s</I>,<I>bound<I>,<I>rcd</I>)</TT>
+      <TT>searchOneBoundS (<I>s</I>,<I>bound</I>,<I>rcd</I>)</TT>
     </DT>
     <DD>
       <P>returns the first succeeded space of script <I>s</I>
          obtained by depth-first
          search with recomputation distance <I>rcd</I>, where the depth of
-         the search tree explored is less than or equal to <I>bound<I>.
+         the search tree explored is less than or equal to <I>bound</I>.
       </P>
       <P>If there is no solution in a depth less than or equal
          to <I>bound</I>, but there might be solutions deeper in the tree,
          <TT>CUT</TT> is returned.
          In case the entire search tree has a depth less than
-         <I>bound<I> and no solution exists, <I>NONE</I> is returned.
+         <I>bound</I> and no solution exists, <I>NONE</I> is returned.
       </P>
     </DD>
 
