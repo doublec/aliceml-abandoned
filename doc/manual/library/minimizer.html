@@ -1,0 +1,49 @@
+<?php include("macros.php3"); ?>
+<?php heading("The Minimizer structure", "The <TT>Minimizer</TT> structure") ?>
+
+<?php section("synopsis", "synopsis") ?>
+
+  <PRE>
+    signature MINIMIZER
+    structure Minimizer : MINIMIZER
+  </PRE>
+
+  <P>
+    The <TT>Minimizer</TT> structure provides functionality for
+    <EM>minimizing</EM> values. A minimal value is semantically
+    equivalent but is represented internally using a maximal amount of
+    sharing. E.g., the values <TT>(SOME 4, SOME 4)</TT> and <TT>let
+    val a = SOME 4 in (a,a) end</TT> are structurally
+    equivalent (and hence considered equal by Alice), but their
+    representations are not. Minimization would transform the internal
+    representation of the first value into that of the second.
+  </P>
+
+<?php section("import", "import") ?>
+
+  <PRE>
+    import signature MINIMIZER from "x-alice:/lib/system/MINIMIZER-sig"
+    import structure Minimizer from "x-alice:/lib/system/Minimizer"</PRE>
+
+
+<?php section("interface", "interface") ?>
+
+  <PRE>
+    signature MINIMIZER =
+    sig
+	val minimize : 'a -> unit
+    end
+  </PRE>
+
+<?php section("description", "description") ?>
+
+  <DL>
+    <DT>
+      <TT>minimize v</TT>
+    </DT>
+    <DD>
+      <P>Minimizes the representation of the value <I>v</I>.</P>
+    </DD>
+  </DL>
+
+<?php footing() ?>

@@ -53,7 +53,8 @@ INSTALLFILES_LIBRARY_0 = \
 	ieee-real.html imp-map.html imp-set.html imperative-io.html \
 	integer.html int-inf.html io.html \
 	list.html list-pair.html lock.html \
-	map.html math.html mono-array.html mono-array-slice.html \
+	map.html math.html minimizer.html mono-array.html \
+	mono-array-slice.html \
 	mono-vector.html mono-vector-slice.html \
 	option.html ordered.html os.html os-file-sys.html os-io.html \
 	os-path.html os-process.html \
