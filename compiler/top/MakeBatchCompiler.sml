@@ -343,6 +343,7 @@ functor MakeMain(structure Composer: COMPOSER'
 
 	(*DEBUG*)
 	local
+	    structure ParsingPhase = MakeParsingPhase(Switches)
 	    structure AbstractionPhase =
 		  MakeDumpingPhase(
 			structure Phase    = MakeAbstractionPhase(Composer)
