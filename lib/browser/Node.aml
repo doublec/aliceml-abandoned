@@ -273,14 +273,15 @@ struct
     fun setContent (n,c) = case n of RelNode(r) => #content(r) := c
                                    | _ => ()  
                                  
-    fun setGroup (root,pnode) = case pnode of 
+    fun setGroup (canvas,pnode) = case pnode of 
 	Simple(r)    => GtkSupport.newTag(#group(r),0.0,0.0) 
       | Container(r) => GtkSupport.newTag(#group(r),0.0,0.0) 
       | Concat(r)    => GtkSupport.newTag(#group(r),0.0,0.0) 
       | Limit(r)     => GtkSupport.newTag(#group(r),0.0,0.0) 
       | RelNode(r) => GtkSupport.newTag(#group(r),0.0,0.0) 
       | RelRefNode(r) => GtkSupport.newTag(#group(r),0.0,0.0) 
-      | Empty        =>  GtkSupport.newTag(root,0.0,0.0)
+      | Empty        =>  GtkSupport.newTag(GtkSupport.canvasRoot(canvas),
+					   0.0,0.0)
       | RelNode(r) => GtkSupport.newTag(#group(r),0.0,0.0) 
       | RelRefNode(r) => GtkSupport.newTag(#group(r),0.0,0.0) 
 
@@ -325,7 +326,7 @@ struct
 
     (* new Simple *)   
 
-    fun createSimple (desc,p,i,d,str,color,root) = 
+    fun createSimple (desc,p,i,d,str,color,canvas) = 
 	Simple {desc = desc,     
 		parent = p, 
 		index = i, 
@@ -336,11 +337,11 @@ struct
 		    (str)),   
 		color = color, 
 		status = ref DAZZLED,  
-		group = setGroup(root,p)}
+		group = setGroup(canvas,p)}
 	
     (* new Concat *)
 
-    fun createConcat (desc,p,i,d,na,root) =  
+    fun createConcat (desc,p,i,d,na,canvas) =  
 	Concat {desc = desc, 
 		parent = p,
 		index  = i, 
@@ -350,11 +351,11 @@ struct
 		l_width = ref ~1, 
 		height = ref ~1, 
 		status = ref DAZZLED, 
-		group = setGroup(root,p)} 
+		group = setGroup(canvas,p)} 
 	
     (* new Container *)
 
-    fun createContainer (desc,p,i,d,na,root) =   
+    fun createContainer (desc,p,i,d,na,canvas) =   
 	Container {desc = desc,  
 		   parent = p,  
 		   index = i,
@@ -364,22 +365,22 @@ struct
 		   height = ref ~1, 
 		   l_width = ref ~1, 
 		   status = ref DAZZLED,
-		   group = setGroup(root,p)} 
+		   group = setGroup(canvas,p)} 
 
     (* new Limit *)
 
-    fun createLimit (desc,sort,p,i,d,root) =  
+    fun createLimit (desc,sort,p,i,d,canvas) =  
 	Limit  {desc = desc, 
 		sort = sort, 
 		parent = p,  
 		index  = i,
 		depth = d, 
 		status = ref DAZZLED, 
-		group = setGroup(root,p)}
+		group = setGroup(canvas,p)}
 	
     (* new RelNode *)
 
-    fun createRelNode (desc,c,p,i,d,count,str,root) =  
+    fun createRelNode (desc,c,p,i,d,count,str,canvas) =  
 	let val node = RelNode {desc = desc, 
 				content = ref c, 
 				parent = p,   
@@ -391,13 +392,13 @@ struct
 				height = ref ~1, 
 				color = REL_COLOR  ,  
 				status = ref DAZZLED,  
-				group = setGroup(root,p)}
+				group = setGroup(canvas,p)}
 	in (relnumber := (!relnumber) + 1 ; node) 
 	end 
 
     (* new RelRefNode *)
   
-    fun createRelRefNode (desc,p,i,d,str,root) = 
+    fun createRelRefNode (desc,p,i,d,str,canvas) = 
 	RelRefNode {desc = desc,  
  		    parent = p,  
 		    index = i,  
@@ -406,7 +407,7 @@ struct
 		    width = ref(String.size(str)),  
 		    color = REL_COLOR,  
 		    status = ref DAZZLED,  
-		    group = setGroup(root,p)}  
+		    group = setGroup(canvas,p)}  
  
     (*** boolean tests ***)
 
