@@ -1,10 +1,12 @@
 (*
- * Authors:
+ * Author:
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Contributor:
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt and Andreas Rossberg, 2001
+ *   Leif Kornstaedt, 2001
  *
  * Last change:
  *   $Date$ by $Author$
