@@ -216,33 +216,89 @@ struct
     and foldDepth (n,i,f,g) = 
 	Server.serve
 	(fn () => 
-	(setDazzled n
-	; Settings.set_depth(!Settings.max_depth + i)
-	; let val ind = getAncIndex n 
-	      val (anc,ancline) = valOf(MainDictionary.lookup 
-			      (Dictionaries.dict,ind)) 
-	      val old_ydim = Layout.get_ydim(anc) 
-	      val va = getValue(getDesc(n))
-	      val new = 
-		  case getDesc n of 
-		  INTERPUNCT => raise Match
-		| VALUE(r) => f (va,#typ(r),getParent(n),getIndex(n),
-				 getDepth(n))
-		| I_VALUE(r) => g (va,#typ(r),getParent(n),getIndex(n),
-				   getDepth(n))
-	      val _ = updateChild(getParent(n),getIndex(n),new)  
-	      val node = if getParent(new) = Empty then new else anc
-	      val (_,y_pos) = Services.getPosition(getGroup(anc))
-	  in ( Gtk.objectDestroy(getGroup(n))
-	      ;  showChanges (anc,ancline,node,old_ydim,ind,y_pos) 
-	      ; Settings.set_depth(!Settings.max_depth - i) )
-	  end))
+	 let val old_depth = !(Settings.max_depth)
+	 in 
+	     ( setDazzled n
+	      ; Settings.set_depth(findHighestDepth n + i)
+	      ; TextIO.print("FOLD_DEPTH: highestDepth war "^
+			     Int.toString(findHighestDepth n)^"\n")
+	      ; fold (n,i,f,g)
+	      ; Settings.set_depth(old_depth) )
+	 end)
 
-    (* foldWith *)
-    and foldWidth (n,i,f,g) = TextIO.print("Changing width by " 
-					   ^ Int.toString(i)
-					   ^ "\n") (* !!!! *)
+    (* foldWidth *)
+    and foldWidth (n,i,f,g) = 
+	Server.serve
+	(fn () => 
+	 let val old_width = !(Settings.max_width)
+	 in 
+	     ( setDazzled n
+	      ; Settings.set_width(findHighestWidth n + i)
+	      ; TextIO.print("FOLD_WIDTH: highestWidth war "^
+			     Int.toString(findHighestWidth n)^"\n")
+	      ; fold (n,i,f,g)
+	      ; Settings.set_width(old_width) )
+	 end )
 	
+    (* fold *)
+    and fold (n,i,f,g) = 
+	let val ind = getAncIndex n 
+	    val (anc,ancline) = valOf(MainDictionary.lookup 
+					(Dictionaries.dict,ind)) 
+	    val old_ydim = Layout.get_ydim(anc) 
+	    val va = getValue(getDesc(n))
+	    val new = 
+		case getDesc n of 
+		    INTERPUNCT => raise Match
+		  | VALUE(r) => f (va,#typ(r),getParent(n),getIndex(n),
+				   getDepth(n))
+		  | I_VALUE(r) => g (va,#typ(r),getParent(n),getIndex(n),
+				     getDepth(n))
+	    val _ = updateChild(getParent(n),getIndex(n),new)  
+	    val node = if getParent(new) = Empty then new else anc
+	    val (_,y_pos) = Services.getPosition(getGroup(anc))
+	in ( Gtk.objectDestroy(getGroup(n))
+	    ; showChanges (anc,ancline,node,old_ydim,ind,y_pos) )
+	end 
+
+    (* findHighestDepth *)
+    and findHighestDepth n = case n of
+	Concat(r) => Layout.max(Array.toList(#kids(r)),
+				fn no => if no = Empty 
+					     then findHighestDepth n
+					 else findHighestDepth no)
+      | Container(r) => Layout.max(Array.toList(#kids(r)),
+				   fn no => if no = Empty 
+						then findHighestDepth n
+					    else findHighestDepth no)
+      | RelNode(r) => findHighestDepth (!(#content(r)))
+      | _ => getDepth n
+
+    (* findHighestWidth *)
+    and findHighestWidth n = 
+	let val new_i = ref 0 
+	in ( findHighestWidth' (n,0,new_i)
+	    ; !new_i )
+	end 
+
+    and findHighestWidth' (n,i,new_i) = case n of
+	Concat(r) => array_map(fn no => findHighestWidth'(no,!new_i,new_i),
+				  #kids(r))
+      | RelNode(r) => findHighestWidth'(!(#content(r)),i,new_i)
+      | Container(r) 
+	    => ( let val li = Array.toList(#kids(r))
+		     val test_i = List.length(li) - 
+			 (if isLimit(List.last(li)) then 1 else 0)
+		     val first = List.nth(li,0)
+		 in if isSimple first
+		     andalso String.equal("struct",getRep first)
+			then ()
+		    else new_i := Int.max(i,test_i)
+		 end  
+		; array_map(fn no => findHighestWidth'(no,!new_i,new_i),
+			    #kids(r)) )
+	  | _ => ()
+   
 end (* struct *)
 
 end
