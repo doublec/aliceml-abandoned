@@ -24,8 +24,8 @@
 
 class Closure;
 class Transform;
-#if PROFILE
 class ConcreteCode;
+#if PROFILE
 class String;
 #endif
 
@@ -40,7 +40,9 @@ public:
   // Frame Handling
   virtual void PushCall(Closure *closure) = 0;
   // Runtime compilation
-  virtual u_int GetArity();
+  //   returns INVALID_INT if unknown; Scheduler::ONE_ARG for single argument
+  virtual u_int GetInArity(ConcreteCode *concreteCode) = 0;
+  //   returns NULL if none
   virtual function GetCFunction();
 #if PROFILE
   // Profiling
