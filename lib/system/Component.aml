@@ -35,14 +35,12 @@ struct
       | EVALUATED of { inf: inf, mod: mod }
     type t = component
 
-    exception Sited   = UnsafeComponent.Sited
-    exception Corrupt = UnsafeComponent.Corrupt
-
-    exception Mismatch of {component : Url.t,
-			   request : Url.t option,
-			   cause : Inf.mismatch}
-    exception Eval of exn
-    exception Failure of Url.t * exn
+    exception Sited    = UnsafeComponent.Sited
+    exception Corrupt  = UnsafeComponent.Corrupt
+    exception NotFound = UnsafeComponent.NotFound
+    exception Mismatch = UnsafeComponent.Mismatch
+    exception Eval     = UnsafeComponent.Eval
+    exception Failure  = UnsafeComponent.Failure
 
     val extension = UnsafeComponent.extension
 
@@ -81,15 +79,21 @@ struct
 	let
 	    val name = Url.toStringRaw url   (*--** use getLocalPath instead *)
 	in
-	    (case valOf (localize name) of
-		 Resolver.FILE name' =>
-		     (UnsafeComponent.load name'
-		      handle Corrupt =>
-			  UnsafeComponent.linkNative name'
-			  handle UnsafeComponent.Native msg =>
-			      (trace ("linkNative: " ^ msg); raise Corrupt))
-	       | Resolver.STRING string => UnsafeComponent.unpack_ string)
-	    handle cause => raise IO.Io {name, function = "load", cause}
+	    case localize name of
+		SOME (Resolver.FILE name') =>
+		    (UnsafeComponent.load name'
+		     handle e as IO.Io {cause = Corrupt, ...} =>
+			 UnsafeComponent.linkNative name'
+			 handle cause as UnsafeComponent.Native msg =>
+				(trace ("linkNative: " ^ msg);
+				 raise IO.Io {name, function = "load", cause})
+			      | cause as Corrupt =>
+				raise IO.Io {name, function = "load", cause})
+	      | SOME (Resolver.STRING string) =>
+		    (UnsafeComponent.unpack_ string
+		     handle cause =>
+			 raise IO.Io {name, function = "load", cause})
+	      | NONE => raise IO.Io {name, function = "load", cause = NotFound}
 	end
 
     fun save (name, component) =
@@ -176,7 +180,8 @@ struct
 		trace ("evaluating " ^ Url.toString baseUrl);
 		(body imports'
 		 handle e as (non (Failure (_, _))) =>
-		     raise Failure (baseUrl, Eval e))
+		     (trace ("evaluation failed in " ^ Url.toString baseUrl);
+		      raise Failure (baseUrl, Eval e)))
 		before
 		trace ("evaluated  " ^ Url.toString baseUrl)
 	    end

@@ -27,9 +27,15 @@ export
    %% For use by Alice programs:
    'UnsafeComponent$': Component
 define
-   IoException = {NewUniqueName 'IO.Io'}
-   SitedException = {NewUniqueName 'Component.Sited'}
-   CorruptException = {NewUniqueName 'Component.Corrupt'}
+   IoException       = {NewUniqueName 'IO.Io'}
+
+   SitedException    = {NewUniqueName 'Component.Sited'}
+   CorruptException  = {NewUniqueName 'Component.Corrupt'}
+   NotFoundException = {NewUniqueName 'Component.NotFound'}
+   MismatchException = {NewUniqueName 'Component.Mismatch'}
+   EvalException     = {NewUniqueName 'Component.Eval'}
+   FailureException  = {NewUniqueName 'Component.Failure'}
+   NativeException   = {NewUniqueName 'Component.Native'}
 
    proc {Trace Title Msg U}
       if {Resolve.trace.get} then
@@ -37,10 +43,13 @@ define
       end
    end
 
-   proc {RaiseIoException U N E}
-      %--** cause not of type exn
+   proc {RaiseIo U N E}
       {Exception.raiseError
        alice(IoException(name: U function: {ByteString.make N} cause: E))}
+   end
+
+   proc {RaiseNative Msg}
+      {Exception.raiseError alice(NativeException({ByteString.make Msg}))}
    end
 
    Extension = {ByteString.make
@@ -92,30 +101,30 @@ define
    end
 
    fun {FunctorToComponent F} Rec Body in
-      if {Not {Functor.is F}} then
-	 {Exception.raiseError alice(CorruptException)}
+      if {Not {Functor.is F}} then unit
+      else
+	 Rec = {Record.make '#' {Record.foldRInd F.'import'
+				 fun {$ Fea _ Rest} Fea|Rest end nil}}
+	 Body = if {IsTuple Rec} then F.apply
+		else Ari in
+		   Ari = {Arity Rec}
+		   fun {$ IMPORT} {F.apply {ReplaceArity IMPORT Ari}} end
+		end
+	 'UNEVALUATED'(imports:
+			  {List.toTuple '#[]'
+			   {Record.foldRInd F.'import'
+			    fun {$ ModName Desc Rest}
+			       {ByteString.make
+				case {CondSelect Desc 'from' unit} of unit then
+				   {OzURL.toVirtualString
+				    {DefaultURL.nameToUrl ModName}}
+				[] URL then URL
+				end}#
+			       {OzToSig {CondSelect Desc 'type' nil}}|Rest
+			    end nil}}
+		       body: Body
+		       inf: {OzToSig F.'export'})
       end
-      Rec = {Record.make '#' {Record.foldRInd F.'import'
-			      fun {$ Fea _ Rest} Fea|Rest end nil}}
-      Body = if {IsTuple Rec} then F.apply
-	     else Ari in
-		Ari = {Arity Rec}
-		fun {$ IMPORT} {F.apply {ReplaceArity IMPORT Ari}} end
-	     end
-      'UNEVALUATED'(imports:
-		       {List.toTuple '#[]'
-			{Record.foldRInd F.'import'
-			 fun {$ ModName Desc Rest}
-			    {ByteString.make
-			     case {CondSelect Desc 'from' unit} of unit then
-				{OzURL.toVirtualString
-				 {DefaultURL.nameToUrl ModName}}
-			     [] URL then URL
-			     end}#
-			    {OzToSig {CondSelect Desc 'type' nil}}|Rest
-			 end nil}}
-		    body: Body
-		    inf: {OzToSig F.'export'})
    end
 
    local
@@ -148,11 +157,7 @@ define
 	    'EVALUATED'(inf: 'NONE' 'mod': {Module.link [HU]}.1)
 	 elseif {IsNative URL} then
 	    'EVALUATED'(inf: 'NONE' 'mod': {Module.link [HU]}.1)
-	 else
-	    {FunctorToComponent try {Pickle.load HU}
-				catch E=error(url(load _) ...) then
-				   {RaiseIoException U 'load' E} unit
-				end}
+	 else {FunctorToComponent {Pickle.load HU}}
 	 end
       end
    end
@@ -162,6 +167,16 @@ define
 	       '\'Sited': SitedException
 	       'Corrupt': CorruptException
 	       '\'Corrupt': CorruptException
+	       'NotFound': NotFoundException
+	       '\'NotFound': NotFoundException
+	       'Mismatch': fun {$ X} {Adjoin X MismatchException} end
+	       '\'Mismatch': MismatchException
+	       'Eval': fun {$ Exn} EvalException(Exn) end
+	       '\'Eval': EvalException
+	       'Failure': fun {$ Url Exn} FailureException(Url Exn) end
+	       '\'Failure': FailureException
+	       'Native': fun {$ Msg} NativeException(Msg) end
+	       '\'Native': NativeException
 	       'extension': Extension
 	       'getInitialTable': fun {$ unit} '#[]' end   %--**
 	       'save':
@@ -171,19 +186,55 @@ define
 			{Pickle.saveWithCells {ComponentToFunctor Component}
 			 Filename '' 9}
 		     catch error(dp(generic 'pickle:nogoods' ...) ...)
-		     then {Exception.raiseError alice(SitedException)}
+		     then {RaiseIo Filename 'save' SitedException}
 		     end
 		     unit
 		  end
 	       'load':
-		  fun {$ U}
+		  fun {$ U} Component in
 		     {Trace 'component' 'load ' U}
-		     {Load U}
+		     try
+			Component = {Load U}
+		     catch error(url(load _) ...) then
+			{RaiseIo U 'load' NotFoundException}
+		     [] error(dp(generic ...) ...) then
+			{RaiseIo U 'load' CorruptException}
+		     [] error(foreign(dlOpen _)) then
+			{RaiseIo U 'load' NotFoundException}
+		     [] error(foreign(dlOpen _ _)) then
+			{RaiseIo U 'load' CorruptException}
+		     [] error(foreign(cannotFindOzInitModule _)) then
+			{RaiseIo U 'load' CorruptException}
+		     [] E then
+			{RaiseIo U 'load' E} %--** cause not of type exn
+		     end
+		     case Component of unit then
+			{RaiseIo U 'load' CorruptException} unit
+		     else Component
+		     end
 		  end
 	       'linkNative':
-		  fun {$ U}
+		  fun {$ U} Component in
 		     {Trace 'component' 'linkNative ' U}
-		     {Load U#'{native}'}
+		     try
+			Component = {Load U#'{native}'}
+		     catch error(url(load _) ...) then
+			{RaiseNative 'native component not found'}
+		     [] error(dp(generic ...) ...) then
+			{RaiseNative 'not a native component'}
+		     [] error(foreign(dlOpen _)) then
+			{RaiseNative 'linking of native component failed'}
+		     [] error(foreign(dlOpen _ Msg)) then
+			{RaiseNative Msg}
+		     [] error(foreign(cannotFindOzInitModule _)) then
+			{RaiseNative 'symbol `oz_init_module\' not found'}
+		     [] _ then
+			{RaiseNative 'unknown error'}
+		     end
+		     case Component of unit then
+			{RaiseNative 'not a native component'} unit
+		     else Component
+		     end
 		  end
 	       'pack_':
 		  fun {$ Component}
@@ -195,6 +246,9 @@ define
 		  end
 	       'unpack_':
 		  fun {$ S}
-		     {FunctorToComponent {Pickle.unpack S}}
+		     case {FunctorToComponent {Pickle.unpack S}} of unit then
+			{Exception.raiseError alice(CorruptException)} unit
+		     elseof Component then Component
+		     end
 		  end)
 end
