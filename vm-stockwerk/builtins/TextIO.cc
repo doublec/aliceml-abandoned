@@ -20,9 +20,9 @@ static const BlockLabel STREAM_LABEL = Store::MakeLabel(0);   //--**
 
 class Stream : private Block {
 private:
-  static const int SIZE     = 2;
-  static const int FILE_POS = 1;
-  static const int NAME_POS = 2;
+  static const u_int SIZE     = 2;
+  static const u_int FILE_POS = 1;
+  static const u_int NAME_POS = 2;
 public:
   using Block::ToWord;
 
@@ -53,7 +53,7 @@ public:
 
 class EnlargableString: private Block {
 private:
-  static const int LEN_POS = 1;
+  static const u_int LEN_POS = 1;
 public:
   using Block::ToWord;
 
