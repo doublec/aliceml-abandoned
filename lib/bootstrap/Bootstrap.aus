@@ -328,6 +328,7 @@ structure String =
 	val size = builtin "String.size"
 	val substring = builtin "String.substring"
 	val sub = builtin "String.sub"
+	val explode = builtin "String.explode"
 
 	fun extract (s, i, NONE) = substring (s, i, size s - i)
 	  | extract (s, i, SOME j) = substring (s, i, j)
@@ -353,6 +354,7 @@ type string = String.string
 val str = String.str
 val size = String.size
 val concat = String.concat
+val explode = String.explode
 val implode = String.implode
 val substring = String.substring
 val op^ = String.^

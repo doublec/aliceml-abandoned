@@ -122,6 +122,13 @@ define
 	    else 0
 	    end
 	 end
+      'String.explode':
+	 fun {$ S}
+	    {List.foldR {ByteString.toString S}
+	     fun {$ C Cr}
+		'::'('#'(C Cr))
+	     end nil}
+	 end
       'Word.fromInt\'': fun {$ N#X} {Word.make N X} end
       'Word.toInt': Word.toInt
       'Word.toIntX': Word.toIntX
