@@ -49,7 +49,7 @@ public:
   void ReplaceArg(u_int f, word v) {
     AssertStore(f < GetSize());
     AssertStore(v != NULL);
-    AssertStore(this->IsMutable() == 1);
+    AssertStore(this->IsMutable());
     ((word *) this)[f + 1] = v;
     if (!PointerOp::IsInt(v)) {
       u_int valgen = HeaderOp::DecodeGeneration(PointerOp::RemoveTag(v));
@@ -61,7 +61,7 @@ public:
     }
   }
   void ReplaceArg(u_int f, s_int v) {
-    AssertStore(this->IsMutable() == 1);
+    AssertStore(this->IsMutable());
     InitArg(f, Store::IntToWord(v));
   }
   word ToWord() {

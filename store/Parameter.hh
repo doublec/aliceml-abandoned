@@ -26,7 +26,7 @@
 #define HEADER_SIZESHIFT_WIDTH     1
 // Space used for Block Size (MAX_BLOCKSIZE = (2 ^ (HEADER_SIZE_WIDTH) - 1))
 #define HEADER_SIZE_WIDTH          20
-// Space used for Block Tag (MAX_TAGSIZE = (2 ^ (HEADER_TAG_WIDTH) - 1))*/
+// Space used for Block Tag (MAX_TAGSIZE = (2 ^ (HEADER_TAG_WIDTH) - 1))
 #define HEADER_TAG_WIDTH           7
 // Space used for Mutable Flag
 #define HEADER_MUTABLE_WIDTH     1
