@@ -24,9 +24,16 @@ sig
     structure RelMan: DICTIONARY 	
     structure Transient: DICTIONARY 
 
-    type main = Main.dictionary
+    (* main dictionary - storing all trees *)
+    type main = Main.dictionary   
+
+    (* relation manager - one for each tree *)
     type relman = RelMan.dictionary
+
+    (* transient dictionary - storing all futures *)
     type transient = Transient.dictionary
+
+    (* empty instances *)
 
     val maindict: main  
     val reldict: relman
