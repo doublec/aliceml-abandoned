@@ -8,20 +8,20 @@
 and its features:</P>
 
 <UL>
-  <LI><A href="#sml">Standard ML compatibility</LI>
-  <LI><A href="#interactive">Interactive use</LI>: evaluating declarations and
-  browsing results
-  <LI><A href="#laziness">Laziness</LI>: transparent lazy evaluation on demand
-  <LI><A href="#concurrency">Concurrency</LI>: threads and data-flow
-  synchronistation
-  <LI><A href="#promises">Promises</LI>: place-holders for undetermined values
-  <LI><A href="#components">Components</LI>: platform independence and
-  lazy dynamic linking
-  <LI><A href="#packages">Packages</LI>: dynamic typing and first-class modules
-  <LI><A href="#pickling">Pickling</LI>: platform independent persistence
-  <LI><A href="#distribution">Distribution</LI>:
-  <LI><A href="#constraints">Constraint Programming</LI>
-  <LI><A href="#interop">Interoperability</LI>: calling or being called from Oz
+  <LI><A href="#sml">Standard ML compatibility</A></LI>
+  <LI><A href="#interactive">Interactive use</A>: evaluating declarations and
+  browsing results</LI>
+  <LI><A href="#laziness">Laziness</A>: transparent lazy evaluation on demand</LI>
+  <LI><A href="#concurrency">Concurrency</A>: threads and data-flow
+  synchronistation</LI>
+  <LI><A href="#promises">Promises</A>: </LI>
+  <LI><A href="#components">Components</A>: platform independence and
+  lazy dynamic linking</LI>
+  <LI><A href="#packages">Packages</A>: dynamic typing and first-class modules</LI>
+  <LI><A href="#pickling">Pickling</A>: platform independent persistence</LI>
+  <LI><A href="#distribution">Distribution</A>: </LI>
+  <LI><A href="#constraints">Constraint Programming</A>: </LI>
+  <LI><A href="#interop">Interoperability</A>: working hand in hand with Oz
   programs</LI>
 </UL>
 
@@ -30,11 +30,11 @@ and its features:</P>
 
 <P>Alice ML is an extension of the
 <A href="http://cm.bell-labs.com/cm/cs/what/smlnj/sml.html">Standard ML</A> language (SML).
-Most of the examples shown here assume a working knowledge of SML
-<A href="usage.php3#interactive">interactive toplevel</A>. There are numerous
+Most of the examples shown here assume a working knowledge of functional
+programming in general and SML in particular. There are numerous
 books and tutorials available for SML.</P>
 
-<P>Online:</P>
+<P>Online Material:</P>
 
 <UL>
   <LI><A href="http://www-2.cs.cmu.edu/People/rwh/introsml/">Programming in
@@ -44,7 +44,7 @@ books and tutorials available for SML.</P>
   Edinburgh</LI>
 </UL>
 
-<P>Books:</P>
+<P>Paper Books:</P>
 
 <UL>
   <LI><A href="http://www.cl.cam.ac.uk/users/lcp/MLbook/">ML for the Working
@@ -61,7 +61,7 @@ books and tutorials available for SML.</P>
   Definition of Standard ML</A> (Revised), by Robin Milner, Mads Tofte,
   Robert Harper, Dave MacQueen. The MIT Press</LI>
   <LI><A href="http://SML.sourceforge.net/Basis/">The Standard ML
-  Basis Library</A> (Preliminary) , by John Reppy and Emden Gansner.</LI>
+  Basis Library</A> (Preliminary), by John Reppy and Emden Gansner.</LI>
 </UL>
 
 <P>For a more comprehensive literature list, see the
