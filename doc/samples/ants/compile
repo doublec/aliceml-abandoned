@@ -1,6 +1,6 @@
 #!/bin/sh
 
-PATH=/opt/alice-devel/bin:$PATH
+#PATH=/opt/alice-devel/bin:$PATH
 
 INFILE=$1
 BASEFILE=`basename $INFILE .ante`

@@ -1,0 +1,20 @@
+Anttrax
+Andreas Rossberg
+rossberg@ps.uni-sb.de
+
+Team Members:
+
+Benedikt Grundmann <bgrund@ps.uni-sb.de>
+Didier Le Botlan <botlan@ps.uni-sb.de>
+Christian Lindig <lindig@cs.uni-sb.de>
+Andreas Rossberg <rossberg@ps.uni-sb.de>
+Gabor Szokoli <szokoli@ps.uni-sb.de>
+Guido Tack <tack@ps.uni-sb.de>
+
+Our ant always knows the absolute direction it is facing. We use 3 bits of marking to record a suitable direction for heading home on every hex it visits. Using another bit, we create food trails whenever we carry home food. We try to avoid moving into traps set by the opponent.
+
+The ant is programmed with a combinator library written in Alice ML, a dialect of SML (see www.ps.uni-sb.de/alice). The combinators make up a sequential, block-structured imperative programming language with keyword arguments, as appearent from the generating ML program (see "anttrax.ante"). Its most important feature is automatically managing state information about the absolute direction the ant is facing. A switch statement allows decisions dependent on the state. The library also supports symbolic and scoped labels, loops, probabilistic repitition and exchangable branch arms for conditionals and more boring features -- see signature file "ANTE-sig.aml".
+
+The combinators generate a graph like structure which is then compiled down to a state machine, by resolving symbolic labels. The direction state is handled by duplicating the whole machine 6 times -- see file "Ante.aml".
+
+We also have written a visualizer using Gtk, which particularly allowed visualizing our use of markers.

@@ -1,0 +1,35 @@
+Prerequisites:
+--------------
+
+You need a version of Alice installed (www.ps.uni-sb.de/alice) to build the ant compiler.
+
+Unfortunately, you need the CVS version of Alice on Seam to build the simulator (because of the version of the Gtk binding used).
+
+
+Building the compiler:
+----------------------
+
+Do
+
+  make depend compiler
+
+You can then compile .ante into .ant files using
+
+  ./compile file.ante
+
+Beware, error handling is rudimentary. Usually you will be rewarded with an uncaught exception.. ;-)
+
+
+Building the simulator:
+-----------------------
+
+Will not work with the release version of Alice!
+
+Do
+
+  (cd parsec && make depend && make)
+  make depend simulator
+
+Run the simulator with
+
+  ./sim -v black.ant red.ant arena.world
