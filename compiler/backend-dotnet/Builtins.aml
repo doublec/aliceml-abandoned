@@ -3,12 +3,24 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 1999-2000
+ *   Leif Kornstaedt, 1999-2001
  *
  * Last change:
  *   $Date$ by $Author$
  *   $Revision$
  *)
+
+import
+    structure StringHashKey
+from "../../lib/utility/StringHashKey"
+
+import
+    structure MkHashImpMap
+from "../../lib/utility/MkHashImpMap"
+
+import
+    signature BUILTINS
+from "BUILTINS-sig"
 
 structure Builtins :> BUILTINS =
     struct
