@@ -56,7 +56,7 @@ functor MakeMozartTarget(structure Switches: SWITCHES
 	val sign = CodeGenPhase.sign
 
 	fun save () filename component =
-	    CodeGenPhase.save (component, filename, !Switches.outputAssembly)
+	    CodeGenPhase.save (component, filename, !Switches.Debug.dumpTarget)
 
 	fun apply () component = CodeGenPhase.apply component
     end
