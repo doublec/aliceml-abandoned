@@ -18,6 +18,14 @@
 #include <errno.h>
 #include <fcntl.h>
 
+#if defined(__MINGW32__) || defined(_MSC_VER)
+#include <windows.h>
+#include <winsock.h>
+#define GetLastError() WSAGetLastError()
+#else
+#define GetLastError() errno
+#endif
+
 #include "store/Store.hh"
 #include "generic/RootSet.hh"
 #include "generic/StackFrame.hh"
@@ -47,11 +55,9 @@ enum IOStreamType {
   IO_OUT = (IO_IN + 1)
 };
 
-class IOStream : private Block {
+class IOStream: private Block {
 private:
-  static const u_int STREAM_POS = 0;
-  static const u_int NAME_POS   = 1;
-  static const u_int SIZE       = 2;
+  enum { STREAM_POS, NAME_POS, SIZE };
 protected:
   static BlockLabel IOStreamTypeToBlockLabel(IOStreamType type) {
     return static_cast<BlockLabel>(static_cast<int>(type));
@@ -59,7 +65,7 @@ protected:
 public:
   using Block::ToWord;
   // IOStream Accessors
-  std::FILE *GetStream() {
+  std::FILE *GetFile() {
     return static_cast<std::FILE *>
       (Store::DirectWordToUnmanagedPointer(GetArg(STREAM_POS)));
   }
@@ -75,7 +81,7 @@ public:
   }
 };
 
-class InStream : public IOStream {
+class InStream: public IOStream {
 public:
   // InStream Constructor
   static InStream *New(std::FILE *file, String *name) {
@@ -90,7 +96,7 @@ public:
   }
 };
 
-class OutStream : public IOStream {
+class OutStream: public IOStream {
 public:
   // OutStream Constructor
   static OutStream *New(std::FILE *file, String *name) {
@@ -117,97 +123,29 @@ static String *Concat(String *a, const char *b, u_int bLen) {
   return s;
 }
 
-static const u_int bufSize = 8192;
-static char buf[bufSize];
-
 //
-// Asnychronous File IO
+// Asynchronous File IO
 //
 #if defined(__MINGW32__) || defined(_MSC_VER)
-#include <windows.h>
-#include <winsock.h>
-
-class InOut {
-public:
-  SOCKET fd1;
-  HANDLE fd2;
-  InOut(SOCKET f1, HANDLE f2): fd1(f1), fd2(f2) {}
-};
-#define bufSz 10000
-
-static DWORD __stdcall ReaderThread(void *p) {
-  InOut *io  = (InOut*) p;
-  SOCKET out = io->fd1;
-  HANDLE in  = io->fd2;
-  delete io;
-
-//    // this one solves a problem with W2K SP2.
-//    // readerThread cause the system to freeze if we
-//    // don't call gethostname() (?load ws2_32.dll? changed with SP2)
-//    // before ReadFile().
-//    char dummyBuf[1000];
-//    gethostname(dummyBuf,sizeof(Dummybuf));
-
-  char buf[bufSz];
-  while(1) {
-    DWORD count;
-    if (ReadFile(in,buf,bufSz,&count,0)==FALSE) {
-      fprintf(stderr ,"ReadFile failed: %d\n", GetLastError);
-      break;
-    }
-
-  loop:
-    int sent = send(out,buf,count,0);
-    if (sent < 0) {
-      fprintf(stderr, "send(%d) failed: %d\n", out, GetLastError);
-      break;
-    }
-    count -= sent;
-    if (count > 0)
-      goto loop;
-  }
-  CloseHandle(in);
-  ExitThread(1);
-  return 1;
-}
-
-static DWORD __stdcall WriterThread(void *p) {
-  InOut *io = (InOut*) p;
-  SOCKET in = io->fd1;
-  HANDLE out = io->fd2;
-  delete io;
-  
-  char buf[bufSz];
-  while(1) {
-    int got = recv(in,buf,bufSz,0);
-    if (got<0) {
-      fprintf(stderr, "recv(%d) failed: %d\n", in, WSAGetLastError());
-      break;
-    }
-
-  loop:
-    DWORD count;
-    if (WriteFile(out,buf,got,&count,0)==FALSE) {
-      //message("WriteFile(%d) failed: %d\n",out,GetLastError());
-      break;
-    }
-    got -= count;
-    if (got>0)
-      goto loop;
-  }
-  CloseHandle(out);
-  ExitThread(1);
-  return 1;
-}
-
 class IOSupport {
+private:
+  class InOut {
+  public:
+    SOCKET fd1;
+    HANDLE fd2;
+    InOut(SOCKET f1, HANDLE f2): fd1(f1), fd2(f2) {}
+  };
+
+  static const u_int BUFFER_SIZE = 1024;
+  static DWORD __stdcall ReaderThread(void *p);
+  static DWORD __stdcall WriterThread(void *p);
 public:
   static int SocketPair(int, int type, int, int *sb) {
     int res = -1;
     SOCKET insock, outsock, newsock;
     struct sockaddr_in sock_in;
     int len = sizeof (sock_in);
-    
+
     newsock = socket(AF_INET, type, 0);
     if (newsock == INVALID_SOCKET) {
       goto done;
@@ -220,13 +158,13 @@ public:
     if (bind(newsock, (struct sockaddr *) &sock_in, sizeof (sock_in)) < 0) {
       goto done;
     }
-    
+
     if (getsockname(newsock, (struct sockaddr *) &sock_in, &len) < 0) {
       closesocket(newsock);
       goto done;
     }
     listen(newsock, 2);
-    
+
     /* create a connecting socket */
     outsock = socket(AF_INET, type, 0);
     if (outsock == INVALID_SOCKET) {
@@ -234,7 +172,7 @@ public:
       goto done;
     }
     sock_in.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
-    
+
     /* Do a connect and accept the connection */
     if (connect(outsock, (struct sockaddr *) &sock_in, sizeof (sock_in)) < 0) {
       closesocket(newsock);
@@ -253,49 +191,109 @@ public:
 
     sb[0] = insock;
     sb[1] = outsock;
-
   done:
     return res;
   }
   static void CreateReader(SOCKET s, HANDLE h) {
-    DWORD tid;
-    HANDLE th = CreateThread(NULL, 10000, &ReaderThread,
-			     new InOut(s,h), 0, &tid);
-    CloseHandle(th);
+    DWORD threadId;
+    HANDLE hThread =
+      CreateThread(NULL, 1024, &ReaderThread, new InOut(s, h), 0, &threadId);
+    CloseHandle(hThread);
   }
-  static void CreateWrite(SOCKET s, HANDLE h) {
-    DWORD tid;
-    HANDLE th = CreateThread(NULL, 10000, &WriterThread,
-			     new InOut(s,h), 0, &tid);
-    CloseHandle(th);
+  static void CreateWriter(SOCKET s, HANDLE h) {
+    DWORD threadId;
+    HANDLE hThread =
+      CreateThread(NULL, 1024, &WriterThread, new InOut(s, h), 0, &threadId);
+    CloseHandle(hThread);
   }
 };
 
-#define GetLastError WSAGetLastError()
+DWORD __stdcall IOSupport::ReaderThread(void *p) {
+  InOut *io = (InOut*) p;
+  SOCKET out = io->fd1;
+  HANDLE in = io->fd2;
+  delete io;
 
-#undef EAGAIN
-#define EAGAIN WSAEWOULDBLOCK
+  // This one solves a problem with W2K SP2.
+  // ReaderThread cause the system to freeze if we
+  // don't call gethostname() (?load ws2_32.dll? changed with SP2)
+  // before ReadFile().
+  char dummyBuf[1024];
+  gethostname(dummyBuf, sizeof(dummyBuf));
 
-#else
+  char buf[BUFFER_SIZE];
+  while (true) {
+    DWORD count;
+    if (ReadFile(in, buf, BUFFER_SIZE, &count, NULL) == FALSE) {
+      if (GetLastError() != ERROR_BROKEN_PIPE)
+	std::fprintf(stderr, "ReadFile failed: %d\n", GetLastError());
+      break;
+    }
+    if (count == 0)
+      break;
+    u_int totalSent = 0;
+  loop:
+    int sent = send(out, &buf[totalSent], count, 0);
+    if (sent == SOCKET_ERROR) {
+      std::fprintf(stderr, "send(%d) failed: %d\n", out, GetLastError());
+      break;
+    }
+    count -= sent;
+    totalSent += sent;
+    if (count > 0)
+      goto loop;
+  }
+  CloseHandle(in);
+  closesocket(out);
+  return 0;
+}
 
-#define GetLastError errno
+DWORD __stdcall IOSupport::WriterThread(void *p) {
+  InOut *io = (InOut*) p;
+  SOCKET in = io->fd1;
+  HANDLE out = io->fd2;
+  delete io;
+
+  char buf[BUFFER_SIZE];
+  while (true) {
+    int got = recv(in, buf, BUFFER_SIZE, 0);
+    if (got == SOCKET_ERROR) {
+      std::fprintf(stderr, "recv(%d) failed: %d\n", in, GetLastError());
+      break;
+    }
+    if (got == 0)
+      break;
+    u_int totalWritten = 0;
+  loop:
+    DWORD count;
+    if (WriteFile(out, &buf[totalWritten], got, &count, 0) == FALSE) {
+      Error("WriteFile failed\n");
+      break;
+    }
+    totalWritten += count;
+    got -= count;
+    if (got > 0)
+      goto loop;
+  }
+  closesocket(in);
+  CloseHandle(out);
+  return 0;
+}
 #endif
 
-static word stdinWrapper;
-
-class FileIO {
-protected:
+class FdIO {
+private:
   static const u_int BUF_SIZE = 8192;
-  int stream;
+  int fd;
   u_int nBytes;
-  u_int eof;
+  bool eof;
   char buf[BUF_SIZE];
 public:
-  // FileIO Constructor and Destructor
-  FileIO(int fHandle) {
-    stream = fHandle;
+  // FdIO Constructor
+  FdIO(int fHandle) {
+    fd = fHandle;
     nBytes = 0;
-    eof    = 0;
+    eof = false;
   }
   u_int GetNBytes() {
     return nBytes;
@@ -303,97 +301,99 @@ public:
   char *GetBuffer() {
     return buf;
   }
-  u_int IsEof() {
+  bool IsEof() {
     return eof;
   }
   Future *Fill() {
-    if (nBytes == (BUF_SIZE - 1))
+    // A return value of INVALID_POINTER indicates that there is some
+    // data in the buffer or we have reached EOF.
+    if (nBytes != 0)
       return INVALID_POINTER;
-  retry:
-    Future *future = IOHandler::CheckReadable(stream);
+    Future *future = IOHandler::CheckReadable(fd);
     if (future != INVALID_POINTER)
       return future;
-    // to be done: correct policy here
 #if defined(__MINGW32__) || defined(_MSC_VER)
-    int rdBytes = recv(stream, buf + nBytes, BUF_SIZE - nBytes, 0);
+    int rdBytes = recv(fd, buf + nBytes, BUF_SIZE - nBytes, 0);
+    if (rdBytes == SOCKET_ERROR) {
+      // to be done: raise io something here
+      Error("FdIO::Fill: critical io error\n");
+    } else if (rdBytes == 0) { // eof
+      eof = true;
+    } else
+      nBytes += rdBytes;
 #else
-    int rdBytes = read(stream, buf + nBytes, BUF_SIZE - nBytes);
-#endif
+  retry:
+    int rdBytes = read(fd, buf + nBytes, BUF_SIZE - nBytes);
     if (rdBytes == -1) {
-      switch (GetLastError) {
-      case EAGAIN:
-	// Can this happen here?
-	fprintf(stderr, "io would block\n");
+      Assert(GetLastError() != EAGAIN);
+      switch (GetLastError()) {
+      case EINTR:
 	goto retry;
       default:
 	// to be done: raise io something here
-	Error("FileIO::Fill: critical io error\n");
+	Error("FdIO::Fill: critical io error\n");
 	break;
       }
-    }
-    else
+    } else if (rdBytes == 0) { // eof
+      eof = true;
+    } else
       nBytes += rdBytes;
+#endif
     return INVALID_POINTER;
   }
   void Commit(u_int count) {
     nBytes -= count;
-    memmove(buf, buf + count, nBytes);
-  }
-  // FileIO Tagging and Untagging
-  word ToWord() {
-    return Store::UnmanagedPointerToWord(this);
-  }
-  static FileIO *FileIO::FromWordDirect(word io) {
-    return static_cast<FileIO *>(Store::DirectWordToUnmanagedPointer(io));
+    std::memmove(buf, buf + count, nBytes);
   }
 };
 
-class IOFrame : public StackFrame {
-protected:
-  static const u_int FILE_IO_POS = 0;
-  static const u_int STRING_POS  = 1;
-  static const u_int ALL_POS     = 2;
-  static const u_int SIZE        = 3;
+static FdIO *stdinWrapper;
+
+class FdInputFrame: public StackFrame {
+private:
+  enum { FILE_IO_POS, STRING_POS, READ_ALL_POS, SIZE };
 public:
   using Block::ToWord;
   using StackFrame::GetInterpreter;
-  // IOFrame Accessors
-  FileIO *GetFileIO() {
-    return static_cast<FileIO *>
-      (Store::DirectWordToUnmanagedPointer(StackFrame::GetArg(FILE_IO_POS)));
+
+  // FdInputFrame Constructor
+  static FdInputFrame *New(Interpreter *interpreter,
+			   FdIO *fdIO, bool readAll) {
+    StackFrame *frame = StackFrame::New(FD_INPUT_FRAME, interpreter, SIZE);
+    String *string    = String::New(static_cast<u_int>(0));
+    frame->InitArg(FILE_IO_POS, Store::UnmanagedPointerToWord(fdIO));
+    frame->InitArg(STRING_POS, string->ToWord());
+    frame->InitArg(READ_ALL_POS, readAll);
+    return static_cast<FdInputFrame *>(frame);
+  }
+  // FdInputFrame Untagging
+  static FdInputFrame *FromWordDirect(word frame) {
+    StackFrame *p = StackFrame::FromWordDirect(frame);
+    Assert(p->GetLabel() == FD_INPUT_FRAME && p->GetSize() == SIZE);
+    return static_cast<FdInputFrame *>(p);
+  }
+
+  // FdInputFrame Accessors
+  FdIO *GetFdIO() {
+    return static_cast<FdIO *>
+      (Store::DirectWordToUnmanagedPointer(GetArg(FILE_IO_POS)));
   }
   String *GetString() {
-    return String::FromWordDirect(StackFrame::GetArg(STRING_POS));
+    return String::FromWordDirect(GetArg(STRING_POS));
   }
   void SetString(String *string) {
-    StackFrame::ReplaceArg(STRING_POS, string->ToWord());
+    ReplaceArg(STRING_POS, string->ToWord());
   }
-  word NeedAll() {
-    return StackFrame::GetArg(ALL_POS);
-  }
-  // IOFrame Constructor
-  static IOFrame *New(Interpreter *interpreter, FileIO *stream,
-		      u_int readAll) {
-    StackFrame *frame = StackFrame::New(IO_FRAME, interpreter, SIZE);
-    String *string    = String::New(static_cast<u_int>(0));
-    frame->InitArg(FILE_IO_POS, Store::UnmanagedPointerToWord(stream));
-    frame->InitArg(STRING_POS, string->ToWord());
-    frame->InitArg(ALL_POS, Store::IntToWord(readAll));
-    return static_cast<IOFrame *>(frame);
-  }
-  // IOFrame Untagging
-  static IOFrame *FromWordDirect(word frame) {
-    StackFrame *p = StackFrame::FromWordDirect(frame);
-    Assert(p->GetLabel() == IO_FRAME);
-    return static_cast<IOFrame *>(p);
+  bool ReadAll() {
+    return Store::DirectWordToInt(GetArg(READ_ALL_POS));
   }
 };
 
-class IOInterpreter : public Interpreter {
+class IOInterpreter: public Interpreter {
 public:
   static IOInterpreter *self;
   // IOInterpreter Constructor
-  IOInterpreter() : Interpreter() {}
+  IOInterpreter(): Interpreter() {}
   // IOInterpreter Static Constructor
   static void Init() {
     self = new IOInterpreter();
@@ -410,65 +410,54 @@ public:
 //
 IOInterpreter *IOInterpreter::self;
 
-static Interpreter::Result CheckPreempt() {
-  if (StatusWord::GetStatus(Store::GCStatus() | Scheduler::PreemptStatus())) {
-    PREEMPT;
-  }
-  else {
-    RETURN0;
-  }
-}
-
 Interpreter::Result IOInterpreter::Run() {
-  IOFrame *frame = IOFrame::FromWordDirect(Scheduler::GetFrame());
-  FileIO *stream = frame->GetFileIO();
-  Future *future = stream->Fill();
+  FdInputFrame *frame = FdInputFrame::FromWordDirect(Scheduler::GetFrame());
+  FdIO *fdIO = frame->GetFdIO();
+  Future *future = fdIO->Fill();
   if (future != INVALID_POINTER) {
     Scheduler::currentData = future->ToWord();
     return Interpreter::REQUEST;
   }
   // We have data
   String *string = frame->GetString();
-  u_int nBytes   = stream->GetNBytes();
-  u_int eof      = 0;
-  if (frame->NeedAll() == Store::IntToWord(0)) {
-    char *buf    = stream->GetBuffer();
-    u_int nBytes = stream->GetNBytes();
-    u_int i      = 0;
-    while (i < nBytes) {
+  char *buffer   = fdIO->GetBuffer();
+  u_int nBytes   = fdIO->GetNBytes();
+  bool eof       = fdIO->IsEof();
+  if (frame->ReadAll()) { // inputAll
+    string = Concat(string, buffer, nBytes);
+    fdIO->Commit(nBytes);
+  } else { // inputLine
+    u_int nBytes = fdIO->GetNBytes();
+    for (u_int i = 0; i < nBytes; i++) {
 #if defined(__MINGW32__) || defined(_MSC_VER)
-      // to be done: proper character conversion
-      if ((buf[i] == 0x0d) &&
-	  ((i + 1) < nBytes) && (buf[i + 1] == 0x0a)) {
-	string = Concat(string, stream->GetBuffer(), i + 1);
-	stream->Commit(i +  2);
-	eof = 1;
+      if (i + 1 < nBytes && buffer[i] == '\r' && buffer[i + 1] == '\n') {
+	buffer[i] = '\n';
+	string = Concat(string, buffer, i + 1);
+	fdIO->Commit(i +  2);
+	eof = true;
 	break;
-      }
-#else
-      if (buf[i] == '\n') {
-	string = Concat(string, stream->GetBuffer(), i + 1);
-	stream->Commit(i + 1);
-	eof = 1;
-	break;
-      }
+      } else
 #endif
-      else
-	i++;
+      if (buffer[i] == '\n') {
+	string = Concat(string, buffer, i + 1);
+	fdIO->Commit(i + 1);
+	eof = true;
+	break;
+      }
     }
-  }
-  else {
-    string = Concat(string, stream->GetBuffer(), nBytes);
-    stream->Commit(nBytes);
-    eof = stream->IsEof();
   }
   if (eof) {
     Scheduler::PopFrame();
-    RETURN(string->ToWord());
-  }
-  else {
+    Scheduler::nArgs = Scheduler::ONE_ARG;
+    Scheduler::currentArgs[0] = string->ToWord();
+    return Interpreter::CONTINUE;
+  } else {
     frame->SetString(string);
-    return CheckPreempt();
+    Scheduler::nArgs = 0;
+    if (StatusWord::GetStatus(Store::GCStatus() | Scheduler::PreemptStatus()))
+      return Interpreter::PREEMPT;
+    else
+      return Interpreter::CONTINUE;
   }
 }
 
@@ -477,8 +466,18 @@ const char *IOInterpreter::Identify() {
 }
 
 void IOInterpreter::DumpFrame(word) {
-  std::fprintf(stderr, "IOInterpreter frame\n");
+  FdInputFrame *frame = FdInputFrame::FromWordDirect(Scheduler::GetFrame());
+  if (frame->ReadAll()) // inputAll
+    std::fprintf(stderr, "Primitive UnsafeIO.inputAll\n");
+  else // inputLine
+    std::fprintf(stderr, "Primitive UnsafeIO.inputLine\n");
 }
+
+static const u_int bufSize = 8192;
+
+//
+// Primitives
+//
 
 DEFINE3(UnsafeIO_Io) {
   ConVal *conVal = ConVal::New(Constructor::FromWordDirect(IoConstructor), 3);
@@ -491,7 +490,7 @@ DEFINE3(UnsafeIO_Io) {
 DEFINE2(UnsafeIO_openIn) {
   DECLARE_BOOL(binary, x0);
   DECLARE_STRING(name, x1);
-  const char *flags = (binary ? "rb" : "r");
+  const char *flags = (binary? "rb": "r");
   std::FILE *file = std::fopen(name->ExportC(), flags);
   if (file != NULL) {
     RETURN(InStream::New(file, name)->ToWord());
@@ -502,20 +501,20 @@ DEFINE2(UnsafeIO_openIn) {
 
 DEFINE1(UnsafeIO_closeIn) {
   DECLARE_INSTREAM(stream, x0);
-  std::fclose(stream->GetStream());
+  std::fclose(stream->GetFile());
   RETURN_UNIT;
 } END
 
 DEFINE1(UnsafeIO_inputAll) {
   DECLARE_INSTREAM(stream, x0);
-  std::FILE *file = stream->GetStream();
+  std::FILE *file = stream->GetFile();
   if (file == stdin) {
-    FileIO *io     = FileIO::FromWordDirect(stdinWrapper);
-    IOFrame *frame = IOFrame::New(IOInterpreter::self, io, 1);
+    FdInputFrame *frame =
+      FdInputFrame::New(IOInterpreter::self, stdinWrapper, true);
     Scheduler::PushFrame(frame->ToWord());
     RETURN0;
-  }
-  else {
+  } else {
+    char buf[bufSize];
     String *b = String::New(static_cast<u_int>(0));
     while (!feof(file)) {
       u_int nRead = std::fread(buf, 1, bufSize, file);
@@ -530,14 +529,14 @@ DEFINE1(UnsafeIO_inputAll) {
 
 DEFINE1(UnsafeIO_inputLine) {
   DECLARE_INSTREAM(stream, x0);
-  std::FILE *file = stream->GetStream();
+  std::FILE *file = stream->GetFile();
   if (file == stdin) {
-    FileIO *io     = FileIO::FromWordDirect(stdinWrapper);
-    IOFrame *frame = IOFrame::New(IOInterpreter::self, io, 0);
+    FdInputFrame *frame =
+      FdInputFrame::New(IOInterpreter::self, stdinWrapper, false);
     Scheduler::PushFrame(frame->ToWord());
     RETURN0;
-  }
-  else {
+  } else {
+    char buf[bufSize];
     String *b = String::New(static_cast<u_int>(0));
     u_int index = 0;
     int c = std::fgetc(file);
@@ -567,7 +566,7 @@ DEFINE1(UnsafeIO_inputLine) {
 DEFINE2(UnsafeIO_openOut) {
   DECLARE_BOOL(binary, x0);
   DECLARE_STRING(name, x1);
-  const char *flags = (binary ? "wb" : "w");
+  const char *flags = (binary? "wb": "w");
   std::FILE *file = std::fopen(name->ExportC(), flags);
   if (file != NULL) {
     RETURN(OutStream::New(file, name)->ToWord());
@@ -579,7 +578,7 @@ DEFINE2(UnsafeIO_openOut) {
 DEFINE2(UnsafeIO_openAppend) {
   DECLARE_BOOL(binary, x0);
   DECLARE_STRING(name, x1);
-  const char *flags = (binary ? "wab" : "wa");
+  const char *flags = (binary? "wab": "wa");
   std::FILE *file = std::fopen(name->ExportC(), flags);
   if (file != NULL) {
     RETURN(OutStream::New(file, name)->ToWord());
@@ -590,13 +589,13 @@ DEFINE2(UnsafeIO_openAppend) {
 
 DEFINE1(UnsafeIO_closeOut) {
   DECLARE_OUTSTREAM(stream, x0);
-  std::fclose(stream->GetStream());
+  std::fclose(stream->GetFile());
   RETURN_UNIT;
 } END
 
 DEFINE1(UnsafeIO_flushOut) {
   DECLARE_OUTSTREAM(stream, x0);
-  std::fflush(stream->GetStream());
+  std::fflush(stream->GetFile());
   RETURN_UNIT;
 } END
 
@@ -604,7 +603,7 @@ DEFINE2(UnsafeIO_output) {
   DECLARE_OUTSTREAM(stream, x0);
   DECLARE_STRING(s, x1);
   u_int size = s->GetSize();
-  u_int nWritten = std::fwrite(s->GetValue(), 1, size, stream->GetStream());
+  u_int nWritten = std::fwrite(s->GetValue(), 1, size, stream->GetFile());
   if (nWritten == size) {
     RETURN_UNIT;
   } else {
@@ -615,7 +614,7 @@ DEFINE2(UnsafeIO_output) {
 DEFINE2(UnsafeIO_output1) {
   DECLARE_OUTSTREAM(stream, x0);
   DECLARE_INT(c, x1);
-  if (std::fputc(c, stream->GetStream()) != EOF) {
+  if (std::fputc(c, stream->GetFile()) != EOF) {
     RETURN_UNIT;
   } else {
     RAISE_IO(Store::IntToWord(0), "output1", stream->GetName());
@@ -645,14 +644,14 @@ word UnsafeIO() {
   // We need select on stdin
   int sv[2];
   if (IOSupport::SocketPair(PF_UNIX, SOCK_STREAM, 0, sv) == -1) {
-    fprintf(stderr, "UnsafeIO: socket pair failed\n");
+    std::fprintf(stderr, "UnsafeIO: socket pair failed\n");
     exit(1);
   }
   IOSupport::CreateReader(sv[0], GetStdHandle(STD_INPUT_HANDLE));
   handle = sv[1];
 #else
   handle = fileno(stdin);
-  // Try to make stdin non blocking
+  // Try to make stdin nonblocking
   int flags = fcntl(handle, F_GETFL, 0);
   if (flags == -1) {
     Error("Unable to query stdin flags\n");
@@ -662,10 +661,8 @@ word UnsafeIO() {
     Error("Unable to make stdin nonblocking\n");
   }
 #endif
-  FileIO *io = new FileIO(handle);
-  stdinWrapper = io->ToWord();
+  stdinWrapper = new FdIO(handle); //--** also for stdout, stderr
   IOHandler::SetDefaultBlockFD(handle);
-  RootSet::Add(stdinWrapper);
 
   Record *record = Record::New(16);
   record->Init("'Io", IoConstructor);
