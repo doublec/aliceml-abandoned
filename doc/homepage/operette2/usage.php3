@@ -42,7 +42,7 @@
     top-level environment</A> is available for compiling source files.</P>
   <P>The following extra options may be given:</P>
   <DL>
-    <DT><TT>--nodefaultimport</TT></DT>
+    <DT><TT>--noimplicitimport</TT></DT>
     <DD><P>Do not make the SML Standard Basis top-level environment available
       to source files.  This option is necessary for bootstrapping the
       top-level environment itself.</P></DD>
