@@ -158,6 +158,43 @@ white1 white2 queen apply /whiteQueen
 black1 black2 queen apply /blackQueen
 
 %%
+%% Kings
+%%
+
+{ /col2 /col1
+  col1 col2 figureSurface apply /surface
+  col1 col1 figureSurface apply /surface1
+  col2 col2 figureSurface apply /surface2
+  % Base
+  surface cylinder 1.0 0.75 1.0 scale
+  % Body
+  surface cone 180.0 rotatez 30.0 rotatey 0.0 1.0 0.0 translate
+  1.0 7.5 1.0 scale
+  surface plane 0.0 4.0 0.0 translate intersect union
+  % Crown
+  38.146 /phi
+  surface cylinder 1.0 2.0 1.0 scale
+  surface1 plane -90.0 phi subf rotatex
+  surface2 plane 90.0 phi addf rotatex intersect
+  -45.0 rotatez 1.0 0.0 0.0 translate /wedge
+  wedge wedge 60.0 rotatey union wedge 120.0 rotatey union
+  wedge 180.0 rotatey union wedge 240.0 rotatey union wedge 300.0 rotatey union
+  0.0 1.0 0.0 translate difference 0.6 0.25 0.6 scale
+  % Scepter
+  surface2 cube 0.1 0.7 0.1 scale
+  surface2 cube 0.6 0.1 0.1 scale -0.25 0.35 0.0 translate union
+  -0.05 0.4 -0.05 translate union
+  0.0 4.7 0.0 translate union
+  % Head
+  surface sphere 0.9 uscale 0.0 3.9 0.0 translate difference
+  surface sphere 0.8 uscale 0.0 4.0 0.0 translate union
+  0.4 uscale
+} /king
+
+white1 white2 king apply /whiteKing
+black1 black2 king apply /blackKing
+
+%%
 %% The scene
 %%
 
@@ -184,6 +221,7 @@ whiteTower 3.5 0.0 -3.5 translate union
 whiteBishop -1.5 0.0 -3.5 translate union
 whiteBishop 1.5 0.0 -3.5 translate union
 whiteQueen -0.5 0.0 -3.5 translate union
+whiteKing 0.5 0.0 -3.5 translate union
 blackPawn -3.5 0.0 2.5 translate union
 blackPawn -2.5 0.0 2.5 translate union
 blackPawn -1.5 0.0 2.5 translate union
@@ -197,6 +235,7 @@ blackTower 3.5 0.0 3.5 translate union
 blackBishop -1.5 0.0 3.5 translate union
 blackBishop 1.5 0.0 3.5 translate union
 blackQueen -0.5 0.0 3.5 translate union
+blackKing 0.5 0.0 3.5 translate union
 30.0 rotatey -20.0 rotatex 0.4 uscale 0.3 0.0 3.0 translate
 
 /scene
