@@ -13,15 +13,16 @@ signature IMP_MAP =
 
     val delete :	'a map * key -> unit
     val deleteExistent:	'a map * key -> unit		(* Delete *)
+    val deleteWith :	(key -> unit) -> 'a map * key -> unit
+
     val insert :	'a map * key * 'a -> unit
     val insertDisjoint:	'a map * key * 'a -> unit	(* Collision *)
+    val insertWith :	('a * 'a -> 'a) -> 'a map * key * 'a -> unit
+    val insertWithi :	(key * 'a * 'a -> 'a) -> 'a map * key * 'a -> unit
+
     val union :		'a map * 'a map -> unit
     val unionDisjoint :	'a map * 'a map -> unit		(* Collision *)
-
-    val deleteWith :	(key -> unit) -> 'a map * key -> unit
-    val insertWith :	('a * 'a -> 'a) -> 'a map * key * 'a -> unit
     val unionWith :	('a * 'a -> 'a) -> 'a map * 'a map -> unit
-    val insertWithi :	(key * 'a * 'a -> 'a) -> 'a map * key * 'a -> unit
     val unionWithi :	(key * 'a * 'a -> 'a) -> 'a map * 'a map -> unit
 
     val lookup :	'a map * key -> 'a option
