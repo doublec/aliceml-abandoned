@@ -17,8 +17,8 @@
 #pragma interface "adt/Queue.hh"
 #endif
 
-#include "store/Store.hh"
 #include <cstring>
+#include "store/Store.hh"
 
 class Queue: private Block {
 private:
@@ -57,8 +57,8 @@ private:
     word *newBase = newArray->GetBase();
     std::memcpy(newBase, oldBase + index, (oldSize - index) * sizeof(word));
     std::memcpy(newBase + index, oldBase, index * sizeof(word));
-    SetWriteIndex(index);
     SetReadIndex(0);
+    SetWriteIndex(oldSize);
     SetArray(newArray);
   }
 protected:
@@ -132,7 +132,7 @@ public:
       u_int length = array->GetSize();
       while (scanIndex < length) {
 	if (array->GetArg(scanIndex) == w) { // shorten queue at beginning
-	  u_int *base = reinterpret_cast<u_int *>(array->GetBase()); //--**
+	  word *base = array->GetBase();
 	  std::memmove(base + readIndex + 1, base + readIndex,
 		       (scanIndex - readIndex) * sizeof(word));
 	  SetReadIndex(readIndex + 1);
@@ -145,7 +145,7 @@ public:
     }
     while (scanIndex < writeIndex) {
       if (array->GetArg(scanIndex) == w) { // shorten queue at end
-	u_int *base = reinterpret_cast<u_int *>(array->GetBase()); //--**
+	word *base = array->GetBase();
 	std::memmove(base + scanIndex, base + scanIndex + 1,
 		     (writeIndex - scanIndex) * sizeof(word));
 	SetWriteIndex(writeIndex - 1);
