@@ -39,6 +39,13 @@ define
       [] nil then 'NONE'
       end
    end
+   fun {MakeBound V}
+      case V
+      of [X] then 'BOUND_SOME'(X)
+      [] nil then 'BOUND_NONE'
+      [] cut then 'BOUND_CUT'
+      end
+   end
    fun {MakeKill K}
       fun {$ _}
 	 {K}
@@ -56,10 +63,10 @@ define
       {MakeOption {Search.one.depthS {MakeScript P} Rcd _}}
    end
    fun {SearchOneBoundFun P Bound Rcd}
-      {MakeOption {Search.one.bound {MakeScript P} Bound Rcd _}}
+      {MakeBound {Search.one.bound {MakeScript P} Bound Rcd _}}
    end
    fun {SearchOneBoundSFun P Bound Rcd}
-      {MakeOption {Search.one.boundS {MakeScript P} Bound Rcd _}}
+      {MakeBound {Search.one.boundS {MakeScript P} Bound Rcd _}}
    end
    fun {SearchOneIterFun P Rcd}
       {MakeOption {Search.one.iter {MakeScript P} Rcd _}}
