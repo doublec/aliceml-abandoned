@@ -400,15 +400,26 @@ define
 	 {State.cs
 	  endDefinition(BodyVInstr FormalRegs nil ?GRegs ?Code ?NLiveRegs)}
 	 VHd = vDefinition(_ Reg PredId unit GRegs Code VTl)
+      [] primAppExp(Region Builtinname nil) then ArgReg VInter Value in
+	 {State.cs newReg(?ArgReg)}
+	 VHd = vEquateConstant(_ unit ArgReg VInter)
+	 Value = BuiltinTable.Builtinname
+	 if {CompilerSupport.isBuiltin Value} then
+	    VInter = vCallBuiltin(_ {System.printName Value} [ArgReg Reg]
+				  {TranslateRegion Region State} VTl)
+	 else
+	    VInter = vCallConstant(_ Value [ArgReg Reg]
+				   {TranslateRegion Region State} VTl)
+	 end
       [] primAppExp(Region Builtinname Ids) then Value Regs in
 	 Value = BuiltinTable.Builtinname
 	 Regs = {FoldR Ids fun {$ Id Regs} {GetReg Id State}|Regs end [Reg]}
 	 if {CompilerSupport.isBuiltin Value} then
-	    VHd = vCallBuiltin(_ {System.printName Value}
-			       Regs {TranslateRegion Region State} VTl)
+	    VHd = vCallBuiltin(_ {System.printName Value} Regs
+			       {TranslateRegion Region State} VTl)
 	 else
-	    VHd = vCallConstant(_ Value
-				Regs {TranslateRegion Region State} VTl)
+	    VHd = vCallConstant(_ Value Regs
+				{TranslateRegion Region State} VTl)
 	 end
       [] varAppExp(Region Id tupArgs(Ids=_|_)) then
 	 VHd = vConsCall(_ {GetReg Id State}
