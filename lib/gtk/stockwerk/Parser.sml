@@ -1,15 +1,47 @@
+(*
+ * Authors:
+ *   Robert Grabowski <grabow@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Robert Grabowski, 2003
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
+(* 
+ The Parser structure creates a representation of the declarations
+ in a C file in two steps:
+     1. The CKIT is used to generate an abstract syntax tree (AST) 
+        from the C file. 
+     2. The functions in this structure then convert the CKIT AST
+        into an own simplified representation (defined in TypeTree.sml).
+*)
+
 
 structure Parser :> PARSER =
 struct
     open TypeTree
 
-    exception EUnknown
-    exception EMessage of string
-    exception EIgnore of string
+    (* EParseError: thrown if error during CKIT parsing occurs *)
     exception EParseError
 
+    (* EMessage: thrown when a declaration cannot be converted *)
+    exception EMessage of string 
+
+    (* EIgnore: thrown when a part of a declaration (like an enum value) *)
+    (*          cannot be converted *)
+    exception EIgnore of string      
+
+    (* EUnknown: general purpose exception *)
+    exception EUnknown           
+
+
+
+    (* Use the CKIT to generate an AST from a C file *)
     fun generateAst file =
-    (* generates abstract syntax tree from file *)
     let
 	val tree = ParseToAst.fileToAst file
     in
@@ -21,22 +53,24 @@ struct
 			 raise EParseError )
     end
 	
+    (* Remove declarations from AST that are not relevant for the binding *)
     fun filterCoreDecls decls = 
-    (* retrieves declarations that are relevant to us *)
 	foldr (fn (Ast.DECL(Ast.ExternalDecl d,_,_),e) => d::e 
                                                | (_,e) => e) 
 	nil 
 	decls
 
+    (* Main AST->TypeTree conversion function. *)
     fun parseDecls decls ttab =
     let
+	(* Utility functions *)
 	fun showWarning s = print ("Parser: "^s^"\n")
         fun toSmallInt (i,s) = (LargeInt.toInt i) handle _ => raise EIgnore s
 	fun parseList f memlist =
 	    foldr (fn (x,l) => ((f x)::l) handle EIgnore s=>(showWarning s; l))
 	          nil memlist
 
-        (* type id table functions *)
+        (* Type ID table functions *)
 	fun getTypeByID id = 
 	    (valOf(Tidtab.find(ttab, id)):Bindings.tidBinding)
 	    handle 
@@ -124,6 +158,8 @@ struct
 		end
 	end
 
+        (* The following functions parse struct, union, enum, *)
+        (* typedef and function declarations. *)
 	fun parseStruct structName memlist = 
 	let	    
 	    val message = "ignored anonymus bitfield in struct "^structName
@@ -138,19 +174,14 @@ struct
         let
 	    fun parseMember(t,m:Ast.member) = (Symbol.name(#name m),convType t)
 	in
-	    UNION (unionName, map parseMember memlist)
+	    UNION (unionName, parseList parseMember memlist)
 	end
 
 	fun parseEnum tid memlist =
 	let
-	    fun parseMember (m:Ast.member,v) = 
-	    let
-		val name = Symbol.name(#name m)
-	    in
-		(name, toSmallInt(v,"ignored enum value "^name^": too big"))
-	    end
+	    fun parseMember (m:Ast.member,v) = (Symbol.name(#name m), v)
 	in
-	    ENUM (findEnumName tid, parseList parseMember memlist)
+	    ENUM (findEnumName tid, map parseMember memlist)
 	end
 
 	fun parseTypeDef typeName ctype = ALIAS (typeName, convType ctype)
@@ -207,7 +238,7 @@ struct
 	parseDecls' decls nil nil
     end (* of parseDecls *)
 
-    (* main parse function *)
+    (* Main parse function *)
     fun parse file =
     let
 	val _ = print (Util.separator "Generating AST")
