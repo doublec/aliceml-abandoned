@@ -688,9 +688,9 @@ prepare
 	 end
       'Word8.fromInt':
 	 fun {$ I} {BootWord.make 8 I} end
-      'Word8.fromLargeWord':
+      'Word8.fromLarge':
 	 fun {$ W} {BootWord.make 8 {BootWord.toInt W}} end
-      'Word8.fromLargeWordX':
+      'Word8.fromLargeX':
 	 fun {$ W} {BootWord.make 8 {BootWord.toIntX W}} end
       'Word8.mod':
 	 fun {$ W1 W2}
@@ -705,9 +705,9 @@ prepare
       'Word8.orb': BootWord.orb
       'Word8.toInt': BootWord.toInt
       'Word8.toIntX': BootWord.toIntX
-      'Word8.toLargeWord':
+      'Word8.toLarge':
 	 fun {$ W} {BootWord.make 31 {BootWord.toInt W}} end
-      'Word8.toLargeWordX':
+      'Word8.toLargeX':
 	 fun {$ W} {BootWord.make 31 {BootWord.toIntX W}} end
       'Word8.wordSize': 31
       'Word8.xorb': BootWord.'xorb'
@@ -843,9 +843,9 @@ prepare
 	 end
       'Word31.fromInt':
 	 fun {$ I} {BootWord.make 31 I} end
-      'Word31.fromLargeWord':
+      'Word31.fromLarge':
 	 fun {$ W} {BootWord.make 31 {BootWord.toInt W}} end
-      'Word31.fromLargeWordX':
+      'Word31.fromLargeX':
 	 fun {$ W} {BootWord.make 31 {BootWord.toIntX W}} end
       'Word31.mod':
 	 fun {$ W1 W2}
@@ -860,9 +860,9 @@ prepare
       'Word31.orb': BootWord.orb
       'Word31.toInt': BootWord.toInt
       'Word31.toIntX': BootWord.toIntX
-      'Word31.toLargeWord':
+      'Word31.toLarge':
 	 fun {$ W} {BootWord.make 31 {BootWord.toInt W}} end
-      'Word31.toLargeWordX':
+      'Word31.toLargeX':
 	 fun {$ W} {BootWord.make 31 {BootWord.toIntX W}} end
       'Word31.wordSize': 31
       'Word31.xorb': BootWord.'xorb')
