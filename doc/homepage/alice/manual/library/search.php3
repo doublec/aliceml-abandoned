@@ -146,7 +146,7 @@ signature SEARCH =
     <DD>
       <P>returns the first solution of script <I>s</I> obtained by depth-first
          search with recomputation distance <I>rcd</I>, where the depth of
-         the search tree explored is less than or equal to <I>bound<I>.
+         the search tree explored is less than or equal to <I>bound</I>.
       </P>
       <P>If there is no solution in a depth less than or equal
          to <I>bound</I>, but there might be solutions deeper in the tree,
