@@ -10,8 +10,7 @@
  *   $Revision$
  *)
 
-functor MakeEngine(val cmd: string
-		   val args: string list
+functor MakeEngine(val cmd: unit -> string * string list
 		   structure Code: CODE) :> ENGINE where type code = Code.t =
     struct
 	type t = Unix.proc option ref
@@ -22,7 +21,7 @@ functor MakeEngine(val cmd: string
 
 	val valueToString = Int.toString
 
-	fun start () = ref (SOME (Unix.execute (cmd, args)))
+	fun start () = ref (SOME (Unix.execute (cmd ())))
 
 	fun instream proc = #1 (Unix.streamsOf (valOf (!proc)))
 	fun outstream proc = #2 (Unix.streamsOf (valOf (!proc)))
