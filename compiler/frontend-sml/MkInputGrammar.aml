@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg, 2001-2003
  *
  * Last change:
  *   $Date$ by $Author$
@@ -31,8 +31,8 @@
  *   - removed exception declarations (made into a derived form)
  *   - removed abstype (made into a derived form with local)
  *   - simplified open and fixity declarations to single id (multi ids made DF)
- *   - some hacks to build libraries: primitive declarations,
- *     special eqtype declarations and specifications
+ *   - some hacks to build libraries: primitive declarations, overload
+ *     declarations, special eqtype declarations and specifications
  *
  * Extensions and modifications to module language:
  *   - components
@@ -175,6 +175,8 @@ struct
 	| INFIXDec        of Info * int * VId
 	| INFIXRDec       of Info * int * VId
 	| NONFIXDec       of Info * VId
+	| OVERLOADDec     of Info * TyVar * LongTyConSeq
+				  * Op * VId * Ty * LongVIdSeq
 	| PRIMITIVEVALDec         of Info * Op * VId * Ty * string
 	| PRIMITIVETYPEDec        of Info * TyVarSeq * TyCon * string
 	| PRIMITIVEEXTTYPEDec     of Info * TyVarSeq * TyCon * string
@@ -411,8 +413,10 @@ struct
 
     and 'a Seq    = Seq of Info * 'a list
 
-    withtype TySeq    = Ty Seq
-    and      TyVarSeq = TyVar Seq
+    withtype TySeq        = Ty Seq
+    and      TyVarSeq     = TyVar Seq
+    and      LongTyConSeq = LongTyCon Seq
+    and      LongVIdSeq   = LongVId Seq
 
     (* The Type(tm) *)
 
@@ -479,6 +483,7 @@ struct
       | infoDec(INFIXDec(I,_,_))			= I
       | infoDec(INFIXRDec(I,_,_))			= I
       | infoDec(NONFIXDec(I,_))				= I
+      | infoDec(OVERLOADDec(I,_,_,_,_,_,_))		= I
       | infoDec(PRIMITIVEVALDec(I,_,_,_,_))		= I
       | infoDec(PRIMITIVETYPEDec(I,_,_,_))		= I
       | infoDec(PRIMITIVEEXTTYPEDec(I,_,_,_))		= I

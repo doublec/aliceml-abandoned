@@ -1236,6 +1236,12 @@ struct
 
     and trTySeq E (Seq(i, tys)) = List.map (trTy E) tys
 
+    and trLongTyConSeq E (Seq(i, longtycons)) =
+	List.map (#1 o trLongTyCon E) longtycons
+
+    and trLongVIdSeq E (Seq(i, longvids)) =
+	List.map (#1 o trLongVId E) longvids
+
     and trTyVarSeq E (Seq(i, tyvars)) = List.map (trSeqTyVar E) tyvars
 
     and trSeqTyVar E (tyvar as TyVar(i, tyvar')) =
@@ -1473,6 +1479,31 @@ struct
 		val fix'    = O.Fix(i, fix)
 		val dec'    = O.FixDec(i, vallab', fix')
 		val _       = insertInf(E, vid', (i', NONE))
+	   in
+		dec' :: acc
+	   end
+
+	 | OVERLOADDec(i, tyvar as TyVar(i1,tyvar'), longtyconseq,
+		          _, vid as VId(i2,vid'), ty, longvidseq) =>
+	   let
+		val  E'             = env()
+		val  _              = insertScope E
+		val (varid',stamp1) = trTyVar_bind E tyvar
+		val  _              = insertDisjointVar(E, tyvar', (i, stamp1))
+		val  typlongids'    = Vector.fromList
+					(trLongTyConSeq E longtyconseq)
+		val (valid',stamp2) = trValVId_bind E vid
+		val  typ'           = trTy E ty
+		val  vallongids'    = Vector.fromList(trLongVIdSeq E longvidseq)
+		val  _              = removeScope E
+		val  pat'           = O.VarPat(i2, valid')
+		val  exps'          = Vector.map (fn vallongid' =>
+					O.VarExp(O.infoLongid vallongid',
+						 vallongid')) vallongids'
+		val  exp'           = O.OverExp(i, exps',
+					       varid', typlongids', typ')
+		val  dec'           = O.ValDec(i, pat', exp')
+		val  _              = insertVal(E, vid', (i, stamp2, V))
 	   in
 		dec' :: acc
 	   end

@@ -2,7 +2,7 @@
 (*   Andreas Rossberg <rossberg@ps.uni-sb.de>			*)
 (*								*)
 (* Copyright:							*)
-(*   Andreas Rossberg, 2001-2002				*)
+(*   Andreas Rossberg, 2001-2003				*)
 (*								*)
 (* Last change:							*)
 (*   $Date$ by $Author$	*)
@@ -154,7 +154,7 @@
 (* We did NOT introduce a sharing signature ... and signature ... derived form	*)
 (* similar to types, because we consider that completely broken.		*)
 (*										*)
-(* To avoid hardwiring certain library issues, we further added the following	*)
+(* To avoid hardwiring library issues, we further added the following		*)
 (* low-level constructs:							*)
 (*	  dec     ::= __eqeqtype typbind					*)
 (*                ::= __primitive val <op> vid : ty = string			*)
@@ -171,6 +171,7 @@
 (*					: sigexp = string		(DF)	*)
 (*	          ::= __primitive signature sigid strpat_1 ... strpat_n	(n>=0)	*)
 (*					= string				*)
+(*		  ::= __overload tyvar as longtyconseq <op>vid : ty =longvidseq	*)
 (*	  spec    ::= __eqeqtype typdesc					*)
 (*                ::= __primitive type tyvarseq tycon = string			*)
 (*                ::= __primitive eqtype tyvarseq tycon = string		*)
@@ -250,15 +251,23 @@
 	| RAISE | REC | THEN | TYPE | VAL | WITH | WITHTYPE | WHILE
 	| LPAR | RPAR | LBRACK | RBRACK | LBRACE | RBRACE | COMMA | COLON
 	| SEMICOLON | DOTS | UNDERBAR | BAR | EQUALS | DARROW | ARROW | HASH
+
+	(* Alice core extensions *)
 	| EXTTYPE | CONSTRUCTOR | NON | WITHFUN | WITHVAL | DOT | HASHBRACK
 	| LAZY | SPAWN
-	| ANY | FCT | PACK | UNPACK
-	| IMPORT | FROM
-	| PRIMITIVE | EQEQTYPE | REFTYPE | PERVASIVE
 
 	(* Additional reserved words for the modules language *)
 	| EQTYPE | FUNCTOR | INCLUDE | SHARING | SIG
 	| SIGNATURE | STRUCT | STRUCTURE | WHERE | COLONGREATER
+
+	(* Alice module extensions *)
+	| ANY | FCT | PACK | UNPACK
+
+	(* Alice component extensions *)
+	| IMPORT | FROM
+
+	(* Secret internal keywords *)
+	| PRIMITIVE | OVERLOAD | EQEQTYPE | REFTYPE | PERVASIVE
 
 	(* Special constants *)
 	| ZERO | DIGIT of int | NUMERIC of LargeInt.int
@@ -280,7 +289,7 @@
 	 LAZY SPAWN
 	 ANY FCT PACK UNPACK
 	 IMPORT FROM
-	 PRIMITIVE EQEQTYPE REFTYPE PERVASIVE
+	 PRIMITIVE OVERLOAD EQEQTYPE REFTYPE PERVASIVE
 
 %eop     EOF
 %noshift EOF
@@ -291,7 +300,7 @@
 %right VAL FUN TYPE EQTYPE DATATYPE ABSTYPE EXTTYPE CONSTRUCTOR EXCEPTION
        STRUCTURE FUNCTOR SIGNATURE
        IMPORT
-       PRIMITIVE EQEQTYPE REFTYPE
+       PRIMITIVE OVERLOAD EQEQTYPE REFTYPE
 %right LOCAL OPEN INFIX INFIXR NONFIX INCLUDE
 %right AND
 %left  DARROW		(* L/R is arbitrary *)
@@ -414,6 +423,13 @@
 	| tyvarseq			of TyVarSeq
 	|    tyvarseq1			of TyVarSeq
 	|    tyvar_COMMA_list1		of TyVar list
+	| longtyconseq			of LongTyConSeq
+	|    longtyconseq1		of LongTyConSeq
+	|    longtycon_COMMA_list1	of LongTyCon list
+
+	| longvidseq			of LongVIdSeq
+	|    longvidseq1		of LongVIdSeq
+	|    longvid_COMMA_list1	of LongVId list
 
 	(* Nonterminals for the module language *)
 	| atstrexp			of AtStrExp
@@ -828,6 +844,10 @@
 	| NONFIX vid_list1
 			( NONFIXMULTIDec(I(NONFIXleft,vid_list1right),
 					 vid_list1) )
+	| OVERLOAD longtyconseq AS tyvar OP_opt vid COLON ty EQUALS longvidseq
+			( OVERLOADDec(I(OVERLOADleft,longvidseqright),
+				      tyvar, longtyconseq,
+				      OP_opt, vid, ty, longvidseq) )
 	| PRIMITIVE VAL OP_opt vid COLON ty EQUALS STRING
 			( PRIMITIVEVALDec(I(PRIMITIVEleft,STRINGright),
 					  OP_opt, vid, ty, STRING) )
@@ -1173,6 +1193,35 @@
      tyvar_COMMA_list1:
 	  tyvar COMMA tyvar_COMMA_list1	( tyvar::tyvar_COMMA_list1 )
 	| tyvar				( tyvar::[] )
+
+
+  longtyconseq:
+	  longtyconseq1			( longtyconseq1 )
+	| (*empty*)			( Seq(I(defaultPos,defaultPos), []) )
+     longtyconseq1:
+	  longtycon			( Seq(I(longtyconleft,longtyconright),
+					      [longtycon]))
+	| LPAR longtycon_COMMA_list1 RPAR
+					( Seq(I(LPARleft,RPARright),
+					      longtycon_COMMA_list1) )
+     longtycon_COMMA_list1:
+	  longtycon COMMA longtycon_COMMA_list1
+					( longtycon::longtycon_COMMA_list1 )
+	| longtycon			( longtycon::[] )
+
+
+  longvidseq:
+	  longvidseq1			( longvidseq1 )
+	| (*empty*)			( Seq(I(defaultPos,defaultPos), []) )
+     longvidseq1:
+	  longvid			( Seq(I(longvidleft,longvidright),
+					      [longvid]))
+	| LPAR longvid_COMMA_list1 RPAR	( Seq(I(LPARleft,RPARright),
+					      longvid_COMMA_list1) )
+     longvid_COMMA_list1:
+	  longvid COMMA longvid_COMMA_list1
+					( longvid::longvid_COMMA_list1 )
+	| longvid			( longvid::[] )
 
 
 
