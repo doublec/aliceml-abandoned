@@ -12,7 +12,6 @@
 
 functor
 import
-   BootValue(byNeedFail: ByNeedFail) at 'x-oz://boot/Value'
    BootName(newUnique: NewUniqueName '<' hash) at 'x-oz://boot/Name'
    BootFloat(fPow) at 'x-oz://boot/Float'
    BootWord at 'x-oz://boot/Word'
@@ -141,7 +140,7 @@ define
 		       try
 			  {P unit}
 		       catch E=error(E2 ...) then
-			  {ByNeedFail {AdjoinAt E 1 FutureException(E2)}}
+			  {Value.byNeedFail {AdjoinAt E 1 FutureException(E2)}}
 		       end
 		    end}
 	 end
@@ -196,7 +195,7 @@ define
       'Hole.fail':
 	 fun {$ X E}
 	    try
-	       X = {ByNeedFail error(alice(FutureException(E)))}
+	       X = {Value.byNeedFail error(alice(FutureException(E)))}
 	    catch _ then
 	       {RaiseAliceException BuiltinTable.'Hole.Hole'}
 	    end
