@@ -21,7 +21,8 @@ static inline int GetPlatform() {
 }
 
 word UnsafeConfig(void) {
-  Tuple *t = Tuple::New(1);
+  Tuple *t = Tuple::New(2);
   t->Init(0, Store::IntToWord(GetPlatform()));
+  t->Init(1, String::New("stockwerk")->ToWord());
   RETURN_STRUCTURE(t);
 }
