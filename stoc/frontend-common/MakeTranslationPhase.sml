@@ -14,6 +14,7 @@ structure TranslationPhase :> TRANSLATION_PHASE =
 	Type.isArrow t andalso isTagType(#2(Type.asArrow t)) orelse
 	Type.isAll t   andalso isTagType(#2(Type.asAll t))   orelse
 	Type.isExist t andalso isTagType(#2(Type.asExist t)) orelse
+	Type.isMu t    andalso isTagType(Type.asMu t)        orelse
 	Type.isSum t
 
 
@@ -156,6 +157,10 @@ UNFINISHED: obsolete after bootstrapping:
     fun trLongid(I.ShortId(i,x))	= O.ShortId(i, trId x)
       | trLongid(I.LongId(i,y,a))	= O.LongId(i, trLongid' y, trLab a)
 
+    fun trLabLongid(I.ShortId(i,x))	= O.Lab(i,
+					       Label.fromName(trName(I.name x)))
+      | trLabLongid(I.LongId(i,y,a))	= trLabLongid y
+
 
   (* Extract bound ids from declarations. *)
 
@@ -210,7 +215,10 @@ UNFINISHED: obsolete after bootstrapping:
       | trExp(I.PrimExp(i,s,t))		= O.PrimExp(i, s)
       | trExp(I.VarExp(i,y))		= O.VarExp(i, trLongid y)
       | trExp(I.TagExp(i,a,k))		= O.TagExp(i, trLab a, k>1)
-      | trExp(I.ConExp(i,y,k))		= O.ConExp(i, trLongid y, k>1)
+      | trExp(I.ConExp(i,y,k))		= if isTagType(#typ i) then
+					      O.TagExp(i, trLabLongid y, k>1)
+					  else
+					      O.ConExp(i, trLongid y, k>1)
       | trExp(I.RefExp(i))		= O.RefExp(i)
       | trExp(I.TupExp(i,es))		= O.TupExp(i, trExps es)
       | trExp(I.ProdExp(i,r))		= O.RowExp(i, trExpRow r)
