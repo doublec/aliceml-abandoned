@@ -1,4 +1,5 @@
 import structure Type          from "x-alice:/lib/rtt/Type"
+import structure PervasiveType from "x-alice:/lib/rtt/PervasiveType"
 import structure Atom          from "x-alice:/lib/data/Atom"
 import structure Reflect       from "x-alice:/lib/system/Reflect"
 import structure Common        from "Common"
@@ -210,13 +211,13 @@ struct
   (*** ARRAY / VECTOR ***)
   val undefinedKid = Common.undefined "Builtin-KID"
 
-  fun genArray (prefix, suffix, getLength, sub) : _ type_mapper =
+  fun genArray (prefix, suffix, getLength, sub, getArgType) : _ type_mapper =
     fn (depth, item, path, targs, value) =>
     let val length = getLength value
     in
       if length > 0 then
       let
-        val argType = case targs of [t] => t | _ => assert false
+        val argType = getArgType targs
         val widthLimit = !Prefs.widthLimit
         val (limit, width) =
           if length > widthLimit
@@ -237,15 +238,20 @@ struct
   val arraySuffix = AbsTree.closeAbsBracketL
   val vectorSuffix = AbsTree.closeAbsBracketL
 
-  val array = genArray (arrayPrefix, arraySuffix, Array.length, Array.sub)
+  fun polyType [t] = t | polyType _ = assert false
+  val charType = const PervasiveType.typ_char
+  val word8Type = const (PervasiveType.lookup "Word8.word")
+
+  val array = genArray (arrayPrefix, arraySuffix, Array.length, Array.sub,
+			polyType)
   val vector = genArray ([("#[", Prefs.vecStyle)], [("]", Prefs.vecStyle)],
-			 Vector.length, Vector.sub)
+			 Vector.length, Vector.sub, polyType)
   val charArray = genArray (arrayPrefix, arraySuffix, CharArray.length,
-			    Reflect.reflect o CharArray.sub)
+			    Reflect.reflect o CharArray.sub, charType)
   val word8Array = genArray (arrayPrefix, arraySuffix, Word8Array.length,
-			     Reflect.reflect o Word8Array.sub)
+			     Reflect.reflect o Word8Array.sub, word8Type)
   val word8Vector = genArray (vectorPrefix, vectorSuffix, Word8Vector.length,
-			      Reflect.reflect o Word8Vector.sub)
+			      Reflect.reflect o Word8Vector.sub, word8Type)
 
   (*** PACKAGES ***)
   fun package (depth, item, path, targs, value) =
