@@ -31,16 +31,16 @@ DEFINE1(General_exnName) {
 
 void Primitive::RegisterGeneral() {
   Register("General.:=", General_assign, 2);
-  Register("General.Bind", Constructor::New()->ToWord()); //--** unique
-  Register("General.Chr", Constructor::New()->ToWord()); //--** unique
-  Register("General.Div", Constructor::New()->ToWord()); //--** unique
-  Register("General.Domain", Constructor::New()->ToWord()); //--** unique
-  Register("General.Fail", Constructor::New()->ToWord()); //--** unique
-  Register("General.Match", Constructor::New()->ToWord()); //--** unique
-  Register("General.Overflow", Constructor::New()->ToWord()); //--** unique
-  Register("General.Size", Constructor::New()->ToWord()); //--** unique
-  Register("General.Span", Constructor::New()->ToWord()); //--** unique
-  Register("General.Subscript", Constructor::New()->ToWord()); //--** unique
+  RegisterUniqueConstructor("General.Bind");
+  RegisterUniqueConstructor("General.Chr");
+  RegisterUniqueConstructor("General.Div");
+  RegisterUniqueConstructor("General.Domain");
+  RegisterUniqueConstructor("General.Fail");
+  RegisterUniqueConstructor("General.Match");
+  RegisterUniqueConstructor("General.Overflow");
+  RegisterUniqueConstructor("General.Size");
+  RegisterUniqueConstructor("General.Span");
+  RegisterUniqueConstructor("General.Subscript");
   Register("General.exchange", General_exchange, 2);
   Register("General.exnName", General_exnName, 1);
 }

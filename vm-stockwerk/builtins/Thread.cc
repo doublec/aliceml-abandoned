@@ -85,7 +85,7 @@ DEFINE0(Thread_yield) {
 } END
 
 void Primitive::RegisterThread() {
-  Register("Thread.Terminate", Constructor::New()->ToWord()); //--** unique
+  RegisterUniqueConstructor("Thread.Terminate");
   Register("Thread.current", Thread_current, 0);
   Register("Thread.isSuspended", Thread_isSuspended, 1);
   Register("Thread.raiseIn", Thread_raiseIn, 2);

@@ -13,5 +13,5 @@
 #include "builtins/Authoring.hh"
 
 void Primitive::RegisterList() {
-  Register("List.Empty", Constructor::New()->ToWord()); //--** unique
+  RegisterUniqueConstructor("List.Empty");
 }

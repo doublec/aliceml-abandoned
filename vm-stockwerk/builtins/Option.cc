@@ -13,5 +13,5 @@
 #include "builtins/Authoring.hh"
 
 void Primitive::RegisterOption() {
-  Register("Option.Option", Constructor::New()->ToWord()); //--** unique
+  RegisterUniqueConstructor("Option.Option");
 }

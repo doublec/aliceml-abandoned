@@ -57,8 +57,8 @@ DEFINE1(Hole_isHole) {
 } END
 
 void Primitive::RegisterHole() {
-  Register("Hole.Cyclic", Constructor::New()->ToWord()); //--** unique
-  Register("Hole.Hole", Constructor::New()->ToWord()); //--** unique
+  RegisterUniqueConstructor("Hole.Cyclic");
+  RegisterUniqueConstructor("Hole.Hole");
   Register("Hole.fail", Hole_fail, 2);
   Register("Hole.fill", Hole_fill, 2);
   Register("Hole.future", Hole_future, 1);

@@ -68,7 +68,7 @@ DEFINE1(Future_isFuture) {
 } END
 
 void Primitive::RegisterFuture() {
-  Register("Future.Future", Constructor::New()->ToWord()); //--** unique
+  RegisterUniqueConstructor("Future.Future");
   Register("Future.alarm'", Future_alarmQuote, 1);
   Register("Future.await", Future_await, 1);
   Register("Future.awaitOne", Future_awaitOne, 2);

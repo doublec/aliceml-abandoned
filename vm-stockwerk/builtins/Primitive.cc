@@ -136,6 +136,10 @@ void Primitive::Register(const char *name, function value, u_int arity) {
   Register(name, closure->ToWord());
 }
 
+void Primitive::RegisterUniqueConstructor(const char *name) {
+  Register(name, UniqueConstructor::New(String::New(name))->ToWord());
+}
+
 word Primitive::Lookup(String *name) {
   word key = name->ToWord();
   if (!table->IsMember(key)) {
