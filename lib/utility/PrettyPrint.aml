@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg, 2001-2002
  *
  * Last change:
  *   $Date$ by $Author$
@@ -105,22 +105,12 @@ struct
 	   | (i,H,BREAK s)::z	=> fits(w - String.size s, z)
 	   | (i,A,BREAK s)::z	=> false	(* A abused as inner V *)
 	   | (i,m,BREAK s)::z	=> true
-	   (* Inner boxes may never be vertical: *)
-	   | (i,H,BOX(V,x))::z	=> fits(w, (i,A,x)::z)
-	   | (i,H,BOX(n,x))::z	=> fits(w, (i,H,x)::z)
 	   (* Adjacent boxes are assumed "as vertical as possible": *)
-	   | (i,m,BOX(A,x))::z	=> fits(w, (i,V,x)::z)
-	   | (i,m,BOX(n,x))::z	=> fits(w, (i,n,x)::z)
-(*TODO: think about it, shouldn't the cases for boxes be:
-	   | (i,(H|A),BOX(V,x))::z	=> fits(w, (i,A,x)::z)
-	   | (i,(H|A),BOX(n,x))::z	=> fits(w, (i,H,x)::z)
-	   | (i,(V|F),BOX(H,x))::z	=> fits(w, (i,H,x)::z)
-	   | (i,(V|F),BOX(n,x))::z	=> fits(w, (i,V,x)::z)
-Or just:
+	   | (i,V,BOX(H,x))::z	=> fits(w, (i,H,x)::z)
+	   | (i,V,BOX(n,x))::z	=> fits(w, (i,V,x)::z)
+	   (* Inner boxes may never be vertical: *)
 	   | (i,m,BOX(V,x))::z	=> fits(w, (i,A,x)::z)
 	   | (i,m,BOX(n,x))::z	=> fits(w, (i,H,x)::z)
-i.e. adjacent boxes are treated like inner ones?
-*)
 	   | (i,m,NEST(j,x))::z	=> fits(w, (i,m,x)::z)
 	   | (i,m,BELOW x)::z	=> fits(w, (i,m,x)::z)
 
