@@ -57,8 +57,8 @@ struct
 
     fun ppLit(IntLit n)		= text(LargeInt.toString n)
       | ppLit(WordLit w)	= text(LargeWord.toString w)
-      | ppLit(CharLit c)	= text("#\"" ^ WideChar.toCString c ^ "\"")
-      | ppLit(StringLit s)	= text("\"" ^ WideString.toCString s ^ "\"")
+      | ppLit(CharLit c)	= text("#\"" ^ WideChar.toString c ^ "\"")
+      | ppLit(StringLit s)	= text("\"" ^ WideString.toString s ^ "\"")
       | ppLit(RealLit r)	= text(LargeReal.toString r)
 
 
