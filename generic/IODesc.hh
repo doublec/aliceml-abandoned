@@ -109,7 +109,9 @@ public:
 #if defined(__MINGW32__) || defined(_MSC_VER)
   HANDLE GetHandle() {
     Assert(GetType() == TYPE_HANDLE || GetType() == TYPE_FORWARDED);
-    return Store::WordToUnmanagedPointer(GetArg(HANDLE_POS));
+    HANDLE *p = (HANDLE *)
+      Store::DirectWordToChunk(GetArg(HANDLE_POS))->GetBase();
+    return p[0];
   }
 #endif
   u_int GetOrdinal() {
