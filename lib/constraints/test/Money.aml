@@ -11,10 +11,10 @@
  *
  *)
 
-import structure Tools  from "x-alice:/lib/system/Tools"
-import structure FD     from "x-alice:/lib/constraints/FD"
-import structure Space  from "x-alice:/lib/constraints/Space"
-import structure Search from "x-alice:/lib/constraints/Search"
+import structure Inspector from "x-alice:/lib/tools/Inspector"
+import structure FD        from "x-alice:/lib/constraints/FD"
+import structure Space     from "x-alice:/lib/constraints/Space"
+import structure Search    from "x-alice:/lib/constraints/Search"
 
 structure Money =
     struct
@@ -38,5 +38,5 @@ structure Money =
 	    end
 
 	(* Inspect the solution *)
-	val _ = Tools.inspect(Search.searchAll money)
+	val _ = Inspector.inspect(Search.searchAll money)
     end
