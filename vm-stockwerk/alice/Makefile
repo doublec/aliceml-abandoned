@@ -27,7 +27,7 @@ LIGHTNING_SOURCES =
 endif
 
 PRIMITIVE_MODULES = \
-	Unqualified Array Char Future General GlobalStamp Hole Int \
+	Unqualified Array Byte Char Future General GlobalStamp Hole Int \
 	List Math Option Real Ref String Thread UniqueString Unsafe \
 	Vector Word8 Word8Array Word8Vector Word31
 LIB_SYSTEM_MODULES = \
