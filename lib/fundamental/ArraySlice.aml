@@ -31,6 +31,7 @@ struct
 	type array        = array
 	type vector       = vector
 	type vector_slice = VectorSlice.slice
+	type 'a elem      = 'a
 	__primitive val alength :  'a a -> int		= "Array.length"
 	__primitive val asub :	   'a a * int -> 'a	= "Array.sub"
 	__primitive val aupdate :  'a a * int * 'a -> unit = "Array.update"

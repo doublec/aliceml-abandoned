@@ -34,6 +34,7 @@ struct
 	type dst_array  = array
 	type vector     = vector
 	type dst_vector = vector
+	type 'a elem    = 'a
 	__primitive val maxLen :   int			= "Array.maxLen"
 	__primitive val length :   'a t -> int		= "Array.length"
 	__primitive val sub :	   'a t * int -> 'a	= "Array.sub"
