@@ -40,76 +40,99 @@ static word handlerTable;
 static const u_int initialHandlerTableSize = 7;
 
 //
-// Stream Classes
+// InputStream Class
 //
-typedef enum {
-  FILE_INPUT_STREAM   = MIN_DATA_LABEL,
-  STRING_INPUT_STREAM = (FILE_INPUT_STREAM + 1)
-} IN_STREAM_TYPE;
+static const u_int READ_BUFFER_SIZE = 8192; // to be checked
+static const u_int READ_BUFFER_OVERSHOOT = 20; // to be checked
 
-class InputStream: private Block {
+class InputStream: private Block { //--** finalization to be done
 private:
-  enum { HD_POS, TL_POS, RD_POS, EOB_POS, BUFFER_POS, SIZE };
-public:
-  using Block::ToWord;
-  // InputStream Accessors
+  enum IN_STREAM_TYPE {
+    FILE_INPUT_STREAM = MIN_DATA_LABEL, STRING_INPUT_STREAM
+  };
+
+  enum { HD_POS, TL_POS, RD_POS, EOB_POS, BUFFER_POS, BASE_SIZE };
+  enum { RD_BUF_POS = BASE_SIZE, FILE_POS, FILE_INPUT_STREAM_SIZE };
+  enum { STRING_INPUT_STREAM_SIZE = BASE_SIZE };
+
   u_int GetHd() {
-    return Store::DirectWordToInt(Block::GetArg(HD_POS));
+    return Store::DirectWordToInt(GetArg(HD_POS));
   }
   void SetHd(u_int hd) {
-    Block::ReplaceArg(HD_POS, hd);
+    ReplaceArg(HD_POS, hd);
   }
   u_int GetTl() {
-    return Store::DirectWordToInt(Block::GetArg(TL_POS));
+    return Store::DirectWordToInt(GetArg(TL_POS));
   }
   void SetTl(u_int tl) {
-    Block::ReplaceArg(TL_POS, tl);
+    ReplaceArg(TL_POS, tl);
   }
   u_int GetRd() {
-    return Store::DirectWordToInt(Block::GetArg(RD_POS));
+    return Store::DirectWordToInt(GetArg(RD_POS));
   }
   void SetRd(u_int rd) {
-    Block::ReplaceArg(RD_POS, rd);
+    ReplaceArg(RD_POS, rd);
   }
-  u_int GetEOB() {
-    return Store::DirectWordToInt(Block::GetArg(EOB_POS));
-  }
-  void SetEOB(u_int eob) {
-    Block::ReplaceArg(EOB_POS, eob);
+  void SetEOB(bool eob) {
+    ReplaceArg(EOB_POS, eob);
   }
   String *GetBuffer() {
-    return String::FromWordDirect(Block::GetArg(BUFFER_POS));
+    return String::FromWordDirect(GetArg(BUFFER_POS));
   }
   void SetBuffer(String *buffer) {
-    Block::ReplaceArg(BUFFER_POS, buffer->ToWord());
+    ReplaceArg(BUFFER_POS, buffer->ToWord());
   }
-  word GetArg(u_int index) {
-    return Block::GetArg(SIZE + index);
+
+  static InputStream *New(IN_STREAM_TYPE type, u_int size) {
+    InputStream *is =
+      (InputStream *) Store::AllocBlock((BlockLabel) type, size);
+    is->InitArg(HD_POS, 0);
+    is->InitArg(RD_POS, 0);
+    is->InitArg(EOB_POS, false);
+    return is;
   }
-  void InitArg(u_int index, word value) {
-    Block::InitArg(SIZE + index, value);
+public:
+  using Block::ToWord;
+
+  // InputStream Constructors
+  static InputStream *NewFromFile(const char *filename) {
+    InputStream *is = New(FILE_INPUT_STREAM, FILE_INPUT_STREAM_SIZE);
+    FILE *file = std::fopen(filename, "rb");
+    is->InitArg(FILE_POS, Store::UnmanagedPointerToWord(file));
+    if (file != NULL) {
+      Chunk *buffer =
+	Store::AllocChunk(READ_BUFFER_SIZE + READ_BUFFER_OVERSHOOT);
+      is->InitArg(BUFFER_POS, buffer->ToWord());
+    }
+    is->InitArg(TL_POS, 0);
+    return is;
   }
-  void ReplaceArg(u_int index, word value) {
-    Block::ReplaceArg(SIZE + index, value);
+  static InputStream *NewFromString(String *string) {
+    InputStream *is = New(STRING_INPUT_STREAM, STRING_INPUT_STREAM_SIZE);
+    is->InitArg(BUFFER_POS, string->ToWord());
+    is->InitArg(TL_POS, string->GetSize());
+    return is;
   }
+
+  // InputStream Untagging
+  static InputStream *FromWordDirect(word stream) {
+    Block *p = Store::DirectWordToBlock(stream);
+    Assert(p != INVALID_POINTER);
+    Assert(p->GetLabel() == (BlockLabel) FILE_INPUT_STREAM ||
+	   p->GetLabel() == (BlockLabel) STRING_INPUT_STREAM);
+    return static_cast<InputStream *>(p);
+  }
+
   // InputStream Methods
-  u_int IsEOB() {
-    if (GetEOB()) {
-      SetEOB(0);
-      SetRd(GetHd());
-      return 1;
-    }
-    else {
-      return 0;
-    }
+  bool IsEOB() {
+    return Store::DirectWordToInt(Block::GetArg(EOB_POS));
   }
   u_char GetByte() {
     u_int rd = GetRd();
-    if (rd == GetTl()) {
-      SetEOB(1);
+    if (rd >= GetTl()) {
+      SetEOB(true);
       return (u_char) 0;
-    }
-    else {
+    } else {
       SetRd(rd + 1);
       u_char *buffer = GetBuffer()->GetValue();
       return buffer[rd];
@@ -119,12 +142,10 @@ public:
     u_int rd      = GetRd();
     u_char *bytes = GetBuffer()->GetValue() + rd;
     // Seek bytes to make sure they are available
-    if (rd + n >= GetTl()) {
-      SetEOB(1);
-    }
-    else {
+    if (rd + n >= GetTl())
+      SetEOB(true);
+    else
       SetRd(rd + n);
-    }
     return bytes;
   }
   u_int GetUInt() {
@@ -133,7 +154,7 @@ public:
     u_int value = 0;
     u_char b;
     do {
-      b = GetByte(); if (GetEOB()) return 0;
+      b = GetByte(); if (IsEOB()) return 0;
       u_char c = b & 0x7F;
       if (c >= (u_char) (1 << freeBits))
 	Error("Unpickler: integer out of range"); //--** raise exception
@@ -146,164 +167,84 @@ public:
   void Commit() {
     SetHd(GetRd());
   }
-  void AppendToBuffer(u_char *src, int size) {
-    // This has to be revisited: TOO NAIVE
-    // Fresh Buffer
-    if (GetTl() == 0) {
-      SetTl(size);
-      SetBuffer(String::New(reinterpret_cast<char *>(src), size));
-    }
-    // Enlarge Buffer
-    else {
-      u_int tl       = GetTl();
-      int newTl      = size + tl;
-      String *buffer = String::New(newTl);
-      u_char *p      = buffer->GetValue();
-      std::memcpy(p, GetBuffer()->GetValue(), tl);
-      std::memcpy(p + tl, src, size);
-      SetTl(newTl);
-      SetBuffer(buffer);
+  void Close() {
+    switch ((IN_STREAM_TYPE) GetLabel()) {
+    case FILE_INPUT_STREAM:
+      {
+	FILE *file = static_cast<FILE *>
+	  (Store::DirectWordToUnmanagedPointer(GetArg(FILE_POS)));
+	std::fclose(file);
+      }
+      break;
+    case STRING_INPUT_STREAM:
+      break;
+    default:
+      Error("InputStream::Close: illegal node type");
     }
   }
-  // Former virtual methods; need manual dispatch
-  void Close();
-  Interpreter::Result FillBuffer(TaskStack *taskStack);
-  // InputStream Constructor
-  static InputStream *New(IN_STREAM_TYPE type, u_int size) {
-    InputStream *stream =
-      (InputStream *) Store::AllocBlock((BlockLabel) type, SIZE + size);
-    stream->SetHd(0);
-    stream->SetTl(0);
-    stream->SetRd(0);
-    stream->SetEOB(0);
-    return stream;
+  Interpreter::Result FillBuffer(TaskStack *taskStack) {
+    switch ((IN_STREAM_TYPE) GetLabel()) {
+    case FILE_INPUT_STREAM:
+      {
+	u_int hd = GetHd(), tl = GetTl();
+	String *buffer = GetBuffer();
+	u_char *bytes = buffer->GetValue();
+	u_int size = buffer->GetSize();
+	if (hd > 0) { // move data to beginning of buffer, then fill rest
+	  tl -= hd;
+	  std::memmove(bytes, bytes + hd, tl);
+	  SetHd(0);
+	  bytes += tl;
+	  size -= tl;
+	} else if (tl == size) { // enlarge buffer by READ_BUFFER_SIZE
+	  u_int newSize = size + READ_BUFFER_SIZE;
+	  String *newBuffer = String::New(newSize);
+	  SetBuffer(newBuffer);
+	  u_char *newBytes = newBuffer->GetValue();
+	  std::memcpy(newBytes, bytes, size);
+	  bytes = newBytes + size;
+	  size = READ_BUFFER_SIZE;
+	} else { // free space at end of buffer: fill it
+	  bytes += tl;
+	  size -= tl;
+	}
+	SetRd(GetHd()); // undo non-committed reads
+	SetEOB(false);
+	// here bytes and size indicate the buffer to fill;
+	// tl still needs to be written back
+	FILE *file = static_cast<FILE *>
+	  (Store::DirectWordToUnmanagedPointer(GetArg(FILE_POS)));
+	u_int nread = std::fread(bytes, sizeof(u_char), size, file);
+	if (ferror(file)) {
+	  Error("InputStream::FillBuffer"); //--** raise Io exception
+	} else if (nread == 0) { // at end of file: raise Corrupt exception
+	  Scheduler::currentData = Unpickler::Corrupt;
+	  Scheduler::currentBacktrace = Backtrace::New(taskStack->GetFrame());
+	  taskStack->PopFrame();
+	  return Interpreter::RAISE;
+	} else {
+	  tl += nread;
+	  SetTl(tl);
+	  taskStack->PopFrame();
+	  return Interpreter::CONTINUE;
+	}
+      }
+    case STRING_INPUT_STREAM:
+      // there is no more data: raise Corrupt exception
+      Scheduler::currentData = Unpickler::Corrupt;
+      Scheduler::currentBacktrace = Backtrace::New(taskStack->GetFrame());
+      taskStack->PopFrame();
+      return Interpreter::RAISE;
+    default:
+      Error("InputStream::FillBuffer: illegal node type");
+    }
   }
-  // InputStream Untagging
-  static InputStream *FromWordDirect(word stream) {
-    Block *p = Store::DirectWordToBlock(stream);
-    Assert(p != INVALID_POINTER);
-    Assert(p->GetLabel() == (BlockLabel) FILE_INPUT_STREAM ||
-	   p->GetLabel() == (BlockLabel) STRING_INPUT_STREAM);
-    return static_cast<InputStream *>(p);
-  }
-};
-
-static const u_int READ_BUFFER_SIZE = 8192; // to be checked
-
-// FileInputStream
-class FileInputStream : public InputStream { //--** finalization to be done
-private:
-  enum { RD_BUF_POS, FILE_POS, EXCEPTION_POS, SIZE };
-
-  Chunk *GetRdBuf() {
-    return Store::DirectWordToChunk(GetArg(RD_BUF_POS));
-  }
-  FILE *GetFile() {
-    return (FILE *) Store::DirectWordToUnmanagedPointer(GetArg(FILE_POS));
-  }
-public:
-  // FileInputStream Accessors
   bool HasException() {
-    return Store::DirectWordToInt(GetArg(EXCEPTION_POS));
-  }
-  // FileInputStream Constructor
-  static FileInputStream *New(const char *filename) {
-    InputStream *is = InputStream::New(FILE_INPUT_STREAM, SIZE);
-    Chunk *rdBuf    = Store::AllocChunk(READ_BUFFER_SIZE);
-    FILE *file      = fopen(filename, "rb");
-    u_int exception = (file == NULL);
-    is->InitArg(RD_BUF_POS, rdBuf->ToWord());
-    is->InitArg(FILE_POS, Store::UnmanagedPointerToWord(file));
-    is->InitArg(EXCEPTION_POS, Store::IntToWord(exception));
-    return static_cast<FileInputStream *>(is);
-  }
-  // FileInputStream Functions
-  void Close() {
-    std::fclose(GetFile());
-  }
-  Interpreter::Result FillBuffer(TaskStack *taskStack) {
-    u_char *rdBuf = (u_char *) GetRdBuf()->GetBase();
-    FILE *file    = GetFile();
-    u_int nread   = (u_int) std::fread(rdBuf, sizeof(u_char),
-				       READ_BUFFER_SIZE, file);
-    if (ferror(file)) {
-      Error("FileInputStream::FillBuffer"); //--** raise Io exception
-    } else if (nread == 0) {
-      Scheduler::currentData = Unpickler::Corrupt;
-      Scheduler::currentBacktrace = Backtrace::New(taskStack->GetFrame());
-      taskStack->PopFrame();
-      return Interpreter::RAISE;
-    } else {
-      AppendToBuffer(rdBuf, nread);
-      taskStack->PopFrame();
-      return Interpreter::CONTINUE;
-    }
+    FILE *file = static_cast<FILE *>
+      (Store::DirectWordToUnmanagedPointer(GetArg(FILE_POS)));
+    return file == NULL;
   }
 };
-
-// StringInputStream
-class StringInputStream : public InputStream {
-private:
-  enum { STRING_POS, SIZE };
-public:
-  // StringInputStream Accessors
-  word GetString() {
-    return GetArg(STRING_POS);
-  }
-  void SetString(word string) {
-    ReplaceArg(STRING_POS, string);
-  }
-  // StringInputStream Constructor
-  static StringInputStream *New(String *string) {
-    StringInputStream *is =
-      (StringInputStream *) InputStream::New(STRING_INPUT_STREAM, SIZE);
-    is->SetString(string->ToWord());
-    return is;
-  }
-  // StringInputStream Functions
-  void Close() {
-    return;
-  }
-  Interpreter::Result FillBuffer(TaskStack *taskStack) {
-    taskStack->PopFrame();
-    word string = GetString();
-    if (string == Store::IntToWord(0)) {
-      Scheduler::currentData = Unpickler::Corrupt;
-      Scheduler::currentBacktrace = Backtrace::New(taskStack->GetFrame());
-      taskStack->PopFrame();
-      return Interpreter::RAISE;
-    } else {
-      Chunk *chunk = Store::DirectWordToChunk(string);
-      AppendToBuffer(reinterpret_cast<u_char *>(chunk->GetBase()),
-		     chunk->GetSize());
-      SetString(Store::IntToWord(0));
-      return Interpreter::CONTINUE;
-    }
-  }
-};
-
-// InputStream Methods
-void InputStream::Close() {
-  switch ((IN_STREAM_TYPE) this->GetLabel()) {
-  case FILE_INPUT_STREAM:
-    ((FileInputStream *) this)->Close(); break;
-  case STRING_INPUT_STREAM:
-    ((StringInputStream *) this)->Close(); break;
-  default:
-    Error("InputStream::Close: illegal node type");
-  }
-}
-
-Interpreter::Result InputStream::FillBuffer(TaskStack *taskStack) {
-  switch ((IN_STREAM_TYPE) this->GetLabel()) {
-  case FILE_INPUT_STREAM:
-    return ((FileInputStream *) this)->FillBuffer(taskStack);
-  case STRING_INPUT_STREAM:
-    return ((StringInputStream *) this)->FillBuffer(taskStack);
-  default:
-    Error("InputStream::FillBuffer: illegal node type");
-  }
-}
 
 // Pickle Arguments
 class UnpickleArgs {
@@ -887,7 +828,7 @@ static const u_int INITIAL_TABLE_SIZE = 16; // to be checked
 
 Interpreter::Result Unpickler::Unpack(String *s, TaskStack *taskStack) {
   Tuple *x = Tuple::New(1);
-  InputStream *is = (InputStream *) StringInputStream::New(s);
+  InputStream *is = InputStream::NewFromString(s);
   Stack *env = Stack::New(INITIAL_TABLE_SIZE);
   taskStack->PopFrame();
   PickleUnpackInterpeter::PushFrame(taskStack, x);
@@ -897,8 +838,8 @@ Interpreter::Result Unpickler::Unpack(String *s, TaskStack *taskStack) {
 }
 
 Interpreter::Result Unpickler::Load(String *filename, TaskStack *taskStack) {
-  char *szFileName    = filename->ExportC();
-  FileInputStream *is = FileInputStream::New(szFileName);
+  char *szFileName = filename->ExportC();
+  InputStream *is = InputStream::NewFromFile(szFileName);
   if (is->HasException()) {
     delete is;
     Scheduler::currentData = Store::IntToWord(0); // to be done
