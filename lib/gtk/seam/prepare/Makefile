@@ -1,3 +1,10 @@
+###
+# GTK+ 2.0 Bindings for Alice
+#
+# Preparation steps: 
+# 1. generate a big header file with all GTK+ declarations
+# 2. clean file from things that could confuse the CKit parser
+
 INSTALL = install -C -v -m 666
 
 COMPS = GTK GDK GDK_PIXBUF G

@@ -1,33 +1,44 @@
+###
+# GTK+ 2.0 Bindings for Alice - Makefile
 
+# The generator creates full code for the following name spaces
 COMPS = Gdk Gtk GnomeCanvas
 COMPSCAP = GDK GTK GNOME_CANVAS
 
+# The generator creates only enum components for the following name spaces
 ENUMCOMPS = Pango
 ENUMCOMPSCAP = PANGO
 
-NATIVES = $(COMPS:%=Native%)
-LIBS = gtk+-2.0 libgnomecanvas-2.0
-
-GENERATOR = GtkBinding.x86-linux
+# names of generated files
 ENUMS = $(COMPSCAP:%=%_ENUMS-sig.aml) $(COMPS:%=%Enums.aml) \
 	$(ENUMCOMPSCAP:%=%_ENUMS-sig.aml) $(ENUMCOMPS:%=%Enums.aml)
 UNSAFE = $(COMPSCAP:%=%_UNSAFE-sig.aml) $(COMPS:%=%Unsafe.aml)
+NATIVES = $(COMPS:%=Native%)
 GENNATIVES = $(NATIVES:%=%.asig) $(NATIVES:%=%.cc)
 GENFILES = $(GENNATIVES) $(ENUMS) $(UNSAFE)
 GENSIGS = $(COMPSCAP:%=%-sig.aml) 
+
+# temporary output directory
 OUTDIR = output
+
+# support file indicating last generator build
 LASTGENERATE = lastgenerate
 
+# names of all files to compile
 COMMON = GTK_TYPES-sig.aml GtkTypes.aml GTK_CORE-sig.aml GtkCore.aml
 MAINFILES = $(COMPS:%=%.aml)
-
 CPPSOURCES = $(NATIVES:%=%.cc)
 ALICESOURCES = $(COMMON) $(ENUMS) $(UNSAFE) $(GENSIGS) $(MAINFILES)
 
+# executable names
+GENERATOR = GtkBinding.x86-linux
 SML = sml
 ALICEC = alicec --dump-phases
 ALICETOOL = alicetool
 INSTALL = install -C -v -m 666
+CLIBS = gtk+-2.0 libgnomecanvas-2.0
+
+#################################################
 
 .PHONY: all full generate compile depend docs clean veryclean distclean
 
@@ -35,7 +46,8 @@ all: compile
 
 full: generate depend compile docs
 
-#################################################
+
+### SOURCE CODE GENERATION ######################
 
 $(GENFILES): $(LASTGENERATE)
 
@@ -58,23 +70,25 @@ gtkclean.c:
 %-sig.aml: %-sig.tml %_UNSAFE-sig.aml %_ENUMS-sig.aml
 	gawk -f includesig.awk -v filename=includesig.awk $< > $@
 
-#################################################
+
+### COMPILATION #################################
 
 compile: $(NATIVES:%=%.dll) $(COMPS:%=%.stc)
 
 %.dll: %.o
-	$(ALICETOOL) -v ld -Wl,-S `pkg-config --libs $(LIBS)` $< -o $@
+	$(ALICETOOL) -v ld -Wl,-S `pkg-config --libs $(CLIBS)` $< -o $@
 
 %.o: %.cc
-	$(ALICETOOL) -v cc `pkg-config --cflags $(LIBS)` -c $< -o $@
+	$(ALICETOOL) -v cc `pkg-config --cflags $(CLIBS)` -c $< -o $@
 
 %.stc: %.aml
 	$(ALICEC) $< -o $@
 
-#################################################
+
+### DEPENDENCIES ################################
 
 depend: Makefile $(CPPSOURCES) $(ALICESOURCES)
-	gcc -M -I ../../../vm-stockwerk `pkg-config --cflags $(LIBS)` \
+	gcc -M -I ../../../vm-stockwerk `pkg-config --cflags $(CLIBS)` \
 	    $(CPPSOURCES) > Makefile.depend
 	echo 'use "smldepend.sml"; depend("Makefile.depend","$$(GENERATOR)");'\
                                                                    | $(SML)
@@ -83,12 +97,14 @@ depend: Makefile $(CPPSOURCES) $(ALICESOURCES)
 
 -include Makefile.depend
 
-#################################################
+
+### DOCUMENTATION ###############################
 
 docs:
 	(cd doc; $(MAKE) )
 
-#################################################
+
+### CLEAN #######################################
 
 clean:
 	rm -f $(GENERATOR)

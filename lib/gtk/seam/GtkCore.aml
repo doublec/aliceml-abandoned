@@ -13,11 +13,12 @@ struct
     type arg = GtkTypes.arg
     type callBackFunction = object * arg list -> unit
 
-    val GtkWidgetUnref = NativeGtk.widgetUnref
-    val GtkObjectUnref = NativeGtk.objectUnref
-    val GObjectUnref = NativeGtk.gObjectUnref
-    val DeleteUnref = NativeGtk.deleteUnref
-    val NoUnref = fn _ => ()
+    type refInfo = (object -> object) * (object -> unit)
+    val GtkWidgetRef = (NativeGtk.widgetRef, NativeGtk.widgetUnref)
+    val GtkObjectRef = (NativeGtk.objectRef, NativeGtk.objectUnref)
+    val GObjectRef = (NativeGtk.gObjectRef, NativeGtk.gObjectUnref)
+    val DeleteRef = (fn p => p, NativeGtk.deleteUnref)
+    val NoRef = (fn p => p, fn _ => ())
 
     local
 	val weakMap = 
@@ -96,19 +97,18 @@ struct
 				doSignalConnect(p,"destroy",event,false))
 	    end
 
-	(* TO-DO: ref() *)
-	fun newObject (p,unref,hasSignals) =
+	fun newObject (p,refInfo,hasSignals) =
 	    let
-		val obj     = (p, unref, ref nil)
+		val obj     = (#1(refInfo) p, #2(refInfo), ref nil)
 	    in
 		( if hasSignals then addDestroyEvent (obj) else () ;
   	          weakMapAdd (p,obj) )
 	    end 
     in
-	fun addObject (p,unref,hasSignals) =
+	fun addObject (p,refInfo,hasSignals) =
 	    (if p = NULL orelse weakMapContains p 
 		 then () 
-	         else newObject (p,unref,hasSignals) ; 
+	         else newObject (p,refInfo,hasSignals) ; 
              p)
     end
 
