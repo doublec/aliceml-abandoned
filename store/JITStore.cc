@@ -45,8 +45,10 @@ static const char *RegToString(u_int Reg) {
     return "V2";
   case JIT_SP:
     return "SP";
+#ifdef JIT_FP
   case JIT_FP:
     return "FP";
+#endif
   default:
   return "INVALID_REGISTER";
   }
