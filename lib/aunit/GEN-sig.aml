@@ -1,0 +1,44 @@
+(*
+ * Authors:
+ *   Benedikt Grundmann <bgrund@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Benedikt Grundmann, 2003
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+signature GEN =
+sig
+	type 'a test 			= 'a -> unit
+	type 'a gen				= int -> 'a
+
+	val test: int -> 'a gen -> 'a test -> unit
+	(* [test num gen test] executes test num times 
+	 * using gen to generate test data 
+	 *)
+
+	(* Generators / Combinators *)
+	val pair: 'a gen * 'b gen -> ('a * 'b) gen
+	val triple: 'a gen * 'b gen * 'c gen -> ('a * 'b * 'c) gen
+	
+	val const: 'a -> 'a gen
+	(* [const v] returns a generator which
+	 * always returns v
+	 *)
+
+	val oneOf: 'a gen list -> 'a gen
+	val freq: (int * 'a gen) list -> 'a gen
+	val listOf: 'a gen -> 'a list gen
+	val cond: 'a gen * ('a -> bool) -> 'a gen 
+
+	(* Standard generators *)
+	val bool: bool gen
+	val string: string gen
+	val char: char gen
+	val int: int gen
+	val cardinal: int gen
+end
+
+

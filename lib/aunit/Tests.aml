@@ -1,0 +1,141 @@
+(*
+ * Authors:
+ *   Benedikt Grundmann <bgrund@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Benedikt Grundmann, 2003
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+import structure AUnit from "AUnit"
+import structure Report from "Report"
+import structure Gen from "Gen"
+
+local
+	open AUnit
+	val testNot = ("Bool.not", fn () => (assert ("not true = false", Bool.not true = false);
+										 assert ("not false = true", Bool.not false = true)))
+
+	val testToString = ("Bool.toString", fn () => (assert ("toString true = \"true\"", Bool.toString true = "true");
+												   assert ("toString false = \"false\"", Bool.toString false = "false")))
+in
+	val testSuiteBool = ("Bool", [testNot, testToString])
+end
+
+local 
+	open AUnit
+	open Gen
+
+	val testNum = 100
+	
+	val testStr = "0123456789"
+	val testStr2 = "01234567890123456789"
+
+	val testSubInvalid = ("String.sub",
+							fn () => (test testNum int (fn i => if i < 0 orelse i >= String.size testStr then
+																	assertExn Subscript ("invalid index", fn () => String.sub (testStr, i))
+																else
+																	assert ("valid index", Char.ord (String.sub (testStr, i)) = i + Char.ord #"0"))))
+
+	val testConcatOp = ("^", fn () => assert ("0123456789 ^ 0123456789", testStr ^ testStr = testStr2))
+	val testConcatOp2 = ("^", fn () => test testNum (pair (string, string)) (fn (a, b) => assert ("size", 
+																			String.size (a ^ b) = String.size a + String.size b)))
+
+	val testConcat0 = ("String.concat0", fn () => assert ("concat [] = \"\"", String.concat [] = ""))
+	
+	val testConcat1 = ("String.concat1", fn () => assert ("concat [\"foo\"] = \"foo\"", String.concat ["foo"] = "foo"))
+
+	val testConcat2 = ("String.concat2", fn () => assert ("concat [\"foo\", \"bar\"] = \"foobar\"", String.concat ["foo", "bar"] = "foobar"))
+
+in
+	val testSuiteString = ("String", [testSubInvalid, testConcatOp, testConcatOp2, testConcat0, testConcat1, testConcat2])
+end
+
+
+local 
+	open AUnit
+
+	val testBug49 = ("Bug #49", 
+		fn () =>
+			let	exception Quit
+				val lock = Lock.lock () 
+				val test = Lock.sync lock (fn b => if b then () else raise Quit)
+			in
+				assertExn Quit ("can raise Exception inside locked functions", fn () => test false);
+				(* Okay now ensure that we can still call test *)
+				assert ("locks are released when exception was raised", test true = ())
+			end)
+
+
+	val testLazy = ("lazy", fn () => 
+			let exception Quit
+				val testa = lazy true 
+				val testb = lazy (raise Quit)
+			in
+				assert ("isFuture testa", Future.isFuture testa);
+				assert ("isLazy testa", Future.isLazy testa);
+				assert ("testa", testa);
+				assert ("isDetermined testa", Future.isDetermined testa);
+				assert ("not isLazy testa", not (Future.isLazy testa));
+				
+				assert ("isFuture testb", Future.isFuture testb);
+				assert ("isLazy testb", Future.isLazy testb);
+				assertExn Quit ("testb raises Quit", fn () => testb = ()); 
+				assert ("isFailed testb", Future.isFailed testb);
+				assert ("not isLazy testb", not (Future.isLazy testb))
+			
+			end)
+
+	
+	val testSpawn = ("spawn", fn () => 
+			let exception Quit
+				val testa = Future.await (spawn true)
+				val testb = spawn (raise Quit)
+			in
+				assert ("isDetermined testa", testa);
+				assert ("testa", testa);
+				assertExn Quit ("testb raises Quit", fn () => testb = ()); 
+				assert ("isFailed testb", Future.isFailed testb) 
+			end)
+
+	val testByNeed = ("ByNeed", fn () => assert ("sigsev on SEAM due to Bug #58", false))
+(*
+	val testByNeed = ("ByNeed", fn () =>
+		let exception Quit
+			structure F = ByNeed (signature S = (val x: unit) functor F () = (val x = raise Quit))
+		in
+			assertExn Quit ("raises Quit", fn () => F.x = ()) 
+		end)
+*)
+	val testPromise1 = ("promise", fn () =>
+		let	val p = Promise.promise ()
+			val f = Promise.future p
+		in
+			assert ("isFuture f", Future.isFuture f);
+			Promise.fulfill (p, true);
+			assert ("fulfilled f", f);
+			assertExn Promise.Promise ("Promise raised on multiple fulfill", fn () => Promise.fulfill (p, true))
+		end)
+
+	val testPromise2 = ("promise (fail)", fn () =>
+		let val p = Promise.promise ()
+			val f = Promise.future p
+			exception Foo
+		in
+			assert ("isFuture f", Future.isFuture f);
+			Promise.fail (p, Foo);
+			assert ("isFailed f", Future.isFailed f);
+			assertExn Foo ("f raises Foo", fn () => f = ())
+		end)
+
+in
+	val testSuiteConcur = ("Concur", [testBug49])
+	val testSuiteFuture = ("Future", [testLazy, testSpawn, testByNeed, testPromise1, testPromise2])
+end
+(*	separate doesn't work in the moment due to the cell structure being sited :-( 
+val _ = Report.executeAll TextIO.stdOut { AUnit.defaultCfg where separate = true } [testSuiteString, testSuiteBool, testSuiteConcur, testSuiteFuture]
+*)
+val _ = Report.executeAll TextIO.stdOut AUnit.defaultCfg [testSuiteString, testSuiteBool, testSuiteConcur, testSuiteFuture]
+

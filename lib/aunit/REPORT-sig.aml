@@ -1,0 +1,20 @@
+(*
+ * Authors:
+ *   Benedikt Grundmann <bgrund@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Benedikt Grundmann, 2003
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+import structure AUnit from "AUnit"
+
+signature REPORT =
+sig
+	val report: TextIO.outstream -> AUnit.result -> unit
+
+	val execute: TextIO.outstream -> AUnit.config -> AUnit.testsuite -> unit
+	val executeAll: TextIO.outstream -> AUnit.config -> AUnit.testsuite list -> unit
+end
