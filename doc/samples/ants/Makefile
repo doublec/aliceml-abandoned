@@ -39,6 +39,7 @@ simulator: $(SIMULATOR_TARGETS)
 
 %.ant: %.ante
 	compile $<
+	@echo "Number of states: " && wc -l $@
 
 parsec/Makefile.depend:
 	(cd parsec && $(MAKE) depend)
