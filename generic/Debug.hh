@@ -12,12 +12,14 @@
 //   $Revision$
 //
 
-#ifndef __EMULATOR__DEBUG_HH__
-#define __EMULATOR__DEBUG_HH__
+#ifndef __GENERIC__DEBUG_HH__
+#define __GENERIC__DEBUG_HH__
 
 #if defined(INTERFACE)
-#pragma interface "emulator/Debug.hh"
+#pragma interface "generic/Debug.hh"
 #endif
+
+#include "store/Store.hh"
 
 class Debug {
 public:
