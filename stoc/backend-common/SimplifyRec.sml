@@ -25,6 +25,7 @@ structure SimplifyRec :> SIMPLIFY_REC =
 	    WildPat of pat_info
 	  | LitPat of pat_info * lit
 	  | VarPat of pat_info * id
+	  | TagPat of pat_info * lab * pat option * bool
 	  | ConPat of pat_info * longid * pat option * bool
 	  | RefPat of pat_info * pat
 	  | TupPat of pat_info * pat list
@@ -35,6 +36,7 @@ structure SimplifyRec :> SIMPLIFY_REC =
 	fun infoPat (WildPat info) = info
 	  | infoPat (LitPat (info, _)) = info
 	  | infoPat (VarPat (info, _)) = info
+	  | infoPat (TagPat (info, _, _, _)) = info
 	  | infoPat (ConPat (info, _, _, _)) = info
 	  | infoPat (RefPat (info, _)) = info
 	  | infoPat (TupPat (info, _)) = info
@@ -72,6 +74,18 @@ structure SimplifyRec :> SIMPLIFY_REC =
 	  | patToExp (pat as LitPat (info, lit)) = (pat, LitExp (info, lit))
 	  | patToExp (pat as VarPat (info, id)) =
 	    (pat, VarExp (info, ShortId (id_info info, id)))
+	  | patToExp (pat as TagPat (info, lab, NONE, _)) =
+	    (pat, TagExp (info, lab, false))
+	  | patToExp (TagPat (info, lab, SOME pat, isNAry)) =
+	    let
+		val (pat', exp') = patToExp pat
+		val info' =
+		    exp_info (#region info,
+			      Type.inArrow (#typ (infoPat pat), #typ info))
+	    in
+		(TagPat (info, lab, SOME pat', isNAry),
+		 AppExp (info, TagExp (info', lab, isNAry), exp'))
+	    end
 	  | patToExp (pat as ConPat (info, longid, NONE, _)) =
 	    (pat, ConExp (info, longid, false))
 	  | patToExp (ConPat (info, longid, SOME pat, isNAry)) =
@@ -126,6 +140,18 @@ structure SimplifyRec :> SIMPLIFY_REC =
 	    if lit1 = lit2 then (nil, nil)
 	    else Error.error (#region info, "pattern never matches")
 	  | derec' (VarPat (_, id), exp) = (nil, [([id], exp)])
+	  | derec' (TagPat (info, Lab (_, label1), NONE, _),
+		    TagExp (_, Lab (_, label2), false)) =
+	    if label1 = label2 then (nil, nil)
+	    else Error.error (#region info, "pattern never matches")
+	  | derec' (TagPat (info, Lab (_, label1), SOME pat, _),
+		    AppExp (_, TagExp (_, Lab (_, label2), true), exp)) =
+	    let
+		val (constraints, idsExpList) = derec' (pat, exp)
+	    in
+		if label1 = label2 then (constraints, idsExpList)
+		else Error.error (#region info, "pattern never matches")
+	    end
 	  | derec' (ConPat (_, longid1, NONE, _),
 		    ConExp (_, longid2, false)) =
 	    ([(longid1, longid2)], nil)
@@ -204,6 +230,19 @@ structure SimplifyRec :> SIMPLIFY_REC =
 	    else Error.error (#region info, "pattern never matches")
 	  | unify (VarPat (info, id), pat2) = (nil, AsPat (info, id, pat2))
 	  | unify (pat1, VarPat (info, id)) = (nil, AsPat (info, id, pat1))
+	  | unify (pat1 as TagPat (info, Lab (_, label), NONE, _),
+		   TagPat (_, Lab (_, label'), NONE, _)) =
+	    if label = label' then (nil, pat1)
+	    else Error.error (#region info, "pattern never matches")
+	  | unify (TagPat (info, lab as Lab (_, label), SOME pat1, isNAry),
+		   TagPat (_, Lab (_, label'), SOME pat2, _)) =
+	    let
+		val (constraints, pat) = unify (pat1, pat2)
+	    in
+		if label = label' then
+		    (constraints, TagPat (info, lab, SOME pat, isNAry))
+		else Error.error (#region info, "pattern never matches")
+	    end
 	  | unify (pat1 as ConPat (_, longid, NONE, _),
 		   ConPat (_, longid', NONE, _)) =
 	    ([(longid, longid')], pat1)
@@ -286,6 +325,14 @@ structure SimplifyRec :> SIMPLIFY_REC =
 	fun preprocess (I.WildPat info) = (nil, WildPat info)
 	  | preprocess (I.LitPat (info, lit)) = (nil, LitPat (info, lit))
 	  | preprocess (I.VarPat (info, id)) = (nil, VarPat (info, id))
+	  | preprocess (I.TagPat (info, label, isNAry)) =
+	    (nil, TagPat (info, label, NONE, isNAry))
+	  | preprocess (I.AppPat (_, I.TagPat (info, label, isNAry), pat)) =
+	    let
+		val (constraints, pat') = preprocess pat
+	    in
+		(constraints, TagPat (info, label, SOME pat', isNAry))
+	    end
 	  | preprocess (I.ConPat (info, longid, isNAry)) =
 	    (nil, ConPat (info, longid, NONE, isNAry))
 	  | preprocess (I.AppPat (_, I.ConPat (info, longid, isNAry), pat)) =

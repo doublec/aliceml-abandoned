@@ -20,11 +20,15 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 
 	(* Tests *)
 
-	type pos = Label.t list
+	datatype selector =
+	    LABEL of Label.t
+	  | LONGID of Stamp.t * Label.t list
+	type pos = selector list
 	type typ = Type.t
 
 	datatype test =
 	    LitTest of I.lit
+	  | TagTest of Label.t * typ option * O.conArity
 	  | ConTest of I.longid * typ option * O.conArity
 	  | RefTest of typ
 	  | TupTest of typ list
@@ -47,6 +51,24 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	(* Test Sequence Construction *)
 
 	fun typPat pat = #typ (infoPat pat)
+
+	local
+	    fun longidToSelector' (ShortId (_, Id (_, stamp, _))) =
+		(stamp, nil)
+	      | longidToSelector' (LongId (_, longid, Lab (_, label))) =
+		let
+		    val (stamp, labels) = longidToSelector' longid
+		in
+		    (stamp, label::labels)
+		end
+	in
+	    fun longidToSelector longid =
+		let
+		    val (stamp, labels) = longidToSelector' longid
+		in
+		    LONGID (stamp, List.rev labels)
+		end
+	end
 
 	local
 	    fun parseRow row =
@@ -75,18 +97,30 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 		end
 	end
 
-	(*--** the following is wrong for generative datatypes: *)
-	fun longidToLabel (ShortId (_, Id (_, _, Name.ExId s))) =
-	    Label.fromString s
-	  | longidToLabel (ShortId (_, Id (_, _, Name.InId))) =
-	    raise Crash.Crash "SimplifyMatch.longIdToLabel"
-	  | longidToLabel (LongId (_, _, Lab (_, label))) = label
-
 	fun makeTestSeq (WildPat _, _, rest, mapping) = (rest, mapping)
 	  | makeTestSeq (LitPat (_, lit), pos, rest, mapping) =
 	    (Test (pos, LitTest lit)::rest, mapping)
 	  | makeTestSeq (VarPat (_, id), pos, rest, mapping) =
 	    (rest, (pos, id)::mapping)
+	  | makeTestSeq (TagPat (info, Lab (_, label), isNAry),
+			 pos, rest, mapping) =
+	    let
+		val info' = exp_info (Source.nowhere, #typ info)
+		val conArity = makeConArity (info', isNAry)
+	    in
+		(Test (pos, TagTest (label, NONE, conArity))::rest, mapping)
+	    end
+	  | makeTestSeq (AppPat (_, TagPat (info, Lab (_, label), isNAry),
+				 pat), pos, rest, mapping) =
+	    let
+		val typ = Type.inArrow (typPat pat, #typ info)
+		val info' = exp_info (Source.nowhere, typ)
+		val conArity = makeConArity (info', isNAry)
+	    in
+		makeTestSeq (pat, LABEL label::pos,
+			     Test (pos, TagTest (label, SOME (typPat pat),
+						 conArity))::rest, mapping)
+	    end
 	  | makeTestSeq (ConPat (info, longid, isNAry), pos, rest, mapping) =
 	    let
 		val info' = exp_info (Source.nowhere, #typ info)
@@ -101,21 +135,22 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 		val info' = exp_info (Source.nowhere, typ)
 		val conArity = makeConArity (info', isNAry)
 	    in
-		makeTestSeq (pat, longidToLabel longid::pos,
+		makeTestSeq (pat, longidToSelector longid::pos,
 			     Test (pos, ConTest (longid, SOME (typPat pat),
 						 conArity))::rest, mapping)
 	    end
 	  | makeTestSeq (AppPat (_, RefPat _, pat), pos, rest, mapping) =
-	    makeTestSeq (pat, Label.fromString "ref"::pos,
+	    makeTestSeq (pat, LABEL (Label.fromString "ref")::pos,
 			 Test (pos, RefTest (typPat pat))::rest, mapping)
 	  | makeTestSeq (TupPat (_, pats), pos, rest, mapping) =
 	    Misc.List_foldli
 	    (fn (i, pat, (rest, mapping)) =>
-	     makeTestSeq (pat, Label.fromInt (i + 1)::pos, rest, mapping))
+	     makeTestSeq (pat, LABEL (Label.fromInt (i + 1))::pos,
+			  rest, mapping))
 	    (Test (pos, TupTest (List.map typPat pats))::rest, mapping) pats
 	  | makeTestSeq (RowPat (info, patFields), pos, rest, mapping) =
 	    List.foldl (fn (Field (_, Lab (_, label), pat), (rest, mapping)) =>
-			makeTestSeq (pat, label::pos, rest, mapping))
+			makeTestSeq (pat, LABEL label::pos, rest, mapping))
 	    (case getRow (#typ info) of
 		 (labelTypList, _, true) =>
 		     List.foldl (fn ((label, typ), rest) =>
@@ -128,7 +163,8 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	  | makeTestSeq (VecPat (_, pats), pos, rest, mapping) =
 	    Misc.List_foldli
 	    (fn (i, pat, (rest, mapping)) =>
-	     makeTestSeq (pat, Label.fromInt (i + 1)::pos, rest, mapping))
+	     makeTestSeq (pat, LABEL (Label.fromInt (i + 1))::pos,
+			  rest, mapping))
 	    (Test (pos, VecTest (List.map typPat pats))::rest, mapping)
 	    pats
 	  | makeTestSeq (AsPat (_, pat1, pat2), pos, rest, mapping) =
@@ -182,8 +218,10 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	(* Construction of Test Trees Needing Backtracking *)
 
 	fun testEq (LitTest lit1, LitTest lit2) = lit1 = lit2
-	  | testEq (ConTest (longid1, _, _), ConTest (longid2, _, _)) =
-	    longidToLabel longid1 = longidToLabel longid2
+	  | testEq (TagTest (label1, _, _), TagTest (label2, _, _)) =
+	    label1 = label2
+	  | testEq (ConTest (_, _, _), ConTest (_, _, _)) = false
+	    (*--** use longidEq as better approximation *)
 	  | testEq (TupTest _, _) = true
 	  | testEq (RecTest _, _) = true
 	  | testEq (VecTest typs1, VecTest typs2) =
@@ -422,6 +460,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	    fun deconstructs (WildPat _) = false
 	      | deconstructs (LitPat _) = true
 	      | deconstructs (VarPat (_, _)) = raise BindsAll
+	      | deconstructs (TagPat (_, _, _)) = true
 	      | deconstructs (ConPat (_, _, _)) = true
 	      | deconstructs (RefPat _) = true
 	      | deconstructs (TupPat (_, _)) = true
@@ -459,7 +498,8 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 					(Label.fromInt (i + 1), id)) ids
 		    val mapping =
 			List.foldr (fn ((label, id), mapping) =>
-				    ([label], id)::mapping) nil labelIdList
+				    ([LABEL label], id)::mapping)
+			nil labelIdList
 		in
 		    (O.TupArgs ids, graph, mapping, consequents)
 		end
@@ -474,7 +514,8 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 			labelTypList
 		    val mapping =
 			List.foldr (fn ((label, id), mapping) =>
-				    ([label], id)::mapping) nil labelIdList
+				    ([LABEL label], id)::mapping)
+			nil labelIdList
 		in
 		    (O.RecArgs labelIdList, graph, mapping, consequents)
 		end

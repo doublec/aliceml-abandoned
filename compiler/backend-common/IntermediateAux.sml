@@ -29,9 +29,10 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	    List.exists (fn dec => occursInDec (dec, id)) decs
 	and occursInExp (LitExp (_, _), _) = false
 	  | occursInExp (PrimExp (_, _), _) = false
-	  | occursInExp (NewExp (_, _, _), _) = false
+	  | occursInExp (NewExp (_, _), _) = false
 	  | occursInExp (VarExp (_, ShortId (_, id)), id') = idEq (id, id')
 	  | occursInExp (VarExp (_, LongId (_, _, _)), _) = false
+	  | occursInExp (TagExp (_, _, _), _) = false
 	  | occursInExp (ConExp (_, _, _), _) = false
 	  | occursInExp (RefExp _, _) = false
 	  | occursInExp (TupExp (_, exps), id) =
@@ -75,6 +76,7 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	and occursInPat (WildPat _, _) = false
 	  | occursInPat (LitPat (_, _), _) = false
 	  | occursInPat (VarPat (_, _), _) = false
+	  | occursInPat (TagPat (_, _, _), _) = false
 	  | occursInPat (ConPat (_, _, _), _) = false
 	  | occursInPat (RefPat _, id) = false
 	  | occursInPat (TupPat (_, pats), id) =
@@ -101,6 +103,7 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	    fun patternVariablesOf' (WildPat _, ids) = ids
 	      | patternVariablesOf' (LitPat (_, _), ids) = ids
 	      | patternVariablesOf' (VarPat (_, id), ids) = id::ids
+	      | patternVariablesOf' (TagPat (_, _, _), ids) = ids
 	      | patternVariablesOf' (ConPat (_, _, _), ids) = ids
 	      | patternVariablesOf' (RefPat _, ids) = ids
 	      | patternVariablesOf' (TupPat (_, pats), ids) =
@@ -150,9 +153,10 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	    RecDec (info, List.map (fn dec => substDec (dec, subst)) decs)
 	and substExp (exp as LitExp (_, _), _) = exp
 	  | substExp (exp as PrimExp (_, _), _) = exp
-	  | substExp (exp as NewExp (_, _, _), _) = exp
+	  | substExp (exp as NewExp (_, _), _) = exp
 	  | substExp (VarExp (info, longid), subst) =
 	    VarExp (info, substLongId (longid, subst))
+	  | substExp (exp as TagExp (_, _, _), _) = exp
 	  | substExp (exp as ConExp (_, _, _), _) = exp
 	  | substExp (exp as RefExp _, _) = exp
 	  | substExp (TupExp (info, exps), subst) =
@@ -201,6 +205,7 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	and substPat (pat as WildPat _, _) = pat
 	  | substPat (pat as LitPat (_, _), _) = pat
 	  | substPat (pat as VarPat (_, _), _) = pat
+	  | substPat (pat as TagPat (_, _, _), _) = pat
 	  | substPat (ConPat (info, longid, isNAry), subst) =
 	    ConPat (info, substLongId (longid, subst), isNAry)
 	  | substPat (pat as RefPat _, subst) = pat
@@ -270,6 +275,7 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	    in
 		(VarPat (info, id'), (id, id', info)::subst)
 	    end
+	  | relax (pat as TagPat (_, _, _), subst) = (pat, subst)
 	  | relax (pat as ConPat (_, _, _), subst) = (pat, subst)
 	  | relax (pat as RefPat _, subst) = (pat, subst)
 	  | relax (TupPat (info, pats), subst) =

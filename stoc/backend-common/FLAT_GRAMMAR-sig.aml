@@ -60,6 +60,7 @@ signature FLAT_GRAMMAR =
 
 	datatype test =
 	    LitTest of lit
+	  | TagTest of label * id option * conArity
 	  | ConTest of id * id option * conArity
 	  | RefTest of id
 	  | TupTest of id list
@@ -86,8 +87,9 @@ signature FLAT_GRAMMAR =
 	and exp =
 	    LitExp of exp_info * lit
 	  | PrimExp of exp_info * string
-	  | NewExp of exp_info * string option * conArity
+	  | NewExp of exp_info * conArity
 	  | VarExp of exp_info * id
+	  | TagExp of exp_info * label * conArity
 	  | ConExp of exp_info * id * conArity
 	  | RefExp of exp_info
 	  | TupExp of exp_info * id list
@@ -98,6 +100,7 @@ signature FLAT_GRAMMAR =
 	  | FunExp of exp_info * stamp * funFlag list * id args * body
 	  | AppExp of exp_info * id * id args
 	  | SelAppExp of exp_info * label * id
+	  | TagAppExp of exp_info * label * id args * conArity
 	  | ConAppExp of exp_info * id * id args * conArity
 	  | RefAppExp of exp_info * id args
 	  | PrimAppExp of exp_info * string * id list

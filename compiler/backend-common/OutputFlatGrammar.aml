@@ -90,6 +90,10 @@ structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
 	  | outputLit (StringLit s) = "string \"" ^ String.toCString s ^ "\""
 	  | outputLit (RealLit r) = "real " ^ (*LargeReal.toString*) r
 
+	fun outputTag Nullary = S "tag0"
+	  | outputTag Unary = S "tag1"
+	  | outputTag (Tuple _ | Record _) = S "tag+"
+
 	fun outputCon Nullary = S "con0"
 	  | outputCon Unary = S "con1"
 	  | outputCon (Tuple _ | Record _) = S "con+"
@@ -105,6 +109,11 @@ structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
 		 S "}"]
 
 	fun outputTest (LitTest lit) = S (outputLit lit)
+	  | outputTest (TagTest (label, NONE, conArity)) =
+	    SEQ [outputTag conArity, S " ", S (Label.toString label)]
+	  | outputTest (TagTest (label, SOME id, conArity)) =
+	    SEQ [S "(", outputTag conArity, S " ", S (Label.toString label),
+		 S ") ", ID id]
 	  | outputTest (ConTest (id, NONE, conArity)) =
 	    SEQ [outputCon conArity, S " ", ID id]
 	  | outputTest (ConTest (id1, SOME id2, conArity)) =
@@ -161,10 +170,10 @@ structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
 	    SEQ [S "export ", IN, outputExp exp, EX]
 	and outputExp (LitExp (_, lit)) = S (outputLit lit)
 	  | outputExp (PrimExp (_, s)) = S ("prim \"" ^ s ^ "\"")
-	  | outputExp (NewExp (_, NONE, conArity)) = outputCon conArity
-	  | outputExp (NewExp (_, SOME string, conArity)) =
-	    SEQ [S "(", outputCon conArity, S " \"", S string, S "\""]
+	  | outputExp (NewExp (_, conArity)) = outputCon conArity
 	  | outputExp (VarExp (_, id)) = ID id
+	  | outputExp (TagExp (_, label, conArity)) =
+	    SEQ [outputTag conArity, S " ", S (Label.toString label)]
 	  | outputExp (ConExp (_, id, conArity)) =
 	    SEQ [outputCon conArity, S " ", ID id]
 	  | outputExp (RefExp _) = SEQ [S "ref"]
@@ -187,6 +196,9 @@ structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
 	    SEQ [ID id, S " ", outputArgs args]
 	  | outputExp (SelAppExp (_, label, id)) =
 	    SEQ [S ("#" ^ Label.toString label ^ " "), ID id]
+	  | outputExp (TagAppExp (_, label, args, conArity)) =
+	    SEQ [S "(", outputTag conArity, S " ", S (Label.toString label),
+		 S ") ", outputArgs args]
 	  | outputExp (ConAppExp (_, id, args, conArity)) =
 	    SEQ [S "(", outputCon conArity, S " ", ID id, S ") ",
 		 outputArgs args]

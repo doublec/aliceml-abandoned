@@ -83,6 +83,8 @@ structure LivenessAnalysisPhase :> LIVENESS_ANALYSIS_PHASE =
 	    (StampSet.union (set, set'); lset)
 
 	fun scanTest (LitTest _, lset) = lset
+	  | scanTest (TagTest (_, NONE, _), lset) = lset
+	  | scanTest (TagTest (_, SOME id, _), lset) = del (lset, id)
 	  | scanTest (ConTest (id, NONE, _), lset) = ins (lset, id)
 	  | scanTest (ConTest (id1, SOME id2, _), lset) =
 	    del (ins (lset, id1), id2)
@@ -221,8 +223,9 @@ structure LivenessAnalysisPhase :> LIVENESS_ANALYSIS_PHASE =
 	    raise Crash.Crash "LivenessAnalysisPhase.scanStm 2"
 	and scanExp (LitExp (_, _), lset) = lset
 	  | scanExp (PrimExp (_, _), lset) = lset
-	  | scanExp (NewExp (_, _, _), lset) = lset
+	  | scanExp (NewExp (_, _), lset) = lset
 	  | scanExp (VarExp (_, id), lset) = ins (lset, id)
+	  | scanExp (TagExp (_, _, _), lset) = lset
 	  | scanExp (ConExp (_, id, _), lset) = ins (lset, id)
 	  | scanExp (RefExp _, lset) = lset
 	  | scanExp (TupExp (_, ids), lset) = insList (lset, ids)
@@ -240,6 +243,8 @@ structure LivenessAnalysisPhase :> LIVENESS_ANALYSIS_PHASE =
 	  | scanExp (AppExp (_, id, args), lset) =
 	    processArgs (args, ins (lset, id), ins)
 	  | scanExp (SelAppExp (_, _, id), lset) = ins (lset, id)
+	  | scanExp (TagAppExp (_, _, args, _), lset) =
+	    processArgs (args, lset, ins)
 	  | scanExp (ConAppExp (_, id, args, _), lset) =
 	    processArgs (args, ins (lset, id), ins)
 	  | scanExp (RefAppExp (_, args), lset) = processArgs (args, lset, ins)
@@ -259,6 +264,8 @@ structure LivenessAnalysisPhase :> LIVENESS_ANALYSIS_PHASE =
 	fun insList (set, ids) = List.app (fn id => ins (set, id)) ids
 
 	fun initTest (LitTest _, _) = ()
+	  | initTest (TagTest (_, NONE, _), _) = ()
+	  | initTest (TagTest (_, SOME id, _), set) = ins (set, id)
 	  | initTest (ConTest (_, NONE, _), _) = ()
 	  | initTest (ConTest (_, SOME id, _), set) = ins (set, id)
 	  | initTest (RefTest id, set) = ins (set, id)

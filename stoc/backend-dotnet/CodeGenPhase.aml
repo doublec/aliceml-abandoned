@@ -143,6 +143,8 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	     emit Dup; emit (Castclass StockWerk.Real);
 	     emit (Ldfld (StockWerk.Real, "Value", Float32Ty));
 	     emit (LdcR4 s); emit (B (NE_UN, elseLabel)); emit Pop)
+	  | genTest (TagTest (_, _, _), _) =
+	    raise Crash.Crash "CodeGen.genExp: TagTest not implemented"
 	  | genTest (ConTest (id, NONE, _), elseLabel) =
 	    (emit Dup; emitId id; emit (B (NE_UN, elseLabel)); emit Pop)
 	  | genTest (ConTest (id1, SOME id2, _), elseLabel) =
@@ -353,14 +355,11 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	    in
 		emit (Ldsfld (StockWerk.Prebound, id, ty))
 	    end
-	  | genExp (NewExp (_, NONE, _), PREPARE) =
+	  | genExp (NewExp (_, _), PREPARE) =
 	    emit (Newobj (StockWerk.GenerativeCon, nil))
-	  | genExp (NewExp (_, SOME s, _), PREPARE) =
-	    (emit (Ldstr s);
-	     emit (Call (false, StockWerk.NongenerativeCon, "Make",
-			 [System.StringTy],
-			 StockWerk.NongenerativeConTy)))
 	  | genExp (VarExp (_, id), PREPARE) = emitId id
+	  | genExp (TagExp (_, _, _), _) =
+	    raise Crash.Crash "CodeGen.genExp: TagExp not implemented"
 	  | genExp (ConExp (_, id as Id (_, stamp, _), _), PREPARE) = emitId id
 	  | genExp (RefExp _, PREPARE) =
 	    emit (Ldsfld (StockWerk.Prebound, "ref", StockWerk.StockWertTy))
@@ -578,6 +577,8 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 		      emit (Callvirt (StockWerk.StockWert, "Select",
 				      [System.StringTy],
 				      StockWerk.StockWertTy))))
+	  | genExp (TagAppExp (_, _, _, _), _) =
+	    raise Crash.Crash "CodeGen.genExp: TagAppExp not implemented"
 	  | genExp (ConAppExp (_, id, _, _), PREPARE) =
 	    (emitId id;
 	     emit (Newobj (StockWerk.ConVal, [StockWerk.StockWertTy])))

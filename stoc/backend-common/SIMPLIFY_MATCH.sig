@@ -15,11 +15,15 @@ signature SIMPLIFY_MATCH =
 	structure I: INTERMEDIATE_GRAMMAR = IntermediateGrammar
 	structure O: FLAT_GRAMMAR = FlatGrammar
 
-	type pos = Label.t list
+	datatype selector =
+	    LABEL of Label.t
+	  | LONGID of Stamp.t * Label.t list
+	type pos = selector list
 	type typ = Type.t
 
 	datatype test =
 	    LitTest of I.lit
+	  | TagTest of Label.t * typ option * O.conArity
 	  | ConTest of I.longid * typ option * O.conArity
 	  | RefTest of typ
 	  | TupTest of typ list
@@ -31,7 +35,7 @@ signature SIMPLIFY_MATCH =
 	  | DecTest of mapping * I.dec list
 	withtype mapping = (pos * I.id) list
 
-	val longidToLabel: I.longid -> Label.t
+	val longidToSelector: I.longid -> selector
 
 	datatype testGraph =
 	    Node of pos * test * testGraph ref * testGraph ref * nodeStatus ref

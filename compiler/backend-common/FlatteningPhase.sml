@@ -36,6 +36,9 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 	val longid_true = ShortId ({region = Source.nowhere}, id_true)
 	val longid_false = ShortId ({region = Source.nowhere}, id_false)
 
+	val label_true = Label.fromString "true"
+	val label_false = Label.fromString "false"
+
 	type mapping = (pos * id) list
 
 	fun lookup (pos, (pos', id)::mappingRest) =
@@ -86,9 +89,9 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 
 	fun translateIf (info: exp_info, id, thenStms, elseStms, errStms) =
 	    [O.TestStm (stmInfo (#region info), id,
-			O.ConTest (id_true, NONE, O.Nullary), thenStms,
+			O.TagTest (label_true, NONE, O.Nullary), thenStms,
 			[O.TestStm (stmInfo (#region info), id,
-				    O.ConTest (id_false, NONE, O.Nullary),
+				    O.TagTest (label_false, NONE, O.Nullary),
 				    elseStms, errStms)])]
 
 	fun translateCont (Decs (dec::decr, cont)) =
@@ -211,8 +214,8 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 	    f (O.LitExp (info, lit))::translateCont cont
 	  | translateExp (PrimExp (info, s), f, cont) =
 	    f (O.PrimExp (info, s))::translateCont cont
-	  | translateExp (NewExp (info, stringOpt, isNAry), f, cont) =
-	    f (O.NewExp (info, stringOpt, makeConArity (info, isNAry)))::
+	  | translateExp (NewExp (info, isNAry), f, cont) =
+	    f (O.NewExp (info, makeConArity (info, isNAry)))::
 	    translateCont cont
 	  | translateExp (VarExp (info, longid), f, cont) =
 	    let
@@ -220,6 +223,9 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 	    in
 		stms @ f (O.VarExp (info, id))::translateCont cont
 	    end
+	  | translateExp (TagExp (info, Lab (_, label), isNAry), f, cont) =
+	    f (O.TagExp (info, label, makeConArity (info, isNAry)))::
+	    translateCont cont
 	  | translateExp (ConExp (info, longid, isNAry), f, cont) =
 	    let
 		val (stms, id) = translateLongid longid
@@ -302,6 +308,18 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 		checkReachability consequents;
 		f (O.FunExp (info, Stamp.new (), nil, args, body))::
 		translateCont cont
+	    end
+	  | translateExp (AppExp (info, TagExp (info', Lab (_, label), isNAry),
+				  exp2), f, cont) =
+	    let
+		val r = ref NONE
+		val rest = [O.IndirectStm (stmInfo (#region info), r)]
+		val (stms, args) = unfoldArgs (exp2, rest)
+		val conArity = makeConArity (info', isNAry)
+	    in
+		r := SOME (f (O.TagAppExp (info, label, args, conArity))::
+			   translateCont cont);
+		stms
 	    end
 	  | translateExp (AppExp (info, ConExp (info', longid, isNAry), exp2),
 			  f, cont) =
@@ -573,6 +591,15 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 	    end
 	and translateTest (LitTest lit, _, mapping) =
 	    (nil, O.LitTest lit, mapping)
+	  | translateTest (TagTest (label, NONE, conArity), _, mapping) =
+	    (nil, O.TagTest (label, NONE, conArity), mapping)
+	  | translateTest (TagTest (label, SOME typ, conArity), pos, mapping) =
+	    let
+		val id' = freshId (exp_info (Source.nowhere, typ))
+		val mapping' = (LABEL label::pos, id')::mapping
+	    in
+		(nil, O.TagTest (label, SOME id', conArity), mapping')
+	    end
 	  | translateTest (ConTest (longid, NONE, conArity), _, mapping) =
 	    let
 		val (stms, id) = translateLongid longid
@@ -584,14 +611,15 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 	    let
 		val (stms, id) = translateLongid longid
 		val id' = freshId (exp_info (Source.nowhere, typ))
-		val mapping' = (longidToLabel longid::pos, id')::mapping
+		val mapping' = (longidToSelector longid::pos, id')::mapping
 	    in
 		(stms, O.ConTest (id, SOME id', conArity), mapping')
 	    end
 	  | translateTest (RefTest typ, pos, mapping) =
 	    let
 		val id = freshId (exp_info (Source.nowhere, typ))
-		val mapping' = (Label.fromString "ref"::pos, id)::mapping
+		val mapping' =
+		    (LABEL (Label.fromString "ref")::pos, id)::mapping
 	    in
 		(nil, O.RefTest id, mapping')
 	    end
@@ -603,7 +631,8 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 		val mapping' =
 		    Misc.List_foldli
 		    (fn (i, id, mapping) =>
-		     (Label.fromInt (i + 1)::pos, id)::mapping) mapping ids
+		     (LABEL (Label.fromInt (i + 1))::pos, id)::mapping)
+		    mapping ids
 	    in
 		(nil, O.TupTest ids, mapping')
 	    end
@@ -616,7 +645,7 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 		    labelTypList
 		val mapping' =
 		    ListPair.foldr (fn ((label, _), (_, i), mapping) =>
-				    (label::pos, i)::mapping)
+				    (LABEL label::pos, i)::mapping)
 		    mapping (labelTypList, labelIdList)
 	    in
 		(nil, O.RecTest labelIdList, mapping')
@@ -624,7 +653,7 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 	  | translateTest (LabTest (label, typ), pos, mapping) =
 	    let
 		val id = freshId (exp_info (Source.nowhere, typ))
-		val mapping' = ((label::pos), id)::mapping
+		val mapping' = ((LABEL label::pos), id)::mapping
 	    in
 		(nil, O.LabTest (label, id), mapping')
 	    end
@@ -636,7 +665,8 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 		val mapping' =
 		    Misc.List_foldli
 		    (fn (i, id, mapping) =>
-		     (Label.fromInt (i + 1)::pos, id)::mapping) mapping ids
+		     (LABEL (Label.fromInt (i + 1))::pos, id)::mapping)
+		    mapping ids
 	    in
 		(nil, O.VecTest ids, mapping')
 	    end
