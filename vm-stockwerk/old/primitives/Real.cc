@@ -9,10 +9,11 @@
 //   $Date$ by $Author$
 //   $Revision$
 //
+
 #include <cmath>
 
-#include "store.hh"
-#include "alicedata.hh"
+#include "datalayer/alicedata.hh"
+
 #include "CommonOp.hh"
 #include "Real.hh"
 

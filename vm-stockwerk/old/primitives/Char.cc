@@ -9,10 +9,11 @@
 //   $Date$ by $Author$
 //   $Revision$
 //
+
 #include <ctype.h>
 
-#include "store.hh"
-#include "alicedata.hh"
+#include "datalayer/alicedata.hh"
+
 #include "CommonOp.hh"
 #include "Char.hh"
 

@@ -9,10 +9,11 @@
 //   $Date$ by $Author$
 //   $Revision$
 //
+
 #include <cstdio>
 
-#include "store.hh"
-#include "alicedata.hh"
+#include "datalayer/alicedata.hh"
+
 #include "CommonOp.hh"
 
 #if defined(INTERFACE)

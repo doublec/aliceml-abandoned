@@ -9,8 +9,8 @@
 //   $Date$ by $Author$
 //   $Revision$
 //
-#include "store.hh"
-#include "alicedata.hh"
+
+#include "datalayer/alicedata.hh"
 
 #if defined(INTERFACE)
 #pragma implementation "CommonOp.hh"

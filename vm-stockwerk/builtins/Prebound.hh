@@ -12,7 +12,7 @@
 #ifndef __PREBOUND_HH__
 #define __PREBOUND_HH__
 
-typedef word (*FUNPTR)(...);
+typedef void (*FUNPTR)();
 
 namespace Builtins {
   namespace Prebound {

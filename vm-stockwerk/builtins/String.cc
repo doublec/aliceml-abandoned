@@ -9,10 +9,11 @@
 //   $Date$ by $Author$
 //   $Revision$
 //
+
 #include <cstring>
 
-#include "store.hh"
-#include "alicedata.hh"
+#include "datalayer/alicedata.hh"
+
 #include "CommonOp.hh"
 #include "ListOp.hh"
 #include "String.hh"
