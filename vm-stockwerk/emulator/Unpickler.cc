@@ -842,7 +842,6 @@ void Unpickler::Init() {
   UnpickleInterpreter::Init();
   PickleUnpackInterpeter::Init();
   PickleLoadInterpreter::Init();
-  Corrupt =
-    UniqueConstructor::New(String::New("UnsafeComponent.Corrupt"))->ToWord();
+  Corrupt = UniqueConstructor::New(String::New("Component.Corrupt"))->ToWord();
   RootSet::Add(Corrupt);
 }
