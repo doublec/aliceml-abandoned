@@ -215,16 +215,26 @@
   <P>
     When the URL of a component is tested for inclusion, it is tested
     in order against the given <TT>--include</TT> and <TT>--exclude</TT>
-    prefixes.  The first match decides.  If no <TT>--include</TT> or
-    <TT>--exclude</TT> is given, no component will be included at all.
-    In particular, one has to make sure that the root component is
-    included.
+    prefixes, where string prefix matching is used.  The first match decides.
+    If no <TT>--include</TT> or <TT>--exclude</TT> is given, no component will
+    be included at all.  In particular, one has to make sure that the root
+    component is included.
   </P>
 
   <P>
     Native components cannot be part of a component bundle.
     They are implicitly considered excluded.
   </P>
+
+<?php subsection("linkerexample", "example") ?>
+
+  <P>
+    A typical application of the linker is to link all components imported
+    using relative imports from the same directory as or a subdirectory
+    of the root component.  The following command line accomplishes this
+    for a root component <TT>Foo</TT>:
+  </P>
+  <PRE>alicelink -v --include ./ ./Foo -o LinkedFoo.ozf</PRE>
 
 
 <?php section("depend", "dependency") ?>
