@@ -26,6 +26,7 @@
 #include "generic/Double.hh"
 
 typedef u_char u_int8;
+typedef signed char s_int8;
 typedef short s_int16; //--** ensure that this is always 16-bit
 typedef unsigned short u_int16; //--** ensure that this is always 16-bit
 typedef s_int s_int32; //--** ensure that this is always 32-bit
@@ -57,8 +58,8 @@ public:
   static const BlockLabel ExceptionTableEntry = (BlockLabel) (base + 12);
   // Types
   static const BlockLabel Class               = (BlockLabel) (base + 13);
-  static const BlockLabel BaseType            = (BlockLabel) (base + 14);
   static const BlockLabel ArrayType           = (BlockLabel) (base + 15);
+  static const BlockLabel PrimitiveType       = (BlockLabel) (base + 14);
   // Data layer
   static const BlockLabel Lock                = (BlockLabel) (base + 16);
   static const BlockLabel Object              = (BlockLabel) (base + 17);
@@ -77,14 +78,14 @@ public:
     Block *b = Store::WordToBlock(x);
     Assert(b == INVALID_POINTER ||
 	   b->GetLabel() == JavaLabel::Class ||
-	   b->GetLabel() == JavaLabel::BaseType ||
+	   b->GetLabel() == JavaLabel::PrimitiveType ||
 	   b->GetLabel() == JavaLabel::ArrayType);
     return static_cast<Type *>(b);
   }
   static Type *FromWordDirect(word x) {
     Block *b = Store::DirectWordToBlock(x);
     Assert(b->GetLabel() == JavaLabel::Class ||
-	   b->GetLabel() == JavaLabel::BaseType ||
+	   b->GetLabel() == JavaLabel::PrimitiveType ||
 	   b->GetLabel() == JavaLabel::ArrayType);
     return static_cast<Type *>(b);
   }
@@ -157,44 +158,44 @@ public:
   Worker::Result RunInitializer();
 };
 
-class DllExport BaseType: protected Type {
+class DllExport PrimitiveType: protected Type {
 public:
   enum type { Byte, Char, Double, Float, Int, Long, Short, Boolean };
 protected:
   enum {
-    BASE_TYPE_POS, // int (type)
+    TYPE_POS, // int (type)
     SIZE
   };
 public:
   using Block::ToWord;
 
-  static BaseType *New(type baseType) {
-    Block *b = Store::AllocBlock(JavaLabel::BaseType, SIZE);
-    b->InitArg(BASE_TYPE_POS, baseType);
-    return static_cast<BaseType *>(b);
+  static PrimitiveType *New(type t) {
+    Block *b = Store::AllocBlock(JavaLabel::PrimitiveType, SIZE);
+    b->InitArg(TYPE_POS, t);
+    return static_cast<PrimitiveType *>(b);
   }
 
   static u_int GetElementSize(type baseType) {
     switch (baseType) {
-    case BaseType::Boolean:
-    case BaseType::Byte:
+    case PrimitiveType::Boolean:
+    case PrimitiveType::Byte:
       return 1;
-    case BaseType::Char:
-    case BaseType::Short:
+    case PrimitiveType::Char:
+    case PrimitiveType::Short:
       return 2;
-    case BaseType::Int:
-    case BaseType::Float:
+    case PrimitiveType::Int:
+    case PrimitiveType::Float:
       return 4;
-    case BaseType::Long:
-    case BaseType::Double:
+    case PrimitiveType::Long:
+    case PrimitiveType::Double:
       return 8;
     default:
       Error("invalid base type");
     }
   }
 
-  type GetBaseType() {
-    return static_cast<type>(Store::DirectWordToInt(GetArg(BASE_TYPE_POS)));
+  type GetType() {
+    return static_cast<type>(Store::DirectWordToInt(GetArg(TYPE_POS)));
   }
 };
 
@@ -412,7 +413,7 @@ public:
 class DllExport ObjectArray: private Block {
 protected:
   enum {
-    TYPE_POS, // ArrayType(Type != BaseType)
+    ELEMENT_TYPE_POS, // Type (!= PrimitiveType)
     LENGTH_POS, // int
     BASE_SIZE
     // ... elements
@@ -420,9 +421,10 @@ protected:
 public:
   using Block::ToWord;
 
-  static ObjectArray *New(Type *type, u_int length) {
+  static ObjectArray *New(Type *elementType, u_int length) {
+    Assert(elementType->GetLabel() != JavaLabel::PrimitiveType);
     Block *b = Store::AllocBlock(JavaLabel::ObjectArray, BASE_SIZE + length);
-    b->InitArg(TYPE_POS, type->ToWord());
+    b->InitArg(ELEMENT_TYPE_POS, elementType->ToWord());
     b->InitArg(LENGTH_POS, Store::IntToWord(length));
     for (u_int i = length; i--; ) b->InitArg(BASE_SIZE + i, null);
     return static_cast<ObjectArray *>(b);
@@ -438,8 +440,8 @@ public:
     return static_cast<ObjectArray *>(b);
   }
 
-  Type *GetType() {
-    return Type::FromWordDirect(GetArg(TYPE_POS));
+  Type *GetElementType() {
+    return Type::FromWordDirect(GetArg(ELEMENT_TYPE_POS));
   }
   u_int GetLength() {
     return Store::DirectWordToInt(GetArg(LENGTH_POS));
@@ -463,7 +465,7 @@ class BaseArray: private Chunk {
   friend class JavaString;
 protected:
   enum {
-    BASE_TYPE_POS, // byte (BaseType::type);
+    ELEMENT_TYPE_POS, // byte (PrimitiveType::type);
     BASE_SIZE
     // ... elements
   };
@@ -475,12 +477,13 @@ protected:
 public:
   using Block::ToWord;
 
-  static BaseArray *New(BaseType::type baseType, u_int length) {
-    u_int elemSize = BaseType::GetElementSize(baseType);
-    Chunk *chunk = Store::AllocChunk(BASE_SIZE + length * elemSize);
+  static BaseArray *New(PrimitiveType::type elementType, u_int length) {
+    u_int elementSize = PrimitiveType::GetElementSize(elementType);
+    Chunk *chunk = Store::AllocChunk(BASE_SIZE + length * elementSize);
     char *p = chunk->GetBase();
-    for (u_int i = length * elemSize; i--; ) p[BASE_SIZE + i] = 0;
-    p[BASE_TYPE_POS] = baseType;
+    //--** initialization wrong for float/double
+    for (u_int i = length * elementSize; i--; ) p[BASE_SIZE + i] = 0;
+    p[ELEMENT_TYPE_POS] = elementType;
     return static_cast<BaseArray *>(chunk);
   }
   static BaseArray *FromWord(word x) {
@@ -490,22 +493,22 @@ public:
     return static_cast<BaseArray *>(Store::DirectWordToChunk(x));
   }
 
-  BaseType::type GetBaseType() {
-    return static_cast<BaseType::type>(GetBase()[BASE_TYPE_POS]);
+  PrimitiveType::type GetElementType() {
+    return static_cast<PrimitiveType::type>(GetBase()[ELEMENT_TYPE_POS]);
   }
   u_int GetLength() {
-    switch (GetBaseType()) {
-    case BaseType::Boolean:
-    case BaseType::Byte:
+    switch (GetElementType()) {
+    case PrimitiveType::Boolean:
+    case PrimitiveType::Byte:
       return GetSize() - BASE_SIZE;
-    case BaseType::Char:
-    case BaseType::Short:
+    case PrimitiveType::Char:
+    case PrimitiveType::Short:
       return (GetSize() - BASE_SIZE) / 2;
-    case BaseType::Int:
-    case BaseType::Float:
+    case PrimitiveType::Int:
+    case PrimitiveType::Float:
       return (GetSize() - BASE_SIZE) / 4;
-    case BaseType::Long:
-    case BaseType::Double:
+    case PrimitiveType::Long:
+    case PrimitiveType::Double:
       return (GetSize() - BASE_SIZE) / 8;
     default:
       Error("invalid base type");
@@ -513,63 +516,63 @@ public:
   }
 
   u_int LoadBoolean(u_int index) {
-    Assert(GetBaseType() == BaseType::Boolean);
+    Assert(GetElementType() == PrimitiveType::Boolean);
     return GetElementPointer(index, 1)[0];
   }
   u_int LoadByte(u_int index) {
-    Assert(GetBaseType() == BaseType::Byte);
+    Assert(GetElementType() == PrimitiveType::Byte);
     return GetElementPointer(index, 1)[0];
   }
   u_int LoadChar(u_int index) {
-    Assert(GetBaseType() == BaseType::Char);
+    Assert(GetElementType() == PrimitiveType::Char);
     u_char *p = GetElementPointer(index, 2);
     return (p[0] << 8) | p[1];
   }
   u_int LoadShort(u_int index) {
-    Assert(GetBaseType() == BaseType::Short);
+    Assert(GetElementType() == PrimitiveType::Short);
     u_char *p = GetElementPointer(index, 2);
     return (p[0] << 8) | p[1];
   }
   u_int LoadInt(u_int index) {
-    Assert(GetBaseType() == BaseType::Int);
+    Assert(GetElementType() == PrimitiveType::Int);
     u_char *p = GetElementPointer(index, 4);
     return (p[0] << 24) | (p[1] << 16) | (p[2] << 8) | p[3];
   }
   JavaLong *LoadLong(u_int index) {
-    Assert(GetBaseType() == BaseType::Long);
+    Assert(GetElementType() == PrimitiveType::Long);
     return JavaLong::New(GetElementPointer(index, 8));
   }
   Float *LoadFloat(u_int index) {
-    Assert(GetBaseType() == BaseType::Float);
+    Assert(GetElementType() == PrimitiveType::Float);
     return Float::NewFromNetworkRepresentation(GetElementPointer(index, 4));
   }
   Double *LoadDouble(u_int index) {
-    Assert(GetBaseType() == BaseType::Double);
+    Assert(GetElementType() == PrimitiveType::Double);
     return Double::NewFromNetworkRepresentation(GetElementPointer(index, 8));
   }
 
   void StoreBoolean(u_int index, u_int value) {
-    Assert(GetBaseType() == BaseType::Boolean);
+    Assert(GetElementType() == PrimitiveType::Boolean);
     GetElementPointer(index, 1)[0] = value & 1;
   }
   void StoreByte(u_int index, u_int value) {
-    Assert(GetBaseType() == BaseType::Byte);
+    Assert(GetElementType() == PrimitiveType::Byte);
     GetElementPointer(index, 1)[0] = value;
   }
   void StoreChar(u_int index, u_int value) {
-    Assert(GetBaseType() == BaseType::Char);
+    Assert(GetElementType() == PrimitiveType::Char);
     u_char *p = GetElementPointer(index, 2);
     p[0] = value >> 8;
     p[1] = value;
   }
   void StoreShort(u_int index, u_int value) {
-    Assert(GetBaseType() == BaseType::Short);
+    Assert(GetElementType() == PrimitiveType::Short);
     u_char *p = GetElementPointer(index, 2);
     p[0] = value >> 8;
     p[1] = value;
   }
   void StoreInt(u_int index, u_int value) {
-    Assert(GetBaseType() == BaseType::Int);
+    Assert(GetElementType() == PrimitiveType::Int);
     u_char *p = GetElementPointer(index, 4);
     p[0] = value >> 24;
     p[1] = value >> 16;
@@ -577,26 +580,26 @@ public:
     p[3] = value;
   }
   void StoreLong(u_int index, JavaLong *value) {
-    Assert(GetBaseType() == BaseType::Long);
+    Assert(GetElementType() == PrimitiveType::Long);
     std::memcpy(GetElementPointer(index, 8),
 		value->GetNetworkRepresentation(), 8);
   }
   void StoreFloat(u_int index, Float *value) {
-    Assert(GetBaseType() == BaseType::Float);
+    Assert(GetElementType() == PrimitiveType::Float);
     std::memcpy(GetElementPointer(index, 4),
 		value->GetNetworkRepresentation(), 4);
   }
   void StoreDouble(u_int index, Double *value) {
-    Assert(GetBaseType() == BaseType::Double);
+    Assert(GetElementType() == PrimitiveType::Double);
     std::memcpy(GetElementPointer(index, 8),
 		value->GetNetworkRepresentation(), 8);
   }
 
   void Copy(u_int destPos, BaseArray *srcArray, u_int srcPos, u_int n) {
-    Assert(GetBaseType() == srcArray->GetBaseType());
+    Assert(GetElementType() == srcArray->GetElementType());
     Assert(destPos + n <= GetLength());
     Assert(srcPos + n <= srcArray->GetLength());
-    u_int elemSize = BaseType::GetElementSize(GetBaseType());
+    u_int elemSize = PrimitiveType::GetElementSize(GetElementType());
     if (srcArray == this) {
       std::memmove(GetElementPointer(destPos, elemSize),
 		   srcArray->GetElementPointer(srcPos, elemSize),
@@ -649,7 +652,7 @@ public:
     return static_cast<JavaString *>(object);
   }
   static JavaString *New(u_int length) {
-    return New(BaseArray::New(BaseType::Char, length), 0, length);
+    return New(BaseArray::New(PrimitiveType::Char, length), 0, length);
   }
   static JavaString *New(const u_wchar *s, u_int length) {
     JavaString *string = New(length);
@@ -720,7 +723,7 @@ public:
     u_int offset = GetOffset();
     u_int length = GetLength();
     if (offset == 0 && length == array->GetLength()) return array;
-    BaseArray *newArray = BaseArray::New(BaseType::Char, length);
+    BaseArray *newArray = BaseArray::New(PrimitiveType::Char, length);
     for (u_int i = length; i--; )
       newArray->StoreChar(i, array->LoadChar(offset + i));
     return newArray;

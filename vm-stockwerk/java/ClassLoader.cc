@@ -564,28 +564,28 @@ word ClassLoader::ResolveType(JavaString *name) {
   word wClass;
   switch (n--, name->CharAt(index++)) {
   case 'B':
-    wClass = BaseType::New(BaseType::Byte)->ToWord();
+    wClass = PrimitiveType::New(PrimitiveType::Byte)->ToWord();
     break;
   case 'C':
-    wClass = BaseType::New(BaseType::Char)->ToWord();
+    wClass = PrimitiveType::New(PrimitiveType::Char)->ToWord();
     break;
   case 'D':
-    wClass = BaseType::New(BaseType::Double)->ToWord();
+    wClass = PrimitiveType::New(PrimitiveType::Double)->ToWord();
     break;
   case 'F':
-    wClass = BaseType::New(BaseType::Float)->ToWord();
+    wClass = PrimitiveType::New(PrimitiveType::Float)->ToWord();
     break;
   case 'I':
-    wClass = BaseType::New(BaseType::Int)->ToWord();
+    wClass = PrimitiveType::New(PrimitiveType::Int)->ToWord();
     break;
   case 'J':
-    wClass = BaseType::New(BaseType::Long)->ToWord();
+    wClass = PrimitiveType::New(PrimitiveType::Long)->ToWord();
     break;
   case 'S':
-    wClass = BaseType::New(BaseType::Short)->ToWord();
+    wClass = PrimitiveType::New(PrimitiveType::Short)->ToWord();
     break;
   case 'Z':
-    wClass = BaseType::New(BaseType::Boolean)->ToWord();
+    wClass = PrimitiveType::New(PrimitiveType::Boolean)->ToWord();
     break;
   case 'L':
     {

@@ -119,6 +119,7 @@ public:
 protected:
   enum {
     ACCESS_FLAGS_POS, // access_flags
+    CLASS_NAME_POS, // JavaString
     NAME_POS, // JavaString
     DESCRIPTOR_POS, // JavaString
     BYTE_CODE_POS, // JavaByteCode | int(0)
@@ -131,8 +132,8 @@ private:
 public:
   using Block::ToWord;
 
-  static MethodInfo *New(u_int accessFlags, JavaString *name,
-			 JavaString *descriptor) {
+  static MethodInfo *New(u_int accessFlags, JavaString *className,
+			 JavaString *name, JavaString *descriptor) {
     Assert(((accessFlags & ACC_PUBLIC) != 0) +
 	   ((accessFlags & ACC_PRIVATE) != 0) +
 	   ((accessFlags & ACC_PROTECTED) != 0) <= 1);
@@ -141,6 +142,7 @@ public:
 			   ACC_STRICT|ACC_SYNCHRONIZED)) == 0);
     Block *b = Store::AllocBlock(JavaLabel::MethodInfo, SIZE);
     b->InitArg(ACCESS_FLAGS_POS, accessFlags);
+    b->InitArg(CLASS_NAME_POS, className->ToWord());
     b->InitArg(NAME_POS, name->ToWord());
     b->InitArg(DESCRIPTOR_POS, descriptor->ToWord());
     b->InitArg(BYTE_CODE_POS, null);
@@ -160,6 +162,9 @@ public:
   }
   bool IsNative() {
     return GetAccessFlags() & ACC_NATIVE;
+  }
+  JavaString *GetClassName() {
+    return JavaString::FromWordDirect(GetArg(CLASS_NAME_POS));
   }
   JavaString *GetName() {
     return JavaString::FromWordDirect(GetArg(NAME_POS));
