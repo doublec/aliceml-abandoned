@@ -1,9 +1,10 @@
 (*
  * Author:
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 2001-2003
+ *   Leif Kornstaedt and Andreas Rossberg, 2001-2003
  *
  * Last change:
  *   $Date$ by $Author$
@@ -29,7 +30,19 @@ signature COMPONENT =
 
 	val extension: string
 
+	val defaultResolver: unit
+
 	val load: Url.t -> component
 	val save: string * component -> unit
 	val inf: component -> Inf.t option
+
+	functor MkManager() : (*COMPONENT_MANAGER*)
+	    sig
+		exception Conflict
+
+		val eval: Url.t * component -> Reflect.module
+		val link: Url.t -> component
+		val enter: Url.t * component -> unit
+		val lookup: Url.t -> component option
+	    end
     end

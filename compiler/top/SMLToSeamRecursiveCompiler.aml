@@ -3,7 +3,7 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 2000-2003
+ *   Leif Kornstaedt and Andreas Rossberg, 1999-2003
  *
  * Last change:
  *   $Date$ by $Author$
@@ -12,7 +12,7 @@
 
 import structure TextIO              from "../../lib/system/TextIO"
 import structure Url                 from "../../lib/system/Url"
-import structure ComponentManager    from "../../lib/system/ComponentManager"
+import structure Component           from "../../lib/system/Component"
 import structure Assert              from "../../lib/utility/Assert"
 import structure Source              from "../infrastructure/Source"
 import structure MkSwitches          from "../infrastructure/MkSwitches"
@@ -37,6 +37,9 @@ structure SMLToSeamRecursiveCompiler =
 
 	fun loadSig (desc, url) = !acquireSigRef (desc, url)
 	fun loadMod (desc, url) = !acquireModRef (desc, url)
+
+	structure ComponentManager =
+	    Component.MkManager(val resolver = Component.defaultResolver)
 
 	structure FrontendSML =
 	    MkFrontendSML(val loadSig = loadSig
