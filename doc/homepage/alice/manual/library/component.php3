@@ -42,6 +42,12 @@
 	exception Sited
 	exception Corrupt
 
+	exception Mismatch of {component : Url.t,
+			       request : Url.t option,
+			       cause : Inf.mismatch}
+	exception Eval of exn
+	exception Failure of Url.t * exn
+
 	val extension: string
 
 	functor Create(signature S  structure X : S) :
@@ -84,6 +90,42 @@
 	of a file did not represent a well-formed pickled component.
 	This exception is never raised directly; it only appears as the
 	<TT>cause</TT> of an <TT>IO.Io</TT> exception.</P>
+    </DD>
+
+    <DT>
+      <PRE>exception Mismatch of {component : Url.t,
+		       request : Url.t option,
+		       cause : Inf.mismatch}</PRE>
+    </DT>
+    <DD>
+      <P>indicates a signature mismatch during dynamic linking.
+	<TT>component</TT> is the URL of the component whose export
+	signature did not meet the requirements of the requestor
+	given by <TT>request</TT>.  A requestor of <TT>NONE</TT>
+	indicates an request made programmatically.  The <TT>cause</TT>
+	is the mismatch reported by the used signature-checking facility.</P>
+    </DD>
+
+    <DT>
+      <TT>exception Eval of exn</TT>
+    </DT>
+    <DD>
+      <P>indicates that a component raised an exception during
+	initialization, that is, while its declarations were being
+	evaluated.  This is never raised directly, but packaged in
+	a <TT>Failure</TT> exception instead.</P>
+    </DD>
+
+    <DT>
+      <TT>exception Failure of Url.t * exn</TT>
+    </DT>
+    <DD>
+      <P>indicates that the loading, evaluating or signature matching
+	of a component failed.  The URL is that of the component.  If
+	loading failed, the exception is an <TT>IO.Io</TT> exception.
+	If evaluating failed, the exception is an <TT>Eval</TT> exception.
+	If signature matching failed, the exception is a <TT>Mismatch</TT>
+	exception.</P>
     </DD>
 
     <DT>
@@ -144,7 +186,8 @@
       <P>returns a new component manager with a component table empty but
 	for the virtual machine's built-in components and those components
 	that had to be loaded to initialize the system's boot component
-	manager.</P>
+	manager.  The returned component manager uses <TT>load</TT> to
+	load its components, and as such the corresponding resolver.</P>
     </DD>
   </DL>
 
