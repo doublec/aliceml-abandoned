@@ -104,6 +104,8 @@ functor MkEngine(val cmd: unit -> string * string list
 
 	exception Format of string
 
+	fun error s = (TextIO.output (TextIO.stdErr, s ^ "\n"); raise Format s)
+
 	fun start (ref (SOME proc)) = proc
 	  | start (r as ref NONE) =
 	    let
@@ -212,8 +214,8 @@ functor MkEngine(val cmd: unit -> string * string list
 	    in
 		case result of
 		    [("Valref", s)] => valOf (Int.fromString s)
-		  | [("Error", s)] => raise Format ("link (engine): " ^ s)
-		  | _ => raise Format "link: could not parse result"
+		  | [("Error", s)] => error ("link (engine): " ^ s)
+		  | _ => error "link: could not parse result"
 	    end
 
 	fun save (procOptRef, _) (valref, filename) =
@@ -227,7 +229,7 @@ functor MkEngine(val cmd: unit -> string * string list
 	    in
 		case result of
 		    nil => ()
-		  | [("Error", s)] => raise Format ("save (engine): " ^ s)
-		  | _ => raise Format "save: could not parse result"
+		  | [("Error", s)] => error ("save (engine): " ^ s)
+		  | _ => error "save: could not parse result"
 	    end
     end
