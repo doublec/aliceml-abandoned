@@ -30,7 +30,7 @@ import functor   FromEqHashKey       from "../../lib/utility/HASH_KEY-sig"
 import signature CHECK_INTERMEDIATE  from "CHECK_INTERMEDIATE-sig"
 
 (*DEBUG*)
-import fun print from "../../lib/system/TextIO"
+import structure TextIO from "../../lib/system/TextIO"
 
 structure CheckIntermediate :> CHECK_INTERMEDIATE =
 struct
@@ -134,9 +134,9 @@ struct
 (*DEBUG*)
 orelse
 let fun prTyp name t =
-(print name; print " = ";
+(TextIO.print name; TextIO.print " = ";
  PrettyPrint.output(TextIO.stdOut, PPType.ppTyp t, 76 - size name);
- print "\n")
+ TextIO.print "\n")
 in
 prTyp "t2" t2;
 prTyp "t1'" t1';
