@@ -489,29 +489,41 @@ AC_DEFUN([AC_SEAM_CHECK_SOCKET_FLAVOR],
       AC_LANG_PROGRAM(dnl
         [[#include <sys/select.h>]],
         [[select(0, 0, 0, 0, 0);]]),
-     [AC_MSG_RESULT(unix)
+     [AC_MSG_RESULT(posix)
+      AC_DEFINE(USE_POSIX_SELECT, 1)
       AC_DEFINE(USE_WINSOCK, 0)],
-     [ac_seam_save_LIBS="${LIBS}"
-      LIBS="${LIBS}${LIBS:+ }-lwsock32"
-      AC_RUN_IFELSE(dnl
-         AC_LANG_PROGRAM(dnl
-           [[#include <winsock.h>]],
-           [[WSADATA wsa_data;
-             WORD req_version = MAKEWORD(1, 1);
-             return WSAStartup(req_version, &wsa_data);]]),
-        [AC_MSG_RESULT(-lwsock32)
-         AC_DEFINE(USE_WINSOCK, 1)],
-        [LIBS="wsock32.lib${LIBS:+ }${LIBS}"
+     [AC_LINK_IFELSE(dnl
+        AC_LANG_PROGRAM(dnl
+          [[#include<sys/types.h>
+	    #include<sys/time.h>
+	    #include<unistd.h>]],
+          [[select(0, 0, 0, 0, 0);]]),
+	[AC_MSG_RESULT(unix)
+	 AC_DEFINE(USE_POSIX_SELECT, 0)
+	 AC_DEFINE(USE_WINSOCK, 0)],
+        [ac_seam_save_LIBS="${LIBS}"
+         LIBS="${LIBS}${LIBS:+ }-lwsock32"
          AC_RUN_IFELSE(dnl
             AC_LANG_PROGRAM(dnl
               [[#include <winsock.h>]],
               [[WSADATA wsa_data;
                 WORD req_version = MAKEWORD(1, 1);
                 return WSAStartup(req_version, &wsa_data);]]),
-           [AC_MSG_RESULT(wsock32.lib)
+           [AC_MSG_RESULT(-lwsock32)
+	    AC_DEFINE(USE_POSIX_SELECT, 0)
             AC_DEFINE(USE_WINSOCK, 1)],
-           [AC_MSG_RESULT(none)
-            LIBS="${ac_seam_save_LIBS}"])])])])dnl
+           [LIBS="wsock32.lib${LIBS:+ }${LIBS}"
+            AC_RUN_IFELSE(dnl
+               AC_LANG_PROGRAM(dnl
+                 [[#include <winsock.h>]],
+                 [[WSADATA wsa_data;
+                   WORD req_version = MAKEWORD(1, 1);
+                   return WSAStartup(req_version, &wsa_data);]]),
+              [AC_MSG_RESULT(wsock32.lib)
+	       AC_DEFINE(USE_POSIX_SELECT, 0)
+               AC_DEFINE(USE_WINSOCK, 1)],
+              [AC_MSG_ERROR(could not find suitable sockets library)
+               ])])])])])dnl
 
 dnl Macro:
 dnl   AC_SEAM_WITH_LIGHTNING

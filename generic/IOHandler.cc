@@ -21,8 +21,13 @@
 #if USE_WINSOCK
 #include <winsock.h>
 #define GetLastError() WSAGetLastError()
-#else
+#elif USE_POSIX_SELECT
 #include <sys/select.h>
+#define GetLastError() errno
+#else
+#include <sys/types.h>
+#include <sys/time.h>
+#include <unistd.h>
 #define GetLastError() errno
 #endif
 
