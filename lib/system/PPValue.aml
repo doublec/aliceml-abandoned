@@ -166,7 +166,7 @@ struct
 
   (* Values *)
 
-    val absDoc = text "val"
+    val absDoc = text "_val"
     val ellDoc = text "..."
 
     fun ppLab l = text(Label.toString l)
@@ -174,10 +174,16 @@ struct
     fun ppVal  t x = ppVal' t (default()) x
     and ppVal' t fm x =
 	if #depth fm <= 0 then text "_" else
+	if Hole.isHole x then text "_hole" else
 	case Future.status x
-	 of Future.FAILED => ppKeyword fm (text "raise")
-	  | Future.FUTURE => ppKeyword fm (text(if Future.isLazy x
-						then "lazy" else "future"))
+	 of Future.FUTURE =>
+	    ppKeyword fm (text(if Future.isLazy x then "_lazy" else "_future"))
+	  | Future.FAILED =>
+	    let
+		val e = Future.await x handle e => UnsafeValue.cast e
+	    in
+		ppCustom fm (text "_failed", [ppVal' typ_exn (elem fm) e])
+	    end
 	  | Future.DETERMINED =>
 	case inspect t
 	 of (Unknown | Var _) =>
@@ -185,7 +191,7 @@ struct
 	  | Con p =>
 		ppCon p t fm x
 	  | Arrow _ =>
-		ppKeyword fm (text "fn")
+		ppKeyword fm (text "_fn")
 	  | Prod r =>
 		ppProd (UnsafeValue.proj,UnsafeValue.projTuple) r fm x
 	  | Sum r =>
@@ -361,7 +367,7 @@ struct
 	    )
 	end
 
-    fun ppVec t fm =
+    fun ppVector t fm =
 	let
 	    val (_,t') = Type.asApply t
 	    val ppElem = ppVal' t' (elem fm)
@@ -389,17 +395,19 @@ struct
 	    fn x =>
 	    let
 		val (n,doc0) = if Array.length x <= #width fm
-				then (Array.length x, empty)
-				else (#width fm, text "," ^/^ ellDoc)
+				then (Array.length x, [])
+				else (#width fm, [ellDoc])
 		val xs = ArraySlice.toList(ArraySlice.slice(x,0,SOME n))
 	    in
-		SOME(
+		SOME(ppCustom fm (text "array", List.map ppElem xs @ doc0))
+		(*SOME(
 		    contain ("[|", "|]") (
 			ppCommaList ppElem xs ^^ doc0
 		    )
-		)
+		)*)
 	    end
 	end
+
 
   (* Other types in lib/fundamental *)
 
@@ -411,10 +419,62 @@ struct
 	    SOME(ppCustom fm (text "promise", [ppElem(Promise.future x)]))
 	end
 
-    fun ppSubstring t fm x =
+    fun ppMonoRow (s,length,sliceList) t' t fm =
 	let
-	    val (s,i,n) = Substring.base x
-	    val  docs'  = [ppVal' typ_string (elem fm) s,
+	    val ppElem = ppVal' t' (elem fm)
+	in
+	    fn x =>
+	    let
+		val (n,doc0) = if length x <= #width fm
+				then (length x, [])
+				else (#width fm, [ellDoc])
+		val xs = sliceList(x,n)
+	    in
+		SOME(ppCustom fm (text s, List.map ppElem xs @ doc0))
+	    end
+	end
+
+    val ppWord8Vector' = ppMonoRow("vector", Word8Vector.length,
+				  fn(x,n) => Word8VectorSlice.toList
+					  (Word8VectorSlice.slice(x,0,SOME n)))
+    val ppWord8Array'  = ppMonoRow("array", Word8Array.length,
+				  fn(x,n) => Word8ArraySlice.toList
+					  (Word8ArraySlice.slice(x,0,SOME n)))
+    val ppCharArray'   = ppMonoRow("array", CharArray.length,
+				  fn(x,n) => CharArraySlice.toList
+					  (CharArraySlice.slice(x,0,SOME n)))
+
+    fun ppMonoSlice base t' t fm x =
+	let
+	    val (s,i,n) = base x
+	    val  docs'  = [ppVal' t' (elem fm) s,
+			   text(Int.toString i),
+			   text(Int.toString n)]
+	in
+	    SOME(ppCustom fm (text "slice", docs'))
+	end
+
+    val ppWord8VectorSlice' = ppMonoSlice Word8VectorSlice.base
+    val ppWord8ArraySlice'  = ppMonoSlice Word8ArraySlice.base
+    val ppCharVectorSlice'  = ppMonoSlice CharVectorSlice.base
+    val ppCharArraySlice'   = ppMonoSlice CharArraySlice.base
+
+    fun ppVectorSlice t fm x =
+	let
+	    val  t'     = Type.apply(typ_vec, #2(Type.asApply t))
+	    val (v,i,n) = VectorSlice.base x
+	    val  docs'  = [ppVal' t' (elem fm) v,
+			   text(Int.toString i),
+			   text(Int.toString n)]
+	in
+	    SOME(ppCustom fm (text "slice", docs'))
+	end
+
+    fun ppArraySlice t fm x =
+	let
+	    val  t'     = Type.apply(typ_array, #2(Type.asApply t))
+	    val (a,i,n) = ArraySlice.base x
+	    val  docs'  = [ppVal' t' (elem fm) a,
 			   text(Int.toString i),
 			   text(Int.toString n)]
 	in
@@ -467,18 +527,19 @@ struct
 			(Component.inf(ComponentManager.link
 			  (Url.fromString "x-alice:/lib/fundamental/Package"))))
 
-    fun lookupPath(sign, modLab, typLab) =
+    fun lookupTyp(sign, modLab, typLab) =
 	let
 	    val sign' = Inf.asSig(Inf.lookupMod(sign, Label.fromString modLab))
 	    val typ   = Inf.lookupTyp'(sign', Label.fromString typLab)
-	    val typ'  = if Type.isApply typ then #1(Type.asApply typ) else typ
 	in
-	    Type.asCon typ'
+	    if Type.isApply typ then #1(Type.asApply typ) else typ
 	end
+
+    fun lookupPath(sign, modLab, typLab) =
+	Type.asCon(lookupTyp(sign, modLab, typLab))
 
     val path_word8	   = lookupPath(coreSig,"Word8","word")
     val path_promise	   = lookupPath(coreSig,"Promise","promise")
-    val path_substring	   = lookupPath(coreSig,"Substring","substring")
     val path_unique_string = lookupPath(coreSig,"UniqueString","unique_string")
     val path_time	   = lookupPath(coreSig,"Time","time")
     val path_thread	   = lookupPath(coreSig,"Thread","thread")
@@ -486,6 +547,20 @@ struct
     val path_stream	   = lookupPath(coreSig,"Stream","stream")
     val path_package	   = lookupPath(packageSig,"Package","package")
     val path_val_package   = lookupPath(packageSig,"Package","val_package")
+    val path_word8_vector  = lookupPath(coreSig,"Word8Vector","vector")
+    val path_word8_array   = lookupPath(coreSig,"Word8Array","array")
+    val path_char_array    = lookupPath(coreSig,"CharArray","array")
+    val path_vector_slice  = lookupPath(coreSig,"VectorSlice","slice")
+    val path_array_slice   = lookupPath(coreSig,"ArraySlice","slice")
+    val path_word8_vector_slice = lookupPath(coreSig,"Word8VectorSlice","slice")
+    val path_word8_array_slice  = lookupPath(coreSig,"Word8ArraySlice","slice")
+    val path_char_vector_slice  = lookupPath(coreSig,"CharVectorSlice","slice")
+    val path_char_array_slice   = lookupPath(coreSig,"CharArraySlice","slice")
+
+    val typ_word8         = lookupTyp(coreSig,"Word8","word")
+    val typ_word8_vector  = lookupTyp(coreSig,"Word8Vector","vector")
+    val typ_word8_array   = lookupTyp(coreSig,"Word8Array","array")
+    val typ_char_array    = lookupTyp(coreSig,"CharArray","array")
 
     val _ = registerTyp(path_int,           ppInt)
     val _ = registerTyp(path_word,          ppWord)
@@ -496,9 +571,10 @@ struct
     val _ = registerTyp(path_exn,           ppExn)
     val _ = registerTyp(path_ref,           ppRef)
     val _ = registerTyp(path_promise,       ppPromise)
-    val _ = registerTyp(path_vec,           ppVec)
+    val _ = registerTyp(path_vec,           ppVector)
     val _ = registerTyp(path_array,         ppArray)
-    val _ = registerTyp(path_substring,     ppSubstring)
+    val _ = registerTyp(path_vector_slice,  ppVectorSlice)
+    val _ = registerTyp(path_array_slice,   ppArraySlice)
     val _ = registerTyp(path_unique_string, ppUniqueString)
     val _ = registerTyp(path_time,          ppTime)
     val _ = registerTyp(path_thread,        ppThread)
@@ -506,4 +582,15 @@ struct
     val _ = registerTyp(path_stream,        ppStream)
     val _ = registerTyp(path_package,       ppPackage)
     val _ = registerTyp(path_val_package,   ppValPackage)
+    val _ = registerTyp(path_word8_vector,  ppWord8Vector' typ_word8)
+    val _ = registerTyp(path_word8_array,   ppWord8Array' typ_word8)
+    val _ = registerTyp(path_char_array,    ppCharArray' typ_char)
+    val _ = registerTyp(path_word8_vector_slice,
+			ppWord8VectorSlice' typ_word8_vector)
+    val _ = registerTyp(path_word8_array_slice,
+			ppWord8ArraySlice' typ_word8_array)
+    val _ = registerTyp(path_char_vector_slice,
+			ppCharVectorSlice' typ_string)
+    val _ = registerTyp(path_char_array_slice,
+			ppCharArraySlice' typ_char_array)
 end
