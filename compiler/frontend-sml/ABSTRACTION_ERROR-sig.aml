@@ -109,6 +109,15 @@ sig
 	| TyVarShadowed		of TyVar.t
 	| StrIdShadowed		of StrId.t
 	| SigIdShadowed		of SigId.t
+	(* Conventions *)
+	| LabConvention		of Lab.t
+	| VIdConvention		of VId.t
+	| ValVIdConvention	of VId.t
+	| ConVIdConvention	of VId.t
+	| TyConConvention	of TyCon.t
+	| TyVarConvention	of TyVar.t
+	| StrIdConvention	of StrId.t
+	| SigIdConvention	of SigId.t
 
     val error :	Source.region * error -> 'a
     val warn :	Source.region * warning -> unit
