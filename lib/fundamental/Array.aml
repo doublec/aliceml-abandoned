@@ -14,11 +14,13 @@
  *  Items marked with (**) are extensions to the Standard Basis.
  *)
 
-import structure __pervasive                           from "Pervasive"
-import type unit and int and vector and array and list from "ToplevelTypes"
-import val op =                                        from "ToplevelValues"
-import functor MkArray                                 from "MkArray"
-import signature ARRAY                                 from "ARRAY-sig"
+import structure __pervasive        from "Pervasive"
+import __primitive
+       type unit and int and vector
+       type array and list          from "ToplevelTypes"
+import __primitive val op =         from "ToplevelValues"
+import __primitive functor MkArray  from "MkArray"
+import __primitive signature ARRAY  from "ARRAY-sig"
 
 structure Array : ARRAY =
 struct
