@@ -9,22 +9,23 @@ functor MakeHashImpMap(Key: HASH_KEY) :> IMP_MAP where type key = Key.t =
     exception Collision of key
 
 
-    fun hash(t,k)		= Key.hash k mod Array.length t
+    fun hash(m,k)		= Key.hash k mod Array.length m
     fun isEntryFor k (k',_)	= k = k'
 
 
     fun new n			= Array.array(n,[])
 
-    fun copy t			= let val t' = Array.array(Array.length t, [])
+    fun copy m			= let val m' = Array.array(Array.length m, [])
 				  in
-				      Array.copy{src=t, dst=t', si=0, di=0,
+				      Array.copy{src=m, dst=m', si=0, di=0,
 						 len=NONE} ;
-				      t'
+				      m'
 				  end
 
-    fun isEmpty t		= Misc.Array_all List.null t
+    fun isEmpty m		= Misc.Array_all List.null m
+    fun size m			= Array.foldl (fn(ks,n) => n+List.length ks) 0 m
 
-    fun lookup(t,k)		= let val kas = Array.sub(t, hash(t,k)) in
+    fun lookup(m,k)		= let val kas = Array.sub(m, hash(m,k)) in
 				    Option.map #2 (List.find (isEntryFor k) kas)
 				  end
 
@@ -32,22 +33,22 @@ functor MakeHashImpMap(Key: HASH_KEY) :> IMP_MAP where type key = Key.t =
       | delete'(ka::kas, k)	= if #1 ka = k then kas : (key * 'a) list
 					       else ka::delete'(kas,k)
 
-    fun delete(t,k)		= let val i    = hash(t,k)
-				      val kas  = Array.sub(t,i)
+    fun delete(m,k)		= let val i    = hash(m,k)
+				      val kas  = Array.sub(m,i)
 				      val kas' = delete'(kas,k)
 				  in
-				      Array.update(t, i, kas')
+				      Array.update(m, i, kas')
 				  end
 
-    fun insertWithi f (t,k,a)	= let val i    = hash(t,k)
-				      val kas  = Array.sub(t,i)
+    fun insertWithi f (m,k,a)	= let val i    = hash(m,k)
+				      val kas  = Array.sub(m,i)
 				      val kas' =
 					case List.find (isEntryFor k) kas
 					  of NONE       => (k,a)::kas
 					   | SOME(k,a') =>
 						(k, f(k,a',a))::delete'(kas,k)
 				  in
-				      Array.update(t, i, kas')
+				      Array.update(m, i, kas')
 				  end
 
     fun insertWith f		= insertWithi(fn(k,a1,a2) => f(a1,a2))

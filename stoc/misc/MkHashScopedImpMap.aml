@@ -40,6 +40,8 @@ functor MakeHashScopedImpMap(Key: HASH_KEY) :>
     fun isEmptyScope(ref ms)	= ImpMap.isEmpty(List.hd ms)
     fun isEmpty(ref ms)		= List.all ImpMap.isEmpty ms
 
+    fun sizeScope(ref ms)	= ImpMap.size(List.hd ms)
+    fun size(ref ms)		= List.foldl (fn(m,n) => n + ImpMap.size m) 0 ms
 
     fun appScope f (ref ms)	= ImpMap.app f (List.hd ms)
     fun app f (ref ms)		= List.app (ImpMap.app f) (List.rev ms)

@@ -20,6 +20,7 @@ signature IMP_SET =
     val unionWith :	(item -> unit) -> set * set -> unit
 
     val member :	set * item -> bool
+    val size :		set -> int
     val isEmpty :	set -> bool
 
     val app :		(item -> unit) -> set -> unit

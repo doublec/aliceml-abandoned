@@ -33,6 +33,8 @@ signature SCOPED_IMP_MAP =
 
     val lookup :	'a map * key -> 'a option
     val lookupScope :	'a map * key -> 'a option
+    val size :		'a map -> int
+    val sizeScope :	'a map -> int
     val isEmpty :	'a map -> bool
     val isEmptyScope :	'a map -> bool
 

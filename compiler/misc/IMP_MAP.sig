@@ -22,6 +22,7 @@ signature IMP_MAP =
     val unionWithi :	(key * 'a * 'a -> 'a) -> 'a map * 'a map -> unit
 
     val lookup :	'a map * key -> 'a option
+    val size :		'a map -> int
     val isEmpty :	'a map -> bool
 
     val app :		('a -> unit) -> 'a map -> unit

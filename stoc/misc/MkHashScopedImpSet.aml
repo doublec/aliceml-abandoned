@@ -38,6 +38,8 @@ functor MakeHashScopedImpSet(Item: HASH_KEY) :>
     fun isEmptyScope(ref ss)	= ImpSet.isEmpty(List.hd ss)
     fun isEmpty(ref ss)		= List.all ImpSet.isEmpty ss
 
+    fun sizeScope(ref ss)	= ImpSet.size(List.hd ss)
+    fun size(ref ss)		= List.foldl (fn(s,n) => n + ImpSet.size s) 0 ss
 
     fun appScope f (ref ss)	= ImpSet.app f (List.hd ss)
     fun app f (ref ss)		= List.app (ImpSet.app f) (List.rev ss)

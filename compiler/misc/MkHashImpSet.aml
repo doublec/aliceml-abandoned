@@ -9,20 +9,21 @@ functor MakeHashImpSet(Item: HASH_KEY) :> IMP_SET where type item = Item.t =
     exception Collision of item
 
 
-    fun hash(t,k)		= Item.hash k mod Array.length t
+    fun hash(s,k)		= Item.hash k mod Array.length s
 
     fun new n			= Array.array(n,[])
 
-    fun copy t			= let val t' = Array.array(Array.length t, [])
+    fun copy s			= let val s' = Array.array(Array.length s, [])
 				  in
-				      Array.copy{src=t, dst=t', si=0, di=0,
+				      Array.copy{src=s, dst=s', si=0, di=0,
 						 len=NONE} ;
-				      t'
+				      s'
 				  end
 
-    fun isEmpty t		= Misc.Array_all List.null t
+    fun isEmpty s		= Misc.Array_all List.null s
+    fun size s			= Array.foldl (fn(is,n) => n+List.length is) 0 s
 
-    fun member(t,i)		= let val is = Array.sub(t, hash(t,i)) in
+    fun member(s,i)		= let val is = Array.sub(s, hash(s,i)) in
 				      List.exists (fn i' => i = i') is
 				  end
 

@@ -31,6 +31,8 @@ signature SCOPED_IMP_SET =
 
     val member :	set * item -> bool
     val memberScope :	set * item -> bool
+    val size :		set -> int
+    val sizeScope :	set -> int
     val isEmpty :	set -> bool
     val isEmptyScope :	set -> bool
 
