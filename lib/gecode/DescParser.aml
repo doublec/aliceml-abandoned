@@ -39,7 +39,7 @@ struct
     | parseArg (s as ("VarRanges<IntVar>" |
                          "UBIter<SetVar>" |
                          "LBIter<SetVar>" |
-                         "RangesMinus<UBIter<SetVar>, LBIter<SetVar> >" |
+                         "Diff<UBIter<SetVar>, LBIter<SetVar> >" |
                          "I&"
                          )) = Iterator s
     | parseArg s = Other s

@@ -371,3 +371,5 @@ DEFINE1(alive) {
   DBGMSG("done");
   RETURN_BOOL(Store::WordToInt(cr->Get(0))!=0);
 } END
+
+using namespace Iter::Ranges;
