@@ -10,9 +10,7 @@
  *   $Revision$
  *)
 
-import structure Url       from "../utility/Url"
-import structure Label     from "../rtt/Label"
-import structure Signature from "Signature"
+import structure Label from "../rtt/Label"
 
 signature UNSAFE_COMPONENT_COMPONENT =
     sig
