@@ -1,4 +1,4 @@
-structure Lexer (*:> LEXER*)=
+structure Lexer :> LEXER =
     struct
 
 	exception Error 
