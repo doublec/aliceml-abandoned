@@ -329,8 +329,14 @@ struct
 		    SOME authority => authority
 		  | NONE => raise Authority
 	    val (host, port) = parseAuthority authority
-            val path	    = Option.valOf (
-                    Int.fromString ( hd (Url.getPath url)))
+	    val path =
+		case Url.getPath url of
+		    ["ticket", s] =>
+			(case Int.fromString s of
+			     SOME i => i
+			   | NONE => raise Authority
+			)
+		   | _ => raise Authority
 	in
 	    request' (host, port, (path, tag, text))
 	end
