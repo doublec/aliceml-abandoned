@@ -87,6 +87,8 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	    LetExp (info, substDecs' (decs, subst), substExp' (exp, subst))
 	  | substExp' (UpExp (info, exp), subst) =
 	    UpExp (info, substExp' (exp, subst))
+	  | substExp' (CastExp (info, exp), subst) =
+	    CastExp (info, substExp' (exp, subst))
 	and substMatches' (matches, subst) =
 	    Vector.map (fn Match (info, pat, exp) =>
 			Match (info, substPat' (pat, subst),

@@ -672,6 +672,8 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 	    end
 	  | translateExp (UpExp (_, exp), f, cont) =
 	    translateExp (exp, f, cont)
+	  | translateExp (CastExp (_, exp), f, cont) =
+	    translateExp (exp, f, cont)
 	and simplifyIf (AndExp (_, exp1, exp2), thenStms, elseStms) =
 	    let
 		val elseStms' = share elseStms
@@ -935,25 +937,26 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 		(Vector.fromList labelIdDefList, mapping)
 	    end
 
-	fun translate () (desc, (imports, (exportExp, sign))) =
+	fun translate () (desc, (imports, decs, idFields, sign)) =
 	    let
-		val exports = ref NONE
-		fun export exp =
-		    (case !exports of
-			 NONE => exports := SOME exp
-		       | SOME _ =>
-			     raise Crash.Crash "FlatteningPhase.translate 1";
-		     O.ExportStm (stm_info (#region (infoExp exportExp)), exp))
 		val imports' =
 		    Vector.map (fn (id, sign, url) =>
 				(O.IdDef (translateId id), sign, url)) imports
-		val body' = translateExp (exportExp, export, Goto nil)
-		val exports' =
-		    case !exports of
-			SOME (O.ProdExp (_, labelIdVec)) => labelIdVec
-		      | SOME (O.TupExp (_, #[])) => #[]
-		      | _ => raise Crash.Crash "FlatteningPhase.translate 2"
+		val labelIdList =
+		    Vector.foldr (fn (Field (_, Lab (_, label), id), rest) =>
+				  (label, translateId id)::rest) nil idFields
+		val (exports', arity) = LabelSort.sort labelIdList
+		val exportExp =
+		    case arity of
+			LabelSort.Tup _ =>
+			    O.TupExp ({region = Source.nowhere},
+				      Vector.map #2 exports')
+		      | LabelSort.Prod =>
+			    O.ProdExp ({region = Source.nowhere}, exports')
+		val cont =
+		    Goto [O.ExportStm (stm_info Source.nowhere, exportExp)]
+		val body' = translateCont (Decs (Vector.toList decs, cont))
 	    in
-		(imports', body', exports', sign)
+		(imports', body', exports', sign): FlatGrammar.component
 	    end
     end
