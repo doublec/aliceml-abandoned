@@ -1,6 +1,6 @@
 <?php include("macros.php3"); ?>
 
-<?php heading("Oz for Lightning - Usage", "usage") ?>
+<?php heading("Oz for NGWS - Usage", "usage") ?>
 
 <?php section("overview", "overview") ?>
   <P>The interface to the Alice system features:</P>
@@ -18,20 +18,28 @@
     <DT><TT>stoc</TT> [<TT>-c</TT>]
       <I>&lt;input file&gt;</I> [<TT>-o</TT>] <I>&lt;output file&gt;</I></DT>
     <DD><P>Compile <I>&lt;input file&gt;</I> as an Alice source and write an
-      IL file as <I>&lt;output file&gt;</I>.</DD>
+      IL file to <I>&lt;output file&gt;</I>.  This then has to be assembled
+      by issuing <TT>ilasm /dll </TT><I>&lt;output file&gt;</I>.</P></DD>
   </DL>
 
-  <P>Any imported component <TT>file.dll</TT> there must either exist in source
+  <P>Any imported component <TT>file.dll</TT> must either exist in source
     form (i.e., a file named <TT>file.aml</TT> or <TT>file.sml</TT>)
     or there must exist a file <TT>file.dll.sig</TT>
     which contains the signature of the component (see
     <A href="#foreign">below</A>).
-    In both cases the compiler invokes itself recursively to gather the
+    In both cases the compiler invokes itself recursively to obtain the
     signature of the imported component (since signatures are not yet
     saved persistently).</P>
-  <P>Per default, <A href="libraries.php3#toplevel">parts of the SML Standard
-    Basis top-level environment</A> is available for compiling source
-    files.</P>
+  <P><A href="libraries.php3#toplevel">Parts of the SML Standard
+    Basis top-level environment</A> are automatically available for
+    compiling source files.</P>
+
+  <P><B>Important notice:</B>  Due to a bug in the system, it is
+    necessary to reassemble some support files each time you invoked
+    <TT>stoc</TT>.  To do this, issue the following commands:</P>
+  <PRE>
+	ilasm /dll TextIO.il
+	ilasm /dll Tools.il</PRE>
 
 
 <?php section("vm", "vm") ?>
