@@ -97,6 +97,10 @@ so that you can refer to them in consecutive inputs:</P>
 - 2*it;
 <I><SMALL>val it : int = 18</SMALL></I></PRE>
 
+<DIV class=note>
+<P><I>Note:</I> We only use and describe the simple <A href="interactive.html#text">text interface</A> to the toplevel in this tour. There also is a <A href="interactive.html#gui">graphical frontend</A>, which works similarly, but offers more features.</P>
+</DIV>
+
 <P>We can also try the one-line Hello World program:</P>
 
 <PRE class=code>
@@ -140,6 +144,10 @@ loop ()
 &lt;Ctrl-C&gt;
 <I><SMALL>interrupted</SMALL></I></PRE>
 
+<DIV class=note>
+<P><I>Note:</I> In the <A href="interactive.html#gui">graphical interface</A> to the toplevel you have to interrupt a computation by invoking the respective command from the <I>Eval</I> menu. The keyboard shortcut is Ctrl-I.</P>
+</DIV>
+
 <P>Unlike with other ML systems, you can also put a computation into background instead of interrupting it, by pressing Ctrl-Z (Ctrl-Break on Windows):</P>
 
 <PRE class=code>
@@ -149,10 +157,11 @@ loop ()
 
 <P>This feature is useful if you still want to use the result of the computation later on but do not want to wait for it now. The result of a background computation is represented by futures, see the <A href="#concurrency">discussion of concurrency</A> below.</P>
 
-<P>The interactive toplevel is exited with Ctrl-D (Ctrl-Z on Windows), or by calling <TT>exit()</TT>.</P>
+<P>The interactive toplevel (in <A href="interactive.html#text">text mode</A>) is exited with Ctrl-D (Ctrl-Z on Windows), or by calling <TT>exit()</TT>.</P>
 
 <DIV class=note>
-<P><I>Note:</I> Under Windows, depending on the shell used, Ctrl characters may not work as expected. We recommend using zsh under Cygwin, or the SML mode for Emacs. On Linux, certain command line editing tools like <TT>rlwrap</TT> might interfer with some of the Ctrl characters as well.</P>
+<P><I>Note:</I> Under Windows, depending on the shell used, Ctrl characters may not work as expected. We recommend using zsh under Cygwin, or the SML mode for Emacs. On Linux, certain command line editing tools like <TT>rlwrap</TT> might interfer with some of the Ctrl characters as well.
+In case of problems, we suggest using the <A href="interactive.html#gui">graphical mode</A> of the toplevel.</P>
 </DIV>
 
 <?php subsection("interactive-inspector", "The Inspector") ?>
