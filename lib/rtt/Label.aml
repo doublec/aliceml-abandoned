@@ -10,11 +10,8 @@
  *   $Revision$
  *)
 
-import structure IntHashKey    from "../utility/IntHashKey"
-import structure StringHashKey from "../utility/StringHashKey"
-import structure Name          from "Name"
-import signature LABEL         from "LABEL-sig"
-
+import structure Name  from "Name"
+import signature LABEL from "LABEL-sig"
 
 structure Label :> LABEL =
 struct
@@ -42,11 +39,13 @@ struct
 
     (* Ordering and hashing *)
 
+    val equal				= op =
+
     fun compare(NUM n1,   NUM n2)	= Int.compare(n1,n2)
       | compare(ALPHA s1, ALPHA s2)	= String.compare(s1,s2)
       | compare(NUM n1,   ALPHA s2)	= LESS
       | compare(ALPHA s1, NUM n2)	= GREATER
 
-    fun hash(NUM n)			= IntHashKey.hash n
-      | hash(ALPHA s)			= StringHashKey.hash s
+    fun hash(NUM n)			= Int.hash n
+      | hash(ALPHA s)			= String.hash s
 end
