@@ -11,9 +11,6 @@ Group is
 	../../bootstrap/GlobalStamp.sml
 	../../bootstrap/DummyAddr.sml
 
-	LIST_SORT-sig.aml
-	MkListSort.aml
-
 	HASH_KEY-sig.aml
 
 	SIMPLE_IMP_MAP-sig.aml
