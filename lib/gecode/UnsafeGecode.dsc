@@ -54,7 +54,7 @@ void sortedness(const IntVarArgs&, const IntVarArgs&, ConLevel); int_sortedness;
 void permsort(const IntVarArgs&, const IntVarArgs&, const IntVarArgs&, ConLevel); int_permsort;
 
 // Global cardinality
-void gcc(const IntVarArgs&, const IntArgs&, const IntArgs&, int, ConLevel); int_gcc;
+void gcc(const IntVarArgs&, const IntArgs&, const IntArgs&, ConLevel); int_gcc;
 
 // Linear equations
 void linear(const IntArgs&, const IntVarArgs&, RelType, int, ConLevel); int_linear;

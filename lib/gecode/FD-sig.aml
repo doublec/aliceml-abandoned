@@ -90,7 +90,7 @@ sig
 
     (* Global cardinality *)
     val gcc : space * intvar vector * int vector * int vector *
-              int * conlevel -> unit
+              conlevel -> unit
 
     (* Counting constraints *)
     val countII : space * intvar vector * relation *
