@@ -21,7 +21,7 @@ sig
     val content :	'a cell -> 'a
     val replace :	'a cell * 'a -> unit
 
-    val equals :	'a cell * 'a cell -> bool
+    val equal :		'a cell * 'a cell -> bool
     val hash :		'a cell -> int
 
     functor MkMap(type t) : SIMPLE_IMP_MAP where type key = t cell
