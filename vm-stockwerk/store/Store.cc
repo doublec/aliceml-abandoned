@@ -645,7 +645,7 @@ void Store::MemStat() {
       total += size;
       chunk = chunk->GetNext();
     }
-    std::printf("G%d --> Used: %8d; Total: %8d; GC-Limit: %8d.\n", i, used, total, memMax[i]);
+    std::printf("G%d --> Used: %8u; Total: %8u; GC-Limit: %8u.\n", i, used, total, memMax[i]);
   }
   std::printf("---\n");
   std::fflush(stdout);

@@ -35,14 +35,14 @@ static void CreateHeader(FILE *f, u_int header_size_width) {
   unsigned long TAG_SHIFT        = (SIZE_SHIFT + header_size_width);
   unsigned long CHILDISH_SHIFT   = (TAG_SHIFT + HEADER_TAG_WIDTH);
   unsigned long MAX_TAGSIZE      = ((1 << HEADER_TAG_WIDTH) - 1);
-  unsigned long MAX_BLOCKSIZE    = ((1 << header_size_width) - 1); // to be determined
-  unsigned long MAX_BIGBLOCKSIZE = (MAX_BLOCKSIZE * (1 << SIZESHIFT_SHIFT));
-  unsigned long BIGSIZE_MIN      = (1 << (1 << SIZESHIFT_SHIFT));
+  unsigned long MAX_BLOCKSIZE    = ((1 << HEADER_SIZE_WIDTH) - 1); // to be determined
   unsigned long GEN_GC_MASK      = ComputeMask(GEN_GC_SHIFT, HEADER_GEN_GC_MARK_WIDTH);
   unsigned long SIZESHIFT_MASK   = ComputeMask(SIZESHIFT_SHIFT, HEADER_SIZESHIFT_WIDTH);
   unsigned long SIZE_MASK        = ComputeMask(SIZE_SHIFT, header_size_width);
   unsigned long TAG_MASK         = ComputeMask(TAG_SHIFT, HEADER_TAG_WIDTH);
   unsigned long CHILDISH_MASK    = ComputeMask(CHILDISH_SHIFT, HEADER_CHILDISH_WIDTH);
+  unsigned long BIGSIZE_MIN      = (1 << SIZESHIFT_MASK);
+  unsigned long MAX_BIGBLOCKSIZE = (MAX_BLOCKSIZE << SIZESHIFT_MASK);
 
   std::fprintf(f, "typedef enum {\n");
 
