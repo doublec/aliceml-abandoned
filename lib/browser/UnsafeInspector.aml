@@ -1,0 +1,31 @@
+(*
+ * Authors:
+ *   Bernadette Blum <blum@ps.uni-sb.de>
+ *   Marvin Schiller <schiller@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Bernadette Blum, 2002
+ *   Marvin Schiller, 2002
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
+import structure Widget from "Widget"
+
+import signature UNSAFE_INSPECTOR from "UNSAFE_INSPECTOR-sig"
+
+structure UnsafeInspector :> UNSAFE_INSPECTOR = 
+struct
+  	       
+    (* inspect *)
+    fun inspect (v,t) = Widget.inspect(v,t)
+    
+    (* inspectInf *)
+    and inspectInf (v,t) = Widget.inspectInf(v,t)
+
+    val _  = Widget.init ()
+
+end
