@@ -20,8 +20,8 @@
  *   not reentrant.
  *)
 
-use "LEXER-sig.sml";
-use "Lexer.sml";
+use "../LEXER-sig.sml";
+use "../Lexer.sml";
 
     val nesting = ref 0		(* non-reentrant side-effect way :-P *)
 
@@ -158,19 +158,4 @@ and comment =
 	    if !nesting = 0 then lex() else comment() ) |
    _    => (comment() )
 
-
-
-fun lexFile fileName =
-    let
-	val ins = TextIO.openIn fileName
-	val lexString = TextIO.inputAll ins
-    in
-	TextIO.closeIn ins;
-	lex lexString
-    end
-
-val b = lexFile "/home/nikopp/hose/hamlet/original/Lexer.sml"
-
-fun go () = while not (!EOF) do b()
-		
 
