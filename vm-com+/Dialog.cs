@@ -24,9 +24,9 @@ class Dialog {
 	WndClassEx wndclass = new WndClassEx();
 	Msg msg             = new Msg();
 	String clName       = "Entry Area";
-	
+
 	Win32.WinCB wcb = new Win32.WinCB(this.CallBack);
-        root            = System.Runtime.InteropServices.GCHandle.Alloc(wcb);
+	root            = System.Runtime.InteropServices.GCHandle.Alloc(wcb);
 
 	wndclass.cbSize        = System.Runtime.InteropServices.Marshal.SizeOf(wndclass);
 	wndclass.style         = ClassStyle.HRedraw | ClassStyle.VRedraw;
@@ -47,8 +47,8 @@ class Dialog {
 	    throw new System.ApplicationException("Unable to Register Entry Dialog");
 	}
 
-	wnd = User.CreateWindowExA(0, clName, clName, WinStyle.OverlappedWindow,
-				   0, 0, xDim, yDim, 0, 0, instance, 0);
+	wnd = User.CreateWindowEx(0, clName, clName, WinStyle.OverlappedWindow,
+				  0, 0, xDim, yDim, 0, 0, instance, 0);
 
 	if (wnd == 0) {
 	    throw new System.ApplicationException(Error.GetSystemErrorMessage());
@@ -89,23 +89,22 @@ class Dialog {
 		b = b.Append((char) w);
 		break;
 	    }
-	    
+
 	    User.InvalidateRect(wnd, null, true);
 	    return 0;
 	case WinMsg.Paint: {
 	    int charX, charY, maxX, maxY;
 	    String s;
-	    
+
 	    if (b.Length == 0) {
 		s = "";
-	    }
-	    else {
+	    } else {
 		s = b.ToString();
 	    }
 
 	    dc = User.BeginPaint(wnd, ps);
 	    User.GetClientRect(wnd, rect);
-	    
+
 	    ps.paint.left   = rect.left;
 	    ps.paint.top    = rect.top;
 	    ps.paint.right  = rect.right;
@@ -122,7 +121,7 @@ class Dialog {
 
 	    GDI.SetTextColor(dc, 0);
 	    GDI.TextOut(dc, 0, 0, s, s.Length);
-	    
+
 	    rect.left   = (s.Length * charX);
 	    rect.top    = 0;
 	    rect.right  = ((s.Length + 1) * charX);
@@ -143,8 +142,7 @@ class Dialog {
 	lock (this) {
 	    if (b.Length == 0) {
 		retVal = "";
-	    }
-	    else {
+	    } else {
 		retVal = b.ToString();
 		b      = new StringBuilder();
 	    }
@@ -154,7 +152,7 @@ class Dialog {
 }
 
 class ReadLine : Alice.Values.Procedure {
-    public static Object StaticApply(Object obj) {
+    public override object Apply(object obj) {
 	Dialog dlg = Execute.dlg;
 
 	lock (dlg) {
@@ -162,14 +160,11 @@ class ReadLine : Alice.Values.Procedure {
 	    return dlg.retVal;
 	}
     }
-    public override Object Apply(Object obj) {
-	return StaticApply(obj);
-    }
 }
 
 class Execute {
     public static Dialog dlg;
-    public static Object Main(Object obj) {
+    public static object Main(object obj) {
 	dlg = new Dialog(40, 3);
 	new Thread(new ThreadStart(dlg.Run)).Start();
 

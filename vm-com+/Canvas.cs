@@ -98,10 +98,10 @@ class Canvas {
     }
     public void CreateWindow(int parent, int instance, int width, int height) {
 	RegisterCanvasClass();
-	wnd = User.CreateWindowExA(WinStyle.ControlParent, clName, null,
-				   WinStyle.Child | WinStyle.Visible |
-				   WinStyle.HScroll | WinStyle.VScroll,
-				   0, 0, width, height, parent, 0, instance, 0);
+	wnd = User.CreateWindowEx(WinStyle.ControlParent, clName, null,
+				  WinStyle.Child | WinStyle.Visible |
+				  WinStyle.HScroll | WinStyle.VScroll,
+				  0, 0, width, height, parent, 0, instance, 0);
 	
 	if (wnd == 0) {
 	    throw new System.ApplicationException(Error.GetSystemErrorMessage());
@@ -1196,8 +1196,8 @@ class Inspector {
 	    throw new System.ApplicationException("Unable to Register Inspector");
 	}
 
-	wnd = User.CreateWindowExA(0, clName, clName, WinStyle.OverlappedWindow,
-				   0, 0, 400, 400, 0, 0, instance, 0);
+	wnd = User.CreateWindowEx(0, clName, clName, WinStyle.OverlappedWindow,
+				  0, 0, 400, 400, 0, 0, instance, 0);
 
 	if (wnd == 0) {
 	    throw new System.ApplicationException(Error.GetSystemErrorMessage());
