@@ -33,7 +33,7 @@
   </P>
 
   <P>
-    Stockhausen is based on 
+    Stockhausen implements the language <I>Alice</I>, which is based on 
     <A href="http://cm.bell-labs.com/cm/cs/what/smlnj/sml.html">Standard ML</A>
     but adds many of the interesting features from
     <A href="http://www.mozart-oz.org/">Mozart</A>. Operette 1 already supports:
@@ -49,7 +49,7 @@
   </UL>
 
   <P>
-    Moreover, Stockhausen adds other interesting features neither found in
+    Moreover, Alice adds other interesting features neither found in
     Mozart nor in SML, like typed <A href="modules.php3">higher-order
     modules</A> and <A href="extensions.php3"">other extensions</A>.
   </P>
