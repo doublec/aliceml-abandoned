@@ -83,14 +83,11 @@ define
 	 else
 	    try {Pickle.load HU TaskStack}
 	    catch E=system(os(os ...) ...) then
-	       try {Pickle.load HU#'.'#Extension TaskStack}
-	       catch system(os(os ...) ...) then
-		  exception(nil con(IoException
-				    I_name: U
-				    I_function: {ByteString.make 'load'}
-				    I_cause: E)   %--** cause not of type exn
-			    TaskStack.2)
-	       end
+	       exception(nil con(IoException
+				 I_name: U
+				 I_function: {ByteString.make 'load'}
+				 I_cause: E)   %--** cause not of type exn
+			 TaskStack.2)
 	    end
 	 end
       end
