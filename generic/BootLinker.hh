@@ -20,6 +20,7 @@
 #endif
 
 #include "adt/HashTable.hh"
+#include "adt/Queue.hh"
 
 class String;
 
@@ -62,6 +63,8 @@ public:
 class BootLinker {
 private:
   static word componentTable;
+  static word keyQueue;
+  static u_int numberOfEntries;
   static u_int traceFlag;
   static char *aliceHome;
   static HashTable *GetComponentTable() {
@@ -70,19 +73,14 @@ private:
 public:
   // BootLinker Functions
   static void Trace(const char *prefix, Chunk *key);
-  static void EnterComponent(Chunk *key, word sign, word str) {
-    GetComponentTable()->InsertItem(key->ToWord(),
-				    Component::New(sign, str)->ToWord());
+  static Queue *GetKeyQueue() {
+    return Queue::FromWordDirect(keyQueue);
   }
-  static Component *LookupComponent(Chunk *key) {
-    HashTable *componentTable = GetComponentTable();
-    word keyWord = key->ToWord();
-    if (componentTable->IsMember(keyWord)) {
-      return Component::FromWord(componentTable->GetItem(keyWord));
-    } else {
-      return INVALID_POINTER;
-    }
+  static u_int GetNumberOfEntries() {
+    return numberOfEntries;
   }
+  static void EnterComponent(Chunk *key, word sign, word str);
+  static Component *LookupComponent(Chunk *key);
   static void SetTraceMode(u_int trace) {
     traceFlag = trace;
   }
