@@ -48,8 +48,8 @@ define
 		recordInd # [a(recordInd) a(tuple) labelTuple]
 
 		%% Logic-, Future- and Constraint-Variables
-		free     # [free free free]
-		future   # [future future future]
+		free     # [free a(free) free]
+		future   # [future a(future) future]
 		fdInt    # [a(fdInt) fdInt fdInt]
 		fsVal    # [fsVal fdInt fdInt]
 		fsHelper # [fsHelper fdInt fdInt]
@@ -78,8 +78,8 @@ define
 		recordGrInd  # [a(recordGrInd) a(tupleGr) labelTupleGr]
 
 		%% Logic-, Future- and Constraint-Variants
-		freeGr   # [a(freeGr) freeGr freeGr]
-		futureGr # [a(futureGr) futureGr futureGr]
+		freeGr   # [a(freeGr) a(freeGr) freeGr]
+		futureGr # [a(futureGr) a(futureGr) futureGr]
 		fdIntGr  # [a(fdIntGr) fdIntGr fdIntGr]
 		fsValGr  # [a(fsValGr) fdIntGr fdIntGr]
 		fsVarGr  # [a(fsVarGr) fsVarGr fdIntGr]

@@ -18,6 +18,10 @@ import
    HelperComponent('nodes' : Helper) at 'Helper'
 export
    atomLayoutObject        : AtomLayoutObject
+   freeLayoutObject        : FreeLayoutObject
+   freeGrLayoutObject      : FreeGrLayoutObject
+   futureLayoutObject      : FutureLayoutObject
+   futureGrLayoutObject    : FutureGrLayoutObject
    nameLayoutObject        : NameLayoutObject
    nameGrLayoutObject      : NameGrLayoutObject
    procedureLayoutObject   : ProcedureLayoutObject
@@ -35,7 +39,10 @@ define
       LayoutObjects = TreeNodes.'layout'
    in
       IntLayoutObject             = LayoutObjects.intLayoutObject
+      OzFreeLayoutObject          = LayoutObjects.freeLayoutObject
       OzFreeGrLayoutObject        = LayoutObjects.freeGrLayoutObject
+      OzFutureLayoutObject        = LayoutObjects.futureLayoutObject
+      OzFutureGrLayoutObject      = LayoutObjects.futureGrLayoutObject
       OzProcedureLayoutObject     = LayoutObjects.procedureLayoutObject
       LabelTupleLayoutObject      = LayoutObjects.labelTupleLayoutObject
       LabelTupleIndLayoutObject   = LayoutObjects.labelTupleIndLayoutObject
@@ -55,47 +62,87 @@ define
       in
 	 case Value
 	 of '#[]' then type <- vector
+	 [] nil   then
+	    value <- '[]'
+	    type  <- constructor
 	 else type <- constructor
 	 end
-	 {Helper.convert {Atom.toString Value} PrintStr LengthStr}
+	 {Helper.convert {Atom.toString @value} PrintStr LengthStr}
+      end
+   end
+
+   class FreeLayoutObject from OzFreeLayoutObject
+      meth createRep(PrintStr LengthStr)
+	 PrintStr = '_hole'
+	 LengthStr = PrintStr
       end
    end
    
-   class NameLayoutObject from IntLayoutObject
+   class FreeGrLayoutObject from OzFreeGrLayoutObject
       meth createRep(PrintStr LengthStr)
-	 Value = @value
-      in
-	 PrintStr  = case Value
-		     of false then type <- constructor 'false'
-		     [] true  then type <- constructor 'true'
-		     [] unit  then type <- tuple '()'
-		     elsecase {System.printName Value}
-		     of ''   then '<N:>'
-		     [] Name then '<N:'#Name#'>'
-		     end
+	 PrintStr = '_hole'
 	 LengthStr = PrintStr
       end
    end
 
-   class NameGrLayoutObject from OzFreeGrLayoutObject
-      meth createRep(PrintStr LengthStr)
-	 Value = @value
-      in
-	 PrintStr  = case Value
-		     of false then type <- constructor 'false'
-		     [] true  then type <- constructor 'true'
-		     [] unit  then type <- tuple '()'
-		     elsecase {System.printName Value}
-		     of ''   then '<N:>'
-		     [] Name then'<N:'#Name#'>'
-		     end
-	 LengthStr = PrintStr
+   local
+      class AliceLayoutObject
+	 meth createRep(PrintStr LengthStr)
+	    PrintStr = case {self checkFutureType(@value $)}
+		       of '<Fut>'    then '_future'
+		       [] '<Failed>' then '_failed'
+		       [] '<ByNeed>' then '_lazy'
+		       end
+	    LengthStr = PrintStr
+	 end
       end
-   end     
+   in
+      class FutureLayoutObject from OzFutureLayoutObject AliceLayoutObject
+	 meth createRep(PrintStr LengthStr)
+	    AliceLayoutObject, createRep(PrintStr LengthStr)
+	 end
+      end
+
+      class FutureGrLayoutObject from OzFutureGrLayoutObject AliceLayoutObject
+	 meth createRep(PrintStr LengthStr)
+	    AliceLayoutObject, createRep(PrintStr LengthStr)
+	 end
+      end
+   end
+   
+   local
+      class AliceLayoutObject
+	 meth createRep(PrintStr LengthStr)
+	    Value = @value
+	 in
+	    PrintStr  = case Value
+			of false then type <- constructor 'false'
+			[] true  then type <- constructor 'true'
+			[] unit  then type <- tuple '()'
+			elsecase {System.printName Value}
+			of ''   then 'unknown' %% Hack Alert
+			[] Name then Name
+			end
+	    LengthStr = PrintStr
+	 end
+      end
+   in
+      class NameLayoutObject from IntLayoutObject AliceLayoutObject
+	 meth createRep(PrintStr LengthStr)
+	    AliceLayoutObject, createRep(PrintStr LengthStr)
+	 end
+      end
+
+      class NameGrLayoutObject from OzFreeGrLayoutObject AliceLayoutObject
+	 meth createRep(PrintStr LengthStr)
+	    AliceLayoutObject, createRep(PrintStr LengthStr)
+	 end
+      end
+   end
    
    class ProcedureLayoutObject from OzProcedureLayoutObject
       meth createRep(PrintStr LengthStr)
-	 PrintStr  = 'fn'
+	 PrintStr  = '_fn'
 	 LengthStr = PrintStr
       end
    end

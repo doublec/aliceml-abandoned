@@ -175,6 +175,34 @@ define
       {Inspector.configure typeConversion ConversionTable}
    end
 
+   %% Introduce abstract types
+   local
+      fun {ExpandArray V W D}
+	 AW = {Array.high V}
+	 AT = {Tuple.make '@Array__' (AW + 1)}
+      in
+	 {For 0 AW 1 proc {$ I} AT.(I+1) = {Array.get V I} end} AT
+      end
+   in
+      {Inspector.configure arrayMenu
+       menu(nil nil [auto('Expand'(ExpandArray))] nil)} 
+   end
+
+   local
+      fun {ExpandThread V W D}
+	 State = case {Thread.state V}
+		 of runnable   then 'RUNNABLE'
+		 [] blocked    then 'BLOCKED'
+		 [] terminated then 'TERMINATED'
+		 end
+      in
+	 '@Thread__'(State)
+      end
+   in
+      {Inspector.configure threadMenu
+       menu(nil nil [auto('Expand'(ExpandThread))] nil)}
+   end
+
    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
    %% Create Exported Structure
    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -183,6 +211,7 @@ define
 
    %% Configuration Defaults
    local
+      White  = '#ffffff'
       Black  = '#000000'
       Blue   = '#0000ff'
       Green  = '#228b22'
@@ -224,6 +253,9 @@ define
 		      'DEPTH_ARROW':      {NewCell Red}
 		      'PARENTHESES':      {NewCell Black}
 		      'MISC':             {NewCell Black})
+
+      {Inspector.configure typeprefixColor Brown}
+      {Inspector.configure proxyColor White}
 
       Widths = widths('TUPLE':             {NewCell DefaultWidths}
 		      'RECORD':            {NewCell DefaultWidths}

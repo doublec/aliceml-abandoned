@@ -99,6 +99,40 @@ define
 	 @parent = Parent
       end
    end
+
+   class TypePrefixNode from OzLabelNode
+      meth layoutX($)
+	 XDim   = @xDim
+	 Value  = @value
+	 String = if {IsAtom Value}     then {Atom.toString Value}
+		  elseif {IsName Value} then
+		     case {System.printName Value}
+		     of '' then {Atom.toString 'unknown'}
+		     [] PN then {VirtualString.toString PN}
+		     end
+		  else Value
+		  end
+      in
+	 if {IsFree XDim}
+	 then XDim = ({VirtualString.length {ConvertAtom String @string}} + 2)
+	 end
+	 XDim
+      end
+      meth drawX(X Y $)
+	 Visual  = @visual
+	 XDim    = @xDim
+	 StringX = (XDim - 2)
+      in
+	 if @dirty
+	 then
+	    dirty <- false
+	    {Visual printXY(X Y @string @tag typeprefix)}
+	    {Visual printXY((X + StringX) Y @limStr @secTag tuple)}
+	 else {Visual doublePlace(X Y StringX @tag @secTag)}
+	 end
+	 (X + XDim)
+      end
+   end
    
    class LabelNode from OzLabelNode
       meth layoutX($)
@@ -107,8 +141,8 @@ define
 	 String = if {IsAtom Value}     then {Atom.toString Value}
 		  elseif {IsName Value} then
 		     case {System.printName Value}
-		     of '' then {Atom.toString '<N:>'}
-		     [] PN then {VirtualString.toString '<N:'#PN#'>'}
+		     of '' then {Atom.toString 'unknown'}
+		     [] PN then {VirtualString.toString PN}
 		     end
 		  else Value
 		  end
@@ -373,7 +407,7 @@ define
 	       @sDim = {VirtualString.length {ConvertAtom {Atom.toString FeaVal} String}}
 	    else
 	       String = if {IsName FeaVal}
-			then '<N:'#{System.printName FeaVal}#'>'
+			then {System.printName FeaVal}
 			else FeaVal
 			end
 	       @sDim  = {VirtualString.length String}
@@ -435,7 +469,7 @@ define
 	       @sDim = {VirtualString.length {ConvertAtom {Atom.toString FeaVal} String}}
 	    else
 	       String = if {IsName FeaVal}
-			then '<N:'#{System.printName FeaVal}#'>'
+			then {System.printName FeaVal}
 			else FeaVal
 			end
 	       @sDim  = {VirtualString.length String}
@@ -549,6 +583,7 @@ define
 		   convertBS   : ConvertByteString
 		   atom        : AtomNode
 		   ozAtom      : OzAtomNode
+		   prefix      : TypePrefixNode
 		   label       : LabelNode
 		   labelType   : LabelTypeNode
 		   labelRecord : LabelRecordNode

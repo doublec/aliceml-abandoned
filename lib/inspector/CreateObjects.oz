@@ -13,7 +13,7 @@
 functor $
 import
    FD
-   System(eq)
+   System(eq show)
    Inspector('nodes' : TreeNodes)
    HelperComponent('nodes' : Helper) at 'Helper'
 export
@@ -219,22 +219,39 @@ define
 	       @type  = vector
 	       @label = {New Helper.ozAtom create('#[' self 0 Visual vector)}
 	       @brace = {New Helper.ozAtom create(']' self 0 Visual vector)}
+	    [] '@Array__' then
+	       @type  = array
+	       @label = {New Helper.prefix create('array' '{|' self Visual)}
+	       @brace = {New Helper.ozAtom create('|}' self 0 Visual tuple)}
+	    [] '@Thread__' then
+	       @type  = 'thread'
+	       @label = {New Helper.prefix create('thread' '{|' self Visual)}
+	       @brace = {New Helper.ozAtom create('|}' self 0 Visual tuple)}
 	    [] 'Promise__' then
 	       @type  = promise
-	       @label = {New Helper.ozAtom create('promise' self 0 Visual promise)}
-	       @brace = {New Helper.empty create(self)}
-	       arity    <- nil
-	       maxWidth <- 0
-	       %% Hack Alert
-	       {Dictionary.put @items 1 {New Helper.empty create(self)}}
+	       @label = {New Helper.prefix create('promise' '{|' self Visual)}
+	       %% We need to rewrite the value to its internal represenation
+	       %% Moreover, we hide the fact that the promise uses a hole
+	       %% instead of a future
+	       case Value of 'Promise__'(_ F) then
+		  value    <- '@Promise__'(!!F)
+		  arity    <- [1]
+		  maxWidth <- 1
+	       end
+	       @brace = {New Helper.ozAtom create('|}' self 0 Visual tuple)}
+	    [] '@Promise__' then
+	       @type  = promise
+	       @label = {New Helper.prefix create('promise' '{|' self Visual)}
+	       @brace = {New Helper.ozAtom create('|}' self 0 Visual tuple)}
 	    [] 'Package__' then
 	       @type  = package
-	       @label = {New Helper.ozAtom create('package' self 0 Visual package)}
-	       @brace = {New Helper.empty create(self)}
+	       @label = {New Helper.prefix create('package' '{|' self Visual)}
+	       @brace = {New Helper.ozAtom create('|}' self 0 Visual tuple)}
 	       arity    <- nil
 	       maxWidth <- 0
 	       %% Hack Alert
-	       {Dictionary.put @items 1 {New Helper.empty create(self)}}
+	       {Dictionary.put @items 1
+		{New Helper.ozAtom create('...' self 1 Visual tuple)}}
 	    else
 	       @type = conval
 	       if {System.eq Value.1 unit}
