@@ -26,6 +26,7 @@ structure Word =
 	__primitive toInt : word -> int = "Word.toInt"
 	__primitive toLargeInt : word -> LargeInt.int = "Word.toInt"
 	__primitive toIntX : word -> int = "Word.toIntX"
+	__primitive op+ : word * word -> word = "Word.+"
 	__primitive orb : word * word -> word = "Word.orb"
 	__primitive xorb : word * word -> word = "Word.xorb"
 	__primitive andb : word * word -> word = "Word.andb"
