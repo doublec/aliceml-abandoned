@@ -30,7 +30,7 @@
 #include "alice/Data.hh" //--**
 #include "alice/AliceLanguageLayer.hh"
 
-#if defined(ALICE_PROFILE)
+#if PROFILE
 #include "generic/Profiler.hh"
 #endif
 
@@ -83,7 +83,7 @@ int main(int argc, char *argv[]) {
   TaskStack::Init();
   IOHandler::Init();
   Scheduler::Init();
-#if defined(ALICE_PROFILE)
+#if PROFILE
   Profiler::Init();
 #endif
   // Setup Interpreters and Services
@@ -128,6 +128,9 @@ int main(int argc, char *argv[]) {
 			   TaskStack::New());
       // Restart Scheduler to execute module
       Scheduler::Run();
+#if PROFILE
+      Profiler::DumpInfo();
+#endif
       exit(0);
     }
     exit(1);
