@@ -20,78 +20,43 @@ import __primitive structure Ref     from "Ref"
 import __primitive structure Hole    from "Hole"
 import __primitive signature PROMISE from "PROMISE-sig"
 
-(* For now we need a hack to make the Inspector properly display promises...
+local
 structure Promise : PROMISE =						(**)
 struct
     open Ref
 
-    type 'a promise	= bool ref * 'a
+    type 'a promise	= (bool * 'a) ref
     type 'a t		= 'a promise
 
     exception Promise
 
-    fun promise()	= (ref false, Hole.hole())
-    fun future(_,h)	= Hole.future h handle Hole.Hole => h
+    fun promise()	= ref (false, Hole.hole())
+    fun future(ref(_,h)) = Hole.future h handle Hole.Hole => h
 
-    fun fulfill((r,h), x) =
+    fun fulfill(p, x) =
 	let
-	    val b = Hole.hole()
+	    val  p'   = Hole.hole()
+	    val (b,h) = exchange(p, Hole.future p')
 	in
-	    if exchange(r, Hole.future b)
-	    then (Hole.fill(b,true); raise Promise)
-	    else (Hole.fill(h,x) handle e => (Hole.fill(b,false); raise e);
-		  Hole.fill(b,true))
+	    if b
+	    then (Hole.fill(p',(true,h)); raise Promise)
+	    else (Hole.fill(h,x) handle e => (Hole.fill(p',(false,h)); raise e);
+		  Hole.fill(p',(true,h)))
 	end
 
-    fun fail((r,h), e) =
+    fun fail(p, e) =
 	let
-	    val b = Hole.hole()
+	    val  p'   = Hole.hole()
+	    val (b,h) = exchange(p, Hole.future p')
 	in
-	    if exchange(r, Hole.future b)
-	    then (Hole.fill(b,true); raise Promise)
-	    else (Hole.fail(h,e) handle e' => (Hole.fill(b,false); raise e');
-		  Hole.fill(b,true))
+	    if b
+	    then (Hole.fill(p',(true,h)); raise Promise)
+	    else (Hole.fail(h,e) handle e' => (Hole.fill(p',(false,h)); raise e');
+		  Hole.fill(p',(true,h)))
 	end
 
-    fun isFulfilled(r,h) = !r
+    fun isFulfilled(ref(b,h)) = b
 end
-*)
-
-local
-    structure Promise : PROMISE =					(**)
-    struct
-	open Ref
-
-	datatype 'a promise	= Promise__ of bool ref * 'a
-	type 'a t		= 'a promise
-
-	exception Promise
-
-	fun promise()	= Promise__(ref false, Hole.hole())
-	fun future(Promise__(_,h))	= Hole.future h handle Hole.Hole => h
-
-	fun fulfill(Promise__(r,h), x) =
-	    let
-		val b = Hole.hole()
-	    in
-		if exchange(r, Hole.future b)
-		then (Hole.fill(b,true); raise Promise)
-		else (Hole.fill(h,x) handle e => (Hole.fill(b,false); raise e);
-		      Hole.fill(b,true))
-	    end
-
-	fun fail(Promise__(r,h), e) =
-	    let
-		val b = Hole.hole()
-	    in
-		if exchange(r, Hole.future b)
-		then (Hole.fill(b,true); raise Promise)
-		else (Hole.fail(h,e) handle e' => (Hole.fill(b,false); raise e');
-		      Hole.fill(b,true))
-	    end
-
-	fun isFulfilled(Promise__(r,h)) = !r
-    end
 
     __primitive __eqeqtype promise = "'a promise"
     __primitive functor Cast (structure X : PROMISE signature S) : S = "Cast"
