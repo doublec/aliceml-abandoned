@@ -80,7 +80,9 @@ structure HttpServer :> HTTP_SERVER =
 	     if Future.isDetermined tokens then
 		 case tokens of
 		     ()::tokens => closeIdle (tokens, socket)
-		   | _ => raise Match
+		   | nil =>
+			(trace "explicitly closing connection\n";
+			 Socket.close socket)
 	     else
 		 (trace "closing idle connection\n";
 		  Socket.close socket))
@@ -88,18 +90,17 @@ structure HttpServer :> HTTP_SERVER =
 	fun handleConnection (socket, host, port) =
 	    let
 		val (stream, tokens) = Stream.stream ()
-		fun sendToken token = Stream.send (stream, token)
 	    in
-		spawn handleConnection' (socket, host, port, sendToken);
+		spawn handleConnection' (socket, host, port, stream);
 		spawn closeIdle (tokens, socket)
 	    end
-	and handleConnection' (socket, host, port, sendToken) =
+	and handleConnection' (socket, host, port, stream) =
 	    let
 		val _ = trace ("connection from " ^ host ^ ":" ^
 			       Int.toString port ^ "\n")
 		val request = Http.readRequest socket
 		val p = Promise.promise ()
-		val _ = sendToken (Promise.future p)
+		val _ = Stream.send (stream, Promise.future p)
 		val handler = findHandler (#uri request)
 		val response = handler request
 		    handle _ =>
@@ -111,11 +112,11 @@ structure HttpServer :> HTTP_SERVER =
 		Http.writeResponse (socket, response);
 		Promise.fulfill (p, ());
 		if List.exists (fn s => s = "close") connectionTokens then
-		    Socket.close socket
-		else handleConnection' (socket, host, port, sendToken)
+		    Stream.close stream
+		else handleConnection' (socket, host, port, stream)
 	    end
 	    handle Http.Format =>
-		       Socket.close socket
+		       Stream.close stream
 		       before trace "protocol error\n"
 		 | Http.Closed => ()
 
