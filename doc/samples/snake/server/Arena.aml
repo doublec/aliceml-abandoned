@@ -6,7 +6,7 @@ import structure Pos                    from "../common/Pos"
 import structure Color                  from "../common/Color"
 import structure Random                 from "x-alice:/lib/utility/Random"
 import structure Inspector              from "x-alice:/lib/tools/Inspector"
-
+import structure Print                  from "x-alice:/lib/system/Print"
 
 structure Arena :> ARENA =
 struct
@@ -285,7 +285,7 @@ struct
         end
 
     and removeSnakeBody (a, s) =
-        Snake.appBody (fn (r, c) => TA.update (a, r, c, P.EMPTY)) s
+        Snake.appBody (fn (r, c) => TA.update (a, r, c, P.EMPTY)) s;
  
     fun removeSnakeBodies (a, snakes) =
         List.app (curry removeSnakeBody a) snakes
@@ -319,17 +319,18 @@ struct
             val snakes  = List.map #1 snakesNDirs
             (* remove snake from old locations *)
             val _       = removeSnakes (arena, snakes);
-            val _       = removeSnakes (arena, snakesInGate);
+            val _       = removeSnakeBodies (arena, snakesInGate);
 
             (* move all snakes *)
             val _           = List.app Snake.move snakesNDirs
-            val finished    = List.foldl (fn (s, res) =>
+            val (finished,
+               halfFinished) = List.foldl (fn (s, (f, hf)) =>
                                 (Snake.shrink s;
                                  if Snake.length s <= 1 then
-                                    s :: res
+                                    (s :: f, hf)
                                  else 
                                     (placeSnakeBody (arena, s);
-                                     res))) [] snakesInGate
+                                     (f, s :: hf) ))) ([], []) snakesInGate
 
             fun hitOtherSnake [] s          = false
               | hitOtherSnake (s2::sns) s   = 
@@ -351,15 +352,14 @@ struct
                but other snakes might hit their body.
              *)
             val (dead, snakes)  = List.partition (hitOtherSnake 
-                                                (snakes @ finished)) snakes  
+                                                (snakes @ halfFinished)) snakes  
         in
             placeSnakes (arena, snakes, dead, [], [], finished)
         end
 
     and placeSnakes (a, [], dead, grown, gateEntered, finished) =
         (* at the end remove all those corpses lying around *)
-        (removeSnakeBodies (a, dead);
-         { dead, grown, gateEntered, finished })
+        ({ dead, grown, gateEntered, finished })
 
       | placeSnakes (a, s::sns, dead, grown, gateEntered, finished) =
         let
@@ -382,8 +382,9 @@ struct
             |   P.GATE (c, P.OPEN)  =>
                 if Color.equal (color, c) 
                     then (* it's this snakes gate and it's open *)
-                        placeSnakes (a, sns, dead, grown, s :: gateEntered, 
-                                finished)
+                        (placeSnakeBody (a, s);
+                         placeSnakes (a, sns, dead, grown, s :: gateEntered, 
+                                finished))
                     else (* another snakes gate :-( *)
                         placeSnakes (a, sns, s :: dead, grown, gateEntered,
                             finished)
