@@ -198,8 +198,5 @@ define
 	     'Bind': Bind
 	     'eq': fun {$ X#Y} X == Y end
 	     'assign': fun {$ X#Y} {Assign X Y} '#' end
-	     'builtin': fun {$ S} BuiltinTable.{VirtualString.toAtom S} end
-	     '<': BuiltinTable.'<'   %--** remove
-	     '+': BuiltinTable.'+'   %--** remove
-	     '*': BuiltinTable.'*')   %--** remove
+	     'builtin': fun {$ S} BuiltinTable.{VirtualString.toAtom S} end)
 end

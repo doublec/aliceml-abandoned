@@ -16,10 +16,6 @@ structure BindEnv0 :> BIND_ENV0 =
     val _ = insertInf(E0, VId.fromString "=",  (i, SOME(BindEnv.LEFT,  4)))
     val _ = insertInf(E0, VId.fromString ":=", (i, SOME(BindEnv.LEFT,  3)))
 
-    val _ = insertInf(E0, VId.fromString "<",  (i, SOME(BindEnv.LEFT, 4)))
-    val _ = insertInf(E0, VId.fromString "+",  (i, SOME(BindEnv.LEFT, 6)))
-    val _ = insertInf(E0, VId.fromString "*",  (i, SOME(BindEnv.LEFT, 7)))
-
     (* Type environment *)
 
     val E_empty = new()
@@ -55,8 +51,5 @@ structure BindEnv0 :> BIND_ENV0 =
     val _ = insertVal(E0, VId.fromString ":=",    (i, P.stamp_assign,V))
 
     val _ = insertVal(E0, VId.fromString "builtin", (i, P'.stamp_builtin, V))
-    val _ = insertVal(E0, VId.fromString "<",       (i, P'.stamp_less,    V))
-    val _ = insertVal(E0, VId.fromString "+",       (i, P'.stamp_plus,    V))
-    val _ = insertVal(E0, VId.fromString "*",       (i, P'.stamp_times,   V))
 
   end
