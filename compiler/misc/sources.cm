@@ -2,6 +2,10 @@ Group is
 
     (* Utilities *)
 
+#if (!defined(structure Posix))
+    DummyPosix.sml
+#endif
+
     ExtendedBase.sml
 
     Assert.sml
