@@ -13,11 +13,27 @@ structure Ant =
   fun otherColor Red   = Black
     | otherColor Black = Red
 
-  type ant = {id : id,
-              color : color,
-              state : Instructions.state,
-              resting : int,
-              direction : direction,
-              hasFood : bool}
+  type ant = { id : id,
+               color : color,
+               state : Instructions.state ref,
+               resting : int ref,
+               direction : direction ref,
+               hasFood : bool ref,
+               xpos : int ref,
+               ypos : int ref}
+
+  fun setState({state,...}:ant, newState) = state:=newState
+  fun setResting({resting,...}:ant, newResting) = resting:=newResting
+  fun setDirection({direction,...}:ant, newDirection) = direction:=newDirection
+  fun setHasFood({hasFood,...}:ant, newHasFood) = hasFood:=newHasFood
+  fun setCoords({xpos,ypos,...}:ant, (x,y)) = (xpos:=x; ypos:=y)
+
+  fun getState({state,...}:ant) = !state
+  fun getResting({resting,...}:ant) = !resting
+  fun getDirection({direction,...}:ant) = !direction
+  fun getHasFood({hasFood,...}:ant) = !hasFood
+  fun getColor(ant:ant) = #color ant
+  fun getId(ant:ant) = #id ant
+  fun getCoords({xpos,ypos,...}:ant) = (!xpos, !ypos)
 
   end

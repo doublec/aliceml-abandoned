@@ -1,4 +1,3 @@
-import signature PRIM           from "PRIM-sig"
 import signature TOKEN          from "TOKEN-sig"
 import structure MkPrim         from "MkPrim"
 import structure MkCombinators  from "MkCombinators"

@@ -67,28 +67,31 @@ struct
         else
             let val c = String.sub (line, x)
                 val emptyCell = World.emptyCell
-                val cell = 
+                val cell =
                     case c of
-                        #"#"    => { emptyCell where rocky = true }
-                    |   #"."    => emptyCell
-                    |   #"+"    => { emptyCell where 
+                        #"#"    => { (emptyCell()) where rocky = true }
+                    |   #"."    => emptyCell()
+                    |   #"+"    => { (emptyCell()) where 
                                        redHill = true,
-                                       ant     = newAnt (Ant.Red, id)
+                                       ant     = newAnt (Ant.Red, id, x div 2, y)
                                    }
-                    |   #"-"    => { emptyCell where 
+                    |   #"-"    => { (emptyCell()) where 
                                         blackHill   = true,
-                                        ant         = newAnt (Ant.Black, id) }
+                                        ant         = newAnt (Ant.Black, id, x div 2, y) }
                     |   d       =>
                         if Char.isDigit d andalso d <> #"0" then
-                            { emptyCell where food = ord d - ord #"0" }
+                            { (emptyCell()) where food = ref (ord d - ord #"0") }
                         else error (y+2, x, "invalid character in world")
             in
-                World.initCellAt (world, (x div 2, y), cell);
+                World.initCellAt (world,
+                                  (x div 2, y),
+                                  cell);
                 parseLine' (line, true, y, x+1, xSize, world, id)
             end
 
-    and newAnt (color, id) =
-        SOME {   
-            id = id (), color, state = 0, resting = 0, 
-            direction = Ant.E, hasFood = false }
+    and newAnt (color, id, x, y) : Ant.ant option ref =
+        ref (SOME {   
+                   id = id (), color, state = ref 0, resting = ref 0, 
+                   direction = ref Ant.E, hasFood = ref false,
+                   xpos = ref x, ypos = ref y})
 end

@@ -31,40 +31,40 @@ structure Simulator :
 
   fun instr(Sense(sensedir,st1,st2,cond,_),
             w,id:int,p,a) =
-      let val p' = sensedCell(p, #direction a, sensedir)
-          val st = if cellMatches(w, p', cond, #color a) then st1 else st2
+      let val p' = sensedCell(p, Ant.getDirection a, sensedir)
+          val st = if cellMatches(w, p', cond, Ant.getColor a) then st1 else st2
       in
           setState(w,p,st)
       end
     | instr(Mark(i,st,_),
             w,id,p,a) =
-      (setMarkerAt(w,p, #color a, i);
+      (setMarkerAt(w,p, Ant.getColor a, i);
        setState(w,p,st))
     | instr(Unmark(i, st, _),
             w,id,p,a) =
-      (clearMarkerAt(w,p, #color a, i);
+      (clearMarkerAt(w,p, Ant.getColor a, i);
        setState(w,p,st))
     | instr(PickUp(st1, st2, _),
             w,id,p,a) =
-      if #hasFood a orelse foodAt(w, p)=0 then
+      if Ant.getHasFood a orelse foodAt(w, p)=0 then
           setState(w,p,st2)
       else (setFoodAt(w,p,foodAt(w, p)-1);
             setHasFood(w,p,true);
             setState(w,p,st1))
     | instr(Drop(st, _),
             w,id,p,a) =
-      (if #hasFood a then
+      (if Ant.getHasFood a then
            (setFoodAt(w,p, foodAt(w,p)+1);
             setHasFood(w,p,false))
        else ();
        setState(w,p,st))
     | instr(Turn(lr, st, _),
             w,id,p,a) =
-      (setDirection(w,p, turn(lr, #direction a));
+      (setDirection(w,p, turn(lr, Ant.getDirection a));
        setState(w,p,st))
     | instr(Move(st1, st2, _),
             w,id,p,a) =
-      let val newp = adjacentCell(p, #direction a) in
+      let val newp = adjacentCell(p, Ant.getDirection a) in
           if rocky(w, newp) orelse someAntIsAt(w, newp) then
               setState(w,p,st2)
           else
@@ -85,11 +85,11 @@ structure Simulator :
       let val p = findAnt(w, id)
           val a = antAt(w, p) handle Option => raise Empty
       in
-          if #resting a > 0 then
-              setResting(w, p, #resting a - 1)
-          else instr (getInstruction(case #color a of Red => redAnt
-                                                    | _ => blackAnt,
-                                     #state a),
+          if Ant.getResting a > 0 then
+              setResting(w, p, Ant.getResting a - 1)
+          else instr (getInstruction(case Ant.getColor a of Red => redAnt
+                                                          | _ => blackAnt,
+                                     Ant.getState a),
                       w, id, p, a)
       end
       else ()
@@ -105,18 +105,20 @@ structure Simulator :
             | loop'(size, n, f) = (f (size-n); loop'(size,n-1,f))
           fun loop n f = loop'(n,n,f)
       in
-          print ("Staring with "^Int.toString noOfAnts^" ants\n");
+          print ("Starting with "^Int.toString noOfAnts^" ants\n");
           print ("\t red player: "^redAnt^"\n");
           print ("\t black player: "^blackAnt^"\n");
           print ("random seed: "^(Int.toString(Word.toInt defSeed))^"\n");
-          loop 10001
-          (fn r => (print ("\nAfter round "^Int.toString r^"...\n");
-                    printOnlyAnts world;
+          loop 100000
+          (fn r => ((*print ("\nAfter round "^Int.toString r^"...\n");*)
+                    (*printOnlyAnts world;*)
+                    (*printWorld world;*)
                     if r mod 1000 = 0 then print ("round "^Int.toString r^"\n") else ();
                     loop noOfAnts
                          (fn i => step(world, redBrain, blackBrain, i))));
-          printWorld world;
-          printStats world
+          (*printWorld world;*)
+          printStats world;
+          ()
       end
 
   end

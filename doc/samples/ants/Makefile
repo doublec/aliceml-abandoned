@@ -8,7 +8,8 @@ SIMULATOR_COMPONENTS = \
 	World \
 	Simulator \
 	InstructionsParser \
-	WorldParser
+	WorldParser \
+	simAnt
 
 SIMULATOR_SOURCES = $(SIMULATOR_COMPONENTS:%=%.aml)
 SIMULATOR_TARGETS = $(SIMULATOR_COMPONENTS:%=%.stc)
@@ -39,7 +40,7 @@ parsec/Makefile.depend:
 
 parsec: parsec/Makefile.depend
 	(cd parsec && $(MAKE))
-	
+
 depend:
 	$(ALICEDEP) $(SOURCES) > Makefile.depend
 
