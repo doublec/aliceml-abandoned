@@ -499,7 +499,7 @@ word SelFromEnv(word env, u_int index) {
   } else {}
 
 #define CONTINUE()							     \
-  if (StatusWord::GetStatus(Store::GCStatus() | Scheduler::PreemptStatus())) \
+  if (StatusWord::GetStatus() != 0)                                          \
     return Interpreter::PREEMPT;					     \
   else									     \
     return Interpreter::CONTINUE;

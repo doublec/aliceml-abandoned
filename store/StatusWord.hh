@@ -29,8 +29,14 @@ public:
   static void SetStatus(u_int mask) {
     status |= mask;
   }
+  static void ClearStatus() {
+    status = 0;
+  }
   static void ClearStatus(u_int mask) {
     status &= ~mask;
+  }
+  static u_int GetStatus() {
+    return status;
   }
   static u_int GetStatus(u_int mask) {
     return status & mask;
