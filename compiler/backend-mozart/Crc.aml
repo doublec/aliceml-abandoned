@@ -16,6 +16,10 @@
  * 3309 [ISO-3309] or ITU-T V.42 [ITU-V42] for a formal specification.)
  *)
 
+import
+    signature CRC
+from "CRC-sig"
+
 structure Crc :> CRC =
     struct
 	open Word32
