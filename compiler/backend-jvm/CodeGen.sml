@@ -1,3 +1,4 @@
+(* Labelzähler, aNewLabel liefert einen neuen String "label?", ? ist Zahl *)
 local
     val labelcount = ref 0
 in
@@ -6,12 +7,15 @@ in
 	 "label"^Int.toString(!labelcount))
 end
 
+(* falls was böses passiert, wird eine Error-exception mit sinnvollem Inhalt 'geraist' *)
 exception Error of string
 
+(* Verwaltung der lokalen Variablen. Wir merken uns den maximalen Wert, welche als nächste frei ist, usw.
+ Auf einem Stack werden verschachtelte Lambdas verwurschtelt *)
 local
     val localscount = ref 1 (* in 0 ist this, in 1 ist das Argument *)
-    and maxlocals   = ref 1
-    and stack : ((int * int) list) ref = ref nil
+    val maxlocals   = ref 1
+    val stack : ((int * int) list) ref = ref nil
 in
     val rec
 	nextFreeLocal = fn () => (localscount := !localscount + 1;
@@ -29,9 +33,11 @@ in
 	case !stack of
 	    ((lc,ml)::rest) => (stack := rest; localscount := lc; maxlocals := ml)
 	  | nil => raise Error("empty locals stack")
-    and maxLocals = fn () => ! maxlocals
+    and
+	maxLocals = fn () => ! maxlocals
 end
 
+(* Wie lautet die aktuelle Klasse, in der wir sind? Stack weil verschachtelte Lambdas. *)
 local
     val stack = ref ["Drinstehnmuesst"]
 in
@@ -43,11 +49,15 @@ in
 	popClass  = fn () =>  case !stack of (x::xs) => stack := xs | _ => raise Error("popClass kapuutt")
 end
 
+(* Just another mad function *)
 val rec flatten = fn x::xs => x@flatten(xs) | nil => nil
 
+(* Einstiegspunkt *)
 val rec genProgramCode = fn (Dec dec) => decCode (dec)
+
 and
     decListCode = fn decs : DEC list => flatten (map decCode decs)
+
 and
     decCode =
     fn (Local (localdecs, decs)) =>
@@ -77,6 +87,7 @@ and
     in
 	part1 @ part2
     end
+
 and
     expCode=
     fn (Andalso(exp1,exp2)) =>
@@ -101,18 +112,18 @@ and
 	      Label truelabel]
 	@ e2 @ [Label falselabel]
     end
+
      | (Appl (exp1,exp2)) =>
 	let
 	    val coname     = aNewLabel()
-	    and exname     = aNewLabel()
-	    and builtin    = aNewLabel()
-	    and errorlabel = aNewLabel()
-	    and endlabel   = aNewLabel()
-	    and exp        = expCode(exp1)
-	    and atexp      = expCode(exp2)
-	    and h          = nextFreeLocal()
-	    and i          = nextFreeLocal()
-
+	    val exname     = aNewLabel()
+	    val builtin    = aNewLabel()
+	    val errorlabel = aNewLabel()
+	    val endlabel   = aNewLabel()
+	    val exp        = expCode(exp1)
+	    val atexp      = expCode(exp2)
+	    val h          = nextFreeLocal()
+	    val i          = nextFreeLocal()
 	    val insts = exp @ atexp @
 		[
 		 Astore h,
@@ -158,15 +169,20 @@ and
 	in
 	    ( dropLocals(2); insts)
 	end
+
      | (Case (exp, match)) =>
 	expCode(exp) @ matchCode(match)
+
      | (Explist liste) =>
 	let
 	    val rec
-		eiter = fn exp::nil => expCode(exp) | (exp::exps) => expCode(exp)@[Pop]@eiter(exps) | _ => raise Error "eiter"
+		eiter =
+		fn exp::nil => expCode(exp)
+		 | (exp::exps) => expCode(exp)@[Pop]@eiter(exps) | _ => raise Error "eiter"
 	in
 	    eiter liste
 	end
+
      | (lambda as Fn (JVMString name,freevars,match)) =>
 	let
 	    val names = flatten (map Load freevars)
@@ -182,12 +198,13 @@ and
 	     popClass();
 	     result)
 	end
+
      | Handle(exp, match) =>
 	let
 	    val e     = expCode(exp)
-	    and m     = matchCode(match)
-	    and try   = aNewLabel()
-	    and catch = aNewLabel()
+	    val m     = matchCode(match)
+	    val try   = aNewLabel()
+	    val catch = aNewLabel()
 	in
 	    [Catch (CException, try, catch, catch),
 	     Catch (CRuntimeError, try, catch, catch),
@@ -196,14 +213,15 @@ and
 	    [Label catch] @
 	    m
 	end
-    | If(exp1,exp2,exp3) =>
+
+     | If(exp1,exp2,exp3) =>
 	let
 	    val e1 = expCode(exp1)
-	    and e2 = expCode(exp2)
-	    and e3 = expCode(exp3)
-	    and truelabel  = aNewLabel()
-	    and falselabel = aNewLabel()
-	    and endiflabel = aNewLabel()
+	    val e2 = expCode(exp2)
+	    val e3 = expCode(exp3)
+	    val truelabel  = aNewLabel()
+	    val falselabel = aNewLabel()
+	    val endiflabel = aNewLabel()
 	in
 	    e1@
 	    [Invokevirtual (CVal, "request", "()"^CVal),
@@ -225,9 +243,11 @@ and
 	    e3 @
 	    [Label endiflabel]
 	end
-    | Let(declist,exp) =>
+
+     | Let(declist,exp) =>
 	decListCode(declist)@expCode(exp)
-    | Orelse(exp1,exp2) =>
+
+     | Orelse(exp1,exp2) =>
 	let
 	    val truelabel  = aNewLabel()
 	    val falselabel = aNewLabel()
@@ -249,10 +269,11 @@ and
 		  Label falselabel]
 	    @ e2 @ [Label truelabel]
 	end
-    | Raise(exp) =>
+
+     | Raise(exp) =>
 	let
 	    val e = expCode(exp)
-	    and noexception = aNewLabel()
+	    val noexception = aNewLabel()
 	in
 	    e @
 	    [Dup,
@@ -267,9 +288,11 @@ and
 	     Invokespecial (CRuntimeError,"<init>","("^CString^")V"),
 	     Athrow]
 	end
-    | Record(Arity 0, _) =>
+
+     | Record(Arity 0, _) =>
 	[Getstatic (CConstants^"/dmlunit", CConstructor0)]
-    | Record(Arity arity, reclablist) =>
+
+     | Record(Arity arity, reclablist) =>
 	let
 	    val rec
 		labelcode =
@@ -289,10 +312,10 @@ and
 		 atCodeInt(label),
 		 Invokespecial (CLabel,"<init>","(I)V"),
 		 Aastore]
-	    and
+	    val
 		labeliter = fn ((l,_)::rest,i) => labelcode (l,i) @ labeliter(rest,i+1)
 	      | (nil,_) => nil
-	    and
+	    val
 		labexpiter = fn ((_,e)::rest,i) => [Dup, atCodeInt(i)] @ expCode(e) @ [Aastore] @ labexpiter(rest, i+1)
 	      | (nil,_) => nil
 	in
@@ -306,7 +329,8 @@ and
 	    labexpiter(reclablist,0) @
 	    [Invokespecial (CRecord,"<init>","(["^CLabel^"["^CVal^")V")]
 	end
-    | SCon(scon) =>
+
+     | SCon(scon) =>
 	let
 	    val F = case scon of
 		CHARscon c   => atCodeInt(ord c)
@@ -316,7 +340,7 @@ and
 		    orelse (Real.sign (r-2.0)=0) then Fconst (trunc r) else Ldc (JVMFloat r)
 	      | STRINGscon s => Ldc (JVMString s)
 	      | WORDscon w   => Ldc (JVMString "XXX")
-	    and jtype = case scon of
+	    val jtype = case scon of
 		CHARscon c   => "(I)V"
 	      | INTscon i    =>  "(I)V"
 	      | REALscon r   => "(F)V"
@@ -334,23 +358,26 @@ and
 	     F,
 	     Invokespecial (skon,"<init>",jtype)]
 	end
-    | VId(Shortvid(vidname, Defining loc)) => (
+
+     | VId(Shortvid(vidname, Defining loc)) => (
 				      loc  := nextFreeLocal();
 				      nil)
-    | VId(Shortvid(_,Bound b)) => (case !b of
-				       Shortvid (_,Defining wherever) =>
-					   [Aload (!wherever)]
-				     | _ => raise Error "invalid vid")
-    | VId(Shortvid(vidname,Free)) =>
+
+     | VId(Shortvid(_,Bound b)) => (case !b of
+					Shortvid (_,Defining wherever) =>
+					    [Aload (!wherever)]
+				      | _ => raise Error "invalid vid")
+     | VId(Shortvid(vidname,Free)) =>
 	[Aload 0,
 	 Getfield (getCurrentClass()^vidname, CVal)]
-    | While(exp1,exp2) =>
+
+     | While(exp1,exp2) =>
 	let
 	    val beforelabel = aNewLabel()
-	    and truelabel   = aNewLabel()
-	    and falselabel  = aNewLabel()
-	    and e1 = expCode(exp1)
-	    and e2 = expCode(exp2)
+	    val truelabel   = aNewLabel()
+	    val falselabel  = aNewLabel()
+	    val e1 = expCode(exp1)
+	    val e2 = expCode(exp2)
 	in
 	    [Label beforelabel] @
 	    e1 @
@@ -371,7 +398,9 @@ and
 	    [Goto beforelabel,
 	     Label falselabel]
 	end
-    | _ => raise Error "Fußschuß"
+
+     | _ => raise Error "Fußschuß"
+
 and
     patCode = fn
     Patas(Shortvid(_, Defining loc), pat) =>
@@ -379,11 +408,12 @@ and
 	 [Dup,
 	  Astore (!loc)] @
 	 patCode(pat))
+
   | Patcon(Shortvid(vidname, Bound loc), pat) =>
 	let
 	    val faillabel = aNewLabel()
-	    and endlabel = aNewLabel()
-	    and p = patCode(pat)
+	    val endlabel = aNewLabel()
+	    val p = patCode(pat)
 	in
 	    [Invokevirtual (CVal, "request", "()"^CVal),
 	     Dup,
@@ -402,11 +432,12 @@ and
 	     Pop,
 	     Label endlabel]
 	end
+
   | Patex(Shortvid(vidname, Bound loc), pat) =>
 	let
 	    val faillabel = aNewLabel()
-	    and endlabel = aNewLabel()
-	    and p = patCode(pat)
+	    val endlabel = aNewLabel()
+	    val p = patCode(pat)
 	in
 	    [Invokevirtual (CVal, "request", "()"^CVal),
 	     Dup,
@@ -425,11 +456,12 @@ and
 	     Pop,
 	     Label endlabel]
 	end
+
   | Patopenrec(reclabs) =>
 	let
 	    val faillabel = aNewLabel()
-	    and endlabel = aNewLabel()
-	    and loc = nextFreeLocal()
+	    val endlabel = aNewLabel()
+	    val loc = nextFreeLocal()
 	    val prc = patRowCode(reclabs, loc)
 	in
 	    [Dup,
@@ -444,11 +476,14 @@ and
 	     Iconst 0,
 	     Label endlabel]
 	end
+
   | Patrec _ => raise Error "not yet understood"
+
   | Patscon (scon) =>
 	[Invokevirtual (CVal, "request", "()"^CVal)] @
 	expCode(SCon scon) @
 	[Invokevirtual (CVal, "equals", "("^CVal^")I")]
+
   | Patvid (Shortvid vid) =>
 	(case vid of
 	     (_, Defining loc) => (loc := nextFreeLocal();
@@ -460,7 +495,9 @@ and
 				  | _ => raise Error "patvid bound def")
 	   | (_, Free) => raise Error "patvid free"
 		 )
+
   | _ => raise Error "patCode Patas"
+
 and
     patRowCode = fn
     (labpat::reclabs,i) =>
@@ -469,9 +506,9 @@ and
 		((lab,pat), i) =>
 		    let
 			val undef = aNewLabel()
-			and endlabel = aNewLabel()
-			and p = patCode(pat)
-			and l = case lab of RecStringlabel s => s | RecIntlabel k => Int.toString(k)
+			val endlabel = aNewLabel()
+			val p = patCode(pat)
+			val l = case lab of RecStringlabel s => s | RecIntlabel k => Int.toString(k)
 		    in
 			[Aload i,
 			 Ldc (JVMString l),
@@ -486,8 +523,8 @@ and
 			 Label endlabel]
 		    end
 	    val skiplabel = aNewLabel()
-	    and head = patRowCodeSingle(labpat,i)
-	    and prc = patRowCode(reclabs,i)
+	    val head = patRowCodeSingle(labpat,i)
+	    val prc = patRowCode(reclabs,i)
 	in
 	    head @
 	    [Dup,
@@ -496,6 +533,7 @@ and
 	    prc @
 	    [Label skiplabel]
 	end
+
   | (nil, _) => [Iconst 1]
 
 and
@@ -528,10 +566,12 @@ and
 	 Athrow,
 	 Label endlabel]
     end
+
 and
     Load = fn (JVMString name) => [Aload 0, Getfield ( getCurrentClass(), name)]
   | (JVMInt i) => [Aload i]
   | _ => raise Error("cannot load scrap")
+
 and
     expCodeClass =
     fn Fn (JVMString name,freevars,match) =>
@@ -562,7 +602,9 @@ and
     in
 	Class(access,name,CFcnClosure,fieldlist,[init,applY])
     end
+
      | _ => raise Error "expCodeClass"
+
 and
     atCodeInt =
     fn i =>
