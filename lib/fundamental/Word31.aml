@@ -13,8 +13,8 @@
 
 import structure __pervasive
        structure Int and LargeWord and Word from "Pervasive"
-import type int and bool                    from "ToplevelTypes"
-import structure MkWord                     from "MkWord"
+import __primitive type int and bool        from "ToplevelTypes"
+import functor MkWord                       from "MkWord"
 
 structure Word31 = MkWord(
     type word = LargeWord.word
