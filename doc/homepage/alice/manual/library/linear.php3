@@ -68,7 +68,8 @@
     </DT>
     <DD>
       <P>Used to describe domains of finite domain variables. <TT>`` i</TT>
-         denotes a single integer value and <TT>>`#(l,h)</TT> denotes all
+         denotes the single integer value <TT>i</TT>
+         and <TT>>`#(l,h)</TT> denotes all
          integer values between <TT>l</TT> and <TT>h</TT>. For example,
          <TT>[``3,`#(5,10)]</TT> denotes <TT>[3,5,6,7,8,9,10]</TT>.
       </P>
@@ -76,8 +77,8 @@
 
     <DT>
       <TT>datatype term =<BR>
-              fd of FD.fd<BR>
-            | `  of int<BR>
+            &nbsp;&nbsp;fd of FD.fd<BR>
+            | `&nbsp;&nbsp;of int<BR>
             | `+ of term * term<BR>
             | `- of term * term<BR>
             | `* of term * term</TT>
@@ -100,12 +101,12 @@
 
     <DT>
       <TT>datatype rel =<BR>
-	    `<   of term * term<BR>
-	  | `<=  of term * term<BR>
-	  | `=   of term * term<BR>
-	  | `<>  of term * term<BR>
-	  | `>=  of term * term<BR>
-	  | `>   of term * term<BR>
+	  &nbsp;&nbsp;`<&nbsp;&nbsp;&nbsp;of term * term<BR>
+	  | `<=&nbsp;&nbsp;of term * term<BR>
+	  | `=&nbsp;&nbsp;&nbsp;of term * term<BR>
+	  | `<>&nbsp;&nbsp;of term * term<BR>
+	  | `>=&nbsp;&nbsp;of term * term<BR>
+	  | `>&nbsp;&nbsp;&nbsp;of term * term<BR>
 	  | `<-> of rel * term</TT>
     </DT>
     <DD>
