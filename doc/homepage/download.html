@@ -60,7 +60,7 @@ where <TT>&lt;alice-dir&gt;</TT>denotes the Alice installation directory. This w
 
 <UL>
   <LI>Please add
-  <PRE>deb http://www.ps.uni-sb.de/alice/download/debian testing</PRE>
+  <PRE>deb http://www.ps.uni-sb.de/alice/download/debian testing contrib</PRE>
   to your <TT>/etc/apt/sources.list</TT>. You need to apt-get the
   package <TT>alice-runtime</TT>.</LI>
   <LI>Alternatively, use <TT>deb-src</TT> to retrieve and install
@@ -97,7 +97,10 @@ and libgmp.</LI>
 <LI>Please add
 <PRE>deb http://www.ps.uni-sb.de/alice/download/fink ./</PRE>
 to your <TT>/sw/etc/apt/sources.list</TT>. You need to install the
-package <TT>alice-runtime</TT>, e.g. using the Fink Commander.</LI>
+package <TT>alice-runtime</TT>, e.g. using the Fink Commander.
+The fink dependencies for gtk seem to be incomplete. If you can't see
+any text e.g. in the GUI of the interactive toplevel, please install the
+package <TT>pango1-xft2</TT> manually.</LI>
 
 <LI>
 Additionally, we provide <A HREF="download/AliceLauncher.dmg">a Mac OS X launcher
