@@ -68,8 +68,8 @@
 
   <H3>Constructors</H3>
   <P>With a few exceptions simplifying interoperability, constructors of
-    closed datatypes are mapped to atoms and constructors of open datatypes
-    are mapped to names.</P>
+    closed datatypes are mapped to atoms and constructors of extensible
+    datatypes are mapped to names.</P>
   <CENTER>
     <TABLE class=dyptic>
       <TR><TH>Alice Type<TH>Oz Representation
@@ -82,7 +82,7 @@
       <TR>
 	<TD>Other constructors of closed datatypes
 	<TD>Atoms with corresponding print name
-      <TR><TD>Constructors of open datatypes<TD>Names
+      <TR><TD>Constructors of extensible datatypes<TD>Names
     </TABLE>
   </CENTER>
 

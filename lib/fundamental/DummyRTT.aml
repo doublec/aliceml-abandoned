@@ -18,7 +18,7 @@ local
     struct
 	__primitive type 'a strict   = "strict"
 	__primitive type 'a conarrow = "conarrow"
-	__primitive datatype exn     = "exn"
+	__primitive exttype exn      = "exn"
     end
 in
     structure __pervasive =

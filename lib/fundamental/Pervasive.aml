@@ -22,7 +22,7 @@
 	type ('a,'b) conarrow
 
 	(* to enable derived forms: *)
-	datatype exn
+	exttype exn
 	datatype 'a list = nil | :: of 'a * 'a list
 
 	structure Int :		sig eqtype int  end
@@ -183,7 +183,7 @@ struct
     open __pervasive
 
     __primitive __reftype 'a ref = ref of 'a
-    __primitive datatype exn = "exn"
+    __primitive exttype exn = "exn"
     datatype 'a list = nil | op:: of 'a * 'a list
 
     structure Int	= struct __primitive eqtype int		= "int"     end
