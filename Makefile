@@ -52,15 +52,18 @@ all-subdirs:
 
 clean:
 	for i in $(SUBDIRSR); do (cd $$i && $(MAKE) clean) || exit 1; done
-	rm -f $(OBJS) Main.o stow.def
+	rm -f $(OBJS) Main.o stow.def JavaMain.o
 
 veryclean:
 	for i in $(SUBDIRSR); do (cd $$i && $(MAKE) veryclean) || exit 1; done
-	rm -f $(OBJS) Main.o stow.exe stow.dll
+	rm -f $(OBJS) Main.o stow.def JavaMain.o
+	rm -f stow.exe stow.dll java.exe
 
 distclean:
 	for i in $(SUBDIRSR); do (cd $$i && $(MAKE) distclean) || exit 1; done
-	rm -f $(OBJS) Main.o stow.exe stow.dll Makefile.depend
+	rm -f $(OBJS) Main.o stow.def JavaMain.o
+	rm -f stow.exe stow.dll java.exe
+	rm -f Makefile.depend
 
 Makefile.depend: Makefile $(SRCS)
 	cd store && $(MAKE) StoreConfig.hh || exit 1
