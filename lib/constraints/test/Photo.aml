@@ -16,7 +16,7 @@ import structure Tools    from "x-alice:/lib/system/Tools"
 import structure FD       from "x-alice:/lib/constraints/FD"
 import structure Space    from "x-alice:/lib/constraints/Space"
 import structure Search   from "x-alice:/lib/constraints/Search"
-import structure Explorer from "x-alice:/lib/constraints/Explorer"
+import structure Explorer from "x-alice:/lib/tools/Explorer"
 
 structure Photo =
     struct
