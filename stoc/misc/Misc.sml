@@ -21,6 +21,24 @@ structure Misc :> MISC =
     fun List_appr f  nil		= ()
       | List_appr f (x::xs)		= ( List_appr f xs ; f x )
 
+    fun List_foldli f z xs =
+	let
+	    fun foldli' (x::xr, z, i) =
+		foldli' (xr, f (i, x, z), i + 1)
+	      | foldli' (nil, z, _) = z
+	in
+	    foldli' (xs, z, 0)
+	end
+
+    fun List_mapi f xs =
+	let
+	    fun mapi' (x::xr, i) = f (i, x)::mapi' (xr, i + 1)
+	      | mapi' (nil, _) = nil
+	in
+	    mapi' (xs, 0)
+	end
+
+
     fun ListPair_find f (nil,_)		= NONE
       | ListPair_find f (_,nil)		= NONE
       | ListPair_find f (x::xs, y::ys)	= if f(x,y) then SOME(x,y)

@@ -12,6 +12,8 @@ signature MISC =
     val Option_fold :	('a * 'b -> 'b) -> 'b -> 'a option -> 'b
 
     val List_appr :	('a -> unit) -> 'a list -> unit
+    val List_foldli :	(int * 'a * 'b -> 'b) -> 'b -> 'a list -> 'b
+    val List_mapi :	(int * 'a -> 'b) -> 'a list -> 'b list
 
     val ListPair_find :	('a * 'b -> bool) -> 'a list * 'b list -> ('a * 'b) option
 
