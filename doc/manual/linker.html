@@ -75,9 +75,11 @@ alicelink -v --include ./ ./Foo -o LinkedFoo.ozf</PRE>
   <DD><P>Exclude components with these URL prefixes.</P></DD>
   <DT><TT>--rewrite</TT> &lt;<I>rule</I>&gt;<TT>,</TT>...<TT>,</TT>&lt;<I
     >rule</I>&gt;</DT>
-  <DD><P>Specifies how to replace import URL prefixes in resulting component,
-    where a RULE is of the form &lt;<I>from</I>&gt;<TT>=</TT>&lt;<I
-    >to</I>&gt;.</P></DD>
+  <DD><P>Specifies how to rewrite import URLs in resulting component.
+    A &lt;<I>rule</I>&gt; is of the form &lt;<I>from</I>&gt;<TT>=</TT>&lt;<I
+    >to</I>&gt;, where &lt;<I>from</I>&gt; and </TT>&lt;<I>to</I>&gt; are
+    <A href="library/resolver-handler.html#pattern">patterns</A> in which
+    <TT>?{x}</TT> denotes a variable.</P></DD>
 </DL>
 
 
