@@ -219,13 +219,13 @@ public:
   }
   static Real *FromWordDirect(word x) {
     Chunk *chunk = Store::DirectWordToChunk(x);
-    Assert(chunk->GetSize() == Store::SizeToChunkSize(sizeof(double)));
+    Assert(chunk->GetSize() == sizeof(double));
     return static_cast<Real *>(chunk);
   }
 
   double GetValue() {
     double result;
-    std::memcpy(GetBase(), &result, sizeof(double));
+    std::memcpy(&result, GetBase(), sizeof(double));
     return result;
   }
 };
