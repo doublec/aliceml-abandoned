@@ -128,9 +128,9 @@ define
 	 Hd = tryStm({TrInfo Info} {TrBody TryBody $ nil ShareDict}
 		     {TrIdDef IdDef} {TrBody HandleBody $ nil ShareDict})|Tl
       [] 'EndTryStm'(Info Body) then
-	 Hd = endTryStm({TrInfo Info} {TrBody Body})|Tl
+	 Hd = endTryStm({TrInfo Info} {TrBody Body $ nil ShareDict})|Tl
       [] 'EndHandleStm'(Info Body) then
-	 Hd = endTryStm({TrInfo Info} {TrBody Body})|Tl
+	 Hd = endHandleStm({TrInfo Info} {TrBody Body $ nil ShareDict})|Tl
       [] 'TestStm'(Info Id Tests Body) then
 	 Hd = testStm({TrInfo Info} {TrId Id}
 		      case Tests of 'LitTests'(LitBodyList) then
