@@ -95,6 +95,8 @@ DEFINE1(Thread_isSuspended) {
 
 DEFINE2(Thread_raiseIn) {
   DECLARE_THREAD(thread, x0);
+  Transient *transient = Store::WordToTransient(x1);
+  if (transient != INVALID_POINTER) REQUEST(transient->ToWord());
   if (thread == Scheduler::GetCurrentThread()) {
     RAISE(x1);
   } else {
