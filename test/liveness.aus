@@ -1,0 +1,6 @@
+__prebound Prebound
+__primitive val show: 'a = "show"
+
+val _ = show 5
+val _ = (raise Prebound.Match) handle _ => 6
+val _ = show 7
