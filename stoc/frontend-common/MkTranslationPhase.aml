@@ -122,6 +122,7 @@ UNFINISHED: obsolete after bootstrapping:
       | idsTyp xs' (I.ExtTyp(i))	= ()
       | idsTyp xs' (I.AllTyp(i,x,t))	= idsTyp xs' t
       | idsTyp xs' (I.ExTyp(i,x,t))	= idsTyp xs' t
+      | idsTyp xs' (I.PackTyp(i,j))	= ()
       | idsTyp xs' (I.SingTyp(i,y))	= ()
     and idsTyps xs'			= List.app(idsTyp xs')
 
@@ -157,6 +158,7 @@ UNFINISHED: obsolete after bootstrapping:
       | trExp(I.HandleExp(i,e,ms))	= O.HandleExp(i, trExp e, trMatchs ms)
       | trExp(I.AnnExp(i,e,t))		= trExp e
       | trExp(I.LetExp(i,ds,e))		= O.LetExp(i, trDecs ds, trExp e)
+      | trExp(I.PackExp(i,m))		= trMod m
 
     and trExps es			= List.map trExp es
 
@@ -217,6 +219,7 @@ UNFINISHED: obsolete after bootstrapping:
       | trMod(I.AnnMod(i,m,j))		= trMod m
       | trMod(I.UpMod(i,m,j))		= trMod m
       | trMod(I.LetMod(i,ds,m))		= O.LetExp(i, trDecs ds, trMod m)
+      | trMod(I.UnpackMod(i,e,j))	= trExp e
 
 
 
@@ -267,6 +270,7 @@ UNFINISHED: obsolete after bootstrapping:
       | trTyp(I.ExtTyp(i), ds')		= ds'
       | trTyp(I.AllTyp(i,x,t), ds')	= trTyp(t, ds')
       | trTyp(I.ExTyp(i,x,t), ds')	= trTyp(t, ds')
+      | trTyp(I.PackTyp(i,j), ds')	= ds'
       | trTyp(I.SingTyp(i,y), ds')	= ds'
 
     and trTyps(ts, ds')			= List.foldr trTyp ds' ts
@@ -328,6 +332,7 @@ UNFINISHED: obsolete after bootstrapping:
       | trRep(I.ExtTyp(i), y, ds')	= ds'
       | trRep(I.AllTyp(i,x,t), y, ds')	= trRep(t, y, ds')
       | trRep(I.ExTyp(i,x,t), y, ds')	= trRep(t, y, ds')
+      | trRep(I.PackTyp(i,j), y, ds')	= ds'
       | trRep(I.SingTyp(i,y'), y, ds')	= ds'
 
     and trReps(ts, y, ds')		=

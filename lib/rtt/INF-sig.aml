@@ -134,6 +134,8 @@ signature INF =
 	| MismatchInf of lab * mismatch
 	| MismatchValSort of lab * val_sort * val_sort
 	| MismatchTypSort of lab * typ_sort * typ_sort
+	| MismatchDom     of mismatch
+	| MismatchRan     of mismatch
 	| Incompatible    of inf * inf
 	| IncompatibleArg of path * path
 
