@@ -391,7 +391,6 @@ structure DerivedForms :> DERIVED_FORMS =
     val IFExp        = G.IFExp
     val ORELSEExp    = G.ORELSEExp
     val ANDALSOExp   = G.ANDALSOExp
-    val WHILEExp     = G.WHILEExp
     val SEQAtExp     = G.SEQAtExp
 
     fun LETAtExp(I, dec, [exp]) = G.LETAtExp(I, dec, exp)
@@ -418,6 +417,25 @@ structure DerivedForms :> DERIVED_FORMS =
 	    G.ATEXPExp(I, G.LETAtExp(I, dec, VIDExp(I', vid)))
 	end
 
+    fun WHILEExp(I, exp1, exp2) =
+	let
+	    val vid       = G.VId(I, VId.invent())
+	    val longvid   = G.SHORTLong(I, vid)
+	    val vidExp    = G.ATEXPExp(I, G.LONGVIDAtExp(I, G.WITHOp, longvid))
+	    val unitAtExp = UNITAtExp(I)
+	    val unitExp   = G.ATEXPExp(I, unitAtExp)
+	    val callVid   = G.APPExp(I, vidExp, unitAtExp)
+
+	    val seqExp    = G.ATEXPExp(I, G.SEQAtExp(I, [exp2, callVid]))
+	    val fnBody    = G.IFExp(I, exp1, seqExp, unitExp)
+	    val mrule     = G.Mrule(I, G.ATPATPat(I, G.WILDCARDAtPat(I)),fnBody)
+	    val fnExp     = G.FNExp(I, G.Match(I, mrule, NONE))
+	    val fnBind    = G.PLAINValBind(I, VIDPat(I, vid), fnExp, NONE)
+	    val valbind   = G.RECValBind(I, fnBind)
+	    val dec       = G.VALDec(I, G.Seq(I, []), valbind)
+	in
+	    G.ATEXPExp(I, G.LETAtExp(I, dec, callVid))
+	end
 
     fun VIDExpRow(I, vid as G.VId(I',vid'), ty_opt, exprow_opt) =
 	let

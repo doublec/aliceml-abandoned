@@ -83,7 +83,6 @@ signature ABSTRACT_GRAMMAR =
 	| AndExp    of exp_info * exp * exp	(* short-circuit conjunction *)
 	| OrExp     of exp_info * exp * exp	(* short-circuit disjunction *)
 	| IfExp     of exp_info * exp * exp * exp (* conditional *)
-	| WhileExp  of exp_info * exp * exp	(* while loop *)
 	| SeqExp    of exp_info * exp vector	(* sequential expressions *)
 	| CaseExp   of exp_info * exp * match vector (* case *)
 	| HandleExp of exp_info * exp * match vector (* exception handling *)

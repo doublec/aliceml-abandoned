@@ -38,7 +38,6 @@ structure ElaborationError :> ELABORATION_ERROR =
 	| OrExpUnify		of unify_error
 	| IfExpCondUnify	of unify_error
 	| IfExpBranchUnify	of unify_error
-	| WhileExpCondUnify	of unify_error
 	| RaiseExpUnify		of unify_error
 	| HandleExpUnify	of unify_error
 	| AnnExpUnify		of unify_error
@@ -301,10 +300,6 @@ structure ElaborationError :> ELABORATION_ERROR =
 	ppUnify4(
 	  textpar["inconsistent","types","in","branches","of","`if':"],
 	  textpar["does","not","agree","with","type"], ue)
-      | ppError(WhileExpCondUnify ue) =
-	ppUnify2(
-	  textpar["operand","of","`while'","is","not","a","boolean:"],
-	  textpar["does","not","match","type"], ue)
       | ppError(RaiseExpUnify ue) =
 	ppUnify2(
 	  textpar["operand","of","`raise'","is","not","an","exception:"],

@@ -109,7 +109,6 @@ functor MakeAbstractGrammar(type fix_info
 	| AndExp    of exp_info * exp * exp	(* short-circuit conjunction *)
 	| OrExp     of exp_info * exp * exp	(* short-circuit disjunction *)
 	| IfExp     of exp_info * exp * exp * exp (* conditional *)
-	| WhileExp  of exp_info * exp * exp	(* while loop *)
 	| SeqExp    of exp_info * exp vector	(* sequential expressions *)
 	| CaseExp   of exp_info * exp * match vector (* case *)
 	| FailExp   of exp_info			(* failure *)
@@ -265,7 +264,6 @@ functor MakeAbstractGrammar(type fix_info
       | infoExp(AndExp(i,_,_))		= i
       | infoExp(OrExp(i,_,_))		= i
       | infoExp(IfExp(i,_,_,_))		= i
-      | infoExp(WhileExp(i,_,_))	= i
       | infoExp(SeqExp(i,_))		= i
       | infoExp(CaseExp(i,_,_))		= i
       | infoExp(FailExp(i))		= i

@@ -116,7 +116,6 @@ signature INPUT_GRAMMAR =
 	| HANDLEExp      of Info * Exp * Match
 	| RAISEExp       of Info * Exp
 	| IFExp          of Info * Exp * Exp * Exp
-	| WHILEExp       of Info * Exp * Exp
 	| CASEExp        of Info * Exp * Match
 	| FNExp          of Info * Match
 	| PACKExp        of Info * LongStrId

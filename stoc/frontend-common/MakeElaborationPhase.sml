@@ -97,7 +97,6 @@ struct
 						  isValue exp2 andalso
 						  isValue exp3
       | isValue( I.AppExp _
-	       | I.WhileExp _
 	       | I.SeqExp _
 	       | I.CaseExp _
 	       | I.RaiseExp _
@@ -416,19 +415,6 @@ struct
 				error(i, E.IfExpBranchUnify(t2, t3, t4, t5))
 	in
 	    ( t2, O.IfExp(typInfo(i,t2), exp1', exp2', exp3') )
-	end
-
-      | elabExp(E, I.WhileExp(i, exp1, exp2)) =
-	let
-	    val (t1,exp1') = elabExp(E, exp1)
-	    val (t2,exp2') = elabExp(E, exp2)
-	    val  tb        = boolTyp E
-	    val  t         = unitTyp E
-	    val  _         = Type.unify(t1,tb) handle Type.Unify(t3,t4) =>
-				error(I.infoExp exp1,
-				      E.WhileExpCondUnify(t1, tb, t3, t4))
-	in
-	    ( t, O.WhileExp(typInfo(i,t), exp1', exp2') )
 	end
 
       | elabExp(E, I.SeqExp(i, exps)) =

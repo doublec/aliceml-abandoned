@@ -29,7 +29,6 @@ signature ELABORATION_ERROR =
 	| OrExpUnify		of unify_error
 	| IfExpCondUnify	of unify_error
 	| IfExpBranchUnify	of unify_error
-	| WhileExpCondUnify	of unify_error
 	| RaiseExpUnify		of unify_error
 	| HandleExpUnify	of unify_error
 	| AnnExpUnify		of unify_error

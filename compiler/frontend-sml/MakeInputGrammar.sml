@@ -116,7 +116,6 @@ functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
 	| HANDLEExp      of Info * Exp * Match
 	| RAISEExp       of Info * Exp
 	| IFExp          of Info * Exp * Exp * Exp
-	| WHILEExp       of Info * Exp * Exp
 	| CASEExp        of Info * Exp * Match
 	| FNExp          of Info * Match
 	| PACKExp        of Info * LongStrId
@@ -412,7 +411,6 @@ functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
       | infoExp(HANDLEExp(I,_,_))			= I
       | infoExp(RAISEExp(I,_))				= I
       | infoExp(IFExp(I,_,_,_))				= I
-      | infoExp(WHILEExp(I,_,_))			= I
       | infoExp(CASEExp(I,_,_))				= I
       | infoExp(FNExp(I,_))				= I
       | infoExp(PACKExp(I,_))				= I

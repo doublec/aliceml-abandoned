@@ -596,7 +596,6 @@ UNFINISHED: obsolete after bootstrapping:
       | trExp(I.OrExp(i,e1,e2))		= O.OrExp(i, trExp e1, trExp e2)
       | trExp(I.IfExp(i,e1,e2,e3))	= O.IfExp(i, trExp e1, trExp e2,
 							       trExp e3)
-      | trExp(I.WhileExp(i,e1,e2))	= O.WhileExp(i, trExp e1, trExp e2)
       | trExp(I.SeqExp(i,es))		= O.SeqExp(i, trExps es)
       | trExp(I.CaseExp(i,e,ms))	= O.CaseExp(i, trExp e, trMatchs ms)
       | trExp(I.FailExp(i))		= O.FailExp(i)

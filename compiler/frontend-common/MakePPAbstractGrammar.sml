@@ -247,10 +247,6 @@ struct
 					    ppExp exp2 ^/^
 					    ppExp exp3
 					  )
-      | ppExp(WhileExp(i, exp1, exp2))	= exptree "While" i (
-					    ppExp exp1 ^/^
-					    ppExp exp2
-					  )
       | ppExp(SeqExp(i, exps))		= exptree "Seq" i (
 					    ppExps exps
 					  )

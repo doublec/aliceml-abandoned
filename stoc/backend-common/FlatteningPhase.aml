@@ -518,29 +518,6 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 	    in
 		simplifyIf (exp1, stms2, stms3)
 	    end
-	  | translateExp (WhileExp (info, exp1, exp2), f, cont) =
-	    let
-		val r = ref NONE
-		val cont' = Goto [O.IndirectStm (stm_info (#region info), r)]
-		fun eval exp' =
-		    O.ValDec (stm_info (#region (infoExp exp2)),
-			      O.Wildcard, exp')
-		val info' = infoExp exp1
-		val id = freshIntermediateId info'
-		val trueBody = translateExp (exp2, eval, cont')
-		val falseBody = translateExp (TupExp (info, #[]), f, cont)
-		val errorBody = raisePrim (#region info', "General.Match")
-		val stms1 =
-		    translateIf (info', translateId id,
-				 trueBody, falseBody, errorBody)
-		val stms2 =
-		    translateDec (ValDec (id_info info',
-					  VarPat (info', id), exp1),
-				  Goto stms1)
-		val stms = share stms2
-	    in
-		r := SOME stms; stms
-	    end
 	  | translateExp (SeqExp (_, exps), f, cont) =
 	    let
 		val isLast = ref true

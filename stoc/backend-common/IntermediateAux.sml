@@ -70,8 +70,6 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	  | substExp' (IfExp (info, exp1, exp2, exp3), subst) =
 	    IfExp (info, substExp' (exp1, subst),
 		   substExp' (exp2, subst), substExp' (exp3, subst))
-	  | substExp' (WhileExp (info, exp1, exp2), subst) =
-	    WhileExp (info, substExp' (exp1, subst), substExp' (exp2, subst))
 	  | substExp' (SeqExp (info, exps), subst) =
 	    SeqExp (info, Vector.map (fn exp => substExp' (exp, subst)) exps)
 	  | substExp' (CaseExp (info, exp, matches), subst) =

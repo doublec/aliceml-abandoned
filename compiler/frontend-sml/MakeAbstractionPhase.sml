@@ -387,8 +387,7 @@ functor MakeAbstractionPhase(
 	    unguardedTyVarsExp E exp @ unguardedTyVarsTy E ty
 
       | unguardedTyVarsExp E ( ANDALSOExp(_, exp1, exp2)
-			     | ORELSEExp(_, exp1, exp2)
-			     | WHILEExp(_, exp1, exp2) ) =
+			     | ORELSEExp(_, exp1, exp2) ) =
 	    unguardedTyVarsExp E exp1 @ unguardedTyVarsExp E exp2
 
       | unguardedTyVarsExp E (HANDLEExp(_, exp, match)) =
@@ -649,9 +648,6 @@ functor MakeAbstractionPhase(
 	 | RAISEExp(i, exp)		=> O.RaiseExp(i, trExp E exp)
 	 | IFExp(i, exp1, exp2, exp3)	=>
 		O.IfExp(i, trExp E exp1, trExp E exp2, trExp E exp3)
-
-	 | WHILEExp(i, exp1, exp2) =>
-		O.WhileExp(i, trExp E exp1, trExp E exp2)
 
 	 | CASEExp(i, exp, match) =>
 		O.CaseExp(i, trExp E exp, trMatcho E (SOME match))

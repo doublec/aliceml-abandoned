@@ -74,7 +74,6 @@ UNFINISHED: obsolete after bootstrapping:
 	| AndExp    of exp_info * exp * exp		(* conjunction *)
 	| OrExp     of exp_info * exp * exp		(* disjunction *)
 	| IfExp     of exp_info * exp * exp * exp	(* conditional *)
-	| WhileExp  of exp_info * exp * exp		(* conditional loop *)
 	| SeqExp    of exp_info * exp vector		(* sequential *)
 	| CaseExp   of exp_info * exp * match vector	(* case switch *)
 	| RaiseExp  of exp_info * exp			(* exception raise *)
@@ -159,7 +158,6 @@ UNFINISHED: obsolete after bootstrapping:
       | infoExp(AndExp(i,_,_))		= i
       | infoExp(OrExp(i,_,_))		= i
       | infoExp(IfExp(i,_,_,_))		= i
-      | infoExp(WhileExp(i,_,_))	= i
       | infoExp(SeqExp(i,_))		= i
       | infoExp(CaseExp(i,_,_))		= i
       | infoExp(RaiseExp(i,_))		= i

@@ -4,7 +4,6 @@ structure CheckIntermediate :> CHECK_INTERMEDIATE =
     structure Env = MakeHashScopedImpMap(FromEqHashKey(Stamp))
 
     open IntermediateGrammar
-    open PervasiveType
 
 
   (* Signalling errors *)
