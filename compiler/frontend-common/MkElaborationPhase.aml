@@ -26,8 +26,6 @@ TODO: Eliminate SingTyp in abstract grammar by proper encoding of datatypes.
 
 *******************************************************************************)
 
-
-
 import structure Url               from "../../lib/system/Url"
 import structure Source            from "../infrastructure/Source"
 
@@ -1095,7 +1093,7 @@ PrettyPrint.output(TextIO.stdErr, PPInf.ppInf j, 80);
 TextIO.print "\n";
 ())
 *)
-	    val j' = Inf.sing(Inf.mod(p,j))
+	    val j' = Future.byneed(fn() => Inf.sing(Inf.mod(p,j)))
 	    val u  = ref(if name = PervasiveType.name_pervasive
 			 then UseEnv.FULL
 			 else UseEnv.PARTIAL(UseEnv.new()))
@@ -1964,11 +1962,11 @@ TextIO.print "\n";
 
     fun elabAnn(E, desc, I.ImpAnn(i, imps, url)) =
 	let
-	    val s     = loadSig(desc, url)
+	    val s     = Future.byneed(fn() => loadSig(desc, url))
 	    val s'    = Inf.emptySig()
 	    val imps' = elabImps(E, s, s', imps)
 	    val s''   = if !Switches.Language.retainFullImport then s
-			else Inf.narrowSig(s,s')
+			else Future.byneed(fn() => Inf.narrowSig(s,s'))
 (*DEBUG*) handle e => raise e
 	in
 	    O.ImpAnn(sigInfo(i,s''), imps', url)
@@ -1986,8 +1984,9 @@ TextIO.print "\n";
     and elabImp(E, s, s', I.FixImp(i, vallab, desc)) =
 	let
 	    val (l,vallab') = elabLab(E, vallab)
-	    val f1          = Inf.lookupFix(s, l) handle Inf.Lookup _ =>
-				error(i, E.ImpMismatch(Inf.MissingFix l))
+	    val f1          = Future.byneed(fn() =>
+			      Inf.lookupFix(s, l) handle Inf.Lookup _ =>
+				error(i, E.ImpMismatch(Inf.MissingFix l)))
 	    val desc'       =
 		case desc
 		 of I.NoDesc(i')       => O.NoDesc(fixInfo(i',f1))
@@ -2008,8 +2007,9 @@ TextIO.print "\n";
 	let
 	    val (t0,qt,valid') = elabValid_bind(E, s, valid)
 	    val  l             = Label.fromName(O.name valid')
-	    val  t1            = Inf.lookupVal(s, l) handle Inf.Lookup _ =>
-				   error(i, E.ImpMismatch(Inf.MissingVal l))
+	    val  t1            = Future.byneed(fn() =>
+			         Inf.lookupVal(s, l) handle Inf.Lookup _ =>
+				   error(i, E.ImpMismatch(Inf.MissingVal l)))
 	    val (t2,desc')     =
 		case desc
 		 of I.NoDesc(i')       => (t1, O.NoDesc(typInfo(i',t1)))
@@ -2032,9 +2032,10 @@ TextIO.print "\n";
 	let
 	    val l  = Label.fromName(I.name typid)
 	    val p  = elabNewPath(NONE, I.name typid)
-	    val k1 = Inf.lookupTyp(s, l) handle Inf.Lookup _ =>
-			error(i, E.ImpMismatch(Inf.MissingTyp l))
-	    val t1 = Inf.lookupTyp'(s, l)
+	    val k1 = Future.byneed(fn() =>
+		     Inf.lookupTyp(s, l) handle Inf.Lookup _ =>
+			error(i, E.ImpMismatch(Inf.MissingTyp l)))
+	    val t1 = Future.byneed(fn() => Inf.lookupTyp'(s, l))
 	    val (k2,t2,desc') =
 		case desc
 		 of I.NoDesc(i')       => (k1, t1, O.NoDesc(typInfo(i', t1)))
@@ -2057,14 +2058,15 @@ TextIO.print "\n";
 	let
 	    val l  = Label.fromName(I.name modid)
 	    val p  = elabNewPath(NONE, I.name modid)
-	    val j1 = Inf.lookupMod(s, l) handle Inf.Lookup _ =>
-			error(i, E.ImpMismatch(Inf.MissingMod l))
-	    val m1 = Inf.lookupMod'(s, l)
+	    val j1 = Future.byneed(fn() =>
+		     Inf.lookupMod(s, l) handle Inf.Lookup _ =>
+			error(i, E.ImpMismatch(Inf.MissingMod l)))
+	    val m1 = Future.byneed(fn() => Inf.lookupMod'(s, l))
 	    val (j2,jm2,desc') =
 		case desc
 		 of I.NoDesc(i') =>
 		    let
-			val jm1 = Inf.sing m1
+			val jm1 = Future.byneed(fn() => Inf.sing m1)
 		    in
 			(j1, jm1, O.NoDesc(infInfo(i', jm1)))
 		    end
@@ -2088,9 +2090,10 @@ TextIO.print "\n";
 	let
 	    val l  = Label.fromName(I.name infid)
 	    val p  = elabNewPath(NONE, I.name infid)
-	    val k1 = Inf.lookupInf(s, l) handle Inf.Lookup _ =>
-			error(i, E.ImpMismatch(Inf.MissingInf l))
-	    val j1 = Inf.lookupInf'(s, l)
+	    val k1 = Future.byneed(fn() =>
+		     Inf.lookupInf(s, l) handle Inf.Lookup _ =>
+			error(i, E.ImpMismatch(Inf.MissingInf l)))
+	    val j1 = Future.byneed(fn() => Inf.lookupInf'(s, l))
 	    val (k2,j2,desc') =
 		case desc
 		 of I.NoDesc(i')       => (k1, j1, O.NoDesc(infInfo(i',j1)))
@@ -2128,10 +2131,10 @@ TextIO.print "\n";
 	let
 	    val l  = Label.fromName(I.name typid)
 	    val p  = elabNewPath(NONE, I.name typid)
-	    val k1 = Inf.lookupTyp(s, l) handle Inf.Lookup _ =>
-			error(i, E.ImpMismatch(Inf.MissingTyp l))
-	    val t1 = Inf.lookupTyp'(s, l) handle Inf.Lookup _ =>
-			error(i, E.ImpMismatch(Inf.MissingTyp l))
+	    val k1 = Future.byneed(fn() =>
+		     Inf.lookupTyp(s, l) handle Inf.Lookup _ =>
+			error(i, E.ImpMismatch(Inf.MissingTyp l)))
+	    val t1 = Future.byneed(fn() => Inf.lookupTyp'(s, l))
 	    val _  =
 		case desc
 		 of I.NoDesc(i')       => ()
@@ -2167,7 +2170,8 @@ TextIO.print "\n";
 	let
 	    (*UNFINISHED *)
 	    val (t1,p,typid') = elabTypid(E, typid)
-	    val  k1           = Inf.lookupTyp(s, Label.fromName(I.name typid))
+	    val  k1           = Future.byneed(fn() =>
+				Inf.lookupTyp(s, Label.fromName(I.name typid)))
 	    val (k2,t2,desc') =
 		case desc
 		 of I.NoDesc(i')       => (k1, t1, O.NoDesc(typInfo(i',t1)))

@@ -263,8 +263,9 @@ struct
 		(case zo of NONE => () | SOME z' => PathMap.insert(pm,p,z'))
 	    end
 
-    and envFromSig (I,s)    = envFromSig'(I, PathMap.new(), Stamp.new(), s)
-    and envFromSig'(I,pm,z,s) =
+    and envFromSig (I,s)       = envFromSig'(I, PathMap.new(), Stamp.new(), s)
+    and envFromSig'(I,pm,z,s)  = Future.byneed(fn() => envFromSig''(I,pm,z,s))
+    and envFromSig''(I,pm,z,s) =
 	let
 	    val E     = new()
 	    val items = Inf.items s

@@ -3181,9 +3181,11 @@ struct
 	   let
 		val (valid',stamp) = trVId_bind E vid
 		val  imp'          = O.ValImp(i', valid', O.NoDesc(i'))
-		val  _             = if isSome(lookupVal(E', vid')) then () else
-					error(i', E.ValItemUnbound vid')
-		val  _             = insertDisjointVal(E, vid', (i', stamp, V))
+		val  is            = Future.byneed(fn() =>
+				     if isSome(lookupVal(E', vid'))
+				     then V
+				     else error(i', E.ValItemUnbound vid'))
+		val  _             = insertDisjointVal(E, vid', (i',stamp,is))
 				     handle CollisionVal vid' =>
 					error(i', E.ImpVIdDuplicate vid')
 	   in
@@ -3200,9 +3202,11 @@ struct
 		val  _             = deleteScope E
 		val  desc'         = O.SomeDesc(O.infoTyp typ', typ')
 		val  imp'          = O.ValImp(i, valid', desc')
-		val  _             = if isSome(lookupVal(E', vid')) then () else
-					error(i', E.ValItemUnbound vid')
-		val  _             = insertDisjointVal(E, vid', (i', stamp, V))
+		val  is            = Future.byneed(fn() =>
+				     if Option.isSome(lookupVal(E', vid'))
+				     then V
+				     else error(i', E.ValItemUnbound vid'))
+		val  _             = insertDisjointVal(E, vid', (i',stamp,is))
 				     handle CollisionVal vid' =>
 					error(i', E.ImpVIdDuplicate vid')
 	   in
@@ -3217,10 +3221,10 @@ struct
 	   let
 		val (typid',stamp) = trTyCon_bind E tycon
 		val  imp'          = O.TypImp(i', typid', O.NoDesc(i'))
-		val  _             = if Option.isSome(lookupTy(E',tycon'))
-				     then () else
-					  error(i', E.TypItemUnbound tycon')
-		val  E''           = new()
+		val  E''           = Future.byneed(fn() =>
+				     if Option.isSome(lookupTy(E',tycon'))
+				     then new()
+				     else error(i', E.TypItemUnbound tycon'))
 		val  _             = insertDisjointTy(E, tycon', (i',stamp,E''))
 				     handle CollisionTy _ =>
 					error(i', E.ImpTyConDuplicate tycon')
@@ -3238,10 +3242,10 @@ struct
 		val  funtyp'       = funtyp(varids', O.AbsTyp(i',false))
 		val  desc'         = O.SomeDesc(O.infoTyp funtyp', funtyp')
 		val  imp'          = O.TypImp(i, typid', desc')
-		val  _             = if Option.isSome(lookupTy(E',tycon'))
-				     then () else
-					  error(i', E.TypItemUnbound tycon')
-		val  E''           = new()
+		val  E''           = Future.byneed(fn() =>
+				     if Option.isSome(lookupTy(E',tycon'))
+				     then new()
+				     else error(i', E.TypItemUnbound tycon'))
 		val  _             = insertDisjointTy(E, tycon', (i',stamp,E''))
 				     handle CollisionTy _ =>
 					error(i', E.SpecTyConDuplicate tycon')
@@ -3258,7 +3262,7 @@ struct
 	   let
 		val TyCon(i',tycon') = tycon
 		val (typid',stamp)   = trTyCon_bind E tycon
-		val  E''             = BindEnv.new()
+		val  E''             = new()
 		val  _               = insertDisjointTy(E,tycon',(i',stamp,E''))
 				       handle CollisionTy _ =>
 					 error(i', E.ImpTyConDuplicate tycon')
@@ -3344,12 +3348,14 @@ struct
 						     typ11', typ12'))
 		val  imp'          = O.ValImp(i, valid', O.SomeDesc(i,typ2'))
 		val  _             = deleteScope E
+		val  is            =
+		     Future.byneed(fn() =>
+		     case lookupVal(E', vid')
+		     of SOME(_,_,T _) => T(k,tycon',kty)
+		      | SOME(_,_,_)   => error(i', E.ConItemNonCon vid')
+		      | NONE          => error(i', E.ConItemUnbound vid'))
 	   in
-		case lookupVal(E', vid')
-		  of SOME(_,_,T _) => ()
-		   | SOME(_,_,_)   => error(i', E.ConItemNonCon vid')
-		   | NONE          => error(i', E.ConItemUnbound vid');
-		insertDisjointVal(E'', vid',  (i', stamp, T(k,tycon',kty)))
+		insertDisjointVal(E'', vid', (i',stamp,is))
 		handle CollisionVal _ => error(i', E.ConItemDuplicate vid');
 		trConItemo' (E,E',E'',tycon',varids',typ', fld'::acc1,
 			     imp'::acc2) conitemo
@@ -3363,10 +3369,11 @@ struct
 	   let
 		val (typid',stamp) = trTyCon_bind E tycon
 		val  imp'          = O.TypImp(i', typid', O.NoDesc(i'))
-		val  E''           = case lookupTy(E',tycon')
+		val  E''           = Future.byneed(fn() =>
+				     case lookupTy(E',tycon')
 				       of SOME(_,_,E'') => E''
 				        | NONE =>
-					  error(i', E.TypItemUnbound tycon')
+					  error(i', E.TypItemUnbound tycon'))
 		val  _             = insertDisjointTy(E, tycon', (i',stamp,E''))
 				     handle CollisionTy _ =>
 					error(i', E.ImpTyConDuplicate tycon')
@@ -3384,10 +3391,11 @@ struct
 		val  funtyp'       = funtyp(varids', O.AbsTyp(i',true))
 		val  desc'         = O.SomeDesc(O.infoTyp funtyp', funtyp')
 		val  imp'          = O.TypImp(i, typid', desc')
-		val  E''           = case lookupTy(E',tycon')
+		val  E''           = Future.byneed(fn() =>
+				     case lookupTy(E',tycon')
 				       of SOME(_,_,E'') => E''
 				        | NONE =>
-					  error(i', E.TypItemUnbound tycon')
+					  error(i', E.TypItemUnbound tycon'))
 		val  _             = insertDisjointTy(E, tycon', (i',stamp,E''))
 				     handle CollisionTy _ =>
 					error(i', E.SpecTyConDuplicate tycon')
@@ -3404,15 +3412,16 @@ struct
 		val (valid2',stamp2) = trVId_bind E vid
 		val  imp1'           = O.ValImp(i', valid1', O.NoDesc(i'))
 		val  imp2'           = O.ValImp(i', valid2', O.NoDesc(i'))
-		val  k               = case lookupVal(E', vid')
-				       of SOME(_,_,C k) => k
-					| SOME(_,_,_)   =>
+		val  is2             = Future.byneed(fn() =>
+				       case lookupVal(E', vid')
+				       of SOME(_,_,is as C k) => is
+					| SOME(_,_,_) =>
 					  error(i', E.EconItemNonCon vid')
 					| NONE =>
-					  error(i', E.EconItemUnbound vid')
+					  error(i', E.EconItemUnbound vid'))
 	   in
-		( insertDisjointVal(E, conVId vid', (i', stamp1, V))
-		; insertDisjointVal(E, vid',  (i', stamp2, C k))
+		( insertDisjointVal(E, conVId vid', (i',stamp1,V))
+		; insertDisjointVal(E, vid', (i',stamp2,is2))
 		) handle CollisionVal _ => error(i', E.ImpVIdDuplicate vid');
 		trEconItemo' (E,E', imp2'::imp1'::acc) econitemo
 	   end
@@ -3437,15 +3446,16 @@ struct
 					      O.ArrTyp(O.infoTyp typ12',
 						       typ11', typ12'))
 		val  imp2'           = O.ValImp(i, valid2', O.SomeDesc(i,typ2'))
-		val  k               = case lookupVal(E', vid')
-				       of SOME(_,_,C k) => k
-					| SOME(_,_,_)   =>
+		val  is2             = Future.byneed(fn() =>
+				       case lookupVal(E', vid')
+				       of SOME(_,_,is as C k) => is
+					| SOME(_,_,_) =>
 					  error(i', E.EconItemNonCon vid')
 					| NONE =>
-					  error(i', E.EconItemUnbound vid')
+					  error(i', E.EconItemUnbound vid'))
 	   in
-		( insertDisjointVal(E, conVId vid', (i', stamp1, V))
-		; insertDisjointVal(E, vid',  (i', stamp2, C k))
+		( insertDisjointVal(E, conVId vid', (i',stamp1,V))
+		; insertDisjointVal(E, vid', (i',stamp2,is2))
 		) handle CollisionVal _ => error(i', E.ImpVIdDuplicate vid');
 		trEconItemo' (E,E', imp2'::imp1'::acc) econitemo
 	   end
@@ -3459,10 +3469,12 @@ struct
 	   let
 		val (modid',stamp) = trStrId_bind E strid
 		val  imp'          = O.ModImp(i', modid', O.NoDesc(i'))
-		val  F             = case lookupStr(E', strid')
+		val  F             = Future.byneed(fn() =>
+				     case lookupStr(E', strid')
 				     of SOME(_,_,F) => F
-				     | NONE => error(i',E.StrItemUnbound strid')
-		val  _             = insertDisjointStr(E, strid',(i',stamp,F))
+				      | NONE =>
+					error(i',E.StrItemUnbound strid'))
+		val  _             = insertDisjointStr(E, strid', (i',stamp,F))
 				     handle CollisionStr strid' =>
 					error(i', E.ImpStrIdDuplicate strid')
 	   in
@@ -3474,14 +3486,14 @@ struct
 		val  i             = Source.span(i', infoSigExp sigexp)
 		val (modid',stamp) = trStrId_bind E strid
 		val (inf',F)       = trSigExp E sigexp
-		val  F'            = case lookupStr(E', strid')
-				     of SOME(_,_,F') => match(F',F)
-				     | NONE => error(i',E.StrItemUnbound strid')
 		val  desc'         = O.SomeDesc(O.infoInf inf', inf')
 		val  imp'          = O.ModImp(i, modid', desc')
-		val  _             = if isSome(lookupStr(E',strid')) then() else
-					error(i', E.StrItemUnbound strid')
-		val  _             = insertDisjointStr(E, strid',(i',stamp,F))
+		val  F'            = Future.byneed(fn() =>
+				     case lookupStr(E', strid')
+				     of SOME(_,_,F') => match(F',F)
+				      | NONE =>
+					error(i',E.StrItemUnbound strid'))
+		val  _             = insertDisjointStr(E, strid', (i',stamp,F'))
 				     handle CollisionStr strid' =>
 					error(i', E.ImpStrIdDuplicate strid')
 	   in
@@ -3497,11 +3509,12 @@ struct
 	   let
 		val (infid',stamp) = trSigId_bind E sigid
 		val  imp'          = O.InfImp(i', infid', O.NoDesc(i'))
-		val  F             = case lookupSig(E', sigid')
+		val  F             = Future.byneed(fn() =>
+				     case lookupSig(E', sigid')
 				       of SOME(_,_,F) => F
 					| NONE =>
-					  error(i', E.SigItemUnbound sigid')
-		val  _             = insertDisjointSig(E, sigid',(i',stamp,F))
+					  error(i', E.SigItemUnbound sigid'))
+		val  _             = insertDisjointSig(E, sigid', (i',stamp,F))
 				     handle CollisionSig _ =>
 					error(i', E.ImpSigIdDuplicate sigid')
 	   in
@@ -3517,10 +3530,12 @@ struct
 		val  _             = deleteScope E
 		val  desc'         = O.SomeDesc(O.infoInf inf', inf')
 		val  imp'          = O.InfImp(i', infid', desc')
-		val  F             = case lookupSig(E', sigid')
+		val  F             = Future.byneed(fn() =>
+				     case lookupSig(E', sigid')
 				     of SOME(_,_,F) => F
-				     | NONE => error(i',E.SigItemUnbound sigid')
-		val  _             = insertDisjointSig(E, sigid',(i',stamp,F))
+				      | NONE =>
+					error(i',E.SigItemUnbound sigid'))
+		val  _             = insertDisjointSig(E, sigid', (i',stamp,F))
 				     handle CollisionSig _ =>
 					error(i', E.ImpSigIdDuplicate sigid')
 	   in
@@ -3543,8 +3558,8 @@ struct
 	fn IMPORTAnn(i, imp, s) =>
 	   let
 		val url   = Url.fromString s
-		val s     = loadSig(desc, url)
-		val E''   = BindEnvFromSig.envFromSig(i, s)
+		val E''   = Future.byneed(fn() =>
+			    BindEnvFromSig.envFromSig(i, loadSig(desc, url)))
 		val _     = insertScope E
 		val imps' = trImp (E,E'') imp
 		val E'''  = splitScope E
@@ -3560,8 +3575,7 @@ struct
 	 | IMPORTALLAnn(i, s) =>
 	   let
 		val url   = Url.fromString s
-		val s     = loadSig(desc, url)
-		val E''   = BindEnvFromSig.envFromSig(i, s)
+		val E''   = BindEnvFromSig.envFromSig(i, loadSig(desc, url))
 		val E'''  = BindEnv.new()
 		val imps' = Vector.rev(Vector.fromList
 				(trOpenImp (E''',i) (E'',[])))
