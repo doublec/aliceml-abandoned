@@ -85,6 +85,7 @@ structure PrimOps :> PRIM_OPS =
 		ins ("Future.concur", SOME Unary);
 		ins ("Future.isByneed", SOME Unary);
 		ins ("Future.status", SOME Unary);
+		ins ("General.Assert", NONE);
 		ins ("General.Bind", NONE);
 		ins ("General.Chr", NONE);
 		ins ("General.Div", NONE);

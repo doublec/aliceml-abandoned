@@ -193,7 +193,6 @@ LIBSYSTEMSOURCES0 = \
 	PP_COMPONENT-sig.aml PPComponent.aml
 LIBUTILITYSOURCES0 = \
 	$(LIBUTILITYNATIVES0:%=Unsafe%.asig) \
-	ASSERT-sig.aml Assert.aml \
 	SCOPED_IMP_SET-sig.aml MkScopedImpSet.aml SCOPED_IMP_MAP-sig.aml \
 	MkScopedImpMap.aml \
 	CELL-sig.aml \
@@ -266,7 +265,7 @@ COMPILERFRONTENDSMLSOURCES0 = \
 	BindEnv.aml BIND_ENV_FROM_SIG-sig.aml BindEnvFromSig.aml \
 	SHARING-sig.aml Sharing.aml ABSTRACTION_PHASE-sig.aml \
 	MkAbstractionPhase.aml DERIVED_FORMS-sig.aml PARSER-sig.aml \
-	Parser.aml DerivedForms.aml LEXER_ERROR-sig.aml MkLexerError.aml \
+	Parser.aml MkDerivedForms.aml LEXER_ERROR-sig.aml MkLexerError.aml \
 	Lexer.aml MkCountPosLexer.aml PARSING_PHASE-sig.aml \
 	MkParsingPhase.aml MkFrontendSML.aml
 COMPILERFRONTENDSMLSOURCES = \

@@ -94,7 +94,9 @@ programming language (SML), as defined in</P>
     <LI> <A href="sugar.html#vectors">vector expressions and patterns</A> </LI>
     <LI> <A href="sugar.html#records">sugar for records</A> </LI>
     <LI> <A href="sugar.html#patterns">extended pattern language</A> </LI>
-    <LI> <A href="sugar.html#rec">generalized recursive definitions</A> </LI>
+    <LI> <A href="sugar.html#rec-expression">generalized recursive definitions</A> </LI>
+    <LI> <A href="sugar.html#sourcepos">source position</A> </LI>
+    <LI> <A href="sugar.html#assert">assertions</A> </LI>
   </UL>
   </LI>
 </UL>
@@ -113,10 +115,10 @@ programming language (SML), as defined in</P>
 
 <P>Alice defines some additional identifiers as reserved words:</P>
 
-<PRE>
-	any    constructor   exttype    fct      from       import     non
-	lazy   pack          spawn      unpack   withfun    withval
-</PRE>
+<PRE class=code>
+	any       assert    assert<I>d</I>   constructor   exttype   fct      from
+	import    non       lazy      pack          spawn     unpack
+	withfun   withval   _file_   _line_</PRE>
 
 <P>The following grammar collects all syntactic extensions of Alice ML
 relative to Standard ML. Derived forms are marked (*).
@@ -141,6 +143,16 @@ relative to Standard ML. Derived forms are marked (*).
     <TD></TD> <TD></TD>
     <TD> <TT>{</TT> <I>atexp</I> <TT>where</TT> <I>exprow</I> <TT>}</TT> </TD>
     <TD> <A href="sugar.html#records-update">record update</A> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>_file_</TT> </TD>
+    <TD> <A href="sugar.html#sourcepos">source file</A> (*) </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>_line_</TT> </TD>
+    <TD> <A href="sugar.html#sourcepos">source line</A> (*) </TD>
   </TR>
 
   <TR></TR>
@@ -169,6 +181,31 @@ relative to Standard ML. Derived forms are marked (*).
     <TD></TD> <TD></TD>
     <TD> <TT>pack</TT> <I>strexp</I> <TT>:></TT> <I>sigexp</I> </TD>
     <TD> <A href="packages.html#package-pack">packing</A> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>assert</TT>&lt;<I>d</I>&gt; <I>exp</I> </TD>
+    <TD> <A href="sugar.html#assert">boolean assertion</A> (*) </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>assert</TT>&lt;<I>d</I>&gt; <I>exp</I> <TT>of</TT> <I>pat</I> </TD>
+    <TD> <A href="sugar.html#assert">pattern assertion</A> (*) </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>assert</TT>&lt;<I>d</I>&gt; <I>exp</I> <TT>raise</TT> <I>pat</I> </TD>
+    <TD> <A href="sugar.html#assert">exception assertion</A> (*) </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>assert</TT>&lt;<I>d</I>&gt; <I>exp</I> <TT>do</TT> <I>exp</I> </TD>
+    <TD> <A href="sugar.html#assert">boolean precondition</A> (*) </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>assert</TT>&lt;<I>d</I>&gt; <I>exp</I> <TT>of</TT> <I>pat</I> <TT>do</TT> <I>exp</I> </TD>
+    <TD> <A href="sugar.html#assert">pattern precondition</A> (*) </TD>
   </TR>
 
   <TR></TR>

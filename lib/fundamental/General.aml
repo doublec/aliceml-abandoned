@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2002
+ *   Andreas Rossberg, 2001-2003
  *
  * Last change:
  *   $Date$ by $Author$
@@ -14,19 +14,21 @@
  *  Items marked with (**) are extensions to the Standard Basis.
  *)
 
-import structure __pervasive                               from "Pervasive"
+import structure __pervasive                        from "Pervasive"
 import __primitive
-       type unit and string and exn and ref datatype order from "ToplevelTypes"
+       type unit and int and string and exn and ref
+       datatype order                               from "ToplevelTypes"
 import __primitive
        infix 3 := :=: o infix 0 before
-       val ! and op := and op :=:                          from "ToplevelValues"
-import __primitive signature GENERAL                       from "GENERAL-sig"
+       val ! and op := and op :=:                   from "ToplevelValues"
+import __primitive signature GENERAL                from "GENERAL-sig"
 
 structure General : GENERAL =
 struct
     type unit					= unit
     type exn					= exn
 
+    __primitive exception Assert of string * int = "General.Assert"
     __primitive exception Bind			= "General.Bind"
     __primitive exception Chr			= "General.Chr"
     __primitive exception Div			= "General.Div"

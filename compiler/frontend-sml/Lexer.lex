@@ -22,6 +22,7 @@
  *   - longids have been moved to the context-free grammar,
  *     so the LONGID token is substituted by a DOT token
  *   - #[ keyword for vector expressions
+ *   - ASSERT keyword(s)
  *   - EXTTYPE and CONSTRUCTOR keywords for extensible datatypes
  *   - NON keyword added for negated patterns
  *   - WITHVAL and WITHFUN keywords for bindings inside pattern
@@ -101,6 +102,7 @@
 	    TOKEN(toVal(yytext,i), l, r)
 	end
 
+    fun ASSERT_ d_opt (l,r) = ASSERT(d_opt, l, r)
 
     fun error'(yypos, yytext, e) = error(toLRPos(yypos, yytext), e)
 
@@ -305,11 +307,24 @@
   <INITIAL>"__pervasive"=> ( token(PERVASIVE, yypos, yytext) );
   <INITIAL>"__primitive"=> ( token(PRIMITIVE, yypos, yytext) );
   <INITIAL>"__reftype"	=> ( token(REFTYPE,   yypos, yytext) );
+  <INITIAL>"_file_"	=> ( token(FILE,      yypos, yytext) );
+  <INITIAL>"_line_"	=> ( token(LINE,      yypos, yytext) );
   <INITIAL>"abstype"	=> ( token(ABSTYPE,   yypos, yytext) );
   <INITIAL>"and"	=> ( token(AND,       yypos, yytext) );
   <INITIAL>"andalso"	=> ( token(ANDALSO,   yypos, yytext) );
   <INITIAL>"any"	=> ( token(ANY,       yypos, yytext) );
   <INITIAL>"as"		=> ( token(AS,        yypos, yytext) );
+  <INITIAL>"assert"	=> ( token(ASSERT_ NONE,    yypos, yytext) );
+  <INITIAL>"assert0"	=> ( token(ASSERT_(SOME 0), yypos, yytext) );
+  <INITIAL>"assert1"	=> ( token(ASSERT_(SOME 1), yypos, yytext) );
+  <INITIAL>"assert2"	=> ( token(ASSERT_(SOME 2), yypos, yytext) );
+  <INITIAL>"assert3"	=> ( token(ASSERT_(SOME 3), yypos, yytext) );
+  <INITIAL>"assert4"	=> ( token(ASSERT_(SOME 4), yypos, yytext) );
+  <INITIAL>"assert5"	=> ( token(ASSERT_(SOME 5), yypos, yytext) );
+  <INITIAL>"assert6"	=> ( token(ASSERT_(SOME 6), yypos, yytext) );
+  <INITIAL>"assert7"	=> ( token(ASSERT_(SOME 7), yypos, yytext) );
+  <INITIAL>"assert8"	=> ( token(ASSERT_(SOME 8), yypos, yytext) );
+  <INITIAL>"assert9"	=> ( token(ASSERT_(SOME 9), yypos, yytext) );
   <INITIAL>"case"	=> ( token(CASE,      yypos, yytext) );
   <INITIAL>"constructor"=> ( token(CONSTRUCTOR,yypos, yytext) );
   <INITIAL>"datatype"	=> ( token(DATATYPE,  yypos, yytext) );

@@ -10,7 +10,6 @@
  *   $Revision$
  *)
 
-import structure Assert                from "../../lib/utility/Assert"
 import structure Atom                  from "../../lib/data/Atom"
 import structure MkHashImpSet          from "../../lib/data/MkHashImpSet"
 import structure MkHashImpMap          from "../../lib/data/MkHashImpMap"
@@ -432,7 +431,7 @@ functor MkCodeGenPhase(structure AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR
 		    instr toAllocate
 	    end
 	  | recToHoles (nil, _, unallocated, _, instr) =
-	    (Assert.assert (IdSet'.isEmpty unallocated); instr)
+	    (assert (IdSet'.isEmpty unallocated); instr)
 	and translateStm ((Entry (_, _) | Exit (_, _, _) |
 			   LastUse (_, _) | ValDec (_, _, _) |
 			   RecDec (_, _) | RefDec (_, _, _) |
@@ -666,7 +665,7 @@ functor MkCodeGenPhase(structure AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR
 		val (returnArgs, instr) =
 		    case detup (instr, id) of
 			DECONSTRUCTED (idDefs, instr) =>
-			     (Assert.assert(Vector.length idDefs > 1);
+			     (assert (Vector.length idDefs > 1);
 			      (idDefs, instr))
 		      | (USED | SIDE_EFFECTING | UNKNOWN) =>
 			    (#[(O.IdDef id)], instr)

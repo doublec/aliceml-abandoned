@@ -16,7 +16,6 @@
  * returns a topological ordering of all strongly connected components.
  *)
 
-import structure Assert             from "Assert"
 import signature HASHABLE           from "../data/HASHABLE-sig"
 import signature IMP_MAP            from "../data/IMP_MAP-sig"
 import signature DEPTH_FIRST_SEARCH from "DEPTH_FIRST_SEARCH-sig"
@@ -45,7 +44,7 @@ functor MkDepthFirstSearch
 	    (Map.insert (#done state, key, #maxId state);
 	     if Key.equal (key, key') then (#stack state := keyr; [key])
 	     else key::getCycle (keyr, key', state))
-	  | getCycle (nil, _, _) = raise Assert.failure
+	  | getCycle (nil, _, _) = assert false
 
 	fun visit (map, key, state as {currentId, stack, done, sorted, ...}) =
 	    let

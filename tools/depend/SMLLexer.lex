@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg, 2001-2004
  *
  * Last change:
  *   $Date$ by $Author$
@@ -112,7 +112,7 @@
 				  end
 			      else if Char.isSpace c then
 				   gap(k+1, cs)
-			      else raise Assert.failure
+			      else raise Assert ("", 0) 
 
 	    and gap(k, cs) =
 		    if String.sub(s,k) = #"\\" then

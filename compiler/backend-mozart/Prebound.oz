@@ -341,6 +341,7 @@ prepare
 	    else 'DETERMINED'
 	    end
 	 end
+      'General.Assert': {NewUniqueName 'General.Assert'}
       'General.Bind': {NewUniqueName 'General.Bind'}
       'General.Chr': {NewUniqueName 'General.Chr'}
       'General.Div': {NewUniqueName 'General.Div'}

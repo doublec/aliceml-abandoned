@@ -3,6 +3,7 @@ Language:
 * Implemented overloading (except for literals).
 * Implemented a simple form of intensional polymorphism that enables
   generic library functions like printVal or inspect.
+* Syntactic support for assertions with multiple activation levels.
 
 Compiler:
 

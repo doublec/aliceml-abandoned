@@ -10,7 +10,6 @@
  *   $Revision$
  *)
 
-import structure Assert        from "../../lib/utility/Assert"
 import structure Crash         from "../infrastructure/Crash"
 import structure Source        from "../infrastructure/Source"
 import structure Stamp         from "../common/Stamp"

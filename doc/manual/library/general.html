@@ -38,6 +38,7 @@
 
 	datatype order = LESS | EQUAL | GREATER
 
+	exception Assert of string * int
 	exception Bind
 	exception Chr
 	exception Div
@@ -79,6 +80,14 @@
   </P>
 
   <DL>
+    <DT>
+      <TT>exception Assert of string * int</TT>
+    </DT>
+    <DD>
+      <P>Indicates an assertion failes. The arguments are the file name
+      and the line number of the respective <TT>assert</TT> expression.</P>
+    </DD>
+
     <DT>
       <TT>exception Unordered</TT>
     </DT>

@@ -14,7 +14,6 @@
 import structure TextIO              from "../../lib/system/TextIO"
 import structure Url                 from "../../lib/system/Url"
 import structure ComponentManager    from "../../lib/system/ComponentManager"
-import structure Assert              from "../../lib/utility/Assert"
 import structure Source              from "../infrastructure/Source"
 import structure MkSwitches          from "../infrastructure/MkSwitches"
 import structure MkFrontendCommon    from "../frontend-common/MkFrontendCommon"
@@ -32,9 +31,9 @@ structure SMLToDotNetRecursiveCompiler =
 	structure Switches = MkSwitches(val logOut = TextIO.stdOut)
 
 	val acquireSigRef: sig_loader ref =
-	    ref (fn _ => raise Assert.failure)
+	    ref (fn _ => raise Assert ("",0,0))
 	val acquireModRef: mod_loader ref =
-	    ref (fn _ => raise Assert.failure)
+	    ref (fn _ => raise Assert ("",0,0))
 
 	fun loadSig (desc, url) = !acquireSigRef (desc, url)
 	fun loadMod (desc, url) = !acquireModRef (desc, url)

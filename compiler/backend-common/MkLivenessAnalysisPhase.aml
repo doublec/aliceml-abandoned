@@ -10,7 +10,6 @@
  *   $Revision$
  *)
 
-import structure Assert                  from "../../lib/utility/Assert"
 import structure Name                    from "../../lib/rtt/Name"
 import structure Crash                   from "../infrastructure/Crash"
 import signature SWITCHES                from "../infrastructure/SWITCHES-sig"
@@ -91,7 +90,7 @@ functor MkLivenessAnalysisPhase(Switches: SWITCHES) :>
 	  | allDefsStm (EndTryStm (_, body), set, nested, shared) =
 	    if nested then allDefsBody (body, set, false, shared) else ()
 	  | allDefsStm (EndHandleStm (_, body), set, nested, shared) =
-	    (Assert.assert (not nested);
+	    (assert (not nested);
 	     allDefsBody (body, set, nested, shared))
 	  | allDefsStm (TestStm (_, _, tests, body), set, nested, shared) =
 	    (allDefsTests (tests, set, nested, shared);

@@ -7,6 +7,7 @@ signature GENERAL =
     include GENERAL
 
     exception Unordered
+    exception Assert of string * int
 
     val :=: :		'a ref * 'a ref -> unit
     val id :		'a -> 'a
@@ -15,6 +16,7 @@ signature GENERAL =
     val uncurry :	('a -> 'b -> 'c) -> ('a * 'b -> 'c)
     val flip :		('a * 'b -> 'c) -> ('b * 'a -> 'c)
     val inverse :	order -> order
+    val assert :	bool -> 'a
   end
 
 
@@ -23,6 +25,7 @@ structure General : GENERAL =
     open General
 
     exception Unordered = IEEEReal.Unordered
+    exception Assert of string * int
 
     fun op :=: (r1 as ref x1, r2 as ref x2)	= (r1 := x2 ; r2 := x1)
     fun id x					= x
@@ -33,9 +36,12 @@ structure General : GENERAL =
     fun inverse LESS				= GREATER
       | inverse EQUAL				= EQUAL
       | inverse GREATER				= LESS
+
+    fun assert exp = if exp then Unsafe.cast () else raise Assert ("assert", 0)
   end
 
 exception Unordered = General.Unordered
+exception Assert = General.Assert
 val op :=:	= General.:=:
 val id		= General.id
 val const	= General.const
@@ -43,7 +49,7 @@ val curry	= General.curry
 val uncurry	= General.uncurry
 val flip	= General.flip
 val inverse	= General.inverse
-
+val assert	= General.assert
 
 (*****************************************************************************
  * Ref
@@ -1390,6 +1396,7 @@ infix 3 :=:
 
 type ('a,'b) pair = 'a * 'b
 
+exception Assert = General.Assert
 val op :=:	= General.:=:
 val id		= General.id
 val const	= General.const
@@ -1397,6 +1404,7 @@ val curry	= General.curry
 val uncurry	= General.uncurry
 val flip	= General.flip
 val inverse	= General.inverse
+val assert	= General.assert
 
 exception Alt	= Alt.Alt
 val fst		= Alt.fst

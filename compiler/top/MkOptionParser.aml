@@ -34,6 +34,8 @@ functor MkOptionParser(Switches: SWITCHES) :> OPTION_PARSER =
 	    \\t--(no-)warn-unused-import\n\
 	    \\t\tWhether to warn about unused imports.\n\
 	    \Language options:\n\
+	    \\t--assert <int>\n\
+	    \\t\tSpecify assertion level for compiled code.\n\
 	    \\t--(no-)retain-full-import\n\
 	    \\t\tWhether to reduce import signatures to the entities used.\n\
 	    \\t--(no-)reexport-import\n\
@@ -118,6 +120,10 @@ functor MkOptionParser(Switches: SWITCHES) :> OPTION_PARSER =
 	    (Language.implicitImportFile :=
 		(if file = "-" then NONE else SOME file);
 	     parse rest)
+	  | parse (all as "--assert"::num::rest) =
+	    (case Int.fromString num of
+		  SOME n => (Language.assertionLevel := n; parse rest)
+		| NONE => all)
 	  | parse (s::rest) =
 	    if checkBooleanSwitches (s, booleanSwitches) then parse rest
 	    else s::rest

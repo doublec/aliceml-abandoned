@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2002
+ *   Andreas Rossberg, 2001-2003
  *
  * Last change:
  *   $Date$ by $Author$
@@ -15,7 +15,7 @@
  *)
 
 import structure __pervasive                      from "Pervasive"
-import __primitive type unit type string type ref from "ToplevelTypes"
+import __primitive type unit type string type int type ref from "ToplevelTypes"
 
 signature GENERAL =
 sig
@@ -33,6 +33,7 @@ sig
     exception Span
     exception Subscript
     exception Unordered						(**)
+    exception Assert of string * int				(**)
 
     val exnName :	exn -> string
     val exnMessage :	exn -> string

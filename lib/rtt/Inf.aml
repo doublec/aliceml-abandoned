@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2003
+ *   Andreas Rossberg, 2001-2004
  *
  * Last change:
  *   $Date$ by $Author$
@@ -98,7 +98,6 @@ TODO:
 
 *******************************************************************************)
 
-import structure Assert       from "../utility/Assert"
 import structure Cell         from "../utility/Cell"
 import functor   MkHashImpMap from "../data/MkHashImpMap"
 import structure GlobalStamp  from "../data/GlobalStamp"
@@ -258,7 +257,7 @@ struct
     and mapr'(f,  nil )		= nil
       | mapr'(f, x::xs)		= let val xs' = mapr'(f,xs) in f x :: xs' end
 
-    fun dummy _			= raise Assert.failure
+    fun dummy _			= assert false
     val modFwd			= ref(dummy : path * inf -> mod)
     val applyFwd'		= ref(dummy : inf * mod -> inf)
     val narrowFwd 		= ref(dummy : inf * inf -> inf)
@@ -375,7 +374,7 @@ struct
     fun itemPath(TYP(p,_))	= p
       | itemPath(MOD(p,_))	= p
       | itemPath(INF(p,_))	= p
-      | itemPath _		= raise Assert.failure
+      | itemPath _		= assert false
 
     fun tab((itemsr, ref(SOME tab), _) : sign) = tab
       | tab((itemsr, r, _) : sign) =
@@ -740,7 +739,7 @@ struct
       | hide(TYP(p,k))	= (Path.hide p; Type.isSingKind k)
       | hide(MOD(p,j))	= (Path.hide p; isSing j)
       | hide(INF(p,k))	= (Path.hide p; isSingKind k)
-      | hide(HIDDEN _)	= raise Assert.failure
+      | hide(HIDDEN _)	= assert false
 
     fun hideItem' dom item =
 	(if itemDom item <> dom then SOME item
@@ -833,25 +832,25 @@ struct
 					  else MOD(p, sing'(mod(p,j)))
       | strong(item as INF(p,k))	= if isSingKind k then item
 					  else INF(p, singKind(con'(p,k)))
-      | strong(HIDDEN _)		= raise Assert.failure
+      | strong(HIDDEN _)		= assert false
 
     fun selectFix(FIX(l,q))		= q
-      | selectFix _			= raise Assert.failure
+      | selectFix _			= assert false
     fun selectVal(VAL(l,t))		= t
-      | selectVal _			= raise Assert.failure
+      | selectVal _			= assert false
     fun selectTyp(TYP(p,k))		= k
-      | selectTyp _			= raise Assert.failure
+      | selectTyp _			= assert false
     fun selectMod(MOD(p,j))		= j
-      | selectMod _			= raise Assert.failure
+      | selectMod _			= assert false
     fun selectInf(INF(p,k))		= k
-      | selectInf _			= raise Assert.failure
+      | selectInf _			= assert false
 
     fun selectTyp'(TYP(p,k))		= Type.asSingKind k
-      | selectTyp' _			= raise Assert.failure
+      | selectTyp' _			= assert false
     fun selectMod'(MOD(p,j))		= asSing j
-      | selectMod' _			= raise Assert.failure
+      | selectMod' _			= assert false
     fun selectInf'(INF(p,k))		= asSingKind k
-      | selectInf' _			= raise Assert.failure
+      | selectInf' _			= assert false
 
     exception Lookup of lab
 
@@ -1158,7 +1157,7 @@ struct
 		    then maximiseItem item1
 		    else (change:= true; Option.map HIDDEN (maximiseItem item1))
 		  | _ =>
-			raise Assert.failure
+			assert false
 		) handle Hidden =>
 			maximiseItem item1
 
@@ -1724,7 +1723,7 @@ TextIO.print "\n"
 *)
 (*DEBUG*)handle e => raise e
 		)
-	      | _ => raise Assert.failure
+	      | _ => assert false
 	end
 	handle Hidden          => ()
 	     | Tab.Unknown dom => raise Mismatch(missing dom)
@@ -2110,7 +2109,7 @@ TextIO.print "\n";
 ;
 	    INF(p',k')
 	end
-      | infimumItem _ = raise Assert.failure
+      | infimumItem _ = assert false
 
     and infimumKind(c,k1,k2) =
 	(* TODO: contravariance in parameters *)

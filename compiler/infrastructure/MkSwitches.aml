@@ -4,7 +4,7 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2000-2003
+ *   Andreas Rossberg, 2000-2004
  *   Leif Kornstaedt, 2001-2002
  *
  * Last change:
@@ -33,6 +33,7 @@ struct
 
     structure Language =
     struct
+	val assertionLevel			= ref 0
 	val allowUnclosedComponents		= ref false
 	val supportRtt				= ref true
 	val silentFailExp			= ref true

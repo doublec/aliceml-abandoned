@@ -1,12 +1,12 @@
-(* Author:							*)
-(*   Andreas Rossberg <rossberg@ps.uni-sb.de>			*)
-(*								*)
-(* Copyright:							*)
-(*   Andreas Rossberg, 2001-2003				*)
-(*								*)
-(* Last change:							*)
-(*   $Date$ by $Author$	*)
-(*   $Revision$						*)
+(* Author:									*)
+(*   Andreas Rossberg <rossberg@ps.uni-sb.de>					*)
+(*										*)
+(* Copyright:									*)
+(*   Andreas Rossberg, 2001-2004						*)
+(*										*)
+(* Last change:									*)
+(*   $Date$ by $Author$				*)
+(*   $Revision$							*)
 
 (*										*)
 (* Standard ML syntactic analysis						*)
@@ -28,6 +28,12 @@
 (*	  exp ::= lazy exp							*)
 (*   - spawn expressions:							*)
 (*	  exp ::= spawn exp							*)
+(*   - assertions:								*)
+(*	  exp ::= assert<d> exp							*)
+(*		  assert<d> exp of pat						*)
+(*		  assert<d> exp raise pat					*)
+(*		  assert<d> exp_1 do exp_2					*)
+(*		  assert<d> exp_1 of pat do exp_2				*)
 (*   - lazy function declarations:						*)
 (*        fvalbind ::= lazy <op> vid atpat11 ... atpat1n <: ty1> = exp1 | ...	*)
 (*   - concurrent function declarations:					*)
@@ -254,6 +260,8 @@
 
 %pos  Source.pos
 
+%arg (sourceDesc): Source.desc
+
 %verbose
 
 
@@ -270,6 +278,7 @@
 	| SEMICOLON | DOTS | UNDERBAR | BAR | EQUALS | DARROW | ARROW | HASH
 
 	(* Alice core extensions *)
+	| ASSERT of int option | FILE | LINE
 	| EXTTYPE | CONSTRUCTOR | NON | WITHFUN | WITHVAL | DOT | HASHBRACK
 	| LAZY | SPAWN
 
@@ -303,6 +312,7 @@
 	 EQTYPE FUNCTOR INCLUDE SHARING SIG
 	 SIGNATURE STRUCT STRUCTURE WHERE
 	 EXTTYPE CONSTRUCTOR NON WITHFUN WITHVAL
+	 ASSERT FILE LINE
 	 LAZY SPAWN
 	 ANY FCT PACK UNPACK
 	 IMPORT FROM
@@ -322,11 +332,13 @@
 %right AND
 %left  DARROW		(* L/R is arbitrary *)
 %left  BAR		(* L/R is arbitrary *)
+%left  OF		(* L/R is arbitrary *)
 %left  DO		(* L/R is arbitrary *)
 %left  ELSE		(* L/R is arbitrary *)
 %left  LAZY		(* L/R is arbitrary *)
 %left  SPAWN		(* L/R is arbitrary *)
 %left  RAISE		(* L/R is arbitrary *)
+%left  IN		(* L/R is arbitrary *)
 %right HANDLE
 %right ORELSE
 %right ANDALSO
@@ -678,6 +690,8 @@
 
   atexp:
 	  scon		( SCONAtExp(I(sconleft,sconright), scon) )
+	| FILE		( FILEAtExp(I(FILEleft,FILEright), sourceDesc) )
+	| LINE		( LINEAtExp(I(LINEleft,LINEright), sourceDesc) )
 	| longvid
 			( LONGVIDAtExp(I(longvidleft,longvidright),
 				       SANSOp, longvid) )
@@ -771,7 +785,19 @@
 	| PACK atstrexp COLONGREATER atsigexp
 				( PACKExp(I(PACKleft,atsigexpright),
 					  atstrexp, atsigexp) )
-
+	| ASSERT exp DO exp	( ASSERTDOExp(I(ASSERTleft, exp2right),
+					      sourceDesc, ASSERT, exp1, exp2) )
+	| ASSERT exp OF pat DO exp
+				( ASSERTOFDOExp(I(ASSERTleft, exp2right),
+						sourceDesc, ASSERT, exp1, pat,
+						exp2) )
+	| ASSERT exp		( ASSERTExp(I(ASSERTleft, expright), 
+					    sourceDesc, ASSERT, exp) )
+	| ASSERT exp OF pat	( ASSERTOFExp(I(ASSERTleft, patright),
+					      sourceDesc, ASSERT, exp, pat) )
+	| ASSERT exp RAISE pat  ( ASSERTRAISEExp(I(ASSERTleft, patright), 
+						 sourceDesc, ASSERT, exp, pat) )
+	
 
   (* Core: Matches *)
 

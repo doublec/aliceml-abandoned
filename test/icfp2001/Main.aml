@@ -1,7 +1,6 @@
 import structure Doc    from "Doc"
 import structure Parse  from "Parse"
 import structure Smurf  from "Smurf"
-import structure Assert from "x-alice:/lib/utility/Assert"
 
 structure Main =
 struct

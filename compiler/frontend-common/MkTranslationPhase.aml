@@ -36,7 +36,6 @@ import structure FixityTranslation	from "FixityTranslation"
 import structure PervasiveTypeTranslation from "PervasiveTypeTranslation"
 
 import structure TranslationEnv		from "TranslationEnv"
-import structure Assert                 from "../../lib/utility/Assert"
 import structure Crash			from "../infrastructure/Crash"
 import structure Error			from "../infrastructure/Error"
 import structure Source			from "../infrastructure/Source"
@@ -345,7 +344,7 @@ struct
 	    val exp1    = O.VarExp(typInfo(r,t2), longid2)
 	    val (t3,t4) = Type.asArrow t2
 	in
-	    (*ASSERT Type.equal(t3,#typ(infoExp exp2)) *)
+	    (*ASSERT assert Type.equal(t3,#typ(infoExp exp2)); *)
 	    O.AppExp(typInfo(r,t4), exp1, exp2)
 	end
 
@@ -511,7 +510,7 @@ struct
 	    callInf(E, lab_lookupMod, trTuple(r, #[e1,e2]))
 	end
 
-    fun trVirtTyplongid(E, I.ShortId(i,x)) = raise Assert.failure
+    fun trVirtTyplongid(E, I.ShortId(i,x)) = assert false
       | trVirtTyplongid(E, I.LongId(i,y, I.Lab(_,l)) : I.typlongid) =
 	(* [y.l] = Inf.lookupTyp'(Inf.asSig[y], Label.fromString "l") *)
 	let
@@ -522,7 +521,7 @@ struct
 	    callInf(E, lab_lookupTyp', trTuple(r, #[e1,e2]))
 	end
 
-    fun trVirtInflongid(E, I.ShortId(i,x)) = raise Assert.failure
+    fun trVirtInflongid(E, I.ShortId(i,x)) = assert false
       | trVirtInflongid(E, I.LongId(i,y, I.Lab(_,l)) : I.inflongid) =
 	(* [y.l] = Inf.lookupInf'(Inf.asSig[y], Label.fromString "l") *)
 	let
@@ -1119,9 +1118,9 @@ struct
 		 * been performed to equalize them. Example:
 		 *   fct(signature S) -> ()  :>  fct(signature S) -> ()
 		 * So we cannot put in an assertion here!
-		(*ASSERT assert Path.equal(p1,p2) => *)
+		(*ASSERT assert Path.equal(p1,p2) do *)
 		if not(Path.equal(Inf.asCon j1, Inf.asCon j2')))
-		then raise Assert.failure else
+		then assert false else
 		 *)
 		NONE
 	    else
@@ -1253,7 +1252,7 @@ struct
 	  | (_, Inf.Sing m2) =>
 		coerceMod(E, r, x1,j1,x2o,#2(Inf.asMod m2),j2', isntIdentity)
 	  | (_, (Inf.Sig _ | Inf.Arrow _ | Inf.Lambda _ | Inf.Apply _)) =>
-		raise Assert.failure
+		assert false
 
     and coerceStr(E, r, x1,s1, x2o,[],s2', isntIdentity, flds, row) =
 	    (isntIdentity, Vector.fromList flds, row)

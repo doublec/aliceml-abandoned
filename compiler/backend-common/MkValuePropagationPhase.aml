@@ -25,7 +25,6 @@ import structure Url                     from "../../lib/system/Url"
 import structure UnsafeValue             from "../../lib/system/UnsafeValue"
 import structure Reflect                 from "../../lib/system/Reflect"
 import structure PrettyPrint             from "../../lib/utility/PrettyPrint"
-import structure Assert                  from "../../lib/utility/Assert"
 import signature IMP_MAP                 from "../../lib/data/IMP_MAP-sig"
 import structure MkHashImpMap            from "../../lib/data/MkHashImpMap"
 import structure MkDepthFirstSearch from "../../lib/utility/MkDepthFirstSearch"
@@ -560,7 +559,7 @@ functor MkValuePropagationPhase(val isCross: bool
 		     let
 			 val entry' = (valueMin (value, value'), isToplevel)
 		     in
-			 Assert.assert (isToplevel = isToplevel');
+			 assert (isToplevel = isToplevel');
 			 IdMap.insert (env', id, entry')
 		     end
 	       | NONE => IdMap.insert (env', id, entry)) env
@@ -1046,7 +1045,7 @@ functor MkValuePropagationPhase(val isCross: bool
 	    SOME (LitTests (Vector.concat [xs, ys]))
 	  | testsAppend (SOME (TagTests (labels, xs)),
 			 SOME (TagTests (labels', ys))) =
-	    (Assert.assert (labels = labels');
+	    (assert (labels = labels');
 	     SOME (TagTests (labels, Vector.concat [xs, ys])))
 	  | testsAppend (SOME (ConTests xs), SOME (ConTests ys)) =
 	    SOME (ConTests (Vector.concat [xs, ys]))
@@ -1868,7 +1867,7 @@ functor MkValuePropagationPhase(val isCross: bool
 			  {env, isToplevel, export, lazySels, outArityInfo}) =
 	    case sortShared (body, stamp) of
 		([stamp']::sorted, shared) =>
-		    (Assert.assert (stamp = stamp');
+		    (assert (stamp = stamp');
 		     vpBody (body, {env = env, isToplevel = isToplevel,
 				    shared = shared, export = export,
 				    lazySels = lazySels,
@@ -1876,7 +1875,7 @@ functor MkValuePropagationPhase(val isCross: bool
 		     List.app
 		     (fn stamps =>
 		      let
-			  val _ = Assert.assert (List.null (List.tl stamps))
+			  val _ = assert (List.null (List.tl stamps))
 			  val stamp = List.hd stamps
 		      in
 			  case StampMap.lookupExistent (shared, stamp) of

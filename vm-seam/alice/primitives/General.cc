@@ -47,6 +47,7 @@ void PrimitiveTable::RegisterGeneral() {
   PrimitiveTable::General_Subscript =
     UniqueConstructor::New("Subscript", "General.Subscript")->ToWord();
 
+  RegisterUniqueConstructor("Assert", "General.Assert");
   RegisterUniqueConstructor("Bind", "General.Bind");
   Register("General.Chr", PrimitiveTable::General_Chr);
   Register("General.Div", PrimitiveTable::General_Div);

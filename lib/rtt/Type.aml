@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2003
+ *   Andreas Rossberg, 2001-2004
  *
  * Last change:
  *   $Date$ by $Author$
@@ -202,7 +202,6 @@ type variables allowed under MU, there can never be a hole either, anyway.
 
 *******************************************************************************)
 
-import structure Assert  from "../utility/Assert"
 import structure Cell    from "../utility/Cell"
 import structure Name    from "Name"
 import structure Label   from "Label"
@@ -306,7 +305,7 @@ struct
      * the old forward reference trick.
      *)
 
-    fun dummy _		= raise Assert.failure
+    fun dummy _		= assert false
     val appFwd 		= ref(dummy : (typ -> unit) -> typ -> unit)
     val equalFwd 	= ref(dummy : typ * typ -> bool)
     val substFwd	= ref(dummy : subst * typ -> typ)
@@ -1033,7 +1032,7 @@ fun checkMu(t0,t1) =
 	    Map.insert(m,t0,());
 	    List.app (app o #2) lts
 	end
-      | _ => (TextIO.print("!! checkMu illformed: " ^ typToString t1 ^ "\n"); raise Assert.failure)
+      | _ => (TextIO.print("!! checkMu illformed: " ^ typToString t1 ^ "\n"); assert false)
 
 val _ = checkMuFwd := checkMu
 *)
@@ -1126,7 +1125,7 @@ val _ = checkMuFwd := checkMu
 				  buildBind'(mt,mk,rea,a',t1)
 				  before Map.insert(mt,a,a''))
 		)
-	   | _ => raise Assert.failure
+	   | _ => assert false
 
     and buildPair(mt,mk, rea, t, toTyp, t1,t2) =
 	let
@@ -1152,8 +1151,8 @@ val _ = checkMuFwd := checkMu
 	let
 	    val lts' = List.map (fn(li,ti) => (li, build(mt,mk,rea,ti))) lts
 	in
-(*ASSERT    assert isNone d => *)
-	    (*if isSome d then raise Assert.failure else*)
+(*ASSERT    assert isNone d do *)
+	    (*if isSome d then assert false else*)
 	    if ListPair.all (fn((_,t),(_,t')) => Cell.equal(canonical t,t'))
 			    (lts,lts')
 	    then buildOld(mt, t)
@@ -1546,7 +1545,7 @@ val _ = checkMuFwd := checkMu
 						 else insert(1, m::ms, t,t2)
 				  )
       | insert(i, m::ms, t1,t2)	= insert(i-1, ms, t1, t2)
-      | insert(i,  [],   t1,t2)	= raise Assert.failure
+      | insert(i,  [],   t1,t2)	= assert false
 
     val lock = Lock.lock()
 

@@ -4,7 +4,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt and Andreas Rossberg, 1999-2003
+ *   Leif Kornstaedt and Andreas Rossberg, 1999-2004
  *
  * Last change:
  *   $Date$ by $Author$
@@ -15,7 +15,6 @@ import structure TextIO              from "../../lib/system/TextIO"
 import structure Url                 from "../../lib/system/Url"
 import structure Component           from "../../lib/system/Component"
 import structure ComponentManager    from "../../lib/system/ComponentManager"
-import structure Assert              from "../../lib/utility/Assert"
 import structure Source              from "../infrastructure/Source"
 import structure MkSwitches          from "../infrastructure/MkSwitches"
 import structure MkFrontendCommon    from "../frontend-common/MkFrontendCommon"
@@ -32,10 +31,10 @@ structure SMLToMozartRecursiveCompiler =
     let
 	structure Switches = MkSwitches(val logOut = TextIO.stdOut)
 
-	val acquireSigRef: sig_loader ref =
-	    ref (fn _ => raise Assert.failure)
-	val acquireModRef: mod_loader ref =
-	    ref (fn _ => raise Assert.failure)
+	val _ = General.Assert	(* dummy to force CM importing ExtendedBasis *)
+
+	val acquireSigRef: sig_loader ref = ref (fn _ => assert false)
+	val acquireModRef: mod_loader ref = ref (fn _ => assert false)
 
 	fun loadSig (desc, url) = !acquireSigRef (desc, url)
 	fun loadMod (desc, url) = !acquireModRef (desc, url)

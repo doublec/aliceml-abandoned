@@ -9,12 +9,14 @@
 expressible by other, less convenient means:</P>
 
 <UL>
-  <LI> <A href="sugar.html#lexical">Lexical syntax</A> </LI>
-  <LI> <A href="sugar.html#longids">Long identifiers</A> </LI>
-  <LI> <A href="sugar.html#vectors">Vector expressions and patterns</A> </LI>
-  <LI> <A href="sugar.html#records">Records</A> </LI>
-  <LI> <A href="sugar.html#patterns">Pattern language</A> </LI>
-  <LI> <A href="sugar.html#rec">Recursive definitions</A> </LI>
+  <LI> <A href="#lexical">Lexical syntax</A> </LI>
+  <LI> <A href="#longids">Long identifiers</A> </LI>
+  <LI> <A href="#sourcepos">Source position</A> </LI>
+  <LI> <A href="#vectors">Vector expressions and patterns</A> </LI>
+  <LI> <A href="#records">Records</A> </LI>
+  <LI> <A href="#patterns">Pattern language</A> </LI>
+  <LI> <A href="#rec">Recursive definitions</A> </LI>
+  <LI> <A href="#assert">Assertions</A> </LI>
 </UL>
 
 
@@ -46,6 +48,19 @@ from the identifiers:</P>
 mod . submod (*Here!*) . subsub
     . f</PRE>
 
+
+<?php subsection("sourcepos", "Source position") ?>
+
+<P>For debugging purposes, Alice supports two special expression derived forms:</P>
+
+<PRE class=code>
+_file_
+_line_</PRE>
+
+<P>Occurances of these keywords are replaced by the file name and the line number of their respective occurance in the source file. For example,</P>
+
+<PRE class=code>
+print ("Error in file " ^ _file_ ", line " ^ Int.toString _line_ ^ "\n")</PRE>
 
 
 <?php section("vectors", "vectors") ?>
@@ -343,5 +358,124 @@ val l = rec xs => 1::2::xs</PRE>
 </TABLE>
 
 <P>where <I>vid</I> is a new identifier.</P>
+
+
+<?php section("assert", "Assertions") ?>
+
+<P>Syntactic sugar is provided for expressing preconditions and other assertions conveniently. If an assertion fails, the exception <A href="library/toplevel.html#interface"><TT>Assert</TT></A> is raised, indicating the location of the failed assertion. Assertions can be activated selectively with the <A href="compiler.html#options"><TT>--assert</TT></A> compiler switch.</P>
+
+
+<?php subsection("assert-syntax", "Assertion syntax") ?>
+
+<TABLE class=bnf>
+  <TR>
+    <TD> <I>exp</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> ... </TD>
+    <TD> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>assert</TT>&lt;<I>d</I>&gt; <I>exp</I> </TD>
+    <TD> boolean assertion </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>assert</TT>&lt;<I>d</I>&gt; <I>exp</I> <TT>of</TT> <I>pat</I> </TD>
+    <TD> pattern assertion </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>assert</TT>&lt;<I>d</I>&gt; <I>exp</I> <TT>raise</TT> <I>pat</I> </TD>
+    <TD> exception assertion </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>assert</TT>&lt;<I>d</I>&gt; <I>exp</I> <TT>do</TT> <I>exp</I> </TD>
+    <TD> boolean precondition </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>assert</TT>&lt;<I>d</I>&gt; <I>exp</I> <TT>of</TT> <I>pat</I> <TT>do</TT> <I>exp</I> </TD>
+    <TD> pattern precondition </TD>
+  </TR>
+</TABLE>
+
+<P>Assertions are derived forms:</P>
+
+<TABLE class=bnf>
+  <TR>
+    <TD> <TT>assert</TT> <I>exp<SUB>1</SUB></I> <TT>do</TT> <I>exp<SUB>2</SUB></I> </TD>
+    <TD> ==> </TD>
+    <TD> <TT>if</TT> <I>exp<SUB>1</SUB></I> <TT>then</TT> <I>exp<SUB>2</SUB></I> <TT>else</TT> <TT>raise</TT> <TT>Assert(_file_,_line_)</TT></TD>
+  </TR>
+  <TR>
+    <TD> <TT>assert</TT> <I>exp<SUB>1</SUB></I> <TT>of</TT> <I>pat</I> <TT>do</TT> <I>exp<SUB>2</SUB></I> </TD>
+    <TD> ==> </TD>
+    <TD> <TT>assert</TT> <TT>(case</TT> <I>exp<SUB>1</SUB></I> <TT>of</TT> <I>pat</I> <TT>=></TT> <TT>true</TT> <TT>|</TT> <TT>_</TT> <TT>=></TT> <TT>false)</TT> <TT>do</TT> <I>exp<SUB>2</SUB></I> </TD>
+  </TR>
+  <TR>
+    <TD> <TT>assert</TT> <I>exp</I> </TD>
+    <TD> ==> </TD>
+    <TD> <TT>assert</TT> <I>exp</I> <TT>do</TT> <TT>lazy</TT> <TT>raise</TT> <TT>Assert(_file_,_line_)</TT></TD>
+  </TR>
+  <TR>
+    <TD> <TT>assert</TT> <I>exp</I> <TT>of</TT> <I>pat</I> </TD>
+    <TD> ==> </TD>
+    <TD> <TT>assert</TT> <I>exp</I> <TT>of</TT> <I>pat</I> <TT>do</TT> <TT>()</TT> </TD>
+  </TR>
+  <TR>
+    <TD> <TT>assert</TT> <I>exp</I> <TT>raise</TT> <I>pat</I> </TD>
+    <TD> ==> </TD>
+    <TD> <TT>assert</TT> <TT>((</TT><I>exp</I><TT>;</TT> <TT>false)</TT> <TT>handle</TT> <I>pat</I> <TT>=></TT> <TT>true</TT> <TT>|</TT> <TT>_</TT> <TT>=></TT> <TT>false)</TT> <TT>do</TT> <TT>()</TT> </TD>
+  </TR>
+</TABLE>
+
+<P>Here, <TT>_line_</TT> will be on the same line where the <TT>assert</TT> keyword occured.</P>
+
+<P>Assertions can be assigned an explicit level by appending a digit to the <TT>assert</TT> keyword. Such assertions can be controlled via the <A href="compiler.html#options"><TT>--assert</TT></A> compiler switch that specifies the assertion level (0-9) of the compiled code. Any assertion that has a level annotation higher then that assertion level will be disabled. Note that level 0 assertions cannot be disabled. An unannotated assertion defaults to level 0.</P>
+
+<P>When an assertion is disabled, the basic derived form is resolved differently:</P>
+
+<TABLE class=bnf>
+  <TR>
+    <TD> <TT>assert</TT><I>d</I> <I>exp<SUB>1</SUB></I> <TT>do</TT> <I>exp<SUB>2</SUB></I> </TD>
+    <TD> ==> </TD>
+    <TD> <I>exp<SUB>2</SUB></I> </TD>
+  </TR>
+</TABLE>
+
+<P>From this, the other expansions follow:</P>
+
+<TABLE class=bnf>
+  <TR>
+    <TD> <TT>assert</TT><I>d</I> <I>exp<SUB>1</SUB></I> <TT>of</TT> <I>pat</I> <TT>do</TT> <I>exp<SUB>2</SUB></I> </TD>
+    <TD> ==> </TD>
+    <TD> <I>exp<SUB>2</SUB></I> </TD>
+  </TR>
+  <TR>
+    <TD> <TT>assert</TT><I>d</I> <I>exp</I> </TD>
+    <TD> ==> </TD>
+    <TD> <TT>lazy</TT> <TT>raise</TT> <TT>Assert(_file_,_line_)</TT></TD>
+  </TR>
+  <TR>
+    <TD> <TT>assert</TT><I>d</I> <I>exp</I> <TT>of</TT> <I>pat</I> </TD>
+    <TD> ==> </TD>
+    <TD> <TT>()</TT> </TD>
+  </TR>
+  <TR>
+    <TD> <TT>assert</TT><I>d</I> <I>exp</I> <TT>raise</TT> <I>pat</I> </TD>
+    <TD> ==> </TD>
+    <TD> <TT>()</TT> </TD>
+  </TR>
+</TABLE>
+
+<P>Note that boolean assertions of the form <TT>assert</TT> <I>exp</I> are fully polymorphic. This enables the following idiom for indicating "impossible" cases:</P>
+
+<PRE class=code>
+fun f (x::xs) = g x
+  | f  nil    = assert false  (* we know the list is non-empty *)</PRE>
+
+<P>The value of such an assert expression should never be used and is thus represented by a <A href="futures.html#failed">failed future</A>. Accessing it will also raise an <TT>Assert</TT> exception.</P>
 
 <?php footing() ?>

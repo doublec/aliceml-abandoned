@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2002
+ *   Andreas Rossberg, 2001-2003
  *
  * Last change:
  *   $Date$ by $Author$
@@ -57,7 +57,7 @@ local
 	__primitive type 'a strict   = "strict"
 	__primitive type 'a conarrow = "conarrow"
     end
-in
+
     (* Step 3: Extend with actual content
      *         (requires type lib and datatype encoding) *)
     structure __pervasive =
@@ -65,7 +65,20 @@ in
 	open __pervasive
 
 	__primitive exttype exn = "exn"
+	datatype bool    = false | true
 	datatype 'a list = nil | op:: of 'a * 'a list
+    end
+
+    __primitive type int    = "int"
+    __primitive type string = "string"
+in
+    (* Step 4: Extend with exceptions
+     *         (requires type exn) *)
+    structure __pervasive =
+    struct
+	open __pervasive
+
+	__primitive exception Assert of string * int = "General.Assert"
     end
 end (* local *)
 

@@ -4,7 +4,7 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2000-2003
+ *   Andreas Rossberg, 2000-2004
  *   Leif Kornstaedt, 2001-2002
  *
  * Last change:
@@ -31,6 +31,7 @@ sig
 
     structure Language :
     sig
+	val assertionLevel :			int ref
 	val allowUnclosedComponents :		bool ref
 	val supportRtt :			bool ref
 	val silentFailExp :			bool ref

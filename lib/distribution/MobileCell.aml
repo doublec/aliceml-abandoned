@@ -32,7 +32,6 @@
 (*--** The manager should forward getState requests instead of
  * executing them itself - but this does not work with functional proxies *)
 
-import structure Assert        from "x-alice:/lib/utility/Assert"
 import structure GlobalStamp   from "x-alice:/lib/data/GlobalStamp"
 import structure MkHashImpMap  from "x-alice:/lib/data/MkHashImpMap"
 import structure Remote        from "x-alice:/lib/distribution/Remote"
@@ -137,7 +136,7 @@ structure MobileCell :> MOBILE_CELL =
 					     (managerTable, stamp) of
 					SOME returnState' =>
 					    cast returnState' ()
-				      | NONE => raise Assert.failure
+				      | NONE => raise Assert ("",0,0)
 		    in
 			GlobalTable.insert
 			    (managerTable, stamp, cast returnState);
@@ -167,7 +166,7 @@ structure MobileCell :> MOBILE_CELL =
 				    case GlobalTable.remove
 					     (stateTable, stamp) of
 					SOME value => cast value
-				      | NONE => raise Assert.failure
+				      | NONE => raise Assert ("",0,0)
 				val returnState = Remote.proxy1 returnState
 			    in
 				cast getState (valueNeeded, returnState)

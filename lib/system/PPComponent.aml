@@ -12,7 +12,6 @@
 
 (* Mostly identical to lib/rtt/PPInf - keep in sync! *)
 
-import structure Assert        from "../utility/Assert"
 
 import structure UnsafeValue   from "../system/UnsafeValue"
 import structure Reflect       from "../system/Reflect"
@@ -266,7 +265,7 @@ struct
 			  | Type.SingKind t  => if isDatatype
 						then "datatype "
 						else "type "
-			  | Type.ArrowKind _ => raise Assert.failure
+			  | Type.ArrowKind _ => assert false
 		    ) ^^
 		    hbox(doc1 ^/^ text "") ^^
 		    ppLab(Path.toLab p) ^/^

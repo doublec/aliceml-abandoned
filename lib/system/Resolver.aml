@@ -10,7 +10,6 @@
  *   $Revision$
  *)
 
-import structure Assert       from "../utility/Assert"
 import structure MkHashImpMap from "../data/MkHashImpMap"
 import structure Url          from "Url"
 import structure Config       from "Config"
@@ -136,7 +135,7 @@ structure Resolver: RESOLVER =
 		    (case cs of
 			 nil => ()
 		       | _::_ => raise MatchFailure)
-		  | match (_, _, _) = raise Assert.failure
+		  | match (_, _, _) = assert false
 
 		fun instantiate (p, env) =
 		    String.implode (List.concat (instantiate' (p, env)))

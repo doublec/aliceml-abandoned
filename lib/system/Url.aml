@@ -10,7 +10,6 @@
  *   $Revision$
  *)
 
-import structure Assert from "../utility/Assert"
 import structure Config from "Config"
 import signature URL    from "URL-sig"
 
@@ -322,7 +321,7 @@ structure Url :> URL =
 				 _::_ => pushPath prefix
 			       | nil => ();
 			     parseFragment suffix)
-		      | (_, SOME _, _) => raise Assert.failure
+		      | (_, SOME _, _) => assert false
 		and parseAuthority cs =
 		    let
 			val (prefix, sep, suffix) = split isPath cs
@@ -334,7 +333,7 @@ structure Url :> URL =
 				(absolute := true; parsePath suffix)
 			  | SOME #"?" => parseQuery suffix
 			  | SOME #"#" => parseFragment suffix
-			  | SOME _ => raise Assert.failure
+			  | SOME _ => assert false
 		    end
 		and parsePathDev (c::(#":")::cr) =
 		    (device := SOME (toDevice c); parsePath cr)
@@ -349,7 +348,7 @@ structure Url :> URL =
 			  | SOME (#"/" | #"\\") => parsePath suffix
 			  | SOME #"?" => parseQuery suffix
 			  | SOME #"#" => parseFragment suffix
-			  | SOME _ => raise Assert.failure
+			  | SOME _ => assert false
 		    end
 		and parseQuery cs =
 		    let
@@ -359,7 +358,7 @@ structure Url :> URL =
 			case sep of
 			    NONE => ()
 			  | SOME #"#" => parseFragment suffix
-			  | SOME _ => raise Assert.failure
+			  | SOME _ => assert false
 		    end
 		and parseFragment cs = fragment := SOME (String.implode cs)
 	    in

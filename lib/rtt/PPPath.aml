@@ -14,7 +14,6 @@ import structure Name        from "Name"
 import structure Label       from "Label"
 import structure Path        from "Path"
 
-import structure Assert      from "../utility/Assert"
 import structure PrettyPrint from "../utility/PrettyPrint"
 import structure PPMisc      from "PPMisc"
 import signature PP_PATH     from "PP_PATH-sig"

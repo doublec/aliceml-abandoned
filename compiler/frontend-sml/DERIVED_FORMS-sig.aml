@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2002
+ *   Andreas Rossberg, 2001-2004
  *
  * Last change:
  *   $Date$ by $Author$
@@ -20,6 +20,15 @@
  *   - recursive expressions:
  *	rec pat => exp     ==>     let val rec x as pat = exp in x end
  *     where x is a fresh identifier.
+ *   - file and line expansion:
+ *      _file_  ==>  "myfile.aml"
+ *      _line_  ==>  42
+ *   - assertions:
+ *      assert<d> exp1 do exp2         ==>  if exp1 then exp2 else raise Assert(_file_,_line_)
+ *	assert<d> exp1 of pat do exp2  ==>  assert (case exp1 of pat => true | _ => false) do exp2
+ *	assert<d> exp                  ==>  assert exp do lazy raise Assert(_file_,_line_)
+ *	assert<d> exp of pat           ==>  assert exp of pat do ()
+ *	assert<d> exp raise pat        ==>  assert ((exp; false) handle vid as pat => true | _ => false) do ()
  *   - exception declarations have been made a derived form:
  *	exception exbind          ==>  con exbind'
  *	vid <of ty> <and exbind>  ==>  vid <of ty> : exn <and exbind'>
@@ -79,7 +88,7 @@
 
 import signature INPUT_GRAMMAR from "INPUT_GRAMMAR-sig"
 import structure InputGrammar  from "InputGrammar"
-
+import structure Source	       from "../infrastructure/Source"
 
 local
     open InputGrammar
@@ -117,6 +126,14 @@ sig
     val WHILEExp:    Info * Exp * Exp                          -> Exp
     val LISTAtExp:   Info * Exp list                           -> AtExp
     val RECExp:      Info * Pat * Exp                          -> Exp
+
+    val FILEAtExp:      Info * Source.desc                          -> AtExp
+    val LINEAtExp:      Info * Source.desc                          -> AtExp
+    val ASSERTDOExp:    Info * Source.desc * int option * Exp * Exp -> Exp
+    val ASSERTOFDOExp:  Info * Source.desc * int option * Exp * Pat * Exp -> Exp
+    val ASSERTExp:      Info * Source.desc * int option * Exp       -> Exp
+    val ASSERTOFExp:    Info * Source.desc * int option * Exp * Pat -> Exp
+    val ASSERTRAISEExp: Info * Source.desc * int option * Exp * Pat -> Exp
 
     val VIDExpRow:   Info * VId * Ty option * ExpRow option    -> ExpRow
 

@@ -61,7 +61,6 @@
  * annotiert werden.
  *)
 
-import structure Assert          from "../../lib/utility/Assert"
 import structure Url             from "../../lib/system/Url"
 import structure Name            from "../../lib/rtt/Name"
 import structure Label           from "../../lib/rtt/Label"
@@ -280,7 +279,7 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 		genRec (rest, unallocated, forward)
 	    end
 	  | genRec (nil, unallocated, _) =
-	    Assert.assert (IdSet.isEmpty unallocated)
+	    assert (IdSet.isEmpty unallocated)
 	and genTests (LitTests #[], elseBody) = genBody elseBody
 	  | genTests (LitTests litBodyVec, elseBody) =
 	    (case Vector.sub (litBodyVec, 0) of

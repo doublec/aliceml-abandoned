@@ -4,7 +4,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt and Andreas Rossberg, 2001-2003
+ *   Leif Kornstaedt and Andreas Rossberg, 2001-2004
  *
  * Last change:
  *   $Date$ by $Author$
@@ -13,7 +13,6 @@
 
 import structure OS          from "../../lib/system/OS"
 import structure TextIO      from "../../lib/system/TextIO"
-import structure Assert      from "../../lib/utility/Assert"
 import structure Parser      from "SMLParser"
 import structure Error       from "SMLError"
 import functor   MkAnalyzer  from "MkAnalyzer"
@@ -59,7 +58,7 @@ struct
 				filenames;
 		       TextIO.print "\n\n"
 		   end
-		   handle Assert.Assert _ =>
+		   handle Assert _ =>
 			  (TextIO.output (TextIO.stdErr,
 					  "while processing " ^ filename ^
 					  ": assertion failure\n");

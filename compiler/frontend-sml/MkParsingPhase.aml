@@ -23,7 +23,7 @@ import functor   MkCountPosLexer from "MkCountPosLexer"
 import structure LrParser        from "../../lib/ml-yacc/parser2"
 import functor   Join            from "../../lib/ml-yacc/join"
 import functor   MkLrVals        from "Parser"
-import structure DerivedForms    from "DerivedForms"
+import structure MkDerivedForms  from "MkDerivedForms"
 import functor   MkLexerError    from "MkLexerError"
 import structure ParsingError    from "ParsingError"
 import signature PARSING_PHASE   from "PARSING_PHASE-sig"
@@ -40,32 +40,33 @@ struct
     structure E = ParsingError
 
 
-    (* Build Yacc parser *)
+       (* The actual parsing function *)
+	    (* Build Yacc parser *)
+
+    structure DerivedForms = MkDerivedForms (Switches)
 
     structure LrVals = MkLrVals(structure Token        = LrParser.Token
 				structure DerivedForms = DerivedForms)
-
+				
     structure LexerError = MkLexerError(structure Tokens = LrVals.Tokens
 					type error       = ParsingError.error)
 
-    structure Lexer  = MkLexer(structure Tokens     = LrVals.Tokens
-			       structure LexerError = LexerError)
+    structure Lexer  = MkLexer( structure Tokens     = LrVals.Tokens
+				structure LexerError = LexerError)
 
     structure Lexer' = MkCountPosLexer(structure Lexer      = Lexer
 				       structure LexerError = LexerError
 				       val error            = ParsingError.error
 				       val startLine =
-					   if !Switches.Language.implicitImport
-					   then 0 else 1)
+					    if !Switches.Language.implicitImport
+					    then 0 else 1)
 
     structure Parser = Join(structure LrParser   = LrParser
-			    structure ParserData = LrVals.ParserData
-			    structure Lex        = Lexer')
+		    structure ParserData = LrVals.ParserData
+		    structure Lex        = Lexer')
 
 
-    (* The actual parsing function *)
-
-    fun parse source =
+    fun parse (desc, source) =
 	let
 	    val yyread = ref false
 	    fun yyinput _ =
@@ -78,8 +79,8 @@ struct
 
 	    fun onError(s, pos1, pos2) = E.error((pos1,pos2), E.SyntaxError s)
 	in
-	    #1 (Parser.parse(0, lexer, onError, ()))
+	    #1 (Parser.parse(0, lexer, onError, desc))
 	end
 
-    fun translate(desc, _, source) = ((), parse source)
+    fun translate(desc, _, source) = ((), parse (desc, source))
 end

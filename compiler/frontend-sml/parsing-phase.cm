@@ -17,7 +17,7 @@ Group is
 	Parser.grm
 
 	DERIVED_FORMS-sig.aml
-	DerivedForms.aml
+	MkDerivedForms.aml
 
 	PARSING_PHASE-sig.aml
 	MkParsingPhase.aml

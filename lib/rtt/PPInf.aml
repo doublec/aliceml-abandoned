@@ -3,14 +3,13 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2002
+ *   Andreas Rossberg, 2001-2003
  *
  * Last change:
  *   $Date$ by $Author$
  *   $Revision$
  *)
 
-import structure Assert        from "../utility/Assert"
 
 import structure Label         from "Label"
 import structure LabelSet      from "LabelSet"
@@ -368,7 +367,7 @@ struct
 			  | Type.SingKind t  => if isDatatype
 						then "datatype "
 						else "type "
-			  | Type.ArrowKind _ => raise Assert.failure
+			  | Type.ArrowKind _ => assert false
 		    ) ^^
 		    hbox(doc1 ^/^ text "") ^^
 		    ppLab(Path.toLab p) ^/^
