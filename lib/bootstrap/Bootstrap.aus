@@ -4,8 +4,7 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 1999
- *   Leif Kornstaedt, 1999
+ *   Andreas Rossberg and Leif Kornstaedt, 1999-2000
  *
  * Last change:
  *   $Date$ by $Author$
@@ -38,6 +37,8 @@ infix  0  before
 (* CAREFUL! Each pervasive type may only be mentioned in one primitive
    declaration/specification, otherwise the compiler will crash! *)
 
+local
+
 structure Pervasive =							(**)
   struct
     structure Int	= struct __primitive eqtype int		= "int"     end
@@ -60,6 +61,8 @@ structure Pervasive =							(**)
     structure Promise	= struct __primitive type 'a promise	= "promise" end
 *)
   end
+
+in
 
 type    unit		= {}
 type    int		= Pervasive.Int.int
@@ -1281,7 +1284,7 @@ structure Int : INTEGER =
 	then Char.ord c - Char.ord #"0"
 	else (Char.ord c - Char.ord #"A" + 10) mod 32
 
-    fun skipWSget getc src = getc (dropl Char.isSpace getc src)
+    fun skipWSget (getc, src) = getc (dropl Char.isSpace getc src)
 
     fun isBinDigit #"0" = true
       | isBinDigit #"1" = true
@@ -1298,41 +1301,41 @@ structure Int : INTEGER =
 		  | OCT => (isOctDigit,       8)
 		  | DEC => (Char.isDigit,    10)
 		  | HEX => (Char.isHexDigit, 16)
-	    fun dig1 sgn NONE = NONE
-	      | dig1 sgn (SOME (c, rest)) =
+	    fun dig1 (sgn, NONE) = NONE
+	      | dig1 (sgn, SOME (c, rest)) =
 		let
-		    fun digr res src =
+		    fun digr (res, src) =
 			case getc src of
 			    NONE => SOME (sgn * res, src)
 			  | SOME (c', rest') =>
 				if isDigit c' then
-				    digr (factor * res + hexval c') rest'
+				    digr (factor * res + hexval c', rest')
 				else
 				    SOME (sgn * res, src)
 		in
-		    if isDigit c then digr (hexval c) rest else NONE
+		    if isDigit c then digr (hexval c, rest) else NONE
 		end
-	    fun getdigs sgn after0 inp =
-		case dig1 sgn inp of
+	    fun getdigs (sgn, after0, inp) =
+		case dig1 (sgn, inp) of
 		    NONE => SOME (0, after0)
 		  | res => res
-	    fun hexopt sgn NONE = NONE
-	      | hexopt sgn (SOME (#"0", after0)) =
-		if radix <> HEX then getdigs sgn after0 (getc after0)
+	    fun hexopt (sgn, NONE) = NONE
+	      | hexopt (sgn, SOME (#"0", after0)) =
+		if radix <> HEX then getdigs (sgn, after0, getc after0)
 		else
 		    (case getc after0 of
 			 NONE => SOME(0, after0)
 		       | SOME ((#"x" | #"X"), rest) =>
-			     getdigs sgn after0 (getc rest)
-		       | inp => getdigs sgn after0 inp)
-	      | hexopt sgn inp = dig1 sgn inp
+			     getdigs (sgn, after0, getc rest)
+		       | inp => getdigs (sgn, after0, inp))
+	      | hexopt (sgn, inp) = dig1 (sgn, inp)
 	    fun sign NONE = NONE
-	      | sign (SOME (#"~", rest)) = hexopt ~1 (getc rest)
-	      | sign (SOME (#"-", rest)) = hexopt ~1 (getc rest)
-	      | sign (SOME (#"+", rest)) = hexopt 1 (getc rest)
-	      | sign inp = hexopt  1 inp
+	      | sign (SOME (#"~", rest)) = hexopt (~1, getc rest)
+	      | sign (SOME (#"-", rest)) = hexopt (~1, getc rest)
+	      | sign (SOME (#"+", rest)) = hexopt (1, getc rest)
+	      | sign inp = hexopt (1, inp)
 	in
-	    sign (skipWSget getc source)
+	    sign (skipWSget (getc, source))
 	end
 
     __primitive val toString : int -> string = "Int.toString"
@@ -1825,13 +1828,13 @@ structure Real : REAL =
 			if c = #"e" orelse c = #"E"  then
 			    (true, rest)
 			else (false, src)
-	    fun scandigs first next final source =
-		let fun digs state src =
+	    fun scandigs (first, next, final, source) =
+		let fun digs (state, src) =
 		    case getc src of
 			NONE          => (SOME (final state), src)
 		      | SOME(c, rest) =>
 			    if Char.isDigit c then
-				digs (next(state, decval c)) rest
+				digs (next(state, decval c), rest)
 			    else
 				(SOME (final state), src)
 		in
@@ -1839,23 +1842,23 @@ structure Real : REAL =
 			NONE          => (NONE, source)
 		      | SOME(c, rest) =>
 			    if Char.isDigit c then
-				digs (first (decval c)) rest
+				digs (first (decval c), rest)
 			    else (NONE, source)
 		end
 
 	    fun ident x = x
-	    val getint  =
-		scandigs fromInt
-		(fn (res, cval) => 10.0 * res + fromInt cval) ident
-	    val getfrac =
-		scandigs
-		(fn cval => (1, fromInt cval))
-		(fn ((decs, frac), cval) =>
-		 (Int.+(decs,1), 10.0*frac+fromInt cval))
-		(fn (decs, frac) => frac / pow10 decs)
-	    val getexp =
-		scandigs ident (fn (res, cval) =>
-				Int.+(Int.*(10,res),cval)) ident
+	    fun getint source =
+		scandigs (fromInt,
+			  fn (res, cval) => 10.0 * res + fromInt cval,
+			  ident, source)
+	    fun getfrac source =
+		scandigs (fn cval => (1, fromInt cval),
+			  fn ((decs, frac), cval) =>
+			  (Int.+(decs,1), 10.0*frac+fromInt cval),
+			  fn (decs, frac) => frac / pow10 decs, source)
+	    fun getexp source =
+		scandigs (ident, fn (res, cval) => Int.+(Int.*(10,res),cval),
+			  ident, source)
 
 	    fun sign src =
 		case getc src of
@@ -1870,28 +1873,28 @@ structure Real : REAL =
 	    val (decpt,  src3) = pointsym src2
 	    val (frac,   src4) = getfrac src3
 
-	    fun mkres v rest =
+	    fun mkres (v, rest) =
 		SOME(if manpos then v else ~v, rest)
 
-	    fun expopt manval src =
+	    fun expopt (manval, src) =
 		let val (esym,   src1) = esym src
 		    val (exppos, src2) = sign src1
 		    val (expv,   rest) = getexp src2
 		in
 		    case (esym, expv) of
-			(_,     NONE)     => mkres manval src
+			(_,     NONE)     => mkres (manval, src)
 		      | (true,  SOME exp) =>
-			    if exppos then mkres (manval * pow10 exp) rest
-			    else mkres (manval / pow10 exp) rest
+			    if exppos then mkres (manval * pow10 exp, rest)
+			    else mkres (manval / pow10 exp, rest)
 		      | _                 => NONE
 		end
 	in
 	    case (intg,     decpt, frac) of
-		(NONE,      true,  SOME fval) => expopt fval src4
+		(NONE,      true,  SOME fval) => expopt (fval, src4)
 	      | (SOME ival, false, SOME _   ) => NONE
-	      | (SOME ival, true,  NONE     ) => mkres ival src2
-	      | (SOME ival, false, NONE     ) => expopt ival src2
-	      | (SOME ival, _    , SOME fval) => expopt (ival+fval) src4
+	      | (SOME ival, true,  NONE     ) => mkres (ival, src2)
+	      | (SOME ival, false, NONE     ) => expopt (ival, src2)
+	      | (SOME ival, _    , SOME fval) => expopt (ival+fval, src4)
 	      | _                             => NONE
 	end
 
@@ -2572,3 +2575,5 @@ exception Cyclic	= Future.Cyclic				(**)
 
 val byneed		= Future.byneed				(**)
 val concur		= Future.concur				(**)
+
+end (* local *)
