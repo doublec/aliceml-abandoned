@@ -1,4 +1,4 @@
 Group is
 
-	SWITCHES.sig
-	MakeSwitches.sml
+	SWITCHES-sig.aml
+	MkSwitches.aml
