@@ -14,15 +14,14 @@
 
 DEFINE2(doubleToLongBits) {
   DECLARE_DOUBLE(theDouble, x0); x1 = x1;
-  RETURN2(JavaLong::New(theDouble->GetNetworkRepresentation())->ToWord(),
-	  null);
+  DRETURN(JavaLong::New(theDouble->GetNetworkRepresentation())->ToWord());
 } END
 
 DEFINE2(longBitsToDouble) {
   DECLARE_LONG(theLong, x0); x1 = x1;
   Double *theDouble =
     Double::NewFromNetworkRepresentation(theLong->GetNetworkRepresentation());
-  RETURN2(theDouble->ToWord(), null);
+  DRETURN(theDouble->ToWord());
 } END
 
 void NativeMethodTable::java_lang_Double(JavaString *className) {
