@@ -20,7 +20,7 @@ functor Intermediate(type info
 
     type stamp      = int
 
-    datatype name   = ExId of string | InId 
+    datatype name   = ExId of string | InId
 
     datatype lab    = Lab     of info * string
     datatype id     = Id      of info * stamp * name
