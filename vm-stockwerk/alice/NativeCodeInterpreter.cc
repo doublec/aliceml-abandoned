@@ -144,7 +144,7 @@ word NativeCodeInterpreter::TailPushCall(Closure *closure) {
   return frame;
 }
 
-Block *
+Transform *
 NativeCodeInterpreter::GetAbstractRepresentation(ConcreteRepresentation *b) {
   return static_cast<NativeConcreteCode *>(b)->GetAbstractRepresentation();
 }

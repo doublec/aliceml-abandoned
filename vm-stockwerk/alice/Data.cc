@@ -33,13 +33,13 @@ static const u_int initialTableSize = 16; // to be checked
 
 class ConstructorHandler: public ConcreteRepresentationHandler {
 public:
-  virtual Block *GetAbstractRepresentation(ConcreteRepresentation *);
+  virtual Transform *GetAbstractRepresentation(ConcreteRepresentation *);
 };
 
-Block *
+Transform *
 ConstructorHandler::GetAbstractRepresentation(ConcreteRepresentation *b) {
   Constructor *constructor = static_cast<Constructor *>(b);
-  return static_cast<Block *>(constructor->GetTransform());
+  return constructor->GetTransform();
 }
 
 //

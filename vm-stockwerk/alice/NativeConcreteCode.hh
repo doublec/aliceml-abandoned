@@ -64,8 +64,8 @@ public:
   u_int GetSkipCCCPC() {
     return (u_int) Store::DirectWordToInt(Get(SKIP_CCC_PC_POS));
   }
-  Block *GetAbstractRepresentation() {
-    return Store::DirectWordToBlock(Get(TRANSFORM_POS));
+  Transform *GetAbstractRepresentation() {
+    return Transform::FromWordDirect(Get(TRANSFORM_POS));
   }
   void Disassemble(std::FILE *file);
   void UpdateCode(Chunk *chunk, word immediateEnv) {
