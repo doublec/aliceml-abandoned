@@ -1,5 +1,6 @@
 Library:
 
+* Added Array2
 * Defined and fixed behaviour of proxies in the presence of
   sited values and failed futures.
 * Fixed race condition in Future.awaitEither.

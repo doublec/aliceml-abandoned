@@ -1,4 +1,4 @@
-PHP = php
+PHP = php4
 
 ifeq ($(STOCKWERK), 1)
 INTEROP =
@@ -33,7 +33,7 @@ INSTALLFILES_0 = \
 INSTALLFILES_LIBRARY_0 = \
 	macros.php3 menu.html bg.gif \
 	index.html \
-	alt.html array.html array-slice.html \
+	alt.html array.html array2.html array-slice.html \
 	bin-io.html bool.html byneed.html byte.html \
 	char.html command-line.html \
 	future.html \

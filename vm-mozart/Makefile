@@ -90,7 +90,7 @@
 
 SRCTOP = ..
 BOOTSTRAPDIR = $(SRCTOP)/bootstrap
-OZHOME = /opt/mozart-stable
+OZHOME = /usr/lib/mozart
 PREFIX = /opt/stockhausen-devel
 
 # No configuration needed from here
@@ -134,7 +134,8 @@ LIBNATIVES = \
 
 LIBFUNDAMENTALSOURCES0 = \
 	Pervasive.aml ToplevelTypes.aml ToplevelValues.aml \
-	Core.aml ALT-sig.aml ARRAY-sig.aml ARRAY_SLICE-sig.aml \
+	Core.aml ALT-sig.aml ARRAY2-sig.aml \
+	ARRAY-sig.aml ARRAY_SLICE-sig.aml \
 	ATOM-sig.aml BOOL-sig.aml BYTE-sig.aml \
 	CHAR-sig.aml FUTURE-sig.aml GENERAL-sig.aml HOLE-sig.aml \
 	IEEE_REAL-sig.aml INTEGER-sig.aml LIST-sig.aml LIST_PAIR-sig.aml \
@@ -146,7 +147,8 @@ LIBFUNDAMENTALSOURCES0 = \
 	TEXT-sig.aml THREAD-sig.aml TIME-sig.aml \
 	VECTOR-sig.aml VECTOR_PAIR-sig.aml VECTOR_SLICE-sig.aml \
 	WORD-sig.aml PACKAGE-sig.aml \
-	Alt.aml Array.aml ArraySlice.aml Atom.aml Bool.aml Byte.aml Char.aml \
+	Alt.aml Array.aml Array2.aml \
+	ArraySlice.aml Atom.aml Bool.aml Byte.aml Char.aml \
 	CharArray.aml CharArraySlice.aml CharVector.aml CharVectorSlice.aml \
 	Future.aml General.aml Hole.aml IEEEReal.aml Int.aml LargeInt.aml \
 	LargeReal.aml LargeWord.aml List.aml ListPair.aml Lock.aml Math.aml \

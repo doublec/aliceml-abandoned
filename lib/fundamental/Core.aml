@@ -100,6 +100,8 @@ import __primitive structure WideCharArraySlice	from "WideCharArraySlice"
 import __primitive structure Word8ArraySlice	from "Word8ArraySlice"
 import __primitive signature BYTE		from "BYTE-sig"
 import __primitive structure Byte		from "Byte"
+import __primitive structure Array2             from "Array2"
+import __primitive signature ARRAY2             from "ARRAY2-sig"
 
 import __primitive signature TIME		from "TIME-sig"
 import __primitive structure Time		from "Time"
@@ -205,6 +207,10 @@ signature MONO_ARRAY_SLICE	= MONO_ARRAY_SLICE
 structure CharArraySlice	= CharArraySlice
 structure WideCharArraySlice	= WideCharArraySlice
 structure Word8ArraySlice	= Word8ArraySlice
+
+signature ARRAY2                = ARRAY2
+structure Array2                = Array2
+
 signature BYTE			= BYTE
 structure Byte			= Byte
 
