@@ -3,36 +3,19 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 2000
+ *   Leif Kornstaedt, 2000-2002
  *
  * Last change:
  *   $Date$ by $Author$
  *   $Revision$
  *)
 
-import
-    structure Crash
-from "../infrastructure/Crash"
-
-import
-    structure Unsafe
-from "../../lib/system/Unsafe"   (*--** does not exist *)
-
-import
-    structure StampMap
-from "../common/StampMap"
-
-import
-    structure PrimPickle
-from "PrimPickle"
-
-import
-    structure PickleGrammar
-from "PickeGrammar"
-
-import
-    signature OUTPUT_PICKLE
-from "OUTPUT_PICKLE-sig"
+import structure Crash         from "../infrastructure/Crash"
+import structure Unsafe        from "../../lib/system/Unsafe"   (*--** does not exist *)
+import structure StampMap      from "../common/StampMap"
+import structure PrimPickle    from "PrimPickle"
+import structure PickleGrammar from "PickeGrammar"
+import signature OUTPUT_PICKLE from "OUTPUT_PICKLE-sig"
 
 structure OutputPickle :> OUTPUT_PICKLE =
     struct
@@ -42,14 +25,11 @@ structure OutputPickle :> OUTPUT_PICKLE =
 	    struct
 		datatype t =
 		    ARRAY
-		  | ARRAY_ZERO
 		  | CELL
 		  | CONSTRUCTOR
 		  | CON_VAL
 		  | GLOBAL_STAMP
-		  | TUPLE
 		  | VECTOR
-		  | VECTOR_ZERO
 		  | TAG of LargeInt.int
 
 		val none = 0: LargeInt.int
@@ -99,15 +79,12 @@ structure OutputPickle :> OUTPUT_PICKLE =
 		val staticCon = TAG 1
 
 		fun toInt ARRAY        = 0
-		  | toInt ARRAY_ZERO   = 1
-		  | toInt CELL         = 2
-		  | toInt CONSTRUCTOR  = 3
-		  | toInt CON_VAL      = 4
-		  | toInt GLOBAL_STAMP = 5
-		  | toInt TUPLE        = 6
-		  | toInt VECTOR       = 7
-		  | toInt VECTOR_ZERO  = 8
-		  | toInt (TAG i)      = 9 + i
+		  | toInt CELL         = 1
+		  | toInt CONSTRUCTOR  = 2
+		  | toInt CON_VAL      = 3
+		  | toInt GLOBAL_STAMP = 4
+		  | toInt VECTOR       = 5
+		  | toInt (TAG i)      = 6 + i
 	    end
 
 	type context = {outstream: PrimPickle.outstream,
@@ -119,6 +96,8 @@ structure OutputPickle :> OUTPUT_PICKLE =
 	    PrimPickle.outputChunk (outstream, words)
 	fun outputBlock ({outstream, ...}: context, label, size) =
 	    PrimPickle.outputBlock (outstream, Label.toInt label, size)
+	fun outputTuple ({outstream, ...}: context, size) =
+	    PrimPickle.outputTuple (outstream, size)
 	fun outputClosure ({outstream, ...}: context, size) =
 	    PrimPickle.outputClosure (outstream, size)
 	fun outputReference ({outstream, ...}: context, id) =
@@ -133,11 +112,9 @@ structure OutputPickle :> OUTPUT_PICKLE =
 	  | outputOption output (context, SOME x) =
 	    (outputBlock (context, Label.some, 1); output (context, x))
 
-	fun outputVector _ (context, #[]) =
-	    (outputBlock (context, Label.VECTOR_ZERO, 1);
-	     outputInt (context, 0))
-	  | outputVector output (context, xs) =
-	    (outputBlock (context, Label.VECTOR, Vector.length xs);
+	fun outputVector output (context, xs) =
+	    (outputBlock (context, Label.VECTOR, Vector.length xs + 1);
+	     outputInt (context, LargeInt.fromInt (Vector.length xs));
 	     Vector.app (fn x => output (context, x)) xs)
 
 	fun outputStamp (context, stamp) =
@@ -211,13 +188,11 @@ structure OutputPickle :> OUTPUT_PICKLE =
 			 StampMap.insertDisjoint (shared, stamp, id)
 		     end)
 	  | outputValue (context, Tuple values) =
-	    (outputBlock (context, Label.TUPLE, Vector.length values);
+	    (outputTuple (context, Vector.length values);
 	     Vector.app (fn value => outputValue (context, value)) values)
-	  | outputValue (context, Vector #[]) =
-	    (outputBlock (context, Label.VECTOR_ZERO, 1);
-	     outputInt (context, 0))
 	  | outputValue (context, Vector values) =
-	    (outputBlock (context, Label.VECTOR, Vector.length values);
+	    (outputBlock (context, Label.VECTOR, Vector.length values + 1);
+	     outputInt (context, LargeInt.fromInt (Vector.length values));
 	     Vector.app (fn value => outputValue (context, value)) values)
 	  | outputValue (context, Closure (function, values)) =
 	    (outputClosure (context, 1 + Vector.length values);
@@ -275,7 +250,7 @@ structure OutputPickle :> OUTPUT_PICKLE =
 	     outputString (context, name);
 	     outputVector outputIdRef (context, idRefs);
 	     outputOption (fn (context, (idDef, instr)) =>
-			   (outputBlock (context, Label.TUPLE, 2);
+			   (outputTuple (context, 2);
 			    outputIdDef (context, idDef);
 			    outputInstr (context, instr)))
 	     (context, idDefInstrOpt))
@@ -284,7 +259,7 @@ structure OutputPickle :> OUTPUT_PICKLE =
 	     outputIdRef (context, idRef);
 	     outputArgs outputIdRef (context, inArgs);
 	     outputOption (fn (context, (outArgs, instr)) =>
-			   (outputBlock (context, Label.TUPLE, 2);
+			   (outputTuple (context, 2);
 			    outputArgs outputIdDef (context, outArgs);
 			    outputInstr (context, instr)))
 	     (context, outArgsInstrOpt))
@@ -293,7 +268,7 @@ structure OutputPickle :> OUTPUT_PICKLE =
 	     outputValue (context, value);
 	     outputArgs outputIdRef (context, inArgs);
 	     outputOption (fn (context, (outArgs, instr)) =>
-			   (outputBlock (context, Label.TUPLE, 2);
+			   (outputTuple (context, 2);
 			    outputArgs outputIdDef (context, outArgs);
 			    outputInstr (context, instr)))
 	     (context, outArgsInstrOpt))
@@ -325,7 +300,7 @@ structure OutputPickle :> OUTPUT_PICKLE =
 	    (outputBlock (context, Label.intTest, 3);
 	     outputIdRef (context, idRef);
 	     outputVector (fn (context, (int, instr)) =>
-			   (outputBlock (context, Label.TUPLE, 2);
+			   (outputTuple (context, 2);
 			    outputInt (context, int);
 			    outputInstr (context, instr))) (context, tests);
 	     outputInstr (context, instr))
@@ -333,7 +308,7 @@ structure OutputPickle :> OUTPUT_PICKLE =
 	    (outputBlock (context, Label.realTest, 3);
 	     outputIdRef (context, idRef);
 	     outputVector (fn (context, (real, instr)) =>
-			   (outputBlock (context, Label.TUPLE, 2);
+			   (outputTuple (context, 2);
 			    outputReal (context, real);
 			    outputInstr (context, instr))) (context, tests);
 	     outputInstr (context, instr))
@@ -341,7 +316,7 @@ structure OutputPickle :> OUTPUT_PICKLE =
 	    (outputBlock (context, Label.stringTest, 3);
 	     outputIdRef (context, idRef);
 	     outputVector (fn (context, (string, instr)) =>
-			   (outputBlock (context, Label.TUPLE, 2);
+			   (outputTuple (context, 2);
 			    outputString (context, string);
 			    outputInstr (context, instr))) (context, tests);
 	     outputInstr (context, instr))
@@ -349,7 +324,7 @@ structure OutputPickle :> OUTPUT_PICKLE =
 	    (outputBlock (context, Label.stringTest, 3);
 	     outputIdRef (context, idRef);
 	     outputVector (fn (context, (string, instr)) =>
-			   (outputBlock (context, Label.TUPLE, 2);
+			   (outputTuple (context, 2);
 			    outputWideString (context, string);
 			    outputInstr (context, instr))) (context, tests);
 	     outputInstr (context, instr))
@@ -357,11 +332,11 @@ structure OutputPickle :> OUTPUT_PICKLE =
 	    (outputBlock (context, Label.tagTest, 4);
 	     outputIdRef (context, idRef);
 	     outputVector (fn (context, (tag, instr)) =>
-			  (outputBlock (context, Label.TUPLE, 2);
+			  (outputTuple (context, 2);
 			   outputInt (context, LargeInt.fromInt tag);
 			   outputInstr (context, instr))) (context, tests1);
 	     outputVector (fn (context, (tag, idDefs, instr)) =>
-			   (outputBlock (context, Label.TUPLE, 3);
+			   (outputTuple (context, 3);
 			    outputInt (context, LargeInt.fromInt tag);
 			    outputVector outputIdDef (context, idDefs);
 			    outputInstr (context, instr))) (context, tests2);
@@ -370,11 +345,11 @@ structure OutputPickle :> OUTPUT_PICKLE =
 	    (outputBlock (context, Label.conTest, 4);
 	     outputIdRef (context, idRef);
 	     outputVector (fn (context, (con, instr)) =>
-			   (outputBlock (context, Label.TUPLE, 2);
+			   (outputTuple (context, 2);
 			    outputCon (context, con);
 			    outputInstr (context, instr))) (context, tests1);
 	     outputVector (fn (context, (con, idDefs, instr)) =>
-			   (outputBlock (context, Label.TUPLE, 3);
+			   (outputTuple (context, 3);
 			    outputCon (context, con);
 			    outputVector outputIdDef (context, idDefs);
 			    outputInstr (context, instr))) (context, tests2);
@@ -383,7 +358,7 @@ structure OutputPickle :> OUTPUT_PICKLE =
 	    (outputBlock (context, Label.vecTest, 3);
 	     outputIdRef (context, idRef);
 	     outputVector (fn (context, (idDefs, instr)) =>
-			   (outputBlock (context, Label.TUPLE, 2);
+			   (outputTuple (context, 2);
 			    outputVector outputIdDef (context, idDefs);
 			    outputInstr (context, instr))) (context, tests);
 	     outputInstr (context, instr))

@@ -3,28 +3,17 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 2000
+ *   Leif Kornstaedt, 2000-2002
  *
  * Last change:
  *   $Date$ by $Author$
  *   $Revision$
  *)
 
-import
-    structure BinIO
-from "../../lib/system/BinIO"
-
-import
-    structure Crash
-from "../infrastructure/Crash"
-
-import
-    structure StringMap
-from "../infrastructure/StringMap"
-
-import
-    signature PRIM_PICKLE
-from "PRIM_PICKLE-sig"
+import structure BinIO       from "../../lib/system/BinIO"
+import structure Crash       from "../infrastructure/Crash"
+import structure StringMap   from "../infrastructure/StringMap"
+import signature PRIM_PICKLE from "PRIM_PICKLE-sig"
 
 structure PrimPickle :> PRIM_PICKLE =
     struct
@@ -49,9 +38,10 @@ structure PrimPickle :> PRIM_PICKLE =
 	val tNEGINT    = 0w1: Word8.word
 	val tCHUNK     = 0w2: Word8.word
 	val tBLOCK     = 0w3: Word8.word
-	val tCLOSURE   = 0w4: Word8.word
-	val tREF       = 0w5: Word8.word
-	val tTRANSFORM = 0w6: Word8.word
+	val tTUPLE     = 0w4: Word8.word
+	val tCLOSURE   = 0w5: Word8.word
+	val tREF       = 0w6: Word8.word
+	val tTRANSFORM = 0w7: Word8.word
 
 	fun outputByte ((outstream, _, _), w) = BinIO.output1 (outstream, w)
 
@@ -77,6 +67,9 @@ structure PrimPickle :> PRIM_PICKLE =
 	fun outputBlock (q, label, size) =
 	    (outputByte (q, tBLOCK); outputUInt (q, label);
 	     outputUInt (q, fromInt size); inc q)
+
+	fun outputTuple (q, size) =
+	    (outputByte (q, tTUPLE); outputUInt (q, fromInt size); inc q)
 
 	fun outputClosure (q, size) =
 	    (outputByte (q, tCLOSURE); outputUInt (q, fromInt size); inc q)
