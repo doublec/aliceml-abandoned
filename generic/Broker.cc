@@ -68,6 +68,13 @@ static void *LoadLanguageLayer(String *languageId) {
     if (handle != NULL)
       languageLayerTable->Put(wLanguageId,
 			      Store::UnmanagedPointerToWord(handle));
+    else {
+#if defined(__MINGW32__) || defined(_MSC_VER)
+#else
+      std::fprintf(stderr, "dlopen(%s) failed: %s\n",
+		   filename->ExportC(), dlerror());
+#endif
+    }
     return handle;
   }
 }
@@ -75,6 +82,7 @@ static void *LoadLanguageLayer(String *languageId) {
 void Broker::Start(String *languageId, int argc, char *argv[]) {
   void *handle = LoadLanguageLayer(languageId);
   if (handle == NULL) {
+    //--** improve error handling
     Error("could not link language layer library");
   }
   void (*Start)(int, char *[]) =
