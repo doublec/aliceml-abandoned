@@ -98,6 +98,18 @@ FRONTEND_COMMON_FILES = \
 	$(STOC_DIR)/frontend-common/TRANSLATION_PHASE.sig \
 	$(STOC_DIR)/frontend-common/TranslationPhase.sml
 
+FRONTEND_SML_LEXER_FILES = \
+	Base.import \
+	Word.import \
+	TextIO.import \
+	MLYacc.import \
+	Misc.import \
+	Error.import \
+	$(STOC_DIR)/frontend-sml/Parser.grm.sig \
+	$(STOC_DIR)/frontend-sml/LEXER_ERROR.sig \
+	$(STOC_DIR)/frontend-sml/Lexer.lex.sml \
+	$(STOC_DIR)/frontend-sml/CountPosLexer.sml
+
 FRONTEND_SML_FILES = \
 	Base.import \
 	Word.import \
@@ -107,6 +119,7 @@ FRONTEND_SML_FILES = \
 	Error.import \
 	Common.import \
 	FrontendCommon.import \
+	FrontendSMLLexer.import \
 	$(STOC_DIR)/frontend-sml/LAB.sig \
 	$(STOC_DIR)/frontend-sml/Lab.sml \
 	$(STOC_DIR)/frontend-sml/ID.sig \
@@ -124,13 +137,9 @@ FRONTEND_SML_FILES = \
 	$(STOC_DIR)/frontend-sml/ABSTRACTION_PHASE.sig \
 	$(STOC_DIR)/frontend-sml/AbstractionPhase.sml \
 	$(STOC_DIR)/frontend-sml/DERIVED_FORMS.sig \
-	$(STOC_DIR)/frontend-sml/Parser.grm.sig \
+	$(STOC_DIR)/frontend-sml/LexerError.sml \
 	$(STOC_DIR)/frontend-sml/Parser.grm.sml \
 	$(STOC_DIR)/frontend-sml/DerivedForms.sml \
-	$(STOC_DIR)/frontend-sml/LEXER_ERROR.sig \
-	$(STOC_DIR)/frontend-sml/LexerError.sml \
-	$(STOC_DIR)/frontend-sml/Lexer.lex.sml \
-	$(STOC_DIR)/frontend-sml/CountPosLexer.sml \
 	$(STOC_DIR)/frontend-sml/PARSING_PHASE.sig \
 	$(STOC_DIR)/frontend-sml/ParsingPhase.sml \
 	$(STOC_DIR)/frontend-sml/BIND_ENV0.sig \
@@ -177,7 +186,7 @@ COMPONENTS = \
 	Base \
 	MLYacc \
 	Misc Error Common \
-	FrontendCommon FrontendSML \
+	FrontendCommon FrontendSMLLexer FrontendSML \
 	BackendCommon BackendMozart
 
 %.ozf: %.aus
@@ -197,6 +206,8 @@ Common.aus: $(COMMON_FILES)
 	$(MERGE) $(COMMON_FILES) > $@
 FrontendCommon.aus: $(FRONTEND_COMMON_FILES)
 	$(MERGE) $(FRONTEND_COMMON_FILES) > $@
+FrontendSMLLexer.aus: $(FRONTEND_SML_LEXER_FILES)
+	$(MERGE) $(FRONTEND_SML_LEXER_FILES) > $@
 FrontendSML.aus: $(FRONTEND_SML_FILES)
 	$(MERGE) $(FRONTEND_SML_FILES) > $@
 BackendCommon.aus: $(BACKEND_COMMON_FILES)

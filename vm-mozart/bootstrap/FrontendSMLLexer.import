@@ -1,0 +1,30 @@
+(* -*- sml -*- *)
+
+import
+
+###frontend-sml/Parser.grm.sig
+###frontend-sml/LEXER_ERROR.sig
+
+functor Lexer(structure Tokens:     Parser_TOKENS
+	      structure LexerError: LEXER_ERROR
+		  where type token = (Tokens.svalue, int) Tokens.token): LEXER
+
+signature LEXER_ERRORS =
+  sig
+    type error
+    type token
+    exception Error of Source.pos * error
+    exception EOF of Source.pos -> token
+    val toString: error -> string
+  end
+
+functor CountPosLexer(
+	structure Lexer: LEXER
+	where type UserDeclarations.pos = int
+	where type ('a,'b) UserDeclarations.token = ('a,'b) LrParser.Token.token
+	structure LexerError: LEXER_ERRORS
+	where type token =
+		(Lexer.UserDeclarations.svalue, int) LrParser.Token.token
+) : LEXER
+
+from "FrontendSMLLexer.ozf"
