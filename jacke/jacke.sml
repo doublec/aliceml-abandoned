@@ -1,6 +1,7 @@
 (* main parsing routines
    - constructing parser
    - generating parse tree
+   - performing semantic analysis
 *)
 
 

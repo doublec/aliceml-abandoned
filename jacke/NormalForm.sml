@@ -10,12 +10,11 @@ struct
 	    fn () => (r:=(!r+1); s^"__"^Int.toString(!r-1))^"__"
 	end
 
-    val newRulename = mkNewNamefunction "rule" 0
-    val newIdname = mkNewNamefunction "id" 0
-    val start = "NewStartSymbol"    
+    val newRulename = mkNewNamefunction "rule" 954
+    val newIdname = mkNewNamefunction "id" 387
 
     (* not used... last tokendec => datatype + eop *)
-    local 
+(*    local 
 	val eop = "EOP"
 	fun countTokenDecs p = 
 	    List.length(List.filter (fn (A.TokenDec l) => true | _ => false) p)
@@ -33,7 +32,7 @@ struct
 		remove (tokenDecs -1) extended
 	    end
     end
-
+*)
     local fun split l1 l2 [] = (l1,l2)
 	    | split l1 l2 (x::xs) = split l2 (x::l1) xs
 	  fun merge l1 [] = l1
