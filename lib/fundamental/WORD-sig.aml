@@ -1,11 +1,10 @@
 (*
  * Authors:
- *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 1999-2001
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg and Leif Kornstaedt, 1999-2001
  *
  * Last change:
  *   $Date$ by $Author$
@@ -53,7 +52,6 @@ sig
     val div :		word * word -> word
     val mod :		word * word -> word
 
-(*TODO
     val op > :		word * word -> bool
     val op < :		word * word -> bool
     val op >= :		word * word -> bool
@@ -62,11 +60,8 @@ sig
 
     val min :		word * word -> word
     val max :		word * word -> word
-*)
 
-(*TODO
     val fmt :		StringCvt.radix -> word -> string
-*)
     val toString :	word -> string
     val scan :		StringCvt.radix -> (char,'a) StringCvt.reader
 					-> (word,'a) StringCvt.reader

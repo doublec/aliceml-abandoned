@@ -1,11 +1,10 @@
 (*
  * Authors:
- *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 1999-2001
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg and Leif Kornstaedt, 1999-2001
  *
  * Last change:
  *   $Date$ by $Author$
@@ -17,11 +16,16 @@
  *)
 
 import structure __pervasive                          from "Pervasive"
-import type int and word and string datatype option   from "ToplevelTypes"
-import infix 4 <> <= infix 6 + - infix 7 * mod
-       val op <> and op <= and op + and op - and op * from "ToplevelValues"
+import type int and word and string
+       datatype bool and order and option and list    from "ToplevelTypes"
+import infix 4 = <> < > <= infixr 5 :: infix 6 + - infix 7 * div mod
+       val op = and op <> and op < and op <=
+       and op + and op -                              from "ToplevelValues"
+import structure General                              from "General"
+import structure Option                               from "Option"
 import structure LargeInt                             from "LargeInt"
 import structure Char                                 from "Char"
+import structure String                               from "String"
 import structure StringCvt                            from "StringCvt"
 import signature WORD                                 from "WORD-sig"
 
@@ -45,7 +49,6 @@ struct
     fun fromInt x	= fromInt'(wordSize,x)
     fun fromLargeInt x	= fromInt'(wordSize,x)
 
-
     __primitive val op + :   word * word -> word = "Word.+"
     __primitive val op - :   word * word -> word = "Word.-"
     __primitive val op * :   word * word -> word = "Word.*"
@@ -60,69 +63,103 @@ struct
     __primitive val op >> :  word * word -> word = "Word.>>"
     __primitive val op ~>> : word * word -> word = "Word.~>>"
 
-    local
-	open StringCvt
-	fun skipWSget getc source = getc (dropl Char.isSpace getc source)
+    __primitive val op < :   word * word -> bool = "Word.<"
+    __primitive val op > :   word * word -> bool = "Word.>"
+    __primitive val op <= :  word * word -> bool = "Word.<="
+    __primitive val op >= :  word * word -> bool = "Word.>="
 
-	(* Below, 48 = Char.ord #"0" and 55 = Char.ord #"A" - 10. *)
-	fun decval c = fromInt (Char.ord c) - fromInt 48;
-	fun hexval c =
-	    if Char.ord #"0" <= Char.ord c
-	    andalso Char.ord c <= Char.ord #"9" then
-		fromInt (Char.ord c) - fromInt 48
-	    else
-		(fromInt (Char.ord c) - fromInt 55) mod (fromInt 32);
-    in
-	fun scan radix getc source =
-	    let open StringCvt
-		val source = skipWS getc source
-		val (isDigit, factor) =
-		    case radix of
-			BIN => (fn c => (Char.ord #"0" <= Char.ord c
-				andalso Char.ord c <= Char.ord #"1"),  2)
-		      | OCT => (fn c => (Char.ord #"0" <= Char.ord c
-				andalso Char.ord c <= Char.ord #"7"),  8)
-		      | DEC => (Char.isDigit,                          10)
-		      | HEX => (Char.isHexDigit,                       16)
-		fun dig1 NONE              = NONE
-		  | dig1 (SOME (c1, src1)) =
-		    let fun digr res src =
-			case getc src of
-			    NONE           => SOME (res, src)
-			  | SOME (c, rest) =>
-				if isDigit c then
-				    digr (fromInt factor * res + hexval c)
-				    rest
-				else SOME (res, src)
-		    in
-			if isDigit c1 then digr (hexval c1) src1
-			else NONE
-		    end
-		fun getdigs after0 src =
-		    case dig1 (getc src) of
-			NONE => SOME(fromInt 0, after0)
-		      | res  => res
-		fun hexprefix after0 src =
-		    if radix <> HEX then getdigs after0 src
-		    else
-			case getc src of
-			    SOME(#"x", rest) => getdigs after0 rest
-			  | SOME(#"X", rest) => getdigs after0 rest
-			  | SOME _           => getdigs after0 src
-			  | NONE => SOME(fromInt 0, after0)
-	    in
-		case getc source of
-		    SOME(#"0", after0) =>
-			(case getc after0 of
-			     SOME(#"w", src2) => hexprefix after0 src2
-			   | SOME _           => hexprefix after0 after0
-			   | NONE             => SOME(fromInt 0, after0))
-		  | SOME _ => dig1 (getc source)
-		  | NONE   => NONE
-	    end
-    end
+    fun compare(w1,w2) =
+	if w1 < w2 then LESS
+	else if w1 < w2 then GREATER
+	else EQUAL
 
-    val fromString = StringCvt.scanString (scan StringCvt.HEX)
+    fun min(w1,w2) = if w1 < w2 then w1 else w2
+    fun max(w1,w2) = if w1 > w2 then w1 else w2
 
-    __primitive val toString : word -> string = "Word.toString"
+
+    (* Formatting *)
+
+    open StringCvt
+
+    (* fmt and scan both use inverted signs to cope with minInt! *)
+
+    fun base BIN	= 0w2
+      | base OCT	= 0w8
+      | base DEC	= 0w10
+      | base HEX	= 0w16
+
+    fun toIsDigit BIN	= Char.isBinDigit
+      | toIsDigit OCT	= Char.isOctDigit
+      | toIsDigit DEC	= Char.isDigit
+      | toIsDigit HEX	= Char.isHexDigit
+
+    val zero		= fromInt(Char.ord #"0")
+    val ten		= fromInt(Char.ord #"A") - 0w10
+    fun digit i		= Char.chr(toInt(i + (if i < 0w10 then zero else ten)))
+    fun value c		= fromInt(Char.ord(Char.toUpper c)) -
+			  (if fromInt(Char.ord c) < ten+0w10 then zero else ten)
+
+    fun fmt radix 0w0	= "0"
+      | fmt radix i	= fmt'(base radix, i, [])
+    and fmt'(b, 0w0,cs)	= String.implode cs
+      | fmt'(b, i, cs)	= fmt'(b, i div b, digit(i mod b) :: cs)
+
+
+    (* Scanning *)
+
+    fun scanPrefix getc src =
+	case getc src
+	  of SOME(#"0", src') =>
+	     (case getc src'
+		of SOME(#"w", src'') => (true, src'')
+		 | _                 => (false, src)
+	     )
+	   | _ => (false, src)
+
+    fun scanHexPrefix getc src =
+	case getc src
+	  of SOME(#"0", src') =>
+	     (case getc src'
+		of SOME(#"x", src'') => (true, src'')
+		 | SOME(#"X", src'') => (true, src'')
+		 | SOME(#"w", src'') =>
+		   (case getc src''
+		      of SOME(#"x", src''') => (true, src''')
+		       | SOME(#"X", src''') => (true, src''')
+		       | _                  => (true, src'')
+		   )
+		 | _                 => (false, src)
+	     )
+	   | _ => (false, src)
+
+    fun scanNum (isDigit, b) getc src =
+	case getc src
+	  of SOME(c, _) =>
+	     if isDigit c
+	     then SOME(scanNum' (isDigit, b) getc src 0w0)
+	     else NONE
+	   | NONE => NONE
+    and scanNum' (isDigit, b) getc src i =
+	case getc src
+	  of SOME(c, src') =>
+	     if isDigit c
+	     then if i > fromInt ~1 div b then raise General.Overflow
+		  else scanNum' (isDigit, b) getc src' (b*i + value c)
+	     else (i, src)
+	   | NONE => (i, src)
+
+    fun scan radix getc src =
+	let
+	    val       src1  = skipWS getc src
+	    val (pref,src2) = if radix = HEX then scanHexPrefix getc src1
+					     else scanPrefix getc src1
+	in
+	    case scanNum (toIsDigit radix, base radix) getc src2
+	      of NONE => if pref then SOME(0w0, #2(Option.valOf(getc src1)))
+				 else NONE
+	       | some => some
+	end
+
+    val toString	= fmt HEX
+    val fromString	= scanString(scan HEX)
 end
