@@ -18,7 +18,6 @@
 #include "Base.hh"
 #include "generic/SignalHandler.hh"
 #include "store/Store.hh"
-#include "store/JITStore.hh"
 #include "store/Map.hh"
 #include "store/WeakMap.hh"
 #include "adt/IntMap.hh"
@@ -56,8 +55,11 @@
 #include "generic/Unpickler.hh"
 #include "generic/Pickler.hh"
 #include "generic/Profiler.hh"
-#include "generic/JitterGenericData.hh"
 #include "generic/Authoring.hh"
+#if LIGHTNING
+#include "store/JITStore.hh"
+#include "generic/JitterGenericData.hh"
+#endif
 
 extern "C" SeamDll void InitSeam();
 
