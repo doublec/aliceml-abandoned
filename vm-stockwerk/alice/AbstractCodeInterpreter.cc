@@ -247,8 +247,7 @@ Interpreter::Result AbstractCodeInterpreter::Run(TaskStack *taskStack) {
   }
   taskStack->PopFrame(); // Discard Frame
   // Execution
-  //--** while (!(Scheduler::TestPreempt() || Store::NeedGC())) {
-  while (true) {
+  while (!(Scheduler::TestPreempt() || Store::NeedGC())) {
   loop:
     switch (Pickle::GetInstr(pc)) {
     case Pickle::Kill: // of id vector * instr

@@ -518,7 +518,7 @@ word BootLinker::Link(Chunk *url) {
   RootSet::Add(urlWord);
   Scheduler::Run();
   RootSet::Remove(urlWord);
-  Component *component = LookupComponent(url);
+  Component *component = LookupComponent(Store::WordToChunk(urlWord));
   if (component == INVALID_POINTER) {
     return Store::IntToWord(0);
   }
