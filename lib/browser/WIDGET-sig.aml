@@ -22,11 +22,6 @@ sig
     (* inspection *)
     
     val inspect:    'a * Type.t -> unit
-    val inspectInf: 'a * Inf.t -> unit
-
-    
-    (* initialization *)
-
-    val init: unit -> unit
+    val inspectMod: 'a * Inf.t -> unit
 
 end
