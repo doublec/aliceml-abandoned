@@ -29,6 +29,7 @@
 #include "generic/Transients.hh"
 #include "generic/Transform.hh"
 #include "generic/Primitive.hh"
+#include "generic/RootSet.hh"
 #include "alice/PrimitiveTable.hh"
 #include "alice/Data.hh"
 #include "alice/AbstractCode.hh"
@@ -505,6 +506,8 @@ Tuple *NativeCodeJitter::assignment;
 LivenessInformation *NativeCodeJitter::livenessInfo;
 u_int NativeCodeJitter::rowIndex;
 #endif
+
+word NativeCodeJitter::inlineTable;
 
 //
 // Environment Accessors
@@ -1224,8 +1227,7 @@ TagVal *NativeCodeJitter::InstrAppPrim(TagVal *pc) {
   JITStore::LogMesg(GetPrimitveName(pc->Sel(0)));
 #endif
   Closure *closure = Closure::FromWord(pc->Sel(0));
-  BlockHashTable *table =
-    BlockHashTable::FromWordDirect(PrimitiveTable::inlineTable);
+  BlockHashTable *table = BlockHashTable::FromWordDirect(inlineTable);
   if (table->IsMember(closure->ToWord())) {
     u_int tag = Store::DirectWordToInt(table->GetItem(closure->ToWord()));
     InlineAppInstr(static_cast<INLINED_PRIMITIVE>(tag), pc);
@@ -1937,6 +1939,14 @@ void NativeCodeJitter::CompileInstr(TagVal *pc) {
   }
 }
 
+static const char *inlineNames[] = {
+  "Future.byneed",
+  "Char.ord",
+  "Int.+",
+  "Int.*",
+  "Int.<",
+  NULL};
+
 // NativeCodeJitter Static Constructor
 void NativeCodeJitter::Init(u_int bufferSize) {
   JITStore::InitLoggging();
@@ -1945,6 +1955,16 @@ void NativeCodeJitter::Init(u_int bufferSize) {
   codeBuffer     = (jit_insn *) malloc(sizeof(jit_insn) * bufferSize);
   ImmediateEnv::Init();
   ActiveSet::Init();
+  // InitInlines
+  BlockHashTable *table = BlockHashTable::New(10);
+  u_int i = 0;
+  do {
+    ::Chunk *name = (::Chunk *) (String::New(inlineNames[i]));
+    word value  = PrimitiveTable::LookupValue(name);
+    table->InsertItem(value, Store::IntToWord(i++));
+  } while (inlineNames[i] != NULL);
+  inlineTable = table->ToWord();
+  RootSet::Add(inlineTable);
   // Compute Initial PC
   CompileProlog("Dummy Information");
   initialPC = Store::IntToWord(GetRelativePC());

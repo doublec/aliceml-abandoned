@@ -55,6 +55,7 @@ protected:
   static LivenessInformation *livenessInfo;
   static u_int rowIndex;
 #endif
+  static word inlineTable;
   // Environment Accessors
   static u_int RefToIndex(word ref);
   static u_int LocalEnvSel(u_int Dest, u_int Ptr, u_int pos);
