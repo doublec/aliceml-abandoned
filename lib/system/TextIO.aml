@@ -219,7 +219,7 @@ structure TextIO :> TEXT_IO =
 		    (TextStreamIO.mkOutstream (writer, IO.NO_BUF))
 	    end
 
-	fun print s = output (stdOut, s)
+	fun print s = (output (stdOut, s); flushOut stdOut)
 
 	fun scanStream scan f =
 	    case scan StreamIO.input1 (getInstream f) of
