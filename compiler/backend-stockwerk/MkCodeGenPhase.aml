@@ -419,7 +419,13 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 	  | translateStm (ExportStm (info, exp), env) =
 	    translateStm (ReturnStm (info, exp), env)
 	and translateExp (NewExp (_, name), id, instr, _) =
-	    O.PutNew (id, Name.toString name, instr)
+	    let
+		val s = Name.toString name
+		val s = if String.size s > 0 andalso String.sub (s, 0) = #"'"
+			then String.extract (s, 1, NONE) else s
+	    in
+		O.PutNew (id, s, instr)
+	    end
 	  | translateExp (VarExp (_, idRef), id, instr, env) =
 	    O.PutVar (id, translateIdRef (idRef, env), instr)
 	  | translateExp (TagExp (_, _, tag, TupArgs #[]), id, instr, _) =
