@@ -1,18 +1,18 @@
 
-import structure C from "C"
+import structure c from "c"
 import structure util from "util"
 
-open C
+open c
 open util
 
 
 val _ = printhello();
 
 val v1 = vec_new();
-val _ = memset(v1,sizeof_vec(),0);
+val _ = memset(v1,sizeof_vec(),#" ");
 
 val v2 = vec_new();
-val _ = memset(v2,sizeof_vec(),0);
+val _ = memset(v2,sizeof_vec(),#" ");
 
 val _ = vec_set_x(v1,1);
 val _ = vec_set_y(v1,2);
@@ -33,16 +33,16 @@ val _ = print ("v3 = ("^Int.toString(vec_get_x v3)^","^
 val v3x = unref_int (cast_int v3)
 val _ = print ("v3.x = "^Int.toString(v3x)^"\n")
 
-val arr = Array.array(4,3);
+val arr = Array.array(4,#"a")
 val sum1 = add_array(arr);
 val _ = print ("Summe Array: "^Int.toString(sum1)^"\n");
 
-(*val _ = let val lst = map pointer_int [1,2,3,4,5]
+val _ = let val lst = map pointer_int [1,2,3,4,5]
     val sum2 = list_add lst
     val _ = map delete lst
 in
     print ("Summe Liste: "^Int.toString(sum2)^"\n")
-end*)
+end
 
 val sum3 = (mycast const_a) + (mycast const_b) + (mycast const_c) + (mycast const_d);
 val _ = print ("Summe a+b+c+d: "^Int.toString(sum3)^"\n")
