@@ -76,3 +76,13 @@ TABLE.bnf TT {
 	font-family:	"Courier New", Courier, Monospace;
 	font-size:	100%;
 }
+
+TABLE.dyptic {
+	width:		80%;
+}
+
+TABLE.dyptic TH, TABLE.dyptic TD {
+	text-align:	left;
+	padding:	3px;
+	background:	#eeeeee;
+}
