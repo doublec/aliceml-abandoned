@@ -1,1 +1,1 @@
-structure StampSet = MakeHashImpSet(Stamp)
+structure StampSet = MakeHashImpSet(FromEqHashKey(Stamp))

@@ -810,8 +810,8 @@ if kind' t1' <> k2 then raise Assert.failure else
 			 recur unifyRow (t1, t2, r1, r2, SUM)
 
 		       | (CON(_,_,p1), CON(_,_,p2)) =>
-			 if p1 = p2 then t1 := LINK t2
-				    else raise Unify(t1,t2)
+			 if Path.equals(p1,p2) then t1 := LINK t2
+					       else raise Unify(t1,t2)
 
 		       | (APPLY(tt1), APPLY(tt2)) =>
 			 (* Note that we do not allow general lambdas during
@@ -968,7 +968,7 @@ end*)
 			 recur equalsRow (r1,r2)
 
 		       | (CON(_,_,p1), CON(_,_,p2)) =>
-			 p1 = p2
+			 Path.equals(p1,p2)
 
 		       | (APPLY(tt1), APPLY(tt2)) =>
 			 recur equalsPair (tt1,tt2)

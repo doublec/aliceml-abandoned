@@ -35,7 +35,7 @@ structure Composer :> COMPOSER' where type Sig.t = Inf.sign =
 
 	fun setAcquisitionMethod f = acquire := f
 
-	structure UrlMap = MakeHashImpMap(Url)
+	structure UrlMap = MakeHashImpMap(FromEqHashKey(Url))
 
 	val signTable: Sig.t UrlMap.t = UrlMap.new ()
 

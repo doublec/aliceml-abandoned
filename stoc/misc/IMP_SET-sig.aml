@@ -1,7 +1,7 @@
 signature IMP_SET =
   sig
 
-    eqtype item
+    type item
     type set
     type t = set
 

@@ -33,7 +33,9 @@ structure BindEnv :> BIND_ENV =
 
     (* The map implementing the environment *)
 
-    structure Map = MakeHashScopedImpMap(type t = Dom val hash = hashDom)
+    structure Map = MakeHashScopedImpMap(type t     = Dom
+					 val equals = op=
+					 val hash   = hashDom)
 
 
     (* The environment's range *)

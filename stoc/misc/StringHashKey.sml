@@ -6,6 +6,8 @@ structure StringHashKey : HASH_KEY =
     open Word
     infix << >> andb xorb
 
+    val equals = op=
+
     fun hash s =	(* hashpjw [Aho/Sethi/Ullman "Compilers"] *)
 	let
 	    val n = String.size s

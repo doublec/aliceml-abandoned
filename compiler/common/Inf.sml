@@ -25,6 +25,7 @@ structure InfPrivate =
     datatype space = VAL' | TYP' | MOD' | INF' | FIX'
 
     structure Map = MakeHashImpMap(struct type t = space * lab
+					  val equals = op=
 					  fun hash(_,l) = Label.hash l end)
 
 
@@ -427,7 +428,7 @@ structure InfPrivate =
 	    val p' = Path.instance PathMap.lookup (rea, p)
 	in
 	    (*UNFINISHED: do we need to make the check? *)
-	    if p' <> p then PathMap.insert(rea, p, p') else () ;
+	    if Path.equals(p',p) then () else PathMap.insert(rea, p, p') ;
 	    p'
 	end
 
@@ -804,7 +805,7 @@ structure InfPrivate =
 	    FIX(x, q)
 	end
 
-    and strengthenId(p, pln)		= Path.strengthen(p, pln)
+    and strengthenId(p, (p',l,n))	= Path.strengthen(p,l,n, p')
 
     and strengthenPathDef(p, NONE)	= SOME p
       | strengthenPathDef(p, d)		= d
@@ -879,7 +880,7 @@ structure InfPrivate =
 
     and match'(rea, _, ref TOP) = ()
       | match'(rea, j1 as ref(CON(_,p1)), j2 as ref(CON(_,p2))) =
-	if p1 = p2 then
+	if Path.equals(p1,p2) then
 	    ()
 	else
 	    raise Mismatch(Incompatible(j1,j2))
@@ -901,7 +902,7 @@ structure InfPrivate =
 
       | match'(rea, ref(APPLY(j11,p1,j12)), ref(APPLY(j21,p2,j22))) =
 	( match'(rea, j11, j21)
-	; if p1 = p2 then () else
+	; if Path.equals(p1,p2) then () else
 	      raise Mismatch(IncompatibleArg(p1,p2))
 	)
 
@@ -927,7 +928,7 @@ structure InfPrivate =
 		    val  space  = itemSpace item2
 		    val  item1  = List.hd(Map.lookupExistent(m1, (space,l)))
 		in
-		    if p = itemPath item1 then () else
+		    if Path.equals(p, itemPath item1) then () else
 		    case space
 		     of VAL' => PathMap.insert(val_rea, p, selectVal(!item1))
 		      | TYP' => PathMap.insert(typ_rea, p, selectTyp(!item1))
@@ -1033,7 +1034,8 @@ structure InfPrivate =
     and matchValDef(l, _,    NONE)	= ()
       | matchValDef(l, NONE, SOME p2)	= raise Mismatch(ManifestVal(l,NONE,p2))
       | matchValDef(l, SOME p1, SOME p2) =
-	    if p1 = p2 then () else raise Mismatch(ManifestVal(l, SOME p1, p2))
+	    if Path.equals(p1,p2) then () else
+		raise Mismatch(ManifestVal(l, SOME p1, p2))
 
     and matchTypDef(l, _,    NONE)	= ()
       | matchTypDef(l, NONE, SOME t2)	= raise Mismatch(ManifestTyp(l,NONE,t2))
@@ -1044,7 +1046,8 @@ structure InfPrivate =
     and matchModDef(l, _,    NONE)	= ()
       | matchModDef(l, NONE, SOME p2)	= raise Mismatch(ManifestMod(l,NONE,p2))
       | matchModDef(l, SOME p1, SOME p2) =
-	    if p1 = p2 then () else raise Mismatch(ManifestMod(l, SOME p1, p2))
+	    if Path.equals(p1,p2) then () else
+		raise Mismatch(ManifestMod(l, SOME p1, p2))
 
     and matchInfDef(l, _,    NONE)	= ()
       | matchInfDef(l, NONE, SOME j2)	= raise Mismatch(ManifestInf(l,NONE))
@@ -1072,7 +1075,7 @@ structure InfPrivate =
     and intersect'(rea, j1, ref TOP) = j1
       | intersect'(rea, ref TOP, j2) = j2
       | intersect'(rea, j1 as ref(CON(_,p1)), j2 as ref(CON(_,p2))) =
-	if p1 = p2 then
+	if Path.equals(p1,p2) then
 	    j1
 	else
 	    raise Mismatch(Incompatible(j1,j2))
@@ -1152,7 +1155,7 @@ structure InfPrivate =
 		     (* Nested structures are already realised.
 		      * We would loop during realisation if we inserted
 		      * identity realisations. *)
-		     ( if pair1(itemPath item1 <> itemPath item2,
+		     ( if pair1(not(Path.equals(itemPath item1,itemPath item2)),
 				!item1, !item2) then () else
 			  Misc.General_swap(item1, item2)
 		     ; pair(m1, items, (item1,item2)::pairs, left)
@@ -1263,7 +1266,7 @@ structure InfPrivate =
       | intersectValDef(l, SOME p1, NONE)	= SOME p1
       | intersectValDef(l, NONE,    SOME p2)	= SOME p2
       | intersectValDef(l, SOME p1, SOME p2)	=
-	    if p1 = p2 then SOME p1 else
+	    if Path.equals(p1,p2) then SOME p1 else
 		raise Mismatch(ManifestVal(l, SOME p1, p2))
 
     and intersectTypDef(l, NONE,    NONE)	= NONE
@@ -1277,7 +1280,7 @@ structure InfPrivate =
       | intersectModDef(l, SOME p1, NONE)	= SOME p1
       | intersectModDef(l, NONE,    SOME p2)	= SOME p2
       | intersectModDef(l, SOME p1, SOME p2)	=
-	    if p1 = p2 then SOME p1 else
+	    if Path.equals(p1,p2) then SOME p1 else
 		raise Mismatch(ManifestMod(l, SOME p1, p2))
 
     and intersectInfDef(l, NONE,    NONE)	= NONE

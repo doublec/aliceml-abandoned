@@ -60,23 +60,23 @@ functor MakePrebound(val valid_false :	string
     val typstamp_ref	= Stamp.new()
     val typstamp_exn	= Stamp.new()
 
-    val valpath_false	= Path.fromLab(Label.fromName valname_false)
-    val valpath_true	= Path.fromLab(Label.fromName valname_true)
-    val valpath_nil	= Path.fromLab(Label.fromName valname_nil)
-    val valpath_cons	= Path.fromLab(Label.fromName valname_cons)
-    val valpath_ref	= Path.fromLab(Label.fromName valname_ref)
-    val valpath_match	= Path.fromLab(Label.fromName valname_match)
-    val valpath_bind	= Path.fromLab(Label.fromName valname_bind)
+    val valpath_false	= Path.global valname_false
+    val valpath_true	= Path.global valname_true
+    val valpath_nil	= Path.global valname_nil
+    val valpath_cons	= Path.global valname_cons
+    val valpath_ref	= Path.global valname_ref
+    val valpath_match	= Path.global valname_match
+    val valpath_bind	= Path.global valname_bind
 
-    val typpath_int	= Path.fromLab(Label.fromName typname_int)
-    val typpath_word	= Path.fromLab(Label.fromName typname_word)
-    val typpath_char	= Path.fromLab(Label.fromName typname_char)
-    val typpath_string	= Path.fromLab(Label.fromName typname_string)
-    val typpath_real	= Path.fromLab(Label.fromName typname_real)
-    val typpath_bool	= Path.fromLab(Label.fromName typname_bool)
-    val typpath_exn	= Path.fromLab(Label.fromName typname_exn)
-    val typpath_ref	= Path.fromLab(Label.fromName typname_ref)
-    val typpath_vec	= Path.fromLab(Label.fromName typname_vec)
-    val typpath_list	= Path.fromLab(Label.fromName typname_list)
+    val typpath_int	= Path.global typname_int
+    val typpath_word	= Path.global typname_word
+    val typpath_char	= Path.global typname_char
+    val typpath_string	= Path.global typname_string
+    val typpath_real	= Path.global typname_real
+    val typpath_bool	= Path.global typname_bool
+    val typpath_exn	= Path.global typname_exn
+    val typpath_ref	= Path.global typname_ref
+    val typpath_vec	= Path.global typname_vec
+    val typpath_list	= Path.global typname_list
 
   end

@@ -179,6 +179,7 @@ structure IL :> IL =
 
 	structure Map =
 	    MakeHashImpMap(type t = label
+			   val equals = op=
 			   fun hash label = label)
 
 	val size = ref 0

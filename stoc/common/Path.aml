@@ -9,67 +9,47 @@ structure PathPrivate =
 
   (* Types *)
 
-    type lab   = Label.t
-    type name  = Name.t
-    type url   = Url.t
+    type lab	= Label.t
+    type name	= Name.t
+    type stamp	= GlobalStamp.t
 
     datatype path' =
 	  PLAIN of name
-	| URL   of url
 	| DOT   of path * lab * int
 
-    withtype path = path' ref
+    withtype path = stamp * path' ref
     type t = path
 
 
   (* Creation and projection *)
 
-    fun invent()		= ref(PLAIN(Name.InId))
-    fun fromLab l		= ref(PLAIN(Label.toName l))
-    fun fromUrl url		= ref(URL url)
-    fun path pln		= ref(DOT pln)
+    fun invent()		= (GlobalStamp.new(), ref(PLAIN(Name.InId)))
+    fun fromLab l		= (GlobalStamp.new(), ref(PLAIN(Label.toName l)))
+    fun path pln		= (GlobalStamp.new(), ref(DOT pln))
+    fun global n		= (GlobalStamp.fromString(Name.toString n),
+				   ref(PLAIN n))
 
-    fun toLab(ref(PLAIN n))	= Label.fromName n
-      | toLab _			= raise Crash.Crash "Path.toLab"
+    fun toLab (_, ref(PLAIN n))	= Label.fromName n
+      | toLab   _		= raise Crash.Crash "Path.toLab"
 
-    fun isDot(ref(DOT _))	= true
-      | isDot _			= false
+    fun isDot (_, ref(DOT _))	= true
+      | isDot   _		= false
 
-    fun asDot(ref(DOT pln))	= pln
-      | asDot _			= raise Crash.Crash "Path.asDot"
+    fun asDot (_, ref(DOT pln))	= pln
+      | asDot   _		= raise Crash.Crash "Path.asDot"
 
 
-  (* Ordering and hashing *)
+  (* Comparison and hashing *)
 
-    fun idx(PLAIN _)		= 0
-      | idx(URL _)		= 1
-      | idx(DOT _)		= 2
-
-    fun compare(p1 as ref p1', p2 as ref p2')	= if p1 = p2 then EQUAL
-						  else compare'(p1', p2')
-    and compare'(PLAIN(x1),     PLAIN(x2))	= Name.compare(x1,x2)
-      | compare'(URL(u1),       URL(u2))	= Url.compare(u1,u2)
-      | compare'(DOT(p1,l1,n1), DOT(p2,l2,n2))	= (case compare(p1,p2)
-						     of r as (LESS|GREATER) => r
-						      | EQUAL =>
-						   case Label.compare(l1,l2)
-						     of r as (LESS|GREATER) => r
-						      | EQUAL =>
-						   Int.compare(n1,n2))
-      | compare'(p1,            p2)		= Int.compare(idx p1, idx p2)
-
-    fun hash(ref(PLAIN x))	= Name.hash x
-      | hash(ref(URL u))	= Url.hash u
-      | hash(ref(DOT(p,l,n)))	= Label.hash l
+    fun equals((stamp1,_), (stamp2,_))	= stamp1 = stamp2
+    fun compare((stamp1,_), (stamp2,_))	= GlobalStamp.compare(stamp1,stamp2)
+    fun hash (stamp, _)			= GlobalStamp.hash stamp
 
 
   (* Strengthening *)
 
-    (* Strengthening has to be used carefully, as it results in a new
-     * hash value, thereby invalidating eventual hash maps and sets! *)
-
-    fun strengthen(p1, (p as ref(PLAIN _),l,n)) = p := DOT(p1,l,n)
-      | strengthen _                            = ()
+    fun strengthen(p,l,n, (_, p' as ref(PLAIN _))) = p' := DOT(p,l,n)
+      | strengthen _                               = ()
 
 
   (* Cloning *)
@@ -80,10 +60,9 @@ structure PathPrivate =
 		case lookup(rea, p1)
 		 of SOME p2 => p2
 		  | NONE    =>
-		case !p1
-		 of p' as PLAIN _ => ref p'
-		  | p' as URL _   => p1
-		  | DOT(p,l,n)    => ref(DOT(clone p, l, n))
+		case !(#2 p1)
+		 of DOT(p,l,n) => (GlobalStamp.new(), ref(DOT(clone p, l, n)))
+		  | p'         => (GlobalStamp.new(), ref p')
 	in
 	    clone p
 	end
@@ -93,4 +72,4 @@ structure PathPrivate =
   end
 
 
-structure Path : (*DEBUG :>*) PATH = PathPrivate
+structure Path : PATH = PathPrivate

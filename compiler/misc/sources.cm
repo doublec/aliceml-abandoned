@@ -8,6 +8,8 @@ Group is
     Misc.sml
     STAMP.sig
     MakeStamp.sml
+    GLOBAL_STAMP.sig
+    GlobalStamp.sml
 
     HASH_KEY.sig
     IMP_SET.sig

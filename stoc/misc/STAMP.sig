@@ -18,4 +18,3 @@ signature STAMP =
     val hash :		stamp -> int
 
   end
-(*DEBUG where type stamp = int*)

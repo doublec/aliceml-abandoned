@@ -36,7 +36,7 @@ functor MakeHashImpMap(Key: HASH_KEY) :> IMP_MAP where type key = Key.t =
 
 
     fun hash(t,k)		= Key.hash k mod Array.length t
-    fun isEntryFor k (k',_)	= k = k'
+    fun isEntryFor k (k',_)	= Key.equals(k,k')
 
     fun member((ref t,_), k)	= let val kas = Array.sub(t, hash(t,k)) in
 				    List.exists (isEntryFor k) kas
@@ -56,8 +56,9 @@ functor MakeHashImpMap(Key: HASH_KEY) :> IMP_MAP where type key = Key.t =
     exception Delete'
 
     fun delete'(  [],    k)	= raise Delete'
-      | delete'(ka::kas, k)	= if #1 ka = k then kas : (key * 'a) list
-					       else ka :: delete'(kas,k)
+      | delete'(ka::kas, k)	= if Key.equals(#1 ka, k)
+				  then kas : (key * 'a) list
+				  else ka :: delete'(kas,k)
 
     fun deleteWith f (m,k)	= let val (ref t,n) = m
 				      val i    = hash(t,k)

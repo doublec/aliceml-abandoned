@@ -1,7 +1,7 @@
 signature IMP_MAP =
   sig
 
-    eqtype key
+    type key
     type 'a map
     type 'a t = 'a map
 

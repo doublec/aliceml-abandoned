@@ -31,15 +31,15 @@ functor MakeHashImpSet(Item: HASH_KEY) :> IMP_SET where type item = Item.t =
     fun hash(t,k)		= Item.hash k mod Array.length t
 
     fun member((ref t,_), k)	= let val ks = Array.sub(t, hash(t,k)) in
-				      List.exists (fn k' => k = k') ks
+				      List.exists (fn k'=> Item.equals(k,k')) ks
 				  end
 
 
     exception Delete'
 
     fun delete'( [],   k')	= raise Delete'
-      | delete'(k::ks, k')	= if k = k' then ks
-					    else k :: delete'(ks,k')
+      | delete'(k::ks, k')	= if Item.equals(k,k') then ks
+						       else k :: delete'(ks,k')
 
     fun deleteWith f (s,k)	= let val (ref t,n) = s
 				      val i   = hash(t,k)
@@ -72,7 +72,8 @@ functor MakeHashImpSet(Item: HASH_KEY) :> IMP_SET where type item = Item.t =
 				      val i  = hash(t,k)
 				      val ks = Array.sub(t,i)
 				  in
-				      if List.exists (fn k' => k = k') ks
+				      if List.exists
+						(fn k' => Item.equals(k,k')) ks
 				      then f k
 				      else ( Array.update(t, i, k::ks)
 					   ; n := !n+1 )

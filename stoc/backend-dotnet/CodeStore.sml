@@ -29,7 +29,7 @@ structure CodeStore :> CODE_STORE =
 	type class = stamp
 
 	structure Map = StampMap
-	structure ScopedMap = MakeHashScopedImpMap(Stamp)
+	structure ScopedMap = MakeHashScopedImpMap(FromEqHashKey(Stamp))
 
 	type classAttrState = (extends * implements) option ref
 	type scope = reg ScopedMap.t

@@ -11,7 +11,7 @@ structure Env :> ENV =
 
     (* The map implementing the environment *)
 
-    structure Map = MakeHashScopedImpMap(Stamp)
+    structure Map = MakeHashScopedImpMap(FromEqHashKey(Stamp))
 
     datatype env = ENV of ran Map.t
     and      ran = VAL of val_entry

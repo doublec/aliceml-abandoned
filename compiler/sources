@@ -31,6 +31,8 @@
 ../misc/MakeHashScopedImpMap.sml
 ../misc/STAMP.sig
 ../misc/MakeStamp.sml
+../misc/GLOBAL_STAMP.sig
+../misc/GlobalStamp.sml
 ../misc/PRETTY_PRINT.sig
 ../misc/PrettyPrint.sml
 ../misc/PP_MISC.sig
