@@ -20,7 +20,7 @@ signature ENVIRONMENT =
 	val declare: t * FlatGrammar.id -> PickleGrammar.id
 	val fresh: t -> PickleGrammar.id
 	val lookup: t * FlatGrammar.id -> PickleGrammar.idRef
-	val lookupStamp: t * Stamp.t -> PickleGrammar.idRef
+	val lookupStamp: t * Stamp.t -> PickleGrammar.idRef option
 	val lookupShared: t * Stamp.t -> PickleGrammar.instr option
 	val declareShared: t * Stamp.t * PickleGrammar.instr -> unit
     end

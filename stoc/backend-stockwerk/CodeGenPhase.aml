@@ -161,7 +161,12 @@ structure CodeGenPhase: CODE_GEN_PHASE =
 		val instr =
 		    case stms of
 			_::_ =>
-			    translateDec (stm, translateBody (stms, env), env)
+			    let
+				val _ = doDec (stm, env)
+				val instr = translateBody (stms, env)
+			    in
+				translateDec (stm, instr, env)
+			    end
 		      | nil => translateStm (stm, env)
 	    in
 		case #liveness (infoStm stm) of
@@ -169,8 +174,9 @@ structure CodeGenPhase: CODE_GEN_PHASE =
 			let
 			    val idRefs =
 				StampSet.fold (fn (stamp, rest) =>
-					       lookupStamp (env, stamp)::rest)
-				nil set
+					       case lookupStamp (env, stamp) of
+						   SOME idRef => idRef::rest
+						 | NONE => rest) nil set
 			    val ids = List.mapPartial getLocal idRefs
 			in
 			    O.Kill (Vector.fromList ids, instr)
@@ -179,6 +185,29 @@ structure CodeGenPhase: CODE_GEN_PHASE =
 	    end
 	  | translateBody (nil, _) =
 	    raise Crash.Crash "CodeGenPhase.translateBody"
+	and doDec (ValDec (_, IdDef id, _), env) = ignore (declare (env, id))
+	  | doDec (ValDec (_, Wildcard, _), _) = ()
+	  | doDec (RecDec (_, idDefExpVec), env) =
+	    Vector.app (fn (idDef, _) =>
+			case idDef of
+			    IdDef id => ignore (declare (env, id))
+			  | Wildcard => ()) idDefExpVec
+	  | doDec (RefAppDec (_, IdDef id, _), env) =
+	    ignore (declare (env, id))
+	  | doDec (RefAppDec (_, Wildcard, _), _) = ()
+	  | doDec (TupDec (_, idDefs, _), env) =
+	    Vector.app (fn idDef =>
+			case idDef of
+			    IdDef id => ignore (declare (env, id))
+			  | Wildcard => ()) idDefs
+	  | doDec (ProdDec (info, labelIdDefVec, id), env) =
+	    doDec (TupDec (info, Vector.map #2 labelIdDefVec, id), env)
+	  | doDec ((RaiseStm (_, _) | ReraiseStm (_, _) |
+		    TryStm (_, _, _, _) | EndTryStm (_, _) |
+		    EndHandleStm (_, _) | TestStm (_, _, _, _) |
+		    SharedStm (_, _, _) | ReturnStm (_, _) |
+		    IndirectStm (_, _) | ExportStm (_, _)), _) =
+	    raise Crash.Crash "CodeGenPhase.doDec"
 	and translateDec (ValDec (_, IdDef id, exp), instr, env) =
 	    translateExp (exp, declare (env, id), instr, env)
 	  | translateDec (ValDec (_, Wildcard, exp), instr, env) =
@@ -471,7 +500,7 @@ structure CodeGenPhase: CODE_GEN_PHASE =
 				O.OneArg (O.IdDef formalId), bodyInstr)
 	    in
 		O.Tuple #[O.Vector imports',
-			  O.Closure (#[], function),
+			  O.Closure (function, #[]),
 			  O.Sign exportSign]
 	    end
     end

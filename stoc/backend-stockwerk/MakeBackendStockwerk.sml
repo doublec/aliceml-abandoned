@@ -19,7 +19,7 @@ functor MakePickleTarget(structure Sig: SIGNATURE
 	type t = PickleGrammar.t
 
 	fun sign (PickleGrammar.Tuple #[PickleGrammar.Vector _,
-					PickleGrammar.Closure (#[], _),
+					PickleGrammar.Closure (_, #[]),
 					PickleGrammar.Sign exportSign]) =
 	    exportSign
 	  | sign _ = raise Crash.Crash "MakeBackendStockwerk.sign"

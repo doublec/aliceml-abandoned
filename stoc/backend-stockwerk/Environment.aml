@@ -48,13 +48,19 @@ structure Environment :> ENVIRONMENT =
 
 	fun declare ({stack, scope, localIndex, globalIndex, globals, shared},
 		     FlatGrammar.Id (_, stamp, _)) =
-	    let
-		val i = !localIndex
-	    in
-		localIndex := i + 1;
-		StampMap.insertDisjoint (!scope, stamp, PickleGrammar.Local i);
-		i
-	    end
+	    case StampMap.lookup (!scope, stamp) of
+		SOME (PickleGrammar.Local i) => i
+	      | SOME (PickleGrammar.Global _) =>
+		    raise Crash.Crash "Environment.declare"
+	      | NONE =>
+			let
+			    val i = !localIndex
+			in
+			    localIndex := i + 1;
+			    StampMap.insertDisjoint (!scope, stamp,
+						     PickleGrammar.Local i);
+			    i
+			end
 
 	fun fresh {stack, scope, localIndex, globalIndex, globals, shared} =
 	    let
@@ -81,7 +87,7 @@ structure Environment :> ENVIRONMENT =
 
 	fun lookupStamp ({stack, scope, localIndex, globalIndex, globals,
 			  shared}, stamp) =
-	    StampMap.lookupExistent (!scope, stamp)
+	    StampMap.lookup (!scope, stamp)
 
 	fun lookupShared ({stack, scope, localIndex, globalIndex, globals,
 			   shared}, stamp) =

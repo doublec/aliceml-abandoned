@@ -38,7 +38,7 @@ signature PICKLE_GRAMMAR =
 	  | Constructor of Stamp.t
 	  | Tuple of value vector
 	  | Vector of value vector
-	  | Closure of value vector * function
+	  | Closure of function * value vector
 	  | Sign of sign
 	and function = Function of int * int * idDef args * instr
 	and instr =

@@ -16,11 +16,12 @@
  * chunk     ::= CHUNK size <byte>*size
  * size      ::= <uint>
  * block     ::= BLOCK label size field*size
+ *            |  CLOSURE size field*size
  * label     ::= <uint>
  * field     ::= pickle | reference
  * reference ::= REF id
  * id        ::= <uint>
- * handler   ::= HANDLER <cstring> label size field*size
+ * handler   ::= HANDLER (chunk|reference) field
  *)
 
 signature PRIM_PICKLE =
@@ -47,7 +48,8 @@ signature PRIM_PICKLE =
 	val outputInt: outstream * LargeInt.int -> unit
 	val outputChunk: outstream * Word8.word vector -> id
 	val outputBlock: outstream * label * size -> id
-	val outputHandler: outstream * string * label * size -> id
 	val outputReference: outstream * id -> unit
+	val outputString: outstream * string -> id
+	val outputHandler: outstream * string * label * size -> id
 	val closeOut: outstream -> unit
     end

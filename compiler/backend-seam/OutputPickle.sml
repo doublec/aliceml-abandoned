@@ -73,10 +73,12 @@ structure OutputPickle :> OUTPUT_PICKLE =
 	    PrimPickle.outputChunk (outstream, words)
 	fun outputBlock ({outstream, ...}: context, label, size) =
 	    PrimPickle.outputBlock (outstream, label, size)
-	fun outputHandler ({outstream, ...}: context, name, label, size) =
-	    PrimPickle.outputHandler (outstream, name, label, size)
 	fun outputReference ({outstream, ...}: context, id) =
 	    PrimPickle.outputReference (outstream, id)
+	fun outputString ({outstream, ...}: context, s) =
+	    PrimPickle.outputString (outstream, s)
+	fun outputHandler ({outstream, ...}: context, name, label, size) =
+	    PrimPickle.outputHandler (outstream, name, label, size)
 
 	fun outputOption _ (context, NONE) =
 	    outputInt (context, Label.none)
@@ -114,11 +116,6 @@ structure OutputPickle :> OUTPUT_PICKLE =
 	val filler8 = Char.chr 1
 	val filler16 = WideChar.chr 1
 
-	fun outputString (context, s) =
-	    outputChunk (context,
-			 Vector.map (fn c => Word8.fromInt (Char.ord c))
-			 (Vector.fromList (String.explode s)))
-
 	fun outputWideString (context, s) =
 	    outputChunk (context,
 			 Vector.fromList
@@ -130,16 +127,41 @@ structure OutputPickle :> OUTPUT_PICKLE =
 					  Word8.fromInt (i mod 0x100)::cs
 				      end) nil (String.explode s)))
 
-	fun outputReal (context, r) = () (*--** *)
 
-	fun outputValue (context, Prim name) = () (*--** *)
+	fun outputReal (context, r) =
+	    let
+		val vec = Unsafe.blastWrite r
+		val mkIndex =
+		    case Word8Vector.sub (vec, 0) of
+			0wx33 => (fn i => 103 - i)
+		      | 0wx00 => (fn i => i + 96)
+		      | _ => raise Crash.Crash "OutputPickle.outputReal"
+	    in
+		outputChunk (context,
+			     Vector.tabulate
+			     (8, fn i => Word8Vector.sub (vec, mkIndex i)));
+		()
+	    end
+
+	fun outputValue (context, Prim name) =
+	    (outputHandler (context, "Alice.primitive", Label.TAG 0, 1);
+	     ignore (outputString (context, name)))
 	  | outputValue (context, Int i) = outputInt (context, i)
 	  | outputValue (context, String s) =
 	    ignore (outputString (context, s))
 	  | outputValue (context, WideString s) =
 	    ignore (outputWideString (context, s))
 	  | outputValue (context, Real r) = outputReal (context, r)
-	  | outputValue (context, Constructor stamp) = () (*--** *)
+	  | outputValue (context as {shared, ...}, Constructor stamp) =
+	    (case StampMap.lookup (shared, stamp) of
+		 SOME id => outputReference (context, id)
+	       | NONE =>
+		     let
+			 val id = outputBlock (context, Label.CONSTRUCTOR, 1)
+		     in
+			 outputInt (context, 0); (*--** print name? *)
+			 StampMap.insertDisjoint (shared, stamp, id)
+		     end)
 	  | outputValue (context, Tuple values) =
 	    (outputBlock (context, Label.TUPLE, Vector.length values);
 	     Vector.app (fn value => outputValue (context, value)) values)
@@ -149,11 +171,14 @@ structure OutputPickle :> OUTPUT_PICKLE =
 	  | outputValue (context, Vector values) =
 	    (outputBlock (context, Label.VECTOR, Vector.length values);
 	     Vector.app (fn value => outputValue (context, value)) values)
-	  | outputValue (context, Closure (vs, function)) = () (*--** *)
+	  | outputValue (context, Closure (function, values)) =
+	    (outputBlock (context, Label.CLOSURE, 1 + Vector.length values);
+	     outputFunction (context, function);
+	     Vector.app (fn value => outputValue (context, value)) values)
 	  | outputValue (context, Sign sign) = outputInt (context, 0) (*--** *)
 	and outputFunction (context,
 			    Function (nglobals, nlocals, args, body)) =
-	    (outputBlock (context, Label.function, 4);
+	    (outputHandler (context, "Alice.function", Label.function, 4);
 	     outputInt (context, LargeInt.fromInt nglobals);
 	     outputInt (context, LargeInt.fromInt nlocals);
 	     outputArgs outputIdDef (context, args);
