@@ -235,15 +235,18 @@ define
 	    NewFrame = frame(Me IdDefArgs NextInstr Closure L)
 	    continue(Args Op|NewFrame|TaskStack)
 	 end
-      [] tag(!GetRef Id IdRef NextInstr) then
-	 L.Id := {Access case IdRef of tag(!Local Id2) then L.Id2
-			 [] tag(!Global I) then Closure.(I + 1)
-			 end}
+      [] tag(!GetRef Id IdRef NextInstr) then R in
+	 R = case IdRef of tag(!Local Id2) then L.Id2
+	     [] tag(!Global I) then Closure.(I + 1)
+	     end
+	 %--** request R if necessary
+	 L.Id := {Access R}
 	 {Emulate NextInstr Closure L TaskStack}
       [] tag(!GetTup IdDefs IdRef NextInstr) then T N in
 	 T = case IdRef of tag(!Local Id) then L.Id
 	     [] tag(!Global I) then Closure.(I + 1)
 	     end
+	 %--** request T if necessary
 	 N = {Width IdDefs}
 	 for J in 1..N do
 	    case IdDefs.J of tag(!IdDef Id) then
@@ -266,9 +269,9 @@ define
 	 end
       [] tag(!Try TryInstr IdDef1 IdDef2 HandleInstr) then
 	 {Emulate TryInstr Closure L
-	  handler(IdDef1 IdDef2 HandleInstr Closure L)|TaskStack}
+	  handler(Me IdDef1 IdDef2 HandleInstr Closure L)|TaskStack}
       [] tag(!EndTry NextInstr) then
-	 case TaskStack of handler(_ _ _ _)|Rest then
+	 case TaskStack of handler(_ _ _ _ _)|Rest then
 	    {Emulate NextInstr Closure L Rest}
 	 end
       [] tag(!EndHandle NextInstr) then
@@ -277,18 +280,21 @@ define
 	 I = case IdRef of tag(!Local Id) then L.Id
 	     [] tag(!Global J) then Closure.(J + 1)
 	     end
+	 %--** request I if necessary
 	 ThenInstr = {LitCase 1 {Width IntInstrVec} I IntInstrVec ElseInstr}
 	 {Emulate ThenInstr Closure L TaskStack}
       [] tag(!RealTest IdRef RealInstrVec ElseInstr) then F ThenInstr in
 	 F = case IdRef of tag(!Local Id) then L.Id
 	     [] tag(!Global I) then Closure.(I + 1)
 	     end
+	 %--** request F if necessary
 	 ThenInstr = {LitCase 1 {Width RealInstrVec} F RealInstrVec ElseInstr}
 	 {Emulate ThenInstr Closure L TaskStack}
       [] tag(!StringTest IdRef StringInstrVec ElseInstr) then S ThenInstr in
 	 S = case IdRef of tag(!Local Id) then L.Id
 	     [] tag(!Global I) then Closure.(I + 1)
 	     end
+	 %--** request S if necessary
 	 ThenInstr = {LitCase 1 {Width StringInstrVec}
 		      S StringInstrVec ElseInstr}
 	 {Emulate ThenInstr Closure L TaskStack}
@@ -301,6 +307,7 @@ define
 	 T = case IdRef of tag(!Local Id) then L.Id
 	     [] tag(!Global I) then Closure.(I + 1)
 	     end
+	 %--** request T if necessary
 	 if {IsInt T} then ThenInstr in
 	    ThenInstr = {LitCase 1 {Width NullaryCases}
 			 T NullaryCases ElseInstr}
@@ -322,6 +329,7 @@ define
 	 C = case IdRef of tag(!Local Id) then L.Id
 	     [] tag(!Global I) then Closure.(I + 1)
 	     end
+	 %--** request C if necessary
 	 if {IsName C} then ThenInstr in
 	    ThenInstr = {NullaryConCase 1 {Width NullaryCases}
 			 C NullaryCases Closure L ElseInstr}
@@ -343,6 +351,7 @@ define
 	 V = case IdRef of tag(!Local Id) then L.Id
 	     [] tag(!Global I) then Closure.(I + 1)
 	     end
+	 %--** request V if necessary
 	 case {VecCase 1 {Width IdDefsInstrVec} {Width V} IdDefsInstrVec}
 	 of IdDefs#ThenInstr then N in
 	    N = {Width IdDefs}
@@ -382,12 +391,14 @@ define
 	 case IdDefArgs of tag(!OneArg IdDef) then
 	    case IdDef of tag(!IdDef Id) then
 	       L.Id := case Args of arg(X) then X
-		       [] args(...) then {Adjoin Args tuple}
+		       [] args(...) then {Adjoin Args tuple}   % construct
 		       end
 	    [] !Wildcard then skip
 	    end
 	 [] tag(!TupArgs IdDefs) then T N in
-	    T = case Args of arg(X) then X
+	    T = case Args of arg(X) then
+		   %--** request X if necessary
+		   X   % deconstruct
 		[] args(...) then Args
 		end
 	    N = {Width IdDefs}
@@ -403,7 +414,7 @@ define
    end
 
    fun {Handle Debug Exn TaskStack}
-      case TaskStack of handler(IdDef1 IdDef2 Instr Closure L)|Rest then
+      case TaskStack of handler(_ IdDef1 IdDef2 Instr Closure L)|Rest then
 	 case IdDef1 of tag(!IdDef Id) then
 	    L.Id := package(Debug Exn)
 	 [] !Wildcard then skip
