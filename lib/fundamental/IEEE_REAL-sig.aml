@@ -25,12 +25,7 @@ sig
      exception Unordered
 
      datatype real_order	= LESS | EQUAL | GREATER | UNORDERED
-     datatype nan_mode		= QUIET | SIGNALLING
-     datatype float_class	= NAN of nan_mode
-				| INF
-				| ZERO
-				| NORMAL
-				| SUBNORMAL
+     datatype float_class	= NAN | INF | ZERO | NORMAL | SUBNORMAL
      datatype rounding_mode	= TO_NEAREST
 				| TO_NEGINF
 				| TO_POSINF

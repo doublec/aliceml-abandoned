@@ -91,7 +91,7 @@ struct
 
     fun class x  = class'(abs x)
     and class' x =
-	if x != x then IEEEReal.NAN IEEEReal.QUIET else
+	if x != x then IEEEReal.NAN else
 	if x = 1.0/0.0 then IEEEReal.INF else
 	if x = 0.0 then IEEEReal.ZERO else
 	IEEEReal.NORMAL	(* TODO: detect SUBNORMAL *)
