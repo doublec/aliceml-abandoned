@@ -44,6 +44,12 @@
 	type <A href="#simple_response">simple_response</A> =
 	     {statusCode : int, contentType : string, body : string}
 
+	datatype <A href="#word">word</A> =
+	    TOKEN of string
+	  | SEPARATOR of char
+	  | COMMENT of string
+	  | QUOTED_STRING of string
+
 	exception <A href="#Closed">Closed</A>
 	exception <A href="#Format">Format</A>
 
@@ -55,6 +61,8 @@
 
 	val <A href="#reasonPhrase">reasonPhrase</A> : int -> string
 	val <A href="#makeResponse">makeResponse</A> : simple_response -> response
+
+	val <A href="#parseFieldValue">parseFieldValue</A> : string -> word list
     end</PRE>
 
 <?php section("description", "description") ?>
@@ -107,6 +115,22 @@
     </DD>
 
     <DT>
+      <TT>datatype <A href="#word">word</A> =
+	    TOKEN of string
+	  | SEPARATOR of char
+	  | COMMENT of string
+	  | QUOTED_STRING of string</TT>
+    </DT>
+    <DD>
+      <P>The type of a word in a header field.  The meaning of the constructors
+	is defined in RFC&nbsp;2616.  Comments are stripped of the surrounding
+	parentheses.  Quoted strings are stripped of the quotes.  Escaped
+	characters in the outermost comment level and in quoted strings
+	are processed, that is, replaced by the literal character they
+	represent.</P>
+    </DD>
+
+    <DT>
       <TT>exception <A name="Closed">Closed</A></TT>
     </DT>
     <DD>
@@ -130,7 +154,8 @@
       <P>attempts to read an HTTP request from <TT><I>sock</I></TT>, parses
 	it, and returns it.  Raises <TT><A href="#Closed">Closed</A></TT>
 	or <TT><A href="#Format">Format</A></TT> if the connection was
-	closed or the request was malformed, respectively.</P>
+	closed or the request was malformed, respectively.  Any linear white
+	space in header field values is translated to a single space.</P>
     </DD>
 
     <DT>
@@ -140,7 +165,8 @@
       <P>attempts to read an HTTP response from <TT><I>sock</I></TT>, parses
 	it, and returns it.  Raises <TT><A href="#Closed">Closed</A></TT>
 	or <TT><A href="#Format">Format</A></TT> if the connection was
-	closed or the response was malformed, respectively.</P>
+	closed or the response was malformed, respectively.  Any linear white
+	space in header field values is translated to a single space.</P>
     </DD>
 
     <DT>
@@ -182,6 +208,17 @@
 	generated using function <TT><A href="#reasonPhrase">reasonPhrase</A
 	></TT>.</P>
     </DD>
+
+    <DT>
+      <TT><A name="parseFieldValue">parseFieldValue</A> <I>s</I></TT>
+    </DT>
+    <DD>
+      <P>parses <TT><I>s</I></TT> into a list of words as defined by
+	RFC&nbsp;2616.  Raises <TT><A href="#Format">Format</A></TT> if
+	the <TT><I>s</I></TT> is not a well-formed header field value.
+	Any linear white space in <TT><I>s</I></TT> must already have
+	been translated to a single space.</P>
+    </DT>
   </DL>
 
 <?php section("examples", "examples") ?>
