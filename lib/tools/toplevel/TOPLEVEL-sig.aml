@@ -22,4 +22,9 @@ sig
     val setErrWidth	: int -> unit
     val setErrStream	: TextIO.StreamIO.outstream -> unit
     val setTraceStream	: TextIO.StreamIO.outstream -> unit
+
+    val banner		: string
+    val bye		: string
+    val prompt		: string
+    val contPrompt	: string
 end

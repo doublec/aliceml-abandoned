@@ -233,4 +233,20 @@ struct
 	     of NONE      => Promise.fulfill (p, env)
 	      | SOME env' => Promise.fulfill (p, loopUses (env', signal))
 	end
+
+
+    (* Texts *)
+
+    val major      = Int.toString (#major Config.version)
+    val minor      = Int.toString (#minor Config.version)
+    val revision   = Int.toString (#revision Config.version)
+
+    val version    = major ^ "." ^ minor ^
+		     (if revision = "0" then "" else "." ^ revision)
+    val banner     = "Alice " ^ version ^ " (\"" ^ Config.codename ^ "\"),\n" ^
+		     "mastered " ^ Date.fmt "%Y/%m/%d" Config.buildDate ^ "\n"
+    val bye        = "That's all, said Humpty Dumpty. Good-bye.\n"
+
+    val prompt     = "- "
+    val contPrompt = "  "
 end
