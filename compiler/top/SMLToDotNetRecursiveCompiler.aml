@@ -51,7 +51,7 @@ structure SMLToDotNetRecursiveCompiler =
 	    MkBackendDotNet(structure Switches = Switches)
 
 	structure BackendCommon =
-	    MkBackendCommon(val isCross = BackendDotNot.isCross
+	    MkBackendCommon(val isCross = BackendDotNet.isCross
 			    val loadMod = loadMod
 			    structure Switches = Switches)
 
