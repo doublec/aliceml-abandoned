@@ -167,12 +167,10 @@ functor MkRecursiveCompiler(structure ComponentManager: COMPONENT_MANAGER
 				 ^ "\n" ^ s
 			 end
 		val d = loadDependencyFiles ()
-		val filename' = OS.Path.joinBaseExt
-				{base = OS.Path.base filename,
-				 ext = SOME Component.extension}
 		val s'' = List.foldr (fn (f, s) =>
-				      "import \"" ^ OS.Path.base f ^ "\" " ^ s)
-				     s' (Dependency.lookup (d, filename'))
+				      "import \"" ^ f ^ "\" " ^ s)
+				     s' (Dependency.lookup
+					 (d, OS.Path.base filename))
 	    in
 		processBasic process (Source.urlDesc url, s'')
 	    end handle (Url.NotLocal | Option) =>
