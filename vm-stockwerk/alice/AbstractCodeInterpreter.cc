@@ -23,6 +23,7 @@
 #include "emulator/ConcreteCode.hh"
 #include "emulator/Alice.hh"
 #include "emulator/Pickle.hh"
+#include "emulator/LazySelectionInterpreter.hh"
 
 // Local Environment
 class Environment : private Array {
@@ -479,6 +480,24 @@ AbstractCodeInterpreter::Run(word args, TaskStack *taskStack) {
 	pc = TagVal::FromWord(pc->Sel(2));
       }
       break;
+    case Pickle::Sel: // of id * idRef * int * instr
+      {
+	word suspendWord = GetIdRef(pc->Sel(1), globalEnv, localEnv);
+	Tuple *tuple = Tuple::FromWord(suspendWord);
+	if (tuple == INVALID_POINTER) SUSPEND(suspendWord);
+	localEnv->Add(pc->Sel(0), tuple->Sel(Store::WordToInt(pc->Sel(2))));
+	pc = TagVal::FromWord(pc->Sel(3));
+      }
+      break;
+    case Pickle::LazySel: // of id * idRef * int * instr
+      {
+	word tuple = GetIdRef(pc->Sel(1), globalEnv, localEnv);
+	int index = Store::WordToInt(pc->Sel(2));
+	localEnv->Add(pc->Sel(0),
+		      LazySelectionClosure::New(tuple, index)->ToWord());
+	pc = TagVal::FromWord(pc->Sel(3));
+      }
+      break;
     case Pickle::Raise: // of idRef
       {
 	Scheduler::currentData = GetIdRef(pc->Sel(0), globalEnv, localEnv);
@@ -579,6 +598,7 @@ AbstractCodeInterpreter::Run(word args, TaskStack *taskStack) {
 	pc = TagVal::FromWord(pc->Sel(2));
       }
       break;
+    //--** WideStringTest
     case Pickle::TagTest:
       // of idRef * (int * instr) vector
       //          * (int * idDef vector * instr) vector * instr
@@ -621,8 +641,8 @@ AbstractCodeInterpreter::Run(word args, TaskStack *taskStack) {
       }
       break;
     case Pickle::ConTest:
-      // of idRef * (con * instr) vector
-      //          * (con * idDef vector * instr) vector * instr
+      // of idRef * (idRef * instr) vector
+      //          * (idRef * idDef vector * instr) vector * instr
       {
 	word suspendWord = GetIdRef(pc->Sel(0), globalEnv, localEnv);
 	ConVal *conVal = ConVal::FromWord(suspendWord);
@@ -633,15 +653,7 @@ AbstractCodeInterpreter::Run(word args, TaskStack *taskStack) {
 	  u_int ntests = tests->GetLength();
 	  for (u_int i = 0; i < ntests; i++) {
 	    Tuple *triple = Tuple::FromWord(tests->Sub(i));
-	    TagVal *conBlock = TagVal::FromWord(triple->Sel(0));
-	    switch (Pickle::GetCon(conBlock)) {
-	    case Pickle::Con:
-	      suspendWord = localEnv->Lookup(conBlock->Sel(0));
-	      break;
-	    case Pickle::StaticCon:
-	      suspendWord = conBlock->Sel(0);
-	      break;
-	    }
+	    suspendWord = GetIdRef(triple->Sel(0), globalEnv, localEnv);
 	    Constructor *testConstructor = Constructor::FromWord(suspendWord);
 	    if (testConstructor == INVALID_POINTER) SUSPEND(suspendWord);
 	    if (testConstructor == constructor) {
@@ -663,15 +675,7 @@ AbstractCodeInterpreter::Run(word args, TaskStack *taskStack) {
 	  u_int ntests = tests->GetLength();
 	  for (u_int i = 0; i < ntests; i++) {
 	    Tuple *pair = Tuple::FromWord(tests->Sub(i));
-	    TagVal *conBlock = TagVal::FromWord(pair->Sel(0));
-	    switch (Pickle::GetCon(conBlock)) {
-	    case Pickle::Con:
-	      suspendWord = localEnv->Lookup(conBlock->Sel(0));
-	      break;
-	    case Pickle::StaticCon:
-	      suspendWord = conBlock->Sel(0);
-	      break;
-	    }
+	    suspendWord = GetIdRef(pair->Sel(0), globalEnv, localEnv);
 	    Constructor *testConstructor = Constructor::FromWord(suspendWord);
 	    if (testConstructor == INVALID_POINTER) SUSPEND(suspendWord);
 	    if (testConstructor == constructor) {
@@ -746,7 +750,8 @@ AbstractCodeInterpreter::Run(word args, TaskStack *taskStack) {
 }
 
 Interpreter::Result
-AbstractCodeInterpreter::Handle(word exn, word debug, TaskStack *taskStack) {
+AbstractCodeInterpreter::Handle(word exn, word /*debug*/,
+				TaskStack *taskStack) {
   AbstractCodeFrame *frame =
     AbstractCodeFrame::FromWord(taskStack->GetFrame());
   if (frame->IsHandlerFrame()) {
