@@ -8,7 +8,7 @@
 
   <P>
     A major feature of Stockhausen is <I>pickling</I>, the ability to
-    make persistent arbitrary user data structures. This includes higher-order
+    make arbitrary user data structures persistent. This includes higher-order
     data, i.e. functions. But it does not stop there, as Stockhausen
     even allows pickling of complete modules.
   </P>
@@ -31,21 +31,23 @@
   </UL>
 
   <P>
-    Functional values do not contain any stateful objects. They can be
+    <I>Functional</I> values do not contain any stateful objects. They can be
     freely pickled and unpickled. After putting a functional object in
     a pickle and reextracting it it is indistinguishable from the original
     object.
   </P>
 
   <P>
-    Stateful data does contain objects like references or arrays. Stateful
+    <I>Stateful</I> data does contain objects like references or arrays.
+    Stateful
     objects can also be pickled freely. However, pickling of stateful values
     has a copying semantics: each time a stateful value is extracted from
     a pickle a fresh copy of the object is created.
   </P>
 
   <P>
-    Sited objects are connected to a parent process. They refer to certain
+    <I>Sited</I> objects are connected to a parent process. They refer to
+    certain
     resources that are not available outside the process. An example
     is the input stream of an open file.
     Consequently, sited data may not be pickled.
@@ -114,15 +116,16 @@
   <P>
     Just as for the <TT>Pack</TT> operation for
     <A href="packages.php3">packages</A>, the signature passed to the
-    <TT>Save</TT> functor is the signature under which the pickle
-    can be loaded again. Specifying a signature that is less specific
+    <TT>Save</TT> functor is the most specific signature that can
+    be expected when the pickle is loaded again.
+    Specifying a signature that is less specific
     than the actual module type implies abstraction taking place.
   </P>
 
   <P>
     If the Url module contained references to any sited objects,
-    then the functor would raise the exception <TT>Sited</TT> to
-    indicate failure. However, <TT>Url</TT> is not sited.
+    the functor would raise the exception <TT>Sited</TT> to
+    indicate failure (<TT>Url</TT> is not sited, however).
   </P>
 
   <P>
@@ -137,8 +140,11 @@
   <P>
     If loading is successful, <TT>Url'</TT> will be bound to a structure
     with the signature <TT>URL</TT>.
+  </P>
+
+  <P>
     Loading of a pickle may fail for several reasons. There may be
-    an ordinary I/O error, in which case an <TT>IO.Io</TT> will occur.
+    an ordinary I/O error, in which case an <TT>IO.Io</TT> exeption will occur.
     The pickle format may be erroneous, which causes a <TT>Corrupt</TT>
     exception. Or the pickles's signature may not match the one passed
     to the <TT>Load</TT> functor. In that case, the exception
@@ -150,7 +156,7 @@
 
   <P>
     For convenience, two short-hand functors are available for
-    dealing with plain core values only:
+    dealing with plain core values:
   </P>
 
   <PRE>
@@ -173,7 +179,7 @@
   </PRE>
 
   <P>
-    The <TT>LoadVal</TT> functor simple assumes a pickle of the same
+    The <TT>LoadVal</TT> functor simply assumes a pickle of the same
     type and returns the contained value <TT>x</TT>.
   </P>
 
@@ -225,8 +231,8 @@
   </PRE>
 
   <P class=note>
-    A current <A href="packages.php3#limitations">implementation limitation
-    in the treatment of runtime types</A> of Operette 2 may lead to
+    A current <A href="packages.php3#limitations">implementation limitation</A>
+    in the treatment of runtime types of Operette 2 may lead to
     unexpected results in connection with sharing, if the signatures passed
     to the <TT>Save</TT> functor are not specified carefully.
   </P>
@@ -272,7 +278,7 @@
     Note that execution
     causes the creation of new generative types. So if a non-pickle
     component is loaded twice, any generative type contained in
-    the resulting module will be incompatible between both instances.
+    its export will be incompatible between both instances.
     Similarly for exceptions.
   </P>
 
@@ -291,14 +297,14 @@
     <LI> Linking of imports happens lazily, while the <TT>Load</TT>
          functor executes the component eagerly. (Lazy execution can
 	 be achieved through the use of the
-	 <A href="laziness.php3#modules"><TT>ByNeed</TT> functor</A> though.)
+	 <A href="laziness.php3#modules"><TT>ByNeed</TT></A> functor though.)
     <LI> Components imported via import announcements are only linked
          in once in a given process, regardless how many import announcements
 	 exist for the same component. <TT>Load</TT> will always reload
 	 the requested component.
     <LI> Import announcements allow the import of arbitrary and multiple
          entities from a component while the <TT>Load</TT> functor can only
-	 load modules (which name is fixed to <TT>X</TT>).
+	 load modules (whose name is fixed to <TT>X</TT>).
   </UL>
 
   <P>
