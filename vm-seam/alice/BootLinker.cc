@@ -26,10 +26,7 @@
 #include "generic/Unpickler.hh"
 #include "generic/Properties.hh"
 #include "alice/Data.hh" //--** avoid Alice dependencies
-
-enum ComponentTag {
-  EVALUATED, UNEVALUATED
-};
+#include "alice/Types.hh" //--** avoid Alice dependencies
 
 // Tracing
 static bool traceFlag;
@@ -401,29 +398,29 @@ Worker::Result LinkWorker::Run() {
   Worker::Construct();
   TagVal *tagVal = TagVal::FromWord(Scheduler::currentArgs[0]);
   Assert(tagVal != INVALID_POINTER);
-  switch (static_cast<ComponentTag>(tagVal->GetTag())) {
-  case EVALUATED:
+  switch (tagVal->GetTag()) {
+  case Types::EVALUATED:
     {
       tagVal->AssertWidth(2);
-      word sign = tagVal->Sel(0);
-      word str = tagVal->Sel(1);
+      word sign = tagVal->Sel(Types::inf1);
+      word str = tagVal->Sel(Types::mod);
       EnterWorker::PushFrame(key, sign);
       Scheduler::nArgs = 0;
       Scheduler::currentArgs[0] = str;
       return Worker::CONTINUE;
     }
     break;
-  case UNEVALUATED:
+  case Types::UNEVALUATED:
     {
       tagVal->AssertWidth(3);
-      word closure = tagVal->Sel(0);
-      Vector *imports = Vector::FromWord(tagVal->Sel(1));
-      word sign = tagVal->Sel(2);
+      word closure = tagVal->Sel(Types::body);
+      Vector *imports = Vector::FromWord(tagVal->Sel(Types::imports));
+      word sign = tagVal->Sel(Types::inf2);
       Assert(imports != INVALID_POINTER);
       EnterWorker::PushFrame(key, sign);
       ApplyWorker::PushFrame(key, closure, imports);
       // Push LoadFrames for imports: string * sign vector
-      for (u_int i = imports->GetLength(); i--;) {
+      for (u_int i = imports->GetLength(); i--; ) {
 	Tuple *t = Tuple::FromWord(imports->Sub(i));
 	Assert(t != INVALID_POINTER);
 	t->AssertWidth(2);
@@ -542,7 +539,7 @@ void BootLinker::Init(NativeComponent *nativeComponents) {
   while (nativeComponents->name != NULL) {
     word (*init)() = nativeComponents->init;
     String *key = String::New(nativeComponents->name);
-    word sign = Store::IntToWord(0); // 0 = NONE
+    word sign = Store::IntToWord(Types::NONE);
     EnterComponent(key, sign, init());
     nativeComponents++;
   }
