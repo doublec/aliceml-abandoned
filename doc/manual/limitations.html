@@ -14,7 +14,7 @@ the Alice system.</P>
   <DT>Equality</DT><!--mozart-->
   <DD><P>The <TT>=</TT> operator is <A href="futures.html#request">strict</A>.
       Accordingly, in order to test two futures for equality, both have to
-      be requested.  The current implementation will not request futures if
+      be requested. The current implementation will not request futures if
       they are physically equal.</P>
   </DD>
 
@@ -22,6 +22,14 @@ the Alice system.</P>
   <DD><P>The equality attribute of types is ignored. The <TT>=</TT> operator
       may be applied to values of any type. For functions and similar values
       it uses physical equality.</P>
+  </DD>
+
+  <DT>Datatype replication</DT>
+  <DD><P>Datatype replication in signatures (<TT>datatype</TT> <I>t</I>
+      <TT>=</TT> <TT>datatype</TT> <I>u</I>) is not supported yet. Since
+      datatypes are <A href="types.html#datatype">structural</A>, the datatype
+      specification can be copied as a work-around. Datatype replication in
+      structures is supported.</P>
   </DD>
 
   <DT>Overloading</DT>

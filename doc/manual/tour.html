@@ -29,10 +29,10 @@ and its features:</P>
 
 <?php section("sml", "standard ML") ?>
 
-<P>Alice ML is an extension of the
-<A href="http://cm.bell-labs.com/cm/cs/what/smlnj/sml.html">Standard ML</A> language (SML).
-Most of the examples shown here assume a working knowledge of functional
-programming in general and SML in particular. There are numerous
+<P>Alice ML is an extension of the <A
+href="http://cm.bell-labs.com/cm/cs/what/smlnj/sml.html">Standard ML</A>
+language (SML). Most of the examples shown here assume a working knowledge of
+functional programming in general and SML in particular. There are numerous
 books and tutorials available for SML.</P>
 
 <P>Online Material:</P>
@@ -74,8 +74,8 @@ on the SML/NJ site.</P>
 
 <P>Alice ML is an extension of Standard ML, and the Alice
 <A href="interactive.html">interactive toplevel</A>
-functions very similar to the interactive prompts known from other SML
-systems where you can type in expressions and declarations to evaluate them.
+works very similar to the interactive prompts known from other SML
+systems, where you can type in expressions and declarations to evaluate them.
 Input is terminated with a semicolon. For example, you might simply perform a
 simple calculation:</P>
 
@@ -98,15 +98,17 @@ so that you can refer to them in consecutive inputs:</P>
 <I>Hello world!
 val it : unit = ()</I></PRE>
 
-<P>In the rest of this tour we will present program fragments in their pure
-form, without showing the interactive prompt or the semicolon terminating the
-interactive input. For example, the last interaction will be displayed simply
-as</P>
+<DIV class=note>
+<P><I>Note:</I> In the rest of this tour we will present
+program fragments in their pure form, without showing the interactive prompt or
+the semicolon terminating the interactive input. For example, the last
+interaction will be displayed simply as</P>
 
 <PRE class=code>
 print "Hello world!\n"
 <I>Hello world!
 val it : unit = ()</I></PRE>
+</DIV>
 
 <P>Entering a function declaration is more interesting. For example,
 the factority function:<P>
@@ -126,7 +128,7 @@ fac 50
 
 <?php subsection("interactive-inspector", "The Inspector") ?>
 
-<P>For more complex values, the static output of the result is often
+<P>For more complex values, plain static output of the result is often
 insufficient. The Alice system includes the <A
 href="library/inspector.html"><EM>Inspector</EM></A> for browsing arbitrary data
 structures interactively:</P>
@@ -135,8 +137,8 @@ structures interactively:</P>
 inspect (List.tabulate (10, fn i => (i, i*i, i*i*i)))
 <I>val it : unit = ()</I></PRE>
 
-<P>An Inspector window will pop up displaying the table of the first hundred
-square and cubic numbers:</P>
+<P>An Inspector window will pop up displaying the table of square and cubic
+numbers:</P>
 
 <P align=center><IMG src="inspector-1.jpg" border=0 alt="Alice Inspector"></P>
 
@@ -258,14 +260,14 @@ facs
 <I>val it : int list = 1 :: 1 :: 2 :: 6 :: 24 :: 120 :: 720 :: lazy</I></PRE>
 
 <DIV class=note>
-<P><EM>Note:</EM> The Inspector observes when lazy suspensions are triggered. If you
-evaluate</P>
+<P><EM>Note:</EM> The Inspector observes when lazy suspensions are triggered. If
+you evaluate</P>
 
 <PRE class=code>
 inspect facs
 <I>val it : unit = ()</I>
 List.nth (facs,13)
-<I></I></PRE>
+<I>val it : int = 6227020800</I></PRE>
 
 <P>it will automatically update its window to reflect the substitution of the
 lazy tail of <TT>facs</TT> by a (partial) list.</P>
