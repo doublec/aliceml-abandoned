@@ -14,7 +14,7 @@ struct
 
     val GtkAnchorTypeToInt = id
 
-    val NULL = null
+    val NULL = Gtk.null ()
 end
 
 structure Canvas =
