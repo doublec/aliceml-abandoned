@@ -1,5 +1,6 @@
 Library:
 
+* Sync'ed with latest Basis spec.
 * Fixed {*VectorSlice,Substring}.splitr (also fixes OS.Path.split*).
 
 
