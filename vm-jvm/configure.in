@@ -67,4 +67,11 @@ AC_SUBST(m4)
 AC_SUBST(javac)
 AC_SUBST(smlcm)
 
-AC_OUTPUT(Makefile benchmarks/Makefile java/Makefile java/src/Makefile java/src/runtime/Makefile java/src/tools/Makefile Compiler/Makefile Compiler/Backend/Makefile)
+runtime="$PWD/runtime.jar"
+AC_SUBST(runtime)
+patch="$PWD/patch.jar"
+AC_SUBST(patch)
+dmllib="$PWD/Compiler/Backend"
+AC_SUBST(dmllib)
+
+AC_OUTPUT(Makefile benchmarks/Makefile java/Makefile java/src/Makefile java/src/runtime/Makefile java/src/tools/Makefile Compiler/Makefile Compiler/Backend/Makefile bin/dmlc bin/Exec bin/ExecTya bin/ExecSunJit bin/MultiExec)
