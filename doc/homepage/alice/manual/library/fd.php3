@@ -623,20 +623,19 @@
     </DD>
 
     <DT>
-      <tt>disjoint (<I>x</I>, <I>i1<I>, <I>y</I>, <I>i2</I>)</TT>
+      <tt>disjoint (<I>x</I>, <I>i1</I>, <I>y</I>, <I>i2</I>)</TT>
     </DT>
     <DD>
       <P>creates a propagator for
       <PRE>
-        x + i1 <= y or y + i2 <= x
-      </PRE>
+        x + i1 <= y or y + i2 <= x</PRE>
       <P>May cut holes into the domains.
       <P>For precise operational semantics, see
          <A HREF="http://www.mozart-oz.org/documentation/system/node25.html#section.fd.misc">here</A>.
     </DD>
 
     <DT>
-      <tt>disjointC (<I>x</I>, <I>i1<I>, <I>y</I>, <I>i2</I>, <I>c</I>)</TT>
+      <tt>disjointC (<I>x</I>, <I>i1</I>, <I>y</I>, <I>i2</I>, <I>c</I>)</TT>
     </DT>
     <DD>
       <P>creates a propagator for
@@ -649,7 +648,7 @@
     </DD>
 
     <DT>
-      <tt>tasksOverlap (<I>x</I>, <I>i1<I>, <I>y</I>, <I>i2</I>, <I>c</I>)</TT>
+      <tt>tasksOverlap (<I>x</I>, <I>i1</I>, <I>y</I>, <I>i2</I>, <I>c</I>)</TT>
     </DT>
     <DD>
       <P>For operational semantics, see
