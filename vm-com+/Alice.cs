@@ -2124,7 +2124,7 @@ namespace Alice {
 	}
 	public class CommandLine_name : Procedure {
 	    public static Object StaticApply(Object a) {
-		return Environment.GetCommandLineArgs()[0];
+		return Environment.GetCommandLineArgs()[1];
 	    }
 	    public override Object Apply(Object a) {
 		return StaticApply(a);
@@ -2135,12 +2135,12 @@ namespace Alice {
 		System.String[] args = Environment.GetCommandLineArgs();
 		int len              = args.Length;
 
-		if (len == 1) {
+		if (len == 2) {
 		    return (Int32) 1;
 		}
 		else {
 		    TagVal head = ListOp.Cons(args[len - 1], (Int32) 1);
-		    for (int i = (len - 2); i >= 1; i--) {
+		    for (int i = (len - 2); i >= 2; i--) {
 			head = (TagVal) ListOp.Cons(args[i], head);
 		    }
 		    return head;
