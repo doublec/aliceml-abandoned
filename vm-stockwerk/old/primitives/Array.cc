@@ -16,7 +16,7 @@
 
 DEFINE2(Array_array) {
   DECLARE_INT(length, x0);
-  if (length < 0 || static_cast<u_int>(length) > Array::maxLen)
+  if (static_cast<u_int>(length) > Array::maxLen)
     RAISE(PrimitiveTable::General_Size);
   Array *array = Array::New(length);
   for (u_int i = length; i--; )
@@ -45,7 +45,7 @@ DEFINE1(Array_length) {
 DEFINE2(Array_sub) {
   DECLARE_ARRAY(array, x0);
   DECLARE_INT(index, x1);
-  if (index < 0 || static_cast<u_int>(index) >= array->GetLength())
+  if (static_cast<u_int>(index) >= array->GetLength())
     RAISE(PrimitiveTable::General_Subscript);
   RETURN(array->Sub(index));
 } END
@@ -53,7 +53,7 @@ DEFINE2(Array_sub) {
 DEFINE3(Array_update) {
   DECLARE_ARRAY(array, x0);
   DECLARE_INT(index, x1);
-  if (index < 0 || static_cast<u_int>(index) >= array->GetLength())
+  if (static_cast<u_int>(index) >= array->GetLength())
     RAISE(PrimitiveTable::General_Subscript);
   array->Update(index, x2);
   RETURN_UNIT;

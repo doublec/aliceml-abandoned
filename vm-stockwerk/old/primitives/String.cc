@@ -103,7 +103,7 @@ DEFINE1(String_size) {
 DEFINE2(String_sub) {
   DECLARE_STRING(string, x0);
   DECLARE_INT(index, x1);
-  if (index < 0 || static_cast<u_int>(index) >= string->GetSize())
+  if (static_cast<u_int>(index) >= string->GetSize())
     RAISE(PrimitiveTable::General_Subscript);
   RETURN_INT(string->GetValue()[index]);
 } END
@@ -112,9 +112,10 @@ DEFINE3(String_substring) {
   DECLARE_STRING(string, x0);
   DECLARE_INT(startIndex, x1);
   DECLARE_INT(sliceLength, x2);
-  int stringLength = string->GetSize();
-  if (startIndex < 0 || sliceLength < 0 ||
-      startIndex + sliceLength > stringLength)
+  u_int stringLength = string->GetSize();
+  // Check that 0 <= sliceLength <= stringLength - startIndex < stringLength:
+  if (static_cast<u_int>(startIndex) >= stringLength ||
+      static_cast<u_int>(sliceLength) > stringLength - startIndex)
     RAISE(PrimitiveTable::General_Subscript);
   String *substring = String::New(sliceLength);
   std::memcpy(substring->GetValue(),
