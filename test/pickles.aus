@@ -36,7 +36,7 @@ __primitive val byNeed: (unit -> 'a) -> 'a = "Transient.byNeed"
 
 __primitive val exit: int -> 'a = "Application.exit"
 
-__primitive val show: (unit -> 'a) -> 'a = "show"
+__primitive val show: 'a -> unit = "show"
 
 __primitive val save: ('a * string) -> unit = "Pickle.save"
 __primitive val load: string -> 'a = "Pickle.load"
