@@ -35,9 +35,34 @@ structure BindEnvFromSig :> BIND_ENV_FROM_SIG =
 	Path.equals(#3(Type.asCon(#1(Type.asApply t))), PreboundType.path_ref)
 	handle Type.Type => false
 
+    fun arityFromTyp t =
+	if Type.isTuple t then
+	    List.length(Type.asTuple t)
+	else if Type.isProd t then
+	    arityFromRow(Type.asProd t)
+	else
+	    1
+
+    and arityFromRow r =
+	if Type.isUnknownRow r then
+	    1
+	else if Type.isEmptyRow r then
+	    0
+	else
+	    1 + arityFromRow(Type.tailRow r)
+
+
+    fun idStatusFromTyps []	= C 0
+      | idStatusFromTyps [t]	= C(arityFromTyp t)
+      | idStatusFromTyps ts	= C(List.length ts)
+
     fun idStatusFromSort(Inf.VALUE, t)       = V
       | idStatusFromSort(Inf.CONSTRUCTOR, t) =
-	if not(Type.isArrow t) then
+	if Type.isAll t then
+	    idStatusFromSort(Inf.CONSTRUCTOR, #2(Type.asAll t))
+	else if Type.isExist t then
+	    idStatusFromSort(Inf.CONSTRUCTOR, #2(Type.asExist t))
+	else if not(Type.isArrow t) then
 	    C 0
 	else
 	    let
@@ -45,20 +70,11 @@ structure BindEnvFromSig :> BIND_ENV_FROM_SIG =
 	    in
 		if Type.isArrow t2 then
 		    C(arity t2 + 1)
-		else if Type.isTuple t1 then
-		    C(List.length(Type.asTuple t1))
 		else if isRef t2 then
 		    R
 		else
-		    C 1
+		    C(arityFromTyp t1)
 	    end
-
-    fun idStatusFromTyps []	= C 0
-      | idStatusFromTyps [t]	= if Type.isTuple t then
-					C(List.length(Type.asTuple t))
-				  else
-					C 1
-      | idStatusFromTyps ts	= C(List.length ts)
 
 
     fun envFromTyp(I,t) =
