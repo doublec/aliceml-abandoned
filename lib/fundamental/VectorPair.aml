@@ -74,7 +74,7 @@ struct
       | foldr'(f,x,v1,v2,i)	= foldr'(f, f(sub'(v1,i), sub'(v2,i), x),
 					 v1, v2, i-1)
 
-    fun foldri f x (v1,v2)	= foldri'(f, x, v1, v2, length(v1,v2))
+    fun foldri f x (v1,v2)	= foldri'(f, x, v1, v2, length(v1,v2)-1)
     and foldri'(f,x,v1,v2,~1)	= x
       | foldri'(f,x,v1,v2,i)	= foldri'(f, f(i, sub'(v1,i), sub'(v2,i), x),
 					  v1, v2, i-1)
