@@ -120,7 +120,9 @@ clean-seam: clean-common
 	(cd lib/test && make distclean) || exit 1
 	(cd lib/gtk/seam && make distclean) || exit 1
 	(cd lib/tools/inspector/seam && make distclean) || exit 1
-
+	(cd tools/lex && make distclean) || exit 1
+	(cd tools/yacc && make distclean) || exit 1
+	
 clean-common:
 	(cd bootstrap && make clean) || exit 1
 	rm -f time[1-3]
@@ -213,14 +215,14 @@ libs-seam:
 	 make TARGET=seam all PREFIX=$(PREFIX)/share/alice install) || exit 1 ;\
 	(cd lib/test && make SH_EXT=alc depend && \
 	 make SH_EXT=alc all PREFIX=$(PREFIX)/share/alice install) || exit 1 ;\
-	(cd lib/gtk/seam && ./BUILD_ALL) || exit 1 ;\
-	(cd lib/gtk/seam && make install) || exit 1 ;\
-	(cd lib/tools/inspector/seam && make depend) || exit 1 ;\
-	(cd lib/tools/inspector/seam && make all PREFIX=$(PREFIX) install) || exit 1 ;\
 	(cd tools/yacc && make depend) || exit 1 ;\
 	(cd tools/yacc && make all && make install) || exit 1 ;\
 	(cd tools/lex && make depend) || exit 1;\
 	(cd tools/lex && make all && make install) || exit 1 ;\
+	(cd lib/gtk/seam && ./BUILD_ALL) || exit 1 ;\
+	(cd lib/gtk/seam && make install) || exit 1 ;\
+	(cd lib/tools/inspector/seam && make depend) || exit 1 ;\
+	(cd lib/tools/inspector/seam && make all PREFIX=$(PREFIX) install) || exit 1 ;\
 	(cd lib/gecode && make generate GECODEDIR=$(GECODEDIR)) || exit ;\
 	(cd lib/gecode && make depend GECODEDIR=$(GECODEDIR)) || exit ;\
 	(cd lib/gecode && make all install GECODEDIR=$(GECODEDIR)) || exit ;\
