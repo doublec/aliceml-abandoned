@@ -962,8 +962,13 @@ struct
 	end
 
       | trInf'(I.ConInf(i,y)) =
-	(* [y] = {[y]} *)
-	O.VarExp(typInfo(#region i, typ_inf), trInflongid y)
+	(* [y] = Inf.instance{[y]} *)
+	let
+	    val e'  = O.VarExp(typInfo(#region i, typ_inf), trInflongid y)
+	in
+	    infOp(lab_instance, e')
+	end
+
 
       | trInf'(I.SigInf(i,ss)) =
 	(* [sig ss end] = let val s = Inf.empty() in [ss]; Inf.inSig s end *)
