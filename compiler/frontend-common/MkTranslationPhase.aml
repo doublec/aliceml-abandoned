@@ -2174,7 +2174,7 @@ struct
 	    ( xjus', ds'' )
 	end
 
-    and trAnn E (I.ImpAnn(i,is,u), (xjus',ds')) =
+    and trAnn E (I.ImpAnn(i,is,u,b), (xjus',ds')) =
 	let
 	    val r      = #region i
 	    val j      = Future.byneed(fn() => Inf.sign(#sign i))
@@ -2188,7 +2188,7 @@ struct
 	    val ds''   = trImps(E, is, O.ShortId(i',x'), ds')
 	in
 	    if isPerv then Type.unify(t',t) else ();
-	    ( (x',j,u)::xjus', ds'' )
+	    ( (x',j,u,b)::xjus', ds'' )
 	end
 
     and trImps(E, is, y, ds')             = Vector.foldl (trImp (E,y)) ds' is
@@ -2217,7 +2217,7 @@ struct
 	in
 	    if !Switches.Language.retainFullImport then () else
 	    ( Inf.compressSig s
-	    ; Vector.app (fn(x,j,u) => Inf.compress j) xjus'
+	    ; Vector.app (fn(x,j,u,b) => Inf.compress j) xjus'
 	    );
 	    ( xjus', ds', fs', Inf.sign s )
 	end

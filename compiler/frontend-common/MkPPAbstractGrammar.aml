@@ -619,7 +619,8 @@ struct
     fun anntree head i body		= tree (head ^ "Ann") (ppAnnInfo i) body
 
     fun ppAnns anns			= vec(Vector.map ppAnn anns)
-    and ppAnn(ImpAnn(i, imps, url))	= anntree "Imp" i (
+    and ppAnn(ImpAnn(i, imps, url, b))	= anntree "Imp" i (
+					    ppBool b ^/^
 					    ppUrl url ^/^
 					    ppImps imps
 					  )

@@ -109,6 +109,7 @@
 (*   - components:								*)
 (*	  component ::= ann <program>						*)
 (*	  ann       ::=	import imp from string					*)
+(*	  		import string						*)
 (*			<>							*)
 (*			ann <;> ann						*)
 (*	  imp       ::=	val valitem						*)
@@ -173,9 +174,8 @@
 (*                ::= __primitive __eqeqtype tyvarseq tycon = string		*)
 (*	          ::= __primitive signature sigid strpat_1 ... strpat_n	(n>=0)	*)
 (*					= string				*)
-(*	  rea     ::= __primitive type tyvarseq tycon = string			*)
-(*                ::= __primitive signature sigid strpat_1 ... strpat_n	(n>=0)	*)
-(*					= string				*)
+(*	  ann     ::= __primitive import imp from string			*)
+(*	  	      __primitive import string					*)
 (*										*)
 (* Notes:									*)
 (*   - Two phrases named Fmatch and Fmrule have been added to factorize		*)
@@ -2664,6 +2664,12 @@
 					    imp, STRING) )
 	| IMPORT STRING		( IMPORTALLAnn(I(IMPORTleft,STRINGright),
 					    STRING) )
+	| PRIMITIVE IMPORT imp FROM STRING
+	  			( PRIMITIVEIMPORTAnn(I(IMPORTleft,STRINGright),
+						     imp, STRING) )
+	| PRIMITIVE IMPORT STRING
+				( PRIMITIVEIMPORTALLAnn(I(IMPORTleft,
+							  STRINGright), STRING))
 	| ann1 ann1 %prec SEMICOLON
 				( SEQAnn(I(ann11left,ann12right),
 					 ann11, ann12) )

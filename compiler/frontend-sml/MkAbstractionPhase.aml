@@ -3555,7 +3555,7 @@ struct
 	end
 
     and trAnn'(E,E',desc,acc1,acc2) =
-	fn IMPORTAnn(i, imp, s) =>
+	fn ann as ( IMPORTAnn(i, imp, s) | PRIMITIVEIMPORTAnn(i, imp, s) ) =>
 	   let
 		val url   = Url.fromString s
 		val E''   = Future.byneed(fn() =>
@@ -3568,11 +3568,12 @@ struct
 				trOpenDec (E',i,NONE) (E''',acc2)
 			    else
 				acc2
+		val b     = case ann of IMPORTAnn _ => false | _ => true
 	   in
-		( O.ImpAnn(i, imps', url) :: acc1, acc2' )
+		( O.ImpAnn(i, imps', url, b) :: acc1, acc2' )
 	   end
 
-	 | IMPORTALLAnn(i, s) =>
+	 | ann as ( IMPORTALLAnn(i, s) | PRIMITIVEIMPORTALLAnn(i, s) ) =>
 	   let
 		val url   = Url.fromString s
 		val E''   = BindEnvFromSig.envFromSig(i, loadSig(desc, url))
@@ -3584,8 +3585,9 @@ struct
 				trOpenDec (E',i,NONE) (E''',acc2)
 			    else
 				acc2
+		val b     = case ann of IMPORTALLAnn _ => false | _ => true
 	   in
-		( O.ImpAnn(i, imps', url) :: acc1, acc2' )
+		( O.ImpAnn(i, imps', url, b) :: acc1, acc2' )
 	   end
 
 	 | EMPTYAnn(i) =>

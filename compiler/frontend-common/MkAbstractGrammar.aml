@@ -253,7 +253,7 @@ struct
 
   (* Components *)
 
-    and ann  = ImpAnn of ann_info * imp vector * Url.t
+    and ann  = ImpAnn of ann_info * imp vector * Url.t * bool
 
     and comp = Comp of comp_info * ann vector * dec vector
 
@@ -384,7 +384,7 @@ struct
       | infoImp(InfImp(i,_,_))		= i
       | infoImp(RecImp(i,_))		= i
 
-    fun infoAnn(ImpAnn(i,_,_))		= i
+    fun infoAnn(ImpAnn(i,_,_,_))	= i
 
     fun infoDesc(NoDesc(i))		= i
       | infoDesc(SomeDesc(i,_))		= i

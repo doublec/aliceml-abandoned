@@ -226,7 +226,7 @@ sig
 
   (* Components *)
 
-    and ann  = ImpAnn of ann_info * imp vector * Url.t
+    and ann  = ImpAnn of ann_info * imp vector * Url.t * bool
 
     and comp = Comp of comp_info * ann vector * dec vector
 

@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg, 2001-2002
  *
  * Last change:
  *   $Date$ by $Author$
@@ -395,10 +395,12 @@ sig
     (* Announcements *)
 
     and Ann =
-	  IMPORTAnn    of Info * Imp * string
-	| IMPORTALLAnn of Info * string
-	| EMPTYAnn     of Info
-	| SEQAnn       of Info * Ann * Ann
+	  IMPORTAnn             of Info * Imp * string
+	| IMPORTALLAnn          of Info * string
+	| PRIMITIVEIMPORTAnn    of Info * Imp * string
+	| PRIMITIVEIMPORTALLAnn of Info * string
+	| EMPTYAnn              of Info
+	| SEQAnn                of Info * Ann * Ann
 
     (* Programs and components *)
 

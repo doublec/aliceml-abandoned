@@ -396,10 +396,12 @@ struct
     (* Announcements *)
 
     and Ann =
-	  IMPORTAnn    of Info * Imp * string
-	| IMPORTALLAnn of Info * string
-	| EMPTYAnn     of Info
-	| SEQAnn       of Info * Ann * Ann
+	  IMPORTAnn             of Info * Imp * string
+	| IMPORTALLAnn          of Info * string
+	| PRIMITIVEIMPORTAnn    of Info * Imp * string
+	| PRIMITIVEIMPORTALLAnn of Info * string
+	| EMPTYAnn              of Info
+	| SEQAnn                of Info * Ann * Ann
 
     (* Programs and components *)
 
@@ -643,6 +645,8 @@ struct
 
     fun infoAnn(IMPORTAnn(I,_,_))			= I
       | infoAnn(IMPORTALLAnn(I,_))			= I
+      | infoAnn(PRIMITIVEIMPORTAnn(I,_,_))		= I
+      | infoAnn(PRIMITIVEIMPORTALLAnn(I,_))		= I
       | infoAnn(EMPTYAnn(I))				= I
       | infoAnn(SEQAnn(I,_,_))				= I
 

@@ -1969,7 +1969,7 @@ TextIO.print "\n";
 
   (* Announcements *)
 
-    fun elabAnn(E, desc, I.ImpAnn(i, imps, url)) =
+    fun elabAnn(E, desc, I.ImpAnn(i, imps, url, b)) =
 	let
 	    val s     = Future.byneed(fn() => loadSig(desc, url))
 	    val s'    = Inf.emptySig()
@@ -1978,7 +1978,7 @@ TextIO.print "\n";
 			else Future.byneed(fn() => Inf.narrowSig(s,s'))
 (*DEBUG*) handle e => raise e
 	in
-	    O.ImpAnn(sigInfo(i,s''), imps', url)
+	    O.ImpAnn(sigInfo(i,s''), imps', url, b)
 	end
 
     and elabAnns(E, desc, anns) =
@@ -2206,7 +2206,7 @@ TextIO.print "\n";
 	Vector.fromList
 	  (List.mapPartial (fn ann' => stripAnn(E, ann')) (Vector.toList anns'))
 
-    and stripAnn(E, O.ImpAnn({region,sign}, imps', url)) =
+    and stripAnn(E, O.ImpAnn({region,sign}, imps', url, b)) =
 	let
 	    val UE     = UseEnv.new()
 	    val imps'' = stripImps(E, UE, imps')
@@ -2218,7 +2218,7 @@ TextIO.print "\n";
 	    in
 		if Vector.length imps'' = 0
 		then NONE
-		else SOME(O.ImpAnn({region=region, sign=sign'}, imps'', url))
+		else SOME(O.ImpAnn({region=region, sign=sign'}, imps'', url, b))
 	    end
 	end
 
