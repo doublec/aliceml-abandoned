@@ -2,7 +2,7 @@
  * True oz programmers can write oz programs in any language, observe:
  *)
 
-import structure FD     from "x-alice:/lib/gecode/FD"
+import structure FD     from "FD"
 import signature LINEAR from "LINEAR-sig"
 
 structure Linear :> LINEAR =

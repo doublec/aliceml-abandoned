@@ -63,6 +63,7 @@ signature GC_SIG =
 	   val max : 'space * 'fdvar vector * 'fdvar -> unit
 	   val abs : 'space * 'fdvar * 'fdvar * 'conlevel -> unit
 	   val mult: 'space * 'fdvar * 'fdvar * 'fdvar -> unit
+	   val power: 'space * 'fdvar * 'fdvar * 'fdvar -> unit
 
 	   val bool_not : 'space * 'boolvar * 'boolvar -> unit
 	   val bool_and : 'space * 'boolvar * 'boolvar * 'boolvar -> unit
@@ -77,6 +78,8 @@ signature GC_SIG =
 			'b_var_sel * 'b_val_sel -> unit
 
 	   val assign : 'space * 'fdvar vector * 'avalsel -> unit
+
+	   val fail : 'space -> unit
 
 	   val status  : 'space -> 'status
 	   val commit  : 'space * int -> unit

@@ -30,10 +30,18 @@
 //
 // Interpretation:
 // A variable may be used 
-//   * in the space where it was create
+//   * in the space where it was created
 //   * or if it was created in a root space
 //     (one obtained through gc_makespace), in any space
 //     obtained by cloning that root space
+// When a root space is cloned, it looses its root character,
+// and every variable that is created in the original space after
+// cloning will not be considered a root variable.
+
+//#define DBGMSG(m) { fprintf(stderr,"---> "); \
+//  fprintf(stderr, m); fprintf(stderr, "\n"); }
+
+#define DBGMSG(m)
 
 #define RETURN_IPAIR(i,j) RETURN2(Store::IntToWord(i), Store::IntToWord(j));
 
@@ -45,7 +53,8 @@
     s = (GecodeSpace *) Store::WordToUnmanagedPointer(cr->Get(0));          \
     stamp = Store::DirectWordToInt(cr->Get(1));                             \
     pstamp = Store::DirectWordToInt(cr->Get(2));                            \
-  }
+  } \
+  DBGMSG("DECLARE SPACE done");
 
 #define DEFINE6(name)					\
   static Worker::Result name() {			\
@@ -74,7 +83,8 @@ static word InvalidVarConstructor;
    if (myStamp != stamp && myStamp != pstamp)           \
      RAISE(InvalidVarConstructor);                      \
    v = Store::DirectWordToInt(varIntern->Sel(0));             \
- }
+ } \
+ DBGMSG("DECLARE_VAR done.");
 
 
 namespace UnsafeGecode {
@@ -140,6 +150,7 @@ void GecodeFinalizationSet::Finalize(word value) {
 }
 
 DEFINE0(gc_makespace) {
+  DBGMSG("makespace");
   GecodeSpace *s = new GecodeSpace();
 
   ConcreteRepresentation *cr =
@@ -148,10 +159,12 @@ DEFINE0(gc_makespace) {
   cr->Init(1, Store::IntToWord(-1));
   cr->Init(2, Store::IntToWord(SpaceStamp++));
   UnsafeGecode::gecodeFinalizationSet->Register(cr->ToWord());
+  DBGMSG("done");
   RETURN(cr->ToWord());
 } END
 
 DEFINE2(gc_fdvar) {
+  DBGMSG("gc_fdvar");
   DECLARE_SPACE(s, stamp, pstamp, x0);
   CHECK_SPACE(s);
   
@@ -171,10 +184,12 @@ DEFINE2(gc_fdvar) {
   }
   DomSpec ds(pairs, noOfPairs);
   int newVar = s->AddIntVariable(ds);
+  DBGMSG("done");
   RETURN_IPAIR(newVar, stamp);
 } END
 
 DEFINE3(gc_fdvarr) {
+  DBGMSG("fdvarr");
   DECLARE_SPACE(s, stamp, pstamp, x0);
   CHECK_SPACE(s);
   
@@ -196,36 +211,44 @@ DEFINE3(gc_fdvarr) {
   
   DomSpec ds(pairs, noOfPairs);
   int newVar = s->AddIntVariableR(ds, boolVar);
+  DBGMSG("done");
   RETURN_IPAIR(newVar, stamp);
 } END
 
 DEFINE1(gc_boolvar) {
+  DBGMSG("boolvar");
   DECLARE_SPACE(s, stamp, pstamp, x0);
   CHECK_SPACE(s);
 
   if (stamp==-1) stamp=pstamp;
 
   int newVar = s->AddBoolVariable();
+  DBGMSG("done");
   RETURN_IPAIR(newVar, stamp);
 } END
 
 DEFINE2(gc_getmin) {
+  DBGMSG("getmin");
   DECLARE_SPACE(s, stamp, pstamp, x0);
   CHECK_SPACE(s);
 
   DECLARE_VAR(var, stamp, pstamp, x1);
+  DBGMSG("done");
   RETURN_INT(s->vmin(var));
 } END
 
 DEFINE2(gc_getmax) {
+  DBGMSG("getmax");
   DECLARE_SPACE(s, stamp, pstamp, x0);
   CHECK_SPACE(s);
 
   DECLARE_VAR(var, stamp, pstamp, x1);
+  DBGMSG("done");
   RETURN_INT(s->vmax(var));
 } END
 
 DEFINE3(gc_dom) {
+  DBGMSG("dom");
   DECLARE_SPACE(s, stamp, pstamp, x0);
   CHECK_SPACE(s);
   DECLARE_VAR(i, stamp, pstamp, x1);
@@ -243,11 +266,13 @@ DEFINE3(gc_dom) {
   }
 
   DomSpec ds(pairs, noOfPairs);
-  s->tdom(i, ds);
+  s->dom(i, ds);
+  DBGMSG("done");
   RETURN_UNIT;
 } END
 
 DEFINE4(gc_domr) {
+  DBGMSG("domr");
   DECLARE_SPACE(s, stamp, pstamp, x0);
   CHECK_SPACE(s);
   DECLARE_VAR(i, stamp, pstamp, x1);
@@ -266,63 +291,75 @@ DEFINE4(gc_domr) {
   }
 
   DomSpec ds(pairs, noOfPairs);
-  s->tdom(i, ds, boolvar);
+  s->domR(i, ds, boolvar);
+  DBGMSG("done");
   RETURN_UNIT;
 } END
 
 DEFINE4(gc_rel) {
+  DBGMSG("rel");
   DECLARE_SPACE(s, stamp, pstamp, x0);
   CHECK_SPACE(s);
   DECLARE_VAR(i, stamp, pstamp, x1);
   DECLARE_INT(rel, x2);
   DECLARE_VAR(j, stamp, pstamp, x3);
-  s->trel(i, UnsafeGecode::int2reltype[rel], j);
+  s->rel(i, UnsafeGecode::int2reltype[rel], j);
+  DBGMSG("done");
   RETURN_UNIT;
 } END
 
 DEFINE4(gc_reli) {
+  DBGMSG("reli");
   DECLARE_SPACE(s, stamp, pstamp, x0);
   CHECK_SPACE(s);
   DECLARE_VAR(i, stamp, pstamp, x1);
   DECLARE_INT(rel, x2);
   DECLARE_INT(j, x3);
-  s->treli(i, UnsafeGecode::int2reltype[rel], j);
+  s->relI(i, UnsafeGecode::int2reltype[rel], j);
+  DBGMSG("done");
   RETURN_UNIT;
 } END
 
 DEFINE5(gc_relr) {
+  DBGMSG("relr");
   DECLARE_SPACE(s, stamp, pstamp, x0);
   CHECK_SPACE(s);
   DECLARE_VAR(i, stamp, pstamp, x1);
   DECLARE_INT(rel, x2);
   DECLARE_VAR(j, stamp, pstamp, x3);
   DECLARE_VAR(boolVar, stamp, pstamp, x4);
-  s->trelR(i, UnsafeGecode::int2reltype[rel], j, boolVar);
+  s->relR(i, UnsafeGecode::int2reltype[rel], j, boolVar);
+  DBGMSG("done");
   RETURN_UNIT;
 } END
 
 DEFINE5(gc_relir) {
+  DBGMSG("relir");
   DECLARE_SPACE(s, stamp, pstamp, x0);
   CHECK_SPACE(s);
   DECLARE_VAR(i, stamp, pstamp, x1);
   DECLARE_INT(rel, x2);
   DECLARE_INT(j, x3);
   DECLARE_VAR(boolVar, stamp, pstamp, x4);
-  s->treliR(i, UnsafeGecode::int2reltype[rel], j, boolVar);
+  s->relIR(i, UnsafeGecode::int2reltype[rel], j, boolVar);
+  DBGMSG("done");
   RETURN_UNIT;
 } END
 
 DEFINE4(gc_eq) {
+  DBGMSG("eq");
   DECLARE_SPACE(s, stamp, pstamp, x0);
   CHECK_SPACE(s);
   DECLARE_VAR(i, stamp, pstamp, x1);
   DECLARE_VAR(j, stamp, pstamp, x2);
   DECLARE_INT(cl, x3);
-  s->teq(i, j, UnsafeGecode::int2cl[cl]);
+  s->eq(i, j, UnsafeGecode::int2cl[cl]);
+  DBGMSG("done");
   RETURN_UNIT;
 } END
 
 DEFINE4(gc_eqv) {
+  DBGMSG("eqv");
   DECLARE_SPACE(s, stamp, pstamp, x0);
   CHECK_SPACE(s);
   DECLARE_VECTOR(v, x1);
@@ -336,22 +373,26 @@ DEFINE4(gc_eqv) {
     DECLARE_VAR(tmp, stamp, pstamp, v->Sub(i));
     vars[i] = tmp;
   }
-  s->teq(vars, UnsafeGecode::int2cl[cl]);
+  s->eqV(vars, UnsafeGecode::int2cl[cl]);
+  DBGMSG("done");
   RETURN_UNIT;
 } END
 
 DEFINE5(gc_eqr) {
+  DBGMSG("eqr");
   DECLARE_SPACE(s, stamp, pstamp, x0);
   CHECK_SPACE(s);
   DECLARE_VAR(i, stamp, pstamp, x1);
   DECLARE_VAR(j, stamp, pstamp, x2);
   DECLARE_INT(cl, x3);
   DECLARE_VAR(boolVar, stamp, pstamp, x4);
-  s->teqR(i, j, boolVar, UnsafeGecode::int2cl[cl]);
+  s->eqR(i, j, boolVar, UnsafeGecode::int2cl[cl]);
+  DBGMSG("done");
   RETURN_UNIT;
 } END
 
 DEFINE5(gc_eqvr) {
+  DBGMSG("eqvr");
   DECLARE_SPACE(s, stamp, pstamp, x0);
   CHECK_SPACE(s);
   DECLARE_VECTOR(v, x1);
@@ -368,11 +409,13 @@ DEFINE5(gc_eqvr) {
     vars[i] = tmp;
   }
 
-  s->teqR(vars, boolVar, UnsafeGecode::int2cl[cl]);
+  s->eqVR(vars, boolVar, UnsafeGecode::int2cl[cl]);
+  DBGMSG("done");
   RETURN_UNIT;
 } END
 
 DEFINE3(gc_distinct) {
+  DBGMSG("distinct");
   DECLARE_SPACE(s, stamp, pstamp, x0);
   CHECK_SPACE(s);
   DECLARE_VECTOR(v, x1);
@@ -387,11 +430,13 @@ DEFINE3(gc_distinct) {
     DECLARE_VAR(tmp, stamp, pstamp, v->Sub(i));
     vars[i] = tmp;
   }
-  s->tdistinct(vars, UnsafeGecode::int2cl[cl]);
+  s->distinct(vars, UnsafeGecode::int2cl[cl]);
+  DBGMSG("done");
   RETURN_UNIT;
 } END
 
 DEFINE3(gc_distincti) {
+  DBGMSG("distincti");
   DECLARE_SPACE(s, stamp, pstamp, x0);
   CHECK_SPACE(s);
   DECLARE_VECTOR(v, x1);
@@ -411,11 +456,13 @@ DEFINE3(gc_distincti) {
     DECLARE_VAR(tmp2, stamp, pstamp, t->Sel(1));
     vars[i] = tmp2;
   }
-  s->tdistinct(offsets, vars, UnsafeGecode::int2cl[cl]);
+  s->distinctI(offsets, vars, UnsafeGecode::int2cl[cl]);
+  DBGMSG("done");
   RETURN_UNIT;
 } END
 
 DEFINE5(gc_linear) {
+  DBGMSG("linear");
   DECLARE_SPACE(s, stamp, pstamp, x0);
   CHECK_SPACE(s);
   DECLARE_VECTOR(v, x1);
@@ -436,12 +483,14 @@ DEFINE5(gc_linear) {
     DECLARE_VAR(tmp2, stamp, pstamp, t->Sel(1));
     vars[i] = tmp2;
   }
-  s->tlinear(offsets, vars, UnsafeGecode::int2reltype[rel], c,
-	     UnsafeGecode::int2cl[cl]);
+  s->linear(offsets, vars, UnsafeGecode::int2reltype[rel], c,
+	    UnsafeGecode::int2cl[cl]);
+  DBGMSG("done");
   RETURN_UNIT;
 } END
 
 DEFINE6(gc_linearr) {
+  DBGMSG("linearr");
   DECLARE_SPACE(s, stamp, pstamp, x0);
   CHECK_SPACE(s);
   DECLARE_VECTOR(v, x1);
@@ -463,71 +512,85 @@ DEFINE6(gc_linearr) {
     DECLARE_VAR(tmp2, stamp, pstamp, t->Sel(1));
     vars[i] = tmp2;
   }
-  s->tlinearR(offsets, vars, UnsafeGecode::int2reltype[rel], c,
-	      boolVar, UnsafeGecode::int2cl[cl]);
+  s->linearR(offsets, vars, UnsafeGecode::int2reltype[rel], c,
+	     boolVar, UnsafeGecode::int2cl[cl]);
+  DBGMSG("done");
   RETURN_UNIT;
 } END
     
 DEFINE3(gc_bool_not) {
+  DBGMSG("bool_not");
   DECLARE_SPACE(s, stamp, pstamp, x0);
   CHECK_SPACE(s);
   DECLARE_VAR(a, stamp, pstamp, x1);
   DECLARE_VAR(b, stamp, pstamp, x2);
-  s->tbool_not(a, b);
+  s->bool_not(a, b);
+  DBGMSG("done");
   RETURN_UNIT;
 } END
 
 DEFINE4(gc_bool_and) {
+  DBGMSG("bool_and");
   DECLARE_SPACE(s, stamp, pstamp, x0);
   CHECK_SPACE(s);
   DECLARE_VAR(a, stamp, pstamp, x1);
   DECLARE_VAR(b, stamp, pstamp, x2);
   DECLARE_VAR(c, stamp, pstamp, x3);
-  s->tbool_and(a, b, c);
+  s->bool_and(a, b, c);
+  DBGMSG("done");
   RETURN_UNIT;
 } END
 
 DEFINE4(gc_bool_or) {
+  DBGMSG("bool_or");
   DECLARE_SPACE(s, stamp, pstamp, x0);
   CHECK_SPACE(s);
   DECLARE_VAR(a, stamp, pstamp, x1);
   DECLARE_VAR(b, stamp, pstamp, x2);
   DECLARE_VAR(c, stamp, pstamp, x3);
-  s->tbool_or(a, b, c);
+  s->bool_or(a, b, c);
+  DBGMSG("done");
   RETURN_UNIT;
 } END
 
 DEFINE4(gc_bool_imp) {
+  DBGMSG("bool_imp");
   DECLARE_SPACE(s, stamp, pstamp, x0);
   CHECK_SPACE(s);
   DECLARE_VAR(a, stamp, pstamp, x1);
   DECLARE_VAR(b, stamp, pstamp, x2);
   DECLARE_VAR(c, stamp, pstamp, x3);
-  s->tbool_imp(a, b, c);
+  s->bool_imp(a, b, c);
+  DBGMSG("done");
   RETURN_UNIT;
 } END
 
 DEFINE4(gc_bool_eq) {
+  DBGMSG("bool_eq");
   DECLARE_SPACE(s, stamp, pstamp, x0);
   CHECK_SPACE(s);
   DECLARE_VAR(a, stamp, pstamp, x1);
   DECLARE_VAR(b, stamp, pstamp, x2);
   DECLARE_VAR(c, stamp, pstamp, x3);
-  s->tbool_eq(a, b, c);
+  s->bool_eq(a, b, c);
+  DBGMSG("done");
   RETURN_UNIT;
 } END
 
 DEFINE4(gc_bool_xor) {
+  DBGMSG("bool_xor");
   DECLARE_SPACE(s, stamp, pstamp, x0);
   CHECK_SPACE(s);
   DECLARE_VAR(a, stamp, pstamp, x1);
   DECLARE_VAR(b, stamp, pstamp, x2);
   DECLARE_VAR(c, stamp, pstamp, x3);
-  s->tbool_xor(a, b, c);
+  s->bool_xor(a, b, c);
+  DBGMSG("done");
   RETURN_UNIT;
 } END
 
 DEFINE3(gc_bool_andv) {
+  DBGMSG("bool_andv");
   DECLARE_SPACE(s, stamp, pstamp, x0);
   CHECK_SPACE(s);
   DECLARE_VECTOR(v, x1);
@@ -542,11 +605,13 @@ DEFINE3(gc_bool_andv) {
     DECLARE_VAR(tmp1, stamp, pstamp, v->Sub(i));
     vars[i] = tmp1;
   }
-  s->tbool_and(vars, b);
+  s->bool_andV(vars, b);
+  DBGMSG("done");
   RETURN_UNIT;
 } END
 
 DEFINE3(gc_bool_orv) {
+  DBGMSG("bool_orv");
   DECLARE_SPACE(s, stamp, pstamp, x0);
   CHECK_SPACE(s);
   DECLARE_VECTOR(v, x1);
@@ -560,11 +625,13 @@ DEFINE3(gc_bool_orv) {
     DECLARE_VAR(tmp1, stamp, pstamp, v->Sub(i));
     vars[i] = tmp1;
   }
-  s->tbool_or(vars, b);
+  s->bool_orV(vars, b);
+  DBGMSG("done");
   RETURN_UNIT;
 } END
 
 DEFINE4(gc_branch) {
+  DBGMSG("branch");
   DECLARE_SPACE(s, stamp, pstamp, x0);
   CHECK_SPACE(s);
   DECLARE_VECTOR(v, x1);
@@ -580,34 +647,44 @@ DEFINE4(gc_branch) {
     DECLARE_VAR(tmp1, stamp, pstamp, v->Sub(i));
     vars[i] = tmp1;
   }
-  s->tbranch(vars, UnsafeGecode::int2bvarsel[varsel],
-	     UnsafeGecode::int2bvalsel[valsel]);
+  s->branch(vars, UnsafeGecode::int2bvarsel[varsel],
+	    UnsafeGecode::int2bvalsel[valsel]);
+  DBGMSG("done");
   RETURN_UNIT;
 } END
 
 DEFINE1(gc_status) {
+  DBGMSG("status");
   DECLARE_SPACE(s, stamp, pstamp, x0);
   CHECK_SPACE(s);
   switch(s->status()) {
   case SS_BRANCH:
+    DBGMSG("done");
     RETURN_INT(0);
   case SS_FAILED:
+    DBGMSG("done");
     RETURN_INT(1);
     break;
   case SS_SOLVED:
+    DBGMSG("done");
     RETURN_INT(2);
   }
+  DBGMSG("strange error!!!");
+
 } END
 
 DEFINE2(gc_commit) {
+  DBGMSG("commit");
   DECLARE_SPACE(s, stamp, pstamp, x0);
   CHECK_SPACE(s);
   DECLARE_INT(i, x1);
   s->commit(i);
+  DBGMSG("done");
   RETURN_UNIT;
 } END
 
 DEFINE1(gc_clone) {
+  DBGMSG("clone");
   DECLARE_SPACE(s, stamp, pstamp, x0);
   CHECK_SPACE(s);
 
@@ -622,10 +699,12 @@ DEFINE1(gc_clone) {
   cr->Init(1, Store::IntToWord(SpaceStamp++));
   cr->Init(2, Store::IntToWord(pstamp));
   UnsafeGecode::gecodeFinalizationSet->Register(cr->ToWord());
+  DBGMSG("done");
   RETURN(cr->ToWord());
 } END
 
 DEFINE1(gc_discard) {
+  DBGMSG("discard");
   GecodeSpace *s;
   if (Store::WordToTransient(x0) != INVALID_POINTER) { REQUEST(x0); }
   ConcreteRepresentation *cr = ConcreteRepresentation::FromWordDirect(x0);
@@ -633,17 +712,21 @@ DEFINE1(gc_discard) {
   
   delete s;
   cr->Replace(0, Store::IntToWord(0));
+  DBGMSG("done");
   RETURN_UNIT;
 } END
 
 DEFINE1(gc_alive) {
+  DBGMSG("alive");
   if (Store::WordToTransient(x0) != INVALID_POINTER) { REQUEST(x0); }
   ConcreteRepresentation *cr = ConcreteRepresentation::FromWordDirect(x0);
   
+  DBGMSG("done");
   RETURN_BOOL(Store::WordToInt(cr->Get(0))!=0);
 } END
 
 DEFINE6(gc_countii) {
+  DBGMSG("countii");
   DECLARE_SPACE(s, stamp, pstamp, x0);
   CHECK_SPACE(s);
   DECLARE_VECTOR(v, x1);
@@ -661,12 +744,14 @@ DEFINE6(gc_countii) {
     vars[i] = tmp;
   }
 
-  s->tcountii(vars, UnsafeGecode::int2reltype[rel],
-	      i, UnsafeGecode::int2reltype[rel2], j);
+  s->countII(vars, UnsafeGecode::int2reltype[rel],
+	     i, UnsafeGecode::int2reltype[rel2], j);
+  DBGMSG("done");
   RETURN_UNIT;
 } END
 
 DEFINE6(gc_countvi) {
+  DBGMSG("countvi");
   DECLARE_SPACE(s, stamp, pstamp, x0);
   CHECK_SPACE(s);
   DECLARE_VECTOR(v, x1);
@@ -684,12 +769,14 @@ DEFINE6(gc_countvi) {
     vars[i] = tmp;
   }
 
-  s->tcountvi(vars, UnsafeGecode::int2reltype[rel],
+  s->countVI(vars, UnsafeGecode::int2reltype[rel],
 	      i, UnsafeGecode::int2reltype[rel2], j);
+  DBGMSG("done");
   RETURN_UNIT;
 } END
 
 DEFINE6(gc_countiv) {
+  DBGMSG("countiv");
   DECLARE_SPACE(s, stamp, pstamp, x0);
   CHECK_SPACE(s);
   DECLARE_VECTOR(v, x1);
@@ -707,12 +794,14 @@ DEFINE6(gc_countiv) {
     vars[i] = tmp;
   }
 
-  s->tcountiv(vars, UnsafeGecode::int2reltype[rel],
+  s->countIV(vars, UnsafeGecode::int2reltype[rel],
 	      i, UnsafeGecode::int2reltype[rel2], j);
+  DBGMSG("done");
   RETURN_UNIT;
 } END
 
 DEFINE6(gc_countvv) {
+  DBGMSG("countvv");
   DECLARE_SPACE(s, stamp, pstamp, x0);
   CHECK_SPACE(s);
   DECLARE_VECTOR(v, x1);
@@ -730,12 +819,14 @@ DEFINE6(gc_countvv) {
     vars[i] = tmp;
   }
 
-  s->tcountvv(vars, UnsafeGecode::int2reltype[rel],
+  s->countVV(vars, UnsafeGecode::int2reltype[rel],
 	      i, UnsafeGecode::int2reltype[rel2], j);
+  DBGMSG("done");
   RETURN_UNIT;
 } END
 
 DEFINE4(gc_element) {
+  DBGMSG("element");
   DECLARE_SPACE(s, stamp, pstamp, x0);
   CHECK_SPACE(s);
   DECLARE_VECTOR(v, x1);
@@ -751,11 +842,13 @@ DEFINE4(gc_element) {
     vars[i] = tmp;
   }
 
-  s->telement(vars, i, j);
+  s->element(vars, i, j);
+  DBGMSG("done");
   RETURN_UNIT;
 } END
 
 DEFINE4(gc_elementi) {
+  DBGMSG("elementi");
   DECLARE_SPACE(s, stamp, pstamp, x0);
   CHECK_SPACE(s);
   DECLARE_VECTOR(v, x1);
@@ -771,11 +864,13 @@ DEFINE4(gc_elementi) {
     args[i] = tmp;
   }
 
-  s->telementi(args, i, j);
+  s->elementI(args, i, j);
+  DBGMSG("done");
   RETURN_UNIT;
 } END
 
 DEFINE4(gc_lex) {
+  DBGMSG("lex");
   DECLARE_SPACE(s, stamp, pstamp, x0);
   CHECK_SPACE(s);
   DECLARE_VECTOR(v1, x1);
@@ -800,11 +895,13 @@ DEFINE4(gc_lex) {
     vars2[i] = tmp;
   }
 
-  s->tlex(vars1, UnsafeGecode::int2reltype[rel], vars2);
+  s->lex(vars1, UnsafeGecode::int2reltype[rel], vars2);
+  DBGMSG("done");
   RETURN_UNIT;
 } END
 
 DEFINE3(gc_min) {
+  DBGMSG("min");
   DECLARE_SPACE(s, stamp, pstamp, x0);
   CHECK_SPACE(s);
   DECLARE_VECTOR(v, x1);
@@ -818,11 +915,13 @@ DEFINE3(gc_min) {
     vars[i] = tmp;
   }
 
-  s->tmin(vars, i);
+  s->min(vars, i);
+  DBGMSG("done");
   RETURN_UNIT;
 } END
 
 DEFINE3(gc_max) {
+  DBGMSG("max");
   DECLARE_SPACE(s, stamp, pstamp, x0);
   CHECK_SPACE(s);
   DECLARE_VECTOR(v, x1);
@@ -836,35 +935,55 @@ DEFINE3(gc_max) {
     vars[i] = tmp;
   }
 
-  s->tmax(vars, i);
+  s->max(vars, i);
+  DBGMSG("done");
   RETURN_UNIT;
 } END
 
 DEFINE4(gc_abs) {
+  DBGMSG("abs");
   DECLARE_SPACE(s, stamp, pstamp, x0);
   CHECK_SPACE(s);
   DECLARE_VAR(i, stamp, pstamp, x1);
   DECLARE_VAR(j, stamp, pstamp, x2);
   DECLARE_INT(cl, x3);
 
-  s->tabs(i, j, UnsafeGecode::int2cl[cl]);
+  s->abs(i, j, UnsafeGecode::int2cl[cl]);
 
+  DBGMSG("done");
   RETURN_UNIT;
 } END
 
 DEFINE4(gc_mult) {
+  DBGMSG("mult");
   DECLARE_SPACE(s, stamp, pstamp, x0);
   CHECK_SPACE(s);
   DECLARE_VAR(i, stamp, pstamp, x1);
   DECLARE_VAR(j, stamp, pstamp, x2);
   DECLARE_VAR(k, stamp, pstamp, x3);
 
-  s->tmult(i, j, k);
+  s->mult(i, j, k);
 
+  DBGMSG("done");
+  RETURN_UNIT;
+} END
+
+DEFINE4(gc_power) {
+  DBGMSG("power");
+  DECLARE_SPACE(s, stamp, pstamp, x0);
+  CHECK_SPACE(s);
+  DECLARE_VAR(i, stamp, pstamp, x1);
+  DECLARE_VAR(j, stamp, pstamp, x2);
+  DECLARE_VAR(k, stamp, pstamp, x3);
+
+  s->power(i, j, k);
+
+  DBGMSG("done");
   RETURN_UNIT;
 } END
 
 DEFINE3(gc_assign) {
+  DBGMSG("assign");
   DECLARE_SPACE(s, stamp, pstamp, x0);
   CHECK_SPACE(s);
   DECLARE_VECTOR(v, x1);
@@ -879,22 +998,36 @@ DEFINE3(gc_assign) {
     vars[i] = tmp;
   }
 
-  s->tassign(vars, UnsafeGecode::int2avalsel[avalsel]);
+  s->assign(vars, UnsafeGecode::int2avalsel[avalsel]);
+  DBGMSG("done");
   RETURN_UNIT;
 } END
 
+DEFINE1(gc_fail) {
+  DBGMSG("fail");
+  DECLARE_SPACE(s, stamp, pstamp, x0);
+  CHECK_SPACE(s);
+  s->fail();
+  DBGMSG("done");
+  RETURN_UNIT;
+} END
 
 // These are only for debugging purposes
 DEFINE1(gc_stamps) {
+  DBGMSG("stamps");
   DECLARE_SPACE(s, stamp, pstamp, x0);
+  DBGMSG("done");
   RETURN_IPAIR(stamp, pstamp);
 } END
 DEFINE1(gc_varStamp) {
+  DBGMSG("varStamp");
   DECLARE_TUPLE(var, x0);
+  DBGMSG("done");
   RETURN(var->Sel(1));
 } END
 
 word InitComponent() {
+  DBGMSG("init gecode");
   UnsafeGecode::gecodeFinalizationSet = new UnsafeGecode::GecodeFinalizationSet();
   UnsafeGecode::gecodeHandler = new UnsafeGecode::GecodeHandler();
   
@@ -908,7 +1041,7 @@ word InitComponent() {
 			   "UnsafeGecode.InvalidVar")->ToWord();
   RootSet::Add(InvalidVarConstructor);
 
-  Record *record = Record::New(52);
+  Record *record = Record::New(54);
 
   record->Init("'InvalidSpace", InvalidSpaceConstructor);
   record->Init("InvalidSpace", InvalidSpaceConstructor);
@@ -1010,6 +1143,8 @@ word InitComponent() {
 		 gc_abs, 4);
   INIT_STRUCTURE(record, "UnsafeGecode", "mult",
 		 gc_mult, 4);
+  INIT_STRUCTURE(record, "UnsafeGecode", "power",
+		 gc_power, 4);
   INIT_STRUCTURE(record, "UnsafeGecode", "assign",
 		 gc_assign, 3);
 
@@ -1017,6 +1152,10 @@ word InitComponent() {
 		 gc_stamps, 1);
   INIT_STRUCTURE(record, "UnsafeGecode", "varStamp",
 		 gc_varStamp, 1);
+
+  INIT_STRUCTURE(record, "UnsafeGecode", "fail",
+		 gc_fail, 1);
+  DBGMSG("done");
 
   RETURN_STRUCTURE("UnsafeGecode$", record);
 }

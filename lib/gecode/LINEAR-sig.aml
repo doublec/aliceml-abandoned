@@ -2,7 +2,7 @@
  * First atttempt for gecode-FD linear wrapper
  *)
 
-import structure FD from "x-alice:/lib/gecode/FD"
+import structure FD from "FD"
 import structure Space from "Space"
 
 signature LINEAR =

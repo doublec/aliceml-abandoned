@@ -129,6 +129,8 @@ sig
 	      unit
     val mult:  Space.space *  fdvar *  fdvar *
 	       fdvar -> unit
+    val power:  Space.space *  fdvar *  fdvar *
+		fdvar -> unit
 						  
     (* Branching strategies *)
 
