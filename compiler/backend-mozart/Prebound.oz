@@ -369,6 +369,8 @@ define
       'Unsafe.Array.sub': Array.get
       'Unsafe.Array.update':
 	 fun {$ A I X} {Array.put A I X} unit end
+      'Unsafe.Vector.sub':
+	 fun {$ V I} V.(I + 1) end
       'Unsafe.cast': fun {$ X} X end
       'Vector.fromList':
 	 fun {$ Xs} {List.toTuple '#' Xs} end
