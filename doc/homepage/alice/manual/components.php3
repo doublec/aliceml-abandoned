@@ -71,7 +71,7 @@
   <P>
     An Alice program is executed by starting a component. In general, a
     component relies on other components. These other components are loaded
-    and evaluated by need by the <I>Komponist</I>, who is part of the runtime
+    and evaluated by need by the <I>Composer</I>, who is part of the runtime
     system.
     A component that is never actually accessed at runtime will not get loaded.
     URI resolving is handled similar to Mozart.
