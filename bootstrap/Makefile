@@ -3,7 +3,7 @@
 ###   Leif Kornstaedt <kornstae@ps.uni-sb.de>
 ###
 ### Copyright:
-###   Leif Kornstaedt, 1999-2001
+###   Leif Kornstaedt, 1999-2003
 ###
 ### Last change:
 ###   $Date$ by $Author$
@@ -28,7 +28,7 @@ FUNCTORS = Prebound.ozf CodeGen.ozf Main.ozf
 .PHONY: all clean
 
 all: alicedep.$(PLATFORM) alicec-mozart.exe \
-	alicec-mozart.$(PLATFORM) alicec-stockwerk.$(PLATFORM)
+	alicec-mozart.$(PLATFORM) alicec-seam.$(PLATFORM)
 
 alicec-mozart.exe: $(FUNCTORS)
 	$(OZL) $(OZLFLAGS) -x Main.ozf -o $@
@@ -55,9 +55,9 @@ alicec-dotnet.$(PLATFORM):
 	echo 'use "make-alicec-dotnet.sml";' | $(SML)
 	if [ ! -f $@ ]; then exit 1; fi
 
-alicec-stockwerk.$(PLATFORM):
+alicec-seam.$(PLATFORM):
 	-rm -f $@
-	echo 'use "make-alicec-stockwerk.sml";' | $(SML)
+	echo 'use "make-alicec-seam.sml";' | $(SML)
 	if [ ! -f $@ ]; then exit 1; fi
 
 clean:
@@ -68,6 +68,6 @@ veryclean: clean
 	-rm -f alicedep.*
 	-rm -f alicec-mozart.* alice-mozart.*
 	-rm -f alicec-dotnet.*
-	-rm -f alicec-stockwerk.*
+	-rm -f alicec-seam.*
 
 distclean: veryclean
