@@ -1,0 +1,10 @@
+structure types : 
+sig
+	type 'a pointer
+	type cfun
+end
+=
+struct
+	type 'a pointer
+	type cfun
+end
