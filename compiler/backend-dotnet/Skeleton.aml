@@ -15,8 +15,8 @@ import
 from "../../lib/system/TextIO"
 
 import
-    structure OS
-from "../../lib/system/OS"
+    structure Config
+from "../../lib/system/Config"
 
 import
     signature SKELETON
@@ -43,11 +43,11 @@ structure Skeleton :> SKELETON =
 
 	fun externals () =
 	    let
-		val stockhome =
-		    case OS.Process.getEnv "STOCKHOME" of
+		val dir =
+		    case Config.homeDir of
 			SOME s => s ^ "/"
 		      | NONE => ""
 	    in
-		readFile (stockhome ^ "Skeleton.il")
+		readFile (dir ^ "Skeleton.il")
 	    end
     end
