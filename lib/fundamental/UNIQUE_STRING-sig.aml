@@ -1,0 +1,30 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure __pervasive       from "Pervasive"
+import type int and bool and order from "ToplevelTypes"
+import signature STRING            from "STRING-sig"
+
+signature UNIQUE_STRING =					(**)
+sig
+    structure String : STRING
+
+    eqtype unique_string
+    type t = unique_string
+
+    val unique :	String.string -> unique_string
+    val string :	unique_string -> String.string
+
+    val equal :		unique_string * unique_string -> bool
+    val compare :	unique_string * unique_string -> order
+    val hash :		unique_string -> int
+end
