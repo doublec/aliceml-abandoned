@@ -12,13 +12,17 @@
 
 SMLofNJ.Internals.GC.messages false;
 CM.make();
+open String;
 local
     val rec ds = fn
 	([prog]) =>
 	    (CodeGen.genProgramCode ("Emil", Main.simplifyString prog); 0)
     val rec dc = fn
 	(fi::rest) =>
-	    (CodeGen.genProgramCode ("Emil", Main.simplifyFile fi); dc (rest))
+	    (CodeGen.genProgramCode (if (extract(fi, size fi-4, NONE)=".dml")
+					 then substring(fi, 0, size fi-4)
+				     else fi,
+					 Main.simplifyFile fi); dc (rest))
       | (nil) => 0
 
     fun dmlc (_, []) =
