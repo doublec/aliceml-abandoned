@@ -109,11 +109,11 @@ struct
 						    chr(n mod 10 + zero)]
 					  (*TODO: not working for WideChar*)
 
-    fun toOctAscii 0			= "\\0"
-      | toOctAscii i			= toOctAscii'(i, nil)
-    and toOctAscii'(0, cs)		= String_implode(#"\\" :: cs)
-      | toOctAscii'(i, cs)		= toOctAscii'(i div 8,
-						  chr(i mod 8 + ord #"0") :: cs)
+    fun toOctAscii i			= String_implode
+					    [#"\\", chr(i div 64 + zero),
+						    chr(i div 8 mod 8 + zero),
+						    chr(i mod 8 + zero)]
+
 
     fun toCString #"\\"			= "\\\\"
       | toCString #"\""			= "\\\""
