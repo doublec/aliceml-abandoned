@@ -123,7 +123,7 @@ DEFINE3(String_substring) {
 
 DEFINE1(String_str) {
   DECLARE_INT(i, x0);
-  char c = static_cast<char>(i);
+  char c = i;
   RETURN(String::New(&c, 1)->ToWord());
 } END
 
