@@ -63,7 +63,7 @@ case $(uname) in
 	;;
 esac
 
-ALICE_LOAD=cache=~/.alice/cache${sep}pattern=?{x}=?{x}.stc${sep}pattern=?{x}=?{x}.dll
+ALICE_LOAD=cache=$HOME/.alice/cache${sep}pattern=?{x}=?{x}.stc${sep}pattern=?{x}=?{x}.dll
 
 if [ ! -z "$ALICE_LOAD_PREFIX" ]
 then
@@ -78,10 +78,10 @@ export ALICE_HOME ALICE_LOAD
 
 ## To use the GUI debugger on Windows/Cygwin:
 #echo run alice "$@"
-#exec insight "$SEAM_HOME"/seam.exe
+#exec insight "$SEAM_HOME"/bin/seam.exe
 
 ## To use the debugger on Unix:
 #(echo "break Base.cc:22"; echo "tty /dev/pts/4"; echo run alice "$@"; cat) |
-#exec gdb "$SEAM_HOME"/seam.exe
+#exec gdb "$SEAM_HOME"/bin/seam.exe
 
 exec "$SEAM_HOME"/bin/seam.exe alice "$@"
