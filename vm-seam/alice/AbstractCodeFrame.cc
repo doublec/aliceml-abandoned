@@ -36,6 +36,13 @@ static void DisassembleAlice(Closure *closure) {
 void AbstractCodeFrame::Environment::Add(word id, word value) {
   Update(Store::WordToInt(id), value);
 }
+
+#if DEBUGGER
+word AbstractCodeFrame::Environment::LookupUnchecked(word id) {
+  return Sub(Store::WordToInt(id));
+}
+#endif
+
 word AbstractCodeFrame::Environment::Lookup(word id) {
   word value = Sub(Store::WordToInt(id));
 #ifdef LIVENESS_DEBUG

@@ -70,7 +70,7 @@ static word GetTypeScheme(Closure *closure) {
 static Vector *GetValues(int length, AbstractCodeFrame::Environment *env) {
   Vector *values = Vector::New(length);
   for (int index = length; index--; ) {
-    values->Init(index, env->Lookup(Store::IntToWord(index)));
+    values->Init(index, env->LookupUnchecked(Store::IntToWord(index)));
   }
   return values;
 }

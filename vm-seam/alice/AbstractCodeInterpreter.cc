@@ -401,7 +401,13 @@ Worker::Result AbstractCodeInterpreter::Run(StackFrame *sFrame) {
 	// DebugFrame Generation
 	word event =
 	  GenerateEntryEvent(pc->Sel(0), pc->Sel(1), localEnv, globalEnv);
-	DebugWorker::PushFrame(event);
+	// TODO: Introduce PushUnder on Stack
+	Assert(frame == (StackFrame *) Scheduler::stackTop);
+	Scheduler::PopFrame(frame->GetSize());
+//	DebugWorker::PushFrame(event);
+	DebugFrame *dFrame = DebugFrame::New(DebugWorker::self, event);
+	frame = AbstractCodeFrame::New(self, pc->ToWord(), globalEnv, 
+				       localEnv, formalArgs->ToWord());
 	pc = TagVal::FromWordDirect(pc->Sel(2));
 	if (Scheduler::GetCurrentThread()->GetDebugMode() == Thread::DEBUG) {
 	  Debugger::SendEvent(event);
@@ -418,9 +424,9 @@ Worker::Result AbstractCodeInterpreter::Run(StackFrame *sFrame) {
 	// Pop current Frame
 	Scheduler::PopFrame(frame->GetSize());
 	// Check for and pop DebugFrame
-	sFrame = Scheduler::GetFrame();
-	Assert(sFrame->GetWorker() == DebugWorker::self);
-	DebugFrame *debugFrame = STATIC_CAST(DebugFrame *, sFrame);
+	StackFrame *dFrame = Scheduler::GetFrame();
+	Assert(dFrame->GetWorker() == DebugWorker::self);
+	DebugFrame *debugFrame = STATIC_CAST(DebugFrame *, dFrame);
 	Scheduler::PopFrame(debugFrame->GetSize());
 	word coord = pc->Sel(0);
 	word stepPoint = pc->Sel(1);

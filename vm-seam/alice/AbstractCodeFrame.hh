@@ -32,6 +32,9 @@ public:
   public:
     using Array::ToWord;
     void Add(word id, word value);
+#if DEBUGGER
+    word LookupUnchecked(word id);
+#endif
     word Lookup(word id);
     void Kill(word id, TagVal *pc, Closure *globalEnv);
     static Environment *New(u_int size);
