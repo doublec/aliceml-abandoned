@@ -251,7 +251,7 @@ structure Http :> HTTP =
 	and parseToken (cs as c::rest, cs') =
 	    if isTokenChar c then parseToken (rest, c::cs')
 	    else parseToken' (cs', cs)
-	  | parseToken (nil, cs') = parseToken (cs', nil)
+	  | parseToken (nil, cs') = parseToken' (cs', nil)
 	and parseToken' (cs, rest) =
 	    TOKEN (String.implode (List.rev cs))::parseFieldValue' rest
 	and parseComment ((c as #"(")::rest, depth, cs) =
