@@ -495,7 +495,7 @@ define
 	 meth create(FeaVal Visual Node)
 	    NewNode = {New FeatureIndNode create(FeaVal Visual Node)}
 	 in
-	    @string = if {{Node getParent($)} isLast(Node $)} then '' else ',' end
+	    @string = if {{Node getParent($)} isLast(Node $)} then '' else ', ' end
 	    @visual = Visual
 	    @tag    = {Visual newTag($)}
 	    @node   = NewNode

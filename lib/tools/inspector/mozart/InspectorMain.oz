@@ -130,13 +130,13 @@ define
 			  fset#fsValGr fsvar#fsVarGr free#freeGr future#futureGr
 			  byteString#byteString]
       NormalIndNodes   = [int#int word#word float#float atom#atom name#name
-			  procedure#procedure hashtuple#tupleInd
+			  procedure#procedure hashtuple#tuple
 			  pipetuple#list labeltuple#vectorInd record#recordInd
 			  fdint#fdInt cell#cellInd
 			  fset#fsVal fsvar#fsVar free#free future#future
 			  byteString#byteString]
       RelationIndNodes = [int#int word#word float#float atom#atom name#name procedure#procedure
-			  hashtuple#tupleGrInd pipetuple#listGr
+			  hashtuple#tupleGr pipetuple#listGr
 			  labeltuple#vectorGrInd record#recordGrInd
 			  cell#cellGrInd fdint#fdIntGr
 			  fset#fsValGr fsvar#fsVarGr free#freeGr future#futureGr

@@ -41,9 +41,8 @@ define
 		
 		%% Container Nodes
 		tuple     # [a(tuple) a(tuple) labelTuple]
-		tupleInd  # [a(tuple) a(tupleInd) labelTupleInd]
 		vector    # [a(vector) a(tuple) labelTuple]
-		vectorInd # [a(vector) a(tupleInd) labelTupleInd]
+		vectorInd # [a(vector) a(vectorInd) a(vectorInd)]
 		list      # [a(list) a(list) pipeTuple]
 		record    # [a(record) a(tuple) labelTuple]
 		recordInd # [a(recordInd) a(tuple) labelTuple]
@@ -69,9 +68,8 @@ define
 
 		%% Container Nodes
 		tupleGr      # [a(tupleGr) a(tupleGr) labelTupleGr]
-		tupleGrInd   # [a(tupleGr) a(tupleGrInd) labelTupleGrInd]
 		vectorGr     # [a(vectorGr) a(tupleGr) labelTupleGr]
-		vectorGrInd  # [a(vectorGr) a(tupleGrInd) labelTupleGrInd]
+		vectorGrInd  # [a(vectorGr) a(vectorGrInd) a(vectorGrInd)]
 		listGr       # [a(listGr) a(listGr) a(listGrM)]
 		%% Required by TreeWidget
 		pipetupleGrS # [a(listGr) a(listGr) a(listGrS)]
