@@ -17,7 +17,7 @@
 #pragma interface "scheduler/Closure.hh"
 #endif
 
-#include "scheduler/Interpreter.hh"
+#include "scheduler/ConcreteCode.hh"
 
 class TaskStack;
 
@@ -39,7 +39,7 @@ public:
   }
 
   ConcreteCode *GetConcreteCode() {
-    return ConcreteCode::FromWord(GetArg(CONCRETE_CODE_POS));
+    return ConcreteCode::FromWordDirect(GetArg(CONCRETE_CODE_POS));
   }
   u_int GetSize() {
     return Block::GetSize() - 1;

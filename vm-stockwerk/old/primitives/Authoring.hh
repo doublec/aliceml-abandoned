@@ -82,7 +82,11 @@
 }
 #define RETURN_UNIT \
   return Interpreter::Result(Interpreter::Result::CONTINUE, 0);
-#define RETURN_INT(i) RETURN(Store::IntToWord(i));
+#define RETURN_INT(i) {							\
+  taskStack->PushFrame(1);						\
+  taskStack->PutInt(0, i);						\
+  return Interpreter::Result(Interpreter::Result::CONTINUE, -1);	\
+}
 #define RETURN_BOOL(b) RETURN_INT(b);
 
 #define REQUEST(w) {							\

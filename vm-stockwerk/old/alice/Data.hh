@@ -134,7 +134,7 @@ public:
 
   static Constructor *New() {
     Block *b = Store::AllocBlock(Alice::ToBlockLabel(Alice::Constructor), 1);
-    b->InitArg(1, Store::IntToWord(0)); //--** print name?
+    b->InitArg(1, 0); //--** print name?
     return static_cast<Constructor *>(b);
   }
   static Constructor *FromWord(word x) {
@@ -390,7 +390,7 @@ public:
 
   static WideString *New(w_char *str, u_int len) {
     Block *b = Store::AllocChunk(WORDS_NEEDED(len, w_char) + 1);
-    b->InitArg(LEN_POS, Store::IntToWord(len));
+    b->InitArg(LEN_POS, len);
     memcpy(reinterpret_cast<char *>(b->GetBase() + 1), str,
 	   len * sizeof(w_char));
     return static_cast<WideString *>(b);

@@ -85,7 +85,7 @@ PrimitiveInterpreter::Run(TaskStack *taskStack, int nargs) {
       }
     } else if (nargs == 0) {
       taskStack->PushFrame(1);
-      taskStack->PutWord(0, Store::IntToWord(0)); // unit
+      taskStack->PutWord(0, 0); // unit
     } else { // construct
       Tuple *tuple = Tuple::New(nargs);
       for (u_int i = nargs; i--; )
@@ -152,7 +152,7 @@ word Primitive::Lookup(String *name) {
   if (!table->IsMember(key)) {
     char message[80 + name->GetLength()];
     sprintf(message, "Primitive::Lookup: unknown primitive `%.*s'",
-	    name->GetLength(), name->GetValue());
+	    static_cast<int>(name->GetLength()), name->GetValue());
     Error(message);
   }
   return table->GetItem(key);

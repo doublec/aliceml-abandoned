@@ -69,7 +69,7 @@ public:
     return (GetSize() - 1) * sizeof(word); // not String::GetLength!
   }
   void SetLength(int len) {
-    InitArg(LEN_POS, Store::IntToWord(len));
+    ReplaceArg(LEN_POS, len);
   }
 
   EnlargableString *Enlarge() {

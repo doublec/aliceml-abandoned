@@ -19,6 +19,7 @@
 
 #include "adt/Stack.hh"
 #include "scheduler/Closure.hh"
+#include "scheduler/Interpreter.hh"
 
 class TaskStack: private Stack {
 private:
@@ -62,7 +63,7 @@ public:
     return GetFrameArg(offset);
   }
   void PutInt(u_int offset, int i) {
-    PutFrameArg(offset, Store::IntToWord(i)); //--** remove IntToWord
+    PutFrameArg(offset, i);
   }
   int GetInt(u_int offset) {
     return Store::DirectWordToInt(GetWord(offset));

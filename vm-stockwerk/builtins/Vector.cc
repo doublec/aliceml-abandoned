@@ -46,7 +46,7 @@ DEFINE2(Vector_tabulate) {
   if (length < 0 || static_cast<u_int>(length) > Vector::maxLen)
     RAISE(GlobalPrimitives::General_Size);
   taskStack->PushFrame(3);
-  taskStack->PutWord(0, Store::IntToWord(0));
+  taskStack->PutInt(0, 0); // start index
   taskStack->PutWord(1, Vector::New(length)->ToWord());
   taskStack->PutWord(2, closure->ToWord());
   taskStack->
@@ -65,7 +65,7 @@ DEFINE1(Vector_tabulate_cont) {
   if (index == vector->GetLength())
     RETURN(vector->ToWord());
   taskStack->PushFrame(3);
-  taskStack->PutWord(0, Store::IntToWord(index));
+  taskStack->PutInt(0, index);
   taskStack->PutWord(1, vector->ToWord());
   taskStack->PutWord(2, closure->ToWord());
   taskStack->

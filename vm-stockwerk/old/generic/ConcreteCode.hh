@@ -41,13 +41,18 @@ public:
     Assert(b == INVALID_POINTER || b->GetLabel() == CONCRETECODE_LABEL);
     return static_cast<ConcreteCode *>(b);
   }
+  static ConcreteCode *FromWordDirect(word x) {
+    Block *b = Store::DirectWordToBlock(x);
+    Assert(b->GetLabel() == CONCRETECODE_LABEL);
+    return static_cast<ConcreteCode *>(b);
+  }
 
   word GetAbstractCode() {
     return GetArg(ABSTRACT_CODE_POS);
   }
   Interpreter *GetInterpreter() {
     return static_cast<Interpreter *>
-      (Store::WordToUnmanagedPointer(GetArg(INTERPRETER_POS))); //--** Direct
+      (Store::DirectWordToUnmanagedPointer(GetArg(INTERPRETER_POS)));
   }
   void Init(u_int index, word value) {
     InitArg(SIZE + index + 1, value);

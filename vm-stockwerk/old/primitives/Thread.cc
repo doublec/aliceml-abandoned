@@ -63,11 +63,11 @@ DEFINE1(Thread_state) {
   DECLARE_THREAD(thread, x0);
   switch (thread->GetState()) {
   case Thread::BLOCKED:
-    RETURN(Store::IntToWord(0));
+    RETURN_INT(0);
   case Thread::RUNNABLE:
-    RETURN(Store::IntToWord(1));
+    RETURN_INT(1);
   case Thread::TERMINATED:
-    RETURN(Store::IntToWord(2));
+    RETURN_INT(2);
   }
   Error("Thread_state: unknown state returned by Thread::GetState");
 } END

@@ -15,7 +15,7 @@
 DEFINE1(Internal_applyUnit) {
   DECLARE_CLOSURE(closure, x0);
   taskStack->PushCall(closure);
-  RETURN(Store::IntToWord(0)); // unit
+  RETURN_UNIT;
 } END
 
 DEFINE1(Internal_bind) {
