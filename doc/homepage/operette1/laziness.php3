@@ -61,7 +61,7 @@
 
   <PRE>
 	fun mapl f   []    = nil
-	  | mapl f (x::xs) = f x :: byneed(fn() => mapl f xs)
+	  | mapl f (x::xs) = byneed(fn() => f x :: mapl f xs)
   </PRE>
 
 
