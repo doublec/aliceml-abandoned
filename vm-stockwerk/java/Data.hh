@@ -61,7 +61,8 @@ class DllExport Type: public Block {
 public:
   static Type *FromWord(word x) {
     Block *b = Store::WordToBlock(x);
-    Assert(b->GetLabel() == JavaLabel::Class ||
+    Assert(b == INVALID_POINTER ||
+	   b->GetLabel() == JavaLabel::Class ||
 	   b->GetLabel() == JavaLabel::ObjectArrayType ||
 	   b->GetLabel() == JavaLabel::BaseArrayType);
     return static_cast<Type *>(b);
@@ -86,7 +87,7 @@ public:
   static Class *New(class ClassInfo *classInfo);
   static Class *FromWord(word x) {
     Block *b = Store::WordToBlock(x);
-    Assert(b == INVALID_POINTER && b->GetLabel() == JavaLabel::Class);
+    Assert(b == INVALID_POINTER || b->GetLabel() == JavaLabel::Class);
     return static_cast<Class *>(b);
   }
   static Class *FromWordDirect(word x) {
@@ -378,7 +379,7 @@ public:
   }
   static StaticFieldRef *FromWord(word x) {
     Block *b = Store::WordToBlock(x);
-    Assert(b->GetLabel() == JavaLabel::StaticFieldRef);
+    Assert(b == INVALID_POINTER || b->GetLabel() == JavaLabel::StaticFieldRef);
     return static_cast<StaticFieldRef *>(b);
   }
 
@@ -403,7 +404,8 @@ public:
   }
   static InstanceFieldRef *FromWord(word x) {
     Block *b = Store::WordToBlock(x);
-    Assert(b->GetLabel() == JavaLabel::InstanceFieldRef);
+    Assert(b == INVALID_POINTER ||
+	   b->GetLabel() == JavaLabel::InstanceFieldRef);
     return static_cast<InstanceFieldRef *>(b);
   }
 
@@ -427,7 +429,8 @@ public:
   }
   static StaticMethodRef *FromWord(word x) {
     Block *b = Store::WordToBlock(x);
-    Assert(b->GetLabel() == JavaLabel::StaticMethodRef);
+    Assert(b == INVALID_POINTER ||
+	   b->GetLabel() == JavaLabel::StaticMethodRef);
     return static_cast<StaticMethodRef *>(b);
   }
 
@@ -457,7 +460,8 @@ public:
   }
   static VirtualMethodRef *FromWord(word x) {
     Block *b = Store::WordToBlock(x);
-    Assert(b->GetLabel() == JavaLabel::VirtualMethodRef);
+    Assert(b == INVALID_POINTER ||
+	   b->GetLabel() == JavaLabel::VirtualMethodRef);
     return static_cast<VirtualMethodRef *>(b);
   }
 
