@@ -585,7 +585,7 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 		      | SOME (Arity.Unary) => SOME 1
 		      | SOME (Arity.Tuple n) => SOME n
 		      | SOME (Arity.Product labels) =>
-			SOME (Vector.length labels)
+			    SOME (Vector.length labels)
 		val template =
 		    O.Template (coord, Vector.length globalIdRefs,
 				localNames, args', outArityOpt', bodyInstr,
@@ -767,7 +767,7 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 		    O.VecTest (O.LastUseLocal formalId,
 			       #[(idDefs, instr)], elseInstr)
 		val liveness = Liveness.analyze (args, bodyInstr)
-		val outArityOpt = NONE
+		val outArityOpt = SOME 1
 		val abstractCode =
 		    O.Function ((filename, 0, 0), #[], localNames,
 				args, outArityOpt, bodyInstr, liveness)
