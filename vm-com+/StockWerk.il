@@ -144,7 +144,7 @@
       newobj instance void StockWerk.Builtins.String$str::.ctor()
       stsfld class StockWerk.StockWert StockWerk.Prebound::String$str
       newobj instance void StockWerk.Builtins.Thread$current::.ctor()
-      stsfld class StockWerk.StockWert StockWerk.Prebound::Int$toString
+      stsfld class StockWerk.StockWert StockWerk.Prebound::Thread$current
       newobj instance void StockWerk.Builtins.TextIO$print::.ctor()
       stsfld class StockWerk.StockWert StockWerk.Prebound::TextIO$print
       newobj instance void StockWerk.Builtins.Thread$spawn::.ctor()
@@ -1787,7 +1787,7 @@
       ldsfld class StockWerk.StockWert StockWerk.Prebound::unit
       bne.un.s testTransient
       ldarg.0
-      tail. callvirt instance class StockWerk.StockWert StockWerk.Procedure::Apply0()
+      tail. callvirt instance class StockWerk.StockWert StockWerk.StockWert::Apply0()
       ret
     testTransient:
       ldarg.1
@@ -1824,7 +1824,7 @@
       ldfld class StockWerk.StockWert StockWerk.Tuple2::Value1
       ldloc.0
       ldfld class StockWerk.StockWert StockWerk.Tuple2::Value2
-      tail. callvirt instance class StockWerk.StockWert StockWerk.Procedure::Apply2(class StockWerk.StockWert, class StockWerk.StockWert)
+      tail. callvirt instance class StockWerk.StockWert StockWerk.StockWert::Apply2(class StockWerk.StockWert, class StockWerk.StockWert)
       ret
     testTransient:
       ldarg.1
@@ -1863,7 +1863,7 @@
       ldfld class StockWerk.StockWert StockWerk.Tuple3::Value2
       ldloc.0
       ldfld class StockWerk.StockWert StockWerk.Tuple3::Value3
-      tail. callvirt instance class StockWerk.StockWert StockWerk.Procedure::Apply3(class StockWerk.StockWert, class StockWerk.StockWert, class StockWerk.StockWert)
+      tail. callvirt instance class StockWerk.StockWert StockWerk.StockWert::Apply3(class StockWerk.StockWert, class StockWerk.StockWert, class StockWerk.StockWert)
       ret
     testTransient:
       ldarg.1
@@ -2018,6 +2018,7 @@
       ldarg.1
       isinst StockWerk.Int
       brfalse.s testTransient
+      ldarg.1
       castclass StockWerk.Int
       ldfld int32 StockWerk.Int::Value
       newobj instance void StockWerk.Char::.ctor(int32)
@@ -2048,6 +2049,7 @@
       ldarg.1
       isinst StockWerk.Char
       brfalse.s testTransient
+      ldarg.1
       castclass StockWerk.Char
       ldfld int32 StockWerk.Char::Value
       newobj instance void StockWerk.Int::.ctor(int32)
@@ -2336,7 +2338,7 @@
       ldarg.1
       castclass StockWerk.Char
       ldfld int32 StockWerk.Char::Value
-      call class System.String System.Char::ToString(int32)
+      call class System.String System.Char::ToString(wchar)
       newobj instance void StockWerk.String::.ctor(class System.String)
       ret
     testTransient:
