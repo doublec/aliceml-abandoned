@@ -15,8 +15,10 @@ struct
     val dbCom    = newDB 1 (* Communication. *)
     val dbSearch = newDB 2 (* Search. *)
     val dbManag  = newDB 3 (* Management. *)
+    val dbSlow   = newDB 4 (* Slow search. *)
 
     val dbZero = Word31.fromInt 0 (* Empty mask *)
+    val dbNone = dbZero
     val dbAll  = Word31.notb dbZero (* Full mask *)
 
     (* Print the debug message according to the masks. *)

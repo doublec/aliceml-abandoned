@@ -13,14 +13,14 @@ import structure ExplorerMain from "x-alice:/tools/explorer/ExplorerMain"
 import structure MainWindow   from "x-alice:/tools/explorer/MainWindow"
 import structure Types        from "x-alice:/tools/explorer/Types"
 
-structure MkGRSpace :> RSPACE = 
+functor MkGRSpace (val name : string) :> RSPACE = 
   fct (type a
        val order  : Space.space * a -> unit
        val root   : Space.space
        val rdist  : int) =>
   struct
 
-    val expl = ExplorerMain.initWithSpace root
+    val expl = ExplorerMain.initWithSpace (root, name)
     val state = valOf (!expl)
 
     val _ = Types.setHideFailed expl false
@@ -36,7 +36,7 @@ structure MkGRSpace :> RSPACE =
         Future.await f
       end
 
-    type rspace = Types.tree
+    type rspace = (Types.tree * a Path.t)
 
     fun getQLeft  tree = ExplorerNode.getLeftChild tree
     fun getQRight tree = ExplorerNode.getRightChild tree
@@ -53,26 +53,25 @@ structure MkGRSpace :> RSPACE =
         | Types.UNKNOWN => assert false
       end
 
-    fun status tree = serve (qStatus, tree)
+    fun status (tree, _) = serve (qStatus, tree)
 
     fun applyPath (tree, []) = tree
-      | applyPath (tree, Path.Better _ :: l) = tree
+      | applyPath (tree, Path.Better _ :: l) =  tree (* Better is ignored. *)
       | applyPath (tree, Path.Commit 1 :: l) = (qStatus tree ;
                                                 applyPath (getQLeft tree, l))
       | applyPath (tree, Path.Commit 2 :: l) = (qStatus tree ;
                                                 applyPath (getQRight tree, l))
       | applyPath (tree, _) = assert false
 
-    fun getLeft tree = serve (getQLeft, tree)
-    fun getRight tree = serve (getQRight, tree)
+    fun getLeft (tree, p) = (serve (getQLeft, tree), Path.Commit 1 :: p)
+    fun getRight (tree, p) = (serve (getQRight, tree), Path.Commit 2 :: p)
 
-    fun space path = serve (applyPath, (Types.getTree expl, path))
+    fun space path =
+      (serve (applyPath, (Types.getTree expl, path)), List.rev path)
 
-    fun qPath (Types.N (ifo,tof,_)) = case !tof of
-      NONE => []
-    | SOME m => Path.Commit (#alternative ifo) :: (qPath m)
+    fun path (tree, p) = List.rev p
 
-    fun path tree = serve (qPath, tree)
+    fun getSpace (tree, _) = ExplorerNode.getSpace tree
 
-    fun getSpace tree = ExplorerNode.getSpace tree
+    fun best ((tree, p), sol) = (tree, p) (* Ignored. *)
   end

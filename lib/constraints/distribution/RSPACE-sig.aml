@@ -24,6 +24,7 @@ sig
   val getLeft  : rspace -> rspace  (* NotBranching *)
   val getRight : rspace -> rspace  (* NotBranching *)
   val getSpace : rspace -> Space.space
+  val best     : rspace * a -> rspace (* Add a new contraint. *)
 end
 
 exception NotBranching

@@ -78,6 +78,12 @@ To start the search,
 	val sols = Engine.start(dbAll, hosts)
 
 The arguments to 'start' are a debug level and a list of hosts.
+It returns a channel 'sols' where solutions will be put concurrently.
+In search mode "ONE", the channel may contain many solutions
+ (or none if the problem has no solutions).
+In search mode "ALL", the channel contains all the solutions.
+In search mode "BEST", the channel may contain many solutions. The last one
+is the best one.
 
 
 See Test.aml to get a full example.
@@ -106,7 +112,7 @@ RUN:
   See the file initScript for an example.
 
   If you use the graphical workers, each worker must allow X windows to open.
-  (an unsafe way to do so is 'xhost +' on each worker).
+  (an unsafe way to do so is 'xhost +' on each remote machine).
 
 When this is set up, launch the demo:
 

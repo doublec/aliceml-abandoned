@@ -10,11 +10,13 @@ struct
       * contains the id of the worker and some data. *)
 
   type 'a worker_intf =
-    {id     :        id,                       (* Id of this worker. *)
-     name   :    string,                       (* Nickname of this worker. *)
-     share  :      unit -> ('a Path.t) option, (* Returns available work *)
-     explore: 'a Path.t -> unit, (* Explore the given path in the search tree *)
-     stop   :      unit -> unit
+    {id       :        id,                       (* Id of this worker. *)
+     name     :    string,                       (* Nickname of this worker. *)
+     share    :      unit -> ('a Path.t) option, (* Returns available work *)
+     explore  : 'a Path.t -> unit, (* Explore this path in the search tree *)
+     best     :        'a -> unit, (* Current best solution. *)
+     stop     :      unit -> unit,
+     shutdown :    unit -> unit
      }
     
   type 'a manager_intf =

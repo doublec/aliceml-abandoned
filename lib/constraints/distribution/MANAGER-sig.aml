@@ -6,7 +6,15 @@ import structure Debug     from "Debug"
 
 signature MANAGER =
 sig
-  val new : Debug.db_mask * int * ('a,'b,'c) Common.search_mode * ('a -> string)
-            -> 'a Interface.manager_intf * 'a Channel.t
+  structure ScriptGen : Common.SCRIPT_GEN
+
+  val new : Debug.db_mask
+          * int                                (* Number of workers. *)
+          * (int vector,'a) Common.search_mode (* Search mode *)
+          * (int vector -> string)             (* Print solutions *)
+
+         -> int vector Interface.manager_intf  (* Manager interface *)
+          * (unit -> unit)                     (* Shutdown *)
+          * int vector Channel.t               (* Solutions *)
 end
 

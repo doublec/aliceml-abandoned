@@ -11,27 +11,18 @@ import structure Debug   from "Debug"
 (* Needed only in debug mode *)
 (* import "RemoteWorker" *)
 
-open Common  (* SCRIPT_GEN, BEST, Internalize, ExternalOrder *)
+open Common  (* SCRIPT_GEN, BEST, Internalize, ExternalOrder, mkOrder *)
 
-functor MkEngine (Manager : MANAGER) (ScriptGen : SCRIPT_GEN) =
+functor MkEngine (Manager : MANAGER) =
 struct
   
   open Debug
   val itos = Int.toString
   val wtos = Word31.toString
 
+  structure ScriptGen  = Manager.ScriptGen
   structure MyScript   = ScriptGen.MkScript Space FD FS
   val       searchMode = MyScript.searchMode
-
-  (* If the script does not provide an external order (xOrder),
-   * we build one using the internal order. *)
-  fun mkOrder (iOrder, coercion) (a,b) =
-    let val space = Space.new ()
-      val vars  = coercion (b, space)
-    in
-      iOrder (space, a, vars) ;
-      not ((Space.status space) = Space.FAILED)
-    end
 
   (* Start the search on given hosts. 
    * oxOrder if NONE or SOME f where f is a comparison function *)
@@ -44,10 +35,11 @@ struct
       val _ = dbPrint (dbManag, "Creating Manager\n")
       val searchMode' =
         case searchMode of
-          BEST (c, Internalize f) => BEST (c,ExternalOrder (mkOrder (c,f)))
+          BEST (c, Internalize (f,localscript)) => 
+            BEST (c, ExternalOrder (mkOrder (c,f, MyScript.root, localscript)))
         | x => x
 
-      val (managerInterface, sols) =
+      val (managerInterface, shutdown, sols) =
         Manager.new (verbosity, List.length hostsAndIds, searchMode',
                      ScriptGen.print)
 
@@ -83,7 +75,7 @@ struct
     in
       (* Connect to all workers. *)
       List.appi connect hostsAndIds ;
-      sols 
+      (shutdown, sols)
     end
 end
 

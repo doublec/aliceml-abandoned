@@ -1,30 +1,33 @@
 import signature FD    from "x-alice:/lib/gecode/FD-sig"
 import signature FS    from "x-alice:/lib/gecode/FS-sig"
 import signature SPACE from "x-alice:/lib/gecode/SPACE-sig"
+import structure Space  from "x-alice:/lib/gecode/Space"
 
 structure Common =
 struct
 
   (* In 'BEST' search mode, found solutions are used to restrict the search tree
-   * internal_order (space, sol, vars)
+   * internal_order (space, sol)
    *   posts constraints in the given space such that
    *   sol < vars   i.e. vars are strictly better than sol
    *  'space stands for Space.space *)
-  type ('a, 'b, 'space) internal_order = 'space * 'a * 'b -> unit
+  type ('a, 'space) internal_order = 'space * 'a -> unit
 
   (* In 'BEST' search mode, two choices :
    *   - Build automatically an order on solutions using a conversion function
+   *     which injects a solution in the variables used by the internal order.
    *   - Provide a comparison for solutions, compatible with the internal order,
    *     that is, externalOrder (x, y) iff y is strictly better than x
    *)
-  datatype ('a,'b,'space) compare_mode =
-    Internalize of 'a * 'space -> 'b (* Conversion function *)
-  | ExternalOrder of 'a * 'a -> bool (* Comparison of solutions. *)
+  datatype ('a, 'space) compare_mode =
+    Internalize   of ('a * 'space -> unit) (* Conversion function. *)
+                   * ('space -> unit)      (* Initializing space. *)
+  | ExternalOrder of 'a * 'a -> bool     (* Comparison of solutions. *)
 
-  datatype ('a,'b,'space) search_mode =
+  datatype ('a, 'space) search_mode =
     ONE
   | ALL
-  | BEST of ('a,'b,'space) internal_order * ('a,'b,'space) compare_mode
+  | BEST of ('a, 'space) internal_order * ('a, 'space) compare_mode
     
   signature SCRIPT_GEN =
     sig
@@ -34,12 +37,12 @@ struct
         (FS : FS where type space = Space.space
          where type intvar = FD.intvar
          where type boolvar = FD.boolvar)  :
+
         sig
-          (* type variables = FD.intvar vector *)
-          
-          val script      : unit -> (FD.intvar vector) * Space.space
-          val getSolution : (FD.intvar vector) * Space.space -> (int vector)
-          val searchMode  : (int vector, FD.intvar vector, Space.space) search_mode
+          val root        : Space.space
+          val script      : Space.space -> unit
+          val getSolution : Space.space -> int vector
+          val searchMode  : (int vector, Space.space) search_mode
         end
 
       (* print solutions. Used for debug. *)      
@@ -55,6 +58,20 @@ struct
         
     end
   
+  (* Builds an external order using the internal order. *)
+  fun mkOrder (iOrder, inject, rootspace, localscript) =
+            let
+              val localspace = Space.clone rootspace
+              val _ = localscript localspace
+            in           
+              fn (a,b) =>  (* true iff a < b *)
+              let val space = Space.clone localspace
+              in
+                inject (b, space) ;   (* Injects the constraints vars = b *)
+                iOrder (space, a) ;   (* Injects the constraints a < vars *)
+                not ((Space.status space) = Space.FAILED)
+              end
+            end
 end
 
 

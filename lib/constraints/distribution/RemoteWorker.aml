@@ -10,15 +10,14 @@ import structure MkWorker from"MkWorker"
 (* A graphical interface *)
 import "MkGRSpace"
 
-local structure PreWorker = MkWorker MkGRSpace
-in
-
 structure RemoteWorker =
 struct	    
 
   (* For debugging purposes mostly, we use a local log file. *)
+  val filename = OS.FileSys.tmpName ()
+    
   val log =
-    let val filename = OS.FileSys.tmpName ()
+    let 
       val logfile =
         TextIO.openOut filename
         handle IO.Io {name=n, function=f, cause=c} =>
@@ -32,14 +31,17 @@ struct
         ((* print msg ; *)
          TextIO.output(logfile, msg) ;
          TextIO.flushOut logfile)
-      val _ = logIt ("** "^filename^" is the log file for remoteWorker")
     in
       logIt
     end
-
+  
+  fun logp m = (print m ; log m) 
+    
   fun start (ticket, id, name, verbosity) =
     let 
-      val _ = log (" #" ^ (Int.toString id) ^ " (aka " ^ name ^ ")\n\n")
+      val _ = logp
+        ("** "^filename^" is the log file for remoteWorker" ^
+         " #" ^ (Int.toString id) ^ " (aka " ^ name ^ ")\n\n")
 
       (* Get the ticket, and unpack the gifts. *)
       structure Parcel = unpack (Remote.take ticket) : PARCEL
@@ -47,7 +49,8 @@ struct
       val managerIntf = Parcel.interface
 
       (* Create a real worker and launch it. *)
-      structure Worker = PreWorker ScriptGen 
+      structure Worker =
+        MkWorker (MkGRSpace (val name = "Worker " ^ name)) ScriptGen
     in
       Worker.register (id, name, log, verbosity, managerIntf)
     end
@@ -80,8 +83,8 @@ struct
                 OS.Process.exit OS.Process.failure)
 
                   | e =>
-               (log ("\n Error : Exception raised\n" ^ (exnName e) ^ "\n" ^
-                     (exnMessage e) ^ "\n -- see above --\n\n") ;
+               (logp ("\n Error : Exception raised\n" ^ (exnName e) ^ "\n" ^
+                      (exnMessage e) ^ "\n -- see above --\n\n") ;
                 raise e))
            
     | _ => 
@@ -89,5 +92,4 @@ struct
             OS.Process.exit OS.Process.failure)		
 
   val _ = entryPoint (CommandLine.arguments ())  
-end
 end

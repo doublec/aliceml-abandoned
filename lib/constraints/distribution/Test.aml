@@ -16,9 +16,9 @@ val itos = Int.toString
  *   All numbers must be different
  *)
 val max = 10
-val size = 5
-val numbers1 = #[1, 1, 2, 3, 1]
-val numbers2 = #[2, 3, 4, 5, 6]
+val size = 6
+val numbers1 = #[2, 1, 2, 5, 1, 6]
+val numbers2 = #[1, 3, 4, 3, 6, 7]
 
 infix %
 fun a % b = Vector.sub (a,b)
@@ -38,29 +38,58 @@ struct
       fun fromInt sp n = FD.intvar (sp,#[(n,n)])
       fun toInt   sp v = FD.Reflect.value (sp,v)
 
-      fun script () =
-        let
-          val space = Space.new () 
-          val vars = FD.rangeVec(space, size, (0, max))
-          val reif = FD.boolvarVec (space, size)
-          val nreif = FD.boolvarVec (space, size)
+      (* The initial root space. *)
+      val root = Space.new () 
+
+      (* Some variables. *)
+      val vars  = FD.rangeVec   (root, size, (0, max))
+      val reif  = FD.boolvarVec (root, size)
+      val nreif = FD.boolvarVec (root, size) (* not reif *)
+      val reif2 = Vector.map FD.Reflect.boolvar2intvar reif
+      val sum   = FD.intvar (root, #[(0, size*max)])
+      val kvars = Vector.tabulate
+        (size+1, (fn i => if i<size then (1,vars%i) else (~1, sum)))
+
+      (* Propagators. *)
+      fun script space =
+        (FD.distinct (space, vars, cn) ;
+         VectorPair.app
+         (fn (b1, b2) => FD.nega(space, b1, b2)) (reif, nreif) ;
+         
+         Vector.appi
+         (fn (i, var) =>
+          (FD.Reified.equal
+           (space, var, fromInt space (numbers1%i), reif%i, cn) ;
+           FD.Reified.equal
+           (space, var, fromInt space (numbers2%i), nreif%i, cn)))
+         vars ;
+        
+         (* Sum *)
+         FD.linear (space, kvars, FD.EQ, 0, cn) ;
+         
+         FD.branch (space, reif2, FD.B_NONE, FD.B_MIN);
+         ())
+
+(*      val searchMode = Common.ALL *)
+
+      fun iOrder (sp, sol) =
+        let val lsum = Vector.foldl (fn (e,s) => e+s) 0 sol
+            val vsum = fromInt sp lsum
         in
-          FD.distinct (space, vars, cn) ;
-          VectorPair.app (fn (b1, b2) => FD.nega(space, b1, b2)) (reif, nreif) ;
-
-          Vector.appi
-          (fn (i, var) =>
-           (FD.Reified.equal (space, var, fromInt space (numbers1%i), reif%i, cn) ;
-            FD.Reified.equal (space, var, fromInt space (numbers2%i), nreif%i, cn)))
-          vars ;
-
-          FD.branch(space, Vector.map FD.Reflect.boolvar2intvar reif, FD.B_NONE, FD.B_MIN);
-          (vars, space)
+          FD.rel (sp, sum, FD.LE, vsum)
         end
 
-      val searchMode = Common.ALL
+      fun xOrder (a,b) =
+        let
+          val sum1 = Vector.foldl (fn (e,s) => e+s) 0 a
+          val sum2 = Vector.foldl (fn (e,s) => e+s) 0 a
+        in
+          sum1 < sum2
+        end
+
+      val searchMode = Common.BEST (iOrder, Common.ExternalOrder xOrder) 
         
-      fun getSolution (v,space) = Vector.map (toInt space) v
+      fun getSolution space = Vector.map (toInt space) vars
         
     end
 
@@ -90,10 +119,10 @@ val _ =
 	structure Manager = GManager Prob
 
 	(* We build the search engine. *)
-	structure Engine = MkEngine Manager Prob
+	structure Engine = MkEngine Manager
 	    
 	(* As soon as the engine starts, it returns a channel of solutions. *)
-	val sols = Engine.start(dbAll, hosts)
+	val (shutdown, sols) = Engine.start(dbAll, hosts)
 
 	val l = Channel.toList sols
     in
@@ -108,6 +137,7 @@ val _ =
       while Option.map (String.isPrefix "q") (TextIO.inputLine TextIO.stdIn) <> SOME true do () ;
         
         print "Bye.\n" ;
+        shutdown () ;
         OS.Process.exit OS.Process.success
     end
 

@@ -1,6 +1,7 @@
 import structure Remote  from "x-alice:/lib/distribution/Remote"
 import structure Channel from "x-alice:/lib/data/Channel"
 
+import structure Common  from "Common"
 import structure Utils   from "Utils"
 import structure Path    from "Path"
 import signature MANAGER from "MANAGER-sig"
@@ -12,7 +13,7 @@ infix 0 %
 fun a % b = Array.sub (a,b)
 in
 
-structure Manager :> MANAGER =
+functor MkManager (ScriptGen : Common.SCRIPT_GEN) :> MANAGER =
 struct
 
   open Debug
@@ -24,6 +25,8 @@ struct
    * If you think that n should be unknown, just use extensible arrays,
    * or hashtables or whatever.
    * Beware : All functions of the interface can be called concurrently. *)
+
+  structure ScriptGen = ScriptGen
 
   fun new (verbosity, n, searchMode, printSol) =
     let
@@ -40,7 +43,9 @@ struct
          name     = "Dummy" ,
          share    = fn _ => assert false ,
          explore  = fn _ => assert false ,
-         stop     = fn () => ()
+         best     = fn _ => () ,
+         stop     = fn () => () ,
+         shutdown = fn () => ()
          }
                 
       (* An array of all worker interfaces. *)
@@ -48,7 +53,30 @@ struct
         
       (* Returns the name of Worker #id *)
       fun name id = #name (workers%id)
-        
+
+      val searchBest = 
+        case searchMode of
+          Common.BEST (_, Common.ExternalOrder xcmp) => SOME xcmp
+        | Common.BEST (_, _) => assert false
+        | _ => NONE
+
+      (* Current best solution. *)
+      val best = ref NONE
+
+      fun updateBest sol =
+        case searchBest of
+          NONE => ()
+        | SOME xcmp =>
+            let
+              val p = Promise.promise ()
+              val oldbest = Ref.exchange (best, Promise.future p)
+            in
+            if oldbest = NONE orelse xcmp (valOf oldbest, sol) then
+              (Promise.fulfill (p, SOME sol) ;
+               Array.app (fn w => #best w sol) workers)
+            else Promise.fulfill (p, oldbest)
+            end 
+
       (* List of workers not known to be idle,
        * that is, workers that received 'explore',
        * and that have not sent 'find' *)
@@ -77,8 +105,13 @@ struct
          
          Seq.stop () ;
          Log.stop () ;
+         if searchBest <> NONE then Channel.put (solutions, valOf (!best))
+         else () ;
          Channel.close solutions ;
          ())
+
+      (* Shutdown all workers. *)
+      fun shutdown () = Array.app (fn w => #shutdown w ()) workers
         
       (* Ask Worker #id if it has some work to share. *)
       fun askForWork id = #share (workers%id) ()
@@ -101,7 +134,7 @@ struct
                    (Utils.sleepms 800 ;
                     Seq.app findWorkFor id) (* Loop, but later. I! *)
                | SOME w => 
-                   (llog (dbCom, name id ^ " gets work " ^ Path.print w) ;
+                   (llog (dbCom, name id ^ " gets work " ^ Path.print w ^ "\n");
                     sendWork id w)
 
     (******   Functions of the manager interface.   ******)
@@ -111,7 +144,9 @@ struct
         (llog (dbCom, #name workerIntf ^
                " (#" ^ (Int.toString (#id workerIntf)) ^ ") has registered.\n");
          Array.update (workers, #id workerIntf, workerIntf) ;
-         if isFinished () then #stop workerIntf () else ())
+         if isFinished () then #stop workerIntf ()
+         else if !best <> NONE then #best workerIntf (valOf (!best))
+         else ())
         
       (* FIND work to be done. *)
       fun find id =
@@ -123,7 +158,9 @@ struct
       fun collect (sol, id, path) =
         (llog (dbCom, name id ^ " has sent a solution at path " ^
                (Path.print path) ^ ".\nNamely " ^ (printSol sol) ^ "\n") ;
-         Channel.put (solutions, sol))
+         Channel.put (solutions, sol) ;
+         if searchMode = Common.ONE then terminate()
+         else updateBest sol)
         
       (* LOG a message. *)
       fun log (id, msg) = Log.app print (name id ^ " says : " ^ msg)
@@ -141,8 +178,8 @@ struct
            log      = fn args => spawn (log args)}     (* Asynchronous *)
         end
     in
-      (managerInterface, solutions)
+      (managerInterface, shutdown, solutions)
     end
-  
+
 end
 end

@@ -18,7 +18,8 @@ MANAGER-sig.stc: \
 	Interface.stc \
 	Debug.stc
 
-Manager.stc: \
+MkManager.stc: \
+	Common.stc \
 	Utils.stc \
 	Path.stc \
 	MANAGER-sig.stc \
@@ -26,9 +27,9 @@ Manager.stc: \
 
 GManager.stc: \
 	MANAGER-sig.stc \
-	Manager.stc \
+	MkManager.stc \
 	Common.stc \
-	Path.stc
+	MkGRSpace.stc
 
 MkEngine.stc: \
 	Common.stc \

@@ -1,55 +1,45 @@
 import structure Remote  from "x-alice:/lib/distribution/Remote"
-import structure Space from "x-alice:/lib/gecode/Space"
-import structure FD    from "x-alice:/lib/gecode/FD"
-import structure FS    from "x-alice:/lib/gecode/FS"
+import structure Space   from "x-alice:/lib/gecode/Space"
+import structure FD      from "x-alice:/lib/gecode/FD"
+import structure FS      from "x-alice:/lib/gecode/FS"
 
-(* Related to the Explorer. *)
-import structure ExplorerNode from "x-alice:/tools/explorer/ExplorerNode"
-import structure ExplorerMain from "x-alice:/tools/explorer/ExplorerMain"
-import structure MainWindow   from "x-alice:/tools/explorer/MainWindow"
-import structure Types        from "x-alice:/tools/explorer/Types"
-
-import signature MANAGER from "MANAGER-sig"
-import structure Manager from "Manager"
-import structure Common  from "Common"
-import structure Path    from "Path"
+import signature MANAGER   from "MANAGER-sig"
+import structure MkManager from "MkManager"
+import structure Common    from "Common"
+import structure MkGRSpace from "MkGRSpace"
 
 (* A graphical manager draws the solutions. *)
 
 functor GManager (ScriptGen : Common.SCRIPT_GEN) :> MANAGER =
 struct
 
+  structure Manager = MkManager ScriptGen
+  structure ScriptGen = ScriptGen
+
   structure Script = ScriptGen.MkScript Space FD FS
-  val (variables, rootSpace) = Script.script ()
-    
-  val expl = ExplorerMain.initWithSpace rootSpace
-  val state = valOf (!expl)
-    
-  val _ = Types.setHideFailed expl false
-  val _ = Types.setZoomFollows expl true
-    
-  fun getQLeft  tree = ExplorerNode.getLeftChild tree
-  fun getQRight tree = ExplorerNode.getRightChild tree
-    
-  fun qStatus tree = 
-    (ExplorerNode.noOfChildren (expl, tree) ;
-     ExplorerNode.nodeStatus (expl, tree) ;
-     MainWindow.refresh (ExplorerMain.serve, expl))
-    
-  fun applyPath (tree, []) = tree
-    | applyPath (tree, Path.Better _ :: l) = tree
-    | applyPath (tree, Path.Commit 1 :: l) = (qStatus tree ;
-                                              applyPath (getQLeft tree, l))
-    | applyPath (tree, Path.Commit 2 :: l) = (qStatus tree ;
-                                              applyPath (getQRight tree, l))
-    | applyPath (tree, _) = assert false
-    
-  fun draw path = ExplorerMain.serve
-    (fn () => qStatus(applyPath (Types.getTree expl, path)))
+  val rootSpace = Script.root
+  val _ = Script.script rootSpace
+
+  val (isBestMode, iOrder) =
+    case Script.searchMode of
+      Common.BEST (order, _) => (true, fn (s,a) => order (s, a))
+    | _ => (false, fn (_,_) => assert false) (* Is not used *)
+
+  structure GRSpace = MkGRSpace (val name = "Manager")
+    (type      a = int vector (* ScriptGen.sol *)
+     val   order = iOrder
+     val    root = rootSpace
+     val   rdist = 0)
+
+  fun draw path = 
+    let val space = GRSpace.space path
+    in
+      ignore (GRSpace.status space)
+    end
     
   fun new (verbosity, n, searchMode, printSol) =
     let
-      val (managerIntf, solutions) =
+      val (managerIntf, shutdown, solutions) =
         Manager.new (verbosity, n, searchMode, printSol)
         
       fun collect (sol, id, path) = (draw path ;
@@ -60,7 +50,7 @@ struct
                           collect  = Remote.proxy collect,
                           log      = #log managerIntf}
     in
-      (newInterface, solutions)
+      (newInterface, shutdown, solutions)
     end
   
 end

@@ -7,7 +7,7 @@ SOURCES = Debug.aml Utils.aml \
           Common.aml \
           Path.aml Interface.aml \
           PARCEL-sig.aml \
-          MANAGER-sig.aml Manager.aml GManager.aml \
+          MANAGER-sig.aml MkManager.aml GManager.aml \
           MkEngine.aml \
           RSPACE-sig.aml MkGRSpace.aml \
           MkWorker.aml \
@@ -21,10 +21,8 @@ COMPONENTS = $(SOURCES:%.aml=%.stc)
 
 .PHONY: all msg depend clean veryclean distclean message
 
-all: msg $(COMPONENTS)
-
-msg:
-	@echo "*** Beware: each workers sleeps 950ms at each node."
+all: $(COMPONENTS)
+	@echo "*** Beware: each workers sleeps 520ms at each node."
 	@echo "*** This is why the search is so slow."
 	@echo
 
