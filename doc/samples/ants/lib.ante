@@ -9,6 +9,7 @@ val todo = loop (flip 123 ifyes nop)
 val lost = loop (flip 124 ifyes nop)
 
 fun nextstep step = (step+1) mod 3
+fun prevstep step = (step+2) mod 3
 
 fun sync_trail action0 action1 action2 otherwise failaction =
     sense2 here (marker trailmarker1) ifyes (
@@ -36,27 +37,31 @@ and turnto_trail' (if1,if2) success failure =
 	goto sense_trail_ahead
     ))
 
-fun towards_hill' trailstep trailaction homeaction =
-    turnto_trail (nextstep trailstep) (
-	move ifnot (todo) ++
-	trailaction ++
-	sense here home ifyes homeaction
-    ) otherwise (lost)
-
-fun towards_hill (l0,l1,l2) trailaction homeaction =
-    loop (
-	label l0 ++
-	towards_hill' 0 trailaction homeaction ++
-	label l1 ++
-	towards_hill' 1 trailaction homeaction ++
-	label l2 ++
-	towards_hill' 2 trailaction homeaction
+fun towards_hill' trailstep trailaction homeaction blockaction =
+    letlabel (fn l =>
+	turnto_trail (prevstep trailstep) (
+	    move ifnot blockaction ++
+	    trailaction ++
+	    sense here home ifyes homeaction ++
+	    goto l
+	) otherwise (lost) ++
+	label l
     )
 
-fun sync_towards_hill trailaction homeaction otherwise failaction =
+fun towards_hill (l0,l1,l2) trailaction homeaction blockaction =
+    loop (
+	label l0 ++
+	towards_hill' 0 trailaction homeaction blockaction ++
+	label l1 ++
+	towards_hill' 1 trailaction homeaction blockaction ++
+	label l2 ++
+	towards_hill' 2 trailaction homeaction blockaction
+    )
+
+fun sync_towards_hill trailaction homeaction blockaction otherwise failaction =
     letlabel (fn l0 =>
     letlabel (fn l1 =>
     letlabel (fn l2 =>
 	sync_trail (goto l0) (goto l1) (goto l2) otherwise failaction ++
-	towards_hill (l0,l1,l2) trailaction homeaction
+	towards_hill (l0,l1,l2) trailaction homeaction blockaction
     )))

@@ -18,7 +18,7 @@ fun worker _ =
 	towards_blob (goto "towards_hill")
     ) ++
     proc "towards_hill" (
-	sync_towards_hill nop (goto "drop_food") otherwise (lost)
+	sync_towards_hill nop (goto "drop_food") todo otherwise (lost)
     ) ++
     proc "drop_food" (
 	drop_food (goto "towards_blob")
