@@ -15,7 +15,6 @@ signature UNSAFE_IO_DESC_COMPONENT =
 	structure UnsafeIODesc:
 	    sig
 		exception ClosedStream
-		exception Io of {name: string, function: string, cause: exn}
 
 		(* Common operations supported by all readers/writers *)
 		val hash: 'iodesc -> word
