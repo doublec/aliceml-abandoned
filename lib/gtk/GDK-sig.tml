@@ -1,0 +1,24 @@
+(*
+ * Authors:
+ *   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Thorsten Brunklaus, 2002
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
+import structure GtkTypes from "GtkTypes"
+
+local
+    type bool = int
+in
+    signature GDK =
+	sig
+#include "GTK_TYPES_INTERFACE.aml"
+#include "GDK_INTERFACE.aml"
+	end
+end
