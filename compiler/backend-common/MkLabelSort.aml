@@ -11,16 +11,16 @@
  *)
 
 import
-    structure Crash
-from "../infrastructure/Crash"
-
-import
     structure MkListSort
-from "../misc/MkListSort"
+from "../../lib/utility/MkListSort"
 
 import
     structure Label
-from "../common/Label"
+from "../../lib/rtt/Label"
+
+import
+    structure Crash
+from "../infrastructure/Crash"
 
 import
     signature LABEL_SORT
