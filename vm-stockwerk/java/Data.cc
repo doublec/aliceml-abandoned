@@ -15,6 +15,7 @@
 #endif
 
 #include "generic/RootSet.hh"
+#include "generic/String.hh"
 #include "generic/Backtrace.hh"
 #include "java/ClassInfo.hh"
 #include "java/StackFrame.hh"
@@ -255,11 +256,15 @@ Class *Class::New(ClassInfo *classInfo) {
 	  nVirtualMethods++;
 	}
       } else {
+	word foo = String::New(classInfo->GetName()->Concat("#")->Concat(methodInfo->GetName())->Concat(methodInfo->GetDescriptor())->ExportC())->ToWord();
 	; //--** Error("LinkageError"); //--** throw
-	if (methodInfo->IsStatic())
+	if (methodInfo->IsStatic()) {
+	  b->InitArg(BASE_SIZE + nStaticFields + nStaticMethods, foo);
 	  nStaticMethods++;
-	else
+	} else {
+	  virtualTable->InitArg(nSuperVirtualMethods + nVirtualMethods, foo);
 	  nVirtualMethods++;
+	}
       }
     } else { // is abstract
       Assert(!methodInfo->IsStatic());
