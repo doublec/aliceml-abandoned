@@ -53,14 +53,15 @@ public:
   }
   static void SuspendThread(Thread *thread) {
     //--** remove from runnable queue if it's in there
-    //--** check if argument is current thread
     thread->Suspend();
     thread->GetTaskStack()->Purge();
   }
   static void ResumeThread(Thread *thread) {
-    thread->Resume();
-    if (thread->GetState() == Thread::RUNNABLE)
-      AddThread(thread);
+    if (thread->IsSuspended()) {
+      thread->Resume();
+      if (thread->GetState() == Thread::RUNNABLE)
+	AddThread(thread);
+    }
   }
 
   static bool TestPreempt() {
