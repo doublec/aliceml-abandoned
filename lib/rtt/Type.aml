@@ -665,7 +665,7 @@ struct
 		      fn i => (Label.fromInt(i+1), Vector.sub(ts,i)))
 
     fun namedToIndexed lts =
-	Vector.rev(Vector.fromList(List.mapi namedToIndexed' lts))
+	Vector.fromList(List.mapi namedToIndexed' lts)
 	handle Overflow => raise Row
     and namedToIndexed'(i,(l,t)) =
 	case Label.toInt l
