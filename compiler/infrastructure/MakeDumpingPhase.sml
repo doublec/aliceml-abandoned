@@ -17,7 +17,8 @@ struct
 		TextIO.output(Switches.Debug.logOut, "-- " ^ header ^ ":\n");
 		PrettyPrint.output(Switches.Debug.logOut, pp rep',
 				   !Switches.Debug.logWidth);
-		TextIO.output(Switches.Debug.logOut, "\n")
+		TextIO.output(Switches.Debug.logOut, "\n");
+		TextIO.flushOut Switches.Debug.logOut
 	    );
 	    rep'
 	end

@@ -8,7 +8,8 @@ struct
 
     fun translate context desc_rep =
 	( if not(!Switches.Debug.dumpPhases) then () else
-	     TextIO.output(Switches.Debug.logOut, "-- " ^ name ^ "...\n")
+	     (TextIO.output(Switches.Debug.logOut, "-- " ^ name ^ "...\n");
+	      TextIO.flushOut Switches.Debug.logOut)
 	; Phase.translate context desc_rep
 	)
 end
