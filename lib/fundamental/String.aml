@@ -52,8 +52,6 @@ struct
 
     __primitive val op ^ :    string * string -> string = "String.^"
 
-    fun translate f s	= concat(List.map f (explode s))	(*INEFFICIENT*)
-
     fun isPrefix s1 s2		= isPrefix'(s1,s2,0)
     and isPrefix'(s1,s2,i)	= i = size s1 orelse
 				  i <> size s2 andalso
@@ -84,21 +82,26 @@ struct
     val equal			= op =
     val collate			= CharVector.collate
 
-    fun fields  f  s		= fields'(f, s, 0, 0, nil)
-    and fields'(f, s, i, j, ss) where (j = size s)
-				= List.rev(substring(s,i,j-i)::ss)
-      | fields'(f, s, i, j, ss) where (f(sub'(s,j)))
-      				= fields'(f,s,j+1,j+1, substring(s,i,j-i)::ss)
-      | fields'(f, s, i, j, ss)	= fields'(f,s,i,j+1,ss)
+    fun translate  f s		= translate'(f,s,0,nil)
+    and translate'(f,s,i,ss) where (i = size s)
+			    	= concat(List.rev ss)
+      | translate'(f,s,i,ss)	= translate'(f,s,i+1, f(sub'(s,i))::ss)
 
-    fun tokens  f  s		= tokens'(f, s, 0, 0, nil)
-    and tokens'(f, s, i, j, ss)	where (j = size s)
+    fun fields  f s		= fields'(f,s,0,0,nil)
+    and fields'(f,s,i,j,ss) where (j = size s)
+				= List.rev(substring(s,i,j-i)::ss)
+      | fields'(f,s,i,j,ss) where (f(sub'(s,j)))
+      				= fields'(f,s,j+1,j+1, substring(s,i,j-i)::ss)
+      | fields'(f,s,i,j,ss)	= fields'(f,s,i,j+1,ss)
+
+    fun tokens  f s		= tokens'(f,s,0,0,nil)
+    and tokens'(f,s,i,j,ss)	where (j = size s)
 				= List.rev(if i = j then ss
 					   else substring(s,i,j-i)::ss)
-      | tokens'(f, s, i, j, ss) where (f(sub'(s,j)))
+      | tokens'(f,s,i,j,ss) where (f(sub'(s,j)))
       				= tokens'(f,s,j+1,j+1, if i = j then ss
 					  else substring(s,i,j-i)::ss)
-      | tokens'(f, s, i, j, ss)	= tokens'(f,s,i,j+1,ss)
+      | tokens'(f,s,i,j,ss)	= tokens'(f,s,i,j+1,ss)
 
     fun concatWith s' ss	= concat(concatWith'(s', ss))
     and concatWith'(s', nil)	= nil
