@@ -19,6 +19,7 @@ import structure PPType from "x-alice:/lib/rtt/PPType"
 import structure PervasiveType from "x-alice:/lib/rtt/PervasiveType"
 import structure PPInf from "x-alice:/lib/rtt/PPInf"
 import structure UnsafeValue from "x-alice:/lib/system/UnsafeValue"
+import structure Reflect from "x-alice:/lib/system/Reflect"
 import structure Gtk from "x-alice:/lib/gtk/Gtk"
 import structure Gdk from "x-alice:/lib/gtk/Gdk"
 import structure GtkCanvas from "x-alice:/lib/gtk/GtkCanvas"
@@ -360,7 +361,8 @@ fun scrollY (y,scrolled,vadj) =
 	let 
 	    val reinspect_active = not(Node.getDesc(n) = Node.INTERPUNCT)
 	    val force_active = (Node.isByneed n) handle _ => false
-	    val delete_active = getParent(n) = Empty
+	    val delete_active = getParent(n) = Empty orelse 
+		                (isRelNode(getParent(n)) andalso getParent(getParent(n)) = Empty)
 	    val width_item_list = [EntryObj(LABEL("-5"),
 					      [Handler("activate",w(~5))],
 						       true),
@@ -1087,15 +1089,17 @@ fun setVisible (x,y) = let
 
 
 (********** Inspizieren **********)
+
     fun inspect(v,t) = 
 	let
+	    val va = UnsafeValue.cast v: Reflect.value
 	    val i = Dictionaries.Main.
 		        getHighestIndexAssigned(Dictionaries.maindict) +1
 	    val root = (new();stopButtonSetActive(true)
-			; Dictionaries.RelMan.update(Dictionaries.reldict,(i,nil))
-			; relnumber := 0
+			; Dictionaries.RelMan.update(Dictionaries.reldict,(i,[(V va,ref 0,0)]))
+			; relnumber := 1
 			;!canvasroot)
-	    val n = NewNode.newNode(v,t,i,root)	
+	    val n = NewNode.newNode(va,t,i,root)	
             val line = (Layout.layout(n)
 			;setVisible(get_xdim(n),get_ydim(n)+1)
 			;createSepLine(root,!act_line,canvaswidth(hadj)))
@@ -1113,13 +1117,14 @@ fun setVisible (x,y) = let
 			   
     fun inspectInf(v,t) = 
 	let
+	    val va = UnsafeValue.cast v: Reflect.module
 	    val i = Dictionaries.Main.
 		        getHighestIndexAssigned(Dictionaries.maindict) +1
 	    val root = (new();stopButtonSetActive(true)
-			; Dictionaries.RelMan.update(Dictionaries.reldict,(i,nil))
-			; relnumber := 0
+			; Dictionaries.RelMan.update(Dictionaries.reldict,(i,[(M va,ref 0,0)]))
+			; relnumber := 1
 			;!canvasroot)
-	    val n = NewNode.newNodeInf(v,t,i,root)	
+	    val n = NewNode.newNodeInf(va,t,i,root)	
             val line =( Layout.layout(n)
 		       ;setVisible(get_xdim(n),get_ydim(n)+1)
 		       ;createSepLine(root,!act_line,canvaswidth(hadj)))
