@@ -33,13 +33,13 @@ all: gtkraw.c gtkclean.c
 gtkraw.c: gtkdefs.c
 	$(GCC) $(OPTS) gtkdefs.c > gtkraw.c
 
-gtkclean.c: Prepare.stc
+gtkclean.c: Prepare.alc
 	alicerun Prepare gtkraw.c gtkclean.c
 
-%.stc: %.aml
+%.alc: %.aml
 	$(ALICEC) $< -o $@
 
 clean:
-	rm -f Prepare.stc gtkraw.c gtkclean.c
+	rm -f Prepare.alc gtkraw.c gtkclean.c
 
 distclean: clean

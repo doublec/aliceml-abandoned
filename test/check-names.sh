@@ -2,7 +2,7 @@
 #   ./check-names.sh install/
 
 ALICEDUMP='install/bin/alicelink -d'
-EXT=stc
+EXT=alc
 
 function CHECK {
   for FILE in `ls $1 | grep $EXT`

@@ -8,13 +8,13 @@ ALICERUN = alicerun
 
 .PHONY: run all
 
-all: gtktest.stc
+all: gtktest.alc
 	$(ALICERUN) gtktest
 
 %: %.cc
 	$(CC) $< -o $@ $(FLAGS)
 
-%.stc: %.aml
+%.alc: %.aml
 	$(ALICEC) -c $< -o $@
 
 depend:
@@ -25,7 +25,7 @@ depend:
 
 clean:
 	rm -f *.o
-	rm -f *.stc
+	rm -f *.alc
 	rm -f test valisttest reftest canvastest
 
 distclean:

@@ -33,12 +33,12 @@ ALICELINK = alicelink
 ALICELINK_OPTS = -v
 ifeq ($(TARGET), seam)
 NATIVES = 
-STC = stc
+EXT = alc
 else
 NATIVES = Remote
 OZC = ozc
 OZCOPTS = -z9
-STC = ozf
+EXT = ozf
 endif
 
 ALICESOURCES = \
@@ -50,15 +50,15 @@ ALICESOURCES = \
 OZSOURCES = $(NATIVES:%=Unsafe%.oz)
 
 COMPONENTS = \
-	$(ALICESOURCES:%.aml=%.$(STC)) \
-	LinkedBinRemote.$(STC) \
-	LinkedHttpRemote.$(STC)
-	# $(NATIVES:%=Linked%.$(STC)) \
+	$(ALICESOURCES:%.aml=%.$(EXT)) \
+	LinkedBinRemote.$(EXT) \
+	LinkedHttpRemote.$(EXT)
+	# $(NATIVES:%=Linked%.$(EXT)) \
 
 INSTALLDIRS = $(PREFIX)/lib/distribution
 INSTALLFILES = \
-	$(filter-out $(PREFIX)/lib/distribution/MkRemote.$(STC), \
-	  $(ALICESOURCES:%.aml=$(PREFIX)/lib/distribution/%.$(STC)))
+	$(filter-out $(PREFIX)/lib/distribution/MkRemote.$(EXT), \
+	  $(ALICESOURCES:%.aml=$(PREFIX)/lib/distribution/%.$(EXT)))
 
 .PHONY: all depend install clean veryclean distclean
 
@@ -71,22 +71,22 @@ all: $(COMPONENTS)
 depend:
 	$(ALICEDEP) $(ALICESOURCES) > Makefile.depend
 
-%.$(STC): %.oz
+%.$(EXT): %.oz
 	$(OZC) $(OZCOPTS) -c $< -o $@
 
-Linked%Remote.stc: %Remote.$(STC) $(OZSOURCES:%.oz=%.$(STC)) MkRemote.$(STC)
+Linked%Remote.alc: %Remote.$(EXT) $(OZSOURCES:%.oz=%.$(EXT)) MkRemote.$(EXT)
 	$(ALICELINK) $(ALICELINK_OPTS) $*Remote \
 	--include $*Remote --include MkRemote -o $@
 
-Linked%Remote.ozf: %Remote.$(STC) $(OZSOURCES:%.oz=%.$(STC)) MkRemote.$(STC)
+Linked%Remote.ozf: %Remote.$(EXT) $(OZSOURCES:%.oz=%.$(EXT)) MkRemote.$(EXT)
 	$(ALICELINK) $(ALICELINK_OPTS) $*Remote \
 	--include $*Remote --include UnsafeRemote --include MkRemote -o $@
 
-#Linked%.$(STC): %.$(STC) $(OZSOURCES:%.oz=%.$(STC))
+#Linked%.$(EXT): %.$(EXT) $(OZSOURCES:%.oz=%.$(EXT))
 #	$(ALICELINK) $(ALICELINK_OPTS) $* \
 #	--include $* --include Unsafe$* -o $@
 
-%.$(STC): %.aml
+%.$(EXT): %.aml
 	$(ALICEC) $(ALICEC_OPTS) -c $< -o $@
 
 -include Makefile.depend
@@ -100,14 +100,14 @@ install: $(INSTALLDIRS) $(INSTALLFILES)
 $(INSTALLDIRS):
 	mkdir -p -m 775 $@
 
-#$(NATIVES:%=$(PREFIX)/lib/distribution/%.$(STC)): \
-#	$(PREFIX)/lib/distribution/%.$(STC): Linked%.$(STC)
+#$(NATIVES:%=$(PREFIX)/lib/distribution/%.$(EXT)): \
+#	$(PREFIX)/lib/distribution/%.$(EXT): Linked%.$(EXT)
 #	install -c -m 444 $< $@
 
-$(PREFIX)/lib/distribution/%Remote.$(STC): Linked%Remote.$(STC)
+$(PREFIX)/lib/distribution/%Remote.$(EXT): Linked%Remote.$(EXT)
 	install -c -m 444 $< $@
 
-$(PREFIX)/lib/distribution/%.$(STC): %.$(STC)
+$(PREFIX)/lib/distribution/%.$(EXT): %.$(EXT)
 	install -c -m 444 $< $@
 
 ##
@@ -115,7 +115,7 @@ $(PREFIX)/lib/distribution/%.$(STC): %.$(STC)
 ##
 
 clean:
-	-rm -f $(NATIVES:%=Unsafe%.$(STC)) $(COMPONENTS) *.ozm
+	-rm -f $(NATIVES:%=Unsafe%.$(EXT)) $(COMPONENTS) *.ozm
 
 veryclean: clean
 

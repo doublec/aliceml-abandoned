@@ -172,7 +172,7 @@ AliceDll word UnsafeComponent() {
   record->Init("'Native", NativeConstructor);
   INIT_STRUCTURE(record, "UnsafeComponent", "Native",
 		 UnsafeComponent_Native, 1);
-  record->Init("extension", String::New("stc")->ToWord());
+  record->Init("extension", String::New("alc")->ToWord());
   INIT_STRUCTURE(record, "UnsafeComponent", "getInitialTable",
 		 UnsafeComponent_getInitialTable, 0);
   INIT_STRUCTURE(record, "UnsafeComponent", "save",

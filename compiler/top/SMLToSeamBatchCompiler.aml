@@ -18,4 +18,4 @@ structure SMLToSeamBatchCompiler =
 			SMLToSeamRecursiveCompiler
 		    val executableHeader =
 			"#!/bin/sh\nexec alicerun $0 \"$@\"\n"
-		    val extension = "stc")
+		    val extension = "alc")

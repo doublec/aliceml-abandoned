@@ -71,7 +71,7 @@ structure SMLToSeamRecursiveCompiler =
 	structure RecursiveCompiler =
 	    MkRecursiveCompiler(structure ComponentManager = ComponentManager'
 				structure Compiler = Compiler
-				val extension = "stc")
+				val extension = "alc")
 
 	val _ = acquireSigRef := RecursiveCompiler.acquireSig
 	val _ = acquireModRef := RecursiveCompiler.acquireMod

@@ -22,7 +22,7 @@ ALICEC = alicec
 ALICETOOL = alicetool 
 CLIBS = gtk+-2.0 libgnomecanvas-2.0
 
-all: stc obj dll hello.stc scramble.stc
+all: alc obj dll hello.alc scramble.alc
 
 ################### SOURCE CODE GENERATION #####################
 
@@ -34,11 +34,11 @@ generate:
 
 ######################### COMPILE ##############################
 
-stc: types.stc $(BINDINGS:%=%-sig.stc) c-sig.stc CORE-sig.stc Core.stc Gtk.stc
+alc: types.alc $(BINDINGS:%=%-sig.alc) c-sig.alc CORE-sig.alc Core.alc Gtk.alc
 obj: $(BINDINGS:%=%-binding.o)
 dll: $(BINDINGS:%=%.dll) c.dll NativeCore.dll
 
-%.stc: %.aml
+%.alc: %.aml
 	alicec $<
 
 %.o: %.cc

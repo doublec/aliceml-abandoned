@@ -34,12 +34,12 @@ ALICESOURCES = \
 	Stream.aml Model.aml Eventlistener.aml TextView.aml EnvView.aml \
 	Client.aml DebuggerControls.aml SourceView.aml
 COMPONENTS = \
-	$(ALICESOURCES:%.aml=%.stc)
+	$(ALICESOURCES:%.aml=%.alc)
 
 INSTALLDIRS = $(PREFIX)/lib/debugger
 INSTALL3DIRS = /c/Programme/SEAM/share/alice/lib/debugger
-INSTALLFILES = $(ALICESOURCES:%.aml=$(INSTALLDIRS)/%.stc)
-INSTALL3FILES = $(ALICESOURCES:%.aml=$(INSTALL3DIRS)/%.stc)
+INSTALLFILES = $(ALICESOURCES:%.aml=$(INSTALLDIRS)/%.alc)
+INSTALL3FILES = $(ALICESOURCES:%.aml=$(INSTALL3DIRS)/%.alc)
 
 .PHONY: all depend install clean veryclean distclean
 
@@ -54,7 +54,7 @@ depend:
 
 -include Makefile.depend
 
-%.stc: %.aml
+%.alc: %.aml
 	$(ALICEC) $(ALICEC_OPTS) -c $< -o $@
 
 ##
@@ -71,10 +71,10 @@ $(INSTALLDIRS):
 $(INSTALL3DIRS):
 	mkdir -p -m 775 $@
 
-$(INSTALLDIRS)/%.stc: %.stc
+$(INSTALLDIRS)/%.alc: %.alc
 	install -c -m 444 $< $@
 
-$(INSTALL3DIRS)/%.stc: %.stc
+$(INSTALL3DIRS)/%.alc: %.alc
 	install -c -m 444 $< $@
 ##
 ## Cleaning Up

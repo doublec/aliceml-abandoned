@@ -15,15 +15,15 @@ INSTALLTO= `alice-config --alicelibdir`/postscript
 
 .PHONY: all install clean
 
-all: PS.stc
+all: PS.alc
 
 install: all
 	mkdir -p $(INSTALLTO)
-	install -c -m444 PS.stc $(INSTALLTO)
+	install -c -m444 PS.alc $(INSTALLTO)
 	install -c -m444 prolog.ps $(INSTALLTO)
 
 clean:
-	rm PS.stc
+	rm PS.alc
 
-%.stc: %.aml
+%.alc: %.aml
 	alicec -c $< -o $@

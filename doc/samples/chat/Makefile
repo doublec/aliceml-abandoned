@@ -1,5 +1,5 @@
 ifdef SEAM
-EXT:=stc
+EXT:=alc
 export EXT
 endif
 

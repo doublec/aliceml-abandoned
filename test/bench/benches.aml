@@ -360,7 +360,7 @@ local
 in
   fun pickleList () =
       let
-	structure S = Pickle.SaveVal(val file = "list.stc"
+	structure S = Pickle.SaveVal(val file = "list.alc"
 				     type t = int list
 				     val x = xs)
       in
@@ -369,7 +369,7 @@ in
 
   fun unpickleList () =
     let
-      structure S = Pickle.LoadVal(val file = "list.stc"
+      structure S = Pickle.LoadVal(val file = "list.alc"
 				   type t = int list)
     in
       ()

@@ -18,23 +18,23 @@ SOURCES= \
 	GtkClasses.aml \
 	GtkDefaults.aml
 
-TARGETS= $(SOURCES:%.aml=%.stc)
+TARGETS= $(SOURCES:%.aml=%.alc)
 
 INSTALLTO= `alice-config --alicetoolsdir`
 
 .PHONY: clean all
 
-all: Glade.stc
+all: Glade.alc
 
-Glade.stc: $(TARGETS)
+Glade.alc: $(TARGETS)
 	alicelink --include ./ ./Main -o $@
 
-%.stc: %.aml
+%.alc: %.aml
 	alicec -c $< -o $@
 
 clean:
 	rm -f $(TARGETS)
-	rm -f Glade.stc
+	rm -f Glade.alc
 
 distclean: clean
 	rm -f Makefile.depend
@@ -44,7 +44,7 @@ depend:
 
 install: all
 	install -d $(INSTALLTO)
-	install Glade.stc $(INSTALLTO)
+	install Glade.alc $(INSTALLTO)
 	install aliceglade `alice-config --alicebindir`
 
 -include Makefile.depend

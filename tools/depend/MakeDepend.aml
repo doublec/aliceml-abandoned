@@ -18,7 +18,7 @@ import signature MAKE_DEPEND  from "MAKE_DEPEND-sig"
 
 local
     structure SMLToMozartMakeDepend = MkMakeDepend(val extension = "ozf")
-    structure SMLToSeamMakeDepend   = MkMakeDepend(val extension = "stc")
+    structure SMLToSeamMakeDepend   = MkMakeDepend(val extension = "alc")
     structure SMLToDotNetMakeDepend = MkMakeDepend(val extension = "dll")
 in
     structure MakeDepend :> MAKE_DEPEND =

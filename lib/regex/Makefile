@@ -10,7 +10,7 @@ NATIVES = NativeRegex
 SOURCES = \
 	NativeRegex.cc
 
-TARGETS = Regex.stc
+TARGETS = Regex.alc
 
 EXTRA_LIBS = 
 EXTRA_INCLUDES = 
@@ -27,7 +27,7 @@ all: $(NATIVES:%=%.dll) $(TARGETS)
 %.dll: %.o
 	$(ALICETOOL) link $(EXTRA_LIBS) $(SOURCES:%.cc=%.o) -o $@
 
-%.stc: %.aml
+%.alc: %.aml
 	alicec -c $< -o $@
 
 clean:

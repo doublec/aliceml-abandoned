@@ -40,7 +40,7 @@
 ##    A complete source tree is created in subdirectory build1.
 ## build1-all:
 ##    The native components are created using ozc.  The component
-##    Build1.stc (and all its imports, transitively) are built
+##    Build1.alc (and all its imports, transitively) are built
 ##    using the bootstrap compiler via recursive invocation.
 ## build1-install:
 ##    A minimal but working system (only consisting of a compiler,
@@ -410,9 +410,9 @@ BUILD1SOURCES = \
 	build1/tools/Linker.aml
 
 INSTALL1DIRS = build1/install build1/install/compiler
-INSTALL1COMPILERFILES = CompilerMain.stc
+INSTALL1COMPILERFILES = CompilerMain.alc
 INSTALL1FILES = \
-	build1/install/tools/Linker.stc \
+	build1/install/tools/Linker.alc \
 	$(INSTALL1COMPILERFILES:%=build1/install/compiler/%) \
 	$(LIBNATIVES:%=build1/install/%)
 
@@ -555,9 +555,9 @@ build1/tools/depend/SMLParser.grm.aml: build1/tools/depend/SMLParser.grm.sml \
 ## Performing Build 1
 ##
 
-build1-all: build1-src build1/Build1.stc
+build1-all: build1-src build1/Build1.alc
 
-build1/%.stc: build1/%.aml
+build1/%.alc: build1/%.aml
 	$(ALICEC0) $(ALICEC_OPTS) --recursive-compilation \
 	--trace-component-access --no-rtt -c $< -o $@
 
@@ -570,11 +570,11 @@ build1-install: build1-all $(INSTALL1DIRS) $(INSTALL1FILES)
 $(INSTALL1DIRS):
 	mkdir -p -m 775 $@
 
-build1/install/compiler/CompilerMain.stc:
-	(cd build1 && tar cf - `find . -name '*.stc'`) | \
+build1/install/compiler/CompilerMain.alc:
+	(cd build1 && tar cf - `find . -name '*.alc'`) | \
 	(cd build1/install && tar xf -)
 
-build1/install/tools/Linker.stc:
+build1/install/tools/Linker.alc:
 
 ########################################################################
 ### BUILD 2
@@ -617,12 +617,12 @@ $(LIBNATIVES:%=build2/%): build2/%: build1/%
 ## Performing Build 2
 ##
 
-build2-all: build2-src build2/lib/rtt/LinkedRTT.stc
+build2-all: build2-src build2/lib/rtt/LinkedRTT.alc
 
-build2/%.stc: build2/%.aml
+build2/%.alc: build2/%.aml
 	$(ALICEC1) $(ALICEC_OPTS) --no-rtt -c $< -o $@
 
-build2/lib/rtt/LinkedRTT.stc: build2/lib/rtt/RTT.stc
+build2/lib/rtt/LinkedRTT.alc: build2/lib/rtt/RTT.alc
 	$(ALICELINK1) $(ALICELINK_OPTS) build2/lib/rtt/RTT \
 	--exclude build2/lib/utility/Unsafe \
 	--exclude build2/lib/system/Unsafe \
@@ -658,15 +658,15 @@ INSTALL3DIRS = \
 #---**
 INSTALL3TOPFILES = alicec.import alice.import COPYING
 INSTALL3LIBFILES = \
-	$(LIBSOURCES0:%.aml=%.stc) \
-	$(DEBUGGERSOURCES:%.aml=%.stc) \
-	fundamental/Pervasive.stc fundamental/Core.stc \
-	fundamental/PACKAGE-sig.stc fundamental/Package.stc
-#	fundamental/RTT.stc 
-INSTALL3COMPILERFILES = CompilerMain.stc ToplevelMain.stc
+	$(LIBSOURCES0:%.aml=%.alc) \
+	$(DEBUGGERSOURCES:%.aml=%.alc) \
+	fundamental/Pervasive.alc fundamental/Core.alc \
+	fundamental/PACKAGE-sig.alc fundamental/Package.alc
+#	fundamental/RTT.alc 
+INSTALL3COMPILERFILES = CompilerMain.alc ToplevelMain.alc
 INSTALL3COMPILERTOPFILES = \
-	SMLToSeamRecursiveCompiler.stc
-INSTALL3TOOLSFILES = Linker.stc Depend.stc
+	SMLToSeamRecursiveCompiler.alc
+INSTALL3TOOLSFILES = Linker.alc Depend.alc
 INSTALL3FILES = \
 	$(INSTALL3TOPFILES:%=build3/install/%) \
 	$(INSTALL3LIBFILES:%=build3/install/lib/%) \
@@ -693,13 +693,13 @@ build3/lib/debugger/%.aml: lib/debugger/%.aml Rel2.import
 
 build3-all: build2-all $(BUILD3DIRS) $(BUILD3SOURCES) \
 	$(LIBNATIVES:%=build3/%) \
-	build3/lib/fundamental/Core.stc \
-	build3/lib/system/Boot.stc \
-	build3/compiler/LinkedCompilerMain.stc \
-	build3/compiler/LinkedToplevelMain.stc \
-	build3/compiler/top/LinkedSMLToSeamRecursiveCompiler.stc
+	build3/lib/fundamental/Core.alc \
+	build3/lib/system/Boot.alc \
+	build3/compiler/LinkedCompilerMain.alc \
+	build3/compiler/LinkedToplevelMain.alc \
+	build3/compiler/top/LinkedSMLToSeamRecursiveCompiler.alc
 
-build3/lib/fundamental/RTT.stc: build2/lib/rtt/LinkedRTT.stc
+build3/lib/fundamental/RTT.alc: build2/lib/rtt/LinkedRTT.alc
 	cp $< $@
 
 build3/alicec.import: lib/fundamental/Fundamental.import lib/Other.import
@@ -709,14 +709,14 @@ build3/alice.import: lib/fundamental/Fundamental.import lib/Other.import \
 	Toplevel.import
 	cat $^ > $@
 
-build3/lib/fundamental/Pervasive.stc: build3/lib/fundamental/Pervasive.aml
+build3/lib/fundamental/Pervasive.alc: build3/lib/fundamental/Pervasive.aml
 	$(ALICEC2) $(ALICEC_OPTS) --no-check-intermediate -c $< -o $@
 
-build3/%.stc: build3/%.aml
+build3/%.alc: build3/%.aml
 	$(ALICEC2) $(ALICEC_OPTS) -c $< -o $@
 
-build3/lib/fundamental/LinkedPervasive.stc: \
-	build3/lib/fundamental/Pervasive.stc
+build3/lib/fundamental/LinkedPervasive.alc: \
+	build3/lib/fundamental/Pervasive.alc
 	$(ALICELINK2) $(ALICELINK_OPTS) \
 	--exclude build3/lib/utility/Unsafe \
 	--exclude build3/lib/system/Unsafe \
@@ -725,7 +725,7 @@ build3/lib/fundamental/LinkedPervasive.stc: \
 	--rewrite "x-alice:/?{x}=../../?{x}" \
 	build3/lib/fundamental/Pervasive -o $@
 
-build3/compiler/LinkedCompilerMain.stc: build3/compiler/CompilerMain.stc
+build3/compiler/LinkedCompilerMain.alc: build3/compiler/CompilerMain.alc
 	$(ALICELINK2) $(ALICELINK_OPTS) --rewrite "build3/?{x}=../?{x}" \
 	--exclude build3/compiler/top/SMLToMozartRecursiveCompiler \
 	--exclude build3/compiler/top/SMLToDotNetRecursiveCompiler \
@@ -733,7 +733,7 @@ build3/compiler/LinkedCompilerMain.stc: build3/compiler/CompilerMain.stc
 	--include build3/compiler \
 	build3/compiler/CompilerMain -o $@
 
-build3/compiler/LinkedToplevelMain.stc: build3/compiler/ToplevelMain.stc
+build3/compiler/LinkedToplevelMain.alc: build3/compiler/ToplevelMain.alc
 	$(ALICELINK2) $(ALICELINK_OPTS) --rewrite "build3/?{x}=../?{x}" \
 	--exclude build3/compiler/top/SMLToMozartRecursiveCompiler \
 	--exclude build3/compiler/top/SMLToDotNetRecursiveCompiler \
@@ -741,18 +741,18 @@ build3/compiler/LinkedToplevelMain.stc: build3/compiler/ToplevelMain.stc
 	--include build3/compiler \
 	build3/compiler/ToplevelMain -o $@
 
-build3/compiler/top/LinkedSMLToSeamRecursiveCompiler.stc: \
-	build3/compiler/top/SMLToSeamRecursiveCompiler.stc
+build3/compiler/top/LinkedSMLToSeamRecursiveCompiler.alc: \
+	build3/compiler/top/SMLToSeamRecursiveCompiler.alc
 	$(ALICELINK2) $(ALICELINK_OPTS) --rewrite "build3/?{x}=../../?{x}" \
 	--include build3/compiler \
 	build3/compiler/top/SMLToSeamRecursiveCompiler -o $@
 
-build3/tools/linker/LinkedMain.stc: $(TOOLSLINKERSOURCES:%.aml=build3/%.stc)
+build3/tools/linker/LinkedMain.alc: $(TOOLSLINKERSOURCES:%.aml=build3/%.alc)
 	$(ALICELINK2) $(ALICELINK_OPTS) --rewrite "build3/?{x}=../?{x}" \
 	--include build3/tools/linker \
 	build3/tools/linker/Main -o $@
 
-build3/tools/depend/LinkedMain.stc: $(TOOLSDEPENDSOURCES:%.aml=build3/%.stc)
+build3/tools/depend/LinkedMain.alc: $(TOOLSDEPENDSOURCES:%.aml=build3/%.alc)
 	$(ALICELINK2) $(ALICELINK_OPTS) --rewrite "build3/?{x}=../?{x}" \
 	--include build3/tools/depend \
 	build3/tools/depend/Main -o $@
@@ -775,16 +775,16 @@ build3/install/%.import: build3/%.import
 build3/install/COPYING: ../COPYING
 	install -c -m 444 $< $@
 
-build3/install/lib/fundamental/Pervasive.stc: \
-	build3/lib/fundamental/LinkedPervasive.stc
+build3/install/lib/fundamental/Pervasive.alc: \
+	build3/lib/fundamental/LinkedPervasive.alc
 	install -c -m 444 $< $@
 
-build3/install/lib/fundamental/Core.stc: \
-	build3/lib/fundamental/Core.stc
+build3/install/lib/fundamental/Core.alc: \
+	build3/lib/fundamental/Core.alc
 	install -c -m 444 $< $@
 
-#build3/install/lib/fundamental/RTT.stc: \
-#	build3/lib/fundamental/RTT.stc
+#build3/install/lib/fundamental/RTT.alc: \
+#	build3/lib/fundamental/RTT.alc
 #	install -c -m 444 $< $@
 
 build3/install/lib/%: build3/lib/%
@@ -796,10 +796,10 @@ build3/install/compiler/%: build3/compiler/Linked%
 build3/install/compiler/top/%: build3/compiler/top/Linked%
 	install -c -m 444 $< $@
 
-build3/install/tools/Linker.stc: build3/tools/linker/LinkedMain.stc
+build3/install/tools/Linker.alc: build3/tools/linker/LinkedMain.alc
 	install -c -m 444 $< $@
 
-build3/install/tools/Depend.stc: build3/tools/depend/LinkedMain.stc
+build3/install/tools/Depend.alc: build3/tools/depend/LinkedMain.alc
 	install -c -m 444 $< $@
 
 ########################################################################

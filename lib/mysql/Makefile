@@ -18,7 +18,7 @@ NATIVES = UnsafeMySQL
 
 SOURCES = UnsafeMySQL.cc
 
-TARGETS = MySQL.stc
+TARGETS = MySQL.alc
 
 EXTRA_LIBS = `mysql_config --libs`
 EXTRA_INCLUDES = `mysql_config --cflags`
@@ -36,12 +36,12 @@ MySQL.dll: $(SOURCES:%.cc=%.o)
 %.dll: %.o
 	alicetool link $(EXTRA_LIBS) $(SOURCES:%.cc=%.o) -o $@
 
-%.stc: %.aml
+%.alc: %.aml
 	alicec -c $< -o $@
 
 clean:
 	rm -f $(NATIVES:%=%.o)
-	rm -f *.stc
+	rm -f *.alc
 	rm -f $(NATIVES:%=%.dll.def)
 	rm -f $(NATIVES:%=%.dll)
 

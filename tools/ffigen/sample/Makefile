@@ -14,9 +14,9 @@ ALICETOOL = alicetool
 NATIVES = util util_binding
 CLIBS = gtk+-2.0 libgnomecanvas-2.0
 
-code: types.stc c-sig.stc util-sig.stc c.dll util.dll demo.stc
+code: types.alc c-sig.alc util-sig.alc c.dll util.dll demo.alc
 
-all: generate types.stc c-sig.stc util-sig.stc c.dll util.dll demo.stc
+all: generate types.alc c-sig.alc util-sig.alc c.dll util.dll demo.alc
 
 
 ################### SOURCE CODE GENERTION #####################
@@ -28,16 +28,16 @@ generate:
 
 ################### SOURCE CODE GENERTION #####################
 
-types.stc: types.aml
+types.alc: types.aml
 	alicec types.aml
 
-c-sig.stc: c-sig.aml
+c-sig.alc: c-sig.aml
 	alicec c-sig.aml
 
-util-sig.stc: util-sig.aml
+util-sig.alc: util-sig.aml
 	alicec util-sig.aml
 
-demo.stc: demo.aml
+demo.alc: demo.aml
 	alicec demo.aml
 
 %.o: %.cc
@@ -50,4 +50,4 @@ util.dll: util.o util-binding.o
 	alicetool -v ld -Wl,-S util.o util-binding.o -o util.dll `pkg-config --libs $(CLIBS)`
 
 clean:
-	rm -f *.stc *.o *.dll
+	rm -f *.alc *.o *.dll

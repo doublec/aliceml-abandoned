@@ -12,9 +12,9 @@ SRCS = hello.aml          \
        move.aml           \
        TextViewer.aml     \
        AliceTour.aml
-OBJS = $(SRCS:%.aml=%.stc)
+OBJS = $(SRCS:%.aml=%.alc)
 
-%.stc: %.aml
+%.alc: %.aml
 	$(ALICEC) $(ALICEC_OPTS) -c $< -o $@
 
 all: $(OBJS)
@@ -23,7 +23,7 @@ depend:
 	$(ALICEDEP) $(SRCS) > Makefile.depend
 
 clean:
-	rm -f *.stc
+	rm -f *.alc
 
 distclean: clean
 	rm -f Makefile.depend

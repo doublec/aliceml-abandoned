@@ -28,32 +28,32 @@ SIGSOURCES 	= $(SIGS:%=%-sig.aml)
 STRUCTSOURCES	= $(STRUCTS:%=%.aml)
 SOURCES 	= $(SIGSOURCES) $(STRUCTSOURCES)
 
-SIGFILES	= $(SIGS:%=%-sig.stc)
-STRUCTFILES	= $(STRUCTS:%=%.stc)
+SIGFILES	= $(SIGS:%=%-sig.alc)
+STRUCTFILES	= $(STRUCTS:%=%.alc)
 FILES		= $(SIGFILES) $(STRUCTFILES)
 
 INSTALLTO = `alice-config --alicelibdir`/tools
 
-all: $(FILES) LinkedInspector.stc
+all: $(FILES) LinkedInspector.alc
 
 depend:
 	$(ALICEDEP) $(SOURCES) > Makefile.depend
 
-LinkedInspector.stc: $(FILES)
+LinkedInspector.alc: $(FILES)
 	$(ALICELINK) $(ALICELINK_OPTS) --include . ./Inspector -o $@
 
-%.stc: %.aml
+%.alc: %.aml
 	$(ALICEC) $(ALICEC_OPTS) -c $< -o $@
 
 -include Makefile.depend
 
 clean: 
-	-rm -f *.stc
+	-rm -f *.alc
 
 distclean: clean
 	-rm -f Makefile.depend
 
-install: LinkedInspector.stc
+install: LinkedInspector.alc
 	mkdir -p -m 775 $(INSTALLTO) #install -d $(INSTALLTO)
-	install -c -m444 LinkedInspector.stc $(INSTALLTO)/Inspector.stc
+	install -c -m444 LinkedInspector.alc $(INSTALLTO)/Inspector.alc
 	install -c -m444 stop.xbm $(INSTALLTO)/stop.xbm

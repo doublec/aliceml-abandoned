@@ -8,7 +8,7 @@ NATIVES = NativeAliceXML
 SOURCES = \
 	NativeAliceXML.cc
 
-TARGETS = AliceXML.stc
+TARGETS = AliceXML.alc
 
 EXTRA_LIBS = -lxml2
 
@@ -25,7 +25,7 @@ AliceXML.dll: $(SOURCES:%.cc=%.o)
 %.dll: %.o
 	alicetool link $(EXTRA_LIBS) $(SOURCES:%.cc=%.o) -o $@
 
-%.stc: %.aml
+%.alc: %.aml
 	alicec -c $< -o $@
 
 clean:

@@ -37,10 +37,10 @@ ALICESOURCES = $(CORE) $(ENUMS) $(UNSAFE) $(GENSIGS) $(MAINFILES)
 
 # names of object files
 OBJECTS = $(CPPSOURCES:%.cc=%.o) $(CPPSOURCES:%.cc=%.dll) \
-	  $(ALICESOURCES:%.aml=%.stc)
+	  $(ALICESOURCES:%.aml=%.alc)
 
 INSTALLTARGETS = $(CPPSOURCES:%.cc=%.dll) \
-	  $(ALICESOURCES:%.aml=%.stc)
+	  $(ALICESOURCES:%.aml=%.alc)
 
 # platform specific settings
 ifdef WINDOWS
@@ -115,7 +115,7 @@ compile: $(OBJECTS)
 	$(ALICETOOL) -v compile -c $< -o $@ \
 	 $(CC_OPTS) `pkg-config --cflags $(PC_OPTS)`
 
-%.stc: %.aml
+%.alc: %.aml
 	$(ALICEC) $(ALICEC_OPTS) $< -o $@
 
 

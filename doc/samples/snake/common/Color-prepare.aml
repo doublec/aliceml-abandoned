@@ -9,9 +9,9 @@
  *
  *)
 
-import signature COLOR  from "COLOR-sig"
-import structure OS     from "x-alice:/lib/system/OS"
-import structure Config from "x-alice:/lib/system/Config"
+import signature COLOR     from "COLOR-sig"
+import structure OS        from "x-alice:/lib/system/OS"
+import structure Component from "x-alice:/lib/system/Component"
 
 structure Color :> COLOR = 
 struct
@@ -89,7 +89,7 @@ struct
 
 end
 
-val ext = if Config.vm = "seam" then "stc" else "ozf"
+val ext = Component.extension
 
 val _ = Pickle.save ("Color." ^ ext, pack (structure Color = Color) 
 		                       :> (structure Color : COLOR))

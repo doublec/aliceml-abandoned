@@ -28,7 +28,7 @@ Will not work with the release version of Alice!
 Do
 
   (cd parsec && make depend && make)
-  make EXT=stc depend simulator
+  make EXT=alc depend simulator
 
 Run the simulator with
 

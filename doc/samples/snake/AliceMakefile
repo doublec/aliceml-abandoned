@@ -10,7 +10,7 @@ endif
 export ROOT
 
 ifndef EXT
-  EXT := stc
+  EXT := alc
 endif
 export EXT
 
@@ -44,7 +44,7 @@ endif
 export ALICEDEP
 
 ifndef M4
-  ifeq (${EXT},stc)
+  ifeq (${EXT},alc)
     M4 := m4 -DGTK2
   else
     M4 := m4

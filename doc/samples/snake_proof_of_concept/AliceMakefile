@@ -15,7 +15,7 @@ endif
 export SH_EXT
 
 ifndef SW_EXT
-  SW_EXT := stc
+  SW_EXT := alc
 endif
 export SW_EXT
 

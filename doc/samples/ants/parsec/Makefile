@@ -2,7 +2,7 @@ SOURCES=CharParser.aml ERROR-sig.aml MkError.aml COMBINATORS-sig.aml MkCombinato
 ALICEC=alicec
 ALICEDEP=alicedep
 
-COMPONENTS=$(addsuffix .stc, $(basename $(SOURCES)))
+COMPONENTS=$(addsuffix .alc, $(basename $(SOURCES)))
 
 all: $(COMPONENTS)
 
@@ -10,7 +10,7 @@ all: $(COMPONENTS)
 %.ozf : %.aml
 	$(ALICEC) $< -o $@	
 
-%.stc : %.aml
+%.alc : %.aml
 	$(ALICEC) $< -o $@	
 
 depend: 

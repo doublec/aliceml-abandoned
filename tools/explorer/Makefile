@@ -38,19 +38,19 @@ SOURCES= \
 	MenuManager.aml \
 	$(GLADE_TARGETS)
 
-TARGETS= $(SOURCES:%.aml=%.stc)
+TARGETS= $(SOURCES:%.aml=%.alc)
 
 .PHONY: clean all
 
-all: LinkedExplorer.stc
+all: LinkedExplorer.alc
 
-LinkedExplorer.stc: $(TARGETS)
+LinkedExplorer.alc: $(TARGETS)
 	alicelink --include ./ ./Explorer -o $@
 
 $(GLADE_TARGETS): $(GLADE_SOURCES)
 	aliceglade $< -o $(GLADE_SOURCES:%.glade=%)
 
-%.stc: %.aml
+%.alc: %.aml
 	alicec -c $< -o $@
 
 clean:
@@ -63,6 +63,6 @@ depend:
 
 install: all
 	install -d $(INSTALLTO)
-	install LinkedExplorer.stc $(INSTALLTO)/Explorer.stc
+	install LinkedExplorer.alc $(INSTALLTO)/Explorer.alc
 
 -include Makefile.depend

@@ -57,7 +57,7 @@ add_to_alice_load "cache=${HOME}/.@PACKAGE@/cache"
 add_to_alice_load "cache=${datadir}/@PACKAGE@/cache"
 add_to_alice_load "cache=${libdir}/@PACKAGE@/cache"
 
-add_to_alice_load "pattern=?{x}=?{x}.stc"
+add_to_alice_load "pattern=?{x}=?{x}.alc"
 add_to_alice_load "pattern=?{x}=?{x}.dll"
 
 if [ ! -z "$ALICE_LOAD_PREFIX" ]

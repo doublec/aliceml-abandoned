@@ -75,7 +75,7 @@ static String *Localize(String *key) {
   u_char *p         = path->GetValue();
   std::memcpy(p, aliceHome->GetValue(), hSize);
   std::memcpy(p + hSize, key->GetValue(), kSize);
-  std::memcpy(p + hSize + kSize, ".stc", 4);
+  std::memcpy(p + hSize + kSize, ".alc", 4);
   return path;
 }
 

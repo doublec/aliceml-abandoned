@@ -37,7 +37,7 @@
       before any of the following.</P>
     <?php if ($platform == "seam") { ?>
     <LI><P>Otherwise, the URL is tried with the platform's default component
-      extension appended, which is <TT>.stc</TT>.</P>
+      extension appended, which is <TT>.alc</TT>.</P>
     <?php } else { ?>
     <LI><P>If the URL uses the <TT>x-oz</TT> scheme, it is tried as-is,
       for compatibility with Oz.</P>
@@ -141,7 +141,7 @@
     them.  Alice deviates from Oz for improved cross-platform compatibility.
     <?php if ($platform == "seam") { ?>
     Different virtual machines for Alice use different file extensions.
-    For example, the SEAM-based Alice uses <TT>.stc</TT>, while the
+    For example, the SEAM-based Alice uses <TT>.alc</TT>, while the
     Mozart-based Alice uses <TT>.ozf</TT>.
     <?php } else { ?>
     The upcoming virtual machine for Alice uses a different file extension.
