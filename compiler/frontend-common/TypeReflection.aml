@@ -105,4 +105,7 @@ structure TypeReflection :> TYPE_REFLECTION =
     val lab_fill	= Label.fromString "fill"
     val _		= Type.fill : typ * typ -> unit		(* verify *)
 
+    val lab_equals	= Label.fromString "equals"
+    val _		= Type.equals : typ * typ -> bool	(* verify *)
+
   end

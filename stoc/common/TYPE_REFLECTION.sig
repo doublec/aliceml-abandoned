@@ -43,5 +43,7 @@ signature TYPE_REFLECTION =
     val lab_extendRow :	Label.t
 
     val lab_fill :	Label.t
-  
+
+    val lab_equals :	Label.t  
+
   end
