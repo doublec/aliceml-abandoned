@@ -55,7 +55,7 @@ struct
 	    else ()
 	end
 
-    val _ =  (Gtk.widgetSetSizeRequest (canvas, xsize, ysize);
+    val _ =  (Gtk.widgetSetSizeRequest (canvas, 100, 100); (* Minimal size *)
 	      Gtk.widgetModifyBg (canvas, Gtk.STATE_NORMAL, white);
 	      Gtk.containerAdd (parent, canvas))
 
