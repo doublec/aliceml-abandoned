@@ -116,7 +116,7 @@ structure TestSuite :
 	fun vSubOfUni1 (a,b,c) =
 		vSubSet1(a,IntInf.orb(b,c))
 	
-	fun vDiff1 (a,b,c) = IntInf.andb (IntInf.xorb(c,b),b) = c
+	fun vDiff1 (a,b,c) = IntInf.andb (IntInf.xorb(c,b),b) = a
 	fun vDisjoint1 (a,b) = IntInf.andb(a,b) = IntInf.fromInt 0
 	fun vDistinct1 (a,b) = IntInf.xorb(a,b) > IntInf.fromInt 0
 	fun vPartition1 (a,b,c) = (vDisjoint1 (b,c) ) andalso (vUnion1 (a,b,c))
