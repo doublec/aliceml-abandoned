@@ -1,4 +1,4 @@
-SUBDIRS = alice
+SUBDIRS = alice debian
 
 INCLUDES = -I@top_srcdir@
 

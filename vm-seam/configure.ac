@@ -8,7 +8,7 @@ dnl
 
 AC_REVISION([$Id$])
 AC_PREREQ(2.53)
-AC_INIT(Alice/SEAM, 1.0, alice@ps.uni-sb.de, alice)
+AC_INIT(Alice/SEAM, 1.0.1, alice@ps.uni-sb.de, alice)
 AC_CONFIG_SRCDIR(AliceMain.cc)
 AM_INIT_AUTOMAKE
 
@@ -134,6 +134,7 @@ AC_CONFIG_FILES([
    alice/lib/utility/Makefile
    alice/lib/distribution/Makefile
    alice/primitives/Makefile
+   debian/Makefile
    bin/alicerun
    bin/alicetool
    bin/alice-config
