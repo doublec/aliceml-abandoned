@@ -126,7 +126,7 @@ text "(" ^^ PPPath.ppPath p ^^ text ")" ^/^*)
 		    abox(PPType.ppTyp t)
 		) ^^
 		(case d of NONE => empty | SOME p' =>
-		if p' = p then empty else
+		if Path.equals(p',p) then empty else
 		nest(break ^^
 		    abox(text "=" ^/^ PPPath.ppPath p')
 		))
@@ -145,7 +145,9 @@ text "(" ^^ PPPath.ppPath p ^^ text ")" ^/^*)
 		    abox(PPType.ppKind k)
 		) ^^
 		(case d of NONE => empty | SOME t =>
-		if Type.isCon t andalso #3(Type.asCon t) = p then empty else
+		if Type.isCon t andalso Path.equals(#3(Type.asCon t), p) then
+		    empty
+		else
 		nest(break ^^
 		    abox(text "=" ^/^ PPType.ppTyp t)
 		))
@@ -164,7 +166,7 @@ text "(" ^^ PPPath.ppPath p ^^ text ")" ^/^*)
 		    abox(ppInf j)
 		) ^^
 		(case d of NONE => empty | SOME p' =>
-		if p' = p then empty else
+		if Path.equals(p',p) then empty else
 		nest(break ^^
 		    abox(text "=" ^/^ PPPath.ppPath p')
 		))
@@ -183,7 +185,7 @@ text "(" ^^ PPPath.ppPath p ^^ text ")" ^/^*)
 		    abox(ppKind k)
 		) ^^
 		(case d of NONE => empty | SOME j =>
-		if isCon j andalso #2(asCon j) = p then empty else
+		if isCon j andalso Path.equals(#2(asCon j), p) then empty else
 		nest(break ^^
 		    abox(text "=" ^/^ ppInf j)
 		))
