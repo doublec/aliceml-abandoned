@@ -125,8 +125,7 @@ structure OzifyImperativeGrammar :> OZIFY_IMPERATIVE_GRAMMAR =
 	    (f (q, "recTest");
 	     outputList (outputPair (outputLab, outputId)) (q, labIdList); r q)
 	  | outputTest (q, LabTest (lab, id)) =
-	    (f (q, "labTest"); outputLab (q, lab); output1 (q, #"#");
-	     outputId (q, id); r q)
+	    (f (q, "labTest"); outputLab (q, lab); m q; outputId (q, id); r q)
 	  | outputTest (q, VecTest ids) =
 	    (f (q, "vecTest"); outputList outputId (q, ids); r q)
 
