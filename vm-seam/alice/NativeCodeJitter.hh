@@ -84,7 +84,7 @@ protected:
   static void SaveRegister();
   static void RestoreRegister();
   static void PushCall(u_int Closure, CallInfo *info);
-  static void DirectCall(Interpreter *interpreter, void *ptr);
+  static void DirectCall(Interpreter *interpreter);
   static void TailCall(u_int Closure, CallInfo *info);
   static void BranchToOffset(u_int wOffset);
   static u_int GetRelativePC();
@@ -98,13 +98,15 @@ protected:
   static u_int ReloadIdRef(u_int Dest, word idRef);
   static void KillVariables();
   static void BlockOnTransient(u_int Ptr, word pc);
+  static void LoadStatus(u_int Dest);
+  static void CheckPreempt(u_int pc);
   static void LookupTestTable(u_int Key, u_int table);
   static u_int CompilePrimitive(INLINED_PRIMITIVE primitive,
 				Vector *actualIdRefs);
   static void NormalAppPrim(Closure *closure, TagVal *pc);
   static void CompileContinuation(TagVal *idDefArgsInstrOpt);
   static void LoadArguments(TagVal *actualArgs);
-  static void AppVarPrim(TagVal *pc, Interpreter *interpreter, void *ptr);
+  static void AppVarPrim(TagVal *pc, Interpreter *interpreter);
   static void AppVar(TagVal *pc, word wClosure);
   // NativeCodeJitter Instructions
   static TagVal *InstrKill(TagVal *pc);
