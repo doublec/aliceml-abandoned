@@ -17,7 +17,7 @@ include $(TOPDIR)/Makefile.rules
 
 SOURCES = \
 	Outline.cc Data.cc ClassLoader.cc ClassInfo.cc ClassFile.cc \
-	ByteCodeInterpreter.cc JavaLanguageLayer.cc
+	ByteCodeInterpreter.cc Startup.cc JavaLanguageLayer.cc
 
 OBJS = $(SOURCES:%.cc=%.o)
 
