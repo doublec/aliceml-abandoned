@@ -31,6 +31,14 @@ prepare
       end
    end
 
+   fun {DropDotReverse Cs Cs2}
+      case Cs
+      of nil then Cs2
+      [] &.|Rest then Cs2
+      [] C|Rest then {DropDotReverse Rest C|Cs2}
+      end
+   end
+
    fun {NumberCompare I J}
       if I == J then 'EQUAL'
       elseif I < J then 'LESS'
@@ -343,14 +351,14 @@ prepare
       'General.exnName':
 	 fun {$ N}
 	    case {VirtualString.toString {Value.toVirtualString {Label N} 0 0}}
-	    of "<N>" then {ByteString.make "<unknown>"}
+	    of "<N>" then {ByteString.make "_unknown"}
 	    elseof &<|&N|&:|& |&'|Rest then
 	       case {Reverse Rest} of &>|Rest then
-		  {ByteString.make {Reverse Rest}}
+		  {ByteString.make {DropDotReverse Rest nil}}
 	       end
 	    elseof &<|&N|&:|& |Rest then
 	       case {Reverse Rest} of &>|Rest then
-		  {ByteString.make {Reverse Rest}}
+		  {ByteString.make {DropDotReverse Rest nil}}
 	       end
 	    elseof S then {ByteString.make S}
 	    end
@@ -370,7 +378,7 @@ prepare
 	    end
 	 end
       'GlobalStamp.hash': BootName.hash
-      'Hole.Hole': {NewUniqueName 'Promise.Promise'}
+      'Hole.Hole': {NewUniqueName 'Hole.Hole'}
       'Hole.fail':
 	 fun {$ X E}
 	    {Wait E}
@@ -395,9 +403,7 @@ prepare
 	 end
       'Hole.future':
 	 fun {$ X}
-	    if {IsFuture X} then
-	       skip   %--** wait until it is bound to a hole
-	    elseif {Not {IsFree X}} then
+	    if {IsFuture X} orelse {Not {IsFree X}} then
 	       {Exception.raiseError alice(BuiltinTable.'Hole.Hole')}
 	    end
 	    !!X
