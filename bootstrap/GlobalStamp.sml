@@ -30,4 +30,9 @@ struct
 
     fun hash(GEN(n,_))		= n
       | hash(STR s)		= String.hash s
+
+    fun compare(STR s1, STR s2)	= String.compare(s1,s2)
+      | compare(STR _,  GEN _)  = LESS
+      | compare(GEN _,  STR _)  = GREATER
+      | compare(GEN(n1,_), GEN(n2,_)) = Int.compare(n1,n2)	(* Hack! *)
 end
