@@ -199,11 +199,11 @@ structure OzifySimplifiedGrammar :> OZIFY_SIMPLIFIED_GRAMMAR =
 	    (f (q, "labTest"); outputLabString (q, string); output1 (q, #"#");
 	     outputId (q, id); r q)
 	and outputArgs outputX (q, OneArg id) =
-	    (f (q, "OneArg"); outputX (q, id); r q)
+	    (f (q, "oneArg"); outputX (q, id); r q)
 	  | outputArgs outputX (q, TupArgs ids) =
-	    (f (q, "TupArgs"); outputList outputX (q, ids); r q)
+	    (f (q, "tupArgs"); outputList outputX (q, ids); r q)
 	  | outputArgs outputX (q, RecArgs stringIdList) =
-	    (f (q, "RecArgs");
+	    (f (q, "recArgs");
 	     outputList (outputPair (outputString, outputX))
 	     (q, stringIdList); r q)
 
