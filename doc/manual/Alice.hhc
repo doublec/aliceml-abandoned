@@ -1,5 +1,14 @@
 <!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
 <HTML>
+
+<!--
+********************************************************************************
+
+NOTE: Any page hooked in here must also be added to sitemap.html!
+
+********************************************************************************
+-->
+
 <HEAD>
 <meta name="GENERATOR" content="Microsoft&reg; HTML Help Workshop 4.1">
 <!-- Sitemap 1.0 -->
