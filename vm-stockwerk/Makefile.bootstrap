@@ -828,6 +828,7 @@ INSTALLDIRS = \
 INSTALLFILES = \
 	$(PREFIX)/stow.exe \
 	$(INSTALL3TOPFILES:%=$(PREFIX)/%) \
+	$(INSTALL3INCLUDEFILES:%=$(PREFIX)/include/%) \
 	$(INSTALL3BINFILES:%=$(PREFIX)/bin/%) \
 	$(INSTALL3LIBFILES:%=$(PREFIX)/lib/%) \
 	$(INSTALL3COMPILERFILES:%=$(PREFIX)/compiler/%) \
@@ -844,6 +845,9 @@ $(PREFIX)/stow.exe: build3/install/stow.exe
 	install -c -m 555 $< $@
 
 $(INSTALL3TOPFILES:%=$(PREFIX)/%): $(PREFIX)/%: build3/install/%
+	install -c -m 444 $< $@
+
+$(INSTALL3INCLUDEFILES:%=$(PREFIX)/include/%): $(PREFIX)/%: build3/install/%
 	install -c -m 444 $< $@
 
 $(INSTALL3BINFILES:%=$(PREFIX)/bin/%): $(PREFIX)/%: build3/install/%
