@@ -13,4 +13,4 @@ export STOC=$STOCKHOME/stoc-mozart.exe
 export STOC_MOZART=$STOC
 export OZHOME=/opt/mozart-1.1.1
 
-exec sml @SMLload=$PREFIX/stoc-mozart "$@"
+exec sml @SMLload=$STOCKHOME/stoc-mozart "$@"
