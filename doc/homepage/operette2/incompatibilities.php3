@@ -291,7 +291,7 @@
       <P>
 	Rename your functors or structures appropriately. It is a good idea to
 	stick to naming conventions that denote functors with names like
-	<TT>MakeTable</TT>.
+	<TT>MkTable</TT>.
       </P>
     </LI>
   </UL>
