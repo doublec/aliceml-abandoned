@@ -12,7 +12,7 @@
 
 import
     structure TextIO
-from "../lib/TextIO"
+from "../../lib/TextIO"
 
 import
     structure Url

@@ -12,7 +12,7 @@
 
 import
     structure OS
-from "../lib/OS"
+from "../../lib/OS"
 
 signature BATCH_COMPILER =
     sig

@@ -110,7 +110,7 @@ from "VALUE_PROPAGATION_PHASE-sig"
 
 import   (*--**DEBUG*)
     structure TextIO
-from "../lib/TextIO"
+from "../../lib/TextIO"
 
 signature SCOPED_IMP_MAP =
     sig
