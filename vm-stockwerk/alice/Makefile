@@ -17,10 +17,13 @@ TOPDIR = ..
 include $(TOPDIR)/Makefile.vars
 include $(TOPDIR)/Makefile.rules
 
+LIGHTNING_SOURCES0 = \
+	NativeConcreteCode.cc NativeCodeInterpreter.cc NativeCodeJitter.cc
+
 ifdef LIGHTNING
-EXTRA_SRCS = NativeConcreteCode.cc NativeCodeInterpreter.cc NativeCodeJitter.cc
+LIGHTNING_SOURCES = $(LIGHTNING_SOURCES0)
 else
-EXTRA_SRCS =
+LIGHTNING_SOURCES =
 endif
 
 PRIMITIVE_MODULES = \
@@ -39,18 +42,19 @@ SOURCES = \
 	$(LIB_DISTRIBUTION_MODULES:%=lib/distribution/Unsafe%.cc) \
 	LazySelInterpreter.cc AbstractCodeInterpreter.cc AliceConcreteCode.cc \
 	AliceLanguageLayer.cc \
-	$(EXTRA_SRCS)
+	$(LIGHTNING_SRCS)
 
 OBJS = $(SOURCES:%.cc=%.o)
 
 all: libalice.a
 
 libalice.a: $(OBJS)
-	ar rc libalice.a $(OBJS) || exit 1
-	ranlib libalice.a
+	-rm -f $@
+	ar rc $@ $(OBJS) || exit 1
+	ranlib $@
 
 clean:
-	rm -f $(OBJS)
+	rm -f $(OBJS) $(LIGHTNING_SOURCES0:%.cc=%.o)
 
 veryclean: clean
 	rm -f libalice.a
