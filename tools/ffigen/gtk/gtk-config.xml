@@ -1,0 +1,147 @@
+<xml>
+
+<!-- Allgemeine Optionen -->
+
+<options>
+</options>
+
+<!-- Filter die auf alle automatisch generierten Funktionen angewandt werden -->
+
+<filter>
+  <ignore>##item_affine##</ignore>
+  <ignore>GdkModifierType</ignore>
+
+  <accept>new</accept>
+  <accept>delete</accept>
+  <accept>cfun</accept>
+  <accept>pointer#x#</accept>
+  <accept>unref#x#</accept>
+  <accept>sizeof#x#</accept>
+  <accept>cast#x#</accept>
+
+  <accept>GType</accept>
+
+  <accept>gint</accept>
+  <accept>guint</accept>
+  <accept>guint32</accept>
+  <accept>gboolean</accept>
+  <accept>gfloat</accept>
+  <accept>gdouble</accept>
+  <accept>gchar</accept>
+  <accept>gpointer</accept>
+
+  <rename><from>_GdkColor#x#</from><to>GdkColor#x#</to></rename>
+  <accept>Gdk##</accept>
+  <accept>GDK##</accept>
+  <accept>gdk_##</accept>
+ 
+  <accept>Gtk##</accept>
+  <accept>GTK##</accept> 
+  <accept>gtk_##</accept>
+
+  <accept>ART#</accept>
+  <accept>Art##</accept>
+  <accept>GnomeCanvas##</accept>
+  <accept>gnome_canvas##</accept>
+
+</filter>
+
+<!-- Name Transformations for GDK -->
+
+<filter><rename><from>Gdk#x#_#y#</from><to>Gdk#x##CAPITAL:y#</to></rename><accept>##</accept></filter>
+<filter><rename><from>Gdk#x#_#y#</from><to>Gdk#x##CAPITAL:y#</to></rename><accept>##</accept></filter>
+<filter><rename><from>Gdk#x#_#y#</from><to>Gdk#x##CAPITAL:y#</to></rename><accept>##</accept></filter>
+<filter><rename><from>Gdk#x#_#y#</from><to>Gdk#x##CAPITAL:y#</to></rename><accept>##</accept></filter>
+<filter><rename><from>Gdk#x#_#y#</from><to>Gdk#x##CAPITAL:y#</to></rename><accept>##</accept></filter>
+
+<filter><rename><from>gdk_#x#_#y#</from><to>gdk_#x##CAPITAL:y#</to></rename><accept>##</accept></filter>
+<filter><rename><from>gdk_#x#_#y#</from><to>gdk_#x##CAPITAL:y#</to></rename><accept>##</accept></filter>
+<filter><rename><from>gdk_#x#_#y#</from><to>gdk_#x##CAPITAL:y#</to></rename><accept>##</accept></filter>
+<filter><rename><from>gdk_#x#_#y#</from><to>gdk_#x##CAPITAL:y#</to></rename><accept>##</accept></filter>
+<filter><rename><from>gdk_#x#</from><to>gdk#CAPITAL:x#</to></rename><accept>##</accept></filter>
+
+
+<!-- Name Transformations for GTK -->
+
+<filter><rename><from>Gtk#x#_#y#</from><to>Gtk#x##CAPITAL:y#</to></rename><accept>##</accept></filter>
+<filter><rename><from>Gtk#x#_#y#</from><to>Gtk#x##CAPITAL:y#</to></rename><accept>##</accept></filter>
+<filter><rename><from>Gtk#x#_#y#</from><to>Gtk#x##CAPITAL:y#</to></rename><accept>##</accept></filter>
+<filter><rename><from>Gtk#x#_#y#</from><to>Gtk#x##CAPITAL:y#</to></rename><accept>##</accept></filter>
+<filter><rename><from>Gtk#x#_#y#</from><to>Gtk#x##CAPITAL:y#</to></rename><accept>##</accept></filter>
+
+<filter><rename><from>gtk_#x#_#y#</from><to>gtk_#x##CAPITAL:y#</to></rename><accept>##</accept></filter>
+<filter><rename><from>gtk_#x#_#y#</from><to>gtk_#x##CAPITAL:y#</to></rename><accept>##</accept></filter>
+<filter><rename><from>gtk_#x#_#y#</from><to>gtk_#x##CAPITAL:y#</to></rename><accept>##</accept></filter>
+<filter><rename><from>gtk_#x#_#y#</from><to>gtk_#x##CAPITAL:y#</to></rename><accept>##</accept></filter>
+<filter><rename><from>gtk_#x#_#y#</from><to>gtk_#x##CAPITAL:y#</to></rename><accept>##</accept></filter>
+<filter><rename><from>gtk_#x#</from><to>gtk#CAPITAL:x#</to></rename><accept>##</accept></filter>
+
+<!-- Name Transformations for GnomeCanvas -->
+
+<filter><rename><from>gnome_#x#_#y#</from><to>gnome_#x##CAPITAL:y#</to></rename><accept>##</accept></filter>
+<filter><rename><from>gnome_#x#_#y#</from><to>gnome_#x##CAPITAL:y#</to></rename><accept>##</accept></filter>
+<filter><rename><from>gnome_#x#_#y#</from><to>gnome_#x##CAPITAL:y#</to></rename><accept>##</accept></filter>
+<filter><rename><from>gnome_#x#_#y#</from><to>gnome_#x##CAPITAL:y#</to></rename><accept>##</accept></filter>
+<filter><rename><from>gnome_#x#_#y#</from><to>gnome_#x##CAPITAL:y#</to></rename><accept>##</accept></filter>
+<filter><rename><from>gnome_#x#</from><to>gnome#CAPITAL:x#</to></rename><accept>##</accept></filter>
+
+
+<!-- Spezielle Typbehandlung -->
+
+<type>
+  <ctype>gboolean</ctype>
+  <alicetype>bool</alicetype>
+  <toword>BOOL_TO_WORD</toword>
+  <fromword>DECLARE_BOOL</fromword>
+</type>
+
+<type>
+  <ctype>gint</ctype>
+  <alicetype>int</alicetype>
+  <toword>INT_TO_WORD</toword>
+  <fromword>DECLARE_INT</fromword>
+</type>
+
+<type>
+  <ctype>guint</ctype>
+  <alicetype>int</alicetype>
+  <toword>INT_TO_WORD</toword>
+  <fromword>DECLARE_INT</fromword>
+</type>
+
+<type>
+  <ctype>gfloat</ctype>
+  <alicetype>real</alicetype>
+  <toword>FLOAT_TO_WORD</toword>
+  <fromword>DECLARE_CFLOAT</fromword>
+</type>
+
+<type>
+  <ctype>gdouble</ctype>
+  <alicetype>real</alicetype>
+  <toword>DOUBLE_TO_WORD</toword>
+  <fromword>DECLARE_CDOUBLE</fromword>
+</type>
+
+<type>
+  <ctype>GList*</ctype>
+  <alicetype>'a pointer list</alicetype>
+  <toword>GTK_LIST_TO_WORD</toword>
+  <fromword>DECLARE_GTK_LIST</fromword>
+</type>
+
+<type>
+  <ctype>const gchar*</ctype>
+  <alicetype>string</alicetype>
+  <toword>STRING_TO_WORD</toword>
+  <fromword>DECLARE_CSTRING</fromword>
+</type>
+
+<type>
+  <ctype>gchar*</ctype>
+  <alicetype>string</alicetype>
+  <toword>STRING_TO_WORD</toword>
+  <fromword>DECLARE_CSTRING</fromword>
+</type>
+
+</xml>
