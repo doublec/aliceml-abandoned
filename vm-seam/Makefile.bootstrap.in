@@ -465,7 +465,9 @@ build1/compiler/frontend-sml/Lexer.lex: compiler/frontend-sml/Lexer.lex
 build1/compiler/frontend-sml/Lexer.aml: \
 	build1/compiler/frontend-sml/Lexer.lex.sml \
 	compiler/frontend-sml/Lexer.aml.header Rel2.import
-	cat Rel2.import $(SRCTOP)/compiler/frontend-sml/Lexer.aml.header $< > $@
+	sed s/Unsafe.//g $< > $@.temp
+	cat Rel2.import $(SRCTOP)/compiler/frontend-sml/Lexer.aml.header $@.temp > $@
+	rm $@.temp
 
 build1/compiler/frontend-sml/Parser.grm: compiler/frontend-sml/Parser.grm
 	cp $< $@
