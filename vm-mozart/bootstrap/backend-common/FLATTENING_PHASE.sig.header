@@ -1,4 +1,8 @@
 import
+    structure Source
+from "x-alice:/infrastructure/Source.ozf"
+
+import
     signature CONTEXT
 from "x-alice:/infrastructure/CONTEXT.ozf"
 
