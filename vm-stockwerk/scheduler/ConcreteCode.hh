@@ -21,9 +21,9 @@ class Interpreter;
 
 class ConcreteCode: private Block {
 private:
-  static const int SIZE = 2;
-  static const int ABSTRACT_CODE_POS = 1;
-  static const int INTERPRETER_POS = 2;
+  static const u_int SIZE = 2;
+  static const u_int ABSTRACT_CODE_POS = 1;
+  static const u_int INTERPRETER_POS = 2;
 public:
   using Block::ToWord;
 
