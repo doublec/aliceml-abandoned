@@ -62,10 +62,58 @@ esac
 dnl
 dnl  Libraries
 dnl
-AC_CHECK_LIB(wsock32, main)
 AC_CHECK_LIB(dl, dlopen)
 
 AC_SUBST(INCLUDES)
+
+dnl
+dnl  Unix Sockets vs. WinSock
+dnl
+AC_CACHE_CHECK([for Unix select vs. WinSock], [seam_cv_socket_flavor],
+  [AC_LINK_IFELSE(AC_LANG_PROGRAM([[#include <sys/select.h>]],
+				  [[select(0, NULL, NULL, NULL, NULL);]]),
+		  [seam_cv_socket_flavor=unix],
+		  [seam_save_LIBS="$LIBS"
+		   LIBS="-lwsock32 $LIBS"
+		   AC_RUN_IFELSE(AC_LANG_PROGRAM([[#include <winsock.h>]],
+		     [[WSADATA wsa_data;
+		       WORD req_version = MAKEWORD(1, 1);
+		       return WSAStartup(req_version, &wsa_data);]]),
+		     [seam_cv_socket_flavor=windows],
+		     [seam_cv_socket_flavor=none])
+		   LIBS="$seam_save_LIBS"])])
+
+case "$seam_cv_socket_flavor" in
+    unix)
+	AC_DEFINE(USE_WINSOCK, 0)
+	;;
+    windows)
+	AC_DEFINE(USE_WINSOCK, 1)
+	LIBS="-lwsock32 $LIBS"
+	;;
+    none)
+	AC_MSG_ERROR([cannot find a usable sockets library])
+	;;
+esac
+
+dnl
+dnl  VirtualAlloc
+dnl
+AC_CACHE_CHECK([for VirtualAlloc],
+  [seam_cv_have_virtualalloc],
+  [AC_LINK_IFELSE(AC_LANG_PROGRAM([[#include <windows.h>]],
+				  [[VirtualAlloc(NULL, 0, 0, 0);]]),
+		  seam_cv_have_virtualalloc=yes,
+		  seam_cv_have_virtualalloc=no)])
+
+case "$seam_cv_have_virtualalloc" in
+    no)
+	AC_DEFINE(HAVE_VIRTUALALLOC, 0)
+	;;
+    yes)
+	AC_DEFINE(HAVE_VIRTUALALLOC, 1)
+	;;
+esac
 
 dnl
 dnl  zlib
