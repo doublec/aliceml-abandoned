@@ -2198,6 +2198,8 @@ handle Inf.Mismatch m => error(Source.nowhere, E.AnnModMismatch m)
 			 else stripAnns(E, anns')
 	    val _      = Env.mergeScope E
 	in
+	    Vector.app (fn O.ImpAnn({sign,...},_,_) =>
+		       Inf.compressSig sign) anns'';
 	    O.Comp(sigInfo(i,s), anns'', decs')
 	end
 
