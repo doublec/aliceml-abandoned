@@ -28,7 +28,7 @@ sig
 
     val length: vector -> int
     val sub: vector * int -> elem
-    val replace: vector * int * elem -> vector				(**)
+    val update: vector * int * elem -> vector				(**)
     val extract: vector * int * int option -> vector
     val concat: vector list -> vector
     val rev: vector -> vector						(**)

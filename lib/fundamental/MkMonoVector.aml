@@ -61,13 +61,12 @@ struct
     fun extract(v,0,NONE)	= v
       | extract(v,i,no)		= tabulate(sliceLength(v,i,no),
 					   fn k => sub'(v,i+k))
-    fun append(v1,v2)		= concat[v1,v2]				(**)
 
     fun rev v			= let val len = length v		(**)
 				      fun f i = sub'(v, len-i-1)
 				  in tabulate(len, f) end
 
-    fun replace(v,i,x)		= let fun f j where (i = j) = x		(**)
+    fun update(v,i,x)		= let fun f j where (i = j) = x		(**)
 					| f j               = sub(v,j)
 				  in tabulate(length v, f) end
 
