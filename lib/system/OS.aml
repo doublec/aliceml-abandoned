@@ -145,7 +145,6 @@ struct
 	       | _                           => false
 
 	fun toString{isAbs=false, vol, arcs=""::_} = raise Path
-	  | toString{isAbs=true, vol, arcs=nil}    = raise Path
 	  | toString{isAbs, vol, arcs} =
 	    if Bool.not(validVolume{isAbs=isAbs, vol=vol}) then
 		raise Path
@@ -184,7 +183,7 @@ struct
 	    end
 
 	fun joinDirFile{dir, file} =
-	    if file = "" then dir else
+	    if dir = "" then file else
 	    let
 		val {isAbs, vol, arcs} = fromString dir
 	    in
@@ -226,6 +225,7 @@ struct
 	    end
 
 	fun joinBaseExt{base, ext=NONE}     = base
+	  | joinBaseExt{base, ext=SOME ""}  = base
 	  | joinBaseExt{base, ext=SOME arc} = base ^ "." ^ arc
 
 	val dir  = #dir o splitDirFile
@@ -233,7 +233,7 @@ struct
 	val base = #base o splitBaseExt
 	val ext  = #ext o splitBaseExt
 
-	fun mkCanonicalArcs(isAbs(*false*), nil, nil) =
+	fun mkCanonicalArcs((*isAbs*)false, nil, nil) =
 		"."::nil
 	  | mkCanonicalArcs(isAbs, nil, arcs') =
 		List.rev arcs'
@@ -278,10 +278,10 @@ struct
 		else raise Path
 
 	fun mkAbsolute{path, relativeTo} =
-	    if isAbsolute path then
-		path
-	    else if isRelative relativeTo then
+	    if isRelative relativeTo then
 		raise Path
+	    else if isAbsolute path then
+		path
 	    else
 		mkCanonical(concat(relativeTo, path))
 
@@ -294,10 +294,14 @@ struct
 		val abs = mkCanonical relativeTo
 		val {isAbs=isAbs1, vol=vol1, arcs=arcs1} = fromString path
 		val {isAbs=isAbs2, vol=vol2, arcs=arcs2} = fromString abs
+		val arcs1 = case arcs1 of [""] => nil | _ => arcs1
+		val arcs2 = case arcs2 of [""] => nil | _ => arcs2
 	    in
-		if Bool.not isAbs1 then
+		if Bool.not isAbs2 then
+		    raise Path
+		else if Bool.not isAbs1 then
 		    path
-		else if Bool.not isAbs2 orelse Bool.not(vol1 = vol2) then
+		else if Bool.not(vol1 = vol2) then
 		    raise Path
 		else case stripCommonPrefix(arcs1, arcs2)
 		 of (nil, nil) => "."
