@@ -166,12 +166,15 @@ fun mozartify inFilename outFilename s =
 
 (* Tell the composer how to compile Alice source files *)
 
-fun parseFileUrl url =
-    (case (Url.getScheme url, Url.getAuthority url) of
-	 ((NONE | SOME "file"), NONE) => ()
-       | _ => raise Crash.Crash "Main.parseFileUrl";
-     Url.setScheme (url, NONE);
-     Url.toString url)
+fun parseUrl url =
+    case (Url.getScheme url, Url.getAuthority url) of
+	(NONE, NONE) =>
+	    Url.toString (Url.setScheme (url, NONE))
+      | (SOME "file", NONE) =>
+	    Url.toString (Url.setScheme (url, NONE))
+      | (SOME "x-alice", NONE) =>
+	    Url.toString (Url.setScheme (Url.makeRelativePath url, NONE))
+      | _ => raise Crash.Crash "Main.parseUrl"
 
 fun existsFile filename =
     (TextIO.closeIn (TextIO.openIn filename); true) handle IO.Io _ => false
@@ -202,14 +205,23 @@ fun compileSign filename =
 	  | _ => raise Crash.Crash "Composer.compileSign"
     end
 
+val fileStack: string list ref = ref nil
+
 fun compileForMozart (sourceFilename, targetFilename) =
     (TextIO.print ("### compiling file " ^ sourceFilename ^ "\n");
+     fileStack := sourceFilename::(!fileStack);
      processFile (mozartify sourceFilename targetFilename) sourceFilename
-     before TextIO.print ("### wrote file " ^ targetFilename ^ "\n"))
+     before (TextIO.print ("### wrote file " ^ targetFilename ^ "\n");
+	     case fileStack of
+		 ref (_::(rest as resumeFilename::_)) =>
+		     (fileStack := rest;
+		      TextIO.print ("### resuming compilation of " ^
+				    resumeFilename ^ "\n"))
+	       | ref _ => ()))
 
 fun acquireSign url =
     let
-	val targetFilename = parseFileUrl url
+	val targetFilename = parseUrl url
 	val sigFilename = targetFilename ^ ".sig"
     in
 	if existsFile sigFilename then compileSign sigFilename
