@@ -13,7 +13,7 @@
 #include "Stockwerk.hh"
 
 int main(int argc, char *argv[]) {
-  char *home = std::getenv("STOCKHOME");
+  char *home = std::getenv("ALICE_HOME");
   if (home == NULL) {
     Error("could not determine installation directory");
   }

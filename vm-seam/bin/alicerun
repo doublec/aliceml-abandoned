@@ -19,15 +19,15 @@ find_in () {
     echo "${found_in}"
 }
 
-if test -z "${STOCKHOME}"; then
+if test -z "${ALICE_HOME}"; then
     dir=$(dirname "$0")
     dir=$(dirname "$dir")
-    STOCKHOME=$(find_in stow.exe /usr/share/alice "$PROGRAMFILES/Alice" "$dir")
+    ALICE_HOME=$(find_in stow.exe /usr/share/alice "$PROGRAMFILES/Alice" "$dir")
 fi
 
 case $(uname) in
     CYGWIN*)
-	STOCKHOME=`cygpath -m "$STOCKHOME"`
+	ALICE_HOME=`cygpath -m "$ALICE_HOME"`
 	sep=\;
 	;;
     *)
@@ -46,14 +46,14 @@ then
     ALICE_LOAD=$ALICE_LOAD${sep}$ALICE_LOAD_SUFFIX
 fi
 
-export STOCKHOME ALICE_LOAD
+export ALICE_HOME ALICE_LOAD
 
 ## To use the GUI debugger on Windows/Cygwin:
 #echo run "$@"
-#exec gdb "$STOCKHOME"/stow.exe
+#exec gdb "$ALICE_HOME"/stow.exe
 
 ## To use the debugger on Unix:
 #(echo "break Base.cc:22"; echo "tty /dev/pts/4"; echo run "$@"; cat) |
-#exec gdb "$STOCKHOME"/stow.exe
+#exec gdb "$ALICE_HOME"/stow.exe
 
-exec "$STOCKHOME"/stow.exe "$@"
+exec "$ALICE_HOME"/stow.exe "$@"
