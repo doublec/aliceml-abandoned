@@ -14,7 +14,8 @@ OUTDIR = output
 COMMON = GTK_TYPES-sig.aml GtkTypes.aml GTK_CORE-sig.aml GtkCore.aml
 MAINFILES = $(COMPS:%=%.aml)
 
-COMPFILES = $(COMMON) $(ENUMS) $(UNSAFE) $(GENSIGS) $(MAINFILES)
+CPPSOURCES = $(NATIVES:%=%.cc)
+ALICESOURCES = $(COMMON) $(ENUMS) $(UNSAFE) $(GENSIGS) $(MAINFILES)
 
 ALICEC = alicec --dump-phases
 ALICETOOL = alicetool
@@ -22,7 +23,7 @@ INSTALL = install -C -v -m 666
 
 
 
-all: generate compile
+all: generate depend compile
 
 #################################################
 
@@ -31,22 +32,20 @@ generate: rungenerator $(GENSIGS)
 gtkclean.c:
 	(cd prepare ; $(MAKE) )
 
-rungenerator: gtkclean.c
+rungenerator $(GENFILES): gtkclean.c
 	if test ! -d $(OUTDIR) ; then mkdir $(OUTDIR) ; fi
 	echo 'CM.make();main "$(OUTDIR)";' | sml
 	$(INSTALL) $(GENFILES:%=$(OUTDIR)/%) .
 	rm -f $(OUTDIR)/*
 	rmdir $(OUTDIR)
 
-# $(GENFILES): rungenerator ;
-
 %-sig.aml: %-sig.tml %_UNSAFE-sig.aml %_ENUMS-sig.aml
-	gawk -f includesig.awk -v filename=includesig.awk < $< > $@
+	gawk -f includesig.awk -v filename=includesig.awk $< > $@
 
 #################################################
 
 
-compile: $(NATIVES:%=%.dll) $(COMPFILES:%.aml=%.stc)
+compile: $(NATIVES:%=%.dll) $(COMPS:%=%.stc)
 
 %.o: %.cc
 	$(ALICETOOL) -v cc `pkg-config --cflags gtk+-2.0` -c $< -o $@
@@ -56,6 +55,19 @@ compile: $(NATIVES:%=%.dll) $(COMPFILES:%.aml=%.stc)
 
 %.stc: %.aml
 	$(ALICEC) $< -o $@
+
+#################################################
+
+depend: Makefile.depend
+
+Makefile.depend: Makefile $(CPPSOURCES) $(ALICESOURCES)
+	gcc -M -I ../../../vm-stockwerk `pkg-config --cflags gtk+-2.0` \
+	    $(CPPSOURCES) > Makefile.depend
+#	echo 'CM.make();depend("Makefile.depend","$$(GENFILES)",CM.names());' \
+#             | sml
+	gawk -f alicedepend.awk -v outfile=Makefile.depend $(MAINFILES)
+
+include Makefile.depend
 
 #################################################
 
@@ -69,8 +81,8 @@ docs:
 clean:
 	rm -f $(GENFILES)
 	rm -f $(GENSIGS)
-	rm -f $(COMPFILES:%.aml=%.stc)
-	rm -f $(NATIVES:%=%.o)
+	rm -f *.stc
+	rm -f *.o
 	rm -f *~
 
 cmclean:
@@ -80,9 +92,10 @@ cmclean:
 
 veryclean: clean cmclean
 	rm -f gtkclean.c
+	rm -f $(NATIVES:%=%.dll)
 	rm -f $(NATIVES:%=%.dll.def)
+	rm -f Makefile.depend
 	(cd prepare ; $(MAKE) clean )
 	(cd doc ; $(MAKE) clean )
 
 distclean: veryclean
-	rm -f $(NATIVES:%=%.dll)

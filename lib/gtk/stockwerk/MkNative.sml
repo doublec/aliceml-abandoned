@@ -1,8 +1,7 @@
 
 functor MkNative(structure TypeManager : TYPE_MANAGER
 		 structure Special : SPECIAL
-		 val space : Util.spaces
-		 val tree : TypeTree.tree) :> GENERATOR = 
+		 val space : Util.spaces) :> GENERATOR = 
     struct
 	open TypeTree
 	open TypeManager
@@ -65,7 +64,7 @@ functor MkNative(structure TypeManager : TYPE_MANAGER
             (* declaration of input or input/output arguments *)
 	    local
 		fun inDeclare (NUMERIC(_,false,_))= "DECLARE_INT"
-		  | inDeclare (NUMERIC(_,true, _))= "DECLARE_DOUBLE"
+		  | inDeclare (NUMERIC(_,true, _))= "DECLARE_CDOUBLE"
 		  | inDeclare BOOL                = "DECLARE_BOOL"
 		  | inDeclare (POINTER _)         = "DECLARE_UNMANAGED_POINTER"
 		  | inDeclare (STRING _)          = "DECLARE_CSTRING"
@@ -254,13 +253,13 @@ functor MkNative(structure TypeManager : TYPE_MANAGER
 	    footer
 	end
 
-        val myItems' = List.filter (Util.funNot Special.isIgnored) tree
-	val myItems = Util.filters [isItemOfSpace space, checkItem] 
-		      (myItems' @ Special.changedFuns @ Special.specialFuns)
-
         (* main function for creating native files *)
-        fun create() =
+        fun create tree =
 	let
+	    val myItems' = List.filter (Util.funNot Special.isIgnored) tree
+	    val myItems = Util.filters [isItemOfSpace space, checkItem] 
+			    (myItems'@Special.changedFuns@Special.specialFuns)
+
 	    val _ = print ("Generating "^nativeName^"\n")
 	    val s = Util.openFile siginfo
 	    val w = Util.openFile wrapperinfo

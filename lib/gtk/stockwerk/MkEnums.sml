@@ -1,8 +1,7 @@
 
 functor MkEnums(structure TypeManager : TYPE_MANAGER
 	        structure Special : SPECIAL
-	        val space : Util.spaces
-	        val tree : TypeTree.tree) :> GENERATOR =
+	        val space : Util.spaces) :> GENERATOR =
     struct
 	open TypeTree
 	open TypeManager
@@ -87,13 +86,13 @@ functor MkEnums(structure TypeManager : TYPE_MANAGER
 	end
 	  | processItem _ = ( nil , nil )
 
-	val myItems = Util.filters [Util.funNot Special.isIgnored, 
-				    isItemOfSpace space, checkItem,
-				    Util.funNot Special.isIgnoredSafe] tree
-
         (* main function for creating safe files *)
-        fun create() =
+        fun create tree =
 	let
+	    val myItems = Util.filters [Util.funNot Special.isIgnored, 
+					isItemOfSpace space, checkItem,
+					Util.funNot Special.isIgnoredSafe] tree
+
 	    val _ = print ("Generating "^safeName^"\n")
 	    val s = Util.openFile siginfo
 	    val w = Util.openFile wrapperinfo

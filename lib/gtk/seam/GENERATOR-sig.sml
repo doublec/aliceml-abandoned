@@ -1,5 +1,5 @@
 
 signature GENERATOR =
     sig
-	val create : unit -> unit
+	val create : TypeTree.tree -> unit
     end

@@ -1,6 +1,7 @@
 #ifndef _MY_NATIVE_AUTHORING_HH_
 #define _MY_NATIVE_AUTHORING_HH_
 
+#ifndef DEFINE5
 #define DEFINE5(name)					\
   static Interpreter::Result name() {			\
     Assert(Scheduler::nArgs == 5);			\
@@ -10,7 +11,8 @@
     word x1 = Scheduler::currentArgs[1];		\
     word x2 = Scheduler::currentArgs[2];		\
     word x3 = Scheduler::currentArgs[3];                \
-    word x4 = Scheduler::currentArgs[4];
+    word x4 = Scheduler::currentArgs[4];                
+#endif
 #define DEFINE6(name)					\
   static Interpreter::Result name() {			\
     Assert(Scheduler::nArgs == 6);			\
@@ -218,7 +220,7 @@
 #define DECLARE_CSTRING(str,x)                           \
   DECLARE_STRING(str##__temp,x);                         \
   char *str = str##__temp->ExportC();
-#define DECLARE_DOUBLE(dbl,x)                            \
+#define DECLARE_CDOUBLE(dbl,x)                           \
   DECLARE_REAL(dbl##__temp,x);                           \
   double dbl = dbl##__temp->GetValue();
 #define DECLARE_CARRAY(a,x,type,F)                       \
@@ -228,7 +230,7 @@
      F(a##__value,a##__temp->Sub(a##__iter));            \
      a[a##__iter] = a##__value;                          \
   }
-#define DECLARE_ENUM DECLARE_DOUBLE
+#define DECLARE_ENUM DECLARE_CDOUBLE
 
 
 #define RETURN_TUPLE2(y0,y1)                             \

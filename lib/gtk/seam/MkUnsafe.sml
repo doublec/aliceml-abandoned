@@ -1,8 +1,7 @@
 
 functor MkUnsafe(structure TypeManager : TYPE_MANAGER
 	         structure Special : SPECIAL
-	         val space : Util.spaces
-	         val tree : TypeTree.tree) :> GENERATOR =
+	         val space : Util.spaces) :> GENERATOR =
     struct
 	open TypeTree
 	open TypeManager
@@ -116,14 +115,14 @@ functor MkUnsafe(structure TypeManager : TYPE_MANAGER
 	end
 	  | processItem _ = ( nil , nil )
 
-        val myItems' = List.filter (Util.funNot Special.isIgnored) tree
-	val myItems = Util.filters [isItemOfSpace space, checkItem,
-				    Util.funNot Special.isIgnoredSafe] 
-		      (myItems' @ Special.changedFuns @ Special.specialFuns)
-
         (* main function for creating unsafe files *)
-        fun create() =
+        fun create tree =
 	let
+	    val myItems' = List.filter (Util.funNot Special.isIgnored) tree
+	    val myItems = Util.filters [isItemOfSpace space, checkItem,
+				        Util.funNot Special.isIgnoredSafe] 
+		            (myItems'@Special.changedFuns@Special.specialFuns)
+
 	    val _ = print ("Generating "^unsafeName^"\n")
 	    val s = Util.openFile siginfo
 	    val w = Util.openFile wrapperinfo
