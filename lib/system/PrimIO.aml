@@ -71,20 +71,20 @@ functor PrimIO(structure V: MONO_VECTOR
 	     close: unit -> unit,
 	     ioDesc: OS.IO.iodesc option}
 
-	fun V_extract (v, i, n) = V.tabulate (n, fn j => V.sub (v, i + j))
-	fun A_extract (a, i, n) = V.tabulate (n, fn j => A.sub (a, i + j))
-	fun A_extract' (a, i, SOME n) = A_extract (a, i, n)
-	  | A_extract' (a, i, NONE) = A_extract (a, i, A.length a - i)
+	fun v_extract (v, i, n) = V.tabulate (n, fn j => V.sub (v, i + j))
+	fun a_extract (a, i, n) = V.tabulate (n, fn j => A.sub (a, i + j))
+	fun a_extract' (a, i, SOME n) = a_extract (a, i, n)
+	  | a_extract' (a, i, NONE) = a_extract (a, i, A.length a - i)
 
-	fun A_copyVecSlice' (src, si, dst, di, 0) = ()
-	  | A_copyVecSlice' (src, si, dst, di, len) =
+	fun a_copyVecSlice' (src, si, dst, di, 0) = ()
+	  | a_copyVecSlice' (src, si, dst, di, len) =
 	    (A.update (dst, di, V.sub (src, si));
-	     A_copyVecSlice' (src, si + 1, dst, di + 1, len - 1))
-	fun A_copyVecSlice {src, si, dst, di, len} =
+	     a_copyVecSlice' (src, si + 1, dst, di + 1, len - 1))
+	fun a_copyVecSlice {src, si, dst, di, len} =
 	    if si < 0 orelse di < 0 orelse si + len > V.length src
 				    orelse di + len > A.length dst
 	    then raise General.Subscript
-	    else A_copyVecSlice' (src, si, dst, di, len)
+	    else a_copyVecSlice' (src, si, dst, di, len)
 
 	fun openVector v =
 	    let
@@ -108,7 +108,7 @@ functor PrimIO(structure V: MONO_VECTOR
 			case Int.compare (n, 0) of
 			    LESS => raise General.Size
 			  | EQUAL => raise General.Domain
-			  | GREATER => (pos := p + n; V_extract (v, p, n))
+			  | GREATER => (pos := p + n; v_extract (v, p, n))
 		    end
 
 		fun readArr {buf, i, sz} =
@@ -121,7 +121,7 @@ functor PrimIO(structure V: MONO_VECTOR
 			    LESS => raise General.Size
 			  | EQUAL => raise General.Domain
 			  | GREATER => (pos := p + n;
-					A_copyVecSlice {src = v, si = p,
+					a_copyVecSlice {src = v, si = p,
 							len = n,
 							dst = buf, di = i};
 					n)
@@ -232,7 +232,7 @@ functor PrimIO(structure V: MONO_VECTOR
 				  val buf = A.array (sz, someElem)
 				  val i = valOf readArr {buf, i = 0, sz = NONE}
 			      in
-				  A_extract (buf, 0, i)
+				  a_extract (buf, 0, i)
 			      end)
 		    else if isSome block then (*--** first read, then block *)
 			if isSome readVecNB then
@@ -246,7 +246,7 @@ functor PrimIO(structure V: MONO_VECTOR
 				      val i = valOf (valOf readArrNB
 						  {buf, i = 0, sz = NONE})
 				  in
-				      A_extract (buf, 0, i)
+				      a_extract (buf, 0, i)
 				  end)
 			else NONE
 		    else NONE
@@ -291,7 +291,7 @@ functor PrimIO(structure V: MONO_VECTOR
 			      in
 				  case valOf readArrNB {buf,i=0,sz=NONE} of
 				      SOME i =>
-					  SOME (A_extract (buf, 0, i))
+					  SOME (a_extract (buf, 0, i))
 				    | NONE => NONE
 			      end)
 		    else if Option.isSome canInput then
@@ -308,7 +308,7 @@ functor PrimIO(structure V: MONO_VECTOR
 					  val i =
 					      valOf readArr {buf, i=0, sz=NONE}
 				      in
-					  SOME (A_extract (buf, 0, i))
+					  SOME (a_extract (buf, 0, i))
 				      end
 				  else NONE)
 			else NONE
@@ -369,7 +369,7 @@ functor PrimIO(structure V: MONO_VECTOR
 				  val n = len (V.length buf, i, sz)
 				  val a = A.array (n, someElem)
 			      in
-				  A_copyVecSlice {src = buf, si = i, len = n,
+				  a_copyVecSlice {src = buf, si = i, len = n,
 						  dst = a, di = 0};
 				  valOf writeArr {buf = a, i = 0, sz = NONE}
 			      end)
@@ -385,7 +385,7 @@ functor PrimIO(structure V: MONO_VECTOR
 				      val n = len (V.length buf, i, sz)
 				      val a = A.array (n, someElem)
 				  in
-				      A_copyVecSlice {src = buf, si = i,
+				      a_copyVecSlice {src = buf, si = i,
 						      len = n, dst = a,
 						      di = 0};
 				      valOf (valOf writeArrNB
@@ -398,7 +398,7 @@ functor PrimIO(structure V: MONO_VECTOR
 		    else if isSome writeVec then
 			SOME (fn {buf, i, sz} =>
 			      valOf writeVec
-				  {buf = A_extract' (buf, i, sz),
+				  {buf = a_extract' (buf, i, sz),
 				   i = 0, sz = NONE})
 		    else if isSome block then (*--** first write, then block *)
 			if isSome writeArrNB then
@@ -409,7 +409,7 @@ functor PrimIO(structure V: MONO_VECTOR
 			    SOME (fn {buf, i, sz} =>
 				  (valOf block ();
 				   valOf (valOf writeVecNB
-				       {buf = A_extract' (buf, i, sz),
+				       {buf = a_extract' (buf, i, sz),
 					i = 0, sz = NONE})))
 			else NONE
 		    else NONE
@@ -421,7 +421,7 @@ functor PrimIO(structure V: MONO_VECTOR
 				  val n = len (V.length buf, i, sz)
 				  val a = A.array (n, someElem)
 			      in
-				  A_copyVecSlice {src = buf, si = i, len = n,
+				  a_copyVecSlice {src = buf, si = i, len = n,
 						  dst = a, di = 0};
 				  valOf writeArrNB
 				      {buf = a, i = 0, sz = SOME n}
@@ -439,7 +439,7 @@ functor PrimIO(structure V: MONO_VECTOR
 					  val n = len (V.length buf, i, sz)
 					  val a = A.array (n, someElem)
 				      in
-					  A_copyVecSlice {src = buf, si = i,
+					  a_copyVecSlice {src = buf, si = i,
 							  len = n, dst = a,
 							  di = 0};
 					  SOME (valOf writeArr
@@ -453,7 +453,7 @@ functor PrimIO(structure V: MONO_VECTOR
 		    else if isSome writeVecNB then
 			SOME (fn {buf, i, sz} =>
 			      valOf writeVecNB
-				  {buf = A_extract' (buf, i, sz), i = 0,
+				  {buf = a_extract' (buf, i, sz), i = 0,
 				   sz = NONE})
 		    else if isSome canOutput then
 			if isSome writeArr then
@@ -465,7 +465,7 @@ functor PrimIO(structure V: MONO_VECTOR
 			    SOME (fn {buf, i, sz} =>
 				  if valOf canOutput () then
 				      SOME (valOf (valOf writeVecNB
-					  {buf = A_extract' (buf, i, sz),
+					  {buf = a_extract' (buf, i, sz),
 					   i = 0, sz = NONE}))
 				  else NONE)
 			else NONE

@@ -51,19 +51,19 @@ functor StreamIO(structure PrimIO: PRIM_IO
 
 	type out_pos = outstream * pos
 
-	fun Vector_extract (v, i, SOME n) =
+	fun vector_extract (v, i, SOME n) =
 	    Vector.tabulate (n, fn j => Vector.sub (v, i + j))
-	  | Vector_extract (v, i, NONE) =
-	    Vector_extract (v, i, SOME (Vector.length v - i))
-	fun Array_copyVecSlice' (src, si, dst, di, 0) = ()
-	  | Array_copyVecSlice' (src, si, dst, di, len) =
+	  | vector_extract (v, i, NONE) =
+	    vector_extract (v, i, SOME (Vector.length v - i))
+	fun array_copyVecSlice' (src, si, dst, di, 0) = ()
+	  | array_copyVecSlice' (src, si, dst, di, len) =
 	    (Array.update (dst, di, Vector.sub (src, si));
-	     Array_copyVecSlice' (src, si + 1, dst, di + 1, len - 1))
-	fun Array_copyVecSlice {src, si, dst, di, len} =
+	     array_copyVecSlice' (src, si + 1, dst, di + 1, len - 1))
+	fun array_copyVecSlice {src, si, dst, di, len} =
 	    if si < 0 orelse di < 0 orelse si + len > Vector.length src
 				    orelse di + len > Array.length dst
 	    then raise General.Subscript
-	    else Array_copyVecSlice' (src, si, dst, di, len)
+	    else array_copyVecSlice' (src, si, dst, di, len)
 
 	fun blocking NONE = raise IO.BlockingNotSupported
 	  | blocking (SOME f) = f
@@ -129,7 +129,7 @@ functor StreamIO(structure PrimIO: PRIM_IO
 	    let
 		val (v, offset, f') = input' (f, Vector.maxLen, "input")
 	    in
-		(Vector_extract (v, offset, NONE), f')
+		(vector_extract (v, offset, NONE), f')
 	    end
 
 	fun input1 f =
@@ -155,12 +155,12 @@ functor StreamIO(structure PrimIO: PRIM_IO
 	    in
 		if k = 0 then (nil, f')
 		else if k >= n then
-		    ([Vector_extract (v, offset, SOME n)], f')
+		    ([vector_extract (v, offset, SOME n)], f')
 		else
 		    let
 			val (vs, f'') = inputN' (f, n - k)
 		    in
-			(Vector_extract (v, offset, NONE)::vs, f'')
+			(vector_extract (v, offset, NONE)::vs, f'')
 		    end
 	    end
 
@@ -181,7 +181,7 @@ functor StreamIO(structure PrimIO: PRIM_IO
 		    let
 			val (vs, f'') = inputAll' f'
 		    in
-			(Vector_extract (v, offset, SOME k)::vs, f'')
+			(vector_extract (v, offset, SOME k)::vs, f'')
 		    end
 	    end
 
@@ -224,7 +224,7 @@ functor StreamIO(structure PrimIO: PRIM_IO
 				    NONE => history'
 				  | SOME (_, 0) => history'
 				  | SOME (v, i) =>
-					BUFFER (Vector_extract (v, 0, SOME i),
+					BUFFER (vector_extract (v, 0, SOME i),
 						ref history')
 			in
 			    Promise.fulfill (p, history');
@@ -260,9 +260,9 @@ functor StreamIO(structure PrimIO: PRIM_IO
 				    NONE => (history', Vector.fromList nil)
 				  | SOME (v, 0) => (history', v)
 				  | SOME (v, i) =>
-					(BUFFER (Vector_extract (v, 0, SOME i),
+					(BUFFER (vector_extract (v, 0, SOME i),
 						 ref history'),
-					 Vector_extract (v, i, NONE))
+					 vector_extract (v, i, NONE))
 			in
 			    Promise.fulfill (p, history');
 			    (reader, v)
@@ -353,7 +353,7 @@ functor StreamIO(structure PrimIO: PRIM_IO
 		val vStart' = vStart + k
 		val vLen' = vLen - k
 	    in
-		Array_copyVecSlice {src = v, si = vStart, len = k,
+		array_copyVecSlice {src = v, si = vStart, len = k,
 				    dst = buf, di = bufLen - free};
 		if free' > 0 andalso buffered then stillFree := free'
 		else
