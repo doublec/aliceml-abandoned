@@ -23,7 +23,7 @@
 #include <windows.h>
 #endif
 
-enum { ALICE_SIGINT };
+enum { ALICE_SIGINT, ALICE_SIGSTOP };
 
 // TODO: We currently accept both translated and untranslated signals.
 // TODO: This needs a design.
@@ -35,6 +35,11 @@ static int TranslateSignal(int signal) {
   case CTRL_C_EVENT:
 #endif
     return CTRL_C_EVENT;
+  case ALICE_SIGSTOP:
+#if ALICE_SIGSTOP != CTRL_BREAK_EVENT
+  case CTRL_BREAK_EVENT:
+    return CTRL_BREAK_EVENT;
+#endif
   default:
     Error("Unknown Signal");
   }
@@ -44,6 +49,11 @@ static int TranslateSignal(int signal) {
   case ALICE_SIGINT:
   case SIGINT:
     return SIGINT;
+#endif
+#if defined(SIGTSTP)
+  case ALICE_SIGSTOP:
+  case SIGTSTP:
+    return SIGTSTP;
 #endif
   default:
     Error("Unknown Signal");

@@ -13,6 +13,6 @@
 
 signature SIGNAL =
     sig
-	datatype signal = SIGINT
+	datatype signal = SIGINT | SIGSTOP
 	val register : signal * (signal -> unit) -> unit
     end

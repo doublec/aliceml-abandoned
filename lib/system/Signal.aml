@@ -16,6 +16,6 @@ import signature SIGNAL       from "SIGNAL-sig"
 
 structure Signal :> SIGNAL =
     struct
-        datatype signal = SIGINT
+        datatype signal = SIGINT | SIGSTOP
 	open UnsafeSignal
     end
