@@ -5,6 +5,9 @@
 2. object list: richtiger Typ
 3. Ellipsen nehmen nur ein Argument
 
+4. Quellcode aufraeumen
+5. Dokumentation
+
 * aktuelles Problem: Finalisierung an falscher Stelle und nur bei GdkPixbuf?
 * Transient from finalStream funktioniert nicht -> finalStream abgeschafft
 
