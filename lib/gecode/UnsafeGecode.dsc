@@ -78,7 +78,7 @@ fail : void - void
 
 set_getUpperBound : setvar - UBIter<SetVar>
 set_getLowerBound : setvar - LBIter<SetVar>
-set_getUnknown : setvar - RangesMinus<UBIter<SetVar>, LBIter<SetVar> >
+set_getUnknown : setvar - Iter::Ranges::Diff<UBIter<SetVar>, LBIter<SetVar> >
 set_getCardinalityMin : setvar - int
 set_getCardinalityMax : setvar - int
 set_getAssigned : setvar - bool

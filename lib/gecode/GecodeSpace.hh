@@ -16,6 +16,7 @@
 
 #include "gecode-int.hh"
 #include "gecode-set.hh"
+#include "iter/ranges-diff.hh"
 
 #define makeintvarargs(a,vars)                                 \
   IntVarArgs a(vars.size());                                   \
@@ -167,7 +168,7 @@ public:
   
   UBIter<SetVar> set_getUpperBound(setvar);
   LBIter<SetVar> set_getLowerBound(setvar);
-  RangesMinus<UBIter<SetVar>, LBIter<SetVar> > set_getUnknown(setvar);
+  Iter::Ranges::Diff<UBIter<SetVar>, LBIter<SetVar> > set_getUnknown(setvar);
   int set_getCardinalityMin(setvar);
   int set_getCardinalityMax(setvar);
   bool set_getAssigned(setvar);

@@ -324,12 +324,12 @@ LBIter<SetVar> GecodeSpace::set_getLowerBound(int s) {
   LBIter<SetVar> lb(fss[s]);
   return lb;
 }
-RangesMinus<UBIter<SetVar>, LBIter<SetVar> >
+Iter::Ranges::Diff<UBIter<SetVar>, LBIter<SetVar> >
 GecodeSpace::set_getUnknown(int s) {
   enter();
   UBIter<SetVar> ub(fss[s]);
   LBIter<SetVar> lb(fss[s]);
-  RangesMinus<UBIter<SetVar>, LBIter<SetVar> > m(ub,lb);
+  Iter::Ranges::Diff<UBIter<SetVar>, LBIter<SetVar> > m(ub,lb);
   return m;
 }
 
