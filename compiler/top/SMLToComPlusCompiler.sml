@@ -12,7 +12,7 @@
 
 structure SMLToComPlusCompiler =
     let
-	structure Switches = MakeSwitches()
+	structure Switches = MakeSwitches(val logOut = TextIO.stdOut)
 
 	structure ComPlusTarget = MakeComPlusTarget(Signature)
 

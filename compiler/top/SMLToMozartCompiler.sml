@@ -13,7 +13,7 @@
 
 structure SMLToMozartCompiler =
     let
-	structure Switches = MakeSwitches()
+	structure Switches = MakeSwitches(val logOut = TextIO.stdOut)
 
 	structure MozartTarget =
 	    MakeMozartTarget(structure Switches = Switches
