@@ -476,10 +476,10 @@ struct
 	      | I.GuardPat(_,p,_)
 	      | I.AnnPat(_,p,_)), xs')	= idsPat(p,xs')
       | idsPat((I.TupPat(_,ps)
-	      | I.VecPat(_,ps)
-	      | I.AltPat(_,ps)), xs')	= idsPats(ps,xs')
+	      | I.VecPat(_,ps)), xs')	= idsPats(ps,xs')
       | idsPat(I.ProdPat(_,r), xs')	= idsRow(r,xs')
-      | idsPat(I.AsPat(_,p1,p2), xs')	= ( idsPat(p1,xs') ; idsPat(p2,xs') )
+      | idsPat((I.AsPat(_,p1,p2)
+	      | I.AltPat(_,p1,p2)),xs')	= ( idsPat(p1,xs') ; idsPat(p2,xs') )
       | idsPat(I.WithPat(_,p,ds), xs')	= ( idsPat(p,xs') ; idsDecs(ds,xs') )
 
     and idsRow(I.Row(_,fs,_), xs')	= Vector.app(fn f => idsField(f,xs')) fs
@@ -519,7 +519,7 @@ struct
       | trExp(I.OrExp(i,e1,e2))		= O.OrExp(i, trExp e1, trExp e2)
       | trExp(I.IfExp(i,e1,e2,e3))	= O.IfExp(i, trExp e1, trExp e2,
 							       trExp e3)
-      | trExp(I.SeqExp(i,es))		= O.SeqExp(i, trExps es)
+      | trExp(I.SeqExp(i,e1,e2))	= O.SeqExp(i, trExp e1, trExp e2)
       | trExp(I.CaseExp(i,e,ms))	= O.CaseExp(i, trExp e, trMatchs ms)
       | trExp(I.FailExp(i))		= O.FailExp(i)
       | trExp(I.LazyExp(i,e))		= O.LazyExp(i, trExp e)
@@ -584,7 +584,7 @@ struct
       | trPat(I.ProdPat(i,r))		= O.ProdPat(i, trPatRow r)
       | trPat(I.VecPat(i,ps))		= O.VecPat(i, trPats ps)
       | trPat(I.AsPat(i,p1,p2))		= O.AsPat(i, trPat p1, trPat p2)
-      | trPat(I.AltPat(i,ps))		= O.AltPat(i, trPats ps)
+      | trPat(I.AltPat(i,p1,p2))	= O.AltPat(i, trPat p1, trPat p2)
       | trPat(I.NegPat(i,p))		= O.NegPat(i, trPat p)
       | trPat(I.GuardPat(i,p,e))	= O.GuardPat(i, trPat p, trExp e)
       | trPat(I.AnnPat(i,p,t))		= trPat p
@@ -880,7 +880,7 @@ val _ = TextIO.inputLine(TextIO.stdIn)
 					 #[idToExp x1', idToExp x3']))
 	    val  i2      = typInfo(r,t2)
 	    val  e2'     = O.ProdExp(i2, #[O.Field(i0', O.Lab(i0',l3), e1')])
-	    val  e'      = O.LetExp(i2, #[d'], O.SeqExp(i2, #[e0',e2']))
+	    val  e'      = O.LetExp(i2, #[d'], O.SeqExp(i2, e0', e2'))
 	in
 	    O.FunExp(i', #[O.Match(nonInfo r, p', e')])
 	end
@@ -925,7 +925,7 @@ val _ = TextIO.inputLine(TextIO.stdIn)
 	    val  e1'     = reaInfOp(lab_match, O.TupExp(typInfo(r,typ_infinf),
 					       #[idToExp x12', e12']))
 	    val  e2'     = idToExp x11' (*UNFINISHED*)
-	    val  e'      = O.LetExp(i2', #[d'], O.SeqExp(i2', #[e1', e2']))
+	    val  e'      = O.LetExp(i2', #[d'], O.SeqExp(i2', e1', e2'))
 	in
 	    O.FunExp(i', #[O.Match(nonInfo r, p', e')])
 	end

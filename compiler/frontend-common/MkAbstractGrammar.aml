@@ -132,7 +132,7 @@ struct
 	| AndExp    of exp_info * exp * exp	(* short-circuit conjunction *)
 	| OrExp     of exp_info * exp * exp	(* short-circuit disjunction *)
 	| IfExp     of exp_info * exp * exp * exp (* conditional *)
-	| SeqExp    of exp_info * exp vector	(* sequential expressions *)
+	| SeqExp    of exp_info * exp * exp	(* sequential expressions *)
 	| CaseExp   of exp_info * exp * match vector (* case *)
 	| LazyExp   of exp_info * exp		(* byneed evaulation *)
 	| SpawnExp  of exp_info * exp		(* concurrent evaulation *)
@@ -161,7 +161,7 @@ struct
 	| ProdPat   of pat_info * pat row	(* row (record) *)
 	| VecPat    of pat_info * pat vector	(* vector *)
 	| AsPat     of pat_info * pat * pat	(* as (layered) pattern *)
-	| AltPat    of pat_info * pat vector	(* alternative pattern *)
+	| AltPat    of pat_info * pat * pat	(* alternative pattern *)
 	| NegPat    of pat_info * pat		(* negated pattern *)
 	| GuardPat  of pat_info * pat * exp	(* guarded pattern *)
 	| AnnPat    of pat_info * pat * typ	(* type annotation *)
@@ -290,7 +290,7 @@ struct
       | infoExp(AndExp(i,_,_))		= i
       | infoExp(OrExp(i,_,_))		= i
       | infoExp(IfExp(i,_,_,_))		= i
-      | infoExp(SeqExp(i,_))		= i
+      | infoExp(SeqExp(i,_,_))		= i
       | infoExp(CaseExp(i,_,_))		= i
       | infoExp(LazyExp(i,_))		= i
       | infoExp(SpawnExp(i,_))		= i
@@ -315,7 +315,7 @@ struct
       | infoPat(ProdPat(i,_))		= i
       | infoPat(VecPat(i,_))		= i
       | infoPat(AsPat(i,_,_))		= i
-      | infoPat(AltPat(i,_))		= i
+      | infoPat(AltPat(i,_,_))		= i
       | infoPat(NegPat(i,_))		= i
       | infoPat(GuardPat(i,_,_))	= i
       | infoPat(AnnPat(i,_,_))		= i

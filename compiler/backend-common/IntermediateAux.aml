@@ -124,8 +124,8 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	  | substExp' (IfExp (info, exp1, exp2, exp3), subst) =
 	    IfExp (info, substExp' (exp1, subst),
 		   substExp' (exp2, subst), substExp' (exp3, subst))
-	  | substExp' (SeqExp (info, exps), subst) =
-	    SeqExp (info, Vector.map (fn exp => substExp' (exp, subst)) exps)
+	  | substExp' (SeqExp (info, exp1, exp2), subst) =
+	    SeqExp (info, substExp' (exp1, subst), substExp' (exp2, subst))
 	  | substExp' (CaseExp (info, exp, matches), subst) =
 	    CaseExp (info, substExp' (exp, subst),
 		     substMatches' (matches, subst))
@@ -169,8 +169,8 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	    VecPat (info, Vector.map (fn pat => substPat' (pat, subst)) pats)
 	  | substPat' (AsPat (info, pat1, pat2), subst) =
 	    AsPat (info, substPat' (pat1, subst), substPat' (pat2, subst))
-	  | substPat' (AltPat (info, pats), subst) =
-	    AltPat (info, Vector.map (fn pat => substPat' (pat, subst)) pats)
+	  | substPat' (AltPat (info, pat1, pat2), subst) =
+	    AltPat (info, substPat' (pat1, subst), substPat' (pat2, subst))
 	  | substPat' (NegPat (info, pat), subst) =
 	    NegPat (info, substPat' (pat, subst))
 	  | substPat' (GuardPat (info, pat, exp), subst) =
@@ -287,8 +287,8 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	    in
 		(AsPat (info, pat1', pat2'), subst'')
 	    end
-	  | relax (AltPat (info, pats), subst) =
-	    (AltPat (info, Vector.map separateAlt pats), subst)
+	  | relax (AltPat (info, pat1, pat2), subst) =
+	    (AltPat (info, separateAlt pat1, separateAlt pat2), subst)
 	  | relax (NegPat (info, pat), subst) =
 	    (NegPat (info, separateAlt pat), subst)
 	  | relax (GuardPat (info, pat, exp), subst) =

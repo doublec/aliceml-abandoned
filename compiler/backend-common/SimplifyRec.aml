@@ -445,7 +445,7 @@ structure SimplifyRec :> SIMPLIFY_REC =
 	    in
 		(constraints1 @ constraints2 @ constraints3, pat')
 	    end
-	  | preprocess (I.AltPat (info, _)) =
+	  | preprocess (I.AltPat (info, _, _)) =
 	    Error.error (#region info,
 			 "alternative pattern not allowed in val rec")
 	  | preprocess (I.NegPat (info, _)) =

@@ -478,12 +478,12 @@ struct
 	    ( t2, O.IfExp(typInfo(i,t2), exp1', exp2', exp3') )
 	end
 
-      | elabExp(E, I.SeqExp(i, exps)) =
+      | elabExp(E, I.SeqExp(i, exp1, exp2)) =
 	let
-	    val (ts,exps') = elabExps(E, exps)
-	    val  t         = Vector.sub(ts, Vector.length ts - 1)
+	    val (t1,exp1') = elabExp(E, exp1)
+	    val (t2,exp2') = elabExp(E, exp2)
 	in
-	    ( t, O.SeqExp(typInfo(i,t), exps') )
+	    ( t2, O.SeqExp(typInfo(i,t2), exp1', exp2') )
 	end
 
       | elabExp(E, I.CaseExp(i, exp, matchs)) =
@@ -721,16 +721,14 @@ struct
 	    ( t2, O.AsPat(typInfo(i,t2), pat1', pat2') )
 	end
 
-      | elabPat(E, s, I.AltPat(i, pats)) =
+      | elabPat(E, s, I.AltPat(i, pat1, pat2)) =
 	let
-	    val (ts,pats') = elabPats(E, s, pats)
-	    val  t         = case ts of #[] => Type.unknown(Type.STAR)
-				      |  _  => Vector.sub(ts,0)
-	    val  _         = unifyVec ts handle UnifyVec(n,t1,t2) =>
-				error(I.infoPat(Vector.sub(pats,n)),
-				      E.AltPatUnify(t, Vector.sub(ts,n), t1,t2))
+	    val (t1,pat1') = elabPat(E, s, pat1)
+	    val (t2,pat2') = elabPat(E, s, pat2)
+	    val  _         = Type.unify(t1,t2) handle Type.Unify(t3,t4) =>
+				error(i, E.AltPatUnify(t1, t2, t3, t4))
 	in
-	    ( t, O.AltPat(typInfo(i,t), pats') )
+	    ( t2, O.AltPat(typInfo(i,t2), pat1', pat2') )
 	end
 
       | elabPat(E, s, I.NegPat(i, pat)) =

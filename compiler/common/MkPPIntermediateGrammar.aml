@@ -179,8 +179,9 @@ struct
 					    ppExp exp2 ^/^
 					    ppExp exp3
 					  )
-      | ppExp(SeqExp(i, exps))		= exptree "Seq" i (
-					    ppExps exps
+      | ppExp(SeqExp(i, exp1, exp2))	= exptree "Seq" i (
+					    ppExp exp1 ^/^
+					    ppExp exp2
 					  )
       | ppExp(CaseExp(i, exp, matchs))	= exptree "Case" i (
 					    ppExp exp ^/^
@@ -255,8 +256,9 @@ struct
 					    ppPat pat1 ^/^
 					    ppPat pat2
 					  )
-      | ppPat(AltPat(i, pats))		= pattree "Alt" i (
-					    ppPats pats
+      | ppPat(AltPat(i, pat1, pat2))	= pattree "Alt" i (
+					    ppPat pat1 ^/^
+					    ppPat pat2
 					  )
       | ppPat(NegPat(i, pat))		= pattree "Neg" i (
 					    ppPat pat

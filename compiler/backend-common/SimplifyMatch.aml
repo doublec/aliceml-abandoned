@@ -95,7 +95,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	datatype testSeqElem =
 	    Test of pos * test
 	  | Neg of testSeq
-	  | Alt of testSeq vector
+	  | Alt of testSeq * testSeq
 	withtype testSeq = testSeqElem list
 
 	(* Test Sequence Construction *)
@@ -224,14 +224,13 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	    in
 		makeTestSeq (pat2, pos, rest', mapping')
 	    end
-	  | makeTestSeq (AltPat (_, pats), pos, rest, mapping) =
-	    (Alt (Vector.map (fn pat =>
-			      let
-				  val (rest', _) =
-				      makeTestSeq (pat, pos, nil, mapping)
-			      in
-				  List.rev rest'
-			      end) pats)::rest, mapping)
+	  | makeTestSeq (AltPat (_, pat1, pat2), pos, rest, mapping) =
+	    let
+		val (rest1', _) = makeTestSeq (pat1, pos, nil, mapping)
+		val (rest2', _) = makeTestSeq (pat2, pos, nil, mapping)
+	    in
+		(Alt (List.rev rest1', List.rev rest2')::rest, mapping)
+	    end
 	  | makeTestSeq (NegPat (_, pat), pos, rest, mapping) =
 	    let
 		val (rest', _) = makeTestSeq (pat, pos, nil, mapping)
@@ -349,11 +348,10 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	  | testSeqToString' (Neg testSeq::rest) =
 	    "<neg>\n" ^ testSeqToString' testSeq ^ "</neg>\n" ^
 	    testSeqToString' rest
-	  | testSeqToString' (Alt testSeqs::rest) =
-	    Vector.foldr (fn (testSeq, s) =>
-			  "<alt>\n" ^ testSeqToString' testSeq ^ s)
-	    "</alt>\n" testSeqs ^
-	    testSeqToString' rest
+	  | testSeqToString' (Alt (testSeq1, testSeq2)::rest) =
+	    "<alt>\n" ^ testSeqToString' testSeq1 ^
+	    "<alt>\n" ^ testSeqToString' testSeq2 ^
+	    "</alt>\n" ^ testSeqToString' rest
 	  | testSeqToString' nil = ""
 
 	fun testSeqToString testSeq =
@@ -417,14 +415,14 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	      | mergeIntoTree (Neg testSeq::testSeqRest, thenTree, elseTree) =
 		mergeIntoTree (testSeq, elseTree,
 			       mergeIntoTree (testSeqRest, thenTree, elseTree))
-	      | mergeIntoTree (Alt testSeqs::testSeqRest, thenTree, elseTree) =
+	      | mergeIntoTree (Alt (testSeq1, testSeq2)::testSeqRest, thenTree,
+			       elseTree) =
 		(*--** this may create duplicate code in some cases. *)
 		(* This could be removed by reconstructing the whole graph *)
 		(* using hash-consing. *)
-		Vector.foldr
-		(fn (testSeq, elseTree) =>
-		 mergeIntoTree (testSeq @ testSeqRest, thenTree, elseTree))
-		elseTree testSeqs
+		mergeIntoTree (testSeq1 @ testSeqRest, thenTree,
+			       mergeIntoTree (testSeq2 @ testSeqRest, thenTree,
+					      elseTree))
 	      | mergeIntoTree (nil, thenTree, _) = thenTree
 	end
 
@@ -599,8 +597,8 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	      | deconstructs (VecPat (_, _)) = raise NotNAry
 	      | deconstructs (AsPat (_, pat1, pat2)) =
 		deconstructs pat1 orelse deconstructs pat2
-	      | deconstructs (AltPat (_, pats)) =
-		Vector.exists deconstructs pats
+	      | deconstructs (AltPat (_, pat1, pat2)) =
+		deconstructs pat1 orelse deconstructs pat2
 	      | deconstructs (NegPat (_, pat)) = deconstructs pat
 	      | deconstructs (GuardPat (_, pat, _)) =
 		deconstructs pat orelse raise SideEffect

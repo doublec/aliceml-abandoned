@@ -600,25 +600,14 @@ functor MkFlatteningPhase(val loadSign:
 	    in
 		simplifyIf (exp1, stms2, stms3)
 	    end
-	  | translateExp (SeqExp (_, exps), f, cont) =
+	  | translateExp (SeqExp (_, exp1, exp2), f, cont) =
 	    let
-		val isLast = ref true
-		fun translate (exp, stms) =
-		    if !isLast then
-			(case stms of
-			     nil => ()
-			   | _::_ =>
-				 raise Crash.Crash
-				     "MkFlatteningPhase.translateExp";
-			 isLast := false; translateExp (exp, f, cont))
-		    else
-			translateExp
-			(exp,
-			 fn exp' => O.ValDec (stm_info (#region (infoExp exp)),
-					      O.Wildcard, exp'),
-			 Goto stms)
+		val stms2 = translateExp (exp2, f, cont)
 	    in
-		Vector.foldr translate nil exps
+		translateExp
+		(exp1, fn exp' => O.ValDec (stm_info (#region (infoExp exp1)),
+					    O.Wildcard, exp'),
+		 Goto stms2)
 	    end
 	  | translateExp (CaseExp (info, exp, matches), f, cont) =
 	    let

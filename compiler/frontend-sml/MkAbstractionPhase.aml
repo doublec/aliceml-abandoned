@@ -201,6 +201,20 @@ struct
     fun annexp(exp, typs) =
 	List.foldl (fn(typ,exp) => O.AnnExp(O.infoTyp typ, exp, typ)) exp typs
 
+    fun seqexp []          = raise Crash.Crash "AbstractionPhase.seqexp"
+      | seqexp [exp]       = exp
+      | seqexp(exp1::exps) =
+	let val exp2 = seqexp exps in
+	    O.SeqExp(Source.over(O.infoExp exp1, O.infoExp exp2), exp1, exp2)
+	end
+
+    fun altpat []          = raise Crash.Crash "AbstractionPhase.altpat"
+      | altpat [pat]       = pat
+      | altpat(pat1::pats) =
+	let val pat2 = altpat pats in
+	    O.AltPat(Source.over(O.infoPat pat1, O.infoPat pat2), pat1, pat2)
+	end
+
     fun funexp(valids, exp) =
 	List.foldr (fn(valid,exp) =>
 	     let val i = Source.over(O.infoId valid, O.infoExp exp) in
@@ -684,7 +698,7 @@ struct
 	   end
 	 | TUPLEAtExp(i, exps)		=> O.TupExp(i, trExps E exps)
 	 | VECTORAtExp(i, exps)		=> O.VecExp(i, trExps E exps)
-	 | SEQAtExp(i, exps)		=> O.SeqExp(i, trExps E exps)
+	 | SEQAtExp(i, exps)		=> seqexp(List.map (trExp E) exps)
 	 | LETAtExp(i, dec, exp)	=>
 	   let
 		val  _   = insertScope E
@@ -902,7 +916,7 @@ struct
 		val  _    = mergeDisjointScope E' handle CollisionVal vid' =>
 				errorVId(E', vid', E.PatVIdDuplicate)
 	   in
-		O.AltPat(i, Vector.fromList(pat'::pats'))
+		altpat(pat'::pats')
 	   end
 
 	 | PARAtPat(i, pat) => trPat (E,E') pat
@@ -1890,8 +1904,7 @@ struct
 	   in
 		case List.find (fn(_,arity',_) => arity<>arity') pat'aritytyps's
 		  of NONE =>
-			( O.AltPat(i, Vector.fromList(pat'::pats')),
-			  arity, typs' @ typs'' )
+			( altpat(pat'::pats'), arity, typs' @ typs'' )
 		   | SOME(pat',_,_) =>
 			error(O.infoPat pat', E.FvalBindArityInconsistent)
 	   end
