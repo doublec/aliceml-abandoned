@@ -253,9 +253,7 @@ define
 	      'Future.awaitOne': missing('Future.awaitOne')   %--**
 %		 fun {$ X Y} {WaitOr X Y} X end
 	      'Future.byneed':
-		 fun {$ Closure}
-		    transient({NewCell byneed(Closure)})
-		 end#r_v
+		 fun {$ Closure} transient({NewCell byneed(Closure)}) end#r_v
 	      'Future.concur':
 		 fun {$ Closure TaskStack} Transient TaskStack in
 		    Transient = transient({NewCell future(nil)})
