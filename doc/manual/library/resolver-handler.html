@@ -20,9 +20,9 @@
 
   <P>
     On the programming language level, a <EM>handler</EM> is a function that
-    takes a URI and transforms it into another URI.  A handler may or may not
-    be <EM>applicable</EM>, which means that it actually may or may not return
-    a URI.
+    takes a URI and transforms it into another URI.  Any or both of the URIs
+    may be relative.  A handler may or may not be <EM>applicable</EM>, which
+    means that it actually may or may not return a URI.
   </P>
 
   <P>
@@ -91,8 +91,10 @@
     </DT>
     <DD>
       <P>returns a handler that causes an attempt to locate the resource
-	below a specific root <TT><I>url</I></TT>.  Only applicable for
-	resource names that represent a relative path name.</P>
+	below a specific root <TT><I>url</I></TT>.  The root <I>url</I>
+	is, if relative, resolved with respect to the current working
+	directory at the time of handler creation.  The handler is only
+	applicable for resource names that represent a relative path name.</P>
     </DD>
 
     <DT>
@@ -104,7 +106,9 @@
       <PRE><I>scheme</I>/<I>authority</I>/<I>device</I>/<I>path</I></PRE>
       <P>is constructed, where path components for absent constituents are
 	left out.  The handler returns the URL obtained by resolving this
-	relative URL with respect to <TT><I>url</I></TT>.</P>
+	relative URL with respect to <TT><I>url</I></TT>, which is resolved,
+	if relative, with respect to the current working directory at the
+	time of handler creation.</P>
     </DD>
 
     <DT>
