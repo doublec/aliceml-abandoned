@@ -45,4 +45,4 @@ class Transient;
 class Chunk;
 class WeakDictionary;
 
-#endif __STORE__TYPES_HH__
+#endif
