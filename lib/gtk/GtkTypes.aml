@@ -18,13 +18,6 @@ in
 	struct
 	    type object
 
-	    datatype arg =
-		INT    of int
-	      | DOUBLE of real
-	      | STRING of string
-	      | OBJECT of object
-	      | POINTS of (int * int) list
-
 	    datatype inputSource =
 		GDK_SOURCE_MOUSE
 	      | GDK_SOURCE_PEN
@@ -128,5 +121,13 @@ in
 	      | GDK_DROP_FINISHED
 	      | GDK_CLIENT_EVENT
 	      | UNSUPPORTED
+
+	    datatype arg =
+		INT    of int
+	      | DOUBLE of real
+	      | STRING of string
+	      | OBJECT of object
+	      | POINTS of (int * int) list
+	      | EVENT  of event
 	end
 end
