@@ -17,7 +17,7 @@ import structure PathSet from "PathSet"
 import structure PathMap from "PathMap"
 import structure Type    from "Type"
 import structure Fixity  from "Fixity"
-import signature IMP_MAP from "../utility/IMP_MAP-sig"
+import signature IMP_MAP from "../data/IMP_MAP-sig"
 
 signature INF =
 sig
@@ -51,7 +51,7 @@ sig
 		   , inf_rea : inf_rea
 		   }
 
-    val newRea :	unit -> rea
+    val rea :		unit -> rea
     val isEmptyRea :	rea -> bool
 
 
