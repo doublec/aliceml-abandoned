@@ -114,6 +114,7 @@ define
    case {Application.getArgs plain} of Name|Rest then
       {Property.put 'ozl.checkExpImp' CheckExpImpExtended}
       {Property.put 'ozl.checkImpImp' CheckImpImp}
+      {Property.put 'alice.rootUrl' Name}
       {Property.put 'ozd.args' Rest}
       {Property.put 'errors.depth' 20}
       {Property.put 'errors.width' 10}
