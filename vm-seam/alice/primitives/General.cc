@@ -19,15 +19,26 @@ DEFINE1(General_exnName) {
 } END
 
 void PrimitiveTable::RegisterGeneral() {
+  PrimitiveTable::General_Chr =
+    UniqueConstructor::New(String::New("General.Chr"))->ToWord();
+  PrimitiveTable::General_Div =
+    UniqueConstructor::New(String::New("General.Div"))->ToWord();
+  PrimitiveTable::General_Overflow =
+    UniqueConstructor::New(String::New("General.Overflow"))->ToWord();
+  PrimitiveTable::General_Size =
+    UniqueConstructor::New(String::New("General.Size"))->ToWord();
+  PrimitiveTable::General_Subscript =
+    UniqueConstructor::New(String::New("General.Subscript"))->ToWord();
+
   RegisterUniqueConstructor("General.Bind");
-  RegisterUniqueConstructor("General.Chr");
-  RegisterUniqueConstructor("General.Div");
+  Register("General.Chr", PrimitiveTable::General_Chr);
+  Register("General.Div", PrimitiveTable::General_Div);
   RegisterUniqueConstructor("General.Domain");
   RegisterUniqueConstructor("General.Fail");
   RegisterUniqueConstructor("General.Match");
-  RegisterUniqueConstructor("General.Overflow");
-  RegisterUniqueConstructor("General.Size");
+  Register("General.Overflow", PrimitiveTable::General_Overflow);
+  Register("General.Size", PrimitiveTable::General_Size);
   RegisterUniqueConstructor("General.Span");
-  RegisterUniqueConstructor("General.Subscript");
+  Register("General.Subscript", PrimitiveTable::General_Subscript);
   Register("General.exnName", General_exnName, 1);
 }

@@ -55,7 +55,6 @@ private:
   static word Lookup(word table, Chunk *name);
 public:
   static word Future_Future;
-  static word Future_await;
   static word General_Chr;
   static word General_Div;
   static word General_Overflow;
