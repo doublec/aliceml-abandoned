@@ -1,24 +1,40 @@
 package de.uni_sb.ps.DML.DMLRuntime;
 
+/** Diese Klasse repräsentiert DMLWord.
+ *  @see DMLInt
+ *  @see DMLReal
+ *  @see DMLSCon
+ *  @see DMLString
+ *  @see DMLValue
+ */
 final public class DMLWord extends DMLSCon {
 
-    
-  /** Gleichheit auf Integer-Werten */
-  final public boolean equals(Object val) {
-    return (val instanceof DMLWord) && (((DMLWord)val).value==this.value);
-  }
+    /** java-long Wert */
+    private long value=0;
 
-  public DMLWord(long value) {
-    this.value=value;
-  }
+    /** Gleichheit auf Long-Werten */
+    final public boolean equals(Object val) {
+	return (val instanceof DMLWord) && (((DMLWord)val).value==this.value);
+    }
 
-  long value=0;
+    /** Baut ein neues DMLWord mit Wert <code>value</code>.
+     *  @param value <code>long</code> Wert, der dem DMLWord entspricht.
+     */
+    public DMLWord(long value) {
+	this.value=value;
+    }
 
-  final public String toString() {
-    return value+": word";
-  }
+    /** Stringdarstellung des Wertes erzeugen.
+     *  @return String Stringdarstellung des Wertes
+     */
+    final public String toString() {
+	return value+": word";
+    }
 
-  final public long getLong() {
-    return value;
-  }
+    /** Den Java-Wert des DMLWord auslesen.
+     *  @return long Java-Wert der dem DMLWord-Wert entspricht
+     */
+    final public long getLong() {
+	return value;
+    }
 }

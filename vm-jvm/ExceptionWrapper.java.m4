@@ -1,18 +1,30 @@
 package de.uni_sb.ps.DML.DMLRuntime;
 
+/** Wrapper, um DML-Werte als Exception werfen zu können.
+ *  @see DMLValue#raise()
+ */
 final public class DMLExceptionWrapper extends RuntimeException {
-    DMLValue value = null;
 
-    public DMLExceptionWrapper(DMLValue v){
-	super();
-	value=v;
+    private DMLValue value = null;
+
+    /** Baut einen neuen ExceptionWrapper.
+     *  @param val der Wert der als Exception geworfen werden soll
+     */
+    public DMLExceptionWrapper(DMLValue val){
+	value=val;
     }
 
-    public DMLValue getValue() {
+    /** Liefert den Wert aus dem Wrapper.
+     *  @return DMLValue Wert der als Exception geworfen wurde
+     */
+    final public DMLValue getValue() {
 	return value;
     }
 
-    public String toString() {
-	return "\n\t"+value;
+    /** Stringdarstellung des ExceptionWrappers.
+     *  @return String Stringdarstellung des ExceptionWrappers
+     */
+    final public String toString() {
+	return "\n\t"+value+" as exception";
     }
 }

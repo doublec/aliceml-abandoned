@@ -1,11 +1,13 @@
 package de.uni_sb.ps.DML.DMLRuntime;
 
+/** Tuple-Darstellung in DML.
+ *  @see DMLRecord
+ */
 public class DMLTuple implements DMLValue {
 
-    DMLValue vals[]=null;
+    private DMLValue vals[]=null;
 
     public DMLTuple(DMLValue[] vals) {
-	super();
 	this.vals=vals;
     }
 
@@ -57,8 +59,8 @@ public class DMLTuple implements DMLValue {
 	return this;
     }
 
-    final public DMLValue apply(DMLValue v) {
-	return DMLConstants.runtimeError.apply(new DMLString("cannot apply "+this+" to "+v)).raise();
+    final public DMLValue apply(DMLValue val) {
+	return DMLConstants.runtimeError.apply(new DMLString("cannot apply "+this+" to "+val)).raise();
     }
 
     final public DMLValue raise() {
