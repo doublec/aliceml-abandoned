@@ -53,13 +53,13 @@ define
    %%
    %% Accessing the State
    %%
-   %% <state> ::= state(isToplevel: <bool>
+   %% <state> ::= state(isToplevel: <cell>(<bool>)
    %%                   counter: <cell>(<int>)
    %%                   env: <cell>([<dictionary>(<stamp> -> <valrep>)]))
    %%
 
    fun {NewState}
-      state(isToplevel: false
+      state(isToplevel: {NewCell true}
 	    counter: {NewCell 0}
 	    env: {NewCell [{NewDictionary}]})
    end
@@ -140,12 +140,13 @@ define
    %% The Annotation Procedures
    %%
 
-   proc {Annotate Dec}
-      {AnnotateDec Dec {NewState}}
+   proc {Annotate Decs} State in
+      State = {NewState}
+      {ForAll Decs proc {$ Dec} {AnnotateDec Dec State} end}
    end
 
    proc {AnnotateDec Dec State}
-      case Dec of conDec(Info Id HasArgs) then V in
+      case Dec of conDec(_ Id=id(Info Stamp _) HasArgs) then V ValRep in
 	 V = if {IsToplevel State} then N in
 		N = case {Intermediate.getPrintName Id} of unit then {NewName}
 		    elseof PN then {CompilerSupport.newNamedName PN}
@@ -155,10 +156,12 @@ define
 		end
 	     else top
 	     end
-	 {SetValRep Info {NewReg State}#V}
-      [] valDec(Info Ids Exp) then V in
+	 ValRep = {NewReg State}#V
+	 {SetValRep Info ValRep}
+	 {EnterValRep State Stamp ValRep}
+      [] valDec(_ Ids Exp) then V in
 	 {ForAll Ids
-	  proc {$ id(_ Stamp _)} ValRep in
+	  proc {$ id(Info Stamp _)} ValRep in
 	     ValRep = _#_
 	     {EnterValRep State Stamp ValRep}
 	     {SetValRep Info ValRep}
@@ -207,12 +210,14 @@ define
 	 ValRep = {NewReg State}#{List.toRecord record VRPairs}
       [] selExp(_ lab(_ S)) then
 	 ValRep = {NewReg State}#selector({Intermediate.labToFeature S})
-      [] funExp(_ id(_ Stamp _) Exp) then OldIsToplevel in
+      [] funExp(_ id(Info Stamp _) Exp) then OldIsToplevel ValRep1 in
 	 %--** generate `fast' function
 	 {Save State}
 	 OldIsToplevel = {IsToplevel State}
 	 {SetToplevel State false}
-	 {EnterValRep State Stamp {NewReg State}#top}
+	 ValRep1 = {NewReg State}#top
+	 {EnterValRep State Stamp ValRep1}
+	 {SetValRep Info ValRep1}
 	 _ = {AnnotateExp Exp State}
 	 {SetToplevel State OldIsToplevel}
 	 {Restore State}

@@ -70,12 +70,9 @@
 %%
 
 functor
-import
-   Info(getCoord)
 export
    GetPrintName
    InfoOf
-   CoordinatesOf
    LabToFeature
 define
    fun {GetPrintName Id}
@@ -120,10 +117,6 @@ define
       [] id(I _ _) then I
       [] lab(I _) then I
       end
-   end
-
-   fun {CoordinatesOf X}
-      {Info.getCoord {InfoOf X}}
    end
 
    fun {LabToFeature S}

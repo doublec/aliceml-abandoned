@@ -17,7 +17,7 @@ export
    Parse
 define
    C = {New Compiler.engine init()}
-   _ = {New Compiler.interface init(C true)}
+   _ = {New Compiler.interface init(C auto)}
    {C enqueue(mergeEnv(env('NONE': none
 			   'SOME': some
 			   'WordLit': wordLit
