@@ -68,6 +68,8 @@ private:
     return HashTable::FromWordDirect(componentTable);
   }
 public:
+  // BootLinker Static Constructor
+  static void Init(NativeComponent *nativeComponents);
   // BootLinker Functions
   static Queue *GetKeyQueue() {
     return Queue::FromWordDirect(keyQueue);
@@ -77,9 +79,7 @@ public:
   }
   static void EnterComponent(String *key, word sign, word str);
   static Component *LookupComponent(String *key);
-  static word Link(String *url);
-  // BootLinker Static Constructor
-  static void Init(NativeComponent *nativeComponents);
+  static void Link(String *url);
 };
 
 #endif
