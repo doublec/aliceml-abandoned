@@ -18,7 +18,7 @@
 
 static char *ToCString(String *string) {
   int length = string->GetLength();
-  char *s = static_cast<char *>(malloc(length + 1));
+  char *s = static_cast<char *>(malloc(length + 1)); //--** don't use this!
   memcpy(s, string->GetValue(), length);
   s[length] = '\0';
   return s;
