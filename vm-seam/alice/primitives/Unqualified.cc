@@ -64,8 +64,8 @@ static int Compare(word x0, word x1) {
     }
   case CHUNK_LABEL:
     {
-      Chunk *ac = static_cast<Chunk *>(a);
-      Chunk *bc = static_cast<Chunk *>(b);
+      Chunk *ac = STATIC_CAST(Chunk *, a);
+      Chunk *bc = STATIC_CAST(Chunk *, b);
       u_int size = ac->GetSize();
       return bc->GetSize() == size &&
 	!std::memcmp(ac->GetBase(), bc->GetBase(), size);

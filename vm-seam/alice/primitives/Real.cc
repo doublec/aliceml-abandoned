@@ -25,7 +25,7 @@
 #define REAL_TO_INT(name, op)					\
   DEFINE1(name) {						\
     DECLARE_REAL(real, x0);					\
-    RETURN_INT(static_cast<s_int>(op(real->GetValue())));	\
+    RETURN_INT(STATIC_CAST(s_int, op(real->GetValue())));	\
   } END
 
 #define REAL_REAL_TO_REAL_OP(name, op)				\
@@ -47,7 +47,7 @@
     DECLARE_REAL(real1, x0);					\
     DECLARE_REAL(real2, x1);					\
     double result = op(real1->GetValue(), real2->GetValue());	\
-    RETURN_INT(static_cast<s_int>(result));			\
+    RETURN_INT(STATIC_CAST(s_int, result));			\
   } END
 
 static inline double Trunc(double x) {
@@ -86,7 +86,7 @@ REAL_TO_INT(Real_floor, std::floor)
 
 DEFINE1(Real_fromInt) {
   DECLARE_INT(i, x0);
-  RETURN_REAL(static_cast<double>(i));
+  RETURN_REAL(STATIC_CAST(double, i));
 } END
 
 REAL_TO_REAL(Real_realCeil, std::ceil)

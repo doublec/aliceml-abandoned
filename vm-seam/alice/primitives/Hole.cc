@@ -18,7 +18,7 @@ DEFINE2(Hole_fail) {
     RAISE(PrimitiveTable::Hole_Hole);
   Transient *exnTransient = Store::WordToTransient(x1);
   if (exnTransient != INVALID_POINTER) REQUEST(exnTransient->ToWord());
-  static_cast<Hole *>(transient)->Fail(x1);
+  STATIC_CAST(Hole *, transient)->Fail(x1);
   RETURN_UNIT;
 } END
 
@@ -26,7 +26,7 @@ DEFINE2(Hole_fill) {
   Transient *transient = Store::WordToTransient(x0);
   if (transient == INVALID_POINTER || transient->GetLabel() != HOLE_LABEL)
     RAISE(PrimitiveTable::Hole_Hole);
-  Hole *hole = static_cast<Hole *>(transient);
+  Hole *hole = STATIC_CAST(Hole *, transient);
   if (!hole->Fill(x1)) {
     hole->Fail(PrimitiveTable::Future_Cyclic);
     RAISE(PrimitiveTable::Future_Cyclic);
@@ -38,7 +38,7 @@ DEFINE1(Hole_future) {
   Transient *transient = Store::WordToTransient(x0);
   if (transient == INVALID_POINTER || transient->GetLabel() != HOLE_LABEL)
     RAISE(PrimitiveTable::Hole_Hole);
-  RETURN(static_cast<Hole *>(transient)->GetFuture()->ToWord());
+  RETURN(STATIC_CAST(Hole *, transient)->GetFuture()->ToWord());
 } END
 
 DEFINE0(Hole_hole) {

@@ -28,7 +28,7 @@ public:
   static RaiseFrame *New(Thread *thread, Worker *worker, word exn) {
     NEW_THREAD_STACK_FRAME(frame, thread, worker, SIZE);
     frame->InitArg(EXN_POS, exn);
-    return static_cast<RaiseFrame *>(frame);
+    return STATIC_CAST(RaiseFrame *, frame);
   }
 };
 
@@ -60,13 +60,13 @@ public:
 RaiseWorker *RaiseWorker::self;
 
 u_int RaiseWorker::GetFrameSize(StackFrame *sFrame) {
-  RaiseFrame *frame = static_cast<RaiseFrame *>(sFrame);
+  RaiseFrame *frame = STATIC_CAST(RaiseFrame *, sFrame);
   Assert(sFrame->GetWorker() == this);
   return frame->GetSize();
 }
 
 Worker::Result RaiseWorker::Run(StackFrame *sFrame) {
-  RaiseFrame *frame = static_cast<RaiseFrame *>(sFrame);
+  RaiseFrame *frame = STATIC_CAST(RaiseFrame *, sFrame);
   Assert(sFrame->GetWorker() == this);
   Scheduler::currentData = frame->GetExn();
   word wFrame = sFrame->Clone();
@@ -108,8 +108,7 @@ DEFINE2(Thread_raiseIn) {
       RaiseWorker::PushFrame(thread, x1);
       thread->SetArgs(0, Store::IntToWord(0));
       if (state == Thread::BLOCKED) {
-	Future *future = static_cast<Future *>
-	  (Store::WordToTransient(thread->GetFuture()));
+	Future *future = STATIC_CAST(Future *, Store::WordToTransient(thread->GetFuture()));
 	Assert(future != INVALID_POINTER);
 	future->RemoveFromWaitQueue(thread);
 	Scheduler::WakeupThread(thread);
