@@ -10,9 +10,7 @@
 %%%   $Revision$
 %%%
 
-declare
-[Frontend CodeGen Assembler] =
-{Module.link ['Frontend.ozf' 'CodeGen.ozf' 'Assembler.ozf']}
+declare [Frontend CodeGen] = {Module.link ['Frontend.ozf' 'CodeGen.ozf']}
 
 {Browse {Frontend.translateFile '../../test/bug.aus'}}
 
@@ -22,13 +20,10 @@ declare
 case {Frontend.translateFile '../../test/infer.aus'}
 %      '/home/kornstae/stockhausen/lib/bootstrap/Bootstrap.aus'}
 of unit then skip
-elseof AST then
+elseof AST then F in
    {System.showInfo 'generating code ...'}
-   case {CodeGen.translate AST} of Globals#Code then P in
-      {System.showInfo 'assembling ...'}
-      P = {Assembler.assemble Code Globals switches}
-      {System.showInfo 'executing ...'}
-      {P}
-      {System.showInfo 'done'}
-   end
+   F = {CodeGen.translate AST}
+   {System.showInfo 'executing ...'}
+   {Module.apply [F] _}
+   {System.showInfo 'done'}
 end

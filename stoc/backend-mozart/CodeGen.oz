@@ -13,11 +13,12 @@
 functor
 import
    CompilerSupport(isBuiltin) at 'x-oz://boot/CompilerSupport'
-   System(printName)
+   System(printName showInfo)
    Narrator('class')
    ErrorListener('class')
    CodeStore('class')
    Prebound(builtinTable env)
+   Assembler(assemble)
    Word at '../../vm-mozart/Word.so{native}'
 export
    Translate
@@ -173,14 +174,13 @@ define
 	    end
 	 end
 	 VTl = nil
-      [] returnStm(_ Exp) then
-	 case ReturnReg of unit then
-	    {Exception.raiseError stoc(internal translateStm Stm)}
-	 else
-	    {TranslateExp Exp ReturnReg VHd VTl State}
-	 end
-      [] exportStm(_ _) then
-	 VHd = VTl   %--**
+      [] returnStm(_ Exp) then {TranslateExp Exp ReturnReg VHd VTl State}
+      [] exportStm(_ Ids) then Ari in
+	 Ari = {Arity {List.toRecord 'export'
+		       {Map Ids fun {$ id(_ _ exId(PN))} PN#unit end}}}
+	 VHd = vEquateRecord(_ 'export' Ari ReturnReg
+			     {Map Ids
+			      fun {$ Id} value({GetReg Id State}) end} VTl)
       end
    end
 
@@ -323,8 +323,20 @@ define
        end VHd VTl}
    end
 
-   fun {Translate _#_#Program}
-      NarratorObject Reporter CS RegDict Prebound VInstr GRegs Code NLiveRegs
+/*
+   F = {Functor.new
+	'import'('A': info('from': 'A.ozf') 'B': info('from': 'B.ozf'))
+	'export'(c: value d: value)
+	fun {$ IMPORT} A B C D in
+	   A = IMPORT.'A'
+	   B = IMPORT.'B'
+	   'export'(c: C d: D)
+	end}
+*/
+
+   fun {Translate Import#Export#Body}
+      NarratorObject Reporter CS RegDict Prebound ImportReg ExportReg
+      State VInstr VInter GRegs Code NLiveRegs
    in
       NarratorObject = {New Narrator.'class' init(?Reporter)}
       _ = {New ErrorListener.'class' init(NarratorObject)}
@@ -332,21 +344,43 @@ define
 	    init(proc {$ getSwitch(_ X)} X = false end Reporter)}
       {MakeRegDict CS ?RegDict ?Prebound}
       {CS startDefinition()}
-      {TranslateBody Program ?VInstr nil
-       state(regDict: RegDict shareDict: {NewDictionary} cs: CS) unit}
-      {CS endDefinition(VInstr nil nil ?GRegs ?Code ?NLiveRegs)}
-      case Code of Code1#Code2 then StartLabel EndLabel in
+      {CS newReg(?ImportReg)}
+      {CS newReg(?ExportReg)}
+      State = state(regDict: RegDict shareDict: {NewDictionary} cs: CS)
+      {FoldL Import
+       fun {$ VHd (Id=id(_ Stamp _))#_ VTl}
+	  VHd = vInlineDot(_ ImportReg {VirtualString.toAtom Stamp}
+			   {MakeReg Id State} false unit VTl)
+       end VInstr VInter}
+      {TranslateBody Body ?VInter nil State ExportReg}
+      {CS endDefinition(VInstr [ImportReg ExportReg] nil
+			?GRegs ?Code ?NLiveRegs)}
+      case Code of Code1#Code2 then StartLabel EndLabel Res in
 	 StartLabel = {NewName}
 	 EndLabel = {NewName}
-	 {Map GRegs fun {$ Reg} Prebound.Reg end}#
-	 (lbl(StartLabel)|
-	  definition(x(0) EndLabel
-		     pid('Toplevel abstraction' 0 pos('' 1 0) [sited]
-			 NLiveRegs)
-		     unit {List.mapInd GRegs fun {$ I _} g(I - 1) end}
-		     Code1)|
-	  endDefinition(StartLabel)|
-	  {Append Code2 [lbl(EndLabel) tailCall(x(0) 0)]})
+	 {System.showInfo 'assembling ...'}
+	 {{Assembler.assemble
+	   (lbl(StartLabel)|
+	    definition(x(0) EndLabel
+		       pid('Toplevel abstraction' 2 pos('' 1 0) [sited]
+			   NLiveRegs)
+		       unit {List.mapInd GRegs fun {$ I _} g(I) end}
+		       Code1)|
+	    endDefinition(StartLabel)|
+	    {Append Code2 [lbl(EndLabel) unify(x(0) g(0)) return]})
+	   Res|{Map GRegs fun {$ Reg} Prebound.Reg end}
+	   switches}}
+	 {Functor.new
+	  {List.toRecord 'import' {Map Import
+				   fun {$ id(_ Stamp _)#URL}
+				      {VirtualString.toAtom Stamp}#
+				      info('from': URL)
+				   end}}
+	  {List.toRecord 'export' {Map Export
+				   fun {$ id(_ _ exId(PN))}
+				      PN#value
+				   end}}
+	  Res}
       end
    end
 end
