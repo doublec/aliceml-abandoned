@@ -166,10 +166,12 @@ functor MkNativeHelper(structure TypeManager : TYPE_MANAGER
 
 		val retList = Util.makeTuple ", " "" (map makeOutArg outs)
 		val retList' = if retList = "" then "" else ("("^retList^")")
+		val numOuts = length outs
+		(* Alice always requires a return value *)
+		val returnSuffix = if  numOuts = 0 then "_UNIT"
+				   else Int.toString numOuts
 	    in
-		val retLine = 
-		    [wrIndent, "RETURN", Int.toString (length outs),
-		               retList', ";\n"]
+	        val retLine = [wrIndent, "RETURN", returnSuffix, retList', ";\n"]
 	    end
 
             (* end line *)
@@ -185,15 +187,20 @@ functor MkNativeHelper(structure TypeManager : TYPE_MANAGER
 
        
 	(* STRUCTURE ENTRY GENERATION *)
-	fun structEntryLine (funName,arglist,io) =
+	fun structEntryLine (funName,ret,arglist,io) =
 	    let
+	        val alwithret = 
+		    if ret = VOID then arglist else (OUT, "ret", ret)::arglist
+		val (_,outs) = splitInOuts (alwithret, false)
+		val numOuts = Int.max(1, length outs)
 		val wname = Util.computeWrapperName(space,funName)
 	    in
 		String.concat
-		    [wrIndent, "INIT_STRUCTURE(record, \"",nativeName,
+		    [wrIndent, "INIT_STRUCTURE_N(record, \"",nativeName,
 		     "\", \"", wname, if io then "'" else "", "\", ", 
 		     nativeName, "_", wname, if io then "_" else "", ", ",
-		     Int.toString(numIns(arglist,io)), ");\n"]
+		     Int.toString(numIns(arglist,io)), ", ",
+		     Int.toString numOuts, ");\n"]
 	    end
 
         (* STRUCTURE CODE GENERATION *)

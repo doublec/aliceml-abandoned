@@ -50,9 +50,9 @@ functor MkNative(structure TypeManager : TYPE_MANAGER
 	    let
 		val al = splitArgTypes arglist
 	    in
-		structEntryLine(funName,al,false) ::
+		structEntryLine(funName,ret,al,false) ::
 		 (if numOuts(al,false)>0 
-		     then [structEntryLine(funName,al,true)] 
+		     then [structEntryLine(funName,ret,al,true)] 
 		     else nil)
 	    end
 	  | makeStructureEntry _ = nil

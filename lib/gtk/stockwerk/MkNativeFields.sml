@@ -90,6 +90,7 @@ functor MkNativeFields(structure TypeManager : TYPE_MANAGER
 			    makeFieldFun space (sname,mname,mtype,get)
 		    in
 			structEntryLine(funName,
+					ret,
 					splitArgTypesNoOuts arglist,false)
 		    end
 		val members' = List.filter checkStructMember members
