@@ -51,9 +51,6 @@ public:
   Closure *GetClosure() {
     return Closure::FromWord(StackFrame::GetArg(CLOSURE_POS));
   }
-  void InitLocalEnv(u_int index, word value) {
-    StackFrame::InitArg(BASE_SIZE + index, value);
-  }
   // NativeCodeFrame Constructor
   static NativeCodeFrame *New(Interpreter *interpreter,
 			      u_int pc,
@@ -67,6 +64,8 @@ public:
     frame->InitArg(CODE_POS, code->ToWord());
     frame->InitArg(CLOSURE_POS, closure->ToWord());
     frame->InitArg(IMMEDIATE_ARGS_POS, immediateArgs->ToWord());
+    for (u_int i = nbLocals; i--;)
+      frame->InitArg(BASE_SIZE + i, Store::IntToWord(0));
     return STATIC_CAST(NativeCodeFrame *, frame);
   }
 };
@@ -78,28 +77,6 @@ NativeCodeInterpreter *NativeCodeInterpreter::self;
 
 void NativeCodeInterpreter::Init() {
   self = new NativeCodeInterpreter();
-}
-
-static inline StackFrame *MakeNativeFrame(NativeConcreteCode *concreteCode,
-					  Closure *closure) {
-  Assert(concreteCode->GetInterpreter() == NativeCodeInterpreter::self);
-  u_int nLocals        = concreteCode->GetNLocals();
-  Chunk *code          = concreteCode->GetNativeCode();
-  Tuple *immediateArgs = concreteCode->GetImmediateArgs();
-  NativeCodeFrame *frame =
-    NativeCodeFrame::New(NativeCodeInterpreter::self,
-			 concreteCode->GetCCCPC(),
-			 code, closure, immediateArgs,
-			 nLocals);
-  for (u_int i = nLocals; i--;)
-    frame->InitLocalEnv(i, Store::IntToWord(0));
-  return STATIC_CAST(StackFrame *, frame);
-}
-
-StackFrame *NativeCodeInterpreter::FastPushCall(Closure *closure) {
-  NativeConcreteCode *concreteCode =
-    NativeConcreteCode::FromWordDirect(closure->GetConcreteCode());
-  return MakeNativeFrame(concreteCode, closure);
 }
 
 u_int NativeCodeInterpreter::GetInArity(TagVal *abstractCode) {
@@ -128,7 +105,14 @@ u_int NativeCodeInterpreter::GetFrameSize(StackFrame *sFrame) {
 void NativeCodeInterpreter::PushCall(Closure *closure) {
   NativeConcreteCode *concreteCode =
     NativeConcreteCode::FromWord(closure->GetConcreteCode());
-  MakeNativeFrame(concreteCode, closure);
+  Assert(concreteCode->GetInterpreter() == NativeCodeInterpreter::self);
+  u_int nLocals        = concreteCode->GetNLocals();
+  Chunk *code          = concreteCode->GetNativeCode();
+  Tuple *immediateArgs = concreteCode->GetImmediateArgs();
+  NativeCodeFrame::New(NativeCodeInterpreter::self,
+		       concreteCode->GetCCCPC(),
+		       code, closure, immediateArgs,
+		       nLocals);
 }
 
 Worker::Result NativeCodeInterpreter::Run(StackFrame *sFrame) {
