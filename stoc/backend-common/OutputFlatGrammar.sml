@@ -183,6 +183,7 @@ structure OutputImperativeGrammar :> OUTPUT_IMPERATIVE_GRAMMAR =
 	fun outputComponent (idStringList, _, body) =
 	    format (SEQ [SEQ (List.map
 			      (fn (id, string) =>
-			       SEQ [S "import ", ID id, S (" from " ^ string)])
+			       SEQ [S "import ", ID id,
+				    S (" from " ^ string ^ "\n")])
 			      idStringList), outputBody body, NL])
     end
