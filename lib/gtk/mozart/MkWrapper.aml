@@ -146,10 +146,7 @@ functor MkWrapper(structure TypeManager : TYPE_MANAGER
 	end
        
 	(* Function Decl Emitter *)
-	fun emitDecl (FUNCTION("gtk_canvas_item_new", _)) =
-	    psl [Util.indent 3, "'itemNew' : ItemNew\n",
-		 Util.indent 3, "'itemConfigure' : ItemConfigure\n"]
-	  | emitDecl (FUNCTION(name, _)) =
+	fun emitDecl (FUNCTION(name, _)) =
 	    let
 		val name = Util.computeWrapperName (space, name)
 	    in
@@ -188,13 +185,13 @@ functor MkWrapper(structure TypeManager : TYPE_MANAGER
 	     "      Result = unit\n",
 	     "   end\n"]
 
-	(* CanvasItemNew and -Configure Code *)
+	(* CanvasItemNew and -Set Code *)
 	val canvasItemCode =
 	    ["   proc {ItemNew Group Type Args Result}\n",
 	     "      Result = {GOZCore.canvasItemNew Group Type Args}\n",
 	     "   end\n",
-             "   proc {ItemConfigure Item Args Result}\n",
-	     "      Result = {GOZCore.canvasItemConfigure Item Args}\n",
+             "   proc {ItemSet Item Type Arg Result}\n",
+	     "      Result = {GOZCore.canvasItemSet Item Type Arg}\n",
 	     "   end\n"
 	     ]
 
@@ -204,6 +201,7 @@ functor MkWrapper(structure TypeManager : TYPE_MANAGER
 	  | emit (FUNCTION("gtk_signal_emit", _))            = ()
 	  | emit (FUNCTION("gtk_signal_handler_block", _))   = ()
 	  | emit (FUNCTION("gtk_signal_handler_unblock", _)) = ()
+	  | emit (FUNCTION("gtk_canvas_item_set", _))        = ()
 	  | emit (FUNCTION("gtk_widget_get", _))        = psl widgetGetCode
 	  | emit (FUNCTION("gtk_canvas_item_new", _))   = psl canvasItemCode
 	  | emit (FUNCTION("gtk_color_selection_get_color", _)) =
@@ -374,12 +372,15 @@ functor MkWrapper(structure TypeManager : TYPE_MANAGER
 	     "   O2P = GOZCore.objectToPointer\n",
 	     "   ImportList = GOZCore.importList\n",
 	     "   ExportList = GOZCore.exportList\n",
+	     "   fun {ToA BS}\n",
+	     "      {String.toAtom {ByteString.toString BS}}\n",
+	     "   end\n",
 	     "   fun {SignalConnect Object Signal Handler}\n",
              "      proc {OzHandler Arg}\n",
              "         {Handler Arg _}\n",
              "      end\n",
              "   in\n",
-             "      {Object signalConnect(Signal OzHandler $)}\n",
+             "      {Object signalConnect({ToA Signal} OzHandler $)}\n",
              "   end\n",
 	     "   fun {SignalDisconnect Object SignalId}\n",
 	     "      {Object signalDisconnect(SignalId)}\n",
@@ -425,7 +426,7 @@ functor MkWrapper(structure TypeManager : TYPE_MANAGER
 
 	(* File Init Constant Data *)
 	val gdkInit    = ["   Interface = 'UnsafeGDK'(\n",
-			  "                  'allocColor' : AllocColor\n"]
+			  "         'allocColor' : AllocColor\n"]
 	val gtkInit    = ["   Interface = 'UnsafeGTK'(\n"]
 	val canvasInit = ["   Interface = 'UnsafeGTKCANVAS'(\n"]
 
