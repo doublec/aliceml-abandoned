@@ -120,8 +120,9 @@
       <TR><TD>By-need future<TD>By-need future
       <TR>
 	<TD>Promise
-	<TD>Pair of boolean cell and logic variable;<BR>the cell is
-	  <TT>true</TT> if the promise is either fulfilled or failed
+	<TD>Record with label <TT>'Promise__'</TT> and two subtrees, a
+	  boolean cell and a logic variable.<BR>The cell is
+	  <TT>true</TT> if the promise has either been fulfilled or failed
     </TABLE>
   </CENTER>
 
@@ -134,9 +135,6 @@
       <TR><TD><TT>vector</TT><TD>Tuple with label <TT>'#[]'</TT>
       <TR><TD><TT>Cell.cell</TT><TD>Cell
       <TR><TD><TT>Thread.thread</TT><TD>Thread
-      <TR>
-	<TD><TT>TextIO.instream</TT>, <TT>TextIO.outstream</TT>
-	<TD>Instances of <TT>Open.file</TT>
     </TABLE>
   </CENTER>
 
