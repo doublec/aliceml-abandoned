@@ -14,7 +14,7 @@
 
 #include "../Base.hh"
 
-#ifdef DEBUG_STORE
+#ifdef STORE_DEBUG
 #define AssertStore(Cond) AssertBase(Cond, #Cond)
 #else
 #define AssertStore(Cond)
