@@ -284,7 +284,7 @@ Interpreter::Result ApplyInterpreter::Run(word, TaskStack *taskStack) {
   Vector *imports   = Vector::FromWord(frame->GetImports());
   Chunk *key        = frame->GetKey();
   taskStack->PopFrame();
-  BootLinker::Trace("[boot-linker] applying", key);
+  BootLinker::Trace("applying", key);
   u_int n         = imports->GetLength();
   Vector *strs    = Vector::New(n);
   // Order significant here?
@@ -325,7 +325,7 @@ Interpreter::Result EnterInterpreter::Run(word args, TaskStack *taskStack) {
   Chunk *key       = frame->GetKey();
   word sign         = frame->GetSign();
   taskStack->PopFrame();
-  BootLinker::Trace("[boot-linker] entering", key);
+  BootLinker::Trace("entering", key);
   word str = Interpreter::Construct(args);
   BootLinker::EnterComponent(key, sign, str);
   CONTINUE(Interpreter::OneArg(str));
@@ -356,7 +356,7 @@ typedef enum {
 Interpreter::Result LinkInterpreter::Run(word args, TaskStack *taskStack) {
   LinkFrame *frame = LinkFrame::FromWord(taskStack->GetFrame());
   Chunk *key      = frame->GetKey();
-  BootLinker::Trace("[boot-linker] linking", key);
+  BootLinker::Trace("linking", key);
   taskStack->PopFrame();
   args = Interpreter::Construct(args);
   TagVal *targs = TagVal::FromWord(args);
@@ -428,7 +428,7 @@ Interpreter::Result LoadInterpreter::Run(word, TaskStack *taskStack) {
   if (BootLinker::LookupComponent(key) != INVALID_POINTER) {
     CONTINUE(Interpreter::EmptyArg());
   }
-  BootLinker::Trace("[boot-linker] loading", key);
+  BootLinker::Trace("loading", key);
   LinkInterpreter::PushFrame(taskStack, key);
   taskStack->PushFrame(frame->ToWord());
   return Unpickler::Load(BootLinker::MakeFileName(key), taskStack);
@@ -484,7 +484,8 @@ void BootLinker::Print(Chunk *c) {
 
 void BootLinker::Trace(const char *prefix, Chunk *key) {
   if (traceFlag) {
-    fprintf(stderr, "%s '%.*s'\n", prefix, (int) key->GetSize(), key->GetBase());
+    fprintf(stderr, "[boot-linker] %s %.*s\n",
+	    prefix, (int) key->GetSize(), key->GetBase());
   }
 }
 
