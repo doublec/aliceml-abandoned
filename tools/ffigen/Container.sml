@@ -128,7 +128,7 @@ struct
 
 	    fun handle_type_name s = 
 		(case Config.applyFilter s of
-		     CMD_REJECT => raise Warning ("Filter: type "^s^" ignored.")
+		     CMD_REJECT => raise Warning ("Filter: type "^s^" rejected.")
 		   |(CMD_ACCEPT s') => (if not (Set.member(!type_set,s'))
 				       then (sign := ("\t\ttype " ^ s')::(!sign); type_set := Set.insert(!type_set,s'))
 				       else (); 
