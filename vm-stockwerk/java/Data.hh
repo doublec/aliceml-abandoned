@@ -45,8 +45,8 @@ public:
   static const BlockLabel ExceptionTableEntry = (BlockLabel) (base + 12);
   // Types
   static const BlockLabel Class               = (BlockLabel) (base + 13);
-  static const BlockLabel ObjectArrayType     = (BlockLabel) (base + 14);
-  static const BlockLabel BaseArrayType       = (BlockLabel) (base + 15);
+  static const BlockLabel BaseType            = (BlockLabel) (base + 14);
+  static const BlockLabel ArrayType           = (BlockLabel) (base + 15);
   // Data layer
   static const BlockLabel Lock                = (BlockLabel) (base + 16);
   static const BlockLabel Object              = (BlockLabel) (base + 17);
@@ -63,13 +63,13 @@ public:
     Block *b = Store::WordToBlock(x);
     Assert(b == INVALID_POINTER ||
 	   b->GetLabel() == JavaLabel::Class ||
-	   b->GetLabel() == JavaLabel::ObjectArrayType ||
-	   b->GetLabel() == JavaLabel::BaseArrayType);
+	   b->GetLabel() == JavaLabel::BaseType ||
+	   b->GetLabel() == JavaLabel::ArrayType);
     return static_cast<Type *>(b);
   }
 };
 
-class DllExport Class: private Type {
+class DllExport Class: protected Type {
 protected:
   enum {
     CLASS_INFO_POS, // ClassInfo
@@ -123,45 +123,37 @@ public:
   }
 };
 
-class DllExport ObjectArrayType: private Type {
-protected:
-  enum {
-    CLASS_POS, // Class
-    DIMENSIONS_POS, // int
-    SIZE
-  };
-public:
-  using Block::ToWord;
-
-  static ObjectArrayType *New(word classType, u_int dimensions) {
-    Block *b = Store::AllocBlock(JavaLabel::ObjectArrayType, SIZE);
-    b->InitArg(CLASS_POS, classType);
-    b->InitArg(DIMENSIONS_POS, dimensions);
-    return static_cast<ObjectArrayType *>(b);
-  }
-};
-
-class DllExport BaseType {
+class DllExport BaseType: protected Type {
 public:
   enum type { Byte, Char, Double, Float, Int, Long, Short, Boolean };
-};
-
-class DllExport BaseArrayType: private Type {
 protected:
   enum {
     BASE_TYPE_POS, // int(BaseType)
-    DIMENSIONS_POS, // int
     SIZE
   };
 public:
   using Block::ToWord;
 
-  static BaseArrayType *New(BaseType::type baseType, u_int dimensions) {
-    Assert(dimensions > 0);
-    Block *b = Store::AllocBlock(JavaLabel::BaseArrayType, SIZE);
+  static BaseType *New(type baseType) {
+    Block *b = Store::AllocBlock(JavaLabel::BaseType, SIZE);
     b->InitArg(BASE_TYPE_POS, baseType);
-    b->InitArg(DIMENSIONS_POS, dimensions);
-    return static_cast<BaseArrayType *>(b);
+    return static_cast<BaseType *>(b);
+  }
+};
+
+class DllExport ArrayType: protected Type {
+protected:
+  enum {
+    TYPE_POS, // Type
+    SIZE
+  };
+public:
+  using Block::ToWord;
+
+  static ArrayType *New(word type) {
+    Block *b = Store::AllocBlock(JavaLabel::ArrayType, SIZE);
+    b->InitArg(TYPE_POS, type);
+    return static_cast<ArrayType *>(b);
   }
 };
 
@@ -295,7 +287,7 @@ public:
 class DllExport ObjectArray: private Block {
 protected:
   enum {
-    TYPE_POS, // ObjectArrayType
+    TYPE_POS, // ArrayType(Type != BaseType)
     LENGTH_POS, // int
     BASE_SIZE
     // ... elements
@@ -303,8 +295,7 @@ protected:
 public:
   using Block::ToWord;
 
-  static ObjectArray *New(ObjectArrayType *type, u_int length) {
-    //--** support multiple dimensions
+  static ObjectArray *New(Type *type, u_int length) {
     Block *b = Store::AllocBlock(JavaLabel::ObjectArray, BASE_SIZE + length);
     b->InitArg(TYPE_POS, type->ToWord());
     b->InitArg(LENGTH_POS, Store::IntToWord(length));

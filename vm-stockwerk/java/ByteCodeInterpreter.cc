@@ -557,8 +557,9 @@ Worker::Result ByteCodeInterpreter::Run() {
 	  REQUEST(wType);
 	int count = JavaInt::FromWord(frame->Pop());
 	if (count >= 0) {
-	  ObjectArrayType *arrayType = ObjectArrayType::New(type->ToWord(), 1);
-	  ObjectArray *arr           = ObjectArray::New(arrayType, count);
+	  Type *arrayType = static_cast<Type *>
+	    (ArrayType::New(type->ToWord()));
+	  ObjectArray *arr = ObjectArray::New(arrayType, count);
 	  for (u_int i = count; i--;)
 	    arr->Init(i, null);
 	  frame->Push(arr->ToWord());
@@ -704,12 +705,12 @@ Worker::Result ByteCodeInterpreter::Run() {
 	    }
 	  }
 	  break;
-	case JavaLabel::ObjectArrayType:
+	case JavaLabel::BaseType:
 	  {
-	    Error("not implemented");
+	    Error("invalid type");
 	  }
 	  break;
-	case JavaLabel::BaseArrayType:
+	case JavaLabel::ArrayType:
 	  {
 	    Error("not implemented");
 	  }
@@ -1269,12 +1270,12 @@ Worker::Result ByteCodeInterpreter::Run() {
 		      Object::FromWordDirect(wObject)->IsInstanceOf(classObj));
 	  }
 	  break;
-	case JavaLabel::ObjectArrayType:
+	case JavaLabel::BaseType:
 	  {
-	    Error("not implemented");
+	    Error("invalid type");
 	  }
 	  break;
-	case JavaLabel::BaseArrayType:
+	case JavaLabel::ArrayType:
 	  {
 	    Error("not implemented");
 	  }
@@ -1556,7 +1557,7 @@ Worker::Result ByteCodeInterpreter::Run() {
 	  if (curDim != 0)
 	    length *= curDim;
 	}
-	ObjectArrayType *type = INVALID_POINTER; // to be done
+	Type *type = INVALID_POINTER; // to be done
 	ObjectArray *arr = ObjectArray::New(type, length);
 	frame->Push(arr->ToWord());
       }
@@ -1573,8 +1574,8 @@ Worker::Result ByteCodeInterpreter::Run() {
 	    frame->Push(object->ToWord());
 	  }
 	  break;
-	case JavaLabel::ObjectArrayType:
-	case JavaLabel::BaseArrayType:
+	case JavaLabel::BaseType:
+	case JavaLabel::ArrayType:
 	  {
 	    // to be done: raise InstantiationError
 	    Error("InstantiationError");
@@ -1590,7 +1591,7 @@ Worker::Result ByteCodeInterpreter::Run() {
       {
 	pc++; // Ignore ATYPE indicator
 	int count = Store::DirectWordToInt(frame->Pop());
-	ObjectArrayType *type = INVALID_POINTER; // to be done
+	Type *type = INVALID_POINTER; // to be done
 	ObjectArray *arr = ObjectArray::New(type, count);
 	frame->Push(arr->ToWord());
       }
