@@ -19,14 +19,14 @@ class TaskStack;
 
 class Thread: private Block {
 public:
-  enum {
+  typedef enum {
     HIGH, MEDIUM, LOW
   } priority;
 
   using Block::ToWord;
 
-  static Thread *New(Thread::priority, TaskStack *);
-  Thread::priority GetPriority();
+  static Thread *New(priority, TaskStack *);
+  priority GetPriority();
   TaskStack *GetTaskStack();
   void UpdateTaskStack(TaskStack *);
 };

@@ -14,7 +14,7 @@
 #include "Thread.hh"
 #include "TaskStack.hh"
 
-static void Scheduler::Timer() {
+void Scheduler::Timer() {
   preempt = true;
 }
 
