@@ -10,10 +10,10 @@
  *   $Revision$
  *)
 
-signature IMPERATIVE_PHASE = 
+signature IMPERATIVE_PHASE =
     sig
 	structure I: SIMPLIFIED_GRAMMAR = SimplifiedGrammar
 	structure O: IMPERATIVE_GRAMMAR = ImperativeGrammar
 
-	val translateProgram: I.dec list -> O.body
+	val translate: I.program -> O.program
     end

@@ -20,6 +20,7 @@ structure ImperativeGrammar :> IMPERATIVE_GRAMMAR =
 
 	(* Identifiers *)
 
+	datatype name = datatype IntermediateGrammar.name
 	datatype lab = datatype IntermediateGrammar.lab
 	datatype id = datatype IntermediateGrammar.id
 
@@ -50,7 +51,7 @@ structure ImperativeGrammar :> IMPERATIVE_GRAMMAR =
 	  | RaiseStm of coord * id
 	  | SharedStm of coord * body * shared   (* used at least twice *)
 	  | ReturnStm of coord * exp
-	  | IndirectStm of coord * body ref
+	  | IndirectStm of coord * body option ref
 	and exp =
 	    LitExp of coord * lit
 	  | VarExp of coord * id

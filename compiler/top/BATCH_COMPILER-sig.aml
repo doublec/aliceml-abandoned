@@ -13,6 +13,9 @@ signature MAIN =
     val simplifyString :	string -> SimplifiedGrammar.program
     val simplifyFile :		string -> SimplifiedGrammar.program
 
+    val imperatifyString :	string -> ImperativeGrammar.program
+    val imperatifyFile :	string -> ImperativeGrammar.program
+
     val ozifyString :		string * TextIO.outstream -> unit
     val ozifyFile :		string * TextIO.outstream -> unit
 

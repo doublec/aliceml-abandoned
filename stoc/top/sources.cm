@@ -10,6 +10,7 @@ is
     ../frontend-common/sources.cm
     ../common/sources.cm
     ../backend-common/sources.cm
+    ../backend-mozart/sources.cm
 
     BIND_ENV0.sig
     BindEnv0.sml

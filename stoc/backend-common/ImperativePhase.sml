@@ -18,6 +18,37 @@ structure ImperativePhase :> IMPERATIVE_PHASE =
 	open I
 	open Prebound
 
+	(* State *)
+
+	local
+	    val count = ref 0
+	in
+	    fun gen () =
+		let
+		    val n = !count + 1
+		in
+		    count := n; n
+		end
+	end
+
+	local
+	    structure SharedDone =
+		MakeHashImpMap(type t = int
+			       fun hash i = i)
+
+	    val state: O.body SharedDone.t = SharedDone.new 19
+	in
+	    fun enterShared (i, stms) = SharedDone.insert (state, i, stms)
+
+	    fun lookupShared i = valOf (SharedDone.lookup (state, i))
+	end
+
+	(* Translation *)
+
+	fun share nil = nil
+	  | share stms =   (*--** provide better coordinates *)
+	    [O.SharedStm (Source.nowhere, stms, ref backendInfoDummy)]
+
 	datatype continuation =
 	    Decs of dec list * continuation
 	  | Goto of O.body
@@ -54,9 +85,7 @@ structure ImperativePhase :> IMPERATIVE_PHASE =
 	  | translateCont (Goto stms) = stms
 	  | translateCont (Share (r as ref NONE, cont)) =
 	    let
-		val stms =
-		    [O.SharedStm (Source.nowhere,    (*--** *)
-				  translateCont cont, ref backendInfoDummy)]
+		val stms = share (translateCont cont)
 	    in
 		r := SOME stms; stms
 	    end
@@ -172,7 +201,7 @@ structure ImperativePhase :> IMPERATIVE_PHASE =
 	    end
 	  | translateExp (WhileExp (coord, exp1, exp2), f, cont) =
 	    let
-		val r = ref nil
+		val r = ref NONE
 		val cont' = Goto [O.IndirectStm (coord, r)]
 		fun eval exp' = O.EvalStm (coordOf exp2, exp')
 		val coord' = coordOf exp1
@@ -188,10 +217,9 @@ structure ImperativePhase :> IMPERATIVE_PHASE =
 					    falseBody, errorBody)])]
 		val stms2 =
 		    translateDec (OneDec (coord', id, exp1), Goto stms1)
-		val stms =
-		    [O.SharedStm (Source.nowhere, stms2, ref backendInfoDummy)]
+		val stms = share stms2
 	    in
-		r := stms; stms
+		r := SOME stms; stms
 	    end
 	  | translateExp (SeqExp (_, exps), f, cont) =
 	    let
@@ -246,12 +274,16 @@ structure ImperativePhase :> IMPERATIVE_PHASE =
 	    in
 		translateCont (Decs (decs, Goto stms))
 	    end
-
-(*
-	  | SharedExp of coord * exp * shared
-*)
-
+	  | translateExp (SharedExp (coord, exp, r as ref 0), f, cont) =
+	    let
+		val n = gen ()
+		val _ = r := n
+		val stms = translateExp (exp, f, cont)
+	    in
+		enterShared (n, stms); stms
+	    end
+	  | translateExp (SharedExp (_, _, ref i), _, _) = lookupShared i
 	  | translateExp (DecExp (_, _), _, cont) = translateCont cont
 
-	fun translateProgram decs = translateCont (Decs (decs, Goto nil))
+	fun translate decs = translateCont (Decs (decs, Goto nil))
     end

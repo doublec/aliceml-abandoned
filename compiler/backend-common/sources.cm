@@ -5,6 +5,7 @@ Group is
     ../misc/sources.cm
 
     simplified-grammar.cm
+    imperative-grammar.cm
 
     LABEL_SORT.sig
     LabelSort.sml
@@ -16,8 +17,6 @@ Group is
     MATCH_COMPILATION_PHASE.sig
     MatchCompilationPhase.sml
 
-    IMPERATIVE_GRAMMAR.sig
-    ImperativeGrammar.sml
     IMPERATIVE_PHASE.sig
     ImperativePhase.sml
 

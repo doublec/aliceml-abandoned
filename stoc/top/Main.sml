@@ -22,12 +22,13 @@ structure Main :> MAIN =
     val abstract   = AbstractionPhase.translate BindEnv0.E0 o parse
     val translate  = TranslationPhase.translate o abstract
     val simplify   = MatchCompilationPhase.simplify o translate
+    val imperatify = ImperativePhase.translate o simplify
 
     fun ozify outstream s =
 	let
-	    val prog = simplify s
+	    val prog = imperatify s
 	in
-	    OzifySimplifiedGrammar.outputProgram(outstream, prog) ;
+	    OzifyImperativeGrammar.outputProgram(outstream, prog) ;
 	    TextIO.output1(outstream, #"\n")
 	end
 
@@ -50,6 +51,9 @@ structure Main :> MAIN =
 
     val simplifyString		= processString simplify
     val simplifyFile		= processFile simplify
+
+    val imperatifyString	= processString imperatify
+    val imperatifyFile		= processFile imperatify
 
     fun ozifyString(s,os)	= processString (ozify os) s
     fun ozifyFile(n,os)		= processFile (ozify os) n
