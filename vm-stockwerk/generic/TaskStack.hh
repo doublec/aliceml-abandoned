@@ -43,6 +43,9 @@ public:
   StackFrame *GetFrame(u_int index) {
     return (StackFrame *) (GetBase() + (index + 1));
   }
+  StackFrame *GetFrameBase() {
+    return (StackFrame *) GetBase();
+  }
 
   static TaskStack *New(u_int size);
   static TaskStack *New() {

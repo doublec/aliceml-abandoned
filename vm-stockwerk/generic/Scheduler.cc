@@ -55,7 +55,7 @@ inline void Scheduler::SwitchToThread() {
   Assert(currentThread->GetState() == Thread::RUNNABLE);
   Assert(!currentThread->IsSuspended());
   currentTaskStack = currentThread->GetTaskStack();
-  word *base = (word *) currentTaskStack->GetFrame(0);
+  word *base = (word *) currentTaskStack->GetFrameBase();
   stackTop = base + currentTaskStack->GetTop();
   stackMax = base + currentTaskStack->GetSize();
   word args = currentThread->GetArgs(nArgs);
@@ -76,8 +76,7 @@ inline void Scheduler::SwitchToThread() {
 }
 
 inline void Scheduler::FlushThread() {
-  u_int top =
-    static_cast<u_int>(stackTop - (word *) currentTaskStack->GetFrame(0));
+  u_int top = GetCurrentStackTop();
   currentTaskStack->SetTop(top);
   currentThread->SetTaskStack(currentTaskStack);
   Assert(nArgs == ONE_ARG || nArgs < maxArgs);
@@ -257,7 +256,6 @@ Worker::Result Scheduler::PushCall(word wClosure) {
 }
 
 void DumpCurrentTaskStack() {
-  u_int top =
-    Scheduler::stackTop - (word *) Scheduler::currentTaskStack->GetFrame(0);
+  u_int top = Scheduler::GetCurrentStackTop();
   Scheduler::currentTaskStack->Dump(top);
 }

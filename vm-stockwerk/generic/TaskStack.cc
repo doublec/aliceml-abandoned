@@ -126,10 +126,10 @@ void TaskStack::Purge() {
   // to be done: find policy here (when to shrink grown stacks)
   // Purge all frames:
   word *base = (word *) GetFrame(0);
-  word *top  = base + GetTop();
+  word *top  = base + GetTop() - 1;
   // to be done: maybe PurgeFrame should return frame size
-  while (top > base) {
-    StackFrame *frame = (StackFrame *) (top - 1);
+  while (top >= base) {
+    StackFrame *frame = (StackFrame *) top;
     Worker *worker = frame->GetWorker();
     top -= worker->GetFrameSize(frame);
     worker->PurgeFrame(frame);
@@ -138,9 +138,9 @@ void TaskStack::Purge() {
 
 void TaskStack::Dump(u_int stackTop) {
   word *base = (word *) GetFrame(0);
-  word *top  = base + stackTop;
-  while (top > base) {
-    StackFrame *frame = (StackFrame *) (top - 1);
+  word *top  = base + stackTop - 1;
+  while (top >= base) {
+    StackFrame *frame = (StackFrame *) top;
     Worker *worker = frame->GetWorker();
     top -= worker->GetFrameSize(frame);
     worker->DumpFrame(frame);
