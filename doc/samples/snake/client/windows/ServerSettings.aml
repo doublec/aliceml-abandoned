@@ -171,7 +171,7 @@ struct
 		    
 		    val tick       = Time.fromMilliseconds (read tickAdjust)
 		    val timeout    = Time.fromSeconds (read timeoutAdj)
-		    val dimensions = (read xDimAdjust, read yDimAdjust)
+		    val dimensions = (read yDimAdjust, read xDimAdjust)
 		    val goodie     = read goodysAdjust
 		    val lives = 
 			if Gtk.toggleButtonGetActive livesCheckButton

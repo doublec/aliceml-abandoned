@@ -279,7 +279,7 @@ struct
 
 	    val cross = 
 		let
-		    val font  = "-*-arial-bold-*-*-24-*-*-*-*-*-*-*-*"
+		    val font  = "-*-*-*-*-*-24-*-*-*-*-*-*-*-*"
 		    val x = Real.fromInt cellSize2
 		    val y = Real.fromInt cellSize2
 		    val anchor = Gtk.ANCHOR_CENTER
@@ -444,4 +444,49 @@ struct
 
 	end
 
+    fun startCountDown a =
+        let
+            val obj         = toObject a
+            val oldNumber   = ref (Gtk.null ())
+            val color       = white
+           
+            fun changeObj new =
+                (if !oldNumber <> Gtk.null () 
+                    then Gtk.objectDestroy (!oldNumber)
+                    else ();
+                 oldNumber := new)
+
+ 
+            fun display NONE =
+                changeObj (Gtk.null ())
+              | display (SOME n) =
+                let
+                    val root    = GtkCanvas.root obj
+                    val num     = Int.toString n
+	            val font   = 
+                            "-*-*-*-*-*-*-34-*-*-*-*-*-*-*"
+                    val (x, y) = GtkCanvas.getScrollOffsets 
+                        (obj, 0, 0)
+                    val x      = Real.fromInt (x + 200)
+                    val y      = Real.fromInt (y + 150)
+                    val anchor = Gtk.ANCHOR_CENTER
+                    val args   = [("text", GtkCanvas.STRING num),
+                                  ("font", GtkCanvas.STRING font),
+                                  ("x", GtkCanvas.DOUBLE x), 
+                                  ("y", GtkCanvas.DOUBLE y),
+                                  ("fill_color_gdk", 
+                                   GtkCanvas.OBJECT color),
+                                  ("anchor", GtkCanvas.INT anchor)]
+                        
+                    val numObj  = GtkCanvas.itemNew (root, 
+                                                 GtkCanvas.TEXT, args)
+                in
+                    changeObj numObj;
+                    Gtk.layoutThaw obj;
+                    Gtk.layoutFreeze obj
+                end
+        in
+            display
+        end
+                
 end

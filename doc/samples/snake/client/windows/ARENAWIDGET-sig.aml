@@ -30,4 +30,5 @@ sig
 	
     val changeView : arena_widget * Pos.pos -> unit
 	
+    val startCountDown : arena_widget -> (int option -> unit)
 end

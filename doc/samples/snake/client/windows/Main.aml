@@ -58,10 +58,13 @@ fun highscoreToString score =
 	val hours   = time div 3600
 	val minutes = (time mod 3600) div 60
 	val seconds = (time mod 3600) mod 60
+        
+        fun toStr d =
+            (if d <= 9 
+                then "0"
+                else "") ^ Int.toString d 
     in
-	Int.toString hours   ^ " : " ^
-	Int.toString minutes ^ " : " ^
-	Int.toString seconds ^ " time left"
+	toStr hours ^ " : " ^ toStr minutes ^ " : " ^ toStr seconds 
     end
 
 
@@ -130,40 +133,23 @@ struct
 			(reset (SOME ("Highscore", highscoreToString h)))
 			
 		    fun update difflist = ArenaWidget.update (arena, difflist)
-			
-		    val oldNumber   = ref (Gtk.null ())
-		    val color       = Gdk.allocColor (65535, 65535, 65535)
-		    fun countdown 0 = if !oldNumber <> Gtk.null ()
-					  then Gtk.objectDestroy (!oldNumber)
-				      else ()
-		      | countdown n =
-			let
-			    val root   = GtkCanvas.root canvas
-			    val num    = Int.toString n
-			    val font   = 
-				"-*-times-bold-*-*-*-120-*-*-*-*-*-*-*"
-			    val (x, y) = GtkCanvas.getScrollOffsets 
-				(canvas, 0, 0)
-			    val x      = Real.fromInt (x + 200)
-			    val y      = Real.fromInt (y + 150)
-			    val anchor = Gtk.ANCHOR_CENTER
-			    val args   = [("text", GtkCanvas.STRING num),
-					  ("font", GtkCanvas.STRING font),
-					  ("x", GtkCanvas.DOUBLE x), 
-					  ("y", GtkCanvas.DOUBLE y),
-					  ("fill_color_gdk", 
-					   GtkCanvas.OBJECT color),
-					  ("anchor", GtkCanvas.INT anchor)]
-				
-			    val num    = GtkCanvas.itemNew (root, 
-							 GtkCanvas.TEXT, args)
-				
-			in
-			    if !oldNumber <> Gtk.null ()
-				then Gtk.objectDestroy (!oldNumber)
-			    else ();
-				oldNumber := num
-			end
+		
+                    val displayCountDown    = ref NONE	
+                    
+                    fun countdown n =
+                        let val displ = case !displayCountDown of
+                                NONE    =>
+                                let val d = ArenaWidget.startCountDown arena
+                                in
+                                    displayCountDown := SOME d;
+                                    d
+                                end
+                            |   SOME d  => d
+                        in
+                            if n = 0 
+                                then (displ NONE; displayCountDown := NONE)
+                                else displ (SOME n)
+                        end
 		    
 		    fun tick remainingTime =
 			let
