@@ -4,7 +4,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt and Andreas Rossberg, 2001-2001
+ *   Leif Kornstaedt and Andreas Rossberg, 2001-2002
  *
  * Last change:
  *   $Date$ by $Author$
@@ -20,7 +20,9 @@ struct
     datatype platform = WIN32 | UNIX
 
     val platform = UnsafeConfig.platform
-    val homeDir  = OS.Process.getEnv "STOCKHOME"
+    val vm = UnsafeConfig.vm
+
+    val homeDir = OS.Process.getEnv "STOCKHOME"
 
     val pathEscape =
 	case platform of

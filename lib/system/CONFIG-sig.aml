@@ -16,7 +16,10 @@ sig
     datatype platform = WIN32 | UNIX
 
     val platform : platform
+    val vm : string
+
     val homeDir : string option
+
     val pathEscape : char option
     val pathSeparator : char
 end
