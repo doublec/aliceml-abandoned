@@ -31,7 +31,6 @@ struct
             val f = Promise.future p
         in
             (* signal reader that he may start *)
-            print "signaliing reader to start\n";
             Promise.fulfill (r, p);
             
             (* avoid creating endless promise lists, for 
@@ -52,12 +51,10 @@ struct
             val p = Promise.promise ()
         in
             (* signal writer to start *)
-            print "signaling writer to start\n";
             Promise.fulfill (r, p);
             
             (* and wait till it's finished *)
             Future.await (Promise.future p);
-            print "signaling that writer finished\n";
 
             (* continue -- there are NO active read locks now *)
             processLock (0, [], ths)
