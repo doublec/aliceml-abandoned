@@ -1,11 +1,9 @@
 (*
- * Authors:
+ * Author:
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
- *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 1999-2000
- *   Andreas Rossberg, 1999-2000
+ *   Leif Kornstaedt, 2000
  *
  * Last change:
  *   $Date$ by $Author$
@@ -15,7 +13,7 @@
 local
     structure Switches = MakeSwitches()
 
-    structure MozartTarget = MakeMozartTarget(Signature)
+    structure ComPlusTarget = MakeComPlusTarget(Signature)
 
     structure FrontendSML = MakeFrontendSML(Composer)
 
@@ -23,15 +21,15 @@ local
 	MakeFrontendCommon(structure Composer = Composer
 			   structure Switches = Switches)
 
-    structure BackendMozart = MakeBackendMozart(MozartTarget)
+    structure BackendComPlus = MakeBackendComPlus(ComPlusTarget)
 in
-    structure SMLToMozartCompiler =
+    structure SMLToComPlusCompiler =
 	MakeCompiler(structure Switches         = Switches
-		     structure Target           = MozartTarget
+		     structure Target           = ComPlusTarget
 		     structure FrontendSpecific = FrontendSML
 		     structure FrontendCommon   = FrontendCommon
 		     structure BackendCommon    = BackendCommon
-		     structure BackendSpecific  = BackendMozart
+		     structure BackendSpecific  = BackendComPlus
 
 		     structure FrontendSpecificInitialContext =
 			       FrontendSMLInitialContext

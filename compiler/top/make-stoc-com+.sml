@@ -22,18 +22,18 @@ local
 	     OS.Process.failure)
 
     fun defaults () =
-	(Main.Switches.printComponentSig := false;
-	 Main.Switches.defaultImport := false)
+	(SMLToComPlusMain.Switches.printComponentSig := false;
+	 SMLToComPlusMain.Switches.defaultImport := false)
 
     fun stoc nil =   (* for testing bootstrapping *)
 	(defaults ();
-	 hdl Main.flattenString (TextIO.inputAll TextIO.stdIn))
+	 hdl SMLToComPlusMain.flattenString (TextIO.inputAll TextIO.stdIn))
       | stoc ([infile, "-o", outfile] | ["-c", infile, "-o", outfile]) =
 	(defaults ();
-	 hdl Main.compile (infile, outfile, ""))
+	 hdl SMLToComPlusMain.compile (infile, outfile, ""))
       | stoc [infile, outfile] =
 	(defaults ();
-	 hdl Main.compile (infile, outfile, ""))
+	 hdl SMLToComPlusMain.compile (infile, outfile, ""))
       | stoc _ = OS.Process.failure
 
     fun main _ = stoc (CommandLine.arguments ())

@@ -12,7 +12,5 @@
  *   $Revision$
  *)
 
-structure Main =
-    MakeMain(structure Composer = Composer
-	     structure Compiler = SMLToMozartCompiler
-	     structure TargetInitialContext = MozartTargetInitialContext)
+(* For convenience *)
+structure Main = SMLToMozartMain

@@ -12,37 +12,33 @@
  *   $Revision$
  *)
 
-structure Switches = MakeSwitches()
+local
+    structure Switches = MakeSwitches()
 
-structure MozartTarget = MakeMozartTarget(Signature)
+    structure MozartTarget = MakeMozartTarget(Signature)
 
-structure FrontendSML = MakeFrontendSML(Composer)
+    structure FrontendSML = MakeFrontendSML(Composer)
 
-structure FrontendCommon =
-    MakeFrontendCommon(structure Composer = Composer
-		       structure Switches = Switches)
+    structure FrontendCommon =
+	MakeFrontendCommon(structure Composer = Composer
+			   structure Switches = Switches)
 
-structure MozartGenerationPhase = MakeMozartGenerationPhase(MozartTarget)
+    structure BackendMozart = MakeBackendMozart(MozartTarget)
+in
+    structure SMLToMozartCompiler =
+	MakeCompiler(structure Switches         = Switches
+		     structure Target           = MozartTarget
+		     structure FrontendSpecific = FrontendSML
+		     structure FrontendCommon   = FrontendCommon
+		     structure BackendCommon    = BackendCommon
+		     structure BackendSpecific  = BackendMozart
 
-structure SMLToMozartCompiler =
-    MakeCompiler(structure Switches         = Switches
-		 structure Target           = MozartTarget
-		 structure FrontendSpecific = FrontendSML
-		 structure FrontendCommon   = FrontendCommon
-		 structure BackendCommon    = BackendCommon
-		 structure BackendSpecific  = MozartGenerationPhase
-
-		 structure FrontendSpecificInitialContext =
-			   FrontendSMLInitialContext
-		 structure FrontendCommonInitialContext =
-			   FrontendCommonInitialContext
-		 structure BackendCommonInitialContext =
-		     struct
-			 type t = unit
-			 fun initial () = ()
-		     end
-		 structure BackendSpecificInitialContext =
-		     struct
-			 type t = unit
-			 fun initial () = ()
-		     end)
+		     structure FrontendSpecificInitialContext =
+			       FrontendSMLInitialContext
+		     structure FrontendCommonInitialContext =
+			       FrontendCommonInitialContext
+		     structure BackendCommonInitialContext =
+			       InitialEmptyContext
+		     structure BackendSpecificInitialContext =
+			       InitialEmptyContext)
+end

@@ -6,6 +6,7 @@ Group is
     ../frontend-common/sources.cm
     ../backend-common/sources.cm
     ../backend-mozart/sources.cm
+    ../backend-com+/sources.cm
 
     composer.cm
     compiler.cm
@@ -13,5 +14,11 @@ Group is
     Pickle.sml
     MAIN.sig
     MakeMain.sml
+
     SMLToMozartCompiler.sml
+    SMLToMozartMain.sml
+
+    SMLToComPlusCompiler.sml
+    SMLToComPlusMain.sml
+
     Main.sml
