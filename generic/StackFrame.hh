@@ -27,8 +27,9 @@ typedef enum {
   // Primitive Frames
   PRIMITIVE_FRAME             = (ABSTRACT_CODE_HANDLER_FRAME + 1),
   VECTOR_TABULATE_FRAME       = (PRIMITIVE_FRAME + 1),
+  RAISE_FRAME                 = (VECTOR_TABULATE_FRAME + 1),
   // Pickling Frames
-  INPUT_FRAME                 = (VECTOR_TABULATE_FRAME + 1),
+  INPUT_FRAME                 = (RAISE_FRAME + 1),
   TRANSFORM_FRAME             = (INPUT_FRAME + 1),
   UNPICKLE_FRAME              = (TRANSFORM_FRAME + 1),
   PICKLE_UNPACK_FRAME         = (UNPICKLE_FRAME + 1),
