@@ -454,6 +454,18 @@ final public class General {
 	}
     }
 
+    _BUILTIN(Show) {
+	_BUILTTUP;
+	_APPLY(val) {
+	    System.out.println(val.toString(10));
+	    return Constants.dmlunit;
+	}
+    }
+    _FIELD(General,show);
+    static {
+	Builtin.builtins.put("show",show);
+    }
+
     _BUILTIN(Print) {
 	_BUILTTUP;
 	_APPLY(val) {
