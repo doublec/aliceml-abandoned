@@ -29,7 +29,7 @@ href="components.html">components</A> from source files.</A>
 <P>The <I>&lt;input file&gt;</I> is compiled as an Alice source program and a
 corresponding component is written as output.  If <I>&lt;output file&gt;</I> is
 given, it is used as the output file name, else the basename of <I>&lt;input
-file&gt;</I> is used with <TT>.ozf</TT> as extension. Compiled components can
+file&gt;</I> is used with <TT>.alc</TT> as extension. Compiled components can
 be executed by invoking the <A href="machine.html">virtual machine</A>.</P>
 
 <P><I>&lt;input file&gt;</I> may be a URL.  See <A
@@ -168,9 +168,9 @@ dependencies directly as dependency files.</P>
 
 <PRE class=code>
 # project.depend
-A.ozf: B.ozf C.ozf D.ozf
-B.ozf:
-C.ozf: D.ozf</PRE>
+A.alc: B.alc C.alc D.alc
+B.alc:
+C.alc: D.alc</PRE>
 
 <P>By invoking</P>
 
@@ -191,7 +191,7 @@ assume:</P>
 
 <PRE class=code>
 # project.depend
-sub/A.ozf: B.ozf ../C.ozf sub/D.ozf</PRE>
+sub/A.alc: B.alc ../C.alc sub/D.alc</PRE>
 
 <P>By invoking</P>
 

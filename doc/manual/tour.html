@@ -474,9 +474,10 @@ Ref.exchange (r, 20)
 operation. See <A href="#promises-concurrent">below</A> for an example relying
 on this function.</P>
 
+<!--
 <P class=note><EM>Note:</EM> Due to limitations of the Mozart virtual machine,
 Alice does not yet provide an atomic exchange operation for arrays.</P>
-
+-->
 
 <?php section("promises", "promises") ?>
 
@@ -1530,7 +1531,8 @@ search. Alice hence also provides support for powerful, user-definable search
 techniques. For a more thorough introduction to constraint programming, we
 refer to the Oz <A href="http://www.mozart-oz.org/documentation/fdt/">Finite
 Domain Constraint Programming Tutorial</A>. All constraint programming
-functionality from Oz is available in Alice.</P>
+functionality from Oz is available in Alice, albeit with somewhat different
+interfaces.</P>
 
 
 <?php subsection("constraints-example", "Example") ?>
@@ -1608,7 +1610,7 @@ diamond) will open an Inspector window displaying the variable assignments of
 the solution. Chosing an inner node will display the information available at
 the respective point of the search tree.</P>
 
-
+<!--
 <?php section("interop", "interoperability") ?>
 
 <P>The Alice compiler generates Oz pickled functors (<TT>.ozf</TT> files). The
@@ -1624,6 +1626,6 @@ which specifies the types of the entities imported.</P>
 projects that want to use Alice. It also allows escaping the statically typed
 world of ML for arbitrary subsystems, where that may be desirable. See the <A
 href="interop.html">manual page</A> on interoperability for more detail.</P>
-
+-->
 
 <?php footing() ?>

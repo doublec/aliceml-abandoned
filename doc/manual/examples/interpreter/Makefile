@@ -2,17 +2,17 @@ SIGS	= ELAB ENV EVAL LEXER PARSER TYPE VALUE
 STRUCTS	= Elab Env Eval Lexer Main Parser Syntax Token Type Value
 FILES	= $(SIGS:%=%-sig.aml) $(STRUCTS:%=%.aml)
 
-all: $(FILES:%.aml=%.ozf)
+all: $(FILES:%.aml=%.alc)
 
 depend:
 	alicedep $(FILES) >Makefile.depend
 
 -include Makefile.depend
 
-%.ozf: %.aml
+%.alc: %.aml
 	alicec -c $< -o $@
 clean:
-	rm -rf *.ozf
+	rm -rf *.alc
 
 distclean: clean
 	rm -rf Makefile.depend

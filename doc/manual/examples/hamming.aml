@@ -20,10 +20,6 @@ val _ = print (Int.toString (List.nth (hamming, 1500)) ^ "\n")
 val _ = OS.Process.exit OS.Process.success
 
 
-(* Note: Unfortunately, the following version using promises to tie the knot
- * does not work currently, due to a bug in Mozart's implementation of
- * unification. *)
-
 val hammingUsingPromises =
     let
 	open Promise
