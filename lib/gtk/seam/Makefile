@@ -15,7 +15,7 @@ ENUMS = $(COMPSCAP:%=%_ENUMS-sig.aml) $(COMPS:%=%Enums.aml) \
 UNSAFE = $(COMPSCAP:%=%_UNSAFE-sig.aml) $(COMPS:%=%Unsafe.aml)
 NATIVECOMPS = $(COMPS:%=Native%) $(COMPS:%=NativeFields%)
 NATIVES = $(NATIVECOMPS:%=%.asig) $(NATIVECOMPS:%=%.cc)
-GENFILES = $(NATIVES) $(ENUMS) $(UNSAFE)
+GENFILES = $(NATIVES) $(ENUMS) $(UNSAFE) Key.aml
 GENSIGS = $(COMPSCAP:%=%-sig.aml) 
 
 # C input file
@@ -30,7 +30,7 @@ LASTGENERATE = lastgenerate
 BUILDER = GTK_BUILDER-sig GtkBuilder
 
 # names of all files to compile
-CORE = CORE-sig.aml Core.aml
+CORE = CORE-sig.aml Core.aml Key.aml
 MAINFILES = $(COMPS:%=%.aml) $(BUILDER:%=%.aml)
 CPPSOURCES = $(NATIVECOMPS:%=%.cc) NativeCore.cc
 ALICESOURCES = $(CORE) $(ENUMS) $(UNSAFE) $(GENSIGS) $(MAINFILES)
@@ -76,10 +76,12 @@ all: compile
 
 $(GENFILES): $(LASTGENERATE)
 
-$(LASTGENERATE) generate: $(INPUTFILE) $(GENERATOR)
+$(LASTGENERATE) generate: $(INPUTFILE) $(GENERATOR) 
 	if test ! -d $(OUTDIR) ; then mkdir $(OUTDIR) ; fi
 	$(SML) $(OUTDIR) $(INPUTFILE) @SMLload=$(GENERATOR)
+	./prepare-keyval.sh && mv Key.aml ${OUTDIR} || exit
 	$(INSTALL) $(GENFILES:%=$(OUTDIR)/%) .
+	
 	rm -f $(OUTDIR)/*
 	rmdir $(OUTDIR)
 	touch $(LASTGENERATE)
@@ -95,6 +97,7 @@ $(GENERATOR):
 	    ;; \
 	esac
 	test -e $(GENERATOR) || exit 1
+
 
 $(INPUTFILE):
 	( cd prepare && $(MAKE) )
