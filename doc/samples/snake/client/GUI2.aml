@@ -1,3 +1,14 @@
+import structure EnterName from "windows/EnterName"
+import structure PlayerSettings from "windows/PlayerSettings"
+import structure Main from "windows/Main"
+import structure Connection from "windows/Connection"
+import structure Wait from "windows/Wait"
+import structure ServerSettings from "windows/ServerSettings"
+import structure Protocol from "../common/Protocol"
+import structure Color from "../common/Color"
+import structure Config from "../common/Config"
+
+
 import signature GUI2       from "GUI2-sig"
 
 structure GUI2 :> GUI2 =
@@ -17,7 +28,7 @@ struct
 
         (* called during the join phase *)
         play :          string * Color.color -> error option,
-        watch :         unit -> error option
+        watch :         unit -> error option,
 
         (* called during a running game *)
         turn :          Protocol.direction -> error option,
@@ -28,7 +39,7 @@ struct
 	start : unit -> error option,
 
         (* called anytime *)
-        disconnect :    unit -> unit
+        disconnect :    unit -> error option
     }
 
 
@@ -42,8 +53,8 @@ struct
     |   LEVEL_RUNNING
 
     type gui = {
-        mainWindow :    mainwindow_type,
-        callbacks :     callbacks
+        mainWindow :    Main.mainwindow_type,
+        callbacks :     callbacks,
         state :         gui_state ref
     }
 
@@ -64,17 +75,17 @@ struct
 (* -------------------------------- *)
     (* menuItem `start client' pressed . displays connection window*)
     and startClientCB (state, callbacks) mainWindow =
-        (case state of 
-	    INITIAL => state := CONNECT (Connection.mkConnectionWindow 
+        (case !state of 
+	    INITIAL => state := (CONNECT (Connection.mkConnectionWindow 
 					 (Main.getWindow mainWindow, 
-					  connectCB        state,
-					  cancelConnectCB (state, mainWindow, 
-							   callbacks)))
+					  connectCB (state,
+						     mainWindow, callbacks),
+					  cancelConnectCB state)))
 	  |     _   => assert false)
 
     (* menuItem `start server' pressed *)
     and startServerCB (state, callbacks) mainWindow = 
-        (case state of
+        (case !state of
 	    INITIAL => 
 	       state := SERVER_SETTINGS (ServerSettings.mkServerSettingsWindow 
 					 (Main.getWindow mainWindow,
@@ -85,8 +96,9 @@ struct
 
     (* menuItem 'start singleplayer' pressed *)
     and startSingleCB (state, callbacks) mainWindow =
-	(case state of
-	     INITIAL => state := SINGLE_SETTINGS (EnterName.mkEnterName
+	(case !state of
+	     INITIAL => (state := SINGLE_SETTINGS;
+			 EnterName.mkEnterName
 				    (Main.getWindow mainWindow,
 				     readySingleCB (state, mainWindow,
 						    callbacks),
@@ -94,7 +106,7 @@ struct
 	   |    _    => assert false)
 
     and turnCB (state, callbacks) d = 
-	(case state of 
+	(case !state of 
 	     LEVEL_RUNNING => (case #turn callbacks d of
 				   NONE                  => NONE
 				 | SOME (CONN_ERROR msg) => SOME msg
@@ -102,7 +114,7 @@ struct
 	   |       _       => assert false)
 
     and changeViewCB (state, callbacks) vh = 
-	(case state of
+	(case !state of
 	     LEVEL_RUNNING => (case #changeView callbacks vh of
 				   NONE                  => NONE
 				 | SOME (CONN_ERROR msg) => SOME msg
@@ -114,7 +126,7 @@ struct
 
     (* menuItem 'giveUp' pressed, mainWindow is already set in start mode... *)
     and giveUpCB (state, callbacks) mainWindow = 
-	(case state of
+	(case !state of
 	     LEVEL_RUNNING => (state := INITIAL;
 			       case #disconnect callbacks () of
 				   NONE                  => NONE
@@ -130,7 +142,7 @@ struct
        the user is given the possibility to retry entering the
        ticket and connecting *)
     and connectCB (state, mainWindow, callbacks : callbacks) ticket =
-        case state of
+        case !state of
             CONNECT _ => 
             (case #connect callbacks ticket of
                 NONE    =>  (* connection was successful  *)
@@ -154,8 +166,8 @@ struct
 
     (* this function is called by the ConnectionWindow. The connectionWindow.
        should have already closed itself before calling this function. *)
-    and cancelConnectCB state =
-        case state of
+    and cancelConnectCB state () =
+        case !state of
             CONNECT _   => state := INITIAL
         |   _           => assert false
 
@@ -164,24 +176,26 @@ struct
        have been closed. It starts the server by differentiating Spectator
        and Player. *)
     and readySSettingsCB (state, mainWindow, callbacks) (player, config) = 
-	(case state of 
+	(case !state of 
 	  SERVER_SETTINGS s => 
 	      (case #startServer callbacks (player, config) of
 		   FST ticket => 
 		       (state := WAIT (Wait.mkWaitWindow 
 				       (Main.getWindow mainWindow,
-					ServerSettings.alreadyConnected s,
-					readyWaitCB (), cancelWaitCB (),
-					ticket); NONE)
+					ServerSettings.alreadyConn s,
+					readyWaitCB (state, mainWindow,
+						     callbacks), 
+					cancelWaitCB (state, callbacks),
+					ticket));NONE)
 		 | SND (CONN_ERROR msg) => (state := INITIAL; SOME msg)
 		 | SND (ERROR msg)      => (state := INITIAL; SOME msg))
-		 |            _        => assert false))
+	|            _        => assert false)
 
 
     (* the ServerSettingsWindow should have been closed before calling 
        this procedure *)
-    and cancelSSettingsCB state =
-	case state of 
+    and cancelSSettingsCB state () =
+	case !state of 
 	    SERVER_SETTINGS _ => state := INITIAL
 	|            _        => assert false
 
@@ -192,7 +206,7 @@ struct
        if something went wrong SOME msg will be returned. In that case, the
        message will be displayed and the PlayerSettingsWindow is closed. *)
     and readyPSettingsCB (state, mainWindow, callbacks) NONE =
-	(case state of
+	(case !state of
 	    PLAYER_SETTINGS _ => 
 		(case #watch callbacks () of
 		     NONE                  => NONE
@@ -201,8 +215,8 @@ struct
 		   | SOME (ERROR msg)      => (state := INITIAL;
 					       SOME msg))
            |           _      => assert false)
-      | readyPSettingsCB (state, mainWindow, callbacks) player = 
-	     (case state of
+      | readyPSettingsCB (state, mainWindow, callbacks) (SOME player) = 
+	     (case !state of
 		  PLAYER_SETTINGS _ => 
 		      (case #play callbacks player of
 			   NONE                  => NONE
@@ -214,8 +228,8 @@ struct
 		  
     (* this function is called by the PlayerSettingsWindow. It should also have
        already closed itself before callinng cancelPSettingsCB *)
-    and cancelPSettingsCB (state, callbacks) = 
-	(case state of 
+    and cancelPSettingsCB (state, callbacks) () = 
+	(case !state of 
 	    PLAYER_SETTINGS _ => (#disconnect callbacks (); state := INITIAL)
 	  |            _      => assert false)
 
@@ -225,7 +239,7 @@ struct
        will be closed and everything's ok. Otherwise the error message
        will be displayed and the EnterNameWindow NOT destroyed *)
     and readySingleCB (state, mainWindow, callbacks) settings =
-	(case state of 
+	(case !state of 
 	     SINGLE_SETTINGS => (case #startServer callbacks settings of
 				     FST _             => 
 					 (case #start callbacks () of
@@ -237,15 +251,15 @@ struct
 	   |      _           => assert false) 
 
     (* called after closing the EnterNameWindow *)
-    and cancelSingleCB state = 
-	(case state of
+    and cancelSingleCB state () = 
+	(case !state of
 	    SINGLE_SETTINGS => state := INITIAL
 	  |      _          => assert false)
 
 (* -------------------------------- *)
     (* this is called from the WaitWindow, after it's closing *)
     and readyWaitCB (state, mainWindow, callbacks) () =
-	(case state of 
+	(case !state of 
 	    WAIT _ => (case #start callbacks () of
 			   NONE                  => NONE
 			 | SOME (CONN_ERROR msg) => (state := INITIAL; 
@@ -255,8 +269,8 @@ struct
 	  |   _    => assert false)
 
     (* cancelWaitCB is called after the termination of WaitWindow *)
-    and cancelWaitCB (state, callbacks) =
-	(case state of 
+    and cancelWaitCB (state, callbacks) () =
+	(case !state of 
 	    WAIT _ => (#disconnect callbacks (); state := INITIAL)
 	  |   _    => assert false)
 	

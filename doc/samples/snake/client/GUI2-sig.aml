@@ -1,3 +1,7 @@
+import structure Pos            from "../common/Pos"
+import structure Highscore      from "../common/Highscore"
+import structure Config         from "../common/Config"
+import structure Color          from "../common/Color"
 import structure Protocol       from "../common/Protocol"
 
 signature GUI2 =
@@ -12,9 +16,9 @@ sig
 
     type callbacks = {
         (* called initially *)
-        startServer :   (string * Color.color) option * Config.config -> (string, error) alt,
+        startServer :   (string * Color.color) option * Config.config -> 
+		                                           (string, error) alt,
         connect :       string -> error option,
-
         (* called during a running game *)
         turn :          Protocol.direction -> error option,
         changeView :    Protocol.view_hint -> error option,
@@ -25,17 +29,17 @@ sig
 	watch :         unit -> error option,
         
 	(* called in wait phase of server *)
-	start : unit -> error option
+	start : unit -> error option,
 
         (* called anytime *)
-        disconnect :    unit -> unit
+        disconnect :    unit -> error option
     }
 
 
     val start : callbacks -> gui
 
     val playersJoined :       gui * (string * Color.color) list -> unit
-    val playersDisconnected : gui * string * Color.color -> unit
+    val playerDisconnected : gui * string * Color.color -> unit
     val gameStarted :         gui -> unit
     val levelStart :          gui * Protocol.level_info -> unit    
     val levelTick :           gui * Highscore.points list option * Protocol.diff list * Pos.pos option * Time.time -> unit

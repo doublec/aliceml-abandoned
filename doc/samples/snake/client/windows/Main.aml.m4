@@ -339,7 +339,11 @@ struct
 				 menuMenuItem = #menuMenuItem p,
 				 canvas = #canvas p,
 				 rightHBox = #rightHBox p};
-		       giveUpCB ())
+		       (case giveUpCB p of
+			    NONE => ()
+			  | SOME msg => 
+				(Text.mkTextWindow (#object p, "ERROR!",
+					   "error, while disconnecting!");())))
 		      
 	    fun backToStart (p : mainwindow_type) = 
 		(case !mode of
@@ -350,13 +354,7 @@ struct
 			    val _ = log ("backToStart", "in GAME mode")
 			    fun cancel () = ()
 			    fun no ()     = ()
-			    fun yes ()    = 
-				(case giveUp p of
-				     NONE => ()
-				   | SOME msg => 
-					 Text.mkTextWindow (#object p,
-						"ERROR!", 
-					        "error, while disconnecting!"))
+			    fun yes ()    = giveUp p
                             val answer    = {yes, no, cancel}
 			in
 			    Question.mkQuestionBox 
@@ -383,8 +381,9 @@ struct
 			    |   _         => NONE) of
 			       NONE => ()
 			     | SOME msg => (reset' p;
-				   Text.mkTextWindow (#object p, "ERROR!", 
-				     "could not send any messages to server!"))
+				  (Text.mkTextWindow (#object p, "ERROR!", 
+				   "could not send any messages to server!");
+				   ())))
 		    |    _   => ())
 
 	    ifdef([[GTK2]],[[
@@ -392,7 +391,7 @@ struct
 	    fun canvasEvent [Gtk.EVENT event] = 
 		(case event of
 		     Gdk.EVENT_KEY_PRESS {keyval, ...}	=> 
-			                          key (mainWindowWiget, keyval)
+			                         key (mainWindowWidget, keyval)
 		   |            _                  	=> ())
 	      |  canvasEvent       x            = ()
 	    ]],[[

@@ -10,7 +10,6 @@
 *)
 
 import structure Gtk            from "GtkSupport"
-import structure Gdk            from "GtkSupport"
 
 import structure Pos            from "../../common/Pos"
 import structure Protocol       from "../../common/Protocol"
