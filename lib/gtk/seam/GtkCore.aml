@@ -113,6 +113,7 @@ struct
 		 then () 
 	         else newObject (p,refInfo,hasSignals) ; 
              p)
+(*	fun addObject (p, _, _) = p*)
     end
 
 
@@ -146,6 +147,8 @@ struct
 	val _ = NativeGtkCore.init ()
 	val _ = spawn (listener eventStream)
 	val _ = spawn (mainLoop initPoll)
+(*	val _ = print "Init called\n"
+        val _ = TextIO.flushOut TextIO.stdOut*)
     in
 	()
     end
