@@ -22,7 +22,7 @@ SRCS = \
 	Main.oz
 
 LIB_SYSTEM_SRCS0 = \
-	Config IO OS Unix CommandLine Component Debug Reflect
+	Config IO OS Unix CommandLine Component Debug Socket Reflect
 LIB_SYSTEM_SRCS = $(LIB_SYSTEM_SRCS0:%=lib/system/Unsafe%.oz)
 #	Config IO OS Unix CommandLine Component Debug Socket Rand Reflect
 
@@ -43,6 +43,9 @@ all: \
 	$(SRCS:%.oz=%.ozf) \
 	$(LIB_SYSTEM_SRCS:%.oz=%.ozf) \
 	$(LIB_UTILITY_SRCS:%.oz=%.ozf)
+
+stow.exe: $(SRCS:%.oz=%.ozf)
+	ozl -v -o $@ Main.ozf
 
 clean:
 	-rm -f FloatChunk.o FloatChunk.so-$(PLATFORM)
