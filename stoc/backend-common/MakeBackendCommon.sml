@@ -12,12 +12,14 @@
 
 structure BackendCommon = FlatteningPhase
 
+(*
 structure BackendCommon =
     ComposePhases(structure Phase1 = BackendCommon
 		  structure Phase2 = ValuePropagationPhase
 		  structure Context = EmptyContext
 		  fun context1 () = ()
 		  fun context2 () = ())
+*)
 
 structure BackendCommon =
     ComposePhases(structure Phase1 = BackendCommon
