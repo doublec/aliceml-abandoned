@@ -36,19 +36,21 @@ public:
   }
   static Closure *FromWord(word x) {
     Block *b = Store::WordToBlock(x);
-    Assert(b == INVALID_POINTER ||
-	   b->GetLabel() == Alice::ToBlockLabel(Alice::Closure));
+    Assert(b == INVALID_POINTER || b->GetLabel() == CLOSURE_LABEL);
     return static_cast<Closure *>(b);
   }
 
   ConcreteCode *GetConcreteCode() {
     return ConcreteCode::FromWord(GetArg(CONCRETE_CODE_POS));
   }
+  u_int GetSize() {
+    return Block::GetSize() - 1;
+  }
   void Init(u_int index, word value) {
-    InitArg(index + 1, value);
+    InitArg(index + 2, value);
   }
   word Sub(u_int index) {
-    return GetArg(index + 1);
+    return GetArg(index + 2);
   }
 };
 
