@@ -8,6 +8,23 @@
     structure Resolver : RESOLVER
   </PRE>
 
+  <P>
+    This structure provides functionality to map symbolic resource names
+    to actual files or strings.  A <I>resolver</I> encapsulates a list
+    of <I>handlers</I>, which are asked in succession to provide a URL
+    under which to attempt to access the resource proper.  The act of
+    querying the handlers and performing the resource access is called
+    a <I>localization act</I>.
+  </P>
+
+  <P>
+    If the environment variable <TT>ALICE_TRACE_RESOLVER</TT> is set,
+    then every localization act will output trace messages about what
+    handlers were called on what resource and with what result.
+    These messages are printed to the standard error output stream
+    <TT>TextIO.stdErr</TT>.
+  </P>
+
 <?php section("import", "import") ?>
 
   <PRE>
@@ -20,21 +37,96 @@
   <PRE>
     signature RESOLVER =
     sig
-	structure Handler : RESOLVER_HANDLER
+	structure <A href="#Handler">Handler</A> : RESOLVER_HANDLER
 
-	type resolver
-	type t = resolver
+	type <A href="#resolver">resolver</A>
+	type <A href="#t">t</A> = resolver
 
-	datatype result =
+	datatype <A href="#result">result</A> =
 	    FILE of string
 	  | STRING of string
 
-	val new: string * Handler.handler list -> resolver
-	val localize: resolver -> string -> result option
+	val <A href="#new">new</A>: string * Handler.handler list -> resolver
+	val <A href="#localize">localize</A>: resolver -> string -> result option
     end
   </PRE>
 
 <?php section("description", "description") ?>
+
+  <DL>
+    <DT>
+      <TT>structure <A name="Handler">Handler</A></TT>
+    </DT>
+    <DD>
+      <P>defines the handlers used by resolvers.  The
+	<TT><A href="resolver-handler.php3#parse">parse</A></TT>
+	function uses the following syntax:  Handler specifications
+	are separated by colons (<TT>:</TT>).  If last handler
+	specification is the equals sign (<TT>=</TT>), then the
+	<TT><A href="resolver-handler.php3#default">default</A></TT>
+	handler is <I>not</I> appended, else it is.  The following
+	handler specifications are accepted:</P>
+      <TABLE align=center border=1>
+	<TR><TH>Syntax<TH>Specified handler
+	<TR>
+	  <TD><TT>root=<I>s</I></TT>
+	  <TD>The handler <TT><A href="resolver-handler.php3#root">root</A
+	    > <I>s</I>.
+	<TR>
+	  <TD><TT>cache=<I>s</I></TT>
+	  <TD>The handler <TT><A href="resolver-handler.php3#cache">cache</A
+	    > <I>s</I>.
+	<TR>
+	  <TD><TT>prefix=<I>s1</I>=<I>s2</I></TT>
+	  <TD>The handler <TT><A href="resolver-handler.php3#prefix">prefix</A
+	    > (<I>s1</I>, <I>s2</I>).
+	<TR>
+	  <TD><TT>pattern=<I>s1</I>=<I>s2</I></TT>
+	  <TD>The handler <TT><A href="resolver-handler.php3#prefix">pattern</A
+	    > (<I>s1</I>, <I>s2</I>).
+      </TABLE>
+    </DD>
+
+    <DT>
+      <TT>type <A name="resolver">resolver</A></TT><BR>
+      <TT>type <A name="t">t</A> = resolver</TT>
+    </DT>
+    <DD>
+      <P>The type of resolvers.</P>
+    </DD>
+
+    <DT>
+      <PRE>datatype <A name="result">result</A> =
+    FILE of string
+  | STRING of string</PRE>
+    </DT>
+    <DD>
+      <P>The type of results of localization acts.  If localization
+	of a resource succeeded and found a local file with name&nbsp;<I>s</I>,
+	the result of the localization act is <TT>FILE&nbsp;<I>s</I></TT>;
+	if the resource was found on a remote address, the resource is
+	downloaded into a string&nbsp;<I>s</I> and the result of the
+	localization act is <TT>STRING&nbsp;<I>s</I></TT>.</P>
+    </DD>
+
+    <DT>
+      <TT><A name="new">new</A> (<I>name</I>, <I>handlers</I>)</TT>
+    </DT>
+    <DD>
+      <P>returns a new resolver with name <I>name</I> and trying the given
+	<I>handlers</I> in order.  The name is used to print tracing
+	messages.</P>
+    </DD>
+
+    <DT>
+      <TT><A name="localize">localize</A> <I>resolver</I> <I>name</I></TT>
+    </DT>
+    <DD>
+      <P>performs a localization act, using <I>resolver</I>, to localize
+	the resource with symbolic name <I>name</I>.  Returns <TT>SOME _</TT>,
+	if localization was successful, <TT>NONE</TT> otherwise.</P>
+    </DD>
+  </DL>
 
 <?php section("also", "see also") ?>
 
