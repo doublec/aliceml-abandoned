@@ -40,9 +40,9 @@ struct
 
     fun insertPervasive((_,xr,_), x)		= xr := SOME x
     fun lookupPervasive(_, ref(SOME x), _)	= x
-      | lookupPervasive(_, ref NONE, _)		= raise Pervasive
+      | lookupPervasive(_, _, _)		= raise Pervasive
 
     fun insertPervasive'((_,_,yr), y')		= yr := SOME y'
     fun lookupPervasive'(_, _, ref(SOME y'))	= y'
-      | lookupPervasive'(_, _, ref NONE)	= raise Pervasive
+      | lookupPervasive'(_, _, _)		= raise Pervasive
 end

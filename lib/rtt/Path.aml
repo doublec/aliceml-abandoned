@@ -74,9 +74,10 @@ struct
 
     exception Path
 
-    fun inspect (_, ref(NAME n))	= Name n
-      | inspect (_, ref(HIDDEN n))	= Hidden n
-      | inspect (_, ref(DOT pl))	= Dot pl
+    fun inspect (_, ref p')		= inspect' p'
+    and inspect' (NAME n)		= Name n
+      | inspect' (HIDDEN n)		= Hidden n
+      | inspect' (DOT pl)		= Dot pl
 
     fun isName (_, ref(NAME _))		= true
       | isName  _			= false
@@ -92,9 +93,10 @@ struct
     fun asDot  (_, ref(DOT pl))		= pl
       | asDot   _			= raise Path
 
-    fun toLab (_, ref(DOT(_,l)))	= l
-      | toLab (_, ref(HIDDEN _))	= raise Path
-      | toLab (_, ref(NAME n))		= Label.fromName n
+    fun toLab (_, ref p')		= toLab' p'
+    and toLab' (DOT(_,l))		= l
+      | toLab' (HIDDEN _)		= raise Path
+      | toLab' (NAME n)			= Label.fromName n
 					  handle Domain => raise Path
 
   (* Comparison and hashing *)

@@ -378,7 +378,7 @@ struct
       | itemPath _		= raise Assert.failure
 
     fun tab((itemsr, ref(SOME tab), _) : sign) = tab
-      | tab((itemsr, r as ref NONE, _) : sign) =
+      | tab((itemsr, r, _) : sign) =
 	let
 	    val tab = Tab.map()
 	in
