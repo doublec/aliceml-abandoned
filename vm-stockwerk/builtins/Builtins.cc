@@ -40,16 +40,16 @@ namespace Builtins {
     Block *bb = Store::WordToBlock(b);
     
     if ((ab != INVALID_POINTER) && (bb != INVALID_POINTER)) {
-      t_label l = ab->GetLabel();
+      BlockLabel l = ab->GetLabel();
 
-      if ((l == AliceLabel::Cell)) {
+      if ((l == AliceLabel::ToBlockLabel(AliceLabel::Cell))) {
 	return Store::IntToWord(ab == bb);
       }
-      else if (l == AliceLabel::Array) {
+      else if (l == AliceLabel::ToBlockLabel(AliceLabel::Array)) {
 	return CompareSubs(ab, bb);
       }
-      else if (l == AliceLabel::ConVal) {
-	if (bb->GetLabel() == AliceLabel::ConVal) {
+      else if (l == AliceLabel::ToBlockLabel(AliceLabel::ConVal)) {
+	if (bb->GetLabel() == AliceLabel::ToBlockLabel(AliceLabel::ConVal)) {
 	  return CompareSubs(ab, bb);
 	}
 	return Store::IntToWord(0);

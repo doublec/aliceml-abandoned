@@ -46,9 +46,9 @@ public:
   char *GetName() { return ((String *) Store::WordToBlock(GetArg(NAME_POS)))->GetValue(); }
 
   static Stream *New(FILE *fs, String *name) {
-    static t_label label = Store::MakeLabel(0);
-    Block *b             = Store::AllocBlock(label, SIZE);
-    FilePtr *file        = FilePtr::New(fs);
+    static BlockLabel label = Store::MakeLabel(0);
+    Block *b                = Store::AllocBlock(label, SIZE);
+    FilePtr *file           = FilePtr::New(fs);
 
     b->InitArg(FILE_POS, file->ToWord());
     b->InitArg(NAME_POS, name->ToWord());

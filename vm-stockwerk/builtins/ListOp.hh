@@ -25,8 +25,8 @@ public:
     return a->GetArg(2);
   }
   static word Cons(word car, word cdr) {
-    static t_label label = Store::MakeLabel(0);
-    Block *cell          = Store::AllocBlock(label, 2);
+    static BlockLabel label = Store::MakeLabel(0);
+    Block *cell             = Store::AllocBlock(label, 2);
 
     cell->InitArg(1, car);
     cell->InitArg(2, cdr);
