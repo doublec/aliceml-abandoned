@@ -1,10 +1,10 @@
 Group is
 
 	../../lib/utility/sources.cm
+	../../lib/rtt/type.cm
 	../infrastructure/crash.cm
 	../infrastructure/source.cm
 	intermediate-grammar.cm
-	type.cm
 	id-stamp.cm
 
 	CHECK_INTERMEDIATE-sig.aml

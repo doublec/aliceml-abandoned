@@ -1,7 +1,7 @@
 Group is
 
+    ../../lib/rtt/interface.cm
     ../infrastructure/composer.cm
-    ../common/interface.cm
 
     Signature.aml
     Composer.aml
