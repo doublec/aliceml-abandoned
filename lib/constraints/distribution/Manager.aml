@@ -1,0 +1,151 @@
+import structure Remote from "x-alice:/lib/distribution/Remote"
+import "Channel"
+import structure Utils from "Utils"
+import "Path"
+import signature MANAGER from "MANAGER-sig"
+
+import structure Debug from "Debug"
+
+local
+(* Array access *)
+infix 0 %
+fun a % b = Array.sub (a,b)
+in
+
+structure Manager :> MANAGER =
+struct
+
+    open Debug
+    
+    (* Creates a new manager for n clients.
+     * 'valOf oorder' is used to compare solutions in the case of BEST search.*)
+
+    (* Implementation note :
+     * We need n to create a new array containing interfaces to workers.
+     * If you think that n should be unknown, just use extensible arrays,
+     * or hashtables or whatever.
+     * Beware : All functions of the interface can be called concurrently. *)
+    fun new (verbosity, n, searchMode, oorder, printSol) =
+	let
+	    (* A sequential server. *)
+	    structure Seq = Utils.NewSequence ()
+	    structure Log = Utils.NewSequence ()
+
+	    fun llog (level, msg) = Log.app Debug.dbPrint (verbosity, level, msg)
+
+	    val solutions = Channel.new ()  (* A new channel for solutions *)
+
+	    val dummyInterface =
+		{id       = ~1 ,
+		 name     = "Dummy" ,
+		 share    = fn _ => assert false ,
+		 explore  = fn _ => assert false ,
+		 stop     = fn () => ()
+		 }
+
+
+	    (* An array of all worker interfaces. *)
+	    val workers = Array.array (n,dummyInterface)
+
+            (* The name of Worker #id *)
+	    fun name id = #name (workers%id)
+
+	    (* List of workers not known to be idle,
+	     * that is, workers that received 'explore',
+	     * and that have not sent 'find' *)
+	    (* This list is empty at the beginning,
+	     * and at the end, when the problem is solved. *)
+	    val notIdle = ref []
+
+	    fun isNotIdle id =
+		(assert(List.notContains (!notIdle) id) ;
+		 notIdle := id :: !notIdle)
+
+	    fun isIdle id = notIdle := List.filter (fn x => x <> id) (!notIdle)
+
+	    (* The status of the search corresponds to the following :
+	     *   not started yet == not (!searchStarted)
+	     *       in progress == !searchStarted && (!notIdle <> [])
+	     *          finished == !searchStarted && (!notIdle = [])
+	     *)
+	    val searchStarted = ref false
+	    fun isFinished () = !searchStarted andalso List.null (!notIdle)
+
+	    (* The search is done. *)
+	    fun terminate () =
+		(llog (dbSearch || dbCom, "Search finished. Stopping workers.\n") ;
+		 Array.app (fn w => #stop w ()) workers ;
+
+		 Seq.stop () ;
+		 Log.stop () ;
+		 Channel.close solutions ;
+		 ())
+
+	    (* Ask Worker #id if it has some work to share. *)
+	    fun askForWork id = #share (workers%id) ()
+
+	    (* Send the work w to Worker #id. *)
+	    fun sendWork id w = (isNotIdle id ; #explore (workers%id) w)
+
+	    (* Find work and send it to Worker #id. *)
+	    fun findWorkFor id =
+		if not (!searchStarted) then
+		    (* Ah ah our first client. Give him all the work. *)
+		    (searchStarted := true ;
+		     sendWork id (Path.root))
+		(* If nobody is known to be working, we are finished. *)
+		else if List.null (!notIdle) then terminate ()
+		else
+		(* We ask every non-idle worker for some work to share. *)
+		case Utils.findSome askForWork (!notIdle) of
+		    NONE => spawn (* spawn because of sleep. *)
+			(Utils.sleepms 800 ;
+			 Seq.app findWorkFor id) (* Loop, but later. I! *)
+		  | SOME w => 
+			(llog (dbCom, name id ^ " gets some work, which is " ^ Path.print w) ;
+			 sendWork id w)
+			
+
+    (******   Functions of the manager interface.   ******)
+
+	    (* A worker registers. *)
+	    fun register workerIntf =
+		(llog (dbCom, #name workerIntf ^
+		       " (#" ^ (Int.toString (#id workerIntf)) ^
+		       ") has registered.\n") ;
+		 Array.update (workers, #id workerIntf, workerIntf) ;
+		 if isFinished () then #stop workerIntf () else ())
+		
+	    (* FIND work to be done. *)
+	    fun find id =
+		(isIdle id ; (* We know that id is idle. *)
+		 llog (dbCom, name id ^ " wants some work.\n") ;
+		 Seq.app findWorkFor id) 
+
+	    (* COLLECT a solution *)
+	    fun collect (sol, id, path) =
+		(llog (dbCom, name id ^ " has sent a solution at path " ^ (Path.print path) ^
+		       ".\nNamely " ^ (printSol sol) ^ "\n") ;
+		 Channel.put (solutions, sol))
+
+	    (* LOG a message. *)
+	    fun log (id, msg) = Log.app print (name id ^ " says : " ^ msg)
+
+	    val managerInterface =
+		let
+		    val register = Remote.proxy register
+		    val find     = Remote.proxy find
+		    val collect  = Remote.proxy collect
+		    val log      = Remote.proxy log
+		in
+		{register = register ,
+		 find     = find ,    
+		 collect  = collect,
+		 log      = fn args => spawn (log args)}     (* Asynchronous *)
+		end
+	in
+	    (managerInterface, solutions)
+	end
+
+end
+end

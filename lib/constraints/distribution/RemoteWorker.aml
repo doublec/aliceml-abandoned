@@ -1,0 +1,102 @@
+import structure Remote from "x-alice:/lib/distribution/Remote"
+import structure TextIO from "x-alice:/lib/system/TextIO"
+import signature PARCEL from "PARCEL-sig"
+import "MkWorker"
+(* import structure Inspector from "x-alice:/lib/tools/Inspector" *)
+
+(* A text interface *)
+(*     import "MkRSpace"  *)
+
+(* A graphical interface *)
+import "MkGRSpace"
+
+local structure PreWorker = MkWorker MkGRSpace
+in
+
+structure RemoteWorker =
+struct	    
+
+    (* For debugging purposes mostly, we use a local log file. *)
+    val log =
+	let val filename = OS.FileSys.tmpName ()
+	    val logfile =
+		TextIO.openOut filename
+		handle IO.Io {name=n, function=f, cause=c} =>
+		    (TextIO.output (TextIO.stdErr,
+				    "RemoteWorker.aml : Cannot create file " ^
+				    filename ^ "\n" ^
+				    "Exception Io.Io  name = " ^ n ^
+				    "  ;  fonction = " ^ f ^ 
+				    "  ;  cause = " ^ exnName c ^ "\n") ;
+		     TextIO.stdErr)
+	    fun logIt msg =
+		((* print msg ; *)
+		 TextIO.output(logfile, msg) ;
+		 TextIO.flushOut logfile)
+	    val _ = logIt ("** "^filename^" is the log file for remoteWorker")
+	in
+	    logIt
+	end
+
+    fun start (ticket, id, name, verbosity) =
+	let 
+	    val _ = log (" #" ^ (Int.toString id) ^ " (aka " ^ name ^ ")\n\n")
+
+	    (* Get the ticket, and unpack the gifts. *)
+	    val pp = Remote.take ticket
+	    structure Parcel = unpack (pp) : PARCEL
+	    structure ScriptGen = Parcel.ScriptGen
+	    val managerIntf = Parcel.interface
+
+	    (* Create a real worker and launch it. *)
+	    structure Worker = PreWorker ScriptGen 
+	in
+	    Worker.register (id, name, log, verbosity, managerIntf)
+	end
+
+    fun entryPoint args =
+	case args of
+	    nil => 
+		(log "This component (RemoteWorker) is part of " ;
+		 log "the distributed search engine.\n" ;
+		 log "It should be passed some arguments.\n" ;
+		 OS.Process.exit OS.Process.failure)
+
+	  | [ticket, id, name, verbosity] =>
+		(case (Int.fromString id, Word31.fromString verbosity) of
+		     (NONE, _) => 
+			 (log "RemoteWorker : the second argument (" ;
+			  log id ;
+			  log ") should be a valid number.\n" ;
+			  OS.Process.exit OS.Process.failure)
+
+		   | (_, NONE) => 
+			 (log "RemoteWorker : the fourth argument (" ;
+			  log id ;
+			  log ") should be a valid number.\n" ;
+			  OS.Process.exit OS.Process.failure)
+			 
+		   | (SOME n, SOME v) => start (ticket, n, name, v)
+			 handle Remote.Ticket =>
+			     (log ("RemoteWorker #" ^ id ^ " (" ^ name) ;
+			      log ") : the given ticket (see below)" ;
+			      log "is not valid. May be the host is down.\n" ;
+			      log ticket ;
+			      log "\n" ;
+			      OS.Process.exit OS.Process.failure)
+
+			      | e =>
+			     (log "\n Error : Exception raised\n" ;
+			      log (exnName e) ;
+			      log "\n" ;
+			      log (exnMessage e) ;
+			      log "\n -- see above --\n\n" ;
+			      raise e))
+		
+	  | _ => 
+		(log "RemoteWorker : Wrong number of arguments.\n" ;
+		 OS.Process.exit OS.Process.failure)		
+
+    val _ = entryPoint (CommandLine.arguments ())  
+end
+end

@@ -1,0 +1,8 @@
+import "Common"
+import "Interface"
+
+signature PARCEL =
+sig
+    structure ScriptGen : Common.SCRIPT_GEN
+    val       interface : (* ScriptGen.sol *) (int vector) Interface.manager_intf
+end

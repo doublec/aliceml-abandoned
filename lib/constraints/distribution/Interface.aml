@@ -1,0 +1,28 @@
+(* Interface between the Workers and the Manager. *)
+
+import structure Path from "Path"
+
+structure Interface =
+struct
+    type id = int  (* A unique number for each worker. *)
+
+    (* Asynchronous messages have the type 'typ' -> unit.
+     * A typical message from a worker to a manager
+     * contains the id of the worker and some data. *)
+
+type 'a worker_intf =
+    {id       :        id ,
+     name     :    string ,
+     share    :      unit -> ('a Path.t) option ,
+     explore  : 'a Path.t -> unit ,
+     stop     :      unit -> unit
+     }
+
+type 'a manager_intf =
+    {register :      'a worker_intf -> unit ,
+     find     :                  id -> unit ,
+     collect  : 'a * id * 'a Path.t -> unit ,
+     log      :         id * string -> unit 
+     }
+
+end

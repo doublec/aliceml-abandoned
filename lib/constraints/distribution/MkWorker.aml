@@ -1,0 +1,156 @@
+import structure Space from "x-alice:/lib/gecode/Space"
+import structure FD from "x-alice:/lib/gecode/FD"
+import structure FS from "x-alice:/lib/gecode/FS"
+import structure Remote from "x-alice:/lib/distribution/Remote"
+import "Common"
+import structure Utils from "Utils"
+import structure MyStack from "Utils"
+import "Interface"
+import "Path"
+import signature RSPACE from "RSPACE-sig"
+
+import structure Debug from "Debug"
+
+functor MkWorker (MkRSpace : RSPACE) (ScriptGen : Common.SCRIPT_GEN) =
+struct	
+
+ open Debug
+
+ (* A sequential server. *)
+ structure Log = Utils.NewSequence ()
+
+ structure Script = ScriptGen.MkScript Space FD FS
+
+ val (variables, rootSpace) = Script.script ()
+
+ fun order (sp, sol)   = Script.order (sp, sol, variables)
+		
+ (* Recomputable space *)
+ structure RSpace = MkRSpace (type     a = (* ScriptGen.sol *) int vector
+			      val  order = order
+			      val   root = rootSpace
+			      val  rdist = ScriptGen.rdist)
+
+ fun register (id, name, llog, verbosity, 
+	       managerIntf : (* ScriptGen.sol *) (int vector) Interface.manager_intf) =
+     let
+	 
+	 val logtime = ref 0
+
+	 fun log (lvl, msg) =
+	     if Word31.compare (dbZero, verbosity && lvl) = EQUAL then ()
+	     else
+		 Log.add
+		 (fn () => let val _ = logtime := !logtime + 1
+			       val msg = Int.toString (!logtime) ^ " - " ^ msg
+			   in
+			       llog msg ;
+			       #log managerIntf (id, msg)
+			   end)
+		 
+	 (* The tasks to be done are stored in a stack.
+	  * Each task is represented as a rspace to be explored. *)
+	 val tasks = MyStack.new ()
+
+	 fun share () =
+	     (log (dbCom, "Looking for some work to SHARE.\n") ;
+	      if MyStack.isEmpty tasks then (log (dbCom, "None found.\n") ; NONE)
+	      else case MyStack.takeLast tasks of
+		  NONE => (log (dbCom, "None found.\n") ; NONE)
+		| SOME rsp => (log (dbCom, "Giving some work.\n") ;
+			       SOME (List.rev (RSpace.path rsp))))
+
+
+	 val msgNotAssigned =
+	     "Some variables are not assigned, " ^ 
+	     "but no more branching is possible.\n" ^
+	     "This probably means that the given search problem " ^
+	     "is not well specified.\n"
+	     
+	 (* Take a task from the task list and search. *)
+	 fun doSearch () =
+	     (log (dbSearch, "doSearch\n") ;
+	     case MyStack.pop tasks of
+		 NONE => #find managerIntf id (* Ask for some work. *)
+	       | SOME rspace =>
+		     (log (dbSearch, "asking the rspace at " ^
+			   (Path.print (List.rev (RSpace.path rspace)))
+			   ^ ".\n") ;
+		      case RSpace.status rspace of
+			  Space.FAILED =>
+			      (log (dbSearch, "Failure" ^
+				    (Path.print (List.rev (RSpace.path rspace)))
+				    ^ "...next.\n") ;
+			      doSearch ()) (* Next. *)
+			| Space.SOLVED =>
+			      let val _ = log (dbSearch, "Succeeded. Got a sol at " ^
+				   (Path.print (List.rev (RSpace.path rspace)))
+					       ^ ".\n")
+				  val space = RSpace.getSpace rspace
+			      in
+				  #collect managerIntf
+				     (Script.getSolution (variables, space), id,
+				      List.rev (RSpace.path rspace))
+				  handle FD.NotAssigned =>
+				      log (dbExc, msgNotAssigned) ;
+					  
+				  doSearch ()
+			      end
+			| Space.BRANCH =>
+			      let val _ = log (dbSearch, "Some alternatives at " ^
+				  (Path.print (List.rev (RSpace.path rspace)))
+					       ^ ".\n")
+				  val left = RSpace.getLeft rspace
+				  val right = RSpace.getRight rspace
+			      in
+				  MyStack.push (tasks, right) ;
+				  MyStack.push (tasks, left) ;
+				  Utils.sleepms 950 ;
+				  doSearch ()
+			      end))
+			  
+	 (* 'explore' message : create a new rspace
+	  * and put it in the task list. *)
+	 fun explore z =
+	     (log (dbCom, "Exploring given path.\n") ;
+	      assert (MyStack.isEmpty tasks) ;
+	      (MyStack.push (tasks, (RSpace.space z))
+	       handle (Fail s) => 
+		   (log (dbExc, "The initial search space is already failed.\n") ;
+		    log (dbExc, "Exception Fail : " ^ s ^ "\n")));
+	      doSearch ())
+	     
+	 fun stop () =
+	     (log (dbCom || dbSearch, "Terminating.\n") ;
+	      Log.stop () ;
+	      (* OS.Process.exit OS.Process.success *) ())
+
+	 val pex = Promise.promise () 
+	 fun wrapHandle f = fn args =>
+	     (f args handle ex => (Promise.fulfill (pex, ex) ; raise ex))
+	     
+	 val workerInterface =
+	     let
+		 val share   = Remote.proxy (wrapHandle share)
+		 val explore = Remote.proxy (wrapHandle explore)
+		 val stop    = Remote.proxy (wrapHandle stop)
+	     in
+		 {id      = id ,
+		  name    = name ,
+		  share   = share ,
+		  explore = fn args => spawn (explore args), (* Asynchronous *)
+		  stop    = stop }
+	     end
+	
+     in
+	 #register managerIntf workerInterface ;
+	 
+	 log (dbCom, "Asking for some work.\n") ;
+	 #find managerIntf id ;
+	 
+	 log (dbCom, "I have asked. Now waiting.\n") ;
+	 
+	 (* Capture exceptions of other threads. *)
+	 raise (Future.await (Promise.future pex))
+     end
+end

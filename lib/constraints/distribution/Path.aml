@@ -1,0 +1,33 @@
+(* A path in the search tree. *)
+
+(* In the case of 'best search',
+ * the path may also contain 'better than' constraints,
+ * that is, contraints corresponding to a 'best' message.
+ * This is necessary because choices in the search tree
+ * depend on *ALL* previous constraints, including 'better than' constraints.
+ *) 
+
+structure Path =
+struct
+    datatype 'a item =
+	Commit    of int
+      | Constrain of 'a
+
+    (* A path in the search tree. *)
+    (* externalized paths are in the correct order (1st operation 1st) *)
+    (* internalized paths are in reverse order (1st operation last) *)
+    type 'a path = ('a item) list
+    type t = path
+	
+    val root = []
+
+    val itos = Int.toString
+    fun print [] = "[]"
+      | print ((Commit n) :: xs) =
+	       (itos n ^ "-" ^ print xs)
+      | print ((Constrain _) :: xs) =
+	       ("BEST(" ^ print xs ^ ")")
+
+end
+
+

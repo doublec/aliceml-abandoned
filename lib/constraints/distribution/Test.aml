@@ -1,0 +1,292 @@
+import structure Inspector from "x-alice:/lib/tools/Inspector"
+import signature SPACE     from "x-alice:/lib/gecode/SPACE-sig"
+import signature FD        from "x-alice:/lib/gecode/FD-sig"
+import signature FS        from "x-alice:/lib/gecode/FS-sig"
+
+import "Common"
+import structure GManager from "GManager"
+import "MkEngine"
+import "Channel"
+
+
+import structure Debug from "Debug"
+
+val itos = Int.toString
+val max = 10
+val size = 5
+val numbers1 = #[1, 1, 2, 3, 1]
+val numbers2 = #[2, 3, 4, 5, 6]
+
+infix %
+fun a % b = Vector.sub (a,b)
+
+structure Big :> Common.SCRIPT_GEN =
+struct
+(*    type sol = int vector *)
+
+    functor MkScript (Space : SPACE)
+	(FD : FD where type space = Space.space)
+	(FS : FS) =
+	struct
+(*	    type variables = FD.intvar vector *)
+
+	    val cn = FD.BND
+
+	    fun fromInt sp n = FD.intvar (sp,#[(n,n)])
+	    fun toInt   sp v = FD.Reflect.value (sp,v)
+
+	    fun script () =
+		let
+		    val space = Space.new () 
+		    val vars = FD.rangeVec(space, size, (0, max))
+		    val reif = FD.boolvarVec (space, size)
+		    val nreif = FD.boolvarVec (space, size)
+		in
+		    FD.distinct (space, vars, cn) ;
+		    VectorPair.app (fn (b1, b2) => FD.nega(space, b1, b2)) (reif, nreif) ;
+
+		    Vector.appi
+		    (fn (i, var) =>
+		     (FD.Reified.equal (space, var, fromInt space (numbers1%i), reif%i, cn) ;
+		      FD.Reified.equal (space, var, fromInt space (numbers2%i), nreif%i, cn)))
+		       vars ;
+
+		    FD.branch(space, Vector.map FD.Reflect.boolvar2intvar reif, FD.B_NONE, FD.B_MIN);
+		    (vars, space)
+		end
+
+	    fun order (_, _, _) = ()
+	    
+	    fun internalize (v,space) = Vector.map (fromInt space) v
+	    fun getSolution (v,space) = Vector.map (toInt space) v
+		    
+	end
+
+    fun print v =
+	Vector.foldl (fn (a, s) => s ^ " ; " ^ itos a) "" v
+
+    val rdist = 1
+
+end
+
+
+(*
+(* SEND + MORE = MONEY Script *)
+structure Money :> Common.SCRIPT_GEN =
+    struct
+	(* External Problem Result type *)
+	type sol = {s:int, e:int, n:int, d:int,
+		    m:int, o:int, r:int, y:int}
+	    
+	functor MkScript(FD : FD) (FS : FS) =
+	    struct
+		(* Internal Problem Result type *)
+		type internal_sol = {s:FD.fd, e:FD.fd , n:FD.fd, d:FD.fd,
+				     m:FD.fd, o:FD.fd , r:FD.fd, y:FD.fd}
+		    
+		(* Problem Description *)
+		fun script () =
+		    let
+			val ds as #[s,e,n,d,m,o,r,y] = FD.rangeVec(8, (0, 9))
+			val zero                     = FD.fromInt 0
+		    in
+			FD.sumC(#[(1000, s), (100, e), (10, n), (1, d),
+				  (1000, m), (100, o), (10, r), (1, e),
+
+				  (~10000, m), (~1000, o), (~100, n),
+				  (~10, e), (~1, y)],
+				FD.EQUAL, zero);
+
+			FD.notequal(s, zero);
+			FD.notequal(m, zero);
+			FD.distinct(ds);
+			FD.distribute(FD.FIRSTFAIL, ds);
+			{s, e, n, d, m, o, r, y}
+		    end
+		
+		(* Order not necessary *)
+		fun order(_, _) = ()
+		    
+		(* Import Function *)
+		fun internalize sol =
+		    let
+			val {s=s, e=e, n=n, d=d, m=m, o=o, r=r, y=y} = sol
+		    in
+			{s=FD.fromInt s, e=FD.fromInt e, n=FD.fromInt n,
+			 d=FD.fromInt d, m=FD.fromInt m, o=FD.fromInt o,
+			 r=FD.fromInt r, y=FD.fromInt y}
+		    end
+		(* Export Function *)
+		fun externalize sol =
+		    let
+			val {s=s, e=e, n=n, d=d, m=m, o=o, r=r, y=y} = sol
+		    in
+			{s=FD.toInt s, e=FD.toInt e, n=FD.toInt n,
+			 d=FD.toInt d, m=FD.toInt m, o=FD.toInt o,
+			 r=FD.toInt r, y=FD.toInt y}
+		    end
+	    end
+	
+	fun print sol =
+	    let
+		val {s=s, e=e, n=n, d=d, m=m, o=o, r=r, y=y} = sol
+	    in
+		"s = " ^ (itos s) ^ " ; " ^ 
+		"e = " ^ (itos e) ^ " ; " ^ 
+		"n = " ^ (itos n) ^ " ; " ^ 
+		"d = " ^ (itos d) ^ " ; " ^ 
+		"m = " ^ (itos m) ^ " ; " ^ 
+		"o = " ^ (itos o) ^ " ; " ^ 
+		"r = " ^ (itos r) ^ " ; " ^ 
+		"y = " ^ (itos y) ^ " ; "
+	    end
+
+	val rdist = 1
+
+    end
+
+(* Photo Alignment Script *)
+structure Photo :> Common.SCRIPT_GEN =
+    struct
+	(* External Problem Result Type *)
+	type sol = {alice:int, bert:int, chris:int,
+		    deb:int, evan:int} * int vector * int
+	    
+	functor MkScript (FD : FD) (FS : FS) =
+	    struct
+		(* Internal Problem Result Type *)
+		type internal_sol =
+		    {alice:FD.fd, bert:FD.fd, chris:FD.fd,
+		     deb:FD.fd, evan:FD.fd} * FD.fd vector * FD.fd
+		    
+		(* Auxiliary Definitions *)
+		datatype person = ALICE | BERT | CHRIS | DEB | EVAN
+		    
+		val nPersons = 5
+		    
+		fun personIndex ALICE = 0
+		  | personIndex BERT  = 1
+		  | personIndex CHRIS = 2
+		  | personIndex DEB   = 3
+		  | personIndex EVAN  = 4
+		    
+		val prefs = #[(ALICE, CHRIS), (BERT, EVAN), (CHRIS, DEB),
+			      (CHRIS, EVAN), (DEB, ALICE), (DEB, EVAN),
+			      (EVAN, BERT)]
+		    
+		(* Problem Description *)
+		fun script () =
+		    let
+			val pos as #[alice, bert, chris, deb, evan] =
+			    FD.rangeVec(nPersons, (1, nPersons))
+			(* Best Values is 5; lowest 0 *)
+			val sat = FD.range(0, Vector.length prefs)
+			val ful = Vector.map
+			    (fn (a, b) =>
+			     let
+				 val c1     = FD.bin()
+				 val c2     = FD.bin()
+				 val result = FD.bin()
+				 val zero   = FD.fromInt 0
+				 val one    = FD.fromInt 1
+				 val posA   = Vector.sub(pos, personIndex a)
+				 val posB   = Vector.sub(pos, personIndex b)
+			     in
+				 FD.Reified.sumC(#[(1, one), (1, posA),
+						   (~1, posB)],
+						 FD.EQUAL, zero, c1);
+				 FD.Reified.sumC(#[(1, posA), (~1, posB)],
+						 FD.EQUAL, one, c2);
+				 FD.Reified.sum(#[c1, c2],
+						FD.EQUAL, one, result);
+				 result
+			     end) prefs
+		    in
+			FD.distinct pos;
+			FD.sum(ful, FD.EQUAL, sat);
+			FD.distribute(FD.NAIVE, pos);
+			({alice, bert, chris, deb, evan}, ful, sat)
+		    end
+				    
+		(* Import Function *)
+		fun internalize sol =
+		    let
+			val ({alice=a, bert=b, chris=c, deb=d, evan=e}, f, g)
+			    = sol
+		    in
+			({alice=FD.fromInt a, bert=FD.fromInt b,
+			  chris=FD.fromInt c, deb=FD.fromInt d,
+			  evan=FD.fromInt e},
+			 Vector.map FD.fromInt f, FD.fromInt g)
+		    end
+		(* Export Function *)
+		fun externalize sol =
+		    let
+			val ({alice=a, bert=b, chris=c, deb=d, evan=e}, f, g)
+			    = sol
+		    in
+			({alice=FD.toInt a, bert=FD.toInt b, chris=FD.toInt c,
+			  deb=FD.toInt d, evan=FD.toInt e},
+			 Vector.map FD.toInt f, FD.toInt g)
+		    end
+
+		(* Problem Order *)
+		fun order((_, _, a), (_, _, b)) = FD.lessEq(a, b)
+
+	    end
+
+	fun xOrder ((_, _, a), (_, _, b)) = a <= b
+
+	fun print sol =
+	    let
+		val ({alice=a , bert=b, chris=c, deb=d, evan=e}, f, g) = sol
+	    in
+		"alice = " ^ (itos a) ^ " ; " ^ 
+		"bert = " ^ (itos b) ^ " ; " ^ 
+		"chris = " ^ (itos c) ^ " ; " ^ 
+		"deb = " ^ (itos d) ^ " ; " ^ 
+		"evan = " ^ (itos e) ^ " ; " ^ 
+		"g = " ^ (itos g) ^ " ; "
+	    end
+
+	val rdist = 1
+
+    end
+*)
+
+val _ =
+
+    let
+	open Debug
+
+	(* We select the problem we want to explore. *)
+	structure Prob = Big
+	    
+	(* Hosts used as remote workers. *)
+	val hosts = [("frisch", "Tony"),
+		     ("localhost", "Bill")]
+	    
+	(* We select the manager (can be graphical) *)
+	structure Manager = GManager Prob
+
+	(* We build the search engine. *)
+	structure Engine = MkEngine Manager Prob
+	    
+	(* As soon as the engine starts, it returns a channel of solutions. *)
+	val sols = Engine.start(dbManag, hosts, Common.BEST, NONE) 
+
+	val l = Channel.toList sols
+    in
+  	Inspector.inspect l ;
+
+	List.app (fn s => print ("SOLUTION : " ^ (Prob.print s) ^ "\n")) l ;
+	
+	(* Wait until all the solutions have been found. *)
+	Channel.waitClosed sols ;
+	
+	while Option.map (String.isPrefix "q") (TextIO.inputLine TextIO.stdIn) <> SOME true do () ;
+	    
+	    print "Bye.\n" ;
+	    OS.Process.exit OS.Process.success
+    end
+

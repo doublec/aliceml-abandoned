@@ -1,0 +1,92 @@
+import structure FD     from "x-alice:/lib/gecode/FD"
+import structure FS     from "x-alice:/lib/gecode/FS"
+import structure Space  from "x-alice:/lib/gecode/Space"
+import structure Remote from "x-alice:/lib/distribution/Remote"
+import "Common"
+import signature MANAGER from "MANAGER-sig"
+import signature PARCEL from "PARCEL-sig"
+
+import structure Debug from "Debug"
+
+(* Needed only in debug mode *)
+ import "RemoteWorker"
+
+functor MkEngine (Manager : MANAGER) (ScriptGen : Common.SCRIPT_GEN) =
+struct
+
+    val clientURI = "x-alice:RemoteWorker"
+
+    open Debug
+    val itos = Int.toString
+    val wtos = Word31.toString
+
+    (* If the script does not provide an external order (xOrder),
+     * we build one using the internal order. *)
+    fun makeOrder () =
+	let structure MyScript    = ScriptGen.MkScript Space FD FS
+	    val       internalize = MyScript.internalize
+	    val       order       = MyScript.order
+	in
+	    fn (a,b) =>
+	    let val space = Space.new ()
+		val vars  = internalize (b, space)
+	    in
+		order (space, a, vars) ;
+		not((Space.status space) = Space.FAILED)
+	    end
+	end
+
+    (* Start the search on given hosts. 
+     * oxOrder if NONE or SOME f where f is a comparison function *)
+    fun start (verbosity, hostsAndIds, searchMode, oxOrder) =
+	let
+	    val verbosity = verbosity || dbExc (* Always print exceptions. *)
+	    fun dbPrint (l, msg) = Debug.dbPrint (verbosity, l, msg)
+		
+	    (* Create a manager. *)
+	    val _ = dbPrint (dbManag, "Creating Manager\n")
+	    val xOrder = if searchMode = Common.BEST andalso oxOrder = NONE
+			     then SOME(makeOrder ()) else oxOrder
+
+	    val (managerInterface, sols) =
+		Manager.new (verbosity, List.length hostsAndIds,
+			     searchMode, xOrder, ScriptGen.print)
+
+	    (* This structure will be downloaded by the hosts
+	     * using a TICKET. *)
+ 	    val _ = dbPrint (dbCom || dbManag, "Creating Parcel, ")
+	    structure Parcel =
+	    struct
+		structure ScriptGen = ScriptGen
+		val       interface = managerInterface
+	    end
+	    
+	    val gift = pack Parcel :> (PARCEL)
+(* ???				       where type ScriptGen.sol = ScriptGen.sol) *)
+	    val ticket = Remote.offer gift
+	    val _ = dbPrint (dbCom || dbManag, "offered through ticket " ^ ticket ^ "\n")
+		
+	    (* Connect to the given host and launch a client. *)
+	    fun connect (id, (host, name)) =
+		(dbPrint (dbCom || dbManag,"Connecting " ^ host
+			  ^ "  id = " ^ (itos id)
+			  ^ " (aka " ^ name ^ ")\n") ;
+		 OS.Process.system(String.concatWith " "
+				   ["ssh", "-f", host,
+				    "'source /usr/local/bin/sfb-demo.sh",
+				    ";",
+				    "$ALICERUN", clientURI, ticket,
+				    itos id, name, wtos verbosity,
+				    "'"]) ;
+(*		 RemoteWorker.entryPoint [ticket, itos id, name, wtos verbosity] ; *)
+		 print "Back from OS.System\n" ;
+		 ())
+	in
+			     
+	    (* Concurrently launch the clients on the hosts. *)
+	    List.appi connect hostsAndIds ;
+	    sols 
+	end
+end
+
+

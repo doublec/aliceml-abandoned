@@ -1,0 +1,11 @@
+import "Channel"
+import "Common"
+import "Interface"
+import structure Debug from "Debug"
+
+signature MANAGER =
+sig
+    val new : Debug.db_mask * int * Common.search_mode * ('a * 'a -> bool) option * ('a -> string)
+	      -> 'a Interface.manager_intf * 'a Channel.t
+end
+
