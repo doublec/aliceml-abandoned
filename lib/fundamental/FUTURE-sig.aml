@@ -17,10 +17,9 @@
  *  Items marked with (**) are extensions to the Standard Basis.
  *)
 
-import structure __pervasive      from "Pervasive"
-import type unit and bool and exn from "ToplevelTypes"
-import structure Time             from "Time"
-
+import structure __pervasive              from "Pervasive"
+import type unit and bool and alt and exn from "ToplevelTypes"
+import structure Time                     from "Time"
 
 signature FUTURE =					(**)
 sig
@@ -32,7 +31,7 @@ sig
     val alarm :		Time.time -> unit
 
     val await :		'a -> 'a
-    val awaitOne :	'a * 'b -> 'a
+    val awaitEither :	'a * 'b -> ('a,'b) alt
 
     val status :	'a -> status
     val isFuture :	'a -> bool
