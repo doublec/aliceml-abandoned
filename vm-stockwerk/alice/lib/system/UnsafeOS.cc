@@ -331,6 +331,7 @@ DEFINE1(UnsafeOS_Process_terminate) {
 } END
 
 DEFINE1(UnsafeOS_Process_atExn) {
+  //--** support multiple actions
   DECLARE_CLOSURE(closure, x0);
   Properties::atExn = closure->ToWord();
   RETURN_UNIT;
