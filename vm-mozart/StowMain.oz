@@ -76,6 +76,7 @@ define
    end
 
    {Error.registerFormatter alice
+    %--** also format the alice future exception
     fun {$ E} T in
        T = 'Alice exception'
        case E of alice(E Coord) then
