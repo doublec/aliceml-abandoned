@@ -46,7 +46,7 @@ OBJS = $(SOURCES:%.cc=%.o)
 all: alice.dll
 
 alice.dll: $(OBJS)
-	$(LD) $(LDFLAGS) -shared -o $@ $(OBJS) $(LIBS)
+	$(LD) $(LDFLAGS) -o $@ $(OBJS) $(LIBS)
 
 clean:
 	rm -f $(OBJS)
@@ -71,6 +71,6 @@ Makefile.depend: Makefile $(SOURCES)
 	 done && \
 	 for i in $(LIB_DISTRIBUTION_SOURCES); do \
 	     $(MAKEDEPEND) $$i -MT alice/lib/distribution/`basename $$i .cc`.o; \
-	 done) > $@
+	 done) > $@ || (rm -f Makefile.depend && exit 1)
 
 include Makefile.depend
