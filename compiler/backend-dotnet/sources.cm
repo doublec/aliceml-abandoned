@@ -1,6 +1,5 @@
 Group
 
-    functor MkDotNetTarget
     functor MkBackendDotNet
 
 is
