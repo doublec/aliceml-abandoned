@@ -3,8 +3,8 @@
 FILESRC = getenv.cc initenv.cc panic.cc path.cc ppid.cc registry.cc
 FILEOBJS = $(FILESRC:%.cc=%.o)
 
-CXX = g++-2
-CXXFLAGS = -mno-cygwin -O3 -march=i686 -mcpu=i686
+CXX = g++
+CXXFLAGS = -mno-cygwin -O3 -march=i686 -mcpu=i686 # -DMOZART_1_2_0
 
 all: $(FILEOBJS) alicerun.exe alice.exe alicec.exe aliceserv.exe alicelink.exe alicedep.exe
 

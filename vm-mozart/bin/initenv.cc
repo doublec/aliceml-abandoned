@@ -67,7 +67,11 @@ char *getAliceHome(bool toUnix)
   return ret;
 }
 
+#ifndef MOZART_1_2_0
+static char *mozartKey = "SOFTWARE\\Mozart Consortium\\Mozart\\1.3.0";
+#else
 static char *mozartKey = "SOFTWARE\\Mozart Consortium\\Mozart\\1.2.5";
+#endif
 
 char *getOzHome(bool toUnix)
 {
