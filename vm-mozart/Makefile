@@ -90,10 +90,14 @@
 
 SRCTOP = ..
 BOOTSTRAPDIR = $(SRCTOP)/bootstrap
-OZHOME = /opt/mozart-stable
 PREFIX = /opt/stockhausen-devel
 
 # No configuration needed from here
+
+OZEXE = $(shell which oz)
+OZHOME = $(OZEXE:%/bin/oz=%)
+
+export OZHOME
 
 VPATH = $(SRCTOP)
 
