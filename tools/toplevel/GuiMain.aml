@@ -430,10 +430,11 @@ structure GuiMain =
                 let
 		    val _ = Core.signalHandlerBlock(Gui.notebook1,
 						    notebookSwitchEventId)
-                    val {buf,view,...} = Buffer.buffer {notebook=Gui.notebook1,
-                                                        id=(!numberOfPages),
-                                                        file=SOME f,
-                                                        loadFile=true}
+                    val {buf,view,highlight,...} =
+			Buffer.buffer {notebook=Gui.notebook1,
+                                       id=(!numberOfPages),
+                                       file=SOME f,
+                                       loadFile=true}
                 in
                     Gtk.widgetGrabFocus (view);
                     Gtk.signalConnect(buf, "mark-set", markSet);
@@ -445,7 +446,7 @@ structure GuiMain =
 		    Core.signalHandlerUnblock(Gui.notebook1,
 					      notebookSwitchEventId);
 		    changeFocus (BUFFER view) ();
-		    syntax();
+		    Promise.fulfill(!highlight, SOME 0);
                     checkNotebookSize()
                 end
 
