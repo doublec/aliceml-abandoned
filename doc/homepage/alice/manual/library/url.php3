@@ -8,13 +8,6 @@
     structure Url : URL
   </PRE>
 
-<?php section("import", "import") ?>
-
-  <PRE>
-    import signature URL from "x-alice:/lib/utility/URL-sig"
-    import signature Url from "x-alice:/lib/utility/Url"
-  </PRE>
-
   <P>
     This structure provides functions for parsing URLs, extracting URL
     constituents, constructing URLs from constituents and resolving
@@ -24,6 +17,13 @@
     mostly-conservative common extension.  Device letters enable the
     representation of Windows-style path and file names as URLs.
   </P>
+
+<?php section("import", "import") ?>
+
+  <PRE>
+    import signature URL from "x-alice:/lib/utility/URL-sig"
+    import signature Url from "x-alice:/lib/utility/Url"
+  </PRE>
 
 <?php section("interface", "interface") ?>
 

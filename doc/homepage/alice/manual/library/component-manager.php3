@@ -8,12 +8,6 @@
     signature COMPONENT_MANAGER
   </PRE>
 
-<?php section("import", "import") ?>
-
-  <PRE>
-    import signature COMPONENT_MANAGER from "x-alice:/lib/system/COMPONENT_MANAGER-sig"
-  </PRE>
-
   <P>
     A <EM>component manager</EM> is responsible for loading and linking
     components.  To this aim, every component manager maintains its
@@ -24,6 +18,12 @@
     description of exception <TT>Component.Failure</TT> to see how these
     "asynchronous" exceptions are handled.
   </P>
+
+<?php section("import", "import") ?>
+
+  <PRE>
+    import signature COMPONENT_MANAGER from "x-alice:/lib/system/COMPONENT_MANAGER-sig"
+  </PRE>
 
 <?php section("interface", "interface") ?>
 

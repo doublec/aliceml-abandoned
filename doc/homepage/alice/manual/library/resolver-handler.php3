@@ -8,12 +8,6 @@
     signature RESOLVER_HANDLER
   </PRE>
 
-<?php section("import", "import") ?>
-
-  <PRE>
-    import signature RESOLVER_HANDLER from "x-alice:/lib/system/RESOLVER_HANDLER-sig"
-  </PRE>
-
   <P>
     This signature represents handlers as used by <A href="resolver.php3"
     >resolvers</A> to find resources such as components.  A <EM>handler</EM>
@@ -22,6 +16,12 @@
     may or may not be <EM>applicable</EM>, which means that it actually
     may or may not return a URL.
   </P>
+
+<?php section("import", "import") ?>
+
+  <PRE>
+    import signature RESOLVER_HANDLER from "x-alice:/lib/system/RESOLVER_HANDLER-sig"
+  </PRE>
 
 <?php section("interface", "interface") ?>
 
