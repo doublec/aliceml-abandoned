@@ -27,8 +27,6 @@
 #include "generic/Properties.hh"
 #include "generic/PushCallInterpreter.hh"
 #include "generic/ByneedInterpreter.hh"
-
-#include "alice/Data.hh" //--**
 #include "alice/AliceLanguageLayer.hh"
 
 #if PROFILE
@@ -72,17 +70,21 @@ static u_int mb(u_int n) {
   return n << 20;
 }
 
-int main(int argc, char *argv[]) {
-  // Setup the store
+DllExport int StockwerkMain(char *home, u_int argc, char *argv[]) {
+  // Set up the store:
   u_int memLimits[STORE_GENERATION_NUM];
   memLimits[0] = mb(16);
   memLimits[1] = mb(15);
   memLimits[2] = mb(35);
   Store::InitStore(memLimits, 67, 20);
-  // Setup Datastructures
+  // Set up datastructures:
   RootSet::Init();
   UniqueString::Init();
-  Properties::Init();
+  Properties::Init(home, argc, argv);
+  if (Properties::rootUrl == Store::IntToWord(0)) {
+    std::fprintf(stderr, "usage: %s component\n", argv[0]);
+    return 2;
+  }
   TaskStack::Init();
   IOHandler::Init();
   SignalHandler::Init();
@@ -90,42 +92,28 @@ int main(int argc, char *argv[]) {
 #if PROFILE
   Profiler::Init();
 #endif
-  // Setup Interpreters and Services
+  // Set up interpreters and services:
   PushCallInterpreter::Init();
   ByneedInterpreter::Init();
   Unpickler::Init();
   Pickler::Init();
-  // Setup Alice Layer
+  // Set up Alice Language Layer:
   AliceLanguageLayer::Init();
-  // Setup Alice Exceptions used in lower Layers
+  // Setup Alice exceptions used in lower Layers:
   //--** should not be here
   Unpickler::InitExceptions();
   Pickler::InitExceptions();
   BootLinker::Init(nativeComponents);
-  // Parse command line
-  if (argc < 2) {
-    fprintf(stderr, "usage: %s component\n", argv[0]);
-    exit(2);
+  // Link and execute boot component:
+  BootLinker::Link(String::New("lib/system/Boot")); //--** to be done
+  Scheduler::Run();
+  return 0;
+}
+
+int main(int argc, char *argv[]) {
+  char *home = std::getenv("STOCKHOME");
+  if (home == NULL) {
+    Error("could not determine installation directory");
   }
-  else {
-    String *rootUrl     = String::New(argv[1]);
-    word urlWord        = rootUrl->ToWord();
-    argv++; argc--;
-    Properties::rootUrl = urlWord;
-    String *bootUrl     = String::New("lib/system/Boot"); // to be done
-    // Initialize Properties::commandLineArguments:
-    word tail = Store::IntToWord(1); // nil
-    argv++; argc--;
-    for (u_int i = argc; i--; ) {
-      TagVal *cons = TagVal::New(0, 2); // ::
-      cons->Init(0, String::New(argv[i])->ToWord());
-      cons->Init(1, tail);
-      tail = cons->ToWord();
-    }
-    Properties::commandLineArguments = tail;
-    // Link and Execute Component
-    BootLinker::Link(bootUrl);
-    Scheduler::Run();
-    exit(0);
-  }
+  std::exit(StockwerkMain(home, argc, argv));
 }
