@@ -54,7 +54,7 @@ fi
 
 : ${OZ_LOAD:=cache=~/.oz/cache${sep}cache=/usr/lib/mozart/cache${sep}cache=/usr/share/mozart/cache${sep}cache=$OZHOME/cache}
 
-OZ_LOAD=$ALICE_LOAD${sep}pattern=x-alice:/'?{x}'=$ALICE_HOME/'?{x}'.ozf${sep}$OZ_LOAD
+OZ_LOAD=$ALICE_LOAD${sep}pattern=x-alice:/'?{x}'=$ALICE_HOME/'?{x}'.ozf${sep}pattern=x-alice:/'?{x}'=$ALICE_HOME/'?{x}'${sep}$OZ_LOAD
 
 export ALICE_HOME ALICE_LOAD OZ_LOAD
 
