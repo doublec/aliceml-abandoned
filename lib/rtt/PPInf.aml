@@ -63,6 +63,9 @@ structure PPInf :> PP_INF =
 				 (ppInf j) ps))
 	end
 
+      | ppInf'(ABBREV(j1,j2)) =
+	    ppInf j1
+
       | ppInf'(LINK j) =
 (*DEBUG
 text "@" ^^*)

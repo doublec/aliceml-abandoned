@@ -36,7 +36,8 @@ structure InfPrivate =
 	| FUN    of path * inf * inf		(* arrow (functor) *)
 	| LAMBDA of path * inf * inf		(* abstraction (dep. function)*)
 	| APPLY  of inf * path * inf		(* application *)
-	| LINK   of inf
+	| LINK   of inf				(* forward (for substitution) *)
+	| ABBREV of inf * inf			(* abbreviations *)
 
     and item' =
 	  VAL of id *  typ  * val_sort * path def	(* value *)
@@ -265,21 +266,32 @@ structure InfPrivate =
 
     (*UNFINISHED: avoid multiple cloning of curried lambdas somehow *)
 
-    fun reduce(j as ref(APPLY(j1,p,j2)))	= reduceApply(j, j1, p, j2)
-      | reduce(ref(LINK j))			= reduce j
-      | reduce _				= ()
-
-    and reduceApply(j, j1 as ref(LAMBDA _), p, j2) =
-	( case !(instance j1)
-	    of LAMBDA(p1, j11, j12) =>
-		(*UNFINISHED: do realisation *)
-		(*Path.replace(p1, p)*)
-		( j := LINK j12
-		; reduce j
+    fun reduce(j as ref(APPLY(j1,p,j2))) =
+	let
+	    fun reduceApply(j1 as ref(LAMBDA _), jo) =
+		( case !(instance j1)
+		    of LAMBDA(p1, j11, j12) =>
+			(*UNFINISHED: do realisation *)
+			(*Path.replace(p1, p)*)
+			( j := LINK j12
+			; reduce j
+			)
+		    | _ => raise Crash.Crash "Inf.reduceApply"
 		)
-	    | _ => raise Crash.Crash "Inf.reduceApply"
-	)
-      | reduceApply(j, j1, p, j2) = ()
+	      | reduceApply(ref(LINK j11), jo) =
+		    reduceApply(follow j11, jo)
+
+	      | reduceApply(ref(ABBREV(j11,j12)), jo) =
+		    reduceApply(follow j12, SOME(Option.getOpt(jo,j11)))
+
+	      | reduceApply _ = ()
+	in
+	    reduceApply(j1, NONE)
+	end
+
+      | reduce(ref(LINK j | ABBREV(_,j))) = reduce j
+
+      | reduce _ = ()
 
 
   (* Realisation *)
@@ -307,7 +319,7 @@ structure InfPrivate =
       | realise'(rea, j' as SIG s)	= ( realiseSig(rea, s)
 					  ; j'
 					  )
-      | realise'(rea, j' as ( FUN(_,j1,j2) | LAMBDA(_,j1,j2) )) =
+      | realise'(rea, j' as (FUN(_,j1,j2) | LAMBDA(_,j1,j2) | ABBREV(j1,j2))) =
 					  ( realise(rea, j1)
 					  ; realise(rea, j2)
 					  ; j'
@@ -400,6 +412,8 @@ structure InfPrivate =
       | instanceInf'(r,z, APPLY(j1,p,j2))	= APPLY(instanceInf(r,z, j1),
 							realisePath(r, p),
 							instanceInf(r,z, j2))
+      | instanceInf'(r,z, ABBREV(j1,j2))	= ABBREV(instanceInf(r,z, j1),
+							 instanceInf(r,z, j2))
 
     and instanceCon(r,z, (k,p))			= ( instanceKind(r,z, k),
 						    realisePath(r, p) )
@@ -499,7 +513,7 @@ structure InfPrivate =
     and realiseT'(rea', LINK j)			= realiseT(rea', j)
       | realiseT'(rea', (TOP | CON _))		= ()
       | realiseT'(rea', SIG s)			= realiseTSig(rea', s)
-      | realiseT'(rea', (FUN(_,j1,j2) | LAMBDA(_,j1,j2))) =
+      | realiseT'(rea', (FUN(_,j1,j2) | LAMBDA(_,j1,j2) | ABBREV(j1,j2))) =
 						  ( realiseT(rea', j1)
 						  ; realiseT(rea', j2)
 						  )
@@ -566,6 +580,8 @@ structure InfPrivate =
       | singletonInf'(z, APPLY(j1,p,j2))	= APPLY(singletonInf(z, j1),
 							p,
 							singletonInf(z, j2))
+      | singletonInf'(z, ABBREV(j1,j2))		= ABBREV(singletonInf(z, j1),
+							 singletonInf(z, j2))
 
     and singletonCon(z, (k,p))			= ( singletonKind(z, k), p )
 
@@ -654,6 +670,7 @@ structure InfPrivate =
       | clone'(FUN(p,j1,j2))	= FUN(p, clone j1, clone j2)
       | clone'(LAMBDA(p,j1,j2))	= LAMBDA(p, clone j1, clone j2)
       | clone'(APPLY(j1,p,j2))	= APPLY(clone j1, p, clone j2)
+      | clone'(ABBREV(j1,j2))	= ABBREV(clone j1, clone j2)
 
     and cloneCon (k,p)		= (cloneKind k, p)
 
@@ -699,6 +716,7 @@ structure InfPrivate =
     fun inArrow pjj	= ref(FUN pjj)
     fun inLambda pjj	= ref(LAMBDA pjj)
     fun inApply jpj	= let val j = ref(APPLY jpj) in reduce j ; j end
+    fun inAbbrev jj	= ref(ABBREV jj)
 
     fun pathToPath  p	= p
     fun pathToTyp k p	= Type.inCon(k, Type.CLOSED, p)
@@ -709,7 +727,9 @@ structure InfPrivate =
 
     exception Interface
 
-    fun asInf j		= !(follow j)
+    fun asInf(ref(LINK j))	= asInf j
+      | asInf(ref(ABBREV(_,j)))	= asInf j
+      | asInf(ref j')		= j'
 
     fun isTop j		= case asInf j of TOP      => true | _ => false
     fun isCon j		= case asInf j of CON _    => true | _ => false
@@ -730,9 +750,11 @@ structure InfPrivate =
 
   (* Strengthening *)
 
-    fun strengthen(p, ref(SIG s))  = strengthenSig(p, s)
-      | strengthen(p, ref(LINK j)) = strengthen(p, j)
-      | strengthen(p, _)           = ()
+    fun strengthen(p, ref(SIG s))		= strengthenSig(p, s)
+      | strengthen(p, ref(LINK j))		= strengthen(p, j)
+      | strengthen(p, ref(ABBREV(j1,j2)))	= ( strengthen(p, j1)
+						  ; strengthen(p, j2) )
+      | strengthen(p, _)			= ()
 
     and strengthenSig(p, (ref items, _)) =
 	    List.app (fn item => strengthenItem(p, item)) items
@@ -814,6 +836,7 @@ structure InfPrivate =
       | kind'(LAMBDA(p,j1,j2))	= inDependent(p, j1, kind j2)
       | kind'(APPLY(j1,p,j2))	= (*UNFINISHED*) inGround()
       | kind'(LINK j)		= kind j
+      | kind'(ABBREV(j1,j2))	= kind j2
 
 
   (* Matching *)
@@ -993,9 +1016,15 @@ structure InfPrivate =
 	      raise Mismatch(IncompatibleArg(p1,p2))
 	)
 
-      | match'(rea, ref(LINK j1), j2)	= match'(rea, j1, j2)
-      | match'(rea, j1, ref(LINK j2))	= match'(rea, j1, j2)
-      | match'(rea, j1,j2)		= raise Mismatch(Incompatible(j1,j2))
+      | match'(rea, ref(LINK j1), j2)		= match'(rea, j1, j2)
+      | match'(rea, j1, ref(LINK j2))		= match'(rea, j1, j2)
+      | match'(rea, ref(ABBREV(_,j1)), j2)	= match'(rea, j1, j2)
+      | match'(rea, j1, j2 as ref(ABBREV(j21,j22))) =
+	( match'(rea, j1, j22)
+	; j2 := ABBREV(j21,j1)
+	)
+
+      | match'(rea, j1,j2) = raise Mismatch(Incompatible(j1,j2))
 
 
     and equals(j1,j2) = (*UNFINISHED*) true
@@ -1206,9 +1235,22 @@ false)
 	(*UNFINISHED*)
 	    raise Crash.Crash "Inf.intersect: APPLY"
 
-      | intersect'(rea, ref(LINK j1), j2) = intersect'(rea, j1, j2)
-      | intersect'(rea, j1, ref(LINK j2)) = intersect'(rea, j1, j2)
-      | intersect'(rea, j1,j2)            = raise Mismatch(Incompatible(j1,j2))
+      | intersect'(rea, ref(LINK j1), j2)	= intersect'(rea, j1, j2)
+      | intersect'(rea, j1, ref(LINK j2))	= intersect'(rea, j1, j2)
+
+      | intersect'(rea, j1 as ref(ABBREV(j11,j12)), j2)	=
+	(*UNFINISHED: need some node for intersection... *)
+	( intersect'(rea, j12, j2)
+	; j1 := ABBREV(j11,j2)
+	; j1
+	)
+      | intersect'(rea, j1, j2 as ref(ABBREV(j21,j22))) =
+	(*UNFINISHED: need some node for intersection... *)
+	( intersect'(rea, j1, j22)
+	; j2 := ABBREV(j21,j1)
+	; j2
+	)
+      | intersect'(rea, j1,j2) = raise Mismatch(Incompatible(j1,j2))
 
 
     fun intersect(j1,j2) =

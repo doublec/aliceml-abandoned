@@ -42,6 +42,7 @@ signature INF =
     val inArrow :	path * inf * inf -> inf
     val inLambda :	path * inf * inf -> inf
     val inApply :	inf * path * inf -> inf
+    val inAbbrev :	inf * inf        -> inf
 
   (* Inquiries *)
 
