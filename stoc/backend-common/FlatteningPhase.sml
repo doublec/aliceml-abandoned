@@ -113,7 +113,7 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 			      end) subst
 		val decs' =
 		    List.foldr (fn ((id, exp), decs) =>
-				translateExp (exp,
+				translateExp (substExp (exp, subst),
 					      fn exp' =>
 					      O.ValDec (infoExp exp, id, exp',
 							false),
