@@ -28,7 +28,7 @@ final public class NoGood implements DMLValue {
     final private Object readResolve()
 	throws java.io.ObjectStreamException {
 	Object o = GName.gNames.get(gName);
-	if (o==null) {
+	if (o == null) {
 	    return this;
 	} else {
 	    return o;

@@ -81,10 +81,10 @@ public class Thread extends java.lang.Thread implements DMLValue {
 
     final private Object writeReplace()
 	throws java.io.ObjectStreamException {
-	if (ng==null) { // falls zum ersten Mal serialisiert
-	    GName gn=new GName();
-	    ng=new NoGood(gn);
-	    GName.gNames.put(gn,ng);
+	if (ng == null) { // falls zum ersten Mal serialisiert
+	    GName gn = new GName();
+	    ng = new NoGood(gn);
+	    GName.gNames.put(gn, this);
 	    return ng;
 	} else {
 	    return ng;

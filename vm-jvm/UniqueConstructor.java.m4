@@ -22,7 +22,7 @@ public class UniqueConstructor extends Constructor {
     public UniqueConstructor(java.lang.String name) {
 	this.name = name;
 	if (GName.gNames.get(name)==null) {
-		GName.gNames.put(name,this);
+	    GName.gNames.put(name,this);
 	}
     }
     /** @see UniqueName */
@@ -39,10 +39,10 @@ public class UniqueConstructor extends Constructor {
 	throws java.io.ObjectStreamException {
 	Object o = GName.gNames.get(name);
 	if (o==null) {
-	GName.gNames.put(name,this);
-	return this;
+	    GName.gNames.put(name,this);
+	    return this;
 	} else {
-	return o;
+	    return o;
 	}
     }
 

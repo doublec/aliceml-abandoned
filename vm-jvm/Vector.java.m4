@@ -1,14 +1,14 @@
 /*
- * Author: 
+ * Author:
  *      Daniel Simon, <dansim@ps.uni-sb.de>
- * 
+ *
  * Copyright:
  *      Daniel Simon, 1999
  *
  * Last change:
  *    $Date$ by $Author$
  * $Revision$
- * 
+ *
  */
 package de.uni_sb.ps.dml.runtime;
 
@@ -18,6 +18,8 @@ import java.rmi.RemoteException;
  *  @see Array
  */
 final public class Vector implements DMLValue {
+
+    private NoGood ng = null;
 
     /** the maximum length of a vector */
     public final static int maxLength = 65535;
@@ -288,6 +290,18 @@ final public class Vector implements DMLValue {
 
     _apply_fails ;
 
+    final private Object writeReplace()
+	throws java.io.ObjectStreamException {
+	if (ng == null) { // falls zum ersten Mal serialisiert
+	    GName gn = new GName();
+	    ng = new NoGood(gn);
+	    GName.gNames.put(gn, this);
+	    return ng;
+	} else {
+	    return ng;
+	}
+    }
+
     final public java.lang.String toString() {
 	java.lang.String s="["+vec[0];
 	int l = vec.length;
@@ -295,7 +309,7 @@ final public class Vector implements DMLValue {
 	    s += ", "+vec[i];
 	return s+"] : Vector";
     }
-    //' 
+    //'
     /*************************************************************/
     /* Part 2
      */
