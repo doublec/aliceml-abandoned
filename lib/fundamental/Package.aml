@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg, 2001-2002
  *
  * Last change:
  *   $Date$ by $Author$
@@ -11,89 +11,24 @@
  *)
 
 import structure __pervasive from "Pervasive"
+import type package          from "ToplevelTypes"
 import signature PACKAGE     from "PACKAGE-sig"
 
-(* For now we need a hack to make the Inspector properly display packages...
-structure Package :> PACKAGE =
+structure Package :> PACKAGE where type package = package =
 struct
-    type package
+    type package = package
     type t = package
     type val_package = package
 
     type      mismatch = __pervasive.Inf.mismatch
     exception Mismatch = __pervasive.Inf.Mismatch
-    exception MismatchVal
 
-    __primitive functor Pack :
-	fct(signature S structure X : S) -> (val package : package) = "Pack"
-    __primitive functor Unpack :
-	fct(val package : package signature S) -> S = "Unpack"
+    functor Pack(signature S structure X : S) = (val package = pack X :> S)
+    functor Unpack(signature S val package : package) = unpack package : S
 
-    signature VAL_PACKAGE = sig type t val x : t end
-
-    functor PackVal(Arg : VAL_PACKAGE) =
-	Pack(signature S = VAL_PACKAGE where type t = Arg.t
-	     structure X = Arg)
+    functor PackVal(type t val x : t) =
+	(val package = pack (val x = x) :> (val x : t))
 
     functor UnpackVal(val package : val_package type t) =
-	(val x = let structure X =
-		    Unpack(val package = package
-			   signature S = VAL_PACKAGE where type t = t)
-		in X.x end
-		handle Mismatch _ => raise MismatchVal
-	)
-end
-*)
-
-structure Package :> PACKAGE =
-struct
-    type package'
-    datatype package = Package__ of package'
-    type t = package
-    datatype val_package = ValPackage__ of package'
-
-    type      mismatch = __pervasive.Inf.mismatch
-    exception Mismatch = __pervasive.Inf.Mismatch
-    exception MismatchVal
-
-    __primitive functor Pack' :
-	fct(signature S structure X : S) -> (val package : package') = "Pack"
-    __primitive functor Unpack' :
-	fct(val package : package' signature S) -> S = "Unpack"
-
-    functor Pack(Arg : sig signature S structure X : S end) =
-    let
-	structure P = Pack'(Arg)
-    in
-	(val package = Package__(P.package))
-    end
-
-    functor Unpack(val package : package signature S) =
-    let
-	val Package__ package' = package
-    in
-	Unpack'(val package = package' signature S = S)
-    end
-
-    signature VAL_PACKAGE = sig type t val x : t end
-
-    functor PackVal(Arg : VAL_PACKAGE) =
-    let
-	structure P = Pack'(signature S = VAL_PACKAGE where type t = Arg.t
-			    structure X = Arg)
-    in
-	(val package = ValPackage__(P.package))
-    end
-
-    functor UnpackVal(val package : val_package type t) =
-    let
-	val ValPackage__ package' = package
-    in
-	(val x = let structure X =
-		    Unpack'(val package = package'
-			    signature S = VAL_PACKAGE where type t = t)
-		in X.x end
-		handle Mismatch _ => raise MismatchVal
-	)
-    end
+	unpack package : (val x : t)
 end
