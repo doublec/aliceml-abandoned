@@ -10,35 +10,26 @@
  *   $Revision$
  *)
 
-import
-    structure Source
-from "../infrastructure/Source"
-
-import
-    signature CONTEXT
-from "../infrastructure/CONTEXT-sig"
-
-import
-    structure FlatGrammar
-from "../backend-common/FlatGrammar"
-
-import
-    structure Signature
-from "../top/Signature"
+import structure Reflect     from "../../lib/system/Reflect"
+import structure Component   from "../../lib/system/Component"
+import structure Url         from "../../lib/utility/Url"
+import structure Source      from "../infrastructure/Source"
+import signature CONTEXT     from "../infrastructure/CONTEXT-sig"
+import structure FlatGrammar from "../backend-common/FlatGrammar"
 
 signature CODE_GEN_PHASE_COMPONENT =
     sig
 	structure CodeGenPhase:
 	    sig
-		structure C :
-		sig 
-		    val new :	unit -> 't
-		    val clone :	't -> 't
-		end
+		structure C:
+		    sig
+			val new: unit -> 't
+			val clone: 't -> 't
+		    end
 
 		val translate: 'C_t * Source.desc * FlatGrammar.component -> 't
-		val sign: 't -> Signature.t
-		val save: 't * string * bool -> unit
-		val apply: 't -> unit
+		val dumpTarget: 't -> string
+		val eval: 't * Reflect.value -> unit
+		val component: 't -> Component.t
 	    end
     end
