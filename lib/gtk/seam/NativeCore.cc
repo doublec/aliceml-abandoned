@@ -591,6 +591,22 @@ static void Init() {
     __die("error during init: cannot create pipe");
   if (!SetStdHandle(STD_INPUT_HANDLE, pipeInHandle))
     __die("error during init: cannot redirect stdin");
+
+  /*
+   * Praise the infinite wisdom of the Windows API designers!
+   * If the parent Windows process started Alice with a STARTUPINFO structure
+   * (like Emacs does, also praise their wisdom for using this nonsense!)
+   * then the first call to ShowWindow will have no predictable effect.
+   * Since Gtk ignores this problem (let's praise their wisdom as well),
+   * this means that the first window we try to create might not show up.
+   * For instance, this happens to the Inspector under Windows under Emacs.
+   * To work around this intellectual diarrhoea, we create a dummy window here
+   * and delete it immediately. - AR
+   */
+  HINSTANCE hInst;
+  HWND hWnd = CreateWindow("BUTTON", "", 0, 0, 0, 0, 0, NULL, NULL, hInst, NULL);
+  ShowWindow(hWnd, SW_SHOWNORMAL);
+  DestroyWindow(hWnd);
 #endif
   gtk_init(NULL,NULL);
 #if defined(__CYGWIN32__) || defined(__MINGW32__)
