@@ -9,7 +9,9 @@ final public class DMLConstants {
 
     public static final DMLName dmlmatch = new DMLName("[Match]");
     public static final DMLName dmlbind  = new DMLName("[Bind]");
+    public static final DMLName none  = new DMLName("NONE");
 
+    public static final DMLConstructor some = new DMLConstructor("SOME");
     public static final DMLConstructor runtimeError = new DMLConstructor("runtimeError");
     public static final DMLConstructor reference    = new DMLConstructor("reference");
     public static final DMLConstructor cons         = new DMLConstructor("cons");
