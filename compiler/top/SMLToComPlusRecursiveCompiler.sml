@@ -44,11 +44,8 @@ structure SMLToComPlusMain =
 				  structure Compiler = Compiler
 				  val extension = "dll")
 
-	structure BatchCompiler =
-	    MakeBatchCompiler(structure RecursiveCompiler = RecursiveCompiler
-			      val executableHeader = "")
-
 	val _ = f := RecursiveCompiler.acquireSign
     in
-	BatchCompiler
+	MakeBatchCompiler(structure RecursiveCompiler = RecursiveCompiler
+			  val executableHeader = "")
     end

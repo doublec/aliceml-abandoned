@@ -1,6 +1,7 @@
 Group
 
     structure SMLToMozartMain
+    structure SMLToMozartEmacsToplevel
     structure SMLToComPlusMain
     structure SMLToStockwerkMain
     structure Debug

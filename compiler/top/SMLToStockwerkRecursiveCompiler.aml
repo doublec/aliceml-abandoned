@@ -46,12 +46,9 @@ structure SMLToStockwerkMain =
 				  structure Compiler = Compiler
 				  val extension = ".stc")
 
-	structure BatchCompiler =
-	    MakeBatchCompiler(structure RecursiveCompiler = RecursiveCompiler
-			      val executableHeader =
-				  "#!/bin/sh\nexec stow $0 \"$@\"\n")
-
 	val _ = f := RecursiveCompiler.acquireSign
     in
-	BatchCompiler
+	MakeBatchCompiler(structure RecursiveCompiler = RecursiveCompiler
+			  val executableHeader =
+			      "#!/bin/sh\nexec stow $0 \"$@\"\n")
     end

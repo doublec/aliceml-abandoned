@@ -50,12 +50,9 @@ structure SMLToMozartMain =
 				  structure Compiler = Compiler
 				  val extension = "ozf")
 
-	structure BatchCompiler =
-	    MakeBatchCompiler(structure RecursiveCompiler = RecursiveCompiler
-			      val executableHeader =
-				  "#!/bin/sh\nexec stow $0 \"$@\"\n")
-
 	val _ = f := RecursiveCompiler.acquireSign
     in
-	BatchCompiler
+	MakeBatchCompiler(structure RecursiveCompiler = RecursiveCompiler
+			  val executableHeader =
+			      "#!/bin/sh\nexec stow $0 \"$@\"\n")
     end

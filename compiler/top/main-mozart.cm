@@ -7,5 +7,7 @@ Group is
 
     make-recursive-compiler.cm
     make-batch-compiler.cm
+    toplevel.cm
 
     SMLToMozartMain.sml
+    SMLToMozartEmacsToplevel.sml

@@ -3,22 +3,23 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 2000-2001
+ *   Leif Kornstaedt, 2001
  *
  * Last change:
  *   $Date$ by $Author$
  *   $Revision$
  *)
 
-structure SMLToStockwerkMain =
+structure SMLToMozartEmacsToplevel =
     let
 	structure Switches = MakeSwitches(val logOut = TextIO.stdOut)
 
 	val f: (Source.desc * Url.t -> Composer.Sig.t) ref =
-	    ref (fn _ => raise Crash.Crash "SMLToStockwerkMain.f")
+	    ref (fn _ => raise Crash.Crash "SMLToMozartMain.f")
 
-	structure PickleTarget =
-	    MakePickleTarget(structure Sig = Signature)
+	structure MozartTarget =
+	    MakeMozartTarget(structure Switches = Switches
+			     structure Sig = Signature)
 
 	structure FrontendSML =
 	    MakeFrontendSML(fun loadSign (desc, url) = !f (desc, url)
@@ -30,25 +31,24 @@ structure SMLToStockwerkMain =
 
 	structure BackendCommon = MakeBackendCommon(Switches)
 
-	structure BackendStockwerk =
-	    MakeBackendStockwerk(structure Switches = Switches
-				 structure PickleTarget = PickleTarget)
+	structure BackendMozart =
+	    MakeBackendMozart(structure Switches = Switches
+			      structure MozartTarget = MozartTarget)
+
 	structure Compiler =
 	    MakeCompiler(structure Switches         = Switches
-			 structure Target           = PickleTarget
+			 structure Target           = MozartTarget
 			 structure FrontendSpecific = FrontendSML
 			 structure FrontendCommon   = FrontendCommon
 			 structure BackendCommon    = BackendCommon
-			 structure BackendSpecific  = BackendStockwerk)
+			 structure BackendSpecific  = BackendMozart)
 
 	structure RecursiveCompiler =
 	    MakeRecursiveCompiler(structure Composer = Composer
 				  structure Compiler = Compiler
-				  val extension = ".stc")
+				  val extension = "ozf")
 
 	val _ = f := RecursiveCompiler.acquireSign
     in
-	MakeBatchCompiler(structure RecursiveCompiler = RecursiveCompiler
-			  val executableHeader =
-			      "#!/bin/sh\nexec stow $0 \"$@\"\n")
+	MakeEmacsToplevel(structure RecursiveCompiler = RecursiveCompiler)
     end
