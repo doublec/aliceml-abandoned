@@ -1,0 +1,28 @@
+import structure Space from "x-alice:/lib/gecode/Space"
+import structure Debug from "Debug"
+
+(* Specification of the constraint problem, including recomputation policy,
+ * debug level, and branch and bound optimization. *)
+signature PROBLEM =
+sig
+  type solution (* The type of solutions *)
+
+  val root : Space.space  (* Root node *)
+  val readSolution : Space.space -> solution
+
+  (* Recomputation *)
+  val copyq : int -> bool (* All spaces s.t. 'copyq depth = true' are cloned *)
+
+  (* Branch and bound *)
+  val bab : bool (* Indicates if branch and bound is active. *)
+  val bound : Space.space * solution -> unit (* bound the given space *)
+  val compare : solution * solution -> bool
+         (* compare (x,y) is true iff y is better than x.
+          * This function is called only if you use
+          * the function 'Search.init' or 'Search.betterThan'.
+	  * In particular, it is not used by local Branch and Bound search *)
+
+  (* Debug level *)
+  val mask : Debug.db_mask
+end
+

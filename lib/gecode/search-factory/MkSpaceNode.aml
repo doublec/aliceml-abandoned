@@ -1,17 +1,17 @@
 import structure Debug     from "Debug"
-import signature POLICY    from "Policy"
+import signature PROBLEM   from "PROBLEM-sig"
 import signature SPACENODE from "SPACENODE-sig"
 import structure Space     from "x-alice:/lib/gecode/Space"
 import structure FD        from "x-alice:/lib/gecode/FD"
 import structure Path      from "Path"
 
-functor MkSpaceNode (Policy:POLICY)
-  :> SPACENODE where type solution = Policy.sol =
+functor MkSpaceNode (Problem:PROBLEM)
+  :> SPACENODE where type solution = Problem.solution =
 struct
 
   open Debug
 
-  type solution = Policy.sol
+  type solution = Problem.solution
   exception Child
 
   datatype space_node = Node of node_rep
@@ -22,7 +22,7 @@ struct
      copy   : Space.space option ref ,
      status : Space.status ,
      bestId : int ,  (* ID number of the best solution known at this node. *)
-     best   : Policy.sol option , (* Solution applied to this node. *)
+     best   : solution option , (* Solution applied to this node. *)
      depth  : int }
 
   val undefined = lazy assert false
@@ -37,13 +37,13 @@ struct
 
   type t = space_node
 
-  fun dbPrint (mask, msg) = Debug.dbPrint (mask, Policy.mask, msg)
+  fun dbPrint (mask, msg) = Debug.dbPrint (mask, Problem.mask, msg)
 
   val root =
     let 
-      val status = Space.status Policy.root
-      val spaceref = ref (SOME (Space.clone Policy.root))
-      val copyref = ref (SOME Policy.root)
+      val status = Space.status Problem.root
+      val spaceref = ref (SOME (Space.clone Problem.root))
+      val copyref = ref (SOME Problem.root)
     in
     Node {mom    = undefined ,
           altNum = ~1 ,
@@ -59,8 +59,8 @@ struct
   fun depth     (Node node) = #depth  node
   fun getBestId (Node node) = #bestId node
 
-  val bab = Policy.bab
-  val bound = Policy.bound
+  val bab = Problem.bab
+  val bound = Problem.bound
 
   (* Update globalBest and globalBestId if
    *  'condf currentBest currentId' is true *)
@@ -142,7 +142,7 @@ struct
         (NONE  , SOME s) => Space.clone s  (* clone copy   *)
       | (NONE  , NONE  ) => recompute node (* recomputation *)
       | (SOME s, acopy ) =>                (* donate space *)
-          if acopy = NONE andalso Policy.copyq (#depth node)
+          if acopy = NONE andalso Problem.copyq (#depth node)
             then (dbPrint (dbClone, "CLONE at path " ^ 
                            (Path.toString (getPath (Node node))) ^ "\n") ;
                   updateCloneRef (rcopy, s))
@@ -216,15 +216,16 @@ struct
           (* When a solution is found, BOUND *)
           if status = Space.SOLVED andalso bab then
             let
-              val solution = Policy.readSolution space
+              val solution = Problem.readSolution space
               (* This solution is not always better than previous solutions:
                * the current node might have been bound too early
                * (e.g. because of a call to getPath)
                * Hence, we have to check if this new solution is the best. *)
             in
-              ignore(setBestIfCond (solution, (fn (best, bestId) =>
-                                               newBestId = bestId
-                                               orelse hardCompare(best,space))))
+            ignore(setBestIfCond (solution,
+				  (fn (best, bestId) =>
+				      newBestId = bestId
+				      orelse hardCompare(best,space))))
             end
             handle FD.NotAssigned => ()
             else () ;
@@ -273,7 +274,7 @@ struct
         case pbest of
           NONE => node
         | SOME sol =>
-            if setBestIfCond (sol, fn (best, _) => Policy.compare (best, sol))
+            if setBestIfCond (sol, fn (best, _) => Problem.compare (best, sol))
               then 
                 let val Node rnode = node 
                 in
@@ -284,6 +285,6 @@ struct
     end
 
   fun addSolution sol =
-    ignore(setBestIfCond (sol, fn (best, _) => Policy.compare (best, sol)))
+    ignore(setBestIfCond (sol, fn (best, _) => Problem.compare (best, sol)))
 
 end

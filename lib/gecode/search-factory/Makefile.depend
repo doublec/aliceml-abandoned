@@ -2,7 +2,7 @@ Debug.alc:
 
 Path.alc:
 
-Policy.alc: \
+PROBLEM-sig.alc: \
 	Debug.alc
 
 SPACENODE-sig.alc: \
@@ -10,7 +10,7 @@ SPACENODE-sig.alc: \
 
 MkSpaceNode.alc: \
 	Debug.alc \
-	Policy.alc \
+	PROBLEM-sig.alc \
 	SPACENODE-sig.alc \
 	Path.alc
 
@@ -19,22 +19,21 @@ TREENODE-sig.alc: \
 	Debug.alc
 
 MkTreeNode.alc: \
-	Policy.alc \
+	PROBLEM-sig.alc \
 	TREENODE-sig.alc \
 	MkSpaceNode.alc
 
 SEARCH-sig.alc: \
+	Path.alc \
 
 MkSearch.alc: \
 	Path.alc \
 	SEARCH-sig.alc \
-	Policy.alc \
+	PROBLEM-sig.alc \
 	Debug.alc \
-	MkTreeNode.alc \
-	Policy.alc
+	MkTreeNode.alc
 
 Test.alc: \
 	Debug.alc \
-	MkSearch.alc \
 	MkSearch.alc
 

@@ -4,7 +4,7 @@ ALICEDEP = alicedep
 ALICEC_OPTS =
 
 SOURCES = Debug.aml \
-          Path.aml Policy.aml \
+          Path.aml PROBLEM-sig.aml \
           SPACENODE-sig.aml MkSpaceNode.aml \
           TREENODE-sig.aml MkTreeNode.aml \
           SEARCH-sig.aml MkSearch.aml \
@@ -12,13 +12,11 @@ SOURCES = Debug.aml \
 
 COMPONENTS = $(SOURCES:%.aml=%.alc)
 
-#INSTALLDIRS = $(PREFIX)/lib/distribution/search
-#INSTALLFILES = $(COMPONENTS:%=$(PREFIX)/lib/distribution/search/%)
+INSTALLDIR=`alice-config --alicelibdir`/gecode/search-factory
 
 .PHONY: all depend clean veryclean distclean
 
 all: $(COMPONENTS)
-	@echo "Read TODO"
 
 depend:
 	$(ALICEDEP) $(SOURCES) > Makefile.predepend
@@ -30,15 +28,10 @@ $(COMPONENTS): %.alc: %.aml
 ##
 ## Installing
 ##
+install: $(COMPONENTS)
+	mkdir -p -m 775 $(INSTALLDIR)
+	install -c -m444 $(COMPONENTS) $(INSTALLDIR)
 
-install: $(INSTALLDIRS) $(INSTALLFILES)
-
-$(INSTALLDIRS):
-	mkdir -p $@
-
-#$(PREFIX)/lib/distribution/search/%: %
-#	install -c -m 444 $< $@
-#
 
 ##
 ## Cleaning Up

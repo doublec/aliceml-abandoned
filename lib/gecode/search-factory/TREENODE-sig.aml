@@ -13,7 +13,7 @@ sig
   type t = tree_node
   type solution  (* Only needed for Branch & Bound. Otherwise, can be unit. *)
 
-  (* Returns a tree_node corresponding to the root space Policy.root. *)
+  (* Returns a tree_node corresponding to the root space. *)
   val root : tree_node
   val fromPath : solution Path.t -> tree_node
 

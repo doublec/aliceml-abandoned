@@ -1,16 +1,16 @@
-import signature POLICY      from "Policy"
+import signature PROBLEM     from "PROBLEM-sig"
 import signature TREENODE    from "TREENODE-sig"
 import functor   MkSpaceNode from "MkSpaceNode"
 
-functor MkTreeNode (Policy:POLICY)
-  :> TREENODE where type solution = Policy.sol =
+functor MkTreeNode (Problem:PROBLEM)
+  :> TREENODE where type solution = Problem.solution =
 struct
 
-  val mask = Policy.mask
+  val mask = Problem.mask
 
-  structure SpaceNode = MkSpaceNode Policy
+  structure SpaceNode = MkSpaceNode Problem
 
-  type solution = Policy.sol
+  type solution = Problem.solution
   exception Child  = SpaceNode.Child
 
   datatype tree_node = Node of node_rep

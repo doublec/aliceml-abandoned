@@ -11,7 +11,7 @@ sig
   type t = space_node
   type solution  (* Only needed for Branch & Bound. Otherwise, can be unit. *)
 
-  (* Returns a space_node corresponding to the root space Policy.root. *)
+  (* Returns a space_node corresponding to the root space. *)
   val root : space_node
   val fromPath : solution Path.t -> space_node
 

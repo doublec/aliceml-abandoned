@@ -2,18 +2,19 @@ import structure Space       from "x-alice:/lib/gecode/Space"
 import structure FD          from "x-alice:/lib/gecode/FD"
 import structure Path        from "Path"
 import signature SEARCH      from "SEARCH-sig"
-import signature POLICY      from "Policy"
+import signature PROBLEM     from "PROBLEM-sig"
 import structure Debug       from "Debug"
 import functor   MkTreeNode  from "MkTreeNode"
-import functor   BasicPolicy from "Policy"
 
-functor MkSearch (Policy : POLICY) 
-  :> SEARCH where type path = Policy.sol Path.t =
+functor MkSearch (Problem : PROBLEM) 
+  :> SEARCH where type solution = Problem.solution =
 struct
 
   open Debug
 
-  structure TreeNode = MkTreeNode Policy
+  type solution = Problem.solution
+
+  structure TreeNode = MkTreeNode Problem
 
   fun print msg = dbPrint (dbSearch, TreeNode.mask, msg)
   fun printPath n = Path.toString (TreeNode.getPath n) ^ "\n"
@@ -27,7 +28,6 @@ struct
           then print "Warning: The search is slow because dbSlow is set.\n"
           else ()
 
-  type path = TreeNode.solution Path.t
   exception NotAssigned
 
   datatype status = Stopped | Running | StopIt of unit Promise.promise
@@ -113,27 +113,18 @@ struct
   fun getUnexploredPath () = updateNodes
      (fn l => case l of ([] | [_]) => (l, NONE) | _ => getLast ([], l))
 
-  fun wrap read space = read space
+  fun safeRead space = Problem.readSolution space
     handle FD.NotAssigned => raise NotAssigned
   (* FS.NotAssigned does not exist, yet... *)
 
-  fun getOneSolution read = Option.map (wrap read) (nextSolved ())
+  fun getOneSolution () = Option.map safeRead (nextSolved ())
 
-  fun getAll (read, accu) =
-    case nextSolved () of
-      NONE => accu
-    | SOME sp => getAll (read, read sp :: accu)
+  fun getAll accu = case nextSolved () of
+			NONE => accu
+		      | SOME sp => getAll (safeRead sp :: accu)
 
-  fun getAllSolutions read = getAll (wrap read, [])
+  fun getAllSolutions () = getAll []
 
-  fun betterThan [(~1, SOME sol)] = TreeNode.addSolution sol
-    | betterThan _ = assert false (* No! Solutions must be encoded as above!*)
+  fun betterThan sol = TreeNode.addSolution sol
     
 end
-
-local
-signature ARG = (val root : Space.space val rdist : int)
-in
-functor MkSimpleSearch (Arg:ARG) = MkSearch (BasicPolicy Arg)
-end
-

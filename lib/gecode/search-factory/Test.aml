@@ -1,11 +1,7 @@
 import structure Debug      from "Debug"
 import structure Space      from "x-alice:/lib/gecode/Space"
 import structure FD         from "x-alice:/lib/gecode/FD"
-
-import structure Explorer   from "x-alice:/lib/tools/Explorer"
-
 import structure MkSearch   from "MkSearch"
-import structure MkSimpleSearch from "MkSearch"
 
 open Debug
 
@@ -104,24 +100,16 @@ struct
   val root = root
   fun copyq d = d mod rdist = 0
   val bab = true
-  type sol = int Vector.t
+  type solution = int Vector.t
   val bound = bound
   val readSolution = readSolution
   fun compare _ = assert false
   val mask = mask
 end
 
-(* Branch and Bound *)
-structure Search1 = MkSearch Policy
+structure Search = MkSearch Policy
 
-(* Simple tree *)
-structure Search2 = MkSimpleSearch (val root = root val rdist = rdist)
-
-structure Search = Search1
-
-val explorer = Explorer.init script
-
-val sols = Search.getAllSolutions readSolution
+val sols = Search.getAllSolutions ()
 
 val _ =
   (print "I found " ; print (Int.toString (List.length sols)) ;
