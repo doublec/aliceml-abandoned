@@ -26,6 +26,7 @@ private:
   static const u_int ATOM_DICT     = 6;
 protected:
   static word root;
+  static u_int allowGC;
 
   static word GetRoot(u_int pos);
   static int HaveTask();
@@ -66,10 +67,10 @@ protected:
   static char *InterpretOp(Block *p);
 public:
   static void Init();
-  static u_int RegisterAtom(char *s);
+  static u_int RegisterAtom(const char *s);
   static char *AtomToString(u_int name);
   static u_int GlobalAlloc(u_int name);
-  static u_int GlobalAlloc(char *s);
+  static u_int GlobalAlloc(const char *s);
   static int SearchGlobal(u_int name);
   static char *Interpret(word tree);
 };

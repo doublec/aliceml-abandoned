@@ -94,13 +94,15 @@ expr:		TK_ID
 		}
 	|	TK_OPARENT TK_TAIL exprlist TK_CPARENT
 		{
-			word exarr = ConsCell::FromWord($2)->ToArray(T_EXPRARR)->ToWord();
+			word exarr = ConsCell::FromWord($3)->ToArray(T_EXPRARR)->ToWord();
 
 			$$ = ApplicationNode::New(exarr, 1)->ToWord();
 		}
 	|	TK_OPARENT TK_BEGIN exprlist TK_CPARENT
 		{
-			$$ = BeginNode::New($3)->ToWord();
+			word exarr = ConsCell::FromWord($3)->ToArray(T_EXPRARR)->ToWord();
+
+			$$ = BeginNode::New(exarr)->ToWord();
 		}
 ;
 

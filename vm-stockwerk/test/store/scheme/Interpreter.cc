@@ -46,8 +46,13 @@ static int BothNil(word a, word b) {
   }
 }
 
+static u_int StackSize(word s) {
+  return Store::DirectWordToBlock(Store::DirectWordToBlock(s)->GetArg(1))->GetSize();
+}
+
 // Internal Class Variables
 word Interpreter::root;
+u_int Interpreter::allowGC;
 
 // Internal Class Methods
 inline word Interpreter::GetRoot(u_int pos) {
@@ -56,56 +61,58 @@ inline word Interpreter::GetRoot(u_int pos) {
 
 // Handle Interpreter Tasks
 inline int Interpreter::HaveTask() {
-  return !Stack::FromWord(GetRoot(TASK_STACK))->IsEmpty();
+  return !Stack::FromWordDirect(GetRoot(TASK_STACK))->IsEmpty();
 }
 
 inline void Interpreter::PushTask(word task) {
-  Stack::FromWord(GetRoot(TASK_STACK))->SlowPush(task);
+  Stack::FromWordDirect(GetRoot(TASK_STACK))->SlowPush(task);
 }
 
 inline word Interpreter::PopTask() {
-  return Stack::FromWord(GetRoot(TASK_STACK))->Pop();
+  return Stack::FromWordDirect(GetRoot(TASK_STACK))->SlowPop();
 }
 
 // Push and Pop from EVAL_STACK
 inline void Interpreter::PushValue(word value) {
-  Stack::FromWord(GetRoot(EVAL_STACK))->SlowPush(value);
+  Stack::FromWordDirect(GetRoot(EVAL_STACK))->SlowPush(value);
 }
 
 inline word Interpreter::PopValue() {
-  return Stack::FromWord(GetRoot(EVAL_STACK))->Pop();
+  return Stack::FromWordDirect(GetRoot(EVAL_STACK))->SlowPop();
 }
 
 // Push and Pop Frame
 inline void Interpreter::PushFrame(u_int size) {
   Block *p = Store::AllocBlock((BlockLabel) T_FRAME, size);
-  Stack::FromWord(GetRoot(FRAME_STACK))->SlowPush(p->ToWord());
+  Stack::FromWordDirect(GetRoot(FRAME_STACK))->SlowPush(p->ToWord());
 }
 
 inline void Interpreter::PushFrame(word frame) {
-  Stack::FromWord(GetRoot(FRAME_STACK))->Push(frame);
+  Stack::FromWordDirect(GetRoot(FRAME_STACK))->Push(frame);
 }
 
 inline word Interpreter::PopFrame() {
-  return Stack::FromWord(GetRoot(FRAME_STACK))->Pop();
+  return Stack::FromWordDirect(GetRoot(FRAME_STACK))->SlowPop();
 }
 
 // Push and Pop Closures
 inline void Interpreter::PushClosure(word closure) {
-  Stack::FromWord(GetRoot(CLOSURE_STACK))->SlowPush(closure);
+  Stack::FromWordDirect(GetRoot(CLOSURE_STACK))->SlowPush(closure);
 }
 
 inline word Interpreter::PopClosure() {
-  return Stack::FromWord(GetRoot(CLOSURE_STACK))->Pop();
+  return Stack::FromWordDirect(GetRoot(CLOSURE_STACK))->SlowPop();
 }
 
 // Push elem i of current FRAME/CLOSURE/GLOBAL to EVAL_STACK
 inline void Interpreter::PushFrameArg(u_int i) {
-  PushValue(Store::DirectWordToBlock(Stack::FromWord(GetRoot(FRAME_STACK))->Top())->GetArg(i));
+  PushValue(Store::DirectWordToBlock(Stack::FromWordDirect(GetRoot(FRAME_STACK))->Top())
+	    ->GetArg(i));
 }
 
 inline void Interpreter::PushClosureArg(u_int i) {
-  PushValue(Store::DirectWordToBlock(Stack::FromWord(GetRoot(CLOSURE_STACK))->Top())->GetArg(i));
+  PushValue(Store::DirectWordToBlock(Stack::FromWordDirect(GetRoot(CLOSURE_STACK))->Top())
+	    ->GetArg(i));
 }
 
 inline void Interpreter::PushGlobalArg(u_int i) {
@@ -114,12 +121,12 @@ inline void Interpreter::PushGlobalArg(u_int i) {
 
 // Pop from EVAL_STACK and write to elem i of current FRAME/CLOSURE/GLOBAL
 inline void Interpreter::AssignFrameArg(u_int i) {
-  Store::DirectWordToBlock(Stack::FromWord(GetRoot(FRAME_STACK))->Top())
+  Store::DirectWordToBlock(Stack::FromWordDirect(GetRoot(FRAME_STACK))->Top())
     ->ReplaceArg(i, PopValue());
 }
 
 inline void Interpreter::AssignClosureArg(u_int i) {
-  Store::DirectWordToBlock(Stack::FromWord(GetRoot(CLOSURE_STACK))->Top())
+  Store::DirectWordToBlock(Stack::FromWordDirect(GetRoot(CLOSURE_STACK))->Top())
     ->ReplaceArg(i, PopValue());
 }
 
@@ -158,9 +165,11 @@ void Interpreter::CreateDefaultEnv() {
   CreateId(GlobalAlloc("time"), OP_TIME);
   CreateId(GlobalAlloc("gc"), OP_GC);
   CreateId(GlobalAlloc("gengc"), OP_GENGC);
+  CreateId(GlobalAlloc("setgc"), OP_SETGC);
   CreateId(GlobalAlloc("show_list"), OP_SHOWLIST);
   CreateId(GlobalAlloc("exit"), OP_EXIT);
   CreateId(GlobalAlloc("memstat"), OP_MEMSTAT);
+  CreateId(GlobalAlloc("skip"), OP_SKIP);
 }
 
 inline void Interpreter::InterpretDeclArr(Block *instr) {
@@ -169,10 +178,14 @@ inline void Interpreter::InterpretDeclArr(Block *instr) {
   for (int i = size; i--;) {
     PushTask(instr->GetArg(i));
   }
-  if (Store::NeedGC()) {
+  if (allowGC && Store::NeedGC()) {
     Store::DoGC(root);
 #if defined(STORE_DEBUG)
     Store::MemStat();
+    std::printf("TASK_STACK size %d\n", StackSize(GetRoot(TASK_STACK)));
+    std::printf("EVAL_STACK size %d\n", StackSize(GetRoot(EVAL_STACK)));
+    std::printf("FRAME_STACK size %d\n", StackSize(GetRoot(FRAME_STACK)));
+    std::printf("CLOSURE_STACK size %d\n", StackSize(GetRoot(CLOSURE_STACK)));
 #endif
   }
 }
@@ -221,12 +234,7 @@ inline void Interpreter::InterpretIf(Block *instr) {
 inline void Interpreter::InterpretSelection(Block *instr) {
   SelectionNode *node = SelectionNode::FromBlock(instr);
   
-  if (IntNode::FromWord(PopValue())->GetInt()) {
-    PushTask(node->GetThen());
-  }
-  else {
-    PushTask(node->GetElse());
-  }
+  PushTask((IntNode::FromWord(PopValue())->GetInt() ? node->GetThen() : node->GetElse()));
 }
 
 inline void Interpreter::InterpretValue(Block *instr) {
@@ -243,7 +251,6 @@ inline void Interpreter::InterpretId(Block *instr) {
     PushClosureArg(node->GetIndex()); break;
   case T_GLOBAL_VAR:
     PushGlobalArg(node->GetIndex()); break;
-    break;
   }
 }
 
@@ -274,9 +281,10 @@ inline void Interpreter::InterpretApplication(Block *instr) {
   ApplicationNode *node = ApplicationNode::FromBlock(instr);
   Block *arr            = Store::DirectWordToBlock(node->GetExprArr());
   u_int size            = arr->GetSize();
-  
-  PushTask(Store::IntToWord(T_APPLY));
-  
+  NodeType curtype      = ((node->IsTail()) ? T_TAILAPPLY : T_APPLY);
+
+  //  std::printf("IsTail: %d, %d\n", (int) node, node->IsTail());
+  PushTask(Store::IntToWord(curtype));
   for (u_int i = 0; i < size; i++) {
     PushTask(arr->GetArg(i));
   }
@@ -287,21 +295,31 @@ inline void Interpreter::InterpretBegin(Block *instr) {
   Block *arr      = Store::DirectWordToBlock(node->GetExprArr());
   u_int size      = arr->GetSize();
   
-  // to be determined
-  for (u_int i = 0; i < size; i++) {
+  for (u_int i = size; i--;) {
     PushTask(arr->GetArg(i));
   }
 }
 
 inline void Interpreter::InterpretTime() {
   gettimeofday(&end_t, INVALID_POINTER);
-  std::printf("Evaluation time: %ld:%ld\n",
-	      (end_t.tv_sec - start_t.tv_sec),
-	      (end_t.tv_usec - start_t.tv_usec));
+#if (defined(STORE_DEBUG) || defined(STORE_PROFILE))
+  struct timeval *sum_t = Store::ReadTime();
+  long total_sec        = (end_t.tv_sec - start_t.tv_sec);
+  long total_usec       = (end_t.tv_usec - start_t.tv_usec);
+
+  long calc_time  = (((total_sec - sum_t->tv_sec) * 1000) +
+		     ((total_usec - sum_t->tv_usec) / 1000));
+  long gc_time    = ((sum_t->tv_sec * 1000) + (sum_t->tv_usec / 1000));
+  long total_time = ((total_sec * 1000) + (total_usec / 1000));
+  double  weight  = (0.0 + gc_time) / (0.0 + total_time) * 100;
+
+  std::printf("Calc: %ld ms; GC: %ld ms; Total: %ld ms; Weight: %g percent\n",
+	      calc_time, gc_time, total_time, weight);
+#endif
   std::fflush(stdout);
 }
 
-inline char *Interpreter::InterpretOp(Block *p) {
+char *Interpreter::InterpretOp(Block *p) {
   switch (PrimOpNode::FromBlock(p)->GetType()) {
   case OP_PLUS: {
     int a, b;
@@ -444,8 +462,11 @@ inline char *Interpreter::InterpretOp(Block *p) {
     break;
   }
   case OP_TIME: {
-    PushTask(TimeNode::New()->ToWord());
-    PushTask(PopValue());
+    PushTask(Store::IntToWord(T_TIME));
+    PushTask(ApplicationNode::FromLambda(PopValue())->ToWord());
+#if (defined(STORE_DEBUG) || defined(STORE_PROFILE))
+    Store::ResetTime();
+#endif
     gettimeofday(&start_t, INVALID_POINTER);
     break;
   }
@@ -458,9 +479,13 @@ inline char *Interpreter::InterpretOp(Block *p) {
     Store::ForceGCGen(gen);
     Store::DoGC(root);
     Store::MemStat();
+    std::printf("TASK_STACK size %d\n", StackSize(GetRoot(TASK_STACK)));
+    std::printf("EVAL_STACK size %d\n", StackSize(GetRoot(EVAL_STACK)));
+    std::printf("FRAME_STACK size %d\n", StackSize(GetRoot(FRAME_STACK)));
+    std::printf("CLOSURE_STACK size %d\n", StackSize(GetRoot(CLOSURE_STACK)));
 #else
     PopValue();
-    if (Store::NeedGC()) {
+    if (allowGC && Store::NeedGC()) {
       Store::DoGC(root);
     }
 #endif
@@ -471,6 +496,13 @@ inline char *Interpreter::InterpretOp(Block *p) {
 #if defined(STORE_DEBUG) || defined(STORE_PROFILE)
     Store::MemStat();
 #endif
+    break;
+  }
+  case OP_SETGC: {
+    static const char *val[]= {"off", "on" };
+
+    allowGC = IntNode::FromWord(PopValue())->GetInt();
+    std::printf("Automatic Garbage Collection is %s.\n", val[allowGC]);
     break;
   }
   case OP_SHOWLIST: {
@@ -513,6 +545,8 @@ inline char *Interpreter::InterpretOp(Block *p) {
 #endif
     break;
   }
+  case OP_SKIP:
+    break;
   default:
     break;
   }
@@ -531,12 +565,13 @@ void Interpreter::Init() {
   p->InitArg(GLB_ENV_LIST, Store::IntToWord(0));
   p->InitArg(GLB_ENV, EnlargableArray::New((BlockLabel) T_GLBENV, STACK_SIZE)->ToWord());
   p->InitArg(ATOM_DICT, AtomDictionary::New(DICT_SIZE)->ToWord());
-  root = p->ToWord();
+  root    = p->ToWord();
+  allowGC = 0;
   CreateDefaultEnv();
 }
 
 // Public Interpreter Methods
-u_int Interpreter::RegisterAtom(char *s) {
+u_int Interpreter::RegisterAtom(const char *s) {
   return AtomDictionary::FromWord(GetRoot(ATOM_DICT))->FromString(s);
 }
 
@@ -558,7 +593,7 @@ u_int Interpreter::GlobalAlloc(u_int name) {
   }
 }
 
-u_int Interpreter::GlobalAlloc(char *s) {
+u_int Interpreter::GlobalAlloc(const char *s) {
   return GlobalAlloc(RegisterAtom(s));
 }
 
@@ -577,7 +612,9 @@ char *Interpreter::Interpret(word tree) {
       switch ((NodeType) Store::DirectWordToInt(task)) {
       case T_REMOVE:
 	InterpretRemove(); break;
-      case T_APPLY: {
+      case T_TIME:
+	InterpretTime(); break;
+      case T_TAILAPPLY: {
 	fn       = NULL;
 	Block *p = Store::DirectWordToBlock(PopValue());
 	if (p->GetLabel() == (BlockLabel) T_CLOSURE) {
@@ -585,9 +622,8 @@ char *Interpreter::Interpret(word tree) {
 	  Block *arr       = Store::DirectWordToBlock(abs->GetArgList());
 	  u_int size       = arr->GetSize();
 	
-	  PushTask(Store::IntToWord(T_REMOVE));
 	  PushTask(abs->GetBody());
-
+	  PushTask(Store::IntToWord(T_TOGGLE));
 	  PushFrame(abs->GetFrameSize());
 	  PushClosure(abs->GetEnv());
 
@@ -599,10 +635,47 @@ char *Interpreter::Interpret(word tree) {
 	  fn = InterpretOp(p);
 	}
   
-	if (Store::NeedGC()) {
+	if (allowGC && Store::NeedGC()) {
 	  Store::DoGC(root);
 #if defined(STORE_DEBUG)
 	  Store::MemStat();
+	  std::printf("TASK_STACK size %d\n", StackSize(GetRoot(TASK_STACK)));
+	  std::printf("EVAL_STACK size %d\n", StackSize(GetRoot(EVAL_STACK)));
+	  std::printf("FRAME_STACK size %d\n", StackSize(GetRoot(FRAME_STACK)));
+	  std::printf("CLOSURE_STACK size %d\n", StackSize(GetRoot(CLOSURE_STACK)));
+#endif
+	}
+	break;
+      }
+      case T_APPLY: {
+	fn       = NULL;
+	Block *p = Store::DirectWordToBlock(PopValue());
+	if (p->GetLabel() == (BlockLabel) T_CLOSURE) {
+	  ClosureNode *abs = ClosureNode::FromBlock(p);
+	  Block *arr       = Store::DirectWordToBlock(abs->GetArgList());
+	  u_int size       = arr->GetSize();
+	
+	  PushTask(Store::IntToWord(T_REMOVE));
+	  PushTask(abs->GetBody());
+	  PushFrame(abs->GetFrameSize());
+	  PushClosure(abs->GetEnv());
+
+	  for (u_int i = size; i--;) {
+	    PushTask(AssignNode::New(IdNode::FromWord(arr->GetArg(i)))->ToWord());
+	  }
+	}
+	else {
+	  fn = InterpretOp(p);
+	}
+  
+	if (allowGC && Store::NeedGC()) {
+	  Store::DoGC(root);
+#if defined(STORE_DEBUG)
+	  Store::MemStat();
+	  std::printf("TASK_STACK size %d\n", StackSize(GetRoot(TASK_STACK)));
+	  std::printf("EVAL_STACK size %d\n", StackSize(GetRoot(EVAL_STACK)));
+	  std::printf("FRAME_STACK size %d\n", StackSize(GetRoot(FRAME_STACK)));
+	  std::printf("CLOSURE_STACK size %d\n", StackSize(GetRoot(CLOSURE_STACK)));
 #endif
 	}
 	break;
@@ -643,8 +716,6 @@ char *Interpreter::Interpret(word tree) {
 	InterpretApplication(instr); break;
       case T_BEGIN:
 	InterpretBegin(instr); break;
-      case T_TIME:
-	InterpretTime(); break;
       default:
 	break;
       }
