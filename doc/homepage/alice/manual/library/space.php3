@@ -1,6 +1,7 @@
 <?php include("macros.php3"); ?>
 <?php heading("The Space structure", "The <TT>Space</TT> structure"); ?>
 
+<P></P>
 <?php section("synopsis", "synopsis"); ?>
 
   <PRE>

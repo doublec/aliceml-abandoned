@@ -1,6 +1,7 @@
 <?php include("macros.php3"); ?>
 <?php heading("The Search structure", "The <TT>Search</TT> structure"); ?>
 
+<P></P>
 <?php section("synopsis", "synopsis"); ?>
   <PRE>
     signature SEARCH
