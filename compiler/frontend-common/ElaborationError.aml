@@ -237,16 +237,16 @@ struct
 	    ppKindMismatch km
       | ppInfMismatch'(Inf.MismatchDom im) =
 	    break ^^
-	    textpar["argument","signature","is","too","restrictive,",
+	    textpar["argument","signature","is","too","permissive,",
 		"because"] ^^
 	    ppInfMismatch' im
       | ppInfMismatch'(Inf.MismatchRan im) =
 	    break ^^
-	    textpar["result","signature","is","too","permissive,","because"] ^^
+	    textpar["result","signature","is","too","restrictive,","because"] ^^
 	    ppInfMismatch' im
       | ppInfMismatch'(Inf.MismatchParam im) =
 	    break ^^
-	    textpar["parameter","signature","is","too","restrictive,",
+	    textpar["parameter","signature","is","too","permissive,",
 		"because"] ^^
 	    ppInfMismatch' im
       | ppInfMismatch'(Inf.MismatchBody im) =
@@ -274,7 +274,7 @@ struct
 
     and ppKindMismatch(Inf.MismatchKindDom im) =
 	    break ^^
-	    textpar["argument","signature","is","too","restrictive,",
+	    textpar["argument","signature","is","too","permissive,",
 		"because"] ^^
 	    ppInfMismatch' im
       | ppKindMismatch(Inf.MismatchKindRan km) =
