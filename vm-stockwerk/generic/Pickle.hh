@@ -1,8 +1,6 @@
 //
-// Author:
+// Authors:
 //   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
-//
-// Contributor:
 //   Leif Kornstaedt <kornstae@ps.uni-sb.de>
 //   Guido Tack <tack@ps.uni-sb.de>
 //
