@@ -236,9 +236,8 @@ ALLSOURCES = Init.oz $(LIBSOURCES) $(STOCSOURCES)
 
 SOURCEDIRS = \
 	lib lib/fundamental lib/system lib/utility lib/rtt lib/ml-yacc \
-	stoc stoc/misc stoc/infrastructure stoc/common \
-	stoc/frontend-common stoc/frontend-sml \
-	stoc/backend-common stoc/backend-mozart stoc/top
+	stoc stoc/infrastructure stoc/common stoc/frontend-common \
+	stoc/frontend-sml stoc/backend-common stoc/backend-mozart stoc/top
 
 ##
 ## Main Target and Generally Applicable Rules
@@ -382,7 +381,7 @@ build1/stow.ozf: build1/Init.ozf $(BUILD1OZLINPUTS)
 build1/stoc.ozf: $(BUILD1OZLINPUTS)
 	$(OZL) --include=.. build1/stoc/top/StocMain.ozf -o $@
 
-build1/stoc/backend-mozart/CodeStore.oz: \
+build1/stoc/backend-mozart/CodeStore.ozf: \
 	build1/stoc/backend-mozart/CodeEmitter.oz
 
 ##
@@ -542,8 +541,9 @@ build3/lib/fundamental/RTT.ozf: build2/install/lib/rtt/RTT.ozf
 build3/%.ozf: build3/%.oz
 	$(OZC) -c $< -o $@
 
+#--** --rtt-level=core is a problem for stoc/frontend-sml/MkParsingPhase.aml
 build3/stoc/%.ozf: build3/stoc/%.aml
-	$(STOC2) $(STOC_OPTS) --rtt-level=core -c $< -o $@
+	$(STOC2) $(STOC_OPTS) -c $< -o $@
 
 build3/%.ozf: build3/%.aml
 	$(STOC2) $(STOC_OPTS) --rtt-level=full -c $< -o $@
