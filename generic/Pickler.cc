@@ -389,6 +389,15 @@ Interpreter::Result PicklingInterpreter::Run(TaskStack *taskStack) {
       CONTINUE();
     }
     break;
+  case UNIQUESTRING_LABEL:
+    {
+      outputStream->PutByte(Pickle::UNIQUE);
+      seen->Add(v);
+      UniqueString *s = static_cast<UniqueString *>(v);
+      PicklingInterpreter::PushFrame(taskStack, s->ToString()->ToWord());
+      CONTINUE();
+    }
+    break;
   case TUPLE_LABEL:
     {
       u_int size = v->GetSize();
