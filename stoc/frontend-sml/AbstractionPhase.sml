@@ -47,9 +47,6 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	end
 
 
-    fun localdec dec = O.LocalDec(O.infoDec dec, dec)
-
-
     fun lookupIdStatus(E, vid') =
 	case lookupVal(E, vid')
 	  of NONE             => V
@@ -586,7 +583,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		val  _     = delete2ndScope E
 		val  _     = mergeScope E
 	   in
-		List.map localdec decs1' @ decs2'
+		O.LocalDec(i, decs1') :: decs2'
 	   end
 
 	 | OPENDec(i, longstrid) =>
