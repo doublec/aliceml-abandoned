@@ -13,11 +13,8 @@
 //
 
 #include "generic/Tuple.hh"
-#include "generic/ConcreteCode.hh"
 #include "generic/Closure.hh"
-#include "generic/Transform.hh"
-#include "generic/Unpickler.hh"
-#include "alice/AbstractCodeInterpreter.hh"
+#include "alice/AliceConcreteCode.hh"
 #include "alice/primitives/Authoring.hh"
 
 DEFINE2(Unsafe_Array_sub) {
@@ -54,20 +51,9 @@ DEFINE1(Unsafe_getPrimitiveByName) {
   RETURN(PrimitiveTable::LookupValue(static_cast<Chunk *>(name)));
 } END
 
-DEFINE1(Unsafe_makeFunction) {
-  DECLARE_TUPLE(tuple, x0);
-  tuple->AssertWidth(5);
-  TagVal *function = TagVal::New(0, 5); // Function
-  for (u_int i = 5; i--; )
-    function->Init(i, tuple->Sel(i));
-  ConcreteCode *concreteCode =
-    ConcreteCode::New(AbstractCodeInterpreter::self, 2);
-  Chunk *name =
-    Store::DirectWordToChunk(Unpickler::aliceFunctionTransformName);
-  Transform *transform = Transform::New(name, function->ToWord());
-  concreteCode->Init(0, function->ToWord());
-  concreteCode->Init(1, transform->ToWord());
-  RETURN(concreteCode->ToWord());
+DEFINE1(Unsafe_makeConcreteCode) {
+  DECLARE_TAGVAL(abstractCode, x0);
+  RETURN(AliceConcreteCode::New(abstractCode)->ToWord());
 } END
 
 DEFINE2(Unsafe_makeClosure) {
@@ -111,7 +97,7 @@ void PrimitiveTable::RegisterUnsafe() {
   Register("Unsafe.Vector.sub", Unsafe_Vector_sub, 2);
   Register("Unsafe.cast", Unsafe_cast, 1);
   Register("Unsafe.getPrimitiveByName", Unsafe_getPrimitiveByName, 1);
-  Register("Unsafe.makeFunction", Unsafe_makeFunction, 1);
+  Register("Unsafe.makeConcreteCode", Unsafe_makeConcreteCode, 1);
   Register("Unsafe.makeClosure", Unsafe_makeClosure, 2);
   Register("Unsafe.makeTaggedValue", Unsafe_makeTaggedValue, 2);
   Register("Unsafe.makeTuple", Unsafe_makeTuple, 1);
