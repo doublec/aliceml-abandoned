@@ -67,6 +67,38 @@
     }
   }
 
+  .class sealed public BuiltinTable extends System.Object {
+    .field static public initonly class System.Collections.Hashtable Table
+    .method public static void .cctor() {
+      .locals(class System.Collections.Hashtable)
+      newobj instance void System.Collections.Hashtable::.ctor()
+      dup
+      stsfld class System.Collections.Hashtable StockWerk.BuiltinTable::Table
+      stloc.0
+      ldloc.0
+      ldstr "promise"
+      newobj instance void StockWerk.Builtins.BIPromise::.ctor()
+      call instance void System.Collections.Hashtable::Add(class System.Object, class System.Object)
+      ldloc.0
+      ldstr "future"
+      newobj instance void StockWerk.Builtins.BIFuture::.ctor()
+      call instance void System.Collections.Hashtable::Add(class System.Object, class System.Object)
+      ldloc.0
+      ldstr "fulfill"
+      newobj instance void StockWerk.Builtins.BIFulfill::.ctor()
+      call instance void System.Collections.Hashtable::Add(class System.Object, class System.Object)
+      ldloc.0
+      ldstr "await"
+      newobj instance void StockWerk.Builtins.BIAwait::.ctor()
+      call instance void System.Collections.Hashtable::Add(class System.Object, class System.Object)
+      ldloc.0
+      ldstr "thread"
+      newobj instance void StockWerk.Builtins.BIThread::.ctor()
+      call instance void System.Collections.Hashtable::Add(class System.Object, class System.Object)
+      ret
+    }
+  }
+
   .class sealed public RecordArity extends System.Object {
     .field public static class System.Collections.Hashtable ArityTable
     .field public class System.String[] Labels
@@ -518,9 +550,63 @@
   // Tuples and Records
   //
 
+  .class public Tuple2 extends StockWerk.StockWert {
+    .field public initonly class StockWerk.StockWert Value1
+    .field public initonly class StockWerk.StockWert Value2
+    .method public void .ctor(class StockWerk.StockWert, class StockWerk.StockWert) {
+      ldarg.0
+      call instance void StockWerk.StockWert::.ctor()
+      ldarg.0
+      ldarg.1
+      stfld class StockWerk.StockWert StockWerk.Tuple2::Value1
+      ldarg.0
+      ldarg.2
+      stfld class StockWerk.StockWert StockWerk.Tuple2::Value2
+      ret
+    }
+    .method virtual public bool Equals(class StockWerk.StockWert) {
+      .locals(class StockWerk.Tuple2)
+    retry:
+      ldarg.1
+      isinst StockWerk.Tuple2
+      brfalse.s testTransient
+      ldarg.1
+      castclass StockWerk.Tuple2
+      stloc.0
+      ldarg.0
+      ldfld class StockWerk.StockWert StockWerk.Tuple2::Value1
+      ldloc.0
+      ldfld class StockWerk.StockWert StockWerk.Tuple2::Value1
+      callvirt instance bool StockWerk.StockWert::Equals(class StockWerk.StockWert)
+      brfalse.s retFalse
+      ldarg.0
+      ldfld class StockWerk.StockWert StockWerk.Tuple2::Value2
+      ldloc.0
+      ldfld class StockWerk.StockWert StockWerk.Tuple2::Value2
+      callvirt instance bool StockWerk.StockWert::Equals(class StockWerk.StockWert)
+      brfalse.s retFalse
+      ldc.i4 1
+      ret
+    testTransient:
+      ldarg.1
+      isinst StockWerk.Transient
+      brfalse.s retFalse
+      ldarg.1
+      castclass StockWerk.Transient
+      callvirt instance class StockWerk.StockWert StockWerk.Transient::Request()
+      starg.s 1
+      br.s retry
+    retFalse:
+      ldc.i4 0
+      ret
+    }
+  }
+
   .class public Tuple extends StockWerk.StockWert {
     .field public initonly class StockWerk.StockWert[] Values
     .method public void .ctor(class StockWerk.StockWert[]) {
+      ldarg.0
+      call instance void StockWerk.StockWert::.ctor()
       ldarg.0
       ldarg.1
       stfld class StockWerk.StockWert StockWerk.Tuple::Values
@@ -956,6 +1042,109 @@
       tail. call instance void StockWerk.Global::.ctor()
       ret
     }
+    .method public class StockWerk.StockWert Apply0() {
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::TypeError
+      newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
+      throw
+    }
+    .method public class StockWerk.StockWert Apply2(class StockWerk.StockWert, class StockWerk.StockWert) {
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::TypeError
+      newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
+      throw
+    }
+    .method public class StockWerk.StockWert Apply3(class StockWerk.StockWert, class StockWerk.StockWert, class StockWerk.StockWert) {
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::TypeError
+      newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
+      throw
+    }
+    .method public class StockWerk.StockWert Apply4(class StockWerk.StockWert, class StockWerk.StockWert, class StockWerk.StockWert, class StockWerk.StockWert) {
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::TypeError
+      newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
+      throw
+    }
+    .method public class StockWerk.StockWert Apply5(class StockWerk.StockWert, class StockWerk.StockWert, class StockWerk.StockWert, class StockWerk.StockWert, class StockWerk.StockWert) {
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::TypeError
+      newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
+      throw
+    }
+    .method public class StockWerk.StockWert Apply6(class StockWerk.StockWert, class StockWerk.StockWert, class StockWerk.StockWert, class StockWerk.StockWert, class StockWerk.StockWert, class StockWerk.StockWert) {
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::TypeError
+      newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
+      throw
+    }
+    .method public class StockWerk.StockWert Apply7(class StockWerk.StockWert, class StockWerk.StockWert, class StockWerk.StockWert, class StockWerk.StockWert, class StockWerk.StockWert, class StockWerk.StockWert, class StockWerk.StockWert) {
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::TypeError
+      newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
+      throw
+    }
+  }
+
+  .class public abstract Procedure0 extends StockWerk.Procedure {
+    .method public void .ctor() {
+      ldarg.0
+      tail. call instance void StockWerk.Procedure::.ctor()
+      ret
+    }
+    .method public class StockWerk.StockWert Apply(class StockWerk.StockWert) {
+    retry:
+      ldarg.1
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::Unit
+      bne.un.s testTransient
+      ldarg.0
+      tail. callvirt instance class StockWerk.StockWert StockWerk.Procedure::Apply0()
+      ret
+    testTransient:
+      ldarg.1
+      isinst StockWerk.Transient
+      brfalse.s raise
+      ldarg.1
+      castclass StockWerk.Transient
+      callvirt instance class StockWerk.StockWert StockWerk.Transient::Request()
+      starg.s 1
+      br.s retry
+    raise:
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::TypeError
+      newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
+      throw
+    }
+  }
+
+  .class public abstract Procedure2 extends StockWerk.Procedure {
+    .method public void .ctor() {
+      ldarg.0
+      tail. call instance void StockWerk.Procedure::.ctor()
+      ret
+    }
+    .method public class StockWerk.StockWert Apply(class StockWerk.StockWert) {
+      .locals(class StockWerk.StockTuple2)
+    retry:
+      ldarg.1
+      isinst StockWerk.Tuple2
+      brfalse.s testTransient
+      ldarg.1
+      castclass StockWerk.Tuple2
+      stloc.0
+      ldarg.0
+      ldloc.0
+      ldfld class StockWerk.StockWert StockWerk.Tuple2::Value1
+      ldloc.0
+      ldfld class StockWerk.StockWert StockWerk.Tuple2::Value2
+      tail. callvirt instance class StockWerk.StockWert StockWerk.Procedure::Apply2(class StockWerk.StockWert, class StockWerk.StockWert)
+      ret
+    testTransient:
+      ldarg.1
+      isinst StockWerk.Transient
+      brfalse.s raise
+      ldarg.1
+      castclass StockWerk.Transient
+      callvirt instance class StockWerk.StockWert StockWerk.Transient::Request()
+      starg.s 1
+      br.s retry
+    raise:
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::TypeError
+      newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
+      throw
+    }
   }
 
   //
@@ -997,14 +1186,18 @@
   }
 }
 
+//
+// Builtins
+//
+
 .namespace StockWerk.Builtins {
-  .class sealed public BIPromise extends StockWerk.Procedure {
+  .class sealed public BIPromise extends StockWerk.Procedure0 {
     .method public void .ctor() {
       ldarg.0
-      tail. call instance void StockWerk.Procedure::.ctor()
+      tail. call instance void StockWerk.Procedure0::.ctor()
       ret
     }
-    .method public static class StockWerk.StockWert Apply0() {
+    .method public class StockWerk.StockWert Apply0() {
       newobj instance void StockWerk.Promise::.ctor()
       ret
     }
@@ -1016,23 +1209,23 @@
       tail. call instance void StockWerk.Procedure::.ctor()
       ret
     }
-    .method public static class StockWerk.StockWert Apply1(class StockWerk.StockWert) {
+    .method public class StockWerk.StockWert Apply(class StockWerk.StockWert) {
     retry:
-      ldarg.0
+      ldarg.1
       isinst StockWerk.Promise
       brfalse.s testFuture
-      ldarg.0
+      ldarg.1
       castclass StockWerk.Promise
       tail. call instance class StockWerk.StockWert StockWerk.Promise::GetFuture()
       ret
     testFuture:
-      ldarg.0
+      ldarg.1
       isinst StockWerk.Future
       brfalse.s raise
-      ldarg.0
+      ldarg.1
       castclass StockWerk.Future
       call instance class StockWerk.StockWert StockWerk.Future::Request()
-      starg.s 0
+      starg.s 1
       br.s retry
     raise:
       ldsfld class StockWerk.StockWert StockWerk.Prebound::Future
@@ -1041,31 +1234,31 @@
     }
   }
 
-  .class sealed public BIFulfill extends StockWerk.Procedure {
+  .class sealed public BIFulfill extends StockWerk.Procedure2 {
     .method public void .ctor() {
       ldarg.0
-      call instance void StockWerk.Procedure::.ctor()
+      call instance void StockWerk.Procedure2::.ctor()
       ret
     }
-    .method public static class StockWerk.StockWert Apply2(class StockWerk.StockWert, class StockWerk.StockWert) {
+    .method public class StockWerk.StockWert Apply2(class StockWerk.StockWert, class StockWerk.StockWert) {
     retry:
-      ldarg.0
+      ldarg.1
       isinst StockWerk.Promise
       brfalse.s testFuture
-      ldarg.0
-      castclass StockWerk.Promise
       ldarg.1
+      castclass StockWerk.Promise
+      ldarg.2
       call instance void StockWerk.Promise::Fulfill(class StockWerk.StockWert)
       ldsfld class StockWerk.StockWert StockWerk.Prebound::Unit
       ret
     testFuture:
-      ldarg.0
+      ldarg.1
       isinst StockWerk.Future
       brfalse.s raise
-      ldarg.0
+      ldarg.1
       castclass StockWerk.Future
       call instance class StockWerk.StockWert StockWerk.Future::Request()
-      starg.s 0
+      starg.s 1
       br.s retry
     raise:
       ldsfld class StockWerk.StockWert StockWerk.Prebound::Future
@@ -1080,16 +1273,16 @@
       tail. call instance void StockWerk.Procedure::.ctor()
       ret
     }
-    .method public static class StockWerk.StockWert Apply1(class StockWerk.StockWert) {
-      ldarg.0
+    .method public class StockWerk.StockWert Apply(class StockWerk.StockWert) {
+      ldarg.1
       isinst StockWerk.Transient
       brfalse.s return
-      ldarg.0
+      ldarg.1
       castclass StockWerk.Transient
       tail. call instance class StockWerk.StockWert StockWerk.Transient::Request()
       ret
     return:
-      ldarg.0
+      ldarg.1
       ret
     }
   }
@@ -1100,18 +1293,10 @@
       tail. call instance void StockWerk.Procedure::.ctor()
       ret
     }
-    .method public static class StockWerk.StockWert Apply1(class StockWerk.StockWert) {
-      ldarg.0
+    .method public class StockWerk.StockWert Apply(class StockWerk.StockWert) {
+      ldarg.1
       newobj instance void StockWerk.Thread::.ctor(class StockWerk.StockWert)
       ret
     }
   }
-}
-
-.method public static void DllMain() {
-  .entrypoint
-  //--** the following instructions just make the DLL verifiable:
-  newobj instance void StockWerk.Builtins.BIAwait::.ctor()
-  pop
-  ret
 }
