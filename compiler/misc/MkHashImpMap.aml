@@ -1,82 +1,101 @@
 functor MakeHashImpMap(Key: HASH_KEY) :> IMP_MAP where type key = Key.t =
   struct
 
-    open Misc
+    type key = Key.t
 
-    type key    = Key.t
-    type 'a map = (int ref * (key * 'a) option array) ref
+    datatype 'a entry = EMPTY | ENTRY of key * 'a | DELETED
+
+    type 'a map = (int ref * 'a entry array) ref
     type 'a t   = 'a map
 
     exception Delete    of key
     exception Collision of key
 
+
+    fun valOfEntry (ENTRY(k,a))		= a
+      | valOfEntry    _			= raise Match
+
+    fun appiEntry f (ENTRY(k,a))	= f(k,a)
+      | appiEntry f    _		= ()
+
+    fun foldiEntry f b (ENTRY(k,a))	= f(k,a,b)
+      | foldiEntry f b    _		= b
+
+
     val initialSize		= 19
 
-
-    fun new()			= ref(ref 0, Array.array(initialSize,NONE))
-
-    fun copy(ref(n,t))		= let val t' = Array.array(Array.length t,NONE)
-				  in
-				      Array.copy{src=t, dst=t', si=0, di=0,
-						 len=NONE} ;
-				      ref(ref(!n), t')
-				  end
-
+    fun new()			= ref(ref 0, Array.array(initialSize,EMPTY))
 
     fun size(ref(n,_))		= !n
     fun isEmpty(ref(n,_))	= !n = 0
 
-
-    fun find(t,k)		= find'(t, Key.hash k mod Array.length t, k)
-    and find'(t,i,k)		= case Array.sub(t,i)
-				    of NONE       => (false,i)
-				     | SOME(k',_) =>
-				       if k = k' then (true,i)
-				       else find'(t,(i+1) mod Array.length t, k)
-
-    fun lookup(ref(_,t),k)	= Option.map #2 (Array.sub(t, #2(find(t,k))))
+    fun copy(ref(n,t)) =
+	let
+	    val t' = Array.array(Array.length t, EMPTY)
+	in
+	    Array.copy{src=t, dst=t', si=0, di=0, len=NONE} ;
+	    ref(ref(!n), t')
+	end
 
 
-    fun deleteWith f (ref(n,t), k)
-				= case find(t,k)
-				    of (false,_) => f k
-				     | (true, i) => ( Array.update(t,i,NONE)
-						    ; n := !n-1
-						    )
+    fun find(t,k) =
+	let
+	    fun loop(i,jo) =
+		let val i' = i mod Array.length t in
+		    case Array.sub(t,i')
+		      of EMPTY       => (false, Option.getOpt(jo,i'))
+		       | DELETED     => loop(i'+1, SOME(Option.getOpt(jo,i')))
+		       | ENTRY(k',_) => if k = k' then (true,i')
+						  else loop(i'+1, jo)
+		end
+	in
+	    loop(Key.hash k, NONE)
+	end
+
+    fun lookup(ref(_,t),k) =
+	case find(t,k)
+	  of (false,_) => NONE
+	   | (true, i) => SOME(valOfEntry(Array.sub(t,i)))
+
+
+    fun deleteWith f (ref(n,t), k) =
+	case find(t,k)
+	  of (false,_) => f k
+	   | (true, i) => ( Array.update(t,i,DELETED) ; n := !n-1 )
 
     fun delete x		= deleteWith ignore x
     fun deleteExistent x	= deleteWith (fn k => raise Delete k) x
 
 
-    fun reinsert t (ka as(k,a))	= Array.update(t, #2(find(t,k)), SOME ka)
-    fun resize(m as ref(n,t))	= if 3 * !n < 2 * Array.length t then () else
-				  let
-				      val t' = Array.array(2*Array.length t-1,
-							   NONE)
-				  in
-				      Array.app (Option_app(reinsert t')) t ;
-				      m := (n,t')
-				  end
+    fun reinsert t (ka as (k,a)) = Array.update(t, #2(find(t,k)), ENTRY ka)
+
+    fun resize(m as ref(n,t)) =
+	if 3 * !n < 2 * Array.length t then () else
+	let
+	    val t' = Array.array(2*Array.length t-1, EMPTY)
+	in
+	    Array.app (appiEntry(reinsert t')) t ;
+	    m := (n,t')
+	end
 
 
-    fun valOf(t,i)		= #2(Option.valOf(Array.sub(t,i)) : key * 'a)
-    fun insertWithi f (m,k,a)	= let val   _   = resize m
-				      val (n,t) = !m
-				      val (b,i) = find(t,k)
-				      val   a'  = if not b then a
-						  else f(k, valOf(t,i), a)
-				  in
-				      Array.update(t,i,SOME(k,a')) ;
-				      n := !n+1
-				  end
+    fun insertWithi f (m,k,a) =
+	let
+	    val   _   = resize m
+	    val (n,t) = !m
+	    val (b,i) = find(t,k)
+	    val   a'  = if not b then a
+				 else f(k, valOfEntry(Array.sub(t,i)), a)
+	in
+	    Array.update(t, i, ENTRY(k,a')) ; n := !n+1
+	end
 
     fun insertWith f		= insertWithi(fn(k,a1,a2) => f(a1,a2))
     fun insert x		= insertWithi #3 x
     fun insertDisjoint x	= insertWithi(fn(k,_,_) => raise Collision k) x
 
-    fun appi f (ref(_,t))	= Array.app (Option_app f) t
-    fun foldi f b (ref(_,t))	= Array.foldl (fn(NONE,b)      => b
-						|(SOME(k,a),b) => f(k,a,b)) b t
+    fun appi f (ref(_,t))	= Array.app (appiEntry f) t
+    fun foldi f b (ref(_,t))	= Array.foldl (fn(e,b) => foldiEntry f b e) b t
     fun app f			= appi (fn(k,a) => f a)
     fun fold f			= foldi (fn(k,a,b) => f(a,b))
 
