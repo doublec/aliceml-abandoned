@@ -15,6 +15,7 @@
 //
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 
 #include "Parameter.hh"
 
@@ -72,7 +73,7 @@ static unsigned long ComputeMask(int pos, int width) {
   return mask;
 }
 
-static void CreateHeader(FILE *f, unsigned int header_size_width) {
+static void CreateHeader(std::FILE *f, unsigned int header_size_width) {
   unsigned long GEN_GC_SHIFT     = 0;
   unsigned long SIZESHIFT_SHIFT  = (HEADER_GEN_GC_MARK_WIDTH);
   unsigned long SIZE_SHIFT       = (SIZESHIFT_SHIFT + HEADER_SIZESHIFT_WIDTH);
@@ -110,7 +111,7 @@ static void CreateHeader(FILE *f, unsigned int header_size_width) {
   std::fprintf(f, "} HeaderWord;\n\n");
 }
 
-static void CreateLabel(FILE *f, unsigned long size) {
+static void CreateLabel(std::FILE *f, unsigned long size) {
   STORE_HELPER_LABEL_ARRAY;
   unsigned int arr_size = (sizeof(helper_arr) / sizeof(char *));
 
@@ -142,7 +143,7 @@ static void CreateLabel(FILE *f, unsigned long size) {
 
 int main(int argc, char **argv) {
   const char *int_val;
-  FILE *f;
+  std::FILE *f;
 
   if (((sizeof(unsigned long) * 8) < HEADER_FULL_WIDTH)) {
     std::fprintf(stderr,
@@ -247,11 +248,11 @@ int main(int argc, char **argv) {
     break;
   case badSize:
     std::fprintf(stderr, "%s: `float' type is not 4 bytes\n", argv[0]);
-    exit(1);
+    std::exit(1);
   case nonIEC:
     std::fprintf(stderr, "%s: `float' type is not IEC 60559 conformant\n",
 		 argv[0]);
-    exit(1);
+    std::exit(1);
   }
 
   switch (CheckDoubleEndianness()) {
@@ -265,11 +266,11 @@ int main(int argc, char **argv) {
     break;
   case badSize:
     std::fprintf(stderr, "%s: `double' type is not 8 bytes\n", argv[0]);
-    exit(1);
+    std::exit(1);
   case nonIEC:
     std::fprintf(stderr, "%s: `double' type is not IEC 60559 conformant\n",
 		 argv[0]);
-    exit(1);
+    std::exit(1);
   }
 
   std::fprintf(f, "#endif\n");
