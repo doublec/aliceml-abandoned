@@ -288,7 +288,7 @@ struct
 	let
 	    open RecursiveCompiler.Switches
 	in
-	    Language.implicitImportFile := SOME "x-alice:/alice.import";
+	    Language.implicitImportFile := SOME "x-alice:/alicec.import";
 	    Warn.inaccessibleExport := false
 	end
 
