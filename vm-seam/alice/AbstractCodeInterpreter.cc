@@ -538,8 +538,7 @@ Interpreter::Result AbstractCodeInterpreter::Run() {
 	  }
 	  break;
 	}
-	if (StatusWord::GetStatus(Store::GCStatus() |
-				  Scheduler::PreemptStatus())) {
+	if (StatusWord::GetStatus() != 0) {
 	  Interpreter::Result res =
 	    Scheduler::PushCall(GetIdRefKill(pc->Sel(0), globalEnv, localEnv));
 	  return res == Interpreter::CONTINUE? Interpreter::PREEMPT: res;
