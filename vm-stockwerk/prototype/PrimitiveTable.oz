@@ -17,6 +17,7 @@ import
    BootWord at 'x-oz://boot/Word'
    FloatChunk(toOz fromOz) at 'FloatChunk.so{native}'
    Scheduler(object)
+   ByneedInterpreter(interpreter)
 export
    ImportOzModule
    Table
@@ -114,9 +115,9 @@ define
 	      '<>': Value.'\\='#rr_b
 	      'Array.array':
 		 fun {$ N X TaskStack}
-		    if 0 =< N andthen N < Primitives.'Array.maxLen' then
+		    if 0 =< N andthen N < Table.'Array.maxLen' then
 		       continue(arg({Array.new 0 N - 1 X}) TaskStack.2)
-		    else exception(nil Primitives.'General.Size' TaskStack.2)
+		    else exception(nil Table.'General.Size' TaskStack.2)
 		    end
 		 end#rr_t
 	      'Array.fromList': missing('Array.fromList')   %--**
@@ -131,13 +132,12 @@ define
 		 end#li_v
 */
 	      'Array.length': fun {$ A} {Array.high A} + 1 end#r_v
-	      'Array.maxLen': 0x7FFFFFF
+	      'Array.maxLen': value(0x7FFFFFF)
 	      'Array.sub':
 		 fun {$ A I TaskStack}
 		    try continue(arg({Array.get A I}) TaskStack.2)
 		    catch error(kernel(array ...) ...) then
-		       exception(nil Primitives.'General.Subscript'
-				 TaskStack.2)
+		       exception(nil Table.'General.Subscript' TaskStack.2)
 		    end
 		 end#rr_t
 	      'Array.update':
@@ -146,8 +146,7 @@ define
 		       {Array.put A I X}
 		       continue(args() TaskStack.2)
 		    catch error(kernel(array ...) ...) then
-		       exception(nil Primitives.'General.Subscript'
-				 TaskStack.2)
+		       exception(nil Table.'General.Subscript' TaskStack.2)
 		    end
 		 end#rri_t
 	      'Char.<': Value.'<'#rr_b
@@ -158,7 +157,7 @@ define
 	      'Char.chr':
 		 fun {$ C TaskStack}
 		    if {Char.is C} then continue(arg(C) TaskStack.2)
-		    else exception(nil Primitives.'General.Chr' TaskStack.2)
+		    else exception(nil Table.'General.Chr' TaskStack.2)
 		    end
 		 end#r_t
 	      'Char.isAlpha': Char.isAlpha#r_b
@@ -195,7 +194,8 @@ define
 		    Transient = transient({NewCell future(nil)})
 		    TaskStack = [byneedFrame(ByneedInterpreter.interpreter
 					     Transient)]
-		    Scheduler, newThread(Closure args() taskStack: TaskStack)
+		    {Scheduler.object newThread(Closure args()
+						taskStack: TaskStack)}
 		    continue(arg(Transient) TaskStack)
 		 end#r_t   %--** or i_t?
 
@@ -223,16 +223,16 @@ define
 		    else 0
 		    end
 		 end#i_v
-	      'General.Bind': {NewUniqueName 'General.Bind'}
-	      'General.Chr': {NewUniqueName 'General.Chr'}
-	      'General.Div': {NewUniqueName 'General.Div'}
-	      'General.Domain': {NewUniqueName 'General.Domain'}
-	      'General.Fail': {NewUniqueName 'General.Fail'}
-	      'General.Match': {NewUniqueName 'General.Match'}
-	      'General.Overflow': {NewUniqueName 'General.Overflow'}
-	      'General.Size': {NewUniqueName 'General.Size'}
-	      'General.Span': {NewUniqueName 'General.Span'}
-	      'General.Subscript': {NewUniqueName 'General.Subscript'}
+	      'General.Bind': value({NewUniqueName 'General.Bind'})
+	      'General.Chr': value({NewUniqueName 'General.Chr'})
+	      'General.Div': value({NewUniqueName 'General.Div'})
+	      'General.Domain': value({NewUniqueName 'General.Domain'})
+	      'General.Fail': value({NewUniqueName 'General.Fail'})
+	      'General.Match': value({NewUniqueName 'General.Match'})
+	      'General.Overflow': value({NewUniqueName 'General.Overflow'})
+	      'General.Size': value({NewUniqueName 'General.Size'})
+	      'General.Span': value({NewUniqueName 'General.Span'})
+	      'General.Subscript': value({NewUniqueName 'General.Subscript'})
 	      'General.exnName':
 		 fun {$ N}
 		    case {VirtualString.toString
@@ -264,8 +264,8 @@ define
 		    end
 		 end#rr_v
 	      'GlobalStamp.hash': fun {$ N} {BootName.hash N} end#r_v
-	      'Hole.Cyclic': {NewUniqueName 'Future.Cyclic'}
-	      'Hole.Hole': {NewUniqueName 'Promise.Promise'}
+	      'Hole.Cyclic': value({NewUniqueName 'Future.Cyclic'})
+	      'Hole.Hole': value({NewUniqueName 'Promise.Promise'})
 	      'Hole.fail':
 		 fun {$ X Exn TaskStack}
 		    case {Deref X} of Transient=transient(TransientState) then
@@ -286,7 +286,7 @@ define
 			  continue(args() TaskStack.2)
 		       else request(Transient args(Transient Exn) TaskStack)
 		       end
-		    else exception(nil Primitives.'Hole.Hole' TaskStack.2)
+		    else exception(nil Table.'Hole.Hole' TaskStack.2)
 		    end
 		 end#ir_t   %--** or ii_t?
 	      'Hole.fill':
@@ -294,8 +294,7 @@ define
 		    case {Deref X} of Transient=transient(TransientState) then
 		       case {Access TransientState} of hole(MyFuture) then
 			  if {IsCyclic Y TransientState} then
-			     exception(nil Primitives.'Hole.Cyclic'
-				       TaskStack.2)
+			     exception(nil Table.'Hole.Cyclic' TaskStack.2)
 			  else
 			     NewTransientState = ref(Y)
 			  in
@@ -314,7 +313,7 @@ define
 			  end
 		       else request(Transient args(Transient Y) TaskStack)
 		       end
-		    else exception(nil Primitives.'Hole.Hole' TaskStack.2)
+		    else exception(nil Table.'Hole.Hole' TaskStack.2)
 		    end
 		 end#ii_t
 	      'Hole.future':
@@ -331,7 +330,7 @@ define
 			  continue(arg(Res) TaskStack.2)
 		       else request(Transient arg(Transient) TaskStack)
 		       end
-		    else exception(nil Primitives.'Hole.Hole' TaskStack.2)
+		    else exception(nil Table.'Hole.Hole' TaskStack.2)
 		    end
 		 end#i_t
 	      'Hole.hole': fun {$} transient({NewCell hole(noFuture)}) end#n_v
@@ -368,11 +367,11 @@ define
 				       (X1 - X2 - 1) div X2
 				    end) TaskStack.2)
 		    catch _ then
-		       exception(nil Primitives.'General.Div' TaskStack.2)
+		       exception(nil Table.'General.Div' TaskStack.2)
 		    end
 		 end#rr_t
-	      'Int.maxInt': NONE
-	      'Int.minInt': NONE
+	      'Int.maxInt': value(NONE)
+	      'Int.minInt': value(NONE)
 	      'Int.mod':
 		 fun {$ X1 X2 TaskStack}
 		    try A in
@@ -388,25 +387,25 @@ define
 				       end
 				    end) TaskStack.2)
 		    catch _ then
-		       exception(nil Primitives.'General.Div' TaskStack.2)
+		       exception(nil Table.'General.Div' TaskStack.2)
 		    end
 		 end#rr_t
-	      'Int.precision': NONE
+	      'Int.precision': value(NONE)
 	      'Int.quot':
 		 fun {$ I J TaskStack}
 		    try continue(arg(I div J) TaskStack.2)
 		    catch _ then
-		       exception(nil Primitives.'General.Div' TaskStack.2)
+		       exception(nil Table.'General.Div' TaskStack.2)
 		    end
 		 end#rr_t
 	      'Int.rem':
 		 fun {$ I J TaskStack}
 		    try continue(arg(I mod J) TaskStack.2)
 		    catch _ then
-		       exception(nil Primitives.'General.Div' TaskStack.2)
+		       exception(nil Table.'General.Div' TaskStack.2)
 		    end
 		 end#rr_t
-	      'List.Empty': {NewUniqueName 'List.Empty'}
+	      'List.Empty': value({NewUniqueName 'List.Empty'})
 	      'Math.acos': fun {$ X} {F2C {Acos {C2F X}}} end#r_v
 	      'Math.acosh': fun {$ X} {F2C {Float.acosh {C2F X}}} end#r_v
 	      'Math.asin': fun {$ X} {F2C {Asin {C2F X}}} end#r_v
@@ -416,10 +415,10 @@ define
 	      'Math.atan2': fun {$ X Y} {F2C {Atan2 {C2F X} {C2F Y}}} end#rr_v
 	      'Math.cos': fun {$ X} {F2C {Cos {C2F X}}} end#r_v
 	      'Math.cosh': fun {$ X} {F2C {Float.cosh {C2F X}}} end#r_v
-	      'Math.e': {F2C 2.71828182846}
+	      'Math.e': value({F2C 2.71828182846})
 	      'Math.exp': fun {$ X} {F2C {Exp {C2F X}}} end#r_v
 	      'Math.ln': fun {$ X} {F2C {Log {C2F X}}} end#r_v
-	      'Math.pi': {F2C 3.14159265359}
+	      'Math.pi': value({F2C 3.14159265359})
 	      'Math.pow':
 		 fun {$ X Y} {F2C {BootFloat.fPow {C2F X} {C2F Y}}} end#rr_v
 	      'Math.sin': fun {$ X} {F2C {Sin {C2F X}}} end#r_v
@@ -427,7 +426,7 @@ define
 	      'Math.sqrt': fun {$ X} {F2C {Sqrt {C2F X}}} end#r_v
 	      'Math.tan': fun {$ X} {F2C {Tan {C2F X}}} end#r_v
 	      'Math.tanh': fun {$ X} {F2C {Float.tanh {C2F X}}} end#r_v
-	      'Option.Option': {NewUniqueName 'Option.Option'}
+	      'Option.Option': value({NewUniqueName 'Option.Option'})
 	      'Real.~': fun {$ X} {F2C ~{C2F X}} end#r_v
 	      'Real.+': fun {$ X Y} {F2C {C2F X} + {C2F Y}} end#rr_v
 	      'Real.-': fun {$ X Y} {F2C {C2F X} - {C2F Y}} end#rr_v
@@ -446,7 +445,7 @@ define
 		 fun {$ X Y} {NumberCompare {C2F X} {C2F Y}} end#rr_v
 	      'Real.floor': fun {$ R} {FloatToInt {Floor {C2F R}}} end#r_v
 	      'Real.fromInt': fun {$ X} {F2C {IntToFloat X}} end#r_v
-	      'Real.precision': 52
+	      'Real.precision': value(52)
 	      'Real.realCeil': fun {$ X} {F2C {Ceil {C2F X}}} end#r_v
 	      'Real.realFloor': fun {$ X} {F2C {Floor {C2F X}}} end#r_v
 	      'Real.realRound': fun {$ X} {F2C {Round {C2F X}}} end#r_v
@@ -488,15 +487,14 @@ define
 	      'String.explode':
 		 fun {$ S} {StringExplode S 0 {ByteString.length S}} end#r_v
 	      'String.implode': missing('String.implode')   %--** ByteString.make
-	      'String.maxSize': 0x7FFFFFFF
+	      'String.maxSize': value(0x7FFFFFFF)
 	      'String.size': ByteString.length#r_v
 	      'String.sub':
 		 fun {$ S I TaskStack}
 		    try
 		       continue(arg({ByteString.get S I}) TaskStack.2)
 		    catch system(kernel('ByteString.get' ...) ...) then
-		       exception(nil Primitives.'General.Subscript'
-				 TaskStack.2)
+		       exception(nil Table.'General.Subscript' TaskStack.2)
 		    end
 		 end#rr_t
 	      'String.substring':
@@ -504,8 +502,7 @@ define
 		    try
 		       continue(arg({ByteString.slice S I I + J}) TaskStack.2)
 		    catch system(kernel('ByteString.slice' ...) ...) then
-		       exception(nil Primitives.'General.Subscript'
-				 TaskStack.2)
+		       exception(nil Table.'General.Subscript' TaskStack.2)
 		    end
 		 end#rrr_t
 	      'String.str': fun {$ C} {ByteString.make [C]} end#r_v
@@ -545,16 +542,15 @@ define
 	      'Unsafe.Vector.sub': fun {$ V I} V.(I + 1) end#rr_v
 	      'Unsafe.cast': fun {$ X} X end#i_v
 	      'Vector.fromList': missing('Vector.fromList')   %--** fun {$ Xs _} {List.toTuple vector Xs} end
-	      'Vector.maxLen': 0x7FFFFFF
+	      'Vector.maxLen': value(0x7FFFFFF)
 	      'Vector.length': Width#r_v
 	      'Vector.sub':
 		 fun {$ V I TaskStack}
 		    try continue(arg(V.(I + 1)) TaskStack.2)
 		    catch error(kernel('.' ...) ...) then
-		       exception(nil Primitives.'General.Subscript'
-				 TaskStack.2)
+		       exception(nil Table.'General.Subscript' TaskStack.2)
 		    end
-		 end
+		 end#rr_t
 	      'Vector.tabulate': missing('Vector.tabulate')   %--**
 /*
 		 fun {$ Args} N = Args.1 F = Args.2 V in
@@ -599,9 +595,9 @@ define
 		       continue(arg({W2I {BootWord.'div' {I2W W1} {I2W W2}}})
 				TaskStack.2)
 		    catch _ then
-		       exception(nil Primitives.'General.Div' TaskStack.2)
+		       exception(nil Table.'General.Div' TaskStack.2)
 		    end
-		 end
+		 end#rr_t
 	      'Word.fromInt\'': fun {$ 31 X} X end#rr_v   %--** size
 	      'Word.mod':
 		 fun {$ W1 W2 TaskStack}
@@ -609,15 +605,15 @@ define
 		       continue(arg({W2I {BootWord.'mod' {I2W W1} {I2W W2}}})
 				TaskStack.2)
 		    catch _ then
-		       exception(nil Primitives.'General.Div' TaskStack.2)
+		       exception(nil Table.'General.Div' TaskStack.2)
 		    end
-		 end
+		 end#rr_t
 	      'Word.notb': fun {$ X} {W2I {BootWord.notb {I2W X}}} end#r_v
 	      'Word.orb':
 		 fun {$ X Y} {W2I {BootWord.orb {I2W X} {I2W Y}}} end#rr_v
 	      'Word.toInt': fun {$ X} X end#r_v
 	      'Word.toIntX': fun {$ X} {BootWord.toIntX {I2W X}} end#r_v
-	      'Word.wordSize': 31
+	      'Word.wordSize': value(31)
 	      'Word.xorb':
 		 fun {$ X Y} {W2I {BootWord.'xorb' {I2W X} {I2W Y}}} end#rr_v)
 
@@ -654,6 +650,7 @@ define
 	    elseof Y then continue(arg(if {F Y} then 1 else 0 end) Rest)
 	    end
 	 [] ii_t then T = {Deconstruct Args} in {F T.1 T.2 TaskStack}
+	 [] ii_v then T = {Deconstruct Args} in continue(arg({F T.1 T.2}) Rest)
 	 [] ir_t then T = {Deconstruct Args} in
 	    case {Deref T.2} of Transient=transient(_) then
 	       request(Transient args(T.1 Transient) TaskStack)
@@ -728,13 +725,16 @@ define
 			      end
 			   end)
 
+   fun {ImportField X}
+      case X of P#Spec then closure(primitive(Interpreter P Spec))
+      [] value(Y) then Y
+      [] missing(_) then {Value.byNeedFail X}   %--**
+      else {ImportOzModule X}
+      end
+   end
+
    fun {ImportOzModule Module}
-      {Record.map Module
-       fun {$ X}
-	  case X of P#Spec then closure(primitive(Interpreter P Spec))
-	  else X
-	  end
-       end}
+      {Record.map Module ImportField}
    end
 
    Table = {ImportOzModule Primitives}
