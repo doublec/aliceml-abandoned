@@ -691,10 +691,8 @@ build3/alicec.import: lib/fundamental/Fundamental.import lib/Other.import
 	cat $^ > $@
 
 build3/alice.import: lib/fundamental/Fundamental.import lib/Other.import \
-	compiler/top/Toplevel.import
-	grep -hv 'x-alice:/lib/distribution/' $^ | \
-	grep -hv 'x-alice:/lib/constraints/' | \
-	grep -hv 'x-alice:/lib/tools/' > $@
+	Toplevel.import
+	cat $^ > $@
 
 build3/%.stc: build3/%.aml
 	$(ALICEC2) $(ALICEC_OPTS) -c $< -o $@
