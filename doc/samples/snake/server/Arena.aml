@@ -302,7 +302,7 @@ struct
 			    List.filter (fn x => not (snake = x)) snakes
 		    val hit = hitSnake snake othersnakes
 		in
-		    Array2.update(a,r,c,P.SNAKE_HEAD(dir,color));
+		    Array2.update(a,r,c, P.SNAKE_HEAD(dir,color));
 		    if hit
 			then killSnake snake
 		    else 

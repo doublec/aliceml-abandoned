@@ -12,6 +12,7 @@
 import structure PPValue        from "x-alice:/lib/system/PPValue"
 import structure PrettyPrint    from "x-alice:/lib/utility/PrettyPrint"
 import structure Stream         from "x-alice:/lib/data/Stream"
+import val ispawn               from "ISpawn"
 
 local
     structure P = PrettyPrint
@@ -22,7 +23,7 @@ local
     |   logger (msg :: msgs) =
         (P.output (TextIO.stdErr, msg, 70); logger msgs)
 
-    val _ = spawn logger messages
+    val _ = ispawn logger messages
 
 in
     fun log' t (part, value) = 

@@ -17,7 +17,7 @@ in
             log ("playersJoined", v),
         tournamentStarted   = fn (v: unit) => 
             log ("tournamentStarted", v),
-        levelStarted        = fn (v: unit) => 
+        levelStarted        = fn (v: Protocol.level_info) => 
             log ("levelStarted", v),
         playerDisconnected  = fn (v: string * Color.color) => 
             log ("playerDisconnected", v),

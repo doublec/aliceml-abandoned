@@ -57,7 +57,7 @@ struct
                if requested turn is impossible (ie.e new-dir 180° old-dir)
                then do not turn at all. 
              *)
-            val head    = List.hd body
+            val head    = assert not (List.null body) do List.hd body
 
             val (new_head, dir) = 
                case (old_dir, new_dir) of
@@ -80,11 +80,12 @@ struct
             direction := dir
         end
 
-    fun head (SN { body = ref b, ... }) = List.hd b
+    fun head (SN { body = ref b, ... }) = assert not (List.null b) do List.hd b
 
-    fun body (SN { body = ref b, ... }) = List.tl b 
+    fun body (SN { body = ref b, ... }) = assert not (List.null b) do List.tl b 
 
-    fun appBody f (SN { body = ref b, ... }) = List.app f (List.tl b)
+    fun appBody f (SN { body = ref b, ... }) = 
+        assert not (List.null b) do List.app f (List.tl b)
 
     fun length (SN { body = ref b, ... }) = List.length b
 

@@ -306,6 +306,9 @@ struct
                 let
                     (* get all players who can play another level *)
                     val p   = allPossiblePlayers ()
+
+                    (* dimensions of the new level *)
+                    val dims    = Array2.dimensions newArena
                 in
                     (* set players state to playing and place snake *)
                     assert List.length p <= List.length startPos do
@@ -323,7 +326,8 @@ struct
                                 state := Part.PLAYING (info, snake)
                             end
                         ) (p, startPos);
-                    invokeSeveral (allConnected (), #levelStarted, ());
+                    invokeSeveral (allConnected (), #levelStarted, 
+                            { dimensions = dims });
                     (levels, oldArena, newArena)
                 end
             
@@ -441,7 +445,8 @@ struct
 
             fun ticker () = 
                 let
-                    val arena       = List.hd levels ++ #1
+                    val arena       = assert not (List.null levels) do 
+                                        List.hd levels ++ #1
                     val oldArena    = Arena.emptyCopy arena
 
                     fun loop (levels, old, new) =
@@ -529,7 +534,7 @@ fun test () =
                     (dummyClient, 
                 { Config.defaultSingle where tick = Time.fromSeconds 3 } )
     in
-        #play server ("bene", Color.fromString "red");    
+        #play server ("bene", Color.fromString "yellow");    
         valOf (#startGame server) ();
         (ticket, server)
     end
