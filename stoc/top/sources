@@ -65,6 +65,8 @@
 ../frontend-common/PPPath.sml
 ../frontend-common/PP_TYPE.sig
 ../frontend-common/PPType.sml
+../frontend-common/PP_INF.sig
+../frontend-common/PPInf.sml
 ../frontend-common/ELABORATION_ERROR.sig
 ../frontend-common/ElaborationError.sml
 ../frontend-common/ELABORATION_PHASE.sig
