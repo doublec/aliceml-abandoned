@@ -100,7 +100,7 @@ PREFIX = /opt/stockhausen-devel
 
 VPATH = $(SRCTOP)
 
-STOC0 = $(BOOTSTRAPDIR)/stoc-mozart
+STOC0 = $(BOOTSTRAPDIR)/stoc
 STOC1 = STOCKHOME=build1/install build1/install/bin/stoc
 STOC2 = STOCKHOME=build2/install build2/install/bin/stoc
 

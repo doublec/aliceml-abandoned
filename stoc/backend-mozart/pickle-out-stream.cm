@@ -5,7 +5,7 @@ Group
 is
 
     ../../lib/utility/sources.cm
-    ../infrastructure/crash.cm
+    ../infrastructure/sources.cm
 
     crc.cm
     PICKLE_OUT_STREAM-sig.aml
