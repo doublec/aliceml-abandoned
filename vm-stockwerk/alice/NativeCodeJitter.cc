@@ -654,16 +654,20 @@ void NativeCodeJitter::RestoreRegister() {
   NativeCodeFrame::GetEnv(JIT_V0, JIT_V2, 2);
 }
 
-void NativeCodeJitter::PushCall(u_int Closure, CallInfo *info) {
+void NativeCodeJitter::PushCall(CallInfo *info) {
 #if PROFILE
-  jit_pushr_ui(Closure);
+  if (info->mode != NORMAL_CALL) {
+    ImmediateSel(JIT_R0, JIT_V2, info->closure);
+    jit_pushr_ui(JIT_R0); // Closure
+  }
   JITStore::Call(1, (void *) Scheduler::PushCall);
   RETURN();
 #else
   switch (info->mode) {
   case NATIVE_CALL:
     {
-      jit_pushr_ui(Closure); // Closure
+      ImmediateSel(JIT_R0, JIT_V2, info->closure);
+      jit_pushr_ui(JIT_R0); // Closure
       jit_ldi_p(JIT_R0, &NativeCodeInterpreter::nativeContinuation);
       jit_pushr_ui(JIT_R0);  // Continuation
       JITStore::Call(2, (void *) NativeCodeInterpreter::FastPushCall);
@@ -677,9 +681,8 @@ void NativeCodeJitter::PushCall(u_int Closure, CallInfo *info) {
     break;
   case SELF_CALL:
     {
-      jit_pushr_ui(Closure); // Save Closure
       NativeCodeFrame::New(JIT_V1, currentNLocals);
-      jit_popr_ui(JIT_R0); // Restore Closure
+      ImmediateSel(JIT_R0, JIT_V2, info->closure); // Closure
       NativeCodeFrame::PutClosure(JIT_V1, JIT_R0);
       u_int size = NativeCodeFrame::GetFrameSize(currentNLocals);
       jit_movi_p(JIT_R0, Store::IntToWord(size));
@@ -699,7 +702,7 @@ void NativeCodeJitter::PushCall(u_int Closure, CallInfo *info) {
     break;
   case NORMAL_CALL:
     {
-      jit_pushr_ui(Closure);
+      // Invariant: Closure is on the stack
       JITStore::Call(1, (void *) Scheduler::PushCall);
       RETURN();
     }
@@ -718,9 +721,12 @@ void NativeCodeJitter::DirectCall(Interpreter *interpreter) {
   RETURN();
 }
 
-void NativeCodeJitter::TailCall(u_int Closure, CallInfo *info) {
+void NativeCodeJitter::TailCall(CallInfo *info) {
 #if PROFILE
-  jit_pushr_ui(Closure);
+  if (info->mode != NORMAL_CALL) {
+    ImmediateSel(JIT_R0, JIT_V2, info->closure);
+    jit_pushr_ui(JIT_R0);
+  }
   Generic::Scheduler::PopFrame();
   JITStore::Call(1, (void *) ::Scheduler::PushCall);
   RETURN();
@@ -728,8 +734,9 @@ void NativeCodeJitter::TailCall(u_int Closure, CallInfo *info) {
   switch (info->mode) {
   case NATIVE_CALL:
     {
-      jit_pushr_ui(Closure); // Closure
-      jit_ldi_p(JIT_R0, &NativeCodeInterpreter::returnContinuation);
+      ImmediateSel(JIT_R0, JIT_V2, info->closure);
+      jit_pushr_ui(JIT_R0); // Closure
+      NativeCodeFrame::GetContinuation(JIT_R0, JIT_V2); // Reuse continuation
       jit_pushr_ui(JIT_R0); // Continuation
       u_int size = NativeCodeFrame::GetFrameSize(currentNLocals);
       Generic::Scheduler::PopFrame(size);
@@ -744,7 +751,8 @@ void NativeCodeJitter::TailCall(u_int Closure, CallInfo *info) {
     break;
   case SELF_CALL:
     {
-      NativeCodeFrame::ReplaceClosure(JIT_V2, Closure);
+      ImmediateSel(JIT_R0, JIT_V2, info->closure);
+      NativeCodeFrame::ReplaceClosure(JIT_V2, JIT_R0);
       CheckPreempt(info->pc);
       NativeCodeFrame::GetCode(JIT_R0, JIT_V2);
       jit_addi_p(JIT_R0, JIT_R0, info->pc);
@@ -753,7 +761,7 @@ void NativeCodeJitter::TailCall(u_int Closure, CallInfo *info) {
     break;
   case NORMAL_CALL:
     {
-      jit_pushr_ui(Closure);
+      // Invariant: Closure is on the stack
       u_int size = NativeCodeFrame::GetFrameSize(currentNLocals);
       Generic::Scheduler::PopFrame(size);
       JITStore::Call(1, (void *) Scheduler::PushCall);
@@ -1207,8 +1215,10 @@ void NativeCodeJitter::DirectAppVar(TagVal *pc, word wClosure) {
   if (appClosure != INVALID_POINTER) {
     word wConcreteCode = appClosure->GetConcreteCode();
     if (wConcreteCode == currentConcreteCode) {
-      info.mode = SELF_CALL;
-      info.pc   = Store::DirectWordToInt(initialNoCCCPC);
+      info.mode    = SELF_CALL;
+      info.pc      = Store::DirectWordToInt(initialNoCCCPC);
+      info.closure = ImmediateEnv::Register(appClosure->ToWord());
+      goto no_request;
     }
     else {
       ConcreteCode *concreteCode = ConcreteCode::FromWord(wConcreteCode);
@@ -1217,8 +1227,10 @@ void NativeCodeJitter::DirectAppVar(TagVal *pc, word wClosure) {
 	if (interpreter == NativeCodeInterpreter::self) {
 	  NativeConcreteCode *nativeCode =
 	    static_cast<NativeConcreteCode *>(concreteCode);
-	  info.mode = NATIVE_CALL;
-	  info.pc   = nativeCode->GetSkipCCCPC();
+	  info.mode    = NATIVE_CALL;
+	  info.pc      = nativeCode->GetSkipCCCPC();
+	  info.closure = ImmediateEnv::Register(appClosure->ToWord());
+	  goto no_request;
 	}
 	else if (interpreter->GetCFunction() != NULL) {
 	  LoadArguments(actualArgs);
@@ -1228,21 +1240,23 @@ void NativeCodeJitter::DirectAppVar(TagVal *pc, word wClosure) {
       }
     }
   }
-  word instrPC  = Store::IntToWord(GetRelativePC());
-  u_int closure = LoadIdRef(JIT_V1, pc->Sel(0), instrPC);
-  jit_pushr_ui(closure); // Save Closure
+  {
+    word instrPC  = Store::IntToWord(GetRelativePC());
+    u_int closure = LoadIdRef(JIT_V1, pc->Sel(0), instrPC);
+    jit_pushr_ui(closure); // Save Closure
+  }
+ no_request:
   TagVal *idDefArgsInstrOpt = TagVal::FromWord(pc->Sel(2));
   if (idDefArgsInstrOpt != INVALID_POINTER)
     CompileContinuation(idDefArgsInstrOpt);
   LoadArguments(actualArgs);
   KillIdRef(pc->Sel(0));
-  jit_popr_ui(JIT_V1); // Restore Closure
   if (idDefArgsInstrOpt != INVALID_POINTER) {
     KillVariables();
-    PushCall(JIT_V1, &info);
+    PushCall(&info);
   }
   else
-    TailCall(JIT_V1, &info);
+    TailCall(&info);
 }
 
 // AppVar of idRef * idRef args * (idDef args * instr) option
@@ -1255,9 +1269,11 @@ void NativeCodeJitter::AppVar(TagVal *pc, word wClosure) {
   if (appClosure != INVALID_POINTER) {
     word wConcreteCode = appClosure->GetConcreteCode();
     if (wConcreteCode == currentConcreteCode) {
-      info.mode = SELF_CALL;
+      info.mode    = SELF_CALL;
+      info.closure = ImmediateEnv::Register(appClosure->ToWord());
       if (SkipCCC(actualArgs, currentArgs))
 	info.pc = Store::DirectWordToInt(initialNoCCCPC);
+      goto no_request;
     }
     else {
       ConcreteCode *concreteCode = ConcreteCode::FromWord(wConcreteCode);
@@ -1268,9 +1284,11 @@ void NativeCodeJitter::AppVar(TagVal *pc, word wClosure) {
 	if (interpreter == NativeCodeInterpreter::self) {
 	  NativeConcreteCode *nativeCode =
 	    static_cast<NativeConcreteCode *>(concreteCode);
-	  info.mode = NATIVE_CALL;
+	  info.mode    = NATIVE_CALL;
+	  info.closure = ImmediateEnv::Register(appClosure->ToWord());
 	  if (calleeArity == actualArity)
 	    info.pc = nativeCode->GetSkipCCCPC();
+	  goto no_request;
 	}
 	else if (interpreter->GetCFunction() != NULL) {
 	  LoadArguments(actualArgs);
@@ -1282,21 +1300,23 @@ void NativeCodeJitter::AppVar(TagVal *pc, word wClosure) {
       }
     }
   }
-  word instrPC  = Store::IntToWord(GetRelativePC());
-  u_int closure = LoadIdRef(JIT_V1, pc->Sel(0), instrPC);
-  jit_pushr_ui(closure); // Save Closure
+  {
+    word instrPC  = Store::IntToWord(GetRelativePC());
+    u_int closure = LoadIdRef(JIT_V1, pc->Sel(0), instrPC);
+    jit_pushr_ui(closure); // Save Closure
+  }
+ no_request:
   TagVal *idDefArgsInstrOpt = TagVal::FromWord(pc->Sel(2));
   if (idDefArgsInstrOpt != INVALID_POINTER)
     CompileContinuation(idDefArgsInstrOpt);
   LoadArguments(actualArgs);
   KillIdRef(pc->Sel(0));
-  jit_popr_ui(JIT_V1); // Restore Closure
   if (idDefArgsInstrOpt != INVALID_POINTER) {
     KillVariables();
-    PushCall(JIT_V1, &info);
+    PushCall(&info);
   }
   else
-    TailCall(JIT_V1, &info);
+    TailCall(&info);
 }
 
 //

@@ -43,6 +43,7 @@ typedef enum {
 typedef struct {
   CALL_MODE mode;
   u_int pc;
+  u_int closure;
 } CallInfo;
 
 #define ALICE_REGISTER_NB 3
@@ -79,9 +80,9 @@ protected:
   static void ResetRegister();
   static void SaveRegister();
   static void RestoreRegister();
-  static void PushCall(u_int Closure, CallInfo *info);
+  static void PushCall(CallInfo *info);
   static void DirectCall(Interpreter *interpreter);
-  static void TailCall(u_int Closure, CallInfo *info);
+  static void TailCall(CallInfo *info);
   static void BranchToOffset(u_int wOffset);
   static u_int GetRelativePC();
   static void SetRelativePC(word pc);
