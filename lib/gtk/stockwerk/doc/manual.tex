@@ -1,0 +1,258 @@
+\documentclass{article}
+\usepackage{german}
+\usepackage[latin1]{inputenc}
+
+\setlength{\textwidth}{14cm}
+\setlength{\oddsidemargin}{1cm}
+
+\begin{document}
+\begin{center}
+\begin{huge}Benutzungshinweise für die Alice-GTK-Bindings\end{huge}
+
+Entwurf vom 01.10.02
+
+Robert Grabowski
+
+\end{center}
+
+
+
+\section{Einleitung}
+Mit dieser Schnittstelle ist es möglich, die GTK+-2-Bibliothek unter Alice zu
+nutzen. Dieses Dokument beschreibt, wie die Schnittstelle aufgebaut ist und
+welche Besonderheiten unter Alice zu beachten sind. Die eigentliche
+Dokumentation der GTK-Bibliothek selbst findet man z.B. unter
+\texttt{http://www.gtk.org/}.
+
+
+
+\section{Einbinden der Schnittstelle}
+Die Schnittstelle besteht aus den Dateien ???. Die Komponente ``Gtk'' stellt
+die Funktionalität der GTK-Bibliothek zur Verfügung, die Komponente ``Gdk''
+die der GDK-Bibliothek. In Alice-Programme können diese mit der Deklaration
+\texttt{import structure Gtk from ``Gtk''} (analog für Gdk) eingebunden
+werden.
+
+
+
+\section{Funktionen}
+Grundsätzlich sind alle GTK- und GDK-Funktionen nutzbar, d.h. alle Funktionen,
+die mit \texttt{gtk\_} oder \texttt{gdk\_} beginnen.
+
+\subsection{Funktionsname}
+Die Alice-Funktionsnamen entsprechen nicht den C-Funktionsnamen, sondern sind
+nach einer bestimmten Konvention umgewandelt:
+\begin{enumerate}
+\item Das Präfix (\texttt{gtk\_} bzw. \texttt{gdk\_}) wird entfernt,
+\item jeder Unterstrich (\_) wird entfernt; der jeweils darauffolgende
+      Buchstabe wird zu einem Großbuchstaben.
+\end{enumerate}
+
+Beispiel: Die Funktion \texttt{gtk\_window\_set\_title} heißt unter Alice
+\texttt{Gtk.windowSetTitle}.
+
+\subsection{Funktionsargumente}
+Die C-Typen der Argumente und des Rückgabewerts wurden nach folgender Tabelle
+auf Alice-Typen umgewandelt:
+
+\begin{tabular}{|c|c|}
+\hline \textbf{C-Typ}     & \textbf{Alice-Typ} \\
+\hline void               & unit       \\
+\hline (ganzzahliger Typ) & int        \\
+\hline (Fließkomma-Typ)   & real       \\
+\hline gboolean           & bool       \\
+\hline char*/gchar*       & string     \\
+\hline (enum-Typ)         & int        \\
+\hline t[]                & t array    \\
+\hline t*                 & object     \\
+\hline GList*/GSList*     & object list\\
+\hline
+\end{tabular}
+
+Der Typ \texttt{object} ist ein abstrakter Datentyp, der lediglich einen
+Zeiger auf beliebige Datenstrukturen darstellt. Werte vom Typ \texttt{object}
+können auf Gleichheit überprüft werden. Der Typ ist in der Komponente ``Gtk''
+deklariert; die Komponente ``Gdk'' verwendet ``Gtk.object''.
+
+Hat die Funktion mehrere Argumente, so werden diese als Tupel übergeben.
+
+Beispiel: Die C-Funktion
+ 
+\texttt{void gtk\_window\_set\_title(GtkWindow*, gchar*)}
+
+hat unter Alice die Signatur
+
+\texttt{val windowSetTitle : object * string -> unit}
+
+\subsection{Ein- und Ausgabe-Argumente}
+
+Bei den meisten Bibliotheksfunktionen werden alle Argumente \textit{by value}
+übergeben. Die Funktionsausgabe wird über den Rückgabewert übergeben.
+Zu beachten ist, dass auch Argumente von einem Typ wie \texttt{GtkWindow*}
+Werteparameter sind, da die Funktion evtl. die Informationen in der
+Datenstruktur \texttt{GtkWindow} ändert, nicht jedoch den Zeiger selbst.
+
+Manche Funktionen erwarten jedoch keine Werte, sondern Zeiger auf
+Speicherstellen, an die sie ihre Ausgaben schreiben können. Ein solcher
+Ausgabeparameter ist immer ein Zeiger auf ein Wert eines der folgenden Typen:
+
+\begin{itemize}
+\item Zahl (z.B. gfloat*, gint*)
+\item Enumtyp (z.B. ???)
+\item String (z.B. gchar**)
+\item Liste (z.B. GList**, GSList**) (???)
+\item Zeiger auf Datenstruktur (z.B. GtkWindow**)
+\end{itemize}
+
+Da Alice dieses Konzept nicht unterstützt\footnote{Eigentlich schon, mit
+Referenzen, aber das würde die Schnittstelle wesentlich unhandlicher machen.},
+werden diese Ausgabeparameter zusammen mit dem eigentlichen Rückgabewert
+als Tupel zurückgegeben. Ist der eigentliche Rückgabewert vom Typ unit,
+entfällt er aus dem Tupel.
+
+Beispiel:
+
+\texttt{void gtk\_image\_get\_stock(GtkImage*, gchar**, GtkIconSize*)}
+
+wird zu 
+
+\texttt{val imageGetStock : object -> string * int}
+(GtkIconSize ist ein Enum-Typ)
+
+In seltenen Fällen kommt es vor, dass Ausgabeparameter auch als Eingabe-
+Parameter dienen. Daher gibt es für jede Funktion, die mindestens
+einen Ausgabeparameter hat, noch eine zweite Variante, in der es für
+alle Ausgabeparameter zusätzlich noch Eingabeparameter gibt.
+
+Beispiel: Obige Funktion imageGetStock hat noch eine zweite Variante, und zwar
+
+\texttt{val imageGetStock' : object * string * int -> string * int}
+
+
+
+\section{Enum-Werte}
+
+Alle Werte aus Enumerations-Typen (C-Aufzählungs-Typen) sind in der
+Schnittstelle als \texttt{int}-Konstanten verfügbar und können dort verwendet
+werden, wo ein entsprechender Enum-Typ benötigt wird.
+
+Die Namen unter Alice entsprechen den Namen unter C, jedoch ohne das Präfix
+\texttt{GTK\_} bzw. \texttt{GDK\_}. Das Präfix wird jedoch \textit{nicht}
+entfernt, falls der Bezeichner ohne das Präfix mit einer Ziffer beginnen würde.
+
+Beispiele:\\
+\texttt{GTK\_WINDOW\_TOPLEVEL} heißt unter Alice 
+  \texttt{Gtk.WINDOW\_TOPLEVEL}\\
+\texttt{GDK\_2BUTTON\_PRESS} heißt unter Alice 
+  \texttt{Gdk.GDK\_2BUTTON\_PRESS}
+
+
+
+\section{Besonderheiten}
+
+Zusätzlich zu den beschriebenen Umwandlungsregeln gibt es ein paar Ausnahmen
+und Besonderheiten zu beachten.
+
+\subsection{Konstanten}
+
+Die Struktur ``Gtk'' stellt folgende Konstanten zu Verfügung:
+\begin{itemize}
+\item \texttt{val NULL : object}\\
+      stellt einen NULL-Zeiger zur Verfügung. Dies wird für einige Funktionen
+      benötigt.
+\item \texttt{val TRUE : int}\\
+      \texttt{val FALSE : int}\\
+      entsprechen den gleichnamigen Konstanten aus der C-Bibliothek.
+      Achtung: Das Alice-Pendant zu \texttt{gboolean} ist \texttt{bool}, man
+      kann also fast immer das gewöhnliche ``true'' und ``false'' benutzen.
+      Die Konstanten Gtk.TRUE und Gtk.FALSE sind für Funktionen gedacht, die
+      ein \texttt{int} verlangen, aber trotzdem ein TRUE oder FALSE erwarten.
+\end{itemize}
+
+\subsection{String-Listen}
+
+Bei manchen Funktionen wird ein Parameter vom Typ \texttt{GList*} oder 
+\texttt{GSList*} nicht auf den Typ \texttt{object list}, sondern auf den Typ
+\texttt{string list} abgebildet.
+So erwartet zum Beispiel Gtk.comboSetPopdownStrings eine \texttt{string list}.
+
+\subsection{Typ-Überprüfungen für \texttt{object}s}
+
+GTK+ besitzt eine eigene Klassenhierarchie, wobei \texttt{GObject} die
+Basisklasse für alle GTK+-Objekte ist. Ferner besitzt die Bibliothek ein
+eigenes Typsystem, mit dem z.B. die Klasse eines Objekts zur Laufzeit überprüft
+werden kann. 
+
+Die Alice-Schnittstelle macht sich dieses Feature zunutze, um
+unmittelbar vor dem eigentlichen Bibliotheks-Funktionsaufruf für alle
+Eingabeargumente vom Alice-Typ \texttt{object} zu überprüfen, ob diese den
+richtigen Typ haben. 
+
+Falls die Funktion ein Objekt einer bestimmten Klasse A
+verlangt, falls das übergebene \texttt{object} ein Objekt der Klasse B ist
+und falls B weder A noch eine abgeleitete Klasse von A ist, wird eine Ausnahme
+vom Typ Gtk.TypeMismatch geworfen. Diese ist deklariert als
+\texttt{exception TypeMismatch of string},
+der string enthält eine Fehlermeldung.
+
+Aus Performance-Gründen kann diese Typüberprüfung abgeschaltet werden, und
+zwar mit \texttt{Gtk.enableTypeChecking(false)}. Die Bibliothek selbst nimmt
+auch eine Typprüfung vor. Leider werden deren Fehlermeldungen direkt auf dem
+Bildschirm ausgegeben.
+
+Für alle anderen Typen übernimmt die Schnittstelle keine Typ-Überprüfung.
+
+\subsection{Nicht verfügbare Enum-Werte}
+
+Bestimmte Enum-Werte stehen nicht als Konstante zur Verfügung, weil sie einfach
+zu groß sind, um in ein 31-Bit-Alice-\texttt{int} zu passen. Dazu zählen ???.
+
+\subsection{Nicht verfügbare Funktionen}
+
+Folgende Funktionen sind nicht verfügbar:
+\begin{itemize}
+\item Alle Funktionen, die unter C mit einer Ellipse (``...'') deklariert sind
+      und daher eine variable Anzahl von Parametern nehmen. Es ist nicht
+      möglich, dieses Feature irgendwie auf Alice abzubilden.
+\item Alle Funktionen, die nur als Makro definiert sind.
+\item gtk\_true und gtk\_false. Ihr Verhalten lässt sich aber mit
+      \texttt{(fn () => Gtk.TRUE)} bzw. \texttt{(fn () => Gtk.FALSE)}
+      nachbilden.
+\item gtk\_init, gtk\_init\_check und gtk\_main (siehe unten).
+\end{itemize}
+
+\subsection{Die Hauptschleife}
+
+Sobald die Gtk-Struktur geladen wurde, wird automatisch gtk\_init aufgerufen.
+Außerdem wird automatisch ein Thread gestartet, in dem die GTK-
+Signalverarbeitungs-Schleife läuft.
+
+Dadurch werden Widgets angezeigt, sobald z.B. \texttt{Gtk.widgetShow}
+aufgerufen wurde. Es ist also nicht notwendig (und auch nicht möglich), 
+manuell im Alice-Programm gtk\_init oder gtk\_main aufzurufen.
+
+\subsection{Event-Handling}
+
+Um eine Callback-Funktion an ein Widget und ein Signal zu binden, steht die
+Funktion \texttt{Gtk.signalConnect} zur Verfügung. Die Signatur sieht so aus:
+
+\texttt
+{val signalConnect : object * string * (object * arg list -> unit) -> int}
+
+Der erste Parameter ist das Widget, an dass die Callback-Funktion gebunden
+werden soll, der zweite Parameter ist der Name des Ereignisses, und der
+dritte Parameter ist schließlich die Callback-Funktion selbst.
+Der Rückgabewerte ist die ``connection id''. Diese wird nur benötigt, wenn
+die Funktion später wieder getrennt werden soll.
+
+Die Callback-Funktion wiederum erhält das Widget, welches das Ereignis
+ausgelöst hat, sowie eine Liste von Argumenten. (???) 
+
+Beispiel:
+
+\texttt{val button = Gtk.buttonNewWithTitle(``Click me'')\\
+        fun showMessage \_ = print ``button clicked!''\\
+        val connid = Gtk.signalConnect(button, ``clicked'', showMessage)}
+
+\end{document}             
+
