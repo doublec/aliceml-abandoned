@@ -94,8 +94,8 @@ href="incompatibilities.html#funid">incompatibilities</A>).</P>
 
 <?php subsection("higher-sigexp", "Functor signatures") ?>
 
-<P>The syntax for signatures has been extended to contain functor types,
-respectively. For example, functor <TT>F</TT> can be described by the following
+<P>The syntax for signatures has been extended to contain functor types.
+For example, functor <TT>F</TT> can be described by the following
 signature:</P>
 
 <PRE class=code>
@@ -137,7 +137,7 @@ matches another signature <I>S</I><SUB>2</SUB> with nested <TT>T</TT> =
 
 <?php subsection("sigmembers-abstract", "Abstract signatures") ?>
 
-<P>Analoguous to types, nested signatures may be specified abstractly:</P>
+<P>Analogously to types, nested signatures may be specified abstractly:</P>
 
 <PRE class=code>
 signature S =
@@ -154,15 +154,15 @@ are particularly useful as functor parameters, because they allow declaring
 functor F (signature S structure X : S) = (* ... *)</PRE>
 
 <P>The Alice <A href="library.html">library</A> contains several examples of
-such polymorphic functors, e.g. the <A href="#lazy"><TT>ByNeed</TT></A> functor
-or the functors provided by the <A
+such polymorphic functors, for example, the <A href="#lazy"><TT>ByNeed</TT></A>
+functor or the functors provided by the <A
 href="library/component-manager.html">component manager</A>.</P>
 
 <DIV class=note>
 
 <P><I>Note:</I> Abstract signatures render the type system of Alice ML
-undecidable. We do not consider this a problem in practice, since the simplest
-program to make the type checker loop already is highly artificial:</P>
+undecidable. We do not consider this a problem in practice, since already
+the simplest program to make the type checker loop is highly artificial:</P>
 
 <PRE class=code>
 signature I =
