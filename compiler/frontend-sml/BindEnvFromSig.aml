@@ -166,7 +166,9 @@ struct
 		 of (Type.EmptyRow | Type.UnknownRow) => ()
 		  | Type.FieldRow(l,t',r') =>
 		let
+		    val  vid    = VId.fromString(Label.toString l)
 		    val  is     = T(arityFromTyp t', tycon, k)
+		    val (_,z,_) = Option.valOf(lookupVal(E,vid))
 		    val  t''    = Type.instance(Inf.lookupVal(s,l))
 		    val (t1,t2) = case Type.inspect t''
 				   of Type.Arrow tt => tt
@@ -177,13 +179,14 @@ struct
 		    if not(List.all Type.isUnknown ts) then raise Type.Type else
 		    Type.unify(t0, t3);
 		    Type.unify(t1, unstrict t');
-		    insertVal(E', VId.fromString(Label.toString l),
-				  (I, Stamp.new(), is));
+		    insertVal(E', vid, (I,z,is));
 		    loop r'
 		end
 	in
-	    ( loop r ; E' )
-	    handle (**)e as (Inf.Lookup | Type.Type | Type.Mismatch _) => new()
+	    loop r
+	    handle (Option.Option | Inf.Lookup | Type.Type | Type.Mismatch _) =>
+		deleteAll E';
+	    E'
 	end
 
 
@@ -280,7 +283,7 @@ struct
 	    let
 		val name = Label.toString l
 		val vid  = vidFromLabel l
-		val x    = Stamp.new()
+		val z    = Stamp.new()
 		val is   = if String.sub(name,0) = #"'" then V else
 			    let
 				val l'        = Label.fromString("'" ^ name)
@@ -299,7 +302,7 @@ struct
 			    end
 			    handle (Inf.Lookup|Type.Type|Type.Mismatch _) => V
 	    in
-		insertDisjointVal(E, vid, (I,x,is))
+		insertDisjointVal(E, vid, (I,z,is))
 	    end
 	  | _ => ()
 
