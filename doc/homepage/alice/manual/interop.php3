@@ -216,16 +216,14 @@
             sig
                 val show: 'a -> unit
             end</PRE>
-  <P>The Oz functor <TT>UntypedF.ozf</TT> can now be combined with the
-    signature at <TT>F.asig</TT> into a typed component <TT>F.ozf</TT> by
-    invoking the Alice compiler thus:</P>
-  <PRE>        alicec --replacesign UntypedF.ozf F.asig F.ozf</PRE>
   <P>We can now import the component into Alice using an import announcement
     of the form</P>
   <PRE>        import val show from "F"</PRE>
-  <P>Note that the name of the signature is ignored.</P>
-  <P>If the signature does not truthfully describe the Oz component,
-    run-time errors will occur.</P>
+  <P>This will read the signature from <TT>F.asig</TT>, and consider the
+    structure exported from <TT>F.ozf</TT> to conform to this signature.
+    (Note that the name of the signature is ignored.)  If the signature
+    does not truthfully describe the Oz component, run-time errors will
+    occur.</P>
 
 <?php section("alicefromoz", "alice from oz") ?>
   <P>Since Oz does not type-check its imports at link-time, Alice components
