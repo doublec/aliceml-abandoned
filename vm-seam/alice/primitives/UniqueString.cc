@@ -10,7 +10,7 @@
 //   $Revision$
 //
 
-#include "alice/primitives/Authoring.hh"
+#include "alice/Authoring.hh"
 
 DEFINE1(UniqueString_hash) {
   DECLARE_UNIQUE_STRING(uniqueString, x0);
