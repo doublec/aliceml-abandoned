@@ -4,7 +4,7 @@ IOBJS  = Win32.dll Canvas.dll Dialog.dll Helper.dll
 .il.dll:
 	ilasm -nologo -quiet -dll -out=$@ $<
 
-all: stow.exe $(OBJS) inspector
+all: stow.exe $(OBJS) inspector Base.dll
 
 inspector: $(IOBJS)
 
@@ -22,6 +22,10 @@ Dialog.dll: Dialog.cs Win32.dll Alice.dll
 
 Helper.dll: Helper.cs Alice.dll
 	csc -nologo -t:library -r:Alice.dll Helper.cs
+
+Base.dll: ../lib/bootstrap/Bootstrap.aus
+	stoc --noimplicitimport -c ../lib/bootstrap/Bootstrap.aus -o Base.il
+	ilasm /dll Base.il
 
 stow.exe: stow.cs Alice.dll
 	csc -nologo -t:exe -r:Alice.dll stow.cs
