@@ -20,12 +20,7 @@ import signature PERVASIVE_TYPE from "PERVASIVE_TYPE-sig"
 
 functor MkPervasiveType(val labid_false :	string
 			val labid_true :	string
-			val labid_nil :		string
-			val labid_cons :	string
-			val typid_zero :	string
-			val typid_succ :	string
 			val typid_bool :	string
-			val typid_list :	string
 			val typid_int :		string
 			val typid_word :	string
 			val typid_real :	string
@@ -35,6 +30,7 @@ functor MkPervasiveType(val labid_false :	string
 			val typid_array :	string
 			val typid_ref :		string
 			val typid_exn :		string
+			val typid_strict :	string
 			val typid_conarrow :	string
 			val valid_match :	string
 			val valid_bind :	string
@@ -52,14 +48,9 @@ struct
 
     val lab_false	= Label.fromString labid_false
     val lab_true	= Label.fromString labid_true
-    val lab_nil		= Label.fromString labid_nil
-    val lab_cons	= Label.fromString labid_cons
 
     val name_pervasive	= Name.ExId modid_pervasive
-    val name_zero	= Name.ExId typid_zero
-    val name_succ	= Name.ExId typid_succ
     val name_bool	= Name.ExId typid_bool
-    val name_list	= Name.ExId typid_list
     val name_int	= Name.ExId typid_int
     val name_word	= Name.ExId typid_word
     val name_real	= Name.ExId typid_real
@@ -69,19 +60,14 @@ struct
     val name_array	= Name.ExId typid_array
     val name_ref	= Name.ExId typid_ref
     val name_exn	= Name.ExId typid_exn
+    val name_strict	= Name.ExId typid_strict
     val name_conarrow	= Name.ExId typid_conarrow
 
     val name_match	= Name.ExId valid_match
     val name_bind	= Name.ExId valid_bind
 
     val paths		= PathSet.new()
-    val path_zero	= Path.pervasive typid_zero
-    val _		= PathSet.insert(paths, path_zero)
-    val path_succ	= Path.pervasive typid_succ
-    val _		= PathSet.insert(paths, path_succ)
     val path_bool	= Path.pervasive typid_bool
-			  (* non-generative *)
-    val path_list	= Path.pervasive typid_list
 			  (* non-generative *)
     val path_int	= Path.pervasive typid_int
     val _		= PathSet.insert(paths, path_int)
@@ -101,13 +87,12 @@ struct
     val _		= PathSet.insert(paths, path_ref)
     val path_exn	= Path.pervasive typid_exn
     val _		= PathSet.insert(paths, path_exn)
+    val path_strict	= Path.pervasive typid_strict
+    val _		= PathSet.insert(paths, path_strict)
     val path_conarrow	= Path.pervasive typid_conarrow
     val _		= PathSet.insert(paths, path_conarrow)
 
-    val con_zero	= (STAR, CLOSED, path_zero)
-    val con_succ	= (ARROW(STAR,STAR), CLOSED, path_succ)
     val con_bool	= (STAR, CLOSED, path_bool)
-    val con_list	= (ARROW(STAR,STAR), CLOSED, path_list)
     val con_int		= (STAR, CLOSED, path_int)
     val con_word	= (STAR, CLOSED, path_word)
     val con_real	= (STAR, CLOSED, path_real)
@@ -117,10 +102,9 @@ struct
     val con_vec		= (ARROW(STAR,STAR), CLOSED, path_vec)
     val con_array	= (ARROW(STAR,STAR), CLOSED, path_array)
     val con_ref		= (ARROW(STAR,STAR), CLOSED, path_ref)
-    val con_conarrow	= (ARROW(STAR,ARROW(STAR,STAR)), CLOSED, path_conarrow)
+    val con_strict	= (ARROW(STAR,STAR), CLOSED, path_strict)
+    val con_conarrow	= (ARROW(STAR,STAR), CLOSED, path_conarrow)
 
-    val typ_zero	= Type.inCon con_zero
-    val typ_succ	= Type.inCon con_succ
     val typ_int		= Type.inCon con_int
     val typ_word	= Type.inCon con_word
     val typ_real	= Type.inCon con_real
@@ -130,25 +114,14 @@ struct
     val typ_array	= Type.inCon con_array
     val typ_ref		= Type.inCon con_ref
     val typ_exn		= Type.inCon con_exn
+    val typ_strict	= Type.inCon con_strict
     val typ_conarrow	= Type.inCon con_conarrow
 
-    val typ_list	= Type.unknown(ARROW(STAR,STAR))
-    val var_list	= Type.var STAR
-    val typ_var		= Type.inVar var_list
-    val typ_cons	= Type.inTuple #[typ_var,Type.inApply(typ_list,typ_var)]
-
+    val typ_zero	= Type.inApply(typ_strict, Type.inTuple #[])
     val row_bool	= Type.extendRow(lab_false, typ_zero,
 			  Type.extendRow(lab_true, typ_zero, Type.emptyRow()))
-    val row_list	= Type.extendRow(lab_cons, typ_cons,
-			  Type.extendRow(lab_nil, typ_zero, Type.emptyRow()))
-
-    val typ_unit	= Type.inTuple #[]
     val typ_bool	= Type.inAbbrev(Type.inCon con_bool,
 					Type.inMu(Type.inSum row_bool))
-    val _		= Type.fill(typ_list,
-			    Type.inAbbrev(Type.inCon con_list,
-				Type.inMu(Type.inLambda(var_list,
-							Type.inSum row_list))))
 
 
     exception Lookup
@@ -163,8 +136,7 @@ struct
 	else if s = typid_array  then con_array
 	else if s = typid_ref    then con_ref
 	else if s = typid_exn    then con_exn
-	else if s = typid_zero   then con_zero
-	else if s = typid_succ   then con_succ
+	else if s = typid_strict then con_strict
 	else if s = typid_conarrow then con_conarrow
 	else raise Lookup
 end
