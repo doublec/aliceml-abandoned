@@ -2,8 +2,8 @@
 
 Current:
 
-- Look into type annotations
-- Syntactic constructor arity?
+- Runtime types
+- Intermediate verifier
 
 General:
 
