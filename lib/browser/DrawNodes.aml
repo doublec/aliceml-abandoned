@@ -387,8 +387,8 @@ struct
     and move (n,x,y) = 
 	let
 	    val group = getGroup(n)
-	    val (old_x,old_y) = Services.getPosition(group,
-						     !Settings.font)
+	    val old_x = itemGetFieldX1(group)
+	    val old_y = itemGetFieldY1(group)
 	    val dx = x - old_x
 	    val dy = y - old_y
             (*
