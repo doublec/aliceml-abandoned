@@ -10,13 +10,27 @@
  *   $Revision$
  *)
 
+import
+    structure BinIO
+from "../../lib/system/BinIO"
+
+import
+    structure Crash
+from "../infrastructure/Crash"
+
+import
+    structure StringMap
+from "../infrastructure/StringMap"
+
+import
+    signature PRIM_PICKLE
+from "PRIM_PICKLE-sig"
+
 structure PrimPickle :> PRIM_PICKLE =
     struct
 	open LargeInt
 
 	type id = int
-
-	structure StringMap = MkHashImpMap(StringHashKey)
 
 	type outstream = BinIO.outstream * id ref * id StringMap.t
 

@@ -10,6 +10,18 @@
  *   $Revision$
  *)
 
+import
+    structure Stamp
+from "../infrastructure/Stamp"
+
+import
+    structure FlatGrammar
+from "../backend-common/FlatGrammar"
+
+import
+    structure PickleGrammar
+from "PickleGrammar"
+
 signature ENVIRONMENT =
     sig
 	type t

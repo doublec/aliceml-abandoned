@@ -10,6 +10,42 @@
  *   $Revision$
  *)
 
+import
+    structure Assert
+from "../../lib/utility/Assert"
+
+import
+    structure Url
+from "../../lib/utility/Url"
+
+import
+    structure Crash
+from "../infrastructure/Crash"
+
+import
+    structure EmptyContext
+from "../infrastructure/EmptyContext"
+
+import
+    structure StampSet
+from "../common/StampSet"
+
+import
+    structure FlatGrammar
+from "../backend-common/FlatGrammar"
+
+import
+    signature PickleGrammar
+from "PickleGrammar"
+
+import
+    structure Environment
+from "Environment"
+
+import
+    signature CODE_GEN_PHASE
+from "CODE_GEN_PHASE-sig"
+
 structure CodeGenPhase: CODE_GEN_PHASE =
     struct
 	structure C = EmptyContext

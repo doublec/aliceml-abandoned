@@ -10,6 +10,18 @@
  *   $Revision$
  *)
 
+import
+    structure Stamp
+from "../infrastructure/Stamp"
+
+import
+    structure FlatGrammar
+from "../backend-common/FlatGrammar"
+
+import
+    signature PICKLE_GRAMMAR
+from "PICKLE_GRAMMAR-sig"
+
 structure PickleGrammar :> PICKLE_GRAMMAR =
     struct
 	type sign = FlatGrammar.sign

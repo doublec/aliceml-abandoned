@@ -10,6 +10,30 @@
  *   $Revision$
  *)
 
+import
+    structure Crash
+from "../infrastructure/Crash"
+
+import
+    structure Unsafe
+from "../../lib/system/Unsafe"   (*--** does not exist *)
+
+import
+    structure StampMap
+from "../common/StampMap"
+
+import
+    structure PrimPickle
+from "PrimPickle"
+
+import
+    structure PickleGrammar
+from "PickeGrammar"
+
+import
+    signature OUTPUT_PICKLE
+from "OUTPUT_PICKLE-sig"
+
 structure OutputPickle :> OUTPUT_PICKLE =
     struct
 	open PickleGrammar

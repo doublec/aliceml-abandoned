@@ -10,6 +10,30 @@
  *   $Revision$
  *)
 
+import
+    structure Crash
+from "../infrastructure/Crash"
+
+import
+    structure Stamp
+from "../infrastructure/Stamp"
+
+import
+    structure StampMap
+from "../common/StampMap"
+
+import
+    structure FlatGrammar
+from "../backend-common/FlatGrammar"
+
+import
+    structure PickleGrammar
+from "PickleGrammar"
+
+import
+    signature ENVIRONMENT
+from "ENVIRONMENT-sig"
+
 structure Environment :> ENVIRONMENT =
     struct
 	type scope = PickleGrammar.idRef StampMap.t
