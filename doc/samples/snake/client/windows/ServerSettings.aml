@@ -19,13 +19,31 @@ import structure Wait       from "Wait"
 
 
 
-structure ServerSettings =
+structure ServerSettings :> 
+sig
+
+    type server_settings_widget
+
+    type ready_cb = (string * Color.color) option * Config.config -> 
+	                                                          string option
+
+    type cancel_cb = unit -> unit
+
+    val mkServerSettingsWindow : Gtk.object * ready_cb * cancel_cb -> 
+	                                                 server_settings_widget
+
+    val alreadyConn : server_settings_widget -> (string * Color.color) list
+
+end =
 struct
 
+    type server_settings_widget = {object : Gtk.object,
+				   alreadyConn : (string * Color.color) list}
+	
 
+    fun alreadyConn s = !(#alreadyConn s)
 	
-	
-    fun mkServerSettings ({startServer}, {reset, gameMode}) = 
+    fun mkServerSettings (parent, readyCB, cancelCB) =
 	let
 
 	    val serverSettings     = Gtk.windowNew Gtk.WINDOW_TOPLEVEL
@@ -132,8 +150,9 @@ struct
 	    val (levelsAdjust, levelsScale) =
 		mkhScale (levelsHBox, "Levels", 50.0, 1.0, 31.0)
 
+	    val alreadyConn = ref nil
 
-	    fun mainQuit () = (Gtk.widgetDestroy serverSettings; reset NONE)
+	    fun mainQuit () = (Gtk.widgetDestroy serverSettings; cancelCB ())
 		
 	    fun changedNameText () = 
 		if Gtk.entryGetText nameText = ""
@@ -256,11 +275,10 @@ struct
 	    fun okClickedCB spectator = 
 		let
 		    val config = readValues ()
-		    val alreadyConn = ref nil
 
-		    val return = 
-			(if Gtk.toggleButtonGetActive spectator
-			    then startServer (NONE, config)
+		    fun return () = 
+			if Gtk.toggleButtonGetActive spectator
+			    then readyCB (NONE, config)
 			else
 			    let
 				val name  = Gtk.entryGetText nameText
@@ -270,20 +288,20 @@ struct
 			    in
 				alreadyConn := [(name, color)];
                                 print "start\n";
-				startServer (SOME (name, color), config) before print "end\n"
-			    end) handle Error.Error msg => SND msg
+				readyCB (SOME (name, color), config) 
+				before print "end\n"
+			    end
 
 		in
 		    Gtk.widgetDestroy serverSettings;
-		    case return of 
-			FST (mStart, guiJoin, serverUrl) => 
-			           Wait.mkWaitingWindow 
-				       (!alreadyConn, mStart, 
-					guiJoin, serverUrl, {reset, gameMode})
-		      | SND     errorMsg => reset (SOME ("ERROR!!", errorMsg))
+		    case return () of 
+			NONE => ()
+		      | SOME errorMsg => 
+			        Text.mkTextWindow (parent, "ERROR!", errorMsg)
 		end
 
 	in
+	    Gtk.windowSetParent (serverSettings, parent);
 	    Gtk.windowSetModal (serverSettings, true);
 	    Gtk.windowSetTitle (serverSettings, "Server Settings");
 	    Gtk.windowSetPosition (serverSettings, Gtk.WIN_POS_CENTER);
@@ -386,7 +404,10 @@ struct
 	    
 	    Gtk.containerAdd (serverSettings, dialogVBox);
 
-	    Gtk.widgetShowAll serverSettings
+	    Gtk.widgetShowAll serverSettings;
+
+	    {object = serverSettings,
+	     alreadyConn}
 
 	end
 

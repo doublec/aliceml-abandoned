@@ -87,7 +87,39 @@ fun highscoreToString score =
 
 
 
-structure Main =
+structure Main :> 
+sig
+
+    type mainwindow_type
+
+    type start_client_cb = mainwindow_type -> unit
+
+    type start_server_cb = mainwindow_type -> unit
+
+    type start_single_cb = mainwindow_type -> unit
+	
+    type quit_cb         = mainwindow_type -> unit
+
+    type give_up_cb      = mainwindow_type -> unit
+
+    val mkMainWindow :   start_client_cb * start_server_cb * start_single_cb * 
+	                                give_up_cb * quit_cb -> mainwindow_type
+
+    val gameMode :       mainwindow_type -> unit
+
+    val getWindow :      mainwindow_type -> Gtk.object
+
+    val levelStart :     mainwindow_type * Protocol.level_info -> unit
+
+    val levelTick :      mainwindow_type * Highscore.points list option * 
+	                               Protocol.diff list * Pos.pos option * 
+                                                              Time.time -> unit
+ 
+    val levelCountDown : mainwindow_type * int -> unit
+
+    val gameFinished :   mainwindow_type * Highscore.highscore -> unit
+
+end =
 struct
 
     (* the modes in which the window can exists *)
@@ -97,8 +129,49 @@ struct
     datatype mode = START | GAME of radar_visibility
 
 
+
+    type mainwindow_type = {object : Gtk.object,
+			    arena  : ArenaWidget.arena_widget,
+			    radar  : RadarWidget.radar_widget,
+			    timeLabel : Gtk.object,
+			    mode : mode,
+			    updatePoints : ,
+			    update : ,
+			    countdown : ,
+			    displayCountDown :,
+			    gameMode :  -> unit,
+			    menuGiveUpItem : Gtk.object,
+			    menuMenuItem : Gtk.object,
+			    rightHBox : Gtk.object,
+			    pointsLabel : Gtk.object}
+
+    fun getWindow w = #object w
+
+    fun gameFinished (p, s) = TextWindow.mkTextWindow (p, "Highscore", 
+						       highscoreToString s)
+
+    fun levelStart (p, levelInf) = 
+	(ArenaWidget.initLevel (#arena p, levelInf);
+	 RadarWidget.initLevel (#radar p, levelInf);
+	 Gtk.labelSet Text (#timeLabel p, ""))
+
+    fun levelTick (p, points, diffs, pos, time) = 
+	(Gtk.labelSetText (#timeLabel, (timeToString time) ^ "\n");
+	 #update p (diffs, pos, #arena p, #radar p);
+	 Option.app (#updatePoints p) (pts, #pointsLabel p))
+	
+    fun levelCountDown (p, n) = 
+	             #countdown p (#displayCountDown p, n, #object p, #arena p)
+
+    fun gameMode p = #gameMode p {mode = #mode p,
+				  menuGiveUpItem = #menuGiveUpItem p,
+				  menuMenuItem = #menuMenuItem p,
+				  canvas = #canvas p,
+				  rightHBox = #rightHBox p}
+				  
+		    
     (* builds the mainWindow, starting in START mode *)
-    fun mkMainWindow ({connect, startServer}, gui) = 
+    fun mkMainWindow (startClientCB, startServerCB, startSingleCB, quitCB) = 
 	let
 	    val _ = log ("mkMainWindow", "starts")
 	    val mainWindow     = Gtk.windowNew Gtk.WINDOW_TOPLEVEL
@@ -140,6 +213,98 @@ struct
             val radar          = RadarWidget.initialize ()
 	    val radarWidget    = RadarWidget.toObject radar
 
+	    val displayCountDown    = ref NONE
+
+	    fun update (difflist, pos, arena, radar)  = 
+		(ArenaWidget.update (arena, difflist, pos);
+		 RadarWidget.update (radar, difflist, pos))
+		
+	    fun countdown (display, n, win, arena)  =
+		let 
+		    val _ = log ("countdown", n)
+		    val displ = case !display of
+			NONE    =>
+			    let 
+				val (width, height) = 
+				    Gtk.windowGetSize win
+				val d = 
+				    ArenaWidget.startCountDown 
+				    (arena, width div 2, height div 2)
+			    in
+				displayCountDown := SOME d; d
+			    end
+		      |   SOME d  => d
+		in
+		    if n = 0 
+			then (displ NONE; display := NONE)
+		    else displ (SOME n)
+		end
+
+	    (* updates the pointsLabel. different points are separated
+	     by newlines *)
+	    fun updatePoints (plist, pointsLabel) =
+		let
+		    val _ = log ("updatePoints", "starts")
+		    fun pToString p = (if p <= 9 then "    " 
+				       else if p <= 99 then "   "
+				       else if p <= 999 then "  " 
+				       else if p <= 9999 then " "
+				       else "") ^ (Int.toString p)
+			
+		    fun toString' ({name, 
+				    color, 
+				    points, 
+				    gamePoints,
+				    lives = NONE}, str) =
+			(str ^ "<span foreground='" 
+			 ^ (Color.toHexStr color) ^ "'><i>" 
+			 ^ name ^ ":\n" 
+			 ^ (pToString points) ^ "  +  " 
+			 ^ (pToString gamePoints) ^ "\n\n</i></span>")
+		      | toString' ({name, 
+				    color, 
+				    points, 
+				    gamePoints,
+				    lives = SOME lives}, str) =
+			(str ^ "<span foreground='" 
+			 ^ (Color.toHexStr color) ^ "'><i>" 
+			 ^ name ^ ":\n" 
+			 ^ (pToString points) ^ "  +  " 
+			 ^ (pToString gamePoints)
+			 ^ " | lives: " ^ (Int.toString lives) 
+			 ^ "\n\n</i></span>")
+		    fun toString () = List.foldl toString' "" plist
+		in
+		    log("updatePoints", "ends with setting markups") 
+		    before
+		    Gtk.labelSetMarkup (pointsLabel, toString ())
+		end
+		
+	    fun gameMode z =
+		((#mode z) := GAME(false);
+		 Gtk.widgetSetSensitive (#menuGiveUpItem z, true);
+		 Gtk.widgetSetSensitive (#menuMenuItem z, false);
+		 Gtk.widgetShow (#canvas z);
+		 Gtk.widgetShow (#rightHBox z);
+		 (* update procedures *)
+		 turn' := turn;
+		 changeView' := changeView;
+		 giveUp' := giveUp;
+		 disconnect' := disconnect;
+		 log ("gameMode", "ends"))
+
+	    val mainWindowWidget = {object = mainWindow,
+				    radar,
+				    arena,
+				    mode,
+				    displayCountDown,
+				    update,
+				    updatePoints,
+				    timeLabel,
+				    countdown,
+				    gameMode}
+				    
+
 	    (* resets the window in START mode *)
 	(*    fun reset' () =
 		(print "resetting window\n";
@@ -150,16 +315,13 @@ struct
                  Gtk.widgetHide radarWidget;
 		 mode := START)*)
 
-	    fun reset' () = (Gtk.widgetDestroy mainWindow;
-	                     mkMainWindow ({connect, startServer}, gui))
+	    fun reset' () = Gtk.widgetDestroy mainWindow
 
 	    (* resets window and also shows [msg] when needed *)
 	    fun reset NONE = reset' ()
 	      | reset (SOME (title, msg)) = (Text.mkTextWindow (title, msg);
                                              reset' ())
 		
-	    val _ = if (Future.isFuture $ Promise.future gui) 
-		        then Promise.fulfill (gui, {reset}) else ()
 
 	    (* initializing the procedures for modelGame *)
 	    val turn'       = ref (fn _ => ())
@@ -167,122 +329,9 @@ struct
 	    val giveUp'     = ref (fn () => ())
 	    val disconnect' = ref (fn () => ())
 		
-	    (* calling the procedure gameMode turns main window in GAME mode,
-	     by setting and fullfilling guiGame and updating functionality *)
-	    fun gameMode ({disconnect}, {turn, changeView, giveUp}, guiGameP) =
-		let
-		    val _ = log ("gameMode", "fullfilling guiGame")
-		    fun gameFinished h = 
-			(reset (SOME ("Highscore", highscoreToString h)))
-			
-		    fun update (difflist, pos)  = 
-                        (ArenaWidget.update (arena, difflist, pos);
-	                 RadarWidget.update (radar, difflist, pos))
-		
-                    val displayCountDown    = ref NONE
-                    
-                    fun countdown n =
-                        let 
-                            val _ = log ("countdown", n)
-			    val displ = case !displayCountDown of
-                                NONE    =>
-				let 
-				    val (width, height) = 
-					Gtk.windowGetSize mainWindow
-				    val d = 
-					ArenaWidget.startCountDown 
-					(arena, width div 2, height div 2)
-                                in
-                                    displayCountDown := SOME d; d
-                                end
-                            |   SOME d  => d
-                        in
-                            if n = 0 
-                                then (displ NONE; displayCountDown := NONE)
-                            else displ (SOME n)
-                        end
-		   		    
-		    (* updates the pointsLabel. different points are separated
-		     by newlines *)
-		    fun updatePoints plist =
-			let
-			    val _ = log ("updatePoints", "starts")
-			    fun pToString p = (if p <= 9 then "    " 
-						else if p <= 99 then "   "
-						else if p <= 999 then "  " 
-						else if p <= 9999 then " "
-			  			else "") ^ (Int.toString p)
 
-			    fun toString' ({name, 
-					     color, 
-					     points, 
-					     gamePoints,
-                                             lives = NONE}, str) =
-				(str ^ "<span foreground='" 
-                                  ^ (Color.toHexStr color) ^ "'><i>" 
-                                  ^ name ^ ":\n" 
-				  ^ (pToString points) ^ "  +  " 
-				  ^ (pToString gamePoints) ^ "\n\n</i></span>")
-			      | toString' ({name, 
-					     color, 
-					     points, 
-					     gamePoints,
-                                             lives = SOME lives}, str) =
-                                (str ^ "<span foreground='" 
-                                  ^ (Color.toHexStr color) ^ "'><i>" 
-                                  ^ name ^ ":\n" 
-				  ^ (pToString points) ^ "  +  " 
-				  ^ (pToString gamePoints)
-				  ^ " | lives: " ^ (Int.toString lives) 
-                                  ^ "\n\n</i></span>")
-			    fun toString () = List.foldl toString' "" plist
-			in
-			    log("updatePoints", "ends with setting markups") 
-			       before
-			    Gtk.labelSetMarkup (pointsLabel, toString ())
-			end
-		    
-		    fun startLevel levinf = 
-			(ArenaWidget.initLevel (arena, levinf);
-			 RadarWidget.initLevel (radar, levinf);
-			 Gtk.labelSetText (timeLabel, ""))
-			
-		    fun tick (pts, diffs, headPos, remainingTime) =
-			let
-			    val _ = log ("tick", "starts")
-			    val timeStr = (timeToString remainingTime) ^ "\n"
-			in
-			    Gtk.labelSetText (timeLabel, timeStr);
-                            update (diffs, headPos);
-                            log ("tick", "ends") 
-			    before Option.app updatePoints pts
-			end
-	
-		in
-		    mode := GAME(false);
-		    Gtk.widgetSetSensitive (menuGiveUpItem, true);
-		    Gtk.widgetSetSensitive (menuMenuItem, false);
-		    Gtk.widgetShow canvas;
-		    Gtk.widgetShow rightHBox;
-		    if (Future.isFuture $ Promise.future guiGameP) 
-		    then Promise.fulfill (guiGameP, {startLevel, 
-						    countdown, 
-						    tick,
-						    gameFinished}) else ();
-		    (* update procedures *)
-		    turn' := turn;
-		    changeView' := changeView;
-		    giveUp' := giveUp;
-		    disconnect' := disconnect;
-		    log ("gameMode", "ends")
-		end
 
-	    fun giveUp () = (log("giveUp", "has been called");!giveUp' ()) 
-	          handle Error.Error msg => reset (SOME ("ERROR!", msg))
 
-	    fun disconnect () = (log("disconnect", "hast been called");
-				 !disconnect' ())
-	   	  handle Error.Error msg => reset (SOME ("ERROR!", msg))
 
 
 	    (* the different behaviour by pressing the quit button *)
@@ -308,19 +357,18 @@ struct
 	    (* procedure called by pressing Client - button *)
 	    fun startClient () = 
                   (log ("startClient", "has been called");
-		   Connection.mkConnectToServer ({connect}, {reset, gameMode}))
- 	               handle Error.Error msg => reset (SOME ("Error!", msg))
+		   startClientCB bla)
 	    (* procedure called by pressing Server - button *)
 	    fun startMultiPlayer () = 
 		  (log ("startMultiPlayer", "has been called");
-		   ServerSettings.mkServerSettings ({startServer}, 
-                                                            {reset, gameMode}))
- 	               handle Error.Error msg => reset (SOME ("Error!", msg))
+		   startServerCB bla)
             (* procedure called by pressing SinglePlayer - button *)
 	    fun startSinglePlayer () = 
 		  (log ("startSinglePlayer", "has been called");
-		   EnterName.mkEnterName {startServer, reset, gameMode})
- 	               handle Error.Error msg => reset (SOME ("Error!", msg))
+		   startSingleCB bla)
+	    (* procedure called by pressing GiveUp - button *)
+	    fun giveUp () = (log ("giveUp", "has been called");
+			     giveUpCB bla)
 
 	    (* converts canvasEvents into direction or view_hint *)
 	    fun key keyval = 

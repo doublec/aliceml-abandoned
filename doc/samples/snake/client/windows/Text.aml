@@ -15,10 +15,11 @@ import structure Gtk       from "GtkSupport"
 structure Text =
 struct
 
+    type text_widget = Gtk.object
 
     (* [mkTextWindow(title, mode)] builds a text window 
      with title 'title' and text 'mode' *)
-    fun mkTextWindow (title, mode) = 
+    fun mkTextWindow (parent, title, mode) = 
 	let
 
 	    val textWindow  = Gtk.windowNew Gtk.WINDOW_TOPLEVEL
@@ -28,7 +29,7 @@ struct
 	    val label       = Gtk.labelNew mode
 
 	in
-
+	    Gtk.widgetSetParentWindow (textWindow, parent);
 	    Gtk.windowSetTitle (textWindow, title);
 	    Gtk.windowSetModal (textWindow, true);
 	    Gtk.windowSetPosition (textWindow, Gtk.WIN_POS_CENTER);
@@ -47,7 +48,9 @@ struct
 	    Gtk.boxPackStart (dialogVBox, buttonHBox, false, false, 5);
 
 	    Gtk.containerAdd (textWindow, dialogVBox);
-    	    Gtk.widgetShowAll textWindow	    
+    	    Gtk.widgetShowAll textWindow;
+
+	    textWindow
 
 	end
 

@@ -17,12 +17,35 @@ import structure Color      from "../../common/Color"
 import structure Error      from "Error"
 
 
-structure Wait =
+structure Wait :> 
+sig
+
+    type wait_widget
+
+    type ready_cb = unit -> string option
+
+    type cancel_cb = unit -> unit
+
+    val mkWaitWindow       : Gtk.object * ready_cb * cancel_cb * string -> 
+	                                                            wait_widget
+
+    val playersJoined      : wait_widget * (string * Color.color) list -> unit
+
+    val playerDisconnected : wait_widget * string * Color.color -> unit
+
+    val gameStarted        : wait_widget -> unit
+
+end =
 struct
-    val colormap = Gdk.colormapGetSystem ()
+
+    type wait_widget = {object : Gtk.object,
+			insertPlayer : string * Color.color -> unit,
+			insertColor : Color.color -> unit,
+			removePlayer : string * Color.color -> unit,
+			removeColor : Color.color -> unit}
 
     (* converts a Color.color into a Gdk.color *)
-    fun colorToGdkColor c =
+    fun colorToGdkColor (colormap, c) =
 	let
 	    val (r, g, b) = Color.rgb c
 	    fun conv n = Real.round (65535.0 * n)
@@ -32,9 +55,18 @@ struct
 	    color
 	end
 
+    (* inserts all connected players into text widget *)
+    fun playersJoined (p, players) = List.app (#insertPlayer p) players
+	
+    (* removes one player from text widget *)
+    fun playerDisconnected (p, player) = #removePlayer p player
+	
+    fun gameStarted _ = ()
+    (* cause in server mode this signal should never appear *)
+
+
     (* builds the waiting window *)
-    fun mkWaitingWindow (alreadyConnected, {start, disconnect}, 
-			 guiJoin, serverUrlStr, {reset, gameMode}) =
+    fun mkWaitingWindow (parent, alreadyConn, readyCB, cancelCB, ticket) =
 	let
 	    val waiting          = Gtk.windowNew Gtk.WINDOW_TOPLEVEL
 	    val dialogVBox       = Gtk.vboxNew (false, 0)
@@ -53,12 +85,14 @@ struct
 	    val playerWindow      = 
 		Gtk.scrolledWindowNew (Gtk.null, Gtk.null)
 
+	    val colormap = Gdk.colormapGetSystem ()
+
 	    (* [insert(name, color)] inserts one player with name and color in
 	       connected-players list *)
 	    fun insertPlayer (name, color) = 
 		let
 		    val text  = name ^ " has connected!\n"
-		    val color = colorToGdkColor color
+		    val color = colorToGdkColor (colormap, color)
 		in
 		    Gtk.textWidgetInsert (playerText, text, color)
 		end
@@ -68,50 +102,26 @@ struct
 	    fun removePlayer (name, color) =
 		let
 		    val text  = name ^ " has disconnected!\n"
-		    val color = colorToGdkColor color
+		    val color = colorToGdkColor (colormap, color)
 		in
 		    Gtk.textWidgetInsert (playerText, text, color)
 		end
 		
 	    (* the mainQuit procedure resets also the used refs *)
-	    fun mainQuit () = (disconnect (); Gtk.widgetDestroy waiting;
-		               reset NONE)
+	    fun mainQuit () = (Gtk.widgetDestroy waiting; cancelCB ())
 		
-		
-	    (* inserts all connected players into text widget *)
-	    val playersJoined = List.app insertPlayer
-		
-	    (* removes one player from text widget *)
-	    val playerDisconnected = removePlayer
-		
-	    fun gameStarted () = ()
-	    (* cause in server mode this signal never appears *)
-		
-		
-	    (* fulfills the guiJoin promise, if already fulfilled
-               nothing will be done *)
-	    val _ = if (Future.isFuture (Promise.future guiJoin))
-			then Promise.fulfill (guiJoin, {playersJoined,
-							playerDisconnected,
-							gameStarted})
-		    else ()
-			
 	    (* the signal the server gives to start the game,
 	     also resets the refs and destroyes the window *)
-	    fun start' () = 
+	    fun start () = 
 		(Gtk.widgetDestroy waiting;
-		 let
-		     fun return () = start () handle Error.Error msg => SND msg
-		 in
-		     case return () of
-			 FST (mGame, guiGame) => 
-			     gameMode ({disconnect}, mGame, guiGame)
-		       | SND   errorMsg       =>
-			     reset (SOME ("ERROR!!", errorMsg))
-		 end)
+		 case readyCB () of
+		     NONE          => ()
+		   | SOME errorMsg => 
+			      Text.mkTextWindow (parent, "ERROR!", errorMsg))
 	in
 
-	    playersJoined alreadyConnected;
+	    playersJoined alreadyConn;
+	    Gtk.windowSetParent (waiting, parent);
 	    Gtk.windowSetModal (waiting, true);
 	    Gtk.windowSetTitle (waiting, "Waiting...");
 	    Gtk.windowSetPosition (waiting, Gtk.WIN_POS_CENTER);
@@ -121,7 +131,7 @@ struct
 	    Gtk.signalConnect (waiting, "delete-event", 
 			       fn _ => mainQuit ());
 	    Gtk.signalConnect (startButton, "clicked",
-			       fn _ => start' ());
+			       fn _ => start ());
 	    Gtk.signalConnect (disconnectButton, "clicked", 
 			       fn _ => mainQuit ());
 	    
@@ -159,7 +169,13 @@ struct
 	    
 	    (* pack everything in container and show it all *)
 	    Gtk.containerAdd (waiting, dialogVBox);
-	    Gtk.widgetShowAll waiting
+	    Gtk.widgetShowAll waiting;
+ 
+	    {object = waiting,
+	     insertPlayer,
+	     insertColor,
+	     removePlayer,
+	     removeColor}
 	    
 	end
     

@@ -18,7 +18,17 @@ import structure Color  from "../../common/Color"
 import structure Error  from "Error"
 
 
-structure EnterName =
+structure EnterName :> 
+sig
+    
+    type ready_cb  = (string * Color.color) option * Config.config -> 
+	                                                       string option
+
+    type cancel_cb = unit -> unit
+
+    val mkEnterName : Gtk.object * ready_cb * cancel_cb -> unit
+
+end =
 struct
 
     val colormap = Gdk.colormapGetSystem ()
@@ -36,7 +46,7 @@ struct
 
 
     (* builds the player settings window *)
-    fun mkEnterName {startServer, reset, gameMode} =
+    fun mkEnterName (parent, readyCB, cancelCB) = 
 	let
 
 	    val enterName     = Gtk.windowNew Gtk.WINDOW_TOPLEVEL
@@ -60,35 +70,9 @@ struct
 	    fun insertColors colors = 
 		Gtk.comboSetPopdownStrings (colorCombo, colors)
 
-	    fun removeColor col =
-		let
-		    val c = Color.toString col
-		    val colors = !allColors
-		    fun removeColor' () = List.filter (fn x => x <> c) colors
-		    val spareColors = removeColor' ()
-		in
-		    allColors := spareColors;
-		    Gtk.comboSetPopdownStrings (colorCombo, spareColors)
-		end
-
-	    fun insertColor col = 
-		let
-		    val colors = (Color.toString col) :: (!allColors)
-		in
-		    allColors := colors;
-		    Gtk.comboSetPopdownStrings (colorCombo, colors)
-		end
-
-	    val colorlock = Lock.lock ()
-
-	    val removeColor = Lock.sync colorlock removeColor
-
-	    val insertColor = Lock.sync colorlock insertColor
-		
 	    (* the mainQuit procedure. returns to the main window *)
-	    fun mainQuit () = 
-		(Gtk.widgetDestroy enterName;
-		 reset NONE)
+	    fun mainQuit () = (Gtk.widgetDestroy enterName;
+			       cancelCB ())
 
 
 	    (* called, if the client has changed the nameText widget.
@@ -105,32 +89,19 @@ struct
 		    val color = Gtk.entryGetText 
 			(Gtk.comboGetFieldEntry colorCombo)
 		    val color = Color.fromString color
-		    fun return () = 
-			(startServer (SOME (name, color), Config.defaultSingle)) handle Error.Error msg => SND msg
+		    fun result () = 
+			readyCB (SOME (name, color), Config.defaultSingle)
 		in
-		    Gtk.widgetDestroy enterName;
-		    case return () of
-			FST ({start, disconnect}, guiJoinP, _) => 
-			    let
-				val guiJoin = {playersJoined = fn _ => (),
-					       playerDisconnected = fn _ => (),
-					       gameStarted = fn _ => ()}
-			    in
-				Promise.fulfill (guiJoinP, guiJoin);
-				(case start () of
-				     FST (mGame, guiGame) => 
-					 gameMode ({disconnect}, mGame, 
-						   guiGame)
-				   | SND   errorMsg       => 
-					 reset (SOME ("ERROR!!", errorMsg)))
-			    end
-		      | SND errorMsg   => reset (SOME ("ERROR!!", errorMsg))
+		    case result () of
+			NONE     => Gtk.widgetDestroy enterName
+		      | SOME msg => Text.mkTextWindow ("ERROR!", msg)
 		end
 
 	in
 
 	    (* inserts all available colors into the color combo *)
 	    insertColors (!allColors);
+	    Gtk.widgetSetParentWindow (enterName, parent);
 	    Gtk.windowSetModal (enterName, true);
 	    Gtk.windowSetTitle (enterName, "Please choose name and color");
 	    Gtk.windowSetPosition (enterName, Gtk.WIN_POS_CENTER);
