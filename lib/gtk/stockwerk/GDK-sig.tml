@@ -1,13 +1,14 @@
 import structure GtkTypes from "GtkTypes"
 import structure PangoEnums from "PangoEnums"
+import structure GdkEnums from "GdkEnums"
 
 signature GDK =
 sig
 
     type object = GtkTypes.object
     exception TypeMismatch of string
-    type arg = GtkTypes.arg
 
+<<< "GTK_TYPES-sig.aml" >>>
 <<< "GDK_ENUMS-sig.aml" >>>
 <<< "GDK_UNSAFE-sig.aml" >>>
 
