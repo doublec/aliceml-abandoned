@@ -39,7 +39,7 @@ DEFINE2(UnsafeMkRefMap_delete) {
 
 DEFINE1(UnsafeMkRefMap_deleteAll) {
   DECLARE_HASH_TABLE(table, x0);
-  Error("UnsafeMkRefMap.deleteAll not implemented"); //--** to be done
+  table->Clear();
   RETURN_UNIT;
 } END
 
