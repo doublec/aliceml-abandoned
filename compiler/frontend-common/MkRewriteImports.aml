@@ -390,7 +390,7 @@ val _=TextIO.print("\n")
 *)
 	    val _    = PathMap.union(#mod b, #mod b')
 	    val _    = if not(!Switches.Language.supportRtt) then () else
-		       DynMatch.match'(rea, loadMod(desc,url), j)
+		       DynMatch.matchWith(rea, loadMod(desc,url), j)
 (*DEBUG
 fun prPath p = TextIO.print(" " ^ PrettyPrint.toString(PPPath.ppPath p, 100) ^ "#" ^ Int.toString(Path.hash p))
 fun prTyp t = TextIO.print(PrettyPrint.toString(PPType.ppTyp t, 75))
