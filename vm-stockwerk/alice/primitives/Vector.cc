@@ -11,5 +11,6 @@
 //
 
 #define XVector Vector
+#define REQUEST_ELEMS_INT 0
 
 #include "Vector.icc"
