@@ -1,6 +1,7 @@
+NJ
 CM
-Lexer.lex.*
-Parser.grm.*
+*.lex.*
+*.grm.*
 ~*
 [a-z]*.sml
 *.x86-linux
