@@ -15,18 +15,23 @@
 
 
   <H1>
-  oz<BR>
-  for<BR>
-  lightning.<BR>
+<!--
+  <TABLE cellpadding=8 bgcolor=white>
+    <TR><TD>
+      <IMG class=logo src="../stockhausen.gif">
+    </TD></TR>
+  </TABLE>
+  <BR>
+-->
+  stock<BR>
+  hausen.<BR>
   <BR>
   <BR>
   <?php echo($chapter) ?>
   <BR>
   </H1>
 
-<!--
   <IMG align="right" src="../stockhausen.gif">
--->
 
   <?php
     include("menu.php3")
