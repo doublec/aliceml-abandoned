@@ -20,6 +20,7 @@
 #include "emulator/Interpreter.hh"
 #include "emulator/TaskStack.hh"
 #include "emulator/Transients.hh"
+#include "emulator/ByneedInterpreter.hh"
 
 word Scheduler::root;
 ThreadQueue *Scheduler::threadQueue;
