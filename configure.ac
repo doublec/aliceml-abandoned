@@ -30,7 +30,7 @@ dnl     checks for system services
 case $(uname) in
     CYGWIN*)
 	SEAM_MACHINE_FLAGS=-mno-cygwin
-	SEAM_LDFLAGS = 
+	SEAM_LDFLAGS=
 	SEAM_LIBS="-lwsock32 -lmsvcrt"
 	;;
     *)
