@@ -60,7 +60,7 @@
 #include "generic/Authoring.hh"
 #include "generic/JitterGenericData.hh"
 
-SeamDll void InitSeam();
+extern "C" SeamDll void InitSeam();
 
 // These must be extern "C" because the symbols are accessed
 // via GetProcAddress/dlsym.  We cannot use the SeamDll macro
