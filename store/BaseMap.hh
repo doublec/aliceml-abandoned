@@ -63,7 +63,7 @@ public:
   SeamMemberDll word Get(word key);
   SeamMemberDll word CondGet(word key, word alternative); 
 
-  u_int GetSize() {
+  SeamMemberDll u_int GetSize() {
     return (u_int) Store::WordToInt(GetArg(COUNTER_POS));
   }
   void Clear() {
@@ -79,7 +79,7 @@ public:
     return (GetCounter() == 0);
   }
 
-  void Apply(item_apply func);
+  SeamMemberDll void Apply(item_apply func);
 
   static SeamMemberDll BaseMap<T> *New(BlockLabel l, u_int size);
 };
