@@ -84,11 +84,11 @@ define
 		IsToplevel)
       [] conDec(_ _ _ _) then Stm
       [] evalStm(Coord Exp) then evalStm(Coord {ShareExp Exp ShareDict})
-      [] handleStm(Coord Body1 Id Body2) then
-	 handleStm(Coord {ShareBody Body1 ShareDict}
-		   Id {ShareBody Body2 ShareDict})
-      [] endHandleStm(Coord Body) then
-	 endHandleStm(Coord {ShareBody Body ShareDict})
+      [] handleStm(Coord Body1 Id Body2 Body3 Shared) then
+	 handleStm(Coord {ShareBody Body1 ShareDict} Id
+		   {ShareBody Body2 ShareDict} {ShareBody Body3 ShareDict}
+		   Shared)
+      [] endHandleStm(_ _) then Stm
       [] testStm(Coord Id Test Body1 Body2) then
 	 testStm(Coord Id Test
 		 {ShareBody Body1 ShareDict} {ShareBody Body2 ShareDict})
