@@ -1,0 +1,55 @@
+%%
+
+%header	(functor LrVals(structure Token : TOKEN))
+%name Parser
+
+%pos  int
+%term	  EOF
+	| LBRACK | RBRACK
+	| LBRACE | RBRACE
+	| IDENTIFIER of string
+	| BINDER     of string
+	| BOOLEAN    of string
+	| INTEGER    of int
+	| REAL       of real
+	| STRING     of string
+
+%eop     EOF
+%noshift EOF
+
+
+%start    program
+%nonterm  program    of Machine.program
+	| tokenlist  of Machine.token list
+	| tokengroup of Machine.token
+	| token      of Machine.token
+
+%%
+
+program:
+	  tokenlist			( Machine.Program tokenlist )
+
+tokenlist:
+	  (*empty*)			( nil )
+	| tokengroup tokenlist		( tokengroup::tokenlist )
+
+tokengroup:
+	  token				( token )
+	| LBRACE tokenlist RBRACE	( Machine.Function tokenlist )
+	| LBRACK tokenlist RBRACE	( Machine.Array tokenlist )
+
+token:
+	  IDENTIFIER			( case Machine.operator IDENTIFIER
+					    of NONE => Machine.Id IDENTIFIER
+					     | SOME operator =>
+						Machine.Operator operator
+					)
+	| BINDER			( case Machine.operator BINDER
+					    of NONE => Machine.Binder BINDER
+					     | _ =>
+						Error.error(BINDERleft,
+							"rebinding of operator")
+					)
+	| INTEGER			( Machine.IntConst INTEGER )
+	| REAL				( Machine.RealConst REAL )
+	| STRING			( Machine.StringConst STRING )

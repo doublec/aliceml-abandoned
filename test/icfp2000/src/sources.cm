@@ -1,8 +1,15 @@
 Group is
 
-    VECTOR.sml
-    Vector.sml
-    COLOR.sml
+    smlnj-lib.cm
+    ml-yacc-lib.cm
+
+    Error.sml
+    Lexer.lex
+    Parser.grm
+
+    Machine.sml
+
     Color.sml
+    Geometry.sml
     RENDERER.sml
     Renderer.sml

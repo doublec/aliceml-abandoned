@@ -2,8 +2,7 @@ structure Renderer :> RENDERER =
     struct
 	open Geometry
 
-	type angle  = real (* radiant *)
-	type color  = Color.t
+	type color = Color.color
 
 	datatype plane_face    = PlaneSurface
 	datatype sphere_face   = SphereSurface

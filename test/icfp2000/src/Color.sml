@@ -1,7 +1,18 @@
+signature COLOR =
+    sig
+	type color = {red: real, green: real, blue: real}
+
+	val color: real * real * real -> color
+	val scale: real * color -> color
+	val prod: color * color -> color
+    end
+
+
 structure Color :> COLOR =
     struct
 	type color = {red: real, green: real, blue: real}
-	type t = color
+
+	fun color (r,g,b) = {red = r, green = g, blue = b}
 
 	fun scale (k, {red, green, blue}): color =
 	    {red = k * red, green = k * green, blue = k * blue}
