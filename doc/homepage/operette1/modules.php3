@@ -109,8 +109,8 @@
   </P>
 
   <P>
-    (Note: We decided to keep the keyword <TT>structure</TT> (and the syntactic
-    classes <I>strid</I>, <I>strexp</I>, etc.) for compatibility reasons,
+    (Note: We decided to keep the keyword <TT>structure</TT> - and the syntactic
+    classes <I>strid</I>, <I>strexp</I>, etc. - for compatibility reasons,
     although <TT>module</TT> might now be more appropriate.)
   </P>
 
