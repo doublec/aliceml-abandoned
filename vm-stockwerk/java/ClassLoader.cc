@@ -142,17 +142,20 @@ void BuildClassWorker::DumpFrame(word frame) {
 }
 
 //
-// ResolveClassInterpreter
+// ResolveInterpreter
 //
 
-class ResolveClassInterpreter: public Interpreter {
+class ResolveInterpreter: public Interpreter {
 public:
-  static ResolveClassInterpreter *self;
+  enum type {
+    RESOLVE_CLASS, RESOLVE_FIELD, RESOLVE_METHOD, RESOLVE_INTERFACE_METHOD
+  };
+  static ResolveInterpreter *self;
 private:
-  ResolveClassInterpreter() {}
+  ResolveInterpreter() {}
 public:
   static void Init() {
-    self = new ResolveClassInterpreter();
+    self = new ResolveInterpreter();
   }
 
   virtual Result Run();
@@ -161,61 +164,116 @@ public:
   virtual void PushCall(Closure *closure);
 };
 
-class ResolveClassFrame: private StackFrame {
+class ResolveFrame: private StackFrame {
 protected:
-  enum { CLASS_LOADER_POS, NAME_POS, SIZE };
+  enum {
+    CLASS_LOADER_POS, RESOLVE_TYPE_POS, CLASS_POS, NAME_POS, DESCRIPTOR_POS,
+    SIZE
+  };
 public:
   using Block::ToWord;
 
-  static ResolveClassFrame *New(ClassLoader *classLoader, JavaString *name) {
+  static ResolveFrame *New(ClassLoader *classLoader, JavaString *name) {
     StackFrame *frame =
-      StackFrame::New(RESOLVE_CLASS_FRAME,
-		      ResolveClassInterpreter::self, SIZE);
+      StackFrame::New(RESOLVE_CLASS_FRAME, ResolveInterpreter::self, SIZE);
     frame->InitArg(CLASS_LOADER_POS, classLoader->ToWord());
+    frame->InitArg(RESOLVE_TYPE_POS, ResolveInterpreter::RESOLVE_CLASS);
     frame->InitArg(NAME_POS, name->ToWord());
-    return static_cast<ResolveClassFrame *>(frame);
+    return static_cast<ResolveFrame *>(frame);
   }
-  static ResolveClassFrame *FromWordDirect(word x) {
+  static ResolveFrame *New(ClassLoader *classLoader,
+			   ResolveInterpreter::type resolveType,
+			   word theClass, JavaString *name,
+			   JavaString *descriptor) {
+    StackFrame *frame =
+      StackFrame::New(RESOLVE_CLASS_FRAME, ResolveInterpreter::self, SIZE);
+    frame->InitArg(CLASS_LOADER_POS, classLoader->ToWord());
+    frame->InitArg(RESOLVE_TYPE_POS, resolveType);
+    frame->InitArg(CLASS_POS, theClass);
+    frame->InitArg(NAME_POS, name->ToWord());
+    frame->InitArg(DESCRIPTOR_POS, descriptor->ToWord());
+    return static_cast<ResolveFrame *>(frame);
+  }
+  static ResolveFrame *FromWordDirect(word x) {
     StackFrame *frame = StackFrame::FromWordDirect(x);
     Assert(frame->GetLabel() == RESOLVE_CLASS_FRAME);
-    return static_cast<ResolveClassFrame *>(frame);
+    return static_cast<ResolveFrame *>(frame);
   }
 
   ClassLoader *GetClassLoader() {
     return ClassLoader::FromWordDirect(GetArg(CLASS_LOADER_POS));
   }
+  ResolveInterpreter::type GetResolveType() {
+    return static_cast<ResolveInterpreter::type>
+      (Store::DirectWordToInt(GetArg(RESOLVE_TYPE_POS)));
+  }
+  word GetClass() {
+    Assert(GetResolveType() != ResolveInterpreter::RESOLVE_CLASS);
+    return GetArg(CLASS_POS);
+  }
   JavaString *GetName() {
     return JavaString::FromWordDirect(GetArg(NAME_POS));
   }
+  JavaString *GetDescriptor() {
+    Assert(GetResolveType() != ResolveInterpreter::RESOLVE_CLASS);
+    return JavaString::FromWordDirect(GetArg(DESCRIPTOR_POS));
+  }
 };
 
-Worker::Result ResolveClassInterpreter::Run() {
-  ResolveClassFrame *frame =
-    ResolveClassFrame::FromWordDirect(Scheduler::GetAndPopFrame());
-  JavaString *name = frame->GetName();
-  ClassFile *classFile = ClassFile::NewFromFile(name);
-  ClassInfo *classInfo = classFile->Parse(frame->GetClassLoader());
-  if (classInfo == INVALID_POINTER)
-    ; //--** raise ClassFormatError
-  if (!classInfo->GetName()->Equals(name))
-    ; //--** raise NoClassDefFoundError
-  BuildClassWorker::PushFrame(classInfo);
-  return Worker::CONTINUE;
+Worker::Result ResolveInterpreter::Run() {
+  ResolveFrame *frame = ResolveFrame::FromWordDirect(Scheduler::GetFrame());
+  switch (frame->GetResolveType()) {
+  case RESOLVE_CLASS:
+    {
+      JavaString *name = frame->GetName();
+      ClassFile *classFile = ClassFile::NewFromFile(name);
+      ClassInfo *classInfo = classFile->Parse(frame->GetClassLoader());
+      if (classInfo == INVALID_POINTER)
+	; //--** raise ClassFormatError
+      if (!classInfo->GetName()->Equals(name))
+	; //--** raise NoClassDefFoundError
+      Scheduler::PopFrame();
+      BuildClassWorker::PushFrame(classInfo);
+      return Worker::CONTINUE;
+    }
+  case RESOLVE_FIELD:
+  case RESOLVE_METHOD:
+  case RESOLVE_INTERFACE_METHOD:
+    {
+      word wClass = frame->GetClass();
+      Class *theClass = Class::FromWord(wClass);
+      if (theClass == INVALID_POINTER) {
+	Scheduler::currentData = wClass;
+	return Worker::REQUEST;
+      }
+    }
+    break; //--**
+  }
 }
 
-void ResolveClassInterpreter::PushCall(Closure *closure) {
+void ResolveInterpreter::PushCall(Closure *closure) {
   ClassLoader *classLoader = ClassLoader::FromWordDirect(closure->Sub(0));
-  JavaString *name = JavaString::FromWordDirect(closure->Sub(1));
-  Scheduler::PushFrame(ResolveClassFrame::New(classLoader, name)->ToWord());
+  ResolveInterpreter::type resolveType =
+    static_cast<ResolveInterpreter::type>
+    (Store::DirectWordToInt(closure->Sub(1)));
+  if (resolveType == ResolveInterpreter::RESOLVE_CLASS) {
+    JavaString *name = JavaString::FromWordDirect(closure->Sub(2));
+    Scheduler::PushFrame(ResolveFrame::New(classLoader, name)->ToWord());
+  } else {
+    word theClass = closure->Sub(2);
+    JavaString *name = JavaString::FromWordDirect(closure->Sub(3));
+    JavaString *descriptor = JavaString::FromWordDirect(closure->Sub(4));
+    Scheduler::PushFrame(ResolveFrame::New(classLoader, resolveType, theClass,
+					   name, descriptor)->ToWord());
+  }
 }
 
-const char *ResolveClassInterpreter::Identify() {
-  return "ResolveClassInterpreter";
+const char *ResolveInterpreter::Identify() {
+  return "ResolveInterpreter";
 }
 
-void ResolveClassInterpreter::DumpFrame(word frame) {
-  ResolveClassFrame *resolveClassFrame =
-    ResolveClassFrame::FromWordDirect(frame);
+void ResolveInterpreter::DumpFrame(word frame) {
+  ResolveFrame *resolveClassFrame = ResolveFrame::FromWordDirect(frame);
   std::fprintf(stderr, "Resolve class %s\n",
 	       resolveClassFrame->GetName()->ExportC());
 }
@@ -226,7 +284,7 @@ void ResolveClassInterpreter::DumpFrame(word frame) {
 
 void ClassLoader::Init() {
   BuildClassWorker::Init();
-  ResolveClassInterpreter::Init();
+  ResolveInterpreter::Init();
 }
 
 ClassLoader *ClassLoader::New() {
@@ -240,11 +298,11 @@ ClassTable *ClassLoader::GetClassTable() {
 }
 
 word ClassLoader::ResolveClassByNeed(JavaString *name) {
-  ConcreteCode *concreteCode =
-    ConcreteCode::New(ResolveClassInterpreter::self, 2);
-  concreteCode->Init(0, ToWord());
-  concreteCode->Init(1, name->ToWord());
-  Closure *closure = Closure::New(concreteCode->ToWord(), 0);
+  ConcreteCode *concreteCode = ConcreteCode::New(ResolveInterpreter::self, 0);
+  Closure *closure = Closure::New(concreteCode->ToWord(), 3);
+  closure->Init(0, ToWord());
+  closure->Init(1, Store::IntToWord(ResolveInterpreter::RESOLVE_CLASS));
+  closure->Init(2, name->ToWord());
   return Byneed::New(closure->ToWord())->ToWord();
 }
 
@@ -307,4 +365,45 @@ word ClassLoader::ResolveType(JavaString *name) {
     classTable->Insert(name, wClass);
   }
   return wClass;
+}
+
+word ClassLoader::ResolveFieldRef(JavaString *className, JavaString *name,
+				  JavaString *descriptor) {
+  //--** also maintain a dictionary?
+  ConcreteCode *concreteCode = ConcreteCode::New(ResolveInterpreter::self, 0);
+  Closure *closure = Closure::New(concreteCode->ToWord(), 5);
+  closure->Init(0, ToWord());
+  closure->Init(1, Store::IntToWord(ResolveInterpreter::RESOLVE_FIELD));
+  closure->Init(2, ResolveType(className));
+  closure->Init(3, name->ToWord());
+  closure->Init(4, descriptor->ToWord());
+  return Byneed::New(closure->ToWord())->ToWord();
+}
+
+word ClassLoader::ResolveMethodRef(JavaString *className, JavaString *name,
+				   JavaString *descriptor) {
+  //--** also maintain a dictionary?
+  ConcreteCode *concreteCode = ConcreteCode::New(ResolveInterpreter::self, 0);
+  Closure *closure = Closure::New(concreteCode->ToWord(), 5);
+  closure->Init(0, ToWord());
+  closure->Init(1, Store::IntToWord(ResolveInterpreter::RESOLVE_METHOD));
+  closure->Init(2, ResolveType(className));
+  closure->Init(3, name->ToWord());
+  closure->Init(4, descriptor->ToWord());
+  return Byneed::New(closure->ToWord())->ToWord();
+}
+
+word ClassLoader::ResolveInterfaceMethodRef(JavaString *className,
+					    JavaString *name,
+					    JavaString *descriptor) {
+  //--** also maintain a dictionary?
+  ConcreteCode *concreteCode = ConcreteCode::New(ResolveInterpreter::self, 0);
+  Closure *closure = Closure::New(concreteCode->ToWord(), 5);
+  closure->Init(0, ToWord());
+  u_int resolveType = ResolveInterpreter::RESOLVE_INTERFACE_METHOD;
+  closure->Init(1, Store::IntToWord(resolveType));
+  closure->Init(2, ResolveType(className));
+  closure->Init(3, name->ToWord());
+  closure->Init(4, descriptor->ToWord());
+  return Byneed::New(closure->ToWord())->ToWord();
 }

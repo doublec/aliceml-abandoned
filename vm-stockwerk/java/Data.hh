@@ -67,6 +67,12 @@ protected:
 public:
   using Block::ToWord;
 
+  static Class *FromWord(word x) {
+    Block *b = Store::WordToBlock(x);
+    Assert(b == INVALID_POINTER && b->GetLabel() == JavaLabel::Class);
+    return static_cast<Class *>(b);
+  }
+
   word GetStaticField(u_int index);
   Closure *GetStaticMethod(u_int index);
 };
@@ -177,6 +183,9 @@ public:
     if (string->GetLength() != length) return false;
     return !std::memcmp(GetBase(), string->GetBase(),
 			length * sizeof(u_wchar));
+  }
+  JavaString *Intern() {
+    return this; //--**
   }
 
   char *ExportC() {

@@ -55,21 +55,22 @@ private:
   bool ParseVersion(u_int &offset);
   ConstantPool *ParseConstantPool(u_int &offset);
   ConstantPoolEntry *ParseConstantPoolEntry(u_int &offset);
-  Table *ResolveConstantPool(ConstantPool *constantPoolS,
+  Table *ResolveConstantPool(ConstantPool *constantPool,
 			     ClassLoader *classLoader);
-  Table *ParseInterfaces(u_int &offset, Table *constantPoolR);
-  Table *ParseFields(u_int &offset, ConstantPool *constantPoolS,
-		     Table *constantPoolR);
-  FieldInfo *ParseFieldInfo(u_int &offset, ConstantPool *constantPoolS,
-			    Table *constantPoolR);
-  bool ParseFieldAttributes(u_int &offset, ConstantPool *constantPoolS,
-			    Table *constantPoolR, word &constantValue);
-  Table *ParseMethods(u_int &offset, ConstantPool *constantPoolS,
-		      Table *constantPoolR);
-  MethodInfo *ParseMethodInfo(u_int &offset, ConstantPool *constantPoolS,
-			      Table *constantPoolR);
-  bool ParseMethodAttributes(u_int &offset, ConstantPool *constantPoolS,
-			     Table *constantPoolR, JavaByteCode *&byteCode);
+  Table *ParseInterfaces(u_int &offset, Table *runtimeConstantPool);
+  Table *ParseFields(u_int &offset, ConstantPool *constantPool,
+		     Table *runtimeConstantPool);
+  FieldInfo *ParseFieldInfo(u_int &offset, ConstantPool *constantPool,
+			    Table *runtimeConstantPool);
+  bool ParseFieldAttributes(u_int &offset, ConstantPool *constantPool,
+			    Table *runtimeConstantPool, word &constantValue);
+  Table *ParseMethods(u_int &offset, ConstantPool *constantPool,
+		      Table *runtimeConstantPool);
+  MethodInfo *ParseMethodInfo(u_int &offset, ConstantPool *constantPool,
+			      Table *runtimeConstantPool);
+  bool ParseMethodAttributes(u_int &offset, ConstantPool *constantPool,
+			     Table *runtimeConstantPool,
+			     JavaByteCode *&byteCode);
   void SkipAttributes(u_int &offset);
 public:
   using Chunk::ToWord;
