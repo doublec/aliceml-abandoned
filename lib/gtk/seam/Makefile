@@ -80,7 +80,8 @@ INSTALLDIR = `alice-config --alicelibdir`/gtk
 
 DISTFILES = $(CPPSOURCES) Makefile debian platform.sh \
 	MyNativeAuthoring.hh NativeUtils.hh NativeGdkSpecial.hh \
-	NativeGnomeCanvasSpecial.hh NativeGtkSpecial.hh myinstall
+	NativeGnomeCanvasSpecial.hh NativeGtkSpecial.hh \
+	ExtraMarshaller.hh myinstall
 distdir = alice-gtk-$(VERSION)
 
 #################################################
