@@ -10,10 +10,10 @@
 //   $Revision$
 //
 
-#ifndef __ALICE__PRIMITIVES__AUTHORING_HH__
-#define __ALICE__PRIMITIVES__AUTHORING_HH__
+#ifndef __ALICE__AUTHORING_HH__
+#define __ALICE__AUTHORING_HH__
 
-#include "generic/NativeAuthoring.hh"
+#include "generic/Authoring.hh"
 #include "alice/Data.hh"
 #include "alice/PrimitiveTable.hh"
 
