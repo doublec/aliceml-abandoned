@@ -34,7 +34,8 @@ define
    case Args.1 of RootUrl|Rest then
       {Property.put 'stockwerk.args' Rest}
       case {Linker.link Args.booturl} of tuple(Closure) then
-	 {Scheduler.object newThread(Closure arg({ByteString.make RootUrl}) _)}
+	 {Scheduler.object newThread(closure: Closure
+				     args: arg({ByteString.make RootUrl}))}
 	 {Scheduler.object run()}
 	 {Application.exit 1}
       end
