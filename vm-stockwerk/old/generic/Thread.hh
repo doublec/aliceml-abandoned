@@ -45,9 +45,6 @@ private:
   void Resume() {
     ReplaceArg(IS_SUSPENDED_POS, false);
   }
-  TaskStack *GetTaskStack() {
-    return TaskStack::FromWordDirect(GetArg(TASK_STACK_POS));
-  }
 public:
   using Block::ToWord;
 
@@ -70,6 +67,9 @@ public:
     return static_cast<Thread *>(b);
   }
 
+  TaskStack *GetTaskStack() { //--** should be private
+    return TaskStack::FromWordDirect(GetArg(TASK_STACK_POS));
+  }
   priority GetPriority() {
     return static_cast<priority>(Store::DirectWordToInt(GetArg(PRIORITY_POS)));
   }
