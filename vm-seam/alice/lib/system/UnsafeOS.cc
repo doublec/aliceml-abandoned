@@ -46,14 +46,23 @@ static word SysErrConstructor;
 //
 
 DEFINE1(UnsafeOS_FileSys_openDir) {
+#if defined(__MINGW32__) || defined(_MSC_VER)
+  // dummy
+  RETURN_UNIT;
+#else
   DECLARE_STRING(name, x0);
   DIR *d = opendir(name->ExportC());
   if (!d) RAISE_SYS_ERR();
 
   RETURN(Store::UnmanagedPointerToWord(d));
+#endif
 } END
 
 DEFINE1(UnsafeOS_FileSys_readDir) {
+#if defined(__MINGW32__) || defined(_MSC_VER)
+  // dummy
+  RETURN_INT(0);
+#else
   DECLARE_UNMANAGED_POINTER(d, x0);
   
   if (struct dirent *n = readdir((DIR *)d)) {
@@ -63,22 +72,32 @@ DEFINE1(UnsafeOS_FileSys_readDir) {
   } else {
     RETURN_INT(0);
   }
+#endif
 } END
 
 DEFINE1(UnsafeOS_FileSys_rewindDir) {
+#if defined(__MINGW32__) || defined(_MSC_VER)
+  RETURN_UNIT;
+#else
   DECLARE_UNMANAGED_POINTER(d, x0);
   rewinddir((DIR *)d);
 
   RETURN_UNIT;
+#endif
 } END
 
 DEFINE1(UnsafeOS_FileSys_closeDir) {
+#if defined(__MINGW32__) || defined(_MSC_VER)
+  // dummy
+  RETURN_UNIT;
+#else
   DECLARE_UNMANAGED_POINTER(d, x0);
 
   if (closedir((DIR *)d) != 0)
     RAISE_SYS_ERR();
   
   RETURN_UNIT;
+#endif
 } END
 
 DEFINE1(UnsafeOS_FileSys_chDir) {
