@@ -11,16 +11,13 @@
  *)
 
 import structure TextIO              from "../../lib/system/TextIO"
-import structure Url                 from "../../lib/system/Url"
 import structure Component           from "../../lib/system/Component"
 import structure ComponentManager    from "../../lib/system/ComponentManager"
-import structure Source              from "../infrastructure/Source"
 import structure MkSwitches          from "../infrastructure/MkSwitches"
 import structure MkFrontendCommon    from "../frontend-common/MkFrontendCommon"
 import structure MkFrontendSML       from "../frontend-sml/MkFrontendSML"
 import structure MkBackendCommon     from "../backend-common/MkBackendCommon"
 import structure MkBackendSeam       from "../backend-seam/MkBackendSeam"
-import structure Error               from "../infrastructure/Error"
 import structure MkCompiler          from "MkCompiler"
 import structure MkRecursiveCompiler
        structure InfLoader
