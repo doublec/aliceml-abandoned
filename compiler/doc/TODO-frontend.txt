@@ -1,16 +1,10 @@
 (* TODO-frontend.txt *)
 
-Current:
-
-- Runtime types
-- Intermediate verifier
-
 General:
 
 - Check for multiple imports from single (normalised) URL
 - Improve pretty-printing
 - Consistent state cleanup (especially on errors)
-- Copyright notices
 
 Documentation:
 
@@ -54,20 +48,13 @@ Missing from Extended Module Language:
 - Open in signatures
   [not difficult, but do we want it? (required for some derived forms);
    probably local specifications should contain declarations]
-- Full manifest values
-  [not too difficult, but do we want them?]
 - Singleton signatures (can use manifest structures in most cases)
   [syntax? how do they colaborate with manifest structures?]
 - Functor paths
   [how can they coexist with generative functors?]
-- Specialization (intersection) of value specifications
-  [need to intersect quantified types]
 - Full signature intersection
   [how treat conflicting dependencies?]
 - Hiding / signature subtraction
   [worthwhile?]
-- Parameterized signatures
-  [checking application, reduction, matching, kind analysis, kind matching,
-   intersection]
 - First-class modules
   [heavily messes up architecture of type checker]
