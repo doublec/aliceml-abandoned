@@ -18,6 +18,12 @@ import signature LINEAR from "LINEAR-sig"
 
 structure Linear :> LINEAR =
     struct
+	infix  7  `*
+	infix  6  `+ `-
+	infix  5  `#
+	infix  4  `= `<> `> `>= `< `<=
+	infix  3  `<->
+
 	datatype fdop = PLUS | MINUS | MUL
 
 	datatype domain_element =
@@ -46,11 +52,6 @@ structure Linear :> LINEAR =
 	  | `>=  of term * term
 	  | `>   of term * term
 	  | `<-> of rel * term
-
-	infix  7  `*
-	infix  6  `+ `-
-	infix  5  `#
-	infix  4  `= `<> `> `>= `< `<= `<->
 
 	datatype status =
 	    ATOMIC of FD.fd

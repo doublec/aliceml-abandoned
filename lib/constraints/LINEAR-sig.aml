@@ -2,10 +2,12 @@
  * Authors:
  *   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
  *   Christian Schulte <schulte@ps.uni-sb.de>
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
  *   Thorsten Brunklaus, 2001
  *   Christian Schulte, 2001
+ *   Andreas Rossberg, 2001
  *
  * Last Change:
  *   $Date$ by $Author$
@@ -17,6 +19,12 @@ import structure FD from "FD"
 
 signature LINEAR =
     sig
+	infix  7  `*
+	infix  6  `+ `-
+	infix  5  `#
+	infix  4  `= `<> `> `>= `< `<=
+	infix  3  `<->
+
 	datatype domain_element =
 	    `` of int
 	  | `# of int * int
@@ -46,9 +54,4 @@ signature LINEAR =
 	val distribute : FD.dist_mode * term vector -> unit
 	val distinct : term vector -> unit
 	val post : rel -> unit
-
-	infix  7  `*
-	infix  6  `+ `-
-	infix  5  `#
-	infix  4  `= `<> `> `>= `< `<= `<->
     end
