@@ -22,7 +22,7 @@ final class DMLObjectOutputStream extends java.io.ObjectOutputStream {
 	super(out);
     }
 
-    final public waitForBind(boolean b) {
+    final public void waitForBind(boolean b) {
 	waitforbind=b;
     }
 
@@ -72,9 +72,9 @@ final class DMLObjectOutputStream extends java.io.ObjectOutputStream {
     final protected Object replaceObject(Object obj) {
 	if (obj instanceof DMLLVar)
 	    if (waitforbind)
-		obj = ((DMLLVar) obj.request());
+		obj = ((DMLLVar) obj).request();
 	    else
-		obj = ((DMLLVar) obj.getValue());
+		obj = ((DMLLVar) obj).getValue();
 
 	if (obj instanceof DMLConstructor)
 	    return ((DMLConstructor) obj).globalize();

@@ -6,7 +6,7 @@ final public class DMLConstructor implements DMLValue {
 
     String name = null;
 
-    String gName = null;
+    GName gName = null;
 
     public DMLConstructor() {
 	super();
@@ -54,7 +54,7 @@ final public class DMLConstructor implements DMLValue {
     final public GName globalize() {
 	if (gName==null) {
 	    gName = new GName(1);
-	    gNames.put(gName,c);
+	    gNames.put(gName,this);
 	    return gName;
 	}
 	else

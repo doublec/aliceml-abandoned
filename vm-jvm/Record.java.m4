@@ -1,12 +1,13 @@
 package de.uni_sb.ps.DML.DMLRuntime;
 
-final public class DMLRecord implements DMLValue {
+final public class DMLRecord extends DMLTuple {
 
     static private java.util.Hashtable arityHash = new java.util.Hashtable();
 
     DMLRecordArity arity=null;
 
     public DMLRecord (DMLLabel[] ls, DMLValue[] vals) {
+	super(null);
 	Object ar=null;
 	this.vals=vals;
 	arity=new DMLRecordArity(ls, vals);

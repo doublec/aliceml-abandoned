@@ -50,7 +50,7 @@ final public class DMLName implements DMLValue {
     final public GName globalize() {
 	if (gName==null) {
 	    gName = new GName(0);
-	    gNames.put(gName,c);
+	    DMLConstructor.gNames.put(gName,this);
 	    return gName;
 	}
 	else

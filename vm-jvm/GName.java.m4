@@ -22,10 +22,10 @@ final public class GName implements java.io.Serializable {
     }
 
     public int hashCode() {
-	return gid.hashCode();
+	return osname.hashCode();
     }
 
     public boolean equals(Object o) {
-	return (o instanceof GName) && gid.equals(((GName) o).gid);
+	return (o instanceof GName) && osname.equals(((GName) o).osname);
     }
 }
