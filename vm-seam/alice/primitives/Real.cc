@@ -74,11 +74,11 @@ DEFINE2(Real_compare) {
   double x = real1->GetValue();
   double y = real2->GetValue();
   if (x == y) {
-    RETURN_INT(0);   // EQUAL
+    RETURN_INT(Types::EQUAL);
   } else if (x < y) {
-    RETURN_INT(2);   // LESS
+    RETURN_INT(Types::LESS);
   } else { // x > y
-    RETURN_INT(1);   // GREATER
+    RETURN_INT(Types::GREATER);
   }
 } END
 
