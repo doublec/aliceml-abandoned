@@ -1,0 +1,120 @@
+(*
+ * Authors:
+ *   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Thorsten Brunklaus, 2001
+ *
+ * Last Change:
+ *   Date: 2002/05/07 12:16:12 by Author: bruni
+ *   Revision: 1.8
+ *
+ *)
+
+import structure Gtk from "x-alice:/lib/gtk/Gtk"
+
+local
+    datatype event = datatype Gtk.event
+    datatype arg   = datatype Gtk.arg
+in
+    signature GTKBUILDER =
+	sig
+	    datatype GtkWidget =
+		Toplevel    of {title:string, border:int,
+				handler:GtkSignalHandler list, inner:GtkWidget}
+	      | HBox        of {homogeneous:bool, spacing:int,
+				entries:GtkBoxEntry list}
+	      | VBox        of {homogeneous:bool, spacing:int,
+				entries:GtkBoxEntry list}
+	      | Table       of {rows:int, columns:int, homogeneous:bool,
+				entries:GtkTableEntry list}
+	      | Frame       of {title:string, ftype:GtkFrameType,
+				inner:GtkWidget}
+	      | AspectFrame of {title:string, xalign:real,
+				yalign:real, ratio: real option,
+				inner:GtkWidget}
+	      | Alignment   of {xalign:real, yalign:real,
+				xscale:real, yscale:real,
+				inner:GtkWidget}
+	      | HPane       of {left:GtkWidget, right:GtkWidget}
+	      | VPane       of {up:GtkWidget, down:GtkWidget}
+	      | Adjustment  of {value:real, lower:real, upper:real, 
+				step_inc:real, page_inc:real, page_size:real}
+	      | AccelLabel  of string
+	      | Label       of string
+	      | Arrow       of {artyp:int, arshadow:int}
+	      | Entry       of {max:int option}
+	      | Button      of string * GtkSignalHandler list
+	      | CheckButton of string * GtkSignalHandler list
+	      | Text        of {xdim:real, ydim:real, text:string list}
+	      | Canvas      of {pic:int, width:int, height:int}
+	      | Calendar    of GtkSignalHandler list
+	      | Notebook    of bool * ({label:string, note:GtkWidget} list)
+	      | Tree        of GtkTreeItem list * (string * string -> unit)
+	      | HButtonBox  of GtkButtonBoxStyle * GtkWidget list
+	      | VButtonBox  of GtkButtonBoxStyle * GtkWidget list
+	      | MenuBar     of {label:string, submenu:GtkMenuItem list} list
+	      | Window      of Gtk.object
+	    and GtkBoxEntry =
+		BoxSimple of GtkWidget
+	      | BoxStart  of bool * bool * int * GtkWidget
+	      | BoxEnd    of bool * bool * int * GtkWidget
+	    and GtkTableEntry =
+		TableSimple of {x:int, y:int, item:GtkWidget}
+	      | TableEntry  of {x1:int, x2:int,
+				y1:int, y2:int, item:GtkWidget} 
+	    and GtkSignalHandler =
+		Handler     of string * (arg list -> unit)
+	      | FullHandler of string * (Gtk.object * arg list -> unit)
+	    and GtkFrameType =
+		ShadowNone | ShadowIn | ShadowOut
+	      | ShadowEtchedIn | ShadowEtchedOut
+	    and GtkButtonBoxStyle =
+		DefaultStyle | SpreadStyle | EdgeStyle | StartStyle | EndStyle
+	    and GtkMenuItem =
+		MenuItem      of string * GtkSignalHandler list
+	      | CheckMenuItem of string * GtkSignalHandler list
+	      | SubMenu       of string * GtkMenuItem list
+	    and GtkTreeItem =
+		TreeItem of string
+	      | SubTree  of string * GtkTreeItem list
+	    and GtkCursorType =
+		X_CURSOR | ARROW | BASED_ARROW_DOWN | BASED_ARROW_UP
+	      | BOAT | BOGOSITY |
+		BOTTOM_LEFT_CORNER | BOTTOM_RIGHT_CORNER
+	      | BOTTOM_SIDE | BOTTOM_TEE |
+		BOX_SPIRAL | CENTER_PTR | CIRCLE | CLOCK
+	      | COFFEE_MUG | CROSS | CROSS_REVERSE |
+		CROSSHAIR | DIAMOND_CROSS | DOT | DOTBOX
+	      | DOUBLE_ARROW | DRAFT_LARGE
+	      | DRAFT_SMALL | DRAPED_BOX | EXCHANGE | FLEUR | GOBBLER | GUMBY
+	      | HAND1 | HAND2 | HEART | ICON | IRON_CROSS
+	      | LEFT_PTR | LEFT_SIDE | LEFT_TEE
+	      | LEFTBUTTON | LL_ANGLE | LR_ANGLE | MAN | MIDDLEBUTTON
+	      | MOUSE | PENCIL | PIRATE
+	      | PLUS | QUESTION_ARROW | RIGHT_PTR | RIGHT_SIDE
+	      | RIGHT_TEE | RIGHTBUTTON
+	      | RTL_LOGO | SAILBOAT | SB_DOWN_ARROW | SB_H_DOUBLE_ARROW
+	      | SB_LEFT_ARROW | SB_RIGHT_ARROW | SB_UP_ARROW
+	      | SHUTTLE | SIZING | SPIDER | SPRAYCAN | STAR
+	      | TARGET | TCROSS | TOP_LEFT_ARROW
+	      | TOP_LEFT_CORNER | TOP_RIGHT_CORNER | TOP_SIDE | TOP_TEE
+	      | TREK | UL_ANGLE | UMBRELLA | UR_ANGLE | WATCH | XTERM
+	    and CanvasItem =
+		Group     of {parent:Gtk.object, x:real, y:real}
+	      | Lines     of {parent:Gtk.object, coords: int list,
+			      width_pixels:int, fill_color:Gtk.object}
+	      | Rectangle of {parent:Gtk.object, x1:real, y1:real,
+			      x2:real, y2:real,
+			      fill_color:Gtk.object, outline_color:Gtk.object}
+	      | Ellipse   of {parent:Gtk.object, x1:real, y1:real,
+			      x2:real, y2:real,
+			      fill_color:Gtk.object, outline_color:Gtk.object}
+	      | CText     of {parent:Gtk.object, x:real, y:real,
+			      text:string, font: string,
+			      fill_color:Gtk.object, anchor:int}
+
+	    val MakeWidget : GtkWidget -> Gtk.object
+	    val MakeCanvasItem : CanvasItem -> Gtk.object
+	end
+end

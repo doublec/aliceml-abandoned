@@ -1,0 +1,31 @@
+(* Alice Snake 2.0 - GUI
+*
+*  Authors: Benedikt Grundmann / Sebastian Germesin
+*
+*  $Revision$
+*
+*  Last updated: $Date$ by $Author$
+* 
+*
+*)
+
+import structure Gtk         from "x-alice:/lib/gtk/Gtk"
+import structure Protocol    from "../common/Protocol"
+import structure Pos         from "../common/Pos"
+
+signature ARENAWIDGET =
+sig
+
+    type arena_widget
+	
+    val initialize : unit -> arena_widget
+	
+    val toObject : arena_widget -> Gtk.object
+	
+    val initLevel : arena_widget * Protocol.level_info -> unit
+	
+    val update : arena_widget * Protocol.diff list -> unit
+	
+    val changeView : arena_widget * Pos.pos -> unit
+	
+end
