@@ -12,6 +12,7 @@
 //   $Revision$
 //
 
+#include "alice/StackFrame.hh"
 #include "alice/Authoring.hh"
 
 #define STRINGIFY(x) #x
@@ -19,8 +20,121 @@
 #define CONCAT(x,y) x##y
 #define XCONCAT(x,y) CONCAT(x,y)
 
-#define DECLARE_XARRAY(array, x) DECLARE_BLOCKTYPE(XArray, array, x)
+#define VectorTabulateFrame XCONCAT(XVector,TabulateFrame)
+#define VectorTabulateWorker XCONCAT(XVector,TabulateWorker)
 
+#define DECLARE_XARRAY(array, x) DECLARE_BLOCKTYPE(XArray, array, x)
+#define DECLARE_XVECTOR(vector, x) DECLARE_BLOCKTYPE(XVector, vector, x)
+
+//
+// ArrayTabulateWorker
+//
+class ArrayTabulateWorker: public Worker {
+private:
+  static ArrayTabulateWorker *self;
+
+  ArrayTabulateWorker(): Worker() {}
+public:
+  static void Init() {
+    self = new ArrayTabulateWorker();
+  }
+
+  static void PushFrame(XArray *array, word closure, u_int i, u_int n);
+  virtual Result Run();
+  virtual const char *Identify();
+  virtual void DumpFrame(word frame);
+};
+
+class ArrayTabulateFrame: private StackFrame {
+private:
+  enum { ARRAY_POS, CLOSURE_POS, INDEX_POS, NUMBEROFELEMENTS_POS, SIZE };
+public:
+  using StackFrame::ToWord;
+
+  static ArrayTabulateFrame *New(Worker *worker, XArray *array,
+				 word closure, u_int index,
+				 u_int numberOfElements) {
+    StackFrame *frame = StackFrame::New(ARRAY_TABULATE_FRAME, worker, SIZE);
+    frame->InitArg(ARRAY_POS, array->ToWord());
+    frame->InitArg(CLOSURE_POS, closure);
+    frame->InitArg(INDEX_POS, index);
+    frame->InitArg(NUMBEROFELEMENTS_POS, numberOfElements);
+    return static_cast<ArrayTabulateFrame *>(frame);
+  }
+  static ArrayTabulateFrame *FromWordDirect(word frame) {
+    StackFrame *p = StackFrame::FromWordDirect(frame);
+    Assert(p->GetLabel() == ARRAY_TABULATE_FRAME);
+    return static_cast<ArrayTabulateFrame *>(p);
+  }
+
+  XArray *GetArray() {
+    return XArray::FromWord(GetArg(ARRAY_POS));
+  }
+  word GetClosure() {
+    return GetArg(CLOSURE_POS);
+  }
+  u_int GetIndex() {
+    return Store::WordToInt(GetArg(INDEX_POS));
+  }
+  void UpdateIndex(u_int i) {
+    ReplaceArg(INDEX_POS, i);
+  }
+  u_int GetNumberOfElements() {
+    return Store::WordToInt(GetArg(NUMBEROFELEMENTS_POS));
+  }
+};
+
+ArrayTabulateWorker *ArrayTabulateWorker::self;
+
+void ArrayTabulateWorker::PushFrame(XArray *array,
+				    word closure, u_int i, u_int n) {
+  ArrayTabulateFrame *frame =
+    ArrayTabulateFrame::New(self, array, closure, i, n);
+  Scheduler::PushFrame(frame->ToWord());
+}
+
+Worker::Result ArrayTabulateWorker::Run() {
+  ArrayTabulateFrame *frame =
+    ArrayTabulateFrame::FromWordDirect(Scheduler::GetFrame());
+  XArray *array = frame->GetArray();
+  word closure    = frame->GetClosure();
+  u_int i         = frame->GetIndex();
+  u_int n         = frame->GetNumberOfElements();
+  Construct();
+  word wValue = Scheduler::currentArgs[0];
+#if REQUEST_ELEMS_INT
+  if (Store::WordToInt(wValue) == INVALID_INT) {
+    Scheduler::currentData = wValue;
+    return Worker::REQUEST;
+  }
+#endif
+  array->Update(i, wValue);
+  if (++i == n) {
+    Scheduler::PopFrame();
+    Scheduler::nArgs = Scheduler::ONE_ARG;
+    Scheduler::currentArgs[0] = array->ToWord();
+    return Worker::CONTINUE;
+  } else {
+    frame->UpdateIndex(i);
+    Scheduler::nArgs = Scheduler::ONE_ARG;
+    Scheduler::currentArgs[0] = Store::IntToWord(i);
+    return Scheduler::PushCall(closure);
+  }
+}
+
+const char *ArrayTabulateWorker::Identify() {
+  return "ArrayTabulateWorker";
+}
+
+void ArrayTabulateWorker::DumpFrame(word frameWord) {
+  ArrayTabulateFrame *frame = ArrayTabulateFrame::FromWordDirect(frameWord);
+  std::fprintf(stderr, STRINGIFY(XArray)".tabulate %d of %d\n",
+	       frame->GetIndex(), frame->GetNumberOfElements());
+}
+
+//
+// Primitives
+//
 DEFINE2(Array_array) {
   DECLARE_INT(length, x0);
   if (static_cast<u_int>(length) > XArray::maxLen)
@@ -29,6 +143,17 @@ DEFINE2(Array_array) {
   for (u_int i = length; i--; )
     array->Init(i, x1);
   RETURN(array->ToWord());
+} END
+
+DEFINE3(Array_extract) {
+  DECLARE_XARRAY(array, x0);
+  DECLARE_INT(i, x1);
+  DECLARE_INT(n, x2);
+  if (i < 0 || n < 0 || static_cast<u_int>(i + n) > array->GetLength())
+    RAISE(PrimitiveTable::General_Subscript);
+  XVector *vector = XVector::New(n);
+  for (u_int j = n; j--; ) vector->Init(j, array->Sub(i + j));
+  RETURN(vector->ToWord());
 } END
 
 DEFINE1(Array_fromList) {
@@ -49,6 +174,15 @@ DEFINE1(Array_fromList) {
   RETURN(array->ToWord());
 } END
 
+DEFINE1(Array_fromVector) {
+  DECLARE_XVECTOR(vector, x0);
+  Assert(XArray::maxLen == XVector::maxLen);
+  u_int length = vector->GetLength();
+  XArray *array = XArray::New(length);
+  for (u_int i = length; i--; ) array->Init(i, vector->Sub(i));
+  RETURN(array->ToWord());
+} END
+
 DEFINE1(Array_length) {
   DECLARE_XARRAY(array, x0);
   RETURN_INT(array->GetLength());
@@ -62,6 +196,34 @@ DEFINE2(Array_sub) {
   RETURN(array->Sub(index));
 } END
 
+DEFINE2(Array_tabulate) {
+  DECLARE_INT(length, x0);
+  if (length == 0) {
+    RETURN(XArray::New(0)->ToWord());
+  } else if (length < 0 || static_cast<u_int>(length) > XVector::maxLen) {
+    RAISE(PrimitiveTable::General_Size);
+  } else {
+    word wClosure = x1;
+    XArray *array = XArray::New(length);
+    ArrayTabulateWorker::PushFrame(array, wClosure, 0, length);
+    Scheduler::nArgs = Scheduler::ONE_ARG;
+    Scheduler::currentArgs[0] = Store::IntToWord(0);
+    return Scheduler::PushCall(wClosure);
+  }
+} END
+
+DEFINE1(Array_toList) {
+  DECLARE_XARRAY(array, x0);
+  word list = Store::IntToWord(Types::nil);
+  for (u_int i = array->GetLength(); i--; ) {
+    TagVal *cons = TagVal::New(Types::cons, 2);
+    cons->Init(0, array->Sub(i));
+    cons->Init(1, list);
+    list = cons->ToWord();
+  }
+  RETURN(list);
+} END
+
 DEFINE3(Array_update) {
   DECLARE_XARRAY(array, x0);
   DECLARE_INT(index, x1);
@@ -73,17 +235,25 @@ DEFINE3(Array_update) {
 
 void PrimitiveTable::XCONCAT(Register,XArray)() {
   Register(XSTRINGIFY(XArray)".array", Array_array, 2);
+  Register(XSTRINGIFY(XArray)".extract", Array_extract, 3);
   Register(XSTRINGIFY(XArray)".fromList", Array_fromList, 1);
+  Register(XSTRINGIFY(XArray)".fromVector", Array_fromVector, 1);
   Register(XSTRINGIFY(XArray)".length", Array_length, 1);
   Register(XSTRINGIFY(XArray)".maxLen", Store::IntToWord(Array::maxLen));
   Register(XSTRINGIFY(XArray)".sub", Array_sub, 2);
+  Register(XSTRINGIFY(XArray)".tabulate", Array_tabulate, 2);
+  Register(XSTRINGIFY(XArray)".toList", Array_toList, 1);
   Register(XSTRINGIFY(XArray)".update", Array_update, 3);
 #if defined(YArray)
   Register(XSTRINGIFY(YArray)".array", Array_array, 2);
+  Register(XSTRINGIFY(YArray)".extract", Array_extract, 3);
   Register(XSTRINGIFY(YArray)".fromList", Array_fromList, 1);
+  Register(XSTRINGIFY(YArray)".fromVector", Array_fromVector, 1);
   Register(XSTRINGIFY(YArray)".length", Array_length, 1);
   Register(XSTRINGIFY(YArray)".maxLen", Store::IntToWord(Array::maxLen));
   Register(XSTRINGIFY(YArray)".sub", Array_sub, 2);
+  Register(XSTRINGIFY(YArray)".tabulate", Array_tabulate, 2);
+  Register(XSTRINGIFY(YArray)".toList", Array_toList, 1);
   Register(XSTRINGIFY(YArray)".update", Array_update, 3);
 #endif
 }
