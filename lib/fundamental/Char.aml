@@ -1,0 +1,129 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(*
+ *  Items marked with (**) are extensions to the Standard Basis.
+ *)
+
+import structure __pervasive                           from "Pervasive"
+import type char and string and int
+       type bool and order and list                    from "ToplevelTypes"
+import infix 4 = < > <= >= infix 6 + - infix 7 div mod
+       val op = and op >=
+       val op + and op - and op div and op mod         from "ToplevelValues"
+import structure General                               from "General"
+import structure Bool                                  from "Bool"
+import signature CHAR                                  from "CHAR-sig"
+
+
+structure Char : CHAR =
+struct
+    type char   = char
+    type string = string
+    type t	= char						(**)
+
+    __primitive val ord : char -> int = "Char.ord"
+    __primitive val chr : int -> char = "Char.chr"
+
+    val maxOrd  = 255
+    val minChar = chr 0
+    val maxChar = chr maxOrd
+
+    fun pred c where (c = minChar)	= raise General.Chr
+      | pred c				= chr(ord c - 1)
+    fun succ c where (c = maxChar)	= raise General.Chr
+      | succ c				= chr(ord c + 1)
+
+    __primitive val Int_compare : int * int -> order     = "Int.compare"
+    __primitive val String_size : string -> int          = "String.size"
+    __primitive val String_sub :  string * int -> char   = "String.sub"
+    __primitive val String_str :  char -> string         = "String.str"
+    __primitive val String_implode : char list -> string = "String.implode"
+
+    fun compare(c1,c2)   = Int_compare(ord c1, ord c2)
+
+    fun contains  s c    = contains'(s, c, String_size s)
+    and contains'(s,c,i) =
+	String_sub(s,i) = c orelse i >= 0 andalso contains'(s, c, i-1)
+
+    fun notContains s c = Bool.not(contains s c)
+
+
+    __primitive val op < :	char * char -> bool = "Char.<"
+    __primitive val op > :	char * char -> bool = "Char.>"
+    __primitive val op <= :	char * char -> bool = "Char.<="
+    __primitive val op >= :	char * char -> bool = "Char.>="
+
+    __primitive val toLower :	char -> char = "Char.toLower"
+    __primitive val toUpper :	char -> char = "Char.toUpper"
+
+    __primitive val isLower :	char -> bool = "Char.isLower"
+    __primitive val isUpper :	char -> bool = "Char.isUpper"
+    __primitive val isAlpha :	char -> bool = "Char.isAlpha"
+    __primitive val isAlphaNum:	char -> bool = "Char.isAlphaNum"
+    __primitive val isDigit :	char -> bool = "Char.isDigit"
+    __primitive val isHexDigit:	char -> bool = "Char.isHexDigit"
+    __primitive val isPunct :	char -> bool = "Char.isPunct"
+    __primitive val isPrint :	char -> bool = "Char.isPrint"
+    __primitive val isGraph :	char -> bool = "Char.isGraph"
+    __primitive val isSpace :	char -> bool = "Char.isSpace"
+    __primitive val isCntrl :	char -> bool = "Char.isCntrl"
+
+    fun isAscii c = chr 0 <= c andalso c <= chr 127
+
+    fun toWide c	= c						(**)
+    fun fromWide c	= c						(**)
+
+    fun toString #"\\"			= "\\\\"
+      | toString #"\""			= "\\\""
+      | toString c where (isPrint c)	= String_str c
+      | toString #"\a"			= "\\a"
+      | toString #"\b"			= "\\b"
+      | toString #"\t"			= "\\t"
+      | toString #"\n"			= "\\n"
+      | toString #"\v"			= "\\v"
+      | toString #"\f"			= "\\f"
+      | toString #"\r"			= "\\r"
+      | toString c where (c < #" ")	= String_implode
+					    [#"\\", #"^", chr(ord c + ord #"@")]
+      | toString c =   (*TODO: does not work properly for WideChar *)
+	let
+	    val n    = ord c
+	    val zero = ord #"0"
+	in
+	    String_implode [#"\\", chr(n div 100 + zero),
+				   chr(n div 10 mod 10 + zero),
+				   chr(n mod 10 + zero)]
+	end
+
+    fun toCString #"\\"			= "\\\\"
+      | toCString #"\""			= "\\\""
+      | toCString #"?"			= "\\?"
+      | toCString #"'"			= "\\'"
+      | toCString c where (isPrint c)	= String_str c
+      | toCString #"\a"			= "\\a"
+      | toCString #"\b"			= "\\b"
+      | toCString #"\t"			= "\\t"
+      | toCString #"\n"			= "\\n"
+      | toCString #"\v"			= "\\v"
+      | toCString #"\f"			= "\\f"
+      | toCString #"\r"			= "\\r"
+      | toCString c =   (*TODO: does not work properly for WideChar *)
+	let
+	    val n    = ord c
+	    val zero = ord #"0"
+	in
+	    String_implode [#"\\", chr(n div 64 + zero),
+				   chr(n div 8 mod 8 + zero),
+				   chr(n mod 8 + zero)]
+	end
+end
