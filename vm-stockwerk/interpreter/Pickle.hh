@@ -19,6 +19,8 @@
 
 class Pickle {
 public:
+  //--** exception handling missing
+
   enum con {
     Con, StaticCon
   };
