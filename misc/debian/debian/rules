@@ -88,10 +88,10 @@ binary-indep: build install
 	dh_installdocs $(DEB_SOURCE_DIR)/README
 	dh_installchangelogs
 	dh_strip
-	dh_compress --exclude=*.alc
 	dh_fixperms
 	dh_installmenu
 	dh_installdeb
+	dh_compress --exclude=*.alc
 	dh_shlibdeps
 	dh_gencontrol
 	dh_md5sums

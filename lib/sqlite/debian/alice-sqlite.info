@@ -7,6 +7,6 @@ HomePage: http://www.ps.uni-sb.de/alice
 License: BSD
 Description: Alice Language Layer, SQLite binding
 Source-MD5: INSERTMD5HERE
-Depends: alice (= %v-%r), sqlite
+Depends: alice (= %v-%r)
 CompileScript: make compiledll
 InstallScript: make installdll INSTALLDIR=%i/share/alice/lib/sqlite
