@@ -92,6 +92,12 @@
  } \
  DBGMSG("DECLARE_VAR done.");
 
+#define DECLARE_DESCRIPTION(desc, x) \
+ BranchDesc* desc; \
+ if (Store::WordToTransient(x) != INVALID_POINTER) { REQUEST(x); } \
+ { ConcreteRepresentation *cr = ConcreteRepresentation::FromWordDirect(x); \
+ desc = static_cast<BranchDesc *>(Store::WordToUnmanagedPointer(cr->Get(0))); \
+ }
 
 namespace UnsafeGecode {
 
@@ -99,6 +105,7 @@ namespace UnsafeGecode {
   static word InvalidVarConstructor;
   static word InvalidSpaceConstructor;
   static word InvalidDomainConstructor;
+  static word DescriptionConstructor;
   static s_int SpaceStamp = 0;
   
   class VectorValIterator {
@@ -233,6 +240,21 @@ void GecodeFinalizationSet::Finalize(word value) {
   word ptr = cr->Get(0);
   GecodeSpace *s = (GecodeSpace *)Store::WordToUnmanagedPointer(ptr);
   delete s;
+}
+
+class GecodeBranchdescFinalizationSet: public FinalizationSet {
+public:
+  virtual void Finalize(word value);
+};
+
+static GecodeBranchdescFinalizationSet *gecodeBranchdescFinalizationSet;
+
+void GecodeBranchdescFinalizationSet::Finalize(word value) {
+  ConcreteRepresentation *cr = ConcreteRepresentation::FromWordDirect(value);
+  word ptr = cr->Get(0);
+  BranchDesc *desc =
+    static_cast<BranchDesc *>(Store::WordToUnmanagedPointer(ptr));
+  delete desc;
 }
 
 }
@@ -774,6 +796,38 @@ DEFINE2(gc_commit) {
   s->commit(i);
   DBGMSG("done");
   RETURN_UNIT;
+} END
+
+DEFINE3(gc_commitDescription) {
+  DBGMSG("commitDescription");
+  DECLARE_SPACE(s, stamp, pstamp, x0);
+  CHECK_SPACE(s);
+  DECLARE_INT(i, x1);
+  DECLARE_DESCRIPTION(desc, x2);
+  DBGMSG("commit");
+  s->commitDescription(i,desc);
+  DBGMSG("done");
+  RETURN_UNIT;
+} END
+
+DEFINE1(gc_description) {
+  DBGMSG("description");
+  DECLARE_SPACE(s, stamp, pstamp, x0);
+  CHECK_SPACE(s);
+
+  switch(s->status()) {
+  case SS_BRANCH:
+    break;
+  default:
+    RAISE(UnsafeGecode::DescriptionConstructor)
+  }
+
+  ConcreteRepresentation *cr =
+    ConcreteRepresentation::New(UnsafeGecode::gecodeHandler,1);
+  cr->Init(0, Store::UnmanagedPointerToWord(s->description()));
+  UnsafeGecode::gecodeBranchdescFinalizationSet->Register(cr->ToWord());
+  DBGMSG("done");
+  RETURN(cr->ToWord());
 } END
 
 DEFINE1(gc_clone) {
@@ -1930,7 +1984,7 @@ DEFINE2(gc_fsPrint) {
 } END
 
 static word UnsafeGecodeBase() {
-  Record *record = Record::New(15);
+  Record *record = Record::New(19);
   UnsafeGecode::InvalidSpaceConstructor =
     UniqueConstructor::New("InvalidSpace",
 			   "UnsafeGecode.UnsafeGecodeBase.InvalidSpace")->ToWord();
@@ -1945,6 +1999,10 @@ static word UnsafeGecodeBase() {
 			   "UnsafeGecode.UnsafeGecodeBase.InvalidDomain")->ToWord();
   RootSet::Add(UnsafeGecode::InvalidDomainConstructor);
 
+  UnsafeGecode::DescriptionConstructor =
+    UniqueConstructor::New("Description",
+			   "UnsafeGecode.UnsafeGecodeBase.Description")->ToWord();
+  RootSet::Add(UnsafeGecode::DescriptionConstructor);
 
   record->Init("'InvalidSpace", UnsafeGecode::InvalidSpaceConstructor);
   record->Init("InvalidSpace", UnsafeGecode::InvalidSpaceConstructor);
@@ -1955,6 +2013,9 @@ static word UnsafeGecodeBase() {
   record->Init("'InvalidDomain", UnsafeGecode::InvalidDomainConstructor);
   record->Init("InvalidDomain", UnsafeGecode::InvalidDomainConstructor);
 
+  record->Init("'Description", UnsafeGecode::DescriptionConstructor);
+  record->Init("Description", UnsafeGecode::DescriptionConstructor);
+
   INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeBase", "makeSpace",
 		 gc_makespace, 0);
   INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeBase", "fail",
@@ -1963,6 +2024,10 @@ static word UnsafeGecodeBase() {
 		 gc_status, 1);
   INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeBase", "commit",
 		 gc_commit, 2);
+  INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeBase", "commitDescription",
+		 gc_commitDescription, 3);
+  INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeBase", "description",
+		 gc_description, 1);
   INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeBase", "clone",
 		 gc_clone, 1);
   INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeBase", "discard",
@@ -2168,7 +2233,10 @@ static word UnsafeGecodeFS() {
 
 word InitComponent() {
   DBGMSG("init gecode");
-  UnsafeGecode::gecodeFinalizationSet = new UnsafeGecode::GecodeFinalizationSet();
+  UnsafeGecode::gecodeFinalizationSet =
+    new UnsafeGecode::GecodeFinalizationSet();
+  UnsafeGecode::gecodeBranchdescFinalizationSet =
+    new UnsafeGecode::GecodeBranchdescFinalizationSet();
   UnsafeGecode::gecodeHandler = new UnsafeGecode::GecodeHandler();
 
   // This is used to mark variables as sited

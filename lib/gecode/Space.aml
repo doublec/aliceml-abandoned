@@ -16,6 +16,7 @@ import structure UnsafeGecode from "UnsafeGecode"
 structure Space :> SPACE =
 struct
     type space
+    type description
 
     datatype status = BRANCH | FAILED | SOLVED
 

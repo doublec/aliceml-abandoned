@@ -13,6 +13,7 @@
 signature SPACE =
 sig
     type space
+    type description
 
     (* Exception thrown by all operations on spaces *)
     (* if the space has been discarded *)
@@ -22,14 +23,18 @@ sig
     (* if variable is used in a space where it is invalid *)
     exception InvalidVar
 
+    exception Description
+
     datatype status = BRANCH | FAILED | SOLVED
-    val new     : unit -> space
-    val status  : space -> status
-    val commit  : space * int -> unit
-    val clone   : space -> space
-    val discard : space -> unit
-    val alive   : space -> unit
-    val fail    : space -> unit
+    val new         : unit -> space
+    val status      : space -> status
+    val commit      : space * int -> unit
+    val commitDescription : space * int * description -> unit
+    val description : space -> description
+    val clone       : space -> space
+    val discard     : space -> unit
+    val alive       : space -> unit
+    val fail        : space -> unit
 
     (* debugging *)
     (*val stamps  : space -> int * int*)

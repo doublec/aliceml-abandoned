@@ -13,6 +13,10 @@
 
 #include "GecodeSpace.hh"
 
+void GecodeSpace::commitDescription(int alt, BranchDesc *desc) {
+  commit(alt, desc);
+}
+
 int GecodeSpace::AddIntVariable(DomSpec& ds) {
   if (!enter()) return -1;
 

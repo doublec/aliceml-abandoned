@@ -50,6 +50,7 @@ public:
   using Space::clone;
   using Space::status;
   using Space::commit;
+  using Space::description;
   using Space::operator new;
   using Space::operator delete;
 
@@ -75,6 +76,9 @@ public:
   int AddIntVariable(DomSpec& ds);
   int AddIntVariableR(DomSpec& ds, int boolVar);  
   int AddBoolVariable();
+
+  // commit with description (for batch recomputation)
+  void commitDescription(int alt, BranchDesc *desc);
 
   // Inspect variable information
   int vmin(int var);

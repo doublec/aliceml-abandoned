@@ -14,12 +14,18 @@ import structure Space from "Space"
 
 signature SEARCH =
 sig
-    (* Standard search engines (imported from UnsafeGecode) *)
-    val searchOne : Space.space ->  Space.space option
-    val searchAll :  Space.space ->  Space.space list
+    (* Standard search engines, full copying *)
+    val searchOne : Space.space -> Space.space option
+    val searchAll : Space.space -> Space.space list
 
-    (* Branch and bound search engine written in Alice *)
-    val bab :  Space.space *
-	      ( Space.space *  Space.space -> unit) ->
-	       Space.space option
+    (* Branch and bound search engine *)
+    val searchBest :
+        Space.space * (Space.space *  Space.space -> unit) ->
+	Space.space option
+
+    structure Recompute : sig
+        (* batch recomputation with fixed distance *)
+        val searchOne  : Space.space * int -> Space.space option
+        val searchAll  : Space.space * int -> Space.space list
+    end
 end

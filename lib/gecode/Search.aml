@@ -54,7 +54,7 @@ struct
 	    (dfe 0 (Space.clone s); NONE) handle (Found s) => SOME s
 	end
 
-    fun bab (space, constrain) =
+    fun searchBest (space, constrain) =
 	let
 	    fun babe fs bs best =
 		case fs of
@@ -78,4 +78,88 @@ struct
 	in
 	    babe [Space.clone space] nil NONE
 	end
+
+    structure Recompute = struct
+
+      fun recompute s nil = Space.clone s
+        | recompute s ((i,id)::ir) =
+          let
+              val c = recompute s ir
+          in
+              Space.commitDescription(c,i,id);
+              c
+          end
+              
+      fun getDesc s n = (n, Space.description s)
+                          
+      fun searchOne (s, m) =
+          let
+              exception Found of Space.space
+              fun dfre s r is d =
+                  case Space.status s of
+                      Space.SOLVED => (raise Found s)
+                    | Space.FAILED => Space.discard s
+                    | Space.BRANCH =>
+                      if d>=m then
+                          let
+                              val c = Space.clone s
+                              val desc = getDesc s 1
+                          in
+                              Space.commit(s, 1);
+                              dfre s c [desc] 1;
+                              Space.commit(c, 2);
+                              dfre c c nil m
+                          end
+                      else let val desc = getDesc s 1 in                
+                               Space.commit(s,1);
+                               dfre s r (desc::is) (d+1);
+                               let
+                                   val c = recompute r is
+                                   val desc = getDesc c 2
+                               in
+                                   Space.commit(c, 2);
+                                   dfre c r (desc::is) (d+1)
+                               end
+                           end
+              val s' = Space.clone s
+          in
+              (dfre s' s' nil m; NONE)
+              handle Found s => SOME s
+          end
+              
+      fun searchAll (s, m) =
+          let
+              fun dfre s r is d =
+                  case Space.status s of
+                      Space.SOLVED => [s]
+                    | Space.FAILED => (Space.discard s; nil)
+                    | Space.BRANCH =>
+                      if d>=m then
+                          let
+                              val c = Space.clone s
+                              val desc = getDesc s 1
+                          in
+                              (Space.commit(s, 1);
+                               dfre s c [desc] 1)@
+                              (Space.commit(c, 2);
+                               dfre c c nil m)
+                          end
+                      else let val desc = getDesc s 1 in                
+                               (Space.commit(s,1);
+                                dfre s r (desc::is) (d+1))@
+                               let
+                                   val c = recompute r is
+                                   val desc = getDesc c 2
+                               in
+                                   Space.commit(c, 2);
+                                   dfre c r (desc::is) (d+1)
+                               end
+                           end
+              val s' = Space.clone s
+          in
+              dfre s' s' nil m
+          end
+
+    end
+
 end

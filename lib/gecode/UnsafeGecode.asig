@@ -17,13 +17,16 @@ sig
 	    exception InvalidSpace
 	    exception InvalidVar
             exception InvalidDomain
-		      
+	    exception Description
+
 	    val makeSpace : unit -> 'space
 				    
 	    val fail : 'space -> unit
 				 
 	    val status  : 'space -> 'status
 	    val commit  : 'space * int -> unit
+	    val commitDescription  : 'space * int * 'description -> unit
+            val description : 'space -> 'description
 	    val clone   : 'space -> 'space
 	    val discard : 'space -> unit
 	    val alive   : 'space -> unit
