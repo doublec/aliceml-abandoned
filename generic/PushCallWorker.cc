@@ -55,11 +55,10 @@ void PushCallInterpreter::PushFrame(TaskStack *taskStack, word closure) {
   taskStack->PushFrame(PushCallFrame::New(self, closure)->ToWord());
 }
 
-Interpreter::Result PushCallInterpreter::Run(word args, TaskStack *taskStack) {
+Interpreter::Result PushCallInterpreter::Run(TaskStack *taskStack) {
   word closure =
     PushCallFrame::FromWordDirect(taskStack->GetFrame())->GetClosure();
   taskStack->PopFrame();
-  Scheduler::currentArgs = args;
   return taskStack->PushCall(closure);
 }
 

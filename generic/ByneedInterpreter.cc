@@ -67,11 +67,12 @@ static inline int IsCyclic(word x, Future *future) {
   return static_cast<Future *>(Store::WordToTransient(x)) == future;
 }
 
-Interpreter::Result ByneedInterpreter::Run(word args, TaskStack *taskStack) {
+Interpreter::Result ByneedInterpreter::Run(TaskStack *taskStack) {
   ByneedFrame *frame = ByneedFrame::FromWordDirect(taskStack->GetFrame());
   Future *future = frame->GetFuture();
   future->ScheduleWaitingThreads();
-  word arg = Interpreter::Construct(args);
+  Interpreter::Construct();
+  word arg = Scheduler::currentArgs[0];
   if (IsCyclic(arg, future)) { // cancel future with Cyclic exception
     future->Become(CANCELLED_LABEL, Hole::cyclicExn);
     Scheduler::currentData = Hole::cyclicExn;
@@ -80,7 +81,8 @@ Interpreter::Result ByneedInterpreter::Run(word args, TaskStack *taskStack) {
   } else { // actually bind the future
     taskStack->PopFrame();
     future->Become(REF_LABEL, arg);
-    Scheduler::currentArgs = Interpreter::OneArg(arg);
+    Scheduler::nArgs = Scheduler::ONE_ARG;
+    Scheduler::currentArgs[0] = arg;
     return Interpreter::CONTINUE;
   }
 }
@@ -92,7 +94,8 @@ ByneedInterpreter::Handle(word exn, Backtrace *, TaskStack *taskStack) {
   taskStack->PopFrame();
   future->ScheduleWaitingThreads();
   future->Become(CANCELLED_LABEL, exn);
-  Scheduler::currentArgs = Interpreter::OneArg(future->ToWord());
+  Scheduler::nArgs = Scheduler::ONE_ARG;
+  Scheduler::currentArgs[0] = future->ToWord();
   return Interpreter::CONTINUE;
 }
 
