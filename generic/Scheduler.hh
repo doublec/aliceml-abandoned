@@ -21,7 +21,7 @@
 
 #include "generic/Thread.hh"
 #include "generic/ThreadQueue.hh"
-#include "generic/PushCallInterpreter.hh"
+#include "generic/PushCallWorker.hh"
 
 class Backtrace;
 
@@ -66,7 +66,7 @@ public:
   }
   static Thread *NewThread(word closure, u_int nArgs, word args) {
     Thread *thread = NewThread(nArgs, args);
-    PushCallInterpreter::PushFrame(thread, closure);
+    PushCallWorker::PushFrame(thread, closure);
     return thread;
   }
   static void ScheduleThread(Thread *thread) {
@@ -112,7 +112,7 @@ public:
   static void PopFrame() {
     nFrames--;
   }
-  static Interpreter::Result PushCall(word closure);
+  static Worker::Result PushCall(word closure);
   // Other Scheduler Functions
   static u_int PreemptStatus() {
     return (1 << SCHEDULER_THREAD_PREEMPT_STATUS);

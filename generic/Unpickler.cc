@@ -28,7 +28,7 @@
 #include "generic/Closure.hh"
 #include "generic/Backtrace.hh"
 #include "generic/Transients.hh"
-#include "generic/Interpreter.hh"
+#include "generic/Worker.hh"
 #include "generic/Scheduler.hh"
 #include "generic/Transform.hh"
 #include "generic/Unpickler.hh"
@@ -200,7 +200,7 @@ public:
       Error("InputStream::Close: illegal node type");
     }
   }
-  Interpreter::Result FillBuffer() {
+  Worker::Result FillBuffer() {
     switch ((IN_STREAM_TYPE) GetLabel()) {
     case FILE_INPUT_STREAM:
       {
@@ -238,12 +238,12 @@ public:
 	  Scheduler::currentData = Unpickler::Corrupt;
 	  Scheduler::currentBacktrace =
 	    Backtrace::New(Scheduler::GetAndPopFrame());
-	  return Interpreter::RAISE;
+	  return Worker::RAISE;
 	} else {
 	  tl += nread;
 	  SetTl(tl);
 	  Scheduler::PopFrame();
-	  return Interpreter::CONTINUE;
+	  return Worker::CONTINUE;
 	}
       }
     case STRING_INPUT_STREAM:
@@ -251,7 +251,7 @@ public:
       Scheduler::currentData = Unpickler::Corrupt;
       Scheduler::currentBacktrace =
 	Backtrace::New(Scheduler::GetAndPopFrame());
-      return Interpreter::RAISE;
+      return Worker::RAISE;
     default:
       Error("InputStream::FillBuffer: illegal node type");
     }
@@ -287,16 +287,16 @@ public:
   }
 };
 
-// InputInterpreter
-class InputInterpreter : public Interpreter {
+// InputWorker
+class InputWorker: public Worker {
 private:
-  static InputInterpreter *self;
-  // InputInterpreter Constructor
-  InputInterpreter() : Interpreter() {}
+  static InputWorker *self;
+  // InputWorker Constructor
+  InputWorker(): Worker() {}
 public:
-  // InputInterpreter Static Constructor
+  // InputWorker Static Constructor
   static void Init() {
-    self = new InputInterpreter();
+    self = new InputWorker();
   }
   // Frame Handling
   static void PushFrame();
@@ -308,37 +308,36 @@ public:
 };
 
 //
-// InputInterpreter Functions
+// InputWorker Functions
 //
-InputInterpreter *InputInterpreter::self;
+InputWorker *InputWorker::self;
 
-void InputInterpreter::PushFrame() {
+void InputWorker::PushFrame() {
   Scheduler::PushFrame(StackFrame::New(INPUT_FRAME, self, 0)->ToWord());
 }
 
-Interpreter::Result InputInterpreter::Run() {
+Worker::Result InputWorker::Run() {
   return UnpickleArgs::GetInputStream()->FillBuffer();
 }
 
-const char *InputInterpreter::Identify() {
-  return "InputInterpreter";
+const char *InputWorker::Identify() {
+  return "InputWorker";
 }
 
-void InputInterpreter::DumpFrame(word) {
+void InputWorker::DumpFrame(word) {
   std::fprintf(stderr, "Fill Unpickling Buffer\n");
 }
 
-// TransformInterpreter Frame
-class TransformFrame : private StackFrame {
+// TransformWorker Frame
+class TransformFrame: private StackFrame {
 private:
   enum { FUTURE_POS, TUPLE_POS, SIZE };
 public:
   using Block::ToWord;
 
   // TransformFrame Constructor
-  static TransformFrame *New(Interpreter *interpreter,
-			     Future *future, Tuple *tuple) {
-    StackFrame *frame = StackFrame::New(TRANSFORM_FRAME, interpreter, SIZE);
+  static TransformFrame *New(Worker *worker, Future *future, Tuple *tuple) {
+    StackFrame *frame = StackFrame::New(TRANSFORM_FRAME, worker, SIZE);
     frame->InitArg(FUTURE_POS, future->ToWord());
     frame->InitArg(TUPLE_POS, tuple->ToWord());
     return static_cast<TransformFrame *>(frame);
@@ -360,19 +359,19 @@ public:
   }
 };
 
-// TransformInterpreter
-class TransformInterpreter : public Interpreter {
+// TransformWorker
+class TransformWorker: public Worker {
 private:
-  static TransformInterpreter *self;
-  // TransformInterpreter Constructor
-  TransformInterpreter() : Interpreter() {}
+  static TransformWorker *self;
+  // TransformWorker Constructor
+  TransformWorker(): Worker() {}
 public:
-  // TransformInterpreter Static Constructor
+  // TransformWorker Static Constructor
   static void Init() {
-    self = new TransformInterpreter();
+    self = new TransformWorker();
   }
   // Frame Handling
-  static void TransformInterpreter::PushFrame(Future *future, Tuple *tuple);
+  static void TransformWorker::PushFrame(Future *future, Tuple *tuple);
   // Execution
   virtual Result Run();
   // Debugging
@@ -395,15 +394,15 @@ word ApplyTransform(String *name, word argument) {
 }
 
 //
-// TransformInterpreter Functions
+// TransformWorker Functions
 //
-TransformInterpreter *TransformInterpreter::self;
+TransformWorker *TransformWorker::self;
 
-void TransformInterpreter::PushFrame(Future *future, Tuple *tuple) {
+void TransformWorker::PushFrame(Future *future, Tuple *tuple) {
   Scheduler::PushFrame(TransformFrame::New(self, future, tuple)->ToWord());
 }
 
-Interpreter::Result TransformInterpreter::Run() {
+Worker::Result TransformWorker::Run() {
   TransformFrame *frame =
     TransformFrame::FromWordDirect(Scheduler::GetAndPopFrame());
   Future *future = frame->GetFuture();
@@ -411,28 +410,27 @@ Interpreter::Result TransformInterpreter::Run() {
   String *name   = String::FromWordDirect(tuple->Sel(0));
   word argument  = tuple->Sel(1);
   future->Become(REF_LABEL, ApplyTransform(name, argument));
-  return Interpreter::CONTINUE;
+  return Worker::CONTINUE;
 }
 
-const char *TransformInterpreter::Identify() {
-  return "TransformInterpreter";
+const char *TransformWorker::Identify() {
+  return "TransformWorker";
 }
 
-void TransformInterpreter::DumpFrame(word) {
+void TransformWorker::DumpFrame(word) {
   std::fprintf(stderr, "Apply Transform\n");
 }
 
-// UnpickleInterpreter Frame
-class UnpickleFrame : private StackFrame {
+// UnpickleWorker Frame
+class UnpickleFrame: private StackFrame {
 private:
   enum { BLOCK_POS, INDEX_POS, NUM_ELEMS_POS, SIZE };
 public:
   using Block::ToWord;
 
   // UnpickleFrame Constructor
-  static UnpickleFrame *New(Interpreter *interpreter,
-			    word x, u_int i, u_int n) {
-    StackFrame *frame = StackFrame::New(UNPICKLING_FRAME, interpreter, SIZE);
+  static UnpickleFrame *New(Worker *worker, word x, u_int i, u_int n) {
+    StackFrame *frame = StackFrame::New(UNPICKLING_FRAME, worker, SIZE);
     frame->InitArg(BLOCK_POS, x);
     frame->InitArg(INDEX_POS, Store::IntToWord(i));
     frame->InitArg(NUM_ELEMS_POS, Store::IntToWord(n));
@@ -457,16 +455,16 @@ public:
   }
 };
 
-// UnpickleInterpreter
-class UnpickleInterpreter : public Interpreter {
+// UnpickleWorker
+class UnpickleWorker: public Worker {
 private:
-  static UnpickleInterpreter *self;
-  // UnpickleInterpreter Constructor
-  UnpickleInterpreter() : Interpreter() {}
+  static UnpickleWorker *self;
+  // UnpickleWorker Constructor
+  UnpickleWorker(): Worker() {}
 public:
-  // UnpickleInterpreter Static Constructor
+  // UnpickleWorker Static Constructor
   static void Init() {
-    self = new UnpickleInterpreter();
+    self = new UnpickleWorker();
   }
   // Frame Handling
   static void PushFrame(word block, u_int i, u_int n);
@@ -478,11 +476,11 @@ public:
 };
 
 //
-// UnpickleInterpreter Functions
+// UnpickleWorker Functions
 //
-UnpickleInterpreter *UnpickleInterpreter::self;
+UnpickleWorker *UnpickleWorker::self;
 
-void UnpickleInterpreter::PushFrame(word block, u_int i, u_int n) {
+void UnpickleWorker::PushFrame(word block, u_int i, u_int n) {
   Scheduler::PushFrame(UnpickleFrame::New(self, block, i, n)->ToWord());
 }
 
@@ -491,7 +489,7 @@ static inline
 void PushUnpickleFrame(word block, u_int i, u_int n) {
   if (i != n) {
     Assert(i < n);
-    UnpickleInterpreter::PushFrame(block, i, n);
+    UnpickleWorker::PushFrame(block, i, n);
   }
 }
 
@@ -514,29 +512,30 @@ static inline word SelFromEnv(word env, u_int index) {
 // End of Buffer requires rereading;
 // therefore we reinstall the old task stack
 //--** to be done: more efficient solution
-#define CHECK_EOB()				\
+#define CHECK_EOB() {				\
   if (is->IsEOB()) {				\
     Scheduler::PushFrame(frame->ToWord());	\
-    InputInterpreter::PushFrame();		\
-    return Interpreter::CONTINUE;		\
-  } else {}
+    InputWorker::PushFrame();			\
+    return Worker::CONTINUE;			\
+  }						\
+}
 
 #define CONTINUE() {				\
   if (StatusWord::GetStatus() != 0)		\
-    return Interpreter::PREEMPT;		\
+    return Worker::PREEMPT;			\
   else						\
-    return Interpreter::CONTINUE;		\
+    return Worker::CONTINUE;			\
 }
 
 #define CORRUPT() {					\
   Scheduler::currentData = Unpickler::Corrupt;		\
   Scheduler::currentBacktrace =				\
     Backtrace::New(Scheduler::GetAndPopFrame());	\
-  return Interpreter::RAISE;				\
+  return Worker::RAISE;					\
 }
 
 // Core Unpickling Function
-Interpreter::Result UnpickleInterpreter::Run() {
+Worker::Result UnpickleWorker::Run() {
   UnpickleFrame *frame =
     UnpickleFrame::FromWordDirect(Scheduler::GetAndPopFrame());
   word x = frame->GetBlock();
@@ -628,7 +627,7 @@ Interpreter::Result UnpickleInterpreter::Run() {
 	AddToEnv(env, y);
 	is->Commit();
 	PushUnpickleFrame(x, i + 1, n);
-	UnpickleInterpreter::PushFrame(y, 0, size);
+	UnpickleWorker::PushFrame(y, 0, size);
 	CONTINUE();
       }
       break;
@@ -640,7 +639,7 @@ Interpreter::Result UnpickleInterpreter::Run() {
 	AddToEnv(env, y);
 	is->Commit();
 	PushUnpickleFrame(x, i + 1, n);
-	UnpickleInterpreter::PushFrame(y, 0, size);
+	UnpickleWorker::PushFrame(y, 0, size);
 	CONTINUE();
       }
       break;
@@ -653,7 +652,7 @@ Interpreter::Result UnpickleInterpreter::Run() {
 	AddToEnv(env, y);
 	is->Commit();
 	PushUnpickleFrame(x, i + 1, n);
-	UnpickleInterpreter::PushFrame(y, 0, size);
+	UnpickleWorker::PushFrame(y, 0, size);
 	CONTINUE();
       }
       break;
@@ -666,8 +665,8 @@ Interpreter::Result UnpickleInterpreter::Run() {
 	is->Commit();
 	Tuple *tuple = Tuple::New(2);
 	PushUnpickleFrame(x, i + 1, n);
-	TransformInterpreter::PushFrame(future, tuple);
-	UnpickleInterpreter::PushFrame(tuple->ToWord(), 0, 2);
+	TransformWorker::PushFrame(future, tuple);
+	UnpickleWorker::PushFrame(tuple->ToWord(), 0, 2);
 	CONTINUE();
       }
       break;
@@ -687,27 +686,26 @@ Interpreter::Result UnpickleInterpreter::Run() {
   }
 }
 
-const char *UnpickleInterpreter::Identify() {
-  return "UnpickleInterpreter";
+const char *UnpickleWorker::Identify() {
+  return "UnpickleWorker";
 }
 
-void UnpickleInterpreter::DumpFrame(word frameWord) {
+void UnpickleWorker::DumpFrame(word frameWord) {
   UnpickleFrame *frame = UnpickleFrame::FromWordDirect(frameWord);
   std::fprintf(stderr, "Unpickling Task %d of %d\n",
 	       frame->GetIndex(), frame->GetNumberOfElements());
 }
 
-// PickleUnpackInterpeter Frame
-class PickleUnpackFrame : private StackFrame {
+// PickleUnpackWorker Frame
+class PickleUnpackFrame: private StackFrame {
 private:
   enum { TUPLE_POS, SIZE };
 public:
   using Block::ToWord;
 
   // PickleUnpackFrame Constructor
-  static PickleUnpackFrame *New(Interpreter *interpreter, Tuple *x) {
-    StackFrame *frame =
-      StackFrame::New(PICKLE_UNPACK_FRAME, interpreter, SIZE);
+  static PickleUnpackFrame *New(Worker *worker, Tuple *x) {
+    StackFrame *frame = StackFrame::New(PICKLE_UNPACK_FRAME, worker, SIZE);
     frame->InitArg(TUPLE_POS, x->ToWord());
     return static_cast<PickleUnpackFrame *>(frame);
   }
@@ -724,16 +722,16 @@ public:
   }
 };
 
-// PickleUnpackInterpeter
-class PickleUnpackInterpeter : public Interpreter {
+// PickleUnpackWorker
+class PickleUnpackWorker: public Worker {
 private:
-  static PickleUnpackInterpeter *self;
-  // PickleUnpackInterpeter Constructor
-  PickleUnpackInterpeter() : Interpreter() {}
+  static PickleUnpackWorker *self;
+  // PickleUnpackWorker Constructor
+  PickleUnpackWorker(): Worker() {}
 public:
-  // PickleUnpackInterpeter Static Constructor
+  // PickleUnpackWorker Static Constructor
   static void Init() {
-    self = new PickleUnpackInterpeter();
+    self = new PickleUnpackWorker();
   }
   // Frame Handling
   static void PushFrame(Tuple *x);
@@ -745,41 +743,41 @@ public:
 };
 
 //
-// PickleUnpackInterpeter Functions
+// PickleUnpackWorker Functions
 //
-PickleUnpackInterpeter *PickleUnpackInterpeter::self;
+PickleUnpackWorker *PickleUnpackWorker::self;
 
-void PickleUnpackInterpeter::PushFrame(Tuple *x) {
+void PickleUnpackWorker::PushFrame(Tuple *x) {
   Scheduler::PushFrame(PickleUnpackFrame::New(self, x)->ToWord());
 }
 
-Interpreter::Result PickleUnpackInterpeter::Run() {
+Worker::Result PickleUnpackWorker::Run() {
   PickleUnpackFrame *frame =
     PickleUnpackFrame::FromWordDirect(Scheduler::GetAndPopFrame());
   Tuple *x = frame->GetTuple();
   Scheduler::nArgs = Scheduler::ONE_ARG;
   Scheduler::currentArgs[0] = x->Sel(0);
-  return Interpreter::CONTINUE;
+  return Worker::CONTINUE;
 }
 
-const char *PickleUnpackInterpeter::Identify() {
-  return "PickleUnpackInterpeter";
+const char *PickleUnpackWorker::Identify() {
+  return "PickleUnpackWorker";
 }
 
-void PickleUnpackInterpeter::DumpFrame(word) {
+void PickleUnpackWorker::DumpFrame(word) {
   std::fprintf(stderr, "Pickle Unpack\n");
 }
 
-// PickleLoadInterpreter Frame
-class PickleLoadFrame : private StackFrame {
+// PickleLoadWorker Frame
+class PickleLoadFrame: private StackFrame {
 private:
   enum { TUPLE_POS, SIZE };
 public:
   using Block::ToWord;
 
   // PickleLoadFrame Constructor
-  static PickleLoadFrame *New(Interpreter *interpreter, Tuple *x) {
-    StackFrame *frame = StackFrame::New(PICKLE_LOAD_FRAME, interpreter, SIZE);
+  static PickleLoadFrame *New(Worker *worker, Tuple *x) {
+    StackFrame *frame = StackFrame::New(PICKLE_LOAD_FRAME, worker, SIZE);
     frame->InitArg(TUPLE_POS, x->ToWord());
     return static_cast<PickleLoadFrame *>(frame);
   }
@@ -796,16 +794,16 @@ public:
   }
 };
 
-// PickleLoadInterpreter
-class PickleLoadInterpreter : public Interpreter {
+// PickleLoadWorker
+class PickleLoadWorker: public Worker {
 private:
-  static PickleLoadInterpreter *self;
-  // PickleLoadInterpreter Constructor
-  PickleLoadInterpreter() : Interpreter() {}
+  static PickleLoadWorker *self;
+  // PickleLoadWorker Constructor
+  PickleLoadWorker(): Worker() {}
 public:
-  // PickleLoadInterpreter Static Constructor
+  // PickleLoadWorker Static Constructor
   static void Init() {
-    self = new PickleLoadInterpreter();
+    self = new PickleLoadWorker();
   }
   // Frame Handling
   static void PushFrame(Tuple *x);
@@ -817,15 +815,15 @@ public:
 };
 
 //
-// PickleLoadInterpreter Functions
+// PickleLoadWorker Functions
 //
-PickleLoadInterpreter *PickleLoadInterpreter::self;
+PickleLoadWorker *PickleLoadWorker::self;
 
-void PickleLoadInterpreter::PushFrame(Tuple *x) {
+void PickleLoadWorker::PushFrame(Tuple *x) {
   Scheduler::PushFrame(PickleLoadFrame::New(self, x)->ToWord());
 }
 
-Interpreter::Result PickleLoadInterpreter::Run() {
+Worker::Result PickleLoadWorker::Run() {
   PickleLoadFrame *frame =
     PickleLoadFrame::FromWordDirect(Scheduler::GetAndPopFrame());
   InputStream *is = UnpickleArgs::GetInputStream();
@@ -833,14 +831,14 @@ Interpreter::Result PickleLoadInterpreter::Run() {
   is->Close();
   Scheduler::nArgs = Scheduler::ONE_ARG;
   Scheduler::currentArgs[0] = x->Sel(0);
-  return Interpreter::CONTINUE;
+  return Worker::CONTINUE;
 }
 
-const char *PickleLoadInterpreter::Identify() {
-  return "PickleLoadInterpreter";
+const char *PickleLoadWorker::Identify() {
+  return "PickleLoadWorker";
 }
 
-void PickleLoadInterpreter::DumpFrame(word) {
+void PickleLoadWorker::DumpFrame(word) {
   std::fprintf(stderr, "Pickle Load\n");
 }
 
@@ -849,18 +847,18 @@ void PickleLoadInterpreter::DumpFrame(word) {
 //
 static const u_int INITIAL_TABLE_SIZE = 16; // to be checked
 
-Interpreter::Result Unpickler::Unpack(String *s) {
+Worker::Result Unpickler::Unpack(String *s) {
   Tuple *x = Tuple::New(1);
   InputStream *is = InputStream::NewFromString(s);
   Stack *env = Stack::New(INITIAL_TABLE_SIZE);
   Scheduler::PopFrame();
-  PickleUnpackInterpeter::PushFrame(x);
-  UnpickleInterpreter::PushFrame(x->ToWord(), 0, 1);
+  PickleUnpackWorker::PushFrame(x);
+  UnpickleWorker::PushFrame(x->ToWord(), 0, 1);
   UnpickleArgs::New(is, env->ToWord());
-  return Interpreter::CONTINUE;
+  return Worker::CONTINUE;
 }
 
-Interpreter::Result Unpickler::Load(String *filename) {
+Worker::Result Unpickler::Load(String *filename) {
   char *szFileName = filename->ExportC();
   InputStream *is = InputStream::NewFromFile(szFileName);
   if (is->HasException()) {
@@ -868,27 +866,27 @@ Interpreter::Result Unpickler::Load(String *filename) {
     Scheduler::currentData = Store::IntToWord(0); // to be done
     fprintf(stderr, "file '%s' not found\n", szFileName);
     Scheduler::currentBacktrace = Backtrace::New(Scheduler::GetAndPopFrame());
-    return Interpreter::RAISE;
+    return Worker::RAISE;
   }
   Scheduler::PopFrame();
   Tuple *x = Tuple::New(1);
   Stack *env = Stack::New(INITIAL_TABLE_SIZE);
-  PickleLoadInterpreter::PushFrame(x);
-  UnpickleInterpreter::PushFrame(x->ToWord(), 0, 1);
+  PickleLoadWorker::PushFrame(x);
+  UnpickleWorker::PushFrame(x->ToWord(), 0, 1);
   UnpickleArgs::New(is, env->ToWord());
-  return Interpreter::CONTINUE;
+  return Worker::CONTINUE;
 }
 
 word Unpickler::Corrupt;
 
 void Unpickler::Init() {
-  // Setup internal Interpreters
+  // Setup internal Workers
   InputStream::Init();
-  InputInterpreter::Init();
-  TransformInterpreter::Init();
-  UnpickleInterpreter::Init();
-  PickleUnpackInterpeter::Init();
-  PickleLoadInterpreter::Init();
+  InputWorker::Init();
+  TransformWorker::Init();
+  UnpickleWorker::Init();
+  PickleUnpackWorker::Init();
+  PickleLoadWorker::Init();
   handlerTable =
     HashTable::New(HashTable::BLOCK_KEY, initialHandlerTableSize)->ToWord();
   RootSet::Add(handlerTable);

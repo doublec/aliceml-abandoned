@@ -19,7 +19,7 @@
 
 #include "store/Store.hh"
 
-class Interpreter;
+class Worker;
 
 // Known StackFrame Types
 enum FrameLabel {
@@ -65,19 +65,19 @@ enum FrameLabel {
 
 class DllExport StackFrame: private Block {
 protected:
-  enum { INTERPRETER_POS, BASE_SIZE };
+  enum { WORKER_POS, BASE_SIZE };
 public:
   using Block::ToWord;
 
   // StackFrame Constructors
-  static StackFrame *New(FrameLabel l, Interpreter *interpreter) {
+  static StackFrame *New(FrameLabel l, Worker *worker) {
     Block *p = Store::AllocBlock((BlockLabel) l, BASE_SIZE);
-    p->InitArg(INTERPRETER_POS, Store::UnmanagedPointerToWord(interpreter));
+    p->InitArg(WORKER_POS, Store::UnmanagedPointerToWord(worker));
     return static_cast<StackFrame *>(p);
   }
-  static StackFrame *New(FrameLabel l, Interpreter *interpreter, u_int size) {
+  static StackFrame *New(FrameLabel l, Worker *worker, u_int size) {
     Block *p = Store::AllocBlock((BlockLabel) l, BASE_SIZE + size);
-    p->InitArg(INTERPRETER_POS, Store::UnmanagedPointerToWord(interpreter));
+    p->InitArg(WORKER_POS, Store::UnmanagedPointerToWord(worker));
     return static_cast<StackFrame *>(p);
   }
 
@@ -93,9 +93,9 @@ public:
   FrameLabel GetLabel() {
     return static_cast<FrameLabel>(static_cast<int>(Block::GetLabel()));
   }
-  Interpreter *GetInterpreter() {
-    return static_cast<Interpreter *>
-      (Store::WordToUnmanagedPointer(Block::GetArg(INTERPRETER_POS)));
+  Worker *GetWorker() {
+    return static_cast<Worker *>
+      (Store::WordToUnmanagedPointer(Block::GetArg(WORKER_POS)));
   }
   word GetArg(u_int pos) {
     return Block::GetArg(BASE_SIZE + pos);
