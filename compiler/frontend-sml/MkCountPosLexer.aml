@@ -17,7 +17,7 @@ functor CountPosLexer(
 
     fun makeLexer yyinput =
 	let
-	    val lin  = ref 1
+	    val lin  = ref 0	(*UNFINISHED: 1*)
 	    val col  = ref 0
 	    val pos  = ref 0
 	    val buf  = ref ""	(* current buffer *)
