@@ -1283,10 +1283,8 @@ define
 	     else Instr in
 		case {Dictionary.condGet @Permanents Reg none}
 		of vEquateConstant(_ Constant _ _) then   % 1)
-		   {Dictionary.remove @Permanents Reg}
 		   putConstant(Constant x(I))
 		[] vGetSelf(_ _ _) then   % 1)
-		   {Dictionary.remove @Permanents Reg}
 		   getSelf(x(I))
 		elsecase Emitter, GetTemp(Reg $) of x(!I) then
 		   %% Optimize the special case that the register
