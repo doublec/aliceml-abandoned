@@ -17,8 +17,8 @@ is
     LABEL_SORT-sig.aml
     MkLabelSort.aml
     LabelSort.aml
-    INTERMEDIATE_AUX-sig.aml
-    IntermediateAux.aml
+
+    intermediate-aux.cm
 
     SIMPLIFY_MATCH-sig.aml
     SimplifyMatch.aml
