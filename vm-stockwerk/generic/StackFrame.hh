@@ -55,7 +55,7 @@ typedef enum {
   NATIVE_CODE_HANDLER_FRAME,
   LAZY_COMPILE_FRAME,
   // Alice Async IO Frames
-  IO_FRAME
+  IO_FRAME,
   // End of Frames
   MAX_STACK_FRAME = IO_FRAME
 } FrameLabel;
