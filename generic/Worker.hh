@@ -5,42 +5,34 @@
 //
 // Copyright:
 //   Thorsten Brunklaus, 2002
-//   Leif Kornstaedt, 2000
+//   Leif Kornstaedt, 2000-2002
 //
 // Last Change:
 //   $Date$ by $Author$
 //   $Revision$
 //
 
-#ifndef __GENERIC__INTERPRETER_HH__
-#define __GENERIC__INTERPRETER_HH__
+#ifndef __GENERIC__WORKER_HH__
+#define __GENERIC__WORKER_HH__
 
 #if defined(INTERFACE)
-#pragma interface "generic/Interpreter.hh"
+#pragma interface "generic/Worker.hh"
 #endif
 
 #include "store/Store.hh"
-#include "generic/ConcreteRepresentationHandler.hh"
-
-class Closure;
-class Backtrace;
 
 #if PROFILE
 class StackFrame;
-class ConcreteCode;
 class String;
 #endif
 
-class DllExport Interpreter: public ConcreteRepresentationHandler {
+class DllExport Worker {
 public:
   enum Result {
     CONTINUE, PREEMPT, SUSPEND, RAISE, REQUEST, TERMINATE
   };
-  typedef Interpreter::Result (*function)();
-  // Interpreter Constructor
-  Interpreter() {}
-  // ConcreteRepresentation Methods
-  virtual Block *GetAbstractRepresentation(Block *blockWithHandler);
+  // Worker Constructor
+  Worker() {}
   // Calling Convention Conversion
   static void Construct();
   //   Deconstruct returns 1 iff argument needs to be requested,
@@ -48,7 +40,6 @@ public:
   //   returns 0 iff deconstruction was immediately successful
   static u_int Deconstruct();
   // Frame Handling
-  virtual void PushCall(Closure *closure);
   virtual void PurgeFrame(word frame);
   // Execution
   virtual Result Run() = 0;
@@ -56,15 +47,10 @@ public:
   // Debugging
   virtual const char *Identify() = 0;
   virtual void DumpFrame(word frame) = 0;
-  // Runtime compilation
-  virtual u_int GetArity();
-  virtual function GetCFunction();
 #if PROFILE
   // Profiling
   virtual word GetProfileKey(StackFrame *frame);
-  virtual word GetProfileKey(ConcreteCode *concreteCode);
   virtual String *GetProfileName(StackFrame *frame);
-  virtual String *GetProfileName(ConcreteCode *concreteCode);
 #endif
 };
 
