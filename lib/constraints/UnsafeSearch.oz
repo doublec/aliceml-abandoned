@@ -12,8 +12,7 @@
 
 functor
 import
-   Explorer(object one best all)
-%   InspectorComponent('Inspector$': Inspector) at 'x-alice:/lib/tools/Inspector'
+   Search
 export
    'UnsafeSearch$' : UnsafeSearch
 define
@@ -38,6 +37,7 @@ define
       case V
       of [X] then 'SOME'(X)
       [] nil then 'NONE'
+      end
    end
    fun {MakeKill K}
       fun {$ _}
@@ -82,7 +82,7 @@ define
    fun {SearchAllDepthSFun P Rcd}
       {Search.allS {MakeScript P} Rcd _}
    end
-   fun {SearchBestFun P O}
+   fun {SearchBestFun P Order}
       {MakeOption {Search.base.best {MakeScript P} {MakeOrder Order}}}
    end
    fun {SearchBestBABFun P Order Rcd}
@@ -97,24 +97,23 @@ define
    fun {SearchBestRestartSFun P Order Rcd}
       {MakeOption {Search.best.restartS {MakeScript P} {MakeOrder Order} Rcd _}}
    end
-   {Inspect Search}
    %% Create Search Interface
-   UnsafeExplorer = 'UnsafeSearch'('searchOne' : SearchOneFun
-				   'searchOneDepth' : SearchOneDepthFun
-				   'searchOneDepthS' : SearchOneDepthSFun
-				   'searchOneBound' : SearchOneBoundFun
-				   'searchOneBoundS' : SearchOneBoundSFun
-				   'searchOneIter' : SearchOneIterFun
-				   'searchOneIterS' : SearchOneIterSFun
-				   'searchOneLDS' : SearchOneLDSFun
-				   'searchOneLDSS' : SearchOneLDSSFun
-				   'searchAll' : SearchAllFun
-				   'searchAllDepth' : SearchAllDepthFun
-				   'searchAllDepthS' : SearchAllDepthSFun
-				   'searchBest' : SearchBestFun
-				   'searchBestBAB' : SearchBestBABFun
-				   'searchBestBABS' : SearchBestBABSFun
-				   'searchBestRestart' : SearchBestRestartFun
-				   'searchBestRestartS' : SearchBestRestartSFun
-				  )
+   UnsafeSearch = 'UnsafeSearch'('searchOne' : SearchOneFun
+				 'searchOneDepth' : SearchOneDepthFun
+				 'searchOneDepthS' : SearchOneDepthSFun
+				 'searchOneBound' : SearchOneBoundFun
+				 'searchOneBoundS' : SearchOneBoundSFun
+				 'searchOneIter' : SearchOneIterFun
+				 'searchOneIterS' : SearchOneIterSFun
+				 'searchOneLDS' : SearchOneLDSFun
+				 'searchOneLDSS' : SearchOneLDSSFun
+				 'searchAll' : SearchAllFun
+				 'searchAllDepth' : SearchAllDepthFun
+				 'searchAllDepthS' : SearchAllDepthSFun
+				 'searchBest' : SearchBestFun
+				 'searchBestBAB' : SearchBestBABFun
+				 'searchBestBABS' : SearchBestBABSFun
+				 'searchBestRestart' : SearchBestRestartFun
+				 'searchBestRestartS' : SearchBestRestartSFun
+				)
 end
