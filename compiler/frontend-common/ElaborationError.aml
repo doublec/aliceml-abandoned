@@ -217,10 +217,12 @@ structure ElaborationError :> ELABORATION_ERROR =
 	    indent(textpar["val",ppLab a]) ^^
 	    textpar["is","not","an","open","datatype"]
       | ppMismatch'(Inf.MismatchDom im) =
+	    break ^^
 	    textpar["functor","argument","signature","is","incompatible,",
 		"because"] ^^
 	    ppMismatch' im
       | ppMismatch'(Inf.MismatchRan im) =
+	    break ^^
 	    textpar["functor","result","signature","is","incompatible,",
 		"because"] ^^
 	    ppMismatch' im
