@@ -24,7 +24,7 @@
     than once.
   </P>
 
-  <P>
+  <P class=note><EM>Note:</EM> 
     Promises may be thought of as single-assignment references that
     allow dereferencing prior to assignment, yielding a future. The
     operations <TT>promise</TT>, <TT>future</TT> and <TT>fulfill</TT>

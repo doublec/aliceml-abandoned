@@ -8,13 +8,8 @@
 
 <P>A <EM>future</EM> is a place-holder for the undetermined result of a
 computation. Once the computation terminates with a result value, the future is
-eliminated by globally replacing it with that value. That value may be a future
-on its own. If the associated computation terminates with an exception, the
-future is <EM>failed</EM>. A failed future carries the corresponding exception
-and reraises it on every attempt to access it. Whenever a future is
-<EM>requested</EM> by a concurrent computation, i.e. it tries to access its
-value, that computation automatically synchronizes on the future by blocking on
-it until it becomes determined or failed.</P>
+eliminated by globally replacing it with that value. The value may be a future
+on its own.</P>
 
 <P>There are three basic kinds of futures:</P>
 
@@ -27,24 +22,27 @@ it until it becomes determined or failed.</P>
 	a value that is assigned later through an explicit operation </LI>
 </UL>
 
+<P>Whenever a future is <EM>requested</EM> by a concurrent computation, i.e. it
+tries to access its value, that computation automatically synchronizes on the
+future by blocking until it becomes determined or failed.</P>
+
+<P>If the computation associated with a future terminates with an exception,
+the future is <EM>failed</EM>. A failed future carries the corresponding
+exception and reraises it on every attempt to access it.</P>
+
 
 <?php section("spawn", "concurrency") ?>
 
 <P>A concurrent future is created by the expression</P>
 
-<PRE>
+<PRE class=code>
 spawn <I>exp</I></PRE>
 
 <P>which evaluates the expression <TT><I>exp</I></TT> in new thread and returns
 immediately with a future of its result. When the expression has been
-evaluated, the future is globally replaced by the result. Note that the result
-may itself be a future. See the below discussion on <A href="#failed">failed
-futures</A> for the treatment of possible error conditions.</P>
-
-<P>A thread that tries to <A href="#request"><EM>request</EM></A> a future is
-automatically blocked until the result is no longer a future. Such implicit
-data-flow synchronisation enables concurrent programming on a high level of
-abstraction.</P>
+evaluated, the future is globally replaced by the result. See the below
+discussion on <A href="#failed">failed futures</A> for the treatment of
+possible error conditions.</P>
 
 
 <?php subsection("spawn-example", "Example") ?>
@@ -59,7 +57,7 @@ Vector.tabulate (50, fn i => spawn f i)</PRE>
 <?php subsection("spawn-sugar", "Syntactic sugar") ?>
 
 <P>A derived form is provided for defining functions that always evaluate in
-separate thread:</P>
+separate threads:</P>
 
 <PRE class=code>
 fun spawn f x y = exp</PRE>
@@ -73,14 +71,15 @@ href="#sugar">below</A> for a precise definition of this derived form.</P>
 
 <P>An expression can be marked as lazy:</P>
 
-<PRE>
+<PRE class=code>
 lazy <I>exp</I></PRE>
 
 <P>A lazy expression immediately evaluates to a lazy future of the result of
-<TT><I>exp</I></TT>. As soon as a thread requests the future, the computation
-is intiated in a new thread. The future then turns into a concurrent future and
-evaluation proceeds similar as for <TT>spawn</TT>. In particular, <A
-href="#failed">failure</A> is handled consistently.</P>
+<TT><I>exp</I></TT>. As soon as a thread <A href="#request">requests</A> the
+future, the computation is intiated in a new thread. The lazy future is
+replaced by a concurrent future and evaluation proceeds similar as for
+<TT>spawn</TT>. In particular, <A href="#failed">failure</A> is handled
+consistently.</P>
 
 
 <?php subsection("lazy-example", "Example") ?>
@@ -112,9 +111,9 @@ fun lazy mapl f   []    = nil
 <P>This formulation is equivalent to</P>
 
 <PRE class=code>
-fun mapl' f xs = lazy (case xs of
-                            []   => nil
-                         | x::xs => f x :: mapl' f xs)</PRE>
+fun mapl f xs = lazy (case xs of
+                           []   => nil
+                        | x::xs => f x :: mapl f xs)</PRE>
 
 
 
@@ -141,9 +140,9 @@ Promise.fulfill (p, v)</PRE>
 <P>to the corresponding promise, which globally replaces the future with the
 value <TT><I>v</I></TT>.</P>
 
-<P>Promises may also be thought of as single-assignment references that allow
-dereferencing prior to assignment, yielding a future. The operations
-<TT>promise</TT>, <TT>future</TT> and <TT>fulfill</TT> correspond to
+<P class=note><EM>Note:</EM> Promises may be thought of as single-assignment
+references that allow dereferencing prior to assignment, yielding a future. The
+operations <TT>promise</TT>, <TT>future</TT> and <TT>fulfill</TT> correspond to
 <TT>ref</TT>, <TT>!</TT> and <TT>:=</TT>, respectively.</P>
 
 
@@ -179,6 +178,9 @@ result. The requesting thread blocks until the result is determined.</P>
 operation has been applied to the corresponding promise. Blocking continues if
 the promise is fulfilled with another future.</P>
 
+<P>The implicit data-flow synchronisation implied by the future semantics
+enables concurrent programming on a high level of abstraction.</P>
+
 
 <?php section("failed", "failed futures") ?>
 
@@ -209,7 +211,7 @@ programming with futures, promises and concurrent threads:</P>
 
 <P>The latter is a functor that allows creation of lazy futures for modules.</P>
 
-<P>Lazy modules are also core to the semantics of <A
+<P>Lazy modules are also at the core of the semantics of <A
 href="dynamics.php3#components">components</A>.
 
 

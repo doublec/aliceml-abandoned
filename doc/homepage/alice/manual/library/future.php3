@@ -19,7 +19,7 @@
     reraises it on every attempt to access it.
     Whenever a future is <EM>requested</EM> by a concurrent computation, i.e.
     it tries to access its value, that computation automatically
-    synchronizes on the future by blocking on it until it becomes determined
+    synchronizes on the future by blocking until it becomes determined
     or failed.
   </P>
 
