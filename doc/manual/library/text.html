@@ -5,11 +5,18 @@
 
   <PRE>
     signature TEXT
-    structure Text : TEXT where Char       = Char
-                            and String     = String
-			    and Substring  = Substring
-			    and CharVector = CharVector
-			    and CharArray  = CharArray
+    structure Text : TEXT
+              where Char       = Char
+                and String     = String
+		and Substring  = Substring
+		and CharVector = CharVector
+		and CharArray  = CharArray
+    structure WideText : TEXT
+              where Char       = WideChar
+                and String     = WideString
+		and Substring  = WideSubstring
+		and CharVector = WideCharVector
+		and CharArray  = WideCharArray
   </PRE>
 
   <P>
