@@ -24,7 +24,7 @@ local
 	      | _ => args
 	end
 
-    fun stoc args = SMLToMozartBatchCompiler.stoc args
+    fun main' args = SMLToMozartBatchCompiler.main args
 	handle e =>
 	let
 	    val history = List.rev(SMLofNJ.exnHistory e)
@@ -39,7 +39,7 @@ local
 	    OS.Process.failure
 	end
 
-    fun main _ = OS.Process.exit (stoc (getArgs ()))
+    fun main _ = OS.Process.exit (main' (getArgs ()))
 in
-    val _ = SMLofNJ.exportFn ("stoc-mozart", main)
+    val _ = SMLofNJ.exportFn ("alicec-mozart", main)
 end;

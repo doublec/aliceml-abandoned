@@ -24,7 +24,7 @@ local
 	      | _ => args
 	end
 
-    fun stoc args = SMLToDotNetBatchCompiler.stoc args
+    fun main' args = SMLToDotNetBatchCompiler.main args
 	handle e =>
 	let
 	    val hist  = List.rev(SMLofNJ.exnHistory e)
@@ -39,7 +39,7 @@ local
 	    OS.Process.failure
 	end
 
-    fun main _ = OS.Process.exit (stoc (getArgs ()))
+    fun main _ = OS.Process.exit (main' (getArgs ()))
 in
-    val _ = SMLofNJ.exportFn ("stoc-dotnet", main)
+    val _ = SMLofNJ.exportFn ("alicec-dotnet", main)
 end;
