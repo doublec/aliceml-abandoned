@@ -18,9 +18,10 @@
 
   <P>
     The current implementation knows how to access resources under URLs
-    with no scheme, the <TT>file</TT> scheme, or the <TT>http</TT> scheme.
-    For the latter, it uses the functions of the <TT><A href="http-client.html"
-    >HttpClient</A></TT> structure.
+    with no scheme, the <TT>x-alice</TT> scheme, the <TT>file</TT> scheme,
+    or the <TT>http</TT> scheme.  The latter are interpreted using the
+    functions of the <TT><A href="http-client.html">HttpClient</A></TT>
+    structure.
   </P>
 
   <P>
@@ -119,9 +120,13 @@
       <P>The type of results of localization acts.  If localization
 	of a resource succeeded and found a local file with name&nbsp;<TT><I
 	>s</I></TT>, the result of the localization act is <TT>FILE&nbsp;<I
-	>s</I></TT>; if the resource was found on a remote address, the
-	resource is downloaded into a string&nbsp;<TT><I>s</I></TT> and the
-	result of the localization act is <TT>STRING&nbsp;<I>s</I></TT>.</P>
+	>s</I></TT>.  URLs returned by handlers are translated to local file
+	names using the <A href="url.html#toLocalFile"><TT>Url.toLocalFile</TT
+	></A> function.  File names are always absolute; if necessary, they
+	are resolved with respect to the current working directory.  If the
+	resource was found on a remote site, the resource is downloaded into
+	a string&nbsp;<TT><I>s</I></TT> and the result of the localization
+	act is <TT>STRING&nbsp;<I>s</I></TT>.</P>
     </DD>
 
     <DT>
