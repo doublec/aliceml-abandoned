@@ -15,7 +15,8 @@
 #endif
 
 #include <cstdio>
-#include "adt/HashTable.hh"
+
+#include "adt/ChunkMap.hh"
 #include "generic/String.hh"
 #include "generic/Tuple.hh"
 #include "generic/RootSet.hh"
@@ -30,31 +31,30 @@
 
 //--** check loading constraints
 
-class ClassTable: private HashTable {
+class ClassTable: private ChunkMap {
 private:
   static const u_int initialTableSize = 19; //--** to be determined
 public:
   using Block::ToWord;
 
   static ClassTable *ClassTable::New() {
-    return static_cast<ClassTable *>
-      (HashTable::New(HashTable::BLOCK_KEY, initialTableSize));
+    return static_cast<ClassTable *>(ChunkMap::New(initialTableSize));
   }
   static ClassTable *FromWordDirect(word x) {
-    return static_cast<ClassTable *>(HashTable::FromWordDirect(x));
+    return static_cast<ClassTable *>(ChunkMap::FromWordDirect(x));
   }
 
   word Lookup(JavaString *name) {
     word wName = name->ToArray()->ToWord();
     if (IsMember(wName))
-      return GetItem(wName);
+      return Get(wName);
     else
       return word(0);
   }
   void Insert(JavaString *name, word wClass) {
     word wName = name->ToArray()->ToWord();
     Assert(!IsMember(wName));
-    InsertItem(wName, wClass);
+    Put(wName, wClass);
   }
 };
 
@@ -494,10 +494,10 @@ Worker::Result ResolveInterpreter::Run() {
 	std::fprintf(stderr, "resolving method %s#%s%s\n",
 		     theClass->GetClassInfo()->GetName()->ExportC(),
 		     name->ExportC(), descriptor->ExportC());
-      HashTable *methodHashTable = theClass->GetMethodHashTable();
+      ChunkMap *methodChunkMap = theClass->GetMethodHashTable();
       word wKey = Class::MakeMethodKey(name, descriptor);
-      if (methodHashTable->IsMember(wKey)) {
-	word wMethodRef = methodHashTable->GetItem(wKey);
+      if (methodChunkMap->IsMember(wKey)) {
+	word wMethodRef = methodChunkMap->Get(wKey);
 	//--** is the method is abstract, but C is not abstract,
 	//--** throw AbstractMethodError
 	Scheduler::PopFrame();
@@ -537,10 +537,10 @@ Worker::Result ResolveInterpreter::Run() {
 	std::fprintf(stderr, "resolving interface method %s#%s%s\n",
 		     theClass->GetClassInfo()->GetName()->ExportC(),
 		     name->ExportC(), descriptor->ExportC());
-      HashTable *methodHashTable = theClass->GetMethodHashTable();
+      ChunkMap *methodChunkMap = theClass->GetMethodHashTable();
       word wKey = Class::MakeMethodKey(name, descriptor);
-      if (methodHashTable->IsMember(wKey)) {
-	word wMethodRef = methodHashTable->GetItem(wKey);
+      if (methodChunkMap->IsMember(wKey)) {
+	word wMethodRef = methodChunkMap->Get(wKey);
 	//--** is the method is abstract, but C is not abstract,
 	//--** throw AbstractMethodError
 	Assert(MethodRef::FromWordDirect(wMethodRef)->GetLabel() ==

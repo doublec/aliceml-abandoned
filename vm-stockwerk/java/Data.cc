@@ -174,19 +174,19 @@ word Class::MakeMethodKey(JavaString *name, JavaString *descriptor) {
   return name->Concat(descriptor)->ToArray()->ToWord();
 }
 
-void Class::FillMethodHashTable(HashTable *methodHashTable) {
+void Class::FillMethodHashTable(ChunkMap *methodHashTable) {
   ClassInfo *classInfo = GetClassInfo();
   word wSuper = classInfo->GetSuper();
   if (wSuper != null)
     Class::FromWord(wSuper)->FillMethodHashTable(methodHashTable);
   Table *methods = classInfo->GetMethods();
-  HashTable *myMethodHashTable = GetMethodHashTable();
+  ChunkMap *myMethodHashTable = GetMethodHashTable();
   for (u_int i = methods->GetCount(); i--; ) {
     MethodInfo *methodInfo = MethodInfo::FromWordDirect(methods->Get(i));
     if (!methodInfo->IsStatic()) {
       word key =
 	MakeMethodKey(methodInfo->GetName(), methodInfo->GetDescriptor());
-      methodHashTable->InsertItem(key, myMethodHashTable->GetItem(key));
+      methodHashTable->Put(key, myMethodHashTable->Get(key));
     }
   }
 }
@@ -205,7 +205,7 @@ static u_int CountInterfaces(Class *theClass) {
 
 static void FillInterfaceTable(Class *aClass, u_int &index,
 			       Table *interfaceTable,
-			       HashTable *methodHashTable,
+			       ChunkMap *methodHashTable,
 			       Table *virtualTable) {
   Table *interfaces = aClass->GetClassInfo()->GetInterfaces();
   for (u_int i = interfaces->GetCount(); i--; ) {
@@ -223,7 +223,7 @@ static void FillInterfaceTable(Class *aClass, u_int &index,
       if (!methodHashTable->IsMember(wKey))
 	Error("NoSuchMethodError"); //--** throw
       MethodRef *methodRef =
-	MethodRef::FromWordDirect(methodHashTable->GetItem(wKey));
+	MethodRef::FromWordDirect(methodHashTable->Get(wKey));
       if (methodRef->GetLabel() != JavaLabel::VirtualMethodRef)
 	Error("IncompatibleClassChangeError"); //--** throw
       VirtualMethodRef *virtualMethodRef =
@@ -303,8 +303,7 @@ Class *Class::New(ClassInfo *classInfo) {
   b->InitArg(CLASS_INFO_POS, classInfo->ToWord());
   Class *theClass = static_cast<Class *>(b);
   // Build method hash table:
-  HashTable *methodHashTable =
-    HashTable::New(HashTable::BLOCK_KEY, 16); //--** to be determined
+  ChunkMap *methodHashTable = ChunkMap::New(16); //--** to be determined
   if (super != INVALID_POINTER)
     super->FillMethodHashTable(methodHashTable);
   u_int nSuperVirtualMethods = methodHashTable->GetSize();
@@ -323,7 +322,7 @@ Class *Class::New(ClassInfo *classInfo) {
     } else if (methodHashTable->IsMember(wKey)) {
       // overriding a method does not contribute a new virtual table entry
       VirtualMethodRef *superMethodRef =
-	VirtualMethodRef::FromWordDirect(methodHashTable->GetItem(wKey));
+	VirtualMethodRef::FromWordDirect(methodHashTable->Get(wKey));
       u_int index = superMethodRef->GetIndex();
       wMethodRef = VirtualMethodRef::New(theClass, index, nArgs)->ToWord();
     } else if (classInfo->IsInterface()) {
@@ -335,7 +334,7 @@ Class *Class::New(ClassInfo *classInfo) {
       u_int index = nVirtualMethods++;
       wMethodRef = VirtualMethodRef::New(theClass, index, nArgs)->ToWord();
     }
-    methodHashTable->InsertItem(wKey, wMethodRef);
+    methodHashTable->Put(wKey, wMethodRef);
   }
   // Initialize class:
   b->InitArg(METHOD_HASH_TABLE_POS, methodHashTable->ToWord());
@@ -423,7 +422,7 @@ Class *Class::New(ClassInfo *classInfo) {
       classInitializer = wClosure;
     }
     word wMethodRef =
-      methodHashTable->GetItem(MakeMethodKey(name, descriptor));
+      methodHashTable->Get(MakeMethodKey(name, descriptor));
     if (methodInfo->IsStatic()) {
       StaticMethodRef *methodRef = StaticMethodRef::FromWordDirect(wMethodRef);
       Assert(methodRef->GetClass() == theClass);
@@ -567,18 +566,17 @@ static const u_int initialInternTableSize = 19; //--** to be determined
 void JavaString::Init() {
   wClass = ClassLoader::PreloadClass("java/lang/String");
   RootSet::Add(wClass);
-  wInternTable =
-    HashTable::New(HashTable::BLOCK_KEY, initialInternTableSize)->ToWord();
+  wInternTable = ChunkMap::New(initialInternTableSize)->ToWord();
   RootSet::Add(wInternTable);
 }
 
 JavaString *JavaString::Intern() {
-  HashTable *internTable = HashTable::FromWordDirect(wInternTable);
+  ChunkMap *internTable = ChunkMap::FromWordDirect(wInternTable);
   BaseArray *array = ToArray();
   word key = array->ToWord();
   if (internTable->IsMember(key))
-    return JavaString::FromWordDirect(internTable->GetItem(key));
+    return JavaString::FromWordDirect(internTable->Get(key));
   JavaString *result = JavaString::New(array, 0, array->GetLength());
-  internTable->InsertItem(key, result->ToWord());
+  internTable->Put(key, result->ToWord());
   return result;
 }

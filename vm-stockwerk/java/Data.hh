@@ -19,7 +19,7 @@
 #endif
 
 #include <cstring>
-#include "adt/HashTable.hh"
+#include "adt/ChunkMap.hh"
 #include "generic/Closure.hh"
 #include "generic/Transients.hh"
 #include "generic/Worker.hh"
@@ -174,10 +174,10 @@ public:
   bool IsInterface();
   Class *GetSuperClass();
 
-  HashTable *GetMethodHashTable() {
-    return HashTable::FromWordDirect(GetArg(METHOD_HASH_TABLE_POS));
+  ChunkMap *GetMethodHashTable() {
+    return ChunkMap::FromWordDirect(GetArg(METHOD_HASH_TABLE_POS));
   }
-  void FillMethodHashTable(HashTable *methodHashTable);
+  void FillMethodHashTable(ChunkMap *methodHashTable);
   Table *GetVirtualTable() {
     return Table::FromWordDirect(GetArg(VIRTUAL_TABLE_POS));
   }
