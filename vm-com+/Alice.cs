@@ -1658,6 +1658,14 @@ namespace Alice {
 		return StaticApply(a);
 	    }
 	}
+	public class Real_realRound : Procedure {
+	    public static Object StaticApply(Object a) {
+		return (double) System.Math.Round((double) CommonOp.Sync(a));
+	    }
+	    public override Object Apply(Object a) {
+		return StaticApply(a);
+	    }
+	}
 	public class Real_realTrunc : Procedure {
 	    public static Object StaticApply(Object a) {
 		double x = (double) CommonOp.Sync(a);
@@ -2558,6 +2566,7 @@ namespace Alice {
 	public static Object Real_fromInt     = new Real_fromInt();
 	public static Object Real_realCeil    = new Real_realCeil();
 	public static Object Real_realFloor   = new Real_realFloor();
+	public static Object Real_realRound   = new Real_realRound();
 	public static Object Real_realTrunc   = new Real_realTrunc();
 	public static Object Real_rem         = new Real_rem();
 	public static Object Real_round       = new Real_round();
