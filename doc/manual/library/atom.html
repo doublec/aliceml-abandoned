@@ -88,10 +88,8 @@
       <TT>compare (<I>a1</I>, <I>a2</I>)</TT>
     </DT>
     <DD>
-      <P>Performs a lexicographic comparison of the content of the atoms.
-      Equivalent to</P>
-      <PRE>
-        compare (toString <I>a1</I>, toString <I>a2</I>)</PRE>
+      <P>Defines an ordering on atoms. Comparison is intended to be
+      constant time. Note that the ordering is not lexicographic.</P>
     </DD>
 
     <DT>
