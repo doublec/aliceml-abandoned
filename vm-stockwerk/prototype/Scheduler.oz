@@ -22,6 +22,8 @@ export
 define
    %--** add another thread that checks for preemption
 
+   INITIAL_SIGNAL_SOURCES_SIZE = 8
+
    class Thread
       attr Args: unit TaskStack: unit Res: unit Suspended: unit State: unit
       meth init(args: A stack: T result: R)
@@ -80,10 +82,14 @@ define
    end
 
    class Scheduler
-      attr QueueHd: unit QueueTl: unit CurrentThread: unit
+      attr
+	 QueueHd: unit QueueTl: unit CurrentThread: unit
+	 SignalSources: unit PendingSignals: unit
       meth init() Empty in
 	 QueueHd <- Empty
 	 QueueTl <- Empty
+	 SignalSources <- {Array.new 0 INITIAL_SIGNAL_SOURCES_SIZE - 1 unit}
+	 PendingSignals <- nil
       end
       meth newThread(Closure Args ?Res <= _ taskStack: TaskStack0 <= nil)
 	 case Closure of closure(Function ...) then TaskStack in
@@ -111,7 +117,18 @@ define
 	 @CurrentThread
       end
       meth run() Hd = @QueueHd in
-	 if {IsFree Hd} then
+	 case @PendingSignals of Id|Rest then
+	    PendingSignals <- Rest
+	    case @SignalSources.Id of transient(TransientState) then
+	       case {Access TransientState} of future(Ts) then
+		  for T in Ts do
+		     Scheduler, wakeup(T)
+		  end
+	       end
+	       {Assign TransientState ref(tuple())}
+	    end
+	    @SignalSources.Id := unit
+	 elseif {IsFree Hd} then
 	    skip   %--** wait for I/O or asynchronous signals
 	 elsecase Hd of T|Tr then
 	    QueueHd <- Tr
@@ -174,6 +191,29 @@ define
 	 %--** when can this be done in the current thread?
 	 TaskStack = [byneedFrame(ByneedInterpreter.interpreter Transient)]
 	 Scheduler, newThread(Closure args() taskStack: TaskStack)
+      end
+      meth registerSignalSource(?Id ?Transient) A in
+	 A = @SignalSources
+	 for I in 0..{Array.high A} break: Break do
+	    case A.I of unit then
+	       Id = I
+	       A.Id := Transient
+	       {Break}
+	    end
+	 end
+	 if {IsFree Id} then NewA in   % enlargen array
+	    Id = {Array.high A} + 1
+	    NewA = {Array.new 0 (Id * 3 div 2 - 1) unit}
+	    for I in 0..{Array.high A} do
+	       NewA.I := A.I
+	    end
+	    SignalSources <- NewA
+	    NewA.Id := Transient
+	 end
+	 Transient = transient({NewCell future(nil)})
+      end
+      meth emitSignal(Id)
+	 PendingSignals <- Id|@PendingSignals
       end
    end
 
