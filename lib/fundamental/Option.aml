@@ -19,7 +19,7 @@ import datatype bool and option from "ToplevelTypes"
 import signature OPTION         from "OPTION-sig"
 
 
-structure Option : OPTION =
+structure Option :> OPTION =
 struct
     datatype option		= datatype option
     type  'a t			= 'a option				(**)

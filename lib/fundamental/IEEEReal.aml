@@ -21,7 +21,7 @@ import type unit and int and string
 import signature IEEE_REAL           from "IEEE_REAL-sig"
 
 
-structure IEEEReal : IEEE_REAL =
+structure IEEEReal :> IEEE_REAL =
 struct
      exception Unordered
 

@@ -19,7 +19,7 @@ import datatype bool and alt from "ToplevelTypes"
 import signature ALT         from "ALT-sig"
 
 
-structure Alt : ALT =							(**)
+structure Alt :> ALT =							(**)
 struct
     datatype alt		= datatype alt
     type ('a,'b) t		= ('a,'b) alt

@@ -25,7 +25,7 @@ import structure Time             from "Time"
 import signature FUTURE           from "FUTURE-sig"
 
 
-structure Future : FUTURE =				(**)
+structure Future :> FUTURE =				(**)
 struct
     datatype  status = FUTURE | FAILED | DETERMINED
     exception Cyclic = Hole.Cyclic

@@ -22,7 +22,7 @@ import type unit type string type ref from "ToplevelTypes"
 signature GENERAL =
 sig
     eqtype unit
-    type exn
+    exttype exn
 
     exception Bind
     exception Chr

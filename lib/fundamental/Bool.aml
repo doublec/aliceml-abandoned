@@ -19,7 +19,7 @@ import datatype bool         from "ToplevelTypes"
 import val op =              from "ToplevelValues"
 import signature BOOL        from "BOOL-sig"
 
-structure Bool : BOOL =
+structure Bool :> BOOL =
 struct
     datatype bool	= datatype bool
     type     t		= bool						(**)

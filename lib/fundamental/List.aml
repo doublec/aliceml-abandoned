@@ -24,7 +24,7 @@ import structure Bool                                from "Bool"
 import signature LIST                                from "LIST-sig"
 
 
-structure List : LIST =
+structure List :> LIST =
 struct
     datatype list		= datatype list
     type  'a t			= 'a list				(**)
