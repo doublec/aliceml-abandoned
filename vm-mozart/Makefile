@@ -164,12 +164,13 @@ LIBRTTSOURCES0 = \
 LIBMLYACCSOURCES0 = base-sig.aml join.aml lrtable.aml stream.aml parser2.aml
 
 LIBSOURCES0 = \
-	$(LIBFUNDAMENTALSOURCES0:%=fundamental/%) \
 	$(LIBSYSTEMSOURCES0:%=system/%) \
 	$(LIBUTILITYSOURCES0:%=utility/%) \
 	$(LIBRTTSOURCES0:%=rtt/%) \
 	$(LIBMLYACCSOURCES0:%=ml-yacc/%)
-LIBSOURCES = $(LIBSOURCES0:%=lib/%)
+LIBSOURCES = \
+	$(LIBFUNDAMENTALSOURCES0:%=lib/fundamental/%) \
+	$(LIBSOURCES0:%=lib/%)
 
 STOCINFRASTRUCTURESOURCES0 = \
 	CRASH-sig.aml Crash.aml SOURCE-sig.aml Source.aml ERROR-sig.aml \
@@ -525,7 +526,7 @@ INSTALL3BINFILES = $(INSTALL2BINFILES) stot stot-emacs
 INSTALL3LIBFILES = \
 	$(filter %.ozf, $(LIBSOURCES0:%.aml=%.ozf)) \
 	$(filter %.ozf, $(LIBSOURCES0:%.asig=%.ozf)) \
-	fundamental/RTT.ozf
+	fundamental/Fundamental.ozf
 INSTALL3STOCFILES = $(INSTALL2STOCFILES) StotMain.ozf StotEmacsMain.ozf
 INSTALL3STOCTOPFILES = Composer.ozf
 INSTALL3FILES = \
@@ -582,6 +583,10 @@ build3/lib/fundamental/%.ozf: build3/lib/%.aml
 build3/%.ozf: build3/%.aml
 	$(STOC2) $(STOC_OPTS) -c $< -o $@
 
+build3/lib/fundamental/LinkedFundamental.ozf: \
+	build3/lib/fundamental/Fundamental.ozf
+	$(STOL2) $(STOL_OPTS) $< -o $@
+
 build3/stoc/LinkedStocMain.ozf: build3/stoc/StocMain.ozf \
 	$(STOCBACKENDMOZARTSOURCES:%.oz=build3/%.ozf)
 	$(STOL2) $(STOL_OPTS) --include=.. $< -o $@
@@ -612,7 +617,11 @@ $(INSTALL3TOPFILES:%=build3/install/%): build3/install/%: build3/%
 $(INSTALL3BINFILES:%=build3/install/bin/%): build3/install/bin/%: %
 	install -c -m 555 $< $@
 
-$(INSTALL3LIBFILES:%=build3/install/lib/%): build3/install/%: build3/%
+build3/install/lib/fundamental/Fundamental.ozf: \
+	build3/lib/fundamental/LinkedFundamental.ozf
+	install -c -m 444 $< $@
+
+build3/install/lib/%: build3/lib/%
 	install -c -m 444 $< $@
 
 build3/install/stoc/%: build3/stoc/Linked%
