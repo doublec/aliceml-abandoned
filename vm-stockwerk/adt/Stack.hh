@@ -27,7 +27,7 @@ private:
 protected:
   void Enlarge(u_int oldsize, u_int newsize) {
     Block *oa = Store::UnsafeWordToBlock(GetArg(ARR_POS));
-    Block *na = Store::AllocBlock((BlockLabel) STACKARRAY_LABEL, newsize);
+    Block *na = Store::AllocBlock(STACKARRAY_LABEL, newsize);
 
     std::memcpy(na->GetBase(), oa->GetBase(), oldsize * sizeof(word));
     ReplaceArg(ARR_POS, na->ToWord());
@@ -137,8 +137,8 @@ public:
     return (Stack *) x;
   }
   static Stack *New(u_int s) {
-    Block *p = Store::AllocBlock((BlockLabel) STACK_LABEL, SIZE);
-    Block *a = Store::AllocBlock((BlockLabel) STACKARRAY_LABEL, s);
+    Block *p = Store::AllocBlock(STACK_LABEL, SIZE);
+    Block *a = Store::AllocBlock(STACKARRAY_LABEL, s);
     
     p->InitArg(TOP_POS, Store::IntToWord(1));
     p->InitArg(ARR_POS, a->ToWord());
@@ -148,7 +148,7 @@ public:
   static Stack *FromWord(word x) {
     Block *p = Store::WordToBlock(x);
 
-    Assert((p == INVALID_POINTER) || (p->GetLabel() == (BlockLabel) STACK_LABEL));
+    Assert((p == INVALID_POINTER) || (p->GetLabel() == STACK_LABEL));
     return FromBlock(p);
   }
 };

@@ -50,7 +50,7 @@ public:
     return (HashNode *) x;
   }
   static HashNode *New() {
-    Block *p = Store::AllocBlock((BlockLabel) HASHNODE_LABEL, SIZE);
+    Block *p = Store::AllocBlock(HASHNODE_LABEL, SIZE);
 
     p->InitArg(KEY_POS, Store::IntToWord(-1));
     p->InitArg(VAL_POS, Store::IntToWord(0));
@@ -60,7 +60,7 @@ public:
   static HashNode *FromWord(word x) {
     Block *p = Store::WordToBlock(x);
 
-    Assert((p == INVALID_POINTER) || (p->GetLabel() == (BlockLabel) HASHNODE_LABEL));
+    Assert((p == INVALID_POINTER) || (p->GetLabel() == HASHNODE_LABEL));
     return FromBlock(p);
   }
 };
@@ -112,8 +112,9 @@ public:
   using Block::ToWord;
 
   void InsertItem(word key, word value);
+  void DeleteItem(word key);
   int IsMember(word key);
-  word GetItem(word key);
+  word GetItem(word key); // must be member
 
   u_int GetSize() {
     return (u_int) Store::WordToInt(GetArg(COUNTER_POS));
@@ -121,7 +122,7 @@ public:
   u_int GetTableSize() {
     return (u_int) Store::WordToBlock(GetArg(TABLE_POS))->GetSize();
   }
-  void MakeEmpty() {
+  void Clear() {
     Block *arr = Store::WordToBlock(GetArg(TABLE_POS));
     u_int size = arr->GetSize();
     
@@ -132,14 +133,11 @@ public:
   }
 
   static HashTable *New(hashkeytype type, u_int size);
-  static HashTable *FromBlock(Block *x) {
-    return (HashTable *) x;
-  }
   static HashTable *FromWord(word x) {
     Block *p = Store::WordToBlock(x);
 
-    Assert((p == INVALID_POINTER) || (p->GetLabel() == (BlockLabel) HASHTABLE_LABEL));
-    return FromBlock(p);
+    Assert((p == INVALID_POINTER) || (p->GetLabel() == HASHTABLE_LABEL));
+    return (HashTable *) p;
   }
 };
 
