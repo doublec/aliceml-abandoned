@@ -16,9 +16,10 @@ import structure Component             from "../../lib/system/Component"
 import signature COMPONENT_MANAGER
     from "../../lib/system/COMPONENT_MANAGER-sig"
 import signature SWITCHES              from "../infrastructure/SWITCHES-sig"
-import signature PHASE                 from "../infrastructure/PHASE-sig"
-import structure MkTracingPhase        from "../infrastructure/MkTracingPhase"
 import structure Target                from "../infrastructure/Target"
+import signature BACKEND_SPECIFIC
+    from "../infrastructure/BACKEND_SPECIFIC-sig"
+import structure MkTracingPhase        from "../infrastructure/MkTracingPhase"
 import structure StampMap              from "../common/StampMap"
 import structure Value                 from "Value"
 import structure MkAbstractCodeGrammar from "MkAbstractCodeGrammar"
@@ -27,7 +28,7 @@ import structure MkCodeGenPhase        from "MkCodeGenPhase"
 functor MkBackendStockwerk(structure ComponentManager:
 			       COMPONENT_MANAGER
 				   where type component = Component.t
-			   structure Switches: SWITCHES): PHASE =
+			   structure Switches: SWITCHES): BACKEND_SPECIFIC =
     let
 	structure AbstractCodeGrammar = MkAbstractCodeGrammar(Value)
 	structure CodeGenPhase = MkCodeGenPhase(AbstractCodeGrammar)
@@ -62,8 +63,14 @@ functor MkBackendStockwerk(structure ComponentManager:
 			Target.COMPONENT {component = fn () => component, eval}
 		    end
 	    end
+	structure TracingPhase =
+	    MkTracingPhase(structure Phase = ThePhase
+			   structure Switches = Switches
+			   val name = "Code Generation")
     in
-	MkTracingPhase(structure Phase = ThePhase
-		       structure Switches = Switches
-		       val name = "Code Generation")
+	struct
+	    open TracingPhase
+	    structure O = Target
+	    val isCross = false
+	end
     end

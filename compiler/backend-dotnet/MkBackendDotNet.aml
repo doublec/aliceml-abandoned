@@ -1,29 +1,28 @@
-
 (*
  * Author:
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 2000-2001
+ *   Leif Kornstaedt, 2000-2002
  *
  * Last change:
  *   $Date$ by $Author$
  *   $Revision$
  *)
 
-import structure OS             from "../../lib/system/OS"
-import structure Source         from "../infrastructure/Source"
-import structure Error          from "../infrastructure/Error"
-import signature SWITCHES       from "../infrastructure/SWITCHES-sig"
-import signature PHASE          from "../infrastructure/PHASE-sig"
-import structure EmptyContext   from "../infrastructure/EmptyContext"
-import structure MkTracingPhase from "../infrastructure/MkTracingPhase"
-import structure Target         from "../infrastructure/Target"
-import structure FlatGrammar    from "../backend-common/FlatGrammar"
-import structure IL             from "IL"
-import structure CodeGenPhase   from "CodeGenPhase"
+import structure OS               from "../../lib/system/OS"
+import structure Source           from "../infrastructure/Source"
+import structure Error            from "../infrastructure/Error"
+import signature SWITCHES         from "../infrastructure/SWITCHES-sig"
+import structure EmptyContext     from "../infrastructure/EmptyContext"
+import structure Target           from "../infrastructure/Target"
+import signature BACKEND_SPECIFIC from "../infrastructure/BACKEND_SPECIFIC-sig"
+import structure MkTracingPhase   from "../infrastructure/MkTracingPhase"
+import structure FlatGrammar      from "../backend-common/FlatGrammar"
+import structure IL               from "IL"
+import structure CodeGenPhase     from "CodeGenPhase"
 
-functor MkBackendDotNet(structure Switches: SWITCHES): PHASE =
+functor MkBackendDotNet(structure Switches: SWITCHES): BACKEND_SPECIFIC =
     let
 	fun inf (_, exportInf) = exportInf
 
@@ -40,22 +39,28 @@ functor MkBackendDotNet(structure Switches: SWITCHES): PHASE =
 		    raise Error.Error (Source.nowhere,
 				       "invocation of `" ^ ilasm ^ "' failed")
 	    end
-    in
-	MkTracingPhase(structure Phase =
-			   struct
-			       structure C = EmptyContext
-			       structure I = FlatGrammar
-			       structure O = Target
+	structure TracingPhase =
+	    MkTracingPhase(structure Phase =
+			       struct
+				   structure C = EmptyContext
+				   structure I = FlatGrammar
+				   structure O = Target
 
-			       fun translate () x =
-				   let
-				       val program =
-					   CodeGenPhase.translate () x
-				   in
-				       Target.FOREIGN {save = save program,
-						       inf = inf program}
-				   end
-			   end
-		       structure Switches = Switches
-		       val name = "Code Generation")
+				   fun translate () x =
+				       let
+					   val program =
+					       CodeGenPhase.translate () x
+				       in
+					   Target.FOREIGN {save = save program,
+							   inf = inf program}
+				       end
+			       end
+			   structure Switches = Switches
+			   val name = "Code Generation")
+    in
+	struct
+	    open TracingPhase
+	    structure O = Target
+	    val isCross = true
+	end
     end
