@@ -13,6 +13,49 @@ define
    InitialAttributes = attributes(b: 1 ems: 1 i: 1 tt: 1 u: 1
 				  size: 11 color: 9)
 
+   fun {MkDataItemAttributes Property IsSpace}
+      attributes(b: if IsSpace then {FD.int 1#2}
+		    elseif Property.b then 2 else 1
+		    end
+		 ems: if IsSpace then {FD.int 1#3}
+		      elseif Property.s then 3
+		      elseif Property.em then 2
+		      else 1
+		      end
+		 i: if IsSpace then {FD.int 1#2}
+		    elseif Property.i then 2
+		    else 1
+		    end
+		 tt: if IsSpace then {FD.int 1#2}
+		     elseif Property.tt then 2
+		     else 1
+		     end
+		 u: Property.u + 1
+		 size: case Property.size of ~1 then 11 elseof S then S + 1 end
+		 color:
+		    if IsSpace then {FD.int 1#11}
+		    elsecase Property.color of 'R' then 1
+		    [] 'G' then 2
+		    [] 'B\'' then 3
+		    [] 'C' then 4
+		    [] 'M' then 5
+		    [] 'Y' then 6
+		    [] 'K' then 7
+		    [] 'W' then 8
+		    [] 'UNKNOWN' then 9
+		    end)
+   end
+
+   fun {MkElementAttributes}
+      attributes(b: {FD.int 1#2}
+		 ems: {FD.int 1#3}
+		 i: {FD.int 1#2}
+		 tt: {FD.int 1#2}
+		 u: {FD.int 1#4}
+		 size: {FD.int 1#11}
+		 color: {FD.int 1#9})
+   end
+
    fun {MkSizeProc I}
       proc {$ A In Out}
 	 case A of size then Out = I
@@ -125,12 +168,14 @@ define
       Root = root(daughters: {FS.var.upperBound 1#NumberOfVertices}
 		  scope: {FS.var.upperBound 1#NumberOfDataItems})
       DataItems = {List.mapInd Meaning
-		   fun {$ I Text#_#_}
+		   fun {$ I Text#IsSpace#Property}
 		      dataItem(mother: {FD.int 0#NumberOfVertices}
 			       daughters: FS.value.empty
 			       down: FS.value.empty
 			       eqdown: {FS.value.singl I}
 			       scope: {FS.value.singl I}
+			       attributes:
+				  {MkDataItemAttributes Property IsSpace}
 			       text: Text)
 		   end}
       Elements = for I in 1..NumberOfElements collect: Collect do
@@ -140,7 +185,8 @@ define
 			     down: {FS.var.upperBound 1#NumberOfVertices}
 			     eqdown: {FS.var.upperBound 0#NumberOfVertices}
 			     scope: {FS.var.upperBound 1#NumberOfDataItems}
-			     tag: {FD.int Epsilon#MaxTag})}
+			     tag: {FD.int Epsilon#MaxTag}
+			     attributes: {MkElementAttributes})}
 		 end
 
       V = {AdjoinAt
