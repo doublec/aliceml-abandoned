@@ -77,7 +77,7 @@ struct
 		scanId (s, x, x+1, merge (PLAIN, x', x, rs))
 	    else if c = #"\"" then
 		scanString (s, x, x+1, merge (PLAIN, x', x, rs))
-	    else if c = #"(" andalso x < String.size s
+	    else if c = #"(" andalso x < String.size s - 1
 		 andalso String.sub (s, x+1) = #"*" then
 		scanComment 1 (s, x, x+2, merge (PLAIN, x', x, rs))
 	    else

@@ -58,18 +58,18 @@ structure OutputWriters =
       val (compilerText, compilerWriter) = TextPrimIO.openVectorListWr ()
 
       val compilerInWriter = markWriter (#"\000", compilerWriter)
-      val compilerIn = TextIO.StreamIO.mkOutstream (compilerInWriter, IO.LINE_BUF)
+      val compilerIn = TextIO.StreamIO.mkOutstream (compilerInWriter, IO.NO_BUF)
 
       val compilerOutWriter = markWriter (#"\001", compilerWriter)
-      val compilerOut = TextIO.StreamIO.mkOutstream (compilerOutWriter, IO.LINE_BUF)
+      val compilerOut = TextIO.StreamIO.mkOutstream (compilerOutWriter, IO.NO_BUF)
       val _ = Evaluator.setOutStream compilerOut
 
       val compilerErrWriter = markWriter (#"\002", compilerWriter)
-      val compilerErr = TextIO.StreamIO.mkOutstream (compilerErrWriter, IO.LINE_BUF)
+      val compilerErr = TextIO.StreamIO.mkOutstream (compilerErrWriter, IO.NO_BUF)
       val _ = Evaluator.setErrStream compilerErr
 
       val (traceText, compilerTraceWriter) = TextPrimIO.openVectorListWr ()
-      val compilerTrace = TextIO.StreamIO.mkOutstream (compilerTraceWriter, IO.LINE_BUF)
+      val compilerTrace = TextIO.StreamIO.mkOutstream (compilerTraceWriter, IO.NO_BUF)
       val _ = Evaluator.setTraceStream compilerTrace
 
       val (rowCol, rowColText) = Stream.stream ()
