@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg, 2001-2003
  *
  * Last change:
  *   $Date$ by $Author$
@@ -23,5 +23,5 @@ sig
     structure I : SOURCE        = Source
     structure O : INPUT_GRAMMAR = InputGrammar
 
-    val translate : C.t -> Source.desc * I.source -> InputGrammar.Component
+    val translate : Source.desc * C.t * I.source -> C.t * InputGrammar.Component
 end

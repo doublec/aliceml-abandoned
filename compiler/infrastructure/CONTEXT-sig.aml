@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg, 2001-2003
  *
  * Last change:
  *   $Date$ by $Author$
@@ -13,6 +13,5 @@
 signature CONTEXT =
 sig
     type t
-    val new :	unit -> t
-    val clone :	t -> t
+    val empty : t
 end

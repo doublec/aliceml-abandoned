@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg, 2001-2003
  *
  * Last change:
  *   $Date$ by $Author$
@@ -81,6 +81,5 @@ struct
 	    #1 (Parser.parse(0, lexer, onError, ()))
 	end
 
-    fun translate() (desc, source) = parse source
-
+    fun translate(desc, _, source) = ((), parse source)
 end

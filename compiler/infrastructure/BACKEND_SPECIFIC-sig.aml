@@ -18,11 +18,11 @@ import signature TARGET         from "TARGET-sig"
 
 signature BACKEND_SPECIFIC =
 sig
+    (*--** include PHASE where O : TARGET *)
     structure C: CONTEXT
     structure I: REPRESENTATION
     structure O: TARGET
 
+    val translate: Source.desc * C.t * I.t -> C.t * O.t   (* [Error.Error] *)
     val isCross: bool
-
-    val translate: C.t -> Source.desc * I.t -> O.t   (* [Error.Error] *)
 end

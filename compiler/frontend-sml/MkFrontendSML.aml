@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg, 2001-2003
  *
  * Last change:
  *   $Date$ by $Author$
@@ -26,39 +26,40 @@ import structure MkAbstractionPhase
        type sig_loader             from "MkAbstractionPhase"
 
 
-functor MkFrontendSML(
-		val loadSig :        sig_loader
-		structure Switches : SWITCHES
-	) : PHASE =
-    let
-	structure Phase1 =
-		  MkTracingPhase(
-			structure Phase    = MkParsingPhase(Switches)
-			structure Switches = Switches
-			val name = "Parsing"
-		  )
-	structure Phase2 =
-		  MkTracingPhase(
-			structure Phase    =
-			    MkAbstractionPhase(val loadSig = loadSig
-					       structure Switches = Switches)
-			structure Switches = Switches
-			val name = "Abstraction"
-		  )
-	structure Phase2' =
-		  MkResultDumpingPhase(
-			structure Phase    = Phase2
-			structure Switches = Switches
-			val header = "Abstract Syntax"
-			val pp     = PPAbstractGrammar.ppComp
-			val switch = Switches.Debug.dumpAbstractionResult
-		  )
-    in
-	ComposePhases'(
-	    structure Phase1  = Phase1
-	    structure Phase2  = Phase2'
-	    structure Context = BindEnv
-	    fun context1 E    = ()
-	    fun context2 E    = E
-	)
-    end
+functor MkFrontendSML (
+    val loadSig :        sig_loader
+    structure Switches : SWITCHES
+) : PHASE =
+let
+    structure Phase1 =
+	      MkTracingPhase (
+		    structure Phase    = MkParsingPhase(Switches)
+		    structure Switches = Switches
+		    val name = "Parsing"
+	      )
+    structure Phase2 =
+	      MkTracingPhase (
+		    structure Phase    =
+			MkAbstractionPhase(val loadSig = loadSig
+					   structure Switches = Switches)
+		    structure Switches = Switches
+		    val name = "Abstraction"
+	      )
+    structure Phase2' =
+	      MkResultDumpingPhase (
+		    structure Phase    = Phase2
+		    structure Switches = Switches
+		    val header = "Abstract Syntax"
+		    val pp     = PPAbstractGrammar.ppComp
+		    val switch = Switches.Debug.dumpAbstractionResult
+	      )
+in
+    ComposePhases' (
+	structure Phase1  = Phase1
+	structure Phase2  = Phase2'
+	structure Context = Phase2'.C
+	val context       = Pair.snd
+	val context1      = ignore
+	val context2      = id
+    )
+end
