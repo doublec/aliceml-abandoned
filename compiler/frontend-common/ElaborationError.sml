@@ -25,10 +25,12 @@ structure ElaborationError :> ELABORATION_ERROR =
     datatype error =
 	(* Expressions *)
 	  VecExpUnify		of unify_error
+	| ConExpConUnify	of unify_error
+	| ConExpArgUnify	of unify_error
+	| UpdExpUnify		of unify_error
+	| SelExpUnify		of unify_error
 	| AppExpFunUnify	of unify_error
 	| AppExpArgUnify	of unify_error
-	| CompExpNoRow		of typ
-	| CompExpUnify		of unify_error
 	| AndExpUnify		of unify_error
 	| OrExpUnify		of unify_error
 	| IfExpCondUnify	of unify_error
@@ -40,10 +42,9 @@ structure ElaborationError :> ELABORATION_ERROR =
 	| MatchPatUnify		of unify_error
 	| MatchExpUnify		of unify_error
 	(* Patterns *)
+	| ConPatConUnify	of unify_error
+	| ConPatArgUnify	of unify_error
 	| VecPatUnify		of unify_error
-	| AppPatArrTyp		of typ
-	| AppPatFunUnify	of unify_error
-	| AppPatUnify		of unify_error
 	| AsPatUnify		of unify_error
 	| AltPatUnify		of unify_error
 	| GuardPatUnify		of unify_error
@@ -208,16 +209,6 @@ structure ElaborationError :> ELABORATION_ERROR =
 	    textpar["is","incompatible"]
       | ppMismatch'(Inf.MismatchFix(a,q1,q2)) =
 	    textpar["fixity","of",ppQuoted(ppLab a),"is","different"]
-      | ppMismatch'(Inf.MismatchValSort(a,Inf.CONSTRUCTOR _,
-					  Inf.CONSTRUCTOR _)) =
-	    indent(textpar["constructor",ppLab a]) ^^
-	    textpar["has","incompatible","syntactic","arity"]
-      | ppMismatch'(Inf.MismatchValSort(a,w1,w2)) =
-	    indent(textpar["val",ppLab a]) ^^
-	    textpar["is","not","a","constructor"]
-      | ppMismatch'(Inf.MismatchTypSort(a,w1,w2)) =
-	    indent(textpar["val",ppLab a]) ^^
-	    textpar["is","not","an","open","datatype"]
       | ppMismatch'(Inf.MismatchDom im) =
 	    break ^^
 	    textpar["functor","argument","signature","is","too","restrictive,",
@@ -260,6 +251,22 @@ structure ElaborationError :> ELABORATION_ERROR =
 	ppUnify2(
 	  textpar["inconsistent","types","in","vector","expression:"],
 	  textpar["does","not","agree","with","previous","element","type"], ue)
+      | ppError(ConExpConUnify ue) =
+	ppUnify2(
+	  textpar["applied","value","is","not","a","constructor","function:"],
+	  textpar["does","not","match","function","type"], ue)
+      | ppError(ConExpArgUnify ue) =
+	ppUnify4(
+	  textpar["constructor","argument","type","mismatch:"],
+	  textpar["does","not","match","argument","type"], ue)
+      | ppError(UpdExpUnify ue) =
+	ppUnify4(
+	  textpar["mismatch","on","record","update:"],
+	  textpar["does","not","match","type"], ue)
+      | ppError(SelExpUnify ue) =
+	ppUnify2(
+	  textpar["selection","type","mismatch:"],
+	  textpar["does","not","match","record","type"], ue)
       | ppError(AppExpFunUnify ue) =
 	ppUnify2(
 	  textpar["applied","value","is","not","a","function:"],
@@ -268,15 +275,6 @@ structure ElaborationError :> ELABORATION_ERROR =
 	ppUnify4(
 	  textpar["argument","type","mismatch:"],
 	  textpar["does","not","match","argument","type"], ue)
-      | ppError(CompExpNoRow t) =
-	vbox(
-	    textpar["specialization","type","is","not","a","record:"] ^^
-	    nest(break ^^ PPType.ppTyp t)
-	)
-      | ppError(CompExpUnify ue) =
-	ppUnify4(
-	  textpar["mismatch","on","record","update:"],
-	  textpar["does","not","match","type"], ue)
       | ppError(AndExpUnify ue) =
 	ppUnify2(
 	  textpar["operand","of","`andalso'","is","not","a","boolean:"],
@@ -309,7 +307,6 @@ structure ElaborationError :> ELABORATION_ERROR =
 	ppUnify4(
 	  textpar["expression","does","not","match","annotation:"],
 	  textpar["does","not","match","type"], ue)
-      (* Patterns *)
       | ppError(MatchPatUnify ue) =
 	ppUnify4(
 	  textpar["inconsistent","types","in","`case'","patterns:"],
@@ -318,18 +315,20 @@ structure ElaborationError :> ELABORATION_ERROR =
 	ppUnify4(
 	  textpar["inconsistent","types","in","branches","of","`case':"],
 	  textpar["does","not","agree","with","previous","type"], ue)
+      (* Patterns *)
+      | ppError(ConPatConUnify ue) =
+	ppUnify2(
+	  textpar["applied","identifier","is","not","a","constructor",
+		  "function:"],
+	  textpar["does","not","match","function","type"], ue)
+      | ppError(ConPatArgUnify ue) =
+	ppUnify4(
+	  textpar["ill-typed","constructor","argument:"],
+	  textpar["does","not","match","argument","type"], ue)
       | ppError(VecPatUnify ue) =
 	ppUnify2(
 	  textpar["inconsistent","types","in","vector","pattern:"],
 	  textpar["does","not","agree","with","previous","element","type"], ue)
-      | ppError(AppPatArrTyp t) =
-	  textpar["missing","argument","to","constructor","in","pattern"]
-      | ppError(AppPatFunUnify ue) =
-	  textpar["surplus","argument","to","constructor","in","pattern"]
-      | ppError(AppPatUnify ue) =
-	ppUnify4(
-	  textpar["ill-typed","constructor","argument:"],
-	  textpar["does","not","match","argument","type"], ue)
       | ppError(AsPatUnify ue) =
 	ppUnify4(
 	  textpar["inconsistent","types","in","`as'","pattern:"],

@@ -16,10 +16,12 @@ signature ELABORATION_ERROR =
     datatype error =
 	(* Expressions *)
 	  VecExpUnify		of unify_error
+	| ConExpConUnify	of unify_error
+	| ConExpArgUnify	of unify_error
+	| UpdExpUnify		of unify_error
+	| SelExpUnify		of unify_error
 	| AppExpFunUnify	of unify_error
 	| AppExpArgUnify	of unify_error
-	| CompExpNoRow		of typ
-	| CompExpUnify		of unify_error
 	| AndExpUnify		of unify_error
 	| OrExpUnify		of unify_error
 	| IfExpCondUnify	of unify_error
@@ -31,10 +33,9 @@ signature ELABORATION_ERROR =
 	| MatchPatUnify		of unify_error
 	| MatchExpUnify		of unify_error
 	(* Patterns *)
+	| ConPatConUnify	of unify_error
+	| ConPatArgUnify	of unify_error
 	| VecPatUnify		of unify_error
-	| AppPatArrTyp		of typ
-	| AppPatFunUnify	of unify_error
-	| AppPatUnify		of unify_error
 	| AsPatUnify		of unify_error
 	| AltPatUnify		of unify_error
 	| GuardPatUnify		of unify_error
