@@ -15,8 +15,9 @@ TOPDIR = .
 include $(TOPDIR)/Makefile.vars
 include $(TOPDIR)/Makefile.rules
 
-SUBDIRS = store adt generic alice
-SUBDIRSR = alice generic adt store
+# GNU make has no reverse function, but we need these in reversed form, too:
+SUBDIRS = store adt generic alice java
+SUBDIRSR = java alice generic adt store
 
 SRCS = Base.cc StockwerkMain.cc
 OBJS = $(SRCS:%.cc=%.o)
