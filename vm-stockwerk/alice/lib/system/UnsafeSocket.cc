@@ -10,6 +10,7 @@
 //   $Revision$
 //
 
+#include <cstring>
 #include <unistd.h>
 #include <sys/types.h>
 

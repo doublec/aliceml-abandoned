@@ -10,6 +10,8 @@
 //   $Revision$
 //
 
+#include <cstring>
+#include <cstdlib>
 #if defined(__MINGW32__) || defined(_MSC_VER)
 #include <winsock.h>
 #else
