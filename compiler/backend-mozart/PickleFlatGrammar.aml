@@ -38,22 +38,7 @@ structure PickleFlatGrammar :> CODE
 
 	fun outputStamp (q, stamp) = outputInt (q, Stamp.hash stamp)
 
-	local
-	    fun pathCeil filename =
-		let
-		    val fro = ".ozf"
-		    val n = String.size filename
-		    val m = String.size fro
-		in
-		    if n > m
-		       andalso String.substring (filename, n - m, m) = fro
-		    then filename
-		    else filename ^ fro
-	    end
-	in
-	    fun outputUrl (q, url) =
-		outputString (q, pathCeil (Url.toStringRaw url))
-	end
+	fun outputUrl (q, url) = outputString (q, Url.toStringRaw url)
 
 	(*--** remove global state *)
 	val visited: label StampMap.t = StampMap.new ()
