@@ -48,6 +48,7 @@ import signature SWITCHES          from "../infrastructure/SWITCHES-sig"
 import signature ELABORATION_PHASE from "ELABORATION_PHASE-sig"
 
 (*DEBUG
+import structure Stamp             from "../common/Stamp"
 import structure PathSet           from "../../lib/rtt/PathSet"
 import structure PrettyPrint       from "../../lib/utility/PrettyPrint"
 import structure PPMisc            from "../../lib/rtt/PPMisc"
