@@ -83,6 +83,7 @@
 	val inject : 'a space * ('a -> unit) -> unit
 	val merge : 'a space -> 'a
         val kill : 'a space -> unit
+        val waitStable : 'a space -> unit
     end</PRE>
 
 <?php section("description", "description"); ?>
@@ -245,14 +246,6 @@
     </DD>
 
     <DT>
-      <TT>kill <I>s</I></TT>
-    </DT>
-    <DD>
-      <P>kills <I>s</I> by injecting a failure into a space.
-      </P>
-    </DD>
-
-    <DT>
       <TT>merge <I>s</I></TT>
     </DT>
     <DD>
@@ -263,6 +256,22 @@
       </P>
       <P>Raises a runtime error if <I>s</I> is already merged,
          or if the current space is not addmissible for <I>s</I>.
+      </P>
+    </DD>
+
+    <DT>
+      <TT>kill <I>s</I></TT>
+    </DT>
+    <DD>
+      <P>kills <I>s</I> by injecting a failure into a space.
+      </P>
+    </DD>
+
+    <DT>
+      <TT>waitStable <I>s</I></TT>
+    <DT>
+    <DD>
+      <P>Synchronizes on stability of <I>s</I> and returns <TT>unit</TT>.
       </P>
     </DD>
   </DL>
