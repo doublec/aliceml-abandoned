@@ -71,11 +71,13 @@ DEFINE2(UnsafeRemote_dynamicCall) {
 } END
 
 DEFINE1(UnsafeRemote_packValue) {
+  taskStack->PushFrame(prim_self);
   return Pickler::Pack(x0, taskStack);
 } END
 
 DEFINE1(UnsafeRemote_unpackValue) {
   DECLARE_STRING(packedValue, x0);
+  taskStack->PushFrame(prim_self);
   return Unpickler::Unpack(static_cast<Chunk *>(packedValue), taskStack);
 } END
 
