@@ -12,11 +12,11 @@
 //   $Revision$
 //
 
-#ifndef __EMULATOR__PROPERTIES_HH__
-#define __EMULATOR__PROPERTIES_HH__
+#ifndef __GENERIC__PROPERTIES_HH__
+#define __GENERIC__PROPERTIES_HH__
 
 #if defined(INTERFACE)
-#pragma interface "emulator/Properties.hh"
+#pragma interface "generic/Properties.hh"
 #endif
 
 #include "store/Store.hh"
