@@ -303,7 +303,7 @@ define
 	    end
 	 end
       'Int.toString':
-	 fun {$ I} {ByteString.make {Int.toString I}} end
+	 fun {$ I} {ByteString.make {IntToString I}} end
       'List.Empty': {NewUniqueName 'List.Empty'}
       'Math.acos': Acos
       'Math.acosh': Float.acosh
@@ -357,7 +357,10 @@ define
 	 fun {$ R}
 	    {FloatToInt {Round R}}
 	 end
-      'Real.toString': FloatToString
+      'Real.toString':
+	 fun {$ F}
+	    {ByteString.make {FloatToString F}}
+	 end
       'Real.trunc':
 	 fun {$ R}
 	    {FloatToInt if R >= 0.0 then {Floor R} else {Ceil R} end}
