@@ -32,15 +32,15 @@
   </P>
   <P>
     The general steps to create a GTK+ widget are:
-    <UL>
-      <LI>Instantiate a widget object using the appropriate constructor.
-      <LI>Connect appropriate handlers to all signals and events we wish
-	to react to.
-      <LI>Set attributes of the widget.
-      <LI>Pack the widget into a container.
-      <LI>Make the widget visible.
-    </UL>
   </P>
+  <UL>
+    <LI>Instantiate a widget object using the appropriate constructor.
+    <LI>Connect appropriate handlers to all signals and events we wish
+      to react to.
+    <LI>Set attributes of the widget.
+    <LI>Pack the widget into a container.
+    <LI>Make the widget visible.
+  </UL>
 
 <?php subsection("Widget Creation", "Widget Creation"); ?>
   <P>
@@ -167,14 +167,16 @@
 <?php subsection("Modules", "Modules"); ?>
   <P>
     GTK+ is organized into the following modules:
-    <UL>
-     <LI><TT>structure Gdk<br>
-             from "x-alice://lib/gtk/Gdk"</TT>
-     <LI><TT>structure Gtk<br>
-             from 'x-alice://lib/gtk/Gtk'</TT>
-     <LI><TT>structure GtkCanvas<br>
-              from 'x-alice://lib/gtk/GtkCanvas'</TT>
-    </UL>
+  </P>
+  <UL>
+   <LI><TT>structure Gdk<br>
+           from "x-alice://lib/gtk/Gdk"</TT>
+   <LI><TT>structure Gtk<br>
+           from 'x-alice://lib/gtk/Gtk'</TT>
+   <LI><TT>structure GtkCanvas<br>
+            from 'x-alice://lib/gtk/GtkCanvas'</TT>
+  </UL>
+  <P>
     Each module represents a namespace.  The corresponding API constants
     and functions are mapped to constants and functions
     in these namespaces.
