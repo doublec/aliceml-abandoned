@@ -1,3 +1,11 @@
+ifeq ($(STOCKWERK), 1)
+INTEROP =
+PLATFORM = stockwerk
+else
+INTEROP = interop.html
+PLATFORM = mozart
+endif
+
 PREFIX = /opt/stockhausen-devel/doc
 
 DIRS = $(PREFIX) \
@@ -14,7 +22,7 @@ INSTALLFILES_0 = \
 	incompatibilities.html limitations.html \
 	tools.html interactive.html compiler.html machine.html \
 	linker.html depend.html \
-	interop.html migration.html tour.html sitemap.html \
+	$(INTEROP) migration.html tour.html sitemap.html \
 	mozart_cartoon.jpg inspector-1.jpg inspector-2.jpg inspector-3.jpg \
 	inspector-conc-1.jpg inspector-conc-2.jpg inspector-conc-3.jpg \
 	inspector-conc-4.jpg inspector-conc-5.jpg inspector-conc-6.jpg \
@@ -77,10 +85,9 @@ examples/interpreter.tar: \
 $(DIRS):
 	mkdir -p $@
 
-# For Stockwerk pages:
-# (echo '<?php $$platform = "stockwerk"; ?>'; cat $<) | php -q > $<.static
 $(PREFIX)/%.html: %.html
-	php -q $< >$<.static
+	(echo '<?php $$platform = "$(PLATFORM)"; ?>'; cat $<) | \
+	php -q > $<.static
 	install -c -m 444 $<.static $@
 	rm -f $<.static
 
