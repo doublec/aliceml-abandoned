@@ -5,22 +5,15 @@ import structure Assert from "x-alice:/lib/utility/Assert"
 
 structure Main =
 struct
-(*DEBUG*)
-    val file = TextIO.openIn "example.smlng"
-    val s    = TextIO.inputAll file
-    val _    = TextIO.closeIn file
-
-    fun process(bound, best, others, timeout) = 
-	if Future.isFuture(Future.awaitOne(others, timeout)) then
-	    best
-	else
-	    case others of [] =>
-		best
-	    | doc::docs =>
-		(Assert.assert(Doc.length doc < bound);
-		 process(bound, doc, docs, timeout))
-		handle _ => process(bound, best, docs, timeout)
-		(* for robustness! *)
+    fun process(bound, best, betters, timeout) = 
+	if Future.isFuture(Future.awaitOne(betters, timeout)) then best else
+	case betters of [] =>
+	    best (* Wow, an optimal solution! *)
+	| doc::docs =>
+	    (Assert.assert(Doc.length doc < bound);
+	     process(bound, doc, docs, timeout))
+	    handle _ => process(bound, best, docs, timeout)
+	    (* for robustness! *)
 
     fun main' timeout =
 	let

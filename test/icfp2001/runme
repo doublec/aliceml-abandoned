@@ -1,0 +1,3 @@
+#!/bin/sh
+
+ozengine Linked.ozf $1
