@@ -430,7 +430,7 @@ Interpreter::Result LoadInterpreter::Run(word, TaskStack *taskStack) {
   BootLinker::Trace("[boot-linker] loading", key);
   LinkInterpreter::PushFrame(taskStack, key);
   taskStack->PushFrame(frame->ToWord());
-  return Unpickler::Load(BootLinker::MakeFileName(key)->GetBase(), taskStack);
+  return Unpickler::Load(BootLinker::MakeFileName(key), taskStack);
 }
 
 const char *LoadInterpreter::Identify() {

@@ -158,10 +158,12 @@ void TaskStack::Init() {
 
 // Core PushCall Function
 Interpreter::Result TaskStack::PushCall(word closure) {
+  Assert(Store::WordToInt(closure) == INVALID_INT);
   Transient *transient = Store::WordToTransient(closure);
   // Found Closure
   if (transient == INVALID_POINTER) {
     Closure *cl = Closure::FromWord(closure);
+    Assert(cl != INVALID_POINTER);
     word code = cl->GetConcreteCode();
     transient = Store::WordToTransient(code);
     // Found Code Block

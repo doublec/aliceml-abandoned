@@ -28,7 +28,7 @@ public:
   // Unpickler Functions
   static Interpreter::Result Unpack(Chunk *s, TaskStack *taskStack);
   // Excpect c filename style
-  static Interpreter::Result Load(char *filename, TaskStack *taskStack);
+  static Interpreter::Result Load(Chunk *filename, TaskStack *taskStack);
   // Unpickler Static Constructor
   static void Init();
 };

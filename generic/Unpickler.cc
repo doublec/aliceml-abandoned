@@ -810,6 +810,16 @@ void PickleLoadInterpreter::DumpFrame(word) {
 //
 static const u_int INITIAL_TABLE_SIZE = 16; // to be checked
 
+// String Handling: to be done
+static char *ExportString(Chunk *s) {
+  u_int sLen = s->GetSize();
+  Chunk *e   = Store::AllocChunk(sLen + 1);
+  char *eb   = e->GetBase();
+  memcpy(eb, s->GetBase(), sLen);
+  eb[sLen] = '\0';
+  return eb;
+}
+
 Interpreter::Result Unpickler::Unpack(Chunk *s, TaskStack *taskStack) {
   Tuple *x = Tuple::New(1);
   InputStreamBase *is = (InputStreamBase *) new StringInputStream(s);
@@ -820,14 +830,15 @@ Interpreter::Result Unpickler::Unpack(Chunk *s, TaskStack *taskStack) {
   CONTINUE(PickleArgs::New(is, env->ToWord(), 0)->ToWord());
 }
 
-Interpreter::Result Unpickler::Load(char *filename, TaskStack *taskStack) {
+Interpreter::Result Unpickler::Load(Chunk *filename, TaskStack *taskStack) {
   Tuple *x            = Tuple::New(1);
-  FileInputStream *is = new FileInputStream(filename);
+  char *szFileName    = ExportString(filename);
+  FileInputStream *is = new FileInputStream(szFileName);
   taskStack->PopFrame();
   if (is->GotException()) {
     delete is;
     Scheduler::currentData = Store::IntToWord(0); // to be done
-    fprintf(stderr, "file '%s' not found\n", filename);
+    fprintf(stderr, "file '%s' not found\n", szFileName);
     return Interpreter::RAISE;
   }
   HashTable *env = HashTable::New(HashTable::INT_KEY, INITIAL_TABLE_SIZE);
