@@ -1,0 +1,57 @@
+(*
+ * Authors:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt and Andreas Rossberg, 2000-2002
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+signature BIN_IO =
+sig
+(*TODO
+    structure StreamIO:	STREAM_IO
+*)
+    type vector = string (* StreamIO.vector *)
+    type elem   = char (* StreamIO.elem *)
+
+    type instream
+    type outstream
+
+    val openIn :	string -> instream
+    val closeIn :	instream -> unit
+(*  val input :		instream -> vector
+    val input1 :	instream -> elem option
+    val inputN :	instream * int -> vector *)
+    val inputAll :	instream -> vector
+(*  val lookahead :	instream -> elem option
+    val canInput :	instream * int -> int option
+    val endOfStream :	instream -> bool *)
+
+    val openOut :	string -> outstream
+    val openAppend :	string -> outstream
+    val closeOut :	outstream -> unit
+    val flushOut :	outstream -> unit
+    val output :	outstream * vector -> unit
+    val output1 :	outstream * elem -> unit
+
+(*TODO
+    val getPosIn :	instream -> StreamIO.in_pos
+    val setPosIn :	instream * StreamIO.in_pos -> unit
+    val mkInstream :	StreamIO.instream -> instream
+    val getInstream :	instream -> StreamIO.instream
+    val setInstream :	instream * StreamIO.instream -> unit
+    val getPosOut :	outstream -> StreamIO.out_pos
+    val setPosOut :	outstream * StreamIO.out_pos -> unit
+    val mkOutstream :	StreamIO.outstream -> outstream
+    val getOutstream :	outstream -> StreamIO.outstream
+    val setOutstream :	outstream * StreamIO.outstream -> unit
+    val scanStream :	((Char.char, StreamIO.instream) StringCvt.reader ->
+			 ('a, StreamIO.instream) StringCvt.reader)
+			-> instream -> 'a option 
+*)
+end

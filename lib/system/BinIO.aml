@@ -1,0 +1,38 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2002
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure UnsafeIO from "UnsafeIO"
+import signature BIN_IO   from "BIN_IO-sig"
+
+structure BinIO :> BIN_IO =
+    struct
+	type vector = string (* StreamIO.vector *)
+	type elem   = char (* StreamIO.elem *)
+
+	type instream
+	type outstream
+
+	val stdIn = UnsafeIO.stdIn
+	val stdOut = UnsafeIO.stdOut
+	val stdErr = UnsafeIO.stdErr
+
+	fun openIn s = UnsafeIO.openIn (false, s)
+	val closeIn = UnsafeIO.closeIn
+	val inputAll = UnsafeIO.inputAll
+
+	fun openOut s = UnsafeIO.openOut (false, s)
+	fun openAppend s = UnsafeIO.openAppend (false, s)
+	val closeOut = UnsafeIO.closeOut
+	val flushOut = UnsafeIO.flushOut
+	val output = UnsafeIO.output
+	val output1 = UnsafeIO.output1
+    end
