@@ -335,7 +335,7 @@ struct
 	    | Size | Span | Subscript | IEEEReal.Unordered
 	    | Alt.Alt | Option.Option | Time.Time
 	    | Future.Cyclic | Promise.Promise
-	    | Thread.Terminate | Thread.Terminated | Package.MismatchVal ) =>
+	    | Thread.Terminate | Thread.Terminated ) =>
 	    SOME(
 		text(General.exnName x)
 	    )
