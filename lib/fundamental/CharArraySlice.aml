@@ -11,10 +11,11 @@
  *)
 
 import structure __pervasive                          from "Pervasive"
-import type unit and string and char and int and list from "ToplevelTypes"
-import structure CharArray                            from "CharArray"
-import structure CharVectorSlice                      from "CharVectorSlice"
-import functor   MkMonoArraySlice                     from "MkMonoArraySlice"
+import __primitive
+       type unit and string and char and int and list from "ToplevelTypes"
+import __primitive structure CharArray                from "CharArray"
+import __primitive structure CharVectorSlice          from "CharVectorSlice"
+import functor MkMonoArraySlice                       from "MkMonoArraySlice"
 
 structure CharArraySlice = MkMonoArraySlice(
     type elem         = char
