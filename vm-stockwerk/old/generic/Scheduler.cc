@@ -31,6 +31,8 @@ void Scheduler::Init() {
   threadQueue = ThreadQueue::New();
 }
 
+//--** document representation of inactive threads (invariants)
+
 void Scheduler::Run() {
   //--** start timer thread
   while ((currentThread = threadQueue->Dequeue()) != INVALID_POINTER) {
@@ -44,6 +46,7 @@ void Scheduler::Run() {
       int offset = nargs == -1? 1: nargs;
       Interpreter *interpreter =
 	static_cast<Interpreter *>(taskStack->GetUnmanagedPointer(offset));
+      Assert(interpreter != NULL);
       preempt = false;
       //--** reset time slice?
       result = interpreter->Run(taskStack, nargs);
@@ -80,12 +83,13 @@ void Scheduler::Run() {
 	{
 	  int nvars = result.nargs;
 	  Assert(nvars > 0);
-	  Transient *transient[nvars];
+	  Transient *transients[nvars];
 	  for (int i = nvars; i--; )
-	    transient[i] = Store::WordToTransient(taskStack->GetWord(i));
+	    transients[i] = Store::WordToTransient(taskStack->GetWord(i));
 	  taskStack->PopFrame(nvars);
 	  for (int i = nvars; i--; ) {
-	    switch (transient[i]->GetLabel()) {
+	    Transient *transient = transients[i];
+	    switch (transient->GetLabel()) {
 	    case HOLE:
 	      taskStack->PushFrame(1);
 	      taskStack->PutWord(0, GlobalPrimitives::Hole_Hole);
@@ -93,15 +97,36 @@ void Scheduler::Run() {
 	    case FUTURE:
 	      taskStack->PushFrame(1);
 	      taskStack->PutInt(0, 0);
-	      static_cast<Future *>(transient[i])->
-		AddToWaitQueue(currentThread);
+	      static_cast<Future *>(transient)->AddToWaitQueue(currentThread);
 	      break;
 	    case CANCELLED:
 	      taskStack->PushFrame(1);
-	      taskStack->PutWord(0, transient[i]->GetArg());
+	      taskStack->PutWord(0, transient->GetArg());
 	      goto raise;
 	    case BYNEED:
-	      //--** Perform application
+	      {
+		word closure = transient->GetArg();
+		transient->Become(FUTURE, Store::IntToWord(0)); // empty queue
+		// Push a task that binds the transient:
+		word primitive = GlobalPrimitives::Internal_bind;
+		taskStack->PushFrame(1);
+		taskStack->PutWord(0, transient->ToWord());
+		taskStack->PushCall(Closure::FromWord(primitive));
+		// Push the exception handler and the mark:
+		primitive = GlobalPrimitives::Internal_byneedHandler;
+		taskStack->PushCall(Closure::FromWord(primitive));
+		taskStack->PushFrame(1);
+		taskStack->PutUnmanagedPointer(0, NULL);
+		// Push a task that pops the handler after the application:
+		primitive = GlobalPrimitives::Internal_popHandler;
+		taskStack->PushCall(Closure::FromWord(primitive));
+		// Push a task that applies the closure then run it:
+		primitive = GlobalPrimitives::Internal_applyUnit;
+		taskStack->PushCall(Closure::FromWord(primitive));
+		taskStack->PushFrame(1);
+		taskStack->PutWord(0, closure);
+		nargs = 1;
+	      }
 	      break;
 	    default:
 	      Error("Scheduler::Run: invalid transient label");
