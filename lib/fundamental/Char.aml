@@ -179,7 +179,7 @@ struct
 
     and scanGap getc src =
 	case getc src
-	  of SOME(#"\\", src')                   => scanEscape getc src'
+	  of SOME(#"\\", src')                   => scan getc src'
 	   | SOME(  c,   src') where (isSpace c) => scanGap getc src'
 	   | NONE                                => NONE
 
@@ -225,7 +225,7 @@ struct
 	   | SOME(#"\"", src')                   => SOME(#"\"", src')
 	   | SOME(#"'",  src')                   => SOME(#"'", src')
 	   | SOME(#"^",  src')                   => scanControl getc src'
-	   | SOME(#"u",  src')                   => scanCUnicode getc src'
+	   | SOME(#"x",  src')                   => scanCUnicode getc src'
 	   | SOME(  c,   src') where (isDigit c) => scanCAscii getc src'
 	   | _                                   => NONE
 
