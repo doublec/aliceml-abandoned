@@ -1,9 +1,4 @@
 
-val labelprefix = "worker_"
-val goto  = fn s => goto (labelprefix ^ s)
-val label = fn s => label (labelprefix ^ s)
-val proc  = fn s => proc (labelprefix ^ s)
-
 fun nextstep step = (step+1) mod 3
 
 fun towards_blob towards_hill =
@@ -23,7 +18,7 @@ fun worker _ =
 	towards_blob (goto "towards_hill")
     ) ++
     proc "towards_hill" (
-	towards_hill nop (goto "drop_food")
+	sync_towards_hill nop (goto "drop_food") otherwise (lost)
     ) ++
     proc "drop_food" (
 	drop_food (goto "towards_blob")

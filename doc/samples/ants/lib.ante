@@ -8,14 +8,14 @@ val boringmarker = 4
 val todo = loop (flip 123 ifyes nop)
 val lost = loop (flip 124 ifyes nop)
 
-local
-val labelprefix = "home_"
-val goto  = fn s => goto (labelprefix ^ s)
-val label = fn s => label (labelprefix ^ s)
-val proc  = fn s => proc (labelprefix ^ s)
-in
-
 fun nextstep step = (step+1) mod 3
+
+fun sync_trail action0 action1 action2 otherwise failaction =
+    sense2 here (marker trailmarker1) ifyes (
+	sense2 here (marker trailmarker2) ifyes action2 ifnot action0
+    ) ifnot (
+	sense2 here (marker trailmarker2) ifyes action1 ifnot failaction
+    )
 
 fun turnto_trail step success otherwise failure =
     turnto_trail' (Vector.sub(#[(ifnot,ifyes), (ifyes,ifnot), (ifnot,ifnot)],
@@ -43,20 +43,20 @@ fun towards_hill' trailstep trailaction homeaction =
 	sense here home ifyes homeaction
     ) otherwise (lost)
 
-fun towards_hill trailaction homeaction =
+fun towards_hill (l0,l1,l2) trailaction homeaction =
     loop (
-	label "towards_hill0" ++
+	label l0 ++
 	towards_hill' 0 trailaction homeaction ++
-	label "towards_hill1" ++
+	label l1 ++
 	towards_hill' 1 trailaction homeaction ++
-	label "towards_hill2" ++
+	label l2 ++
 	towards_hill' 2 trailaction homeaction
     )
 
-fun sync_trail action0 action1 action2 otherwise failaction =
-    sense2 here (marker trailmarker1) ifyes (
-	sense2 here (marker trailmarker2) ifyes action2 ifnot action0
-    ) ifnot (
-	sense2 here (marker trailmarker2) ifyes action1 ifnot failaction
-    )
-end
+fun sync_towards_hill trailaction homeaction otherwise failaction =
+    letlabel (fn l0 =>
+    letlabel (fn l1 =>
+    letlabel (fn l2 =>
+	sync_trail (goto l0) (goto l1) (goto l2) otherwise failaction ++
+	towards_hill (l0,l1,l2) trailaction homeaction
+    )))
