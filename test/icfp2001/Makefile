@@ -1,8 +1,6 @@
-FILES =	Tag Doc Meaning Lex Parse Smurf Main
+.PHONY:	all clean
 
-.PHONY:	all
-
-all:	Main.ozf
+all:	Main.ozf Smurf.ozf
 
 %.ozf:	%.aml
 	alicec -c $< -o $@
