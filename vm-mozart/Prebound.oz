@@ -196,6 +196,7 @@ define
 	     'true': true
 	     'nil': nil
 	     'cons': '::'
+	     'ref': NewCell
 	     'Match': Match
 	     'Bind': Bind)
 end
