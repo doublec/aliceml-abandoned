@@ -11,7 +11,7 @@
  *)
 
 import structure __pervasive                       from "Pervasive"
-import type unit and int
+import __primitive type unit and int
        datatype list and option and bool and order from "ToplevelTypes"
 
 signature MONO_VECTOR =
