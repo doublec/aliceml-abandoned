@@ -10,7 +10,7 @@ INSTALLFILES_0 = \
 	style.css bg.gif alice.gif musicemb.jpg macros.php3 \
 	index.php3 people.php3 papers.php3 download.php3
 INSTALLFILES_PAPERS_0 = \
-	intermediate.ps
+	intermediate.ps opaque.ps
 INSTALLFILES_MANUAL_0 = \
 	bg.gif alice.gif style.css \
 	index.php3 macros.php3 menu.php3 laziness.php3 \
