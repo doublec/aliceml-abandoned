@@ -4,10 +4,10 @@ signature MAIN =
     structure Composer: COMPOSER'
     structure Switches: SWITCHES
 
-    (*DEBUG*)
     val compileSign :		string -> Composer.Sig.t
     val compile :		string * string * string -> Composer.Sig.t
 
+    (*DEBUG*)
     val parseString :		string -> InputGrammar.t
     val parseFile :		string -> InputGrammar.t
 
