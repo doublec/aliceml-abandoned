@@ -12,7 +12,7 @@
 
 functor
 require
-   BootName(newUnique: NewUniqueName '<' hash) at 'x-oz://boot/Name'
+   BootName(newUnique: NewUniqueName '<' hash toString) at 'x-oz://boot/Name'
    BootFloat(fPow) at 'x-oz://boot/Float'
    BootWord at 'x-oz://boot/Word'
 export
@@ -193,6 +193,7 @@ prepare
 	 fun {$ S} {NewUniqueName {VirtualString.toAtom S}} end
       'GlobalStamp.toString':
 	 fun {$ N} {ByteString.make {Value.toVirtualString N 0 0}} end
+	 % fun {$ N} {ByteString.make {BootName.toString N}} end
       'GlobalStamp.compare':
 	 fun {$ N1 N2}
 	    if N1 == N2 then 'EQUAL'
