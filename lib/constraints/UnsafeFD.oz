@@ -1,7 +1,6 @@
 %%%
 %%% Authors:
 %%%   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
-%%%   Andreas Rossberg <rossberg@ps.uni-sb.de>
 %%%
 %%% Copyright:
 %%%   Thorsten Brunklaus, 2000
@@ -13,59 +12,19 @@
 
 functor
 import
-   System
+   System(eq)
    FD
    Schedule
+   FDCommon('unzipVec' : UnzipVec
+	    'aliceDomainToOzDomain' : AliceDomainToOzDomain
+	    'alicePropToOzProp' : AlicePropToOzProp
+	    'aliceAssignToOzAssign' : AliceAssignToOzAssign
+	    'tell' : Tell
+	    'exnWrapper' : ExnWrapper) at 'FDCommon.ozf'
 export
    'UnsafeFD$' : UnsafeFD
 define
-   %% Global Helper Functions
-   proc {UnzipVec V V1 V2}
-      I = {Width V}
-   in
-      V1 = {MakeTuple '#[]' I}
-      V2 = {MakeTuple '#[]' I}
-      {Record.forAllInd V proc {$ I X#Y}
-			     V1.I = X
-			     V2.I = Y
-			  end}
-   end
-
-   local
-      fun {MakeOzValue V}
-	 case V
-	 of 'SINGLE'(X)  then X
-	 [] 'RANGE'(L U) then L#U
-	 end
-      end
-      fun {Cons X Y}
-	 {MakeOzValue X}|Y
-      end
-   in
-      fun {AliceDomainToOzDomain D}
-	 {Record.foldR D Cons nil}
-      end
-   end
-
-   fun {AlicePropToOzProp P}
-      case P
-      of 'LESS'      then '<:'
-      [] 'LESSEQ'    then '=<:'
-      [] 'EQUAL'     then '=:'
-      [] 'NOTEQUAL'  then '\\=:'
-      [] 'GREATER'   then '>:'
-      [] 'GREATEREQ' then '>=:'
-      end
-   end
-
-   fun {AliceAssignToOzAssign A}
-      case A
-      of 'MIN' then min
-      [] 'MID' then mid
-      [] 'MAX' then max
-      end
-   end
-
+   %% Scheduling Constraints Import
    fun {ToAtom S}
       {String.toAtom {ByteString.toString S}}
    end
@@ -501,97 +460,100 @@ define
    end
 
    %% Create Interface
-   UnsafeFD = 'UnsafeFD'('inf'                 : FD.inf
-			 'sup'                 : FD.sup
-			 'unsafeFD'            : FDFun
-			 'unsafeFDVec'         : FDVecFun
-			 'unsafeRange'         : RangeFun
-			 'unsafeRangeVec'      : RangeVecFun
-			 'bin'                 : BinFun
-			 'binVec'              : BinVecFun
-			 'assign'              : AssignFun
-			 'toInt'               : ToIntFun
-			 'future'              : ToFutureFun
-			 'unsafeFromInt'       : FromIntFun
-			 'isBin'               : IsBinFun
-			 'sum'                 : SumFun
-			 'sumC'                : SumCFun
-			 'sumAC'               : SumACFun
-			 'sumCN'               : SumCNFun
-			 'sumACN'              : SumACNFun
-			 'sumD'                : SumDFun
-			 'sumCD'               : SumCDFun
-			 'plus'                : PlusFun
-			 'minus'               : MinusFun
-			 'times'               : TimesFun
-			 'power'               : PowerFun
-			 'divI'                : DivIFun
-			 'modI'                : ModIFun
-			 'plusD'               : PlusDFun
-			 'minusD'              : MinusDFun
-			 'timesD'              : TimesDFun
-			 'divD'                : DivDFun
-			 'modD'                : ModDFun
-			 'min'                 : MinFun
-			 'max'                 : MaxFun
-			 'equal'               : EqualFun
-			 'notequal'            : NotEqualFun
-			 'distance'            : DistanceFun
-			 'less'                : LessFun
-			 'lessEq'              : LessEqFun
-			 'greater'             : GreaterFun
-			 'greaterEq'           : GreaterEqFun
-			 'disjoint'            : DisjointFun
-			 'disjointC'           : DisjointCFun
-			 'tasksOverlap'        : TasksOverlapFun
-			 'distinct'            : DistinctFun
-			 'distinctOffset'      : DistinctOffsetFun
-			 'distinct2'           : Distinct2Fun
-			 'atMost'              : AtMostFun
-			 'atLeast'             : AtLeastFun
-			 'exactly'             : ExactlyFun
-			 'element'             : ElementFun
-			 'conj'                : ConjFun
-			 'disj'                : DisjFun
-			 'exor'                : ExorFun
-			 'nega'                : NegaFun
-			 'impl'                : ImplFun
-			 'equi'                : EquiFun
-			 'unsafeReified_fd'    : ReifiedFdFun
-			 'unsafeReified_fdVec' : ReifiedFdVecFun
-			 'reified_card'        : ReifiedCardFun
-			 'reified_distance'    : ReifiedDistanceFun
-			 'reified_sum'         : ReifiedSumFun
-			 'reified_sumC'        : ReifiedSumCFun
-			 'reified_sumAC'       : ReifiedSumACFun
-			 'reified_sumCN'       : ReifiedSumCNFun
-			 'reified_sumACN'      : ReifiedSumACNFun
-			 'reflect_min'         : FD.reflect.min
-			 'reflect_max'         : FD.reflect.max
-			 'reflect_mid'         : FD.reflect.mid
-			 'reflect_nextLarger'  : FD.reflect.nextLarger
-			 'reflect_nextSmaller' : FD.reflect.nextSmaller
-			 'reflect_size'        : FD.reflect.size
-			 'reflect_dom'         : ReflectDomainFun
-			 'reflect_domList'     : FD.reflect.domList
-			 'reflect_nbSusps'     : FD.reflect.nbSusps
-			 'reflect_eq'          : System.eq
-			 'watch_min'           : FD.watch.min
-			 'watch_max'           : FD.watch.max
-			 'watch_size'          : FD.watch.size
-			 'distribute'          : DistFun
-			 'choose'              : ChooseFun
-			 'schedule_cumulative' : CumulativeFun
-			 'schedule_cumulativeEF' : CumulativeEFFun
-			 'schedule_cumulativeTI' : CumulativeTIFun
-			 'schedule_cumulativeUp' : CumulativeUpFun
-			 'schedule_disjoint' : SchedDisjointFun
-			 'schedule_firstsDist' : FirstsDistFun
-			 'schedule_lastsDist' : LastsDistFun
-			 'schedule_firstsLastsDist' : FirstsLastsDistFun
-			 'schedule_taskIntervalsDistP' : TaskIntervalsDistPFun
-			 'schedule_taskIntervalsDistO' : TaskIntervalsDistOFun
-			 'schedule_serializedDisj' : SerializedDisjFun
-			 'schedule_serialized' : SerializedFun
-			 'schedule_taskIntervals' : TaskIntervalsFun)
+   UnsafeFD = {Record.map
+	       'UnsafeFD'('\'Tell'              : Tell
+		          'inf'                 : FD.inf
+			  'sup'                 : FD.sup
+			  'unsafeFD'            : FDFun
+			  'unsafeFDVec'         : FDVecFun
+			  'unsafeRange'         : RangeFun
+			  'unsafeRangeVec'      : RangeVecFun
+			  'bin'                 : BinFun
+			  'binVec'              : BinVecFun
+			  'assign'              : AssignFun
+			  'toInt'               : ToIntFun
+			  'future'              : ToFutureFun
+			  'unsafeFromInt'       : FromIntFun
+			  'isBin'               : IsBinFun
+			  'sum'                 : SumFun
+			  'sumC'                : SumCFun
+			  'sumAC'               : SumACFun
+			  'sumCN'               : SumCNFun
+			  'sumACN'              : SumACNFun
+			  'sumD'                : SumDFun
+			  'sumCD'               : SumCDFun
+			  'plus'                : PlusFun
+			  'minus'               : MinusFun
+			  'times'               : TimesFun
+			  'power'               : PowerFun
+			  'divI'                : DivIFun
+			  'modI'                : ModIFun
+			  'plusD'               : PlusDFun
+			  'minusD'              : MinusDFun
+			  'timesD'              : TimesDFun
+			  'divD'                : DivDFun
+			  'modD'                : ModDFun
+			  'min'                 : MinFun
+			  'max'                 : MaxFun
+			  'equal'               : EqualFun
+			  'notequal'            : NotEqualFun
+			  'distance'            : DistanceFun
+			  'less'                : LessFun
+			  'lessEq'              : LessEqFun
+			  'greater'             : GreaterFun
+			  'greaterEq'           : GreaterEqFun
+			  'disjoint'            : DisjointFun
+			  'disjointC'           : DisjointCFun
+			  'tasksOverlap'        : TasksOverlapFun
+			  'distinct'            : DistinctFun
+			  'distinctOffset'      : DistinctOffsetFun
+			  'distinct2'           : Distinct2Fun
+			  'atMost'              : AtMostFun
+			  'atLeast'             : AtLeastFun
+			  'exactly'             : ExactlyFun
+			  'element'             : ElementFun
+			  'conj'                : ConjFun
+			  'disj'                : DisjFun
+			  'exor'                : ExorFun
+			  'nega'                : NegaFun
+			  'impl'                : ImplFun
+			  'equi'                : EquiFun
+			  'unsafeReified_fd'    : ReifiedFdFun
+			  'unsafeReified_fdVec' : ReifiedFdVecFun
+			  'reified_card'        : ReifiedCardFun
+			  'reified_distance'    : ReifiedDistanceFun
+			  'reified_sum'         : ReifiedSumFun
+			  'reified_sumC'        : ReifiedSumCFun
+			  'reified_sumAC'       : ReifiedSumACFun
+			  'reified_sumCN'       : ReifiedSumCNFun
+			  'reified_sumACN'      : ReifiedSumACNFun
+			  'reflect_min'         : FD.reflect.min
+			  'reflect_max'         : FD.reflect.max
+			  'reflect_mid'         : FD.reflect.mid
+			  'reflect_nextLarger'  : FD.reflect.nextLarger
+			  'reflect_nextSmaller' : FD.reflect.nextSmaller
+			  'reflect_size'        : FD.reflect.size
+			  'reflect_dom'         : ReflectDomainFun
+			  'reflect_domList'     : FD.reflect.domList
+			  'reflect_nbSusps'     : FD.reflect.nbSusps
+			  'reflect_eq'          : System.eq
+			  'watch_min'           : FD.watch.min
+			  'watch_max'           : FD.watch.max
+			  'watch_size'          : FD.watch.size
+			  'distribute'          : DistFun
+			  'choose'              : ChooseFun
+			  'schedule_cumulative' : CumulativeFun
+			  'schedule_cumulativeEF' : CumulativeEFFun
+			  'schedule_cumulativeTI' : CumulativeTIFun
+			  'schedule_cumulativeUp' : CumulativeUpFun
+			  'schedule_disjoint' : SchedDisjointFun
+			  'schedule_firstsDist' : FirstsDistFun
+			  'schedule_lastsDist' : LastsDistFun
+			  'schedule_firstsLastsDist' : FirstsLastsDistFun
+			  'schedule_taskIntervalsDistP' : TaskIntervalsDistPFun
+			  'schedule_taskIntervalsDistO' : TaskIntervalsDistOFun
+			  'schedule_serializedDisj' : SerializedDisjFun
+			  'schedule_serialized' : SerializedFun
+			  'schedule_taskIntervals' : TaskIntervalsFun)
+	       ExnWrapper}
 end
