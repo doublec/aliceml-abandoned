@@ -23,22 +23,23 @@
     to locate resources.  In particular, localizing of components and pickles
     is performed under a resolver.  Where Oz initializes this resolver from
     the value of the <TT>OZ_LOAD</TT> environment variable, Alice uses the
-    environment variable called <TT>ALICE_LOAD</TT> instead.</P>
-  <P><TT>alicerun</TT> initializes <TT>OZ_LOAD</TT>, unless set, in the
-    same way that <TT>ozengine</TT> does.  <TT>ALICE_LOAD</TT>, in contrast,
-    is much richer and is initialized, always, with the following methods:</P>
+    environment variables <TT>ALICE_LOAD_PREFIX</TT> and
+    <TT>ALICE_LOAD_SUFFIX</TT> instead.</P>
+  <P><TT>alicerun</TT> initializes <TT>OZ_LOAD</TT>, unless set, in the same
+    way that <TT>ozengine</TT> does.  Alice's resolving methods are defined
+    as follows:</P>
   <OL>
+    <LI><P>If <TT>ALICE_LOAD_PREFIX</TT> is set, its methods are tried
+      before any of the following.</P>
     <LI><P>If the URL uses the <TT>x-oz</TT> scheme, it is tried as-is,
       for compatibility with Oz.</P>
     <LI><P>Otherwise, the URL is tried with the platform's default component
       extension appended, which is <TT>.ozf</TT>.</P>
-    <LI><P>If that fails, the URL is tried as-is, for compatibility with
-      Oz.</P>
+    <LI><P>If that fails, the URL is tried as-is, for compatibility
+      with Oz.</P>
+    <LI><P>If that fails, and <TT>ALICE_LOAD_SUFFIX</TT> is set, its methods
+      are tried at this point.</P>
   </OL>
-  <P>This behaviour can be influenced by the two environment variables
-    <TT>ALICE_LOAD_PREFIX</TT> and <TT>ALICE_LOAD_SUFFIX</TT>.  The
-    resolution methods specified by their contents are prepended resp.
-    appended to the methods enumerated above.</P>
 
 <?php section("componentmanagers", "component managers") ?>
   <P>Alice provides its own <A href="library/component-manager.html"
