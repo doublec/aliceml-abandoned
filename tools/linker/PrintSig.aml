@@ -63,10 +63,9 @@ struct
 
     fun ppInfOpt NONE = PrettyPrint.text "[no signature]"
       | ppInfOpt (SOME inf) =
-	if Inf.isSig inf then
-	    PPInf.ppSig (Inf.asSig inf)
-	else
-	    PPInf.ppInf inf
+	if Inf.isSig inf
+	then PPInf.ppSig (Inf.asSig inf)
+	else PPInf.ppInf inf
 
     fun pathToString p = PrettyPrint.toString(PPPath.ppPath p, 10000)
 

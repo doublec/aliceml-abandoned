@@ -1,49 +1,35 @@
 (*
  * Author:
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 2002
+ *   Leif Kornstaedt and Andreas Rossberg, 2002-2004
  *
  * Last change:
  *   $Date$ by $Author$
  *   $Revision$
  *)
 
-import signature IMP_MAP     from "../../lib/data/IMP_MAP-sig"
+import structure Inf         from "../../lib/rtt/Inf"
 import structure Url         from "../../lib/system/Url"
 import structure Resolver    from "../../lib/system/Resolver"
 import structure MyComponent from "MyComponent"
 
 signature LINK =
     sig
-	structure UrlMap: IMP_MAP
-
 	datatype boundary =
 	    INCLUDE of string
 	  | EXCLUDE of string
 
-	exception Empty
-	exception Mismatch of Url.t * Url.t
-	exception Conflict of Url.t
+	exception Mismatch of Url.t * Url.t * Inf.mismatch
 	exception Rewrite of Url.t * Url.t * Url.t
+	exception Cycle of Url.t list
 	exception Io of Url.t * exn
-
-	val collect: boundary vector * bool -> Url.t ->
-		     {componentMap: MyComponent.t UrlMap.t,
-		      includeMap: Url.t vector UrlMap.t,
-		      excludeMap: MyComponent.inf UrlMap.t}
-		     (* Empty, Mismatch, Conflict, Io *)
-
-	val sort: Url.t vector UrlMap.t * 'a UrlMap.t -> Url.t list list
-
-	val rewrite: Resolver.Handler.t list -> Url.t -> Url.t
-	    (* Option.Option *)
 
 	val link: {root: Url.t,
 		   verbose: bool,
-		   typeCheck: bool,
-		   boundary: boundary vector,
+		   boundary: boundary list,
 		   rewrite: Resolver.Handler.t list} -> MyComponent.t
-		     (* Empty, Mismatch, Conflict, Rewrite, Io *)
+		     (* Empty, Mismatch, Cycle, Rewrite, Io *)
     end

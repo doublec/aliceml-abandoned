@@ -34,7 +34,6 @@ structure Main :> MAIN =
 	val outputFile: string option ref = ref NONE
 	val verbose = ref false
 	val dumpsig = ref false
-	val typeCheck = ref true
 	val boundary: Link.boundary list ref = ref nil
 	val rewrite: Resolver.Handler.t list ref = ref nil
 
@@ -79,8 +78,7 @@ structure Main :> MAIN =
 		val component =
 		    Link.link {root = Url.fromString root,
 			       verbose = !verbose,
-			       typeCheck = !typeCheck,
-			       boundary = Vector.fromList (!boundary),
+			       boundary = !boundary,
 			       rewrite = !rewrite @ [Resolver.Handler.default]}
 	    in
 		MyComponent.save (outputFile, component);
@@ -88,18 +86,16 @@ structure Main :> MAIN =
 		else ();
 		OS.Process.success
 	    end
-	    handle Link.Empty =>
-		       error "root component has been excluded\n"
-		 | Link.Mismatch (url, url') =>
+	    handle Link.Mismatch (url, url', _) =>
 		       error ("signature of component\n\
 			      \   " ^ Url.toString url ^ "\n\
-			      \does not fulfill requirements of component\n\
-			      \   " ^ Url.toString url' ^ "\n")
-		 | Link.Conflict url =>
-		       error ("excluded component\n\
-			      \   " ^ Url.toString url ^ "\n\
-			      \imported multiply \
-			      \with incompatible signatures\n")
+			      \does not match import requirement of component\n\
+			      \   " ^ Url.toString url' ^ "\n\
+			      \Try recompiling the latter.\n")
+		 | Link.Cycle urls =>
+		       error ("components have cyclic inter-dependencies:\n" ^
+			      String.concat (List.map (fn url =>
+				  "   " ^ Url.toString url ^ "\n") urls))
 		 | Link.Rewrite (url1, url2, url) =>
 		       error ("rewrites ambiguates urls\n\
 			      \   " ^ Url.toString url1 ^ "\n\
@@ -135,7 +131,6 @@ structure Main :> MAIN =
           | main (("--version")::_) = version ()
 	  | main (("-v"|"--verbose")::rest) = (verbose := true; main rest)
 	  | main (("-d"|"--dumpsig")::rest) = (dumpsig := true; main rest)
-	  | main ("--no-type-check"::rest) = (typeCheck := false; main rest)
 	  | main ("--include"::includes::rest) =
 	    (boundary := (!boundary @ List.map Link.INCLUDE (csl includes));
 	     main rest)
