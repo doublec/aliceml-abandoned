@@ -29,23 +29,35 @@ import structure String                               from "String"
 import structure StringCvt                            from "StringCvt"
 import signature WORD                                 from "WORD-sig"
 
+local
+type large_word    = __pervasive.LargeWord.word
+type toplevel_word = word
+in
 
-functor MkWord(val wordSize: int) : WORD =
+functor MkWord(type word val wordSize: int) : WORD =
 struct
     type word = word
     type t    = word							(**)
 
     val wordSize = wordSize
 
-    __primitive val toInt :		word -> int          = "Word.toInt"
-    __primitive val toIntX :		word -> int          = "Word.toIntX"
-    __primitive val toLargeInt :	word -> LargeInt.int = "Word.toInt"
-    __primitive val toLargeIntX :	word -> LargeInt.int = "Word.toIntX"
-    __primitive val fromInt' :		int * int -> word    = "Word.fromInt'"
+    __primitive val largeWordSize: int = "LargeWord.wordSize"
 
-    fun toLargeWord w	= w
-    fun toLargeWordX w	= w
-    fun fromLargeWord w	= w
+    __primitive val fromInt': int * int -> word = "Word.fromInt'"
+    __primitive val fromWord': int * toplevel_word -> word = "Word.fromWord'"
+    __primitive val fromWordX': int * toplevel_word -> word = "Word.fromWordX'"
+    __primitive val fromWord'': int * word -> large_word = "Word.fromWord'"
+    __primitive val fromWordX'': int * word -> large_word = "Word.fromWordX'"
+
+    __primitive val toInt :       word -> int              = "Word.toInt"
+    __primitive val toIntX :      word -> int              = "Word.toIntX"
+    __primitive val toLargeInt :  word -> LargeInt.int     = "Word.toInt"
+    __primitive val toLargeIntX : word -> LargeInt.int     = "Word.toIntX"
+
+    fun toLargeWord x	= fromWord''(largeWordSize,x)
+    fun toLargeWordX x	= fromWordX''(largeWordSize,x)
+    fun fromWord x	= fromWord'(wordSize,x)
+    fun fromLargeWord x	= fromWord'(wordSize,x)
     fun fromInt x	= fromInt'(wordSize,x)
     fun fromLargeInt x	= fromInt'(wordSize,x)
 
@@ -59,9 +71,9 @@ struct
     __primitive val orb :    word * word -> word = "Word.orb"
     __primitive val xorb :   word * word -> word = "Word.xorb"
     __primitive val andb :   word * word -> word = "Word.andb"
-    __primitive val op << :  word * word -> word = "Word.<<"
-    __primitive val op >> :  word * word -> word = "Word.>>"
-    __primitive val op ~>> : word * word -> word = "Word.~>>"
+    __primitive val op << :  word * toplevel_word -> word = "Word.<<"
+    __primitive val op >> :  word * toplevel_word -> word = "Word.>>"
+    __primitive val op ~>> : word * toplevel_word -> word = "Word.~>>"
 
     __primitive val op < :   word * word -> bool = "Word.<"
     __primitive val op > :   word * word -> bool = "Word.>"
@@ -83,10 +95,16 @@ struct
 
     (* fmt and scan both use inverted signs to cope with minInt! *)
 
-    fun base BIN	= 0w2
-      | base OCT	= 0w8
-      | base DEC	= 0w10
-      | base HEX	= 0w16
+    val w0 = fromWord 0w0
+    val w2 = fromWord 0w2
+    val w8 = fromWord 0w8
+    val w10 = fromWord 0w10
+    val w16 = fromWord 0w16
+
+    fun base BIN	= fromWord 0w2
+      | base OCT	= fromWord 0w8
+      | base DEC	= fromWord 0w10
+      | base HEX	= fromWord 0w16
 
     fun toIsDigit BIN	= Char.isBinDigit
       | toIsDigit OCT	= Char.isOctDigit
@@ -94,15 +112,15 @@ struct
       | toIsDigit HEX	= Char.isHexDigit
 
     val zero		= fromInt(Char.ord #"0")
-    val ten		= fromInt(Char.ord #"A") - 0w10
-    fun digit i		= Char.chr(toInt(i + (if i < 0w10 then zero else ten)))
+    val ten		= fromInt(Char.ord #"A") - w10
+    fun digit i		= Char.chr(toInt(i + (if i < w10 then zero else ten)))
     fun value c		= fromInt(Char.ord(Char.toUpper c)) -
-			  (if fromInt(Char.ord c) < ten+0w10 then zero else ten)
+			  (if fromInt(Char.ord c) < ten+w10 then zero else ten)
 
-    fun fmt radix 0w0	= "0"
-      | fmt radix i	= fmt'(base radix, i, [])
-    and fmt'(b, 0w0,cs)	= String.implode cs
-      | fmt'(b, i, cs)	= fmt'(b, i div b, digit(i mod b) :: cs)
+    fun fmt radix i = if i = w0 then "0"
+		      else fmt'(base radix, i, [])
+    and fmt'(b, i, cs) = if i = w0 then String.implode cs
+			 else fmt'(b, i div b, digit(i mod b) :: cs)
 
 
     (* Scanning *)
@@ -136,7 +154,7 @@ struct
 	case getc src
 	  of SOME(c, _) =>
 	     if isDigit c
-	     then SOME(scanNum' (isDigit, b) getc src 0w0)
+	     then SOME(scanNum' (isDigit, b) getc src w0)
 	     else NONE
 	   | NONE => NONE
     and scanNum' (isDigit, b) getc src i =
@@ -155,11 +173,13 @@ struct
 					     else scanPrefix getc src1
 	in
 	    case scanNum (toIsDigit radix, base radix) getc src2
-	      of NONE => if pref then SOME(0w0, #2(Option.valOf(getc src1)))
+	      of NONE => if pref then SOME(w0, #2(Option.valOf(getc src1)))
 				 else NONE
 	       | some => some
 	end
 
     val toString	= fmt HEX
     val fromString	= scanString(scan HEX)
+end
+
 end

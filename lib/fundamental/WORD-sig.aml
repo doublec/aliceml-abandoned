@@ -42,9 +42,9 @@ sig
     val orb :		word * word -> word
     val xorb :		word * word -> word
     val andb :		word * word -> word
-    val << :		word * word -> word
-    val >> :		word * word -> word
-    val ~>> :		word * word -> word
+    val << :		word * __pervasive.Word.word -> word
+    val >> :		word * __pervasive.Word.word -> word
+    val ~>> :		word * __pervasive.Word.word -> word
 
     val + :		word * word -> word
     val - :		word * word -> word
