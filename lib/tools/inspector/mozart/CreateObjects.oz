@@ -19,6 +19,7 @@ export
    intCreateObject         : IntCreateObject
    floatCreateObject       : FloatCreateObject
    procedureCreateObject   : ProcedureCreateObject
+   nameGrCreateObject      : NameGrCreateObject
    wordCreateObject        : WordCreateObject
    byteStringCreateObject  : ByteStringCreateObject
    cellCreateObject        : CellCreateObject
@@ -80,6 +81,21 @@ define
       meth create(Value Parent Index Visual Depth)
 	 @type = function
 	 CreateObject, create(Value Parent Index Visual Depth)
+      end
+   end
+
+   class NameGrCreateObject from OzFreeGrCreateObject
+      meth gcr(Entry Value Parent Index Visual Depth)
+	 @type    = name
+	 @entry   = Entry
+	 @contTag = {Visual newTag($)}
+	 {self handleMode({Entry getEqualStr($)} Visual)}
+	 {Entry awake(self)}
+	 CreateObject, create(Value Parent Index Visual Depth)
+	 {Visual logVar(self Value false)}
+      end
+      meth handleMode(RefStr Visual)
+	 @mode = {New Helper.marker create('R'#RefStr ' as ' self Visual)}
       end
    end
    

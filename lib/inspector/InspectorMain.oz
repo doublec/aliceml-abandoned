@@ -99,7 +99,7 @@ define
 			  record#record fdint#fdInt cell#cell
 			  fset#fsVal fsvar#fsVar free#free future#future
 			  byteString#byteString]
-      RelationNodes    = [int#int word#word float#float atom#atom name#name procedure#procedure
+      RelationNodes    = [int#int word#word float#float atom#atom name#nameGr procedure#procedure
 			  hashtuple#tupleGr pipetuple#listGr
 			  labeltuple#vectorGr record#recordGr
 			  fdint#fdIntGr cell#cellGr
@@ -111,7 +111,7 @@ define
 			  fdint#fdInt cell#cellInd
 			  fset#fsVal fsvar#fsVar free#free future#future
 			  byteString#byteString]
-      RelationIndNodes = [int#int word#word float#float atom#atom name#name procedure#procedure
+      RelationIndNodes = [int#int word#word float#float atom#atom name#nameGr procedure#procedure
 			  hashtuple#tupleGr pipetuple#listGr
 			  labeltuple#vectorGrInd record#recordGrInd
 			  cell#cellGrInd fdint#fdIntGr
