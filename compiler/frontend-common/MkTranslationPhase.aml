@@ -69,25 +69,6 @@ struct
 	end
 
 
-  (* Recognize sum type constructors (tags) *)
-
-    fun decomposeConarrow t =
-	if Type.isAll t then decomposeConarrow(#2(Type.asAll t)) else
-	let
-	    val (t',tArity)  = Type.asApply t
-	    val (t'',tArrow) = Type.asApply t'
-	in
-(*ASSERT    assert Type.equals(t'', PervasiveType.typ_conarrow) => *)
-	    if not(Type.equals(t'', PervasiveType.typ_conarrow))
-	    then raise Assert.failure else
-	    (tArrow, tArity)
-	end
-
-    fun decodeArity t  = decodeArity'(#2(decomposeConarrow t))
-    and decodeArity' t = if Type.isApply t
-			 then 1 + decodeArity'(#2(Type.asApply t))
-			 else 0
-
   (* Names and labels *)
 
     open NameTranslation
@@ -107,6 +88,9 @@ struct
     open PathTranslation
     open LabelTranslation
     open FixityTranslation
+
+    val typ_unit	= Type.inTuple #[]
+    val typ_zero	= Type.inApply(typ_strict, typ_unit)
 
     val var_poly	= Type.var(Type.STAR)
     val typ_poly	= Type.inAll(var_poly, Type.inVar var_poly)
@@ -334,25 +318,28 @@ struct
     fun trString(r, s) =
 	O.LitExp(typInfo(r, typ_string), O.StringLit(String.toWide s))
 
+    fun trStrict(r, e) =
+	O.StrictExp(typInfo(r, Type.inApply(typ_strict, #typ(O.infoExp e))), e)
     fun trTuple(r, es) =
 	O.TupExp(typInfo(r, Type.inTuple(Vector.map (#typ o O.infoExp) es)), es)
     fun trVector(r, t, es) =
 	O.VecExp(typInfo(r, Type.inApply(typ_vec, t)), es)
-    fun trTagged(r, t, a, e, b) =
-	O.TagExp(typInfo(r,t), O.Lab(nonInfo r, a), e, b)
+    fun trTagged(r, t, a, e) =
+	O.TagExp(typInfo(r,t), O.Lab(nonInfo r, a), e)
+    fun trTaggedN(r, t, a, es) =
+	trTagged(r, t, a, trStrict(r, trTuple(r, es)))
     fun trTag(r, t, a) =
 	O.TagExp(typInfo(r,t), O.Lab(nonInfo r, a),
-		 O.FailExp(typInfo(r, typ_zero)), false)
+		 O.StrictExp(typInfo(r,typ_zero), trUnit r))
     fun trNone(r, t) =
 	trTag(r, Type.inApply(typ_opt, t), lab_none)
     fun trSome(r, e) =
-	trTagged(r, Type.inApply(typ_opt,#typ(O.infoExp e)), lab_some, e, false)
+	trTagged(r, Type.inApply(typ_opt,#typ(O.infoExp e)), lab_some, e)
 
     fun trKind(E, r, Type.STAR) =
 	trTag(r, typ_kind E, lab_star)
       | trKind(E, r, Type.ARROW(k1,k2)) =
-	trTagged(r, typ_kind E, lab_arrow,
-		 trTuple(r, vector[trKind(E,r,k1), trKind(E,r,k2)]), true)
+	trTaggedN(r, typ_kind E, lab_arrow, vector[trKind(E,r,k1), trKind(E,r,k2)])
 			      (*UNFINISHED: this should be a vector constant,
 			        but NJ has a bug... *)
 
@@ -371,12 +358,11 @@ struct
     fun trFix(E, r, Fixity.NONFIX) =
 	trTag(r, typ_fix E, lab_nonfix)
       | trFix(E, r, Fixity.PREFIX n) =
-	trTagged(r, typ_fix E, lab_prefix, trInt(r,n), false)
+	trTagged(r, typ_fix E, lab_prefix, trInt(r,n))
       | trFix(E, r, Fixity.POSTFIX n) =
-	trTagged(r, typ_fix E, lab_postfix, trInt(r,n), false)
+	trTagged(r, typ_fix E, lab_postfix, trInt(r,n))
       | trFix(E, r, Fixity.INFIX(n,a)) =
-	trTagged(r, typ_fix E, lab_infix,
-		 trTuple(r, vector[trInt(r,n), trAssoc(E,r,a)]), true)
+	trTaggedN(r, typ_fix E, lab_infix, vector[trInt(r,n), trAssoc(E,r,a)])
 			    (*UNFINISHED: this should be a vector constant,
 			     * but NJ has a bug... *)
 
@@ -501,6 +487,7 @@ struct
       | idsPat(E, (I.TagPat(_,_,_,p)
 		  |I.ConPat(_,_,p)
 		  |I.RefPat(_,p)
+		  |I.StrictPat(_,p)
 		  |I.AltPat(_,p,_)
 		  |I.NegPat(_,p)
 		  |I.GuardPat(_,p,_)
@@ -531,16 +518,12 @@ struct
     and trExp(E, I.LitExp(i,l))		= O.LitExp(i, trLit l)
       | trExp(E, I.VarExp(i,y))		= O.VarExp(i, trVallongid(E, y))
       | trExp(E, I.PrimExp(i,s,t))	= O.PrimExp(i, s)
-      | trExp(E, I.LabExp(i,l,t))	= O.FailExp(i)
-      | trExp(E, I.NewExp(i,t))		= O.NewExp(i, decodeArity(#typ i) > 1)
-      | trExp(E, I.TagExp(i,l,NONE,e))	= O.TagExp(i, trVallab l, trExp(E,e),
-						   false)
-      | trExp(E, I.TagExp(i,l,SOME y,e))= O.TagExp(i, trVallab l, trExp(E,e),
-					  decodeArity(#typ(I.infoLongid y)) > 1)
+      | trExp(E, I.NewExp(i,t))		= O.NewExp(i)
+      | trExp(E, I.TagExp(i,l,_,e))	= O.TagExp(i, trVallab l, trExp(E,e))
       | trExp(E, I.ConExp(i,y,e))	= O.ConExp(i, trVallongid(E,y),
-						   trExp(E,e),
-					  decodeArity(#typ(I.infoLongid y)) > 1)
+						   trExp(E,e))
       | trExp(E, I.RefExp(i,e))		= O.RefExp(i, trExp(E,e))
+      | trExp(E, I.StrictExp(i,e))	= O.StrictExp(i, trExp(E,e))
       | trExp(E, I.TupExp(i,es))	= O.TupExp(i, trExps(E,es))
       | trExp(E, I.ProdExp(i,r))	= O.ProdExp(i, trExpRow(E,r))
       | trExp(E, I.UpdExp(i,e,r))	= trUpdExp(i, trExp(E,e), trExpRow(E,r))
@@ -607,14 +590,11 @@ struct
     and trPat(E, I.JokPat(i))		= O.JokPat(i)
       | trPat(E, I.LitPat(i,l))		= O.LitPat(i, trLit l)
       | trPat(E, I.VarPat(i,x))		= O.VarPat(i, trValid(E,x))
-      | trPat(E, I.TagPat(i,l,NONE,p))	= O.TagPat(i, trVallab l, trPat(E,p),
-						      false)
-      | trPat(E, I.TagPat(i,l,SOME y,p))= O.TagPat(i, trVallab l, trPat(E,p),
-					  decodeArity(#typ(I.infoLongid y)) > 1)
+      | trPat(E, I.TagPat(i,l,_,p))	= O.TagPat(i, trVallab l, trPat(E,p))
       | trPat(E, I.ConPat(i,y,p))	= O.ConPat(i, trVallongid(E,y),
-						      trPat(E,p),
-					  decodeArity(#typ(I.infoLongid y)) > 1)
+						      trPat(E,p))
       | trPat(E, I.RefPat(i,p))		= O.RefPat(i, trPat(E,p))
+      | trPat(E, I.StrictPat(i,p))	= O.StrictPat(i, trPat(E,p))
       | trPat(E, I.TupPat(i,ps))	= O.TupPat(i, trPats(E,ps))
       | trPat(E, I.ProdPat(i,r))	= O.ProdPat(i, trPatRow(E,r))
       | trPat(E, I.VecPat(i,ps))	= O.VecPat(i, trPats(E,ps))
@@ -1344,7 +1324,10 @@ struct
 	else
 	    trTyp'(E, t)
 
-    and trTyp'(E, I.VarTyp(i, I.Id(_,z,n))) =
+    and trTyp'(E, I.JokTyp _) =
+	raise Crash.Crash "TranslationPhase.trTyp: JokTyp"
+
+      | trTyp'(E, I.VarTyp(i, I.Id(_,z,n))) =
 	(* [a] = Type.inVar{[a]} *)
 	let
 	    val x' = O.Id(typInfo(#region i, typ_var E), z, trTypName n)
@@ -1377,15 +1360,6 @@ struct
 	let
 	    val e1' = trTyp'(E,t1)
 	    val e2' = trTyp'(E,t2)
-	in
-	    callTyp(E, lab_inApply, trTuple(#region i, #[e1',e2']))
-	end
-
-      | trTyp'(E, I.RefTyp(i,t)) =
-	(* [Ref t] = Type.inApply(PervasiveType.typ_ref, [t]) *)
-	let
-	    val e1' = accessPervType(E, lab_typ_ref)
-	    val e2' = trTyp'(E,t)
 	in
 	    callTyp(E, lab_inApply, trTuple(#region i, #[e1',e2']))
 	end

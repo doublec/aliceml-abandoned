@@ -37,7 +37,7 @@ sig
     datatype error =
 	(* Expressions *)
 	  VecExpUnify		of unify_error
-	| TagExpConUnify	of unify_error
+	| TagExpLab		of lab
 	| TagExpArgUnify	of unify_error
 	| TagExpRowUnify	of unify_error
 	| ConExpConUnify	of unify_error
@@ -56,7 +56,7 @@ sig
 	| MatchPatUnify		of unify_error
 	| MatchExpUnify		of unify_error
 	(* Patterns *)
-	| TagPatConUnify	of unify_error
+	| TagPatLab		of lab
 	| TagPatArgUnify	of unify_error
 	| TagPatRowUnify	of unify_error
 	| ConPatConUnify	of unify_error
@@ -67,6 +67,8 @@ sig
 	| GuardPatUnify		of unify_error
 	| AnnPatUnify		of unify_error
 	(* Types *)
+	| JokTyp
+	| JokTypRow
 	| StarTypKind		of kind
 	| AppTypFunKind		of kind
 	| AppTypArgKind		of kind * kind

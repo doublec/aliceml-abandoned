@@ -82,7 +82,6 @@ struct
 
   (* Predefined types *)
 
-    fun unitTyp E	= PervasiveType.typ_unit
     fun boolTyp E	= PervasiveType.typ_bool
     fun exnTyp E	= PervasiveType.typ_exn
 
@@ -93,13 +92,16 @@ struct
     fun stringTyp E	= PervasiveType.typ_string
     fun realTyp E	= PervasiveType.typ_real
 
+    fun strictTyp(E,t)	= Type.inApply(PervasiveType.typ_strict, t)
     fun refTyp(E,t)	= Type.inApply(PervasiveType.typ_ref, t)
     fun vecTyp(E,t)	= Type.inApply(PervasiveType.typ_vec, t)
-    fun listTyp(E,t)	= Type.inApply(PervasiveType.typ_list, t)
 
     fun conarrowTyp(E,t1,t2) =
-	Type.inApply(Type.inApply(PervasiveType.typ_conarrow,
-		Type.inArrow(t1,t2)), Type.unknown(Type.STAR))
+	Type.inApply(PervasiveType.typ_conarrow, Type.inArrow(t1,t2))
+
+    fun selLab(t, a) =
+	if not(Type.isSum' t) then raise Domain else
+	Type.lookupRow(Type.asSum' t, a) handle Type.Row => raise Domain
 
 
   (* Unification of vectors *)
@@ -122,7 +124,7 @@ struct
     fun isValue( I.LitExp _
 	       | I.VarExp _
 	       | I.PrimExp _
-	       | I.LabExp _
+	       | I.StrictExp _
 	       | I.NewExp _
 	       | I.FunExp _
 	       | I.FailExp _ )			= true
@@ -267,24 +269,15 @@ struct
 
       | elabExp(E, I.PrimExp(i, s, typ)) =
 	let
-	    val (t,typ') = elabStarTyp(E, typ)
+	    val (t,typ') = elabStarTyp(E, false, typ)
 	in
 	    ( t, O.PrimExp(typInfo(i,t), s, typ') )
-	end
-
-      | elabExp(E, I.LabExp(i, lab, typ)) =
-	(*UNFINISHED: check that label is in domain of record type*)
-	let
-	    val (a,lab') = elabLab(E, lab)
-	    val (t,typ') = elabStarTyp(E, typ)
-	in
-	    ( t, O.LabExp(typInfo(i,t), lab', typ') )
 	end
 
       | elabExp(E, I.NewExp(i, typ)) =
 	(*UNFINISHED: check that type is open*)
 	let
-	    val (t,typ') = elabStarTyp(E, typ)
+	    val (t,typ') = elabStarTyp(E, false, typ)
 	in
 	    ( t, O.NewExp(typInfo(i,t), typ') )
 	end
@@ -299,23 +292,17 @@ struct
 	    ( t, O.TagExp(typInfo(i,t), vallab', NONE, exp') )
 	end
 
-      | elabExp(E, I.TagExp(i, vallab, SOME vallongid, exp)) =
+      | elabExp(E, I.TagExp(i, vallab, SOME typ, exp)) =
 	let
-	    (*UNFINISHED: check consistency of label*)
-	    val (a,vallab')     = elabLab(E, vallab)
-	    val (t1,vallongid') = elabVallongid(E, vallongid)
-	    val  t1'            = Type.instance t1
-	    val (t2,exp')       = elabExp(E, exp)
-	    val  t11            = Type.unknown(Type.STAR)
-	    val  t12            = Type.unknown(Type.STAR)
-	    val  t3             = conarrowTyp(E, t11, t12)
-	    val  _              = Type.unify(t3,t1') handle Type.Unify(t4,t5) =>
-				    error(I.infoLongid vallongid,
-					  E.TagExpConUnify(t3, t1', t4, t5))
-	    val  _              = Type.unify(t11,t2) handle Type.Unify(t4,t5) =>
-				    error(i, E.TagExpArgUnify(t11, t2, t4, t5))
+	    val (a,vallab') = elabLab(E, vallab)
+	    val (t,typ')    = elabStarTyp(E, true, typ)
+	    val (t1,exp')   = elabExp(E, exp)
+	    val  t2         = selLab(t,a) handle Domain =>
+				    error(I.infoLab vallab, E.TagExpLab a)
+	    val  _          = Type.unify(t1,t2) handle Type.Unify(t3,t4) =>
+				    error(i, E.TagExpArgUnify(t1, t2, t3, t4))
 	in
-	    ( t12, O.TagExp(typInfo(i,t12), vallab', SOME vallongid', exp') )
+	    ( t, O.TagExp(typInfo(i,t), vallab', SOME typ', exp') )
 	end
 
       | elabExp(E, I.ConExp(i, vallongid, exp)) =
@@ -329,7 +316,7 @@ struct
 	    val  _              = Type.unify(t3,t1') handle Type.Unify(t4,t5) =>
 				    error(I.infoLongid vallongid,
 					  E.ConExpConUnify(t3, t1', t4, t5))
-	    val  _              = Type.unify(t11,t2) handle Type.Unify(t4,t5) =>
+	    val  _              = Type.unify(t11,t2) handle Type.Unify(t4,t5)=>
 				    error(i, E.ConExpArgUnify(t11, t2, t4, t5))
 	in
 	    ( t12, O.ConExp(typInfo(i,t12), vallongid', exp') )
@@ -341,6 +328,14 @@ struct
 	    val  t        = refTyp(E, t1)
 	in
 	    ( t, O.RefExp(typInfo(i,t), exp') )
+	end
+
+      | elabExp(E, I.StrictExp(i, exp)) =
+	let
+	    val (t1,exp') = elabExp(E, exp)
+	    val  t        = strictTyp(E, t1)
+	in
+	    ( t, O.StrictExp(typInfo(i,t), exp') )
 	end
 
       | elabExp(E, I.TupExp(i, exps)) =
@@ -526,7 +521,7 @@ struct
       | elabExp(E, I.AnnExp(i, exp, typ)) =
 	let
 	    val (t1,exp') = elabExp(E, exp)
-	    val (t2,typ') = elabStarTyp(E, typ)
+	    val (t2,typ') = elabStarTyp(E, true, typ)
 	    val  _        = Type.unify(t1,t2) handle Type.Unify(t3,t4) =>
 				error(i, E.AnnExpUnify(t1, t2, t3, t4))
 	in
@@ -623,23 +618,17 @@ struct
 	    ( t, O.TagPat(typInfo(i,t), vallab', NONE, pat') )
 	end
 
-      | elabPat(E, s, I.TagPat(i, vallab, SOME vallongid, pat)) =
+      | elabPat(E, s, I.TagPat(i, vallab, SOME typ, pat)) =
 	let
-	    (*UNFINISHED: check consistency of label*)
-	    val (a,vallab')     = elabLab(E, vallab)
-	    val (t1,vallongid') = elabVallongid(E, vallongid)
-	    val  t1'            = Type.instance t1
-	    val (t2,pat')       = elabPat(E, s, pat)
-	    val  t11            = Type.unknown(Type.STAR)
-	    val  t12            = Type.unknown(Type.STAR)
-	    val  t3             = conarrowTyp(E, t11, t12)
-	    val  _              = Type.unify(t3,t1') handle Type.Unify(t4,t5) =>
-				    error(I.infoLongid vallongid,
-					  E.TagPatConUnify(t3, t1', t4, t5))
-	    val  _              = Type.unify(t11,t2) handle Type.Unify(t4,t5) =>
-				    error(i, E.TagPatArgUnify(t11, t2, t4, t5))
+	    val (a,vallab') = elabLab(E, vallab)
+	    val (t,typ')    = elabStarTyp(E, true, typ)
+	    val (t1,pat')   = elabPat(E, s, pat)
+	    val  t2         = selLab(t,a) handle Domain =>
+				    error(I.infoLab vallab, E.TagPatLab a)
+	    val  _          = Type.unify(t1,t2) handle Type.Unify(t3,t4) =>
+				    error(i, E.TagPatArgUnify(t1, t2, t3, t4))
 	in
-	    ( t12, O.TagPat(typInfo(i,t12), vallab', SOME vallongid', pat') )
+	    ( t, O.TagPat(typInfo(i,t), vallab', SOME typ', pat') )
 	end
 
       | elabPat(E, s, I.ConPat(i, vallongid, pat)) =
@@ -653,7 +642,7 @@ struct
 	    val  _              = Type.unify(t3,t1') handle Type.Unify(t4,t5) =>
 				    error(I.infoLongid vallongid,
 					  E.ConPatConUnify(t3, t1', t4, t5))
-	    val  _              = Type.unify(t11,t2) handle Type.Unify(t4,t5) =>
+	    val  _              = Type.unify(t11,t2) handle Type.Unify(t4,t5)=>
 				    error(i, E.ConPatArgUnify(t11, t2, t4, t5))
 	in
 	    ( t12, O.ConPat(typInfo(i,t12), vallongid', pat') )
@@ -665,6 +654,14 @@ struct
 	    val  t        = refTyp(E, t1)
 	in
 	    ( t, O.RefPat(typInfo(i,t), pat') )
+	end
+
+      | elabPat(E, s, I.StrictPat(i, pat)) =
+	let
+	    val (t1,pat') = elabPat(E, s, pat)
+	    val  t        = strictTyp(E, t1)
+	in
+	    ( t, O.StrictPat(typInfo(i,t), pat') )
 	end
 
       | elabPat(E, s, I.TupPat(i, pats)) =
@@ -737,7 +734,7 @@ struct
       | elabPat(E, s, I.AnnPat(i, pat, typ)) =
 	let
 	    val (t1,pat') = elabPat(E, s, pat)
-	    val (t2,typ') = elabStarTyp(E, typ)
+	    val (t2,typ') = elabStarTyp(E, true, typ)
 	    val  _        = Type.unify(t1,t2) handle Type.Unify(t3,t4) =>
 				error(i, E.AnnPatUnify(t1, t2, t3, t4))
 	in
@@ -878,7 +875,19 @@ struct
 
   (* Types *)
 
-    and elabTyp(E, I.VarTyp(i, varid)) =
+    and elabTyp(E, typ) = elabTyp'(E, false, typ)
+
+    and elabTyp'(E, allowJok, I.JokTyp(i)) =
+	let
+	    val t = Type.unknown(Type.STAR)
+	in
+	    if allowJok then
+		( t, O.JokTyp(typInfo(i,t)) )
+	    else
+		error(i, E.JokTyp)
+	end
+
+      | elabTyp'(E, allowJok, I.VarTyp(i, varid)) =
 	let
 	    val (a,varid') = elabVarid(E, varid)
 	    val  t         = Type.inVar a
@@ -886,7 +895,7 @@ struct
 	    ( t, O.VarTyp(typInfo(i,t), varid') )
 	end
 
-      | elabTyp(E, I.PrimTyp(i, s))=
+      | elabTyp'(E, allowJok, I.PrimTyp(i, s))=
 	let
 	    val c = PervasiveType.lookup s handle PervasiveType.Lookup =>
 			error(i, E.PervasiveTypUnknown s)
@@ -895,26 +904,26 @@ struct
 	    ( t, O.PrimTyp(typInfo(i,t), s) )
 	end
 
-      | elabTyp(E, I.ConTyp(i, typlongid)) =
+      | elabTyp'(E, allowJok, I.ConTyp(i, typlongid)) =
 	let
 	    val (t,typlongid') = elabTyplongid(E, typlongid)
 	in
 	    ( t, O.ConTyp(typInfo(i,t), typlongid') )
 	end
 
-      | elabTyp(E, I.FunTyp(i, varid, typ)) =
+      | elabTyp'(E, allowJok, I.FunTyp(i, varid, typ)) =
 	let
 	    val (a,varid') = elabVarid_bind(E, Type.STAR, varid)
-	    val (t1,typ')  = elabTyp(E, typ)
+	    val (t1,typ')  = elabTyp'(E, allowJok, typ)
 	    val  t         = Type.inLambda(a,t1)
 	in
 	    ( t, O.FunTyp(typInfo(i,t), varid', typ') )
 	end
 
-      | elabTyp(E, I.AppTyp(i, typ1, typ2)) =
+      | elabTyp'(E, allowJok, I.AppTyp(i, typ1, typ2)) =
 	let
-	    val (t1,typ1') = elabTyp(E, typ1)
-	    val (t2,typ2') = elabTyp(E, typ2)
+	    val (t1,typ1') = elabTyp'(E, allowJok, typ1)
+	    val (t2,typ2') = elabTyp'(E, allowJok, typ2)
 	    val  k1        = Type.kind t1
 	    val  k2        = Type.kind t2
 	    val  _         = case k1
@@ -928,68 +937,58 @@ struct
 	    ( t, O.AppTyp(typInfo(i,t), typ1', typ2') )
 	end
 
-      | elabTyp(E, I.RefTyp(i, typ)) =
+      | elabTyp'(E, allowJok, I.TupTyp(i, typs)) =
 	let
-	    val (t1,typ') = elabTyp(E, typ)
-	    val  _        = case Type.kind t1 of Type.STAR => () | k =>
-				error(I.infoTyp typ, E.RefTypKind(k))
-	    val  t        = refTyp(E, t1)
-	in
-	    ( t, O.RefTyp(typInfo(i,t), typ') )
-	end
-
-      | elabTyp(E, I.TupTyp(i, typs)) =
-	let
-	    val (ts,typs') = elabStarTyps(E, typs)
+	    val (ts,typs') = elabStarTyps(E, allowJok, typs)
 	    val  t         = Type.inTuple ts
 	in
 	    ( t, O.TupTyp(typInfo(i,t), typs') )
 	end
 
-      | elabTyp(E, I.ProdTyp(i, typrow)) =
+      | elabTyp'(E, allowJok, I.ProdTyp(i, typrow)) =
 	let
-	    val (r,typrow') = elabRow(elabStarTyp, E, typrow)
+	    val (r,typrow') = elabTypRow(E, allowJok, typrow)
 	    val  t          = Type.inProd r
 	in
 	    ( t, O.ProdTyp(typInfo(i,t), typrow') )
 	end
 
-      | elabTyp(E, I.SumTyp(i, typrow)) =
+      | elabTyp'(E, allowJok, I.SumTyp(i, typrow)) =
 	let
-	    val (r,typrow') = elabRow(elabStarTyp, E, typrow)
+	    val (r,typrow') = elabTypRow(E, allowJok, typrow)
 	    val  t          = Type.inSum r
 	in
 	    ( t, O.SumTyp(typInfo(i,t), typrow') )
 	end
 
-      | elabTyp(E, I.ArrTyp(i, typ1, typ2)) =
+      | elabTyp'(E, allowJok, I.ArrTyp(i, typ1, typ2)) =
 	let
-	    val (t1,typ1') = elabStarTyp(E, typ1)
-	    val (t2,typ2') = elabStarTyp(E, typ2)
+	    val (t1,typ1') = elabStarTyp(E, allowJok, typ1)
+	    val (t2,typ2') = elabStarTyp(E, allowJok, typ2)
 	    val  t         = Type.inArrow(t1,t2)
 	in
 	    ( t, O.ArrTyp(typInfo(i,t), typ1', typ2') )
 	end
 
-      | elabTyp(E, I.AllTyp(i, varid, typ)) =
+      | elabTyp'(E, allowJok, I.AllTyp(i, varid, typ)) =
 	let
 	    val (a,varid') = elabVarid_bind(E, Type.STAR, varid)
-	    val (t1,typ')  = elabStarTyp(E, typ)
+	    val (t1,typ')  = elabStarTyp(E, allowJok, typ)
 	    val  t         = Type.inAll(a,t1)
 	in
 	    ( t, O.AllTyp(typInfo(i,t), varid', typ') )
 	end
 
-      | elabTyp(E, I.ExTyp(i, varid, typ)) =
+      | elabTyp'(E, allowJok, I.ExTyp(i, varid, typ)) =
 	let
 	    val (a,varid') = elabVarid_bind(E, Type.STAR, varid)
-	    val (t1,typ')  = elabStarTyp(E, typ)
+	    val (t1,typ')  = elabStarTyp(E, allowJok, typ)
 	    val  t         = Type.inExist(a,t1)
 	in
 	    ( t, O.ExTyp(typInfo(i,t), varid', typ') )
 	end
 
-      | elabTyp(E, I.PackTyp(i, inf)) =
+      | elabTyp'(E, allowJok, I.PackTyp(i, inf)) =
 	let
 	    val (j,inf') = elabInf(E, inf)
 	    (*UNFINISHED*)
@@ -999,30 +998,41 @@ struct
 	    ( t, O.PackTyp(typInfo(i,t), inf') )
 	end
 
-      | elabTyp(E, I.SingTyp(i, vallongid)) =
+      | elabTyp'(E, allowJok, I.SingTyp(i, vallongid)) =
 	let
 	    val (t,vallongid') = elabVallongid(E, vallongid)
 	in
 	    ( t, O.SingTyp(typInfo(i,t), vallongid') )
 	end
 
-      | elabTyp(E, I.AbsTyp _) =
+      | elabTyp'(E, allowJok, I.AbsTyp _) =
 	raise Crash.Crash "Elab.elabTyp: AbsTyp"
+
+    and elabTypRow(E, allowJok, typrow) =
+	let
+	    val res as (r, typrow' as O.Row(_,_,b)) =
+		elabRow(fn(E,t) => elabStarTyp(E, allowJok, t), E, typrow)
+	    
+	in
+	    if b andalso not allowJok
+	    then error(I.infoRow typrow, E.JokTypRow)
+	    else res
+	end
 
 
   (* Types in positions where they may not be higher order *)
 
-    and elabStarTyp(E, typ) =
+    and elabStarTyp(E, allowJok, typ) =
 	let
-	    val ttyp' as (t,typ') = elabTyp(E, typ)
+	    val ttyp' as (t,typ') = elabTyp'(E, allowJok, typ)
 	in
 	    case Type.kind t
 	      of Type.STAR => ttyp'
 	       | k         => error(I.infoTyp typ, E.StarTypKind(k))
 	end
 
-    and elabStarTyps(E, typs) =
-	VectorPair.unzip(Vector.map (fn typ => elabStarTyp(E, typ)) typs)
+    and elabStarTyps(E, allowJok, typs) =
+	VectorPair.unzip(Vector.map (fn typ=> elabStarTyp(E,allowJok,typ)) typs)
 
 
 
@@ -1735,7 +1745,7 @@ struct
     and elabSpec(E, s, I.ValSpec(i, valid, typ)) =
 	let
 	    val (t0,qt,p,valid') = elabValid_bind(E, s, valid)
-	    val (t,typ')         = elabStarTyp(E, typ)
+	    val (t,typ')         = elabStarTyp(E, false, typ)
 	    val  _               = Type.fill(t0,t)
 	    val  _               = Type.fill(qt,t)
 	    val  _               = Inf.extendVal(s, p, t)
@@ -1894,7 +1904,7 @@ struct
 				   (t1, O.NoDesc(typInfo(i',t1)))
 				 | I.SomeDesc(i',typ) =>
 				   let
-				      val (t2,typ') = elabStarTyp(E, typ)
+				      val (t2,typ') = elabStarTyp(E, false, typ)
 				   in
 				      if Type.matches(t2,t1) then
 					  (t2, O.SomeDesc(typInfo(i',t2), typ'))

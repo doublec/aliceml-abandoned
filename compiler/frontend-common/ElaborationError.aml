@@ -55,7 +55,7 @@ struct
     datatype error =
 	(* Expressions *)
 	  VecExpUnify		of unify_error
-	| TagExpConUnify	of unify_error
+	| TagExpLab		of lab
 	| TagExpArgUnify	of unify_error
 	| TagExpRowUnify	of unify_error
 	| ConExpConUnify	of unify_error
@@ -74,7 +74,7 @@ struct
 	| MatchPatUnify		of unify_error
 	| MatchExpUnify		of unify_error
 	(* Patterns *)
-	| TagPatConUnify	of unify_error
+	| TagPatLab		of lab
 	| TagPatArgUnify	of unify_error
 	| TagPatRowUnify	of unify_error
 	| ConPatConUnify	of unify_error
@@ -85,6 +85,8 @@ struct
 	| GuardPatUnify		of unify_error
 	| AnnPatUnify		of unify_error
 	(* Types *)
+	| JokTyp
+	| JokTypRow
 	| StarTypKind		of kind
 	| AppTypFunKind		of kind
 	| AppTypArgKind		of kind * kind
@@ -288,18 +290,20 @@ struct
 	ppUnify2(
 	  textpar["inconsistent","types","in","vector","expression:"],
 	  textpar["does","not","agree","with","previous","element","type"], ue)
+      | ppError(TagExpLab a) =
+	  textpar["label",ppLab a,"is","not","contained","in","type"]
       | ppError(TagExpRowUnify ue) =
 	ppUnify4(
 	  textpar["constructor","type","and","tag","inconsistent:"],
 	  textpar["does","not","match","argument","type"], ue)
-      | ppError(TagExpConUnify ue | ConExpConUnify ue) =
-	ppUnify2(
-	  textpar["applied","value","is","not","a","constructor","function:"],
-	  textpar["does","not","match","function","type"], ue)
       | ppError(TagExpArgUnify ue | ConExpArgUnify ue) =
 	ppUnify4(
 	  textpar["constructor","argument","type","mismatch:"],
 	  textpar["does","not","match","argument","type"], ue)
+      | ppError(ConExpConUnify ue) =
+	ppUnify2(
+	  textpar["applied","value","is","not","a","constructor","function:"],
+	  textpar["does","not","match","function","type"], ue)
       | ppError(UpdExpUnify ue) =
 	ppUnify4(
 	  textpar["mismatch","on","record","update:"],
@@ -357,15 +361,17 @@ struct
 	ppUnify4(
 	  textpar["constructor","type","and","tag","inconsistent:"],
 	  textpar["does","not","match","argument","type"], ue)
-      | ppError(TagPatConUnify ue | ConPatConUnify ue) =
-	ppUnify2(
-	  textpar["applied","identifier","is","not","a","constructor",
-		  "function:"],
-	  textpar["does","not","match","function","type"], ue)
+      | ppError(TagPatLab a) =
+	  textpar["label",ppLab a,"is","not","contained","in","type"]
       | ppError(TagPatArgUnify ue | ConPatArgUnify ue) =
 	ppUnify4(
 	  textpar["ill-typed","constructor","argument:"],
 	  textpar["does","not","match","argument","type"], ue)
+      | ppError(ConPatConUnify ue) =
+	ppUnify2(
+	  textpar["applied","identifier","is","not","a","constructor",
+		  "function:"],
+	  textpar["does","not","match","function","type"], ue)
       | ppError(VecPatUnify ue) =
 	ppUnify2(
 	  textpar["inconsistent","types","in","vector","pattern:"],
@@ -387,6 +393,10 @@ struct
 	  textpar["pattern","does","not","match","annotation:"],
 	  textpar["does","not","match","type"], ue)
       (* Types *)
+      | ppError(JokTyp) =
+	  textpar["misplaced","type","wildcard"]
+      | ppError(JokTypRow) =
+	  textpar["misplaced","type","row","wildcard"]
       | ppError(StarTypKind k) =
 	  textpar["missing","arguments","in","type","expression"]
       | ppError(AppTypFunKind k) =
