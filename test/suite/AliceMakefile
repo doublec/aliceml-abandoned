@@ -3,6 +3,20 @@ ifndef SOURCES
 endif
 export SOURCES
 
+ifndef PLATFORM
+    PLATFORM := WINDOWS # to change for specific platoform
+endif
+export PLATFORM
+
+ifndef VM
+    VM := SEAM          # to change for spedific VM
+endif
+export VM
+
+ifndef M4
+    M4 := m4 -D${PLATFORM} -D${VM}
+endif
+export M4
 
 ifndef ROOT
   ROOT := $(basename $(firstword $(SOURCES)))
@@ -42,15 +56,6 @@ ifndef ALICEDEP
   ALICEDEP := alicedep
 endif
 export ALICEDEP
-
-ifndef M4
-  ifeq (${EXT},alc)
-    M4 := m4 -DGTK2
-  else
-    M4 := m4
-  endif
-endif
-export M4
 
 .PHONY: .DELETE_ON_ERROR all components library depend clean
 .DELETE_ON_ERROR:

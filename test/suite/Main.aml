@@ -33,6 +33,7 @@ import structure TestArray2      from "lib/fundamental/Array2"
 import structure TestVector      from "lib/fundamental/Vector"
 import structure TestPair        from "lib/fundamental/Pair"
 import structure TestRef         from "lib/fundamental/Ref"
+import structure TestConfig      from "lib/system/Config"
 import structure TestTime        from "lib/system/Time"
 import structure TestTimer       from "lib/system/Timer"
 import structure TestOSPath      from "lib/system/OS_Path"
@@ -61,13 +62,14 @@ fun randomizeTests () =
 			TestArray2.randomize,
 			TestOSPath.randomize,
 			TestRef.randomize,
+			TestConfig.randomize,
 			TestPair.randomize,
 		        TestRegressions.randomize]
     in
 	List.app (fn x => x ()) allTests
     end
 
-val allTests = [TestRegressions.suite,
+val allTests = [(*TestRegressions.suite,*)
 		TestCompiler.suite,
 		TestPair.suite,
 		TestRef.suite,
@@ -75,10 +77,10 @@ val allTests = [TestRegressions.suite,
 		TestBool.suite,
 		TestGeneral.suite,
 		TestOption.suite, 
-		TestList.suite,
+		(*TestList.suite,*)
 		TestListPair.suite,
 		TestArray2.suite,
-		TestArray.suite,
+		(*TestArray.suite,*)
 		TestVector.suite,
 		TestChar.suite,
 		TestString.suite,
@@ -86,6 +88,7 @@ val allTests = [TestRegressions.suite,
 		TestInteger.suite,
 		TestIntInf.suite,
 		TestByte.suite,
+		TestConfig.suite,
 		TestOSPath.suite,
 		TestTimer.suite,
 		TestTime.suite]

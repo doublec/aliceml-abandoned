@@ -127,24 +127,19 @@ struct
 
     fun testUpdate () =
 	let
-	    fun t (xss, a, r, c) = 
-		       if List.null xss orelse r < 0 orelse c < 0 orelse 
-			   Array2.nCols a <= c orelse
-			   Array2.nRows a <= r
-			   then true
-		       else false
+	    fun t (a, r, c) = 
+		let
+		    val x = Gen.int (r + c)
+		in
+		   (Array2.update (a, r, c, x);
+		    Array2.sub (a, r, c) = x)
+		      handle Subscript => r < 0 orelse c < 0 orelse 
+					  Array2.nCols a <= c orelse
+					  Array2.nRows a <= r
+		end
 	in
-	    Gen.try 100 (Gen.triple (Gen.list (Gen.list Gen.int), 
-				     Gen.int, Gen.int))
-	      (Test.test (fn (xss, r, c) => let
-						val x = Gen.int (r + c)
-						val a = Array2.fromList xss
-					    in
-						(Array2.update (a, r, c, x);
-						 Array2.sub (a, r, c) = x)
-						 handle Subscript =>
-						       t (xss, a, r, c)
-					    end))
+	    Gen.try 100 (Gen.triple (Gen.array2 Gen.int, Gen.int, Gen.int))
+	      (Test.test t)
 	end
 
     fun testEqual () = 
@@ -197,7 +192,8 @@ struct
 	    fun t' nil         (_, _, a) = a
 	      | t' (nil :: xs) (r, c, a) = t' xs (r + 1, 0, a)
 	      | t' (x   :: xs) (r, c, a) = 
-		                 (Array2.update (a, r, c, List.hd x);				  t' ((List.tl x) :: xs) (r, c + 1, a))
+		                 (Array2.update (a, r, c, List.hd x);
+				  t' ((List.tl x) :: xs) (r, c + 1, a))
 
 	    fun t nil = SOME (Array2.array (0, 0, 0))
 	      | t  xs =

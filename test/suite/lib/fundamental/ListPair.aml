@@ -176,6 +176,31 @@ struct
 					   ys := nil)))
 	end
 
+    fun testApprEq () =
+	let
+	    val xs = ref nil
+	    val ys = ref nil
+
+	    fun f x (a, b) = x := (a, b) :: !x
+
+	    fun t x = 
+		let
+		    val r = SOME (ListPair.apprEq (f xs) x)
+			handle UnequalLengths => NONE
+		    val r1 = SOME (List.appr (f ys) (ListPair.zipEq x))
+			handle UnsequalLengths => NONE
+		in
+		    r = r1
+		end
+		
+	in
+	    Gen.try 1000 (Gen.pair (Gen.list Gen.int, Gen.list Gen.int))
+	       (Test.test (fn x => (t x andalso !xs = !ys andalso
+				    !xs = ListPair.zip x)
+				   before (xs := nil;
+					   ys := nil)))
+	end
+
     fun testAppiEq () =
 	let
 	    val xs = ref nil
@@ -438,6 +463,438 @@ struct
 					   zs := nil)))
 	end
 
+    fun testFoldl () =
+	let
+	    val xs = ref nil
+	    val ys = ref nil
+
+	    fun g ((a, b), c) = (a, b, c)
+
+	    fun f x (a, b, c) = (x := (a, b) :: !x; c + a + b)
+
+	    fun t x = ListPair.foldl (f xs) 0 x =
+		      List.foldl (f ys o g) 0 (ListPair.zip x)
+
+	in
+	    Gen.try 1000 (Gen.pair (Gen.list Gen.int, Gen.list Gen.int))
+	      (Test.test (fn x => (t x andalso !xs = !ys)
+				   before (xs := nil;
+					   ys := nil)))
+	end
+
+    fun testFoldli () =
+	let
+	    val xs = ref nil
+	    val ys = ref nil
+
+	    fun g (i, (a, b), c) = (i, a, b, c)
+
+	    fun f x (i, a, b, c) = (x := (a, b) :: !x; i + c + a + b)
+
+	    fun t x = ListPair.foldli (f xs) 0 x =
+		      List.foldli (f ys o g) 0 (ListPair.zip x)
+
+	in
+	    Gen.try 1000 (Gen.pair (Gen.list Gen.int, Gen.list Gen.int))
+	      (Test.test (fn x => (t x andalso !xs = !ys)
+				   before (xs := nil;
+					   ys := nil)))
+	end
+
+    fun testFoldlEq () =
+	let
+	    val xs = ref nil
+	    val ys = ref nil
+
+	    fun g ((a, b), c) = (a, b, c)
+
+	    fun f x (a, b, c) = (x := (a, b) :: !x; c + a + b)
+
+	    fun t x = 
+		let
+		    val r = SOME (ListPair.foldlEq (f xs) 0 x) 
+			handle UnequalLengths => NONE
+		    val r1 = SOME (List.foldl (f ys o g) 0 (ListPair.zipEq x))
+			handle UnequalLengths => NONE
+		in
+		    r = r1
+		end
+
+	in
+	    Gen.try 1000 (Gen.pair (Gen.list Gen.int, Gen.list Gen.int))
+	      (Test.test (fn x => (t x andalso !xs = !ys)
+				   before (xs := nil;
+					   ys := nil)))
+	end
+
+    fun testFoldliEq () =
+	let
+	    val xs = ref nil
+	    val ys = ref nil
+
+	    fun g (i, (a, b), c) = (i, a, b, c)
+
+	    fun f x (i, a, b, c) = (x := (a, b) :: !x; i + c + a + b)
+
+	    fun t x = 
+		let
+		    val r = SOME (ListPair.foldliEq (f xs) 0 x) 
+			handle UnequalLengths => NONE
+		    val r1 = SOME (List.foldli (f ys o g) 0 (ListPair.zipEq x))
+			handle UnequalLengths => NONE
+		in
+		    r = r1
+		end
+
+	in
+	    Gen.try 1000 (Gen.pair (Gen.list Gen.int, Gen.list Gen.int))
+	      (Test.test (fn x => (t x andalso !xs = !ys)
+				   before (xs := nil;
+					   ys := nil)))
+	end
+
+    fun testFoldr () =
+	let
+	    val xs = ref nil
+	    val ys = ref nil
+
+	    fun g ((a, b), c) = (a, b, c)
+
+	    fun f x (a, b, c) = (x := (a, b) :: !x; c + a + b)
+
+	    fun t x = ListPair.foldr (f xs) 0 x =
+		      List.foldr (f ys o g) 0 (ListPair.zip x)
+
+	in
+	    Gen.try 1000 (Gen.pair (Gen.list Gen.int, Gen.list Gen.int))
+	      (Test.test (fn x => (t x andalso !xs = !ys)
+				   before (xs := nil;
+					   ys := nil)))
+	end
+
+    fun testFoldri () =
+	let
+	    val xs = ref nil
+	    val ys = ref nil
+
+	    fun g (i, (a, b), c) = (i, a, b, c)
+
+	    fun f x (i, a, b, c) = (x := (a, b) :: !x; i + c + a + b)
+
+	    fun t x = ListPair.foldri (f xs) 0 x =
+		      List.foldri (f ys o g) 0 (ListPair.zip x)
+
+	in
+	    Gen.try 1000 (Gen.pair (Gen.list Gen.int, Gen.list Gen.int))
+	      (Test.test (fn x => (t x andalso !xs = !ys)
+				   before (xs := nil;
+					   ys := nil)))
+	end
+
+    fun testFoldrEq () =
+	let
+	    val xs = ref nil
+	    val ys = ref nil
+
+	    fun g ((a, b), c) = (a, b, c)
+
+	    fun f x (a, b, c) = (x := (a, b) :: !x; c + a + b)
+
+	    fun t x = 
+		let
+		    val r = SOME (ListPair.foldrEq (f xs) 0 x) 
+			handle UnequalLengths => NONE
+		    val r1 = SOME (List.foldr (f ys o g) 0 (ListPair.zipEq x))
+			handle UnequalLengths => NONE
+		in
+		    r = r1
+		end
+
+	in
+	    Gen.try 1000 (Gen.pair (Gen.list Gen.int, Gen.list Gen.int))
+	      (Test.test (fn x => (t x andalso !xs = !ys)
+				   before (xs := nil;
+					   ys := nil)))
+	end
+
+    fun testFoldriEq () =
+	let
+	    val xs = ref nil
+	    val ys = ref nil
+
+	    fun g (i, (a, b), c) = (i, a, b, c)
+
+	    fun f x (i, a, b, c) = (x := (a, b) :: !x; i + c + a + b)
+
+	    fun t x = 
+		let
+		    val r = SOME (ListPair.foldriEq (f xs) 0 x) 
+			handle UnequalLengths => NONE
+		    val r1 = SOME (List.foldri (f ys o g) 0 (ListPair.zipEq x))
+			handle UnequalLengths => NONE
+		in
+		    r = r1
+		end
+
+	in
+	    Gen.try 1000 (Gen.pair (Gen.list Gen.int, Gen.list Gen.int))
+	      (Test.test (fn x => (t x andalso !xs = !ys)
+				   before (xs := nil;
+					   ys := nil)))
+	end
+
+    fun testAll () =
+	let
+	    val xs = ref nil
+	    val ys = ref nil
+
+	    fun f x (a, b) = (x := (a, b) :: !x; a = b)
+
+	    fun t x = ListPair.all (f xs) x =
+		      List.all (f ys) (ListPair.zip x)
+	in
+	    Gen.try 1000 (Gen.pair (Gen.list Gen.int, Gen.list Gen.int))
+	      (Test.test (fn x => (t x andalso !xs = !ys)
+				   before (xs := nil;
+					   ys := nil)))
+	end
+
+    fun testAlli () =
+	let
+	    val xs = ref nil
+	    val ys = ref nil
+
+	    fun g (i, (a, b)) = (i, a, b)
+
+	    fun f x (i, a, b) = (x := (a, b) :: !x; a = b andalso a = i)
+
+	    fun t x = ListPair.alli (f xs) x =
+		      List.alli (f ys o g) (ListPair.zip x)
+	in
+	    Gen.try 1000 (Gen.pair (Gen.list Gen.int, Gen.list Gen.int))
+	      (Test.test (fn x => (t x andalso !xs = !ys)
+				   before (xs := nil;
+					   ys := nil)))
+	end
+
+    fun testAllEq () =
+	let
+	    val xs = ref nil
+	    val ys = ref nil
+
+	    fun f x (a, b) = (x := (a, b) :: !x; a = b)
+
+	    fun t x = 
+		let
+		    val r = SOME (ListPair.allEq (f xs) x)
+				 handle UnequalLengths => NONE
+		    val r1 = SOME (List.all (f ys) (ListPair.zipEq x))
+			       handle UnequalLengths => NONE
+		in
+		    r = r1
+		end
+	in
+	    Gen.try 1000 (Gen.pair (Gen.list Gen.int, Gen.list Gen.int))
+	      (Test.test (fn x => (t x andalso !xs = !ys)
+				   before (xs := nil;
+					   ys := nil)))
+	end
+
+    fun testAlliEq () =
+	let
+	    val xs = ref nil
+	    val ys = ref nil
+
+	    fun g (i, (a, b)) = (i, a, b)
+
+	    fun f x (i, a, b) = (x := (a, b) :: !x; a = b andalso a = i)
+
+	    fun t x = 
+		let
+		    val r = SOME (ListPair.alliEq (f xs) x)
+				 handle UnequalLengths => NONE
+		    val r1 = SOME (List.alli (f ys o g) (ListPair.zipEq x))
+			       handle UnequalLengths => NONE
+		in
+		    r = r1
+		end
+	in
+	    Gen.try 1000 (Gen.pair (Gen.list Gen.int, Gen.list Gen.int))
+	      (Test.test (fn x => (t x andalso !xs = !ys)
+				   before (xs := nil;
+					   ys := nil)))
+	end
+
+    fun testExists () =
+	let
+	    val xs = ref nil
+	    val ys = ref nil
+
+	    fun f x (a, b) = (x := (a, b) :: !x; a = b)
+
+	    fun t x = ListPair.exists (f xs) x =
+		      List.exists (f ys) (ListPair.zip x)
+	in
+	    Gen.try 1000 (Gen.pair (Gen.list Gen.int, Gen.list Gen.int))
+	      (Test.test (fn x => (t x andalso !xs = !ys)
+				   before (xs := nil;
+					   ys := nil)))
+	end
+
+    fun testExistsi () =
+	let
+	    val xs = ref nil
+	    val ys = ref nil
+
+	    fun g (i, (a, b)) = (i, a, b)
+
+	    fun f x (i, a, b) = (x := (a, b) :: !x; a = b andalso i = a)
+
+	    fun t x = ListPair.existsi (f xs) x =
+		      List.existsi (f ys o g) (ListPair.zip x)
+	in
+	    Gen.try 1000 (Gen.pair (Gen.list Gen.int, Gen.list Gen.int))
+	      (Test.test (fn x => (t x andalso !xs = !ys)
+				   before (xs := nil;
+					   ys := nil)))
+	end
+
+    fun testExistsEq () = 
+	Test.test (fn _ => raise Test.MissingFunction) ()
+(*	let
+	    val xs = ref nil
+	    val ys = ref nil
+
+	    fun f x (a, b) = (x := (a, b) :: !x; a = b)
+
+	    fun t x = 
+		let
+		    val r = SOME (ListPair.existsEq (f xs) x)
+				 handle UnequalLengths => NONE
+		    val r1 = SOME (List.exists (f ys) (ListPair.zipEq x))
+			       handle UnequalLengths => NONE
+		in
+		    r = r1
+		end
+	in
+	    Gen.try 1000 (Gen.pair (Gen.list Gen.int, Gen.list Gen.int))
+	      (Test.test (fn x => (t x andalso !xs = !ys)
+				   before (xs := nil;
+					   ys := nil)))
+	end
+*)
+
+    fun testExistsiEq () = 
+	Test.test (fn _ => raise Test.MissingFunction) ()
+(*	let
+	    val xs = ref nil
+	    val ys = ref nil
+
+	    fun g (i, (a, b)) = (i, a, b)
+
+	    fun f x (i, a, b) = (x := (a, b) :: !x; a = b andalso i = a)
+
+	    fun t x = 
+		let
+		    val r = SOME (ListPair.existsiEq (f xs) x)
+				 handle UnequalLengths => NONE
+		    val r1 = SOME (List.existsi (f ys o g) (ListPair.zipEq x))
+			       handle UnequalLengths => NONE
+		in
+		    r = r1
+		end
+	in
+	    Gen.try 1000 (Gen.pair (Gen.list Gen.int, Gen.list Gen.int))
+	      (Test.test (fn x => (t x andalso !xs = !ys)
+				   before (xs := nil;
+					   ys := nil)))
+	end
+*)
+
+    fun testFilter () =
+	let
+	    val xs = ref nil
+	    val ys = ref nil
+		     
+	    fun f x (a, b) = (x := (a, b) :: !x; a = b)
+
+	    fun t x = ListPair.filter (f xs) x =
+		      List.filter (f ys) (ListPair.zip x)
+	in
+	    Gen.try 1000 (Gen.pair (Gen.list Gen.int, Gen.list Gen.int))
+	      (Test.test (fn x => (t x andalso !xs = !ys)
+				   before (xs := nil;
+					   ys := nil)))
+	end
+
+    fun testFilteri () =
+	let
+	    val xs = ref nil
+	    val ys = ref nil
+
+	    fun g (i, (a, b)) = (i, a, b)
+ 
+	    fun f x (i, a, b) = (x := (a, b) :: !x; a = b andalso a = i)
+
+	    fun t x = ListPair.filteri (f xs) x =
+		      List.map g (List.filteri (f ys o g) (ListPair.zip x))
+	in
+	    Gen.try 1000 (Gen.pair (Gen.list Gen.int, Gen.list Gen.int))
+	      (Test.test (fn x => (t x andalso !xs = !ys)
+				   before (xs := nil;
+					   ys := nil)))
+	end
+
+    fun testFilterEq () =
+	Test.test (fn _ => raise Test.MissingFunction) ()
+(*	let
+	    val xs = ref nil
+	    val ys = ref nil
+		     
+	    fun f x (a, b) = (x := (a, b) :: !x; a = b)
+
+	    fun t x = 
+		let
+		    val r = SOME (ListPair.filterEq (f xs) x)
+				 handle UnequalLengths => NONE
+		    val r1 = SOME (List.filter (f ys) (ListPair.zipEq x))
+			     handle UnequalLengths => NONE
+		in
+		    r = r1
+		end
+	in
+	    Gen.try 1000 (Gen.pair (Gen.list Gen.int, Gen.list Gen.int))
+	      (Test.test (fn x => (t x andalso !xs = !ys)
+				   before (xs := nil;
+					   ys := nil)))
+	end
+*)
+
+    fun testFilteriEq () =
+	Test.test (fn _ => raise Test.MissingFunction) ()
+(*	let
+	    val xs = ref nil
+	    val ys = ref nil
+		     
+	    fun f x (a, b) = (x := (a, b) :: !x; a = b)
+
+	    fun t x = 
+		let
+		    val r = SOME (ListPair.filteriEq (f xs) x)
+				 handle UnequalLengths => NONE
+		    val r1 = SOME (List.filteri (f ys) (ListPair.zipEq x))
+			     handle UnequalLengths => NONE
+		in
+		    r = r1
+		end
+	in
+	    Gen.try 1000 (Gen.pair (Gen.list Gen.int, Gen.list Gen.int))
+	      (Test.test (fn x => (t x andalso !xs = !ys)
+				   before (xs := nil;
+					   ys := nil)))
+	end
+*)
+
     fun testFind () =
 	let
 	    fun t f (xs, ys) = ListPair.find f (xs, ys) = 
@@ -468,16 +925,37 @@ struct
 			      ("app", testApp),
 			      ("appi", testAppi),
 			      ("appiEq", testAppiEq),
+			      ("apprEq", testApprEq),
 			      ("appriEq", testAppriEq),
 			      ("appEq", testAppEq),
 			      ("map", testMap),
 			      ("mapPartial", testMapPartial),
 			      ("mapPartialEq", testMapPartialEq),
 			      ("mapiPartialEq", testMapiPartialEq),
-			      ("mapPartiali", testMapiPartial),
+			      ("mapiPartial", testMapiPartial),
 			      ("mapi", testMapi),
 			      ("mapiEq", testMapiEq),
 			      ("mapEq", testMapEq),
+			      ("foldl", testFoldl),
+			      ("foldli", testFoldli),
+			      ("foldr", testFoldr),
+			      ("foldri", testFoldri),
+			      ("foldlEq", testFoldlEq),
+			      ("foldliEq", testFoldliEq),
+			      ("foldrEq", testFoldrEq),
+			      ("foldriEq", testFoldriEq),
+			      ("all", testAll),
+			      ("alli", testAlli),
+			      ("allEq", testAllEq),
+			      ("alliEq", testAlliEq),
+			      ("exists", testExists),
+			      ("existsi", testExistsi),
+			      ("existsEq", testExistsEq),
+			      ("existsiEq", testExistsiEq),
+			      ("filter", testFilter),
+			      ("filteri", testFilteri),
+			      ("filterEq", testFilterEq),
+			      ("filteriEq", testFilteriEq),
 			      ("find", testFind),
 			      ("findi", testFindi)])
 end

@@ -1,0 +1,230 @@
+(*
+ * Authors:
+ *   Sebastian Germesin <germi@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Sebastian Germesin, 2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature TESTSUITE from "../../src/TESTSUITE-sig"
+
+import structure Gen       from "x-alice:/lib/test/Gen"
+import structure Test      from "../../src/Test"
+
+
+structure TestOSPath :> TESTSUITE = (* the ospath test suite *)
+struct
+
+    structure P = OS.Path
+(*
+    fun genFalsePath n = 
+	let
+	    val arcs = ["foo", 
+			"bla",
+			"test",
+			"igor",
+			"drcox",
+			"jd",
+			"elliot",
+			"turk",
+			"drkelzo"]
+
+	    fun buildDir i s = if i = 0 then s else
+		    buildDir (i - 1) ((List.nth (arcs, i mod (length arcs))) ^ 
+		                      "/" ^ s)
+	in
+	    if Gen.bool n then "/" ^ (buildDir (Gen.int n))
+	    else buildDir (Gen.int n)
+	end
+
+    fun genTruePath n = 
+	let
+	    val arcs = ["foo", 
+			"bla",
+			"test",
+			"igor",
+			"drcox",
+			"jd",
+			"elliot",
+			"turk",
+			"drkelzo"]
+
+	    fun buildDir i s = if i = 0 then s else
+		    buildDir (i - 1) ((List.nth (arcs, i mod (length arcs))) ^ 
+		                      "/" ^ s)
+	in
+	    if Gen.bool n then "/" ^ (buildDir (Gen.int n))
+	    else buildDir (Gen.int n)
+	end
+		*)   
+
+    val randomize = Gen.randomize
+
+    fun testCurrentArc () = 
+	Test.test (fn x => x = ".") P.currentArc
+
+    fun testParentArc () =
+	Test.test (fn x => x = "..") P.parentArc
+
+    fun testFromString () =
+	(Test.test (fn x => P.fromString x = {isAbs=false, 
+					     vol="", 
+					     arcs=[]}) "";
+	Test.test (fn x => P.fromString x = {isAbs=true, 
+					     vol="", 
+					     arcs=[""]}) "/";
+	Test.test (fn x => P.fromString x = {isAbs=true, 
+					     vol="", 
+					     arcs=["", ""]}) "//";
+	Test.test (fn x => P.fromString x = {isAbs=false, 
+					     vol="", 
+					     arcs=["a"]}) "a";
+	Test.test (fn x => P.fromString x = {isAbs=true, 
+					     vol="", 
+					     arcs=["a"]}) "/a";
+	Test.test (fn x => P.fromString x = {isAbs=true, 
+					     vol="", 
+					     arcs=["", "a"]}) "//a";
+	Test.test (fn x => P.fromString x = {isAbs=false, 
+					     vol="", 
+					     arcs=["a", ""]}) "a/";
+	Test.test (fn x => P.fromString x = {isAbs=false, 
+					     vol="", 
+					     arcs=["a", "", ""]}) "a//";
+	Test.test (fn x => P.fromString x = {isAbs=false, 
+					     vol="", 
+					     arcs=["a", "b"]}) "a/b")
+	    
+    fun testToString () = 
+	let
+	    fun t'' (x, nil)   b = x ^ b
+	      | t'' (x, y::ys) b = t'' (x, ys) (y ^ "/" ^ b)
+
+	    fun t' (i, v, a) = if v = ""
+			       then SOME (if i then t'' ("/", rev a) ""
+					  else t'' ("", rev a) "")
+			       else NONE
+	    
+	    fun t (isAbs, vol, arcs) = 
+		let
+		    val r = t' (isAbs, vol, arcs)
+		    val r1 = SOME (P.toString {isAbs, vol, arcs}) 
+			         handle Path => NONE
+		in
+		    r = r1
+		end
+	in
+	  Gen.try 100 (Gen.triple (Gen.bool, Gen.string, Gen.list Gen.string))
+	     (Test.test t)
+	end
+
+    fun testValidVolume () =
+	let
+	    fun t (isAbs, vol) = P.validVolume {isAbs, vol} = (vol = "")
+	in
+	    Gen.try 100 (Gen.pair (Gen.bool, Gen.string)) (Test.test t)
+	end
+
+    fun testGetVolume () = 
+	let
+	    fun t s = let
+		        type path = {isAbs : bool, 
+				     vol : string, arcs : string list}
+		        val (p : path) = P.fromString s
+                      in
+                        P.getVolume s = #vol p
+	              end
+	in
+	    Gen.try 10 Gen.string (Test.test t)
+	end
+
+    fun testGetParent () =
+	(Test.test (fn s => P.getParent s = "/") "/";
+	 Test.test (fn s => P.getParent s = ".") "a";
+	 Test.test (fn s => P.getParent s = "a/..") "a/";
+	 Test.test (fn s => P.getParent s = "a///..") "a///";
+	 Test.test (fn s => P.getParent s = "a") "a/b";
+	 Test.test (fn s => P.getParent s = "a/b/..") "a/b/";
+	 Test.test (fn s => P.getParent s = "../..") "..";
+	 Test.test (fn s => P.getParent s = "..") ".";
+	 Test.test (fn s => P.getParent s = "..") "")
+
+    fun testSplitDirFile () = 
+	(Test.test (fn s => P.splitDirFile s = {dir = "", file = ""}) "";
+	 Test.test (fn s => P.splitDirFile s = {dir = "", file = "."}) ".";
+	 Test.test (fn s => P.splitDirFile s = {dir = "", file = "b"}) "b";
+	 Test.test (fn s => P.splitDirFile s = {dir = "b", file = ""}) "b/";
+	 Test.test (fn s => P.splitDirFile s = {dir = "a", file = "b"}) "a/b";
+	 Test.test (fn s => P.splitDirFile s = {dir = "/", file = "a"}) "/a")
+
+    fun testJoinDirFile () =
+	let
+	    fun t' (d, f) = if String.size d + String.size f > String.maxSize
+			    then NONE
+			    else if String.isSubstring "/" f
+			    then NONE
+			    else if d = "" then SOME f
+			    else SOME (d ^ "/" ^ f)
+
+	    fun t (dir, file) = 
+		let
+		    val r = t' (dir, file)
+		    val r1 = SOME (P.joinDirFile {dir, file})
+			        handle _ => NONE
+		in
+		    r = r1
+		end
+	in
+	    Gen.try 100 (Gen.pair (Gen.string, Gen.string)) (Test.test t)
+	end
+
+    fun testDir () =
+	let
+	    fun t s = P.dir s = (#dir o P.splitDirFile) s
+	in
+	    Gen.try 100 Gen.string (Test.test t)
+	end
+
+    fun testFile () =
+	let
+	    fun t s = P.file s = (#file o P.splitDirFile) s
+	in
+	    Gen.try 100 Gen.string (Test.test t)
+	end
+
+    fun testSplitBaseExt () =
+	(Test.test (fn s => P.splitBaseExt s = {base = "", ext = NONE}) "";
+	 Test.test (fn s => P.splitBaseExt s = {base = ".login", 
+						ext = NONE}) ".login";
+	 Test.test (fn s => P.splitBaseExt s = {base = "/.login", 
+						ext = NONE}) "/.login";
+	 Test.test (fn s => P.splitBaseExt s = {base = "a", 
+						ext = NONE}) "a";
+	 Test.test (fn s => P.splitBaseExt s = {base = "a.", 
+						ext = NONE}) "a.";
+	 Test.test (fn s => P.splitBaseExt s = {base = "a", 
+						ext = SOME "b"}) "a.b";
+	 Test.test (fn s => P.splitBaseExt s = {base = "a.b", 
+						ext = SOME "c"}) "a.b.c";
+	 Test.test (fn s => P.splitBaseExt s = {base = ".news/comp", 
+						ext = NONE}) ".news/comp")
+
+	    
+
+    val suite = ("OS.Path", [("currentArc", testCurrentArc),
+			     ("parentArd", testParentArc),
+			     ("fromString", testFromString),
+			     ("toString", testToString),
+			     ("validVolume", testValidVolume),
+			     ("getVolume", testGetVolume),
+			     ("getParent", testGetParent),
+			     ("splitDirFile", testSplitDirFile),
+			     ("joinDirFile", testJoinDirFile),
+			     ("testDir", testDir),
+			     ("testFile", testFile),
+			     ("splitBaseExt", testSplitBaseExt)])
+end
