@@ -17,6 +17,7 @@
 #pragma interface "alice/AbstractCode.hh"
 #endif
 
+#include <cstdio>
 #include "alice/Data.hh"
 
 // Opcodes
@@ -44,9 +45,10 @@ public:
     PutCon, PutNew, PutRef, PutTag, PutTup, PutVar, PutVec, Raise, RealTest,
     Reraise, Return, Sel, Shared, Specialize, StringTest, TagTest, Try, VecTest
   };
+  static const u_int nInstrs = VecTest + 1;
 
   enum idRef {
-    Global, Immediate, Local, Toplevel
+    Global, Immediate, LastUseLocal, Local, Toplevel
   };
 
   enum abstractCode {
@@ -68,6 +70,8 @@ public:
   static abstractCode GetAbstractCode(TagVal *tagVal) {
     return static_cast<abstractCode>(tagVal->GetTag());
   }
+
+  static void Disassemble(std::FILE *f, TagVal *pc);
 };
 
 #endif
