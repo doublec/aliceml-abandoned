@@ -5,7 +5,7 @@
 //
 // Copyright:
 //   Thorsten Brunklaus, 2002
-//   Leif Kornstaedt, 2002
+//   Leif Kornstaedt, 2002-2003
 //
 // Last Change:
 //   $Date$ by $Author$
@@ -26,8 +26,8 @@ DEFINE0(UnsafeCommandLine_arguments) {
 word UnsafeCommandLine() {
   Record *record = Record::New(2);
   INIT_STRUCTURE(record, "UnsafeCommandLine", "name",
-		 UnsafeCommandLine_name, 0, true);
+		 UnsafeCommandLine_name, 0);
   INIT_STRUCTURE(record, "UnsafeCommandLine", "arguments",
-		 UnsafeCommandLine_arguments, 0, true);
+		 UnsafeCommandLine_arguments, 0);
   RETURN_STRUCTURE("UnsafeCommandLine$", record);
 }
