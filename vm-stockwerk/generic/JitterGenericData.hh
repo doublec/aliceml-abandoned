@@ -19,7 +19,6 @@
 
 #include "store/JITStore.hh"
 #include "generic/Scheduler.hh"
-#include "alice/JitterImmediateEnv.hh"
 
 namespace Generic {
   class Scheduler {
