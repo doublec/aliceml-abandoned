@@ -10,6 +10,7 @@ final public class DMLConstants {
     public static final DMLName dmlbind  = new DMLName("[Bind]");
 
     public static final DMLConstructor runtimeError = new DMLConstructor("runtimeError");
+    public static final DMLConstructor reference    = new DMLConstructor("reference");
     public static final DMLConstructor cons         = new DMLConstructor("list");
 
 }

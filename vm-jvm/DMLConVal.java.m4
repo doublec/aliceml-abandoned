@@ -22,6 +22,17 @@ final public class DMLConVal implements DMLValue {
 	return content;
     }
 
+    /** setzt Wert auf val und gibt alten Wert zurueck */
+    final public DMLValue assign(DMLValue val) {
+	if (this.constructor == DMLConstants.reference) {
+	    DMLValue v=this.content;
+	    this.content=val;
+	    return DMLConstants.dmlunit;
+	}
+	else
+	    return DMLConstants.runtimeError.apply(new DMLString("cannot assign "+val+" to "+this)).raise();
+    }
+
     final public String toString() {
 	return constructor+"("+content+") : constructed value";
     }

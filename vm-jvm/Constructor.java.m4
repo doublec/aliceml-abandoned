@@ -14,7 +14,7 @@ final public class DMLConstructor implements DMLValue {
 	this.name=name;
     }
 
-    /** Gleichheit des Namens und der Stelligkeit */
+    /** Pointergleichheit */
     final public boolean equals(Object val) {
 	return (val == this);
     }
