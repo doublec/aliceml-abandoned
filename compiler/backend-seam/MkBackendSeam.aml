@@ -31,7 +31,9 @@ functor MkBackendSeam(structure ComponentManager:
 		      structure Switches: SWITCHES): BACKEND_SPECIFIC =
     let
 	structure AbstractCodeGrammar = MkAbstractCodeGrammar(Value)
-	structure CodeGenPhase = MkCodeGenPhase(AbstractCodeGrammar)
+	structure CodeGenPhase = 
+	    MkCodeGenPhase(structure AbstractCodeGrammar = AbstractCodeGrammar
+			   structure Switches = Switches)
 
 	type value = AbstractCodeGrammar.value
 
