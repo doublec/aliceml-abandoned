@@ -17,7 +17,7 @@ include $(TOPDIR)/Makefile.vars
 include $(TOPDIR)/Makefile.rules
 
 SRCS = \
-	RootSet.cc NativeTaskManager.cc InternalTasks.cc \
+	RootSet.cc TaskStack.cc NativeTaskManager.cc InternalTasks.cc \
 	Scheduler.cc Transients.cc Outline.cc
 OBJS = $(SRCS:%.cc=%.o)
 

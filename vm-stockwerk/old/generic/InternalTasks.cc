@@ -24,19 +24,8 @@ DEFINE1(InternalTasks_await) {
   }
 } END
 
-DEFINE1(InternalTasks_defaultHandler) {
-  //--** print out information about the unhandled exception
-  x0 = x0; // avoid warning
-  TERMINATE;
-} END
-
 DEFINE1(InternalTasks_raise) {
   RAISE(x0);
-} END
-
-DEFINE1(InternalTasks_terminate) {
-  x0 = x0; // avoid warning
-  TERMINATE;
 } END
 
 static inline void Set(word &member, NativeTaskManager::function f,
@@ -47,7 +36,5 @@ static inline void Set(word &member, NativeTaskManager::function f,
 
 void InternalTasks::Init() {
   Set(await, InternalTasks_await, -1, 0);
-  Set(defaultHandler, InternalTasks_defaultHandler, -1, 0);
   Set(raise, InternalTasks_raise, -1, 0);
-  Set(terminate, InternalTasks_terminate, -1, 0);
 }

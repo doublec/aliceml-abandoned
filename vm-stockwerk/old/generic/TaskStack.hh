@@ -28,9 +28,13 @@ public:
   using Stack::ToWord;
   using Stack::IsEmpty;
 
+  static word emptyTask;
+
+  static void Init();
+
   static TaskStack *New() {
     TaskStack *taskStack = static_cast<TaskStack *>(Stack::New(threshold));
-    //--** push suicide task and default exception handler on taskStack
+    taskStack->PushCall(Closure::FromWordDirect(emptyTask));
     return taskStack;
   }
   static TaskStack *FromWord(word x) {
