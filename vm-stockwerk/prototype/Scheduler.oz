@@ -27,7 +27,7 @@ define
 
    class Thread
       attr Args: unit TaskStack: unit Res: unit Suspended: unit State: unit
-      meth init(args: A stack: T result: R)
+      meth init(args: A stack: T result: R <= _)
 	 Args <- A
 	 TaskStack <- T
 	 Res <- R
@@ -45,6 +45,7 @@ define
 	 TaskStack <- T
       end
       meth bindResult(X)
+	 %--** is the result ever needed anymore?
 	 @Res = X
 	 State <- terminated
       end
@@ -92,13 +93,14 @@ define
 	 SignalSources <- {Array.new 0 INITIAL_SIGNAL_SOURCES_SIZE - 1 unit}
 	 PendingSignals <- nil
       end
-      meth newThread(Closure Args ?Res <= _ taskStack: TaskStack0 <= nil)
-	 case Closure of closure(Function ...) then TaskStack in
-	    TaskStack = {Function.1.pushCall Closure TaskStack0}
-	    Scheduler, Enqueue({New Thread init(args: Args
-						stack: TaskStack
-						result: Res)})
-	 end
+      meth newThread(closure: Closure <= unit
+		     args: Args <= args()
+		     taskStack: TaskStack0 <= nil) TaskStack in
+	 TaskStack = case Closure of closure(Function ...) then
+			{Function.1.pushCall Closure TaskStack0}
+		     [] unit then TaskStack0
+		     end
+	 Scheduler, Enqueue({New Thread init(args: Args stack: TaskStack)})
       end
       meth wakeup(T)
 	 {T wakeup()}
@@ -195,7 +197,7 @@ define
       meth Byneed(Transient Closure) TaskStack in
 	 %--** when can this be done in the current thread?
 	 TaskStack = [byneedFrame(ByneedInterpreter.interpreter Transient)]
-	 Scheduler, newThread(Closure args() taskStack: TaskStack)
+	 Scheduler, newThread(closure: Closure taskStack: TaskStack)
       end
       meth registerSignalSource(?Id ?Transient) A in
 	 A = @SignalSources
