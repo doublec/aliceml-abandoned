@@ -136,10 +136,11 @@ DEFINE1(Word32_toInt) {
 DEFINE1(Word32_toIntX) {
   DECLARE_WORD32(i, x0);
   if (i & (1 << (WORD_PRECISION - 1))) {
-    RETURN_INT(i | ~(static_cast<u_int>(-1)));
-  } else {
-    RETURN_INT(i);
+    i = i | ~(static_cast<u_int>(-1));
   }
+  if (i > static_cast<u_int>(MAX_VALID_INT))
+    RAISE(PrimitiveTable::General_Overflow);
+  RETURN_INT(i);
 } END
 
 DEFINE1(Word32_fromLargeInt) {
