@@ -139,9 +139,9 @@
   <CENTER>
     <TABLE class=dyptic>
       <TR><TH>Alice Library Type<TH>Oz Representation
+      <TR><TD><TT>ref</TT><TD>Cell
       <TR><TD><TT>array</TT><TD>Array
       <TR><TD><TT>vector</TT><TD>Tuple with label <TT>'#[]'</TT>
-      <TR><TD><TT>Cell.cell</TT><TD>Cell
       <TR><TD><TT>Thread.thread</TT><TD>Thread
     </TABLE>
   </CENTER>
@@ -176,8 +176,10 @@
 	    <BR>e.g., <TT>'$S$'</TT>
     </TABLE>
   </CENTER>
+<!--
   <P>When working without RTT, signature and type members are represented
   by failed futures only.</P>
+-->
 
   <?php subsection("components", "Components") ?>
   <P>Alice components are translated into Oz functors:</P>
@@ -196,7 +198,7 @@
 
 <?php section("ozfromalice", "Oz from Alice") ?>
   <P>Alice compiled components are annotated with signatures denoting
-    the expected types of the component it imports and the actual type
+    the expected signatures of the component it imports and the actual signature
     of the structure it computes.  Compatibility of actual and expected
     signatures is checked at link-time to guarantee type safety.
     The actual export signature is also loaded at compile time to
@@ -205,7 +207,7 @@
     functors before they can be imported into Alice components.  This
     will be shown by an example.</P>
   <P>Assume the following Oz functor is stored at URL
-    <TT>UntypedF.ozf</TT>:</P>
+    <TT>F.ozf</TT>:</P>
   <PRE>
         functor
         import
