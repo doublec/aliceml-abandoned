@@ -1,6 +1,8 @@
 <?php include("macros.php3"); ?>
 <?php heading("The Linear structure", "The <TT>Linear</TT> structure"); ?>
 
+<P></P>
+
 <?php section("synopsis", "synopsis"); ?>
 
   <PRE>
@@ -174,7 +176,7 @@
       <TT>distinct <I>v</I></TT>
     </DT>
     <DD>
-      <P>posts the distrinct constraint on all variables in <I>v</I>.
+      <P>posts the distinct constraint on all variables in <I>v</I>.
          For details, see <A HREF="FD.php3">here</A>.
       </P>
     </DD>
