@@ -20,62 +20,48 @@
 #include <cstring>
 
 class MemChunk {
-private:
-#if (defined(STORE_DEBUG) || defined(STORE_PROFILE))
-  static u_int counter;
-#endif
 protected:
   MemChunk *prev, *next;
-  char *block, *base, *max;
-  s_int top;
-  u_int anchor;
+  char *block, *base, *top, *max;
+
+  void SetPrev(MemChunk *prv) { prev = prv; }
+  void SetNext(MemChunk *nxt) { next = nxt; }
 public:
-#if (defined(STORE_DEBUG) || defined(STORE_PROFILE))
-  u_int id;
-#endif
-  MemChunk(MemChunk *prv, MemChunk *nxt, u_int size) : prev(prv), next(nxt) {
+  MemChunk(MemChunk *root, u_int size) : prev(NULL) {
     block = base = (char *) std::malloc(size + STORE_MEM_ALIGN);
     AssertStore(block != NULL);
     // Ensure Base Ptr Alignment
     base += (STORE_MEM_ALIGN - ((u_int) base & (STORE_MEM_ALIGN - 1)));
-    max    = (base + size);
-    top    = (sizeof(u_int) - size);
-    anchor = 0;
-    u_int *b = (u_int *) base;
-    for (u_int i = (size / sizeof(u_int)); i--;) {
-      b[i] = HeaderOp::EncodeHeader(REF_LABEL, 0, 0);
+    max = (base + size);
+    top = base;
+    next = root;
+    if (root != NULL) {
+      root->SetPrev(this);
     }
-#if (defined(STORE_DEBUG) || defined(STORE_PROFILE))
-    id = counter++;
-#endif
+    std::memset(base, 1, size);
   }
-  MemChunk() : prev(INVALID_POINTER), next(INVALID_POINTER), block(INVALID_POINTER), anchor(1) {}
   ~MemChunk() {
-    AssertStore(block != INVALID_POINTER);
+    AssertStore(block != NULL);
     std::free(block);
+    if (prev != NULL) {
+      prev->SetNext(next);
+    }
+    if (next != NULL) {
+      next->SetPrev(prev);
+    }
   }
 
   void Clear(){
     u_int size = (u_int) (max - base);
-
-    top = (sizeof(u_int) - size);
-    u_int *b = (u_int *) base;
-    //    b[0] = HeaderOp::EncodeHeader(REF_LABEL, 0, 0);
-    for (u_int i = (size / sizeof(u_int)); i--;) {
-      b[i] = HeaderOp::EncodeHeader(REF_LABEL, 0, 0);
-    }
+    std::memset(base, 1, size);
+    top = base;
   }
-  s_int GetTop()              { return top; }
-  void SetTop(s_int top)      { MemChunk::top = top; } 
-  char *GetMax()              { return max; }
-  char *GetBottom()           { return base; }
-  u_int GetSize()             { return (u_int) (max - base); }
-
-  MemChunk *GetNext()         { return next; }
-  void SetNext(MemChunk *nxt) { next = nxt; }
-  MemChunk *GetPrev()         { return prev; }
-  void SetPrev(MemChunk *prv) { prev = prv; }
-  u_int IsAnchor()            { return anchor; }
+  char *GetTop()         { return top; }
+  void SetTop(char *top) { MemChunk::top = top; } 
+  char *GetMax()         { return max; }
+  char *GetBase()        { return base; }
+  MemChunk *GetNext()    { return next; }
+  MemChunk *GetPrev()    { return prev; }
 };
 
 #endif
