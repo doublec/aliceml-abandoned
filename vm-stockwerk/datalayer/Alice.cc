@@ -37,17 +37,19 @@ t_label AliceLabel::WideString;
 //
 void AliceLabel::CreateAliceLabel() {
   MIN_LABEL   = (t_label) 0;
-  MAX_LABEL   = (t_label) (MAX_LSIZE - 12);
+  MAX_LABEL   = (t_label) (MAX_LSIZE - 14);
   
-  Array       = (t_label) (MAX_LSIZE - 11);
-  Builtin     = (t_label) (MAX_LSIZE - 10);
-  Cell        = (t_label) (MAX_LSIZE - 9);
-  Constructor = (t_label) (MAX_LSIZE - 8);
-  ConVal      = (t_label) (MAX_LSIZE - 7);
-  Real        = (t_label) (MAX_LSIZE - 6);
-  Record      = (t_label) (MAX_LSIZE - 5);
-  String      = (t_label) (MAX_LSIZE - 4);
-  Tuple       = (t_label) (MAX_LSIZE - 3);
-  Vector      = (t_label) (MAX_LSIZE - 2);
+  Array       = (t_label) (MAX_LSIZE - 13);
+  ArrayZero   = (t_label) (MAX_LSIZE - 12);
+  Builtin     = (t_label) (MAX_LSIZE - 11);
+  Cell        = (t_label) (MAX_LSIZE - 10);
+  Constructor = (t_label) (MAX_LSIZE - 9);
+  ConVal      = (t_label) (MAX_LSIZE - 8);
+  Real        = (t_label) (MAX_LSIZE - 7);
+  Record      = (t_label) (MAX_LSIZE - 6);
+  String      = (t_label) (MAX_LSIZE - 5);
+  Tuple       = (t_label) (MAX_LSIZE - 4);
+  Vector      = (t_label) (MAX_LSIZE - 3);
+  VectorZero  = (t_label) (MAX_LSIZE - 2);
   WideString  = (t_label) (MAX_LSIZE - 1);
 }
