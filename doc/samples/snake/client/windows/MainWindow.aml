@@ -263,9 +263,7 @@ struct
 	    Gtk.menuAppend (menuHighscore, menuResetScore);
 	    Gtk.menuAppend (menuLeave, menuGiveUpItem);
 	    Gtk.menuAppend (menuLeave, menuQuit);
-	    Gtk.widgetHide canvas;
-	    Gtk.widgetHide pointsHBox;
-	    
+
 	    Gtk.signalConnect (mainWindow, "event",
 			       canvasEvent);
 	    Gtk.signalConnect (mainWindow, "delete-event", 
@@ -289,7 +287,8 @@ struct
 	    Gtk.menuItemSetSubmenu (menuScoreItem, menuHighscore);
 	    Gtk.menuItemSetSubmenu (menuQuitItem, menuLeave);
 
-	    Gtk.widgetSetSensitive(menuGiveUpItem, false);
+	    Gtk.widgetSetSensitive (menuGiveUpItem, false);
+(*	    Gtk.widgetSetUsize (pointsHBox, 180, 500); *)
 
 	    Gtk.menuBarAppend (menuBar, menuMenuItem);
 	    Gtk.menuBarAppend (menuBar, menuScoreItem);
@@ -306,7 +305,10 @@ struct
 
 	    Gtk.containerAdd (mainWindow, dialogVBox);
 
-	    Gtk.widgetShowAll mainWindow
+	    Gtk.widgetShowAll mainWindow;
+
+	    Gtk.widgetHide canvas;
+	    Gtk.widgetHide pointsHBox
 		
 	end
 end
