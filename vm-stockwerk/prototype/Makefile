@@ -13,6 +13,7 @@
 PLATFORM = $(shell oztool platform)
 
 SRCS = \
+	Debug.oz \
 	PrimitiveTable.oz \
 	ByneedInterpreter.oz \
 	Scheduler.oz \
