@@ -2,5 +2,6 @@ Group is
 
     main-mozart.cm
     main-com+.cm
+    main-stockwerk.cm
 
     Main.sml

@@ -2,5 +2,6 @@ Group is
 
     make-main.cm
 
+    ../backend-com+/sources.cm
     SMLToComPlusCompiler.sml
     SMLToComPlusMain.sml

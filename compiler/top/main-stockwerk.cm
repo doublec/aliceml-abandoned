@@ -1,0 +1,7 @@
+Group is
+
+    make-main.cm
+
+    ../backend-stockwerk/sources.cm
+    SMLToStockwerkCompiler.sml
+    SMLToStockwerkMain.sml

@@ -2,5 +2,6 @@ Group is
 
     make-main.cm
 
+    ../backend-mozart/sources.cm
     SMLToMozartCompiler.sml
     SMLToMozartMain.sml

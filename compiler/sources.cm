@@ -2,6 +2,7 @@ Group
 
 	structure SMLToMozartMain
 	structure SMLToComPlusMain
+	structure SMLToStockwerkMain
 	structure Main
 
 is
