@@ -307,6 +307,10 @@ struct
 	let 
 	    val reinspect_active = not(Helper.getDesc(n) = Types.INTERPUNCT)
 	in
+	case n of
+	RelNode _ => ()
+      | RelRefNode _ => ()
+      | _ =>
 	serve (fn () => 
 	       (createMenu
 		(PopupObj
