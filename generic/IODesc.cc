@@ -126,33 +126,54 @@ DWORD __stdcall IOForwarder::ReaderThread(void *p) {
   // ReaderThread cause the system to freeze if we
   // don't call gethostname() (?load ws2_32.dll? changed with SP2)
   // before ReadFile().
-  char dummyBuf[1024];
+  static char dummyBuf[1024];
   gethostname(dummyBuf, sizeof(dummyBuf));
 
   char buf[BUFFER_SIZE];
-  while (true) {
+  BOOL eof = FALSE;
+  do {
+    static HANDLE stdin_handle = GetStdHandle(STD_INPUT_HANDLE);
     DWORD count;
-    if (ReadFile(in, buf, BUFFER_SIZE, &count, NULL) == FALSE) {
+    BOOL ret;
+
+    if ((in == stdin_handle) &&	(GetFileType(in) == FILE_TYPE_CHAR)) {
+      // For the console, we cannot rely on ReadFile returning with count 0 for
+      // detecting EOF, because this also happens upon Ctrl-C and Ctrl-Break
+      // (although this does not seem to be documented).
+      ret = ReadConsole(in, buf, BUFFER_SIZE, &count, NULL);
+      // ReadConsole does not process EOF itself...
+      if (ret)
+	for (int i = 0; i < count; i++)
+	  if (buf[i] == '\x01a') {
+	    eof = TRUE;
+	    count = i;
+	    break;
+	  }
+    } else {
+      ret = ReadFile(in, buf, BUFFER_SIZE, &count, NULL);
+      if (count == 0)
+	eof = TRUE;
+    }
+    if (ret == FALSE) {
       if (GetLastError() != ERROR_BROKEN_PIPE)
 	std::fprintf(stderr, "ReadFile failed: %ld\n", GetLastError());
       break;
     }
-    if (count == 0)
-      break;
+
     u_int totalSent = 0;
-  loop:
-    Interruptible(sent, send(out, &buf[totalSent], count, 0));
-    if (sent == SOCKET_ERROR) {
-      std::fprintf(stderr, "send(%d) failed: %d\n", out, GetLastSocketError());
-      break;
+    while (count > 0) {
+      Interruptible(sent, send(out, &buf[totalSent], count, 0));
+      if (sent == SOCKET_ERROR) {
+	std::fprintf(stderr, "send(%d) failed: %d\n", out, GetLastSocketError());
+	break;
+      }
+      count -= sent;
+      totalSent += sent;
     }
-    count -= sent;
-    totalSent += sent;
-    if (count > 0)
-      goto loop;
   }
-  CloseHandle(in);
+  while (!eof);
   closesocket(out);
+  CloseHandle(in);
   return 0;
 }
 
@@ -825,6 +846,16 @@ static IODesc *MakeStdIODesc(const char *name, DWORD nStdHandle, u_int dir) {
     return IODesc::NewClosed(String::New(name));
   return IODesc::NewForwarded(dir, String::New(name), hStd);
 }
+// Don't use forwarding on output streams, because it screws up
+// flushing and synchronisation between stdin, stdout and stderr!
+// Have to solve potential VM blocking in a more general way anyhow,
+// e.g. by using a system thread pool for expensive C calls.
+static IODesc *MakeStdIODescHandle(const char *name, DWORD nStdHandle, u_int dir) {
+  HANDLE hStd = GetStdHandle(nStdHandle);
+  if (hStd == INVALID_HANDLE_VALUE) // assume that it has been closed
+    return IODesc::NewClosed(String::New(name));
+  return IODesc::NewFromHandle(dir, String::New(name), hStd);
+}
 
 IODesc *IODesc::NewFromStdIn() {
   IODesc *ioDesc =
@@ -834,10 +865,12 @@ IODesc *IODesc::NewFromStdIn() {
   return ioDesc;
 }
 IODesc *IODesc::NewFromStdOut() {
-  return MakeStdIODesc("stdOut", STD_OUTPUT_HANDLE, IODesc::DIR_WRITER);
+  // return MakeStdIODesc("stdOut", STD_OUTPUT_HANDLE, IODesc::DIR_WRITER);
+  return MakeStdIODescHandle("stdOut", STD_OUTPUT_HANDLE, IODesc::DIR_WRITER);
 }
 IODesc *IODesc::NewFromStdErr() {
-  return MakeStdIODesc("stdErr", STD_OUTPUT_HANDLE, IODesc::DIR_WRITER);
+  // return MakeStdIODesc("stdErr", STD_OUTPUT_HANDLE, IODesc::DIR_WRITER);
+  return MakeStdIODescHandle("stdErr", STD_OUTPUT_HANDLE, IODesc::DIR_WRITER);
 }
 #else
 static IODesc *MakeStdIODesc(const char *name, int fd, u_int dir) {
