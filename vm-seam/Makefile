@@ -12,7 +12,7 @@ OBJS = \
 	builtins/libbuiltins.a datalayer/libdatalayer.a \
 	scheduler/libscheduler.a adt/libadt.a store/libstore.a
 
-LIBS = #-lmsvcrt
+LIBS = -lm #-lmsvcrt
 
 .PHONY: all-subdirs depend-local
 
