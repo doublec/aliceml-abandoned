@@ -13,6 +13,25 @@
     spaces. First class computation spaces can be used to program inference
     engines for problem solving.
   </P>
+  <P>
+    For example, depth-first one solution search can be done as follows.
+  </P>
+  <PRE>
+    fun searchOne s =
+	(case ask s of
+	     FAILED          => NONE
+	   | SUCCEEDED       => SOME (Space.merge s)
+	   | ALTERNATIVES(n) =>
+		 let
+		     val c = Space.clone s
+		 in
+		     (Space.commit(s, SINGLE 1);
+		      case searchOne s of
+			  NONE   => (Space.commit(c, RANGE(2, n)); searchOne c)
+			| SOME s => SOME s)
+		 end)
+	 
+    val solution = searchOne (Space.space money)</PRE>
 
 <?php section("import", "import"); ?>
 
