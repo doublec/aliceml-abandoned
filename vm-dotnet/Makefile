@@ -26,7 +26,7 @@ Base.aml: ../lib/bootstrap/Bootstrap.aus
 	copy ..\lib\bootstrap\Bootstrap.aus Base.aml
 
 Base.dll: Base.aml stoc-com+.x86-win32 Skeleton.il
-	stoc --noimplicitimport -c Base.aml -o $@
+	stoc --no-implicit-import -c Base.aml -o $@
 
 IO.dll: IO.cs
 	csc -nologo -t:library IO.cs
