@@ -131,7 +131,7 @@ struct
     open BindEnv
     open I
 
-    val empty = new()
+    val empty = env()
 
   (* Error handling *)
 
@@ -155,7 +155,7 @@ struct
     fun conName s  = "'" ^ s
     fun conVId vid = VId.fromString(conName(VId.toString vid))
 
-    fun inventId i = O.Id(i, Stamp.new(), Name.InId)
+    fun inventId i = O.Id(i, Stamp.stamp(), Name.InId)
 
     fun idToLab(O.Id(i, _, name))        = O.Lab(i, Label.fromName name)
     fun longidToLab(O.ShortId(_, id))    = idToLab id
@@ -258,7 +258,7 @@ struct
     fun renameVarids E =
 	List.map (fn(O.Id(i, _, name)) =>
 		  let
-		      val stamp' = Stamp.new()
+		      val stamp' = Stamp.stamp()
 		  in
 		      insertVar(E, TyVar.fromString(Name.toString name),
 				   (i, stamp'));
@@ -361,7 +361,7 @@ struct
 	    val i     = infoId id
 	    val id'   = idId id
 	    val name  = toString id'
-	    val stamp = Stamp.new()
+	    val stamp = Stamp.stamp()
 	    val _     = if !Switches.Warn.shadowing
 			andalso Option.isSome(lookup(E, id')) then
 			   warn(i, Shadowed id')
@@ -407,7 +407,7 @@ struct
     fun trConVId_bind' E (VId(i, vid')) =
 	let
 	    val name  = conName(VId.toString vid')
-	    val stamp = Stamp.new()
+	    val stamp = Stamp.stamp()
 	in
 	    ( O.Id(i, stamp, Name.ExId name), stamp )
 	end
@@ -757,7 +757,7 @@ struct
 	   end
 	 | HASHAtExp(i, lab) =>
 	   let
-		val id'  = O.Id(i, Stamp.new(), Name.InId)
+		val id'  = O.Id(i, Stamp.stamp(), Name.InId)
 		val pat' = O.VarPat(i, id')
 		val exp' = O.VarExp(i, O.ShortId(i, id'))
 		val mat' = O.Mat(i, pat', O.SelExp(i, trLab E lab, exp'))
@@ -924,7 +924,7 @@ struct
 
     and trMrule E (Mrule(i, pat, exp)) =
 	let
-		val E'   = BindEnv.new()
+		val E'   = env()
 		val pat' = trPat (E,E') pat
 		val  _   = inheritScope(E,E')
 		val exp' = trExp E exp
@@ -1032,7 +1032,7 @@ struct
 		trAppPat (E,E') (Infix.pat (infEnv E) pat)
 
 	 | TYPEDPat(i, pat, ty)	=> O.AnnPat(i, trPat (E,E') pat, trTy E ty)
-	 | NONPat(i, pat)	=> O.NegPat(i, trPat (E,BindEnv.new()) pat)
+	 | NONPat(i, pat)	=> O.NegPat(i, trPat (E,env()) pat)
 	 | ASPat(i, pat1, pat2) => O.AsPat(i,trPat (E,E') pat1,trPat(E,E') pat2)
 	 | WHEREPat(i, pat, atexp) =>
 	   let
@@ -1170,7 +1170,7 @@ struct
 		( apptyp(typs', O.ConTyp(i, typlongid')), E' )
 	   end
 	 | PARTy(i, ty) => trTyWithEnv E ty
-	 | ty => ( trTy E ty, BindEnv.new() )
+	 | ty => ( trTy E ty, env() )
 
 
     and trTy E =
@@ -1302,7 +1302,7 @@ struct
     and trDec'(E,acc) =
 	fn VALDec(i, tyvarseq, valbind) =>
 	   let
-		val  E'     = BindEnv.new()
+		val  E'     = env()
 		val  _      = insertScope E
 		val varids' = trValTyVarSeq E tyvarseq @
 			      unguardedTyVarsValBind E valbind
@@ -1320,7 +1320,7 @@ struct
 
 	 | FUNDec(i, tyvarseq, fvalbind) =>
 	   let
-		val  E'      = BindEnv.new()
+		val  E'      = env()
 		val valids'  = trFvalBindo_lhs (E,E') (SOME fvalbind)
 		val  _       = union(E,E')
 		val  _       = insertScope E
@@ -1340,7 +1340,7 @@ struct
 
 	 | TYPEDec(i, typbind) =>
 	   let
-		val E'    = BindEnv.new()
+		val E'    = env()
 		val decs' = trTypBindo' (E,E',acc) (SOME typbind)
 		val  _    = union(E,E')
 	   in
@@ -1349,7 +1349,7 @@ struct
 
 	 | DATATYPEDec(i, datbind) =>
 	   let
-		val  E'             = BindEnv.new()
+		val  E'             = env()
 		val  _              = trDatBindo_lhs (E,E') (SOME datbind)
 		val  _              = union(E,E')
 		val (tdecs',cdecs') = trDatBindo_rhs (E,E') (SOME datbind)
@@ -1366,7 +1366,7 @@ struct
 					of O.LongId(_,modlongid',_) =>
 						SOME modlongid'
 					 | O.ShortId _ => NONE
-		val E''             = new()
+		val E''             = env()
 		val _               = insertTy(E, tycon', (i', stamp, E''))
 	   in
 		foldiVals (trOpenDecVal (E,i,modlongido',SOME tycon'))
@@ -1380,7 +1380,7 @@ struct
 
 	 | EXTTYPEDec(i, extbind) =>
 	   let
-		val E'    = BindEnv.new()
+		val E'    = env()
 		val decs' = trExtBindo' (E,E',acc) (SOME extbind)
 		val  _    = union(E,E')
 	   in
@@ -1389,7 +1389,7 @@ struct
 
 	 | CONSTRUCTORDec(i, econbind) =>
 	   let
-		val E'    = BindEnv.new()
+		val E'    = env()
 		val decs' = trEconBindo' (E,E',acc) (SOME econbind)
 		val  _    = union(E,E')
 	   in
@@ -1398,7 +1398,7 @@ struct
 
 	 | STRUCTUREDec(i, strbind) =>
 	   let
-		val E'    = BindEnv.new()
+		val E'    = env()
 		val decs' = trStrBindo' (E,E',acc) (SOME strbind)
 		val  _    = union(E,E')
 	   in
@@ -1407,7 +1407,7 @@ struct
 
 	 | SIGNATUREDec(i, sigbind) =>
 	   let
-		val E'    = BindEnv.new()
+		val E'    = env()
 		val decs' = trSigBindo' (E,E',acc) (SOME sigbind)
 		val _     = union(E,E')
 	   in
@@ -1499,8 +1499,7 @@ struct
 		val  varids'       = trTyVarSeq E tyvarseq	(* ignore *)
 		val  _             = deleteScope E
 		val  dec'          = O.TypDec(i, typid', O.PrimTyp(i,s))
-		val  _             = insertTy(E, tycon',
-						 (i, stamp, BindEnv.new()))
+		val  _             = insertTy(E, tycon', (i, stamp, env()))
 	   in
 		dec' :: acc
 	   end
@@ -1512,8 +1511,7 @@ struct
 		val  varids'       = trTyVarSeq E tyvarseq	(* ignore *)
 		val  _             = deleteScope E
 		val  dec'          = O.TypDec(i, typid', O.PrimTyp(i,s))
-		val  _             = insertTy(E, tycon',
-						 (i, stamp, BindEnv.new()))
+		val  _             = insertTy(E, tycon', (i, stamp, env()))
 	   in
 		dec' :: acc
 	   end
@@ -1529,13 +1527,13 @@ struct
 		val  typ'           = reftyp E (i1', varToTyp varid')
 		val  dec1'          = O.TypDec(i, typid',
 						  O.FunTyp(i, varid', typ'))
-		val  id'            = O.Id(i2', Stamp.new(), Name.InId)
+		val  id'            = O.Id(i2', Stamp.stamp(), Name.InId)
 		val  pat'           = O.VarPat(i2', id')
 		val  exp'           = O.VarExp(i2', O.ShortId(i2', id'))
 		val  mat'           = O.Mat(i2', pat', O.RefExp(i2', exp'))
 		val  dec2'          = O.ValDec(i, O.VarPat(i2', valid'),
 						  O.FunExp(i, #[mat']))
-		val  E'             = BindEnv.new()
+		val  E'             = env()
 		val  _              = insertVal(E', vid', (i2', stamp2, R))
 		val  _              = insertTy(E, tycon', (i1', stamp1, E'))
 		val  _              = union(E,E')
@@ -1563,7 +1561,7 @@ struct
 			O.ConExp(i, vallongid1', O.StrictExp(i,O.TupExp(i,#[])))
 		     else
 		     let
-			val validM'     = O.Id(i, Stamp.new(), Name.InId)
+			val validM'     = O.Id(i, Stamp.stamp(), Name.InId)
 			val vallongidM' = O.ShortId(i, validM')
 			val patM'       = O.VarPat(i, validM')
 			val exp0M'      = O.VarExp(i, vallongidM')
@@ -1626,7 +1624,7 @@ struct
     and trOpenDecVal (E,i,modlongido',tycono) (vid', (_,stamp1,is), acc) =
 	let
 	    val name       = VId.toString vid'
-	    val stamp2     = Stamp.new()
+	    val stamp2     = Stamp.stamp()
 	    val valid1'    = O.Id(i, stamp1, Name.ExId name)
 	    val valid2'    = O.Id(i, stamp2, Name.ExId name)
 	    val vallongid' = case modlongido'
@@ -1647,7 +1645,7 @@ struct
     and trOpenDecTy (E,i,modlongido') (tycon', (_,stamp1,E'), acc) =
 	let
 	    val name       = TyCon.toString tycon'
-	    val stamp2     = Stamp.new()
+	    val stamp2     = Stamp.stamp()
 	    val typid1'    = O.Id(i, stamp1, Name.ExId name)
 	    val typid2'    = O.Id(i, stamp2, Name.ExId name)
 	    val typlongid' = case modlongido'
@@ -1655,7 +1653,7 @@ struct
 			        | SOME modlongid' =>
 				   O.LongId(i, modlongid',
 					    O.Lab(i, Label.fromString name))
-	    val E''        = new()
+	    val E''        = env()
 	    val _          = appiVals (fn(vid,_) =>
 				insertDisjointVal(E'',vid,
 			    	    Option.valOf(lookupVal(E,vid)))) E'
@@ -1668,7 +1666,7 @@ struct
     and trOpenDecStr (E,i,modlongido') (strid', (_,stamp1,F), acc) =
 	let
 	    val name       = StrId.toString strid'
-	    val stamp2     = Stamp.new()
+	    val stamp2     = Stamp.stamp()
 	    val modid1'    = O.Id(i, stamp1, Name.ExId name)
 	    val modid2'    = O.Id(i, stamp2, Name.ExId name)
 	    val modlongid' = case modlongido'
@@ -1685,7 +1683,7 @@ struct
     and trOpenDecSig (E,i,modlongido') (sigid', (_,stamp1,F), acc) =
 	let
 	    val name       = SigId.toString sigid'
-	    val stamp2     = Stamp.new()
+	    val stamp2     = Stamp.stamp()
 	    val infid1'    = O.Id(i, stamp1, Name.ExId name)
 	    val infid2'    = O.Id(i, stamp2, Name.ExId name)
 	    val inflongid' = case modlongido'
@@ -1911,7 +1909,7 @@ struct
 
     and trFmrule_rhs E (Mrule(i, fpat, exp)) =
 	   let
-		val  E'                = BindEnv.new()
+		val  E'                = env()
 		val (pat',arity,typs') = trFpat_rhs (E,E') fpat
 		val  _                 = inheritScope(E,E')
 		val  exp'              = trExp E exp
@@ -2077,7 +2075,7 @@ struct
 		val  funtyp'       = funtyp(varids', O.AbsTyp(i',false))
 		val  dec'          = O.TypDec(i, typid', funtyp')
 		val  _             = insertDisjointTy(E', tycon',
-						     (i', stamp, BindEnv.new()))
+						     (i', stamp, env()))
 				     handle CollisionTy _ =>
 					error(i', E.TypBindDuplicate tycon')
 	   in
@@ -2095,7 +2093,7 @@ struct
 		val  _             = deleteScope E
 		val  funtyp'       = funtyp(varids', typ')
 		val  dec'          = O.TypDec(i', typid', funtyp')
-		val  E''           = new()
+		val  E''           = env()
 		val  _             = insertDisjointTy(E',tycon',(i',stamp,E''))
 				     handle CollisionTy _ =>
 					error(i', E.TypBindDuplicate tycon')
@@ -2111,7 +2109,7 @@ struct
 		val TyCon(i',tycon') = tycon
 		val (typid',stamp)   = trTyCon_bind E tycon
 		val  _               = insertDisjointTy(E', tycon',
-						(i', stamp, BindEnv.new()))
+						(i', stamp, env()))
 				       handle CollisionTy _ =>
 					   error(i', E.DatBindDuplicate tycon')
 	   in
@@ -2179,7 +2177,7 @@ struct
 				 O.StrictExp(i, O.TupExp(i, #[])))
 		     else
 		     let
-			val validM'     = O.Id(i, Stamp.new(), Name.InId)
+			val validM'     = O.Id(i, Stamp.stamp(), Name.InId)
 			val vallongidM' = O.ShortId(i, validM')
 			val patM'       = O.VarPat(i, validM')
 			val exp0M'      = O.VarExp(i, vallongidM')
@@ -2212,7 +2210,7 @@ struct
 		val  funtyp'       = funtyp(varids', O.AbsTyp(i',true))
 		val  dec'          = O.TypDec(i, typid', funtyp')
 		val  _             = insertDisjointTy(E', tycon',
-						     (i', stamp, BindEnv.new()))
+						     (i', stamp, env()))
 				     handle CollisionTy _ =>
 					error(i', E.ExtBindDuplicate tycon')
 	   in
@@ -2243,7 +2241,7 @@ struct
 			O.ConExp(i, vallongid1', O.StrictExp(i,O.TupExp(i,#[])))
 		     else
 		     let
-			val validM'     = O.Id(i, Stamp.new(), Name.InId)
+			val validM'     = O.Id(i, Stamp.stamp(), Name.InId)
 			val vallongidM' = O.ShortId(i, validM')
 			val patM'       = O.VarPat(i, validM')
 			val exp0M'      = O.VarExp(i, vallongidM')
@@ -2563,7 +2561,7 @@ struct
 					of O.ShortId _              => NONE
 					 | O.LongId(_,modlongid',_) =>
 						SOME modlongid'
-		val E''             = new()
+		val E''             = env()
 		val  _              = insertDisjointTy(E, tycon',(i',stamp,E''))
 				      handle CollisionTy _ =>
 					error(i', E.SpecTyConDuplicate tycon')
@@ -2684,8 +2682,7 @@ struct
 		val  varids'       = trTyVarSeq E tyvarseq	(* ignore *)
 		val  _             = deleteScope E
 		val  spec'         = O.TypSpec(i, typid', O.PrimTyp(i,s))
-		val  _             = insertTy(E, tycon',
-						 (i, stamp, BindEnv.new()))
+		val  _             = insertTy(E, tycon', (i, stamp, env()))
 	   in
 		spec' :: acc
 	   end
@@ -2707,7 +2704,7 @@ struct
     and trOpenSpecVal (E,i,modlongido',tycon) (vid', (_,stamp1,is), acc) =
 	let
 	    val name       = VId.toString vid'
-	    val stamp2     = Stamp.new()
+	    val stamp2     = Stamp.stamp()
 	    val valid1'    = O.Id(i, stamp1, Name.ExId name)
 	    val valid2'    = O.Id(i, stamp2, Name.ExId name)
 	    val vallongid' = case modlongido'
@@ -2776,7 +2773,7 @@ struct
 		val  funtyp'       = funtyp(varids', O.AbsTyp(i',false))
 		val  spec'         = O.TypSpec(i, typid', funtyp')
 		val  _             = insertDisjointTy(E, tycon',
-						   (i', stamp, BindEnv.new()))
+						   (i', stamp, env()))
 				     handle CollisionTy _ =>
 					error(i', E.SpecTyConDuplicate tycon')
 	   in
@@ -2794,7 +2791,7 @@ struct
 		val  _             = deleteScope E
 		val  funtyp'       = funtyp(varids', typ')
 		val  spec'         = O.TypSpec(i, typid', funtyp')
-		val  E'            = new()
+		val  E'            = env()
 		val  _             = insertDisjointTy(E, tycon', (i',stamp,E'))
 				     handle CollisionTy _ =>
 					error(i', E.SpecTyConDuplicate tycon')
@@ -2811,7 +2808,7 @@ struct
 		val TyCon(i',tycon') = tycon
 		val (typid',stamp)   = trTyCon_bind E tycon
 		val _                = insertDisjointTy(E, tycon',
-						   (i', stamp, BindEnv.new()))
+						   (i', stamp, env()))
 				       handle CollisionTy _ =>
 					 error(i', E.SpecTyConDuplicate tycon')
 	   in
@@ -2902,7 +2899,7 @@ struct
 		val  funtyp'       = funtyp(varids', O.AbsTyp(i',true))
 		val  spec'         = O.TypSpec(i, typid', funtyp')
 		val  _             = insertDisjointTy(E, tycon',
-						   (i', stamp, BindEnv.new()))
+						   (i', stamp, env()))
 				     handle CollisionTy _ =>
 					error(i', E.SpecTyConDuplicate tycon')
 	   in
@@ -3163,7 +3160,7 @@ struct
     and trOpenImpVal (E,i) (vid', (_,_,is), acc) =
 	let
 	    val name   = VId.toString vid'
-	    val stamp  = Stamp.new()
+	    val stamp  = Stamp.stamp()
 	    val valid' = O.Id(i, stamp, Name.ExId name)
 	    val _      = insertDisjointVal(E, vid', (i,stamp,is))
 			 handle CollisionVal _ =>
@@ -3175,9 +3172,9 @@ struct
     and trOpenImpTy (E,i) (tycon', (_,_,E'), acc) =
 	let
 	    val name   = TyCon.toString tycon'
-	    val stamp  = Stamp.new()
+	    val stamp  = Stamp.stamp()
 	    val typid' = O.Id(i, stamp, Name.ExId name)
-	    val E''    = new()
+	    val E''    = env()
 	    val _      = appiVals (fn(vid,_) =>
 			    insertDisjointVal(E'',vid,
 			    	Option.valOf(lookupVal(E,vid)))) E'
@@ -3191,7 +3188,7 @@ struct
     and trOpenImpStr (E,i) (strid', (_,_,F), acc) =
 	let
 	    val name   = StrId.toString strid'
-	    val stamp  = Stamp.new()
+	    val stamp  = Stamp.stamp()
 	    val modid' = O.Id(i, stamp, Name.ExId name)
 	    val _      = insertDisjointStr(E, strid', (i,stamp,F))
 			 handle CollisionStr _ =>
@@ -3208,7 +3205,7 @@ struct
     and trOpenImpSig (E,i) (sigid', (_,_,F), acc) =
 	let
 	    val name   = SigId.toString sigid'
-	    val stamp  = Stamp.new()
+	    val stamp  = Stamp.stamp()
 	    val infid' = O.Id(i, stamp, Name.ExId name)
 	    val _      = insertDisjointSig(E, sigid', (i,stamp,F))
 			 handle CollisionSig _ =>
@@ -3269,7 +3266,7 @@ struct
 		val  imp'          = O.TypImp(i', typid', O.NoDesc(i'))
 		val  E''           = Future.byneed(fn() =>
 				     if Option.isSome(lookupTy(E',tycon'))
-				     then new()
+				     then env()
 				     else error(i', E.TypItemUnbound tycon'))
 		val  _             = insertDisjointTy(E, tycon', (i',stamp,E''))
 				     handle CollisionTy _ =>
@@ -3290,7 +3287,7 @@ struct
 		val  imp'          = O.TypImp(i, typid', desc')
 		val  E''           = Future.byneed(fn() =>
 				     if Option.isSome(lookupTy(E',tycon'))
-				     then new()
+				     then env()
 				     else error(i', E.TypItemUnbound tycon'))
 		val  _             = insertDisjointTy(E, tycon', (i',stamp,E''))
 				     handle CollisionTy _ =>
@@ -3308,7 +3305,7 @@ struct
 	   let
 		val TyCon(i',tycon') = tycon
 		val (typid',stamp)   = trTyCon_bind E tycon
-		val  E''             = new()
+		val  E''             = env()
 		val  _               = insertDisjointTy(E,tycon',(i',stamp,E''))
 				       handle CollisionTy _ =>
 					 error(i', E.ImpTyConDuplicate tycon')
@@ -3623,7 +3620,7 @@ struct
 	   let
 		val url   = Url.fromString s
 		val E''   = BindEnvFromSig.envFromSig(i, loadSig(desc, url))
-		val E'''  = BindEnv.new()
+		val E'''  = env()
 		val imps' = Vector.rev(Vector.fromList
 				(trOpenImp (E''',i) (E'',[])))
 		val _     = union(E,E''')
@@ -3665,7 +3662,7 @@ struct
 
     fun trComponent (E,desc) (Component(i, ann, programo)) =
 	let
-	    val  E'            = BindEnv.new()
+	    val  E'            = env()
 	    val  _             = insertSelf E
 	    val  _             = insertScope E
 	    val (anns',decs1') = trAnn (E,E',desc) ann
