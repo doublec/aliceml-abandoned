@@ -155,8 +155,8 @@ LIBFUNDAMENTALSOURCES0 = \
 	Option.aml Pair.aml Position.aml Promise.aml Real.aml Ref.aml \
 	Stream.aml String.aml StringCvt.aml Substring.aml UniqueString.aml \
 	Thread.aml Time.aml Toplevel.aml Vector.aml VectorPair.aml \
-	WideChar.aml WideString.aml Word.aml Word8.aml Word8Vector.aml \
-	Package.aml ByNeed.aml
+	WideChar.aml WideString.aml Word.aml Word8.aml Word8Array.aml \
+	Word8Vector.aml Package.aml ByNeed.aml
 LIBSYSTEMSOURCES0 = \
 	$(LIBSYSTEMNATIVES0:%=Unsafe%.asig) UnsafeValue.asig \
 	CONFIG-sig.aml IO-sig.aml PRIM_IO-sig.aml PrimIO.aml \
