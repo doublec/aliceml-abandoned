@@ -33,7 +33,6 @@ signature ENGINE =
 
 	exception Format of string
 
-	val link: C.t -> code -> component                 (* Format *)
-	val save: C.t -> component * string -> unit        (* Format *)
-	val apply: C.t -> component * exportDesc -> unit   (* Format *)
+	val link: C.t -> code * string option -> component   (* Format *)
+	val save: C.t -> component * string -> unit          (* Format *)
     end
