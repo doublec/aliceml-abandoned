@@ -255,7 +255,7 @@ structure Renderer :> RENDERER =
 			    (kd, ambient) intensityDirList
 			val d = normalizeVec dir
 			val reflected =
-			    if Real.== (kd, 0.0) orelse depth = 0
+			    if Real.== (ks, 0.0) orelse depth = 0
 			    then Color.black
 			    else
 				trace (p,
@@ -280,8 +280,20 @@ structure Renderer :> RENDERER =
 
 	fun mkRender {ambient, lights, scene, vision, width, height, depth} =
 	    let
+		val w = 2.0 * Math.tan (0.5 * vision)
+		val delta = w / Real.fromInt width
+		val h = delta * height
+		val top = h / 2.0
+		val left = w / 2.0
+		val base = (0.0, 0.0, ~1.0)
 		fun render' (x, y) =
-		    {red = 0.0, green = 0.0, blue = 0.0}   (*UNFINISHED*)
+		    let
+			val dir = (left + Real.fromInt x * delta,
+				   top - Real.fromInt y * delta,
+				   1.0)
+		    in
+			trace (base, dir, ambient, lights, scene, depth)
+		    end
 	    in
 		render'
 	    end
