@@ -95,7 +95,8 @@ define
 	 end
       end
       meth output(S)
-	 Open.file, write(vs: {TranslateStringToCRLF S})
+	 Open.file, write(vs: {TranslateStringToCRLF
+			       {VirtualString.toString S}})
       end
       meth output1(C)
 	 Open.file, write(vs: {TranslateCharToCRLF C})
