@@ -103,6 +103,20 @@ inline void Decorator::DecorateBegin(Block *instr) {
   }
 }
 
+inline void Decorator::DecorateSetQ(Block *instr) {
+  SetQNode *node = SetQNode::FromBlock(instr);
+
+  Decorate(node->GetId()->ToWord());
+  Decorate(node->GetExpr());
+}
+
+inline void Decorator::DecorateSetCxr(Block *instr) {
+  SetCxrNode *node = SetCxrNode::FromBlock(instr);
+
+  Decorate(node->GetCell());
+  Decorate(node->GetExpr());
+}
+
 // Public Decorator Methods
 void Decorator::Decorate(word tree) {
   Block *instr = Store::DirectWordToBlock(tree);
@@ -128,6 +142,8 @@ void Decorator::Decorate(word tree) {
     DecorateApplication(instr); break;
   case T_BEGIN:
     DecorateBegin(instr); break;
+  case T_SETQ:
+    DecorateSetQ(instr); break;
   default:
     break;
   }
