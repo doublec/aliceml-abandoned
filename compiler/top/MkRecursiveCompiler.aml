@@ -183,9 +183,12 @@ functor MkRecursiveCompiler(structure ComponentManager: COMPONENT_MANAGER
 		let
 		    val sigFilename = Url.toStringRaw (valOf (Source.url desc))
 		    val _ = trace ("reading signature from " ^ sigFilename)
+		    val switch =
+			Ref.exchange (Switches.Warn.unusedImport, false)
 		    val (_, target) =
 			Compiler.compile (desc, Context.empty,
 					  Source.fromString s)
+		    val _ = Switches.Warn.unusedImport := switch
 		    val _ = trace ("finished reading signature from " ^ sigFilename)
 		    val {export, imports} =
 			case target of
