@@ -116,14 +116,15 @@
 ../frontend-sml/BindEnv0.sml
 ../backend-common/DEBUG.sig
 ../backend-common/Debug.sml
+../backend-common/LABEL_SORT.sig
+../backend-common/MakeLabelSort.sml
+../backend-common/LabelSort.sml
 ../backend-common/IMPERATIVE_GRAMMAR.sig
 ../backend-common/ImperativeGrammar.sml
 ../backend-common/OUTPUT_IMPERATIVE_GRAMMAR.sig
 ../backend-common/OutputImperativeGrammar.sml
 ../backend-common/INTERMEDIATE_AUX.sig
 ../backend-common/IntermediateAux.sml
-../backend-common/LABEL_SORT.sig
-../backend-common/MakeLabelSort.sml
 ../backend-common/SIMPLIFY_MATCH.sig
 ../backend-common/SimplifyMatch.sml
 ../backend-common/SIMPLIFY_REC.sig
