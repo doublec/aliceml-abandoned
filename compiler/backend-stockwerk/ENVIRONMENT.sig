@@ -17,10 +17,10 @@ signature ENVIRONMENT =
 	val new: unit -> t
 	val startFn: t -> unit
 	val endFn: t -> FlatGrammar.id vector * int
-	val declare: t * FlatGrammar.id -> Pickle.id
-	val fresh: t -> Pickle.id
-	val lookup: t * FlatGrammar.id -> Pickle.idRef
-	val lookupStamp: t * Stamp.t -> Pickle.idRef
-	val lookupShared: t * Stamp.t -> Pickle.instr option
-	val declareShared: t * Stamp.t * Pickle.instr -> unit
+	val declare: t * FlatGrammar.id -> PickleGrammar.id
+	val fresh: t -> PickleGrammar.id
+	val lookup: t * FlatGrammar.id -> PickleGrammar.idRef
+	val lookupStamp: t * Stamp.t -> PickleGrammar.idRef
+	val lookupShared: t * Stamp.t -> PickleGrammar.instr option
+	val declareShared: t * Stamp.t * PickleGrammar.instr -> unit
     end

@@ -10,20 +10,26 @@
  *   $Revision$
  *)
 
-structure BackendStockwerk: PHASE =
+structure CodeGenPhase: CODE_GEN_PHASE =
     struct
 	structure C = EmptyContext
 	structure I = FlatGrammar
-	structure O = Pickle
+	structure O = PickleGrammar
 
 	open I
 	open Environment
 
 	fun translateLit (IntLit i) = O.Int i
-	  | translateLit (WordLit w) = O.Word w
-	  | translateLit (CharLit c) = O.Char c
+	  | translateLit (WordLit w) = O.Int (LargeWord.toLargeInt w)
+	  | translateLit (CharLit c) = O.Int (LargeInt.fromInt (Char.ord c))
 	  | translateLit (StringLit s) = O.String s
 	  | translateLit (RealLit r) = O.Real r
+
+	fun litToInt (IntLit i) = i
+	  | litToInt (WordLit w) = LargeWord.toLargeInt w
+	  | litToInt (CharLit c) = LargeInt.fromInt (Char.ord c)
+	  | litToInt (StringLit _ | RealLit _) =
+	    raise Crash.Crash "BackendStockwerk.litToInt"
 
 	fun translateId (id, env) = lookup (env, id)
 
@@ -142,6 +148,7 @@ structure BackendStockwerk: PHASE =
 	  | detup (O.IntTest (_, _, _), _) = UNKNOWN
 	  | detup (O.RealTest (_, _, _), _) = UNKNOWN
 	  | detup (O.StringTest (_, _, _), _) = UNKNOWN
+	  | detup (O.WideStringTest (_, _, _), _) = UNKNOWN
 	  | detup (O.TagTest (_, _, _, _), _) = UNKNOWN
 	  | detup (O.ConTest (_, _, _, _), _) = UNKNOWN
 	  | detup (O.VecTest (_, _, _), _) = UNKNOWN
@@ -249,32 +256,12 @@ structure BackendStockwerk: PHASE =
 	    translateBody (elseBody, env)
 	  | translateStm (TestStm (_, id, LitTests litTests, elseBody), env) =
 	    (case Vector.sub (litTests, 0) of
-		 (WordLit _, _) =>
+		 ((IntLit _ | WordLit _ | CharLit _), _) =>
 		     O.IntTest
 		     (lookup (env, id),
 		      Vector.map (fn (lit, body) =>
-				  case lit of WordLit w =>
-				      (LargeWord.toInt w,
-				       translateBody (body, env))
-				    | _ => raise Match) litTests,
-		      translateBody (elseBody, env))
-	       | (IntLit _, _) =>
-		     O.IntTest
-		     (lookup (env, id),
-		      Vector.map (fn (lit, body) =>
-				  case lit of IntLit i =>
-				      (LargeInt.toInt i,
-				       translateBody (body, env))
-				    | _ => raise Match) litTests,
-		      translateBody (elseBody, env))
-	       | (CharLit _, _) =>
-		     O.IntTest
-		     (lookup (env, id),
-		      Vector.map (fn (lit, body) =>
-				  case lit of CharLit c =>
-				      (WideChar.ord c,
-				       translateBody (body, env))
-				    | _ => raise Match) litTests,
+				  (litToInt lit, translateBody (body, env)))
+		      litTests,
 		      translateBody (elseBody, env))
 	       | (StringLit _, _) =>
 		     O.StringTest
@@ -289,8 +276,7 @@ structure BackendStockwerk: PHASE =
 		     (lookup (env, id),
 		      Vector.map (fn (lit, body) =>
 				  case lit of RealLit r =>
-				      (valOf (Real.fromString r),
-				       translateBody (body, env))
+				      (r, translateBody (body, env))
 				    | _ => raise Match) litTests,
 		      translateBody (elseBody, env)))
 	  | translateStm (TestStm (_, id, TagTests tagTests, elseBody), env) =

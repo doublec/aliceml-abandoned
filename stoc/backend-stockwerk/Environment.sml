@@ -12,7 +12,7 @@
 
 structure Environment :> ENVIRONMENT =
     struct
-	type scope = Pickle.idRef StampMap.t
+	type scope = PickleGrammar.idRef StampMap.t
 	type globals = FlatGrammar.id list
 	type index = int
 
@@ -21,7 +21,7 @@ structure Environment :> ENVIRONMENT =
 		  localIndex: index ref,
 		  globalIndex: index ref,
 		  globals: globals ref,
-		  shared: Pickle.instr StampMap.t}
+		  shared: PickleGrammar.instr StampMap.t}
 
 	fun new () =
 	    {stack = ref nil, scope = ref (StampMap.new ()),
@@ -52,7 +52,7 @@ structure Environment :> ENVIRONMENT =
 		val i = !localIndex
 	    in
 		localIndex := i + 1;
-		StampMap.insertDisjoint (!scope, stamp, Pickle.Local i);
+		StampMap.insertDisjoint (!scope, stamp, PickleGrammar.Local i);
 		i
 	    end
 
@@ -71,7 +71,7 @@ structure Environment :> ENVIRONMENT =
 	      | NONE =>
 		    let
 			val i = !globalIndex
-			val idRef = Pickle.Global i
+			val idRef = PickleGrammar.Global i
 		    in
 			globals := id::(!globals);
 			globalIndex := i + 1;

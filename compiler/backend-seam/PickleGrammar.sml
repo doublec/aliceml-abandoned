@@ -10,9 +10,9 @@
  *   $Revision$
  *)
 
-structure Pickle :> PICKLE =
+structure PickleGrammar :> PICKLE_GRAMMAR =
     struct
-	structure C = EmptyContext
+	type sign = FlatGrammar.sign
 
 	type id = int
 
@@ -31,15 +31,14 @@ structure Pickle :> PICKLE =
 	datatype value =
 	    Prim of string
 	  | Int of LargeInt.int
-	  | Word of LargeWord.word
-	  | Char of WideChar.char
-	  | String of WideString.string
-	  | Real of string
+	  | String of String.string
+	  | WideString of WideString.string
+	  | Real of Real.real
 	  | Constructor of Stamp.t
 	  | Tuple of value vector
 	  | Vector of value vector
 	  | Closure of value vector * function
-	  | Sign of Inf.sign
+	  | Sign of sign
 	and function = Function of int * int * idDef args * instr
 	and instr =
 	    Kill of id vector * instr
@@ -61,9 +60,11 @@ structure Pickle :> PICKLE =
 	  | Try of instr * idDef * instr
 	  | EndTry of instr
 	  | EndHandle of instr
-	  | IntTest of idRef * (int * instr) vector * instr
-	  | RealTest of idRef * (real * instr) vector * instr
-	  | StringTest of idRef * (string * instr) vector * instr
+	  | IntTest of idRef * (Int32.int * instr) vector * instr
+	  | RealTest of idRef * (Real.real * instr) vector * instr
+	  | StringTest of idRef * (String.string * instr) vector * instr
+	  | WideStringTest of idRef * (WideString.string * instr) vector
+				    * instr
 	  | TagTest of idRef * (int * instr) vector
 			     * (int * idDef vector * instr) vector * instr
 	  | ConTest of idRef * (con * instr) vector
