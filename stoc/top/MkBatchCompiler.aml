@@ -421,6 +421,8 @@ functor MakeBatchCompiler(structure Composer: COMPOSER
 
 	(*DEBUG*)
 	local
+(*	    val _ = Switches.Bootstrap.rttLevel := Switches.Bootstrap.FULL_RTT
+*)
 	    structure ParsingPhase =
 		  MakeTracingPhase(
 			structure Phase    = MakeParsingPhase(Switches)
