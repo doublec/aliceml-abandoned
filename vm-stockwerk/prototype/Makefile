@@ -21,6 +21,8 @@ SRCS = \
 	Linker.oz \
 	Main.oz
 
+LIB_SYSTEM_SRCS = UnsafeOS.oz
+
 %.o: %.cc
 	oztool c++ -c $< -o $@
 
@@ -30,7 +32,12 @@ SRCS = \
 %.ozf: %.oz
 	ozc -c $< -o $@
 
-all: FloatChunk.so-$(PLATFORM) $(SRCS:%.oz=%.ozf)
+all: \
+	FloatChunk.so-$(PLATFORM) \
+	$(SRCS:%.oz=%.ozf) \
+	$(LIB_SYSTEM_SRCS:%.oz=lib/system/%.ozf)
 
 clean:
+	-rm -f FloatChunk.o FloatChunk.so-$(PLATFORM)
 	-rm -f $(SRCS:%.oz=%.ozf)
+	-rm -f $(LIB_SYSTEM_SRCS:%.oz=lib/system/%.ozf)
