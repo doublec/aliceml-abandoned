@@ -1,0 +1,56 @@
+(* Feed this on Site A *)
+
+import "x-alice:/lib/distribution/REMOTE-sig"
+import "x-alice:/lib/distribution/Remote"
+
+open Remote
+
+fun f x = Ref.exchange (x, 17)
+
+fun test f =
+    let
+	val r = ref 45
+    in
+	TextIO.print (Int.toString (!r) ^ "\n");
+	TextIO.print (Int.toString (f r) ^ "\n");
+	TextIO.print (Int.toString (!r) ^ "\n")
+    end
+
+test f
+
+test (proxy f)
+
+fun g s = TextIO.print (s ^ "\n")
+
+signature S = (val f: int ref -> int val g: string -> unit)
+
+structure X =
+    struct
+	val f = proxy f
+	val g = proxy g
+    end
+
+structure Ticket = Offer(signature S = S structure X = X)
+
+TextIO.print (Ticket.ticket ^ "\n")
+
+(*--------------------------------------------------------------------*)
+(* Feed this on Site B *)
+
+import "x-alice:/lib/distribution/REMOTE-sig"
+import "x-alice:/lib/distribution/Remote"
+
+open Remote
+
+signature S = (val f: int ref -> int val g: string -> unit)
+
+structure Server =
+    Take(val ticket =
+	     "x-ozticket://134.96.186.119:9000:9ufsuy:DFw/s:w:x:m:AzJety"
+	 signature S = S)
+
+structure _ = Inspector.Inspect(signature S = S structure X = Server)
+
+test Server.f
+
+Server.g "hello, world"
