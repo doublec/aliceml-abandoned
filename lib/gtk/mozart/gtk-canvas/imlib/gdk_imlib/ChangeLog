@@ -1,0 +1,251 @@
+2000-05-20  Mark Crichton  <crichton@gimp.org>
+
+        * misc.c (gdk_imlib_init): uses GdkRGB visual instead of X's
+        default visual.  Behaves better on Solaris.
+        (gdk_imlib_init_params): ditto
+
+2000-04-14  Miguel de Icaza  <miguel@gnu.org>
+
+	* misc.c (gdk_imlib_init_params): Use the correct parsing method
+	to get the visual number from the specified file.
+	(gdk_imlib_init): ditto.  
+
+2000-02-24  Federico Mena Quintero  <federico@helixcode.com>
+
+	* colors.c (alloc_colors): New function to allocate a color array.
+	This is the meaty part from gdk_imlib_load_colors() moved over to
+	its own function.
+	(gdk_imlib_load_colors): Use alloc_colors().  Do not print a
+	message if we cannot open the file, since we are already returning
+	an error code.
+	(gdk_imlib_load_default_colors__private): New function to allocate
+	a hardcoded default palette.
+	(PaletteAlloc): Made static, renamed from _gdk_imlib_PaletteAlloc.
+
+	* gdk_imlib_private.h: Added prototype for
+	gdk_imlib_load_default_colors__private().
+
+	* misc.c (gdk_imlib_init): Load a default palette if the palette
+	file could not be loaded.  Bail out if no colors could be
+	allocated.  Maybe we could just use BlackPixel and WhitePixel.
+
+2000-02-22  Morten Welinder  <terra@diku.dk>
+
+	* utils.c (gdk_imlib_create_image_from_xpm_data): Leak fix.
+
+1999-10-16  Kjartan Maraas  <kmaraas@online.no>
+
+	* colors.c (PaletteLUTSet): Removed unused variables.
+
+1999-09-02  Raja R Harinath  <harinath@cs.umn.edu>
+
+	* rend.c (gdk_imlib_best_color_match): 
+	Fix typo - `g_return_val_if_fail', not `g_return_val_fail'.
+	(_gdk_imlib_index_best_color_match): Likewise.
+
+1999-09-02  Pavel Machek  <pavel@artax.karlin.mff.cuni.cz>
+
+	* rend.c, globals.c, misc.c: No need to allocate structure
+	dynamically - it is needed, always. 
+	Turned some fprintf(stderr) into g_return_val_if_fail as they 
+	seem much cleaner to me. 
+	
+Fri Apr 2 15:28:28 1999  Asbjorn Pettersen  <ape@spacetec.no>
+
+	* gdk_imlib_private.h: replace <sys/types.h>.
+ 	Needed for OS/2 version.
+
+1999-03-22  Pavel Machek  <pavel@artax.karlin.mff.cuni.cz>
+
+	* globals.c: robustness: you better keep gdk_imlib_data
+ 	initialized to NULL
+
+1999-02-11  Owen Taylor  <otaylor@redhat.com>
+
+	* misc.c: Don't overwrite existing locale settings, just 
+	 temporarily set LC_NUMERIC to "C", then restore it.
+
+1999-02-11  Tomas Ogren  <stric@ing.umu.se>
+
+	* utils.c: Since when did sizeof() be the same as strlen() on char*'s?
+	Also changed some malloc() + strcpy() -> strdup().
+
+1999-02-11  Tomas Ogren  <stric@ing.umu.se>
+
+	* Recommend 1.0.3 instead of 1.0.1 (if broken 1.0.2)
+
+1999-01-15  Miguel de Icaza  <miguel@nuclecu.unam.mx>
+
+	* modules.c: Make the gdk_imlib_load_alpha and
+	gdk_imlib_inlined_png_to_image routines be exported.
+
+1999-01-16  Jeff Garzik  <jgarzik@pobox.com>
+
+	* gdk_imlib_private.h:
+	Include gdkx.h for definition of gdk_window_foreign_new in misc.c.
+
+	* io-png.c (_loader_alpha_png):
+	Correct variable declarations to get rid of unused vars;
+
+	* modules.c (get_module_loader_saver):
+	Function now returns value.  FIXME: The value is never used,
+	should probably be converted to a void function.
+
+1998-12-15  Miguel de Icaza  <miguel@nuclecu.unam.mx>
+
+	* cache.c (gdk_imlib_set_cache_info, gdk_imlib_get_cache_info):
+	To control the cache externally.
+
+	* cache.c (gdk_imlib_flush_old_entries, gdk_imlib_flush_cache):
+	New empty routines.  An API we might use in the future.  Better
+	have it here before :-)
+
+1998-12-13  Miguel de Icaza  <miguel@nuclecu.unam.mx>
+
+	* gdk_imlib_private.h: Moved structure members that depended on
+	HAVE_SHM to the end of the strucutre, where they do not hurt us.
+
+	The problem is as follows: If HAVE_SHM is defined at Imlib compile
+	time, then the Xdata structure is expanded to have these two
+	fields.  Since we do not test for SHM in other places where we
+	access _gdk_imlib_data (which caused the Alpha crashes and the
+	duplicated icons due to the cache changes).
+
+1998-12-12  Miguel de Icaza  <miguel@nuclecu.unam.mx>
+
+	* load.c (_gdk_imlib_LoadBMP): This code got lost by accident.
+
+1998-12-07  Miguel de Icaza  <miguel@nuclecu.unam.mx>
+
+	* rend.c (gdk_imlib_render): Small typo correction.
+
+1998-12-06  Miguel de Icaza  <miguel@nuclecu.unam.mx>
+
+	* misc.c (gdk_imlib_init): Use sizeof (s) instead of 4096 while
+	reading from the files.  If someone ever changed these, we would
+	be in trouble.
+
+	* load.c (gdk_imlib_load_image): Use "file" instead of "fil" in
+	the call to _gdk_imlib_LoadTIFF (to make it work with wierd filenames).
+
+	* gdk_imlib_private.h: Clean up the name space.  All of the
+	internal routines that were previously exposed are now prefixed
+	with _gdk_imlib_ instead of a mix of g_ and g.
+
+	GdkImlibData data variable "id" is now called _gdk_imlib_data. 
+
+	* misc.c (HandleXError): This one is static.
+
+	* load.c (gdk_imlib_load_image): On GNOME we do not enable
+	spawning any external processes.  Specially with the setup
+	currently implemented.  Play it safe, we do not want to appear on
+	BUGTRAQ because of this feature. 
+
+	* utils.c (gdk_imlib_set_image_red_curve,
+	gdk_imlib_set_image_green_curve): Code changes to make it work
+	with the new im->map setup. Make it check its input arguments,
+	according to GTK+/GDK conventions.
+	(
+	(gdk_imlib_apply_modifiers_to_rgb): Adapt as well.
+
+	* cache.c (gnullify_image): Release im->map if it exists.
+
+	* rend.c (gdk_imlib_render): Instead of testing for the defaults
+	here, we need only to test againt im->map now (as the im->map will
+	have a non-NULL value if a map even exists).
+
+	* utils.c (gcalc_map_tables): Test here if the color modifiers are
+	the defaults, and if so mark do not compute the modifier table,
+	and free any existing modifier table if it exists.
+
+Wed Sep 23 11:21:49 1998  Owen Taylor  <otaylor@redhat.com>
+
+	* rend.c (gdk_imlib_pixmap_foreign_new): Create pixmap
+	with g_new0, instead of g_new, to increase the chances
+	that all fields are initialized properly.
+
+1998-06-28  Miguel de Icaza  <miguel@nuclecu.unam.mx>
+
+	* misc.c (gdk_imlib_init): Let the user use --no-xshm by checking
+	the setting on Gdk.
+
+1998-05-18  Miguel de Icaza  <miguel@nuclecu.unam.mx>
+
+	* misc.c (gdk_imlib_init): Initialize uninitialized variables.
+
+	* rend.c: Remove unused variables.
+	
+1998-05-07  Raja R Harinath  <harinath@cs.umn.edu>
+
+	* save.c (gdk_imlib_save_image): Replaces `snprintf' with
+	`g_snprintf' calls. 
+	* utils.c (gdk_imlib_create_image_from_data): Likewise.
+
+Tue May  5 15:11:59 1998  Radek Doulik  <gis@academy.cas.cz>
+
+	* replaced snprintf calls with g_snprintf ones, so it
+	compiles now on SunOS 
+
+Sat Apr 11 12:30:13 1998  George Lebl  <jirka@5z.com>
+
+	* utils.c: fixed yet one more SIGFPE on alpha
+
+Fri Mar 20 00:02:43 1998  Tom Tromey  <tromey@cygnus.com>
+
+	* gdk_imlib.h: Replaced `()' with `(void)'.
+
+Sun Mar 15 12:34:45 1998  Owen Taylor <owt1@cornell.edu>
+
+	* Makefile.am (INCLUDES): Added GTK_CFLAGS
+
+1998-02-25  Raja R Harinath  <harinath@cs.umn.edu>
+
+	* Makefile.am (DEFS): Define `SYSTEM_IMRC' too.
+
+1998-02-25  Federico Mena Quintero  <federico@nuclecu.unam.mx>
+
+	* misc.c (gdk_imlib_copy_image): The drawable passed to gdk_gc_new
+	should be the dest drawable, not the base imlib window.  This
+	caused BadMatches all over the place (especially in copy_mask).
+	(gdk_imlib_copy_mask): Likewise.
+
+1998-02-24  Raja R Harinath  <harinath@cs.umn.edu>
+
+	* Makefile.am (DEFS): New var.  Moved stuff from CFLAGS.
+	(INCLUDES): New var.
+
+1998-02-24  Mark Galassi  <rosalia@cygnus.com>
+
+	* Makefile.am (libgdk_imlib_la_SOURCES):
+	(lib_LTLIBRARIES): changed gdk_imlib to use the libtool+automake
+	formalisms.
+
+	* load.c (gdk_imlib_load_image): changed JPEG_PATH to DJPEG_PROG
+	and removed %s/djpeg, sine DJPEG_PROG is the full program path.
+
+1998-02-17  Federico Mena Quintero  <federico@nuclecu.unam.mx>
+
+	* Makefile.in (install): Make directory for config files.
+
+	* configure.in: Fixed ENL_LIB_SUPPORT function for non-existing libraries.
+
+1998-02-16  Federico Mena Quintero  <federico@nuclecu.unam.mx>
+
+	* misc.c (gdk_imlib_init): I create a colormap specific to the
+	visual the base_window will be using.  This fixes BadMatch errors
+	on machines with multiple visual/depth combinations.
+
+1998-02-17 The Rasterman <raster@redhat.com>
+
+        * misc.c (gdk_imlib_init) Fixed visual stuff slightly, and Colormap 
+	creation (so it only does so if the visual for the default and the 
+	chosen visual mismatch), added function calls to retrieve Imlib's 
+	visual and Colormap, plus endianess fixes for network displaying.
+
+1998-02-17 The Rasterman <raster@redhat.com>
+
+	added system imrc config return function
+
+1998-02-18 The Rasterman <raster@redhat.com>
+
+	Fixed load.c - missed a not (!) in an if clause

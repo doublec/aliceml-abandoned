@@ -1,0 +1,448 @@
+# Makefile.in generated automatically by automake 1.4 from Makefile.am
+
+# Copyright (C) 1994, 1995-8, 1999 Free Software Foundation, Inc.
+# This Makefile.in is free software; the Free Software Foundation
+# gives unlimited permission to copy and/or distribute it,
+# with or without modifications, as long as this notice is preserved.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY, to the extent permitted by law; without
+# even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+# PARTICULAR PURPOSE.
+
+
+SHELL = @SHELL@
+
+srcdir = @srcdir@
+top_srcdir = @top_srcdir@
+VPATH = @srcdir@
+prefix = @prefix@
+exec_prefix = @exec_prefix@
+
+bindir = @bindir@
+sbindir = @sbindir@
+libexecdir = @libexecdir@
+datadir = @datadir@
+sysconfdir = @sysconfdir@
+sharedstatedir = @sharedstatedir@
+localstatedir = @localstatedir@
+libdir = @libdir@
+infodir = @infodir@
+mandir = @mandir@
+includedir = @includedir@
+oldincludedir = /usr/include
+
+DESTDIR =
+
+pkgdatadir = $(datadir)/@PACKAGE@
+pkglibdir = $(libdir)/@PACKAGE@
+pkgincludedir = $(includedir)/@PACKAGE@
+
+top_builddir = ..
+
+ACLOCAL = @ACLOCAL@
+AUTOCONF = @AUTOCONF@
+AUTOMAKE = @AUTOMAKE@
+AUTOHEADER = @AUTOHEADER@
+
+INSTALL = @INSTALL@
+INSTALL_PROGRAM = @INSTALL_PROGRAM@ $(AM_INSTALL_PROGRAM_FLAGS)
+INSTALL_DATA = @INSTALL_DATA@
+INSTALL_SCRIPT = @INSTALL_SCRIPT@
+transform = @program_transform_name@
+
+NORMAL_INSTALL = :
+PRE_INSTALL = :
+POST_INSTALL = :
+NORMAL_UNINSTALL = :
+PRE_UNINSTALL = :
+POST_UNINSTALL = :
+host_alias = @host_alias@
+host_triplet = @host@
+AS = @AS@
+CC = @CC@
+CJPEG_PROG = @CJPEG_PROG@
+CONVERT_PATH = @CONVERT_PATH@
+CONVERT_PROG = @CONVERT_PROG@
+CPPFLAGS = @CPPFLAGS@
+DJPEG_PROG = @DJPEG_PROG@
+DLLTOOL = @DLLTOOL@
+GDK_IMLIB = @GDK_IMLIB@
+GDK_SUPPORT_LIBS = @GDK_SUPPORT_LIBS@
+GIFLIBS = @GIFLIBS@
+GIFTOPNM_PROG = @GIFTOPNM_PROG@
+GMODULE_FLAGS = @GMODULE_FLAGS@
+GMODULE_LIBS = @GMODULE_LIBS@
+GTK_CFLAGS = @GTK_CFLAGS@
+GTK_CONFIG = @GTK_CONFIG@
+GTK_LIBS = @GTK_LIBS@
+HAVE_LIBPNG = @HAVE_LIBPNG@
+JPEGLIBS = @JPEGLIBS@
+LD = @LD@
+LDFLAGS = @LDFLAGS@
+LIBTOOL = @LIBTOOL@
+LN_S = @LN_S@
+MAINT = @MAINT@
+MAKEINFO = @MAKEINFO@
+NETPBM_PATH = @NETPBM_PATH@
+NM = @NM@
+OBJDUMP = @OBJDUMP@
+PACKAGE = @PACKAGE@
+PNGLIBS = @PNGLIBS@
+RANLIB = @RANLIB@
+SUPPORT_LIBS = @SUPPORT_LIBS@
+TIFFLIBS = @TIFFLIBS@
+VERSION = @VERSION@
+X_CFLAGS = @X_CFLAGS@
+X_EXTRA_LIBS = @X_EXTRA_LIBS@
+X_LIBS = @X_LIBS@
+X_PRE_LIBS = @X_PRE_LIBS@
+
+common_ldflags = -avoid-version
+
+libimlib_gif_la_SOURCES = io-gif.c
+libimlib_gif_la_LDFLAGS = $(common_ldflags)
+libimlib_gif_la_LIBADD = $(GIFLIBS)
+
+libimlib_jpeg_la_SOURCES = io-jpeg.c
+libimlib_jpeg_la_LDFLAGS = $(common_ldflags)
+libimlib_jpeg_la_LIBADD = $(JPEGLIBS)
+
+libimlib_png_la_SOURCES = io-png.c
+libimlib_png_la_LDFLAGS = $(common_ldflags)
+libimlib_png_la_LIBADD = $(PNGLIBS)
+
+libimlib_tiff_la_SOURCES = io-tiff.c
+libimlib_tiff_la_LDFLAGS = $(common_ldflags)
+libimlib_tiff_la_LIBADD = $(TIFFLIBS)
+
+libimlib_ps_la_SOURCES = io-ps.c
+libimlib_ps_la_LDFLAGS = $(common_ldflags)
+libimlib_ps_la_LIBADD = 
+
+libimlib_bmp_la_SOURCES = io-bmp.c
+libimlib_bmp_la_LDFLAGS = $(common_ldflags)
+libimlib_bmp_la_LIBADD = 
+
+libimlib_xpm_la_SOURCES = io-xpm.c
+libimlib_xpm_la_LDFLAGS = $(common_ldflags)
+libimlib_xpm_la_LIBADD = 
+
+libimlib_ppm_la_SOURCES = io-ppm.c
+libimlib_ppm_la_LDFLAGS = $(common_ldflags)
+libimlib_ppm_la_LIBADD = 
+
+@DYNAMIC_MODULES_WORK_TRUE@@HAVE_GIF_TRUE@GIF = libimlib-gif.la
+
+@DYNAMIC_MODULES_WORK_TRUE@@HAVE_JPEG_TRUE@JPEG = libimlib-jpeg.la
+
+@DYNAMIC_MODULES_WORK_TRUE@@HAVE_PNG_TRUE@PNG = libimlib-png.la
+
+@DYNAMIC_MODULES_WORK_TRUE@@HAVE_TIFF_TRUE@TIFF = libimlib-tiff.la
+
+@DYNAMIC_MODULES_WORK_TRUE@OTHER = 	libimlib-bmp.la			libimlib-xpm.la			libimlib-ppm.la			libimlib-ps.la
+
+@DYNAMIC_MODULES_WORK_TRUE@DYNAMIC_LIBS = 	$(OTHER) $(GIF) $(JPEG) $(TIFF) $(PNG)
+@DYNAMIC_MODULES_WORK_FALSE@DYNAMIC_LIBS = 
+
+lib_LTLIBRARIES =  	libgdk_imlib.la			$(DYNAMIC_LIBS)
+
+
+libgdk_imlib_la_SOURCES =  	cache.c      			colors.c     			globals.c    			load.c       			misc.c       			rend.c       			utils.c      			save.c				modules.c
+
+
+libgdk_imlib_la_LDFLAGS = -version-info 10:8:9
+libgdk_imlib_la_LIBADD = $(GMODULE_LIBS)
+
+include_HEADERS = gdk_imlib.h gdk_imlib_private.h gdk_imlib_types.h
+
+DEFS = -DDJPEG_PROG=\"@DJPEG_PROG@\"  -DCJPEG_PROG=\"@CJPEG_PROG@\" 	-DCONVERT_PATH=\"@CONVERT_PATH@\" 	-DNETPBM_PATH=\"@NETPBM_PATH@\" -DSYSTEM_IMRC=\"@sysconfdir@/imrc\" 	-DIMLIB_LIB=\""$(libdir)"\"
+
+
+INCLUDES = -I. -I$(srcdir) -I.. -I$(srcdir)/.. 	$(GTK_CFLAGS) $(X_CFLAGS) $(GMODULE_FLAGS) 
+
+mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
+CONFIG_HEADER = ../config.h
+CONFIG_CLEAN_FILES = 
+LTLIBRARIES =  $(lib_LTLIBRARIES)
+
+LIBS = @LIBS@
+libgdk_imlib_la_DEPENDENCIES = 
+libgdk_imlib_la_OBJECTS =  cache.lo colors.lo globals.lo load.lo misc.lo \
+rend.lo utils.lo save.lo modules.lo
+libimlib_bmp_la_DEPENDENCIES = 
+libimlib_bmp_la_OBJECTS =  io-bmp.lo
+libimlib_xpm_la_DEPENDENCIES = 
+libimlib_xpm_la_OBJECTS =  io-xpm.lo
+libimlib_ppm_la_DEPENDENCIES = 
+libimlib_ppm_la_OBJECTS =  io-ppm.lo
+libimlib_ps_la_DEPENDENCIES = 
+libimlib_ps_la_OBJECTS =  io-ps.lo
+libimlib_gif_la_DEPENDENCIES = 
+libimlib_gif_la_OBJECTS =  io-gif.lo
+libimlib_jpeg_la_DEPENDENCIES = 
+libimlib_jpeg_la_OBJECTS =  io-jpeg.lo
+libimlib_tiff_la_DEPENDENCIES = 
+libimlib_tiff_la_OBJECTS =  io-tiff.lo
+libimlib_png_la_DEPENDENCIES = 
+libimlib_png_la_OBJECTS =  io-png.lo
+CFLAGS = @CFLAGS@
+COMPILE = $(CC) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
+LTCOMPILE = $(LIBTOOL) --mode=compile $(CC) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
+CCLD = $(CC)
+LINK = $(LIBTOOL) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(LDFLAGS) -o $@
+HEADERS =  $(include_HEADERS)
+
+DIST_COMMON =  ChangeLog Makefile.am Makefile.in install-sh \
+mkinstalldirs
+
+
+DISTFILES = $(DIST_COMMON) $(SOURCES) $(HEADERS) $(TEXINFOS) $(EXTRA_DIST)
+
+TAR = tar
+GZIP_ENV = --best
+SOURCES = $(libgdk_imlib_la_SOURCES) $(libimlib_bmp_la_SOURCES) $(libimlib_xpm_la_SOURCES) $(libimlib_ppm_la_SOURCES) $(libimlib_ps_la_SOURCES) $(libimlib_gif_la_SOURCES) $(libimlib_jpeg_la_SOURCES) $(libimlib_tiff_la_SOURCES) $(libimlib_png_la_SOURCES)
+OBJECTS = $(libgdk_imlib_la_OBJECTS) $(libimlib_bmp_la_OBJECTS) $(libimlib_xpm_la_OBJECTS) $(libimlib_ppm_la_OBJECTS) $(libimlib_ps_la_OBJECTS) $(libimlib_gif_la_OBJECTS) $(libimlib_jpeg_la_OBJECTS) $(libimlib_tiff_la_OBJECTS) $(libimlib_png_la_OBJECTS)
+
+all: all-redirect
+.SUFFIXES:
+.SUFFIXES: .S .c .lo .o .s
+$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ Makefile.am $(top_srcdir)/configure.in $(ACLOCAL_M4) 
+	cd $(top_srcdir) && $(AUTOMAKE) --gnu --include-deps gdk_imlib/Makefile
+
+Makefile: $(srcdir)/Makefile.in  $(top_builddir)/config.status
+	cd $(top_builddir) \
+	  && CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= $(SHELL) ./config.status
+
+
+mostlyclean-libLTLIBRARIES:
+
+clean-libLTLIBRARIES:
+	-test -z "$(lib_LTLIBRARIES)" || rm -f $(lib_LTLIBRARIES)
+
+distclean-libLTLIBRARIES:
+
+maintainer-clean-libLTLIBRARIES:
+
+install-libLTLIBRARIES: $(lib_LTLIBRARIES)
+	@$(NORMAL_INSTALL)
+	$(mkinstalldirs) $(DESTDIR)$(libdir)
+	@list='$(lib_LTLIBRARIES)'; for p in $$list; do \
+	  if test -f $$p; then \
+	    echo "$(LIBTOOL)  --mode=install $(INSTALL) $$p $(DESTDIR)$(libdir)/$$p"; \
+	    $(LIBTOOL)  --mode=install $(INSTALL) $$p $(DESTDIR)$(libdir)/$$p; \
+	  else :; fi; \
+	done
+
+uninstall-libLTLIBRARIES:
+	@$(NORMAL_UNINSTALL)
+	list='$(lib_LTLIBRARIES)'; for p in $$list; do \
+	  $(LIBTOOL)  --mode=uninstall rm -f $(DESTDIR)$(libdir)/$$p; \
+	done
+
+.c.o:
+	$(COMPILE) -c $<
+
+.s.o:
+	$(COMPILE) -c $<
+
+.S.o:
+	$(COMPILE) -c $<
+
+mostlyclean-compile:
+	-rm -f *.o core *.core
+
+clean-compile:
+
+distclean-compile:
+	-rm -f *.tab.c
+
+maintainer-clean-compile:
+
+.c.lo:
+	$(LIBTOOL) --mode=compile $(COMPILE) -c $<
+
+.s.lo:
+	$(LIBTOOL) --mode=compile $(COMPILE) -c $<
+
+.S.lo:
+	$(LIBTOOL) --mode=compile $(COMPILE) -c $<
+
+mostlyclean-libtool:
+	-rm -f *.lo
+
+clean-libtool:
+	-rm -rf .libs _libs
+
+distclean-libtool:
+
+maintainer-clean-libtool:
+
+libgdk_imlib.la: $(libgdk_imlib_la_OBJECTS) $(libgdk_imlib_la_DEPENDENCIES)
+	$(LINK) -rpath $(libdir) $(libgdk_imlib_la_LDFLAGS) $(libgdk_imlib_la_OBJECTS) $(libgdk_imlib_la_LIBADD) $(LIBS)
+
+libimlib-bmp.la: $(libimlib_bmp_la_OBJECTS) $(libimlib_bmp_la_DEPENDENCIES)
+	$(LINK) -rpath $(libdir) $(libimlib_bmp_la_LDFLAGS) $(libimlib_bmp_la_OBJECTS) $(libimlib_bmp_la_LIBADD) $(LIBS)
+
+libimlib-xpm.la: $(libimlib_xpm_la_OBJECTS) $(libimlib_xpm_la_DEPENDENCIES)
+	$(LINK) -rpath $(libdir) $(libimlib_xpm_la_LDFLAGS) $(libimlib_xpm_la_OBJECTS) $(libimlib_xpm_la_LIBADD) $(LIBS)
+
+libimlib-ppm.la: $(libimlib_ppm_la_OBJECTS) $(libimlib_ppm_la_DEPENDENCIES)
+	$(LINK) -rpath $(libdir) $(libimlib_ppm_la_LDFLAGS) $(libimlib_ppm_la_OBJECTS) $(libimlib_ppm_la_LIBADD) $(LIBS)
+
+libimlib-ps.la: $(libimlib_ps_la_OBJECTS) $(libimlib_ps_la_DEPENDENCIES)
+	$(LINK) -rpath $(libdir) $(libimlib_ps_la_LDFLAGS) $(libimlib_ps_la_OBJECTS) $(libimlib_ps_la_LIBADD) $(LIBS)
+
+libimlib-gif.la: $(libimlib_gif_la_OBJECTS) $(libimlib_gif_la_DEPENDENCIES)
+	$(LINK) -rpath $(libdir) $(libimlib_gif_la_LDFLAGS) $(libimlib_gif_la_OBJECTS) $(libimlib_gif_la_LIBADD) $(LIBS)
+
+libimlib-jpeg.la: $(libimlib_jpeg_la_OBJECTS) $(libimlib_jpeg_la_DEPENDENCIES)
+	$(LINK) -rpath $(libdir) $(libimlib_jpeg_la_LDFLAGS) $(libimlib_jpeg_la_OBJECTS) $(libimlib_jpeg_la_LIBADD) $(LIBS)
+
+libimlib-tiff.la: $(libimlib_tiff_la_OBJECTS) $(libimlib_tiff_la_DEPENDENCIES)
+	$(LINK) -rpath $(libdir) $(libimlib_tiff_la_LDFLAGS) $(libimlib_tiff_la_OBJECTS) $(libimlib_tiff_la_LIBADD) $(LIBS)
+
+libimlib-png.la: $(libimlib_png_la_OBJECTS) $(libimlib_png_la_DEPENDENCIES)
+	$(LINK) -rpath $(libdir) $(libimlib_png_la_LDFLAGS) $(libimlib_png_la_OBJECTS) $(libimlib_png_la_LIBADD) $(LIBS)
+
+install-includeHEADERS: $(include_HEADERS)
+	@$(NORMAL_INSTALL)
+	$(mkinstalldirs) $(DESTDIR)$(includedir)
+	@list='$(include_HEADERS)'; for p in $$list; do \
+	  if test -f "$$p"; then d= ; else d="$(srcdir)/"; fi; \
+	  echo " $(INSTALL_DATA) $$d$$p $(DESTDIR)$(includedir)/$$p"; \
+	  $(INSTALL_DATA) $$d$$p $(DESTDIR)$(includedir)/$$p; \
+	done
+
+uninstall-includeHEADERS:
+	@$(NORMAL_UNINSTALL)
+	list='$(include_HEADERS)'; for p in $$list; do \
+	  rm -f $(DESTDIR)$(includedir)/$$p; \
+	done
+
+tags: TAGS
+
+ID: $(HEADERS) $(SOURCES) $(LISP)
+	list='$(SOURCES) $(HEADERS)'; \
+	unique=`for i in $$list; do echo $$i; done | \
+	  awk '    { files[$$0] = 1; } \
+	       END { for (i in files) print i; }'`; \
+	here=`pwd` && cd $(srcdir) \
+	  && mkid -f$$here/ID $$unique $(LISP)
+
+TAGS:  $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) $(LISP)
+	tags=; \
+	here=`pwd`; \
+	list='$(SOURCES) $(HEADERS)'; \
+	unique=`for i in $$list; do echo $$i; done | \
+	  awk '    { files[$$0] = 1; } \
+	       END { for (i in files) print i; }'`; \
+	test -z "$(ETAGS_ARGS)$$unique$(LISP)$$tags" \
+	  || (cd $(srcdir) && etags $(ETAGS_ARGS) $$tags  $$unique $(LISP) -o $$here/TAGS)
+
+mostlyclean-tags:
+
+clean-tags:
+
+distclean-tags:
+	-rm -f TAGS ID
+
+maintainer-clean-tags:
+
+distdir = $(top_builddir)/$(PACKAGE)-$(VERSION)/$(subdir)
+
+subdir = gdk_imlib
+
+distdir: $(DISTFILES)
+	@for file in $(DISTFILES); do \
+	  d=$(srcdir); \
+	  if test -d $$d/$$file; then \
+	    cp -pr $$d/$$file $(distdir)/$$file; \
+	  else \
+	    test -f $(distdir)/$$file \
+	    || ln $$d/$$file $(distdir)/$$file 2> /dev/null \
+	    || cp -p $$d/$$file $(distdir)/$$file || :; \
+	  fi; \
+	done
+
+info-am:
+info: info-am
+dvi-am:
+dvi: dvi-am
+check-am: all-am
+check: check-am
+installcheck-am:
+installcheck: installcheck-am
+install-exec-am: install-libLTLIBRARIES
+install-exec: install-exec-am
+
+install-data-am: install-includeHEADERS
+install-data: install-data-am
+
+install-am: all-am
+	@$(MAKE) $(AM_MAKEFLAGS) install-exec-am install-data-am
+install: install-am
+uninstall-am: uninstall-libLTLIBRARIES uninstall-includeHEADERS
+uninstall: uninstall-am
+all-am: Makefile $(LTLIBRARIES) $(HEADERS)
+all-redirect: all-am
+install-strip:
+	$(MAKE) $(AM_MAKEFLAGS) AM_INSTALL_PROGRAM_FLAGS=-s install
+installdirs:
+	$(mkinstalldirs)  $(DESTDIR)$(libdir) $(DESTDIR)$(includedir)
+
+
+mostlyclean-generic:
+
+clean-generic:
+
+distclean-generic:
+	-rm -f Makefile $(CONFIG_CLEAN_FILES)
+	-rm -f config.cache config.log stamp-h stamp-h[0-9]*
+
+maintainer-clean-generic:
+mostlyclean-am:  mostlyclean-libLTLIBRARIES mostlyclean-compile \
+		mostlyclean-libtool mostlyclean-tags \
+		mostlyclean-generic
+
+mostlyclean: mostlyclean-am
+
+clean-am:  clean-libLTLIBRARIES clean-compile clean-libtool clean-tags \
+		clean-generic mostlyclean-am
+
+clean: clean-am
+
+distclean-am:  distclean-libLTLIBRARIES distclean-compile \
+		distclean-libtool distclean-tags distclean-generic \
+		clean-am
+	-rm -f libtool
+
+distclean: distclean-am
+
+maintainer-clean-am:  maintainer-clean-libLTLIBRARIES \
+		maintainer-clean-compile maintainer-clean-libtool \
+		maintainer-clean-tags maintainer-clean-generic \
+		distclean-am
+	@echo "This command is intended for maintainers to use;"
+	@echo "it deletes files that may require special tools to rebuild."
+
+maintainer-clean: maintainer-clean-am
+
+.PHONY: mostlyclean-libLTLIBRARIES distclean-libLTLIBRARIES \
+clean-libLTLIBRARIES maintainer-clean-libLTLIBRARIES \
+uninstall-libLTLIBRARIES install-libLTLIBRARIES mostlyclean-compile \
+distclean-compile clean-compile maintainer-clean-compile \
+mostlyclean-libtool distclean-libtool clean-libtool \
+maintainer-clean-libtool uninstall-includeHEADERS \
+install-includeHEADERS tags mostlyclean-tags distclean-tags clean-tags \
+maintainer-clean-tags distdir info-am info dvi-am dvi check check-am \
+installcheck-am installcheck install-exec-am install-exec \
+install-data-am install-data install-am install uninstall-am uninstall \
+all-redirect all-am all installdirs mostlyclean-generic \
+distclean-generic clean-generic maintainer-clean-generic clean \
+mostlyclean distclean maintainer-clean
+
+
+# Tell versions [3.59,3.63) of GNU make to not export all variables.
+# Otherwise a system limit (for SysV at least) may be exceeded.
+.NOEXPORT:

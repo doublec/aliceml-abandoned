@@ -1,0 +1,130 @@
+1999-12-05  John Harper  <john@dcs.warwick.ac.uk>
+	* rend.c (Imlib_render): stop GC caching leaking memory
+
+1999-10-16  Kjartan Maraas  <kmaraas@online.no>
+
+	* cache.c: (clean_caches): Remove unused variable.
+	* colors.c: (PaletteLUTSet): Removed unused variables.
+	* utils.c: (Imlib_bevel_image): Removed unused variables.
+		
+Tue Jun 15 13:08:28 1999  Owen Taylor  <otaylor@redhat.com>
+
+	* misc.c (Imlib_copy_mask): create gc's without
+	GraphicsExpose events, as elsewhere in imlib.
+
+1999-02-11  Owen Taylor  <otaylor@redhat.com>
+
+	* misc.c: Don't overwrite existing locale settings, just 
+	 temporarily set LC_NUMERIC to "C", then restore it.
+
+1999-02-11  Tomas Ogren  <stric@ing.umu.se>
+
+	* utils.c: Since when did sizeof() be the same as strlen() on char*'s?
+	Also changed some malloc() + strcpy() -> strdup().
+
+1999-02-11  Tomas Ogren  <stric@ing.umu.se>
+
+	* Recommend 1.0.3 instead of 1.0.1 (if broken 1.0.2)
+
+Sat Apr 11 12:30:47 1998  George Lebl  <jirka@5z.com>
+
+	* utils.c: fixed yet one more SIGFPE on alpha
+
+Fri Feb 27 09:41:57 1998  Tom Tromey  <tromey@cygnus.com>
+
+	* load.c (Imlib_load_image): Typo fix from Robert Wilhelm.
+
+1998-02-25  Raja R Harinath  <harinath@cs.umn.edu>
+
+	* Makefile.am (DEFS): Define `SYSTEM_IMRC' too.
+
+1998-02-25  Federico Mena Quintero  <federico@nuclecu.unam.mx>
+
+	* misc.c (Imlib_copy_image): The drawable passed to XCreateGC
+	should be the dest drawable, not image pixmap.  This caused
+	BadMatches all over the place (especially in copy_mask).
+	(Imlib_copy_mask): Likewise.
+
+1998-02-24  Raja R Harinath  <harinath@cs.umn.edu>
+
+	* Makefile.am (DEFS): New var.  Moved stuff from CFLAGS.
+	(INCLUDES): New var.
+
+1998-02-24  Mark Galassi  <rosalia@cygnus.com>
+
+	* Makefile.am: converted the Makefile.in to a Makefile.am.
+	(lib_LTLIBRARIES): 
+	(libImlib_la_SOURCES): also converted it to use libtool and
+	generate shared libraries.
+
+	* load.c (Imlib_load_image): changed JPEG_PATH to DJPEG_PROG and
+	removed %s/djpeg, sine DJPEG_PROG is the full program path.
+
+1998-02-16  Federico Mena Quintero  <federico@nuclecu.unam.mx>
+
+	* misc.c (Imlib_init):  I create a colormap specific to the visual
+	the base_window will be using.  This fixes BadMatch errors on
+	machines with multiple visual/depth combinations.
+
+
+1998-02-17 The Rasterman <raster@redhat.com>
+
+        * misc.c (Imlib_init) Fixed visual stuff slightly, and Colormap 
+	creation (so it only does so if the visual for the default and the 
+	chosen visual mismatch), added function calls to retrieve Imlib's 
+	visual and Colormap, plus endianess fixes for network displaying.
+
+1998-02-17 The Rasterman <raster@redhat.com>
+
+	added system imrc config retunr function
+
+1998-02-18 The Rasterman <raster@redhat.com>
+
+        Fixed load.c - missed a not (!) in an if clause
+	
+1998-03-17 Mandrake <mandrake@mandrake.net>
+	* misc.c - boy I hate reading "Imlib Init" all the time. the fprintf
+	to stderr is commented out.
+
+1999-03-22  Pavel Machek  <pavel@artax.karlin.mff.cuni.cz>
+
+	* utils.c (Imlib_create_image_from_xpm_data): robustness: fail if
+ 	id->x.disp is not initialized
+
+1999-03-23  Michael Jennings <mej@eterm.org>
+
+	* utils.c (Imlib_create_image_from_xpm_data): Please keep the gdk
+	macros in the gdk version.  g_return_val_if_fail() is not valid
+	in Imlib.
+
+1999-05-11  Michael Jennings <mej@eterm.org>
+
+	Added support for specifying a colormap with the ImlibInitParams.
+
+1999-06-16  Michael Jennings <mej@eterm.org>
+
+	Speedups.  Don't recalculate map tables or dirty pixmaps if nothing
+	has changed.
+
+1999-06-17  Michael Jennings <mej@eterm.org>
+
+	New function:
+	Imlib_bevel_image(ImlibData *, ImlibImage *, ImlibBorder *, unsigned char)
+
+	Draws a bevel onto an image before rendering.  Widths of the bevel edges
+	are taken from the ImlibBorder parameter.  The final parameter is numerical,
+	true to bevel up, false to bevel down.
+
+1999-06-18  Michael Jennings <mej@eterm.org>
+
+	Another new function, related to yesterday's:
+	Imlib_bevel_pixmap(ImlibData *, Pixmap, int, int, ImlibBorder *, unsigned char)
+
+	Draws a bevel onto a pixmap after rendering.  Widths of the bevel edges are
+	taken from the ImlibBorder parameter.  The final parameter is numerical,
+	true to bevel up, false to bevel down.  The two int parameters are the width
+	and height, respectively, of the pixmap (in pixels, of course).
+
+	I haven't tested this in anything but 8 bpp, so I'm hoping someone will tell me
+	if it's broken.
+
