@@ -21,6 +21,7 @@
 #include "generic/ConcreteCode.hh"
 
 #include "java/Data.hh"
+#include "java/StackFrame.hh"
 #include "java/ByteCodeInterpreter.hh"
 
 //
@@ -370,7 +371,7 @@ Worker::Result ByteCodeInterpreter::Run() {
     case Instr::SALOAD:
       {
 	u_int index = Store::DirectWordToInt(frame->Pop());
-	JavaArray *arr  = JavaArray::FromWord(frame->Pop());
+	ObjectArray *arr  = ObjectArray::FromWord(frame->Pop());
 	if (arr != INVALID_POINTER) {
 	  if (index < arr->GetLength()) {
 	    frame->Push(arr->Get(index));
@@ -393,7 +394,7 @@ Worker::Result ByteCodeInterpreter::Run() {
       {
 	word value  = frame->Pop();
 	u_int index = Store::DirectWordToInt(frame->Pop());
-	JavaArray *arr  = JavaArray::FromWordDirect(frame->Pop());
+	ObjectArray *arr  = ObjectArray::FromWordDirect(frame->Pop());
 	if (index < arr->GetLength()) {
 	  arr->Assign(index, value);
 	}
@@ -458,8 +459,8 @@ Worker::Result ByteCodeInterpreter::Run() {
 	// to be done: what is with the index bytes?
 	int count = Store::DirectWordToInt(frame->Pop());
 	if (count >= 0) {
-	  word type = Store::IntToWord(0); // to be done
-	  JavaArray *arr = JavaArray::New(type, count);
+	  ObjectArrayType *type = INVALID_POINTER; // to be done
+	  ObjectArray *arr = ObjectArray::New(type, count);
 	  for (u_int i = count; i--;)
 	    arr->Init(i, Store::IntToWord(0));
 	  frame->Push(arr->ToWord());
@@ -484,7 +485,7 @@ Worker::Result ByteCodeInterpreter::Run() {
       break;
     case Instr::ARRAYLENGTH:
       {
-	JavaArray *arr = JavaArray::FromWord(frame->Pop());
+	ObjectArray *arr = ObjectArray::FromWord(frame->Pop());
 	if (arr != INVALID_POINTER) {
 	  frame->Push(Store::IntToWord(arr->GetLength()));
 	}
@@ -1415,8 +1416,8 @@ Worker::Result ByteCodeInterpreter::Run() {
 	  if (curDim != 0)
 	    length *= curDim;
 	}
-	word type = Store::IntToWord(0); // to be done
-	JavaArray *arr = JavaArray::New(type, length);
+	ObjectArrayType *type = INVALID_POINTER; // to be done
+	ObjectArray *arr = ObjectArray::New(type, length);
 	frame->Push(arr->ToWord());
       }
       break;
@@ -1432,8 +1433,8 @@ Worker::Result ByteCodeInterpreter::Run() {
       {
 	pc++; // Ignore ATYPE indicator
 	int count = Store::DirectWordToInt(frame->Pop());
-	word type = Store::IntToWord(0); // to be done
-	JavaArray *arr = JavaArray::New(type, count);
+	ObjectArrayType *type = INVALID_POINTER; // to be done
+	ObjectArray *arr = ObjectArray::New(type, count);
 	frame->Push(arr->ToWord());
       }
       break;
