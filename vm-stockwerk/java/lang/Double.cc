@@ -10,7 +10,6 @@
 //   $Revision$
 //
 
-#include "generic/Debug.hh"
 #include "java/Authoring.hh"
 
 DEFINE2(doubleToLongBits) {
