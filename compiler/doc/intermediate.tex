@@ -37,7 +37,6 @@
 
 \title{The Stockhausen Intermediate Language}
 \author{Andreas Rossberg \\
-Programming System Lab \\
 Universit\"at des Saarlandes \\
 \url{rossberg@ps.uni-sb.de}}
 \date{\today}
@@ -54,11 +53,9 @@ The syntax given here should be read as an abstract syntax. The meaning of most 
 
 A long identifier expression $\longid.\lab$ is equivalent to the expression $(\f{lazy}\; \#\lab(\longid))$, ie. it represents lazy selection. The reason for having long identifiers separate is that they can appear in patterns.
 
-The expression $(\f{new})$ generates a new constructor name for an open datatype. The long identifier in expressions of the form $@\longid(\exp)$ or patterns $@\longid(\pat)$ must denote such a generative constructor. On the other hand, $`\lab(\exp)$ and $`\lab(\pat)$ denote constructed values of closed (structural) datatypes.
+The expression $(\f{new})$ generates a new constructor name for an open datatype. The long identifier in expressions of the form $@\longid(\exp)$ or patterns $@\longid(\pat)$ must denote such a generative constructor. On the other hand, $`\lab(\exp)$ and $`\lab(\pat)$ denote constructed values of closed (structural) datatypes. Strict expressions force evaluation of the argument. The dual strict pattern establishes the invariant that the value matched has been evaluated strictly and can thus not be a future. These constructs are particularly used to encode strictness of tags and constructor such that the backend can unbox them.
 
-The expression $(\f{prim}\;s)$ is needed for binding primitive (builtin) values, which are named by a string.
-
-The $(\f{fail})$ expression marks an unused value. Forcing it always is an error. It is used to represent the unused argument of nullary constructors (which the backend can optimize away) and during bootstrapping as a placeholder for runtime types.
+The expression $(\f{prim}\;s)$ is needed for binding primitive (builtin) values, which are named by a string. The $(\f{fail})$ expression marks an unused value. Forcing it always is an error. It is used during bootstrapping as a placeholder for runtime types.
 
 The \f{abs} and \f{unabs} expressions are needed for typing purposes only and are described in section \ref{typing}.
 
@@ -96,7 +93,8 @@ $\exp$	&$:=$&	$\lit$				& literal expression \\
 	&&	$\#\lab(\exp)$			& product projection \\
 	&&	$`\lab(\exp)$			& sum injection \\
 	&&	$@\longid(\exp)$		& construction \\
-	&&	$\f{ref}(\exp)$			& reference \\
+	&&	$\f{ref}\;\exp$			& reference \\
+	&&	$\f{strict}\;\exp$		& strict evaluation \\
 	&&	$[\exps]$			& vector \\
 	&&	$(\exps)$			& tuple \\
 	&&	$\{\flds^\exp\}$		& labelled product \\
@@ -132,7 +130,8 @@ $\pat$	&$:=$&	$\lit$				& literal pattern \\
 	&&	$\id$				& variable \\
 	&&	$`\lab(\pat)$			& sum injection \\
 	&&	$@\longid(\pat)$		& construction \\
-	&&	$\f{ref}(\pat)$			& reference \\
+	&&	$\f{ref}\;\pat$			& reference \\
+	&&	$\f{strict}\;\pat$		& non-future pattern \\
 	&&	$[\pats]$			& vector \\
 	&&	$(\pats)$			& tuple \\
 	&&	$\{\flds^\pat,\_\}$		& labelled product \\
@@ -430,7 +429,17 @@ E \vdash \exp \Rightarrow t'
 \qquad
 t = \c{ref}(t')
 }{
-E \vdash \f{ref}(\exp) : t \Rightarrow t
+E \vdash \f{ref}\;\exp : t \Rightarrow t
+}
+\end{equation}
+
+\begin{equation}
+\frac{
+E \vdash \exp \Rightarrow t'
+\qquad
+t = \c{strict}(t')
+}{
+E \vdash \f{strict}\;\exp : t \Rightarrow t
 }
 \end{equation}
 
@@ -765,7 +774,17 @@ E \vdash \pat \Rightarrow t',E'
 \qquad
 t = \c{ref}(t')
 }{
-E \vdash \f{ref}(\pat) : t \Rightarrow t,E'
+E \vdash \f{ref}\;\pat : t \Rightarrow t,E'
+}
+\end{equation}
+
+\begin{equation}
+\frac{
+E \vdash \pat \Rightarrow t',E'
+\qquad
+t = \c{strict}(t')
+}{
+E \vdash \f{strict}\;\pat : t \Rightarrow t,E'
 }
 \end{equation}
 

@@ -130,20 +130,19 @@ struct
       | ppExp(PrimExp(i, s))		= exptree "Prim" i (
 					    ppString s
 					  )
-      | ppExp(NewExp(i, b))		= exptree "New" i (
-					    ppBool b
-					  )
-      | ppExp(TagExp(i, lab, exp, b))	= exptree "Tag" i (
-					    ppBool b ^/^
+      | ppExp(NewExp(i))		= exptree "New" i empty
+      | ppExp(TagExp(i, lab, exp))	= exptree "Tag" i (
 					    ppLab lab ^/^
 					    ppExp exp
 					  )
-      | ppExp(ConExp(i, longid, exp,b))	= exptree "Con" i (
-					    ppBool b ^/^
+      | ppExp(ConExp(i, longid, exp))	= exptree "Con" i (
 					    ppLongid longid ^/^
 					    ppExp exp
 					  )
       | ppExp(RefExp(i, exp))		= exptree "Ref" i (
+					    ppExp exp
+					  )
+      | ppExp(StrictExp(i, exp))	= exptree "Strict" i (
 					    ppExp exp
 					  )
       | ppExp(TupExp(i, exps))		= exptree "Tup" i (
@@ -230,17 +229,18 @@ struct
       | ppPat(VarPat(i, id))		= pattree "Var" i (
 					    ppId id
 					  )
-      | ppPat(TagPat(i, lab, pat, b))	= pattree "Tag" i (
-					    ppBool b ^/^
+      | ppPat(TagPat(i, lab, pat))	= pattree "Tag" i (
 					    ppLab lab ^/^
 					    ppPat pat
 					  )
-      | ppPat(ConPat(i, longid, pat,b))	= pattree "Con" i (
-					    ppBool b ^/^
+      | ppPat(ConPat(i, longid, pat))	= pattree "Con" i (
 					    ppLongid longid ^/^
 					    ppPat pat
 					  )
       | ppPat(RefPat(i, pat))		= pattree "Ref" i (
+					    ppPat pat
+					  )
+      | ppPat(StrictPat(i, pat))	= pattree "Strict" i (
 					    ppPat pat
 					  )
       | ppPat(TupPat(i, pats))		= pattree "Tup" i (

@@ -275,21 +275,20 @@ struct
 		t
 	   end
 
-	(* t = conarrow (t1->t2) t3    t2 is open
-	 * --------------------------------------
-	 *           E |- new : t => t
+	(* t = conarrow (t1->t2)    t2 is open
+	 * -----------------------------------
+	 *         E |- new : t => t
 	 *)
-	 | NewExp(i, isNary) =>
+	 | NewExp(i) =>
 	   let
 		val  t       = #typ i
-		val (t',t3)  = checked Type.asApply(Type.instance t)
-			      (i, "NewExp type 1", #[TYPE t])
-		val (t4,t'') = checked Type.asApply t'
-			      (i, "NewExp type 2", #[TYPE t])
-		val (t1,t2)  = checked Type.asArrow t''
+		val (t',t3)  = checked Type.asApply t
+			      (i, "NewExp application type", #[TYPE t])
+		val (t1,t2)  = checked Type.asArrow t3
 			      (i, "NewExp type", #[TYPE t])
-		(*UNFINISHED: check isNary *)
 	   in
+		check (Type.equals(t', PervasiveType.typ_conarrow))
+		      (i, "NewExp conarrow", #[TYPE t']);
 		check (isOpenType t2)
 		      (i, "NewExp type sort", #[TYPE t2]);
 		t
@@ -311,50 +310,46 @@ struct
 
 	(* E |- lab => a    E |- exp => t'    t = {a:t',r}
 	 * -----------------------------------------------
-	 *            E |- `lab(exp) : t => t
+	 *           E |- `lab(exp) : t => t
 	 *)
-	 | TagExp(i, lab, exp, isNary) =>
+	 | TagExp(i, lab, exp) =>
 	   let
-		val t  = #typ i
-		val a  = chLab E lab
-		val t' = chExp E exp
-		val r  = checked Type.asSum' t
-			 (i, "TagExp type", #[TYPE t])
-		val t1 = checked Type.lookupRow(r,a)
-			 (i, "TagExp label", #[LAB a, TYPE t])
-		(*UNFINISHED: check isNary *)
+		val t   = #typ i
+		val a   = chLab E lab
+		val t'  = chExp E exp
+		val r   = checked Type.asSum' t
+			  (i, "TagExp type", #[TYPE t])
+		val t1  = checked Type.lookupRow(r,a)
+			  (i, "TagExp label", #[LAB a, TYPE t])
 	   in
 		check (Type.equals(t1,t'))
 		      (i, "TagExp argument type", #[TYPE_PAIR(t1,t')]);
 		t
 	   end
 
-	(*   E |- longid => t1    E |- exp => t2
-	 * t1 > conarrow (t2->t) t3    t is open
-	 * -------------------------------------
-	 *       E |- longid(exp) : t => t
+	(* E |- longid => t1    E |- exp => t2
+	 * t1 > conarrow (t2->t)    t is open
+	 * -----------------------------------
+	 *    E |- longid(exp) : t => t
 	 *)
-	 | ConExp(i, longid, exp, isNary) =>
+	 | ConExp(i, longid, exp) =>
 	   let
 		val  t       = #typ i
 		val  t1      = chLongid E longid
 		val  t2      = chExp E exp
-		val (t',t3)  = checked Type.asApply(Type.instance t1)
+		val (t4,t3)  = checked Type.asApply(Type.instance t1)
 			       (i, "ConExp constructor type 1", #[TYPE t1])
-		val (t4,t'') = checked Type.asApply t'
-			       (i, "ConExp constructor type 2", #[TYPE t1])
-		val (t2',t') = checked Type.asArrow t''
+		val (t2',t') = checked Type.asArrow t3
 			       (i, "ConExp constructor type", #[TYPE t1])
-		(*UNFINISHED: check isNary *)
 	   in
+		check (Type.equals(t4, PervasiveType.typ_conarrow))
+		      (i, "ConExp conarrow", #[TYPE t4]);
 		check (isOpenType t)
-		      (i,"ConExp constructor type sort", #[TYPE t]);
+		      (i, "ConExp constructor type sort", #[TYPE t]);
 		checked Type.unify(t2,t2')
-		      (i, "ConExp argument type",
-			  #[TYPE_PAIR(t'', Type.inArrow(t2,t2'))]);
+		      (i, "ConExp argument type", #[TYPE_PAIR(t2,t2')]);
 		checked Type.unify(t',t)
-		      (i, "ConExp type",
-			  #[TYPE_PAIR(t'', Type.inArrow(t',t))]);
+		      (i, "ConExp type", #[TYPE_PAIR(t',t)]);
 		t
 	   end
 
@@ -435,6 +430,21 @@ struct
 		      (i, "VecExp type constructor", #[TYPE t1]);
 		check (Vector.all (fn t' => Type.equals(t',t2)) ts)
 		      (i, "VecExp component type", #[TYPE t2]);
+		t
+	   end
+
+	(* E |- exp => t'   t = c_strict(t')
+	 * ---------------------------------
+	 *    E |- strict exp : t => t
+	 *)
+	 | StrictExp(i, exp) =>
+	   let
+		val t  = #typ i
+		val t' = chExp E exp
+		val t1 = Type.inApply(PervasiveType.typ_strict, t')
+	   in
+		check (Type.equals(t1,t))
+		      (i, "StrictExp type", #[TYPE_PAIR(t1,t)]);
 		t
 	   end
 
@@ -752,18 +762,17 @@ struct
 
 	(* E |- lab => a    E |- pat => t',E'    t = {a:t',r}
 	 * --------------------------------------------------
-	 *            E |- `lab(pat) : t => t,E'
+	 *           E |- `lab(pat) : t => t,E'
 	 *)
-	 | TagPat(i, lab, pat, isNary) =>
+	 | TagPat(i, lab, pat) =>
 	   let
-		val t  = #typ i
-		val a  = chLab E lab
-		val t' = chPat E pat
-		val r  = checked Type.asSum' t
-			 (i, "TagPat type", #[TYPE t])
-		val t1 = checked Type.lookupRow(r,a)
-			 (i, "TagPat label", #[LAB a, TYPE t])
-		(*UNFINISHED: check isNary *)
+		val t   = #typ i
+		val a   = chLab E lab
+		val t'  = chPat E pat
+		val r   = checked Type.asSum' t
+			  (i, "TagPat type", #[TYPE t])
+		val t1  = checked Type.lookupRow(r,a)
+			  (i, "TagPat label", #[LAB a, TYPE t])
 	   in
 		check (Type.equals(t1,t'))
 		      (i, "TagPat argument type", #[TYPE_PAIR(t1,t')]);
@@ -771,31 +780,28 @@ struct
 	   end
 
 	(* E |- longid => t1    E |- pat => t2,E'
-	 * t1 > conarrow (t2->t) t3    t is open
+	 *   t1 > conarrow (t2->t)    t is open
 	 * --------------------------------------
-	 *       E |- longid(pat) : t => t,E'
+	 *     E |- longid(pat) : t => t,E'
 	 *)
-	 | ConPat(i, longid, pat, isNary) =>
+	 | ConPat(i, longid, pat) =>
 	   let
 		val  t       = #typ i
 		val  t1      = chLongid E longid
 		val  t2      = chPat E pat
-		val (t',t3)  = checked Type.asApply(Type.instance t1)
+		val (t4,t3)  = checked Type.asApply(Type.instance t1)
 			       (i, "ConPat constructor type 1", #[TYPE t1])
-		val (t4,t'') = checked Type.asApply t'
-			       (i, "ConPat constructor type 2", #[TYPE t1])
-		val (t2',t') = checked Type.asArrow t''
+		val (t2',t') = checked Type.asArrow t3
 			       (i, "ConPat constructor type", #[TYPE t1])
-		(*UNFINISHED: check isNary *)
 	   in
+		check (Type.equals(t4, PervasiveType.typ_conarrow))
+		      (i, "ConExp conarrow", #[TYPE t4]);
 		check (isOpenType t)
-		      (i,"ConPat constructor type sort", #[TYPE t]);
+		      (i, "ConPat constructor type sort", #[TYPE t]);
 		checked Type.unify(t2,t2')
-		      (i, "ConPat argument type",
-			  #[TYPE_PAIR(t'', Type.inArrow(t2,t2'))]);
+		      (i, "ConPat argument type", #[TYPE_PAIR(t2,t2')]);
 		checked Type.unify(t',t)
-		      (i, "ConPat type",
-			  #[TYPE_PAIR(t'', Type.inArrow(t',t))]);
+		      (i, "ConPat type", #[TYPE_PAIR(t',t)]);
 		t
 	   end
 	(* E |- longid => t''    E |- pat => t',E'    t'' > t'->t    t is open
@@ -876,6 +882,21 @@ struct
 		      (i, "VecPat type constructor", #[TYPE t1]);
 		check (Vector.all (fn t' => Type.equals(t',t2)) ts)
 		      (i, "VecPat component type", #[TYPE t2]);
+		t
+	   end
+
+	(* E |- pat => t',E'    t = c_strict(t')
+	 * -------------------------------------
+	 *     E |- strict pat : t => t,E'
+	 *)
+	 | StrictPat(i, pat) =>
+	   let
+		val t  = #typ i
+		val t' = chPat E pat
+		val t1 = Type.inApply(PervasiveType.typ_strict, t')
+	   in
+		check (Type.equals(t1,t))
+		      (i, "StrictPat type", #[TYPE_PAIR(t1,t)]);
 		t
 	   end
 
