@@ -44,6 +44,7 @@ struct
     in
 	fun awaitEither (a, b) =
 	    let
+		exception AwaitEitherTerminate
 		val c  = Hole.hole ()
 		val t1 = Hole.hole ()
 		val t2 = Hole.hole ()
@@ -51,11 +52,11 @@ struct
 		spawn (Hole.fill (t1, currentThread ());
 		       (await a; ()) handle _ => ();
 		       Hole.fill (c, FST a) handle Hole.Hole => ();
-		       raiseIn (t2, Terminate));
+		       raiseIn (t2, AwaitEitherTerminate));
 		spawn (Hole.fill (t2, currentThread ());
 		       (await b; ()) handle _ => ();
 		       Hole.fill (c, SND b) handle Hole.Hole => ();
-		       raiseIn (t1, Terminate));
+		       raiseIn (t1, AwaitEitherTerminate));
 		await (Hole.future c)
 	    end
     end
