@@ -4,7 +4,7 @@
 
   <BR><BR><BR><BR>
 
-<?php section("current", "realease") ?>
+<?php section("current", "release") ?>
 
   <P>
     The public release of the Alice system is scheduled for the end of 2001
