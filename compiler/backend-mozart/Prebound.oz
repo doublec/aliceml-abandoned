@@ -327,10 +327,6 @@ prepare
 	 end
       'Hole.hole':
 	 fun {$ unit} _ end
-      'Hole.isFailed':
-	 fun {$ X}
-	    false   %--** unimplemented
-	 end
       'Hole.isHole': IsFree
       'Int.~': Number.'~'
       'Int.+': Number.'+'

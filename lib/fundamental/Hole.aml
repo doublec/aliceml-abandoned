@@ -34,5 +34,4 @@ struct
     __primitive val fail :	'a * exn -> unit	= "Hole.fail"
 
     __primitive val isHole :	'a -> bool		= "Hole.isHole"
-    __primitive val isFailed :	'a -> bool		= "Hole.isFailed"
 end

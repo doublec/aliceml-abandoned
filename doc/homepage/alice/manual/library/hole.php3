@@ -53,7 +53,6 @@
 	val fail :     'a * exn -> unit
 
 	val isHole :   'a -> bool
-	val isFailed : 'a -> bool
     end
   </PRE>
 
@@ -115,15 +114,6 @@
     <DD>
       <P>Returns <TT>true</TT> if <TT><I>v</I></TT> is a hole,
       <TT>false</TT> otherwise.</P>
-    </DD>
-
-    <DT>
-      <TT>isFailed <I>v</I></TT>
-    </DT>
-    <DD>
-      <P>Returns <TT>true</TT> if <TT><I>v</I></TT> has been failed,
-      <TT>false</TT> otherwise. Equivalent to
-      <TT>Future.isFailed <I>v</I></TT>.</P>
     </DD>
   </DL>
 

@@ -33,5 +33,4 @@ sig
     val fail :		'a * exn -> unit	(* Hole *)
 
     val isHole :	'a -> bool
-    val isFailed :	'a -> bool
 end
