@@ -1,0 +1,3 @@
+#!/bin/sh
+
+sml @SMLload=$(dirname $0)/jacke-image $@
