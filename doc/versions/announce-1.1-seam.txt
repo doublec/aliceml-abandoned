@@ -1,0 +1,73 @@
+We are happy to announce version 1.1 of the Alice programming
+system:
+
+     http://www.ps.uni-sb.de/alice/
+
+Alice ML is a functional programming language that enriches the
+statically typed, closed functional world of ML with extensive
+support for type-safe programming of concurrent, distributed
+and open systems. It also features cutting-edge constraint
+programming technology in the tradition of Oz/Mozart.
+
+Alice ML is a mostly conservative extension of Standard ML
+featuring:
+
+  Futures
+     selective laziness and light-weight concurrency with
+     implicit dataflow synchronisation
+  Higher-order modules
+     higher-order functors and abstract signatures
+  Packages
+     dynamically typed ML modules as first-class values
+  Pickling
+     type-safe, generic & platform-independent marshalling,
+     including code, types and full modules
+  Components
+     type-safe lazy dynamic linking across the Internet
+  Distribution
+     type-safe remote functions and network mobility
+  Constraints
+     constraint propagation and programmable search for
+     solving hard combinatorical problems
+  Virtual Machine
+     portable implementation with support for just-in-time
+     compilation
+  Interactive tools
+     graphical browsers for data structures and search spaces
+
+The highlights of this release are:
+
+  Graphical User Interface
+     The Interactive Toplevel now comes with an optional GUI that
+     includes a simple editor.
+  First-class Compilation
+     The library now enables runtime access to the compiler, and
+     includes a Lisp-style "eval" function.
+  Search Factory and Distributed Search
+     A generic Search Factory enables programming of custom search
+     strategies for constraint programming, including a distributed
+     search engine.
+  Glade Interface Builder
+     The new aliceglade tool allows creation of Gtk interfaces with
+     the Glade interface builder. [glade.gnome.org]
+  SQL Library
+     A binding to the SQLite library is now included in the
+     distribution. [www.sqlite.org]
+  XML Parser
+     The distribution also includes an XML parser based on the
+     libxml2 library. [www.xmlsoft.org]
+  Bug Fixes
+     Lots of bugs and problems fixed, particularly on Windows.
+  Mac OS Port and Debian Packages
+     Packages for Mac OS X and Debian are now available.
+
+For a detailed list of changes see:
+
+     http://www.ps.uni-sb.de/alice/download/CHANGES
+
+Alice is open source under a BSD-style license. Binary packages
+are currently available for Linux and Windows.
+
+Enjoy,
+
+        - The Alice Team

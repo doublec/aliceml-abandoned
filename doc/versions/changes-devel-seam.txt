@@ -6,10 +6,11 @@ Runtime System:
 Compiler:
 
 * [NEW] Support for giving multiple source files on command line.
-* [NEW] Import URLs are now resolved relative to the out-file location when
-        compiling, allowing proper separation of source and build directories.
 * [NEW] Added option -z (--minimize) for minimizing output components.
+* [CHG] Import URLs are now resolved relative to the out-file location when
+        compiling, allowing proper separation of source and build directories.
 * [FIX] Fixed bogus compilation of word literals (could lead to segfaults).
+* [FIX] Produce proper error messages for out-of-range literals.
 
 Linker:
 
@@ -17,34 +18,28 @@ Linker:
 
 Interactive Toplevel:
 
-* [NEW] Graphical user interface, including simple editor facility, activated
+* [NEW] Graphical user interface, including a simple editor, activated
         with option -g (--gui) (default when Alice is started from GUI).
 * [FIX] Fixed off-by-one line numbers, including use function.
 * [FIX] Eliminated race condition when bg'ing computation (eg. pressing Ctrl-Z).
+* [FIX] Improved signal handling on Windows.
 
-Library:
+Basis Library:
 
-* [NEW] aliceglade: use the glade GUI builder to graphically design user
-	interfaces, and aliceglade to generate Alice source code that
-	implements the interface.
-* [NEW] XML: A simple xml parser library based on libxml2
-* [NEW] SQLite: A binding to a flat-file database engine
 * [NEW] Compiler: new component that gives runtime access to the compiler,
         including a Lisp-style eval function on strings containg Alice programs.
 * [NEW] Store: new low-level interface to runtime heap and garbage collector.
-* [NEW] Explorer: one-step exploration
-* [NEW] Search-factory (Gecode): new gecode-based library that performs 
-        search for constraint problems. Takes care of recomputation and
-        Branch & Bound optimization.
-* [NEW] Distributed-search (Gecode): new library that can solve a constraint
-        problem by using several machines on a network.
 * [NEW] Promise: added isFulfilled predicate.
 * [NEW] ListPair: added exists[i]Eq and filter[i]Eq.
 * [NEW] Date: added fromISO, toISO, scanISO for locale-independent date formats.
 * [NEW] PrimIO: added functions openVectorList{Rd,Wr}, useful for redirection.
 * [NEW] Config: added version record and codename string.
+* [NEW] OS.FileSys: new functions getHomeDir and getApplicationConfigDir for
+        enquiring canonical user data and configuration directories.
 * [CHG] Lock: sync is now re-entrant.
 * [CHG] Minimizer: removed, superseded by Store component.
+* [CHG] OS.Path: handle Windows style path syntax as well; allow mkRelative to
+        take two relative paths.
 * [CHG] Http: ignore multiple headers; replace empty reguest URIs with "/".
 * [CHG] Remote: replaced execute/Execute by two function/functors eval/Eval and
         run/Run: the former terminates after evaluation of the mobile component,
@@ -52,9 +47,12 @@ Library:
         uncaught exceptions on the remote site are now propagated back to the
         caller; optional logging of remote invocation.
 * [FIX] Promise: equality now works properly.
+* [FIX] Int: fixed border case for div and quot (minInt/~1 overflows).
 * [FIX] IntInf: fixed handling of division by 0.
-* [FIX] Word[N]: fixed mod by 0 and conversion overflow checks.
-* [FIX] Real: fixed comparison, exception handling, handling NaNs and infinity.
+* [FIX] Word[N]: fixed compare, mod by 0, shift with offsets > 32, and
+        conversion overflow checks.
+* [FIX] Real: fixed comparison, exception handling, string conversion of NaNs
+        and infinity on Windows.
 * [FIX] List[Pair]: fixed evaluation order of filter[i] and partition[i].
 * [FIX] Vector, {Char,Word8}Vector: update raises Subscript for bad indices.
 * [FIX] VectorPair: fixed foldri.
@@ -63,15 +61,48 @@ Library:
 * [FIX] String: fixed numeric escapes and gaps in scanC, fromCString.
 * [FIX] Substring: fixed tokens function.
 * [FIX] Date: fixed handling of small time values.
-* [FIX] TextIO, StreamIO: fixed buffering of TTY output.
+* [FIX] TextIO, StreamIO: fixed buffering of TTY output, esp. on Windows.
 * [FIX] TextIO: implemented CR/NL translation properly.
-* [FIX] Pickle, Component: improved error handling.
-* [CHG] OS.Path: allow mkRelative to take two relative paths.
+* [FIX] Pickle, Component: improved error handling, particularly for I/O.
 * [FIX] OS.Path: fixed border cases in toString, joinDirExt, mkAbsolute,
         mkRelative.
-* [FIX] Inspector: fixed handling of unit type, and mono vectors and arrays.
+* [FIX] OS.FileSys: directory streams now operational on Windows.
+
+Constraint Library:
+
+* [NEW] MkSearch: a generic search factory for customizing search engines,
+        takes care of recomputation and branch & bound optimization.
+* [NEW] MkEngine: a distributed search engine that allows solving constraint
+        problems on the collected resources of multiple machines on a network.
+* [NEW] Explorer: now allows single-step exploration.
+* [FIX] Gecode: Miscellaneous bug fixes.
+
+Other Libraries:
+
+* [NEW] SQLite: a binding to a flat-file database engine. [www.sqlite.org]
+* [NEW] XML: a simple SML parser library based on libxml2. [www.xmlsoft.org]
+* [NEW] Gtk: new functions for Unicode UTF-8 encoding and decoding.
+* [NEW] Gtk: global lock that can be grabbed to synchronize with Gtk event loop.
+* [CHG] Gtk: interface change to support multiple modifiers for accellerators.
+* [FIX] Gtk: catch exceptions from signal handlers to prevent GUI hang-ups;
+        miscellaneous bug fixes.
 * [FIX] Gtk, Inspector: work around behaviour of Windows API refusing to display
         a window under certain conditions (e.g. in Emacs).
+* [FIX] Inspector: fixed handling of unit type, and mono vectors and arrays.
+
+Tools:
+
+* [NEW] aliceglade: use the Glade Interface Builder to graphically design user
+	interfaces and the new aliceglade tool to generate Alice source code
+	that implements the interface. [glade.gnome.org]
+
+Platforms:
+
+* [NEW] Mac OS X: Alice is now available on PowerPC, though without support
+        for just-in-time compilation.
+* [NEW] Debian: added binary and source packages.
+* [NEW] Red Hat: added source packages.
+* [CHG] Red Hat: RPM now adds Alice to Applications menu.
 
 
 Alice 1.0 (Kraftwerk Album 1) - 2004/12/22

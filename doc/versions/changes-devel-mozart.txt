@@ -27,6 +27,7 @@ Compiler:
 * Import URLs are now resolved relative to the out-file location when compiling,
   allowing proper separation of source and build directories.
 * Support for smart recompilation, taking component signatures into account.
+* Produce proper error messages for out-of-range literals.
 
 Linker:
 
@@ -57,8 +58,12 @@ Library:
     through value of ALICE_TRACE_COMPONENT.
   - Trace messages are more informative, particularly wrt signature mismatches.
 * Toplevel: Future.await is now available unqualified.
+* Word[N]: fixed compare.
 * Word32 added. LargeWord = Word32 now, but Word = Word31 remains.
 * Exn: new structure for dealing with exceptions and backtraces.
+* OS.Path:
+  - Handle Windows style path syntax as well.
+  - Allow mkRelative to take two relative paths.
 * OS.Process: atExn takes an Exn.packet now.
 * Promise:
   - Equality now works properly.
