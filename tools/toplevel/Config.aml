@@ -68,11 +68,11 @@ structure Config =
       val green = Gdk.colorNew(0, 0x8000, 0)
       val white = Gdk.colorNew(0xffff, 0xffff, 0xffff)
 
-      val reservedColor = blue
-      val errorColor = red
-      val stringColor = orange
-      val plainColor = black
-      val commentColor = green
+      val reservedColor = ref blue
+      val errorColor = ref red
+      val stringColor = ref orange
+      val plainColor = ref black
+      val commentColor = ref green
 
       val _ = Gdk.colormapAllocColor(cmap, black, false, true)
       val _ = Gdk.colormapAllocColor(cmap, white, false, true)
@@ -96,19 +96,51 @@ structure Config =
 
       fun makeTags buf =
           let
-              val err = Gtk.textBufferCreateTag(buf, "error", "foreground-gdk", Gtk.OBJECT errorColor)
+              val err = Gtk.textBufferCreateTag(buf, "error", "foreground-gdk", Gtk.OBJECT (!errorColor))
               val log = Gtk.textBufferCreateTag(buf, "log", "style", Gtk.INT (PangoEnums.PangoStyleToInt PangoEnums.STYLE_ITALIC))
-              val plain = Gtk.textBufferCreateTag(buf, "plain", "foreground-gdk", Gtk.OBJECT plainColor)
+              val plain = Gtk.textBufferCreateTag(buf, "plain", "foreground-gdk", Gtk.OBJECT (!plainColor))
 
-              val comment = Gtk.textBufferCreateTag(buf, "comment", "foreground-gdk", Gtk.OBJECT commentColor)
-              val string = Gtk.textBufferCreateTag(buf, "string", "foreground-gdk", Gtk.OBJECT stringColor)
-              val reserved = Gtk.textBufferCreateTag(buf, "reserved", "foreground-gdk", Gtk.OBJECT reservedColor)
+              val comment = Gtk.textBufferCreateTag(buf, "comment", "foreground-gdk", Gtk.OBJECT (!commentColor))
+              val string = Gtk.textBufferCreateTag(buf, "string", "foreground-gdk", Gtk.OBJECT (!stringColor))
+              val reserved = Gtk.textBufferCreateTag(buf, "reserved", "foreground-gdk", Gtk.OBJECT (!reservedColor))
 
               val noedit = Gtk.textBufferCreateTag(buf, "noedit", "editable", Gtk.BOOL false)
               val bold = Gtk.textBufferCreateTag(buf, "bold", "weight", Gtk.INT (PangoEnums.PangoWeightToInt PangoEnums.WEIGHT_BOLD))
           in
               {err, log, plain, comment, string, reserved, bold, noedit} : tags
           end
+
+      fun changeColor (tag, color) =
+	  Gtk.objectSetObject(tag, "foreground-gdk", color)
+
+
+      fun getRgbColor color =
+	  (Gdk.colorGetFieldRed color,
+	   Gdk.colorGetFieldGreen color,
+	   Gdk.colorGetFieldBlue color)
+
+      fun mkRgbColor (r,g,b) =
+	  let val c = Gdk.colorNew(r,g,b)
+	  in
+	      Gdk.colormapAllocColor(cmap, c, false, true);
+	      c
+	  end
+
+      fun changeColors buf =
+	  let
+	      val tt = Gtk.textBufferGetTagTable buf
+	      val plain = Gtk.textTagTableLookup(tt, "plain")
+	      val error = Gtk.textTagTableLookup(tt, "error")
+	      val string = Gtk.textTagTableLookup(tt, "string")
+	      val reserved = Gtk.textTagTableLookup(tt, "reserved")
+	      val comment = Gtk.textTagTableLookup(tt, "comment")
+	  in
+	      changeColor(plain, !plainColor);
+	      changeColor(error, !errorColor);
+	      changeColor(string, !stringColor);
+	      changeColor(reserved, !reservedColor);
+	      changeColor(comment, !commentColor)
+	  end
 
       fun init() =
 	  let
@@ -118,6 +150,13 @@ structure Config =
 	  in
 	      stdFontName := C.stdFontName;
 	      stdFont := Gtk.pangoFontDescriptionFromString (!stdFontName);
+
+	      plainColor := mkRgbColor C.plainColor;
+	      errorColor := mkRgbColor C.errorColor;
+	      stringColor := mkRgbColor C.stringColor;
+	      reservedColor := mkRgbColor C.reservedColor;
+	      commentColor := mkRgbColor C.commentColor;
+
 	      historySize := C.historySize
 	  end handle (OS.SysErr _ | IO.Io _ | Component.Mismatch _) =>
 	      FileDialog.message
@@ -126,15 +165,16 @@ structure Config =
       fun save() =
 	  let
 	      val cDir = createConfigDir ()
-	      structure C = struct
-				val reservedColor = (0,0,0)
-				val errorColor = (0,0,0)
-				val stringColor = (0,0,0)
-				val plainColor = (0,0,0)
-				val commentColor = (0,0,0)
-				val historySize = !historySize
-				val stdFontName = !stdFontName
-			    end
+	      structure C = 
+	      struct
+		  val reservedColor = getRgbColor (!reservedColor)
+		  val errorColor = getRgbColor (!errorColor)
+		  val stringColor = getRgbColor (!stringColor)
+		  val plainColor = getRgbColor (!plainColor)
+		  val commentColor = getRgbColor (!commentColor)
+		  val historySize = !historySize
+		  val stdFontName = !stdFontName
+	      end
 	  in
 	      Pickle.save(cDir^"/Configuration."^Pickle.extension,
 			  pack C : USER_CONFIG)

@@ -11,6 +11,7 @@
  *
  *)
 
+import structure Gdk from "x-alice:/lib/gtk/Gdk"
 import structure Gtk from "x-alice:/lib/gtk/Gtk"
 import structure Gui from "Gui"
 import structure Config from "Config"
@@ -20,8 +21,115 @@ import structure Buffer from "Buffer"
 structure Preferences =
     struct
 
+	val plain_label = Gtk.labelNew ""
+	val error_label = Gtk.labelNew ""
+	val keyword_label = Gtk.labelNew ""
+	val string_label = Gtk.labelNew ""
+	val comment_label = Gtk.labelNew ""
+	val log_label = Gtk.labelNew ""
+
+	fun formatHex x =
+	    let
+		val s = Int.fmt StringCvt.HEX x
+	    in
+		if String.size s = 1 then "0"^s else s
+	    end
+	    
+
+	fun mkLabel(txt, color) =
+	    let
+		val r = Gdk.colorGetFieldRed color div 256
+		val g = Gdk.colorGetFieldGreen color div 256
+		val b = Gdk.colorGetFieldBlue color div 256
+	    in
+		"<span foreground=\"#"^
+                formatHex r^
+                formatHex g^
+                formatHex b^
+                "\">"^txt^"</span>"
+	    end
+
+	val plain_color_button = Gtk.buttonNew ()
+	val error_color_button = Gtk.buttonNew ()
+	val keyword_color_button = Gtk.buttonNew ()
+	val string_color_button = Gtk.buttonNew ()
+	val comment_color_button = Gtk.buttonNew ()
+
+	val _ = Gtk.containerAdd(plain_color_button, plain_label)
+	val _ = Gtk.containerAdd(error_color_button, error_label)
+	val _ = Gtk.containerAdd(keyword_color_button, keyword_label)
+	val _ = Gtk.containerAdd(string_color_button, string_label)
+	val _ = Gtk.containerAdd(comment_color_button, comment_label)
+	    
+	val _ = Gtk.tableAttach(Gui.table1,plain_color_button,1,2,0,1,Gtk.FILL,Gtk.FILL,0,0)
+	val _ = Gtk.tableAttach(Gui.table1,error_color_button,1,2,1,2,Gtk.FILL,Gtk.FILL,0,0)
+	val _ = Gtk.tableAttach(Gui.table1,keyword_color_button,1,2,2,3,Gtk.FILL,Gtk.FILL,0,0)
+	val _ = Gtk.tableAttach(Gui.table1,string_color_button,1,2,3,4,Gtk.FILL,Gtk.FILL,0,0)
+	val _ = Gtk.tableAttach(Gui.table1,comment_color_button,1,2,4,5,Gtk.FILL,Gtk.FILL,0,0)
+
+	val plainColor = ref (!Config.plainColor)
+	val errorColor = ref (!Config.errorColor)
+	val reservedColor = ref (!Config.reservedColor)
+	val stringColor = ref (!Config.stringColor)
+	val commentColor = ref (!Config.commentColor)
+	val colorsChanged = ref false
+
+	fun colorDialog(label, color) _ =
+	    let
+		val dia = Gtk.colorSelectionDialogNew "Select colour"
+		val cs = Gtk.colorSelectionDialogGetFieldColorsel dia
+		val _ = Gtk.colorSelectionSetCurrentColor(cs, !color)
+                val response = Gtk.dialogRun dia
+	    in
+		case Gtk.IntToGtkResponseType response of
+		    Gtk.RESPONSE_OK =>
+		    let
+			val c = Gdk.colorNew(0, 0, 0)
+			val txt = Gtk.labelGetText label
+		    in
+			Gtk.colorSelectionGetCurrentColor(cs, c);
+			Gdk.colormapAllocColor(Config.cmap, c, false, true);
+			color := c;
+			colorsChanged := true;
+			Gtk.labelSetMarkup(label,
+					   mkLabel(txt, c))
+		    end
+		  | _ => ();
+		Gtk.widgetDestroy dia
+	    end
+
+	val _ = Gtk.signalConnect(plain_color_button, "clicked",
+				  colorDialog(plain_label, plainColor))
+	val _ = Gtk.signalConnect(error_color_button, "clicked",
+				  colorDialog(error_label, errorColor))
+	val _ = Gtk.signalConnect(keyword_color_button, "clicked",
+				  colorDialog(keyword_label, reservedColor))
+	val _ = Gtk.signalConnect(string_color_button, "clicked",
+				  colorDialog(string_label, stringColor))
+	val _ = Gtk.signalConnect(comment_color_button, "clicked",
+				  colorDialog(comment_label, commentColor))
+
+	fun fillColors () =
+	    (plainColor := (!Config.plainColor);
+	     errorColor := (!Config.errorColor);
+	     reservedColor := (!Config.reservedColor);
+	     stringColor := (!Config.stringColor);
+	     commentColor := (!Config.commentColor);
+	     colorsChanged := false;
+	     Gtk.labelSetMarkup(plain_label,
+				mkLabel("plain text", !plainColor));
+	     Gtk.labelSetMarkup(error_label,
+				mkLabel("error", !errorColor));
+	     Gtk.labelSetMarkup(keyword_label,
+				mkLabel("keyword", !reservedColor));
+	     Gtk.labelSetMarkup(string_label,
+				mkLabel("\"string\"", !stringColor));
+	     Gtk.labelSetMarkup(comment_label,
+				mkLabel("(*comment*)", !commentColor)))
+	    
 	fun fillDialog () =
 	    (Gtk.buttonSetLabel(Gui.font_button, !Config.stdFontName);
+	     fillColors ();
 	     Gtk.entrySetText(Gui.history_size_entry,
 			      Int.toString (!Config.historySize)))
 
@@ -33,6 +141,16 @@ structure Preferences =
 		    Option.getOpt(Int.fromString historySize, 100)
 	    in
 		Config.historySize := historySize;
+		if !colorsChanged then
+		    (Config.plainColor := (!plainColor);
+		     Config.errorColor := (!errorColor);
+		     Config.reservedColor := (!reservedColor);
+		     Config.stringColor := (!stringColor);
+		     Config.commentColor := (!commentColor);
+		     Config.changeColors (Gtk.textViewGetBuffer Gui.progout);
+		     Config.changeColors (Gtk.textViewGetBuffer Gui.compilerout);
+		     Buffer.changeColors())
+		else ();
 		Config.stdFontName := fontName;
 		Config.stdFont :=
 		Gtk.pangoFontDescriptionFromString fontName;

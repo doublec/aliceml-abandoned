@@ -593,4 +593,8 @@ structure Buffer =
           BufferMap.app (fn {view,...} =>
                             Gtk.widgetModifyFont(view, !Config.stdFont))
                         bufferMap
+
+      fun changeColors() =
+	  BufferMap.app
+	  (fn {buf,...} => Config.changeColors buf) bufferMap
    end
