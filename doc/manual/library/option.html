@@ -109,10 +109,10 @@
       as follows:</P>
       <PRE>
       fun collate f =
-	  fn (NONE,   NONE)   = EQUAL
-	   | (NONE,   SOME _) = LESS
-	   | (SOME _, NONE)   = GREATER
-	   | (SOME x, SOME y) = f (x, y)</PRE>
+	  fn (NONE,   NONE)   => EQUAL
+	   | (NONE,   SOME _) => LESS
+	   | (SOME _, NONE)   => GREATER
+	   | (SOME x, SOME y) => f (x, y)</PRE>
     </DD>
   </DL>
 
