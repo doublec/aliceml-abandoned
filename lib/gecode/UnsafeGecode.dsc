@@ -4,7 +4,7 @@ class Space {
   IntVar new_intvar(DomSpec&); new_intvar;
   BoolVar new_boolvar(void); new_boolvar;
   SetVar new_setvar(void); new_setvar;
-  void commit(int, BranchDesc*); commit;
+  void commit(int, BranchingDesc*); commit;
 };
 
 class IntVar {

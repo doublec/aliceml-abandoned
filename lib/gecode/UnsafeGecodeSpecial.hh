@@ -126,10 +126,10 @@
  DBGMSG("DECLARE_VAR done.");
 
 #define DECLARE_DESCRIPTION(desc, x) \
- BranchDesc* desc; \
+ BranchingDesc* desc; \
  if (Store::WordToTransient(x) != INVALID_POINTER) { REQUEST(x); } \
  { ConcreteRepresentation *cr = ConcreteRepresentation::FromWord(x); \
- desc = static_cast<BranchDesc *>(Store::WordToUnmanagedPointer(cr->Get(0))); \
+ desc = static_cast<BranchingDesc *>(Store::WordToUnmanagedPointer(cr->Get(0))); \
  }
 
 namespace UnsafeGecode {
@@ -222,8 +222,8 @@ static GecodeBranchdescFinalizationSet *gecodeBranchdescFinalizationSet;
 void GecodeBranchdescFinalizationSet::Finalize(word value) {
   ConcreteRepresentation *cr = ConcreteRepresentation::FromWord(value);
   word ptr = cr->Get(0);
-  BranchDesc *desc =
-    static_cast<BranchDesc *>(Store::WordToUnmanagedPointer(ptr));
+  BranchingDesc *desc =
+    static_cast<BranchingDesc *>(Store::WordToUnmanagedPointer(ptr));
   delete desc;
 }
 
