@@ -104,6 +104,8 @@ INSTALLFILES = \
 all: install
 
 install: $(DIRS) $(INSTALLFILES)
+	rm -f constraints.html
+	rm -f $(PLATFORM_LIB:%=library/%)
 
 clean:
 	rm -f constraints.html
