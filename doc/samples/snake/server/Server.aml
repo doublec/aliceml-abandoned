@@ -245,12 +245,14 @@ struct
             fun computePointsList () =
                 List.map (fn p =>
                     let val (name, 
-                            color)  = Part.nameNColor p
-                        val info    = Part.playerInfo p
-                        val points  = ! $ #points info
-                        val gamePoints = ! $ #gamePoints info
+                            color)      = Part.nameNColor p
+                        val info        = Part.playerInfo p
+                        val points      = ! $ #points info
+                        val gamePoints  = ! $ #gamePoints info
+                        val livesLeft   = Option.map (fn lives => 
+                                lives - !(#deathCount info)) (#lives config)
                     in
-                        { name, color, points, gamePoints }
+                        ({ name, color, points, gamePoints }, livesLeft)
                     end) (Part.allWithPoints (! participants) )
 
             fun sendPoints p =
@@ -343,7 +345,7 @@ struct
                 let
                     val highscore   = HighscoreIO.load ()
                     val highscore   = Highscore.merge (highscore, 
-                                        computePointsList (), 0) (*FIXME*)
+                                        List.map #1 $ computePointsList (), 0) (*FIXME*)
                 in
                     invokeSeveral (_file_, _line_)
                         (Part.allConnected $ ! participants, #tournamentFinished, 

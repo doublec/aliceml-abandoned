@@ -172,7 +172,7 @@ struct
 	    is finished, it's called after levelFinished. 
 	    [h] will be displayed. *)
 
-        updatePoints :      Highscore.points list -> unit
+        updatePoints :      (Highscore.points * int option) list -> unit
     }
 
     signature SERVER_CONNECTOR =
