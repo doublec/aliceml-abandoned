@@ -77,11 +77,11 @@
 
     <DT>
       <TT>datatype term =<BR>
-            &nbsp;&nbsp;fd of FD.fd<BR>
-            | `&nbsp;&nbsp;of int<BR>
-            | `+ of term * term<BR>
-            | `- of term * term<BR>
-            | `* of term * term</TT>
+          &nbsp;&nbsp;&nbsp;&nbsp;fd of FD.fd<BR>
+          &nbsp;&nbsp;| `&nbsp;&nbsp;of int<BR>
+          &nbsp;&nbsp;| `+ of term * term<BR>
+          &nbsp;&nbsp;| `- of term * term<BR>
+          &nbsp;&nbsp;| `* of term * term</TT>
     </DT>
     <DD>
       <P>This datatype is used to post arithmetic constraints.
@@ -90,24 +90,24 @@
         <LI><TT>fd <I>x</I></TT> injects the finite domain
             variable <I>x</I> into a term.
         <LI><TT>` <I>i</I></TT> injects a integer value <I>i</I> into a term.
-        <LI><TT>`+(<I>x</I><I>y</I>)</TT> denotes the sum
+        <LI><TT>`+(<I>x</I>,<I>y</I>)</TT> denotes the sum
             of <I>x</I> and <I>y</I>.
-        <LI><TT>`-(<I>x</I><I>y</I>)</TT> denotes
+        <LI><TT>`-(<I>x</I>,<I>y</I>)</TT> denotes
             the difference of <I>x</I> and <I>y</I>.
-        <LI><TT>`*(<I>x</I><I>y</I>)</TT> denotes the
+        <LI><TT>`*(<I>x</I>,<I>y</I>)</TT> denotes the
             product of <I>x</I> and <I>y</I>.
       </UL>
     </DD>
 
     <DT>
       <TT>datatype rel =<BR>
-	  &nbsp;&nbsp;`<&nbsp;&nbsp;&nbsp;of term * term<BR>
-	  | `<=&nbsp;&nbsp;of term * term<BR>
-	  | `=&nbsp;&nbsp;&nbsp;of term * term<BR>
-	  | `<>&nbsp;&nbsp;of term * term<BR>
-	  | `>=&nbsp;&nbsp;of term * term<BR>
-	  | `>&nbsp;&nbsp;&nbsp;of term * term<BR>
-	  | `<-> of rel * term</TT>
+	  &nbsp;&nbsp;&nbsp;&nbsp;`<&nbsp;&nbsp;&nbsp;of term * term<BR>
+	  &nbsp;&nbsp;| `<=&nbsp;&nbsp;of term * term<BR>
+	  &nbsp;&nbsp;| `=&nbsp;&nbsp;&nbsp;of term * term<BR>
+	  &nbsp;&nbsp;| `<>&nbsp;&nbsp;of term * term<BR>
+	  &nbsp;&nbsp;| `>=&nbsp;&nbsp;of term * term<BR>
+	  &nbsp;&nbsp;| `>&nbsp;&nbsp;&nbsp;of term * term<BR>
+	  &nbsp;&nbsp;| `<-> of rel * term</TT>
     </DT>
     <DD>
       <P>This datatype is used to post linear equations.
