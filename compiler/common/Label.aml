@@ -13,6 +13,9 @@ structure Lab :> LAB =
 				    of SOME n => NUM n
 				     | NONE   => ALPHA s
 
+    fun fromName(Name.ExId s)	= ALPHA s
+      | fromName(Name.InId)	= ALPHA ""
+
     fun toString(NUM n)		= Int.toString n
       | toString(ALPHA s)	= s
 

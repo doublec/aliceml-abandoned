@@ -161,8 +161,8 @@ functor MakeAbstractGrammar(type info) :>
 
     fun conToId(Con(_,x,_))		= x
 
-    fun idToLab(Id(i,_,ExId n))		= Lab(i,n)
-      | idToLab _			= Crash.crash "AbstractGrammar.idToLab"
+    fun idToLab(Id(i,_,ExId s))		= Lab(i,s)
+      | idToLab(Id(i,_,InId))		= Lab(i,"")
 
     fun infoLab(Lab(i,_))		= i
     fun infoId(Id(i,_,_))		= i

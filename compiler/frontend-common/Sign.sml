@@ -1,6 +1,6 @@
 (* UNFINISHED: How should we handle mutually recursice items? *)
 
-(* Signatures contain state. This means that they must be instantiated (cloned)
+(* Signatures contain state. This means that they must be cloned
    at each occurance. *)
 
 structure SignPrivate =
@@ -15,25 +15,25 @@ structure SignPrivate =
     type typ   = Type.t
     type kind  = Type.kind
 
-    type id    = lab * int * stamp
+    type id    = path * lab * int
 
     type 'a def = 'a option
 
-    datatype ('inf,'sort) item' =
+    datatype ('inf,'kind) item' =
 	  VAL of id * typ * bool * path def	(* value or constructor *)
 	| TYP of id * kind * typ def		(* type *)
 	| MOD of id * 'inf * path def		(* module *)
-	| INF of id * 'sort * 'inf def		(* interface *)
+	| INF of id * 'kind * 'inf def		(* interface *)
 
     datatype dom = VAL' | CON' | TYP' | MOD' | INF'
 
     structure Map = MakeHashImpMap(struct type t = dom * lab
 					  fun hash(_,l) = Lab.hash l end)
 
-    type ('inf,'sort) item = ('inf,'sort) item' ref
-    type ('inf,'sort) sign = ('inf,'sort) item list ref
-			   * ('inf,'sort) item list Map.t	(* [sigma,s] *)
-    type ('inf,'sort) t    = ('inf,'sort) sign
+    type ('inf,'kind) item = ('inf,'kind) item' ref
+    type ('inf,'kind) sign = ('inf,'kind) item list ref
+			   * ('inf,'kind) item list Map.t	(* [sigma,s] *)
+    type ('inf,'kind) t    = ('inf,'kind) sign
 
     (* Invariants for sign:
      * - each item in the map must appear in the list, and vice versa
@@ -43,22 +43,22 @@ structure SignPrivate =
      *)
 
 
-  (* Substitutions and realisations *)
+  (* Realisations *)
 
-    type subst = Path.subst
+    type rea		 = path PathMap.t
 
-    type val_rea      = path PathMap.t
-    type typ_rea      = typ  PathMap.t
-    type mod_rea      = path PathMap.t
-    type 'inf inf_rea = 'inf PathMap.t
-    type 'inf rea     = val_rea * typ_rea * mod_rea * 'inf inf_rea
+    type val_rea	 = path PathMap.t
+    type typ_rea	 = typ  PathMap.t
+    type ('i,'k) mod_rea = ('i,'k) sign PathMap.t
+    type ('i,'k) inf_rea = 'i PathMap.t
+    type ('i,'k) rea'	 = val_rea * typ_rea * ('i,'k) mod_rea * ('i,'k) inf_rea
 
 
   (* Accessors *)
 
-    fun labOfId(l,n,z)		= l
-    fun indexOfId(l,n,z)	= n
-    fun stampOfId(l,n,z)	= z
+    fun pathOfId(p,l,n)		= p
+    fun labOfId(p,l,n)		= l
+    fun indexOfId(p,l,n)	= n
 
     fun id(ref item')		= id' item'
     and id'(VAL(id,_,_,_))	= id
@@ -66,30 +66,33 @@ structure SignPrivate =
       | id'(MOD(id,_,_))	= id
       | id'(INF(id,_,_))	= id
 
+    fun path  item		= pathOfId(id item)
+    fun lab   item		= labOfId(id item)
     fun index item		= indexOfId(id item)
-
-    fun labToName l		= Name.ExId(Lab.toString l)
 
 
   (* Construction *)
 
     fun empty() = (ref [], Map.new())
 
+    fun hideId (p,l,n)		= (p,l,n+1)
+    fun hide item		= item := hide'(!item)
+    and hide'(VAL(id,t,b,d))	= VAL(hideId id, t, b, d)
+      | hide'(TYP(id,k,d))	= TYP(hideId id, k, d)
+      | hide'(MOD(id,j,d))	= MOD(hideId id, j, d)
+      | hide'(INF(id,k,d))	= INF(hideId id, k, d)
+
     fun extend((itemsr,map), dom, l, makeItem') =
 	let
-	    val z    = Stamp.new()
-	    val id   = ref(l,1,z)
-	    val item = ref(makeItem'(!id))
+	    val p    = Path.fromLab l
+	    val item = ref(makeItem'(p,l,0))
 
 	    val _ = itemsr := item :: !itemsr
-	    val _ = Map.insertWith
-			(fn(items,_) =>
-			    let val id'   = (l, index(List.hd items) + 1, z)
-			        val item' = makeItem' id'
-			    in  id := id' ; item := item' ; item::items end
-			) (map, (dom,l), [item])
+	    val _ = Map.insertWith (fn(items,_) =>
+					( List.app hide items ; item::items )
+				   ) (map, (dom,l), [item])
 	in
-	    !id
+	    p
 	end
 
     fun extendVal(s,l,t,b,d) = extend(s, VAL', l, fn x => VAL(x,t,b,d))
@@ -109,7 +112,7 @@ structure SignPrivate =
     fun selectMod(MOD(x, j, d))		= j
       | selectMod _			= raise Crash.Crash "Sign.selectMod"
 
-    fun selectInf(INF(x, s, SOME j))	= j
+    fun selectInf(INF(x, k, SOME j))	= j
       | selectInf _			= raise Crash.Crash "Sign.selectInf"
 
 
@@ -136,185 +139,160 @@ structure SignPrivate =
     fun lookupInf' args = (selectInf o lookup' INF') args
 
 
-  (* Substitution *)
+  (* Realisation *)
 
-    fun substitute (substituteInf, substituteSort) (subst, (ref items, _)) =
+    fun realise (realiseInf,realiseKind) (rea, (ref items, _)) =
 	let
-	    fun substituteItem(item as ref(VAL(x, t, b, d))) =
-		let
-		    val _  = Type.substitute(subst, t)
-		    val d' = substitutePathDef d
-		in
-		    item := VAL(x, t, b, d')
-		end
+	    fun realiseItem(item as ref(VAL(x, t, b, d))) =
+		( Type.realise(rea, t) ; item := VAL(x,t,b, realisePathDef d))
+	      | realiseItem(ref(TYP(x, k, d))) =
+		  realiseTypDef d
+	      | realiseItem(item as ref(MOD(x, j, d))) =
+		( realiseInf(rea, j) ; item := MOD(x, j, realisePathDef d) )
+	      | realiseItem(ref(INF(x, k, d))) =
+		( realiseKind(rea, k) ; realiseInfDef d )
 
-	      | substituteItem(item as ref(TYP(x, k, d))) =
-		let
-		    val _ = substituteTypDef d
-		in
-		    item := TYP(x, k, d)
-		end
+	    and realisePathDef      NONE    = NONE
+	      | realisePathDef(d as SOME p) =
+		case PathMap.lookup(rea, p)
+		  of NONE => d
+		   | d'   => d'
 
-	      | substituteItem(item as ref(MOD(x, j, d))) =
-		let
-		    val _  = substituteInf(subst, j)
-		    val d' = substitutePathDef d
-		in
-		    item := MOD(x, j, d')
-		end
+	    and realiseTypDef NONE    = ()
+	      | realiseTypDef(SOME t) = Type.realise(rea, t)
 
-	      | substituteItem(item as ref(INF(x, s, d))) =
-		let
-		    val _ = substituteSort(subst, s)
-		    val _ = substituteInfDef d
-		in
-		    item := INF(x, s, d)
-		end
-
-	    and substitutePathDef NONE    = NONE
-	      | substitutePathDef(SOME p) = SOME(Path.substitute(subst, p))
-
-	    and substituteTypDef NONE     = ()
-	      | substituteTypDef(SOME t)  = Type.substitute(subst, t)
-
-	    and substituteInfDef NONE     = ()
-	      | substituteInfDef(SOME j)  = substituteInf(subst, j)
+	    and realiseInfDef NONE    = ()
+	      | realiseInfDef(SOME j) = realiseInf(rea, j)
 	in
-	    List.app substituteItem items
+	    List.app realiseItem items
 	end
 
 
   (* Strengthening *)
 
-    fun strengthen (strengthenInf, substituteInf, substituteSort, infCon)
-		   (subst, p, (ref items, _)) =
+    fun strengthen infCon (p, (ref items, _)) =
 	let
-	    fun extendSubst(z, l, n) =
-		let val p' = Path.DOT(p,l,n) in
-		    StampMap.insert(subst, z, p') ; p'
-		end
+	    fun strengthenId(p',l,n) = Path.substitute(p', p, l, n)
 
-	    fun strengthenItem(item as ref(VAL(x as (l,n,z), t, b, d))) =
+	    fun strengthenItem(item as ref(VAL(x, t, b, d))) =
 		let
-		    val p' = extendSubst(z, l, n)
-		    val _  = Type.substitute(subst, t)
-		    val d' = strengthenPathDef(p', d)
+		    val _  = strengthenId x
+		    val d' = strengthenPathDef(pathOfId x, d)
 		in
 		    item := VAL(x, t, b, d')
 		end
 
-	      | strengthenItem(item as ref(TYP(x as (l,n,z), k, d))) =
+	      | strengthenItem(item as ref(TYP(x, k, d))) =
 		let
-		    val p' = extendSubst(z, l, n)
-		    val d' = strengthenTypDef(p', k, d)
+		    val _  = strengthenId x
+		    val d' = strengthenTypDef(pathOfId x, k, d)
 		in
 		    item := TYP(x, k, d')
 		end
 
-	      | strengthenItem(item as ref(MOD(x as (l,n,z), j, d))) =
+	      | strengthenItem(item as ref(MOD(x, j, d))) =
 		let
-		    val p' = extendSubst(z, l, n)
-		    val _  = substituteInf(subst, j)
-		    val d' = strengthenPathDef(p', d)
+		    val _  = strengthenId x
+		    val d' = strengthenPathDef(pathOfId x, d)
 		in
 		    item := MOD(x, j, d')
 		end
 
-	      | strengthenItem(item as ref(INF(x as (l,n,z), s, d))) =
+	      | strengthenItem(item as ref(INF(x, k, d))) =
 		let
-		    val p' = extendSubst(z, l, n)
-		    val _  = substituteSort(subst, s)
-		    val d' = strengthenInfDef(p', s, d)
+		    val _  = strengthenId x
+		    val d' = strengthenInfDef(pathOfId x, k, d)
 		in
-		    item := INF(x, s, d')
+		    item := INF(x, k, d')
 		end
 
 	    and strengthenPathDef(p', NONE)   = SOME p'
-	      | strengthenPathDef(p', SOME p) = SOME(Path.substitute(subst, p))
+	      | strengthenPathDef(p', d)      = d
 
-	    and strengthenTypDef(p', k, NONE) =
-		    SOME(Type.inCon(k, Type.CLOSED, p'))
-	      | strengthenTypDef(p', k, d as SOME t) =
-		    ( Type.substitute(subst, t) ; d )
+	    and strengthenTypDef(p', k, NONE) = SOME(Type.inCon
+							(k, Type.CLOSED, p'))
+	      | strengthenTypDef(p', k, d)    = d
 
-	    and strengthenInfDef(p', s, NONE) = SOME(infCon(s, p'))
-	      | strengthenInfDef(p', s, d as SOME j) =
-		    ( substituteInf(subst, j) ; d )
+	    and strengthenInfDef(p', k, NONE) = SOME(infCon(k, p'))
+	      | strengthenInfDef(p', k, d)    = d
 	in
 	    List.app strengthenItem items
 	end
 
 
-  (* Instantiation *)
+  (* Cloning *)
 
-    fun instantiate (instantiateInf, instantiateSort) (subst, (ref items,_)) =
+    fun clone (cloneInf, cloneKind) (rea, (ref items,_)) =
 	let
 	    val s as (itemsr,map) = empty()
-
-	    fun extendSubst(l, n, z) =
-		let val z' = Stamp.new() in
-		    StampMap.insert(subst, z, Path.PLAIN(z',l,n)) ; z'
-		end
 
 	    fun extendSig(doml, item) =
 		( itemsr := item :: !itemsr
 		; Map.insertWith (fn(l1,l2) => l2 @ l1) (map, doml, [item])
 		)
 
-	    fun instantiateTyp t =
-		let val t2 = Type.clone t in
-		    Type.substitute(subst,t2) ; t2
+	    fun clonePath p =
+		let val p' = Path.cloneBinder PathMap.lookup (rea, p) in
+		    if p' <> p then PathMap.insert(rea, p, p') else () ; p'
 		end
 
-	    fun instantiateItem(ref(VAL((l,n,z), t, b, d))) =
+	    fun cloneTyp t =
+		let val t2 = Type.clone t in
+		    Type.realise(rea,t2) ; t2
+		end
+
+	    fun cloneItem(ref(VAL((p,l,n), t, b, d))) =
 		let
-		    val z'   = extendSubst(l, n, z)
-		    val t'   = instantiateTyp t
-		    val d'   = instantiatePathDef d
-		    val item = ref(VAL((l,n,z'), t', b, d'))
+		    val p'   = clonePath p
+		    val t'   = cloneTyp t
+		    val d'   = clonePathDef d
+		    val item = ref(VAL((p',l,n), t', b, d'))
 		in
 		    extendSig((VAL',l), item)
 		end
 
-	      | instantiateItem(ref(TYP((l,n,z), k, d))) =
+	      | cloneItem(ref(TYP((p,l,n), k, d))) =
 		let
-		    val z'   = extendSubst(l, n, z)
-		    val d'   = instantiateTypDef d
-		    val item = ref(TYP((l,n,z'), k, d'))
+		    val p'   = clonePath p
+		    val d'   = cloneTypDef d
+		    val item = ref(TYP((p',l,n), k, d'))
 		in
 		    extendSig((TYP',l), item)
 		end
 
-	      | instantiateItem(ref(MOD((l,n,z), j, d))) =
+	      | cloneItem(ref(MOD((p,l,n), j, d))) =
 		let
-		    val z'   = extendSubst(l, n, z)
-		    val j'   = instantiateInf(subst, j)
-		    val d'   = instantiatePathDef d
-		    val item = ref(MOD((l,n,z'), j', d'))
+		    val p'   = clonePath p
+		    val j'   = cloneInf(rea, j)
+		    val d'   = clonePathDef d
+		    val item = ref(MOD((p',l,n), j', d'))
 		in
 		    extendSig((MOD',l), item)
 		end
 
-	      | instantiateItem(ref(INF((l,n,z), s, d))) =
+	      | cloneItem(ref(INF((p,l,n), k, d))) =
 		let
-		    val z'   = extendSubst(l, n, z)
-		    val s'   = instantiateSort(subst, s)
-		    val d'   = instantiateInfDef d
-		    val item = ref(INF((l,n,z'), s', d'))
+		    val p'   = clonePath p
+		    val k'   = cloneKind(rea, k)
+		    val d'   = cloneInfDef d
+		    val item = ref(INF((p',l,n), k', d'))
 		in
 		    extendSig((INF',l), item)
 		end
 
-	    and instantiatePathDef NONE    = NONE
-	      | instantiatePathDef(SOME p) = SOME(Path.substitute(subst, p))
+	    and clonePathDef      NONE    = NONE
+	      | clonePathDef(d as SOME p) =
+		case PathMap.lookup(rea, p)
+		  of NONE => d
+		   | d'   => d'
 
-	    and instantiateTypDef NONE     = NONE
-	      | instantiateTypDef(SOME t)  = SOME(instantiateTyp t)
+	    and cloneTypDef NONE     = NONE
+	      | cloneTypDef(SOME t)  = SOME(cloneTyp t)
 
-	    and instantiateInfDef NONE     = NONE
-	      | instantiateInfDef(SOME j)  = SOME(instantiateInf(subst, j))
+	    and cloneInfDef NONE     = NONE
+	      | cloneInfDef(SOME j)  = SOME(cloneInf(rea, j))
 
-	    val _ = Misc.List_appr instantiateItem items
+	    val _ = Misc.List_appr cloneItem items
 	in
 	    s
 	end

@@ -1262,8 +1262,8 @@ val _=print "\n"
 	    val  _        = Type.enterLevel()
 	    val  k        = elabTypKind(E, typ)
 	    val (t1,id')  = elabTypId(E, k, id)
-	(*UNFINISHED: build real path*) val O.Id(_, z, O.ExId s) = id'
-	    val  p        = Path.PLAIN(z, Lab.fromString s, 1)
+	(*UNFINISHED: build real path*)
+	    val  p        = Path.fromLab(Lab.fromName(O.name id'))
 	    val (t2,typ') = elabTypRep(E, p, t1, fn t => t, fn k => k, typ)
 	    val  _        = Type.exitLevel()
 	    val  E'       = splitScope E
@@ -1504,8 +1504,8 @@ print "\n") andthen
 	    val  _        = Type.enterLevel()
 	    val  k        = elabTypKind(E, typ)
 	    val (t1,id')  = elabTypId(E, k, id)
-	(*UNFINISHED: build real path*) val O.Id(_, z, O.ExId s) = id'
-	    val  p        = Path.PLAIN(z, Lab.fromString s, 1)
+	(*UNFINISHED: build real path*)
+	    val  p        = Path.fromLab(Lab.fromName(O.name id'))
 	    val (t2,typ') = elabTypRep(E, p, t1, fn t => t, fn k => k, typ)
 	    val  _        = Type.exitLevel()
 	    val  E'       = splitScope E

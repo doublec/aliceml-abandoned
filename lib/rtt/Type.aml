@@ -38,15 +38,15 @@ structure TypePrivate =
 
     type t = typ
 
-    type subst = Path.subst
-    type rea   = typ PathMap.t
+    type rea     = path PathMap.t
+    type typ_rea = typ PathMap.t
 
     (*
      * We establish the following invariants:
      * - rows are sorted by label
      * - types are always in head normal form
-     * - directly nested ALLs appear in depth-first leftmost traversal order
-     * - same for nested EXs
+     * - sequential quantifiers are ordered such that the bound variables
+     *   appear in depth-first leftmost traversal order inside the body
      *)
 
 
@@ -169,7 +169,7 @@ structure TypePrivate =
 		    app1'(t',app)
 		end
 	in
-	    app t before unmark t
+	    app t before unmark t handle e => ( unmark t ; raise e )
 	end
 
     fun foldl f a t =
@@ -184,22 +184,13 @@ structure TypePrivate =
 		    foldl1'(t',fold,a')
 		end
 	in
-	    fold(t,a) before unmark t
+	    fold(t,a) before unmark t handle e => ( unmark t ; raise e )
 	end
 
 
-  (* Substitution *)
+  (* Cloning *)
 
-    fun substitute(subst, t) =
-	app (fn (t as ref(CON(k,s,p))) =>
-		 t := CON(k, s, Path.substitute(subst,p))
-	      |  _  =>  ()
-	    ) t
-
-
-  (* Cloning under a type realisation *)
-
-    fun realise(rea, t) =
+    fun clone t =
 	let
 	    (* We want to be able to handle recursive types, so we have to
 	     * implement graph copying here.
@@ -227,17 +218,17 @@ structure TypePrivate =
 		    t2
 		end
 
-	    and clone t =
-		let val t1 = follow t in
-		    case !t1 of (MARK _ | VAR _ | HOLE _) => t1
-			      | t1'                       => dup t1
+	    and clone t1 =
+		let val t11 = follow t1 in
+		    case !t11 of (MARK _ | VAR _ | HOLE _) => t11
+			       | t11'                      => dup t11
 		end
 
 	    and clone'(ARR(t1,t2))	= ARR(clone t1, clone t2)
 	      | clone'(TUP ts)		= TUP(List.map clone ts)
 	      | clone'(ROW r)		= ROW(cloneRow r)
 	      | clone'(SUM r)		= SUM(cloneRow r)
-	      | clone'(CON c)		= CON c (*UNFINISHED: do rea+red*)
+	      | clone'(CON c)		= CON c
 	      | clone'(ALL(a,t))	= ALL(dup' a, clone t)
 	      | clone'(EX(a,t))		= EX(dup' a, clone t)
 	      | clone'(LAM(a,t))	= LAM(dup' a, clone t)
@@ -262,9 +253,6 @@ structure TypePrivate =
 	end
 
 
-    fun clone t = realise(PathMap.new(), t)
-
-
   (* Reduction to head normal form *)
 
     (*UNFINISHED: avoid multiple cloning of curried lambdas somehow *)
@@ -275,9 +263,9 @@ structure TypePrivate =
     and reduceApp(t, t1 as ref(LAM(a,_)), t2, r) =
 	( t := HOLE(kind a, !level)
 	; case !(clone t1)
-	    of LAM(a,t3) =>
+	    of LAM(a,t11) =>
 		( a := LINK t2
-		; t := (if r then REC else LINK) t3
+		; t := (if r then REC else LINK) t11
 		; reduce t
 		)
 	    | _ => Crash.crash "Type.reduceApp"
@@ -316,11 +304,7 @@ structure TypePrivate =
     exception Type
 
     fun asType(ref(LINK t | REC t))	= asType t
-      | asType(t as ref(APP _))		= ( reduce t ; asType' t )
       | asType(ref t')			= t'
-
-    and asType'(ref(t' as APP _))	= t'
-      | asType' t			= asType t
 
     fun isUnknown t	= case asType t of HOLE _ => true | _ => false
     fun isArrow t	= case asType t of ARR _ => true | _ => false
@@ -431,57 +415,41 @@ structure TypePrivate =
 	end
 
 
-  (* Shifting of hole variable levels *)
+  (* Occur check (not used by unification) *)
 
-    fun shiftLevel(t,n) =
-	if n = !level then () else
-	let
-	    fun shift(t as ref(HOLE(k,n'))) =
-		if n' < n then () else t := HOLE(k,n)
-	      | shift t = ()
-	in
-	    app shift t
-	end
-
-
-  (* Occur check (2 versions: strict and weaker one used by unify) *)
+    exception Occurs
 
     fun occurs(t1,t2) =
 	let
-	    exception Occurs
-
-	    fun occurs t2 =
-		if t1 = t2 then
-		    raise Occurs
-		else
-		    case !t2
-		      of MARK _ => ()
-		       | t2'    =>
-			 ( t2 := MARK t2' ; app1'(t2', occurs) )
+	    fun occurs t = if t1 = t then raise Occurs else ()
 	in
-	    (( occurs t2 ; false ) handle Occurs => true) before unmark t2
-	end
-
-    fun occursIllegally(t1,t2) =
-	let
-	    exception Occurs
-
-	    fun occurs t2 =
-		if t1 = t2 then
-		    raise Occurs
-		else
-		    case !t2
-		      of (REC _ | MARK _) => ()
-		       | t2'              =>
-			 ( t2 := MARK t2' ; app1'(t2', occurs) )
-	in
-	    (( occurs t2 ; false ) handle Occurs => true) before unmark t2
+	    ( app occurs t2 ; false ) handle Occurs => true
 	end
 
 
   (* Unification *)
 
     exception Unify of typ * typ
+
+
+    fun liftAndCheck(n,t1,t2) =
+	let
+	    fun lift(t as ref(t' as HOLE(k,n'))) =
+		    t := MARK(if n' <= n then t' else HOLE(k,n))
+	      | lift(ref(MARK _)) = ()
+	      | lift(t as ref t') = ( t := MARK t' ; app1'(t', lift) )
+
+	    fun check(t as ref t') =
+		if t1 = t then
+		    ( unmark t2 ; raise Unify(t1,t2) )
+		else case t'
+		  of HOLE(k,n') => t := MARK(if n' <= n then t' else HOLE(k,n))
+		   | MARK _     => ()
+		   | REC _      => ( t := MARK t' ; app1'(t', lift) )
+		   | _          => ( t := MARK t' ; app1'(t', check) )
+	in
+	    check t2 ; unmark t2
+	end
 
 
     fun unify(t1,t2) =
@@ -510,18 +478,12 @@ if k1 <> k2 then raise Assert.failure else
 		       | (HOLE(k1,n), _) =>
 (*ASSERT		 assert k1 = kind' t2' =>*)
 if k1 <> kind' t2' then raise Assert.failure else
-			 if occursIllegally(t1,t2) then
-			     raise Unify(t1,t2)
-			 else
-			     ( shiftLevel(t2,n) ; t1 := LINK t2 )
+			 ( liftAndCheck(n,t1,t2) ; t1 := LINK t2 )
 
 		       | (_, HOLE(k2,n)) =>
 (*ASSERT		 assert kind' t1' = k2 =>*)
 if kind' t1' <> k2 then raise Assert.failure else
-			 if occursIllegally(t2,t1) then
-			     raise Unify(t1,t2)
-			 else
-			     ( shiftLevel(t1,n) ; t2 := LINK t1 )
+			 ( liftAndCheck(n,t2,t1) ; t2 := LINK t1 )
 
 		       | (REC(t11), REC(t21)) =>
 			 recurse unify (t11,t21)
@@ -555,6 +517,9 @@ if kind' t1' <> k2 then raise Assert.failure else
 				    else raise Unify(t1,t2)
 
 		       | (APP(tt1), APP(tt2)) =>
+			 (* Note that we do not allow general lambdas during
+			  * unification, so application is considered to be
+			  * in normal form *)
 			 recurse unifyPair (tt1,tt2)
 
 		       | (ALL(a1,t1), ALL(a2,t2)) =>
@@ -632,6 +597,31 @@ if kind' t1' <> k2 then raise Assert.failure else
 	    s
 	end
 
+
+  (* Realisation *)
+
+    fun realise(rea, t) =
+	let
+	    fun subst(ref(CON(k,s,p))) = Path.realise PathMap.lookup (rea, p)
+	      | subst t1               = ()
+	in
+	    app subst t
+	end
+
+    fun realise'(typ_rea, rea, t) =
+	let
+	    val apps = ref[]
+
+	    fun subst(t1 as ref(CON(k,s,p))) =
+		(case PathMap.lookup(typ_rea, p)
+		   of SOME t2 => t1 := LINK t2
+		    | NONE    => Path.realise PathMap.lookup (rea, p)
+		)
+	      | subst(t1 as ref(APP _)) = apps := t1::(!apps)
+	      | subst t1 = ()
+	in
+	    app subst t ; List.app reduce (!apps)
+	end
 
   end
 

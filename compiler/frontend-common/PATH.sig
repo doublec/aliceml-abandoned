@@ -4,16 +4,27 @@
 signature PATH =
   sig
 
-    type stamp = Stamp.t
-    type lab   = Lab.t
+  (* Types *)
 
-    datatype path = PLAIN of stamp * lab * int | DOT of path * lab * int
+    type lab   = Lab.t
+    type name  = Name.t
+
+    eqtype path
     type t = path
 
-    type subst = path StampMap.t
+  (* Operations *)
+
+    val invent :	unit -> path
+    val fromLab :	lab  -> path
+    val path :		path * lab * int -> path
 
     val compare :	path * path -> order
     val hash :		path -> int
-    val substitute :	subst * path -> path
+
+    val substitute :	path * path * lab * int -> unit
+    val realise :	('rea * path -> path option) -> 'rea * path -> unit
+
+    val cloneBinder :	('rea * path -> path option) -> 'rea * path -> path
+    val cloneFree :	('rea * path -> path option) -> 'rea * path -> path
 
   end

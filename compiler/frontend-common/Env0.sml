@@ -13,17 +13,16 @@ structure Env0 :> ENV0 =
 
     (* Type environment *)
 
-    val path_word    = Path.PLAIN(Prebound.stamp_word, Lab.fromString"word", 1)
-    val path_int     = Path.PLAIN(Prebound.stamp_int,  Lab.fromString"int",  1)
-    val path_char    = Path.PLAIN(Prebound.stamp_char, Lab.fromString"char", 1)
-    val path_string  = Path.PLAIN(Prebound.stamp_string,
-  						       Lab.fromString"string",1)
-    val path_real    = Path.PLAIN(Prebound.stamp_real, Lab.fromString"real", 1)
-    val path_bool    = Path.PLAIN(Prebound.stamp_bool, Lab.fromString"bool", 1)
-    val path_exn     = Path.PLAIN(Prebound.stamp_exn,  Lab.fromString"exn",  1)
-    val path_ref     = Path.PLAIN(Prebound.stamp_tref, Lab.fromString"ref",  1)
-    val path_vec     = Path.PLAIN(Prebound.stamp_vec,  Lab.fromString"vector",1)
-    val path_list    = Path.PLAIN(Prebound.stamp_list, Lab.fromString"list", 1)
+    val path_word    = Path.fromLab(Lab.fromString "word")
+    val path_int     = Path.fromLab(Lab.fromString "int")
+    val path_char    = Path.fromLab(Lab.fromString "char")
+    val path_string  = Path.fromLab(Lab.fromString "string")
+    val path_real    = Path.fromLab(Lab.fromString"real")
+    val path_bool    = Path.fromLab(Lab.fromString"bool")
+    val path_exn     = Path.fromLab(Lab.fromString"exn")
+    val path_ref     = Path.fromLab(Lab.fromString"ref")
+    val path_vec     = Path.fromLab(Lab.fromString"vector")
+    val path_list    = Path.fromLab(Lab.fromString"list")
 
     val con_word     = (Type.STAR, Type.CLOSED, path_word)
     val con_int      = (Type.STAR, Type.CLOSED, path_int)

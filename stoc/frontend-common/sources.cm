@@ -27,9 +27,16 @@ is
 
 	ENV0.sig
 	Env0.sml
+
+	PP_PATH.sig
+	PPPath.sml
 	PP_TYPE.sig
 	PPType.sml
-
+(*	PP_SIGN.sig
+	PPSign.sml
+	PP_INF.sig
+	PPInf.sml
+*)
 	TypedGrammar.sml
 	ELABORATION_ERROR.sig
 	ElaborationError.sml

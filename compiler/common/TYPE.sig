@@ -16,8 +16,8 @@ signature TYPE =
     type typ						(* [tau,t] *)
     type t = typ
 
-    type subst = Path.subst
-    type rea   = typ PathMap.t
+    type rea     = path PathMap.t
+    type typ_rea = typ PathMap.t
 
 
   (* Injections *)
@@ -66,14 +66,6 @@ signature TYPE =
     val asLambda :	typ -> alpha * typ	(* Type *)
     val asApp :		typ -> typ * typ	(* Type *)
 
-  (* Copying and instantiation *)
-
-    val instance :	typ -> typ
-    val skolem :	typ -> typ
-    val clone :		typ -> typ
-    val substitute :	subst * typ -> unit
-    val realise :	rea   * typ -> typ
-
   (* Complex extractions *)
 
     val kind :		typ   -> kind
@@ -91,6 +83,15 @@ signature TYPE =
     val unknownRow :	unit -> row
     val emptyRow :	unit -> row
     val extendRow :	lab * typ list * row -> row	(* Row *)
+
+  (* Copying and instantiation *)
+
+    val instance :	typ -> typ
+    val skolem :	typ -> typ
+    val clone :		typ -> typ
+
+    val realise :	rea * typ -> unit
+    val realise' :	typ_rea * rea * typ -> unit
 
   (* Unification and closure *)
 

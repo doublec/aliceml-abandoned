@@ -13,28 +13,26 @@ signature SIGN =
     type typ   = Type.t
     type kind  = Type.kind
 
-    type id    = lab * int * stamp
+    type ('inf,'kind) sign			(* [sigma,s] *)
+    type ('inf,'kind) t = ('inf,'kind) sign
 
-    type ('inf,'sort) sign			(* [sigma,s] *)
-    type ('inf,'sort) t = ('inf,'sort) sign
+  (* Realisations *)
 
-  (* Substitutions and realisations *)
+    type rea		 = path PathMap.t
 
-    type subst = Path.subst
-
-    type val_rea      = path PathMap.t
-    type typ_rea      = typ  PathMap.t
-    type mod_rea      = path PathMap.t
-    type 'inf inf_rea = 'inf PathMap.t
-    type 'inf rea     = val_rea * typ_rea * mod_rea * 'inf inf_rea
+    type val_rea	 = path PathMap.t
+    type typ_rea	 = typ  PathMap.t
+    type ('i,'k) mod_rea = ('i,'k) sign PathMap.t
+    type ('i,'k) inf_rea = 'i PathMap.t
+    type ('i,'k) rea'	 = val_rea * typ_rea * ('i,'k) mod_rea * ('i,'k) inf_rea
 
   (* Construction *)
 
     val empty :		unit -> ('a,'b) sign
-    val extendVal :	('a,'b) sign * lab * typ * bool * path option -> id
-    val extendTyp :	('a,'b) sign * lab * kind * typ option -> id
-    val extendMod :	('a,'b) sign * lab * 'a  * path option -> id
-    val extendInf :	('a,'b) sign * lab * 'b  *  'a  option -> id
+    val extendVal :	('a,'b) sign * lab * typ * bool * path option -> path
+    val extendTyp :	('a,'b) sign * lab * kind * typ option -> path
+    val extendMod :	('a,'b) sign * lab * 'a  * path option -> path
+    val extendInf :	('a,'b) sign * lab * 'b  *  'a  option -> path
 
   (* Lookup *)
 
@@ -48,14 +46,12 @@ signature SIGN =
     val lookupMod' :	('a,'b) sign * lab * int -> 'a
     val lookupInf' :	('a,'b) sign * lab * int -> 'a
 
-  (* Instantiation etc. *)
+  (* Realisations and cloning *)
 
-    val substitute :	(subst * 'a -> unit) * (subst * 'b -> unit) ->
-			 subst * ('a,'b) sign -> unit
-    val strengthen :	(subst * path * 'a -> unit) * (subst * 'a -> unit) *
-			(subst * 'b -> unit) * ('b * path -> 'a) ->
-			 subst * path * ('a,'b) sign -> unit
-    val instantiate :	(subst * 'a -> 'a) * (subst * 'b -> 'b) ->
-			 subst * ('a,'b) sign -> ('a,'b) sign
+    val realise :	(rea * 'a -> unit) * (rea * 'b -> unit) ->
+			 rea * ('a,'b) sign -> unit
+    val clone :		(rea * 'a -> 'a) * (rea * 'b -> 'b) ->
+			 rea * ('a,'b) sign -> ('a,'b) sign
+    val strengthen :	('b * path -> 'a) -> path * ('a,'b) sign -> unit
 
   end
