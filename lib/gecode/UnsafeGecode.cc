@@ -1334,7 +1334,7 @@ DEFINE3(gc_fsCard) {
   DECLARE_VAR(var1, stamp, pstamp, x1);
   DECLARE_VAR(var2, stamp, pstamp, x2);
   DBGMSG("done");
-  s->fs_card(var1, var2);
+  s->fs_card(var2, var1);
   RETURN_UNIT;
 } END
 
