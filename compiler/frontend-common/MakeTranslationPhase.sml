@@ -60,7 +60,8 @@ UNFINISHED: obsolete after bootstrapping:
 
     fun idsDec(I.ValDec(i,p,e), xs')	= idsPat(p, xs')
       | idsDec(I.ConDec(i,c,t), xs')	= idsCon(c, xs')
-      | idsDec(I.TypDec(i,x,t), xs')	= idsTyp(t, xs')
+      | idsDec(I.TypDec(i,x,t), xs')	= xs'
+      | idsDec(I.DatDec(i,x,t), xs')	= idsTyp(t, xs')
       | idsDec(I.ModDec(i,x,m), xs')	= trId x::xs'
       | idsDec(I.InfDec(i,x,j), xs')	= xs'
       | idsDec(I.RecDec(i,ds), xs')	= idsDecs(ds, xs')
@@ -199,7 +200,8 @@ UNFINISHED: obsolete after bootstrapping:
 					   of I.SingTyp(_,y) => trEqCon(c,y,ds')
 					    | _              => trCon(c,ds')
 					  )
-      | trDec(I.TypDec(i,x,t), ds')	= trTyp(t, ds')
+      | trDec(I.TypDec(i,x,t), ds')	= ds'
+      | trDec(I.DatDec(i,x,t), ds')	= trTyp(t, ds')
       | trDec(I.ModDec(i,x,m), ds')	= let val x' as O.Id(i',_,_) = trId x in
 					      O.ValDec(i, O.VarPat(i',x'),
 							  trMod m) :: ds'

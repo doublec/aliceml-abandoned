@@ -122,6 +122,7 @@ signature ABSTRACT_GRAMMAR =
 	  ValDec    of info * pat * exp		(* values *)
 	| ConDec    of info * con * typ		(* constructor *)
 	| TypDec    of info * id * typ		(* type *)
+	| DatDec    of info * id * typ		(* data type *)
 	| ModDec    of info * id * mod		(* module *)
 	| InfDec    of info * id * inf		(* interface *)
 	| RecDec    of info * dec list		(* recursive declarations *)
@@ -134,6 +135,7 @@ signature ABSTRACT_GRAMMAR =
 	  ValSpec   of info * id * typ		(* value *)
 	| ConSpec   of info * con * typ		(* constructor *)
 	| TypSpec   of info * id * typ		(* type *)
+	| DatSpec   of info * id * typ		(* data type *)
 	| ModSpec   of info * id * inf		(* module *)
 	| InfSpec   of info * id * inf		(* interface *)
 	| RecSpec   of info * spec list		(* recursive specifications *)
@@ -147,6 +149,7 @@ signature ABSTRACT_GRAMMAR =
     (* Operations *)
 
     val stamp :		id	-> stamp
+    val name :		id	-> name
     val lab :		lab	-> string
     val idToLab :	id	-> lab
 

@@ -1538,7 +1538,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		val cons'     = trConBindo (E,E'') (SOME conbind)
 		val _         = deleteScope E
 		val funtyp'   = funtyp(ids', O.SumTyp(i', cons'))
-		val dec'      = O.TypDec(i, id', funtyp')
+		val dec'      = O.DatDec(i, id', funtyp')
 		val  _        = unionDisjoint(E',E'') handle CollisionVal vid' =>
 				errorVId'("duplicate data constructor ",
 					  E'', vid', " in binding group")
@@ -1555,7 +1555,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		val ids'      = trTyVarSeq E tyvarseq
 		val _         = deleteScope E
 		val funtyp'   = funtyp(ids', O.ExtTyp(i'))
-		val dec'      = O.TypDec(i, id', funtyp')
+		val dec'      = O.DatDec(i, id', funtyp')
 	   in
 		trDatBindo_rhs' (E,E', dec'::acc) datbindo
 	   end
@@ -2030,7 +2030,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		val cons'    = trConDesco (E,E') (SOME condesc)
 		val _        = deleteScope E
 		val funtyp'  = funtyp(ids', O.SumTyp(i', cons'))
-		val spec'    = O.TypSpec(i, id', funtyp')
+		val spec'    = O.DatSpec(i, id', funtyp')
 		val _        = unionDisjoint(E,E') handle CollisionVal vid' =>
 				errorVId'("duplicate value or constructor ",
 					  E', vid', " in signature")
@@ -2047,7 +2047,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		val ids'     = trTyVarSeq E tyvarseq
 		val _        = deleteScope E
 		val funtyp'  = funtyp(ids', O.ExtTyp(i'))
-		val spec'    = O.TypSpec(i, id', funtyp')
+		val spec'    = O.DatSpec(i, id', funtyp')
 	   in
 		trDatDesco_rhs' (E, spec'::acc) datdesco
 	   end
