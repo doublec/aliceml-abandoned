@@ -271,6 +271,24 @@ fun createFrame (title,obj) =
 	 ; frame)
     end
 
+fun  createScrollWindowDefaults(inc1,inc2) =  
+    let
+	val adj1 = Gtk.adjustmentNew(0.0,0.0,!Settings.max_x ,
+				     inc1,inc2,!Settings.max_x )
+	val adj2 = Gtk.adjustmentNew(0.0,0.0,!Settings.max_y ,
+				     inc1,inc2,!Settings.max_y ) 
+	    
+	val scrolled = Gtk.scrolledWindowNew(adj1,adj2)
+	val hadj = Gtk.scrolledWindowGetHadjustment(scrolled)
+	val vadj = Gtk.scrolledWindowGetVadjustment(scrolled)
+    in
+	(Gtk.scrolledWindowSetPolicy(scrolled,
+				     Gtk.POLICY_ALWAYS,
+				     Gtk.POLICY_ALWAYS)
+	 ; (scrolled,hadj,vadj))
+    end
+
+     
 end
 
  
