@@ -8,15 +8,12 @@ Bugs:
 * propagate output width on init and after resize
 * cannot make window smaller
 * modified files dialogue is too ugly
-* Ctrl-L for goto line (Ctrl-G is semi-std for "Search again")
-* Move history items to eval menu?
 
 * Glade should generate widgetShow calls bottom up
 
 Missing Features:
 
 * live highlighting!
-* replace
 * cumulative undo?
 * redo?
 * incremental search?
