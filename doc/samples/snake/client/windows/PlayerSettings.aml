@@ -32,11 +32,6 @@ fun colorToGdkColor c =
 structure PlayerSettings =
 struct
 
-    val allColors = ref (List.map Color.toString Color.all)
-
-    val alreadyConn = ref nil
-
-
 
 
 
@@ -45,13 +40,12 @@ struct
 	let
 
 	    val playerSettings  = Gtk.windowNew Gtk.WINDOW_TOPLEVEL
-   	    val playerAdjust1 = Gtk.adjustmentNew (50.0, 0.0, 100.0, 
-						1.0, 1.0, 1.0)
-   	    val playerAdjust2 = Gtk.adjustmentNew (50.0, 0.0, 100.0, 
-						1.0, 1.0, 1.0)
-  	    val playerText = Gtk.textNew (playerAdjust1, playerAdjust2)
- 	    val colorCombo = Gtk.comboNew ()
-
+   	    val playerAdjust1   = Gtk.adjustmentNew (50.0, 0.0, 100.0, 
+						     1.0, 1.0, 1.0)
+   	    val playerAdjust2   = Gtk.adjustmentNew (50.0, 0.0, 100.0, 
+						     1.0, 1.0, 1.0)
+  	    val playerText      = Gtk.textNew (playerAdjust1, playerAdjust2)
+ 	    val colorCombo      = Gtk.comboNew ()
 	    val settingsVBox 	= Gtk.vboxNew (false, 0)
 	    val nameLabel 	= Gtk.labelNew "Name : "
 	    val nameText	= Gtk.entryNew ()
@@ -74,41 +68,43 @@ struct
 	    val cancelButton    = Gtk.buttonNewWithLabel "Cancel"
 	    val buttonHBox	= Gtk.hboxNew (true, 10)
 
+	    val allColors = ref (List.map Color.toString Color.all)
 
-    fun insertColors colors = 
-	Gtk.comboSetPopdownStrings (colorCombo, colors)
+	    val alreadyConn = ref nil
 
-    fun insertPlayer (name, color) = 
-	let
-	    val font = 
-		Gdk.fontLoad ("-*-times-*-*-*-*-*-*-*-*-*-*-*-*")
-	    val white = Gdk.allocColor (0xffff, 0xffff, 0xffff)
-	    val front = colorToGdkColor color
-	in
-	    Gtk.textInsert(playerText, font, front, 
-			   white, name ^ "\n", ~1);
-	    alreadyConn := (name, color) :: !alreadyConn
-	end
+	    fun insertColors colors = 
+		Gtk.comboSetPopdownStrings (colorCombo, colors)
+		
+	    fun insertPlayer (name, color) = 
+		let
+		    val font = 
+			Gdk.fontLoad ("-*-arial-bold-*-*-*-*-*-*-*-*-*-*-*")
+		    val white = Gdk.allocColor (0xffff, 0xffff, 0xffff)
+		    val front = colorToGdkColor color
+		in
+		    Gtk.textInsert(playerText, font, front, 
+				   white, name ^ "\n", ~1);
+		    alreadyConn := (name, color) :: !alreadyConn
+		end
 
-    fun removePlayer (name, color) = 
-	let
-	    val font = 
-		Gdk.fontLoad ("-*-arial-bold-*-*-*-*-*-*-*-*-*-*-*")
-	    val white = Gdk.allocColor (0xffff, 0xffff, 0xffff)
-	    val black = Gdk.allocColor (0 ,0, 0)
-	in
-	    Gtk.textInsert(playerText, font, black, 
-			   white, 
-			   name ^
-	                   " has disconnected" ^
-	                   "\n", ~1);
-	    alreadyConn := (name, color) :: (!alreadyConn)
-	end
+	    fun removePlayer (name, color) = 
+		let
+		    val font = 
+			Gdk.fontLoad ("-*-arial-bold-*-*-*-*-*-*-*-*-*-*-*")
+		    val white = Gdk.allocColor (0xffff, 0xffff, 0xffff)
+		    val black = Gdk.allocColor (0 ,0, 0)
+		in
+		    Gtk.textInsert(playerText, font, black, 
+				   white, 
+				   name ^
+				   " has disconnected" ^
+				   "\n", ~1);
+		    alreadyConn := (name, color) :: (!alreadyConn)
+		end
 
 	    val started = 
 		ref (fn () => 
 		     (Gtk.widgetDestroy playerSettings;
-		      alreadyConn := nil;
 		      reset (SOME ("ERROR", 
 				   "Game already started"))))
 
@@ -125,7 +121,7 @@ struct
 
 	    fun insertColor col = 
 		let
-		    val colors = (Color.toString col)::(!allColors)
+		    val colors = (Color.toString col) :: (!allColors)
 		in
 		    allColors := colors;
 		    Gtk.comboSetPopdownStrings (colorCombo, colors)
@@ -158,7 +154,6 @@ struct
 
 	    fun mainQuit () = 
 		(disconnect ();
-		 alreadyConn := nil;
 		 Gtk.widgetDestroy playerSettings;
 		 reset NONE)
 
@@ -192,8 +187,8 @@ struct
 				    Gtk.entryGetText 
 				    (Gtk.comboGetFieldEntry colorCombo))
 			    in 
-				alreadyConn := 
-				(name, color) :: (!alreadyConn);
+				(*alreadyConn := 
+				(name, color) :: (!alreadyConn);*)
 				play (name, color)
 				
 			    end
@@ -206,14 +201,13 @@ struct
 			(Gtk.widgetDestroy playerSettings;
 			 case return () of 
 			     FST (mGame, guiGame) => 
-				 (Wait.mkWaitingWindow 
+				 Wait.mkWaitingWindow 
 				 (SND (rev (!alreadyConn), 
 				       {disconnect},
 				       mGame, 
 				       guiGame,
 				       (joined, disconnected, started),
-				       {reset, gameMode}));
-				  alreadyConn := nil)
+				       {reset, gameMode}))
 			   | SND     errorMsg     => 
 				 reset (SOME ("ERROR!!", errorMsg)))
 		end

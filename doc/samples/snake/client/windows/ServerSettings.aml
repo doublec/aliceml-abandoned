@@ -270,7 +270,7 @@ struct
 				    Gtk.entryGetText 
 				    (Gtk.comboGetFieldEntry (colorCombo)))
 			    in
-				alreadyConn := [(name, color)];
+				alreadyConn := [(*(name, color)*)];
 				startServer 
 				(SOME (name, color),
 				 config)

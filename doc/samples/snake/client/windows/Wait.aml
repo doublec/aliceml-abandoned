@@ -35,58 +35,58 @@ fun colorToGdkColor c =
 structure Wait =
 struct
 
-
     (* builds the waiting window *)
     fun mkWaitingWindow alternate = 
 	let
-(* the textwindow where the connected player will be listed *)
-	
-    		    val playerTextAdjust1 = 
-			Gtk.adjustmentNew (50.0, 0.0, 100.0, 1.0, 1.0, 1.0)
-    	   	    val playerTextAdjust2 =
-			Gtk.adjustmentNew (50.0, 0.0, 100.0, 1.0, 1.0, 1.0)
-    		    val playerText = 
-			Gtk.textNew (playerTextAdjust1, playerTextAdjust2)
+	    val waiting          = Gtk.windowNew Gtk.WINDOW_TOPLEVEL
+	    val dialogVBox       = Gtk.vboxNew (false, 0)
+	    val connectedLabel   = Gtk.labelNew "Connected Players : "
+	    val separator1       = Gtk.hseparatorNew ()
+	    val separator2       = Gtk.hseparatorNew ()
+	    val disconnectButton = Gtk.buttonNewWithLabel "Disconnect"
 
-    (* [insert(name, color)] inserts one player with name and color in
-     connected-players list *)
-    fun insert (name, color) = 
-	let
-	    val font = 
-		Gdk.fontLoad ("-*-arial-bold-*-*-*-*-*-*-*-*-*-*-*")
-	    val white = Gdk.allocColor (0xffff, 0xffff, 0xffff)
-	    val front = colorToGdkColor color
-	in
-	    Gtk.textInsert(playerText, font, front,
-			   white, name ^ "\n", ~1)
-	end
-	in
-	case alternate of
+	    (* the textwindow where the connected player will be listed *)
+	    val playerTextAdjust1 = 
+		Gtk.adjustmentNew (50.0, 0.0, 100.0, 1.0, 1.0, 1.0)
+	    val playerTextAdjust2 =
+		Gtk.adjustmentNew (50.0, 0.0, 100.0, 1.0, 1.0, 1.0)
+	    val playerTextAdjust3 = 
+		Gtk.adjustmentNew (50.0, 0.0, 100.0, 1.0, 1.0, 1.0)
+	    val playerTextAdjust4 =
+		Gtk.adjustmentNew (50.0, 0.0, 100.0, 1.0, 1.0, 1.0)
+	    val playerText        = 
+		Gtk.textNew (playerTextAdjust1, playerTextAdjust2)
+	    val playerWindow      = 
+		Gtk.scrolledWindowNew (playerTextAdjust3, playerTextAdjust4)
 
-	    (* client is in server mode *)
-	    FST (alreadyConnected, {start, disconnect}, guiJoin, serverUrlStr,
-		 {reset, gameMode}) =>
+	    (* [insert(name, color)] inserts one player with name and color in
+	     connected-players list *)
+	    fun insert (name, color) = 
+		let
+		    val font = 
+			Gdk.fontLoad ("-*-arial-bold-*-*-*-*-*-*-*-*-*-*-*")
+		    val white = Gdk.allocColor (0xffff, 0xffff, 0xffff)
+		    val front = colorToGdkColor color
+		in
+		    Gtk.textInsert(playerText, font, front,
+				   white, name ^ "\n", ~1)
+		end
+	in
+	    case alternate of
+		(* client is in server mode *)
+		FST (alreadyConnected, {start, disconnect}, 
+		     guiJoin, serverUrlStr, {reset, gameMode}) =>
 		let
 
-		    val waiting          = Gtk.windowNew Gtk.WINDOW_TOPLEVEL
-		    val dialogVBox       = Gtk.vboxNew (false, 0)
-		    val connectedLabel   = Gtk.labelNew "Connected Players : "
-		    val playerWindow     = 
-			Gtk.scrolledWindowNew (playerTextAdjust1,
-					       playerTextAdjust2)
-		    val separator1       = Gtk.hseparatorNew ()
-		    val separator2       = Gtk.hseparatorNew ()
 		    val startButton      = Gtk.buttonNewWithLabel "Start"
-		    val disconnectButton = Gtk.buttonNewWithLabel "Disconnect"
 		    val buttonHBox       = Gtk.hbuttonBoxNew ()
 		    val urlHBox          = Gtk.hboxNew (false, 10)
 		    val urlLabel         = Gtk.labelNew "Server-URL: "
-		    val serverUrl        = ref (Gtk.entryNew ())
+		    val serverUrl        = Gtk.entryNew ()
 
 		    (* the mainQuit procedure resets also the used refs *)
 		    fun mainQuit () = 
 			(disconnect ();
-			 serverUrl := (Gtk.entryNew ());
 			 Gtk.widgetDestroy waiting;
 			 reset NONE)
 
@@ -112,8 +112,7 @@ struct
 		      (* the signal the server gves to start the game,
 		       also resets the refs and destroyes the window *)
 		    fun start' () = 
-			(serverUrl := (Gtk.entryNew ());
-			 Gtk.widgetDestroy waiting;
+			(Gtk.widgetDestroy waiting;
 			case start () of
 			    FST (mGame, guiGame) => 
 				gameMode ({disconnect}, mGame, guiGame)
@@ -136,10 +135,10 @@ struct
 				       fn _ => mainQuit ());
 
 		    (* set some default configurations *)
-		    Gtk.entryPrependText (!serverUrl, serverUrlStr);
+		    Gtk.entryPrependText (serverUrl, serverUrlStr);
 		    Gtk.containerSetBorderWidth (waiting, 10);
 		    Gtk.miscSetAlignment (connectedLabel, 0.0, 0.5);
-		    Gtk.entrySetEditable (!serverUrl, false);
+		    Gtk.entrySetEditable (serverUrl, false);
 		    Gtk.windowSetDefaultSize(waiting, 300, 400);
 		    Gtk.scrolledWindowSetPolicy (playerWindow, 
 						 Gtk.POLICY_NEVER, 
@@ -150,7 +149,7 @@ struct
 		    Gtk.boxPackStart (buttonHBox, disconnectButton, 
 				      true, true, 5);
 		    Gtk.boxPackStart (urlHBox, urlLabel, false, false, 5);
-		    Gtk.boxPackStart (urlHBox, !serverUrl, true, true, 5);
+		    Gtk.boxPackStart (urlHBox, serverUrl, true, true, 5);
 		    Gtk.boxPackStart (dialogVBox, urlHBox, false, false, 0);
 		    Gtk.boxPackStart (dialogVBox, separator2, false, 
 				      false, 5);
@@ -169,21 +168,13 @@ struct
 		end
 
 
-	    (* client is in client mode *)
-	  | SND (alreadyConnected, {disconnect}, mGame, guiGame, 
-		 (joined, disconnected, started),
-		 {reset, gameMode}) =>
+	      (* client is in client mode *)
+	      | SND (alreadyConn, {disconnect}, mGame, guiGame, 
+		     (joined, disconnected, started),
+		     {reset, gameMode}) =>
 		let
-		    val waiting          = Gtk.windowNew Gtk.WINDOW_TOPLEVEL
-		    val dialogVBox       = Gtk.vboxNew (false, 0)
-		    val connectedLabel   = Gtk.labelNew "Connected Players : "
-		    val playerWindow     = 
-			Gtk.scrolledWindowNew (playerTextAdjust1, 
-					       playerTextAdjust2)
-		    val separator1       = Gtk.hseparatorNew ()
-		    val separator2       = Gtk.hseparatorNew ()
-		    val disconnectButton = Gtk.buttonNewWithLabel "Disconnect"
-		    val buttonHBox       = Gtk.hboxNew (true, 10)
+
+		    val buttonHBox = Gtk.hboxNew (true, 10)
 
 		    fun mainQuit () = 
 			(disconnect ();
@@ -207,7 +198,7 @@ struct
 
 			
 		in
-		    playersJoined alreadyConnected;
+		    playersJoined alreadyConn;
 		    Gtk.windowSetModal (waiting,true);
 		    Gtk.windowSetTitle (waiting, "Waiting...");
 		    Gtk.windowSetPosition (waiting, Gtk.WIN_POS_CENTER);
