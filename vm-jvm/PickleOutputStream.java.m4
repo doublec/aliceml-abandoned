@@ -6,7 +6,6 @@ final public class DMLObjectOutputStream extends java.io.ObjectOutputStream {
     boolean waitforbind = false;
 
     public DMLObjectOutputStream() throws java.io.IOException {
-	super();
 	if (fcn==null)
 	    try{
 		fcn=Class.forName("de.uni_sb.ps.dml.runtime.DMLFunction");
@@ -19,7 +18,6 @@ final public class DMLObjectOutputStream extends java.io.ObjectOutputStream {
     }
 
     public DMLObjectOutputStream(java.io.OutputStream out) throws java.io.IOException {
-	super(out);
 	if (fcn==null)
 	    try{
 		fcn=Class.forName("de.uni_sb.ps.dml.runtime.DMLFunction");
