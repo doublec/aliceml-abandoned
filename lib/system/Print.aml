@@ -10,6 +10,7 @@
  *   $Revision$
  *)
 
+import structure Type        from "../rtt/Type"
 import structure TextIO      from "TextIO"
 import structure PrettyPrint from "../utility/PrettyPrint"
 import structure PPValue     from "PPValue"
@@ -25,6 +26,10 @@ struct
 
     fun printVal'  t x = outputVal'  t (TextIO.stdOut, x, !printWidth)
     fun printType' t x = outputType' t (TextIO.stdOut, x, !printWidth)
+
+    fun register t f =
+	PPValue.registerTyp' t (fn _ => fn _ => fn x =>
+				SOME (PrettyPrint.text (f x)))
 end
 
 structure Print (* : PRINT *) =
@@ -36,4 +41,7 @@ struct
 				= Print'.outputVal'
     __overload 'a outputType : TextIO.outstream * 'a * int -> unit
 				= Print'.outputType'
+
+    exception Type = Type.Type
+    __overload 'a register : ('a -> string) -> unit = Print'.register
 end

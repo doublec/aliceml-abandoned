@@ -29,6 +29,9 @@ can stretch several lines, it is terminated by a line containing a semicolon as
 its last character. The system will print the results and inferred types
 for the given declarations, or an appropriate error message.</P>
 
+<P>Values of abstract type are not printed. The <TT>register</TT> function from the <A href="library/print.html"><TT>Print</TT></A> module can be used to install simple user-defined printing functions for abstract types that the
+toplevel will use in its outputs.</P>
+
 <P>Note that the <TT>inspect</TT> function from the <A
 href="library/inspector.html">Inspector</A> is available to browse complex
 results conveniently.</P>

@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2003
+ *   Andreas Rossberg, 2003-2004
  *
  * Last change:
  *   $Date$ by $Author$
@@ -20,4 +20,7 @@ sig
     val printType :	'a -> unit
     val outputVal :	TextIO.outstream * 'a * int -> unit
     val outputType :	TextIO.outstream * 'a * int -> unit
+
+    exception Type
+    val register : ('a -> string) -> unit
 end

@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2002
+ *   Andreas Rossberg, 2002-2004
  *
  * Last change:
  *   $Date$ by $Author$
@@ -17,7 +17,6 @@ import structure Type        from "../rtt/Type"
 signature PP_VALUE =
 sig
     type doc    = PrettyPrint.doc
-    type path   = Path.t
     type typ    = Type.t
     type format = {depth : int, width : int, prec : int}
 
@@ -26,6 +25,6 @@ sig
 
     val ppVal :		typ -> 'value -> doc
     val ppVal' :	typ -> format -> 'value -> doc
-    val registerTyp :	path * (typ -> format -> 'value -> doc option) -> unit
-    val unregisterTyp :	path -> unit
+    val registerTyp :	(typ -> format -> 'value -> doc option) -> unit
+    val unregisterTyp :	'value -> unit
 end

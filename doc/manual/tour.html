@@ -866,6 +866,15 @@ struct
 end
 <I>structure Num : NUM</I></PRE>
 
+<DIV class=note>
+<P><I>Note:</I> For values of abstract type the toplevel prints placeholders
+only. However, the function <A href="library/print.html"><TT>Print.register</TT></A> can be used to install a user-defined printer for abstract types, e.g.
+<PRE class=code>
+Print.register (Int.toString o Num.toInt)</PRE>
+enables the toplevel to print values of type <TT>Num.t</TT> in integer
+representation.
+</DIV>
+
 <P>A package can be formed from this structure and be written to a file:</P>
 
 <PRE class=code>

@@ -35,6 +35,7 @@ Interactive Toplevel:
 * Enable Ctrl-C for interrupting a computation.
 * Enable Ctrl-Z for putting a computation into background.
 * Function exit() for as an alternative for Ctrl-D in broken environments.
+* Value printer is customizable for abstract types.
 
 Runtime system:
 
@@ -45,7 +46,7 @@ Runtime system:
   (Generic Constraint Development Environment). It adds
   selection constraints, batch recomputation and distributed search.
   Propagation and search is more than 10 times faster than with Mozart.
-* Mozart is no longer required to run Alice.
+* Mozart is no longer required to run Alice (and no longer compatible with it).
 
 Library:
 
@@ -68,6 +69,7 @@ Library:
 * Future: added ByNeed and Concur functors.
 * Channel: new module for concurrent message channels.
 * RefMap: new module for stable polymorphic hash tables over references.
+* Print: new function register for hooking user-defined printing functions.
 * Remote: added functor Proxy to conveniently wrap a whole module into proxies.
 
 Tools:

@@ -35,12 +35,25 @@
 	val printType :  'a -> unit
 	val outputVal :  TextIO.outstream * 'a * int -> unit
 	val outputType : TextIO.outstream * 'a * int -> unit
+
+	exception Type
+	val register :   ('a -> string) -> unit
     end
   </PRE>
 
 <?php section("description", "description"); ?>
 
   <DL>
+    <DT>
+      <TT>exception Type</TT>
+    </DT>
+    <DD>
+      <P>
+        Raised by function <TT>register</TT> when the passed printer does
+	not operate on an abstract type.
+      </P>
+    </DD>
+
     <DT>
       <TT>printWidth</TT>
     </DT>
@@ -78,6 +91,29 @@
       <P>The second form is equivalent to:</P>
       <PRE>
       outputType (TextIO.stdOut, <I>x</I>, !printWidth)</PRE>
+    </DD>
+
+    <DT>
+      <TT>register <I>f</I></TT>
+    </DT>
+    <DD>
+      <P>
+        Adds function <TT><I>f</I></TT> as a printer. The function must have
+	a concrete type <I>tyvarseq</I> <TT><I>t</I> -> string</TT>, where
+	<TT><I>t</I></TT>
+	has to be an abstract type. Further calls to <TT>printVal</TT> use
+	this function to transform values of any type <I>tyseq <TT>t</TT></I>
+	to a printable string representation. In the
+	<A href="../interactive.html">interactive toplevel</A>, this also
+	affects how evaluation results are printed. Raises <TT>Type</TT> if
+	the type of <TT><I>f</I></TT> is not of the required form.
+	This includes the case that <TT><I>t</I></TT> is not an abstract type,
+	or that <TT><I>f</I></TT> is not fully polymorphic in the type
+	arguments <I>tyseq</I> to <TT><I>t</I></TT>.
+	Note that these rules also exclude <TT><I>f</I></TT> from being
+	<EM>too polymorphic</EM>, i.e. being of type <TT>'a -> string</TT>,
+	because in that case no type name could be derived.
+      </P>
     </DD>
   </DL>
 

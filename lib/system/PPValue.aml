@@ -15,15 +15,9 @@ import structure Reflect          from "../system/Reflect"
 
 import structure Name             from "../rtt/Name"
 import structure Label            from "../rtt/Label"
-import structure Path             from "../rtt/Path"
 import structure PathMap          from "../rtt/PathMap"
 import structure Type             from "../rtt/Type"
 import structure PervasiveType    from "../rtt/PervasiveType"
-
-import structure Inf              from "../rtt/Inf"
-import structure Url              from "../system/Url"
-import structure Component        from "../system/Component"
-import structure ComponentManager from "../system/ComponentManager"
 
 import structure Atom             from "../data/Atom"
 
@@ -31,43 +25,18 @@ import structure PrettyPrint      from "../utility/PrettyPrint"
 import structure PPMisc           from "../rtt/PPMisc"
 import signature PP_VALUE         from "PP_VALUE-sig"
 
-structure PPValue :> PP_VALUE =
+structure PPValue (*: PP_VALUE*) =
 struct
     type doc    = PrettyPrint.doc
-    type path   = Path.t
     type typ    = Type.t
-    type value  = Reflect.value
     type format = {depth : int, width : int, prec : int}
 
+local
     open Type
     open PervasiveType
     open PrettyPrint
     open PPMisc
     infixr ^^ ^/^
-
-
-  (* Type registration *)
-
-    val registry =
-	PathMap.map() : (typ -> format -> value -> doc option) list PathMap.t
-
-    fun registerTyp(p,f) =
-	PathMap.insertWith op@ (registry, p, [UnsafeValue.cast f])
-
-    fun unregisterTyp p =
-	PathMap.remove(registry, p)
-
-    fun tryRegistry(p,t,fm,x) =
-	case PathMap.lookup(registry, p)
-	 of NONE		=> NONE
-	  | SOME fs		=> tryRegistry'(fs,t,fm,x)
-    and tryRegistry'(fs,t,fm,x) =
-	case fs
-	 of []     => NONE
-	  | f::fs' =>
-	case f t fm (UnsafeValue.cast x)
-	  of NONE => tryRegistry'(fs',t,fm,x)
-	   | some => some
 
 
   (* Type inspection helpers *)
@@ -79,7 +48,7 @@ struct
 	case inspect t
 	 of Apply(t1,t2) => unapply'(t1,t2::ts)
 	  | _            => (t,ts)
-	
+
     fun unarg t =
 	case inspect t
 	 of Apply(t1,t2) =>
@@ -104,6 +73,49 @@ struct
 	case inspectRow r
 	 of (UnknownRow | EmptyRow) => []
 	  | FieldRow(_,t,r')        => t :: rowToTyps' r'
+
+
+  (* Type registration *)
+
+    type 'a printer = typ -> format -> 'a -> doc option
+
+    val registry = PathMap.map() : Reflect.value printer list PathMap.t
+
+    val typ_value = ref NONE
+    fun getValueTyp' t _ = typ_value := SOME t
+    __overload 'a getValueTyp : 'a -> unit = getValueTyp'
+    val _ = getValueTyp (spawn (raise Domain) : Reflect.value)
+
+    fun registerTyp' t (f : 'a printer) =
+	let
+	    val (t',ts) = unapply t
+	    val  p      = Type.asCon t'
+	in
+	    (* enforce polymorphic arguments (for soundness) *)
+  	    List.app (fn t => Type.unify(t, Option.valOf(!typ_value))) ts
+	    handle Type.Mismatch _ => raise Type.Type;
+	    PathMap.insertWith (flip op@) (registry, p, [UnsafeValue.cast f])
+	end
+
+    fun unregisterTyp' t _ =
+	let
+	    val (t',ts) = unapply t
+	    val  p      = Type.asCon t'
+	in
+	    PathMap.remove(registry, p)
+	end
+
+    fun tryRegistry(p,t,fm,x) =
+	case PathMap.lookup(registry, p)
+	 of NONE		=> NONE
+	  | SOME fs		=> tryRegistry'(fs,t,fm,x)
+    and tryRegistry'(fs,t,fm,x) =
+	case fs
+	 of []     => NONE
+	  | f::fs' =>
+	case f t fm (UnsafeValue.cast x)
+	  of NONE => tryRegistry'(fs',t,fm,x)
+	   | some => some
 
 
   (* Special handling of lists *)
@@ -322,7 +334,6 @@ struct
 	end
 	
 
-
   (* Pervasive types *)
 
     fun ppInt t fm x	= SOME(text(Int.toString x))
@@ -422,7 +433,7 @@ struct
 	    SOME(ppCustom fm (text "promise", [ppElem(Promise.future x)]))
 	end
 
-    fun ppMonoRow (s,length,sliceList) t' t fm =
+    fun ppMonoRow (t',s,length,sliceList) t fm =
 	let
 	    val ppElem = ppVal' t' (elem fm)
 	in
@@ -437,17 +448,26 @@ struct
 	    end
 	end
 
-    val ppWord8Vector' = ppMonoRow("vector", Word8Vector.length,
-				  fn(x,n) => Word8VectorSlice.toList
-					  (Word8VectorSlice.slice(x,0,SOME n)))
-    val ppWord8Array'  = ppMonoRow("array", Word8Array.length,
-				  fn(x,n) => Word8ArraySlice.toList
-					  (Word8ArraySlice.slice(x,0,SOME n)))
-    val ppCharArray'   = ppMonoRow("array", CharArray.length,
-				  fn(x,n) => CharArraySlice.toList
-					  (CharArraySlice.slice(x,0,SOME n)))
+    fun ppWord8Vector'' t _ =
+	ppMonoRow(t, "vector", Word8Vector.length,
+		  fn(x,n) => Word8VectorSlice.toList
+			     (Word8VectorSlice.slice(x,0,SOME n)))
+    __overload 'a ppWord8Vector' : 'a -> Word8Vector.t printer = ppWord8Vector''
+    val ppWord8Vector = ppWord8Vector'(Word8.fromInt 0)
+    fun ppWord8Array'' t _ =
+	ppMonoRow(t, "array", Word8Array.length,
+		  fn(x,n) => Word8ArraySlice.toList
+			     (Word8ArraySlice.slice(x,0,SOME n)))
+    __overload 'a ppWord8Array' : 'a -> Word8Array.t printer = ppWord8Array''
+    val ppWord8Array = ppWord8Array'(Word8.fromInt 0)
+    fun ppCharArray'' t _ =
+	ppMonoRow(t, "array", CharArray.length,
+		  fn(x,n) => CharArraySlice.toList
+			     (CharArraySlice.slice(x,0,SOME n)))
+    __overload 'a ppCharArray' : 'a -> CharArray.t printer = ppCharArray''
+    val ppCharArray = ppCharArray' #" "
 
-    fun ppMonoSlice base t' t fm x =
+    fun ppMonoSlice (t',base) t fm x =
 	let
 	    val (s,i,n) = base x
 	    val  docs'  = [ppVal' t' (elem fm) s,
@@ -457,10 +477,22 @@ struct
 	    SOME(ppCustom fm (text "slice", docs'))
 	end
 
-    val ppWord8VectorSlice' = ppMonoSlice Word8VectorSlice.base
-    val ppWord8ArraySlice'  = ppMonoSlice Word8ArraySlice.base
-    val ppCharVectorSlice'  = ppMonoSlice CharVectorSlice.base
-    val ppCharArraySlice'   = ppMonoSlice CharArraySlice.base
+    fun ppWord8VectorSlice'' t _ = ppMonoSlice(t, Word8VectorSlice.base)
+    __overload 'a ppWord8VectorSlice' : 'a -> Word8VectorSlice.t printer =
+	ppWord8VectorSlice''
+    val ppWord8VectorSlice = ppWord8VectorSlice'(Word8Vector.fromList [])
+    fun ppWord8ArraySlice'' t _ = ppMonoSlice(t, Word8ArraySlice.base)
+    __overload 'a ppWord8ArraySlice' : 'a -> Word8ArraySlice.t printer =
+	ppWord8ArraySlice''
+    val ppWord8ArraySlice = ppWord8ArraySlice'(Word8Array.fromList [])
+    fun ppCharVectorSlice'' t _ = ppMonoSlice(t, CharVectorSlice.base)
+    __overload 'a ppCharVectorSlice' : 'a -> CharVectorSlice.t printer =
+	ppCharVectorSlice''
+    val ppCharVectorSlice = ppCharVectorSlice' ""
+    fun ppCharArraySlice'' t _ = ppMonoSlice(t, CharArraySlice.base)
+    __overload 'a ppCharArraySlice' : 'a -> CharArraySlice.t printer =
+	ppCharArraySlice''
+    val ppCharArraySlice = ppCharArraySlice'(CharArray.fromList [])
 
     fun ppVectorSlice t fm x =
 	let
@@ -502,101 +534,61 @@ struct
 	    SOME(ppCustom fm (text "thread", [ppVal T.x (Thread.state x)]))
 	end
 
-    fun ppLock t fm x =
+    fun ppLock t fm (x : Lock.lock) =
 	SOME(ppCustom fm (text "lock", []))
 
-    fun ppValPackage t fm x =
+    fun ppValPackage t fm (x : Package.val_package) =
 	let
 	    (* TODO: extract value *)
 	in
 	    SOME(ppCustom fm (text "val_package", [text "..."]))
 	end
 
-    fun ppPackage t fm x =
+    fun ppPackage t fm (x : Package.package) =
 	let
 	    (* TODO: what do we display here? *)
 	in
 	    SOME(ppCustom fm (text "package", [text "..."]))
 	end
+in
+    val defaultDepth = defaultDepth
+    val defaultWidth = defaultWidth
+    val ppVal  = ppVal
+    val ppVal' = ppVal'
+
+    val registerTyp' = registerTyp'
+    __overload 'a registerTyp   : 'a printer -> unit = registerTyp'
+    __overload 'a unregisterTyp : 'a -> unit = unregisterTyp'
 
   (* Register *)
 
-    val coreSig = Inf.asSig(Option.valOf
-			(Component.inf(ComponentManager.link
-			  (Url.fromString "x-alice:/lib/fundamental/Core"))))
-    val packageSig = Inf.asSig(Option.valOf
-			(Component.inf(ComponentManager.link
-			  (Url.fromString "x-alice:/lib/fundamental/Package"))))
-    val atomSig = Inf.asSig(Option.valOf
-			(Component.inf(ComponentManager.link
-			  (Url.fromString "x-alice:/lib/data/Atom"))))
-
-    fun lookupTyp(sign, modLab, typLab) =
-	let
-	    val sign' = Inf.asSig(Inf.lookupMod(sign, Label.fromString modLab))
-	    val typ   = Inf.lookupTyp'(sign', Label.fromString typLab)
-	in
-	    if Type.isApply typ then #1(Type.asApply typ) else typ
-	end
-
-    fun lookupPath(sign, modLab, typLab) =
-	Type.asCon(lookupTyp(sign, modLab, typLab))
-
-    val path_word8	   = lookupPath(coreSig,"Word8","word")
-    val path_word32	   = lookupPath(coreSig,"Word32","word")
-    val path_intInf	   = lookupPath(coreSig,"IntInf","int")
-    val path_promise	   = lookupPath(coreSig,"Promise","promise")
-    val path_atom          = lookupPath(atomSig,"Atom","atom")
-    val path_time	   = lookupPath(coreSig,"Time","time")
-    val path_thread	   = lookupPath(coreSig,"Thread","thread")
-    val path_lock	   = lookupPath(coreSig,"Lock","lock")
-    val path_package	   = lookupPath(packageSig,"Package","package")
-    val path_val_package   = lookupPath(packageSig,"Package","val_package")
-    val path_word8_vector  = lookupPath(coreSig,"Word8Vector","vector")
-    val path_word8_array   = lookupPath(coreSig,"Word8Array","array")
-    val path_char_array    = lookupPath(coreSig,"CharArray","array")
-    val path_vector_slice  = lookupPath(coreSig,"VectorSlice","slice")
-    val path_array_slice   = lookupPath(coreSig,"ArraySlice","slice")
-    val path_word8_vector_slice = lookupPath(coreSig,"Word8VectorSlice","slice")
-    val path_word8_array_slice  = lookupPath(coreSig,"Word8ArraySlice","slice")
-    val path_char_vector_slice  = lookupPath(coreSig,"CharVectorSlice","slice")
-    val path_char_array_slice   = lookupPath(coreSig,"CharArraySlice","slice")
-
-    val typ_word8         = lookupTyp(coreSig,"Word8","word")
-    val typ_word8_vector  = lookupTyp(coreSig,"Word8Vector","vector")
-    val typ_word8_array   = lookupTyp(coreSig,"Word8Array","array")
-    val typ_char_array    = lookupTyp(coreSig,"CharArray","array")
-
-    val _ = registerTyp(path_int,           ppInt)
-    val _ = registerTyp(path_intInf,        ppIntInf)
-    val _ = registerTyp(path_word,          ppWord)
-    val _ = registerTyp(path_word8,         ppWord8)
-    val _ = registerTyp(path_word32,        ppWord32)
-    val _ = registerTyp(path_real,          ppReal)
-    val _ = registerTyp(path_char,          ppChar)
-    val _ = registerTyp(path_string,        ppString)
-    val _ = registerTyp(path_exn,           ppExn)
-    val _ = registerTyp(path_ref,           ppRef)
-    val _ = registerTyp(path_promise,       ppPromise)
-    val _ = registerTyp(path_vec,           ppVector)
-    val _ = registerTyp(path_array,         ppArray)
-    val _ = registerTyp(path_vector_slice,  ppVectorSlice)
-    val _ = registerTyp(path_array_slice,   ppArraySlice)
-    val _ = registerTyp(path_atom,          ppAtom)
-    val _ = registerTyp(path_time,          ppTime)
-    val _ = registerTyp(path_thread,        ppThread)
-    val _ = registerTyp(path_lock,          ppLock)
-    val _ = registerTyp(path_package,       ppPackage)
-    val _ = registerTyp(path_val_package,   ppValPackage)
-    val _ = registerTyp(path_word8_vector,  ppWord8Vector' typ_word8)
-    val _ = registerTyp(path_word8_array,   ppWord8Array' typ_word8)
-    val _ = registerTyp(path_char_array,    ppCharArray' typ_char)
-    val _ = registerTyp(path_word8_vector_slice,
-			ppWord8VectorSlice' typ_word8_vector)
-    val _ = registerTyp(path_word8_array_slice,
-			ppWord8ArraySlice' typ_word8_array)
-    val _ = registerTyp(path_char_vector_slice,
-			ppCharVectorSlice' typ_string)
-    val _ = registerTyp(path_char_array_slice,
-			ppCharArraySlice' typ_char_array)
+    val _ = registerTyp ppInt
+    val _ = registerTyp ppIntInf
+    val _ = registerTyp ppWord
+    val _ = registerTyp ppWord8
+    val _ = registerTyp ppWord32
+    val _ = registerTyp ppReal
+    val _ = registerTyp ppChar
+    val _ = registerTyp ppString
+    val _ = registerTyp ppExn
+    val _ = registerTyp ppRef
+    val _ = registerTyp ppPromise
+    val _ = registerTyp ppVector
+    val _ = registerTyp ppArray
+    val _ = registerTyp ppVectorSlice
+    val _ = registerTyp ppArraySlice
+    val _ = registerTyp ppAtom
+    val _ = registerTyp ppTime
+    val _ = registerTyp ppThread
+    val _ = registerTyp ppLock
+    val _ = registerTyp ppPackage
+    val _ = registerTyp ppValPackage
+    val _ = registerTyp ppWord8Vector
+    val _ = registerTyp ppWord8Array
+    val _ = registerTyp ppCharArray
+    val _ = registerTyp ppWord8VectorSlice
+    val _ = registerTyp ppWord8ArraySlice
+    val _ = registerTyp ppCharVectorSlice
+    val _ = registerTyp ppCharArraySlice
+end
 end
