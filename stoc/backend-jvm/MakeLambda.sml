@@ -8,8 +8,8 @@ functor MakeLambda(structure StampSet:IMP_SET
 	open ImperativeGrammar
 	type stamp=IntermediateGrammar.stamp
 
-	fun printstack (x::xs) = (print (Int.toString x^", "); printstack xs)
-	  | printstack nil = print "\n"
+(*	fun printstack (x::xs) = (print (Int.toString x^", "); printstack xs)
+	  | printstack nil = print "\n"*)
 
 	val lambdaStack = ref (toplevel::nil)
 	val staticStack = ref (true::nil)
@@ -26,12 +26,12 @@ functor MakeLambda(structure StampSet:IMP_SET
 	val stampName: string StampHash.t=StampHash.new ()
 
 	fun push (Id(_,stamp',_)) =
-	    (printstack (stamp'::(!lambdaStack));
+	    ((*printstack (stamp'::(!lambdaStack));*)
 	     lambdaStack := (stamp'::(!lambdaStack));
 	     staticStack := (true::(!staticStack)))
 
 	fun pop () =
-	    (printstack (tl (!lambdaStack));
+	    ((*printstack (tl (!lambdaStack));*)
 	     lambdaStack := tl(!lambdaStack);
 	     staticStack := tl(!staticStack))
 
