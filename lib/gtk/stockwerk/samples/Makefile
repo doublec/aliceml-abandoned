@@ -4,6 +4,7 @@ ALICEC_OPTS = --dump-phases
 ALICEDEP    = alicedep
 
 SRCS = hello.aml          \
+       logo.aml           \
        packbox.aml        \
        canvas.aml         \
        scramble.aml       \
