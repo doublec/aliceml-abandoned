@@ -20,6 +20,7 @@ import structure PervasiveType         from "../../lib/rtt/PervasiveType"
 import structure Crash                 from "../infrastructure/Crash"
 import structure Source                from "../infrastructure/Source"
 import structure IntMap                from "../infrastructure/IntMap"
+import structure Stamp                 from "../common/Stamp"
 import structure StampMap              from "../common/StampMap"
 import structure Arity                 from "../backend-common/Arity"
 import structure FlatGrammar           from "../backend-common/FlatGrammar"
@@ -105,7 +106,14 @@ functor MkCodeGenPhase(structure AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR
 	  | translateArgs f (ProdArgs labelXVec, env) =
 	    Vector.map (fn (_, x) => f (x, env)) labelXVec
 
-	fun translateSingleEntityTupArgs (idRef, env) =
+	fun translateEmptyTupArgs env =
+	    let
+		val id = fresh env
+	    in
+		O.PutTup (id, #[], O.Return (#[(O.LastUseLocal id)]))
+	    end
+
+	fun translateSingletonTupArgs (idRef, env) =
 	    let
 		val id = fresh env
 	    in
@@ -544,12 +552,14 @@ functor MkCodeGenPhase(structure AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR
 	    O.Return (#[(O.Immediate (V.int (FixedInt.fromInt tag)))])
 	  | translateStm (ReturnStm (_, ConExp (_, idRef, TupArgs #[])), env) =
 	    O.Return (#[(translateIdRef (idRef, env))])
+	  | translateStm (ReturnStm (_, TupExp (_, #[])), env) =
+	    translateEmptyTupArgs env
 	  | translateStm (ReturnStm (_, TupExp (_, #[idRef])), env) =
-	    translateSingleEntityTupArgs (idRef, env)
+	    translateSingletonTupArgs (idRef, env)
 	  | translateStm (ReturnStm (_, TupExp (_, idRefs)), env) =
 	    O.Return (translateIdRefs (idRefs, env))
 	  | translateStm (ReturnStm (_, ProdExp (_, #[labelIdRef])), env) =
-	    translateSingleEntityTupArgs (#2 labelIdRef, env)
+	    translateSingletonTupArgs (#2 labelIdRef, env)
 	  | translateStm (ReturnStm (_, ProdExp (_, labelIdRefVec)), env) =
 	    O.Return (Vector.map (fn (_, idRef) =>
 				     translateIdRef (idRef, env))
@@ -618,6 +628,20 @@ functor MkCodeGenPhase(structure AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR
 		val isSpecialize =
 		    List.exists (fn IsToplevel => true | _ => false) flags
 		val _ = startFn env
+		val (args, body) =
+		    case args of
+		        (TupArgs #[] | ProdArgs #[]) =>
+			let
+			    val idInfo = {region = region, typ = Type.tuple #[]}
+			    val id = Id (idInfo, Stamp.stamp (), Name.InId)
+			    val args' = OneArg (IdDef id)
+			    val body' = TupDec (region, #[], IdRef id)::
+			    		LastUse (region, #[id])::body
+			in
+			    (args', body')
+			end
+		      | _ => (args, body)
+			
 		val args' = translateArgs translateIdDef (args, env)
 		val bodyInstr = translateBody (body, env)
 		val liveness = Liveness.analyze (args', bodyInstr)
