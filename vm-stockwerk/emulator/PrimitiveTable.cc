@@ -34,6 +34,7 @@ word PrimitiveTable::General_Size;
 word PrimitiveTable::General_Subscript;
 word PrimitiveTable::Hole_Cyclic;
 word PrimitiveTable::Hole_Hole;
+word PrimitiveTable::Thread_Terminated;
 
 void PrimitiveTable::Init() {
   valueTable    = HashTable::New(HashTable::BLOCK_KEY, 19)->ToWord();
@@ -48,6 +49,7 @@ void PrimitiveTable::Init() {
   RootSet::Add(PrimitiveTable::General_Subscript);
   RootSet::Add(PrimitiveTable::Hole_Cyclic);
   RootSet::Add(PrimitiveTable::Hole_Hole);
+  RootSet::Add(PrimitiveTable::Thread_Terminated);
   RegisterUnqualified();
   RegisterArray();
   RegisterChar();

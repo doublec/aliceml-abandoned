@@ -59,6 +59,7 @@ public:
   static word General_Subscript;
   static word Hole_Cyclic;
   static word Hole_Hole;
+  static word Thread_Terminated;
 
   static void Init();
   static word LookupValue(Chunk *name);

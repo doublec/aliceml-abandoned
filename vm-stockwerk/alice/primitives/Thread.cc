@@ -3,17 +3,86 @@
 //   Leif Kornstaedt <kornstae@ps.uni-sb.de>
 //
 // Copyright:
-//   Leif Kornstaedt, 2000
+//   Leif Kornstaedt, 2000-2002
 //
 // Last Change:
 //   $Date$ by $Author$
 //   $Revision$
 //
 
+#include <cstdio>
 #include "emulator/Closure.hh"
 #include "emulator/Thread.hh"
 #include "emulator/Scheduler.hh"
 #include "emulator/Authoring.hh"
+#include "emulator/StackFrame.hh"
+
+class RaiseFrame: private StackFrame {
+private:
+  static const u_int EXN_POS = 0;
+  static const u_int SIZE    = 1;
+public:
+  using StackFrame::ToWord;
+  // RaiseFrame Accessors
+  word GetExn() {
+    return GetArg(EXN_POS);
+  }
+  // RaiseFrame Constructor
+  static RaiseFrame *New(Interpreter *interpreter, word exn) {
+    StackFrame *frame =
+      StackFrame::New(RAISE_FRAME, interpreter, SIZE);
+    frame->InitArg(EXN_POS, exn);
+    return static_cast<RaiseFrame *>(frame);
+  }
+  // VectorTabulateFrame Untagging
+  static RaiseFrame *FromWord(word frame) {
+    Block *p = Store::WordToBlock(frame);
+    Assert(p == INVALID_POINTER || p->GetLabel() == (BlockLabel) RAISE_FRAME);
+    return (RaiseFrame *) p;
+  }
+};
+
+class RaiseInterpreter: public Interpreter {
+private:
+  static RaiseInterpreter *self;
+public:
+  // RaiseInterpreter Constructor
+  RaiseInterpreter(): Interpreter() {}
+  // RaiseInterpreter Static Constructor
+  static void Init() {
+    self = new RaiseInterpreter();
+  }
+  // Frame Handling
+  static void PushFrame(TaskStack *taskStack, word exn) {
+    taskStack->PushFrame(RaiseFrame::New(self, exn)->ToWord());
+  }
+  // Execution
+  virtual Result Run(word args, TaskStack *taskStack);
+  // Debugging
+  virtual const char *Identify();
+  virtual void DumpFrame(word frame);
+};
+
+//
+// RaiseInterpreter Functions
+//
+RaiseInterpreter *RaiseInterpreter::self;
+
+Interpreter::Result RaiseInterpreter::Run(word, TaskStack *taskStack) {
+  RaiseFrame *frame = RaiseFrame::FromWord(taskStack->GetFrame());
+  Scheduler::currentData = frame->GetExn();
+  return Interpreter::RAISE;
+}
+
+const char *RaiseInterpreter::Identify() {
+  return "RaiseInterpreter";
+}
+
+void RaiseInterpreter::DumpFrame(word) {
+  fprintf(stderr, "Raise\n");
+}
+
+// Builtins
 
 DEFINE0(Thread_current) {
   RETURN(Scheduler::GetCurrentThread()->ToWord());
@@ -29,8 +98,18 @@ DEFINE2(Thread_raiseIn) {
   if (thread == Scheduler::GetCurrentThread()) {
     RAISE(x1);
   } else {
-    // to be done ThreadRaiseInInterpreter
-    RETURN_UNIT;
+    Thread::state state = thread->GetState();
+    if (state == Thread::TERMINATED) {
+      RAISE(PrimitiveTable::Thread_Terminated);
+    } else {
+      RaiseInterpreter::PushFrame(thread->GetTaskStack(), x1);
+      thread->SetArgs(Interpreter::EmptyArg());
+      if (state == Thread::BLOCKED) {
+	thread->Unregister();
+	Scheduler::WakeupThread(thread);
+      }
+      RETURN_UNIT;
+    }
   }
 } END
 
@@ -68,8 +147,11 @@ DEFINE0(Thread_yield) {
 } END
 
 void PrimitiveTable::RegisterThread() {
+  RaiseInterpreter::Init();
+  PrimitiveTable::Thread_Terminated =
+    UniqueConstructor::New(String::New("Thread.Terminated"))->ToWord();
   RegisterUniqueConstructor("Thread.Terminate");
-  RegisterUniqueConstructor("Thread.Terminated");
+  Register("Thread.Terminated", PrimitiveTable::Thread_Terminated);
   Register("Thread.current", Thread_current, 0);
   Register("Thread.isSuspended", Thread_isSuspended, 1);
   Register("Thread.raiseIn", Thread_raiseIn, 2);
