@@ -606,6 +606,7 @@ namespace Alice {
 		if (i >= Char.MinValue && i <= Char.MaxValue) {
 		    return (char) i;
 		} else {
+Console.WriteLine(i);
 		    throw new Values.Exception(Prebound.General_Chr);
 		}
 	    }
@@ -1680,12 +1681,12 @@ namespace Alice {
 		return StaticApply(a);
 	    }
 	}
-	public class Thread_current: Procedure {
-	    public static object StaticApply(object a) {
+	public class Thread_current: Procedure0 {
+	    public static object StaticApply() {
 		return Thread.CurrentThread;
 	    }
-	    public override object Apply(object a) {
-		return StaticApply(a);
+	    public override object Apply() {
+		return StaticApply();
 	    }
 	}
 	public class Thread_isSuspended: Procedure {
@@ -2211,8 +2212,8 @@ namespace Alice {
 	public static object Word_xorb         = new Word_xorb();
     }
     public class Komponist {
-	static public Komponist global_k          = null;
-	static System.Collections.Hashtable table = 
+	Uri BaseUri;
+	static System.Collections.Hashtable table =
 	    new System.Collections.Hashtable();
 	static void Debug(string message) {
 	    Console.WriteLine("Komponist: " + message);
@@ -2221,44 +2222,38 @@ namespace Alice {
 	    Console.WriteLine("Komponist: Error: " + message);
 	    Environment.Exit(1);
 	}
+	public Komponist(Uri baseUri) {
+	    BaseUri = baseUri;
+	}
 	class link: Procedure0 {
-	    private string Url;
-	    public link(string url) {
-		if (url.StartsWith("x-alice:")) {
-		    url = url.Remove(0, "x-alice:".Length);
-		    string home =
-			Environment.GetEnvironmentVariable("STOCKHOME");
-		    if (home == null) {
-			Error("Environment variable STOCKHOME not set.");
-		    } else {
-			url = home + "/" + url;
-		    }
-		}
-		//--** would be easier to convert to Url object and back.
-		//--** see class System.Web.HttpUrl
-		url = url.Replace('/', '\\');
-		int index;
-		while ((index = url.IndexOf("\\\\")) != -1) {
-		    url = url.Remove(index, 1);
-		}
-		Url = url;
+	    private Uri MyUri;
+	    private string Filename;
+	    public link(Uri myUri, string filename) {
+		MyUri = myUri;
+		Filename = filename;
 	    }
 	    public override object Apply() {
 		try {
-		    Debug("Load " + Url);
-		    Type type = Assembly.LoadFrom(Url).GetType("Execute");
-		    if (type == null) {
-			Error("GetType " + Url + "#Execute failed.");
+		    Debug("Load " + Filename);
+		    Assembly assembly;
+		    try {
+			assembly = Assembly.LoadFrom(Filename);
+		    } catch (System.IO.FileNotFoundException) {
+			assembly = Assembly.LoadFrom(Filename + ".dll");
 		    }
-		    Debug("GetMethod " + Url + "#Execute::Main");
+		    Type type = assembly.GetType("Execute");
+		    if (type == null) {
+			Error("GetType " + Filename + "#Execute failed.");
+		    }
 		    MethodInfo minf = type.GetMethod("Main");
 		    if (minf == null) {
-			Error("GetMethod " + Url + "#Execute::Main failed.");
+			Error("GetMethod " + Filename +
+			      "#Execute::Main failed.");
 		    }
-		    Debug("Invoke " + Url + "#Execute::Main");
-		    object[] args = new object[] {Komponist.global_k};
+		    Debug("Apply " + Filename);
+		    object[] args = new object[] {new Komponist(MyUri)};
 		    object val = minf.Invoke(null, args);
-		    Debug("Finished " + Url + "#Execute::Main");
+		    Debug("Finished " + Filename);
 		    return val;
 		} catch (System.Exception e) {
 		    Debug("Uncaught exception " + e);
@@ -2268,12 +2263,30 @@ namespace Alice {
 		}
 	    }
 	}
-	public object Import(string url) {
-	    if (table.ContainsKey(url)) {
-		return table[url];
+	public static Uri ParseUri(Uri baseUri, string relative) {
+	    if (relative.StartsWith("x-alice:")) {
+		relative = relative.Remove(0, "x-alice:".Length);
+		return new Uri("x-alice://loopback" + relative);
 	    } else {
-		object val = new Byneed(new link(url));
-		table.Add(url, val);
+		return new Uri(baseUri, relative);
+	    }
+	}
+	public object Import(string relativeUri) {
+	    Uri resolvedUri = ParseUri(BaseUri, relativeUri);
+	    if (table.ContainsKey(resolvedUri)) {
+		return table[resolvedUri];
+	    } else {
+		Uri uri = resolvedUri;
+		if (uri.Scheme.Equals("x-alice")) {
+		    string home =
+			Environment.GetEnvironmentVariable("STOCKHOME");
+		    if (home == null) {
+			Error("Environment variable STOCKHOME not set.");
+		    }
+		    uri = new Uri(home + uri.AbsolutePath);
+		}
+		object val = new Byneed(new link(resolvedUri, uri.LocalPath));
+		table.Add(resolvedUri, val);
 		return val;
 	    }
 	}

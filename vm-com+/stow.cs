@@ -15,8 +15,8 @@ using System;
 
 class Start {
     public static void Main(string[] args) {
-	Alice.Komponist k = new Alice.Komponist();
-	Alice.Komponist.global_k = k;
+	Uri baseUri = new Uri(System.IO.Directory.GetCurrentDirectory() + "/");
+	Alice.Komponist k = new Alice.Komponist(baseUri);
 	if (args.Length < 1) {
 	    Console.WriteLine("Usage: stow <application dll> <arguments ...>");
 	    Environment.Exit(2);
