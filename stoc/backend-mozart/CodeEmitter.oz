@@ -77,98 +77,138 @@ local
    end
 
    local
-      proc {Reserve Regs N W K}
-	 if N =< W then Reg in
-	    Reg = Regs.N
-	    Reg :: K#N
-	    {Reserve Regs N + 1 W K}
+      local
+	 proc {DoAssign L H D X N}
+	    if L=<H then
+	       if {BitArray.test D L} then
+		  X.L=N {DoAssign L+1 H D X N+1}
+	       else
+		  {DoAssign L+1 H D X N}
+	       end
+	    end
+	 end
+      in
+	 proc {AssignFirst _|D X}
+	    {DoAssign {BitArray.low D} {BitArray.high D} D X 0}
 	 end
       end
 
-      fun {Subset Xs Ys}
-	 case Xs#Ys of (I|Xr)#(I|Yr) then {Subset Xr Yr}
-	 [] nil#_ then true
-	 else false
+      local
+	 proc {DoVector L H D X V I}
+	    if L=<H then
+	       if {BitArray.test D L} then
+		  V.I=X.L {DoVector L+1 H D X V I+1}
+	       else
+		  {DoVector L+1 H D X V I}
+	       end
+	    end
+	 end
+      in
+	 fun {MakeVector C|D X}
+	    V={MakeTuple v C}
+	 in
+	    {DoVector {BitArray.low D} {BitArray.high D} D X V 1}
+	    V
 	 end
       end
-
-\ifdef DEBUG_OPTIMIZER
-      proc {Send P M}
-	 {System.show M}
-	 {Port.send P M}
-      end
-\endif
    in
       class RegisterOptimizer
-	 feat P S D
-	 attr N: unit LastYs: nil
-	 meth init(NumberReserved) Ms in
-	    self.P = {Port.new Ms}
-	    self.S = {Space.new
-		      proc {$ X}
-			 D = {NewDictionary}
-			 proc {Loop Ms}
-			    case Ms of decl(Y)|Mr then
-			       {Dictionary.put D Y {FD.decl}}
-			       {Loop Mr}
-			    [] distinct(Ys)|Mr then
-			       {FD.distinct
-				{Map Ys fun {$ Y} {Dictionary.get D Y} end}}
-			       {Loop Mr}
-			    [] eq(Y1 Y2)|Mr then
-			       {Dictionary.get D Y1} = {Dictionary.get D Y2}
-			       {Loop Mr}
-			    [] optimize()|_ then
-			       X = {Dictionary.toRecord y D}
-			       {Reserve X 1 {Width X} NumberReserved}
-			       {FD.assign min X}
-			    end
-			 end
-		      in
-			 {Loop Ms}
-		      end}
-	    self.D = {NewDictionary}
-	    N <- 1
+	 attr
+	    N:      1    % Current Y index
+	    CDs:    nil  % List of pairs cardinality and bitarrays
+			 % representing distinct constraints
+	    Es:     nil  % List of pairs of equality constraints
+	 feat
+	    Mapping      % Maps allocation to real registers
+	 meth init
+	    %% Assumption: register indices start from 1
+	    self.Mapping = {Dictionary.new}
+	 end
+	 meth Distinct(Ys)
+	    case Ys of [_] then skip else
+	       D2={BitArray.fromList Ys}
+	    in
+	       case @CDs
+	       of (_|D1)|CDr then
+		  if {BitArray.subsumes D2 D1} then
+		     CDs <- ({BitArray.card D2}|D2)|CDr
+		  else
+		     CDs <- ({BitArray.card D2}|D2)|@CDs
+		  end
+	       else
+		  CDs <- [{BitArray.card D2}|D2]
+	       end
+	    end
+	 end
+	 meth decl(Is ?Y ?I)
+	    J
+	 in
+	    I=@N
+	    N <- I+1
+	    Y=y(J)
+	    {Dictionary.put self.Mapping I J}
+	    {self Distinct(I|Is)}
 	 end
 	 meth isEmpty($)
-	    {Dictionary.isEmpty self.D}
+	    {Dictionary.isEmpty self.Mapping}
 	 end
-	 meth decl(Is ?Y ?I)=M J NewYs in
-	    I = @N
-	    N <- I + 1
-	    Y = y(J)
-	    {Dictionary.put self.D I J}
-	    {Send self.P decl(I)}
-	    NewYs = {Sort I|Is Value.'<'}
-	    if {Not {Subset @LastYs NewYs}} then
-	       {Send self.P distinct(@LastYs)}
+	 meth eq(Y1 Y2)
+	    if Y1\=Y2 then
+	       Es <- (Y1|Y2)|@Es
 	    end
-	    LastYs <- NewYs
 	 end
-	 meth eq(_ _)=M
-	    {Send self.P M}
-	 end
-	 meth optimize(?NumberOfYs) T RaiseOnBlock in
-	    case @LastYs of nil then skip
-	    elseof Ys then
-	       {Send self.P distinct(Ys)}
-	    end
-	    {Send self.P optimize()}
+	 meth optimize($)
+	    LCDs = {Sort @CDs fun {$ C1|_ C2|_}
+				 C1>C2
+			      end}
+	    CDs <- nil
+	    LEs = @Es
+	    Es  <- nil
+	    LN  = @N-1
+	    S = {Space.new proc {$ X}
+			      %% Create mapping
+			      X = {MakeTuple regs LN}
+			      %% Process equality constraints
+			      {ForAll LEs
+			       proc {$ Y1|Y2}
+				  X.Y1=X.Y2
+			       end}
+			      %% Take the first distinct and assign directly
+			      if LCDs\=nil then
+				 {AssignFirst LCDs.1 X}
+			      end
+			      %% Tell domain constraints
+			      X ::: 0#LN
+			      local
+				 Vs={Map if LCDs\=nil then LCDs.2
+					 else LCDs
+					 end
+				     fun {$ LCD}
+					{MakeVector LCD X}
+				     end}
+			      in
+				 %% Post distincts
+				 {ForAll Vs FD.distinct}
+				 %% Assign following distincts
+				 {ForAll Vs proc {$ V}
+					       {FD.assign min V}
+					    end}
+			      end
+			      {FD.assign min X}
+			   end}
 	    T = {Thread.this}
 	    RaiseOnBlock = {Debug.getRaiseOnBlock T}
+	    Alloc
+	 in
 	    {Debug.setRaiseOnBlock T false}
-	    case {Space.ask self.S} of succeeded then C in
-	       {Debug.setRaiseOnBlock T RaiseOnBlock}
-	       C = {NewCell ~1}
-	       {Record.forAllInd {Space.merge self.S}
-		proc {$ I J}
-		   if {Access C} < J then
-		      {Assign C J}
-		   end
-		   {Dictionary.get self.D I} = J
-		end}
-	       NumberOfYs = {Access C} + 1
-	    end
+	    {Space.ask S succeeded}
+	    {Debug.setRaiseOnBlock T RaiseOnBlock}
+	    Alloc = {Space.merge S}
+	    {Record.foldLInd Alloc
+	     fun {$ I M J}
+		{Dictionary.get self.Mapping I}=J
+		{Max M J}
+	     end ~1}+1
 	 end
       end
    end
@@ -225,7 +265,7 @@ in
 	 LowestFreeX <- 0
 	 HighestEverX <- ~1
 	 NamedYs <- {NewDictionary}
-	 RegOpt <- {New RegisterOptimizer init(NumberReserved)}
+	 RegOpt <- {New RegisterOptimizer init()}
 	 HighestUsedG <- ~1
 	 LocalEnvSize <- _
 	 CodeHd <- allocateL(@LocalEnvSize)|NewCodeTl
@@ -1579,7 +1619,7 @@ in
 	       Emitter, EmitAddr(Addr)
 	    end
 	    {@RegOpt optimize(?NumberOfYs)}
-	    RegOpt <- {New RegisterOptimizer init(0)}
+	    RegOpt <- {New RegisterOptimizer init()}
 	    LocalEnvSize <- OldLocalEnvSize
 	 else OldLocalEnvsInhibited in
 	    OldLocalEnvsInhibited = @LocalEnvsInhibited
@@ -1850,12 +1890,6 @@ in
 	 %% Precondition: Reg has not yet occurred
 	 case Cont of nil then
 	    Emitter, AllocateAnyTemp(Reg ?R)
-	 [] vMakePermanent(_ RegIndices Cont2) then
-	    if {Some RegIndices fun {$ Reg0#_#_} Reg0 == Reg end} then
-	       Emitter, AllocateAnyTemp(Reg ?R)
-	    else
-	       Emitter, PredictRegSub(Reg Cont2 ?R)
-	    end
 	 [] vEquateConstant(_ Constant MessageReg Cont2)
 	    andthen {IsLiteral Constant}
 	 then
