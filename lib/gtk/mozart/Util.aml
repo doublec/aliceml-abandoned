@@ -35,6 +35,13 @@ structure Util :> UTIL =
 	fun cutPrefix(Xs, Ys) =
 	    cutPrefix'(String.explode Xs, String.explode Ys)
 
+	fun cleanPointers' ((#"[")::(#"]")::Xr) = #"*"::(cleanPointers' Xr)
+	  | cleanPointers' (X::Xr)          = X::(cleanPointers' Xr)
+	  | cleanPointers' nil              = nil
+
+	fun cleanPointers Xs =
+	    String.implode (cleanPointers' (String.explode Xs))
+			       
 	fun firstLower'(X::Xr) = String.implode ((Char.toLower X)::Xr)
 	  | firstLower' nil    = ""
 

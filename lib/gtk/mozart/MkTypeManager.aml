@@ -82,9 +82,11 @@ functor MkTypeManager(val types :
 
 	(* Argument Transformation *)
 	local
-	    fun prepareSingleArg(i, ARG(TYPE(base, ptrs), _)) =
+	    fun prepareSingleArg (i, ARG(TYPE("gchar", "*[]"), _)) =
+		(i, IN("gchar*[]"), "none")
+	      | prepareSingleArg(i, ARG(TYPE(base, ptrs), _)) =
 		let
-		    val tStr = base ^ ptrs
+		    val tStr = base ^ (Util.cleanPointers ptrs)
 		    val tTyp = (case tStr of
 				    "int*"      => OUT("int")
 				  | "gint*"     => OUT("int")

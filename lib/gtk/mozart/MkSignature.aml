@@ -70,6 +70,7 @@ functor MkSignature(structure TypeManager : TYPE_MANAGER
 	      | getInType "char*"        = "string"
 	      | getInType "const gchar*" = "string"
 	      | getInType "const char*"  = "string"
+	      | getInType "gchar*[]"     = "string list"
 	      | getInType "void"         = "unit"
 	      | getInType "GList*"       = "object list"
 	      | getInType tStr           =
@@ -214,7 +215,7 @@ functor MkSignature(structure TypeManager : TYPE_MANAGER
 	    [indent, "val allocColor : int * int * int -> object\n"]
 
 	val gtkInits =
-	    [indent, "val null : object\n",
+	    [indent, "val null : unit -> object\n",
 	     indent, "val signalConnect : ",
 	     indent, "object * string * (arg list -> unit) -> sigid\n",
 	     indent, "val signalDisconnect : object * sigid -> unit\n",

@@ -17,6 +17,8 @@ signature UTIL =
 	val checkPrefix : string * string -> bool
 	val cutPrefix : string * string -> string
 	val stripPrefix : string -> string
+	(* Pointer Transformation *)
+	val cleanPointers: string -> string
 	(* Char Transformation *)
 	val firstLower : string -> string
 	val firstUpper : string -> string
