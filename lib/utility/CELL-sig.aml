@@ -3,21 +3,21 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg, 2001-2003
  *
  * Last change:
  *   $Date$ by $Author$
  *   $Revision$
  *)
 
-import signature IMP_MAP from "IMP_MAP-sig"
+import signature IMP_MAP from "../data/IMP_MAP-sig"
 
 signature CELL =
 sig
     eqtype 'a cell
     type 'a t = 'a cell
 
-    val new :		'a -> 'a cell
+    val cell :		'a -> 'a cell
     val content :	'a cell -> 'a
     val replace :	'a cell * 'a -> unit
     val equal :		'a cell * 'a cell -> bool
