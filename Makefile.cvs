@@ -21,10 +21,10 @@ autotools:
 	if ! test -d lightning; then mkdir lightning; fi
 	cp -p Makefile.lightning.am lightning/Makefile.am
 	libtoolize --copy --force --automake --ltdl
-	aclocal-1.8 -I .
+	aclocal -I .
 	autoconf
-	automake-1.8 --add-missing
-	cd libltdl; aclocal-1.8; autoconf; automake-1.8 --add-missing
+	automake --add-missing
+	cd libltdl; aclocal; autoconf; automake --add-missing
 
 lightning:
 	rm -rf lightning
