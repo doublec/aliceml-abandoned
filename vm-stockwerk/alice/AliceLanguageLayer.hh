@@ -19,8 +19,13 @@
 
 class AliceLanguageLayer {
 public:
-  static word functionTransformName;
-  static word constructorTransformName;
+  class TransformNames {
+  public:
+    static word primitiveValue;
+    static word primitiveFunction;
+    static word function;
+    static word constructor;
+  };
 
   static void Init();
 };
