@@ -70,7 +70,7 @@ struct
 		    SOME s => Resolver.Handler.parse s
 		  | NONE => [Resolver.Handler.default]
 	in
-	    Resolver.new {name = "load", handlers, memoize = true}
+	    Resolver.resolver {name = "load", handlers, memoize = true}
 	end
 
     fun load' resolver url =
@@ -115,7 +115,7 @@ struct
 	datatype component = datatype component
 
 	val map: (inf * mod) UrlMap.t =
-	    lazy UrlMap.new (Vector.map (fn (s, inf, mod) =>
+	    lazy UrlMap.map (Vector.map (fn (s, inf, mod) =>
 					 (Url.fromString ("x-alice:/" ^ s),
 					  (inf, mod)))
 			     initialTable)

@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2002
+ *   Andreas Rossberg, 2001-2003
  *
  * Last change:
  *   $Date$ by $Author$
@@ -317,7 +317,8 @@ struct
   (* Debugging aids *)
 
     fun trace f s	= f
-    val newKind		= new
+    val new		= cell
+    val newKind		= cell
 
     (*DEBUG: The following allows tracing of all type nodes.
 
@@ -390,7 +391,7 @@ struct
 
     val new = fn t' =>
 	let
-	    val t = new t'
+	    val t = cell t'
 	in
 	    TextIO.print("new " ^ id t ^ " = " ^ typ'ToString [] t' ^
 			 " by " ^ !currentFn ^ "\n");
@@ -597,7 +598,7 @@ struct
 	case content t1'
 	  of LAMBDA(a,t3) =>
 	     let
-		 val m   = Map.new()
+		 val m   = Map.map()
 		 val _   = Map.insert(m, canonical a, t2)
 		 val t3' = subst(m,t3)
 	     in
@@ -796,7 +797,7 @@ struct
 	case content t
 	  of (LINK t1 | ABBREV(_,t1))	=> unrollApply(t0,t1,ts)
 	   | APPLY(t1,t2)		=> unrollApply(t0,t1,t2::ts)
-	   | MU t1			=> let val m = Map.new() in
+	   | MU t1			=> let val m = Map.map() in
 					       Map.insertDisjoint(m,t,t);
 					       unrollLambda(t0,m,t1,ts)
 					   end
@@ -930,7 +931,7 @@ struct
 
     fun app'(b,f,t) =
 	let
-	    val m = Map.new()
+	    val m = Map.map()
 
 	    fun app t =
 		if Map.member(m,t) then () else
@@ -947,7 +948,7 @@ struct
 
     fun foldl'(b,f,c,t) =
 	let
-	    val m = Map.new()
+	    val m = Map.map()
 
 	    fun foldl(t,c) =
 		if Map.member(m,t) then c else
@@ -972,7 +973,7 @@ struct
 
     fun appKind (f,fTyp) k =
 	let
-	    val m = KindMap.new()
+	    val m = KindMap.map()
 
 	    fun app k =
 		if KindMap.member(m,k) then () else
@@ -994,7 +995,7 @@ fun checkMu(t0,t1) =
       | ABBREV(_,t11) => checkMu(t0,t11)
       | SUM(NAMED(lts as (l1,_)::_,_)) =>
         let
-	    val m = Map.new()
+	    val m = Map.map()
 
 	    fun app t =
 		if Map.member(m,t) then () else
@@ -1206,21 +1207,21 @@ val _ = checkMuFwd := checkMu
     fun subst(m, t) =
 	if Map.isEmpty m
 	then t
-	else build(m, KindMap.new(), PathMap.new(), t)
+	else build(m, KindMap.map(), PathMap.map(), t)
 
     fun realise(rea, t) =
 	if PathMap.isEmpty rea
 	then t
-	else build(Map.new(), KindMap.new(), rea, t)
+	else build(Map.map(), KindMap.map(), rea, t)
 
     fun realiseKind(rea, k) =
 	if PathMap.isEmpty rea
 	then k
-	else buildKind(Map.new(), KindMap.new(), rea, k)
+	else buildKind(Map.map(), KindMap.map(), rea, k)
 
     type realise_context = {typ : typ Map.t, kind : kind KindMap.t}
 
-    fun realiseStart() = {typ = Map.new(), kind = KindMap.new()}
+    fun realiseStart() = {typ = Map.map(), kind = KindMap.map()}
 
     fun realiseCont(m : realise_context, rea, t) =
 	if PathMap.isEmpty rea
@@ -1252,7 +1253,7 @@ val _ = checkMuFwd := checkMu
      * if called from matchCont!
      *)
 
-    fun instance t = instance'(subst, Map.new(), t, NONE)
+    fun instance t = instance'(subst, Map.map(), t, NONE)
     and instance'(f,m,t,to) =
 	case content t
 	  of LINK t	=> instance'(f,m,t,to)
@@ -1264,7 +1265,7 @@ val _ = checkMuFwd := checkMu
 	   | _		=> case to of NONE    => f(m,t)
 				    | SOME t1 => f(m,abbrev'(t1,t))
 
-    fun skolem t = skolem'(subst, Map.new(), t, NONE)
+    fun skolem t = skolem'(subst, Map.map(), t, NONE)
     and skolem'(f,m,t,to) =
 	case content t
 	  of LINK t	=> skolem'(f,m,t,to)
@@ -1335,7 +1336,7 @@ val _ = checkMuFwd := checkMu
 
     fun liftAndCheck(n,t1,t2) =
 	let
-	    val m = Map.new()
+	    val m = Map.map()
 
 	    fun lift t =
 		if Cell.equal(t1,t) then raise Mismatch(t1,t2) else
@@ -1432,7 +1433,7 @@ val _ = checkMuFwd := checkMu
      *)
 
     type match_context = typ Map.t
-    val matchStart     = Map.new
+    val matchStart     = Map.map
     val matchBranch    = Map.clone
 
     fun lookup(i,  [],   t)	= NONE
@@ -1503,8 +1504,8 @@ val _ = checkMuFwd := checkMu
 			of NONE      => canonical t2
 			 | SOME rea' =>
 			   let
-			       val mt = Map.new()
-			       val mk = KindMap.new()
+			       val mt = Map.map()
+			       val mk = KindMap.map()
 			   in
 			       List.app (fn m => Map.unionDisjoint(mt,m)) ms;
 			       canonical(build(mt,mk,rea',t2))
@@ -1655,7 +1656,7 @@ TextIO.print("i = "^Int.toString i^"\n");
 
 	  | (MU(t11), MU(t21)) =>
 		let
-		    val m = Map.new()
+		    val m = Map.map()
 		in
 		    Map.insert(m,t1,t2);
 		    mergeBind(m,ms, t1,t2, unify'(i+1,m::ms,rea, t11,t21))
@@ -1667,7 +1668,7 @@ TextIO.print("i = "^Int.toString i^"\n");
 		let
 		    val a1 = canonical a1
 		    val a2 = canonical a2
-		    val m  = Map.new()
+		    val m  = Map.map()
 		in
 		    Map.insert(m,t1,t2);
 		    mergeBind(m,ms, t1,t2,
@@ -1772,7 +1773,7 @@ equal(t1,t2)
     fun matchCont'(ms,rea,t1,t2) =
 	if Cell.equal(t1,t2) then () else
 	let
-	    val m   = Map.new()
+	    val m   = Map.map()
 	    val t1' = instance'(#2, m, t1, NONE)
 (*DEBUG*)handle e => raise e
 	    val t2' = skolem'(#2, m, t2, NONE)
@@ -1851,7 +1852,7 @@ matchCont(m,rea,t1,t2)
 
     fun paths t =
     	let
-	    val s = PathMap.new()
+	    val s = PathMap.map()
 	in
 	    paths' s t;
 	    s
@@ -1859,7 +1860,7 @@ matchCont(m,rea,t1,t2)
 
     fun pathsKind k =
     	let
-	    val s = PathMap.new()
+	    val s = PathMap.map()
 	in
 	    appKind (ignore, paths' s) k;
 	    s
