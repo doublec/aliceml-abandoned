@@ -1,7 +1,7 @@
 import structure Ant from "Ant"
 import structure Instructions from "Instructions"
 import structure World              from "World"
-import structure InstructionsParser from "InstructionsParser"
+import structure InstructionsParser from "SimpleInstructionsParser"
 import structure WorldParser        from "WorldParser"
 import structure Viewer             from "Viewer"
 

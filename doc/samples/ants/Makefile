@@ -11,6 +11,7 @@ SIMULATOR_COMPONENTS = \
 	World \
 	Simulator \
 	InstructionsParser \
+	SimpleInstructionsParser \
 	WorldParser \
 	SimulatorMain \
 	Viewer
