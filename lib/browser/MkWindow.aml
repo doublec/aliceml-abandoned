@@ -209,12 +209,13 @@ val selection = ref NONE
     
 fun destroySelectionMarkings () = case !selection of 
     NONE => ()
-  | SOME(_,rect) => Gtk.objectDestroy(rect) 
+  | SOME(_,rect,rect') =>( Gtk.objectDestroy(rect)
+			  ; Gtk.objectDestroy(rect'))
 
 
 fun getSelectionNode() = case !selection of 
     NONE => Types.Empty
-  | SOME(n,_) => n  
+  | SOME(n,_,_) => n  
 
 (* invokes canvas resize *)	
 fun handleResize (scrolled,hadj,vadj,resize) = (fn _ =>  serve' (fn () => let
@@ -521,21 +522,32 @@ struct
 		       (case node of 
 			    SOME(n) => 
 				let 
+				    val ydim =Layout.get_ydim(n) 
 				    val group = Helper.getGroup(n)
 				    val x2 = Real.fromInt(font_width 
 					    	* Layout.get_xdim(n))
 				    val y2 = Real.fromInt(font_height 
-						  *Layout.get_ydim(n))
+						  * ydim)
+				    val y2' = Real.fromInt(font_height 
+						  * (ydim-1))
+				    val lx =Real.fromInt(font_width 
+						  *  Layout.iterFindLX(n))
 				    val re =createRectangle(group,
 							    0.0,
 							    0.0,
-							    x2,
+							    lx,
 							    y2)
+				    val re' = createRectangle(group,
+							    0.0,
+							    0.0,
+							    x2,
+							    y2')
 				in                                             
 				    (  postT n  
-				    ; GtkCanvas.itemLowerToBottom(re) 
+				    ; GtkCanvas.itemLowerToBottom(re)
+				    ; GtkCanvas.itemLowerToBottom(re') 
 				    ; destroySelectionMarkings() 
-				    ; selection := SOME (n,re) 
+				    ; selection := SOME (n,re,re') 
 				    ; setSelectionMenuSensitive(bar,true)
 				    ; case n of
 				     Types.Limit(_) => 

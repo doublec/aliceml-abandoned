@@ -66,9 +66,31 @@ struct
       | get_l_xdim_or_xdim n = get_xdim n
 	
     and iterFindLX n = case n of
-        Container _ => #3(layout n)
+        Container _ => get_l_xdim(n)
       | Concat(r) 
-	=> let val li = Array.toList(#kids(r))
+	=> let
+	       val li = Array.toList(#kids(r))
+	       val li' = List.take(li,List.length(li)-1)
+	       val seclast = List.last(li')
+	       val l_x = if setsVertical seclast 
+			     then iterFindLX (seclast)
+				 + sum_up(#2(List.partition 
+					     (fn i => i = seclast) li),
+					  get_xdim)
+			 else get_xdim(n)
+	   in
+	       l_x
+	   end
+       | RelNode(r) => (iterFindLX(!(#content(r)))) + 
+				(if isSimple (!(#content(r)))
+				     orelse !(#counter(r)) = 1 
+				     then 0 
+				 else String.size(#rep(r)))
+      | _ => get_xdim(n)
+
+(* 
+
+let val li = Array.toList(#kids(r))
 	       val li' = List.take(li,List.length(li)-1)
 	       val seclast = List.last(li')
 	   in if setsVertical seclast
@@ -82,7 +104,7 @@ struct
 		       end 
 	      else #1(layout n)
 	   end 
-      | _ => #1(layout n)
+      | _ => #1(layout n) *)
 
     (* layout *)
     and layout n = 

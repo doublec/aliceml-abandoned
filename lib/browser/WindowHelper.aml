@@ -170,7 +170,7 @@ fun createRectangle (group,x1,y1,x2,y2) =
       ("fill_color_gdk", 
        Gtk.OBJECT(MkColorTable.allocColor(65535,60000,60000))),
       ("outline_color_gdk", 
-       Gtk.OBJECT (MkColorTable.allocColor(50000,0,0)))]) 
+       Gtk.OBJECT (MkColorTable.allocColor(65535,60000,60000)))]) 
 
 
 fun copyArray' (a,b,i) = if i < Array.length(b) 
