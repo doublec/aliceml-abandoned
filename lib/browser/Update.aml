@@ -214,7 +214,9 @@ struct
 	 let val old_depth = !(Settings.max_depth)
 	 in 
 	     ( setDazzled n
-	      ; Settings.set_depth(findHighestDepth n + i)
+	      ; let val new_depth = findHighestDepth n + i
+		in Settings.set_depth(if new_depth < 0 then 0 else new_depth)
+		end
 	      ; TextIO.print("FOLD_DEPTH: highestDepth war "^
 			     Int.toString(findHighestDepth n)^"\n")
 	      ; fold (n,i,f,g)
@@ -228,7 +230,9 @@ struct
 	 let val old_width = !(Settings.max_width)
 	 in 
 	     ( setDazzled n
-	      ; Settings.set_width(findHighestWidth n + i)
+	      ; let val new_width = findHighestWidth n + i
+		in Settings.set_width(if new_width < 0 then 0 else new_width)
+		end
 	      ; TextIO.print("FOLD_WIDTH: highestWidth war "^
 			     Int.toString(findHighestWidth n)^"\n")
 	      ; fold (n,i,f,g)

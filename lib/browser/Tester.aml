@@ -90,6 +90,17 @@ Promise.fulfill(prom1,#[1,2]);
 
 Promise.fulfill(prom2,#[2,3,4,5,6]);
 
+(* Promises *)
+structure Prom = Reflect.ReflectType (type t = char Promise.promise list);
+val promise1 = Promise.promise();
+val promise2 = Promise.promise();
+
+UnsafeInspector.inspect ([promise2,promise1,promise2],Prom.x);
+
+Promise.fulfill(promise1,#"o");
+
+Promise.fulfill(promise2,"n");
+
 (***)
 
 val x = lazy 4711;

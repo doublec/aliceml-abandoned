@@ -197,8 +197,9 @@ struct
 	    val font_height = Services.fontHeight()
 	    val y = int_y div font_height
 	    val highest_i = MainDictionary.getHighestIndexAssigned(dict)
-	    val _ = TextIO.print("searching for x:" ^ Int.toString(x) ^ " and y:" ^Int.toString(y)
-				  ^ " \n")
+	    val _ = () (* TextIO.print("searching for x:" 
+			^ Int.toString(x) ^ " and y:" ^Int.toString(y)
+			^ " \n") *)
 	in
 	   iterate (dict,x,y,0,highest_i)
 	end

@@ -57,7 +57,7 @@ signature UPDATE =
 	    node * int * (Reflect.value * Type.t * node * int * int -> node) *
 	    (Reflect.value * Inf.t * node * int * int -> node) -> unit
 
-       (* wird in Init bei "Shrink" benoetigt *)
+       (* wird in Init bei "shrink" benoetigt *)
 	val findHighestDepth: node -> int
 
 end

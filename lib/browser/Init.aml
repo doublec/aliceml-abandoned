@@ -40,24 +40,24 @@ structure Init :> INIT =
 struct
 
 (*
-    val sign = Inf.asSig(Option.valOf
-		(Component.inf(ComponentManager.link
-		  (Url.fromString "x-alice:/lib/fundamental/Fundamental"))))
-    
-    fun lookupPath(modLab,typLab) =
-	let
-	    val sign' = Inf.asSig(Inf.lookupMod(sign, Label.fromString modLab))
-	    val typ = Inf.lookupTyp'(sign', Label.fromString typLab)
-	    val typ' = if Type.isApply typ 
-			   then #1(Type.asApply typ) 
-		       else typ
-	in
-	    Type.asCon typ'
-	end
-    
-    val path_promise = lookupPath("Promise","promise")
+    val sign = Inf.asSig(Option.valOf 
+		(Component.inf(ComponentManager.link 
+		  (Url.fromString "x-alice:/lib/fundamental/Fundamental")))) 
+     
+    fun lookupPath(modLab,typLab) = 
+	let 
+            val sign' = Inf.asSig(Inf.lookupMod(sign, Label.fromString modLab))
+	    val typ = Inf.lookupTyp'(sign', Label.fromString typLab) 
+	    val typ' = if Type.isApply typ  
+			   then #1(Type.asApply typ)  
+		       else typ 
+	in 
+	    Type.asCon typ' 
+	end 
+      
+    val path_promise = lookupPath("Promise","promise") 
 
-    val path_package = lookupPath("Package","package")
+    val path_package = lookupPath("Package","package") 
 *)
  
     (* init *)
@@ -71,7 +71,7 @@ struct
 		   ; registerType(PervasiveType.path_vec, createVector)
 		   ; registerType(PervasiveType.path_array, createArray)
                (*  ; registerType(path_promise, createPromise)
-                   ; registerType(path_package, createPackage)  *) 
+                   ; registerType(path_package, createPackage)  *)  
 		   ; registerColor(INT_COLOR,  allocColor(0,45000,0))
 		   ; registerColor(REAL_COLOR, allocColor(0,45000,0))
 		   ; registerColor(CHAR_COLOR, allocColor(45000,0,50000))     
@@ -103,7 +103,7 @@ struct
 			    ("shrink",
 			     fn (n,_) 
 			     => let val diff = Helper.getDepth(n) - 
-			                       !(Settings.max_depth)
+			                       Update.findHighestDepth n
 				in if diff >= 0 
 				       then ()
 				   else Update.foldDepth(n,diff-1,createGraph,

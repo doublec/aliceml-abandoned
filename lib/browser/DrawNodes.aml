@@ -170,19 +170,19 @@ struct
 			       old_y2) = Services.getCoordinates group  
 			  val dx = x-old_x
 			  val dy = y-old_y
-			  val _ = TextIO.print("Moving from x:"
-					       ^ Int.toString(old_x)
-					       ^ " and y:"
-					       ^ Int.toString(old_y)
-					       ^ " to x:"
-					       ^ Int.toString(x)
-					       ^ " and y:"
-					       ^ Int.toString(y)
-					       ^", dx is "
-					       ^ Int.toString(dx)
-					       ^ " and dy is "
-					       ^ Int.toString(dy)
-					       ^ "\n")
+			  val _ = () (*TextIO.print("Moving from x:"
+				      ^ Int.toString(old_x)
+				      ^ " and y:"
+				      ^ Int.toString(old_y)
+				      ^ " to x:"
+				      ^ Int.toString(x)
+				      ^ " and y:"
+				      ^ Int.toString(y)
+				      ^", dx is "
+				      ^ Int.toString(dx)
+				      ^ " and dy is "
+				      ^ Int.toString(dy)
+				      ^ "\n") *)
 		      in
 		        Services.moveGroup(group,dx,dy) 
 		      end
