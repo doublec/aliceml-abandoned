@@ -196,8 +196,7 @@ AbstractCodeInterpreter *AbstractCodeInterpreter::self;
 
 Block *
 AbstractCodeInterpreter::GetAbstractRepresentation(Block *blockWithHandler) {
-  ConcreteCode *concreteCode =
-    reinterpret_cast<ConcreteCode *>(blockWithHandler);
+  ConcreteCode *concreteCode = static_cast<ConcreteCode *>(blockWithHandler);
   return Store::DirectWordToBlock(concreteCode->Get(1));
 }
 
@@ -665,7 +664,8 @@ AbstractCodeInterpreter::Run(word args, TaskStack *taskStack) {
 	    }
 	  }
 	} else { // nullary constructor
-	  Constructor *constructor = reinterpret_cast<Constructor *>(conVal);
+	  Constructor *constructor =
+	    static_cast<Constructor *>(static_cast<Block *>(conVal));
 	  Vector *tests = Vector::FromWord(pc->Sel(1));
 	  u_int ntests = tests->GetLength();
 	  for (u_int i = 0; i < ntests; i++) {

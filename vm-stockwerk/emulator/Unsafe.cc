@@ -49,14 +49,14 @@ DEFINE1(Unsafe_cast) {
 
 DEFINE1(Unsafe_getPrimitiveByName) {
   DECLARE_STRING(name, x0);
-  RETURN(PrimitiveTable::LookupValue(reinterpret_cast<Chunk *>(name)));
+  RETURN(PrimitiveTable::LookupValue(static_cast<Chunk *>(name)));
 } END
 
 DEFINE2(Unsafe_makeClosure) {
   word function = x0;
   DECLARE_VECTOR(vector, x1);
   //--** sharing of names
-  Chunk *name = reinterpret_cast<Chunk *>(String::New("Alice.function"));
+  Chunk *name = static_cast<Chunk *>(String::New("Alice.function"));
   Transform *transform = Transform::New(name, function);
   ConcreteCode *concreteCode =
     ConcreteCode::New(AbstractCodeInterpreter::self, 2);

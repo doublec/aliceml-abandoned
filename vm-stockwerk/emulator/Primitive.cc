@@ -80,8 +80,7 @@ PrimitiveInterpreter::GetAbstractRepresentation(Block *blockWithHandler) {
     return INVALID_POINTER;
   }
   else {
-    ConcreteCode *concreteCode =
-      reinterpret_cast<ConcreteCode *>(blockWithHandler);
+    ConcreteCode *concreteCode = static_cast<ConcreteCode *>(blockWithHandler);
     return Store::DirectWordToBlock(concreteCode->Get(0));
   }
 }

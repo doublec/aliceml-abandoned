@@ -88,7 +88,7 @@ void Scheduler::Run() {
 	    {
 	      taskStack->Purge();
 	      currentThread->SetArgs(currentArgs);
-	      Future *future = reinterpret_cast<Future *>(transient);
+	      Future *future = static_cast<Future *>(transient);
 	      future->AddToWaitQueue(currentThread);
 	      currentThread->Block(transient->ToWord());
 	      nextThread = true;
@@ -107,7 +107,7 @@ void Scheduler::Run() {
 	      transient->Become(FUTURE_LABEL, Store::IntToWord(0));
 	      taskStack->Purge();
 	      currentThread->SetArgs(currentArgs);
-	      Future *future = reinterpret_cast<Future *>(transient);
+	      Future *future = static_cast<Future *>(transient);
 	      future->AddToWaitQueue(currentThread);
 	      currentThread->Block(transient->ToWord());
 	      nextThread = true;
