@@ -205,6 +205,9 @@ public:
   Entry *GetEntry() {
     return Entry::FromWordDirect(GetArg(ENTRY_POS));
   }
+  void SetEntry(Entry *entry) {
+    ReplaceArg(ENTRY_POS, entry->ToWord());
+  }
   word GetClosure() {
     return GetArg(CLOSURE_POS);
   }
@@ -229,13 +232,11 @@ Interpreter::Result RefMapIteratorInterpreter::Run(TaskStack *taskStack) {
   Entry *entry = frame->GetEntry();
   word closure = frame->GetClosure();
   operation op = frame->GetOperation();
-  taskStack->PopFrame();
   Entry *nextEntry = entry->GetNext();
-  if (nextEntry != INVALID_POINTER) {
-    RefMapIteratorFrame *newFrame =
-      RefMapIteratorFrame::New(this, nextEntry, closure, op);
-    taskStack->PushFrame(newFrame->ToWord());
-  }
+  if (nextEntry != INVALID_POINTER)
+    frame->SetEntry(nextEntry);
+  else
+    taskStack->PopFrame();
   switch (op) {
   case app:
     Scheduler::nArgs = Scheduler::ONE_ARG;
@@ -275,6 +276,8 @@ void RefMapIteratorInterpreter::DumpFrame(word wFrame) {
   case appi: name = "appi"; break;
   case fold: name = "fold"; break;
   case foldi: name = "foldi"; break;
+  default:
+    Error("UnsafeMkRefMap: Unknown operation\n");
   }
   std::fprintf(stderr, "RefMap.%s\n", name);
 }
@@ -334,7 +337,8 @@ DEFINE2(UnsafeMkRefMap_app) {
   word closure = x0;
   DECLARE_REF_MAP(refMap, x1);
   Entry *entry = refMap->GetHead();
-  RefMapIteratorInterpreter::PushFrame(taskStack, entry, closure, app);
+  if (entry != INVALID_POINTER)
+    RefMapIteratorInterpreter::PushFrame(taskStack, entry, closure, app);
   RETURN_UNIT;
 } END
 
@@ -342,7 +346,8 @@ DEFINE2(UnsafeMkRefMap_appi) {
   word closure = x0;
   DECLARE_REF_MAP(refMap, x1);
   Entry *entry = refMap->GetHead();
-  RefMapIteratorInterpreter::PushFrame(taskStack, entry, closure, appi);
+  if (entry != INVALID_POINTER)
+    RefMapIteratorInterpreter::PushFrame(taskStack, entry, closure, appi);
   RETURN_UNIT;
 } END
 
@@ -351,7 +356,8 @@ DEFINE3(UnsafeMkRefMap_fold) {
   word zero = x1;
   DECLARE_REF_MAP(refMap, x2);
   Entry *entry = refMap->GetHead();
-  RefMapIteratorInterpreter::PushFrame(taskStack, entry, closure, fold);
+  if (entry != INVALID_POINTER)
+    RefMapIteratorInterpreter::PushFrame(taskStack, entry, closure, fold);
   RETURN(zero);
 } END
 
@@ -360,7 +366,8 @@ DEFINE3(UnsafeMkRefMap_foldi) {
   word zero = x1;
   DECLARE_REF_MAP(refMap, x2);
   Entry *entry = refMap->GetHead();
-  RefMapIteratorInterpreter::PushFrame(taskStack, entry, closure, foldi);
+  if (entry != INVALID_POINTER)
+    RefMapIteratorInterpreter::PushFrame(taskStack, entry, closure, foldi);
   RETURN(zero);
 } END
 
