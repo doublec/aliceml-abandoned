@@ -10,19 +10,19 @@
  *   $Revision$
  *)
 
-import structure Fixity            from "../common/Fixity"
-import structure Name              from "../common/Name"
-import structure Label             from "../common/Label"
+import structure Fixity            from "../../lib/rtt/Fixity"
+import structure Name              from "../../lib/rtt/Name"
+import structure Label             from "../../lib/rtt/Label"
 import structure Stamp             from "../common/Stamp"
-import structure Type              from "../common/Type"
-import structure Inf               from "../common/Inf"
+import structure Type              from "../../lib/rtt/Type"
+import structure Inf               from "../../lib/rtt/Inf"
 import structure AbstractGrammar   from "AbstractGrammar"
 
-import structure PrettyPrint       from "../misc/PrettyPrint"
+import structure PrettyPrint       from "../../lib/utility/PrettyPrint"
 import structure PPMisc            from "../infrastructure/PPMisc"
-import structure PPPath            from "../common/PPPath"
-import structure PPType            from "../common/PPType"
-import structure PPInf             from "../common/PPInf"
+import structure PPPath            from "../../lib/rtt/PPPath"
+import structure PPType            from "../../lib/rtt/PPType"
+import structure PPInf             from "../../lib/rtt/PPInf"
 
 import structure Error             from "../infrastructure/Error"
 import signature ELABORATION_ERROR from "ELABORATION_ERROR-sig"

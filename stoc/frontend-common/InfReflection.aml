@@ -10,13 +10,13 @@
  *   $Revision$
  *)
 
-import structure Name           from "Name"
-import structure Label          from "Label"
-import structure Path           from "Path"
-import structure Type           from "Type"
-import structure Fixity         from "Fixity"
-import structure Inf            from "Inf"
-import structure PervasiveType  from "PervasiveType"
+import structure Name           from "../../lib/rtt/Name"
+import structure Label          from "../../lib/rtt/Label"
+import structure Path           from "../../lib/rtt/Path"
+import structure Type           from "../../lib/rtt/Type"
+import structure Fixity         from "../../lib/rtt/Fixity"
+import structure Inf            from "../../lib/rtt/Inf"
+import structure PervasiveType  from "../../lib/rtt/PervasiveType"
 import structure PathReflection from "PathReflection"
 import signature INF_REFLECTION from "INF_REFLECTION-sig"
 

@@ -12,7 +12,7 @@
 
 import functor MkAbstractGrammar   from "MkAbstractGrammar"
 import functor MkPPAbstractGrammar from "MkPPAbstractGrammar"
-import structure PrettyPrint       from "../misc/PrettyPrint"
+import structure PrettyPrint       from "../../lib/utility/PrettyPrint"
 import structure Source            from "../infrastructure/Source"
 
 

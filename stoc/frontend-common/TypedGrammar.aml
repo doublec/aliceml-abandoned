@@ -29,9 +29,9 @@ import functor MkAbstractGrammar   from "MkAbstractGrammar"
 import functor MkPPAbstractGrammar from "MkPPAbstractGrammar"
 
 import structure Source            from "../infrastructure/Source"
-import structure Fixity            from "../common/Fixity"
-import structure Type              from "../common/Type"
-import structure Inf               from "../common/Inf"
+import structure Fixity            from "../../lib/rtt/Fixity"
+import structure Type              from "../../lib/rtt/Type"
+import structure Inf               from "../../lib/rtt/Inf"
 
 
 structure TypedInfo =
