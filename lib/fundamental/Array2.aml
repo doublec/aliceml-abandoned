@@ -28,9 +28,9 @@ import __primitive
        datatype	option and list and bool 
 				     from "ToplevelTypes"
 import __primitive
-       infix 4 = <> > >= <= infixr 5 :: @ infix 6 + - infix 7 *
+       infix 4 = <> < > >= <= infixr 5 :: @ infix 6 + - infix 7 *
        infix 3 := 
-       val op = and op >= and op <= and op >
+       val op = and op < and op >= and op <= and op >
        val op + and op - val op *                  from "ToplevelValues"
 import __primitive structure General               from "General"
 import __primitive structure Bool                  from "Bool"
@@ -70,6 +70,7 @@ local
 	   (* implementation *)
 
 	   fun array (rows, columns, default) =
+               if rows < 0 orelse columns < 0 then raise General.Size else
 	       { values = Array.array (rows * columns, default),
 		rows = rows,
 		cols = columns
@@ -90,10 +91,12 @@ local
 
 
 	   fun sub (a as {values, rows, cols}, row, col) = 
-	       Array.sub (values, index (a, row, col))
+               (check (General.Subscript, a, row, col);
+	        Array.sub (values, index (a, row, col)))
 
 	   fun update (a as {values, rows, cols}, row, col, v) =
-	       Array.update (values, index (a, row, col), v)
+	       (check (General.Subscript, a, row, col);
+                Array.update (values, index (a, row, col), v))
 
 	   fun dummy () = lazy raise General.Fail "dummy value accessed (inside Array2)"
 
@@ -187,7 +190,7 @@ local
 
 
 	   fun column (a as {values, rows, cols}, c) = 
-	       Vector.tabulate (cols, fn r => sub (a, r, c))
+	       Vector.tabulate (rows, fn r => sub (a, r, c))
 
 	   fun transRegion exn { base, row, col, nrows, ncols } = 
 	       (* Given a region return a quintuple of 
