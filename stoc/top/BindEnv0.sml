@@ -45,9 +45,9 @@ structure BindEnv0 :> BIND_ENV0 =
 *)
     (* Value environment *)
 
-    val _ = plus(E0, E_bool)
-    val _ = plus(E0, E_list)
-    val _ = plus(E0, E_ref)
+    val _ = union(E0, E_bool)
+    val _ = union(E0, E_list)
+    val _ = union(E0, E_ref)
     val _ = insertVal(E0, VId.fromString "Match", (i, P.stamp_Match, C false))
     val _ = insertVal(E0, VId.fromString "Bind",  (i, P.stamp_Bind,  C false))
     val _ = insertVal(E0, VId.fromString "=",     (i, P.stamp_eq,    V))
