@@ -20,7 +20,7 @@ structure StringHashKey : HASH_KEY =
 		    iter(Int.+(i,1), h' xorb (g >> 0w16))
 		end
 	in
-	    toInt(iter(0,0w0))
+	    toInt(iter(0,0w0) andb 0wx3fffffff)
 	end
     
   end
