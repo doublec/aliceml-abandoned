@@ -306,13 +306,13 @@ functor MkFlatteningPhase(structure Switches: SWITCHES) :> FLATTENING_PHASE =
 	    translateDec (dec, Decs (decr, cont))
 	  | translateCont (Decs (nil, cont)) = translateCont cont
 	  | translateCont (Goto stms) = stms
-	  | translateCont (Share (r as ref NONE, cont)) =
+	  | translateCont (Share (ref (SOME stms), _)) = stms
+	  | translateCont (Share (r, cont)) =
 	    let
 		val stms = share (translateCont cont)
 	    in
 		r := SOME stms; stms
 	    end
-	  | translateCont (Share (ref (SOME stms), _)) = stms
 	and translateDec (ValDec (info, VarPat (_, id as Id (_, _, name)),
 				  NewExp info'), cont) =
 	    O.ValDec (#region info, O.IdDef (translateId id),
