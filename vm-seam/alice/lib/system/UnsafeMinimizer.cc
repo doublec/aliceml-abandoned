@@ -34,7 +34,6 @@ DEFINE1(UnsafeMinimizer_minimize) {
 } END
 
 AliceDll word UnsafeMinimizer() {
-  PartitionLoader::Init();
   Record *record = Record::New(3);
   INIT_STRUCTURE(record, "UnsafeMinimizer", "newPartition",
 		 UnsafeMinimizer_newPartition, 0);  
