@@ -25,6 +25,7 @@ AbstractGrammar
  | -------- frontend-common ------------
  |
  | ElaborationPhase:
+ |	- Admissibility checking
  |	- Type inference
  |	- Overloading resolution
  |	- Interface checking
@@ -44,8 +45,14 @@ IntermediateGrammar
  |
  | MatchCompilationPhase:
  |	- Pattern matching compilation
+ |	- Trivialisation of recursive bindings
  V
 SimplifiedGrammar
+ |
+ | ImperativePhase:
+ |	- Linearisation
+ V
+ImperativeGrammar
  |
  | PartialEvaluationPhase:
  |	- Value propagation
@@ -57,7 +64,7 @@ SimplifiedGrammar
  |
  | -------------------------------------
  V
-SimplifiedGrammar'
+ImperativeGrammar'
  |
  | -------- backend-stockwerk ----------
  |
