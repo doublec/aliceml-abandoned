@@ -26,7 +26,9 @@ define
 
    CommandLine =
    tuple(I_name:
-	    fun {$} {ByteString.make {Property.get 'application.url'}} end#n_v
+	    fun {$}
+	       {ByteString.make {Property.get 'stockwerk.rootUrl'}}
+	    end#n_v
 	 I_arguments:
 	    fun {$}
 	       {FoldR {Property.get 'stockwerk.args'}
