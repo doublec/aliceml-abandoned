@@ -15,11 +15,6 @@ alice_dll_LIBADD = \
 	alice/primitives/libprimitives.a
 
 bin_SCRIPTS = \
-	bin/alice \
-	bin/alicec \
-	bin/alicedep \
-	bin/alicelink \
-	bin/aliceremote \
 	bin/alicerun \
 	bin/alicetool \
 	bin/alice-config
@@ -28,11 +23,6 @@ include_HEADERS = \
 	Alice.hh
 
 EXTRA_DIST = \
-	bin/alice \
-	bin/alicec \
-	bin/alicedep \
-	bin/alicelink \
-	bin/aliceremote \
 	bin/alicerun.in \
 	bin/alicetool.in \
 	bin/alice-config.in

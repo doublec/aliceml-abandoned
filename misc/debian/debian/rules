@@ -57,10 +57,13 @@ install-stamp: build-stamp
 	dh_installdirs
 	mkdir $(DEB_INSTALL_DIR) || true
 	$(MAKE) -C $(DEB_BUILD_DIR) $(install_options) \
-		install DESTDIR=$(DEB_INSTALL_DIR)
+		install DESTDIR=$(DEB_INSTALL_DIR)/usr
 	echo > $@
-	mkdir $(DEB_INSTALL_DIR)/usr/share/doc || true
-	mkdir $(DEB_INSTALL_DIR)/usr/share/doc/alice || true
+	mkdir -p $(DEB_INSTALL_DIR)/usr/share/doc/alice || true
+	mkdir -p $(DEB_INSTALL_DIR)/usr/share/applications || true
+	mv $(DEB_INSTALL_DIR)/usr/debian/alice.desktop \
+	   $(DEB_INSTALL_DIR)/usr/share/applications
+	rmdir $(DEB_INSTALL_DIR)/usr/debian
 	mv $(DEB_INSTALL_DIR)/usr/share/alice/doc/examples \
 	   $(DEB_INSTALL_DIR)/usr/share/doc/alice/examples
 	mv $(DEB_INSTALL_DIR)/usr/share/alice/doc \
@@ -82,8 +85,9 @@ binary-indep: build install
 	dh_installdocs $(DEB_SOURCE_DIR)/README
 	dh_installchangelogs
 	dh_strip
-	dh_compress --exclude=*.ozf
+	dh_compress --exclude=*.alc
 	dh_fixperms
+	dh_installmenu
 	dh_installdeb
 	dh_shlibdeps
 	dh_gencontrol
