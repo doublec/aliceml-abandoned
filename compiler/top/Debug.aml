@@ -182,7 +182,7 @@ structure Debug : DEBUG =
 			   in  BindEnvFromSig.envFromSig(#region i,#sign i);
 			       comp
 			   end
-	fun translate' x = TranslationPhase.translate () x
+	fun translate' x = TranslationPhase.translate (TranslationEnv.new()) x
 	fun flatten' x   = BackendCommon.translate (BackendCommon.C.new ()) x
 
 	infix 3 oo
