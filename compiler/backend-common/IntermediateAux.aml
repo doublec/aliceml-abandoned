@@ -379,7 +379,7 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	    usedVarsExp (exp, set, used, shared)
 	and usedVarsExp (O.LitExp (_, _), _, _, _) = ()
 	  | usedVarsExp (O.PrimExp (_, _), _, _, _) = ()
-	  | usedVarsExp (O.NewExp _, _, _, _) = ()
+	  | usedVarsExp (O.NewExp (_, _), _, _, _) = ()
 	  | usedVarsExp (O.VarExp (_, id), set, used, _) =
 	    usedVarsId (id, set, used)
 	  | usedVarsExp (O.TagExp (_, _, _), _, _, _) = ()

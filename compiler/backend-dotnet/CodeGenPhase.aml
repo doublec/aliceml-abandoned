@@ -500,7 +500,7 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	    in
 		emit (Ldsfld (dottedname, id, ObjectTy))
 	    end
-	  | genExp (NewExp _) =
+	  | genExp (NewExp (_, _)) =
 	    (emit (Call (false, System.Guid, "NewGuid", #[], System.GuidTy));
 	     emit (Box System.Guid))
 	  | genExp (VarExp (_, id)) = emitId id

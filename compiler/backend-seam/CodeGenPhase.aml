@@ -394,7 +394,7 @@ structure CodeGenPhase: CODE_GEN_PHASE =
 	    O.PutConst (id, translateLit lit, instr)
 	  | translateExp (PrimExp (_, name), id, instr, _) =
 	    O.PutConst (id, O.Prim name, instr)
-	  | translateExp (NewExp _, id, instr, _) = O.PutNew (id, instr)
+	  | translateExp (NewExp (_, _), id, instr, _) = O.PutNew (id, instr)
 	  | translateExp (VarExp (_, id'), id, instr, env) =
 	    O.PutVar (id, lookup (env, id'), instr)
 	  | translateExp (TagExp (_, _, tag), id, instr, _) =
@@ -480,7 +480,7 @@ structure CodeGenPhase: CODE_GEN_PHASE =
 	    raise Crash.Crash "CodeGenPhase.translateExp: FailExp"
 	and translateIgnore (LitExp (_, _), instr, _) = instr
 	  | translateIgnore (PrimExp (_, _), instr, _) = instr
-	  | translateIgnore (NewExp _, instr, _) = instr
+	  | translateIgnore (NewExp (_, _), instr, _) = instr
 	  | translateIgnore (VarExp (_, _), instr, _) = instr
 	  | translateIgnore (TagExp (_, _, _), instr, _) = instr
 	  | translateIgnore (ConExp (_, _), instr, _) = instr

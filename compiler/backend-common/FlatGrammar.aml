@@ -98,7 +98,7 @@ structure FlatGrammar :> FLAT_GRAMMAR =
 	and exp =
 	    LitExp of exp_info * lit
 	  | PrimExp of exp_info * string
-	  | NewExp of exp_info
+	  | NewExp of exp_info * Name.t
 	  | VarExp of exp_info * id
 	  | TagExp of exp_info * label * int
 	  | ConExp of exp_info * con

@@ -746,6 +746,12 @@ prepare
 		imods: [false]
 		test: true
 	)
+'Name.newNamed':
+	builtin(
+		types: ['atom' 'name']
+		det: [det any(det)]
+		imods: [false]
+	)
 'Name.newUnique':
 	builtin(
 		types: ['atom' 'name']

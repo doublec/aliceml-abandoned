@@ -10,37 +10,14 @@
  *   $Revision$
  *)
 
-import
-    structure Url
-from "../../lib/utility/Url"
-
-import
-    structure Name
-from "../../lib/rtt/Name"
-
-import
-    structure Label
-from "../../lib/rtt/Label"
-
-import
-    structure Stamp
-from "../common/Stamp"
-
-import
-    structure StampSet
-from "../common/StampSet"
-
-import
-    signature FLAT_GRAMMAR
-from "FLAT_GRAMMAR-sig"
-
-import
-    structure FlatGrammar
-from "FlatGrammar"
-
-import
-    signature OUTPUT_FLAT_GRAMMAR
-from "OUTPUT_FLAT_GRAMMAR-sig"
+import structure Url                 from "../../lib/utility/Url"
+import structure Name                from "../../lib/rtt/Name"
+import structure Label               from "../../lib/rtt/Label"
+import structure Stamp               from "../common/Stamp"
+import structure StampSet            from "../common/StampSet"
+import signature FLAT_GRAMMAR        from "FLAT_GRAMMAR-sig"
+import structure FlatGrammar         from "FlatGrammar"
+import signature OUTPUT_FLAT_GRAMMAR from "OUTPUT_FLAT_GRAMMAR-sig"
 
 structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
     struct
@@ -236,7 +213,7 @@ structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
 		 idDefsBodyVector)
 	and formatExp (LitExp (_, lit)) = formatLit lit
 	  | formatExp (PrimExp (_, name)) = SEQ #[S "prim \"", S name, S "\""]
-	  | formatExp (NewExp _) = S "new"
+	  | formatExp (NewExp (_, _)) = S "new"
 	  | formatExp (VarExp (_, id)) = ID id
 	  | formatExp (TagExp (_, label, n)) =
 	    SEQ #[S "tag ", S (Label.toString label), S "/", I n]

@@ -83,7 +83,7 @@ structure DeadCodeEliminationPhase :> DEAD_CODE_ELIMINATION_PHASE =
 
 	fun deadExp (LitExp (_, _)) = NONE
 	  | deadExp (PrimExp (_, _)) = NONE
-	  | deadExp (NewExp _) = NONE
+	  | deadExp (NewExp (_, _)) = NONE
 	  | deadExp (VarExp (_, _)) = NONE
 	  | deadExp (TagExp (_, _, _)) = NONE
 	  | deadExp (TupExp (_, _)) = NONE

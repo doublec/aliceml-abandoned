@@ -12,53 +12,18 @@
  *   $Revision$
  *)
 
-import
-    structure OS
-from "../../lib/system/OS"
-
-import
-    structure BinIO
-from "../../lib/system/BinIO"
-
-import
-    structure Url
-from "../../lib/utility/Url"
-
-import
-    structure Name
-from "../../lib/rtt/Name"
-
-import
-    structure Label
-from "../../lib/rtt/Label"
-
-import
-    structure Crash
-from "../infrastructure/Crash"
-
-import
-    structure Source
-from "../infrastructure/Source"
-
-import
-    structure Stamp
-from "../infrastructure/Stamp"
-
-import
-    structure StampMap
-from "../infrastructure/StampMap"
-
-import
-    structure FlatGrammar
-from "../backend-common/FlatGrammar"
-
-import
-    signature CODE
-from "../backend-common/CODE-sig"
-
-import
-    structure PickleOutStream
-from "PickleOutStream"
+import structure OS              from "../../lib/system/OS"
+import structure BinIO           from "../../lib/system/BinIO"
+import structure Url             from "../../lib/utility/Url"
+import structure Name            from "../../lib/rtt/Name"
+import structure Label           from "../../lib/rtt/Label"
+import structure Crash           from "../infrastructure/Crash"
+import structure Source          from "../infrastructure/Source"
+import structure Stamp           from "../infrastructure/Stamp"
+import structure StampMap        from "../infrastructure/StampMap"
+import structure FlatGrammar     from "../backend-common/FlatGrammar"
+import signature CODE            from "../backend-common/CODE-sig"
+import structure PickleOutStream from "PickleOutStream"
 
 structure PickleFlatGrammar :> CODE
     where type t = Source.desc * string option ref * FlatGrammar.t =
@@ -156,11 +121,12 @@ structure PickleFlatGrammar :> CODE
 		      | "::" => ignore (outputAtom (q, "|"))
 		      | s => ignore (outputAtom (q, s))
 
+	fun outputName (q, Name.ExId s) =
+	    (outputTuple (q, "ExId", 1); outputAtom (q, s))
+	  | outputName (q, Name.InId) = outputAtom (q, "InId");
+
 	fun outputId (q, Id (info, stamp, name)) =
-	    (outputTuple (q, "Id", 3);
-	     case name of
-		 Name.ExId s => (outputTuple (q, "ExId", 1); outputAtom (q, s))
-	       | Name.InId => outputAtom (q, "InId");
+	    (outputTuple (q, "Id", 3); outputName (q, name);
 	     outputStamp (q, stamp); outputIdInfo (q, info))
 
 	fun outputIdDef (q, IdDef id) =
@@ -271,8 +237,9 @@ structure PickleFlatGrammar :> CODE
 	  | outputExp (q, PrimExp (info, name)) =
 	    (outputTuple (q, "PrimExp", 2); outputAtom (q, name);
 	     outputExpInfo (q, info))
-	  | outputExp (q, NewExp info) =
-	    (outputTuple (q, "NewExp", 1); outputExpInfo (q, info))
+	  | outputExp (q, NewExp (info, name)) =
+	    (outputTuple (q, "NewExp", 2); outputName (q, name);
+	     outputExpInfo (q, info))
 	  | outputExp (q, VarExp (info, id)) =
 	    (outputTuple (q, "VarExp", 2); outputId (q, id);
 	     outputExpInfo (q, info))

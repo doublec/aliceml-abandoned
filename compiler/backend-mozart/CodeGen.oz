@@ -349,8 +349,14 @@ define
 	 vEquateConstant(_ Constant Reg VTl)
       [] 'PrimExp'(_ Builtinname) then
 	 vEquateConstant(_ BuiltinTable.Builtinname Reg VTl)
-      [] 'NewExp'(Region) then
+      [] 'NewExp'(Region 'InId') then
 	 vCallBuiltin(_ 'Name.new' [Reg] {TranslateRegion Region State} VTl)
+      [] 'NewExp'(Region 'ExId'(PrintName)) then VHd VInter ArgReg in
+	 {State.cs newReg(?ArgReg)}
+	 VHd = vEquateConstant(_ PrintName ArgReg VInter)
+	 VInter = vCallBuiltin(_ 'Name.newNamed' [ArgReg Reg]
+			       {TranslateRegion Region State} VTl)
+	 VHd
       [] 'VarExp'(_ Id) then
 	 vUnify(_ Reg {GetReg Id State} VTl)
       [] 'TagExp'(_ Label _) then

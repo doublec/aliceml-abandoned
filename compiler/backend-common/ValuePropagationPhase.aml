@@ -247,7 +247,7 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 
 	fun expToValue (LitExp (_, lit)) = LitVal lit
 	  | expToValue (PrimExp (_, name)) = PrimVal name
-	  | expToValue (NewExp _) = UnknownVal   (*--** ConVal? *)
+	  | expToValue (NewExp (_, _)) = UnknownVal   (*--** ConVal? *)
 	  | expToValue (VarExp (_, id)) = VarVal id
 	  | expToValue (TagExp (_, label, n)) = TagVal (label, n)
 	  | expToValue (ConExp (_, con)) = ConVal con
@@ -705,7 +705,7 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 
 	fun isSimple (LitExp (_, _), _) = true
 	  | isSimple (PrimExp (_, _), _) = true
-	  | isSimple (NewExp _, _) = true
+	  | isSimple (NewExp (_, _), _) = true
 	  | isSimple (VarExp (_, id), env) = isSome (IdMap.lookup (env, id))
 	  | isSimple (TagExp (_, _, _), _) = true
 	  | isSimple (ConExp (_, _), _) = true
@@ -1119,7 +1119,7 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 	     handle PrimOps.UnknownPrim =>
 		 Error.error (#region info, "unknown primitive " ^ name);
 	     (nil, exp))
-	  | vpExp (exp as NewExp _, _, _, _) = (nil, exp)
+	  | vpExp (exp as NewExp (_, _), _, _, _) = (nil, exp)
 	    (*--** generate StaticCon if on toplevel *)
 	  | vpExp (VarExp (info, id), env, _, _) =
 	    (nil, getTerm (info, id, env))

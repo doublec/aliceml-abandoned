@@ -284,7 +284,12 @@ functor MkFlatteningPhase(val loadSign:
 	    [O.EndTryStm (stm_info region, translateCont cont)]
 	  | translateCont (EndHandle (region, cont)) =
 	    [O.EndHandleStm (stm_info region, translateCont cont)]
-	and translateDec (ValDec (info, VarPat (_, id), exp), cont) =
+	and translateDec (ValDec (info, VarPat (_, id as Id (_, _, name)),
+				  NewExp (info', isNAry)), cont) =
+	    O.ValDec (stm_info (#region info),
+		      O.IdDef (translateId id),
+		      O.NewExp (id_info info', name))::translateCont cont
+	  | translateDec (ValDec (info, VarPat (_, id), exp), cont) =
 	    let
 		fun declare exp' =
 		    O.ValDec (stm_info (#region info),
@@ -405,7 +410,7 @@ functor MkFlatteningPhase(val loadSign:
 	  | translateExp (PrimExp (info, name), f, cont) =
 	    f (O.PrimExp (id_info info, name))::translateCont cont
 	  | translateExp (NewExp (info, isNAry), f, cont) =
-	    f (O.NewExp (id_info info))::translateCont cont
+	    f (O.NewExp (id_info info, Name.InId))::translateCont cont
 	  | translateExp (VarExp (info, longid), f, cont) =
 	    let
 		val (stms, id, _) = translateLongid longid

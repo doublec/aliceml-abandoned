@@ -165,7 +165,7 @@ define
       case Exp of 'LitExp'(Info Lit) then 'LitExp'({TrInfo Info} Lit)
       [] 'PrimExp'(Info String) then
 	 'PrimExp'({TrInfo Info} {VirtualString.toAtom String})
-      [] 'NewExp'(Info) then 'NewExp'({TrInfo Info})
+      [] 'NewExp'(Info Name) then 'NewExp'({TrInfo Info} {TrName Name})
       [] 'VarExp'(Info Id) then 'VarExp'({TrInfo Info} {TrId Id})
       [] 'TagExp'(Info Label N) then 'TagExp'({TrInfo Info} {TrLabel Label} N)
       [] 'ConExp'(Info Con) then 'ConExp'({TrInfo Info} {TrCon Con})
