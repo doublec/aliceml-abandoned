@@ -80,6 +80,27 @@ struct
 	    (if i = 0 then c else c ^ Int.toString i)
 	end
 
+  (* Name management for holes *)
+
+    val counter = ref 0
+    val holes   = Map.new() : int Map.t
+
+    fun holeIndex t =
+	case Map.lookup(holes, canonical t)
+	 of SOME n => n
+	  | NONE =>
+	let
+	    val n = !counter+1
+	in
+	    (* Clean up map *)
+	    List.app (fn t => Map.deleteExistent(holes, t))
+		(Map.foldi (fn(t,_,ts) => if isUnknown(fromCanonical t)
+	 				  then ts else t::ts) [] holes);
+	    Map.insertDisjoint(holes, canonical t, n);
+	    counter := n;
+	    n
+	end
+
 
   (* Kinds *)
 
@@ -148,8 +169,7 @@ struct
 		else if isUnknown t then
 		    let
 			val k   = kind t
-			val t'  = fromCanonical(canonical t)
-			val doc = text("'" ^ Int.toString(hash t'))
+			val doc = text("'" ^ Int.toString(holeIndex t))
 		    in
 			if isStarKind k
 			then doc
@@ -158,8 +178,7 @@ struct
 		else if isVar t then
 		    let
 			val k   = kind t
-			val doc = ppVar false ^^	(* unbound! *)
-				  text("'" ^ Int.toString(hash t))
+			val doc = ppVar false	(* unbound! *)
 		    in
 			if isStarKind k
 			then doc
@@ -224,9 +243,6 @@ struct
 			fbox(nest(ppSeqPrec ppTypPrec 4 ts ^/^ ppTypPrec 5 t3))
 		    end
 		else if isMu t then
-(*DEBUG
-		    text("MU." ^ Int.toString(hash t))
-*)
 		    let
 			val t1  = asMu t
 			val doc = ppVar true

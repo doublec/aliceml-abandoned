@@ -323,7 +323,9 @@ struct
 
     fun pth p = PrettyPrint.toString(PPPath.ppPath p, 1000000)
 
-    fun id t = Int.toString(hash (*DEBUG Addr.addr*) t)
+    fun id t = Int.toString(Addr.addr t) (* only works from build2 on *)
+    (*fun id t = Int.toString(#1 t)
+    		(* For NJ, have to make bootstrap/Cell transparent! *)*)
 
     val rec typ'ToString = fn ads =>
 	fn t =>	if Hole.isHole t then "_" else
