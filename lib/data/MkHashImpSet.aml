@@ -27,7 +27,7 @@ struct
     val initialSize		= 19
 
     fun set()			= (ref(Array.array(initialSize,[])), ref 0)
-    fun deleteAll (s,k)		= if !k = 0 then () else
+    fun removeAll (s,k)		= if !k = 0 then () else
 				  ( s := Array.array(initialSize,[]) ; k := 0 )
 
     fun size(_, ref n)		= n
@@ -63,24 +63,24 @@ struct
 				  end
 
 
-    exception Delete'
+    exception Remove
 
-    fun delete'( [],   k')	= raise Delete'
-      | delete'(k::ks, k')	= if Item.equal(k,k') then ks
-						      else k :: delete'(ks,k')
+    fun remove'( [],   k')	= raise Remove
+      | remove'(k::ks, k')	= if Item.equal(k,k') then ks
+						      else k :: remove'(ks,k')
 
-    fun deleteWith f (s,k)	= let val (ref t,n) = s
+    fun removeWith f (s,k)	= let val (ref t,n) = s
 				      val i   = hash(t,k)
 				      val ks  = Array.sub(t,i)
-				      val ks' = delete'(ks,k) before n := !n-1
-						handle Delete' =>
+				      val ks' = remove'(ks,k) before n := !n-1
+						handle Remove =>
 						       (f k ; ks)
 				  in
 				      Array.update(t,i,ks')
 				  end
 
-    val delete			= deleteWith ignore
-    val deleteExistent		= deleteWith(fn k => raise Unknown k)
+    val remove			= removeWith ignore
+    val removeExistent		= removeWith(fn k => raise Unknown k)
 
 
     fun reinsert t k		= let val i = hash(t,k) in
@@ -114,7 +114,7 @@ struct
     fun unionDisjoint(s1,s2)	= app (fn k => insertDisjoint(s1,k)) s2
     fun unionWith f (s1,s2)	= app (fn k => insertWith f (s1,k)) s2
 
-    fun difference(s1,s2)	= app (fn k => delete(s1,k)) s2
+    fun difference(s1,s2)	= app (fn k => remove(s1,k)) s2
     fun intersect(s1,s2)	= filter (fn k => member(s2,k)) s1
 
     fun subset(s1,s2)		= all (fn k => member(s2,k)) s1

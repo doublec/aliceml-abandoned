@@ -110,7 +110,7 @@ functor MkRedBlackSet (Item : ORDERED) :> SET where type item = Item.t =
 	| LEFT of (color * item * tree * zipper)
 	| RIGHT of (color * tree * item * zipper)
     in
-    fun deleteExistent (SET(nItems, t), k) = let
+    fun removeExistent (SET(nItems, t), k) = let
 	  fun zip (TOP, t) = t
 	    | zip (LEFT(color, x, b, z), a) = zip(z, T(color, a, x, b))
 	    | zip (RIGHT(color, a, x, z), b) = zip(z, T(color, a, x, b))
@@ -164,8 +164,8 @@ functor MkRedBlackSet (Item : ORDERED) :> SET where type item = Item.t =
 	    SET(nItems-1, del(t, TOP))
 	  end
     end (* local *)
-    fun delete (s, x) = deleteExistent (s, x) handle Unknown _ => s
-    fun deleteWith f (s, x) = deleteExistent (s, x) handle Unknown z => (f z; s)
+    fun remove (s, x) = removeExistent (s, x) handle Unknown _ => s
+    fun removeWith f (s, x) = removeExistent (s, x) handle Unknown z => (f z; s)
 
   (* Return true if and only if item is an element in the set *)
     fun member (SET(_, t), k) = let
@@ -312,7 +312,7 @@ functor MkRedBlackSet (Item : ORDERED) :> SET where type item = Item.t =
 		  | ((T(_, _, x, _), r1), (T(_, _, y, _), r2)) => (
 		      case Item.compare(x, y)
 		       of LESS => union' (r1, t2, n+1, addItem(x, result))
-			| EQUAL => (clashFn x; union' (r1, r2, n+1, addItem(x, result)))
+			| EQUAL => (clashFn y; union' (r1, r2, n+1, addItem(y, result)))
 			| GREATER => union' (t1, r2, n+1, addItem(y, result))
 		      (* end case *))
 		(* end case *))

@@ -30,10 +30,10 @@ sig
     val insertDisjoint:	set * item -> unit		(* Collision *)
     val insertWith :	(item -> unit) -> set * item -> unit
 
-    val delete :	set * item -> unit
-    val deleteExistent:	set * item -> unit		(* Unknown *)
-    val deleteWith :	(item -> unit) -> set * item -> unit
-    val deleteAll :	set -> unit
+    val remove :	set * item -> unit
+    val removeExistent:	set * item -> unit		(* Unknown *)
+    val removeWith :	(item -> unit) -> set * item -> unit
+    val removeAll :	set -> unit
 
     val union :		set * set  -> unit
     val unionDisjoint :	set * set  -> unit		(* Collision *)
@@ -42,11 +42,15 @@ sig
     val intersect :	set * set -> unit
     val difference :	set * set -> unit
 
+    val size :		set -> int
+    val isEmpty :	set -> bool
+
     val member :	set * item -> bool
     val choose :	set -> item option
 
-    val size :		set -> int
-    val isEmpty :	set -> bool
+    val equal :		set * set -> bool
+    val subset :	set * set -> bool
+    val compare :	set * set -> order
 
     val app :		(item -> unit) -> set -> unit
     val fold :		(item * 'a -> 'a) -> 'a -> set -> 'a
@@ -54,8 +58,4 @@ sig
     val exists :	(item -> bool) -> set -> bool
     val find :		(item -> bool) -> set -> item option
     val filter :	(item -> bool) -> set -> unit
-
-    val equal :		set * set -> bool
-    val subset :	set * set -> bool
-    val compare :	set * set -> order
 end

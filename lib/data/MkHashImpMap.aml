@@ -27,7 +27,7 @@ struct
     val initialSize		= 19
 
     fun map()			= (ref(Array.array(initialSize,[])), ref 0)
-    fun deleteAll (m,k)		= if !k = 0 then () else
+    fun removeAll (m,k)		= if !k = 0 then () else
 				  ( m := Array.array(initialSize,[]) ; k := 0 )
 
     fun size(_, ref n)		= n
@@ -93,24 +93,24 @@ struct
 				       | SOME(k,a) => a
 				  end
 
-    exception Delete'
+    exception Remove
 
-    fun delete'(  [],    k)	= raise Delete'
-      | delete'(ka::kas, k)	= if Key.equal(#1 ka, k)
+    fun remove'(  [],    k)	= raise Remove
+      | remove'(ka::kas, k)	= if Key.equal(#1 ka, k)
 				  then kas : (key * 'a) list
-				  else ka :: delete'(kas,k)
+				  else ka :: remove'(kas,k)
 
-    fun deleteWith f (m,k)	= let val (ref t,n) = m
+    fun removeWith f (m,k)	= let val (ref t,n) = m
 				      val i    = hash(t,k)
 				      val kas  = Array.sub(t,i)
-				      val kas' = delete'(kas,k) before n := !n-1
-						 handle Delete' => (f k ; kas)
+				      val kas' = remove'(kas,k) before n := !n-1
+						 handle Remove => (f k ; kas)
 				  in
 				      Array.update(t, i, kas')
 				  end
 
-    fun delete x		= deleteWith ignore x
-    fun deleteExistent x	= deleteWith(fn k => raise Unknown k) x
+    fun remove x		= removeWith ignore x
+    fun removeExistent x	= removeWith(fn k => raise Unknown k) x
 
     fun reinsert t (ka as(k,_))	= let val i = hash(t,k) in
 				      Array.update(t, i, ka::Array.sub(t,i))
@@ -133,7 +133,7 @@ struct
 					  of NONE =>
 						(k,a)::kas before n := !n+1
 					   | SOME(k,a') =>
-						(k, f(k,a',a))::delete'(kas,k)
+						(k, f(k,a',a))::remove'(kas,k)
 				  in
 				      Array.update(t, i, kas')
 				  end

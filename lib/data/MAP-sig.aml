@@ -31,14 +31,17 @@ sig
     val insertWith :	('a * 'a -> 'a) -> 'a map * key * 'a -> 'a map
     val insertWithi :	(key * 'a * 'a -> 'a) -> 'a map * key * 'a -> 'a map
 
-    val delete :	'a map * key -> 'a map
-    val deleteExistent:	'a map * key -> 'a map		(* Unknown *)
-    val deleteWith :	(key -> unit) -> 'a map * key -> 'a map
+    val remove :	'a map * key -> 'a map
+    val removeExistent:	'a map * key -> 'a map		(* Unknown *)
+    val removeWith :	(key -> unit) -> 'a map * key -> 'a map
 
     val union :		'a map * 'a map -> 'a map
     val unionDisjoint :	'a map * 'a map -> 'a map	(* Collision *)
     val unionWith :	('a * 'a -> 'a) -> 'a map * 'a map -> 'a map
     val unionWithi :	(key * 'a * 'a -> 'a) -> 'a map * 'a map -> 'a map
+
+    val size :		'a map -> int
+    val isEmpty :	'a map -> bool
 
     val member :	'a map * key -> bool
     val lookup :	'a map * key -> 'a option
@@ -46,8 +49,8 @@ sig
     val choose :	'a map -> 'a option
     val choosei :	'a map -> (key * 'a) option
 
-    val size :		'a map -> int
-    val isEmpty :	'a map -> bool
+    val equal :		('a * 'a -> bool) -> 'a map * 'a map -> bool
+    val submap :	('a * 'a -> bool) -> 'a map * 'a map -> bool
 
     val app :		('a -> unit) -> 'a map -> unit
     val map :		('a -> 'b) -> 'a map -> 'b map
@@ -68,7 +71,4 @@ sig
     val findi :		(key * 'a -> bool) -> 'a map -> (key * 'a) option
     val filteri :	(key * 'a -> bool) -> 'a map -> 'a map
     val partitioni :	(key * 'a -> bool) -> 'a map -> 'a map * 'a map
-
-    val equal :		('a * 'a -> bool) -> 'a map * 'a map -> bool
-    val submap :	('a * 'a -> bool) -> 'a map * 'a map -> bool
 end

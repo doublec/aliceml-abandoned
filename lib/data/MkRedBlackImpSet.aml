@@ -40,10 +40,10 @@ struct
     fun insertDisjoint (s,x)	= update (s, fn s' => Set.insertDisjoint (s',x))
     fun insertWith f (s,x)	= update (s, fn s' => Set.insertWith f (s',x))
 
-    fun delete (s,x)		= update (s, fn s' => Set.delete (s',x))
-    fun deleteExistent (s,x)	= update (s, fn s' => Set.deleteExistent (s',x))
-    fun deleteWith f (s,x)	= update (s, fn s' => Set.deleteWith f (s',x))
-    fun deleteAll s		= s := Set.empty
+    fun remove (s,x)		= update (s, fn s' => Set.remove (s',x))
+    fun removeExistent (s,x)	= update (s, fn s' => Set.removeExistent (s',x))
+    fun removeWith f (s,x)	= update (s, fn s' => Set.removeWith f (s',x))
+    fun removeAll s		= s := Set.empty
 
     fun union (s1,s2)		= update (s1, fn s1' => Set.union (s1',!s2))
     fun unionDisjoint (s1,s2)	= update (s1, fn s1' =>

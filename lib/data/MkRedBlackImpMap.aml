@@ -42,10 +42,10 @@ struct
     fun insertWith f (m,x,y)	= update (m, fn m' => Map.insertWith f (m',x,y))
     fun insertWithi f (m,x,y)	= update (m, fn m' => Map.insertWithi f(m',x,y))
 
-    fun delete (m,x)		= update (m, fn m' => Map.delete (m',x))
-    fun deleteExistent (m,x)	= update (m, fn m' => Map.deleteExistent (m',x))
-    fun deleteWith f (m,x)	= update (m, fn m' => Map.deleteWith f (m',x))
-    fun deleteAll m		= m := Map.empty
+    fun remove (m,x)		= update (m, fn m' => Map.remove (m',x))
+    fun removeExistent (m,x)	= update (m, fn m' => Map.removeExistent (m',x))
+    fun removeWith f (m,x)	= update (m, fn m' => Map.removeWith f (m',x))
+    fun removeAll m		= m := Map.empty
 
     fun union (m1,m2)		= update (m1, fn m1' => Map.union (m1',!m2))
     fun unionDisjoint (m1,m2)	= update (m1, fn m1' =>

@@ -140,7 +140,7 @@ functor MkRedBlackMap (Key : ORDERED) :> MAP where type key = Key.t =
 	| LEFT of (color * key * 'a * 'a tree * 'a zipper)
 	| RIGHT of (color * 'a tree * key * 'a * 'a zipper)
     in
-    fun deleteExistent (MAP(nItems, t), k) = let
+    fun removeExistent (MAP(nItems, t), k) = let
 	  fun zip (TOP, t) = t
 	    | zip (LEFT(color, xk, x, b, z), a) = zip(z, T(color, a, xk, x, b))
 	    | zip (RIGHT(color, a, xk, x, z), b) = zip(z, T(color, a, xk, x, b))
@@ -199,8 +199,8 @@ functor MkRedBlackMap (Key : ORDERED) :> MAP where type key = Key.t =
 	    MAP(nItems-1, t)
 	  end
     end (* local *)
-    fun delete (m, k) = deleteExistent (m, k) handle Unknown _ => m
-    fun deleteWith f (m, k) = deleteExistent (m, k) handle Unknown k => (f k; m)
+    fun remove (m, k) = removeExistent (m, k) handle Unknown _ => m
+    fun removeWith f (m, k) = removeExistent (m, k) handle Unknown k => (f k; m)
 
   (* return the first item in the map (or NONE if it is empty) *)
     fun choose (MAP(_, t)) = let
