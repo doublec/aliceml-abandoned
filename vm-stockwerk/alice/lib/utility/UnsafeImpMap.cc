@@ -1,11 +1,12 @@
 //
 // Author:
-//   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
 //   Leif Kornstaedt <kornstae@ps.uni-sb.de>
 //
+// Contributor:
+//   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
+//
 // Copyright:
-//   Thorsten Brunklaus, 2002
-//   Leif Kornstaedt, 2002
+//   Leif Kornstaedt and Thorsten Brunklaus, 2002
 //
 // Last Change:
 //   $Date$ by $Author$
@@ -172,19 +173,16 @@ public:
 };
 
 #define DECLARE_IMP_MAP(impMap, x) DECLARE_BLOCKTYPE(ImpMap, impMap, x)
-#define DECLARE_WORD(w, x) \
-  word w; \
-  s_int i_w = Store::WordToInt(x); \
-  if (i_w == INVALID_INT) { \
-    Block *p = Store::WordToBlock(x); \
-    if (p == INVALID_POINTER) { \
-      REQUEST(x); \
-    } \
-    else \
-      w = p->ToWord(); \
-  } \
-  else { \
-    w = Store::IntToWord(i_w); \
+#define DECLARE_KEY(w, x)			\
+  word w;					\
+  {						\
+    s_int i = Store::WordToInt(x);		\
+    if (i == INVALID_INT) {			\
+      Block *p = Store::WordToBlock(x);		\
+      if (p == INVALID_POINTER) REQUEST(x);	\
+      w = p->ToWord();				\
+    }						\
+    w = Store::IntToWord(i);			\
   }
 
 //
@@ -215,13 +213,13 @@ public:
   using StackFrame::ToWord;
 
   static ImpMapInsertFrame *New(Worker *worker, ImpMapEntry *entry) {
-    StackFrame *frame = StackFrame::New(CELLMAP_INSERT_FRAME, worker, SIZE);
+    StackFrame *frame = StackFrame::New(IMPMAP_INSERT_FRAME, worker, SIZE);
     frame->InitArg(ENTRY_POS, entry->ToWord());
     return static_cast<ImpMapInsertFrame *>(frame);
   }
   static ImpMapInsertFrame *FromWordDirect(word frame) {
     StackFrame *p = StackFrame::FromWordDirect(frame);
-    Assert(p->GetLabel() == CELLMAP_INSERT_FRAME);
+    Assert(p->GetLabel() == IMPMAP_INSERT_FRAME);
     return static_cast<ImpMapInsertFrame *>(p);
   }
 
@@ -286,7 +284,7 @@ public:
   static ImpMapIteratorFrame *New(Worker *worker,
 				   ImpMapEntry *entry, word closure,
 				   ImpMapIteratorWorker::operation op) {
-    StackFrame *frame = StackFrame::New(CELLMAP_ITERATOR_FRAME, worker, SIZE);
+    StackFrame *frame = StackFrame::New(IMPMAP_ITERATOR_FRAME, worker, SIZE);
     frame->InitArg(ENTRY_POS, entry->ToWord());
     frame->InitArg(CLOSURE_POS, closure);
     frame->InitArg(OPERATION_POS, Store::IntToWord(op));
@@ -294,7 +292,7 @@ public:
   }
   static ImpMapIteratorFrame *FromWordDirect(word frame) {
     StackFrame *p = StackFrame::FromWordDirect(frame);
-    Assert(p->GetLabel() == CELLMAP_ITERATOR_FRAME);
+    Assert(p->GetLabel() == IMPMAP_ITERATOR_FRAME);
     return static_cast<ImpMapIteratorFrame *>(p);
   }
 
@@ -411,7 +409,7 @@ public:
 			       ImpMapEntry *entry, word closure,
 			       ImpMapFindWorker::operation op) {
     StackFrame *frame =
-      StackFrame::New(CELLMAP_FIND_FRAME, worker, SIZE);
+      StackFrame::New(IMPMAP_FIND_FRAME, worker, SIZE);
     frame->InitArg(ENTRY_POS, entry->ToWord());
     frame->InitArg(CLOSURE_POS, closure);
     frame->InitArg(OPERATION_POS, Store::IntToWord(op));
@@ -419,7 +417,7 @@ public:
   }
   static ImpMapFindFrame *FromWordDirect(word frame) {
     StackFrame *p = StackFrame::FromWordDirect(frame);
-    Assert(p->GetLabel() == CELLMAP_FIND_FRAME);
+    Assert(p->GetLabel() == IMPMAP_FIND_FRAME);
     return static_cast<ImpMapFindFrame *>(p);
   }
 
@@ -541,7 +539,7 @@ DEFINE1(UnsafeImpMap_clone) {
 DEFINE4(UnsafeImpMap_insertWithi) {
   word closure = x0;
   DECLARE_IMP_MAP(impMap, x1);
-  DECLARE_WORD(key, x2);
+  DECLARE_KEY(key, x2);
   word value = x3;
   if (impMap->Member(key)) {
     ImpMapEntry *entry = impMap->LookupEntry(key);
@@ -560,7 +558,7 @@ DEFINE4(UnsafeImpMap_insertWithi) {
 DEFINE3(UnsafeImpMap_deleteWith) {
   word closure = x0;
   DECLARE_IMP_MAP(impMap, x1);
-  DECLARE_WORD(key, x2);
+  DECLARE_KEY(key, x2);
   if (impMap->Member(key)) {
     impMap->Delete(key);
     RETURN_UNIT;
@@ -579,7 +577,7 @@ DEFINE1(UnsafeImpMap_deleteAll) {
 
 DEFINE2(UnsafeImpMap_lookup) {
   DECLARE_IMP_MAP(impMap, x0);
-  DECLARE_WORD(key, x1);
+  DECLARE_KEY(key, x1);
   RETURN(impMap->Lookup(key));
 } END
 
