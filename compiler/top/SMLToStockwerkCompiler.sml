@@ -28,7 +28,8 @@ structure SMLToStockwerkCompiler =
 	structure BackendCommon = MakeBackendCommon(Switches)
 
 	structure BackendStockwerk =
-	    MakeBackendStockwerk(structure PickleTarget = PickleTarget)
+	    MakeBackendStockwerk(structure Switches = Switches
+				 structure PickleTarget = PickleTarget)
     in
 	MakeCompiler(structure Switches         = Switches
 		     structure Target           = PickleTarget

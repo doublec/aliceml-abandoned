@@ -33,12 +33,16 @@ functor MakePickleTarget(structure Sig: SIGNATURE
 	    end
     end
 
-functor MakeBackendStockwerk(structure PickleTarget: TARGET
+functor MakeBackendStockwerk(structure Switches: SWITCHES
+			     structure PickleTarget: TARGET
 				where type t = PickleGrammar.t): PHASE =
-    struct
-	structure C = EmptyContext
-	structure I = FlatGrammar
-	structure O = PickleTarget
+    MakeTracingPhase(structure Phase =
+			 struct
+			     structure C = EmptyContext
+			     structure I = FlatGrammar
+			     structure O = PickleTarget
 
-	val translate = CodeGenPhase.translate
-    end
+			     val translate = CodeGenPhase.translate
+			 end
+		     structure Switches = Switches
+		     val name = "Emitting Pickle")
