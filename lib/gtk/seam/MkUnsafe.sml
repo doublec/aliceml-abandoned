@@ -24,6 +24,7 @@ functor MkUnsafe(structure TypeManager : TYPE_MANAGER
 	open TypeManager
 
 	val nativeName = "Native"^Util.spaceName(space)
+	val fieldsName = "NativeFields"^Util.spaceName(space)
 	val unsafeName = Util.spaceName(space)^"Unsafe"
 
 	(* Indentation constants *)
@@ -55,6 +56,7 @@ functor MkUnsafe(structure TypeManager : TYPE_MANAGER
 		["(* This is a generated file. ",
 		 "Modifications may get lost. *)\n\n",
 		 "import structure ",nativeName," from \"",nativeName, "\"\n",
+		 "import structure ",fieldsName," from \"",fieldsName, "\"\n",
 		 "import structure Core  from \"Core\"\n",
 	          "import structure GnomeCanvasEnums ",
 		    "from \"GnomeCanvasEnums\"\n",
@@ -77,7 +79,7 @@ functor MkUnsafe(structure TypeManager : TYPE_MANAGER
 
 
 	(* SIGNATURE CODE GENERATION *)
-	fun sigEntry(funName, ret, arglist, doinout) =
+	fun sigEntry(funName, ret, arglist, doinout) _ =
         let
 	    val wname = Util.computeWrapperName(space,funName)^
 		          (if doinout then "'" else "")
@@ -89,10 +91,11 @@ functor MkUnsafe(structure TypeManager : TYPE_MANAGER
 	end
 
 	(* WRAPPER CODE GENERATION *)
-	fun wrapperEntry(funName, ret, arglist, doinout) =
+	fun wrapperEntry(funName, ret, arglist, doinout) fieldFun =
 	let
 	    val wname = Util.computeWrapperName(space,funName) ^
 		        (if doinout then "'" else "")
+	    val natComp = if fieldFun then fieldsName else nativeName
 	    val (ins, outs') = splitInOuts (arglist, doinout)
 	    val outs = if ret = VOID then outs' else (OUT,"ret",ret)::outs'
 	    val insConv = 
@@ -103,14 +106,14 @@ functor MkUnsafe(structure TypeManager : TYPE_MANAGER
             val generateSimple = (insConv@outsConv) = map noConv (ins@outs)
 	in
 	    if generateSimple then
-		[wrIndent, "val ", wname, " = ", nativeName, ".", wname, "\n"]
+		[wrIndent, "val ", wname, " = ", natComp, ".", wname, "\n"]
 	    else
 		[wrIndent, "fun ", wname, "(", 
 		 Util.makeTuple ", " "" (map (fn info => #2info) ins), 
 		 ") =\n",
 		 wrIndent, wrIndent, "let val (",
 		 Util.makeTuple ", " "x" (map (fn info => #2info) outs), 
-		 ") = ", nativeName, ".", wname, "(",
+		 ") = ", natComp, ".", wname, "(",
 		 Util.makeTuple ", " "" insConv, ")\n", 
 		 wrIndent, wrIndent, "in (",
 		 Util.makeTuple ", " "x" outsConv, ")\n",
@@ -121,9 +124,9 @@ functor MkUnsafe(structure TypeManager : TYPE_MANAGER
 	fun processItem (FUNC (funName,ret,arglist)) = 
 	    let
 		val al =  splitArgTypes arglist
-		fun call f = f(funName, ret, al, false) @
+		fun call f = (f (funName, ret, al, false) false) @
 		                 (if numOuts (al,false) > 0 
-				      then f(funName,ret,al,true)
+				      then (f (funName,ret,al,true) false)
 				      else nil)
 	    in
 		( call sigEntry , call wrapperEntry )
@@ -137,7 +140,7 @@ functor MkUnsafe(structure TypeManager : TYPE_MANAGER
 			val (funName,ret,arglist) = 
 			    makeFieldFun space (structName,mname,mtype,get)
 		    in
-			f(funName,ret,splitArgTypesNoOuts arglist,false)
+			f (funName,ret,splitArgTypesNoOuts arglist,false) true
 		    end
 		in
 		    List.concat 
