@@ -173,7 +173,8 @@ DEFINE1(UnsafeIO_inputLine) {
     c = std::fgetc(file);
   }
   b = Concat(b, buf, index);
-  b = Concat(b, "\n", 1);
+  if (b->GetSize())
+    b = Concat(b, "\n", 1);
   RETURN(b->ToWord());
 } END
 
