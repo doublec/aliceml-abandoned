@@ -25,7 +25,7 @@ BEGIN {
       if (match($0, /^import[^a-zA-Z][^"]*"[^"]*".*$/)) {
          print "";
       }
-      else if (match($0, /^import[^a-zA-Z][^"]*$/)) {
+      else if (match($0, /^import([^a-zA-Z][^"]*)?$/)) {
          import = 1;
          print "";
       }
