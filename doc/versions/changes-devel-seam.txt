@@ -5,11 +5,10 @@ Runtime system:
   rendering it up to 5 times faster than Alice on Mozart.
 * Completely new, extended constraint library based on Gecode
   (Generic Constraint Development Environment). It provides advanced
-  global constraints (like global cardinality, sortedness, regular
-  language acceptance, counting, lexicographic ordering) not found in
-  Mozart, set selection constraints, and batch recomputation. The new
-  library gives a considerable gain in performance (typically one
-  order of magnitude).
+  global constraints (like global cardinality, sortedness, counting,
+  lexicographic ordering) not found in Mozart, set selection
+  constraints, and batch recomputation. The new library gives a
+  considerable gain in performance (typically one order of magnitude).
 * Mozart is no longer required to run Alice (and no longer compatible with it).
 
 Language:
@@ -54,7 +53,18 @@ Interactive Toplevel:
 
 Library:
 
-* Constraint library now based on Gecode, with changed interface.
+* Constraint library now based on Gecode.
+  - State-of-the-art global constraints for finite domain integers
+    (All-distinct, global cardinality, sortedness, lexicographic
+    ordering)
+  - Finite set selection constraints
+  - More reified constraints for finite sets
+  - Supports batch recomputation, improving the performance of search
+    engines considerably
+  - Performance improvements due to complete re-design and
+    re-implementation of the library
+  - Interface changes: computation spaces are now explicit
+  - Rewritten explorer and search engines
 * Component:
   - Added fromPackage.
   - Create now takes a functor as argument to support unevaluated components.
