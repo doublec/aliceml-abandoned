@@ -12,9 +12,7 @@
 
 import structure Reflect     from "../../lib/system/Reflect"
 import structure Component   from "../../lib/system/Component"
-import structure Url         from "../../lib/system/Url"
 import structure Source      from "../infrastructure/Source"
-import signature CONTEXT     from "../infrastructure/CONTEXT-sig"
 import structure FlatGrammar from "../backend-common/FlatGrammar"
 
 signature CODE_GEN_PHASE_COMPONENT =

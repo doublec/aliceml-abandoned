@@ -11,7 +11,6 @@
  *)
 
 import structure Label                from "../../lib/rtt/Label"
-import structure Type                 from "../../lib/rtt/Type"
 import signature MAP                  from "../../lib/data/MAP-sig"
 import structure Source               from "../infrastructure/Source"
 import structure Stamp                from "../common/Stamp"

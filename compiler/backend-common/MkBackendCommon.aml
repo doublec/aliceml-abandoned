@@ -23,7 +23,6 @@ import structure MkResultDumpingPhase
     from "../infrastructure/MkResultDumpingPhase"
 import structure MkContextDumpingPhase
     from "../infrastructure/MkContextDumpingPhase"
-import structure FlatGrammar     from "FlatGrammar"
 import structure OutputFlatGrammar        from "OutputFlatGrammar"
 import structure MkFlatteningPhase        from "MkFlatteningPhase"
 import structure MkValuePropagationPhase  from "MkValuePropagationPhase"

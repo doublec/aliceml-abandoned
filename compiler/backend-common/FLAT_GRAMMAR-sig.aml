@@ -17,7 +17,6 @@ import structure Label               from "../../lib/rtt/Label"
 import structure Type                from "../../lib/rtt/Type"
 import structure Source              from "../infrastructure/Source"
 import structure Stamp               from "../common/Stamp"
-import structure StampSet            from "../common/StampSet"
 import structure IntermediateGrammar from "../common/IntermediateGrammar"
 import structure Arity               from "Arity"
 

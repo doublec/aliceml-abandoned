@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2003
+ *   Andreas Rossberg, 2001-2004
  *
  * Last change:
  *   $Date$ by $Author$
@@ -20,7 +20,6 @@ import structure PathMap             from "../../lib/rtt/PathMap"
 import structure Stamp               from "Stamp"
 import structure StampMap            from "StampMap"
 
-import structure PPPath              from "../../lib/rtt/PPPath"
 import structure PPType              from "../../lib/rtt/PPType"
 import structure PrettyPrint         from "../../lib/utility/PrettyPrint"
 import structure TextIO              from "../../lib/system/TextIO"
@@ -28,9 +27,6 @@ import structure TextIO              from "../../lib/system/TextIO"
 import structure Crash               from "../infrastructure/Crash"
 import functor   MkScopedImpMap      from "../../lib/utility/MkScopedImpMap"
 import signature CHECK_INTERMEDIATE  from "CHECK_INTERMEDIATE-sig"
-
-(*DEBUG*)
-import structure TextIO from "../../lib/system/TextIO"
 
 structure CheckIntermediate :> CHECK_INTERMEDIATE =
 struct

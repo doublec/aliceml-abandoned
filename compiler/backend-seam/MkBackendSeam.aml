@@ -10,7 +10,6 @@
  *   $Revision$
  *)
 
-import structure Reflect               from "../../lib/system/Reflect"
 import structure UnsafeValue           from "../../lib/system/UnsafeValue"
 import structure Component             from "../../lib/system/Component"
 import signature COMPONENT_MANAGER
