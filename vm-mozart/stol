@@ -8,7 +8,7 @@ then
   STOCKHOME=`(cd $dir; cd ..; /bin/pwd)`
 fi
 
-: ${OZHOME=/opt/mozart-1.1.1}
+: ${OZHOME=/opt/mozart-1.2.0}
 : ${OZ_LOAD=cache=$OZHOME/cache/}
 
 OZ_LOAD=pattern='?{x}'='?{x}.ozf':pattern=x-alice\\:/'?{x}'=$STOCKHOME/'?{x}'.ozf:$OZ_LOAD
