@@ -521,7 +521,7 @@ const char *PicklePackInterpreter::Identify() {
 }
 
 void PicklePackInterpreter::DumpFrame(word) {
-  std::fprintf(stderr, "PicklePackInterpreter");
+  std::fprintf(stderr, "Pickle Pack");
 }
 
 // PickleSaveInterpreter Frame
@@ -587,7 +587,7 @@ const char *PickleSaveInterpreter::Identify() {
 }
 
 void PickleSaveInterpreter::DumpFrame(word) {
-  std::fprintf(stderr, "PickleSaveInterpreter\n");
+  std::fprintf(stderr, "Pickle Save\n");
 }
 
 //
