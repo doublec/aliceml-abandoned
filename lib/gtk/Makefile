@@ -50,6 +50,7 @@ NATIVEOBJS = GtkCanvas.o
 NATIVEFILES = gtkcanvas.so-$(OZPLATFORM)
 NATIVEFLAGS = $(SRCDIR)/build/lib/libgtk-canvas.a \
               $(SRCDIR)/build/lib/libart_lgpl.a \
+              $(SRCDIR)/gtk-canvas/build/lib/libgdk_imlib.a \
               -lg -lgdk -lgtk
 
 .PHONY: all depend install clean veryclean distclean native
@@ -105,6 +106,8 @@ UntypedCanvas.ozf: CanvasWrapper.oz CanvasExport.oz
 Canvas.ozf: GTKCore.ozf
 
 native:
+	(cd gtk-canvas/imlib && ./configure --prefix=$(BUILDDIR)/build) || exit 1
+	(cd gtk-canvas/imlib && $(MAKE) all install) || exit 1
 	(cd gtk-canvas && ./configure --prefix=$(BUILDDIR)/build) || exit 1
 	(cd gtk-canvas && $(MAKE) all install) || exit 1
 	oztool c++ $(CXXFLAGS) -c GtkCanvas.c -o GtkCanvas.o || exit 1
@@ -151,5 +154,6 @@ veryclean: clean
 	-rm -f header/filter.$(SMLPLATFORM) collect.$(SMLPLATFORM)
 
 distclean: veryclean
+	(cd gtk-canvas/imlib && $(MAKE) distclean) || exit 1
 	(cd gtk-canvas && $(MAKE) distclean) || exit 1
 	-rm -f Makefile.depend
