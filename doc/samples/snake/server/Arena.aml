@@ -30,8 +30,10 @@ struct
 	 walls: int
 	 (* MAGIC NUMBERs ... *)
 	 }
+    
+    exception NoMoreEmptySpots
 
-    fun random {dimensions = (rows, cols), players,walls} =
+    fun random' {dimensions = (rows, cols), players,walls} =
 	let
             fun testUp (arena, (row, col)) =
                 Array2.alli Array2.RowMajor (fn (r, c, cell) =>
@@ -182,17 +184,30 @@ struct
                     Vector.sub (figures, Random.int max)
                 end
                
-            exception NoMoreEmptySpots
-
-            val maxNumberOfTries = 5
+            val maxNumberOfTries = 8
             
             fun findEmptySpot tries =
                 let
-                    val p = (Random.int rows, Random.int cols)
+                    val r2  = rows div 2 - 2
+                    val c2  = cols div 2 - 2
+                    
+                    val (r, c) = case tries mod 4 of
+                            0   => (Random.int r2, Random.int c2)
+                        |   1   => (r2 + Random.int r2, Random.int c2)
+                        |   2   => (r2 + Random.int r2, c2 + Random.int c2)
+                        |   3   => (Random.int r2, c2 + Random.int c2)
+                        |   _   => assert false
+                    
+                    val lu = (r, c)
+                    val p  = (r + 2, c + 2)
+                    val ru = (r, c + 2)
+
+                    fun testSpot p = test (arena, p, Protocol.UP) andalso
+                                        test (arena, p, Protocol.DOWN)
                 in
-                    if test (arena, p, Protocol.UP) andalso
-                            test (arena, p, Protocol.DOWN) then
-                        p
+                    if testSpot p then p
+                    else if testSpot lu then lu
+                    else if testSpot ru then ru
                     else if tries < maxNumberOfTries then
                         findEmptySpot (tries + 1)
                     else
@@ -202,13 +217,23 @@ struct
                 
             fun placeWalls (n, p) =
                 if n <= 0 then ()
-                else 
-                    case place (chooseFigure (), p) of
-                        NONE    => placeWalls (n, findEmptySpot 0)
-                    |   SOME p' => placeWalls (n - 1, p')
+                else
+                    let val f = chooseFigure () 
+                    in
+                        case place (f, p) of
+                            NONE    =>
+                            let val p = findEmptySpot 0
+                            in
+                                case place (f, p) of
+                                    NONE    => placeWalls (n, p)
+                                |   SOME p' => placeWalls (n - 1, p')
+                            end
+                        |   SOME p' =>
+                            placeWalls (n - 1, p')
+                    end
                     
                             
-            val _   = placeWalls (walls, (rows div 2, cols div 2))
+            val _   = placeWalls (walls, (rows div 2, cols div 2)) 
 
             (* place starting points *)
 
@@ -228,10 +253,20 @@ struct
 		end
 
 	in
+             (* TODO: handle NoMoreEmptySpots *)
 	     (arena, startpoints (players, nil))
 	end
 
+    fun random tries c =
+            random' c 
+        handle NoMoreEmptySpots =>
+            if tries >= 3 then 
+                random 0 { c where walls = #walls c - 1 }
+            else
+                random (tries + 1) c
 
+    val random = random 0 
+        
     fun placeSnakes (a,snakes) =
 	let
 	    val died = ref nil
