@@ -23,15 +23,16 @@
 #include "generic/String.hh"
 
 class Transform;
+class ConcreteRepresentationHandler;
 
 class Alice {
 public:
-  static const BlockLabel Array       = MIN_DATA_LABEL;
-  static const BlockLabel Cell        = (BlockLabel) (MIN_DATA_LABEL + 1);
-  static const BlockLabel ConVal      = (BlockLabel) (MIN_DATA_LABEL + 2);
-  static const BlockLabel Vector      = (BlockLabel) (MIN_DATA_LABEL + 3);
-  static const BlockLabel MIN_TAG     = (BlockLabel) (MIN_DATA_LABEL + 4);
-  static const BlockLabel MAX_TAG     = MAX_DATA_LABEL;
+  static const BlockLabel Array   = MIN_DATA_LABEL;
+  static const BlockLabel Cell    = (BlockLabel) (MIN_DATA_LABEL + 1);
+  static const BlockLabel ConVal  = (BlockLabel) (MIN_DATA_LABEL + 2);
+  static const BlockLabel Vector  = (BlockLabel) (MIN_DATA_LABEL + 3);
+  static const BlockLabel MIN_TAG = (BlockLabel) (MIN_DATA_LABEL + 4);
+  static const BlockLabel MAX_TAG = MAX_DATA_LABEL;
 
   static bool IsTag(BlockLabel l) {
     return l >= MIN_TAG && l <= MAX_TAG;
@@ -132,8 +133,8 @@ private:
   static const u_int HANDLER_POS = 0;
   static const u_int NAME_POS = 1;
   static const u_int TRANSFORM_POS = 2;
-  static const u_int SIZE = 3; //--** needs to be represented exactly
-  static Handler *handler;
+  static const u_int SIZE = 3;
+  static ConcreteRepresentationHandler *handler;
 public:
   using Block::ToWord;
 
@@ -141,7 +142,8 @@ public:
 
   static Constructor *New(word name, Block *guid);
   static Constructor *New(word name) {
-    Block *b = Store::AllocBlockWithHandler(SIZE, handler);
+    Block *b = Store::AllocBlock(CONCRETE_LABEL, SIZE);
+    b->InitArg(HANDLER_POS, Store::UnmanagedPointerToWord(handler));
     b->InitArg(NAME_POS, name);
     b->InitArg(TRANSFORM_POS, 0); // construct lazily
     return static_cast<Constructor *>(b);
@@ -149,12 +151,12 @@ public:
   static Constructor *FromWord(word x) {
     Block *b = Store::WordToBlock(x);
     Assert(b == INVALID_POINTER ||
-	   b->GetLabel() == HANDLERBLOCK_LABEL && b->GetSize() == SIZE);
+	   b->GetLabel() == CONCRETE_LABEL && b->GetSize() == SIZE);
     return static_cast<Constructor *>(b);
   }
   static Constructor *FromWordDirect(word x) {
     Block *b = Store::DirectWordToBlock(x);
-    Assert(b->GetLabel() == HANDLERBLOCK_LABEL && b->GetSize() == SIZE);
+    Assert(b->GetLabel() == CONCRETE_LABEL && b->GetSize() == SIZE);
     return static_cast<Constructor *>(b);
   }
 

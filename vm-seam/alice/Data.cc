@@ -19,6 +19,7 @@
 #include "adt/HashTable.hh"
 #include "generic/RootSet.hh"
 #include "generic/Transform.hh"
+#include "generic/ConcreteRepresentationHandler.hh"
 #include "alice/Data.hh"
 #include "alice/Guid.hh"
 #include "alice/AliceLanguageLayer.hh"
@@ -27,15 +28,10 @@
 // ConstructorHandler
 //
 
-class ConstructorHandler: public Handler {
+class ConstructorHandler: public ConcreteRepresentationHandler {
 public:
-  virtual void PrepareForGC(Block *p);
   virtual Block *GetAbstractRepresentation(Block *blockWithHandler);
 };
-
-void ConstructorHandler::PrepareForGC(Block *) {
-  // nothing to do
-}
 
 Block *ConstructorHandler::GetAbstractRepresentation(Block *blockWithHandler) {
   Constructor *constructor = static_cast<Constructor *>(blockWithHandler);
@@ -49,7 +45,7 @@ Block *ConstructorHandler::GetAbstractRepresentation(Block *blockWithHandler) {
 word globalTable;
 static const u_int initialSize = 16; // to be checked
 
-Handler *Constructor::handler;
+ConcreteRepresentationHandler *Constructor::handler;
 
 void Constructor::Init() {
   handler = new ConstructorHandler();
@@ -73,7 +69,8 @@ Constructor *Constructor::New(word name, Block *guid) {
   if (hashTable->IsMember(key)) {
     return Constructor::FromWordDirect(hashTable->GetItem(key));
   } else {
-    Block *b = Store::AllocBlockWithHandler(SIZE, handler);
+    Block *b = Store::AllocBlock(CONCRETE_LABEL, SIZE);
+    b->InitArg(HANDLER_POS, Store::UnmanagedPointerToWord(handler));
     b->InitArg(NAME_POS, name);
     b->InitArg(TRANSFORM_POS, MakeConstructorTransform(name, key)->ToWord());
     hashTable->InsertItem(key, b->ToWord());
