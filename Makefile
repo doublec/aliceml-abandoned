@@ -8,6 +8,8 @@ GLOBAL_PREFIX = /opt/alice-devel
 PREFIX = $(PWD)/install
 DEBUG = 0
 
+GECODEDIR = /opt/gecode
+
 OPTS1= # '--dump-phases' # --dump-abstraction-result' # --dump-intermediate'
 OPTS2= # '--dump-phases'
 OPTS3= # '--dump-phases' # --dump-intermediate'
@@ -41,7 +43,7 @@ else
     TIMECOMMAND3 =
 endif
 
-export PREFIX TARGET WINDOWS
+export PREFIX TARGET WINDOWS GECODEDIR
 
 .PHONY: clean clean-common clean-mozart clean-seam \
 	install install-prelude install-common install-global install-mozart install-seam \
@@ -210,7 +212,14 @@ libs-seam:
 	(cd lib/gtk/seam && ./BUILD_ALL) || exit 1 ;\
 	(cd lib/gtk/seam && make install) || exit 1 ;\
 	(cd lib/tools/inspector/seam && make depend) || exit 1 ;\
-	(cd lib/tools/inspector/seam && make all PREFIX=$(PREFIX) install) || exit 1
+	(cd lib/tools/inspector/seam && make all PREFIX=$(PREFIX) install) || exit 1 ;\
+	(cd lib/gecode && make depend GECODEDIR=$(GECODEDIR)) || exit ;\
+	(cd lib/gecode && make all install GECODEDIR=$(GECODEDIR)) || exit ;\
+	(cd lib/postscript && make all install) || exit 1 ;\
+	(cd lib/tools/explorer/seam && touch ExplorerGUI.aml ExplorerGUISignals.aml) || exit 1 ;\
+	(cd lib/tools/explorer/seam && make depend) || exit 1 ;\
+	(cd lib/tools/explorer/seam && make all install) || exit 1
+
 
 ##
 ## Build Seam
