@@ -106,6 +106,10 @@ struct
     and map'(f,  nil )		= nil
       | map'(f, x::xs)		= f x :: map'(f,xs)
 
+    fun mapr  f   xs		= mapr'(f,xs)				(**)
+    and mapr'(f,  nil )		= nil
+      | mapr'(f, x::xs)		= let val xs' = mapr'(f,xs) in f x :: xs' end
+
     fun mapi  f xs		= mapi'(f,0,xs)				(**)
     and mapi'(f, i,  nil )	= nil
       | mapi'(f, i, x::xs)	= f(i,x) :: mapi'(f, i+1, xs)
