@@ -6,6 +6,7 @@ is
 
     ../../lib/utility/sources.cm
     ../../lib/rtt/type.cm
+    ../../lib/rtt/interface.cm
     ../infrastructure/sources.cm
     ../common/id-stamp.cm
     ../common/intermediate-grammar.cm
