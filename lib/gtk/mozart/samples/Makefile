@@ -12,7 +12,8 @@ SRCS = hello.aml          \
        TextViewer.aml     \
        move.aml           \
        canvas.aml         \
-       scramble.aml
+       scramble.aml       \
+       AliceTour.aml
 
 OBJS = $(SRCS:%.aml=%.ozf)
 
