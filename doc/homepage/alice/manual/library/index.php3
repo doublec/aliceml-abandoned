@@ -4,10 +4,14 @@
 <?php section("synopsis", "synopsis") ?>
 
   <P>
-    <B>UNFINISHED</B><BR>
-    These pages describe the Alice library. It extends the
+    These pages provide a reference to the Alice library. It extends the
     <A href="http://www.dina.kvl.dk/~sestoft/sml/">Standard ML
-    Basis library</A>.
+    Basis library</A>. All modules from the Standard Basis and some basic
+    Alice-specific structures are available
+    by default and need not be imported explicitly. For all others, the
+    "import" section from the corresponding reference page contains the
+    URL of the necessary import announcement. Note that it is not necessary to
+    import corresponding signatures, if they are never used explicitly.
   </P>
 
 <?php section("toplevel", "top-level") ?>
