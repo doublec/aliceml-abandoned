@@ -130,8 +130,8 @@ sig
 		      boolvar -> unit
 	    val relI : space * intvar * relation * int *
 		       boolvar -> unit
-	    val equal : space * intvar * intvar *
-			boolvar * conlevel -> unit
+(*	    val equal : space * intvar * intvar *
+			boolvar * conlevel -> unit*)
 	    val linear : space * (int * intvar) vector * relation *
 			 int * boolvar * conlevel -> unit
 	end

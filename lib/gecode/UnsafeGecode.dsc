@@ -1,3 +1,11 @@
+// Spaces
+commit : int - void
+
+new_intvar : DomSpec& - intvar
+new_boolvar : void - boolvar
+new_setvar : void - setvar
+commitDescription : int, BranchDesc* - void
+
 // Inspect variable information
 
 int_getMin : intvar - int
@@ -27,14 +35,14 @@ int_linearR : const IntArgs&, const intvarargs&, reltype, int, boolvar, conlevel
 
 // Counting constraints
 int_countII : const intvarargs&, reltype, int, reltype, int - void 
-int_countIV : const intvarargs&, reltype, int, reltype, int - void
-int_countVI : const intvarargs&, reltype, int, reltype, int - void
-int_countVV : const intvarargs&, reltype, int, reltype, int - void
+int_countIV : const intvarargs&, reltype, int, reltype, intvar - void
+int_countVI : const intvarargs&, reltype, intvar, reltype, int - void
+int_countVV : const intvarargs&, reltype, intvar, reltype, intvar - void
 
 // Access constraints
 
-int_element : const intvarargs&, int, int - void
-int_elementI : const intvarargs&, int, int - void
+int_element : const intvarargs&, intvar, intvar - void
+int_elementI : const IntArgs&, intvar, intvar - void
 int_lex : const intvarargs&, reltype, const intvarargs& - void
 
 // Boolean constraints
@@ -78,6 +86,9 @@ set_getAssigned : setvar - bool
 set_getUpperBoundSize : setvar - unsigned int
 set_getLowerBoundSize : setvar - unsigned int
 
+set_lowerBound : setvar, I& - void
+set_upperBound : setvar, I& - void
+
 set_include : intvar, setvar - void
 set_exclude : intvar, setvar - void
 set_the : intvar, setvar - void
@@ -85,7 +96,7 @@ set_min : intvar, setvar - void
 set_max : intvar, setvar - void
 set_match : setvar, const intvarargs& - void
 set_card : setvar, intvar - void
-set_cardRange : setvar, int min, int max - void
+set_cardRange : setvar, int, int - void
 
 set_superOfInter : setvar, setvar, setvar - void
 set_subOfUnion : setvar, setvar, setvar - void

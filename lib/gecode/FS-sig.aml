@@ -60,8 +60,8 @@ sig
 	    val make : space * domain -> setvar
 	    val empty : space -> setvar
 	    val single : space * int -> setvar
-	    val universal : space -> setvar
-	    val is : space* setvar -> bool
+(*	    val universal : space -> setvar*)
+	    val is : space * setvar -> bool
 	end
 
     structure Int :
@@ -99,7 +99,7 @@ sig
 	val unknown : space * setvar -> domain
 	val cardOfLowerBound : space * setvar -> int
 	val cardOfUpperBound : space * setvar -> int
-	val cardOfUnknown : space * setvar -> int
+(*	val cardOfUnknown : space * setvar -> int*)
         val print : space * setvar -> unit (* DEBUGGING ONLY! *)
     end
 

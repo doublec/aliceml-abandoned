@@ -33,7 +33,7 @@ sig
     val description : space -> description
     val clone       : space -> space
     val discard     : space -> unit
-    val alive       : space -> unit
+    val alive       : space -> bool
     val fail        : space -> unit
 
     (* debugging *)

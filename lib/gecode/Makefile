@@ -33,7 +33,10 @@ TARGETS = \
 	LINEAR-sig.stc \
 	Linear.stc \
 	CONSTRAINTS-sig.stc \
-	Constraints.stc
+	Constraints.stc \
+	DescParser.stc \
+	Generator.stc \
+	GeneratorMain.stc \
 
 MAKEDEPEND = alicetool makedepend
 
@@ -44,9 +47,20 @@ LDFLAGS = -L../../../gecode-install/lib/gecode
 MY_CXXFLAGS=-O2 -DNDEBUG -pipe -DHAVE_CONFIG_H
 #MY_CXXFLAGS=-pipe -DHAVE_CONFIG_H
 
+.PHONY: all generate clean veryclean distclean depend install
+
 all: $(NATIVES:%=%.dll) $(TARGETS)
 
 UnsafeGecode.dll: $(SOURCES:%.cc=%.o)
+
+GeneratorMain.stc: Generator.stc
+
+Generator.stc: DescParser.stc
+
+UnsafeGecode.cc: UnsafeGecode.dsc GeneratorMain.stc
+	alicerun GeneratorMain
+
+UnsafeGecode.asig: UnsafeGecode.cc
 
 %.o: %.cc
 	alicetool -v compile $(EXTRA_INCLUDES) $(CXXFLAGS) $(MY_CXXFLAGS) \
@@ -68,9 +82,10 @@ veryclean: clean
 
 distclean: veryclean
 	rm -f $(NATIVES:%=%.dll)
+	rm -f UnsafeGecode.cc UnsafeGecode.asig
 	rm -f Makefile.depend
 
-depend:
+depend: UnsafeGecode.cc
 	alicedep *.aml > Makefile.depend
 	$(MAKEDEPEND) $(EXTRA_INCLUDES) $(MY_CXXFLAGS) $(CXXFLAGS) $(SOURCES) \
 	$(CPPFLAGS) >> Makefile.depend

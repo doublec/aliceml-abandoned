@@ -36,84 +36,109 @@ struct
 
    type domain = (int * int) vector
 
-   exception InvalidDomain = UnsafeGecode.UnsafeGecodeBase.InvalidDomain
-
-   structure UnsafeGecodeFS = UnsafeGecode.UnsafeGecodeFS
-   open UnsafeGecodeFS
+   exception InvalidDomain = UnsafeGecode.InvalidDomain
 
    type setvar
+
+   val setvar = UnsafeGecode.new_setvar
 		      
    fun setvarVec(space,n) = Vector.tabulate (n, fn _ => setvar(space))
    fun bounds(space,lb,ub) =
        let
 	   val v = setvar space
        in
-	   UnsafeGecodeFS.lowerBound(space,v,lb);
-	   UnsafeGecodeFS.upperBound(space,v,ub);
+	   UnsafeGecode.set_lowerBound(space,v,lb);
+	   UnsafeGecode.set_upperBound(space,v,ub);
 	   v
        end
    fun lowerBound(space,lb) =
        let
 	   val v = setvar space
        in
-	   UnsafeGecodeFS.lowerBound(space,v,lb);
+	   UnsafeGecode.set_lowerBound(space,v,lb);
 	   v
        end
    fun upperBound(space,ub) =
        let
 	   val v = setvar space
        in
-	   UnsafeGecodeFS.upperBound(space,v,ub);
+	   UnsafeGecode.set_upperBound(space,v,ub);
 	   v
        end
+
+   fun cardRange(space,min,max,s) = UnsafeGecode.set_cardRange(space,s,min,max)
+
+   val superOfInter = UnsafeGecode.set_superOfInter
+   val subOfUnion = UnsafeGecode.set_subOfUnion
+   val compl = UnsafeGecode.set_complement
+
+   val difference = UnsafeGecode.set_difference
+   val intersect = UnsafeGecode.set_intersection
+   val intersectN = UnsafeGecode.set_intersectionn
+   val union = UnsafeGecode.set_union
+   val unionN = UnsafeGecode.set_unionn
+   val subset = UnsafeGecode.set_subset
+   val noSubset = UnsafeGecode.set_nosubset
+   val disjoint = UnsafeGecode.set_disjoint
+   (*    val disjointN : space * setvar vector -> unit *)
+   val distinct = UnsafeGecode.set_distinct
+   val distinctN = UnsafeGecode.set_distinctn
+   val partition = UnsafeGecode.set_partition
+   val partitionN = UnsafeGecode.set_partitionn
+   val equals = UnsafeGecode.set_equals
+   val convex = UnsafeGecode.set_convex
+   val convexHull = UnsafeGecode.set_convexHull
+
+   val setvarbranch = UnsafeGecode.set_branch
 
    structure Value =
        struct
           fun make(space,v) = bounds(space,v,v)
 	  fun empty space = bounds(space,#[],#[])
 	  fun single(space,i) = make(space,#[(i,i)])
-	  val universal = UnsafeGecodeFS.universal
-	  val is = UnsafeGecodeFS.is
+(*	  val universal = UnsafeGecodeFS.universal*)
+	  val is = UnsafeGecode.set_getAssigned
        end
 
    structure Int =
        struct
-          val incl  = UnsafeGecodeFS.incl
-          val excl  = UnsafeGecodeFS.excl
-          val the   = UnsafeGecodeFS.the
-          val min   = UnsafeGecodeFS.min
-          val max   = UnsafeGecodeFS.max
-          val match = UnsafeGecodeFS.match
-          val card  = UnsafeGecodeFS.card
+          val incl  = UnsafeGecode.set_include
+          val excl  = UnsafeGecode.set_exclude
+          val the   = UnsafeGecode.set_the
+          val min   = UnsafeGecode.set_min
+          val max   = UnsafeGecode.set_max
+          val match = UnsafeGecode.set_match
+          val card  = UnsafeGecode.set_card
        end
 
    structure Reified =
        struct
-          val isIn = UnsafeGecodeFS.isInR
-	  val incl = UnsafeGecodeFS.inclR
+          val isIn = UnsafeGecode.set_includeRI
+	  val incl = UnsafeGecode.set_includeR
 	  fun areIn(space,v,set) = Vector.app
 				       (fn (b,i) => (isIn(space,i,set,b)))
 				       v
-          val equal = UnsafeGecodeFS.equalR
-          val subset = UnsafeGecodeFS.subsetR
+          val equal = UnsafeGecode.set_equalR
+          val subset = UnsafeGecode.set_subsetR
        end
 
    structure Selection =
        struct
-           val setvar = UnsafeGecodeFS.selectSetvar
-	   val union = UnsafeGecodeFS.selectUnion
-	   val inter = UnsafeGecodeFS.selectInter
+           val setvar = UnsafeGecode.set_selectSets
+	   val union = UnsafeGecode.set_selectUnion
+	   val inter = UnsafeGecode.set_selectInter
        end
 
    structure Reflect =
        struct
-           val card = UnsafeGecodeFS.getCard
-	   val lowerBound = UnsafeGecodeFS.getLowerBound
-	   val upperBound = UnsafeGecodeFS.getUpperBound
-	   val unknown = UnsafeGecodeFS.getUnknown
-	   val cardOfLowerBound = UnsafeGecodeFS.getCardOfLowerBound
-	   val cardOfUpperBound = UnsafeGecodeFS.getCardOfUpperBound
-	   val cardOfUnknown = UnsafeGecodeFS.getCardOfUnknown
-           val print = UnsafeGecodeFS.print
+           fun card(s,v) = (UnsafeGecode.set_getCardinalityMin(s,v),
+                            UnsafeGecode.set_getCardinalityMax(s,v))
+	   val lowerBound = UnsafeGecode.set_getLowerBound
+	   val upperBound = UnsafeGecode.set_getUpperBound
+	   val unknown = UnsafeGecode.set_getUnknown
+	   val cardOfLowerBound = UnsafeGecode.set_getLowerBoundSize
+	   val cardOfUpperBound = UnsafeGecode.set_getUpperBoundSize
+(*	   val cardOfUnknown = UnsafeGecode.getCardOfUnknown*)
+           val print = UnsafeGecode.set_print
        end
 end

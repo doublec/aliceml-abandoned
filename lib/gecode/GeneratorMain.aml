@@ -1,0 +1,4 @@
+import structure Generator from "Generator"
+
+val _ = Generator.generate()
+val _ = OS.Process.exit OS.Process.success

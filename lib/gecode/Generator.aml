@@ -1,0 +1,358 @@
+import structure Print from "x-alice:/lib/system/Print"
+import structure DescParser from "DescParser"
+
+structure Generator =
+  struct
+  open DescParser
+
+  fun outputDefine(f, noOfArgs, name) =
+      (TextIO.output(f, "DEFINE"^Int.toString noOfArgs^"("^name^") {\n");
+       TextIO.output(f, "  DBGMSG(\""^name^"\");\n"))
+
+  fun outputEnd f = TextIO.output(f, "} END\n\n")
+
+  fun outputDeclSpace f =
+      (TextIO.output(f, "  DECLARE_SPACE(s, stamp, pstamp, x0);\n");
+       TextIO.output(f, "  CHECK_SPACE(s);\n"))
+
+  fun outputDomSpec(n, f) =
+      let val n = Int.toString n in
+          TextIO.output(f, "  DECLARE_VECTOR(v"^n^", x"^n^");\n");
+          TextIO.output(f, "  int noOfPairs"^n^" = v"^n^"->GetLength();\n");
+          TextIO.output(f, "  int pairs"^n^"[noOfPairs"^n^"][2];\n\n");
+          TextIO.output(f, "  for (int j=noOfPairs"^n^"; j--;) {\n");
+          TextIO.output(f, "    DECLARE_TUPLE(tmp, v"^n^"->Sub(j));\n");
+          TextIO.output(f, "    DECLARE_INT(tmp0, tmp->Sel(0));\n");
+          TextIO.output(f, "    DECLARE_INT(tmp1, tmp->Sel(1));\n");
+          TextIO.output(f, "    pairs"^n^"[j][0] = tmp0;\n");
+          TextIO.output(f, "    pairs"^n^"[j][1] = tmp1;\n");
+          TextIO.output(f, "  }\n");
+          TextIO.output(f, "  DomSpec ds"^n^"(pairs"^n^", noOfPairs"^n^");\n")
+      end
+
+  fun outputRel(n, f) =
+      let val n = Int.toString n in
+          TextIO.output(f, "  DECLARE_INT(rel"^n^", x"^n^");\n")
+      end
+
+  fun outputConlevel(n, f) =
+      let val n = Int.toString n in
+          TextIO.output(f, "  DECLARE_INT(cl"^n^", x"^n^");\n")
+      end
+
+  fun outputInt(n, f) =
+      let val n = Int.toString n in
+          TextIO.output(f, "  DECLARE_INT(i"^n^", x"^n^");\n")
+      end
+
+  fun outputDescription(n, f) =
+      let val n = Int.toString n in
+          TextIO.output(f, "  DECLARE_DESCRIPTION(desc"^n^", x"^n^");\n")
+      end
+
+  fun outputIntArgs(n, f) =
+      let val n = Int.toString n in
+          TextIO.output(f, "  DECLARE_VECTOR(v"^n^", x"^n^");\n");
+
+          TextIO.output(f, "  int noOfArgs"^n^" = v"^n^"->GetLength();\n");
+          TextIO.output(f, "  if (noOfArgs"^n^"==0) RETURN_UNIT;\n");
+          TextIO.output(f, "  IntArgs args"^n^"(noOfArgs"^n^");\n");
+          TextIO.output(f, "  for (int i=noOfArgs"^n^"; i--;) {\n");
+          TextIO.output(f, "    DECLARE_INT(tmp, v"^n^"->Sub(i));\n");
+          TextIO.output(f, "    args"^n^"[i] = tmp;\n");
+          TextIO.output(f, "  }\n")
+      end
+
+  fun outputUIntArgs(n,f) =
+      let val n = Int.toString n in
+          TextIO.output(f, "  DECLARE_INT(i"^n^", x"^n^");\n")
+      end
+
+  fun outputBoolArgs(n,f) =
+      let val n = Int.toString n in
+          TextIO.output(f, "  DECLARE_BOOL(i"^n^", x"^n^");\n")
+      end
+
+  fun outputValSelArgs(n,a,f) =
+      let val n = Int.toString n in
+          TextIO.output(f, "  DECLARE_INT(varValSel"^n^", x"^n^");\n")
+      end
+
+  fun outputIteratorArgs(n,f) =
+      let val n = Int.toString n in
+          TextIO.output(f,
+                        "  DECLARE_VECTOR(v"^n^", x"^n^");\n");
+          TextIO.output(f,
+                        "  int setSize"^n^" = v"^n^"->GetLength();\n");
+          TextIO.output(f,
+                        "  int lastmax"^n^" = IntegerSet::SMALLEST_ELEMENT;\n");
+          TextIO.output(f,
+                        "  for (int i=0; i<setSize"^n^"; i++) {\n");
+          TextIO.output(f,
+                        "    DECLARE_TUPLE(tmp, v"^n^"->Sub(i));\n");
+          TextIO.output(f,
+                        "    DECLARE_INT(tmp0, tmp->Sel(0));\n");
+          TextIO.output(f,
+                        "    DECLARE_INT(tmp1, tmp->Sel(1));\n");
+          TextIO.output(f,
+                        "    if(tmp0>tmp1 || tmp0 <= lastmax"^n^") {\n");
+          TextIO.output(f,
+                        "      RAISE(UnsafeGecode::InvalidDomainConstructor);\n");
+          TextIO.output(f,
+                        "    }\n");
+          TextIO.output(f,
+                        "    lastmax"^n^" = tmp1;\n");
+          TextIO.output(f,
+                        "  }\n");
+          TextIO.output(f,
+                        "  UnsafeGecode::VectorRangeIterator is"^n^"(v"^n^");\n")
+      end
+
+  fun outputVarDec(n,f,(IntVar|BoolVar|SetVar)) =
+      TextIO.output(f, "  DECLARE_VAR(var"^Int.toString n^
+                       ", stamp, pstamp, x"^Int.toString n^");\n")
+    | outputVarDec(n,f,List v) =
+      let val n = Int.toString n in
+          TextIO.output(f, 
+                        "  DECLARE_VECTOR(v"^n^", x"^n^");\n"^
+                        "  int noOfVars"^n^" = v"^n^"->GetLength();\n"^
+                        "  if (noOfVars"^n^"==0) RETURN_UNIT;\n"^
+                        "  IntArgs vars"^n^"(noOfVars"^n^");\n"^
+                        "  for (int i=noOfVars"^n^"; i--;) {\n"^
+                        "    DECLARE_VAR(tmp, stamp, pstamp, v"^n^"->Sub(i));\n"^
+                        "    vars"^n^"[i] = tmp;\n"^
+                        "  }\n")
+      end
+
+
+  fun outputInArgs n f nil = ()
+    | outputInArgs n f ((Var v)::ar) =
+      (outputVarDec(n, f, v);
+       outputInArgs (n+1) f ar)
+    | outputInArgs n f (DomSpec::ar) =
+      (outputDomSpec(n,f);outputInArgs (n+1) f ar)
+    | outputInArgs n f (Rel::ar) =
+      (outputRel(n, f); outputInArgs (n+1) f ar)
+    | outputInArgs n f (ConLevel::ar) =
+      (outputConlevel(n,f); outputInArgs (n+1) f ar)
+    | outputInArgs n f (Int::ar) =
+      (outputInt(n,f); outputInArgs (n+1) f ar)
+    | outputInArgs n f (IntArgs::ar) = 
+      (outputIntArgs(n,f); outputInArgs (n+1) f ar)
+    | outputInArgs n f (UInt::ar) = 
+      (outputUIntArgs(n,f); outputInArgs (n+1) f ar)
+    | outputInArgs n f (Bool::ar) =
+      (outputBoolArgs(n,f); outputInArgs (n+1) f ar)
+    | outputInArgs n f
+      ((a as (AvalSel|BvalSel|BvarSel|SetBvalSel|SetBvarSel)::ar)) =
+      (outputValSelArgs(n,a,f); outputInArgs (n+1) f ar)
+    | outputInArgs n f (Description::ar) =
+      (outputDescription(n,f); outputInArgs (n+1) f ar)
+    | outputInArgs n f (Void::ar) = outputInArgs (n+1) f ar
+    | outputInArgs n f ((Iterator "I&")::ar) =
+      (outputIteratorArgs(n, f); outputInArgs (n+1) f ar)
+    | outputInArgs n f ((Iterator _)::ar) = outputInArgs (n+1) f ar
+    | outputInArgs n f ((Other s)::ar) = outputInArgs (n+1) f ar
+    | outputInArgs _ _ _ = raise Empty
+
+  fun getVarName (i, arg) =
+      let val n = Int.toString (i+1) in
+          case arg of Var (List _) => "vars"^n
+                    | Var _ => "var"^n
+                    | DomSpec => "ds"^n
+                    | Rel => "UnsafeGecode::int2reltype[rel"^n^"]"
+                    | ConLevel => "UnsafeGecode::int2cl[cl"^n^"]"
+                    | Int => "i"^n
+                    | UInt => "i"^n
+                    | IntArgs => "args"^n
+                    | Bool => "i"^n
+                    | Void => ""
+                    | AvalSel => "UnsafeGecode::int2avalsel[varValSel"^n^"]"
+                    | BvalSel => "UnsafeGecode::int2bvalsel[varValSel"^n^"]"
+                    | BvarSel => "UnsafeGecode::int2bvarsel[varValSel"^n^"]"
+                    | SetBvalSel =>
+                      "UnsafeGecode::int2fsbvalsel[varValSel"^n^"]"
+                    | SetBvarSel =>
+                      "UnsafeGecode::int2fsbvarsel[varValSel"^n^"]"
+                    | Iterator "I&" => "is"^n
+                    | Iterator _ => raise Empty
+                    | Description => "desc"^n
+                    | Other s => "?!?!?!?"
+                    | _ => raise Empty
+      end
+
+  fun putCommas [a] = a
+    | putCommas nil = ""
+    | putCommas (a::ar) = a^","^putCommas ar
+
+  fun outputCall(f, fname, inargs, outarg) =                
+      let
+          val args = putCommas (List.mapi getVarName inargs)
+      in
+          case outarg of Void =>
+                         TextIO.output(f, "  s->"^fname^"("^args^");\n"^
+                                          "  RETURN_UNIT;\n")
+                       | (Int|UInt) =>
+                         TextIO.output(f, "  RETURN_INT(s->"^fname^"("^args^"));\n")
+                       | Bool =>
+                         TextIO.output(f, "  RETURN_BOOL(s->"^fname^"("^args^"));\n")
+                       | Iterator s =>
+                         TextIO.output(f, "  unsigned int retIterSize = 0;\n"^
+                                          "  for("^s^" iters = s->"^fname^
+                                          "("^args^");\n"^
+                                          "      iters(); ++iters) retIterSize++;\n"^
+                                          "  "^s^" ret = s->"^fname^"("^args^");\n"^
+                                          "  Vector *vret = Vector::New(retIterSize);\n"^
+                                          "  if(retIterSize>0) {\n"^
+                                          "    u_int count = 0;\n"^
+                                          "    for (; ret(); ++ret) {\n"^
+                                          "      Tuple *t = Tuple::New(2);\n"^
+                                          "      t->Init(0, Store::IntToWord(ret.min()));\n"^
+                                          "      t->Init(1, Store::IntToWord(ret.max()));\n"^
+                                          "      vret->Init(count, t->ToWord());\n"^
+                                          "      count++;\n"^
+                                          "    }\n"^
+                                          "  }\n"^
+                                          "  RETURN(vret->ToWord());\n"
+                                          )
+                       | Var v =>
+                         let val typ = case v of IntVar => "intvar"
+                                               | BoolVar => "boolvar"
+                                               | SetVar => "setvar"
+                                               | _ => raise Empty
+                         in
+                             TextIO.output(f, "  RETURN_GECODE_VAR(s->new_"^typ^"("^
+                                              args^"), stamp, pstamp);\n")
+                         end
+
+                       | _ => (Print.printVal outarg; print "\n"; raise Empty)
+      end
+
+  fun outputDesc(f, nil) = ()
+    | outputDesc(f, (fname, (inargs, outarg))::rest) =
+      ((case inargs of [Void] =>
+                       outputDefine(f, 1, fname)
+                     | _ => outputDefine(f, List.length inargs + 1, fname));
+       outputDeclSpace f;
+       outputInArgs 1 f inargs;
+       outputCall(f, fname, inargs, outarg);
+       outputEnd f;
+       outputDesc(f, rest))
+
+
+  datatype binding = Exn of string | Fun of string * int * args list * args
+      
+  fun generateBinding(name, ([Void], outarg)) = Fun(name, 1, [Space], outarg)
+    | generateBinding(name, (inargs, outarg)) = Fun(name,
+                                               List.length inargs + 1,
+                                               Space::inargs, outarg)
+
+  fun calcRecordSize binding =
+      foldl (fn (Exn _, i) => i+2 | (Fun _,i) => i+1) 0 binding
+
+  fun outputExn(f, s) =
+      (TextIO.output(f, 
+          "  record->Init(\"'"^s^"\", UnsafeGecode::"^s^"Constructor);\n");
+       TextIO.output(f,
+          "  record->Init(\""^s^"\", UnsafeGecode::"^s^"Constructor);\n"))
+
+  fun outputFun(f, (name, arity, _, _)) =
+      (TextIO.output(f,
+          "  INIT_STRUCTURE(record, \"UnsafeGecode\", \""^name^"\",\n");
+       TextIO.output(f,
+          "                 "^name^", "^Int.toString arity^");\n"))
+
+  fun outputBinding(f, binding) =
+      let
+          val size = Int.toString (calcRecordSize binding)
+      in
+          TextIO.output(f, "word InitComponent() {\n");
+          TextIO.output(f, "  UnsafeGecode::init();\n");
+          TextIO.output(f, "  Record *record = Record::New("^size^");\n");
+          app (fn Exn args => outputExn(f, args)
+                | Fun args => outputFun(f, args)) binding;
+          TextIO.output(f, "  RETURN_STRUCTURE(\"UnsafeGecode$\", record);\n");
+          TextIO.output(f, "}\n")
+      end
+
+  fun outputHeader(f, filename) =
+      (TextIO.output(f, "// This is a generated file. Do not edit!\n");
+       TextIO.output(f, "// Original source: "^filename^".dsc\n\n");
+       TextIO.output(f, "#include \""^filename^"Special.hh\"\n\n"))
+
+  fun outputAsigExn(f, s) =
+      TextIO.output(f, "    exception "^s^"\n")
+
+  fun addMark true = "'"
+    | addMark false = ""
+  fun argToType add (Var IntVar) = (addMark add)^"intvar"
+    | argToType add (Var BoolVar) = (addMark add)^"boolvar"
+    | argToType add (Var SetVar) = (addMark add)^"setvar"
+    | argToType add (Var (List IntVar)) = (addMark add)^"intvar vector"
+    | argToType add (Var (List BoolVar)) = (addMark add)^"boolvar vector"
+    | argToType add (Var (List SetVar)) = (addMark add)^"setvar vector"
+    | argToType add DomSpec = (addMark add)^"domain"
+    | argToType add Rel = (addMark add)^"rel"
+    | argToType add ConLevel = (addMark add)^"conlevel"
+    | argToType add Int = "int"
+    | argToType add IntArgs = "int vector"
+    | argToType add UInt = "int"
+    | argToType add Bool = "bool"
+    | argToType add Void = "unit"
+    | argToType add (Iterator s) = (addMark add)^"domain"
+    | argToType add AvalSel = (addMark add)^"avalsel"
+    | argToType add BvalSel = (addMark add)^"bvalsel"
+    | argToType add BvarSel = (addMark add)^"bvarsel"
+    | argToType add SetBvalSel = (addMark add)^"setbvalsel"
+    | argToType add SetBvarSel = (addMark add)^"setbvarsel"
+    | argToType add Space = (addMark add)^"space"
+    | argToType add Status = (addMark add)^"status"
+    | argToType add Description = (addMark add)^"description"
+    | argToType add (Other _) = raise Empty
+
+  fun putStars [a] = a
+    | putStars nil = ""
+    | putStars (a::ar) = a^" * "^putStars ar
+
+  fun outputAsigFun(f, (name, noOfArgs, args, outarg)) =
+      TextIO.output(f, "    val "^name^" : "^
+                       (putStars (map (argToType true) args))^
+                       " -> "^argToType true outarg^"\n")
+
+  fun outputAsig(f, binding) =
+      (TextIO.output(f, "signature GC_SIG =\nsig\n");
+       TextIO.output(f, "  structure UnsafeGecode : sig\n");
+       app (fn Exn args => outputAsigExn(f, args)
+             | Fun (name,n,inargs,outarg) =>
+               outputAsigFun(f, (name, n, inargs, outarg))) binding;
+       TextIO.output(f, "  end\nend\n")
+       )
+
+  fun generate()=
+      let
+          val stdBinding =
+              [Exn "InvalidSpace",
+               Exn "InvalidVar",
+               Exn "InvalidDomain",
+               Exn "Description",
+               Fun ("makespace", 0, [Void], Space),
+               Fun ("status", 1, [Space], Status),
+               Fun ("description", 1, [Space], Description),
+               Fun ("clone", 1, [Space], Space),
+               Fun ("discard", 1, [Space], Void),
+               Fun ("alive", 1, [Space], Bool)
+               ]
+          val f = TextIO.openOut ("UnsafeGecode.cc")
+          val asig = TextIO.openOut ("UnsafeGecode.asig")
+          val desc = DescParser.parseFile ("UnsafeGecode.dsc")
+          val binding = stdBinding@(map generateBinding desc)
+      in
+          outputHeader(f, "UnsafeGecode");
+          outputDesc(f, desc);
+          outputBinding(f, binding);
+          TextIO.closeOut f;
+          outputAsig(asig, binding);
+          TextIO.closeOut asig
+      end
+
+  end

@@ -33,6 +33,13 @@
   SetVarArgs a(vars.size());                              \
 { int s = vars.size(); for (int i=s; i--;) a[i] = fss[vars[i]]; }
 
+typedef int intvar;
+typedef int boolvar;
+typedef int setvar;
+typedef IntArgs intvarargs;
+typedef IntArgs boolvarargs;
+typedef IntArgs setvarargs;
+
 class GecodeSpace : private Space {
 protected:
   IntVarArray is;
@@ -43,8 +50,8 @@ protected:
   int noOfSetVars;
   int fsArraySize;
 
-  void EnlargeIntVarArray();
-  void EnlargeSetVarArray();
+  void EnlargeIntVarArray(void);
+  void EnlargeSetVarArray(void);
 
 public:
   using Space::clone;
@@ -73,102 +80,100 @@ public:
     return new GecodeSpace(*this);
   }
 
-  int AddIntVariable(DomSpec& ds);
-  int AddIntVariableR(DomSpec& ds, int boolVar);  
-  int AddBoolVariable();
+  intvar new_intvar(DomSpec&);
+  boolvar new_boolvar(void);
 
   // commit with description (for batch recomputation)
-  void commitDescription(int alt, BranchDesc *desc);
+  void commitDescription(int alt, BranchDesc*);
 
   // Inspect variable information
-  int vmin(int var);
-  int vmax(int var);
-  VarRanges<IntVar> vranges(int var);
+  int int_getMin(intvar);
+  int int_getMax(intvar);
+  VarRanges<IntVar> int_getRanges(intvar);
 
   // Domain
-  void dom(int var, DomSpec& ds);
-  void domR(int var, DomSpec& ds, int boolvar);
+  void int_dom(intvar, DomSpec& ds);
+  void int_domR(intvar, DomSpec& ds, boolvar);
 
   // Propagators
-  void rel(int, reltype, int);
-  void relI(int, reltype, int);
-  void relR(int, reltype, int, int);
-  void relIR(int, reltype, int, int);
+  void int_rel(intvar, reltype, intvar);
+  void int_relI(intvar, reltype, int);
+  void int_relR(intvar, reltype, intvar, boolvar);
+  void int_relIR(intvar, reltype, int, boolvar);
 
-  void eq(int, int, conlevel);
-  void eqV(const IntArgs& a, conlevel);
-  void eqR(int, int, int, conlevel);
+  void int_eq(intvar, intvar, conlevel);
+  void int_eqV(const intvarargs&, conlevel);
+  void int_eqR(intvar, intvar, boolvar, conlevel);
 
   // Distinct constraints
-  void distinct(const IntArgs& a, conlevel cl);
-  void distinctI(const IntArgs& offsets, const IntArgs& vars, conlevel cl);
+  void int_distinct(const intvarargs&, conlevel);
+  void int_distinctI(const IntArgs& offsets, const intvarargs&, conlevel);
 
   // Linear equations
-  void linear(const IntArgs& coefficients, const IntArgs& vars, reltype rel,
-	      int constant, conlevel cl);
-  void linearR(const IntArgs& coefficients, const IntArgs& vars, reltype rel,
-	       int constant, int boolVar, conlevel cl);
+  void int_linear(const IntArgs& coefficients, const intvarargs& vars,
+                  reltype rel, int constant, conlevel cl);
+  void int_linearR(const IntArgs& coefficients, const intvarargs& vars,
+               reltype, int, boolvar, conlevel);
 
 
   // Counting constraints
-  void countII(const IntArgs& vars, reltype rel,
-	       int i, reltype rel2, int j);
-  void countIV(const IntArgs& vars, reltype rel,
-	       int i, reltype rel2, int j);
-  void countVI(const IntArgs& vars, reltype rel,
-	       int i, reltype rel2, int j);
-  void countVV(const IntArgs& vars, reltype rel,
-	       int i, reltype rel2, int j);
+  void int_countII(const intvarargs&, reltype,
+	       int, reltype, int);
+  void int_countIV(const intvarargs&, reltype,
+	       int, reltype, int);
+  void int_countVI(const intvarargs& vars, reltype,
+	       int, reltype, int);
+  void int_countVV(const intvarargs& vars, reltype,
+	       int, reltype, int);
 
   // Access constraints
 
-  void element(const IntArgs& vars, int i, int j);
-  void elementI(const IntArgs& vars, int i, int j);
-  void lex(const IntArgs& vars1, reltype rel,
-	   const IntArgs& vars2);
+  void int_element(const intvarargs&, intvar, intvar);
+  void int_elementI(const IntArgs&, intvar, intvar);
+  void int_lex(const intvarargs&, reltype, const intvarargs& vars2);
 
   // Boolean constraints
-  void bool_not(int, int);
-  void bool_and(int, int, int);
-  void bool_or(int, int, int);
-  void bool_imp(int, int, int);
-  void bool_eq(int, int, int);
-  void bool_xor(int, int, int);
+  void int_bool_not(boolvar, boolvar);
+  void int_bool_and(boolvar, boolvar, boolvar);
+  void int_bool_or(boolvar, boolvar, boolvar);
+  void int_bool_imp(boolvar, boolvar, boolvar);
+  void int_bool_eq(boolvar, boolvar, boolvar);
+  void int_bool_xor(boolvar, boolvar, boolvar);
   
-  void bool_andV(const IntArgs& vars, int);
-  void bool_orV(const IntArgs& vars, int);
+  void int_bool_andV(const boolvarargs&, boolvar);
+  void int_bool_orV(const boolvarargs&, boolvar);
 
   // Arithmetic constraints
 
-  void min(const IntArgs& vars, int i);
-  void max(const IntArgs& vars, int i);
-  void abs(int i, int j, conlevel cl);
-  void mult(int i, int j, int k);
-  void power(int i, int j, int k);
+  void int_min(const intvarargs&, intvar);
+  void int_max(const intvarargs& vars, intvar);
+  void int_abs(intvar, intvar, conlevel);
+  void int_mult(intvar, intvar, intvar);
+  void int_power(intvar, intvar, intvar);
 
   // Value assignment
 
-  void assign(const IntArgs& vars, AvalSel as);
+  void int_assign(const intvarargs&, AvalSel);
 
   // Branching
-  void branch(const IntArgs& vars, BvarSel, BvalSel);
+  void int_branch(const intvarargs& vars, BvarSel, BvalSel);
 
   // Faling
-  void fail();
+  void fail(void);
 
   // Finite Set Variables / Constraints
 
-  int AddSetVariable();
+  setvar new_setvar(void);
   
-  UBIter<SetVar> fs_upperBound(int);
-  LBIter<SetVar> fs_lowerBound(int);
-  RangesMinus<UBIter<SetVar>, LBIter<SetVar> > fs_unknown(int);
-  int fs_cardinalityMin(int);
-  int fs_cardinalityMax(int);
-  bool fs_assigned(int);
+  UBIter<SetVar> set_getUpperBound(setvar);
+  LBIter<SetVar> set_getLowerBound(setvar);
+  RangesMinus<UBIter<SetVar>, LBIter<SetVar> > set_getUnknown(setvar);
+  int set_getCardinalityMin(setvar);
+  int set_getCardinalityMax(setvar);
+  bool set_getAssigned(setvar);
 
   template<class I>
-  void fs_lowerBound(int s, I& i) {
+  void set_lowerBound(setvar s, I& i) {
     if (!enter()) return;
     if (Space::failed())
       return;
@@ -177,7 +182,7 @@ public:
   }
 
   template<class I>
-  void fs_upperBound(int s, I& i) {
+  void set_upperBound(setvar s, I& i) {
     if (!enter()) return;
     if (Space::failed())
       return;
@@ -186,50 +191,50 @@ public:
   }
 
 
-  unsigned int fs_upperBoundSize(int);
-  unsigned int fs_lowerBoundSize(int);
+  unsigned int set_getUpperBoundSize(setvar);
+  unsigned int set_getLowerBoundSize(setvar);
 
-  void fs_include(int, int);
-  void fs_exclude(int, int);
-  void fs_the(int, int);
-  void fs_min(int, int);
-  void fs_max(int, int);
-  void fs_match(int, const IntArgs&);
-  void fs_card(int, int);
-  void fs_cardRange(int, int, int);
+  void set_include(intvar, setvar);
+  void set_exclude(intvar, setvar);
+  void set_the(intvar, setvar);
+  void set_min(intvar, setvar);
+  void set_max(intvar, setvar);
+  void set_match(setvar, const intvarargs&);
+  void set_card(setvar, intvar);
+  void set_cardRange(setvar, int min, int max);
 
-  void fs_superOfInter(int, int, int);
-  void fs_subOfUnion(int, int, int);
+  void set_superOfInter(setvar, setvar, setvar);
+  void set_subOfUnion(setvar, setvar, setvar);
   
-  void fs_subset(int, int);
-  void fs_nosubset(int, int);
-  void fs_disjoint(int, int);
-  void fs_distinct(int, int);
-  void fs_distinctn(const IntArgs&);
-  void fs_equals(int, int);
-  void fs_convex(int);
-  void fs_convexHull(int, int);
-  void fs_union(int, int, int);
-  void fs_complement(int, int);
-  void fs_intersection(int, int, int);
-  void fs_difference(int, int, int);
-  void fs_partition(int, int, int);
-  void fs_unionn(const IntArgs&, int);
-  void fs_intersectionn(const IntArgs&, int);
-  void fs_partitionn(const IntArgs&, int);
+  void set_subset(setvar, setvar);
+  void set_nosubset(setvar, setvar);
+  void set_disjoint(setvar, setvar);
+  void set_distinct(setvar, setvar);
+  void set_distinctn(const setvarargs&);
+  void set_equals(setvar, setvar);
+  void set_convex(setvar);
+  void set_convexHull(setvar, setvar);
+  void set_union(setvar, setvar, setvar);
+  void set_complement(setvar, setvar);
+  void set_intersection(setvar, setvar, setvar);
+  void set_difference(setvar, setvar, setvar);
+  void set_partition(setvar, setvar, setvar);
+  void set_unionn(const setvarargs&, setvar);
+  void set_intersectionn(const setvarargs&, setvar);
+  void set_partitionn(const setvarargs&, setvar);
 
-  void fs_includeR(int, int, int);
-  void fs_includeRI(int, int, int);
-  void fs_equalR(int, int, int);
-  void fs_subsetR(int, int, int);
+  void set_includeR(intvar, setvar, boolvar);
+  void set_includeRI(int, setvar, boolvar);
+  void set_equalR(setvar, setvar, boolvar);
+  void set_subsetR(setvar, setvar, boolvar);
 
-  void fs_selectUnion(int, const IntArgs&, int);
-  void fs_selectInter(int, const IntArgs&, int);
-  void fs_selectSets(int, const IntArgs&, int);
+  void set_selectUnion(setvar, const setvarargs&, setvar);
+  void set_selectInter(setvar, const setvarargs&, setvar);
+  void set_selectSets(setvar, const setvarargs&, intvar);
 
-  void fs_branch(const IntArgs&, SetBvarSel, SetBvalSel);
+  void set_branch(const setvarargs&, SetBvarSel, SetBvalSel);
   
-  void fs_print(int);
+  void set_print(setvar);
 
 };
 
