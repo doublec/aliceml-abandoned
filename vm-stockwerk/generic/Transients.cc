@@ -17,21 +17,14 @@
 #include <cstring>
 #include "generic/RootSet.hh"
 #include "generic/Transients.hh"
+#include "alice/Data.hh" //--** should not be here
 
 word Hole::cyclicExn;
 word Hole::holeExn;
 
 void Hole::Init() {
-  //--** this hard codes constructor representation
-  static const char cyclicExnName[] = "Hole.Cyclic";
-  Chunk *chunk1 = Store::AllocChunk(sizeof(cyclicExnName) - 1);
-  std::memcpy(chunk1->GetBase(), cyclicExnName, sizeof(cyclicExnName) - 1);
-  cyclicExn = chunk1->ToWord();
+  cyclicExn = UniqueConstructor::New(String::New("Hole.Cyclic"))->ToWord();
   RootSet::Add(cyclicExn);
-
-  static const char holeExnName[] = "Hole.Hole";
-  Chunk *chunk2 = Store::AllocChunk(sizeof(holeExnName) - 1);
-  std::memcpy(chunk2->GetBase(), holeExnName, sizeof(holeExnName) - 1);
-  holeExn = chunk2->ToWord();
+  holeExn = UniqueConstructor::New(String::New("Hole.Hole"))->ToWord();
   RootSet::Add(holeExn);
 }

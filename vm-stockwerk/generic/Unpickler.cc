@@ -472,10 +472,12 @@ word ApplyTransform(Chunk *f, word x) {
   if ((len == sizeof("Alice.primitive.value") - 1) &&
       !std::memcmp(fs, "Alice.primitive.value", len)) {
     Block *xp = Store::WordToBlock(x);
+    //--** xp->AssertWidth(1);
     return PrimitiveTable::LookupValue(Chunk::FromWord(xp->GetArg(0)));
   } else if ((len == sizeof("Alice.primitive.function") - 1) &&
 	     !std::memcmp(fs, "Alice.primitive.function", len)) {
     Block *xp = Store::WordToBlock(x);
+    //--** xp->AssertWidth(1);
     return PrimitiveTable::LookupFunction(Chunk::FromWord(xp->GetArg(0)));
   } else if ((len == sizeof("Alice.function") - 1) &&
 	     !std::memcmp(fs, "Alice.function", len)) {
@@ -487,8 +489,16 @@ word ApplyTransform(Chunk *f, word x) {
     concreteCode->Init(0, x);
     concreteCode->Init(1, transform->ToWord());
     return concreteCode->ToWord();
+  } else if ((len == sizeof("Alice.constructor") - 1) &&
+	     !std::memcmp(fs, "Alice.constructor", len)) {
+    Block *xp = Store::WordToBlock(x);
+    //--** xp->AssertWidth(2);
+    Constructor *constructor =
+      Constructor::New(xp->GetArg(0), Store::WordToBlock(xp->GetArg(1)));
+    return constructor->ToWord();
+  } else {
+    Error("ApplyTransform: unknown transform");
   }
-  Error("ApplyTransform: unknown transform");
 }
 
 //
