@@ -25,10 +25,11 @@ functor MkSignature(structure TypeManager : TYPE_MANAGER
 	open TypeManager
 
 	(* This file will be created *)
-	val file = TextIO.openOut((case space of
-				       "gdk"        => "UnsafeGDK.asig"
-				     | "gtk"        => "UnsafeGTK.asig"
-				     | "gtk_canvas" => "UnsafeGTKCANVAS.asig"))
+	val file =
+	    TextIO.openOut((case space of
+				"gdk"        => "GDK_INTERFACE.aml"
+			      | "gtk"        => "GTK_INTERFACE.aml"
+			      | "gtk_canvas" => "GTK_CANVAS_INTERFACE.aml"))
 	    
 	(* Printing abstractions *)
 	fun ps s   = TextIO.output(file, s)
@@ -229,22 +230,28 @@ functor MkSignature(structure TypeManager : TYPE_MANAGER
 		   | "gtk_canvas" => ("UnsafeGTKCANVAS",
 				      "UNSAFE_GTK_CANVAS_COMPONENT", nil))
 	in
-	    val filePrefix =
-		["(* This file is generated. Please do not edit *)\n\n",
-		 "import structure GtkTypes from \"GtkTypes\"\n\n",
-		 "local\n",
-		 "    open GtkTypes\n",
-		 "in\n",
-		 "    signature ", component, " = \n",
-		 "        sig\n",
-		 "            structure ", sigName, " : \n",
-		 "                sig\n"] @ defs
-	end
+	    val filePrefix = defs
 
-	val fileEnd =
-	    ["                end\n",
-             "        end\n",
-	     "end\n"]
+(*  	    val filePrefix = *)
+(*  		["(* This file is generated. Please do not edit *)\n\n", *)
+(*  		 "import structure GtkTypes from \"GtkTypes\"\n\n", *)
+(*  		 "local\n", *)
+(*  		 "    open GtkTypes\n", *)
+(*  		 "\n", *)
+(*  		 "    signature ", sigName, " = \n", *)
+(*  		 "        sig\n"] @ defs *)
+
+	    val fileEnd = nil
+
+(*  	    val fileEnd = *)
+(*  		["        end\n", *)
+(*  		 "in\n", *)
+(*  		 "    signature ", component, " = \n", *)
+(*  		 "        sig\n", *)
+(*  		 "            structure ", sigName, " : ", sigName, "\n", *)
+(*  		 "        end\n", *)
+(*  		 "end\n"] *)
+	end
 
 	(* Create Signature File *)
 	fun create () =
