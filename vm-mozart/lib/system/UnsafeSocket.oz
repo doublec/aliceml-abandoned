@@ -42,7 +42,16 @@ define
 		     client:
 			fun {$ Host Port} Socket in
 			   Socket = {New Open.socket init()}
-			   {Socket connect(host: Host port: Port)}
+			   try
+			      {Socket connect(host: Host port: Port)}
+			   catch E then   %--** maybe, should raise OS.SysErr
+			      {Exception.raiseError
+			       alice(IoException(name:
+						    {ByteString.make 'socket'}
+						 function:
+						    {ByteString.make 'client'}
+						 cause: E))} %--** not type exn
+			   end
 			   Socket
 			end
 		     input1:
