@@ -10,9 +10,10 @@
  *   $Revision$
  *)
 
-import structure GlobalStamp   from "GlobalStamp"
-import functor   MkHashImpMap  from "MkHashImpMap"
-import signature STAT          from "STAT-sig"
+import structure UnsafeValue  from "../lib/system/UnsafeValue"
+import structure GlobalStamp  from "GlobalStamp"
+import functor   MkHashImpMap from "MkHashImpMap"
+import signature STAT         from "STAT-sig"
 
 structure Stat :> STAT =
 struct
@@ -25,18 +26,16 @@ struct
 
     val map = Map.new() : value Map.t
 
-    __primitive val cast : 'a -> 'b = "Unsafe.cast"
-
     fun stat x =
 	let
 	    val stamp = GlobalStamp.new()
 	in
-	    Map.insertDisjoint(map, stamp, cast x);
+	    Map.insertDisjoint(map, stamp, UnsafeValue.cast x);
 	    stamp
 	end
 
     fun !!stamp =
 	case Map.lookup(map, stamp)
 	  of NONE   => raise Remote
-	   | SOME x => cast x
+	   | SOME x => UnsafeValue.cast x
 end
