@@ -1645,7 +1645,7 @@ struct
 	in
 	    TranslationEnv.insertMod(E, I.stamp x);
 	    case trInfRep'(E, mkKind', p', j2)
-	      of NONE => (TranslationEnv.deleteMod(E, I.stamp x); NONE)
+	      of NONE => (TranslationEnv.removeMod(E, I.stamp x); NONE)
 	       | some => some
 	end
 
@@ -2187,7 +2187,7 @@ struct
 
     fun translate(desc, E, comp) =
 	let
-	    val _     = Inf.Map.deleteAll infHash
+	    val _     = Inf.Map.removeAll infHash
 	    val E'    = TranslationEnv.clone E
 	    val comp' = trComp(E', comp)
 	in

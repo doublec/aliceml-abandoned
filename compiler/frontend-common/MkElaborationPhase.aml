@@ -552,7 +552,7 @@ struct
 	    val  s       = Inf.emptySig()
 	    val  decs'   = elabDecs(E, s, NONE, decs)
 	    val (t,exp') = elabExp(E, exp)
-	    val  _       = Env.deleteScope E
+	    val  _       = Env.removeScope E
 	in
 	    ( t, O.LetExp(typInfo(i,t), decs', exp') )
 	end
@@ -1196,7 +1196,7 @@ TextIO.print "\n";
 	    val (j1,inf')    = elabGroundInf(E, SOME p, inf)
 	    val (j1',modid') = elabModid_bind(E, p, false, j1, modid)
 	    val (j2,mod')    = elabMod(E, NONE, mod)
-	    val  _           = Env.deleteScope E
+	    val  _           = Env.removeScope E
 	    val  j           = Inf.arrow(p, j1', j2)
 	in
 (*DEBUG
@@ -1309,7 +1309,7 @@ TextIO.print "\n";
 	    val  decs'    = elabDecs(E, s, SOME p, decs)
 	    val  j1       = Inf.sign s
 	    val (j2,mod') = elabMod(E, po, mod)
-	    val  _        = Env.deleteScope E
+	    val  _        = Env.removeScope E
 (*DEBUG
 val _ = (
 TextIO.print "ElabMod LetMod:\n";
@@ -1439,7 +1439,7 @@ TextIO.print "\n";
 	    val (j1,inf1')   = elabGroundInf(E, SOME p, inf1)
 	    val (j1',modid') = elabModid_bind(E, p, false, j1, modid)
 	    val (j2,inf2')   = elabGroundInf(E, NONE, inf2)
-	    val  _           = Env.deleteScope E
+	    val  _           = Env.removeScope E
 	    val  j           = Inf.arrow(p, j1', j2)
 	in
 	    ( j, O.ArrInf(infInfo(i,j), modid', inf1', inf2') )
@@ -1452,7 +1452,7 @@ TextIO.print "\n";
 	    val (j1,inf1')   = elabGroundInf(E, SOME p, inf1)
 	    val (j1',modid') = elabModid_bind(E, p, false, j1, modid)
 	    val (j2,inf2')   = elabInf(E, NONE, inf2)
-	    val  _           = Env.deleteScope E
+	    val  _           = Env.removeScope E
 	    val  j           = Inf.lambda(p, j1', j2)
 	in
 	    ( j, O.FunInf(infInfo(i,j), modid', inf1', inf2') )
@@ -1495,7 +1495,7 @@ TextIO.print "\n";
 	    val  decs'    = elabDecs(E, s, SOME p, decs)
 	    val  j1       = Inf.sign s
 	    val (j2,inf') = elabInf(E, po, inf)
-	    val  _        = Env.deleteScope E
+	    val  _        = Env.removeScope E
 	    val  j        = Inf.exist(p,j1,j2)	(* maximises *)
 	    val  _        = if not(Inf.isExist j) then () else
 				error(i, E.LetInfGenerative(#2(Inf.asExist j)))
@@ -1541,7 +1541,7 @@ TextIO.print "\n";
 	    val (j2,gen,inf2') = elabInfRep(E, p,
 				     fn k => mkKind(Inf.depKind(p',j1,k)),
 				     inf2)
-	    val  _             = Env.deleteScope E
+	    val  _             = Env.removeScope E
 	    val  j             = if gen then j2 else Inf.lambda(p', j1', j2)
 				   (* If interface is generative we get back
 				    * a constructor with appropriate kind
@@ -1599,7 +1599,7 @@ TextIO.print "\n";
 	    val  az       = enterVarids(E, varids)
 	    val  _        = Env.insertScope E
 	    val (t2,exp') = elabExp(E, exp)
-	    val  _        = Env.deleteScope E
+	    val  _        = Env.removeScope E
 	    val (t1,pat') = elabPat(E, s, pat)
 	    val  _        = Type.exitLevel()
 	    val  E'       = Env.splitScope E
@@ -1794,7 +1794,7 @@ TextIO.print "\n";
 	let
 	    val  _        = Env.insertScope E
 	    val (t2,exp') = elabExp(E, exp)
-	    val  _        = Env.deleteScope E
+	    val  _        = Env.removeScope E
 	    val  _        = r := tpats'
 	    val  _        = Type.unify(t1,t2) handle Type.Mismatch(t3,t4) =>
 				error(i, E.ValDecMismatch(t1, t2, t3, t4))
