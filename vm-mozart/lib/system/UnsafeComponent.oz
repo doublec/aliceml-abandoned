@@ -64,7 +64,7 @@ define
 
    fun {ComponentToFunctor Component}
       case Component
-      of 'UNEVALUATED'(imports: Imports body: Body sign: Sig) then
+      of 'UNEVALUATED'(imports: Imports body: Body inf: Sig) then
 	 {Functor.new
 	  {List.toTuple 'import'
 	   {Record.foldR Imports
@@ -73,8 +73,8 @@ define
 		    'type': {SigToOz Sig})|In
 	    end nil}}
 	  {SigToOz Sig} Body}
-      [] 'EVALUATED'(Sig Str) then
-	 {Functor.new 'import' {SigToOz Sig} fun {$ _} Str end}
+      [] 'EVALUATED'(inf: Sig 'mod': Mod) then
+	 {Functor.new 'import' {SigToOz Sig} fun {$ _} Mod end}
       end
    end
 
@@ -115,7 +115,7 @@ define
 			    {OzToSig {CondSelect Desc 'type' nil}}|Rest
 			 end nil}}
 		    body: Body
-		    sign: {OzToSig F.'export'})
+		    inf: {OzToSig F.'export'})
    end
 
    local
@@ -145,9 +145,9 @@ define
       in
 	 if {IsOzScheme URL} then
 	    %--** just acquire (do not link)
-	    'EVALUATED'('NONE' {Module.link [HU]}.1)
+	    'EVALUATED'(inf: 'NONE' 'mod': {Module.link [HU]}.1)
 	 elseif {IsNative URL} then
-	    'EVALUATED'('NONE' {Module.link [HU]}.1)
+	    'EVALUATED'(inf: 'NONE' 'mod': {Module.link [HU]}.1)
 	 else
 	    {FunctorToComponent try {Pickle.load HU}
 				catch E=error(url(load _) ...) then
