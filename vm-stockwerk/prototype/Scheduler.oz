@@ -22,11 +22,13 @@ define
    %--** add another thread that checks for preemption
 
    class Thread
-      attr Args TaskStack Res
+      attr Args TaskStack Res Suspended State
       meth init(args: A stack: T result: R)
 	 Args <- A
 	 TaskStack <- T
 	 Res <- R
+	 Suspended <- false
+	 State <- runnable
       end
       meth getArgs($)
 	 @Args
@@ -40,6 +42,28 @@ define
       end
       meth bindResult(X)
 	 @Res = X
+	 State <- terminated
+      end
+      meth setSuspend(B)
+	 case @State of terminated then skip
+	 else Suspended <- B
+	 end
+      end
+      meth isSuspended($)
+	 @Suspended
+      end
+      meth setState(S)
+	 State <- S
+      end
+      meth getState($)
+	 @State
+      end
+   end
+
+   fun {MyMember Ts T}
+      if {IsFree Ts} then false
+      elsecase Ts of !T|_ then true
+      elseof _|Tr then {MyMember Tr T}
       end
    end
 
@@ -52,12 +76,23 @@ define
       meth newThread(Closure Args ?Res <= _ taskStack: TaskStack0 <= nil)
 	 case Closure of closure(Function ...) then TaskStack in
 	    TaskStack = {Function.1.pushCall Closure TaskStack0}
-	    Scheduler, enqueue({New Thread init(args: Args
+	    Scheduler, Enqueue({New Thread init(args: Args
 						stack: TaskStack
 						result: Res)})
 	 end
       end
-      meth enqueue(T) Tl Rest in
+      meth wakeup(T)
+	 {T setState(runnable)}
+	 Scheduler, Enqueue(T)
+      end
+      meth condEnqueue(T)
+	 case {T getState($)} of runnable andthen {Not {MyMember @QueueHd T}}
+	 then Scheduler, Enqueue(T)
+	 else skip
+	 end
+      end
+      meth Enqueue(T) Tl Rest in
+	 {T setState(runnable)}
 	 Tl = (QueueTl <- Rest)
 	 Tl = T|Rest
       end
@@ -69,8 +104,10 @@ define
 	    skip   %--** wait for I/O
 	 elsecase Hd of T|Tr then
 	    QueueHd <- Tr
-	    CurrentThread <- T
-	    Scheduler, Run({T getArgs($)} {T getTaskStack($)})
+	    if {Not {T isSuspended($)}} then
+	       CurrentThread <- T
+	       Scheduler, Run({T getArgs($)} {T getTaskStack($)})
+	    end
 	    Scheduler, run()
 	 end
       end
@@ -99,7 +136,7 @@ define
 	    Scheduler, Run(Args TaskStack)
 	 [] preempt(Args TaskStack) then
 	    {@CurrentThread setArgsAndTaskStack(Args TaskStack)}
-	    Scheduler, enqueue(@CurrentThread)
+	    Scheduler, Enqueue(@CurrentThread)
 	 [] exception(Debug Exn TaskStack) then
 	    Scheduler, Handle(Debug Exn TaskStack)
 	 [] request(Transient=transient(TransientState) Args TaskStack) then
@@ -109,9 +146,11 @@ define
 				 TaskStack)
 	    [] future(Ts) then
 	       {@CurrentThread setArgsAndTaskStack(Args TaskStack)}
+	       {@CurrentThread setState(blocked)}
 	       {Assign TransientState future(@CurrentThread|Ts)}
 	    [] byneed(Closure) then
 	       {@CurrentThread setArgsAndTaskStack(Args TaskStack)}
+	       {@CurrentThread setState(blocked)}
 	       {Assign TransientState future([@CurrentThread])}
 	       Scheduler, Byneed(Transient Closure)
 	    [] cancelled(Exn) then
