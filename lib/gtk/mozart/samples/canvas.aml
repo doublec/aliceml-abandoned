@@ -1,0 +1,36 @@
+import structure Inspector from "x-alice:/lib/tools/Inspector"
+import structure GTK       from "x-alice:/lib/gtk/GTK"
+import structure GDK       from "x-alice:/lib/gtk/GDK"
+import structure Canvas    from "x-alice:/lib/gtk/Canvas"
+
+local
+    open Canvas
+
+    fun DeleteEvent () = () (* Inspector.inspect "Delete Event occurred" *)
+    fun Destroy () = () (* Inspector.inspect "Destroy Event occurred" *)
+    val Window = GTK.windowNew GTK.WINDOW_TOPLEVEL
+    val DestroyId = GTK.signalConnect(Window, "destroy", Destroy)
+
+    val map = GDK.colormapGetSystem ()
+    val black = GDK.allocateGDKColor(0,0,0);
+    val _ = GDK.colormapAllocColor(map, black, false, true);
+    val _ = GTK.canvasInit ()
+    val MyCanvas = Canvas.new ()
+    val root = Canvas.root(MyCanvas)
+
+    val targs = [va_string "text", va_string "Dies ist ein Test",
+		 va_string "x", va_float 100.0, va_string "y", va_float 100.0,
+		 va_string "font",
+		 va_string "-adobe-helvetica-medium-r-normal--12-*-72-72-p-*-iso8859-1",
+		 va_string "fill_color_gdk", va_object black]
+    val titem = Canvas.itemNew(root, Canvas.textGetType(), targs)
+in
+    val _ = (GTK.containerSetBorderWidth(Window, 10);
+	     GTK.widgetSetUsize(MyCanvas, 400, 400);
+	     Canvas.setScrollRegion(MyCanvas, 0.0, 0.0, 400.0, 400.0);
+	     GTK.containerAdd(Window, MyCanvas);
+	     GTK.widgetShowAll(Window);
+	     Canvas.updateNow MyCanvas;
+	     print "Done")
+end
+

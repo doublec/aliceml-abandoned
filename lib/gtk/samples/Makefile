@@ -9,14 +9,16 @@ SRCS = hello.aml          \
        widgets.aml        \
        GtkBuilder-sig.aml \
        GtkBuilder.aml     \
-       TextViewer.aml
+       TextViewer.aml     \
+       canvas.aml
 
 OBJS = hello.ozf          \
        packbox.ozf        \
        widgets.ozf        \
        GtkBuilder-sig.ozf \
        GtkBuilder.ozf     \
-       TextViewer.ozf
+       TextViewer.ozf     \
+       canvas.ozf
 
 %.ozf: %.aml
 	$(STOC) $(STOCOPTS) -c $< -o $@
