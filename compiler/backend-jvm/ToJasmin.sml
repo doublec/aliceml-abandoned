@@ -36,6 +36,16 @@ structure ToJasmin =
 	datatype branchinst = Lab of label * bool | Jump of jump | Non
 	datatype registerOps = Load of (stamp * INSTRUCTION) | Store
 
+	fun jumpToOp Ret = Return
+	  | jumpToOp IRet = Ireturn
+	  | jumpToOp ARet = Areturn
+	  | jumpToOp Got = Nop
+
+	fun opToJump Areturn = ARet
+	  | opToJump Ireturn = IRet
+	  | opToJump Return = Ret
+	  | opToJump _ = Got
+
 	fun labtoString (Lab (label', _)) = Label.toString label'
 	  | labtoString (Jump Got) = "Goto"
 	  | labtoString (Jump Ret) = "Return"
@@ -136,7 +146,8 @@ structure ToJasmin =
 
 	    (* mark a lable as reachable *)
 	    fun setReachable l' =
-		IntSet.insert (!reachable, l')
+		(vprint (2, "Label "^Label.toString l'^" marked reachable\n");
+		 IntSet.insert (!reachable, l'))
 
 	    (* check whether a lable is reachable or not *)
 	    fun isReachable l' =
@@ -162,7 +173,9 @@ structure ToJasmin =
 		end
 
 	    (* mark a lable as used *)
-	    fun setUsed l' = IntSet.insert (!usedlabel, l')
+	    fun setUsed l' =
+		(vprint (2, "Label "^Label.toString l'^" marked as used\n");
+		 IntSet.insert (!usedlabel, l'))
 	    end
 
 	structure JVMreg =
@@ -403,11 +416,8 @@ structure ToJasmin =
 
 	fun optimize insts =
 	    let
-		fun deadCode (last, (c as Comment _)::rest) =
+		fun deadCode (last, (c as (Comment _ | Line _))::rest) =
 		    c :: deadCode (last, rest)
-
-		  | deadCode (last, (l as Line _):: rest) =
-		    l :: deadCode (last, rest)
 
 		  | deadCode (last, (c as Catch (_,fromC,toC,using))::rest) =
 		    (Catches.add c;
@@ -448,53 +458,18 @@ structure ToJasmin =
 			else code'
 		    end
 
-		  | deadCode (Lab (lab', dropMode), Areturn::rest) =
+		  | deadCode (Lab (lab', dropMode), (ret as (Areturn | Ireturn | Return))::rest) =
 		    let
+			val ret' = opToJump ret
 			val code' =
-			    (LabelMerge.merge (lab', Jump ARet);
-			     deadCode (Jump ARet, rest))
+			    (LabelMerge.merge (lab', Jump ret');
+			     deadCode (Jump ret', rest))
 			val code'' =
 			    if dropMode then
 				code'
 			    else
-				Areturn ::
+				ret ::
 				code'
-		    in
-			if LabelMerge.isUsed lab' orelse not dropMode then
-			    Label lab' ::
-			    code''
-			else code''
-		    end
-
-		  | deadCode (Lab (lab', dropMode), Return::rest) =
-		    let
-			val code' =
-			    (LabelMerge.merge (lab', Jump Ret);
-			     deadCode (Jump Ret, rest))
-			val code'' =
-			    if dropMode then
-				code'
-			    else
-				Return ::
-				code'
-		    in
-			if LabelMerge.isUsed lab' orelse not dropMode then
-			    Label lab' ::
-			    code''
-			else code''
-		    end
-
-		  | deadCode (Lab (lab', dropMode), Ireturn::rest) =
-		    let
-			val code' =
-			    (LabelMerge.merge (lab', Jump IRet);
-			     deadCode (Jump IRet, rest))
-			val code'' =
-			    if dropMode then
-				code'
-			    else
-				Ireturn ::
-				deadCode (Jump IRet, rest)
 		    in
 			if LabelMerge.isUsed lab' orelse not dropMode then
 			    Label lab' ::
@@ -536,33 +511,24 @@ structure ToJasmin =
 			 (LabelMerge.setReachable lab'';
 			  Goto lab'' :: deadCode (Jump Got, rest))
 
-		  | deadCode (Non, Areturn::rest) =
-			 Areturn :: deadCode (Jump ARet, rest)
-
-		  | deadCode (Non, Return::rest) =
-			 Return :: deadCode (Jump Ret, rest)
-
-		  | deadCode (Non, Ireturn::rest) =
-			 Ireturn :: deadCode (Jump IRet, rest)
-
-		  | deadCode (Non, Athrow::rest) =
-			 Athrow :: deadCode (Jump Got, rest)
+		  | deadCode (Non, (job as (Areturn | Return | Ireturn | Athrow))::rest) =
+			 job :: deadCode (Jump (opToJump job), rest)
 
 		  | deadCode (Non, c::rest) =
 			 ((case c of
-			       Ifacmpeq l' => LabelMerge.setReachable l'
-			     | Ifacmpne l' => LabelMerge.setReachable l'
-			     | Ifeq l' => LabelMerge.setReachable l'
-			     | Ificmpeq l' => LabelMerge.setReachable l'
-			     | Ificmplt l' => LabelMerge.setReachable l'
-			     | Ificmpne l' => LabelMerge.setReachable l'
-			     | Ifne l' => LabelMerge.setReachable l'
-			     | Ifnull l' => LabelMerge.setReachable l'
-			     | Tableswitch (_, ls, l) =>
-				   List.app
-				   LabelMerge.setReachable
-				   (l::ls)
-			     | Lookupswitch ((_, ls), l) =>
+			       (Ifacmpeq l'
+				 | Ifacmpne l'
+				 | Ifeq l'
+				 | Ificmpeq l'
+				 | Ificmpge l'
+				 | Ificmpgt l'
+				 | Ificmple l'
+				 | Ificmplt l'
+				 | Ificmpne l'
+				 | Ifne l'
+				 | Ifnull l') => LabelMerge.setReachable l'
+			     | (Tableswitch (_, ls, l)
+				 | Lookupswitch ((_, ls), l)) =>
 				   List.app
 				   LabelMerge.setReachable
 				   (l::ls)
@@ -571,16 +537,10 @@ structure ToJasmin =
 
 		  | deadCode (last, nil) = nil
 
-		fun prepareLiveness (Astore r::insts, pos) =
+		fun prepareLiveness ((Astore r | Istore r)::insts, pos) =
 		    (JVMreg.define(r, pos);
 		     prepareLiveness (insts,pos+1))
-		  | prepareLiveness (Istore r::insts, pos) =
-		    (JVMreg.define(r, pos);
-		     prepareLiveness (insts,pos+1))
-		  | prepareLiveness (Aload r::insts, pos) =
-		    (JVMreg.use(r, pos);
-		     prepareLiveness (insts,pos+1))
-		  | prepareLiveness (Iload r::insts, pos) =
+		  | prepareLiveness ((Aload r | Iload r)::insts, pos) =
 		    (JVMreg.use(r, pos);
 		     prepareLiveness (insts,pos+1))
 		  | prepareLiveness (Label l'::insts, pos) =
@@ -592,55 +552,25 @@ structure ToJasmin =
 		(* Register 0 must not be overwritten. *)
 		    JVMreg.use (thisStamp,pos)
 
-		fun liveness (Goto label'::insts, pos) =
-		    (JVMreg.addJump(pos, label');
+		fun liveness ((Goto l | Ifacmpeq l | Ifacmpne l |
+			       Ifeq l | Ifne l | Ifnull l |
+			       Ificmpeq l | Ificmple l | Ificmplt l |
+			       Ificmpne l | Ificmpgt l | Ificmpge l)::insts, pos) =
+		    (JVMreg.addJump(pos, l);
 		     liveness (insts, pos+1))
-		  | liveness (Ifacmpeq label'::insts, pos) =
-		     (JVMreg.addJump(pos, label');
-		      liveness (insts, pos+1))
-		  | liveness (Ifacmpne label'::insts, pos) =
-		     (JVMreg.addJump(pos, label');
-		      liveness (insts, pos+1))
-		  | liveness (Ifeq label'::insts, pos) =
-		     (JVMreg.addJump(pos, label');
-		      liveness (insts, pos+1))
-		  | liveness (Ificmpeq label'::insts, pos) =
-		     (JVMreg.addJump(pos, label');
-		      liveness (insts, pos+1))
-		   | liveness (Ificmplt label'::insts, pos) =
-		     (JVMreg.addJump(pos, label');
-		      liveness (insts, pos+1))
-		  | liveness (Ificmpne label'::insts, pos) =
-		     (JVMreg.addJump(pos, label');
-		      liveness (insts, pos+1))
-		  | liveness (Ifne label'::insts, pos) =
-		     (JVMreg.addJump(pos, label');
-		      liveness (insts, pos+1))
-		  | liveness (Ifnull label'::insts, pos) =
-		     (JVMreg.addJump(pos, label');
-		      liveness (insts, pos+1))
 		  | liveness (_::insts, pos) =
 		     liveness (insts, pos+1)
 		  | liveness (nil, _) = ()
 
-		fun fuse (old, (c as Comment _)::rest) =
+		fun fuse (old, (c as (Comment _ | Line _))::rest) =
 		    c::fuse (old, rest)
-		  | fuse (old, (l as Line _) :: rest) =
-		    l :: fuse (old, rest)
-		  | fuse (l as Load (a,ori), (stor as Astore b)::rest) =
+		  | fuse (l as Load (a,ori), (stor as (Astore b | Istore b))::rest) =
 		    (if JVMreg.fuse (a,b)
 			 then fuse (Store, rest)
 		     else ori::stor::fuse(Store,rest))
-		  | fuse (l as Load (a,_),Istore b::rest) =
-		    (JVMreg.fuse (a,b);
-		     fuse (Store, rest))
-		  | fuse (Load (_,ori), (l as Aload b)::rest) =
+		  | fuse (Load (_,ori), (l as (Aload b | Iload b))::rest) =
 		    ori::fuse (Load (b,l), rest)
-		  | fuse (Store, (l as Aload b)::rest) =
-		    fuse (Load (b,l), rest)
-		  | fuse (Load (_,ori), (l as Iload b)::rest) =
-		    ori::fuse (Load (b,l), rest)
-		  | fuse (Store, (l as Iload b)::rest) =
+		  | fuse (Store, (l as (Aload b | Iload b))::rest) =
 		    fuse (Load (b,l), rest)
 		  | fuse (Store, inst::rest) =
 		    inst::fuse(Store, rest)
@@ -811,6 +741,9 @@ structure ToJasmin =
 	  | stackNeedInstruction (Ifacmpne _) = ~2
 	  | stackNeedInstruction (Ifeq _) = ~1
 	  | stackNeedInstruction (Ificmpeq _) = ~2
+	  | stackNeedInstruction (Ificmple _) = ~2
+	  | stackNeedInstruction (Ificmpge _) = ~2
+	  | stackNeedInstruction (Ificmpgt _) = ~2
 	  | stackNeedInstruction (Ificmplt _) = ~2
 	  | stackNeedInstruction (Ificmpne _) = ~2
 	  | stackNeedInstruction (Ifne _) = ~1
@@ -905,6 +838,9 @@ structure ToJasmin =
 	      | instructionToJasmin (Ifacmpne l,_) = "if_acmpne "^(LabelMerge.labName l)
 	      | instructionToJasmin (Ifeq l,_) = "ifeq "^(LabelMerge.labName l)
 	      | instructionToJasmin (Ificmpeq l,_) = "if_icmpeq "^(LabelMerge.labName l)
+	      | instructionToJasmin (Ificmple l,_) = "if_icmple "^(LabelMerge.labName l)
+	      | instructionToJasmin (Ificmpge l,_) = "if_icmpge "^(LabelMerge.labName l)
+	      | instructionToJasmin (Ificmpgt l,_) = "if_icmpgt "^(LabelMerge.labName l)
 	      | instructionToJasmin (Ificmplt l,_) = "if_icmplt "^(LabelMerge.labName l)
 	      | instructionToJasmin (Ificmpne l,_) = "if_icmpne "^(LabelMerge.labName l)
 	      | instructionToJasmin (Ifne l,_) = "ifne "^(LabelMerge.labName l)
@@ -991,13 +927,7 @@ structure ToJasmin =
 	in
 	    fun instructionsToJasmin (insts, enterstack, staticapply, ziel) =
 		let
-		    fun noStack (Comment _) = true
-		      | noStack (Line _) = true
-		      | noStack (Goto _) = true
-		      | noStack Athrow = true
-		      | noStack Return = true
-		      | noStack Areturn = true
-		      | noStack Ireturn = true
+		    fun noStack (Comment _ | Line _ | Goto _ | Athrow | Areturn | Ireturn | Return) = true
 		      | noStack _ = false
 
 		    fun recurse (i::is, need, max) =
@@ -1007,38 +937,29 @@ structure ToJasmin =
 			    val sizeAfter = need+stackNeedInstruction i
 
 			    val nextSize = case i of
-				Areturn => LabelMerge.leaveMethod (sizeAfter, is)
+				(Areturn | Ireturn | Return | Athrow) =>
+				    LabelMerge.leaveMethod (sizeAfter, is)
 			      (* The Java verifier doesn't expect the stack to be
 			       empty on athrow.
 			       Nevertheless, JVM cleans the stack when exceptions
 			       are handled, so we have to ensure an empty stack
 			       when throwing exceptions. *)
-			      | Athrow => LabelMerge.leaveMethod (sizeAfter, is)
 			      | Catch (_, try, to, catch) =>
 				    (LabelMerge.checkSizeAt (catch, 1);
 				     sizeAfter)
 			      | Goto label =>
 				    (LabelMerge.checkSizeAt (label, sizeAfter);
 				     LabelMerge.leave (is, sizeAfter))
-			      | Ifacmpeq label => LabelMerge.checkSizeAt (label, sizeAfter)
-			      | Ifacmpne label => LabelMerge.checkSizeAt (label, sizeAfter)
-			      | Ifeq label => LabelMerge.checkSizeAt (label, sizeAfter)
-			      | Ificmpeq label => LabelMerge.checkSizeAt (label, sizeAfter)
-			      | Ificmplt label => LabelMerge.checkSizeAt (label, sizeAfter)
-			      | Ificmpne label => LabelMerge.checkSizeAt (label, sizeAfter)
-			      | Ifne label => LabelMerge.checkSizeAt (label, sizeAfter)
-			      | Ifnull label => LabelMerge.checkSizeAt (label, sizeAfter)
-			      | Ireturn => LabelMerge.leaveMethod (sizeAfter, is)
+			      | (Ifacmpeq label | Ifacmpne label | Ifeq label
+				  | Ificmpeq label | Ificmple label | Ificmpge label
+				  | Ificmpgt label | Ificmplt label | Ificmpne label
+				  | Ifne label | Ifnull label) =>
+				    LabelMerge.checkSizeAt (label, sizeAfter)
 			      | Label label =>
 				    (lastLabel := label;
 				     LabelMerge.checkSizeAt (label, sizeAfter))
-			      | Lookupswitch ((_, labs), label) =>
-				    foldr
-				    LabelMerge.checkSizeAt
-				    sizeAfter
-				    (label::labs)
-			      | Return => LabelMerge.leaveMethod (sizeAfter, is)
-			      | Tableswitch (_, labs, label) =>
+			      | (Lookupswitch ((_, labs), label)
+				  | Tableswitch (_, labs, label)) =>
 				    foldr
 				    LabelMerge.checkSizeAt
 				    sizeAfter

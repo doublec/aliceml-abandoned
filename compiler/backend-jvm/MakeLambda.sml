@@ -257,7 +257,7 @@ functor MakeLambda(structure StampSet:IMP_SET
 		  | NONE => NormalApply p
 	    end
 
-	fun buildRecApply lambda =
+	fun buildRecApply (lambda, fin) =
 	    Method ([MPublic],
 		    "recApply",
 		    ([Classsig IVal, Classsig IVal,
@@ -270,7 +270,7 @@ functor MakeLambda(structure StampSet:IMP_SET
 						 ([Classsig CObject], [Voidsig])),
 				  Aload thisStamp,
 				  Areturn]
-		       | SOME v => v))
+		       | SOME v => Multi v :: fin))
 	    before (StampHash.delete (recApply, lambda))
 
 	fun showRecApplies () =

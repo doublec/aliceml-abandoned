@@ -62,6 +62,9 @@ structure JVMInst =
 	  | Ifacmpne of label
 	  | Ifeq  of label
 	  | Ificmpeq of label
+	  | Ificmpge of label
+	  | Ificmpgt of label
+	  | Ificmple of label
 	  | Ificmplt of label
 	  | Ificmpne of label
 	  | Ifne of label

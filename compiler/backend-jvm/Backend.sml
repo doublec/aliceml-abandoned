@@ -409,24 +409,75 @@ structure Backend=
 
 	structure PrimCode =
 	    struct
-		fun code name = if !OPTIMIZE >=4 then
-		    (case name of
-			 "Int.+" => ([Iadd], [IntType, IntType], IntType)
-		       | "Int.-" => ([Isub], [IntType, IntType], IntType)
-		       | "Int.<" =>
-			     let
-				 val weida = Label.new ()
-				 val tr = Label.new ()
-			     in
-				 ([Ificmplt tr,
-				   Getstatic BFalse,
-				   Goto weida,
-				   Label tr,
-				   Getstatic BTrue,
-				   Label weida],
-				  [IntType, IntType], BoolType)
-			     end
-		       | _ => (nil, [UType], UType))
-				else (nil, [UType], UType)
+		fun code (name, ids, stampcodes, parmcode) =
+		    let
+			val label1 = Label.new()
+			val label2 = Label.new()
+
+			fun compare iftrue =
+			    [iftrue,
+			     Getstatic BFalse,
+			     Goto label2,
+			     Label label1,
+			     Getstatic BTrue,
+			     Label label2]
+
+			val (primcode, pty, rty) =
+			    if !OPTIMIZE >=4 then
+				(case name of
+				     "Int.+" => ([Iadd], [IntType, IntType], IntType)
+				   | "print" =>
+					 ([Getstatic FOut,
+					   Multi parmcode,
+					   Invokevirtual MPrint,
+					   Getstatic BUnit],
+					  [UType], UType)
+				   | "Int.-" => ([Isub], [IntType, IntType], IntType)
+				   | "Int.<" => (compare (Ificmplt label1), [IntType, IntType], BoolType)
+				   | "Int.<=" => (compare (Ificmple label1), [IntType, IntType], BoolType)
+				   | "Int.=" => (compare (Ificmpeq label1), [IntType, IntType], BoolType)
+				   | "Int.>=" => (compare (Ificmpge label1), [IntType, IntType], BoolType)
+				   | "Int.>" => (compare (Ificmpgt label1), [IntType, IntType], BoolType)
+				   | _ => (nil, [UType], UType))
+			    else (nil, [UType], UType)
+
+			fun tyLoadParms (Id (_, stamp'', _)::ids'', stampcode''::stampcodes'', ty''::tys'') =
+			    (case (ty'', ConstProp.get stamp'') of
+				 (IntType, SOME (LitExp (_, IntLit l))) => atCodeInt l
+			       | _ => let
+					  val good = Label.new ()
+					  val handle' = Label.new ()
+				      in
+					  Multi [Catch ("java/lang/ClassCastException", good,
+							handle', Label.matchlabel),
+						 stampcode'',
+						 Dup,
+						 Instanceof ITransient,
+						 Ifeq good,
+						 Checkcast ITransient,
+						 Invokevirtual MRequest,
+						 Label good,
+						 Checkcast CInt,
+						 Getfield (CInt^"/value", [Intsig]),
+						 Label handle']
+				      end) ::
+				 tyLoadParms(ids'', stampcodes'', tys'')
+			  | tyLoadParms (_, _, _) = nil
+
+		    in
+			case primcode of
+			    nil => nil
+			  | _ => ((case rty of
+				       IntType => Multi [New CInt,
+							 Dup]
+				     | BoolType => Nop
+				     | UType => Nop) ::
+				  Multi (tyLoadParms (ids, stampcodes, pty)) ::
+				  Multi primcode ::
+				  (case rty of
+				       IntType => [Invokespecial (CInt, "<init>", ([Intsig], [Voidsig]))]
+				     | BoolType => nil
+				     | UType => nil))
+		    end
 	    end
     end

@@ -1115,42 +1115,26 @@ structure CodeGen =
 	    Comment "RecArgs" ::
 	    createRecord (NONE, stringids, init, curFun, curCls)
 	and
+	    ids2stampcode (Id (_, stamp', _)::ids', curFun, curCls) =
+	    stampCode(stamp', curFun, curCls)::ids2stampcode (ids', curFun, curCls)
+	    | ids2stampcode (nil, _, _) = nil
+	and
 	    invokeRecApply (stamp', args, curFun, tailCallPos, curCls, defaultApply) =
 	    let
-		val (primcode, tys, retty) = case ConstProp.get stamp' of
-		    SOME (PrimExp (_, name)) => PrimCode.code name
-		  | _ => (nil, [UType], UType)
-
 		val fnstamp = Lambda.getLambda stamp'
 		val (parms, ids) =
 		    case args of
 			TupArgs a => (length a, a)
 		      | _ => (1, nil)
 
+		val prim = case ConstProp.get stamp' of
+		    SOME (PrimExp (_, name)) =>
+			PrimCode.code (name, ids, ids2stampcode (ids, curFun, curCls),
+				       idArgCode (args, curFun, curCls, nil))
+		  | _ => nil
+
 		fun nullLoad (0, akku) = akku
 		  | nullLoad (n, akku) = nullLoad (n-1, Aconst_null::akku)
-
-		fun tyLoadParms (Id (_, stamp'', _)::ids'', ty''::tys'') =
-		    (case (ty'', ConstProp.get stamp'') of
-			 (IntType, SOME (LitExp (_, IntLit l))) => atCodeInt l
-		       | _ => let
-				  val good = Label.new ()
-				  val handle' = Label.new ()
-			      in
-				  Multi [stampCode (stamp'', curFun, curCls),
-					 Dup,
-					 Instanceof ITransient,
-					 Ifeq good,
-					 Checkcast ITransient,
-					 Invokevirtual MRequest,
-					 Label good,
-					 Checkcast CInt,
-					 Getfield (CInt^"/value", [Intsig]),
-					 Label handle',
-					 Catch ("java/lang/ClassCastException", good, handle', Label.matchlabel)]
-			      end) ::
-			 tyLoadParms(ids'', tys'')
-		  | tyLoadParms (_, _) = nil
 
 		fun loadparms (p, ending)=
 		    Comment ("p = "^Int.toString p^"; parms = "^Int.toString parms) ::
@@ -1179,7 +1163,7 @@ structure CodeGen =
 			end
 
 		val code' =
-		    (case primcode of
+		    (case prim of
 			 nil => (case Lambda.invokeRecApply (fnstamp, parms) of
 				     InvokeRecApply (p, destStamp, pos', label') =>
 					 let
@@ -1214,17 +1198,7 @@ structure CodeGen =
 					     Comment "NormalApply" ::
 					     loadparms (p', [Invokeinterface (mApply p')])
 					 end)
-		       | _ => (case retty of
-				   IntType => Multi [New CInt,
-						     Dup]
-				 | BoolType => Nop
-				 | UType => Nop) ::
-			     Multi (tyLoadParms (ids, tys)) ::
-			     Multi primcode ::
-			     (case retty of
-				  IntType => [Invokespecial (CInt, "<init>", ([Intsig], [Voidsig]))]
-				| BoolType => nil
-				| UType => nil))
+		       | primcode => primcode)
 	    in
 		Comment ("invokeRecApply: "^Stamp.toString fnstamp^":"^Int.toString parms^" in "^Stamp.toString fnstamp) ::
 		code'
@@ -1325,15 +1299,15 @@ structure CodeGen =
 		    case stampop of
 			NONE => (getParms, [])
 		      | SOME stamp' => (nullLoad arity,
-					[Astore stamp',
+					[Checkcast IConVal,
+					 Dup,
+					 Astore stamp',
 					 Multi getParms,
 					 Invokeinterface (mSetContent arity)])
 	    in
 		idCode (id'', curFun, curCls) ::
 		Multi loadparms ::
 		Invokeinterface (mApply arity) ::
-		Checkcast IConVal ::
-		Dup ::
 		fill
 	    end
 	and
@@ -1368,16 +1342,12 @@ structure CodeGen =
 			    (List.rev ids)
 			     else createTuple (NONE, ids, init, curFun, curCls)
 		in
-		    (case name of
-			 "print" =>
-			     Line line ::
-			     Getstatic FOut ::
-			     parmcode
-			     [Invokevirtual MPrint,
-			      Getstatic BUnit]
-		       | _ => Multi (expCode (PrimExp ((pos', name)), curFun, curCls)) ::
-			     parmcode
-			     [Invokeinterface (mApply n)])
+		    case PrimCode.code (name, ids, ids2stampcode (ids, curFun, curCls),
+				       createTuple (NONE, ids, nil, curFun, curCls)) of
+			nil => Multi (expCode (PrimExp (pos', name), curFun, curCls)) ::
+			    parmcode
+			    [Invokeinterface (mApply n)]
+		      | primcode => primcode
 		end
 
 	  | expCode (PrimExp (((line,_),_), name), _, curCls) =
@@ -1612,6 +1582,17 @@ structure CodeGen =
 		    Aload s' ::
 		    parmLoad rest
 
+		val addmatchlabel =
+		    [Comment "Label.matchlabel",
+		     Label Label.matchlabel,
+		     Pop,
+		     New CExWrap,
+		     Dup,
+		     Getstatic BMatch,
+		     Invokespecial(CExWrap,"<init>",
+				   ([Classsig IVal],[Voidsig])),
+		     Athrow]
+
 		fun makeApplyMethod (parms, insts) =
 		    let
 			val ta = if parms = 1
@@ -1636,14 +1617,7 @@ structure CodeGen =
 				applyName parms,
 				(valList parms, [Classsig IVal]),
 				Multi body' ::
-				[Label Label.matchlabel,
-				 Pop,
-				 New CExWrap,
-				 Dup,
-				 Getstatic BMatch,
-				 Invokespecial(CExWrap,"<init>",
-					       ([Classsig IVal],[Voidsig])),
-				 Athrow])
+				addmatchlabel)
 		    end
 
 		(* normal apply methods *)
@@ -1653,7 +1627,7 @@ structure CodeGen =
 		     makeApplyMethod (2, ap2),
 		     makeApplyMethod (3, ap3),
 		     makeApplyMethod (4, ap4),
-		     Lambda.buildRecApply curFun)
+		     Lambda.buildRecApply (curFun, addmatchlabel))
 
 		(* default constructor *)
 		val init = Method ([MPublic],"<init>",([], [Voidsig]),
