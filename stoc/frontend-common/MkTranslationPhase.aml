@@ -256,7 +256,10 @@ UNFINISHED: obsolete after bootstrapping:
       | trPat(I.LitPat(i,l))		= O.LitPat(i, trLit l)
       | trPat(I.VarPat(i,x))		= O.VarPat(i, trId x)
       | trPat(I.TagPat(i,a,k))		= O.TagPat(i, trLab a, k>1)
-      | trPat(I.ConPat(i,y,k))		= O.ConPat(i, trLongid y, k>1)
+      | trPat(I.ConPat(i,y,k))		= if isTagType(#typ i) then
+					      O.TagPat(i, trLabLongid y, k>1)
+					  else
+					      O.ConPat(i, trLongid y, k>1)
       | trPat(I.RefPat(i))		= O.RefPat(i)
       | trPat(I.TupPat(i,ps))		= O.TupPat(i, trPats ps)
       | trPat(I.ProdPat(i,r))		= O.RowPat(i, trPatRow r)
