@@ -78,11 +78,16 @@ signature SEARCH =
     sig
 	type 'a order = 'a * 'a -> unit
 
+	datatype 'a bound_solution =
+	    BOUND_NONE
+	  | BOUND_SOME of 'a
+	  | BOUND_CUT
+
 	val searchOne : (unit -> 'a) -> 'a option
 	val searchOneDepth : (unit -> 'a) * int -> 'a option
 	val searchOneDepthS : (unit -> 'a) * int -> 'a Space.space option
-	val searchOneBound : (unit -> 'a) * int * int -> 'a option
-	val searchOneBoundS : (unit -> 'a) * int * int -> 'a Space.space option
+	val searchOneBound : (unit -> 'a) * int * int -> 'a bound_solution
+	val searchOneBoundS : (unit -> 'a) * int * int -> 'a Space.space bound_solution
 	val searchOneIter : (unit -> 'a) * int -> 'a option
 	val searchOneIterS : (unit -> 'a) * int -> 'a Space.space option
 	val searchOneLDS : (unit -> 'a) * int -> 'a option
@@ -150,9 +155,9 @@ signature SEARCH =
       </P>
       <P>If there is no solution in a depth less than or equal
          to <I>bound</I>, but there might be solutions deeper in the tree,
-         <TT>CUT</TT> is returned.
+         <TT>BOUND_CUT</TT> is returned.
          In case the entire search tree has a depth less than
-         <I>bound</I> and no solution exists, <I>NONE</I> is returned.
+         <I>bound</I> and no solution exists, <I>BOUND_NONE</I> is returned.
       </P>
     </DD>
 
