@@ -23,6 +23,8 @@
     <LI><A href="#fundamental">the fundamental library</A>
     <LI><A href="#system">the system library</A>
     <LI><A href="#utility">utilities library</A>
+    <LI><A href="#inspector">inspector tool</A>
+    <LI><A href="#gui">graphical user interface library</A>
   </UL>
 
   <P>
@@ -246,12 +248,20 @@
     </LI>
   </UL>
 
-<?php section("inspector", "Inspector") ?>
+<?php section("inspector", "inspector") ?>
 
   <P>
-    Access to the Inspector is provided through the structure <TT>Inspector</TT>
-    which resides in the lib namespace:
+    The <I>Alice Inspector</I> is a tool that allows to interactively
+    display and inspect Alice data structures.  Access to the Inspector
+    is provided through the following structure:
   </P>
+
+  <UL>
+    <LI>
+      <TT>structure Inspector
+      <BR>from "x-alice:/lib/Inspector"</TT>
+    </LI>
+  </UL>
 
   <PRE>
 	structure Inspector:
@@ -259,13 +269,13 @@
 		val inspect : 'a -> unit
 		val inspectN : int * 'a -> unit
 		val configure : 'a -> unit
-	    end
-  </PRE>
+	    end</PRE>
 
-<?php section("gtk", "GTK-toolkit") ?>
+<?php section("gui", "gui") ?>
 
   <P>
-    The gtk namespace provides the GTK-toolkit:
+    A graphical user interface library, built on the GTK Toolkit, is
+    available via the following components:
   </P>
 
   <UL>
@@ -282,10 +292,12 @@
   </UL>
 
   <P>
-    Both modules contain almost the full set of functions originally provided by the toolkit.
-    All function names have been converted to a SML-like naming scheme, that is,
-    <TT>gtk_foo_bar</TT> becomes <TT>GTK.fooBar</TT> and <TT>gdk_foo_baz</TT> becomes
-    <TT>GDK.fooBaz</TT>, respectively.     
+    Both modules contain almost the full set of functions originally
+    provided by the toolkit.  The functions are available under names
+    following the so-called "camel casing" scheme, with the library
+    prefix removed, i.e., <TT>gtk_foo_bar</TT> would be available as
+    <TT>GTK.fooBar</TT> and <TT>gdk_foo_baz</TT> as <TT>GDK.fooBaz</TT>,
+    respectively.
   </P>
 
 <?php footing() ?>
