@@ -340,12 +340,13 @@ structure ToJasmin =
 			 else false
 		    end
 
-		(* How often is a register defined? Most registers are defined only once.
-		 However, there are a few ones which are defined twice. Those must
-		 not be fused on aload/atore. *)
+		(* How often is a register written to? Most registers are written only
+		 once. However, there are a few ones which are written twice. Those must
+		 not be fused on aload/atore sequences. *)
 		fun countDefine reg =
+		    (print ("Accessing reg "^Int.toString reg^"\n");
 		    Array.update (!defines, reg,
-				  Array.sub(!defines, reg)+1)
+				  Array.sub(!defines, reg)+1))
 	    end
 
 	fun optimize (insts, registers, parms) =
@@ -990,6 +991,7 @@ structure ToJasmin =
 			     nil => ()
 			   | _ =>
 				 (LabelMerge.new();
+				  print ("Perslocs: "^Int.toString perslocs^"\n");
 				  JVMreg.new perslocs;
 				  TextIO.output(io,".method "^
 						(mAccessToString access)^

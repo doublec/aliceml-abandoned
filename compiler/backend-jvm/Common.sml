@@ -116,13 +116,7 @@ structure Common=
 	  | RecApply of int * stamp * int
 
 	 (* generate names for apply methods. *)
-	fun applyName (isstatic, 1) =
-	    if isstatic then "sapply" else "apply"
-	  | applyName (isstatic, parms) =
-		let
-		    val p = if parms <=4 then parms else 1
-		in
-		    if isstatic then "sapply"^Int.toString p
-		    else "apply"^Int.toString p
-		end
+	fun applyName 1 = "apply"
+	  | applyName parms =
+	    "apply"^Int.toString (if parms <=4 then parms else 1)
     end

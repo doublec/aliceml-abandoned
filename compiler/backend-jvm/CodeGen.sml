@@ -230,7 +230,7 @@ structure CodeGen =
 
 		 val decs = decListCode program
 		 val run = Method([MPublic], "run", ([], [Voidsig]),
-				  Locals (Register.max()+1),
+				  Locals (Register.max()+3001),
 				  Multi decs ::
 				  (if !VERBOSE >= 1 then
 				       Multi [Getstatic ("java/lang/System/out",
@@ -498,7 +498,7 @@ structure CodeGen =
 			    akku
 			end
 		in
-		    val initcode = List.foldr init nil idexps
+		    val initcode = List.foldr init nil (List.rev idexps)
 		end
 
 		(* 2nd step *)
@@ -976,6 +976,7 @@ structure CodeGen =
 		    Multi (testCode test') ::
 		    Multi
 		    (decListCode body') ::
+		    Comment "Test: Goto danach" ::
 		    Goto danach ::
 		    Label ilselabel ::
 		    Pop ::
@@ -1002,15 +1003,37 @@ structure CodeGen =
 			decListCode body'
 		    end
 	    else
-		 [Goto schonda]
+		[Comment "Goto Shared",
+		 Goto schonda]
 
 	  | decCode (ReturnStm (_,ap as AppExp(_,id' as (Id (_,stamp',_)),arg'))) =
 		(* tailcall applikation *)
 		if Lambda.isSelfCall stamp' then
-		    idArgCode
-		     (arg',
-		      [Astore 1,
-		       Goto alpha])
+		    (case arg' of
+			 TupArgs ta =>
+			     let
+				 val tal = length ta
+			     in
+				 if tal <=4 then
+				     let
+					 fun prepTupApply (id'::rest, reg) =
+					     idCode id' ::
+					     Astore reg ::
+					     prepTupApply (rest, reg+1)
+					   | prepTupApply (nil,_) = nil
+				     in
+					 Multi (prepTupApply (ta,1)) ::
+					 [Goto alpha]
+				     end
+				 else idArgCode (arg',
+						 [Astore 1,
+						  Goto alpha])
+			     end
+		       | _ =>
+			     idArgCode
+			     (arg',
+			      [Astore 1,
+			       Goto alpha]))
 		else
 		    normalReturn
 		    [Multi (expCode ap),
@@ -1256,14 +1279,10 @@ structure CodeGen =
 	    createRecord (stringids, init)
 
 	and
-	    invoke (isstatic, stamp', count) =
-	    if isstatic then
-		Invokestatic (classNameFromStamp (Lambda.getLambda stamp'),
-				  applyName (true, count), (valList count, [Classsig CVal]))
-		else
-		    Invokeinterface (CVal,
-				     applyName (false, count),
-				     (valList count, [Classsig CVal]))
+	    invoke (stamp', count) =
+	    Invokeinterface (CVal,
+			     applyName count,
+			     (valList count, [Classsig CVal]))
 	and
 	    loadIds nil = nil
 	  | loadIds (id'::rest) =
@@ -1271,23 +1290,14 @@ structure CodeGen =
 
 	and
 	    normalAppExp (AppExp(_,id' as Id(_,stamp',_), ida'')) =
-	    [Ifstatic
-	     ((stamp', 1),
-	      idArgCode
-	      (ida'',
-	       [Invokestatic (classNameFromStamp
-			      (Lambda.getLambda stamp'),
-			      applyName (true, 1),
-			      ([Classsig CVal],
-			       [Classsig CVal]))]),
-	      stampCode stamp' ::
-	      idArgCode
-	      (ida'',
-	       [Invokeinterface
-		(CVal,
-		 applyName (false, 1),
-		 ([Classsig CVal],
-		  [Classsig CVal]))]))]
+	    stampCode stamp' ::
+	    idArgCode
+	    (ida'',
+	     [Invokeinterface
+	      (CVal,
+	       applyName 1,
+	       ([Classsig CVal],
+		[Classsig CVal]))])
 	    | normalAppExp _ = raise Mitch
 
 	and
@@ -1296,14 +1306,10 @@ structure CodeGen =
 		val l = length ids
 	    in
 		if l <> 1 andalso l <=4 then
-		    [Ifstatic
-		     ((stamp', l),
-		      [Multi (loadIds ids),
-		       invoke (true, stamp', l)],
-		      [stampCode stamp',
-		       Multi (loadIds ids),
-		       invoke (false, stamp', l)])]
-		    else normalAppExp a
+		    [stampCode stamp',
+		     Multi (loadIds ids),
+		     invoke (stamp', l)]
+		else normalAppExp a
 	    end
 	  | expCode (a as AppExp _) =
 	    normalAppExp a
@@ -1363,13 +1369,9 @@ structure CodeGen =
 		     in
 			 Lambda.push id';
 			 Lambda.pushFun illegalId;
-			 Label.push();
-			 Register.push();
 			 Class.push(className);
 			 expCodeClass lambda;
 			 Class.pop();
-			 Register.pop();
-			 Label.pop();
 			 Lambda.popFun ();
 			 Lambda.pop();
 			 object :: loadVars
@@ -1424,7 +1426,7 @@ structure CodeGen =
 			  idCode id' ::
 			  idArgCode
 			  (idargs,
-			   [Invokeinterface (CVal, applyName (false,1),
+			   [Invokeinterface (CVal, applyName 1,
 					    ([Classsig CVal],
 					     [Classsig CVal]))])
 	  | expCode (RefAppExp (_, idargs)) =
@@ -1487,21 +1489,25 @@ structure CodeGen =
 				   parm, a0, a2, a3, a4, ra) =
 		    let
 			val l = length ids
-			val b'' = if l = 0 orelse (l>=2 andalso l<=4) then
-			    decListCode body'' else nil
+			val (b'',r'') = if l = 0 orelse (l>=2 andalso l<=4)
+				      then
+					  (Register.push();
+					   Label.push();
+					   Register.assignParms (ids,1);
+					   (decListCode body'', Register.save()) before
+					   (Register.pop();
+					    Label.pop()))
+				  else (nil, Register.save())
 		    in
 			case l of
 			    0 => createApplies
-				(rest, parm, b'', a2, a3, a4, ra)
-			  | 2 => (Register.assignParms (ids,1);
-				  createApplies
-				  (rest, parm, a0, b'', a3, a4, ra))
-			  | 3 => (Register.assignParms (ids,1);
-				  createApplies
-				  (rest, parm, a0, a2, b'', a4, ra))
-			  | 4 => (Register.assignParms (ids,1);
-				  createApplies
-				  (rest, parm, a0, a2, a3, b'', ra))
+				(rest, parm, (b'',r''), a2, a3, a4, ra)
+			  | 2 => createApplies
+				  (rest, parm, a0, (b'',r''), a3, a4, ra)
+			  | 3 => createApplies
+				  (rest, parm, a0, a2, (b'',r''), a4, ra)
+			  | 4 => createApplies
+				  (rest, parm, a0, a2, a3, (b'',r''), ra)
 			  | _ => createApplies
 				(rest, parm, a0, a2, a3, a4,
 				 [TestStm (dummyCoord,
@@ -1510,17 +1516,26 @@ structure CodeGen =
 		    end
 		  | createApplies ((t as RecArgs labids, body'') :: rest,
 				   parm, a0, a2, a3, a4, ra) =
-		    createApplies (rest, parm, a0, a2, a3, a4,
-				   [TestStm (dummyCoord, Id (dummyPos, parm, InId),
-					     RecTest labids,
-					     body'', ra)])
+		     createApplies (rest, parm, a0, a2, a3, a4,
+				    [TestStm (dummyCoord, Id (dummyPos, parm, InId),
+					      RecTest labids,
+					      body'', ra)])
 		  | createApplies (nil, parm, a0, a2, a3, a4, ra) =
-		    (a0, a2, a3, a4, decListCode ra)
+		     (Register.push();
+		      Label.push();
+		      (a0, a2, a3, a4, (decListCode ra,Register.save())) before
+		      (Register.pop();
+		       Label.pop()))
 		  | createApplies (_, _, _, _, _, _, _) = raise Mitch
 
-		val (ap0, ap2, ap3, ap4, ad) =
-		    createApplies (List.rev specialApplies, stampFromId id',
-				   nil, nil, nil, nil, body')
+		val ((ap0,rg0), (ap2,rg2), (ap3,rg3), (ap4,rg4), (ad,rgd)) =
+		    let
+			val rs = Register.save()
+		    in
+			createApplies (List.rev specialApplies, stampFromId id',
+				       (nil,rs), (nil,rs),
+				       (nil,rs), (nil,rs), body')
+		    end
 
 		fun buildSpecialApply (count, spec, id'') =
 		    case spec of
@@ -1543,30 +1558,21 @@ structure CodeGen =
 				 (idCode id'' ::
 				  Instanceof tupNo ::
 				  Ifeq elselabel ::
-				  Ifstatic ((stampFromId id'',count),
-					    [Nop],
-					    [Aload 0]) ::
+				  Aload 0 ::
 				  idCode id'' ::
 				  Checkcast tupNo ::
 				  Dup ::
 				  Astore r ::
 				  Multi (gets (0, count-1)) ::
-				  Ifstatic
-				  ((stampFromId id'', count),
-				   [Invokestatic
-				    (classNameFromId id'',
-				     applyName (true, count),
-				     ([Classsig CVal, Classsig CVal],
-				      [Classsig CVal]))],
-				   [Invokeinterface
-				    (CVal,
-				     applyName (false, count),
-				     ([Classsig CVal, Classsig CVal],
-				      [Classsig CVal]))]) ::
+				  Invokeinterface
+				  (CVal,
+				   applyName count,
+				   ([Classsig CVal, Classsig CVal],
+				    [Classsig CVal])) ::
 				  normalReturn
 				  [Areturn,
 				   Label elselabel])
-			  end
+			     end
 
 		val defaultApply =
 		    (case ap0 of
@@ -1622,74 +1628,48 @@ structure CodeGen =
 
 		(* Now generate the code for the main apply function *)
 		val ap =
-		    (Label alpha ::
-		     Multi
-		     (addDebugInfo defaultApply) ::
-		     normalReturn
-		     [Areturn])
+		    Multi
+		    (addDebugInfo defaultApply) ::
+		    normalReturn
+		    [Areturn]
 
 		fun parmLoad (0, akku) = akku
 		  | parmLoad (n, akku) = parmLoad (n-1, Aload n :: akku)
 
-		fun makeApplyMethod (isSapply, parms, insts) =
+		fun makeApplyMethod (parms, insts, regstate) =
 		    let
+			val _ = Register.restore regstate
 			val ta = TupArgs (Vector.sub (parmIds, parms))
 			val stamp' = stampFromId id'
+			val destStamp = Lambda.getClassStamp (stamp', parms)
 		    in
-			Method (MPublic :: (if isSapply then [MStatic] else nil),
-				applyName (isSapply, parms),
-				(valList parms, [Classsig CVal]),
-				Locals (Register.max() +parms),
-				if Lambda.sapplyPossible parms andalso (not isSapply) then
-				    parmLoad
-				    (parms,
-				     Invokestatic (className,
-						   applyName (true, parms),
-						   (valList parms,
-						    [Classsig CVal])) ::
-				     normalReturn [Areturn])
-				else
-				    if not (Lambda.sapplyPossible parms) andalso isSapply then
-					nil
-				    else
-					(case insts of
-					     nil =>
-						 Multi
-						 (if Lambda.sapplyPossible 1 then
-						      idArgCode
-						      (ta,
-						       [Invokestatic
-							(classNameFromStamp stamp',
-							 applyName (true, 1),
-							 ([Classsig CVal],
-							  [Classsig CVal]))])
-						  else
-						      stampCode thisStamp ::
-						      idArgCode
-						      (ta,
-						       [Invokevirtual
-							(classNameFromStamp stamp',
-							 applyName (false, 1),
-							 ([Classsig CVal],
-							  [Classsig CVal]))])) ::
-						      normalReturn [Areturn]
-					   | _ => insts))
+			(*if  destStamp = stamp' then*)
+			    Method ([MPublic],
+				    applyName parms,
+				    (valList parms, [Classsig CVal]),
+				    Locals (Register.max()+1001),
+				    case insts of
+					nil =>
+					    stampCode thisStamp ::
+					    idArgCode
+					    (ta,
+					     Invokevirtual
+					     (classNameFromStamp stamp',
+					      applyName 1,
+					      ([Classsig CVal],
+					       [Classsig CVal])) ::
+					     normalReturn [Areturn])
+				      | _ => Label alpha :: insts)
+			(*else Lambda.addToRecApply ( *)
 		    end
 
 		(* normal apply methods *)
 		val (applY, apply0, apply2, apply3, apply4) =
-		    (makeApplyMethod (false,1,ap),
-		     makeApplyMethod (false,0,ap0),
-		     makeApplyMethod (false,2,ap2),
-		     makeApplyMethod (false,3,ap3),
-		     makeApplyMethod (false,4,ap4))
-
-		(* static apply methods. *)
-		val sapplY = makeApplyMethod (true,1,ap)
-		val sapply0 = makeApplyMethod (true,0,ap0)
-		val sapply2 = makeApplyMethod (true,2,ap2)
-		val sapply3 = makeApplyMethod (true,3,ap3)
-		val sapply4 = makeApplyMethod (true,4,ap4)
+		    (makeApplyMethod (1,ap, rgd),
+		     makeApplyMethod (0,ap0, rg0),
+		     makeApplyMethod (2,ap2, rg2),
+		     makeApplyMethod (3,ap3, rg3),
+		     makeApplyMethod (4,ap4, rg4))
 
 		(* standard constructor *)
 		val init = Method ([MPublic],"<init>",([], [Voidsig]), Locals 1,
@@ -1704,8 +1684,7 @@ structure CodeGen =
 				  CFcnClosure,
 				  nil,
 				  fieldscode,
-				  [init, applY, apply0, apply2, apply3, apply4,
-				   sapplY, sapply0, sapply2, sapply3, sapply4])
+				  [init, applY, apply0, apply2, apply3, apply4])
 	    in
 		classToJasmin (class)
 	    end

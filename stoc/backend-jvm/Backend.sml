@@ -124,6 +124,13 @@ structure Backend=
 						  register := regs)
 			  | nil => Crash.crash "empty locals stack"
 
+		    (* save a former state *)
+		    fun save () = (!localscount, !register)
+
+		    (* restore a former state *)
+		    fun restore (n, rg) = (localscount := n;
+					 register:=rg)
+
 		    (* return the number of the highest register in use *)
 		    fun max () = !localscount
 

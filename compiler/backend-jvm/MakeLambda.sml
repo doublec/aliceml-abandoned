@@ -186,7 +186,7 @@ functor MakeLambda(structure StampSet:IMP_SET
 	(* Return the class in which apply is defined. Note that this is
 	 not necessarily the class that corresponds to the stamp as crosswise
 	 recursive functions are merged in one single apply *)
-	fun getClass (stampint as (stamp', _)) =
+	fun getClassStamp (stampint as (stamp', _)) =
 	    case StampIntHash.lookup (recApplies, stampint) of
 		SOME (stamp'', _) => stamp''
 	      | NONE => stamp'
@@ -202,8 +202,8 @@ functor MakeLambda(structure StampSet:IMP_SET
 			      RecApply (1, stamp'', pos)
 			| NONE =>
 			      (if StampIntSet.member (normalApplies, sp) then
-				   Apply (applyName (false, parms), parms)
-			       else Apply (applyName (false, 1), 1))))
+				   Apply (applyName parms, parms)
+			       else Apply (applyName 1, 1))))
 
 	local
 	    val actual = ref illegalStamp
