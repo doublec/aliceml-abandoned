@@ -156,7 +156,7 @@ struct
 	    let val (p',l,n) = Path.asDot p
 	    in explodePath'(p', [], sigidFromLabel l) end
 	else
-	    raise Crash.Crash "BindEnvFromSig.explodePath"
+	    (p, [], sigidFromLabel(Path.toLab p))
     and explodePath'(p, strids, sigid) =
 	if Path.isDot p then
 	    let val (p',l,n) = Path.asDot p
@@ -184,7 +184,7 @@ struct
 		ABSTR(z,strids,sigid,[])
 	    end
 	else if Inf.isSig j then
-	    PLAIN(envFromSig'(I, pm, Inf.asSig j))
+	    PLAIN(envFromSig'(I, pm, Stamp.new(), Inf.asSig j))
 	else if Inf.isArrow j then
 	    let
 		val (p,j1,j2) = Inf.asArrow j
@@ -212,17 +212,17 @@ struct
 	else
 	    raise Crash.Crash "BindEnvFromSig.envFromInf: unknown interface"
 
-    and envFromSig (I,s)    = envFromSig'(I, PathMap.new(), s)
-    and envFromSig'(I,pm,s) =
+    and envFromSig (I,s)    = envFromSig'(I, PathMap.new(), Stamp.new(), s)
+    and envFromSig'(I,pm,z,s) =
 	let
 	    val E = new()
 	in
 	    insertSelf E;
-	    List.app (insertItem(E,I,pm,s)) (Inf.items s);
+	    List.app (insertItem(E,I,pm,z,s)) (Inf.items s);
 	    E
 	end
 
-    and insertItem (E,I,pm,s) item =
+    and insertItem (E,I,pm,z,s) item =
 	if Inf.isFixItem item then
 	    let
 		val (l,f) = Inf.asFixItem item
@@ -274,9 +274,11 @@ struct
 	else if Inf.isInfItem item then
 	    let
 		val (l,k,jo) = Inf.asInfItem item
+		val  p       = Inf.pathInf(s,l)
 		val  F       = envfnFromInf'(I, pm, Inf.lookupInf(s,l))
 		val  x       = Stamp.new()
 	    in
+		PathMap.insert(pm,p,z);
 		insertSig(E, sigidFromLabel l, (I,x,F))
 	    end
 	else
