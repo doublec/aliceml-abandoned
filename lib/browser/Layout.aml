@@ -21,6 +21,7 @@ import structure MainDictionary from "MainDictionary"
 import structure Dictionaries from "Dictionaries"
 import structure WindowHelper from "WindowHelper"
 import structure Settings from "Settings"
+import structure Services from "Services"
 import signature LAYOUT from "LAYOUT-sig"
 
 open Types Helper
@@ -146,19 +147,12 @@ struct
        else
 	   case MainDictionary.lookup(dict,i) of
 	       NONE => calcMaxXDim(dict,i+1)
-	     | SOME node => let
-				val x  =  get_xdim(node)
-				val x' =  calcMaxXDim(dict,i+1)
-			    in
-				if x > x' then x 
-				else x' 
-			    end
+	     | SOME node => Int.max( get_xdim(node),calcMaxXDim(dict,i+1)) 
+				
 
     fun setVisible (x,y) = let
-			       val w = WindowHelper.fontWidth
-				   (!Settings.font)
-			       val h = WindowHelper.fontHeight
-				   (!Settings.font)
+			       val w = Services.fontWidth()
+			       val h = Services.fontHeight()
 			       val rx =  Real.fromInt(w * x)
 			       val ry =  Real.fromInt(h * y)
 			   in

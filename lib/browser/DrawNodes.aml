@@ -40,8 +40,8 @@ struct
     	   
     fun groupToPosition (group,x,y) = 
 	    let
-		val w = WindowHelper.fontWidth(!Settings.font)
-		val h = WindowHelper.fontHeight(!Settings.font)
+		val w = Services.fontWidth()
+		val h = Services.fontHeight()
 		val (rx,ry) = (Real.fromInt(x* w),Real.fromInt(y*h))
 	    in
 		GtkCanvas.itemMove(group,rx,ry)
@@ -62,7 +62,7 @@ struct
 				    0.0,
 				    0.0,
 				    color,
-				    !Settings.font)
+				    !Settings.fontname)
 		 ;#status(r) := Types.CLEAN
 		 ;(x+String.length(#rep(r)),y))
 	    end )
@@ -82,7 +82,7 @@ struct
 				    0.0,
 				    0.0,
 				    color,
-				    !Settings.font)
+				    !Settings.fontname)
 		 ;#status(r) := Types.CLEAN     
 	         ;(x+1,y))
 	    end )
@@ -99,7 +99,7 @@ struct
 				      0.0,
 				      0.0,
 				      color,
-				      !Settings.font)
+				      !Settings.fontname)
 		   ;#status(r) := Types.CLEAN
 	           ;(x+String.length(#rep(r)),y))
 	      end )
@@ -117,7 +117,7 @@ struct
 					 0.0,
 					 0.0,
 					 color,
-					 !Settings.font)
+					 !Settings.fontname)
 		      ;#status(r) := Types.CLEAN
 	              ; (x+String.length(#rep(r)),y))
 	     end )
@@ -230,8 +230,7 @@ struct
 
     and move(n,x,y) = let
 			  val group = getGroup(n)
-			  val (old_x,old_y) = Services.getPosition(group,
-						       !Settings.font) 
+			  val (old_x,old_y) = Services.getPosition group  
 			  val dx = x-old_x
 			  val dy = y-old_y
 			  val _ = TextIO.print("Moving from x:"
@@ -248,7 +247,7 @@ struct
 					       ^ Int.toString(dy)
 					       ^ "\n")
 		      in
-		       ( Services.moveGroup(group,dx,dy,!Settings.font) 
+		       ( Services.moveGroup(group,dx,dy) 
 			   ; (x+get_xdim(n),y+get_ydim(n)-1))
 		      end
 

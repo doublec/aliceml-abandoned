@@ -13,6 +13,8 @@
  *
  *)
 
+import structure Gtk from "x-alice:/lib/gtk/Gtk"
+
 signature SETTINGS = 
 sig
 
@@ -23,6 +25,7 @@ sig
     val relmode: bool ref
     val relnumber: int ref
     val tokenmode: bool ref
-    val font: string ref
+    val fontname: string ref
+    val font: Gtk.object ref
 
 end

@@ -27,6 +27,7 @@ import structure NodeSearch from "NodeSearch"
 import structure DrawNodes from "DrawNodes"
 import structure Layout from "Layout"
 import structure Server from "Server"
+import structure Services from "Services"
 import structure Helper from "Helper" (* to be verified *)
 (* import structure Update from "Update" (* to be verified *)
 import structure NewNode from "NewNode" (* to be verified *) *)
@@ -323,8 +324,8 @@ struct
 
  fun handleEvent [Gdk.EVENT(event)] = serve (fn () =>
      let
-	 val font_width = fontWidth(!Settings.font)
-	 val font_height = fontHeight(!Settings.font)  
+	 val font_width = Services.fontWidth()
+	 val font_height = Services.fontHeight()  
      in
 	case event of
 	  Gdk.GDK_BUTTON_PRESS({button = 1, ...} as r) => 

@@ -12,6 +12,8 @@
  *   $Revision$
  *
  *)
+
+import structure Gdk from "x-alice:/lib/gtk/Gdk"
 import signature SETTINGS from "SETTINGS-sig"
 
 structure Settings :> SETTINGS = 
@@ -23,6 +25,7 @@ struct
     val relmode = ref false
     val relnumber = ref 0
     val tokenmode = ref false
-    val font = ref "8x13"
+    val fontname = ref "8x13"
+    val font = ref (Gdk.fontLoad(!fontname))
 
 end

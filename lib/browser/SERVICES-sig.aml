@@ -19,15 +19,17 @@ signature SERVICES =
     sig
 	type tag = Gtk.object
 	type color = Gtk.object
-	type font = string
 	
+	val fontWidth     : unit -> int
+        val fontHeight    : unit -> int
 	val newTag        : tag * real * real -> tag
 	val move          : tag * real * real -> unit   
-	val printXY       : string * tag * real * real * color * font -> tag
+	val printXY       : string * tag * real * real * color * string -> tag
 	val positionGroup : tag * real * real -> unit
-	val moveGroup     : tag * int * int * string -> unit
-	val getCoordinates: tag * font -> int * int * int * int 
-	val getPosition   : tag * font -> int * int
+	val moveGroup     : tag * int * int  -> unit
+	val getCoordinates: tag  -> int * int * int * int 
+	val getPosition   : tag  -> int * int
 	val itemMoveTo    : tag * real * real -> unit
+
 	    
     end 

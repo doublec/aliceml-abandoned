@@ -86,7 +86,7 @@ struct
 	      case MainDictionary.lookup(dict,i) of
 	      NONE => iterMove(dict,dy,i+1,highest_i)
             | SOME node 
-	      => ( Services.moveGroup(getGroup(node),0,dy,!Settings.font)
+	      => ( Services.moveGroup(getGroup(node),0,dy)
                  ; iterMove (dict,dy,i+1,highest_i) )
 	
     (* update *)
@@ -106,8 +106,7 @@ struct
 	       val _ = updateChild(getParent(n),getIndex(n),new)
               (*  val _ = TextIO.print("UPDATE: updateChild gemacht\n") *)
 	       val node = if getParent(new) = Empty then new else anc 
-	       val (x_pos,y_pos) = Services.getPosition(getGroup(node),
-							!Settings.font)
+	       val (x_pos,y_pos) = Services.getPosition(getGroup(node))
               (* val _ = TextIO.print("UPDATE: node zugewiesen\n") *)
 	   in ( Gtk.objectDestroy(getGroup(n)) 
               (* ; TextIO.print("UPDATE: alte Gruppe zerstoert\n") *)

@@ -37,8 +37,6 @@ struct
     fun inspect (v,t) = 
 	let 
 	    val n = NewNode.newNode(v,t)
-	    val w = WindowHelper.fontWidth(!Settings.font) (* !! *)
-	    val h = WindowHelper.fontHeight(!Settings.font)
 	in
 	    ( Layout.layout(n)
 	     ;  DrawNodes.draw(n,0,!WindowManager.act_line)
@@ -52,8 +50,6 @@ struct
     (* inspectInf *)
     and inspectInf (v,t) = 
 	let val n = NewNodeInf.newNodeInf(v,t)
-	    val w = WindowHelper.fontWidth(!Settings.font) (* !! *)
-	    val h = WindowHelper.fontHeight(!Settings.font)
 	in  ( Layout.layout(n)
 	     ;  DrawNodes.draw(n,0,!WindowManager.act_line)
 	     ; WindowManager.incr_act_line
