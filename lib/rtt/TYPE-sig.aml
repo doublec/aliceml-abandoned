@@ -142,6 +142,7 @@ signature TYPE =
 
   (* Unification and closure *)
 
+    exception Fill
     exception Unify of typ * typ
     exception Intersect
 
