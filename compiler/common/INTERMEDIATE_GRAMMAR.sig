@@ -31,6 +31,7 @@ UNFINISHED: obsolete after bootstrapping:
 
     datatype exp =
 	  LitExp    of info * lit
+	| PrimExp   of info * string
 	| VarExp    of info * longid
 	| ConExp    of info * longid * bool
 	| RefExp    of info
@@ -91,7 +92,6 @@ UNFINISHED: obsolete after bootstrapping:
 			 *     to an VarExp on the RHS then the RHS id may not
 			 *     be bound on the LHS *)
 	| ConDec    of info * id * bool (* has args *)
-	| PrimDec   of info * id * string
 	| RecDec    of info * dec list
 
     (* Programs *)

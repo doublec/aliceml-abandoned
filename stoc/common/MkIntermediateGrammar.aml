@@ -32,6 +32,7 @@ UNFINISHED: obsolete after bootstrapping:
 
     datatype exp =
 	  LitExp    of info * lit
+	| PrimExp   of info * string
 	| VarExp    of info * longid
 	| ConExp    of info * longid * bool
 	| RefExp    of info
@@ -92,7 +93,6 @@ UNFINISHED: obsolete after bootstrapping:
 			 *     to an VarExp on the RHS then the RHS id may not
 			 *     be bound on the LHS *)
 	| ConDec    of info * id * bool (* has args *)
-	| PrimDec   of info * id * string
 	| RecDec    of info * dec list
 
     (* Programs *)
@@ -108,6 +108,7 @@ UNFINISHED: obsolete after bootstrapping:
       | infoLongid(LongId(i,_,_))	= i
 
     fun infoExp(LitExp(i,_))		= i
+      | infoExp(PrimExp(i,_))		= i
       | infoExp(VarExp(i,_))		= i
       | infoExp(ConExp(i,_,_))		= i
       | infoExp(RefExp(i))		= i
@@ -147,7 +148,6 @@ UNFINISHED: obsolete after bootstrapping:
 
     fun infoDec(ValDec(i,_,_))		= i
       | infoDec(ConDec(i,_,_))		= i
-      | infoDec(PrimDec(i,_,_))		= i
       | infoDec(RecDec(i,_))		= i
 
   end

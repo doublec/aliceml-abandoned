@@ -1,7 +1,7 @@
 structure Prebound' :> PREBOUND' =
   struct
 
-    type name = Stamp.t
+    type stamp = Stamp.t
 
     val stamp_builtin = Stamp.new()
 
