@@ -295,10 +295,12 @@ structure OutputPickle :> OUTPUT_PICKLE =
 	     outputId (context, id); outputIdRef (context, idRef);
 	     outputInt (context, LargeInt.fromInt i);
 	     outputInstr (context, instr))
-	  | outputInstr (context, LazyPolySel (id, idRef, label, instr)) =
+	  | outputInstr (context, LazyPolySel (ids, idRef, labels, instr)) =
 	    (outputBlock (context, Label.lazyPolySel, 4);
-	     outputId (context, id); outputIdRef (context, idRef);
-	     outputLabel (context, label); outputInstr (context, instr))
+	     outputVector outputId (context, ids);
+	     outputIdRef (context, idRef);
+	     outputVector outputLabel (context, labels);
+	     outputInstr (context, instr))
 	  | outputInstr (context, Raise idRef) =
 	    (outputBlock (context, Label.raise_, 1);
 	     outputIdRef (context, idRef))

@@ -54,7 +54,7 @@ signature ABSTRACT_CODE_GRAMMAR =
 	  | GetRef of id * idRef * instr
 	  | GetTup of idDef vector * idRef * instr
 	  | Sel of id * idRef * int * instr
-	  | LazyPolySel of id * idRef * label * instr
+	  | LazyPolySel of id vector * idRef * label vector * instr
 	  | Raise of idRef
 	  | Reraise of idRef
 	  | Try of instr * idDef * idDef * instr

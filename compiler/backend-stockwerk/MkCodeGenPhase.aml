@@ -183,10 +183,10 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 	    if isId (idRef, id') then USED
 	    else detup' (detup (instr, id'),
 			 fn instr => O.Sel (id, idRef, i, instr))
-	  | detup (O.LazyPolySel (id, idRef, label, instr), id') =
+	  | detup (O.LazyPolySel (ids, idRef, labels, instr), id') =
 	    if isId (idRef, id') then USED
 	    else detup' (detup (instr, id'),
-			 fn instr => O.LazyPolySel (id, idRef, label, instr))
+			 fn instr => O.LazyPolySel (ids, idRef, labels, instr))
 	  | detup (O.Raise idRef, id) =
 	    if isId (idRef, id) then USED else KILLED
 	  | detup (O.Reraise idRef, id) =
@@ -230,6 +230,33 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 		 Vector.tabulate
 		     (n, fn i => #2 (Option.valOf (Array.sub (layout, i)))))
 	    end
+
+	fun mergeIdRefs (idRef as O.Local id, O.Local id') =
+	    if id = id' then SOME idRef else NONE
+	  | mergeIdRefs (idRef as O.LastUseLocal id,
+			 (O.Local id' | O.LastUseLocal id')) =
+	    if id = id' then SOME idRef else NONE
+	  | mergeIdRefs (O.Local id, idRef as O.LastUseLocal id') =
+	    if id = id' then SOME idRef else NONE
+	  | mergeIdRefs (idRef as O.Global id, O.Global id') =
+	    if id = id' then SOME idRef else NONE
+	  | mergeIdRefs (idRef as O.Toplevel id, O.Toplevel id') =
+	    if id = id' then SOME idRef else NONE
+	  | mergeIdRefs (_, _) = NONE
+
+	fun vecCons (x, xs) =
+	    Vector.tabulate (Vector.length xs + 1,
+			     fn 0 => x | i => Vector.sub (xs, i - 1))
+
+	fun lazyPolySel (id, idRef, label, instr as
+			 O.LazyPolySel (ids, idRef', labels, instr')) =
+	    (case mergeIdRefs (idRef, idRef') of
+		 SOME idRef =>
+		     O.LazyPolySel (vecCons (id, ids), idRef,
+				    vecCons (label, labels), instr')
+	       | NONE => O.LazyPolySel (#[id], idRef, #[label], instr))
+	  | lazyPolySel (id, idRef, label, instr) =
+	    O.LazyPolySel (#[id], idRef, #[label], instr)
 
 	fun translateBody ([stm], env) = translateStm (stm, env)
 	  | translateBody ((stm as ValDec (_, IdDef id, exp))::
@@ -513,8 +540,8 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 	  | translateExp (SelExp (_, _, _, i, idRef), id, instr, env) =
 	    O.Sel (id, translateIdRef (idRef, env), i, instr)
 	  | translateExp (LazyPolySelExp (_, label, idRef), id, instr, env) =
-	    O.LazyPolySel (id, translateIdRef (idRef, env),
-			   translateLabel label, instr)
+	    lazyPolySel (id, translateIdRef (idRef, env),
+			 translateLabel label, instr)
 	  | translateExp (FunAppExp (info, idRef, _, args), id, instr, env) =
 	    translateVarAppExp O.DirectAppVar (idRef, args, id, instr, env)
 	  | translateExp (FailExp info, id, instr, env) = (*--** implement *)
