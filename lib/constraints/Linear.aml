@@ -24,6 +24,8 @@ structure Linear :> LINEAR =
 	infix  4  `= `<> `> `>= `< `<=
 	infix  3  `<->
 
+	exception Transform of string
+
 	datatype fdop = PLUS | MUL
 
 	datatype domain_element =
@@ -82,7 +84,6 @@ structure Linear :> LINEAR =
 	    simplify (op`*(op`(i * j), simplify a))
 	  | simplify (op`*(op`*(op`(i), op`(j)), a)) =
 	    simplify (op`*(op`(i * j), a))
-	  | simplify (op`+(op`(i), op`(j))) = op`(i + j)
 	  | simplify (op`*(op`(i), op`(j))) = op`(i * j)
 	  | simplify (op`*(a, b)) = op`*(simplify a, simplify b)
 	  | simplify (op`-(a, b)) =
@@ -103,16 +104,17 @@ structure Linear :> LINEAR =
 	    in
 	      Op(label, foldl flatten'' nil ts)
 	    end
+	  | flatten _ = raise Match
 	and flatten'(l, t as BinOp(opl, a, b), ts) where (l = opl) =
 	    flatten'(l, a, b::ts)
 	  | flatten'(label, t, ts) = map flatten (t::ts)
 
 	fun getFD (Id (FD v))  = v
 	  | getFD (Id (op` i)) = FD.fromInt i
-	  | getFD _            = raise Subscript
+	  | getFD _            = raise (Transform "getFD")
 
 	fun getInt (Id(op` i)) = i
-	  | getInt _           = raise Subscript
+	  | getInt _           = raise (Transform "getInt")
 
 	fun isSum ts            = List.all checkS ts
 	and checkS (Id (op` i)) = i >= 0
@@ -138,18 +140,19 @@ structure Linear :> LINEAR =
 	fun analyzeSum ts = if isSum ts then SUM
 			    else if isSumC ts then SUMC
 			    else if isSumCN ts then SUMCN
-			    else raise Subscript
+			    else raise (Transform "analyzeSum")
 					  
-	fun analyzeCN ts = if allAtomic ts then SUMCN else raise Subscript
+	fun analyzeCN ts = if allAtomic ts then SUMCN else raise (Transform "analyzeCN")
 
 	fun analyze (Id (FD v))                  = ATOMIC v
 	  | analyze (Id (op` i))                 = ATOMIC (FD.fromInt i)
 	  | analyze (Op(MUL, [Id(op` _), Id _])) = SUMC
 	  | analyze (Op(MUL, ts))                = analyzeCN ts
 	  | analyze (Op(PLUS, ts))               = analyzeSum ts
+	  | analyze _                            = raise Match
 
 	fun createSumVector (Op(PLUS, ts)) = Vector.fromList (map getFD ts)
-	  | createSumVector _              = raise Subscript
+	  | createSumVector _              = raise (Transform "createSumVector")
 
 	fun makeConst (Op(MUL, [Id (op` i), Id (op` j)])) = (i*j, FD.fromInt 1)
 	  | makeConst (Op(MUL, [Id (op` i), v]))          = (i, getFD v)
@@ -159,13 +162,13 @@ structure Linear :> LINEAR =
 					  
 	fun createSumCVector (Op(PLUS, ts)) = Vector.fromList (map makeConst ts)
 	  | createSumCVector (t as Op(MUL, ts)) = #[makeConst t]
-	  | createSumCVector _                  = raise Subscript
+	  | createSumCVector _                  = raise (Transform "createSumCVector")
 
 	fun computeInt(nil, k, nil)             = (k, [FD.fromInt 1])
 	  | computeInt(nil, k, vs)              = (k, vs)
 	  | computeInt((Id (FD v))::tr, k, vs)  = computeInt (tr, k, v::vs) 
 	  | computeInt((Id (op` i))::tr, k, vs) = computeInt(tr, k * i, vs)
-	  | computeInt _                        = raise Subscript
+	  | computeInt _                        = raise (Transform "computeInt")
 
 	fun createSumCNEntry (Op(MUL, ts)) =
 	    let
@@ -175,11 +178,11 @@ structure Linear :> LINEAR =
 	    end
 	  | createSumCNEntry (Id (op` i)) = (i, #[FD.fromInt 1])
 	  | createSumCNEntry (Id (FD v))  = (1, Vector.fromList([v]))
-	  | createSumCNEntry  _           = raise Subscript
+	  | createSumCNEntry  _           = raise (Transform "createSumCNEntry")
 
 	fun createSumCNVector (Op(PLUS, ts)) =
 	    Vector.fromList (map createSumCNEntry ts)
-	  | createSumCNVector _ = raise Subscript
+	  | createSumCNVector _ = raise (Transform "createSumCNVector")
 
 	fun negateSum (i, v) = (~i, v)
 
@@ -190,7 +193,7 @@ structure Linear :> LINEAR =
 	fun getTermsC(SUM, (Op(PLUS, ts)))     = (map (fn x => (1, getFD x)) ts)
 	  | getTermsC(SUMC,(Op(PLUS, ts)))      = map makeConst ts
 	  | getTermsC(SUMC,(t as (Op(MUL, _)))) = [makeConst t]
-	  | getTermsC _                         = raise Subscript
+	  | getTermsC _                         = raise (Transform "getTermsC")
 
 	fun getTermsCN(SUM, (Op(PLUS, ts))) =
 	    (map (fn x => (1, #[getFD x])) ts)
@@ -205,7 +208,7 @@ structure Linear :> LINEAR =
 	  | getTermsCN(SUMCN, Op(PLUS, ts)) =
 	    (map (fn x => createSumCNEntry x) ts)
 	  | getTermsCN(SUMCN, t) = [createSumCNEntry t]
-	  | getTermsCN _ = raise Subscript
+	  | getTermsCN _ = raise (Transform "getTermsCN")
 	    	
 	local
 	    fun convertElem (op`` i)     = FD.SINGLE(i)
@@ -226,7 +229,7 @@ structure Linear :> LINEAR =
 
 	fun termToFD (FD v)  = v
 	  | termToFD (op` i) = FD.fromInt i
-	  | termToFD _       = raise Subscript
+	  | termToFD _       = raise (Transform "termToFD")
 
 	fun distribute(mode, v) =
 	    spawn FD.distribute(mode, Vector.map termToFD v)
@@ -279,7 +282,8 @@ structure Linear :> LINEAR =
 			in
 			  FD.sumCN(Vector.fromList sums,
 				   rel, FD.fromInt 0)
-			end))
+			end
+		      | _ => raise Match))
 	    end
 	and postReified(op`<(a, b), c)  = postReified'(a, b, c, FD.LESS)
 	  | postReified(op`<=(a, b), c) = postReified'(a, b, c, FD.LESSEQ)
@@ -287,7 +291,7 @@ structure Linear :> LINEAR =
 	  | postReified(op`<>(a, b), c) = postReified'(a, b, c, FD.NOTEQUAL)
 	  | postReified(op`>=(a, b), c) = postReified'(a, b, c, FD.GREATEREQ)
 	  | postReified(op`>(a, b), c)  = postReified'(a, b, c, FD.GREATER)
-	  | postReified _               = raise Subscript
+	  | postReified _               = raise (Transform "postReified")
 	and postReified'(a, b, c, rel) =
 	    let
 		val a' = flatten (transform a)
@@ -320,6 +324,7 @@ structure Linear :> LINEAR =
 			in
 			  FD.Reified.sumCN(Vector.fromList sums,
 					   rel, FD.fromInt 0, cv)
-			end))
+			end
+		      | _ => raise Match))
 	    end
     end

@@ -25,6 +25,8 @@ signature LINEAR =
 	infix  4  `= `<> `> `>= `< `<=
 	infix  3  `<->
 
+	exception Transform of string
+
 	datatype domain_element =
 	    `` of int
 	  | `# of int * int
