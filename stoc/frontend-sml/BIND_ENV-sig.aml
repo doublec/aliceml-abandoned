@@ -1,6 +1,7 @@
 signature BIND_ENV =
   sig
 
+    type Lab   = Lab.t
     type VId   = VId.t
     type TyVar = TyVar.t
     type TyCon = TyCon.t
@@ -17,6 +18,7 @@ signature BIND_ENV =
 
     type Env
     type Inf = Info * InfStatus
+    type Fld = Info
     type Var = Info * stamp
     type Val = Info * stamp * IdStatus
     type Ty  = Info * stamp * Env
@@ -26,12 +28,13 @@ signature BIND_ENV =
 
 
     exception CollisionInf of VId
-    exception CollisionVal of VId   (* = VIdMap.Collision *)
-    exception CollisionTy  of TyCon (* = TyConMap.Collision *)
-    exception CollisionVar of TyVar (* = TyVarMap.Collision *)
-    exception CollisionStr of StrId (* = StrIdMap.Collision *)
-    exception CollisionSig of SigId (* = SigIdMap.Collision *)
-    exception CollisionFun of FunId (* = FunIdMap.Collision *)
+    exception CollisionFld of Lab
+    exception CollisionVal of VId
+    exception CollisionTy  of TyCon
+    exception CollisionVar of TyVar
+    exception CollisionStr of StrId
+    exception CollisionSig of SigId
+    exception CollisionFun of FunId
 
 
     val new :			unit -> Env
@@ -48,6 +51,7 @@ signature BIND_ENV =
     val unionInf :		Env * Env -> unit
 
     val insertInf :		Env *  VId  * Inf -> unit
+    val insertFld :		Env *  Lab  * Fld -> unit
     val insertVal :		Env *  VId  * Val -> unit
     val insertTy :		Env * TyCon * Ty  -> unit
     val insertVar :		Env * TyVar * Var -> unit
@@ -55,6 +59,7 @@ signature BIND_ENV =
     val insertSig :		Env * SigId * Sig -> unit
     val insertFun :		Env * FunId * Fun -> unit
     val insertDisjointInf :	Env *  VId  * Inf -> unit   (* CollisionInf *)
+    val insertDisjointFld :	Env *  Lab  * Fld -> unit   (* CollisionFld *)
     val insertDisjointVal :	Env *  VId  * Val -> unit   (* CollisionVal *)
     val insertDisjointTy :	Env * TyCon * Ty  -> unit   (* CollisionTy *)
     val insertDisjointVar :	Env * TyVar * Var -> unit   (* CollisionVar *)
@@ -63,33 +68,39 @@ signature BIND_ENV =
     val insertDisjointFun :	Env * FunId * Fun -> unit   (* CollisionFun *)
 
     val lookupInf :		Env *  VId  -> Inf option
+    val lookupFld :		Env *  Lab  -> Fld option
+    val lookupVar :		Env * TyVar -> Var option
     val lookupVal :		Env *  VId  -> Val option
     val lookupTy :		Env * TyCon -> Ty  option
-    val lookupVar :		Env * TyVar -> Var option
     val lookupStr :		Env * StrId -> Str option
     val lookupSig :		Env * SigId -> Sig option
     val lookupFun :		Env * FunId -> Fun option
     val lookupScopeInf :	Env *  VId  -> Inf option
+    val lookupScopeFld :	Env *  Lab  -> Fld option
+    val lookupScopeVar :	Env * TyVar -> Var option
     val lookupScopeVal :	Env *  VId  -> Val option
     val lookupScopeTy :		Env * TyCon -> Ty  option
-    val lookupScopeVar :	Env * TyVar -> Var option
     val lookupScopeStr :	Env * StrId -> Str option
     val lookupScopeSig :	Env * SigId -> Sig option
     val lookupScopeFun :	Env * FunId -> Fun option
 
     val isEmptyValScope :	Env -> bool
 
-    val infEnv :		Env -> Inf VIdMap.t
+    val infEnv :		Env -> VId -> InfStatus
 
+    val appInfs :		( VId  * Inf -> unit) -> Env -> unit
+    val appFlds :		( Lab  * Fld -> unit) -> Env -> unit
+    val appVars :		(TyVar * Var -> unit) -> Env -> unit
     val appVals :		( VId  * Val -> unit) -> Env -> unit
     val appTys :		(TyCon * Ty  -> unit) -> Env -> unit
-    val appVars :		(TyVar * Var -> unit) -> Env -> unit
     val appStrs :		(StrId * Str -> unit) -> Env -> unit
     val appSigs :		(SigId * Sig -> unit) -> Env -> unit
     val appFuns :		(FunId * Fun -> unit) -> Env -> unit
+    val foldInfs :		( VId  * Inf * 'a -> 'a) -> 'a -> Env -> 'a
+    val foldFlds :		( Lab  * Fld * 'a -> 'a) -> 'a -> Env -> 'a
+    val foldVars :		(TyVar * Var * 'a -> 'a) -> 'a -> Env -> 'a
     val foldVals :		( VId  * Val * 'a -> 'a) -> 'a -> Env -> 'a
     val foldTys :		(TyCon * Ty  * 'a -> 'a) -> 'a -> Env -> 'a
-    val foldVars :		(TyVar * Var * 'a -> 'a) -> 'a -> Env -> 'a
     val foldStrs :		(StrId * Str * 'a -> 'a) -> 'a -> Env -> 'a
     val foldSigs :		(SigId * Sig * 'a -> 'a) -> 'a -> Env -> 'a
     val foldFuns :		(FunId * Fun * 'a -> 'a) -> 'a -> Env -> 'a

@@ -395,7 +395,14 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	       | (longid', R) =>
 		 O.RefExp(i)
 	   )
-	 | RECORDAtExp(i, exprowo)	=> O.RowExp(i, trExpRowo(E,nil) exprowo)
+	 | RECORDAtExp(i, exprowo)	=>
+	   let
+		val  _   = insertScope E
+		val row' = trExpRowo E exprowo
+		val  _   = deleteScope E
+	   in
+		O.RowExp(i, row')
+	   end
 	 | HASHAtExp(i, lab)		=> O.SelExp(i, trLab E lab)
 	 | TUPLEAtExp(i, exps)		=> O.TupExp(i, trExps E exps)
 	 | VECTORAtExp(i, exps)		=> O.VecExp(i, trExps E exps)
@@ -412,17 +419,16 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	 | PARAtExp(i, exp)		=> trExp E exp
 
 
-    and trExpRowo (E,labs) =
+    and trExpRowo E =
 	fn NONE => O.Row(Source.nowhere, [], false)
 
-	 | SOME(ROWExpRow(i, lab as Lab(i',lab1), exp, exprowo)) =>
-	   if List.exists (fn lab2 => lab2=lab1) labs then
-		errorLab("duplicate label ", lab, " in record")
-	   else
+	 | SOME(ROWExpRow(i, lab as Lab(i',lab'), exp, exprowo)) =>
 	   let
 		val i1'    = Source.over(i', infoExp exp)
 		val field' = O.Field(i1', trLab E lab, trExp E exp)
-		val O.Row(_,fields',_) = trExpRowo (E, lab1::labs) exprowo
+		val _      = insertFld(E, lab', i') handle CollisionFld _ =>
+			     errorLab("duplicate label ", lab, " in record")
+		val O.Row(_,fields',_) = trExpRowo E exprowo
 	   in
 		O.Row(i, field'::fields', false)
 	   end
@@ -517,7 +523,15 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	       | (longid', V)   =>
 		 error(i, "non-constructor long identifier in pattern")
 	   )
-	 | RECORDAtPat(i, patrowo) => O.RowPat(i, trPatRowo (E,E',nil) patrowo)
+	 | RECORDAtPat(i, patrowo) =>
+	   let
+		val  _   = insertScope E
+		val row' = trPatRowo (E,E') patrowo
+		val  _   = deleteScope E
+	   in
+		O.RowPat(i, row')
+	   end
+
 	 | TUPLEAtPat(i, pats)     => O.TupPat(i, trPats (E,E') pats)
 	 | VECTORAtPat(i, pats)    => O.VecPat(i, trPats (E,E') pats)
 	 | ALTAtPat(i, pats)       =>
@@ -537,19 +551,18 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	 | PARAtPat(i, pat) => trPat (E,E') pat
 
 
-    and trPatRowo (E,E',labs) =
+    and trPatRowo (E,E') =
 	fn NONE => O.Row(Source.nowhere, [], false)
 
 	 | SOME(WILDCARDPatRow(i)) => O.Row(i, [], true)
 
-	 | SOME(ROWPatRow(i, lab as Lab(i',lab1), pat, patrowo)) =>
-	   if List.exists (fn lab2 => lab2=lab1) labs then
-		errorLab("duplicate label ", lab, " in record")
-	   else
+	 | SOME(ROWPatRow(i, lab as Lab(i',lab'), pat, patrowo)) =>
 	   let
 		val i1'    = Source.over(i', infoPat pat)
 		val field' = O.Field(i1', trLab E lab, trPat (E,E') pat)
-		val O.Row(_,fields',dots') = trPatRowo (E,E',lab1::labs) patrowo
+		val _      = insertFld(E, lab', i') handle CollisionFld _ =>
+			     errorLab("duplicate label ", lab, " in record")
+		val O.Row(_,fields',dots') = trPatRowo (E,E') patrowo
 	   in
 		O.Row(i, field'::fields', dots')
 	   end
@@ -665,23 +678,30 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		apptyp(typs', O.ConTyp(i, longid'))
 	   end
 
-	 | RECORDTy(i, tyrowo)  => O.RowTyp(i, trTyRowo (E,[]) tyrowo)
+	 | RECORDTy(i, tyrowo) =>
+	   let
+		val  _   = insertScope E
+		val row' = trTyRowo E tyrowo
+		val  _   = deleteScope E
+	   in
+		O.RowTyp(i, row')
+	   end
+
 	 | ARROWTy(i, ty1, ty2) => O.ArrTyp(i, trTy E ty1, trTy E ty2)
 	 | PARTy(i, ty)         => trTy E ty
 
 
 
-    and trTyRowo (E,labs) =
+    and trTyRowo E =
 	fn NONE => O.Row(Source.nowhere, [], false)
 
-	 | SOME(ROWTyRow(i, lab as Lab(i',lab1), ty, tyrowo)) =>
-	   if List.exists (fn lab2 => lab2=lab1) labs then
-		errorLab("duplicate label ", lab, " in record")
-	   else
+	 | SOME(ROWTyRow(i, lab as Lab(i',lab'), ty, tyrowo)) =>
 	   let
 		val i1'    = Source.over(i', infoTy ty)
 		val field' = O.Field(i1', trLab E lab, trTy E ty)
-		val O.Row(_,fields',_) = trTyRowo (E, lab1::labs) tyrowo
+		val _      = insertFld(E, lab', i') handle CollisionFld _ =>
+			     errorLab("duplicate label ", lab, " in record")
+		val O.Row(_,fields',_) = trTyRowo E tyrowo
 	   in
 		O.Row(i, field'::fields', false)
 	   end

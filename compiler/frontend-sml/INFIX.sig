@@ -18,7 +18,7 @@ signature INFIX =
     datatype Assoc = LEFT | RIGHT
     type InfStatus = (Assoc * int) option
 
-    type InfEnv    = (Grammar.Info * InfStatus) VIdMap.t
+    type InfEnv    = VId.t -> InfStatus
 
 
     (* Resolving phrases containing infixed identifiers *)

@@ -1,6 +1,13 @@
 structure BindEnv :> BIND_ENV =
   struct
 
+    type Info  = Source.position
+    type stamp = AbstractGrammar.stamp
+
+
+    (* The environment's domain *)
+
+    type Lab   = Lab.t
     type VId   = VId.t
     type TyVar = TyVar.t
     type TyCon = TyCon.t
@@ -8,23 +15,48 @@ structure BindEnv :> BIND_ENV =
     type SigId = SigId.t
     type FunId = FunId.t
 
-    type Info  = Source.position
-    type stamp = AbstractGrammar.stamp
+    datatype Dom = INFIX of VId
+		 | LAB   of Lab
+		 | TYVAR of TyVar
+		 | VID   of VId
+		 | TYCON of TyCon
+		 | STRID of StrId
+		 | SIGID of SigId
+		 | FUNID of FunId
+
+    fun hashDom(INFIX id) = StringHashKey.hash(  VId.toString id)
+      | hashDom(LAB   id) = StringHashKey.hash(  Lab.toString id)
+      | hashDom(TYVAR id) = StringHashKey.hash(TyVar.toString id)
+      | hashDom(VID   id) = StringHashKey.hash(  VId.toString id)
+      | hashDom(TYCON id) = StringHashKey.hash(TyCon.toString id)
+      | hashDom(STRID id) = StringHashKey.hash(StrId.toString id)
+      | hashDom(SIGID id) = StringHashKey.hash(SigId.toString id)
+      | hashDom(FUNID id) = StringHashKey.hash(FunId.toString id)
+
+
+    (* The map implementing the environment *)
+
+    structure Map = MakeHashScopedImpMap(type t = Dom val hash = hashDom)
+
+
+    (* The environment's range *)
 
     datatype InfAssoc  = datatype Infix.Assoc
     type     InfStatus = Infix.InfStatus
     datatype IdStatus  = V | C of int | R
 
-    datatype Env = ENV of { IE: Inf VIdMap.t
-			  , UE: Var TyVarMap.t
-			  , VE: Val VIdMap.t
-			  , TE: Ty  TyConMap.t
-			  , SE: Str StrIdMap.t
-			  , GE: Sig SigIdMap.t
-			  , FE: Fun FunIdMap.t
-			  }
+    datatype Env = ENV of Ran Map.t
+    and      Ran = INF of Inf
+		 | FLD of Fld
+		 | VAR of Var
+		 | VAL of Val
+		 | TY  of Ty
+		 | STR of Str
+		 | SIG of Sig
+		 | FUN of Fun
 
     withtype Inf = Info * InfStatus
+    and      Fld = Info
     and      Var = Info * stamp
     and      Val = Info * stamp * IdStatus
     and      Ty  = Info * stamp * Env
@@ -32,169 +64,149 @@ structure BindEnv :> BIND_ENV =
     and      Sig = Info * stamp * Env
     and      Fun = Info * stamp * Env
 
+    fun unInfo(SOME(INF x)) = SOME x | unInfo _ = NONE
+    fun unFldo(SOME(FLD x)) = SOME x | unFldo _ = NONE
+    fun unVaro(SOME(VAR x)) = SOME x | unVaro _ = NONE
+    fun unValo(SOME(VAL x)) = SOME x | unValo _ = NONE
+    fun unTyo (SOME(TY  x)) = SOME x | unTyo  _ = NONE
+    fun unStro(SOME(STR x)) = SOME x | unStro _ = NONE
+    fun unSigo(SOME(SIG x)) = SOME x | unSigo _ = NONE
+    fun unFuno(SOME(FUN x)) = SOME x | unFuno _ = NONE
+
+    fun appInf f (INFIX id, INF x) = f(id,x) | appInf f _ = ()
+    fun appFld f (LAB   id, FLD x) = f(id,x) | appFld f _ = ()
+    fun appVar f (TYVAR id, VAR x) = f(id,x) | appVar f _ = ()
+    fun appVal f (VID   id, VAL x) = f(id,x) | appVal f _ = ()
+    fun appTy  f (TYCON id, TY  x) = f(id,x) | appTy  f _ = ()
+    fun appStr f (STRID id, STR x) = f(id,x) | appStr f _ = ()
+    fun appSig f (SIGID id, SIG x) = f(id,x) | appSig f _ = ()
+    fun appFun f (FUNID id, FUN x) = f(id,x) | appFun f _ = ()
+
+    fun foldInf f ((INFIX id, INF x), a) = f(id,x,a) | foldInf f (_,a) = a
+    fun foldFld f ((LAB   id, FLD x), a) = f(id,x,a) | foldFld f (_,a) = a
+    fun foldVar f ((TYVAR id, VAR x), a) = f(id,x,a) | foldVar f (_,a) = a
+    fun foldVal f ((VID   id, VAL x), a) = f(id,x,a) | foldVal f (_,a) = a
+    fun foldTy  f ((TYCON id, TY  x), a) = f(id,x,a) | foldTy  f (_,a) = a
+    fun foldStr f ((STRID id, STR x), a) = f(id,x,a) | foldStr f (_,a) = a
+    fun foldSig f ((SIGID id, SIG x), a) = f(id,x,a) | foldSig f (_,a) = a
+    fun foldFun f ((FUNID id, FUN x), a) = f(id,x,a) | foldFun f (_,a) = a
+
+
+    (* Collision exceptions *)
 
     exception CollisionInf of VId
-    exception CollisionVal = VIdMap.Collision
-    exception CollisionTy  = TyConMap.Collision
-    exception CollisionVar = TyVarMap.Collision
-    exception CollisionStr = StrIdMap.Collision
-    exception CollisionSig = SigIdMap.Collision
-    exception CollisionFun = FunIdMap.Collision
+    exception CollisionFld of Lab
+    exception CollisionVal of VId
+    exception CollisionTy  of TyCon
+    exception CollisionVar of TyVar
+    exception CollisionStr of StrId
+    exception CollisionSig of SigId
+    exception CollisionFun of FunId
+
+    fun transformCollision(INFIX id)	= raise CollisionInf id
+      | transformCollision(LAB   id)	= raise CollisionFld id
+      | transformCollision(TYVAR id)	= raise CollisionVar id
+      | transformCollision(VID   id)	= raise CollisionVal id
+      | transformCollision(TYCON id)	= raise CollisionTy  id
+      | transformCollision(STRID id)	= raise CollisionStr id
+      | transformCollision(SIGID id)	= raise CollisionSig id
+      | transformCollision(FUNID id)	= raise CollisionFun id
 
 
-    fun new()				= ENV { IE = VIdMap.new()
-					      , UE = TyVarMap.new()
-					      , VE = VIdMap.new()
-					      , TE = TyConMap.new()
-					      , SE = StrIdMap.new()
-					      , GE = SigIdMap.new()
-					      , FE = FunIdMap.new()
-					      }
+    (* Actual operations *)
 
-    fun copy(ENV{IE,UE,VE,TE,SE,GE,FE})	= ENV { IE = VIdMap.copy IE
-					      , UE = TyVarMap.copy UE
-					      , VE = VIdMap.copy VE
-					      , TE = TyConMap.copy TE
-					      , SE = StrIdMap.copy SE
-					      , GE = SigIdMap.copy GE
-					      , FE = FunIdMap.copy FE
-					      }
+    fun new()				= ENV(Map.new())
+    fun copy(ENV E)			= ENV(Map.copy E)
+    fun copyScope(ENV E)		= ENV(Map.copyScope E)
+    fun insertScope(ENV E)		= Map.insertScope E
+    fun deleteScope(ENV E)		= Map.deleteScope E
+    fun delete2ndScope(ENV E)		= Map.delete2ndScope E
+    fun mergeScope(ENV E)		= Map.mergeScope E
 
-    fun copyScope(ENV{IE,UE,VE,TE,SE,GE,FE}) =
-					  ENV { IE = VIdMap.copyScope IE
-					      , UE = TyVarMap.copyScope UE
-					      , VE = VIdMap.copyScope VE
-					      , TE = TyConMap.copyScope TE
-					      , SE = StrIdMap.copyScope SE
-					      , GE = SigIdMap.copyScope GE
-					      , FE = FunIdMap.copyScope FE
-					      }
+    fun union(ENV E1, ENV E2)		= Map.union(E1,E2)
+    fun unionDisjoint(ENV E1, ENV E2)	= Map.unionDisjoint(E1,E2)
+					  handle Map.Collision coll =>
+						 transformCollision coll
 
-    fun insertScope(ENV{IE,UE,VE,TE,SE,GE,FE}) =
-					  ( VIdMap.insertScope IE
-					  ; TyVarMap.insertScope UE
-					  ; VIdMap.insertScope VE
-					  ; TyConMap.insertScope TE
-					  ; StrIdMap.insertScope SE
-					  ; SigIdMap.insertScope GE
-					  ; FunIdMap.insertScope FE
-					  )
+    fun insertInf(ENV E, id, x)		= Map.insert(E, INFIX id, INF x)
+    fun insertFld(ENV E, id, x)		= Map.insert(E, LAB   id, FLD x)
+    fun insertVar(ENV E, id, x)		= Map.insert(E, TYVAR id, VAR x)
+    fun insertVal(ENV E, id, x)		= Map.insert(E, VID   id, VAL x)
+    fun insertTy (ENV E, id, x)		= Map.insert(E, TYCON id, TY  x)
+    fun insertStr(ENV E, id, x)		= Map.insert(E, STRID id, STR x)
+    fun insertSig(ENV E, id, x)		= Map.insert(E, SIGID id, SIG x)
+    fun insertFun(ENV E, id, x)		= Map.insert(E, FUNID id, FUN x)
 
-    fun deleteScope(ENV{IE,UE,VE,TE,SE,GE,FE}) =
-					  ( VIdMap.deleteScope IE
-					  ; TyVarMap.deleteScope UE
-					  ; VIdMap.deleteScope VE
-					  ; TyConMap.deleteScope TE
-					  ; StrIdMap.deleteScope SE
-					  ; SigIdMap.deleteScope GE
-					  ; FunIdMap.deleteScope FE
-					  )
+    fun insertDisjointInf(ENV E, id, x)	= Map.insertDisjoint(E, INFIX id, INF x)
+					  handle Map.Collision(INFIX id) =>
+						 raise CollisionInf id
+    fun insertDisjointFld(ENV E, id, x)	= Map.insertDisjoint(E, LAB id, FLD x)
+					  handle Map.Collision(LAB id) =>
+						 raise CollisionFld id
+    fun insertDisjointVar(ENV E, id, x)	= Map.insertDisjoint(E, TYVAR id, VAR x)
+					  handle Map.Collision(TYVAR id) =>
+						 raise CollisionVar id
+    fun insertDisjointVal(ENV E, id, x)	= Map.insertDisjoint(E, VID id, VAL x)
+					  handle Map.Collision(VID id) =>
+						 raise CollisionVal id
+    fun insertDisjointTy(ENV E, id, x)	= Map.insertDisjoint(E, TYCON id, TY x)
+					  handle Map.Collision(TYCON id) =>
+						 raise CollisionTy id
+    fun insertDisjointStr(ENV E, id, x)	= Map.insertDisjoint(E, STRID id, STR x)
+					  handle Map.Collision(STRID id) =>
+						 raise CollisionStr id
+    fun insertDisjointSig(ENV E, id, x)	= Map.insertDisjoint(E, SIGID id, SIG x)
+					  handle Map.Collision(SIGID id) =>
+						 raise CollisionSig id
+    fun insertDisjointFun(ENV E, id, x)	= Map.insertDisjoint(E, FUNID id, FUN x)
+					  handle Map.Collision(FUNID id) =>
+						 raise CollisionFun id
 
-    fun delete2ndScope(ENV{IE,UE,VE,TE,SE,GE,FE}) =
-					  ( VIdMap.delete2ndScope IE
-					  ; TyVarMap.delete2ndScope UE
-					  ; VIdMap.delete2ndScope VE
-					  ; TyConMap.delete2ndScope TE
-					  ; StrIdMap.delete2ndScope SE
-					  ; SigIdMap.delete2ndScope GE
-					  ; FunIdMap.delete2ndScope FE
-					  )
+    fun lookupInf(ENV E, id)		= unInfo(Map.lookup(E, INFIX id))
+    fun lookupFld(ENV E, id)		= unFldo(Map.lookup(E, LAB   id))
+    fun lookupVar(ENV E, id)		= unVaro(Map.lookup(E, TYVAR id))
+    fun lookupVal(ENV E, id)		= unValo(Map.lookup(E, VID   id))
+    fun lookupTy (ENV E, id)		= unTyo (Map.lookup(E, TYCON id))
+    fun lookupStr(ENV E, id)		= unStro(Map.lookup(E, STRID id))
+    fun lookupSig(ENV E, id)		= unSigo(Map.lookup(E, SIGID id))
+    fun lookupFun(ENV E, id)		= unFuno(Map.lookup(E, FUNID id))
 
-    fun mergeScope(ENV{IE,UE,VE,TE,SE,GE,FE}) =
-					  ( VIdMap.mergeScope IE
-					  ; TyVarMap.mergeScope UE
-					  ; VIdMap.mergeScope VE
-					  ; TyConMap.mergeScope TE
-					  ; StrIdMap.mergeScope SE
-					  ; SigIdMap.mergeScope GE
-					  ; FunIdMap.mergeScope FE
-					  )
+    fun lookupScopeInf(ENV E, id)	= unInfo(Map.lookupScope(E, INFIX id))
+    fun lookupScopeFld(ENV E, id)	= unFldo(Map.lookupScope(E, LAB   id))
+    fun lookupScopeVar(ENV E, id)	= unVaro(Map.lookupScope(E, TYVAR id))
+    fun lookupScopeVal(ENV E, id)	= unValo(Map.lookupScope(E, VID   id))
+    fun lookupScopeTy (ENV E, id)	= unTyo (Map.lookupScope(E, TYCON id))
+    fun lookupScopeStr(ENV E, id)	= unStro(Map.lookupScope(E, STRID id))
+    fun lookupScopeSig(ENV E, id)	= unSigo(Map.lookupScope(E, SIGID id))
+    fun lookupScopeFun(ENV E, id)	= unFuno(Map.lookupScope(E, FUNID id))
 
+    fun appInfs f (ENV E)		= Map.appi (appInf f) E
+    fun appFlds f (ENV E)		= Map.appi (appFld f) E
+    fun appVars f (ENV E)		= Map.appi (appVar f) E
+    fun appVals f (ENV E)		= Map.appi (appVal f) E
+    fun appTys  f (ENV E)		= Map.appi (appTy  f) E
+    fun appStrs f (ENV E)		= Map.appi (appStr f) E
+    fun appSigs f (ENV E)		= Map.appi (appSig f) E
+    fun appFuns f (ENV E)		= Map.appi (appFun f) E
 
-    fun union(ENV{IE,UE,VE,TE,SE,GE,FE},
-	      ENV{IE=IE',UE=UE',VE=VE',TE=TE',SE=SE',GE=GE',FE=FE'}) =
-					  ( VIdMap.union(IE,IE')
-					  ; TyVarMap.union(UE,UE')
-					  ; VIdMap.union(VE,VE')
-					  ; TyConMap.union(TE,TE')
-					  ; StrIdMap.union(SE,SE')
-					  ; SigIdMap.union(GE,GE')
-					  ; FunIdMap.union(FE,FE')
-					  )
-
-    fun unionDisjoint(ENV{IE,UE,VE,TE,SE,GE,FE},
-		      ENV{IE=IE',UE=UE',VE=VE',TE=TE',SE=SE',GE=GE',FE=FE'}) =
-	( FunIdMap.unionDisjoint(FE,FE')
-	; SigIdMap.unionDisjoint(GE,GE')
-	; StrIdMap.unionDisjoint(SE,SE')
-	; TyConMap.unionDisjoint(TE,TE')
-	; VIdMap.unionDisjoint(VE,VE')
-	; TyVarMap.unionDisjoint(UE,UE')
-	; VIdMap.unionDisjoint(IE,IE')
-	  handle VIdMap.Collision vid => raise CollisionInf vid
-	)
-
-    fun unionInf(ENV{IE,...}, ENV{IE=IE',...}) = VIdMap.union(IE,IE')
+    fun foldInfs f a (ENV E)		= Map.foldi (foldInf f) a E
+    fun foldFlds f a (ENV E)		= Map.foldi (foldFld f) a E
+    fun foldVars f a (ENV E)		= Map.foldi (foldVar f) a E
+    fun foldVals f a (ENV E)		= Map.foldi (foldVal f) a E
+    fun foldTys  f a (ENV E)		= Map.foldi (foldTy  f) a E
+    fun foldStrs f a (ENV E)		= Map.foldi (foldStr f) a E
+    fun foldSigs f a (ENV E)		= Map.foldi (foldSig f) a E
+    fun foldFuns f a (ENV E)		= Map.foldi (foldFun f) a E
 
 
-    fun insertInf(ENV{IE,...}, id, x)	= VIdMap.insert(IE, id, x)
-    fun insertVar(ENV{UE,...}, id, x)	= TyVarMap.insert(UE, id, x)
-    fun insertVal(ENV{VE,...}, id, x)	= VIdMap.insert(VE, id, x)
-    fun insertTy (ENV{TE,...}, id, x)	= TyConMap.insert(TE, id, x)
-    fun insertStr(ENV{SE,...}, id, x)	= StrIdMap.insert(SE, id, x)
-    fun insertSig(ENV{GE,...}, id, x)	= SigIdMap.insert(GE, id, x)
-    fun insertFun(ENV{FE,...}, id, x)	= FunIdMap.insert(FE, id, x)
+    fun isEmptyValScope(ENV E)		= Map.isEmptyScope E orelse
+					  foldVals (fn _ => false) true (ENV E)
 
-    fun insertDisjointInf(ENV{IE,...}, id, x) =
-	VIdMap.insertDisjoint(IE, id, x)
-	handle VIdMap.Collision vid => raise CollisionInf vid
-    fun insertDisjointVar(ENV{UE,...}, id, x) =
-	TyVarMap.insertDisjoint(UE, id, x)
-    fun insertDisjointVal(ENV{VE,...}, id, x) =
-	VIdMap.insertDisjoint(VE, id, x)
-    fun insertDisjointTy (ENV{TE,...}, id, x) =
-	TyConMap.insertDisjoint(TE, id, x)
-    fun insertDisjointStr(ENV{SE,...}, id, x) =
-	StrIdMap.insertDisjoint(SE, id, x)
-    fun insertDisjointSig(ENV{GE,...}, id, x) =
-	SigIdMap.insertDisjoint(GE, id, x)
-    fun insertDisjointFun(ENV{FE,...}, id, x) =
-	FunIdMap.insertDisjoint(FE, id, x)
+    fun unionInf(E1,E2)			= appInfs (fn(id,x) =>
+						     insertInf(E1,id,x)) E2
 
-    fun lookupInf(ENV{IE,...}, id)	= VIdMap.lookup(IE, id)
-    fun lookupVar(ENV{UE,...}, id)	= TyVarMap.lookup(UE, id)
-    fun lookupVal(ENV{VE,...}, id)	= VIdMap.lookup(VE, id)
-    fun lookupTy (ENV{TE,...}, id)	= TyConMap.lookup(TE, id)
-    fun lookupStr(ENV{SE,...}, id)	= StrIdMap.lookup(SE, id)
-    fun lookupSig(ENV{GE,...}, id)	= SigIdMap.lookup(GE, id)
-    fun lookupFun(ENV{FE,...}, id)	= FunIdMap.lookup(FE, id)
-
-    fun lookupScopeInf(ENV{IE,...}, id)	= VIdMap.lookupScope(IE, id)
-    fun lookupScopeVar(ENV{UE,...}, id) = TyVarMap.lookupScope(UE, id)
-    fun lookupScopeVal(ENV{VE,...}, id)	= VIdMap.lookupScope(VE, id)
-    fun lookupScopeTy (ENV{TE,...}, id)	= TyConMap.lookupScope(TE, id)
-    fun lookupScopeStr(ENV{SE,...}, id)	= StrIdMap.lookupScope(SE, id)
-    fun lookupScopeSig(ENV{GE,...}, id)	= SigIdMap.lookupScope(GE, id)
-    fun lookupScopeFun(ENV{FE,...}, id)	= FunIdMap.lookupScope(FE, id)
-
-    fun isEmptyValScope(ENV{VE,...})	= VIdMap.isEmptyScope VE
-
-    fun infEnv(ENV{IE,...})		= IE
-
-    fun appVars f (ENV{UE,...})		= TyVarMap.appi f UE
-    fun appVals f (ENV{VE,...})		= VIdMap.appi   f VE
-    fun appTys  f (ENV{TE,...})		= TyConMap.appi f TE
-    fun appStrs f (ENV{SE,...})		= StrIdMap.appi f SE
-    fun appSigs f (ENV{GE,...})		= SigIdMap.appi f GE
-    fun appFuns f (ENV{FE,...})		= FunIdMap.appi f FE
-
-    fun foldF f ((x,a),b)		= f(x,a,b)
-
-    fun foldVars f a (ENV{UE,...})	= TyVarMap.foldi (foldF f) a UE
-    fun foldVals f a (ENV{VE,...})	= VIdMap.foldi   (foldF f) a VE
-    fun foldTys  f a (ENV{TE,...})	= TyConMap.foldi (foldF f) a TE
-    fun foldStrs f a (ENV{SE,...})	= StrIdMap.foldi (foldF f) a SE
-    fun foldSigs f a (ENV{GE,...})	= SigIdMap.foldi (foldF f) a GE
-    fun foldFuns f a (ENV{FE,...})	= FunIdMap.foldi (foldF f) a FE
+    fun infEnv E vid			= case lookupInf(E, vid)
+					    of NONE        => NONE
+					     | SOME(_,inf) => inf
 
   end

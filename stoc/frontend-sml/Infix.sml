@@ -21,7 +21,7 @@ structure Infix :> INFIX =
 
     type InfStatus = (Assoc * int) option
 
-    type InfEnv    = (Info * InfStatus) VIdMap.t
+    type InfEnv    = VId.t -> InfStatus
 
 
     (* Helper for error messages *)
@@ -36,11 +36,11 @@ structure Infix :> INFIX =
     datatype 'a FixityCategory = NONFIX of 'a
 			       | INFIX  of Assoc * int * VId
 
-    fun categoriseVId (IE: InfEnv) (at, vid as VId(i,vid')) =
-	(case VIdMap.lookup(IE,vid')
-	   of ( NONE | SOME(_,NONE) )  => NONFIX(at)
-	    | SOME(_,SOME(assoc,prec)) => INFIX(assoc, prec, vid)
-	)
+    fun categoriseVId IE (at, vid as VId(i,vid')) =
+	case IE vid'
+	  of NONE             => NONFIX(at)
+	   | SOME(assoc,prec) => INFIX(assoc, prec, vid)
+
 
     fun categoriseLongVId IE (at, SHORTLong(i, vid)) =
 	    categoriseVId IE (at, vid)
