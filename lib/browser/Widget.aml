@@ -648,7 +648,7 @@ struct
 	      val w = toplevelWindowNew()
 	      val bbox = 
 		  createButtonBox{buttons = 
-		      [BObj("ok",[Handler("clicked",
+		      [BObj("OK",[Handler("clicked",
 					  (okHandler(w,
 						     width_s,
 						     depth_s,
@@ -656,7 +656,7 @@ struct
 						     treemode_button,
 						     relmode_button,
 						     tokenmode_button)   ))]),
-		       BObj("cancel",
+		       BObj("Cancel",
 			    [Handler("clicked",fn _ => 
 				     widgetDestroy(w))])],
 				       borderwidth = 20}

@@ -437,7 +437,7 @@ structure GtkSupport =
 	  let
 	      val dialog = Gtk.dialogNew()
 	      val ddialog = (fn _ =>  Gtk.widgetDestroy(dialog)) 
-	      val ok = createButton(BObj("ok",[Handler("clicked",ddialog)]))
+	      val ok = createButton(BObj("OK",[Handler("clicked",ddialog)]))
 	      val l =  Gtk.labelNew("Alice Browser \n"
 				    ^ "Created by \n"
 				    ^ "Bernadette Blum & Marvin Schiller")
