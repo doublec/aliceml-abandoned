@@ -615,7 +615,7 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 		val funExp = FunExp (funInfo, [Match (id_info info, pat, exp)])
 		val (stms, id) = unfoldTerm (funExp, Goto rest)
 	    in
-		(r := SOME (f (O.PrimAppExp (id_info info, "Future.byNeed",
+		(r := SOME (f (O.PrimAppExp (id_info info, "Future.byneed",
 					     [id]))::translateCont cont);
 		 stms)
 	    end
