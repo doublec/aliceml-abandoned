@@ -43,4 +43,4 @@ void Primitive::RegisterGeneral() {
   Register("General.Subscript", Constructor::New()->ToWord()); //--** unique
   Register("General.exchange", General_exchange, 2);
   Register("General.exnName", General_exnName, 1);
-};
+}

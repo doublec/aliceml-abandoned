@@ -107,4 +107,4 @@ void Primitive::RegisterWord() {
   Register("Word.toString", Word_toString, 1);
   Register("Word.wordSize", Store::IntToWord(31));
   Register("Word.xorb", Word_xorb, 2);
-};
+}

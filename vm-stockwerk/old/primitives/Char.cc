@@ -88,4 +88,4 @@ void Primitive::RegisterChar() {
   Register("Char.isUpper", Char_isUpper, 1);
   Register("Char.toLower", Char_toLower, 1);
   Register("Char.toUpper", Char_toUpper, 1);
-};
+}

@@ -22,7 +22,7 @@ static char *ToCString(String *string) {
   memcpy(s, string->GetValue(), length);
   s[length] = '\0';
   return s;
-};
+}
 
 DEFINE1(OS_Process_system) {
   DECLARE_STRING(string, x0);

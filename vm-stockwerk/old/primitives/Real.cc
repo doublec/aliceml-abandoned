@@ -130,4 +130,4 @@ void Primitive::RegisterReal() {
   Register("Real.round", Real_round, 1);
   Register("Real.toString", Real_toString, 1);
   Register("Real.trunc", Real_trunc, 1);
-};
+}

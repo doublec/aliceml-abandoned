@@ -44,4 +44,4 @@ void Primitive::RegisterVector() {
   Register("Vector.length", Vector_length, 1);
   Register("Vector.sub", Vector_sub, 2);
   //--** tabulate
-};
+}

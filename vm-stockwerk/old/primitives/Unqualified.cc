@@ -74,5 +74,5 @@ DEFINE2(opnoteq) {
 void Primitive::RegisterUnqualified() {
   Register("=", opeq);
   Register("<>", opnoteq);
-};
+}
 */

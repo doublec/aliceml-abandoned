@@ -141,4 +141,4 @@ void Primitive::RegisterString() {
   Register("String.sub", String_sub, 1);
   Register("String.substring", String_substring, 3);
   Register("String.str", String_str, 1);
-};
+}

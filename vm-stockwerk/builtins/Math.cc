@@ -67,4 +67,4 @@ void Primitive::RegisterMath() {
   Register("Math.sqrt", Math_sqrt, 1);
   Register("Math.tan", Math_tan, 1);
   Register("Math.tanh", Math_tanh, 1);
-};
+}

@@ -18,4 +18,4 @@ DEFINE1(Internal_raise) {
 
 void Primitive::RegisterInternal() {
   Register("Internal.raise", Internal_raise, 1);
-};
+}

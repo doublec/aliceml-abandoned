@@ -14,4 +14,4 @@
 
 void Primitive::RegisterList() {
   Register("List.Empty", Constructor::New()->ToWord()); //--** unique
-};
+}

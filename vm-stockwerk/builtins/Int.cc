@@ -142,4 +142,4 @@ void Primitive::RegisterInt() {
   Register("Int.quot", Int_quot, 2);
   Register("Int.rem", Int_rem, 2);
   Register("Int.toString", Int_toString, 1);
-};
+}

@@ -49,4 +49,4 @@ void Primitive::RegisterUnsafe() {
   Register("Unsafe.String.sub", Unsafe_String_sub, 2);
   Register("Unsafe.Vector.sub", Unsafe_Vector_sub, 2);
   Register("Unsafe.cast", Unsafe_cast, 1);
-};
+}

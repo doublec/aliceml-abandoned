@@ -14,4 +14,4 @@
 
 void Primitive::RegisterGlobalStamp() {
   //--** new fromString toString compare hash
-};
+}

@@ -26,4 +26,4 @@ void GlobalPrimitives::Init() {
   Hole_Cyclic = Primitive::Lookup("Hole.Cyclic");
   Hole_Hole = Primitive::Lookup("Hole.Hole");
   Internal_raise = Primitive::Lookup("Internal.raise");
-};
+}

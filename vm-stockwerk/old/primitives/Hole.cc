@@ -65,4 +65,4 @@ void Primitive::RegisterHole() {
   Register("Hole.hole", Hole_hole, 0);
   Register("Hole.isFailed", Hole_isFailed, 1);
   Register("Hole.isFailed", Hole_isHole, 1);
-};
+}
