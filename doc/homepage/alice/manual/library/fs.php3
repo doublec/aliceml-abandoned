@@ -272,7 +272,7 @@
       <tt>partition (<I>v</I>,<I>x</I>)</TT>
     </DT>
     <DD>
-      <P><I>v</I> is a partition of <I>x<I>, that is, <I>v</I> containts
+      <P><I>v</I> is a partition of <I>x</I>, that is, <I>v</I> containts
       pairwise disjoint set such that the union yields <I>x</I>.
     </P></DD>
 
