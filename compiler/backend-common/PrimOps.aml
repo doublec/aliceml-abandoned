@@ -169,6 +169,7 @@ structure PrimOps :> PRIM_OPS =
 		ins ("Real.trunc", SOME Unary);
 		ins ("Ref.:=", SOME (Tuple 2));
 		ins ("Ref.exchange", SOME (Tuple 2));
+		ins ("Remote.dynamicCall", SOME (Tuple 2));
 		ins ("String.^", SOME (Tuple 2));
 		ins ("String.<", SOME (Tuple 2));
 		ins ("String.>", SOME (Tuple 2));
