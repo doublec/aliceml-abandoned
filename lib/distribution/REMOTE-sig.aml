@@ -23,7 +23,7 @@ signature REMOTE =
 
 	(*--** once-only offer and proxy *)
 	val proxy: ('a -> 'b) -> 'a -> 'b
-	val offer: Package.package -> string              (* Pickle.Sited *)
+	val offer: Package.package -> ticket              (* Pickle.Sited *)
 	val take: ticket -> Package.package               (* Ticket *)
 
 	(*--** functor Proxy(signature S functor F(): S): fct(S) -> S*)
