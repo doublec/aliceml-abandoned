@@ -1,0 +1,23 @@
+ICFP <7><PL><B>ICFP 2001 Programming Contest
+Challenge Task
+version 2</B></PL></7>
+
+<5>Damien Doligez, Luc Maranget, Pierre Weis</5>
+<I>This document is also available as </I><U><b><I>PDF</I></b></U><I>, </I><U><b><I>Postcript</I></b></U><I> and </I><U><b><I>plain text</I></b></U><I>.</I>
+
+<6><PL><B>1   The SML/NG markup language</B></PL></6>
+Th
+
+<6><PL><B>2   Description of SML/NG</B></PL></6>
+A document is composed of text and tags. A tag is a sequence of
+characters (the tag's <EM>name</EM>) between &lt; and &gt;.
+Anything else in a document is called <EM>text</EM>. For example,
+
+<TT>B</TT> (bold)
+<TT>EM</TT> (emphasis)
+<TT>I</TT> (italic)
+<TT>PL</TT> (plain)
+<TT>S</TT> (strong emphasis)
+<TT>TT</TT> (typewriter)
+<TT>U</TT> (underline)
+<TT>0</TT>...<TT>9</TT> (size)
