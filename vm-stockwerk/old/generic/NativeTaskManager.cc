@@ -11,13 +11,14 @@
 //
 
 #include "builtins/Primitive.hh"
+#include "builtins/GlobalPrimitives.hh"
 
 class PrimitiveInterpreter: public Interpreter {
 private:
   Primitive::function function;
-  u_int arity;
+  int arity;
 public:
-  PrimitiveInterpreter(Primitive::function f, u_int n):
+  PrimitiveInterpreter(Primitive::function f, int n):
     function(f), arity(n == 1? -1: n) {}
 
   ConcreteCode *Prepare(word abstractCode);
@@ -45,9 +46,41 @@ Interpreter::Result
 PrimitiveInterpreter::Run(TaskStack *taskStack, int nargs) {
   if (arity != nargs) {
     if (nargs == -1) {
-      //--** deconstruct one tuple from the task stack to (arity) arguments
-    } else {
-      //--** construct (nargs) arguments from the task stack into one tuple
+      word suspendWord = taskStack->GetWord(0);
+      if (arity == 0) { // await unit
+	if (Store::WordToInt(suspendWord) == INVALID_INT) {
+	  taskStack->PopFrame(1);
+	  Closure::FromWord(GlobalPrimitives::Future_await)->
+	    PushCall(taskStack);
+	  taskStack->PushFrame(1);
+	  taskStack->PutWord(0, suspendWord);
+	  return Result(Result::CONTINUE, 1);
+	}
+	Assert(Store::WordToInt(suspendWord) == 0); // unit
+      } else { // deconstruct
+	Tuple *tuple = Tuple::FromWord(suspendWord);
+	if (tuple == INVALID_POINTER) {
+	  taskStack->PopFrame(1);
+	  Closure::FromWord(GlobalPrimitives::Future_await)->
+	    PushCall(taskStack);
+	  taskStack->PushFrame(1);
+	  taskStack->PutWord(0, suspendWord);
+	  return Result(Result::CONTINUE, 1);
+	}
+	taskStack->PushFrame(arity - 1);
+	Assert(tuple->GetWidth() == arity);
+	for (u_int i = arity; i--; )
+	  taskStack->PutWord(i, tuple->Sel(i));
+      }
+    } else if (nargs == 0) {
+      taskStack->PushFrame(1);
+      taskStack->PutWord(0, Store::IntToWord(0)); // unit
+    } else { // construct
+      Tuple *tuple = Tuple::New(nargs);
+      for (u_int i = nargs; i--; )
+	tuple->Init(i, taskStack->GetWord(i));
+      taskStack->PopFrame(nargs - 1);
+      taskStack->PutWord(0, tuple->ToWord());
     }
   }
   return function(taskStack);
