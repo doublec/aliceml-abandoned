@@ -57,6 +57,7 @@ DEFINE1(Future_status) {
     RETURN_INT(Types::DETERMINED);
   switch (transient->GetLabel()) {
   case HOLE_LABEL:
+    RAISE(PrimitiveTable::Hole_Hole);
   case FUTURE_LABEL:
   case BYNEED_LABEL:
     RETURN_INT(Types::FUTURE);
@@ -68,6 +69,9 @@ DEFINE1(Future_status) {
 } END
 
 void PrimitiveTable::RegisterFuture() {
+  PrimitiveTable::Future_Cyclic = Hole::cyclicExn;
+
+  Register("Future.Cyclic", PrimitiveTable::Future_Cyclic);
   Register("Future.alarm'", Future_alarmQuote, 1);
   Register("Future.await", Future_await, 1);
   Register("Future.byneed", Future_byneed, 1);
