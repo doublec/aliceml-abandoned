@@ -193,10 +193,8 @@ static void PrintInfo(word /*key*/, word value) {
 
 void Profiler::DumpInfo() {
   BlockHashTable *t = BlockHashTable::FromWordDirect(table);
-  if ((logFile = fopen("profile_log.txt", "w")) == NULL) {
-    fprintf(stderr, "Profiler:DumpInfo: unable to open log file\n");
-    exit(1);
-  }
+  if ((logFile = std::fopen("profile_log.txt", "w")) == NULL)
+    Error("Profiler:DumpInfo: unable to open log file");
   t->Apply((item_apply) PrintInfo);
   std::fclose(logFile);
 }
