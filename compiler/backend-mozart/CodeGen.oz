@@ -83,20 +83,20 @@ define
 	    onScalar(Constant ThenVInstr)
 	 else unit
 	 end
-      [] tagTest(Label) then
+      [] tagTest(Label _) then
 	 onScalar(Label ThenVInstr)
-      [] tagAppTest(Label oneArg(Id)) then ThenVInstr0 in
+      [] tagAppTest(Label _ oneArg(Id)) then ThenVInstr0 in
 	 ThenVInstr0 = vGetVariable(_ {MakeReg Id State} ThenVInstr)
 	 onRecord(Label 1 ThenVInstr0)
-      [] tagAppTest(Label tupArgs(nil)) then
+      [] tagAppTest(Label _ tupArgs(nil)) then
 	 onScalar(Label ThenVInstr)
-      [] tagAppTest(Label tupArgs(Ids=_|_)) then ThenVInstr0 in
+      [] tagAppTest(Label _ tupArgs(Ids=_|_)) then ThenVInstr0 in
 	 {FoldL Ids
 	  proc {$ VHd Id VTl}
 	     VHd = vGetVariable(_ {MakeReg Id State} VTl)
 	  end ThenVInstr0 ThenVInstr}
 	 onRecord(Label {Length Ids} ThenVInstr0)
-      [] tagAppTest(Label recArgs(LabelIdList)) then ThenVInstr0 in
+      [] tagAppTest(Label _ recArgs(LabelIdList)) then ThenVInstr0 in
 	 {FoldL LabelIdList
 	  proc {$ VHd _#Id VTl}
 	     VHd = vGetVariable(_ {MakeReg Id State} VTl)
@@ -273,9 +273,9 @@ define
 			    {TranslateRegion Region State} VTl)
       [] varExp(_ Id) then
 	 VHd = vUnify(_ Reg {GetReg Id State} VTl)
-      [] tagExp(_ Label nullary) then
+      [] tagExp(_ Label _ nullary) then
 	 VHd = vEquateConstant(_ Label Reg VTl)
-      [] tagExp(Region Label unary) then
+      [] tagExp(Region Label _ unary) then
 	 PredId NLiveRegs ArgReg ResReg VInstr GRegs Code
       in
 	 PredId = pid(Label 2 {TranslateRegion Region State} nil NLiveRegs)
@@ -286,9 +286,9 @@ define
 	 {State.cs
 	  endDefinition(VInstr [ArgReg ResReg] nil ?GRegs ?Code ?NLiveRegs)}
 	 VHd = vDefinition(_ Reg PredId unit GRegs Code VTl)
-      [] tagExp(_ Label tuple(0)) then
+      [] tagExp(_ Label _ tuple(0)) then
 	 VHd = vEquateConstant(_ fun {$ unit} Label end Reg VTl)
-      [] tagExp(_ Label _) then
+      [] tagExp(_ Label _ _) then
 	 VHd = vEquateConstant(_ fun {$ X} {Adjoin X Label} end Reg VTl)
       [] conExp(_ Id nullary) then
 	 VHd = vUnify(_ Reg {GetReg Id State} VTl)
@@ -342,7 +342,7 @@ define
 		   {AdjoinAt Rec Label value({GetReg Id State})}
 		end '#'}
 	 VHd = vEquateRecord(_ '#' {Arity Rec} Reg {Record.toList Rec} VTl)
-      [] selExp(_ Label) then
+      [] selExp(_ _ Label) then
 	 VHd = vEquateConstant(_ fun {$ X} X.Label end Reg VTl)
       [] vecExp(_ nil) then
 	 VHd = vEquateConstant(_ '#' Reg VTl)
@@ -443,15 +443,15 @@ define
 	 end
 	 VInter = vDeconsCall(_ {GetReg Id State} ArgReg Reg
 			      {TranslateRegion Region State} VTl)
-      [] tagAppExp(_ Label oneArg(Id)) then
+      [] tagAppExp(_ Label _ oneArg(Id)) then
 	 VHd = vEquateRecord(_ Label 1 Reg [value({GetReg Id State})] VTl)
-      [] tagAppExp(_ Label tupArgs(nil)) then
+      [] tagAppExp(_ Label _ tupArgs(nil)) then
 	 VHd = vEquateConstant(_ Label Reg VTl)
-      [] tagAppExp(_ Label tupArgs(Ids=_|_)) then
+      [] tagAppExp(_ Label _ tupArgs(Ids=_|_)) then
 	 VHd = vEquateRecord(_ Label {Length Ids} Reg
 			     {Map Ids fun {$ Id} value({GetReg Id State}) end}
 			     VTl)
-      [] tagAppExp(_ Label recArgs(LabelIdList)) then
+      [] tagAppExp(_ Label _ recArgs(LabelIdList)) then
 	 VHd = vEquateRecord(_ Label
 			     {Map LabelIdList fun {$ Label#_} Label end} Reg
 			     {Map LabelIdList
@@ -497,7 +497,7 @@ define
       [] refAppExp(Region Id) then
 	 VHd = vCallBuiltin(_ 'Cell.new' [{GetReg Id State} Reg]
 			    {TranslateRegion Region State} VTl)
-      [] selAppExp(Region Label Id) then
+      [] selAppExp(Region Label _ Id) then
 	 VHd = vInlineDot(_ {GetReg Id State} Label Reg false
 			  {TranslateRegion Region State} VTl)
       [] funAppExp(Region Id _ Args) then
