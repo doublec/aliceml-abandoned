@@ -11,8 +11,8 @@
  *)
 
 import structure TextIO              from "../../lib/system/TextIO"
+import structure Url                 from "../../lib/system/Url"
 import structure ComponentManager    from "../../lib/system/ComponentManager"
-import structure Url                 from "../../lib/utility/Url"
 import structure Assert              from "../../lib/utility/Assert"
 import structure Source              from "../infrastructure/Source"
 import structure MkSwitches          from "../infrastructure/MkSwitches"

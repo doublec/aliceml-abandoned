@@ -11,7 +11,7 @@
  *)
 
 import signature IMP_MAP     from "../lib/utility/IMP_MAP-sig"
-import structure Url         from "../lib/utility/Url"
+import structure Url         from "../lib/system/Url"
 import structure MyComponent from "MyComponent"
 
 signature LINK =

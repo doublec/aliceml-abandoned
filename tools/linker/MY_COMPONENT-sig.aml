@@ -10,7 +10,7 @@
  *   $Revision$
  *)
 
-import structure Url from "../lib/utility/Url"
+import structure Url from "../lib/system/Url"
 import structure Inf from "../lib/rtt/Inf"
 
 signature MY_COMPONENT =

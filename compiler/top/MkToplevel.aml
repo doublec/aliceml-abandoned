@@ -13,7 +13,7 @@
 
 import structure TextIO               from "../../lib/system/TextIO"
 import structure OS                   from "../../lib/system/OS"
-import structure Url                  from "../../lib/utility/Url"
+import structure Url                  from "../../lib/system/Url"
 
 import structure Component            from "../../lib/system/Component"
 import structure PPComponent          from "../../lib/system/PPComponent"
