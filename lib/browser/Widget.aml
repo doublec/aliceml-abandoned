@@ -690,22 +690,35 @@ fun updateIterate = re_inspect
 	 end
    
  fun deleteNode Empty = ()
-   | deleteNode (Simple(r) as node)  =   ( objectDestroy(getGroup(node))
-	     ; (if not(Future.isDetermined(UnsafeValue.cast (getValue(getDesc(node)))))	
-	     then case Dictionaries.Transient.iterLookup
-		 (Dictionaries.transdict,fn (v,_,n) => 
-		  v = getValue(getDesc(node))) 
-		 of
-		     SOME (n,i) => Dictionaries.Transient.delete
-			 (Dictionaries.transdict,i)
-		   | NONE => ()
-	       else ()) handle Match => ())
-     | deleteNode (RelNode(r) as node) = (deleteNode (getContent(node))
-					  ; objectDestroy(getGroup(node))) 
-     | deleteNode (RelRefNode(r)as node) = (objectDestroy(getGroup(node))) 
-     | deleteNode (Limit(r) as node) = objectDestroy(getGroup(node))
-     | deleteNode node =  ( Array.app deleteNode (getKids(node))
-			   ; objectDestroy(getGroup(node)))
+   | deleteNode (Simple(r) as node)  =   
+     ( objectDestroy(getGroup(node))
+     ; (if not(Future.isDetermined(UnsafeValue.cast (getValue(getDesc(node)))))	
+	    then case Dictionaries.Transient.iterLookup
+		    (Dictionaries.transdict,fn (v,_,n) => 
+		     UnsafeValue.same(v,getValue(getDesc(node))))
+		of
+		SOME ((v,thr,l),i) 
+	        => let val new_l =  
+		     #2(List.partition (fn n => getParent(n) = getParent(node)
+					andalso getIndex(n) = getIndex(node))
+			l)
+		   in if null new_l 
+			  then ( Thread.terminate(thr) 
+				; Dictionaries.Transient.delete
+				(Dictionaries.transdict,i) )
+		      else Dictionaries.Transient.update
+			  (Dictionaries.transdict,(i,(v,thr,new_l)))
+		   end 
+	       
+	      | NONE => ()
+		   
+	else ()) handle _ => ())
+   | deleteNode (RelNode(r) as node) = (deleteNode (getContent(node))
+					; objectDestroy(getGroup(node))) 
+   | deleteNode (RelRefNode(r)as node) = (objectDestroy(getGroup(node))) 
+   | deleteNode (Limit(r) as node) = objectDestroy(getGroup(node))
+   | deleteNode node =  ( Array.app deleteNode (getKids(node))
+			 ; objectDestroy(getGroup(node)))
    
 
     fun deleteNodeTree node = 
@@ -716,8 +729,8 @@ fun updateIterate = re_inspect
 		| _ => Empty
 	    val dy = ~1 - get_ydim(root_node)
 	in
-	( deleteNode node
-	  ;case Dictionaries.Main.lookup(Dictionaries.maindict,getIndex(node))  
+	( deleteNode root_node
+	  ;case Dictionaries.Main.lookup(Dictionaries.maindict,getIndex(root_node))  
 	 of 
 	     SOME (n,sep) => if not(sep = GtkSupport.uglyNULL) 
 				 then objectDestroy(sep) 

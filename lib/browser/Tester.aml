@@ -75,7 +75,10 @@ UnsafeInspector.inspect (l,int_list);
 
 (* Futures *)
 structure Fut = Reflect.ReflectType (type t = int vector list);
+structure Fut2 = Reflect.ReflectType (type t = int vector vector)
 val fut = Fut.x;
+val fut2 = Fut2.x;
+
 val prom1 = Promise.promise();
 val prom2 = Promise.promise();
 val prom3 = Promise.promise();    
@@ -84,6 +87,8 @@ val future2 = Promise.future prom2;
 val future3 = Promise.future prom3;
 
 UnsafeInspector.inspect([future1,future2,future1,future1],fut);
+
+UnsafeInspector.inspect(#[future2,future1],fut2);
 
 Promise.fulfill(prom1,#[1,2]);
 

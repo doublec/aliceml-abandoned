@@ -44,11 +44,7 @@ struct
     
     exception UpdateError
     
-    (* momentan in Dictionaries:
-    structure MainDictionary = MkDictionary(type t = node * GtkSupport.tag)
-    val main_dict = MainDictionary.empty *)
-
-    (* Operationen, die auf die Funktionalitaet von Widget zurueckgreifen
+(* Operationen, die auf die Funktionalitaet von Widget zurueckgreifen
        - werden beim Starten des Inspectors "gefuellt" *)
     val incrActLine = ref (fn _ => ())
     val resize = ref (fn () => ()) 
@@ -124,8 +120,7 @@ struct
 
    (* update *)
     and update (no,va,f,g,root) = 
-	(TextIO.print("started update") 
-	 ; let val  n = if !(Settings.relmode) 
+	   let val  n = if !(Settings.relmode) 
 	                    andalso isRelNode(getParent(no))
 			    then getParent(no)
 			else no
@@ -176,7 +171,7 @@ struct
 		     ; setVisible(get_xdim(node), dy) )
 		 end
 	      ; TextIO.print(" Iter move done \n") )
-	   end ) 
+	   end  
 
     (* findRelNode *)
     and findRelNode(anc,va) = 
@@ -209,13 +204,14 @@ struct
 	end
         
     (* tell *)
-    and tell (va,li,f,g,root) =  
+    and tell (va,i,li,f,g,root) =  
 	let val new_li = List.sort (fn (n,m) => Int.compare(getAncIndex n, 
 							    getAncIndex m)) 
 	                           li
 	in ((* Window.stopButtonSetActive(true) *)
 	     List.map (fn n => update(n,va,f,g,root)) new_li 
-	     ; (!resize)() 
+	   ; (!resize)() 
+	   ; Dictionaries.Transient.delete(Dictionaries.transdict,i)
 	    (* ; Window.stopButtonSetActive(false) *) )
 	end   
 
@@ -223,13 +219,13 @@ struct
     and watcher (future,va,i,f,g,root) = 
 	Thread.thread 
 	(fn () 
-	 =>  (if Future.isLazy  future
-		       then UnsafeValue.awaitRequest(future)
-		   else Future.await(future)
-		  ; let val new_l = #3(valOf(Dictionaries.Transient.lookup
-					     (Dictionaries.transdict,i)))
-		    in Server.serve(fn () => tell(va,new_l,f,g,root))
-		    end ))
+	 =>  ( if Future.isLazy  future
+		   then UnsafeValue.awaitRequest(future)
+	       else Future.await(future)
+	     ; let val new_l = #3(valOf(Dictionaries.Transient.lookup
+					(Dictionaries.transdict,i)))
+	       in Server.serve(fn () => tell(va,i,new_l,f,g,root))
+	       end ))
 	
     (* reinspect *)
     and reinspect (n,f,g,root) = 
