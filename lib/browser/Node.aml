@@ -453,4 +453,10 @@ struct
 			 (Future.isLazy(future)) handle _ => false
 		     end
 
+    fun isDepthLimit n = getSort(n) = DEPTH_LIMIT
+	handle Match => false
+
+    fun isWidthLimit n = getSort(n) = WIDTH_LIMIT
+	handle Match => false
+
 end

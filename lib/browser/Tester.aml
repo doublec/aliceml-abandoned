@@ -31,6 +31,14 @@ val my_array = let val a = Array.array(2,1.0)
 UnsafeInspector.inspect ({ref = ref "hallo",vec1 = #[(4,5),(6,7)],
                           vec2 = #[(6,7),(4,5)], arr = my_array},rva_rec); 
 
+structure Rec = Reflect.ReflectType(type t = {arr: real array});
+val recc = Rec.x;
+UnsafeInspector.inspect({arr = my_array},recc);
+
+structure Arr = Reflect.ReflectType(type t = real array);
+val arr = Arr.x;
+UnsafeInspector.inspect(my_array,arr);
+
 (* Datentyp *)
 datatype foo = A 
              | B of int ref list

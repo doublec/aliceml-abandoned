@@ -73,9 +73,9 @@ struct
 	 end
 
     (* newNode *)
-    fun newNode (v,t,i,root) = let val va = UnsafeValue.cast v: Reflect.value			 
-			       in  createGraph (va,t,Empty,i,0,root)
-			       end 
+     fun newNode (v,t,i,root) = let val va = UnsafeValue.cast v: Reflect.value			 
+				in createGraph (va,t,Empty,i,0,root)
+				end 
 
     (* createGraph *)
     and createGraph (va,t,p,i,d,root) = ( (*Window.testIfStop() *) ()
@@ -500,8 +500,8 @@ struct
 	      in  docToNode (doc,p,i,d,root) 
 	      end )
 
-(* docToNode *) (* changed on 5.March *)
-and docToNode (doc,p,i,d,root) =
+    (* docToNode *) (* changed on 5.March *)
+    and docToNode (doc,p,i,d,root) =
         (case doc of
          SIMPLE(r) 
 	   => let val color = 
@@ -541,8 +541,8 @@ and docToNode (doc,p,i,d,root) =
 	      end  
         | CONCAT(r) => let val na = Array.array(Vector.length(#kids(r)),
 						 Empty)
-                            val concat = createConcat(#desc(r),p,i,d,na,
-						      root)
+			   val concat = createConcat(#desc(r),p,i,d,na,
+						     root)
 		       in
 			   (Vector.appi (fn (i,a) => 
 				       Array.update(na,i,
@@ -556,12 +556,12 @@ and docToNode (doc,p,i,d,root) =
 			  in
 			      (Vector.appi(fn (i,a) => 
 				      Array.update(na,i,
-				 docToNode(a,container,i,d+1,root))) (#kids(r))
+				 docToNode(a,container,i,d,root))) (#kids(r))
 			       ;container)
 			  end
 	| LIMIT(r) => createLimit(#desc(r),#sort(r),p,i,d,root) 
-	| EMBEDDED(v,t) => createGraph (v,t,p,i,d,root)
-	| EMBEDDED_INF(v,t) => createGraphInf (v,t,p,i,d,root) ) 
+	| EMBEDDED(v,t) => createGraph (v,t,p,i,d+1,root)
+	| EMBEDDED_INF(v,t) => createGraphInf (v,t,p,i,d+1,root) ) 
   	     
 (* spezielle Behandlung von Futures *)
    

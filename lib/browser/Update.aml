@@ -13,6 +13,8 @@
  *
  *)
 
+import structure Inspector from "x-alice:/lib/tools/Inspector"
+
 import structure TextIO from "x-alice:/lib/system/TextIO"
 import structure Reflect from "x-alice:/lib/system/Reflect"
 import structure UnsafeValue from "x-alice:/lib/system/UnsafeValue"
@@ -268,8 +270,7 @@ struct
 			           : Reflect.value
 	in  Server.serve(fn () => 
 			 (update(n,va,f,g,root) 
-			 ; (!resize)()
-			 ; TextIO.print("REINSPECT: Window.resize() done :-)\n") ) )
+			 ; (!resize)() ) )
 	end
          handle General.Match  => raise UpdateError 
 	
@@ -282,6 +283,8 @@ struct
 	 in 
 	     ( setDazzled n
 	      ; let val new_depth = findHighestDepth n + i 
+		    val _ = TextIO.print("\nUPDATE: findHighestDepth liefert "
+					 ^Int.toString(findHighestDepth n)^"\n")
 		    val va = getReflectValue n
 		in ( Settings.set_depth(if new_depth < 0 then 0 else new_depth)
 		    ; update (n,va,f,g,root)
@@ -325,17 +328,19 @@ struct
 	 end )
 
     (* findHighestDepth *)
-    and findHighestDepth n = case n of
+    and findHighestDepth n = 
+	case n of
 	Concat(r) => max(Array.toList(#kids(r)),
-				fn no => if no = Empty 
-					     then findHighestDepth n
+				fn no => if no = Empty orelse isDepthLimit no 
+					     then getDepth n
 					 else findHighestDepth no)
       | Container(r) => max(Array.toList(#kids(r)),
-				   fn no => if no = Empty 
-						then findHighestDepth n
+				   fn no => if no = Empty orelse isDepthLimit no
+						then getDepth n
 					    else findHighestDepth no)
       | RelNode(r) => findHighestDepth (!(#content(r)))
-      | _ => getDepth n
+      | node => if isDepthLimit node then getDepth(getParent(node))
+		else getDepth node
 
     (* findHighestWidth *)
     and findHighestWidth n = 

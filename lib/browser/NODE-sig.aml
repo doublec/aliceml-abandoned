@@ -208,4 +208,7 @@ sig
 
     val isByneed: node -> bool 
 
+    val isDepthLimit: node -> bool
+    val isWidthLimit: node -> bool
+
 end

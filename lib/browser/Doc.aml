@@ -244,29 +244,31 @@ struct
 				     then LIMIT{desc = INTERPUNCT,
 						sort = WIDTH_LIMIT}
 			 else if i = l - 1
-				  then CONCAT{desc = INTERPUNCT, 
-					      kids = 
-					      #[SIMPLE{desc = INTERPUNCT,
-						       rep = Int.toString(i),
-						       color = LABEL_COLOR},
-						SIMPLE{desc = INTERPUNCT,
-						       rep = " = ",
-						       color = EQU_COLOR},
-						EMBEDDED(Array.sub(arr,i),
-							 arr_typ)] }
-			      else CONCAT{desc = INTERPUNCT,
-					  kids = 
-					  #[SIMPLE{desc = INTERPUNCT,
-						   rep = Int.toString(i),
-						   color = LABEL_COLOR},
-					    SIMPLE{desc = INTERPUNCT,
-						   rep = " = ",
-						   color = EQU_COLOR},
-					    EMBEDDED
-					    (Array.sub(arr,i),arr_typ),
-					    SIMPLE{desc = INTERPUNCT,
-						   rep = ", ",
-						   color = SEP_COLOR}]} )
+				  then (* mit Trennzeichen *)
+				      CONCAT{desc = INTERPUNCT, 
+					     kids = 
+					     #[SIMPLE{desc = INTERPUNCT,
+						      rep = Int.toString(i),
+						      color = LABEL_COLOR},
+					       SIMPLE{desc = INTERPUNCT,
+						      rep = " = ",
+						      color = EQU_COLOR},
+					       EMBEDDED(Array.sub(arr,i),
+							arr_typ)] }
+			      else (* ohne Trennzeichen *)
+				  CONCAT{desc = INTERPUNCT,
+					 kids = 
+					 #[SIMPLE{desc = INTERPUNCT,
+						  rep = Int.toString(i),
+						  color = LABEL_COLOR},
+					   SIMPLE{desc = INTERPUNCT,
+						  rep = " = ",
+						  color = EQU_COLOR},
+					   EMBEDDED
+					   (Array.sub(arr,i),arr_typ),
+					   SIMPLE{desc = INTERPUNCT,
+						  rep = ", ",
+						  color = SEP_COLOR}]} )
                     val cont = CONTAINER{desc = INTERPUNCT,
 					 kids = cont_kids}
 		in CONCAT{desc = descr,
