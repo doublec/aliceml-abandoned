@@ -544,8 +544,11 @@ Worker::Result ByteCodeInterpreter::Run() {
   }
   else if (pc == -2) {
     // Push Return Value to stack
-    if (Scheduler::nArgs != 0)
+    if (Scheduler::nArgs == Scheduler::ONE_ARG)
       frame->Push(Scheduler::currentArgs[0]);
+    else
+      for (u_int i = 0; i < Scheduler::nArgs; i++)
+	frame->Push(Scheduler::currentArgs[i]);
     pc = frame->GetContPC();
   }
   while (true) {
@@ -738,13 +741,22 @@ Worker::Result ByteCodeInterpreter::Run() {
       pc += 3;
       break;
     case Instr::ARETURN:
-    case Instr::DRETURN: // reals are boxed
-    case Instr::FRETURN: // reals are boxed
+    case Instr::FRETURN:
     case Instr::IRETURN:
+      {
+	JavaDebug::Print("(A|F|I)RETURN");
+	Scheduler::nArgs          = Scheduler::ONE_ARG;
+	Scheduler::currentArgs[0] = frame->Pop();
+	Scheduler::PopFrame();
+	CHECK_PREEMPT();
+      }
+      break;
+    case Instr::DRETURN:
     case Instr::LRETURN:
       {
-	JavaDebug::Print("(A|D|F|I|L)RETURN");
-	Scheduler::nArgs          = Scheduler::ONE_ARG;
+	JavaDebug::Print("(D|L)RETURN");
+	Scheduler::nArgs          = 2;
+	Scheduler::currentArgs[1] = frame->Pop();
 	Scheduler::currentArgs[0] = frame->Pop();
 	Scheduler::PopFrame();
 	CHECK_PREEMPT();
@@ -1713,12 +1725,14 @@ Worker::Result ByteCodeInterpreter::Run() {
     case Instr::LCONST_0:
       {
 	frame->Push(JavaLong::New(0, 0)->ToWord());
+	FILL_SLOT();
 	pc += 1;
       }
       break;
     case Instr::LCONST_1:
       {
 	frame->Push(JavaLong::New(0, 1)->ToWord());
+	FILL_SLOT();
 	pc += 1;
       }
       break;
