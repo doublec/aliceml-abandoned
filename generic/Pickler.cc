@@ -66,7 +66,7 @@ public:
   }
   void PutByte(u_char byte);
   void PutBytes(Chunk *c);
-  void PutBytes(u_char *buf, u_int size);
+  void PutBytes(const u_char *buf, u_int size);
   void PutUInt(u_int i);
   word Close();
 };
@@ -106,7 +106,7 @@ public:
 
   void PutByte(u_char byte);
   void PutBytes(Chunk *c);
-  void PutBytes(u_char *buf, u_int size);
+  void PutBytes(const u_char *buf, u_int size);
   word Close();
 };
 
@@ -146,7 +146,7 @@ public:
 
   void PutByte(u_char byte);
   void PutBytes(Chunk *c);
-  void PutBytes(u_char *c, u_int size);
+  void PutBytes(const u_char *c, u_int size);
   word Close();
 };
 
@@ -177,7 +177,7 @@ void OutputStream::PutBytes(Chunk *c) {
   }
 }
 
-void OutputStream::PutBytes(u_char *buf, u_int size) {
+void OutputStream::PutBytes(const u_char *buf, u_int size) {
   switch (GetType()) {
   case FILE_OUTPUT_STREAM:
     STATIC_CAST(FileOutputStream *, this)->PutBytes(buf, size); break;
@@ -201,7 +201,7 @@ void FileOutputStream::PutBytes(Chunk *c) {
   gzwrite(GetFile(), c->GetBase(), c->GetSize());
 }
 
-void FileOutputStream::PutBytes(u_char *buf, u_int size) {
+void FileOutputStream::PutBytes(const u_char *buf, u_int size) {
   gzwrite(GetFile(), buf, size);
 }
 
@@ -241,7 +241,7 @@ void StringOutputStream::PutBytes(Chunk *c) {
   SetPos(pos + cSize);
 }
 
-void StringOutputStream::PutBytes(u_char *buf, u_int size) {
+void StringOutputStream::PutBytes(const u_char *buf, u_int size) {
   //  u_int cSize = c->GetSize();
   u_int pos   = GetPos();
   while (pos + size >= GetSize())
@@ -1082,6 +1082,9 @@ void PickleSaveWorker::WriteToStream(OutputBuffer *obf,
   u_int stackHeight = PickleArgs::GetMaxStackHeight();
 
   // Write the magic header = stack info
+  outputStream->PutBytes((const unsigned char*)"seam", 4);
+  outputStream->PutUInt(Pickle::majorVersion);
+  outputStream->PutUInt(Pickle::minorVersion);
   outputStream->PutByte(Pickle::INIT);
   outputStream->PutUInt(stackHeight);
   outputStream->PutUInt(noOfLoc+1);

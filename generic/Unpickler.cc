@@ -1139,21 +1139,35 @@ u_int PickleCheckWorker::GetFrameSize(StackFrame *sFrame) {
 Worker::Result PickleCheckWorker::Run(StackFrame *sFrame) {
   InputStream *is = UnpickleArgs::GetInputStream();
 
-  u_char tag = is->GetByte(); PCHECK_EOB();
+  u_char* magic = is->GetBytes(4); PCHECK_EOB();
   bool flag = false;
   u_int stackSize = 0;
   u_int localsSize = 0;
 
-  if (STATIC_CAST(Pickle::Tag, tag) == Pickle::INIT) {
+  if (!strncmp((char*)magic, "seam", 4)) {
     is->Commit();
-    stackSize = is->GetUInt(); PCHECK_EOB();
+    u_int major = is->GetUInt(); PCHECK_EOB();
     is->Commit();
-    if (stackSize > MAX_VALID_INT) NCORRUPT();
-    if (!is->IsEOF()) {
-      localsSize = is->GetUInt(); PCHECK_EOB();
+    if (major==Pickle::majorVersion) {
+      u_int minor = is->GetUInt(); PCHECK_EOB();
       is->Commit();
-      if (localsSize > MAX_VALID_INT) NCORRUPT();
-      flag = true;
+      if (minor<=Pickle::minorVersion) {
+        is->Commit();
+        u_char tag = is->GetByte(); PCHECK_EOB();
+
+        if (STATIC_CAST(Pickle::Tag, tag) == Pickle::INIT) {
+          is->Commit();
+          stackSize = is->GetUInt(); PCHECK_EOB();
+          is->Commit();
+          if (stackSize > MAX_VALID_INT) NCORRUPT();
+          if (!is->IsEOF()) {
+            localsSize = is->GetUInt(); PCHECK_EOB();
+            is->Commit();
+            if (localsSize > MAX_VALID_INT) NCORRUPT();
+            flag = true;
+          }
+        }
+      }
     }
   }
 

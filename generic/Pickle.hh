@@ -22,7 +22,9 @@
 #endif
 
 //   pickle        ::=  init instrs ENDOFSTREAM
-//   init	   ::=  INIT stackSize noOfLocals
+//   init	   ::=  "seam" major minor INIT stackSize noOfLocals
+//   major         ::= <uint>
+//   minor         ::= <uint>
 //   stackSize     ::= <uint>
 //   noOfLocals    ::= <uint>
 //   instrs        ::=  instr instrs
@@ -48,6 +50,9 @@
 
 class Pickle {
 public:
+  static const u_int majorVersion = 1;
+  static const u_int minorVersion = 0;
+
   enum Tag {
     INIT,         // 0
     STORE,        // 1
