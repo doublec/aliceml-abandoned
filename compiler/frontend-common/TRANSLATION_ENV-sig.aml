@@ -32,7 +32,7 @@ sig
     val clone :			env -> env
 
     val insertMod :		env * stamp -> unit	(* Collision *)
-    val deleteMod :		env * stamp -> unit	(* Delete *)
+    val removeMod :		env * stamp -> unit	(* Unknown *)
     val memberMod :		env * stamp -> bool
 
     val insertPervasive :	env * modid   -> unit
