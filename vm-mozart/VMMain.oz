@@ -14,11 +14,11 @@ functor
 import
    BootName('<' hash) at 'x-oz://boot/Name'
    Application(getArgs exit)
-   Property(put)
+   Property(get put)
    Module(manager)
-   System(printError)
+   System(printError onToplevel)
    Resolve(trace)
-   Error(registerFormatter exceptionToMessage)
+   Error(registerFormatter exceptionToMessage printException)
    InfComponent('Inf$': Inf) at 'lib/rtt/Inf'
    BootComponent('boot': Boot) at 'lib/system/Boot'
 define
@@ -92,6 +92,32 @@ define
        else
 	  error(kind: T
 		items: [line(oz(E))])
+       end
+    end}
+
+   {Property.put 'alice.atExnActions'
+    {NewCell [fun {$ E}
+		 {Error.printException E}
+		 if {System.onToplevel} then
+		    {Application.exit 1}
+		 end
+		 unit
+	      end]}}
+
+   {Property.put 'errors.handler'
+    proc {$ E}
+       case E of system(kernel(terminate) ...) then
+	  skip
+       [] error(alice(Exn ...) ...) then
+	  {ForAll {Access {Property.get 'alice.atExnActions'}}
+	   proc {$ P}
+	       try {P Exn _} catch _ then skip end
+	   end}
+       else
+	  {Error.printException E}
+	  if {System.onToplevel} then
+	     {Application.exit 1}
+	  end
        end
     end}
 
