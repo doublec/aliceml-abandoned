@@ -72,4 +72,4 @@ functor MkBackendMozart(structure Switches: SWITCHES
 			       CodeGenPhase.translate (env, desc, component)
 		       end
 		   structure Switches = Switches
-		   val name = "Assembling")
+		   val name = "Code Generation")
