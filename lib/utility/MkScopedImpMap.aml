@@ -3,14 +3,14 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg, 2001-2003
  *
  * Last change:
  *   $Date$ by $Author$
  *   $Revision$
  *)
 
-import signature IMP_MAP        from "IMP_MAP-sig"
+import signature IMP_MAP        from "../data/IMP_MAP-sig"
 import signature SCOPED_IMP_MAP from "SCOPED_IMP_MAP-sig"
 
 
@@ -22,17 +22,16 @@ struct
     type 'a map = 'a ImpMap.t list ref
     type 'a t   = 'a map
 
-    exception Delete    = ImpMap.Delete
+    exception Unknown   = ImpMap.Unknown
     exception Collision = ImpMap.Collision
-    exception Lookup    = ImpMap.Lookup
 
 
-    fun new()			= ref[ImpMap.new()]
+    fun map()			= ref[ImpMap.map()]
     fun clone(ref ms)		= ref(List.map ImpMap.clone ms)
     fun cloneScope(ref ms)	= ref[ImpMap.clone(List.hd ms)]
-    fun insertScope r		= r := ImpMap.new() :: !r
+    fun insertScope r		= r := ImpMap.map() :: !r
     fun deleteScope r		= r := List.tl(!r)
-    fun deleteAll r		= r := [ImpMap.new()]
+    fun deleteAll r		= r := [ImpMap.map()]
     fun splitScope(r as ref ms)	= ( deleteScope r ; ref[List.hd ms] )
     fun inheritScope(r,r')	= r := List.hd(!(splitScope r')) :: !r
 
@@ -48,20 +47,20 @@ struct
     fun mergeScopeWithi f	= mergeScope'(ImpMap.unionWithi f)
 
 
-    fun lookup'( [],   k)	= raise Lookup k
+    fun lookup'( [],   k)	= raise Unknown k
       | lookup'([m],   k)	= ImpMap.lookupExistent(m,k)
       | lookup'(m::ms, k)	= case ImpMap.lookup(m,k)
 				    of NONE   => lookup'(ms,k)
 				     | SOME a => a
 
     fun lookup(ref ms, k)		= SOME(lookup'(ms,k))
-					  handle Lookup _ => NONE
+					  handle Unknown _ => NONE
     fun lookupExistent(ref ms, k)	= lookup'(ms,k)
     fun lookupScope(ref ms, k)		= ImpMap.lookup(List.hd ms, k)
     fun lookupExistentScope(ref ms, k)	= ImpMap.lookupExistent(List.hd ms, k)
 
     fun member(ref ms, k)	= ( lookup'(ms, k) ; true )
-				  handle Lookup _ => false
+				  handle Unknown _ => false
     fun memberScope(ref ms, k)	= ImpMap.member(List.hd ms, k)
 
     fun isEmptyScope(ref ms)	= ImpMap.isEmpty(List.hd ms)

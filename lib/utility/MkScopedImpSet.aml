@@ -3,14 +3,14 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg, 2001-2003
  *
  * Last change:
  *   $Date$ by $Author$
  *   $Revision$
  *)
 
-import signature IMP_SET        from "IMP_SET-sig"
+import signature IMP_SET        from "../data/IMP_SET-sig"
 import signature SCOPED_IMP_SET from "SCOPED_IMP_SET-sig"
 
 
@@ -22,18 +22,18 @@ struct
     type set  = ImpSet.t list ref
     type t    = set
 
-    exception Delete    = ImpSet.Delete
+    exception Unknown   = ImpSet.Unknown
     exception Collision = ImpSet.Collision
 
 
     val scopeSize = 19
 
-    fun new()			= ref[ImpSet.new()]
+    fun set()			= ref[ImpSet.set()]
     fun clone(ref ss)		= ref(List.map ImpSet.clone ss)
     fun cloneScope(ref ss)	= ref[ImpSet.clone(List.hd ss)]
-    fun insertScope r		= r := ImpSet.new() :: !r
+    fun insertScope r		= r := ImpSet.set() :: !r
     fun deleteScope r		= r := List.tl(!r)
-    fun deleteAll r		= r := [ImpSet.new()]
+    fun deleteAll r		= r := [ImpSet.set()]
     fun splitScope(r as ref ss)	= ( deleteScope r ; ref[List.hd ss] )
     fun inheritScope(r,r')	= r := List.hd(!(splitScope r')) :: !r
 

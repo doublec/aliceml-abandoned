@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg, 2001-2003
  *
  * Last change:
  *   $Date$ by $Author$
@@ -20,10 +20,10 @@ sig
     type set
     type t = set
 
-    exception Delete    of item
+    exception Unknown   of item
     exception Collision of item
 
-    val new :			unit -> set
+    val set :			unit -> set
 
     val clone :			set -> set
     val cloneScope :		set -> set
@@ -39,7 +39,7 @@ sig
     val mergeScopeWith :	(item -> unit) -> set -> unit
 
     val delete :		set * item -> unit
-    val deleteExistent :	set * item -> unit		(* Delete *)
+    val deleteExistent :	set * item -> unit		(* Unknown *)
     val deleteWith :		(item -> unit) -> set * item -> unit
 
     val insert :		set * item -> unit
