@@ -350,8 +350,9 @@ struct
 	    val (rows, cols) = Array2.dimensions arena
 	    val (obj, f) = Array2.sub (arena, r, c)
 	in
-	    assert f <> field do
-	    changeField (obj, f, r, c, field, cache, arena, canvas)
+	    if f <> field
+	    then changeField (obj, f, r, c, field, cache, arena, canvas)
+	    else ()
 	end
 
 	
