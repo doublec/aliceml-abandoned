@@ -17,13 +17,14 @@ cp stoc/stoc-mozart.x86-linux $PREFIX/
 # Copy System Libraries
 cp vm-mozart/*.ozf $PREFIX/lib
 cp vm-mozart/bootstrap/lib/*.ozf.sig $PREFIX/lib/
-(cd vm-mozart/bootstrap && make Default.import) || exit 1
-cp vm-mozart/bootstrap/Default.import $PREFIX/
+#(cd vm-mozart/bootstrap && make Default.import) || exit 1
+cp vm-mozart/bootstrap/Base.import $PREFIX/Default.import
 # Copy Base Lib
+(cd vm-mozart/bootstrap && rm -f lib/Base.ozf && make lib/Base.ozf) || exit 1
 cp vm-mozart/bootstrap/lib/Base.ozf $PREFIX/lib
 cp vm-com+/Base.dll.sig $PREFIX/lib/Base.ozf.sig
 # Copy Bin Files
 cp vm-mozart/bootstrap/stoc.test $PREFIX/bin/stoc
 chmod +x $PREFIX/bin/stoc
-cp vm-mozart/bootstrap/stow $PREFIX/bin/stow
+cp vm-mozart/bootstrap/stow.test $PREFIX/bin/stow
 chmod +x $PREFIX/bin/stow
