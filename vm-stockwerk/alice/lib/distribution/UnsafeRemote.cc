@@ -71,11 +71,11 @@ DEFINE2(UnsafeRemote_dynamicCall) {
   }
 } END
 
-DEFINE1(UnsafeRemote_pack) {
+DEFINE1(UnsafeRemote_packValue) {
   return Pickler::Pack(x0, taskStack);
 } END
 
-DEFINE1(UnsafeRemote_unpack) {
+DEFINE1(UnsafeRemote_unpackValue) {
   DECLARE_STRING(packedValue, x0);
   return Unpickler::Unpack(static_cast<Chunk *>(packedValue), taskStack);
 } END
@@ -89,11 +89,11 @@ word UnsafeRemote(void) {
 				    UnsafeRemote_dynamicCall, 2, false));
   t->Init(1, Primitive::MakeClosure("UnsafeRemote_getLocalIP",
 				    UnsafeRemote_getLocalIP, 0, true));
-  t->Init(2, Primitive::MakeClosure("UnsafeRemote_pack",
-				    UnsafeRemote_pack, 1, true));
+  t->Init(2, Primitive::MakeClosure("UnsafeRemote_packValue",
+				    UnsafeRemote_packValue, 1, true));
   t->Init(3, Primitive::MakeClosure("UnsafeRemote_setCallback",
 				    UnsafeRemote_setCallback, 1, true));
-  t->Init(4, Primitive::MakeClosure("UnsafeRemote_unpack",
-				    UnsafeRemote_unpack, 1, true));
+  t->Init(4, Primitive::MakeClosure("UnsafeRemote_unpackValue",
+				    UnsafeRemote_unpackValue, 1, true));
   RETURN_STRUCTURE(t);
 }

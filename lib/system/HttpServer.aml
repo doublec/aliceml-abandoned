@@ -16,6 +16,7 @@ import structure FromEqHashKey from "../utility/HASH_KEY-sig"
 import structure StringHashKey from "../utility/StringHashKey"
 import structure MkHashImpMap  from "../utility/MkHashImpMap"
 import structure Url           from "../utility/Url"
+import structure UnsafeRemote  from "UnsafeRemote"
 import signature HTTP_SERVER   from "HTTP_SERVER-sig"
 
 structure HttpServer :> HTTP_SERVER =
@@ -84,7 +85,7 @@ structure HttpServer :> HTTP_SERVER =
 				  if String.size content <> n then raise Format
 				  else content
 			      end
-		        | NONE => raise Format)
+			| NONE => raise Format)
 		     handle Overflow => raise Format)
 	      | NONE => ""
 
@@ -165,7 +166,7 @@ structure HttpServer :> HTTP_SERVER =
 			    handleConnection (socket, host, port)
 			    handle Closed => ()
 			val (_, serverPort) = Socket.server (portOpt, server)
-			val serverHost = "amy"   (*--** *)
+			val serverHost = UnsafeRemote.getLocalIP ()
 			val url =
 			    Url.fromString ("http://" ^ serverHost ^ ":" ^
 					    Int.toString serverPort ^ "/")

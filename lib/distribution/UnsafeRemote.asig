@@ -3,7 +3,7 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 2001
+ *   Leif Kornstaedt, 2001-2002
  *
  * Last Change:
  *   $Date$ by $Author$
@@ -14,10 +14,12 @@ signature UNSAFE_REMOTE_COMPONENT =
     sig
 	structure UnsafeRemote:
 	    sig
-		exception Ticket
+		val getLocalIP: unit -> string
 
-		val proxy: ('a -> 'b) -> ('a -> 'b)
-		val offer: Package.package -> string
-		val take: string -> Package.package        (* Ticket *)
+		val setCallback: (string * 'a -> 'b) -> unit
+		val dynamicCall: string * 'a -> 'b
+
+		val packValue: 'a -> string
+		val unpackValue: string -> 'b
 	    end
     end

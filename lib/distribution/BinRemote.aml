@@ -59,16 +59,15 @@ structure Remote :> REMOTE =
 			       val return =
 				   proxy (fn package =>
 					     Promise.fulfill (p, package))))
-		val _ =   (*--**DEBUG*)
-		    TextIO.print ("ssh " ^ host ^ " alicerun " ^
-				  "x-alice:/lib/distribution/RemoteServer " ^
-				  T.ticket ^ "\n")
-		val proc =
-		    Unix.execute ("ssh",
-				  [host, "alicerun",
-				   "x-alice:/lib/distribution/RemoteServer",
-				   T.ticket])
 	    in
+		(*--**DEBUG*)
+		TextIO.print ("ssh " ^ host ^ " alicerun " ^
+			      "x-alice:/lib/distribution/RemoteServer " ^
+			      T.ticket ^ "\n");
+		Unix.execute ("ssh",
+			      [host, "alicerun",
+			       "x-alice:/lib/distribution/RemoteServer",
+			       T.ticket]);
 		Package.Unpack(val package = Promise.future p
 			       signature S = RESULT)
 	    end
