@@ -33,7 +33,7 @@ static Property defaultProperties[] = {
   {"java.vendor", "Programming Systems Lab, Universität des Saarlandes"},
   {"java.vendor.url", "http://www.ps.uni-sb.de/alice/"},
   {"java.vendor.url.bug", "http://www.ps.uni-sb.de/alice/bugs/"},
-  {"java.home", "/opt/stockhausen-devel"}, //--** Properties::aliceHome
+  {"java.home", "/opt/stockhausen-devel"}, //--**
   {"java.vm.specification.version", "1.0"},
   {"java.vm.specification.vendor", "Sun Microsystems Inc."},
   {"java.vm.specification.name", "Java Virtual Machine Specification"},
