@@ -581,8 +581,8 @@ void ByteCodeInterpreter::PushCall(Closure *closure) {
 
 Worker::Result ByteCodeInterpreter::Run() {
   ByteCodeFrame *frame = ByteCodeFrame::FromWordDirect(Scheduler::GetFrame());
-  int pc = frame->GetPC();
-  unsigned char *code = (unsigned char *) frame->GetCode()->GetBase();
+  s_int pc = frame->GetPC();
+  u_int8 *code = reinterpret_cast<u_int8 *>(frame->GetCode()->GetBase());
   RuntimeConstantPool *pool = frame->GetRuntimeConstantPool();
   // to be done: more efficient solution
   if (pc == -1) {
@@ -685,10 +685,9 @@ Worker::Result ByteCodeInterpreter::Run() {
 	if (array != INVALID_POINTER) {
 	  if (index < array->GetLength()) {
 	    Object *object = Object::FromWord(value);
-	    Type *type     = array->GetType();
-	    //--** need component type
-	    if ((type->GetLabel() == JavaLabel::Class) &&
-		((object == INVALID_POINTER) ||
+	    Type *type     = array->GetElementType();
+	    if (type->GetLabel() == JavaLabel::Class &&
+		(object == INVALID_POINTER ||
 		 object->IsInstanceOf(static_cast<Class *>(type))))
 	      array->Store(index, value);
 	    else {
@@ -762,7 +761,7 @@ Worker::Result ByteCodeInterpreter::Run() {
     case Instr::ILOAD:
       {
 	JavaDebug::Print("(A|F|I)LOAD");
-	word value = frame->GetEnv((u_int) GET_BYTE_INDEX()); 
+	word value = frame->GetEnv(GET_BYTE_INDEX()); 
 	frame->Push(value);
 	pc += 2;
       }
@@ -771,7 +770,7 @@ Worker::Result ByteCodeInterpreter::Run() {
     case Instr::LLOAD:
       {
 	JavaDebug::Print("(D|L)LOAD");
-	word value = frame->GetEnv((u_int) GET_BYTE_INDEX()); 
+	word value = frame->GetEnv(GET_BYTE_INDEX()); 
 	frame->Push(value);
 	FILL_SLOT();
 	pc += 2;
@@ -866,12 +865,7 @@ Worker::Result ByteCodeInterpreter::Run() {
 	  REQUEST(wType);
 	int count = JavaInt::FromWord(frame->Pop());
 	if (count >= 0) {
-	  Type *arrayType = static_cast<Type *>
-	    (ArrayType::New(type->ToWord()));
-	  ObjectArray *arr = ObjectArray::New(arrayType, count);
-	  for (u_int i = count; i--;)
-	    arr->Init(i, null);
-	  frame->Push(arr->ToWord());
+	  frame->Push(ObjectArray::New(type, count)->ToWord());
 	}
 	else {
 	  RAISE_VM_EXCEPTION(NegativeArraySizeException, "ANEWARRAY");
@@ -1039,7 +1033,7 @@ Worker::Result ByteCodeInterpreter::Run() {
     case Instr::BIPUSH:
       {
 	JavaDebug::Print("BIPUSH");
-	frame->Push(Store::IntToWord((int) (char) GET_BYTE_INDEX()));
+	frame->Push(Store::IntToWord(static_cast<s_int8>(GET_BYTE_INDEX())));
 	pc += 2;
       }
       break;
@@ -1063,7 +1057,7 @@ Worker::Result ByteCodeInterpreter::Run() {
 	    }
 	  }
 	  break;
-	case JavaLabel::BaseType:
+	case JavaLabel::PrimitiveType:
 	  {
 	    Error("invalid type");
 	  }
@@ -1088,7 +1082,7 @@ Worker::Result ByteCodeInterpreter::Run() {
     case Instr::D2I:
       {
 	DECLARE_DOUBLE(value);
-	frame->Push(JavaInt::ToWord((int) value));
+	frame->Push(JavaInt::ToWord(static_cast<s_int32>(value)));
 	pc += 1;
       }
       break;
@@ -1109,8 +1103,7 @@ Worker::Result ByteCodeInterpreter::Run() {
       {
 	DECLARE_DOUBLE(v2);
 	DECLARE_DOUBLE(v1);
-	int result = (v1 > v2);
-	frame->Push(JavaInt::ToWord(result));
+	frame->Push(JavaInt::ToWord(v1 > v2? 1: v1 == v2? 0: v1 < v2? -1: 1));
 	pc += 1;
       }
       break;
@@ -1118,8 +1111,7 @@ Worker::Result ByteCodeInterpreter::Run() {
       {
 	DECLARE_DOUBLE(v2);
 	DECLARE_DOUBLE(v1);
-	int result = (v1 < v2);
-	frame->Push(JavaInt::ToWord(result));
+	frame->Push(JavaInt::ToWord(v1 > v2? 1: v1 == v2? 0: v1 < v2? -1: -1));
 	pc += 1;
       }
       break;
@@ -1203,10 +1195,7 @@ Worker::Result ByteCodeInterpreter::Run() {
 	word v1 = frame->Pop();
 	word v2 = frame->Pop();
 	word v3 = frame->Pop();
-	word v4 = frame->Pop();
-	frame->Push(v2);
 	frame->Push(v1);
-	frame->Push(v4);
 	frame->Push(v3);
 	frame->Push(v2);
 	frame->Push(v1);
@@ -1282,13 +1271,16 @@ Worker::Result ByteCodeInterpreter::Run() {
       {
 	Float *v2 = JavaFloat::FromWord(frame->Pop());
 	Float *v1 = JavaFloat::FromWord(frame->Pop());
-	frame->Push(JavaInt::ToWord(v1 > v2));
+	frame->Push(JavaInt::ToWord(v1 > v2? 1: v1 == v2? 0: v1 < v2? -1: 1));
 	pc += 1;
       }
       break;
     case Instr::FCMPL:
       {
-	Error("not implemented");
+	Float *v2 = JavaFloat::FromWord(frame->Pop());
+	Float *v1 = JavaFloat::FromWord(frame->Pop());
+	frame->Push(JavaInt::ToWord(v1 > v2? 1: v1 == v2? 0: v1 < v2? -1: -1));
+	pc += 1;
       }
       break;
     case Instr::FCONST_0:
@@ -1392,20 +1384,20 @@ Worker::Result ByteCodeInterpreter::Run() {
     case Instr::GOTO:
       {
 	JavaDebug::Print("GOTO");
-	pc += (short int) GET_POOL_INDEX();
+	pc += static_cast<s_int16>(GET_POOL_INDEX());
       }
       break;
     case Instr::GOTO_W:
       {
 	JavaDebug::Print("GOTO_W");
-	pc += (int) GET_WIDE_INDEX();
+	pc += static_cast<s_int32>(GET_WIDE_INDEX());
       }
       break;
     case Instr::I2B:
       {
 	JavaDebug::Print("I2B");
 	s_int32 i = JavaInt::FromWord(frame->Pop());
-	frame->Push(Store::IntToWord(static_cast<u_char>(i)));
+	frame->Push(Store::IntToWord(static_cast<s_int8>(i)));
 	pc += 1;
       }
       break;
@@ -1416,12 +1408,18 @@ Worker::Result ByteCodeInterpreter::Run() {
       break;
     case Instr::I2D:
       {
-	Error("not implemented");
+	JavaDebug::Print("I2D");
+	s_int32 i = JavaInt::FromWord(frame->Pop());
+	PUSH_DOUBLE(static_cast<double>(i));
+	pc += 1;
       }
       break;
     case Instr::I2F:
       {
-	Error("not implemented");
+	JavaDebug::Print("I2F");
+	s_int32 i = JavaInt::FromWord(frame->Pop());
+	frame->Push(Float::New(static_cast<float>(i))->ToWord());
+	pc += 1;
       }
       break;
     case Instr::I2L:
@@ -1440,8 +1438,8 @@ Worker::Result ByteCodeInterpreter::Run() {
     case Instr::IADD:
       {
 	JavaDebug::Print("IADD");
-	int v2 = JavaInt::FromWord(frame->Pop());
-	int v1 = JavaInt::FromWord(frame->Pop());
+	s_int v2 = JavaInt::FromWord(frame->Pop());
+	s_int v1 = JavaInt::FromWord(frame->Pop());
 	frame->Push(JavaInt::ToWord(v1 + v2));
 	pc += 1;
       }
@@ -1449,8 +1447,8 @@ Worker::Result ByteCodeInterpreter::Run() {
     case Instr::IAND:
       {
 	JavaDebug::Print("IAND");
-	int v2 = JavaInt::FromWord(frame->Pop());
-	int v1 = JavaInt::FromWord(frame->Pop());
+	s_int v2 = JavaInt::FromWord(frame->Pop());
+	s_int v1 = JavaInt::FromWord(frame->Pop());
 	frame->Push(JavaInt::ToWord(v1 & v2));
 	pc += 1;
       }
@@ -1507,8 +1505,8 @@ Worker::Result ByteCodeInterpreter::Run() {
     case Instr::IDIV:
       {
 	JavaDebug::Print("IDIV");
-	int v2 = JavaInt::FromWord(frame->Pop());
-	int v1 = JavaInt::FromWord(frame->Pop());
+	s_int v2 = JavaInt::FromWord(frame->Pop());
+	s_int v1 = JavaInt::FromWord(frame->Pop());
 	if (v2 != 0)
 	  frame->Push(JavaInt::ToWord(v1 / v2));
 	else {
@@ -1524,7 +1522,7 @@ Worker::Result ByteCodeInterpreter::Run() {
 	word v2 = Word::Deref(frame->Pop());
 	word v1 = Word::Deref(frame->Pop());
 	if (v1 == v2)
-	  pc += (short) GET_POOL_INDEX();
+	  pc += static_cast<s_int16>(GET_POOL_INDEX());
 	else
 	  pc += 3;
       }
@@ -1536,7 +1534,7 @@ Worker::Result ByteCodeInterpreter::Run() {
 	word v2 = Word::Deref(frame->Pop());
 	word v1 = Word::Deref(frame->Pop());
 	if (v1 != v2)
-	  pc += (short) GET_POOL_INDEX();
+	  pc += static_cast<s_int16>(GET_POOL_INDEX());
 	else
 	  pc += 3;
       }
@@ -1544,10 +1542,10 @@ Worker::Result ByteCodeInterpreter::Run() {
     case Instr::IF_ICMPLT:
       {
 	JavaDebug::Print("IF_ICMPLT");
-	int v2 = JavaInt::FromWord(frame->Pop());
-	int v1 = JavaInt::FromWord(frame->Pop());
+	s_int v2 = JavaInt::FromWord(frame->Pop());
+	s_int v1 = JavaInt::FromWord(frame->Pop());
 	if (v1 < v2)
-	  pc += (short) GET_POOL_INDEX();
+	  pc += static_cast<s_int16>(GET_POOL_INDEX());
 	else
 	  pc += 3;
       }
@@ -1555,10 +1553,10 @@ Worker::Result ByteCodeInterpreter::Run() {
     case Instr::IF_ICMPGE:
       {
 	JavaDebug::Print("IF_ICMPGE");
-	int v2 = JavaInt::FromWord(frame->Pop());
-	int v1 = JavaInt::FromWord(frame->Pop());
+	s_int v2 = JavaInt::FromWord(frame->Pop());
+	s_int v1 = JavaInt::FromWord(frame->Pop());
 	if (v1 >= v2)
-	  pc += (short) GET_POOL_INDEX();
+	  pc += static_cast<s_int16>(GET_POOL_INDEX());
 	else
 	  pc += 3;
       }
@@ -1566,10 +1564,10 @@ Worker::Result ByteCodeInterpreter::Run() {
     case Instr::IF_ICMPGT:
       {
 	JavaDebug::Print("IF_ICMPGT");
-	int v2 = JavaInt::FromWord(frame->Pop());
-	int v1 = JavaInt::FromWord(frame->Pop());
+	s_int v2 = JavaInt::FromWord(frame->Pop());
+	s_int v1 = JavaInt::FromWord(frame->Pop());
 	if (v1 > v2)
-	  pc += (short) GET_POOL_INDEX();
+	  pc += static_cast<s_int16>(GET_POOL_INDEX());
 	else
 	  pc += 3;
       }
@@ -1577,10 +1575,10 @@ Worker::Result ByteCodeInterpreter::Run() {
     case Instr::IF_ICMPLE:
       {
 	JavaDebug::Print("IF_ICMPLE");
-	int v2 = JavaInt::FromWord(frame->Pop());
-	int v1 = JavaInt::FromWord(frame->Pop());
+	s_int v2 = JavaInt::FromWord(frame->Pop());
+	s_int v1 = JavaInt::FromWord(frame->Pop());
 	if (v1 <= v2)
-	  pc += (short) GET_POOL_INDEX();
+	  pc += static_cast<s_int16>(GET_POOL_INDEX());
 	else
 	  pc += 3;
       }
@@ -1589,7 +1587,7 @@ Worker::Result ByteCodeInterpreter::Run() {
       {
 	JavaDebug::Print("IFEQ");
 	if (JavaInt::FromWord(frame->Pop()) == 0)
-	  pc += (short) GET_POOL_INDEX();
+	  pc += static_cast<s_int16>(GET_POOL_INDEX());
 	else
 	  pc += 3;
       }
@@ -1598,7 +1596,7 @@ Worker::Result ByteCodeInterpreter::Run() {
       {
 	JavaDebug::Print("IFNE");
 	if (JavaInt::FromWord(frame->Pop()) != 0)
-	  pc += (short) GET_POOL_INDEX();
+	  pc += static_cast<s_int16>(GET_POOL_INDEX());
 	else
 	  pc += 3;
       }
@@ -1607,7 +1605,7 @@ Worker::Result ByteCodeInterpreter::Run() {
       {
 	JavaDebug::Print("IFLT");
 	if (JavaInt::FromWord(frame->Pop()) < 0)
-	  pc += (short) GET_POOL_INDEX();
+	  pc += static_cast<s_int16>(GET_POOL_INDEX());
 	else
 	  pc += 3;
       }
@@ -1616,7 +1614,7 @@ Worker::Result ByteCodeInterpreter::Run() {
       {
 	JavaDebug::Print("IFGE");
 	if (JavaInt::FromWord(frame->Pop()) >= 0)
-	  pc += (short) GET_POOL_INDEX();
+	  pc += static_cast<s_int16>(GET_POOL_INDEX());
 	else
 	  pc += 3;
       }
@@ -1625,7 +1623,7 @@ Worker::Result ByteCodeInterpreter::Run() {
       {
 	JavaDebug::Print("IFGT");
 	if (JavaInt::FromWord(frame->Pop()) > 0)
-	  pc += (short) GET_POOL_INDEX();
+	  pc += static_cast<s_int16>(GET_POOL_INDEX());
 	else
 	  pc += 3;
       }
@@ -1634,7 +1632,7 @@ Worker::Result ByteCodeInterpreter::Run() {
       {
 	JavaDebug::Print("IFLE");
 	if (JavaInt::FromWord(frame->Pop()) <= 0)
-	  pc += (short) GET_POOL_INDEX();
+	  pc += static_cast<s_int16>(GET_POOL_INDEX());
 	else
 	  pc += 3;
       }
@@ -1643,7 +1641,7 @@ Worker::Result ByteCodeInterpreter::Run() {
       {
 	JavaDebug::Print("IFNONNULL");
 	if (frame->Pop() != null)
-	  pc += (short) GET_POOL_INDEX();
+	  pc += static_cast<s_int16>(GET_POOL_INDEX());
 	else
 	  pc += 3;
       }
@@ -1652,7 +1650,7 @@ Worker::Result ByteCodeInterpreter::Run() {
       {
 	JavaDebug::Print("IFNULL");
 	if (frame->Pop() == null)
-	  pc += (short) GET_POOL_INDEX();
+	  pc += static_cast<s_int16>(GET_POOL_INDEX());
 	else
 	  pc += 3;
       }
@@ -1661,8 +1659,8 @@ Worker::Result ByteCodeInterpreter::Run() {
       {
 	JavaDebug::Print("IINC");
 	u_int index = GET_BYTE_INDEX();
-	int v       = JavaInt::FromWord(frame->GetEnv(index));
-	v += static_cast<int>(static_cast<signed char>(code[pc + 2]));
+	s_int v     = JavaInt::FromWord(frame->GetEnv(index));
+	v += static_cast<s_int8>(code[pc + 2]);
 	frame->SetEnv(index, JavaInt::ToWord(v));
 	pc += 3;
       }
@@ -1670,8 +1668,8 @@ Worker::Result ByteCodeInterpreter::Run() {
     case Instr::IMUL:
       {
 	JavaDebug::Print("IMUL");
-	int v2 = JavaInt::FromWord(frame->Pop());
-	int v1 = JavaInt::FromWord(frame->Pop());
+	s_int v2 = JavaInt::FromWord(frame->Pop());
+	s_int v1 = JavaInt::FromWord(frame->Pop());
 	frame->Push(JavaInt::ToWord(v1 * v2));
 	pc += 1;
       }
@@ -1679,7 +1677,7 @@ Worker::Result ByteCodeInterpreter::Run() {
     case Instr::INEG:
       {
 	JavaDebug::Print("INEG");
-	int v = JavaInt::FromWord(frame->Pop());
+	s_int v = JavaInt::FromWord(frame->Pop());
 	frame->Push(JavaInt::ToWord(0-v));
 	pc += 1;
       }
@@ -1692,7 +1690,7 @@ Worker::Result ByteCodeInterpreter::Run() {
 	if (type == INVALID_POINTER)
 	  REQUEST(wType);
 	word wObject = frame->Pop();
-	int result = 0;
+	u_int result = 0;
 	switch (type->GetLabel()) {
 	case JavaLabel::Class:
 	  {
@@ -1703,14 +1701,14 @@ Worker::Result ByteCodeInterpreter::Run() {
 		      Object::FromWordDirect(wObject)->IsInstanceOf(classObj));
 	  }
 	  break;
-	case JavaLabel::BaseType:
+	case JavaLabel::PrimitiveType:
 	  {
 	    Error("invalid type");
 	  }
 	  break;
 	case JavaLabel::ArrayType:
 	  {
-	    Error("not implemented");
+	    Error("not implemented"); // to be done
 	  }
 	  break;
 	default:
@@ -1819,8 +1817,8 @@ Worker::Result ByteCodeInterpreter::Run() {
     case Instr::IOR:
       {
 	JavaDebug::Print("IOR");
-	int v2 = JavaInt::FromWord(frame->Pop());
-	int v1 = JavaInt::FromWord(frame->Pop());
+	s_int v2 = JavaInt::FromWord(frame->Pop());
+	s_int v1 = JavaInt::FromWord(frame->Pop());
 	frame->Push(JavaInt::ToWord(v1 || v2));
 	pc += 1;
       }
@@ -1828,8 +1826,8 @@ Worker::Result ByteCodeInterpreter::Run() {
     case Instr::IREM:
       {
 	JavaDebug::Print("IREM");
-	int v2 = JavaInt::FromWord(frame->Pop());
-	int v1 = JavaInt::FromWord(frame->Pop());
+	s_int v2 = JavaInt::FromWord(frame->Pop());
+	s_int v1 = JavaInt::FromWord(frame->Pop());
 	if (v2 != 0)
 	  frame->Push(JavaInt::ToWord(v1 % v2));
 	else {
@@ -1841,8 +1839,8 @@ Worker::Result ByteCodeInterpreter::Run() {
     case Instr::ISHL:
       {
 	JavaDebug::Print("ISHL");
-	int v2 = JavaInt::FromWord(frame->Pop());
-	int v1 = JavaInt::FromWord(frame->Pop());
+	u_int v2 = JavaInt::FromWord(frame->Pop());
+	u_int v1 = JavaInt::FromWord(frame->Pop());
 	frame->Push(JavaInt::ToWord(v1 << (v2 % 32)));
 	pc += 1;
       }
@@ -1859,8 +1857,8 @@ Worker::Result ByteCodeInterpreter::Run() {
     case Instr::ISUB:
       {
 	JavaDebug::Print("ISUB");
-	int v2 = JavaInt::FromWord(frame->Pop());
-	int v1 = JavaInt::FromWord(frame->Pop());
+	s_int v2 = JavaInt::FromWord(frame->Pop());
+	s_int v1 = JavaInt::FromWord(frame->Pop());
 	frame->Push(JavaInt::ToWord(v1 - v2));
 	pc += 1;
       }
@@ -1877,8 +1875,8 @@ Worker::Result ByteCodeInterpreter::Run() {
     case Instr::IXOR:
       {
 	JavaDebug::Print("IXOR");
-	int v2 = JavaInt::FromWord(frame->Pop());
-	int v1 = JavaInt::FromWord(frame->Pop());
+	u_int v2 = JavaInt::FromWord(frame->Pop());
+	u_int v1 = JavaInt::FromWord(frame->Pop());
 	frame->Push(JavaInt::ToWord(v1 ^ v2));
 	pc += 1;
       }
@@ -1892,6 +1890,7 @@ Worker::Result ByteCodeInterpreter::Run() {
       {
 	Error("not implemented");
       }
+      break;
     case Instr::L2D:
       {
 	Error("not implemented");
@@ -1964,7 +1963,7 @@ Worker::Result ByteCodeInterpreter::Run() {
     case Instr::LDC_W:
       {
 	JavaDebug::Print("LDC_W");
-	word value = GET_POOL_VALUE((unsigned short) GET_POOL_INDEX());
+	word value = GET_POOL_VALUE(GET_POOL_INDEX());
 	frame->Push(value);
 	pc += 3;
       }
@@ -1972,7 +1971,7 @@ Worker::Result ByteCodeInterpreter::Run() {
     case Instr::LDC2_W:
       {
 	JavaDebug::Print("LDC2_W");
-	word value = GET_POOL_VALUE((unsigned short) GET_POOL_INDEX());
+	word value = GET_POOL_VALUE(GET_POOL_INDEX());
 	frame->Push(value);
 	FILL_SLOT();
 	pc += 3;
@@ -2033,7 +2032,7 @@ Worker::Result ByteCodeInterpreter::Run() {
 	JavaDebug::Print("LSHR");
 	u_int v2 = JavaInt::FromWord(frame->Pop());
 	DECLARE_LONG(v1);
-	PUSH_LONG(v1 / (1 << (v2 % 64)));
+	PUSH_LONG(v1 / (static_cast<u_int64>(1) << (v2 % 64)));
 	pc += 1;
       }
       break;
@@ -2052,7 +2051,7 @@ Worker::Result ByteCodeInterpreter::Run() {
 	u_int v2 = JavaInt::FromWord(frame->Pop());
 	DECLARE_LONG(v1);
 	u_int64 u_v1 = v1;
-	PUSH_LONG(u_v1 / (1 << (v2 % 64)));
+	PUSH_LONG(u_v1 / (static_cast<u_int64>(1) << (v2 % 64)));
 	pc += 1;
       }
       break;
@@ -2099,19 +2098,19 @@ Worker::Result ByteCodeInterpreter::Run() {
       break;
     case Instr::MULTIANEWARRAY:
       {
+	//--** to be done
 	JavaDebug::Print("MULTIANEWARRAY");
 	word wType = GET_POOL_VALUE(GET_POOL_INDEX());
 	Type *type = Type::FromWord(wType);
 	if (type == INVALID_POINTER)
 	  REQUEST(wType);
-	u_int nDims = (u_int) code[pc + 3];
+	u_int nDims = code[pc + 3];
 	for (u_int i = nDims; i--;) {
-	  int count = JavaInt::FromWord(frame->Pop());
+	  s_int count = JavaInt::FromWord(frame->Pop());
 	  if (count < 0) {
 	    RAISE_VM_EXCEPTION(NegativeArraySizeException, "multianewarray");
 	  }
 	  ObjectArray *arr = ObjectArray::New(type, count);
-	  arr = arr;
 	  type = static_cast<Type *>(ArrayType::New(type->ToWord()));
 	}
 	frame->Push(type->ToWord());
@@ -2143,7 +2142,7 @@ Worker::Result ByteCodeInterpreter::Run() {
 	    lock->Release();
 	  }
 	  break;
-	case JavaLabel::BaseType:
+	case JavaLabel::PrimitiveType:
 	case JavaLabel::ArrayType:
 	  {
 	    RAISE_VM_EXCEPTION(InstantiationError, "new");
@@ -2158,33 +2157,33 @@ Worker::Result ByteCodeInterpreter::Run() {
     case Instr::NEWARRAY:
       {
 	JavaDebug::Print("NEWARRAY");
-	int count = Store::DirectWordToInt(frame->Pop());
+	s_int count = Store::DirectWordToInt(frame->Pop());
 	if (count >= 0) {
 	  BaseArray *baseArray;
 	  switch (code[pc + 1]) {
 	  case 4:
-	    baseArray = BaseArray::New(BaseType::Boolean, count);
+	    baseArray = BaseArray::New(PrimitiveType::Boolean, count);
 	    break;
 	  case 5:
-	    baseArray = BaseArray::New(BaseType::Char, count);
+	    baseArray = BaseArray::New(PrimitiveType::Char, count);
 	    break;
 	  case 6:
-	    baseArray = BaseArray::New(BaseType::Float, count);
+	    baseArray = BaseArray::New(PrimitiveType::Float, count);
 	    break;
 	  case 7:
-	    baseArray = BaseArray::New(BaseType::Double, count);
+	    baseArray = BaseArray::New(PrimitiveType::Double, count);
 	    break;
 	  case 8:
-	    baseArray = BaseArray::New(BaseType::Byte, count);
+	    baseArray = BaseArray::New(PrimitiveType::Byte, count);
 	    break;
 	  case 9:
-	    baseArray = BaseArray::New(BaseType::Short, count);
+	    baseArray = BaseArray::New(PrimitiveType::Short, count);
 	    break;
 	  case 10:
-	    baseArray = BaseArray::New(BaseType::Int, count);
+	    baseArray = BaseArray::New(PrimitiveType::Int, count);
 	    break;
 	  case 11:
-	    baseArray = BaseArray::New(BaseType::Long, count);
+	    baseArray = BaseArray::New(PrimitiveType::Long, count);
 	    break;
 	  default:
 	    Error("invalid base type");
@@ -2281,7 +2280,7 @@ Worker::Result ByteCodeInterpreter::Run() {
     case Instr::SIPUSH:
       {
 	JavaDebug::Print("SIPUSH");
-	short value = GET_POOL_INDEX();
+	s_int32 value = static_cast<s_int16>(GET_POOL_INDEX());
 	frame->Push(JavaInt::ToWord(value));
 	pc += 3;
       }
@@ -2308,28 +2307,40 @@ Worker::Result ByteCodeInterpreter::Run() {
 	case Instr::ILOAD:
 	case Instr::FLOAD:
 	case Instr::ALOAD:
-	case Instr::LLOAD:
 	  {
 	    frame->Push(frame->GetEnv(GET_POOL_INDEX()));
+	    pc += 2;
+	  }
+	  break;
+	case Instr::LLOAD:
+	case Instr::DLOAD:
+	  {
+	    frame->Push(frame->GetEnv(GET_POOL_INDEX()));
+	    FILL_SLOT();
 	    pc += 2;
 	  }
 	  break;
 	case Instr::ISTORE:
 	case Instr::FSTORE:
 	case Instr::ASTORE:
-	case Instr::LSTORE:
 	  {
+	    frame->SetEnv(GET_POOL_INDEX(), frame->Pop());
+	    pc += 2;
+	  }
+	case Instr::LSTORE:
+	case Instr::DSTORE:
+	  break;
+	  {
+	    DROP_SLOT();
 	    frame->SetEnv(GET_POOL_INDEX(), frame->Pop());
 	    pc += 2;
 	  }
 	  break;
 	case Instr::IINC:
 	  {
-	    u_int index      = GET_POOL_INDEX();
-	    unsigned char c1 = code[pc + 3];
-	    unsigned char c2 = code[pc + 4];
-	    signed short inc = ((c1 << 8) | c2);
-	    int value        = JavaInt::FromWord(frame->GetEnv(index));
+	    u_int index = GET_POOL_INDEX();
+	    s_int16 inc = ((code[pc + 3] << 8) | code[pc + 4]);
+	    s_int value = JavaInt::FromWord(frame->GetEnv(index));
 	    value += inc;
 	    frame->SetEnv(index, JavaInt::ToWord(value));
 	    pc += 4;
@@ -2337,10 +2348,10 @@ Worker::Result ByteCodeInterpreter::Run() {
 	  break;
 	case Instr::RET:
 	  {
-	    Error("not implemented");
+	    Error("not implemented"); //--**
 	  }
 	default:
-	  Error("wrong opcode");
+	  Error("invalid `wide' opcode");
 	}
       }
       break;
@@ -2357,7 +2368,7 @@ Worker::Result ByteCodeInterpreter::Run() {
 
 Interpreter::Result ByteCodeInterpreter::Handle() {
   ByteCodeFrame *frame = ByteCodeFrame::FromWordDirect(Scheduler::GetFrame());
-  int pc               = frame->GetPC();
+  s_int pc             = frame->GetPC();
   Table *table         = frame->GetExceptionTable();
   u_int count          = table->GetCount();
   Object *object       = Object::FromWord(Scheduler::currentData);
@@ -2365,8 +2376,8 @@ Interpreter::Result ByteCodeInterpreter::Handle() {
   for (u_int i = 0; i < count; i++) {
     ExceptionTableEntry *entry =
       ExceptionTableEntry::FromWordDirect(table->Get(i));
-    int startPC = entry->GetStartPC();
-    int endPC   = entry->GetEndPC();
+    s_int startPC = entry->GetStartPC();
+    s_int endPC   = entry->GetEndPC();
     // Exception handler is within range
     if ((startPC <= pc) && (pc < endPC)) {
       // Check exception type
@@ -2395,16 +2406,14 @@ const char *ByteCodeInterpreter::Identify() {
 void ByteCodeInterpreter::DumpFrame(word wFrame) {
   ByteCodeFrame *frame = ByteCodeFrame::FromWordDirect(wFrame);
   MethodInfo *info     = frame->GetMethodInfo();
-  //--** include class name
-  std::fprintf(stderr, "%s%s\n",
-	       info->GetName()->ExportC(),
-	       info->GetDescriptor()->ExportC());
+  std::fprintf(stderr, "%s#%s%s\n", info->GetClassName()->ExportC(),
+	       info->GetName()->ExportC(), info->GetDescriptor()->ExportC());
 }
 
 void ByteCodeInterpreter::FillStackTraceElement(word wFrame, 
 						Object *stackTraceElement) {
   ByteCodeFrame *frame = ByteCodeFrame::FromWordDirect(wFrame);
-  JavaString *className = JavaString::New("unknown");
+  JavaString *className = frame->GetMethodInfo()->GetClassName();
   JavaString *name = frame->GetMethodInfo()->GetName();
   stackTraceElement->InitInstanceField
     (StackTraceElement::DECLARING_CLASS_INDEX, className->ToWord());

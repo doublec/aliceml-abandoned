@@ -298,7 +298,7 @@ ConstantPoolEntry *ClassFile::ParseConstantPoolEntry(u_int &offset) {
     {
       u_int reprLen = GetU2(offset);
       BaseArray *array =
-	BaseArray::New(BaseType::Char, reprLen); // pessimistic assumption
+	BaseArray::New(PrimitiveType::Char, reprLen); // pessimistic assumption
       u_int index = 0;
       u_int reprEnd = offset + reprLen;
       while (offset < reprEnd) {
@@ -416,7 +416,8 @@ ClassFile::ParseFieldAttributes(u_int &offset, FieldInfo *fieldInfo,
   return true;
 }
 
-Table *ClassFile::ParseMethods(u_int &offset, ConstantPool *constantPool,
+Table *ClassFile::ParseMethods(u_int &offset, JavaString *className,
+			       ConstantPool *constantPool,
 			       RuntimeConstantPool *runtimeConstantPool) {
   //--** No two methods in one class file may have the same name and descriptor
   //--** All interface methods must have their ACC_ABSTRACT and ACC_PUBLIC
@@ -425,7 +426,7 @@ Table *ClassFile::ParseMethods(u_int &offset, ConstantPool *constantPool,
   Table *methods = Table::New(methodsCount);
   for (u_int i = 0; i < methodsCount; i++) {
     MethodInfo *methodInfo =
-      ParseMethodInfo(offset, constantPool, runtimeConstantPool);
+      ParseMethodInfo(offset, className, constantPool, runtimeConstantPool);
     if (methodInfo == INVALID_POINTER) return INVALID_POINTER;
     methods->Init(i, methodInfo->ToWord());
   }
@@ -433,7 +434,8 @@ Table *ClassFile::ParseMethods(u_int &offset, ConstantPool *constantPool,
 }
 
 MethodInfo *
-ClassFile::ParseMethodInfo(u_int &offset, ConstantPool *constantPool,
+ClassFile::ParseMethodInfo(u_int &offset, JavaString *className,
+			   ConstantPool *constantPool,
 			   RuntimeConstantPool *runtimeConstantPool) {
   u_int accessFlags = GetU2(offset);
   if (((accessFlags & MethodInfo::ACC_PUBLIC) != 0) +
@@ -448,7 +450,8 @@ ClassFile::ParseMethodInfo(u_int &offset, ConstantPool *constantPool,
     return INVALID_POINTER;
   JavaString *name = constantPool->GetUtf8(GetU2(offset));
   JavaString *descriptor = constantPool->GetUtf8(GetU2(offset));
-  MethodInfo *methodInfo = MethodInfo::New(accessFlags, name, descriptor);
+  MethodInfo *methodInfo =
+    MethodInfo::New(accessFlags, className, name, descriptor);
   if (!ParseMethodAttributes(offset, methodInfo, constantPool,
 			     runtimeConstantPool))
     return INVALID_POINTER;
@@ -554,7 +557,8 @@ ClassInfo *ClassFile::Parse(ClassLoader *classLoader) {
   Table *interfaces = ParseInterfaces(offset, runtimeConstantPool);
   Table *fields = ParseFields(offset, constantPool, runtimeConstantPool);
   if (fields == INVALID_POINTER) return INVALID_POINTER;
-  Table *methods = ParseMethods(offset, constantPool, runtimeConstantPool);
+  Table *methods =
+    ParseMethods(offset, name, constantPool, runtimeConstantPool);
   if (methods == INVALID_POINTER) return INVALID_POINTER;
   SkipAttributes(offset);
   Assert(offset == GetSize());
