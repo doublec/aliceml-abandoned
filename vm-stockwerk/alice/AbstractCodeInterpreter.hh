@@ -31,6 +31,8 @@ public:
   static void Init() {
     self = new AbstractCodeInterpreter();
   }
+  // Handler Methods
+  virtual Block *GetAbstractRepresentation(Block *blockWithHandler);
   // Frame Handling
   virtual void PushCall(TaskStack *taskStack, Closure *closure);
   virtual void PurgeFrame(TaskStack *taskStack);

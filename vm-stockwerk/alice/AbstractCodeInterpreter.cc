@@ -194,13 +194,20 @@ inline word GetIdRef(word idRef, Closure *globalEnv, Environment *localEnv) {
 //
 AbstractCodeInterpreter *AbstractCodeInterpreter::self;
 
+Block *
+AbstractCodeInterpreter::GetAbstractRepresentation(Block *blockWithHandler) {
+  ConcreteCode *concreteCode =
+    reinterpret_cast<ConcreteCode *>(blockWithHandler);
+  return Store::DirectWordToBlock(concreteCode->Get(1));
+}
+
 void AbstractCodeInterpreter::PushCall(TaskStack *taskStack,
 				       Closure *closure) {
   ConcreteCode *concreteCode =
     ConcreteCode::FromWord(closure->GetConcreteCode());
   Assert(concreteCode->GetInterpreter() == this);
   // datatype function = Function of coord * int * int * idDef args * instr
-  TagVal *function = TagVal::FromWord(concreteCode->Get(0));
+  TagVal *function = TagVal::FromWord(concreteCode->Get(0)); // to be done
   int nlocals = Store::WordToInt(function->Sel(2));
   AbstractCodeFrame *frame =
     AbstractCodeFrame::New(this,
