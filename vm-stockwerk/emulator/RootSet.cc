@@ -51,7 +51,7 @@ public:
 //--** This should probably implement a real set instead of using Queue.
 class Set: private Queue {
 private:
-  static const u_int initialSize = 8;
+  static const u_int initialSize = 8; // to be checked
 public:
   using Queue::ToWord;
 
@@ -66,16 +66,17 @@ public:
     Enqueue(Element::New(&root)->ToWord());
   }
   void Remove(word &root) {
-//      for (u_int i = GetNumberOfElements(); i--; ) {
-//        Element *element = Element::FromWordDirect(GetNthElement(i));
-//        if (element->GetPointer() == &root) {
-//  	Queue::Remove(element->ToWord());
-//  	break;
-//        }
-//      }
-    // to be done
+    for (u_int i = GetNumberOfElements(); i--; ) {
+      Element *element = Element::FromWordDirect(GetNthElement(i));
+      if (element->GetPointer() == &root) {
+	//--** inefficient: use some method Queue::RemoveNthElement
+  	Queue::Remove(element->ToWord());
+  	break;
+      }
+    }
   }
   void PreGC() {
+    Blank();
     for (u_int i = GetNumberOfElements(); i--; )
       Element::FromWordDirect(GetNthElement(i))->PreGC();
   }
