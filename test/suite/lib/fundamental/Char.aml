@@ -1,0 +1,52 @@
+(*
+ * Authors:
+ *   Sebastian Germesin <germi@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Sebastian Germesin, 2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature TESTSUITE from "../test/TESTSUITE-sig"
+
+import structure Gen       from "../../src/Gen"
+import structure Test      from "../test/Test"
+
+structure TestChar :> TESTSUITE = (* the char test suite *)
+struct
+
+    fun testMinChar () =
+	Test.test (fn _ => Char.minChar = #"\^@") ()
+	
+    fun testMaxChar () =
+	Test.test (fn _ => Char.maxChar = #"\255") ()
+
+    fun testMaxOrd () =
+	Test.test (fn _ => Char.maxOrd = 255) ()
+
+    fun testChr () =
+	(Test.test (fn n => Char.chr n = Char.minChar) 0;
+	 Test.test (fn n => Char.chr n = Char.maxChar) Char.maxOrd;
+	 Gen.try 1000 Gen.int
+		 (Test.test 
+		      (fn x => (Char.chr x; true) handle General.Chr => true)))
+
+    fun testOrd () =
+	let
+	    fun test' n = if n > 255 then true
+			  else if Char.ord (Char.chr n) = n 
+			       then test' (n + 1)
+			       else false
+	in
+	    Test.test (fn _ => test' 0) ()
+	end
+
+    val suite = ("Char", [("testMinChar", testMinChar),
+			  ("testMaxChar", testMaxChar),
+			  ("testMaxOrd", testMaxOrd),
+			  ("testChr", testChr),
+			  ("testOrd", testOrd)])
+end
