@@ -1999,10 +1999,9 @@ struct
     fun idToDec(x' as O.Id(i,_,n), y) =
 	let
 	    val i' = nonInfo(#region i)
+	    val y' = O.LongId(i, y, O.Lab(i', Label.fromName n))
 	in
-	    O.ValDec(i', idToPat x',
-			 O.LazyExp(i, O.SelExp(i, O.Lab(i', Label.fromName n),
-						  O.VarExp(O.infoLongid y, y))))
+	    O.ValDec(i', idToPat x', O.LazyExp(i, O.VarExp(i, y')))
 	end
 
     fun trAnns a_s =
