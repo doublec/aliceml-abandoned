@@ -700,7 +700,7 @@ structure Simplify :> SIMPLIFY =
 	    (*--** name propagation, multiple argument optimization *)
 	    S.FunExp (coord, "", [(S.OneArg id, simplifyExp exp)])
 	  | simplifyExp (AppExp (coord, exp1, exp2)) =
-	    S.AppExp (coord, simplifyExp exp1, simplifyExp exp2)
+	    S.AppExp (coord, simplifyExp exp1, simplifyExp exp2, ref false)
 	  | simplifyExp (AdjExp (coord, exp1, exp2)) =
 	    S.AdjExp (coord, simplifyExp exp1, simplifyExp exp2)
 	  | simplifyExp (AndExp (coord, exp1, exp2)) =

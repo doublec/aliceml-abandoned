@@ -50,7 +50,7 @@ structure Simplified :> SIMPLIFIED =
 	  | SelExp of coord * lab
 	  | FunExp of coord * string * (id args * exp) list
 	    (* all arities distinct; always contains a single OneArg *)
-	  | AppExp of coord * exp * exp
+	  | AppExp of coord * exp * exp * bool ref   (* is tail *)
 	  | AdjExp of coord * exp * exp
 	  | WhileExp of coord * exp * exp
 	  | SeqExp of coord * exp list

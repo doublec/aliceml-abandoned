@@ -144,9 +144,10 @@ structure OzifySimplified :> OZIFYSIMPLIFIED =
 	     outputAtom (q, string); m q;
 	     outputList (outputPair (outputArgs outputId, outputExp))
 	     (q, argsExpList); r q)
-	  | outputExp (q, AppExp (coord, exp1, exp2)) =
+	  | outputExp (q, AppExp (coord, exp1, exp2, ref isTail)) =
 	    (f (q, "appExp"); outputCoord (q, coord); m q;
-	     outputExp (q, exp1); m q; outputExp (q, exp2); r q)
+	     outputExp (q, exp1); m q; outputExp (q, exp2);
+	     m q; outputBool (q, isTail); r q)
 	  | outputExp (q, AdjExp (coord, exp1, exp2)) =
 	    (f (q, "adjExp"); outputCoord (q, coord); m q;
 	     outputExp (q, exp1); m q; outputExp (q, exp2); r q)
