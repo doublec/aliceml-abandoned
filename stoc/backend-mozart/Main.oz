@@ -40,7 +40,7 @@ define
    case {Frontend.translateFile Args.'in' Args.'image'} of unit then
       {Application.exit 1}
    elseof AST then
-      {Pickle.save {CodeGen.translate AST} Args.'out'}
+      {Pickle.save {CodeGen.translate Args.'in' AST} Args.'out'}
       {Application.exit 0}
    end
 end

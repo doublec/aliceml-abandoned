@@ -61,8 +61,8 @@ define
       end
    end
 
-   fun {TranslateCoord I#J#_#_}
-      pos(bogus I J)   %--**
+   fun {TranslateCoord I#J#_#_ State}
+      pos(State.filename I J)
    end
 
    fun {TranslateLit Lit}
@@ -90,12 +90,12 @@ define
       in
 	 Reg = {MakeReg Id State}
 	 VHd = vExHandler(_ TryVInstr Reg CatchVInstr
-			  {TranslateCoord Coord} VInter _)
+			  {TranslateCoord Coord State} VInter _)
 	 {TranslateBody Body1 ?TryVInstr nil State ReturnReg}
 	 {TranslateBody Body2 ?CatchVInstr nil State ReturnReg}
 	 {TranslateBody Body3 ?VInter nil State ReturnReg}
       [] endHandleStm(Coord _) then
-	 VHd = vPopEx(_ {TranslateCoord Coord} nil)
+	 VHd = vPopEx(_ {TranslateCoord Coord State} nil)
       [] testStm(Coord Id Test Body1 Body2) then Reg0 ThenVInstr ElseVInstr in
 	 %--** assemble several testStm into a single vMatch
 	 Reg0 = {GetReg Id State}
@@ -103,8 +103,8 @@ define
 	    Constant = {TranslateLit Lit}
 	    if {IsNumber Constant} orelse {IsLiteral Constant} then
 	       VHd = vTestConstant(_ Reg0 {TranslateLit Lit}
-				   ThenVInstr ElseVInstr {TranslateCoord Coord}
-				   VTl)
+				   ThenVInstr ElseVInstr
+				   {TranslateCoord Coord State} VTl)
 	    else TmpReg VInter in
 	       {State.cs newReg(?TmpReg)}
 	       VHd = vEquateConstant(_ Constant TmpReg VInter)
@@ -128,15 +128,15 @@ define
 			       ThenVInstr0 ElseVInstr VTl)
 	    ThenVInstr0 = vCallBuiltin(_ 'Cell.access'
 				       [Reg0 {MakeReg Id State}]
-				       {TranslateCoord Coord} ThenVInstr)
+				       {TranslateCoord Coord State} ThenVInstr)
 	 [] tupTest(nil) then
 	    VHd = vTestConstant(_ Reg0 '#'
-				ThenVInstr ElseVInstr {TranslateCoord Coord}
-				VTl)
+				ThenVInstr ElseVInstr
+				{TranslateCoord Coord State} VTl)
 	 [] tupTest(Ids) then ThenVInstr0 in
 	    VHd = vMatch(_ Reg0 ElseVInstr
 			 [onRecord('#' {Length Ids} ThenVInstr0)]
-			 {TranslateCoord Coord} VTl)
+			 {TranslateCoord Coord State} VTl)
 	    {FoldL Ids
 	     proc {$ VHd Id VTl}
 		VHd = vGetVariable(_ {MakeReg Id State} VTl)
@@ -144,7 +144,7 @@ define
 	 [] recTest(FeatureIdList) then Arity ThenVInstr0 in
 	    Arity = {Map FeatureIdList fun {$ F#_} F end}
 	    VHd = vMatch(_ Reg0 ElseVInstr [onRecord('#' Arity ThenVInstr0)]
-			 {TranslateCoord Coord} VTl)
+			 {TranslateCoord Coord State} VTl)
 	    {FoldL FeatureIdList
 	     proc {$ VHd _#Id VTl}
 		VHd = vGetVariable(_ {MakeReg Id State} VTl)
@@ -161,7 +161,7 @@ define
 	 {TranslateBody Body2 ?ElseVInstr nil State ReturnReg}
       [] raiseStm(Coord Id) then
 	 VHd = vCallBuiltin(_ 'Exception.raiseError' [{GetReg Id State}]
-			    {TranslateCoord Coord} VTl)
+			    {TranslateCoord Coord State} VTl)
       [] sharedStm(_ Body I) then
 	 if {Dictionary.member State.shareDict I} then
 	    VHd = {Dictionary.get State.shareDict I}
@@ -209,7 +209,8 @@ define
       [] primExp(_ Builtinname) then
 	 VHd = vEquateConstant(_ Prebound.builtinTable.Builtinname Reg VTl)
       [] newExp(Coord _) then
-	 VHd = vCallBuiltin(_ 'Name.new' [Reg] {TranslateCoord Coord} VTl)
+	 VHd = vCallBuiltin(_ 'Name.new' [Reg]
+			    {TranslateCoord Coord State} VTl)
       [] varExp(_ Id) then
 	 VHd = vUnify(_ Reg {GetReg Id State} VTl)
       [] conExp(_ Id false) then
@@ -218,7 +219,7 @@ define
 	 Pos PredId NLiveRegs ArgReg TmpReg ResReg
 	 VInstr NameReg VInter1 VInter2 GRegs Code
       in
-	 Pos = {TranslateCoord Coord}
+	 Pos = {TranslateCoord Coord State}
 	 PredId = pid({GetPrintName Id} 2 Pos nil NLiveRegs)
 	 {State.cs startDefinition()}
 	 {State.cs newReg(?ArgReg)}
@@ -235,7 +236,7 @@ define
       [] refExp(Coord) then
 	 Pos PredId NLiveRegs ArgReg ResReg VInstr GRegs Code
       in
-	 Pos = {TranslateCoord Coord}
+	 Pos = {TranslateCoord Coord State}
 	 PredId = pid('ref' 2 Pos nil NLiveRegs)
 	 {State.cs startDefinition()}
 	 {State.cs newReg(?ArgReg)}
@@ -267,7 +268,7 @@ define
 			    end
 		     [testStm(Coord Id Test Body In)]
 		  end Body}
-	 PredId = pid('' 2 {TranslateCoord Coord} nil NLiveRegs)
+	 PredId = pid('' 2 {TranslateCoord Coord State} nil NLiveRegs)
 	 {State.cs startDefinition()}
 	 {State.cs newReg(?ResReg)}
 	 FormalRegs = [{MakeReg Id State} ResReg]
@@ -279,17 +280,17 @@ define
 	 {State.cs newReg(?ArgReg)}
 	 {TranslateArgs Args ArgReg VHd VInter State}
 	 VInter = vCall(_ {GetReg Id State} [ArgReg Reg]
-			{TranslateCoord Coord} VTl)
+			{TranslateCoord Coord State} VTl)
       [] selAppExp(Coord Lab Id) then
 	 VHd = vInlineDot(_ {GetReg Id State} Lab Reg false
-			  {TranslateCoord Coord} VTl)
+			  {TranslateCoord Coord State} VTl)
       [] conAppExp(Coord Id Args) then
-	 Pos VInter1 NameReg TmpReg ResReg VInter2 ArgReg VInter3 VInter4
+	 Pos TmpReg VInter1 NameReg ResReg VInter2 ArgReg VInter3 VInter4
       in
-	 Pos = {TranslateCoord Coord}
+	 Pos = {TranslateCoord Coord State}
+	 {State.cs newReg(?TmpReg)}
 	 VHd = vEquateConstant(_ 1 TmpReg VInter1)
 	 NameReg = {GetReg Id State}
-	 {State.cs newReg(?TmpReg)}
 	 {State.cs newReg(?ResReg)}
 	 VInter1 = vCallBuiltin(_ 'Tuple.make' [NameReg TmpReg ResReg]
 				Pos VInter2)
@@ -301,20 +302,20 @@ define
 	 {State.cs newReg(?ArgReg)}
 	 {TranslateArgs Args ArgReg VHd VInter State}
 	 VInter = vCallBuiltin(_ 'Cell.new' [ArgReg Reg]
-			       {TranslateCoord Coord} VTl)
+			       {TranslateCoord Coord State} VTl)
       [] primAppExp(Coord Builtinname Ids) then Value Regs in
 	 Value = Prebound.builtinTable.Builtinname
 	 Regs = {FoldR Ids fun {$ Id Regs} {GetReg Id State}|Regs end [Reg]}
 	 if {CompilerSupport.isBuiltin Value} then
 	    VHd = vCallBuiltin(_ {System.printName Value}
-			       Regs {TranslateCoord Coord} VTl)
+			       Regs {TranslateCoord Coord State} VTl)
 	 else
-	    VHd = vCallConstant(_ Value Regs {TranslateCoord Coord} VTl)
+	    VHd = vCallConstant(_ Value Regs {TranslateCoord Coord State} VTl)
 	 end
       [] adjExp(Coord Id1 Id2) then
 	 VHd = vCallBuiltin(_ 'Record.adjoin' [{GetReg Id1 State}
 					       {GetReg Id2 State} Reg]
-			    {TranslateCoord Coord} VTl)
+			    {TranslateCoord Coord State} VTl)
       end
    end
 
@@ -336,7 +337,7 @@ define
 	end}
 */
 
-   fun {Translate Import#Export#Body}
+   fun {Translate Filename Import#Export#Body}
       NarratorObject Reporter CS RegDict Prebound ImportReg ExportReg
       State VInstr VInter GRegs Code NLiveRegs
    in
@@ -348,7 +349,8 @@ define
       {CS startDefinition()}
       {CS newReg(?ImportReg)}
       {CS newReg(?ExportReg)}
-      State = state(regDict: RegDict shareDict: {NewDictionary} cs: CS)
+      State = state(regDict: RegDict shareDict: {NewDictionary} cs: CS
+		    filename: Filename)
       {FoldL Import
        proc {$ VHd (Id=id(_ Stamp _))#_ VTl}
 	  VHd = vInlineDot(_ ImportReg {VirtualString.toAtom Stamp}
