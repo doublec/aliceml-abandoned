@@ -33,6 +33,6 @@ structure UnsafeValue :> UNSAFE_VALUE =
 
 	fun conName con = raise NotSupported
 
-	fun inArity (function, eager) = raise NotSupported
-	fun outArity (function, eager) = raise NotSupported
+	fun inArity function = raise NotSupported
+	fun outArity function = raise NotSupported
     end
