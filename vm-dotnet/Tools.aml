@@ -1,5 +1,5 @@
 import
-    val inspect
+    val nativeInspect
     val makeArrowType
     val makeBasicType
     val makeListType
@@ -19,7 +19,9 @@ signature TOOLS =
 	  | ArrowTy of ty * ty
 	  | ListTy of ty | BoolTy
 
+(*UNFINISHED
 	val toString: 'a * ty -> string
+*)
 	val inspect:  'a * ty -> unit
     end
 
@@ -35,21 +37,7 @@ structure Tools :> TOOLS =
 	  | ArrowTy of ty * ty
 	  | ListTy of ty | BoolTy
 
-	fun tyToTy IntTy		= makeBasicType "int"
-	  | tyToTy WordTy		= makeBasicType "word"
-	  | tyToTy CharTy		= makeBasicType "char"
-	  | tyToTy StringTy		= makeBasicType "string"
-	  | tyToTy RealTy		= makeBasicType "real"
-	  | tyToTy(TupleTy tys)		= makeTupleType(Vector.map tyToTy tys)
-	  | tyToTy(RecordTy tys)        = makeRecordType(Vector.map recordHelper tys)
-	  | tyToTy(ArrowTy(ty1,ty2))	= makeArrowType(tyToTy ty1, tyToTy ty2)
-	  | tyToTy BoolTy		= makeBasicType "bool"
-	  | tyToTy(ListTy ty)		= makeListType(tyToTy ty)
-	  | tyToTy _			= raise Domain
-        and recordHelper(l,t)          = makeTupleType(#[makeBasicType(l), tyToTy(t)])
-
-	val inspect = fn(x,ty) => inspect(x, tyToTy ty)
-
+(*UNFINISHED
 	__primitive val cast: 'a -> 'b = "Unsafe.cast"
 	__primitive val getTag: 'a -> int = "Unsafe.getTag"
 	__primitive val getValue: 'a -> 'b = "Unsafe.getValue"
@@ -109,4 +97,20 @@ structure Tools :> TOOLS =
 		if Future.isFailed x then "<Failed>" else "<Future>"
 	  | toString (x, ty) where (Hole.isHole x) = "<Hole>"
 	  | toString (x, ty) = toString' (x, ty)
+*)
+
+	fun tyToTy IntTy		= makeBasicType "int"
+	  | tyToTy WordTy		= makeBasicType "word"
+	  | tyToTy CharTy		= makeBasicType "char"
+	  | tyToTy StringTy		= makeBasicType "string"
+	  | tyToTy RealTy		= makeBasicType "real"
+	  | tyToTy(TupleTy tys)		= makeTupleType(Vector.map tyToTy tys)
+	  | tyToTy(RecordTy tys)        = makeRecordType(Vector.map recordHelper tys)
+	  | tyToTy(ArrowTy(ty1,ty2))	= makeArrowType(tyToTy ty1, tyToTy ty2)
+	  | tyToTy BoolTy		= makeBasicType "bool"
+	  | tyToTy(ListTy ty)		= makeListType(tyToTy ty)
+	  | tyToTy _			= raise Domain
+        and recordHelper(l,t)           = makeTupleType(#[makeBasicType(l), tyToTy(t)])
+
+	fun inspect (x, ty) = nativeInspect (x, tyToTy ty)
     end
