@@ -19,9 +19,9 @@ BOOTSTRAPDIR = $(SRCTOP)/bootstrap
 
 # No configuration needed from here
 
-STOC = alicec
-STODEP =  sml @SMLload=$(BOOTSTRAPDIR)/alicedep
-STOCOPTS = --rtt-level=no
+ALICEC = alicec
+ALICEDEP = alicedep
+ALICEC_OPTS = --rtt-level=no
 
 SOURCES = Sample.aml \
           FDAlpha.aml \
@@ -36,10 +36,10 @@ COMPONENTS = $(SOURCES:%.aml=%.ozf)
 all: $(COMPONENTS)
 
 depend:
-	$(STODEP) $(ALICESOURCES) > Makefile.depend
+	$(ALICEDEP) $(ALICESOURCES) > Makefile.depend
 
 $(COMPONENTS): %.ozf: %.aml
-	$(STOC) $(STOCOPTS) -c $< -o $@
+	$(ALICEC) $(ALICEC_OPTS) -c $< -o $@
 
 ##
 ## Cleaning Up
