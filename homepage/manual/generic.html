@@ -3,7 +3,13 @@
 
   alice_project_header("Generic Services");
 ?>
-<P>Some structure is needed here.
+<P>The <EM>scheduler</EM> controls the execution of concurrent <EM>threads</EM>.
+   Computation within a thread is organized into <EM>tasks</EM>.
+   Each task corresponds to a <EM>stack frame</EM>
+   pushed on the thread's task stack.
+   Each stack frame carries a reference to its <EM>evaluator</EM> responsible for
+   execution, with arbitrarily many evaluators supported.
+   Computation is performed through this interface indirection.
 </P>
 
 <?php pslab_header2("Scheduler") ?>
@@ -59,7 +65,7 @@ public:
   <DT><TT>Run()</TT>
   </DT>
   <DD><P>This is the main function of the scheduler. It is invoked once
-      the core system has been initialized. It returnes only if the
+      the core system has been initialized. It returns only if the
       currently running thread asks for system termination
       via the <TT>EXIT</TT> message.</P>
   </DD>
@@ -123,7 +129,7 @@ public:
          to be given as argument in case of a handle event.
          <TT>PopHandler</TT> removes a previously installed exception
          handler. Both functions operate on the exception handler stack
-         of the thread currently excuted.</P>
+         of the thread currently executed.</P>
   </DD>
   <DT><TT>PushCall(closure)</TT>
   </DT>
@@ -137,8 +143,8 @@ public:
 <?php pslab_header2("Thread") ?>
 
 <P>
-Computation within a thread is orgnazed into tasks pushed on the task stack.
-In addition, each thread provides a exception handler stack allowing for
+Computation within a thread is organized into tasks pushed on the task stack.
+In addition, each thread provides an exception handler stack allowing for
 constant time handling of exceptions.
 </P>
 
@@ -511,7 +517,7 @@ public:
   </DD>
   <DT><TT>DumpFrame(sFrame)</TT>
   </DT>
-  <DD><P>This functions implements the dump function of assiciated with the
+  <DD><P>This functions implements the dump function of associated with the
          stack frame. This function will be used by the default exception handler
          to construct a exception backtrace.</P>
   </DD>
@@ -581,7 +587,7 @@ public:
 </P>
 <P>
    The abstract representation consists of a pair of a name and a value and
-   is named <TT>Tranform</TT>. The name will be used by the unpickler to
+   is named <TT>Transform</TT>. The name will be used by the unpickler to
    apply the appropriate internalization function associated with this name.
 </P>
 
@@ -624,8 +630,8 @@ public:
 <DL>
   <DT><TT>GetAbstractRepresentation(concreteRepresentation)</TT>
   </DT>
-  <DD><P>This abstract function modelles the transformation from an concrete
-         representation to an serializable abstract representation.
+  <DD><P>This abstract function models the transformation from a concrete
+         representation to a serializable abstract representation.
          Returning an <TT>INVALID_POINTER</TT> denotes that the object cannot
          be serialized.</P>
   </DD>
@@ -842,7 +848,7 @@ public:
   <DT><TT>Load(languageId, key)</TT>
   </DT>
   <DD><P>This method loads a language layer denoted by <TT>languageId</TT>,
-         with the opional argument key passed to the <TT>Load</TT> function
+         with the optional argument key passed to the <TT>Load</TT> function
          of the language layer.
          In case of failure, the exception <TT>BrokerError</TT> is raised.</P>
   </DD>
@@ -862,7 +868,7 @@ public:
 <?php pslab_header2("The Unpickler") ?>
 
 <P>As noted above, SEAM supports the notion of
-   internal and external representation. Externalized representions
+   internal and external representation. Externalized representations
    that require a different internal representation are stored as transforms,
    that is, a pair consisting of a name and the external representation of the
    value.
@@ -906,7 +912,7 @@ public:
   <DT><TT>RegisterHandler(name, handler)</TT>
   </DT>
   <DD><P>Registers the handler <TT>handler</TT> under name <TT>name</TT>.
-         Each time, the pickler encounteres a transform with the same name,
+         Each time, the pickler encounters a transform with the same name,
          it applies the registered handler to the external representation.
       </P>
       <P>The current implementation does not support multiple handlers stored
@@ -928,7 +934,7 @@ public:
 
 <?php pslab_header2("The Pickler") ?>
 
-<P>The pickler creates an bytecode program from any pickable store values.
+<P>The pickler creates a bytecode program from any pickable store values.
 </P>
 
 <PRE>
