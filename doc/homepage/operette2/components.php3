@@ -1,6 +1,6 @@
 <?php include("macros.php3"); ?>
 
-<?php heading("Stockhausen Operette 1 - Components", "components") ?>
+<?php heading("Stockhausen Operette 2 - Components", "components") ?>
 
 
 

@@ -1,6 +1,6 @@
 <?php include("macros.php3"); ?>
 
-<?php heading("Stockhausen Operette 1 - Libraries", "libraries") ?>
+<?php heading("Stockhausen Operette 2 - Libraries", "libraries") ?>
 
 
 
@@ -49,7 +49,7 @@
 <?php section("basis", "basis library") ?>
 
   <P>
-    Stockhausen Operette 1 only provides parts of the
+    Stockhausen Operette 2 only provides parts of the
     <A href="http://www.dina.kvl.dk/~sestoft/sml/sml-std-basis.html">SML
     Basis Library</A>. The following structures are complete:
   </P>
@@ -191,7 +191,7 @@
 
   <P>
     Structures from the Standard ML Basis Library not listed above are not
-    available in Operette 1.
+    available in Operette 2.
   </P>
 
   <P>

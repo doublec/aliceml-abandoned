@@ -1,6 +1,6 @@
 <?php include("macros.php3"); ?>
 
-<?php heading("Stockhausen Operette 1 - Futures", "futures") ?>
+<?php heading("Stockhausen Operette 2 - Futures", "futures") ?>
 
 
 
@@ -154,7 +154,7 @@
   </P>
 
   <P class=note>
-    Note: In Operette 1, the operation <TT>isFuture</TT> does return
+    Note: In Operette 2, the operation <TT>isFuture</TT> does return
     <TT>true</TT> for failed futures, due to limitations
     of the Mozart virtual machine. Similarly, <TT>isFailed</TT> will always
     deliver <TT>false</TT>.

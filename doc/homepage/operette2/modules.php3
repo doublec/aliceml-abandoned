@@ -1,6 +1,6 @@
 <?php include("macros.php3"); ?>
 
-<?php heading("Stockhausen Operette 1 - Extended Module System",
+<?php heading("Stockhausen Operette 2 - Extended Module System",
 		"extended <BR> module <BR> system") ?>
 
 
@@ -23,7 +23,7 @@
   </UL>
 
   <P>
-    Items marked with (*) are not fully implemented in Operette 1.
+    Items marked with (*) are not fully implemented in Operette 2.
   </P>
 
   <P>
@@ -259,7 +259,7 @@
 
   <P class=note>
     Caveat: parameterized signatures are not yet properly treated
-    in Operette 1.
+    in Operette 2.
   </P>
 
 

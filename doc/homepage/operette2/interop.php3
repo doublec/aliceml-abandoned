@@ -1,10 +1,10 @@
 <?php include("macros.php3"); ?>
 
-<?php heading("Stockhausen Operette 1 - Interoperability with Mozart",
+<?php heading("Stockhausen Operette 2 - Interoperability with Mozart",
 	      "interoper<BR>ability") ?>
 
 <?php section("overview", "overview") ?>
-  <P>Stockhausen Operette 1 is based on <A href="http://www.mozart-oz.org/"
+  <P>Stockhausen Operette 2 is based on <A href="http://www.mozart-oz.org/"
     >Mozart</A> and supports interoperability between Oz and Alice.</P>
   <P>The Stockhausen compiler translates components into pickled Oz functors.
     It is possible to mix Oz and Alice code on a per-component basis.

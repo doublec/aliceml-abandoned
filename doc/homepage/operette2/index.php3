@@ -1,6 +1,6 @@
 <?php include("macros.php3"); ?>
 
-<?php heading("Stockhausen Operette 1", "\"operette 1\"") ?>
+<?php heading("Stockhausen Operette 2", "\"operette 2\"") ?>
 
 
 
@@ -8,7 +8,7 @@
 
   <P>
     We proudly present the first internal prototype release of the Stockhausen
-    system. We call it <I>"Operette&nbsp;1"</I>.
+    system. We call it <I>"Operette&nbsp;2"</I>.
   </P>
 
   <P>
@@ -18,7 +18,7 @@
     <A href="http://cm.bell-labs.com/cm/cs/what/smlnj/sml.html">Standard ML</A>.
     Moreover, Alice includes other interesting features found in neither of
     both languages.
-    Besides implementing almost complete SML, Stockhausen Operette 1 already
+    Besides implementing almost complete SML, Stockhausen Operette 2 already
     supports:
   </P>
 
@@ -36,8 +36,8 @@
   <P>
     Important design goals for Alice/Stockhausen were backward compatibility
     with Standard ML, as well as interoperability with Mozart.
-    Stockhausen Operette 1 is based on the
-    <A href="http://www.mozart-oz.org/">Mozart</A> virtual machine. Operette 1
+    Stockhausen Operette 2 is based on the
+    <A href="http://www.mozart-oz.org/">Mozart</A> virtual machine. Operette 2
     programs can therefore <A href="interop.php3">interoperate</A> with Oz.
   </P>
 

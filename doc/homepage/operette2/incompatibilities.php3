@@ -1,6 +1,6 @@
 <?php include("macros.php3"); ?>
 
-<?php heading("Stockhausen Operette 1 - SML Incompatibilities",
+<?php heading("Stockhausen Operette 2 - SML Incompatibilities",
 		"incompati <BR> bilities <BR> with SML") ?>
 
 
@@ -14,7 +14,7 @@
   </P>
 
   <P>
-    Another limitation of Stockhausen Operette 1 is the lack of support
+    Another limitation of Stockhausen Operette 2 is the lack of support
     for overloading: the toplevel arithmetic operators are only defined for
     type <TT>int</TT>. Moreover, Stockhausen currently does not distinguish
     equality types: equality is permitted on any type. Both features will

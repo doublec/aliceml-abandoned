@@ -1,6 +1,6 @@
 <?php include("macros.php3"); ?>
 
-<?php heading("Stockhausen Operette 1 - Core Language Extensions",
+<?php heading("Stockhausen Operette 2 - Core Language Extensions",
 		"core <BR> language <BR> extensions") ?>
 
 
