@@ -77,69 +77,27 @@ import signature INPUT_GRAMMAR from "INPUT_GRAMMAR-sig"
 import structure InputGrammar  from "InputGrammar"
 
 
+local
+    open InputGrammar
+in
+
 signature DERIVED_FORMS =
 sig
 
-    (* Import *)
-
-    structure Grammar: INPUT_GRAMMAR = InputGrammar
-
-    type Info      = Grammar.Info
-
-    type Lab       = Grammar.Lab
-    type VId       = Grammar.VId
-    type TyCon     = Grammar.TyCon
-    type StrId     = Grammar.StrId
-    type LongVId   = Grammar.LongVId
-    type LongTyCon = Grammar.LongTyCon
-    type LongStrId = Grammar.LongStrId
-    type LongSigId = Grammar.LongSigId
-
-    type Op        = Grammar.Op
-    type AtExp     = Grammar.AtExp
-    type AppExp    = Grammar.Exp
-    type InfExp    = Grammar.Exp
-    type Exp       = Grammar.Exp
-    type ExpRow    = Grammar.ExpRow
-    type Match     = Grammar.Match
-    type Mrule     = Grammar.Mrule
-    type Dec       = Grammar.Dec
-    type ValBind   = Grammar.ValBind
-    type FvalBind  = Grammar.FvalBind
-    type ExBind    = Grammar.DconBind
-    type Fmatch    = Grammar.Match
-    type Fmrule    = Grammar.Mrule
-    type Fpat      = Grammar.Pat
-    type TypBind   = Grammar.TypBind
-    type DatBind   = Grammar.DatBind
-    type AtPat     = Grammar.AtPat
-    type PatRow    = Grammar.PatRow
-    type Pat       = Grammar.Pat
-    type Ty        = Grammar.Ty
-    type TyVarSeq  = Grammar.TyVarSeq
-    type AtStrExp  = Grammar.AtStrExp
-    type AppStrExp = Grammar.StrExp
-    type StrExp    = Grammar.StrExp
-    type StrPat    = Grammar.StrPat
-    type StrBind   = Grammar.StrBind
-    type AtSigExp  = Grammar.AtSigExp
-    type AppSigExp = Grammar.SigExp
-    type SigExp    = Grammar.SigExp
-    type Spec      = Grammar.Spec
-    type ValDesc   = Grammar.ValDesc
-    type TypDesc   = Grammar.TypDesc
-    type DatDesc   = Grammar.DatDesc
-    type ExDesc    = Grammar.DconDesc
-    type Imp       = Grammar.Imp
-    type ValItem   = Grammar.ValItem
-    type TypItem   = Grammar.TypItem
-    type DatItem   = Grammar.DatItem
-    type ExItem    = Grammar.DconItem
+    type AppExp    = Exp
+    type InfExp    = Exp
+    type ExBind    = DconBind
+    type Fmatch    = Match
+    type Fmrule    = Mrule
+    type Fpat      = Pat
+    type AppStrExp = StrExp
+    type AppSigExp = SigExp
+    type ExDesc    = DconDesc
+    type ExItem    = DconItem
     type FunBind
     type FunDesc
     type FunItem
     type Rea
-    type Program   = Grammar.Program
 
     (* Expressions *)
 
@@ -302,3 +260,5 @@ sig
     val PACKExp:	Info * LongStrId * LongSigId -> Exp
     val UNPACKStrExp:	Info * InfExp * SigExp -> StrExp
 end
+
+end (* local *)

@@ -127,8 +127,8 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	structure I = FlatGrammar
 	structure O = IL
 
-	open I
 	open O
+	open I
 	open CodeStore
 
 	local
@@ -204,8 +204,8 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	  | genLit (RealLit r) = (emit (LdcR8 r); emit (Box System.Double))
 
 	(*--** remove global state *)
-	val sharedLabels: label StampMap.t = StampMap.new ()
-	val handlerCont: (label * body) option ref = ref NONE
+	val sharedLabels: O.label StampMap.t = StampMap.new ()
+	val handlerCont: (O.label * I.body) option ref = ref NONE
 
 	fun genStm (ValDec (_, idDef, exp)) = (genExp exp; declareLocal idDef)
 	  | genStm (RefAppDec (_, idDef, id)) =
