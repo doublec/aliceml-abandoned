@@ -340,7 +340,7 @@
       <tt>Int.match (<I>x</I>,<I>v</I>)</TT>
     </DT>
     <DD>
-      <P><I>v</I>is a vector of <I>n</I> integer variables that denote
+      <P><I>v</I> is a vector of <I>n</I> integer variables that denote
          the elements of <I>x</I> in ascending order. 
     </P></DD>
 
@@ -348,16 +348,16 @@
       <tt>Int.minN (<I>x</I>,<I>v</I>)</TT>
     </DT>
     <DD>
-      <P><I>v</I>is a vector of <I>n</I> integer variables that denote
-         the <I>n</n> minimal elements of <I>x</I> in ascending order. 
+      <P><I>v</I> is a vector of <I>n</I> integer variables that denote
+         the <I>n</I> minimal elements of <I>x</I> in ascending order. 
     </P></DD>
 
     <DT>
       <tt>Int.maxN (<I>x</I>,<I>v</I>)</TT>
     </DT>
     <DD>
-      <P><I>v</I>is a vector of <I>n</I> integer variables that denote
-         the <I>n</n> maximal elements of <I>x</I> in ascending order. 
+      <P><I>v</I> is a vector of <I>n</I> integer variables that denote
+         the <I>n</I> maximal elements of <I>x</I> in ascending order. 
     </P></DD>
 
     <DT>
