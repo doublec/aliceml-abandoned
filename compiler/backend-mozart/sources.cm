@@ -10,6 +10,7 @@ is
     ../infrastructure/sources.cm
     ../common/id-stamp.cm
     ../backend-common/flat-grammar.cm
+    ../backend-common/arity.cm
     ../backend-common/engine.cm
 
     (* Externalisation (into Oz syntax) *)
