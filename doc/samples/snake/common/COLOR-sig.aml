@@ -38,6 +38,12 @@ sig
     (** [rgb color] returns a triple [(red, green, blue)], with
         the usual meaning and range [0.0 - 1.0]
       *)
+
+    val toHexStr : color -> string
+    (** [toHexStr color] returns a string value containing the
+	 hexadecimal coded rgb value with leading # 
+      *)
+
 end
 
 

@@ -199,21 +199,26 @@ struct
 					     points, 
 					     gamePoints,
                                              lives = NONE}, str) =
-				(str ^ name ^ ":\n" 
-				 ^ (pToString points) ^ "  +  " 
-				 ^ (pToString gamePoints) ^ "\n\n")
+				(str ^ "<span foreground='" 
+                                  ^ (Color.toHexStr color) ^ "'><i>" 
+                                  ^ name ^ ":\n" 
+				  ^ (pToString points) ^ "  +  " 
+				  ^ (pToString gamePoints) ^ "\n\n</i></span>")
 			      | toString' ({name, 
 					     color, 
 					     points, 
 					     gamePoints,
                                              lives = SOME lives}, str) =
-				(str ^ name ^ ":\n" 
-				^ (pToString points) ^ "  +  " 
-				^ (pToString gamePoints)
-				^ " | lives: " ^ (Int.toString lives) ^ "\n\n")
+                                (str ^ "<span foreground='" 
+                                  ^ (Color.toHexStr color) ^ "'><i>" 
+                                  ^ name ^ ":\n" 
+				  ^ (pToString points) ^ "  +  " 
+				  ^ (pToString gamePoints)
+				  ^ " | lives: " ^ (Int.toString lives) 
+                                  ^ "\n\n</i></span>")
 			    fun toString () = List.foldl toString' "" plist
 			in
-			    Gtk.labelSetText (pointsLabel, toString ())
+			    Gtk.labelSetMarkup (pointsLabel, toString ())
 			end
 		    
 		    fun startLevel levinf = 
