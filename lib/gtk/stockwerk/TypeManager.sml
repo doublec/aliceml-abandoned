@@ -169,7 +169,7 @@ struct
 	   EStruct   => error "struct in arglist or retval"
 	 | EUnion    => error "union in arglist or retval"
     end		    
-(***) | checkItem (s as (STRUCT _)) = isItemOfSpace Util.GDK s
+(**   | checkItem (s as (STRUCT _)) = isItemOfSpace Util.GDK s *)
       | checkItem _ = true
 
     fun checkStructMember (_,TYPEREF ("gconstpointer", _)) = false
