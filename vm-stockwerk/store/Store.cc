@@ -203,11 +203,11 @@ inline void Store::CheneyScan(MemChunk *chunk, char *scan) {
     scan = chunk->GetBase();
   have_scan:
     while (scan < chunk->GetTop()) {
-      Block *p = (Block *) scan;
-      // Scan current tuple (if not CHUNK or WEAK_DICT_LABEL)
+      Block *p      = (Block *) scan;
       u_int cursize = HeaderOp::DecodeSize(p);
       BlockLabel l  = p->GetLabel();
-      if ((l != CHUNK_LABEL) && (l != WEAK_DICT_LABEL)) {
+      // CHUNK_LABEL and WEAK_DICT_LABEL are the largest possible labels
+      if (l < CHUNK_LABEL) {
 	for (u_int i = cursize; i--;) {
 	  word item = p->GetArg(i);
 	  item = PointerOp::Deref(item);
