@@ -21,9 +21,7 @@
 
 class DllExport Stack : private Block {
 protected:
-  static const u_int SIZE    = 2;
-  static const u_int TOP_POS = 0;
-  static const u_int ARR_POS = 1;
+  enum { TOP_POS, ARR_POS, SIZE };
 protected:
   u_int GetTop() {
     return Store::DirectWordToInt(GetArg(TOP_POS));
