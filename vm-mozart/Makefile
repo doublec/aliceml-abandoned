@@ -41,9 +41,21 @@ FRONTENDCOMMONSOURCES = \
 	TranslationPhase.sml MakeFrontendCommon.sml
 FRONTENDCOMMONFILES = $(FRONTENDCOMMONSOURCES:%=frontend-common/%)
 
+FRONTENDSMLSOURCES = \
+	LAB.sig Lab.sml ID.sig MakeId.sml Ids.sml SCON.sig SCon.sml \
+	INPUT_GRAMMAR.sig MakeInputGrammar.sml InputGrammar.sml \
+	PARSING_ERROR.sig ParsingError.sml ABSTRACTION_ERROR.sig \
+	AbstractionError.sml INFIX.sig Infix.sml BIND_ENV.sig BindEnv.sml \
+	BIND_ENV_FROM_SIG.sig BindEnvFromSig.sml SHARING.sig Sharing.sml \
+	ABSTRACTION_PHASE.sig MakeAbstractionPhase.sml DERIVED_FORMS.sig \
+	Parser.grm.sig Parser.grm.sml DerivedForms.sml LEXER_ERROR.sig \
+	LexerError.sml Lexer.lex.sml CountPosLexer.sml PARSING_PHASE.sig \
+	ParsingPhase.sml BIND_ENV0.sig BindEnv0.sml MakeFrontendSML.sml
+FRONTENDSMLFILES = $(FRONTENDSMLSOURCES:%=frontend-sml/%)
+
 BODYFILES = $(NATIVESOURCES:%=lib/%.ozf.sig) lib/Word.sml \
 	$(MLYACCFILES) $(ERRORFILES) $(MISCFILES) $(TOPFILES) $(COMMONFILES) \
-	$(FRONTENDCOMMONFILES)
+	$(FRONTENDCOMMONFILES) $(FRONTENDSMLFILES)
 
 ALLFILES = lib/Base.sml $(NATIVEFILES) $(BODYFILES)
 
@@ -79,6 +91,9 @@ common/%: ../../stoc/common/% common/%.header Base.import
 frontend-common/%: ../../stoc/frontend-common/% frontend-common/%.header \
 	Base.import
 	cat Base.import frontend-common/$*.header $< > $@
+
+frontend-sml/%: ../../stoc/frontend-sml/% frontend-sml/%.header Base.import
+	cat Base.import frontend-sml/$*.header $< > $@
 
 %.ozf: %.sml
 	$(STOC_MOZART) $< $@
