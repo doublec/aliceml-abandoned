@@ -157,9 +157,9 @@ structure Buffer =
 
       fun getBufferByName f =
 	  case BufferMap.find
-	      (fn {file,...} => !file=SOME f) bufferMap of
-	      NONE => NONE
-	    | SOME {buf,...} => SOME buf
+	      (fn {file,...} => case !file of SOME f' => shortName f' = f | _ => false) bufferMap of
+	      NONE => (NONE, ~1)
+	    | SOME {buf,id,...} => (SOME buf, id)
 
       fun getView id =
           #view (BufferMap.lookupExistent(bufferMap, id))

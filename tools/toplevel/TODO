@@ -3,9 +3,6 @@ TODO list for the Alice IDE
 
 Bugs:
 
-* jump-to-error does not work for compile
-  (how do we detect whether we feeded something from a buffer or used
-  the toplevel directly? We have to give eval a filename for buffers!)
 * scroll to bottom after layout change or resize
 * propagate output width on init and after resize
 * pane resize upon opening first tab shrinks output pane to 0 size
@@ -14,7 +11,6 @@ Bugs:
 
 Missing Features:
 
-* shortcut for jump-to-error (Ctrl-E?)
 * cumulative undo
 * redo
 * overwrapping search

@@ -53,6 +53,7 @@ structure GuiMain =
         fun getCurrentPage () =
             case !currentPage of ~1 => NONE
                                | i => SOME (getPage i)
+	fun findPage id = Option.map #1 (List.findi (fn (_,i) => i=id) (!pages))
 
         (* Evaluation *)
 
@@ -404,9 +405,9 @@ structure GuiMain =
             case getCurrentPage() of NONE => ()
                                    | SOME id =>
             let
-                val buf =
+                val (buf,id) =
 		    case file of
-			NONE => SOME (Buffer.getBuffer id)
+			NONE => (SOME (Buffer.getBuffer id), id)
 		      | SOME f => Buffer.getBufferByName f
 	    in
 		case buf of
@@ -428,6 +429,8 @@ structure GuiMain =
                          (Gtk.textIterSetLineOffset(startiter, col);
                           Gtk.textIterSetLineOffset(enditer, col');
                           Buffer.selectRange(buf, startiter, enditer);
+			  Gtk.notebookSetCurrentPage(Gui.notebook1,
+						     valOf (findPage id));
                           Gtk.widgetGrabFocus (Buffer.getView id))
                      else ())
                 else ()
