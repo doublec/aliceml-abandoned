@@ -5,7 +5,6 @@
 
 .il.dll:
 	ilasm /dll $<
-	lm -a $*.dll -c .
 
 all: StockWerk.dll Test.exe
 
