@@ -591,8 +591,8 @@ INSTALL3BINFILES = $(INSTALL2BINFILES) alice
 INSTALL3LIBFILES = \
 	$(LIBSOURCES0:%.aml=%.stc) \
 	fundamental/Fundamental.stc
-INSTALL3COMPILERFILES = $(INSTALL2COMPILERFILES) CompilerMain.stc
-#--** ToplevelMain.stc
+INSTALL3COMPILERFILES = $(INSTALL2COMPILERFILES) \
+	CompilerMain.stc ToplevelMain.stc
 INSTALL3COMPILERTOPFILES = \
 	SMLToStockwerkRecursiveCompiler.stc
 INSTALL3FILES = \
@@ -622,6 +622,7 @@ build3-all: build2-install $(BUILD3DIRS) $(BUILD3SOURCES) \
 	build3/lib/fundamental/LinkedFundamental.stc \
 	build3/lib/system/Boot.stc \
 	build3/compiler/LinkedCompilerMain.stc \
+	build3/compiler/LinkedToplevelMain.stc \
 	build3/compiler/top/LinkedSMLToStockwerkRecursiveCompiler.stc
 
 build3/lib/fundamental/RTT.stc: build2/lib/rtt/LinkedRTT.stc
@@ -651,6 +652,14 @@ build3/compiler/LinkedCompilerMain.stc: build3/compiler/CompilerMain.stc
 	--exclude build3/compiler/top/SMLToStockwerkRecursiveCompiler \
 	--include build3/compiler \
 	build3/compiler/CompilerMain -o $@
+
+build3/compiler/LinkedToplevelMain.stc: build3/compiler/ToplevelMain.stc
+	$(ALICELINK2) $(ALICELINK_OPTS) --rewrite build3/=../ \
+	--exclude build3/compiler/top/SMLToMozartRecursiveCompiler \
+	--exclude build3/compiler/top/SMLToDotNetRecursiveCompiler \
+	--exclude build3/compiler/top/SMLToStockwerkRecursiveCompiler \
+	--include build3/compiler \
+	build3/compiler/ToplevelMain -o $@
 
 build3/compiler/top/LinkedSMLToStockwerkRecursiveCompiler.stc: \
 	build3/compiler/top/SMLToStockwerkRecursiveCompiler.stc
