@@ -465,6 +465,14 @@ public:
 #define DROP_SLOT() \
   frame->Pop();
 
+#define DECLARE_LONG(v) \
+  DROP_SLOT(); \
+  s_int64 v = JavaLong::FromWordDirect(frame->Pop())->GetValue();
+
+#define PUSH_LONG(v) \
+  frame->Push(JavaLong::New(v)->ToWord()); \
+  FILL_SLOT()
+
 #define DECLARE_DOUBLE(v) \
   DROP_SLOT(); \
   double v = JavaDouble::FromWord(frame->Pop())->GetValue();
@@ -730,14 +738,14 @@ Worker::Result ByteCodeInterpreter::Run() {
       break;
     case Instr::DASTORE:
       {
-	frame->Pop(); // Remove Fillslot
+	DROP_SLOT();
 	Double *value = JavaDouble::FromWord(frame->Pop());
 	XASTORE("DASTORE", StoreDouble, value);
       }
       break;
     case Instr::LASTORE:
       {
-	frame->Pop(); // Remove Fillslot
+	DROP_SLOT();
 	JavaLong *value = JavaLong::FromWord(frame->Pop());
 	XASTORE("LASTORE", StoreLong, value);
       }
@@ -768,11 +776,12 @@ Worker::Result ByteCodeInterpreter::Run() {
 	FILL_SLOT();
 	pc += 2;
       }
+      break;
     case Instr::ALOAD_0:
     case Instr::FLOAD_0:
     case Instr::ILOAD_0:
       {
-	JavaDebug::Print("(A|D|F|I|L)LOAD_0");
+	JavaDebug::Print("(A|F|I)LOAD_0");
 	word value = frame->GetEnv(0);
 	frame->Push(value);
 	pc += 1;
@@ -781,7 +790,7 @@ Worker::Result ByteCodeInterpreter::Run() {
     case Instr::DLOAD_0:
     case Instr::LLOAD_0:
       {
-	JavaDebug::Print("(D||L)LOAD_0");
+	JavaDebug::Print("(D|L)LOAD_0");
 	word value = frame->GetEnv(0);
 	frame->Push(value);
 	FILL_SLOT();
@@ -792,7 +801,7 @@ Worker::Result ByteCodeInterpreter::Run() {
     case Instr::FLOAD_1:
     case Instr::ILOAD_1:
       {
-	JavaDebug::Print("(A|D|F|I|L)LOAD_1");
+	JavaDebug::Print("(A|F|I)LOAD_1");
 	word value = frame->GetEnv(1);
 	frame->Push(value);
 	pc += 1;
@@ -801,7 +810,7 @@ Worker::Result ByteCodeInterpreter::Run() {
     case Instr::DLOAD_1:
     case Instr::LLOAD_1:
       {
-	JavaDebug::Print("(D||L)LOAD_1");
+	JavaDebug::Print("(D|L)LOAD_1");
 	word value = frame->GetEnv(1);
 	frame->Push(value);
 	FILL_SLOT();
@@ -821,7 +830,7 @@ Worker::Result ByteCodeInterpreter::Run() {
     case Instr::DLOAD_2:
     case Instr::LLOAD_2:
       {
-	JavaDebug::Print("(D||L)LOAD_2");
+	JavaDebug::Print("(D|L)LOAD_2");
 	word value = frame->GetEnv(2);
 	frame->Push(value);
 	FILL_SLOT();
@@ -841,7 +850,7 @@ Worker::Result ByteCodeInterpreter::Run() {
     case Instr::DLOAD_3:
     case Instr::LLOAD_3:
       {
-	JavaDebug::Print("(D||L)LOAD_3");
+	JavaDebug::Print("(D|L)LOAD_3");
 	word value = frame->GetEnv(3);
 	frame->Push(value);
 	FILL_SLOT();
@@ -917,60 +926,100 @@ Worker::Result ByteCodeInterpreter::Run() {
       }
       break;
     case Instr::ASTORE:
-    case Instr::DSTORE: // reals are boxed
-    case Instr::FSTORE: // reals are boxed
+    case Instr::FSTORE:
     case Instr::ISTORE:
-    case Instr::LSTORE:
       {
-	JavaDebug::Print("(A|D|F|I|L)STORE");
+	JavaDebug::Print("(A|F|I)STORE");
+	word value = frame->Pop();
+	frame->SetEnv(GET_BYTE_INDEX(), value);
+	pc += 2;
+      }
+      break;
+    case Instr::LSTORE:
+    case Instr::DSTORE:
+      {
+	JavaDebug::Print("(D|L)STORE");
+	DROP_SLOT();
 	word value = frame->Pop();
 	frame->SetEnv(GET_BYTE_INDEX(), value);
 	pc += 2;
       }
       break;
     case Instr::ASTORE_0:
-    case Instr::DSTORE_0: // reals are boxed
-    case Instr::FSTORE_0: // reals are boxed
+    case Instr::FSTORE_0:
     case Instr::ISTORE_0:
-    case Instr::LSTORE_0:
       {
-	JavaDebug::Print("(A|D|F|I|L)STORE_0");
+	JavaDebug::Print("(A|F|I)STORE_0");
+	word value = frame->Pop();
+	frame->SetEnv(0, value);
+	pc += 1;
+      }
+      break;
+    case Instr::LSTORE_0:
+    case Instr::DSTORE_0:
+      {
+	JavaDebug::Print("(A|L)STORE_0");
+	DROP_SLOT();
 	word value = frame->Pop();
 	frame->SetEnv(0, value);
 	pc += 1;
       }
       break;
     case Instr::ASTORE_1:
-    case Instr::DSTORE_1: // reals are boxed
-    case Instr::FSTORE_1: // reals are boxed
+    case Instr::FSTORE_1:
     case Instr::ISTORE_1:
-    case Instr::LSTORE_1:
       {
-	JavaDebug::Print("(A|D|F|I|L)STORE_1");
+	JavaDebug::Print("(A|F|I)STORE_1");
+	word value = frame->Pop();
+	frame->SetEnv(1, value);
+	pc += 1;
+      }
+      break;
+    case Instr::LSTORE_1:
+    case Instr::DSTORE_1:
+      {
+	JavaDebug::Print("(D|L)STORE_1");
+	DROP_SLOT();
 	word value = frame->Pop();
 	frame->SetEnv(1, value);
 	pc += 1;
       }
       break;
     case Instr::ASTORE_2:
-    case Instr::DSTORE_2: // reals are boxed
-    case Instr::FSTORE_2: // reals are boxed
+    case Instr::FSTORE_2:
     case Instr::ISTORE_2:
-    case Instr::LSTORE_2:
       {
-	JavaDebug::Print("(A|D|F|I|L)STORE_2");
+	JavaDebug::Print("(A|F|I)STORE_2");
+	word value = frame->Pop();
+	frame->SetEnv(2, value);
+	pc += 1;
+      }
+      break;
+    case Instr::LSTORE_2:
+    case Instr::DSTORE_2:
+      {
+	JavaDebug::Print("(D|L)STORE_2");
+	DROP_SLOT();
 	word value = frame->Pop();
 	frame->SetEnv(2, value);
 	pc += 1;
       }
       break;
     case Instr::ASTORE_3:
-    case Instr::DSTORE_3: // reals are boxed
-    case Instr::FSTORE_3: // reals are boxed
+    case Instr::FSTORE_3:
     case Instr::ISTORE_3:
-    case Instr::LSTORE_3:
       {
-	JavaDebug::Print("(A|D|F|I|L)STORE_3");
+	JavaDebug::Print("(A|F|I)STORE_3");
+	word value = frame->Pop();
+	frame->SetEnv(3, value);
+	pc += 1;
+      }
+      break;
+    case Instr::LSTORE_3:
+    case Instr::DSTORE_3:
+      {
+	JavaDebug::Print("(D|L)STORE_3");
+	DROP_SLOT();
 	word value = frame->Pop();
 	frame->SetEnv(3, value);
 	pc += 1;
@@ -1167,7 +1216,7 @@ Worker::Result ByteCodeInterpreter::Run() {
     case Instr::DUP2:
       {
 	JavaDebug::Print("DUP2");
-	// Always match from 1
+	// Always match form 1
 	word v1 = frame->Pop();
 	word v2 = frame->Pop();
 	frame->Push(v2);
@@ -1340,8 +1389,8 @@ Worker::Result ByteCodeInterpreter::Run() {
     case Instr::I2B:
       {
 	JavaDebug::Print("I2B");
-	int i = JavaInt::FromWord(frame->Pop());
-	frame->Push(Store::IntToWord((int) ((unsigned char) i)));
+	s_int32 i = JavaInt::FromWord(frame->Pop());
+	frame->Push(Store::IntToWord(static_cast<u_char>(i)));
 	pc += 1;
       }
       break;
@@ -1362,7 +1411,10 @@ Worker::Result ByteCodeInterpreter::Run() {
       break;
     case Instr::I2L:
       {
-	Error("not implemented");
+	JavaDebug::Print("I2L");
+	s_int32 i = JavaInt::FromWord(frame->Pop());
+	PUSH_LONG(i);
+	pc += 1;
       }
       break;
     case Instr::I2S:
@@ -1837,26 +1889,42 @@ Worker::Result ByteCodeInterpreter::Run() {
       break;
     case Instr::L2I:
       {
-	Error("not implemented");
+	JavaDebug::Print("L2I");
+	DECLARE_LONG(v);
+	frame->Push(JavaInt::ToWord(v));
+	pc += 1;
       }
       break;
     case Instr::LADD:
       {
-	Error("not implemented");
+	JavaDebug::Print("LADD");
+	DECLARE_LONG(v2);
+	DECLARE_LONG(v1);
+	PUSH_LONG(v1 + v2);
+	pc += 1;
       }
       break;
     case Instr::LAND:
       {
-	Error("not implemented");
+	JavaDebug::Print("LAND");
+	DECLARE_LONG(v2);
+	DECLARE_LONG(v1);
+	PUSH_LONG(v1 & v2);
+	pc += 1;
       }
       break;
     case Instr::LCMP:
       {
-	Error("not implemented");
+	JavaDebug::Print("LCMP");
+	DECLARE_LONG(v2);
+	DECLARE_LONG(v1);
+	frame->Push(JavaInt::ToWord(v1 == v2? 0: v1 < v2? -1: 1));
+	pc += 1;
       }
       break;
     case Instr::LCONST_0:
       {
+	JavaDebug::Print("LCONST_0");
 	frame->Push(JavaLong::New(0, 0)->ToWord());
 	FILL_SLOT();
 	pc += 1;
@@ -1864,6 +1932,7 @@ Worker::Result ByteCodeInterpreter::Run() {
       break;
     case Instr::LCONST_1:
       {
+	JavaDebug::Print("LCONST_1");
 	frame->Push(JavaLong::New(0, 1)->ToWord());
 	FILL_SLOT();
 	pc += 1;
@@ -1872,21 +1941,23 @@ Worker::Result ByteCodeInterpreter::Run() {
     case Instr::LDC:
       {
 	JavaDebug::Print("LDC");
-	word value = GET_POOL_VALUE(GET_BYTE_INDEX()); 
+	word value = GET_POOL_VALUE(GET_BYTE_INDEX());
 	frame->Push(value);
 	pc += 2;
       }
       break;
     case Instr::LDC_W:
       {
-	word value = GET_POOL_VALUE((unsigned short) GET_POOL_INDEX()); 
+	JavaDebug::Print("LDC_W");
+	word value = GET_POOL_VALUE((unsigned short) GET_POOL_INDEX());
 	frame->Push(value);
 	pc += 3;
       }
       break;
     case Instr::LDC2_W:
       {
-	word value = GET_POOL_VALUE((unsigned short) GET_POOL_INDEX()); 
+	JavaDebug::Print("LDC2_W");
+	word value = GET_POOL_VALUE((unsigned short) GET_POOL_INDEX());
 	frame->Push(value);
 	FILL_SLOT();
 	pc += 3;
@@ -1899,12 +1970,19 @@ Worker::Result ByteCodeInterpreter::Run() {
       break;
     case Instr::LMUL:
       {
-	Error("not implemented");
+	JavaDebug::Print("LMUL");
+	DECLARE_LONG(v2);
+	DECLARE_LONG(v1);
+	PUSH_LONG(v1 * v2);
+	pc += 1;
       }
       break;
     case Instr::LNEG:
       {
-	Error("not implemented");
+	JavaDebug::Print("LNEG");
+	DECLARE_LONG(v);
+	PUSH_LONG(0 - v);
+	pc += 1;
       }
       break;
     case Instr::LOOKUPSWITCH:
@@ -1914,7 +1992,11 @@ Worker::Result ByteCodeInterpreter::Run() {
       break;
     case Instr::LOR:
       {
-	Error("not implemented");
+	JavaDebug::Print("LOR");
+	DECLARE_LONG(v2);
+	DECLARE_LONG(v1);
+	PUSH_LONG(v1 | v2);
+	pc += 1;
       }
       break;
     case Instr::LREM:
@@ -1924,23 +2006,48 @@ Worker::Result ByteCodeInterpreter::Run() {
       break;
     case Instr::LSHL:
       {
-	Error("not implemented");
+	JavaDebug::Print("LSHL");
+	u_int v2 = JavaInt::FromWord(frame->Pop());
+	DECLARE_LONG(v1);
+	PUSH_LONG(v1 << (v2 % 64));
+	pc += 1;
       }
       break;
     case Instr::LSHR:
       {
-	Error("not implemented");
+	JavaDebug::Print("LSHR");
+	u_int v2 = JavaInt::FromWord(frame->Pop());
+	DECLARE_LONG(v1);
+	PUSH_LONG(v1 / (1 << (v2 % 64)));
+	pc += 1;
       }
       break;
     case Instr::LSUB:
       {
-	Error("not implemented");
+	JavaDebug::Print("LSUB");
+	DECLARE_LONG(v2);
+	DECLARE_LONG(v1);
+	PUSH_LONG(v1 - v2);
+	pc += 1;
       }
       break;
     case Instr::LUSHR:
+      {
+	JavaDebug::Print("LUSHR");
+	u_int v2 = JavaInt::FromWord(frame->Pop());
+	DECLARE_LONG(v1);
+	u_int64 u_v1 = v1;
+	PUSH_LONG(u_v1 / (1 << (v2 % 64)));
+	pc += 1;
+      }
+      break;
     case Instr::LXOR:
       {
-	Error("not implemented");
+	JavaDebug::Print("LXOR");
+	DECLARE_LONG(v2);
+	DECLARE_LONG(v1);
+	PUSH_LONG(v1 ^ v2);
+	pc += 1;
       }
       break;
     case Instr::MONITORENTER:
