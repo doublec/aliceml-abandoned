@@ -30,7 +30,7 @@ structure Future :> FUTURE =				(**)
 struct
     datatype  status = FUTURE | FAILED | DETERMINED
 
-    __primitive exception Cyclic			= "Hole.Cyclic"
+    __primitive exception Cyclic			= "Future.Cyclic"
     __primitive val concur :	(unit -> 'a) -> 'a	= "Future.concur"
     __primitive val byneed :	(unit -> 'a) -> 'a	= "Future.byneed"
     __primitive val alarm :	Time.time -> unit	= "Future.alarm'"

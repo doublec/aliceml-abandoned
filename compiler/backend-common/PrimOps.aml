@@ -77,6 +77,7 @@ structure PrimOps :> PRIM_OPS =
 		ins ("CharVector.sub", SOME (Tuple 2));
 		ins ("CharVector.tabulate", SOME (Tuple 2));
 		ins ("CharVector.toList", SOME Unary);
+		ins ("Future.Cyclic", NONE);
 		ins ("Future.alarm'", SOME Unary);
 		ins ("Future.await", SOME Unary);
 		ins ("Future.byneed", SOME Unary);
@@ -99,7 +100,6 @@ structure PrimOps :> PRIM_OPS =
 		ins ("GlobalStamp.toString", SOME Unary);
 		ins ("GlobalStamp.compare", SOME (Tuple 2));
 		ins ("GlobalStamp.hash", SOME Unary);
-		ins ("Hole.Cyclic", NONE);
 		ins ("Hole.Hole", NONE);
 		ins ("Hole.fail", SOME (Tuple 2));
 		ins ("Hole.fill", SOME (Tuple 2));

@@ -290,6 +290,7 @@ prepare
 	    {ForThread {ByteString.width V} - 1 0 ~1
 	     fun {$ Xs I} {ByteString.get V I}|Xs end nil}
 	 end
+      'Future.Cyclic': {NewUniqueName 'Future.Cyclic'}
       'Future.alarm\'':
 	 fun {$ X} !!{Alarm (X + 500) div 1000} end
       'Future.await':
@@ -375,7 +376,6 @@ prepare
 	    end
 	 end
       'GlobalStamp.hash': BootName.hash
-      'Hole.Cyclic': {NewUniqueName 'Future.Cyclic'}
       'Hole.Hole': {NewUniqueName 'Promise.Promise'}
       'Hole.fail':
 	 fun {$ X E}
