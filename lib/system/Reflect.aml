@@ -4,7 +4,7 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt and Andreas Rossberg, 2001-2002
+ *   Leif Kornstaedt and Andreas Rossberg, 2001-2003
  *
  * Last change:
  *   $Date$ by $Author$
@@ -50,11 +50,11 @@ structure Reflect : REFLECT =
 		(val x = cast Str.x)
 	    end
 
-	functor Unreflect(val x: module signature S) =
-	    UnsafeReflect.Unreflect(val x = cast x signature S = S)
+	functor Reify(val x: module signature S) =
+	    UnsafeReflect.Reify(val x = cast x signature S = S)
 
 	structure ReflectSig = UnsafeReflect.ReflectSig
-	structure UnreflectSig = UnsafeReflect.UnreflectSig
+	structure ReifySig = UnsafeReflect.ReifySig
 
 	functor ReflectType(type t) =
 	    let
