@@ -10,15 +10,15 @@
  *   $Revision$
  *)
 
-
 (*
  *  Items marked with (**) are extensions to the Standard Basis.
  *)
 
 import structure __pervasive                   from "Pervasive"
-import type unit and int and vector and array
+import __primitive
+       type unit and int and vector and array
        type bool and order and option and list from "ToplevelTypes"
-import structure VectorSlice                   from "VectorSlice"
+import __primitive structure VectorSlice       from "VectorSlice"
 
 signature ARRAY_SLICE =
 sig
