@@ -172,7 +172,7 @@ Class *Class::New(ClassInfo *classInfo) {
   b->InitArg(VIRTUAL_TABLE_POS, virtualTable->ToWord());
   b->InitArg(LOCK_POS, Lock::New()->ToWord());
   for (i = nStaticFields; i--; )
-    //--** initialization incorrect for long/float/double
+    //--** initialization incorrect for constantValue and long/float/double
     b->InitArg(BASE_SIZE + i, Store::IntToWord(0));
   // Create method closures:
   RuntimeConstantPool *runtimeConstantPool =

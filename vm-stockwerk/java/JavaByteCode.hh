@@ -23,6 +23,8 @@
 #include "java/Table.hh"
 #include "java/ByteCodeInterpreter.hh"
 
+class MethodInfo;
+
 class DllExport ExceptionTableEntry: private Block {
 protected:
   enum {
@@ -79,6 +81,7 @@ public:
 class DllExport JavaByteCode: private ConcreteCode {
 protected:
   enum {
+    METHOD_INFO_POS, // MethodInfo
     MAX_STACK_POS, // int
     MAX_LOCALS_POS, // int
     CODE_POS, // Chunk
@@ -88,16 +91,9 @@ protected:
 public:
   using Block::ToWord;
 
-  static JavaByteCode *New(u_int maxStack, u_int maxLocals, Chunk *code,
-			   Table *exceptionTable) {
-    ConcreteCode *concreteCode =
-      ConcreteCode::New(ByteCodeInterpreter::self, SIZE);
-    concreteCode->Init(MAX_STACK_POS, Store::IntToWord(maxStack));
-    concreteCode->Init(MAX_LOCALS_POS, Store::IntToWord(maxLocals));
-    concreteCode->Init(CODE_POS, code->ToWord());
-    concreteCode->Init(EXCEPTION_TABLE_POS, exceptionTable->ToWord());
-    return static_cast<JavaByteCode *>(concreteCode);
-  }
+  static JavaByteCode *New(MethodInfo *methodInfo, u_int maxStack,
+			   u_int maxLocals, Chunk *code,
+			   Table *exceptionTable);
   static JavaByteCode *FromWord(word x) {
     return static_cast<JavaByteCode *>(ConcreteCode::FromWord(x));
   }

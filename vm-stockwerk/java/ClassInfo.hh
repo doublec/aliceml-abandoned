@@ -69,13 +69,6 @@ public:
     fieldInfo->InitArg(HAS_CONSTANT_VALUE_POS, false);
     return fieldInfo;
   }
-  static FieldInfo *New(u_int accessFlags, JavaString *name,
-			JavaString *descriptor, word constantValue) {
-    FieldInfo *fieldInfo = NewInternal(accessFlags, name, descriptor);
-    fieldInfo->InitArg(HAS_CONSTANT_VALUE_POS, true);
-    fieldInfo->InitArg(CONSTANT_VALUE_POS, constantValue);
-    return fieldInfo;
-  }
   static FieldInfo *FromWordDirect(word x) {
     Block *b = Store::DirectWordToBlock(x);
     Assert(b->GetLabel() == JavaLabel::FieldInfo);
@@ -93,6 +86,19 @@ public:
   }
   bool IsTheField(JavaString *name, JavaString *descriptor) {
     return name->Equals(GetName()) && descriptor->Equals(GetDescriptor());
+  }
+  bool HasConstantValue() {
+    return Store::DirectWordToInt(GetArg(HAS_CONSTANT_VALUE_POS));
+  }
+  void InitConstantValue(word constantValue) {
+    Assert(IsStatic());
+    Assert(!HasConstantValue());
+    InitArg(HAS_CONSTANT_VALUE_POS, true);
+    InitArg(CONSTANT_VALUE_POS, constantValue);
+  }
+  word GetConstantValue() {
+    Assert(HasConstantValue());
+    return GetArg(CONSTANT_VALUE_POS);
   }
 };
 
@@ -118,8 +124,14 @@ protected:
     SIZE
   };
 private:
-  static MethodInfo *NewInternal(u_int accessFlags, JavaString *name,
-				 JavaString *descriptor) {
+  u_int GetAccessFlags() {
+    return Store::DirectWordToInt(GetArg(ACCESS_FLAGS_POS));
+  }
+public:
+  using Block::ToWord;
+
+  static MethodInfo *New(u_int accessFlags, JavaString *name,
+			 JavaString *descriptor) {
     Assert(((accessFlags & ACC_PUBLIC) != 0) +
 	   ((accessFlags & ACC_PRIVATE) != 0) +
 	   ((accessFlags & ACC_PROTECTED) != 0) <= 1);
@@ -130,27 +142,8 @@ private:
     b->InitArg(ACCESS_FLAGS_POS, accessFlags);
     b->InitArg(NAME_POS, name->ToWord());
     b->InitArg(DESCRIPTOR_POS, descriptor->ToWord());
+    b->InitArg(BYTE_CODE_POS, null);
     return static_cast<MethodInfo *>(b);
-  }
-  u_int GetAccessFlags() {
-    return Store::DirectWordToInt(GetArg(ACCESS_FLAGS_POS));
-  }
-public:
-  using Block::ToWord;
-
-  static MethodInfo *New(u_int accessFlags, JavaString *name,
-			 JavaString *descriptor) {
-    Assert((accessFlags & (ACC_NATIVE | ACC_ABSTRACT)) != 0);
-    MethodInfo *methodInfo = NewInternal(accessFlags, name, descriptor);
-    methodInfo->InitArg(BYTE_CODE_POS, 0);
-    return methodInfo;
-  }
-  static MethodInfo *New(u_int accessFlags, JavaString *name,
-			 JavaString *descriptor, JavaByteCode *byteCode) {
-    Assert((accessFlags & (ACC_NATIVE | ACC_ABSTRACT)) == 0);
-    MethodInfo *methodInfo = NewInternal(accessFlags, name, descriptor);
-    methodInfo->InitArg(BYTE_CODE_POS, byteCode->ToWord());
-    return methodInfo;
   }
   static MethodInfo *FromWordDirect(word x) {
     Block *b = Store::DirectWordToBlock(x);
@@ -160,6 +153,9 @@ public:
 
   bool IsStatic() {
     return GetAccessFlags() & ACC_STATIC;
+  }
+  bool IsAbstract() {
+    return GetAccessFlags() & ACC_ABSTRACT;
   }
   bool IsNative() {
     return GetAccessFlags() & ACC_NATIVE;
@@ -176,6 +172,11 @@ public:
   }
   JavaByteCode *GetByteCode() {
     return JavaByteCode::FromWord(GetArg(BYTE_CODE_POS));
+  }
+  void InitByteCode(JavaByteCode *byteCode) {
+    Assert((GetAccessFlags() & (ACC_NATIVE | ACC_ABSTRACT)) == 0);
+    Assert(GetByteCode() == INVALID_POINTER);
+    InitArg(BYTE_CODE_POS, byteCode->ToWord());
   }
 };
 

@@ -63,16 +63,16 @@ private:
 		     RuntimeConstantPool *runtimeConstantPool);
   FieldInfo *ParseFieldInfo(u_int &offset, ConstantPool *constantPool,
 			    RuntimeConstantPool *runtimeConstantPool);
-  bool ParseFieldAttributes(u_int &offset, ConstantPool *constantPool,
-			    RuntimeConstantPool *runtimeConstantPool,
-			    word &constantValue);
+  bool ParseFieldAttributes(u_int &offset, FieldInfo *fieldInfo,
+			    ConstantPool *constantPool,
+			    RuntimeConstantPool *runtimeConstantPool);
   Table *ParseMethods(u_int &offset, ConstantPool *constantPool,
 		      RuntimeConstantPool *runtimeConstantPool);
   MethodInfo *ParseMethodInfo(u_int &offset, ConstantPool *constantPool,
 			      RuntimeConstantPool *runtimeConstantPool);
-  bool ParseMethodAttributes(u_int &offset, ConstantPool *constantPool,
-			     RuntimeConstantPool *runtimeConstantPool,
-			     JavaByteCode *&byteCode);
+  bool ParseMethodAttributes(u_int &offset, MethodInfo *methodInfo,
+			     ConstantPool *constantPool,
+			     RuntimeConstantPool *runtimeConstantPool);
   void SkipAttributes(u_int &offset);
 public:
   using Chunk::ToWord;

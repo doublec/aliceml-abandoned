@@ -357,33 +357,32 @@ ClassFile::ParseFieldInfo(u_int &offset,
     return INVALID_POINTER;
   JavaString *name = constantPool->GetUtf8(GetU2(offset));
   JavaString *descriptor = constantPool->GetUtf8(GetU2(offset));
-  word constantValue;
-  if (!ParseFieldAttributes(offset, constantPool, runtimeConstantPool,
-			    constantValue))
+  FieldInfo *fieldInfo = FieldInfo::New(accessFlags, name, descriptor);
+  if (!ParseFieldAttributes(offset, fieldInfo,
+			    constantPool, runtimeConstantPool))
     return INVALID_POINTER;
-  else if (constantValue != (word) 0 && (accessFlags & FieldInfo::ACC_STATIC))
-    return FieldInfo::New(accessFlags, name, descriptor, constantValue);
-  else
-    return FieldInfo::New(accessFlags, name, descriptor);
+  return fieldInfo;
 }
 
-bool ClassFile::ParseFieldAttributes(u_int &offset,
-				     ConstantPool *constantPool,
-				     RuntimeConstantPool *runtimeConstantPool,
-				     word &constantValue) {
+bool
+ClassFile::ParseFieldAttributes(u_int &offset, FieldInfo *fieldInfo,
+				ConstantPool *constantPool,
+				RuntimeConstantPool *runtimeConstantPool) {
   u_int attributesCount = GetU2(offset);
   JavaString *constantValueAttributeName = JavaString::New("ConstantValue");
-  constantValue = (word) 0;
+  bool foundConstantValue = false;
   for (u_int i = attributesCount; i--; ) {
     JavaString *attributeName = constantPool->GetUtf8(GetU2(offset));
     u_int attributeLength = GetU4(offset);
     if (attributeName->Equals(constantValueAttributeName)) {
       //--** is attributeLength != 2 an error or an unknown attribute?
       Assert(attributeLength == 2);
-      if (constantValue != (word) 0) return false;
+      if (foundConstantValue) return false;
+      foundConstantValue = true;
+      if (!fieldInfo->IsStatic()) return false;
       //--** must be CONSTANT_Integer, CONSTANT_Long, CONSTANT_Float,
       //--** CONSTANT_Double, or CONSTANT_String
-      constantValue = runtimeConstantPool->Get(GetU2(offset));
+      fieldInfo->InitConstantValue(runtimeConstantPool->Get(GetU2(offset)));
     } else
       offset += attributeLength; // skip info
   }
@@ -407,8 +406,7 @@ Table *ClassFile::ParseMethods(u_int &offset, ConstantPool *constantPool,
 }
 
 MethodInfo *
-ClassFile::ParseMethodInfo(u_int &offset,
-			   ConstantPool *constantPool,
+ClassFile::ParseMethodInfo(u_int &offset, ConstantPool *constantPool,
 			   RuntimeConstantPool *runtimeConstantPool) {
   u_int accessFlags = GetU2(offset);
   if (((accessFlags & MethodInfo::ACC_PUBLIC) != 0) +
@@ -423,37 +421,29 @@ ClassFile::ParseMethodInfo(u_int &offset,
     return INVALID_POINTER;
   JavaString *name = constantPool->GetUtf8(GetU2(offset));
   JavaString *descriptor = constantPool->GetUtf8(GetU2(offset));
-  JavaByteCode *byteCode;
-  if (!ParseMethodAttributes(offset, constantPool,
-			     runtimeConstantPool, byteCode))
+  MethodInfo *methodInfo = MethodInfo::New(accessFlags, name, descriptor);
+  if (!ParseMethodAttributes(offset, methodInfo, constantPool,
+			     runtimeConstantPool))
     return INVALID_POINTER;
-  else if (byteCode == INVALID_POINTER) {
-    if (accessFlags & (MethodInfo::ACC_NATIVE | MethodInfo::ACC_ABSTRACT))
-      return MethodInfo::New(accessFlags, name, descriptor);
-    else
-      return INVALID_POINTER;
-  } else {
-    if (accessFlags & (MethodInfo::ACC_NATIVE | MethodInfo::ACC_ABSTRACT))
-      return INVALID_POINTER;
-    else
-      return MethodInfo::New(accessFlags, name, descriptor, byteCode);
-  }
+  return methodInfo;
 }
 
-bool ClassFile::ParseMethodAttributes(u_int &offset,
-				      ConstantPool *constantPool,
-				      RuntimeConstantPool *runtimeConstantPool,
-				      JavaByteCode *&byteCode) {
+bool
+ClassFile::ParseMethodAttributes(u_int &offset, MethodInfo *methodInfo,
+				 ConstantPool *constantPool,
+				 RuntimeConstantPool *runtimeConstantPool) {
   //--** implementations must recognize the Exceptions attribute
   u_int attributesCount = GetU2(offset);
   JavaString *codeAttributeName = JavaString::New("Code");
-  byteCode = INVALID_POINTER;
+  bool foundByteCode = false;
   for (u_int i = attributesCount; i--; ) {
     JavaString *attributeName = constantPool->GetUtf8(GetU2(offset));
     u_int attributeLength = GetU4(offset);
     if (attributeName->Equals(codeAttributeName)) {
       // Parse Code attribute:
-      if (byteCode != INVALID_POINTER) return INVALID_POINTER;
+      if (foundByteCode) return false;
+      if (methodInfo->IsAbstract() || methodInfo->IsNative()) return false;
+      foundByteCode = true;
       u_int startOffset = offset;
       u_int maxStack = GetU2(offset);
       u_int maxLocals = GetU2(offset);
@@ -475,12 +465,15 @@ bool ClassFile::ParseMethodAttributes(u_int &offset,
 	exceptionTable->Init(k, entry->ToWord());
       }
       SkipAttributes(offset);
-      byteCode = JavaByteCode::New(maxStack, maxLocals, code, exceptionTable);
+      JavaByteCode *byteCode =
+	JavaByteCode::New(methodInfo, maxStack, maxLocals, code,
+			  exceptionTable);
+      methodInfo->InitByteCode(byteCode);
       if (offset != startOffset + attributeLength) return false;
     } else
       offset += attributeLength; // skip info
   }
-  return true;
+  return foundByteCode || methodInfo->IsAbstract() || methodInfo->IsNative();
 }
 
 void ClassFile::SkipAttributes(u_int &offset) {
