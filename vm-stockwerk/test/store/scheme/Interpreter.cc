@@ -82,8 +82,12 @@ inline void Interpreter::PushFrame(u_int size) {
   Stack::FromWord(GetRoot(FRAME_STACK))->SlowPush(p->ToWord());
 }
 
-inline void Interpreter::PopFrame() {
-  Stack::FromWord(GetRoot(FRAME_STACK))->Pop();
+inline void Interpreter::PushFrame(word frame) {
+  Stack::FromWord(GetRoot(FRAME_STACK))->Push(frame);
+}
+
+inline word Interpreter::PopFrame() {
+  return Stack::FromWord(GetRoot(FRAME_STACK))->Pop();
 }
 
 // Push and Pop Closures
@@ -91,8 +95,8 @@ inline void Interpreter::PushClosure(word closure) {
   Stack::FromWord(GetRoot(CLOSURE_STACK))->SlowPush(closure);
 }
 
-inline void Interpreter::PopClosure() {
-  Stack::FromWord(GetRoot(CLOSURE_STACK))->Pop();
+inline word Interpreter::PopClosure() {
+  return Stack::FromWord(GetRoot(CLOSURE_STACK))->Pop();
 }
 
 // Push elem i of current FRAME/CLOSURE/GLOBAL to EVAL_STACK
@@ -164,7 +168,7 @@ inline void Interpreter::InterpretDeclArr(Block *instr) {
     PushTask(instr->GetArg(i));
   }
   if (Store::NeedGC()) {
-    //root = Store::DoGC(root);
+    Store::DoGC(root);
   }
 }
 
@@ -191,6 +195,15 @@ inline void Interpreter::InterpretAssign(Block *instr) {
 inline void Interpreter::InterpretRemove() {
   PopFrame();
   PopClosure();
+}
+
+inline void Interpreter::InterpretToggle() {
+  word tmp = PopFrame();
+  PopFrame();
+  PushFrame(tmp);
+  tmp = PopClosure();
+  PopClosure();
+  PushClosure(tmp);
 }
 
 inline void Interpreter::InterpretIf(Block *instr) {
@@ -257,7 +270,7 @@ inline void Interpreter::InterpretApplication(Block *instr) {
   Block *arr            = Store::DirectWordToBlock(node->GetExprArr());
   u_int size            = arr->GetSize();
   
-  PushTask(ApplyNode::New()->ToWord());
+  PushTask(Store::IntToWord(T_APPLY));
   
   for (u_int i = 0; i < size; i++) {
     PushTask(arr->GetArg(i));
@@ -488,36 +501,6 @@ inline char *Interpreter::InterpretOp(Block *p) {
   return INVALID_POINTER;
 }
 
-inline char *Interpreter::InterpretApply() {
-  word value = PopValue(); 
-  Block *p   = Store::DirectWordToBlock(value);
-  char *fn   = NULL;
-
-  if (p->GetLabel() == (BlockLabel) T_CLOSURE) {
-    ClosureNode *abs = ClosureNode::FromBlock(p);
-    Block *arr       = Store::DirectWordToBlock(abs->GetArgList());
-    u_int size       = arr->GetSize();
-    
-    PushTask(RemoveNode::New()->ToWord());
-    PushTask(abs->GetBody());
-    
-    PushFrame(abs->GetFrameSize());
-    PushClosure(abs->GetEnv());
-
-    for (u_int i = size; i--;) {
-      PushTask(AssignNode::New(IdNode::FromWord(arr->GetArg(i)))->ToWord());
-    }
-  }
-  else {
-    fn = InterpretOp(p);
-  }
-  
-  if (Store::NeedGC()) {
-    // root = Store::DoGC(root);
-  }
-  return fn;
-}
-
 // Public Methods
 void Interpreter::Init() {
   Block *p = Store::AllocBlock(MIN_DATA_LABEL, ROOTSET_SIZE);
@@ -569,43 +552,80 @@ char *Interpreter::Interpret(word tree) {
   PushTask(tree);
   
   while (HaveTask()) {
-    Block *instr = Store::DirectWordToBlock(PopTask());
+    word task = PopTask();
+
+    if (PointerOp::IsInt(task)) {
+      switch ((NodeType) Store::DirectWordToInt(task)) {
+      case T_REMOVE:
+	InterpretRemove(); break;
+      case T_APPLY: {
+	fn       = NULL;
+	Block *p = Store::DirectWordToBlock(PopValue());
+	if (p->GetLabel() == (BlockLabel) T_CLOSURE) {
+	  ClosureNode *abs = ClosureNode::FromBlock(p);
+	  Block *arr       = Store::DirectWordToBlock(abs->GetArgList());
+	  u_int size       = arr->GetSize();
+	
+	  PushTask(Store::IntToWord(T_REMOVE));
+	  PushTask(abs->GetBody());
+
+	  PushFrame(abs->GetFrameSize());
+	  PushClosure(abs->GetEnv());
+
+	  for (u_int i = size; i--;) {
+	    PushTask(AssignNode::New(IdNode::FromWord(arr->GetArg(i)))->ToWord());
+	  }
+	}
+	else {
+	  fn = InterpretOp(p);
+	}
+  
+	if (Store::NeedGC()) {
+	  Store::DoGC(root);
+	}
+	break;
+      }
+      default:
+	break;
+      }
+    }
+    else {
+      Block *instr = Store::DirectWordToBlock(task);
     
-    switch ((NodeType) instr->GetLabel()) {
-    case T_DECLARR:
-      InterpretDeclArr(instr); break;
-    case T_DEFINE:
-      InterpretDefine(instr); break;
-    case T_ASSIGN:
-      InterpretAssign(instr); break;
-    case T_REMOVE:
-      InterpretRemove(); break;
-    case T_IF:
-      InterpretIf(instr); break;
-    case T_SELECTION:
-      InterpretSelection(instr); break;
-    case T_INT:
-    case T_STRING:
-    case T_PRIMOP:
-    case T_CLOSURE:
-    case T_NIL:
-      InterpretValue(instr); break;
-    case T_ID:
-      InterpretId(instr); break;
-    case T_LET:
-      InterpretLet(instr); break;
-    case T_LAMBDA:
-      InterpretLambda(instr); break;
-    case T_APPLICATION:
-      InterpretApplication(instr); break;
-    case T_BEGIN:
-      InterpretBegin(instr); break;
-    case T_TIME:
-      InterpretTime(); break;
-    case T_APPLY:
-      fn = InterpretApply(); break;
-    default:
-      break;
+      switch ((NodeType) instr->GetLabel()) {
+      case T_DECLARR:
+	InterpretDeclArr(instr); break;
+      case T_DEFINE:
+	InterpretDefine(instr); break;
+      case T_ASSIGN:
+	InterpretAssign(instr); break;
+      case T_TOGGLE:
+	InterpretToggle(); break;
+      case T_IF:
+	InterpretIf(instr); break;
+      case T_SELECTION:
+	InterpretSelection(instr); break;
+      case T_INT:
+      case T_STRING:
+      case T_PRIMOP:
+      case T_CLOSURE:
+      case T_NIL:
+	InterpretValue(instr); break;
+      case T_ID:
+	InterpretId(instr); break;
+      case T_LET:
+	InterpretLet(instr); break;
+      case T_LAMBDA:
+	InterpretLambda(instr); break;
+      case T_APPLICATION:
+	InterpretApplication(instr); break;
+      case T_BEGIN:
+	InterpretBegin(instr); break;
+      case T_TIME:
+	InterpretTime(); break;
+      default:
+	break;
+      }
     }
   }
   return fn;

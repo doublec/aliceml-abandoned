@@ -22,7 +22,7 @@ void AssertOutline(const char *file, int line, const char *message) {
 #endif
 
 // Internal Helper Functions
-static inline void Show(char *s) {
+static inline void Show(const char *s) {
   std::printf(s);
   std::fflush(stdout);
 }
@@ -62,7 +62,6 @@ int main(void) {
   Show("Store based Scheme Interpreter started\n");
 
   while (1) {
-    
     if (fn != INVALID_POINTER) {
       if ((fs = std::fopen(fn, "r")) == INVALID_POINTER) {
 	std::fprintf(stderr, "Interpreter::Main: unable to open file `%s'.\n", fn);

@@ -45,6 +45,7 @@ typedef enum {
   T_NIL,
   T_SELECTION,
   T_REMOVE,
+  T_TOGGLE,
   T_ASSIGN,
   T_PRIMOP,
   T_BEGIN,
@@ -491,17 +492,22 @@ public:
 
 class ApplicationNode : private Block {
 private:
-  static const u_int SIZE        = 1;
+  static const u_int SIZE        = 2;
   static const u_int EXPRARR_POS = 0;
+  static const u_int TAIL_POS    = 1;
 public:
   word GetExprArr() {
     return GetArg(EXPRARR_POS);
   }
-  
-  static Block *New(word exprarr) {
+  u_int IsTail() {
+    return Store::DirectWordToInt(GetArg(TAIL_POS));
+  }
+
+  static Block *New(word exprarr, u_int tail) {
     Block *p = Store::AllocBlock((BlockLabel) T_APPLICATION, SIZE);
 
     p->InitArg(EXPRARR_POS, exprarr);
+    p->InitArg(TAIL_POS, tail);
     return p;
   }
   static ApplicationNode *FromBlock(Block *x) {
@@ -511,28 +517,6 @@ public:
     Block *p = Store::DirectWordToBlock(x);
 
     AssertStore((p == INVALID_POINTER) || (p->GetLabel() == (BlockLabel) T_APPLICATION));
-    return FromBlock(p);
-  }
-};
-
-class ApplyNode : private Block {
-private:
-  static const u_int SIZE      = 1;
-  static const u_int DUMMY_POS = 0;
-public:
-  static Block *New() {
-    Block *p = Store::AllocBlock((BlockLabel) T_APPLY, SIZE);
-
-    p->InitArg(DUMMY_POS, Store::IntToWord(0));
-    return p;
-  }
-  static ApplyNode *FromBlock(Block *x) {
-    return (ApplyNode *) x;
-  }
-  static ApplyNode *FromWord(word x) {
-    Block *p = Store::DirectWordToBlock(x);
-
-    AssertStore((p == INVALID_POINTER) || (p->GetLabel() == (BlockLabel) T_APPLY));
     return FromBlock(p);
   }
 };
@@ -652,22 +636,22 @@ public:
 };
 
 // Interpreter Helper Nodes
-class RemoveNode : private Block {
+class ToggleNode : private Block {
 private:
-  static const int SIZE      = 0;
+  static const int SIZE = 0;
 public:
   using Block::ToWord;
 
   static Block *New() {
-    return Store::AllocBlock((BlockLabel) T_REMOVE, SIZE);
+    return Store::AllocBlock((BlockLabel) T_TOGGLE, SIZE);
   }
-  static RemoveNode *FromBlock(Block *x) {
-    return (RemoveNode *) x;
+  static ToggleNode *FromBlock(Block *x) {
+    return (ToggleNode *) x;
   }
-  static RemoveNode *FromWord(word x) {
+  static ToggleNode *FromWord(word x) {
     Block *p = Store::DirectWordToBlock(x);
 
-    AssertStore((p == INVALID_POINTER) || (p->GetLabel() == (BlockLabel) T_REMOVE));
+    AssertStore((p == INVALID_POINTER) || (p->GetLabel() == (BlockLabel) T_TOGGLE));
     return FromBlock(p);
   }
 };
