@@ -1,0 +1,21 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure UnsafeUnix from "UnsafeUnix"
+import signature UNIX       from "UNIX-sig"
+
+structure Unix :> UNIX =
+    struct
+	type proc
+
+	open UnsafeUnix
+    end
