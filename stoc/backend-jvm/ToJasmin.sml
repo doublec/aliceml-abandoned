@@ -16,7 +16,8 @@ structure ToJasmin =
 	open JVMInst
 
 	exception Error of string
-	exception Debug of string*INSTRUCTION list
+	datatype deb = SIs of string*INSTRUCTION list
+	exception Debug of deb
 
 	val actclass= ref ""
 	val stackneed = ref 0
@@ -33,8 +34,167 @@ structure ToJasmin =
 
 	datatype jump = Got | Ret | IRet | ARet
 	datatype branchinst = Lab of string | Jump of jump | Non
+	datatype registerOps = Load of (int * INSTRUCTION) | Store
 
 	val labelMerge: branchinst StringHash.t ref = ref (StringHash.new())
+
+	structure JVMreg =
+	    struct
+		(* maps virtual registers to their first defining position *)
+		val from = ref (Array.array (0,0))
+
+		(* maps virtual registers to their last read access position *)
+		val to = ref (Array.array (0,0))
+
+		(* maps virtual registers to JVM registers *)
+		val regmap = ref (Array.array (0,0))
+
+		(* maps JVM registers to their last read access position *)
+		val jvmto = ref (Array.array (0,0))
+
+		(* maps labels to their position *)
+		val labHash: int StringHash.t ref = ref (StringHash.new())
+
+		(* maps virtual registers to virtual registers (used for
+		 Aload/Astore register fusion) *)
+		val fusedwith = ref (Array.array (0,0))
+
+		(* Some (few) virtual registers are assigned more than once.
+		 Therefore, they cannot be fused on Aload/Astore sequences *)
+		val defines = ref (Array.array (0,0))
+
+		fun new regs =
+		    let
+			val registers = if regs>=2 then regs + 1 else 3
+		    in
+			from := Array.array(registers, ~1);
+			to := Array.array(registers, ~1);
+			regmap := Array.array(registers, ~1);
+			jvmto := Array.array(registers, ~1);
+			labHash := StringHash.new();
+			fusedwith := Array.array (registers,~1);
+			defines := Array.array(registers,0)
+		    end
+
+		fun define (register, pos) =
+		    let
+			val old = Array.sub(!from, register)
+		    in
+			if old = ~1 orelse old > pos
+			    then Array.update(!from, register, pos)
+			else ()
+		    end
+
+		fun use (register, pos) =
+		    let
+			val lookup = Array.sub (!fusedwith, register)
+			val genuineReg = if lookup = ~1 then register else lookup
+			val old = Array.sub(!to, genuineReg)
+		    in
+			if old < pos
+			    then Array.update(!to, genuineReg, pos)
+			else ()
+		    end
+
+		fun assignAll () =
+		    let
+			fun assign (register) =
+			    let
+				val lookup = Array.sub (!fusedwith, register)
+				val genuineReg = if lookup = ~1 then register else lookup
+				val f' = Array.sub (!from, genuineReg)
+				fun assignNextFree (act) =
+				    if f' > Array.sub (!jvmto, act)
+					then (Array.update (!regmap, genuineReg, act);
+					      Array.update (!jvmto, act,
+							    Array.sub (!to, genuineReg)))
+				    else assignNextFree (act+1)
+			    in
+				print (Int.toString register^"/"^Int.toString (Array.length(!to)));
+				if f'= ~1 then
+				    print "is uninitialized!!"
+				    else
+					if lookup = ~1 then
+					    assignNextFree 2
+					else
+					    ();
+				if register+1<Array.length(!to)
+				    then assign (register+1)
+				else ()
+			    end
+		    in
+			Array.update(!regmap, 0, 0);
+			Array.update(!regmap, 1, 1);
+			assign 2
+		    end
+
+		fun defineLabel (label', pos) =
+		    (print ("defining "^label');
+		     StringHash.insert (!labHash, label', pos))
+
+		fun addJump (f', tolabel) =
+		    let
+			val t = StringHash.lookup(!labHash, tolabel)
+
+		    (* Checks whether we jump from behind last usage into the range of the
+		     virtual register or from inside the range to somewhere before first
+		     declaration. If so, the range of this register is changed. *)
+			fun checkReg (register) =
+			    let
+				val lookup = Array.sub (!fusedwith, register)
+				val genuineReg = if lookup = ~1 then register else lookup
+				val regfrom = Array.sub(!from, genuineReg)
+				val regto = Array.sub(!to, genuineReg)
+				val t' = valOf t
+			    in
+				if f' > regto andalso t' > regfrom andalso t' > regto
+				    then
+					Array.update (!to, register, t')
+				else if f' > regfrom andalso f' <regto
+				    andalso t' < regfrom
+					 then Array.update (!from, genuineReg, f')
+				     else if register<Array.length (!to)
+					      then checkReg (register+1)
+					  else ()
+			    end
+		    in
+			if isSome t then checkReg 1 else ()
+		    end
+
+		fun get reg =
+		    let
+			val lookup = Array.sub (!fusedwith, reg)
+			val genuineReg = if lookup = ~1 then reg else lookup
+		    in
+			if !OPTIMIZE >= 2 then Array.sub (!regmap, genuineReg) else reg
+		    end
+
+		fun max default =
+		    let
+			fun findMax r =
+			    if r+1=Array.length (!jvmto) orelse
+				Array.sub (!jvmto, r) = ~1 then
+				r-1
+			    else findMax (r+1)
+		    in
+			if !OPTIMIZE >= 2 then
+			    findMax 2
+			else default
+		    end
+
+		fun fuse (a,b) =
+		    (if Array.sub(!defines, b)<2 then
+			 (Array.update(!fusedwith, b, a);
+			  if Array.sub (!from, a) > Array.sub (!from, b)
+			      then Array.update(!from, a, Array.sub(!from, b)) else ();
+			   if Array.sub (!to, a) > Array.sub (!to, b)
+			       then Array.update(!to, a, Array.sub(!to, b)) else ())
+		     else ())
+
+		fun countDefine reg =
+		    Array.update (!defines, reg,
+				  Array.sub(!defines, reg)+1)
+	    end
 
 	fun directJump lab' =
 	    case StringHash.lookup (!labelMerge, lab') of
@@ -50,7 +210,7 @@ structure ToJasmin =
 	      SOME (Lab lab'') => condJump lab''
 	      | _ => lab'
 
-	fun mergeLabels insts =
+	fun optimize (insts, registers) =
 	    let
 		val verylast = ref Non
 		fun enter (last, Comment _::rest) =
@@ -79,6 +239,14 @@ structure ToJasmin =
 		  | enter (_, _::rest) =
 		    enter (Non, rest)
 		  | enter (_, nil) = ()
+
+		fun doubleAssigns (inst::rest) =
+		    ((case inst of
+			Astore reg => JVMreg.countDefine reg
+		      | Istore reg => JVMreg.countDefine reg
+		      | _ => ());
+			  doubleAssigns rest)
+		  | doubleAssigns nil = ()
 
 		fun deadCode (last, (c as Comment _)::rest) =
 		    c :: deadCode (last, rest)
@@ -121,10 +289,91 @@ structure ToJasmin =
 		  | deadCode (Non, c::rest) =
 			 c :: deadCode (Non, rest)
 		  | deadCode (last, nil) = (verylast := last; nil)
+
+		fun prepareLifeness (Astore r::insts, pos) =
+		    (JVMreg.define(r, pos);
+		     prepareLifeness (insts,pos+1))
+		  | prepareLifeness (Istore r::insts, pos) =
+		    (JVMreg.define(r, pos);
+		     prepareLifeness (insts,pos+1))
+		  | prepareLifeness (Aload r::insts, pos) =
+		    (JVMreg.use(r, pos);
+		     prepareLifeness (insts,pos+1))
+		  | prepareLifeness (Iload r::insts, pos) =
+		    (JVMreg.use(r, pos);
+		     prepareLifeness (insts,pos+1))
+		  | prepareLifeness (Label l'::insts, pos) =
+		    (JVMreg.defineLabel (l', pos);
+		     prepareLifeness (insts,pos+1))
+		  | prepareLifeness (_::insts, pos) =
+		    prepareLifeness (insts,pos+1)
+		  | prepareLifeness (nil, _) = ()
+
+		fun lifeness (Goto label'::insts, pos) =
+		    (JVMreg.addJump(pos, label');
+		     lifeness (insts, pos+1))
+		  | lifeness (Ifacmpeq label'::insts, pos) =
+		     (JVMreg.addJump(pos, label');
+		      lifeness (insts, pos+1))
+		  | lifeness (Ifacmpne label'::insts, pos) =
+		     (JVMreg.addJump(pos, label');
+		      lifeness (insts, pos+1))
+		  | lifeness (Ifeq label'::insts, pos) =
+		     (JVMreg.addJump(pos, label');
+		      lifeness (insts, pos+1))
+		  | lifeness (Ificmpeq label'::insts, pos) =
+		     (JVMreg.addJump(pos, label');
+		      lifeness (insts, pos+1))
+		   | lifeness (Ificmplt label'::insts, pos) =
+		     (JVMreg.addJump(pos, label');
+		      lifeness (insts, pos+1))
+		  | lifeness (Ificmpne label'::insts, pos) =
+		     (JVMreg.addJump(pos, label');
+		      lifeness (insts, pos+1))
+		  | lifeness (Ifneq label'::insts, pos) =
+		     (JVMreg.addJump(pos, label');
+		      lifeness (insts, pos+1))
+		  | lifeness (Ifnull label'::insts, pos) =
+		     (JVMreg.addJump(pos, label');
+		      lifeness (insts, pos+1))
+		  | lifeness (_::insts, pos) =
+		     lifeness (insts, pos+1)
+		  | lifeness (nil, _) = ()
+
+		fun fuse (old, Comment _::rest) =
+		    fuse (old, rest)
+		  | fuse (l as Load (a,_), Astore b::rest) =
+		    (JVMreg.fuse (a,b);
+		     fuse (Store, rest))
+		  | fuse (l as Load (a,_),Istore b::rest) =
+		    (JVMreg.fuse (a,b);
+		     fuse (Store, rest))
+		  | fuse (Load (_,ori), (l as Aload b)::rest) =
+		    ori::fuse (Load (b,l), rest)
+		  | fuse (Store, (l as Aload b)::rest) =
+		    fuse (Load (b,l), rest)
+		  | fuse (Load (_,ori), (l as Iload b)::rest) =
+		    ori::fuse (Load (b,l), rest)
+		  | fuse (Store, (l as Iload b)::rest) =
+		    fuse (Load (b,l), rest)
+		  | fuse (Store, inst::rest) =
+		    inst::fuse(Store, rest)
+		  | fuse (Load (_, ori), inst::rest) =
+		    ori::inst::fuse(Store, rest)
+		  (* The last instruction has to be return. *)
+		  | fuse (_,nil) = nil
+
+		val d' = (labelMerge := StringHash.new();
+			  enter (Non, insts);
+			  doubleAssigns insts;
+			  fuse (Store, deadCode (Non, insts)))
 	    in
-		labelMerge := StringHash.new();
-		enter (Non, insts);
-		deadCode (Non, insts)
+		if !OPTIMIZE >=2 then
+		    (prepareLifeness (d', 0);
+		     lifeness (d', 0);
+		     JVMreg.assignAll())
+		else ();
+		d'
 	    end
 
 	local
@@ -253,7 +502,7 @@ structure ToJasmin =
 	local
 	    fun instructionToJasmin (Astore j, s) =
 		let
-		    val i = if s then j-1 else j
+		    val i = if s then JVMreg.get j-1 else JVMreg.get j
 		in
 		    if i<4 then
 			"astore_"^Int.toString i
@@ -264,7 +513,7 @@ structure ToJasmin =
 	      | instructionToJasmin (Aconst_null,_) = "aconst_null"
 	      | instructionToJasmin (Aload j, s) =
 		let
-		    val i = if s then j-1 else j
+		    val i = if s then JVMreg.get j-1 else JVMreg.get j
 		in
 		    if i<4 then
 			"aload_"^Int.toString i
@@ -326,7 +575,7 @@ structure ToJasmin =
 	      | instructionToJasmin (Ifstatic _,_) = raise Error ""
 	      | instructionToJasmin (Iload j,s) =
 					 let
-					     val i = if s then j-1 else j
+					     val i = if s then JVMreg.get j-1 else JVMreg.get j
 					 in
 					     if i<4 then
 						 "iload_"^Int.toString i
@@ -334,7 +583,7 @@ structure ToJasmin =
 					 end
 	      | instructionToJasmin (Istore j,s) =
 					 let
-				     val i = if s then j-1 else j
+				     val i = if s then JVMreg.get j-1 else JVMreg.get j
 				 in
 				     if i<4 then
 				     "istore_"^Int.toString i
@@ -447,16 +696,16 @@ structure ToJasmin =
 					   instructions, catches, staticapply)) =
 		    (* apply hat derzeit oft ein doppeltes Areturn am Ende.
 		     Wird spaeter wegoptimiert. *)
-		    (TextIO.output(io,".method "^
+		    (JVMreg.new perslocs;
+		     TextIO.output(io,".method "^
 				   (mAccessToString access)^
 				   methodname^
 				   (descriptor2string methodsig)^"\n");
 		     (* Seiteneffekt: stackneed und stackmax werden gesetzt *)
-		     if name="Emilclass33" then
-			 raise Debug ("Zorn",  instructions)
-		     else ();
 		     instructionsToJasmin
-		     (mergeLabels instructions,
+		     (if !OPTIMIZE>=1 then
+			  optimize (instructions, perslocs)
+			  else instructions,
 		      0,
 		      0,
 		      staticapply,
@@ -471,7 +720,7 @@ structure ToJasmin =
 		      else
 			  print ("\n\nStack Verification Error. Stack="^Int.toString (!stackneed)^
 				 " in "^(!actclass)^"."^methodname^".\n"));
-		      TextIO.output(io,".limit locals "^Int.toString(perslocs+1)^"\n");
+		      TextIO.output(io,".limit locals "^Int.toString(JVMreg.max perslocs+1)^"\n");
 		      TextIO.output(io,".limit stack "^Int.toString
 				    ((if !DEBUG>=2 then 2 else 0)+(!stackmax))^"\n");
 		      instructionsToJasmin(catches,0,0, staticapply, io);
