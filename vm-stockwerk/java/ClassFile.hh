@@ -74,7 +74,7 @@ private:
 public:
   using Chunk::ToWord;
 
-  static ClassFile *NewFromFile(char *filename);
+  static ClassFile *NewFromFile(JavaString *filename);
 
   ClassInfo *Parse(ClassLoader *classLoader);
 };

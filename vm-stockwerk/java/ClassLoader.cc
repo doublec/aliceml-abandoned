@@ -21,6 +21,7 @@
 #include "generic/Interpreter.hh"
 #include "java/StackFrame.hh"
 #include "java/ClassLoader.hh"
+#include "java/ClassFile.hh"
 
 class ClassTable: private HashTable {
 private:
@@ -101,9 +102,12 @@ public:
 Worker::Result ResolveClassInterpreter::Run() {
   ResolveClassFrame *frame =
     ResolveClassFrame::FromWordDirect(Scheduler::GetAndPopFrame());
+  JavaString *name = frame->GetName();
+  ClassFile *classFile = ClassFile::NewFromFile(name);
+  ClassInfo *classInfo = classFile->Parse(frame->GetClassLoader());
   Scheduler::nArgs = Scheduler::ONE_ARG;
   Scheduler::currentArgs[0] =
-    frame->GetClassLoader()->ResolveType(frame->GetName());
+    classInfo->ToWord(); //--** return the class object
   return Worker::CONTINUE;
 }
 

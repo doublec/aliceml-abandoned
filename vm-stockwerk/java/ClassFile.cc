@@ -469,8 +469,8 @@ void ClassFile::SkipAttributes(u_int &offset) {
   }
 }
 
-ClassFile *ClassFile::NewFromFile(char *filename) {
-  FILE *f = std::fopen(filename, "rb");
+ClassFile *ClassFile::NewFromFile(JavaString *filename) {
+  FILE *f = std::fopen(filename->ExportC(), "rb");
   if (std::fseek(f, 0, SEEK_END)) {
     std::fclose(f);
     return INVALID_POINTER;
