@@ -149,7 +149,7 @@ DEFINE1(Word_toInt) {
   DECLARE_WORD(i, x0);
   if (i > static_cast<u_int>(MAX_VALID_INT))
     RAISE(PrimitiveTable::General_Overflow);
-  RETURN_WORD(i);
+  RETURN_INT(i);
 } END
 
 DEFINE1(Word_toIntX) {
