@@ -15,35 +15,25 @@
 import structure Gtk from "x-alice:/lib/gtk/Gtk"
 import structure GtkCanvas from "x-alice:/lib/gtk/GtkCanvas"
 import structure MkColorTable from "MkColorTable"
-import signature MK_DRAWING_AREA from "MK_DRAWING_AREA-sig"
-import signature AS from "MK_DRAWING_AREA_ARG-sig"
+import signature DRAWING_AREA from "DRAWING_AREA-sig"
 
-functor MkDrawingArea (structure AreaArgs: AS) : MK_DRAWING_AREA
+functor MkDrawingArea (val xsize : real val ysize: real) : DRAWING_AREA
 =
 struct
 
     type tag = Gtk.object
     val canvas =  GtkCanvas.new 0
 	
-    structure A = AreaArgs
-	
-    val _ =  (let
-		  val x = A.x
-		  val y = A.y
-		  val _ = Gtk.widgetSetUsize(canvas, Real.trunc x, Real.trunc y ) 
-		  val _ = GtkCanvas.setScrollRegion 
-		      (canvas,0.0,0.0,x,y)
-		  in
-	        ()  
-	      end)
+    val _ =  (Gtk.widgetSetUsize(canvas, Real.trunc xsize, Real.trunc ysize ) 
+	      ;GtkCanvas.setScrollRegion (canvas,0.0,0.0,xsize,ysize))
 
     val background =  GtkCanvas.itemNew 
 		      ( GtkCanvas.root(canvas), 
 		       GtkCanvas.RECTANGLE,
 		       [("x1", Gtk.DOUBLE 0.0),
 			("y1", Gtk.DOUBLE 0.0),
-			("x2", Gtk.DOUBLE A.x),
-			("y2", Gtk.DOUBLE A.y),
+			("x2", Gtk.DOUBLE xsize),
+			("y2", Gtk.DOUBLE ysize),
 			("fill_color_gdk", 
 		       Gtk.OBJECT(MkColorTable.allocColor(65535,65535,65535))),
 			("outline_color_gdk", 
@@ -51,40 +41,9 @@ struct
 
     val root = GtkCanvas.root(canvas)
   
-    fun resize (x,y) = 
-	let
-	    val _ = GtkCanvas.setScrollRegion(canvas,0.0,0.0,x,y)
-	    val _ = GtkCanvas.itemSet(background,"x2", Gtk.DOUBLE x)
-	    val _ = GtkCanvas.itemSet(background,"y2", Gtk.DOUBLE y)	
-	in
-	    ()
-	end
-
-
-(* prooved being not very useful  
-
-    fun resize (x,y) = 
-	let
-            (* val _ = Gtk.widgetSetUsize(canvas, 
-					  Real.trunc x, 
-					  Real.trunc y ) *)
-	    val (_,_,x',y') = GtkCanvas.getScrollRegion(canvas,0.0,0.0,0.0,0.0)
-	    val _ = if x = x' andalso y = y' then
-		()
-		    else
-			let
-			    val _ = GtkCanvas.setScrollRegion(canvas,0.0,0.0,x,y)
-			    val _ = GtkCanvas.itemSet(background,"x2", Gtk.DOUBLE x)
-			    val _ = GtkCanvas.itemSet(background,"y2", Gtk.DOUBLE y)	
-			in
-			    ()
-			end
-	in
-	    ()
-	end
-
-*)   
- 
+    fun resize (x,y) = (GtkCanvas.setScrollRegion(canvas,0.0,0.0,x,y)
+	               ;GtkCanvas.itemSet(background,"x2", Gtk.DOUBLE x)
+	               ;GtkCanvas.itemSet(background,"y2", Gtk.DOUBLE y))	
 
 end
 
