@@ -13,6 +13,7 @@
 
 import structure Foreign              from "../../lib/system/Foreign"
 import structure TextIO               from "../../lib/system/TextIO"
+import structure IO                   from "../../lib/system/IO"
 import structure OS                   from "../../lib/system/OS"
 import structure Url                  from "../../lib/system/Url"
 import structure Signal               from "../../lib/system/Signal"
@@ -50,24 +51,35 @@ struct
 
     (* Signal handling *)
 
+    datatype 'a term = TERM of 'a
+    fun unTERM (TERM x) = x
+
+    (* Global handler to avoid space leak (we cannot remove them) *)
+    val interrupt = ref NONE : Signal.signal Promise.promise option ref
+
+    fun handler s =
+	(case Ref.exchange (interrupt, NONE) of
+	     NONE => ()
+	   | SOME p => Promise.fulfill (p, s) handle Promise.Promise => ();
+	 Signal.register (s, handler))
+         (* Signal handlers are currently auto-removed after triggering *)
+    val _ = Signal.register (Signal.SIGINT, handler)
+    val _ = Signal.register (Signal.SIGSTOP, handler)
+
     fun run ((thread, result), stoppable) =
 	let
 	    val p = Promise.promise ()
-	    fun handler s = Promise.fulfill (p, s) handle Promise.Promise => ()
 	in
-	    (* Signal handlers are currently auto-removed after triggering *)
-	    Signal.register (Signal.SIGINT, handler);
-	    if not stoppable then ()
-	    else Signal.register (Signal.SIGSTOP, handler);
+	    interrupt := SOME p;
 	    case Future.awaitEither (result, Promise.future p) of
-		FST _ => SOME result
-	      | SND Signal.SIGSTOP where stoppable => SOME result
+		FST (TERM x) => SOME x (* raises if f raised exn *)
+	      | SND Signal.SIGSTOP where stoppable => SOME (spawn unTERM result)
 	      | SND Signal.SIGINT => (Thread.terminate thread; NONE)
 	      | SND _ => run ((thread, result), stoppable)
 	end
 
-    fun interruptable f = run (Thread.spawnThread f, false)
-    fun stoppableInterruptable f = run (Thread.spawnThread f, true)
+    fun interruptable f = run (Thread.spawnThread (TERM o f), false)
+    fun stoppableInterruptable f = run (Thread.spawnThread (TERM o f), true)
 
 
     (* Use *)
@@ -150,10 +162,39 @@ struct
 		   (TextIO.output (TextIO.stdErr,
 				   "internal failure at " ^ s ^ "\n");
 		    SOME context)   (*--** is this cool or what? *)
-	     | Component.Failure (_, Component.Eval exn) =>
+	     | Component.Failure (url, Component.Eval exn) =>
 		   (TextIO.output (TextIO.stdErr,
 				   "uncaught exception " ^
-				   General.exnName exn ^ "\n");
+				   General.exnName exn ^
+				   (if String.isSuffix "/" (Url.toString url)
+				    then "\n"
+				    else " while evaluating \"" ^
+					 Url.toString url ^ "\"\n"));
+		    SOME context)
+	     | Component.Failure (_, Component.Mismatch
+				     {component, request, ...}) =>
+		   (TextIO.output (TextIO.stdErr,
+				   "failure type-checking \"" ^
+				   Url.toString component ^ "\"" ^
+				   (case request of
+					NONE => "\n"
+				      | SOME url => "\nas requested by \"" ^
+						    Url.toString url ^ "\"\n"));
+				   (*--** print cause *)
+		    SOME context)
+	     | Component.Failure (url, IO.Io _) =>
+		   (TextIO.output (TextIO.stdErr,
+				   "failure loading \"" ^
+				   Url.toString url ^ "\"\n");
+		    SOME context)
+	     | Component.Failure (url, exn) =>
+		   (TextIO.output (TextIO.stdErr,
+				   "unknown failure " ^
+				   General.exnName exn ^
+				   (if String.isSuffix "/" (Url.toString url)
+				    then "\n"
+				    else " while linking \"" ^
+					 Url.toString url ^ "\"\n"));
 		    SOME context)
 	     | exn =>
 		   (TextIO.output (TextIO.stdErr,
