@@ -51,6 +51,7 @@ private:
   static void RegisterVector();
   static void RegisterWord();
   static word Lookup(word table, Chunk *name);
+  static void InitInlines();
 public:
   static word Future_Future;
   static word General_Chr;
@@ -61,6 +62,8 @@ public:
   static word Hole_Cyclic;
   static word Hole_Hole;
   static word Thread_Terminated;
+
+  static word inlineTable;
 
   static void Init();
   static word LookupValue(Chunk *name);

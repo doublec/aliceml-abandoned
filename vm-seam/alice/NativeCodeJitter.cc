@@ -29,6 +29,7 @@
 #include "generic/Transients.hh"
 #include "generic/Transform.hh"
 #include "generic/Primitive.hh"
+#include "alice/PrimitiveTable.hh"
 #include "alice/Data.hh"
 #include "alice/AbstractCode.hh"
 #include "alice/LazySelInterpreter.hh"
@@ -841,6 +842,160 @@ void NativeCodeJitter::BlockOnTransient(u_int Ptr, word pc) {
   RETURN();
 }
 
+void NativeCodeJitter::InlineAppInstr(INLINED_PRIMITIVE primitive, TagVal *pc) {
+  Vector *actualIdRefs = Vector::FromWordDirect(pc->Sel(1));
+  TagVal *idDefInstrOpt = TagVal::FromWord(pc->Sel(2));
+  switch (primitive) {
+  case FUTURE_BYBEED:
+    {
+      Generic::Byneed::New(JIT_V1);
+      u_int reg = LoadIdRef(JIT_R0, actualIdRefs->Sub(0), (word) 0);
+      Generic::Byneed::InitClosure(JIT_V1, reg);
+      JITStore::SetTransientTag(JIT_V1);
+    }
+    break;
+  case CHAR_ORD:
+    {
+      word instrPC = Store::IntToWord(GetRelativePC());
+      u_int reg = LoadIdRef(JIT_V1, actualIdRefs->Sub(0), instrPC);
+      jit_movr_p(JIT_V1, reg);
+    }
+    break;
+  case INT_OPPLUS:
+    {
+      // to be done: exploit immediate knowledge
+      word instrPC = Store::IntToWord(GetRelativePC());
+      u_int x1 = LoadIdRef(JIT_V1, actualIdRefs->Sub(0), instrPC);
+      u_int spill = 0;
+      if (x1 == JIT_V1) {
+	spill = ImmediateEnv::Register(Store::IntToWord(0));
+	ImmediateEnv::Put(spill, x1);
+      }
+      u_int x2 = LoadIdRef(JIT_V1, actualIdRefs->Sub(1), instrPC);
+      if (x1 == JIT_V1) {
+	ImmediateSel(JIT_R0, JIT_V2, spill);
+      }
+      else {
+	jit_movr_p(JIT_R0, x1);
+      }
+      jit_addr_p(JIT_R0, JIT_R0, x2);
+      jit_subi_p(JIT_R0, JIT_R0, 1);
+      jit_movr_p(JIT_V1, JIT_R0);
+    }
+    break;
+  case INT_OPMUL:
+    {
+      // to be done: exploit immediate knowledge
+      word instrPC = Store::IntToWord(GetRelativePC());
+      u_int x1 = LoadIdRef(JIT_V1, actualIdRefs->Sub(0), instrPC);
+      u_int spill = 0;
+      if (x1 == JIT_V1) {
+	spill = ImmediateEnv::Register(Store::IntToWord(0));
+	ImmediateEnv::Put(spill, x1);
+      }
+      u_int x2 = LoadIdRef(JIT_V1, actualIdRefs->Sub(1), instrPC);
+      if (x1 == JIT_V1) {
+	ImmediateSel(JIT_R0, JIT_V2, spill);
+      }
+      else {
+	jit_movr_p(JIT_R0, x1);
+      }
+      JITStore::DirectWordToInt(JIT_R0, JIT_R0);
+      JITStore::DirectWordToInt(x2, x2);
+      jit_mulr_i(JIT_R0, JIT_R0, x2);
+      JITStore::IntToWord(JIT_V1, JIT_R0);
+    }
+    break;
+  case INT_OPLESS:
+    {
+      // to be done: exploit immediate knowledge
+      word instrPC = Store::IntToWord(GetRelativePC());
+      u_int x1 = LoadIdRef(JIT_V1, actualIdRefs->Sub(0), instrPC);
+      u_int spill = 0;
+      if (x1 == JIT_V1) {
+	spill = ImmediateEnv::Register(Store::IntToWord(0));
+	ImmediateEnv::Put(spill, x1);
+      }
+      u_int x2 = LoadIdRef(JIT_V1, actualIdRefs->Sub(1), instrPC);
+      if (x1 == JIT_V1) {
+	ImmediateSel(JIT_R0, JIT_V2, spill);
+      }
+      else {
+	jit_movr_p(JIT_R0, x1);
+      }
+      JITStore::DirectWordToInt(JIT_R0, JIT_R0);
+      JITStore::DirectWordToInt(x2, x2);
+      jit_insn *smaller = jit_bltr_i(jit_forward(), JIT_R0, x2);
+      jit_movi_p(JIT_V1, Store::IntToWord(0));
+      jit_insn *skip = jit_jmpi(jit_forward());
+      jit_patch(smaller);
+      jit_movi_p(JIT_V1, Store::IntToWord(1));
+      jit_patch(skip);
+    }
+    break;
+  default:
+    Error("InlineAppInstr: illegal inline");
+  }
+  if (idDefInstrOpt != INVALID_POINTER) { // SOME (idDef * instr)
+    Tuple *idDefInstr = Tuple::FromWordDirect(idDefInstrOpt->Sel(0));
+    TagVal *idDef = TagVal::FromWord(idDefInstr->Sel(0));
+    if (idDef != INVALID_POINTER) {
+       LocalEnvPut(JIT_V2, idDef->Sel(0), JIT_V1);
+    }
+    CompileInstr(TagVal::FromWordDirect(idDefInstr->Sel(1)));
+  }
+  else {
+    Generic::Primitive::Return1(JIT_V1);
+    NativeCodeFrame::GetTaskStack(JIT_V1, JIT_V2);
+    Generic::TaskStack::PopFrames(JIT_V1, 1);
+    RETURN();
+  }
+}
+
+void NativeCodeJitter::NormalAppInstr(Closure *closure, TagVal *pc) {
+  TagVal *idDefInstrOpt = TagVal::FromWord(pc->Sel(2));
+  word contPC = Store::IntToWord(0);
+  if (idDefInstrOpt != INVALID_POINTER) { // SOME (idDef * instr)
+    Tuple *idDefInstr = Tuple::FromWordDirect(idDefInstrOpt->Sel(0));
+    jit_insn *docall  = jit_jmpi(jit_forward());
+    contPC = Store::IntToWord(GetRelativePC());
+    TagVal *idDef = TagVal::FromWord(idDefInstr->Sel(0));
+    if (idDef != INVALID_POINTER) {
+      Generic::Scheduler::GetZeroArg(JIT_R0);
+      LocalEnvPut(JIT_V2, idDef->Sel(0), JIT_R0);
+    }
+    CompileBranch(TagVal::FromWordDirect(idDefInstr->Sel(1)));
+    jit_patch(docall);
+    SetRelativePC(contPC);
+  }
+  else {
+    NativeCodeFrame::GetTaskStack(JIT_V1, JIT_V2);
+    Generic::TaskStack::PopFrames(JIT_V1, 1);
+  }
+  // Load Arguments
+  Vector *actualIdRefs = Vector::FromWordDirect(pc->Sel(1));
+  u_int nArgs          = actualIdRefs->GetLength();
+  jit_movi_ui(JIT_R0, ((nArgs == 1) ? Scheduler::ONE_ARG : nArgs));
+  Generic::Scheduler::PutNArgs(JIT_R0);
+  Generic::Scheduler::GetCurrentArgs(JIT_V1);
+  for (u_int i = nArgs; i--;) {
+    u_int reg = LoadIdRefKill(JIT_R0, actualIdRefs->Sub(i));
+    Generic::Scheduler::PutArg(JIT_V1, i, reg);
+  }
+  if (idDefInstrOpt != INVALID_POINTER)
+    KillVariables(contPC);
+#if PROFILE
+  u_int i1 = ImmediateEnv::Register(closure->ToWord());
+  ImmediateSel(JIT_V1, JIT_V2, i1);
+  PushCall(JIT_V1);
+#else
+  ConcreteCode *concreteCode =
+    ConcreteCode::FromWord(closure->GetConcreteCode());
+  Interpreter *interpreter = concreteCode->GetInterpreter();
+  DirectCall(interpreter);
+#endif
+}
+
 //
 // Instructions
 //
@@ -1068,48 +1223,15 @@ TagVal *NativeCodeJitter::InstrAppPrim(TagVal *pc) {
 #if defined(JIT_STORE_DEBUG)
   JITStore::LogMesg(GetPrimitveName(pc->Sel(0)));
 #endif
-  TagVal *idDefInstrOpt = TagVal::FromWord(pc->Sel(2));
-  word contPC = Store::IntToWord(0);
-  if (idDefInstrOpt != INVALID_POINTER) { // SOME (idDef * instr)
-    Tuple *idDefInstr = Tuple::FromWordDirect(idDefInstrOpt->Sel(0));
-    jit_insn *docall  = jit_jmpi(jit_forward());
-    contPC = Store::IntToWord(GetRelativePC());
-    TagVal *idDef = TagVal::FromWord(idDefInstr->Sel(0));
-    if (idDef != INVALID_POINTER) {
-      Generic::Scheduler::GetZeroArg(JIT_R0);
-      LocalEnvPut(JIT_V2, idDef->Sel(0), JIT_R0);
-    }
-    CompileBranch(TagVal::FromWordDirect(idDefInstr->Sel(1)));
-    jit_patch(docall);
-    SetRelativePC(contPC);
-  }
-  else {
-    NativeCodeFrame::GetTaskStack(JIT_V1, JIT_V2);
-    Generic::TaskStack::PopFrames(JIT_V1, 1);
-  }
-  // Load Arguments
-  Vector *actualIdRefs = Vector::FromWordDirect(pc->Sel(1));
-  u_int nArgs          = actualIdRefs->GetLength();
-  jit_movi_ui(JIT_R0, ((nArgs == 1) ? Scheduler::ONE_ARG : nArgs));
-  Generic::Scheduler::PutNArgs(JIT_R0);
-  Generic::Scheduler::GetCurrentArgs(JIT_V1);
-  for (u_int i = nArgs; i--;) {
-    u_int reg = LoadIdRefKill(JIT_R0, actualIdRefs->Sub(i));
-    Generic::Scheduler::PutArg(JIT_V1, i, reg);
-  }
   Closure *closure = Closure::FromWord(pc->Sel(0));
-  if (idDefInstrOpt != INVALID_POINTER)
-    KillVariables(contPC);
-#if PROFILE
-  u_int i1 = ImmediateEnv::Register(closure->ToWord());
-  ImmediateSel(JIT_V1, JIT_V2, i1);
-  PushCall(JIT_V1);
-#else
-  ConcreteCode *concreteCode =
-    ConcreteCode::FromWord(closure->GetConcreteCode());
-  Interpreter *interpreter = concreteCode->GetInterpreter();
-  DirectCall(interpreter);
-#endif
+  BlockHashTable *table =
+    BlockHashTable::FromWordDirect(PrimitiveTable::inlineTable);
+  if (table->IsMember(closure->ToWord())) {
+    u_int tag = Store::DirectWordToInt(table->GetItem(closure->ToWord()));
+    InlineAppInstr(static_cast<INLINED_PRIMITIVE>(tag), pc);
+  }
+  else
+    NormalAppInstr(closure, pc);
   return INVALID_POINTER;
 }
 
@@ -1215,9 +1337,9 @@ TagVal *NativeCodeJitter::InstrLazyPolySel(TagVal *pc) {
   PrintPC("LazyPolySel\n");
   LazySelClosureNew(pc->Sel(1), pc->Sel(2));
   jit_pushr_ui(JIT_V1); // Save Closure Ptr
-  JITStore::AllocTransient(JIT_V1, BYNEED_LABEL);
+  Generic::Byneed::New(JIT_V1);
   jit_popr_ui(JIT_R0); // Restore Closure Ptr
-  JITStore::InitArg(JIT_V1, 0, JIT_R0);
+  Generic::Byneed::InitClosure(JIT_V1, JIT_R0);
   JITStore::SetTransientTag(JIT_V1);
   LocalEnvPut(JIT_V2, pc->Sel(0), JIT_V1);
   return TagVal::FromWordDirect(pc->Sel(3));

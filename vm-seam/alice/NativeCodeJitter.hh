@@ -27,6 +27,14 @@ class LivenessTable;
 class LivenessInformation;
 #endif
 
+typedef enum {
+  FUTURE_BYBEED,
+  CHAR_ORD,
+  INT_OPPLUS,
+  INT_OPMUL,
+  INT_OPLESS
+} INLINED_PRIMITIVE;
+
 #define ALICE_REGISTER_NB 3
 
 class NativeCodeJitter : private JITStore {
@@ -75,6 +83,8 @@ protected:
   static void KillVariables(word pc);
   static void BlockOnTransient(u_int Ptr, word pc);
   static void LookupTestTable(u_int Key, u_int table);
+  static void InlineAppInstr(INLINED_PRIMITIVE primitive, TagVal *pc);
+  static void NormalAppInstr(Closure *closure, TagVal *pc);
   // NativeCodeJitter Instructions
   static TagVal *InstrKill(TagVal *pc);
   static TagVal *InstrPutVar(TagVal *pc);
