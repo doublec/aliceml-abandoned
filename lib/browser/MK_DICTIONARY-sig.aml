@@ -26,6 +26,7 @@ sig
     val delete   : dictionary * int -> unit
     val insertI  : dictionary * elemtype -> int
     val update   : dictionary * (int * elemtype) -> unit
+    val getHighestIndexAssigned: dictionary -> int
 
     
 end ;

@@ -46,11 +46,11 @@ struct
     
     (* newNode *)
     fun newNode (v,t) = let val va = UnsafeValue.cast v: Reflect.value
-                            val i = MainDictionary.insertI(dict,Empty)
+                            val i = MainDictionary.getHighestIndexAssigned(dict) +1
 			    val _ = RelManDictionary.update(reldict,(i,nil))
                             val _ = relnumber := 0
 			    val node =  createGraph (va,t,Empty,i,0)
-			in (MainDictionary.insert(dict,(i,node)) ; node)
+			in (MainDictionary.insertI(dict,(node)) ; node)
 			end
   
     (* createGraph *)
