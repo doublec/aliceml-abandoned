@@ -1,14 +1,14 @@
 /*
- * Author: 
+ * Author:
  *      Daniel Simon, <dansim@ps.uni-sb.de>
- * 
+ *
  * Copyright:
  *      Daniel Simon, 1999
  *
  * Last change:
  *    $Date$ by $Author$
  * $Revision$
- * 
+ *
  */
 package de.uni_sb.ps.dml.runtime;
 
@@ -120,6 +120,26 @@ final public class General {
     }
     /** <code>val ignore : 'a -> unit </code>*/
     _FIELD(General,ignore);
+
+    _BUILTIN(ByNeed) {
+	_APPLY(fun) {
+	    return new ByNeedFuture(fun);
+	}
+    }
+    /** <code>val byNeed : (unit -> 'a) -> unit</code>*/
+    _FIELD(General,byNeed);
+
+    _BUILTIN(Wait) {
+	_APPLY(val) {
+	    if (val instanceof DMLLVar) {
+		return ((DMLLVar) val).request();
+	    } else {
+		return val;
+	    }
+	}
+    }
+    /** <code> val wait : lvar -> 'a</code>*/
+    _FIELD(General,wait);
 
     _BUILTIN(Lvar) {
 	_APPLY(_) {
