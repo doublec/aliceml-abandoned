@@ -22,19 +22,19 @@ signature COMPONENT_MANAGER =
 
 	functor Eval(val url: Url.t
 		     val component: component
-		     signature S): S                   (* Mismatch *)
+		     signature S): S                (* Mismatch *)
 
 	functor Link(val url: Url.t
-		     signature S): S
+		     signature S): S                (* Io, Corrupt, Mismatch *)
 
 	functor Enter(val url: Url.t
 		      signature S
-		      structure X: S): any             (* Conflict *)
+		      structure X: S): any          (* Conflict *)
 
 	val eval: Url.t * component -> Reflect.value
-	val link: Url.t -> component
-	val enter: Url.t * component -> unit           (* Conflict *)
+	val link: Url.t -> component                (* Io, Corrupt, Mismatch *)
+	val enter: Url.t * component -> unit        (* Conflict *)
 	val lookup: Url.t -> component option
 
-	val start: Url.t -> unit
+	val start: Url.t -> unit                    (* Io, Corrupt, Mismatch *)
     end
