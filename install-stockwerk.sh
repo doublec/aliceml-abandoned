@@ -40,7 +40,7 @@ rm -f bootstrap/alicec-stockwerk.$PLATFORM #bootstrap/alicedep.$PLATFORM
 (cd vm-stockwerk && /usr/bin/time -po ${TIMEDIR}1 make -f Makefile.bootstrap ALICEC_EXTRA_OPTS="$OPTS1" build1-install) || exit 1
 (cd vm-stockwerk && make -f Makefile.bootstrap ALICEC_EXTRA_OPTS="$OPTS2" build2-install) || exit 1
 (cd vm-stockwerk && /usr/bin/time -po ${TIMEDIR}3 make -f Makefile.bootstrap ALICEC_EXTRA_OPTS="$OPTS3" build3-install) || exit 1
-(cd vm-stockwerk && make -f Makfile.bootstrap PREFIX=$prefix install) || exit 1
+(cd vm-stockwerk && make -f Makefile.bootstrap PREFIX=$prefix install) || exit 1
 
 echo Done.
 echo Time for build 1:
