@@ -122,12 +122,17 @@ in
 	      | GDK_CLIENT_EVENT
 	      | UNSUPPORTED
 
+	    datatype canvas_item_type =
+		GROUP |
+		WIDGET | TEXT | IMAGE |
+		LINE | RECTANGLE | ELLIPSE | POLYGON
+
 	    datatype arg =
 		INT    of int
 	      | DOUBLE of real
 	      | STRING of string
 	      | OBJECT of object
-	      | POINTS of (int * int) list
+	      | POINTS of int list
 	      | EVENT  of event
 	end
 end
