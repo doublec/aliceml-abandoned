@@ -18,6 +18,7 @@ import
     type char
     type string
     type vector
+    type alt
     type array
 
     datatype bool

@@ -66,7 +66,7 @@ __primitive val op / :	real * real -> real	= "Real./"
 __primitive val op div:	int * int -> int	= "Int.div"
 __primitive val op mod:	int * int -> int	= "Int.mod"
 
-__primitive val abs:	int -> int		= "Int.abs"
+__primitive val abs :	int -> int		= "Int.abs"
 
 __primitive val op < :	int * int -> bool	= "Int.<"
 __primitive val op > :	int * int -> bool	= "Int.>"
@@ -420,7 +420,7 @@ signature LIST =
     val drop :		'a list * int -> 'a list
 
     val rev :		'a list -> 'a list
-    val @ :		'a list * 'a list -> 'a list
+    val op @ :		'a list * 'a list -> 'a list
     val append :	'a list * 'a list -> 'a list			(**)
     val revAppend :	'a list * 'a list -> 'a list
     val concat :	'a list list -> 'a list
@@ -1014,7 +1014,7 @@ signature STRING =
     val substring :	string * int * int -> string
     val extract :	string * int * int option -> string
 
-    val ^ :		string * string -> string
+    val op ^ :		string * string -> string
     val append :	string * string -> string			(**)
     val concat :	string list -> string
     val implode :	Char.char list -> string
@@ -2546,62 +2546,63 @@ structure Thread : THREAD =
  * Top-level, part 2
  *****************************************************************************)
 
-type array	= Array.array
+type alt		= Alt.alt				(**)
+type array		= Array.array
 
-exception Alt	= Alt.Alt					(**)
-exception Option = Option.Option
-exception Empty	= List.Empty
+exception Alt		= Alt.Alt				(**)
+exception Option	= Option.Option
+exception Empty		= List.Empty
 
 open General
 
-val not		= Bool.not
+val not			= Bool.not
 
-val fst		= Alt.fst					(**)
-val snd		= Alt.snd					(**)
-val isFst	= Alt.isFst					(**)
-val isSnd	= Alt.isSnd					(**)
+val fst			= Alt.fst				(**)
+val snd			= Alt.snd				(**)
+val isFst		= Alt.isFst				(**)
+val isSnd		= Alt.isSnd				(**)
 
-val getOpt	= Option.getOpt
-val isNone	= Option.isNone					(**)
-val isSome	= Option.isSome
-val valOf	= Option.valOf
+val getOpt		= Option.getOpt
+val isNone		= Option.isNone				(**)
+val isSome		= Option.isSome
+val valOf		= Option.valOf
 
-val null	= List.null
-val hd		= List.hd
-val tl		= List.tl
-val length	= List.length
-val rev		= List.rev
-val op @	= List.@
-val app		= List.app
-val map		= List.map
-val foldr	= List.foldr
-val foldl	= List.foldl
+val null		= List.null
+val hd			= List.hd
+val tl			= List.tl
+val length		= List.length
+val rev			= List.rev
+val op @		= List.@
+val app			= List.app
+val map			= List.map
+val foldr		= List.foldr
+val foldl		= List.foldl
 
-val ord		= Char.ord
-val chr		= Char.chr
+val ord			= Char.ord
+val chr			= Char.chr
 
-val str		= String.str
-val size	= String.size
-val op ^	= String.^
-val concat	= String.concat
-val explode	= String.explode
-val implode	= String.implode
-val substring	= String.substring
+val str			= String.str
+val size		= String.size
+val op ^		= String.^
+val concat		= String.concat
+val explode		= String.explode
+val implode		= String.implode
+val substring		= String.substring
 
-val vector	= Vector.fromList
+val vector		= Vector.fromList
 
-val real	= Real.fromInt
-val ceil	= Real.ceil
-val floor	= Real.floor
-val trunc	= Real.trunc
-val round	= Real.round
+val real		= Real.fromInt
+val ceil		= Real.ceil
+val floor		= Real.floor
+val trunc		= Real.trunc
+val round		= Real.round
 
 (*MISSING
 __primitive val use : string -> unit = "use"
 *)
 
-exception Future = Future.Future				(**)
-exception Cyclic = Future.Cyclic				(**)
+exception Future	= Future.Future				(**)
+exception Cyclic	= Future.Cyclic				(**)
 
-val byneed	= Future.byneed					(**)
-val concur	= Future.concur					(**)
+val byneed		= Future.byneed				(**)
+val concur		= Future.concur				(**)
