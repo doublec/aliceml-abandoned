@@ -53,16 +53,8 @@ public:
       u_int valgen = HeaderOp::DecodeGeneration(PointerOp::RemoveTag(v));
       u_int mygen  = HeaderOp::DecodeGeneration(this);
 
-      if (valgen < mygen) {
-	u_int myold = HeaderOp::DecodeMaxOld(this);
-
-	if (myold == mygen) {
-	  HeaderOp::EncodeMaxOld(this, valgen);
-	  Store::AddToIntgenSet(ToWord()); // Attention: static binding
-	}
-	else {
-	  HeaderOp::EncodeMaxOld(this, MAX(myold, valgen));
-	}
+      if ((valgen < mygen) && (!HeaderOp::HasIntgenMark(this))) {
+	  Store::AddToIntgenSet(this);
       }
     }
     ar[f] = v;
@@ -100,27 +92,7 @@ public:
   using Block::GetSize;
   using Block::GetArg;
   using Block::InitArg;
-  void ReplaceArg(u_int f, word v) {
-    Assert(f > INVALID_FIELD);
-    Assert(f <= GetSize());
-    if (!PointerOp::IsInt(v)) {
-      u_int valgen = HeaderOp::DecodeGeneration(PointerOp::RemoveTag(v));
-      u_int mygen  = HeaderOp::DecodeGeneration(this);
 
-      if (valgen < mygen) {
-	u_int myold = HeaderOp::DecodeMaxOld(this);
-
-	if (myold == mygen) {
-	  HeaderOp::EncodeMaxOld(this, valgen);
-	  Store::AddToIntgenSet(ToWord()); // Attention: static binding
-	}
-	else {
-	  HeaderOp::EncodeMaxOld(this, MAX(myold, valgen));
-	}
-      }
-    }
-    ar[f] = v;
-  }
   word ToWord() {
     return PointerOp::EncodeTransient(this);
   }
@@ -148,19 +120,19 @@ protected:
     InitArg(1, s->ToWord());
   }
 public:
+  using Block::GetLabel;
   using Block::ToWord;
 
   // to be determined
   void InitStack() {
-    u_int size = Block::GetSize();
+    u_int size = GetSize();
 
     InitArg(1, Store::IntToWord(2));
     std::memset(ar + 2, 1,(size - 2) * sizeof(word));
   }
-
   void AllocArgFrame(u_int fsize) {
     u_int top = (u_int) Store::WordToInt(GetArg(1));
-    u_int max = Block::GetSize();
+    u_int max = GetSize();
 
     InitArg(1, Store::IntToWord(top + fsize));
     if ((top + fsize) > max) {
@@ -191,13 +163,13 @@ public:
   void Push(word v) {
     int top = Store::WordToInt(GetArg(1));
     
-    Assert(top <= (int) Block::GetSize());
+    Assert(top <= (int) GetSize());
     InitArg(1, Store::IntToWord(top + 1));
     ReplaceArg((u_int) top, v);
   }
   void SlowPush(word v) {
     u_int top = (u_int) Store::WordToInt(GetArg(1));
-    u_int max = Block::GetSize();
+    u_int max = GetSize();
     
     InitArg(1, Store::IntToWord((int) (top + 1)));
     if (top <= max) {
@@ -213,8 +185,8 @@ public:
   word Top() {
     return GetArg((u_int) Store::WordToInt(GetArg(1)) - 1);
   }
-  word GetArg(u_int f) {
-    return Block::GetArg(((u_int) Store::WordToInt(GetArg(1)) - 1 - f));
+  word GetFrameArg(u_int f) {
+    return GetArg(((u_int) Store::WordToInt(GetArg(1)) - 1 - f));
   }
   word Pop() {
     static word zero = Store::IntToWord(0);
@@ -240,6 +212,33 @@ public:
 
     gs->InitStack();
     return gs;
+  }
+};
+
+class Set : public Stack {
+public:
+  word GetArg(u_int f) {
+    return ((Block *) this)->GetArg(f);
+  }
+  void InitArg(u_int f, word v) {
+    ((Block *) this)->InitArg(f, v);
+  }
+  u_int GetSize() {
+    return (u_int) (Store::WordToInt(((Block *) this)->GetArg(1)) - 1);
+  }
+  void MakeEmpty() {
+    ((Block *) this)->InitArg(1, Store::IntToWord(2));
+  }
+  void Push(word v) {
+    int top = Store::WordToInt(GetArg(1));
+    
+    Assert(top <= (int) GetSize());
+    InitArg(1, Store::IntToWord(top + 1));
+    InitArg((u_int) top, v);
+  }
+
+  static Set *New(u_int s) {
+    return (Set *) Stack::New(s);
   }
 };
 

@@ -24,8 +24,7 @@ public:
   // Header Creation and Acess
   static void EncodeHeader(Block *t, BlockLabel l, u_int s, u_int g) {
     Assert(t != NULL);
-    ((u_int *) t)[0] =  0x00 | (s << SIZE_SHIFT) | (((u_int) l) << TAG_SHIFT)
-      | (g << MAXOLD_SHIFT) | (g << GEN_SHIFT);
+    ((u_int *) t)[0] =  (s << SIZE_SHIFT) | (((u_int) l) << TAG_SHIFT) | (g << GEN_SHIFT);
   }
   static u_int GetHeader(Block *p) {
     Assert(p != NULL); return *((u_int *) p);
@@ -60,14 +59,20 @@ public:
   static u_int DecodeGeneration(Block *p) {
     Assert(p != NULL); return ((*((u_int *) p)) >> GEN_SHIFT);
   }
-  // GC Distance Access
-  static void EncodeMaxOld(Block *p, u_int d) {
+  // Intgen Mark Access
+  static void SetIntgenMark(Block *p) {
     Assert(p != NULL);
-    ((u_int *) p)[0] = ((((u_int *) p)[0] & ~MAXOLD_MASK) | (d << MAXOLD_SHIFT));
+    ((u_int *) p)[0] |= (1 << INTGEN_SHIFT);
   }
-  static u_int DecodeMaxOld(Block *p) {
-    Assert(p != NULL); return ((*((u_int *) p)) >> MAXOLD_SHIFT);
+  static void ClearIntgenMark(Block *p) {
+    Assert(p != NULL);
+    ((u_int *) p)[0] &= ~(1 << INTGEN_SHIFT);
   }
+  static u_int HasIntgenMark(Block *p) {
+    Assert(p != NULL);
+    return (((u_int *) p)[0] & INTGEN_MASK);
+  }
+
 };
 
 #endif

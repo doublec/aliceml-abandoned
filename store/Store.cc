@@ -55,7 +55,7 @@ StoreConfig *Store::config = INVALID_POINTER;
 MemChain **Store::roots    = INVALID_POINTER;
 u_int Store::totalHeapSize = 0;
 
-DataSet *Store::intgen_set = INVALID_POINTER;
+word Store::intgen_set     = (word) 1;
 u_int Store::needGC        = 0;
 //
 // Method Implementations
@@ -125,15 +125,6 @@ void Store::Shrink(MemChain *chain, int threshold) {
   chain->anchor = anchor;
 }
 
-static inline void AdjustMaxOld(Block *p, u_int gen) {
-  u_int mygen = GCHelper::DecodeGen(p);
-  u_int myold = HeaderOp::DecodeMaxOld(p);
-
-  if (mygen == myold) {
-    HeaderOp::EncodeMaxOld(p, gen);
-  }
-}
-
 Block *Store::CopyBlockToDst(Block *p, MemChain *dst) {
     u_int s = HeaderOp::BlankDecodeSize(p);
 
@@ -146,7 +137,6 @@ Block *Store::CopyBlockToDst(Block *p, MemChain *dst) {
     realnp = (Block *) ((char *) newp + 4);
     
     std::memcpy(newp, p, (s + 2) << 2);
-    AdjustMaxOld(realnp, dst->gen);
     GCHelper::EncodeGen(realnp, dst->gen);
     return realnp;
   }
@@ -154,7 +144,6 @@ Block *Store::CopyBlockToDst(Block *p, MemChain *dst) {
     Block *newp = Store::Alloc(dst, (s + 1));
     
     std::memcpy(newp, p, (s + 1) << 2);
-    AdjustMaxOld(newp, dst->gen);
     GCHelper::EncodeGen(newp, dst->gen);
     return newp;
   }
@@ -222,7 +211,7 @@ void Store::InitStore(StoreConfig *cfg) {
     totalHeapSize += chain->total;
   }
   roots[cfg->max_gen - 1]->gen = cfg->max_gen - 2;
-  intgen_set = new DataSet();
+  intgen_set = Set::New(cfg->intgen_size)->ToWord();
 }
 
 void Store::CloseStore() {
@@ -234,49 +223,57 @@ void Store::CloseStore() {
   }
 }
 
-static inline DataSet *CleanUpSet(DataSet *set) {
-  DataSet *ns = new DataSet();
-  u_int size  = set->GetSize();
-
-  for (u_int i = 0; i < size; i++) {
-    word rv = set->GetArg(i);
-
-    if (!PointerOp::IsInt(rv)) {
-      ns->Push(set->GetArg(i));
-    }
-  }
-
-  delete set;
-
-  return ns;
+void Store::AddToIntgenSet(Block *v) {
+  HeaderOp::SetIntgenMark(v);
+  ((Set *) Store::WordToBlock(intgen_set))->SlowPush(v->ToWord());
 }
 
-void Store::DoGC(DataSet *root_set, u_int gen) {
+word Store::DoGC(word root_set, u_int gen) {
   PLACEGENERATIONLIMIT;
   u_int match_gen  = gen_limits[gen];
   u_int dst_gen    = (gen + 1);
   MemChain *dst    = roots[dst_gen];
-  u_int rs_size    = root_set->GetSize();
+  Block *rootset   = Store::WordToBlock(root_set);
+  Block *intgenset = Store::WordToBlock(intgen_set);
+  u_int rs_size    = ((Set *) rootset)->GetSize();
   MemChunk *anchor = dst->anchor;
   char *scan       = anchor->GetTop(); // First top is scan
+  Set *new_root_set, *new_intgen_set;
 
-  // Copy matching root_set entries
-  for (u_int i = 0; i < rs_size; i++) {
-    word p    = PointerOp::Deref(root_set->GetArg(i));
+  // Check That Root IS an root set
+  Assert(rootset->GetLabel() == STACK);
+
+  // Copy tuples to new memory
+  if (HeaderOp::GetHeader(rootset) <= match_gen) {
+    new_root_set = (Set *) CopyBlockToDst(rootset, dst);
+  }
+  else {
+    new_root_set = (Set *) rootset;
+  }
+  if (HeaderOp::GetHeader(intgenset) <= match_gen) {
+    new_intgen_set = (Set *) CopyBlockToDst(intgenset, dst);
+  }
+  else {
+    new_intgen_set = (Set *) intgenset;
+  }
+
+  // Copy matching rootset entries
+  for (u_int i = 2; i <= rs_size; i++) {
+    word p    = PointerOp::Deref(rootset->GetArg(i));
     Block *sp = PointerOp::RemoveTag(p);
 
     if (HeaderOp::GetHeader(sp) <= match_gen) {
       Block *newsp = CopyBlockToDst(sp, dst);
       word newp    = PointerOp::EncodeTag(newsp, PointerOp::DecodeTag(p));
       GCHelper::MarkMoved(sp, newp);
-      root_set->SetArg(i, newp);
+      new_root_set->InitArg(i, newp);
     }
     else {
-      root_set->SetArg(i, p);
+      new_root_set->InitArg(i, p);
     }
   }
   
-  // Scanning chunks (root_set amount)
+  // Scanning chunks (rootset amount)
   Store::ScanChunks(dst, match_gen, anchor, scan);
 
   // Reset Anchor and Scan Ptr (for new stuff)
@@ -284,9 +281,11 @@ void Store::DoGC(DataSet *root_set, u_int gen) {
   scan   = anchor->GetTop();
 
   // Handle InterGenerational Pointers
-  rs_size = intgen_set->GetSize();
-  for (u_int i = 0; i < rs_size; i++) {
-    word dp = PointerOp::Deref(intgen_set->GetArg(i));
+  rs_size = ((Set *) intgenset)->GetSize();
+  new_intgen_set->MakeEmpty();
+
+  for (u_int i = 2; i <= rs_size; i++) {
+    word dp = PointerOp::Deref(intgenset->GetArg(i));
 
     if (!PointerOp::IsInt(dp)) {
       Block *curp   = PointerOp::RemoveTag(dp);
@@ -310,18 +309,18 @@ void Store::DoGC(DataSet *root_set, u_int gen) {
 	}
       }
 
-      // Adjust blocks maxold entry and remove obsolete entry from intgen_set
-      if (dst->gen < GCHelper::DecodeGen(curp)) {
-	HeaderOp::EncodeMaxOld(curp, MAX(dst->gen, HeaderOp::DecodeMaxOld(curp)));
+      // Test for entry removal
+      if (HeaderOp::DecodeGeneration(curp) > gen) {
+	new_root_set->Push(dp);
       }
       else {
-	HeaderOp::EncodeMaxOld(curp, dst->gen);
-	intgen_set->SetArg(i, Store::IntToWord(0));
+	HeaderOp::ClearIntgenMark(curp);
       }
     }
   }
-  // really cleanup the set
-  intgen_set = CleanUpSet(intgen_set);
+
+  // change to the new intgenset
+  intgen_set = new_intgen_set->ToWord();
 
   // Scan chunks (Tuple::intgen_set amount)
   Store::ScanChunks(dst, match_gen, anchor, scan);
@@ -340,6 +339,8 @@ void Store::DoGC(DataSet *root_set, u_int gen) {
     roots[config->max_gen - 2] = roots[config->max_gen - 1];
     roots[config->max_gen - 1] = tmp;
   }
+
+  return new_root_set->ToWord();
 }
 
 #ifdef DEBUG_CHECK
