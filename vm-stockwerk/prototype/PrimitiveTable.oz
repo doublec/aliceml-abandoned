@@ -580,6 +580,7 @@ define
 		       NewFrame = raiseIn(ThreadRaiseInInterpreter Exn)
 		       {T setArgsAndTaskStack(args() NewFrame|OtherTaskStack)}
 		       case State of blocked then
+			  {T unregister()}
 			  {Scheduler.object wakeup(T)}
 		       [] runnable then skip
 		       end

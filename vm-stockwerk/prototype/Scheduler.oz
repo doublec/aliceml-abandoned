@@ -23,7 +23,7 @@ define
    %--** add another thread that checks for preemption
 
    class Thread
-      attr Args TaskStack Res Suspended State
+      attr Args: unit TaskStack: unit Res: unit Suspended: unit State: unit
       meth init(args: A stack: T result: R)
 	 Args <- A
 	 TaskStack <- T
@@ -53,11 +53,22 @@ define
       meth isSuspended($)
 	 @Suspended
       end
-      meth setState(S)
-	 State <- S
+      meth block(Transient)
+	 State <- blocked(Transient)
+      end
+      meth unregister()
+	 case @State of blocked(transient(TransientState)) then
+	    case {Access TransientState} of future(Ts) then
+	       {Assign TransientState
+		future({Filter Ts fun {$ T} T \= self end})}
+	    end
+	 end
+      end
+      meth wakeup()
+	 State <- runnable
       end
       meth getState($)
-	 @State
+	 {Label @State}
       end
    end
 
@@ -83,7 +94,7 @@ define
 	 end
       end
       meth wakeup(T)
-	 {T setState(runnable)}
+	 {T wakeup()}
 	 Scheduler, Enqueue(T)
       end
       meth condEnqueue(T)
@@ -93,7 +104,6 @@ define
 	 end
       end
       meth Enqueue(T) Tl Rest in
-	 {T setState(runnable)}
 	 Tl = (QueueTl <- Rest)
 	 Tl = T|Rest
       end
@@ -148,12 +158,12 @@ define
 				 TaskStack)
 	    [] future(Ts) then
 	       {@CurrentThread setArgsAndTaskStack(Args TaskStack)}
-	       {@CurrentThread setState(blocked)}
 	       {Assign TransientState future(@CurrentThread|Ts)}
+	       {@CurrentThread block(Transient)}
 	    [] byneed(Closure) then
 	       {@CurrentThread setArgsAndTaskStack(Args TaskStack)}
-	       {@CurrentThread setState(blocked)}
 	       {Assign TransientState future([@CurrentThread])}
+	       {@CurrentThread block(Transient)}
 	       Scheduler, Byneed(Transient Closure)
 	    [] cancelled(Exn) then
 	       Scheduler, Handle(nil Exn TaskStack)
