@@ -1,7 +1,10 @@
 (* ML-Yacc Parser Generator (c) 1989 Andrew W. Appel, David R. Tarditi 
  *
  * $Log$
- * Revision 1.6  2001-01-15 15:42:05  kornstae
+ * Revision 1.7  2001-01-15 17:52:20  kornstae
+ * Imports do not need to mention the extension any more.
+ *
+ * Revision 1.6  2001/01/15 15:42:05  kornstae
  * Converted to Alice sources as well.
  *
  * Revision 1.5  2000/03/30 13:37:26  rossberg
@@ -38,7 +41,7 @@ import
     signature PARSER
     signature ARG_LEXER
     signature ARG_PARSER
-from "base.ozf"
+from "base-sig"
 
 (* functor Join creates a user parser by putting together a Lexer structure,
    an LrValues structure, and a polymorphic parser structure.  Note that
