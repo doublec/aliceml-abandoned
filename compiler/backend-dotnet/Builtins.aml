@@ -33,7 +33,7 @@ structure Builtins :> BUILTINS =
 		Map.insert (map, "mod", "Int$mod");
 		Map.insert (map, "Int.compare'", "Int.compare2");
 		Map.insert (map, "String.^", "String$conc");
-		Map.insert (map, "String.compare'", "String$compare'");
+		Map.insert (map, "String.compare'", "String$compare2");
 		Map.insert (map, "Word.+", "Word$plus");
 		Map.insert (map, "Word.<<", "Word$shr");
 		Map.insert (map, "Word.>>", "Word$lsr");
