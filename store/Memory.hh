@@ -42,7 +42,6 @@ public:
     top    = (sizeof(u_int) - size);
     anchor = 0;
     u_int *b = (u_int *) base;
-    //    b[0] = HeaderOp::EncodeHeader(REF_LABEL, 0, 0);
     for (u_int i = (size / sizeof(u_int)); i--;) {
       b[i] = HeaderOp::EncodeHeader(REF_LABEL, 0, 0);
     }

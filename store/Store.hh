@@ -175,6 +175,15 @@ public:
     AssertStore(((u_int) x & TAGMASK) == BLKTAG);
     return PointerOp::DecodeUnmanagedPointer(x);
   }
+  // Calculate Block Size according to given size (used only for assertions)
+  static u_int SizeToBlockSize(u_int size) {
+    return HeaderOp::TranslateSize(size);
+  }
+  // Calculate Block Byte Size according to given byte size (used only for assertions)
+  static u_int SizeToChunkSize(u_int size) {
+    u_int ws = (1 + (((size + sizeof(u_int)) - 1) / sizeof(u_int)));
+    return (HeaderOp::TranslateSize(ws) * sizeof(u_int));
+  }
 #if (defined(STORE_DEBUG) || defined(STORE_PROFILE))
   static void MemStat();
   static void ResetTime();
