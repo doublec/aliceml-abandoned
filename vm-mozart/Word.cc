@@ -180,6 +180,39 @@ OZ_BI_define(Word_plus, 2, 1) {
   OZ_RETURN_WORD(w1->size, TRUNCATE(w1->value + w2->value, w1->size));
 } OZ_BI_end
 
+OZ_BI_define(Word_minus, 2, 1) {
+  OZ_declareWord(0, w1);
+  OZ_declareWord(1, w2);
+  if (w1->size != w2->size) {
+    return OZ_raiseDebug(OZ_makeException(OZ_atom("system"), OZ_atom("kernel"),
+					  "Word.binop", 2,
+					  OZ_in(0), OZ_in(1)));
+  }
+  OZ_RETURN_WORD(w1->size, TRUNCATE(w1->value - w2->value, w1->size));
+} OZ_BI_end
+
+OZ_BI_define(Word_times, 2, 1) {
+  OZ_declareWord(0, w1);
+  OZ_declareWord(1, w2);
+  if (w1->size != w2->size) {
+    return OZ_raiseDebug(OZ_makeException(OZ_atom("system"), OZ_atom("kernel"),
+					  "Word.binop", 2,
+					  OZ_in(0), OZ_in(1)));
+  }
+  OZ_RETURN_WORD(w1->size, TRUNCATE(w1->value * w2->value, w1->size));
+} OZ_BI_end
+
+OZ_BI_define(Word_mod, 2, 1) {
+  OZ_declareWord(0, w1);
+  OZ_declareWord(1, w2);
+  if (w1->size != w2->size) {
+    return OZ_raiseDebug(OZ_makeException(OZ_atom("system"), OZ_atom("kernel"),
+					  "Word.binop", 2,
+					  OZ_in(0), OZ_in(1)));
+  }
+  OZ_RETURN_WORD(w1->size, TRUNCATE(w1->value % w2->value, w1->size));
+} OZ_BI_end
+
 OZ_BI_define(Word_orb, 2, 1) {
   OZ_declareWord(0, w1);
   OZ_declareWord(1, w2);
@@ -251,6 +284,9 @@ OZ_C_proc_interface *oz_init_module(void) {
     {"toInt", 1, 1, Word_toInt},
     {"toIntX", 1, 1, Word_toIntX},
     {"+", 2, 1, Word_plus},
+    {"-", 2, 1, Word_minus},
+    {"*", 2, 1, Word_times},
+    {"mod", 2, 1, Word_mod},
     {"orb", 2, 1, Word_orb},
     {"xorb", 2, 1, Word_xorb},
     {"andb", 2, 1, Word_andb},

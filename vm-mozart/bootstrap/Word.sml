@@ -21,6 +21,9 @@ structure BootWord:
 	val toLargeInt : word -> LargeInt.int
 	val toIntX : word -> int
 	val op+ : word * word -> word
+	val op- : word * word -> word
+	val op* : word * word -> word
+	val op mod : word * word -> word
 	val orb : word * word -> word
 	val xorb : word * word -> word
 	val andb : word * word -> word
@@ -44,6 +47,9 @@ structure Word =
 	val toLargeInt = BootWord.toInt
 	val toIntX = BootWord.toIntX
 	val op+ = BootWord.+
+	val op- = BootWord.-
+	val op* = BootWord.-
+	val op mod = BootWord.mod
 	val orb = BootWord.orb
 	val xorb = BootWord.xorb
 	val andb = BootWord.andb
