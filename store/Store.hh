@@ -72,11 +72,10 @@ public:
   static void CloseStore();
   // Type Access Functions
   static BlockLabel MakeLabel(u_int l) {
-    Assert(l>= MIN_LSIZE); Assert(l <= MAX_LSIZE); return (BlockLabel) l;
+    Assert(l <= MAX_LSIZE); return (BlockLabel) l;
   }
   // Allocation Functions
   static Block *AllocBlock(BlockLabel l, u_int s) {
-    Assert(l >= MIN_LSIZE);
     Assert(l <= MAX_LSIZE);
     return InternalAllocBlock(l, s);
   }
@@ -99,6 +98,12 @@ public:
   }
   static Transient *WordToTransient(word v) {
     return PointerOp::DecodeTransient(PointerOp::Deref(v));
+  }
+  static word UnmanagedPointerToWord(void *v) {
+    return Store::IntToWord(((int) v) >> 1);
+  }
+  static void *WordToUnmanagedPointer(word x) {
+    return (void *) (Store::WordToInt(x) << 1);
   }
   // GC Related Functions
   static void DoGC(DataSet *root_set, u_int gen);

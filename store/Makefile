@@ -1,5 +1,10 @@
 CC     = g++
 CFLAGS = -DDEBUG_CHECK -Wall -ggdb #-DINTERFACE -finline-functions -fno-implement-inlines -O6
+CFLAGS = -DDEBUG_CHECK -Wall -W -Wpointer-arith -Wbad-function-cast -Wcast-qual \
+	    -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations \
+	    -Wnested-externs -Wsynth \
+	    -Winline \
+	    -Wno-unused -Wno-reorder -Wno-uninitialized -Wno-sign-compare
 
 SRCS = store.cc
 
