@@ -82,7 +82,7 @@ public:
 
   static Table *New(u_int count) {
     Block *b = Store::AllocBlock(JavaLabel::Table, BASE_SIZE + count);
-    b->InitArg(COUNT_POS, Store::IntToWord(count));
+    b->InitArg(COUNT_POS, count);
     return static_cast<Table *>(b);
   }
   static Table *FromWord(word x) {
@@ -263,6 +263,22 @@ public:
 // Data Layer
 //
 //--** to be done: support boxed 32-bit integers (for compatibility)
+#if defined(JAVA_INT_32)
+class DllExport JavaInt {
+public:
+  static word ToWord(s_int value) {
+    Chunk *chunk = Store::AllocChunk(4);
+    char *p = chunk->GetBase();
+    p[0] = value >> 24; p[1] = value >> 16; p[2] = value >> 8; p[3] = value;
+    return chunk->ToWord();
+  }
+  static s_int FromWord(word x) {
+    Chunk *chunk = Store::DirectWordToChunk(x);
+    u_int8 *p = reinterpret_cast<u_int8 *>(chunk->GetBase());
+    return (p[0] << 24) | (p[1] << 16) | (p[2] << 8) | p[3];
+  }
+};
+#else
 class DllExport JavaInt {
 public:
   static word ToWord(s_int value) {
@@ -273,6 +289,7 @@ public:
     return Store::DirectWordToInt(value);
   }
 };
+#endif
 
 class DllExport JavaLong: public Chunk {
 public:
@@ -347,7 +364,7 @@ public:
       } else {
 	word wFuture = GetArg(FUTURE_POS);
 	Future *future;
-	if (wFuture == Store::IntToWord(0)) {
+	if (wFuture == null) {
 	  future = Future::New();
 	  ReplaceArg(FUTURE_POS, future->ToWord());
 	} else {
@@ -369,7 +386,7 @@ public:
       ReplaceArg(COUNT_POS, count - 1);
     } else {
       word wFuture = GetArg(FUTURE_POS);
-      if (wFuture != Store::IntToWord(0)) {
+      if (wFuture != null) {
 	Future *future = static_cast<Future *>
 	  (Store::DirectWordToTransient(wFuture));
 	future->ScheduleWaitingThreads();
@@ -396,7 +413,7 @@ protected:
     Block *b = Store::AllocBlock(JavaLabel::Object, BASE_SIZE + size);
     b->InitArg(CLASS_POS, wClass);
     b->InitArg(LOCK_POS, null);
-    //--** initialization incorrect for long/float/double
+    //--** initialization incorrect for int/long/float/double
     for (u_int i = size; i--; ) b->InitArg(BASE_SIZE + i, null);
     return static_cast<Object *>(b);
   }
@@ -469,7 +486,7 @@ public:
     Assert(elementType->GetLabel() != JavaLabel::PrimitiveType);
     Block *b = Store::AllocBlock(JavaLabel::ObjectArray, BASE_SIZE + length);
     b->InitArg(ELEMENT_TYPE_POS, elementType->ToWord());
-    b->InitArg(LENGTH_POS, Store::IntToWord(length));
+    b->InitArg(LENGTH_POS, length);
     for (u_int i = length; i--; ) b->InitArg(BASE_SIZE + i, null);
     return static_cast<ObjectArray *>(b);
   }
@@ -660,9 +677,9 @@ class DllExport JavaString: public Object {
 protected:
   enum {
     VALUE_INDEX, // BaseArray(Char)
-    OFFSET_INDEX, // int
-    COUNT_INDEX, // int
-    HASH_INDEX, // int
+    OFFSET_INDEX, // JavaInt
+    COUNT_INDEX, // JavaInt
+    HASH_INDEX, // JavaInt
     SIZE
   };
 private:
@@ -672,10 +689,10 @@ private:
     return BaseArray::FromWordDirect(GetInstanceField(VALUE_INDEX));
   }
   u_int GetOffset() {
-    return Store::DirectWordToInt(GetInstanceField(OFFSET_INDEX));
+    return JavaInt::FromWord(GetInstanceField(OFFSET_INDEX));
   }
   u_int GetCount() {
-    return Store::DirectWordToInt(GetInstanceField(COUNT_INDEX));
+    return JavaInt::FromWord(GetInstanceField(COUNT_INDEX));
   }
   u_char *GetBase(u_int offset) {
     Assert(offset <= GetValue()->GetLength());
@@ -690,9 +707,9 @@ public:
   static JavaString *New(BaseArray *array, u_int offset, u_int length) {
     Object *object = Object::New(wClass, SIZE);
     object->InitInstanceField(VALUE_INDEX, array->ToWord());
-    object->InitInstanceField(OFFSET_INDEX, Store::IntToWord(offset));
-    object->InitInstanceField(COUNT_INDEX, Store::IntToWord(length));
-    object->InitInstanceField(HASH_INDEX, Store::IntToWord(0));
+    object->InitInstanceField(OFFSET_INDEX, JavaInt::ToWord(offset));
+    object->InitInstanceField(COUNT_INDEX, JavaInt::ToWord(length));
+    object->InitInstanceField(HASH_INDEX, JavaInt::ToWord(0));
     return static_cast<JavaString *>(object);
   }
   static JavaString *New(u_int length) {

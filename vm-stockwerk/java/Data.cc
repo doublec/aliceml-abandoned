@@ -286,7 +286,7 @@ Class *Class::New(ClassInfo *classInfo) {
 	  initialValue = null;
 	  break;
 	case 'B': case 'C': case 'I': case 'S': case 'Z':
-	  initialValue = Store::IntToWord(0);
+	  initialValue = JavaInt::ToWord(0);
 	  break;
 	case 'J':
 	  initialValue = JavaLong::New(0, 0)->ToWord();
@@ -391,7 +391,7 @@ bool Class::IsInterface() {
 
 Class *Class::GetSuperClass() {
   word wSuper = GetClassInfo()->GetSuper();
-  if (wSuper == Store::IntToWord(0)) return INVALID_POINTER;
+  if (wSuper == null) return INVALID_POINTER;
   Class *super = Class::FromWord(wSuper);
   Assert(super != INVALID_POINTER);
   return super;
@@ -434,7 +434,7 @@ Worker::Result Class::RunInitializer() {
 //
 // JavaString Implementation
 //
-word JavaString::wClass = Store::IntToWord(0);
+word JavaString::wClass = null;
 
 static word wInternTable;
 

@@ -254,7 +254,7 @@ protected:
   };
   
   void SetTop(u_int top) {
-    StackFrame::ReplaceArg(TOP_POS, Store::IntToWord(top));
+    StackFrame::ReplaceArg(TOP_POS, top);
   }
   u_int GetTop() {
     return Store::DirectWordToInt(StackFrame::GetArg(TOP_POS));
@@ -263,17 +263,17 @@ public:
   using Block::ToWord;
 
   // ByteCodeFrame Accessors
-  int GetPC() {
+  s_int GetPC() {
     return Store::DirectWordToInt(StackFrame::GetArg(PC_POS));
   }
-  void SetPC(int pc) {
-    StackFrame::InitArg(PC_POS, Store::IntToWord(pc));
+  void SetPC(s_int pc) {
+    StackFrame::InitArg(PC_POS, pc);
   }
-  int GetContPC() {
+  s_int GetContPC() {
     return Store::DirectWordToInt(StackFrame::GetArg(CONT_PC_POS));
   }
-  void SetContPC(int pc) {
-    StackFrame::InitArg(CONT_PC_POS, Store::IntToWord(pc));
+  void SetContPC(s_int pc) {
+    StackFrame::InitArg(CONT_PC_POS, pc);
   }
   Chunk *GetCode() {
     return Store::DirectWordToChunk(StackFrame::GetArg(CODE_POS));
@@ -311,8 +311,8 @@ public:
   }
   // ByteCodeFrame Constructor
   static ByteCodeFrame *New(Interpreter *interpreter,
-			    word pc,
-			    word contPC,
+			    s_int pc,
+			    s_int contPC,
 			    JavaByteCode *byteCode,
 			    word runtimeConstantPool) {
     u_int maxLocals   = byteCode->GetMaxLocals();
@@ -322,7 +322,7 @@ public:
       StackFrame::New(JAVA_BYTE_CODE_FRAME, interpreter, frSize);
     frame->InitArg(PC_POS, pc);
     frame->InitArg(CONT_PC_POS, contPC);
-    frame->InitArg(TOP_POS, Store::IntToWord(BASE_SIZE + maxLocals));
+    frame->InitArg(TOP_POS, BASE_SIZE + maxLocals);
     frame->InitArg(CODE_POS, byteCode->GetCode()->ToWord());
     frame->InitArg(POOL_POS, runtimeConstantPool);
     frame->InitArg(BYTE_CODE_POS, byteCode->ToWord());
@@ -461,10 +461,12 @@ public:
   | (code[pc + 3] << 8) | code[pc + 4])
 
 #define FILL_SLOT() \
-  frame->Push(Store::IntToWord(0));
+  frame->Push(null);
 
-#define DROP_SLOT() \
-  frame->Pop();
+#define DROP_SLOT() { \
+  word value = frame->Pop(); \
+  Assert(value == null); \
+}
 
 #define DECLARE_LONG(v) \
   DROP_SLOT(); \
@@ -511,7 +513,7 @@ public:
 
 #define XASTORE(name, op, value) { \
   JavaDebug::Print(name); \
-  u_int index      = Store::DirectWordToInt(frame->Pop()); \
+  u_int index      = JavaInt::FromWord(frame->Pop()); \
   BaseArray *array = BaseArray::FromWord(frame->Pop()); \
   if (array != INVALID_POINTER) { \
     if (index < array->GetLength()) \
@@ -545,9 +547,9 @@ public:
 
 class JavaDebug {
 public:
-#if defined(STORE_DEBUG)
+#if defined(JAVA_INTERPRETER_DEBUG)
   static void Print(const char *s) {
-    //std::fprintf(stderr, "%s\n", s);
+    std::fprintf(stderr, "%s\n", s);
   }
 #else
   static void Print(const char *) {}
@@ -574,8 +576,8 @@ void ByteCodeInterpreter::PushCall(Closure *closure) {
     JavaByteCode::FromWord(closure->GetConcreteCode());
   ByteCodeFrame *frame =
     ByteCodeFrame::New(ByteCodeInterpreter::self,
-		       Store::IntToWord(-1),
-		       Store::IntToWord(0),
+		       -1,
+		       0,
 		       concreteCode,
 		       closure->Sub(0)); // RuntimeConstantPool
   Scheduler::PushFrame(frame->ToWord());
@@ -682,7 +684,7 @@ Worker::Result ByteCodeInterpreter::Run() {
       {
 	JavaDebug::Print("AASTORE");
 	word value         = frame->Pop();
-	u_int index        = Store::DirectWordToInt(frame->Pop());
+	u_int index        = JavaInt::FromWord(frame->Pop());
 	ObjectArray *array = ObjectArray::FromWord(frame->Pop());
 	if (array != INVALID_POINTER) {
 	  if (index < array->GetLength()) {
@@ -913,7 +915,7 @@ Worker::Result ByteCodeInterpreter::Run() {
 	  default:
 	    Error("unkown type");
 	  }
-	  frame->Push(Store::IntToWord(length));
+	  frame->Push(JavaInt::ToWord(length));
 	  pc += 1;
 	}
 	else {
@@ -1035,7 +1037,7 @@ Worker::Result ByteCodeInterpreter::Run() {
     case Instr::BIPUSH:
       {
 	JavaDebug::Print("BIPUSH");
-	frame->Push(Store::IntToWord(static_cast<s_int8>(GET_BYTE_INDEX())));
+	frame->Push(JavaInt::ToWord(static_cast<s_int8>(GET_BYTE_INDEX())));
 	pc += 2;
       }
       break;
@@ -1483,7 +1485,7 @@ Worker::Result ByteCodeInterpreter::Run() {
       {
 	JavaDebug::Print("I2B");
 	s_int32 i = JavaInt::FromWord(frame->Pop());
-	frame->Push(Store::IntToWord(static_cast<s_int8>(i)));
+	frame->Push(JavaInt::ToWord(static_cast<s_int8>(i)));
 	pc += 1;
       }
       break;
@@ -1608,9 +1610,8 @@ Worker::Result ByteCodeInterpreter::Run() {
       }
       break;
     case Instr::IF_ACMPEQ:
-    case Instr::IF_ICMPEQ:
       {
-	JavaDebug::Print("IF_(A|I)CMPEQ");
+	JavaDebug::Print("IF_ACMPEQ");
 	word v2 = Word::Deref(frame->Pop());
 	word v1 = Word::Deref(frame->Pop());
 	if (v1 == v2)
@@ -1620,11 +1621,34 @@ Worker::Result ByteCodeInterpreter::Run() {
       }
       break;
     case Instr::IF_ACMPNE:
-    case Instr::IF_ICMPNE:
       {
-	JavaDebug::Print("IF_(A|I)CMPNE");
+	JavaDebug::Print("IF_ACMPNE");
 	word v2 = Word::Deref(frame->Pop());
 	word v1 = Word::Deref(frame->Pop());
+	if (v1 != v2)
+	  pc += static_cast<s_int16>(GET_POOL_INDEX());
+	else
+	  pc += 3;
+      }
+      break;
+    case Instr::IF_ICMPEQ:
+      {
+	JavaDebug::Print("IF_ICMPEQ");
+	s_int v2 = JavaInt::FromWord(frame->Pop());
+	s_int v1 = JavaInt::FromWord(frame->Pop());
+	printf("%d ==? %d\n", (int) (v1), (int) (v2));
+	if (v1 == v2)
+	  pc += static_cast<s_int16>(GET_POOL_INDEX());
+	else
+	  pc += 3;
+      }
+      break;
+    case Instr::IF_ICMPNE:
+      {
+	JavaDebug::Print("IF_ICMPNE");
+	s_int v2 = JavaInt::FromWord(frame->Pop());
+	s_int v1 = JavaInt::FromWord(frame->Pop());
+	printf("%d !=? %d\n", (int) (v1), (int) (v2));
 	if (v1 != v2)
 	  pc += static_cast<s_int16>(GET_POOL_INDEX());
 	else
@@ -1806,7 +1830,7 @@ Worker::Result ByteCodeInterpreter::Run() {
 	default:
 	  Error("unknown type");
 	}
-	frame->Push(Store::IntToWord(result));
+	frame->Push(JavaInt::ToWord(result));
 	pc += 3;
       }
       break;
@@ -2319,7 +2343,7 @@ Worker::Result ByteCodeInterpreter::Run() {
     case Instr::NEWARRAY:
       {
 	JavaDebug::Print("NEWARRAY");
-	s_int count = Store::DirectWordToInt(frame->Pop());
+	s_int count = JavaInt::FromWord(frame->Pop());
 	if (count >= 0) {
 	  BaseArray *baseArray;
 	  switch (code[pc + 1]) {
@@ -2548,7 +2572,7 @@ Interpreter::Result ByteCodeInterpreter::Handle() {
     if ((startPC <= pc) && (pc < endPC)) {
       // Check exception type
       word wType = entry->GetCatchType();
-      if (wType == Store::IntToWord(0)) {
+      if (wType == null) {
 	frame->SetPC(entry->GetHandlerPC());
 	return Worker::CONTINUE;
       }
@@ -2588,5 +2612,5 @@ void ByteCodeInterpreter::FillStackTraceElement(word wFrame,
   stackTraceElement->InitInstanceField
     (StackTraceElement::FILE_NAME_INDEX, null);
   stackTraceElement->InitInstanceField
-    (StackTraceElement::FILE_NAME_INDEX, Store::IntToWord(-1));
+    (StackTraceElement::LINE_NUMBER_INDEX, JavaInt::ToWord(-1));
 }
