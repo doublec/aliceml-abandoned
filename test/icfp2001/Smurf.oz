@@ -403,35 +403,46 @@ define
    end
 
    local
-      fun {ToDocSub Daughters V}
+      fun {ToDocSub Daughters V MeaningT}
 	 {List.foldR {FS.reflect.lowerBoundList Daughters}
-	  fun {$ I In}
-	     In %--**
-	     %--** 'TEXT'(Text)|In
-	     %--** 'TAGGED'(Tags.Tag.name {ToDocSub Daughters V})|In
+	  fun {$ I In} W in
+	     W = V.I
+	     case W.tag of !Epsilon then In
+	     [] !DataItemTag then
+		case {FS.reflect.lowerBoundList W.sigma} of [C] then
+		   'TEXT'(MeaningT.C.1)|In
+		end
+	     elsecase {ToDocSub W.daughters V MeaningT} of nil then
+		case {FS.reflect.lowerBoundList W.sigma} of [C] then
+		   'TAGGED'(Tags.(W.tag).name ['TEXT'(MeaningT.C.1)])|In
+		end
+	     elseof Items then
+		'TAGGED'(Tags.(W.tag).name Items)|In
+	     end
 	  end nil}
       end
    in
-      fun {ToDoc V#_}
-	 {ToDocSub V.RootI.daughters V}
+      fun {ToDoc V#_ MeaningT}
+	 {ToDocSub V.RootI.daughters V MeaningT}
       end
    end
 
 \ifndef DEBUG
    local
-      proc {SmurfSub O Docs}
+      proc {SmurfSub O Docs MeaningT}
 	 case {O next($)} of [Res] then DocsRest in
-	    Docs = {ToDoc Res}|(!!DocsRest)
-	    {SmurfSub O DocsRest}
+	    Docs = {ToDoc Res MeaningT}|(!!DocsRest)
+	    {SmurfSub O DocsRest MeaningT}
 	 [] nil then
 	    Docs = nil
 	 end
       end
    in
-      fun {Smurf Meaning SourceCost} O Docs in
+      fun {Smurf Meaning SourceCost} O MeaningT Docs in
 	 O = {New Search.object
 	      script({Script Meaning SourceCost} Order)}
-	 thread {SmurfSub O Docs} end
+	 MeaningT = {List.toTuple meaning {Reverse Meaning}}
+	 thread {SmurfSub O Docs MeaningT} end
 	 !!Docs
       end
    end
