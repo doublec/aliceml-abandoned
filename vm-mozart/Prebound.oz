@@ -80,8 +80,6 @@ prepare
       end
    end
 
-   FutureException = {NewUniqueName 'Future.Future'}
-
    BuiltinTable =
    builtinTable(
       '=': Value.'=='
@@ -150,7 +148,6 @@ prepare
       'Char.isUpper': Char.isUpper
       'Char.toLower': Char.toLower
       'Char.toUpper': Char.toUpper
-      'Future.Future': FutureException
       'Future.alarm\'':
 	 fun {$ X} !!{Alarm (X + 500) div 1000} end
       'Future.await':
@@ -160,11 +157,10 @@ prepare
 	    {ByNeed fun {$}
 		       try
 			  {P unit}
-		       catch error(AliceE=alice(InnerE ...) ...) then
-			  {Value.byNeedFail
-			   error({AdjoinAt AliceE 1 FutureException(InnerE)})}
+		       catch error(AliceE=alice(...) ...) then
+			  {Value.byNeedFail error(AliceE)}
 		       [] error(InnerE ...) then
-			  {Value.byNeedFail error(FutureException(InnerE))}
+			  {Value.byNeedFail error(InnerE)}
 		       end
 		    end}
 	 end
@@ -173,18 +169,14 @@ prepare
 	    !!thread
 		 try
 		    {P unit}
-		 catch error(AliceE=alice(InnerE ...) ...) then
-		    {Value.byNeedFail
-		     error({AdjoinAt AliceE 1 FutureException(InnerE)})}
+		 catch error(AliceE=alice(...) ...) then
+		    {Value.byNeedFail error(AliceE)}
 		 [] error(InnerE ...) then
-		    {Value.byNeedFail error(FutureException(InnerE))}
+		    {Value.byNeedFail error(InnerE)}
 		 end
 	      end
 	 end
-      'Future.isFailed':
-	 fun {$ X}
-	    false   %--** unimplemented
-	 end
+      'Future.isFailed': Value.isFailed
       'Future.isFuture': IsFuture   %--** wrong for failed futures
       'General.Bind': {NewUniqueName 'General.Bind'}
       'General.Chr': {NewUniqueName 'General.Chr'}
@@ -231,7 +223,7 @@ prepare
       'Hole.fail':
 	 fun {$ X E}
 	    try
-	       X = {Value.byNeedFail error(alice(FutureException(E)))}
+	       X = {Value.byNeedFail error(alice(E))}
 	    catch _ then
 	       {Exception.raiseError alice(BuiltinTable.'Hole.Hole')}
 	    end
