@@ -24,43 +24,43 @@ namespace Alice {
 		Object[] ar = new Object[2];
 		ar[0] = a;
 		ar[1] = b;
-		return Apply(a);
+		return Apply(ar);
 	    }
 	    public virtual Object Apply(Object a, Object b, Object c) {
 		Object[] ar = new Object[3];
 		ar[0] = a; ar[1] = b; ar[2] = c;
-		return Apply(a);
+		return Apply(ar);
 	    }
 	    public virtual Object Apply(Object a, Object b, Object c, Object d) {
 		Object[] ar = new Object[4];
 		ar[0] = a; ar[1] = b; ar[2] = c; ar[3] = d;
-		return Apply(a);
+		return Apply(ar);
 	    }
 	    public virtual Object Apply(Object a, Object b, Object c, Object d, Object e) {
 		Object[] ar = new Object[5];
 		ar[0] = a; ar[1] = b; ar[2] = c; ar[3] = d; ar[4] = e;
-		return Apply(a);
+		return Apply(ar);
 	    }
 	    public virtual Object Apply(Object a, Object b, Object c, Object d, Object e, Object f) {
 		Object[] ar = new Object[6];
 		ar[0] = a; ar[1] = b; ar[2] = c; ar[3] = d; ar[4] = e; ar[5] = f;
-		return Apply(a);
+		return Apply(ar);
 	    }
 	    public virtual Object Apply(Object a, Object b, Object c, Object d, Object e, Object f, Object g) {
 		Object[] ar = new Object[7];
 		ar[0] = a; ar[1] = b; ar[2] = c; ar[3] = d; ar[4] = e; ar[5] = f; ar[6] = g;
-		return Apply(a);
+		return Apply(ar);
 	    }
 	    public virtual Object Apply(Object a, Object b, Object c, Object d, Object e, Object f, Object g, Object h) {
 		Object[] ar = new Object[8];
 		ar[0] = a; ar[1] = b; ar[2] = c; ar[3] = d; ar[4] = e; ar[5] = f; ar[6] = g; ar[7] = h;
-		return Apply(a);
+		return Apply(ar);
 	    }
 	    public virtual Object Apply(Object a, Object b, Object c, Object d, Object e, Object f, Object g, Object h, Object i) {
 		Object[] ar = new Object[9];
 		ar[0] = a; ar[1] = b; ar[2] = c; ar[3] = d; ar[4] = e; ar[5] = f;
 		ar[6] = g; ar[7] = h; ar[8] = i;
-		return Apply(a);
+		return Apply(ar);
 	    }
 	    public override bool Equals(Object a) {
 		return (this == (Procedure) a);
