@@ -61,4 +61,4 @@ public:
   }
 };
 
-#endif __STORE__SET_HH__
+#endif
