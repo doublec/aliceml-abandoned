@@ -15,8 +15,8 @@ import signature BIN_IO   from "BIN_IO-sig"
 
 structure BinIO :> BIN_IO =
     struct
-	type vector = string (* StreamIO.vector *)
-	type elem   = char (* StreamIO.elem *)
+	type vector = Word8Vector.vector (* StreamIO.vector *)
+	type elem   = Word8.word (* StreamIO.elem *)
 
 	type instream
 	type outstream

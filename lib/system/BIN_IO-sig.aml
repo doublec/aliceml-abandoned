@@ -16,8 +16,8 @@ sig
 (*TODO
     structure StreamIO:	STREAM_IO
 *)
-    type vector = string (* StreamIO.vector *)
-    type elem   = char (* StreamIO.elem *)
+    type vector = Word8Vector.vector (* StreamIO.vector *)
+    type elem   = Word8.word (* StreamIO.elem *)
 
     type instream
     type outstream
