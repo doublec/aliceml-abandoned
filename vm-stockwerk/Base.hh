@@ -35,12 +35,12 @@
 
 void AssertOutline(const char *file, int line, const char *message);
 #define AssertBase(cond, message) \
-  if (!(cond)) { AssertOutline(__FILE__, __LINE__, message); exit(0); } else {}
+  if (!(cond)) { AssertOutline(__FILE__, __LINE__, message); exit(1); } else {}
 
 //--** should be removed
 #ifdef DEBUG_CHECK
 #define Assert(cond) \
-  if (!(cond)) { AssertOutline(__FILE__, __LINE__, #cond); exit(0); } else {}
+  if (!(cond)) { AssertOutline(__FILE__, __LINE__, #cond); exit(1); } else {}
 #else
 #define Assert(cond)
 #endif
