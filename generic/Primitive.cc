@@ -73,7 +73,6 @@ void PrimitiveInterpreter::PushCall(TaskStack *taskStack, Closure *closure) {
 }
 
 Interpreter::Result PrimitiveInterpreter::Run(word args, TaskStack *taskStack) {
-  Assert(args != (word) 0);
   if (arity == 0) {
     Transient *t = Store::WordToTransient(args);
     if (t == INVALID_POINTER) {
