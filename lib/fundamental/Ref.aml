@@ -15,10 +15,10 @@
  *  Items marked with (**) are extensions to the Standard Basis.
  *)
 
-import structure __pervasive                 from "Pervasive"
-import datatype ref                          from "ToplevelTypes"
-import infix 3 := val ! and op := and op :=: from "ToplevelValues"
-import signature REF                         from "REF-sig"
+import structure __pervasive                          from "Pervasive"
+import datatype ref                                   from "ToplevelTypes"
+import infix 3 := val ! and op = and op := and op :=: from "ToplevelValues"
+import signature REF                                  from "REF-sig"
 
 
 structure Ref : REF =							(**)
@@ -30,6 +30,7 @@ structure Ref : REF =							(**)
     val !				= !
     val op :=				= op :=
     val op :=:				= op :=:
+    val equal				= op =
 
     __primitive val exchange : 'a ref * 'a -> 'a = "Ref.exchange"
     fun map f (r as ref x)		= ref(f x)

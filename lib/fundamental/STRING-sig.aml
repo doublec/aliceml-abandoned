@@ -57,11 +57,13 @@ sig
     val op > :		string * string -> bool
     val op <= :		string * string -> bool
     val op >= :		string * string -> bool
+    val equal :		string * string -> bool				(**)
     val compare :	string * string -> order
     val collate :	(Char.char * Char.char -> order) -> string * string
 							 -> order
     val isPrefix :	string -> string -> bool
     val isSuffix :	string -> string -> bool			(**)
+    val hash :		string -> int					(**)
 
     val toWide :	string -> __pervasive.WideString.string		(**)
     val fromWide :	__pervasive.WideString.string -> string		(**)
