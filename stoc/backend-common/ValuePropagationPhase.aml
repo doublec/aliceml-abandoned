@@ -39,15 +39,18 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 	local
 	    fun node ((edgeMap, countMap), stamp) =
 		(StampMap.insertDisjoint (edgeMap, stamp, nil);
-		 StampMap.insertDisjoint (countMap, stamp, 0))
+		 case StampMap.lookup (countMap, stamp) of
+		     SOME _ => ()
+		   | NONE => StampMap.insertDisjoint (countMap, stamp, 0))
 
 	    fun edge ((edgeMap, countMap), pred, succ) =
 		let
 		    val stamps = StampMap.lookupExistent (edgeMap, pred)
-		    val n = StampMap.lookupExistent (countMap, succ)
 		in
 		    StampMap.insert (edgeMap, pred, succ::stamps);
-		    StampMap.insert (countMap, succ, n + 1)
+		    case StampMap.lookup (countMap, succ) of
+			SOME n => StampMap.insert (countMap, succ, n + 1)
+		      | NONE => StampMap.insert (countMap, succ, 1)
 		end
 
 	    fun sortStm (ValDec (_, _, _), _, _, _) = ()
@@ -60,7 +63,7 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 		(node (graph, stamp);
 		 sortBody (body1, pred, graph, path);
 		 sortBody (body2, pred, graph, path);
-		 sortBody (body3, pred, graph, path))
+		 sortBody (body3, stamp, graph, path))
 	      | sortStm (EndHandleStm (_, stamp), pred, graph, _) =
 		edge (graph, pred, stamp)
 	      | sortStm (TestStm (_, _, testBodyList, body),
@@ -96,12 +99,12 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 		let
 		    val edgeMap: stamp list StampMap.t = StampMap.new ()
 		    val countMap: int StampMap.t = StampMap.new ()
-		    val sharedMap: sharedEntry StampMap.t = StampMap.new ()
+		    val shared: sharedEntry StampMap.t = StampMap.new ()
 		in
 		    sortSharedBody (body, stamp, (edgeMap, countMap),
 				    StampSet.new ());
 		    (*--** use results from countMap *)
-		    (DepthFirstSearch.search edgeMap, sharedMap)
+		    (DepthFirstSearch.search edgeMap, shared)
 		end
 	end
 
@@ -288,12 +291,12 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 
 	fun dynamicTest (ConTest id, env) =
 	    (case IdMap.lookupExistent (env, id) of
-		 (EXP (exp as StaticConExp (_, stamp, _), _), _) =>
+		 (EXP (StaticConExp (_, stamp, _), _), _) =>
 		     DYNAMIC_TEST (StaticConTest stamp)
 	       | (_, _) => DYNAMIC_TEST (ConTest (deref (id, env))))
 	  | dynamicTest (ConAppTest (id, args), env) =
 	    (case IdMap.lookupExistent (env, id) of
-		 (EXP (exp as StaticConExp (_, stamp, _), _), _) =>
+		 (EXP (StaticConExp (_, stamp, _), _), _) =>
 		     DYNAMIC_TEST (StaticConAppTest (stamp, args))
 	       | (_, _) => DYNAMIC_TEST (ConAppTest (deref (id, env), args)))
 	  | dynamicTest (test, _) = DYNAMIC_TEST test
@@ -594,7 +597,8 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 			   bodyOptRef :=
 			   SOME (vpBody (body, env, isToplevel, shared))
 		       end) sorted)
-	       | _ => raise Crash.Crash "ValuePropagationPhase.vpBodyShared")
+	       | (_, _) =>
+		     raise Crash.Crash "ValuePropagationPhase.vpBodyShared")
 
 	fun newEnv () =
 	    let
