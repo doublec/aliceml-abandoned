@@ -54,6 +54,9 @@ $(GLADE_TARGETS): $(GLADE_SOURCES)
 	alicec -c $< -o $@
 
 clean:
+	rm -f $(TARGETS)
+
+distclean:
 	rm -f $(TARGETS) $(GLADE_TARGETS)
 
 depend: $(GLADE_TARGETS)
