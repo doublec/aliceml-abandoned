@@ -93,10 +93,11 @@ public:
     Assert(entry->GetTag() == CONSTANT_Utf8);
     return JavaString::FromWordDirect(entry->GetArg(0));
   }
-  JavaString *GetClassName(u_int index) {
+  word GetClass(u_int index, ClassLoader *classLoader) {
     ConstantPoolEntry *entry = Get(index);
     Assert(entry->GetTag() == CONSTANT_Class);
-    return GetUtf8(Store::DirectWordToInt(entry->GetArg(0)));
+    JavaString *name = GetUtf8(Store::DirectWordToInt(entry->GetArg(0)));
+    return classLoader->ResolveClass(name);
   }
   JavaString *GetNameAndType(u_int index, JavaString *&descriptor) {
     ConstantPoolEntry *entry = Get(index);
@@ -121,31 +122,31 @@ word ConstantPoolEntry::Resolve(ConstantPool *constantPool,
       //--** in Table 4.4 set
       u_int classIndex = Store::DirectWordToInt(GetArg(0));
       u_int nameAndTypeIndex = Store::DirectWordToInt(GetArg(1));
-      JavaString *className = constantPool->GetClassName(classIndex);
+      word theClass = constantPool->GetClass(classIndex, classLoader);
       JavaString *descriptor;
       JavaString *name =
 	constantPool->GetNameAndType(nameAndTypeIndex, descriptor);
-      return classLoader->ResolveFieldRef(className, name, descriptor);
+      return classLoader->ResolveFieldRef(theClass, name, descriptor);
     }
   case CONSTANT_Methodref:
     {
       u_int classIndex = Store::DirectWordToInt(GetArg(0));
       u_int nameAndTypeIndex = Store::DirectWordToInt(GetArg(1));
-      JavaString *className = constantPool->GetClassName(classIndex);
+      word theClass = constantPool->GetClass(classIndex, classLoader);
       JavaString *descriptor;
       JavaString *name =
 	constantPool->GetNameAndType(nameAndTypeIndex, descriptor);
-      return classLoader->ResolveMethodRef(className, name, descriptor);
+      return classLoader->ResolveMethodRef(theClass, name, descriptor);
     }
   case CONSTANT_InterfaceMethodref:
     {
       u_int classIndex = Store::DirectWordToInt(GetArg(0));
       u_int nameAndTypeIndex = Store::DirectWordToInt(GetArg(1));
-      JavaString *className = constantPool->GetClassName(classIndex);
+      word theClass = constantPool->GetClass(classIndex, classLoader);
       JavaString *descriptor;
       JavaString *name =
 	constantPool->GetNameAndType(nameAndTypeIndex, descriptor);
-      return classLoader->ResolveInterfaceMethodRef(className, name,
+      return classLoader->ResolveInterfaceMethodRef(theClass, name,
 						    descriptor);
     }
   case CONSTANT_String:
