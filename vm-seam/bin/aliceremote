@@ -4,7 +4,7 @@
 #   Andreas Rossberg <rossberg@ps.uni-sb.de>
 #
 # Copyright:
-#   Andreas Rossberg, 2004
+#   Andreas Rossberg, 2004-2005
 #
 # Last Change:
 #   $Date$
@@ -16,6 +16,19 @@ then
     PATH="${ALICE_REMOTE_PATH}:${PATH}"
 fi
 
-echo ${PATH}
+if [ ! -z "$ALICE_REMOTE_LOG" ]
+then
+    echo Started: `date` >>/tmp/aliceremote.log
+    echo -n alicerun=
+    which alicerun >>/tmp/aliceremote.log
+    echo argv=$@ >>/tmp/aliceremote.log
+    echo PATH=${PATH} >>/tmp/aliceremote.log
+fi
 
 alicerun "$@"
+RETCODE=$?
+
+if [ ! -z "$ALICE_REMOTE_LOG" ]
+then
+    echo Completed $RETCODE: `date` >>/tmp/aliceremote.log
+fi
