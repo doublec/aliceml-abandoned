@@ -58,13 +58,16 @@ Signatures only need to be imported if used explicitly.</P>
 
 <?php subsection("import-all", "Interactive import") ?>
 
-<P>To access a non-implicit library item in the <A
-href="usage.php#interactive">interactive system</A>, import announcements
-must be used in very much the same way. For convenience, it is possible to
+<P>The <A href="usage.php#interactive">interactive toplevel</A> system imports
+the <EM>complete</EM> library, except <TT>/lib/gtk/</TT>, implicitly. Loading of
+components is performed lazily, though.</P>
+
+<P>To access non-library components (e.g. compiled programs) in the toplevel,
+import announcements must still be used. For convenience, it is possible to
 abbreviate import announcements as follows interactively:</P>
 
 <PRE class=code>
-import "x-alice:/lib/system/Url"</PRE>
+import "build/HelloWorld"</PRE>
 
 <P>Such an announcement will import everything exported by the corresponding
 component.</P>
