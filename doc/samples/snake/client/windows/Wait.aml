@@ -34,15 +34,19 @@ fun colorToGdkColor c =
 
 structure Wait =
 struct
-    (* the textwindow where the connected player will be listed *)
 
-    val playerTextAdjust1 = 
-	Gtk.adjustmentNew (50.0, 0.0, 100.0, 1.0, 1.0, 1.0)
-    val playerTextAdjust2 =
-	Gtk.adjustmentNew (50.0, 0.0, 100.0, 1.0, 1.0, 1.0)
-    val playerText = 
-	Gtk.textNew (playerTextAdjust1, playerTextAdjust2)
 
+    (* builds the waiting window *)
+    fun mkWaitingWindow alternate = 
+	let
+(* the textwindow where the connected player will be listed *)
+	
+    		    val playerTextAdjust1 = 
+			Gtk.adjustmentNew (50.0, 0.0, 100.0, 1.0, 1.0, 1.0)
+    	   	    val playerTextAdjust2 =
+			Gtk.adjustmentNew (50.0, 0.0, 100.0, 1.0, 1.0, 1.0)
+    		    val playerText = 
+			Gtk.textNew (playerTextAdjust1, playerTextAdjust2)
 
     (* [insert(name, color)] inserts one player with name and color in
      connected-players list *)
@@ -56,10 +60,7 @@ struct
 	    Gtk.textInsert(playerText, font, front,
 			   white, name ^ "\n", ~1)
 	end
-
-
-    (* builds the waiting window *)
-    fun mkWaitingWindow alternate = 
+	in
 	case alternate of
 
 	    (* client is in server mode *)
@@ -89,6 +90,7 @@ struct
 			 Gtk.widgetDestroy waiting;
 			 reset NONE)
 
+   
 		    (* inserts all connected players into text widget *)
 		    fun playersJoined xs = List.app insert xs
 
@@ -203,7 +205,6 @@ struct
 			(* they haven't to be fulfilled because they where
 			 fulfilled in PlayerSettingsWindow *)
 
-		    val _ = Inspector.inspect ("alreadyConnected liste in Waitingwindow: ", alreadyConnected)
 			
 		in
 		    playersJoined alreadyConnected;
@@ -243,5 +244,6 @@ struct
 		    Gtk.widgetShowAll waiting
 
 		end
+	end
 
 end

@@ -262,8 +262,13 @@ struct
             fun previousSnake (p, id) =
                 let
                     val parts   = Vector.fromList $ Part.allPlayers p
-                    val ndx     = getOpt (indexOf 
-                                    (fn p => Part.id p = id) parts, 1)
+                    val n       = Vector.length parts
+                    val ndx     = 
+                            case id of
+                                NONE => 0
+                            |   SOME id =>
+                                getOpt (indexOf (fn p => Part.id p = id) parts, 
+                                        1)
                 in
                     if Vector.length parts = 0 then NONE
                     else SOME (Part.id $
@@ -273,8 +278,13 @@ struct
             fun nextSnake (p, id) =
                 let
                     val parts   = Vector.fromList $ Part.allPlayers p
-                    val ndx     = getOpt (indexOf 
-                                    (fn p => Part.id p = id) parts, 1)
+                    val n       = Vector.length parts
+                    val ndx     = 
+                        case id of
+                            NONE => 0 
+                        |   SOME id =>
+                            getOpt (indexOf (fn p => Part.id p = id) parts, 
+                                    n - 1)
                  in
                     if Vector.length parts = 0 then NONE
                     else SOME (Part.id $ 
@@ -343,13 +353,13 @@ struct
                                         nextDir     = ref dir
                                     }
                                 val snake   = Snake.snake (id, color, pos, dir)
-                                val players = Part.allPlayers $ ! participants
                             in
                                 (Part.state part) := Part.PLAYING 
                                                         (playerState, snake);
                                 (* inform the other PLAYERs *)
                                 invokeSeveral 
-                                    (players, #playersJoined, [(name, color)]);
+                                    (Part.allConnected $ ! participants, 
+                                        #playersJoined, [(name, color)]);
                                     true
                             end
                         |   NONE => false   
@@ -392,22 +402,20 @@ struct
             fun changeView id = Lock.sync lock (
                 withParticipant () ("changeView", id, fn (part, hint) => 
                     let
-                        val participants = !participants
-
-                        val newId = 
-                            case hint of 
-                                Protocol.PREV => 
-                                    previousSnake (participants, id)
-                            |   Protocol.NEXT => 
-                                nextSnake (participants, id)
+                        val parts = !participants
                         
-                        val idref =
-                            case ! (Part.state part) of
-                                Part.WATCHING r        => r
-                            |   Part.FINISHED (_, r)   => r
-                            |   _                      => (ref NONE)
+                        val getNewId = case hint of
+                                            P.PREV => nextSnake  
+                                        |   P.NEXT => nextSnake
                     in
-                        idref := newId 
+                        case ! (Part.state part) of
+                                Part.WATCHING (r as ref oldId)  => 
+                                    r := getNewId (parts, oldId)
+                            |   Part.FINISHED (_, r as ref oldId) => 
+                                    r := getNewId (parts, oldId)
+                            |   Part.DEAD (_, r as ref oldId)   => 
+                                    r := getNewId (parts, oldId)
+                            |   _                      => ()
                     end
                 ))
 
