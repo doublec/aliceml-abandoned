@@ -190,7 +190,7 @@ public:
   static RefMapIteratorFrame *New(Interpreter *interpreter,
 				  Entry *entry, word closure, operation op) {
     StackFrame *frame =
-      StackFrame::New(REFMAP_APP_FRAME, interpreter, SIZE);
+      StackFrame::New(REFMAP_ITERATOR_FRAME, interpreter, SIZE);
     frame->InitArg(ENTRY_POS, entry->ToWord());
     frame->InitArg(CLOSURE_POS, closure);
     frame->InitArg(OPERATION_POS, Store::IntToWord(op));
@@ -198,7 +198,7 @@ public:
   }
   static RefMapIteratorFrame *FromWordDirect(word frame) {
     StackFrame *p = StackFrame::FromWordDirect(frame);
-    Assert(p->GetLabel() == REFMAP_APP_FRAME);
+    Assert(p->GetLabel() == REFMAP_ITERATOR_FRAME);
     return static_cast<RefMapIteratorFrame *>(p);
   }
 
