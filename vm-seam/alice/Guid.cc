@@ -25,7 +25,6 @@
 #endif
 #include <time.h>
 
-#include "generic/RootSet.hh"
 #include "alice/Guid.hh"
 
 word Guid::vmGuid;
