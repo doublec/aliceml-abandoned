@@ -37,8 +37,8 @@ solving combinatorical problems using constraints and programmable search
 
 <?php pslab_header2("Overview"); ?>
 <P>
-  In order to build the Alice language layer on top of SEAM,
-  several steps are required:
+  In order to build the Alice language layer, that is the alice.dll,
+  on top of SEAM, several steps are required:
 </P>
 <UL>
   <LI>The Alice data model (including code!) is modelled on top of the store.
@@ -48,11 +48,12 @@ solving combinatorical problems using constraints and programmable search
   <LI>Alice pickling is modelled on top of SEAM pickling by
       providing a set of Alice specific internalization handlers.
   <LI>The Alice FFI is modelled on top of SEAM's FFI. All we need to do
-      is to define the marshalling of the newly defiend alice types and the
+      is to define the marshalling of the newly defined alice types and the
       native compilation unit interface model (assumed by the boot linker).
   <LI>The Alice language layer main module needs to be defined.
 </UL>
-<P>Given this, the Alice VM becomes <TT>seam.exe alice.dll args...</TT>.
+<P>Given this, the Alice VM becomes <TT>seam.exe alice.dll args</TT>,
+   with <TT>args</TT> some alice component.
 </P>
 <?php pslab_header2("Alice Data Model"); ?>
 
@@ -81,7 +82,7 @@ solving combinatorical problems using constraints and programmable search
       built <TT>Constructor</TT> and <TT>ConVal</TT> datatypes on top of store.
   <LI>Alice function closures: mapped to store closures.
   <LI>Alice unevaluated components: mapped to store closures.
-  <LI>Alice evaluated compoments: built <TT>Record</TT> type on top of store.
+  <LI>Alice evaluated components: built <TT>Record</TT> type on top of store.
 </UL>
 <PRE>
 // Define labels of Alice data types
@@ -204,6 +205,7 @@ six central design decisions were made for its code representation:
 <LI>Loops are translated into recursive function calls
 <LI>Control-flow is represented explicitly (in particular, control flow joins)
 <LI>Identifier liveness information is exact
+(by means of explicit kill instructions)
 <LI>Minimize the number of different instructions by using primitives instead.
 This decision relies on the fact that static type information
 often allows for easy runtime optimization of these constructs
@@ -237,14 +239,14 @@ reconstructing this information from plain byte code at runtime.
 </P>
 <UL>
 <LI>Define the code itself:
-Alice code is defined a regular algebraic datatype in Alice,
+Alice code is defined as a regular algebraic datatype in Alice,
 therefore code is of type <TT>TagVal</TT> on runtime level.
 <LI>We need to provide our own <TT>ConcreteCode</TT>
 to use the runtime transformation offered by SEAM pickling.
 <LI>We need to provide our own interpreter together with its own stack frame
 </UL>
 <P>
-Below the code snippets for the interpreted concrete representation are shown:
+Below the code interfaces for the interpreted concrete representation are shown:
 </P>
 <PRE>
 class AliceDll AliceConcreteCode : private ConcreteCode {
@@ -411,8 +413,8 @@ certain values.
   ...
 </PRE>
 <P>In the example above, the <TT>AliceLanguageLayer::concreteCodeConstructor</TT>
-of course has to do the main work of creating the internal represenation.
-The point here is that registering your own handlers all you need to do
+of course has to do the main work of creating the internal representation.
+The point here is that registering your own handlers is all you need to do
 to "teach" SEAM pickling your language specific representation transformations.
 In the current implementation, the concrete code constructor either points
 to <TT>AliceConcreteCode::New</TT> or <TT>NativeConcreteCode::New</TT>,
@@ -422,7 +424,7 @@ depending on the users selection.
 <?php pslab_header2("Alice BootLinker"); ?>
 
 <P>
-Alice language components are implemented as a pair consisting of a interface
+Alice language components are implemented as a pair consisting of an interface
 (called signature) and a structure implementing this interface.
 The Alice VM now needs a initial way of obtaining Alice components at runtime,
 which is performed by the Alice BootLinker. Its interface is shown below.
@@ -466,7 +468,7 @@ public:
   <DT><TT>Init(nativeComponents)</TT></DT>
   <DD>
     <P>The boot linker is initialized with a set of native components
-       that will be evaluated and entered in the glboal component table.
+       that will be evaluated and entered in the global component table.
     </P>
   </DD>
   <DT><TT>EnterComponent(key, sign, str)</TT>
@@ -632,7 +634,7 @@ arguments in order to obtain the untagged representation.
 <?php pslab_header3("Returning Values"); ?>
 
 <P>In addition to the standard <TT>RETURN(value)</TT> from SEAM, the following
-conventience macros are defined:
+convenience macros are defined:
 </P>
 <DL>
   <DT><TT>RETURN_BOOL(boolVal)</TT></DT>
@@ -675,7 +677,7 @@ conventience macros are defined:
 <?php pslab_header2("Alice Primitives"); ?>
 
 <P>Primitives are native functions or values that are part of the abstract
-Alice platform. The differ from regular FFI functions only in that they provide
+Alice platform. They differ from regular FFI functions only in that they provide
 an abstract representation. Alice primitives are managed in a global
 PrimitiveTable. This table is used by the corresponding
 <TT>Alice.primitive.function</TT>
