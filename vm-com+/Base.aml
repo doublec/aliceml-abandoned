@@ -321,6 +321,7 @@ structure Char =
 	__primitive val ord : char -> int = "Char.ord"
 	__primitive val chr : int -> char = "Char.chr"
 
+	__primitive val isAlphaNum : char -> bool = "Char.isAlphaNum"
 	__primitive val isDigit :    char -> bool = "Char.isDigit"
 	__primitive val isHexDigit : char -> bool = "Char.isHexDigit"
 	__primitive val isSpace :    char -> bool = "Char.isSpace"
