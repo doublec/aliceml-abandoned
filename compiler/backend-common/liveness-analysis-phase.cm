@@ -1,6 +1,6 @@
 Group
 
-    functor MakeLivenessAnalysisPhase
+    functor MkLivenessAnalysisPhase
 
 is
 
@@ -10,5 +10,5 @@ is
     flat-grammar.cm
     output-flat-grammar.cm
 
-    LIVENESS_ANALYSIS_PHASE.sig
-    MakeLivenessAnalysisPhase.sml
+    LIVENESS_ANALYSIS_PHASE-sig.aml
+    MkLivenessAnalysisPhase.aml
