@@ -143,9 +143,13 @@ struct
       | isItemOfSpace space (STRUCT (n,_)) =
 	Util.checkPrefix (Util.spaceStructPrefix(space)) n
       | isItemOfSpace _ _ = false
+
+
+val wac = ref 0
 	
 (**)fun workAround (STRUCT ("_GtkFileSelection",_)) = true
-(**)  | workAround s = isItemOfSpace Util.GDK s
+(**)  | workAround s = isItemOfSpace Util.GDK s orelse
+                            (wac := (!wac) + 1 ; (!wac) < 200)
 
     fun checkItem (FUNC (n,ret,arglist)) =
     let
