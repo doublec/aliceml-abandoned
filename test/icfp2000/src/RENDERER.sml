@@ -36,8 +36,6 @@ sig
 	    | Point       of color * point                        (* Tier 2 *)
 	    | Spot        of color * point * point * angle * real (* Tier 3 *)
 
-    exception Error of string
-
     val mkRender :
 	    { ambient :   color
 	    , lights :    light list
@@ -46,5 +44,5 @@ sig
 	    , width :     int
 	    , height :    int
 	    , depth :     int
-	    } -> int * int -> color   (* Error *)
+	    } -> int * int -> color
 end
