@@ -133,7 +133,7 @@ public:
   }
   static void PushHandler(word data) {
     u_int top = GetCurrentStackTop();
-    currentThread->PushHandler(top, data);
+    currentThread->PushHandler(top - 1, data); // was top
   }
   static void PopHandler() {
     currentThread->PopHandler();
