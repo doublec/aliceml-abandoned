@@ -158,25 +158,44 @@ functor MakeBatchCompiler(structure Composer: COMPOSER
 	    (TextIO.closeIn (TextIO.openIn filename); true)
 	    handle IO.Io _ => false
 
-	fun changeExtension (filename, to) =
+	fun pathCeil filename =
 	    let
 		val fro = "." ^ extension
 		val n = String.size filename
 		val m = String.size fro
 	    in
 		if n > m andalso String.substring (filename, n - m, m) = fro
-		then
-		    let
-			val newname =
-			    String.substring (filename, 0, n - m) ^ to
-		    in
-			if existsFile newname then SOME newname
-			else NONE
-		    end
-		else NONE
+		then filename
+		else filename ^ fro
 	    end
 
-	(*--** try appending the extension *)
+	fun pathFloor filename =
+	    let
+		val fro = "." ^ extension
+		val n = String.size filename
+		val m = String.size fro
+	    in
+		if n > m andalso String.substring (filename, n - m, m) = fro
+		then String.substring (filename, 0, n - m)
+		else filename
+	    end
+
+	fun urlCeil url = Url.fromString (pathCeil (Url.toString url))
+
+	(* Try to find a compiled component or source file - search order:
+	 *
+	 * A              compiled component, read signature
+	 * ceil(A)        compiled component, read signature
+	 * ceil(A).sig    compile as signature for native component
+	 * floor(A).aml   compile as new component, write to ceil(A)
+	 * floor(A).sml   compile as new component, write to ceil(A)
+	 * floor(A).sig   compile as new component, write to ceil(A)
+	 *
+	 * where ceil(A) = A, if A has the component extension, else A.ozf
+	 * where floor(A) = A, if A has not component extension,
+	 *                  else A without the component extension
+	 *)
+
 	fun acquireSign (desc, url) =
 	    let
 		val url =
@@ -184,42 +203,61 @@ functor MakeBatchCompiler(structure Composer: COMPOSER
 			SOME base => Url.resolve base url
 		      | NONE => url
 	    in
-		case Composer.sign url of
+		case acquireCompiled url of
 		    SOME sign => sign
 		  | NONE =>
-			let
-			    val sign = acquireSign' (desc, url)
-			in
-			    Composer.enterSign (url, sign); sign
-			end
+		case acquireCompiled (urlCeil url) of
+		    SOME sign => sign
+		  | NONE => acquireFromSource url
 	    end
-	and acquireSign' (desc, url) =
+	and acquireCompiled url =
+	    case Composer.sign url of
+		SOME sign => SOME sign
+	      | NONE =>
+	    case Pickle.loadSign url of
+		SOME sign =>
+		    (Composer.enterSign (urlCeil url, sign);
+		     TextIO.print ("### loaded signature from " ^
+				   Url.toString url ^ "\n"); SOME sign)
+	      | NONE => NONE
+	and acquireFromSource url =
 	    let
 		val targetFilename = parseUrl url
-		val sigFilename = targetFilename ^ ".sig"
+		val sigFilename = pathCeil targetFilename ^ ".sig"
 	    in
-		case Pickle.loadSign url of
-		    SOME sign =>
-			(TextIO.print ("### loaded signature from " ^
-				       Url.toString url ^ "\n");
-			 sign)
+		if existsFile sigFilename then
+		    let
+			val sign = compileSign sigFilename
+		    in
+			Composer.enterSign (urlCeil url, sign); sign
+		    end
+		else
+		case acquireFromSource' (url, targetFilename, ".aml") of
+		    SOME sign => sign
 		  | NONE =>
-		if existsFile sigFilename then compileSign sigFilename else
-		case changeExtension (targetFilename, ".aml") of
-		    SOME sourceFilename =>
-			compile (sourceFilename, targetFilename, "")
-		   | NONE =>
-		case changeExtension (targetFilename, ".sml") of
-		    SOME sourceFilename =>
-			compile (sourceFilename, targetFilename, "")
+		case acquireFromSource' (url, targetFilename, ".sml") of
+		    SOME sign => sign
 		  | NONE =>
-		case changeExtension (targetFilename, ".sig") of
-		    SOME sourceFilename =>
-			compile (sourceFilename, targetFilename, "")
+		case acquireFromSource' (url, targetFilename, ".sig") of
+		    SOME sign => sign
 		  | NONE =>
 		Error.error (Source.nowhere,
 			     "could not locate source for " ^ targetFilename)
 	     end
+	and acquireFromSource' (url, targetFilename, to) =
+	    let
+		val sourceFilename = pathFloor targetFilename ^ to
+	    in
+		if existsFile sourceFilename then
+		    let
+			val sign =
+			    compile (sourceFilename,
+				     pathCeil targetFilename, "")
+		    in
+			Composer.enterSign (urlCeil url, sign); SOME sign
+		    end
+		else NONE
+	    end
 
 	(* Command Line Processing *)
 
