@@ -147,6 +147,8 @@ structure CodeGen =
 	      | freeVarsDec (EvalStm(_, exp')) = freeVarsExp exp'
 	      | freeVarsDec (ReturnStm(_,exp')) = freeVarsExp exp'
 	      | freeVarsDec (ExportStm _) = ()
+	      | freeVarsDec (IndirectStm (_, ref (SOME body'))) = freeVarsDecs body'
+	      | freeVarsDec (IndirectStm (_, ref NONE)) = ()
 	    and
 		freeVarsTest (LitTest _) = ()
 	      | freeVarsTest (ConTest(id',NONE)) = fV.insert id'
@@ -718,6 +720,8 @@ structure CodeGen =
 	  | decCode (EvalStm (_, exp')) =
 		    (expCode exp') @ [Pop]
 	  | decCode (ExportStm (_,Id (_,stamp',_)::_)) = (mainpickle:=Local.get stamp'; nil)
+	  | decCode (IndirectStm (_, ref (SOME body'))) = List.concat (map decCode body')
+	  | decCode (IndirectStm (_, ref NONE)) = nil
 	  | decCode dings = raise Debug (Dec dings)
 	and
 	    idCode (Id(_,stamp',_)) = stampCode stamp'
@@ -1130,13 +1134,20 @@ fun labeliter ((l,_)::rest,i) = labelcode (l,i) @ labeliter(rest,i+1)
 	    let
 		val _ = if !ECHO >=1 then print ("create Class "^(Class.getCurrent())^"\n") else ()
 		val e = if !DEBUG >=2 then
-		    (Getstatic ("java/lang/System/out", [Classsig "java/io/PrintStream"])::
-		     Ldc (JVMString "Betrete: (")::
-		     Invokevirtual ("java/io/PrintStream","print",([Classsig CObj],[Voidsig]))::
-		     Getstatic ("java/lang/System/out", [Classsig "java/io/PrintStream"])::
-		     Ldc (JVMString (nameFromId (Lambda.getOuterFun ())))::
-		     Invokevirtual ("java/io/PrintStream","println",([Classsig CObj],[Voidsig]))::
-		     (List.concat (map decCode body')))
+		    let
+			val nodebug=Label.new()
+		    in
+			(Getstatic (Class.getCurrent()^"/DEBUG", [Boolsig])::
+			 Ifeq nodebug::
+			 Getstatic ("java/lang/System/out", [Classsig "java/io/PrintStream"])::
+			 Ldc (JVMString "Betrete: (")::
+			 Invokevirtual ("java/io/PrintStream","print",([Classsig CObj],[Voidsig]))::
+			 Getstatic ("java/lang/System/out", [Classsig "java/io/PrintStream"])::
+			 Ldc (JVMString (nameFromId (Lambda.getOuterFun ())))::
+			 Invokevirtual ("java/io/PrintStream","println",([Classsig CObj],[Voidsig]))::
+			 Label nodebug::
+			 (List.concat (map decCode body')))
+		    end
 			else (List.concat (map decCode body'))
 
 		val className = classNameFromId id'

@@ -57,7 +57,7 @@ structure Abbrev  =
 	val CPlus          = ("de/uni_sb/ps/dml/runtime/Int/plus",
 			      [Classsig "de/uni_sb/ps/dml/runtime/DMLValue"])
 	val CBuiltin       = "de/uni_sb/ps/dml/runtime/Builtin"
-	val CBuilt         = ("de/uni_sb/ps/dml/runtime/General/getBuiltin",
+	val CBuilt         = ("de/uni_sb/ps/dml/runtime/General/bi",
 			      [Classsig "de/uni_sb/ps/dml/runtime/DMLValue"])
 	val CDMLTuple      = "de/uni_sb/ps/dml/runtime/DMLTuple"
 

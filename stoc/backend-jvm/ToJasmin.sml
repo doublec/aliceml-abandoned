@@ -165,11 +165,18 @@ structure ToJasmin =
 	      | instructionToJasmin (Anewarray cn,_) = "anewarray "^cn
 	      | instructionToJasmin (Areturn,_) =
 		if !DEBUG >=2 then
-		    "getstatic java/lang/System/out Ljava/io/PrintStream;\n"^
-		    "ldc \")\"\n"^
-		    "invokevirtual java/io/PrintStream/print(Ljava/lang/Object;)V\n"^
-		    "areturn"
-		    else "areturn"
+		    let
+			val nodebug=Label.new()
+		    in
+			"getstatic "^(!actclass)^"/DEBUG Z\n"^
+			"ifeq "^nodebug^"\n"^
+			"getstatic java/lang/System/out Ljava/io/PrintStream;\n"^
+			"ldc \")\"\n"^
+			"invokevirtual java/io/PrintStream/print(Ljava/lang/Object;)V\n"^
+			nodebug^":\n"^
+			"areturn"
+		    end
+		else "areturn"
 	      | instructionToJasmin (Arraylength,_) = "arraylength"
 	      | instructionToJasmin (Athrow,_) = "athrow"
 	      | instructionToJasmin (Bipush i,_) = "bipush "^intToString i
@@ -329,10 +336,10 @@ structure ToJasmin =
 		      else
 			  print ("\n\nStack Verification Error. Stack="^Int.toString (!stackneed)^
 				 " in "^(!actclass)^"."^methodname^".\n"));
-		      TextIO.output(io,".limit locals "^Int.toString(perslocs+1)^"\n");
-		      TextIO.output(io,".limit stack "^Int.toString
-				    ((if !DEBUG>=2 then 2 else 0)+(!stackmax))^"\n");
-		      TextIO.output(io,".end method\n"))
+			  TextIO.output(io,".limit locals "^Int.toString(perslocs+1)^"\n");
+			  TextIO.output(io,".limit stack "^Int.toString
+					((if !DEBUG>=2 then 2 else 0)+(!stackmax))^"\n");
+			  TextIO.output(io,".end method\n"))
 	    in
 		actclass:=name;
 		TextIO.output(io,
