@@ -66,24 +66,28 @@ WORD32_WORD_TO_BOOL_OP(Word32_opgreater, >)
 WORD32_WORD_TO_BOOL_OP(Word32_oplessEq, <=)
 WORD32_WORD_TO_BOOL_OP(Word32_opgreaterEq, >=)
 
+// Assume that >> implements a logical right shift (as on x86).
+
 DEFINE2(Word32_opshl) {
   DECLARE_WORD32(i, x0);
   DECLARE_STANDARD_WORD(j, x1);
-  if (j > WORD_PRECISION) j = WORD_PRECISION; // see comment in Word.icc
+  if (j > WORD_PRECISION)
+    RETURN_WORD32(0); // see comment in Word.icc
   RETURN_WORD32(i << j);
 } END
 
 DEFINE2(Word32_opshr) {
   DECLARE_WORD32(i, x0);
   DECLARE_STANDARD_WORD(j, x1);
-  if (j > WORD_PRECISION) j = WORD_PRECISION; // see comment in Word.icc
+  if (j > WORD_PRECISION)
+    RETURN_WORD32(0); // see comment in Word.icc
   RETURN_WORD32(i >> j);
 } END
 
 DEFINE2(Word32_oparithshr) {
   DECLARE_WORD32(i, x0);
   DECLARE_STANDARD_WORD(j, x1);
-
+  if (j > WORD_PRECISION - 1) j = WORD_PRECISION - 1; // see above
   //--** this implementation can be improved on many architectures
   if (i & (1 << (WORD_PRECISION - 1))) {
     RETURN_WORD32((i >> j) | ~(static_cast<u_int>(-1) >> j));
@@ -135,10 +139,8 @@ DEFINE1(Word32_toInt) {
 
 DEFINE1(Word32_toIntX) {
   DECLARE_WORD32(i, x0);
-  if (i & (1 << (WORD_PRECISION - 1))) {
-    i = i | ~(static_cast<u_int>(-1));
-  }
-  if (i > static_cast<u_int>(MAX_VALID_INT))
+  if (static_cast<s_int>(i) > static_cast<s_int>(MAX_VALID_INT) ||
+      static_cast<s_int>(i) < static_cast<s_int>(MIN_VALID_INT))
     RAISE(PrimitiveTable::General_Overflow);
   RETURN_INT(i);
 } END
@@ -159,30 +161,23 @@ DEFINE1(Word32_toLargeInt) {
 
 DEFINE1(Word32_toLargeIntX) {
   DECLARE_WORD32(i, x0);
-  BigInt *b;
-  if (i & (1 << (WORD_PRECISION - 1))) {
-    b = BigInt::New(i | ~(STATIC_CAST(u_int, -1)));
-  } else {
-    b = BigInt::New(i);
-  }
+  BigInt *b = BigInt::New(static_cast<s_int>(i));
   RETURN_INTINF(b);
 } END
 
 DEFINE1(Word32_fromLarge) {
+  DECLARE_WORD32(i, x0); // request argument
   RETURN(x0);
 } END
 
 DEFINE1(Word32_toLarge) {
+  DECLARE_WORD32(i, x0); // request argument
   RETURN(x0);
 } END
 
 DEFINE1(Word32_toLargeX) {
-  DECLARE_WORD32(i, x0);
-  if (i & (1 << (WORD_PRECISION - 1))) {
-    RETURN_WORD32(i | ~(static_cast<u_int>(-1)));
-  } else {
-    RETURN(x0);
-  }
+  DECLARE_WORD32(i, x0); // request argument
+  RETURN(x0);
 } END
 
 WORD32_WORD_TO_WORD_OP(Word32_xorb, ^)

@@ -96,14 +96,18 @@ WORD_WORD_TO_BOOL_OP(Word_opgreaterEq, >=)
 DEFINE2(Word_opshl) {
   DECLARE_WORD(i, x0);
   DECLARE_STANDARD_WORD(j, x1);
-  if (j > WORD_PRECISION) j = WORD_PRECISION; // see above
+  if (j > WORD_PRECISION)
+    RETURN_WORD(0); // see above
   RETURN_WORD(i << j);
 } END
+
+// Assume that >> implements a logical right shift (as on x86).
 
 DEFINE2(Word_opshr) {
   DECLARE_WORD(i, x0);
   DECLARE_STANDARD_WORD(j, x1);
-  if (j > WORD_PRECISION) j = WORD_PRECISION; // see above
+  if (j > WORD_PRECISION)
+    RETURN_WORD(0); // see above
   RETURN_WORD(i >> j);
 } END
 
