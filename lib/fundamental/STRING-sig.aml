@@ -29,29 +29,24 @@ sig
     structure Char :	CHAR
 
     val maxSize :	int
-    val maxLen :	int						(**)
 
     val size :		string -> int
-    val length :	string -> int					(**)
     val str :		Char.char -> string
     val sub :		string * int -> Char.char
     val substring :	string * int * int -> string
     val extract :	string * int * int option -> string
 
     val op ^ :		string * string -> string
-    val append :	string * string -> string			(**)
     val concat :	string list -> string
+    val concatWith :	string -> string list -> string			(**)
     val implode :	Char.char list -> string
     val explode :	string -> Char.char list
-    val fromList :	Char.char list -> string			(**)
-    val toList :	string -> Char.char list			(**)
     val tabulate :	int * (int -> Char.char) -> string		(**)
 
     val map :		(Char.char -> Char.char) -> string -> string
     val translate :	(Char.char -> string) -> string -> string
     val fields :	(Char.char -> bool) -> string -> string list
     val tokens :	(Char.char -> bool) -> string -> string list
-    val separate :	string -> string list -> string			(**)
 
     val op < :		string * string -> bool
     val op > :		string * string -> bool

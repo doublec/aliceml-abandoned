@@ -54,12 +54,6 @@ struct
 
     __primitive val explode : string -> char list       = "String.explode"
 
-    val maxLen		= maxSize					(**)
-    val length		= size						(**)
-    val append		= op ^						(**)
-    val fromList	= implode					(**)
-    val toList		= explode					(**)
-
     fun translate f s	= concat(List.map f (explode s))	(*INEFFICIENT*)
 
     __primitive val op < :	string * string -> bool  = "String.<"
@@ -115,10 +109,10 @@ struct
       				= (List.rev cs', c::cs)
       | token'(f, c::cs, cs')	= token'(f, cs, c::cs')
 
-    fun separate s' ss		= concat(separate'(s', ss))
-    and separate'(s', nil)	= nil
-      | separate'(s', s::nil)	= s::nil
-      | separate'(s', s::ss)	= s::s'::separate'(s', ss)
+    fun concatWith s' ss	= concat(concatWith'(s', ss))
+    and concatWith'(s', nil)	= nil
+      | concatWith'(s', s::nil)	= s::nil
+      | concatWith'(s', s::ss)	= s::s'::concatWith'(s', ss)
 
     fun toWide s		= s					(**)
     fun fromWide s		= s						(**)
