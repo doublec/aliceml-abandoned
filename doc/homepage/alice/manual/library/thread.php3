@@ -1,6 +1,5 @@
 <?php include("macros.php3"); ?>
-<?php heading("The <TT>Thread</TT> structure",
-	      "The <TT>Thread</TT> structure") ?>
+<?php heading("The Thread structure", "The <TT>Thread</TT> structure") ?>
 
 <?php section("synopsis", "synopsis") ?>
 
