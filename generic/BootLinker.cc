@@ -459,7 +459,7 @@ void BootLinker::Init(char *home, prim_table *builtins) {
   componentTable = HashTable::New(HashTable::BLOCK_KEY,
 				  INITIAL_TABLE_SIZE)->ToWord();
   RootSet::Add(componentTable);
-  keyQueue = Queue::New(19)->ToWord();
+  keyQueue = Queue::New(135)->ToWord(); // to be done
   RootSet::Add(keyQueue);
   numberOfEntries = 0;
   aliceHome = home;

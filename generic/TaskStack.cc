@@ -106,6 +106,15 @@ void TaskStack::Dump(word x) {
   PerformDump(x, 0, 0);
 }
 
+void TaskStack::DumpTaskStack() {
+  u_int size = GetStackSize();
+  for (u_int i = size; i--;) {
+    word frame = GetAbsoluteArg(i);
+    Interpreter *interpreter = StackFrame::FromWord(frame)->GetInterpreter();
+    interpreter->DumpFrame(frame);
+  }
+}
+
 // Empty Interpreter
 class EmptyTaskInterpreter : public Interpreter {
 public:

@@ -27,6 +27,7 @@ public:
   typedef Interpreter::Result (*function)(word, TaskStack *);
   // Primitive Function
   static word MakeFunction(function value, u_int arity);
+  static word MakeClosure(function value, u_int arity);
 };
 
 #endif

@@ -116,3 +116,8 @@ word Primitive::MakeFunction(Primitive::function value, u_int arity) {
     ConcreteCode::New(new PrimitiveInterpreter(value, arity, 0), 0);
   return concreteCode->ToWord();
 }
+
+word Primitive::MakeClosure(Primitive::function value, u_int arity) {
+  word concreteCode = MakeFunction(value, arity);
+  return Closure::New(concreteCode, 0)->ToWord();
+}

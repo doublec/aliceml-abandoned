@@ -58,7 +58,8 @@ UNSAFESSRCS = UnsafeMkRefMap.cc \
               UnsafeReflect.cc \
               UnsafeIO.cc \
               UnsafeComponent.cc \
-              UnsafeOS.cc
+              UnsafeOS.cc \
+              UnsafeConfig.cc
 
 SRCS = $(GENERICSRCS) \
        $(PRIMITIVESSRCS) \
