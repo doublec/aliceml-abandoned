@@ -15,9 +15,9 @@ import structure Gdk           from "x-alice:/lib/gtk/Gdk"
 import structure GtkCanvas     from "x-alice:/lib/gtk/GtkCanvas"
 import functor   MkRedBlackMap from "x-alice:/lib/data/MkRedBlackMap"
 import structure Inspector     from "x-alice:/lib/tools/Inspector"
-
+(*
 import structure GtkBuilder    from "../GtkBuilder"
-
+*)
 import structure Protocol      from "../../common/Protocol"
 import structure Color         from "../../common/Color"
 import structure Pos           from "../../common/Pos"
@@ -412,7 +412,7 @@ struct
 	end
 
 end
-
+(*
 fun testfield () =
     let
 
@@ -460,3 +460,4 @@ fun test () =
 
 val _ = test ()
 
+*)
