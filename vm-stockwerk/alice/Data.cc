@@ -65,7 +65,7 @@ static Transform *MakeConstructorTransform(String *name, word key) {
   return Transform::New(transformName, tuple->ToWord());
 }
 
-Constructor *Constructor::New(String *name, Block *guid) {
+Constructor *Constructor::New(String *name, ::Block *guid) {
   Assert(guid != INVALID_POINTER);
   ChunkMap *constructorMap = ChunkMap::FromWordDirect(wConstructorMap);
   word wKey = guid->ToWord();

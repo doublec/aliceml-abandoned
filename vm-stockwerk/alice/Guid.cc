@@ -14,15 +14,15 @@
 #pragma implementation "alice/Guid.hh"
 #endif
 
+#include <cstring>
+#include <cstdlib>
 #if defined(__MINGW32__) || defined(_MSC_VER)
 #include <windows.h>
 #include <process.h>
 #else
 #include <sys/times.h>
-#endif
-
 #include <unistd.h>
-#include <cstdlib>
+#endif
 #include <time.h>
 
 #include "generic/RootSet.hh"
