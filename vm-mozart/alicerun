@@ -21,7 +21,7 @@ case `uname` in
 	;;
 esac
 
-ALICE_LOAD=pattern=x-oz:'?{x}'=x-oz:'?{x}'${SEP}pattern='?{x}'='?{x}.ozf'${SEP}pattern='?{x}'='?{x}'${SEP}pattern=x-alice:/'?{x}'=$STOCKHOME/'?{x}'.ozf${SEP}pattern=x-alice:/'?{x}'=$STOCKHOME/'?{x}'
+ALICE_LOAD=pattern=x-oz:'?{x}'=x-oz\\:'?{x}'${SEP}pattern='?{x}'='?{x}.ozf'${SEP}pattern='?{x}'='?{x}'${SEP}pattern=x-alice:/'?{x}'=$STOCKHOME/'?{x}'.ozf${SEP}pattern=x-alice:/'?{x}'=$STOCKHOME/'?{x}'
 
 OZ_LOAD=$ALICE_LOAD${SEP}$OZ_LOAD
 
