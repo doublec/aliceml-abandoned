@@ -233,17 +233,17 @@ in
 	     case changeExtension (targetFilename, ".ozf", ".aml") of
 		 SOME sourceFilename =>
 		     raise RETURN (compileForMozart
-				  (sourceFilename, targetFilename, ""))
+				   (sourceFilename, targetFilename, ""))
 	       | NONE => ();
 	     case changeExtension (targetFilename, ".ozf", ".sml") of
 		 SOME sourceFilename =>
 		     raise RETURN (compileForMozart
-				  (sourceFilename, targetFilename, ""))
+				   (sourceFilename, targetFilename, ""))
 	       | NONE => ();
 	     case changeExtension (targetFilename, ".ozf", ".sig") of
 		 SOME sourceFilename =>
 		     raise RETURN (compileForMozart
-				  (sourceFilename, targetFilename, ""))
+				   (sourceFilename, targetFilename, ""))
 	       | NONE => ();
 	     TextIO.print ("### warning: could not locate source for " ^
 			   targetFilename ^ "\n");
