@@ -9,6 +9,7 @@ package de.uni_sb.ps.dml.runtime;
 abstract public class Function implements DMLValue {
 
     static public boolean DEBUG = false;
+
     _BUILTIN(Debug) {
 	_APPLY(val) {
 	    DEBUG=true;

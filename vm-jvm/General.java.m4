@@ -196,6 +196,7 @@ final public class General {
 		if (ex != null)
 		    throw ex;
 	    }
+	    System.out.println("Pickled "+out.objectcounter+" objects.");
 	    return Constants.dmlunit;
 	}
     }
@@ -287,9 +288,9 @@ final public class General {
 	    _REQUESTDEC(DMLValue l, args[0]);
 	    _REQUESTDEC(DMLValue r, args[1]);
 	    if (l.equals(r)) {
-		return Constants.dmltrue;
-	    } else {
 		return Constants.dmlfalse;
+	    } else {
+		return Constants.dmltrue;
 	    }
 	}
     }

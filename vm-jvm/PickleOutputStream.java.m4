@@ -14,6 +14,7 @@ final public class PickleOutputStream extends java.io.ObjectOutputStream {
 
     static Class fcn = null;
     boolean waitforbind = false;
+    int objectcounter = 0;
 
     public PickleOutputStream() throws java.io.IOException {
 	super();
@@ -47,6 +48,7 @@ final public class PickleOutputStream extends java.io.ObjectOutputStream {
     }
 
     final protected void annotateClass(Class cls) throws java.io.IOException {
+	objectcounter++;
 	// System.out.println("POS: annotateClass "+cls);
 	if (fcn.isAssignableFrom(cls.getSuperclass())) {
 	    // System.out.println("POS: annotateClass "+cls+" must be annotated");

@@ -188,7 +188,17 @@ final public class Real implements DMLValue {
     /** <code>val round : real -> Int.int </code>*/
     /** <code>val toInt : IEEEReal.rounding_mode -> real -> int </code>*/
     /** <code>val toLargeInt : IEEEReal.rounding_mode -> real -> LargeInt.int </code>*/
+    _BUILTIN(FromInt) {
+	_APPLY(val) {
+	    if (val instanceof Int) {
+		return new Real(((Int) val).value);
+	    } else {
+		_error("argument not int",val);
+	    }
+	}
+    }
     /** <code>val fromInt : int -> real </code>*/
+    _FIELD(Real,fromInt);
     /** <code>val fromLargeInt : LargeInt.int -> real </code>*/
     /** <code>val toLarge : real -> LargeReal.real </code>*/
     /** <code>val fromLarge : IEEEReal.rounding_mode -> LargeReal.real -> real </code>*/
