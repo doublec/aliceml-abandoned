@@ -10,4 +10,7 @@ signature MAIN =
     val ozifyString :		string * string -> unit
     val ozifyFile :		string * string -> unit
 
+    val ozifyStringToStream :	string * TextIO.outstream -> unit
+    val ozifyFileToStream :	string * TextIO.outstream -> unit
+
   end

@@ -23,21 +23,34 @@ structure Main :> MAIN =
 
     fun ozify name s =
 	let
+	    val decs = translate s
 	    val file = TextIO.openOut name
+	in
+	    OzifyIntermediate.output_list OzifyIntermediate.output_dec
+					  (file,decs) ;
+	    TextIO.output1 (file,#"\n") ;
+	    TextIO.closeOut file
+	end
+
+    fun ozifyToStream file s =
+	let
 	    val decs = translate s
 	in
 	    OzifyIntermediate.output_list OzifyIntermediate.output_dec
 					  (file,decs) ;
-	    TextIO.closeOut file
+	    TextIO.output1 (file,#"\n")
 	end
 
-    val parseString	= processString parse
-    val parseFile	= processFile parse
+    val parseString		= processString parse
+    val parseFile		= processFile parse
 
-    val translateString	= processString translate
-    val translateFile	= processFile translate
+    val translateString		= processString translate
+    val translateFile		= processFile translate
 
-    fun ozifyString(s,f)= processString (ozify f) s
-    fun ozifyFile(s,f)	= processFile (ozify f) s
+    fun ozifyString(s,f)	= processString (ozify f) s
+    fun ozifyFile(s,f)		= processFile (ozify f) s
+
+    fun ozifyStringToStream(s,f)= processString (ozifyToStream f) s
+    fun ozifyFileToStream(s,f)	= processFile (ozifyToStream f) s
 
   end
