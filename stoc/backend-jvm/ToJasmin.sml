@@ -183,7 +183,10 @@ structure ToJasmin =
 	      | instructionToJasmin (Catch(cn,from,to,use),_) =
 		".catch "^cn^" from "^from^" to "^to^" using "^use
 	      | instructionToJasmin (Checkcast cn,_) = "checkcast "^cn
-	      | instructionToJasmin (Comment c,_) = "\t; "^c
+	      | instructionToJasmin (Comment c,_) =
+		if !DEBUG>=1
+		    then "\t; "^c
+		else ""
 	      | instructionToJasmin (Dup,_) = "dup"
 	      | instructionToJasmin (Fconst i,_) =
 		if i=0 then
@@ -266,11 +269,13 @@ structure ToJasmin =
 				   "default: "^label
 			     end
 	      | instructionToJasmin (Var (number', name', descriptor', from', to'), isStatic) =
-			     ".var "^
-			     (Int.toString
-			      (if isStatic then number'-1 else number'))
-			     ^" is "^name'^" "^(desclist2string descriptor')^
-			     " from "^from'^" to "^to'
+			     if (!DEBUG >= 1) then
+				 ".var "^
+				 (Int.toString
+				  (if isStatic then number'-1 else number'))
+				 ^" is "^name'^" "^(desclist2string descriptor')^
+				 " from "^from'^" to "^to'
+			     else ""
 
 	in
 	    fun instructionsToJasmin (insts, need, max, staticapply, ziel) =
@@ -292,9 +297,11 @@ structure ToJasmin =
 			      | _ => ((if noStack i
 					   then ()
 				       else
-					   (TextIO.output (ziel,"\t\t.line "^line());
-					    TextIO.output (ziel,"\t; Stack: "^Int.toString need^
-							   " Max: "^Int.toString max^"\n")));
+					   (if !DEBUG>=1
+						then (TextIO.output (ziel,"\t\t.line "^line());
+						      TextIO.output (ziel,"\t; Stack: "^Int.toString need^
+								     " Max: "^Int.toString max^"\n"))
+					    else ()));
 					   TextIO.output (ziel,instructionToJasmin (i, staticapply)^"\n");
 					   (if nd<=0 then
 						recurse (is, nd+need, max)
