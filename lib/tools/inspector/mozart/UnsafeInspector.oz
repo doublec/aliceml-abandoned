@@ -217,12 +217,14 @@ define
       Widths = widths('TUPLE':             {NewCell DefaultWidths}
 		      'RECORD':            {NewCell DefaultWidths}
 		      'LIST':              {NewCell DefaultWidths}
+		      'REFERENCE':         {NewCell DefaultWidths}
 		      'CONSTRUCTED_VALUE': {NewCell DefaultWidths}
 		      'VECTOR':            {NewCell DefaultWidths})
 
       Depths = depths('TUPLE':             {NewCell DefaultDepths}
 		      'RECORD':            {NewCell DefaultDepths}
 		      'LIST':              {NewCell DefaultDepths}
+		      'REFERENCE':         {NewCell DefaultDepths}
 		      'CONSTRUCTED_VALUE': {NewCell DefaultDepths}
 		      'VECTOR':            {NewCell DefaultDepths})
 
