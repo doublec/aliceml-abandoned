@@ -24,18 +24,16 @@ void AssertOutline(const char *file, int line, const char *message) {
 class MyFinalization : public Finalization {
 public:
   MyFinalization() {}
-  ~MyFinalization() {}
+  virtual ~MyFinalization() {}
 
   void Finalize(word value) {
     std::printf("MyFinalization::Finalize enter\n");
     Block *p = Store::WordToBlock(value);
-    if (p->GetLabel() == WEAK_DICT_LABEL) {
+    if (p->GetLabel() == WEAK_DICT_LABEL)
       std::printf("Got WK Dictionary\n");
-    }
-    else {
+    else
       std::printf("Got something different\n");
-    }
-    std::printf("MyFinalizatio::Finalize leave\n");
+    std::printf("MyFinalization::Finalize leave\n");
     std::fflush(stdout);
   }
 };
@@ -48,10 +46,10 @@ int main(void) {
     memLimits[i] = (i + 1) * STORE_MEMCHUNK_SIZE;
   }
   Store::InitStore(memLimits, 75, 20);
-  Store::RegisterFinalizer(new MyFinalization());
+  MyFinalization *f = new MyFinalization();
   std::printf("Allocating WDs...\n");
-  d1 = WeakDictionary::New(10);
-  d2 = WeakDictionary::New(10);
+  d1 = WeakDictionary::New(10, f);
+  d2 = WeakDictionary::New(10, f);
   std::printf("done\n");
   std::printf("Inserting Items...\n");
   for (u_int i = 0; i < 1; i++) {
@@ -83,7 +81,7 @@ int main(void) {
     std::printf("Finalization succeeded\n");
   }
   std::printf("Forcing GC again...\n");
-  Store::ForceGC(root, 1);
+  Store::ForceGC(root, 0);
   std::printf("done\n");
   Store::MemStat();
   std::printf("It Succeeded\n");

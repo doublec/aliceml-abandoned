@@ -60,10 +60,12 @@ int main(void) {
   //  p->InitArg(3, Store::AllocBlock((BlockLabel) 0, 1024)->ToWord());
 
   root = p->ToWord();
-  if (Store::NeedGC()) {
-    std::printf("GCing..\n");
-    Store::DoGC(root);
-  }
+//    if (Store::NeedGC()) {
+//      std::printf("GCing..\n");
+//      Store::DoGC(root);
+//    }
+  std::printf("GCing..\n");
+  //  Store::ForceGC(root, 0);
 
   for (u_int i = 0; i <= COUNT_LIMIT; i++) {
     Stack *s = Stack::FromWord(Store::WordToBlock(root)->GetArg(0));
@@ -72,10 +74,12 @@ int main(void) {
     s->SlowPush(Store::IntToWord(i));
   }
 
-  if (Store::NeedGC()) {
-    std::printf("GCing..\n");
-    Store::DoGC(root);
-  }
+//    if (Store::NeedGC()) {
+//      std::printf("GCing..\n");
+//      Store::DoGC(root);
+//    }
+  std::printf("GCing..\n");
+  //Store::ForceGC(root, 0);
 
   for (u_int i = 0; i <= COUNT_LIMIT; i++) {
     Stack *s = Stack::FromWord(Store::WordToBlock(root)->GetArg(0));
@@ -83,10 +87,12 @@ int main(void) {
     std::printf("Popped: %d\n", v);
   }
 
-  if (Store::NeedGC()) {
-    std::printf("GCing..\n");
-    Store::DoGC(root);
-  }
+//    if (Store::NeedGC()) {
+//      std::printf("GCing..\n");
+//      Store::DoGC(root);
+//    }
+  std::printf("GCing..\n");
+  //Store::ForceGC(root, 0);
 
   if (Store::WordToBlock(root)->GetLabel() == (BlockLabel) 0) {
     std::printf("It Succeeded\n");
