@@ -422,13 +422,24 @@ public:
 };
 
 // to be done: check compliance of java spec with c spec
+class JavaFloat {
+public:
+  static word ToWord(double value) {
+    return Float::New(value)->ToWord();
+  }
+  static Float *FromWord(word value) {
+    return Float::FromWordDirect(value);
+  }
+};
+
+// to be done: check compliance of java spec with c spec
 class JavaDouble {
 public:
   static word ToWord(double value) {
     return Double::New(value)->ToWord();
   }
-  static double FromWord(word value) {
-    return Double::FromWordDirect(value)->GetValue();
+  static Double *FromWord(word value) {
+    return Double::FromWordDirect(value);
   }
 };
 
@@ -449,14 +460,14 @@ public:
   | (code[pc + 3] << 8) | code[pc + 4])
 
 #define FILL_SLOT() \
-  frame->Push(Store::IntToWord(0))
+  frame->Push(Store::IntToWord(0));
 
 #define DROP_SLOT() \
   frame->Pop();
 
 #define DECLARE_DOUBLE(v) \
   DROP_SLOT(); \
-  double v = JavaDouble::FromWord(frame->Pop())
+  double v = JavaDouble::FromWord(frame->Pop())->GetValue();
 
 #define PUSH_DOUBLE(v) \
   frame->Push(JavaDouble::ToWord(v)); \
@@ -486,6 +497,40 @@ public:
   ThrowWorker::PushFrame(ThrowWorker::exn, JavaString::New(mesg)); \
   Scheduler::nArgs = 0; \
   return Worker::CONTINUE; \
+}
+
+#define XASTORE(name, op, value) { \
+  JavaDebug::Print(name); \
+  u_int index      = Store::DirectWordToInt(frame->Pop()); \
+  BaseArray *array = BaseArray::FromWord(frame->Pop()); \
+  if (array != INVALID_POINTER) { \
+    if (index < array->GetLength()) \
+      array->op(index, value); \
+    else { \
+      RAISE_VM_EXCEPTION(ArrayIndexOutOfBoundsException, name); \
+    } \
+  } \
+  else { \
+    RAISE_VM_EXCEPTION(NullPointerException, name); \
+  } \
+  pc += 1; \
+}
+
+#define XALOAD(name, op, value) { \
+  JavaDebug::Print(name); \
+  u_int index      = JavaInt::FromWord(frame->Pop()); \
+  BaseArray *array = BaseArray::FromWord(frame->Pop()); \
+  if (array != INVALID_POINTER) { \
+    if (index < array->GetLength()) \
+      value = array->op(index); \
+    else { \
+      RAISE_VM_EXCEPTION(ArrayIndexOutOfBoundsException, name); \
+    } \
+  } \
+  else { \
+    RAISE_VM_EXCEPTION(NullPointerException, name); \
+  } \
+  pc += 1; \
 }
 
 class JavaDebug {
@@ -572,28 +617,55 @@ Worker::Result ByteCodeInterpreter::Run() {
       }
       break;
     case Instr::BALOAD:
+      {
+	// to be done: distinguish byte and boolean
+	u_int value;
+	XALOAD("BALOAD", LoadByte, value);
+	frame->Push(JavaInt::ToWord(value));
+      }
+      break;
     case Instr::CALOAD:
-    case Instr::DALOAD: // reals are boxed
-    case Instr::FALOAD: // reals are boxed
+      {
+	u_int value;
+	XALOAD("CALOAD", LoadChar, value);
+	frame->Push(JavaInt::ToWord(value));
+      }
+      break;
+    case Instr::FALOAD:
+      {
+	Float *value;
+	XALOAD("FALOAD", LoadFloat, value);
+	frame->Push(value->ToWord());
+      }
+      break;
     case Instr::IALOAD:
-    case Instr::LALOAD:
+      {
+	u_int value;
+	XALOAD("IALOAD", LoadInt, value);
+	frame->Push(JavaInt::ToWord(value));
+      }
+      break;
     case Instr::SALOAD:
       {
-	JavaDebug::Print("(C|D|F|I|L|S)ALOAD");
-	u_int index      = JavaInt::FromWord(frame->Pop());
-	BaseArray *array = BaseArray::FromWord(frame->Pop());
-	if (array != INVALID_POINTER) {
-	  if (index < array->GetLength())
-	    frame->Push(array->Load(index)); //--** do not use
-	  else {
-	    RAISE_VM_EXCEPTION(ArrayIndexOutOfBoundsException,
-			       "(C|D||F|I|L|S)ALOAD");
-	  }
-	}
-	else {
-	  RAISE_VM_EXCEPTION(NullPointerException, "(C|D||F|I|L|S)ALOAD");
-	}
-	pc += 1;
+	u_int value;
+	XALOAD("SALOAD", LoadShort, value);
+	frame->Push(JavaInt::ToWord(value));
+      }
+      break;
+    case Instr::LALOAD:
+      {
+	JavaLong *value;
+	XALOAD("LALOAD", LoadLong, value);
+	frame->Push(value->ToWord());
+	FILL_SLOT();
+      }
+      break;
+    case Instr::DALOAD:
+      {
+	Double *value;
+	XALOAD("DALOAD", LoadDouble, value);
+	frame->Push(value->ToWord());
+	FILL_SLOT();
       }
       break;
     case Instr::AASTORE:
@@ -626,29 +698,48 @@ Worker::Result ByteCodeInterpreter::Run() {
       }
       break;
     case Instr::BASTORE:
+      {
+	// to be done: distinguish byte and boolean
+	u_int value = JavaInt::FromWord(frame->Pop());
+	XASTORE("BASTORE", StoreByte, value);
+      }
+      break;
     case Instr::CASTORE:
-    case Instr::DASTORE: // reals are boxed
-    case Instr::FASTORE: // reals are boxed
+      {
+	u_int value = JavaInt::FromWord(frame->Pop());
+	XASTORE("CASTORE", StoreChar, value);
+      }
+      break;
+    case Instr::FASTORE:
+      {
+	Float *value = JavaFloat::FromWord(frame->Pop());
+	XASTORE("FASTORE", StoreFloat, value);
+      }
+      break;
     case Instr::IASTORE:
-    case Instr::LASTORE:
+      {
+	u_int value = JavaInt::FromWord(frame->Pop());
+	XASTORE("IASTORE", StoreInt, value);
+      }
+      break;
     case Instr::SASTORE:
       {
-	JavaDebug::Print("(C|D|F|I|L|S)ASTORE");
-	word value       = frame->Pop();
-	u_int index      = Store::DirectWordToInt(frame->Pop());
-	BaseArray *array = BaseArray::FromWord(frame->Pop());
-	if (array != INVALID_POINTER) {
-	  if (index < array->GetLength())
-	    array->Store(index, value); //--** do not use
-	  else {
-	    RAISE_VM_EXCEPTION(ArrayIndexOutOfBoundsException,
-			       "(C|D|F|I|L|S)ASTORE");
-	  }
-	}
-	else {
-	  RAISE_VM_EXCEPTION(NullPointerException, "(C|D|F|I|L|S)ASTORE");
-	}
-	pc += 1;
+	u_int value = JavaInt::FromWord(frame->Pop());
+	XASTORE("SASTORE", StoreShort, value);
+      }
+      break;
+    case Instr::DASTORE:
+      {
+	frame->Pop(); // Remove Fillslot
+	Double *value = JavaDouble::FromWord(frame->Pop());
+	XASTORE("DASTORE", StoreDouble, value);
+      }
+      break;
+    case Instr::LASTORE:
+      {
+	frame->Pop(); // Remove Fillslot
+	JavaLong *value = JavaLong::FromWord(frame->Pop());
+	XASTORE("LASTORE", StoreLong, value);
       }
       break;
     case Instr::ACONST_NULL:
@@ -1111,17 +1202,20 @@ Worker::Result ByteCodeInterpreter::Run() {
       break;
     case Instr::FCONST_0:
       {
-	Error("not implemented");
+	frame->Push(Float::New(0.0)->ToWord());
+	pc += 1;
       }
       break;
     case Instr::FCONST_1:
       {
-	Error("not implemented");
+	frame->Push(Float::New(1.0)->ToWord());
+	pc += 1;
       }
       break;
     case Instr::FCONST_2:
       {
-	Error("not implemented");
+	frame->Push(Float::New(2.0)->ToWord());
+	pc += 1;
       }
       break;
     case Instr::FDIV:
