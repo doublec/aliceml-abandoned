@@ -6,9 +6,9 @@
 # This is a temporary hack.
 
 cvs:
+	libtoolize --ltdl
 	aclocal -I .
 	autoconf
-	libtoolize --ltdl
 	automake --add-missing
 
 .PHONY: cvs
