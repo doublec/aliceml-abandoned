@@ -18,6 +18,11 @@
 
 #include <cstring>
 
+typedef enum {
+  STACK,
+  STACKARRAY
+} HelperLabel;
+
 class Stack : private Block {
 private:
   static const u_int SIZE    = 2;
