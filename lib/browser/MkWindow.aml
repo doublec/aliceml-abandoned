@@ -169,11 +169,6 @@ fun setSelectionMenuSensitive (bar,sensitive) =
 	     ; setSensitive(selection_menu,sensitive))
 	end
 
-val window' = Gtk.windowNew Gtk.WINDOW_TOPLEVEL
-
-val alive' = ref true
-
-fun Delete _ = (Gtk.widgetDestroy(window');alive':= false)
 
 val selection = ref NONE
     
@@ -230,22 +225,13 @@ fun scrollY (y,scrolled,vadj) =
 		   reinspecthandler = r} = 
 	let 
 	    val reinspect_active = not(Helper.getDesc(n) = Types.INTERPUNCT)
-	in
-	case n of
-	Types.RelNode _ => ()
-      | Types.RelRefNode _ => ()
-      | _ =>
-	serve' (fn () => 
-	       (createMenu
-		(PopupObj
-		 [MenuObj{title = "Explore Tree",
-			  items = [MenuObj
-				   {title = "width",
-				    items = 
-				    [EntryObj(LABEL("-5"),
+	    val width_item_list = [EntryObj(LABEL("-5"),
 					      [Handler("activate",w(~5))],
 						       true),
-				     EntryObj(LABEL("-3"),
+				   EntryObj(LABEL("-4"),
+					    [Handler("activate",w(~4))],
+					    true),
+				   EntryObj(LABEL("-3"),
 					      [Handler("activate",w(~3))],
 					         true),
 				     EntryObj(LABEL("-2"),
@@ -274,7 +260,19 @@ fun scrollY (y,scrolled,vadj) =
 				     EntryObj(LABEL("+10"),
 					      [Handler("activate",w(10))],
 					      true) 
-				     ],
+				     ]
+	in
+	case n of
+	Types.RelNode _ => ()
+      | Types.RelRefNode _ => ()
+      | _ =>
+	serve' (fn () => 
+	       (createMenu
+		(PopupObj
+		 [MenuObj{title = "Explore Tree",
+			  items = [MenuObj
+				   {title = "width",
+				    items = width_item_list,
 				    sensitive = true},
 				   MenuObj
 				   {title = "depth",
@@ -315,9 +313,11 @@ struct
 
     type tag = Gtk.object
 
-    val window = window'
-  
-    val alive = alive'
+    val window = Gtk.windowNew Gtk.WINDOW_TOPLEVEL
+	
+    val alive = ref true
+	
+    fun Delete _ = (Gtk.widgetDestroy(window);alive:= false)
 
     val handlers = Array.array(5,(fn (n,i) => ()))
 
@@ -415,9 +415,12 @@ struct
 	 val font_height = Services.fontHeight()  
      in
 	case event of
-	  Gdk.GDK_BUTTON_PRESS({button = 1, ...} as r) => 
+	  Gdk.GDK_BUTTON_PRESS({button = b, ...} as r) => 
 		    let 
-			val (x,y) = calcAbsoluteMousePointerPosition(#x(r),#y(r),hadj,vadj)
+			val (x,y) = calcAbsoluteMousePointerPosition(#x(r),
+								     #y(r),
+								     hadj,
+								     vadj)
 			val node = 
 			    NodeSearch.search(Dictionaries.dict,x,y)      
 		    in 
@@ -438,37 +441,35 @@ struct
 				    (GtkCanvas.itemLowerToBottom(re)
 				    ;destroySelectionMarkings()
 				    ;selection := SOME (n,re)
-				    ;setSelectionMenuSensitive(bar,true))
+				    ;setSelectionMenuSensitive(bar,true)
+				    ; case b of
+				       1 => ()
+				    |  3 => 
+					   (makePopup({node = n,
+				    widthhandler = handleWidth(n), 
+				    depthhandler = handleDepth(n), 
+				    reinspecthandler = handleReinspect(n)})
+					    ;())
+				    | _   => () )
 				end
 			  | NONE => ( setSelectionMenuSensitive(bar,false)
 				     ; destroySelectionMarkings()
 					 ; selection := NONE))
 		    end
-	| Gdk.GDK_BUTTON_PRESS({button = 3, ...} as r) =>
-		    let
-			val (x,y) = calcAbsoluteMousePointerPosition(#x(r),#y(r),hadj,vadj)
-			val node = 
-			    NodeSearch.search(Dictionaries.dict,x,y)
-		    in
-		    (case node of 
-		     SOME(n) 
-		     =>( makePopup({node = n,
-				    widthhandler = handleWidth(n), 
-				    depthhandler = handleDepth(n), 
-				    reinspecthandler = handleReinspect(n)})
-				   ; ())
-		   | NONE => ())
-		    end 
         | _ => ()
      end)
 
      fun handleWindowEvent [Gdk.EVENT(event)] = 
 	 serve (fn () => 
 		case event of  
-		    Gdk.GDK_KEY_PRESS({keyval = 65361,...}) => scrollX(~10.0,scrolled,hadj) 
-		  | Gdk.GDK_KEY_PRESS({keyval = 65363,...}) => scrollX(10.0,scrolled,hadj) 
-		  | Gdk.GDK_KEY_PRESS({keyval = 65362,...}) => scrollY(~10.0,scrolled,vadj)    
-		  | Gdk.GDK_KEY_PRESS({keyval = 65364,...}) => scrollY(10.0,scrolled,vadj)
+		    Gdk.GDK_KEY_PRESS({keyval = 65361,...}) => 
+			scrollX(~10.0,scrolled,hadj) 
+		  | Gdk.GDK_KEY_PRESS({keyval = 65363,...}) => 
+			scrollX(10.0,scrolled,hadj) 
+		  | Gdk.GDK_KEY_PRESS({keyval = 65362,...}) => 
+			scrollY(~10.0,scrolled,vadj)    
+		  | Gdk.GDK_KEY_PRESS({keyval = 65364,...}) => 
+			scrollY(10.0,scrolled,vadj)
 		  | _ => () )
 
      val _ = (Gtk.windowSetTitle (window, "Alice Browser V 0.2")
