@@ -261,7 +261,9 @@ structure ToJasmin =
 			val old = lookup (!fromPos, stamp')
 		    in
 			if old = ~1 orelse old > pos
-			    then StampHash.insert (!fromPos, stamp', pos)
+			    then (if !VERBOSE >=3 then print ("define "^Stamp.toString stamp'^
+							      " at "^Int.toString pos^"\n") else ();
+				  StampHash.insert (!fromPos, stamp', pos))
 			else ()
 		    end
 
@@ -272,7 +274,10 @@ structure ToJasmin =
 			val old = lookup (!toPos, ori)
 		    in
 			if old < pos
-			    then StampHash.insert(!toPos, ori, pos)
+			    then (if !VERBOSE >=3 then print ("use "^Stamp.toString stamp'^
+							      " (ori: "^Stamp.toString ori^") at "^
+							      Int.toString pos^"\n") else ();
+				  StampHash.insert(!toPos, ori, pos))
 			else ()
 		    end
 
@@ -354,10 +359,17 @@ structure ToJasmin =
 			    in
 				if f' > regto andalso t' > regfrom andalso t' > regto
 				    then
-					StampHash.insert (!toPos, stamp', t')
+					(if !VERBOSE >= 3 then
+					     print ("setting toPos "^Stamp.toString stamp'^
+						    " to "^Int.toString t'^"\n") else ();
+					StampHash.insert (!toPos, stamp', t'))
 				else if f' > regfrom andalso f' <regto
 				    andalso t' < regfrom
-					 then StampHash.insert (!fromPos, genuineReg, f')
+				    then
+					(if !VERBOSE >= 3 then
+					     print ("setting fromPos "^Stamp.toString stamp'^
+						    " to "^Int.toString t'^"\n") else ();
+					 StampHash.insert (!fromPos, genuineReg, t'))
 				     else ()
 			    end
 		    in
