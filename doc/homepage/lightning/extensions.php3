@@ -1,6 +1,6 @@
 <?php include("macros.php3"); ?>
 
-<?php heading("Oz for Lightning - SML Core Language Extensions",
+<?php heading("Oz for NGWS - SML Core Language Extensions",
 		"core <BR> language <BR> extensions") ?>
 
 

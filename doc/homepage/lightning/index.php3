@@ -1,15 +1,14 @@
 <?php include("macros.php3"); ?>
 
-<?php heading("Oz for Lightning", "\"Alice\"") ?>
+<?php heading("Oz for NGWS", "\"Alice\"") ?>
 
 
 
 <?php section("overview", "overview") ?>
 
   <P>
-    Our Lightning prototype implements a statically typed dialect of
-    <A href="http://www.mozart-oz.org/">Oz</A> named
-    <I>Alice</I>.
+    Our NGWS prototype implements a statically typed dialect of
+    <A href="http://www.mozart-oz.org/">Oz</A> named <I>Alice</I>.
   </P>
 
   <P>
@@ -33,16 +32,15 @@
   </UL>
 
   <P>
-    This prototype has been developed within
-    <A href="https://www.research.microsoft.com/Project7/project7.htm">Project
-    7</A>, funded by
+    This prototype has been developed within <I>Project&nbsp;7</I>, funded by
     <A href="http://www.research.microsoft.com/">Microsoft Research</A>.
   </P>
 
   <P>
     Currently, the system uses
     <A href="http://cm.bell-labs.com/cm/cs/what/smlnj/">SML/NJ</A>
-    to build itself.
+    to build itself.  The SML/NJ runtime system is therefore included
+    in this package.
   </P>
 
 

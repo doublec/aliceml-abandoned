@@ -1,6 +1,6 @@
 <?php include("macros.php3"); ?>
 
-<?php heading("Oz for Lightning - Futures", "futures") ?>
+<?php heading("Oz for NGWS - Futures", "futures") ?>
 
 
 

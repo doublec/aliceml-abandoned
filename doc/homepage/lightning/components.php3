@@ -1,6 +1,6 @@
 <?php include("macros.php3"); ?>
 
-<?php heading("Oz for Lightning - Components", "components") ?>
+<?php heading("Oz for NGWS - Components", "components") ?>
 
 
 
@@ -67,7 +67,7 @@
   </P>
 
   <NOTE>
-    Alice for Lightning allows linking with components not written in Alice,
+    Alice for NGWS allows linking with components not written in Alice,
     to support <A href="interop.php3">interoperability</A>.
   </NOTE>
 
@@ -106,11 +106,12 @@
   </NOTE></P>
 
   <P><NOTE>
-    Note 2: The Lightning prototype currently only supports a very limited
+    Note 2: The NGWS prototype currently only supports a very limited
     set of URLs. A component URL must be either
     <UL>
-      <LI> a file name (with relative paths), or </LI>
-      <LI> a URL of the form <TT>"x-alice:library.dll"</TT>.
+      <LI> a file name (maybe with relative path), or </LI>
+      <LI> a URL of the form <TT>"x-alice:</TT><I>&lt;library&gt;</I><TT
+	   >.dll"</TT>.
     </UL>
     File URL's may optionally be prefixed by <TT>file:</TT>.
   </NOTE></P>

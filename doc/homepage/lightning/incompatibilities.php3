@@ -1,6 +1,6 @@
 <?php include("macros.php3"); ?>
 
-<?php heading("Oz for Lightning - SML Incompatibilities",
+<?php heading("Oz for NGWS - SML Incompatibilities",
 		"incompati <BR> bilities <BR> with SML") ?>
 
 
