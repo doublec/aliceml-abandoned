@@ -11,6 +11,7 @@ INSTALLFILES_0 = \
 INSTALLFILES_OPERETTE2_0 = \
 	bg.gif style.css index.php3 macros.php3 menu.php3 laziness.php3 \
 	futures.php3 threads.php3 components.php3 modules.php3 \
+	packages.php3 pickling.php3 constraints.php3 inspector.php3 gtk.php3 \
 	extensions.php3 incompatibilities.php3 usage.php3 libraries.php3 \
 	interop.php3 examples.php3
 INSTALLFILES_OPERETTE2_EXAMPLES_0 = \
