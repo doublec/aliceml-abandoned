@@ -113,6 +113,14 @@ val direct =
       scan360for (marker validmarker) nop
     )
 
+val directBack =
+    sense2 here (marker validmarker) ifyes (
+      switch (List.tabulate(6,fn i => turnHome ((i+3) mod 6)))
+    ) ifnot (
+      switch (List.tabulate(6,markWithState)) ++
+      scan360for (marker validmarker) nop
+    )
+
 val markTrail =
     sense here (marker validmarker) ifnot (
       switch (List.tabulate(6,markWithState))
@@ -121,6 +129,8 @@ val markTrail =
 fun head n =
     switch (List.tabulate(6,turnTo n))
 end
+
+val turnSomewhere = flip2 2 ifyes (turn left) ifnot (turn right)
 
 fun domove otherwise evadeaction =
     letlabel (fn exit =>
@@ -147,28 +157,19 @@ fun gohome goaction homeaction =
 	letlabel (fn tryagain =>
 	    label tryagain ++
 	    domove otherwise (
-		flip 6 ifyes (turn left) ++
+		flip 6 ifyes turnSomewhere ++
 		goto tryagain
 	    )
 	) ++
 	goaction
     )
 
-(* val fetch_food = *)
-(*     loop ( *)
-(* 	turnto (marker foodmarker) ifnot ( *)
-(* 	    turnto food ifnot nop *)
-(* 	) ++ *)
-(* 	domove otherwise nop *)
-(*     ) *)
-
-
-fun deliver_food worker =
+fun deliver_food follow_food_marks =
     gohome (mark foodmarker)
-           (sense ahead home ifyes (domove otherwise nop) ++
-            sense ahead home ifyes (domove otherwise nop) ++
-            sense ahead home ifyes (domove otherwise nop) ++
-            drop ++ worker)
+           (sense ahead home ifyes (mark foodmarker ++ domove otherwise nop) ++
+            sense ahead home ifyes (mark foodmarker ++ domove otherwise nop) ++
+            sense ahead home ifyes (mark foodmarker ++ domove otherwise nop) ++
+            drop ++ times 3 (turn right) ++ follow_food_marks)
 
 (* Pioneer, build straight streets *)
 (* should only be some ants on the edge of the hill *)
@@ -228,51 +229,85 @@ fun unroll_trail worker =
     gohome (unmark foodmarker)
            worker
 
-fun follow_food_marks worker =
+fun follow_food_marks worker explorer collector =
     loop (
-      direct ++
-      turn right ++ turn right ++ turn right ++
-      myturnto (turn left) (turn left)
-               (turn right) (turn right) food ifyes worker ++
-      myturnto (turn left) (turn left)
-               (turn right) (turn right) (marker foodmarker) ifnot
+      directBack ++
+      turnto food ifyes worker ++
+      turnto (marker foodmarker) ifnot
                (
-                 turn right ++ turn right ++ turn right ++
-                 myturnto (turn left) (turn left)
-                          (turn right) (turn right) food ifyes worker ++
-                 myturnto (turn left) (turn left)
-                          (turn right) (turn right) (marker foodmarker)
-                          ifnot (unroll_trail worker)
+                 turn right ++ turn right ++
+                 turnto (marker foodmarker) ifnot (
+                   times 3 (turn right) ++
+                   turnto (marker foodmarker) ifnot (
+                     unroll_trail explorer
+                   )
+                 ) ++
+                 turnto food ifyes worker ++
+                 explorer
                ) ++
-      domove otherwise (turn left ++
-                        domove otherwise
-                        (flip 4 ifyes (turn right ++ turn right))
-                        ++ worker)
+      domove otherwise (
+          flip2 2 ifyes (
+            turn left ++
+            domove otherwise worker ++
+            times 2 (turn right) ++
+            domove otherwise (domove otherwise explorer) ++
+            turn left
+          ) ifnot (
+            turn right ++
+            domove otherwise worker ++
+            times 2 (turn left) ++
+            domove otherwise (domove otherwise explorer) ++
+            turn right
+          )
+      )
     )
 
 fun worker (probTurn) follow_food_marks collector =
         loop (markTrail ++
               sense here home ifnot (
-              myturnto (turn left) (turn left)
-                       (turn right) (turn right) food ifyes collector ++
-              myturnto (turn left) (turn left)
-                       (turn right) (turn right) (marker foodmarker) ifyes
-                       follow_food_marks
+              turnto food ifyes collector ++
+              turnto (marker foodmarker) ifyes
+                follow_food_marks
               ) ++
               flip probTurn ifyes (turn left) ++             
               domove otherwise turnToFree
               )
 
 (* Collector, follow streets with food marker and bring food home *)
-fun collector worker =
+fun collector worker follow_food_marks =
     domove otherwise worker ++
     pick ifnot worker ++
-    deliver_food worker
+    deliver_food follow_food_marks
+
+fun lazybone explorer =
+    loop (flip 500 ifyes explorer)
+
+fun is_explorer succ =
+    sense leftahead home ifnot (turn left ++ succ) ++
+    sense ahead home ifnot succ ++
+    sense rightahead home ifnot (turn right ++ succ) ++
+    times 3 (turn right) ++
+    sense leftahead home ifnot (turn left ++ succ) ++
+    sense ahead home ifnot succ 
+
+fun specialise pioneer explorer lazybone =
+    is_explorer pioneer ++ lazybone
+(*    flip 10 ifnot lazybone ++
+    move ifyes (flip 2 ifyes pioneer ++ explorer) ++
+    turn right ++
+    move ifyes (flip 4 ifyes pioneer ++ explorer) ++
+    times 3 (turn right) ++
+    move ifyes (flip 8 ifyes pioneer ++ explorer) ++
+    lazybone*)
 
 val ant =
+    specialise (goto "pioneer") (goto "explorer") (goto "lazybone") ++
     proc "pioneer" (pioneer (goto "explorer")) ++
     proc "explorer" (explorer 10 (goto "collector") (goto "worker") ) ++
     proc "worker" (worker 10 (goto "follow_food_marks")
                   (goto "collector")) ++
-    proc "follow_food_marks" (follow_food_marks (goto "worker")) ++
-    proc "collector" (collector (goto "worker"))
+    proc "follow_food_marks" (follow_food_marks (goto "worker")
+                                                (goto "explorer")
+                                                (goto "collector")) ++
+    proc "collector" (collector (goto "worker") (goto "follow_food_marks") ) ++
+    proc "lazybone" (lazybone (goto "explorer"))
