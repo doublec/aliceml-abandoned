@@ -8,7 +8,7 @@ GLOBAL_PREFIX = /opt/alice-devel
 PREFIX = $(PWD)/install
 DEBUG = 0
 
-VERSION = 1.0.1
+VERSION = 1.1
 
 GECODEDIR = /opt/gecode
 SQLITEDIR = /opt/seam-support
