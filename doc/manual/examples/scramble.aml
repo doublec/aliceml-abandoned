@@ -18,19 +18,6 @@ import structure GtkCanvas from "x-alice:/lib/gtk/GtkCanvas"
 import structure Random    from "x-alice:/lib/utility/Random"
 
 local
-    (* A mutable matrix *)
-
-    type 'a matrix = 'a array vector
-
-    fun matrix (w, h, elem) = Vector.tabulate (w, fn _ => Array.array (h, elem))
-    fun sub (m, i, j) = Array.sub (Vector.sub (m, i), j)
-    fun update (m, i, j, elem) = Array.update (Vector.sub (m, i), j, elem)
-
-    fun fold f a n = fold' (f, a, n, 0)
-    and fold' (f, a, 0, i) = a
-      | fold' (f, a, n, i) = fold' (f, f (i, a), n-1, i+1)
-
-
     (* A simple server abstraction *)
 
     fun newServer () =
@@ -60,8 +47,7 @@ local
 			       group : Gtk.object option,
 			       pos : (int * int) ref}
     datatype board = BOARD of {canvas : GtkCanvas.object,
-			       matrix : piece matrix,
-			       w : int, h : int,
+			       matrix : piece Array2.array,
 			       spot : (int * int) ref}
 
     val pieceSize = 50
@@ -117,7 +103,7 @@ local
 
     fun toHexString i = (if i < 0x10 then "0" else "") ^ Int.fmt StringCvt.HEX i
 
-    fun pieceColor (BOARD {w, h, ...}) (x, y) =
+    fun pieceColor (w, h) (x, y) =
 	let
 	    val r      = 255 * (w - x) div w
 	    val g      = 255 * (h - y) div h
@@ -135,38 +121,29 @@ local
 
     fun moveSpot (BOARD {matrix, spot = spotPos as ref (x, y), ...}, x', y') =
 	let
-	    val spot  as PIECE {pos = pos, ...} = sub (matrix, x, y)
-	    val piece as PIECE {pos = pos', group, ...} = sub (matrix, x', y')
+	    val spot  as PIECE {pos = pos, ...} = Array2.sub (matrix, x, y)
+	    val piece as PIECE {pos = pos', group, ...} =
+						  Array2.sub (matrix, x', y')
 	    val dx = real (pieceSize * (x-x'))
 	    val dy = real (pieceSize * (y-y'))
 	in
 	    spotPos := (x', y');
 	    pos := (x', y');
 	    pos' := (x, y);
-	    update (matrix, x, y, piece);
-	    update (matrix, x', y', spot);
+	    Array2.update (matrix, x, y, piece);
+	    Array2.update (matrix, x', y', spot);
 	    GtkCanvas.itemMove (valOf group, dx, dy)
 	end
 
 
     (* Event handler for pieces *)
 
-    exception NoVictory
-
-    fun checkVictory (BOARD {matrix, w, h, ...}) =
-	(fold
-	    (fn (j, n) =>
-		fold
-		    (fn (i, n) =>
-			(checkPiece(sub (matrix, i, j), n);
-			 n+1)
-		    ) n w
-	    ) 0 h;
-	 print "You win!\n"
-	) handle NoVictory => ()
-
-    and checkPiece (PIECE {num, ...}, n) =
-	if num = n then () else raise NoVictory
+    fun checkVictory (BOARD {matrix, ...}) =
+	if Array2.alli Array2.ColMajor
+	    (fn (i, j, PIECE {num, ...}) => num = Array2.nRows matrix*j+i)
+	    {base = matrix, row = 0, col = 0, nrows = NONE, ncols = NONE}
+	then print "You win!\n"
+	else ()
 
     fun pieceHandler (board as BOARD {spot,...}) (pos, text) events =
         serve
@@ -196,31 +173,25 @@ local
 
     fun board (canvas, w, h) =
 	let
-	    val matrix  = matrix (w, h, spot)
-	    val spotPos = ref (0, 0)
-	    val board   = BOARD {canvas, w, h, matrix, spot = spotPos}
-	    val parent  = GtkCanvas.root canvas
+	    val parent = GtkCanvas.root canvas
+	    val matrix = Array2.array (w, h, spot)
+	    val board  = BOARD {canvas, matrix, spot = ref (0, 0)}
 	in
-	    fold
-		(fn (j, n) =>
-		    fold
-			(fn (i, n) =>
-			    (update (matrix, i, j,
-				     piece (parent, i, j, n,
-					    pieceColor board (i, j),
-					    pieceHandler board));
-			     n+1)
-			) n w
-		) 0 h;
+	    Array2.modifyi Array2.ColMajor
+		(fn (i, j, _) => piece (parent, i, j, w*j+i,
+					pieceColor (w, h) (i, j),
+					pieceHandler board))
+		{base = matrix, row = 0, col = 0, nrows = NONE, ncols = NONE};
 	    board
 	end
 
 
     (* Scrambling *)
 
-    fun randomMove (board as BOARD {w, h, spot = ref (x, y), ...}) =
+    fun randomMove (board as BOARD {matrix, spot = ref (x, y), ...}) =
 	let
-	    val dir = Random.int 4
+	    val (w,h) = Array2.dimensions matrix
+	    val dir   = Random.int 4
 	in
 	    if      dir = 0 andalso x > 0   then (x-1, y)
 	    else if dir = 1 andalso x < w-1 then (x+1, y)
