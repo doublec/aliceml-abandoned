@@ -12,7 +12,7 @@
 ###   $Revision$
 ### 
 
-STOC = stoc
+STOC = alicec
 STOCOPTS =
 
 ALICESOURCES = Money.aml Photo.aml
