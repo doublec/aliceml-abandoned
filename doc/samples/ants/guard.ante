@@ -1,4 +1,6 @@
-val dontknow = nop
+
+val dontknow      = nop
+val hill_diameter = 4
 
 val move_to_border =
     repeat 3 (turn left) ++
@@ -8,15 +10,30 @@ val move_to_border =
 
 val move_food_inside =
     turn right ++ turn right ++
-    repeat 5 (move ifnot nop) ++
+    times (hill_diameter div 2) (move ifnot nop) ++
     drop ++ goto "guard"
     
+val become_worker = nop
+
+val blocked =
+    try (fn fail =>
+        sense ahead foe ifyes (
+            turn right ++
+            move ifnot fail ++
+            turn left ++
+            move ifnot fail) ++
+        sense ahead friend ifyes nop) 
+    otherwise 
+        nop
+        
+
 val step =
     sense rightahead home ifnot (turn right) ++ 
     sense rightahead home ifnot (turn right) ++ 
     sense rightahead home ifnot (turn right) ++
     sense here food ifyes (pick ifnot nop ++ move_food_inside) ++
-    move ifnot dontknow    
+    sense here (marker foodmarker) ifyes become_worker ++
+    move ifnot (blocked ++ goto "guard")
 
 val ant =
     proc "guard" move_to_border ++
