@@ -4,6 +4,8 @@ import
    FS
    Search
    Inspector
+   Explorer
+   System
    Select at 'x-ozlib://duchier/cp/Select.ozf'
 export
    'Smurf$': SmurfModule
@@ -156,72 +158,84 @@ define
 	       tag(name: 'COLOR'('W')
 		   p: {MkColorProc 8}))
 
-   RootI = 0
+   RootI = 1
    Epsilon = 1
    MaxTag = {Width Tags}
 
    fun {Constrain Meaning NumberOfElements}
       NumberOfDataItems = {Length Meaning}
-      NumberOfVertices = NumberOfDataItems + NumberOfElements
+      NumberOfVertices = NumberOfDataItems + NumberOfElements + 1
 
-      %% Root is vertex with number 0
-      Root = root(daughters: {FS.var.upperBound 1#NumberOfVertices}
-		  scope: {FS.var.upperBound 1#NumberOfDataItems}
-		  attributes: RootAttributes)
-      DataItems = {List.mapInd Meaning
-		   fun {$ I Text#IsSpace#Property}
-		      dataItem(mother: {FD.int 0#NumberOfVertices}
-			       daughters: FS.value.empty
-			       down: FS.value.empty
-			       eqdown: {FS.value.singl I}
-			       scope: {FS.value.singl I}
-			       attributes:
-				  {MkDataItemAttributes Property IsSpace}
-			       text: Text)
-		   end}
-      Elements = for I in 1..NumberOfElements collect: Collect do
-		    {Collect
-		     element(mother: {FD.int 0#NumberOfVertices}
-			     daughters: {FS.var.upperBound 1#NumberOfVertices}
-			     down: {FS.var.upperBound 1#NumberOfVertices}
-			     eqdown: {FS.var.upperBound 0#NumberOfVertices}
-			     scope: {FS.var.upperBound 1#NumberOfDataItems}
-			     tag: {FD.int 1#MaxTag}
-			     attributes: {MkElementAttributes})}
-		 end
+      FirstDataItemI = RootI + 1
+      LastDataItemI = FirstDataItemI + NumberOfDataItems - 1
+      FirstElementI = LastDataItemI + 1
+      LastElementI = FirstElementI + NumberOfElements - 1
 
-      V = {AdjoinAt
-	   {List.toTuple vertices {Append DataItems Elements}}
-	   RootI Root}
+      FirstNonRootI = FirstDataItemI
+      LastNonRootI = LastElementI
+      FirstVertexI = RootI
+      LastVertexI = LastElementI
+
+      V = {Tuple.make vertices NumberOfVertices}
+
+      %% Initialize root vertex
+      V.RootI = root(daughters: {FS.var.upperBound FirstNonRootI#LastNonRootI}
+		     scope: {FS.var.upperBound FirstDataItemI#LastDataItemI}
+		     attributes: RootAttributes)
+
+      %% Initialize data item vertices
+      {List.forAllInd Meaning
+       proc {$ J Text#IsSpace#Property} I in
+	  I = FirstDataItemI + J - 1
+	  V.I = dataItem(mother: {FD.int FirstVertexI#LastVertexI}
+			 daughters: FS.value.empty
+			 down: FS.value.empty
+			 eqdown: {FS.value.singl I}
+			 scope: {FS.value.singl I}
+			 attributes: {MkDataItemAttributes Property IsSpace}
+			 text: Text)
+       end}
+
+      %% Initialize element vertices
+      for J in 1..NumberOfElements do I in
+	 I = FirstElementI + J - 1
+	 V.I = element(mother: {FD.int FirstVertexI#LastVertexI}
+		       daughters:
+			  {FS.var.upperBound FirstNonRootI#LastNonRootI}
+		       down: {FS.var.upperBound FirstNonRootI#LastNonRootI}
+		       eqdown: {FS.var.upperBound FirstNonRootI#LastNonRootI}
+		       scope: {FS.var.upperBound FirstDataItemI#LastDataItemI}
+		       tag: {FD.int 1#MaxTag}
+		       attributes: {MkElementAttributes})
+      end
 
       %% Treeness Constraints
-      for I in 1..NumberOfVertices do
+      for I in FirstNonRootI..LastNonRootI do
 	 V.I.mother \=: I
       end
 
-      Eqdowns = for I in 1..NumberOfVertices collect: Collect do
+      Eqdowns = for I in FirstNonRootI..LastNonRootI collect: Collect do
 		   {Collect V.I.eqdown}
 		end
 
-      for I in 1..NumberOfElements do W in
-	 W = V.(NumberOfDataItems + I)
+      for I in FirstElementI..LastElementI do W in
+	 W = V.I
 	 {Select.union Eqdowns W.daughters W.down}
 	 {FS.exclude I W.down}
-	 W.eqdown = {FS.partition [{FS.value.singl NumberOfDataItems + I}
-				   W.down]}
+	 W.eqdown = {FS.partition [{FS.value.singl I} W.down]}
       end
 
-      for I in 0..NumberOfVertices do W in
-	 W = V.I
-	 for I2 in 1..NumberOfVertices do
-	    if I2 \= I then W2 in
+      for I1 in FirstVertexI..LastVertexI do W1 in
+	 W1 = V.I1
+	 for I2 in FirstNonRootI..LastNonRootI do
+	    if I2 \= I1 then W2 in
 	       W2 = V.I2
-	       (W2.mother =: I) =: {FS.reified.isIn I2 W.daughters}
+	       (W2.mother =: I1) =: {FS.reified.isIn I2 W1.daughters}
 	    end
 	 end
       end
 
-      {FS.disjointN for I in 0..NumberOfVertices collect: Collect do
+      {FS.disjointN for I in FirstVertexI..LastVertexI collect: Collect do
 		       {Collect V.I.daughters}
 		    end}
 
@@ -229,39 +243,38 @@ define
       Attributes = {List.toRecord attributes
 		    {Map [b ems i tt u size color]
 		     fun {$ A}
-			A#for I in 1..NumberOfVertices collect: Collect do
-			     {Collect V.I.attributes.A}
+			A#for I in FirstVertexI..LastVertexI collect: Collect
+			  do {Collect V.I.attributes.A}
 			  end
 		     end}}
       Ps = for Tag in 1..MaxTag collect: Collect do {Collect Tags.Tag.p} end
 
-      for I in 1..NumberOfElements do W in
-	 W = V.(I + NumberOfDataItems)
+      for I in FirstElementI..LastElementI do W in
+	 W = V.I
 	 {ForAll [b ems i tt u size color]
 	  proc {$ A} Inherited in
 	     Inherited = {Select.fd Attributes.A W.mother}
 	     W.attributes.A = {Select.fd
-			       {Map Ps fun {$ P} {P A Inherited} end}
-			       Tags.(W.tag)}
+			       {Map Ps fun {$ P} {P A Inherited} end} W.tag}
 	  end}
       end
 
       %% Scope constraints
-      Scopes = for I in 0..NumberOfVertices collect: Collect do
+      Scopes = for I in FirstVertexI..LastVertexI collect: Collect do
 		  {Collect V.I.scope}
 	       end
 
-      {FS.int.convex Root.scope}
-      {Select.union Scopes Root.daughters Root.scope}
-      for I in 1..NumberOfElements do W in
-	 W = V.(NumberOfDataItems + I)
+      {FS.int.convex V.RootI.scope}
+      {Select.union Scopes V.RootI.daughters V.RootI.scope}
+      for I in FirstElementI..LastElementI do W in
+	 W = V.I
 	 {FS.int.convex W.scope}
 	 {Select.union Scopes W.daughters W.scope}
       end
 
       %% Unused elements are immediate daughters of the root
-      for I in 1..NumberOfElements do W in
-	 W = V.(NumberOfDataItems + I)
+      for I in FirstElementI..LastElementI do W in
+	 W = V.I
 	 (W.tag =: Epsilon) =: {FS.reified.equal W.scope FS.value.empty}
 	 (W.tag =: Epsilon) =<: (W.mother =: RootI)
       end
@@ -292,7 +305,7 @@ define
 	      proc {$ V}
 		 V = {Constrain {Reverse Meaning} NumberOfElements}
 		 {FS.distribute naive
-		  for I in 0..{Width V} - 1 collect: Collect do
+		  for I in 1..{Width V} collect: Collect do
 		     {Collect V.I.daughters}
 		  end}
 	      end}.1}
@@ -300,11 +313,23 @@ define
 
    SmurfModule = 'Smurf'(smurf: Smurf)
 
-   SampleProperty = '#'(b: false em: false i: false s: false tt: false
+   SampleProperty = '#'(b: true em: false i: false s: false tt: false
 			u: 0 size: ~1 color: 'UNKNOWN')
    SampleMeaning = [[{ByteString.make 'c'}]#false#SampleProperty
 		    [{ByteString.make 'b'}]#false#SampleProperty
 		    [{ByteString.make 'a'}]#false#SampleProperty]
+
+   proc {SmurfTest Meaning NumberOfElements}
+      {Explorer.one proc {$ V}
+		       V = {Constrain {Reverse Meaning} NumberOfElements}
+		       {FS.distribute naive
+			for I in 1..{Width V} collect: Collect do
+			   {Collect V.I.daughters}
+			end}
+		    end}
+   end
+
+   {SmurfTest SampleMeaning 5}
 
    {Inspector.inspect {Smurf SampleMeaning 5}}
 end
