@@ -456,6 +456,7 @@ define
 		       exception(nil Table.'General.Div' TaskStack.2)
 		    end
 		 end#rr_t
+	      'LargeWord.wordSize': value(32)
 	      'List.Empty': value({NewUniqueName 'List.Empty'})
 	      'Math.acos': fun {$ X} {F2C {Acos {C2F X}}} end#r_v
 	      'Math.acosh': fun {$ X} {F2C {Float.acosh {C2F X}}} end#r_v
@@ -691,6 +692,10 @@ define
 		    end
 		 end#rr_t
 	      'Word.fromInt\'': fun {$ 31 X} X end#rr_v   %--** size
+	      'Word.fromWord\'':
+		 fun {$ 31 X} X end#rr_v   %--** size
+	      'Word.fromWordX\'':
+		 fun {$ 31 X} X end#rr_v   %--** size
 	      'Word.mod':
 		 fun {$ W1 W2 TaskStack}
 		    try
