@@ -7,4 +7,8 @@ Group is
 
 	ABSTRACT_GRAMMAR.sig
 	MakeAbstractGrammar.sml
+
+	PP_ABSTRACT_GRAMMAR.sig
+	MakePPAbstractGrammar.sml
+
 	AbstractGrammar.sml
