@@ -46,8 +46,8 @@ struct
                          | REL_COLOR
                          | DEFAULT
 
-
-    (* Datentyp zum Speichern von Wert-/Typinformationen in Knoten *)    
+    (* datatype for storage of value and type information in nodes *)	
+ 
     datatype desc =
 	INTERPUNCT
       | VALUE of {value : Reflect.value,
@@ -55,21 +55,7 @@ struct
       | I_VALUE of {value : Reflect.module,
 		    typ : Inf.t} 
 
-    (* Datentyp zur internen Darstellung von Werten als Knoten *)
-    datatype color_class = INT_COLOR 
-                         | REAL_COLOR
-                         | CHAR_COLOR
-                         | STR_COLOR
-                         | WORD_COLOR
-                         | EXN_COLOR
-                         | REF_COLOR
-                         | LABEL_COLOR
-                         | SEP_COLOR
-                         | EQU_COLOR
-                         | LIMIT_COLOR
-                         | BRACK_COLOR
-                         | REL_COLOR
-                         | DEFAULT
+    (* datatype for internal representation of values *)
 
     datatype node = 
 	Simple of {desc : desc, 
@@ -141,7 +127,7 @@ struct
 
     (***********************************************)
    
-    (* Test auf Spezialfall Liste *)   
+    (* test for special case list *)   
 
     val compList = 
 	let structure UnitList = Reflect.ReflectType(type t = unit list)
@@ -156,7 +142,7 @@ struct
 
     (***********************************************)
 
-    (* Operationen auf value *)
+    (* operations on value *)
 
     fun isValue (V _) = true
       | isValue (M _) = false
@@ -170,7 +156,7 @@ struct
     fun asModule(M x) = x
       | asModule _ = raise Match
   
-   (* Operationen auf desc *)
+   (* operations on desc *)
 	
     fun createValue(va,t) = VALUE{value = va,
 				  typ = t}
@@ -190,9 +176,9 @@ struct
     fun getInf desc = case desc of I_VALUE(r) => #typ(r)
                                  | _ => raise Match  
  
-    (********* Operationen auf node *********)
+    (********* operationen on node *********)
 
-   (*** get-Funktionen ***)
+   (*** get-functions ***)
 
     fun getDesc n = case n of Simple(r) => #desc(r)
                             | Concat(r) => #desc(r)
@@ -268,7 +254,7 @@ struct
     fun getSort (Limit(r)) = #sort(r)
       | getSort _  = raise Match
 
-    (* fuer Layout *)
+    (* needed by layout *)
 
     fun get_xdim n = case n of Simple(r) => !(#width(r))
                              | Concat(r) => !(#width(r))
@@ -294,7 +280,7 @@ struct
 					 else String.size(#rep(r)))   
       | get_l_xdim node = get_xdim node
 
-    (* Information ueber Vorfahren *)
+    (* information about ancestors *)
 
     fun getValueAnc n = let val p = getParent(n) 
 			in if p = Empty 
@@ -316,7 +302,7 @@ struct
 			     else getAncIndex (getParent(n)) 
 
 
-    (*** Veraenderung von node-Feldern ***)
+    (*** modification of node fields ***)
 
     fun setContent (n,c) = case n of RelNode(r) => #content(r) := c
                                    | _ => ()  
@@ -365,12 +351,14 @@ struct
       | Empty => () 
       | _ => raise Match
 
-    (** low-level-Konstruktion **) 
+    (** low level construction **) 
 
-    (* wird bei Konstruktion von RelNodes benutzt *)
+    (* needed for the construction of RelNodse *)
+
     val relnumber = ref 0
 
-    (* createSimple *)   
+    (* new Simple *)   
+
     fun createSimple (desc,p,i,d,str,color,root) = 
 	Simple {desc = desc,     
 		parent = p, 
@@ -384,7 +372,8 @@ struct
 		status = ref DAZZLED,  
 		group = setGroup(root,p)}
 	
-    (* createConcat *)
+    (* new Concat *)
+
     fun createConcat (desc,p,i,d,na,root) =  
 	Concat {desc = desc, 
 		parent = p,
@@ -397,7 +386,8 @@ struct
 		status = ref DAZZLED, 
 		group = setGroup(root,p)} 
 	
-    (* createContainer *)
+    (* new Container *)
+
     fun createContainer (desc,p,i,d,na,root) =   
 	Container {desc = desc,  
 		   parent = p,  
@@ -410,7 +400,8 @@ struct
 		   status = ref DAZZLED,
 		   group = setGroup(root,p)} 
 
-    (* createLimit *)
+    (* new Limit *)
+
     fun createLimit (desc,sort,p,i,d,root) =  
 	Limit  {desc = desc, 
 		sort = sort, 
@@ -420,7 +411,8 @@ struct
 		status = ref DAZZLED, 
 		group = setGroup(root,p)}
 	
-    (* createRelNode *)
+    (* new RelNode *)
+
     fun createRelNode (desc,c,p,i,d,count,str,rman,root) =  
 	let val node = RelNode {desc = desc, 
 				content = ref c, 
@@ -438,7 +430,8 @@ struct
 	in (relnumber := (!relnumber) + 1 ; node) 
 	end 
 
-    (* createRelRefNode *)  
+    (* new RelRefNode *)
+  
     fun createRelRefNode (desc,p,i,d,str,root) = 
 	RelRefNode {desc = desc,  
  		    parent = p,  
@@ -450,7 +443,7 @@ struct
 		    status = ref DAZZLED,  
 		    group = setGroup(root,p)}  
  
-    (*** boolsche Tests ***)
+    (*** boolean tests ***)
 
     fun isSimple n = case n of 
 	Simple _ => true 
@@ -485,7 +478,7 @@ struct
 			 (Future.isLazy(future)) handle _ => false
 		     end
 
-    (* Layout-Information *)
+    (* layout information *)
 
     fun setsVertical  n = 
 	case n of

@@ -43,7 +43,8 @@ sig
                          | REL_COLOR
                          | DEFAULT
 
-    (* Datentyp zum Speichern von Wert-/Typinformationen in Knoten *)   
+    (* datatype for storage of value and type information in nodes *)
+   
     datatype desc = 
 	INTERPUNCT
       | VALUE of {value : Reflect.value,
@@ -51,7 +52,8 @@ sig
       | I_VALUE of {value : Reflect.module,
 		    typ : Inf.t} 
 
-    (* Datentyp zur internen Darstellung von Werten als Knoten *)
+    (* datatype for internal representation of values *)
+
     datatype node = 
 	Simple of {desc : desc, 
 		   parent : node,
@@ -121,14 +123,14 @@ sig
 
     (**********************************************)
 
-    (* Test auf Spezialfall Liste *) 
+    (* test for special case list *) 
 
     val compList : Type.t
     val isListType: Type.t -> bool
 
     (**********************************************)
 
-    (* Operationen auf value *)
+    (* operations on value *)
     
     val asValue: value -> Reflect.value
     val asModule: value -> Reflect.module
@@ -136,7 +138,7 @@ sig
     val isValue: value -> bool
     val isModule: value -> bool
 
-    (* Operationen auf desc *)
+    (* operations on desc *)
 
     val createValue  :  Reflect.value * Type.t -> desc
     val createIValue :  Reflect.module * Inf.t -> desc
@@ -147,9 +149,9 @@ sig
     val getTyp : desc -> Type.typ
     val getInf : desc -> Inf.t
 	
-    (****** Operationen auf node ******)
+    (****** operations on node ******)
 
-    (** get-Funktionen **)
+    (** get-functions **)
 
     val getDesc : node -> desc
     val getReflectValue : node -> Reflect.value
@@ -165,17 +167,19 @@ sig
     val getColor : node -> color_class
     val getSort : node -> limit
 
-    (* fuer Layout *)
+    (* needed by Layout *)
+
     val get_xdim : node -> int
     val get_ydim : node -> int
     val get_l_xdim : node -> int
     
-    (* Information ueber Vorfahren *)
+    (* information about ancestors *)
+
     val getValueAnc : node -> node
     val getNoRelAnc : node -> node * int
     val getAncIndex : node -> int 
 
-    (** Veraenderung von node-Feldern **)
+    (** modification of node fields **)
 
     val setContent : node * node -> unit
     val setGroup :  GtkSupport.tag * node -> GtkSupport.tag
@@ -183,7 +187,7 @@ sig
     val setDazzled : node -> unit
     val updateChild : node * int * node -> unit   
 
-    (** low-level-Konstruktion **)
+    (** low level construction **)
 
     val relnumber: int ref
 
@@ -210,7 +214,7 @@ sig
 	desc * node * int * int * string * GtkSupport.tag 
 	-> node
 
-    (** boolsche Tests **)
+    (** boolean tests **)
 
     val isSimple : node -> bool
     val isContainer : node -> bool
@@ -223,7 +227,7 @@ sig
     
     val isByneed : node -> bool 
 
-    (* Layout-Information *)
+    (* layout information *)
     val setsVertical : node -> bool 
 
 end
