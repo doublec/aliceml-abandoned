@@ -34,8 +34,10 @@ ALICELINK_OPTS = -v
 
 ALICESOURCES = FD-sig.aml FD.aml FS-sig.aml FS.aml \
                SPACE-sig.aml Space.aml \
-               SEARCH-sig.aml Search.aml EXPLORER-sig.aml Explorer.aml \
+               SEARCH-sig.aml Search.aml \
                LINEAR-sig.aml Linear.aml
+
+TOOLSOURCES = EXPLORER-sig.aml Explorer.aml
 
 NATIVES = FD FS Space Search Explorer
 
@@ -43,10 +45,12 @@ OZSOURCES=$(NATIVES:%=Unsafe%.oz)
 
 COMPONENTS = \
 	$(NATIVES:%=Linked%.ozf) \
-	$(ALICESOURCES:%.aml=%.ozf)
+	$(ALICESOURCES:%.aml=%.ozf) \
+	$(TOOLSOURCES:%.aml=%.ozf) \
 
 INSTALLDIRS = $(PREFIX)/lib/constraints
-INSTALLFILES = $(ALICESOURCES:%.aml=$(PREFIX)/lib/constraints/%.ozf)
+INSTALLFILES = $(ALICESOURCES:%.aml=$(PREFIX)/lib/constraints/%.ozf) \
+	$(TOOLSOURCES:%.aml=$(PREFIX)/lib/tools/%.ozf)
 
 .PHONY: all depend install clean veryclean distclean
 
@@ -57,7 +61,7 @@ INSTALLFILES = $(ALICESOURCES:%.aml=$(PREFIX)/lib/constraints/%.ozf)
 all: $(COMPONENTS)
 
 depend:
-	$(ALICEDEP) $(ALICESOURCES) > Makefile.depend
+	$(ALICEDEP) $(ALICESOURCES) $(TOOLSOURCES) > Makefile.depend
 
 %.ozf: %.oz
 	$(OZC) $(OZCOPTS) -c $< -o $@
@@ -85,6 +89,9 @@ $(NATIVES:%=$(PREFIX)/lib/constraints/%.ozf): \
 	install -c -m 444 $< $@
 
 $(PREFIX)/lib/constraints/%.ozf: %.ozf
+	install -c -m 444 $< $@
+
+$(PREFIX)/lib/tools/%.ozf: %.ozf
 	install -c -m 444 $< $@
 
 ##
