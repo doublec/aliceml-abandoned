@@ -57,7 +57,16 @@ public:
 // Types
 //
 
-class DllExport Type: public Block {};
+class DllExport Type: public Block {
+public:
+  static Type *FromWord(word x) {
+    Block *b = Store::WordToBlock(x);
+    Assert(b->GetLabel() == JavaLabel::Class ||
+	   b->GetLabel() == JavaLabel::ObjectArrayType ||
+	   b->GetLabel() == JavaLabel::BaseArrayType);
+    return static_cast<Type *>(b);
+  }
+};
 
 class DllExport Class: private Type {
 protected:
@@ -186,6 +195,11 @@ public:
     b->InitArg(0, theClass->ToWord());
     //--** initialization incorrect for long/float/double
     for (u_int i = size; i--; ) b->InitArg(BASE_SIZE + i, Store::IntToWord(0));
+    return static_cast<Object *>(b);
+  }
+  static Object *FromWord(word x) {
+    Block *b = Store::WordToBlock(x);
+    Assert(b->GetLabel() == JavaLabel::Object);
     return static_cast<Object *>(b);
   }
 
