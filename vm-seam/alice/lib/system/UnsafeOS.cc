@@ -126,10 +126,7 @@ DEFINE1(UnsafeOS_FileSys_mkDir) {
 #if defined(__MINGW32__) || defined(_MSC_VER)
   if (CreateDirectory(name->ExportC(), NULL) == FALSE) RAISE_SYS_ERR();
 #else
-  int res = mkdir(name->ExportC(),
-		  S_IRUSR | S_IWUSR | S_IXUSR |
-		  S_IRGRP | S_IWGRP | S_IXGRP |
-		  S_IROTH | S_IWOTH | S_IXOTH);
+  int res = mkdir(name->ExportC(), S_IRWXU | S_IRWXG | S_IRWXO);
   if (res) RAISE_SYS_ERR();
 #endif
   RETURN_UNIT;
