@@ -72,8 +72,10 @@ DEFINE1(UnsafeRemote_unpackValue) {
   return Unpickler::Unpack(packedValue);
 } END
 
+static word SitedConstructor;
+
 AliceDll word UnsafeRemote() {
-  word SitedConstructor =
+  SitedConstructor =
     UniqueConstructor::New("UnsafeRemote.Sited",
 			   "UnsafeRemote.Sited")->ToWord();
   RootSet::Add(SitedConstructor);
