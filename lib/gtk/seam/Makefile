@@ -77,7 +77,7 @@ ALICEDEP = alicedep
 INSTALL = ./myinstall -v -m 644
 
 INSTALLDIR = `alice-config --alicelibdir`/gtk
-
+ALICEDLL=$(alice-config --alicebindir | sed 's#/bin$##g')/lib/seam/alice.dll
 DISTFILES = $(CPPSOURCES) Makefile debian platform.sh \
 	MyNativeAuthoring.hh NativeUtils.hh NativeGdkSpecial.hh \
 	NativeGnomeCanvasSpecial.hh NativeGtkSpecial.hh \
@@ -130,8 +130,16 @@ compile: compiledll compilealice
 compiledll: $(DLLOBJECTS)
 compilealice: $(ALICEOBJECTS)
 
+# this (the use of ALICEDLL) is an ugly hack around
+# a linking problem which occurs on some linuxes
+# (Debian at least)
+# It should work like this:
+# %.dll: %.o
+#	$(ALICETOOL) -v link $< -o $@ \
+#	 $(CC_OPTS) `pkg-config --libs $(PC_OPTS)`
+
 %.dll: %.o
-	$(ALICETOOL) -v link $< -o $@ \
+	$(ALICETOOL) -v link $(ALICEDLL) $< -o $@ \
 	 $(CC_OPTS) `pkg-config --libs $(PC_OPTS)`
 
 %.o: %.cc
