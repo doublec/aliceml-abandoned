@@ -19,11 +19,11 @@ DEFINE1(floatToIntBits) {
     u_int x;
   } bytes;
   bytes.f = theFloat->GetValue();
-  RETURN(JavaInt::ToWord(bytes.x));
+  RETURN_JINT(bytes.x);
 } END
 
 DEFINE1(intBitsToFloat) {
-  DECLARE_INT(i, x0);
+  DECLARE_JINT(i, x0);
   union {
     float f;
     u_int x;
