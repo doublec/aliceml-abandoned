@@ -19,6 +19,7 @@
 #include "emulator/Interpreter.hh"
 #include "emulator/TaskStack.hh"
 #include "emulator/Scheduler.hh"
+#include "emulator/Backtrace.hh"
 
 // Calling Convention Conversion
 word Interpreter::Construct(word args) {
@@ -82,7 +83,7 @@ word Interpreter::Deconstruct(word args) {
 //
 // Interpreter Functions
 //
-void Interpreter::PrepareForGC(Block *p) {
+void Interpreter::PrepareForGC(Block *) {
   return;
 }
 
@@ -94,15 +95,16 @@ void Interpreter::PushCall(TaskStack *, Closure *) {
   Error("Interpreter::PushCall must never be called\n");
 }
 
-void Interpreter::PurgeFrame(TaskStack *taskStack) {
+void Interpreter::PurgeFrame(TaskStack *) {
   return;
 }
 
-Interpreter::Result Interpreter::Handle(word exn, word /*debug*/,
+Interpreter::Result Interpreter::Handle(word exn, Backtrace *trace,
 					TaskStack *taskStack) {
   // Default Handler: Clear Frame until Handler is found
-  //--** construct backtrace
+  trace->Enqueue(taskStack->GetFrame());
   taskStack->PopFrame();
-  Scheduler::currentData = exn;
+  Scheduler::currentBacktrace = trace;
+  Scheduler::currentData      = exn;
   return Interpreter::RAISE;
 }

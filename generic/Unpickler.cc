@@ -19,6 +19,7 @@
 #include "adt/HashTable.hh"
 #include "emulator/Interpreter.hh"
 #include "emulator/Scheduler.hh"
+#include "emulator/Backtrace.hh"
 #include "emulator/TaskStack.hh"
 #include "emulator/Unpickler.hh"
 #include "emulator/Closure.hh"
@@ -173,7 +174,9 @@ public:
     // This is blocking: to be done
     u_int nread = (u_int) fread(rdBuf, sizeof(u_char), rdSize, file);
     if (nread == 0) {
-      Scheduler::currentData = Unpickler::Corrupt;
+      Scheduler::currentData      = Unpickler::Corrupt;
+      Scheduler::currentBacktrace = Backtrace::New(taskStack->GetFrame());
+      taskStack->PopFrame();
       return Interpreter::RAISE;
     } else {
       AppendToBuffer(rdBuf, nread);
@@ -200,6 +203,8 @@ public:
     taskStack->PopFrame();
     if (string == INVALID_POINTER) {
       Scheduler::currentData = Unpickler::Corrupt;
+      Scheduler::currentBacktrace = Backtrace::New(taskStack->GetFrame());
+      taskStack->PopFrame();
       return Interpreter::RAISE;
     }
     else {
@@ -834,13 +839,15 @@ Interpreter::Result Unpickler::Load(Chunk *filename, TaskStack *taskStack) {
   Tuple *x            = Tuple::New(1);
   char *szFileName    = ExportString(filename);
   FileInputStream *is = new FileInputStream(szFileName);
-  taskStack->PopFrame();
   if (is->GotException()) {
     delete is;
     Scheduler::currentData = Store::IntToWord(0); // to be done
     fprintf(stderr, "file '%s' not found\n", szFileName);
+    Scheduler::currentBacktrace = Backtrace::New(taskStack->GetFrame());
+    taskStack->PopFrame();
     return Interpreter::RAISE;
   }
+  taskStack->PopFrame();
   HashTable *env = HashTable::New(HashTable::INT_KEY, INITIAL_TABLE_SIZE);
   PickleLoadInterpreter::PushFrame(taskStack, x);
   UnpickleInterpreter::PushFrame(taskStack, x->ToWord(), 0, 1);

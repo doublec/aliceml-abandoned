@@ -22,6 +22,8 @@
 #include "emulator/ThreadQueue.hh"
 #include "emulator/Thread.hh"
 
+class Backtrace;
+
 class Scheduler {
 private:
   static word root;
@@ -32,8 +34,9 @@ private:
   static void Timer();
 public:
   // Scheduler public data
-  static word currentData; // Transient or Exception
-  static word currentArgs; // Arguments
+  static word currentData;            // Transient or Exception
+  static word currentArgs;            // Arguments
+  static Backtrace *currentBacktrace; // Backtrace (Queue)
   static word vmGUID;
   // Scheduler Main Function
   static void Run();
