@@ -135,7 +135,7 @@ struct
         let
             val _       = assert 0 <= x andalso x < 100 
                             andalso 0 <= y andalso y < 100
-            val cell    = World.getCellAt (world, (x, y))
+            val cell    = World.getCellAt (world, x, y)
         in
             tilePlot' (td, x, y, cell) 
         end

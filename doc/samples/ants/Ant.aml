@@ -35,7 +35,7 @@ structure Ant =
   fun setResting({resting,...}:ant, newResting) = resting:=newResting
   fun setDirection({direction,...}:ant, newDirection) = direction:=newDirection
   fun setHasFood({hasFood,...}:ant, newHasFood) = hasFood:=newHasFood
-  fun setCoords({xpos,ypos,...}:ant, (x,y)) = (xpos:=x; ypos:=y)
+  fun setCoords({xpos,ypos,...}:ant, x,y) = (xpos:=x; ypos:=y)
 
   fun getState({state,...}:ant) = !state
   fun getResting({resting,...}:ant) = !resting

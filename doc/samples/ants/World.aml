@@ -54,10 +54,10 @@ structure World =
                                       | SOME _ => n+1)
                   0 cells
 
-  fun getCellAt((xs, cells,_):world, (x,y)) =
+  fun getCellAt((xs, cells,_):world, x,y) =
       Array.sub(cells, xs*y+x)
 
-  fun initCellAt(w as (xs, cells,antMap):world, (x,y), cell) =
+  fun initCellAt(w as (xs, cells,antMap):world, x,y, cell) =
       (Array.update(cells, xs*y+x, cell);
        Option.app (fn a => Array.update(antMap,#id a, a)) (!(#ant cell));
        updateCellV (w, x, y))
@@ -71,154 +71,151 @@ structure World =
       (case d of E => NE | SE => E | SW => SE | W => SW | NW => W | NE => NW)
     | turn(Right, d) =
       (case d of E => SE | SE => SW | SW => W | W => NW | NW => NE | NE => E)
-  fun adjacentCell((x,y), E) = (x+1, y)
-    | adjacentCell((x,y), SE) =
+  fun adjacentCell(x,y, E) = (x+1, y)
+    | adjacentCell(x, y, SE) =
       if even y then (x,y+1) else (x+1,y+1)
-    | adjacentCell((x,y), SW) =
+    | adjacentCell(x, y, SW) =
       if even y then (x-1,y+1) else (x,y+1)
-    | adjacentCell((x,y), W) = (x-1,y)
-    | adjacentCell((x,y), NW) =
+    | adjacentCell(x, y, W) = (x-1,y)
+    | adjacentCell(x, y, NW) =
       if even y then (x-1,y-1) else (x,y-1)
-    | adjacentCell((x,y), NE) =
+    | adjacentCell(x, y, NE) =
       if even y then (x,y-1) else (x+1,y-1)
   end
 
-  fun sensedCell(pos, dir, Instructions.Here) = pos
-    | sensedCell(pos, dir, Instructions.Ahead) = adjacentCell(pos, dir)
-    | sensedCell(pos, dir, Instructions.LeftAhead) =
-      adjacentCell(pos, turn(Instructions.Left, dir))
-    | sensedCell(pos, dir, Instructions.RightAhead) =
-      adjacentCell(pos, turn(Instructions.Right, dir))
+  fun sensedCell(x,y, dir, Instructions.Here) = (x,y)
+    | sensedCell(x,y, dir, Instructions.Ahead) = adjacentCell(x,y, dir)
+    | sensedCell(x,y, dir, Instructions.LeftAhead) =
+      adjacentCell(x,y, turn(Instructions.Left, dir))
+    | sensedCell(x,y, dir, Instructions.RightAhead) =
+      adjacentCell(x,y, turn(Instructions.Right, dir))
 
   (* Biology *)
-  fun antAt(world, pos) = valOf (!(#ant (getCellAt(world, pos))))
-  fun setState(world, pos, s) = Ant.setState(antAt(world, pos), s)
+  fun antAt(world, x,y) = valOf (!(#ant (getCellAt(world, x,y))))
+(*  fun setState(world, pos, s) = Ant.setState(antAt(world, pos), s)
   fun setResting(world, pos, r) = Ant.setResting(antAt(world, pos), r)
   fun setDirection(world, pos, d) = Ant.setDirection(antAt(world, pos), d)
-  fun setHasFood(world, pos, h) = Ant.setHasFood(antAt(world, pos), h)
+  fun setHasFood(world, pos, h) = Ant.setHasFood(antAt(world, pos), h)*)
 
   (* Geography *)
-  fun rocky(world, pos) = #rocky (getCellAt(world, pos))
+  fun rocky(world, x,y) = #rocky (getCellAt(world, x,y))
 
-  fun someAntIsAt(world, pos) = !(#ant (getCellAt(world, pos))) <> NONE
-  fun setAntAt(world as (_,_,antMap), pos as (x,y), a : Ant.ant) =
+  fun someAntIsAt(world, x,y) = !(#ant (getCellAt(world, x,y))) <> NONE
+
+  fun setAntAt(world as (_,_,antMap), x,y, a : Ant.ant) =
       let
-          val cell = getCellAt(world, pos)
+          val cell = getCellAt(world, x,y)
           val ant = #ant cell
       in
-          Ant.setCoords(a, pos);
+          Ant.setCoords(a, x,y);
           ant := SOME a;
           updateCellV (world, x, y)
       end
 
-  fun clearAntAt(world, pos as (x, y)) =
+  fun clearAntAt(world, x, y) =
       let
-          val cell = getCellAt(world, pos)
+          val cell = getCellAt(world, x,y)
           val ant = #ant cell
       in
           ant := NONE;
           updateCellV (world, x, y)
       end
 
-  fun findAnt((_,_,antMap):world, id) =
-      Ant.getCoords(Array.sub(antMap, id))
+  fun findAnt((_,_,antMap):world, id) = Array.sub(antMap,id)
 
-  fun antIsAlive(world, id) = 
-      findAnt(world,id) <> (~1,~1)
-
-  fun killAntAt(world, pos) =
+  fun killAntAt(world, x,y) =
       let
-          val ant = antAt(world, pos)
+          val ant = antAt(world, x,y)
       in
-          Ant.setCoords(ant, (~1,~1));
-          clearAntAt(world, pos)
+          Ant.setCoords(ant, ~1,~1);
+          clearAntAt(world, x,y)
       end
 
-  fun foodAt(world, pos) = !(#food (getCellAt(world, pos)))
-  fun setFoodAt(world, pos as (x, y), f) = 
-      (#food (getCellAt(world, pos)) := f;
+  fun foodAt(world, x,y) = !(#food (getCellAt(world, x,y)))
+  fun setFoodAt(world, x, y, f) = 
+      (#food (getCellAt(world, x,y)) := f;
        updateCellV (world, x, y))
              
-  fun anthillAt(world, pos, Ant.Red) =
-      #redHill (getCellAt(world, pos))
-    | anthillAt(world, pos, Ant.Black) =
-      #blackHill (getCellAt(world, pos))
+  fun anthillAt(world, x,y, Ant.Red) =
+      #redHill (getCellAt(world, x,y))
+    | anthillAt(world, x,y, Ant.Black) =
+      #blackHill (getCellAt(world, x,y))
     
   (* Chemistry *)
-  fun changeMarkerAt(world, pos as (x, y), Ant.Red, marker, flag) =
-          (Array.update(#redMarkers (getCellAt(world, pos)),
+  fun changeMarkerAt(world, x, y, Ant.Red, marker, flag) =
+          (Array.update(#redMarkers (getCellAt(world, x,y)),
                        marker, flag);
            updateCellV (world, x, y))
-    | changeMarkerAt(world, pos as (x, y), Ant.Black, marker, flag) =
-          (Array.update(#blackMarkers (getCellAt(world, pos)),
+    | changeMarkerAt(world, x, y, Ant.Black, marker, flag) =
+          (Array.update(#blackMarkers (getCellAt(world, x,y)),
                        marker, flag);
            updateCellV (world, x, y))
 
 
-  fun setMarkerAt(w,p,c,m) = changeMarkerAt(w,p,c,m,true)
-  fun clearMarkerAt(w,p,c,m) = changeMarkerAt(w,p,c,m,false)
+  fun setMarkerAt(w,x,y,c,m) = changeMarkerAt(w,x,y,c,m,true)
+  fun clearMarkerAt(w,x,y,c,m) = changeMarkerAt(w,x,y,c,m,false)
 
-  fun checkMarkerAt(world, pos, Ant.Red, marker) =
-      Array.sub(#redMarkers (getCellAt(world,pos)), marker)
-    | checkMarkerAt(world, pos, Ant.Black, marker) =
-      Array.sub(#blackMarkers (getCellAt(world,pos)), marker)
-  fun checkAnyMarkerAt(world, pos, Ant.Red) =
+  fun checkMarkerAt(world, x,y, Ant.Red, marker) =
+      Array.sub(#redMarkers (getCellAt(world,x,y)), marker)
+    | checkMarkerAt(world, x,y, Ant.Black, marker) =
+      Array.sub(#blackMarkers (getCellAt(world,x,y)), marker)
+  fun checkAnyMarkerAt(world, x,y, Ant.Red) =
       Array.exists (fn x => x)
-                   (#redMarkers (getCellAt(world,pos)))
-    | checkAnyMarkerAt(world, pos, Ant.Black) =
+                   (#redMarkers (getCellAt(world,x,y)))
+    | checkAnyMarkerAt(world, x,y, Ant.Black) =
       Array.exists (fn x => x)
-                   (#blackMarkers (getCellAt(world,pos)))
+                   (#blackMarkers (getCellAt(world,x,y)))
 
   (* Phenomenology *)
   local
       open Instructions
   in
-  fun cellMatches(world, pos, Friend,         color) =
-      someAntIsAt(world,pos) andalso Ant.getColor(antAt(world,pos))=color
-    | cellMatches(world, pos, Foe,            color) =
-      someAntIsAt(world,pos) andalso Ant.getColor(antAt(world,pos))<>color
-    | cellMatches(world, pos, FriendWithFood, color) =
-      someAntIsAt(world,pos)
-      andalso Ant.getColor(antAt(world,pos))=color
-      andalso Ant.getHasFood(antAt(world,pos))
-    | cellMatches(world, pos, FoeWithFood,    color) =
-      someAntIsAt(world,pos)
-      andalso Ant.getColor(antAt(world,pos))<>color
-      andalso Ant.getHasFood(antAt(world,pos))
-    | cellMatches(world, pos, Food,           color) =
-      foodAt(world,pos) > 0
-    | cellMatches(world, pos, Rock,           _    ) = rocky(world,pos)
-    | cellMatches(world, pos, Marker m,       color) =
-      checkMarkerAt(world, pos, color, m)
-    | cellMatches(world, pos, FoeMarker,      color) =
-      checkAnyMarkerAt(world, pos, Ant.otherColor color)
-    | cellMatches(world, pos, Home,           color) =
-      anthillAt(world, pos, color)
-    | cellMatches(world, pos, FoeHome,        color) =
-      anthillAt(world, pos, Ant.otherColor color)
+  fun cellMatches(world, x,y, Friend,         color) =
+      someAntIsAt(world,x,y) andalso Ant.getColor(antAt(world,x,y))=color
+    | cellMatches(world, x,y, Foe,            color) =
+      someAntIsAt(world,x,y) andalso Ant.getColor(antAt(world,x,y))<>color
+    | cellMatches(world, x,y, FriendWithFood, color) =
+      someAntIsAt(world,x,y)
+      andalso Ant.getColor(antAt(world,x,y))=color
+      andalso Ant.getHasFood(antAt(world,x,y))
+    | cellMatches(world, x,y, FoeWithFood,    color) =
+      someAntIsAt(world,x,y)
+      andalso Ant.getColor(antAt(world,x,y))<>color
+      andalso Ant.getHasFood(antAt(world,x,y))
+    | cellMatches(world, x,y, Food,           color) =
+      foodAt(world,x,y) > 0
+    | cellMatches(world, x,y, Rock,           _    ) = rocky(world,x,y)
+    | cellMatches(world, x,y, Marker m,       color) =
+      checkMarkerAt(world, x,y, color, m)
+    | cellMatches(world, x,y, FoeMarker,      color) =
+      checkAnyMarkerAt(world, x,y, Ant.otherColor color)
+    | cellMatches(world, x,y, Home,           color) =
+      anthillAt(world, x,y, color)
+    | cellMatches(world, x,y, FoeHome,        color) =
+      anthillAt(world, x,y, Ant.otherColor color)
   end
 
   (* Martial Arts *)
-  fun adjacentAnts(world, pos, c) =
-      foldl (fn (d,n) => let val cel = adjacentCell(pos, d) in
-                             if someAntIsAt(world, cel) andalso
-                                Ant.getColor(antAt(world, cel)) = c
+  fun adjacentAnts(world, x,y, c) =
+      foldl (fn (d,n) => let val (x',y') = adjacentCell(x,y, d) in
+                             if someAntIsAt(world, x',y') andalso
+                                Ant.getColor(antAt(world, x',y')) = c
                              then n+1 else n
                          end) 0 Ant.directions
-  fun checkForSurroundedAntAt(world, pos) =
-      if someAntIsAt(world, pos) then
-          let val a = antAt(world, pos) in
-              if adjacentAnts(world,pos, Ant.otherColor(Ant.getColor a)) >= 5 then
-                  (killAntAt(world, pos);
-                   setFoodAt(world, pos,
-                             foodAt(world, pos) + 3 +
+  fun checkForSurroundedAntAt(world, (x,y)) =
+      if someAntIsAt(world, x,y) then
+          let val a = antAt(world, x,y) in
+              if adjacentAnts(world,x,y, Ant.otherColor(Ant.getColor a)) >= 5 then
+                  (killAntAt(world, x,y);
+                   setFoodAt(world, x,y,
+                             foodAt(world, x,y) + 3 +
                              (if Ant.getHasFood a then 1 else 0)))
               else ()
           end
       else ()
-  fun checkForSurroundedAnts(world, pos) =
-      (checkForSurroundedAntAt(world, pos);
-       app (fn d => checkForSurroundedAntAt(world, adjacentCell(pos, d)))
+  fun checkForSurroundedAnts(world, x,y) =
+      (checkForSurroundedAntAt(world, (x,y));
+       app (fn d => checkForSurroundedAntAt(world, adjacentCell(x,y, d)))
        Ant.directions)
 
 

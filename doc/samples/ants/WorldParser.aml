@@ -84,7 +84,7 @@ struct
                         else error (y+2, x, "invalid character in world")
             in
                 World.initCellAt (world,
-                                  (x div 2, y),
+                                  x div 2, y,
                                   cell);
                 parseLine' (line, true, y, x+1, xSize, world, id)
             end

@@ -33,70 +33,73 @@ structure Simulator :
   end
 
   fun instr(Sense(sensedir,st1,st2,cond,_),
-            w,id:int,p,a) =
-      let val p' = sensedCell(p, Ant.getDirection a, sensedir)
-          val st = if cellMatches(w, p', cond, Ant.getColor a) then st1 else st2
+            w,id:int,x,y,a) =
+      let val (x',y') = sensedCell(x,y, Ant.getDirection a, sensedir)
+          val st = if cellMatches(w, x',y', cond, Ant.getColor a) then st1 else st2
       in
-          setState(w,p,st)
+          Ant.setState(a,st)
       end
     | instr(Mark(i,st,_),
-            w,id,p,a) =
-      (setMarkerAt(w,p, Ant.getColor a, i);
-       setState(w,p,st))
+            w,id,x,y,a) =
+      (setMarkerAt(w,x,y, Ant.getColor a, i);
+       Ant.setState(a,st))
     | instr(Unmark(i, st, _),
-            w,id,p,a) =
-      (clearMarkerAt(w,p, Ant.getColor a, i);
-       setState(w,p,st))
+            w,id,x,y,a) =
+      (clearMarkerAt(w,x,y, Ant.getColor a, i);
+       Ant.setState(a,st))
     | instr(PickUp(st1, st2, _),
-            w,id,p,a) =
-      if Ant.getHasFood a orelse foodAt(w, p)=0 then
-          setState(w,p,st2)
-      else (setFoodAt(w,p,foodAt(w, p)-1);
-            setHasFood(w,p,true);
-            setState(w,p,st1))
+            w,id,x,y,a) =
+      if Ant.getHasFood a orelse foodAt(w, x,y)=0 then
+          Ant.setState(a,st2)
+      else (setFoodAt(w,x,y,foodAt(w, x,y)-1);
+            Ant.setHasFood(a,true);
+            Ant.setState(a,st1))
     | instr(Drop(st, _),
-            w,id,p,a) =
+            w,id,x,y,a) =
       (if Ant.getHasFood a then
-           (setFoodAt(w,p, foodAt(w,p)+1);
-            setHasFood(w,p,false))
+           (setFoodAt(w,x,y, foodAt(w,x,y)+1);
+            Ant.setHasFood(a,false))
        else ();
-       setState(w,p,st))
+       Ant.setState(a,st))
     | instr(Turn(lr, st, _),
-            w,id,p,a) =
-      (setDirection(w,p, turn(lr, Ant.getDirection a));
-       setState(w,p,st))
+            w,id,x,y,a) =
+      (Ant.setDirection(a, turn(lr, Ant.getDirection a));
+       Ant.setState(a,st))
     | instr(Move(st1, st2, _),
-            w,id,p,a) =
-      let val newp = adjacentCell(p, Ant.getDirection a) in
-          if rocky(w, newp) orelse someAntIsAt(w, newp) then
-              setState(w,p,st2)
+            w,id,x,y,a) =
+      let val (x',y') = adjacentCell(x,y, Ant.getDirection a) in
+          if rocky(w, x',y') orelse someAntIsAt(w, x',y') then
+              Ant.setState(a,st2)
           else
-              (clearAntAt(w, p);
-               setAntAt(w, newp, a);
-               setState(w, newp, st1);
-               setResting(w, newp, 14);
-               checkForSurroundedAnts(w, newp))
+              (clearAntAt(w, x,y);
+               setAntAt(w, x',y', a);
+               Ant.setState(a, st1);
+               Ant.setResting(a, 14);
+               checkForSurroundedAnts(w, x',y'))
       end
     | instr(Flip(n, st1, st2, _),
-            w,id,p,a) =
+            w,id,x,y,a) =
       let val st = if randomInt n = 0 then st1 else st2 in
-          setState(w,p,st)
+          Ant.setState(a,st)
       end
 
   fun step(w, redAnt, blackAnt, id) =
-      case findAnt(w, id) of
-          (~1,~1) => ()
-        | p =>
       let
-          val a = antAt(w, p)
+          val a = findAnt(w,id)
+          val (x,y) = Ant.getCoords a
+      in
+          if (x,y) = (~1,~1) then ()
+          else
+      let
           val resting = Ant.getResting a
       in
           if resting > 0 then
-              setResting(w, p, resting - 1)
+              Ant.setResting(a, resting - 1)
           else instr (getInstruction(case Ant.getColor a of Red => redAnt
                                                           | _ => blackAnt,
                                      Ant.getState a),
-                      w, id, p, a)
+                      w, id, x,y, a)
+      end
       end
 
   fun simulate(showStatus, showWorlds, showAnts, drawWorlds,
