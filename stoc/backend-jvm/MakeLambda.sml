@@ -131,7 +131,8 @@ functor MakeLambda(structure StampSet:IMP_SET
 
 	fun insertRec (idexps as _::rest) =
 	    let
-		fun countFunExps ((_, FunExp _):: rest, n) = countFunExps (rest, n+1)
+		fun countFunExps ((_, FunExp _) :: rest, n) = countFunExps (rest, n+1)
+		  | countFunExps ((_, _) :: rest, n) = countFunExps (rest, n)
 		  | countFunExps (nil, n) = n
 
 		val dest = getDestClass idexps

@@ -282,7 +282,7 @@ structure ToJasmin =
 				    if f' >= lookupInt (!jvmto, act)
 					then (if !VERBOSE >=2 then
 						  print ("map "^Stamp.toString genuineReg^" to "^
-							 Int.toString act^"\n") else ();
+							 Int.toString act^"(used until "^Int.toString (lookupInt (!jvmto, act))^"\n") else ();
 					      case StampHash.lookup (!regmap, genuineReg) of
 						      NONE =>
 							  (StampHash.insert (!regmap, genuineReg, act);
@@ -309,6 +309,13 @@ structure ToJasmin =
 					print ("assign ok.\n") else ()
 			    end
 		    in
+			IntHash.insert (!jvmto, 0, lookup(!to, thisStamp));
+			IntHash.insert (!jvmto, 1, lookup(!to, parm1Stamp));
+			IntHash.insert (!jvmto, 2, lookup(!to, parm2Stamp));
+			IntHash.insert (!jvmto, 3, lookup(!to, parm3Stamp));
+			IntHash.insert (!jvmto, 4, lookup(!to, parm4Stamp));
+			IntHash.insert (!jvmto, 5, lookup(!to, parm5Stamp));
+
 			StampHash.appi assign (!to)
 		    end
 
