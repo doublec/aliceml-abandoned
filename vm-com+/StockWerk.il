@@ -67,7 +67,6 @@
   }
 
   .class sealed public State extends System.Object {
-    //--** use WeakReference?
     .field static private initonly class System.Collections.Hashtable GuidTable
     .method public static void .cctor() {
       newobj instance void System.Collections.Hashtable::.ctor()
@@ -84,6 +83,7 @@
       ldsfld class System.Collections.Hashtable StockWerk.State::GuidTable
       ldloc.1
       ldarg.0
+      newobj instance void System.WeakReference::.ctor(class System.Object)
       call instance void System.Collections.Hashtable::Add(class System.Object, class System.Object)
       ldloc.1
       ret
@@ -94,6 +94,10 @@
       call instance class System.Object System.Collections.Hashtable::get$Item(class System.Object)
       dup
       brfalse.s enter
+      castclass System.WeakReference
+      call instance class System.Object System.WeakReference::get$Target()
+      dup
+      brfalse.s enter
       castclass StockWerk.StockWert
       ret
     enter:
@@ -101,6 +105,7 @@
       ldsfld class System.Collections.Hashtable StockWerk.State::GuidTable
       ldarg.0
       ldarg.1
+      newobj instance void System.WeakReference::.ctor(class System.Object)
       call instance void System.Collections.Hashtable::Add(class System.Object, class System.Object)
       ldarg.1
       ret
