@@ -1,4 +1,0 @@
-# this generates everything. type 'source autogen'
-
-rm -rf autom4te.cache
-aclocal && automake --verbose && autoconf
