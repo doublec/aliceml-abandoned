@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg, 2001-2003
  *
  * Last change:
  *   $Date$ by $Author$
@@ -33,64 +33,65 @@ import functor   MkTranslationPhase    from "MkTranslationPhase"
 import structure CheckIntermediate     from "../common/CheckIntermediate"
 
 
-functor MkFrontendCommon(
-		val loadSig: Source.desc * Url.t -> Inf.sign
-		structure Switches: SWITCHES
-	) : PHASE =
-    let
-	structure Phase1 =
-		  MkTracingPhase(
-			structure Phase =
-			    MkElaborationPhase(val       loadSig  = loadSig
-					       structure Switches = Switches)
-			structure Switches = Switches
-			val name = "Elaboration"
-		  )
-	structure Phase2 =
-		  MkTracingPhase(
-			structure Phase    = MkTranslationPhase(Switches)
-			structure Switches = Switches
-			val name = "Translation"
-		  )
-	structure Phase1' =
-		  MkResultDumpingPhase(
-			structure Phase    = Phase1
-			structure Switches = Switches
-			val header = "Component Signature"
-			val pp     = PPInf.ppSig o #sign o TypedGrammar.infoComp
-			val switch = Switches.Debug.dumpElaborationSig
-		  )
-	structure Phase2' =
-		  MkResultDumpingPhase(
-			structure Phase    = Phase2
-			structure Switches = Switches
-			val header = "Intermediate Syntax"
-			val pp     = PPIntermediateGrammar.ppComp
-			val switch = Switches.Debug.dumpIntermediate
-		  )
-	structure Phase3 =
-		  MkTracingPhase(
-			structure Phase =
-			struct
-			    structure C = EmptyContext
-			    structure I = Phase2'.O
-			    structure O = I
+functor MkFrontendCommon (
+    val loadSig: Source.desc * Url.t -> Inf.sign
+    structure Switches: SWITCHES
+) : PHASE =
+let
+    structure Phase1 =
+	      MkTracingPhase(
+		    structure Phase =
+			MkElaborationPhase(val       loadSig  = loadSig
+					   structure Switches = Switches)
+		    structure Switches = Switches
+		    val name = "Elaboration"
+	      )
+    structure Phase2 =
+	      MkTracingPhase(
+		    structure Phase    = MkTranslationPhase(Switches)
+		    structure Switches = Switches
+		    val name = "Translation"
+	      )
+    structure Phase1' =
+	      MkResultDumpingPhase(
+		    structure Phase    = Phase1
+		    structure Switches = Switches
+		    val header = "Component Signature"
+		    val pp     = PPInf.ppSig o #sign o TypedGrammar.infoComp
+		    val switch = Switches.Debug.dumpElaborationSig
+	      )
+    structure Phase2' =
+	      MkResultDumpingPhase(
+		    structure Phase    = Phase2
+		    structure Switches = Switches
+		    val header = "Intermediate Syntax"
+		    val pp     = PPIntermediateGrammar.ppComp
+		    val switch = Switches.Debug.dumpIntermediate
+	      )
+    structure Phase3 =
+	      MkTracingPhase(
+		    structure Phase =
+		    struct
+			structure C = EmptyContext
+			structure I = Phase2'.O
+			structure O = I
 
-			    fun translate _ (_, comp) =
-				(if !Switches.Debug.checkIntermediate
-				 then CheckIntermediate.check comp else ();
-				 comp)
-			end
-			structure Switches = Switches
-			val name = "Verification (optional)"
-		  )
-    in
-	ComposePhases'(
-	    structure Phase1  = ComposePhases(structure Phase1 = Phase1'
-					      structure Phase2 = Phase2')
-	    structure Phase2  = Phase3
-	    structure Context = Phase1.C
-	    fun context1 E    = E
-	    fun context2 E    = ()
-	)
-    end
+			fun translate(_, _, comp) =
+			    (if !Switches.Debug.checkIntermediate
+			     then CheckIntermediate.check comp else ();
+			     ((), comp))
+		    end
+		    structure Switches = Switches
+		    val name = "Verification (optional)"
+	      )
+in
+    ComposePhases' (
+	structure Phase1  = ComposePhases(structure Phase1 = Phase1'
+					  structure Phase2 = Phase2')
+	structure Phase2  = Phase3
+	structure Context = Phase1.C
+	val context       = Pair.fst
+	val context1      = id
+	val context2      = ignore
+    )
+end
