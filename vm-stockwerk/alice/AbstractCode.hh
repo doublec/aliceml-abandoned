@@ -21,7 +21,7 @@
 #include "alice/Data.hh"
 
 // Opcodes
-class AbstractCode {
+class DllExport AbstractCode {
 public:
   static const u_int functionWidth = 6;
 
