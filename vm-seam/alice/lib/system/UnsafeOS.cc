@@ -16,6 +16,7 @@
 #include <cstdlib>
 #include <cstring>
 
+
 #if defined(__MINGW32__) || defined(_MSC_VER)
 #include <windows.h>
 #else
@@ -23,6 +24,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <errno.h>
+#include <dirent.h>
 #define Interruptible(res, call)		\
   int res;					\
   do {						\
@@ -42,6 +44,42 @@ static word SysErrConstructor;
 //
 // UnsafeOS.FileSys Structure
 //
+
+DEFINE1(UnsafeOS_FileSys_openDir) {
+  DECLARE_STRING(name, x0);
+  DIR *d = opendir(name->ExportC());
+  if (!d) RAISE_SYS_ERR();
+
+  RETURN(Store::UnmanagedPointerToWord(d));
+} END
+
+DEFINE1(UnsafeOS_FileSys_readDir) {
+  DECLARE_UNMANAGED_POINTER(d, x0);
+  
+  if (struct dirent *n = readdir((DIR *)d)) {
+    TagVal *some = TagVal::New(1,1);
+    some->Init(0, String::New(n->d_name)->ToWord());
+    RETURN(some->ToWord());
+  } else {
+    RETURN_INT(0);
+  }
+} END
+
+DEFINE1(UnsafeOS_FileSys_rewindDir) {
+  DECLARE_UNMANAGED_POINTER(d, x0);
+  rewinddir((DIR *)d);
+
+  RETURN_UNIT;
+} END
+
+DEFINE1(UnsafeOS_FileSys_closeDir) {
+  DECLARE_UNMANAGED_POINTER(d, x0);
+
+  if (closedir((DIR *)d) != 0)
+    RAISE_SYS_ERR();
+  
+  RETURN_UNIT;
+} END
 
 DEFINE1(UnsafeOS_FileSys_chDir) {
   DECLARE_STRING(name, x0);
@@ -240,7 +278,7 @@ DEFINE0(UnsafeOS_FileSys_tmpName) {
 } END
 
 static word UnsafeOS_FileSys() {
-  Record *record = Record::New(11);
+  Record *record = Record::New(15);
   INIT_STRUCTURE(record, "UnsafeOS.FileSys", "chDir",
 		 UnsafeOS_FileSys_chDir, 1);
   INIT_STRUCTURE(record, "UnsafeOS.FileSys", "getDir",
@@ -263,6 +301,14 @@ static word UnsafeOS_FileSys() {
 		 UnsafeOS_FileSys_remove, 1);
   INIT_STRUCTURE(record, "UnsafeOS.FileSys", "tmpName",
 		 UnsafeOS_FileSys_tmpName, 1);
+  INIT_STRUCTURE(record, "UnsafeOS_FileSys", "openDir",
+		 UnsafeOS_FileSys_openDir, 1);
+  INIT_STRUCTURE(record, "UnsafeOS_FileSys", "readDir",
+		 UnsafeOS_FileSys_readDir, 1);
+  INIT_STRUCTURE(record, "UnsafeOS_FileSys", "rewindDir",
+		 UnsafeOS_FileSys_rewindDir, 1);
+  INIT_STRUCTURE(record, "UnsafeOS_FileSys", "closeDir",
+		 UnsafeOS_FileSys_closeDir, 1);
   return record->ToWord();
 }
 
