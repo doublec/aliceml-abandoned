@@ -221,6 +221,11 @@
     included.
   </P>
 
+  <P>
+    Native components cannot be part of a component bundle.
+    They are implicitly considered excluded.
+  </P>
+
 
 <?php section("depend", "dependency") ?>
 
