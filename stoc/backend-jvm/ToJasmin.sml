@@ -280,13 +280,13 @@ structure ToJasmin =
 					not (isSome (StampHash.lookup (!regmap, genuineReg)))
 					then (if !VERBOSE >=2 then
 						  print ("map "^Stamp.toString genuineReg^" to "^
-							 Stamp.toString act^"\n") else ();
+							 Int.toString act^"\n") else ();
 					      case StampHash.lookup (!regmap, genuineReg) of
 						      NONE =>
 							  (StampHash.insert (!regmap, genuineReg, act);
 							   IntHash.insert (!jvmto, act, t'))
 						    | SOME v => print ("ERROR: trying to overwrite old value"^
-								       Stamp.toString v^"\n"))
+								       Int.toString v^"\n"))
 				    else assignNextFree (act+1)
 			    in
 				if !VERBOSE >= 2 then
