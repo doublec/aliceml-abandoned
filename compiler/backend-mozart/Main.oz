@@ -94,7 +94,8 @@ define
       [] 'saveValue'#[OutFilename Id] then
 	 {Pickle.save {Get {String.toInt Id}} OutFilename}
 	 {System.printInfo 'Result: 0\n\n'}
-      [] unit then
+      [] 'stop'#nil then
+	 {System.printInfo 'Result: 0\n\n'}
 	 {Application.exit 0}
       elseof X then raise format(loop X) end
       end

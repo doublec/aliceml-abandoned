@@ -114,6 +114,7 @@ structure Main :> MAIN =
 	in
 	    MozartTarget.save engine outFilename
 	    (MozartGenerationPhase.translate inFilename component);
+	    MozartEngine.stop engine;
 	    exportSign
 	end
 

@@ -26,10 +26,6 @@ functor MakeEngine(val cmd: unit -> string * string list
 	fun instream proc = #1 (Unix.streamsOf (valOf (!proc)))
 	fun outstream proc = #2 (Unix.streamsOf (valOf (!proc)))
 
-	fun stop proc =
-	    (TextIO.closeOut (outstream proc);
-	     proc := NONE)
-
 	datatype arg =
 	    CODE of Code.t
 	  | VALUE of value
@@ -76,11 +72,19 @@ functor MakeEngine(val cmd: unit -> string * string list
 			end
 	end
 
+	fun stop proc =
+	    (sendCommand (proc, "stop", nil);
+	     case parseResult proc of
+		 [("Result", _)] => ()
+	       | _ => raise Format "stop: result expected";
+	     TextIO.closeOut (outstream proc);
+	     proc := NONE)
+
 	fun buildFunctor proc code =
 	    (sendCommand (proc, "buildFunctor", [CODE code]);
 	     case parseResult proc of
-		    [("Result", s)] => valOf (Int.fromString s)
-		  | _ => raise Format "buildFunctor: result expected")
+		 [("Result", s)] => valOf (Int.fromString s)
+	       | _ => raise Format "buildFunctor: result expected")
 
 	fun saveValue proc filename value =
 	    (sendCommand (proc, "saveValue", [STRING filename, VALUE value]);
