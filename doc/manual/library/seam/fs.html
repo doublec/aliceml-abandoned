@@ -13,13 +13,9 @@
   </P>
   <P>
     Finite set variables are variables whose values are sets of
-    non-negative integers.
+    integers.
   </P>
-  <P>
-    Note that every propagator creation
-    can raise a <TT>Tell</TT> exception if it is performed on toplevel and
-    the constraint is inconsistent with other constraints.
-  </P>
+
 
   <P>See also:
     <A href="fd.html"><TT>FD</TT></A>
@@ -28,103 +24,154 @@
 <?php section("import", "import"); ?>
 
   <PRE>
-    import signature FS from "x-alice:/lib/constraints/FS-sig"
-    import structure FS from "x-alice:/lib/constraints/FS"</PRE>
+    import signature FS from "x-alice:/lib/gecode/FS-sig"
+    import structure FS from "x-alice:/lib/gecode/FS"</PRE>
 
 <?php section("interface", "interface"); ?>
 
   <PRE>
-    signature FS =
-    sig
-	type fd
-	type bin = fd
-	type fs
+signature FS =
+sig
+    type space
+    type intvar
+    type boolvar
+    type setvar
 
-	exception Tell of {cause : exn}
+    type domain = (int*int) vector
+    exception InvalidDomain
+    (* Exception thrown by all domain tells *)
+    (* if something that is no proper domain is used *)
 
-	(* Implementation dependent fs limits *)
-	val inf : int
-	val sup : int
-	    
-	(* Allocation Function *)
-	val fs : (FD.domain * FD.domain) option -> fs (* Domain, Overflow *)
-	val fsVec : int * FD.domain * FD.domain -> fs vector (* Domain, Overflow *)
+    (* Allocation of finite set variables *)
+    val setvar :  space  ->  setvar
+    val setvarVec :  space * int ->  setvar vector
 
-	(* Standard Propagators *)
-	val compl : fs * fs -> unit
-	val complIn : fs * fs * fs -> unit
-	val incl : fd * fs -> unit
-	val excl : fd * fs -> unit
-	val card : fs * fd -> unit
-	val cardRange : int * int * fs -> unit
-	val isIn : int * fs -> bool
-	val isEmpty : fs -> bool
+    val lowerBound : space * domain -> setvar
+    val upperBound : space * domain -> setvar
+    val bounds : space * domain * domain -> setvar
 
-	val difference : fs * fs * fs -> unit
-	val intersect : fs * fs * fs -> unit
-	val intersectN : fs vector * fs -> unit
-	val union : fs * fs * fs -> unit
-	val unionN : fs vector * fs -> unit
-	val subset : fs * fs -> unit
-	val disjoint : fs * fs -> unit
-	val disjointN : fs vector -> unit
-	val distinct : fs * fs -> unit
-	val distinctN : fs vector -> unit
-	val partition : fs vector * fs -> unit
+    (* Standard Propagators *)
+    val cardRange : space * int * int * setvar -> unit
+    (* val isIn : space * int * setvar -> bool *)
 
-	(* Values *)
-	val value : FD.domain -> fs (* Domain, Overflow *)
-	val emptyValue : unit -> fs
-	val singletonValue : int -> fs
-	(*	    val upperBound : FD.domain -> fs *)
-	val universalValue : unit -> fs
-	val isValue : fs -> bool
-	    
-	(* Integer FS *)
-	structure Int :
-	    sig
-		val min : fs * fd -> unit
-		val max : fs * fd -> unit
-		val convex : fs -> unit
-		val match : fs * fd vector -> unit
-		val minN : fs * fd vector -> unit
-		val maxN : fs * fd vector -> unit
-	    end
+    val superOfInter : space * setvar * setvar * setvar -> unit
+    val subOfUnion : space * setvar * setvar * setvar -> unit
+    val compl : space * setvar * setvar -> unit
+    (* val complIn : space * setvar * setvar * setvar -> unit *)
+    val difference : space * setvar * setvar * setvar -> unit
+    val intersect : space * setvar * setvar * setvar -> unit
+    val intersectN : space * setvar vector * setvar -> unit
+    val union : space * setvar * setvar * setvar -> unit
+    val unionN : space * setvar vector * setvar -> unit
+    val subset : space * setvar * setvar -> unit
+    val noSubset : space * setvar * setvar -> unit
+    val disjoint : space * setvar * setvar -> unit
+(*    val disjointN : space * setvar vector -> unit *)
+    val distinct : space * setvar * setvar -> unit
+    val distinctN : space * setvar vector -> unit
+    val partition : space * setvar * setvar * setvar -> unit
+    val partitionN : space * setvar vector * setvar -> unit
+    val equals : space * setvar * setvar -> unit
+    val convex : space * setvar -> unit
+    val convexHull : space * setvar * setvar -> unit
+    val seq : space * setvar vector -> unit
+    val seqU : space * setvar vector * setvar -> unit
 
-	(* Reified Propagators *)
-	structure Reified :
-	    sig
-		val isIn : int * fs * bin -> unit
-		val areIn : int list * fs * bin list -> unit
-		val incl : fd * fs * bin -> unit
-		val equal : fs * fs * bin -> unit
-		val partition : fs list * int list * fs * bin list -> unit
-	    end
+    structure Value :
+	sig
+	    val make : space * domain -> setvar
+	    val empty : space -> setvar
+	    val single : space * int -> setvar
+(*	    val universal : space -> setvar*)
+	    val is : space * setvar -> bool
+	end
 
-	(* Reflection *)
-	structure Reflect :
-	    sig
-		val card : fs -> FD.domain
-		val lowerBound : fs -> FD.domain
-		val unknown : fs -> FD.domain
-		val upperBound : fs -> FD.domain
+    structure Int :
+        sig
+            val incl : space * setvar * intvar -> unit
+            val excl : space * setvar * intvar -> unit
+            val the : space * setvar * intvar -> unit
+	    val min : space * setvar * intvar -> unit
+	    val max : space * setvar * intvar -> unit
+            val card : space *  setvar * intvar -> unit
+	    val match : space * setvar * intvar vector -> unit
+(*	    val minN : setvar * intvar vector -> unit *)
+(*	    val maxN : setvar * intvar vector -> unit *)
+	end
 
-		val cardOfLowerBound : fs -> int
-		val cardOfUnknown : fs -> int
-		val cardOfUpperBound : fs -> int
-	    end
-    end</PRE>
+    structure Reified : sig
+	val isIn : space * setvar * int * boolvar -> unit
+	val areIn : space * (boolvar * int) vector * setvar -> unit
+	val incl : space * intvar * setvar * boolvar -> unit
+	val equal : space * setvar * setvar * boolvar -> unit
+        val subset : space * setvar * setvar * boolvar -> unit
+(*	val partition : setvar list * int list * setvar * bin list -> unit *)
+    end
+
+    structure Selection : sig
+	val setvar : space * setvar * setvar vector * intvar -> unit
+	val union : space * setvar * setvar vector * setvar -> unit
+	val inter : space * setvar * setvar vector * setvar -> unit
+        val disjoint : space * setvar vector * setvar -> unit
+    end
+	
+    structure Reflect : sig
+	val card : space * setvar -> (int * int)
+	val lowerBound : space * setvar -> domain
+	val upperBound : space * setvar -> domain
+	val unknown : space * setvar -> domain
+	val cardOfLowerBound : space * setvar -> int
+	val cardOfUpperBound : space * setvar -> int
+	val cardOfUnknown : space * setvar -> int
+        val assigned : space * setvar -> bool
+    end
+
+    (* Branching strategies *)
+
+    datatype fsb_var_sel =
+	     FSB_MAX_CARD
+	   | FSB_MIN_CARD
+           | FSB_MIN_UNKNOWN_ELEM
+	   | FSB_NONE
+           | FSB_RANDOM_VAR
+	     
+    datatype fsb_val_sel =
+	     FSB_MAX
+	   | FSB_MIN
+           | FSB_RANDOM_VAL
+
+    val setvarbranch :  space *  setvar vector * fsb_var_sel *
+			fsb_val_sel -> unit
+
+    val randomBranch :  space *  setvar vector * fsb_var_sel *
+			fsb_val_sel * int -> unit
+end
+</PRE>
 
 <?php section("description", "description"); ?>
 
   <DL>
-    <DT>
-      <TT>type fd</TT> <BR>
-      <TT>type bin = fd</TT>
+    <DT
+      <TT>type space</TT>
     </DT>
     <DD>
-      <P>The type of finite domain variables. Usually equal to <TT>FD.fd</TT>.
+      <P>The type of the first class comutational space. Usually equal to <TT>SPACE.space</TT>.
     </P></DD>
+
+    <DT
+      <TT>type intvar</TT> 
+    </DT>
+    <DD>
+      <P>The type of finite domain variables. Usually equal to <TT>FD.intvar</TT>.
+    </P></DD>
+
+    <DT
+      <TT>type boolvar</TT> 
+    </DT>
+    <DD>
+      <P>The type of boolean constraint variables. Usually equal to <TT>FD.intvar</TT>.
+    </P></DD>
+
 
     <DT>
       <TT>type fs</TT>
@@ -134,379 +181,543 @@
     </P></DD>
 
     <DT>
-      <TT>exception Tell of {cause : exn}</TT>
+      <TT>type domain = (int*int) vector</TT>
     </DT>
     <DD>
-      <P>is raised when a propagator is created on toplevel and is inconsistent
-         with other constraints. Usually equal to <TT>FD.Tell</TT>.
+      <P>The type of domain descriptions. 
+      Used to define set bounds at variable creation or later, in value declaration, and reflection.
+      It is an ordered, non-overlapping, non-contingous vector of ordered integer pairs. 
+      For example the set of all primes between 1 and 10 is #[(2,3),(5,5),(7,7)] <BR>
+      Observe that #[(1,2),(3,4)] is an invalid domain: contigous ranges, use #[(1,4)] instead <BR>
+      #[(1,3),(3,4)] is even more so.<BR>
+      #[(3,2)] is also invalid, the range is ill-defined.<BR>
+      #[(4,5),(1,2)] is nonconformant in pair ordering, #[(1,2),(4,5)] is fine.
     </P></DD>
 
     <DT>
-      <TT>inf</TT>
+      <TT>exception InvalidDomain</TT>
     </DT>
     <DD>
-      <P>denotes the implementation dependent smallest possible
-         element of a finite set.
+      <P>Exception thrown by all variable creation and domain tell operations
+      on receipt of a domain description not conforming to the above rules.
     </P></DD>
 
     <DT>
-      <TT>sup</TT>
+      <TT>setvar <I>s</I></TT>
     </DT>
     <DD>
-      <P>denotes the implementation dependent largest possible element
-         of a finite set.
+      <P>Returns a freshly created, unconstrained finite set variable in <I>s</I>.
+      The returned variable is only to be used in <I>s</I> and its decendants.
     </P></DD>
 
     <DT>
-      <TT>fs <I>spec</I></TT>
+      <TT>setvarVec <I>(s,n)</I></TT>
     </DT>
     <DD>
-      <P>returns a freshly created finite set variables initialized according
-         to <I>spec</I>.
+      <P>Returns a vector of <I>n</I> freshly cretaed, 
+      unconstrained finite set variables in <I>s</I>.
     </P></DD>
 
     <DT>
-      <TT>fsVec (<I>n</I>,<I>spec</I>)</TT>
+      <TT>lowerBound <I>(s,dom)</I></TT>
     </DT>
     <DD>
-      <P>returns a vector of size <I>n</I> containing
-         freshly created finite set variables initialized according
-         to <I>spec</I>.
+      <P>Returns a freshly created finite set variable in <I>s</I>, 
+      already constrained to be a superset of <I>dom</I>.
     </P></DD>
 
     <DT>
-      <TT>compl (<I>x</I>,<I>y</I>)</TT>
+      <TT>upperBound <I>(s,dom)</I></TT>
     </DT>
     <DD>
-      <P><TT>y = [FS.inf, ..., FS.sup] - x</TT>
+      <P>Returns a freshly created finite set variable in <I>s</I>, 
+      already constrained to be a subset of <I>dom</I>.
     </P></DD>
 
     <DT>
-      <TT>compl (<I>x</I>,<I>y</I>)</TT>
+      <TT>upperBound <I>(s, dom1, dom2)</I></TT>
     </DT>
     <DD>
-      <P><TT>y = [FS.inf, ..., FS.sup] - x</TT>
+      <P>Returns a freshly created finite set variable in <I>s</I>, 
+      already constrained to be a superset of <I>dom1</I> and a subset of <I>dom2</I>.
+    </P></DD>
+
+
+    <DT>
+      <TT>cardRange (<I>s,min,max,x</I>)</TT>
+    </DT>
+    <DD>
+      <P> Constrains <I>x</I> in <I>s</I> to have a cardinality (number of set elements) 
+      between <I>min</I> and <i>max</I>.
     </P></DD>
 
     <DT>
-      <TT>complIn (<I>x</I>,<I>y</I>,<I>z</I>)</TT>
+      <TT>name <I>arg</I></TT>
     </DT>
     <DD>
-      <P><TT>z = y - x</TT>
+      <P>Blurb explaining the role of <I>arg</I>.
+      The returned variable is only to be used in <I>space</I> and its decendants.
+    </P></DD>    
+
+    <DT>
+      <TT>superOfInter (<I>s, x, y, z</I>)</TT>
+    </DT>
+    <DD>
+      <P> Creates a new propagator in <I>s</I> to
+	  constrain <I>x</I> to be a superset of the intersection of <I>y</I> and <I>z</I>.
+    </P></DD>
+
+   <DT>
+      <TT>subOfUnion (<I>s, x, y, z</I>)</TT>
+    </DT>
+    <DD>
+      <P> Creates a new propagator in <I>s</I> to
+	  constrain <I>x</I> to be a subset of the union of <I>y</I> and <I>z</I>.
     </P></DD>
 
     <DT>
-      <TT>incl (<I>x</I>,<I>y</I>)</TT>
+      <TT>compl (<I>s, x, y</I>)</TT>
     </DT>
     <DD>
-      <P>Post the constraint that <I>x</I> is an element of <I>y</I> and
-         that <TT>inf &lt;= x &lt;= sup</TT> holds.
+      <P> Creates a new propagator in <I>s</I> to constrain
+      <I>x</I> and <I>y</I> to be complements using the largest set representable as the universe.
     </P></DD>
 
     <DT>
-      <TT>excl (<I>x</I>,<I>y</I>)</TT>
+      <TT>difference (<I>s, x,y,z</I>)</TT>
     </DT>
     <DD>
-      <P>Post the constraint that <I>x</I> is not an element of <I>y</I>.
+      <P> Creates a new propagator in <I>s</I> so that
+      <I>x</I> is <I>y</I> minus <I>z</I>.
+    </P></DD>
+
+   <DT>
+      <TT>intersect (<I>s, x, y, z</I>)</TT>
+    </DT>
+    <DD>
+      <P> Creates a new propagator in <I>s</I> to
+	  constrain <I>x</I> to be the intersection of <I>y</I> and <I>z</I>.
+    </P></DD>
+
+   <DT>
+      <TT>intersectN (<I>s, x, v</I>)</TT>
+    </DT>
+    <DD>
+      <P> Creates a new propagator in <I>s</I> to
+	  constrain <I>x</I> to be the intersection of all <I>vi</I>.
+    </P></DD>
+
+   <DT>
+      <TT>union (<I>s, x, y, z</I>)</TT>
+    </DT>
+    <DD>
+      <P> Creates a new propagator in <I>s</I> to
+	  constrain <I>x</I> to be the union of <I>y</I> and <I>z</I>.
+    </P></DD>
+
+   <DT>
+      <TT>unionN (<I>s, x, v</I>)</TT>
+    </DT>
+    <DD>
+      <P> Creates a new propagator in <I>s</I> to
+	  constrain <I>x</I> to be the union of all <I>vi</I>.
+    </P></DD>
+
+	<DT>
+      <TT>subset (<I>s, x, y</I>)</TT>
+    </DT>
+    <DD>
+      <P> Creates a new propagator in <I>s</I> to
+	  constrain <I>x</I> to be a subset of <I>y</I>.
+    </P></DD>
+
+	<DT>
+      <TT>NoSubset (<I>s, x, y</I>)</TT>
+    </DT>
+    <DD>
+      <P> Creates a new propagator in <I>s</I> to
+	  constrain <I>x</I> not to be a subset of <I>y</I>.
+	  Simply put, <I>x</I> must contain at least one element not present in <I>y</I>.
+    </P></DD>
+
+	<DT>
+      <TT>disjoint (<I>s, x, y</I>)</TT>
+    </DT>
+    <DD>
+      <P> Creates a new propagator in <I>s</I> to
+	  constrain <I>x</I> and <I>y</I> to have no common element.
+    </P></DD>
+
+	<DT>
+      <TT>distinct (<I>s, x, y</I>)</TT>
+    </DT>
+    <DD>
+      <P> Creates a new propagator in <I>s</I> to
+	  constrain <I>x</I> and <I>y</I> to be separate sets, differ in at least one element.
+    </P></DD>
+
+	<DT>
+      <TT>distinctN (<I>s, v</I>)</TT>
+    </DT>
+    <DD>
+      <P> Creates a new propagator in <I>s</I> to
+		say no two sets in <I>v</I> can be the same.
+    </P></DD>
+
+   <DT>
+      <TT>partition (<I>s, x, y, z</I>)</TT>
+    </DT>
+    <DD>
+      <P> Creates a new propagator in <I>s</I> to
+	  constrain <I>x</I> to be the union of <I>y</I> and <I>z</I>, while <I>y</I> and <I>z</I> share no element.
+    </P></DD>
+
+   <DT>
+      <TT>partitionN (<I>s, x, v</I>)</TT>
+    </DT>
+    <DD>
+      <P> Creates a new propagator in <I>s</I> to
+	  constrain <I>x</I> to be the union of all <I>vi</I>, while no two sets in <I>v</I> may share elements.
+    </P></DD>
+
+	<DT>
+      <TT>equals (<I>s, x, y</I>)</TT>
+    </DT>
+    <DD>
+      <P> Creates a new propagator in <I>s</I> to
+	  constrain <I>x</I> and <I>y</I> to be the same set.
+    </P></DD>
+
+	<DT>
+      <TT>convex (<I>s, x</I>)</TT>
+    </DT>
+    <DD>
+      <P> Creates a new propagator in <I>s</I> to
+	  constrain <I>x</I> to be a convex set, 
+	  containing all integers between its smallest and largest element.
+    </P></DD>
+
+	<DT>
+      <TT>equals (<I>s, x, y</I>)</TT>
+    </DT>
+    <DD>
+      <P> Creates a new propagator in <I>s</I> to
+	  constrain <I>x</I> to be the convex hull of <I>y</I>. 
+	  Simply put, <I>x</I> has the same smallest and largest element as <I>y</I>, 
+	  but also contains all integers in between.
+    </P></DD>
+
+   <DT>
+      <TT>seq (<I>s, v</I>)</TT>
+    </DT>
+    <DD>
+      <P> Creates a new propagator in <I>s</I> to
+	  constrain the largest element of <I>vi</I> to be 
+	  smaller than the smallest element of <I>vi</I>, 
+	  for all i<j.
+    </P></DD>
+
+   <DT>
+      <TT>seqU (<I>s, x, v</I>)</TT>
+    </DT>
+    <DD>
+      <P> Creates a new propagator in <I>s</I> to
+	  constrain <I>x</I> to be the union of all <I>vi</I>, 
+	  while <I>v</I> is a seqence as defined above. 
+	  This is a special case of the partitionN constraint.	  
+    </P></DD>
+
+
+    <DT>
+      <TT>propagator (<I>s, args</I>)</TT>
+    </DT>
+    <DD>
+      <P> Creates a new propagator in <I>s</I> for
+      doing something with <I>args</I>
     </P></DD>
 
     <DT>
-      <TT>card (<I>x</I>,<I>y</I>)</TT>
+      <TT>Value.make (<I>s, dom</I>)</TT>
     </DT>
     <DD>
-      <P><I>y</I> is constrained to denote the cardinality of <I>x</I>.
+      <P> Creates a determined set in <I>s</I> 
+      containing exactly the elements in <I>dom</I>.
     </P></DD>
 
     <DT>
-      <TT>cardRange (<I>l</I>,<I>u</I>,<I>x</I>)</TT>
+      <TT>Value.empty (<I>s</I>)</TT>
     </DT>
     <DD>
-      <P>Post the constraint that the cardinality of <I>x</I>
-         is greater than or equal to <I>l</I>
-         and less than or equal to <I>h</I>.
+      <P> Creates a determined, empty set in <I>s</I>. 
     </P></DD>
 
     <DT>
-      <TT>isIn (<I>i</I>,<I>x</I>)</TT>
+      <TT>Value.single (<I>s, n</I>)</TT>
     </DT>
     <DD>
-      <P>returns <TT>true</TT> iff <I>i</I> is an element of <I>x</I>,
-         <TT>false</TT> otherwise.
+      <P> Creates a determined, single element set in <I>s</I> 
+      containing the integer <I>n</I>.
     </P></DD>
 
     <DT>
-      <TT>difference (<I>x</I>,<I>y</I>,<I>z</I>)</TT>
+      <TT>Value.is (<I>s, x</I>)</TT>
     </DT>
     <DD>
-      <P>Post the constraint that <TT>z = x - y</TT>.
+      <P> Returns true if <I>x</I> is already determined, false othervise. 
+      See the Reflect structure.
+    </P></DD>
+
+
+
+    <DT>
+      <TT>Int.incl (<I>s, x, y</I>)</TT>
+    </DT>
+    <DD>
+      <P> Creates a new propagator in <I>s</I> ensuring
+	  <I>y</I> is an element of <I>x</I>.
     </P></DD>
 
     <DT>
-      <TT>intersect (<I>x</I>,<I>y</I>,<I>z</I>)</TT>
+      <TT>Int.excl (<I>s, x, y</I>)</TT>
     </DT>
     <DD>
-      <P>Post the constraint that <I>z</I> is the intersection of <I>y</I>
-         and <I>y</I>.
+      <P> Creates a new propagator in <I>s</I> ensuring
+	  <I>y</I> is not an element of <I>x</I>.
     </P></DD>
 
     <DT>
-      <TT>intersectN (<I>v</I>,<I>x</I>)</TT>
+      <TT>Int.the (<I>s, x, y</I>)</TT>
     </DT>
     <DD>
-      <P><I>x</I> constraint to the the intersection of all
-         <I>v1</I>, ..., <I>vn</I>.
+      <P> Creates a new propagator in <I>s</I> ensuring
+	  <I>y</I> is the one and only element of <I>x</I>.
+	  Sets cardinality of <I>x</I> to 1.
     </P></DD>
 
     <DT>
-      <TT>union (<I>x</I>,<I>y</I>,<I>z</I>)</TT>
+      <TT>Int.min (<I>s, x, y</I>)</TT>
     </DT>
     <DD>
-      <P>Post the constraint that <I>z</I> is the union of <I>y</I>
-         and <I>y</I>.
+      <P> Creates a new propagator in <I>s</I> ensuring
+	  <I>y</I> is the smallest element of <I>x</I>.
     </P></DD>
 
     <DT>
-      <TT>unionN (<I>v</I>,<I>x</I>)</TT>
+      <TT>Int.max (<I>s, x, y</I>)</TT>
     </DT>
     <DD>
-      <P><I>x</I> constraint to the the union of all
-         <I>v1</I>, ..., <I>vn</I>.
+      <P> Creates a new propagator in <I>s</I> ensuring
+	  <I>y</I> is the largest element of <I>x</I>.
     </P></DD>
 
     <DT>
-      <TT>subset (<I>x</I>,<I>y</I>)</TT>
+      <TT>Int.card (<I>s, x, y</I>)</TT>
     </DT>
     <DD>
-      <P>Post the constraint that <I>x</I> must be a subset of or equal to
-         <I>y</I>.
+      <P> Creates a new propagator in <I>s</I> ensuring
+	  <I>y</I> is the number of elements (cardinality) of <I>x</I>.
     </P></DD>
 
     <DT>
-      <tt>disjoint (<I>x</I>,<I>y</I>)</TT>
+      <TT>Int.match (<I>s, x, v</I>)</TT>
     </DT>
     <DD>
-      <P><I>x</I> and <I>y</I> must be disjoint.
+      <P> Creates a new propagator in <I>s</I> ensuring
+	  <I>v</I> is the ordered vector of all elements of <I>x</I>.
     </P></DD>
 
     <DT>
-      <tt>disjointN <I>v</I></TT>
+      <TT>Int.minN (<I>s, x, v</I>)</TT>
     </DT>
     <DD>
-      <P>All elements <I>x</I> must be pairwise disjoint.
+      <P> Creates a new propagator in <I>s</I> ensuring
+	  <I>v</I> is the ordered vector of the smallest elements of <I>x</I>.
     </P></DD>
 
     <DT>
-      <tt>distinct (<I>x</I>,<I>x</I>)</TT>
+      <TT>Int.maxN (<I>s, x, v</I>)</TT>
     </DT>
     <DD>
-      <P><I>x</I> and <I>y</I> must be distinct.
+      <P> Creates a new propagator in <I>s</I> ensuring
+	  <I>v</I> is the ordered vector of the largest elements of <I>x</I>.
+    </P></DD>
+
+
+
+    <DT>
+      <TT>Reified.isIn (<I>s, x, y, b</I>)</TT>
+    </DT>
+    <DD>
+      <P> Creates a new propagator in <I>s</I> ensuring
+      <I>b</I> is true if and only if <I>y</I> is an element of <I>x</I>
     </P></DD>
 
     <DT>
-      <tt>distinctN <I>v</I></TT>
+      <TT>Reified.areIn (<I>s, v1, v2, x</I>)</TT>
     </DT>
     <DD>
-      <P>All elements of <I>v</I> must be pairwise distinct.
+      <P> Creates a new propagator in <I>s</I> ensuring
+      <I>v2i</I> is true if and only if <I>v1i</I> is an element of <I>x</I>
     </P></DD>
 
     <DT>
-      <tt>partition (<I>v</I>,<I>x</I>)</TT>
+      <TT>Reified.incl (<I>s, x, y, b</I>)</TT>
     </DT>
     <DD>
-      <P><I>v</I> is a partition of <I>x</I>, that is, <I>v</I> containts
-      pairwise disjoint set such that the union yields <I>x</I>.
+      <P> Creates a new propagator in <I>s</I> ensuring
+      <I>b</I> is true if and only if <I>y</I> is an element of <I>x</I>
     </P></DD>
 
     <DT>
-      <tt>value <I>x</I></TT>
+      <TT>Reified.equal (<I>s, x, y, b</I>)</TT>
     </DT>
     <DD>
-      <P>returns a freshly created finite set value according to <I>spec</I>.
+      <P> Creates a new propagator in <I>s</I> ensuring
+      <I>b</I> is true if and only if <I>y</I> and <I>x</I> are the same set.
     </P></DD>
 
     <DT>
-      <tt>emptyValue ()</TT>
+      <TT>Reified.incl (<I>s, x, y, b</I>)</TT>
     </DT>
     <DD>
-      <P>returns a freshly created finite set value denoting the empty set.
+      <P> Creates a new propagator in <I>s</I> ensuring
+      <I>b</I> is true if and only if <I>x</I> is a subset of <I>y</I>
     </P></DD>
 
     <DT>
-      <tt>singletonValue <I>i</I></TT>
+      <TT>Selection.setvar (<I>s, x, v, y</I>)</TT>
     </DT>
     <DD>
-      <P>returns a freshly created finite set value denoting the
-         the singleton value <I>i</I>.
+      <P> Creates a new propagator in <I>s</I> ensuring
+      the <I>y</I>th element of <I>v</I> is equal to <I>x</I>.
+      <I>y</I> is constrained be in the range of valid indexes for <I>v</I>.
     </P></DD>
 
     <DT>
-      <tt>universalValue ()</TT>
+      <TT>Selection.union (<I>s, x, v, y</I>)</TT>
     </DT>
     <DD>
-      <P>returns a freshly created finite set value denoting the
-         universal value.
+      <P> Creates a new propagator in <I>s</I> ensuring
+      the union of the sets in <I>v</I> indexed by all elements of <I>y</I> is <I>x</I>.
+      <I>y</I> is constrained to contain nothing outside the range of valid indexes for <I>v</I>.
     </P></DD>
 
     <DT>
-      <tt>isValue <I>x</I></TT>
+      <TT>Selection.inter (<I>s, x, v, y</I>)</TT>
     </DT>
     <DD>
-      <P>returns <TT>true</TT> iff <I>x</I> denotes a finite set value,
-         <TT>false</TT> otherwise.
+      <P> Creates a new propagator in <I>s</I> ensuring
+      the intersection of the sets in <I>v</I> indexed by all elements of <I>y</I> is <I>x</I>.
+      <I>y</I> is constrained to contain nothing outside the range of valid indexes for <I>v</I>.
     </P></DD>
 
     <DT>
-      <tt>Int.min (<I>x</I>,<I>y</I>)</TT>
+      <TT>Selection.disjoint (<I>s, x, v, y</I>)</TT>
     </DT>
     <DD>
-      <P><I>y</I> is constrained to denote the minimal element of <I>x</I>.
+      <P> Creates a new propagator in <I>s</I> ensuring
+      the intersection of the sets in <I>v</I> indexed by all elements of <I>y</I> is empty.
+      <I>y</I> is constrained to contain nothing outside the range of valid indexes for <I>v</I>.
+    </P></DD>
+
+
+    <DT>
+      <TT>Reflection.card (<I>s, x</I>)</TT>
+    </DT>
+    <DD>
+      <P> Returns the current cardinality bounds of <I>x</I> in <I>s</I>.
     </P></DD>
 
     <DT>
-      <tt>Int.max (<I>x</I>,<I>y</I>)</TT>
+      <TT>Reflection.lowerBound (<I>s, x</I>)</TT>
     </DT>
     <DD>
-      <P><I>y</I> is constrained to denote the maximal element of <I>x</I>.
+      <P> Returns the currently known greatest lower bound set of <I>x</I> in <I>s</I>.
+      Simply put, all elements known to be in the set.
     </P></DD>
 
     <DT>
-      <tt>Int.convex <I>x</I></TT>
+      <TT>Reflection.upperBound (<I>s, x</I>)</TT>
     </DT>
     <DD>
-      <P>Whenever <I>l</I> and <I>h</I> are elements of <I>x</I>, then
-         every value between <I>l</I> and <I>h</I> is also in <I>x</I>.
+      <P> Returns the currently known least upper bound set of <I>x</I> in <I>s</I>.
+      Simply put, all elements not yet known to be excluded from the set.
     </P></DD>
 
     <DT>
-      <tt>Int.match (<I>x</I>,<I>v</I>)</TT>
+      <TT>Reflection.unknown (<I>s, x</I>)</TT>
     </DT>
     <DD>
-      <P><I>v</I> is a vector of <I>n</I> integer variables that denote
-         the elements of <I>x</I> in ascending order. 
+      <P> Returns the elements whose membership in <I>x</I> is currently unknown in <I>s</I>.
+      Simply put, all elements that may still be both included or excluded.
     </P></DD>
 
     <DT>
-      <tt>Int.minN (<I>x</I>,<I>v</I>)</TT>
+      <TT>Reflection.cardOfLowerBound (<I>s, x</I>)</TT>
     </DT>
     <DD>
-      <P><I>v</I> is a vector of <I>n</I> integer variables that denote
-         the <I>n</I> minimal elements of <I>x</I> in ascending order. 
+      <P> Returns the number of known elements of <I>x</I> in <I>s</I>.
     </P></DD>
 
     <DT>
-      <tt>Int.maxN (<I>x</I>,<I>v</I>)</TT>
+      <TT>Reflection.cardOfUpperBound (<I>s, x</I>)</TT>
     </DT>
     <DD>
-      <P><I>v</I> is a vector of <I>n</I> integer variables that denote
-         the <I>n</I> maximal elements of <I>x</I> in ascending order. 
+      <P> Returns the number of possible elements of <I>x</I> in <I>s</I>.
     </P></DD>
 
     <DT>
-      <tt>Reified.isIn (<I>i</I>,<I>x</I>,<I>c</I>)</TT>
+      <TT>Reflection.cardOfUnknown (<I>s, x</I>)</TT>
     </DT>
     <DD>
-      <P>Reifies <TT>FS.isIn(i, x)</TT> into <I>c</I>.
+      <P> Returns the number of elements whose membership in <I>x</I> is yet to be determined in <I>s</I>.
+      Same as Reflection.cardOfUpperBound(s,x)-Reflection.cardOfLowerBound(s,x)
     </P></DD>
 
     <DT>
-      <tt>Reified.areIn (<I>is</I>,<I>x</I>,<I>cs</I>)</TT>
+      <TT>Reflection.assigned (<I>s, x</I>)</TT>
     </DT>
     <DD>
-      <P>Equivalent to
-      <TT>ListPair.app (fn (i, c) => Reified.isIn(i, x, c)) (is, cs)</TT>.
+      <P> Returns true if <I>x</I> is determined in <I>s</I>.
+      Simply put, same as Reflection.cardOfUnknown(x,s)=0
     </P></DD>
 
     <DT>
-      <TT>Reified.incl (<I>x</I>,<I>y</I>,<I>c</I>)</TT>
+      <TT>datatype fsb_var_sel</TT>
     </DT>
     <DD>
-      <P><I>c</I> reifies the presence of <I>x</I> in <I>y</I>.
-         This propagator detects in contrast to <TT>Reified.isIn</TT>
-         earlier if <I>x</I> is or is not constrained in <I>y</I>. 
+      <P>Identifies the variable selection strategy in branching.<BR>
+      <TT>FSB_MAX_CARD</TT> : Pick the variable with the largest possible cardinality.<BR>
+      <TT>FSB_MIN_CARD</TT> : Pick the variable with the lowest possible cardinality.<BR>
+      <TT>FSB_MIN_UNKNOWN_ELEM</TT> : Pick the variable with the smallest unknown element.<BR>
+      <TT>FSB_NONE</TT> : Pick the leftmost undetermined variable.<BR>
+      <TT>FSB_RANDOM_VAR</TT> : Pick at random.<BR>                  
     </P></DD>
 
     <DT>
-      <TT>Reified.equal (<I>x</I>,<I>y</I>,<I>c</I>)</TT>
+      <TT>datatype fsb_val_sel</TT>
     </DT>
     <DD>
-      <P><I>c</I> reifies the equality of <I>x</I> and <I>y</I>.
+      <P>Identifies the value selection strategy in branching.<BR>
+      <TT>FSB_MAX</TT> : Pick the largest unknown value of the variable.<BR>
+      <TT>FSB_MIN</TT> : Pick the smallest unknown value of the variable.<BR>
+      <TT>FSB_RANDOM_VAR</TT> : Pick at random.<BR>              
     </P></DD>
 
     <DT>
-      <TT>Reified.partition (<I>vs</I>,<I>is</I>,<I>x</I>,<I>cs</I>)</TT>
+      <TT>setvarbranch (<I>s, v, varStrategy, valStrategy</I>)</TT>
     </DT>
     <DD>
-      <P>The propagator partitions the set value <I>x</I>
-         by selecting elements from the list of set values <I>vs</I>.
-         The positive integers in <I>is</I> denote the cost resp. benefit
-         of the corresponding set value in <I>vs</I> if it is selected
-         for the partition. Each element of <I>cs</I> is either 0
-         or the corresponding integer value in <I>is</I> depending
-         on whether the corresponding set value in <I>vs</I>
-         is part of the partition or not. Excluding a set value
-         from the partition is done by constraining the corresponding
-         element of <I>cs</I> to 0.
-         An element in <I>cs</I> not equal to 0 includes
-         the corresponding set value in <I>vs</I> in the partition.
-         The propagator ensures a valid partition
-         according to the values of <I>cs</I>.
+      <P> Creates a new branching (aka distributor or labeling) in <I>s</I> 
+      over the setvars in <I>v</I> following the given strategy.
     </P></DD>
 
     <DT>
-      <TT>Reflect.card <I>x</I></TT>
+      <TT>randombranch (<I>s, v, varStrategy, valStrategy, n</I>)</TT>
     </DT>
     <DD>
-      <P>returns a description of the current information on the cardinality
-         of <I>x</I>.
+      <P> same as setvarbranch, with the possibility of pre-setting the random seed 
+      to achieve reproduceable random search trees.
     </P></DD>
-
-    <DT>
-      <TT>Reflect.lowerBound <I>x</I></TT>
-    </DT>
-    <DD>
-      <P>returns a specification of the greatest lower bound that
-         is currently known about the set <I>x</I>.
-    </P></DD>
-
-    <DT>
-      <TT>Reflect.unknown <I>x</I></TT>
-    </DT>
-    <DD>
-      <P>returns a specification of the set of elements that
-        are neither known to included in <I>x</I> nor excluded from <I>x</I>. 
-    </P></DD>
-
-    <DT>
-      <TT>Reflect.upperBound <I>x</I></TT>
-    </DT>
-    <DD>
-      <P>returns a specification of the least upper bound that
-         is currently known about the set <I>x</I>.
-    </P></DD>
-
-    <DT>
-      <TT>Reflect.cardOfLowerBound <I>x</I></TT>
-    </DT>
-    <DD>
-      <P>returns the cardinality of the current greatest lower bound for
-         <I>x</I>. 
-    </P></DD>
-
-    <DT>
-      <TT>Reflect.cardOfUnknown <I>x</I></TT>
-    </DT>
-    <DD>
-      <P>returns the number of elements that are currently
-         not known to be included or excluded from <I>x</I>.
-    </P></DD>
-
-    <DT>
-      <TT>Reflect.cardOfUpperBound <I>x</I></TT>
-    </DT>
-    <DD>
-      <P>returns the cardinality of the current least upper bound for
-         <I>x</I>. 
-    </P></DD>
-  </DL>
 
 <?php footing() ?>
