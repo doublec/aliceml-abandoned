@@ -29,6 +29,8 @@ import structure Server from "Server"
 
 import signature UPDATE from "UPDATE-sig"
 
+import structure Inspector from "x-alice:/lib/tools/Inspector"
+
 local
     open Doc Node
 in
@@ -67,6 +69,7 @@ struct
 	     | SOME (node,_) => Int.max(get_xdim(node),
 					calcMaxXDim(dict,i+1)) 
 
+
     fun  findRelNode(anc,va) = 
 	let val found = ref false
 	    val va_inf = UnsafeValue.cast va : Reflect.module
@@ -96,6 +99,16 @@ struct
 			     else g (!(#content(r))) )
 	  | _ => () )
 	end
+
+    (* helper that filters double appearances from a sorted list *)
+    fun unique' (eq,nil,new) = rev new
+      | unique' (eq,x::xr,nil) = unique'(eq,xr,[x])
+      | unique' (eq,x::xr,y::new)  = if eq(x,y) 
+					then unique'(eq,xr,y::new)
+					    else unique'(eq,xr,x::y::new)
+
+    fun unique(eq,xs) = unique'(eq,xs,nil)
+
 
     (* finds highest depth in a (part of a) tree *)
 
@@ -182,11 +195,27 @@ struct
 
     (***************************************************)
 
-    (* core function - 
+    (* adjusts layout and representation for an updated node tree *)
+
+    fun layoutDrawTree(topnode,canvas,old_ydim,y_pos) = 
+	( GtkSupport.layoutFreeze(canvas)
+	 ; Layout.layout(topnode) 
+	 ; Draw.draw(topnode,0,y_pos,true) 
+	 ; GtkSupport.layoutThaw(canvas)
+	 ;let 
+	      val dy = get_ydim(topnode) - old_ydim
+	  in
+	      ( (!incrActLine) dy
+	       ; iterMove (dy,getIndex(topnode) + 1))
+	  end
+	 ; setVisible(get_xdim(topnode)))
+
+
+    (* main part of update - 
        is essential for reinspect, foldDepth, foldWith and watcher *)
 
-    fun update (no,va,f,g,canvas) = 
-	let val _ = (GtkSupport.busyButtonSetActive(true))
+    fun updateTree (no,va,f,g,canvas) = 
+	let 
 	    val  n = if !(Settings.relmode) 
 	             andalso isRelNode(getParent(no))
 			 then getParent(no) 
@@ -228,30 +257,43 @@ struct
 	       val y_pos = #2(GtkSupport.getPosition(getGroup(anc),
 						     Settings.getFontHeight(),
 						     Settings.getFontWidth()))
-	in ( setDazzled n
-	    ; GtkSupport.layoutFreeze(canvas)
-	    ; GtkSupport.objectDestroy(getGroup(n))
-	    ; Layout.layout(node) (* layouting *)
-	    ; Dictionaries.Main.update(Dictionaries.maindict,
+	in ( Dictionaries.Main.update(Dictionaries.maindict,
 				       (ind,(node,ancline)))
-	    ; Draw.draw(node,0,y_pos,true) (* drawing *)
-	    ; GtkSupport.layoutThaw(canvas)
-	    ; let val dy = get_ydim(node) - old_ydim
-	      in ( (!incrActLine) dy
-		  ; iterMove (dy,getIndex(anc) + 1) 
-		  ; setVisible(get_xdim(node))
-		  ;GtkSupport.busyButtonSetActive(false))
-	      end )
+	    ; setDazzled n
+	    ; GtkSupport.objectDestroy(getGroup(n))
+	    ; (node,old_ydim,y_pos))
 	end  
-    
+	
+
+    (* core function - 
+       is essential for reinspect, foldDepth, foldWith and watcher *)
+
+    fun update(no,va,f,g,canvas) = let
+				       val (topnode,old_ydim,y_pos) = 
+					   (GtkSupport.busyButtonSetActive(true)
+					    ;updateTree (no,va,f,g,canvas))
+				   in
+				       (layoutDrawTree(topnode,canvas,old_ydim,y_pos) 
+					;GtkSupport.busyButtonSetActive(false))
+				   end
+			       
     (*  mechanism of update watching for FUTURES *)    
-  
+
     fun tell (va,i,li,f,g,canvas) =  
-	let val new_li = List.sort (fn (n,m) => Int.compare(getAncIndex n, 
+	let 
+	    val _ = GtkSupport.busyButtonSetActive(true)
+	    val new_li = List.sort (fn (n,m) => Int.compare(getAncIndex n, 
 							    getAncIndex m)) 
 	    li
-	in (  List.map (fn n => update(n,va,f,g,canvas)) new_li 
+	    val para_list =  List.map (fn n => updateTree(n,va,f,g,canvas)) new_li
+	    val unique_para_list = unique(fn ((tn1,_,_),
+					      (tn2,_,_)) => getIndex(tn1) = getIndex(tn2),
+					  para_list)
+	    val layoutDraw = fn (tn,old_ydim,old_ypos) =>
+		               layoutDrawTree(tn,canvas,old_ydim,old_ypos) 
+	in (  List.app layoutDraw unique_para_list 
 	    ; (!resize)() 
+	    ; GtkSupport.busyButtonSetActive(false)
 	    ; Dictionaries.Transient.delete(Dictionaries.transdict,i) )
 	end   
 
