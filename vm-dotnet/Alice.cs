@@ -1711,15 +1711,6 @@ namespace Alice {
 		return StaticApply(a);
 	    }
 	}
-	public class Thread_Terminate: Procedure {
-	    public static object StaticApply(object obj) {
-		((Thread) CommonOp.Sync(obj)).Stop();
-		return Prebound.unit;
-	    }
-	    public override object Apply(object obj) {
-		return StaticApply(obj);
-	    }
-	}
 	public class Thread_current: Procedure {
 	    public static object StaticApply(object a) {
 		return Thread.CurrentThread;
@@ -2015,7 +2006,7 @@ namespace Alice {
 	}
 	public class Word_toInt: Procedure {
 	    public static object StaticApply(object a) {
-		return CommonOp.Sync(a);
+		return CommonOp.Sync(a); //--** overflow?
 	    }
 	    public override object Apply(object a) {
 		return StaticApply(a);
@@ -2171,8 +2162,6 @@ namespace Alice {
 	public static object Option_NONE    = 0;
 	public static object Option_SOME    = 1;
 
-	public static object Real_negInf      = Double.NegativeInfinity;
-	public static object Real_posInf      = Double.PositiveInfinity;
 	public static object Real_op_UnaryNegation      = new Real_op_UnaryNegation();
 	public static object Real_op_Addition           = new Real_op_Addition();
 	public static object Real_op_Subtraction        = new Real_op_Subtraction();
@@ -2212,7 +2201,7 @@ namespace Alice {
 	public static object Thread_RUNNABLE    = "Thread.RUNNABLE";
 	public static object Thread_BLOCKED     = "Thread.BLOCKED";
 	public static object Thread_TERMINATED  = "Thread.TERMINATED";
-	public static object Thread_Terminate   = new Thread_Terminate();
+	public static object Thread_Terminate   = "Thread.Terminate";
 	public static object Thread_current     = new Thread_current();
 	public static object Thread_isSuspended = new Thread_isSuspended();
 	public static object Thread_raiseIn     = new Thread_raiseIn();
