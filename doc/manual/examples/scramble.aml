@@ -4,7 +4,7 @@
  *   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg and Thorsten Brunklaus, 2000-2004
+ *   Andreas Rossberg and Thorsten Brunklaus, 2000-2005
  *
  * Last Change:
  *   $Date$ by $Author$
@@ -151,17 +151,39 @@ local
 	end
 
 
+    (* Victory notification window *)
+
+    fun victoryNotification () =
+	let
+	    val window      = Gtk.windowNew Gtk.WINDOW_TOPLEVEL
+	    val vbox        = Gtk.vboxNew (true, 12)
+	    val deleteEvent = fn _ => Gtk.widgetDestroy window
+	    val label       = Gtk.labelNew "Congratulations, you solved the puzzle!"
+	    val button      = Gtk.buttonNewWithLabel "OK"
+	in
+	    Gtk.containerSetBorderWidth (vbox, 10);
+	    Gtk.widgetShow vbox;
+	    Gtk.boxPackStart (vbox, label, true, true, 8);
+	    Gtk.boxPackStart (vbox, button, false, false, 8);
+	    Gtk.signalConnect (window, "delete-event", deleteEvent);
+	    Gtk.signalConnect (button, "clicked", deleteEvent);
+	    Gtk.windowSetTitle (window, "Scramble Notification");
+	    Gtk.containerAdd (window, vbox);
+	    Gtk.widgetShowAll window
+	end
+
+
     (* Event handler for pieces *)
 
     fun checkVictory (BOARD {matrix, ...}) =
 	if Array2.alli Array2.ColMajor
 	    (fn (i, j, PIECE {num, ...}) => num = Array2.nRows matrix*j+i)
 	    {base = matrix, row = 0, col = 0, nrows = NONE, ncols = NONE}
-	then print "You win!\n"
+	then victoryNotification ()
 	else ()
 
     fun pieceHandler (board as BOARD {spot,...}) (pos, text) (_,events) =
-        serve
+	serve
 	(fn () =>
 	 case events of
 	    Gtk.EVENT (Gtk.EVENT_ENTER_NOTIFY _) :: _ =>
