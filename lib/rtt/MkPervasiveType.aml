@@ -92,22 +92,22 @@ struct
     val kind_ext	= Type.extKind()
     val kind_arrow	= Type.arrowKind(kind_star, kind_star)
 
-    val typ_int		= Type.abs(kind_star,  path_int)
-    val typ_word	= Type.abs(kind_star,  path_word)
-    val typ_real	= Type.abs(kind_star,  path_real)
-    val typ_char	= Type.abs(kind_star,  path_char)
-    val typ_string	= Type.abs(kind_star,  path_string)
-    val typ_exn		= Type.abs(kind_ext,   path_exn)
-    val typ_ref		= Type.abs(kind_arrow, path_ref)
-    val typ_vec		= Type.abs(kind_arrow, path_vec)
-    val typ_array	= Type.abs(kind_arrow, path_array)
-    val typ_strict	= Type.abs(kind_arrow, path_strict)
-    val typ_conarrow	= Type.abs(kind_arrow, path_conarrow)
+    val typ_int		= Type.con(path_int,      kind_star)
+    val typ_word	= Type.con(path_word,     kind_star)
+    val typ_real	= Type.con(path_real,     kind_star)
+    val typ_char	= Type.con(path_char,     kind_star)
+    val typ_string	= Type.con(path_string,   kind_star)
+    val typ_exn		= Type.con(path_exn,      kind_ext )
+    val typ_ref		= Type.con(path_ref,      kind_arrow)
+    val typ_vec		= Type.con(path_vec,      kind_arrow)
+    val typ_array	= Type.con(path_array,    kind_arrow)
+    val typ_strict	= Type.con(path_strict,   kind_arrow)
+    val typ_conarrow	= Type.con(path_conarrow, kind_arrow)
 
     val typ_zero	= Type.apply(typ_strict, Type.tuple #[])
     val row_bool	= Type.extendRow(lab_false, typ_zero,
 			  Type.extendRow(lab_true, typ_zero, Type.emptyRow()))
-    val typ_bool	= Type.abbrev(Type.abs(kind_star, path_bool),
+    val typ_bool	= Type.abbrev(Type.con(path_bool, kind_star),
 				      Type.unknown kind_star)
     val _               = Type.fix #[(typ_bool, Type.sum row_bool)]
 
