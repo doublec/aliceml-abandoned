@@ -86,16 +86,19 @@ clean:
 
 # package-specific targets
 
+binary-indep:
+
 binary-arch: build install
 	dh_testdir
 	dh_testroot
 	dh_install --sourcedir=$(DEB_SOURCE_DIR)
 	dh_installdocs $(DEB_SOURCE_DIR)/README
-	cat $(DEB_SOURCE_DIR)/COPYING >> $(DEB_INSTALL_DIR)/usr/share/doc/alice/copyright
-	dh_undocumented alice.1 alicec.1 alicedep.1 alicelink.1 alicerun.1 aliceserv.1
+	cp -p -r $(DEB_SOURCE_DIR)/doc $(DEB_INSTALL_DIR)/usr/share/doc/alice/html
+	cd $(DEB_INSTALL_DIR)/usr/share/doc/alice/html && mv examples ..
+	dh_undocumented alice.1 alicec.1 alicedep.1 alicelink.1 aliceserv.1
 	dh_installchangelogs
 	dh_strip
-	dh_compress
+	dh_compress --exclude=*.ozf
 	dh_fixperms
 	dh_installdeb
 	dh_shlibdeps
@@ -103,6 +106,6 @@ binary-arch: build install
 	dh_md5sums
 	dh_builddeb
 
-binary: binary-arch
+binary: binary-arch binary-indep
 
-.PHONY: configure build install clean binary-arch binary
+.PHONY: configure build install clean binary-arch binary-indep binary
