@@ -24,9 +24,9 @@ from "../common/Label"
 
 import
     signature LABEL_SORT
-from "LABEL_SORT-sort"
+from "LABEL_SORT-sig"
 
-functor MkLabelSort(type 'a t val get: 'a t -> Label.t) : LABEL_SORT =
+functor MkLabelSort(type 'a t val get: 'a t -> Label.t): LABEL_SORT =
     struct
 	type 'a t = 'a t
 

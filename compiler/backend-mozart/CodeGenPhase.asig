@@ -16,7 +16,7 @@ from "../infrastructure/Source"
 
 import
     signature CONTEXT
-from "../infrastructure/CONTEXT"
+from "../infrastructure/CONTEXT-sig"
 
 import
     structure Inf

@@ -18,8 +18,8 @@ import structure Stamp               from "Stamp"
 
 import structure Crash               from "../infrastructure/Crash"
 import functor MkHashScopedImpMap    from "../misc/MkHashScopedImpMap"
-import functor FromEqHashKey         from "../misc/HASH_KEY"
-import signature CHECK_INTERMEDIATE  from "CHECK_INTERMEDIATE"
+import functor FromEqHashKey         from "../misc/HASH_KEY-sig"
+import signature CHECK_INTERMEDIATE  from "CHECK_INTERMEDIATE-sig"
 
 
 structure CheckIntermediate :> CHECK_INTERMEDIATE =

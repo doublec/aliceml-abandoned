@@ -10,6 +10,6 @@
  *   $Revision$
  *)
 
-import functor MkStamp from "../misc/Stamp"
+import functor MkStamp from "../misc/MkStamp"
 
 structure Stamp = MkStamp()

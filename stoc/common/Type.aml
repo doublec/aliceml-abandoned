@@ -10,6 +10,7 @@
  *   $Revision$
  *)
 
+import structure TextIO  from "../../lib/TextIO"
 import structure Assert  from "../misc/Assert"
 import structure Name    from "Name"
 import structure Label   from "Label"
