@@ -33,6 +33,10 @@ signature UPDATE =
 	val updateChild: node * int * node -> unit
 
         val iterMove: MainDictionary.dictionary * int * int * int -> unit
+        
+	val update: 
+	    node * Reflect.value * 
+	    (Reflect.value * Type.t  * node * int * int -> node) -> unit
 
         (* eigentlicher update-Mechanismus *)
 	val tell: Reflect.value * node list * 
@@ -44,6 +48,9 @@ signature UPDATE =
 	    'a  * Reflect.value * 
 	    (Reflect.value * Type.t  * node * int * int -> node)
 	    -> Thread.thread
+
+	val reinspect: 
+	    node * (Reflect.value * Type.t  * node * int * int -> node) -> unit
 
 end
 

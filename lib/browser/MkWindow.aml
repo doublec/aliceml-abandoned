@@ -280,20 +280,22 @@ struct
 		;()))
 
 
-	fun calcAbsolutePosition(x,y) = let
-					 val valueh = Gtk.adjustmentGetFieldValue(hadj)
-					 val valuev = Gtk.adjustmentGetFieldValue(vadj) 
-					 val x = Real.+ (x,valueh)
-					 val y = Real.+ (y,valuev)
-				     in
-						 (x,y)
-				     end
+	fun calcAbsolutePosition(x,y) = 
+	    let
+		val valueh = Gtk.adjustmentGetFieldValue(hadj)
+		val valuev = Gtk.adjustmentGetFieldValue(vadj) 
+		val x = Real.+ (x,valueh)
+		val y = Real.+ (y,valuev)
+	    in
+		(x,y)
+	    end
 	
 	fun destroySelectionMarkings () = case !selection of 
 	    NONE => ()
 	  | SOME(_,rect) => Gtk.objectDestroy(rect)  
 		
-	fun handleReinspect node = fn _ => Update.reinspect(node,NewNode.createGraph)
+	fun handleReinspect node = 
+	    fn _ => Update.reinspect(node,NewNode.createGraph)
     
 
  fun handleEvent [Gdk.EVENT(event)] = serve (fn () =>
@@ -342,11 +344,13 @@ struct
 			    NodeSearch.search(Dictionaries.dict,x,y)
 		    in
 		    (case node of 
-			SOME(n) =>( makePopup({widthhandler = [], 
-					       depthhandler = [], 
-					       reinspecthandler = [handleReinspect(node)]})
+		     SOME(n) 
+		     =>( makePopup({widthhandler = [], 
+				    depthhandler = [], 
+				    reinspecthandler = [Handler("activate",
+							 handleReinspect(n))]})
 				   ; ())
-		      | NONE => ())
+		   | NONE => ())
 		    end
         | _ => ()
      end)

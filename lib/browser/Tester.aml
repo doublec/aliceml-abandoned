@@ -33,6 +33,12 @@ UnsafeInspector.inspect ({ref = ref "hallo",vec1 = #[(4,5),(6,7)],
                           vec2 = #[(6,7),(4,5)], arr = my_array},rva_rec); 
 
 (* Datentyp *)
+import structure NewNode from "NewNode";
+import structure Layout from "Layout";
+import structure UnsafeInspector from "UnsafeInspector";
+import structure Reflect from "x-alice:/lib/system/Reflect";
+
+UnsafeInspector.init();
 
 datatype foo = A 
              | B of int ref list
@@ -49,7 +55,13 @@ UnsafeInspector.inspect (D [{1 = #[#["hi","du"],#["guck","mal"]],
 			     2 = #[#[0,8,1,5],#[4,7,1,1]]},
 			    {1 = #[#["ich","kann"],#["Listen","zeichnen"]], 
 			     2 = #[#[0,8,1,5],#[4,7,1,1]] } ],
-			 data_type);
+		import structure NewNode from "NewNode";
+import structure Layout from "Layout";
+import structure UnsafeInspector from "UnsafeInspector";
+import structure Reflect from "x-alice:/lib/system/Reflect";
+
+UnsafeInspector.init();
+	 data_type);
 
 (*
 structure IntList = Reflect.ReflectType (type t = (int * int) list);
@@ -80,17 +92,13 @@ structure Fut = Reflect.ReflectType (type t = int vector Promise.promise list);
 val fut = Fut.x;
 val prom1 = Promise.promise();
 val prom2 = Promise.promise();
-val future = Promise.future prom1;
+val future1 = Promise.future prom1;
+val future2 = Promise.future prom2;
 
-(*
-val filled_future = let val _ = Promise.fulfill(prom2,#[124,248])
-		     in Promise.future prom2
-		     end;
-*)
+UnsafeInspector.inspect([future1,future2,future1,future1],fut);
 
-UnsafeInspector.inspect([future,future],fut);
+Promise.fulfill(prom1,#[1,2]);
 
-Promise.fulfill(prom2,#[1]);
+Promise.fulfill(prom2,#[2,3,4,5,6]);
 
-Promise.fulfill(prom1,#[1]);
 

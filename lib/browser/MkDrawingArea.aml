@@ -43,8 +43,8 @@ struct
   
     fun resize (x,y) = (GtkCanvas.setScrollRegion(canvas,0.0,0.0,x,y)
 	               ;GtkCanvas.itemSet(background,"x2", Gtk.DOUBLE x)
-	               ;GtkCanvas.itemSet(background,"y2", Gtk.DOUBLE y))	
-
+	               ;GtkCanvas.itemSet(background,"y2", Gtk.DOUBLE y))
+	
 end
 
 

@@ -53,6 +53,7 @@ sig
     val getAncIndex : node -> int
     val getDesc : node -> desc
     val getValue : desc -> Reflect.value
+    val getTyp : desc -> Type.typ
     val getDepth : node -> int
     val getGroup : node -> Gtk.object
 

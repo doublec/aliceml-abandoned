@@ -40,7 +40,7 @@ structure Update :> UPDATE =
 struct
     
     exception UpdateError
-    
+     
     val minCounter = ref (MainDictionary.getHighestIndexAssigned
 			  (Dictionaries.dict))
 	
@@ -87,48 +87,42 @@ struct
             | SOME node 
 	      => ( Services.moveGroup(getGroup(node),0,dy,!Settings.font)
                  ; iterMove (dict,dy,i+1,highest_i) )
-		
+	
+    (* update *)
+    and update (n,va,f) = 
+	( setDazzled n 
+	 ; let val ind = getAncIndex n 
+	       val anc = valOf(MainDictionary.lookup 
+			       (Dictionaries.dict,ind)) 
+	       val old_ydim = Layout.get_ydim(anc)
+	       val (_,y) = Services.getPosition(getGroup(anc),!(Settings.font))
+	       val t = getTyp(getDesc(n)) 
+		   handle General.Match => raise UpdateError
+	       val new = f(va,t,getParent(n), getIndex(n),getDepth(n)) 
+	       val node = if getParent(n) = Empty then new else  anc
+	   in ( Gtk.objectDestroy(getGroup(n)) 
+	       ; updateChild(getParent(n),getIndex(n),new) 
+	       ; Layout.layout(node) 
+	       ; MainDictionary.update(Dictionaries.dict, (ind,node))
+	       ; DrawNodes.draw(node,0,y,DrawNodes.DRAW)
+	       ; TextIO.print ("drawing with y = " ^Int.toString(y)^"\n")
+	       ; let val dy =  Layout.get_ydim(node) - old_ydim
+		 in ( WindowManager.incr_act_line dy
+		     ; iterMove (Dictionaries.dict,dy,getIndex(node) + 1,
+				 MainDictionary.getHighestIndexAssigned
+				 (Dictionaries.dict))
+		     ; WindowHelper.setVisible(Layout.get_xdim(node),dy)
+		     ; !WindowManager.resize())
+		 end)
+	   end )
+	
     (* tell *)
     and tell (va,li,f) =  
-	let val new_li = List.sort 
-	    (fn (n,m) => Int.compare(getAncIndex n, 
-				     getAncIndex m)) 
-	    li
-	    val update =  
-		fn n  
-		=> ( setDazzled n 
-		    ; let val ind = getAncIndex n 
-			  val anc = valOf(MainDictionary.lookup 
-					  (Dictionaries.dict,ind)) 
-			  val old_ydim = Layout.get_ydim(anc)
-			  val (x,y) = Services.getPosition
-			              (getGroup(anc),!(Settings.font)) 
-			  val t = ( case getDesc(n) of  
-				   VALUE(rr) => #typ(rr) 
-				 | _ => raise UpdateError)  
-			  val new = f(va,t,getParent(n), 
-				      getIndex(n), 
-				      getDepth(n)) 
-		      in ( minCounter := getAncIndex(hd(new_li)) 
-			  ; Gtk.objectDestroy(getGroup(n)) 
-			  ; updateChild(getParent(n),getIndex(n),new) 
-			  ; Layout.layout(anc) 
-			  ; MainDictionary.update(Dictionaries.dict, 
-						  (ind,anc))
-			  ; DrawNodes.draw(anc,x,y,DrawNodes.DRAW)
-			  ; let val dy =  Layout.get_ydim(anc) - old_ydim
-			    in ( WindowManager.incr_act_line dy
-				; iterMove (Dictionaries.dict,dy,
-					    getIndex(anc) + 1,
-					MainDictionary.getHighestIndexAssigned
-					    (Dictionaries.dict))
-				;  WindowHelper.setVisible(Layout.get_xdim(anc),dy)
-				;  TextIO.print (" dy is " ^Int.toString(dy) ^ "\n")
-				; !WindowManager.resize())
-			    end)
-		      end )
-	    val mapped_li = List.map update new_li 
-	in () 
+	let val new_li = List.sort (fn (n,m) => Int.compare(getAncIndex n, 
+							    getAncIndex m)) 
+	                           li
+	in (minCounter := getAncIndex(hd(new_li)) (* noch noetig ??? *)
+	   ; List.map (fn n => update(n,va,f)) new_li ; ())
 	end   
 
        (* watcher *)
@@ -137,13 +131,26 @@ struct
 	    (fn () 
 	     => ( case TransientDictionary.iterLookup 
 		                (Dictionaries.transdict, 
-				 fn (v,l) => UnsafeValue.same(v,va)) of 
+				 fn (_,l) =>
+				 List.exists 
+				 (fn n
+				  => UnsafeValue.same(getValue(getDesc(n)),
+						      va)) l) of 
 		  NONE => () 
 		| SOME((vv,ll),i)  
 		  => ( Future.await(future)
-		     ; let val new_va = UnsafeValue.cast future
-		       in Server.serve(fn () => tell(new_va,ll,f)) 
-		       end )) )
+		     ; let val new_l = #2(valOf(TransientDictionary.lookup
+						(Dictionaries.transdict,i)))
+		       in Server.serve(fn () => tell(va,new_l,f))
+		       end ) ))
+
+    (* reinspect *)
+    and reinspect (n,f) =  
+        let val va = getValue(getDesc(n))
+	in Server.serve(fn () => update(n,va,f))
+	end
+    handle General.Match => raise UpdateError 
+	    
 end
 
 end

@@ -31,7 +31,7 @@ struct
 	
    datatype limit = DEPTH_LIMIT | WIDTH_LIMIT
 
-   datatype status = CLEAN | DIRTY | DAZZLED
+   datatype status = CLEAN | DIRTY | DAZZLED | DEAD
 
    datatype color_class = INT_COLOR 
                         | REAL_COLOR
@@ -52,6 +52,7 @@ struct
        Simple of {desc : desc, 
 		  parent : node,
 		  index : int,
+		  depth : int,
 		  rep : string, 
                   width : int ref,
 		  color : color_class, 
@@ -71,6 +72,7 @@ struct
      | Container of {desc : desc, 
 		     parent : node,
 		     index : int,
+		     depth : int,
 		     kids : node array, 
 		     width : int ref,
 		     height : int ref,
@@ -90,6 +92,7 @@ struct
                    content : node ref,
 		   parent : node,  
 		   index : int, 
+		   depth : int,
                    counter : int ref, 
 		   rep : string, 
 	           relman : node list ref, 
@@ -102,6 +105,7 @@ struct
      | RelRefNode of {desc : desc, 
 		      parent : node, 
 		      index : int, 
+		      depth : int,
                       rep : string, 
 		      relnode : node, 
                       width : int ref, 

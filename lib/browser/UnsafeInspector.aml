@@ -25,6 +25,8 @@ import structure Settings from "Settings"
 import structure WindowHelper from "WindowHelper"
 import signature UNSAFE_INSPECTOR from "UNSAFE_INSPECTOR-sig"
 
+import structure Update from "Update"
+
 open Types MkColorTable CreateDoc
 
 structure UnsafeInspector :> UNSAFE_INSPECTOR = 
@@ -43,18 +45,23 @@ struct
 	     (Layout.get_ydim(n) + 1)
 	     ; WindowHelper.setVisible(Layout.get_xdim(n),Layout.get_ydim(n)+1)
 	     ; (!WindowManager.resize())
-	     ; (!WindowManager.show) () )
+	     ; (!WindowManager.show) () ) (*
+             ; let val delay =
+	           fn secs => Future.await(Future.alarm(Time.fromReal(secs)))
+	       in (delay(5.0) ; set_depth 0
+		   ; Update.reinspect(n,NewNode.createGraph) ) 
+	       end ) *)
 	end
     
-    fun set_width w = Settings.max_width := w
+    and set_width w = Settings.max_width := w
 
-    fun set_depth d = Settings.max_depth := d
+    and set_depth d = Settings.max_depth := d
 	
-    fun set_relmode b = Settings.relmode := b
+    and set_relmode b = Settings.relmode := b
 
-    fun set_tokenmode b = Settings.tokenmode := b
+    and set_tokenmode b = Settings.tokenmode := b
 
-    fun init () = ( registerType(PervasiveType.path_int, createInt)
+    and  init () = ( registerType(PervasiveType.path_int, createInt)
 		  ; registerType(PervasiveType.path_string, createString)
 		  ; registerType(PervasiveType.path_char, createChar)
 		  ; registerType(PervasiveType.path_word, createWord)

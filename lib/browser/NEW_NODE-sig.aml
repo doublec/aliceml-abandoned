@@ -70,7 +70,7 @@ sig
     val docToNode: doc * node * int * int -> node
 
     val createSimple: 
-        desc * node * int * string * color_class * (node -> Gtk.object) 
+        desc * node * int * int * string * color_class * (node -> Gtk.object) 
 	-> node
     
     val createConcat: 
@@ -78,18 +78,18 @@ sig
 	-> node
 	
     val createContainer: 
-	desc * node * int * node array * int * int * int 
+	desc * node * int * int * node array * int * int * int 
 	* (node -> Gtk.object) -> node
     
     val createLimit: desc * limit * node * int * int * (node -> Gtk.object) 
 	-> node
 
     val createRelNode : 
-	desc * node * node * int * string * node list * (node -> Gtk.object) 
+	desc * node * node * int * int * string * node list * (node -> Gtk.object) 
 	-> node
    
     val createRelRefNode : 
-	desc * node * int * string * node * (node -> Gtk.object) -> node
+	desc * node * int * int * string * node * (node -> Gtk.object) -> node
 
     val createTransient :
 	Reflect.value * Type.t  * node * int * int * Type.t -> node

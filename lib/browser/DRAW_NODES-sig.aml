@@ -28,19 +28,29 @@ signature DRAW_NODES =
 
 	val atomSearch: node * int * int * intention -> int * int * node option
 
-	val atomSearch': node * int * int * int * int * string * desc -> int * int * node option
+	val atomSearch': 
+	    node * int * int * int * int * string * desc 
+	    -> int * int * node option
 
-	val drawSimple :   node * int * int * intention -> int * int * node option
+	val drawSimple :   
+	    node * int * int * intention -> int * int * node option
 
-	val drawLimit  :   node * int * int * intention-> int * int * node option
+	val drawLimit  :   
+	    node * int * int * intention-> int * int * node option
 
-	val drawConcat :   node * int * int * intention -> int * int * node option
+	val drawConcat :   
+	    node * int * int * intention -> int * int * node option
 
-	val drawContainer: node * int * int * intention -> int * int * node option
+	val drawContainer:
+	    node * int * int * intention -> int * int * node option
         
-        val drawRelNode : node * int * int * intention-> int * int * node option
+        val drawRelNode : 
+	    node * int * int * intention-> int * int * node option
 
-        val drawRelRefNode : node * int * int  * intention -> int * int * node option
+        val drawRelRefNode : 
+	    node * int * int  * intention -> int * int * node option
+
+	val move: node * int * int -> int * int * node option
 
 	val draw : node * int * int * intention-> int * int * node option
        

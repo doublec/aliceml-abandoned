@@ -100,7 +100,7 @@ struct
 		     (case List.find f relman of   
 		      NONE 
 		      => let val desc = createValue(va,t,NO_ACTIONS)   
-			     val node = createRelNode (desc,Empty,p,i,
+			     val node = createRelNode (desc,Empty,p,i,d,
 						       str^" as ",
 						       relman,setGroup)
 			     val c = createUsualGraph (va,t,node,0,d) 
@@ -124,7 +124,7 @@ struct
 				    val str = iterTake rep	
 				    val m = incrCounter n 
 				    val node = 
-					createRelRefNode (INTERPUNCT,p,i,
+					createRelRefNode (INTERPUNCT,p,i,d,
 							  str,m,setGroup)
 				    val actrelman = case 
 					RelManDictionary.lookup(reldict,ind)
@@ -148,7 +148,7 @@ struct
 	   => newPath (va,t,p,i,d,path)
          | Type.Arrow _ 
 	   =>  createSimple (createValue(va,t,NO_ACTIONS)
-			     ,p,i,"fn",DEFAULT,setGroup)
+			     ,p,i,d,"fn",DEFAULT,setGroup)
          | Type.All(var,typ) 
 	   => createGraph (va,typ,p,i,d)
 	 | Type.Exist(var,typ) 
@@ -185,10 +185,10 @@ struct
                val length = List.length l
 	       val na = Array.array(length,Empty)
 	       val inty = #2(Type.asApply(t))   
-	       val cont = createContainer (desc,p,i,na,~1,~1,~1,setGroup)
-	       val nodearray = listElemArray(l,length,inty,cont,d,true)
-	       val future = createSimple (INTERPUNCT,cont,length,"_",DEFAULT,
-					  setGroup)
+	       val cont = createContainer (desc,p,i,d,na,~1,~1,~1,setGroup)
+	       val nodearray = listElemArray(l,length,inty,cont,d+1,true)
+	       val future = createSimple (INTERPUNCT,cont,length,d+1,"_",
+					  DEFAULT,setGroup)
 	   in ( Array.update(na,length,future)
 	      ; copyArray(nodearray,na)
 	      ; cont )
@@ -200,10 +200,10 @@ struct
 			else Array.array(length,Empty)
 	       val inty = #2(Type.asApply(t))   
 	   in if b
-		  then let val cont = createContainer (desc,p,i,na,~1,~1,~1,
+		  then let val cont = createContainer (desc,p,i,d,na,~1,~1,~1,
 						       setGroup)
 			   val nodearray = listElemArray(l,length,inty,cont,
-							 d,b)
+							 d+1,b)
 			   val limit = createLimit (INTERPUNCT,WIDTH_LIMIT,
 						    cont,length,d+1,setGroup)
 		       in ( Array.update(na,length,limit)
@@ -213,11 +213,11 @@ struct
 	      else let val concat = createConcat(desc,p,i,d,
 						 Array.array(3,Empty),
 						 ~1,~1,setGroup) 
-		       val lbra = createSimple (INTERPUNCT,concat,0,
+		       val lbra = createSimple (INTERPUNCT,concat,0,d,
 						"[",BRACK_COLOR,setGroup)
-		       val rbra = createSimple (INTERPUNCT,concat,2,
+		       val rbra = createSimple (INTERPUNCT,concat,2,d,
 						"]",BRACK_COLOR,setGroup)
-		       val cont = createContainer (desc,concat,1,na,~1,~1,~1,
+		       val cont = createContainer (desc,concat,1,d,na,~1,~1,~1,
 						   setGroup)	   
 		       val nodearray = listElemArray(List.take(l,length-1),
 						     length-1,inty,cont,d,b)
@@ -246,7 +246,7 @@ struct
                             : Reflect.value
                  val elem = createGraph(inva,listtyp,concat,0,d+1)
                  val repr = if b = true then "::" else ", "
-                 val sep = createSimple(INTERPUNCT,concat,1,repr,SEP_COLOR,
+                 val sep = createSimple(INTERPUNCT,concat,1,d,repr,SEP_COLOR,
 					setGroup)
 	     in ( Array.update(getKids(concat),0,elem)
                 ; Array.update(getKids(concat),1,sep)
@@ -265,10 +265,10 @@ struct
 				    then ("(",")")
 				else ("{","}")
 	      val (lbraNode,rbraNode) = (createSimple (INTERPUNCT,upperConcat,
-						       0,lbra,BRACK_COLOR,
+						       0,d,lbra,BRACK_COLOR,
 						       setGroup),
 					 createSimple (INTERPUNCT,upperConcat,
-						       2,rbra,BRACK_COLOR,
+						       2,d,rbra,BRACK_COLOR,
 						       setGroup))
 	      val container = createContfromRow (va,t,upperConcat,1,d,row, 
 						 UnsafeValue.proj) 
@@ -305,10 +305,10 @@ struct
 			       end
 			       handle Type.Type => ("","")
 	    val (lbraNode,rbraNode) = (createSimple (INTERPUNCT,upperConcat,
-						     1,lbra,BRACK_COLOR,
+						     1,d,lbra,BRACK_COLOR,
 						     setGroup),
 				       createSimple (INTERPUNCT,upperConcat,
-						     3,rbra,BRACK_COLOR,
+						     3,d,rbra,BRACK_COLOR,
 						     setGroup))
 	    val container = case Type.inspect(intyp) of 
 		Type.Prod(row') 
@@ -327,7 +327,7 @@ struct
 					   if container = Empty
 					       then p else upperConcat,
 					   if container = Empty
-					       then i else 0,label,
+					       then i else 0,d,label,
 					   LABEL_COLOR,setGroup) 
 	    val upperKids = getKids(upperConcat)
 	in
@@ -350,7 +350,7 @@ struct
 			    else List.length(lt_list)
 	    val al = if wlimit then !max_width +1 else l
 	    val container = createContainer(INTERPUNCT,
-					    p,i,Array.array(al,Empty)
+					    p,i,d,Array.array(al,Empty)
 					    ,~1,~1,~1,setGroup)
 	    val createProdC = if Type.isTupleRow(row)
 				  then createProdConcatTuple
@@ -381,11 +381,11 @@ struct
 	    val concat = createConcat (INTERPUNCT,p,i,d,
 				       Array.array(c_length,Empty),
 				       ~1,~1,setGroup)
-	    val l_node = createSimple (INTERPUNCT,concat,0,label,
+	    val l_node = createSimple (INTERPUNCT,concat,0,d,label,
 				       LABEL_COLOR,setGroup)
-	    val eq_node = createSimple (INTERPUNCT,concat,1," = ",
+	    val eq_node = createSimple (INTERPUNCT,concat,1,d," = ",
 					EQU_COLOR,setGroup)
-	    val sep_node = createSimple (INTERPUNCT,concat,3,", ",
+	    val sep_node = createSimple (INTERPUNCT,concat,3,d,", ",
 					 SEP_COLOR,setGroup)
 	    val node = createGraph (va,t,concat,2,d+1)
 	    val concat_kids = getKids(concat)
@@ -406,7 +406,7 @@ struct
 	    val concat = createConcat (INTERPUNCT,p,i,d,
 				       Array.array(c_length,Empty),
 				       ~1,~1,setGroup)
-	    val sep_node = createSimple (INTERPUNCT,concat,1,", ",
+	    val sep_node = createSimple (INTERPUNCT,concat,1,d,", ",
 					 SEP_COLOR,setGroup)
 	    val node = createGraph (va,t,concat,0,d+1)
 	    val concat_kids = getKids(concat)
@@ -425,7 +425,7 @@ struct
 	   NONE 
 	   => if d > !max_depth
 		  then createLimit(INTERPUNCT,DEPTH_LIMIT,p,i,d,setGroup)
-	      else createSimple(INTERPUNCT,p,i,"_",DEFAULT,setGroup)
+	      else createSimple(INTERPUNCT,p,i,d,"_",DEFAULT,setGroup)
 	 | SOME create 
 	   => let val doc = create (!max_width,d,v,t)
 	      in  docToNode (doc,p,i,d) 
@@ -468,7 +468,7 @@ struct
 					then REF_COLOR
 				    else DEFAULT)
 			| _ => DEFAULT) ) 
-	      in createSimple (#desc(r),p,i,#rep(r),color,setGroup) 
+	      in createSimple (#desc(r),p,i,d,#rep(r),color,setGroup) 
 	      end  
         | CONCAT(r) => let val na = Array.array(Vector.length(#kids(r)),
 						 Empty)
@@ -486,7 +486,7 @@ struct
 			end
          | CONTAINER(r) => let val na = Array.array(Vector.length(#kids(r)),
 						    Empty)
-                               val container = createContainer(#desc(r),p,i,
+                               val container = createContainer(#desc(r),p,i,d,
                                                                na,~1,~1,~1,
 							       setGroup)
 			       val rl = ref 0
@@ -503,16 +503,18 @@ struct
          | EMBEDDED(v,t) => (createGraph(v,t,p,i,d)) )
 
     (* createSimple *) 
-    and createSimple (desc,p,i,str,color,f) = Simple {desc = desc, 
-						      parent = p,
-						      index = i,
-						      rep = str,
-						      width = 
-						      ref(String.length(str)), 
-						      color = color, 
-						      status = ref DAZZLED,
-						      group = f(p)}
- 
+    and createSimple (desc,p,i,d,str,color,f) = Simple {desc = desc, 
+							parent = p,
+							index = i,
+							depth = d,
+							rep = str,
+							width = 
+							ref(String.length
+							    (str)), 
+							color = color, 
+							status = ref DAZZLED,
+							group = f(p)}
+	
     (* createConcat *)
     and createConcat (desc,p,i,d,na,w,h,f) =  Concat {desc = desc,
 						      parent = p,
@@ -525,10 +527,11 @@ struct
 						      group = f(p)}
 
     (* createContainer *)
-    and createContainer (desc,p,i,na,w,h,l_w,f) =  
+    and createContainer (desc,p,i,d,na,w,h,l_w,f) =  
 	Container {desc = desc, 
 		   parent = p,
 		   index = i,
+		   depth = d,
 		   kids = na, 
 		   width = ref w,
 		   height = ref h,
@@ -546,11 +549,12 @@ struct
 						   group = f(p)}
 
     (* createRelNode *)
-    and createRelNode (desc,c,p,i,str,rman,f) = 
+    and createRelNode (desc,c,p,i,d,str,rman,f) = 
 	let val node = RelNode {desc = desc, 
 				content = ref c,
 				parent = p,  
 				index = i, 
+				depth = d,
 				counter = ref 1, 
 				rep = str, 
 				relman = ref rman, 
@@ -564,10 +568,11 @@ struct
 	end
 
     (* createRelRefNode *)
-    and createRelRefNode (desc,p,i,str,rnode,f) = 
+    and createRelRefNode (desc,p,i,d,str,rnode,f) = 
 	RelRefNode {desc = desc, 
 		    parent = p, 
 		    index = i, 
+		    depth = d,
 		    rep = str, 
 		    relnode = rnode,
 		    width = ref(String.length(str)), 
@@ -582,38 +587,38 @@ struct
             val indesc = createValue(va,tt,NO_ACTIONS) 
 	    val concat = createConcat(desc,p,i,d,Array.array(3,Empty),~1,~1, 
 				      setGroup) 
-	    val first = createSimple(INTERPUNCT,concat,0,"promise {|", 
+	    val first = createSimple(INTERPUNCT,concat,0,d,"promise {|", 
 				     DEFAULT,setGroup) 
             val middle =  
 		if Future.isDetermined future  
-		    then createGraph (va,tt,concat,1,d+1)  
-		else if d+1 <= !max_depth 
-			 then createSimple(indesc,concat,1,"future", 
+		    then createGraph (va,tt,concat,1,d)  
+		else if d <= !max_depth 
+			 then createSimple(indesc,concat,1,d,"future", 
 					    DEFAULT,setGroup) 
 		     else createLimit(indesc,DEPTH_LIMIT,concat,1,d+1, 
 				      setGroup) 
-            val last = createSimple(INTERPUNCT,concat,2,"|}",DEFAULT,setGroup)
+            val last = createSimple(INTERPUNCT,concat,2,d,"|}",DEFAULT,
+				    setGroup)
 	in (Array.update(getKids(concat),0,first) 
 	    ; Array.update(getKids(concat),1,middle) 
 	    ; Array.update(getKids(concat),2,last) 
-	    ; case TransientDictionary.iterLookup  
+	    ; if Future.isDetermined(future)
+		  then ()
+	      else
+	      case TransientDictionary.iterLookup  
 	               (transdict, 
-			fn (_,li)  
+			fn (vv,li) 
 			=> List.exists(fn n  
-				       => UnsafeValue.same 
+				       => UnsafeValue.same  
 				       (getValue(getDesc(n)),va))  
-			               li 
+			li 
 		        handle General.Match => false) of 
 	      SOME ((vv,li),i)   
 	      => TransientDictionary.update(transdict,  
 					 (i,(vv,List.append(li,[concat]))))  
             | NONE  
-	      => (TransientDictionary.insertI(transdict,(va,[concat])) ; ()) 
- 	   ; if not(Future.isDetermined(future)) (*
-		 then TextIO.print "not determined !!! \n"
-	     else TextIO.print "determined !!! \n" *)
-		 then (Update.watcher(future,va,createGraph); () )    
-	     else ()  
+	      => (TransientDictionary.insertI(transdict,(va,[concat]))
+		 ; Update.watcher(future,va,createGraph) ; () )
 	   ; concat)    
 	end  
     

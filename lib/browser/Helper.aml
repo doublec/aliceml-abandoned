@@ -121,8 +121,15 @@ struct
     fun getValue desc = case desc of INTERPUNCT => raise Match
                                    | VALUE(r) => #value(r)
 
+    fun getTyp desc = case desc of INTERPUNCT => raise Match
+                                 | VALUE(r) => #typ(r)
+
     fun getDepth n = case n of Limit(r) => #depth(r)
                              | Concat(r) => #depth(r)
+                             | Container(r) => #depth(r)
+                             | Simple(r) => #depth(r)
+                             | RelNode(r) => #depth(r)
+                             | RelRefNode(r) => #depth(r)
                              | _ => raise Match
 
     fun getGroup n =  case n of Concat(r) => #group(r)
