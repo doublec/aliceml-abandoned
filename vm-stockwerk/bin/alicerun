@@ -6,27 +6,29 @@ find_in () {
     search_for=$1
     found_in=""
     shift
-    for d in $@; do
-	if test -f $d/${search_for} -o -h $d/${search_for}; then
+    for d in "$@"; do
+	if test -f "$d/${search_for}" -o -h "$d/${search_for}"; then
 	    found_in=$d && break
 	fi
     done
     if test -z "${found_in}"; then
 	echo "Error: Could not find ${search_for} in either of" >&2
-	for d in $@; do echo "  $d" >&2; done
+	for d in "$@"; do echo "  $d" >&2; done
 	exit 1
     fi
-    echo ${found_in}
+    echo "${found_in}"
 }
 
 if test -z "${STOCKHOME}"; then
-    STOCKHOME=$(find_in stow.exe /usr/share/alice $(dirname $(dirname $0)))
+    dir=$(dirname "$0")
+    dir=$(dirname "$dir")
+    STOCKHOME=$(find_in stow.exe /usr/share/alice "$PROGRAMFILES/Alice" "$dir")
 fi
 
 case $(uname) in
     CYGWIN*)
-	sep=\;
 	STOCKHOME=`cygpath -m "$STOCKHOME"`
+	sep=\;
 	;;
     *)
 	sep=:
