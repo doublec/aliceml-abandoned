@@ -5,8 +5,8 @@
  *)
 
 
-import structure Token from "Token.ozf"
-import signature LEXER from "LEXER.ozf"
+import structure Token from "Token"
+import signature LEXER from "LEXER-sig"
 
 
 structure Lexer :> LEXER =
