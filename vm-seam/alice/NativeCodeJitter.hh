@@ -25,6 +25,7 @@
 #include "alice/JitterAliceData.hh"
 
 class LivenessTable;
+class TableAllocator;
 
 typedef enum {
   HOLE_HOLE,
@@ -66,7 +67,7 @@ protected:
 
   IntMap *sharedTable;
   LivenessTable *livenessTable;
-  LivenessTable *livenessFreeList;
+  TableAllocator *tableAllocator;
   Tuple *assignment;
   Vector *globalSubst;
   word currentConcreteCode;
@@ -240,7 +241,7 @@ protected:
 
   // Function compilation
   char *CompileProlog(const char *info);
-  void CompileBranch(TagVal *pc);
+  void CompileBranch(TagVal *pc, u_int nLocals = 0);
   void CompileInstr(TagVal *pc);
   Tuple *AllocateRegister(u_int nLocals, Tuple *liveness);
   Chunk *CopyCode(char *start);

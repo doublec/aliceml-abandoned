@@ -406,59 +406,78 @@ public:
 };
 
 // LivenessTable
-class LivenessTable : private Chunk {
+class LivenessTable : protected Array {
 protected:
-  enum { DEAD, ALIVE, KILL };
-
-  void Set(u_int i, char v) {
-    Assert(i < this->GetSize());
-    char *p = this->GetBase();
-    p[i] = v;
+  enum { DEAD, KILL, ALIVE };
+  
+  void Set(u_int i, u_int v) {
+    Init(i, Store::IntToWord(v));
   }
-  char Get(u_int i) {
-    Assert(i < this->GetSize());
-    char *p = this->GetBase();
-    return p[i];
+  u_int Get(u_int i) {
+    return Store::DirectWordToInt(Sub(i));
   }
 public:
-  using Chunk::GetSize;
-  using Chunk::ToWord;
+  using Array::ToWord;
   // LivenessTable Accessors
-  void SetAlive(u_int i) {
-    Set(i, ALIVE);
+  u_int GetSize() {
+    return GetLength();
+  }
+  void SetAlive(u_int i, u_int id) {
+    Set(i, ALIVE + id);
   }
   void SetDead(u_int i) {
     Set(i, DEAD);
   }
-  void SetKill(u_int i) {
-    if (Get(i) == ALIVE)
+  void SetKill(u_int i, u_int id) {
+    if (Get(i) == (ALIVE + id))
       Set(i, KILL);
   }
   bool NeedsKill(u_int i) {
     return (Get(i) == KILL);
-//      u_int status = Get(i);
-//      return ((status == KILL) || (status == DEAD));
-  }
-  LivenessTable *Clone() {
-    u_int size   = this->GetSize();
-    Chunk *clone = Store::AllocChunk(size);
-    std::memcpy(clone->GetBase(), this->GetBase(), size);
-    return (LivenessTable *) clone;
-  }
-  void Clone(LivenessTable *clone) {
-    //--** why break abstraction barriers?
-    u_int size = ((::Block *) this)->GetSize();
-    memcpy(clone, this,  (size + 1) * sizeof(word));
   }
   // LivenessTable Constructor
-  static LivenessTable *New(u_int size) {
-    Chunk *table = Store::AllocChunk(size);
-    std::memset(table->GetBase(), DEAD, size);
-    return (LivenessTable *) table;
+  static LivenessTable *New(u_int tableSize) {
+    Array *table = Array::New(tableSize);
+    for (u_int i = tableSize; i--;)
+      table->Init(i, Store::IntToWord(DEAD));
+    return static_cast<LivenessTable *>(table);
   }
   // LivenessTable Untagging
   static LivenessTable *FromWordDirect(word table) {
-    return (LivenessTable *) Store::DirectWordToChunk(table);
+    return static_cast<LivenessTable *>(Array::FromWordDirect(table));
+  }
+};
+
+class TableAllocator {
+protected:
+  u_int tableSize;
+  word tableList;
+public:
+  TableAllocator(u_int size) {
+    tableList = Store::IntToWord(0);
+    tableSize = size;
+  }
+  
+  LivenessTable *AllocTable() {
+    if (tableList == Store::IntToWord(0))
+      return LivenessTable::New(tableSize);
+    else {
+      Array *table = Array::FromWordDirect(tableList);
+      tableList = table->Sub(0);
+      return static_cast<LivenessTable *>(table);
+    }
+  }
+  LivenessTable *CloneTable(LivenessTable *table) {
+    LivenessTable *clone = AllocTable();
+    Assert(clone != INVALID_POINTER);
+    Assert(clone->GetSize() == tableSize);
+    for (u_int i = tableSize; i--;)
+      static_cast<Array *>(clone)->Init(i, static_cast<Array *>(table)->Sub(i));
+    return clone;
+  }
+  void FreeTable(LivenessTable *table) {
+    static_cast<Array *>(table)->Init(0, tableList);
+    tableList = table->ToWord();
   }
 };
 
@@ -493,6 +512,10 @@ u_int NativeCodeJitter::codeBufferSize;
 //
 // Environment Accessors
 //
+#define REF_TO_INDEX(ref) \
+  u_int id    = Store::WordToInt(ref); \
+  u_int index = Store::DirectWordToInt(assignment->Sel(id));
+
 u_int NativeCodeJitter::RefToIndex(word ref) {
   u_int n     = Store::WordToInt(ref);
   u_int index = Store::DirectWordToInt(assignment->Sel(n));
@@ -510,8 +533,8 @@ u_int NativeCodeJitter::LocalEnvSel(u_int Dest, u_int Ptr, u_int pos) {
 }
 
 void NativeCodeJitter::LocalEnvPut(u_int Ptr, word pos, u_int Value) {
-  u_int index = RefToIndex(pos);
-  livenessTable->SetAlive(index);
+  REF_TO_INDEX(pos);
+  livenessTable->SetAlive(index, id);
   if (index >= ALICE_REGISTER_NB) {
     NativeCodeFrame_ReplaceEnv(Ptr, index, Value);
   }
@@ -521,8 +544,8 @@ void NativeCodeJitter::LocalEnvPut(u_int Ptr, word pos, u_int Value) {
 }
 
 void NativeCodeJitter::MoveIndexValToLocalEnv(word pos, u_int This, u_int i) {
-  u_int index = RefToIndex(pos);
-  livenessTable->SetAlive(index);
+  REF_TO_INDEX(pos);
+  livenessTable->SetAlive(index, id);
   if (index >= ALICE_REGISTER_NB) {
     JITStore::Sel(JIT_R0, This, i);
     NativeCodeFrame_ReplaceEnv(JIT_V2, index, JIT_R0);
@@ -536,8 +559,8 @@ void NativeCodeJitter::MoveBlockValToLocalEnv(word pos, u_int This, u_int i) {
 }
 
 void NativeCodeJitter::MoveMemValToLocalEnv(word pos, void *addr) {
-  u_int index = RefToIndex(pos);
-  livenessTable->SetAlive(index);
+  REF_TO_INDEX(pos);
+  livenessTable->SetAlive(index, id);
   if (index >= ALICE_REGISTER_NB) {
     jit_ldi_p(JIT_R0, addr);
     NativeCodeFrame_ReplaceEnv(JIT_V2, index, JIT_R0);
@@ -559,8 +582,8 @@ void NativeCodeJitter::BindIdDefs(word wIdDefs, u_int This, u_int baseOffset) {
 void NativeCodeJitter::KillIdRef(word idRef) {
   TagVal *tagVal = TagVal::FromWordDirect(idRef);
   if (AbstractCode::GetIdRef(tagVal) == AbstractCode::LastUseLocal) {
-    u_int index = RefToIndex(tagVal->Sel(0));
-    livenessTable->SetKill(index);
+    REF_TO_INDEX(tagVal->Sel(0));
+    livenessTable->SetKill(index, id);
   }
 }
 
@@ -875,9 +898,9 @@ u_int NativeCodeJitter::LoadIdRefKill(u_int Dest, word idRef) {
     Dest = LocalEnvSel(Dest, JIT_V2, RefToIndex(tagVal->Sel(0))); break;
   case AbstractCode::LastUseLocal:
     {
-      u_int index = RefToIndex(tagVal->Sel(0));
+      REF_TO_INDEX(tagVal->Sel(0));
       Dest = LocalEnvSel(Dest, JIT_V2, index);
-      livenessTable->SetKill(index);
+      livenessTable->SetKill(index, id);
     }
     break;
   case AbstractCode::Global:
@@ -1111,10 +1134,7 @@ void NativeCodeJitter::CompileContinuation(TagVal *idDefArgsInstrOpt,
   u_int calleeArity = GetArity(idDefArgs);
   CompileCCC(calleeArity);
   StoreResults(calleeArity, idDefArgs);
-  u_int cloneStack = currentStack;
-  currentStack = max(currentStack, nLocals);
-  CompileBranch(TagVal::FromWordDirect(idDefArgsInstr->Sel(1)));
-  currentStack = cloneStack;
+  CompileBranch(TagVal::FromWordDirect(idDefArgsInstr->Sel(1)), nLocals);
   jit_patch(docall);
   SetRelativePC(contPC);
 }
@@ -1458,8 +1478,8 @@ void NativeCodeJitter::NonNullaryBranches(u_int Tag, Vector *tests) {
 TagVal *NativeCodeJitter::InstrKill(TagVal *pc) {
   Vector *kills = Vector::FromWordDirect(pc->Sel(0));
   for (u_int i = kills->GetLength(); i--;) {
-    u_int index = RefToIndex(kills->Sub(i));
-    livenessTable->SetKill(index);
+    REF_TO_INDEX(kills->Sub(i));
+    livenessTable->SetKill(index, id);
   }
   return TagVal::FromWordDirect(pc->Sel(1));
 }
@@ -2377,6 +2397,8 @@ TagVal *NativeCodeJitter::InstrVecTest(TagVal *pc) {
 // Shared of stamp * instr
 TagVal *NativeCodeJitter::InstrShared(TagVal *pc) {
   JIT_PRINT_PC("InstrShared\n");
+  // to be done: more efficient solution than clearing to zero
+  currentStack = 0;
   word stamp = pc->Sel(0);
   if (sharedTable->IsMember(stamp)) {
     u_int offset = Store::DirectWordToInt(sharedTable->Get(stamp));
@@ -2457,20 +2479,13 @@ char *NativeCodeJitter::CompileProlog(const char *info) {
   return start;
 }
 
-void NativeCodeJitter::CompileBranch(TagVal *pc) {
-  // This breaks abstraction barriers: NextPtr overrides block header
-  LivenessTable *cloneTable;
-  if (livenessFreeList == NULL) {
-    cloneTable = livenessTable->Clone();
-  }
-  else {
-    cloneTable = livenessFreeList;
-    livenessFreeList = ((LivenessTable **) cloneTable)[0];
-    livenessTable->Clone(cloneTable); // CloneInto
-  }
+void NativeCodeJitter::CompileBranch(TagVal *pc, u_int nLocals) {
+  LivenessTable *cloneTable = tableAllocator->CloneTable(livenessTable);
+  u_int cloneStack = currentStack;
+  currentStack = max(cloneStack, nLocals);
   CompileInstr(pc);
-  ((LivenessTable **) livenessTable)[0] = livenessFreeList;
-  livenessFreeList = livenessTable;
+  currentStack = cloneStack;
+  tableAllocator->FreeTable(livenessTable);
   livenessTable = cloneTable;
 }
 
@@ -2646,7 +2661,7 @@ NativeCodeJitter::Compile(LazyCompileClosure *lazyCompileClosure) {
   // Diassemble AbstractCode
   Tuple *coord1 = Tuple::FromWordDirect(abstractCode->Sel(0));
   char *filename = String::FromWordDirect(coord1->Sel(0))->ExportC();
-  if (!strcmp(filename, "file:d:/cygwin/home/bruni/devel/alice/vm-seam/test.aml")) {
+  if ((!strcmp(filename, "file:d:/cygwin/home/bruni/devel/alice/vm-seam/build3/lib/system/Url.aml")) && (Store::DirectWordToInt(coord1->Sel(1)) == 477)) {
     fprintf(stderr, "Disassembling function at %s:%d.%d\n\n",
   	    String::FromWordDirect(coord1->Sel(0))->ExportC(),
   	    Store::DirectWordToInt(coord1->Sel(1)),
@@ -2686,8 +2701,9 @@ NativeCodeJitter::Compile(LazyCompileClosure *lazyCompileClosure) {
   currentConcreteCode = concreteCode;
   currentStack        = 0;
   currentArgs         = TagVal::FromWord(abstractCode->Sel(3));
-  livenessTable       = LivenessTable::New(currentNLocals);
-  livenessFreeList    = NULL;
+  TableAllocator allocator(currentNLocals);
+  tableAllocator      = &allocator;
+  livenessTable       = tableAllocator->AllocTable();
   u_int frameSize     = NativeCodeFrame_GetFrameSize(currentNLocals);
   ImmediateEnv::Register(Store::IntToWord(frameSize));
   // Compile argument calling convention conversion
