@@ -26,6 +26,7 @@
 #include "generic/RootSet.hh"
 #include "generic/FinalizationSet.hh"
 #include "generic/Tuple.hh"
+#include "generic/UniqueString.hh"
 #include "generic/Closure.hh"
 #include "generic/Backtrace.hh"
 #include "generic/Transients.hh"
@@ -34,8 +35,6 @@
 #include "generic/Transform.hh"
 #include "generic/Unpickler.hh"
 #include "generic/Pickle.hh"
-
-#include "alice/Data.hh" //--** should not be here
 
 static word handlerTable;
 static const u_int initialHandlerTableSize = 7;
@@ -1068,10 +1067,7 @@ void Unpickler::Init() {
   PickleLoadWorker::Init();
   handlerTable = ChunkMap::New(initialHandlerTableSize)->ToWord();
   RootSet::Add(handlerTable);
-}
-
-void Unpickler::InitExceptions() {
-  Corrupt = UniqueConstructor::New(String::New("Component.Corrupt"))->ToWord();
+  Corrupt = UniqueString::New(String::New("Component.Corrupt"))->ToWord();
   RootSet::Add(Corrupt);
 }
 

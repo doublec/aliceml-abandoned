@@ -36,7 +36,6 @@
 #if PROFILE
 #include "generic/Profiler.hh"
 #endif
-#include "alice/AliceLanguageLayer.hh"
 #include "java/JavaLanguageLayer.hh"
 #include "java/Startup.hh"
 
@@ -86,12 +85,7 @@ static int JavaMain(char *home, u_int argc, char *argv[]) {
   Unpickler::Init();
   Pickler::Init();
   // Set up Java Language Layer:
-  AliceLanguageLayer::Init(); //--** needed for Alice exceptions
   JavaLanguageLayer::Init();
-  // Setup Alice exceptions used in lower Layers:
-  //--** should not be here
-  Unpickler::InitExceptions();
-  Pickler::InitExceptions();
   // Link and execute boot component:
   Startup();
   return Scheduler::Run();

@@ -72,7 +72,7 @@ public:
   static word holeExn;
 
   // Future Static Constructor
-  static void InitExceptions();
+  static void Init();
 
   // Hole Constructor
   static Hole *New() {
