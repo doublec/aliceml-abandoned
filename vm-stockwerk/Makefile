@@ -16,8 +16,8 @@ include $(TOPDIR)/Makefile.vars
 include $(TOPDIR)/Makefile.rules
 
 # GNU make has no reverse function, but we need these in reversed form, too:
-SUBDIRS = store adt generic alice java
-SUBDIRSR = java alice generic adt store
+SUBDIRS = store adt generic alice
+SUBDIRSR = alice generic adt store
 
 SRCS = Base.cc AliceMain.cc
 OBJS = $(SRCS:%.cc=%.o)
@@ -28,7 +28,7 @@ LDLIBS = $(SUBDIRS:%=-L%) $(SUBDIRSR:%=-l%) \
 
 .PHONY: all-subdirs depend-local
 
-all: all-subdirs $(TARGETS) java.exe
+all: all-subdirs $(TARGETS)
 
 ifdef WINDOWS
 stow.exe: Main.o stow.dll
