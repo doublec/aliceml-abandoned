@@ -295,7 +295,7 @@ final public class String implements DMLValue {
 	_APPLY(val) {
 	    java.lang.String result = null;
 	    try {
-		 result = ((java.lang.String) val).value;
+		 result = ((STRING) val).value;
 		int idx=0;
 		while ((idx=result.indexOf('\\',idx)) > 0) {
 		    result = result.substring(0,idx-1)+"\\\\"+
@@ -323,7 +323,7 @@ final public class String implements DMLValue {
 		}
 		idx = 0;
 		while ((idx=result.indexOf(0x7,idx)) > 0) {
-		    result = result.substring(0,idx-1)+"\\"+String.valueOf(0x7)+
+		    result = result.substring(0,idx-1)+"\\"+java.lang.String.valueOf(0x7)+
 			result.substring(idx+1);
 		}
 		idx = 0;
@@ -338,7 +338,7 @@ final public class String implements DMLValue {
 		}
 		idx = 0;
 		while ((idx=result.indexOf(0xb,idx)) > 0) {
-		    result = result.substring(0,idx-1)+"\\"+String.valueOf(0xb)+
+		    result = result.substring(0,idx-1)+"\\"+java.lang.String.valueOf(0xb)+
 			result.substring(idx+1);
 		}
 		idx = 0;
