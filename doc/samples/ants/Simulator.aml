@@ -102,6 +102,14 @@ structure Simulator :
                rounds,
                redAnt, blackAnt, world) =
       let
+          val _ =
+            if visualize then
+                let val viewer = Viewer.viewer () 
+                in
+                    World.setUpdateCellV (Viewer.updateCell viewer)
+                end
+            else ()
+
           val redBrain = InstructionsParser.parseFile redAnt
           val blackBrain = InstructionsParser.parseFile blackAnt
           val world = WorldParser.parseFile world
@@ -111,12 +119,7 @@ structure Simulator :
             | loop'(size, n, f) = (f (size-n); loop'(size,n-1,f))
           fun loop n f = loop'(n,n,f)
       in
-          if visualize then
-            let val viewer = Viewer.viewer () 
-            in
-                World.setUpdateCellV (Viewer.updateCell viewer)
-            end
-          else ();
+
           if showStatus then
               (print ("Starting with "^Int.toString noOfAnts^" ants\n");
                print (Int.toString rounds^" rounds.\n");

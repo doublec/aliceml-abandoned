@@ -30,25 +30,34 @@ struct
             foodCs      :   Gtk.object vector
         }
 
+    val tileSize = 6
 
-    fun size w =
-        let
-            val wd = Gtk.widgetAuxInfoGetFieldWidth w
-            val ht = Gtk.widgetAuxInfoGetFieldHeight w
-        in
-            (404, 400)
-        end
+    fun size w = (tileSize * 101 , tileSize * 100)
 
     fun allocColor colorName =
         let
-            val colormap= Gdk.colormapGetSystem ()
             val color   = Gdk.colorNew (0, 0, 0)
             val _       = Gdk.colorParse (colorName, color)
+            val colormap= Gdk.colormapGetSystem ()
             val _       = Gdk.colormapAllocColor (colormap, color, 
                                                     false, true) 
         in
             color
         end
+    
+    and allocColor' (r, g, b) =
+        let
+            val colormap= Gdk.colormapGetSystem ()
+            val color   = Gdk.colorNew (Real.trunc (r * 65000.0),
+                                        Real.trunc (g * 65000.0),
+                                        Real.trunc (b * 65000.0))
+            val _       = Gdk.colormapAllocColor (colormap, color, 
+                                                    false, true) 
+        in
+            color
+        end
+    
+        
 
     fun viewer () =
         let
@@ -57,7 +66,7 @@ struct
             val box     = Gtk.vboxNew (false, 0)
             val _       = Gtk.containerAdd (window, box)
             val area    = Gtk.drawingAreaNew ()
-            val _       = Gtk.widgetSetUsize (area, 404, 400);
+            val _       = Gtk.widgetSetUsize (area, tileSize * 101, tileSize * 100);
             val _       = Gtk.boxPackStartDefaults (box, area)
             val bt      = Gtk.buttonNewWithLabel "Quit"
             val _       = Gtk.boxPackStart (box, bt, false, false, 0)
@@ -97,28 +106,22 @@ struct
 
             (* allocate colors *)
             val redAntC     = allocColor "red"
-            val blackAntC   = allocColor "darkbrown"
-            val rockC       = allocColor "darkgray"
-            val redHillC    = allocColor "lightred"
-            val blackHillC  = allocColor "lightbrown"
-            val emptySpotC  = allocColor "green"
-            val foodCs      = Vector.map allocColor #[
-                                "000020",   (* 1 *)
-                                "000040",
-                                "000060",
-                                "000070", 
-                                "000080",   (* 5 *)
-                                "000090",
-                                "0000A0",
-                                "0000B0",
-                                "0000C0"]
+            val blackAntC   = allocColor "black"
+            val rockC       = allocColor "grey"
+            val redHillC    = allocColor' (1.0, 0.8, 0.3)
+            val blackHillC  = allocColor "darkgray"
+            val emptySpotC  = allocColor "white"
+            val foodCs      = Vector.tabulate (10,
+                    fn i => 
+                        allocColor' (0.0, Real.fromInt (10 - i) / 10.0, 0.0))
+
         in
             Gtk.signalConnect (area, "expose_event", expose);
             Gtk.signalConnect (area, "configure_event", configure);
             Gtk.signalConnect (bt, "clicked", fn _ => OS.Process.exit OS.Process.success); 
           (*  Gtk.widgetSetEvents (area,   *)
             Gtk.widgetShowAll window;
-            Thread.sleep (Time.fromSeconds 1);
+            Future.await pixmap;
             G { drawingArea = area, pixmap, window,
                 redAntC, blackAntC, rockC, redHillC, blackHillC,
                 emptySpotC, foodCs}
@@ -131,8 +134,7 @@ struct
                             andalso 0 <= y andalso y < 100
             val cell    = World.getCellAt (world, (x, y))
         in
-            if Future.isFuture pixmap then ()
-            else tilePlot' (td, x, y, cell)
+            tilePlot' (td, x, y, cell)
         end
 
         
@@ -145,16 +147,16 @@ struct
             val gc      = Gdk.gcNew w 
 
            (* every second row is indented *) 
-            val x       = xc * 4 + (if yc mod 2 <> 0 then 2 else 0)         
-            val y       = yc * 4 
+            val x       = xc * tileSize + (if yc mod 2 <> 0 then tileSize else 0)         
+            val y       = yc * tileSize
 
             fun drawRect c = 
                 (Gdk.gcSetForeground (gc, c);
-                 Gdk.drawRectangle (pixmap, gc, true, x, y, 4, 4))
+                 Gdk.drawRectangle (pixmap, gc, true, x, y, tileSize, tileSize))
 
             fun drawIRect c =
                 (Gdk.gcSetForeground (gc, c);
-                 Gdk.drawRectangle (pixmap, gc, true, x + 1, y+1, 2, 2))
+                 Gdk.drawRectangle (pixmap, gc, true, x + 1, y+1, tileSize-2, tileSize-2))
 
         in
             if #rocky cell then
@@ -173,8 +175,8 @@ struct
                     else 
                         drawIRect blackAntC );
                    
-            Gdk.drawRectangle (pixmap, gc, true, x, y, 4, 4);
-            Gtk.widgetQueueDrawArea (area,x, y, 4, 4)
+            Gdk.drawRectangle (pixmap, gc, true, x, y, tileSize, tileSize);
+            Gtk.widgetQueueDrawArea (area,x, y, tileSize, tileSize)
         end
 
 end 
