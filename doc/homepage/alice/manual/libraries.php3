@@ -61,12 +61,6 @@
     available at their default type.
   </P>
 
-  <P>
-    Alice adds the functions <TT>byneed</TT> and <TT>concur</TT> to the
-    top-level, to provide for easy <A href="laziness.php3">laziness</A> and
-    <A href="futures.php3">concurrency with futures</A>.
-  </P>
-
 
 <?php section("fundamental", "fundamental") ?>
 
