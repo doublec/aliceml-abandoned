@@ -3,60 +3,25 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 1999-2000
+ *   Leif Kornstaedt, 1999-2001
  *
  * Last change:
  *   $Date$ by $Author$
  *   $Revision$
  *)
 
-import
-    functor MkHashImpSet
-from "../../lib/utility/MkHashImpSet"
-
-import
-    structure Name
-from "../../lib/rtt/Name"
-
-import
-    structure Label
-from "../../lib/rtt/Label"
-
-import
-    structure Type
-from "../../lib/rtt/Type"
-
-import
-    structure PervasiveType
-from "../../lib/rtt/PervasiveType"
-
-import
-    structure Crash
-from "../infrastructure/Crash"
-
-import
-    structure Stamp
-from "../common/Stamp"
-
-import
-    structure StampSet
-from "../common/StampSet"
-
-import
-    structure IntermediateGrammar
-from "../common/IntermediateGrammar"
-
-import
-    structure Arity
-from "Arity"
-
-import
-    structure FlatGrammar
-from "FlatGrammar"
-
-import
-    signature INTERMEDIATE_AUX
-from "INTERMEDIATE_AUX-sig"
+import structure MkHashImpSet        from "../../lib/utility/MkHashImpSet"
+import structure Name                from "../../lib/rtt/Name"
+import structure Label               from "../../lib/rtt/Label"
+import structure Type                from "../../lib/rtt/Type"
+import structure PervasiveType       from "../../lib/rtt/PervasiveType"
+import structure Crash               from "../infrastructure/Crash"
+import structure Stamp               from "../common/Stamp"
+import structure StampSet            from "../common/StampSet"
+import structure IntermediateGrammar from "../common/IntermediateGrammar"
+import structure Arity               from "Arity"
+import structure FlatGrammar         from "FlatGrammar"
+import signature INTERMEDIATE_AUX    from "INTERMEDIATE_AUX-sig"
 
 structure IntermediateAux :> INTERMEDIATE_AUX =
     struct
@@ -343,7 +308,7 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 
 	fun usedVarsStm (O.ValDec (_, _, exp), set, used, shared) =
 	    usedVarsExp (exp, set, used, shared)
-	  | usedVarsStm (O.RefAppDec (_, _, id), set, used, _) =
+	  | usedVarsStm (O.RefDec (_, _, id), set, used, _) =
 	    usedVarsId (id, set, used)
 	  | usedVarsStm (O.TupDec (_, _, id), set, used, _) =
 	    usedVarsId (id, set, used)
@@ -393,8 +358,12 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	  | usedVarsExp (O.NewExp _, _, _, _) = ()
 	  | usedVarsExp (O.VarExp (_, id), set, used, _) =
 	    usedVarsId (id, set, used)
-	  | usedVarsExp (O.TagExp (_, _, _), _, _, _) = ()
-	  | usedVarsExp (O.ConExp (_, _), _, _, _) = ()
+	  | usedVarsExp (O.TagExp (_, _, _, args), set, used, _) =
+	    usedVarsArgs (args, set, used)
+	  | usedVarsExp (O.ConExp (_, con, args), set, used, _) =
+	    (usedVarsCon (con, set, used); usedVarsArgs (args, set, used))
+	  | usedVarsExp (O.RefExp (_, id), set, used, _) =
+	    usedVarsId (id, set, used)
 	  | usedVarsExp (O.TupExp (_, ids), set, used, _) =
 	    Vector.app (fn id => usedVarsId (id, set, used)) ids
 	  | usedVarsExp (O.ProdExp (_, labelIdVec), set, used, _) =
@@ -407,12 +376,6 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	    Vector.app (fn id => usedVarsId (id, set, used)) ids
 	  | usedVarsExp (O.VarAppExp (_, id, args), set, used, _) =
 	    (usedVarsId (id, set, used); usedVarsArgs (args, set, used))
-	  | usedVarsExp (O.TagAppExp (_, _, _, args), set, used, _) =
-	    usedVarsArgs (args, set, used)
-	  | usedVarsExp (O.ConAppExp (_, con, args), set, used, _) =
-	    (usedVarsCon (con, set, used); usedVarsArgs (args, set, used))
-	  | usedVarsExp (O.RefAppExp (_, id), set, used, _) =
-	    usedVarsId (id, set, used)
 	  | usedVarsExp (O.SelAppExp (_, _, _, _, id), set, used, _) =
 	    usedVarsId (id, set, used)
 	  | usedVarsExp (O.LazySelAppExp (_, _, _, _, id), set, used, _) =
@@ -465,14 +428,12 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	    else if Type.isMu typ then
 		typToArity (Type.asMu typ)
 	    else if Type.isTuple typ then
-		case Vector.length (Type.asTuple typ) of
-		    0 => NONE (*--** Arity.Nullary *)
-		  | n => SOME (Arity.Tuple n)
+		Arity.Tuple (Vector.length (Type.asTuple typ))
 	    else if Type.isProd typ then
-		SOME (rowToArity (Type.asProd typ))
+		rowToArity (Type.asProd typ)
 	    else if Type.isSum typ then
-		SOME (rowToArity (Type.asSum typ))
-	    else SOME (Arity.Unary)
+		rowToArity (Type.asSum typ)
+	    else Arity.Unary
 
 	fun find (labels, label', i, n) =
 	    if i = n then NONE
@@ -480,9 +441,7 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 		SOME (O.Product labels, i)
 	    else find (labels, label', i + 1, n)
 
-	fun findLabel (Arity.Unary, label) =
-	    raise Crash.Crash ("IntermediateAux.findLabel " ^
-			       Label.toString label)
+	fun findLabel (Arity.Unary, _) = NONE
 	  | findLabel (Arity.Tuple n, label) =
 	    (case Label.toLargeInt label of
 		 SOME li =>
@@ -496,8 +455,9 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	    find (labels, label, 0, Vector.length labels)
 
 	fun labelToIndex (typ, label) =
-	    Option.valOf (findLabel (Option.valOf (typToArity typ), label))
-	    handle Option.Option =>
-		raise Crash.Crash ("IntermediateAux.labelToIndex " ^
-				   Label.toString label)
+	    case findLabel (typToArity typ, label) of
+		SOME i => i
+	      | NONE =>
+		    raise Crash.Crash ("IntermediateAux.labelToIndex " ^
+				       Label.toString label)
     end

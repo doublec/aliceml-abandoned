@@ -120,7 +120,7 @@ structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
 
 	fun formatStm (ValDec (_, idDef, exp), _) =
 	    SEQ #[S "val ", IDDEF idDef, S " = ", IN, formatExp exp, EX]
-	  | formatStm (RefAppDec (_, idDef, id'), _) =
+	  | formatStm (RefDec (_, idDef, id'), _) =
 	    SEQ #[S "val ref ", IDDEF idDef, S " = ", ID id']
 	  | formatStm (TupDec (_, idDefs, id), _) =
 	    SEQ #[S "val (", SEP (S ", ", Vector.map IDDEF idDefs),
@@ -171,32 +171,21 @@ structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
 				   formatBody (body, shared), EX, NL])
 		 litBodyVector)
 	  | formatTests (TagTests tagBodyVector, shared) =
-	    SEQ (Vector.map (fn (label, n, conArgs, body) =>
-			     SEQ #[case conArgs of
-				       NONE =>
-					   SEQ #[S "tag ",
-						 S (Label.toString label),
-						 S "/", I n]
-				     | SOME args =>
-					   SEQ #[S "(tag ",
-						 S (Label.toString label),
-						 S "/", I n, S ") ",
-						 formatArgs IDDEF args],
+	    SEQ (Vector.map (fn (label, n, args, body) =>
+			     SEQ #[S "(tag ",
+				   S (Label.toString label),
+				   S "/", I n, S ") ",
+				   formatArgs IDDEF args,
 				   S " =>", IN, NL,
 				   formatBody (body, shared), EX, NL])
 		 tagBodyVector)
 	  | formatTests (ConTests conBodyVector, shared) =
-	    SEQ (Vector.map (fn (con, conArgs, body) =>
-			     SEQ #[case (con, conArgs) of
-				       (Con id, NONE) =>
-					   SEQ #[S "con ", ID id]
-				     | (Con id, SOME args) =>
+	    SEQ (Vector.map (fn (con, args, body) =>
+			     SEQ #[case con of
+				       Con id =>
 					   SEQ #[S "(con ", ID id, S ") ",
 						 formatArgs IDDEF args]
-				     | (StaticCon stamp, NONE) =>
-					   SEQ #[S "con ",
-						 S (Stamp.toString stamp)]
-				     | (StaticCon stamp, SOME args) =>
+				     | StaticCon stamp =>
 					   SEQ #[S "(con ",
 						 S (Stamp.toString stamp),
 						 S ") ",
@@ -215,13 +204,16 @@ structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
 	  | formatExp (PrimExp (_, name)) = SEQ #[S "prim \"", S name, S "\""]
 	  | formatExp (NewExp (_, _)) = S "new"
 	  | formatExp (VarExp (_, id)) = ID id
-	  | formatExp (TagExp (_, label, n)) =
-	    SEQ #[S "tag ", S (Label.toString label), S "/", I n]
-	  | formatExp (ConExp (_, con)) =
-	    SEQ #[S "con ",
+	  | formatExp (TagExp (_, label, n, args)) =
+	    SEQ #[S "(tag ", S (Label.toString label), S "/", I n, S ") ",
+		  formatArgs ID args]
+	  | formatExp (ConExp (_, con, args)) =
+	    SEQ #[S "(con ",
 		  case con of
 		      Con id => ID id
-		    | StaticCon stamp => S (Stamp.toString stamp)]
+		    | StaticCon stamp => S (Stamp.toString stamp), S ") ",
+		  formatArgs ID args]
+	  | formatExp (RefExp (_, id)) = SEQ #[S "ref ", ID id]
 	  | formatExp (TupExp (_, ids)) =
 	    SEQ #[S "(", SEP (S ", ", Vector.map ID ids), S ")"]
 	  | formatExp (ProdExp (_, labelIdVector)) =
@@ -240,17 +232,6 @@ structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
 		  SEP (S ", ", Vector.map ID ids), S ")"]
 	  | formatExp (VarAppExp (_, id, args)) =
 	    SEQ #[ID id, S " ", formatArgs ID args]
-	  | formatExp (TagAppExp (_, label, n, args)) =
-	    SEQ #[S "(tag ", S (Label.toString label), S "/", I n, S ") ",
-		  formatArgs ID args]
-	  | formatExp (ConAppExp (_, con, args)) =
-	    SEQ #[S "(con ",
-		  case con of
-		      Con id => ID id
-		    | StaticCon stamp => S (Stamp.toString stamp), S ") ",
-		  formatArgs ID args]
-	  | formatExp (RefAppExp (_, id)) =
-	    SEQ #[S "ref ", ID id]
 	  | formatExp (SelAppExp (_, _, label, n, id)) =
 	    SEQ #[S "#", S (Label.toString label), S "/", I n, S " ", ID id]
 	  | formatExp (LazySelAppExp (_, _, label, n, id)) =

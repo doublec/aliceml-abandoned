@@ -3,7 +3,7 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 1999-2000
+ *   Leif Kornstaedt, 1999-2001
  *
  * Last change:
  *   $Date$ by $Author$
@@ -34,65 +34,24 @@
  * kill-set of any statement on a path leading to S.
  *)
 
-import
-    structure PrettyPrint
-from "../../lib/utility/PrettyPrint"
-
-import
-    structure Crash
-from "../infrastructure/Crash"
-
-import
-    signature SWITCHES
-from "../infrastructure/SWITCHES-sig"
-
-import
-    signature CONTEXT
-from "../infrastructure/CONTEXT-sig"
-
-import
-    structure ComposePhases
-from "../infrastructure/ComposePhases"
-
-import
-    structure MkTracingPhase
-from "../infrastructure/MkTracingPhase"
-
-import
-    structure MkResultDumpingPhase
-from "../infrastructure/MkResultDumpingPhase"
-
-import
-    structure MkContextDumpingPhase
-from "../infrastructure/MkContextDumpingPhase"
-
-import
-    structure EmptyContext
-from "../infrastructure/EmptyContext"
-
-import
-    structure Stamp
-from "../common/Stamp"
-
-import
-    structure StampSet
-from "../common/StampSet"
-
-import
-    signature FLAT_GRAMMAR
-from "FLAT_GRAMMAR-sig"
-
-import
-    structure FlatGrammar
-from "FlatGrammar"
-
-import
-    structure OutputFlatGrammar
-from "OutputFlatGrammar"
-
-import
-    signature LIVENESS_ANALYSIS_PHASE
-from "LIVENESS_ANALYSIS_PHASE-sig"
+import structure PrettyPrint             from "../../lib/utility/PrettyPrint"
+import structure Crash                   from "../infrastructure/Crash"
+import signature SWITCHES                from "../infrastructure/SWITCHES-sig"
+import signature CONTEXT                 from "../infrastructure/CONTEXT-sig"
+import structure ComposePhases           from "../infrastructure/ComposePhases"
+import structure MkTracingPhase
+    from "../infrastructure/MkTracingPhase"
+import structure MkResultDumpingPhase
+    from "../infrastructure/MkResultDumpingPhase"
+import structure MkContextDumpingPhase
+    from "../infrastructure/MkContextDumpingPhase"
+import structure EmptyContext            from "../infrastructure/EmptyContext"
+import structure Stamp                   from "../common/Stamp"
+import structure StampSet                from "../common/StampSet"
+import signature FLAT_GRAMMAR            from "FLAT_GRAMMAR-sig"
+import structure FlatGrammar             from "FlatGrammar"
+import structure OutputFlatGrammar       from "OutputFlatGrammar"
+import signature LIVENESS_ANALYSIS_PHASE from "LIVENESS_ANALYSIS_PHASE-sig"
 
 structure LivenessAnalysisPhase1 :>
     LIVENESS_ANALYSIS_PHASE where type C.t = unit =
@@ -112,11 +71,11 @@ structure LivenessAnalysisPhase1 :>
 	fun lazyValOf (Orig x) = x
 	  | lazyValOf (Copy x) = x
 
-	fun processArgs (OneArg id, lset, x) = x (lset, id)
-	  | processArgs (TupArgs ids, lset, x) =
-	    Vector.foldl (fn (id, lset) => x (lset, id)) lset ids
-	  | processArgs (ProdArgs labIdVec, lset, x) =
-	    Vector.foldl (fn ((_, id), lset) => x (lset, id)) lset labIdVec
+	fun processArgs (OneArg id, lset, f) = f (lset, id)
+	  | processArgs (TupArgs ids, lset, f) =
+	    Vector.foldl (fn (id, lset) => f (lset, id)) lset ids
+	  | processArgs (ProdArgs labIdVec, lset, f) =
+	    Vector.foldl (fn ((_, id), lset) => f (lset, id)) lset labIdVec
 
 	fun delDef (lset as (Orig set), IdDef (Id (_, stamp, _))) =
 	    if StampSet.member (set, stamp) then
@@ -166,7 +125,7 @@ structure LivenessAnalysisPhase1 :>
 
 	fun scanBody (ValDec (info, idDef, exp)::stms) =
 	    setInfo (info, scanExp (exp, delDef (scanBody stms, idDef)))
-	  | scanBody (RefAppDec (info, idDef, id)::stms) =
+	  | scanBody (RefDec (info, idDef, id)::stms) =
 	    setInfo (info, ins (delDef (scanBody stms, idDef), id))
 	  | scanBody (TupDec (info, idDefs, id)::stms) =
 	    let
@@ -229,30 +188,22 @@ structure LivenessAnalysisPhase1 :>
 	    Vector.foldl (fn ((_, body), lset) => union (lset, scanBody body))
 	    (Copy (StampSet.new ())) litBodyVec
 	  | scanTests (TagTests tagBodyVec) =
-	    Vector.foldl (fn ((_, _, conArgs, body), lset) =>
+	    Vector.foldl (fn ((_, _, args, body), lset) =>
 			  let
 			      val lset' = scanBody body
-			      val lset' =
-				  case conArgs of
-				      SOME args =>
-					  processArgs (args, lset', delDef)
-				    | NONE => lset'
+			      val lset' = processArgs (args, lset', delDef)
 			  in
 			      union (lset, lset')
 			  end) (Copy (StampSet.new ())) tagBodyVec
 	  | scanTests (ConTests conBodyVec) =
-	    Vector.foldl (fn ((con, conArgs, body), lset) =>
+	    Vector.foldl (fn ((con, args, body), lset) =>
 			  let
 			      val lset' = scanBody body
 			      val lset' =
 				  case con of
 				      Con id => ins (lset', id)
 				    | StaticCon _ => lset'
-			      val lset' =
-				  case conArgs of
-				      SOME args =>
-					  processArgs (args, lset', delDef)
-				    | NONE => lset'
+			      val lset' = processArgs (args, lset', delDef)
 			  in
 			      union (lset, lset')
 			  end) (Copy (StampSet.new ())) conBodyVec
@@ -268,9 +219,13 @@ structure LivenessAnalysisPhase1 :>
 	  | scanExp (PrimExp (_, _), lset) = lset
 	  | scanExp (NewExp (_, _), lset) = lset
 	  | scanExp (VarExp (_, id), lset) = ins (lset, id)
-	  | scanExp (TagExp (_, _, _), lset) = lset
-	  | scanExp (ConExp (_, Con id), lset) = ins (lset, id)
-	  | scanExp (ConExp (_, StaticCon _), lset) = lset
+	  | scanExp (TagExp (_, _, _, args), lset) =
+	    processArgs (args, lset, ins)
+	  | scanExp (ConExp (_, Con id, args), lset) =
+	    processArgs (args, ins (lset, id), ins)
+	  | scanExp (ConExp (_, StaticCon _, args), lset) =
+	    processArgs (args, lset, ins)
+	  | scanExp (RefExp (_, id), lset) = ins (lset, id)
 	  | scanExp (TupExp (_, ids), lset) = insVec (lset, ids)
 	  | scanExp (ProdExp (_, labIdVec), lset) =
 	    Vector.foldl (fn ((_, id), lset) => ins (lset, id)) lset labIdVec
@@ -280,13 +235,6 @@ structure LivenessAnalysisPhase1 :>
 	  | scanExp (PrimAppExp (_, _, ids), lset) = insVec (lset, ids)
 	  | scanExp (VarAppExp (_, id, args), lset) =
 	    processArgs (args, ins (lset, id), ins)
-	  | scanExp (TagAppExp (_, _, _, args), lset) =
-	    processArgs (args, lset, ins)
-	  | scanExp (ConAppExp (_, Con id, args), lset) =
-	    processArgs (args, ins (lset, id), ins)
-	  | scanExp (ConAppExp (_, StaticCon _, args), lset) =
-	    processArgs (args, lset, ins)
-	  | scanExp (RefAppExp (_, id), lset) = ins (lset, id)
 	  | scanExp (SelAppExp (_, _, _, _, id), lset) = ins (lset, id)
 	  | scanExp (LazySelAppExp (_, _, _, _, id), lset) = ins (lset, id)
 	  | scanExp (FunAppExp (_, id, _, args), lset) =
@@ -308,11 +256,11 @@ structure LivenessAnalysisPhase2 :> LIVENESS_ANALYSIS_PHASE
 
 	(* Annotate `kill' set at each statement *)
 
-	fun processArgs (OneArg id, set, x) = x (set, id)
-	  | processArgs (TupArgs ids, set, x) =
-	    Vector.app (fn id => x (set, id)) ids
-	  | processArgs (ProdArgs labIdVec, set, x) =
-	    Vector.app (fn (_, id) => x (set, id)) labIdVec
+	fun processArgs (OneArg id, set, f) = f (set, id)
+	  | processArgs (TupArgs ids, set, f) =
+	    Vector.app (fn id => f (set, id)) ids
+	  | processArgs (ProdArgs labIdVec, set, f) =
+	    Vector.app (fn (_, id) => f (set, id)) labIdVec
 
 	fun insDef (set, IdDef (Id (_, stamp, _))) =
 	    StampSet.insert (set, stamp)
@@ -323,7 +271,7 @@ structure LivenessAnalysisPhase2 :> LIVENESS_ANALYSIS_PHASE
 
 	fun initStm (ValDec (_, idDef, exp), set) =
 	    (insDef (set, idDef); initExp exp)
-	  | initStm (RefAppDec (_, idDef, _), set) = insDef (set, idDef)
+	  | initStm (RefDec (_, idDef, _), set) = insDef (set, idDef)
 	  | initStm (TupDec (_, idDefs, _), set) =
 	    Vector.app (fn idDef => insDef (set, idDef)) idDefs
 	  | initStm (ProdDec (_, labelIdDefVec, _), set) =
@@ -352,23 +300,19 @@ structure LivenessAnalysisPhase2 :> LIVENESS_ANALYSIS_PHASE
 	    Vector.app (fn (_, body) => initBody (body, StampSet.clone set))
 	    litBodyVec
 	  | initTests (TagTests tagBodyVec, set) =
-	    Vector.app (fn (_, _, conArgs, body) =>
+	    Vector.app (fn (_, _, args, body) =>
 			let
 			    val set' = StampSet.clone set
 			in
-			    case conArgs of
-				SOME args => processArgs (args, set', insDef)
-			      | NONE => ();
+			    processArgs (args, set', insDef);
 			    initBody (body, set')
 			end) tagBodyVec
 	  | initTests (ConTests conBodyVec, set) =
-	    Vector.app (fn (_, conArgs, body) =>
+	    Vector.app (fn (_, args, body) =>
 			let
 			    val set' = StampSet.clone set
 			in
-			    case conArgs of
-				SOME args => processArgs (args, set', insDef)
-			      | NONE => ();
+			    processArgs (args, set', insDef);
 			    initBody (body, set')
 			end) conBodyVec
 	  | initTests (VecTests vecBodyVec, set) =
