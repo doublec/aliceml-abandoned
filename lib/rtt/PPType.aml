@@ -128,9 +128,9 @@ struct
 	    val c = String.str(Char.chr(Char.ord #"a" + n mod 26))
 	    val i = n div 26
 	in
-	    text((if isBound then "'" else "'_") ^
-		 (if i = 0 then c else c ^ Int.toString i) ^
-		 (if isExtKind(kindVar a) then "_ext" else "")) ^^
+	    text(if isBound then "'" else "'_") ^^
+	    text c ^^ (if i = 0 then empty else text(Int.toString i)) ^^
+	    (if isExtKind(kindVar a) then text "_ext" else empty) ^^
 	    ppConstraint(constraintVar a)
  	end
 
