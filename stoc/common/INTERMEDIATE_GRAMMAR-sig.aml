@@ -122,17 +122,4 @@ signature INTERMEDIATE =
     val info_pat :	pat	-> info
     val info_dec :	dec	-> info
 
-    val output_lit :	TextIO.outstream * lit		-> unit
-    val output_lab :	TextIO.outstream * lab		-> unit
-    val output_id :	TextIO.outstream * id		-> unit
-    val output_longid :	TextIO.outstream * longid	-> unit
-    val output_exp :	TextIO.outstream * exp		-> unit
-    val output_field : (TextIO.outstream * 'a -> unit)	->
-			TextIO.outstream * 'a field	-> unit
-    val output_match :	TextIO.outstream * match	-> unit
-    val output_pat :	TextIO.outstream * pat		-> unit
-    val output_dec :	TextIO.outstream * dec		-> unit
-    val output_list :  (TextIO.outstream * 'a -> unit)	->
-			TextIO.outstream * 'a list	-> unit
-
   end

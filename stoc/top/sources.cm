@@ -73,7 +73,6 @@ Group is
 
     INTERMEDIATE.sig
     Intermediate.sml
-
     PostTranslationIntermediate.sml
 
     TRANSLATE_CORE.sig
@@ -82,6 +81,9 @@ Group is
     Translate_Core.sml
     Translate_Module.sml
     Translate_Program.sml
+
+    OZIFYINTERMEDIATE.sig
+    OzifyIntermediate.sml
 
     MAIN.sig
     Main.sml

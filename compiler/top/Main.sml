@@ -18,13 +18,26 @@ structure Main :> MAIN =
 	    processString process source
 	end
 
-    val parse     = Parse.parse
-    val translate = Translate_Program.translate BindEnv0_Module.E0 o Parse.parse
+    val parse      = Parse.parse
+    val translate  = Translate_Program.translate BindEnv0_Module.E0 o parse
+
+    fun ozify name s =
+	let
+	    val file = TextIO.openOut name
+	    val decs = translate s
+	in
+	    OzifyIntermediate.output_list OzifyIntermediate.output_dec
+					  (file,decs) ;
+	    TextIO.closeOut file
+	end
 
     val parseString	= processString parse
-    val translateString	= processString translate
-
     val parseFile	= processFile parse
+
+    val translateString	= processString translate
     val translateFile	= processFile translate
+
+    fun ozifyString(s,f)= processString (ozify f) s
+    fun ozifyFile(s,f)	= processFile (ozify f) s
 
   end
