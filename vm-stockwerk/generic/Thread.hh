@@ -99,6 +99,7 @@ public:
     return static_cast<state>(Store::DirectWordToInt(GetArg(STATE_POS)));
   }
   void SetTerminated() {
+    SetArgs(0, Store::IntToWord(0));
     SetState(TERMINATED);
   }
   void BlockOn(word future) {
