@@ -22,7 +22,7 @@
 class String;
 
 typedef struct {
-  char *name;
+  const char *name;
   word (*module)(void);
 } prim_table;
 
