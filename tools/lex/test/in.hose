@@ -20,6 +20,7 @@
  *   not reentrant.
  *)
 
+use "LEXER-sig.sml";
 use "Lexer.sml";
 
     val nesting = ref 0		(* non-reentrant side-effect way :-P *)
