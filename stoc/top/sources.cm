@@ -84,6 +84,7 @@ Group is
 
     SIMPLIFIED.sig
     Simplified.sml
+    LABELSORT.sig
     LabelSort.sml
     SIMPLIFY.sig
     Simplify.sml

@@ -56,7 +56,8 @@ signature SIMPLIFIED =
 	  | VarExp of coord * longid
 	  | ConExp of coord * longid * longid option
 	  | TupExp of coord * longid list
-	  | RecExp of coord * (lab * longid) list   (* all labels distinct *)
+	  | RecExp of coord * (lab * longid) list
+	    (* sorted, all labels distinct, no tuple *)
 	  | SelExp of coord * lab
 	  | FunExp of coord * string * id * exp
 	  | AppExp of coord * exp * exp
@@ -72,6 +73,6 @@ signature SIMPLIFIED =
 	    LitTest of lit
 	  | NameTest of longid
 	  | ConTest of longid * id
-	  | RecTest of (string * id) list   (* sorted, distinct *)
+	  | RecTest of (string * id) list   (* sorted, all labels distinct *)
 	  | LabelTest of string * id
     end

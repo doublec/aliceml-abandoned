@@ -53,19 +53,13 @@ structure Simplify :> SIMPLIFY =
 	end
 
 	local
-	    fun tupArity (s::sr, i) =
-		if s = Int.toString i then tupArity (sr, i + 1)
-		else NONE
-	      | tupArity (nil, i) = SOME (i - 1)
+	    structure StringLabelSort =
+		LabelSort(type t = string fun get x = x)
 	in
-	    fun makeArity ss =
-		let
-		    val ss' = LabelSort.sort ss
-		in
-		    case tupArity (ss', 1) of
-			NONE => RecArity ss'
-		      | SOME i => TupArity i
-		end
+	    fun makeArity xs =
+		case StringLabelSort.sort xs of
+		    (_, StringLabelSort.Tup i) => TupArity i
+		  | (xs', StringLabelSort.Rec) => RecArity xs'
 	end
 
 	fun makeTestSeq (WildPat _, _, rest) = rest
@@ -303,6 +297,10 @@ structure Simplify :> SIMPLIFY =
 
 	(* Generate Simplified Ouput from Graph *)
 
+	structure FieldLabelSort =
+	    LabelSort(type t = lab * longid
+		      fun get (Lab (_, s), _) = s)
+
 	type mapping = (pos * id) list
 
 	fun lookup (pos, (pos', id)::mappingRest) =
@@ -363,8 +361,15 @@ structure Simplify :> SIMPLIFY =
 		    ListPair.map (fn (id, Field (_, lab, _)) =>
 				  (lab, ShortId (Source.nowhere, id)))
 		    (ids, expFields)
+		val exp' =
+		    case FieldLabelSort.sort fields of
+			(fields', FieldLabelSort.Tup _) =>
+			    S.TupExp (coord,
+				      List.map (fn (_, exp') => exp') fields')
+		      | (fields', FieldLabelSort.Rec) =>
+			    S.RecExp (coord, fields)
 	    in
-		S.LetExp (Source.nowhere, decs', S.RecExp (coord, fields))
+		S.LetExp (Source.nowhere, decs', exp')
 	    end
 	  | simplifyExp (SelExp (coord, lab)) =
 	    S.SelExp (coord, lab)
