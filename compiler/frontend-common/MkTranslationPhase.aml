@@ -23,21 +23,23 @@ import structure Path			from "../../lib/rtt/Path"
 import structure Type			from "../../lib/rtt/Type"
 import structure Inf			from "../../lib/rtt/Inf"
 import structure PervasiveType		from "../../lib/rtt/PervasiveType"
+import structure PathMap		from "../../lib/rtt/PathMap"
 
-import structure FixityReflection	from "FixityReflection"
-import structure LabelReflection	from "LabelReflection"
-import structure PathReflection		from "PathReflection"
-import structure TypeReflection		from "TypeReflection"
-import structure InfReflection		from "InfReflection"
-import structure PervasiveTypeReflection from "PervasiveTypeReflection"
+import structure NameTranslation	from "NameTranslation"
+import structure LabelTranslation	from "LabelTranslation"
+import structure PathTranslation	from "PathTranslation"
+import structure TypeTranslation	from "TypeTranslation"
+import structure InfTranslation		from "InfTranslation"
+import structure FixityTranslation	from "FixityTranslation"
+import structure PervasiveTypeTranslation from "PervasiveTypeTranslation"
 
+import structure TranslationEnv		from "TranslationEnv"
 import structure Assert                 from "../../lib/utility/Assert"
 import structure Crash			from "../infrastructure/Crash"
 import structure Error			from "../infrastructure/Error"
 import structure Source			from "../infrastructure/Source"
 import structure StringMap		from "../infrastructure/StringMap"
 import functor   MkHashImpMap		from "../../lib/utility/MkHashImpMap"
-import structure CheckIntermediate      from "../common/CheckIntermediate"
 import signature SWITCHES		from "../infrastructure/SWITCHES-sig"
 import signature TRANSLATION_PHASE	from "TRANSLATION_PHASE-sig"
 
@@ -45,12 +47,11 @@ import signature TRANSLATION_PHASE	from "TRANSLATION_PHASE-sig"
 functor MkTranslationPhase(Switches: SWITCHES) : TRANSLATION_PHASE =
 struct
 
-    structure C = EmptyContext
+    structure C = TranslationEnv
     structure I = TypedGrammar
     structure O = IntermediateGrammar
 
     open TypedInfo
-
 
   (* UNFINISHED... *)
 
@@ -89,207 +90,63 @@ struct
 
   (* Names and labels *)
 
-    fun trName' f (Name.ExId s)	= Name.ExId(f s)
-      | trName' f  n		= n
+    open NameTranslation
 
-    fun trValName  n		= n
-    val trTypName		= trName'(fn s => "$" ^ s)
-    val trVarName		= trName'(fn s => "$" ^ s)
-    val trModName		= trName'(fn s => s ^ "$")
-    val trInfName		= trName'(fn s => "$" ^ s ^ "$")
-
-    fun isValName' s		= String.sub(s,0) <> #"$" andalso
-				  String.sub(s, String.size s - 1) <> #"$"
-    fun isTypName' s		= String.sub(s,0) = #"$" andalso
-				  String.sub(s, String.size s - 1) <> #"$"
-    fun isModName' s		= String.sub(s,0) <> #"$" andalso
-				  String.sub(s, String.size s - 1) = #"$"
-    fun isInfName' s		= String.sub(s,0) = #"$" andalso
-				  String.sub(s, String.size s - 1) = #"$"
-
-    fun trValLabel a		= Label.fromName(trValName(Label.toName a))
-    fun trTypLabel a		= Label.fromName(trTypName(Label.toName a))
-    fun trModLabel a		= Label.fromName(trModName(Label.toName a))
-    fun trInfLabel a		= Label.fromName(trInfName(Label.toName a))
+    fun trValLabel a = Label.fromName(trValName(Label.toName a))
+    fun trTypLabel a = Label.fromName(trTypName(Label.toName a))
+    fun trModLabel a = Label.fromName(trModName(Label.toName a))
+    fun trInfLabel a = Label.fromName(trInfName(Label.toName a))
 
 
-  (* Auxiliaries for reflection *)
+  (* Types for annotating RTT code *)
 
     open PervasiveType
-    open InfReflection
-    open TypeReflection
-    open PervasiveTypeReflection
-    open PathReflection
-    open LabelReflection
-    open FixityReflection
+    open InfTranslation
+    open TypeTranslation
+    open PervasiveTypeTranslation
+    open PathTranslation
+    open LabelTranslation
+    open FixityTranslation
 
-    val typ_icon		= InfReflection.typ_con
-    val typ_ikind		= InfReflection.typ_kind
-    val lab_ikind		= InfReflection.lab_kind
+    val var_poly	= Type.var(Type.STAR)
+    val typ_poly	= Type.inAll(var_poly, Type.inVar var_poly)
 
-    val modname_label'		= trModName modname_label
-    val modname_path'		= trModName modname_path
-    val modname_type'		= trModName modname_type
-    val modname_pervType'	= trModName modname_pervasiveType
-    val modname_inf'		= trModName modname_inf
-    val lab_label'		= Label.fromName modname_label'
-    val lab_path'		= Label.fromName modname_path'
-    val lab_type'		= Label.fromName modname_type'
-    val lab_pervType'		= Label.fromName modname_pervType'
-    val lab_inf'		= Label.fromName modname_inf'
+    val lab_none	= Label.fromString "NONE"
+    val lab_some	= Label.fromString "SOME"
+    val typ_opt		= Type.unknown(Type.ARROW(Type.STAR,Type.STAR))
+    val var_opt		= Type.var(Type.STAR)
+    val row_opt		= Type.extendRow(lab_some, Type.inVar var_opt,
+			  Type.extendRow(lab_none, typ_zero,
+			  Type.emptyRow()))
+    val _		= Type.fill(typ_opt,
+			  Type.inMu(Type.inLambda(var_opt, Type.inSum row_opt)))
 
-    val longidr_pervasive	= ref(NONE : O.longid option)
-    fun longid_pervasive()	= case !longidr_pervasive
-				    of SOME y => y
-				     | NONE => raise Crash.Crash
-					"TranslationPhase.longid_pervasive"
+    fun typ(E, modlab, lab) =
+	if not(!Switches.Language.supportRtt) then typ_poly else
+	let
+	    val x  = TranslationEnv.lookupPervasive E
+	    val j0 = #inf(I.infoId x)
+	    val j1 = Inf.lookupMod(Inf.asSig j0, modlab)
+	    val t  = Inf.lookupTyp(Inf.asSig j1, lab)
+	in
+	    t
+	end
 
-    fun info_pervasiveDot a	= let
-				      val i = O.infoLongid(longid_pervasive())
-				      val r = Type.asProd(#typ i)
-				      val t = Type.lookupRow(r,a)
-				  in typInfo(#region i, t) end
-    fun info_label()		= info_pervasiveDot lab_label'
-    fun info_path()		= info_pervasiveDot lab_path'
-    fun info_type()		= info_pervasiveDot lab_type'
-    fun info_inf()		= info_pervasiveDot lab_inf'
-    fun info_pervType()		= info_pervasiveDot lab_pervType'
-
-    val typ_typtyp		= Type.inTuple #[typ_typ, typ_typ]
-    val typ_vartyp		= Type.inTuple #[typ_var, typ_typ]
-    val typ_typVec		= Type.inApply(typ_vec, typ_typ)
-    val typ_kindkind		= Type.inTuple #[typ_kind, typ_kind]
-    val typ_kindToVar		= Type.inArrow(typ_kind, typ_var)
-    val typ_infinf		= Type.inTuple #[typ_inf, typ_inf]
-    val typ_pathinf		= Type.inTuple #[typ_path, typ_inf]
-    val typ_pathinfinf		= Type.inTuple #[typ_path, typ_inf, typ_inf]
-    val typ_infpathinf		= Type.inTuple #[typ_inf, typ_path, typ_inf]
-    val typ_infunit		= Type.inTuple #[typ_inf, typ_unit]
-    val typ_signlab		= Type.inTuple #[typ_sign, typ_lab]
-    val typ_intassoc		= Type.inTuple #[typ_int, typ_assoc]
-    val typ_labtyprow		= Type.inTuple #[typ_lab, typ_typ, typ_row]
-
-    val typ_top			= typ_zero
-    fun typ_infinst t		= Type.inArrow(typ_unit,
-					       Type.inTuple #[typ_unit, t])
-    (*UNFINISHED: this should go *)
-    val lab_none		= Label.fromString "NONE"
-    val lab_some		= Label.fromString "SOME"
-    val typ_opt			= Type.unknown(Type.ARROW(Type.STAR,Type.STAR))
-    val var_opt			= Type.var(Type.STAR)
-    val typ_some		= Type.inTuple #[Type.inVar var_opt]
-    val row_opt			= Type.extendRow(lab_some, typ_some,
-				  Type.extendRow(lab_none, typ_zero,
-				  Type.emptyRow()))
-    val _			= Type.fill(typ_opt,
-					Type.inMu(Type.inLambda(var_opt,
-							  Type.inSum row_opt)))
-    val typ_pathOpt		= Type.inApply(typ_opt, typ_path)
-    val typ_typOpt		= Type.inApply(typ_opt, typ_typ)
-    val typ_infOpt		= Type.inApply(typ_opt, typ_inf)
-    val typ_extendFix		= Type.inTuple #[typ_sign, typ_path, typ_fix]
-    val typ_extendVal		= Type.inTuple
-				  #[typ_sign, typ_path, typ_typ, typ_pathOpt]
-    val typ_extendTyp		= Type.inTuple
-				  #[typ_sign, typ_path, typ_kind, typ_typOpt]
-    val typ_extendMod		= Type.inTuple
-				  #[typ_sign, typ_path, typ_inf, typ_pathOpt]
-    val typ_extendInf		= Type.inTuple
-				  #[typ_sign, typ_path, typ_ikind, typ_infOpt]
-
-    fun longid_pervasiveDot i n	= O.LongId(i, longid_pervasive(),
-					      O.Lab(nonInfo(Source.nowhere),
-						    Label.fromName n))
-
-    fun longid_label()		= longid_pervasiveDot(info_label())
-						      modname_label'
-    fun longid_path()		= longid_pervasiveDot(info_path()) modname_path'
-    fun longid_type()		= longid_pervasiveDot(info_type()) modname_type'
-    fun longid_inf()		= longid_pervasiveDot(info_inf())  modname_inf'
-    fun longid_pervType()	= longid_pervasiveDot(info_pervType())
-						      modname_pervType'
-    fun longid_pervInf()	= (*UNFINISHED*)
-				  unfinished(Source.nowhere) "longid_pervInf" ""
-
-    fun yVal (mkY,typ) a	= let val r  = Source.nowhere
-				      val y' = O.LongId(typInfo(r,typ), mkY(),
-							O.Lab(nonInfo r, a))
-				  in
-				      O.VarExp(typInfo(r,typ), y')
-				  end
-
-    fun yOp (mkY,typ) (a,e')	= let val r   = #region(O.infoExp e')
-				      val t   = #typ(O.infoExp e')
-				      val t1  = Type.inArrow(t, typ)
-				      val y'  = O.LongId(typInfo(r,t1), mkY(),
-							 O.Lab(nonInfo r, a))
-				      val e1' = O.VarExp(typInfo(r,t1), y')
-				  in
-				      O.AppExp(typInfo(r, typ), e1', e')
-				  end
-
-    val labOp			= yOp(longid_label,     typ_lab)
-    val pathOp			= yOp(longid_path,      typ_path)
-    val typOp			= yOp(longid_type,      typ_typ)
-    val kindOp			= yOp(longid_type,      typ_kind)
-    val varOp			= yOp(longid_type,      typ_var)
-    val rowOp			= yOp(longid_type,      typ_row)
-    val unitTypOp		= yOp(longid_type,      typ_unit)
-    val boolTypOp		= yOp(longid_type,      typ_bool)
-    val pervTypeOp		= yOp(longid_pervType,  typ_con)
-    val pervTypeVal		= yVal(longid_pervType, typ_typ)
-    val sigOp			= yOp(longid_inf,       typ_sign)
-    val infOp			= yOp(longid_inf,       typ_inf)
-    val ikindOp			= yOp(longid_inf,       typ_ikind)
-    val unitInfOp		= yOp(longid_inf,       typ_unit)
-    val pathInfOp		= yOp(longid_inf,       typ_path)
-    val pathinfinfInfOp		= yOp(longid_inf,       typ_pathinfinf)
-    val typInfOp		= yOp(longid_inf,       typ_typ)
-    val reaInfOp		= yOp(longid_inf,       typ_rea)
-    val pervInfOp		= yOp(longid_pervInf,   typ_icon)
-
-
-  (* Primitive types and expressions *)
-
-    fun trUnit r	= O.TupExp(typInfo(r,typ_unit), #[])
-    fun trInt(r, n)	= O.LitExp(typInfo(r,typ_int),
-				   O.IntLit(LargeInt.fromInt n))
-    fun trString(r, s)	= O.LitExp(typInfo(r,typ_string),
- 				   O.StringLit(String.toWide s))
-
-    fun trTagged(i, a, e, b) =
-	    O.TagExp(i, O.Lab(nonInfo(#region i), a), e, b)
-    fun trTag(i, a) =
-	    O.TagExp(i, O.Lab(nonInfo(#region i), a),
-		     O.FailExp(typInfo(#region i, typ_zero)), false)
-
-    fun trKind(r, Type.STAR) = trTag(typInfo(r,typ_kind), lab_star)
-      | trKind(r, Type.ARROW(k1,k2)) =
-	    trTagged(typInfo(r,typ_kind), lab_arrow,
-		     O.TupExp(typInfo(r,typ_kindkind),
-			      (*UNFINISHED: this should be a vector constant,
-			        but NJ has a bug... *)
-			      vector[trKind(r,k1), trKind(r,k2)]), true)
-
-    fun trSort(r, Type.OPEN)        = trTag(typInfo(r,typ_sort), lab_open)
-      | trSort(r, Type.CLOSED)      = trTag(typInfo(r,typ_sort), lab_closed)
-
-    fun trAssoc(r, Fixity.LEFT)     = trTag(typInfo(r,typ_assoc), lab_left)
-      | trAssoc(r, Fixity.RIGHT)    = trTag(typInfo(r,typ_assoc), lab_right)
-      | trAssoc(r, Fixity.NEITHER)  = trTag(typInfo(r,typ_assoc), lab_neither)
-
-    fun trFix(r, Fixity.NONFIX)     = trTag(typInfo(r,typ_fix), lab_nonfix)
-      | trFix(r, Fixity.PREFIX n)   = trTagged(typInfo(r,typ_fix), lab_prefix,
-					       trInt(r,n), false)
-      | trFix(r, Fixity.POSTFIX n)  = trTagged(typInfo(r,typ_fix), lab_postfix,
-					       trInt(r,n), false)
-      | trFix(r, Fixity.INFIX(n,a)) = trTagged(typInfo(r,typ_fix), lab_infix,
-					       O.TupExp(typInfo(r,typ_intassoc),
-					       (*UNFINISHED: this should be
-					        * a vector constant,
-					        * but NJ has a bug... *)
-					       vector[trInt(r,n), trAssoc(r,a)]),
-					       true)
+    fun typ_lab E	= typ(E, modlab_label,  typlab_lab)
+    fun typ_path E	= typ(E, modlab_path,   typlab_path)
+    fun typ_sort E	= typ(E, modlab_type,   typlab_sort)
+    fun typ_con E	= typ(E, modlab_type,   typlab_con)
+    fun typ_typ E	= typ(E, modlab_type,   typlab_typ)
+    fun typ_var E	= typ(E, modlab_type,   typlab_var)
+    fun typ_row E	= typ(E, modlab_type,   typlab_row)
+    fun typ_kind E	= typ(E, modlab_type,   typlab_kind)
+    fun typ_icon E	= typ(E, modlab_inf,    typlab_con)
+    fun typ_inf E	= typ(E, modlab_inf,    typlab_inf)
+    fun typ_sig E	= typ(E, modlab_inf,    typlab_sig)
+    fun typ_ikind E	= typ(E, modlab_inf,    typlab_kind)
+    fun typ_rea E	= typ(E, modlab_inf,    typlab_rea)
+    fun typ_fix E	= typ(E, modlab_fixity, typlab_fix)
+    fun typ_assoc E	= typ(E, modlab_fixity, typlab_assoc)
 
 
   (* Transformation of type info *)
@@ -299,67 +156,74 @@ struct
     val infHash = InfHash.new() : Type.t InfHash.map
 		(*UNFINISHED: remove this global variable! *)
 
-    fun ikindToKind k =
-	if Inf.isGround k then
-	    Type.STAR
-	else if Inf.isDependent k then
-	    let
-		val (p,j,k1) = Inf.asDependent k
-	    in
-		Type.ARROW(Type.STAR, ikindToKind k1)
-	    end
-	else
-	    raise Crash.Crash "TranslationPhase.kindToKind: unknown kind"
+    (* A proper translation of interface kinds would require
+     * polymorphic kinds and record kinds, because we have first
+     * class signatures!
+     * Example:
+     *   fun(X:{interface I}) -> fun(Y:X.I) -> something
+     * A faithful translation of this type would be something like
+     *   Fun k -> fun x:{I:*} -> fun x':{I:k} -> something
+     * where Fun denotes big lambda and {I:..} is a record kind.
+     * We don't try this but use AbsExp as an (unsound) approximation.
+     *)
 
-    fun infToTyp j =
+    fun ikindToKind k = Type.STAR
+
+    fun infToTyp(E,j) =
 	case InfHash.lookup(infHash, j) of
 	  SOME t => t
 	| NONE   =>
 	    let
-		val t = infToTyp' j
+		val t = infToTyp'(E,j)
 	    in
 		InfHash.insertDisjoint(infHash, j, t);
 		t
 	    end
 
-    and infToTyp' j =
+    and infToTyp'(E,j) =
 	if Inf.isTop j then
-	    typ_top
+	    (* [any] = top *)
+	    typ_unit
 	else if Inf.isCon j then
+	    (* [c] = c *)
 	    let
 		val (k,p) = Inf.asCon j
 	    in
 		Type.inCon(ikindToKind k, Type.CLOSED, p)
 	    end
 	else if Inf.isSig j then
+	    (* [sig items end] = {[items]} *)
 	    let
 		val s     = Inf.asSig j
 		val items = Inf.items s
 	    in
-		Type.inProd(List.foldr itemToRow (Type.emptyRow()) items)
+		Type.inProd(List.foldr (itemToRow E) (Type.emptyRow()) items)
 	    end
 	else if Inf.isArrow j then
+	    (* [fct(x:j1) -> j2] = [j1] -> [j2] *)
 	    let
 		val (p,j1,j2) = Inf.asArrow j
 	    in
-		Type.inArrow(infToTyp j1, infToTyp j2)
+		Type.inArrow(infToTyp(E,j1), infToTyp(E,j2))
 	    end
 	else if Inf.isLambda j then
+	    (* [\x:j1 . j2] = [j2] *)
 	    let
 		val (p,j1,j2) = Inf.asLambda j
 	    in
-		Type.inLambda(Type.var(Type.STAR), infToTyp j2)
+		infToTyp(E,j2)
 	    end
 	else if Inf.isApply j then
+	    (* [j1(x:j2)] = [j1] *)
 	    let
 		val (j1,p,j2) = Inf.asApply j
 	    in
-		Type.inApply(infToTyp j1, infToTyp j2)
+		infToTyp(E,j1)
 	    end
 	else
 	    raise Crash.Crash "TranslationPhase.infToTyp: unknown inf"
 
-    and itemToRow(item,r) =
+    and itemToRow E (item,r) =
 	if Inf.isValItem item then
 	    let
 		val (a,t,d) = Inf.asValItem item
@@ -369,39 +233,152 @@ struct
 	else if Inf.isTypItem item then
 	    let
 		val (a,k,d) = Inf.asTypItem item
+		val  t      = typ_typ E handle TranslationEnv.Pervasive =>
+			      typ_poly (* for bootstrapping *)
 	    in
-		Type.extendRow(trTypLabel a, typ_typ, r)
+		Type.extendRow(trTypLabel a, t, r)
 	    end
 	else if Inf.isModItem item then
 	    let
 		val (a,j,d) = Inf.asModItem item
 	    in
-		Type.extendRow(trModLabel a, infToTyp j, r)
+		Type.extendRow(trModLabel a, infToTyp(E,j), r)
 	    end
 	else if Inf.isInfItem item then
 	    let
 		val (a,k,d) = Inf.asInfItem item
-		val  t      = case d of SOME j => infToTyp j
-				      | NONE =>
-					(* new abstract type *)
-					Type.inCon(ikindToKind k, Type.CLOSED,
-						   Path.fromLab a)
+		val  t      = typ_inf E handle TranslationEnv.Pervasive =>
+			      typ_poly (* for bootstrapping *)
 	    in
-		Type.extendRow(trInfLabel a, typ_infinst t, r)
+		Type.extendRow(trInfLabel a, t, r)
 	    end
 	else (* fixity *)
 	    r
 
 
-  (* Handling builtin primitives *)
+  (* Identifiers and operations for RTT code *)
 
-    fun updatePervasive(I.Id(i,z,n) : I.modid) =
+    (* We have to insert x before we can call infToTyp! *)
+
+    fun updatePervasive(E, x as I.Id(i,z,n)) =
+	if n <> name_pervasive then () else
+	    TranslationEnv.insertPervasive(E,x)
+
+    fun updatePervasive'(E, x as I.Id(i,z,n) : I.modid) =
 	if n <> name_pervasive then () else
 	let
-	    val i' = typInfo(#region i, infToTyp(#inf i))
+	    val i' = typInfo(#region i, infToTyp(E, #inf i))
+	    val y  = O.ShortId(i', O.Id(i', z, trModName n))
 	in
-	    longidr_pervasive := SOME(O.ShortId(i', O.Id(i', z, trModName n)))
+	    TranslationEnv.insertPervasive'(E,y)
 	end
+
+    fun access modlab (E, lab) =
+	let
+	    val r       = Source.nowhere
+	    val modlab' = trModLabel modlab
+	    val lab'    = trValLabel lab
+	    val longid0 = TranslationEnv.lookupPervasive' E
+(*DEBUG*)handle e => (Error.warn(Source.nowhere, Label.toString modlab ^ "." ^ Label.toString lab);raise e)
+	    val t0      = #typ(O.infoLongid longid0)
+	    val t1      = Type.lookupRow(Type.asProd t0, modlab')
+	    val longid1 = O.LongId(typInfo(r,t1), longid0,
+				   O.Lab(nonInfo r, modlab'))
+	    val t2      = Type.lookupRow(Type.asProd t1, lab)
+	    val longid2 = O.LongId(typInfo(r,t2), longid1,
+				   O.Lab(nonInfo r, lab'))
+	in
+	    O.VarExp(typInfo(r,t2), longid2)
+	end
+
+    fun call modlab (E, lab, exp2) =
+	let
+	    val r       = #region(O.infoExp exp2)
+	    val modlab' = trModLabel modlab
+	    val lab'    = trValLabel lab
+	    val longid0 = TranslationEnv.lookupPervasive' E
+(*DEBUG*)handle e => (Error.warn(Source.nowhere, Label.toString modlab ^ "." ^ Label.toString lab);raise e)
+	    val t0      = #typ(O.infoLongid longid0)
+	    val t1      = Type.lookupRow(Type.asProd t0, modlab')
+	    val longid1 = O.LongId(typInfo(r,t1), longid0,
+				   O.Lab(nonInfo r, modlab'))
+	    val t2      = Type.lookupRow(Type.asProd t1, lab)
+	    val longid2 = O.LongId(typInfo(r,t2), longid1,
+				   O.Lab(nonInfo r, lab'))
+	    val exp1    = O.VarExp(typInfo(r,t2), longid2)
+	    val (t3,t4) = Type.asArrow t2
+	in
+	    (*ASSERT Type.equals(t3,#typ(infoExp exp2)) *)
+	    O.AppExp(typInfo(r,t4), exp1, exp2)
+	end
+
+    val callLab			= call modlab_label
+    val callPath		= call modlab_path
+    val callTyp			= call modlab_type
+    val callPervType		= call modlab_pervasiveType
+    val accessPervType		= access modlab_pervasiveType
+    val callInf			= call modlab_inf
+    fun callPervInf x		= (*UNFINISHED*)
+				  (unfinished(Source.nowhere) "callPervInf" "";
+				   callInf x)
+
+
+  (* Primitive types and expressions *)
+
+    fun trLazy e = O.LazyExp(O.infoExp e, e)
+
+    fun trUnit r =
+	O.TupExp(typInfo(r, typ_unit), #[])
+    fun trInt(r, n) =
+	O.LitExp(typInfo(r, typ_int), O.IntLit(LargeInt.fromInt n))
+    fun trString(r, s) =
+	O.LitExp(typInfo(r, typ_string), O.StringLit(String.toWide s))
+
+    fun trTuple(r, es) =
+	O.TupExp(typInfo(r, Type.inTuple(Vector.map (#typ o O.infoExp) es)), es)
+    fun trVector(r, t, es) =
+	O.VecExp(typInfo(r, Type.inApply(typ_vec, t)), es)
+    fun trTagged(r, t, a, e, b) =
+	O.TagExp(typInfo(r,t), O.Lab(nonInfo r, a), e, b)
+    fun trTag(r, t, a) =
+	O.TagExp(typInfo(r,t), O.Lab(nonInfo r, a),
+		 O.FailExp(typInfo(r, typ_zero)), false)
+    fun trNone(r, t) =
+	trTag(r, Type.inApply(typ_opt, t), lab_none)
+    fun trSome(r, e) =
+	trTagged(r, Type.inApply(typ_opt,#typ(O.infoExp e)), lab_some, e, false)
+
+    fun trKind(E, r, Type.STAR) =
+	trTag(r, typ_kind E, lab_star)
+      | trKind(E, r, Type.ARROW(k1,k2)) =
+	trTagged(r, typ_kind E, lab_arrow,
+		 trTuple(r, vector[trKind(E,r,k1), trKind(E,r,k2)]), true)
+			      (*UNFINISHED: this should be a vector constant,
+			        but NJ has a bug... *)
+
+    fun trSort(E, r, Type.OPEN) =
+	trTag(r, typ_sort E, lab_open)
+      | trSort(E, r, Type.CLOSED) =
+	trTag(r, typ_sort E, lab_closed)
+
+    fun trAssoc(E, r, Fixity.LEFT) =
+	trTag(r, typ_assoc E, lab_left)
+      | trAssoc(E, r, Fixity.RIGHT) =
+	trTag(r, typ_assoc E, lab_right)
+      | trAssoc(E, r, Fixity.NEITHER) =
+	trTag(r, typ_assoc E, lab_neither)
+
+    fun trFix(E, r, Fixity.NONFIX) =
+	trTag(r, typ_fix E, lab_nonfix)
+      | trFix(E, r, Fixity.PREFIX n) =
+	trTagged(r, typ_fix E, lab_prefix, trInt(r,n), false)
+      | trFix(E, r, Fixity.POSTFIX n) =
+	trTagged(r, typ_fix E, lab_postfix, trInt(r,n), false)
+      | trFix(E, r, Fixity.INFIX(n,a)) =
+	trTagged(r, typ_fix E, lab_infix,
+		 trTuple(r, vector[trInt(r,n), trAssoc(E,r,a)]), true)
+			    (*UNFINISHED: this should be a vector constant,
+			     * but NJ has a bug... *)
 
 
   (* Literals *)
@@ -415,39 +392,91 @@ struct
 
   (* Identifiers *)
 
-    fun trValInfo i			= i
-    fun trTypInfo {region,typ}		= {region=region, typ=typ_typ}
-    fun trVarInfo {region,var}		= {region=region, typ=typ_var}
-    fun trModInfo {region,inf}		= {region=region, typ=infToTyp inf}
-    fun trInfInfo {region,inf}		= {region=region,
-					   typ=typ_infinst(infToTyp inf)}
+    fun trValInfo(E,i)			= i
+    fun trTypInfo(E, {region,typ})	= {region=region, typ=typ_typ E}
+    fun trVarInfo(E, {region,var})	= {region=region, typ=typ_var E}
+    fun trModInfo(E, {region,inf})	= {region=region, typ=infToTyp(E,inf)}
+    fun trInfInfo(E, {region,inf})	= {region=region, typ=typ_inf E}
 
     fun trVallab(I.Lab(i,a))		= O.Lab(i, trValLabel  a)
     fun trTyplab(I.Lab(i,a))		= O.Lab(i, trTypLabel a)
     fun trModlab(I.Lab(i,a))		= O.Lab(i, trModLabel a)
     fun trInflab(I.Lab(i,a))		= O.Lab(i, trInfLabel a)
 
-    fun trValid(I.Id(i,z,n))		= O.Id(trValInfo i, z, trValName n)
-    fun trTypid(I.Id(i,z,n))		= O.Id(trTypInfo i, z, trTypName n)
-    fun trVarid(I.Id(i,z,n))		= O.Id(trVarInfo i, z, trVarName n)
-    fun trModid(I.Id(i,z,n))		= O.Id(trModInfo i, z, trModName n)
-    fun trInfid(I.Id(i,z,n))		= O.Id(trInfInfo i, z, trInfName n)
+    exception VirtualModule
 
-    fun trModlongid(I.ShortId(i,x))	= O.ShortId(trModInfo i, trModid x)
-      | trModlongid(I.LongId(i,y,l))	= O.LongId(trModInfo i,
-						   trModlongid y, trModlab l)
+    fun trValid(E, I.Id(i,z,n))		= O.Id(trValInfo(E,i), z, trValName n)
+    fun trTypid(E, I.Id(i,z,n))		= O.Id(trTypInfo(E,i), z, trTypName n)
+    fun trVarid(E, I.Id(i,z,n))		= O.Id(trVarInfo(E,i), z, trTypName n)
+    fun trInfid(E, I.Id(i,z,n))		= O.Id(trInfInfo(E,i), z, trInfName n)
+    fun trModid(E, I.Id(i,z,n))		= if TranslationEnv.memberMod(E, z)
+					  then raise VirtualModule
+					  else O.Id(trModInfo(E,i), z,
+						    trModName n)
 
-    fun trVallongid(I.ShortId(i,x))	= O.ShortId(trValInfo i, trValid x)
-      | trVallongid(I.LongId(i,y,l))	= O.LongId(trValInfo i,
-						   trModlongid y, trVallab l)
+    fun trModlongid(E, I.ShortId(i,x)) =
+	O.ShortId(trModInfo(E,i), trModid(E,x))
+      | trModlongid(E, I.LongId(i,y,l))	=
+	O.LongId(trModInfo(E,i), trModlongid(E,y), trModlab l)
 
-    fun trTyplongid(I.ShortId(i,x))	= O.ShortId(trTypInfo i, trTypid x)
-      | trTyplongid(I.LongId(i,y,l))	= O.LongId(trTypInfo i,
-						   trModlongid y, trTyplab l)
+    fun trVallongid(E, I.ShortId(i,x)) =
+	O.ShortId(trValInfo(E,i), trValid(E,x))
+      | trVallongid(E, I.LongId(i,y,l))	=
+	O.LongId(trValInfo(E,i), trModlongid(E,y), trVallab l)
 
-    fun trInflongid(I.ShortId(i,x))	= O.ShortId(trInfInfo i, trInfid x)
-      | trInflongid(I.LongId(i,y,l))	= O.LongId(trInfInfo i,
-						   trModlongid y, trInflab l)
+    fun trTyplongid(E, I.ShortId(i,x)) =
+	O.ShortId(trTypInfo(E,i), trTypid(E,x))
+      | trTyplongid(E, I.LongId(i,y,l)) =
+	O.LongId(trTypInfo(E,i), trModlongid(E,y), trTyplab l)
+
+    fun trInflongid(E, I.ShortId(i,x)) =
+	O.ShortId(trInfInfo(E,i), trInfid(E,x))
+      | trInflongid(E, I.LongId(i,y,l))	=
+	O.LongId(trInfInfo(E,i), trModlongid(E,y), trInflab l)
+
+
+  (* Ids bound inside interfaces *)
+
+    fun idToExp x' = let val i'=O.infoId x' in O.VarExp(i',O.ShortId(i',x')) end
+    fun idToPat x' = O.VarPat(O.infoId x', x')
+    fun longidToExp y' = O.VarExp(O.infoLongid y', y')
+
+
+    fun trVirtModid(E, I.Id(i,z,n) : I.modid) =
+	O.Id(typInfo(#region i, typ_inf E), z, trModName n)
+
+    fun trVirtModlongid(E, I.ShortId(i,x)) = idToExp(trVirtModid(E, x))
+      | trVirtModlongid(E, I.LongId(i,y, I.Lab(_,a)) : I.modlongid) =
+	(* [y.l] = Inf.lookupMod(Inf.asSig[y], Label.fromString "a") *)
+	let
+	    val r  = #region i
+	    val e1 = callInf(E, lab_asSig, trVirtModlongid(E, y))
+	    val e2 = callLab(E, lab_fromString, trString(r, Label.toString a))
+	in
+	    callInf(E, lab_lookupMod, trTuple(r, #[e1,e2]))
+	end
+
+    fun trVirtTyplongid(E, I.ShortId(i,x)) = raise Assert.failure
+      | trVirtTyplongid(E, I.LongId(i,y, I.Lab(_,a)) : I.typlongid) =
+	(* [y.l] = Inf.lookupTyp(Inf.asSig[y], Label.fromString "a") *)
+	let
+	    val r  = #region i
+	    val e1 = callInf(E, lab_asSig, trVirtModlongid(E, y))
+	    val e2 = callLab(E, lab_fromString, trString(r, Label.toString a))
+	in
+	    callInf(E, lab_lookupTyp, trTuple(r, #[e1,e2]))
+	end
+
+    fun trVirtInflongid(E, I.ShortId(i,x)) = raise Assert.failure
+      | trVirtInflongid(E, I.LongId(i,y, I.Lab(_,a)) : I.inflongid) =
+	(* [y.l] = Inf.lookupInf(Inf.asSig[y], Label.fromString "a") *)
+	let
+	    val r  = #region i
+	    val e1 = callInf(E, lab_asSig, trVirtModlongid(E, y))
+	    val e2 = callLab(E, lab_fromString, trString(r, Label.toString a))
+	in
+	    callInf(E, lab_lookupInf, trTuple(r, #[e1,e2]))
+	end
 
 
   (* Extract bound ids from declarations. *)
@@ -455,84 +484,90 @@ struct
     fun idsId'(x as O.Id(_,_,Name.ExId s), xs')	= StringMap.insert(xs',s,x)
       | idsId'(x, xs')				= ()
 
-    fun idsDecs(ds, xs')		= Vector.app (fn d => idsDec(d,xs')) ds
-    and idsDec(I.ValDec(_,p,_), xs')	= idsPat(p,xs')
-      | idsDec(I.TypDec(_,x,_), xs')	= idsId'(trTypid x, xs')
-      | idsDec(I.ModDec(_,x,_), xs')	= idsId'(trModid x, xs')
-      | idsDec(I.InfDec(_,x,_), xs')	= idsId'(trInfid x, xs')
-      | idsDec(I.VarDec(_,_,d), xs')	= idsDec(d,xs')
-      | idsDec(I.RecDec(_,ds), xs')	= idsDecs(ds,xs')
-      | idsDec((I.FixDec _
-	      | I.LocalDec _), xs')	= ()
+    fun idsDecs(E, ds, xs')		= Vector.app(fn d => idsDec(E,d,xs')) ds
+    and idsDec(E, I.ValDec(_,p,_), xs')	= idsPat(E,p,xs')
+      | idsDec(E, I.TypDec(_,x,_), xs')	= idsId'(trTypid(E,x), xs')
+      | idsDec(E, I.ModDec(_,x,_), xs')	= idsId'(trModid(E,x), xs')
+      | idsDec(E, I.InfDec(_,x,_), xs')	= idsId'(trInfid(E,x), xs')
+      | idsDec(E, I.VarDec(_,_,d), xs')	= idsDec(E,d,xs')
+      | idsDec(E, I.RecDec(_,ds), xs')	= idsDecs(E,ds,xs')
+      | idsDec(E, (I.FixDec _
+		  |I.LocalDec _), xs')	= ()
 
-    and idsPats(ps, xs')		= Vector.app (fn p => idsPat(p,xs')) ps
-    and idsPat((I.JokPat(_)
-	      | I.LitPat(_,_)), xs')	= ()
-      | idsPat(I.VarPat(_,x), xs')	= idsId'(trValid x, xs')
-      | idsPat((I.TagPat(_,_,_,p)
-	      | I.ConPat(_,_,p)
-	      | I.RefPat(_,p)
-	      | I.NegPat(_,p)
-	      | I.GuardPat(_,p,_)
-	      | I.AnnPat(_,p,_)), xs')	= idsPat(p,xs')
-      | idsPat((I.TupPat(_,ps)
-	      | I.VecPat(_,ps)), xs')	= idsPats(ps,xs')
-      | idsPat(I.ProdPat(_,r), xs')	= idsRow(r,xs')
-      | idsPat((I.AsPat(_,p1,p2)
-	      | I.AltPat(_,p1,p2)),xs')	= ( idsPat(p1,xs') ; idsPat(p2,xs') )
-      | idsPat(I.WithPat(_,p,ds), xs')	= ( idsPat(p,xs') ; idsDecs(ds,xs') )
+    and idsPats(E, ps, xs')		= Vector.app(fn p => idsPat(E,p,xs')) ps
+    and idsPat(E, (I.JokPat(_)
+		  |I.LitPat(_,_)), xs')	= ()
+      | idsPat(E, I.VarPat(_,x), xs')	= idsId'(trValid(E,x), xs')
+      | idsPat(E, (I.TagPat(_,_,_,p)
+		  |I.ConPat(_,_,p)
+		  |I.RefPat(_,p)
+		  |I.AltPat(_,p,_)
+		  |I.NegPat(_,p)
+		  |I.GuardPat(_,p,_)
+		  |I.AnnPat(_,p,_)),
+		  xs')			= idsPat(E,p,xs')
+      | idsPat(E, (I.TupPat(_,ps)
+		  |I.VecPat(_,ps)),
+		  xs')			= idsPats(E,ps,xs')
+      | idsPat(E, I.ProdPat(_,r), xs')	= idsRow(E,r,xs')
+      | idsPat(E, I.AsPat(_,p1,p2),xs')	= (idsPat(E,p1,xs') ; idsPat(E,p2,xs'))
+      | idsPat(E, I.WithPat(_,p,ds),xs')= (idsPat(E,p,xs') ; idsDecs(E,ds,xs'))
 
-    and idsRow(I.Row(_,fs,_), xs')	= Vector.app(fn f => idsField(f,xs')) fs
-    and idsField(I.Field(_,_,p), xs')	= idsPat(p,xs')
+    and idsRow(E, I.Row(_,fs,_), xs')	= Vector.app(fn f=>idsField(E,f,xs')) fs
+    and idsField(E, I.Field(_,_,p),xs')	= idsPat(E,p,xs')
 
-    fun ids ds				= let val xs' = StringMap.new() in
-					      idsDecs(ds,xs') ;
-					      Vector.fromList
-					  	  (StringMap.fold op:: [] xs')
-					  end
+    fun ids(E, ds) =
+	let
+	    val xs' = StringMap.new()
+	in
+	    idsDecs(E,ds,xs');
+	    Vector.fromList(StringMap.fold op:: [] xs')
+	end
+
 
   (* Expressions *)
 
-    fun idToExp x'			= let val i' = O.infoId x'
-					  in O.VarExp(i', O.ShortId(i',x')) end
-
-    fun trExps es			= Vector.map trExp es
-    and trExp(I.LitExp(i,l))		= O.LitExp(i, trLit l)
-      | trExp(I.VarExp(i,y))		= O.VarExp(i, trVallongid y)
-      | trExp(I.PrimExp(i,s,t))		= O.PrimExp(i, s)
-      | trExp(I.LabExp(i,l,t))		= O.FailExp(i)
-      | trExp(I.NewExp(i,t))		= O.NewExp(i, decodeArity(#typ i) > 1)
-      | trExp(I.TagExp(i,l,NONE,e))	= O.TagExp(i, trVallab l, trExp e,false)
-      | trExp(I.TagExp(i,l,SOME y,e))	= O.TagExp(i, trVallab l, trExp e,
+    fun trExps(E, es)			= Vector.map (fn e => trExp(E,e)) es
+    and trExp(E, I.LitExp(i,l))		= O.LitExp(i, trLit l)
+      | trExp(E, I.VarExp(i,y))		= O.VarExp(i, trVallongid(E, y))
+      | trExp(E, I.PrimExp(i,s,t))	= O.PrimExp(i, s)
+      | trExp(E, I.LabExp(i,l,t))	= O.FailExp(i)
+      | trExp(E, I.NewExp(i,t))		= O.NewExp(i, decodeArity(#typ i) > 1)
+      | trExp(E, I.TagExp(i,l,NONE,e))	= O.TagExp(i, trVallab l, trExp(E,e),
+						   false)
+      | trExp(E, I.TagExp(i,l,SOME y,e))= O.TagExp(i, trVallab l, trExp(E,e),
 					  decodeArity(#typ(I.infoLongid y)) > 1)
-      | trExp(I.ConExp(i,y,e))		= O.ConExp(i, trVallongid y, trExp e,
+      | trExp(E, I.ConExp(i,y,e))	= O.ConExp(i, trVallongid(E,y),
+						   trExp(E,e),
 					  decodeArity(#typ(I.infoLongid y)) > 1)
-      | trExp(I.RefExp(i,e))		= O.RefExp(i, trExp e)
-      | trExp(I.TupExp(i,es))		= O.TupExp(i, trExps es)
-      | trExp(I.ProdExp(i,r))		= O.ProdExp(i, trExpRow r)
-      | trExp(I.UpdExp(i,e,r))		= trUpdExp(i, trExp e, trExpRow r)
-      | trExp(I.SelExp(i,l,e))		= O.SelExp(i, trVallab l, trExp e)
-      | trExp(I.VecExp(i,es))		= O.VecExp(i, trExps es)
-      | trExp(I.FunExp(i,ms))		= O.FunExp(i, trMatchs ms)
-      | trExp(I.AppExp(i,e1,e2))	= O.AppExp(i, trExp e1, trExp e2)
-      | trExp(I.AndExp(i,e1,e2))	= O.AndExp(i, trExp e1, trExp e2)
-      | trExp(I.OrExp(i,e1,e2))		= O.OrExp(i, trExp e1, trExp e2)
-      | trExp(I.IfExp(i,e1,e2,e3))	= O.IfExp(i, trExp e1, trExp e2,
-							       trExp e3)
-      | trExp(I.SeqExp(i,e1,e2))	= O.SeqExp(i, trExp e1, trExp e2)
-      | trExp(I.CaseExp(i,e,ms))	= O.CaseExp(i, trExp e, trMatchs ms)
-      | trExp(I.FailExp(i))		= O.FailExp(i)
-      | trExp(I.LazyExp(i,e))		= O.LazyExp(i, trExp e)
-      | trExp(I.SpawnExp(i,e))		= O.SpawnExp(i, trExp e)
-      | trExp(I.RaiseExp(i,e))		= O.RaiseExp(i, trExp e)
-      | trExp(I.HandleExp(i,e,ms))	= O.HandleExp(i, trExp e, trMatchs ms)
-      | trExp(I.AnnExp(i,e,t))		= trExp e
-      | trExp(I.LetExp(i,ds,e))		= O.LetExp(i, trDecs ds, trExp e)
-      | trExp(I.PackExp(i,m))		= trMod m
+      | trExp(E, I.RefExp(i,e))		= O.RefExp(i, trExp(E,e))
+      | trExp(E, I.TupExp(i,es))	= O.TupExp(i, trExps(E,es))
+      | trExp(E, I.ProdExp(i,r))	= O.ProdExp(i, trExpRow(E,r))
+      | trExp(E, I.UpdExp(i,e,r))	= trUpdExp(i, trExp(E,e), trExpRow(E,r))
+      | trExp(E, I.SelExp(i,l,e))	= O.SelExp(i, trVallab l, trExp(E,e))
+      | trExp(E, I.VecExp(i,es))	= O.VecExp(i, trExps(E,es))
+      | trExp(E, I.FunExp(i,ms))	= O.FunExp(i, trMatchs(E,ms))
+      | trExp(E, I.AppExp(i,e1,e2))	= O.AppExp(i, trExp(E,e1), trExp(E,e2))
+      | trExp(E, I.AndExp(i,e1,e2))	= O.AndExp(i, trExp(E,e1), trExp(E,e2))
+      | trExp(E, I.OrExp(i,e1,e2))	= O.OrExp(i, trExp(E,e1), trExp(E,e2))
+      | trExp(E, I.IfExp(i,e1,e2,e3))	= O.IfExp(i, trExp(E,e1), trExp(E,e2),
+								  trExp(E,e3))
+      | trExp(E, I.SeqExp(i,e1,e2))	= O.SeqExp(i, trExp(E,e1), trExp(E,e2))
+      | trExp(E, I.CaseExp(i,e,ms))	= O.CaseExp(i, trExp(E,e),
+						       trMatchs(E,ms))
+      | trExp(E, I.FailExp(i))		= O.FailExp(i)
+      | trExp(E, I.LazyExp(i,e))	= O.LazyExp(i, trExp(E,e))
+      | trExp(E, I.SpawnExp(i,e))	= O.SpawnExp(i, trExp(E,e))
+      | trExp(E, I.RaiseExp(i,e))	= O.RaiseExp(i, trExp(E,e))
+      | trExp(E, I.HandleExp(i,e,ms))	= O.HandleExp(i, trExp(E,e),
+							 trMatchs(E,ms))
+      | trExp(E, I.AnnExp(i,e,t))	= trExp(E,e)
+      | trExp(E, I.LetExp(i,ds,e))	= O.LetExp(i, trDecs(E,ds), trExp(E,e))
+      | trExp(E, I.PackExp(i,m))	= trMod(E,m)
 
-    and trExpRow(I.Row(i,fs,_))		= trExpFields fs
-    and trExpFields fs			= Vector.map trExpField fs
-    and trExpField(I.Field(i,l,e))	= O.Field(i, trVallab l, trExp e)
+    and trExpRow(E, I.Row(i,fs,_))	= trExpFields(E,fs)
+    and trExpFields(E, fs)		= Vector.map (trExpField E) fs
+    and trExpField E (I.Field(i,l,e))	= O.Field(i, trVallab l, trExp(E,e))
 
     and trUpdExp(i,e',r') =
 	(* [{ e where r}] = let val x = [e] in {[e]', [r]} *)
@@ -565,198 +600,146 @@ struct
 
   (* Matches and Patterns *)
 
-    and idToPat x'			= O.VarPat(O.infoId x', x')
+    and trMatchs(E, ms)			= Vector.map (trMatch E) ms
+    and trMatch E (I.Match(i,p,e))	= O.Match(i, trPat(E,p), trExp(E,e))
 
-    and trMatchs ms			= Vector.map trMatch ms
-    and trMatch(I.Match(i,p,e))		= O.Match(i, trPat p, trExp e)
-
-    and trPats ps			= Vector.map trPat ps
-    and trPat(I.JokPat(i))		= O.JokPat(i)
-      | trPat(I.LitPat(i,l))		= O.LitPat(i, trLit l)
-      | trPat(I.VarPat(i,x))		= O.VarPat(i, trValid x)
-      | trPat(I.TagPat(i,l,NONE,p))	= O.TagPat(i, trVallab l, trPat p,false)
-      | trPat(I.TagPat(i,l,SOME y,p))	= O.TagPat(i, trVallab l, trPat p,
+    and trPats(E, ps)			= Vector.map (fn p => trPat(E,p)) ps
+    and trPat(E, I.JokPat(i))		= O.JokPat(i)
+      | trPat(E, I.LitPat(i,l))		= O.LitPat(i, trLit l)
+      | trPat(E, I.VarPat(i,x))		= O.VarPat(i, trValid(E,x))
+      | trPat(E, I.TagPat(i,l,NONE,p))	= O.TagPat(i, trVallab l, trPat(E,p),
+						      false)
+      | trPat(E, I.TagPat(i,l,SOME y,p))= O.TagPat(i, trVallab l, trPat(E,p),
 					  decodeArity(#typ(I.infoLongid y)) > 1)
-      | trPat(I.ConPat(i,y,p))		= O.ConPat(i, trVallongid y, trPat p,
+      | trPat(E, I.ConPat(i,y,p))	= O.ConPat(i, trVallongid(E,y),
+						      trPat(E,p),
 					  decodeArity(#typ(I.infoLongid y)) > 1)
-      | trPat(I.RefPat(i,p))		= O.RefPat(i, trPat p)
-      | trPat(I.TupPat(i,ps))		= O.TupPat(i, trPats ps)
-      | trPat(I.ProdPat(i,r))		= O.ProdPat(i, trPatRow r)
-      | trPat(I.VecPat(i,ps))		= O.VecPat(i, trPats ps)
-      | trPat(I.AsPat(i,p1,p2))		= O.AsPat(i, trPat p1, trPat p2)
-      | trPat(I.AltPat(i,p1,p2))	= O.AltPat(i, trPat p1, trPat p2)
-      | trPat(I.NegPat(i,p))		= O.NegPat(i, trPat p)
-      | trPat(I.GuardPat(i,p,e))	= O.GuardPat(i, trPat p, trExp e)
-      | trPat(I.AnnPat(i,p,t))		= trPat p
-      | trPat(I.WithPat(i,p,ds))	= O.WithPat(i, trPat p, trDecs ds)
+      | trPat(E, I.RefPat(i,p))		= O.RefPat(i, trPat(E,p))
+      | trPat(E, I.TupPat(i,ps))	= O.TupPat(i, trPats(E,ps))
+      | trPat(E, I.ProdPat(i,r))	= O.ProdPat(i, trPatRow(E,r))
+      | trPat(E, I.VecPat(i,ps))	= O.VecPat(i, trPats(E,ps))
+      | trPat(E, I.AsPat(i,p1,p2))	= O.AsPat(i, trPat(E,p1), trPat(E,p2))
+      | trPat(E, I.AltPat(i,p1,p2))	= O.AltPat(i, trPat(E,p1), trPat(E,p2))
+      | trPat(E, I.NegPat(i,p))		= O.NegPat(i, trPat(E,p))
+      | trPat(E, I.GuardPat(i,p,e))	= O.GuardPat(i, trPat(E,p), trExp(E,e))
+      | trPat(E, I.AnnPat(i,p,t))	= trPat(E,p)
+      | trPat(E, I.WithPat(i,p,ds))	= O.WithPat(i, trPat(E,p), trDecs(E,ds))
 
-    and trPatRow(I.Row(i,fs,b))		= trPatFields fs
-    and trPatFields fs			= Vector.map trPatField fs
-    and trPatField(I.Field(i,l,p))	= O.Field(i, trVallab l, trPat p)
+    and trPatRow(E, I.Row(i,fs,b))	= trPatFields(E,fs)
+    and trPatFields(E, fs)		= Vector.map (trPatField E) fs
+    and trPatField E (I.Field(i,l,p))	= O.Field(i, trVallab l, trPat(E,p))
 
 
   (* Modules *)
 
-    and trMod(I.PrimMod(i,s,j))		= trPrimMod(i,s,j)
-      | trMod(I.VarMod(i,y))		= O.VarExp(trModInfo i, trModlongid y)
-      | trMod(I.StrMod(i,ds))		= let val i'   = trModInfo i
-					      val ds'  = trDecs ds
-					      val ids' = ids ds
-					      val fs'  = Vector.map
-							     (idToField idToExp)
-							     ids'
-					  in O.LetExp(i',ds',O.ProdExp(i',fs'))
-					  end
-      | trMod(I.SelMod(i,l,m))		= O.SelExp(trModInfo i, trModlab l,
-								trMod m)
-      | trMod(I.FunMod(i,x,j,m))	= let val r  = #region(I.infoId x)
-					      val e' = trMod m
-					      val p' = idToPat(trModid x)
-					      val m' = O.Match(nonInfo r,p',e')
-					  in O.FunExp(trModInfo i, #[m'])
-					  end
-      | trMod(I.AppMod(i,m1,m2))	= let val i1  = I.infoMod m1
-					      val i2  = I.infoMod m2
-					      val j11 = #2(Inf.asArrow(#inf i1))
-					      val j11'= Inf.instance j11
-					      val e1' = trMod m1
-					      val t11 = #1(Type.asArrow
-							(#typ(O.infoExp e1')))
-					      val i2' = typInfo(#region i2, t11)
-					      val  _  = Inf.match(
-							    #inf(I.infoMod m2),
-							    j11')
-					      val e2' = O.UpExp(i2',
-							  trTransCoerceMod
-							   (#region i2,m2,j11'))
-					  in O.AppExp(trModInfo i, e1', e2')
-					  end
-      | trMod(I.AnnMod(i,m,j))		= trTransCoerceMod(#region i, m, #inf i)
-      | trMod(I.UpMod(i,m,j))		= trOpaqCoerceMod(i,m,j)
-      | trMod(I.LetMod(i,ds,m))		= O.LetExp(trModInfo i, trDecs ds,
-								trMod m)
-      | trMod(I.UnpackMod(i,e,j))	= trExp e
+    and trMod(E, I.VarMod(i,y)) =
+	(* [y] = [y] *)
+	O.VarExp(trModInfo(E,i), trModlongid(E,y))
 
-    and trTransCoerceMod(r,m,j2) =
-	(* [m : j] = let val x1 = [m]
-	 *           in [x1 : j1 :> x2 = j2]
-	 *)
+      | trMod(E, I.StrMod(i,ds)) =
+	(* [struct decs end] = let [decs] in {<fields>} *)
 	let
-(*DEBUG*)
-(*
-val _ = print "===== trTransCoerceMod =====\n"
-val _ = print "j1 =\n"
-val _ = PrettyPrint.output(TextIO.stdOut, PPInf.ppInf(#inf(I.infoMod m)), 80)
-val _ = print "\nj2 =\n"
-val _ = PrettyPrint.output(TextIO.stdOut, PPInf.ppInf j2, 80)
-val _ = print "\n"
-val _ = Inspector.inspect{j1= #inf(I.infoMod m),j2}
-val _ = TextIO.inputLine(TextIO.stdIn)
-*)
-	    val i   = nonInfo r
-	    val e1' = trMod m
-
-	    val j1  = #inf(I.infoMod m)
-	    val i1  = O.infoExp e1'
-	    val t1  = #typ i1
-	    val t2  = infToTyp j2
-	    val i2  = typInfo(r,t2)
-
-	    val x1' = O.Id(i1, Stamp.new(), Name.InId)
-	    val x1  = O.ShortId(i1, x1')
-	    val i3  = typInfo(r, typ_unit)	(* x2 will be unused! *)
-	    val x2' = O.Id(i3, Stamp.new(), Name.InId)
-	    val x2  = O.ShortId(i3, x2')
+	    val i'   = trModInfo(E,i)
+	    val ds'  = trDecs(E,ds)
+	    val ids' = ids(E,ds)
+	    val fs'  = Vector.map (idToField idToExp) ids'
 	in
-	    case upInf(false, false, x1,j1,x2,j2, r,t1,t2)
-	      of NONE    => e1'
-	       | SOME e' =>
-		 let
-		     val d' = O.ValDec(i, O.VarPat(i1, x1'), e1')
-		 in
-		     O.LetExp(i2, #[d'], e')
-		 end
+	    O.LetExp(i', ds', O.ProdExp(i',fs'))
 	end
 
-    and trOpaqCoerceMod(i,m,j) =
-	(* [m :> j] = let val    x1  = [m]
-	 *                val (_,x2) = [j]
-	 *            in [x1 : j1 :> x2 = j2]
-	 *)
-	if !Switches.Language.rttLevel <> Switches.Language.FULL_RTT then
-	    trTransCoerceMod(#region i, m, #inf i)
-	else let
+      | trMod(E, I.SelMod(i,l,m)) =
+	(* [m.l] = #[l]([m]) *)
+	O.SelExp(trModInfo(E,i), trModlab l, trMod(E,m))
+
+      | trMod(E, I.FunMod(i,x,j,m)) =
+	(* [fun (x:j) -> m] = fun [x] -> [m] *)
+	let
+	    val r  = #region(I.infoId x)
+	    val e' = trMod(E,m)
+	    val p' = idToPat(trModid(E,x))
+(*DEBUG*)handle VirtualModule => (Error.warn(r, Name.toString(I.name x) ^"[" ^ Stamp.toString(I.stamp x) ^ "] 2\n"); raise VirtualModule)
+	    val m' = O.Match(nonInfo r,p',e')
+	in
+	    O.FunExp(trModInfo(E,i), #[m'])
+	end
+
+      | trMod(E, I.AppMod(i,m1,m2)) =
+	(* [m1 m2] = abs (x (abs [m2 : j12])) *)
+	(* The let is necessary because we may only instantiate quantifiers
+	 * for occurances of identifiers. *)
+	let
+	    val i1  = I.infoMod m1
+	    val i2  = I.infoMod m2
 	    val r   = #region i
-	    val i'  = nonInfo r
-	    val j1  = #inf(I.infoMod m)
-	    val j2  = #inf i
+	    val r1  = #region i1
+	    val r2  = #region i2
+	    val j1  = #inf i1
+	    val j2  = #inf i2
+	    val t1  = infToTyp(E,j1)
+	    val t2  = infToTyp(E,j2)
+	    val e1' = trMod(E,m1)
 
-	    val e1' = trMod m
-	    val e2' = trInf j
-	    val i1  = O.infoExp e1'
-	    val i2  = trModInfo i
-	    val t1  = #typ i1
-	    val t2  = #typ i2
-	    val t3  = Vector.sub(Type.asTuple'(#typ(O.infoExp e2')), 1)
+	    val (p,j11,j12) = Inf.asArrow j1
+	    val (t11,t12)   = Type.asArrow t1
+	    val e2' = trTransCoerceMod'(E, r2, m2, j11)
 
-	    val x1' = O.Id(i1, Stamp.new(), Name.InId)
-	    val x1  = O.ShortId(i1, x1')
-	    val i3  = typInfo(#region(O.infoExp e2'), t3)
-	    val x2' = O.Id(i3, Stamp.new(), Name.InId)
-	    val x2  = O.ShortId(i3, x2')
+	    val e3' = O.AbsExp(typInfo(r1,t11), e2')
+	    val e'  = O.AppExp(typInfo(r,t12), e1', e3')
 	in
-	    case upInf(true, false, x1,j1,x2,j2, r,t1,t2)
-	      of NONE    => O.UpExp(i2, e1')
-	       | SOME e' =>
-		 let
-		     val p1' = O.VarPat(i1, x1')
-		     val d1' = O.ValDec(i', p1', e1')
-
-		     val i4  = typInfo(#region(O.infoExp e2'), typ_inf)
-		     val p2' = O.TupPat(O.infoExp e2', #[O.JokPat(i4),
-							 O.VarPat(i3,x2')])
-		     val d2' = O.ValDec(i', p2', e2')
-		 in
-		     O.LetExp(i2, #[d1',d2'], e')
-		 end
+	    O.UnabsExp(trModInfo(E,i), e')
 	end
 
-  (* Primitive modules *)
+      | trMod(E, I.AnnMod(i,m,j)) =
+	(* [m : j] = let x1 = [m] in [x1 : j1 :> x2 = j2] *)
+	trTransCoerceMod(E,#region i,m,#inf i)
 
-    and trPrimMod(i,"ByNeed",j) =
-	(* ByNeed : (interface I; module F : any -> I) -> I *)
-	(* = fn {[I]=_, [F]=x} -> lazy x() *)
+      | trMod(E, I.AbsMod(i,m,j)) =
+	(* [m :> j] = let x1 = [m]; x2 = [j] in abs [x1 : j1 :> x2 = j2] *)
+	trOpaqCoerceMod(E,i,m,j)
+
+      | trMod(E, I.LetMod(i,ds,m)) =
+	(* [let decs in m] = let [decs] in [m] *)
+	O.LetExp(trModInfo(E,i), trDecs(E,ds), trMod(E,m))
+
+      | trMod(E, I.UnpackMod(i,e,j)) =
+	(* [unpack e : j] = e *)
+	trExp(E,e)
+
+      | trMod(E, I.PrimMod(i,"ByNeed",j)) =
+	(* [prim "ByNeed" : (interface I; module F : any -> I) -> I]
+	 * = fun {[I]=_, [F]=x} -> lazy x()
+	 *)
 	(let
-	    val  i'      = trModInfo i
+	    val  i'      = trModInfo(E,i)
 	    val  r       = #region i'
 	    val  i0'     = nonInfo r
 	    val  t       = #typ i'
 	    val (t1,t2)  = Type.asArrow' t
-	    val (l1,t11) = findField(isModName', Type.asProd t1)
-	    val (l2,t12) = findField(isInfName', Type.asProd t1)
+	    val (l1,t11) = findField(isModName, Type.asProd t1)
+	    val (l2,t12) = findField(isInfName, Type.asProd t1)
 	    val  x'      = O.Id(typInfo(r,t11), Stamp.new(), Name.InId)
 	    val  p'      = O.ProdPat(typInfo(r,t1),
 				#[O.Field(i0', O.Lab(i0',l2),
 					  O.JokPat(typInfo(r,t12))),
 				  O.Field(i0', O.Lab(i0',l1), idToPat x')])
-	    val  i2'     = typInfo(r,t2)
-	    val  e'      = O.LazyExp(i2', O.AppExp(i2', idToExp x', trUnit r))
+	    val  e'      = trLazy(O.AppExp(typInfo(r,t2), idToExp x', trUnit r))
 	in
 	    O.FunExp(i', #[O.Match(nonInfo r, p', e')])
 	end
 	handle Type.Type => raise Crash.Crash "trPrimMod: ByNeed")
 
-      | trPrimMod(i,"Reflect",j) =
-	(* Reflect : (module X : any) -> (x : Value.t) *)
-	(* = fn {[X]=x1} -> {[x]=x1} *)
+      | trMod(E, I.PrimMod(i,"Reflect",j)) =
+	(* [prim "Reflect" : (interface I; module X : I) -> (x : Value.t)]
+	 * = fun {[X]=x1,...} -> {[x]=x1}
+	 *)
 	(let
-	    val  i'      = trModInfo i
+	    val  i'      = trModInfo(E,i)
 	    val  r       = #region i'
 	    val  i0'     = nonInfo r
 	    val  t       = #typ i'
 	    val (t1,t2)  = Type.asArrow' t
-	    val (l1,t11) = findField(isModName', Type.asProd t1)
-	    val (l2,t21) = findField(isValName', Type.asProd t2)
+	    val (l1,t11) = findField(isModName, Type.asProd t1)
+	    val (l2,t21) = findField(isValName, Type.asProd t2)
 	    val  x1'     = O.Id(typInfo(r,t11), Stamp.new(), Name.InId)
 	    val  p'      = O.ProdPat(typInfo(r,t1),
 				     #[O.Field(i0',O.Lab(i0',l1), idToPat x1')])
@@ -767,17 +750,18 @@ val _ = TextIO.inputLine(TextIO.stdIn)
 	end
 	handle Type.Type => raise Crash.Crash "trPrimMod: Reflect")
 
-      | trPrimMod(i,"Unreflect",j) =
-	(* Unreflect : (x : Value.t; interface I) -> I *)
-	(* = fn {[x]=x1, [I]=x2} -> x1 *)
+      | trMod(E, I.PrimMod(i,"Unreflect",j)) =
+	(* [prim "Unreflect" : (x : Value.t; interface I) -> I]
+	 * = fun {[x]=x1, [I]=x2} -> x1
+	 *)
 	(let
-	    val  i'      = trModInfo i
+	    val  i'      = trModInfo(E,i)
 	    val  r       = #region i'
 	    val  i0'     = nonInfo r
 	    val  t       = #typ i'
 	    val (t1,t2)  = Type.asArrow' t
-	    val (l1,t11) = findField(isValName', Type.asProd t1)
-	    val (l2,t21) = findField(isInfName', Type.asProd t2)
+	    val (l1,t11) = findField(isValName, Type.asProd t1)
+	    val (l2,t21) = findField(isInfName, Type.asProd t2)
 	    val  x1'     = O.Id(typInfo(r,t11), Stamp.new(), Name.InId)
 	    val  x2'     = O.Id(typInfo(r,t21), Stamp.new(), Name.InId)
 	    val  p'      = O.ProdPat(typInfo(r,t1),
@@ -789,93 +773,82 @@ val _ = TextIO.inputLine(TextIO.stdIn)
 	end
 	handle Type.Type => raise Crash.Crash "trPrimMod: Reflect")
 
-      | trPrimMod(i,"ReflectSig",j) =
-	(* ReflectSig : (interface I) -> (x : Inf.t) *)
-	(* = fn {[X]=x1} -> {[x]= #1(x1())} *)
+      | trMod(E, I.PrimMod(i,"ReflectSig",j)) =
+	(* [prim "ReflectSig" : (interface I) -> (x : Inf.t)]
+	 * = fun {[I]=x1} -> {[x]=x1}
+	 *)
 	(let
-	    val  i'      = trModInfo i
+	    val  i'      = trModInfo(E,i)
 	    val  r       = #region i'
 	    val  i0'     = nonInfo r
 	    val  t       = #typ i'
 	    val (t1,t2)  = Type.asArrow' t
-	    val (l1,t11) = findField(isInfName', Type.asProd t1)
-	    val (l2,t21) = findField(isValName', Type.asProd t2)
+	    val (l1,t11) = findField(isInfName, Type.asProd t1)
+	    val (l2,t21) = findField(isValName, Type.asProd t2)
 	    val  x1'     = O.Id(typInfo(r,t11), Stamp.new(), Name.InId)
 	    val  p'      = O.ProdPat(typInfo(r,t1),
 				     #[O.Field(i0',O.Lab(i0',l1), idToPat x1')])
-	    val  e1'     = O.SelExp(typInfo(r,t21),
-				    O.Lab(nonInfo r, Label.fromInt 1),
-				    O.AppExp(typInfo(r,t11),
-					     idToExp x1', trUnit r))
 	    val  e'      = O.ProdExp(typInfo(r,t2),
-				     #[O.Field(i0', O.Lab(i0',l2), e1')])
+				     #[O.Field(i0',O.Lab(i0',l2), idToExp x1')])
 	in
 	    O.FunExp(i', #[O.Match(nonInfo r, p', e')])
 	end
 	handle Type.Type => raise Crash.Crash "trPrimMod: Reflect")
-(*
-      | trPrimMod(i,"UnreflectSig",j) =
-	(* UnreflectSig : (x : Inf.t) -> (interface I) *)
-	(* = fn {[X]=x1} -> {[x]= #1(x1())} *)
+
+      | trMod(E, I.PrimMod(i,"UnreflectSig",j)) =
+	(* [prim "UnreflectSig" : (x : Inf.t) -> (interface I)]
+	 * = fun {[x]=x1} -> {[I]=x1}
+	 *)
 	(let
-	    val  i'      = trModInfo i
+	    val  i'      = trModInfo(E,i)
 	    val  r       = #region i'
 	    val  i0'     = nonInfo r
 	    val  t       = #typ i'
 	    val (t1,t2)  = Type.asArrow' t
-	    val (l1,t11) = findField(isInfName', Type.asProd t1)
-	    val (l2,t21) = findField(isValName', Type.asProd t2)
+	    val (l1,t11) = findField(isInfName, Type.asProd t1)
+	    val (l2,t21) = findField(isValName, Type.asProd t2)
 	    val  x1'     = O.Id(typInfo(r,t11), Stamp.new(), Name.InId)
 	    val  p'      = O.ProdPat(typInfo(r,t1),
 				     #[O.Field(i0',O.Lab(i0',l1), idToPat x1')])
-	    val  e1'     = O.SelExp(typInfo(r,t21),
-				    O.Lab(nonInfo r, Label.fromInt 1),
-				    O.AppExp(typInfo(r,t11),
-					     idToExp x1', trUnit r)))
 	    val  e'      = O.ProdExp(typInfo(r,t2),
-				     #[O.Field(i0', O.Lab(i0',l2), e1')])
+				     #[O.Field(i0',O.Lab(i0',l2), idToExp x1')])
 	in
 	    O.FunExp(i', #[O.Match(nonInfo r, p', e')])
 	end
 	handle Type.Type => raise Crash.Crash "trPrimMod: Reflect")
-*)
-      | trPrimMod(i,"Pack",j) =
-	(* Pack : (interface I; module X : I) -> (x : package) *)
-	(* = fn {[X]=x1,[I]=x2} ->
-	 *   let val x3 = #1(x2())
-	 *   in Inf.strengthen(Path.invent(), x3);
-	 *      {[x'] = cast (CoerceOpaq (?,x3) x1, x3)}
-	 *   end *)
-	if !Switches.Language.rttLevel <> Switches.Language.FULL_RTT then
-	    O.FailExp(trModInfo i)
+
+      | trMod(E, I.PrimMod(i,"Pack",j)) =
+	(* [prim "Pack" : (interface I; module X : I) -> (x : package)]
+	 * = fun {[X]=x1,[I]=x2} ->
+	 *   let x3 = Inf.instance x2 in
+	 *   Inf.strengthen(Path.invent(), x3);
+	 *   {[x'] = abs (CoerceOpaq (???,x3) x1, x3)}
+	 *)
+	if not(!Switches.Language.supportRtt) then
+	    O.FailExp(trModInfo(E,i))
 	else
 	(*UNFINISHED: abstraction of RTTs*)
 	(let
-	    val  i'      = trModInfo i
+	    val  i'      = trModInfo(E,i)
 	    val  r       = #region i'
 	    val  i0'     = nonInfo r
 	    val  t       = #typ i'
 	    val (t1,t2)  = Type.asArrow' t
-	    val (l1,t11) = findField(isModName', Type.asProd t1)
-	    val (l2,t12) = findField(isInfName', Type.asProd t1)
-	    val (l3,t21) = findField(isValName', Type.asProd t2)
+	    val (l1,t11) = findField(isModName, Type.asProd t1)
+	    val (l2,t12) = findField(isInfName, Type.asProd t1)
+	    val (l3,t21) = findField(isValName, Type.asProd t2)
 	    val  x1'     = O.Id(typInfo(r,t11), Stamp.new(), Name.InId)
 	    val  x2'     = O.Id(typInfo(r,t12), Stamp.new(), Name.InId)
-	    val  t3      = #2(Type.asArrow t12)
-	    val  x3'     = O.Id(typInfo(r,typ_inf), Stamp.new(), Name.InId)
+	    val  x3'     = O.Id(typInfo(r, typ_inf E), Stamp.new(), Name.InId)
 	    val  p'      = O.ProdPat(typInfo(r,t1),
 				#[O.Field(i0', O.Lab(i0',l1), idToPat x1'),
 				  O.Field(i0', O.Lab(i0',l2), idToPat x2')])
-	    val  a1'     = O.Lab(nonInfo r, Label.fromInt 1)
 	    val  d'      = O.ValDec(nonInfo r, idToPat x3',
-				    O.SelExp(typInfo(r,typ_inf), a1',
-					     O.AppExp(typInfo(r,t3),
-						      idToExp x2', trUnit r)))
-	    val  e0'     = unitInfOp(lab_strengthen,
-				     O.TupExp(typInfo(r,typ_pathinf),
-					      #[pathOp(lab_invent, trUnit r),
+				    callInf(E, lab_instance, idToExp x2'))
+	    val  e0'     = callInf(E, lab_strengthen,
+				   trTuple(r, #[callPath(E,lab_invent,trUnit r),
 						idToExp x3']))
-	    val  e1'     = O.CastExp(typInfo(r,t21), 
+	    val  e1'     = O.AbsExp(typInfo(r,t21), 
 				O.TupExp(typInfo(r,Type.inTuple #[t11,t12]),
 					 #[idToExp x1', idToExp x3']))
 	    val  i2      = typInfo(r,t2)
@@ -886,44 +859,42 @@ val _ = TextIO.inputLine(TextIO.stdIn)
 	end
 	handle Type.Type => raise Crash.Crash "trPrimMod: Pack")
 
-      | trPrimMod(i,"Unpack",j) =
-	(* Unpack : (x : package; interface I) -> I *)
-	(* = fn {[x]=x1,[S]=x2} -> let (x11,x12) = cast x1 in
-	 *                             Inf.match(x12, #1(x2()));
-	 *                             CoerceTrans (x12,x2) x11
-	 *                         end *)
-	if !Switches.Language.rttLevel <> Switches.Language.FULL_RTT then
-	    O.FailExp(trModInfo i)
+      | trMod(E, I.PrimMod(i,"Unpack",j)) =
+	(* [prim "Unpack" : (x : package; interface I) -> I]
+	 * = fn {[x]=x1,[S]=x2} ->
+	 *   let (x11,x12) = unabs x1 in
+	 *   Inf.match(x12, Inf.instance x2);
+	 *   CoerceTrans (x12,x2) x11
+	 *)
+	if not(!Switches.Language.supportRtt) then
+	    O.FailExp(trModInfo(E,i))
 	else
 	(*UNFINISHED: stripping*)
 	(let
-	    val  i'      = trModInfo i
+	    val  i'      = trModInfo(E,i)
 	    val  r       = #region i'
 	    val  i0'     = nonInfo r
 	    val  t       = #typ i'
 	    val (t1,t2)  = Type.asArrow' t
-	    val (l1,t11) = findField(isValName', Type.asProd t1)
-	    val (l2,t12) = findField(isInfName', Type.asProd t1)
+	    val (l1,t11) = findField(isValName, Type.asProd t1)
+	    val (l2,t12) = findField(isInfName, Type.asProd t1)
 	    val  x1'     = O.Id(typInfo(r,t11), Stamp.new(), Name.InId)
 	    val  x2'     = O.Id(typInfo(r,t12), Stamp.new(), Name.InId)
 	    val  p'      = O.ProdPat(typInfo(r,t1),
 				#[O.Field(i0', O.Lab(i0',l1), idToPat x1'),
 				  O.Field(i0', O.Lab(i0',l2), idToPat x2')])
 
-	    val  i1'     = typInfo(r, Type.inTuple #[t2,typ_inf])
+	    val  i1'     = typInfo(r, Type.inTuple #[t2, typ_inf E])
 	    val  i2'     = typInfo(r, t2)
 	    val  x11'    = O.Id(i2', Stamp.new(), Name.InId)
-	    val  x12'    = O.Id(typInfo(r,typ_typ), Stamp.new(), Name.InId)
+	    val  x12'    = O.Id(typInfo(r, typ_inf E), Stamp.new(), Name.InId)
 	    val  p1'     = O.TupPat(i1', #[idToPat x11', idToPat x12'])
-	    val  e1'     = O.CastExp(i1', idToExp x1')
+	    val  e1'     = O.UnabsExp(i1', idToExp x1')
 	    val  d'      = O.ValDec(nonInfo r, p1', e1')
 
-	    val  t3      = #2(Type.asArrow t12)
-	    val  a1'     = O.Lab(nonInfo r, Label.fromInt 1)
-	    val  e11'    = O.AppExp(typInfo(r,t3), idToExp x2', trUnit r)
-	    val  e12'    = O.SelExp(typInfo(r,typ_inf), a1', e11')
-	    val  e1'     = reaInfOp(lab_match, O.TupExp(typInfo(r,typ_infinf),
-					       #[idToExp x12', e12']))
+	    val  e12'    = callInf(E, lab_instance, idToExp x2')
+	    val  e1'     = callInf(E, lab_match,
+				   trTuple(r, #[idToExp x12', e12']))
 	    val  e2'     = idToExp x11' (*UNFINISHED*)
 	    val  e'      = O.LetExp(i2', #[d'], O.SeqExp(i2', e1', e2'))
 	in
@@ -931,95 +902,20 @@ val _ = TextIO.inputLine(TextIO.stdIn)
 	end
 	handle Type.Type => raise Crash.Crash "trPrimMod: Unpack")
 
-      | trPrimMod(i,"PackVal",j) =
-	(* PackVal : (type t; x : t) -> (x : package) *)
-	(* = fn {[x]=x1,[t]=x2} -> {[x']=cast (x1,x2)} *)
-	if !Switches.Language.rttLevel = Switches.Language.NO_RTT then
-	    O.FailExp(trModInfo i)
-	else
-	(let
-	    val  i'      = trModInfo i
-	    val  r       = #region i'
-	    val  i0'     = nonInfo r
-	    val  t       = #typ i'
-	    val (t1,t2)  = Type.asArrow' t
-	    val (l1,t11) = findField(isValName', Type.asProd t1)
-	    val (l2,t12) = findField(isTypName', Type.asProd t1)
-	    val (l3,t21) = findField(isValName', Type.asProd t2)
-	    val  x1'     = O.Id(typInfo(r,t11), Stamp.new(), Name.InId)
-	    val  x2'     = O.Id(typInfo(r,t12), Stamp.new(), Name.InId)
-	    val  p'      = O.ProdPat(typInfo(r,t1),
-				#[O.Field(i0', O.Lab(i0',l1), idToPat x1'),
-				  O.Field(i0', O.Lab(i0',l2), idToPat x2')])
-	    val  e1'     = O.CastExp(typInfo(r,t21), 
-				O.TupExp(typInfo(r,Type.inTuple #[t11,t12]),
-					 #[idToExp x1', idToExp x2']))
-	    val  e'      = O.ProdExp(typInfo(r,t2),
-				    #[O.Field(i0', O.Lab(i0',l3), e1')])
-	in
-	    O.FunExp(i', #[O.Match(nonInfo r, p', e')])
-	end
-	handle Type.Type => raise Crash.Crash "trPrimMod: PackVal")
+      | trMod(E, I.PrimMod(i,s,j)) =
+	(* [prim s : j] = prim s *)
+	O.PrimExp(trModInfo(E,i), s)
 
-      | trPrimMod(i,"UnpackVal",j) =
-	(* UnpackVal : (val x : package; type t) -> (x : t) *)
-	(* = fn {[x]=x1,[t]=x2} -> let (x11,x12) = cast x1 in
-	 *                             if Type.equals(x12,x2) then
-	 *                                 {[x']=x11}
-	 *                             else
-	 *                                 raise prim "???"
-	 *                         end *)
-	if !Switches.Language.rttLevel = Switches.Language.NO_RTT then
-	    O.FailExp(trModInfo i)
-	else
-	(let
-	    val  i'      = trModInfo i
-	    val  r       = #region i'
-	    val  i0'     = nonInfo r
-	    val  t       = #typ i'
-	    val (t1,t2)  = Type.asArrow' t
-	    val (l1,t11) = findField(isValName', Type.asProd t1)
-	    val (l2,t12) = findField(isTypName', Type.asProd t1)
-	    val (l3,t21) = findField(isValName', Type.asProd t2)
-	    val  x1'     = O.Id(typInfo(r,t11), Stamp.new(), Name.InId)
-	    val  x2'     = O.Id(typInfo(r,t12), Stamp.new(), Name.InId)
-	    val  p'      = O.ProdPat(typInfo(r,t1),
-				#[O.Field(i0', O.Lab(i0',l1), idToPat x1'),
-				  O.Field(i0', O.Lab(i0',l2), idToPat x2')])
 
-	    val  x11'    = O.Id(typInfo(r,t21), Stamp.new(), Name.InId)
-	    val  x12'    = O.Id(typInfo(r,typ_typ), Stamp.new(), Name.InId)
-	    val  i1'     = typInfo(r, Type.inTuple #[t21,typ_typ])
-	    val  p1'     = O.TupPat(i1', #[idToPat x11', idToPat x12'])
-	    val  e1'     = O.CastExp(i1', idToExp x1')
-	    val  d'      = O.ValDec(nonInfo r, p1', e1')
-
-	    val  e1'     = boolTypOp(lab_equals, O.TupExp(typInfo(r,typ_typtyp),
-						  #[idToExp x12', idToExp x2']))
-	    val  i2'     = typInfo(r,t2)
-	    val  e2'     = O.ProdExp(i2',
-			    #[O.Field(i0', O.Lab(i0',l3), idToExp x11')])
-	    val  e3'     = O.RaiseExp(i2', (*UNFINISHED*)
-				O.PrimExp(typInfo(r,typ_exn), "General.Bind"))
-	    val  e'      = O.LetExp(i2', #[d'], O.IfExp(i2', e1', e2', e3'))
-	in
-	    O.FunExp(i', #[O.Match(nonInfo r, p', e')])
-	end
-	handle (Type.Type | Type.Row) =>
-		raise Crash.Crash "trPrimMod: UnpackVal")
-
-      | trPrimMod(i,s,j) =
-	O.PrimExp(trModInfo i, s)
-
-    and findField(isName', r) =
+    and findField(isXName, r) =
 	let
-	    val (l,t) = Type.headRow r handle Type.Row =>
+	    val (a,t) = Type.headRow r handle Type.Row =>
 			raise Crash.Crash "TranslationPhase.findField"
 	in
-	    if isName'(Label.toString l) then
-		(l,t)
+	    if isXName(Label.toName a) then
+		(a,t)
 	    else
-		findField(isName', Type.tailRow r)
+		findField(isXName, Type.tailRow r)
 	end
 
 
@@ -1028,154 +924,283 @@ val _ = TextIO.inputLine(TextIO.stdIn)
     (*
      * We use the following transformation rules:
      *
+     *	[x1 : j1 :> x2 = any] = fail
+     *	[x1 : j1 :> x2 = c] = ...
      *	[x1 : sig item1* end :> x2 = sig item2* end] =
-     *	   struct [x1 . item1 :> x2 . item2]* end
+     *	   let x2' = Inf.asSig x2 in struct [x1 . item1 :> x2' . item2]* end
      *	[x1 : fct(x11:j11)->j12 :> x2 = fct(x21:j21)->j22] =
      *	   fct(y:j21) => let z = x1([y : j21 :> _ = j11])
      *                       x3 = x2 y
-     *                   in [z : j12 :> x3 = j22] end
-     *	[x1 : j1 :> x2 = j2] = x1
+     *                   in abs [z : j12 :> x3 = j22]
      *
      *	[x1 . val y:t1 :> x2 . val y:t2] = val y = x1.y
      *	[x1 . constructor y:t1 :> x2 . val y:t2] = val y = x1.y
-     *  [x1 . type y:k1 :> x2 . type y:k2 = t2] = type y = x2.y
+     *  [x1 . type y:k1 :> x2 . type y:k2 = t2] =
+     *     type y = lazy Inf.lookupTyp(x2,"y")
      *	[x1 . structure y:j1 :> x2 . structure y:j2] =
      *	   structure y = [x1.y : j1 :> x2.y = j2]
      *  [x1 . interface y:k1 :> x2 . interface y:k2 = j2] =
-     *     interface y = x2.y
+     *     interface y = lazy Inf.lookupInf(x2,"y")
      *
      * Here in [x1 : j1 :> x2 = j2] the structure is bound to x1 and has
-     * signature j1, while the instance structure representing the generative
-     * parts of interface j2 is bound to x2.
+     * signature j1, while the runtime representation of interface j2 is
+     * bound to x2.
      *
      * Note that the contravariant coercion of a functor argument is always
-     * transparent and so no instance structure is needed. We can thus pass
-     * whatever we want for x2, it remains unused.
+     * transparent and so no interface representation is needed. We can thus
+     * pass whatever we want for x2, it remains unused.
      *
      * Moreover, we apply the optimization that - if the transformation is the
      * identity function - the coercion is a no-op.
      *)
 
-    and upInf(isOpaque, isntIdentity, x1,j1,x2,j2, r,t1,t2) =
+    and trTransCoerceMod(E,r,m,j2) =
+	(* [m : j] = let val x1 = [m]
+	 *           in [x1 : j1 :> _ = j2]
+	 *)
+	let
+	    val i0  = nonInfo r
+	    val e1' = trMod(E,m)
+	    val i1  = O.infoExp e1'
+	    val x1' = O.Id(i1, Stamp.new(), Name.InId)
+	    val x1  = O.ShortId(i1, x1')
+	    val j1  = #inf(I.infoMod m)
+	in
+	    case coerceMod(E, r, x1,j1,NONE,j2,j2, false)
+	      of NONE    => e1'
+	       | SOME e' =>
+		 let
+		     val d' = O.ValDec(i0, O.VarPat(i1,x1'), e1')
+		 in
+		     O.LetExp(typInfo(r, #typ(O.infoExp e')), #[d'], e')
+		 end
+	end
+
+    and trTransCoerceMod'(E,r,m,j) =
+	let
+	    val j1 = #inf(I.infoMod m)
+	    val j2 = Inf.instance j
+	    val _  = Inf.match(j1,j2)
+	in
+	    trTransCoerceMod(E,r,m,j2)
+	end
+
+    and trOpaqCoerceMod(E,i,m,j) =
+	(* [m :> j] = let val x1 = [m]
+	 *                val x2 = [j]
+	 *            in abs [x1 : j1 :> x2 = j2]
+	 *)
+	if not(!Switches.Language.supportRtt) then
+	    O.AbsExp(trModInfo(E,i), trTransCoerceMod'(E, #region i, m, #inf i))
+	else let
+	    val r   = #region i
+	    val i0  = nonInfo r
+	    val i'  = trModInfo(E,i)
+
+	    val e1' = trMod(E,m)
+	    val i1  = O.infoExp e1'
+	    val x1' = O.Id(i1, Stamp.new(), Name.InId)
+	    val x1  = O.ShortId(i1, x1')
+	    val j1  = #inf(I.infoMod m)
+
+	    val e2' = trInf(E,j)
+	    val i2  = typInfo(r, typ_inf E)
+	    val x2' = O.Id(i2, Stamp.new(), Name.InId)
+	    val x2  = O.ShortId(i2, x2')
+	    val j2  = #inf i
+
+	    val j2' = Inf.instance j2
+	    val _   = Inf.match(j1,j2')
+	in
+	    case coerceMod(E, r, x1,j1,SOME x2,j2,j2', false)
+	      of NONE    => O.AbsExp(i', e1')
+	       | SOME e' =>
+		 let
+		     val d1' = O.ValDec(i0, O.VarPat(i1,x1'), e1')
+		     val d2' = O.ValDec(i0, O.VarPat(i2,x2'), e2')
+		 in
+		     O.LetExp(i', #[d1',d2'], O.AbsExp(i', e'))
+		 end
+	end
+
+    and coerceMod(E, r, x1,j1,x2o,j2,j2', isntIdentity) =
 	if Inf.isTop j2 then
+	    (* [x1 : j1 :> x2 = any] = () *)
 	    if Inf.isTop j1 then
 		NONE
 	    else
-		SOME(O.FailExp(typInfo(r,typ_top)))
-	else if Inf.isCon j2 andalso Inf.isCon j1 then
-	    if not isOpaque then
+		SOME(trUnit r)
+	else if Inf.isCon j2 then
+	    if Option.isNone x2o then
+	    (* [x1 : c1 :> _ = c2] = () *)
+		(*UNFINISHED: this should not be...*)
 		(* Note: If we match transparently and have two constructors
 		 * then they are necessarily the same at runtime.
 		 * However, it is not necessarily the case during translation
-		 * because we do transparent ups for functor sig arguments
+		 * because we do transparent coercions for functor sig arguments
 		 * even in the opaque case, so that no proper substitution has
 		 * been performed to equalize them. Example:
 		 *   fct(signature S) -> ()  :>  fct(signature S) -> ()
 		 * So we cannot put in an assertion here!
+		(*ASSERT assert Path.equals(#2 j1, #2 j2) => *)
+		if not(Path.equals(#2(Inf.asCon j1), #2(Inf.asCon j2')))
+		then raise Assert.failure else
 		 *)
 		NONE
 	    else
-		(*UNFINISHED: do runtime abstraction (__perv.Coerce.Opaque?) *)
+	    (* [x1 : j1 :> x2 = c] = ???? *)
+	    (*UNFINISHED: do runtime abstraction (__perv.Coerce.Opaque?) *)
 		NONE
 	else if Inf.isSig j2 andalso Inf.isSig j1 then
+	    (* [x1 : sig item1* end :> x2 = sig item2* end] =
+	     *     let x3 = lazy Inf.asSig x2 in
+	     *     struct [x1 . item1 :> x3 . item2]* end
+	     * [x1 : sig item1* end :> _ = sig item2* end] =
+	     *     struct [x1 . item1 :> _ . item2]* end
+	     *)
 	    let
-		val s1 = Inf.asSig j1
-		val s2 = Inf.asSig j2
-		val (fields,isntIdentity') =
-		    upItems(isOpaque, isntIdentity,
-			    x1, s1, x2, Inf.items s2, r, [])
+		val s1  = Inf.asSig j1
+		val s2  = Inf.asSig j2
+		val s2' = Inf.asSig j2'
+		val i3  = typInfo(r, typ_sig E)
+		val x3' = O.Id(i3, Stamp.new(), Name.InId)
+		val x3o = Option.map (fn _ => O.ShortId(i3, x3')) x2o
+		val (isntIdentity',fields,row) =
+		    coerceStr(E, r, x1,s1, x3o,Inf.items s2,s2',
+			      isntIdentity, [], Type.emptyRow())
 	    in
 		if isntIdentity' orelse Inf.size s1 <> Inf.size s2 then
-		    SOME(O.ProdExp(typInfo(r,t2), fields))
+		    let
+			val e = O.ProdExp(typInfo(r,Type.inProd row), fields)
+		    in
+			SOME(
+			    case x2o of NONE => e | SOME x2 =>
+			    let
+				val e1 = callInf(E, lab_asSig,
+						O.VarExp(O.infoLongid x2, x2))
+				val e2 = trLazy e1
+				val d1 = O.ValDec(nonInfo r, idToPat x3', e2)
+			    in
+				O.LetExp(O.infoExp e, #[d1], e)
+			    end)
+		    end
 		else
 		    NONE
 	    end
 	else if Inf.isArrow j2 andalso Inf.isArrow j1 then
+	    (* [x1 : fct(x11:j11)->j12 :> x2 = fct(x21:j21)->j22] =
+	     *     fct(x3:j21) => let x4 = (abs x1)(abs [x3 : j21 :> _ = j11])
+	     *			      x5 = Inf.realise( .... (*UNFINISHED*),
+	     *                               Inf.instance(#3(Inf.asArrow x2)))
+	     *                    in unabs [x4 : j12 :> x5 = j22]
+	     * [x1 : fct(x11:j11)->j12 :> _ = fct(x21:j21)->j22] =
+	     *     fct(x3:j21) => let x4 = x1(abs [x3 : j21 :> _ = j11])
+	     *                    in unabs [x4 : j12 :> _ = j22]
+	     *)
 	    let
-		val (p1,j11,j12) = Inf.asArrow j1
-		val (p2,j21,j22) = Inf.asArrow j2
-		val    (t11,t12) = Type.asArrow t1
-		val    (t21,t22) = Type.asArrow t2
+		val (p1,j11,j12)    = Inf.asArrow j1
+		val (p1',j11',j12') = Inf.asArrow(Inf.instance j1)
+		val (p2,j21,j22)    = Inf.asArrow j2
+		val (p2',j21',j22') = Inf.asArrow j2'
 
-		val i' = nonInfo r
-		val i1 = typInfo(r, t21)
-		val i2 = typInfo(r, t12)
-		val i3 = typInfo(r, t22)
-		val y' = O.Id(i1, Stamp.new(), Name.InId)
-		val z' = O.Id(i2, Stamp.new(), Name.InId)
-		val y  = O.ShortId(i1, y')
-		val z  = O.ShortId(i2, z')
-		val x3'= O.Id(i3, Stamp.new(), Name.InId)
-		val x3 = O.ShortId(i3, x3')
+		val rea  = Inf.match(j21',j11')
+		val _    = Inf.realise(rea, j12')
+		val _    = Inf.match(j12',j22')
+
+		val i11 = typInfo(r, infToTyp(E,j11'))
+		val i12 = typInfo(r, infToTyp(E,j12'))
+		val i21 = typInfo(r, infToTyp(E,j21'))
+		val i22 = typInfo(r, infToTyp(E,j22'))
+		val i1  = typInfo(r, Type.inArrow(#typ i11, #typ i12))
+		val i2  = typInfo(r, Type.inArrow(#typ i21, #typ i22))
+		val i'  = nonInfo r
+
+		val i5  = typInfo(r, typ_inf E)
+		val x3' = O.Id(i21, Stamp.new(), Name.InId)
+		val x4' = O.Id(i12, Stamp.new(), Name.InId)
+		val x5' = O.Id(i5, Stamp.new(), Name.InId)
+		val x3  = O.ShortId(i21, x3')
+		val x4  = O.ShortId(i12, x4')
+		val x5o = Option.map (fn _ => O.ShortId(i5, x5')) x2o
 	    in
-		case (upInf(false, false, y,j21,y(*unsued*),j11, r,t21,t11),
-		      upInf(isOpaque, isntIdentity, z,j12,x3,j22, r,t12,t22))
-		  of (SOME exp1, SOME exp2) =>
+		case (coerceMod(E, r, x3,j21', NONE,j11,j11', false),
+		      coerceMod(E, r, x4,j12', x5o,j22',j22', isntIdentity))
+		  of (e1o, SOME e2) =>
 		     let
-			val x1exp   = O.VarExp(typInfo(r,t1), x1)
-			val x2exp   = O.VarExp(typInfo(r,t2), x2)
-			val yexp    = O.VarExp(typInfo(r,t21), y)
-			val ypat    = O.VarPat(typInfo(r,t21), y')
-			val zpat    = O.VarPat(typInfo(r,t12), z')
-			val x3pat   = O.VarPat(typInfo(r,t22), x3')
-			val appexp1 = O.AppExp(typInfo(r,t12), x1exp, exp1)
-			val appexp2 = O.AppExp(typInfo(r,t22), x2exp, yexp)
-			val dec1    = O.ValDec(i', zpat, appexp1)
-			val dec2    = O.ValDec(i', x3pat, appexp2)
-			val letexp  = O.LetExp(typInfo(r,t22),#[dec1,dec2],exp2)
+			val e3 = case e1o of SOME e1 => O.AbsExp(i11, e1)
+					   | NONE => O.AbsExp(i11, idToExp x3')
+			val e4 = O.AppExp(i12, O.AbsExp(i1, longidToExp x1), e3)
+			val e6 = O.UnabsExp(i22, e2)
+			val d1 = O.ValDec(i', idToPat x4', e4)
+			val ds = case x2o of NONE => #[d1] | SOME x2 =>
+				 let
+				     val e51 = callInf(E, lab_asArrow,
+						       longidToExp x2)
+				     val a   = Label.fromInt 3
+				     val e52 = O.SelExp(typInfo(r, typ_inf E),
+							O.Lab(i',a), e51)
+				     val e53 = callInf(E, lab_instance, e52)
+				     val e5  = e53
+				     (*UNFINISHED: realise *)
+				     val d2  = O.ValDec(i', idToPat x5', e5)
+				 in
+				     #[d1,d2]
+				 end
+			val e  = O.LetExp(O.infoExp e6, ds, e6)
 		     in
-			SOME(O.FunExp(typInfo(r,t2),#[O.Match(i',ypat,letexp)]))
+			SOME(O.FunExp(i2, #[O.Match(i', idToPat x3', e)]))
 		     end
-		   | (NONE, SOME exp2) =>
+		   | (SOME e1, NONE) =>
+		     (* Optimized:
+		      * abs unabs (abs x1)(abs [x3 : j21 :> _ = j11]) *)
 		     let
-			val x1exp   = O.VarExp(typInfo(r,t1), x1)
-			val x2exp   = O.VarExp(typInfo(r,t2), x2)
-			val yexp    = O.VarExp(typInfo(r,t21), y)
-			val ypat    = O.VarPat(typInfo(r,t21), y')
-			val zpat    = O.VarPat(typInfo(r,t12), z')
-			val x3pat   = O.VarPat(typInfo(r,t22), x3')
-			val appexp1 = O.AppExp(typInfo(r,t12), x1exp, yexp)
-			val appexp2 = O.AppExp(typInfo(r,t22), x2exp, yexp)
-			val dec1    = O.ValDec(i', zpat, appexp1)
-			val dec2    = O.ValDec(i', x3pat, appexp2)
-			val letexp  = O.LetExp(typInfo(r,t22),#[dec1,dec2],exp2)
+			val e3 = O.AbsExp(i11, e1)
+			val e4 = O.AppExp(i12, O.AbsExp(i1, longidToExp x1), e3)
+			val e  = O.UnabsExp(i22, e4)
 		     in
-			SOME(O.FunExp(typInfo(r,t2),#[O.Match(i',ypat,letexp)]))
+			SOME(O.FunExp(i2, #[O.Match(i', idToPat x3', e)]))
 		     end
-		   | (SOME exp1, NONE) =>
-		     let
-			val x1exp  = O.VarExp(typInfo(r,t1), x1)
-			val ypat   = O.VarPat(typInfo(r,t21), y')
-			val appexp = O.AppExp(typInfo(r,t12), x1exp, exp1)
-		     in
-			SOME(O.FunExp(typInfo(r,t2),#[O.Match(i',ypat,appexp)]))
-		     end
-		   | (NONE, NONE) => NONE
+		   | (NONE, NONE) =>
+			(* This could be NONE when rea = 0, I think... *)
+			SOME(O.AbsExp(i2, longidToExp x1))
 	    end
 	else
 	    raise Assert.failure
 
-    and upItems(isOpaque, isntIdentity, x1, s1, x2, [], r, fields) =
-	    (Vector.fromList fields, isntIdentity)
-      | upItems(isOpaque, isntIdentity, x1, s1, x2, item::items, r, fields) =
+    and coerceStr(E, r, x1,s1, x2o,[],s2', isntIdentity, fields, row) =
+	    (isntIdentity, Vector.fromList fields, row)
+      | coerceStr(E, r, x1,s1, x2o,item::items,s2', isntIdentity, fields, row) =
 	if Inf.isValItem item then
+	    (* [x1 . val y:t1 :> x2 . val y:t2] = val y = x1.y
+	     *)
 	    let
-		val (a,t2,_) = Inf.asValItem item
+		val (a,_,_)  = Inf.asValItem item
 		val    t1    = Inf.lookupVal(s1,a)
-		val    i1    = typInfo(r,t1)
-		val    i2    = typInfo(r,t2)
+		val    t2    = Inf.lookupVal(s2',a)
 		val    i'    = nonInfo r
-		val    l'    = O.Lab(i', trValLabel a)
-		val    y1    = O.LongId(i1,x1,l')
-		val    exp   = O.UpExp(i2, O.VarExp(i1,y1))
+		val    a'    = trValLabel a
+		val    l'    = O.Lab(i',a')
+		val    y1    = O.LongId(typInfo(r,t1), x1, l')
+		val    exp   = O.VarExp(typInfo(r,t2), y1)
+		val isntIdentity' = isntIdentity orelse not(Type.equals(t1,t2))
 	    in
-		upItems(isOpaque, isntIdentity, x1, s1, x2, items, r,
-			O.Field(i',l',exp)::fields)
+		coerceStr(E, r, x1,s1, x2o,items,s2', isntIdentity',
+			  O.Field(i',l',exp)::fields, Type.extendRow(a',t2,row))
 	    end
 	else if Inf.isTypItem item then
+	    (* [x1 . type y:k1 :> x2 . type y:k2 = t2] =
+	     *     type y = lazy Inf.lookupTyp(x2, Label.fromString "y")
+	     * [x1 . type y:k1 :> _ . type y:k2 = t2] =
+	     *     type y = x1.y
+	     *)
 	    let
 		val (a,k,d) = Inf.asTypItem item
-		val (x,isntIdentity') =
+		val  i'     = nonInfo r
+		val  t'     = typ_typ E
+		val  i      = typInfo(r,t')
+		val  a'     = trTypLabel a
+		val  l'     = O.Lab(i',a')
+		val (isntIdentity',exp) =
 		    (* Case 0, no module RTT: use structure value
 		     * Case 1, w/o abstraction: use structure value
 		     * Case 2, abstract: use signature value, is not identity
@@ -1184,59 +1209,91 @@ val _ = TextIO.inputLine(TextIO.stdIn)
 		     * Case 4, manifest, is not identity:
 		     *         use signature value
 		     *)
-		    if not isOpaque orelse !Switches.Language.rttLevel <>
-					    Switches.Language.FULL_RTT then
-			(x1, isntIdentity)
-		    else
-			(x2, true)
+		    case x2o of NONE =>
+			let
+			    val y  = O.LongId(i, x1, l')
+			    val e  = O.VarExp(O.infoLongid y, y)
+			in
+			    (isntIdentity, e)
+			end
+		    | SOME x2 =>
+			let
+			    val e1 = O.VarExp(O.infoLongid x2, x2)
+			    val e2 = callLab(E, lab_fromString,
+					     trString(r, Label.toString a))
+			    val e3 = trTuple(r, #[e1,e2])
+			    val e  = trLazy(callInf(E, lab_lookupTyp, e3))
+			in
+			    (true, e)
 			(*UNFINISHED: rethink all this strengthening biz
 			(x2, isntIdentity orelse Option.isNone d
 					  orelse Type.equals(Option.valOf d,
 						Type.inCon(k, Type.CLOSED, p))*)
-		val i   = typInfo(r, typ_typ)
-		val i'  = nonInfo r
-		val l'  = O.Lab(i', trTypLabel a)
-		val y   = O.LongId(i, x, l')
-		val exp = O.VarExp(O.infoLongid y, y)
+			end
 	    in
-		upItems(isOpaque, isntIdentity', x1, s1, x2, items, r,
-			O.Field(i',l',exp)::fields)
+		coerceStr(E, r, x1,s1, x2o,items,s2', isntIdentity',
+			  O.Field(i',l',exp)::fields, Type.extendRow(a',t',row))
 	    end
 	else if Inf.isModItem item then
+	    (*	[x1 . structure y:j1 :> x2 . structure y:j2] =
+	     *	   structure y =
+	     *         let x3 = lazy Inf.lookupMod(x2, Label.fromString "y")
+	     *         in [x1.y : j1 :> x3 = j2]
+	     *	[x1 . structure y:j1 :> _ . structure y:j2] =
+	     *	   structure y = [x1.y : j1 :> _ = j2]
+	     *)
 	    let
-		val (a,j2,_) = Inf.asModItem item
-		val    j1    = Inf.lookupMod(s1,a)
-		val    t1    = infToTyp j1
-		val    t2    = infToTyp j2
-		val    i1    = typInfo(r,t1)
-		val    i2    = typInfo(r,t2)
-		val    i'    = nonInfo r
-		val    a'    = trModLabel a
-		val    l'    = O.Lab(i', a')
-		val    y1    = O.LongId(i1,x1,l')
-		val    y2    = if not isOpaque
-			       orelse !Switches.Language.rttLevel <>
-				       Switches.Language.FULL_RTT
-			       then y1 (*unused*)
-			       else let
-				   val row = Type.asProd'(#typ(O.infoLongid x2))
-				   val typ = Type.lookupRow(row, a')
-			       in
-				   O.LongId(typInfo(r,typ),x2,l')
-			       end
-		val (exp,isntIdentity') =
-		    case upInf(isOpaque, isntIdentity, y1,j1,y2,j2, r,t1,t2)
-		      of NONE => (if isOpaque then O.UpExp(i2, O.VarExp(i1,y1))
-		 			     else O.VarExp(i1,y1), isntIdentity)
-		       | SOME exp => (exp, true)
+		val (a,j2,_)  = Inf.asModItem item
+		val    j1     = Inf.lookupMod(s1,a)
+		val    j2'    = Inf.lookupMod(s2',a)
+		val    t1     = infToTyp(E,j1)
+		val    i1     = typInfo(r,t1)
+		val    i'     = nonInfo r
+		val    a'     = trModLabel a
+		val    l'     = O.Lab(i', a')
+		val    y1     = O.LongId(i1,x1,l')
+		val (x3o,mkE) = case x2o of NONE => (NONE, fn e=>e) | SOME x2 =>
+				let
+				    val i3 = typInfo(r, typ_inf E)
+				    val x3 = O.Id(i3, Stamp.new(), Name.InId)
+				in
+				   (SOME(O.ShortId(i3,x3)),
+				    fn e0 =>
+				    let
+					val e1 = O.VarExp(O.infoLongid x2, x2)
+					val e2 = callLab(E, lab_fromString,
+						  trString(r, Label.toString a))
+					val e3 = trTuple(r, #[e1,e2])
+					val e  = trLazy(
+						  callInf(E, lab_lookupMod, e3))
+					val d  = O.ValDec(i', idToPat x3, e)
+				    in
+					O.LetExp(O.infoExp e0, #[d], e0)
+				    end)
+				end
+		val (isntIdentity',exp) =
+		    case coerceMod(E, r, y1,j1, x3o,j2,j2', isntIdentity)
+		      of NONE     => (isntIdentity, O.VarExp(i1,y1))
+		       | SOME exp => (true, mkE exp)
+		val t' = #typ(O.infoExp exp)
 	    in
-		upItems(isOpaque, isntIdentity', x1, s1, x2, items, r,
-			O.Field(i',l',exp)::fields)
+		coerceStr(E, r, x1,s1, x2o,items,s2', isntIdentity',
+			  O.Field(i',l',exp)::fields, Type.extendRow(a',t',row))
 	    end
 	else if Inf.isInfItem item then
+	    (*  [x1 . interface y:k1 :> x2 . interface y:k2 = j2] =
+	     *     interface y = lazy Inf.lookupInf(x2, Label.fromString "y")
+	     *  [x1 . interface y:k1 :> _ . interface y:k2 = j2] =
+	     *     interface y = x1.y
+	     *)
 	    let
 		val (a,k,d) = Inf.asInfItem item
-		val (x,isntIdentity') =
+		val  i'     = nonInfo r
+		val  t'     = typ_inf E
+		val  i      = typInfo(r,t')
+		val  a'     = trInfLabel a
+		val  l'     = O.Lab(i',a')
+		val (isntIdentity',exp) =
 		    (* Case 0, no module RTT: use structure value
 		     * Case 1, w/o abstraction: use structure value
 		     * Case 2, abstract: use signature value, is not identity
@@ -1245,196 +1302,202 @@ val _ = TextIO.inputLine(TextIO.stdIn)
 		     * Case 4, manifest, is not identity:
 		     *         use signature value
 		     *)
-		    if not isOpaque orelse !Switches.Language.rttLevel <>
-					    Switches.Language.FULL_RTT then
-			(x1, isntIdentity)
-		    else
-			(x2, isntIdentity orelse Option.isNone d)
-		val t1  = infToTyp(Inf.lookupInf(s1,a))
-		val t2  = case d of SOME j => infToTyp j
-				  | NONE =>
-					(* new abstract type *)
-					Type.inCon(ikindToKind k, Type.CLOSED,
-						   Path.fromLab a)
-		val i1  = typInfo(r, typ_infinst t1)
-		val i2  = typInfo(r, typ_infinst t2)
-		val i'  = nonInfo r
-		val l'  = O.Lab(i', trInfLabel a)
-		val y   = O.LongId(i1, x, l')
-		val exp = O.UpExp(i2, O.VarExp(i1, y))
+		    case x2o of NONE =>
+			let
+			    val y  = O.LongId(i, x1, l')
+			    val e  = O.VarExp(O.infoLongid y, y)
+			in
+			    (isntIdentity, e)
+			end
+		    | SOME x2 =>
+			let
+			    val e1 = O.VarExp(O.infoLongid x2, x2)
+			    val e2 = callLab(E, lab_fromString,
+					     trString(r, Label.toString a))
+			    val e3 = trTuple(r, #[e1,e2])
+			    val e  = trLazy(callInf(E, lab_lookupInf, e3))
+			in
+			    (true, e)
+			(*UNFINISHED: rethink all this strengthening biz
+			(x2, isntIdentity orelse Option.isNone d
+					  orelse Inf.equals(Option.valOf d,
+							    Inf.inCon(k,p))*)
+			end
 	    in
-		upItems(isOpaque, isntIdentity', x1, s1, x2, items, r,
-			O.Field(i',l',exp)::fields)
+		coerceStr(E, r, x1,s1, x2o,items,s2', isntIdentity',
+			  O.Field(i',l',exp)::fields, Type.extendRow(a',t',row))
 	    end
 	else (* fixity *)
-	    upItems(isOpaque, isntIdentity, x1, s1, x2, items, r, fields)
+	    coerceStr(E, r, x1,s1, x2o,items,s2', isntIdentity, fields, row)
 
 
 
   (* Types *)
 
     (* The code generated to produce runtime types and interfaces very much
-     * mirrors what happens in the elaborator.
+     * mirrors what happens in the elaborator. However, most of it is lazy.
      *)
 
-    and trTyp t =
-	if !Switches.Language.rttLevel = Switches.Language.NO_RTT then
-	    O.FailExp(typInfo(#region(I.infoTyp t), typ_typ))
+    and trTyp(E, t) =
+	if not(!Switches.Language.supportRtt) then
+	    O.FailExp(trTypInfo(E, I.infoTyp t))
 	else
-	    trTyp' t
+	    trTyp'(E, t)
 
-    and trTyp'(I.VarTyp(i, I.Id(_,z,n))) =
+    and trTyp'(E, I.VarTyp(i, I.Id(_,z,n))) =
 	(* [a] = Type.inVar{[a]} *)
 	let
-	    val x' = O.Id(typInfo(#region i, typ_var), z, trTypName n)
+	    val x' = O.Id(typInfo(#region i, typ_var E), z, trTypName n)
 	in
-	    typOp(lab_inVar, idToExp x')
+	    callTyp(E, lab_inVar, idToExp x')
 	end
 
-      | trTyp'(I.PrimTyp(i,s)) =
+      | trTyp'(E, I.PrimTyp(i,s)) =
 	(* [prim s] = Type.inCon(PervasiveType.lookup s) *)
-	typOp(lab_inCon, pervTypeOp(lab_lookup, trString(#region i, s)))
+	callTyp(E, lab_inCon,
+		callPervType(E, lab_lookup, trString(#region i, s)))
 
-      | trTyp'(I.ConTyp(i,y)) =
+      | trTyp'(E, I.ConTyp(i,y)) =
 	(* [y] = $y *)
-	O.VarExp(typInfo(#region i, typ_typ), trTyplongid y)
+	(let
+	    val y' = trTyplongid(E,y)
+	in
+	    O.VarExp(O.infoLongid y', y')
+	end
+	handle VirtualModule => trVirtTyplongid(E,y))
 
-      | trTyp'(I.FunTyp(i,x,t)) =
+      | trTyp'(E, I.FunTyp(i,x,t)) =
 	(* [fn x => t] = let val $x = Type.var <<kind x>>
 	 *               in Type.inLambda($x,[t]) end
 	 *)
-	trBindTyp lab_inLambda (i, x, t, Type.domKind(Type.kind(#typ i)))
+	trBindTyp(E, lab_inLambda, i, x, t, Type.domKind(Type.kind(#typ i)))
 
-      | trTyp'(I.AppTyp(i,t1,t2)) =
+      | trTyp'(E, I.AppTyp(i,t1,t2)) =
 	(* [t1 t2] = Type.inApply([t1],[t2]) *)
 	let
-	    val e1' = trTyp' t1
-	    val e2' = trTyp' t2
+	    val e1' = trTyp'(E,t1)
+	    val e2' = trTyp'(E,t2)
 	in
-	    typOp(lab_inApply,
-		  O.TupExp(typInfo(#region i, typ_typtyp), #[e1',e2']))
+	    callTyp(E, lab_inApply, trTuple(#region i, #[e1',e2']))
 	end
 
-      | trTyp'(I.RefTyp(i,t)) =
+      | trTyp'(E, I.RefTyp(i,t)) =
 	(* [Ref t] = Type.inApply(PervasiveType.typ_ref, [t]) *)
 	let
-	    val e1' = pervTypeVal lab_typ_ref
-	    val e2' = trTyp' t
+	    val e1' = accessPervType(E, lab_typ_ref)
+	    val e2' = trTyp'(E,t)
 	in
-	    typOp(lab_inApply,
-		  O.TupExp(typInfo(#region i, typ_typtyp), #[e1',e2']))
+	    callTyp(E, lab_inApply, trTuple(#region i, #[e1',e2']))
 	end
 
-      | trTyp'(I.TupTyp(i,ts)) =
+      | trTyp'(E, I.TupTyp(i,ts)) =
 	(* [(t1,...,tn)] = Type.inTuple #[t1,...,tn] *)
 	let
-	    val es' = Vector.map trTyp' ts
+	    val es' = Vector.map (fn t => trTyp'(E,t)) ts
 	in
-	    typOp(lab_inTuple, O.VecExp(typInfo(#region i, typ_typVec), es'))
+	    callTyp(E, lab_inTuple, trVector(#region i, typ_typ E, es'))
 	end
 
-      | trTyp'(I.ProdTyp(i,r)) =
+      | trTyp'(E, I.ProdTyp(i,r)) =
 	(* [{r}] = Type.inProd[r] *)
-	typOp(lab_inProd, trTypRow r)
+	callTyp(E, lab_inProd, trTypRow(E,r))
 
-      | trTyp'(I.SumTyp(i,r)) =
+      | trTyp'(E, I.SumTyp(i,r)) =
 	(* [<r>] = Type.inSum[r] *)
-	typOp(lab_inSum, trTypRow r)
+	callTyp(E, lab_inSum, trTypRow(E,r))
 
-      | trTyp'(I.ArrTyp(i,t1,t2)) =
+      | trTyp'(E, I.ArrTyp(i,t1,t2)) =
 	(* [t1 -> t2] = Type.inArrow([t1],[t2]) *)
 	let
-	    val e1' = trTyp' t1
-	    val e2' = trTyp' t2
+	    val e1' = trTyp'(E,t1)
+	    val e2' = trTyp'(E,t2)
 	in
-	    typOp(lab_inArrow,
-		  O.TupExp(typInfo(#region i, typ_typtyp), #[e1',e2']))
+	    callTyp(E, lab_inArrow, trTuple(#region i, #[e1',e2']))
 	end
 
-      | trTyp'(I.AllTyp(i,x,t)) =
+      | trTyp'(E, I.AllTyp(i,x,t)) =
 	(* [forall x => t] = let val $x = Type.var <<kind x>>
 	 *                   in Type.inAll($x,[t]) end
 	 *)
-	trBindTyp lab_inAll (i,x,t, Type.kindVar(#1(Type.asAll'(#typ i))))
+	trBindTyp(E, lab_inAll, i,x,t, Type.kindVar(#1(Type.asAll'(#typ i))))
 
-      | trTyp'(I.ExTyp(i,x,t)) =
+      | trTyp'(E, I.ExTyp(i,x,t)) =
 	(* [exists x => t] = let val $x = Type.var <<kind x>>
 	 *                   in Type.inExists($x,[t]) end
 	 *)
-	trBindTyp lab_inExist (i,x,t, Type.kindVar(#1(Type.asExist'(#typ i))))
+	trBindTyp(E,lab_inExist, i,x,t, Type.kindVar(#1(Type.asExist'(#typ i))))
 
-      | trTyp'(I.PackTyp(i,j)) =
+      | trTyp'(E, I.PackTyp(i,j)) =
 	(* [pack j] = Type.inPack[j] *)
 	(*UNFINISHED*)
 	unfinished (#region i) "trTyp" "runtime package types"
 
-      | trTyp'(I.SingTyp(i,y)) =
+      | trTyp'(E, I.SingTyp(i,y)) =
 	(* [sing y] = Type.inSing[y] *)
 	(*UNFINISHED*)
 	unfinished (#region i) "trTyp" "runtime singleton types"
 
-      | trTyp'(I.AbsTyp(i, isExtensible)) =
+      | trTyp'(E, I.AbsTyp(i, isExtensible)) =
 	raise Crash.Crash "TranslationPhase.trTyp: AbsTyp"
 
-    and trTypRep(x, t) =
-	if !Switches.Language.rttLevel = Switches.Language.NO_RTT then
-	    O.FailExp(typInfo(#region(I.infoTyp t), typ_typ))
+    and trTypRep(E, x, t) =
+	if not(!Switches.Language.supportRtt) then
+	    O.FailExp(trTypInfo(E, I.infoTyp t))
 	else
 	    let
 		val r  = #region(I.infoId x)
-		val p' = pathOp(lab_fromLab,
-				labOp(lab_fromString,
+		val p' = callPath(E, lab_fromLab,
+				  callLab(E, lab_fromString,
 				      trString(r, Name.toString(I.name x))))
 	    in
-		case trTypRep'(p', t)
-		  of NONE    => trTyp' t
+		case trTypRep'(E,p',t)
+		  of NONE    => trTyp'(E,t)
 		   | SOME e' => e'
 	    end
 
-    and trTypRep'(p', I.FunTyp(i,x,t)) = trTypRep'(p', t)
+    and trTypRep'(E, p', I.FunTyp(i,x,t)) = trTypRep'(E, p', t)
 
-      | trTypRep'(p', I.AbsTyp(i, isExtensible)) =
+      | trTypRep'(E, p', I.AbsTyp(i, isExtensible)) =
 	(* [abstract]_p = Type.inCon(<<kind>>, <<isExtensible>>, p) *)
 	let
 	    val r   = #region i
-	    val e1' = trKind(r, Type.kind(#typ i))
-	    val e2' = trSort(r, if isExtensible then Type.OPEN else Type.CLOSED)
+	    val e1' = trKind(E, r, Type.kind(#typ i))
+	    val e2' = trSort(E, r,
+			     if isExtensible then Type.OPEN else Type.CLOSED)
 	in
-	    SOME(typOp(lab_inCon, O.TupExp(typInfo(r,typ_con), #[e1',e2',p'])))
+	    SOME(callTyp(E, lab_inCon, trTuple(r, #[e1',e2',p'])))
 	end
 
-      | trTypRep'(p', t) = NONE
+      | trTypRep'(E, p', t) = NONE
 
-    and trTypRow(I.Row(i,fs,b)) =
+    and trTypRow(E, I.Row(i,fs,b)) =
 	(* [f1,...,fn]     = [f1](...[fn](Type.emptyRow())...)
 	 * [f1,...,fn,...] = [f1](...[fn](Type.unknownRow())...) *)
 	let
 	    val a  = if b then lab_unknownRow else lab_emptyRow
-	    val e' = rowOp(a, trUnit(#region i))
+	    val e' = callTyp(E, a, trUnit(#region i))
 	in
-	    Vector.foldl trTypField e' fs
+	    Vector.foldl (trTypField E) e' fs
 	end
 
-    and trTypField(I.Field(i1, I.Lab(i2,a), t), e3') =
+    and trTypField E (I.Field(i1, I.Lab(i2,a), t), e3') =
 	(* [a:t]_e3 = Type.extendRow(Label.fromString "a", [t], e3) *)
 	let
 	    val r   = #region i1
-	    val e1' = labOp(lab_fromString,
-			    trString(#region i2, Label.toString a))
-	    val e2' = trTyp' t
+	    val e1' = callLab(E, lab_fromString,
+			      trString(#region i2, Label.toString a))
+	    val e2' = trTyp'(E,t)
 	in
-	    rowOp(lab_extendRow,
-		  O.TupExp(typInfo(r,typ_labtyprow), #[e1',e2',e3']))
+	    callTyp(E, lab_extendRow, trTuple(r, #[e1',e2',e3']))
 	end
 
-    and trBindTyp a (i,x,t,k) =
+    and trBindTyp(E,a,i,x,t,k) =
 	let
 	    val r  = #region i
-	    val x' = trVarid x
+	    val x' = trVarid(E,x)
 	    val d' = O.ValDec(nonInfo r, idToPat x',
-			      varOp(lab_var, trKind(r, k)))
-	    val e' = typOp(a, O.TupExp(typInfo(r,typ_vartyp),
-				       #[idToExp x', trTyp' t]))
+			      callTyp(E, lab_var, trKind(E,r,k)))
+	    val e' = callTyp(E, a, trTuple(r, #[idToExp x', trTyp'(E,t)]))
 	in
 	    O.LetExp(O.infoExp e', #[d'], e')
 	end
@@ -1442,157 +1505,111 @@ val _ = TextIO.inputLine(TextIO.stdIn)
 
   (* Interfaces *)
 
-    and trInf j =
-	if !Switches.Language.rttLevel <> Switches.Language.FULL_RTT then
-	    let
-		val i   = I.infoInf j
-		val r   = #region i
-		val t2  = infToTyp(#inf i)
-		val e1' = O.FailExp(typInfo(r, typ_inf))
-		val e2' = O.FailExp(typInfo(r, t2))
-	    in
-		O.TupExp(typInfo(r, Type.inTuple #[typ_inf,t2]), #[e1',e2'])
-	    end
+    and trInf(E, j) =
+	if not(!Switches.Language.supportRtt) then
+	    (* [j]_E = fail *)
+	    O.FailExp(trInfInfo(E, I.infoInf j))
 	else
-	    trInf' j
+	    trInf'(E, j)
 
-    and trInf'(I.TopInf(i)) =
-	(* [any] = (Inf.inTop(), fail) *)
+    and trInf'(E, I.TopInf(i)) =
+	(* [any]_E = Inf.inTop() *)
 	let
-	    val r   = #region i
-	    val e1' = infOp(lab_inTop, trUnit r)
-	    val e2' = O.FailExp(typInfo(r, typ_top))
+	    val r = #region i
 	in
-	    O.TupExp(typInfo(r, Type.inTuple #[typ_inf,typ_top]), #[e1',e2'])
+	    callInf(E, lab_inTop, trUnit r)
 	end
 
-      | trInf'(I.PrimInf(i,s)) =
-	(* [prim s] = (Inf.inCon(PervasiveInf.lookup s), fail) *)
+      | trInf'(E, I.PrimInf(i,s)) =
+	(* [prim s]_E = Inf.inCon(PervasiveInf.lookup s) *)
 	let
-	    val r   = #region i
-	    val t   = infToTyp(#inf i)
-	    val e1' = infOp(lab_inCon,
-			    pervInfOp(lab_lookup, trString(#region i, s)))
-	    val e2' = O.FailExp(typInfo(r,t))
+	    val r = #region i
 	in
-	    O.TupExp(typInfo(r, Type.inTuple #[typ_inf,t]), #[e1',e2'])
+	    callInf(E, lab_inCon, callPervInf(E, lab_lookup, trString(r, s)))
 	end
 
-      | trInf'(I.ConInf(i,y)) =
-	(* [y] = lazy [y]() *)
+      | trInf'(E, I.ConInf(i,y)) =
+	(* [y]_E = lazy Inf.instance [y]_E *)
 	let
-	    val r   = #region i
-	    val y'  = trInflongid y
-	    val t1  = #typ(O.infoLongid y')
-	    val e1' = O.VarExp(typInfo(r,t1), y')
-	    val e2' = trUnit r
-	    val i'  = typInfo(r, #2(Type.asArrow' t1))
+	    val e1' = let val y' = trInflongid(E,y)
+		      in O.VarExp(O.infoLongid y', y') end
+		      handle VirtualModule => trVirtInflongid(E,y)
 	in
-	    O.LazyExp(i', O.AppExp(i',e1',e2'))
+	    trLazy(callInf(E, lab_instance, e1'))
 	end
 
-      | trInf'(I.SigInf(i,ss)) =
-	(* [sig ss end] = let val s = Inf.empty() [ss]_s
-	 *                in (Inf.inSig s, [ss]') end
+      | trInf'(E, I.SigInf(i,ss)) =
+	(* [sig ss end]_E = let val s = Inf.empty()
+	 *                      [ss]_E,s
+	 *                  in Inf.inSig s end
 	 *)
 	let
 	    val r   = #region i
-	    val i'  = typInfo(r,typ_sign)
+	    val i'  = typInfo(r, typ_sig E)
 	    val s'  = O.Id(i', Stamp.new(), Name.InId)
-	    val e0' = sigOp(lab_empty, trUnit r)
+	    val e0' = callInf(E, lab_empty, trUnit r)
 	    val d'  = O.ValDec(nonInfo r, O.VarPat(i',s'), e0')
-	    val ss' = trSpecs(idToExp s', ss)
-
-	    val e1' = infOp(lab_inSig, idToExp s')
-	    val fs' = trSpecsInst ss
-	    val t2  = infToTyp(#inf i)
-	    val e2' = O.ProdExp(typInfo(r,t2), fs')
-	    val i'  = typInfo(r, Type.inTuple #[typ_inf,t2])
-	    val e'  = O.TupExp(i', #[e1',e2'])
+	    val ss' = trSpecs(E, idToExp s', ss)
+	    val e'  = callInf(E, lab_inSig, idToExp s')
 	in
-	    O.LetExp(i', Vector.append(#[d'], ss'), e')
+	    O.LetExp(typInfo(r, typ_inf E), Vector.append(#[d'], ss'), e')
 	end
 
-      | trInf'(I.FunInf(i,x,j1,j2)) =
-	(* [fn(x:j1) => j2] = let val  x0     = Path.invent()
-	 *                        val (x1,x$) = [j1]
-	 *                        val (x2,_)  = [j2]
-	 *                    in (Inf.inLambda(x0,x1,x2), ???) end
+      | trInf'(E, I.FunInf(i,x,j1,j2)) =
+	(* [fn(x:j1) => j2]_E = let val x0 = Path.invent()
+	 *                          val x$ = [j1]_E
+	 *                          val x2 = [j2]_E+{x}
+	 *                      in Inf.inLambda(x0,x$,x2) end
 	 *)
-	(*trBindInf lab_inLambda (i,x,j1,j2)*)
-	(*UNFINISHED*)
-	unfinished (#region i) "trInf" "runtime parameterized interfaces"
+	trBindInf(E, lab_inLambda, i,x,j1,j2)
 
-      | trInf'(I.AppInf(i,j,m)) =
-	(* [j m] = (Inf.inApply([j],[m],???), ???) *)
+      | trInf'(E, I.AppInf(i,j,m)) =
+	(* [j m]_E = Inf.inApply([j],[m],???) *)
 	(*UNFINISHED*)
 	let
 	    val r   = #region i
-	    val e1' = trInf' j
-	    val e2' = trMod m
-	    val e3' = infOp(lab_inTop, trUnit r)	(* UNFINISHED! *)
-	    val e'  = O.TupExp(typInfo(r, typ_infpathinf), #[e1',e2',e3'])
+	    val e1' = trInf'(E,j)
+	    val e2' = trMod(E,m)
+	    val e3' = callInf(E, lab_inTop, trUnit r)	(* UNFINISHED! *)
 	in
-	    infOp(lab_inApply, e') (*UNFINISHED: wrong type*)
+	    callInf(E, lab_inApply, trTuple(r, #[e1',e2',e3']))
 	end
 
-      | trInf'(I.CompInf(i,j1,j2)) =
-	(* [j1 where j2] = let val x = Inf.intersect(#1[j1], #1[j2])
-	 *                 in (x, lazy {....}) end
+      | trInf'(E, I.CompInf(i,j1,j2)) =
+	(* [j1 where j2]_E = Inf.intersect([j1]_E, [j2]_E)
 	 *)
 	let
 	    val r   = #region i
-	    val x'  = O.Id(typInfo(r,typ_inf), Stamp.new(), Name.InId)
-	    val xx' = idToExp x'
-	    val l'  = O.Lab(nonInfo r, Label.fromInt 1)
-	    val e1' = O.SelExp(typInfo(#region(I.infoInf j1), typ_inf),
-			       l', trInf' j1)
-	    val e2' = O.SelExp(typInfo(#region(I.infoInf j2), typ_inf),
-			       l', trInf' j2)
-	    val e'  = infOp(lab_intersect,
-			    O.TupExp(typInfo(r,typ_infinf), #[e1',e2']))
-	    val d'  = O.ValDec(nonInfo r, idToPat x', e')
-
-	    val j   = #inf i
-	    val t   = infToTyp j
-	    val s'  = O.LazyExp(typInfo(r,t), rebuildInfInst(r,xx',j))
-	    val i'  = typInfo(r, Type.inTuple #[typ_inf,t])
+	    val e1' = trInf'(E,j1)
+	    val e2' = trInf'(E,j2)
 	in
-	    O.LetExp(i', #[d'], O.TupExp(i', #[xx',s']))
+	    callInf(E, lab_intersect, trTuple(r, #[e1',e2']))
 	end
 
-      | trInf'(I.ArrInf(i,x,j1,j2)) =
-	(* [fct(x:j1) -> j2] = let val  x0     = Path.invent()
-	 *                         val (x1,x$) = [j1]
-	 *                         val (x2,x3) = [j2]
-	 *                     in (Inf.inArrow(x0,x1,x2), fail) end
+      | trInf'(E, I.ArrInf(i,x,j1,j2)) =
+	(* [fct(x:j1) -> j2]_E = let val x0 = Path.invent()
+	 *                           val x$ = [j1]_E
+	 *                           val x2 = [j2]_E+{x}
+	 *                       in Inf.inArrow(x0,x$,x2) end
 	 *)
-	trBindInf lab_inArrow (i,x,j1,j2)
+	trBindInf(E, lab_inArrow, i,x,j1,j2)
 
-      | trInf'(I.LetInf(i,ds,j)) =
-	(* [let ds in j end] = let [ds] in [j] end *)
+      | trInf'(E, I.LetInf(i,ds,j)) =
+	(* [let ds in j end]_E = let [ds] in [j]_E end *)
 	let
-	    val e' = trInf' j
+	    val e' = trInf'(E,j)
 	    val t  = #typ(O.infoExp e')
 	in
-	    O.LetExp(typInfo(#region i,t), trDecs ds, e')
+	    O.LetExp(typInfo(#region i,t), trDecs(E,ds), e')
 	end
 
-      | trInf'(I.SingInf(i, m as (I.AnnMod(_,_,j) | I.UpMod(_,_,j)))) =
+      | trInf'(E, I.SingInf(i, (I.AnnMod(_,_,j) | I.AbsMod(_,_,j)))) =
 	(*UNFINISHED: quick hack to make it possible to bootstrap with RTTs *)
-	(* [sing (m : j)] = (#1[j], [m]) *)
-	let
-	    val r   = #region i
-	    val e1' = O.SelExp(typInfo(r,typ_inf),
-			       O.Lab(nonInfo r, Label.fromInt 1), trInf' j)
-	    val e2' = trMod m
-	    val t   = Type.inTuple #[#typ(O.infoExp e1'), #typ(O.infoExp e2')]
-	in
-	    O.TupExp(typInfo(r,t), #[e1',e2'])
-	end
+	(* [sing (m : j)]_E = [j]_E *)
+	trInf'(E, j)
 
-      | trInf'(I.SingInf(i,m)) =
-	(* [sing m] = (Inf.inSing[m], ???) *)
+      | trInf'(E, I.SingInf(i,m)) =
+	(* [sing m] = Inf.inSing ???? *)
 	(*UNFINISHED*)
 	(*DEBUG*)
 	let
@@ -1603,7 +1620,7 @@ val _ = TextIO.inputLine(TextIO.stdIn)
 			    | I.FunMod _    => "FunMod"
 			    | I.AppMod _    => "AppMod"
 			    | I.AnnMod _    => "AnnMod"
-			    | I.UpMod _     => "UpMod"
+			    | I.AbsMod _    => "AbsMod"
 			    | I.LetMod _    => "LetMod"
 			    | I.UnpackMod _ => "UnpackMod"
 	in
@@ -1611,642 +1628,415 @@ val _ = TextIO.inputLine(TextIO.stdIn)
 				   ("runtime singleton interfaces (" ^ s ^ ")")
 	end
 
-      | trInf'(I.AbsInf(i)) =
+      | trInf'(E, I.AbsInf(i)) =
 	raise Crash.Crash "TranslationPhase.trInf: AbsInf"
 
-    and trInfRep(x, j) =
-	if !Switches.Language.rttLevel <> Switches.Language.FULL_RTT then
-	    let
-		val i = I.infoInf j
-	    in
-		O.FailExp(typInfo(#region i, typ_infinst(infToTyp(#inf i))))
-	    end
+    and trInfRep(E, x, j) =
+	if not(!Switches.Language.supportRtt) then
+	    O.FailExp(trInfInfo(E, I.infoInf j))
 	else
-	    (* [j]_p = fn _ => [j]_id,id,p *)
+	    (* [j]_E,p = [j]_E,id,p *)
 	    let
 		val r  = #region(I.infoId x)
-		val p' = pathOp(lab_fromLab,
-			    labOp(lab_fromString,
+		val p' = callPath(E, lab_fromLab,
+			    callLab(E, lab_fromString,
 				  trString(r, Name.toString(I.name x))))
-		val r  = #region(I.infoInf j)
-		val e' = case trInfRep'(fn k' => k', fn e' => e', p', j)
-			   of NONE    => trInf' j
-			    | SOME e' => e'
-		val m' = O.Match(nonInfo r, O.JokPat(typInfo(r,typ_unit)), e')
 	    in
-		O.FunExp(typInfo(r, Type.inArrow(typ_unit, #typ(O.infoExp e'))),
-			 #[m'])
+		case trInfRep'(E, fn k' => k', p', j)
+		  of NONE    => trInf'(E, j)
+		   | SOME e' => e'
 	    end
 
-    and trInfRep'(mkKind, mkStr, p', I.FunInf(i,x,j1,j2)) =
-	(*UNFINISHED: have to bind structure trModid(x) *)
-	(* [fn(x:j1) => j2]_MkKind,MkStr,p =
-	 *       [j2](fn k => MkKind
-	 *            <let val p = Path.invent()
-	 *            val $x = ????
-	 *            in Inf.inDependent(p,[j1],<k>) end>,
-	 *            fn e => MkStr ?????
-	 *            <>)
+    and trInfRep'(E, mkKind, p', I.FunInf(i,x,j1,j2)) =
+	(* [fn(x:j1) => j2]_E,MkKind,p =
+	 *       [j2]_E+{x},(fn k => MkKind <let val p  = Path.invent()
+	 *                                       val x$ = [j1]_E
+	 *                                   in Inf.inDependent(p,x$,<k>) end>),
+	 *            p
 	 *)
 	let
 	    fun mkKind' k' =
 		let
 		    val r   = #region(I.infoId x)
 		    val i'  = nonInfo(#region i)
-		    val i1' = typInfo(r, typ_path)
+		    val i1' = typInfo(r, typ_path E)
 		    val p'  = O.Id(i1', Stamp.new(), Name.InId)
-		    val e1' = pathOp(lab_invent, trUnit r)
+		    val e1' = callPath(E, lab_invent, trUnit r)
 		    val d1' = O.ValDec(i', O.VarPat(i1',p'), e1')
-		    val x'  = trModid x
-		    (*val i2' = typInfo(r, ???)
-		    val d2' = O.ValDec(i', O.VarPat(i2',x'), ??)*)
-		    val e'  = ikindOp(lab_inDependent,
-				     O.TupExp(typInfo(#region i,typ_pathinfinf),
-					      #[idToExp p', trInf' j1, k']))
-		in
-		    mkKind(O.LetExp(O.infoExp e', #[d1'(*,d2'*)], e'))
-		end
 
-	    fun mkStr' e' = (*UNFINISHED*) e'
+		    val x'  = trModid(E,x)
+(*DEBUG*)handle VirtualModule => (Error.warn(#region i, Name.toString(I.name x) ^"[" ^ Stamp.toString(I.stamp x) ^ "] 3\n"); raise VirtualModule)
+		    val i2' = typInfo(r, typ_inf E)
+		    val d2' = O.ValDec(i', O.VarPat(i2',x'), trInf(E, j1))
+
+		    val e'  = callInf(E, lab_inDependent,
+				      trTuple(#region i,
+					      #[idToExp p', idToExp x', k']))
+		in
+		    mkKind(O.LetExp(O.infoExp e', #[d1',d2'], e'))
+		end
 	in
-	    trInfRep'(mkKind', mkStr', p', j2)
+	    TranslationEnv.insertMod(E, I.stamp x);
+	    case trInfRep'(E, mkKind', p', j2)
+	      of NONE => (TranslationEnv.deleteMod(E, I.stamp x); NONE)
+	       | some => some
 	end
 
-      | trInfRep'(mkKind, mkStr, p', I.AbsInf(i)) =
-	(* [abstract]_MkKind,MkStr,p = (Inf.inCon(MkKind<Inf.inGround()>, p),
-	 *                              MkStr<()>)
+      | trInfRep'(E, mkKind, p', I.AbsInf(i)) =
+	(* [abstract]_E,MkKind,p = Inf.inCon(MkKind<Inf.inGround()>, p)
 	 *)
 	let
 	    val r   = #region i
-	    val t   = infToTyp(#inf i)
-	    val e1' = mkKind(ikindOp(lab_inGround, trUnit r))
-	    val e3' = infOp(lab_inCon,
-			    O.TupExp(typInfo(r, typ_icon), #[e1',p']))
-	    val e4' = mkStr(O.FailExp(typInfo(r,t)))
-	    val i'  = typInfo(r, Type.inTuple #[typ_con, #typ(O.infoExp e4')])
+	    val e1' = mkKind(callInf(E, lab_inGround, trUnit r))
+	    val e'  = callInf(E, lab_inCon, trTuple(r, #[e1',p']))
 	in
-	    SOME(O.TupExp(i', #[e3',e4']))
+	    SOME e'
 	end
 
-      | trInfRep'(mkKind, mkStr, p', j) = NONE
+      | trInfRep'(E, mkKind, p', j) = NONE
 
-    and trBindInf a (i,x,j1,j2) =
-	(* [fct(x:j1) -> j2] = let val  x0     = Path.invent()
-	 *                         val (x1,x$) = [j1]
-	 *                         val (x2,x3) = [j2]
-	 *                     in (Inf.a(x0,x1,x2), fn _ => x3) end
+    and trBindInf(E, a, i,x,j1,j2) =
+	(* [fct(x:j1) -> j2]_E = let val x0 = Path.invent()
+	 *                           val x$ = [j1]_E
+	 *                           val x2 = [j2]_E+{x}
+	 *                       in Inf.a(x0,x$,x2) end
 	 *)
 	let
 	    val r   = #region i
 	    val i'  = nonInfo r
-	    val i0' = typInfo(#region(I.infoId x), typ_path)
+	    val i0' = typInfo(#region(I.infoId x), typ_path E)
 	    val x0' = O.Id(i0', Stamp.new(), Name.InId)
-	    val e0' = pathOp(lab_invent, trUnit r)
+	    val e0' = callPath(E, lab_invent, trUnit r)
 	    val d0' = O.ValDec(i', O.VarPat(i0',x0'), e0')
 
-	    val e1' = trInf' j1
-	    val t1  = Vector.sub(Type.asTuple'(#typ(O.infoExp e1')), 1)
-	    val ii' = typInfo(#region(I.infoId x), t1)
-	    val i1' = typInfo(#region(I.infoInf j1), typ_inf)
-	    val x'  = O.Id(ii', I.stamp x, trModName(I.name x))
-	    val x1' = O.Id(i1', Stamp.new(), Name.InId)
-	    val p1' = O.TupPat(O.infoExp e1', #[O.VarPat(i1',x1'),
-						O.VarPat(ii',x')])
-	    val d1' = O.ValDec(i', p1', e1')
+	    val z   = I.stamp x
+	    val e1' = trInf'(E, j1)
+	    val i1' = typInfo(#region(I.infoId x), typ_inf E)
+	    val x'  = O.Id(i1', z, trModName(I.name x))
+	    val d1' = O.ValDec(i', O.VarPat(i1',x'), e1')
 
-	    val r2  = #region(I.infoInf j2)
-	    val e2' = trInf' j2
-	    val t2  = Vector.sub(Type.asTuple'(#typ(O.infoExp e2')), 1)
-	    val i2' = typInfo(r2, typ_inf)
-	    val i3' = typInfo(r2, t2)
+	    val _   = TranslationEnv.insertMod(E, z)
+	    val e2' = trInf'(E, j2)
+	    val i2' = typInfo(#region(I.infoInf j2), typ_inf E)
 	    val x2' = O.Id(i2', Stamp.new(), Name.InId)
-	    val x3' = O.Id(i3', Stamp.new(), Name.InId)
-	    val p2' = O.TupPat(O.infoExp e2', #[O.VarPat(i2',x2'),
-						O.VarPat(i3',x3')])
-	    val d2' = O.ValDec(i', p2', e2')
+	    val d2' = O.ValDec(i', O.VarPat(i2',x2'), e2')
 
-	    val e3' = infOp(a, O.TupExp(typInfo(r,typ_pathinfinf),
-				#[idToExp x0', idToExp x1', idToExp x2']))
-	    val t4  = Type.inArrow(t1,t2)
-	    val p4' = O.JokPat(typInfo(r,t1))
-	    val e4' = O.FunExp(typInfo(r,t4), #[O.Match(i', p4', idToExp x3')])
-	    val e'  = O.TupExp(typInfo(r,Type.inTuple #[typ_inf,t4]),#[e3',e4'])
+	    val e'  = callInf(E, a,
+			      trTuple(r, #[idToExp x0',idToExp x',idToExp x2']))
 	in
 	    O.LetExp(O.infoExp e', #[d0',d1',d2'], e')
 	end
 
 
-    (* This is needed to deal with CompInf only. Ideally we should not need it.
-     * It is inefficient, in particular for nested signatures.
-     * Not sure how we should modify CompInf...
-     *)
-
-    and rebuildInfInst(r,x',j) =
-	if Inf.isSig j then
-	    (* [sig items end]_x -->
-	     *     let val x1 = Inf.asSig x in [items]_x1 end
-	     *)
-	    let
-		val s   = Inf.asSig j
-
-		val x1' = O.Id(typInfo(r,typ_sign), Stamp.new(), Name.InId)
-		val e1' = sigOp(lab_asSig, x')
-		val d'  = O.ValDec(nonInfo r, idToPat x1', e1')
-
-		val e'  = O.ProdExp(typInfo(r, infToTyp j),
-				    rebuildSigInst(r, idToExp x1', s))
-	    in
-		O.LetExp(O.infoExp e', #[d'], e')
-	    end
-	else if Inf.isArrow j then
-	    (* [fct(_:j1) -> j2]_x -->
-	     *     let val (_,_,x1) = Inf.asArrow x in fn _ => [j2]_x1 end
-	     *)
-	    let
-		val (p,j1,j2) = Inf.asArrow j
-
-		val x1' = O.Id(typInfo(r,typ_sign), Stamp.new(), Name.InId)
-		val e1' = pathinfinfInfOp(lab_asArrow, x')
-		val p'  = O.TupPat(typInfo(r,typ_pathinfinf),
-				   #[O.JokPat(typInfo(r,typ_path)),
-				     O.JokPat(typInfo(r,typ_inf)), idToPat x1'])
-		val d'  = O.ValDec(nonInfo r, p', e1')
-
-		val e2' = rebuildInfInst(r, idToExp x1', j2)
-		val t1  = infToTyp j1
-		val t2  = #typ(O.infoExp e2')
-		val e'  = O.FunExp(typInfo(r, Type.inArrow(t1,t2)),
-			   #[O.Match(nonInfo r, O.JokPat(typInfo(r,t1)), e2')])
-	    in
-		O.LetExp(O.infoExp e', #[d'], e')
-	    end
-	else
-	    O.FailExp(typInfo(r, infToTyp j))
-
-    and rebuildSigInst(r,x',s) =
-	Vector.fromList(List.foldl (rebuildItemInst(r,x')) [] (Inf.items s))
-
-    and rebuildItemInst (r,x') (item,fs') =
-	if Inf.isValItem item then
-	    (*UNFINISHED: this should go, but how?*)
-	    (* [val y : t]_x --> y = fail *)
-	    let
-		val (a,t,_) = Inf.asValItem item
-		val  l'     = O.Lab(nonInfo r, trValLabel a)
-		val  e'     = O.FailExp(typInfo(r,t))
-	    in
-		O.Field(nonInfo r, l', e') :: fs'
-	    end
-	else if Inf.isTypItem item then
-	    (* [type y = t]_x --> y = Inf.lookupTyp(x,[y]) *)
-	    let
-		val (a,_,_) = Inf.asTypItem item
-		val  l'  = O.Lab(nonInfo r, trTypLabel a)
-		val  e1' = labOp(lab_fromString, trString(r, Label.toString a))
-		val  e'  = typInfOp(lab_lookupTyp,
-				    O.TupExp(typInfo(r,typ_signlab), #[x',e1']))
-	    in
-		O.Field(nonInfo r, l', e') :: fs'
-	    end
-	else if Inf.isModItem item then
-	    (* [module y : j]_x --> y = let val x1 = Inf.lookupMod(x,[y])
-	     *                          in [j]_x1 end
-	     *)
-	    let
-		val (a,j1,_) = Inf.asModItem item
-		val  l'  = O.Lab(nonInfo r, trModLabel a)
-		val  t1  = infToTyp j1
-		val  x1' = O.Id(typInfo(r,t1), Stamp.new(), Name.InId)
-
-		val  e1' = labOp(lab_fromString, trString(r, Label.toString a))
-		val  e2' = infOp(lab_lookupMod,
-				 O.TupExp(typInfo(r,typ_signlab), #[x',e1']))
-		val  d'  = O.ValDec(nonInfo r, idToPat x1', e2')
-
-		val  e3' = rebuildInfInst(r, idToExp x1', j1)
-		val  e'  = O.LetExp(O.infoExp e3', #[d'], e3')
-	    in
-		O.Field(nonInfo r, l', e') :: fs'
-	    end
-	else if Inf.isInfItem item then
-	    (* [interface y = j]_x --> y = fn _ =>
-	     *                             let val x1 = Inf.instance
-	     *                                          (Inf.lookupInf(x,[y]))
-	     *                             in (x1, [j]_x1) end
-	     *)
-	    let
-		val (a,k,d) = Inf.asInfItem item
-		val  l'  = O.Lab(nonInfo r, trInfLabel a)
-		val  x1' = O.Id(typInfo(r,typ_inf), Stamp.new(), Name.InId)
-		val  xx' = idToExp x1'
-
-		val  e1' = labOp(lab_fromString, trString(r, Label.toString a))
-		val  e2' = infOp(lab_lookupInf,
-				 O.TupExp(typInfo(r,typ_signlab), #[x',e1']))
-		val  e3' = infOp(lab_instance, e2')
-		val  d'  = O.ValDec(nonInfo r, idToPat x1', e3')
-
-		val  j   = case d of SOME j => j
-				   | NONE   => Inf.inCon(k, Path.fromLab a)
-		val  e4' = rebuildInfInst(r,xx',j)
-		val  i   = O.infoExp e4'
-		val  e5' = O.TupExp(typInfo(r, Type.inTuple #[typ_inf,#typ i]),
-				    #[xx', e4'])
-		val  t   = #typ i
-		val  e6' = O.LetExp(i, #[d'], e4')
-
-		val  m'  = O.Match(nonInfo r,O.JokPat(typInfo(r,typ_unit)), e6')
-		val  e'  = O.FunExp(typInfo(r, Type.inArrow(typ_unit,t)), #[m'])
-	    in
-		O.Field(nonInfo r, l', e') :: fs'
-	    end
-	else (* fixity *)
-	    fs'
-
-
   (* Declarations *)
 
-    and trDecs ds        = Vector.rev(Vector.fromList(trDecs'(ds, [])))
-    and trDecs'(ds, ds') = Vector.foldl trDec ds' ds
+    and trDecs(E, ds)       = Vector.rev(Vector.fromList(trDecs'(E, ds, [])))
+    and trDecs'(E, ds, ds') = Vector.foldl (trDec E) ds' ds
 
-    and trDec(I.ValDec(i,p,e), ds') =
+    and trDec E (I.ValDec(i,p,e), ds') =
 	(* [val p = e] = val [p] = [e] *)
-	let
-	    val d' = O.ValDec(i, trPat p, trExp e)
+	(let
+	    val d' = O.ValDec(i, trPat(E,p), trExp(E,e))
 	in
 	    d' :: ds'
-	end
+	end handle VirtualModule =>
+	(*UNFINISHED: ugly hack to deal with inf lets *)
+	    ds'
+	)
 
-      | trDec(I.TypDec(i,x,t), ds') =
-	(* [type x = t] = val $x = [t]_(Path.fromLab(Label.fromString "x")) *)
-	let
-	    val e' = trTypRep(x, t)
-	    val d' = O.ValDec(i, idToPat(trTypid x), e')
-	in
-	    d' :: ds'
-	end
-
-      | trDec(I.ModDec(i,x,m), ds') =
-	(* [module x = m] = val x$ = [m] *)
-	let
-	    val r  = #region(I.infoId x)
-	    val e' = trMod m
-	    val d' = O.ValDec(i, idToPat(trModid x), e')
-	in
-	    d' :: ds'
-	end
-	before updatePervasive x
-
-      | trDec(I.InfDec(i,x,j), ds') =
-	(* [interface x = j] = val $x = [j]_(Path.fromLab(Label.fromString "x"))
+      | trDec E (I.TypDec(i,x,t), ds') =
+	(* [type x = t] = val $x = lazy [t]_(Path.fromLab(Label.fromString "x"))
 	 *)
 	let
-	    val e' = trInfRep(x, j)
-	    val d' = O.ValDec(i, idToPat(trInfid x), e')
+	    val e' = trTypRep(E, x, t)
+	    val d' = O.ValDec(i, idToPat(trTypid(E,x)), trLazy e')
 	in
 	    d' :: ds'
 	end
 
-      | trDec(I.RecDec(i,ds), ds') =
-	O.RecDec(i, trRecDecs ds) :: trRHSRecDecs'(ds, trLHSRecDecs'(ds, ds'))
+      | trDec E (I.ModDec(i,x,m), ds') =
+	(* [module x = m] = val x$ = [m] *)
+	let
+	    val  _      = updatePervasive(E,x)
+	    val  r      = #region(I.infoId x)
+	    val (e',x') = (trMod(E,m), trModid(E,x)) handle VirtualModule =>
+			  (*UNFINISHED: ugly hack to deal with inf lets *)
+			  case m of I.VarMod(i,y) =>
+			      (trVirtModlongid(E,y), trVirtModid(E,x))
+			      before TranslationEnv.insertMod(E, I.stamp x)
+			  | _ => raise VirtualModule
+	    val d' = O.ValDec(i, idToPat x', e')
+(*DEBUG*)handle VirtualModule => (Error.warn(r, Name.toString(I.name x) ^"[" ^ Stamp.toString(I.stamp x) ^ "] 4\n"); raise VirtualModule)
+	in
+	    updatePervasive'(E,x);
+	    d' :: ds'
+	end
 
-      | trDec(I.FixDec(i,x,q), ds')	= ds'
-      | trDec(I.VarDec(i,x,d), ds')	= trDec(d, ds')
-      | trDec(I.LocalDec(i,ds), ds')	= trDecs'(ds, ds')
+      | trDec E (I.InfDec(i,x,j), ds') =
+	(* [interface x = j] =
+	 *       val $x = lazy [j]_(Path.fromLab(Label.fromString "x"))
+	 *)
+	let
+	    val e' = trInfRep(E,x,j)
+	    val d' = O.ValDec(i, idToPat(trInfid(E,x)), trLazy e')
+	in
+	    d' :: ds'
+	end
+
+      | trDec E (I.RecDec(i,ds), ds') =
+	O.RecDec(i, trRecDecs(E,ds)) ::
+	    trRHSRecDecs'(E, ds, trLHSRecDecs'(E, ds, ds'))
+
+      | trDec E (I.FixDec(i,x,q), ds')	= ds'
+      | trDec E (I.VarDec(i,x,d), ds')	= trDec E (d, ds')
+      | trDec E (I.LocalDec(i,ds), ds')	= trDecs'(E, ds, ds')
 
 
-    and trRecDecs ds        = Vector.rev(Vector.fromList(trRecDecs'(ds, [])))
-    and trRecDecs'(ds, ds') = Vector.foldl trRecDec ds' ds
+    and trRecDecs(E, ds) = Vector.rev(Vector.fromList(trRecDecs'(E,ds,[])))
+    and trRecDecs'(E, ds, ds') = Vector.foldl (trRecDec E) ds' ds
 
-    and trRecDec(I.TypDec(i,x,t), ds')	= ds'
-      | trRecDec(d,ds')			= trDec(d,ds')
+    and trRecDec E (I.TypDec(i,x,t), ds')	= ds'
+      | trRecDec E (d,ds')			= trDec E (d,ds')
 
 
-    and trLHSRecDecs'(ds, ds') = Vector.foldl trLHSRecDec ds' ds
-    and trLHSRecDec(I.TypDec(i,x,t), ds') =
+    and trLHSRecDecs'(E, ds, ds') = Vector.foldl (trLHSRecDec E) ds' ds
+    and trLHSRecDec E (I.TypDec(i,x,t), ds') =
 	(* [type x = t]' = val $x = Type.unknown(<<kind>>) *)
 	let
 	    val r  = #region i
-	    val e' = if !Switches.Language.rttLevel = Switches.Language.NO_RTT
-		     then O.FailExp(typInfo(r, typ_typ))
-		     else typOp(lab_unknown,
-				trKind(r, Type.kind(#typ(I.infoTyp t))))
-	    val d' = O.ValDec(nonInfo r, idToPat(trTypid x), e')
+	    val e' = if not(!Switches.Language.supportRtt) then
+			 O.FailExp(trTypInfo(E, I.infoTyp t))
+		     else
+			 callTyp(E, lab_unknown,
+				 trKind(E, r, Type.kind(#typ(I.infoTyp t))))
+	    val d' = O.ValDec(nonInfo r, idToPat(trTypid(E,x)), e')
 	in
 	    d' :: ds'
         end
 
-      | trLHSRecDec(d, ds') = ds'
+      | trLHSRecDec E (d, ds') = ds'
 
-    and trRHSRecDecs'(ds, ds') = Vector.foldl trRHSRecDec ds' ds
-    and trRHSRecDec(I.TypDec(i,x,t), ds') =
+    and trRHSRecDecs'(E, ds, ds') = Vector.foldl (trRHSRecDec E) ds' ds
+    and trRHSRecDec E (I.TypDec(i,x,t), ds') =
 	(* [type x = t]' = val _ = Type.fill($x,
-	 *                              [t]_(Path.fromLab(Label.fromString"x")))
+	 *                         lazy [t]_(Path.fromLab(Label.fromString"x")))
 	 *)
-	if !Switches.Language.rttLevel = Switches.Language.NO_RTT then
+	if not(!Switches.Language.supportRtt) then
 	    ds'
 	else let
 	    val r   = #region i
-	    val e1' = idToExp(trTypid x)
-	    val e2' = typOp(lab_inMu, trTypRep(x, t))
-	    val e'  = unitTypOp(lab_fill,
-				O.TupExp(typInfo(r, typ_typtyp), #[e1',e2']))
-	    val d'  = O.ValDec(nonInfo r, O.JokPat(typInfo(r,typ_unit)), e')
+	    val e1' = idToExp(trTypid(E,x))
+	    val e2' = (*trLazy*)(callTyp(E, lab_inMu, trTypRep(E,x,t)))
+	    val e'  = callTyp(E, lab_fill, trTuple(r, #[e1',e2']))
+	    val d'  = O.ValDec(nonInfo r, O.JokPat(typInfo(r, typ_unit)), e')
 	in
 	    d' :: ds'
 	end
 
-      | trRHSRecDec(d, ds') = ds'
+      | trRHSRecDec E (d, ds') = ds'
 
 
 
   (* Specifications *)
 
-    and trSpecs(s', ss)       = Vector.rev(Vector.fromList(trSpecs'(s',ss,[])))
-    and trSpecs'(s', ss, ds') = Vector.foldl (trSpec s') ds' ss
+    and trSpecs(E, s', ss) =
+	Vector.rev(Vector.fromList(trSpecs'(E,s',ss,[])))
+    and trSpecs'(E, s', ss, ds') = Vector.foldl (trSpec (E,s')) ds' ss
 
-    and trSpec s' (I.ValSpec(i,x,t), ds') =
-	(* [val x : t]_s = val _ = Inf.extendVal(s,
+    and trSpec (E,s') (I.ValSpec(i,x,t), ds') =
+	(* [val x : t]_E,s = val _ = Inf.extendVal(s,
 	 *                                  Inf.newVal(s, Label.fromString[x]),
-	 *                                  [t], NONE)
+	 *                                  lazy [t]_E, NONE)
 	 *)
 	let
 	    val r  = #region i
  	    val r0 = #region(I.infoId x)
-	    val a' = labOp(lab_fromString,
-			   trString(r0, Name.toString(I.name x)))
-	    val p' = pathInfOp(lab_newVal,
-			       O.TupExp(typInfo(r0, typ_signlab), #[s',a']))
-	    val t' = trTyp' t	(*UNFINISHED: singletons*)
-	    val o' = trTag(typInfo(r, typ_pathOpt), lab_none)
-	    val e' = unitInfOp(lab_extendVal,
-			O.TupExp(typInfo(r, typ_extendVal), #[s',p',t',o']))
+	    val a' = callLab(E, lab_fromString,
+			     trString(r0, Name.toString(I.name x)))
+	    val p' = callInf(E, lab_newVal, trTuple(r0, #[s',a']))
+	    val t' = trLazy(trTyp'(E,t))
+	    val o' = trNone(r, typ_path E)
+	    val e' = callInf(E, lab_extendVal, trTuple(r, #[s',p',t',o']))
 	    val d' = O.ValDec(nonInfo r, O.JokPat(O.infoExp e'), e')
 	in
 	    d' :: ds'
 	end
 
-      | trSpec s' (I.TypSpec(i,x,t), ds') =
-	(* [type x = t]_s = val  p = Inf.newTyp(s, Label.fromString "x")
-	 *                  val $x = [t]_p
-	 *                  val  _ = Inf.extendTyp(s, p, Type.kind $x, SOME $x)
+      | trSpec (E,s') (I.TypSpec(i,x,t), ds') =
+	(* [type x = t]_E,s = val  p = Inf.newTyp(s, Label.fromString "x")
+	 *                    val $x = lazy [t]_E,p
+	 *                    val  _ = Inf.extendTyp(s, p, <<kind>>, SOME $x)
 	 *)
 	let
 	    val r   = #region i
 	    val i'  = nonInfo r
 
  	    val r0  = #region(I.infoId x)
-	    val p'  = O.Id(typInfo(r0,typ_path), Stamp.new(), Name.InId)
+	    val p'  = O.Id(typInfo(r0, typ_path E), Stamp.new(), Name.InId)
 	    val pp' = idToExp p'
-	    val a'  = labOp(lab_fromString,
-			    trString(r0, Name.toString(I.name x)))
-	    val e0' = pathInfOp(lab_newTyp,
-				O.TupExp(typInfo(r0, typ_signlab), #[s',a']))
+	    val a'  = callLab(E, lab_fromString,
+			      trString(r0, Name.toString(I.name x)))
+	    val e0' = callInf(E, lab_newTyp, trTuple(r0, #[s',a']))
 	    val d0' = O.ValDec(nonInfo r0, idToPat p', e0')
 
-	    val x'  = trTypid x
+	    val x'  = trTypid(E,x)
 	    val xx' = idToExp x'
-	    val to' = trTypRep'(pp', t)
-	    val e1' = case to' of NONE    => trTyp' t
+	    val to' = trTypRep'(E,pp', t)
+	    val e1' = case to' of NONE    => trTyp'(E, t)
 			        | SOME t' => t'
-	    val d1' = O.ValDec(i', idToPat x', e1')
+	    val d1' = O.ValDec(i', idToPat x', trLazy e1')
 
-	    val k'  = kindOp(lab_kind, xx')
-	    val o'  = case to'
-			of SOME _ => (* generative *)
-			   trTag(typInfo(r, typ_typOpt), lab_none)
-			 | NONE =>
-			   trTagged(typInfo(r,typ_typOpt), lab_some, xx', false)
-	    val e2' = unitInfOp(lab_extendTyp,
-			O.TupExp(typInfo(r, typ_extendTyp), #[s',pp',k',o']))
+	    val k'  = trKind(E, r, Type.kind(#typ(I.infoTyp t)))
+	    val o'  = case to' of SOME _ => trNone(r, typ_typ E) (* generative*)
+			        | NONE   => trSome(r, xx')
+	    val e2' = callInf(E, lab_extendTyp, trTuple(r, #[s',pp',k',o']))
 	    val d2' = O.ValDec(nonInfo r, O.JokPat(O.infoExp e2'), e2')
 	in
 	    d2' :: d1' :: d0' :: ds'
 	end
 
-      | trSpec s' (I.ModSpec(i,x,j), ds') =
-	(* [module x : j]_s = val (x1,x$) = [j]
-	 *                    val _  = Inf.extendMod(s,
+      | trSpec (E,s') (I.ModSpec(i,x,j), ds') =
+	(* [module x : j]_E,s = val x$ = [j]_E
+	 *                      val _  = Inf.extendMod(s,
 	 *                                  Inf.newMod(s, Label.fromString "x"),
-	 *                                  x1, NONE)
+	 *                                  x$, NONE)
+	 * E' = E+{x}
 	 *)
 	let
 	    val r   = #region i
-	    val e1' = trInf' j
-	    val t1  = Vector.sub(Type.asTuple'(#typ(O.infoExp e1')), 1)
-	    val i'  = typInfo(#region(I.infoId x), t1)
-	    val i1' = typInfo(#region(I.infoInf j), typ_inf)
-	    val x'  = O.Id(i', I.stamp x, trModName(I.name x))
-	    val x1' = O.Id(i1', Stamp.new(), Name.InId)
-	    val p1' = O.TupPat(O.infoExp e1', #[O.VarPat(i1',x1'),
-						O.VarPat(i', x')])
-	    val d1' = O.ValDec(nonInfo r, p1', e1')
+	    val z   = I.stamp x
+	    val e1' = trInf'(E, j)
+	    val i'  = typInfo(#region(I.infoInf j), typ_inf E)
+	    val x'  = O.Id(i', z, trModName(I.name x))
+	    val d1' = O.ValDec(nonInfo r, O.VarPat(i',x'), e1')
 
  	    val r0  = #region(I.infoId x)
-	    val a'  = labOp(lab_fromString,
-			    trString(r0, Name.toString(I.name x)))
-	    val p'  = pathInfOp(lab_newMod,
-				O.TupExp(typInfo(r0, typ_signlab), #[s',a']))
-	    val j'  = idToExp x1'
-	    val o'  = trTag(typInfo(r, typ_typOpt), lab_none)
-	    val e2' = unitInfOp(lab_extendMod,
-			O.TupExp(typInfo(r, typ_extendTyp), #[s',p',j',o']))
+	    val a'  = callLab(E, lab_fromString,
+			      trString(r0, Name.toString(I.name x)))
+	    val p'  = callInf(E, lab_newMod, trTuple(r0, #[s',a']))
+	    val j'  = idToExp x'
+	    val o'  = trNone(r, typ_path E)
+	    val e2' = callInf(E, lab_extendMod, trTuple(r, #[s',p',j',o']))
 	    val d2' = O.ValDec(nonInfo r, O.JokPat(O.infoExp e2'), e2')
 	in
+	    TranslationEnv.insertMod(E, z);
 	    d2' :: d1' :: ds'
 	end
 
-      | trSpec s' (I.InfSpec(i,x,j), ds') =
-	(* [interface x = j]_s = val p  = Inf.newInf(s, Label.fromString "x")
-	 *                       val $x = [j]_p
-	 *                       val x2 = lazy #1($x())
-	 *                       val _  = Inf.extendInf(s, p,
-	 *                                            lazy Inf.kind x2, SOME x2)
+      | trSpec (E,s') (I.InfSpec(i,x,j), ds') =
+	(* [interface x = j]_E,s = val p  = Inf.newInf(s, Label.fromString "x")
+	 *                         val $x = lazy [j]_E,p
+	 *                         val _  = Inf.extendInf(s, p,
+	 *                                            lazy Inf.kind x$, SOME x$)
 	 *)
 	let
 	    val r   = #region i
 
  	    val r0  = #region(I.infoId x)
-	    val p'  = O.Id(typInfo(r0,typ_path), Stamp.new(), Name.InId)
+	    val p'  = O.Id(typInfo(r0, typ_path E), Stamp.new(), Name.InId)
 	    val pp' = idToExp p'
-	    val a'  = labOp(lab_fromString,
-			    trString(r0, Name.toString(I.name x)))
-	    val e0' = pathInfOp(lab_newInf,
-				O.TupExp(typInfo(r0, typ_signlab), #[s',a']))
+	    val a'  = callLab(E, lab_fromString,
+			      trString(r0, Name.toString(I.name x)))
+	    val e0' = callInf(E, lab_newInf, trTuple(r0, #[s',a']))
 	    val d0' = O.ValDec(nonInfo r0, idToPat p', e0')
 
-	    val x'  = trInfid x
+	    val x'  = trInfid(E,x)
 	    val xx' = idToExp x'
-	    val jo' = trInfRep'(fn k' => k', fn e' => e', pp', j)
-	    val j'  = case jo' of NONE    => trInf' j
+	    val jo' = trInfRep'(E, fn k' => k', pp', j)
+	    val e1' = case jo' of NONE    => trInf'(E, j)
 			        | SOME j' => j'
-	    val i1' = O.infoExp j'
-	    val r1  = #region i1'
-	    val m'  = O.Match(nonInfo r1, O.JokPat(typInfo(r,typ_unit)), j')
-	    val t1  = Type.inArrow(typ_unit, #typ i1')
-	    val e1' = O.FunExp(typInfo(r1,t1), #[m'])
-	    val d1' = O.ValDec(nonInfo r1, idToPat x', e1')
+	    val r1  = #region(O.infoExp e1')
+	    val d1' = O.ValDec(nonInfo r1, idToPat x', trLazy e1')
 
-	    val r2  = r1
-	    val i2' = typInfo(r2,typ_inf)
-	    val x2' = O.Id(i2', Stamp.new(), Name.InId)
-	    val y2' = idToExp x2'
-	    val l'  = O.Lab(nonInfo r2, Label.fromInt 1)
-	    val e2' = O.AppExp(typInfo(r2, #typ i1'), xx', trUnit r2)
-	    val e2' = O.LazyExp(i2', O.SelExp(i2', l', e2'))
-	    val d2' = O.ValDec(nonInfo r2, O.VarPat(i2',x2'), e2')
-
-	    val k'  = O.LazyExp(typInfo(r1,typ_ikind), ikindOp(lab_ikind, y2'))
-	    val o'  = case jo'
-			of SOME _ => (* generative *)
-			   trTag(typInfo(r, typ_infOpt), lab_none)
-			 | NONE =>
-			   trTagged(typInfo(r, typ_infOpt), lab_some, y2',false)
-	    val e3' = unitInfOp(lab_extendInf,
-			O.TupExp(typInfo(r, typ_extendInf), #[s',pp',k',o']))
-	    val d3' = O.ValDec(nonInfo r, O.JokPat(typInfo(r,typ_unit)), e3')
+	    val k'  = trLazy(callInf(E, lab_kind, xx'))
+	    val o'  = case jo' of SOME _ => trNone(r, typ_inf E) (* generative*)
+			        | NONE   => trSome(r, xx')
+	    val e2' = callInf(E, lab_extendInf, trTuple(r, #[s',pp',k',o']))
+	    val d2' = O.ValDec(nonInfo r, O.JokPat(typInfo(r, typ_unit)), e2')
 	in
-	    d3' :: d2' :: d1' :: d0' :: ds'
+	    d2' :: d1' :: d0' :: ds'
 	end
 
-      | trSpec s' (I.FixSpec(i, I.Lab(i1,a), I.Fix(i2,q)), ds') =
-	(* [fixity x : q]_s = val _ = Inf.extendFix(s,
-	 *                                Inf.newFix(s,Label.fromString[{x}]),
-	 *                                [q])
+      | trSpec (E,s') (I.FixSpec(i, I.Lab(i1,a), I.Fix(i2,q)), ds') =
+	(* [fixity x : q]_E,s = val _ = Inf.extendFix(s,
+	 *                                  Inf.newFix(s,Label.fromString[{x}]),
+	 *                                  [q])
 	 *)
 	let
 	    val r  = #region i
 	    val r0 = #region i2
-	    val a' = labOp(lab_fromString,
-			   trString(r0, Label.toString a))
-	    val p' = pathInfOp(lab_newFix,
-			       O.TupExp(typInfo(r0, typ_signlab), #[s',a']))
-	    val q' = trFix(#region i2, q)
-	    val e' = unitInfOp(lab_extendFix,
-			O.TupExp(typInfo(r, typ_extendFix), #[s',p',q']))
+	    val a' = callLab(E, lab_fromString,
+			     trString(r0, Label.toString a))
+	    val p' = callInf(E, lab_newFix, trTuple(r0, #[s',a']))
+	    val q' = trFix(E, #region i2, q)
+	    val e' = callInf(E, lab_extendFix, trTuple(r, #[s',p',q']))
 	    val d' = O.ValDec(nonInfo r, O.JokPat(O.infoExp e'), e')
 	in
 	    d' :: ds'
 	end
 
-      | trSpec s' (I.RecSpec(i,ss), ds') =
-	trRHSRecSpecs'(s', ss, trLHSRecSpecs'(s', ss, ds'))
+      | trSpec (E,s') (I.RecSpec(i,ss), ds') =
+	trRHSRecSpecs'(E, s', ss, trLHSRecSpecs'(E, s', ss, ds'))
 
-      | trSpec s' (I.ExtSpec(i,j), ds') =
+      | trSpec (E,s') (I.ExtSpec(i,j), ds') =
 	unfinished (#region i) "trSpec" "signature extension"
 	    
 
-    and trLHSRecSpecs'(s', ss, ds') = Vector.foldl (trLHSRecSpec s') ds' ss
-    and trLHSRecSpec s' (I.TypSpec(i,x,t), ds') =
-	(* [type x = t]_s = val $x = Type.unknown(<<kind>>) *)
+    and trLHSRecSpecs'(E, s', ss, ds') =
+	Vector.foldl (trLHSRecSpec (E,s')) ds' ss
+    and trLHSRecSpec (E,s') (I.TypSpec(i,x,t), ds') =
+	(* [type x = t]_E,s = val $x = Type.unknown(<<kind>>) *)
 	let
 	    val r  = #region i
-	    val x' = trTypid x
-	    val e' = typOp(lab_unknown, trKind(r, Type.kind(#typ(I.infoTyp t))))
+	    val x' = trTypid(E,x)
+	    val e' = callTyp(E, lab_unknown,
+			     trKind(E, r, Type.kind(#typ(I.infoTyp t))))
 	    val d' = O.ValDec(nonInfo r, idToPat x', e')
 	in
 	    d' :: ds'
 	end
 
-      | trLHSRecSpec s' (_, ds') =
+      | trLHSRecSpec (E,s') (_, ds') =
 	raise Crash.Crash "TranslationPhase.trLHSRecSpec: invalid spec"
 
-    and trRHSRecSpecs'(s', ss, ds') = Vector.foldl (trRHSRecSpec s') ds' ss
-    and trRHSRecSpec s' (I.TypSpec(i,x,t), ds') =
-	(* [type x = t]_s = val p = Inf.newTyp(s, Label.fromString[x])
-	 *                  val _ = Type.fill($x, [t]_p)
-	 *                  val _ = Inf.extendTyp(s, p, Type.kind $x, SOME $x)
+    and trRHSRecSpecs'(E, s', ss, ds') =
+	Vector.foldl (trRHSRecSpec (E,s')) ds' ss
+    and trRHSRecSpec (E,s') (I.TypSpec(i,x,t), ds') =
+	(* [type x = t]_E,s = val p = Inf.newTyp(s, Label.fromString[x])
+	 *                    val _ = Type.fill($x, lazy [t]_E,p)
+	 *                    val _ = Inf.extendTyp(s, p, <<kind>>, SOME $x)
 	 *)
 	let
 	    val r   = #region i
 	    val i'  = nonInfo r
 
  	    val r0  = #region(I.infoId x)
-	    val p'  = O.Id(typInfo(r0,typ_path), Stamp.new(), Name.InId)
+	    val p'  = O.Id(typInfo(r0, typ_path E), Stamp.new(), Name.InId)
 	    val pp' = idToExp p'
-	    val a'  = labOp(lab_fromString,
-			    trString(r0, Name.toString(I.name x)))
-	    val e0' = pathInfOp(lab_newTyp,
-				O.TupExp(typInfo(r0, typ_signlab), #[s',a']))
+	    val a'  = callLab(E, lab_fromString,
+			      trString(r0, Name.toString(I.name x)))
+	    val e0' = callInf(E, lab_newTyp, trTuple(r0, #[s',a']))
 	    val d0' = O.ValDec(nonInfo r0, idToPat p', e0')
 
-	    val x'  = trTypid x
+	    val x'  = trTypid(E,x)
 	    val xx' = idToExp x'
-	    val to' = trTypRep'(pp', t)
-	    val t'  = typOp(lab_inMu, case to' of NONE    => trTyp' t
-					        | SOME t' => t')
-	    val e1' = unitTypOp(lab_fill,
-				O.TupExp(typInfo(r,typ_typtyp), #[xx',t']))
-	    val d1' = O.ValDec(i', O.JokPat(O.infoId x'), e1')
+	    val to' = trTypRep'(E, pp', t)
+	    val t'  = callTyp(E, lab_inMu, case to' of NONE    => trTyp'(E, t)
+						     | SOME t' => t')
+	    val e1' = callTyp(E, lab_fill, trTuple(r, #[xx', (*trLazy*) t']))
+	    val d1' = O.ValDec(i', O.JokPat(typInfo(r0,typ_unit)), e1')
 
-	    val k'  = kindOp(lab_kind, xx')
-	    val o'  = case to'
-			of SOME _ => (* generative *)
-			   trTag(typInfo(r, typ_typOpt), lab_none)
-			 | NONE =>
-			   trTagged(typInfo(r,typ_typOpt), lab_some, xx', false)
-	    val e2' = unitInfOp(lab_extendTyp,
-			O.TupExp(typInfo(r, typ_extendTyp), #[s',pp',k',o']))
+	    val k'  = trKind(E, r, Type.kind(#typ(I.infoTyp t)))
+	    val o'  = case to' of SOME _ => trNone(r, typ_typ E) (* generative*)
+			        | NONE   => trSome(r, xx')
+	    val e2' = callInf(E, lab_extendTyp, trTuple(r, #[s',pp',k',o']))
 	    val d2' = O.ValDec(nonInfo r, O.JokPat(O.infoExp e2'), e2')
 	in
 	    d2' :: d1' :: d0' :: ds'
 	end
 
-      | trRHSRecSpec s' (_, ds') =
+      | trRHSRecSpec (E,s') (_, ds') =
 	raise Crash.Crash "TranslationPhase.trRHSRecSpec: invalid spec"
-
-
-  (* Signature instance structures *)
-
-    and trSpecsInst ss = Vector.rev(Vector.fromList(trSpecsInst'(ss,[])))
-
-    and trSpecsInst'(ss, fs') = Vector.foldl trSpecInst fs' ss
-
-    and trSpecInst(I.ValSpec(i,x,t), fs') =
-	(*UNFINISHED: get rid of this, but how?*)
-	let
-	    val i' = nonInfo(#region(I.infoId x))
-	    val x' = trValid x
-	    val a  = Label.fromName(O.name x')
-	in
-	    O.Field(i', O.Lab(i',a), O.FailExp(O.infoId x')) :: fs'
-	end
-
-      | trSpecInst(I.TypSpec(i,x,t), fs') =
-	let
-	    val i' = nonInfo(#region(I.infoId x))
-	    val x' = trTypid x
-	    val a  = Label.fromName(O.name x')
-	in
-	    O.Field(i', O.Lab(i',a), idToExp x') :: fs'
-	end
-
-      | trSpecInst(I.ModSpec(i,x,j), fs') =
-	let
-	    val i' = nonInfo(#region(I.infoId x))
-	    val x' = trModid x
-	    val a  = Label.fromName(O.name x')
-	in
-	    O.Field(i', O.Lab(i',a), idToExp x') :: fs'
-	end
-
-      | trSpecInst(I.InfSpec(i,x,j), fs') =
-	let
-	    val i' = nonInfo(#region(I.infoId x))
-	    val x' = trInfid x
-	    val a  = Label.fromName(O.name x')
-	in
-	    O.Field(i', O.Lab(i',a), idToExp x') :: fs'
-	end
-
-      | trSpecInst(I.FixSpec(i,l,q), fs') =
-	fs'
-
-      | trSpecInst(I.RecSpec(i,ss), fs') =
-	trSpecsInst'(ss, fs')
-
-      | trSpecInst(I.ExtSpec(i,j), fs') =
-	unfinished (#region i) "trSpecInst" "signature extension"
 
 
   (* Imports and annotations *)
@@ -2259,46 +2049,50 @@ val _ = TextIO.inputLine(TextIO.stdIn)
 	    O.ValDec(i', idToPat x', O.VarExp(i, y'))
 	end
 
-    fun trAnns a_s =
+    fun trAnns(E, a_s) =
 	let
-	    val (rxsus',ds') = Vector.foldl trAnn ([],[]) a_s
+	    val (rxsus',ds') = Vector.foldl (trAnn E) ([],[]) a_s
 	    val  xsus'       = Vector.rev(Vector.fromList rxsus')
 	    val  ds''        = Vector.rev(Vector.fromList ds')
 	in
 	    ( xsus', ds'' )
 	end
 
-    and trAnn(I.ImpAnn(i,is,u), (xsus',ds')) =
+    and trAnn E (I.ImpAnn(i,is,u), (xsus',ds')) =
 	let
 	    val r    = #region i
 	    val s    = #sign i
-	    val t    = infToTyp(Inf.inSig s)
+	    val t    = Type.unknown(Type.STAR) (* to allow import of pervasive*)
 	    val i'   = typInfo(r,t)
 	    val x'   = O.Id(i', Stamp.new(), Name.InId)
-	    val ds'' = trImps(is, O.ShortId(i',x'), ds')
+	    val ds'' = trImps(E, is, O.ShortId(i',x'), ds')
+	    val _    = Type.fill(t, infToTyp(E, Inf.inSig s))
 	    val _    = Inf.compressSig s
 	in
 	    ( (x',s,u)::xsus', ds'' )
 	end
 
-    and trImps(is, y, ds')		= Vector.foldl (trImp y) ds' is
-    and trImp y (I.ValImp(i,x,d),ds')	= idToDec(trValid x, y) :: ds'
-      | trImp y (I.TypImp(i,x,d),ds')	= idToDec(trTypid x, y) :: ds'
-      | trImp y (I.ModImp(i,x,d),ds')	= idToDec(trModid x, y) :: ds'
-					  before updatePervasive x
-      | trImp y (I.InfImp(i,x,d),ds')	= idToDec(trInfid x, y) :: ds'
-      | trImp y (I.FixImp(i,x,d),ds')	= ds'
-      | trImp y (I.RecImp(i,is), ds')	= trImps(is, y, ds')
+    and trImps(E, is, y, ds')             = Vector.foldl (trImp (E,y)) ds' is
+    and trImp (E,y) (I.ValImp(i,x,d),ds') = idToDec(trValid(E,x), y) :: ds'
+      | trImp (E,y) (I.TypImp(i,x,d),ds') = idToDec(trTypid(E,x), y) :: ds'
+      | trImp (E,y) (I.ModImp(i,x,d),ds') = ((updatePervasive(E,x);
+					     idToDec(trModid(E,x), y) :: ds'
+					     before updatePervasive'(E,x))
+(*DEBUG*)handle VirtualModule => (Error.warn(#region i, Name.toString(I.name x) ^"[" ^ Stamp.toString(I.stamp x) ^ "] 5\n"); raise VirtualModule)
+)
+      | trImp (E,y) (I.InfImp(i,x,d),ds') = idToDec(trInfid(E,x), y) :: ds'
+      | trImp (E,y) (I.FixImp(i,x,d),ds') = ds'
+      | trImp (E,y) (I.RecImp(i,is), ds') = trImps(E, is, y, ds')
 
 
   (* Components *)
 
-    fun trComp(I.Comp(i,a_s,ds)) =
+    fun trComp(E, I.Comp(i,a_s,ds)) =
 	let
-	    val (xsus',ds1') = trAnns a_s
-	    val  ds2'        = trDecs ds
+	    val (xsus',ds1') = trAnns(E,a_s)
+	    val  ds2'        = trDecs(E,ds)
 	    val  ds'         = Vector.append(ds1',ds2')
-	    val  ids'        = ids ds
+	    val  ids'        = ids(E,ds)
 	    val  fs'         = Vector.map (idToField (fn x' => x')) ids'
 	    val  s           = #sign i
 	    val  _           = Inf.compressSig s
@@ -2306,13 +2100,11 @@ val _ = TextIO.inputLine(TextIO.stdIn)
 	    ( xsus', ds', fs', s )
 	end
 
-    fun translate () (desc, component) =
+    fun translate E (desc, component) =
 	let
-	    val _     = InfHash.deleteAll infHash
-	    val comp' = trComp component
+	    (*val _   = InfHash.deleteAll infHash*)
+	    val comp' = trComp(E, component)
 	in
-	    if not(!Switches.Debug.checkIntermediate) then () else
-		CheckIntermediate.check comp';
 	    comp'
 	end
 end

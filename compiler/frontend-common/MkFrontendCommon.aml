@@ -15,7 +15,9 @@ import structure Source                from "../infrastructure/Source"
 
 import signature SWITCHES              from "../infrastructure/SWITCHES-sig"
 import signature PHASE                 from "../infrastructure/PHASE-sig"
-import functor   ComposePhases'        from "../infrastructure/ComposePhases"
+import structure EmptyContext          from "../infrastructure/EmptyContext"
+import functor   ComposePhases
+       functor   ComposePhases'        from "../infrastructure/ComposePhases"
 import functor   MkTracingPhase        from "../infrastructure/MkTracingPhase"
 import functor   MkResultDumpingPhase  from
 					"../infrastructure/MkResultDumpingPhase"
@@ -28,6 +30,7 @@ import structure PPIntermediateGrammar from "../common/IntermediateGrammar"
 
 import functor   MkElaborationPhase    from "MkElaborationPhase"
 import functor   MkTranslationPhase    from "MkTranslationPhase"
+import structure CheckIntermediate     from "../common/CheckIntermediate"
 
 
 functor MkFrontendCommon(
@@ -66,11 +69,28 @@ functor MkFrontendCommon(
 			val pp     = PPIntermediateGrammar.ppComp
 			val switch = Switches.Debug.dumpIntermediate
 		  )
+	structure Phase3 =
+		  MkTracingPhase(
+			structure Phase =
+			struct
+			    structure C = EmptyContext
+			    structure I = Phase2'.O
+			    structure O = I
+
+			    fun translate _ (_, comp) =
+				(if !Switches.Debug.checkIntermediate
+				 then CheckIntermediate.check comp else ();
+				 comp)
+			end
+			structure Switches = Switches
+			val name = "Verification (optional)"
+		  )
     in
 	ComposePhases'(
-	    structure Phase1  = Phase1'
-	    structure Phase2  = Phase2'
-	    structure Context = Env
+	    structure Phase1  = ComposePhases(structure Phase1 = Phase1'
+					      structure Phase2 = Phase2')
+	    structure Phase2  = Phase3
+	    structure Context = Phase1.C
 	    fun context1 E    = E
 	    fun context2 E    = ()
 	)
