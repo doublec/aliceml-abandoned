@@ -14,11 +14,12 @@ functor
 export
    ImportOzModule
    Table
-require
+import
    BootName(newUnique: NewUniqueName '<' hash) at 'x-oz://boot/Name'
    BootFloat(fPow) at 'x-oz://boot/Float'
    BootWord at 'x-oz://boot/Word'
-prepare
+   Scheduler(object)
+define
    NONE = 0
    %SOME = 1
 
@@ -31,6 +32,15 @@ prepare
 	 case {Access TransientState} of ref(Y) then {Deref Y}
 	 else X
 	 end
+      end
+   end
+
+   fun {IsFailed X}
+      case {Deref X} of transient(TransientState) then
+	 case {Access TransientState} of cancelled(_) then 1
+	 else 0
+	 end
+      else 0
       end
    end
 
@@ -161,19 +171,16 @@ prepare
 		   end
 	      end
 */
-	      'Future.isFailed':
+	      'Future.isFailed': IsFailed
+	      'Future.isFuture':
 		 fun {$ X}
-		    case {Deref X0} of transient(TransientState) then
-		       case {Access TransientState} of cancelled(_) then 1
+		    case {Deref X} of transient(TransientState) then
+		       case {Access TransientState} of future(_) then 1
 		       else 0
 		       end
 		    else 0
 		    end
 		 end
-	      'Future.isFuture':
-		 fun {$ X}
-		    if {IsFuture X} then 1 else 0 end
-		 end   %--** wrong for failed futures
 	      'General.Bind': {NewUniqueName 'General.Bind'}
 	      'General.Chr': {NewUniqueName 'General.Chr'}
 	      'General.Div': {NewUniqueName 'General.Div'}
@@ -215,46 +222,78 @@ prepare
 	      'GlobalStamp.hash': BootName.hash
 	      'Hole.Cyclic': {NewUniqueName 'Future.Cyclic'}
 	      'Hole.Hole': {NewUniqueName 'Promise.Promise'}
-	      'Hole.fail': missing('Hole.fail')   %--**
-/*
-	      fun {$ X E}
-		 try
-		    X = {Value.byNeedFail error(alice(FutureException(E)))}
-		 catch _ then
-		    {Exception.raiseError alice(BuiltinTable.'Hole.Hole')}
+	      'Hole.fail':
+		 fun {$ X Exn}
+		    case {Deref X} of Transient=transient(TransientState) then
+		       case {Access TransientState} of hole(MyFuture) then
+			  %--** exception wrapping
+			  NewTransientState = cancelled(Exn)
+		       in
+			  {Assign TransientState NewTransientState}
+			  case MyFuture of noFuture then skip
+			  [] transient(TransientState2) then
+			     case {Access TransientState2} of future(Ts) then
+				for T in Ts do
+				   {Scheduler.object enqueue(T)}
+				end
+				{Assign TransientState2 NewTransientState}
+			     end
+			  end
+			  tuple()
+		       else request(Transient)
+		       end
+		    else exception(Primitives.'Hole.Hole')
+		    end
 		 end
-		 unit
-	      end
-*/
-	      'Hole.fill': missing('Hole.fill')   %--**
-/*
-	      fun {$ X Y}
-		 if {IsDet X} then   %--** test and bind must be atomic
-		    {Exception.raiseError alice(BuiltinTable.'Hole.Hole')}
+	      'Hole.fill':
+		 fun {$ X Y}
+		    %--** cyclic
+		    case {Deref X} of Transient=transient(TransientState) then
+		       case {Access TransientState} of hole(MyFuture) then
+			  NewTransientState = ref(Y)
+		       in
+			  {Assign TransientState NewTransientState}
+			  case MyFuture of noFuture then skip
+			  [] transient(TransientState2) then
+			     case {Access TransientState2} of future(Ts) then
+				for T in Ts do
+				   {Scheduler.object enqueue(T)}
+				end
+				{Assign TransientState2 NewTransientState}
+			     end
+			  end
+			  tuple()
+		       else request(Transient)
+		       end
+		    else exception(Primitives.'Hole.Hole')
+		    end
 		 end
-		 try
-		    X = Y
-		 catch _ then
-		    {Exception.raiseError alice(BuiltinTable.'Hole.Hole')}
+	      'Hole.future':
+		 fun {$ X}
+		    case {Deref X} of Transient=transient(TransientState) then
+		       case {Access TransientState} of hole(MyFuture) then
+			  case MyFuture of noFuture then NewFuture in
+			     NewFuture = transient({NewCell future(nil)})
+			     {Assign TransientState hole(NewFuture)}
+			     NewFuture
+			  else MyFuture
+			  end
+		       else request(Transient)
+		       end
+		    else exception(Primitives.'Hole.Hole')
+		    end
 		 end
-		 unit
-	      end
-*/
-	      'Hole.future': missing('Hole.future')   %--**
-/*
-	      fun {$ X}
-		 if {IsFuture X} then
-		    skip   %--** wait until it is bound to a hole
+	      'Hole.hole': fun {$} transient({NewCell hole(noFuture)}) end
+	      'Hole.isFailed': IsFailed
+	      'Hole.isHole':
+		 fun {$ X}
+		    case {Deref X} of transient(TransientState) then
+		       case {Access TransientState} of hole(_) then 1
+		       else 0
+		       end
+		    else 0
+		    end
 		 end
-		 !!X
-	      end
-*/
-	      'Hole.hole': missing('Hole.hole')   %--**
-/*
-	 fun {$ unit} _ end
-*/
-	      'Hole.isFailed': fun {$ X} 0 end   %--** unimplemented
-	      'Hole.isHole': fun {$ X} if {IsFree X} then 1 else 0 end end
 	      'Int.~': Number.'~'
 	      'Int.+': Number.'+'
 	      'Int.-': Number.'-'
