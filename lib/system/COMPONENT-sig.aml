@@ -40,8 +40,8 @@ signature COMPONENT =
 
 	val create: Inf.t option * Reflect.module -> component
 	    (*--** unsafe! intended for use by lib/system/Boot.aml only *)
-	val load: Url.t -> component                      (* Io *)
-	val save: string * component -> unit              (* Io *)
+	val load: Url.t -> component                      (* IO.Io *)
+	val save: string * component -> unit              (* IO.Io *)
 	val inf: component -> Inf.t option
 
 	functor MkManager(val resolver: Resolver.t):
