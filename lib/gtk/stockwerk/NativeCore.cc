@@ -191,8 +191,7 @@ static inline word ScrollEvent(GdkEvent* event, int label) {
 }
 
 static inline word SimpleEvent(int label) {
-  TagVal *t = TagVal::New(label, 0);
-  return t->ToWord();
+  return INT_TO_WORD (label);
 }
 
 static word GdkEventToDatatype(GdkEvent *event) {
