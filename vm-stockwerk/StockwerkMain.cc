@@ -54,7 +54,7 @@ extern word UnsafeAddr();
 extern word UnsafeRemote();
 
 static NativeComponent nativeComponents[] = {
-  {"lib/system/UnsafeBrowserSuport", UnsafeBrowserSuport},
+  {"lib/system/UnsafeBrowserSupport", UnsafeBrowserSupport},
   {"lib/system/UnsafeConfig",       UnsafeConfig},
   {"lib/system/UnsafeIODesc",       UnsafeIODesc},
   {"lib/system/UnsafeOS",           UnsafeOS},
