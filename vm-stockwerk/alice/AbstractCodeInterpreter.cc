@@ -549,10 +549,15 @@ Interpreter::Result AbstractCodeInterpreter::Run(TaskStack *taskStack) {
       break;
     case AbstractCode::LazySel: // of id * idRef * int * instr
       {
-	word tuple = GetIdRefKill(pc->Sel(1), globalEnv, localEnv);
+	word wTuple = GetIdRefKill(pc->Sel(1), globalEnv, localEnv);
 	int index = Store::DirectWordToInt(pc->Sel(2));
-	Closure *closure = LazySelClosure::New(tuple, index);
-	localEnv->Add(pc->Sel(0), Byneed::New(closure->ToWord())->ToWord());
+	Tuple *tuple = Tuple::FromWord(wTuple);
+	if (tuple == INVALID_POINTER) {
+	  Closure *closure = LazySelClosure::New(wTuple, index);
+	  localEnv->Add(pc->Sel(0), Byneed::New(closure->ToWord())->ToWord());
+	} else {
+	  localEnv->Add(pc->Sel(0), tuple->Sel(index));
+	}
 	pc = TagVal::FromWordDirect(pc->Sel(3));
       }
       break;
