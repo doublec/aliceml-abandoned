@@ -1,0 +1,106 @@
+VORARBEITEN
+
+Oz
+
+[...]
+
+
+Alice
+
+- Alice ist ein Oz-Dialekt, der die wesentlichen Features von Oz in SML integriert.
+- Alice besitzt ein streng statisches Typsystem
+
+Im laufenden Projektzeitraum wurde die Sprache Alice entworfen und zu grossen Teilen implementiert. Alice stellt ein Redesign von Oz dar. Zugrunde liegt die funktionale Sprache Standard ML (SML), die um die wesentlichen Features von Oz erweitert. Alice ersetzt damit den relationalen Kern von Oz durch eine rein funktionale Kernsprache. Weiterhin erbt Alice das statische Typsystem von SML, welches aber in einigen wesentlichen Punkten erweitert wurde.
+
+Das Projekt hat gezeigt, dass die wesentlichen Innovationen von Oz auch in einen funktionalen Kontext übertragen werden können. Für die meisten Konstrukte wurden zudem Lösungen gefunden, die mit dem strengen statischen Typsystem von SML verträglich sind, so dass Alice als streng getypte Sprache entworfen werden konnte. Andererseits stellt Alice die Möglichkeit zur Interoperabilität mit Oz zur Verfügung, so dass Oz-Module mit Alice weiterverwendet werden können.
+
+
+Futures
+
+- Futures und Promises machen das Konzept von logischen Variablen in Alice zugänglich.
+- Das Future-Konzept wurde gegenüber Oz erweitert und bereinigt.
+
+Eines der zentralen Konzepte von Oz ist die Existenz von `logischen Variablen'. Diese stehen in funktionalen Sprachen üblicherweise nicht zur Verfügung. Alice integriert logische Variablen in Form eines überarbeiteten Konzeptes von Futures und Promises. Während eine Future ein noch nicht bekannter Wert ist, der nur in lesender Weise zugegriffen werden kann, wird das der Future zugeordnete Promise als Handle benötigt, um die Future binden zu können. Eine Future wird dabei aus dem zugeordneten Promise extrahiert. Im Gegensatz zu den logischen Variablen in Oz, die implizit eingeführt werden, verlangt Alice die explizite Genaration von Promises, so dass der Programmierer mehr Kontrolle über ihre Einführung erhält.
+
+Darüber hinaus wurde Alice um das Konzept der fehlgeschlagenen Futures erweitert. Im Fehlerfall kann eine Future explizit in einen Fehlerzustand überführt werden, der bei jedem Zugriff eine Ausnahme auslöst. Diese Erweiterung erlaubt eine sauberere Modellierung vieler Fehlersituationen und verringert die Anzahl von Deadlocks auf Grund ungebundener Futures, die das Debugging von Oz-Programmen häufig erschweren. Dieser Aspekt des überarbeiteten Konzepts von Futures hat mittlerweile auch seinen Weg zurück in Oz gefunden.
+
+Ebenfalls in Alice integriert wurden By-need-Futures, die die strikte Semantik von SML um die Möglichkeit von Bedarfs-getriebener Auswertung (lazy evaluation) ergänzt. Alice ist die erste praktische Programmiersprache, die strikte und nicht-strikte Auswertung auf diese Art verbindet. Daneben erlauben nur nicht-strikte Sprachen wie z.B. Haskell den gezielten Wechsel zu strikter Auswertung.
+
+
+Statisches Typsystem
+
+- Alice behält das statische Typsystem von SML bei.
+- Einige moderate Erweiterungen des Typsystems waren notwendig, um verschiedene Oz-Features zu integrieren und gängige Oz-Programmieridiome zu unterstützen.
+- Das Modulsystem wurde stark erweitert, um Komponenten typisieren zu können.
+
+Alice erbt das etablierte statische Typsystem von SML. In der Frühphase des Projektes kristallierte sich das Designziel heraus, die strenge Typdisziplin von SML auch für die Oz-spezifischen Erweiterungen beizubehalten. Die entsprechenden Konzepte mussten also in einer Form integriert werden, die die Invarianten des Typsystems nicht unterminiert. So stellte sich beispielsweise schnell heraus, dass logische Variablen in der Form, wie sie in Oz vorhanden sind, unverträglich sind mit Subtyping (Subsumption), welches für objektorientierte Typsysteme üblicherweise eine zentrale Rolle einnimmt. Die Aufsplittung von logischen Variablen in getrennt getypte, aber zuweisbare Promises und in typtransparente, aber nur lesbare Futures vermeidet in diesem Fall die Kontravarianz-Probleme in Verbindung mit Zuweisung, die zum Beispiel Sprachen wie Java aufweisen.
+
+Andere in Oz häufig verwendete Features wurden durch moderate Erweiterungen des SML-Typsystems realisiert. So identifiziert Alice benutzerdefinierte Datentypen nicht wie SML über Namensgleichheit, sondern interpretiert sie rein strukturell. Datentyp-Konstruktoren können damit in der selben Weise eingesetzt werden, wie Atome in Oz. Die strukturelle Interpretation von Datentypen ist insbesondere für die verteilte Programmierung von Bedeutung, bei der sich Namensgleichheit als zu unflexibel erwies. In ähnlicher Weise verallgemeinert Alice SML-Exceptions zu benutzerdefinierten offenen Summentypen und stellt damit ein Äquivalent zu Oz-Namen zur Verfügung.
+
+Andere Konzepte wiederum, wie zum Beispiel Threads oder By-need-Futures, erwiesen sich aus Sicht des Typsystems als orthogonal. Auch für die Integration von Berechnungsräumen und Finite-Domain- sowie Mengenconstraints stellt das Typsystem kein essentielles Hindernis dar. Formale Korrektheitsbeweise stehen jedoch noch aus. Feature-Constraints sind bisher nicht in Alice integriert.
+
+Essentielle Erweiterungen gegenüber SML hat das Typsystem von Alice auf Modulebene erfahren. So erlaubt Alice nicht nur Funktoren höherer Ordnung, sondern auch das Enkapsulieren von Signaturen und allgemeinen Modultypen in Strukturen. Die so erweiterte Modulsprache ist einerseits die Grundlage für die Modellierung des Komponentensystems von Alice (welches das Konzept der Oz-Funktoren widerspiegelt), andererseits Voraussetzung für die typsichere Integration dynamischer und reflektiver Sprachkonzepte wie Pickling und Inter-Prozess-Kommunikation. Sie wird benutzt, um Laufzeitrepräsentationen von Typen in die Sprache einzubringen.
+
+
+Komponenten
+
+- Komponenten sind dynamisch ladbare Programmmodule, die Internet-weit verteilt sein können.
+- Komponenten sind streng typisiert.
+- Alice-Komponenten können mit nicht statisch getypten Oz-Funktoren interoperieren.
+
+Die Sprache SML verfügt über kein Konzept zur getrennten Übersetzung. Oz hingegen besitzt ein sehr mächtiges und flexibles Kompilations- und Linking-Modell. In Alice findet sich dieses Modell in Form der so genannten Komponenten wieder (der für Oz verwendete Begriff Funktor wurde vermieden, um Verwechslung mit SML-Funktoren auszuschliessen). Eine Komponente fungiert sowohl als Übersetzungseinheit, als auch als Auslieferungseinheit (unit of deployment). Ein Programm besteht üblicherweise aus einer Vielzahl Komponenten. Zur Laufzeit werden Komponenten erst bei Bedarf dynamisch geladen, ausgeführt und zum laufenden Prozess gebunden. Komponenten sind Internet-fähig, sie können von beliebigen URIs geladen werden.
+
+Im Gegensatz zu Oz-Funktoren sind Alice-Komponenten streng typisiert. Jede Komponente trägt eine komplette Beschreibung ihrer Schnittstelle. Diese wird einerseits verwendet, um zur Übersetzungszeit die Schnittstellen von importierten Komponenten automatisch ermitteln zu können. Andererseits wird die Schnittstelle aber auch zur Ladezeit einer Komponente verifiziert. Damit umfasst die statische Typüberprüfung nicht nur die Übersetzungszeit, sondern auch die (mit der Laufzeit verwobene) Bindungszeit. Die Exaktheit der Schnittstellenbeschreibung einer Komponente geht dabei um einiges darüber hinaus, was beispielsweise bei der Sprache Java Verwendung findet, die einen ähnlichen Mechanismus bietet. Asynchrone Laufzeitfehler auf Grund nicht vorhandener Funktionalität in einer Komponente sind ausgeschlossen, alle Inkonsistenzen werden vom Komponentenmanager frühzeitig erkannt. Allerdings umfasst der Komponentenmechanismus in der aktuellen Implementierung noch kein System zur Authentifizierung von Komponenten.
+
+Alice-Komponenten werden auf Oz-Funktoren abgebildet. Es ist dadurch möglich, beide Sprachen zu mischen. Aus Oz-Sicht verhält sich eine Alice-Komponente wie ein gewöhnlicher Oz-Funktor. Umgekehrt kann ein Oz-Funktor als Alice-Komponente verwendet werden, indem zunächst eine Alice-Signatur angegeben wird. Komponentengrenzen sind somit der Rahmen, der den Übergang zwischen statisch getypter und dynamisch getypter Programmierung in beiden Richtungen erlaubt.
+
+
+Laufzeit-Typisierung
+
+- Alice besitzt eine Laufzeitdarstellung von Typen, um bei dynamischen Operationen Typüberprüfungen durchführen zu können.
+- Abstraktionsgrenzen bleiben auch zur Laufzeit erhalten.
+- Die vollständige Modulsprache wird unterstützt, was hochgradig dynamische Programmierung erlaubt.
+- Die Sprachstruktur ist invariant gegenüber der Hinzunahme von Laufzeittypen.
+
+Einer der fundamentalen Dienste eines offenen und verteilten Programmiersystems wie Oz ist der Export arbiträrer Datenstrukturen aus einem Prozess, die dann von anderen Oz-Prozessen importiert werden können (Pickling und Unpickling). Um ein derartiges Feature in der statisch getypten Welt von Alice zur Verfügung zu stellen, ist eine Übertragung der Typstrukturen in die dynamische Semantik erforderlich. Alice besitzt deshalb ein elaboriertes System von Laufzeittypen.
+
+Exportierte Daten werden stets mit ihrer Typbeschreibung gebündelt. Beim Import von Daten in einem anderen Prozess wird diese dynamische Typbeschreibung mit der statisch verlangten abgeglichen. Die Laufzeittypen reflektieren dabei die vollständige Typstruktur von SML. Insbesondere besteht die Möglichkeit, Daten von abstrakten Typen zu exportieren, die daraufhin nur in abstrakter Form importiert werden können. Einzig der Erzeuger des abstrakten Typs kann den zu Grunde liegenden Representationstyp rekonstruieren. Diese Eigenschaft ist essentiell für die Garantie von Abstraktionsgrenzen in einem offenen Programmiersystem und wird in dieser Form bisher von keinem uns bekannten System unterstützt.
+
+Neuartig für ein Laufzeittypsystem ist weiterhin, dass nicht nur die Typen der Kernsprache unterstützt werden, sondern das System auch die vollständige Modulsprache umfasst. Dies ermöglicht den dynamischen In- und Export kompletter Programmmodule oder Modulhierarchien. Alice identifiziert derartige externalisierte Module mit Komponenten, was die flexible dynamische Generation und Konfiguration beliebiger Programmsysteme möglich macht.
+
+Die gegenüber SML erweiterte Modulsprache höherer Ordnung erlaubte es, Laufzeittypen und sie benötigende dynamische Operationen wie Pickling zu integrieren, ohne das dafür spezielle Sprachkonstrukte hinzugefügt werden mussten. Aus Sicht der Quellsprache handelt es sich lediglich um spezielle Bibliotheksfunktionalität.
+
+
+Typklassen
+
+[Objektstudie, Typklassen, Dipl Gerhard, Future Work, existentielle Typen]
+
+
+Implementierung
+
+[HQ-Compiler, modular?, nicht Feature-complete, Release Schedule]
+[Stockwerk, stark vereinfachtes Design, abstrakter Speicher, unabhängig von RTT]
+
+
+
+ZIELE FÜR DEN FOLGEZEITRAUM
+
+(Formalisierung Laufzeittypen)
+
+
+Strukturen für die offene Programmierung
+
+Beim Entwurf offener und flexibler Programmstrukturen spielen herkömmlicherweise objektorientierte Strukturen eine grosse Rolle. Insbesondere die objektorientierte Programmiersprache Java wird gerne als Beispiel eines offenen Programmiermodells angeführt. Jedoch gibt es nach wie vor keine befriedigende Lösung zur Integration funktionaler und objektorientierter Sprachkonstrukte.
+
+Zu Beginn des aktuellen Projektzeitraums wurde ein an Java angelehntes Objektmodell für SML entworfen. Das Design wies jedoch einen hohen Komplexitätsgrad auf und es war nicht offensichtlich, inwiefern dieser durch die gewonnene Expressivität zu rechtfertigen war. Zudem war der Entwurf nicht ohne Weiteres in Einklang zu bringen mit SMLs polymorpher Typinferenz.
+
+Im Kontext des SML-Modulsystems sind 
+
+In jüngerer Zeit weisen einige Veröffentlichungen darauf hin, dass das Konzept von Typklassen, wie es beispielsweise in der Sprache Haskell zu finden ist, ä
+
+GUIs
+
+
+Integration von Typklassen und existentiellen Typen
+Untersuchung weiterer Erweiterungen des Typsystems (polymorphe Records und Varianten, HO-Polymorphismus, First-Class-Modules)
+First-Class Compiler
