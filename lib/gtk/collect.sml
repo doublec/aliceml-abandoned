@@ -320,15 +320,15 @@ structure Collect : COLLECT =
 
 	val wrpGTKFile = "GTKWrapper.oz"
 	val expGTKFile = "GTKExport.oz"
-	val sigGTKFile = "GTK.oz.sig"
+	val sigGTKFile = "GTK.ozf.sig"
 
 	val wrpGDKFile = "GDKWrapper.oz"
 	val expGDKFile = "GDKExport.oz"
-	val sigGDKFile = "GDK.oz.sig"
+	val sigGDKFile = "GDK.ozf.sig"
 
 	val wrpCanvasFile = "CanvasWrapper.oz"
 	val expCanvasFile = "CanvasExport.oz"
-	val sigCanvasFile = "Canvas.oz.sig"
+	val sigCanvasFile = "Canvas.ozf.sig"
 
 	val wrpGTKPrefix = ["%%%\n",
 			    "%%% Notice:\n",
@@ -381,9 +381,7 @@ structure Collect : COLLECT =
 	     " *\n",
 	     " *)\n",
 	     "\n",
-	     "import\n",
-	     "    structure GTKCore\n",
-	     "from \"GTKCore.ozf\"\n\n",
+	     "import structure GTKCore from \"x-alice:/lib/gtk/GTKCore.ozf\"\n\n",
 	     "signature GTK_COMPONENT =\n",
 	     "    sig\n",
 	     "        signature GTK =\n",
@@ -407,9 +405,7 @@ structure Collect : COLLECT =
 	     " *\n",
 	     " *)\n",
 	     "\n",
-	     "import\n",
-	     "    structure GTKCore\n",
-	     "from \"GTKCore.ozf\"\n\n",
+	     "import structure GTKCore from \"x-alice:/lib/gtk/GTKCore.ozf\"\n\n",
 	     "signature GDK_COMPONENT =\n",
 	     "    sig\n",
 	     "        signature GDK =\n",
@@ -452,9 +448,7 @@ structure Collect : COLLECT =
 	     " *\n",
 	     " *)\n",
 	     "\n",
-	     "import\n",
-	     "    structure GTKCore\n",
-	     "from \"GTKCore.ozf\"\n\n",
+	     "import structure GTKCore from \"x-alice:/lib/gtk/GTKCore.ozf\"\n\n",
 	     "signature CANVAS_COMPONENT =\n",
 	     "    sig\n",
 	     "        signature CANVAS =\n",

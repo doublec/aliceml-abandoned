@@ -111,7 +111,12 @@ define
 	    meth !Dispatch
 	       case @stream
 	       of Event|Tail then
-		  _ = {{Dictionary.get @handlerDict Event} unit}
+		  P = {Dictionary.get @handlerDict Event}
+	       in
+		  _ = case {Procedure.arity P}
+		      of 1 then {P}
+		      [] 2 then {P unit}
+		      end
 		  stream <- Tail
 		  DispatcherObject, Dispatch
 	       end

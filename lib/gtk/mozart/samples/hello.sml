@@ -11,13 +11,9 @@
  *
  *)
 
-import
-    structure OS
-from "x-alice:/lib/OS.ozf"
-
-import
-    structure GTK
-from "x-alice:/lib/gtk/GTK.ozf"
+import structure OS from "x-alice:/lib/OS.ozf"
+import val print from "x-alice:/lib/TextIO.ozf"
+import structure GTK from "x-alice:/lib/gtk/GTK.ozf"
 
 local
     fun Hello () = print "Hello, World!"

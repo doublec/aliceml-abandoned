@@ -11,13 +11,8 @@
  *
  *)
 
-import
-    structure OS
-from "x-alice:/lib/OS.ozf"
-
-import
-    structure GTK
-from "x-alice:/lib/gtk/GTK.ozf"
+import structure OS from "x-alice:/lib/OS.ozf"
+import structure GTK from "x-alice:/lib/gtk/GTK.ozf"
 
 local
     fun deleteEvent () = GTK.exit ()
