@@ -103,6 +103,7 @@ clean:
 
 distclean: clean
 	rm -r $(CLASSROOT)$(RUNTIME); \
+	rm Makefile ;\
 	exit 0
 
 $(files): $(CLASSROOT)$(RUNTIME)%.class : $(SRCDIR)/%.java.m4
