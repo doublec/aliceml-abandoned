@@ -3,9 +3,9 @@ import structure Reflect from "x-alice:/lib/system/Reflect";
 
 (* ganz einfache Liste *)
 
-structure SList = Reflect.ReflectType (type t = int list);
+structure SList = Reflect.ReflectType (type t = int vector);
 
-UnsafeInspector.inspect ([1,2],SList.x);
+UnsafeInspector.inspect (#[1,2],SList.x);
 
 (* Tupel mir verschiedenen "einfachen" Werten - zum Testen des Breitenfilters
    geeignet *)
@@ -57,6 +57,7 @@ UnsafeInspector.inspect (D [{1 = #[#["hi","du"],#["guck","mal"]],
 			    {1 = #[#["ich","kann"],#["Listen","zeichnen"]], 
 			     2 = #[#[0,8,1,5],#[4,7,1,1]]}                  ],
 			 data_type);
+UnsafeInspector.inspect(C(C(A)),data_type);
 
 structure Test = Reflect.ReflectType (type t = int vector list);
 UnsafeInspector.inspect([#[1,2],#[1,1]],Test.x);

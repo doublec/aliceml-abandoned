@@ -150,20 +150,25 @@ struct
 	       val (p,index) = if !(Settings.relmode) 
 				   then (getParent(n),getIndex(n)) 
 			       else getNoRelAnc n	
-	       val new =
-		   case getDesc(n) of
-		       VALUE(r) => f(va,#typ(r),p,index,
-				     getDepth(n),root)
-		     | I_VALUE(r) => let val va_inf =   
-				         UnsafeValue.cast va : Reflect.module
-				     in g(va_inf,#typ(r),p,index,
-					  getDepth(n),root)
-				     end 
-		     | INTERPUNCT => (*
-			             f(va,(UnsafeValue.cast ()),p,index,
-				     getDepth(n)) 
-				      *) 
-			             raise UpdateError
+	       val new = 
+		   ( if !(Settings.relmode) (* RELATIONSMODUS *)
+			 then ( Dictionaries.RelMan.delete
+			       (Dictionaries.reldict,ind)
+			       ; relnumber := 0 )
+		     else ()  
+		   ; case getDesc(n) of
+			 VALUE(r) => f(va,#typ(r),p,index,
+				       getDepth(n),root)
+		       | I_VALUE(r) => let val va_inf =   
+			     UnsafeValue.cast va : Reflect.module
+				       in g(va_inf,#typ(r),p,index,
+					    getDepth(n),root)
+				       end 
+		       | INTERPUNCT => (*
+					f(va,(UnsafeValue.cast ()),p,index,
+					getDepth(n)) 
+					*) 
+				       raise UpdateError )
 	       val _ = updateChild(p,index,new)
 	       val node = if getParent(new) = Empty then new else anc
 	       val _ = if isRelRefNode new
@@ -172,23 +177,6 @@ struct
 	       val (_,y_pos) = GtkSupport.getPosition(getGroup(anc))
 	   in ( setDazzled n
 	       ; Gtk.objectDestroy(getGroup(n))
-	       ; if !(Settings.relmode) (* RELATIONSMODUS *)
-		     then ( Dictionaries.RelMan.delete
-			   (Dictionaries.reldict,ind)
-			   ; relnumber := 0 )
-		   (* then let val rn_list = getRelNodeList node
-			  in List.app 
-			      (fn n => let val ri_rel = 
-			                   case ReinspectedRelDict.lookup 
-					       (Dictionaries.ri_reldict,ind)
-					       of SOME x => x 
-					        | NONE => []
-				       in  ReinspectedRelDict.update
-					   (Dictionaries.ri_reldict,
-					    (ind, n::ri_rel))
-				       end) rn_list
-			  end *)
-		 else ()  
                ; Layout.layout(node)  
 	       ; Dictionaries.Main.update(Dictionaries.maindict,
 					  (ind,(node,ancline)))

@@ -193,9 +193,9 @@ struct
 	     => createSimple (createValue(va,t),p,i,d,"fn",
 			      DEFAULT,root)
 	   | Type.All(var,typ) (* Allquantor *)
-	     => createGraph (va,typ,p,i,d,root)
+	     => createUsualGraph (va,typ,p,i,d,root)
 	   | Type.Exist(var,typ)  (* Existenzquantor *)
-	     => createGraph (va,typ,p,i,d,root)
+	     => createUsualGraph (va,typ,p,i,d,root)
 	   | Type.Lambda(var,typ) (* Abstraktion *)
 	     => raise  createGraph_unknownNode 
            | Type.Apply(t1,t2) 
@@ -220,7 +220,7 @@ struct
 		       end)  
 	   | Type.Prod(row) => treatProd(va,t,p,i,d,row,root) 
 	     (* Record *)
-	   | Type.Mu(sum) => createGraph (va,sum,p,i,d,root) (* Rekursion *)
+	   | Type.Mu(sum) => createUsualGraph (va,sum,p,i,d,root) (* Rekursion *)
 	   | Type.Sum(row) => treatSum(va,t,p,i,d,row,root) 
 	     (* Datentyp *) 
 	   | _ => raise  createGraph_unknownNode  (* unbekannt *) )
@@ -254,7 +254,7 @@ struct
 	   in if b orelse !relmode
 		  then let val cont = createContainer (desc,p,i,d,na,root)
 			   val nodearray = listElemArray(l,length,inty,cont,
-							 d+1,b,root)
+							 d,b,root)
 			   val last = 
 			       if b (* Breitenlimit ueberschritten *)
 				   then createLimit (INTERPUNCT,WIDTH_LIMIT,
