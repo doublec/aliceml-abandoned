@@ -295,7 +295,8 @@ AbstractInterpreter::Run(TaskStack *taskStack, int nargs) {
 	pc = TagVal::FromWord(pc->Sel(3));
       }
       break;
-    case Pickle::AppPrim: // of idDef * string * idRef vector * instr option
+    case Pickle::AppPrim: // of string * idRef vector * (idDef * instr) option
+      //--** adapt to new representation
       {
 	TagVal *instrOpt = TagVal::FromWord(pc->Sel(3));
 	if (instrOpt != INVALID_POINTER) { // SOME instr
@@ -319,7 +320,8 @@ AbstractInterpreter::Run(TaskStack *taskStack, int nargs) {
 	return Result(Result::CONTINUE, nargs);
       }
       break;
-    case Pickle::AppVar: // of idDef args * idRef * idRef args * instr option
+    case Pickle::AppVar: // of idRef * idRef args * (idDef args * instr) option
+      //--** adapt to new representation
       {
 	word suspendWord = GetIdRef(pc->Sel(1), globalEnv, localEnv);
 	Closure *closure = Closure::FromWord(suspendWord);
@@ -351,7 +353,8 @@ AbstractInterpreter::Run(TaskStack *taskStack, int nargs) {
 	}
       }
       break;
-    case Pickle::AppConst: // of idDef args * value * idRef args * instr option
+    case Pickle::AppConst:
+      // of value * idRef args * (idDef args * instr) option
       {
 	//--** AppConst not implemented yet
       }
