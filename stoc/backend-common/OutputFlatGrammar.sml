@@ -81,6 +81,7 @@ structure OutputImperativeGrammar :> OUTPUT_IMPERATIVE_GRAMMAR =
 	  | outputTest (ConTest (id, NONE)) = SEQ [S "nam ", ID id]
 	  | outputTest (ConTest (id1, SOME id2)) =
 	    SEQ [S "(con ", ID id1, S ") ", ID id2]
+	  | outputTest (RefTest id) = SEQ [S "(con ref) ", ID id]
 	  | outputTest (TupTest ids) =
 	    SEQ [S "(", SEP (S ", ", List.map ID ids), S ")"]
 	  | outputTest (RecTest labIdList) =
@@ -136,6 +137,7 @@ structure OutputImperativeGrammar :> OUTPUT_IMPERATIVE_GRAMMAR =
 	  | outputExp (VarExp (_, id)) = ID id
 	  | outputExp (ConExp (_, id, false)) = SEQ [S "nam ", ID id]
 	  | outputExp (ConExp (_, id, true)) = SEQ [S "con ", ID id]
+	  | outputExp (RefExp _) = SEQ [S "con ref"]
 	  | outputExp (TupExp (_, ids)) =
 	    SEQ [S "(", SEP (S ", ", List.map ID ids), S ")"]
 	  | outputExp (RecExp (_, labIdList)) =
@@ -158,6 +160,8 @@ structure OutputImperativeGrammar :> OUTPUT_IMPERATIVE_GRAMMAR =
 	    SEQ [S ("#" ^ lab ^ " "), ID id]
 	  | outputExp (ConAppExp (_, id, args)) =
 	    SEQ [S "(con ", ID id, S ") ", outputArgs args]
+	  | outputExp (RefAppExp (_, args)) =
+	    SEQ [S "(con ref) ", outputArgs args]
 	  | outputExp (PrimAppExp (_, s, ids)) =
 	    SEQ [S (s ^ " "), SEP (S ", ", List.map ID ids)]
 	  | outputExp (AdjExp (_, id1, id2)) =

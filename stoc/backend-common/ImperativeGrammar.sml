@@ -38,6 +38,7 @@ structure ImperativeGrammar: IMPERATIVE_GRAMMAR =
 	datatype test =
 	    LitTest of lit
 	  | ConTest of id * id option
+	  | RefTest of id
 	  | TupTest of id list
 	  | RecTest of (lab * id) list
 	    (* sorted, all labels distinct, no tuple *)
@@ -74,6 +75,7 @@ structure ImperativeGrammar: IMPERATIVE_GRAMMAR =
 	  | PrimExp of coord * string
 	  | VarExp of coord * id
 	  | ConExp of coord * id * hasArgs
+	  | RefExp of coord
 	  | TupExp of coord * id list
 	  | RecExp of coord * (lab * id) list
 	    (* sorted, all labels distinct, no tuple *)
@@ -84,6 +86,7 @@ structure ImperativeGrammar: IMPERATIVE_GRAMMAR =
 	  | AppExp of coord * id * id args
 	  | SelAppExp of coord * lab * id
 	  | ConAppExp of coord * id * id args
+	  | RefAppExp of coord * id args
 	  | PrimAppExp of coord * string * id list
 	  | AdjExp of coord * id * id
 	withtype body = stm list

@@ -21,7 +21,6 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 
 	val id_false = Id (Source.nowhere, Prebound.stamp_false, ExId "false")
 	val id_true = Id (Source.nowhere, Prebound.stamp_true, ExId "true")
-	val id_ref = Id (Source.nowhere, Prebound.stamp_ref, ExId "ref")
 	val id_Match = Id (Source.nowhere, Prebound.stamp_Match, ExId "Match")
 	val id_Bind = Id (Source.nowhere, Prebound.stamp_Bind, ExId "Bind")
 
@@ -202,7 +201,7 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 		stms @ f (O.ConExp (coord, id, hasArgs))::translateCont cont
 	    end
 	  | translateExp (RefExp coord, f, cont) =
-	    f (O.ConExp (coord, id_ref, true))::translateCont cont
+	    f (O.RefExp coord)::translateCont cont
 	  | translateExp (TupExp (coord, exps), f, cont) =
 	    let
 		val r = ref NONE
@@ -287,8 +286,7 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 		val rest = [O.IndirectStm (coord, r)]
 		val (stms2, args) = unfoldArgs (exp2, rest)
 	    in
-		(r := SOME (f (O.ConAppExp (coord, id_ref, args))::
-			    translateCont cont);
+		(r := SOME (f (O.RefAppExp (coord, args))::translateCont cont);
 		 stms2)
 	    end
 	  | translateExp (AppExp (coord, SelExp (_, Lab (_, s)), exp2),
@@ -542,7 +540,7 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 		val id = freshId Source.nowhere
 		val mapping' = ((""::pos), id)::mapping
 	    in
-		(nil, O.ConTest (id_ref, SOME id), mapping')
+		(nil, O.RefTest id, mapping')
 	    end
 	  | translateTest (TupTest n, pos, mapping) =
 	    let
