@@ -23,5 +23,6 @@
 #include "alice/NativeConcreteCode.hh"
 #include "alice/PrimitiveTable.hh"
 #include "alice/AliceLanguageLayer.hh"
+#include "alice/Authoring.hh"
 
 #endif
