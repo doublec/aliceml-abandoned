@@ -4,7 +4,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 1999-2000
+ *   Leif Kornstaedt, 1999-2002
  *   Andreas Rossberg, 2001
  *
  * Last change:
@@ -12,14 +12,13 @@
  *   $Revision$
  *)
 
-
-(*
- *  Items marked with (**) are extensions to the Standard Basis.
- *)
-
 import structure __pervasive from "Pervasive"
-import structure Word        from "Word"
-import signature WORD        from "WORD-sig"
+import type int              from "ToplevelTypes"
+import structure MkWord      from "MkWord"
 
-
-structure LargeWord : WORD = Word
+local
+    __primitive val wordSize : int = "LargeWord.wordSize"
+in
+    structure LargeWord = MkWord(type word = __pervasive.LargeWord.word
+				 val wordSize = wordSize)
+end
