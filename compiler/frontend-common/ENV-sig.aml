@@ -10,8 +10,8 @@ signature ENV =
     type env
     type t = env
 
-    type val_entry = id * typ * bool
-    type typ_entry = id * typ
+    type val_entry = id * typ * Inf.val_sort
+    type typ_entry = id * typ * Inf.typ_sort
     type var_entry = id * var
     type mod_entry = id * inf
     type inf_entry = id * inf

@@ -3,17 +3,32 @@ signature INF =
 
   (* Types *)
 
-    type path = Path.t
+    type lab   = Lab.t
+    type name  = Name.t
+    type stamp = Stamp.t
+    type path  = Path.t
+    type typ   = Type.t
+    type tkind = Type.kind
 
-    type inf
-    type t = inf    
+    datatype val_sort = VALUE | CONSTRUCTOR	(* [w] *)
+    datatype typ_sort = datatype Type.sort	(* [w] *)
 
     type kind					(* [kappa,k] *)
     type con  = kind * path			(* [chi,c]   *)
-    type sign = (inf,kind) Sign.t		(* [sigma,s] *)
+    type sign					(* [sigma,s] *)
+    type inf					(* [jota,j] *)
+    type t = inf    
 
-    type rea  = Sign.rea
-    type rea' = (inf,kind) Sign.rea'
+  (* Realisations *)
+
+    type rea	 = path PathMap.t
+
+    type val_rea = path PathMap.t
+    type typ_rea = typ  PathMap.t
+    type mod_rea = sign PathMap.t
+    type inf_rea = inf  PathMap.t
+    type rea'	 = val_rea * typ_rea * mod_rea * inf_rea
+
 
   (* Injections *)
 
@@ -48,6 +63,7 @@ signature INF =
     val clone :		inf -> inf
     val realise :	rea  * inf -> unit
     val strengthen :	path * inf -> unit
+    val strengthenSig :	path * sign -> unit
 
   (* Kinds *)
 
@@ -61,5 +77,31 @@ signature INF =
     val asDependent :	kind -> path * inf * kind	(* Kind *)
 
     val kind :		inf -> kind
+
+  (* Signature construction *)
+
+    val empty :		unit -> sign
+
+    val newVal :	sign * lab -> path
+    val newTyp :	sign * lab -> path
+    val newMod :	sign * lab -> path
+    val newInf :	sign * lab -> path
+
+    val extendVal :	sign * path *  typ  * val_sort * path option -> path
+    val extendTyp :	sign * path * tkind * typ_sort * typ  option -> path
+    val extendMod :	sign * path *  inf  * path option -> path
+    val extendInf :	sign * path *  kind * inf  option -> path
+
+  (* Signature lookup *)
+
+    val lookupVal :	sign * lab -> typ
+    val lookupTyp :	sign * lab -> typ
+    val lookupMod :	sign * lab -> inf
+    val lookupInf :	sign * lab -> inf
+
+    val lookupVal' :	sign * lab * int -> typ
+    val lookupTyp' :	sign * lab * int -> typ
+    val lookupMod' :	sign * lab * int -> inf
+    val lookupInf' :	sign * lab * int -> inf
 
   end

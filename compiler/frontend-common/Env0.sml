@@ -46,23 +46,23 @@ structure Env0 :> ENV0 =
     val typ_vec      = Type.inCon con_vec
     val typ_list     = Type.inCon con_list
 
-    fun insertTyp'(stamp, typ, s) =
+    fun insertTyp'(stamp, typ, w, s) =
 	let
-	    val entry = ( Id(Source.nowhere, stamp, Name.ExId s), typ )
+	    val entry = ( Id(Source.nowhere, stamp, Name.ExId s), typ, w )
 	in
 	    insertTyp(E0, stamp, entry)
 	end
 
-    val _ = insertTyp'(P.stamp_word,   typ_word,   "word")
-    val _ = insertTyp'(P.stamp_int,    typ_int,    "int")
-    val _ = insertTyp'(P.stamp_char,   typ_char,   "char")
-    val _ = insertTyp'(P.stamp_string, typ_string, "string")
-    val _ = insertTyp'(P.stamp_real,   typ_real,   "real")
-    val _ = insertTyp'(P.stamp_bool,   typ_bool,   "bool")
-    val _ = insertTyp'(P.stamp_exn,    typ_exn,    "exn")
-    val _ = insertTyp'(P.stamp_tref,   typ_ref,    "ref")
-    val _ = insertTyp'(P.stamp_vec,    typ_vec,    "vector")
-    val _ = insertTyp'(P.stamp_list,   typ_list,   "list")
+    val _ = insertTyp'(P.stamp_word,   typ_word,   Inf.CLOSED, "word")
+    val _ = insertTyp'(P.stamp_int,    typ_int,    Inf.CLOSED, "int")
+    val _ = insertTyp'(P.stamp_char,   typ_char,   Inf.CLOSED, "char")
+    val _ = insertTyp'(P.stamp_string, typ_string, Inf.CLOSED, "string")
+    val _ = insertTyp'(P.stamp_real,   typ_real,   Inf.CLOSED, "real")
+    val _ = insertTyp'(P.stamp_bool,   typ_bool,   Inf.CLOSED, "bool")
+    val _ = insertTyp'(P.stamp_exn,    typ_exn,    Inf.OPEN,   "exn")
+    val _ = insertTyp'(P.stamp_tref,   typ_ref,    Inf.CLOSED, "ref")
+    val _ = insertTyp'(P.stamp_vec,    typ_vec,    Inf.CLOSED, "vector")
+    val _ = insertTyp'(P.stamp_list,   typ_list,   Inf.CLOSED, "list")
 
     (* Value environment *)
 
@@ -85,7 +85,8 @@ structure Env0 :> ENV0 =
 
     fun insertCon'(stamp, typ, s) =
 	let
-	    val entry = ( Id(Source.nowhere, stamp, Name.ExId s), typ, true )
+	    val entry = ( Id(Source.nowhere, stamp, Name.ExId s),
+			  typ, Inf.CONSTRUCTOR )
 	in
 	    insertVal(E0, stamp, entry)
 	end

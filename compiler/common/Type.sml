@@ -7,13 +7,12 @@ structure TypePrivate =
 
   (* Types *)
 
-    type lab  = Lab.t					(* [lab,l] *)
-    type path = Path.t					(* [pi,p] *)
-
+    datatype sort = OPEN | CLOSED
     datatype kind = STAR | ARROW of kind * kind		(* [kappa,k] *)
 
-    datatype con_sort = OPEN | CLOSED
-    type     con      = kind * con_sort * path		(* [chi,c] *)
+    type lab  = Lab.t					(* [lab,l] *)
+    type path = Path.t					(* [pi,p] *)
+    type con  = kind * sort * path			(* [chi,c] *)
 
     datatype typ' =					(* [tau',t'] *)
 	  HOLE of kind * int	(* variable for inference *)

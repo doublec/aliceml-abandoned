@@ -13,6 +13,9 @@ signature SIGN =
     type typ   = Type.t
     type kind  = Type.kind
 
+    datatype val_sort = VALUE | CONSTRUCTOR	(* [w] *)
+    datatype typ_sort = datatype Type.sort	(* [w] *)
+
     type ('inf,'kind) sign			(* [sigma,s] *)
     type ('inf,'kind) t = ('inf,'kind) sign
 
@@ -35,8 +38,10 @@ signature SIGN =
     val newMod :	('a,'b) sign * lab -> path
     val newInf :	('a,'b) sign * lab -> path
 
-    val extendVal :	('a,'b) sign * path * typ  * bool * path option -> path
-    val extendTyp :	('a,'b) sign * path * kind * typ  option -> path
+    val extendVal :	('a,'b) sign * path * typ  * val_sort * path option
+								 -> path
+    val extendTyp :	('a,'b) sign * path * kind * typ_sort * typ option
+								 -> path
     val extendMod :	('a,'b) sign * path *  'a  * path option -> path
     val extendInf :	('a,'b) sign * path *  'b  *  'a  option -> path
 
@@ -45,12 +50,12 @@ signature SIGN =
     val lookupVal :	('a,'b) sign * lab -> typ
     val lookupTyp :	('a,'b) sign * lab -> typ
     val lookupMod :	('a,'b) sign * lab -> 'a
-    val lookupInf :	('a,'b) sign * lab -> 'a
+    val lookupInf :	('b * path -> 'a) -> ('a,'b) sign * lab -> 'a
 
     val lookupVal' :	('a,'b) sign * lab * int -> typ
     val lookupTyp' :	('a,'b) sign * lab * int -> typ
     val lookupMod' :	('a,'b) sign * lab * int -> 'a
-    val lookupInf' :	('a,'b) sign * lab * int -> 'a
+    val lookupInf' :	('b * path -> 'a) -> ('a,'b) sign * lab * int -> 'a
 
   (* Realisations and cloning *)
 

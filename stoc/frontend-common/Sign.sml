@@ -1,5 +1,3 @@
-(* UNFINISHED: How should we handle mutually recursice items? *)
-
 (* Signatures contain state. This means that they must be cloned
    at each occurance. *)
 
@@ -8,24 +6,26 @@ structure SignPrivate =
 
   (* Types *)
 
-    type lab   = Lab.t
-    type name  = Name.t
-    type stamp = Stamp.t
-    type path  = Path.t
-    type typ   = Type.t
-    type kind  = Type.kind
+    type lab	= Lab.t
+    type name	= Name.t
+    type stamp	= Stamp.t
+    type path	= Path.t
+    type typ	= Type.t
+    type kind	= Type.kind
 
-    type id    = path * lab * int
+    type id	= path * lab * int
+    type 'a def	= 'a option
 
-    type 'a def = 'a option
+    datatype val_sort = VALUE | CONSTRUCTOR		(* [w] *)
+    datatype typ_sort = datatype Type.sort		(* [w] *)
 
     datatype ('inf,'kind) item' =
-	  VAL of id * typ * bool * path def	(* value or constructor *)
-	| TYP of id * kind * typ def		(* type *)
-	| MOD of id * 'inf * path def		(* module *)
-	| INF of id * 'kind * 'inf def		(* interface *)
+	  VAL of id *  typ  * val_sort * path def	(* value *)
+	| TYP of id *  kind * typ_sort * typ def	(* type *)
+	| MOD of id * 'inf  * path def			(* module *)
+	| INF of id * 'kind * 'inf def			(* interface *)
 
-    datatype dom = VAL' | CON' | TYP' | MOD' | INF'
+    datatype dom = VAL' | TYP' | MOD' | INF'
 
     structure Map = MakeHashImpMap(struct type t = dom * lab
 					  fun hash(_,l) = Lab.hash l end)
@@ -62,13 +62,19 @@ structure SignPrivate =
 
     fun id(ref item')		= id' item'
     and id'(VAL(id,_,_,_))	= id
-      | id'(TYP(id,_,_))	= id
+      | id'(TYP(id,_,_,_))	= id
       | id'(MOD(id,_,_))	= id
       | id'(INF(id,_,_))	= id
 
     fun path  item		= pathOfId(id item)
     fun lab   item		= labOfId(id item)
     fun index item		= indexOfId(id item)
+
+    fun domOfItem(ref item')	= domOfItem' item'
+    and domOfItem'(VAL _)	= VAL'
+      | domOfItem'(TYP _)	= TYP'
+      | domOfItem'(MOD _)	= MOD'
+      | domOfItem'(INF _)	= INF'
 
 
   (* Construction *)
@@ -83,8 +89,8 @@ structure SignPrivate =
 
     fun hideId (p,l,n)		= (p,l,n+1)
     fun hide item		= item := hide'(!item)
-    and hide'(VAL(id,t,b,d))	= VAL(hideId id, t, b, d)
-      | hide'(TYP(id,k,d))	= TYP(hideId id, k, d)
+    and hide'(VAL(id,t,w,d))	= VAL(hideId id, t, w, d)
+      | hide'(TYP(id,k,w,d))	= TYP(hideId id, k, w, d)
       | hide'(MOD(id,j,d))	= MOD(hideId id, j, d)
       | hide'(INF(id,k,d))	= INF(hideId id, k, d)
 
@@ -103,25 +109,27 @@ val _=print("-- extending signature with `" ^ Lab.toString l ^ "'\n");
 	    p
 	end
 
-    fun extendVal(s,p,t,b,d)	= extend(s, VAL', p, fn x => VAL(x,t,b,d))
-    fun extendTyp(s,p,k,d)	= extend(s, TYP', p, fn x => TYP(x,k,d))
+    fun extendVal(s,p,t,w,d)	= extend(s, VAL', p, fn x => VAL(x,t,w,d))
+    fun extendTyp(s,p,k,w,d)	= extend(s, TYP', p, fn x => TYP(x,k,w,d))
     fun extendMod(s,p,j,d)	= extend(s, MOD', p, fn x => MOD(x,j,d))
     fun extendInf(s,p,k,d)	= extend(s, INF', p, fn x => INF(x,k,d))
 
 
   (* Lookup *)
 
-    fun selectVal(VAL(x, t, b, d))	= t
+    fun selectVal(VAL(x, t, w, d))	= t
       | selectVal _			= raise Crash.Crash "Sign.selectVal"
 
-    fun selectTyp(TYP(x, k, SOME t))	= t
+    fun selectTyp(TYP(x, k, w, SOME t))	= t
+      | selectTyp(TYP(x, k, w, NONE))	= Type.inCon(k, w, pathOfId x)
       | selectTyp _			= raise Crash.Crash "Sign.selectTyp"
 
     fun selectMod(MOD(x, j, d))		= j
       | selectMod _			= raise Crash.Crash "Sign.selectMod"
 
-    fun selectInf(INF(x, k, SOME j))	= j
-      | selectInf _			= raise Crash.Crash "Sign.selectInf"
+    fun selectInf f (INF(x, k, SOME j))	= j
+      | selectInf f (INF(x, k, NONE))	= f(k, pathOfId x)
+      | selectInf f _			= raise Crash.Crash "Sign.selectInf"
 
 
     fun lookup dom ((_,m), l) =
@@ -143,24 +151,24 @@ val _=print("-- extending signature with `" ^ Lab.toString l ^ "'\n");
 )
 
 
-    fun lookupVal args  = (selectVal o lookup VAL') args
-    fun lookupTyp args  = (selectTyp o lookup TYP') args
-    fun lookupMod args  = (selectMod o lookup MOD') args
-    fun lookupInf args  = (selectInf o lookup INF') args
+    fun lookupVal args		= (selectVal o lookup VAL') args
+    fun lookupTyp args		= (selectTyp o lookup TYP') args
+    fun lookupMod args		= (selectMod o lookup MOD') args
+    fun lookupInf inCon args	= (selectInf inCon o lookup INF') args
 
-    fun lookupVal' args = (selectVal o lookup' VAL') args
-    fun lookupTyp' args = (selectTyp o lookup' TYP') args
-    fun lookupMod' args = (selectMod o lookup' MOD') args
-    fun lookupInf' args = (selectInf o lookup' INF') args
+    fun lookupVal' args		= (selectVal o lookup' VAL') args
+    fun lookupTyp' args		= (selectTyp o lookup' TYP') args
+    fun lookupMod' args		= (selectMod o lookup' MOD') args
+    fun lookupInf' inCon args	= (selectInf inCon o lookup' INF') args
 
 
   (* Realisation *)
 
     fun realise (realiseInf,realiseKind) (rea, (ref items, _)) =
 	let
-	    fun realiseItem(item as ref(VAL(x, t, b, d))) =
-		( Type.realise(rea, t) ; item := VAL(x,t,b, realisePathDef d))
-	      | realiseItem(ref(TYP(x, k, d))) =
+	    fun realiseItem(item as ref(VAL(x, t, w, d))) =
+		( Type.realise(rea, t) ; item := VAL(x, t, w, realisePathDef d))
+	      | realiseItem(ref(TYP(x, k, w, d))) =
 		  realiseTypDef d
 	      | realiseItem(item as ref(MOD(x, j, d))) =
 		( realiseInf(rea, j) ; item := MOD(x, j, realisePathDef d) )
@@ -187,22 +195,22 @@ val _=print("-- extending signature with `" ^ Lab.toString l ^ "'\n");
 
     fun strengthen infCon (p, (ref items, _)) =
 	let
-	    fun strengthenId(p',l,n) = Path.substitute(p', p, l, n)
+	    fun strengthenId(p',l,n) = Path.substituteDot(p', p, l, n)
 
-	    fun strengthenItem(item as ref(VAL(x, t, b, d))) =
+	    fun strengthenItem(item as ref(VAL(x, t, w, d))) =
 		let
 		    val _  = strengthenId x
 		    val d' = strengthenPathDef(pathOfId x, d)
 		in
-		    item := VAL(x, t, b, d')
+		    item := VAL(x, t, w, d')
 		end
 
-	      | strengthenItem(item as ref(TYP(x, k, d))) =
+	      | strengthenItem(item as ref(TYP(x, k, w, d))) =
 		let
 		    val _  = strengthenId x
 		    val d' = strengthenTypDef(pathOfId x, k, d)
 		in
-		    item := TYP(x, k, d')
+		    item := TYP(x, k, w, d')
 		end
 
 	      | strengthenItem(item as ref(MOD(x, j, d))) =
@@ -256,21 +264,21 @@ val _=print("-- extending signature with `" ^ Lab.toString l ^ "'\n");
 		    Type.realise(rea,t2) ; t2
 		end
 
-	    fun cloneItem(ref(VAL((p,l,n), t, b, d))) =
+	    fun cloneItem(ref(VAL((p,l,n), t, w, d))) =
 		let
 		    val p'   = clonePath p
 		    val t'   = cloneTyp t
 		    val d'   = clonePathDef d
-		    val item = ref(VAL((p',l,n), t', b, d'))
+		    val item = ref(VAL((p',l,n), t', w, d'))
 		in
 		    extendSig((VAL',l), item)
 		end
 
-	      | cloneItem(ref(TYP((p,l,n), k, d))) =
+	      | cloneItem(ref(TYP((p,l,n), k, w, d))) =
 		let
 		    val p'   = clonePath p
 		    val d'   = cloneTypDef d
-		    val item = ref(TYP((p',l,n), k, d'))
+		    val item = ref(TYP((p',l,n), k, w, d'))
 		in
 		    extendSig((TYP',l), item)
 		end
@@ -311,6 +319,83 @@ val _=print("-- extending signature with `" ^ Lab.toString l ^ "'\n");
 	in
 	    s
 	end
+
+
+  (* Matching *)
+
+    datatype mismatch =
+	  MissingVal  of lab
+	| MissingTyp  of lab
+	| MissingMod  of lab
+	| MissingInf  of lab
+	| ManifestVal of lab
+	| ManifestTyp of lab
+	| ManifestMod of lab
+	| ManifestInf of lab
+
+    exception Mismatch of mismatch
+
+    fun matchDef (equals, err) (l ,_,       NONE   ) = ()
+      | matchDef (equals, err) (l, NONE,    SOME _ ) = raise Mismatch(err l)
+      | matchDef (equals, err) (l, SOME x1, SOME x2) =
+	    if equals(x1,x2) then () else raise Mismatch(err l)
+
+    val matchValDef = matchDef(Path.equals, ManifestVal)
+    val matchTypDef = matchDef(Type.equals, ManifestTyp)
+    val matchModDef = matchDef(Path.equals, ManifestMod)
+    val matchInfDef = matchDef(Inf.equals, ManifestInf)
+
+    fun match((ref items1, m1), (ref items2, m2)) =
+	let
+	    fun pair(     [],      pairs) = List.rev pairs
+	      | pair(item2::items, pairs) =
+		let
+		    val (p2,l,n) = id item2
+		    val  item1   = List.hd(Map.lookupExistent
+						(m1, (domOfItem item2,l)))
+		    val  p1      = path item1
+		in
+		    Path.substitute(p2, p1) ;
+		    pair(items, (item1,item2)::pairs)
+		end
+		handle Map.Lookup (VAL',l) => raise Mismatch(MissingVal l)
+		     | Map.Lookup (TYP',l) => raise Mismatch(MissingTyp l)
+		     | Map.Lookup (MOD',l) => raise Mismatch(MissingMod l)
+		     | Map.Lookup (INF',l) => raise Mismatch(MissingInf l)
+	in
+	    List.app matchItem (pair(items2, []))
+	end
+
+    and matchItem(ref item1', ref item2') = matchItem'(item1', item2')
+
+    and matchItem'(VAL(x1,t1,s1,d1), VAL(x2,t2,s2,d2)) =
+	    ( matchTyp(t1,t2) ; matchValDef(labOfId x, d1, d2) )
+      | matchItem'(TYP(x1,k1,s1,d1), TYP(x2,k2,s2,d2)) =
+	    ( matchKind(t1,t2) ; matchTypDef(labOfId x, d1, d2) )
+      | matchItem'(MOD(x1,j1,d1), MOD(x2,j2,d2)) =
+	    ( matchInf(t1,t2) ; matchModDef(labOfId x, d1, d2) )
+      | matchItem'(INF(x1,k1,d1), INF(x2,k2,d2)) =
+      | matchItem' _ = raise Crash.crash "Sign.matchItem"
+
+    and matchTyp(t1,t2)  = (*UNFINISHED*) ()
+    and matchKind(k1,k2) = (*UNFINISHED*) ()
+    and matchInf(j1,j2)  = (*UNFINISHED*) ()
+    and matchInfKind(k1,k2) = (*UNFINISHED*) ()
+
+    and matchValDef(l, _,       NONE)    = ()
+      | matchValDef(l, NONE,    SOME p2) = raise Mismatch(ManifestVal l)
+      | matchValDef(l, SOME p1, SOME p2) = if Path.equals(p1,p2) then () else
+					   raise Mismatch(ManifestVal l)
+
+    and matchTypDef(l, _,       NONE)    = ()
+      | matchTypDef(l, NONE,    SOME t2) = raise Mismatch(ManifestTyp l)
+      | matchTypDef(l, SOME t1, SOME t2) = if Type.equals(t1,t2) then () else
+					   raise Mismatch(ManifestTyp l)
+
+    and matchModDef(l, _,       NONE)    = ()
+      | matchModDef(l, NONE,    SOME p2) = raise Mismatch(ManifestVal l)
+      | matchModDef(l, SOME p1, SOME p2) = if Path.equals(p1,p2) then () else
+					   raise Mismatch(ManifestVal l)
 
   end
 

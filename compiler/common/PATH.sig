@@ -9,7 +9,7 @@ signature PATH =
     type lab   = Lab.t
     type name  = Name.t
 
-    eqtype path
+    type path
     type t = path
 
   (* Operations *)
@@ -19,10 +19,13 @@ signature PATH =
     val toLab :		path -> lab
     val path :		path * lab * int -> path
 
+    val equals :	path * path -> bool
     val compare :	path * path -> order
     val hash :		path -> int
 
-    val substitute :	path * path * lab * int -> unit
+    val substitute :	path * path -> unit
+    val substituteDot :	path * (path * lab * int) -> unit
+
     val realise :	('rea * path -> path option) -> 'rea * path -> unit
 
     val cloneBinder :	('rea * path -> path option) -> 'rea * path -> path

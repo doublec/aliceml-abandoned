@@ -38,6 +38,10 @@ structure PathPrivate =
 
   (* Ordering and hashing *)
 
+    fun equals(ref(LINK p1), p2)		= equals(p1, p2)
+      | equals(p1, ref(LINK p2))		= equals(p1, p2)
+      | equals(p1, p2)				= p1 = p2
+
     fun compare(ref(LINK p1), p2)		= compare(p1, p2)
       | compare(p1, ref(LINK p2))		= compare(p1, p2)
       | compare(p1 as ref p1', p2 as ref p2')	= if p1 = p2 then EQUAL
@@ -62,7 +66,8 @@ structure PathPrivate =
 
   (* Substitution and Realisation *)
 
-    fun substitute(p1, p, l, n) = p1 := DOT(p,l,n)
+    fun substitute(p1, p)	= p1 := LINK p
+    fun substituteDot(p1, pln)	= p1 := DOT pln
 
     fun realise lookup (rea, p) =
 	case lookup(rea, p)

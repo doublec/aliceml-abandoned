@@ -3,13 +3,12 @@ signature TYPE =
 
   (* Types *)
 
-    datatype con_sort = OPEN | CLOSED
-
+    datatype sort = OPEN | CLOSED
     datatype kind = STAR | ARROW of kind * kind		(* [kappa,k] *)
 
     type lab  = Lab.t					(* [lab,l] *)
     type path = Path.t					(* [pi,p] *)
-    type con  = kind * con_sort * path			(* [chi,c] *)
+    type con  = kind * sort * path			(* [chi,c] *)
 
     type row						(* [rho,r] *)
     type var						(* [alpha,a] *)

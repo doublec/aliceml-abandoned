@@ -18,8 +18,6 @@ is
 	StampMap.sml
 	TYPE.sig
 	Type.sml
-	SIGN.sig
-	Sign.sml
 	INF.sig
 	Inf.sml
 	ENV.sig
@@ -32,9 +30,7 @@ is
 	PPPath.sml
 	PP_TYPE.sig
 	PPType.sml
-(*	PP_SIGN.sig
-	PPSign.sml
-	PP_INF.sig
+(*	PP_INF.sig
 	PPInf.sml
 *)
 	TypedGrammar.sml
