@@ -17,17 +17,17 @@ import
    Inspector('nodes' : TreeNodes)
    HelperComponent('nodes' : Helper) at 'Helper'
 export
-   atomLayoutObject       : AtomLayoutObject
-   nameLayoutObject       : NameLayoutObject
-   procedureLayoutObject  : ProcedureLayoutObject
-   byteStringLayoutObject : ByteStringLayoutObject
-   wordLayoutObject       : WordLayoutObject
-   tupleLayoutObject      : TupleLayoutObject
-   tupleIndLayoutObject   : TupleIndLayoutObject
-   listLayoutObject       : ListLayoutObject
-   tupleGrLayoutObject    : TupleGrLayoutObject
-   tupleGrIndLayoutObject : TupleGrIndLayoutObject
-   listGrLayoutObject     : ListGrLayoutObject
+   atomLayoutObject        : AtomLayoutObject
+   nameLayoutObject        : NameLayoutObject
+   procedureLayoutObject   : ProcedureLayoutObject
+   byteStringLayoutObject  : ByteStringLayoutObject
+   wordLayoutObject        : WordLayoutObject
+   tupleLayoutObject       : TupleLayoutObject
+   vectorIndLayoutObject   : VectorIndLayoutObject
+   vectorGrIndLayoutObject : VectorGrIndLayoutObject
+   listLayoutObject        : ListLayoutObject
+   tupleGrLayoutObject     : TupleGrLayoutObject
+   listGrLayoutObject      : ListGrLayoutObject
 define
    %% Import all needed LayoutObjects
    local
@@ -105,21 +105,33 @@ define
       end
    end
 
-   class TupleIndLayoutObject from LabelTupleIndLayoutObject
-      meth noSep($)
-	 true
-      end
-   end
-
    class TupleGrLayoutObject from LabelTupleGrLayoutObject
       meth noSep($)
 	 true
       end
    end
 
-   class TupleGrIndLayoutObject from LabelTupleGrIndLayoutObject
+   class VectorIndLayoutObject from LabelTupleLayoutObject LabelTupleIndLayoutObject
       meth noSep($)
 	 true
+      end
+      meth adjustLayout(LXDim BXDim)
+	 case @type
+	 of vector then LabelTupleLayoutObject, adjustLayout(LXDim BXDim)
+	 [] conval then LabelTupleIndLayoutObject, adjustLayout(LXDim BXDim)
+	 end
+      end
+   end
+
+   class VectorGrIndLayoutObject from LabelTupleGrLayoutObject LabelTupleGrIndLayoutObject
+      meth noSep($)
+	 true
+      end
+      meth adjustLayout(LXDim BXDim)
+	 case @type
+	 of vector then LabelTupleGrLayoutObject, adjustLayout(LXDim BXDim)
+	 [] conval then LabelTupleGrIndLayoutObject, adjustLayout(LXDim BXDim)
+	 end
       end
    end
    
