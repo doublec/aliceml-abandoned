@@ -40,7 +40,7 @@ structure ImperativePhase :> IMPERATIVE_PHASE =
 		MakeHashImpMap(type t = int
 			       fun hash i = i)
 
-	    val state: O.body SharedDone.t = SharedDone.new 19
+	    val state: O.body SharedDone.t = SharedDone.new ()
 	in
 	    fun enterShared (i, stms) = SharedDone.insert (state, i, stms)
 
