@@ -108,14 +108,18 @@ define
       {Map Stms fun {$ Stm} {ShareStm Stm ShareDict} end}
    end
 
-   fun {TranslateFile File} C VS Program in
+   fun {TranslateFile File} C in
       C = {New Compiler.engine init()}
       _ = {New Compiler.interface init(C auto)}
       {C enqueue(setSwitch(expression true))}
-      VS = {StockhausenToImperative File}
-      {System.showInfo 'reading imperative syntax ...'}
-      Program = {VirtualStringToValue VS}
-      {System.showInfo 'sharing bodies ...'}
-      {ShareBody Program {NewDictionary}}
+      case {StockhausenToImperative File} of false then
+	 {System.showInfo 'frontend error'}
+	 unit
+      elseof VS then Program in
+	 {System.showInfo 'reading imperative syntax ...'}
+	 Program = {VirtualStringToValue VS}
+	 {System.showInfo 'sharing bodies ...'}
+	 {ShareBody Program {NewDictionary}}
+      end
    end
 end
