@@ -20,12 +20,20 @@ href="manual/">manual</A> web pages.</P>
 <P>As a self installing executable:</P>
 
 <UL>
-  <LI><A href="download/alice-1.0-1.exe"><TT>alice-1.0-1.exe</TT></A></LI>
+  <LI><A href="download/alice-1.0-2.exe"><TT>alice-1.0-2.exe</TT></A></LI>
 </UL>
 
 <P><B>Note:</B> You have to uninstall all previous versions of Alice before
 installing the packages.</P>
 
+<P><B><FONT color="#ff0000">Important Note:</FONT></B> There appear to be
+GMP-related problems on some Windows boxes, where Alice silently exits
+as soon as large <TT>IntInf</TT> or <TT>Time</TT> values are constructed.
+Unfortunately, we have not yet found the precise cause of the problem.
+With the previous <TT>alice-1.0-1.exe</TT> package this kept Alice from
+working at all on affected systems. The new package slightly improves the
+situation, so you can at least run Alice up to using the aforementioned
+types. We will try to properly fix the problem as soon as possible.</P>
 
 <?php subsection("packages-linux", "Linux") ?>
 
