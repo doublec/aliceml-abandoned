@@ -42,12 +42,83 @@ public:
   static const BlockLabel ObjectArrayType     = (BlockLabel) (base + 9);
   static const BlockLabel BaseArrayType       = (BlockLabel) (base + 10);
   // Data layer
-  static const BlockLabel JavaArray           = (BlockLabel) (base + 11);
   static const BlockLabel Lock                = (BlockLabel) (base + 12);
   static const BlockLabel Object              = (BlockLabel) (base + 13);
+  static const BlockLabel ObjectArray         = (BlockLabel) (base + 11);
 };
 
+//
+// Types
+//
+
+class DllExport Type: public Block {};
+
+class DllExport Class: private Type {
+protected:
+  enum {
+    CLASS_INFO_POS, // ClassInfo
+    VIRTUAL_TABLE_POS, // Block(Closure ... Closure)
+    LOCK_POS,
+    INITIALIZATION_THREAD_POS, // Thread | int(0)
+    BASE_SIZE
+    // ... static fields
+    // ... static methods
+  };
+public:
+  using Block::ToWord;
+
+  word GetStaticField(u_int index);
+  Closure *GetStaticMethod(u_int index);
+};
+
+class DllExport ObjectArrayType: private Type {
+protected:
+  enum {
+    DIMENSIONS_POS, // int
+    CLASS_POS, // Class
+    SIZE
+  };
+public:
+  using Block::ToWord;
+};
+
+class DllExport BaseType {
+public:
+  enum { Byte, Char, Double, Float, Int, Long, Short, Boolean };
+};
+
+class DllExport BaseArrayType: private Type {
+protected:
+  enum {
+    DIMENSIONS_POS, // int
+    BASE_TYPE_POS, // int(BaseType)
+    SIZE
+  };
+public:
+  using Block::ToWord;
+};
+
+//
+// Data Layer
+//
+
 static const word null = Store::IntToWord(0);
+
+class DllExport Lock: private Block {
+  // to be determined
+};
+
+class DllExport Object: private Block {
+protected:
+  enum {
+    CLASS_POS, // Class
+    BASE_SIZE
+    // ... instance fields
+  };
+public:
+  word GetInstanceField(u_int index);
+  Closure *GetVirtualMethod(u_int index);
+};
 
 class DllExport JavaString: private Chunk {
 public:
@@ -94,10 +165,10 @@ public:
   }
 };
 
-class DllExport JavaArray: private Block {
+class DllExport ObjectArray: private Block {
 protected:
   enum {
-    CLASS_POS, // Class
+    TYPE_POS, // ObjectArrayType
     SIZE_POS, // int
     BASE_SIZE
     // ... elements
@@ -105,23 +176,23 @@ protected:
 public:
   using Block::ToWord;
 
-  static JavaArray *New(word type, u_int length) {
-    //--** array representation depends on type
-    Block *b = Store::AllocBlock(JavaLabel::JavaArray, BASE_SIZE + length);
-    b->InitArg(CLASS_POS, type);
+  static ObjectArray *New(ObjectArrayType *type, u_int length) {
+    //--** support multiple dimensions
+    Block *b = Store::AllocBlock(JavaLabel::ObjectArray, BASE_SIZE + length);
+    b->InitArg(TYPE_POS, type->ToWord());
     b->InitArg(SIZE_POS, Store::IntToWord(length));
     for (u_int i = length; i--; ) b->InitArg(BASE_SIZE + i, null);
-    return static_cast<JavaArray *>(b);
+    return static_cast<ObjectArray *>(b);
   }
-  static JavaArray *FromWord(word x) {
+  static ObjectArray *FromWord(word x) {
     Block *b = Store::WordToBlock(x);
-    Assert(b == INVALID_POINTER || b->GetLabel() == JavaLabel::JavaArray);
-    return static_cast<JavaArray *>(b);
+    Assert(b == INVALID_POINTER || b->GetLabel() == JavaLabel::ObjectArray);
+    return static_cast<ObjectArray *>(b);
   }
-  static JavaArray *FromWordDirect(word x) {
+  static ObjectArray *FromWordDirect(word x) {
     Block *b = Store::DirectWordToBlock(x);
-    Assert(b->GetLabel() == JavaLabel::JavaArray);
-    return static_cast<JavaArray *>(b);
+    Assert(b->GetLabel() == JavaLabel::ObjectArray);
+    return static_cast<ObjectArray *>(b);
   }
 
   u_int GetLength() {
@@ -139,65 +210,6 @@ public:
     Assert(index < GetLength());
     return GetArg(BASE_SIZE + index);
   }
-};
-
-class DllExport Lock: private Block {
-  // to be determined
-};
-
-class DllExport Object: private Block {
-protected:
-  enum {
-    CLASS_POS, // Class
-    BASE_SIZE
-    // ... instance fields
-  };
-public:
-  word GetInstanceField(u_int index);
-  Closure *GetVirtualMethod(u_int index);
-};
-
-//
-// Types
-//
-
-class DllExport Class: private Block {
-protected:
-  enum {
-    CLASS_INFO_POS, // ClassInfo
-    VIRTUAL_TABLE_POS, // Block(Closure ... Closure)
-    LOCK_POS,
-    INITIALIZATION_THREAD_POS, // Thread | int(0)
-    BASE_SIZE
-    // ... static fields
-    // ... static methods
-  };
-public:
-  word GetStaticField(u_int index);
-  Closure *GetStaticMethod(u_int index);
-};
-
-class DllExport ObjectArrayType: private Block {
-protected:
-  enum {
-    DIMENSIONS_POS, // int
-    CLASS_POS, // Class
-    SIZE
-  };
-};
-
-class DllExport BaseType {
-public:
-  enum { Byte, Char, Double, Float, Int, Long, Short, Boolean };
-};
-
-class DllExport BaseArrayType: private Block {
-protected:
-  enum {
-    DIMENSIONS_POS, // int
-    BASE_TYPE_POS, // int(BaseType)
-    SIZE
-  };
 };
 
 //
@@ -220,6 +232,7 @@ class DllExport InstanceFieldRef: public FieldRef {
 class DllExport MethodRef: private Block {
 public:
   u_int GetIndex();
+  u_int GetNumberOfArguments();
 };
 
 class DllExport StaticMethodRef: public MethodRef {
