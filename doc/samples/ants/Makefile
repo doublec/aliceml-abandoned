@@ -29,7 +29,8 @@ TARGETS = $(SIMULATOR_TARGETS) $(COMPILER_TARGETS)
 
 all: simulator compiler
 
-simulator: $(SIMULATOR_TARGETS) $(COMPILER_TARGETS)
+compiler: $(COMPILER_TARGETS)
+simulator: $(SIMULATOR_TARGETS)
 
 %.stc: %.aml
 	$(ALICEC) $<

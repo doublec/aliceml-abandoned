@@ -55,7 +55,6 @@ struct
       | flip i ifnot (n,f)	= (n+1, fn k => Flip(i, k, f k))
 
     fun letlabel (f : label -> stmt) = (#1(f ""), fn k => Scope (fn l => #2(f l) k))
-val _ = letlabel : (label->stmt)->stmt
 
     infixr ++
     fun (0,f1) ++ (n2,f2)	= (n2, fn k => Concat(f1 k, f2 k))
@@ -163,7 +162,7 @@ val _ = letlabel : (label->stmt)->stmt
 		(s1, l1@l2, n2, e2)
 	    end
 	  | Scope f =>
-	    traverse (j+1) n e a (f (mkLabel j))
+	    (j := !j+1; traverse j n e a (f (mkLabel (!j))))
 	  | Goto l =>
 	    (case E.lookup (e,l)
 	     of SOME (p,b) => (future p, [], n, e)
@@ -247,17 +246,17 @@ val _ = letlabel : (label->stmt)->stmt
 	    in
 		(n, I.Sense(d',s1,s2,c',a)::l1@l2, n2, e2)
 	    end
-	  | Flip(j,i1,i2) =>
+	  | Flip(y,i1,i2) =>
 	    let
 		val (s1,l1,n1,e1) = traverse j (n+1) e a i1
 		val (s2,l2,n2,e2) = traverse j n1 e1 a i2
 	    in
-		(n, I.Flip(j,s1,s2,a)::l1@l2, n2, e2)
+		(n, I.Flip(y,s1,s2,a)::l1@l2, n2, e2)
 	    end
 
     fun compile (_,f) =
 	let
-	    val (_,l,n,e) = traverse 0 0 E.empty () (f Fail)
+	    val (_,l,n,e) = traverse (ref 0) 0 E.empty () (f Fail)
 	in
 	    assert n <= 10_000 do
 	    assert E.all (Future.isDetermined o future o #1) e do
