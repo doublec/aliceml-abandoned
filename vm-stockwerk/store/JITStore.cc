@@ -84,7 +84,7 @@ static void ShowRegister(const char *info, word value) {
 
 static void CompileRegister(u_int Reg) {
   static char buffer[256];
-  sprintf(buffer, "%s = %sp\n", RegToString(Reg), "%");
+  sprintf(buffer, "%s = %%p\n", RegToString(Reg));
   jit_pushr_ui(Reg);
   jit_movi_p(JIT_R0, strdup(buffer));
   jit_pushr_ui(JIT_R0);
@@ -157,7 +157,7 @@ void JITStore::LogRead(u_int Dest, u_int Ptr, u_int Index) {
 #endif
 }
 
-void JITStore::LogWrite(u_int Ptr, u_int Index, u_int Value) {
+void JITStore::LogWrite(u_int Ptr, u_int index, u_int Value) {
 #if defined(JIT_STORE_DEBUG)
   static char buffer[256];
   SaveContext();
@@ -167,13 +167,13 @@ void JITStore::LogWrite(u_int Ptr, u_int Index, u_int Value) {
   jit_popr_ui(Value);
   CompileRegister(Value);
   sprintf(buffer, "%s[%d] <- %s...",
-	  RegToString(Ptr), Index, RegToString(Value));
+	  RegToString(Ptr), index, RegToString(Value));
   CompileMessage(strdup(buffer));
   RestoreContext();
 #else
   // Avoid compiler warnings
   Ptr   = Ptr;
-  Index = Index;
+  index = index;
   Value = Value;
 #endif
 }
