@@ -27,6 +27,7 @@ __primitive exttype exn		= "exn"
 __primitive __reftype 'a ref	= ref of 'a
 
 type unit			= {}
+type ('a,'b) pair		= 'a * 'b
 datatype bool			= false | true
 datatype order			= LESS | EQUAL | GREATER
 datatype ('a,'b) alt		= FST of 'a | SND of 'b			(**)
