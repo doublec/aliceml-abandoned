@@ -71,15 +71,15 @@ structure General =
     type exn  = exn
 
     exception Bind = Bind
-    __primitive exception Chr = "General.Chr"
-    __primitive exception Div = "General.Div"
-    __primitive exception Domain = "General.Domain"
-    __primitive exception Fail of string = "General.Fail"
+    __primitive constructor Chr: exn = "General.Chr"
+    __primitive constructor Div: exn = "General.Div"
+    __primitive constructor Domain: exn = "General.Domain"
+    __primitive constructor Fail of string: exn = "General.Fail"
     exception Match = Match
-    __primitive exception Overflow = "General.Overflow"
-    __primitive exception Size = "General.Size"
-    __primitive exception Span = "General.Span"
-    __primitive exception Subscript = "General.Subscript"
+    __primitive constructor Overflow: exn = "General.Overflow"
+    __primitive constructor Size: exn = "General.Size"
+    __primitive constructor Span: exn = "General.Span"
+    __primitive constructor Subscript: exn = "General.Subscript"
 
     datatype order = LESS | EQUAL | GREATER
 
@@ -103,7 +103,7 @@ structure Option =
 
     datatype 'a option = NONE | SOME of 'a
 
-    __primitive exception Option = "Option.Option"
+    __primitive constructor Option: exn = "Option.Option"
 
     fun getOpt(SOME v, _) = v
       | getOpt(NONE,   a) = a
@@ -165,7 +165,7 @@ structure List =
 
     datatype list = datatype list
 
-    __primitive exception Empty = "List.Empty"
+    __primitive constructor Empty: exn = "List.Empty"
 
     fun null [] = true
       | null _  = false
@@ -337,7 +337,6 @@ structure String =
 	type string = string
 
 	__primitive val op^ : string * string -> string = "String.^"
-	__primitive val toCString : string -> string = "String.toCString"
 	__primitive val str : char -> string = "String.str"
 	__primitive val size : string -> int = "String.size"
 	__primitive val substring : string * int * int -> string =
@@ -350,6 +349,9 @@ structure String =
 
 	fun concat l = List.foldr (fn (s, rest) => s ^ rest) "" l
 
+	fun toCString s =
+		List.foldr (fn (c, rest) => Char.toCString c ^ rest) "" (explode s)
+
 	fun implode l = concat (List.map str l)
 
 	fun map f s = implode (List.map f (explode s))
@@ -357,6 +359,30 @@ structure String =
 	__primitive val compare : string * string -> order = "String.compare"
 
 	fun s < t = compare (s, t) = LESS
+
+	local
+	    fun token (c::cr, f) =
+		if f c then
+		    let
+			val (cs, rest) = token (cr, f)
+		    in
+			(c::cs, rest)
+		    end
+		else (nil, cr)
+	      | token (nil, _) = (nil, nil)
+
+	    fun tokens' (c::cr, f) =
+		if f c then tokens' (cr, f)
+		else
+		    let
+			val (cs, rest) = token (cr, f)
+		    in
+			implode (c::cs)::tokens' (rest, f)
+		    end
+	      | tokens' (nil, _) = nil
+	in
+	    fun tokens f s = tokens' (explode s, f)
+	end
     end
 
 
@@ -798,14 +824,11 @@ val print = TextIO.print
 (* ML-Yacc Parser Generator (c) 1989 Andrew W. Appel, David R. Tarditi 
  *
  * $Log$
- * Revision 1.2  1999-11-15 12:12:13  rossberg
- * * Implemented translation of sharing constraints.
- * * Bug fixes in treatment of manifest value and module specs.
- * * Several improvements in infrastructure:
- *   - made error handling consistent throughout the frontend
- *   - renamed Source.position to Source.region to avoid confusion
- *   - removed Crash.crash and replaced all calls to raise Crash.Crash
- *     to receive Source positions on crashs
+ * Revision 1.3  2000-01-07 15:41:40  rossberg
+ * Bug fixes in the translation of functors - can bootstrap again.
+ *
+ * Revision 1.3  1999/11/15 12:21:54  rossberg
+ * Reverted to original state because we can deal with sharing now.
  *
  * Revision 1.2  1999/11/02 15:52:03  rossberg
  * Replaced sharing constraints by where constraints. I marked the original
@@ -1123,14 +1146,11 @@ signature ARG_PARSER =
 (* ML-Yacc Parser Generator (c) 1989 Andrew W. Appel, David R. Tarditi 
  *
  * $Log$
- * Revision 1.2  1999-11-15 12:12:13  rossberg
- * * Implemented translation of sharing constraints.
- * * Bug fixes in treatment of manifest value and module specs.
- * * Several improvements in infrastructure:
- *   - made error handling consistent throughout the frontend
- *   - renamed Source.position to Source.region to avoid confusion
- *   - removed Crash.crash and replaced all calls to raise Crash.Crash
- *     to receive Source positions on crashs
+ * Revision 1.3  2000-01-07 15:41:40  rossberg
+ * Bug fixes in the translation of functors - can bootstrap again.
+ *
+ * Revision 1.4  1999/11/15 12:21:54  rossberg
+ * Reverted to original state because we can deal with sharing now.
  *
  * Revision 1.3  1999/11/02 16:09:35  rossberg
  * Ups.
@@ -1249,14 +1269,8 @@ end;
 (* ML-Yacc Parser Generator (c) 1989 Andrew W. Appel, David R. Tarditi 
  *
  * $Log$
- * Revision 1.2  1999-11-15 12:12:13  rossberg
- * * Implemented translation of sharing constraints.
- * * Bug fixes in treatment of manifest value and module specs.
- * * Several improvements in infrastructure:
- *   - made error handling consistent throughout the frontend
- *   - renamed Source.position to Source.region to avoid confusion
- *   - removed Crash.crash and replaced all calls to raise Crash.Crash
- *     to receive Source positions on crashs
+ * Revision 1.3  2000-01-07 15:41:40  rossberg
+ * Bug fixes in the translation of functors - can bootstrap again.
  *
  * Revision 1.1  1999/10/04 09:44:08  kornstae
  * Moved ML-YACC files here from distribution
@@ -1332,14 +1346,8 @@ end;
 (* ML-Yacc Parser Generator (c) 1989 Andrew W. Appel, David R. Tarditi 
  *
  * $Log$
- * Revision 1.2  1999-11-15 12:12:13  rossberg
- * * Implemented translation of sharing constraints.
- * * Bug fixes in treatment of manifest value and module specs.
- * * Several improvements in infrastructure:
- *   - made error handling consistent throughout the frontend
- *   - renamed Source.position to Source.region to avoid confusion
- *   - removed Crash.crash and replaced all calls to raise Crash.Crash
- *     to receive Source positions on crashs
+ * Revision 1.3  2000-01-07 15:41:40  rossberg
+ * Bug fixes in the translation of functors - can bootstrap again.
  *
  * Revision 1.1  1999/10/04 09:44:08  kornstae
  * Moved ML-YACC files here from distribution
@@ -1377,14 +1385,8 @@ end;
 (* ML-Yacc Parser Generator (c) 1989 Andrew W. Appel, David R. Tarditi 
  *
  * $Log$
- * Revision 1.2  1999-11-15 12:12:13  rossberg
- * * Implemented translation of sharing constraints.
- * * Bug fixes in treatment of manifest value and module specs.
- * * Several improvements in infrastructure:
- *   - made error handling consistent throughout the frontend
- *   - renamed Source.position to Source.region to avoid confusion
- *   - removed Crash.crash and replaced all calls to raise Crash.Crash
- *     to receive Source positions on crashs
+ * Revision 1.3  2000-01-07 15:41:40  rossberg
+ * Bug fixes in the translation of functors - can bootstrap again.
  *
  * Revision 1.1  1999/10/04 09:44:08  kornstae
  * Moved ML-YACC files here from distribution
@@ -3723,6 +3725,8 @@ signature TYPE =
     val emptyRow :	unit -> row
     val extendRow :	lab * typ list * row -> row	(* Row *)
 
+    val openRowType :	typ -> unit			(* Row *)
+
   (* Copying and instantiation *)
 
     val instance :	typ -> typ
@@ -4231,6 +4235,14 @@ structure TypePrivate =
 	    loop(1,ts)
 	end
 
+    fun openRow NIL			= RHO(ref(!level))
+      | openRow(r as RHO _)		= r
+      | openRow(FLD(l,ts,r))		= FLD(l, ts, openRow r)
+
+    fun openRowType(ref(LINK t))	= openRowType t
+      | openRowType(t as ref(ROW r))	= t := ROW(openRow r)
+      | openRowType(t as ref(SUM r))	= t := SUM(openRow r)
+      | openRowType _			= raise Row
 
 
   (* Closure *)
@@ -4732,6 +4744,8 @@ signature INF =
 	| MismatchInf of lab * mismatch
 	| MismatchValSort of lab * val_sort * val_sort
 	| MismatchTypSort of lab * typ_sort * typ_sort
+	| MismatchDom     of mismatch
+	| MismatchRan     of mismatch
 	| Incompatible    of inf * inf
 	| IncompatibleArg of path * path
 
@@ -5085,7 +5099,7 @@ structure InfPrivate =
 	let
 	    val p' = Path.instance PathMap.lookup (rea, p)
 	in
-	   (*UNFINISHED: do we need to make the check? *)
+	    (*UNFINISHED: do we need to make the check? *)
 	    if p' <> p then PathMap.insert(rea, p, p') else () ;
 	    p'
 	end
@@ -5436,6 +5450,8 @@ structure InfPrivate =
 	| MismatchInf of lab * mismatch
 	| MismatchValSort of lab * val_sort * val_sort
 	| MismatchTypSort of lab * typ_sort * typ_sort
+	| MismatchDom     of mismatch
+	| MismatchRan     of mismatch
 	| Incompatible    of inf * inf
 	| IncompatibleArg of path * path
 
@@ -5564,18 +5580,21 @@ structure InfPrivate =
       | match'(rea, ref(SIG s1), ref(SIG s2)) = matchSig(rea, s1, s2)
 
       | match'(rea, ref(ARR(p1,j11,j12)), ref(ARR(p2,j21,j22))) =
-	(*UNFINISHED*)
-	    ()
+	( realise(rea, j21)
+	; match'(rea, j21, j11) handle Mismatch mismatch =>
+		raise Mismatch(MismatchDom mismatch)
+	; realise(rea, j12)
+	; match'(rea, j12, j22) handle Mismatch mismatch =>
+		raise Mismatch(MismatchRan mismatch)
+	)
 
       | match'(rea, ref(LAM(p1,j11,j12)), ref(LAM(p2,j21,j22))) =
 	(*UNFINISHED*)
 	    ()
 
       | match'(rea, ref(APP(j11,p1,j12)), ref(APP(j21,p2,j22))) =
-	( match'(rea, j11, j21) ;
-	  if p1 = p2 then
-	      ()
-	  else
+	( match'(rea, j11, j21)
+	; if p1 = p2 then () else
 	      raise Mismatch(IncompatibleArg(p1,p2))
 	)
 
@@ -5838,6 +5857,7 @@ signature ABSTRACT_GRAMMAR =
 	| HandleExp of info * exp * match list	(* exception handling *)
 	| AnnExp    of info * exp * typ		(* type annotation *)
 	| LetExp    of info * dec list * exp	(* let *)
+	| PackExp   of info * mod		(* package introduction *)
 
     and 'a row   = Row   of info * 'a field list * bool
     and 'a field = Field of info * lab * 'a
@@ -5878,6 +5898,7 @@ signature ABSTRACT_GRAMMAR =
 	| ExtTyp    of info			(* extensible sum type *)
 	| AllTyp    of info * id * typ		(* universal quantification *)
 	| ExTyp     of info * id * typ		(* existential quantification *)
+	| PackTyp   of info * inf		(* package type *)
 	| SingTyp   of info * longid		(* singleton type *)
 
     and con =   Con of info * id * typ list	(* data constructor *)
@@ -5894,6 +5915,7 @@ signature ABSTRACT_GRAMMAR =
 	| AnnMod    of info * mod * inf		(* annotation *)
 	| UpMod     of info * mod * inf		(* coercion *)
 	| LetMod    of info * dec list * mod	(* let *)
+	| UnpackMod of info * exp * inf		(* package elimination *)
 
     (* Interfaces *)
 
@@ -6022,6 +6044,7 @@ functor MakeAbstractGrammar(type info) :>
 	| HandleExp of info * exp * match list	(* exception handling *)
 	| AnnExp    of info * exp * typ		(* type annotation *)
 	| LetExp    of info * dec list * exp	(* let *)
+	| PackExp   of info * mod		(* package introduction *)
 
     and 'a row   = Row   of info * 'a field list * bool
     and 'a field = Field of info * lab * 'a
@@ -6062,6 +6085,7 @@ functor MakeAbstractGrammar(type info) :>
 	| ExtTyp    of info			(* extensible sum type *)
 	| AllTyp    of info * id * typ		(* universal quantification *)
 	| ExTyp     of info * id * typ		(* existential quantification *)
+	| PackTyp   of info * inf		(* package type *)
 	| SingTyp   of info * longid		(* singleton type *)
 
     and con =   Con of info * id * typ list	(* data constructor *)
@@ -6078,6 +6102,7 @@ functor MakeAbstractGrammar(type info) :>
 	| AnnMod    of info * mod * inf		(* annotation *)
 	| UpMod     of info * mod * inf		(* coercion *)
 	| LetMod    of info * dec list * mod	(* let *)
+	| UnpackMod of info * exp * inf		(* package elimination *)
 
     (* Interfaces *)
 
@@ -6166,6 +6191,7 @@ functor MakeAbstractGrammar(type info) :>
       | infoExp(HandleExp(i,_,_))	= i
       | infoExp(AnnExp(i,_,_))		= i
       | infoExp(LetExp(i,_,_))		= i
+      | infoExp(PackExp(i,_))		= i
 
     fun infoRow(Row(i,_,_))		= i
     fun infoField(Field(i,_,_))		= i
@@ -6199,6 +6225,7 @@ functor MakeAbstractGrammar(type info) :>
       | infoTyp(ExtTyp(i))		= i
       | infoTyp(AllTyp(i,_,_))		= i
       | infoTyp(ExTyp(i,_,_))		= i
+      | infoTyp(PackTyp(i,_))		= i
       | infoTyp(SingTyp(i,_))		= i
 
     fun infoCon(Con(i,_,_))		= i
@@ -6212,6 +6239,7 @@ functor MakeAbstractGrammar(type info) :>
       | infoMod(AnnMod(i,_,_))		= i
       | infoMod(UpMod(i,_,_))		= i
       | infoMod(LetMod(i,_,_))		= i
+      | infoMod(UnpackMod(i,_,_))	= i
 
     fun infoInf(TopInf(i))		= i
       | infoInf(AbsInf(i))		= i
@@ -7141,6 +7169,8 @@ signature ELABORATION_ERROR =
 	  VecExpUnify		of unify_error
 	| AppExpFunUnify	of unify_error
 	| AppExpArgUnify	of unify_error
+	| CompExpNoRow		of typ
+	| CompExpUnify		of unify_error
 	| AndExpUnify		of unify_error
 	| OrExpUnify		of unify_error
 	| IfExpCondUnify	of unify_error
@@ -7221,6 +7251,8 @@ structure ElaborationError :> ELABORATION_ERROR =
 	  VecExpUnify		of unify_error
 	| AppExpFunUnify	of unify_error
 	| AppExpArgUnify	of unify_error
+	| CompExpNoRow		of typ
+	| CompExpUnify		of unify_error
 	| AndExpUnify		of unify_error
 	| OrExpUnify		of unify_error
 	| IfExpCondUnify	of unify_error
@@ -7366,6 +7398,12 @@ structure ElaborationError :> ELABORATION_ERROR =
 	    ["value",ppLab l,"is","not","a","constructor"]
       | ppMismatch'(Inf.MismatchTypSort(l,w1,w2)) =
 	    ["type",ppLab l,"is","not","an","open","datatype"]
+      | ppMismatch'(Inf.MismatchDom im) =
+	    ["functor","signature","is","incompatible","because","argument"]
+	    @ ppMismatch' im
+      | ppMismatch'(Inf.MismatchRan im) =
+	    ["functor","signature","is","incompatible","because","result"]
+	    @ ppMismatch' im
       | ppMismatch'(Inf.Incompatible(j1,j2)) =
 	    ["signatures","are","incompatible"]
       | ppMismatch'(Inf.IncompatibleArg(p1,p2)) =
@@ -7399,6 +7437,15 @@ structure ElaborationError :> ELABORATION_ERROR =
 	ppUnify4(
 	  par["argument","type","mismatch:"],
 	  par["does","not","match","argument","type"], ue)
+      | ppError(CompExpNoRow t) =
+	vbox(
+	    par["specialization","type","is","not","a","record:"] ^^
+	    nest(break ^^ PPType.ppTyp t)
+	)
+      | ppError(CompExpUnify ue) =
+	ppUnify4(
+	  par["mismatch","on","record","update:"],
+	  par["does","not","match","type"], ue)
       | ppError(AndExpUnify ue) =
 	ppUnify2(
 	  par["operand","of","`andalso'","is","not","a","boolean:"],
@@ -7431,6 +7478,7 @@ structure ElaborationError :> ELABORATION_ERROR =
 	ppUnify4(
 	  par["expression","does","not","match","annotation:"],
 	  par["does","not","match","type"], ue)
+      (* Patterns *)
       | ppError(MatchPatUnify ue) =
 	ppUnify4(
 	  par["inconsistent","types","in","`case'","patterns:"],
@@ -7467,6 +7515,7 @@ structure ElaborationError :> ELABORATION_ERROR =
 	ppUnify4(
 	  par["pattern","does","not","match","annotation:"],
 	  par["does","not","match","type"], ue)
+      (* Types *)
       | ppError(StarTypKind k) =
 	  par["missing","arguments","in","type","expression"]
       | ppError(AppTypFunKind k) =
@@ -7475,6 +7524,7 @@ structure ElaborationError :> ELABORATION_ERROR =
 	  par["missing","arguments","in","type","expression"]
       | ppError(RefTypKind k) =
 	  par["missing","arguments","in","type","expression"]
+      (* Declarations *)
       | ppError(ValDecUnify ue) =
 	ppUnify4(
 	  par["expression","does","not","match","pattern","type:"],
@@ -7483,6 +7533,7 @@ structure ElaborationError :> ELABORATION_ERROR =
 	  par["could not generalize","type","of",ppId x,
 	      "due","to","value","restriction",
 	      "although","it","contains","explicit","type","variables"]
+      (* Modules *)
       | ppError(ModLongidInf(y,j)) =
 	  par["module",ppLongid y,"is","not","a","structure"]
       | ppError(StrModUnclosed lnt) =
@@ -7500,6 +7551,7 @@ structure ElaborationError :> ELABORATION_ERROR =
       | ppError(AnnModMismatch im) =
 	ppMismatch(
 	  par["module","expression","does","not","match","signature:"], im)
+      (* Interfaces *)
       | ppError(GroundInfKind k) =
 	  par["missing","arguments","in","signature","expression"]
       | ppError(CompInfMismatch im) =
@@ -7507,6 +7559,7 @@ structure ElaborationError :> ELABORATION_ERROR =
 	  par["inconsistency","at","signature","specialization:"], im)
       | ppError(SingInfPath) =
 	  par["module","expression","is","not","a","path"]
+      (* Components *)
       | ppError(CompUnclosed lnt) =
 	ppUnclosed(
 	  par["component","is","not","closed:"], lnt)
@@ -7515,7 +7568,7 @@ structure ElaborationError :> ELABORATION_ERROR =
 	vbox(
 	    par["type","of",ppId x,"cannot","be","generalized","due","to",
 		"value","restriction:"] ^^
-	    nest(break ^^ below(PPType.ppTyp t))
+	    nest(break ^^ PPType.ppTyp t)
 	)
 
   (* Export *)
@@ -7541,6 +7594,7 @@ signature ELABORATION_PHASE =
   end
 (* src # 72 *)
 (* UNFINISHED:
+   - packages
    - appropriate treatment of value paths
 *)
 
@@ -7800,8 +7854,7 @@ val _=print "\n"
 	let
 	    val (ts,exps') = elabExps(E, exps)
 	    val  t         = vecTyp(E, List.hd ts)
-	    val  _         = Type.unifyList ts
-			     handle Type.UnifyList(n,t1,t2) =>
+	    val  _         = Type.unifyList ts handle Type.UnifyList(n,t1,t2) =>
 				error(I.infoExp(List.nth(exps,n)),
 				      E.VecExpUnify(t, List.nth(ts,n), t1, t2))
 	in
@@ -7824,12 +7877,10 @@ val _=print "\n"
 	    val  t11       = Type.unknown Type.STAR
 	    val  t12       = Type.unknown Type.STAR
 	    val  t1'       = Type.inArrow(t11,t12)
-	    val  _         = Type.unify(t1,t1')
-			     handle Type.Unify(t3,t4) =>
+	    val  _         = Type.unify(t1,t1') handle Type.Unify(t3,t4) =>
 				error(I.infoExp exp1,
 				      E.AppExpFunUnify(t1, t1', t3, t4))
-	    val  _         = Type.unify(t11,t2)
-			     handle Type.Unify(t3,t4) =>
+	    val  _         = Type.unify(t11,t2) handle Type.Unify(t3,t4) =>
 				error(i, E.AppExpArgUnify(t11, t2, t3, t4))
 	in
 	    ( t12, O.AppExp(typInfo(i,t12), exp1', exp2') )
@@ -7840,10 +7891,12 @@ val _=print "\n"
 	let
 	    val (t1,exp1') = elabExp(E, exp1)
 	    val (t2,exp2') = elabExp(E, exp2)
-	    val  t         = Type.unknown Type.STAR
+	    val  _         = Type.openRowType t2 handle Type.Row =>
+				error(I.infoExp exp2, E.CompExpNoRow t2)
+	    val  _         = Type.unify(t1,t2) handle Type.Unify(t3,t4) =>
+				error(i, E.CompExpUnify(t2, t1, t4, t3))
 	in
-	    unfinished i "elabExp" "record composition";
-	    ( t, O.CompExp(typInfo(i,t), exp1', exp2') )
+	    ( t1, O.CompExp(typInfo(i,t1), exp1', exp2') )
 	end
 
       | elabExp(E, I.AndExp(i, exp1, exp2)) =
@@ -7851,14 +7904,10 @@ val _=print "\n"
 	    val (t1,exp1') = elabExp(E, exp1)
 	    val (t2,exp2') = elabExp(E, exp2)
 	    val  t         = boolTyp E
-	    val  _         = Type.unify(t1,t)
-			     handle Type.Unify(t3,t4) =>
-				error(I.infoExp exp1,
-				      E.AndExpUnify(t1, t, t3, t4))
-	    val  _         = Type.unify(t2,t)
-			     handle Type.Unify(t3,t4) =>
-				error(I.infoExp exp2,
-				      E.AndExpUnify(t2, t, t3, t4))
+	    val  _         = Type.unify(t1,t) handle Type.Unify(t3,t4) =>
+				error(I.infoExp exp1, E.AndExpUnify(t1,t,t3,t4))
+	    val  _         = Type.unify(t2,t) handle Type.Unify(t3,t4) =>
+				error(I.infoExp exp2, E.AndExpUnify(t2,t,t3,t4))
 	in
 	    ( t, O.AndExp(typInfo(i,t), exp1', exp2') )
 	end
@@ -7868,14 +7917,10 @@ val _=print "\n"
 	    val (t1,exp1') = elabExp(E, exp1)
 	    val (t2,exp2') = elabExp(E, exp2)
 	    val  t         = boolTyp E
-	    val  _         = Type.unify(t1,t)
-			     handle Type.Unify(t3,t4) =>
-				error(I.infoExp exp1,
-				      E.OrExpUnify(t1, t, t3, t4))
-	    val  _         = Type.unify(t2,t)
-			     handle Type.Unify(t3,t4) =>
-				error(I.infoExp exp2,
-				      E.OrExpUnify(t2, t, t3, t4))
+	    val  _         = Type.unify(t1,t) handle Type.Unify(t3,t4) =>
+				error(I.infoExp exp1, E.OrExpUnify(t1,t,t3,t4))
+	    val  _         = Type.unify(t2,t) handle Type.Unify(t3,t4) =>
+				error(I.infoExp exp2, E.OrExpUnify(t2,t,t3,t4))
 	in
 	    ( t, O.OrExp(typInfo(i,t), exp1', exp2') )
 	end
@@ -7886,12 +7931,10 @@ val _=print "\n"
 	    val (t2,exp2') = elabExp(E, exp2)
 	    val (t3,exp3') = elabExp(E, exp3)
 	    val  tb        = boolTyp E
-	    val  _         = Type.unify(t1,tb)
-			     handle Type.Unify(t4,t5) =>
+	    val  _         = Type.unify(t1,tb) handle Type.Unify(t4,t5) =>
 				error(I.infoExp exp1,
 				      E.IfExpCondUnify(t1, tb, t4, t5))
-	    val  _         = Type.unify(t2,t3)
-			     handle Type.Unify(t4,t5) =>
+	    val  _         = Type.unify(t2,t3) handle Type.Unify(t4,t5) =>
 				error(i, E.IfExpBranchUnify(t2, t3, t4, t5))
 	in
 	    ( t2, O.IfExp(typInfo(i,t2), exp1', exp2', exp3') )
@@ -7903,8 +7946,7 @@ val _=print "\n"
 	    val (t2,exp2') = elabExp(E, exp2)
 	    val  tb        = boolTyp E
 	    val  t         = Type.inTuple[]
-	    val  _         = Type.unify(t1,tb)
-			     handle Type.Unify(t3,t4) =>
+	    val  _         = Type.unify(t1,tb) handle Type.Unify(t3,t4) =>
 				error(I.infoExp exp1,
 				      E.WhileExpCondUnify(t1, tb, t3, t4))
 	in
@@ -7933,8 +7975,7 @@ val _=print "\n"
 	    val (t1,exp') = elabExp(E, exp)
 	    val  te       = exnTyp E
 	    val  t        = Type.unknown Type.STAR
-	    val  _        = Type.unify(t1,te)
-			    handle Type.Unify(t2,t3) =>
+	    val  _        = Type.unify(t1,te) handle Type.Unify(t2,t3) =>
 				error(I.infoExp exp,
 				      E.RaiseExpUnify(t1, te, t2, t3))
 	in
@@ -7946,8 +7987,7 @@ val _=print "\n"
 	let
 	    val (t1,exp')    = elabExp(E, exp)
 	    val (t2,matchs') = elabMatchs(E, exnTyp E, matchs)
-	    val  _           = Type.unify(t1,t2)
-			       handle Type.Unify(t3,t4) =>
+	    val  _           = Type.unify(t1,t2) handle Type.Unify(t3,t4) =>
 				error(i, E.HandleExpUnify(t1, t2, t3, t4))
 	in
 	    ( t1, O.HandleExp(typInfo(i,t1), exp', matchs') )
@@ -7957,8 +7997,7 @@ val _=print "\n"
 	let
 	    val (t1,exp') = elabExp(E, exp)
 	    val (t2,typ') = elabStarTyp(E, typ)
-	    val  _        = Type.unify(t1,t2)
-			    handle Type.Unify(t3,t4) =>
+	    val  _        = Type.unify(t1,t2) handle Type.Unify(t3,t4) =>
 				error(i, E.AnnExpUnify(t1, t2, t3, t4))
 	in
 	    ( t2, O.AnnExp(typInfo(i,t2), exp', typ') )
@@ -7978,6 +8017,15 @@ val _ = Inf.strengthenSig(Path.fromLab(Lab.fromString "?let"), s)
 	    ( t, O.LetExp(typInfo(i,t), decs', exp') )
 	end
 
+      | elabExp(E, I.PackExp(i, mod)) =
+	let
+	    val (j,mod') = elabMod(E, mod)
+	    (*UNFINISHED*)
+	    val  t       = Type.unknown(Type.STAR)
+	in
+	    unfinished i "elabExp" "packages";
+	    ( t, O.PackExp(typInfo(i,t), mod') )
+	end
 
     and elabExps(E, exps) =
 	ListPair.unzip(List.map (fn exp => elabExp(E,exp)) exps)
@@ -7989,13 +8037,11 @@ val _ = Inf.strengthenSig(Path.fromLab(Lab.fromString "?let"), s)
 	let
 	    val  _        = insertScope E
 	    val (t3,pat') = elabPat(E, Inf.empty(), pat)
-	    val  _        = Type.unify(t1,t3)
-			    handle Type.Unify(t5,t6) =>
+	    val  _        = Type.unify(t1,t3) handle Type.Unify(t5,t6) =>
 				error(I.infoPat pat,
 				      E.MatchPatUnify(t1, t3, t5, t6))
 	    val (t4,exp') = elabExp(E, exp)
-	    val  _        = Type.unify(t2,t4)
-			    handle Type.Unify(t5,t6) =>
+	    val  _        = Type.unify(t2,t4) handle Type.Unify(t5,t6) =>
 				error(I.infoExp exp,
 				      E.MatchExpUnify(t2, t4, t5, t6))
 	    val  _        = deleteScope E
@@ -8049,11 +8095,9 @@ val _ = Inf.strengthenSig(Path.fromLab(Lab.fromString "?let"), s)
 		    val  t11  = Type.unknown Type.STAR
 		    val  t12  = Type.unknown Type.STAR
 		    val  t1'  = Type.inArrow(t11,t12)
-		    val  _    = Type.unify(t1',t1)
-				handle Type.Unify(t3,t4) =>
+		    val  _    = Type.unify(t1',t1) handle Type.Unify(t3,t4) =>
 				    error(i, E.ConPatManyArgs(longid))
-		    val  _    = Type.unify(t11,t2)
-				handle Type.Unify(t3,t4) =>
+		    val  _    = Type.unify(t11,t2) handle Type.Unify(t3,t4) =>
 				    error(i, E.ConPatUnify(t11, t2, t3, t4))
 		in
 		    elabArgs(t12, ts)
@@ -8094,8 +8138,7 @@ val _ = Inf.strengthenSig(Path.fromLab(Lab.fromString "?let"), s)
 	let
 	    val (ts,pats') = elabPats(E, s, pats)
 	    val  t         = vecTyp(E, List.hd ts)
-	    val  _         = Type.unifyList ts
-			     handle Type.UnifyList(n,t1,t2) =>
+	    val  _         = Type.unifyList ts handle Type.UnifyList(n,t1,t2) =>
 				error(I.infoPat(List.nth(pats,n)),
 				      E.VecPatUnify(t, List.nth(ts,n), t1, t2))
 	in
@@ -8106,8 +8149,7 @@ val _ = Inf.strengthenSig(Path.fromLab(Lab.fromString "?let"), s)
 	let
 	    val (t1,pat1') = elabPat(E, s, pat1)
 	    val (t2,pat2') = elabPat(E, s, pat2)
-	    val  _         = Type.unify(t1,t2)
-			     handle Type.Unify(t3,t4) =>
+	    val  _         = Type.unify(t1,t2) handle Type.Unify(t3,t4) =>
 				error(i, E.AsPatUnify(t1, t2, t3, t4))
 	in
 	    ( t2, O.AsPat(typInfo(i,t2), pat1', pat2') )
@@ -8117,8 +8159,7 @@ val _ = Inf.strengthenSig(Path.fromLab(Lab.fromString "?let"), s)
 	let
 	    val (ts,pats') = elabPats(E, s, pats)
 	    val  t         = List.hd ts
-	    val  _         = Type.unifyList ts
-			     handle Type.UnifyList(n,t1,t2) =>
+	    val  _         = Type.unifyList ts handle Type.UnifyList(n,t1,t2) =>
 				error(I.infoPat(List.nth(pats,n)),
 				      E.AltPatUnify(t, List.nth(ts,n), t1, t2))
 	in
@@ -8137,8 +8178,7 @@ val _ = Inf.strengthenSig(Path.fromLab(Lab.fromString "?let"), s)
 	    val (t1,pat') = elabPat(E, s, pat)
 	    val (t2,exp') = elabExp(E, exp)
 	    val  tb       = boolTyp E
-	    val  _        = Type.unify(t2,tb)
-			    handle Type.Unify(t3,t4) =>
+	    val  _        = Type.unify(t2,tb) handle Type.Unify(t3,t4) =>
 				error(i, E.GuardPatUnify(t2, tb, t3, t4))
 	in
 	    ( t1, O.GuardPat(typInfo(i,t1), pat', exp') )
@@ -8148,8 +8188,7 @@ val _ = Inf.strengthenSig(Path.fromLab(Lab.fromString "?let"), s)
 	let
 	    val (t1,pat') = elabPat(E, s, pat)
 	    val (t2,typ') = elabStarTyp(E, typ)
-	    val  _        = Type.unify(t1,t2)
-			    handle Type.Unify(t3,t4) =>
+	    val  _        = Type.unify(t1,t2) handle Type.Unify(t3,t4) =>
 				error(i, E.AnnPatUnify(t1, t2, t3, t4))
 	in
 	    ( t2, O.AnnPat(typInfo(i,t2), pat', typ') )
@@ -8383,6 +8422,16 @@ val _=print "\n"
 	    ( t, O.ExTyp(typInfo(i,t), id', typ') )
 	end
 
+      | elabTyp(E, I.PackTyp(i, inf)) =
+	let
+	    val (j,inf') = elabInf(E, inf)
+	    (*UNFINISHED*)
+	    val  t       = Type.unknown(Type.STAR)
+	in
+	    unfinished i "elabTyp" "packages";
+	    ( t, O.PackTyp(typInfo(i,t), inf') )
+	end
+
       | elabTyp(E, I.SingTyp(i, longid)) =
 	let
 	    val (t,longid') = elabValLongid(E, longid)
@@ -8553,8 +8602,8 @@ val _=print "\n"
 	let
 	    val (j,longid') = elabModLongid(E, longid)
 	    val  s          = Inf.asSig j handle Inf.Interface =>
-					error(I.infoLongid longid,
-					      E.ModLongidInf(longid, j))
+				error(I.infoLongid longid,
+				      E.ModLongidInf(longid, j))
 	in
 	    ( s, longid' )
 	end
@@ -8579,7 +8628,7 @@ val _=print "\n"
 	    val s     = Inf.empty()
 	    val decs' = elabDecs(E, s, decs)
 	    val _     = Inf.close s handle Inf.Unclosed lnt =>
-			error(i, E.StrModUnclosed lnt)
+			    error(i, E.StrModUnclosed lnt)
 	    val j     = Inf.inSig s
 	in
 	    ( j, O.StrMod(infInfo(i,j), decs') )
@@ -8644,8 +8693,7 @@ print "\n\
 PrettyPrint.output(TextIO.stdOut, PPInf.ppInf j2, 75);
 print "\n"
 )*)
-	    val  rea        = Inf.match(j2,j11)
-			      handle Inf.Mismatch mismatch =>
+	    val  rea        = Inf.match(j2,j11) handle Inf.Mismatch mismatch =>
 				  error(i, E.AppModArgMismatch mismatch)
 	    val  _          = PathMap.insert(#mod_rea rea, p, p2)
 	    val  _          = Inf.realise(rea, j12)
@@ -8658,8 +8706,7 @@ print "\n"
 	let
 	    val (j1,mod') = elabMod(E, mod)
 	    val (j2,inf') = elabGroundInf(E, inf)
-	    val  _        = Inf.match(j1, j2)
-			    handle Inf.Mismatch mismatch =>
+	    val  _        = Inf.match(j1, j2) handle Inf.Mismatch mismatch =>
 				error(i, E.AnnModMismatch mismatch)
 	    val  j        = j2
 	in
@@ -8671,8 +8718,7 @@ print "\n"
 	    val (j1,mod') = elabMod(E, mod)
 	    val (j2,inf') = elabGroundInf(E, inf)
 	    val  j        = Inf.instance j2	(* opaque *)
-	    val  _        = Inf.match(j1, j2)
-			    handle Inf.Mismatch mismatch =>
+	    val  _        = Inf.match(j1, j2) handle Inf.Mismatch mismatch =>
 				error(i, E.AnnModMismatch mismatch)
 	in
 	    ( j, O.UpMod(infInfo(i,j), mod', inf') )
@@ -8691,6 +8737,17 @@ val p = Path.fromLab(Lab.fromString "?let")
 	    val  _       = deleteScope E
 	in
 	    ( j, O.LetMod(infInfo(i,j), decs', mod') )
+	end
+
+      | elabMod(E, I.UnpackMod(i, exp, inf)) =
+	let
+	    val (t,exp') = elabExp(E, exp)
+	    val (j,inf') = elabInf(E, inf)
+	    val  j'      = Inf.instance j
+	    (*UNFINISHED*)
+	in
+	    unfinished i "elabMod" "packages";
+	    ( j', O.UnpackMod(infInfo(i,j), exp', inf') )
 	end
 
 
@@ -8844,8 +8901,7 @@ print "\n\
 PrettyPrint.output(TextIO.stdOut, PPInf.ppInf j2, 75);
 print "\n"
 )*)
-	    val  j         = Inf.intersect(j1,j2)
-			     handle Inf.Mismatch mismatch =>
+	    val  j         = Inf.intersect(j1,j2) handle Inf.Mismatch mismatch=>
 				error(i, E.CompInfMismatch mismatch)
 (*val _ = (
 print "#### j =\n";
@@ -8946,8 +9002,7 @@ print "\n\
 	    val (t1,pat') = elabPat(E, s, pat)
 	    val  _        = Type.exitLevel()
 	    val  E'       = splitScope E
-	    val  _        = Type.unify(t1,t2)
-			    handle Type.Unify(t3,t4) =>
+	    val  _        = Type.unify(t1,t2) handle Type.Unify(t3,t4) =>
 				error(i, E.ValDecUnify(t1, t2, t3, t4))
 	    (* UNFINISHED: if pat = x and exp = y then equate x to y *)
 	    val  _        = appVals (generaliseVal
@@ -9086,8 +9141,7 @@ val p = Path.fromLab(Lab.fromString "?local")
     and generaliseVal (E, s, poo, isPoly) (x, {id, path=p, typ=t, sort=w}) =
 	let
 	    val t' = if isPoly then Type.close t
-			       else (Type.lift t ; t)
-			       handle Type.Lift a =>
+			       else (Type.lift t ; t) handle Type.Lift a =>
 				   error(I.infoId id, E.ValDecLift(id, a))
 	    val d  = Option.map (fn po => Option.getOpt(po, p)) poo
 	in
@@ -9141,8 +9195,7 @@ print(if w = Inf.CONSTRUCTOR then " (* constructor *)\n" else if isPoly then "\n
 	    val (t2,exp') = elabExp(E, exp)
 	    val  _        = deleteScope E
 	    val  _        = r := tpats'
-	    val  _        = Type.unify(t1,t2)
-			    handle Type.Unify(t3,t4) =>
+	    val  _        = Type.unify(t1,t2) handle Type.Unify(t3,t4) =>
 				error(i, E.ValDecUnify(t1, t2, t3, t4))
 	in
 	    O.ValDec(nonInfo(i), pat', exp')
@@ -9392,8 +9445,8 @@ val p = Path.fromLab(Lab.fromString "?localSpec")
 	    val imps' = elabImps(E, imps)
 	    val s     = Inf.empty()
 	    val decs' = elabDecs(E, s, decs)
-	    val _     = Inf.close s
-			handle Inf.Unclosed lnt => error(i, E.CompUnclosed lnt)
+	    val _     = Inf.close s handle Inf.Unclosed lnt =>
+			    error(i, E.CompUnclosed lnt)
 (*DEBUG*)
 val _ = print "Component signature:\n"
 val _ = PrettyPrint.output(TextIO.stdOut, PPInf.ppSig s, 78)
@@ -9563,6 +9616,7 @@ UNFINISHED: obsolete after bootstrapping:
       | idsTyp xs' (I.ExtTyp(i))	= ()
       | idsTyp xs' (I.AllTyp(i,x,t))	= idsTyp xs' t
       | idsTyp xs' (I.ExTyp(i,x,t))	= idsTyp xs' t
+      | idsTyp xs' (I.PackTyp(i,j))	= ()
       | idsTyp xs' (I.SingTyp(i,y))	= ()
     and idsTyps xs'			= List.app(idsTyp xs')
 
@@ -9598,6 +9652,7 @@ UNFINISHED: obsolete after bootstrapping:
       | trExp(I.HandleExp(i,e,ms))	= O.HandleExp(i, trExp e, trMatchs ms)
       | trExp(I.AnnExp(i,e,t))		= trExp e
       | trExp(I.LetExp(i,ds,e))		= O.LetExp(i, trDecs ds, trExp e)
+      | trExp(I.PackExp(i,m))		= trMod m
 
     and trExps es			= List.map trExp es
 
@@ -9658,6 +9713,7 @@ UNFINISHED: obsolete after bootstrapping:
       | trMod(I.AnnMod(i,m,j))		= trMod m
       | trMod(I.UpMod(i,m,j))		= trMod m
       | trMod(I.LetMod(i,ds,m))		= O.LetExp(i, trDecs ds, trMod m)
+      | trMod(I.UnpackMod(i,e,j))	= trExp e
 
 
 
@@ -9708,6 +9764,7 @@ UNFINISHED: obsolete after bootstrapping:
       | trTyp(I.ExtTyp(i), ds')		= ds'
       | trTyp(I.AllTyp(i,x,t), ds')	= trTyp(t, ds')
       | trTyp(I.ExTyp(i,x,t), ds')	= trTyp(t, ds')
+      | trTyp(I.PackTyp(i,j), ds')	= ds'
       | trTyp(I.SingTyp(i,y), ds')	= ds'
 
     and trTyps(ts, ds')			= List.foldr trTyp ds' ts
@@ -9769,6 +9826,7 @@ UNFINISHED: obsolete after bootstrapping:
       | trRep(I.ExtTyp(i), y, ds')	= ds'
       | trRep(I.AllTyp(i,x,t), y, ds')	= trRep(t, y, ds')
       | trRep(I.ExTyp(i,x,t), y, ds')	= trRep(t, y, ds')
+      | trRep(I.PackTyp(i,j), y, ds')	= ds'
       | trRep(I.SingTyp(i,y'), y, ds')	= ds'
 
     and trReps(ts, y, ds')		=
@@ -9912,7 +9970,6 @@ structure TyCon	= MakeId(Stamp)
 structure TyVar	= MakeId(Stamp)
 structure StrId	= MakeId(Stamp)
 structure SigId = MakeId(Stamp)
-structure FunId = MakeId(Stamp)
 end
 (* src # 80 *)
 (*
@@ -9982,24 +10039,33 @@ structure SCon :> SCON =
  *   - negated patterns
  *   - withval patterns
  *   - abstract type declarations
- *   - open datatypes and free construct declarations via con
- *   - removed exception declarations (made into a derived form with con)
+ *   - open datatypes and free construct declarations
+ *   - package types and expressions
+ *   - removed exception declarations (made into a derived form)
  *   - removed abstype (made into a derived form with local)
- *   - simplified open and fixity declarations to singe id (multi ids made DF)
+ *   - simplified open and fixity declarations to single id (multi ids made DF)
  *   - some hacks to build libraries: primitive value declarations,
  *     overloading declarations, special eqtype declarations and specifications
  *
  * Extensions and modifications to module language:
  *   - components
  *   - unified strdec and topdec
- *   - open datatypes and free constructor specifications via con
- *   - constructor synonym specifications
- *   - signature synonym specifications
+ *   - unified strid and funid
+ *   - functor expressions
+ *   - removed functor declarations (made into a derived form)
+ *   - package elimination
+ *   - parameterized signatures
+ *   - open datatypes and free constructor specifications
  *   - straightified type specifications (synonyms are kept)
- *   - where for structures
+ *   - signature specifications
+ *   - definitional value, constructor, and structure specifications
+ *   - functor signatures
  *   - top signature
- *   - sharing and where for signatures
- *   - definitional structure specifications
+ *   - generalized where
+ *   - sharing for signatures
+ *   - let for signature expressions
+ *   - functor parameters as a separate syntactic class StrPat
+ *   - parenthesized structure and signature expressions
  *   - fixity directives in signatures
  *   - op keyword in signatures
  *
@@ -10036,7 +10102,6 @@ signature INPUT_GRAMMAR =
     datatype TyVar = TyVar of Info * TyVar.t
     datatype StrId = StrId of Info * StrId.t
     datatype SigId = SigId of Info * SigId.t
-    datatype FunId = FunId of Info * FunId.t
 
     datatype 'a Long =
 	  SHORTLong of Info * 'a
@@ -10046,7 +10111,6 @@ signature INPUT_GRAMMAR =
     and      LongTyCon = TyCon Long
     and      LongStrId = StrId Long
     and      LongSigId = SigId Long
-    and      LongFunId = FunId Long
 
 
     (* Optional keyword `op' *)
@@ -10083,6 +10147,7 @@ signature INPUT_GRAMMAR =
 	| WHILEExp       of Info * Exp * Exp
 	| CASEExp        of Info * Exp * Match
 	| FNExp          of Info * Match
+	| PACKExp        of Info * LongStrId
 
     (* Matches *)      
 
@@ -10105,7 +10170,6 @@ signature INPUT_GRAMMAR =
 	| CONSTRUCTORDec  of Info * DconBind
 	| STRUCTUREDec    of Info * StrBind
 	| SIGNATUREDec    of Info * SigBind
-	| FUNCTORDec      of Info * FunBind
 	| LOCALDec        of Info * Dec * Dec
 	| OPENDec         of Info * LongStrId
 	| EMPTYDec        of Info
@@ -10115,8 +10179,6 @@ signature INPUT_GRAMMAR =
 	| PRIMITIVECONSTRUCTORDec of Info * Op * VId * Ty option
 					       * TyVarSeq * LongTyCon * string
 	| PRIMITIVESTRUCTUREDec   of Info * StrId * SigExp * string
-	| PRIMITIVEFUNCTORDec     of Info * FunId * StrId * SigExp * SigExp
-								   * string
 	| OVERLOADDec     of Info * Op * VId * TyVar * Ty
 	| INSTANCEDec     of Info * Op * VId * LongTyCon * LongVId
 	| INSTANCESCONDec of Info * SCon * LongTyCon
@@ -10153,11 +10215,8 @@ signature INPUT_GRAMMAR =
           StrBind        of Info * StrId * StrExp * StrBind option
 
     and SigBind =
-          SigBind        of Info * SigId * SigExp * SigBind option
+          SigBind        of Info * SigId * StrPat list * SigExp * SigBind option
 
-    and FunBind =
-          FunBind        of Info * FunId * StrId * SigExp * StrExp
-                                 * FunBind option
     (* Patterns *)
 
     and AtPat =
@@ -10192,6 +10251,7 @@ signature INPUT_GRAMMAR =
 	| TUPLETy        of Info * Ty list
 	| TYCONTy        of Info * TySeq * LongTyCon
 	| ARROWTy        of Info * Ty * Ty
+	| PACKTy         of Info * LongSigId
 	| PARTy          of Info * Ty
 
     and TyRow =
@@ -10199,21 +10259,37 @@ signature INPUT_GRAMMAR =
 
     (* Structures *)
 
+    and AtStrExp =
+	  STRUCTAtStrExp    of Info * Dec
+	| LONGSTRIDAtStrExp of Info * LongStrId
+	| LETAtStrExp       of Info * Dec * StrExp
+	| PARAtStrExp       of Info * StrExp
+
     and StrExp =
-	  STRUCTStrExp    of Info * Dec
-	| LONGSTRIDStrExp of Info * LongStrId
-	| TRANSStrExp     of Info * StrExp * SigExp
-	| OPAQStrExp      of Info * StrExp * SigExp
-	| APPStrExp       of Info * LongFunId * StrExp
-	| LETStrExp       of Info * Dec * StrExp
+	  ATSTREXPStrExp    of Info * AtStrExp
+	| APPStrExp         of Info * StrExp * AtStrExp
+	| TRANSStrExp       of Info * StrExp * SigExp
+	| OPAQStrExp        of Info * StrExp * SigExp
+	| FCTStrExp         of Info * StrPat * StrExp
+	| UNPACKStrExp      of Info * Exp * SigExp
+
+    and StrPat =
+	  StrPat            of Info * StrId * SigExp
 
     (* Signatures *)
 
+    and AtSigExp =
+	  ANYAtSigExp       of Info
+	| SIGAtSigExp       of Info * Spec
+	| LONGSIGIDAtSigExp of Info * LongSigId
+	| LETAtSigExp       of Info * Dec * SigExp
+	| PARAtSigExp       of Info * SigExp
+
     and SigExp =
-	  ANYSigExp       of Info
-	| SIGSigExp       of Info * Spec
-	| LONGSIGIDSigExp of Info * LongSigId
-	| WHERESigExp     of Info * SigExp * SigExp
+	  ATSIGEXPSigExp    of Info * AtSigExp
+	| APPSigExp         of Info * SigExp * AtStrExp
+	| FCTSigExp         of Info * StrPat * SigExp
+	| WHERESigExp       of Info * SigExp * SigExp
 
     (* Specifications *)
 
@@ -10227,7 +10303,6 @@ signature INPUT_GRAMMAR =
 	| CONSTRUCTORSpec  of Info * DconDesc
 	| STRUCTURESpec    of Info * StrDesc
 	| SIGNATURESpec    of Info * SigDesc
-	| FUNCTORSpec      of Info * FunDesc
 	| INCLUDESpec      of Info * SigExp
 	| EMPTYSpec        of Info
 	| SEQSpec          of Info * Spec * Spec
@@ -10243,7 +10318,8 @@ signature INPUT_GRAMMAR =
 	| NONFIXSpec       of Info * VId
 
     and ValDesc =
-	  ValDesc         of Info * Op * VId * Ty * ValDesc option
+	  NEWValDesc      of Info * Op * VId * Ty * ValDesc option
+	| EQUALValDesc    of Info * Op * VId * Op * LongVId * ValDesc option
 
     and TypDesc =
 	  NEWTypDesc      of Info * TyVarSeq * TyCon * TypDesc option
@@ -10266,12 +10342,9 @@ signature INPUT_GRAMMAR =
 	| EQUALStrDesc    of Info * StrId * SigExp option * LongStrId
 							    * StrDesc option
     and SigDesc =
-          NEWSigDesc      of Info * SigId * SigDesc option
-	| EQUALSigDesc    of Info * SigId * SigExp * SigDesc option
-
-    and FunDesc =
-          FunDesc         of Info * FunId * StrId * SigExp * SigExp
-                                  * FunDesc option
+          NEWSigDesc      of Info * SigId * StrPat list * SigDesc option
+	| EQUALSigDesc    of Info * SigId * StrPat list * SigExp
+							* SigDesc option
     (* Programs *)
 
     and Program = Program of Info * Dec * Program option
@@ -10302,7 +10375,6 @@ signature INPUT_GRAMMAR =
     val infoTyVar :	TyVar		-> Info
     val infoStrId :	StrId		-> Info
     val infoSigId :	SigId		-> Info
-    val infoFunId :	FunId		-> Info
     val infoLong :	'a Long		-> Info
     val infoAtExp :	AtExp		-> Info
     val infoExpRow :	ExpRow		-> Info
@@ -10318,13 +10390,15 @@ signature INPUT_GRAMMAR =
     val infoDconBind :	DconBind	-> Info
     val infoStrBind :	StrBind		-> Info
     val infoSigBind :	SigBind		-> Info
-    val infoFunBind :	FunBind		-> Info
     val infoAtPat :	AtPat		-> Info
     val infoPatRow :	PatRow		-> Info
     val infoPat :	Pat		-> Info
     val infoTy :	Ty		-> Info
     val infoTyRow :	TyRow		-> Info
+    val infoAtStrExp :	AtStrExp	-> Info
     val infoStrExp :	StrExp		-> Info
+    val infoStrPat :	StrPat		-> Info
+    val infoAtSigExp :	AtSigExp	-> Info
     val infoSigExp :	SigExp		-> Info
     val infoSpec :	Spec		-> Info
     val infoValDesc :	ValDesc		-> Info
@@ -10334,7 +10408,6 @@ signature INPUT_GRAMMAR =
     val infoDconDesc :	DconDesc	-> Info
     val infoStrDesc :	StrDesc		-> Info
     val infoSigDesc :	SigDesc		-> Info
-    val infoFunDesc :	FunDesc		-> Info
     val infoProgram :	Program		-> Info
     val infoComponent :	Component	-> Info
     val infoImport :	Import		-> Info
@@ -10346,7 +10419,6 @@ signature INPUT_GRAMMAR =
     val idTyVar :	TyVar		-> TyVar.t
     val idStrId :	StrId		-> StrId.t
     val idSigId :	SigId		-> SigId.t
-    val idFunId :	FunId		-> FunId.t
 
     val explodeLong :	'a Long		-> StrId list * 'a
 
@@ -10365,24 +10437,33 @@ signature INPUT_GRAMMAR =
  *   - negated patterns
  *   - withval patterns
  *   - abstract type declarations
- *   - open datatypes and free construct declarations via con
- *   - removed exception declarations (made into a derived form with con)
+ *   - open datatypes and free construct declarations
+ *   - package types and expressions
+ *   - removed exception declarations (made into a derived form)
  *   - removed abstype (made into a derived form with local)
- *   - simplified open and fixity declarations to singe id (multi ids made DF)
+ *   - simplified open and fixity declarations to single id (multi ids made DF)
  *   - some hacks to build libraries: primitive value declarations,
  *     overloading declarations, special eqtype declarations and specifications
  *
  * Extensions and modifications to module language:
  *   - components
  *   - unified strdec and topdec
- *   - open datatypes and free constructor specifications via con
- *   - constructor synonym specifications
- *   - signature synonym specifications
+ *   - unified strid and funid
+ *   - functor expressions
+ *   - removed functor declarations (made into a derived form)
+ *   - package elimination
+ *   - parameterized signatures
+ *   - open datatypes and free constructor specifications
  *   - straightified type specifications (synonyms are kept)
- *   - where for structures
+ *   - signature specifications
+ *   - definitional value, constructor, and structure specifications
+ *   - functor signatures
  *   - top signature
- *   - sharing and where for signatures
- *   - definitional structure specifications
+ *   - generalized where
+ *   - sharing for signatures
+ *   - let for signature expressions
+ *   - functor parameters as a separate syntactic class StrPat
+ *   - parenthesized structure and signature expressions
  *   - fixity directives in signatures
  *   - op keyword in signatures
  *
@@ -10419,7 +10500,6 @@ functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
     datatype TyVar = TyVar of Info * TyVar.t
     datatype StrId = StrId of Info * StrId.t
     datatype SigId = SigId of Info * SigId.t
-    datatype FunId = FunId of Info * FunId.t
 
     datatype 'a Long =
 	  SHORTLong of Info * 'a
@@ -10429,7 +10509,6 @@ functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
     and      LongTyCon = TyCon Long
     and      LongStrId = StrId Long
     and      LongSigId = SigId Long
-    and      LongFunId = FunId Long
 
 
     (* Optional keyword `op' *)
@@ -10466,6 +10545,7 @@ functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
 	| WHILEExp       of Info * Exp * Exp
 	| CASEExp        of Info * Exp * Match
 	| FNExp          of Info * Match
+	| PACKExp        of Info * LongStrId
 
     (* Matches *)      
 
@@ -10488,7 +10568,6 @@ functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
 	| CONSTRUCTORDec  of Info * DconBind
 	| STRUCTUREDec    of Info * StrBind
 	| SIGNATUREDec    of Info * SigBind
-	| FUNCTORDec      of Info * FunBind
 	| LOCALDec        of Info * Dec * Dec
 	| OPENDec         of Info * LongStrId
 	| EMPTYDec        of Info
@@ -10498,8 +10577,6 @@ functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
 	| PRIMITIVECONSTRUCTORDec of Info * Op * VId * Ty option
 					       * TyVarSeq * LongTyCon * string
 	| PRIMITIVESTRUCTUREDec   of Info * StrId * SigExp * string
-	| PRIMITIVEFUNCTORDec     of Info * FunId * StrId * SigExp * SigExp
-								   * string
 	| OVERLOADDec     of Info * Op * VId * TyVar * Ty
 	| INSTANCEDec     of Info * Op * VId * LongTyCon * LongVId
 	| INSTANCESCONDec of Info * SCon * LongTyCon
@@ -10536,11 +10613,8 @@ functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
           StrBind        of Info * StrId * StrExp * StrBind option
 
     and SigBind =
-          SigBind        of Info * SigId * SigExp * SigBind option
+          SigBind        of Info * SigId * StrPat list * SigExp * SigBind option
 
-    and FunBind =
-          FunBind        of Info * FunId * StrId * SigExp * StrExp
-                                 * FunBind option
     (* Patterns *)
 
     and AtPat =
@@ -10575,6 +10649,7 @@ functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
 	| TUPLETy        of Info * Ty list
 	| TYCONTy        of Info * TySeq * LongTyCon
 	| ARROWTy        of Info * Ty * Ty
+	| PACKTy         of Info * LongSigId
 	| PARTy          of Info * Ty
 
     and TyRow =
@@ -10582,21 +10657,37 @@ functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
 
     (* Structures *)
 
+    and AtStrExp =
+	  STRUCTAtStrExp    of Info * Dec
+	| LONGSTRIDAtStrExp of Info * LongStrId
+	| LETAtStrExp       of Info * Dec * StrExp
+	| PARAtStrExp       of Info * StrExp
+
     and StrExp =
-	  STRUCTStrExp    of Info * Dec
-	| LONGSTRIDStrExp of Info * LongStrId
-	| TRANSStrExp     of Info * StrExp * SigExp
-	| OPAQStrExp      of Info * StrExp * SigExp
-	| APPStrExp       of Info * LongFunId * StrExp
-	| LETStrExp       of Info * Dec * StrExp
+	  ATSTREXPStrExp    of Info * AtStrExp
+	| APPStrExp         of Info * StrExp * AtStrExp
+	| TRANSStrExp       of Info * StrExp * SigExp
+	| OPAQStrExp        of Info * StrExp * SigExp
+	| FCTStrExp         of Info * StrPat * StrExp
+	| UNPACKStrExp      of Info * Exp * SigExp
+
+    and StrPat =
+	  StrPat            of Info * StrId * SigExp
 
     (* Signatures *)
 
+    and AtSigExp =
+	  ANYAtSigExp       of Info
+	| SIGAtSigExp       of Info * Spec
+	| LONGSIGIDAtSigExp of Info * LongSigId
+	| LETAtSigExp       of Info * Dec * SigExp
+	| PARAtSigExp       of Info * SigExp
+
     and SigExp =
-	  ANYSigExp       of Info
-	| SIGSigExp       of Info * Spec
-	| LONGSIGIDSigExp of Info * LongSigId
-	| WHERESigExp     of Info * SigExp * SigExp
+	  ATSIGEXPSigExp    of Info * AtSigExp
+	| APPSigExp         of Info * SigExp * AtStrExp
+	| FCTSigExp         of Info * StrPat * SigExp
+	| WHERESigExp       of Info * SigExp * SigExp
 
     (* Specifications *)
 
@@ -10610,7 +10701,6 @@ functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
 	| CONSTRUCTORSpec  of Info * DconDesc
 	| STRUCTURESpec    of Info * StrDesc
 	| SIGNATURESpec    of Info * SigDesc
-	| FUNCTORSpec      of Info * FunDesc
 	| INCLUDESpec      of Info * SigExp
 	| EMPTYSpec        of Info
 	| SEQSpec          of Info * Spec * Spec
@@ -10626,7 +10716,8 @@ functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
 	| NONFIXSpec       of Info * VId
 
     and ValDesc =
-	  ValDesc         of Info * Op * VId * Ty * ValDesc option
+	  NEWValDesc      of Info * Op * VId * Ty * ValDesc option
+	| EQUALValDesc    of Info * Op * VId * Op * LongVId * ValDesc option
 
     and TypDesc =
 	  NEWTypDesc      of Info * TyVarSeq * TyCon * TypDesc option
@@ -10649,12 +10740,9 @@ functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
 	| EQUALStrDesc    of Info * StrId * SigExp option * LongStrId
 							    * StrDesc option
     and SigDesc =
-          NEWSigDesc      of Info * SigId * SigDesc option
-	| EQUALSigDesc    of Info * SigId * SigExp * SigDesc option
-
-    and FunDesc =
-          FunDesc         of Info * FunId * StrId * SigExp * SigExp
-                                  * FunDesc option
+          NEWSigDesc      of Info * SigId * StrPat list * SigDesc option
+	| EQUALSigDesc    of Info * SigId * StrPat list * SigExp
+							* SigDesc option
     (* Programs *)
 
     and Program = Program of Info * Dec * Program option
@@ -10685,7 +10773,6 @@ functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
     fun infoTyVar(TyVar(I,_))				= I
     fun infoStrId(StrId(I,_))				= I
     fun infoSigId(SigId(I,_))				= I
-    fun infoFunId(FunId(I,_))				= I
 
     fun infoLong(SHORTLong(I,_))			= I
       | infoLong(DOTLong(I,_,_))			= I
@@ -10714,6 +10801,7 @@ functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
       | infoExp(WHILEExp(I,_,_))			= I
       | infoExp(CASEExp(I,_,_))				= I
       | infoExp(FNExp(I,_))				= I
+      | infoExp(PACKExp(I,_))				= I
 
     fun infoMatch(Match(I,_,_))				= I
 
@@ -10729,7 +10817,6 @@ functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
       | infoDec(CONSTRUCTORDec(I,_))			= I
       | infoDec(STRUCTUREDec(I,_))			= I
       | infoDec(SIGNATUREDec(I,_))			= I
-      | infoDec(FUNCTORDec(I,_))			= I
       | infoDec(LOCALDec(I,_,_))			= I
       | infoDec(OPENDec(I,_))				= I
       | infoDec(EMPTYDec(I))				= I
@@ -10738,7 +10825,6 @@ functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
       | infoDec(PRIMITIVEVALDec(I,_,_,_,_))		= I
       | infoDec(PRIMITIVECONSTRUCTORDec(I,_,_,_,_,_,_))	= I
       | infoDec(PRIMITIVESTRUCTUREDec(I,_,_,_))		= I
-      | infoDec(PRIMITIVEFUNCTORDec(I,_,_,_,_,_))	= I
       | infoDec(OVERLOADDec(I,_,_,_,_))			= I
       | infoDec(INSTANCEDec(I,_,_,_,_))			= I
       | infoDec(INSTANCESCONDec(I,_,_))			= I
@@ -10764,9 +10850,7 @@ functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
 
     fun infoStrBind(StrBind(I,_,_,_))			= I
 
-    fun infoSigBind(SigBind(I,_,_,_))			= I
-
-    fun infoFunBind(FunBind(I,_,_,_,_,_))		= I
+    fun infoSigBind(SigBind(I,_,_,_,_))			= I
 
     fun infoAtPat(WILDCARDAtPat(I))			= I
       | infoAtPat(SCONAtPat(I,_))			= I
@@ -10794,20 +10878,34 @@ functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
       | infoTy(TUPLETy(I,_))				= I
       | infoTy(TYCONTy(I,_,_))				= I
       | infoTy(ARROWTy(I,_,_))				= I
+      | infoTy(PACKTy(I,_))				= I
       | infoTy(PARTy(I,_))				= I
 
     fun infoTyRow(ROWTyRow(I,_,_,_))			= I
 
-    fun infoStrExp(STRUCTStrExp(I,_))			= I
-      | infoStrExp(LONGSTRIDStrExp(I,_))		= I
+    fun infoAtStrExp(STRUCTAtStrExp(I,_))		= I
+      | infoAtStrExp(LONGSTRIDAtStrExp(I,_))		= I
+      | infoAtStrExp(LETAtStrExp(I,_,_))		= I
+      | infoAtStrExp(PARAtStrExp(I,_))			= I
+
+    fun infoStrExp(ATSTREXPStrExp(I,_))			= I
+      | infoStrExp(APPStrExp(I,_,_))			= I
       | infoStrExp(TRANSStrExp(I,_,_))			= I
       | infoStrExp(OPAQStrExp(I,_,_))			= I
-      | infoStrExp(APPStrExp(I,_,_))			= I
-      | infoStrExp(LETStrExp(I,_,_))			= I
+      | infoStrExp(FCTStrExp(I,_,_))			= I
+      | infoStrExp(UNPACKStrExp(I,_,_))			= I
 
-    fun infoSigExp(ANYSigExp(I))			= I
-      | infoSigExp(SIGSigExp(I,_))			= I
-      | infoSigExp(LONGSIGIDSigExp(I,_))		= I
+    fun infoStrPat(StrPat(I,_,_))			= I
+
+    fun infoAtSigExp(ANYAtSigExp(I))			= I
+      | infoAtSigExp(SIGAtSigExp(I,_))			= I
+      | infoAtSigExp(LONGSIGIDAtSigExp(I,_))		= I
+      | infoAtSigExp(LETAtSigExp(I,_,_))		= I
+      | infoAtSigExp(PARAtSigExp(I,_))			= I
+
+    fun infoSigExp(ATSIGEXPSigExp(I,_))			= I
+      | infoSigExp(APPSigExp(I,_,_))			= I
+      | infoSigExp(FCTSigExp(I,_,_))			= I
       | infoSigExp(WHERESigExp(I,_,_))			= I
 
     fun infoSpec(VALSpec(I,_))				= I
@@ -10819,7 +10917,6 @@ functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
       | infoSpec(CONSTRUCTORSpec(I,_))			= I
       | infoSpec(STRUCTURESpec(I,_))			= I
       | infoSpec(SIGNATURESpec(I,_))			= I
-      | infoSpec(FUNCTORSpec(I,_))			= I
       | infoSpec(INCLUDESpec(I,_))			= I
       | infoSpec(EMPTYSpec(I))				= I
       | infoSpec(SEQSpec(I,_,_))			= I
@@ -10834,7 +10931,8 @@ functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
       | infoSpec(INFIXRSpec(I,_,_))			= I
       | infoSpec(NONFIXSpec(I,_))			= I
 
-    fun infoValDesc(ValDesc(I,_,_,_,_))			= I
+    fun infoValDesc(NEWValDesc(I,_,_,_,_))		= I
+      | infoValDesc(EQUALValDesc(I,_,_,_,_,_))		= I
 
     fun infoTypDesc(NEWTypDesc(I,_,_,_))		= I
       | infoTypDesc(EQUALTypDesc(I,_,_,_,_))		= I
@@ -10850,10 +10948,8 @@ functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
     fun infoStrDesc(NEWStrDesc(I,_,_,_))		= I
       | infoStrDesc(EQUALStrDesc(I,_,_,_,_))		= I
 
-    fun infoSigDesc(NEWSigDesc(I,_,_))			= I
-      | infoSigDesc(EQUALSigDesc(I,_,_,_))		= I
-
-    fun infoFunDesc(FunDesc(I,_,_,_,_,_))		= I
+    fun infoSigDesc(NEWSigDesc(I,_,_,_))		= I
+      | infoSigDesc(EQUALSigDesc(I,_,_,_,_))		= I
 
     fun infoProgram(Program(I,_,_))			= I
 
@@ -10872,7 +10968,6 @@ functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
     fun idTyVar(TyVar(_,id))				= id
     fun idStrId(StrId(_,id))				= id
     fun idSigId(SigId(_,id))				= id
-    fun idFunId(FunId(_,id))				= id
 
 
     fun explodeLong(SHORTLong(_,id))		= ([], id)
@@ -10893,13 +10988,15 @@ signature PARSING_ERROR =
     datatype error =
 	(* Lexer *)
 	  UnclosedComment
-	| InvalidChar of char
+	| InvalidChar		of char
 	| InvalidString
 	| IntTooLarge
 	| WordTooLarge
 	| RealTooLarge
-	| CharLengthInvalid of string
-	| EscapeCharTooLarge of bool
+	| CharLengthInvalid	of string
+	| EscapeCharTooLarge	of bool
+	(* Parser *)
+	| SyntaxError		of string
 	(* Derived forms *)
 	| WithtypeInvalid
 	| WithtypeArityMismatch
@@ -10933,13 +11030,15 @@ structure ParsingError :> PARSING_ERROR =
     datatype error =
 	(* Lexer *)
 	  UnclosedComment
-	| InvalidChar of char
+	| InvalidChar		of char
 	| InvalidString
 	| IntTooLarge
 	| WordTooLarge
 	| RealTooLarge
-	| CharLengthInvalid of string
-	| EscapeCharTooLarge of bool
+	| CharLengthInvalid	of string
+	| EscapeCharTooLarge	of bool
+	(* Parser *)
+	| SyntaxError		of string
 	(* Derived forms *)
 	| WithtypeInvalid
 	| WithtypeArityMismatch
@@ -10975,6 +11074,9 @@ structure ParsingError :> PARSING_ERROR =
       | ppError(EscapeCharTooLarge uc) =
 	  par[if uc then "unicode" else "ASCII",
 	      "escape","character","too","large"]
+      (* Parser *)
+      | ppError(SyntaxError s) =
+	  par(String.tokens (fn c => c = #" ") s)
       (* Derived forms *)
       | ppError(WithtypeInvalid) =
 	  par["invalid","type","binding","inside","withtype"]
@@ -11010,7 +11112,6 @@ signature ABSTRACTION_ERROR =
     type TyCon	= TyCon.t
     type StrId	= StrId.t
     type SigId	= SigId.t
-    type FunId	= FunId.t
     type id	= AbstractGrammar.id
 
     datatype error =
@@ -11020,7 +11121,6 @@ signature ABSTRACTION_ERROR =
 	| TyVarUnbound		of TyVar
 	| StrIdUnbound		of StrId
 	| SigIdUnbound		of SigId
-	| FunIdUnbound		of FunId
 	| PreboundFirstClass
 	(* Expressions *)
 	| ExpRowLabDuplicate	of Lab
@@ -11036,13 +11136,13 @@ signature ABSTRACTION_ERROR =
 	| TyVarSeqDuplicate	of TyVar
 	| ValTyVarSeqDuplicate	of TyVar
 	(* Declarations and bindings *)
-	| FnBindDuplicate	of VId
-	| FnBindArityInconsistent
-	| FnBindArityZero
-	| FnBindNameInconsistent of VId
-	| FnBindNameMissing
-	| FnBindNameCon		of VId
-	| FnBindPatInvalid
+	| FvalBindDuplicate	of VId
+	| FvalBindArityInconsistent
+	| FvalBindArityZero
+	| FvalBindNameInconsistent of VId
+	| FvalBindNameMissing
+	| FvalBindNameCon	of VId
+	| FvalBindPatInvalid
 	| TypBindDuplicate	of TyCon
 	| DatBindDuplicate	of TyCon
 	| DatBindConDuplicate	of VId
@@ -11051,14 +11151,12 @@ signature ABSTRACTION_ERROR =
 	| DconBindNonCon
 	| StrBindDuplicate	of StrId
 	| SigBindDuplicate	of SigId
-	| FunBindDuplicate	of FunId
 	(* Specifications and descriptions *)
 	| SpecFixDuplicate	of VId
 	| SpecVIdDuplicate	of VId
 	| SpecTyConDuplicate	of TyCon
 	| SpecStrIdDuplicate	of StrId
 	| SpecSigIdDuplicate	of SigId
-	| SpecFunIdDuplicate	of FunId
 	| ConDescDuplicate	of VId
 	| DconDescNonCon
 	(* Sharing translation *)
@@ -11073,7 +11171,6 @@ signature ABSTRACTION_ERROR =
 	| TyVarShadowed		of TyVar
 	| StrIdShadowed		of StrId
 	| SigIdShadowed		of SigId
-	| FunIdShadowed		of FunId
 
     val error :	Source.region * error -> 'a
     val warn :	Source.region * warning -> unit
@@ -11100,7 +11197,6 @@ structure AbstractionError :> ABSTRACTION_ERROR =
     type TyCon	= TyCon.t
     type StrId	= StrId.t
     type SigId	= SigId.t
-    type FunId	= FunId.t
     type id	= AbstractGrammar.id
 
     datatype error =
@@ -11110,7 +11206,6 @@ structure AbstractionError :> ABSTRACTION_ERROR =
 	| TyVarUnbound		of TyVar
 	| StrIdUnbound		of StrId
 	| SigIdUnbound		of SigId
-	| FunIdUnbound		of FunId
 	| PreboundFirstClass
 	(* Expressions *)
 	| ExpRowLabDuplicate	of Lab
@@ -11126,13 +11221,13 @@ structure AbstractionError :> ABSTRACTION_ERROR =
 	| TyVarSeqDuplicate	of TyVar
 	| ValTyVarSeqDuplicate	of TyVar
 	(* Declarations and bindings *)
-	| FnBindDuplicate	of VId
-	| FnBindArityInconsistent
-	| FnBindArityZero
-	| FnBindNameInconsistent of VId
-	| FnBindNameMissing
-	| FnBindNameCon		of VId
-	| FnBindPatInvalid
+	| FvalBindDuplicate	of VId
+	| FvalBindArityInconsistent
+	| FvalBindArityZero
+	| FvalBindNameInconsistent of VId
+	| FvalBindNameMissing
+	| FvalBindNameCon	of VId
+	| FvalBindPatInvalid
 	| TypBindDuplicate	of TyCon
 	| DatBindDuplicate	of TyCon
 	| DatBindConDuplicate	of VId
@@ -11141,14 +11236,12 @@ structure AbstractionError :> ABSTRACTION_ERROR =
 	| DconBindNonCon
 	| StrBindDuplicate	of StrId
 	| SigBindDuplicate	of SigId
-	| FunBindDuplicate	of FunId
 	(* Specifications and descriptions *)
 	| SpecFixDuplicate	of VId
 	| SpecVIdDuplicate	of VId
 	| SpecTyConDuplicate	of TyCon
 	| SpecStrIdDuplicate	of StrId
 	| SpecSigIdDuplicate	of SigId
-	| SpecFunIdDuplicate	of FunId
 	| ConDescDuplicate	of VId
 	| DconDescNonCon
 	(* Sharing translation *)
@@ -11163,7 +11256,6 @@ structure AbstractionError :> ABSTRACTION_ERROR =
 	| TyVarShadowed		of TyVar
 	| StrIdShadowed		of StrId
 	| SigIdShadowed		of SigId
-	| FunIdShadowed		of FunId
 
 
   (* Pretty printing *)
@@ -11176,7 +11268,6 @@ structure AbstractionError :> ABSTRACTION_ERROR =
     fun ppTyVar tyvar	= ppQuoted(TyVar.toString tyvar)
     fun ppStrId strid	= ppQuoted(StrId.toString strid)
     fun ppSigId sigid	= ppQuoted(SigId.toString sigid)
-    fun ppFunId funid	= ppQuoted(FunId.toString funid)
 
     fun ppLab'(AbstractGrammar.Lab(_,l)) = l
 
@@ -11192,9 +11283,8 @@ structure AbstractionError :> ABSTRACTION_ERROR =
     val classVId	= (ppVId,   ["value","or","constructor"])
     val classTyCon	= (ppTyCon, ["type"])
     val classTyVar	= (ppTyVar, ["type","variable"])
-    val classStrId	= (ppStrId, ["structure"])
+    val classStrId	= (ppStrId, ["structure","or","functor"])
     val classSigId	= (ppSigId, ["signature"])
-    val classFunId	= (ppFunId, ["functor"])
 
     fun ppUnbound((ppId,class), id) =
 	  par(["unknown"] @ class @ [ppId id])
@@ -11209,8 +11299,6 @@ structure AbstractionError :> ABSTRACTION_ERROR =
 	  ppUnbound(classStrId, strid)
       | ppError(SigIdUnbound sigid) =
 	  ppUnbound(classSigId, sigid)
-      | ppError(FunIdUnbound funid) =
-	  ppUnbound(classFunId, funid)
       | ppError(PreboundFirstClass) =
 	  par["invalid","use","of","pseudo","structure"]
       (* Expressions *)
@@ -11239,20 +11327,20 @@ structure AbstractionError :> ABSTRACTION_ERROR =
       | ppError(ValTyVarSeqDuplicate tyvar) =
 	  par(["duplicate","or","shadowing"] @ #2 classTyVar @ [ppTyVar tyvar])
       (* Declarations and bindings *)
-      | ppError(FnBindDuplicate vid) =
+      | ppError(FvalBindDuplicate vid) =
 	  par["duplicate","function",ppVId vid,"in","binding","group"]
-      | ppError(FnBindArityInconsistent) =
+      | ppError(FvalBindArityInconsistent) =
 	  par["inconistent","function","arity","in","function","clause"]
-      | ppError(FnBindArityZero) =
+      | ppError(FvalBindArityZero) =
 	  par["no","arguments","in","function","clause"]
-      | ppError(FnBindNameInconsistent vid) =
+      | ppError(FvalBindNameInconsistent vid) =
 	  par["inconistent","function","name",ppVId vid,
 	      "in","function","clause"]
-      | ppError(FnBindNameMissing) =
+      | ppError(FvalBindNameMissing) =
 	  par["no","function","name","in","function","clause"]
-      | ppError(FnBindNameCon vid) =
+      | ppError(FvalBindNameCon vid) =
 	  par["redefining","constructor",ppVId vid,"as","value"]
-      | ppError(FnBindPatInvalid) =
+      | ppError(FvalBindPatInvalid) =
 	  par["invalid","function","clause"]
       | ppError(TypBindDuplicate tycon) =
 	  par(["duplicate"] @ #2 classTyCon @
@@ -11275,9 +11363,6 @@ structure AbstractionError :> ABSTRACTION_ERROR =
       | ppError(SigBindDuplicate sigid) =
 	  par(["duplicate"] @ #2 classSigId @
 	      [ppSigId sigid,"in","binding","group"])
-      | ppError(FunBindDuplicate funid) =
-	  par(["duplicate"] @ #2 classFunId @
-	      [ppFunId funid,"in","binding","group"])
       (* Specifications and descriptions *)
       | ppError(SpecFixDuplicate vid) =
 	  par(["duplicate","fixity","specification","for"] @ #2 classVId @
@@ -11290,8 +11375,6 @@ structure AbstractionError :> ABSTRACTION_ERROR =
 	  par(["duplicate"] @ #2 classStrId @ [ppStrId strid,"in","signature"])
       | ppError(SpecSigIdDuplicate sigid) =
 	  par(["duplicate"] @ #2 classSigId @ [ppSigId sigid,"in","signature"])
-      | ppError(SpecFunIdDuplicate funid) =
-	  par(["duplicate"] @ #2 classFunId @ [ppFunId funid,"in","signature"])
       | ppError(ConDescDuplicate vid) =
 	  par["duplicate","constructor",ppVId vid,"in","datatype"]
       | ppError(DconDescNonCon) =
@@ -11319,8 +11402,6 @@ structure AbstractionError :> ABSTRACTION_ERROR =
 	  ppShadowed(classStrId, strid)
       | ppWarning(SigIdShadowed sigid) =
 	  ppShadowed(classSigId, sigid)
-      | ppWarning(FunIdShadowed funid) =
-	  ppShadowed(classFunId, funid)
 
 
   (* Export *)
@@ -11557,7 +11638,6 @@ signature BIND_ENV =
     type TyCon = TyCon.t
     type StrId = StrId.t
     type SigId = SigId.t
-    type FunId = FunId.t
 
     type Info  = Source.region
     type stamp = AbstractGrammar.stamp
@@ -11574,7 +11654,6 @@ signature BIND_ENV =
     type Ty  = Info * stamp * Env
     type Str = Info * stamp * Env
     type Sig = Info * stamp * Env
-    type Fun = Info * stamp * Env
 
 
     exception CollisionInf of VId
@@ -11584,7 +11663,6 @@ signature BIND_ENV =
     exception CollisionVar of TyVar
     exception CollisionStr of StrId
     exception CollisionSig of SigId
-    exception CollisionFun of FunId
 
 
     val new :			unit -> Env
@@ -11614,7 +11692,6 @@ signature BIND_ENV =
     val insertVar :		Env * TyVar * Var -> unit
     val insertStr :		Env * StrId * Str -> unit
     val insertSig :		Env * SigId * Sig -> unit
-    val insertFun :		Env * FunId * Fun -> unit
     val insertDisjointInf :	Env *  VId  * Inf -> unit   (* CollisionInf *)
     val insertDisjointFld :	Env *  Lab  * Fld -> unit   (* CollisionFld *)
     val insertDisjointVal :	Env *  VId  * Val -> unit   (* CollisionVal *)
@@ -11622,7 +11699,6 @@ signature BIND_ENV =
     val insertDisjointVar :	Env * TyVar * Var -> unit   (* CollisionVar *)
     val insertDisjointStr :	Env * StrId * Str -> unit   (* CollisionStr *)
     val insertDisjointSig :	Env * SigId * Sig -> unit   (* CollisionSig *)
-    val insertDisjointFun :	Env * FunId * Fun -> unit   (* CollisionFun *)
 
     val lookupInf :		Env *  VId  -> Inf option
     val lookupFld :		Env *  Lab  -> Fld option
@@ -11631,7 +11707,6 @@ signature BIND_ENV =
     val lookupTy :		Env * TyCon -> Ty  option
     val lookupStr :		Env * StrId -> Str option
     val lookupSig :		Env * SigId -> Sig option
-    val lookupFun :		Env * FunId -> Fun option
     val lookupScopeInf :	Env *  VId  -> Inf option
     val lookupScopeFld :	Env *  Lab  -> Fld option
     val lookupScopeVar :	Env * TyVar -> Var option
@@ -11639,7 +11714,6 @@ signature BIND_ENV =
     val lookupScopeTy :		Env * TyCon -> Ty  option
     val lookupScopeStr :	Env * StrId -> Str option
     val lookupScopeSig :	Env * SigId -> Sig option
-    val lookupScopeFun :	Env * FunId -> Fun option
 
     val appiInfs :		( VId  * Inf -> unit) -> Env -> unit
     val appiFlds :		( Lab  * Fld -> unit) -> Env -> unit
@@ -11648,7 +11722,6 @@ signature BIND_ENV =
     val appiTys :		(TyCon * Ty  -> unit) -> Env -> unit
     val appiStrs :		(StrId * Str -> unit) -> Env -> unit
     val appiSigs :		(SigId * Sig -> unit) -> Env -> unit
-    val appiFuns :		(FunId * Fun -> unit) -> Env -> unit
     val appiScopeVals :		( VId  * Val -> unit) -> Env -> unit
 
     val foldiInfs :		( VId  * Inf * 'a -> 'a) -> 'a -> Env -> 'a
@@ -11658,7 +11731,6 @@ signature BIND_ENV =
     val foldiTys :		(TyCon * Ty  * 'a -> 'a) -> 'a -> Env -> 'a
     val foldiStrs :		(StrId * Str * 'a -> 'a) -> 'a -> Env -> 'a
     val foldiSigs :		(SigId * Sig * 'a -> 'a) -> 'a -> Env -> 'a
-    val foldiFuns :		(FunId * Fun * 'a -> 'a) -> 'a -> Env -> 'a
 
     val infEnv :		Env -> VId -> InfStatus
 
@@ -11679,7 +11751,6 @@ structure BindEnv :> BIND_ENV =
     type TyCon = TyCon.t
     type StrId = StrId.t
     type SigId = SigId.t
-    type FunId = FunId.t
 
     datatype Dom = INFIX of VId
 		 | LAB   of Lab
@@ -11688,7 +11759,6 @@ structure BindEnv :> BIND_ENV =
 		 | TYCON of TyCon
 		 | STRID of StrId
 		 | SIGID of SigId
-		 | FUNID of FunId
 
     fun hashDom(INFIX id) = StringHashKey.hash(  VId.toString id)
       | hashDom(LAB   id) = StringHashKey.hash(  Lab.toString id)
@@ -11697,7 +11767,6 @@ structure BindEnv :> BIND_ENV =
       | hashDom(TYCON id) = StringHashKey.hash(TyCon.toString id)
       | hashDom(STRID id) = StringHashKey.hash(StrId.toString id)
       | hashDom(SIGID id) = StringHashKey.hash(SigId.toString id)
-      | hashDom(FUNID id) = StringHashKey.hash(FunId.toString id)
 
 
     (* The map implementing the environment *)
@@ -11719,7 +11788,6 @@ structure BindEnv :> BIND_ENV =
 		 | TY  of Ty
 		 | STR of Str
 		 | SIG of Sig
-		 | FUN of Fun
 
     withtype Inf = Info * InfStatus
     and      Fld = Info
@@ -11728,7 +11796,6 @@ structure BindEnv :> BIND_ENV =
     and      Ty  = Info * stamp * Env
     and      Str = Info * stamp * Env
     and      Sig = Info * stamp * Env
-    and      Fun = Info * stamp * Env
 
     fun asInfo(SOME(INF x)) = SOME x | asInfo _ = NONE
     fun asFldo(SOME(FLD x)) = SOME x | asFldo _ = NONE
@@ -11737,7 +11804,6 @@ structure BindEnv :> BIND_ENV =
     fun asTyo (SOME(TY  x)) = SOME x | asTyo  _ = NONE
     fun asStro(SOME(STR x)) = SOME x | asStro _ = NONE
     fun asSigo(SOME(SIG x)) = SOME x | asSigo _ = NONE
-    fun asFuno(SOME(FUN x)) = SOME x | asFuno _ = NONE
 
     fun appInf f (INFIX id, INF x) = f(id,x) | appInf f _ = ()
     fun appFld f (LAB   id, FLD x) = f(id,x) | appFld f _ = ()
@@ -11746,7 +11812,6 @@ structure BindEnv :> BIND_ENV =
     fun appTy  f (TYCON id, TY  x) = f(id,x) | appTy  f _ = ()
     fun appStr f (STRID id, STR x) = f(id,x) | appStr f _ = ()
     fun appSig f (SIGID id, SIG x) = f(id,x) | appSig f _ = ()
-    fun appFun f (FUNID id, FUN x) = f(id,x) | appFun f _ = ()
 
     fun foldInf f (INFIX id, INF x, a) = f(id,x,a) | foldInf f (_,_,a) = a
     fun foldFld f (LAB   id, FLD x, a) = f(id,x,a) | foldFld f (_,_,a) = a
@@ -11755,7 +11820,6 @@ structure BindEnv :> BIND_ENV =
     fun foldTy  f (TYCON id, TY  x, a) = f(id,x,a) | foldTy  f (_,_,a) = a
     fun foldStr f (STRID id, STR x, a) = f(id,x,a) | foldStr f (_,_,a) = a
     fun foldSig f (SIGID id, SIG x, a) = f(id,x,a) | foldSig f (_,_,a) = a
-    fun foldFun f (FUNID id, FUN x, a) = f(id,x,a) | foldFun f (_,_,a) = a
 
 
     (* Collision exceptions *)
@@ -11767,7 +11831,6 @@ structure BindEnv :> BIND_ENV =
     exception CollisionVar of TyVar
     exception CollisionStr of StrId
     exception CollisionSig of SigId
-    exception CollisionFun of FunId
 
     fun transformCollision(INFIX id)	= raise CollisionInf id
       | transformCollision(LAB   id)	= raise CollisionFld id
@@ -11776,7 +11839,6 @@ structure BindEnv :> BIND_ENV =
       | transformCollision(TYCON id)	= raise CollisionTy  id
       | transformCollision(STRID id)	= raise CollisionStr id
       | transformCollision(SIGID id)	= raise CollisionSig id
-      | transformCollision(FUNID id)	= raise CollisionFun id
 
 
     (* Actual operations *)
@@ -11809,7 +11871,6 @@ structure BindEnv :> BIND_ENV =
     fun insertTy (ENV E, id, x)		= Map.insert(E, TYCON id, TY  x)
     fun insertStr(ENV E, id, x)		= Map.insert(E, STRID id, STR x)
     fun insertSig(ENV E, id, x)		= Map.insert(E, SIGID id, SIG x)
-    fun insertFun(ENV E, id, x)		= Map.insert(E, FUNID id, FUN x)
 
     fun insertDisjointInf(ENV E, id, x)	= Map.insertDisjoint(E, INFIX id, INF x)
 					  handle Map.Collision(INFIX id) =>
@@ -11832,9 +11893,6 @@ structure BindEnv :> BIND_ENV =
     fun insertDisjointSig(ENV E, id, x)	= Map.insertDisjoint(E, SIGID id, SIG x)
 					  handle Map.Collision(SIGID id) =>
 						 raise CollisionSig id
-    fun insertDisjointFun(ENV E, id, x)	= Map.insertDisjoint(E, FUNID id, FUN x)
-					  handle Map.Collision(FUNID id) =>
-						 raise CollisionFun id
 
     fun lookupInf(ENV E, id)		= asInfo(Map.lookup(E, INFIX id))
     fun lookupFld(ENV E, id)		= asFldo(Map.lookup(E, LAB   id))
@@ -11843,7 +11901,6 @@ structure BindEnv :> BIND_ENV =
     fun lookupTy (ENV E, id)		= asTyo (Map.lookup(E, TYCON id))
     fun lookupStr(ENV E, id)		= asStro(Map.lookup(E, STRID id))
     fun lookupSig(ENV E, id)		= asSigo(Map.lookup(E, SIGID id))
-    fun lookupFun(ENV E, id)		= asFuno(Map.lookup(E, FUNID id))
 
     fun lookupScopeInf(ENV E, id)	= asInfo(Map.lookupScope(E, INFIX id))
     fun lookupScopeFld(ENV E, id)	= asFldo(Map.lookupScope(E, LAB   id))
@@ -11852,7 +11909,6 @@ structure BindEnv :> BIND_ENV =
     fun lookupScopeTy (ENV E, id)	= asTyo (Map.lookupScope(E, TYCON id))
     fun lookupScopeStr(ENV E, id)	= asStro(Map.lookupScope(E, STRID id))
     fun lookupScopeSig(ENV E, id)	= asSigo(Map.lookupScope(E, SIGID id))
-    fun lookupScopeFun(ENV E, id)	= asFuno(Map.lookupScope(E, FUNID id))
 
     fun appiInfs f (ENV E)		= Map.appi (appInf f) E
     fun appiFlds f (ENV E)		= Map.appi (appFld f) E
@@ -11861,7 +11917,6 @@ structure BindEnv :> BIND_ENV =
     fun appiTys  f (ENV E)		= Map.appi (appTy  f) E
     fun appiStrs f (ENV E)		= Map.appi (appStr f) E
     fun appiSigs f (ENV E)		= Map.appi (appSig f) E
-    fun appiFuns f (ENV E)		= Map.appi (appFun f) E
     fun appiScopeVals f (ENV E)		= Map.appiScope (appVal f) E
 
     fun foldiInfs f a (ENV E)		= Map.foldi (foldInf f) a E
@@ -11871,7 +11926,6 @@ structure BindEnv :> BIND_ENV =
     fun foldiTys  f a (ENV E)		= Map.foldi (foldTy  f) a E
     fun foldiStrs f a (ENV E)		= Map.foldi (foldStr f) a E
     fun foldiSigs f a (ENV E)		= Map.foldi (foldSig f) a E
-    fun foldiFuns f a (ENV E)		= Map.foldi (foldFun f) a E
 
 
     fun unionInf(E1,E2)			= appiInfs (fn(id,x) =>
@@ -11890,8 +11944,6 @@ structure BindEnv :> BIND_ENV =
 						  ; STR(I1,z1,E1) )
       | compose(SIG(I1,z1,E1),  SIG(I2,z2,E2))	= ( unionCompose(E1,E2)
 						  ; SIG(I1,z1,E1) )
-      | compose(FUN(I1,z1,E1),  FUN(I2,z2,E2))	= ( unionCompose(E1,E2)
-						  ; FUN(I1,z1,E1) )
       | compose _				= raise Crash.Crash
 							"BindEnv.compose"
     and composeIdStatus(V, is)			= is
@@ -12207,6 +12259,11 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	      O.ArrTyp(Source.over(O.infoTyp typ1, O.infoTyp typ2), typ1, typ2)
 	    ) typ typs
 
+    fun funinf(idinfs,inf) =
+	List.foldr (fn((id,inf1),inf2) =>
+	      O.FunInf(Source.over(O.infoId id, O.infoInf inf2), id, inf1, inf2)
+	    ) inf idinfs
+
     fun vardec(ids,dec) =
 	List.foldr (fn(id,dec) => O.VarDec(O.infoId id, id, dec)) dec ids
 
@@ -12222,9 +12279,6 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 
 
   (* Constants and identifiers *)
-
-    fun toFunName s   = "$" ^ s
-    fun fromFunName s = String.extract(s,1,NONE)
 
     fun trSCon E =
 	fn SCon(i, SCon.INT n)		=> O.IntLit n
@@ -12263,8 +12317,6 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 			StrId.toString, E.StrIdUnbound)
     val trSigId = trId(lookupSig, infoSigId, idSigId,
 			SigId.toString, E.SigIdUnbound)
-    val trFunId = trId(lookupFun, infoFunId, idFunId,
-			toFunName o FunId.toString, E.FunIdUnbound)
 
 
     fun trId_bind (lookup,infoId,idId,toString,Shadowed) E id =
@@ -12290,8 +12342,6 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 				 E.StrIdShadowed)
     val trSigId_bind = trId_bind(lookupSig, infoSigId, idSigId, SigId.toString,
 				 E.SigIdShadowed)
-    val trFunId_bind = trId_bind(lookupFun, infoFunId, idFunId,
-				toFunName o FunId.toString, E.FunIdShadowed)
 
 
     (* With polymorphic recursion we could avoid the following code
@@ -12346,7 +12396,6 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
     val trLongTyCon = trLongId trTyCon
     val trLongStrId = trLongId trStrId
     val trLongSigId = trLongId trSigId
-    val trLongFunId = trLongId trFunId
 
 
 
@@ -12404,6 +12453,9 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
       | unguardedTyVarsExp E (FNExp(_, match)) =
 	    unguardedTyVarsMatch E match
 
+      | unguardedTyVarsExp E (PACKExp(_, longstrid)) =
+	    []
+
     and unguardedTyVarsMatch E (Match(_, mrule, match_opt)) =
 	    unguardedTyVarsMrule E mrule @ ?unguardedTyVarsMatch E match_opt
 
@@ -12415,9 +12467,6 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 
       | unguardedTyVarsDec E (STRUCTUREDec(_, strbind)) =
 	    unguardedTyVarsStrBind E strbind
-
-      | unguardedTyVarsDec E (FUNCTORDec(_, funbind)) =
-	    unguardedTyVarsFunBind E funbind
 
       | unguardedTyVarsDec E ( LOCALDec(_, dec1, dec2)
 			     | SEQDec(_, dec1, dec2) ) =
@@ -12457,11 +12506,6 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
     and unguardedTyVarsStrBind E (StrBind(_, strid, strexp, strbind_opt)) =
 	    unguardedTyVarsStrExp E strexp @
 	    ?unguardedTyVarsStrBind E strbind_opt
-
-    and unguardedTyVarsFunBind E (FunBind(_, funid, strid, sigexp, strexp,
-								funbind_opt)) =
-	    unguardedTyVarsStrExp E strexp @
-	    ?unguardedTyVarsFunBind E funbind_opt
 
     and unguardedTyVarsAtPat E (RECORDAtPat(_, patrow_opt)) =
 	    ?unguardedTyVarsPatRow E patrow_opt
@@ -12528,6 +12572,9 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
       | unguardedTyVarsTy E (ARROWTy(_, ty, ty')) =
 	    unguardedTyVarsTy E ty @ unguardedTyVarsTy E ty'
 
+      | unguardedTyVarsTy E (PACKTy(_, longsigid)) =
+	    []
+
       | unguardedTyVarsTy E (PARTy(_, ty)) =
 	    unguardedTyVarsTy E ty
 
@@ -12537,21 +12584,33 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
     and unguardedTyVarsTyseq E (Seq(_, tys)) =
 	    List.concat(List.map (unguardedTyVarsTy E) tys)
 
-    and unguardedTyVarsStrExp E (STRUCTStrExp(_, dec)) =
+    and unguardedTyVarsAtStrExp E (STRUCTAtStrExp(_, dec)) =
 	    unguardedTyVarsDec E dec
 
-      | unguardedTyVarsStrExp E (LONGSTRIDStrExp(_, longstrid)) =
+      | unguardedTyVarsAtStrExp E (LONGSTRIDAtStrExp(_, longstrid)) =
 	    []
 
-      | unguardedTyVarsStrExp E ( TRANSStrExp(_, strexp, sigexp)
-				| OPAQStrExp(_, strexp, sigexp) ) =
-	    unguardedTyVarsStrExp E strexp
-
-      | unguardedTyVarsStrExp E (APPStrExp(_, longfunid, strexp)) =
-	    unguardedTyVarsStrExp E strexp
-
-      | unguardedTyVarsStrExp E (LETStrExp(_, dec, strexp)) =
+      | unguardedTyVarsAtStrExp E (LETAtStrExp(_, dec, strexp)) =
 	    unguardedTyVarsDec E dec @ unguardedTyVarsStrExp E strexp
+
+      | unguardedTyVarsAtStrExp E (PARAtStrExp(_, strexp)) =
+	    unguardedTyVarsStrExp E strexp
+
+    and unguardedTyVarsStrExp E (ATSTREXPStrExp(_, atstrexp)) =
+	    unguardedTyVarsAtStrExp E atstrexp
+
+      | unguardedTyVarsStrExp E (APPStrExp(_, strexp, atstrexp)) =
+	    unguardedTyVarsStrExp E strexp @ unguardedTyVarsAtStrExp E atstrexp
+
+      | unguardedTyVarsStrExp E ( TRANSStrExp(_, strexp, _)
+				| OPAQStrExp(_, strexp, _)
+				| FCTStrExp(_, _, strexp) ) =
+	    unguardedTyVarsStrExp E strexp
+
+      | unguardedTyVarsStrExp E (UNPACKStrExp(_, exp, sigexp)) =
+	    unguardedTyVarsExp E exp
+
+      (*UNFINISHED: if we have LETSigExp then we must check sigexps as well*)
 
 
 
@@ -12655,6 +12714,15 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	   in
 		O.FunExp(i, id', exp')
 	   end
+
+	| PACKExp(i, longstrid) =>
+	  let
+		val (longid',E') = trLongStrId E longstrid
+		val  mod'        = longidToMod longid'
+	  in
+		O.PackExp(i, mod')
+	  end
+
 
     and trAppExp E =
 	fn APPExp(i, exp, atexp) => O.AppExp(i, trAppExp E exp, trAtExp E atexp)
@@ -12898,7 +12966,16 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	   end
 
 	 | ARROWTy(i, ty1, ty2) => O.ArrTyp(i, trTy E ty1, trTy E ty2)
-	 | PARTy(i, ty)         => trTy E ty
+
+	 | PACKTy(i, longsigid) =>
+	   let
+		val (longid',E') = trLongSigId E longsigid
+		val  inf'        = O.ConInf(infoLong longsigid, longid')
+	   in
+		O.PackTyp(i, inf')
+	   end
+
+	 | PARTy(i, ty) => trTy E ty
 
     and trTys E = List.map (trTy E)
 
@@ -12969,6 +13046,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	 | RECORDTy(i, tyrowo)   => trAllTyRowo E tyrowo
 	 | TUPLETy(i, tys)       => List.concat(List.map (trAllTy E) tys)
 	 | ARROWTy(i, ty1, ty2)  => trAllTy E ty1 @ trAllTy E ty2
+	 | PACKTy(i, longsigid)  => []
 	 | PARTy(i, ty)          => trAllTy E ty
 
     and trAllTyRowo E =
@@ -13102,15 +13180,6 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		decs'
 	   end
 
-	 | FUNCTORDec(i, funbind) =>
-	   let
-		val E'    = Env.new()
-		val decs' = trFunBindo' (E,E',acc) (SOME funbind)
-		val _     = union(E,E')
-	   in
-		decs'
-	   end
-
 	 | LOCALDec(i, dec1, dec2) =>
 	   let
 		val  _     = insertScope E
@@ -13129,11 +13198,10 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		val (longid', E') = trLongStrId E longstrid
 		val   _           = unionInf(E,E')
 	   in
-		(foldiVals (trOpenDecVal(E,i,SOME longid')) 
+		(foldiVals (trOpenDecVal(E,i,SOME longid'))
 		(foldiTys  (trOpenDecTy (E,i,longid'))
 		(foldiStrs (trOpenDecStr(E,i,longid'))
-		(foldiFuns (trOpenDecFun(E,i,longid'))
-		(foldiSigs (trOpenDecSig(E,i,longid')) acc E') E') E') E') E')
+		(foldiSigs (trOpenDecSig(E,i,longid')) acc E') E') E') E')
 	   end
 
 	 | EMPTYDec(i) =>
@@ -13195,24 +13263,6 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		val  mod'       = O.PrimMod(i, s, inf')
 		val  dec'       = O.ModDec(i, id', mod')
 		val  _          = insertStr(E, strid', (i, stamp, E'))
-	   in
-		dec' :: acc
-	   end
-
-	 | PRIMITIVEFUNCTORDec(i, funid as FunId(i1,funid'),
-			strid as StrId(i2,strid'), sigexp1, sigexp2, s) =>
-	   let
-		val (id1',stamp1) = trFunId_bind E funid
-		val (id2',stamp2) = trStrId_bind E strid
-		val (inf1',E1)    = trSigExp E sigexp1
-		val  _            = insertScope E
-		val  _            = insertStr(E, strid', (i2, stamp2, E1))
-		val (inf2',E2)    = trSigExp E sigexp2
-		val  _            = deleteScope E
-		val  inf'         = O.ArrInf(i, id2', inf1', inf2')
-		val  mod'         = O.PrimMod(i, s, inf')
-		val  dec'         = O.ModDec(i, id1', mod')
-		val  _            = insertFun(E, funid', (i1, stamp1, E2))
 	   in
 		dec' :: acc
 	   end
@@ -13297,19 +13347,6 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	    val longid' = O.LongId(i, longid, lab')
 	    val mod'    = longidToMod longid'
 	    val _       = insertStr(E, strid', (i,stamp2,E'))
-	in
-	    O.ModDec(i, id', mod') :: acc
-	end
-
-    and trOpenDecFun (E,i,longid) (funid', (_,stamp1,E'), acc) =
-	let
-	    val name    = FunId.toString funid'
-	    val stamp2  = Stamp.new()
-	    val id'     = O.Id(i, stamp2, O.ExId(fromFunName name))
-	    val lab'    = O.Lab(i, name)
-	    val longid' = O.LongId(i, longid, lab')
-	    val mod'    = longidToMod longid'
-	    val _       = insertFun(E, funid', (i,stamp2,E'))
 	in
 	    O.ModDec(i, id', mod') :: acc
 	end
@@ -13413,7 +13450,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		val _ = trFmatcho_lhs (E,vid) fmatcho
 		val _ = insertDisjointVal(E', vid', (i',stamp,V))
 			handle CollisionVal _ =>
-			       error(i', E.FnBindDuplicate vid')
+			       error(i', E.FvalBindDuplicate vid')
 	   in
 		id'
 	   end
@@ -13427,7 +13464,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		if idVId vid1 = idVId vid2 then
 		    trFmatcho_lhs (E,vid1) fmatcho
 		else
-		    error(i', E.FnBindNameInconsistent vid2')
+		    error(i', E.FvalBindNameInconsistent vid2')
 	   end
 
     and trFmrule_lhs E (Mrule(i, fpat, exp)) =
@@ -13441,7 +13478,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	 | ( NONPat(i,_)
 	   | ASPat(i,_,_)
 	   | WITHVALPat(i,_,_)
-	   | WITHFUNPat(i,_,_) )	=> error(i, E.FnBindPatInvalid)
+	   | WITHFUNPat(i,_,_) )	=> error(i, E.FvalBindPatInvalid)
 
     and trFappPat_lhs E =
 	fn APPPat(i, fpat, atpat)	=> trFappPat_lhs E fpat
@@ -13452,7 +13489,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	fn LONGVIDAtPat(i, _, SHORTLong(_, vid as VId(i', vid'))) =>
 	   (case lookupIdStatus(E, vid')
 	      of  V        => vid
-	       | (R | C _) => error(i', E.FnBindNameCon vid')
+	       | (R | C _) => error(i', E.FvalBindNameCon vid')
 	   )
 
 	 | ALTAtPat(i, fpats) =>
@@ -13463,14 +13500,14 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		case List.find (fn(VId(_,vid'')) => vid'<>vid'') (List.tl vids)
 		  of NONE                => vid
 		   | SOME(VId(i',vid2')) =>
-			error(i', E.FnBindNameInconsistent vid2')
+			error(i', E.FvalBindNameInconsistent vid2')
 	   end
 
 	 | PARAtPat(i, fpat) =>
 		trFpat_lhs E fpat
 
 	 | atpat =>
-		error(infoAtPat atpat, E.FnBindNameMissing)
+		error(infoAtPat atpat, E.FvalBindNameMissing)
 
     and trFpats_lhs E = List.map(trFpat_lhs E)
 
@@ -13519,7 +13556,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		val (match',arity') = trFmrule_rhs E fmrule
 	   in
 		if arity <> arity' then
-		    error(infoMrule fmrule, E.FnBindArityInconsistent)
+		    error(infoMrule fmrule, E.FvalBindArityInconsistent)
 		else
 		    trFmatcho_rhs' (E, arity, match'::acc) fmatcho
 	   end
@@ -13562,7 +13599,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 
 	 | ( NONPat(i,_) | ASPat(i,_,_)
 	   | WITHVALPat(i,_,_) | WITHFUNPat(i,_,_) ) =>
-		error(i, E.FnBindPatInvalid)
+		error(i, E.FvalBindPatInvalid)
 
     and trFappPat_rhs (E,E') =
 	fn fpat as APPPat _ =>
@@ -13591,12 +13628,12 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		case List.find (fn(_,arity',_) => arity<>arity') pat'aritytyps's
 		  of NONE => ( O.AltPat(i, pat'::pats'), arity, typs' @ typs'' )
 		   | SOME(pat',_,_) =>
-			error(O.infoPat pat', E.FnBindArityInconsistent)
+			error(O.infoPat pat', E.FvalBindArityInconsistent)
 	   end
 
 	 | PARAtPat(i, fpat)	=> trFpat_rhs (E,E') fpat
-	 | LONGVIDAtPat(i,_,_)	=> error(i, E.FnBindArityZero)
-	 | fatpat		=> error(infoAtPat fatpat, E.FnBindPatInvalid)
+	 | LONGVIDAtPat(i,_,_)	=> error(i, E.FvalBindArityZero)
+	 | fatpat		=> error(infoAtPat fatpat, E.FvalBindPatInvalid)
 
     and trAltFpats_rhs (E,E') = List.map(trAltFpat_rhs (E,E'))
 
@@ -13620,18 +13657,18 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
     and trAppliedFpat_rhs (E,E') =
 	fn fpat as (ATPATPat _ | APPPat _) =>
 		trAppliedFappPat_rhs (E,E') (Infix.pat (infEnv E) fpat)
-	 | fpat => error(infoPat fpat, E.FnBindPatInvalid)
+	 | fpat => error(infoPat fpat, E.FvalBindPatInvalid)
 
     and trAppliedFappPat_rhs (E,E') =
 	fn ATPATPat(i, fatpat)	  => trAppliedFatPat_rhs (E,E') fatpat
 	 | APPPat(i, fpat, atpat) => trAppliedFappPat_rhs (E,E') fpat
 				     @ [trAtPat (E,E') atpat]
-	 | fpat => error(infoPat fpat, E.FnBindPatInvalid)
+	 | fpat => error(infoPat fpat, E.FvalBindPatInvalid)
 
     and trAppliedFatPat_rhs (E,E') =
 	fn LONGVIDAtPat _	=> []
 	 | PARAtPat(i, fpat)	=> trAppliedFpat_rhs (E,E') fpat
-	 | fatpat => error(infoAtPat fatpat, E.FnBindPatInvalid)
+	 | fatpat => error(infoAtPat fatpat, E.FvalBindPatInvalid)
 
 
 
@@ -13805,7 +13842,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	end
 
 
-  (* Structure, signature, and functor bindings *)
+  (* Structure and signature bindings *)
 
     and trStrBindo' (E,E',acc) =
 	fn NONE => acc
@@ -13827,12 +13864,16 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
     and trSigBindo' (E,E',acc) =
 	fn NONE => acc
 
-	 | SOME(SigBind(_, sigid as SigId(i',sigid'), sigexp, sigbindo)) =>
+	 | SOME(SigBind(_, sigid as SigId(i',sigid'), strpats, sigexp,
+								sigbindo)) =>
 	   let
-		val i           = Source.over(i', infoSigExp sigexp)
+		val  i          = Source.over(i', infoSigExp sigexp)
 		val (id',stamp) = trSigId_bind E sigid
+		val  _          = insertScope E
+		val  idinfs'    = trStrPats E strpats
 		val (inf',E'')  = trSigExp E sigexp
-		val  dec'       = O.InfDec(i, id', inf')
+		val  _          = deleteScope E
+		val  dec'       = O.InfDec(i, id', funinf(idinfs',inf'))
 		val  _          = insertDisjointSig(E', sigid', (i',stamp,E''))
 				  handle CollisionSig _ =>
 				      error(i', E.SigBindDuplicate sigid')
@@ -13841,35 +13882,10 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	   end
 
 
-    and trFunBindo' (E,E',acc) =
-	fn NONE => acc
-
-	 | SOME(FunBind(_, funid as FunId(i1,funid'), strid as StrId(i2,strid'),
-			   sigexp, strexp, funbindo)) =>
-	   let
-		val  i            = Source.over(i1, infoStrExp strexp)
-		val (id1',stamp1) = trFunId_bind E funid
-		val (id2',stamp2) = trStrId_bind E strid
-		val (inf',E2)     = trSigExp E sigexp
-		val  _            = insertScope E
-		val  _            = insertStr(E, strid', (i2, stamp2, E2))
-		val (mod',E1)     = trStrExp E strexp
-		val  _            = deleteScope E
-		val  funmod'      = O.FunMod(i, id2', inf', mod')
-		val  dec'         = O.ModDec(i, id1', funmod')
-		val  _            = insertDisjointFun(E',funid', (i1,stamp1,E1))
-				    handle CollisionFun _ =>
-				        error(i1, E.FnBindDuplicate funid')
-	   in
-		trFunBindo' (E,E', dec'::acc) funbindo
-	   end
-
-
-
   (* Structure expressions *)
 
-    and trStrExp E =
-	fn STRUCTStrExp(i, dec) =>
+    and trAtStrExp E =
+	fn STRUCTAtStrExp(i, dec) =>
 	   let
 		val _     = insertScope E
 		val decs' = trDec E dec
@@ -13878,11 +13894,34 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		( O.StrMod(i, decs'), E' )
 	   end
 
-	 | LONGSTRIDStrExp(i, longstrid) =>
+	 | LONGSTRIDAtStrExp(i, longstrid) =>
 	   let
 		val (longid',E') = trLongStrId E longstrid
 	   in
 		( longidToMod longid', E' )
+	   end
+
+	 | LETAtStrExp(i, dec, strexp) =>
+	   let
+		val  _        = insertScope E
+		val  decs'    = trDec E dec
+		val (mod',E') = trStrExp E strexp
+		val  _        = deleteScope E
+	   in
+		( O.LetMod(i, decs', mod'), E' )
+	   end
+
+	 | PARAtStrExp(i, strexp) => trStrExp E strexp
+
+    and trStrExp E =
+	fn ATSTREXPStrExp(i, atstrexp) => trAtStrExp E atstrexp
+
+	 | APPStrExp(i, strexp, atstrexp) =>
+	   let
+		val (mod1',E1') = trStrExp E strexp
+		val (mod2',E2') = trAtStrExp E atstrexp
+	   in
+		( O.AppMod(i, mod1', mod2'), E1' )
 	   end
 
 	 | TRANSStrExp(i, strexp, sigexp) =>
@@ -13901,38 +13940,49 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		( O.UpMod(i, mod', inf'), E'' )
 	   end
 
-	 | APPStrExp(i, longfunid, strexp) =>
+	 | FCTStrExp(i, strpat, strexp) =>
 	   let
-		val  i'          = infoLong longfunid
-		val (longid',E') = trLongFunId E longfunid
-		val  mod1'       = longidToMod longid'
-		val (mod2',_)    = trStrExp E strexp
+		val  _         = insertScope E
+		val (id',inf') = trStrPat E strpat
+		val (mod',E')  = trStrExp E strexp
+		val  _         = deleteScope E
 	   in
-		( O.AppMod(i, mod1', mod2'), E' )
+		( O.FunMod(i, id', inf', mod'), E' )
 	   end
 
-	 | LETStrExp(i, dec, strexp) =>
+	 | UNPACKStrExp(i, exp, sigexp) =>
 	   let
-		val  _        = insertScope E
-		val  decs'    = trDec E dec
-		val (mod',E') = trStrExp E strexp
-		val  _        = deleteScope E
+		val  exp'     = trExp E exp
+		val (inf',E') = trSigExp E sigexp
 	   in
-		( O.LetMod(i, decs', mod'), E' )
+		( O.UnpackMod(i, exp', inf'), E' )
 	   end
+
+
+    and trStrPat E (StrPat(i, strid as StrId(i', strid'), sigexp)) =
+	let
+	    val (id',stamp) = trStrId_bind E strid
+	    val (inf',E')   = trSigExp E sigexp
+	    val  _          = insertStr(E, strid', (i', stamp, E'))
+	in
+	    (id', inf')
+	end
+
+    and trStrPats E = List.map (trStrPat E)
+
 
 
   (* Signatures and specifications *)
 
-    and trSigExp E =
-	fn ANYSigExp(i) =>
+    and trAtSigExp E =
+	fn ANYAtSigExp(i) =>
 	   let
 		val E' = Env.new()
 	   in
 		( O.TopInf(i), E' )
 	   end
 
-	 | SIGSigExp(i, spec) =>
+	 | SIGAtSigExp(i, spec) =>
 	   let
 		val _      = insertScope E
 		val specs' = trSpec E spec
@@ -13941,11 +13991,47 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		( O.SigInf(i, specs'), E' )
 	   end
 
-	 | LONGSIGIDSigExp(i, sigid) =>
+	 | LONGSIGIDAtSigExp(i, sigid) =>
 	   let
 		val (longid',E') = trLongSigId E sigid
 	   in
 		( O.ConInf(i, longid'), E' )
+	   end
+
+	 | LETAtSigExp(i, dec, sigexp) =>
+	   let
+		val  _        = insertScope E
+		val  decs'    = trDec E dec
+		val (inf',E') = trSigExp E sigexp
+		val  _        = deleteScope E
+	   in
+		(*UNFINISHED*)
+		(* Mmh, is there really no better way than having LetInf? *)
+		(inf',E')
+	   end
+
+	 | PARAtSigExp(i, sigexp) => trSigExp E sigexp
+
+
+    and trSigExp E =
+	fn ATSIGEXPSigExp(i, atsigexp) => trAtSigExp E atsigexp
+
+	 | APPSigExp(i, sigexp, atstrexp) =>
+	   let
+		val (inf',E') = trSigExp E sigexp
+		val (mod',_)  = trAtStrExp E atstrexp
+	   in
+		( O.AppInf(i, inf', mod'), E' )
+	   end
+
+	 | FCTSigExp(i, strpat, sigexp) =>
+	   let
+		val  _          = insertScope E
+		val (id',inf1') = trStrPat E strpat
+		val (inf2',E')  = trSigExp E sigexp
+		val  _          = deleteScope E
+	   in
+		( O.ArrInf(i, id', inf1', inf2'), E' )
 	   end
 
 	 | WHERESigExp(i, sigexp1, sigexp2) =>
@@ -14007,9 +14093,6 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	 | SIGNATURESpec(i, sigdesc) =>
 		trSigDesco' (E,acc) (SOME sigdesc)
 
-	 | FUNCTORSpec(i, fundesc) =>
-		trFunDesco' (E,acc) (SOME fundesc)
-
 	 | INCLUDESpec(i, sigexp) =>
 	   let
 		val (inf',E') = trSigExp E sigexp
@@ -14020,7 +14103,6 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 			 | CollisionTy  x => error(i, E.SpecTyConDuplicate x)
 			 | CollisionStr x => error(i, E.SpecStrIdDuplicate x)
 			 | CollisionSig x => error(i, E.SpecSigIdDuplicate x)
-			 | CollisionFun x => error(i, E.SpecFunIdDuplicate x)
 	   in
 		O.ExtSpec(i, inf') :: acc
 	   end
@@ -14126,7 +14208,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
     and trValDesco' (E,acc) =
 	fn NONE => acc
 
-	 | SOME(ValDesc(_, _, vid as VId(i',vid'), ty, valdesco)) =>
+	 | SOME(NEWValDesc(_, _, vid as VId(i',vid'), ty, valdesco)) =>
 	   let
 		val  i          = Source.over(i', infoTy ty)
 		val (id',stamp) = trVId_bind E vid
@@ -14137,6 +14219,19 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		val  spec'      = O.ValSpec(i, id', typ')
 		val  _          = insertDisjointVal(E, vid', (i', stamp, V))
 				  handle CollisionVal vid' =>
+				      error(i', E.SpecVIdDuplicate vid')
+	   in
+		trValDesco' (E, spec'::acc) valdesco
+	   end
+
+	 | SOME(EQUALValDesc(i, _, vid as VId(i',vid'), _, longvid, valdesco))=>
+	   let
+		val (id',stamp)  = trVId_bind E vid
+		val (longid',is) = trLongVId E longvid
+		val  typ'        = O.SingTyp(O.infoLongid longid', longid')
+		val  spec'       = O.ValSpec(i, id', typ')
+		val  _           = insertDisjointVal(E, vid', (i', stamp, V))
+				   handle CollisionVal vid' =>
 				      error(i', E.SpecVIdDuplicate vid')
 	   in
 		trValDesco' (E, spec'::acc) valdesco
@@ -14344,10 +14439,13 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
     and trSigDesco' (E,acc) =
 	fn NONE => acc
 
-	 | SOME(NEWSigDesc(_, sigid as SigId(i',sigid'), sigdesco)) =>
+	 | SOME(NEWSigDesc(_, sigid as SigId(i',sigid'), strpats, sigdesco)) =>
 	   let
 		val (id',stamp) = trSigId_bind E sigid
-		val  inf'       = O.AbsInf(i')
+		val  _          = insertScope E
+		val  idinfs'    = trStrPats E strpats
+		val  inf'       = funinf(idinfs', O.AbsInf(i'))
+		val  _          = deleteScope E
 		val  spec'      = O.InfSpec(i', id', inf')
 		val  _          = insertDisjointSig(E, sigid',
 						    (i', stamp, Env.new()))
@@ -14357,42 +14455,22 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		trSigDesco' (E, spec'::acc) sigdesco
 	   end
 
-	 | SOME(EQUALSigDesc(_, sigid as SigId(i',sigid'), sigexp, sigdesco)) =>
+	 | SOME(EQUALSigDesc(_, sigid as SigId(i',sigid'), strpats, sigexp,
+								sigdesco)) =>
 	   let
 		val  i          = Source.over(i', infoSigExp sigexp)
 		val (id',stamp) = trSigId_bind E sigid
+		val  _          = insertScope E
+		val  idinfs'    = trStrPats E strpats
 		val (inf',E')   = trSigExp E sigexp
-		val  spec'      = O.InfSpec(i', id', inf')
+		val  inf''      = funinf(idinfs', inf')
+		val  _          = deleteScope E
+		val  spec'      = O.InfSpec(i', id', inf'')
 		val  _          = insertDisjointSig(E, sigid', (i', stamp, E'))
 				  handle CollisionSig _ =>
 				      error(i', E.SpecSigIdDuplicate sigid')
 	   in
 		trSigDesco' (E, spec'::acc) sigdesco
-	   end
-
-
-
-    and trFunDesco' (E,acc) =
-	fn NONE => acc
-
-	 | SOME(FunDesc(_, funid as FunId(i1,funid'), strid as StrId(i2,strid'),
-			   sigexp1, sigexp2, fundesco)) =>
-	   let
-		val  i            = Source.over(i1, infoSigExp sigexp2)
-		val (id1',stamp1) = trFunId_bind E funid
-		val (id2',stamp2) = trStrId_bind E strid
-		val (inf1',E1)    = trSigExp E sigexp1
-		val  _            = insertScope E
-		val  _            = insertStr(E, strid', (i2, stamp2, E1))
-		val (inf2',E2)    = trSigExp E sigexp2
-		val  _            = deleteScope E
-		val  inf'         = O.ArrInf(i, id1', inf1', inf2')
-		val  spec'        = O.ModSpec(i, id1', inf')
-		val  _            = insertDisjointFun(E, funid', (i1,stamp1,E2))
-				    handle CollisionFun _ =>
-					error(i1, E.SpecFunIdDuplicate funid')
-	   in
-		trFunDesco' (E, spec'::acc) fundesco
 	   end
 
 
@@ -14506,12 +14584,10 @@ signature DERIVED_FORMS =
     type Lab       = Grammar.Lab
     type VId       = Grammar.VId
     type StrId     = Grammar.StrId
-    type FunId     = Grammar.FunId
     type LongVId   = Grammar.LongVId
     type LongTyCon = Grammar.LongTyCon
     type LongStrId = Grammar.LongStrId
     type LongSigId = Grammar.LongSigId
-    type LongFunId = Grammar.LongFunId
 
     type Op        = Grammar.Op
     type AtExp     = Grammar.AtExp
@@ -14535,19 +14611,22 @@ signature DERIVED_FORMS =
     type Pat       = Grammar.Pat
     type Ty        = Grammar.Ty
     type TyVarSeq  = Grammar.TyVarSeq
+    type AtStrExp  = Grammar.AtStrExp
+    type AppStrExp = Grammar.StrExp
     type StrExp    = Grammar.StrExp
+    type StrPat    = Grammar.StrPat
     type StrBind   = Grammar.StrBind
-    type FunBind   = Grammar.FunBind
+    type AppSigExp = Grammar.SigExp
     type SigExp    = Grammar.SigExp
-    type TyReaDesc = (Info * TyVarSeq * LongTyCon * Ty) list
     type Spec      = Grammar.Spec
     type ValDesc   = Grammar.ValDesc
     type TypDesc   = Grammar.TypDesc
     type DatDesc   = Grammar.DatDesc
     type ExDesc    = Grammar.DconDesc
-    type FunDesc   = Grammar.FunDesc
+    type FunBind
+    type FunDesc
+    type Rea
     type Program   = Grammar.Program
-
 
     (* Expressions *)
 
@@ -14592,13 +14671,11 @@ signature DERIVED_FORMS =
     val DATATYPEDec:	Info * DatBind * TypBind option		-> Dec
     val ABSTYPEDec:	Info * DatBind * TypBind option * Dec	-> Dec
     val EXCEPTIONDec:	Info * ExBind				-> Dec
+    val FUNCTORDec:     Info * FunBind                          -> Dec
     val OPENMULTIDec:	Info * LongStrId list			-> Dec
     val INFIXMULTIDec:	Info * int option * VId list		-> Dec
     val INFIXRMULTIDec:	Info * int option * VId list		-> Dec
     val NONFIXMULTIDec:	Info * VId list				-> Dec
-
-    val PRIMITIVEEXCEPTIONDec:   Info * Op * VId * Ty option * string  -> Dec
-    val PRIMITIVEFUNCTORSPECDec: Info * FunId * Spec * SigExp * string -> Dec
 
     val NEWExBind:    Info * Op * VId * Ty option * ExBind option    -> ExBind
     val EQUALExBind:  Info * Op * VId * Op * LongVId * ExBind option -> ExBind
@@ -14609,50 +14686,62 @@ signature DERIVED_FORMS =
 			       * StrBind option                    -> StrBind
     val OPAQStrBind:      Info * StrId * SigExp * StrExp
 			       * StrBind option                    -> StrBind
+    val WILDCARDStrBind:  Info * SigExp option * StrExp
+			       * StrBind option                    -> StrBind
 
     (* Structure expressions *)
 
-    val PARStrExp:        Info * StrExp                            -> StrExp
-    val APPDECStrExp:     Info * LongFunId * Dec                   -> StrExp
+    val DECAtStrExp:      Info * Dec -> AtStrExp
+    val FCTStrExp:        Info * StrPat * StrExp -> StrExp
+
+    val STRIDStrPat:      Info * StrId * SigExp -> StrPat
+    val WILDCARDStrPat:   Info * SigExp         -> StrPat
+    val SPECStrPat:       Info * Spec           -> StrPat
 
     (* Functor bindings *)
 
-    val TRANSFunBind:     Info * FunId * StrId * SigExp * SigExp option
+    val TRANSFunBind:     Info * StrId * StrPat list * SigExp option
 			       * StrExp * FunBind option           -> FunBind
-    val OPAQFunBind:      Info * FunId * StrId * SigExp * SigExp
+    val OPAQFunBind:      Info * StrId * StrPat list * SigExp
 			       * StrExp * FunBind option           -> FunBind
-    val TRANSSPECFunBind: Info * FunId * Spec * SigExp option
-			       * StrExp * FunBind option           -> FunBind
-    val OPAQSPECFunBind:  Info * FunId * Spec * SigExp
-                               * StrExp * FunBind option           -> FunBind
 
     (* Specifications *)
 
     val FUNSpec:          Info * ValDesc                           -> Spec
     val DATATYPESpec:     Info * DatDesc * TypDesc option          -> Spec
     val EXCEPTIONSpec:    Info * ExDesc                            -> Spec
-    val INCLUDEMULTISpec: Info * LongSigId list                    -> Spec
+    val FUNCTORSpec:      Info * FunDesc                           -> Spec
     val SHARINGSpec:      Info * Spec * LongStrId list             -> Spec
+    val INCLUDEMULTISpec: Info * LongSigId list                    -> Spec
     val INFIXMULTISpec:   Info * int option * VId list             -> Spec
     val INFIXRMULTISpec:  Info * int option * VId list             -> Spec
     val NONFIXMULTISpec:  Info * VId list                          -> Spec
 
     val NEWExDesc:        Info * Op * VId * Ty option * ExDesc option -> ExDesc
-    val EQUALExDesc:      Info * Op * VId * Op * LongVId * ExDesc option
-								   -> ExDesc
+    val EQUALExDesc:      Info * Op * VId * Op * LongVId
+						      * ExDesc option -> ExDesc
 
-    val SPECFunDesc:      Info * FunId * Spec * SigExp * FunDesc option
+    val FunDesc:          Info * StrId * StrPat list * SigExp * FunDesc option
 								   -> FunDesc
 
     (* Signature expressions *)
 
-    val PARSigExp:        Info * SigExp                            -> SigExp
-    val WHERETYPESigExp:  Info * SigExp * TyReaDesc                -> SigExp
-    val WHERESTRUCTURESigExp:
+    val WHEREREASigExp:   Info * SigExp * Rea                      -> SigExp
+    val WHERELONGSTRIDSigExp:
 			  Info * SigExp * LongStrId * LongStrId    -> SigExp
 
-    val TyReaDesc:        Info * TyVarSeq * LongTyCon * Ty
-			       * TyReaDesc option                  -> TyReaDesc
+    val VALRea:           Info * Op * LongVId * Op * LongVId * Rea option -> Rea
+    val FUNRea:           Info * Op * LongVId * Op * LongVId * Rea option -> Rea
+    val CONSTRUCTORRea:   Info * Op * LongVId * Op * LongVId * Rea option -> Rea
+    val EXCEPTIONRea:     Info * Op * LongVId * Op * LongVId * Rea option -> Rea
+    val TYPERea:          Info * TyVarSeq * LongTyCon * Ty * Rea option   -> Rea
+    val STRUCTURERea:     Info * LongStrId * SigExp option * LongStrId
+							   * Rea option   -> Rea
+    val FUNCTORRea:       Info * LongStrId * SigExp option * LongStrId
+							   * Rea option   -> Rea
+    val SIGNATURERea:     Info * LongSigId * StrPat list * AppSigExp
+							 * Rea option     -> Rea
+
     (* Programs *)
 
     val DECProgram:       Info * Dec * Program option -> Program
@@ -14773,7 +14862,7 @@ struct
 structure Header = 
 struct
 (*										*)
-(* Standard ML syntactical analysis						*)
+(* Standard ML syntactic analysis						*)
 (*										*)
 (* Definition, sections 2, 3, and 8, Appendix A and B				*)
 (*										*)
@@ -14840,16 +14929,13 @@ struct
 (*		   infixr <d> vid_1 ... vid_n	(n>=1)				*)
 (*		   nonfix vid_1 ... vid_n	(n>=1)				*)
 (*   - no distinction between dec, strdec, and topdec				*)
-(*   - long functor identifiers:						*)
-(*	  strexp  ::= longfunid ( strexp )					*)
-(*	          ::= longfunid ( dec )						*)
 (*   - long signature identifiers:						*)
 (*	  sigexp  ::= longsigid							*)
 (*	  spec    ::= include longsigid_1 ... longsigid_n			*)
 (*   - functor specifications:							*)
 (*	  spec    ::= functor fundesc						*)
-(*	  fundesc ::= funid ( strid : sigexp ) : sigexp <and fundesc>		*)
-(*	          ::= funid ( spec ) : sigexp <and fundesc>			*)
+(*	  fundesc ::= strid ( strid : sigexp ) : sigexp <and fundesc>		*)
+(*	          ::= strid ( spec ) : sigexp <and fundesc>			*)
 (*   - signature specifications:						*)
 (*	  spec    ::= signature sigdesc						*)
 (*	  sigdesc ::= sigid <and sigdesc>					*)
@@ -14871,11 +14957,7 @@ struct
 (*	  dec     ::= __prebound strid						*)
 (*	          ::= __primitive val <op> vid : ty = string			*)
 (*	          ::= __primitive constructor <op> vid <of ty> : ty = string	*)
-(*	          ::= __primitive exception <op> vid <of ty> = string (DF)	*)
 (*	          ::= __primitive structure strid : sigexp = string		*)
-(*	          ::= __primitive functor funid ( strid : sigexp ) : sigexp	*)
-(*						 		   = string	*)
-(*	          ::= __primitive functor funid ( spec ) : sigexp = string (DF)	*)
 (*	          ::= __overload <op> vid with tyvar : ty			*)
 (*	          ::= __instance <op> vid with longtycon = longvid		*)
 (*	          ::= __instance scon with longtycon				*)
@@ -14890,8 +14972,8 @@ struct
 (*   - Two phrases named Fmatch and Fmrule have been added to factorize		*)
 (*     Fvalbind.								*)
 (*   - A phrase named SynDesc has been added to factorize type synonym		*)
-(*     specifications. Similarly, a phrase named TyReaDesc has been added to	*)
-(*     factorize type realisation signature expressions.			*)
+(*     specifications. Similarly, a phrase named Rea has been added to		*)
+(*     factorize realisation signature expressions.				*)
 (*   - Infix expressions [Definition, section 2.6] are resolved during		*)
 (*     elaboration because we allow fixity specifications in signatures that	*)
 (*     come into effect by an open declaration. Infix status is completely	*)
@@ -14938,232 +15020,379 @@ local open LrTable in
 val table=let val actionRows =
 "\
 \\001\000\001\000\000\000\000\000\
-\\001\000\001\000\109\003\002\000\109\003\003\000\109\003\004\000\109\003\
-\\005\000\109\003\007\000\109\003\008\000\109\003\009\000\109\003\
-\\010\000\109\003\011\000\109\003\013\000\109\003\014\000\109\003\
-\\016\000\109\003\017\000\109\003\018\000\109\003\019\000\109\003\
-\\020\000\109\003\021\000\109\003\022\000\109\003\023\000\109\003\
-\\024\000\109\003\025\000\109\003\028\000\109\003\029\000\109\003\
-\\030\000\109\003\034\000\109\003\035\000\109\003\036\000\109\003\
-\\037\000\109\003\038\000\109\003\039\000\109\003\040\000\109\003\
-\\041\000\109\003\042\000\109\003\044\000\109\003\045\000\109\003\
-\\046\000\109\003\047\000\109\003\049\000\109\003\050\000\109\003\
-\\052\000\109\003\053\000\109\003\054\000\115\003\055\000\109\003\
-\\061\000\109\003\062\000\109\003\063\000\109\003\064\000\109\003\
-\\065\000\109\003\066\000\109\003\067\000\109\003\068\000\109\003\
-\\069\000\109\003\070\000\109\003\072\000\109\003\074\000\109\003\
-\\075\000\109\003\077\000\109\003\078\000\109\003\079\000\109\003\
-\\080\000\109\003\081\000\109\003\082\000\109\003\083\000\109\003\
-\\084\000\109\003\085\000\109\003\086\000\109\003\087\000\109\003\000\000\
-\\001\000\001\000\112\003\002\000\112\003\003\000\112\003\004\000\112\003\
-\\005\000\112\003\007\000\112\003\008\000\112\003\009\000\112\003\
-\\010\000\112\003\011\000\112\003\013\000\112\003\014\000\112\003\
-\\016\000\112\003\017\000\112\003\018\000\112\003\020\000\112\003\
-\\021\000\112\003\022\000\112\003\024\000\112\003\025\000\112\003\
-\\028\000\112\003\029\000\112\003\030\000\112\003\031\000\112\003\
-\\032\000\112\003\035\000\112\003\037\000\112\003\039\000\112\003\
-\\040\000\112\003\041\000\112\003\042\000\112\003\045\000\112\003\
-\\046\000\112\003\047\000\112\003\048\000\112\003\050\000\112\003\
-\\052\000\112\003\053\000\112\003\054\000\115\003\061\000\112\003\
-\\062\000\112\003\063\000\112\003\064\000\112\003\065\000\112\003\
-\\066\000\112\003\067\000\112\003\068\000\112\003\069\000\112\003\
-\\070\000\112\003\072\000\112\003\074\000\112\003\075\000\112\003\
-\\076\000\112\003\085\000\112\003\086\000\112\003\087\000\112\003\000\000\
-\\001\000\001\000\115\003\002\000\115\003\003\000\115\003\008\000\115\003\
-\\010\000\115\003\011\000\115\003\013\000\115\003\016\000\115\003\
-\\017\000\115\003\018\000\115\003\020\000\115\003\021\000\115\003\
-\\024\000\115\003\029\000\115\003\030\000\115\003\034\000\117\003\
-\\035\000\115\003\041\000\115\003\042\000\115\003\050\000\115\003\
-\\054\000\115\003\062\000\115\003\063\000\115\003\064\000\115\003\
-\\065\000\115\003\066\000\115\003\067\000\115\003\068\000\115\003\
-\\072\000\115\003\074\000\115\003\076\000\115\003\000\000\
-\\001\000\001\000\116\003\002\000\116\003\003\000\116\003\008\000\116\003\
-\\010\000\116\003\011\000\116\003\013\000\116\003\016\000\116\003\
-\\017\000\116\003\018\000\116\003\020\000\116\003\021\000\116\003\
-\\024\000\116\003\029\000\116\003\030\000\116\003\035\000\116\003\
-\\041\000\116\003\042\000\116\003\046\000\116\003\050\000\116\003\
-\\054\000\115\003\061\000\116\003\062\000\116\003\063\000\116\003\
-\\064\000\116\003\065\000\116\003\066\000\116\003\067\000\116\003\
-\\068\000\116\003\069\000\116\003\070\000\116\003\072\000\116\003\
-\\074\000\116\003\075\000\116\003\076\000\116\003\085\000\116\003\000\000\
-\\001\000\001\000\047\004\002\000\047\004\003\000\047\004\004\000\047\004\
-\\005\000\047\004\007\000\047\004\008\000\047\004\009\000\047\004\
-\\010\000\047\004\011\000\047\004\013\000\047\004\014\000\047\004\
-\\016\000\047\004\017\000\047\004\018\000\047\004\020\000\047\004\
-\\021\000\047\004\022\000\047\004\024\000\047\004\025\000\047\004\
-\\028\000\047\004\029\000\047\004\030\000\047\004\031\000\047\004\
-\\032\000\047\004\035\000\047\004\037\000\047\004\039\000\047\004\
-\\040\000\047\004\041\000\047\004\042\000\047\004\045\000\047\004\
-\\046\000\047\004\047\000\047\004\048\000\047\004\050\000\047\004\
-\\052\000\047\004\053\000\047\004\061\000\047\004\062\000\047\004\
-\\063\000\047\004\064\000\047\004\065\000\047\004\066\000\047\004\
-\\067\000\047\004\068\000\047\004\069\000\047\004\070\000\047\004\
-\\072\000\047\004\074\000\047\004\075\000\047\004\076\000\047\004\
-\\085\000\058\004\086\000\058\004\087\000\148\001\000\000\
-\\001\000\001\000\081\004\002\000\081\004\003\000\114\002\008\000\081\004\
-\\010\000\081\004\011\000\081\004\013\000\081\004\016\000\081\004\
-\\017\000\081\004\018\000\081\004\020\000\081\004\021\000\081\004\
-\\024\000\081\004\029\000\081\004\030\000\081\004\035\000\081\004\
-\\041\000\069\004\042\000\081\004\050\000\081\004\062\000\081\004\
-\\063\000\081\004\064\000\081\004\065\000\081\004\066\000\081\004\
-\\067\000\081\004\068\000\081\004\072\000\081\004\074\000\081\004\
-\\076\000\069\004\000\000\
-\\001\000\001\000\081\004\002\000\081\004\003\000\114\002\008\000\081\004\
-\\010\000\081\004\011\000\081\004\013\000\081\004\016\000\081\004\
-\\017\000\081\004\018\000\081\004\020\000\081\004\021\000\081\004\
-\\024\000\081\004\029\000\081\004\030\000\081\004\035\000\081\004\
-\\041\000\092\004\042\000\081\004\050\000\081\004\062\000\081\004\
-\\063\000\081\004\064\000\081\004\065\000\081\004\066\000\081\004\
-\\067\000\081\004\068\000\081\004\072\000\081\004\074\000\081\004\
-\\075\000\092\004\076\000\092\004\000\000\
-\\001\000\001\000\081\004\002\000\081\004\003\000\078\003\008\000\081\004\
-\\010\000\081\004\011\000\081\004\013\000\081\004\016\000\081\004\
-\\017\000\081\004\018\000\081\004\020\000\081\004\021\000\081\004\
-\\024\000\081\004\029\000\081\004\030\000\081\004\035\000\081\004\
-\\041\000\109\004\042\000\081\004\050\000\081\004\062\000\081\004\
-\\063\000\081\004\064\000\081\004\065\000\081\004\066\000\081\004\
-\\067\000\081\004\068\000\081\004\072\000\081\004\074\000\081\004\
-\\075\000\109\004\076\000\109\004\000\000\
-\\001\000\001\000\101\004\002\000\101\004\003\000\034\002\008\000\101\004\
-\\010\000\101\004\011\000\101\004\013\000\101\004\016\000\101\004\
-\\017\000\101\004\018\000\101\004\020\000\101\004\021\000\101\004\
-\\024\000\101\004\029\000\101\004\030\000\101\004\035\000\101\004\
-\\042\000\101\004\050\000\101\004\062\000\101\004\063\000\101\004\
-\\064\000\101\004\065\000\101\004\066\000\101\004\067\000\101\004\
-\\068\000\101\004\072\000\101\004\074\000\101\004\075\000\092\004\000\000\
-\\001\000\001\000\101\004\002\000\101\004\003\000\053\003\008\000\101\004\
-\\010\000\101\004\011\000\101\004\013\000\101\004\016\000\101\004\
-\\017\000\101\004\018\000\101\004\020\000\101\004\021\000\101\004\
-\\024\000\101\004\029\000\101\004\030\000\101\004\035\000\101\004\
-\\042\000\101\004\050\000\101\004\062\000\101\004\063\000\101\004\
-\\064\000\101\004\065\000\101\004\066\000\101\004\067\000\101\004\
-\\068\000\101\004\072\000\101\004\074\000\101\004\075\000\109\004\000\000\
-\\001\000\001\000\115\004\002\000\115\004\003\000\016\003\008\000\115\004\
-\\010\000\115\004\011\000\115\004\013\000\115\004\016\000\115\004\
-\\017\000\115\004\018\000\115\004\020\000\115\004\021\000\115\004\
-\\024\000\115\004\029\000\115\004\030\000\115\004\035\000\115\004\
-\\041\000\069\004\042\000\115\004\050\000\115\004\062\000\115\004\
-\\063\000\115\004\064\000\115\004\065\000\115\004\066\000\115\004\
-\\067\000\115\004\068\000\115\004\072\000\115\004\074\000\115\004\
-\\076\000\069\004\000\000\
-\\001\000\001\000\115\004\002\000\115\004\003\000\016\003\008\000\115\004\
-\\010\000\115\004\011\000\115\004\013\000\115\004\016\000\115\004\
-\\017\000\115\004\018\000\115\004\020\000\115\004\021\000\115\004\
-\\024\000\115\004\029\000\115\004\030\000\115\004\035\000\115\004\
-\\041\000\092\004\042\000\115\004\050\000\115\004\062\000\115\004\
-\\063\000\115\004\064\000\115\004\065\000\115\004\066\000\115\004\
-\\067\000\115\004\068\000\115\004\072\000\115\004\074\000\115\004\
-\\075\000\092\004\076\000\092\004\000\000\
-\\001\000\001\000\115\004\002\000\115\004\003\000\089\003\008\000\115\004\
-\\010\000\115\004\011\000\115\004\013\000\115\004\016\000\115\004\
-\\017\000\115\004\018\000\115\004\020\000\115\004\021\000\115\004\
-\\024\000\115\004\029\000\115\004\030\000\115\004\035\000\115\004\
-\\041\000\109\004\042\000\115\004\050\000\115\004\062\000\115\004\
-\\063\000\115\004\064\000\115\004\065\000\115\004\066\000\115\004\
-\\067\000\115\004\068\000\115\004\072\000\115\004\074\000\115\004\
-\\075\000\109\004\076\000\109\004\000\000\
-\\001\000\003\000\113\001\008\000\208\004\010\000\208\004\011\000\208\004\
-\\013\000\208\004\017\000\208\004\018\000\208\004\021\000\208\004\
-\\029\000\208\004\030\000\208\004\035\000\208\004\050\000\208\004\
-\\061\000\208\004\063\000\208\004\064\000\208\004\065\000\208\004\
-\\066\000\208\004\067\000\208\004\068\000\208\004\069\000\208\004\
-\\070\000\208\004\072\000\208\004\074\000\208\004\075\000\092\004\000\000\
-\\001\000\003\000\081\002\008\000\199\004\010\000\199\004\011\000\199\004\
-\\013\000\199\004\017\000\199\004\018\000\199\004\021\000\199\004\
-\\029\000\199\004\030\000\199\004\035\000\199\004\046\000\092\004\
-\\050\000\199\004\061\000\199\004\063\000\199\004\064\000\199\004\
-\\065\000\199\004\066\000\199\004\067\000\199\004\068\000\199\004\
-\\069\000\199\004\070\000\199\004\072\000\199\004\074\000\199\004\
-\\075\000\092\004\000\000\
-\\001\000\003\000\004\003\008\000\217\004\010\000\217\004\011\000\217\004\
-\\013\000\217\004\017\000\217\004\018\000\217\004\021\000\217\004\
-\\029\000\217\004\030\000\217\004\035\000\217\004\050\000\217\004\
-\\061\000\217\004\063\000\217\004\064\000\217\004\065\000\217\004\
-\\066\000\217\004\067\000\217\004\068\000\217\004\069\000\217\004\
-\\070\000\217\004\072\000\217\004\074\000\217\004\075\000\092\004\000\000\
-\\001\000\003\000\060\003\008\000\199\004\010\000\199\004\011\000\199\004\
-\\013\000\199\004\017\000\199\004\018\000\199\004\021\000\199\004\
-\\029\000\199\004\030\000\199\004\035\000\199\004\046\000\109\004\
-\\050\000\199\004\061\000\199\004\063\000\199\004\064\000\199\004\
-\\065\000\199\004\066\000\199\004\067\000\199\004\068\000\199\004\
-\\069\000\199\004\070\000\199\004\072\000\199\004\074\000\199\004\
-\\075\000\109\004\000\000\
-\\001\000\003\000\063\003\008\000\208\004\010\000\208\004\011\000\208\004\
-\\013\000\208\004\017\000\208\004\018\000\208\004\021\000\208\004\
-\\029\000\208\004\030\000\208\004\035\000\208\004\050\000\208\004\
-\\061\000\208\004\063\000\208\004\064\000\208\004\065\000\208\004\
-\\066\000\208\004\067\000\208\004\068\000\208\004\069\000\208\004\
-\\070\000\208\004\072\000\208\004\074\000\208\004\075\000\109\004\000\000\
-\\001\000\003\000\082\003\008\000\217\004\010\000\217\004\011\000\217\004\
-\\013\000\217\004\017\000\217\004\018\000\217\004\021\000\217\004\
-\\029\000\217\004\030\000\217\004\035\000\217\004\050\000\217\004\
-\\061\000\217\004\063\000\217\004\064\000\217\004\065\000\217\004\
-\\066\000\217\004\067\000\217\004\068\000\217\004\069\000\217\004\
-\\070\000\217\004\072\000\217\004\074\000\217\004\075\000\109\004\000\000\
-\\001\000\004\000\098\000\007\000\049\001\014\000\097\000\025\000\096\000\
-\\041\000\095\000\000\000\
-\\001\000\004\000\098\000\009\000\069\002\014\000\097\000\025\000\096\000\
-\\041\000\095\000\000\000\
-\\001\000\004\000\098\000\014\000\097\000\022\000\102\001\025\000\096\000\
-\\041\000\095\000\000\000\
-\\001\000\004\000\098\000\014\000\097\000\025\000\096\000\028\000\084\001\
-\\041\000\095\000\000\000\
-\\001\000\004\000\098\000\014\000\097\000\025\000\096\000\035\000\046\001\
-\\040\000\045\001\041\000\095\000\042\000\044\001\000\000\
-\\001\000\004\000\098\000\014\000\097\000\025\000\096\000\041\000\095\000\
-\\042\000\094\000\000\000\
-\\001\000\005\000\109\003\039\000\109\003\040\000\109\003\041\000\109\003\
-\\046\000\102\003\000\000\
-\\001\000\005\000\110\003\039\000\110\003\040\000\110\003\041\000\110\003\
-\\046\000\103\003\075\000\110\003\000\000\
-\\001\000\005\000\111\003\039\000\111\003\040\000\111\003\041\000\111\003\
-\\046\000\104\003\075\000\111\003\000\000\
-\\001\000\005\000\056\001\035\000\204\001\040\000\203\001\041\000\055\001\
-\\045\000\202\001\052\000\053\001\053\000\052\001\075\000\051\001\000\000\
-\\001\000\005\000\056\001\041\000\055\001\046\000\054\001\052\000\053\001\
-\\053\000\052\001\075\000\051\001\000\000\
-\\001\000\005\000\056\001\041\000\055\001\047\000\075\001\052\000\053\001\
-\\053\000\052\001\075\000\051\001\000\000\
-\\001\000\005\000\056\001\041\000\055\001\047\000\091\001\052\000\053\001\
-\\053\000\052\001\075\000\051\001\000\000\
-\\001\000\006\000\067\000\012\000\064\000\015\000\062\000\019\000\059\000\
-\\023\000\056\000\026\000\054\000\027\000\053\000\033\000\050\000\
-\\034\000\049\000\035\000\152\000\036\000\048\000\038\000\047\000\
-\\046\000\046\000\049\000\045\000\055\000\043\000\077\000\033\000\
-\\078\000\032\000\079\000\031\000\080\000\030\000\081\000\029\000\
-\\082\000\028\000\083\000\027\000\084\000\026\000\085\000\025\000\
-\\086\000\024\000\087\000\023\000\000\000\
-\\001\000\006\000\067\000\012\000\064\000\015\000\062\000\019\000\059\000\
-\\023\000\056\000\026\000\054\000\027\000\053\000\033\000\050\000\
-\\034\000\049\000\036\000\048\000\038\000\047\000\046\000\046\000\
-\\049\000\045\000\055\000\043\000\077\000\033\000\078\000\032\000\
-\\079\000\031\000\080\000\030\000\081\000\029\000\082\000\028\000\
-\\083\000\027\000\084\000\026\000\085\000\025\000\086\000\024\000\
-\\087\000\023\000\000\000\
-\\001\000\010\000\248\001\000\000\
-\\001\000\010\000\056\002\000\000\
-\\001\000\010\000\057\002\000\000\
-\\001\000\010\000\067\002\000\000\
-\\001\000\010\000\068\002\000\000\
-\\001\000\010\000\153\002\000\000\
-\\001\000\010\000\191\002\000\000\
-\\001\000\010\000\013\003\041\000\193\002\076\000\192\002\000\000\
-\\001\000\011\000\126\000\030\000\125\000\050\000\124\000\068\000\123\000\
-\\074\000\122\000\000\000\
-\\001\000\016\000\080\001\000\000\
-\\001\000\016\000\081\001\000\000\
-\\001\000\016\000\195\002\000\000\
-\\001\000\019\000\059\000\023\000\056\000\034\000\049\000\036\000\048\000\
-\\038\000\047\000\046\000\046\000\049\000\045\000\055\000\043\000\
+\\001\000\001\000\225\004\002\000\225\004\003\000\225\004\004\000\225\004\
+\\005\000\225\004\007\000\225\004\008\000\225\004\009\000\225\004\
+\\010\000\225\004\011\000\225\004\013\000\225\004\014\000\225\004\
+\\016\000\225\004\017\000\225\004\018\000\225\004\019\000\225\004\
+\\020\000\225\004\021\000\225\004\022\000\225\004\023\000\225\004\
+\\024\000\225\004\025\000\225\004\028\000\225\004\029\000\225\004\
+\\030\000\225\004\034\000\225\004\035\000\225\004\036\000\225\004\
+\\037\000\225\004\038\000\225\004\039\000\225\004\040\000\225\004\
+\\041\000\225\004\042\000\225\004\044\000\225\004\045\000\225\004\
+\\046\000\225\004\047\000\225\004\049\000\225\004\050\000\225\004\
+\\052\000\225\004\053\000\225\004\054\000\231\004\055\000\225\004\
+\\061\000\225\004\062\000\225\004\063\000\225\004\064\000\225\004\
+\\065\000\225\004\066\000\225\004\067\000\225\004\068\000\225\004\
+\\069\000\225\004\070\000\225\004\072\000\225\004\074\000\225\004\
+\\075\000\225\004\076\000\225\004\077\000\225\004\078\000\225\004\
+\\079\000\225\004\080\000\225\004\081\000\225\004\082\000\225\004\
+\\083\000\225\004\084\000\225\004\085\000\225\004\086\000\225\004\
+\\087\000\225\004\000\000\
+\\001\000\001\000\228\004\002\000\228\004\003\000\228\004\004\000\228\004\
+\\005\000\228\004\007\000\228\004\008\000\228\004\009\000\228\004\
+\\010\000\228\004\011\000\228\004\013\000\228\004\014\000\228\004\
+\\016\000\228\004\017\000\228\004\018\000\228\004\020\000\228\004\
+\\021\000\228\004\022\000\228\004\024\000\228\004\025\000\228\004\
+\\028\000\228\004\029\000\228\004\030\000\228\004\031\000\228\004\
+\\032\000\228\004\035\000\228\004\037\000\228\004\039\000\228\004\
+\\040\000\228\004\041\000\228\004\042\000\228\004\045\000\228\004\
+\\046\000\228\004\047\000\228\004\048\000\228\004\050\000\228\004\
+\\052\000\228\004\053\000\228\004\054\000\231\004\061\000\228\004\
+\\062\000\228\004\063\000\228\004\064\000\228\004\065\000\228\004\
+\\066\000\228\004\067\000\228\004\068\000\228\004\069\000\228\004\
+\\070\000\228\004\072\000\228\004\074\000\228\004\075\000\228\004\
+\\076\000\228\004\085\000\228\004\086\000\228\004\087\000\228\004\000\000\
+\\001\000\001\000\232\004\002\000\232\004\003\000\232\004\004\000\232\004\
+\\005\000\232\004\007\000\232\004\008\000\232\004\009\000\232\004\
+\\010\000\232\004\011\000\232\004\013\000\232\004\014\000\232\004\
+\\016\000\232\004\017\000\232\004\018\000\232\004\019\000\232\004\
+\\020\000\232\004\021\000\232\004\022\000\232\004\024\000\232\004\
+\\025\000\232\004\028\000\232\004\029\000\232\004\030\000\232\004\
+\\031\000\232\004\032\000\232\004\034\000\232\004\035\000\232\004\
+\\037\000\232\004\039\000\232\004\040\000\232\004\041\000\232\004\
+\\042\000\232\004\045\000\232\004\046\000\232\004\047\000\232\004\
+\\048\000\232\004\050\000\232\004\052\000\232\004\053\000\232\004\
+\\054\000\231\004\061\000\232\004\062\000\232\004\063\000\232\004\
+\\064\000\232\004\065\000\232\004\066\000\232\004\067\000\232\004\
+\\068\000\232\004\069\000\232\004\070\000\232\004\072\000\232\004\
+\\073\000\232\004\074\000\232\004\075\000\232\004\076\000\232\004\
+\\085\000\232\004\086\000\232\004\087\000\232\004\000\000\
+\\001\000\001\000\158\005\002\000\158\005\003\000\158\005\004\000\158\005\
+\\005\000\158\005\007\000\158\005\008\000\158\005\009\000\158\005\
+\\010\000\158\005\011\000\158\005\013\000\158\005\014\000\158\005\
+\\016\000\158\005\017\000\158\005\018\000\158\005\020\000\158\005\
+\\021\000\158\005\022\000\158\005\024\000\158\005\025\000\158\005\
+\\028\000\158\005\029\000\158\005\030\000\158\005\031\000\158\005\
+\\032\000\158\005\035\000\158\005\037\000\158\005\039\000\158\005\
+\\040\000\158\005\041\000\158\005\042\000\158\005\045\000\158\005\
+\\046\000\158\005\047\000\158\005\048\000\158\005\050\000\158\005\
+\\052\000\158\005\053\000\158\005\061\000\158\005\062\000\158\005\
+\\063\000\158\005\064\000\158\005\065\000\158\005\066\000\158\005\
+\\067\000\158\005\068\000\158\005\069\000\158\005\070\000\158\005\
+\\072\000\158\005\074\000\158\005\075\000\158\005\076\000\158\005\
+\\085\000\170\005\086\000\170\005\087\000\156\001\000\000\
+\\001\000\001\000\200\005\002\000\200\005\003\000\165\002\008\000\200\005\
+\\010\000\200\005\011\000\200\005\013\000\200\005\016\000\200\005\
+\\017\000\200\005\018\000\200\005\019\000\131\001\020\000\200\005\
+\\021\000\200\005\024\000\200\005\029\000\200\005\030\000\200\005\
+\\034\000\130\001\035\000\200\005\041\000\188\005\042\000\200\005\
+\\050\000\200\005\062\000\200\005\063\000\200\005\064\000\200\005\
+\\065\000\200\005\066\000\200\005\067\000\200\005\068\000\200\005\
+\\072\000\200\005\073\000\129\001\074\000\200\005\076\000\188\005\
+\\085\000\104\000\000\000\
+\\001\000\001\000\200\005\002\000\200\005\003\000\165\002\008\000\200\005\
+\\010\000\200\005\011\000\200\005\013\000\200\005\016\000\200\005\
+\\017\000\200\005\018\000\200\005\020\000\200\005\021\000\200\005\
+\\024\000\200\005\029\000\200\005\030\000\200\005\035\000\200\005\
+\\041\000\229\005\042\000\200\005\050\000\200\005\062\000\200\005\
+\\063\000\200\005\064\000\200\005\065\000\200\005\066\000\200\005\
+\\067\000\200\005\068\000\200\005\072\000\200\005\074\000\200\005\
+\\075\000\229\005\076\000\229\005\000\000\
+\\001\000\001\000\200\005\002\000\200\005\003\000\170\004\008\000\200\005\
+\\010\000\200\005\011\000\200\005\013\000\200\005\016\000\200\005\
+\\017\000\200\005\018\000\200\005\019\000\131\001\020\000\200\005\
+\\021\000\200\005\024\000\200\005\029\000\200\005\030\000\200\005\
+\\034\000\130\001\035\000\200\005\041\000\006\006\042\000\200\005\
+\\050\000\200\005\062\000\200\005\063\000\200\005\064\000\200\005\
+\\065\000\200\005\066\000\200\005\067\000\200\005\068\000\200\005\
+\\072\000\200\005\073\000\129\001\074\000\200\005\075\000\006\006\
+\\076\000\006\006\085\000\104\000\000\000\
+\\001\000\001\000\200\005\002\000\200\005\003\000\170\004\008\000\200\005\
+\\010\000\200\005\011\000\200\005\013\000\200\005\016\000\200\005\
+\\017\000\200\005\018\000\200\005\020\000\200\005\021\000\200\005\
+\\024\000\200\005\029\000\200\005\030\000\200\005\035\000\200\005\
+\\041\000\006\006\042\000\200\005\050\000\200\005\054\000\041\001\
+\\062\000\200\005\063\000\200\005\064\000\200\005\065\000\200\005\
+\\066\000\200\005\067\000\200\005\068\000\200\005\072\000\200\005\
+\\074\000\200\005\075\000\006\006\076\000\006\006\000\000\
+\\001\000\001\000\200\005\002\000\200\005\003\000\170\004\008\000\200\005\
+\\010\000\200\005\011\000\200\005\013\000\200\005\016\000\200\005\
+\\017\000\200\005\018\000\200\005\020\000\200\005\021\000\200\005\
+\\024\000\200\005\029\000\200\005\030\000\200\005\035\000\200\005\
+\\041\000\006\006\042\000\200\005\050\000\200\005\062\000\200\005\
+\\063\000\200\005\064\000\200\005\065\000\200\005\066\000\200\005\
+\\067\000\200\005\068\000\200\005\072\000\200\005\074\000\200\005\
+\\075\000\006\006\076\000\006\006\000\000\
+\\001\000\001\000\238\005\002\000\238\005\003\000\170\002\008\000\238\005\
+\\010\000\238\005\011\000\238\005\013\000\238\005\016\000\238\005\
+\\017\000\238\005\018\000\238\005\020\000\238\005\021\000\238\005\
+\\024\000\238\005\029\000\238\005\030\000\238\005\035\000\238\005\
+\\042\000\238\005\050\000\238\005\062\000\238\005\063\000\238\005\
+\\064\000\238\005\065\000\238\005\066\000\238\005\067\000\238\005\
+\\068\000\238\005\072\000\238\005\074\000\238\005\075\000\229\005\000\000\
+\\001\000\001\000\238\005\002\000\238\005\003\000\095\004\008\000\238\005\
+\\010\000\238\005\011\000\238\005\013\000\238\005\016\000\238\005\
+\\017\000\238\005\018\000\238\005\019\000\131\001\020\000\238\005\
+\\021\000\238\005\024\000\238\005\029\000\238\005\030\000\238\005\
+\\034\000\130\001\035\000\238\005\042\000\238\005\050\000\238\005\
+\\062\000\238\005\063\000\238\005\064\000\238\005\065\000\238\005\
+\\066\000\238\005\067\000\238\005\068\000\238\005\072\000\238\005\
+\\073\000\129\001\074\000\238\005\075\000\006\006\085\000\104\000\000\000\
+\\001\000\001\000\238\005\002\000\238\005\003\000\095\004\008\000\238\005\
+\\010\000\238\005\011\000\238\005\013\000\238\005\016\000\238\005\
+\\017\000\238\005\018\000\238\005\020\000\238\005\021\000\238\005\
+\\024\000\238\005\029\000\238\005\030\000\238\005\035\000\238\005\
+\\042\000\238\005\050\000\238\005\054\000\041\001\062\000\238\005\
+\\063\000\238\005\064\000\238\005\065\000\238\005\066\000\238\005\
+\\067\000\238\005\068\000\238\005\072\000\238\005\074\000\238\005\
+\\075\000\006\006\000\000\
+\\001\000\001\000\238\005\002\000\238\005\003\000\095\004\008\000\238\005\
+\\010\000\238\005\011\000\238\005\013\000\238\005\016\000\238\005\
+\\017\000\238\005\018\000\238\005\020\000\238\005\021\000\238\005\
+\\024\000\238\005\029\000\238\005\030\000\238\005\035\000\238\005\
+\\042\000\238\005\050\000\238\005\062\000\238\005\063\000\238\005\
+\\064\000\238\005\065\000\238\005\066\000\238\005\067\000\238\005\
+\\068\000\238\005\072\000\238\005\074\000\238\005\075\000\006\006\000\000\
+\\001\000\001\000\013\006\002\000\013\006\003\000\024\003\008\000\013\006\
+\\010\000\013\006\011\000\013\006\013\000\013\006\016\000\013\006\
+\\017\000\013\006\018\000\013\006\019\000\131\001\020\000\013\006\
+\\021\000\013\006\024\000\013\006\029\000\013\006\030\000\013\006\
+\\034\000\130\001\035\000\013\006\041\000\188\005\042\000\013\006\
+\\050\000\013\006\062\000\013\006\063\000\013\006\064\000\013\006\
+\\065\000\013\006\066\000\013\006\067\000\013\006\068\000\013\006\
+\\072\000\013\006\073\000\129\001\074\000\013\006\076\000\188\005\
+\\085\000\104\000\000\000\
+\\001\000\001\000\013\006\002\000\013\006\003\000\024\003\008\000\013\006\
+\\010\000\013\006\011\000\013\006\013\000\013\006\016\000\013\006\
+\\017\000\013\006\018\000\013\006\020\000\013\006\021\000\013\006\
+\\024\000\013\006\029\000\013\006\030\000\013\006\035\000\013\006\
+\\041\000\229\005\042\000\013\006\050\000\013\006\062\000\013\006\
+\\063\000\013\006\064\000\013\006\065\000\013\006\066\000\013\006\
+\\067\000\013\006\068\000\013\006\072\000\013\006\074\000\013\006\
+\\075\000\229\005\076\000\229\005\000\000\
+\\001\000\001\000\013\006\002\000\013\006\003\000\194\004\008\000\013\006\
+\\010\000\013\006\011\000\013\006\013\000\013\006\016\000\013\006\
+\\017\000\013\006\018\000\013\006\019\000\131\001\020\000\013\006\
+\\021\000\013\006\024\000\013\006\029\000\013\006\030\000\013\006\
+\\034\000\130\001\035\000\013\006\041\000\006\006\042\000\013\006\
+\\050\000\013\006\062\000\013\006\063\000\013\006\064\000\013\006\
+\\065\000\013\006\066\000\013\006\067\000\013\006\068\000\013\006\
+\\072\000\013\006\073\000\129\001\074\000\013\006\075\000\006\006\
+\\076\000\006\006\085\000\104\000\000\000\
+\\001\000\001\000\013\006\002\000\013\006\003\000\194\004\008\000\013\006\
+\\010\000\013\006\011\000\013\006\013\000\013\006\016\000\013\006\
+\\017\000\013\006\018\000\013\006\020\000\013\006\021\000\013\006\
+\\024\000\013\006\029\000\013\006\030\000\013\006\035\000\013\006\
+\\041\000\006\006\042\000\013\006\050\000\013\006\054\000\041\001\
+\\062\000\013\006\063\000\013\006\064\000\013\006\065\000\013\006\
+\\066\000\013\006\067\000\013\006\068\000\013\006\072\000\013\006\
+\\074\000\013\006\075\000\006\006\076\000\006\006\000\000\
+\\001\000\001\000\013\006\002\000\013\006\003\000\194\004\008\000\013\006\
+\\010\000\013\006\011\000\013\006\013\000\013\006\016\000\013\006\
+\\017\000\013\006\018\000\013\006\020\000\013\006\021\000\013\006\
+\\024\000\013\006\029\000\013\006\030\000\013\006\035\000\013\006\
+\\041\000\006\006\042\000\013\006\050\000\013\006\062\000\013\006\
+\\063\000\013\006\064\000\013\006\065\000\013\006\066\000\013\006\
+\\067\000\013\006\068\000\013\006\072\000\013\006\074\000\013\006\
+\\075\000\006\006\076\000\006\006\000\000\
+\\001\000\003\000\248\001\008\000\124\006\010\000\124\006\011\000\124\006\
+\\013\000\124\006\017\000\124\006\018\000\124\006\021\000\124\006\
+\\029\000\124\006\030\000\124\006\035\000\124\006\050\000\124\006\
+\\061\000\124\006\063\000\124\006\064\000\124\006\065\000\124\006\
+\\066\000\124\006\067\000\124\006\068\000\124\006\069\000\124\006\
+\\070\000\124\006\072\000\124\006\074\000\124\006\075\000\229\005\000\000\
+\\001\000\003\000\105\002\008\000\106\006\010\000\106\006\011\000\106\006\
+\\013\000\106\006\017\000\106\006\018\000\106\006\021\000\106\006\
+\\029\000\106\006\030\000\106\006\035\000\106\006\046\000\229\005\
+\\050\000\106\006\061\000\106\006\063\000\106\006\064\000\106\006\
+\\065\000\106\006\066\000\106\006\067\000\106\006\068\000\106\006\
+\\069\000\106\006\070\000\106\006\072\000\106\006\074\000\106\006\
+\\075\000\229\005\000\000\
+\\001\000\003\000\236\002\008\000\141\006\010\000\141\006\011\000\141\006\
+\\013\000\141\006\017\000\141\006\018\000\141\006\021\000\141\006\
+\\029\000\141\006\030\000\141\006\035\000\141\006\050\000\141\006\
+\\061\000\141\006\063\000\141\006\064\000\141\006\065\000\141\006\
+\\066\000\141\006\067\000\141\006\068\000\141\006\069\000\141\006\
+\\070\000\141\006\072\000\141\006\074\000\141\006\075\000\229\005\000\000\
+\\001\000\003\000\059\004\008\000\106\006\010\000\106\006\011\000\106\006\
+\\013\000\106\006\017\000\106\006\018\000\106\006\019\000\131\001\
+\\021\000\106\006\029\000\106\006\030\000\106\006\034\000\130\001\
+\\035\000\106\006\046\000\006\006\050\000\106\006\061\000\106\006\
+\\063\000\106\006\064\000\106\006\065\000\106\006\066\000\106\006\
+\\067\000\106\006\068\000\106\006\069\000\106\006\070\000\106\006\
+\\072\000\106\006\073\000\129\001\074\000\106\006\075\000\006\006\
+\\085\000\104\000\000\000\
+\\001\000\003\000\059\004\008\000\106\006\010\000\106\006\011\000\106\006\
+\\013\000\106\006\017\000\106\006\018\000\106\006\021\000\106\006\
+\\029\000\106\006\030\000\106\006\035\000\106\006\046\000\006\006\
+\\050\000\106\006\054\000\041\001\061\000\106\006\063\000\106\006\
+\\064\000\106\006\065\000\106\006\066\000\106\006\067\000\106\006\
+\\068\000\106\006\069\000\106\006\070\000\106\006\072\000\106\006\
+\\074\000\106\006\075\000\006\006\000\000\
+\\001\000\003\000\059\004\008\000\106\006\010\000\106\006\011\000\106\006\
+\\013\000\106\006\017\000\106\006\018\000\106\006\021\000\106\006\
+\\029\000\106\006\030\000\106\006\035\000\106\006\046\000\006\006\
+\\050\000\106\006\061\000\106\006\063\000\106\006\064\000\106\006\
+\\065\000\106\006\066\000\106\006\067\000\106\006\068\000\106\006\
+\\069\000\106\006\070\000\106\006\072\000\106\006\074\000\106\006\
+\\075\000\006\006\000\000\
+\\001\000\003\000\118\004\008\000\124\006\010\000\124\006\011\000\124\006\
+\\013\000\124\006\017\000\124\006\018\000\124\006\019\000\131\001\
+\\021\000\124\006\029\000\124\006\030\000\124\006\034\000\130\001\
+\\035\000\124\006\050\000\124\006\061\000\124\006\063\000\124\006\
+\\064\000\124\006\065\000\124\006\066\000\124\006\067\000\124\006\
+\\068\000\124\006\069\000\124\006\070\000\124\006\072\000\124\006\
+\\073\000\129\001\074\000\124\006\075\000\006\006\085\000\104\000\000\000\
+\\001\000\003\000\118\004\008\000\124\006\010\000\124\006\011\000\124\006\
+\\013\000\124\006\017\000\124\006\018\000\124\006\021\000\124\006\
+\\029\000\124\006\030\000\124\006\035\000\124\006\050\000\124\006\
+\\054\000\041\001\061\000\124\006\063\000\124\006\064\000\124\006\
+\\065\000\124\006\066\000\124\006\067\000\124\006\068\000\124\006\
+\\069\000\124\006\070\000\124\006\072\000\124\006\074\000\124\006\
+\\075\000\006\006\000\000\
+\\001\000\003\000\118\004\008\000\124\006\010\000\124\006\011\000\124\006\
+\\013\000\124\006\017\000\124\006\018\000\124\006\021\000\124\006\
+\\029\000\124\006\030\000\124\006\035\000\124\006\050\000\124\006\
+\\061\000\124\006\063\000\124\006\064\000\124\006\065\000\124\006\
+\\066\000\124\006\067\000\124\006\068\000\124\006\069\000\124\006\
+\\070\000\124\006\072\000\124\006\074\000\124\006\075\000\006\006\000\000\
+\\001\000\003\000\128\004\008\000\141\006\010\000\141\006\011\000\141\006\
+\\013\000\141\006\017\000\141\006\018\000\141\006\019\000\131\001\
+\\021\000\141\006\029\000\141\006\030\000\141\006\034\000\130\001\
+\\035\000\141\006\050\000\141\006\061\000\141\006\063\000\141\006\
+\\064\000\141\006\065\000\141\006\066\000\141\006\067\000\141\006\
+\\068\000\141\006\069\000\141\006\070\000\141\006\072\000\141\006\
+\\073\000\129\001\074\000\141\006\075\000\006\006\085\000\104\000\000\000\
+\\001\000\003\000\128\004\008\000\141\006\010\000\141\006\011\000\141\006\
+\\013\000\141\006\017\000\141\006\018\000\141\006\021\000\141\006\
+\\029\000\141\006\030\000\141\006\035\000\141\006\050\000\141\006\
+\\054\000\041\001\061\000\141\006\063\000\141\006\064\000\141\006\
+\\065\000\141\006\066\000\141\006\067\000\141\006\068\000\141\006\
+\\069\000\141\006\070\000\141\006\072\000\141\006\074\000\141\006\
+\\075\000\006\006\000\000\
+\\001\000\003\000\128\004\008\000\141\006\010\000\141\006\011\000\141\006\
+\\013\000\141\006\017\000\141\006\018\000\141\006\021\000\141\006\
+\\029\000\141\006\030\000\141\006\035\000\141\006\050\000\141\006\
+\\061\000\141\006\063\000\141\006\064\000\141\006\065\000\141\006\
+\\066\000\141\006\067\000\141\006\068\000\141\006\069\000\141\006\
+\\070\000\141\006\072\000\141\006\074\000\141\006\075\000\006\006\000\000\
+\\001\000\004\000\099\000\007\000\056\001\014\000\098\000\025\000\097\000\
+\\041\000\096\000\000\000\
+\\001\000\004\000\099\000\009\000\093\002\014\000\098\000\025\000\097\000\
+\\041\000\096\000\000\000\
+\\001\000\004\000\099\000\014\000\098\000\022\000\108\001\025\000\097\000\
+\\041\000\096\000\000\000\
+\\001\000\004\000\099\000\014\000\098\000\025\000\097\000\028\000\090\001\
+\\041\000\096\000\000\000\
+\\001\000\004\000\099\000\014\000\098\000\025\000\097\000\035\000\053\001\
+\\040\000\052\001\041\000\096\000\042\000\051\001\000\000\
+\\001\000\004\000\099\000\014\000\098\000\025\000\097\000\041\000\096\000\
+\\042\000\095\000\000\000\
+\\001\000\005\000\225\004\039\000\225\004\040\000\225\004\041\000\225\004\
+\\046\000\218\004\000\000\
+\\001\000\005\000\226\004\039\000\226\004\040\000\226\004\041\000\226\004\
+\\046\000\219\004\075\000\226\004\000\000\
+\\001\000\005\000\227\004\039\000\227\004\040\000\227\004\041\000\227\004\
+\\046\000\220\004\075\000\227\004\000\000\
+\\001\000\005\000\063\001\035\000\214\001\040\000\213\001\041\000\062\001\
+\\045\000\212\001\052\000\060\001\053\000\059\001\075\000\058\001\000\000\
+\\001\000\005\000\063\001\041\000\062\001\046\000\061\001\052\000\060\001\
+\\053\000\059\001\075\000\058\001\000\000\
+\\001\000\005\000\063\001\041\000\062\001\047\000\082\001\052\000\060\001\
+\\053\000\059\001\075\000\058\001\000\000\
+\\001\000\005\000\063\001\041\000\062\001\047\000\097\001\052\000\060\001\
+\\053\000\059\001\075\000\058\001\000\000\
+\\001\000\006\000\068\000\012\000\065\000\015\000\063\000\019\000\060\000\
+\\023\000\057\000\026\000\055\000\027\000\054\000\033\000\051\000\
+\\034\000\050\000\035\000\152\000\036\000\049\000\038\000\048\000\
+\\046\000\047\000\049\000\046\000\055\000\044\000\058\000\043\000\
 \\077\000\033\000\078\000\032\000\079\000\031\000\080\000\030\000\
 \\081\000\029\000\082\000\028\000\083\000\027\000\084\000\026\000\
 \\085\000\025\000\086\000\024\000\087\000\023\000\000\000\
-\\001\000\019\000\031\002\034\000\030\002\073\000\029\002\085\000\028\002\000\000\
+\\001\000\006\000\068\000\012\000\065\000\015\000\063\000\019\000\060\000\
+\\023\000\057\000\026\000\055\000\027\000\054\000\033\000\051\000\
+\\034\000\050\000\036\000\049\000\038\000\048\000\046\000\047\000\
+\\049\000\046\000\055\000\044\000\058\000\043\000\077\000\033\000\
+\\078\000\032\000\079\000\031\000\080\000\030\000\081\000\029\000\
+\\082\000\028\000\083\000\027\000\084\000\026\000\085\000\025\000\
+\\086\000\024\000\087\000\023\000\000\000\
+\\001\000\010\000\017\002\000\000\
+\\001\000\010\000\080\002\000\000\
+\\001\000\010\000\081\002\000\000\
+\\001\000\010\000\091\002\000\000\
+\\001\000\010\000\092\002\000\000\
+\\001\000\010\000\128\002\000\000\
+\\001\000\010\000\201\002\000\000\
+\\001\000\010\000\234\002\075\000\126\001\000\000\
+\\001\000\010\000\072\003\041\000\130\002\076\000\129\002\000\000\
+\\001\000\011\000\007\002\013\000\006\002\029\000\005\002\030\000\004\002\
+\\050\000\003\002\068\000\002\002\072\000\001\002\074\000\000\002\000\000\
+\\001\000\011\000\007\002\013\000\006\002\029\000\005\002\030\000\004\002\
+\\050\000\003\002\068\000\002\002\072\000\001\002\074\000\000\002\
+\\085\000\104\000\000\000\
+\\001\000\011\000\212\002\013\000\211\002\029\000\210\002\030\000\209\002\
+\\050\000\208\002\068\000\207\002\072\000\206\002\074\000\205\002\
+\\085\000\104\000\000\000\
+\\001\000\011\000\017\003\013\000\016\003\029\000\015\003\030\000\014\003\
+\\050\000\013\003\068\000\012\003\072\000\011\003\074\000\010\003\
+\\085\000\104\000\000\000\
+\\001\000\011\000\017\003\013\000\016\003\029\000\015\003\030\000\014\003\
+\\050\000\013\003\068\000\012\003\072\000\011\003\074\000\010\003\
+\\085\000\108\000\000\000\
+\\001\000\011\000\058\003\013\000\057\003\029\000\056\003\030\000\055\003\
+\\050\000\054\003\068\000\053\003\072\000\052\003\074\000\051\003\
+\\085\000\104\000\000\000\
+\\001\000\011\000\058\003\013\000\057\003\029\000\056\003\030\000\055\003\
+\\050\000\054\003\068\000\053\003\072\000\052\003\074\000\051\003\
+\\085\000\108\000\000\000\
+\\001\000\011\000\082\003\013\000\081\003\029\000\080\003\030\000\079\003\
+\\050\000\078\003\068\000\077\003\072\000\076\003\074\000\075\003\
+\\085\000\104\000\000\000\
+\\001\000\011\000\176\003\013\000\175\003\029\000\174\003\030\000\173\003\
+\\044\000\105\000\050\000\172\003\068\000\171\003\072\000\170\003\
+\\074\000\169\003\085\000\104\000\000\000\
+\\001\000\011\000\176\003\013\000\175\003\029\000\174\003\030\000\173\003\
+\\050\000\172\003\068\000\171\003\072\000\170\003\074\000\169\003\
+\\085\000\104\000\000\000\
+\\001\000\011\000\253\003\013\000\252\003\029\000\251\003\030\000\250\003\
+\\050\000\249\003\068\000\248\003\072\000\247\003\074\000\246\003\
+\\085\000\104\000\000\000\
+\\001\000\016\000\086\001\000\000\
+\\001\000\016\000\087\001\000\000\
+\\001\000\016\000\020\002\000\000\
+\\001\000\016\000\136\002\000\000\
+\\001\000\019\000\060\000\023\000\057\000\034\000\050\000\036\000\049\000\
+\\038\000\048\000\046\000\047\000\049\000\046\000\055\000\044\000\
+\\077\000\033\000\078\000\032\000\079\000\031\000\080\000\030\000\
+\\081\000\029\000\082\000\028\000\083\000\027\000\084\000\026\000\
+\\085\000\025\000\086\000\024\000\087\000\023\000\000\000\
+\\001\000\019\000\235\000\034\000\234\000\056\000\233\000\057\000\232\000\
+\\071\000\231\000\085\000\230\000\000\000\
+\\001\000\019\000\235\000\034\000\234\000\056\000\233\000\057\000\245\001\
+\\071\000\231\000\085\000\230\000\000\000\
+\\001\000\019\000\235\000\034\000\234\000\056\000\233\000\057\000\059\002\
+\\071\000\231\000\085\000\230\000\000\000\
+\\001\000\019\000\235\000\034\000\234\000\056\000\233\000\057\000\111\002\
+\\071\000\231\000\085\000\230\000\000\000\
+\\001\000\019\000\235\000\034\000\234\000\056\000\233\000\057\000\142\002\
+\\071\000\231\000\085\000\230\000\000\000\
+\\001\000\019\000\235\000\034\000\234\000\056\000\233\000\057\000\002\003\
+\\071\000\231\000\085\000\230\000\000\000\
+\\001\000\019\000\235\000\034\000\234\000\056\000\233\000\057\000\116\003\
+\\071\000\231\000\085\000\230\000\000\000\
+\\001\000\019\000\235\000\034\000\234\000\056\000\233\000\071\000\231\000\
+\\085\000\230\000\000\000\
+\\001\000\019\000\131\001\034\000\130\001\057\000\014\002\059\000\013\002\
+\\073\000\129\001\085\000\104\000\000\000\
+\\001\000\019\000\131\001\034\000\130\001\057\000\053\002\059\000\052\002\
+\\073\000\129\001\085\000\104\000\000\000\
+\\001\000\019\000\131\001\034\000\130\001\057\000\179\002\059\000\178\002\
+\\073\000\129\001\085\000\104\000\000\000\
 \\001\000\023\000\168\000\027\000\167\000\034\000\166\000\036\000\165\000\
 \\038\000\164\000\044\000\163\000\051\000\162\000\055\000\161\000\
 \\077\000\033\000\078\000\032\000\079\000\031\000\080\000\030\000\
 \\081\000\029\000\082\000\028\000\083\000\027\000\084\000\026\000\
-\\085\000\025\000\086\000\024\000\087\000\023\000\088\000\114\000\000\000\
+\\085\000\025\000\086\000\024\000\087\000\023\000\088\000\115\000\000\000\
 \\001\000\023\000\168\000\027\000\167\000\034\000\171\000\036\000\165\000\
 \\038\000\164\000\044\000\163\000\051\000\162\000\055\000\161\000\
 \\077\000\033\000\078\000\032\000\079\000\031\000\080\000\030\000\
@@ -15173,629 +15402,191 @@ val table=let val actionRows =
 \\044\000\163\000\051\000\162\000\055\000\161\000\077\000\033\000\
 \\078\000\032\000\079\000\031\000\080\000\030\000\081\000\029\000\
 \\082\000\028\000\083\000\027\000\084\000\026\000\085\000\025\000\
-\\086\000\024\000\087\000\023\000\088\000\114\000\000\000\
-\\001\000\023\000\168\000\034\000\171\000\035\000\072\001\036\000\165\000\
+\\086\000\024\000\087\000\023\000\088\000\115\000\000\000\
+\\001\000\023\000\168\000\034\000\171\000\035\000\079\001\036\000\165\000\
 \\038\000\164\000\044\000\163\000\051\000\162\000\055\000\161\000\
 \\077\000\033\000\078\000\032\000\079\000\031\000\080\000\030\000\
 \\081\000\029\000\082\000\028\000\083\000\027\000\084\000\026\000\
 \\085\000\025\000\086\000\024\000\087\000\023\000\000\000\
-\\001\000\023\000\168\000\034\000\171\000\035\000\072\001\036\000\165\000\
+\\001\000\023\000\168\000\034\000\171\000\035\000\079\001\036\000\165\000\
 \\038\000\164\000\044\000\163\000\051\000\162\000\055\000\161\000\
 \\077\000\033\000\078\000\032\000\079\000\031\000\080\000\030\000\
 \\081\000\029\000\082\000\028\000\083\000\027\000\084\000\026\000\
-\\085\000\025\000\086\000\024\000\087\000\023\000\088\000\114\000\000\000\
+\\085\000\025\000\086\000\024\000\087\000\023\000\088\000\115\000\000\000\
 \\001\000\023\000\168\000\034\000\171\000\036\000\165\000\038\000\164\000\
 \\044\000\163\000\051\000\162\000\055\000\161\000\077\000\033\000\
 \\078\000\032\000\079\000\031\000\080\000\030\000\081\000\029\000\
 \\082\000\028\000\083\000\027\000\084\000\026\000\085\000\025\000\
 \\086\000\024\000\087\000\023\000\000\000\
-\\001\000\029\000\222\000\072\000\221\000\085\000\103\000\000\000\
-\\001\000\029\000\107\001\072\000\106\001\085\000\103\000\000\000\
-\\001\000\029\000\246\001\000\000\
-\\001\000\029\000\246\001\085\000\103\000\000\000\
-\\001\000\029\000\126\002\085\000\103\000\000\000\
-\\001\000\029\000\126\002\085\000\106\000\000\000\
-\\001\000\029\000\157\002\085\000\103\000\000\000\
-\\001\000\029\000\159\002\085\000\103\000\000\000\
-\\001\000\029\000\159\002\085\000\106\000\000\000\
-\\001\000\029\000\012\003\085\000\103\000\000\000\
-\\001\000\029\000\031\003\085\000\103\000\000\000\
-\\001\000\029\000\031\003\085\000\109\000\000\000\
-\\001\000\029\000\068\003\085\000\103\000\000\000\
-\\001\000\029\000\068\003\085\000\109\000\000\000\
-\\001\000\031\000\028\001\000\000\
-\\001\000\031\000\132\001\000\000\
-\\001\000\031\000\168\001\000\000\
-\\001\000\031\000\170\001\000\000\
-\\001\000\031\000\228\001\000\000\
-\\001\000\031\000\255\001\000\000\
-\\001\000\031\000\001\002\000\000\
-\\001\000\034\000\115\000\085\000\208\000\086\000\207\000\088\000\114\000\000\000\
-\\001\000\034\000\232\000\056\000\231\000\071\000\230\000\085\000\229\000\000\000\
-\\001\000\034\000\023\001\000\000\
-\\001\000\034\000\129\001\000\000\
-\\001\000\034\000\172\001\000\000\
-\\001\000\034\000\117\002\000\000\
-\\001\000\035\000\047\001\000\000\
-\\001\000\035\000\048\001\000\000\
-\\001\000\035\000\166\001\000\000\
-\\001\000\035\000\205\001\000\000\
-\\001\000\035\000\206\001\000\000\
-\\001\000\035\000\249\001\075\000\122\001\000\000\
-\\001\000\035\000\019\002\000\000\
-\\001\000\035\000\021\002\040\000\020\002\000\000\
-\\001\000\035\000\036\002\000\000\
-\\001\000\035\000\093\002\000\000\
-\\001\000\035\000\134\002\000\000\
-\\001\000\035\000\194\002\041\000\193\002\076\000\192\002\000\000\
-\\001\000\035\000\199\002\075\000\122\001\000\000\
-\\001\000\035\000\223\002\075\000\122\001\000\000\
-\\001\000\035\000\237\002\041\000\193\002\076\000\192\002\000\000\
-\\001\000\035\000\238\002\000\000\
-\\001\000\035\000\250\002\075\000\122\001\000\000\
-\\001\000\037\000\036\001\000\000\
+\\001\000\029\000\222\000\072\000\221\000\085\000\104\000\000\000\
+\\001\000\029\000\113\001\072\000\112\001\085\000\104\000\000\000\
+\\001\000\030\000\125\000\050\000\124\000\074\000\123\000\000\000\
+\\001\000\031\000\036\001\000\000\
+\\001\000\031\000\140\001\000\000\
+\\001\000\031\000\180\001\000\000\
+\\001\000\031\000\182\001\000\000\
+\\001\000\031\000\238\001\000\000\
+\\001\000\031\000\025\002\000\000\
+\\001\000\031\000\027\002\000\000\
+\\001\000\034\000\116\000\085\000\208\000\086\000\207\000\088\000\115\000\000\000\
+\\001\000\034\000\030\001\000\000\
+\\001\000\035\000\054\001\000\000\
+\\001\000\035\000\055\001\000\000\
+\\001\000\035\000\178\001\000\000\
+\\001\000\035\000\215\001\000\000\
+\\001\000\035\000\216\001\000\000\
+\\001\000\035\000\019\002\075\000\126\001\000\000\
+\\001\000\035\000\046\002\000\000\
+\\001\000\035\000\048\002\040\000\047\002\000\000\
+\\001\000\035\000\060\002\000\000\
+\\001\000\035\000\131\002\041\000\130\002\076\000\129\002\000\000\
+\\001\000\035\000\133\002\000\000\
+\\001\000\035\000\019\003\075\000\126\001\000\000\
+\\001\000\035\000\020\003\075\000\126\001\000\000\
 \\001\000\037\000\043\001\000\000\
-\\001\000\037\000\197\001\000\000\
-\\001\000\037\000\201\001\000\000\
-\\001\000\039\000\109\003\040\000\109\003\041\000\109\003\046\000\102\003\
-\\054\000\115\003\075\000\109\003\000\000\
-\\001\000\039\000\029\004\040\000\029\004\041\000\041\001\075\000\120\003\000\000\
-\\001\000\039\000\038\001\000\000\
-\\001\000\039\000\198\001\000\000\
-\\001\000\039\000\017\002\000\000\
-\\001\000\039\000\052\002\000\000\
-\\001\000\041\000\171\001\000\000\
-\\001\000\041\000\004\002\000\000\
-\\001\000\041\000\018\002\000\000\
-\\001\000\041\000\037\002\000\000\
-\\001\000\041\000\047\002\000\000\
-\\001\000\041\000\049\002\000\000\
-\\001\000\041\000\094\002\000\000\
-\\001\000\041\000\099\002\000\000\
-\\001\000\041\000\116\002\076\000\115\002\000\000\
-\\001\000\041\000\132\002\000\000\
-\\001\000\041\000\135\002\000\000\
-\\001\000\041\000\136\002\000\000\
-\\001\000\041\000\165\002\000\000\
-\\001\000\041\000\169\002\000\000\
-\\001\000\041\000\203\002\000\000\
+\\001\000\037\000\050\001\000\000\
+\\001\000\037\000\207\001\000\000\
+\\001\000\037\000\211\001\000\000\
+\\001\000\039\000\225\004\040\000\225\004\041\000\225\004\046\000\218\004\
+\\054\000\231\004\075\000\225\004\000\000\
+\\001\000\039\000\140\005\040\000\140\005\041\000\048\001\075\000\235\004\000\000\
+\\001\000\039\000\045\001\000\000\
+\\001\000\039\000\208\001\000\000\
+\\001\000\039\000\044\002\000\000\
+\\001\000\039\000\076\002\000\000\
+\\001\000\041\000\183\001\000\000\
+\\001\000\041\000\021\002\000\000\
+\\001\000\041\000\031\002\046\000\030\002\000\000\
+\\001\000\041\000\045\002\000\000\
+\\001\000\041\000\061\002\000\000\
+\\001\000\041\000\062\002\000\000\
+\\001\000\041\000\072\002\000\000\
+\\001\000\041\000\073\002\000\000\
+\\001\000\041\000\147\002\000\000\
+\\001\000\041\000\163\002\076\000\162\002\000\000\
+\\001\000\041\000\183\002\000\000\
+\\001\000\041\000\185\002\000\000\
+\\001\000\041\000\231\002\000\000\
+\\001\000\041\000\241\002\000\000\
 \\001\000\041\000\006\003\000\000\
-\\001\000\041\000\018\003\076\000\017\003\000\000\
-\\001\000\041\000\023\003\000\000\
-\\001\000\043\000\067\001\078\000\137\000\079\000\136\000\085\000\066\001\
+\\001\000\041\000\022\003\076\000\021\003\000\000\
+\\001\000\041\000\120\003\000\000\
+\\001\000\043\000\074\001\078\000\137\000\079\000\136\000\085\000\073\001\
 \\086\000\144\000\087\000\143\000\000\000\
-\\001\000\046\000\105\003\075\000\093\003\000\000\
-\\001\000\046\000\106\003\075\000\094\003\000\000\
-\\001\000\046\000\046\000\085\000\025\000\086\000\024\000\087\000\023\000\000\000\
+\\001\000\044\000\105\000\085\000\104\000\000\000\
+\\001\000\046\000\221\004\075\000\209\004\000\000\
+\\001\000\046\000\222\004\075\000\210\004\000\000\
+\\001\000\046\000\047\000\085\000\025\000\086\000\024\000\087\000\023\000\000\000\
 \\001\000\046\000\180\000\085\000\025\000\086\000\024\000\087\000\023\000\000\000\
 \\001\000\046\000\180\000\085\000\179\000\086\000\024\000\087\000\023\000\000\000\
-\\001\000\046\000\022\001\000\000\
-\\001\000\046\000\042\001\000\000\
-\\001\000\046\000\086\001\000\000\
-\\001\000\046\000\114\001\054\000\077\001\000\000\
-\\001\000\046\000\155\001\000\000\
-\\001\000\046\000\200\001\000\000\
-\\001\000\046\000\231\001\000\000\
+\\001\000\046\000\049\001\000\000\
+\\001\000\046\000\092\001\000\000\
+\\001\000\046\000\118\001\054\000\041\001\000\000\
+\\001\000\046\000\164\001\000\000\
+\\001\000\046\000\167\001\000\000\
+\\001\000\046\000\168\001\000\000\
+\\001\000\046\000\210\001\000\000\
 \\001\000\046\000\241\001\000\000\
-\\001\000\046\000\243\001\000\000\
-\\001\000\046\000\032\002\075\000\122\001\000\000\
-\\001\000\046\000\091\002\054\000\077\001\000\000\
-\\001\000\046\000\131\002\000\000\
-\\001\000\046\000\133\002\075\000\122\001\000\000\
-\\001\000\046\000\138\002\000\000\
-\\001\000\046\000\168\002\000\000\
-\\001\000\046\000\197\002\000\000\
-\\001\000\046\000\206\002\000\000\
-\\001\000\046\000\219\002\000\000\
-\\001\000\046\000\246\002\075\000\122\001\000\000\
-\\001\000\046\000\014\003\000\000\
-\\001\000\046\000\020\003\000\000\
-\\001\000\046\000\022\003\075\000\122\001\000\000\
-\\001\000\046\000\024\003\000\000\
-\\001\000\046\000\025\003\000\000\
-\\001\000\046\000\026\003\000\000\
-\\001\000\046\000\042\003\075\000\122\001\000\000\
-\\001\000\046\000\057\003\075\000\122\001\000\000\
+\\001\000\046\000\251\001\000\000\
+\\001\000\046\000\253\001\000\000\
+\\001\000\046\000\054\002\075\000\126\001\000\000\
+\\001\000\046\000\063\002\000\000\
+\\001\000\046\000\119\002\054\000\041\001\000\000\
+\\001\000\046\000\180\002\075\000\126\001\000\000\
+\\001\000\046\000\182\002\000\000\
+\\001\000\046\000\184\002\075\000\126\001\000\000\
+\\001\000\046\000\240\002\000\000\
+\\001\000\046\000\032\003\000\000\
+\\001\000\046\000\062\003\000\000\
+\\001\000\046\000\063\003\000\000\
+\\001\000\046\000\064\003\000\000\
 \\001\000\046\000\065\003\000\000\
-\\001\000\046\000\072\003\000\000\
-\\001\000\046\000\084\003\000\000\
-\\001\000\054\000\100\000\000\000\
-\\001\000\054\000\125\001\000\000\
-\\001\000\054\000\242\001\000\000\
+\\001\000\046\000\066\003\000\000\
+\\001\000\046\000\067\003\000\000\
+\\001\000\046\000\068\003\000\000\
+\\001\000\046\000\069\003\000\000\
+\\001\000\046\000\193\003\000\000\
+\\001\000\046\000\194\003\000\000\
+\\001\000\046\000\195\003\000\000\
+\\001\000\046\000\196\003\000\000\
+\\001\000\046\000\197\003\000\000\
+\\001\000\046\000\198\003\000\000\
+\\001\000\046\000\199\003\000\000\
+\\001\000\046\000\200\003\000\000\
+\\001\000\046\000\201\003\000\000\
+\\001\000\046\000\237\003\000\000\
+\\001\000\046\000\238\003\000\000\
+\\001\000\046\000\239\003\000\000\
+\\001\000\046\000\240\003\000\000\
+\\001\000\046\000\241\003\000\000\
+\\001\000\046\000\242\003\000\000\
+\\001\000\046\000\243\003\000\000\
+\\001\000\046\000\244\003\000\000\
+\\001\000\046\000\009\004\000\000\
+\\001\000\046\000\010\004\000\000\
+\\001\000\046\000\011\004\000\000\
+\\001\000\046\000\012\004\000\000\
+\\001\000\046\000\013\004\000\000\
+\\001\000\046\000\014\004\000\000\
+\\001\000\046\000\015\004\000\000\
+\\001\000\046\000\016\004\000\000\
+\\001\000\046\000\022\004\000\000\
+\\001\000\046\000\023\004\000\000\
+\\001\000\046\000\024\004\000\000\
+\\001\000\046\000\025\004\000\000\
+\\001\000\046\000\026\004\000\000\
+\\001\000\046\000\027\004\000\000\
+\\001\000\046\000\028\004\000\000\
+\\001\000\046\000\029\004\000\000\
+\\001\000\046\000\085\004\000\000\
+\\001\000\046\000\086\004\000\000\
+\\001\000\046\000\087\004\000\000\
+\\001\000\046\000\088\004\000\000\
+\\001\000\046\000\089\004\000\000\
+\\001\000\046\000\090\004\000\000\
+\\001\000\046\000\091\004\000\000\
+\\001\000\046\000\092\004\000\000\
+\\001\000\046\000\150\004\000\000\
+\\001\000\046\000\151\004\000\000\
+\\001\000\046\000\152\004\000\000\
+\\001\000\046\000\153\004\000\000\
+\\001\000\046\000\154\004\000\000\
+\\001\000\046\000\155\004\000\000\
+\\001\000\046\000\156\004\000\000\
+\\001\000\046\000\157\004\000\000\
+\\001\000\047\000\232\002\000\000\
+\\001\000\047\000\007\003\000\000\
+\\001\000\047\000\121\003\000\000\
+\\001\000\048\000\018\002\000\000\
+\\001\000\048\000\213\002\000\000\
+\\001\000\048\000\018\003\000\000\
+\\001\000\048\000\059\003\000\000\
+\\001\000\048\000\083\003\000\000\
+\\001\000\048\000\177\003\000\000\
+\\001\000\048\000\254\003\000\000\
+\\001\000\054\000\101\000\000\000\
+\\001\000\054\000\132\001\000\000\
+\\001\000\054\000\252\001\000\000\
 \\001\000\061\000\214\000\000\000\
-\\001\000\075\000\039\001\000\000\
-\\001\000\075\000\035\002\000\000\
-\\001\000\075\000\084\002\000\000\
-\\001\000\075\000\005\003\000\000\
+\\001\000\075\000\046\001\000\000\
+\\001\000\075\000\171\002\000\000\
+\\001\000\075\000\215\002\000\000\
+\\001\000\075\000\237\002\000\000\
 \\001\000\078\000\137\000\079\000\136\000\085\000\135\000\086\000\134\000\
 \\087\000\133\000\000\000\
-\\001\000\078\000\137\000\079\000\136\000\085\000\066\001\086\000\144\000\
+\\001\000\078\000\137\000\079\000\136\000\085\000\073\001\086\000\144\000\
 \\087\000\143\000\000\000\
-\\001\000\083\000\108\001\000\000\
-\\001\000\083\000\202\002\000\000\
-\\001\000\083\000\207\002\000\000\
-\\001\000\083\000\252\002\000\000\
-\\001\000\083\000\043\003\000\000\
-\\001\000\083\000\045\003\000\000\
-\\001\000\083\000\069\003\000\000\
-\\001\000\085\000\103\000\000\000\
-\\001\000\085\000\106\000\000\000\
-\\001\000\085\000\109\000\000\000\
+\\001\000\083\000\114\001\000\000\
+\\001\000\083\000\030\003\000\000\
+\\001\000\083\000\123\003\000\000\
+\\001\000\083\000\255\003\000\000\
+\\001\000\085\000\104\000\000\000\
+\\001\000\085\000\108\000\000\000\
 \\001\000\085\000\208\000\086\000\207\000\000\000\
-\\001\000\085\000\229\000\000\000\
-\\001\000\085\000\121\001\086\000\207\000\000\000\
-\\001\000\085\000\028\002\000\000\
-\\001\000\088\000\114\000\000\000\
-\\092\003\000\000\
-\\093\003\000\000\
-\\094\003\000\000\
-\\095\003\000\000\
-\\096\003\000\000\
-\\097\003\000\000\
-\\098\003\000\000\
-\\099\003\000\000\
-\\100\003\000\000\
-\\101\003\000\000\
-\\102\003\000\000\
-\\103\003\000\000\
-\\104\003\000\000\
-\\105\003\000\000\
-\\106\003\000\000\
-\\107\003\000\000\
-\\108\003\000\000\
-\\109\003\000\000\
-\\110\003\000\000\
-\\111\003\000\000\
-\\112\003\000\000\
-\\113\003\000\000\
-\\114\003\000\000\
-\\115\003\000\000\
-\\116\003\000\000\
-\\117\003\000\000\
-\\118\003\000\000\
-\\119\003\000\000\
-\\120\003\000\000\
-\\121\003\000\000\
-\\122\003\000\000\
-\\123\003\000\000\
-\\124\003\000\000\
-\\125\003\000\000\
-\\126\003\000\000\
-\\127\003\000\000\
-\\128\003\000\000\
-\\129\003\000\000\
-\\130\003\000\000\
-\\131\003\008\000\223\001\023\000\120\000\000\000\
-\\131\003\008\000\012\002\023\000\120\000\000\000\
-\\131\003\023\000\120\000\000\000\
-\\131\003\023\000\120\000\077\000\033\000\078\000\032\000\079\000\031\000\
-\\080\000\030\000\081\000\029\000\082\000\028\000\083\000\027\000\
-\\084\000\026\000\000\000\
-\\132\003\000\000\
-\\133\003\000\000\
-\\134\003\000\000\
-\\135\003\000\000\
-\\136\003\000\000\
-\\137\003\000\000\
-\\138\003\000\000\
-\\139\003\000\000\
-\\140\003\000\000\
-\\141\003\000\000\
-\\142\003\000\000\
-\\143\003\000\000\
-\\144\003\000\000\
-\\145\003\000\000\
-\\146\003\006\000\067\000\012\000\064\000\015\000\062\000\019\000\059\000\
-\\023\000\056\000\026\000\054\000\027\000\053\000\033\000\050\000\
-\\034\000\049\000\036\000\048\000\038\000\047\000\046\000\046\000\
-\\049\000\045\000\055\000\043\000\077\000\033\000\078\000\032\000\
-\\079\000\031\000\080\000\030\000\081\000\029\000\082\000\028\000\
-\\083\000\027\000\084\000\026\000\085\000\025\000\086\000\024\000\
-\\087\000\023\000\000\000\
-\\147\003\000\000\
-\\148\003\004\000\098\000\014\000\097\000\025\000\096\000\040\000\035\001\
-\\041\000\095\000\000\000\
-\\149\003\000\000\
-\\150\003\000\000\
-\\151\003\004\000\098\000\014\000\097\000\025\000\096\000\041\000\095\000\
-\\042\000\055\002\000\000\
-\\152\003\000\000\
-\\153\003\000\000\
-\\154\003\000\000\
-\\155\003\000\000\
-\\156\003\004\000\098\000\014\000\097\000\025\000\096\000\040\000\183\001\
-\\041\000\095\000\000\000\
-\\156\003\040\000\183\001\000\000\
-\\157\003\000\000\
-\\158\003\019\000\059\000\023\000\056\000\034\000\049\000\036\000\048\000\
-\\038\000\047\000\046\000\046\000\049\000\045\000\055\000\043\000\
-\\077\000\033\000\078\000\147\000\079\000\146\000\080\000\030\000\
-\\081\000\029\000\082\000\028\000\083\000\027\000\084\000\026\000\
-\\085\000\145\000\086\000\144\000\087\000\143\000\000\000\
-\\159\003\000\000\
-\\160\003\000\000\
-\\161\003\019\000\059\000\023\000\056\000\034\000\049\000\036\000\048\000\
-\\038\000\047\000\046\000\046\000\049\000\045\000\055\000\043\000\
-\\077\000\033\000\078\000\032\000\079\000\031\000\080\000\030\000\
-\\081\000\029\000\082\000\028\000\083\000\027\000\084\000\026\000\
-\\085\000\025\000\086\000\024\000\087\000\023\000\000\000\
-\\162\003\000\000\
-\\163\003\000\000\
-\\164\003\004\000\098\000\041\000\095\000\000\000\
-\\165\003\004\000\098\000\025\000\096\000\041\000\095\000\000\000\
-\\166\003\000\000\
-\\167\003\004\000\098\000\014\000\097\000\025\000\096\000\041\000\095\000\000\000\
-\\168\003\004\000\098\000\014\000\097\000\025\000\096\000\041\000\095\000\000\000\
-\\169\003\004\000\098\000\014\000\097\000\025\000\096\000\041\000\095\000\000\000\
-\\170\003\000\000\
-\\171\003\000\000\
-\\172\003\004\000\098\000\014\000\097\000\025\000\096\000\041\000\095\000\000\000\
-\\173\003\000\000\
-\\174\003\000\000\
-\\175\003\045\000\093\001\000\000\
-\\176\003\004\000\098\000\014\000\097\000\025\000\096\000\041\000\095\000\000\000\
-\\177\003\002\000\068\000\008\000\066\000\011\000\065\000\013\000\063\000\
-\\017\000\061\000\018\000\060\000\020\000\058\000\021\000\057\000\
-\\024\000\055\000\029\000\052\000\030\000\051\000\042\000\184\000\
-\\050\000\044\000\062\000\042\000\063\000\041\000\064\000\040\000\
-\\065\000\039\000\066\000\038\000\067\000\037\000\068\000\036\000\
-\\072\000\035\000\074\000\034\000\000\000\
-\\178\003\002\000\068\000\008\000\066\000\011\000\065\000\013\000\063\000\
-\\017\000\061\000\018\000\060\000\019\000\031\002\020\000\058\000\
-\\021\000\057\000\024\000\055\000\029\000\052\000\030\000\051\000\
-\\034\000\030\002\042\000\184\000\050\000\044\000\062\000\042\000\
-\\063\000\041\000\064\000\040\000\065\000\039\000\066\000\038\000\
-\\067\000\037\000\068\000\036\000\072\000\035\000\073\000\029\002\
-\\074\000\034\000\085\000\028\002\000\000\
-\\178\003\002\000\068\000\008\000\066\000\011\000\065\000\013\000\063\000\
-\\017\000\061\000\018\000\060\000\020\000\058\000\021\000\057\000\
-\\024\000\055\000\029\000\052\000\030\000\051\000\042\000\184\000\
-\\050\000\044\000\062\000\042\000\063\000\041\000\064\000\040\000\
-\\065\000\039\000\066\000\038\000\067\000\037\000\068\000\036\000\
-\\072\000\035\000\074\000\034\000\000\000\
-\\179\003\000\000\
-\\180\003\002\000\068\000\008\000\066\000\011\000\065\000\013\000\063\000\
-\\017\000\061\000\018\000\060\000\020\000\058\000\021\000\057\000\
-\\024\000\055\000\029\000\052\000\030\000\051\000\050\000\044\000\
-\\062\000\042\000\063\000\041\000\064\000\040\000\065\000\039\000\
-\\066\000\038\000\067\000\037\000\068\000\036\000\072\000\035\000\
-\\074\000\034\000\000\000\
-\\181\003\000\000\
-\\182\003\000\000\
-\\183\003\002\000\068\000\008\000\066\000\011\000\065\000\013\000\063\000\
-\\017\000\061\000\018\000\060\000\020\000\058\000\021\000\057\000\
-\\024\000\055\000\029\000\052\000\030\000\051\000\050\000\044\000\
-\\062\000\042\000\063\000\041\000\064\000\040\000\065\000\039\000\
-\\066\000\038\000\067\000\037\000\068\000\036\000\072\000\035\000\
-\\074\000\034\000\000\000\
-\\184\003\000\000\
-\\185\003\000\000\
-\\186\003\000\000\
-\\187\003\000\000\
-\\188\003\000\000\
-\\189\003\000\000\
-\\190\003\000\000\
-\\191\003\000\000\
-\\192\003\000\000\
-\\193\003\000\000\
-\\194\003\000\000\
-\\195\003\000\000\
-\\196\003\000\000\
-\\197\003\000\000\
-\\198\003\000\000\
-\\199\003\000\000\
-\\200\003\000\000\
-\\201\003\000\000\
-\\202\003\000\000\
-\\203\003\000\000\
-\\204\003\000\000\
-\\205\003\000\000\
-\\206\003\000\000\
-\\207\003\000\000\
-\\208\003\000\000\
-\\209\003\000\000\
-\\210\003\000\000\
-\\211\003\000\000\
-\\212\003\000\000\
-\\213\003\000\000\
-\\214\003\000\000\
-\\215\003\000\000\
-\\216\003\000\000\
-\\217\003\032\000\097\001\000\000\
-\\218\003\000\000\
-\\219\003\046\000\180\000\085\000\179\000\086\000\024\000\087\000\023\000\000\000\
-\\220\003\000\000\
-\\221\003\054\000\077\001\085\000\103\000\000\000\
-\\222\003\000\000\
-\\223\003\077\000\189\000\078\000\188\000\000\000\
-\\224\003\000\000\
-\\225\003\000\000\
-\\226\003\000\000\
-\\227\003\003\000\059\002\004\000\098\000\014\000\097\000\025\000\096\000\
-\\041\000\095\000\000\000\
-\\228\003\000\000\
-\\229\003\000\000\
-\\230\003\003\000\090\001\000\000\
-\\231\003\000\000\
-\\232\003\000\000\
-\\233\003\045\000\088\001\000\000\
-\\234\003\004\000\098\000\014\000\097\000\025\000\096\000\041\000\095\000\000\000\
-\\235\003\005\000\056\001\041\000\055\001\052\000\053\001\053\000\052\001\
-\\075\000\051\001\000\000\
-\\236\003\000\000\
-\\237\003\000\000\
-\\238\003\000\000\
-\\239\003\003\000\165\001\000\000\
-\\239\003\003\000\165\001\046\000\164\001\000\000\
-\\240\003\000\000\
-\\241\003\000\000\
-\\242\003\000\000\
-\\243\003\000\000\
-\\244\003\000\000\
-\\245\003\000\000\
-\\246\003\000\000\
-\\247\003\003\000\101\001\000\000\
-\\247\003\003\000\101\001\046\000\100\001\000\000\
-\\247\003\003\000\101\001\046\000\219\001\000\000\
-\\247\003\003\000\101\001\046\000\227\001\000\000\
-\\248\003\000\000\
-\\249\003\000\000\
-\\250\003\045\000\214\002\000\000\
-\\251\003\000\000\
-\\252\003\022\000\179\001\000\000\
-\\252\003\022\000\179\001\046\000\178\001\000\000\
-\\252\003\022\000\179\001\046\000\217\001\000\000\
-\\252\003\022\000\179\001\046\000\003\002\000\000\
-\\252\003\022\000\179\001\046\000\006\002\000\000\
-\\253\003\000\000\
-\\254\003\000\000\
-\\255\003\000\000\
-\\000\004\003\000\210\002\000\000\
-\\001\004\000\000\
-\\002\004\000\000\
-\\003\004\000\000\
-\\004\004\003\000\071\002\000\000\
-\\005\004\000\000\
-\\006\004\000\000\
-\\007\004\000\000\
-\\008\004\000\000\
-\\009\004\000\000\
-\\010\004\000\000\
-\\011\004\000\000\
-\\012\004\000\000\
-\\013\004\000\000\
-\\014\004\000\000\
-\\015\004\000\000\
-\\016\004\000\000\
-\\017\004\023\000\168\000\034\000\171\000\036\000\165\000\038\000\164\000\
-\\044\000\163\000\051\000\162\000\055\000\161\000\077\000\033\000\
-\\078\000\032\000\079\000\031\000\080\000\030\000\081\000\029\000\
-\\082\000\028\000\083\000\027\000\084\000\026\000\085\000\025\000\
-\\086\000\024\000\087\000\023\000\000\000\
-\\018\004\000\000\
-\\019\004\005\000\056\001\040\000\196\001\041\000\055\001\052\000\053\001\
-\\053\000\052\001\075\000\051\001\000\000\
-\\020\004\000\000\
-\\021\004\005\000\056\001\041\000\055\001\045\000\202\001\052\000\053\001\
-\\053\000\052\001\075\000\051\001\000\000\
-\\022\004\000\000\
-\\023\004\000\000\
-\\024\004\000\000\
-\\025\004\000\000\
-\\026\004\000\000\
-\\027\004\005\000\056\001\040\000\144\002\041\000\055\001\052\000\053\001\
-\\053\000\052\001\075\000\051\001\000\000\
-\\027\004\040\000\144\002\000\000\
-\\028\004\000\000\
-\\029\004\041\000\041\001\000\000\
-\\030\004\005\000\056\001\041\000\055\001\052\000\053\001\053\000\052\001\
-\\075\000\051\001\000\000\
-\\031\004\005\000\062\002\000\000\
-\\032\004\000\000\
-\\033\004\043\000\067\001\078\000\137\000\079\000\136\000\085\000\066\001\
-\\086\000\144\000\087\000\143\000\000\000\
-\\034\004\000\000\
-\\035\004\000\000\
-\\036\004\023\000\168\000\034\000\171\000\036\000\165\000\038\000\164\000\
-\\044\000\163\000\055\000\161\000\077\000\033\000\078\000\032\000\
-\\079\000\031\000\080\000\030\000\081\000\029\000\082\000\028\000\
-\\083\000\027\000\084\000\026\000\085\000\025\000\086\000\024\000\
-\\087\000\023\000\000\000\
-\\037\004\000\000\
-\\038\004\041\000\055\001\000\000\
-\\039\004\005\000\056\001\041\000\055\001\000\000\
-\\040\004\000\000\
-\\041\004\000\000\
-\\042\004\000\000\
-\\043\004\048\000\149\001\000\000\
-\\044\004\000\000\
-\\045\004\000\000\
-\\046\004\000\000\
-\\048\004\000\000\
-\\049\004\000\000\
-\\050\004\000\000\
-\\051\004\000\000\
-\\052\004\000\000\
-\\053\004\000\000\
-\\054\004\000\000\
-\\055\004\040\000\181\002\000\000\
-\\056\004\000\000\
-\\057\004\078\000\137\000\079\000\136\000\085\000\135\000\086\000\134\000\
-\\087\000\133\000\000\000\
-\\059\004\034\000\013\001\038\000\012\001\088\000\114\000\000\000\
-\\060\004\000\000\
-\\061\004\000\000\
-\\062\004\040\000\020\002\000\000\
-\\063\004\000\000\
-\\064\004\034\000\115\000\088\000\114\000\000\000\
-\\065\004\000\000\
-\\066\004\000\000\
-\\067\004\000\000\
-\\068\004\040\000\167\001\000\000\
-\\069\004\000\000\
-\\070\004\075\000\122\001\000\000\
-\\070\004\075\000\236\002\000\000\
-\\070\004\075\000\055\003\000\000\
-\\071\004\075\000\122\001\000\000\
-\\071\004\075\000\236\002\000\000\
-\\071\004\075\000\055\003\000\000\
-\\072\004\000\000\
-\\073\004\054\000\118\002\000\000\
-\\074\004\000\000\
-\\075\004\000\000\
-\\076\004\000\000\
-\\077\004\000\000\
-\\078\004\000\000\
-\\079\004\000\000\
-\\080\004\000\000\
-\\082\004\000\000\
-\\083\004\000\000\
-\\084\004\000\000\
-\\085\004\000\000\
-\\086\004\000\000\
-\\087\004\000\000\
-\\088\004\000\000\
-\\089\004\000\000\
-\\090\004\075\000\122\001\000\000\
-\\090\004\075\000\082\002\000\000\
-\\091\004\041\000\021\001\076\000\020\001\000\000\
-\\091\004\041\000\021\001\076\000\128\002\000\000\
-\\091\004\041\000\021\001\076\000\248\002\000\000\
-\\091\004\041\000\110\001\000\000\
-\\092\004\000\000\
-\\093\004\000\000\
-\\094\004\000\000\
-\\095\004\000\000\
-\\096\004\000\000\
-\\096\004\085\000\229\000\000\000\
-\\097\004\000\000\
-\\098\004\054\000\077\001\000\000\
-\\099\004\000\000\
-\\100\004\000\000\
-\\102\004\000\000\
-\\103\004\000\000\
-\\104\004\000\000\
-\\105\004\000\000\
-\\106\004\000\000\
-\\107\004\000\000\
-\\108\004\000\000\
-\\109\004\003\000\028\003\000\000\
-\\110\004\000\000\
-\\111\004\000\000\
-\\112\004\000\000\
-\\113\004\000\000\
-\\114\004\000\000\
-\\116\004\000\000\
-\\117\004\000\000\
-\\118\004\000\000\
-\\119\004\000\000\
-\\120\004\000\000\
-\\121\004\000\000\
-\\122\004\000\000\
-\\123\004\000\000\
-\\124\004\008\000\091\000\011\000\090\000\013\000\089\000\017\000\088\000\
-\\018\000\087\000\021\000\086\000\029\000\085\000\030\000\084\000\
-\\050\000\082\000\063\000\081\000\064\000\080\000\065\000\079\000\
-\\066\000\078\000\067\000\077\000\068\000\076\000\069\000\075\000\
-\\070\000\213\000\072\000\073\000\074\000\072\000\000\000\
-\\125\004\008\000\091\000\011\000\090\000\013\000\089\000\017\000\088\000\
-\\018\000\087\000\021\000\086\000\029\000\085\000\030\000\084\000\
-\\042\000\083\000\050\000\082\000\063\000\081\000\064\000\080\000\
-\\065\000\079\000\066\000\078\000\067\000\077\000\068\000\076\000\
-\\069\000\075\000\070\000\074\000\072\000\073\000\074\000\072\000\000\000\
-\\125\004\008\000\091\000\011\000\090\000\013\000\089\000\017\000\088\000\
-\\018\000\087\000\021\000\086\000\029\000\085\000\030\000\084\000\
-\\042\000\083\000\050\000\082\000\063\000\081\000\064\000\080\000\
-\\065\000\079\000\066\000\078\000\067\000\077\000\068\000\076\000\
-\\069\000\075\000\070\000\074\000\072\000\073\000\074\000\072\000\
-\\085\000\103\000\000\000\
-\\126\004\000\000\
-\\127\004\000\000\
-\\128\004\000\000\
-\\129\004\000\000\
-\\130\004\000\000\
-\\131\004\000\000\
-\\132\004\000\000\
-\\133\004\000\000\
-\\134\004\000\000\
-\\135\004\000\000\
-\\136\004\000\000\
-\\137\004\000\000\
-\\138\004\000\000\
-\\139\004\000\000\
-\\140\004\000\000\
-\\141\004\000\000\
-\\142\004\000\000\
-\\143\004\000\000\
-\\144\004\000\000\
-\\145\004\000\000\
-\\146\004\000\000\
-\\147\004\000\000\
-\\148\004\075\000\122\001\000\000\
-\\149\004\000\000\
-\\150\004\000\000\
-\\151\004\000\000\
-\\152\004\000\000\
-\\153\004\000\000\
-\\154\004\000\000\
-\\155\004\000\000\
-\\156\004\000\000\
-\\157\004\000\000\
-\\158\004\032\000\140\001\000\000\
-\\159\004\000\000\
-\\160\004\085\000\229\000\000\000\
-\\161\004\000\000\
-\\162\004\046\000\162\002\000\000\
-\\163\004\000\000\
-\\164\004\000\000\
-\\165\004\046\000\161\002\000\000\
-\\166\004\000\000\
-\\167\004\000\000\
-\\168\004\046\000\085\002\054\000\077\001\000\000\
-\\169\004\000\000\
-\\170\004\000\000\
-\\171\004\000\000\
-\\172\004\003\000\173\002\000\000\
-\\173\004\000\000\
-\\174\004\000\000\
-\\175\004\000\000\
-\\176\004\003\000\254\001\000\000\
-\\176\004\003\000\254\001\046\000\253\001\000\000\
-\\177\004\000\000\
-\\178\004\000\000\
-\\179\004\000\000\
-\\180\004\000\000\
-\\181\004\000\000\
-\\182\004\000\000\
-\\183\004\000\000\
-\\184\004\003\000\145\001\000\000\
-\\184\004\003\000\145\001\046\000\144\001\000\000\
-\\184\004\003\000\145\001\046\000\009\002\000\000\
-\\184\004\003\000\145\001\046\000\179\002\000\000\
-\\185\004\000\000\
-\\186\004\000\000\
-\\187\004\045\000\232\002\000\000\
-\\188\004\000\000\
-\\189\004\000\000\
-\\190\004\000\000\
-\\191\004\003\000\228\002\000\000\
-\\192\004\000\000\
-\\193\004\000\000\
-\\194\004\000\000\
-\\195\004\003\000\103\002\000\000\
-\\196\004\000\000\
-\\197\004\000\000\
-\\198\004\000\000\
-\\199\004\003\000\081\002\054\000\077\001\000\000\
-\\200\004\000\000\
-\\201\004\000\000\
-\\202\004\000\000\
-\\203\004\000\000\
-\\204\004\000\000\
-\\205\004\000\000\
-\\206\004\000\000\
-\\207\004\000\000\
-\\208\004\003\000\113\001\046\000\112\001\000\000\
+\\001\000\085\000\230\000\000\000\
+\\001\000\085\000\125\001\086\000\207\000\000\000\
+\\001\000\088\000\115\000\000\000\
+\\208\004\000\000\
 \\209\004\000\000\
 \\210\004\000\000\
 \\211\004\000\000\
@@ -15804,291 +15595,929 @@ val table=let val actionRows =
 \\214\004\000\000\
 \\215\004\000\000\
 \\216\004\000\000\
+\\217\004\000\000\
 \\218\004\000\000\
 \\219\004\000\000\
 \\220\004\000\000\
 \\221\004\000\000\
 \\222\004\000\000\
-\\223\004\002\000\068\000\008\000\066\000\011\000\065\000\013\000\063\000\
-\\017\000\061\000\018\000\060\000\020\000\058\000\021\000\057\000\
-\\024\000\055\000\029\000\052\000\030\000\051\000\042\000\093\000\
-\\050\000\044\000\062\000\042\000\063\000\041\000\064\000\040\000\
-\\065\000\039\000\066\000\038\000\067\000\037\000\068\000\036\000\
-\\072\000\035\000\074\000\034\000\000\000\
+\\223\004\000\000\
 \\224\004\000\000\
 \\225\004\000\000\
 \\226\004\000\000\
-\\227\004\002\000\068\000\006\000\067\000\008\000\066\000\011\000\065\000\
-\\012\000\064\000\013\000\063\000\015\000\062\000\017\000\061\000\
-\\018\000\060\000\019\000\059\000\020\000\058\000\021\000\057\000\
-\\023\000\056\000\024\000\055\000\026\000\054\000\027\000\053\000\
-\\029\000\052\000\030\000\051\000\033\000\050\000\034\000\049\000\
-\\036\000\048\000\038\000\047\000\042\000\003\001\046\000\046\000\
-\\049\000\045\000\050\000\044\000\055\000\043\000\062\000\042\000\
+\\227\004\000\000\
+\\228\004\000\000\
+\\229\004\000\000\
+\\230\004\000\000\
+\\231\004\000\000\
+\\232\004\000\000\
+\\233\004\000\000\
+\\234\004\000\000\
+\\235\004\000\000\
+\\236\004\000\000\
+\\237\004\000\000\
+\\238\004\000\000\
+\\239\004\000\000\
+\\240\004\000\000\
+\\241\004\000\000\
+\\242\004\000\000\
+\\243\004\000\000\
+\\244\004\008\000\233\001\023\000\121\000\000\000\
+\\244\004\008\000\039\002\023\000\121\000\000\000\
+\\244\004\023\000\121\000\000\000\
+\\244\004\023\000\121\000\077\000\033\000\078\000\032\000\079\000\031\000\
+\\080\000\030\000\081\000\029\000\082\000\028\000\083\000\027\000\
+\\084\000\026\000\000\000\
+\\245\004\000\000\
+\\246\004\000\000\
+\\247\004\000\000\
+\\248\004\000\000\
+\\249\004\000\000\
+\\250\004\000\000\
+\\251\004\000\000\
+\\252\004\000\000\
+\\253\004\000\000\
+\\254\004\000\000\
+\\255\004\000\000\
+\\000\005\000\000\
+\\001\005\000\000\
+\\002\005\000\000\
+\\003\005\006\000\068\000\012\000\065\000\015\000\063\000\019\000\060\000\
+\\023\000\057\000\026\000\055\000\027\000\054\000\033\000\051\000\
+\\034\000\050\000\036\000\049\000\038\000\048\000\046\000\047\000\
+\\049\000\046\000\055\000\044\000\058\000\043\000\077\000\033\000\
+\\078\000\032\000\079\000\031\000\080\000\030\000\081\000\029\000\
+\\082\000\028\000\083\000\027\000\084\000\026\000\085\000\025\000\
+\\086\000\024\000\087\000\023\000\000\000\
+\\004\005\000\000\
+\\005\005\004\000\099\000\014\000\098\000\025\000\097\000\040\000\042\001\
+\\041\000\096\000\000\000\
+\\006\005\000\000\
+\\007\005\000\000\
+\\008\005\004\000\099\000\014\000\098\000\025\000\097\000\041\000\096\000\
+\\042\000\079\002\000\000\
+\\009\005\000\000\
+\\010\005\000\000\
+\\011\005\000\000\
+\\012\005\000\000\
+\\013\005\004\000\099\000\014\000\098\000\025\000\097\000\040\000\193\001\
+\\041\000\096\000\000\000\
+\\013\005\040\000\193\001\000\000\
+\\014\005\000\000\
+\\015\005\019\000\060\000\023\000\057\000\034\000\050\000\036\000\049\000\
+\\038\000\048\000\046\000\047\000\049\000\046\000\055\000\044\000\
+\\077\000\033\000\078\000\147\000\079\000\146\000\080\000\030\000\
+\\081\000\029\000\082\000\028\000\083\000\027\000\084\000\026\000\
+\\085\000\145\000\086\000\144\000\087\000\143\000\000\000\
+\\016\005\000\000\
+\\017\005\000\000\
+\\018\005\019\000\060\000\023\000\057\000\034\000\050\000\036\000\049\000\
+\\038\000\048\000\046\000\047\000\049\000\046\000\055\000\044\000\
+\\077\000\033\000\078\000\032\000\079\000\031\000\080\000\030\000\
+\\081\000\029\000\082\000\028\000\083\000\027\000\084\000\026\000\
+\\085\000\025\000\086\000\024\000\087\000\023\000\000\000\
+\\019\005\000\000\
+\\020\005\000\000\
+\\021\005\004\000\099\000\041\000\096\000\000\000\
+\\022\005\004\000\099\000\025\000\097\000\041\000\096\000\000\000\
+\\023\005\000\000\
+\\024\005\004\000\099\000\014\000\098\000\025\000\097\000\041\000\096\000\000\000\
+\\025\005\004\000\099\000\014\000\098\000\025\000\097\000\041\000\096\000\000\000\
+\\026\005\004\000\099\000\014\000\098\000\025\000\097\000\041\000\096\000\000\000\
+\\027\005\000\000\
+\\028\005\000\000\
+\\029\005\004\000\099\000\014\000\098\000\025\000\097\000\041\000\096\000\000\000\
+\\030\005\054\000\041\001\000\000\
+\\031\005\000\000\
+\\032\005\000\000\
+\\033\005\045\000\099\001\000\000\
+\\034\005\004\000\099\000\014\000\098\000\025\000\097\000\041\000\096\000\000\000\
+\\035\005\002\000\069\000\008\000\067\000\011\000\066\000\013\000\064\000\
+\\017\000\062\000\018\000\061\000\020\000\059\000\021\000\058\000\
+\\024\000\056\000\029\000\053\000\030\000\052\000\042\000\184\000\
+\\050\000\045\000\062\000\042\000\063\000\041\000\064\000\040\000\
+\\065\000\039\000\066\000\038\000\067\000\037\000\068\000\036\000\
+\\072\000\035\000\074\000\034\000\000\000\
+\\036\005\002\000\069\000\008\000\067\000\011\000\066\000\013\000\064\000\
+\\017\000\062\000\018\000\061\000\019\000\131\001\020\000\059\000\
+\\021\000\058\000\024\000\056\000\029\000\053\000\030\000\052\000\
+\\034\000\130\001\042\000\184\000\050\000\045\000\057\000\014\002\
+\\059\000\013\002\062\000\042\000\063\000\041\000\064\000\040\000\
+\\065\000\039\000\066\000\038\000\067\000\037\000\068\000\036\000\
+\\072\000\035\000\073\000\129\001\074\000\034\000\085\000\104\000\000\000\
+\\036\005\002\000\069\000\008\000\067\000\011\000\066\000\013\000\064\000\
+\\017\000\062\000\018\000\061\000\020\000\059\000\021\000\058\000\
+\\024\000\056\000\029\000\053\000\030\000\052\000\042\000\184\000\
+\\050\000\045\000\062\000\042\000\063\000\041\000\064\000\040\000\
+\\065\000\039\000\066\000\038\000\067\000\037\000\068\000\036\000\
+\\072\000\035\000\074\000\034\000\000\000\
+\\037\005\000\000\
+\\038\005\002\000\069\000\008\000\067\000\011\000\066\000\013\000\064\000\
+\\017\000\062\000\018\000\061\000\020\000\059\000\021\000\058\000\
+\\024\000\056\000\029\000\053\000\030\000\052\000\050\000\045\000\
+\\062\000\042\000\063\000\041\000\064\000\040\000\065\000\039\000\
+\\066\000\038\000\067\000\037\000\068\000\036\000\072\000\035\000\
+\\074\000\034\000\000\000\
+\\039\005\000\000\
+\\040\005\000\000\
+\\041\005\002\000\069\000\008\000\067\000\011\000\066\000\013\000\064\000\
+\\017\000\062\000\018\000\061\000\020\000\059\000\021\000\058\000\
+\\024\000\056\000\029\000\053\000\030\000\052\000\050\000\045\000\
+\\062\000\042\000\063\000\041\000\064\000\040\000\065\000\039\000\
+\\066\000\038\000\067\000\037\000\068\000\036\000\072\000\035\000\
+\\074\000\034\000\000\000\
+\\042\005\000\000\
+\\043\005\000\000\
+\\044\005\000\000\
+\\045\005\000\000\
+\\046\005\000\000\
+\\047\005\000\000\
+\\048\005\000\000\
+\\049\005\000\000\
+\\050\005\000\000\
+\\051\005\000\000\
+\\052\005\000\000\
+\\053\005\000\000\
+\\054\005\000\000\
+\\055\005\000\000\
+\\056\005\000\000\
+\\057\005\000\000\
+\\058\005\000\000\
+\\059\005\000\000\
+\\060\005\000\000\
+\\061\005\000\000\
+\\062\005\000\000\
+\\063\005\000\000\
+\\064\005\000\000\
+\\065\005\000\000\
+\\066\005\000\000\
+\\067\005\000\000\
+\\068\005\000\000\
+\\069\005\000\000\
+\\070\005\000\000\
+\\071\005\000\000\
+\\072\005\032\000\103\001\000\000\
+\\073\005\000\000\
+\\074\005\046\000\180\000\085\000\179\000\086\000\024\000\087\000\023\000\000\000\
+\\075\005\000\000\
+\\076\005\054\000\041\001\085\000\104\000\000\000\
+\\077\005\000\000\
+\\078\005\077\000\189\000\078\000\188\000\000\000\
+\\079\005\000\000\
+\\080\005\000\000\
+\\081\005\000\000\
+\\082\005\003\000\083\002\004\000\099\000\014\000\098\000\025\000\097\000\
+\\041\000\096\000\000\000\
+\\083\005\000\000\
+\\084\005\000\000\
+\\085\005\003\000\096\001\000\000\
+\\086\005\000\000\
+\\087\005\000\000\
+\\088\005\045\000\094\001\000\000\
+\\089\005\004\000\099\000\014\000\098\000\025\000\097\000\041\000\096\000\000\000\
+\\090\005\005\000\063\001\041\000\062\001\052\000\060\001\053\000\059\001\
+\\075\000\058\001\000\000\
+\\091\005\000\000\
+\\092\005\000\000\
+\\093\005\000\000\
+\\094\005\003\000\177\001\000\000\
+\\094\005\003\000\177\001\046\000\176\001\000\000\
+\\095\005\000\000\
+\\096\005\000\000\
+\\097\005\000\000\
+\\098\005\000\000\
+\\099\005\000\000\
+\\100\005\000\000\
+\\101\005\000\000\
+\\102\005\003\000\107\001\000\000\
+\\102\005\003\000\107\001\046\000\106\001\000\000\
+\\102\005\003\000\107\001\046\000\229\001\000\000\
+\\102\005\003\000\107\001\046\000\237\001\000\000\
+\\103\005\000\000\
+\\104\005\000\000\
+\\105\005\045\000\039\003\000\000\
+\\106\005\000\000\
+\\107\005\022\000\189\001\000\000\
+\\107\005\022\000\189\001\046\000\188\001\000\000\
+\\107\005\022\000\189\001\046\000\227\001\000\000\
+\\107\005\022\000\189\001\046\000\029\002\000\000\
+\\107\005\022\000\189\001\046\000\033\002\000\000\
+\\108\005\000\000\
+\\109\005\000\000\
+\\110\005\000\000\
+\\111\005\003\000\035\003\000\000\
+\\112\005\000\000\
+\\113\005\000\000\
+\\114\005\000\000\
+\\115\005\003\000\095\002\000\000\
+\\116\005\000\000\
+\\117\005\000\000\
+\\118\005\000\000\
+\\119\005\000\000\
+\\120\005\000\000\
+\\121\005\000\000\
+\\122\005\000\000\
+\\123\005\000\000\
+\\124\005\000\000\
+\\125\005\000\000\
+\\126\005\000\000\
+\\127\005\000\000\
+\\128\005\023\000\168\000\034\000\171\000\036\000\165\000\038\000\164\000\
+\\044\000\163\000\051\000\162\000\055\000\161\000\077\000\033\000\
+\\078\000\032\000\079\000\031\000\080\000\030\000\081\000\029\000\
+\\082\000\028\000\083\000\027\000\084\000\026\000\085\000\025\000\
+\\086\000\024\000\087\000\023\000\000\000\
+\\129\005\000\000\
+\\130\005\005\000\063\001\040\000\206\001\041\000\062\001\052\000\060\001\
+\\053\000\059\001\075\000\058\001\000\000\
+\\131\005\000\000\
+\\132\005\005\000\063\001\041\000\062\001\045\000\212\001\052\000\060\001\
+\\053\000\059\001\075\000\058\001\000\000\
+\\133\005\000\000\
+\\134\005\000\000\
+\\135\005\000\000\
+\\136\005\000\000\
+\\137\005\000\000\
+\\138\005\005\000\063\001\040\000\192\002\041\000\062\001\052\000\060\001\
+\\053\000\059\001\075\000\058\001\000\000\
+\\138\005\040\000\192\002\000\000\
+\\139\005\000\000\
+\\140\005\041\000\048\001\000\000\
+\\141\005\005\000\063\001\041\000\062\001\052\000\060\001\053\000\059\001\
+\\075\000\058\001\000\000\
+\\142\005\005\000\086\002\000\000\
+\\143\005\000\000\
+\\144\005\043\000\074\001\078\000\137\000\079\000\136\000\085\000\073\001\
+\\086\000\144\000\087\000\143\000\000\000\
+\\145\005\000\000\
+\\146\005\000\000\
+\\147\005\023\000\168\000\034\000\171\000\036\000\165\000\038\000\164\000\
+\\044\000\163\000\055\000\161\000\077\000\033\000\078\000\032\000\
+\\079\000\031\000\080\000\030\000\081\000\029\000\082\000\028\000\
+\\083\000\027\000\084\000\026\000\085\000\025\000\086\000\024\000\
+\\087\000\023\000\000\000\
+\\148\005\000\000\
+\\149\005\041\000\062\001\000\000\
+\\150\005\005\000\063\001\041\000\062\001\000\000\
+\\151\005\000\000\
+\\152\005\000\000\
+\\153\005\000\000\
+\\154\005\048\000\157\001\000\000\
+\\155\005\000\000\
+\\156\005\000\000\
+\\157\005\000\000\
+\\159\005\000\000\
+\\160\005\000\000\
+\\161\005\000\000\
+\\162\005\000\000\
+\\163\005\000\000\
+\\164\005\000\000\
+\\165\005\000\000\
+\\166\005\000\000\
+\\167\005\040\000\254\002\000\000\
+\\168\005\000\000\
+\\169\005\078\000\137\000\079\000\136\000\085\000\135\000\086\000\134\000\
+\\087\000\133\000\000\000\
+\\171\005\034\000\017\001\038\000\016\001\058\000\015\001\088\000\115\000\000\000\
+\\172\005\000\000\
+\\173\005\000\000\
+\\174\005\040\000\047\002\000\000\
+\\175\005\000\000\
+\\176\005\034\000\116\000\088\000\115\000\000\000\
+\\177\005\000\000\
+\\178\005\000\000\
+\\179\005\000\000\
+\\180\005\040\000\179\001\000\000\
+\\181\005\000\000\
+\\182\005\054\000\041\001\000\000\
+\\183\005\000\000\
+\\184\005\000\000\
+\\185\005\000\000\
+\\186\005\000\000\
+\\187\005\000\000\
+\\188\005\019\000\131\001\034\000\130\001\073\000\129\001\085\000\104\000\000\000\
+\\189\005\075\000\126\001\000\000\
+\\189\005\075\000\097\003\000\000\
+\\189\005\075\000\187\003\000\000\
+\\190\005\075\000\126\001\000\000\
+\\190\005\075\000\097\003\000\000\
+\\190\005\075\000\187\003\000\000\
+\\191\005\041\000\130\002\076\000\129\002\000\000\
+\\192\005\075\000\126\001\000\000\
+\\192\005\075\000\097\003\000\000\
+\\192\005\075\000\187\003\000\000\
+\\193\005\000\000\
+\\194\005\000\000\
+\\195\005\000\000\
+\\196\005\000\000\
+\\197\005\000\000\
+\\198\005\000\000\
+\\199\005\000\000\
+\\201\005\000\000\
+\\202\005\000\000\
+\\203\005\000\000\
+\\204\005\000\000\
+\\205\005\000\000\
+\\206\005\000\000\
+\\207\005\000\000\
+\\208\005\000\000\
+\\209\005\000\000\
+\\210\005\000\000\
+\\211\005\000\000\
+\\212\005\000\000\
+\\213\005\000\000\
+\\214\005\000\000\
+\\215\005\000\000\
+\\216\005\000\000\
+\\217\005\000\000\
+\\218\005\000\000\
+\\219\005\000\000\
+\\220\005\075\000\126\001\000\000\
+\\220\005\075\000\106\002\000\000\
+\\221\005\041\000\025\001\000\000\
+\\221\005\041\000\025\001\054\000\041\001\000\000\
+\\221\005\041\000\025\001\076\000\024\001\000\000\
+\\221\005\041\000\025\001\076\000\174\001\000\000\
+\\221\005\041\000\116\001\000\000\
+\\222\005\000\000\
+\\223\005\000\000\
+\\224\005\000\000\
+\\225\005\000\000\
+\\226\005\000\000\
+\\227\005\000\000\
+\\228\005\000\000\
+\\229\005\000\000\
+\\230\005\000\000\
+\\231\005\000\000\
+\\232\005\019\000\131\001\034\000\130\001\073\000\129\001\085\000\104\000\000\000\
+\\233\005\054\000\041\001\000\000\
+\\234\005\000\000\
+\\235\005\000\000\
+\\236\005\034\000\030\001\000\000\
+\\237\005\000\000\
+\\239\005\000\000\
+\\240\005\000\000\
+\\241\005\000\000\
+\\242\005\000\000\
+\\243\005\000\000\
+\\244\005\000\000\
+\\245\005\000\000\
+\\246\005\000\000\
+\\247\005\000\000\
+\\248\005\000\000\
+\\249\005\000\000\
+\\250\005\000\000\
+\\251\005\000\000\
+\\252\005\000\000\
+\\253\005\000\000\
+\\254\005\000\000\
+\\255\005\000\000\
+\\000\006\000\000\
+\\001\006\000\000\
+\\002\006\000\000\
+\\003\006\000\000\
+\\004\006\000\000\
+\\005\006\000\000\
+\\006\006\003\000\211\003\000\000\
+\\006\006\003\000\211\003\019\000\131\001\034\000\130\001\073\000\129\001\
+\\085\000\104\000\000\000\
+\\006\006\003\000\211\003\054\000\041\001\000\000\
+\\007\006\000\000\
+\\008\006\000\000\
+\\009\006\000\000\
+\\010\006\034\000\030\001\000\000\
+\\011\006\000\000\
+\\012\006\000\000\
+\\014\006\000\000\
+\\015\006\000\000\
+\\016\006\000\000\
+\\017\006\000\000\
+\\018\006\000\000\
+\\019\006\000\000\
+\\020\006\000\000\
+\\021\006\000\000\
+\\022\006\000\000\
+\\023\006\000\000\
+\\024\006\000\000\
+\\025\006\000\000\
+\\026\006\000\000\
+\\027\006\000\000\
+\\028\006\000\000\
+\\029\006\000\000\
+\\030\006\000\000\
+\\031\006\000\000\
+\\032\006\000\000\
+\\033\006\008\000\092\000\011\000\091\000\013\000\090\000\017\000\089\000\
+\\018\000\088\000\021\000\087\000\029\000\086\000\030\000\085\000\
+\\050\000\083\000\063\000\082\000\064\000\081\000\065\000\080\000\
+\\066\000\079\000\067\000\078\000\068\000\077\000\069\000\076\000\
+\\070\000\213\000\072\000\074\000\074\000\073\000\000\000\
+\\034\006\008\000\092\000\011\000\091\000\013\000\090\000\017\000\089\000\
+\\018\000\088\000\021\000\087\000\029\000\086\000\030\000\085\000\
+\\042\000\084\000\044\000\172\001\050\000\083\000\063\000\082\000\
+\\064\000\081\000\065\000\080\000\066\000\079\000\067\000\078\000\
+\\068\000\077\000\069\000\076\000\070\000\075\000\072\000\074\000\
+\\074\000\073\000\085\000\104\000\000\000\
+\\034\006\008\000\092\000\011\000\091\000\013\000\090\000\017\000\089\000\
+\\018\000\088\000\021\000\087\000\029\000\086\000\030\000\085\000\
+\\042\000\084\000\050\000\083\000\063\000\082\000\064\000\081\000\
+\\065\000\080\000\066\000\079\000\067\000\078\000\068\000\077\000\
+\\069\000\076\000\070\000\075\000\072\000\074\000\074\000\073\000\000\000\
+\\035\006\000\000\
+\\036\006\000\000\
+\\037\006\000\000\
+\\038\006\000\000\
+\\039\006\000\000\
+\\040\006\000\000\
+\\041\006\000\000\
+\\042\006\000\000\
+\\043\006\000\000\
+\\044\006\000\000\
+\\045\006\000\000\
+\\046\006\000\000\
+\\047\006\000\000\
+\\048\006\000\000\
+\\049\006\000\000\
+\\050\006\000\000\
+\\051\006\000\000\
+\\052\006\000\000\
+\\053\006\000\000\
+\\054\006\000\000\
+\\055\006\000\000\
+\\056\006\000\000\
+\\057\006\075\000\126\001\000\000\
+\\058\006\000\000\
+\\059\006\000\000\
+\\060\006\000\000\
+\\061\006\000\000\
+\\062\006\000\000\
+\\063\006\000\000\
+\\064\006\000\000\
+\\065\006\000\000\
+\\066\006\032\000\148\001\000\000\
+\\067\006\000\000\
+\\068\006\046\000\219\002\000\000\
+\\069\006\000\000\
+\\070\006\000\000\
+\\071\006\046\000\218\002\000\000\
+\\072\006\000\000\
+\\073\006\000\000\
+\\074\006\046\000\113\002\054\000\041\001\000\000\
+\\075\006\000\000\
+\\076\006\000\000\
+\\077\006\000\000\
+\\078\006\000\000\
+\\079\006\003\000\246\002\000\000\
+\\080\006\000\000\
+\\081\006\000\000\
+\\082\006\000\000\
+\\083\006\003\000\024\002\000\000\
+\\083\006\003\000\024\002\046\000\023\002\000\000\
+\\084\006\000\000\
+\\085\006\000\000\
+\\086\006\000\000\
+\\087\006\000\000\
+\\088\006\000\000\
+\\089\006\000\000\
+\\090\006\000\000\
+\\091\006\003\000\153\001\000\000\
+\\091\006\003\000\153\001\046\000\152\001\000\000\
+\\091\006\003\000\153\001\046\000\036\002\000\000\
+\\091\006\003\000\153\001\046\000\252\002\000\000\
+\\092\006\000\000\
+\\093\006\000\000\
+\\094\006\045\000\093\003\000\000\
+\\095\006\000\000\
+\\096\006\000\000\
+\\097\006\000\000\
+\\098\006\003\000\088\003\000\000\
+\\099\006\000\000\
+\\100\006\000\000\
+\\101\006\000\000\
+\\102\006\003\000\152\002\000\000\
+\\103\006\000\000\
+\\104\006\000\000\
+\\105\006\000\000\
+\\106\006\003\000\105\002\054\000\041\001\000\000\
+\\107\006\000\000\
+\\108\006\000\000\
+\\109\006\000\000\
+\\110\006\000\000\
+\\111\006\000\000\
+\\112\006\000\000\
+\\113\006\000\000\
+\\114\006\000\000\
+\\115\006\000\000\
+\\116\006\000\000\
+\\117\006\000\000\
+\\118\006\000\000\
+\\119\006\000\000\
+\\120\006\000\000\
+\\121\006\000\000\
+\\122\006\000\000\
+\\123\006\000\000\
+\\124\006\003\000\248\001\046\000\247\001\000\000\
+\\125\006\000\000\
+\\126\006\000\000\
+\\127\006\000\000\
+\\128\006\000\000\
+\\129\006\000\000\
+\\130\006\000\000\
+\\131\006\000\000\
+\\132\006\000\000\
+\\133\006\000\000\
+\\134\006\000\000\
+\\135\006\000\000\
+\\136\006\000\000\
+\\137\006\000\000\
+\\138\006\000\000\
+\\139\006\000\000\
+\\140\006\000\000\
+\\142\006\000\000\
+\\143\006\000\000\
+\\144\006\000\000\
+\\145\006\000\000\
+\\146\006\000\000\
+\\147\006\000\000\
+\\148\006\000\000\
+\\149\006\000\000\
+\\150\006\000\000\
+\\151\006\000\000\
+\\152\006\000\000\
+\\153\006\000\000\
+\\154\006\000\000\
+\\155\006\000\000\
+\\156\006\002\000\069\000\008\000\067\000\011\000\066\000\013\000\064\000\
+\\017\000\062\000\018\000\061\000\020\000\059\000\021\000\058\000\
+\\024\000\056\000\029\000\053\000\030\000\052\000\042\000\094\000\
+\\050\000\045\000\062\000\042\000\063\000\041\000\064\000\040\000\
+\\065\000\039\000\066\000\038\000\067\000\037\000\068\000\036\000\
+\\072\000\035\000\074\000\034\000\000\000\
+\\157\006\000\000\
+\\158\006\000\000\
+\\159\006\000\000\
+\\160\006\002\000\069\000\006\000\068\000\008\000\067\000\011\000\066\000\
+\\012\000\065\000\013\000\064\000\015\000\063\000\017\000\062\000\
+\\018\000\061\000\019\000\060\000\020\000\059\000\021\000\058\000\
+\\023\000\057\000\024\000\056\000\026\000\055\000\027\000\054\000\
+\\029\000\053\000\030\000\052\000\033\000\051\000\034\000\050\000\
+\\036\000\049\000\038\000\048\000\042\000\006\001\046\000\047\000\
+\\049\000\046\000\050\000\045\000\055\000\044\000\058\000\043\000\
+\\062\000\042\000\063\000\041\000\064\000\040\000\065\000\039\000\
+\\066\000\038\000\067\000\037\000\068\000\036\000\072\000\035\000\
+\\074\000\034\000\077\000\033\000\078\000\032\000\079\000\031\000\
+\\080\000\030\000\081\000\029\000\082\000\028\000\083\000\027\000\
+\\084\000\026\000\085\000\025\000\086\000\024\000\087\000\023\000\000\000\
+\\160\006\002\000\069\000\006\000\068\000\008\000\067\000\011\000\066\000\
+\\012\000\065\000\013\000\064\000\015\000\063\000\017\000\062\000\
+\\018\000\061\000\019\000\060\000\020\000\059\000\021\000\058\000\
+\\023\000\057\000\024\000\056\000\026\000\055\000\027\000\054\000\
+\\029\000\053\000\030\000\052\000\033\000\051\000\034\000\050\000\
+\\036\000\049\000\038\000\048\000\046\000\047\000\049\000\046\000\
+\\050\000\045\000\055\000\044\000\058\000\043\000\062\000\042\000\
 \\063\000\041\000\064\000\040\000\065\000\039\000\066\000\038\000\
 \\067\000\037\000\068\000\036\000\072\000\035\000\074\000\034\000\
 \\077\000\033\000\078\000\032\000\079\000\031\000\080\000\030\000\
 \\081\000\029\000\082\000\028\000\083\000\027\000\084\000\026\000\
 \\085\000\025\000\086\000\024\000\087\000\023\000\000\000\
-\\227\004\002\000\068\000\006\000\067\000\008\000\066\000\011\000\065\000\
-\\012\000\064\000\013\000\063\000\015\000\062\000\017\000\061\000\
-\\018\000\060\000\019\000\059\000\020\000\058\000\021\000\057\000\
-\\023\000\056\000\024\000\055\000\026\000\054\000\027\000\053\000\
-\\029\000\052\000\030\000\051\000\033\000\050\000\034\000\049\000\
-\\036\000\048\000\038\000\047\000\046\000\046\000\049\000\045\000\
-\\050\000\044\000\055\000\043\000\062\000\042\000\063\000\041\000\
-\\064\000\040\000\065\000\039\000\066\000\038\000\067\000\037\000\
-\\068\000\036\000\072\000\035\000\074\000\034\000\077\000\033\000\
-\\078\000\032\000\079\000\031\000\080\000\030\000\081\000\029\000\
-\\082\000\028\000\083\000\027\000\084\000\026\000\085\000\025\000\
-\\086\000\024\000\087\000\023\000\000\000\
-\\228\004\000\000\
-\\229\004\000\000\
-\\230\004\000\000\
-\\231\004\042\000\006\000\060\000\005\000\000\000\
-\\232\004\042\000\006\000\060\000\005\000\000\000\
-\\233\004\000\000\
-\\234\004\060\000\005\000\000\000\
-\\235\004\000\000\
+\\161\006\000\000\
+\\162\006\000\000\
+\\163\006\000\000\
+\\164\006\042\000\006\000\060\000\005\000\000\000\
+\\165\006\042\000\006\000\060\000\005\000\000\000\
+\\166\006\000\000\
+\\167\006\060\000\005\000\000\000\
+\\168\006\000\000\
 \"
 val actionRowNumbers =
-"\095\002\094\002\090\002\239\001\
-\\098\002\097\002\093\002\088\002\
-\\029\001\024\001\085\002\025\000\
-\\006\001\005\001\003\001\163\000\
-\\214\000\232\000\220\000\216\000\
-\\231\000\207\000\206\000\001\000\
-\\194\000\193\000\195\000\192\000\
-\\191\000\190\000\189\000\188\000\
-\\180\000\181\000\182\000\172\001\
-\\172\001\180\000\230\000\229\000\
-\\043\000\245\000\229\000\171\000\
-\\215\000\002\001\245\000\033\000\
-\\034\000\049\000\172\001\054\000\
-\\034\000\180\000\130\000\132\000\
-\\023\001\023\001\068\001\068\001\
-\\034\000\051\000\054\000\229\000\
-\\076\000\034\000\172\001\241\001\
-\\238\001\166\000\180\000\181\000\
-\\055\000\077\000\182\000\172\001\
-\\172\001\180\000\230\000\229\000\
-\\229\000\243\001\229\000\172\001\
-\\132\000\068\001\068\001\229\000\
-\\229\000\076\000\025\001\089\002\
-\\089\002\167\001\034\000\054\000\
-\\034\000\004\001\131\000\044\001\
-\\203\001\211\000\045\001\133\000\
-\\212\000\046\001\078\000\213\000\
-\\171\001\183\000\036\001\173\001\
-\\210\000\187\000\037\001\048\001\
-\\132\000\069\000\226\000\132\000\
-\\180\000\182\000\229\000\229\000\
-\\229\000\247\000\244\000\099\000\
-\\042\001\132\000\236\000\200\000\
-\\199\000\198\000\202\000\201\000\
-\\105\000\001\001\167\000\104\000\
-\\134\000\028\000\027\000\103\000\
-\\129\000\128\000\100\000\024\000\
-\\082\000\083\000\237\000\020\000\
-\\050\000\030\000\146\001\144\001\
-\\031\001\115\001\117\001\126\001\
-\\054\000\114\001\143\001\126\001\
-\\053\000\050\000\130\000\035\001\
-\\031\000\052\000\011\001\047\001\
-\\066\001\233\000\060\001\203\000\
-\\064\001\205\000\204\000\026\001\
-\\021\001\044\000\027\001\045\000\
-\\132\000\067\001\197\000\196\000\
-\\132\000\023\000\054\000\080\001\
-\\135\000\078\001\075\001\033\001\
-\\032\000\019\001\015\001\043\001\
-\\132\000\183\000\062\001\062\001\
-\\094\001\209\000\208\000\022\000\
-\\183\000\062\001\242\001\056\000\
-\\173\000\004\002\206\001\005\002\
-\\071\002\248\001\136\000\184\000\
-\\185\000\008\002\207\001\007\002\
-\\212\001\164\000\222\000\004\000\
-\\239\001\209\001\077\000\006\002\
-\\079\000\253\001\183\000\254\001\
-\\009\002\132\000\070\000\132\000\
-\\002\002\132\000\250\001\132\000\
-\\252\001\015\002\132\000\132\000\
-\\251\001\003\002\132\000\017\002\
-\\017\002\183\000\045\002\086\002\
-\\091\002\089\002\087\002\185\000\
-\\157\001\005\000\155\001\153\001\
-\\007\001\159\001\166\001\167\001\
-\\009\001\010\001\008\001\221\000\
-\\217\000\137\000\077\000\077\000\
-\\077\000\240\001\085\001\084\000\
-\\176\001\071\000\185\000\072\000\
-\\109\000\080\000\132\000\132\000\
-\\132\000\034\000\240\000\102\001\
-\\234\000\172\000\000\001\167\001\
-\\034\000\239\000\034\000\034\000\
-\\243\000\241\000\238\000\034\000\
-\\032\001\047\000\050\000\054\000\
-\\034\000\167\001\054\000\145\001\
-\\128\001\125\001\101\000\148\001\
-\\106\000\142\001\139\001\138\000\
-\\026\000\132\001\102\000\029\000\
-\\085\000\086\000\119\001\070\001\
-\\116\001\034\000\065\001\180\000\
-\\063\001\028\001\023\001\034\000\
-\\059\001\058\001\034\000\034\001\
-\\034\000\076\001\054\000\073\001\
-\\054\000\034\000\017\001\054\000\
-\\103\001\095\001\039\001\172\001\
-\\038\001\088\001\227\000\172\001\
-\\054\000\096\001\073\000\249\001\
-\\184\000\185\000\096\002\139\000\
-\\077\000\068\002\077\000\181\000\
-\\180\000\246\001\140\000\244\001\
-\\165\000\141\000\218\000\002\000\
-\\058\000\018\002\019\002\184\000\
-\\035\000\087\000\211\001\240\001\
-\\036\002\074\000\185\000\075\000\
-\\104\001\110\000\014\002\013\002\
-\\105\001\000\002\172\001\255\001\
-\\046\002\039\002\228\000\172\001\
-\\092\002\158\001\167\001\167\001\
-\\107\000\165\001\111\000\088\000\
-\\089\000\048\000\142\000\201\001\
-\\215\001\009\000\168\000\090\000\
-\\112\000\081\001\167\001\172\001\
-\\174\001\187\000\185\000\057\001\
-\\187\000\077\000\240\001\101\001\
-\\113\000\101\001\246\000\114\000\
-\\229\000\167\001\108\000\139\001\
-\\253\000\172\000\138\001\255\000\
-\\250\000\251\000\248\000\013\001\
-\\150\001\036\000\037\000\072\001\
-\\147\001\149\001\054\000\122\001\
-\\118\001\141\001\054\000\121\001\
-\\054\000\054\000\124\001\123\001\
-\\120\001\016\001\038\000\039\000\
-\\021\000\079\001\077\001\074\001\
-\\020\001\018\001\113\001\229\000\
-\\090\001\229\000\061\001\093\001\
-\\132\000\185\000\092\001\014\001\
-\\086\001\229\000\023\001\247\001\
-\\245\001\180\000\059\002\015\000\
-\\202\001\069\002\014\000\169\000\
-\\070\002\028\002\027\002\184\000\
-\\185\000\185\000\208\001\143\000\
-\\172\001\223\000\210\001\213\001\
-\\091\000\115\000\032\002\167\001\
-\\172\001\185\000\012\002\187\000\
-\\116\000\229\000\167\001\058\002\
-\\229\000\016\002\041\002\229\000\
-\\044\002\132\000\185\000\043\002\
-\\183\000\156\001\154\001\160\001\
-\\167\001\168\001\167\001\161\001\
-\\190\001\006\000\117\000\081\000\
-\\185\001\224\000\003\000\023\001\
-\\048\000\023\001\048\000\217\001\
-\\181\000\059\000\204\001\077\000\
-\\084\001\083\001\175\001\144\000\
-\\118\000\145\000\092\000\119\000\
-\\120\000\167\001\146\000\172\001\
-\\130\000\100\001\235\000\254\000\
-\\252\000\034\000\151\001\152\001\
-\\069\001\050\000\127\001\137\001\
-\\054\000\136\001\130\001\131\001\
-\\129\001\030\001\242\000\034\000\
-\\110\001\229\000\130\000\093\001\
-\\089\001\101\001\040\001\093\001\
-\\040\000\062\002\063\002\180\000\
-\\061\000\072\002\062\000\180\000\
-\\025\002\024\002\219\000\022\002\
-\\021\002\180\000\185\000\121\000\
-\\077\000\035\002\034\002\147\000\
-\\122\000\172\001\130\000\031\002\
-\\055\002\229\000\130\000\044\002\
-\\040\002\101\001\001\002\047\002\
-\\164\001\169\001\170\001\193\001\
-\\180\000\077\000\077\000\022\001\
-\\186\000\041\000\177\001\093\000\
-\\046\000\191\001\216\001\218\001\
-\\172\001\148\000\077\000\094\000\
-\\082\001\130\000\167\001\174\000\
-\\123\000\077\000\172\001\149\000\
-\\175\000\185\000\109\001\249\000\
-\\071\001\134\001\127\000\140\001\
-\\133\001\012\001\112\001\113\001\
-\\091\001\099\001\087\001\041\001\
-\\060\002\061\002\064\002\172\001\
-\\073\002\172\001\026\002\184\000\
-\\185\000\214\001\150\000\077\000\
-\\095\000\033\002\130\000\167\001\
-\\185\000\054\002\029\002\229\000\
-\\057\002\058\002\042\002\050\002\
-\\037\002\229\000\162\001\171\000\
-\\192\001\007\000\182\001\195\001\
-\\179\001\194\001\096\000\097\000\
-\\225\000\184\001\077\000\077\000\
-\\188\001\048\000\185\000\048\000\
-\\151\000\205\001\056\001\055\001\
-\\052\001\077\000\098\000\185\000\
-\\176\000\051\001\109\001\107\001\
-\\229\000\135\001\111\001\097\001\
-\\229\000\185\000\185\000\023\002\
-\\020\002\167\001\078\002\016\000\
-\\170\000\124\000\011\002\010\002\
-\\054\002\052\002\229\000\030\002\
-\\056\002\048\002\229\000\044\002\
-\\163\001\196\001\064\000\186\001\
-\\187\001\181\001\178\001\042\000\
-\\152\000\227\001\011\000\125\000\
-\\048\000\153\000\077\000\154\000\
-\\126\000\155\000\049\001\106\001\
-\\108\001\098\001\156\000\157\000\
-\\224\001\080\002\182\000\065\000\
-\\077\000\051\002\053\002\049\002\
-\\038\002\197\001\172\001\189\001\
-\\167\001\230\001\182\000\077\000\
-\\077\000\228\001\048\000\158\000\
-\\177\000\077\000\178\000\167\001\
-\\167\001\222\001\057\000\079\002\
-\\081\002\172\001\077\002\185\000\
-\\010\000\229\001\232\001\012\000\
-\\183\001\231\001\180\001\225\001\
-\\048\000\054\001\159\000\050\001\
-\\017\000\018\000\223\001\185\000\
-\\160\000\219\001\220\001\060\000\
-\\233\001\067\000\226\001\179\000\
-\\065\002\066\002\061\000\074\002\
-\\075\002\063\000\161\000\167\001\
-\\221\001\234\001\172\001\053\001\
-\\067\002\076\002\167\001\008\000\
-\\185\000\019\000\198\001\199\001\
-\\064\000\162\000\082\002\083\002\
-\\066\000\200\001\167\001\084\002\
-\\013\000\235\001\236\001\068\000\
-\\237\001\000\000"
+"\236\002\235\002\231\002\101\002\
+\\239\002\238\002\234\002\229\002\
+\\091\001\086\001\226\002\036\000\
+\\067\001\066\001\064\001\232\000\
+\\021\001\037\001\027\001\023\001\
+\\036\001\015\001\014\001\001\000\
+\\002\001\001\001\003\001\000\001\
+\\255\000\254\000\253\000\252\000\
+\\141\000\247\000\246\000\232\001\
+\\232\001\246\000\035\001\034\001\
+\\090\000\246\000\050\001\034\001\
+\\240\000\022\001\063\001\050\001\
+\\044\000\045\000\082\000\232\001\
+\\087\000\045\000\246\000\144\000\
+\\146\000\085\001\085\001\127\001\
+\\127\001\045\000\084\000\087\000\
+\\034\001\098\000\045\000\232\001\
+\\102\002\099\002\235\000\246\000\
+\\247\000\088\000\071\000\246\000\
+\\232\001\232\001\246\000\035\001\
+\\034\001\034\001\104\002\034\001\
+\\232\001\146\000\127\001\127\001\
+\\034\001\034\001\098\000\087\001\
+\\230\002\230\002\227\001\045\000\
+\\087\000\045\000\065\001\145\000\
+\\106\001\029\002\019\001\027\002\
+\\107\001\046\002\020\001\108\001\
+\\099\000\231\001\248\000\098\001\
+\\233\001\018\001\251\000\099\001\
+\\110\001\146\000\091\000\031\001\
+\\146\000\246\000\034\001\034\001\
+\\078\001\052\001\049\001\113\000\
+\\104\001\146\000\041\001\008\001\
+\\007\001\006\001\010\001\009\001\
+\\119\000\062\001\236\000\118\000\
+\\147\000\039\000\038\000\117\000\
+\\143\000\142\000\114\000\035\000\
+\\100\000\101\000\042\001\031\000\
+\\083\000\041\000\205\001\203\001\
+\\093\001\174\001\176\001\185\001\
+\\087\000\173\001\202\001\185\001\
+\\086\000\083\000\144\000\097\001\
+\\042\000\085\000\072\001\109\001\
+\\125\001\038\001\119\001\011\001\
+\\123\001\013\001\012\001\088\001\
+\\083\001\066\000\089\001\067\000\
+\\146\000\126\001\005\001\004\001\
+\\146\000\034\000\087\000\139\001\
+\\148\000\137\001\134\001\095\001\
+\\043\000\081\001\076\001\105\001\
+\\146\000\248\000\121\001\121\001\
+\\153\001\017\001\016\001\033\000\
+\\248\000\121\001\103\002\089\000\
+\\242\000\121\002\031\002\122\002\
+\\046\002\109\002\149\000\249\000\
+\\250\000\039\002\124\002\042\002\
+\\037\002\034\002\233\000\029\001\
+\\003\000\101\002\099\000\032\002\
+\\071\000\085\001\123\002\046\002\
+\\114\002\248\000\115\002\125\002\
+\\146\000\092\000\146\000\119\002\
+\\146\000\111\002\146\000\113\002\
+\\131\002\146\000\146\000\112\002\
+\\120\002\146\000\133\002\133\002\
+\\248\000\160\002\227\002\232\002\
+\\230\002\228\002\250\000\216\001\
+\\004\000\214\001\212\001\068\001\
+\\218\001\249\000\226\001\227\001\
+\\070\001\071\001\069\001\028\001\
+\\024\001\150\000\071\000\071\000\
+\\151\000\045\002\152\000\077\002\
+\\100\002\030\002\144\001\102\000\
+\\236\001\093\000\250\000\094\000\
+\\123\000\146\000\146\000\246\000\
+\\045\000\045\001\161\001\039\001\
+\\241\000\061\001\227\001\045\000\
+\\044\001\045\000\045\000\048\001\
+\\046\001\043\001\045\000\094\001\
+\\070\000\083\000\087\000\045\000\
+\\227\001\087\000\204\001\187\001\
+\\184\001\115\000\207\001\120\000\
+\\201\001\198\001\153\000\037\000\
+\\191\001\116\000\040\000\103\000\
+\\104\000\178\001\129\001\175\001\
+\\045\000\124\001\122\001\090\001\
+\\085\001\045\000\118\001\117\001\
+\\045\000\096\001\045\000\135\001\
+\\087\000\132\001\087\000\045\000\
+\\079\001\087\000\162\001\154\001\
+\\101\001\232\001\100\001\147\001\
+\\032\001\232\001\087\000\155\001\
+\\095\000\110\002\249\000\250\000\
+\\237\002\154\000\072\000\195\002\
+\\246\000\107\002\155\000\105\002\
+\\234\000\156\000\025\001\002\000\
+\\056\000\038\002\238\001\085\001\
+\\084\001\085\001\249\000\046\000\
+\\225\000\105\000\068\000\124\000\
+\\151\002\096\000\250\000\097\000\
+\\163\001\125\000\130\002\129\002\
+\\164\001\117\002\232\001\116\002\
+\\161\002\154\002\033\001\232\001\
+\\233\002\217\001\227\001\227\001\
+\\221\001\121\000\225\001\126\000\
+\\106\000\107\000\080\000\157\000\
+\\025\002\080\000\073\000\078\002\
+\\108\000\127\000\128\000\158\000\
+\\071\000\140\001\227\001\232\001\
+\\234\001\251\000\250\000\116\001\
+\\251\000\071\000\160\001\129\000\
+\\051\001\130\000\034\001\227\001\
+\\122\000\198\001\058\001\241\000\
+\\197\001\060\001\055\001\056\001\
+\\053\001\074\001\209\001\047\000\
+\\048\000\131\001\206\001\208\001\
+\\087\000\181\001\177\001\200\001\
+\\087\000\180\001\087\000\087\000\
+\\183\001\182\001\179\001\077\001\
+\\049\000\050\000\032\000\138\001\
+\\136\001\133\001\082\001\080\001\
+\\172\001\034\001\149\001\034\001\
+\\120\001\152\001\146\000\250\000\
+\\151\001\075\001\145\001\034\001\
+\\085\001\108\002\106\002\246\000\
+\\174\002\020\000\026\002\099\000\
+\\192\002\074\000\247\000\142\002\
+\\141\002\249\000\250\000\250\000\
+\\041\002\159\000\246\000\249\000\
+\\246\000\034\001\034\001\232\001\
+\\034\001\034\001\051\000\109\000\
+\\244\001\242\001\110\000\070\000\
+\\099\000\069\000\030\001\033\002\
+\\071\000\036\002\071\000\075\000\
+\\147\002\227\001\232\001\250\000\
+\\128\002\251\000\131\000\034\001\
+\\034\001\227\001\173\002\034\001\
+\\132\002\156\002\034\001\159\002\
+\\146\000\250\000\158\002\248\000\
+\\215\001\213\001\219\001\227\001\
+\\228\001\227\001\220\001\002\002\
+\\132\000\005\000\070\000\099\000\
+\\080\000\004\002\044\002\010\000\
+\\237\000\099\000\001\002\071\000\
+\\071\000\081\000\160\000\143\001\
+\\142\001\235\001\161\000\133\000\
+\\162\000\134\000\227\001\232\001\
+\\144\000\159\001\040\001\059\001\
+\\057\001\045\000\210\001\211\001\
+\\128\001\083\000\186\001\196\001\
+\\087\000\195\001\189\001\190\001\
+\\188\001\092\001\047\001\045\000\
+\\169\001\034\001\144\000\152\001\
+\\148\001\160\001\102\001\152\001\
+\\052\000\177\002\178\002\246\000\
+\\057\000\226\000\193\002\019\000\
+\\238\000\099\000\194\002\246\000\
+\\139\002\138\002\026\001\136\002\
+\\135\002\246\000\028\002\046\002\
+\\028\002\144\000\144\000\250\000\
+\\144\000\144\000\237\001\071\000\
+\\071\000\239\001\243\001\240\001\
+\\135\000\222\000\079\000\040\002\
+\\053\000\210\002\021\000\239\000\
+\\099\000\150\002\149\002\163\000\
+\\136\000\232\001\144\000\144\000\
+\\146\002\170\002\034\001\144\000\
+\\159\002\155\002\160\001\118\002\
+\\162\002\224\001\229\001\230\001\
+\\076\000\076\000\006\002\141\000\
+\\137\000\223\000\003\002\048\002\
+\\247\000\058\000\227\000\111\000\
+\\112\000\075\002\138\000\014\000\
+\\070\000\099\000\081\000\141\001\
+\\144\000\227\001\243\000\232\001\
+\\164\000\250\000\168\001\054\001\
+\\130\001\193\001\140\000\199\001\
+\\192\001\073\001\171\001\172\001\
+\\150\001\158\001\146\001\103\001\
+\\175\002\176\002\180\002\246\000\
+\\249\000\246\000\034\001\034\001\
+\\232\001\034\001\034\001\072\000\
+\\196\002\060\000\228\000\140\002\
+\\249\000\250\000\043\002\165\000\
+\\166\000\167\000\168\000\169\000\
+\\170\000\171\000\172\000\248\001\
+\\245\001\071\000\079\000\054\000\
+\\035\002\212\002\246\000\062\000\
+\\229\000\148\002\144\000\227\001\
+\\250\000\169\002\146\002\143\002\
+\\034\001\172\002\173\002\157\002\
+\\165\002\152\002\034\001\222\001\
+\\240\000\006\000\249\001\008\002\
+\\099\000\246\001\007\002\005\002\
+\\076\000\080\000\047\002\050\002\
+\\246\000\249\000\246\000\034\001\
+\\034\001\232\001\034\001\034\001\
+\\073\000\255\001\000\002\077\000\
+\\077\000\080\002\246\000\139\000\
+\\224\000\076\002\115\001\114\001\
+\\113\001\250\000\244\000\168\001\
+\\166\001\034\001\194\001\170\001\
+\\156\001\034\001\028\002\046\002\
+\\028\002\144\000\144\000\250\000\
+\\144\000\144\000\179\002\040\002\
+\\198\002\246\000\249\000\246\000\
+\\034\001\034\001\232\001\034\001\
+\\034\001\074\000\137\002\134\002\
+\\246\000\078\000\246\000\034\001\
+\\034\001\227\001\034\001\034\001\
+\\252\001\251\001\241\001\211\002\
+\\214\002\246\000\249\000\246\000\
+\\034\001\034\001\232\001\034\001\
+\\034\001\075\000\127\002\126\002\
+\\169\002\167\002\034\001\144\002\
+\\145\002\171\002\163\002\034\001\
+\\159\002\223\001\011\002\064\000\
+\\230\000\253\001\010\002\009\002\
+\\132\000\028\002\046\002\028\002\
+\\144\000\144\000\250\000\144\000\
+\\144\000\049\002\040\002\082\002\
+\\015\000\250\001\099\000\081\002\
+\\247\001\079\002\077\000\081\000\
+\\173\000\111\001\165\001\167\001\
+\\157\001\174\000\175\000\176\000\
+\\177\000\178\000\179\000\180\000\
+\\181\000\028\002\046\002\028\002\
+\\144\000\144\000\250\000\144\000\
+\\144\000\197\002\040\002\073\002\
+\\069\002\072\002\073\002\144\000\
+\\144\000\071\002\144\000\144\000\
+\\028\002\046\002\028\002\144\000\
+\\144\000\250\000\144\000\144\000\
+\\213\002\040\002\166\002\168\002\
+\\164\002\153\002\013\002\246\000\
+\\249\000\246\000\034\001\034\001\
+\\232\001\034\001\034\001\076\000\
+\\182\000\183\000\184\000\185\000\
+\\186\000\187\000\188\000\189\000\
+\\085\002\065\000\231\000\084\002\
+\\254\001\083\002\138\000\245\000\
+\\246\000\078\000\246\000\034\001\
+\\034\001\227\001\034\001\034\001\
+\\190\000\191\000\192\000\193\000\
+\\194\000\195\000\196\000\197\000\
+\\067\002\055\000\074\002\068\002\
+\\071\002\071\002\066\002\071\002\
+\\071\002\198\000\199\000\200\000\
+\\201\000\202\000\203\000\204\000\
+\\205\000\028\002\046\002\028\002\
+\\144\000\144\000\250\000\144\000\
+\\144\000\040\002\012\002\246\000\
+\\078\000\246\000\034\001\034\001\
+\\227\001\034\001\034\001\087\002\
+\\246\000\249\000\246\000\034\001\
+\\034\001\232\001\034\001\034\001\
+\\077\000\112\001\023\000\188\002\
+\\022\000\023\000\144\000\144\000\
+\\024\000\144\000\144\000\246\000\
+\\078\000\246\000\034\001\034\001\
+\\227\001\034\001\034\001\070\002\
+\\064\002\062\002\063\002\065\002\
+\\246\000\078\000\246\000\034\001\
+\\034\001\227\001\034\001\034\001\
+\\206\000\207\000\208\000\209\000\
+\\210\000\211\000\212\000\213\000\
+\\012\000\058\002\011\000\012\000\
+\\144\000\144\000\013\000\144\000\
+\\144\000\028\002\046\002\028\002\
+\\144\000\144\000\250\000\144\000\
+\\144\000\086\002\040\002\186\002\
+\\189\002\057\000\191\002\187\002\
+\\024\000\024\000\185\002\024\000\
+\\024\000\026\000\206\002\025\000\
+\\026\000\144\000\144\000\027\000\
+\\144\000\144\000\029\000\222\002\
+\\028\000\029\000\144\000\144\000\
+\\030\000\144\000\144\000\246\000\
+\\078\000\246\000\034\001\034\001\
+\\227\001\034\001\034\001\056\002\
+\\059\002\059\000\061\002\057\002\
+\\013\000\013\000\055\002\013\000\
+\\013\000\214\000\215\000\216\000\
+\\217\000\218\000\219\000\220\000\
+\\221\000\190\002\183\002\181\002\
+\\182\002\184\002\204\002\207\002\
+\\061\000\209\002\205\002\027\000\
+\\027\000\203\002\027\000\027\000\
+\\220\002\223\002\062\000\225\002\
+\\221\002\030\000\030\000\219\002\
+\\030\000\030\000\008\000\007\000\
+\\021\002\008\000\144\000\144\000\
+\\009\000\144\000\144\000\060\002\
+\\053\002\051\002\052\002\054\002\
+\\246\000\078\000\246\000\034\001\
+\\034\001\227\001\034\001\034\001\
+\\208\002\201\002\199\002\200\002\
+\\202\002\224\002\217\002\215\002\
+\\216\002\218\002\019\002\022\002\
+\\063\000\024\002\020\002\009\000\
+\\009\000\018\002\009\000\009\000\
+\\017\000\095\002\016\000\017\000\
+\\144\000\144\000\018\000\144\000\
+\\144\000\023\002\016\002\014\002\
+\\015\002\017\002\093\002\096\002\
+\\065\000\098\002\094\002\018\000\
+\\018\000\092\002\018\000\018\000\
+\\097\002\090\002\088\002\089\002\
+\\091\002\000\000"
 val gotoT =
 "\
-\\156\000\089\003\157\000\002\000\158\000\001\000\000\000\
-\\158\000\005\000\000\000\
-\\001\000\020\000\005\000\019\000\008\000\018\000\011\000\017\000\
-\\012\000\016\000\014\000\015\000\018\000\014\000\027\000\013\000\
-\\028\000\012\000\029\000\011\000\034\000\010\000\036\000\009\000\
-\\037\000\008\000\153\000\007\000\154\000\006\000\000\000\
-\\112\000\069\000\113\000\068\000\114\000\067\000\000\000\
+\\165\000\205\004\166\000\002\000\167\000\001\000\000\000\
+\\167\000\005\000\000\000\
+\\001\000\020\000\005\000\019\000\008\000\018\000\010\000\017\000\
+\\011\000\016\000\013\000\015\000\016\000\014\000\025\000\013\000\
+\\026\000\012\000\027\000\011\000\032\000\010\000\034\000\009\000\
+\\035\000\008\000\162\000\007\000\163\000\006\000\000\000\
+\\120\000\070\000\121\000\069\000\122\000\068\000\000\000\
 \\000\000\
-\\158\000\005\000\000\000\
-\\000\000\
-\\000\000\
+\\167\000\005\000\000\000\
 \\000\000\
 \\000\000\
-\\034\000\090\000\036\000\009\000\037\000\008\000\000\000\
 \\000\000\
 \\000\000\
-\\001\000\020\000\005\000\019\000\008\000\018\000\011\000\017\000\
-\\012\000\016\000\014\000\015\000\018\000\097\000\000\000\
+\\032\000\091\000\034\000\009\000\035\000\008\000\000\000\
 \\000\000\
 \\000\000\
+\\001\000\020\000\005\000\019\000\008\000\018\000\010\000\017\000\
+\\011\000\016\000\013\000\015\000\016\000\098\000\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
@@ -16105,160 +16534,157 @@ val gotoT =
 \\000\000\
 \\000\000\
 \\000\000\
-\\008\000\100\000\090\000\099\000\000\000\
-\\009\000\103\000\099\000\102\000\000\000\
-\\010\000\106\000\106\000\105\000\000\000\
-\\007\000\111\000\050\000\110\000\085\000\109\000\086\000\108\000\000\000\
-\\007\000\111\000\050\000\114\000\085\000\109\000\086\000\108\000\000\000\
-\\008\000\115\000\000\000\
-\\001\000\117\000\017\000\116\000\000\000\
-\\017\000\119\000\000\000\
 \\000\000\
-\\001\000\020\000\005\000\019\000\008\000\018\000\011\000\017\000\
-\\012\000\016\000\014\000\015\000\018\000\014\000\019\000\127\000\
-\\020\000\126\000\027\000\013\000\028\000\012\000\029\000\125\000\000\000\
-\\017\000\129\000\059\000\128\000\000\000\
+\\000\000\
+\\008\000\101\000\090\000\100\000\000\000\
+\\009\000\105\000\102\000\104\000\000\000\
+\\008\000\108\000\112\000\107\000\000\000\
+\\007\000\112\000\048\000\111\000\083\000\110\000\084\000\109\000\000\000\
+\\007\000\112\000\048\000\115\000\083\000\110\000\084\000\109\000\000\000\
+\\008\000\116\000\000\000\
+\\001\000\118\000\015\000\117\000\000\000\
+\\015\000\120\000\000\000\
+\\000\000\
+\\008\000\018\000\013\000\124\000\000\000\
+\\001\000\020\000\005\000\019\000\008\000\018\000\010\000\017\000\
+\\011\000\016\000\013\000\015\000\016\000\014\000\017\000\127\000\
+\\018\000\126\000\025\000\013\000\026\000\012\000\027\000\125\000\000\000\
+\\015\000\129\000\057\000\128\000\000\000\
 \\003\000\130\000\000\000\
 \\000\000\
 \\001\000\020\000\003\000\140\000\005\000\139\000\008\000\018\000\
-\\011\000\017\000\012\000\016\000\014\000\015\000\018\000\138\000\
-\\024\000\137\000\025\000\136\000\000\000\
-\\001\000\020\000\005\000\019\000\008\000\018\000\011\000\017\000\
-\\012\000\016\000\014\000\015\000\018\000\014\000\019\000\146\000\
-\\020\000\126\000\027\000\013\000\028\000\012\000\029\000\125\000\000\000\
-\\001\000\020\000\005\000\019\000\008\000\018\000\011\000\017\000\
-\\012\000\016\000\014\000\015\000\018\000\014\000\021\000\149\000\
-\\023\000\148\000\027\000\013\000\028\000\012\000\029\000\147\000\000\000\
-\\001\000\020\000\005\000\019\000\008\000\018\000\011\000\017\000\
-\\012\000\016\000\014\000\015\000\018\000\014\000\027\000\013\000\
-\\028\000\012\000\029\000\151\000\000\000\
-\\001\000\158\000\005\000\019\000\007\000\111\000\008\000\018\000\
-\\012\000\157\000\014\000\015\000\042\000\156\000\063\000\155\000\
-\\073\000\154\000\074\000\153\000\086\000\152\000\000\000\
-\\007\000\111\000\050\000\167\000\085\000\109\000\086\000\108\000\000\000\
-\\001\000\158\000\005\000\019\000\008\000\018\000\012\000\157\000\
-\\014\000\015\000\063\000\155\000\073\000\154\000\074\000\168\000\000\000\
-\\001\000\020\000\005\000\019\000\008\000\018\000\011\000\017\000\
-\\012\000\016\000\014\000\015\000\018\000\014\000\027\000\013\000\
-\\028\000\012\000\029\000\170\000\000\000\
-\\008\000\018\000\014\000\172\000\040\000\171\000\000\000\
-\\005\000\019\000\008\000\018\000\011\000\173\000\012\000\016\000\
-\\014\000\015\000\000\000\
-\\004\000\176\000\005\000\175\000\039\000\174\000\000\000\
-\\033\000\181\000\035\000\180\000\036\000\179\000\037\000\008\000\000\000\
-\\033\000\183\000\035\000\180\000\036\000\179\000\037\000\008\000\000\000\
-\\002\000\185\000\041\000\184\000\000\000\
-\\002\000\185\000\041\000\188\000\000\000\
-\\001\000\020\000\005\000\019\000\008\000\018\000\011\000\017\000\
-\\012\000\016\000\014\000\015\000\018\000\014\000\027\000\013\000\
-\\028\000\012\000\029\000\189\000\000\000\
-\\001\000\158\000\005\000\019\000\007\000\111\000\008\000\018\000\
-\\012\000\157\000\014\000\015\000\044\000\195\000\046\000\194\000\
-\\048\000\193\000\049\000\192\000\063\000\155\000\073\000\154\000\
-\\074\000\191\000\086\000\190\000\000\000\
-\\001\000\158\000\005\000\019\000\008\000\018\000\012\000\157\000\
-\\014\000\015\000\030\000\198\000\032\000\197\000\063\000\155\000\
-\\073\000\154\000\074\000\196\000\000\000\
-\\017\000\200\000\061\000\199\000\000\000\
-\\006\000\204\000\007\000\111\000\053\000\203\000\054\000\202\000\
-\\086\000\201\000\000\000\
-\\001\000\020\000\005\000\019\000\008\000\018\000\011\000\017\000\
-\\012\000\016\000\014\000\015\000\018\000\014\000\027\000\013\000\
-\\028\000\012\000\029\000\207\000\000\000\
-\\007\000\111\000\052\000\209\000\085\000\208\000\086\000\108\000\000\000\
+\\010\000\017\000\011\000\016\000\013\000\015\000\016\000\138\000\
+\\022\000\137\000\023\000\136\000\000\000\
+\\001\000\020\000\005\000\019\000\008\000\018\000\010\000\017\000\
+\\011\000\016\000\013\000\015\000\016\000\014\000\017\000\146\000\
+\\018\000\126\000\025\000\013\000\026\000\012\000\027\000\125\000\000\000\
+\\001\000\020\000\005\000\019\000\008\000\018\000\010\000\017\000\
+\\011\000\016\000\013\000\015\000\016\000\014\000\019\000\149\000\
+\\021\000\148\000\025\000\013\000\026\000\012\000\027\000\147\000\000\000\
+\\001\000\020\000\005\000\019\000\008\000\018\000\010\000\017\000\
+\\011\000\016\000\013\000\015\000\016\000\014\000\025\000\013\000\
+\\026\000\012\000\027\000\151\000\000\000\
+\\001\000\158\000\005\000\019\000\007\000\112\000\008\000\018\000\
+\\011\000\157\000\013\000\015\000\040\000\156\000\061\000\155\000\
+\\071\000\154\000\072\000\153\000\084\000\152\000\000\000\
+\\007\000\112\000\048\000\167\000\083\000\110\000\084\000\109\000\000\000\
+\\001\000\158\000\005\000\019\000\008\000\018\000\011\000\157\000\
+\\013\000\015\000\061\000\155\000\071\000\154\000\072\000\168\000\000\000\
+\\001\000\020\000\005\000\019\000\008\000\018\000\010\000\017\000\
+\\011\000\016\000\013\000\015\000\016\000\014\000\025\000\013\000\
+\\026\000\012\000\027\000\170\000\000\000\
+\\008\000\018\000\013\000\172\000\038\000\171\000\000\000\
+\\005\000\019\000\008\000\018\000\010\000\173\000\011\000\016\000\
+\\013\000\015\000\000\000\
+\\004\000\176\000\005\000\175\000\037\000\174\000\000\000\
+\\031\000\181\000\033\000\180\000\034\000\179\000\035\000\008\000\000\000\
+\\031\000\183\000\033\000\180\000\034\000\179\000\035\000\008\000\000\000\
+\\002\000\185\000\039\000\184\000\000\000\
+\\002\000\185\000\039\000\188\000\000\000\
+\\001\000\020\000\005\000\019\000\008\000\018\000\010\000\017\000\
+\\011\000\016\000\013\000\015\000\016\000\014\000\025\000\013\000\
+\\026\000\012\000\027\000\189\000\000\000\
+\\001\000\158\000\005\000\019\000\007\000\112\000\008\000\018\000\
+\\011\000\157\000\013\000\015\000\042\000\195\000\044\000\194\000\
+\\046\000\193\000\047\000\192\000\061\000\155\000\071\000\154\000\
+\\072\000\191\000\084\000\190\000\000\000\
+\\001\000\158\000\005\000\019\000\008\000\018\000\011\000\157\000\
+\\013\000\015\000\028\000\198\000\030\000\197\000\061\000\155\000\
+\\071\000\154\000\072\000\196\000\000\000\
+\\015\000\200\000\059\000\199\000\000\000\
+\\006\000\204\000\007\000\112\000\051\000\203\000\052\000\202\000\
+\\084\000\201\000\000\000\
+\\001\000\020\000\005\000\019\000\008\000\018\000\010\000\017\000\
+\\011\000\016\000\013\000\015\000\016\000\014\000\025\000\013\000\
+\\026\000\012\000\027\000\207\000\000\000\
+\\007\000\112\000\050\000\209\000\083\000\208\000\084\000\109\000\000\000\
 \\000\000\
-\\114\000\210\000\000\000\
+\\122\000\210\000\000\000\
 \\000\000\
-\\008\000\214\000\137\000\213\000\000\000\
-\\009\000\216\000\142\000\215\000\000\000\
-\\008\000\018\000\014\000\218\000\122\000\217\000\000\000\
-\\008\000\018\000\009\000\226\000\014\000\225\000\015\000\224\000\
-\\097\000\223\000\098\000\222\000\116\000\221\000\000\000\
-\\010\000\232\000\147\000\231\000\000\000\
-\\007\000\111\000\085\000\234\000\086\000\108\000\125\000\233\000\000\000\
-\\007\000\111\000\085\000\234\000\086\000\108\000\125\000\235\000\000\000\
-\\008\000\236\000\000\000\
-\\001\000\238\000\017\000\237\000\000\000\
-\\017\000\239\000\000\000\
-\\017\000\241\000\133\000\240\000\000\000\
+\\008\000\214\000\144\000\213\000\000\000\
+\\009\000\216\000\150\000\215\000\000\000\
+\\008\000\018\000\013\000\218\000\129\000\217\000\000\000\
+\\008\000\018\000\009\000\227\000\013\000\226\000\014\000\225\000\
+\\098\000\224\000\099\000\223\000\100\000\222\000\101\000\221\000\000\000\
+\\008\000\235\000\156\000\234\000\000\000\
+\\007\000\112\000\083\000\237\000\084\000\109\000\132\000\236\000\000\000\
+\\007\000\112\000\083\000\237\000\084\000\109\000\132\000\238\000\000\000\
+\\008\000\239\000\000\000\
+\\001\000\241\000\015\000\240\000\000\000\
+\\015\000\242\000\000\000\
+\\015\000\244\000\140\000\243\000\000\000\
 \\000\000\
-\\017\000\243\000\123\000\242\000\000\000\
-\\007\000\111\000\085\000\234\000\086\000\108\000\125\000\244\000\000\000\
-\\004\000\176\000\005\000\175\000\039\000\245\000\000\000\
-\\002\000\185\000\041\000\246\000\000\000\
-\\002\000\185\000\041\000\247\000\000\000\
-\\017\000\243\000\123\000\248\000\000\000\
-\\017\000\250\000\135\000\249\000\000\000\
-\\006\000\254\000\007\000\111\000\086\000\253\000\128\000\252\000\
-\\129\000\251\000\000\000\
-\\034\000\090\000\036\000\009\000\037\000\008\000\000\000\
-\\001\000\020\000\005\000\019\000\008\000\018\000\011\000\017\000\
-\\012\000\016\000\014\000\015\000\018\000\014\000\027\000\013\000\
-\\028\000\012\000\029\000\011\000\034\000\010\000\036\000\009\000\
-\\037\000\008\000\153\000\007\000\154\000\000\001\155\000\255\000\000\000\
-\\001\000\020\000\005\000\019\000\008\000\018\000\011\000\017\000\
-\\012\000\016\000\014\000\015\000\018\000\014\000\027\000\013\000\
-\\028\000\012\000\029\000\011\000\034\000\010\000\036\000\009\000\
-\\037\000\008\000\153\000\007\000\154\000\000\001\155\000\002\001\000\000\
-\\007\000\009\001\075\000\008\001\076\000\007\001\077\000\006\001\
-\\078\000\005\001\079\000\004\001\083\000\003\001\000\000\
-\\001\000\020\000\005\000\019\000\008\000\018\000\011\000\017\000\
-\\012\000\016\000\014\000\015\000\018\000\014\000\027\000\013\000\
-\\028\000\012\000\029\000\012\001\000\000\
-\\001\000\158\000\005\000\019\000\008\000\018\000\012\000\157\000\
-\\014\000\015\000\030\000\013\001\032\000\197\000\063\000\155\000\
-\\073\000\154\000\074\000\196\000\000\000\
-\\001\000\020\000\005\000\019\000\008\000\018\000\011\000\017\000\
-\\012\000\016\000\014\000\015\000\018\000\014\000\027\000\013\000\
-\\028\000\012\000\029\000\014\001\000\000\
+\\015\000\246\000\130\000\245\000\000\000\
+\\007\000\112\000\083\000\237\000\084\000\109\000\132\000\247\000\000\000\
+\\004\000\176\000\005\000\175\000\037\000\248\000\000\000\
+\\002\000\185\000\039\000\249\000\000\000\
+\\002\000\185\000\039\000\250\000\000\000\
+\\015\000\246\000\130\000\251\000\000\000\
+\\015\000\253\000\142\000\252\000\000\000\
+\\006\000\001\001\007\000\112\000\084\000\000\001\135\000\255\000\
+\\136\000\254\000\000\000\
+\\032\000\091\000\034\000\009\000\035\000\008\000\000\000\
+\\001\000\020\000\005\000\019\000\008\000\018\000\010\000\017\000\
+\\011\000\016\000\013\000\015\000\016\000\014\000\025\000\013\000\
+\\026\000\012\000\027\000\011\000\032\000\010\000\034\000\009\000\
+\\035\000\008\000\162\000\007\000\163\000\003\001\164\000\002\001\000\000\
+\\001\000\020\000\005\000\019\000\008\000\018\000\010\000\017\000\
+\\011\000\016\000\013\000\015\000\016\000\014\000\025\000\013\000\
+\\026\000\012\000\027\000\011\000\032\000\010\000\034\000\009\000\
+\\035\000\008\000\162\000\007\000\163\000\003\001\164\000\005\001\000\000\
+\\007\000\012\001\073\000\011\001\074\000\010\001\075\000\009\001\
+\\076\000\008\001\077\000\007\001\081\000\006\001\000\000\
+\\001\000\020\000\005\000\019\000\008\000\018\000\010\000\017\000\
+\\011\000\016\000\013\000\015\000\016\000\014\000\025\000\013\000\
+\\026\000\012\000\027\000\016\001\000\000\
+\\001\000\158\000\005\000\019\000\008\000\018\000\011\000\157\000\
+\\013\000\015\000\028\000\017\001\030\000\197\000\061\000\155\000\
+\\071\000\154\000\072\000\196\000\000\000\
+\\001\000\020\000\005\000\019\000\008\000\018\000\010\000\017\000\
+\\011\000\016\000\013\000\015\000\016\000\014\000\025\000\013\000\
+\\026\000\012\000\027\000\018\001\000\000\
 \\000\000\
-\\004\000\016\001\005\000\175\000\008\000\015\001\000\000\
+\\004\000\020\001\005\000\175\000\008\000\019\001\000\000\
 \\000\000\
-\\096\000\017\001\000\000\
+\\097\000\021\001\000\000\
 \\000\000\
+\\097\000\024\001\000\000\
 \\000\000\
-\\000\000\
-\\000\000\
-\\000\000\
-\\000\000\
+\\089\000\027\001\103\000\026\001\113\000\025\001\000\000\
 \\000\000\
 \\000\000\
-\\006\000\022\001\000\000\
+\\089\000\027\001\113\000\029\001\000\000\
+\\000\000\
+\\006\000\030\001\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
-\\007\000\024\001\087\000\023\001\000\000\
+\\007\000\032\001\085\000\031\001\000\000\
 \\000\000\
 \\000\000\
-\\004\000\025\001\005\000\175\000\000\000\
-\\000\000\
-\\000\000\
-\\004\000\027\001\005\000\175\000\000\000\
-\\008\000\028\001\000\000\
-\\010\000\029\001\000\000\
-\\017\000\030\001\000\000\
-\\017\000\031\001\000\000\
-\\017\000\032\001\000\000\
-\\000\000\
-\\000\000\
+\\004\000\033\001\005\000\175\000\000\000\
 \\000\000\
 \\000\000\
 \\004\000\035\001\005\000\175\000\000\000\
+\\008\000\036\001\000\000\
+\\015\000\037\001\000\000\
+\\015\000\038\001\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
+\\004\000\042\001\005\000\175\000\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
-\\071\000\038\001\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
+\\069\000\045\001\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
@@ -16266,221 +16692,223 @@ val gotoT =
 \\000\000\
 \\000\000\
 \\000\000\
-\\001\000\158\000\005\000\019\000\008\000\018\000\012\000\157\000\
-\\014\000\015\000\042\000\048\001\063\000\155\000\073\000\154\000\
-\\074\000\153\000\000\000\
 \\000\000\
-\\001\000\158\000\005\000\019\000\008\000\018\000\012\000\157\000\
-\\014\000\015\000\063\000\055\001\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
-\\001\000\158\000\005\000\019\000\008\000\018\000\012\000\157\000\
-\\014\000\015\000\063\000\155\000\064\000\058\001\065\000\057\001\
-\\073\000\154\000\074\000\056\001\000\000\
-\\001\000\158\000\005\000\019\000\008\000\018\000\012\000\157\000\
-\\014\000\015\000\063\000\155\000\073\000\154\000\074\000\059\001\000\000\
+\\001\000\158\000\005\000\019\000\008\000\018\000\011\000\157\000\
+\\013\000\015\000\040\000\055\001\061\000\155\000\071\000\154\000\
+\\072\000\153\000\000\000\
 \\000\000\
-\\003\000\063\001\005\000\062\001\068\000\061\001\069\000\060\001\000\000\
-\\001\000\158\000\005\000\019\000\008\000\018\000\012\000\157\000\
-\\014\000\015\000\063\000\155\000\064\000\066\001\065\000\057\001\
-\\073\000\154\000\074\000\056\001\000\000\
-\\001\000\158\000\005\000\019\000\007\000\024\001\008\000\018\000\
-\\012\000\157\000\014\000\015\000\063\000\155\000\066\000\069\001\
-\\067\000\068\001\073\000\154\000\074\000\067\001\087\000\023\001\000\000\
-\\001\000\158\000\005\000\019\000\008\000\018\000\012\000\157\000\
-\\014\000\015\000\042\000\071\001\063\000\155\000\073\000\154\000\
-\\074\000\153\000\000\000\
-\\005\000\019\000\008\000\018\000\011\000\072\001\012\000\016\000\
-\\014\000\015\000\000\000\
+\\001\000\158\000\005\000\019\000\008\000\018\000\011\000\157\000\
+\\013\000\015\000\061\000\062\001\000\000\
 \\000\000\
 \\000\000\
-\\001\000\158\000\005\000\019\000\008\000\018\000\012\000\157\000\
-\\014\000\015\000\063\000\155\000\066\000\069\001\067\000\068\001\
-\\073\000\154\000\074\000\067\001\000\000\
 \\000\000\
 \\000\000\
-\\008\000\018\000\014\000\172\000\040\000\074\001\000\000\
+\\001\000\158\000\005\000\019\000\008\000\018\000\011\000\157\000\
+\\013\000\015\000\061\000\155\000\062\000\065\001\063\000\064\001\
+\\071\000\154\000\072\000\063\001\000\000\
+\\001\000\158\000\005\000\019\000\008\000\018\000\011\000\157\000\
+\\013\000\015\000\061\000\155\000\071\000\154\000\072\000\066\001\000\000\
 \\000\000\
+\\003\000\070\001\005\000\069\001\066\000\068\001\067\000\067\001\000\000\
+\\001\000\158\000\005\000\019\000\008\000\018\000\011\000\157\000\
+\\013\000\015\000\061\000\155\000\062\000\073\001\063\000\064\001\
+\\071\000\154\000\072\000\063\001\000\000\
+\\001\000\158\000\005\000\019\000\007\000\032\001\008\000\018\000\
+\\011\000\157\000\013\000\015\000\061\000\155\000\064\000\076\001\
+\\065\000\075\001\071\000\154\000\072\000\074\001\085\000\031\001\000\000\
+\\001\000\158\000\005\000\019\000\008\000\018\000\011\000\157\000\
+\\013\000\015\000\040\000\078\001\061\000\155\000\071\000\154\000\
+\\072\000\153\000\000\000\
+\\005\000\019\000\008\000\018\000\010\000\079\001\011\000\016\000\
+\\013\000\015\000\000\000\
 \\000\000\
 \\000\000\
-\\004\000\176\000\005\000\175\000\039\000\076\001\000\000\
+\\001\000\158\000\005\000\019\000\008\000\018\000\011\000\157\000\
+\\013\000\015\000\061\000\155\000\064\000\076\001\065\000\075\001\
+\\071\000\154\000\072\000\074\001\000\000\
 \\000\000\
 \\000\000\
+\\008\000\018\000\013\000\172\000\038\000\081\001\000\000\
 \\000\000\
-\\035\000\077\001\036\000\179\000\037\000\008\000\000\000\
 \\000\000\
 \\000\000\
+\\004\000\176\000\005\000\175\000\037\000\082\001\000\000\
 \\000\000\
-\\004\000\176\000\005\000\175\000\039\000\080\001\000\000\
 \\000\000\
 \\000\000\
+\\033\000\083\001\034\000\179\000\035\000\008\000\000\000\
 \\000\000\
-\\004\000\176\000\005\000\175\000\039\000\081\001\000\000\
 \\000\000\
-\\001\000\158\000\005\000\019\000\008\000\018\000\012\000\157\000\
-\\014\000\015\000\044\000\083\001\046\000\194\000\048\000\193\000\
-\\049\000\192\000\063\000\155\000\073\000\154\000\074\000\191\000\000\000\
 \\000\000\
+\\004\000\176\000\005\000\175\000\037\000\086\001\000\000\
 \\000\000\
-\\047\000\085\001\000\000\
-\\045\000\087\001\000\000\
 \\000\000\
 \\000\000\
-\\031\000\090\001\000\000\
+\\004\000\176\000\005\000\175\000\037\000\087\001\000\000\
 \\000\000\
+\\001\000\158\000\005\000\019\000\008\000\018\000\011\000\157\000\
+\\013\000\015\000\042\000\089\001\044\000\194\000\046\000\193\000\
+\\047\000\192\000\061\000\155\000\071\000\154\000\072\000\191\000\000\000\
 \\000\000\
-\\004\000\092\001\005\000\175\000\000\000\
-\\006\000\093\001\000\000\
-\\038\000\094\001\000\000\
-\\038\000\096\001\000\000\
-\\055\000\097\001\000\000\
 \\000\000\
+\\045\000\091\001\000\000\
+\\043\000\093\001\000\000\
 \\000\000\
 \\000\000\
-\\006\000\101\001\000\000\
-\\038\000\102\001\000\000\
+\\029\000\096\001\000\000\
 \\000\000\
-\\008\000\018\000\014\000\218\000\122\000\103\001\000\000\
 \\000\000\
+\\004\000\098\001\005\000\175\000\000\000\
+\\006\000\099\001\000\000\
+\\036\000\100\001\000\000\
+\\036\000\102\001\000\000\
+\\053\000\103\001\000\000\
 \\000\000\
-\\096\000\107\001\000\000\
 \\000\000\
-\\143\000\109\001\000\000\
 \\000\000\
+\\006\000\107\001\000\000\
+\\036\000\108\001\000\000\
 \\000\000\
-\\008\000\018\000\009\000\226\000\014\000\225\000\015\000\114\001\
-\\120\000\113\001\000\000\
-\\006\000\118\001\008\000\018\000\013\000\117\001\014\000\116\001\
-\\118\000\115\001\000\000\
+\\008\000\018\000\013\000\218\000\129\000\109\001\000\000\
 \\000\000\
 \\000\000\
+\\097\000\113\001\000\000\
 \\000\000\
-\\008\000\018\000\009\000\226\000\014\000\225\000\015\000\122\001\
-\\116\000\121\001\000\000\
+\\089\000\027\001\103\000\115\001\113\000\025\001\000\000\
 \\000\000\
 \\000\000\
+\\008\000\018\000\009\000\227\000\013\000\226\000\014\000\118\001\
+\\127\000\117\001\000\000\
+\\006\000\122\001\008\000\018\000\012\000\121\001\013\000\120\001\
+\\125\000\119\001\000\000\
 \\000\000\
-\\112\000\124\001\113\000\068\000\114\000\067\000\000\000\
 \\000\000\
-\\008\000\018\000\009\000\226\000\014\000\225\000\015\000\126\001\
-\\097\000\125\001\098\000\222\000\000\000\
+\\008\000\018\000\013\000\126\001\086\000\125\001\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
-\\006\000\128\001\000\000\
 \\000\000\
 \\000\000\
-\\004\000\129\001\005\000\175\000\000\000\
+\\120\000\131\001\121\000\069\000\122\000\068\000\000\000\
+\\089\000\132\001\000\000\
 \\000\000\
-\\004\000\131\001\005\000\175\000\000\000\
+\\008\000\018\000\009\000\227\000\013\000\226\000\014\000\225\000\
+\\098\000\224\000\099\000\223\000\100\000\133\001\101\000\221\000\000\000\
+\\031\000\134\001\033\000\180\000\034\000\179\000\035\000\008\000\000\000\
 \\000\000\
-\\004\000\132\001\005\000\175\000\000\000\
+\\089\000\027\001\103\000\135\001\113\000\025\001\000\000\
 \\000\000\
-\\004\000\133\001\005\000\175\000\000\000\
+\\006\000\136\001\000\000\
 \\000\000\
 \\000\000\
-\\004\000\176\000\005\000\175\000\039\000\134\001\000\000\
-\\004\000\176\000\005\000\175\000\039\000\135\001\000\000\
+\\004\000\137\001\005\000\175\000\000\000\
 \\000\000\
+\\004\000\139\001\005\000\175\000\000\000\
 \\000\000\
-\\004\000\136\001\005\000\175\000\000\000\
-\\115\000\137\001\000\000\
-\\115\000\139\001\000\000\
-\\006\000\140\001\000\000\
-\\130\000\141\001\000\000\
+\\004\000\140\001\005\000\175\000\000\000\
 \\000\000\
+\\004\000\141\001\005\000\175\000\000\000\
 \\000\000\
-\\001\000\020\000\005\000\019\000\008\000\018\000\011\000\017\000\
-\\012\000\016\000\014\000\015\000\018\000\014\000\027\000\013\000\
-\\028\000\012\000\029\000\011\000\034\000\010\000\036\000\009\000\
-\\037\000\008\000\153\000\007\000\154\000\000\001\155\000\144\001\000\000\
 \\000\000\
-\\006\000\118\001\008\000\018\000\013\000\145\001\014\000\116\001\000\000\
+\\004\000\176\000\005\000\175\000\037\000\142\001\000\000\
+\\004\000\176\000\005\000\175\000\037\000\143\001\000\000\
 \\000\000\
 \\000\000\
+\\004\000\144\001\005\000\175\000\000\000\
+\\123\000\145\001\000\000\
+\\123\000\147\001\000\000\
+\\006\000\148\001\000\000\
+\\137\000\149\001\000\000\
 \\000\000\
 \\000\000\
+\\001\000\020\000\005\000\019\000\008\000\018\000\010\000\017\000\
+\\011\000\016\000\013\000\015\000\016\000\014\000\025\000\013\000\
+\\026\000\012\000\027\000\011\000\032\000\010\000\034\000\009\000\
+\\035\000\008\000\162\000\007\000\163\000\003\001\164\000\152\001\000\000\
 \\000\000\
+\\006\000\122\001\008\000\018\000\012\000\153\001\013\000\120\001\000\000\
 \\000\000\
-\\003\000\150\001\080\000\149\001\081\000\148\001\000\000\
-\\007\000\009\001\075\000\152\001\076\000\007\001\077\000\006\001\
-\\078\000\005\001\079\000\004\001\083\000\003\001\084\000\151\001\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
+\\008\000\018\000\009\000\227\000\013\000\226\000\014\000\156\001\000\000\
+\\003\000\159\001\078\000\158\001\079\000\157\001\000\000\
+\\007\000\012\001\073\000\161\001\074\000\010\001\075\000\009\001\
+\\076\000\008\001\077\000\007\001\081\000\006\001\082\000\160\001\000\000\
 \\000\000\
-\\008\000\018\000\009\000\226\000\014\000\225\000\015\000\126\001\
-\\097\000\154\001\098\000\222\000\000\000\
-\\008\000\018\000\009\000\226\000\014\000\225\000\015\000\126\001\
-\\097\000\155\001\098\000\222\000\000\000\
-\\008\000\018\000\009\000\226\000\014\000\225\000\015\000\126\001\
-\\097\000\158\001\098\000\157\001\101\000\156\001\000\000\
-\\008\000\160\001\112\000\159\001\113\000\068\000\114\000\067\000\000\000\
-\\051\000\161\001\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
-\\006\000\118\001\008\000\018\000\013\000\167\001\014\000\116\001\000\000\
 \\000\000\
 \\000\000\
+\\008\000\018\000\009\000\227\000\013\000\226\000\014\000\225\000\
+\\098\000\224\000\099\000\223\000\100\000\163\001\101\000\221\000\000\000\
+\\008\000\018\000\009\000\227\000\013\000\226\000\014\000\225\000\
+\\098\000\224\000\099\000\223\000\100\000\164\001\101\000\221\000\000\000\
 \\000\000\
-\\004\000\171\001\005\000\175\000\000\000\
-\\004\000\172\001\005\000\175\000\000\000\
-\\004\000\173\001\005\000\175\000\000\000\
-\\001\000\020\000\005\000\019\000\008\000\018\000\011\000\017\000\
-\\012\000\016\000\014\000\015\000\018\000\014\000\020\000\174\001\
-\\027\000\013\000\028\000\012\000\029\000\125\000\000\000\
 \\000\000\
-\\058\000\175\001\000\000\
 \\000\000\
-\\003\000\140\000\005\000\179\001\024\000\178\001\000\000\
-\\026\000\180\001\000\000\
-\\007\000\009\001\075\000\182\001\076\000\007\001\077\000\006\001\
-\\078\000\005\001\079\000\004\001\083\000\003\001\000\000\
-\\001\000\020\000\005\000\019\000\008\000\018\000\011\000\017\000\
-\\012\000\016\000\014\000\015\000\018\000\014\000\027\000\013\000\
-\\028\000\012\000\029\000\183\001\000\000\
+\\089\000\027\001\113\000\167\001\000\000\
+\\008\000\169\001\120\000\168\001\121\000\069\000\122\000\068\000\000\000\
+\\097\000\171\001\000\000\
+\\049\000\173\001\000\000\
 \\000\000\
-\\001\000\020\000\005\000\019\000\008\000\018\000\011\000\017\000\
-\\012\000\016\000\014\000\015\000\018\000\014\000\022\000\185\001\
-\\027\000\013\000\028\000\012\000\029\000\184\001\000\000\
-\\001\000\020\000\005\000\019\000\008\000\018\000\011\000\017\000\
-\\012\000\016\000\014\000\015\000\018\000\014\000\020\000\186\001\
-\\027\000\013\000\028\000\012\000\029\000\125\000\000\000\
 \\000\000\
 \\000\000\
+\\006\000\122\001\008\000\018\000\012\000\179\001\013\000\120\001\000\000\
 \\000\000\
-\\001\000\020\000\005\000\019\000\008\000\018\000\011\000\017\000\
-\\012\000\016\000\014\000\015\000\018\000\014\000\027\000\013\000\
-\\028\000\012\000\029\000\187\001\000\000\
 \\000\000\
-\\001\000\020\000\005\000\019\000\008\000\018\000\011\000\017\000\
-\\012\000\016\000\014\000\015\000\018\000\188\001\000\000\
-\\001\000\158\000\005\000\019\000\008\000\018\000\012\000\157\000\
-\\014\000\015\000\042\000\189\001\063\000\155\000\073\000\154\000\
-\\074\000\153\000\000\000\
-\\001\000\158\000\005\000\019\000\008\000\018\000\012\000\157\000\
-\\014\000\015\000\044\000\190\001\046\000\194\000\048\000\193\000\
-\\049\000\192\000\063\000\155\000\073\000\154\000\074\000\191\000\000\000\
-\\001\000\020\000\005\000\019\000\008\000\018\000\011\000\017\000\
-\\012\000\016\000\014\000\015\000\018\000\014\000\027\000\013\000\
-\\028\000\012\000\029\000\191\001\000\000\
-\\007\000\009\001\075\000\192\001\076\000\007\001\077\000\006\001\
-\\078\000\005\001\079\000\004\001\083\000\003\001\000\000\
-\\001\000\158\000\005\000\019\000\008\000\018\000\012\000\157\000\
-\\014\000\015\000\063\000\155\000\073\000\154\000\074\000\193\001\000\000\
+\\004\000\182\001\005\000\175\000\000\000\
+\\004\000\183\001\005\000\175\000\000\000\
+\\008\000\019\001\000\000\
+\\001\000\020\000\005\000\019\000\008\000\018\000\010\000\017\000\
+\\011\000\016\000\013\000\015\000\016\000\014\000\018\000\184\001\
+\\025\000\013\000\026\000\012\000\027\000\125\000\000\000\
 \\000\000\
+\\056\000\185\001\000\000\
 \\000\000\
+\\003\000\140\000\005\000\189\001\022\000\188\001\000\000\
+\\024\000\190\001\000\000\
+\\007\000\012\001\073\000\192\001\074\000\010\001\075\000\009\001\
+\\076\000\008\001\077\000\007\001\081\000\006\001\000\000\
+\\001\000\020\000\005\000\019\000\008\000\018\000\010\000\017\000\
+\\011\000\016\000\013\000\015\000\016\000\014\000\025\000\013\000\
+\\026\000\012\000\027\000\193\001\000\000\
 \\000\000\
+\\001\000\020\000\005\000\019\000\008\000\018\000\010\000\017\000\
+\\011\000\016\000\013\000\015\000\016\000\014\000\020\000\195\001\
+\\025\000\013\000\026\000\012\000\027\000\194\001\000\000\
+\\001\000\020\000\005\000\019\000\008\000\018\000\010\000\017\000\
+\\011\000\016\000\013\000\015\000\016\000\014\000\018\000\196\001\
+\\025\000\013\000\026\000\012\000\027\000\125\000\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
+\\001\000\020\000\005\000\019\000\008\000\018\000\010\000\017\000\
+\\011\000\016\000\013\000\015\000\016\000\014\000\025\000\013\000\
+\\026\000\012\000\027\000\197\001\000\000\
 \\000\000\
-\\071\000\197\001\000\000\
+\\001\000\020\000\005\000\019\000\008\000\018\000\010\000\017\000\
+\\011\000\016\000\013\000\015\000\016\000\198\001\000\000\
+\\001\000\158\000\005\000\019\000\008\000\018\000\011\000\157\000\
+\\013\000\015\000\040\000\199\001\061\000\155\000\071\000\154\000\
+\\072\000\153\000\000\000\
+\\001\000\158\000\005\000\019\000\008\000\018\000\011\000\157\000\
+\\013\000\015\000\042\000\200\001\044\000\194\000\046\000\193\000\
+\\047\000\192\000\061\000\155\000\071\000\154\000\072\000\191\000\000\000\
+\\001\000\020\000\005\000\019\000\008\000\018\000\010\000\017\000\
+\\011\000\016\000\013\000\015\000\016\000\014\000\025\000\013\000\
+\\026\000\012\000\027\000\201\001\000\000\
+\\007\000\012\001\073\000\202\001\074\000\010\001\075\000\009\001\
+\\076\000\008\001\077\000\007\001\081\000\006\001\000\000\
+\\001\000\158\000\005\000\019\000\008\000\018\000\011\000\157\000\
+\\013\000\015\000\061\000\155\000\071\000\154\000\072\000\203\001\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
@@ -16488,632 +16916,1104 @@ val gotoT =
 \\000\000\
 \\000\000\
 \\000\000\
+\\069\000\207\001\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
-\\001\000\020\000\005\000\019\000\008\000\018\000\011\000\017\000\
-\\012\000\016\000\014\000\015\000\018\000\014\000\027\000\013\000\
-\\028\000\012\000\029\000\205\001\000\000\
 \\000\000\
-\\008\000\015\001\000\000\
 \\000\000\
-\\035\000\077\001\036\000\179\000\037\000\008\000\000\000\
-\\033\000\206\001\035\000\180\000\036\000\179\000\037\000\008\000\000\000\
-\\001\000\020\000\005\000\019\000\008\000\018\000\011\000\017\000\
-\\012\000\016\000\014\000\015\000\018\000\014\000\022\000\207\001\
-\\027\000\013\000\028\000\012\000\029\000\184\001\000\000\
 \\000\000\
 \\000\000\
-\\001\000\020\000\005\000\019\000\008\000\018\000\011\000\017\000\
-\\012\000\016\000\014\000\015\000\018\000\014\000\027\000\013\000\
-\\028\000\012\000\029\000\208\001\000\000\
 \\000\000\
-\\001\000\020\000\005\000\019\000\008\000\018\000\011\000\017\000\
-\\012\000\016\000\014\000\015\000\018\000\014\000\027\000\013\000\
-\\028\000\012\000\029\000\209\001\000\000\
 \\000\000\
-\\001\000\158\000\005\000\019\000\008\000\018\000\012\000\157\000\
-\\014\000\015\000\046\000\210\001\048\000\193\000\049\000\192\000\
-\\063\000\155\000\073\000\154\000\074\000\191\000\000\000\
 \\000\000\
-\\001\000\158\000\005\000\019\000\008\000\018\000\012\000\157\000\
-\\014\000\015\000\044\000\211\001\046\000\194\000\048\000\193\000\
-\\049\000\192\000\063\000\155\000\073\000\154\000\074\000\191\000\000\000\
-\\001\000\020\000\005\000\019\000\008\000\018\000\011\000\017\000\
-\\012\000\016\000\014\000\015\000\018\000\014\000\027\000\013\000\
-\\028\000\012\000\029\000\212\001\000\000\
+\\001\000\020\000\005\000\019\000\008\000\018\000\010\000\017\000\
+\\011\000\016\000\013\000\015\000\016\000\014\000\025\000\013\000\
+\\026\000\012\000\027\000\215\001\000\000\
 \\000\000\
-\\001\000\158\000\005\000\019\000\008\000\018\000\012\000\157\000\
-\\014\000\015\000\030\000\213\001\032\000\197\000\063\000\155\000\
-\\073\000\154\000\074\000\196\000\000\000\
-\\058\000\214\001\000\000\
-\\055\000\216\001\000\000\
 \\000\000\
-\\007\000\111\000\050\000\218\001\085\000\109\000\086\000\108\000\000\000\
+\\033\000\083\001\034\000\179\000\035\000\008\000\000\000\
+\\031\000\216\001\033\000\180\000\034\000\179\000\035\000\008\000\000\000\
+\\001\000\020\000\005\000\019\000\008\000\018\000\010\000\017\000\
+\\011\000\016\000\013\000\015\000\016\000\014\000\020\000\217\001\
+\\025\000\013\000\026\000\012\000\027\000\194\001\000\000\
 \\000\000\
 \\000\000\
-\\017\000\220\001\056\000\219\001\000\000\
-\\007\000\111\000\052\000\222\001\085\000\208\000\086\000\108\000\000\000\
-\\001\000\158\000\005\000\019\000\008\000\018\000\012\000\157\000\
-\\014\000\015\000\030\000\223\001\032\000\197\000\063\000\155\000\
-\\073\000\154\000\074\000\196\000\000\000\
-\\055\000\224\001\000\000\
+\\001\000\020\000\005\000\019\000\008\000\018\000\010\000\017\000\
+\\011\000\016\000\013\000\015\000\016\000\014\000\025\000\013\000\
+\\026\000\012\000\027\000\218\001\000\000\
 \\000\000\
+\\001\000\020\000\005\000\019\000\008\000\018\000\010\000\017\000\
+\\011\000\016\000\013\000\015\000\016\000\014\000\025\000\013\000\
+\\026\000\012\000\027\000\219\001\000\000\
 \\000\000\
-\\008\000\018\000\009\000\226\000\014\000\225\000\015\000\114\001\
-\\120\000\227\001\000\000\
-\\006\000\118\001\008\000\018\000\013\000\117\001\014\000\116\001\
-\\118\000\228\001\000\000\
+\\001\000\158\000\005\000\019\000\008\000\018\000\011\000\157\000\
+\\013\000\015\000\044\000\220\001\046\000\193\000\047\000\192\000\
+\\061\000\155\000\071\000\154\000\072\000\191\000\000\000\
 \\000\000\
+\\001\000\158\000\005\000\019\000\008\000\018\000\011\000\157\000\
+\\013\000\015\000\042\000\221\001\044\000\194\000\046\000\193\000\
+\\047\000\192\000\061\000\155\000\071\000\154\000\072\000\191\000\000\000\
+\\001\000\020\000\005\000\019\000\008\000\018\000\010\000\017\000\
+\\011\000\016\000\013\000\015\000\016\000\014\000\025\000\013\000\
+\\026\000\012\000\027\000\222\001\000\000\
 \\000\000\
-\\008\000\018\000\009\000\226\000\014\000\225\000\015\000\126\001\
-\\097\000\232\001\098\000\231\001\139\000\230\001\000\000\
+\\001\000\158\000\005\000\019\000\008\000\018\000\011\000\157\000\
+\\013\000\015\000\028\000\223\001\030\000\197\000\061\000\155\000\
+\\071\000\154\000\072\000\196\000\000\000\
+\\056\000\224\001\000\000\
+\\053\000\226\001\000\000\
 \\000\000\
-\\008\000\018\000\009\000\226\000\014\000\225\000\015\000\126\001\
-\\097\000\235\001\098\000\234\001\144\000\233\001\000\000\
-\\009\000\216\000\142\000\236\001\000\000\
-\\008\000\018\000\014\000\238\001\121\000\237\001\000\000\
+\\007\000\112\000\048\000\228\001\083\000\110\000\084\000\109\000\000\000\
 \\000\000\
 \\000\000\
+\\015\000\230\001\054\000\229\001\000\000\
+\\007\000\112\000\050\000\232\001\083\000\208\000\084\000\109\000\000\000\
+\\001\000\158\000\005\000\019\000\008\000\018\000\011\000\157\000\
+\\013\000\015\000\028\000\233\001\030\000\197\000\061\000\155\000\
+\\071\000\154\000\072\000\196\000\000\000\
+\\053\000\234\001\000\000\
 \\000\000\
 \\000\000\
+\\008\000\018\000\009\000\227\000\013\000\226\000\014\000\118\001\
+\\127\000\237\001\000\000\
+\\006\000\122\001\008\000\018\000\012\000\121\001\013\000\120\001\
+\\125\000\238\001\000\000\
 \\000\000\
 \\000\000\
+\\008\000\018\000\009\000\227\000\013\000\226\000\014\000\225\000\
+\\098\000\224\000\099\000\223\000\100\000\242\001\101\000\241\001\
+\\146\000\240\001\000\000\
+\\151\000\244\001\000\000\
+\\008\000\018\000\013\000\248\001\128\000\247\001\000\000\
 \\000\000\
-\\008\000\018\000\014\000\243\001\104\000\242\001\000\000\
 \\000\000\
-\\008\000\018\000\009\000\226\000\014\000\225\000\015\000\122\001\
-\\116\000\121\001\000\000\
-\\008\000\015\001\009\000\245\001\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
-\\008\000\249\001\112\000\248\001\113\000\068\000\114\000\067\000\000\000\
-\\126\000\250\001\000\000\
 \\000\000\
-\\006\000\118\001\008\000\018\000\013\000\254\001\014\000\116\001\000\000\
 \\000\000\
-\\058\000\000\002\000\000\
+\\008\000\018\000\013\000\253\001\109\000\252\001\000\000\
 \\000\000\
 \\000\000\
+\\031\000\006\002\033\000\180\000\034\000\179\000\035\000\008\000\000\000\
+\\008\000\018\000\013\000\126\001\031\000\010\002\033\000\180\000\
+\\034\000\179\000\035\000\008\000\086\000\009\002\087\000\008\002\
+\\088\000\007\002\000\000\
+\\031\000\013\002\033\000\180\000\034\000\179\000\035\000\008\000\000\000\
+\\008\000\019\001\009\000\014\002\000\000\
 \\000\000\
-\\058\000\003\002\000\000\
 \\000\000\
-\\007\000\111\000\085\000\234\000\086\000\108\000\125\000\005\002\000\000\
 \\000\000\
-\\130\000\006\002\000\000\
 \\000\000\
-\\017\000\009\002\131\000\008\002\000\000\
-\\007\000\111\000\085\000\012\002\086\000\108\000\127\000\011\002\000\000\
 \\000\000\
+\\133\000\020\002\000\000\
 \\000\000\
-\\007\000\009\001\077\000\013\002\078\000\005\001\079\000\004\001\
-\\083\000\003\001\000\000\
-\\007\000\009\001\075\000\014\002\076\000\007\001\077\000\006\001\
-\\078\000\005\001\079\000\004\001\083\000\003\001\000\000\
+\\006\000\122\001\008\000\018\000\012\000\024\002\013\000\120\001\000\000\
 \\000\000\
+\\056\000\026\002\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
+\\056\000\030\002\000\000\
 \\000\000\
-\\008\000\018\000\010\000\025\002\014\000\024\002\016\000\023\002\
-\\088\000\022\002\089\000\021\002\092\000\020\002\000\000\
+\\007\000\112\000\083\000\237\000\084\000\109\000\132\000\032\002\000\000\
 \\000\000\
+\\137\000\033\002\000\000\
 \\000\000\
+\\015\000\036\002\138\000\035\002\000\000\
+\\007\000\112\000\083\000\039\002\084\000\109\000\134\000\038\002\000\000\
 \\000\000\
-\\100\000\031\002\000\000\
 \\000\000\
+\\007\000\012\001\075\000\040\002\076\000\008\001\077\000\007\001\
+\\081\000\006\001\000\000\
+\\007\000\012\001\073\000\041\002\074\000\010\001\075\000\009\001\
+\\076\000\008\001\077\000\007\001\081\000\006\001\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
-\\007\000\009\001\075\000\036\002\076\000\007\001\077\000\006\001\
-\\078\000\005\001\079\000\004\001\083\000\003\001\000\000\
-\\007\000\111\000\050\000\037\002\085\000\109\000\086\000\108\000\000\000\
 \\000\000\
-\\007\000\024\001\087\000\038\002\000\000\
-\\006\000\118\001\008\000\018\000\013\000\039\002\014\000\116\001\000\000\
 \\000\000\
-\\007\000\040\002\000\000\
-\\008\000\018\000\009\000\226\000\014\000\225\000\015\000\126\001\
-\\097\000\041\002\098\000\222\000\000\000\
-\\008\000\043\002\112\000\042\002\113\000\068\000\114\000\067\000\000\000\
-\\058\000\044\002\000\000\
 \\000\000\
-\\058\000\046\002\000\000\
+\\008\000\018\000\013\000\126\001\086\000\009\002\087\000\049\002\
+\\088\000\048\002\092\000\047\002\000\000\
 \\000\000\
 \\000\000\
-\\017\000\048\002\000\000\
-\\007\000\009\001\075\000\049\002\076\000\007\001\077\000\006\001\
-\\078\000\005\001\079\000\004\001\083\000\003\001\000\000\
+\\008\000\018\000\013\000\126\001\086\000\009\002\087\000\049\002\
+\\088\000\048\002\092\000\053\002\000\000\
+\\008\000\018\000\009\000\227\000\013\000\226\000\014\000\225\000\
+\\098\000\224\000\099\000\223\000\100\000\056\002\101\000\055\002\
+\\105\000\054\002\000\000\
 \\000\000\
-\\071\000\038\001\000\000\
 \\000\000\
-\\003\000\140\000\005\000\179\001\024\000\051\002\000\000\
 \\000\000\
-\\026\000\052\002\000\000\
 \\000\000\
 \\000\000\
+\\008\000\018\000\009\000\227\000\013\000\226\000\014\000\225\000\
+\\098\000\224\000\099\000\223\000\100\000\062\002\101\000\221\000\000\000\
 \\000\000\
+\\007\000\012\001\073\000\063\002\074\000\010\001\075\000\009\001\
+\\076\000\008\001\077\000\007\001\081\000\006\001\000\000\
+\\007\000\112\000\048\000\064\002\083\000\110\000\084\000\109\000\000\000\
 \\000\000\
+\\007\000\032\001\085\000\065\002\000\000\
+\\006\000\122\001\008\000\018\000\012\000\066\002\013\000\120\001\000\000\
 \\000\000\
+\\007\000\067\002\000\000\
+\\008\000\018\000\009\000\227\000\013\000\226\000\014\000\225\000\
+\\098\000\224\000\099\000\223\000\100\000\068\002\101\000\221\000\000\000\
+\\056\000\069\002\000\000\
 \\000\000\
 \\000\000\
-\\043\000\056\002\000\000\
 \\000\000\
+\\015\000\072\002\000\000\
+\\007\000\012\001\073\000\073\002\074\000\010\001\075\000\009\001\
+\\076\000\008\001\077\000\007\001\081\000\006\001\000\000\
 \\000\000\
-\\001\000\158\000\005\000\019\000\008\000\018\000\012\000\157\000\
-\\014\000\015\000\063\000\155\000\065\000\058\002\073\000\154\000\
-\\074\000\056\001\000\000\
+\\069\000\045\001\000\000\
 \\000\000\
+\\003\000\140\000\005\000\189\001\022\000\075\002\000\000\
 \\000\000\
-\\072\000\059\002\000\000\
-\\001\000\158\000\005\000\019\000\008\000\018\000\012\000\157\000\
-\\014\000\015\000\063\000\155\000\073\000\154\000\074\000\061\002\000\000\
+\\024\000\076\002\000\000\
 \\000\000\
-\\001\000\158\000\005\000\019\000\008\000\018\000\012\000\157\000\
-\\014\000\015\000\063\000\155\000\067\000\063\002\073\000\154\000\
-\\074\000\062\002\000\000\
-\\001\000\158\000\005\000\019\000\008\000\018\000\012\000\157\000\
-\\014\000\015\000\063\000\155\000\065\000\064\002\073\000\154\000\
-\\074\000\056\001\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
+\\041\000\080\002\000\000\
 \\000\000\
 \\000\000\
+\\001\000\158\000\005\000\019\000\008\000\018\000\011\000\157\000\
+\\013\000\015\000\061\000\155\000\063\000\082\002\071\000\154\000\
+\\072\000\063\001\000\000\
 \\000\000\
 \\000\000\
+\\070\000\083\002\000\000\
+\\001\000\158\000\005\000\019\000\008\000\018\000\011\000\157\000\
+\\013\000\015\000\061\000\155\000\071\000\154\000\072\000\085\002\000\000\
 \\000\000\
+\\001\000\158\000\005\000\019\000\008\000\018\000\011\000\157\000\
+\\013\000\015\000\061\000\155\000\065\000\087\002\071\000\154\000\
+\\072\000\086\002\000\000\
+\\001\000\158\000\005\000\019\000\008\000\018\000\011\000\157\000\
+\\013\000\015\000\061\000\155\000\063\000\088\002\071\000\154\000\
+\\072\000\063\001\000\000\
 \\000\000\
-\\062\000\068\002\000\000\
-\\017\000\070\002\000\000\
 \\000\000\
-\\017\000\220\001\056\000\071\002\000\000\
 \\000\000\
-\\055\000\072\002\000\000\
-\\004\000\073\002\005\000\175\000\000\000\
-\\006\000\118\001\008\000\018\000\013\000\074\002\014\000\116\001\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
-\\017\000\220\001\056\000\075\002\000\000\
-\\033\000\076\002\035\000\180\000\036\000\179\000\037\000\008\000\000\000\
 \\000\000\
 \\000\000\
-\\008\000\018\000\014\000\077\002\000\000\
 \\000\000\
-\\138\000\078\002\000\000\
 \\000\000\
 \\000\000\
-\\143\000\081\002\000\000\
 \\000\000\
+\\060\000\092\002\000\000\
+\\015\000\094\002\000\000\
 \\000\000\
+\\015\000\230\001\054\000\095\002\000\000\
 \\000\000\
+\\053\000\096\002\000\000\
+\\004\000\097\002\005\000\175\000\000\000\
+\\006\000\122\001\008\000\018\000\012\000\098\002\013\000\120\001\000\000\
 \\000\000\
-\\008\000\018\000\009\000\226\000\014\000\225\000\015\000\085\002\
-\\119\000\084\002\000\000\
-\\006\000\086\002\008\000\015\001\000\000\
-\\006\000\118\001\008\000\018\000\013\000\088\002\014\000\116\001\
-\\117\000\087\002\000\000\
 \\000\000\
 \\000\000\
-\\007\000\111\000\085\000\090\002\086\000\108\000\000\000\
+\\015\000\230\001\054\000\099\002\000\000\
+\\031\000\100\002\033\000\180\000\034\000\179\000\035\000\008\000\000\000\
 \\000\000\
 \\000\000\
+\\008\000\018\000\013\000\101\002\000\000\
 \\000\000\
+\\145\000\102\002\000\000\
 \\000\000\
+\\089\000\105\002\000\000\
 \\000\000\
+\\008\000\018\000\009\000\227\000\013\000\226\000\014\000\225\000\
+\\098\000\224\000\099\000\223\000\100\000\108\002\101\000\107\002\
+\\152\000\106\002\000\000\
+\\009\000\216\000\150\000\110\002\000\000\
 \\000\000\
-\\007\000\009\001\075\000\093\002\076\000\007\001\077\000\006\001\
-\\078\000\005\001\079\000\004\001\083\000\003\001\000\000\
-\\007\000\111\000\085\000\234\000\086\000\108\000\125\000\094\002\000\000\
-\\006\000\118\001\008\000\018\000\013\000\095\002\014\000\116\001\000\000\
 \\000\000\
-\\007\000\096\002\000\000\
+\\008\000\018\000\009\000\227\000\013\000\226\000\014\000\113\002\
+\\126\000\112\002\000\000\
+\\006\000\114\002\008\000\019\001\000\000\
+\\006\000\122\001\008\000\018\000\012\000\116\002\013\000\120\001\
+\\124\000\115\002\000\000\
 \\000\000\
-\\017\000\098\002\000\000\
-\\007\000\009\001\075\000\099\002\076\000\007\001\077\000\006\001\
-\\078\000\005\001\079\000\004\001\083\000\003\001\000\000\
-\\136\000\100\002\000\000\
-\\017\000\102\002\000\000\
 \\000\000\
+\\008\000\018\000\013\000\118\002\000\000\
+\\008\000\018\000\009\000\227\000\013\000\226\000\014\000\119\002\000\000\
+\\008\000\018\000\013\000\120\002\000\000\
+\\015\000\121\002\000\000\
+\\015\000\122\002\000\000\
+\\007\000\112\000\083\000\123\002\084\000\109\000\000\000\
+\\015\000\124\002\000\000\
+\\015\000\125\002\000\000\
 \\000\000\
-\\017\000\009\002\131\000\103\002\000\000\
-\\130\000\104\002\000\000\
-\\004\000\105\002\005\000\175\000\000\000\
-\\006\000\118\001\008\000\018\000\013\000\106\002\014\000\116\001\000\000\
 \\000\000\
-\\006\000\107\002\000\000\
+\\008\000\018\000\013\000\126\001\086\000\130\002\000\000\
 \\000\000\
 \\000\000\
+\\001\000\020\000\005\000\019\000\008\000\018\000\010\000\017\000\
+\\011\000\016\000\013\000\015\000\016\000\014\000\025\000\013\000\
+\\026\000\132\002\000\000\
+\\089\000\133\002\000\000\
 \\000\000\
-\\007\000\009\001\075\000\108\002\076\000\007\001\077\000\006\001\
-\\078\000\005\001\079\000\004\001\083\000\003\001\000\000\
 \\000\000\
-\\007\000\009\001\075\000\110\002\076\000\007\001\077\000\006\001\
-\\078\000\005\001\079\000\004\001\083\000\003\001\084\000\109\002\000\000\
 \\000\000\
+\\008\000\018\000\009\000\227\000\013\000\226\000\014\000\225\000\
+\\098\000\224\000\099\000\223\000\100\000\135\002\101\000\221\000\000\000\
 \\000\000\
-\\091\000\111\002\000\000\
+\\008\000\018\000\009\000\227\000\013\000\226\000\014\000\225\000\
+\\098\000\224\000\099\000\223\000\100\000\136\002\101\000\221\000\000\000\
+\\008\000\018\000\009\000\227\000\013\000\226\000\014\000\225\000\
+\\098\000\224\000\099\000\223\000\100\000\139\002\101\000\138\002\
+\\158\000\137\002\000\000\
 \\000\000\
+\\007\000\012\001\073\000\141\002\074\000\010\001\075\000\009\001\
+\\076\000\008\001\077\000\007\001\081\000\006\001\000\000\
+\\007\000\112\000\083\000\237\000\084\000\109\000\132\000\142\002\000\000\
+\\006\000\122\001\008\000\018\000\012\000\143\002\013\000\120\001\000\000\
 \\000\000\
+\\007\000\144\002\000\000\
 \\000\000\
+\\015\000\146\002\000\000\
+\\015\000\147\002\000\000\
+\\007\000\012\001\073\000\148\002\074\000\010\001\075\000\009\001\
+\\076\000\008\001\077\000\007\001\081\000\006\001\000\000\
+\\143\000\149\002\000\000\
+\\015\000\151\002\000\000\
 \\000\000\
 \\000\000\
-\\033\000\117\002\035\000\180\000\036\000\179\000\037\000\008\000\000\000\
-\\008\000\018\000\010\000\025\002\014\000\024\002\016\000\023\002\
-\\088\000\119\002\089\000\118\002\000\000\
-\\033\000\120\002\035\000\180\000\036\000\179\000\037\000\008\000\000\000\
-\\008\000\018\000\010\000\025\002\014\000\024\002\016\000\023\002\
-\\088\000\022\002\089\000\021\002\092\000\121\002\000\000\
+\\015\000\036\002\138\000\152\002\000\000\
+\\137\000\153\002\000\000\
+\\004\000\154\002\005\000\175\000\000\000\
+\\006\000\122\001\008\000\018\000\012\000\155\002\013\000\120\001\000\000\
 \\000\000\
-\\009\000\103\000\099\000\122\002\000\000\
-\\008\000\018\000\014\000\243\001\102\000\123\002\104\000\242\001\000\000\
-\\096\000\125\002\000\000\
-\\008\000\018\000\009\000\226\000\014\000\225\000\015\000\126\001\
-\\097\000\127\002\098\000\222\000\000\000\
-\\051\000\128\002\000\000\
+\\006\000\156\002\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
+\\007\000\012\001\073\000\157\002\074\000\010\001\075\000\009\001\
+\\076\000\008\001\077\000\007\001\081\000\006\001\000\000\
 \\000\000\
+\\007\000\012\001\073\000\159\002\074\000\010\001\075\000\009\001\
+\\076\000\008\001\077\000\007\001\081\000\006\001\082\000\158\002\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
+\\008\000\018\000\013\000\126\001\086\000\130\002\091\000\162\002\000\000\
+\\001\000\020\000\005\000\019\000\008\000\018\000\010\000\017\000\
+\\011\000\016\000\013\000\015\000\016\000\014\000\025\000\013\000\
+\\026\000\164\002\000\000\
+\\089\000\165\002\000\000\
+\\008\000\018\000\013\000\126\001\086\000\009\002\087\000\049\002\
+\\088\000\048\002\092\000\166\002\000\000\
 \\000\000\
-\\007\000\009\001\075\000\135\002\076\000\007\001\077\000\006\001\
-\\078\000\005\001\079\000\004\001\083\000\003\001\000\000\
 \\000\000\
-\\007\000\111\000\085\000\137\002\086\000\108\000\000\000\
-\\005\000\019\000\008\000\018\000\011\000\138\002\012\000\016\000\
-\\014\000\015\000\000\000\
+\\104\000\167\002\000\000\
 \\000\000\
+\\089\000\170\002\000\000\
 \\000\000\
+\\008\000\018\000\009\000\227\000\013\000\226\000\014\000\225\000\
+\\098\000\224\000\099\000\223\000\100\000\171\002\101\000\221\000\000\000\
+\\008\000\018\000\009\000\227\000\013\000\226\000\014\000\225\000\
+\\098\000\224\000\099\000\223\000\100\000\172\002\101\000\221\000\000\000\
+\\008\000\018\000\013\000\126\001\086\000\009\002\087\000\175\002\
+\\088\000\174\002\115\000\173\002\000\000\
 \\000\000\
+\\049\000\179\002\000\000\
 \\000\000\
-\\001\000\020\000\005\000\019\000\008\000\018\000\011\000\017\000\
-\\012\000\016\000\014\000\015\000\018\000\014\000\022\000\139\002\
-\\027\000\013\000\028\000\012\000\029\000\184\001\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
-\\001\000\158\000\005\000\019\000\008\000\018\000\012\000\157\000\
-\\014\000\015\000\042\000\140\002\063\000\155\000\073\000\154\000\
-\\074\000\153\000\000\000\
 \\000\000\
-\\070\000\141\002\000\000\
-\\001\000\158\000\005\000\019\000\008\000\018\000\012\000\157\000\
-\\014\000\015\000\063\000\155\000\073\000\154\000\074\000\143\002\000\000\
-\\070\000\144\002\000\000\
 \\000\000\
+\\007\000\012\001\073\000\184\002\074\000\010\001\075\000\009\001\
+\\076\000\008\001\077\000\007\001\081\000\006\001\000\000\
+\\007\000\112\000\083\000\185\002\084\000\109\000\000\000\
+\\005\000\019\000\008\000\018\000\010\000\186\002\011\000\016\000\
+\\013\000\015\000\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
-\\001\000\020\000\005\000\019\000\008\000\018\000\011\000\017\000\
-\\012\000\016\000\014\000\015\000\018\000\014\000\027\000\013\000\
-\\028\000\012\000\029\000\145\002\000\000\
+\\001\000\020\000\005\000\019\000\008\000\018\000\010\000\017\000\
+\\011\000\016\000\013\000\015\000\016\000\014\000\020\000\187\002\
+\\025\000\013\000\026\000\012\000\027\000\194\001\000\000\
 \\000\000\
-\\017\000\200\000\061\000\146\002\000\000\
-\\005\000\019\000\008\000\018\000\011\000\147\002\012\000\016\000\
-\\014\000\015\000\000\000\
-\\055\000\148\002\000\000\
 \\000\000\
-\\058\000\149\002\000\000\
 \\000\000\
-\\055\000\150\002\000\000\
+\\001\000\158\000\005\000\019\000\008\000\018\000\011\000\157\000\
+\\013\000\015\000\040\000\188\002\061\000\155\000\071\000\154\000\
+\\072\000\153\000\000\000\
 \\000\000\
-\\138\000\152\002\000\000\
+\\068\000\189\002\000\000\
+\\001\000\158\000\005\000\019\000\008\000\018\000\011\000\157\000\
+\\013\000\015\000\061\000\155\000\071\000\154\000\072\000\191\002\000\000\
+\\068\000\192\002\000\000\
 \\000\000\
-\\008\000\214\000\137\000\153\002\000\000\
-\\008\000\018\000\014\000\243\001\104\000\242\001\140\000\154\002\000\000\
 \\000\000\
-\\008\000\018\000\014\000\243\001\104\000\242\001\145\000\156\002\000\000\
-\\008\000\018\000\014\000\238\001\121\000\158\002\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
+\\001\000\020\000\005\000\019\000\008\000\018\000\010\000\017\000\
+\\011\000\016\000\013\000\015\000\016\000\014\000\025\000\013\000\
+\\026\000\012\000\027\000\193\002\000\000\
 \\000\000\
+\\015\000\200\000\059\000\194\002\000\000\
+\\005\000\019\000\008\000\018\000\010\000\195\002\011\000\016\000\
+\\013\000\015\000\000\000\
+\\053\000\196\002\000\000\
 \\000\000\
-\\008\000\018\000\014\000\161\002\000\000\
-\\006\000\118\001\008\000\018\000\013\000\162\002\014\000\116\001\000\000\
+\\056\000\197\002\000\000\
 \\000\000\
-\\008\000\018\000\009\000\226\000\014\000\225\000\015\000\126\001\
-\\097\000\164\002\098\000\222\000\000\000\
-\\126\000\165\002\000\000\
+\\053\000\198\002\000\000\
 \\000\000\
+\\145\000\200\002\000\000\
 \\000\000\
+\\008\000\214\000\144\000\201\002\000\000\
+\\008\000\018\000\013\000\253\001\109\000\252\001\147\000\202\002\000\000\
 \\000\000\
-\\007\000\111\000\085\000\168\002\086\000\108\000\000\000\
-\\005\000\019\000\008\000\018\000\011\000\169\002\012\000\016\000\
-\\014\000\015\000\000\000\
-\\124\000\170\002\000\000\
 \\000\000\
-\\017\000\250\000\135\000\172\002\000\000\
-\\005\000\019\000\008\000\018\000\011\000\173\002\012\000\016\000\
-\\014\000\015\000\000\000\
-\\130\000\174\002\000\000\
+\\151\000\212\002\000\000\
 \\000\000\
-\\058\000\175\002\000\000\
+\\089\000\214\002\000\000\
 \\000\000\
-\\130\000\176\002\000\000\
-\\082\000\178\002\000\000\
+\\008\000\018\000\013\000\248\001\128\000\215\002\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
-\\008\000\100\000\090\000\180\002\000\000\
-\\008\000\018\000\009\000\226\000\014\000\225\000\015\000\126\001\
-\\093\000\183\002\097\000\182\002\098\000\181\002\000\000\
-\\008\000\018\000\009\000\226\000\014\000\225\000\015\000\126\001\
-\\093\000\185\002\097\000\184\002\098\000\181\002\000\000\
-\\008\000\018\000\010\000\025\002\014\000\024\002\016\000\023\002\
-\\033\000\187\002\035\000\180\000\036\000\179\000\037\000\008\000\
-\\088\000\186\002\089\000\118\002\000\000\
-\\008\000\015\001\010\000\188\002\000\000\
 \\000\000\
 \\000\000\
+\\008\000\018\000\013\000\218\002\000\000\
+\\097\000\219\002\000\000\
+\\089\000\027\001\103\000\220\002\113\000\025\001\000\000\
+\\097\000\221\002\000\000\
+\\005\000\019\000\008\000\018\000\010\000\222\002\011\000\016\000\
+\\013\000\015\000\000\000\
+\\005\000\019\000\008\000\018\000\010\000\223\002\011\000\016\000\
+\\013\000\015\000\000\000\
+\\006\000\122\001\008\000\018\000\012\000\224\002\013\000\120\001\000\000\
+\\005\000\019\000\008\000\018\000\010\000\225\002\011\000\016\000\
+\\013\000\015\000\000\000\
+\\005\000\019\000\008\000\018\000\010\000\226\002\011\000\016\000\
+\\013\000\015\000\000\000\
 \\000\000\
+\\008\000\018\000\009\000\227\000\013\000\226\000\014\000\225\000\
+\\098\000\224\000\099\000\223\000\100\000\227\002\101\000\221\000\000\000\
+\\008\000\018\000\009\000\227\000\013\000\226\000\014\000\225\000\
+\\098\000\224\000\099\000\223\000\100\000\228\002\101\000\221\000\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
-\\007\000\111\000\085\000\194\002\086\000\108\000\000\000\
 \\000\000\
-\\008\000\018\000\009\000\226\000\014\000\225\000\015\000\126\001\
-\\097\000\196\002\098\000\222\000\000\000\
+\\008\000\018\000\013\000\126\001\086\000\009\002\087\000\008\002\
+\\088\000\231\002\000\000\
 \\000\000\
 \\000\000\
-\\005\000\019\000\008\000\018\000\011\000\198\002\012\000\016\000\
-\\014\000\015\000\000\000\
-\\007\000\009\001\075\000\199\002\076\000\007\001\077\000\006\001\
-\\078\000\005\001\079\000\004\001\083\000\003\001\000\000\
 \\000\000\
+\\157\000\233\002\000\000\
 \\000\000\
-\\008\000\018\000\009\000\226\000\014\000\225\000\015\000\126\001\
-\\097\000\202\002\098\000\222\000\000\000\
-\\007\000\111\000\085\000\203\002\086\000\108\000\000\000\
+\\089\000\236\002\000\000\
+\\133\000\237\002\000\000\
 \\000\000\
 \\000\000\
-\\006\000\118\001\008\000\018\000\013\000\206\002\014\000\116\001\000\000\
-\\060\000\207\002\000\000\
 \\000\000\
+\\007\000\112\000\083\000\240\002\084\000\109\000\000\000\
+\\005\000\019\000\008\000\018\000\010\000\241\002\011\000\016\000\
+\\013\000\015\000\000\000\
+\\005\000\019\000\008\000\018\000\010\000\242\002\011\000\016\000\
+\\013\000\015\000\000\000\
+\\131\000\243\002\000\000\
 \\000\000\
+\\015\000\253\000\142\000\245\002\000\000\
+\\005\000\019\000\008\000\018\000\010\000\246\002\011\000\016\000\
+\\013\000\015\000\000\000\
+\\137\000\247\002\000\000\
 \\000\000\
-\\003\000\063\001\005\000\062\001\068\000\209\002\000\000\
+\\056\000\248\002\000\000\
 \\000\000\
+\\137\000\249\002\000\000\
+\\080\000\251\002\000\000\
 \\000\000\
 \\000\000\
+\\008\000\018\000\009\000\227\000\013\000\226\000\014\000\225\000\
+\\093\000\255\002\098\000\224\000\099\000\223\000\100\000\254\002\
+\\101\000\253\002\000\000\
+\\008\000\018\000\009\000\227\000\013\000\226\000\014\000\225\000\
+\\093\000\002\003\098\000\224\000\099\000\223\000\100\000\001\003\
+\\101\000\253\002\000\000\
 \\000\000\
-\\062\000\210\002\000\000\
+\\008\000\101\000\090\000\003\003\000\000\
 \\000\000\
-\\057\000\211\002\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
+\\009\000\105\000\102\000\006\003\000\000\
+\\008\000\018\000\013\000\253\001\106\000\007\003\109\000\252\001\000\000\
 \\000\000\
 \\000\000\
-\\007\000\111\000\085\000\213\002\086\000\108\000\000\000\
 \\000\000\
-\\007\000\111\000\085\000\214\002\086\000\108\000\000\000\
 \\000\000\
-\\008\000\018\000\009\000\226\000\014\000\225\000\015\000\085\002\
-\\119\000\215\002\000\000\
-\\006\000\118\001\008\000\018\000\013\000\088\002\014\000\116\001\
-\\117\000\216\002\000\000\
 \\000\000\
+\\008\000\018\000\013\000\126\001\086\000\130\002\114\000\021\003\000\000\
+\\001\000\020\000\005\000\019\000\008\000\018\000\010\000\017\000\
+\\011\000\016\000\013\000\015\000\016\000\014\000\025\000\013\000\
+\\026\000\023\003\000\000\
+\\089\000\024\003\000\000\
+\\008\000\018\000\013\000\126\001\086\000\009\002\087\000\175\002\
+\\088\000\174\002\115\000\025\003\000\000\
 \\000\000\
-\\008\000\018\000\009\000\226\000\014\000\225\000\015\000\126\001\
-\\097\000\220\002\098\000\219\002\150\000\218\002\000\000\
+\\005\000\019\000\008\000\018\000\010\000\026\003\011\000\016\000\
+\\013\000\015\000\000\000\
+\\007\000\012\001\073\000\027\003\074\000\010\001\075\000\009\001\
+\\076\000\008\001\077\000\007\001\081\000\006\001\000\000\
 \\000\000\
+\\007\000\112\000\083\000\029\003\084\000\109\000\000\000\
 \\000\000\
-\\005\000\019\000\008\000\018\000\011\000\222\002\012\000\016\000\
-\\014\000\015\000\000\000\
-\\007\000\009\001\075\000\223\002\076\000\007\001\077\000\006\001\
-\\078\000\005\001\079\000\004\001\083\000\003\001\000\000\
-\\006\000\118\001\008\000\018\000\013\000\224\002\014\000\116\001\000\000\
-\\134\000\225\002\000\000\
+\\006\000\122\001\008\000\018\000\012\000\031\003\013\000\120\001\000\000\
+\\058\000\032\003\000\000\
 \\000\000\
-\\017\000\243\000\123\000\227\002\000\000\
 \\000\000\
-\\136\000\228\002\000\000\
 \\000\000\
-\\132\000\229\002\000\000\
+\\003\000\070\001\005\000\069\001\066\000\034\003\000\000\
 \\000\000\
-\\017\000\009\002\131\000\231\002\000\000\
 \\000\000\
-\\003\000\150\001\080\000\232\002\000\000\
 \\000\000\
-\\091\000\233\002\000\000\
 \\000\000\
+\\060\000\035\003\000\000\
 \\000\000\
+\\055\000\036\003\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
+\\008\000\018\000\013\000\038\003\000\000\
+\\008\000\018\000\009\000\227\000\013\000\226\000\014\000\039\003\000\000\
+\\008\000\018\000\013\000\040\003\000\000\
+\\015\000\041\003\000\000\
+\\015\000\042\003\000\000\
+\\007\000\112\000\083\000\043\003\084\000\109\000\000\000\
+\\015\000\044\003\000\000\
+\\015\000\045\003\000\000\
+\\008\000\018\000\009\000\227\000\013\000\226\000\014\000\225\000\
+\\098\000\224\000\099\000\223\000\100\000\047\003\101\000\241\001\
+\\146\000\046\003\000\000\
 \\000\000\
-\\008\000\018\000\009\000\226\000\014\000\225\000\015\000\126\001\
-\\097\000\237\002\098\000\222\000\000\000\
-\\008\000\018\000\009\000\226\000\014\000\225\000\015\000\126\001\
-\\097\000\238\002\098\000\222\000\000\000\
+\\008\000\018\000\013\000\253\001\109\000\252\001\153\000\048\003\000\000\
 \\000\000\
-\\008\000\018\000\010\000\025\002\014\000\024\002\016\000\023\002\
-\\088\000\239\002\089\000\118\002\000\000\
-\\006\000\118\001\008\000\018\000\013\000\240\002\014\000\116\001\000\000\
-\\008\000\018\000\010\000\025\002\014\000\024\002\016\000\023\002\
-\\088\000\243\002\089\000\242\002\108\000\241\002\000\000\
 \\000\000\
-\\096\000\245\002\000\000\
+\\008\000\018\000\009\000\227\000\013\000\226\000\014\000\113\002\
+\\126\000\058\003\000\000\
+\\006\000\122\001\008\000\018\000\012\000\116\002\013\000\120\001\
+\\124\000\059\003\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
-\\008\000\018\000\009\000\226\000\014\000\225\000\015\000\126\001\
-\\097\000\247\002\098\000\222\000\000\000\
 \\000\000\
-\\006\000\118\001\008\000\018\000\013\000\249\002\014\000\116\001\000\000\
 \\000\000\
 \\000\000\
-\\060\000\251\002\000\000\
 \\000\000\
-\\017\000\129\000\059\000\252\002\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
-\\017\000\220\001\056\000\253\002\000\000\
-\\006\000\118\001\008\000\018\000\013\000\254\002\014\000\116\001\000\000\
-\\006\000\118\001\008\000\018\000\013\000\255\002\014\000\116\001\000\000\
 \\000\000\
+\\008\000\018\000\009\000\227\000\013\000\226\000\014\000\225\000\
+\\098\000\224\000\099\000\223\000\100\000\068\003\101\000\221\000\000\000\
+\\008\000\018\000\013\000\126\001\086\000\009\002\087\000\008\002\
+\\088\000\069\003\000\000\
 \\000\000\
-\\007\000\009\001\075\000\000\003\076\000\007\001\077\000\006\001\
-\\078\000\005\001\079\000\004\001\083\000\003\001\000\000\
 \\000\000\
-\\148\000\001\003\000\000\
 \\000\000\
+\\008\000\235\000\156\000\071\003\000\000\
+\\008\000\018\000\013\000\253\001\109\000\252\001\159\000\072\003\000\000\
 \\000\000\
 \\000\000\
+\\005\000\019\000\008\000\018\000\010\000\082\003\011\000\016\000\
+\\013\000\015\000\000\000\
+\\007\000\012\001\073\000\083\003\074\000\010\001\075\000\009\001\
+\\076\000\008\001\077\000\007\001\081\000\006\001\000\000\
+\\006\000\122\001\008\000\018\000\012\000\084\003\013\000\120\001\000\000\
+\\141\000\085\003\000\000\
+\\131\000\087\003\000\000\
 \\000\000\
-\\134\000\005\003\000\000\
+\\015\000\246\000\130\000\088\003\000\000\
 \\000\000\
-\\017\000\241\000\133\000\006\003\000\000\
+\\143\000\089\003\000\000\
 \\000\000\
+\\139\000\090\003\000\000\
 \\000\000\
+\\015\000\036\002\138\000\092\003\000\000\
 \\000\000\
-\\017\000\009\002\131\000\007\003\000\000\
-\\130\000\008\003\000\000\
+\\003\000\159\001\078\000\093\003\000\000\
+\\091\000\094\003\000\000\
 \\000\000\
 \\000\000\
-\\008\000\018\000\014\000\243\001\094\000\009\003\104\000\242\001\000\000\
+\\089\000\096\003\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
+\\008\000\018\000\009\000\227\000\013\000\226\000\014\000\225\000\
+\\093\000\098\003\098\000\224\000\099\000\223\000\100\000\097\003\
+\\101\000\253\002\000\000\
+\\008\000\018\000\013\000\126\001\086\000\009\002\087\000\049\002\
+\\088\000\100\003\092\000\099\003\000\000\
 \\000\000\
 \\000\000\
+\\008\000\018\000\013\000\101\003\000\000\
+\\008\000\018\000\009\000\227\000\013\000\226\000\014\000\102\003\000\000\
+\\008\000\018\000\013\000\103\003\000\000\
+\\015\000\104\003\000\000\
+\\015\000\105\003\000\000\
+\\007\000\112\000\083\000\106\003\084\000\109\000\000\000\
+\\015\000\107\003\000\000\
+\\015\000\108\003\000\000\
+\\008\000\018\000\009\000\227\000\013\000\226\000\014\000\225\000\
+\\098\000\224\000\099\000\223\000\100\000\110\003\101\000\055\002\
+\\105\000\109\003\000\000\
 \\000\000\
 \\000\000\
-\\107\000\013\003\000\000\
+\\008\000\018\000\009\000\227\000\013\000\226\000\014\000\225\000\
+\\098\000\224\000\099\000\223\000\100\000\113\003\101\000\112\003\
+\\116\000\111\003\000\000\
+\\008\000\018\000\009\000\227\000\013\000\226\000\014\000\225\000\
+\\098\000\224\000\099\000\223\000\100\000\116\003\101\000\112\003\
+\\116\000\115\003\000\000\
 \\000\000\
-\\008\000\018\000\010\000\025\002\014\000\024\002\016\000\023\002\
-\\088\000\243\002\089\000\242\002\108\000\017\003\000\000\
+\\008\000\108\000\112\000\117\003\000\000\
 \\000\000\
-\\008\000\018\000\009\000\226\000\014\000\225\000\015\000\126\001\
-\\097\000\019\003\098\000\222\000\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
+\\006\000\122\001\008\000\018\000\012\000\120\003\013\000\120\001\000\000\
 \\000\000\
+\\058\000\122\003\000\000\
 \\000\000\
+\\015\000\129\000\057\000\123\003\000\000\
 \\000\000\
 \\000\000\
-\\105\000\025\003\000\000\
 \\000\000\
-\\010\000\232\000\147\000\027\003\000\000\
-\\008\000\018\000\014\000\243\001\104\000\242\001\151\000\028\003\000\000\
-\\008\000\018\000\009\000\226\000\014\000\225\000\015\000\126\001\
-\\097\000\220\002\098\000\219\002\150\000\030\003\000\000\
+\\015\000\230\001\054\000\124\003\000\000\
+\\097\000\125\003\000\000\
+\\089\000\027\001\103\000\126\003\113\000\025\001\000\000\
+\\097\000\127\003\000\000\
+\\005\000\019\000\008\000\018\000\010\000\128\003\011\000\016\000\
+\\013\000\015\000\000\000\
+\\005\000\019\000\008\000\018\000\010\000\129\003\011\000\016\000\
+\\013\000\015\000\000\000\
+\\006\000\122\001\008\000\018\000\012\000\130\003\013\000\120\001\000\000\
+\\005\000\019\000\008\000\018\000\010\000\131\003\011\000\016\000\
+\\013\000\015\000\000\000\
+\\005\000\019\000\008\000\018\000\010\000\132\003\011\000\016\000\
+\\013\000\015\000\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
+\\008\000\018\000\013\000\133\003\000\000\
+\\008\000\018\000\009\000\227\000\013\000\226\000\014\000\134\003\000\000\
+\\008\000\018\000\013\000\135\003\000\000\
+\\015\000\136\003\000\000\
+\\015\000\137\003\000\000\
+\\007\000\112\000\083\000\138\003\084\000\109\000\000\000\
+\\015\000\139\003\000\000\
+\\015\000\140\003\000\000\
+\\008\000\018\000\009\000\227\000\013\000\226\000\014\000\225\000\
+\\098\000\224\000\099\000\223\000\100\000\142\003\101\000\107\002\
+\\152\000\141\003\000\000\
 \\000\000\
 \\000\000\
-\\007\000\111\000\085\000\031\003\086\000\108\000\000\000\
+\\008\000\018\000\013\000\143\003\000\000\
+\\008\000\018\000\009\000\227\000\013\000\226\000\014\000\225\000\
+\\098\000\224\000\099\000\145\003\111\000\144\003\000\000\
+\\008\000\018\000\013\000\146\003\000\000\
+\\015\000\147\003\000\000\
+\\015\000\148\003\000\000\
+\\007\000\012\001\073\000\149\003\074\000\010\001\075\000\009\001\
+\\076\000\008\001\077\000\007\001\081\000\006\001\000\000\
+\\015\000\150\003\000\000\
+\\015\000\151\003\000\000\
 \\000\000\
-\\007\000\009\001\075\000\032\003\076\000\007\001\077\000\006\001\
-\\078\000\005\001\079\000\004\001\083\000\003\001\000\000\
 \\000\000\
-\\010\000\106\000\106\000\033\003\000\000\
-\\008\000\018\000\009\000\226\000\014\000\225\000\015\000\126\001\
-\\097\000\036\003\098\000\035\003\109\000\034\003\000\000\
-\\008\000\018\000\009\000\226\000\014\000\225\000\015\000\126\001\
-\\097\000\038\003\098\000\035\003\109\000\037\003\000\000\
 \\000\000\
-\\008\000\018\000\010\000\025\002\014\000\024\002\016\000\023\002\
-\\088\000\243\002\089\000\242\002\108\000\039\003\000\000\
 \\000\000\
 \\000\000\
-\\008\000\018\000\009\000\226\000\014\000\225\000\015\000\126\001\
-\\097\000\042\003\098\000\222\000\000\000\
+\\008\000\018\000\013\000\152\003\000\000\
+\\008\000\018\000\009\000\227\000\013\000\226\000\014\000\153\003\000\000\
+\\008\000\018\000\013\000\154\003\000\000\
+\\015\000\155\003\000\000\
+\\015\000\156\003\000\000\
+\\007\000\112\000\083\000\157\003\084\000\109\000\000\000\
+\\015\000\158\003\000\000\
+\\015\000\159\003\000\000\
+\\008\000\018\000\009\000\227\000\013\000\226\000\014\000\225\000\
+\\098\000\224\000\099\000\223\000\100\000\161\003\101\000\138\002\
+\\158\000\160\003\000\000\
 \\000\000\
-\\007\000\009\001\075\000\044\003\076\000\007\001\077\000\006\001\
-\\078\000\005\001\079\000\004\001\083\000\003\001\000\000\
-\\007\000\009\001\075\000\045\003\076\000\007\001\077\000\006\001\
-\\078\000\005\001\079\000\004\001\083\000\003\001\000\000\
 \\000\000\
-\\104\000\046\003\000\000\
+\\141\000\162\003\000\000\
 \\000\000\
+\\015\000\244\000\140\000\163\003\000\000\
 \\000\000\
-\\007\000\111\000\085\000\047\003\086\000\108\000\000\000\
 \\000\000\
-\\006\000\118\001\008\000\018\000\013\000\048\003\014\000\116\001\000\000\
-\\100\000\050\003\103\000\049\003\105\000\025\003\000\000\
 \\000\000\
 \\000\000\
-\\107\000\052\003\000\000\
+\\015\000\036\002\138\000\164\003\000\000\
+\\137\000\165\003\000\000\
 \\000\000\
 \\000\000\
+\\008\000\018\000\013\000\253\001\094\000\166\003\109\000\252\001\000\000\
 \\000\000\
 \\000\000\
-\\008\000\018\000\010\000\025\002\014\000\024\002\016\000\023\002\
-\\088\000\243\002\089\000\242\002\108\000\054\003\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
-\\105\000\025\003\138\000\057\003\141\000\056\003\000\000\
-\\105\000\025\003\143\000\060\003\146\000\059\003\000\000\
+\\097\000\176\003\000\000\
+\\089\000\027\001\103\000\177\003\113\000\025\001\000\000\
+\\097\000\178\003\000\000\
+\\005\000\019\000\008\000\018\000\010\000\179\003\011\000\016\000\
+\\013\000\015\000\000\000\
+\\005\000\019\000\008\000\018\000\010\000\180\003\011\000\016\000\
+\\013\000\015\000\000\000\
+\\006\000\122\001\008\000\018\000\012\000\181\003\013\000\120\001\000\000\
+\\005\000\019\000\008\000\018\000\010\000\182\003\011\000\016\000\
+\\013\000\015\000\000\000\
+\\005\000\019\000\008\000\018\000\010\000\183\003\011\000\016\000\
+\\013\000\015\000\000\000\
 \\000\000\
-\\006\000\118\001\008\000\018\000\013\000\062\003\014\000\116\001\000\000\
 \\000\000\
 \\000\000\
+\\114\000\184\003\000\000\
 \\000\000\
-\\009\000\103\000\099\000\122\002\102\000\064\003\104\000\046\003\000\000\
+\\089\000\186\003\000\000\
 \\000\000\
-\\008\000\018\000\014\000\243\001\104\000\242\001\110\000\065\003\000\000\
 \\000\000\
 \\000\000\
+\\008\000\018\000\009\000\227\000\013\000\226\000\014\000\225\000\
+\\098\000\224\000\099\000\223\000\100\000\188\003\101\000\112\003\
+\\116\000\187\003\000\000\
+\\008\000\018\000\013\000\126\001\086\000\009\002\087\000\175\002\
+\\088\000\190\003\115\000\189\003\000\000\
 \\000\000\
 \\000\000\
-\\008\000\214\000\104\000\046\003\137\000\153\002\140\000\068\003\000\000\
 \\000\000\
 \\000\000\
-\\009\000\216\000\104\000\046\003\142\000\236\001\145\000\069\003\000\000\
 \\000\000\
-\\007\000\009\001\075\000\071\003\076\000\007\001\077\000\006\001\
-\\078\000\005\001\079\000\004\001\083\000\003\001\000\000\
 \\000\000\
 \\000\000\
-\\007\000\111\000\085\000\072\003\086\000\108\000\000\000\
 \\000\000\
 \\000\000\
 \\000\000\
-\\007\000\009\001\075\000\073\003\076\000\007\001\077\000\006\001\
-\\078\000\005\001\079\000\004\001\083\000\003\001\000\000\
-\\091\000\075\003\095\000\074\003\105\000\025\003\000\000\
-\\006\000\118\001\008\000\018\000\013\000\077\003\014\000\116\001\000\000\
-\\105\000\025\003\148\000\079\003\152\000\078\003\000\000\
 \\000\000\
 \\000\000\
-\\008\000\100\000\090\000\180\002\094\000\081\003\104\000\046\003\000\000\
 \\000\000\
+\\097\000\200\003\000\000\
+\\089\000\027\001\103\000\201\003\113\000\025\001\000\000\
+\\097\000\202\003\000\000\
+\\005\000\019\000\008\000\018\000\010\000\203\003\011\000\016\000\
+\\013\000\015\000\000\000\
+\\005\000\019\000\008\000\018\000\010\000\204\003\011\000\016\000\
+\\013\000\015\000\000\000\
+\\006\000\122\001\008\000\018\000\012\000\205\003\013\000\120\001\000\000\
+\\005\000\019\000\008\000\018\000\010\000\206\003\011\000\016\000\
+\\013\000\015\000\000\000\
+\\005\000\019\000\008\000\018\000\010\000\207\003\011\000\016\000\
+\\013\000\015\000\000\000\
 \\000\000\
 \\000\000\
-\\010\000\232\000\104\000\046\003\147\000\027\003\151\000\083\003\000\000\
+\\110\000\208\003\000\000\
 \\000\000\
-\\007\000\009\001\075\000\084\003\076\000\007\001\077\000\006\001\
-\\078\000\005\001\079\000\004\001\083\000\003\001\000\000\
+\\008\000\018\000\013\000\126\001\086\000\125\001\110\000\210\003\000\000\
+\\110\000\211\003\000\000\
+\\005\000\019\000\008\000\018\000\010\000\212\003\011\000\016\000\
+\\013\000\015\000\000\000\
+\\005\000\019\000\008\000\018\000\010\000\213\003\011\000\016\000\
+\\013\000\015\000\000\000\
+\\110\000\214\003\000\000\
+\\005\000\019\000\008\000\018\000\010\000\215\003\011\000\016\000\
+\\013\000\015\000\000\000\
+\\005\000\019\000\008\000\018\000\010\000\216\003\011\000\016\000\
+\\013\000\015\000\000\000\
+\\097\000\217\003\000\000\
+\\089\000\027\001\103\000\218\003\113\000\025\001\000\000\
+\\097\000\219\003\000\000\
+\\005\000\019\000\008\000\018\000\010\000\220\003\011\000\016\000\
+\\013\000\015\000\000\000\
+\\005\000\019\000\008\000\018\000\010\000\221\003\011\000\016\000\
+\\013\000\015\000\000\000\
+\\006\000\122\001\008\000\018\000\012\000\222\003\013\000\120\001\000\000\
+\\005\000\019\000\008\000\018\000\010\000\223\003\011\000\016\000\
+\\013\000\015\000\000\000\
+\\005\000\019\000\008\000\018\000\010\000\224\003\011\000\016\000\
+\\013\000\015\000\000\000\
 \\000\000\
-\\105\000\025\003\107\000\086\003\111\000\085\003\000\000\
 \\000\000\
 \\000\000\
-\\010\000\106\000\104\000\046\003\106\000\033\003\110\000\088\003\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\008\000\018\000\013\000\225\003\000\000\
+\\008\000\018\000\009\000\227\000\013\000\226\000\014\000\226\003\000\000\
+\\008\000\018\000\013\000\227\003\000\000\
+\\015\000\228\003\000\000\
+\\015\000\229\003\000\000\
+\\007\000\112\000\083\000\230\003\084\000\109\000\000\000\
+\\015\000\231\003\000\000\
+\\015\000\232\003\000\000\
+\\008\000\018\000\009\000\227\000\013\000\226\000\014\000\225\000\
+\\093\000\234\003\098\000\224\000\099\000\223\000\100\000\233\003\
+\\101\000\253\002\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\008\000\018\000\013\000\253\001\109\000\252\001\117\000\243\003\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\008\000\018\000\013\000\254\003\000\000\
+\\008\000\018\000\009\000\227\000\013\000\226\000\014\000\225\000\
+\\098\000\224\000\099\000\000\004\111\000\144\003\149\000\255\003\000\000\
+\\008\000\018\000\013\000\001\004\000\000\
+\\015\000\002\004\000\000\
+\\015\000\003\004\000\000\
+\\007\000\012\001\073\000\004\004\074\000\010\001\075\000\009\001\
+\\076\000\008\001\077\000\007\001\081\000\006\001\000\000\
+\\015\000\005\004\000\000\
+\\015\000\006\004\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\109\000\015\004\000\000\
+\\000\000\
+\\000\000\
+\\110\000\016\004\000\000\
+\\110\000\017\004\000\000\
+\\000\000\
+\\110\000\018\004\000\000\
+\\110\000\019\004\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\097\000\028\004\000\000\
+\\089\000\027\001\103\000\029\004\113\000\025\001\000\000\
+\\097\000\030\004\000\000\
+\\005\000\019\000\008\000\018\000\010\000\031\004\011\000\016\000\
+\\013\000\015\000\000\000\
+\\005\000\019\000\008\000\018\000\010\000\032\004\011\000\016\000\
+\\013\000\015\000\000\000\
+\\006\000\122\001\008\000\018\000\012\000\033\004\013\000\120\001\000\000\
+\\005\000\019\000\008\000\018\000\010\000\034\004\011\000\016\000\
+\\013\000\015\000\000\000\
+\\005\000\019\000\008\000\018\000\010\000\035\004\011\000\016\000\
+\\013\000\015\000\000\000\
+\\000\000\
+\\000\000\
+\\008\000\018\000\013\000\036\004\000\000\
+\\008\000\018\000\009\000\227\000\013\000\226\000\014\000\225\000\
+\\098\000\224\000\099\000\038\004\108\000\037\004\111\000\144\003\000\000\
+\\008\000\018\000\013\000\039\004\000\000\
+\\015\000\040\004\000\000\
+\\015\000\041\004\000\000\
+\\007\000\012\001\073\000\042\004\074\000\010\001\075\000\009\001\
+\\076\000\008\001\077\000\007\001\081\000\006\001\000\000\
+\\015\000\043\004\000\000\
+\\015\000\044\004\000\000\
+\\000\000\
+\\008\000\018\000\013\000\045\004\000\000\
+\\008\000\018\000\009\000\227\000\013\000\226\000\014\000\046\004\000\000\
+\\008\000\018\000\013\000\047\004\000\000\
+\\015\000\048\004\000\000\
+\\015\000\049\004\000\000\
+\\007\000\112\000\083\000\050\004\084\000\109\000\000\000\
+\\015\000\051\004\000\000\
+\\015\000\052\004\000\000\
+\\008\000\018\000\009\000\227\000\013\000\226\000\014\000\225\000\
+\\098\000\224\000\099\000\223\000\100\000\054\004\101\000\112\003\
+\\116\000\053\004\000\000\
+\\000\000\
+\\110\000\208\003\145\000\056\004\148\000\055\004\000\000\
+\\000\000\
+\\008\000\018\000\013\000\126\001\086\000\125\001\110\000\210\003\
+\\145\000\056\004\148\000\058\004\000\000\
+\\110\000\211\003\145\000\056\004\148\000\059\004\000\000\
+\\005\000\019\000\008\000\018\000\010\000\060\004\011\000\016\000\
+\\013\000\015\000\000\000\
+\\005\000\019\000\008\000\018\000\010\000\061\004\011\000\016\000\
+\\013\000\015\000\000\000\
+\\110\000\214\003\145\000\056\004\148\000\062\004\000\000\
+\\005\000\019\000\008\000\018\000\010\000\063\004\011\000\016\000\
+\\013\000\015\000\000\000\
+\\005\000\019\000\008\000\018\000\010\000\064\004\011\000\016\000\
+\\013\000\015\000\000\000\
+\\008\000\018\000\013\000\065\004\000\000\
+\\008\000\018\000\009\000\227\000\013\000\226\000\014\000\225\000\
+\\098\000\224\000\099\000\067\004\111\000\144\003\155\000\066\004\000\000\
+\\008\000\018\000\013\000\068\004\000\000\
+\\015\000\069\004\000\000\
+\\015\000\070\004\000\000\
+\\007\000\012\001\073\000\071\004\074\000\010\001\075\000\009\001\
+\\076\000\008\001\077\000\007\001\081\000\006\001\000\000\
+\\015\000\072\004\000\000\
+\\015\000\073\004\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\008\000\018\000\013\000\074\004\000\000\
+\\008\000\018\000\009\000\227\000\013\000\226\000\014\000\225\000\
+\\098\000\224\000\099\000\076\004\111\000\144\003\161\000\075\004\000\000\
+\\008\000\018\000\013\000\077\004\000\000\
+\\015\000\078\004\000\000\
+\\015\000\079\004\000\000\
+\\007\000\012\001\073\000\080\004\074\000\010\001\075\000\009\001\
+\\076\000\008\001\077\000\007\001\081\000\006\001\000\000\
+\\015\000\081\004\000\000\
+\\015\000\082\004\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\104\000\092\004\107\000\091\004\110\000\208\003\000\000\
+\\000\000\
+\\008\000\018\000\013\000\126\001\086\000\125\001\104\000\092\004\
+\\107\000\094\004\110\000\210\003\000\000\
+\\104\000\092\004\107\000\095\004\110\000\211\003\000\000\
+\\005\000\019\000\008\000\018\000\010\000\096\004\011\000\016\000\
+\\013\000\015\000\000\000\
+\\005\000\019\000\008\000\018\000\010\000\097\004\011\000\016\000\
+\\013\000\015\000\000\000\
+\\104\000\092\004\107\000\098\004\110\000\214\003\000\000\
+\\005\000\019\000\008\000\018\000\010\000\099\004\011\000\016\000\
+\\013\000\015\000\000\000\
+\\005\000\019\000\008\000\018\000\010\000\100\004\011\000\016\000\
+\\013\000\015\000\000\000\
+\\097\000\101\004\000\000\
+\\089\000\027\001\103\000\102\004\113\000\025\001\000\000\
+\\097\000\103\004\000\000\
+\\005\000\019\000\008\000\018\000\010\000\104\004\011\000\016\000\
+\\013\000\015\000\000\000\
+\\005\000\019\000\008\000\018\000\010\000\105\004\011\000\016\000\
+\\013\000\015\000\000\000\
+\\006\000\122\001\008\000\018\000\012\000\106\004\013\000\120\001\000\000\
+\\005\000\019\000\008\000\018\000\010\000\107\004\011\000\016\000\
+\\013\000\015\000\000\000\
+\\005\000\019\000\008\000\018\000\010\000\108\004\011\000\016\000\
+\\013\000\015\000\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\008\000\214\000\109\000\015\004\144\000\201\002\147\000\109\004\000\000\
+\\000\000\
+\\000\000\
+\\110\000\016\004\145\000\056\004\148\000\110\004\000\000\
+\\110\000\017\004\145\000\056\004\148\000\111\004\000\000\
+\\000\000\
+\\110\000\018\004\145\000\056\004\148\000\112\004\000\000\
+\\110\000\019\004\145\000\056\004\148\000\113\004\000\000\
+\\110\000\208\003\151\000\115\004\154\000\114\004\000\000\
+\\000\000\
+\\008\000\018\000\013\000\126\001\086\000\125\001\110\000\210\003\
+\\151\000\115\004\154\000\117\004\000\000\
+\\110\000\211\003\151\000\115\004\154\000\118\004\000\000\
+\\005\000\019\000\008\000\018\000\010\000\119\004\011\000\016\000\
+\\013\000\015\000\000\000\
+\\005\000\019\000\008\000\018\000\010\000\120\004\011\000\016\000\
+\\013\000\015\000\000\000\
+\\110\000\214\003\151\000\115\004\154\000\121\004\000\000\
+\\005\000\019\000\008\000\018\000\010\000\122\004\011\000\016\000\
+\\013\000\015\000\000\000\
+\\005\000\019\000\008\000\018\000\010\000\123\004\011\000\016\000\
+\\013\000\015\000\000\000\
+\\110\000\208\003\157\000\125\004\160\000\124\004\000\000\
+\\000\000\
+\\008\000\018\000\013\000\126\001\086\000\125\001\110\000\210\003\
+\\157\000\125\004\160\000\127\004\000\000\
+\\110\000\211\003\157\000\125\004\160\000\128\004\000\000\
+\\005\000\019\000\008\000\018\000\010\000\129\004\011\000\016\000\
+\\013\000\015\000\000\000\
+\\005\000\019\000\008\000\018\000\010\000\130\004\011\000\016\000\
+\\013\000\015\000\000\000\
+\\110\000\214\003\157\000\125\004\160\000\131\004\000\000\
+\\005\000\019\000\008\000\018\000\010\000\132\004\011\000\016\000\
+\\013\000\015\000\000\000\
+\\005\000\019\000\008\000\018\000\010\000\133\004\011\000\016\000\
+\\013\000\015\000\000\000\
+\\008\000\018\000\013\000\134\004\000\000\
+\\008\000\018\000\009\000\227\000\013\000\226\000\014\000\225\000\
+\\096\000\136\004\098\000\224\000\099\000\135\004\111\000\144\003\000\000\
+\\008\000\018\000\013\000\137\004\000\000\
+\\015\000\138\004\000\000\
+\\015\000\139\004\000\000\
+\\007\000\012\001\073\000\140\004\074\000\010\001\075\000\009\001\
+\\076\000\008\001\077\000\007\001\081\000\006\001\000\000\
+\\015\000\141\004\000\000\
+\\015\000\142\004\000\000\
+\\000\000\
+\\000\000\
+\\009\000\105\000\102\000\006\003\106\000\143\004\109\000\015\004\000\000\
+\\000\000\
+\\000\000\
+\\104\000\092\004\107\000\144\004\110\000\016\004\000\000\
+\\104\000\092\004\107\000\145\004\110\000\017\004\000\000\
+\\000\000\
+\\104\000\092\004\107\000\146\004\110\000\018\004\000\000\
+\\104\000\092\004\107\000\147\004\110\000\019\004\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\009\000\216\000\109\000\015\004\150\000\110\002\153\000\156\004\000\000\
+\\000\000\
+\\000\000\
+\\110\000\016\004\151\000\115\004\154\000\157\004\000\000\
+\\110\000\017\004\151\000\115\004\154\000\158\004\000\000\
+\\000\000\
+\\110\000\018\004\151\000\115\004\154\000\159\004\000\000\
+\\110\000\019\004\151\000\115\004\154\000\160\004\000\000\
+\\000\000\
+\\000\000\
+\\008\000\235\000\109\000\015\004\156\000\071\003\159\000\161\004\000\000\
+\\000\000\
+\\000\000\
+\\110\000\016\004\157\000\125\004\160\000\162\004\000\000\
+\\110\000\017\004\157\000\125\004\160\000\163\004\000\000\
+\\000\000\
+\\110\000\018\004\157\000\125\004\160\000\164\004\000\000\
+\\110\000\019\004\157\000\125\004\160\000\165\004\000\000\
+\\091\000\167\004\095\000\166\004\110\000\208\003\000\000\
+\\008\000\018\000\013\000\126\001\086\000\125\001\091\000\167\004\
+\\095\000\169\004\110\000\210\003\000\000\
+\\000\000\
+\\091\000\167\004\095\000\170\004\110\000\211\003\000\000\
+\\005\000\019\000\008\000\018\000\010\000\171\004\011\000\016\000\
+\\013\000\015\000\000\000\
+\\005\000\019\000\008\000\018\000\010\000\172\004\011\000\016\000\
+\\013\000\015\000\000\000\
+\\091\000\167\004\095\000\173\004\110\000\214\003\000\000\
+\\005\000\019\000\008\000\018\000\010\000\174\004\011\000\016\000\
+\\013\000\015\000\000\000\
+\\005\000\019\000\008\000\018\000\010\000\175\004\011\000\016\000\
+\\013\000\015\000\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\008\000\018\000\013\000\176\004\000\000\
+\\008\000\018\000\009\000\227\000\013\000\226\000\014\000\225\000\
+\\098\000\224\000\099\000\178\004\111\000\144\003\119\000\177\004\000\000\
+\\008\000\018\000\013\000\179\004\000\000\
+\\015\000\180\004\000\000\
+\\015\000\181\004\000\000\
+\\007\000\012\001\073\000\182\004\074\000\010\001\075\000\009\001\
+\\076\000\008\001\077\000\007\001\081\000\006\001\000\000\
+\\015\000\183\004\000\000\
+\\015\000\184\004\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\008\000\101\000\090\000\003\003\094\000\185\004\109\000\015\004\000\000\
+\\000\000\
+\\000\000\
+\\091\000\167\004\095\000\186\004\110\000\016\004\000\000\
+\\091\000\167\004\095\000\187\004\110\000\017\004\000\000\
+\\000\000\
+\\091\000\167\004\095\000\188\004\110\000\018\004\000\000\
+\\091\000\167\004\095\000\189\004\110\000\019\004\000\000\
+\\110\000\208\003\114\000\191\004\118\000\190\004\000\000\
+\\000\000\
+\\008\000\018\000\013\000\126\001\086\000\125\001\110\000\210\003\
+\\114\000\191\004\118\000\193\004\000\000\
+\\110\000\211\003\114\000\191\004\118\000\194\004\000\000\
+\\005\000\019\000\008\000\018\000\010\000\195\004\011\000\016\000\
+\\013\000\015\000\000\000\
+\\005\000\019\000\008\000\018\000\010\000\196\004\011\000\016\000\
+\\013\000\015\000\000\000\
+\\110\000\214\003\114\000\191\004\118\000\197\004\000\000\
+\\005\000\019\000\008\000\018\000\010\000\198\004\011\000\016\000\
+\\013\000\015\000\000\000\
+\\005\000\019\000\008\000\018\000\010\000\199\004\011\000\016\000\
+\\013\000\015\000\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\008\000\108\000\109\000\015\004\112\000\117\003\117\000\200\004\000\000\
+\\000\000\
+\\000\000\
+\\110\000\016\004\114\000\191\004\118\000\201\004\000\000\
+\\110\000\017\004\114\000\191\004\118\000\202\004\000\000\
+\\000\000\
+\\110\000\018\004\114\000\191\004\118\000\203\004\000\000\
+\\110\000\019\004\114\000\191\004\118\000\204\004\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
+\\000\000\
 \\000\000\
 \\000\000\
 \"
-val numstates = 858
-val numrules = 400
+val numstates = 1230
+val numrules = 473
 val s = ref "" and index = ref 0
 val string_to_int = fn () => 
 let val i = !index
@@ -17188,19 +18088,21 @@ datatype svalue = VOID | ntVOID of unit ->  unit
  | program_opt' of unit ->  (Program option)
  | program_opt of unit ->  (Program option)
  | program of unit ->  (Program)
- | AND_tyreadesc_opt__AND_fundesc_opt of unit ->  (TyReaDesc option*FunDesc option)
- | tyreadesc__AND_fundesc_opt of unit ->  (TyReaDesc*FunDesc option)
+ | sigexp__AND_rea_opt__AND_fundesc_opt of unit ->  (SigExp*Rea option*FunDesc option)
+ | AND_rea_opt__AND_fundesc_opt of unit ->  (Rea option*FunDesc option)
+ | rea__AND_fundesc_opt of unit ->  (Rea*FunDesc option)
  | sigexp__AND_fundesc_opt of unit ->  (SigExp*FunDesc option)
- | strexp__AND_fundesc_opt of unit ->  (StrExp*FunDesc option)
  | AND_fundesc_opt of unit ->  (FunDesc option)
  | fundesc of unit ->  (FunDesc)
- | AND_tyreadesc_opt__AND_sigdesc_opt of unit ->  (TyReaDesc option*SigDesc option)
- | tyreadesc__AND_sigdesc_opt of unit ->  (TyReaDesc*SigDesc option)
+ | sigexp__AND_rea_opt__AND_sigdesc_opt of unit ->  (SigExp*Rea option*SigDesc option)
+ | AND_rea_opt__AND_sigdesc_opt of unit ->  (Rea option*SigDesc option)
+ | rea__AND_sigdesc_opt of unit ->  (Rea*SigDesc option)
  | sigexp__AND_sigdesc_opt of unit ->  (SigExp*SigDesc option)
  | AND_sigdesc_opt of unit ->  (SigDesc option)
  | sigdesc of unit ->  (SigDesc)
- | AND_tyreadesc_opt__AND_strdesc_opt of unit ->  (TyReaDesc option*StrDesc option)
- | tyreadesc__AND_strdesc_opt of unit ->  (TyReaDesc*StrDesc option)
+ | sigexp__AND_rea_opt__AND_strdesc_opt of unit ->  (SigExp*Rea option*StrDesc option)
+ | AND_rea_opt__AND_strdesc_opt of unit ->  (Rea option*StrDesc option)
+ | rea__AND_strdesc_opt of unit ->  (Rea*StrDesc option)
  | sigexp__AND_strdesc_opt of unit ->  (SigExp*StrDesc option)
  | AND_strdesc_opt of unit ->  (StrDesc option)
  | strdesc of unit ->  (StrDesc)
@@ -17223,32 +18125,38 @@ datatype svalue = VOID | ntVOID of unit ->  unit
  | longsigid_EQUALS_list1 of unit ->  (LongSigId list)
  | longtycon_EQUALS_list2 of unit ->  (LongTyCon list)
  | longtycon_EQUALS_list1 of unit ->  (LongTyCon list)
- | longsigid_list2 of unit ->  (LongSigId list)
  | WITHTYPE_typdesc_opt of unit ->  (TypDesc option)
  | spec1' of unit ->  (Spec) | spec1 of unit ->  (Spec)
  | spec of unit ->  (Spec)
- | AND_tyreadesc_opt__AND_funbind_opt of unit ->  (TyReaDesc option*FunBind option)
- | tyreadesc__AND_funbind_opt of unit ->  (TyReaDesc*FunBind option)
+ | sigexp__AND_rea_opt__AND_funbind_opt of unit ->  (SigExp*Rea option*FunBind option)
+ | AND_rea_opt__AND_funbind_opt of unit ->  (Rea option*FunBind option)
+ | rea__AND_funbind_opt of unit ->  (Rea*FunBind option)
  | sigexp__AND_funbind_opt of unit ->  (SigExp*FunBind option)
  | strexp__AND_funbind_opt of unit ->  (StrExp*FunBind option)
  | AND_funbind_opt of unit ->  (FunBind option)
+ | strpat_list1 of unit ->  (StrPat list)
  | funbind of unit ->  (FunBind)
- | AND_tyreadesc_opt of unit ->  (TyReaDesc option)
- | tyreadesc of unit ->  (TyReaDesc)
- | AND_tyreadesc_opt__AND_sigbind_opt of unit ->  (TyReaDesc option*SigBind option)
- | tyreadesc__AND_sigbind_opt of unit ->  (TyReaDesc*SigBind option)
+ | sigexp__AND_rea_opt of unit ->  (SigExp*Rea option)
+ | AND_rea_opt of unit ->  (Rea option) | rea of unit ->  (Rea)
+ | sigexp__AND_rea_opt__AND_sigbind_opt of unit ->  (SigExp*Rea option*SigBind option)
+ | AND_rea_opt__AND_sigbind_opt of unit ->  (Rea option*SigBind option)
+ | rea__AND_sigbind_opt of unit ->  (Rea*SigBind option)
  | sigexp__AND_sigbind_opt of unit ->  (SigExp*SigBind option)
  | AND_sigbind_opt of unit ->  (SigBind option)
+ | strpat_list0 of unit ->  (StrPat list)
  | sigbind of unit ->  (SigBind) | sigexp' of unit ->  (SigExp)
- | sigexp of unit ->  (SigExp)
+ | sigexp of unit ->  (SigExp) | appsigexp of unit ->  (AppSigExp)
+ | atsigexp of unit ->  (AtSigExp)
  | COLON_sigexp_opt of unit ->  (SigExp option)
- | AND_tyreadesc_opt__AND_strbind_opt of unit ->  (TyReaDesc option*StrBind option)
- | tyreadesc__AND_strbind_opt of unit ->  (TyReaDesc*StrBind option)
+ | sigexp__AND_rea_opt__AND_strbind_opt of unit ->  (SigExp*Rea option*StrBind option)
+ | AND_rea_opt__AND_strbind_opt of unit ->  (Rea option*StrBind option)
+ | rea__AND_strbind_opt of unit ->  (Rea*StrBind option)
  | sigexp__AND_strbind_opt of unit ->  (SigExp*StrBind option)
  | strexp__AND_strbind_opt of unit ->  (StrExp*StrBind option)
  | AND_strbind_opt of unit ->  (StrBind option)
- | strbind of unit ->  (StrBind) | strexp' of unit ->  (StrExp)
- | strexp of unit ->  (StrExp)
+ | strbind of unit ->  (StrBind) | strpat of unit ->  (StrPat)
+ | strexp of unit ->  (StrExp) | appstrexp of unit ->  (AppStrExp)
+ | atstrexp of unit ->  (AtStrExp)
  | tyvar_COMMA_list1 of unit ->  (TyVar list)
  | tyvarseq1 of unit ->  (TyVarSeq) | tyvarseq of unit ->  (TyVarSeq)
  | ty_COMMA_list2 of unit ->  (Ty list) | tyseq of unit ->  (TySeq)
@@ -17300,15 +18208,13 @@ datatype svalue = VOID | ntVOID of unit ->  unit
  | exp_COMMA_list2 of unit ->  (Exp list)
  | exp_COMMA_list1 of unit ->  (Exp list)
  | exp_COMMA_list0 of unit ->  (Exp list) | atexp of unit ->  (AtExp)
- | OP_opt of unit ->  (Op) | longfunid of unit ->  (LongFunId)
- | longsigid of unit ->  (LongSigId)
+ | OP_opt of unit ->  (Op) | longsigid of unit ->  (LongSigId)
  | longstrid of unit ->  (LongStrId)
  | longtycon of unit ->  (LongTyCon) | longvid' of unit ->  (LongVId)
- | longvid of unit ->  (LongVId) | funid of unit ->  (FunId)
- | sigid of unit ->  (SigId) | strid of unit ->  (StrId)
- | tyvar of unit ->  (TyVar) | tycon of unit ->  (TyCon)
- | vid' of unit ->  (VId) | vid of unit ->  (VId)
- | lab of unit ->  (Lab) | d of unit ->  (int)
+ | longvid of unit ->  (LongVId) | sigid of unit ->  (SigId)
+ | strid of unit ->  (StrId) | tyvar of unit ->  (TyVar)
+ | tycon of unit ->  (TyCon) | vid' of unit ->  (VId)
+ | vid of unit ->  (VId) | lab of unit ->  (Lab) | d of unit ->  (int)
  | scon of unit ->  (SCon)
 end
 type svalue = MlyValue.svalue
@@ -17603,33 +18509,26 @@ val ALPHA as ALPHA1=ALPHA1 ()
 				SigId.fromString ALPHA) ) end
 )
  in (LrTable.NT 8,(result,ALPHA1left,ALPHA1right),rest671) end
-| (25,(_,(MlyValue.ALPHA ALPHA1,ALPHAleft as ALPHA1left,ALPHAright as 
-ALPHA1right))::rest671) => let val result=MlyValue.funid(fn _ => let 
-val ALPHA as ALPHA1=ALPHA1 ()
- in ( FunId(I(ALPHAleft,ALPHAright),
-				FunId.fromString ALPHA) ) end
-)
- in (LrTable.NT 9,(result,ALPHA1left,ALPHA1right),rest671) end
-| (26,(_,(MlyValue.longvid' longvid'1,longvid'1left,longvid'1right))::
+| (25,(_,(MlyValue.longvid' longvid'1,longvid'1left,longvid'1right))::
 rest671) => let val result=MlyValue.longvid(fn _ => let val longvid'
  as longvid'1=longvid'1 ()
  in ( longvid' ) end
 )
- in (LrTable.NT 10,(result,longvid'1left,longvid'1right),rest671) end
-| (27,(_,(_,EQUALSleft as EQUALS1left,EQUALSright as EQUALS1right))::
+ in (LrTable.NT 9,(result,longvid'1left,longvid'1right),rest671) end
+| (26,(_,(_,EQUALSleft as EQUALS1left,EQUALSright as EQUALS1right))::
 rest671) => let val result=MlyValue.longvid(fn _ => (
  SHORTLong(I(EQUALSleft,EQUALSright),
 					    VId(I(EQUALSleft,EQUALSright),
 						VId.fromString "=")) 
 ))
- in (LrTable.NT 10,(result,EQUALS1left,EQUALS1right),rest671) end
-| (28,(_,(MlyValue.vid' vid'1,vid'left as vid'1left,vid'right as 
+ in (LrTable.NT 9,(result,EQUALS1left,EQUALS1right),rest671) end
+| (27,(_,(MlyValue.vid' vid'1,vid'left as vid'1left,vid'right as 
 vid'1right))::rest671) => let val result=MlyValue.longvid'(fn _ => 
 let val vid' as vid'1=vid'1 ()
  in ( SHORTLong(I(vid'left,vid'right), vid') ) end
 )
- in (LrTable.NT 11,(result,vid'1left,vid'1right),rest671) end
-| (29,(_,(MlyValue.vid vid1,_,vidright as vid1right))::_::(_,(
+ in (LrTable.NT 10,(result,vid'1left,vid'1right),rest671) end
+| (28,(_,(MlyValue.vid vid1,_,vidright as vid1right))::_::(_,(
 MlyValue.longstrid longstrid1,longstridleft as longstrid1left,_))::
 rest671) => let val result=MlyValue.longvid'(fn _ => let val longstrid
  as longstrid1=longstrid1 ()
@@ -17637,14 +18536,14 @@ val vid as vid1=vid1 ()
  in ( DOTLong(I(longstridleft,vidright),
 					  longstrid, vid) ) end
 )
- in (LrTable.NT 11,(result,longstrid1left,vid1right),rest671) end
-| (30,(_,(MlyValue.tycon tycon1,tyconleft as tycon1left,tyconright as 
+ in (LrTable.NT 10,(result,longstrid1left,vid1right),rest671) end
+| (29,(_,(MlyValue.tycon tycon1,tyconleft as tycon1left,tyconright as 
 tycon1right))::rest671) => let val result=MlyValue.longtycon(fn _ => 
 let val tycon as tycon1=tycon1 ()
  in ( SHORTLong(I(tyconleft,tyconright), tycon) ) end
 )
- in (LrTable.NT 12,(result,tycon1left,tycon1right),rest671) end
-| (31,(_,(MlyValue.tycon tycon1,_,tyconright as tycon1right))::_::(_,(
+ in (LrTable.NT 11,(result,tycon1left,tycon1right),rest671) end
+| (30,(_,(MlyValue.tycon tycon1,_,tyconright as tycon1right))::_::(_,(
 MlyValue.longstrid longstrid1,longstridleft as longstrid1left,_))::
 rest671) => let val result=MlyValue.longtycon(fn _ => let val 
 longstrid as longstrid1=longstrid1 ()
@@ -17653,14 +18552,14 @@ val tycon as tycon1=tycon1 ()
 					  longstrid, tycon) )
  end
 )
- in (LrTable.NT 12,(result,longstrid1left,tycon1right),rest671) end
-| (32,(_,(MlyValue.strid strid1,stridleft as strid1left,stridright as 
+ in (LrTable.NT 11,(result,longstrid1left,tycon1right),rest671) end
+| (31,(_,(MlyValue.strid strid1,stridleft as strid1left,stridright as 
 strid1right))::rest671) => let val result=MlyValue.longstrid(fn _ => 
 let val strid as strid1=strid1 ()
  in ( SHORTLong(I(stridleft,stridright), strid) ) end
 )
- in (LrTable.NT 13,(result,strid1left,strid1right),rest671) end
-| (33,(_,(MlyValue.strid strid1,_,stridright as strid1right))::_::(_,(
+ in (LrTable.NT 12,(result,strid1left,strid1right),rest671) end
+| (32,(_,(MlyValue.strid strid1,_,stridright as strid1right))::_::(_,(
 MlyValue.longstrid longstrid1,longstridleft as longstrid1left,_))::
 rest671) => let val result=MlyValue.longstrid(fn _ => let val 
 longstrid as longstrid1=longstrid1 ()
@@ -17669,14 +18568,14 @@ val strid as strid1=strid1 ()
 					  longstrid, strid) )
  end
 )
- in (LrTable.NT 13,(result,longstrid1left,strid1right),rest671) end
-| (34,(_,(MlyValue.sigid sigid1,sigidleft as sigid1left,sigidright as 
+ in (LrTable.NT 12,(result,longstrid1left,strid1right),rest671) end
+| (33,(_,(MlyValue.sigid sigid1,sigidleft as sigid1left,sigidright as 
 sigid1right))::rest671) => let val result=MlyValue.longsigid(fn _ => 
 let val sigid as sigid1=sigid1 ()
  in ( SHORTLong(I(sigidleft,sigidright), sigid) ) end
 )
- in (LrTable.NT 14,(result,sigid1left,sigid1right),rest671) end
-| (35,(_,(MlyValue.sigid sigid1,_,sigidright as sigid1right))::_::(_,(
+ in (LrTable.NT 13,(result,sigid1left,sigid1right),rest671) end
+| (34,(_,(MlyValue.sigid sigid1,_,sigidright as sigid1right))::_::(_,(
 MlyValue.longstrid longstrid1,longstridleft as longstrid1left,_))::
 rest671) => let val result=MlyValue.longsigid(fn _ => let val 
 longstrid as longstrid1=longstrid1 ()
@@ -17685,35 +18584,19 @@ val sigid as sigid1=sigid1 ()
 					  longstrid, sigid) )
  end
 )
- in (LrTable.NT 14,(result,longstrid1left,sigid1right),rest671) end
-| (36,(_,(MlyValue.funid funid1,funidleft as funid1left,funidright as 
-funid1right))::rest671) => let val result=MlyValue.longfunid(fn _ => 
-let val funid as funid1=funid1 ()
- in ( SHORTLong(I(funidleft,funidright), funid) ) end
-)
- in (LrTable.NT 15,(result,funid1left,funid1right),rest671) end
-| (37,(_,(MlyValue.funid funid1,_,funidright as funid1right))::_::(_,(
-MlyValue.longstrid longstrid1,longstridleft as longstrid1left,_))::
-rest671) => let val result=MlyValue.longfunid(fn _ => let val 
-longstrid as longstrid1=longstrid1 ()
-val funid as funid1=funid1 ()
- in ( DOTLong(I(longstridleft,funidright),
-					  longstrid, funid) )
- end
-)
- in (LrTable.NT 15,(result,longstrid1left,funid1right),rest671) end
-| (38,(_,(_,OP1left,OP1right))::rest671) => let val result=
+ in (LrTable.NT 13,(result,longstrid1left,sigid1right),rest671) end
+| (35,(_,(_,OP1left,OP1right))::rest671) => let val result=
 MlyValue.OP_opt(fn _ => ( WITHOp ))
- in (LrTable.NT 16,(result,OP1left,OP1right),rest671) end
-| (39,rest671) => let val result=MlyValue.OP_opt(fn _ => ( SANSOp ))
- in (LrTable.NT 16,(result,defaultPos,defaultPos),rest671) end
-| (40,(_,(MlyValue.scon scon1,sconleft as scon1left,sconright as 
+ in (LrTable.NT 14,(result,OP1left,OP1right),rest671) end
+| (36,rest671) => let val result=MlyValue.OP_opt(fn _ => ( SANSOp ))
+ in (LrTable.NT 14,(result,defaultPos,defaultPos),rest671) end
+| (37,(_,(MlyValue.scon scon1,sconleft as scon1left,sconright as 
 scon1right))::rest671) => let val result=MlyValue.atexp(fn _ => let 
 val scon as scon1=scon1 ()
  in ( SCONAtExp(I(sconleft,sconright), scon) ) end
 )
- in (LrTable.NT 17,(result,scon1left,scon1right),rest671) end
-| (41,(_,(MlyValue.longvid longvid1,longvidleft as longvid1left,
+ in (LrTable.NT 15,(result,scon1left,scon1right),rest671) end
+| (38,(_,(MlyValue.longvid longvid1,longvidleft as longvid1left,
 longvidright as longvid1right))::rest671) => let val result=
 MlyValue.atexp(fn _ => let val longvid as longvid1=longvid1 ()
  in (
@@ -17721,8 +18604,8 @@ MlyValue.atexp(fn _ => let val longvid as longvid1=longvid1 ()
 				       SANSOp, longvid) 
 ) end
 )
- in (LrTable.NT 17,(result,longvid1left,longvid1right),rest671) end
-| (42,(_,(MlyValue.longvid longvid1,_,longvidright as longvid1right))
+ in (LrTable.NT 15,(result,longvid1left,longvid1right),rest671) end
+| (39,(_,(MlyValue.longvid longvid1,_,longvidright as longvid1right))
 ::(_,(_,OPleft as OP1left,_))::rest671) => let val result=
 MlyValue.atexp(fn _ => let val longvid as longvid1=longvid1 ()
  in (
@@ -17730,40 +18613,40 @@ MlyValue.atexp(fn _ => let val longvid as longvid1=longvid1 ()
 				       WITHOp, longvid) )
  end
 )
- in (LrTable.NT 17,(result,OP1left,longvid1right),rest671) end
-| (43,(_,(_,_,RBRACEright as RBRACE1right))::(_,(MlyValue.exprow_opt 
+ in (LrTable.NT 15,(result,OP1left,longvid1right),rest671) end
+| (40,(_,(_,_,RBRACEright as RBRACE1right))::(_,(MlyValue.exprow_opt 
 exprow_opt1,_,_))::(_,(_,LBRACEleft as LBRACE1left,_))::rest671) => 
 let val result=MlyValue.atexp(fn _ => let val exprow_opt as 
 exprow_opt1=exprow_opt1 ()
  in ( RECORDAtExp(I(LBRACEleft,RBRACEright), exprow_opt) ) end
 )
- in (LrTable.NT 17,(result,LBRACE1left,RBRACE1right),rest671) end
-| (44,(_,(_,_,RBRACEright as RBRACE1right))::(_,(MlyValue.exprow 
+ in (LrTable.NT 15,(result,LBRACE1left,RBRACE1right),rest671) end
+| (41,(_,(_,_,RBRACEright as RBRACE1right))::(_,(MlyValue.exprow 
 exprow1,_,_))::_::(_,(MlyValue.atexp atexp1,_,_))::(_,(_,LBRACEleft
  as LBRACE1left,_))::rest671) => let val result=MlyValue.atexp(fn _
  => let val atexp as atexp1=atexp1 ()
 val exprow as exprow1=exprow1 ()
  in ( UPDATEAtExp(I(LBRACEleft,RBRACEright), atexp, exprow)) end
 )
- in (LrTable.NT 17,(result,LBRACE1left,RBRACE1right),rest671) end
-| (45,(_,(MlyValue.lab lab1,_,labright as lab1right))::(_,(_,HASHleft
+ in (LrTable.NT 15,(result,LBRACE1left,RBRACE1right),rest671) end
+| (42,(_,(MlyValue.lab lab1,_,labright as lab1right))::(_,(_,HASHleft
  as HASH1left,_))::rest671) => let val result=MlyValue.atexp(fn _ => 
 let val lab as lab1=lab1 ()
  in ( HASHAtExp(I(HASHleft,labright), lab) ) end
 )
- in (LrTable.NT 17,(result,HASH1left,lab1right),rest671) end
-| (46,(_,(_,_,RPARright as RPAR1right))::(_,(_,LPARleft as LPAR1left,_
+ in (LrTable.NT 15,(result,HASH1left,lab1right),rest671) end
+| (43,(_,(_,_,RPARright as RPAR1right))::(_,(_,LPARleft as LPAR1left,_
 ))::rest671) => let val result=MlyValue.atexp(fn _ => (
  UNITAtExp(I(LPARleft,RPARright)) ))
- in (LrTable.NT 17,(result,LPAR1left,RPAR1right),rest671) end
-| (47,(_,(_,_,RPARright as RPAR1right))::(_,(MlyValue.exp_COMMA_list2 
+ in (LrTable.NT 15,(result,LPAR1left,RPAR1right),rest671) end
+| (44,(_,(_,_,RPARright as RPAR1right))::(_,(MlyValue.exp_COMMA_list2 
 exp_COMMA_list21,_,_))::(_,(_,LPARleft as LPAR1left,_))::rest671) => 
 let val result=MlyValue.atexp(fn _ => let val exp_COMMA_list2 as 
 exp_COMMA_list21=exp_COMMA_list21 ()
  in ( TUPLEAtExp(I(LPARleft,RPARright), exp_COMMA_list2) ) end
 )
- in (LrTable.NT 17,(result,LPAR1left,RPAR1right),rest671) end
-| (48,(_,(_,_,RBRACKright as RBRACK1right))::(_,(
+ in (LrTable.NT 15,(result,LPAR1left,RPAR1right),rest671) end
+| (45,(_,(_,_,RBRACKright as RBRACK1right))::(_,(
 MlyValue.exp_COMMA_list0 exp_COMMA_list01,_,_))::(_,(_,LBRACKleft as 
 LBRACK1left,_))::rest671) => let val result=MlyValue.atexp(fn _ => 
 let val exp_COMMA_list0 as exp_COMMA_list01=exp_COMMA_list01 ()
@@ -17771,8 +18654,8 @@ let val exp_COMMA_list0 as exp_COMMA_list01=exp_COMMA_list01 ()
 				    exp_COMMA_list0 ))
  end
 )
- in (LrTable.NT 17,(result,LBRACK1left,RBRACK1right),rest671) end
-| (49,(_,(_,_,RBRACKright as RBRACK1right))::(_,(
+ in (LrTable.NT 15,(result,LBRACK1left,RBRACK1right),rest671) end
+| (46,(_,(_,_,RBRACKright as RBRACK1right))::(_,(
 MlyValue.exp_COMMA_list0 exp_COMMA_list01,_,_))::(_,(_,HASHBRACKleft
  as HASHBRACK1left,_))::rest671) => let val result=MlyValue.atexp(fn _
  => let val exp_COMMA_list0 as exp_COMMA_list01=exp_COMMA_list01 ()
@@ -17781,16 +18664,16 @@ MlyValue.exp_COMMA_list0 exp_COMMA_list01,_,_))::(_,(_,HASHBRACKleft
 				    exp_COMMA_list0 ))
  end
 )
- in (LrTable.NT 17,(result,HASHBRACK1left,RBRACK1right),rest671) end
-| (50,(_,(_,_,RPARright as RPAR1right))::(_,(
+ in (LrTable.NT 15,(result,HASHBRACK1left,RBRACK1right),rest671) end
+| (47,(_,(_,_,RPARright as RPAR1right))::(_,(
 MlyValue.exp_SEMICOLON_list2 exp_SEMICOLON_list21,_,_))::(_,(_,
 LPARleft as LPAR1left,_))::rest671) => let val result=MlyValue.atexp(
 fn _ => let val exp_SEMICOLON_list2 as exp_SEMICOLON_list21=
 exp_SEMICOLON_list21 ()
  in ( SEQAtExp(I(LPARleft,RPARright), exp_SEMICOLON_list2) ) end
 )
- in (LrTable.NT 17,(result,LPAR1left,RPAR1right),rest671) end
-| (51,(_,(_,_,ENDright as END1right))::(_,(
+ in (LrTable.NT 15,(result,LPAR1left,RPAR1right),rest671) end
+| (48,(_,(_,_,ENDright as END1right))::(_,(
 MlyValue.exp_SEMICOLON_list1 exp_SEMICOLON_list11,_,_))::_::(_,(
 MlyValue.dec dec1,_,_))::(_,(_,LETleft as LET1left,_))::rest671) => 
 let val result=MlyValue.atexp(fn _ => let val dec as dec1=dec1 ()
@@ -17800,48 +18683,48 @@ val exp_SEMICOLON_list1 as exp_SEMICOLON_list11=exp_SEMICOLON_list11
 				   dec, exp_SEMICOLON_list1) )
  end
 )
- in (LrTable.NT 17,(result,LET1left,END1right),rest671) end
-| (52,(_,(_,_,RPARright as RPAR1right))::(_,(MlyValue.exp exp1,_,_))::
+ in (LrTable.NT 15,(result,LET1left,END1right),rest671) end
+| (49,(_,(_,_,RPARright as RPAR1right))::(_,(MlyValue.exp exp1,_,_))::
 (_,(_,LPARleft as LPAR1left,_))::rest671) => let val result=
 MlyValue.atexp(fn _ => let val exp as exp1=exp1 ()
  in ( PARAtExp(I(LPARleft,RPARright), exp) ) end
 )
- in (LrTable.NT 17,(result,LPAR1left,RPAR1right),rest671) end
-| (53,(_,(MlyValue.exp_COMMA_list1 exp_COMMA_list11,
+ in (LrTable.NT 15,(result,LPAR1left,RPAR1right),rest671) end
+| (50,(_,(MlyValue.exp_COMMA_list1 exp_COMMA_list11,
 exp_COMMA_list11left,exp_COMMA_list11right))::rest671) => let val 
 result=MlyValue.exp_COMMA_list0(fn _ => let val exp_COMMA_list1 as 
 exp_COMMA_list11=exp_COMMA_list11 ()
  in ( exp_COMMA_list1 ) end
 )
- in (LrTable.NT 18,(result,exp_COMMA_list11left,exp_COMMA_list11right)
+ in (LrTable.NT 16,(result,exp_COMMA_list11left,exp_COMMA_list11right)
 ,rest671) end
-| (54,rest671) => let val result=MlyValue.exp_COMMA_list0(fn _ => (
+| (51,rest671) => let val result=MlyValue.exp_COMMA_list0(fn _ => (
  [] ))
- in (LrTable.NT 18,(result,defaultPos,defaultPos),rest671) end
-| (55,(_,(MlyValue.exp_COMMA_list1 exp_COMMA_list11,_,
+ in (LrTable.NT 16,(result,defaultPos,defaultPos),rest671) end
+| (52,(_,(MlyValue.exp_COMMA_list1 exp_COMMA_list11,_,
 exp_COMMA_list11right))::_::(_,(MlyValue.exp exp1,exp1left,_))::
 rest671) => let val result=MlyValue.exp_COMMA_list1(fn _ => let val 
 exp as exp1=exp1 ()
 val exp_COMMA_list1 as exp_COMMA_list11=exp_COMMA_list11 ()
  in ( exp::exp_COMMA_list1 ) end
 )
- in (LrTable.NT 19,(result,exp1left,exp_COMMA_list11right),rest671)
+ in (LrTable.NT 17,(result,exp1left,exp_COMMA_list11right),rest671)
  end
-| (56,(_,(MlyValue.exp exp1,exp1left,exp1right))::rest671) => let val 
+| (53,(_,(MlyValue.exp exp1,exp1left,exp1right))::rest671) => let val 
 result=MlyValue.exp_COMMA_list1(fn _ => let val exp as exp1=exp1 ()
  in ( exp::[] ) end
 )
- in (LrTable.NT 19,(result,exp1left,exp1right),rest671) end
-| (57,(_,(MlyValue.exp_COMMA_list1 exp_COMMA_list11,_,
+ in (LrTable.NT 17,(result,exp1left,exp1right),rest671) end
+| (54,(_,(MlyValue.exp_COMMA_list1 exp_COMMA_list11,_,
 exp_COMMA_list11right))::_::(_,(MlyValue.exp exp1,exp1left,_))::
 rest671) => let val result=MlyValue.exp_COMMA_list2(fn _ => let val 
 exp as exp1=exp1 ()
 val exp_COMMA_list1 as exp_COMMA_list11=exp_COMMA_list11 ()
  in ( exp::exp_COMMA_list1 ) end
 )
- in (LrTable.NT 20,(result,exp1left,exp_COMMA_list11right),rest671)
+ in (LrTable.NT 18,(result,exp1left,exp_COMMA_list11right),rest671)
  end
-| (58,(_,(MlyValue.exp_SEMICOLON_list1 exp_SEMICOLON_list11,_,
+| (55,(_,(MlyValue.exp_SEMICOLON_list1 exp_SEMICOLON_list11,_,
 exp_SEMICOLON_list11right))::_::(_,(MlyValue.exp exp1,exp1left,_))::
 rest671) => let val result=MlyValue.exp_SEMICOLON_list1(fn _ => let 
 val exp as exp1=exp1 ()
@@ -17849,15 +18732,15 @@ val exp_SEMICOLON_list1 as exp_SEMICOLON_list11=exp_SEMICOLON_list11
 ()
  in ( exp::exp_SEMICOLON_list1 ) end
 )
- in (LrTable.NT 21,(result,exp1left,exp_SEMICOLON_list11right),rest671
+ in (LrTable.NT 19,(result,exp1left,exp_SEMICOLON_list11right),rest671
 ) end
-| (59,(_,(MlyValue.exp exp1,exp1left,exp1right))::rest671) => let val 
+| (56,(_,(MlyValue.exp exp1,exp1left,exp1right))::rest671) => let val 
 result=MlyValue.exp_SEMICOLON_list1(fn _ => let val exp as exp1=exp1 
 ()
  in ( exp::[] ) end
 )
- in (LrTable.NT 21,(result,exp1left,exp1right),rest671) end
-| (60,(_,(MlyValue.exp_SEMICOLON_list1 exp_SEMICOLON_list11,_,
+ in (LrTable.NT 19,(result,exp1left,exp1right),rest671) end
+| (57,(_,(MlyValue.exp_SEMICOLON_list1 exp_SEMICOLON_list11,_,
 exp_SEMICOLON_list11right))::_::(_,(MlyValue.exp exp1,exp1left,_))::
 rest671) => let val result=MlyValue.exp_SEMICOLON_list2(fn _ => let 
 val exp as exp1=exp1 ()
@@ -17865,9 +18748,9 @@ val exp_SEMICOLON_list1 as exp_SEMICOLON_list11=exp_SEMICOLON_list11
 ()
  in ( exp::exp_SEMICOLON_list1 ) end
 )
- in (LrTable.NT 22,(result,exp1left,exp_SEMICOLON_list11right),rest671
+ in (LrTable.NT 20,(result,exp1left,exp_SEMICOLON_list11right),rest671
 ) end
-| (61,(_,(MlyValue.COMMA_exprow_opt COMMA_exprow_opt1,_,
+| (58,(_,(MlyValue.COMMA_exprow_opt COMMA_exprow_opt1,_,
 COMMA_exprow_optright as COMMA_exprow_opt1right))::(_,(MlyValue.exp 
 exp1,_,_))::_::(_,(MlyValue.lab lab1,lableft as lab1left,_))::rest671)
  => let val result=MlyValue.exprow(fn _ => let val lab as lab1=lab1 ()
@@ -17878,9 +18761,9 @@ val COMMA_exprow_opt as COMMA_exprow_opt1=COMMA_exprow_opt1 ()
 	  				    lab, exp, COMMA_exprow_opt) 
 ) end
 )
- in (LrTable.NT 23,(result,lab1left,COMMA_exprow_opt1right),rest671)
+ in (LrTable.NT 21,(result,lab1left,COMMA_exprow_opt1right),rest671)
  end
-| (62,(_,(MlyValue.COMMA_exprow_opt COMMA_exprow_opt1,_,
+| (59,(_,(MlyValue.COMMA_exprow_opt COMMA_exprow_opt1,_,
 COMMA_exprow_optright as COMMA_exprow_opt1right))::(_,(
 MlyValue.COLON_ty_opt COLON_ty_opt1,_,_))::(_,(MlyValue.vid' vid'1,
 vid'left as vid'1left,_))::rest671) => let val result=MlyValue.exprow(
@@ -17893,32 +18776,32 @@ val COMMA_exprow_opt as COMMA_exprow_opt1=COMMA_exprow_opt1 ()
 					    COMMA_exprow_opt) 
 ) end
 )
- in (LrTable.NT 23,(result,vid'1left,COMMA_exprow_opt1right),rest671)
+ in (LrTable.NT 21,(result,vid'1left,COMMA_exprow_opt1right),rest671)
  end
-| (63,(_,(MlyValue.exprow exprow1,_,exprow1right))::(_,(_,COMMA1left,_
+| (60,(_,(MlyValue.exprow exprow1,_,exprow1right))::(_,(_,COMMA1left,_
 ))::rest671) => let val result=MlyValue.COMMA_exprow_opt(fn _ => let 
 val exprow as exprow1=exprow1 ()
  in ( SOME exprow ) end
 )
- in (LrTable.NT 25,(result,COMMA1left,exprow1right),rest671) end
-| (64,rest671) => let val result=MlyValue.COMMA_exprow_opt(fn _ => (
+ in (LrTable.NT 23,(result,COMMA1left,exprow1right),rest671) end
+| (61,rest671) => let val result=MlyValue.COMMA_exprow_opt(fn _ => (
  NONE ))
- in (LrTable.NT 25,(result,defaultPos,defaultPos),rest671) end
-| (65,(_,(MlyValue.exprow exprow1,exprow1left,exprow1right))::rest671)
+ in (LrTable.NT 23,(result,defaultPos,defaultPos),rest671) end
+| (62,(_,(MlyValue.exprow exprow1,exprow1left,exprow1right))::rest671)
  => let val result=MlyValue.exprow_opt(fn _ => let val exprow as 
 exprow1=exprow1 ()
  in ( SOME exprow ) end
 )
- in (LrTable.NT 24,(result,exprow1left,exprow1right),rest671) end
-| (66,rest671) => let val result=MlyValue.exprow_opt(fn _ => ( NONE ))
- in (LrTable.NT 24,(result,defaultPos,defaultPos),rest671) end
-| (67,(_,(MlyValue.atexp atexp1,atexpleft as atexp1left,atexpright as 
+ in (LrTable.NT 22,(result,exprow1left,exprow1right),rest671) end
+| (63,rest671) => let val result=MlyValue.exprow_opt(fn _ => ( NONE ))
+ in (LrTable.NT 22,(result,defaultPos,defaultPos),rest671) end
+| (64,(_,(MlyValue.atexp atexp1,atexpleft as atexp1left,atexpright as 
 atexp1right))::rest671) => let val result=MlyValue.appexp(fn _ => let 
 val atexp as atexp1=atexp1 ()
  in ( ATEXPExp(I(atexpleft,atexpright), atexp) ) end
 )
- in (LrTable.NT 26,(result,atexp1left,atexp1right),rest671) end
-| (68,(_,(MlyValue.atexp atexp1,_,atexpright as atexp1right))::(_,(
+ in (LrTable.NT 24,(result,atexp1left,atexp1right),rest671) end
+| (65,(_,(MlyValue.atexp atexp1,_,atexpright as atexp1right))::(_,(
 MlyValue.appexp appexp1,appexpleft as appexp1left,_))::rest671) => 
 let val result=MlyValue.appexp(fn _ => let val appexp as appexp1=
 appexp1 ()
@@ -17926,89 +18809,97 @@ val atexp as atexp1=atexp1 ()
  in ( APPExp(I(appexpleft,atexpright),
 					 appexp, atexp) ) end
 )
- in (LrTable.NT 26,(result,appexp1left,atexp1right),rest671) end
-| (69,(_,(MlyValue.appexp appexp1,appexp1left,appexp1right))::rest671)
+ in (LrTable.NT 24,(result,appexp1left,atexp1right),rest671) end
+| (66,(_,(MlyValue.appexp appexp1,appexp1left,appexp1right))::rest671)
  => let val result=MlyValue.infexp(fn _ => let val appexp as appexp1=
 appexp1 ()
  in ( appexp ) end
 )
- in (LrTable.NT 27,(result,appexp1left,appexp1right),rest671) end
-| (70,(_,(MlyValue.infexp infexp1,infexp1left,infexp1right))::rest671)
+ in (LrTable.NT 25,(result,appexp1left,appexp1right),rest671) end
+| (67,(_,(MlyValue.infexp infexp1,infexp1left,infexp1right))::rest671)
  => let val result=MlyValue.exp(fn _ => let val infexp as infexp1=
 infexp1 ()
  in ( infexp ) end
 )
- in (LrTable.NT 28,(result,infexp1left,infexp1right),rest671) end
-| (71,(_,(MlyValue.ty ty1,_,tyright as ty1right))::_::(_,(MlyValue.exp
+ in (LrTable.NT 26,(result,infexp1left,infexp1right),rest671) end
+| (68,(_,(MlyValue.ty ty1,_,tyright as ty1right))::_::(_,(MlyValue.exp
  exp1,expleft as exp1left,_))::rest671) => let val result=MlyValue.exp
 (fn _ => let val exp as exp1=exp1 ()
 val ty as ty1=ty1 ()
  in ( TYPEDExp(I(expleft,tyright), exp, ty) ) end
 )
- in (LrTable.NT 28,(result,exp1left,ty1right),rest671) end
-| (72,(_,(MlyValue.exp exp2,_,exp2right))::_::(_,(MlyValue.exp exp1,
+ in (LrTable.NT 26,(result,exp1left,ty1right),rest671) end
+| (69,(_,(MlyValue.exp exp2,_,exp2right))::_::(_,(MlyValue.exp exp1,
 exp1left,_))::rest671) => let val result=MlyValue.exp(fn _ => let val 
 exp1=exp1 ()
 val exp2=exp2 ()
  in ( ANDALSOExp(I(exp1left,exp2right), exp1, exp2)) end
 )
- in (LrTable.NT 28,(result,exp1left,exp2right),rest671) end
-| (73,(_,(MlyValue.exp exp2,_,exp2right))::_::(_,(MlyValue.exp exp1,
+ in (LrTable.NT 26,(result,exp1left,exp2right),rest671) end
+| (70,(_,(MlyValue.exp exp2,_,exp2right))::_::(_,(MlyValue.exp exp1,
 exp1left,_))::rest671) => let val result=MlyValue.exp(fn _ => let val 
 exp1=exp1 ()
 val exp2=exp2 ()
  in ( ORELSEExp(I(exp1left,exp2right), exp1, exp2) ) end
 )
- in (LrTable.NT 28,(result,exp1left,exp2right),rest671) end
-| (74,(_,(MlyValue.match match1,_,matchright as match1right))::_::(_,(
+ in (LrTable.NT 26,(result,exp1left,exp2right),rest671) end
+| (71,(_,(MlyValue.match match1,_,matchright as match1right))::_::(_,(
 MlyValue.exp exp1,expleft as exp1left,_))::rest671) => let val result=
 MlyValue.exp(fn _ => let val exp as exp1=exp1 ()
 val match as match1=match1 ()
  in ( HANDLEExp(I(expleft,matchright), exp, match) ) end
 )
- in (LrTable.NT 28,(result,exp1left,match1right),rest671) end
-| (75,(_,(MlyValue.exp exp1,_,expright as exp1right))::(_,(_,RAISEleft
+ in (LrTable.NT 26,(result,exp1left,match1right),rest671) end
+| (72,(_,(MlyValue.exp exp1,_,expright as exp1right))::(_,(_,RAISEleft
  as RAISE1left,_))::rest671) => let val result=MlyValue.exp(fn _ => 
 let val exp as exp1=exp1 ()
  in ( RAISEExp(I(RAISEleft,expright), exp) ) end
 )
- in (LrTable.NT 28,(result,RAISE1left,exp1right),rest671) end
-| (76,(_,(MlyValue.exp exp3,_,exp3right))::_::(_,(MlyValue.exp exp2,_,
+ in (LrTable.NT 26,(result,RAISE1left,exp1right),rest671) end
+| (73,(_,(MlyValue.exp exp3,_,exp3right))::_::(_,(MlyValue.exp exp2,_,
 _))::_::(_,(MlyValue.exp exp1,_,_))::(_,(_,IFleft as IF1left,_))::
 rest671) => let val result=MlyValue.exp(fn _ => let val exp1=exp1 ()
 val exp2=exp2 ()
 val exp3=exp3 ()
  in ( IFExp(I(IFleft,exp3right), exp1, exp2, exp3) ) end
 )
- in (LrTable.NT 28,(result,IF1left,exp3right),rest671) end
-| (77,(_,(MlyValue.exp exp2,_,exp2right))::_::(_,(MlyValue.exp exp1,_,
+ in (LrTable.NT 26,(result,IF1left,exp3right),rest671) end
+| (74,(_,(MlyValue.exp exp2,_,exp2right))::_::(_,(MlyValue.exp exp1,_,
 _))::(_,(_,WHILEleft as WHILE1left,_))::rest671) => let val result=
 MlyValue.exp(fn _ => let val exp1=exp1 ()
 val exp2=exp2 ()
  in ( WHILEExp(I(WHILEleft,exp2right), exp1, exp2) ) end
 )
- in (LrTable.NT 28,(result,WHILE1left,exp2right),rest671) end
-| (78,(_,(MlyValue.match match1,_,matchright as match1right))::_::(_,(
+ in (LrTable.NT 26,(result,WHILE1left,exp2right),rest671) end
+| (75,(_,(MlyValue.match match1,_,matchright as match1right))::_::(_,(
 MlyValue.exp exp1,_,_))::(_,(_,CASEleft as CASE1left,_))::rest671) => 
 let val result=MlyValue.exp(fn _ => let val exp as exp1=exp1 ()
 val match as match1=match1 ()
  in ( CASEExp(I(CASEleft,matchright), exp, match) ) end
 )
- in (LrTable.NT 28,(result,CASE1left,match1right),rest671) end
-| (79,(_,(MlyValue.match match1,_,matchright as match1right))::(_,(_,
+ in (LrTable.NT 26,(result,CASE1left,match1right),rest671) end
+| (76,(_,(MlyValue.match match1,_,matchright as match1right))::(_,(_,
 FNleft as FN1left,_))::rest671) => let val result=MlyValue.exp(fn _
  => let val match as match1=match1 ()
  in ( FNExp(I(FNleft,matchright), match) ) end
 )
- in (LrTable.NT 28,(result,FN1left,match1right),rest671) end
-| (80,(_,(MlyValue.exp exp1,_,expright as exp1right))::_::(_,(
+ in (LrTable.NT 26,(result,FN1left,match1right),rest671) end
+| (77,(_,(MlyValue.exp exp1,_,expright as exp1right))::_::(_,(
 MlyValue.pat pat1,_,_))::(_,(_,RECleft as REC1left,_))::rest671) => 
 let val result=MlyValue.exp(fn _ => let val pat as pat1=pat1 ()
 val exp as exp1=exp1 ()
  in ( RECExp(I(RECleft,expright), pat, exp) ) end
 )
- in (LrTable.NT 28,(result,REC1left,exp1right),rest671) end
-| (81,(_,(MlyValue.BAR_match_opt BAR_match_opt1,_,BAR_match_optright
+ in (LrTable.NT 26,(result,REC1left,exp1right),rest671) end
+| (78,(_,(MlyValue.longstrid longstrid1,_,longstridright as 
+longstrid1right))::(_,(_,PACKleft as PACK1left,_))::rest671) => let 
+val result=MlyValue.exp(fn _ => let val longstrid as longstrid1=
+longstrid1 ()
+ in ( PACKExp(I(PACKleft,longstridright),
+					  longstrid) ) end
+)
+ in (LrTable.NT 26,(result,PACK1left,longstrid1right),rest671) end
+| (79,(_,(MlyValue.BAR_match_opt BAR_match_opt1,_,BAR_match_optright
  as BAR_match_opt1right))::(_,(MlyValue.mrule mrule1,mruleleft as 
 mrule1left,_))::rest671) => let val result=MlyValue.match(fn _ => let 
 val mrule as mrule1=mrule1 ()
@@ -18018,75 +18909,75 @@ val BAR_match_opt as BAR_match_opt1=BAR_match_opt1 ()
 					mrule, BAR_match_opt) )
  end
 )
- in (LrTable.NT 29,(result,mrule1left,BAR_match_opt1right),rest671)
+ in (LrTable.NT 27,(result,mrule1left,BAR_match_opt1right),rest671)
  end
-| (82,(_,(MlyValue.match match1,_,match1right))::(_,(_,BAR1left,_))::
+| (80,(_,(MlyValue.match match1,_,match1right))::(_,(_,BAR1left,_))::
 rest671) => let val result=MlyValue.BAR_match_opt(fn _ => let val 
 match as match1=match1 ()
  in ( SOME match ) end
 )
- in (LrTable.NT 30,(result,BAR1left,match1right),rest671) end
-| (83,rest671) => let val result=MlyValue.BAR_match_opt(fn _ => (
+ in (LrTable.NT 28,(result,BAR1left,match1right),rest671) end
+| (81,rest671) => let val result=MlyValue.BAR_match_opt(fn _ => (
  NONE ))
- in (LrTable.NT 30,(result,defaultPos,defaultPos),rest671) end
-| (84,(_,(MlyValue.exp exp1,_,expright as exp1right))::_::(_,(
+ in (LrTable.NT 28,(result,defaultPos,defaultPos),rest671) end
+| (82,(_,(MlyValue.exp exp1,_,expright as exp1right))::_::(_,(
 MlyValue.pat pat1,patleft as pat1left,_))::rest671) => let val result=
 MlyValue.mrule(fn _ => let val pat as pat1=pat1 ()
 val exp as exp1=exp1 ()
  in ( Mrule(I(patleft,expright), pat, exp) ) end
 )
- in (LrTable.NT 31,(result,pat1left,exp1right),rest671) end
-| (85,(_,(MlyValue.dec1 dec11,dec11left,dec11right))::rest671) => let 
+ in (LrTable.NT 29,(result,pat1left,exp1right),rest671) end
+| (83,(_,(MlyValue.dec1 dec11,dec11left,dec11right))::rest671) => let 
 val result=MlyValue.dec(fn _ => let val dec1 as dec11=dec11 ()
  in ( dec1 ) end
 )
- in (LrTable.NT 32,(result,dec11left,dec11right),rest671) end
-| (86,rest671) => let val result=MlyValue.dec(fn _ => (
+ in (LrTable.NT 30,(result,dec11left,dec11right),rest671) end
+| (84,rest671) => let val result=MlyValue.dec(fn _ => (
  EMPTYDec(I(defaultPos,defaultPos)) ))
- in (LrTable.NT 32,(result,defaultPos,defaultPos),rest671) end
-| (87,(_,(MlyValue.dec1' dec1'1,dec1'1left,dec1'1right))::rest671) => 
+ in (LrTable.NT 30,(result,defaultPos,defaultPos),rest671) end
+| (85,(_,(MlyValue.dec1' dec1'1,dec1'1left,dec1'1right))::rest671) => 
 let val result=MlyValue.dec'(fn _ => let val dec1' as dec1'1=dec1'1 ()
  in ( dec1' ) end
 )
- in (LrTable.NT 33,(result,dec1'1left,dec1'1right),rest671) end
-| (88,(_,(MlyValue.dec' dec'2,_,dec'2right))::(_,(MlyValue.dec' dec'1,
+ in (LrTable.NT 31,(result,dec1'1left,dec1'1right),rest671) end
+| (86,(_,(MlyValue.dec' dec'2,_,dec'2right))::(_,(MlyValue.dec' dec'1,
 dec'1left,_))::rest671) => let val result=MlyValue.dec'(fn _ => let 
 val dec'1=dec'1 ()
 val dec'2=dec'2 ()
  in ( SEQDec(I(dec'1left,dec'2right), dec'1, dec'2) ) end
 )
- in (LrTable.NT 33,(result,dec'1left,dec'2right),rest671) end
-| (89,(_,(MlyValue.dec1' dec1'1,dec1'1left,dec1'1right))::rest671) => 
+ in (LrTable.NT 31,(result,dec'1left,dec'2right),rest671) end
+| (87,(_,(MlyValue.dec1' dec1'1,dec1'1left,dec1'1right))::rest671) => 
 let val result=MlyValue.dec1(fn _ => let val dec1' as dec1'1=dec1'1 ()
  in ( dec1' ) end
 )
- in (LrTable.NT 34,(result,dec1'1left,dec1'1right),rest671) end
-| (90,(_,(_,SEMICOLONleft as SEMICOLON1left,SEMICOLON1right))::rest671
+ in (LrTable.NT 32,(result,dec1'1left,dec1'1right),rest671) end
+| (88,(_,(_,SEMICOLONleft as SEMICOLON1left,SEMICOLON1right))::rest671
 ) => let val result=MlyValue.dec1(fn _ => (
  EMPTYDec(I(SEMICOLONleft,SEMICOLONleft)) ))
- in (LrTable.NT 34,(result,SEMICOLON1left,SEMICOLON1right),rest671)
+ in (LrTable.NT 32,(result,SEMICOLON1left,SEMICOLON1right),rest671)
  end
-| (91,(_,(MlyValue.dec1 dec12,_,dec12right))::(_,(MlyValue.dec1 dec11,
+| (89,(_,(MlyValue.dec1 dec12,_,dec12right))::(_,(MlyValue.dec1 dec11,
 dec11left,_))::rest671) => let val result=MlyValue.dec1(fn _ => let 
 val dec11=dec11 ()
 val dec12=dec12 ()
  in ( SEQDec(I(dec11left,dec12right), dec11, dec12) ) end
 )
- in (LrTable.NT 34,(result,dec11left,dec12right),rest671) end
-| (92,(_,(MlyValue.dec1'' dec1''1,dec1''1left,dec1''1right))::rest671)
+ in (LrTable.NT 32,(result,dec11left,dec12right),rest671) end
+| (90,(_,(MlyValue.dec1'' dec1''1,dec1''1left,dec1''1right))::rest671)
  => let val result=MlyValue.dec1'(fn _ => let val dec1'' as dec1''1=
 dec1''1 ()
  in ( dec1'' ) end
 )
- in (LrTable.NT 35,(result,dec1''1left,dec1''1right),rest671) end
-| (93,(_,(_,_,ENDright as END1right))::(_,(MlyValue.dec dec2,_,_))::_
+ in (LrTable.NT 33,(result,dec1''1left,dec1''1right),rest671) end
+| (91,(_,(_,_,ENDright as END1right))::(_,(MlyValue.dec dec2,_,_))::_
 ::(_,(MlyValue.dec dec1,_,_))::(_,(_,LOCALleft as LOCAL1left,_))::
 rest671) => let val result=MlyValue.dec1'(fn _ => let val dec1=dec1 ()
 val dec2=dec2 ()
  in ( LOCALDec(I(LOCALleft,ENDright), dec1, dec2) ) end
 )
- in (LrTable.NT 35,(result,LOCAL1left,END1right),rest671) end
-| (94,(_,(MlyValue.valbind valbind1,_,valbindright as valbind1right))
+ in (LrTable.NT 33,(result,LOCAL1left,END1right),rest671) end
+| (92,(_,(MlyValue.valbind valbind1,_,valbindright as valbind1right))
 ::(_,(_,VALleft as VAL1left,_))::rest671) => let val result=
 MlyValue.dec1''(fn _ => let val valbind as valbind1=valbind1 ()
  in (
@@ -18094,16 +18985,16 @@ MlyValue.dec1''(fn _ => let val valbind as valbind1=valbind1 ()
 				 Seq(I(defaultPos,defaultPos), []), valbind) 
 ) end
 )
- in (LrTable.NT 36,(result,VAL1left,valbind1right),rest671) end
-| (95,(_,(MlyValue.valbind valbind1,_,valbindright as valbind1right))
+ in (LrTable.NT 34,(result,VAL1left,valbind1right),rest671) end
+| (93,(_,(MlyValue.valbind valbind1,_,valbindright as valbind1right))
 ::(_,(MlyValue.tyvarseq1 tyvarseq11,_,_))::(_,(_,VALleft as VAL1left,_
 ))::rest671) => let val result=MlyValue.dec1''(fn _ => let val 
 tyvarseq1 as tyvarseq11=tyvarseq11 ()
 val valbind as valbind1=valbind1 ()
  in ( VALDec(I(VALleft,valbindright), tyvarseq1, valbind) ) end
 )
- in (LrTable.NT 36,(result,VAL1left,valbind1right),rest671) end
-| (96,(_,(MlyValue.fvalbind fvalbind1,_,fvalbindright as 
+ in (LrTable.NT 34,(result,VAL1left,valbind1right),rest671) end
+| (94,(_,(MlyValue.fvalbind fvalbind1,_,fvalbindright as 
 fvalbind1right))::(_,(_,FUNleft as FUN1left,_))::rest671) => let val 
 result=MlyValue.dec1''(fn _ => let val fvalbind as fvalbind1=fvalbind1
  ()
@@ -18112,34 +19003,34 @@ result=MlyValue.dec1''(fn _ => let val fvalbind as fvalbind1=fvalbind1
 				 Seq(I(defaultPos,defaultPos), []), fvalbind) 
 ) end
 )
- in (LrTable.NT 36,(result,FUN1left,fvalbind1right),rest671) end
-| (97,(_,(MlyValue.fvalbind fvalbind1,_,fvalbindright as 
+ in (LrTable.NT 34,(result,FUN1left,fvalbind1right),rest671) end
+| (95,(_,(MlyValue.fvalbind fvalbind1,_,fvalbindright as 
 fvalbind1right))::(_,(MlyValue.tyvarseq1 tyvarseq11,_,_))::(_,(_,
 FUNleft as FUN1left,_))::rest671) => let val result=MlyValue.dec1''(
 fn _ => let val tyvarseq1 as tyvarseq11=tyvarseq11 ()
 val fvalbind as fvalbind1=fvalbind1 ()
  in ( FUNDec(I(FUNleft,fvalbindright), tyvarseq1, fvalbind)) end
 )
- in (LrTable.NT 36,(result,FUN1left,fvalbind1right),rest671) end
-| (98,(_,(MlyValue.typbind typbind1,_,typbindright as typbind1right))
+ in (LrTable.NT 34,(result,FUN1left,fvalbind1right),rest671) end
+| (96,(_,(MlyValue.typbind typbind1,_,typbindright as typbind1right))
 ::(_,(_,TYPEleft as TYPE1left,_))::rest671) => let val result=
 MlyValue.dec1''(fn _ => let val typbind as typbind1=typbind1 ()
  in ( TYPEDec(I(TYPEleft,typbindright), typbind) ) end
 )
- in (LrTable.NT 36,(result,TYPE1left,typbind1right),rest671) end
-| (99,(_,(MlyValue.typbind typbind1,_,typbindright as typbind1right))
+ in (LrTable.NT 34,(result,TYPE1left,typbind1right),rest671) end
+| (97,(_,(MlyValue.typbind typbind1,_,typbindright as typbind1right))
 ::(_,(_,EQTYPEleft as EQTYPE1left,_))::rest671) => let val result=
 MlyValue.dec1''(fn _ => let val typbind as typbind1=typbind1 ()
  in ( EQTYPEDec(I(EQTYPEleft,typbindright), typbind) ) end
 )
- in (LrTable.NT 36,(result,EQTYPE1left,typbind1right),rest671) end
-| (100,(_,(MlyValue.typbind typbind1,_,typbindright as typbind1right))
+ in (LrTable.NT 34,(result,EQTYPE1left,typbind1right),rest671) end
+| (98,(_,(MlyValue.typbind typbind1,_,typbindright as typbind1right))
 ::(_,(_,EQEQTYPEleft as EQEQTYPE1left,_))::rest671) => let val result=
 MlyValue.dec1''(fn _ => let val typbind as typbind1=typbind1 ()
  in ( EQEQTYPEDec(I(EQEQTYPEleft,typbindright), typbind) ) end
 )
- in (LrTable.NT 36,(result,EQEQTYPE1left,typbind1right),rest671) end
-| (101,(_,(MlyValue.WITHTYPE_typbind_opt WITHTYPE_typbind_opt1,_,
+ in (LrTable.NT 34,(result,EQEQTYPE1left,typbind1right),rest671) end
+| (99,(_,(MlyValue.WITHTYPE_typbind_opt WITHTYPE_typbind_opt1,_,
 WITHTYPE_typbind_optright as WITHTYPE_typbind_opt1right))::(_,(
 MlyValue.datbind0 datbind01,_,_))::(_,(_,DATATYPEleft as DATATYPE1left
 ,_))::rest671) => let val result=MlyValue.dec1''(fn _ => let val 
@@ -18151,9 +19042,9 @@ WITHTYPE_typbind_opt1 ()
 				      datbind0, WITHTYPE_typbind_opt) 
 ) end
 )
- in (LrTable.NT 36,(result,DATATYPE1left,WITHTYPE_typbind_opt1right),
+ in (LrTable.NT 34,(result,DATATYPE1left,WITHTYPE_typbind_opt1right),
 rest671) end
-| (102,(_,(MlyValue.WITHTYPE_typbind_opt WITHTYPE_typbind_opt1,_,
+| (100,(_,(MlyValue.WITHTYPE_typbind_opt WITHTYPE_typbind_opt1,_,
 WITHTYPE_typbind_optright as WITHTYPE_typbind_opt1right))::(_,(
 MlyValue.datbind1 datbind11,_,_))::(_,(_,DATATYPEleft as DATATYPE1left
 ,_))::rest671) => let val result=MlyValue.dec1''(fn _ => let val 
@@ -18165,9 +19056,9 @@ WITHTYPE_typbind_opt1 ()
 				      datbind1, WITHTYPE_typbind_opt) 
 ) end
 )
- in (LrTable.NT 36,(result,DATATYPE1left,WITHTYPE_typbind_opt1right),
+ in (LrTable.NT 34,(result,DATATYPE1left,WITHTYPE_typbind_opt1right),
 rest671) end
-| (103,(_,(MlyValue.longtycon longtycon1,_,longtyconright as 
+| (101,(_,(MlyValue.longtycon longtycon1,_,longtyconright as 
 longtycon1right))::_::_::(_,(MlyValue.tycon tycon1,_,_))::(_,(_,
 DATATYPEleft as DATATYPE1left,_))::rest671) => let val result=
 MlyValue.dec1''(fn _ => let val tycon as tycon1=tycon1 ()
@@ -18177,8 +19068,8 @@ val longtycon as longtycon1=longtycon1 ()
 					 tycon, longtycon) 
 ) end
 )
- in (LrTable.NT 36,(result,DATATYPE1left,longtycon1right),rest671) end
-| (104,(_,(_,_,ENDright as END1right))::(_,(MlyValue.dec dec1,_,_))::_
+ in (LrTable.NT 34,(result,DATATYPE1left,longtycon1right),rest671) end
+| (102,(_,(_,_,ENDright as END1right))::(_,(MlyValue.dec dec1,_,_))::_
 ::(_,(MlyValue.WITHTYPE_typbind_opt WITHTYPE_typbind_opt1,_,_))::(_,(
 MlyValue.datbind datbind1,_,_))::(_,(_,ABSTYPEleft as ABSTYPE1left,_))
 ::rest671) => let val result=MlyValue.dec1''(fn _ => let val datbind
@@ -18191,8 +19082,8 @@ val dec as dec1=dec1 ()
 				     WITHTYPE_typbind_opt, dec) 
 ) end
 )
- in (LrTable.NT 36,(result,ABSTYPE1left,END1right),rest671) end
-| (105,(_,(MlyValue.dconbind dconbind1,_,dconbindright as 
+ in (LrTable.NT 34,(result,ABSTYPE1left,END1right),rest671) end
+| (103,(_,(MlyValue.dconbind dconbind1,_,dconbindright as 
 dconbind1right))::(_,(_,CONSTRUCTORleft as CONSTRUCTOR1left,_))::
 rest671) => let val result=MlyValue.dec1''(fn _ => let val dconbind
  as dconbind1=dconbind1 ()
@@ -18201,33 +19092,33 @@ rest671) => let val result=MlyValue.dec1''(fn _ => let val dconbind
 					 dconbind) )
  end
 )
- in (LrTable.NT 36,(result,CONSTRUCTOR1left,dconbind1right),rest671)
+ in (LrTable.NT 34,(result,CONSTRUCTOR1left,dconbind1right),rest671)
  end
-| (106,(_,(MlyValue.exbind exbind1,_,exbindright as exbind1right))::(_
+| (104,(_,(MlyValue.exbind exbind1,_,exbindright as exbind1right))::(_
 ,(_,EXCEPTIONleft as EXCEPTION1left,_))::rest671) => let val result=
 MlyValue.dec1''(fn _ => let val exbind as exbind1=exbind1 ()
  in ( EXCEPTIONDec(I(EXCEPTIONleft,exbindright), exbind) ) end
 )
- in (LrTable.NT 36,(result,EXCEPTION1left,exbind1right),rest671) end
-| (107,(_,(MlyValue.strbind strbind1,_,strbindright as strbind1right))
+ in (LrTable.NT 34,(result,EXCEPTION1left,exbind1right),rest671) end
+| (105,(_,(MlyValue.strbind strbind1,_,strbindright as strbind1right))
 ::(_,(_,STRUCTUREleft as STRUCTURE1left,_))::rest671) => let val 
 result=MlyValue.dec1''(fn _ => let val strbind as strbind1=strbind1 ()
  in ( STRUCTUREDec(I(STRUCTUREleft,strbindright), strbind) ) end
 )
- in (LrTable.NT 36,(result,STRUCTURE1left,strbind1right),rest671) end
-| (108,(_,(MlyValue.sigbind sigbind1,_,sigbindright as sigbind1right))
+ in (LrTable.NT 34,(result,STRUCTURE1left,strbind1right),rest671) end
+| (106,(_,(MlyValue.sigbind sigbind1,_,sigbindright as sigbind1right))
 ::(_,(_,SIGNATUREleft as SIGNATURE1left,_))::rest671) => let val 
 result=MlyValue.dec1''(fn _ => let val sigbind as sigbind1=sigbind1 ()
  in ( SIGNATUREDec(I(SIGNATUREleft,sigbindright), sigbind) ) end
 )
- in (LrTable.NT 36,(result,SIGNATURE1left,sigbind1right),rest671) end
-| (109,(_,(MlyValue.funbind funbind1,_,funbindright as funbind1right))
+ in (LrTable.NT 34,(result,SIGNATURE1left,sigbind1right),rest671) end
+| (107,(_,(MlyValue.funbind funbind1,_,funbindright as funbind1right))
 ::(_,(_,FUNCTORleft as FUNCTOR1left,_))::rest671) => let val result=
 MlyValue.dec1''(fn _ => let val funbind as funbind1=funbind1 ()
  in ( FUNCTORDec(I(FUNCTORleft,funbindright), funbind) ) end
 )
- in (LrTable.NT 36,(result,FUNCTOR1left,funbind1right),rest671) end
-| (110,(_,(MlyValue.longstrid_list1 longstrid_list11,_,
+ in (LrTable.NT 34,(result,FUNCTOR1left,funbind1right),rest671) end
+| (108,(_,(MlyValue.longstrid_list1 longstrid_list11,_,
 longstrid_list1right as longstrid_list11right))::(_,(_,OPENleft as 
 OPEN1left,_))::rest671) => let val result=MlyValue.dec1''(fn _ => let 
 val longstrid_list1 as longstrid_list11=longstrid_list11 ()
@@ -18236,15 +19127,15 @@ val longstrid_list1 as longstrid_list11=longstrid_list11 ()
 				       longstrid_list1) 
 ) end
 )
- in (LrTable.NT 36,(result,OPEN1left,longstrid_list11right),rest671)
+ in (LrTable.NT 34,(result,OPEN1left,longstrid_list11right),rest671)
  end
-| (111,(_,(MlyValue.strid strid1,_,stridright as strid1right))::(_,(_,
+| (109,(_,(MlyValue.strid strid1,_,stridright as strid1right))::(_,(_,
 PREBOUNDleft as PREBOUND1left,_))::rest671) => let val result=
 MlyValue.dec1''(fn _ => let val strid as strid1=strid1 ()
  in ( PREBOUNDDec(I(PREBOUNDleft,stridright), strid) ) end
 )
- in (LrTable.NT 36,(result,PREBOUND1left,strid1right),rest671) end
-| (112,(_,(MlyValue.STRING STRING1,_,STRINGright as STRING1right))::_
+ in (LrTable.NT 34,(result,PREBOUND1left,strid1right),rest671) end
+| (110,(_,(MlyValue.STRING STRING1,_,STRINGright as STRING1right))::_
 ::(_,(MlyValue.ty ty1,_,_))::_::(_,(MlyValue.vid vid1,_,_))::(_,(
 MlyValue.OP_opt OP_opt1,_,_))::_::(_,(_,PRIMITIVEleft as 
 PRIMITIVE1left,_))::rest671) => let val result=MlyValue.dec1''(fn _
@@ -18257,8 +19148,8 @@ val STRING as STRING1=STRING1 ()
 					  OP_opt, vid, ty, STRING) 
 ) end
 )
- in (LrTable.NT 36,(result,PRIMITIVE1left,STRING1right),rest671) end
-| (113,(_,(MlyValue.STRING STRING1,_,STRINGright as STRING1right))::_
+ in (LrTable.NT 34,(result,PRIMITIVE1left,STRING1right),rest671) end
+| (111,(_,(MlyValue.STRING STRING1,_,STRINGright as STRING1right))::_
 ::(_,(MlyValue.longtycon longtycon1,_,_))::(_,(MlyValue.tyvarseq 
 tyvarseq1,_,_))::_::(_,(MlyValue.OF_ty_opt OF_ty_opt1,_,_))::(_,(
 MlyValue.vid vid1,_,_))::(_,(MlyValue.OP_opt OP_opt1,_,_))::_::(_,(_,
@@ -18275,22 +19166,8 @@ val STRING as STRING1=STRING1 ()
 						  tyvarseq, longtycon, STRING) 
 ) end
 )
- in (LrTable.NT 36,(result,PRIMITIVE1left,STRING1right),rest671) end
-| (114,(_,(MlyValue.STRING STRING1,_,STRINGright as STRING1right))::_
-::(_,(MlyValue.OF_ty_opt OF_ty_opt1,_,_))::(_,(MlyValue.vid vid1,_,_))
-::(_,(MlyValue.OP_opt OP_opt1,_,_))::_::(_,(_,PRIMITIVEleft as 
-PRIMITIVE1left,_))::rest671) => let val result=MlyValue.dec1''(fn _
- => let val OP_opt as OP_opt1=OP_opt1 ()
-val vid as vid1=vid1 ()
-val OF_ty_opt as OF_ty_opt1=OF_ty_opt1 ()
-val STRING as STRING1=STRING1 ()
- in (
- PRIMITIVEEXCEPTIONDec(I(PRIMITIVEleft,STRINGright),
-						OP_opt, vid, OF_ty_opt, STRING)
-) end
-)
- in (LrTable.NT 36,(result,PRIMITIVE1left,STRING1right),rest671) end
-| (115,(_,(MlyValue.STRING STRING1,_,STRINGright as STRING1right))::_
+ in (LrTable.NT 34,(result,PRIMITIVE1left,STRING1right),rest671) end
+| (112,(_,(MlyValue.STRING STRING1,_,STRINGright as STRING1right))::_
 ::(_,(MlyValue.sigexp sigexp1,_,_))::_::(_,(MlyValue.strid strid1,_,_)
 )::_::(_,(_,PRIMITIVEleft as PRIMITIVE1left,_))::rest671) => let val 
 result=MlyValue.dec1''(fn _ => let val strid as strid1=strid1 ()
@@ -18301,39 +19178,8 @@ val STRING as STRING1=STRING1 ()
 						strid, sigexp, STRING) 
 ) end
 )
- in (LrTable.NT 36,(result,PRIMITIVE1left,STRING1right),rest671) end
-| (116,(_,(MlyValue.STRING STRING1,_,STRINGright as STRING1right))::_
-::(_,(MlyValue.sigexp sigexp2,_,_))::_::_::(_,(MlyValue.sigexp sigexp1
-,_,_))::_::(_,(MlyValue.strid strid1,_,_))::_::(_,(MlyValue.funid 
-funid1,_,_))::_::(_,(_,PRIMITIVEleft as PRIMITIVE1left,_))::rest671)
- => let val result=MlyValue.dec1''(fn _ => let val funid as funid1=
-funid1 ()
-val strid as strid1=strid1 ()
-val sigexp1=sigexp1 ()
-val sigexp2=sigexp2 ()
-val STRING as STRING1=STRING1 ()
- in (
- PRIMITIVEFUNCTORDec(I(PRIMITIVEleft,STRINGright),
-					      funid, strid, sigexp1, sigexp2,
-					      STRING) 
-) end
-)
- in (LrTable.NT 36,(result,PRIMITIVE1left,STRING1right),rest671) end
-| (117,(_,(MlyValue.STRING STRING1,_,STRINGright as STRING1right))::_
-::(_,(MlyValue.sigexp sigexp1,_,_))::_::_::(_,(MlyValue.spec spec1,_,_
-))::_::(_,(MlyValue.funid funid1,_,_))::_::(_,(_,PRIMITIVEleft as 
-PRIMITIVE1left,_))::rest671) => let val result=MlyValue.dec1''(fn _
- => let val funid as funid1=funid1 ()
-val spec as spec1=spec1 ()
-val sigexp as sigexp1=sigexp1 ()
-val STRING as STRING1=STRING1 ()
- in (
- PRIMITIVEFUNCTORSPECDec(I(PRIMITIVEleft,STRINGright),
-						  funid, spec, sigexp, STRING) 
-) end
-)
- in (LrTable.NT 36,(result,PRIMITIVE1left,STRING1right),rest671) end
-| (118,(_,(MlyValue.ty ty1,_,tyright as ty1right))::_::(_,(
+ in (LrTable.NT 34,(result,PRIMITIVE1left,STRING1right),rest671) end
+| (113,(_,(MlyValue.ty ty1,_,tyright as ty1right))::_::(_,(
 MlyValue.tyvar tyvar1,_,_))::_::(_,(MlyValue.vid vid1,_,_))::(_,(
 MlyValue.OP_opt OP_opt1,_,_))::(_,(_,OVERLOADleft as OVERLOAD1left,_))
 ::rest671) => let val result=MlyValue.dec1''(fn _ => let val OP_opt
@@ -18346,8 +19192,8 @@ val ty as ty1=ty1 ()
 				      OP_opt, vid, tyvar, ty) 
 ) end
 )
- in (LrTable.NT 36,(result,OVERLOAD1left,ty1right),rest671) end
-| (119,(_,(MlyValue.longvid longvid1,_,longvidright as longvid1right))
+ in (LrTable.NT 34,(result,OVERLOAD1left,ty1right),rest671) end
+| (114,(_,(MlyValue.longvid longvid1,_,longvidright as longvid1right))
 ::_::(_,(MlyValue.longtycon longtycon1,_,_))::_::(_,(MlyValue.vid vid1
 ,_,_))::(_,(MlyValue.OP_opt OP_opt1,_,_))::(_,(_,INSTANCEleft as 
 INSTANCE1left,_))::rest671) => let val result=MlyValue.dec1''(fn _ => 
@@ -18360,8 +19206,8 @@ val longvid as longvid1=longvid1 ()
 				      OP_opt, vid, longtycon, longvid) 
 ) end
 )
- in (LrTable.NT 36,(result,INSTANCE1left,longvid1right),rest671) end
-| (120,(_,(MlyValue.longtycon longtycon1,_,longtyconright as 
+ in (LrTable.NT 34,(result,INSTANCE1left,longvid1right),rest671) end
+| (115,(_,(MlyValue.longtycon longtycon1,_,longtyconright as 
 longtycon1right))::_::(_,(MlyValue.scon scon1,_,_))::(_,(_,
 INSTANCEleft as INSTANCE1left,_))::rest671) => let val result=
 MlyValue.dec1''(fn _ => let val scon as scon1=scon1 ()
@@ -18371,8 +19217,8 @@ val longtycon as longtycon1=longtycon1 ()
 					  scon, longtycon) 
 ) end
 )
- in (LrTable.NT 36,(result,INSTANCE1left,longtycon1right),rest671) end
-| (121,(_,(MlyValue.vid_list1 vid_list11,_,vid_list1right as 
+ in (LrTable.NT 34,(result,INSTANCE1left,longtycon1right),rest671) end
+| (116,(_,(MlyValue.vid_list1 vid_list11,_,vid_list1right as 
 vid_list11right))::(_,(MlyValue.d_opt d_opt1,_,_))::(_,(_,INFIXleft
  as INFIX1left,_))::rest671) => let val result=MlyValue.dec1''(fn _
  => let val d_opt as d_opt1=d_opt1 ()
@@ -18382,8 +19228,8 @@ val vid_list1 as vid_list11=vid_list11 ()
 					d_opt, vid_list1) )
  end
 )
- in (LrTable.NT 36,(result,INFIX1left,vid_list11right),rest671) end
-| (122,(_,(MlyValue.vid_list1 vid_list11,_,vid_list1right as 
+ in (LrTable.NT 34,(result,INFIX1left,vid_list11right),rest671) end
+| (117,(_,(MlyValue.vid_list1 vid_list11,_,vid_list1right as 
 vid_list11right))::(_,(MlyValue.d_opt d_opt1,_,_))::(_,(_,INFIXRleft
  as INFIXR1left,_))::rest671) => let val result=MlyValue.dec1''(fn _
  => let val d_opt as d_opt1=d_opt1 ()
@@ -18393,8 +19239,8 @@ val vid_list1 as vid_list11=vid_list11 ()
 					 d_opt, vid_list1) 
 ) end
 )
- in (LrTable.NT 36,(result,INFIXR1left,vid_list11right),rest671) end
-| (123,(_,(MlyValue.vid_list1 vid_list11,_,vid_list1right as 
+ in (LrTable.NT 34,(result,INFIXR1left,vid_list11right),rest671) end
+| (118,(_,(MlyValue.vid_list1 vid_list11,_,vid_list1right as 
 vid_list11right))::(_,(_,NONFIXleft as NONFIX1left,_))::rest671) => 
 let val result=MlyValue.dec1''(fn _ => let val vid_list1 as vid_list11
 =vid_list11 ()
@@ -18402,30 +19248,30 @@ let val result=MlyValue.dec1''(fn _ => let val vid_list1 as vid_list11
 					 vid_list1) )
  end
 )
- in (LrTable.NT 36,(result,NONFIX1left,vid_list11right),rest671) end
-| (124,(_,(MlyValue.typbind typbind1,_,typbind1right))::(_,(_,
+ in (LrTable.NT 34,(result,NONFIX1left,vid_list11right),rest671) end
+| (119,(_,(MlyValue.typbind typbind1,_,typbind1right))::(_,(_,
 WITHTYPE1left,_))::rest671) => let val result=
 MlyValue.WITHTYPE_typbind_opt(fn _ => let val typbind as typbind1=
 typbind1 ()
  in ( SOME typbind ) end
 )
- in (LrTable.NT 37,(result,WITHTYPE1left,typbind1right),rest671) end
-| (125,rest671) => let val result=MlyValue.WITHTYPE_typbind_opt(fn _
+ in (LrTable.NT 35,(result,WITHTYPE1left,typbind1right),rest671) end
+| (120,rest671) => let val result=MlyValue.WITHTYPE_typbind_opt(fn _
  => ( NONE ))
- in (LrTable.NT 37,(result,defaultPos,defaultPos),rest671) end
-| (126,(_,(MlyValue.vid_list1 vid_list11,_,vid_list11right))::(_,(
+ in (LrTable.NT 35,(result,defaultPos,defaultPos),rest671) end
+| (121,(_,(MlyValue.vid_list1 vid_list11,_,vid_list11right))::(_,(
 MlyValue.vid vid1,vid1left,_))::rest671) => let val result=
 MlyValue.vid_list1(fn _ => let val vid as vid1=vid1 ()
 val vid_list1 as vid_list11=vid_list11 ()
  in ( vid::vid_list1 ) end
 )
- in (LrTable.NT 38,(result,vid1left,vid_list11right),rest671) end
-| (127,(_,(MlyValue.vid vid1,vid1left,vid1right))::rest671) => let 
+ in (LrTable.NT 36,(result,vid1left,vid_list11right),rest671) end
+| (122,(_,(MlyValue.vid vid1,vid1left,vid1right))::rest671) => let 
 val result=MlyValue.vid_list1(fn _ => let val vid as vid1=vid1 ()
  in ( vid::[] ) end
 )
- in (LrTable.NT 38,(result,vid1left,vid1right),rest671) end
-| (128,(_,(MlyValue.longstrid_list1 longstrid_list11,_,
+ in (LrTable.NT 36,(result,vid1left,vid1right),rest671) end
+| (123,(_,(MlyValue.longstrid_list1 longstrid_list11,_,
 longstrid_list11right))::(_,(MlyValue.longstrid longstrid1,
 longstrid1left,_))::rest671) => let val result=
 MlyValue.longstrid_list1(fn _ => let val longstrid as longstrid1=
@@ -18433,23 +19279,23 @@ longstrid1 ()
 val longstrid_list1 as longstrid_list11=longstrid_list11 ()
  in ( longstrid::longstrid_list1 ) end
 )
- in (LrTable.NT 39,(result,longstrid1left,longstrid_list11right),
+ in (LrTable.NT 37,(result,longstrid1left,longstrid_list11right),
 rest671) end
-| (129,(_,(MlyValue.longstrid longstrid1,longstrid1left,
+| (124,(_,(MlyValue.longstrid longstrid1,longstrid1left,
 longstrid1right))::rest671) => let val result=MlyValue.longstrid_list1
 (fn _ => let val longstrid as longstrid1=longstrid1 ()
  in ( longstrid::[] ) end
 )
- in (LrTable.NT 39,(result,longstrid1left,longstrid1right),rest671)
+ in (LrTable.NT 37,(result,longstrid1left,longstrid1right),rest671)
  end
-| (130,(_,(MlyValue.d d1,d1left,d1right))::rest671) => let val result=
+| (125,(_,(MlyValue.d d1,d1left,d1right))::rest671) => let val result=
 MlyValue.d_opt(fn _ => let val d as d1=d1 ()
  in ( SOME d ) end
 )
- in (LrTable.NT 40,(result,d1left,d1right),rest671) end
-| (131,rest671) => let val result=MlyValue.d_opt(fn _ => ( NONE ))
- in (LrTable.NT 40,(result,defaultPos,defaultPos),rest671) end
-| (132,(_,(MlyValue.AND_valbind_opt AND_valbind_opt1,_,
+ in (LrTable.NT 38,(result,d1left,d1right),rest671) end
+| (126,rest671) => let val result=MlyValue.d_opt(fn _ => ( NONE ))
+ in (LrTable.NT 38,(result,defaultPos,defaultPos),rest671) end
+| (127,(_,(MlyValue.AND_valbind_opt AND_valbind_opt1,_,
 AND_valbind_optright as AND_valbind_opt1right))::(_,(MlyValue.exp exp1
 ,_,_))::_::(_,(MlyValue.pat pat1,patleft as pat1left,_))::rest671) => 
 let val result=MlyValue.valbind(fn _ => let val pat as pat1=pat1 ()
@@ -18460,24 +19306,24 @@ val AND_valbind_opt as AND_valbind_opt1=AND_valbind_opt1 ()
 				       pat, exp, AND_valbind_opt) 
 ) end
 )
- in (LrTable.NT 41,(result,pat1left,AND_valbind_opt1right),rest671)
+ in (LrTable.NT 39,(result,pat1left,AND_valbind_opt1right),rest671)
  end
-| (133,(_,(MlyValue.valbind valbind1,_,valbindright as valbind1right))
+| (128,(_,(MlyValue.valbind valbind1,_,valbindright as valbind1right))
 ::(_,(_,RECleft as REC1left,_))::rest671) => let val result=
 MlyValue.valbind(fn _ => let val valbind as valbind1=valbind1 ()
  in ( RECValBind(I(RECleft,valbindright), valbind) ) end
 )
- in (LrTable.NT 41,(result,REC1left,valbind1right),rest671) end
-| (134,(_,(MlyValue.valbind valbind1,_,valbind1right))::(_,(_,AND1left
+ in (LrTable.NT 39,(result,REC1left,valbind1right),rest671) end
+| (129,(_,(MlyValue.valbind valbind1,_,valbind1right))::(_,(_,AND1left
 ,_))::rest671) => let val result=MlyValue.AND_valbind_opt(fn _ => let 
 val valbind as valbind1=valbind1 ()
  in ( SOME valbind ) end
 )
- in (LrTable.NT 42,(result,AND1left,valbind1right),rest671) end
-| (135,rest671) => let val result=MlyValue.AND_valbind_opt(fn _ => (
+ in (LrTable.NT 40,(result,AND1left,valbind1right),rest671) end
+| (130,rest671) => let val result=MlyValue.AND_valbind_opt(fn _ => (
  NONE ))
- in (LrTable.NT 42,(result,defaultPos,defaultPos),rest671) end
-| (136,(_,(MlyValue.AND_fvalbind_opt AND_fvalbind_opt1,_,
+ in (LrTable.NT 40,(result,defaultPos,defaultPos),rest671) end
+| (131,(_,(MlyValue.AND_fvalbind_opt AND_fvalbind_opt1,_,
 AND_fvalbind_optright as AND_fvalbind_opt1right))::(_,(MlyValue.fmatch
  fmatch1,fmatchleft as fmatch1left,_))::rest671) => let val result=
 MlyValue.fvalbind(fn _ => let val fmatch as fmatch1=fmatch1 ()
@@ -18487,18 +19333,18 @@ val AND_fvalbind_opt as AND_fvalbind_opt1=AND_fvalbind_opt1 ()
 				     fmatch, AND_fvalbind_opt) 
 ) end
 )
- in (LrTable.NT 43,(result,fmatch1left,AND_fvalbind_opt1right),rest671
+ in (LrTable.NT 41,(result,fmatch1left,AND_fvalbind_opt1right),rest671
 ) end
-| (137,(_,(MlyValue.fvalbind fvalbind1,_,fvalbind1right))::(_,(_,
+| (132,(_,(MlyValue.fvalbind fvalbind1,_,fvalbind1right))::(_,(_,
 AND1left,_))::rest671) => let val result=MlyValue.AND_fvalbind_opt(fn 
 _ => let val fvalbind as fvalbind1=fvalbind1 ()
  in ( SOME fvalbind ) end
 )
- in (LrTable.NT 44,(result,AND1left,fvalbind1right),rest671) end
-| (138,rest671) => let val result=MlyValue.AND_fvalbind_opt(fn _ => (
+ in (LrTable.NT 42,(result,AND1left,fvalbind1right),rest671) end
+| (133,rest671) => let val result=MlyValue.AND_fvalbind_opt(fn _ => (
  NONE ))
- in (LrTable.NT 44,(result,defaultPos,defaultPos),rest671) end
-| (139,(_,(MlyValue.BAR_fmatch_opt BAR_fmatch_opt1,_,
+ in (LrTable.NT 42,(result,defaultPos,defaultPos),rest671) end
+| (134,(_,(MlyValue.BAR_fmatch_opt BAR_fmatch_opt1,_,
 BAR_fmatch_optright as BAR_fmatch_opt1right))::(_,(MlyValue.fmrule 
 fmrule1,fmruleleft as fmrule1left,_))::rest671) => let val result=
 MlyValue.fmatch(fn _ => let val fmrule as fmrule1=fmrule1 ()
@@ -18508,30 +19354,30 @@ val BAR_fmatch_opt as BAR_fmatch_opt1=BAR_fmatch_opt1 ()
 				 fmrule, BAR_fmatch_opt) 
 ) end
 )
- in (LrTable.NT 45,(result,fmrule1left,BAR_fmatch_opt1right),rest671)
+ in (LrTable.NT 43,(result,fmrule1left,BAR_fmatch_opt1right),rest671)
  end
-| (140,(_,(MlyValue.fmatch fmatch1,_,fmatch1right))::(_,(_,BAR1left,_)
+| (135,(_,(MlyValue.fmatch fmatch1,_,fmatch1right))::(_,(_,BAR1left,_)
 )::rest671) => let val result=MlyValue.BAR_fmatch_opt(fn _ => let val 
 fmatch as fmatch1=fmatch1 ()
  in ( SOME fmatch ) end
 )
- in (LrTable.NT 46,(result,BAR1left,fmatch1right),rest671) end
-| (141,rest671) => let val result=MlyValue.BAR_fmatch_opt(fn _ => (
+ in (LrTable.NT 44,(result,BAR1left,fmatch1right),rest671) end
+| (136,rest671) => let val result=MlyValue.BAR_fmatch_opt(fn _ => (
  NONE ))
- in (LrTable.NT 46,(result,defaultPos,defaultPos),rest671) end
-| (142,(_,(MlyValue.exp exp1,_,expright as exp1right))::_::(_,(
+ in (LrTable.NT 44,(result,defaultPos,defaultPos),rest671) end
+| (137,(_,(MlyValue.exp exp1,_,expright as exp1right))::_::(_,(
 MlyValue.fpat fpat1,fpatleft as fpat1left,_))::rest671) => let val 
 result=MlyValue.fmrule(fn _ => let val fpat as fpat1=fpat1 ()
 val exp as exp1=exp1 ()
  in ( Fmrule(I(fpatleft,expright), fpat, exp) ) end
 )
- in (LrTable.NT 47,(result,fpat1left,exp1right),rest671) end
-| (143,(_,(MlyValue.pat pat1,pat1left,pat1right))::rest671) => let 
+ in (LrTable.NT 45,(result,fpat1left,exp1right),rest671) end
+| (138,(_,(MlyValue.pat pat1,pat1left,pat1right))::rest671) => let 
 val result=MlyValue.fpat(fn _ => let val pat as pat1=pat1 ()
  in ( pat ) end
 )
- in (LrTable.NT 48,(result,pat1left,pat1right),rest671) end
-| (144,(_,(MlyValue.AND_typbind_opt AND_typbind_opt1,_,
+ in (LrTable.NT 46,(result,pat1left,pat1right),rest671) end
+| (139,(_,(MlyValue.AND_typbind_opt AND_typbind_opt1,_,
 AND_typbind_optright as AND_typbind_opt1right))::(_,(MlyValue.tycon 
 tycon1,_,_))::(_,(MlyValue.tyvarseq tyvarseq1,tyvarseqleft as 
 tyvarseq1left,_))::rest671) => let val result=MlyValue.typbind(fn _
@@ -18543,9 +19389,9 @@ val AND_typbind_opt as AND_typbind_opt1=AND_typbind_opt1 ()
 				     tyvarseq, tycon, AND_typbind_opt) 
 ) end
 )
- in (LrTable.NT 49,(result,tyvarseq1left,AND_typbind_opt1right),
+ in (LrTable.NT 47,(result,tyvarseq1left,AND_typbind_opt1right),
 rest671) end
-| (145,(_,(MlyValue.AND_typbind_opt AND_typbind_opt1,_,
+| (140,(_,(MlyValue.AND_typbind_opt AND_typbind_opt1,_,
 AND_typbind_optright as AND_typbind_opt1right))::(_,(MlyValue.ty ty1,_
 ,_))::_::(_,(MlyValue.tycon tycon1,_,_))::(_,(MlyValue.tyvarseq 
 tyvarseq1,tyvarseqleft as tyvarseq1left,_))::rest671) => let val 
@@ -18559,18 +19405,18 @@ val AND_typbind_opt as AND_typbind_opt1=AND_typbind_opt1 ()
 				  tyvarseq, tycon, ty, AND_typbind_opt) 
 ) end
 )
- in (LrTable.NT 49,(result,tyvarseq1left,AND_typbind_opt1right),
+ in (LrTable.NT 47,(result,tyvarseq1left,AND_typbind_opt1right),
 rest671) end
-| (146,(_,(MlyValue.typbind typbind1,_,typbind1right))::(_,(_,AND1left
+| (141,(_,(MlyValue.typbind typbind1,_,typbind1right))::(_,(_,AND1left
 ,_))::rest671) => let val result=MlyValue.AND_typbind_opt(fn _ => let 
 val typbind as typbind1=typbind1 ()
  in ( SOME typbind ) end
 )
- in (LrTable.NT 50,(result,AND1left,typbind1right),rest671) end
-| (147,rest671) => let val result=MlyValue.AND_typbind_opt(fn _ => (
+ in (LrTable.NT 48,(result,AND1left,typbind1right),rest671) end
+| (142,rest671) => let val result=MlyValue.AND_typbind_opt(fn _ => (
  NONE ))
- in (LrTable.NT 50,(result,defaultPos,defaultPos),rest671) end
-| (148,(_,(MlyValue.AND_datbind_opt AND_datbind_opt1,_,
+ in (LrTable.NT 48,(result,defaultPos,defaultPos),rest671) end
+| (143,(_,(MlyValue.AND_datbind_opt AND_datbind_opt1,_,
 AND_datbind_optright as AND_datbind_opt1right))::(_,(MlyValue.tycon 
 tycon1,_,_))::(_,(MlyValue.tyvarseq tyvarseq1,tyvarseqleft as 
 tyvarseq1left,_))::rest671) => let val result=MlyValue.datbind(fn _
@@ -18582,9 +19428,9 @@ val AND_datbind_opt as AND_datbind_opt1=AND_datbind_opt1 ()
 				      tyvarseq, tycon, AND_datbind_opt) 
 ) end
 )
- in (LrTable.NT 51,(result,tyvarseq1left,AND_datbind_opt1right),
+ in (LrTable.NT 49,(result,tyvarseq1left,AND_datbind_opt1right),
 rest671) end
-| (149,(_,(MlyValue.AND_datbind_opt AND_datbind_opt1,_,
+| (144,(_,(MlyValue.AND_datbind_opt AND_datbind_opt1,_,
 AND_datbind_optright as AND_datbind_opt1right))::(_,(MlyValue.conbind 
 conbind1,_,_))::_::(_,(MlyValue.tycon tycon1,_,_))::(_,(
 MlyValue.tyvarseq tyvarseq1,tyvarseqleft as tyvarseq1left,_))::rest671
@@ -18599,9 +19445,9 @@ val AND_datbind_opt as AND_datbind_opt1=AND_datbind_opt1 ()
 					AND_datbind_opt)
 ) end
 )
- in (LrTable.NT 51,(result,tyvarseq1left,AND_datbind_opt1right),
+ in (LrTable.NT 49,(result,tyvarseq1left,AND_datbind_opt1right),
 rest671) end
-| (150,(_,(MlyValue.AND_datbind_opt AND_datbind_opt1,_,
+| (145,(_,(MlyValue.AND_datbind_opt AND_datbind_opt1,_,
 AND_datbind_optright as AND_datbind_opt1right))::(_,(MlyValue.tycon 
 tycon1,tyconleft as tycon1left,_))::rest671) => let val result=
 MlyValue.datbind0(fn _ => let val tycon as tycon1=tycon1 ()
@@ -18612,9 +19458,9 @@ val AND_datbind_opt as AND_datbind_opt1=AND_datbind_opt1 ()
 				      tycon, AND_datbind_opt) 
 ) end
 )
- in (LrTable.NT 52,(result,tycon1left,AND_datbind_opt1right),rest671)
+ in (LrTable.NT 50,(result,tycon1left,AND_datbind_opt1right),rest671)
  end
-| (151,(_,(MlyValue.AND_datbind_opt AND_datbind_opt1,_,
+| (146,(_,(MlyValue.AND_datbind_opt AND_datbind_opt1,_,
 AND_datbind_optright as AND_datbind_opt1right))::(_,(MlyValue.conbind 
 conbind1,_,_))::_::(_,(MlyValue.tycon tycon1,tyconleft as tycon1left,_
 ))::rest671) => let val result=MlyValue.datbind0(fn _ => let val tycon
@@ -18627,9 +19473,9 @@ val AND_datbind_opt as AND_datbind_opt1=AND_datbind_opt1 ()
 					tycon, conbind, AND_datbind_opt) 
 ) end
 )
- in (LrTable.NT 52,(result,tycon1left,AND_datbind_opt1right),rest671)
+ in (LrTable.NT 50,(result,tycon1left,AND_datbind_opt1right),rest671)
  end
-| (152,(_,(MlyValue.AND_datbind_opt AND_datbind_opt1,_,
+| (147,(_,(MlyValue.AND_datbind_opt AND_datbind_opt1,_,
 AND_datbind_optright as AND_datbind_opt1right))::(_,(MlyValue.tycon 
 tycon1,_,_))::(_,(MlyValue.tyvarseq1 tyvarseq11,tyvarseq1left as 
 tyvarseq11left,_))::rest671) => let val result=MlyValue.datbind1(fn _
@@ -18641,9 +19487,9 @@ val AND_datbind_opt as AND_datbind_opt1=AND_datbind_opt1 ()
 				      tyvarseq1, tycon, AND_datbind_opt) 
 ) end
 )
- in (LrTable.NT 53,(result,tyvarseq11left,AND_datbind_opt1right),
+ in (LrTable.NT 51,(result,tyvarseq11left,AND_datbind_opt1right),
 rest671) end
-| (153,(_,(MlyValue.AND_datbind_opt AND_datbind_opt1,_,
+| (148,(_,(MlyValue.AND_datbind_opt AND_datbind_opt1,_,
 AND_datbind_optright as AND_datbind_opt1right))::(_,(MlyValue.conbind 
 conbind1,_,_))::_::(_,(MlyValue.tycon tycon1,_,_))::(_,(
 MlyValue.tyvarseq1 tyvarseq11,tyvarseq1left as tyvarseq11left,_))::
@@ -18658,18 +19504,18 @@ val AND_datbind_opt as AND_datbind_opt1=AND_datbind_opt1 ()
 					AND_datbind_opt) 
 ) end
 )
- in (LrTable.NT 53,(result,tyvarseq11left,AND_datbind_opt1right),
+ in (LrTable.NT 51,(result,tyvarseq11left,AND_datbind_opt1right),
 rest671) end
-| (154,(_,(MlyValue.datbind datbind1,_,datbind1right))::(_,(_,AND1left
+| (149,(_,(MlyValue.datbind datbind1,_,datbind1right))::(_,(_,AND1left
 ,_))::rest671) => let val result=MlyValue.AND_datbind_opt(fn _ => let 
 val datbind as datbind1=datbind1 ()
  in ( SOME datbind ) end
 )
- in (LrTable.NT 54,(result,AND1left,datbind1right),rest671) end
-| (155,rest671) => let val result=MlyValue.AND_datbind_opt(fn _ => (
+ in (LrTable.NT 52,(result,AND1left,datbind1right),rest671) end
+| (150,rest671) => let val result=MlyValue.AND_datbind_opt(fn _ => (
  NONE ))
- in (LrTable.NT 54,(result,defaultPos,defaultPos),rest671) end
-| (156,(_,(MlyValue.BAR_conbind_opt BAR_conbind_opt1,_,
+ in (LrTable.NT 52,(result,defaultPos,defaultPos),rest671) end
+| (151,(_,(MlyValue.BAR_conbind_opt BAR_conbind_opt1,_,
 BAR_conbind_optright as BAR_conbind_opt1right))::(_,(
 MlyValue.OF_ty_opt OF_ty_opt1,_,_))::(_,(MlyValue.vid vid1,_,_))::(_,(
 MlyValue.OP_opt OP_opt1,OP_optleft as OP_opt1left,_))::rest671) => 
@@ -18683,25 +19529,25 @@ val BAR_conbind_opt as BAR_conbind_opt1=BAR_conbind_opt1 ()
 				  OP_opt, vid, OF_ty_opt, BAR_conbind_opt) 
 ) end
 )
- in (LrTable.NT 55,(result,OP_opt1left,BAR_conbind_opt1right),rest671)
+ in (LrTable.NT 53,(result,OP_opt1left,BAR_conbind_opt1right),rest671)
  end
-| (157,(_,(MlyValue.conbind conbind1,_,conbind1right))::(_,(_,BAR1left
+| (152,(_,(MlyValue.conbind conbind1,_,conbind1right))::(_,(_,BAR1left
 ,_))::rest671) => let val result=MlyValue.BAR_conbind_opt(fn _ => let 
 val conbind as conbind1=conbind1 ()
  in ( SOME conbind ) end
 )
- in (LrTable.NT 56,(result,BAR1left,conbind1right),rest671) end
-| (158,rest671) => let val result=MlyValue.BAR_conbind_opt(fn _ => (
+ in (LrTable.NT 54,(result,BAR1left,conbind1right),rest671) end
+| (153,rest671) => let val result=MlyValue.BAR_conbind_opt(fn _ => (
  NONE ))
- in (LrTable.NT 56,(result,defaultPos,defaultPos),rest671) end
-| (159,(_,(MlyValue.ty ty1,_,ty1right))::(_,(_,OF1left,_))::rest671)
+ in (LrTable.NT 54,(result,defaultPos,defaultPos),rest671) end
+| (154,(_,(MlyValue.ty ty1,_,ty1right))::(_,(_,OF1left,_))::rest671)
  => let val result=MlyValue.OF_ty_opt(fn _ => let val ty as ty1=ty1 ()
  in ( SOME ty ) end
 )
- in (LrTable.NT 57,(result,OF1left,ty1right),rest671) end
-| (160,rest671) => let val result=MlyValue.OF_ty_opt(fn _ => ( NONE ))
- in (LrTable.NT 57,(result,defaultPos,defaultPos),rest671) end
-| (161,(_,(MlyValue.AND_dconbind_opt AND_dconbind_opt1,_,
+ in (LrTable.NT 55,(result,OF1left,ty1right),rest671) end
+| (155,rest671) => let val result=MlyValue.OF_ty_opt(fn _ => ( NONE ))
+ in (LrTable.NT 55,(result,defaultPos,defaultPos),rest671) end
+| (156,(_,(MlyValue.AND_dconbind_opt AND_dconbind_opt1,_,
 AND_dconbind_optright as AND_dconbind_opt1right))::(_,(
 MlyValue.longtycon longtycon1,_,_))::(_,(MlyValue.tyvarseq tyvarseq1,_
 ,_))::_::(_,(MlyValue.OF_ty_opt OF_ty_opt1,_,_))::(_,(MlyValue.vid 
@@ -18719,9 +19565,9 @@ val AND_dconbind_opt as AND_dconbind_opt1=AND_dconbind_opt1 ()
 				      longtycon, AND_dconbind_opt) 
 ) end
 )
- in (LrTable.NT 58,(result,OP_opt1left,AND_dconbind_opt1right),rest671
+ in (LrTable.NT 56,(result,OP_opt1left,AND_dconbind_opt1right),rest671
 ) end
-| (162,(_,(MlyValue.AND_dconbind_opt AND_dconbind_opt1,_,
+| (157,(_,(MlyValue.AND_dconbind_opt AND_dconbind_opt1,_,
 AND_dconbind_optright as AND_dconbind_opt1right))::(_,(
 MlyValue.longvid longvid1,_,_))::(_,(MlyValue.OP_opt OP_opt2,_,_))::_
 ::(_,(MlyValue.vid vid1,_,_))::(_,(MlyValue.OP_opt OP_opt1,OP_opt1left
@@ -18733,22 +19579,22 @@ val longvid as longvid1=longvid1 ()
 val AND_dconbind_opt as AND_dconbind_opt1=AND_dconbind_opt1 ()
  in (
  EQUALDconBind(I(OP_opt1left,AND_dconbind_optright),
-					OP_opt1, vid, OP_opt2, longvid,
-					AND_dconbind_opt) 
+					OP_opt1, vid,
+					OP_opt2, longvid, AND_dconbind_opt) 
 ) end
 )
- in (LrTable.NT 58,(result,OP_opt1left,AND_dconbind_opt1right),rest671
+ in (LrTable.NT 56,(result,OP_opt1left,AND_dconbind_opt1right),rest671
 ) end
-| (163,(_,(MlyValue.dconbind dconbind1,_,dconbind1right))::(_,(_,
+| (158,(_,(MlyValue.dconbind dconbind1,_,dconbind1right))::(_,(_,
 AND1left,_))::rest671) => let val result=MlyValue.AND_dconbind_opt(fn 
 _ => let val dconbind as dconbind1=dconbind1 ()
  in ( SOME dconbind ) end
 )
- in (LrTable.NT 59,(result,AND1left,dconbind1right),rest671) end
-| (164,rest671) => let val result=MlyValue.AND_dconbind_opt(fn _ => (
+ in (LrTable.NT 57,(result,AND1left,dconbind1right),rest671) end
+| (159,rest671) => let val result=MlyValue.AND_dconbind_opt(fn _ => (
  NONE ))
- in (LrTable.NT 59,(result,defaultPos,defaultPos),rest671) end
-| (165,(_,(MlyValue.AND_exbind_opt AND_exbind_opt1,_,
+ in (LrTable.NT 57,(result,defaultPos,defaultPos),rest671) end
+| (160,(_,(MlyValue.AND_exbind_opt AND_exbind_opt1,_,
 AND_exbind_optright as AND_exbind_opt1right))::(_,(MlyValue.OF_ty_opt 
 OF_ty_opt1,_,_))::(_,(MlyValue.vid vid1,_,_))::(_,(MlyValue.OP_opt 
 OP_opt1,OP_optleft as OP_opt1left,_))::rest671) => let val result=
@@ -18761,9 +19607,9 @@ val AND_exbind_opt as AND_exbind_opt1=AND_exbind_opt1 ()
 				    OP_opt, vid, OF_ty_opt, AND_exbind_opt) 
 ) end
 )
- in (LrTable.NT 60,(result,OP_opt1left,AND_exbind_opt1right),rest671)
+ in (LrTable.NT 58,(result,OP_opt1left,AND_exbind_opt1right),rest671)
  end
-| (166,(_,(MlyValue.AND_exbind_opt AND_exbind_opt1,_,
+| (161,(_,(MlyValue.AND_exbind_opt AND_exbind_opt1,_,
 AND_exbind_optright as AND_exbind_opt1right))::(_,(MlyValue.longvid 
 longvid1,_,_))::(_,(MlyValue.OP_opt OP_opt2,_,_))::_::(_,(MlyValue.vid
  vid1,_,_))::(_,(MlyValue.OP_opt OP_opt1,OP_opt1left,_))::rest671) => 
@@ -18774,26 +19620,26 @@ val longvid as longvid1=longvid1 ()
 val AND_exbind_opt as AND_exbind_opt1=AND_exbind_opt1 ()
  in (
  EQUALExBind(I(OP_opt1left,AND_exbind_optright),
-				      OP_opt1, vid, OP_opt2, longvid,
-				      AND_exbind_opt) 
+				      OP_opt1, vid,
+				      OP_opt2, longvid, AND_exbind_opt) 
 ) end
 )
- in (LrTable.NT 60,(result,OP_opt1left,AND_exbind_opt1right),rest671)
+ in (LrTable.NT 58,(result,OP_opt1left,AND_exbind_opt1right),rest671)
  end
-| (167,(_,(MlyValue.exbind exbind1,_,exbind1right))::(_,(_,AND1left,_)
+| (162,(_,(MlyValue.exbind exbind1,_,exbind1right))::(_,(_,AND1left,_)
 )::rest671) => let val result=MlyValue.AND_exbind_opt(fn _ => let val 
 exbind as exbind1=exbind1 ()
  in ( SOME exbind ) end
 )
- in (LrTable.NT 61,(result,AND1left,exbind1right),rest671) end
-| (168,rest671) => let val result=MlyValue.AND_exbind_opt(fn _ => (
+ in (LrTable.NT 59,(result,AND1left,exbind1right),rest671) end
+| (163,rest671) => let val result=MlyValue.AND_exbind_opt(fn _ => (
  NONE ))
- in (LrTable.NT 61,(result,defaultPos,defaultPos),rest671) end
-| (169,(_,(_,UNDERBARleft as UNDERBAR1left,UNDERBARright as 
+ in (LrTable.NT 59,(result,defaultPos,defaultPos),rest671) end
+| (164,(_,(_,UNDERBARleft as UNDERBAR1left,UNDERBARright as 
 UNDERBAR1right))::rest671) => let val result=MlyValue.atpat(fn _ => (
  WILDCARDAtPat(I(UNDERBARleft,UNDERBARright)) ))
- in (LrTable.NT 62,(result,UNDERBAR1left,UNDERBAR1right),rest671) end
-| (170,(_,(MlyValue.longvid' longvid'1,longvid'left as longvid'1left,
+ in (LrTable.NT 60,(result,UNDERBAR1left,UNDERBAR1right),rest671) end
+| (165,(_,(MlyValue.longvid' longvid'1,longvid'left as longvid'1left,
 longvid'right as longvid'1right))::rest671) => let val result=
 MlyValue.atpat(fn _ => let val longvid' as longvid'1=longvid'1 ()
  in (
@@ -18801,8 +19647,8 @@ MlyValue.atpat(fn _ => let val longvid' as longvid'1=longvid'1 ()
 				       SANSOp, longvid') 
 ) end
 )
- in (LrTable.NT 62,(result,longvid'1left,longvid'1right),rest671) end
-| (171,(_,(MlyValue.longvid longvid1,_,longvidright as longvid1right))
+ in (LrTable.NT 60,(result,longvid'1left,longvid'1right),rest671) end
+| (166,(_,(MlyValue.longvid longvid1,_,longvidright as longvid1right))
 ::(_,(_,OPleft as OP1left,_))::rest671) => let val result=
 MlyValue.atpat(fn _ => let val longvid as longvid1=longvid1 ()
  in (
@@ -18810,32 +19656,32 @@ MlyValue.atpat(fn _ => let val longvid as longvid1=longvid1 ()
 				       WITHOp, longvid) )
  end
 )
- in (LrTable.NT 62,(result,OP1left,longvid1right),rest671) end
-| (172,(_,(MlyValue.scon scon1,sconleft as scon1left,sconright as 
+ in (LrTable.NT 60,(result,OP1left,longvid1right),rest671) end
+| (167,(_,(MlyValue.scon scon1,sconleft as scon1left,sconright as 
 scon1right))::rest671) => let val result=MlyValue.atpat(fn _ => let 
 val scon as scon1=scon1 ()
  in ( SCONAtPat(I(sconleft,sconright), scon) ) end
 )
- in (LrTable.NT 62,(result,scon1left,scon1right),rest671) end
-| (173,(_,(_,_,RBRACEright as RBRACE1right))::(_,(MlyValue.patrow_opt 
+ in (LrTable.NT 60,(result,scon1left,scon1right),rest671) end
+| (168,(_,(_,_,RBRACEright as RBRACE1right))::(_,(MlyValue.patrow_opt 
 patrow_opt1,_,_))::(_,(_,LBRACEleft as LBRACE1left,_))::rest671) => 
 let val result=MlyValue.atpat(fn _ => let val patrow_opt as 
 patrow_opt1=patrow_opt1 ()
  in ( RECORDAtPat(I(LBRACEleft,RBRACEright), patrow_opt) ) end
 )
- in (LrTable.NT 62,(result,LBRACE1left,RBRACE1right),rest671) end
-| (174,(_,(_,_,RPARright as RPAR1right))::(_,(_,LPARleft as LPAR1left,
+ in (LrTable.NT 60,(result,LBRACE1left,RBRACE1right),rest671) end
+| (169,(_,(_,_,RPARright as RPAR1right))::(_,(_,LPARleft as LPAR1left,
 _))::rest671) => let val result=MlyValue.atpat(fn _ => (
  UNITAtPat(I(LPARleft,RPARright)) ))
- in (LrTable.NT 62,(result,LPAR1left,RPAR1right),rest671) end
-| (175,(_,(_,_,RPARright as RPAR1right))::(_,(MlyValue.pat_COMMA_list2
+ in (LrTable.NT 60,(result,LPAR1left,RPAR1right),rest671) end
+| (170,(_,(_,_,RPARright as RPAR1right))::(_,(MlyValue.pat_COMMA_list2
  pat_COMMA_list21,_,_))::(_,(_,LPARleft as LPAR1left,_))::rest671) => 
 let val result=MlyValue.atpat(fn _ => let val pat_COMMA_list2 as 
 pat_COMMA_list21=pat_COMMA_list21 ()
  in ( TUPLEAtPat(I(LPARleft,RPARright), pat_COMMA_list2) ) end
 )
- in (LrTable.NT 62,(result,LPAR1left,RPAR1right),rest671) end
-| (176,(_,(_,_,RBRACKright as RBRACK1right))::(_,(
+ in (LrTable.NT 60,(result,LPAR1left,RPAR1right),rest671) end
+| (171,(_,(_,_,RBRACKright as RBRACK1right))::(_,(
 MlyValue.pat_COMMA_list0 pat_COMMA_list01,_,_))::(_,(_,LBRACKleft as 
 LBRACK1left,_))::rest671) => let val result=MlyValue.atpat(fn _ => 
 let val pat_COMMA_list0 as pat_COMMA_list01=pat_COMMA_list01 ()
@@ -18843,8 +19689,8 @@ let val pat_COMMA_list0 as pat_COMMA_list01=pat_COMMA_list01 ()
 				    pat_COMMA_list0) )
  end
 )
- in (LrTable.NT 62,(result,LBRACK1left,RBRACK1right),rest671) end
-| (177,(_,(_,_,RBRACKright as RBRACK1right))::(_,(
+ in (LrTable.NT 60,(result,LBRACK1left,RBRACK1right),rest671) end
+| (172,(_,(_,_,RBRACKright as RBRACK1right))::(_,(
 MlyValue.pat_COMMA_list0 pat_COMMA_list01,_,_))::(_,(_,HASHBRACKleft
  as HASHBRACK1left,_))::rest671) => let val result=MlyValue.atpat(fn _
  => let val pat_COMMA_list0 as pat_COMMA_list01=pat_COMMA_list01 ()
@@ -18853,75 +19699,75 @@ MlyValue.pat_COMMA_list0 pat_COMMA_list01,_,_))::(_,(_,HASHBRACKleft
 				    pat_COMMA_list0) )
  end
 )
- in (LrTable.NT 62,(result,HASHBRACK1left,RBRACK1right),rest671) end
-| (178,(_,(_,_,RPARright as RPAR1right))::(_,(MlyValue.pat_BAR_list2 
+ in (LrTable.NT 60,(result,HASHBRACK1left,RBRACK1right),rest671) end
+| (173,(_,(_,_,RPARright as RPAR1right))::(_,(MlyValue.pat_BAR_list2 
 pat_BAR_list21,_,_))::(_,(_,LPARleft as LPAR1left,_))::rest671) => 
 let val result=MlyValue.atpat(fn _ => let val pat_BAR_list2 as 
 pat_BAR_list21=pat_BAR_list21 ()
  in ( ALTAtPat(I(LPARleft,RPARright),
 				   pat_BAR_list2) ) end
 )
- in (LrTable.NT 62,(result,LPAR1left,RPAR1right),rest671) end
-| (179,(_,(_,_,RPARright as RPAR1right))::(_,(MlyValue.pat pat1,_,_))
+ in (LrTable.NT 60,(result,LPAR1left,RPAR1right),rest671) end
+| (174,(_,(_,_,RPARright as RPAR1right))::(_,(MlyValue.pat pat1,_,_))
 ::(_,(_,LPARleft as LPAR1left,_))::rest671) => let val result=
 MlyValue.atpat(fn _ => let val pat as pat1=pat1 ()
  in ( PARAtPat(I(LPARleft,RPARright), pat) ) end
 )
- in (LrTable.NT 62,(result,LPAR1left,RPAR1right),rest671) end
-| (180,(_,(MlyValue.pat_COMMA_list1 pat_COMMA_list11,
+ in (LrTable.NT 60,(result,LPAR1left,RPAR1right),rest671) end
+| (175,(_,(MlyValue.pat_COMMA_list1 pat_COMMA_list11,
 pat_COMMA_list11left,pat_COMMA_list11right))::rest671) => let val 
 result=MlyValue.pat_COMMA_list0(fn _ => let val pat_COMMA_list1 as 
 pat_COMMA_list11=pat_COMMA_list11 ()
  in ( pat_COMMA_list1 ) end
 )
- in (LrTable.NT 63,(result,pat_COMMA_list11left,pat_COMMA_list11right)
+ in (LrTable.NT 61,(result,pat_COMMA_list11left,pat_COMMA_list11right)
 ,rest671) end
-| (181,rest671) => let val result=MlyValue.pat_COMMA_list0(fn _ => (
+| (176,rest671) => let val result=MlyValue.pat_COMMA_list0(fn _ => (
  [] ))
- in (LrTable.NT 63,(result,defaultPos,defaultPos),rest671) end
-| (182,(_,(MlyValue.pat_COMMA_list1 pat_COMMA_list11,_,
+ in (LrTable.NT 61,(result,defaultPos,defaultPos),rest671) end
+| (177,(_,(MlyValue.pat_COMMA_list1 pat_COMMA_list11,_,
 pat_COMMA_list11right))::_::(_,(MlyValue.pat pat1,pat1left,_))::
 rest671) => let val result=MlyValue.pat_COMMA_list1(fn _ => let val 
 pat as pat1=pat1 ()
 val pat_COMMA_list1 as pat_COMMA_list11=pat_COMMA_list11 ()
  in ( pat::pat_COMMA_list1 ) end
 )
- in (LrTable.NT 64,(result,pat1left,pat_COMMA_list11right),rest671)
+ in (LrTable.NT 62,(result,pat1left,pat_COMMA_list11right),rest671)
  end
-| (183,(_,(MlyValue.pat pat1,pat1left,pat1right))::rest671) => let 
+| (178,(_,(MlyValue.pat pat1,pat1left,pat1right))::rest671) => let 
 val result=MlyValue.pat_COMMA_list1(fn _ => let val pat as pat1=pat1 
 ()
  in ( pat::[] ) end
 )
- in (LrTable.NT 64,(result,pat1left,pat1right),rest671) end
-| (184,(_,(MlyValue.pat_COMMA_list1 pat_COMMA_list11,_,
+ in (LrTable.NT 62,(result,pat1left,pat1right),rest671) end
+| (179,(_,(MlyValue.pat_COMMA_list1 pat_COMMA_list11,_,
 pat_COMMA_list11right))::_::(_,(MlyValue.pat pat1,pat1left,_))::
 rest671) => let val result=MlyValue.pat_COMMA_list2(fn _ => let val 
 pat as pat1=pat1 ()
 val pat_COMMA_list1 as pat_COMMA_list11=pat_COMMA_list11 ()
  in ( pat::pat_COMMA_list1 ) end
 )
- in (LrTable.NT 65,(result,pat1left,pat_COMMA_list11right),rest671)
+ in (LrTable.NT 63,(result,pat1left,pat_COMMA_list11right),rest671)
  end
-| (185,(_,(MlyValue.pat pat2,_,pat2right))::_::(_,(MlyValue.pat pat1,
+| (180,(_,(MlyValue.pat pat2,_,pat2right))::_::(_,(MlyValue.pat pat1,
 pat1left,_))::rest671) => let val result=MlyValue.pat_BAR_list2(fn _
  => let val pat1=pat1 ()
 val pat2=pat2 ()
  in ( [pat1,pat2] ) end
 )
- in (LrTable.NT 66,(result,pat1left,pat2right),rest671) end
-| (186,(_,(MlyValue.pat_BAR_list2 pat_BAR_list21,_,pat_BAR_list21right
+ in (LrTable.NT 64,(result,pat1left,pat2right),rest671) end
+| (181,(_,(MlyValue.pat_BAR_list2 pat_BAR_list21,_,pat_BAR_list21right
 ))::_::(_,(MlyValue.pat pat1,pat1left,_))::rest671) => let val result=
 MlyValue.pat_BAR_list2(fn _ => let val pat as pat1=pat1 ()
 val pat_BAR_list2 as pat_BAR_list21=pat_BAR_list21 ()
  in ( pat::pat_BAR_list2 ) end
 )
- in (LrTable.NT 66,(result,pat1left,pat_BAR_list21right),rest671) end
-| (187,(_,(_,DOTSleft as DOTS1left,DOTSright as DOTS1right))::rest671)
+ in (LrTable.NT 64,(result,pat1left,pat_BAR_list21right),rest671) end
+| (182,(_,(_,DOTSleft as DOTS1left,DOTSright as DOTS1right))::rest671)
  => let val result=MlyValue.patrow(fn _ => (
  WILDCARDPatRow(I(DOTSleft,DOTSright)) ))
- in (LrTable.NT 67,(result,DOTS1left,DOTS1right),rest671) end
-| (188,(_,(MlyValue.COMMA_patrow_opt COMMA_patrow_opt1,_,
+ in (LrTable.NT 65,(result,DOTS1left,DOTS1right),rest671) end
+| (183,(_,(MlyValue.COMMA_patrow_opt COMMA_patrow_opt1,_,
 COMMA_patrow_optright as COMMA_patrow_opt1right))::(_,(MlyValue.pat 
 pat1,_,_))::_::(_,(MlyValue.lab lab1,lableft as lab1left,_))::rest671)
  => let val result=MlyValue.patrow(fn _ => let val lab as lab1=lab1 ()
@@ -18932,9 +19778,9 @@ val COMMA_patrow_opt as COMMA_patrow_opt1=COMMA_patrow_opt1 ()
 				      lab, pat, COMMA_patrow_opt) 
 ) end
 )
- in (LrTable.NT 67,(result,lab1left,COMMA_patrow_opt1right),rest671)
+ in (LrTable.NT 65,(result,lab1left,COMMA_patrow_opt1right),rest671)
  end
-| (189,(_,(MlyValue.COMMA_patrow_opt COMMA_patrow_opt1,_,
+| (184,(_,(MlyValue.COMMA_patrow_opt COMMA_patrow_opt1,_,
 COMMA_patrow_optright as COMMA_patrow_opt1right))::(_,(
 MlyValue.AS_pat_opt AS_pat_opt1,_,_))::(_,(MlyValue.COLON_ty_opt 
 COLON_ty_opt1,_,_))::(_,(MlyValue.vid' vid'1,vid'left as vid'1left,_))
@@ -18949,120 +19795,120 @@ val COMMA_patrow_opt as COMMA_patrow_opt1=COMMA_patrow_opt1 ()
 				    COMMA_patrow_opt) 
 ) end
 )
- in (LrTable.NT 67,(result,vid'1left,COMMA_patrow_opt1right),rest671)
+ in (LrTable.NT 65,(result,vid'1left,COMMA_patrow_opt1right),rest671)
  end
-| (190,(_,(MlyValue.patrow patrow1,_,patrow1right))::(_,(_,COMMA1left,
+| (185,(_,(MlyValue.patrow patrow1,_,patrow1right))::(_,(_,COMMA1left,
 _))::rest671) => let val result=MlyValue.COMMA_patrow_opt(fn _ => let 
 val patrow as patrow1=patrow1 ()
  in ( SOME patrow ) end
 )
- in (LrTable.NT 69,(result,COMMA1left,patrow1right),rest671) end
-| (191,rest671) => let val result=MlyValue.COMMA_patrow_opt(fn _ => (
+ in (LrTable.NT 67,(result,COMMA1left,patrow1right),rest671) end
+| (186,rest671) => let val result=MlyValue.COMMA_patrow_opt(fn _ => (
  NONE ))
- in (LrTable.NT 69,(result,defaultPos,defaultPos),rest671) end
-| (192,(_,(MlyValue.ty ty1,_,ty1right))::(_,(_,COLON1left,_))::rest671
+ in (LrTable.NT 67,(result,defaultPos,defaultPos),rest671) end
+| (187,(_,(MlyValue.ty ty1,_,ty1right))::(_,(_,COLON1left,_))::rest671
 ) => let val result=MlyValue.COLON_ty_opt(fn _ => let val ty as ty1=
 ty1 ()
  in ( SOME ty ) end
 )
- in (LrTable.NT 70,(result,COLON1left,ty1right),rest671) end
-| (193,rest671) => let val result=MlyValue.COLON_ty_opt(fn _ => (
+ in (LrTable.NT 68,(result,COLON1left,ty1right),rest671) end
+| (188,rest671) => let val result=MlyValue.COLON_ty_opt(fn _ => (
  NONE ))
- in (LrTable.NT 70,(result,defaultPos,defaultPos),rest671) end
-| (194,(_,(MlyValue.pat pat1,_,pat1right))::(_,(_,AS1left,_))::rest671
+ in (LrTable.NT 68,(result,defaultPos,defaultPos),rest671) end
+| (189,(_,(MlyValue.pat pat1,_,pat1right))::(_,(_,AS1left,_))::rest671
 ) => let val result=MlyValue.AS_pat_opt(fn _ => let val pat as pat1=
 pat1 ()
  in ( SOME pat ) end
 )
- in (LrTable.NT 71,(result,AS1left,pat1right),rest671) end
-| (195,rest671) => let val result=MlyValue.AS_pat_opt(fn _ => ( NONE )
+ in (LrTable.NT 69,(result,AS1left,pat1right),rest671) end
+| (190,rest671) => let val result=MlyValue.AS_pat_opt(fn _ => ( NONE )
 )
- in (LrTable.NT 71,(result,defaultPos,defaultPos),rest671) end
-| (196,(_,(MlyValue.patrow patrow1,patrow1left,patrow1right))::rest671
+ in (LrTable.NT 69,(result,defaultPos,defaultPos),rest671) end
+| (191,(_,(MlyValue.patrow patrow1,patrow1left,patrow1right))::rest671
 ) => let val result=MlyValue.patrow_opt(fn _ => let val patrow as 
 patrow1=patrow1 ()
  in ( SOME patrow ) end
 )
- in (LrTable.NT 68,(result,patrow1left,patrow1right),rest671) end
-| (197,rest671) => let val result=MlyValue.patrow_opt(fn _ => ( NONE )
+ in (LrTable.NT 66,(result,patrow1left,patrow1right),rest671) end
+| (192,rest671) => let val result=MlyValue.patrow_opt(fn _ => ( NONE )
 )
- in (LrTable.NT 68,(result,defaultPos,defaultPos),rest671) end
-| (198,(_,(MlyValue.atpat atpat1,atpatleft as atpat1left,atpatright
+ in (LrTable.NT 66,(result,defaultPos,defaultPos),rest671) end
+| (193,(_,(MlyValue.atpat atpat1,atpatleft as atpat1left,atpatright
  as atpat1right))::rest671) => let val result=MlyValue.infpat(fn _ => 
 let val atpat as atpat1=atpat1 ()
  in ( ATPATPat(I(atpatleft,atpatright), atpat) ) end
 )
- in (LrTable.NT 72,(result,atpat1left,atpat1right),rest671) end
-| (199,(_,(MlyValue.atpat atpat1,_,atpatright as atpat1right))::(_,(
+ in (LrTable.NT 70,(result,atpat1left,atpat1right),rest671) end
+| (194,(_,(MlyValue.atpat atpat1,_,atpatright as atpat1right))::(_,(
 MlyValue.infpat infpat1,infpatleft as infpat1left,_))::rest671) => 
 let val result=MlyValue.infpat(fn _ => let val infpat as infpat1=
 infpat1 ()
 val atpat as atpat1=atpat1 ()
  in ( APPPat(I(infpatleft,atpatright), infpat, atpat) ) end
 )
- in (LrTable.NT 72,(result,infpat1left,atpat1right),rest671) end
-| (200,(_,(MlyValue.infpat infpat1,infpat1left,infpat1right))::rest671
+ in (LrTable.NT 70,(result,infpat1left,atpat1right),rest671) end
+| (195,(_,(MlyValue.infpat infpat1,infpat1left,infpat1right))::rest671
 ) => let val result=MlyValue.pat(fn _ => let val infpat as infpat1=
 infpat1 ()
  in ( infpat ) end
 )
- in (LrTable.NT 73,(result,infpat1left,infpat1right),rest671) end
-| (201,(_,(MlyValue.ty ty1,_,tyright as ty1right))::_::(_,(
+ in (LrTable.NT 71,(result,infpat1left,infpat1right),rest671) end
+| (196,(_,(MlyValue.ty ty1,_,tyright as ty1right))::_::(_,(
 MlyValue.pat pat1,patleft as pat1left,_))::rest671) => let val result=
 MlyValue.pat(fn _ => let val pat as pat1=pat1 ()
 val ty as ty1=ty1 ()
  in ( TYPEDPat(I(patleft,tyright), pat, ty) ) end
 )
- in (LrTable.NT 73,(result,pat1left,ty1right),rest671) end
-| (202,(_,(MlyValue.pat pat1,_,patright as pat1right))::(_,(_,NONleft
+ in (LrTable.NT 71,(result,pat1left,ty1right),rest671) end
+| (197,(_,(MlyValue.pat pat1,_,patright as pat1right))::(_,(_,NONleft
  as NON1left,_))::rest671) => let val result=MlyValue.pat(fn _ => let 
 val pat as pat1=pat1 ()
  in ( NONPat(I(NONleft,patright), pat) ) end
 )
- in (LrTable.NT 73,(result,NON1left,pat1right),rest671) end
-| (203,(_,(MlyValue.pat pat2,_,pat2right))::_::(_,(MlyValue.pat pat1,
+ in (LrTable.NT 71,(result,NON1left,pat1right),rest671) end
+| (198,(_,(MlyValue.pat pat2,_,pat2right))::_::(_,(MlyValue.pat pat1,
 pat1left,_))::rest671) => let val result=MlyValue.pat(fn _ => let val 
 pat1=pat1 ()
 val pat2=pat2 ()
  in ( ASPat(I(pat1left,pat2right), pat1, pat2) ) end
 )
- in (LrTable.NT 73,(result,pat1left,pat2right),rest671) end
-| (204,(_,(MlyValue.atexp atexp1,_,atexpright as atexp1right))::_::(_,
+ in (LrTable.NT 71,(result,pat1left,pat2right),rest671) end
+| (199,(_,(MlyValue.atexp atexp1,_,atexpright as atexp1right))::_::(_,
 (MlyValue.pat pat1,patleft as pat1left,_))::rest671) => let val result
 =MlyValue.pat(fn _ => let val pat as pat1=pat1 ()
 val atexp as atexp1=atexp1 ()
  in ( WHENPat(I(patleft,atexpright), pat, atexp) ) end
 )
- in (LrTable.NT 73,(result,pat1left,atexp1right),rest671) end
-| (205,(_,(_,_,ENDright as END1right))::(_,(MlyValue.valbind valbind1,
+ in (LrTable.NT 71,(result,pat1left,atexp1right),rest671) end
+| (200,(_,(_,_,ENDright as END1right))::(_,(MlyValue.valbind valbind1,
 _,_))::_::(_,(MlyValue.pat pat1,patleft as pat1left,_))::rest671) => 
 let val result=MlyValue.pat(fn _ => let val pat as pat1=pat1 ()
 val valbind as valbind1=valbind1 ()
  in ( WITHVALPat(I(patleft,ENDright), pat, valbind) ) end
 )
- in (LrTable.NT 73,(result,pat1left,END1right),rest671) end
-| (206,(_,(_,_,ENDright as END1right))::(_,(MlyValue.fvalbind 
+ in (LrTable.NT 71,(result,pat1left,END1right),rest671) end
+| (201,(_,(_,_,ENDright as END1right))::(_,(MlyValue.fvalbind 
 fvalbind1,_,_))::_::(_,(MlyValue.pat pat1,patleft as pat1left,_))::
 rest671) => let val result=MlyValue.pat(fn _ => let val pat as pat1=
 pat1 ()
 val fvalbind as fvalbind1=fvalbind1 ()
  in ( WITHFUNPat(I(patleft,ENDright), pat, fvalbind) ) end
 )
- in (LrTable.NT 73,(result,pat1left,END1right),rest671) end
-| (207,(_,(MlyValue.tupty tupty1,tupty1left,tupty1right))::rest671)
+ in (LrTable.NT 71,(result,pat1left,END1right),rest671) end
+| (202,(_,(MlyValue.tupty tupty1,tupty1left,tupty1right))::rest671)
  => let val result=MlyValue.ty(fn _ => let val tupty as tupty1=tupty1 
 ()
  in ( tupty ) end
 )
- in (LrTable.NT 74,(result,tupty1left,tupty1right),rest671) end
-| (208,(_,(MlyValue.ty ty1,_,tyright as ty1right))::_::(_,(
+ in (LrTable.NT 72,(result,tupty1left,tupty1right),rest671) end
+| (203,(_,(MlyValue.ty ty1,_,tyright as ty1right))::_::(_,(
 MlyValue.tupty tupty1,tuptyleft as tupty1left,_))::rest671) => let 
 val result=MlyValue.ty(fn _ => let val tupty as tupty1=tupty1 ()
 val ty as ty1=ty1 ()
  in ( ARROWTy(I(tuptyleft,tyright), tupty, ty) ) end
 )
- in (LrTable.NT 74,(result,tupty1left,ty1right),rest671) end
-| (209,(_,(MlyValue.ty_STAR_list ty_STAR_list1,ty_STAR_listleft as 
+ in (LrTable.NT 72,(result,tupty1left,ty1right),rest671) end
+| (204,(_,(MlyValue.ty_STAR_list ty_STAR_list1,ty_STAR_listleft as 
 ty_STAR_list1left,ty_STAR_listright as ty_STAR_list1right))::rest671)
  => let val result=MlyValue.tupty(fn _ => let val ty_STAR_list as 
 ty_STAR_list1=ty_STAR_list1 ()
@@ -19071,29 +19917,29 @@ ty_STAR_list1=ty_STAR_list1 ()
 				   ty_STAR_list) )
  end
 )
- in (LrTable.NT 75,(result,ty_STAR_list1left,ty_STAR_list1right),
+ in (LrTable.NT 73,(result,ty_STAR_list1left,ty_STAR_list1right),
 rest671) end
-| (210,(_,(MlyValue.ty_STAR_list ty_STAR_list1,_,ty_STAR_list1right))
+| (205,(_,(MlyValue.ty_STAR_list ty_STAR_list1,_,ty_STAR_list1right))
 ::_::(_,(MlyValue.consty consty1,consty1left,_))::rest671) => let val 
 result=MlyValue.ty_STAR_list(fn _ => let val consty as consty1=consty1
  ()
 val ty_STAR_list as ty_STAR_list1=ty_STAR_list1 ()
  in ( consty::ty_STAR_list ) end
 )
- in (LrTable.NT 76,(result,consty1left,ty_STAR_list1right),rest671)
+ in (LrTable.NT 74,(result,consty1left,ty_STAR_list1right),rest671)
  end
-| (211,(_,(MlyValue.consty consty1,consty1left,consty1right))::rest671
+| (206,(_,(MlyValue.consty consty1,consty1left,consty1right))::rest671
 ) => let val result=MlyValue.ty_STAR_list(fn _ => let val consty as 
 consty1=consty1 ()
  in ( consty::[] ) end
 )
- in (LrTable.NT 76,(result,consty1left,consty1right),rest671) end
-| (212,(_,(MlyValue.atty atty1,atty1left,atty1right))::rest671) => 
+ in (LrTable.NT 74,(result,consty1left,consty1right),rest671) end
+| (207,(_,(MlyValue.atty atty1,atty1left,atty1right))::rest671) => 
 let val result=MlyValue.consty(fn _ => let val atty as atty1=atty1 ()
  in ( atty ) end
 )
- in (LrTable.NT 77,(result,atty1left,atty1right),rest671) end
-| (213,(_,(MlyValue.longtycon longtycon1,_,longtyconright as 
+ in (LrTable.NT 75,(result,atty1left,atty1right),rest671) end
+| (208,(_,(MlyValue.longtycon longtycon1,_,longtyconright as 
 longtycon1right))::(_,(MlyValue.tyseq tyseq1,tyseqleft as tyseq1left,_
 ))::rest671) => let val result=MlyValue.consty(fn _ => let val tyseq
  as tyseq1=tyseq1 ()
@@ -19102,27 +19948,34 @@ val longtycon as longtycon1=longtycon1 ()
 					  tyseq, longtycon) )
  end
 )
- in (LrTable.NT 77,(result,tyseq1left,longtycon1right),rest671) end
-| (214,(_,(MlyValue.tyvar tyvar1,tyvarleft as tyvar1left,tyvarright
+ in (LrTable.NT 75,(result,tyseq1left,longtycon1right),rest671) end
+| (209,(_,(MlyValue.tyvar tyvar1,tyvarleft as tyvar1left,tyvarright
  as tyvar1right))::rest671) => let val result=MlyValue.atty(fn _ => 
 let val tyvar as tyvar1=tyvar1 ()
  in ( TYVARTy(I(tyvarleft,tyvarright), tyvar) ) end
 )
- in (LrTable.NT 78,(result,tyvar1left,tyvar1right),rest671) end
-| (215,(_,(_,_,RBRACEright as RBRACE1right))::(_,(MlyValue.tyrow_opt 
+ in (LrTable.NT 76,(result,tyvar1left,tyvar1right),rest671) end
+| (210,(_,(_,_,RBRACEright as RBRACE1right))::(_,(MlyValue.tyrow_opt 
 tyrow_opt1,_,_))::(_,(_,LBRACEleft as LBRACE1left,_))::rest671) => 
 let val result=MlyValue.atty(fn _ => let val tyrow_opt as tyrow_opt1=
 tyrow_opt1 ()
  in ( RECORDTy(I(LBRACEleft,RBRACEright), tyrow_opt) ) end
 )
- in (LrTable.NT 78,(result,LBRACE1left,RBRACE1right),rest671) end
-| (216,(_,(_,_,RPARright as RPAR1right))::(_,(MlyValue.ty ty1,_,_))::(
+ in (LrTable.NT 76,(result,LBRACE1left,RBRACE1right),rest671) end
+| (211,(_,(_,_,RPARright as RPAR1right))::(_,(MlyValue.ty ty1,_,_))::(
 _,(_,LPARleft as LPAR1left,_))::rest671) => let val result=
 MlyValue.atty(fn _ => let val ty as ty1=ty1 ()
  in ( PARTy(I(LPARleft,RPARright), ty) ) end
 )
- in (LrTable.NT 78,(result,LPAR1left,RPAR1right),rest671) end
-| (217,(_,(MlyValue.COMMA_tyrow_opt COMMA_tyrow_opt1,_,
+ in (LrTable.NT 76,(result,LPAR1left,RPAR1right),rest671) end
+| (212,(_,(MlyValue.longsigid longsigid1,_,longsigidright as 
+longsigid1right))::(_,(_,PACKleft as PACK1left,_))::rest671) => let 
+val result=MlyValue.atty(fn _ => let val longsigid as longsigid1=
+longsigid1 ()
+ in ( PACKTy(I(PACKleft,longsigidright), longsigid)) end
+)
+ in (LrTable.NT 76,(result,PACK1left,longsigid1right),rest671) end
+| (213,(_,(MlyValue.COMMA_tyrow_opt COMMA_tyrow_opt1,_,
 COMMA_tyrow_optright as COMMA_tyrow_opt1right))::(_,(MlyValue.ty ty1,_
 ,_))::_::(_,(MlyValue.lab lab1,lableft as lab1left,_))::rest671) => 
 let val result=MlyValue.tyrow(fn _ => let val lab as lab1=lab1 ()
@@ -19133,75 +19986,75 @@ val COMMA_tyrow_opt as COMMA_tyrow_opt1=COMMA_tyrow_opt1 ()
 				   lab, ty, COMMA_tyrow_opt) 
 ) end
 )
- in (LrTable.NT 79,(result,lab1left,COMMA_tyrow_opt1right),rest671)
+ in (LrTable.NT 77,(result,lab1left,COMMA_tyrow_opt1right),rest671)
  end
-| (218,(_,(MlyValue.tyrow tyrow1,_,tyrow1right))::(_,(_,COMMA1left,_))
+| (214,(_,(MlyValue.tyrow tyrow1,_,tyrow1right))::(_,(_,COMMA1left,_))
 ::rest671) => let val result=MlyValue.COMMA_tyrow_opt(fn _ => let val 
 tyrow as tyrow1=tyrow1 ()
  in ( SOME tyrow ) end
 )
- in (LrTable.NT 81,(result,COMMA1left,tyrow1right),rest671) end
-| (219,rest671) => let val result=MlyValue.COMMA_tyrow_opt(fn _ => (
+ in (LrTable.NT 79,(result,COMMA1left,tyrow1right),rest671) end
+| (215,rest671) => let val result=MlyValue.COMMA_tyrow_opt(fn _ => (
  NONE ))
- in (LrTable.NT 81,(result,defaultPos,defaultPos),rest671) end
-| (220,(_,(MlyValue.tyrow tyrow1,tyrow1left,tyrow1right))::rest671)
+ in (LrTable.NT 79,(result,defaultPos,defaultPos),rest671) end
+| (216,(_,(MlyValue.tyrow tyrow1,tyrow1left,tyrow1right))::rest671)
  => let val result=MlyValue.tyrow_opt(fn _ => let val tyrow as tyrow1=
 tyrow1 ()
  in ( SOME tyrow ) end
 )
- in (LrTable.NT 80,(result,tyrow1left,tyrow1right),rest671) end
-| (221,rest671) => let val result=MlyValue.tyrow_opt(fn _ => ( NONE ))
- in (LrTable.NT 80,(result,defaultPos,defaultPos),rest671) end
-| (222,(_,(MlyValue.consty consty1,constyleft as consty1left,
+ in (LrTable.NT 78,(result,tyrow1left,tyrow1right),rest671) end
+| (217,rest671) => let val result=MlyValue.tyrow_opt(fn _ => ( NONE ))
+ in (LrTable.NT 78,(result,defaultPos,defaultPos),rest671) end
+| (218,(_,(MlyValue.consty consty1,constyleft as consty1left,
 constyright as consty1right))::rest671) => let val result=
 MlyValue.tyseq(fn _ => let val consty as consty1=consty1 ()
  in ( Seq(I(constyleft,constyright),
 					      [consty]) ) end
 )
- in (LrTable.NT 82,(result,consty1left,consty1right),rest671) end
-| (223,rest671) => let val result=MlyValue.tyseq(fn _ => (
+ in (LrTable.NT 80,(result,consty1left,consty1right),rest671) end
+| (219,rest671) => let val result=MlyValue.tyseq(fn _ => (
  Seq(I(defaultPos,defaultPos), []) ))
- in (LrTable.NT 82,(result,defaultPos,defaultPos),rest671) end
-| (224,(_,(_,_,RPARright as RPAR1right))::(_,(MlyValue.ty_COMMA_list2 
+ in (LrTable.NT 80,(result,defaultPos,defaultPos),rest671) end
+| (220,(_,(_,_,RPARright as RPAR1right))::(_,(MlyValue.ty_COMMA_list2 
 ty_COMMA_list21,_,_))::(_,(_,LPARleft as LPAR1left,_))::rest671) => 
 let val result=MlyValue.tyseq(fn _ => let val ty_COMMA_list2 as 
 ty_COMMA_list21=ty_COMMA_list21 ()
  in ( Seq(I(LPARleft,RPARright),
 					      ty_COMMA_list2) ) end
 )
- in (LrTable.NT 82,(result,LPAR1left,RPAR1right),rest671) end
-| (225,(_,(MlyValue.ty_COMMA_list2 ty_COMMA_list21,_,
+ in (LrTable.NT 80,(result,LPAR1left,RPAR1right),rest671) end
+| (221,(_,(MlyValue.ty_COMMA_list2 ty_COMMA_list21,_,
 ty_COMMA_list21right))::_::(_,(MlyValue.ty ty1,ty1left,_))::rest671)
  => let val result=MlyValue.ty_COMMA_list2(fn _ => let val ty as ty1=
 ty1 ()
 val ty_COMMA_list2 as ty_COMMA_list21=ty_COMMA_list21 ()
  in ( ty::ty_COMMA_list2 ) end
 )
- in (LrTable.NT 83,(result,ty1left,ty_COMMA_list21right),rest671) end
-| (226,(_,(MlyValue.ty ty2,_,ty2right))::_::(_,(MlyValue.ty ty1,
+ in (LrTable.NT 81,(result,ty1left,ty_COMMA_list21right),rest671) end
+| (222,(_,(MlyValue.ty ty2,_,ty2right))::_::(_,(MlyValue.ty ty1,
 ty1left,_))::rest671) => let val result=MlyValue.ty_COMMA_list2(fn _
  => let val ty1=ty1 ()
 val ty2=ty2 ()
  in ( [ty1, ty2] ) end
 )
- in (LrTable.NT 83,(result,ty1left,ty2right),rest671) end
-| (227,(_,(MlyValue.tyvarseq1 tyvarseq11,tyvarseq11left,
+ in (LrTable.NT 81,(result,ty1left,ty2right),rest671) end
+| (223,(_,(MlyValue.tyvarseq1 tyvarseq11,tyvarseq11left,
 tyvarseq11right))::rest671) => let val result=MlyValue.tyvarseq(fn _
  => let val tyvarseq1 as tyvarseq11=tyvarseq11 ()
  in ( tyvarseq1 ) end
 )
- in (LrTable.NT 84,(result,tyvarseq11left,tyvarseq11right),rest671)
+ in (LrTable.NT 82,(result,tyvarseq11left,tyvarseq11right),rest671)
  end
-| (228,rest671) => let val result=MlyValue.tyvarseq(fn _ => (
+| (224,rest671) => let val result=MlyValue.tyvarseq(fn _ => (
  Seq(I(defaultPos,defaultPos), []) ))
- in (LrTable.NT 84,(result,defaultPos,defaultPos),rest671) end
-| (229,(_,(MlyValue.tyvar tyvar1,tyvarleft as tyvar1left,tyvarright
+ in (LrTable.NT 82,(result,defaultPos,defaultPos),rest671) end
+| (225,(_,(MlyValue.tyvar tyvar1,tyvarleft as tyvar1left,tyvarright
  as tyvar1right))::rest671) => let val result=MlyValue.tyvarseq1(fn _
  => let val tyvar as tyvar1=tyvar1 ()
  in ( Seq(I(tyvarleft,tyvarright), [tyvar])) end
 )
- in (LrTable.NT 85,(result,tyvar1left,tyvar1right),rest671) end
-| (230,(_,(_,_,RPARright as RPAR1right))::(_,(
+ in (LrTable.NT 83,(result,tyvar1left,tyvar1right),rest671) end
+| (226,(_,(_,_,RPARright as RPAR1right))::(_,(
 MlyValue.tyvar_COMMA_list1 tyvar_COMMA_list11,_,_))::(_,(_,LPARleft
  as LPAR1left,_))::rest671) => let val result=MlyValue.tyvarseq1(fn _
  => let val tyvar_COMMA_list1 as tyvar_COMMA_list11=tyvar_COMMA_list11
@@ -19209,29 +20062,86 @@ MlyValue.tyvar_COMMA_list1 tyvar_COMMA_list11,_,_))::(_,(_,LPARleft
  in ( Seq(I(LPARleft,RPARright),
 					      tyvar_COMMA_list1) ) end
 )
- in (LrTable.NT 85,(result,LPAR1left,RPAR1right),rest671) end
-| (231,(_,(MlyValue.tyvar_COMMA_list1 tyvar_COMMA_list11,_,
+ in (LrTable.NT 83,(result,LPAR1left,RPAR1right),rest671) end
+| (227,(_,(MlyValue.tyvar_COMMA_list1 tyvar_COMMA_list11,_,
 tyvar_COMMA_list11right))::_::(_,(MlyValue.tyvar tyvar1,tyvar1left,_))
 ::rest671) => let val result=MlyValue.tyvar_COMMA_list1(fn _ => let 
 val tyvar as tyvar1=tyvar1 ()
 val tyvar_COMMA_list1 as tyvar_COMMA_list11=tyvar_COMMA_list11 ()
  in ( tyvar::tyvar_COMMA_list1 ) end
 )
- in (LrTable.NT 86,(result,tyvar1left,tyvar_COMMA_list11right),rest671
+ in (LrTable.NT 84,(result,tyvar1left,tyvar_COMMA_list11right),rest671
 ) end
-| (232,(_,(MlyValue.tyvar tyvar1,tyvar1left,tyvar1right))::rest671)
+| (228,(_,(MlyValue.tyvar tyvar1,tyvar1left,tyvar1right))::rest671)
  => let val result=MlyValue.tyvar_COMMA_list1(fn _ => let val tyvar
  as tyvar1=tyvar1 ()
  in ( tyvar::[] ) end
 )
- in (LrTable.NT 86,(result,tyvar1left,tyvar1right),rest671) end
-| (233,(_,(MlyValue.strexp' strexp'1,strexp'1left,strexp'1right))::
-rest671) => let val result=MlyValue.strexp(fn _ => let val strexp' as 
-strexp'1=strexp'1 ()
- in ( strexp' ) end
+ in (LrTable.NT 84,(result,tyvar1left,tyvar1right),rest671) end
+| (229,(_,(_,_,ENDright as END1right))::(_,(MlyValue.dec dec1,_,_))::(
+_,(_,STRUCTleft as STRUCT1left,_))::rest671) => let val result=
+MlyValue.atstrexp(fn _ => let val dec as dec1=dec1 ()
+ in ( STRUCTAtStrExp(I(STRUCTleft,ENDright), dec) ) end
 )
- in (LrTable.NT 87,(result,strexp'1left,strexp'1right),rest671) end
-| (234,(_,(MlyValue.sigexp sigexp1,_,sigexpright as sigexp1right))::_
+ in (LrTable.NT 85,(result,STRUCT1left,END1right),rest671) end
+| (230,(_,(MlyValue.longstrid longstrid1,longstridleft as 
+longstrid1left,longstridright as longstrid1right))::rest671) => let 
+val result=MlyValue.atstrexp(fn _ => let val longstrid as longstrid1=
+longstrid1 ()
+ in (
+ LONGSTRIDAtStrExp(I(longstridleft,longstridright),
+					    longstrid) 
+) end
+)
+ in (LrTable.NT 85,(result,longstrid1left,longstrid1right),rest671)
+ end
+| (231,(_,(_,_,RPARright as RPAR1right))::(_,(MlyValue.strexp strexp1,
+_,_))::(_,(_,LPARleft as LPAR1left,_))::rest671) => let val result=
+MlyValue.atstrexp(fn _ => let val strexp as strexp1=strexp1 ()
+ in ( PARAtStrExp(I(LPARleft,RPARright), strexp) ) end
+)
+ in (LrTable.NT 85,(result,LPAR1left,RPAR1right),rest671) end
+| (232,(_,(_,_,RPARright as RPAR1right))::(_,(MlyValue.dec dec1,_,_))
+::(_,(_,LPARleft as LPAR1left,_))::rest671) => let val result=
+MlyValue.atstrexp(fn _ => let val dec as dec1=dec1 ()
+ in ( DECAtStrExp(I(LPARleft,RPARright), dec) ) end
+)
+ in (LrTable.NT 85,(result,LPAR1left,RPAR1right),rest671) end
+| (233,(_,(_,_,ENDright as END1right))::(_,(MlyValue.strexp strexp1,_,
+_))::_::(_,(MlyValue.dec dec1,_,_))::(_,(_,LETleft as LET1left,_))::
+rest671) => let val result=MlyValue.atstrexp(fn _ => let val dec as 
+dec1=dec1 ()
+val strexp as strexp1=strexp1 ()
+ in ( LETAtStrExp(I(LETleft,ENDright), dec, strexp) ) end
+)
+ in (LrTable.NT 85,(result,LET1left,END1right),rest671) end
+| (234,(_,(MlyValue.atstrexp atstrexp1,atstrexpleft as atstrexp1left,
+atstrexpright as atstrexp1right))::rest671) => let val result=
+MlyValue.appstrexp(fn _ => let val atstrexp as atstrexp1=atstrexp1 ()
+ in ( ATSTREXPStrExp(I(atstrexpleft,atstrexpright),
+					 atstrexp) )
+ end
+)
+ in (LrTable.NT 86,(result,atstrexp1left,atstrexp1right),rest671) end
+| (235,(_,(MlyValue.atstrexp atstrexp1,_,atstrexpright as 
+atstrexp1right))::(_,(MlyValue.appstrexp appstrexp1,appstrexpleft as 
+appstrexp1left,_))::rest671) => let val result=MlyValue.appstrexp(fn _
+ => let val appstrexp as appstrexp1=appstrexp1 ()
+val atstrexp as atstrexp1=atstrexp1 ()
+ in (
+ APPStrExp(I(appstrexpleft,atstrexpright),
+				    appstrexp, atstrexp) 
+) end
+)
+ in (LrTable.NT 86,(result,appstrexp1left,atstrexp1right),rest671) end
+| (236,(_,(MlyValue.appstrexp appstrexp1,appstrexp1left,
+appstrexp1right))::rest671) => let val result=MlyValue.strexp(fn _ => 
+let val appstrexp as appstrexp1=appstrexp1 ()
+ in ( appstrexp ) end
+)
+ in (LrTable.NT 87,(result,appstrexp1left,appstrexp1right),rest671)
+ end
+| (237,(_,(MlyValue.sigexp sigexp1,_,sigexpright as sigexp1right))::_
 ::(_,(MlyValue.strexp strexp1,strexpleft as strexp1left,_))::rest671)
  => let val result=MlyValue.strexp(fn _ => let val strexp as strexp1=
 strexp1 ()
@@ -19242,7 +20152,7 @@ val sigexp as sigexp1=sigexp1 ()
  end
 )
  in (LrTable.NT 87,(result,strexp1left,sigexp1right),rest671) end
-| (235,(_,(MlyValue.sigexp sigexp1,_,sigexpright as sigexp1right))::_
+| (238,(_,(MlyValue.sigexp sigexp1,_,sigexpright as sigexp1right))::_
 ::(_,(MlyValue.strexp strexp1,strexpleft as strexp1left,_))::rest671)
  => let val result=MlyValue.strexp(fn _ => let val strexp as strexp1=
 strexp1 ()
@@ -19250,60 +20160,46 @@ val sigexp as sigexp1=sigexp1 ()
  in ( OPAQStrExp(I(strexpleft,sigexpright), strexp, sigexp)) end
 )
  in (LrTable.NT 87,(result,strexp1left,sigexp1right),rest671) end
-| (236,(_,(_,_,ENDright as END1right))::(_,(MlyValue.dec dec1,_,_))::(
-_,(_,STRUCTleft as STRUCT1left,_))::rest671) => let val result=
-MlyValue.strexp'(fn _ => let val dec as dec1=dec1 ()
- in ( STRUCTStrExp(I(STRUCTleft,ENDright), dec) ) end
-)
- in (LrTable.NT 88,(result,STRUCT1left,END1right),rest671) end
-| (237,(_,(MlyValue.longstrid longstrid1,longstridleft as 
-longstrid1left,longstridright as longstrid1right))::rest671) => let 
-val result=MlyValue.strexp'(fn _ => let val longstrid as longstrid1=
-longstrid1 ()
- in (
- LONGSTRIDStrExp(I(longstridleft,longstridright),
-					  longstrid) )
- end
-)
- in (LrTable.NT 88,(result,longstrid1left,longstrid1right),rest671)
- end
-| (238,(_,(_,_,RPARright as RPAR1right))::(_,(MlyValue.strexp strexp1,
-_,_))::_::(_,(MlyValue.longfunid longfunid1,longfunidleft as 
-longfunid1left,_))::rest671) => let val result=MlyValue.strexp'(fn _
- => let val longfunid as longfunid1=longfunid1 ()
+| (239,(_,(MlyValue.strexp strexp1,_,strexpright as strexp1right))::_
+::(_,(MlyValue.strpat strpat1,_,_))::(_,(_,FCTleft as FCT1left,_))::
+rest671) => let val result=MlyValue.strexp(fn _ => let val strpat as 
+strpat1=strpat1 ()
 val strexp as strexp1=strexp1 ()
+ in ( FCTStrExp(I(FCTleft,strexpright), strpat, strexp) ) end
+)
+ in (LrTable.NT 87,(result,FCT1left,strexp1right),rest671) end
+| (240,(_,(MlyValue.sigexp sigexp1,_,sigexpright as sigexp1right))::_
+::(_,(MlyValue.infexp infexp1,_,_))::(_,(_,UNPACKleft as UNPACK1left,_
+))::rest671) => let val result=MlyValue.strexp(fn _ => let val infexp
+ as infexp1=infexp1 ()
+val sigexp as sigexp1=sigexp1 ()
  in (
- APPStrExp(I(longfunidleft,RPARright),
-				    longfunid, strexp) )
+ UNPACKStrExp(I(UNPACKleft,sigexpright),
+				       infexp, sigexp) )
  end
 )
- in (LrTable.NT 88,(result,longfunid1left,RPAR1right),rest671) end
-| (239,(_,(_,_,RPARright as RPAR1right))::(_,(MlyValue.dec dec1,_,_))
-::_::(_,(MlyValue.longfunid longfunid1,longfunidleft as longfunid1left
-,_))::rest671) => let val result=MlyValue.strexp'(fn _ => let val 
-longfunid as longfunid1=longfunid1 ()
-val dec as dec1=dec1 ()
- in (
- APPDECStrExp(I(longfunidleft,RPARright),
-				       longfunid, dec) )
- end
-)
- in (LrTable.NT 88,(result,longfunid1left,RPAR1right),rest671) end
-| (240,(_,(_,_,RPARright as RPAR1right))::(_,(MlyValue.strexp strexp1,
-_,_))::(_,(_,LPARleft as LPAR1left,_))::rest671) => let val result=
-MlyValue.strexp'(fn _ => let val strexp as strexp1=strexp1 ()
- in ( PARStrExp(I(LPARleft,RPARright), strexp) ) end
+ in (LrTable.NT 87,(result,UNPACK1left,sigexp1right),rest671) end
+| (241,(_,(_,_,RPARright as RPAR1right))::(_,(MlyValue.sigexp sigexp1,
+_,_))::_::(_,(MlyValue.strid strid1,_,_))::(_,(_,LPARleft as LPAR1left
+,_))::rest671) => let val result=MlyValue.strpat(fn _ => let val strid
+ as strid1=strid1 ()
+val sigexp as sigexp1=sigexp1 ()
+ in ( StrPat(I(LPARleft,RPARright), strid, sigexp) ) end
 )
  in (LrTable.NT 88,(result,LPAR1left,RPAR1right),rest671) end
-| (241,(_,(_,_,ENDright as END1right))::(_,(MlyValue.strexp strexp1,_,
-_))::_::(_,(MlyValue.dec dec1,_,_))::(_,(_,LETleft as LET1left,_))::
-rest671) => let val result=MlyValue.strexp'(fn _ => let val dec as 
-dec1=dec1 ()
-val strexp as strexp1=strexp1 ()
- in ( LETStrExp(I(LETleft,ENDright), dec, strexp) ) end
+| (242,(_,(_,_,RPARright as RPAR1right))::(_,(MlyValue.sigexp sigexp1,
+_,_))::_::_::(_,(_,LPARleft as LPAR1left,_))::rest671) => let val 
+result=MlyValue.strpat(fn _ => let val sigexp as sigexp1=sigexp1 ()
+ in ( WILDCARDStrPat(I(LPARleft,RPARright), sigexp) ) end
 )
- in (LrTable.NT 88,(result,LET1left,END1right),rest671) end
-| (242,(_,(MlyValue.strexp__AND_strbind_opt strexp__AND_strbind_opt1,_
+ in (LrTable.NT 88,(result,LPAR1left,RPAR1right),rest671) end
+| (243,(_,(_,_,RPARright as RPAR1right))::(_,(MlyValue.spec spec1,_,_)
+)::(_,(_,LPARleft as LPAR1left,_))::rest671) => let val result=
+MlyValue.strpat(fn _ => let val spec as spec1=spec1 ()
+ in ( SPECStrPat(I(LPARleft,RPARright), spec) ) end
+)
+ in (LrTable.NT 88,(result,LPAR1left,RPAR1right),rest671) end
+| (244,(_,(MlyValue.strexp__AND_strbind_opt strexp__AND_strbind_opt1,_
 ,strexp__AND_strbind_optright as strexp__AND_strbind_opt1right))::_::(
 _,(MlyValue.COLON_sigexp_opt COLON_sigexp_opt1,_,_))::(_,(
 MlyValue.strid strid1,stridleft as strid1left,_))::rest671) => let 
@@ -19321,7 +20217,7 @@ strexp__AND_strbind_opt1 ()
 )
  in (LrTable.NT 89,(result,strid1left,strexp__AND_strbind_opt1right),
 rest671) end
-| (243,(_,(MlyValue.strexp__AND_strbind_opt strexp__AND_strbind_opt1,_
+| (245,(_,(MlyValue.strexp__AND_strbind_opt strexp__AND_strbind_opt1,_
 ,strexp__AND_strbind_optright as strexp__AND_strbind_opt1right))::_::(
 _,(MlyValue.sigexp sigexp1,_,_))::_::(_,(MlyValue.strid strid1,
 stridleft as strid1left,_))::rest671) => let val result=
@@ -19337,25 +20233,44 @@ strexp__AND_strbind_opt1 ()
 )
  in (LrTable.NT 89,(result,strid1left,strexp__AND_strbind_opt1right),
 rest671) end
-| (244,(_,(MlyValue.strbind strbind1,_,strbind1right))::(_,(_,AND1left
+| (246,(_,(MlyValue.strexp__AND_strbind_opt strexp__AND_strbind_opt1,_
+,strexp__AND_strbind_optright as strexp__AND_strbind_opt1right))::_::(
+_,(MlyValue.COLON_sigexp_opt COLON_sigexp_opt1,_,_))::(_,(_,
+UNDERBARleft as UNDERBAR1left,_))::rest671) => let val result=
+MlyValue.strbind(fn _ => let val COLON_sigexp_opt as COLON_sigexp_opt1
+=COLON_sigexp_opt1 ()
+val strexp__AND_strbind_opt as strexp__AND_strbind_opt1=
+strexp__AND_strbind_opt1 ()
+ in (
+ WILDCARDStrBind(I(UNDERBARleft,
+					 strexp__AND_strbind_optright),
+				       COLON_sigexp_opt,
+				       #1 strexp__AND_strbind_opt,
+				       #2 strexp__AND_strbind_opt) 
+) end
+)
+ in (LrTable.NT 89,(result,UNDERBAR1left,strexp__AND_strbind_opt1right
+),rest671) end
+| (247,(_,(MlyValue.strbind strbind1,_,strbind1right))::(_,(_,AND1left
 ,_))::rest671) => let val result=MlyValue.AND_strbind_opt(fn _ => let 
 val strbind as strbind1=strbind1 ()
  in ( SOME strbind ) end
 )
  in (LrTable.NT 90,(result,AND1left,strbind1right),rest671) end
-| (245,rest671) => let val result=MlyValue.AND_strbind_opt(fn _ => (
+| (248,rest671) => let val result=MlyValue.AND_strbind_opt(fn _ => (
  NONE ))
  in (LrTable.NT 90,(result,defaultPos,defaultPos),rest671) end
-| (246,(_,(MlyValue.AND_strbind_opt AND_strbind_opt1,_,
-AND_strbind_opt1right))::(_,(MlyValue.strexp' strexp'1,strexp'1left,_)
-)::rest671) => let val result=MlyValue.strexp__AND_strbind_opt(fn _
- => let val strexp' as strexp'1=strexp'1 ()
+| (249,(_,(MlyValue.AND_strbind_opt AND_strbind_opt1,_,
+AND_strbind_opt1right))::(_,(MlyValue.appstrexp appstrexp1,
+appstrexp1left,_))::rest671) => let val result=
+MlyValue.strexp__AND_strbind_opt(fn _ => let val appstrexp as 
+appstrexp1=appstrexp1 ()
 val AND_strbind_opt as AND_strbind_opt1=AND_strbind_opt1 ()
- in ( ( strexp', AND_strbind_opt ) ) end
+ in ( ( appstrexp, AND_strbind_opt ) ) end
 )
- in (LrTable.NT 91,(result,strexp'1left,AND_strbind_opt1right),rest671
-) end
-| (247,(_,(MlyValue.sigexp__AND_strbind_opt sigexp__AND_strbind_opt1,_
+ in (LrTable.NT 91,(result,appstrexp1left,AND_strbind_opt1right),
+rest671) end
+| (250,(_,(MlyValue.sigexp__AND_strbind_opt sigexp__AND_strbind_opt1,_
 ,sigexp__AND_strbind_optright as sigexp__AND_strbind_opt1right))::_::(
 _,(MlyValue.strexp strexp1,strexpleft as strexp1left,_))::rest671) => 
 let val result=MlyValue.strexp__AND_strbind_opt(fn _ => let val strexp
@@ -19365,13 +20280,13 @@ sigexp__AND_strbind_opt1 ()
  in (
  ( TRANSStrExp(I(strexpleft,
 					  sigexp__AND_strbind_optright),
-					strexp, #1 sigexp__AND_strbind_opt),
-			    #2 sigexp__AND_strbind_opt ) 
+					strexp, #1 sigexp__AND_strbind_opt)
+			  , #2 sigexp__AND_strbind_opt ) 
 ) end
 )
  in (LrTable.NT 91,(result,strexp1left,sigexp__AND_strbind_opt1right),
 rest671) end
-| (248,(_,(MlyValue.sigexp__AND_strbind_opt sigexp__AND_strbind_opt1,_
+| (251,(_,(MlyValue.sigexp__AND_strbind_opt sigexp__AND_strbind_opt1,_
 ,sigexp__AND_strbind_optright as sigexp__AND_strbind_opt1right))::_::(
 _,(MlyValue.strexp strexp1,strexpleft as strexp1left,_))::rest671) => 
 let val result=MlyValue.strexp__AND_strbind_opt(fn _ => let val strexp
@@ -19381,13 +20296,44 @@ sigexp__AND_strbind_opt1 ()
  in (
  ( OPAQStrExp(I(strexpleft,
 					 sigexp__AND_strbind_optright),
-				       strexp, #1 sigexp__AND_strbind_opt),
-			    #2 sigexp__AND_strbind_opt ) 
+				       strexp, #1 sigexp__AND_strbind_opt)
+			  , #2 sigexp__AND_strbind_opt ) 
 ) end
 )
  in (LrTable.NT 91,(result,strexp1left,sigexp__AND_strbind_opt1right),
 rest671) end
-| (249,(_,(MlyValue.AND_strbind_opt AND_strbind_opt1,_,
+| (252,(_,(MlyValue.strexp__AND_strbind_opt strexp__AND_strbind_opt1,_
+,strexp__AND_strbind_optright as strexp__AND_strbind_opt1right))::_::(
+_,(MlyValue.strpat strpat1,_,_))::(_,(_,FCTleft as FCT1left,_))::
+rest671) => let val result=MlyValue.strexp__AND_strbind_opt(fn _ => 
+let val strpat as strpat1=strpat1 ()
+val strexp__AND_strbind_opt as strexp__AND_strbind_opt1=
+strexp__AND_strbind_opt1 ()
+ in (
+ ( FCTStrExp(I(FCTleft,strexp__AND_strbind_optright),
+				      strpat, #1 strexp__AND_strbind_opt)
+			  , #2 strexp__AND_strbind_opt ) 
+) end
+)
+ in (LrTable.NT 91,(result,FCT1left,strexp__AND_strbind_opt1right),
+rest671) end
+| (253,(_,(MlyValue.sigexp__AND_strbind_opt sigexp__AND_strbind_opt1,_
+,sigexp__AND_strbind_optright as sigexp__AND_strbind_opt1right))::_::(
+_,(MlyValue.infexp infexp1,_,_))::(_,(_,UNPACKleft as UNPACK1left,_))
+::rest671) => let val result=MlyValue.strexp__AND_strbind_opt(fn _ => 
+let val infexp as infexp1=infexp1 ()
+val sigexp__AND_strbind_opt as sigexp__AND_strbind_opt1=
+sigexp__AND_strbind_opt1 ()
+ in (
+ ( UNPACKStrExp(I(UNPACKleft,
+					   sigexp__AND_strbind_optright),
+					 infexp, #1 sigexp__AND_strbind_opt)
+			  , #2 sigexp__AND_strbind_opt ) 
+) end
+)
+ in (LrTable.NT 91,(result,UNPACK1left,sigexp__AND_strbind_opt1right),
+rest671) end
+| (254,(_,(MlyValue.AND_strbind_opt AND_strbind_opt1,_,
 AND_strbind_opt1right))::(_,(MlyValue.sigexp' sigexp'1,sigexp'1left,_)
 )::rest671) => let val result=MlyValue.sigexp__AND_strbind_opt(fn _
  => let val sigexp' as sigexp'1=sigexp'1 ()
@@ -19396,354 +20342,863 @@ val AND_strbind_opt as AND_strbind_opt1=AND_strbind_opt1 ()
 )
  in (LrTable.NT 92,(result,sigexp'1left,AND_strbind_opt1right),rest671
 ) end
-| (250,(_,(MlyValue.tyreadesc__AND_strbind_opt 
-tyreadesc__AND_strbind_opt1,_,tyreadesc__AND_strbind_optright as 
-tyreadesc__AND_strbind_opt1right))::_::(_,(MlyValue.sigexp sigexp1,
-sigexpleft as sigexp1left,_))::rest671) => let val result=
-MlyValue.sigexp__AND_strbind_opt(fn _ => let val sigexp as sigexp1=
-sigexp1 ()
-val tyreadesc__AND_strbind_opt as tyreadesc__AND_strbind_opt1=
-tyreadesc__AND_strbind_opt1 ()
+| (255,(_,(MlyValue.sigexp__AND_strbind_opt sigexp__AND_strbind_opt1,_
+,sigexp__AND_strbind_optright as sigexp__AND_strbind_opt1right))::_::(
+_,(MlyValue.strpat strpat1,_,_))::(_,(_,FCTleft as FCT1left,_))::
+rest671) => let val result=MlyValue.sigexp__AND_strbind_opt(fn _ => 
+let val strpat as strpat1=strpat1 ()
+val sigexp__AND_strbind_opt as sigexp__AND_strbind_opt1=
+sigexp__AND_strbind_opt1 ()
  in (
- ( WHERETYPESigExp(I(sigexpleft,
-					      tyreadesc__AND_strbind_optright),
-					   sigexp,
-					   #1 tyreadesc__AND_strbind_opt),
-			    #2 tyreadesc__AND_strbind_opt ) 
+ ( FCTSigExp(I(FCTleft,sigexp__AND_strbind_optright),
+				      strpat, #1 sigexp__AND_strbind_opt)
+			  , #2 sigexp__AND_strbind_opt ) 
 ) end
 )
- in (LrTable.NT 92,(result,sigexp1left,
-tyreadesc__AND_strbind_opt1right),rest671) end
-| (251,(_,(MlyValue.AND_tyreadesc_opt__AND_strbind_opt 
-AND_tyreadesc_opt__AND_strbind_opt1,_,
-AND_tyreadesc_opt__AND_strbind_optright as 
-AND_tyreadesc_opt__AND_strbind_opt1right))::(_,(MlyValue.ty ty1,_,_))
-::_::(_,(MlyValue.longtycon longtycon1,_,_))::(_,(MlyValue.tyvarseq 
-tyvarseq1,_,_))::(_,(_,TYPEleft as TYPE1left,_))::rest671) => let val 
-result=MlyValue.tyreadesc__AND_strbind_opt(fn _ => let val tyvarseq
- as tyvarseq1=tyvarseq1 ()
+ in (LrTable.NT 92,(result,FCT1left,sigexp__AND_strbind_opt1right),
+rest671) end
+| (256,(_,(MlyValue.rea__AND_strbind_opt rea__AND_strbind_opt1,_,
+rea__AND_strbind_optright as rea__AND_strbind_opt1right))::_::(_,(
+MlyValue.sigexp sigexp1,sigexpleft as sigexp1left,_))::rest671) => 
+let val result=MlyValue.sigexp__AND_strbind_opt(fn _ => let val sigexp
+ as sigexp1=sigexp1 ()
+val rea__AND_strbind_opt as rea__AND_strbind_opt1=
+rea__AND_strbind_opt1 ()
+ in (
+ ( WHEREREASigExp(I(sigexpleft,
+					     rea__AND_strbind_optright),
+					   sigexp, #1 rea__AND_strbind_opt)
+			  , #2 rea__AND_strbind_opt ) 
+) end
+)
+ in (LrTable.NT 92,(result,sigexp1left,rea__AND_strbind_opt1right),
+rest671) end
+| (257,(_,(MlyValue.AND_rea_opt__AND_strbind_opt 
+AND_rea_opt__AND_strbind_opt1,_,AND_rea_opt__AND_strbind_optright as 
+AND_rea_opt__AND_strbind_opt1right))::(_,(MlyValue.longvid longvid2,_,
+_))::(_,(MlyValue.OP_opt OP_opt2,_,_))::_::(_,(MlyValue.longvid 
+longvid1,_,_))::(_,(MlyValue.OP_opt OP_opt1,_,_))::(_,(_,VALleft as 
+VAL1left,_))::rest671) => let val result=MlyValue.rea__AND_strbind_opt
+(fn _ => let val OP_opt1=OP_opt1 ()
+val longvid1=longvid1 ()
+val OP_opt2=OP_opt2 ()
+val longvid2=longvid2 ()
+val AND_rea_opt__AND_strbind_opt as AND_rea_opt__AND_strbind_opt1=
+AND_rea_opt__AND_strbind_opt1 ()
+ in (
+ ( VALRea(I(VALleft,AND_rea_opt__AND_strbind_optright),
+				   OP_opt1, longvid1, OP_opt2, longvid2,
+				   #1 AND_rea_opt__AND_strbind_opt)
+			  , #2 AND_rea_opt__AND_strbind_opt ) 
+) end
+)
+ in (LrTable.NT 93,(result,VAL1left,AND_rea_opt__AND_strbind_opt1right
+),rest671) end
+| (258,(_,(MlyValue.AND_rea_opt__AND_strbind_opt 
+AND_rea_opt__AND_strbind_opt1,_,AND_rea_opt__AND_strbind_optright as 
+AND_rea_opt__AND_strbind_opt1right))::(_,(MlyValue.longvid longvid2,_,
+_))::(_,(MlyValue.OP_opt OP_opt2,_,_))::_::(_,(MlyValue.longvid 
+longvid1,_,_))::(_,(MlyValue.OP_opt OP_opt1,_,_))::(_,(_,FUNleft as 
+FUN1left,_))::rest671) => let val result=MlyValue.rea__AND_strbind_opt
+(fn _ => let val OP_opt1=OP_opt1 ()
+val longvid1=longvid1 ()
+val OP_opt2=OP_opt2 ()
+val longvid2=longvid2 ()
+val AND_rea_opt__AND_strbind_opt as AND_rea_opt__AND_strbind_opt1=
+AND_rea_opt__AND_strbind_opt1 ()
+ in (
+ ( FUNRea(I(FUNleft,AND_rea_opt__AND_strbind_optright),
+				   OP_opt1, longvid1, OP_opt2, longvid2,
+				   #1 AND_rea_opt__AND_strbind_opt)
+			  , #2 AND_rea_opt__AND_strbind_opt ) 
+) end
+)
+ in (LrTable.NT 93,(result,FUN1left,AND_rea_opt__AND_strbind_opt1right
+),rest671) end
+| (259,(_,(MlyValue.AND_rea_opt__AND_strbind_opt 
+AND_rea_opt__AND_strbind_opt1,_,AND_rea_opt__AND_strbind_optright as 
+AND_rea_opt__AND_strbind_opt1right))::(_,(MlyValue.longvid longvid2,_,
+_))::(_,(MlyValue.OP_opt OP_opt2,_,_))::_::(_,(MlyValue.longvid 
+longvid1,_,_))::(_,(MlyValue.OP_opt OP_opt1,_,_))::(_,(_,
+CONSTRUCTORleft as CONSTRUCTOR1left,_))::rest671) => let val result=
+MlyValue.rea__AND_strbind_opt(fn _ => let val OP_opt1=OP_opt1 ()
+val longvid1=longvid1 ()
+val OP_opt2=OP_opt2 ()
+val longvid2=longvid2 ()
+val AND_rea_opt__AND_strbind_opt as AND_rea_opt__AND_strbind_opt1=
+AND_rea_opt__AND_strbind_opt1 ()
+ in (
+ ( CONSTRUCTORRea(I(CONSTRUCTORleft,
+					     AND_rea_opt__AND_strbind_optright),
+					   OP_opt1, longvid1, OP_opt2, longvid2,
+				           #1 AND_rea_opt__AND_strbind_opt)
+			  , #2 AND_rea_opt__AND_strbind_opt ) 
+) end
+)
+ in (LrTable.NT 93,(result,CONSTRUCTOR1left,
+AND_rea_opt__AND_strbind_opt1right),rest671) end
+| (260,(_,(MlyValue.AND_rea_opt__AND_strbind_opt 
+AND_rea_opt__AND_strbind_opt1,_,AND_rea_opt__AND_strbind_optright as 
+AND_rea_opt__AND_strbind_opt1right))::(_,(MlyValue.longvid longvid2,_,
+_))::(_,(MlyValue.OP_opt OP_opt2,_,_))::_::(_,(MlyValue.longvid 
+longvid1,_,_))::(_,(MlyValue.OP_opt OP_opt1,_,_))::(_,(_,EXCEPTIONleft
+ as EXCEPTION1left,_))::rest671) => let val result=
+MlyValue.rea__AND_strbind_opt(fn _ => let val OP_opt1=OP_opt1 ()
+val longvid1=longvid1 ()
+val OP_opt2=OP_opt2 ()
+val longvid2=longvid2 ()
+val AND_rea_opt__AND_strbind_opt as AND_rea_opt__AND_strbind_opt1=
+AND_rea_opt__AND_strbind_opt1 ()
+ in (
+ ( EXCEPTIONRea(I(EXCEPTIONleft,
+					   AND_rea_opt__AND_strbind_optright),
+					 OP_opt1, longvid1, OP_opt2, longvid2,
+					 #1 AND_rea_opt__AND_strbind_opt)
+			  , #2 AND_rea_opt__AND_strbind_opt ) 
+) end
+)
+ in (LrTable.NT 93,(result,EXCEPTION1left,
+AND_rea_opt__AND_strbind_opt1right),rest671) end
+| (261,(_,(MlyValue.AND_rea_opt__AND_strbind_opt 
+AND_rea_opt__AND_strbind_opt1,_,AND_rea_opt__AND_strbind_optright as 
+AND_rea_opt__AND_strbind_opt1right))::(_,(MlyValue.ty ty1,_,_))::_::(_
+,(MlyValue.longtycon longtycon1,_,_))::(_,(MlyValue.tyvarseq tyvarseq1
+,_,_))::(_,(_,TYPEleft as TYPE1left,_))::rest671) => let val result=
+MlyValue.rea__AND_strbind_opt(fn _ => let val tyvarseq as tyvarseq1=
+tyvarseq1 ()
 val longtycon as longtycon1=longtycon1 ()
 val ty as ty1=ty1 ()
-val AND_tyreadesc_opt__AND_strbind_opt as 
-AND_tyreadesc_opt__AND_strbind_opt1=
-AND_tyreadesc_opt__AND_strbind_opt1 ()
+val AND_rea_opt__AND_strbind_opt as AND_rea_opt__AND_strbind_opt1=
+AND_rea_opt__AND_strbind_opt1 ()
  in (
- ( TyReaDesc(I(TYPEleft,
-				       AND_tyreadesc_opt__AND_strbind_optright),
-				      tyvarseq, longtycon, ty,
-				      #1 AND_tyreadesc_opt__AND_strbind_opt),
-			    #2 AND_tyreadesc_opt__AND_strbind_opt ) 
+ ( TYPERea(I(TYPEleft,
+				      AND_rea_opt__AND_strbind_optright),
+				    tyvarseq, longtycon, ty,
+				    #1 AND_rea_opt__AND_strbind_opt)
+			  , #2 AND_rea_opt__AND_strbind_opt ) 
 ) end
 )
  in (LrTable.NT 93,(result,TYPE1left,
-AND_tyreadesc_opt__AND_strbind_opt1right),rest671) end
-| (252,(_,(MlyValue.AND_strbind_opt AND_strbind_opt1,
+AND_rea_opt__AND_strbind_opt1right),rest671) end
+| (262,(_,(MlyValue.AND_rea_opt__AND_strbind_opt 
+AND_rea_opt__AND_strbind_opt1,_,AND_rea_opt__AND_strbind_optright as 
+AND_rea_opt__AND_strbind_opt1right))::(_,(MlyValue.longstrid 
+longstrid2,_,_))::_::(_,(MlyValue.COLON_sigexp_opt COLON_sigexp_opt1,_
+,_))::(_,(MlyValue.longstrid longstrid1,_,_))::(_,(_,STRUCTUREleft as 
+STRUCTURE1left,_))::rest671) => let val result=
+MlyValue.rea__AND_strbind_opt(fn _ => let val longstrid1=longstrid1 ()
+val COLON_sigexp_opt as COLON_sigexp_opt1=COLON_sigexp_opt1 ()
+val longstrid2=longstrid2 ()
+val AND_rea_opt__AND_strbind_opt as AND_rea_opt__AND_strbind_opt1=
+AND_rea_opt__AND_strbind_opt1 ()
+ in (
+ ( STRUCTURERea(I(STRUCTUREleft,
+					   AND_rea_opt__AND_strbind_optright),
+				         longstrid1, COLON_sigexp_opt,
+					 longstrid2,
+				         #1 AND_rea_opt__AND_strbind_opt)
+			  , #2 AND_rea_opt__AND_strbind_opt ) 
+) end
+)
+ in (LrTable.NT 93,(result,STRUCTURE1left,
+AND_rea_opt__AND_strbind_opt1right),rest671) end
+| (263,(_,(MlyValue.AND_rea_opt__AND_strbind_opt 
+AND_rea_opt__AND_strbind_opt1,_,AND_rea_opt__AND_strbind_optright as 
+AND_rea_opt__AND_strbind_opt1right))::(_,(MlyValue.longstrid 
+longstrid2,_,_))::_::(_,(MlyValue.COLON_sigexp_opt COLON_sigexp_opt1,_
+,_))::(_,(MlyValue.longstrid longstrid1,_,_))::(_,(_,FUNCTORleft as 
+FUNCTOR1left,_))::rest671) => let val result=
+MlyValue.rea__AND_strbind_opt(fn _ => let val longstrid1=longstrid1 ()
+val COLON_sigexp_opt as COLON_sigexp_opt1=COLON_sigexp_opt1 ()
+val longstrid2=longstrid2 ()
+val AND_rea_opt__AND_strbind_opt as AND_rea_opt__AND_strbind_opt1=
+AND_rea_opt__AND_strbind_opt1 ()
+ in (
+ ( FUNCTORRea(I(FUNCTORleft,
+					 AND_rea_opt__AND_strbind_optright),
+				       longstrid1, COLON_sigexp_opt, longstrid2,
+				       #1 AND_rea_opt__AND_strbind_opt)
+			  , #2 AND_rea_opt__AND_strbind_opt ) 
+) end
+)
+ in (LrTable.NT 93,(result,FUNCTOR1left,
+AND_rea_opt__AND_strbind_opt1right),rest671) end
+| (264,(_,(MlyValue.sigexp__AND_rea_opt__AND_strbind_opt 
+sigexp__AND_rea_opt__AND_strbind_opt1,_,
+sigexp__AND_rea_opt__AND_strbind_optright as 
+sigexp__AND_rea_opt__AND_strbind_opt1right))::_::(_,(
+MlyValue.strpat_list0 strpat_list01,_,_))::(_,(MlyValue.longsigid 
+longsigid1,_,_))::(_,(_,SIGNATUREleft as SIGNATURE1left,_))::rest671)
+ => let val result=MlyValue.rea__AND_strbind_opt(fn _ => let val 
+longsigid as longsigid1=longsigid1 ()
+val strpat_list0 as strpat_list01=strpat_list01 ()
+val sigexp__AND_rea_opt__AND_strbind_opt as 
+sigexp__AND_rea_opt__AND_strbind_opt1=
+sigexp__AND_rea_opt__AND_strbind_opt1 ()
+ in (
+ ( SIGNATURERea
+				(I(SIGNATUREleft,
+				   sigexp__AND_rea_opt__AND_strbind_optright),
+				 longsigid, strpat_list0,
+				 #1 sigexp__AND_rea_opt__AND_strbind_opt,
+				 #2 sigexp__AND_rea_opt__AND_strbind_opt)
+			  , #3 sigexp__AND_rea_opt__AND_strbind_opt ) 
+) end
+)
+ in (LrTable.NT 93,(result,SIGNATURE1left,
+sigexp__AND_rea_opt__AND_strbind_opt1right),rest671) end
+| (265,(_,(MlyValue.AND_strbind_opt AND_strbind_opt1,
 AND_strbind_opt1left,AND_strbind_opt1right))::rest671) => let val 
-result=MlyValue.AND_tyreadesc_opt__AND_strbind_opt(fn _ => let val 
+result=MlyValue.AND_rea_opt__AND_strbind_opt(fn _ => let val 
 AND_strbind_opt as AND_strbind_opt1=AND_strbind_opt1 ()
  in ( ( NONE, AND_strbind_opt ) ) end
 )
  in (LrTable.NT 94,(result,AND_strbind_opt1left,AND_strbind_opt1right)
 ,rest671) end
-| (253,(_,(MlyValue.tyreadesc__AND_strbind_opt 
-tyreadesc__AND_strbind_opt1,_,tyreadesc__AND_strbind_opt1right))::(_,(
-_,AND1left,_))::rest671) => let val result=
-MlyValue.AND_tyreadesc_opt__AND_strbind_opt(fn _ => let val 
-tyreadesc__AND_strbind_opt as tyreadesc__AND_strbind_opt1=
-tyreadesc__AND_strbind_opt1 ()
+| (266,(_,(MlyValue.rea__AND_strbind_opt rea__AND_strbind_opt1,_,
+rea__AND_strbind_opt1right))::(_,(_,AND1left,_))::rest671) => let val 
+result=MlyValue.AND_rea_opt__AND_strbind_opt(fn _ => let val 
+rea__AND_strbind_opt as rea__AND_strbind_opt1=rea__AND_strbind_opt1 ()
  in (
- ( SOME(#1 tyreadesc__AND_strbind_opt),
-				    #2 tyreadesc__AND_strbind_opt ) 
+ ( SOME(#1 rea__AND_strbind_opt)
+				  , #2 rea__AND_strbind_opt ) )
+ end
+)
+ in (LrTable.NT 94,(result,AND1left,rea__AND_strbind_opt1right),
+rest671) end
+| (267,(_,(MlyValue.AND_rea_opt__AND_strbind_opt 
+AND_rea_opt__AND_strbind_opt1,_,AND_rea_opt__AND_strbind_opt1right))::
+(_,(MlyValue.appsigexp appsigexp1,appsigexp1left,_))::rest671) => let 
+val result=MlyValue.sigexp__AND_rea_opt__AND_strbind_opt(fn _ => let 
+val appsigexp as appsigexp1=appsigexp1 ()
+val AND_rea_opt__AND_strbind_opt as AND_rea_opt__AND_strbind_opt1=
+AND_rea_opt__AND_strbind_opt1 ()
+ in (
+ ( appsigexp
+		          , #1 AND_rea_opt__AND_strbind_opt
+			  , #2 AND_rea_opt__AND_strbind_opt ) 
 ) end
 )
- in (LrTable.NT 94,(result,AND1left,tyreadesc__AND_strbind_opt1right),
-rest671) end
-| (254,(_,(MlyValue.sigexp sigexp1,_,sigexp1right))::(_,(_,COLON1left,
+ in (LrTable.NT 95,(result,appsigexp1left,
+AND_rea_opt__AND_strbind_opt1right),rest671) end
+| (268,(_,(MlyValue.sigexp sigexp1,_,sigexp1right))::(_,(_,COLON1left,
 _))::rest671) => let val result=MlyValue.COLON_sigexp_opt(fn _ => let 
 val sigexp as sigexp1=sigexp1 ()
  in ( SOME sigexp ) end
 )
- in (LrTable.NT 95,(result,COLON1left,sigexp1right),rest671) end
-| (255,rest671) => let val result=MlyValue.COLON_sigexp_opt(fn _ => (
+ in (LrTable.NT 96,(result,COLON1left,sigexp1right),rest671) end
+| (269,rest671) => let val result=MlyValue.COLON_sigexp_opt(fn _ => (
  NONE ))
- in (LrTable.NT 95,(result,defaultPos,defaultPos),rest671) end
-| (256,(_,(MlyValue.sigexp' sigexp'1,sigexp'1left,sigexp'1right))::
+ in (LrTable.NT 96,(result,defaultPos,defaultPos),rest671) end
+| (270,(_,(_,ANYleft as ANY1left,ANYright as ANY1right))::rest671) => 
+let val result=MlyValue.atsigexp(fn _ => (
+ ANYAtSigExp(I(ANYleft,ANYright)) ))
+ in (LrTable.NT 97,(result,ANY1left,ANY1right),rest671) end
+| (271,(_,(_,_,ENDright as END1right))::(_,(MlyValue.spec spec1,_,_))
+::(_,(_,SIGleft as SIG1left,_))::rest671) => let val result=
+MlyValue.atsigexp(fn _ => let val spec as spec1=spec1 ()
+ in ( SIGAtSigExp(I(SIGleft,ENDright), spec) ) end
+)
+ in (LrTable.NT 97,(result,SIG1left,END1right),rest671) end
+| (272,(_,(MlyValue.longsigid longsigid1,longsigidleft as 
+longsigid1left,longsigidright as longsigid1right))::rest671) => let 
+val result=MlyValue.atsigexp(fn _ => let val longsigid as longsigid1=
+longsigid1 ()
+ in (
+ LONGSIGIDAtSigExp(I(longsigidleft,longsigidright),
+					    longsigid) 
+) end
+)
+ in (LrTable.NT 97,(result,longsigid1left,longsigid1right),rest671)
+ end
+| (273,(_,(_,_,ENDright as END1right))::(_,(MlyValue.sigexp sigexp1,_,
+_))::_::(_,(MlyValue.dec dec1,_,_))::(_,(_,LETleft as LET1left,_))::
+rest671) => let val result=MlyValue.atsigexp(fn _ => let val dec as 
+dec1=dec1 ()
+val sigexp as sigexp1=sigexp1 ()
+ in ( LETAtSigExp(I(LETleft,ENDright), dec, sigexp) ) end
+)
+ in (LrTable.NT 97,(result,LET1left,END1right),rest671) end
+| (274,(_,(_,_,RPARright as RPAR1right))::(_,(MlyValue.sigexp sigexp1,
+_,_))::(_,(_,LPARleft as LPAR1left,_))::rest671) => let val result=
+MlyValue.atsigexp(fn _ => let val sigexp as sigexp1=sigexp1 ()
+ in ( PARAtSigExp(I(LPARleft,RPARright), sigexp) ) end
+)
+ in (LrTable.NT 97,(result,LPAR1left,RPAR1right),rest671) end
+| (275,(_,(MlyValue.atsigexp atsigexp1,atsigexpleft as atsigexp1left,
+atsigexpright as atsigexp1right))::rest671) => let val result=
+MlyValue.appsigexp(fn _ => let val atsigexp as atsigexp1=atsigexp1 ()
+ in ( ATSIGEXPSigExp(I(atsigexpleft,atsigexpright),
+					 atsigexp) )
+ end
+)
+ in (LrTable.NT 98,(result,atsigexp1left,atsigexp1right),rest671) end
+| (276,(_,(MlyValue.atstrexp atstrexp1,_,atstrexpright as 
+atstrexp1right))::(_,(MlyValue.appsigexp appsigexp1,appsigexpleft as 
+appsigexp1left,_))::rest671) => let val result=MlyValue.appsigexp(fn _
+ => let val appsigexp as appsigexp1=appsigexp1 ()
+val atstrexp as atstrexp1=atstrexp1 ()
+ in (
+ APPSigExp(I(appsigexpleft,atstrexpright),
+				    appsigexp, atstrexp) 
+) end
+)
+ in (LrTable.NT 98,(result,appsigexp1left,atstrexp1right),rest671) end
+| (277,(_,(MlyValue.sigexp' sigexp'1,sigexp'1left,sigexp'1right))::
 rest671) => let val result=MlyValue.sigexp(fn _ => let val sigexp' as 
 sigexp'1=sigexp'1 ()
  in ( sigexp' ) end
 )
- in (LrTable.NT 96,(result,sigexp'1left,sigexp'1right),rest671) end
-| (257,(_,(MlyValue.tyreadesc tyreadesc1,_,tyreadescright as 
-tyreadesc1right))::_::(_,(MlyValue.sigexp sigexp1,sigexpleft as 
-sigexp1left,_))::rest671) => let val result=MlyValue.sigexp(fn _ => 
-let val sigexp as sigexp1=sigexp1 ()
-val tyreadesc as tyreadesc1=tyreadesc1 ()
- in (
- WHERETYPESigExp(I(sigexpleft,tyreadescright),
-					  sigexp, tyreadesc) 
-) end
+ in (LrTable.NT 99,(result,sigexp'1left,sigexp'1right),rest671) end
+| (278,(_,(MlyValue.sigexp sigexp1,_,sigexpright as sigexp1right))::_
+::(_,(MlyValue.strpat strpat1,_,_))::(_,(_,FCTleft as FCT1left,_))::
+rest671) => let val result=MlyValue.sigexp(fn _ => let val strpat as 
+strpat1=strpat1 ()
+val sigexp as sigexp1=sigexp1 ()
+ in ( FCTSigExp(I(FCTleft,sigexpright), strpat, sigexp) ) end
 )
- in (LrTable.NT 96,(result,sigexp1left,tyreadesc1right),rest671) end
-| (258,(_,(_,ANYleft as ANY1left,ANYright as ANY1right))::rest671) => 
-let val result=MlyValue.sigexp'(fn _ => (
- ANYSigExp(I(ANYleft,ANYright)) ))
- in (LrTable.NT 97,(result,ANY1left,ANY1right),rest671) end
-| (259,(_,(_,_,ENDright as END1right))::(_,(MlyValue.spec spec1,_,_))
-::(_,(_,SIGleft as SIG1left,_))::rest671) => let val result=
-MlyValue.sigexp'(fn _ => let val spec as spec1=spec1 ()
- in ( SIGSigExp(I(SIGleft,ENDright), spec) ) end
+ in (LrTable.NT 99,(result,FCT1left,sigexp1right),rest671) end
+| (279,(_,(MlyValue.rea rea1,_,rearight as rea1right))::_::(_,(
+MlyValue.sigexp sigexp1,sigexpleft as sigexp1left,_))::rest671) => 
+let val result=MlyValue.sigexp(fn _ => let val sigexp as sigexp1=
+sigexp1 ()
+val rea as rea1=rea1 ()
+ in ( WHEREREASigExp(I(sigexpleft,rearight),
+					 sigexp, rea) ) end
 )
- in (LrTable.NT 97,(result,SIG1left,END1right),rest671) end
-| (260,(_,(MlyValue.longsigid longsigid1,longsigidleft as 
-longsigid1left,longsigidright as longsigid1right))::rest671) => let 
-val result=MlyValue.sigexp'(fn _ => let val longsigid as longsigid1=
-longsigid1 ()
- in (
- LONGSIGIDSigExp(I(longsigidleft,longsigidright),
-					  longsigid) )
+ in (LrTable.NT 99,(result,sigexp1left,rea1right),rest671) end
+| (280,(_,(MlyValue.appsigexp appsigexp1,appsigexp1left,
+appsigexp1right))::rest671) => let val result=MlyValue.sigexp'(fn _
+ => let val appsigexp as appsigexp1=appsigexp1 ()
+ in ( appsigexp ) end
+)
+ in (LrTable.NT 100,(result,appsigexp1left,appsigexp1right),rest671)
  end
-)
- in (LrTable.NT 97,(result,longsigid1left,longsigid1right),rest671)
- end
-| (261,(_,(_,_,RPARright as RPAR1right))::(_,(MlyValue.sigexp sigexp1,
-_,_))::(_,(_,LPARleft as LPAR1left,_))::rest671) => let val result=
-MlyValue.sigexp'(fn _ => let val sigexp as sigexp1=sigexp1 ()
- in ( PARSigExp(I(LPARleft,RPARright), sigexp) ) end
-)
- in (LrTable.NT 97,(result,LPAR1left,RPAR1right),rest671) end
-| (262,(_,(MlyValue.longstrid longstrid2,_,longstrid2right))::_::(_,(
+| (281,(_,(MlyValue.longstrid longstrid2,_,longstrid2right))::_::(_,(
 MlyValue.longstrid longstrid1,_,_))::_::(_,(MlyValue.sigexp sigexp1,
 sigexpleft as sigexp1left,_))::rest671) => let val result=
 MlyValue.sigexp'(fn _ => let val sigexp as sigexp1=sigexp1 ()
 val longstrid1=longstrid1 ()
 val longstrid2=longstrid2 ()
  in (
- WHERESTRUCTURESigExp(I(sigexpleft,longstrid2right),
+ WHERELONGSTRIDSigExp(I(sigexpleft,longstrid2right),
 					       sigexp, longstrid1, longstrid2) 
 ) end
 )
- in (LrTable.NT 97,(result,sigexp1left,longstrid2right),rest671) end
-| (263,(_,(MlyValue.sigexp__AND_sigbind_opt sigexp__AND_sigbind_opt1,_
+ in (LrTable.NT 100,(result,sigexp1left,longstrid2right),rest671) end
+| (282,(_,(MlyValue.sigexp__AND_sigbind_opt sigexp__AND_sigbind_opt1,_
 ,sigexp__AND_sigbind_optright as sigexp__AND_sigbind_opt1right))::_::(
-_,(MlyValue.sigid sigid1,sigidleft as sigid1left,_))::rest671) => let 
-val result=MlyValue.sigbind(fn _ => let val sigid as sigid1=sigid1 ()
+_,(MlyValue.strpat_list0 strpat_list01,_,_))::(_,(MlyValue.sigid 
+sigid1,sigidleft as sigid1left,_))::rest671) => let val result=
+MlyValue.sigbind(fn _ => let val sigid as sigid1=sigid1 ()
+val strpat_list0 as strpat_list01=strpat_list01 ()
 val sigexp__AND_sigbind_opt as sigexp__AND_sigbind_opt1=
 sigexp__AND_sigbind_opt1 ()
  in (
  SigBind(I(sigidleft,sigexp__AND_sigbind_optright),
-				  sigid, #1 sigexp__AND_sigbind_opt,
+				  sigid, strpat_list0,
+				  #1 sigexp__AND_sigbind_opt,
 				  #2 sigexp__AND_sigbind_opt) 
 ) end
 )
- in (LrTable.NT 98,(result,sigid1left,sigexp__AND_sigbind_opt1right),
+ in (LrTable.NT 101,(result,sigid1left,sigexp__AND_sigbind_opt1right),
 rest671) end
-| (264,(_,(MlyValue.sigbind sigbind1,_,sigbind1right))::(_,(_,AND1left
+| (283,(_,(MlyValue.strpat_list1 strpat_list11,strpat_list11left,
+strpat_list11right))::rest671) => let val result=MlyValue.strpat_list0
+(fn _ => let val strpat_list1 as strpat_list11=strpat_list11 ()
+ in ( strpat_list1 ) end
+)
+ in (LrTable.NT 102,(result,strpat_list11left,strpat_list11right),
+rest671) end
+| (284,rest671) => let val result=MlyValue.strpat_list0(fn _ => ( [] )
+)
+ in (LrTable.NT 102,(result,defaultPos,defaultPos),rest671) end
+| (285,(_,(MlyValue.sigbind sigbind1,_,sigbind1right))::(_,(_,AND1left
 ,_))::rest671) => let val result=MlyValue.AND_sigbind_opt(fn _ => let 
 val sigbind as sigbind1=sigbind1 ()
  in ( SOME sigbind ) end
 )
- in (LrTable.NT 99,(result,AND1left,sigbind1right),rest671) end
-| (265,rest671) => let val result=MlyValue.AND_sigbind_opt(fn _ => (
+ in (LrTable.NT 103,(result,AND1left,sigbind1right),rest671) end
+| (286,rest671) => let val result=MlyValue.AND_sigbind_opt(fn _ => (
  NONE ))
- in (LrTable.NT 99,(result,defaultPos,defaultPos),rest671) end
-| (266,(_,(MlyValue.AND_sigbind_opt AND_sigbind_opt1,_,
+ in (LrTable.NT 103,(result,defaultPos,defaultPos),rest671) end
+| (287,(_,(MlyValue.AND_sigbind_opt AND_sigbind_opt1,_,
 AND_sigbind_opt1right))::(_,(MlyValue.sigexp' sigexp'1,sigexp'1left,_)
 )::rest671) => let val result=MlyValue.sigexp__AND_sigbind_opt(fn _
  => let val sigexp' as sigexp'1=sigexp'1 ()
 val AND_sigbind_opt as AND_sigbind_opt1=AND_sigbind_opt1 ()
  in ( ( sigexp', AND_sigbind_opt ) ) end
 )
- in (LrTable.NT 100,(result,sigexp'1left,AND_sigbind_opt1right),
+ in (LrTable.NT 104,(result,sigexp'1left,AND_sigbind_opt1right),
 rest671) end
-| (267,(_,(MlyValue.tyreadesc__AND_sigbind_opt 
-tyreadesc__AND_sigbind_opt1,_,tyreadesc__AND_sigbind_optright as 
-tyreadesc__AND_sigbind_opt1right))::_::(_,(MlyValue.sigexp sigexp1,
-sigexpleft as sigexp1left,_))::rest671) => let val result=
-MlyValue.sigexp__AND_sigbind_opt(fn _ => let val sigexp as sigexp1=
-sigexp1 ()
-val tyreadesc__AND_sigbind_opt as tyreadesc__AND_sigbind_opt1=
-tyreadesc__AND_sigbind_opt1 ()
+| (288,(_,(MlyValue.sigexp__AND_sigbind_opt sigexp__AND_sigbind_opt1,_
+,sigexp__AND_sigbind_optright as sigexp__AND_sigbind_opt1right))::_::(
+_,(MlyValue.strpat strpat1,_,_))::(_,(_,FCTleft as FCT1left,_))::
+rest671) => let val result=MlyValue.sigexp__AND_sigbind_opt(fn _ => 
+let val strpat as strpat1=strpat1 ()
+val sigexp__AND_sigbind_opt as sigexp__AND_sigbind_opt1=
+sigexp__AND_sigbind_opt1 ()
  in (
- ( WHERETYPESigExp(I(sigexpleft,
-					      tyreadesc__AND_sigbind_optright),
-					   sigexp,
-					   #1 tyreadesc__AND_sigbind_opt),
-			    #2 tyreadesc__AND_sigbind_opt ) 
+ ( FCTSigExp(I(FCTleft,sigexp__AND_sigbind_optright),
+				      strpat, #1 sigexp__AND_sigbind_opt)
+			  , #2 sigexp__AND_sigbind_opt ) 
 ) end
 )
- in (LrTable.NT 100,(result,sigexp1left,
-tyreadesc__AND_sigbind_opt1right),rest671) end
-| (268,(_,(MlyValue.AND_tyreadesc_opt__AND_sigbind_opt 
-AND_tyreadesc_opt__AND_sigbind_opt1,_,
-AND_tyreadesc_opt__AND_sigbind_optright as 
-AND_tyreadesc_opt__AND_sigbind_opt1right))::(_,(MlyValue.ty ty1,_,_))
-::_::(_,(MlyValue.longtycon longtycon1,_,_))::(_,(MlyValue.tyvarseq 
-tyvarseq1,_,_))::(_,(_,TYPEleft as TYPE1left,_))::rest671) => let val 
-result=MlyValue.tyreadesc__AND_sigbind_opt(fn _ => let val tyvarseq
- as tyvarseq1=tyvarseq1 ()
+ in (LrTable.NT 104,(result,FCT1left,sigexp__AND_sigbind_opt1right),
+rest671) end
+| (289,(_,(MlyValue.rea__AND_sigbind_opt rea__AND_sigbind_opt1,_,
+rea__AND_sigbind_optright as rea__AND_sigbind_opt1right))::_::(_,(
+MlyValue.sigexp sigexp1,sigexpleft as sigexp1left,_))::rest671) => 
+let val result=MlyValue.sigexp__AND_sigbind_opt(fn _ => let val sigexp
+ as sigexp1=sigexp1 ()
+val rea__AND_sigbind_opt as rea__AND_sigbind_opt1=
+rea__AND_sigbind_opt1 ()
+ in (
+ ( WHEREREASigExp(I(sigexpleft,
+					     rea__AND_sigbind_optright),
+					   sigexp, #1 rea__AND_sigbind_opt)
+			  , #2 rea__AND_sigbind_opt ) 
+) end
+)
+ in (LrTable.NT 104,(result,sigexp1left,rea__AND_sigbind_opt1right),
+rest671) end
+| (290,(_,(MlyValue.AND_rea_opt__AND_sigbind_opt 
+AND_rea_opt__AND_sigbind_opt1,_,AND_rea_opt__AND_sigbind_optright as 
+AND_rea_opt__AND_sigbind_opt1right))::(_,(MlyValue.longvid longvid2,_,
+_))::(_,(MlyValue.OP_opt OP_opt2,_,_))::_::(_,(MlyValue.longvid 
+longvid1,_,_))::(_,(MlyValue.OP_opt OP_opt1,_,_))::(_,(_,VALleft as 
+VAL1left,_))::rest671) => let val result=MlyValue.rea__AND_sigbind_opt
+(fn _ => let val OP_opt1=OP_opt1 ()
+val longvid1=longvid1 ()
+val OP_opt2=OP_opt2 ()
+val longvid2=longvid2 ()
+val AND_rea_opt__AND_sigbind_opt as AND_rea_opt__AND_sigbind_opt1=
+AND_rea_opt__AND_sigbind_opt1 ()
+ in (
+ ( VALRea(I(VALleft,AND_rea_opt__AND_sigbind_optright),
+				   OP_opt1, longvid1, OP_opt2, longvid2,
+				   #1 AND_rea_opt__AND_sigbind_opt)
+			  , #2 AND_rea_opt__AND_sigbind_opt ) 
+) end
+)
+ in (LrTable.NT 105,(result,VAL1left,
+AND_rea_opt__AND_sigbind_opt1right),rest671) end
+| (291,(_,(MlyValue.AND_rea_opt__AND_sigbind_opt 
+AND_rea_opt__AND_sigbind_opt1,_,AND_rea_opt__AND_sigbind_optright as 
+AND_rea_opt__AND_sigbind_opt1right))::(_,(MlyValue.longvid longvid2,_,
+_))::(_,(MlyValue.OP_opt OP_opt2,_,_))::_::(_,(MlyValue.longvid 
+longvid1,_,_))::(_,(MlyValue.OP_opt OP_opt1,_,_))::(_,(_,FUNleft as 
+FUN1left,_))::rest671) => let val result=MlyValue.rea__AND_sigbind_opt
+(fn _ => let val OP_opt1=OP_opt1 ()
+val longvid1=longvid1 ()
+val OP_opt2=OP_opt2 ()
+val longvid2=longvid2 ()
+val AND_rea_opt__AND_sigbind_opt as AND_rea_opt__AND_sigbind_opt1=
+AND_rea_opt__AND_sigbind_opt1 ()
+ in (
+ ( FUNRea(I(FUNleft,AND_rea_opt__AND_sigbind_optright),
+				   OP_opt1, longvid1, OP_opt2, longvid2,
+				   #1 AND_rea_opt__AND_sigbind_opt)
+			  , #2 AND_rea_opt__AND_sigbind_opt ) 
+) end
+)
+ in (LrTable.NT 105,(result,FUN1left,
+AND_rea_opt__AND_sigbind_opt1right),rest671) end
+| (292,(_,(MlyValue.AND_rea_opt__AND_sigbind_opt 
+AND_rea_opt__AND_sigbind_opt1,_,AND_rea_opt__AND_sigbind_optright as 
+AND_rea_opt__AND_sigbind_opt1right))::(_,(MlyValue.longvid longvid2,_,
+_))::(_,(MlyValue.OP_opt OP_opt2,_,_))::_::(_,(MlyValue.longvid 
+longvid1,_,_))::(_,(MlyValue.OP_opt OP_opt1,_,_))::(_,(_,
+CONSTRUCTORleft as CONSTRUCTOR1left,_))::rest671) => let val result=
+MlyValue.rea__AND_sigbind_opt(fn _ => let val OP_opt1=OP_opt1 ()
+val longvid1=longvid1 ()
+val OP_opt2=OP_opt2 ()
+val longvid2=longvid2 ()
+val AND_rea_opt__AND_sigbind_opt as AND_rea_opt__AND_sigbind_opt1=
+AND_rea_opt__AND_sigbind_opt1 ()
+ in (
+ ( CONSTRUCTORRea(I(CONSTRUCTORleft,
+					     AND_rea_opt__AND_sigbind_optright),
+					   OP_opt1, longvid1, OP_opt2, longvid2,
+				           #1 AND_rea_opt__AND_sigbind_opt)
+			  , #2 AND_rea_opt__AND_sigbind_opt ) 
+) end
+)
+ in (LrTable.NT 105,(result,CONSTRUCTOR1left,
+AND_rea_opt__AND_sigbind_opt1right),rest671) end
+| (293,(_,(MlyValue.AND_rea_opt__AND_sigbind_opt 
+AND_rea_opt__AND_sigbind_opt1,_,AND_rea_opt__AND_sigbind_optright as 
+AND_rea_opt__AND_sigbind_opt1right))::(_,(MlyValue.longvid longvid2,_,
+_))::(_,(MlyValue.OP_opt OP_opt2,_,_))::_::(_,(MlyValue.longvid 
+longvid1,_,_))::(_,(MlyValue.OP_opt OP_opt1,_,_))::(_,(_,EXCEPTIONleft
+ as EXCEPTION1left,_))::rest671) => let val result=
+MlyValue.rea__AND_sigbind_opt(fn _ => let val OP_opt1=OP_opt1 ()
+val longvid1=longvid1 ()
+val OP_opt2=OP_opt2 ()
+val longvid2=longvid2 ()
+val AND_rea_opt__AND_sigbind_opt as AND_rea_opt__AND_sigbind_opt1=
+AND_rea_opt__AND_sigbind_opt1 ()
+ in (
+ ( EXCEPTIONRea(I(EXCEPTIONleft,
+					   AND_rea_opt__AND_sigbind_optright),
+					 OP_opt1, longvid1, OP_opt2, longvid2,
+					 #1 AND_rea_opt__AND_sigbind_opt)
+			  , #2 AND_rea_opt__AND_sigbind_opt ) 
+) end
+)
+ in (LrTable.NT 105,(result,EXCEPTION1left,
+AND_rea_opt__AND_sigbind_opt1right),rest671) end
+| (294,(_,(MlyValue.AND_rea_opt__AND_sigbind_opt 
+AND_rea_opt__AND_sigbind_opt1,_,AND_rea_opt__AND_sigbind_optright as 
+AND_rea_opt__AND_sigbind_opt1right))::(_,(MlyValue.ty ty1,_,_))::_::(_
+,(MlyValue.longtycon longtycon1,_,_))::(_,(MlyValue.tyvarseq tyvarseq1
+,_,_))::(_,(_,TYPEleft as TYPE1left,_))::rest671) => let val result=
+MlyValue.rea__AND_sigbind_opt(fn _ => let val tyvarseq as tyvarseq1=
+tyvarseq1 ()
 val longtycon as longtycon1=longtycon1 ()
 val ty as ty1=ty1 ()
-val AND_tyreadesc_opt__AND_sigbind_opt as 
-AND_tyreadesc_opt__AND_sigbind_opt1=
-AND_tyreadesc_opt__AND_sigbind_opt1 ()
+val AND_rea_opt__AND_sigbind_opt as AND_rea_opt__AND_sigbind_opt1=
+AND_rea_opt__AND_sigbind_opt1 ()
  in (
- ( TyReaDesc(I(TYPEleft,
-				       AND_tyreadesc_opt__AND_sigbind_optright),
-				      tyvarseq, longtycon, ty,
-				      #1 AND_tyreadesc_opt__AND_sigbind_opt),
-			    #2 AND_tyreadesc_opt__AND_sigbind_opt ) 
+ ( TYPERea(I(TYPEleft,
+				      AND_rea_opt__AND_sigbind_optright),
+				    tyvarseq, longtycon, ty,
+				    #1 AND_rea_opt__AND_sigbind_opt)
+			  , #2 AND_rea_opt__AND_sigbind_opt ) 
 ) end
 )
- in (LrTable.NT 101,(result,TYPE1left,
-AND_tyreadesc_opt__AND_sigbind_opt1right),rest671) end
-| (269,(_,(MlyValue.AND_sigbind_opt AND_sigbind_opt1,
+ in (LrTable.NT 105,(result,TYPE1left,
+AND_rea_opt__AND_sigbind_opt1right),rest671) end
+| (295,(_,(MlyValue.AND_rea_opt__AND_sigbind_opt 
+AND_rea_opt__AND_sigbind_opt1,_,AND_rea_opt__AND_sigbind_optright as 
+AND_rea_opt__AND_sigbind_opt1right))::(_,(MlyValue.longstrid 
+longstrid2,_,_))::_::(_,(MlyValue.COLON_sigexp_opt COLON_sigexp_opt1,_
+,_))::(_,(MlyValue.longstrid longstrid1,_,_))::(_,(_,STRUCTUREleft as 
+STRUCTURE1left,_))::rest671) => let val result=
+MlyValue.rea__AND_sigbind_opt(fn _ => let val longstrid1=longstrid1 ()
+val COLON_sigexp_opt as COLON_sigexp_opt1=COLON_sigexp_opt1 ()
+val longstrid2=longstrid2 ()
+val AND_rea_opt__AND_sigbind_opt as AND_rea_opt__AND_sigbind_opt1=
+AND_rea_opt__AND_sigbind_opt1 ()
+ in (
+ ( STRUCTURERea(I(STRUCTUREleft,
+					   AND_rea_opt__AND_sigbind_optright),
+				         longstrid1, COLON_sigexp_opt,
+					 longstrid2,
+				         #1 AND_rea_opt__AND_sigbind_opt)
+			  , #2 AND_rea_opt__AND_sigbind_opt ) 
+) end
+)
+ in (LrTable.NT 105,(result,STRUCTURE1left,
+AND_rea_opt__AND_sigbind_opt1right),rest671) end
+| (296,(_,(MlyValue.AND_rea_opt__AND_sigbind_opt 
+AND_rea_opt__AND_sigbind_opt1,_,AND_rea_opt__AND_sigbind_optright as 
+AND_rea_opt__AND_sigbind_opt1right))::(_,(MlyValue.longstrid 
+longstrid2,_,_))::_::(_,(MlyValue.COLON_sigexp_opt COLON_sigexp_opt1,_
+,_))::(_,(MlyValue.longstrid longstrid1,_,_))::(_,(_,FUNCTORleft as 
+FUNCTOR1left,_))::rest671) => let val result=
+MlyValue.rea__AND_sigbind_opt(fn _ => let val longstrid1=longstrid1 ()
+val COLON_sigexp_opt as COLON_sigexp_opt1=COLON_sigexp_opt1 ()
+val longstrid2=longstrid2 ()
+val AND_rea_opt__AND_sigbind_opt as AND_rea_opt__AND_sigbind_opt1=
+AND_rea_opt__AND_sigbind_opt1 ()
+ in (
+ ( FUNCTORRea(I(FUNCTORleft,
+					 AND_rea_opt__AND_sigbind_optright),
+				       longstrid1, COLON_sigexp_opt, longstrid2,
+				       #1 AND_rea_opt__AND_sigbind_opt)
+			  , #2 AND_rea_opt__AND_sigbind_opt ) 
+) end
+)
+ in (LrTable.NT 105,(result,FUNCTOR1left,
+AND_rea_opt__AND_sigbind_opt1right),rest671) end
+| (297,(_,(MlyValue.sigexp__AND_rea_opt__AND_sigbind_opt 
+sigexp__AND_rea_opt__AND_sigbind_opt1,_,
+sigexp__AND_rea_opt__AND_sigbind_optright as 
+sigexp__AND_rea_opt__AND_sigbind_opt1right))::_::(_,(
+MlyValue.strpat_list0 strpat_list01,_,_))::(_,(MlyValue.longsigid 
+longsigid1,_,_))::(_,(_,SIGNATUREleft as SIGNATURE1left,_))::rest671)
+ => let val result=MlyValue.rea__AND_sigbind_opt(fn _ => let val 
+longsigid as longsigid1=longsigid1 ()
+val strpat_list0 as strpat_list01=strpat_list01 ()
+val sigexp__AND_rea_opt__AND_sigbind_opt as 
+sigexp__AND_rea_opt__AND_sigbind_opt1=
+sigexp__AND_rea_opt__AND_sigbind_opt1 ()
+ in (
+ ( SIGNATURERea
+				(I(SIGNATUREleft,
+				   sigexp__AND_rea_opt__AND_sigbind_optright),
+				 longsigid, strpat_list0,
+				 #1 sigexp__AND_rea_opt__AND_sigbind_opt,
+				 #2 sigexp__AND_rea_opt__AND_sigbind_opt)
+			  , #3 sigexp__AND_rea_opt__AND_sigbind_opt ) 
+) end
+)
+ in (LrTable.NT 105,(result,SIGNATURE1left,
+sigexp__AND_rea_opt__AND_sigbind_opt1right),rest671) end
+| (298,(_,(MlyValue.AND_sigbind_opt AND_sigbind_opt1,
 AND_sigbind_opt1left,AND_sigbind_opt1right))::rest671) => let val 
-result=MlyValue.AND_tyreadesc_opt__AND_sigbind_opt(fn _ => let val 
+result=MlyValue.AND_rea_opt__AND_sigbind_opt(fn _ => let val 
 AND_sigbind_opt as AND_sigbind_opt1=AND_sigbind_opt1 ()
  in ( ( NONE, AND_sigbind_opt) ) end
 )
- in (LrTable.NT 102,(result,AND_sigbind_opt1left,AND_sigbind_opt1right
+ in (LrTable.NT 106,(result,AND_sigbind_opt1left,AND_sigbind_opt1right
 ),rest671) end
-| (270,(_,(MlyValue.tyreadesc__AND_sigbind_opt 
-tyreadesc__AND_sigbind_opt1,_,tyreadesc__AND_sigbind_opt1right))::(_,(
-_,AND1left,_))::rest671) => let val result=
-MlyValue.AND_tyreadesc_opt__AND_sigbind_opt(fn _ => let val 
-tyreadesc__AND_sigbind_opt as tyreadesc__AND_sigbind_opt1=
-tyreadesc__AND_sigbind_opt1 ()
+| (299,(_,(MlyValue.rea__AND_sigbind_opt rea__AND_sigbind_opt1,_,
+rea__AND_sigbind_opt1right))::(_,(_,AND1left,_))::rest671) => let val 
+result=MlyValue.AND_rea_opt__AND_sigbind_opt(fn _ => let val 
+rea__AND_sigbind_opt as rea__AND_sigbind_opt1=rea__AND_sigbind_opt1 ()
  in (
- ( SOME(#1 tyreadesc__AND_sigbind_opt),
-				    #2 tyreadesc__AND_sigbind_opt ) 
+ ( SOME(#1 rea__AND_sigbind_opt)
+				  , #2 rea__AND_sigbind_opt ) )
+ end
+)
+ in (LrTable.NT 106,(result,AND1left,rea__AND_sigbind_opt1right),
+rest671) end
+| (300,(_,(MlyValue.AND_rea_opt__AND_sigbind_opt 
+AND_rea_opt__AND_sigbind_opt1,_,AND_rea_opt__AND_sigbind_opt1right))::
+(_,(MlyValue.appsigexp appsigexp1,appsigexp1left,_))::rest671) => let 
+val result=MlyValue.sigexp__AND_rea_opt__AND_sigbind_opt(fn _ => let 
+val appsigexp as appsigexp1=appsigexp1 ()
+val AND_rea_opt__AND_sigbind_opt as AND_rea_opt__AND_sigbind_opt1=
+AND_rea_opt__AND_sigbind_opt1 ()
+ in (
+ ( appsigexp
+		          , #1 AND_rea_opt__AND_sigbind_opt
+			  , #2 AND_rea_opt__AND_sigbind_opt ) 
 ) end
 )
- in (LrTable.NT 102,(result,AND1left,tyreadesc__AND_sigbind_opt1right)
-,rest671) end
-| (271,(_,(MlyValue.AND_tyreadesc_opt AND_tyreadesc_opt1,_,
-AND_tyreadesc_optright as AND_tyreadesc_opt1right))::(_,(MlyValue.ty 
-ty1,_,_))::_::(_,(MlyValue.longtycon longtycon1,_,_))::(_,(
-MlyValue.tyvarseq tyvarseq1,_,_))::(_,(_,TYPEleft as TYPE1left,_))::
-rest671) => let val result=MlyValue.tyreadesc(fn _ => let val tyvarseq
- as tyvarseq1=tyvarseq1 ()
+ in (LrTable.NT 107,(result,appsigexp1left,
+AND_rea_opt__AND_sigbind_opt1right),rest671) end
+| (301,(_,(MlyValue.AND_rea_opt AND_rea_opt1,_,AND_rea_optright as 
+AND_rea_opt1right))::(_,(MlyValue.longvid longvid2,_,_))::(_,(
+MlyValue.OP_opt OP_opt2,_,_))::_::(_,(MlyValue.longvid longvid1,_,_))
+::(_,(MlyValue.OP_opt OP_opt1,_,_))::(_,(_,VALleft as VAL1left,_))::
+rest671) => let val result=MlyValue.rea(fn _ => let val OP_opt1=
+OP_opt1 ()
+val longvid1=longvid1 ()
+val OP_opt2=OP_opt2 ()
+val longvid2=longvid2 ()
+val AND_rea_opt as AND_rea_opt1=AND_rea_opt1 ()
+ in (
+ VALRea(I(VALleft,AND_rea_optright),
+				 OP_opt1, longvid1,
+				 OP_opt2, longvid2, AND_rea_opt) 
+) end
+)
+ in (LrTable.NT 108,(result,VAL1left,AND_rea_opt1right),rest671) end
+| (302,(_,(MlyValue.AND_rea_opt AND_rea_opt1,_,AND_rea_optright as 
+AND_rea_opt1right))::(_,(MlyValue.longvid longvid2,_,_))::(_,(
+MlyValue.OP_opt OP_opt2,_,_))::_::(_,(MlyValue.longvid longvid1,_,_))
+::(_,(MlyValue.OP_opt OP_opt1,_,_))::(_,(_,FUNleft as FUN1left,_))::
+rest671) => let val result=MlyValue.rea(fn _ => let val OP_opt1=
+OP_opt1 ()
+val longvid1=longvid1 ()
+val OP_opt2=OP_opt2 ()
+val longvid2=longvid2 ()
+val AND_rea_opt as AND_rea_opt1=AND_rea_opt1 ()
+ in (
+ FUNRea(I(FUNleft,AND_rea_optright),
+				 OP_opt1, longvid1,
+				 OP_opt2, longvid2, AND_rea_opt) 
+) end
+)
+ in (LrTable.NT 108,(result,FUN1left,AND_rea_opt1right),rest671) end
+| (303,(_,(MlyValue.AND_rea_opt AND_rea_opt1,_,AND_rea_optright as 
+AND_rea_opt1right))::(_,(MlyValue.longvid longvid2,_,_))::(_,(
+MlyValue.OP_opt OP_opt2,_,_))::_::(_,(MlyValue.longvid longvid1,_,_))
+::(_,(MlyValue.OP_opt OP_opt1,_,_))::(_,(_,CONSTRUCTORleft as 
+CONSTRUCTOR1left,_))::rest671) => let val result=MlyValue.rea(fn _ => 
+let val OP_opt1=OP_opt1 ()
+val longvid1=longvid1 ()
+val OP_opt2=OP_opt2 ()
+val longvid2=longvid2 ()
+val AND_rea_opt as AND_rea_opt1=AND_rea_opt1 ()
+ in (
+ CONSTRUCTORRea(I(CONSTRUCTORleft,AND_rea_optright),
+					 OP_opt1, longvid1,
+					 OP_opt2, longvid2, AND_rea_opt) 
+) end
+)
+ in (LrTable.NT 108,(result,CONSTRUCTOR1left,AND_rea_opt1right),
+rest671) end
+| (304,(_,(MlyValue.AND_rea_opt AND_rea_opt1,_,AND_rea_optright as 
+AND_rea_opt1right))::(_,(MlyValue.longvid longvid2,_,_))::(_,(
+MlyValue.OP_opt OP_opt2,_,_))::_::(_,(MlyValue.longvid longvid1,_,_))
+::(_,(MlyValue.OP_opt OP_opt1,_,_))::(_,(_,EXCEPTIONleft as 
+EXCEPTION1left,_))::rest671) => let val result=MlyValue.rea(fn _ => 
+let val OP_opt1=OP_opt1 ()
+val longvid1=longvid1 ()
+val OP_opt2=OP_opt2 ()
+val longvid2=longvid2 ()
+val AND_rea_opt as AND_rea_opt1=AND_rea_opt1 ()
+ in (
+ EXCEPTIONRea(I(EXCEPTIONleft,AND_rea_optright),
+					 OP_opt1, longvid1,
+					 OP_opt2, longvid2, AND_rea_opt) 
+) end
+)
+ in (LrTable.NT 108,(result,EXCEPTION1left,AND_rea_opt1right),rest671)
+ end
+| (305,(_,(MlyValue.AND_rea_opt AND_rea_opt1,_,AND_rea_optright as 
+AND_rea_opt1right))::(_,(MlyValue.ty ty1,_,_))::_::(_,(
+MlyValue.longtycon longtycon1,_,_))::(_,(MlyValue.tyvarseq tyvarseq1,_
+,_))::(_,(_,TYPEleft as TYPE1left,_))::rest671) => let val result=
+MlyValue.rea(fn _ => let val tyvarseq as tyvarseq1=tyvarseq1 ()
 val longtycon as longtycon1=longtycon1 ()
 val ty as ty1=ty1 ()
-val AND_tyreadesc_opt as AND_tyreadesc_opt1=AND_tyreadesc_opt1 ()
+val AND_rea_opt as AND_rea_opt1=AND_rea_opt1 ()
  in (
- TyReaDesc(I(TYPEleft,AND_tyreadesc_optright),
-				    tyvarseq, longtycon, ty,
-				    AND_tyreadesc_opt) 
+ TYPERea(I(TYPEleft,AND_rea_optright),
+				  tyvarseq, longtycon, ty, AND_rea_opt) 
 ) end
 )
- in (LrTable.NT 103,(result,TYPE1left,AND_tyreadesc_opt1right),rest671
+ in (LrTable.NT 108,(result,TYPE1left,AND_rea_opt1right),rest671) end
+| (306,(_,(MlyValue.AND_rea_opt AND_rea_opt1,_,AND_rea_optright as 
+AND_rea_opt1right))::(_,(MlyValue.longstrid longstrid2,_,_))::_::(_,(
+MlyValue.COLON_sigexp_opt COLON_sigexp_opt1,_,_))::(_,(
+MlyValue.longstrid longstrid1,_,_))::(_,(_,STRUCTUREleft as 
+STRUCTURE1left,_))::rest671) => let val result=MlyValue.rea(fn _ => 
+let val longstrid1=longstrid1 ()
+val COLON_sigexp_opt as COLON_sigexp_opt1=COLON_sigexp_opt1 ()
+val longstrid2=longstrid2 ()
+val AND_rea_opt as AND_rea_opt1=AND_rea_opt1 ()
+ in (
+ STRUCTURERea(I(STRUCTUREleft,AND_rea_optright),
+				       longstrid1, COLON_sigexp_opt, longstrid2,
+				       AND_rea_opt) 
 ) end
-| (272,(_,(MlyValue.tyreadesc tyreadesc1,_,tyreadesc1right))::(_,(_,
-AND1left,_))::rest671) => let val result=MlyValue.AND_tyreadesc_opt(
-fn _ => let val tyreadesc as tyreadesc1=tyreadesc1 ()
- in ( SOME tyreadesc ) end
 )
- in (LrTable.NT 104,(result,AND1left,tyreadesc1right),rest671) end
-| (273,rest671) => let val result=MlyValue.AND_tyreadesc_opt(fn _ => (
- NONE ))
- in (LrTable.NT 104,(result,defaultPos,defaultPos),rest671) end
-| (274,(_,(MlyValue.strexp__AND_funbind_opt strexp__AND_funbind_opt1,_
+ in (LrTable.NT 108,(result,STRUCTURE1left,AND_rea_opt1right),rest671)
+ end
+| (307,(_,(MlyValue.AND_rea_opt AND_rea_opt1,_,AND_rea_optright as 
+AND_rea_opt1right))::(_,(MlyValue.longstrid longstrid2,_,_))::_::(_,(
+MlyValue.COLON_sigexp_opt COLON_sigexp_opt1,_,_))::(_,(
+MlyValue.longstrid longstrid1,_,_))::(_,(_,FUNCTORleft as FUNCTOR1left
+,_))::rest671) => let val result=MlyValue.rea(fn _ => let val 
+longstrid1=longstrid1 ()
+val COLON_sigexp_opt as COLON_sigexp_opt1=COLON_sigexp_opt1 ()
+val longstrid2=longstrid2 ()
+val AND_rea_opt as AND_rea_opt1=AND_rea_opt1 ()
+ in (
+ FUNCTORRea(I(FUNCTORleft,AND_rea_optright),
+				     longstrid1, COLON_sigexp_opt, longstrid2,
+				     AND_rea_opt) 
+) end
+)
+ in (LrTable.NT 108,(result,FUNCTOR1left,AND_rea_opt1right),rest671)
+ end
+| (308,(_,(MlyValue.sigexp__AND_rea_opt sigexp__AND_rea_opt1,_,
+sigexp__AND_rea_optright as sigexp__AND_rea_opt1right))::_::(_,(
+MlyValue.strpat_list0 strpat_list01,_,_))::(_,(MlyValue.longsigid 
+longsigid1,_,_))::(_,(_,SIGNATUREleft as SIGNATURE1left,_))::rest671)
+ => let val result=MlyValue.rea(fn _ => let val longsigid as 
+longsigid1=longsigid1 ()
+val strpat_list0 as strpat_list01=strpat_list01 ()
+val sigexp__AND_rea_opt as sigexp__AND_rea_opt1=sigexp__AND_rea_opt1 
+()
+ in (
+ SIGNATURERea(I(SIGNATUREleft,
+					 sigexp__AND_rea_optright),
+				       longsigid, strpat_list0,
+				       #1 sigexp__AND_rea_opt,
+				       #2 sigexp__AND_rea_opt) 
+) end
+)
+ in (LrTable.NT 108,(result,SIGNATURE1left,sigexp__AND_rea_opt1right),
+rest671) end
+| (309,(_,(MlyValue.rea rea1,_,rea1right))::(_,(_,AND1left,_))::
+rest671) => let val result=MlyValue.AND_rea_opt(fn _ => let val rea
+ as rea1=rea1 ()
+ in ( SOME rea ) end
+)
+ in (LrTable.NT 109,(result,AND1left,rea1right),rest671) end
+| (310,rest671) => let val result=MlyValue.AND_rea_opt(fn _ => ( NONE 
+))
+ in (LrTable.NT 109,(result,defaultPos,defaultPos),rest671) end
+| (311,(_,(MlyValue.AND_rea_opt AND_rea_opt1,_,AND_rea_opt1right))::(_
+,(MlyValue.appsigexp appsigexp1,appsigexp1left,_))::rest671) => let 
+val result=MlyValue.sigexp__AND_rea_opt(fn _ => let val appsigexp as 
+appsigexp1=appsigexp1 ()
+val AND_rea_opt as AND_rea_opt1=AND_rea_opt1 ()
+ in ( ( appsigexp, AND_rea_opt ) ) end
+)
+ in (LrTable.NT 110,(result,appsigexp1left,AND_rea_opt1right),rest671)
+ end
+| (312,(_,(MlyValue.strexp__AND_funbind_opt strexp__AND_funbind_opt1,_
 ,strexp__AND_funbind_optright as strexp__AND_funbind_opt1right))::_::(
-_,(MlyValue.COLON_sigexp_opt COLON_sigexp_opt1,_,_))::_::(_,(
-MlyValue.sigexp sigexp1,_,_))::_::(_,(MlyValue.strid strid1,_,_))::_::
-(_,(MlyValue.funid funid1,funidleft as funid1left,_))::rest671) => 
-let val result=MlyValue.funbind(fn _ => let val funid as funid1=funid1
- ()
-val strid as strid1=strid1 ()
-val sigexp as sigexp1=sigexp1 ()
+_,(MlyValue.COLON_sigexp_opt COLON_sigexp_opt1,_,_))::(_,(
+MlyValue.strpat_list1 strpat_list11,_,_))::(_,(MlyValue.strid strid1,
+stridleft as strid1left,_))::rest671) => let val result=
+MlyValue.funbind(fn _ => let val strid as strid1=strid1 ()
+val strpat_list1 as strpat_list11=strpat_list11 ()
 val COLON_sigexp_opt as COLON_sigexp_opt1=COLON_sigexp_opt1 ()
 val strexp__AND_funbind_opt as strexp__AND_funbind_opt1=
 strexp__AND_funbind_opt1 ()
  in (
- TRANSFunBind(I(funidleft,
+ TRANSFunBind(I(stridleft,
 					 strexp__AND_funbind_optright),
-				       funid, strid, sigexp, COLON_sigexp_opt,
+				       strid, strpat_list1, COLON_sigexp_opt,
 				       #1 strexp__AND_funbind_opt,
 				       #2 strexp__AND_funbind_opt) 
 ) end
 )
- in (LrTable.NT 105,(result,funid1left,strexp__AND_funbind_opt1right),
+ in (LrTable.NT 111,(result,strid1left,strexp__AND_funbind_opt1right),
 rest671) end
-| (275,(_,(MlyValue.strexp__AND_funbind_opt strexp__AND_funbind_opt1,_
+| (313,(_,(MlyValue.strexp__AND_funbind_opt strexp__AND_funbind_opt1,_
 ,strexp__AND_funbind_optright as strexp__AND_funbind_opt1right))::_::(
-_,(MlyValue.sigexp sigexp2,_,_))::_::_::(_,(MlyValue.sigexp sigexp1,_,
-_))::_::(_,(MlyValue.strid strid1,_,_))::_::(_,(MlyValue.funid funid1,
-funidleft as funid1left,_))::rest671) => let val result=
-MlyValue.funbind(fn _ => let val funid as funid1=funid1 ()
-val strid as strid1=strid1 ()
-val sigexp1=sigexp1 ()
-val sigexp2=sigexp2 ()
-val strexp__AND_funbind_opt as strexp__AND_funbind_opt1=
-strexp__AND_funbind_opt1 ()
- in (
- OPAQFunBind(I(funidleft,strexp__AND_funbind_optright),
-				      funid, strid, sigexp1, sigexp2,
-				      #1 strexp__AND_funbind_opt,
-				      #2 strexp__AND_funbind_opt) 
-) end
-)
- in (LrTable.NT 105,(result,funid1left,strexp__AND_funbind_opt1right),
-rest671) end
-| (276,(_,(MlyValue.strexp__AND_funbind_opt strexp__AND_funbind_opt1,_
-,strexp__AND_funbind_optright as strexp__AND_funbind_opt1right))::_::(
-_,(MlyValue.COLON_sigexp_opt COLON_sigexp_opt1,_,_))::_::(_,(
-MlyValue.spec spec1,_,_))::_::(_,(MlyValue.funid funid1,funidleft as 
-funid1left,_))::rest671) => let val result=MlyValue.funbind(fn _ => 
-let val funid as funid1=funid1 ()
-val spec as spec1=spec1 ()
-val COLON_sigexp_opt as COLON_sigexp_opt1=COLON_sigexp_opt1 ()
-val strexp__AND_funbind_opt as strexp__AND_funbind_opt1=
-strexp__AND_funbind_opt1 ()
- in (
- TRANSSPECFunBind(I(funidleft,
-					     strexp__AND_funbind_optright),
-					   funid, spec, COLON_sigexp_opt,
-					   #1 strexp__AND_funbind_opt,
-					   #2 strexp__AND_funbind_opt) 
-) end
-)
- in (LrTable.NT 105,(result,funid1left,strexp__AND_funbind_opt1right),
-rest671) end
-| (277,(_,(MlyValue.strexp__AND_funbind_opt strexp__AND_funbind_opt1,_
-,strexp__AND_funbind_optright as strexp__AND_funbind_opt1right))::_::(
-_,(MlyValue.sigexp sigexp1,_,_))::_::_::(_,(MlyValue.spec spec1,_,_))
-::_::(_,(MlyValue.funid funid1,funidleft as funid1left,_))::rest671)
- => let val result=MlyValue.funbind(fn _ => let val funid as funid1=
-funid1 ()
-val spec as spec1=spec1 ()
+_,(MlyValue.sigexp sigexp1,_,_))::_::(_,(MlyValue.strpat_list1 
+strpat_list11,_,_))::(_,(MlyValue.strid strid1,stridleft as strid1left
+,_))::rest671) => let val result=MlyValue.funbind(fn _ => let val 
+strid as strid1=strid1 ()
+val strpat_list1 as strpat_list11=strpat_list11 ()
 val sigexp as sigexp1=sigexp1 ()
 val strexp__AND_funbind_opt as strexp__AND_funbind_opt1=
 strexp__AND_funbind_opt1 ()
  in (
- OPAQSPECFunBind(I(funidleft,
-					    strexp__AND_funbind_optright),
-					  funid, spec, sigexp,
-					  #1 strexp__AND_funbind_opt,
-					  #2 strexp__AND_funbind_opt) 
+ OPAQFunBind(I(stridleft,strexp__AND_funbind_optright),
+				      strid, strpat_list1, sigexp,
+				      #1 strexp__AND_funbind_opt,
+				      #2 strexp__AND_funbind_opt) 
 ) end
 )
- in (LrTable.NT 105,(result,funid1left,strexp__AND_funbind_opt1right),
+ in (LrTable.NT 111,(result,strid1left,strexp__AND_funbind_opt1right),
 rest671) end
-| (278,(_,(MlyValue.funbind funbind1,_,funbind1right))::(_,(_,AND1left
+| (314,(_,(MlyValue.strpat strpat1,strpat1left,strpat1right))::rest671
+) => let val result=MlyValue.strpat_list1(fn _ => let val strpat as 
+strpat1=strpat1 ()
+ in ( strpat::[] ) end
+)
+ in (LrTable.NT 112,(result,strpat1left,strpat1right),rest671) end
+| (315,(_,(MlyValue.strpat_list1 strpat_list11,_,strpat_list11right))
+::(_,(MlyValue.strpat strpat1,strpat1left,_))::rest671) => let val 
+result=MlyValue.strpat_list1(fn _ => let val strpat as strpat1=strpat1
+ ()
+val strpat_list1 as strpat_list11=strpat_list11 ()
+ in ( strpat::strpat_list1 ) end
+)
+ in (LrTable.NT 112,(result,strpat1left,strpat_list11right),rest671)
+ end
+| (316,(_,(MlyValue.funbind funbind1,_,funbind1right))::(_,(_,AND1left
 ,_))::rest671) => let val result=MlyValue.AND_funbind_opt(fn _ => let 
 val funbind as funbind1=funbind1 ()
  in ( SOME funbind ) end
 )
- in (LrTable.NT 106,(result,AND1left,funbind1right),rest671) end
-| (279,rest671) => let val result=MlyValue.AND_funbind_opt(fn _ => (
+ in (LrTable.NT 113,(result,AND1left,funbind1right),rest671) end
+| (317,rest671) => let val result=MlyValue.AND_funbind_opt(fn _ => (
  NONE ))
- in (LrTable.NT 106,(result,defaultPos,defaultPos),rest671) end
-| (280,(_,(MlyValue.AND_funbind_opt AND_funbind_opt1,_,
-AND_funbind_opt1right))::(_,(MlyValue.strexp' strexp'1,strexp'1left,_)
-)::rest671) => let val result=MlyValue.strexp__AND_funbind_opt(fn _
- => let val strexp' as strexp'1=strexp'1 ()
+ in (LrTable.NT 113,(result,defaultPos,defaultPos),rest671) end
+| (318,(_,(MlyValue.AND_funbind_opt AND_funbind_opt1,_,
+AND_funbind_opt1right))::(_,(MlyValue.appstrexp appstrexp1,
+appstrexp1left,_))::rest671) => let val result=
+MlyValue.strexp__AND_funbind_opt(fn _ => let val appstrexp as 
+appstrexp1=appstrexp1 ()
 val AND_funbind_opt as AND_funbind_opt1=AND_funbind_opt1 ()
- in ( ( strexp', AND_funbind_opt ) ) end
+ in ( ( appstrexp, AND_funbind_opt ) ) end
 )
- in (LrTable.NT 107,(result,strexp'1left,AND_funbind_opt1right),
+ in (LrTable.NT 114,(result,appstrexp1left,AND_funbind_opt1right),
 rest671) end
-| (281,(_,(MlyValue.sigexp__AND_funbind_opt sigexp__AND_funbind_opt1,_
+| (319,(_,(MlyValue.sigexp__AND_funbind_opt sigexp__AND_funbind_opt1,_
 ,sigexp__AND_funbind_optright as sigexp__AND_funbind_opt1right))::_::(
 _,(MlyValue.strexp strexp1,strexpleft as strexp1left,_))::rest671) => 
 let val result=MlyValue.strexp__AND_funbind_opt(fn _ => let val strexp
@@ -19753,13 +21208,13 @@ sigexp__AND_funbind_opt1 ()
  in (
  ( TRANSStrExp(I(strexpleft,
 					  sigexp__AND_funbind_optright),
-					strexp, #1 sigexp__AND_funbind_opt),
-			    #2 sigexp__AND_funbind_opt ) 
+					strexp, #1 sigexp__AND_funbind_opt)
+			  , #2 sigexp__AND_funbind_opt ) 
 ) end
 )
- in (LrTable.NT 107,(result,strexp1left,sigexp__AND_funbind_opt1right)
+ in (LrTable.NT 114,(result,strexp1left,sigexp__AND_funbind_opt1right)
 ,rest671) end
-| (282,(_,(MlyValue.sigexp__AND_funbind_opt sigexp__AND_funbind_opt1,_
+| (320,(_,(MlyValue.sigexp__AND_funbind_opt sigexp__AND_funbind_opt1,_
 ,sigexp__AND_funbind_optright as sigexp__AND_funbind_opt1right))::_::(
 _,(MlyValue.strexp strexp1,strexpleft as strexp1left,_))::rest671) => 
 let val result=MlyValue.strexp__AND_funbind_opt(fn _ => let val strexp
@@ -19769,111 +21224,319 @@ sigexp__AND_funbind_opt1 ()
  in (
  ( OPAQStrExp(I(strexpleft,
 					 sigexp__AND_funbind_optright),
-				       strexp, #1 sigexp__AND_funbind_opt),
-			    #2 sigexp__AND_funbind_opt ) 
+				       strexp, #1 sigexp__AND_funbind_opt)
+			  , #2 sigexp__AND_funbind_opt ) 
 ) end
 )
- in (LrTable.NT 107,(result,strexp1left,sigexp__AND_funbind_opt1right)
+ in (LrTable.NT 114,(result,strexp1left,sigexp__AND_funbind_opt1right)
 ,rest671) end
-| (283,(_,(MlyValue.AND_funbind_opt AND_funbind_opt1,_,
+| (321,(_,(MlyValue.strexp__AND_funbind_opt strexp__AND_funbind_opt1,_
+,strexp__AND_funbind_optright as strexp__AND_funbind_opt1right))::_::(
+_,(MlyValue.strpat strpat1,_,_))::(_,(_,FCTleft as FCT1left,_))::
+rest671) => let val result=MlyValue.strexp__AND_funbind_opt(fn _ => 
+let val strpat as strpat1=strpat1 ()
+val strexp__AND_funbind_opt as strexp__AND_funbind_opt1=
+strexp__AND_funbind_opt1 ()
+ in (
+ ( FCTStrExp(I(FCTleft,strexp__AND_funbind_optright),
+				      strpat, #1 strexp__AND_funbind_opt)
+			  , #2 strexp__AND_funbind_opt ) 
+) end
+)
+ in (LrTable.NT 114,(result,FCT1left,strexp__AND_funbind_opt1right),
+rest671) end
+| (322,(_,(MlyValue.sigexp__AND_funbind_opt sigexp__AND_funbind_opt1,_
+,sigexp__AND_funbind_optright as sigexp__AND_funbind_opt1right))::_::(
+_,(MlyValue.infexp infexp1,_,_))::(_,(_,UNPACKleft as UNPACK1left,_))
+::rest671) => let val result=MlyValue.strexp__AND_funbind_opt(fn _ => 
+let val infexp as infexp1=infexp1 ()
+val sigexp__AND_funbind_opt as sigexp__AND_funbind_opt1=
+sigexp__AND_funbind_opt1 ()
+ in (
+ ( UNPACKStrExp(I(UNPACKleft,
+					   sigexp__AND_funbind_optright),
+					 infexp, #1 sigexp__AND_funbind_opt)
+			  , #2 sigexp__AND_funbind_opt ) 
+) end
+)
+ in (LrTable.NT 114,(result,UNPACK1left,sigexp__AND_funbind_opt1right)
+,rest671) end
+| (323,(_,(MlyValue.AND_funbind_opt AND_funbind_opt1,_,
 AND_funbind_opt1right))::(_,(MlyValue.sigexp' sigexp'1,sigexp'1left,_)
 )::rest671) => let val result=MlyValue.sigexp__AND_funbind_opt(fn _
  => let val sigexp' as sigexp'1=sigexp'1 ()
 val AND_funbind_opt as AND_funbind_opt1=AND_funbind_opt1 ()
  in ( ( sigexp', AND_funbind_opt ) ) end
 )
- in (LrTable.NT 108,(result,sigexp'1left,AND_funbind_opt1right),
+ in (LrTable.NT 115,(result,sigexp'1left,AND_funbind_opt1right),
 rest671) end
-| (284,(_,(MlyValue.tyreadesc__AND_funbind_opt 
-tyreadesc__AND_funbind_opt1,_,tyreadesc__AND_funbind_optright as 
-tyreadesc__AND_funbind_opt1right))::_::(_,(MlyValue.sigexp sigexp1,
-sigexpleft as sigexp1left,_))::rest671) => let val result=
-MlyValue.sigexp__AND_funbind_opt(fn _ => let val sigexp as sigexp1=
-sigexp1 ()
-val tyreadesc__AND_funbind_opt as tyreadesc__AND_funbind_opt1=
-tyreadesc__AND_funbind_opt1 ()
+| (324,(_,(MlyValue.sigexp__AND_funbind_opt sigexp__AND_funbind_opt1,_
+,sigexp__AND_funbind_optright as sigexp__AND_funbind_opt1right))::_::(
+_,(MlyValue.strpat strpat1,_,_))::(_,(_,FCTleft as FCT1left,_))::
+rest671) => let val result=MlyValue.sigexp__AND_funbind_opt(fn _ => 
+let val strpat as strpat1=strpat1 ()
+val sigexp__AND_funbind_opt as sigexp__AND_funbind_opt1=
+sigexp__AND_funbind_opt1 ()
  in (
- ( WHERETYPESigExp(I(sigexpleft,
-					      tyreadesc__AND_funbind_optright),
-					   sigexp,
-					   #1 tyreadesc__AND_funbind_opt),
-			    #2 tyreadesc__AND_funbind_opt ) 
+ ( FCTSigExp(I(FCTleft,sigexp__AND_funbind_optright),
+				      strpat, #1 sigexp__AND_funbind_opt)
+			  , #2 sigexp__AND_funbind_opt ) 
 ) end
 )
- in (LrTable.NT 108,(result,sigexp1left,
-tyreadesc__AND_funbind_opt1right),rest671) end
-| (285,(_,(MlyValue.AND_tyreadesc_opt__AND_funbind_opt 
-AND_tyreadesc_opt__AND_funbind_opt1,_,
-AND_tyreadesc_opt__AND_funbind_optright as 
-AND_tyreadesc_opt__AND_funbind_opt1right))::(_,(MlyValue.ty ty1,_,_))
-::_::(_,(MlyValue.longtycon longtycon1,_,_))::(_,(MlyValue.tyvarseq 
-tyvarseq1,_,_))::(_,(_,TYPEleft as TYPE1left,_))::rest671) => let val 
-result=MlyValue.tyreadesc__AND_funbind_opt(fn _ => let val tyvarseq
- as tyvarseq1=tyvarseq1 ()
+ in (LrTable.NT 115,(result,FCT1left,sigexp__AND_funbind_opt1right),
+rest671) end
+| (325,(_,(MlyValue.rea__AND_funbind_opt rea__AND_funbind_opt1,_,
+rea__AND_funbind_optright as rea__AND_funbind_opt1right))::_::(_,(
+MlyValue.sigexp sigexp1,sigexpleft as sigexp1left,_))::rest671) => 
+let val result=MlyValue.sigexp__AND_funbind_opt(fn _ => let val sigexp
+ as sigexp1=sigexp1 ()
+val rea__AND_funbind_opt as rea__AND_funbind_opt1=
+rea__AND_funbind_opt1 ()
+ in (
+ ( WHEREREASigExp(I(sigexpleft,
+					     rea__AND_funbind_optright),
+					   sigexp, #1 rea__AND_funbind_opt)
+			  , #2 rea__AND_funbind_opt ) 
+) end
+)
+ in (LrTable.NT 115,(result,sigexp1left,rea__AND_funbind_opt1right),
+rest671) end
+| (326,(_,(MlyValue.AND_rea_opt__AND_funbind_opt 
+AND_rea_opt__AND_funbind_opt1,_,AND_rea_opt__AND_funbind_optright as 
+AND_rea_opt__AND_funbind_opt1right))::(_,(MlyValue.longvid longvid2,_,
+_))::(_,(MlyValue.OP_opt OP_opt2,_,_))::_::(_,(MlyValue.longvid 
+longvid1,_,_))::(_,(MlyValue.OP_opt OP_opt1,_,_))::(_,(_,VALleft as 
+VAL1left,_))::rest671) => let val result=MlyValue.rea__AND_funbind_opt
+(fn _ => let val OP_opt1=OP_opt1 ()
+val longvid1=longvid1 ()
+val OP_opt2=OP_opt2 ()
+val longvid2=longvid2 ()
+val AND_rea_opt__AND_funbind_opt as AND_rea_opt__AND_funbind_opt1=
+AND_rea_opt__AND_funbind_opt1 ()
+ in (
+ ( VALRea(I(VALleft,AND_rea_opt__AND_funbind_optright),
+				   OP_opt1, longvid1, OP_opt2, longvid2,
+				   #1 AND_rea_opt__AND_funbind_opt)
+			  , #2 AND_rea_opt__AND_funbind_opt ) 
+) end
+)
+ in (LrTable.NT 116,(result,VAL1left,
+AND_rea_opt__AND_funbind_opt1right),rest671) end
+| (327,(_,(MlyValue.AND_rea_opt__AND_funbind_opt 
+AND_rea_opt__AND_funbind_opt1,_,AND_rea_opt__AND_funbind_optright as 
+AND_rea_opt__AND_funbind_opt1right))::(_,(MlyValue.longvid longvid2,_,
+_))::(_,(MlyValue.OP_opt OP_opt2,_,_))::_::(_,(MlyValue.longvid 
+longvid1,_,_))::(_,(MlyValue.OP_opt OP_opt1,_,_))::(_,(_,FUNleft as 
+FUN1left,_))::rest671) => let val result=MlyValue.rea__AND_funbind_opt
+(fn _ => let val OP_opt1=OP_opt1 ()
+val longvid1=longvid1 ()
+val OP_opt2=OP_opt2 ()
+val longvid2=longvid2 ()
+val AND_rea_opt__AND_funbind_opt as AND_rea_opt__AND_funbind_opt1=
+AND_rea_opt__AND_funbind_opt1 ()
+ in (
+ ( FUNRea(I(FUNleft,AND_rea_opt__AND_funbind_optright),
+				   OP_opt1, longvid1, OP_opt2, longvid2,
+				   #1 AND_rea_opt__AND_funbind_opt)
+			  , #2 AND_rea_opt__AND_funbind_opt ) 
+) end
+)
+ in (LrTable.NT 116,(result,FUN1left,
+AND_rea_opt__AND_funbind_opt1right),rest671) end
+| (328,(_,(MlyValue.AND_rea_opt__AND_funbind_opt 
+AND_rea_opt__AND_funbind_opt1,_,AND_rea_opt__AND_funbind_optright as 
+AND_rea_opt__AND_funbind_opt1right))::(_,(MlyValue.longvid longvid2,_,
+_))::(_,(MlyValue.OP_opt OP_opt2,_,_))::_::(_,(MlyValue.longvid 
+longvid1,_,_))::(_,(MlyValue.OP_opt OP_opt1,_,_))::(_,(_,
+CONSTRUCTORleft as CONSTRUCTOR1left,_))::rest671) => let val result=
+MlyValue.rea__AND_funbind_opt(fn _ => let val OP_opt1=OP_opt1 ()
+val longvid1=longvid1 ()
+val OP_opt2=OP_opt2 ()
+val longvid2=longvid2 ()
+val AND_rea_opt__AND_funbind_opt as AND_rea_opt__AND_funbind_opt1=
+AND_rea_opt__AND_funbind_opt1 ()
+ in (
+ ( CONSTRUCTORRea(I(CONSTRUCTORleft,
+					     AND_rea_opt__AND_funbind_optright),
+					   OP_opt1, longvid1, OP_opt2, longvid2,
+				           #1 AND_rea_opt__AND_funbind_opt)
+			  , #2 AND_rea_opt__AND_funbind_opt ) 
+) end
+)
+ in (LrTable.NT 116,(result,CONSTRUCTOR1left,
+AND_rea_opt__AND_funbind_opt1right),rest671) end
+| (329,(_,(MlyValue.AND_rea_opt__AND_funbind_opt 
+AND_rea_opt__AND_funbind_opt1,_,AND_rea_opt__AND_funbind_optright as 
+AND_rea_opt__AND_funbind_opt1right))::(_,(MlyValue.longvid longvid2,_,
+_))::(_,(MlyValue.OP_opt OP_opt2,_,_))::_::(_,(MlyValue.longvid 
+longvid1,_,_))::(_,(MlyValue.OP_opt OP_opt1,_,_))::(_,(_,EXCEPTIONleft
+ as EXCEPTION1left,_))::rest671) => let val result=
+MlyValue.rea__AND_funbind_opt(fn _ => let val OP_opt1=OP_opt1 ()
+val longvid1=longvid1 ()
+val OP_opt2=OP_opt2 ()
+val longvid2=longvid2 ()
+val AND_rea_opt__AND_funbind_opt as AND_rea_opt__AND_funbind_opt1=
+AND_rea_opt__AND_funbind_opt1 ()
+ in (
+ ( EXCEPTIONRea(I(EXCEPTIONleft,
+					   AND_rea_opt__AND_funbind_optright),
+					 OP_opt1, longvid1, OP_opt2, longvid2,
+					 #1 AND_rea_opt__AND_funbind_opt)
+			  , #2 AND_rea_opt__AND_funbind_opt ) 
+) end
+)
+ in (LrTable.NT 116,(result,EXCEPTION1left,
+AND_rea_opt__AND_funbind_opt1right),rest671) end
+| (330,(_,(MlyValue.AND_rea_opt__AND_funbind_opt 
+AND_rea_opt__AND_funbind_opt1,_,AND_rea_opt__AND_funbind_optright as 
+AND_rea_opt__AND_funbind_opt1right))::(_,(MlyValue.ty ty1,_,_))::_::(_
+,(MlyValue.longtycon longtycon1,_,_))::(_,(MlyValue.tyvarseq tyvarseq1
+,_,_))::(_,(_,TYPEleft as TYPE1left,_))::rest671) => let val result=
+MlyValue.rea__AND_funbind_opt(fn _ => let val tyvarseq as tyvarseq1=
+tyvarseq1 ()
 val longtycon as longtycon1=longtycon1 ()
 val ty as ty1=ty1 ()
-val AND_tyreadesc_opt__AND_funbind_opt as 
-AND_tyreadesc_opt__AND_funbind_opt1=
-AND_tyreadesc_opt__AND_funbind_opt1 ()
+val AND_rea_opt__AND_funbind_opt as AND_rea_opt__AND_funbind_opt1=
+AND_rea_opt__AND_funbind_opt1 ()
  in (
- ( TyReaDesc(I(TYPEleft,
-				       AND_tyreadesc_opt__AND_funbind_optright),
-				      tyvarseq, longtycon, ty,
-				      #1 AND_tyreadesc_opt__AND_funbind_opt),
-			    #2 AND_tyreadesc_opt__AND_funbind_opt ) 
+ ( TYPERea(I(TYPEleft,
+				      AND_rea_opt__AND_funbind_optright),
+				    tyvarseq, longtycon, ty,
+				    #1 AND_rea_opt__AND_funbind_opt)
+			  , #2 AND_rea_opt__AND_funbind_opt ) 
 ) end
 )
- in (LrTable.NT 109,(result,TYPE1left,
-AND_tyreadesc_opt__AND_funbind_opt1right),rest671) end
-| (286,(_,(MlyValue.AND_funbind_opt AND_funbind_opt1,
+ in (LrTable.NT 116,(result,TYPE1left,
+AND_rea_opt__AND_funbind_opt1right),rest671) end
+| (331,(_,(MlyValue.AND_rea_opt__AND_funbind_opt 
+AND_rea_opt__AND_funbind_opt1,_,AND_rea_opt__AND_funbind_optright as 
+AND_rea_opt__AND_funbind_opt1right))::(_,(MlyValue.longstrid 
+longstrid2,_,_))::_::(_,(MlyValue.COLON_sigexp_opt COLON_sigexp_opt1,_
+,_))::(_,(MlyValue.longstrid longstrid1,_,_))::(_,(_,STRUCTUREleft as 
+STRUCTURE1left,_))::rest671) => let val result=
+MlyValue.rea__AND_funbind_opt(fn _ => let val longstrid1=longstrid1 ()
+val COLON_sigexp_opt as COLON_sigexp_opt1=COLON_sigexp_opt1 ()
+val longstrid2=longstrid2 ()
+val AND_rea_opt__AND_funbind_opt as AND_rea_opt__AND_funbind_opt1=
+AND_rea_opt__AND_funbind_opt1 ()
+ in (
+ ( STRUCTURERea(I(STRUCTUREleft,
+					   AND_rea_opt__AND_funbind_optright),
+				         longstrid1, COLON_sigexp_opt,
+					 longstrid2,
+				         #1 AND_rea_opt__AND_funbind_opt)
+			  , #2 AND_rea_opt__AND_funbind_opt ) 
+) end
+)
+ in (LrTable.NT 116,(result,STRUCTURE1left,
+AND_rea_opt__AND_funbind_opt1right),rest671) end
+| (332,(_,(MlyValue.AND_rea_opt__AND_funbind_opt 
+AND_rea_opt__AND_funbind_opt1,_,AND_rea_opt__AND_funbind_optright as 
+AND_rea_opt__AND_funbind_opt1right))::(_,(MlyValue.longstrid 
+longstrid2,_,_))::_::(_,(MlyValue.COLON_sigexp_opt COLON_sigexp_opt1,_
+,_))::(_,(MlyValue.longstrid longstrid1,_,_))::(_,(_,FUNCTORleft as 
+FUNCTOR1left,_))::rest671) => let val result=
+MlyValue.rea__AND_funbind_opt(fn _ => let val longstrid1=longstrid1 ()
+val COLON_sigexp_opt as COLON_sigexp_opt1=COLON_sigexp_opt1 ()
+val longstrid2=longstrid2 ()
+val AND_rea_opt__AND_funbind_opt as AND_rea_opt__AND_funbind_opt1=
+AND_rea_opt__AND_funbind_opt1 ()
+ in (
+ ( FUNCTORRea(I(FUNCTORleft,
+					 AND_rea_opt__AND_funbind_optright),
+				       longstrid1, COLON_sigexp_opt, longstrid2,
+				       #1 AND_rea_opt__AND_funbind_opt)
+			  , #2 AND_rea_opt__AND_funbind_opt ) 
+) end
+)
+ in (LrTable.NT 116,(result,FUNCTOR1left,
+AND_rea_opt__AND_funbind_opt1right),rest671) end
+| (333,(_,(MlyValue.sigexp__AND_rea_opt__AND_funbind_opt 
+sigexp__AND_rea_opt__AND_funbind_opt1,_,
+sigexp__AND_rea_opt__AND_funbind_optright as 
+sigexp__AND_rea_opt__AND_funbind_opt1right))::_::(_,(
+MlyValue.strpat_list0 strpat_list01,_,_))::(_,(MlyValue.longsigid 
+longsigid1,_,_))::(_,(_,SIGNATUREleft as SIGNATURE1left,_))::rest671)
+ => let val result=MlyValue.rea__AND_funbind_opt(fn _ => let val 
+longsigid as longsigid1=longsigid1 ()
+val strpat_list0 as strpat_list01=strpat_list01 ()
+val sigexp__AND_rea_opt__AND_funbind_opt as 
+sigexp__AND_rea_opt__AND_funbind_opt1=
+sigexp__AND_rea_opt__AND_funbind_opt1 ()
+ in (
+ ( SIGNATURERea
+				(I(SIGNATUREleft,
+				   sigexp__AND_rea_opt__AND_funbind_optright),
+				 longsigid, strpat_list0,
+				 #1 sigexp__AND_rea_opt__AND_funbind_opt,
+				 #2 sigexp__AND_rea_opt__AND_funbind_opt)
+			  , #3 sigexp__AND_rea_opt__AND_funbind_opt ) 
+) end
+)
+ in (LrTable.NT 116,(result,SIGNATURE1left,
+sigexp__AND_rea_opt__AND_funbind_opt1right),rest671) end
+| (334,(_,(MlyValue.AND_funbind_opt AND_funbind_opt1,
 AND_funbind_opt1left,AND_funbind_opt1right))::rest671) => let val 
-result=MlyValue.AND_tyreadesc_opt__AND_funbind_opt(fn _ => let val 
+result=MlyValue.AND_rea_opt__AND_funbind_opt(fn _ => let val 
 AND_funbind_opt as AND_funbind_opt1=AND_funbind_opt1 ()
  in ( ( NONE, AND_funbind_opt ) ) end
 )
- in (LrTable.NT 110,(result,AND_funbind_opt1left,AND_funbind_opt1right
+ in (LrTable.NT 117,(result,AND_funbind_opt1left,AND_funbind_opt1right
 ),rest671) end
-| (287,(_,(MlyValue.tyreadesc__AND_funbind_opt 
-tyreadesc__AND_funbind_opt1,_,tyreadesc__AND_funbind_opt1right))::(_,(
-_,AND1left,_))::rest671) => let val result=
-MlyValue.AND_tyreadesc_opt__AND_funbind_opt(fn _ => let val 
-tyreadesc__AND_funbind_opt as tyreadesc__AND_funbind_opt1=
-tyreadesc__AND_funbind_opt1 ()
+| (335,(_,(MlyValue.rea__AND_funbind_opt rea__AND_funbind_opt1,_,
+rea__AND_funbind_opt1right))::(_,(_,AND1left,_))::rest671) => let val 
+result=MlyValue.AND_rea_opt__AND_funbind_opt(fn _ => let val 
+rea__AND_funbind_opt as rea__AND_funbind_opt1=rea__AND_funbind_opt1 ()
  in (
- ( SOME(#1 tyreadesc__AND_funbind_opt),
-			    #2 tyreadesc__AND_funbind_opt ) 
+ ( SOME(#1 rea__AND_funbind_opt)
+			  , #2 rea__AND_funbind_opt ) )
+ end
+)
+ in (LrTable.NT 117,(result,AND1left,rea__AND_funbind_opt1right),
+rest671) end
+| (336,(_,(MlyValue.AND_rea_opt__AND_funbind_opt 
+AND_rea_opt__AND_funbind_opt1,_,AND_rea_opt__AND_funbind_opt1right))::
+(_,(MlyValue.appsigexp appsigexp1,appsigexp1left,_))::rest671) => let 
+val result=MlyValue.sigexp__AND_rea_opt__AND_funbind_opt(fn _ => let 
+val appsigexp as appsigexp1=appsigexp1 ()
+val AND_rea_opt__AND_funbind_opt as AND_rea_opt__AND_funbind_opt1=
+AND_rea_opt__AND_funbind_opt1 ()
+ in (
+ ( appsigexp
+		          , #1 AND_rea_opt__AND_funbind_opt
+			  , #2 AND_rea_opt__AND_funbind_opt ) 
 ) end
 )
- in (LrTable.NT 110,(result,AND1left,tyreadesc__AND_funbind_opt1right)
-,rest671) end
-| (288,(_,(MlyValue.spec1 spec11,spec11left,spec11right))::rest671)
+ in (LrTable.NT 118,(result,appsigexp1left,
+AND_rea_opt__AND_funbind_opt1right),rest671) end
+| (337,(_,(MlyValue.spec1 spec11,spec11left,spec11right))::rest671)
  => let val result=MlyValue.spec(fn _ => let val spec1 as spec11=
 spec11 ()
  in ( spec1 ) end
 )
- in (LrTable.NT 111,(result,spec11left,spec11right),rest671) end
-| (289,rest671) => let val result=MlyValue.spec(fn _ => (
+ in (LrTable.NT 119,(result,spec11left,spec11right),rest671) end
+| (338,rest671) => let val result=MlyValue.spec(fn _ => (
  EMPTYSpec(I(defaultPos,defaultPos)) ))
- in (LrTable.NT 111,(result,defaultPos,defaultPos),rest671) end
-| (290,(_,(MlyValue.spec1' spec1'1,spec1'1left,spec1'1right))::rest671
+ in (LrTable.NT 119,(result,defaultPos,defaultPos),rest671) end
+| (339,(_,(MlyValue.spec1' spec1'1,spec1'1left,spec1'1right))::rest671
 ) => let val result=MlyValue.spec1(fn _ => let val spec1' as spec1'1=
 spec1'1 ()
  in ( spec1' ) end
 )
- in (LrTable.NT 112,(result,spec1'1left,spec1'1right),rest671) end
-| (291,(_,(MlyValue.spec1' spec1'1,_,spec1'right as spec1'1right))::(_
+ in (LrTable.NT 120,(result,spec1'1left,spec1'1right),rest671) end
+| (340,(_,(MlyValue.spec1' spec1'1,_,spec1'right as spec1'1right))::(_
 ,(MlyValue.spec1 spec11,spec1left as spec11left,_))::rest671) => let 
 val result=MlyValue.spec1(fn _ => let val spec1 as spec11=spec11 ()
 val spec1' as spec1'1=spec1'1 ()
  in ( SEQSpec(I(spec1left,spec1'right), spec1, spec1') ) end
 )
- in (LrTable.NT 112,(result,spec11left,spec1'1right),rest671) end
-| (292,(_,(_,SEMICOLONleft as SEMICOLON1left,SEMICOLON1right))::
+ in (LrTable.NT 120,(result,spec11left,spec1'1right),rest671) end
+| (341,(_,(_,SEMICOLONleft as SEMICOLON1left,SEMICOLON1right))::
 rest671) => let val result=MlyValue.spec1(fn _ => (
  EMPTYSpec(I(SEMICOLONleft,SEMICOLONleft)) ))
- in (LrTable.NT 112,(result,SEMICOLON1left,SEMICOLON1right),rest671)
+ in (LrTable.NT 120,(result,SEMICOLON1left,SEMICOLON1right),rest671)
  end
-| (293,(_,(MlyValue.longtycon_EQUALS_list2 longtycon_EQUALS_list21,_,
+| (342,(_,(MlyValue.longtycon_EQUALS_list2 longtycon_EQUALS_list21,_,
 longtycon_EQUALS_list2right as longtycon_EQUALS_list21right))::_::(_,(
 _,SHARINGleft as SHARING1left,_))::rest671) => let val result=
 MlyValue.spec1(fn _ => let val longtycon_EQUALS_list2 as 
@@ -19885,9 +21548,9 @@ longtycon_EQUALS_list21=longtycon_EQUALS_list21 ()
 					  longtycon_EQUALS_list2) 
 ) end
 )
- in (LrTable.NT 112,(result,SHARING1left,longtycon_EQUALS_list21right)
+ in (LrTable.NT 120,(result,SHARING1left,longtycon_EQUALS_list21right)
 ,rest671) end
-| (294,(_,(MlyValue.longtycon_EQUALS_list2 longtycon_EQUALS_list21,_,
+| (343,(_,(MlyValue.longtycon_EQUALS_list2 longtycon_EQUALS_list21,_,
 longtycon_EQUALS_list2right as longtycon_EQUALS_list21right))::_::_::(
 _,(MlyValue.spec1 spec11,spec1left as spec11left,_))::rest671) => let 
 val result=MlyValue.spec1(fn _ => let val spec1 as spec11=spec11 ()
@@ -19899,9 +21562,9 @@ longtycon_EQUALS_list21 ()
 					  spec1, longtycon_EQUALS_list2) 
 ) end
 )
- in (LrTable.NT 112,(result,spec11left,longtycon_EQUALS_list21right),
+ in (LrTable.NT 120,(result,spec11left,longtycon_EQUALS_list21right),
 rest671) end
-| (295,(_,(MlyValue.longsigid_EQUALS_list2 longsigid_EQUALS_list21,_,
+| (344,(_,(MlyValue.longsigid_EQUALS_list2 longsigid_EQUALS_list21,_,
 longsigid_EQUALS_list2right as longsigid_EQUALS_list21right))::_::(_,(
 _,SHARINGleft as SHARING1left,_))::rest671) => let val result=
 MlyValue.spec1(fn _ => let val longsigid_EQUALS_list2 as 
@@ -19914,9 +21577,9 @@ longsigid_EQUALS_list21=longsigid_EQUALS_list21 ()
 					       longsigid_EQUALS_list2) 
 ) end
 )
- in (LrTable.NT 112,(result,SHARING1left,longsigid_EQUALS_list21right)
+ in (LrTable.NT 120,(result,SHARING1left,longsigid_EQUALS_list21right)
 ,rest671) end
-| (296,(_,(MlyValue.longsigid_EQUALS_list2 longsigid_EQUALS_list21,_,
+| (345,(_,(MlyValue.longsigid_EQUALS_list2 longsigid_EQUALS_list21,_,
 longsigid_EQUALS_list2right as longsigid_EQUALS_list21right))::_::_::(
 _,(MlyValue.spec1 spec11,spec1left as spec11left,_))::rest671) => let 
 val result=MlyValue.spec1(fn _ => let val spec1 as spec11=spec11 ()
@@ -19928,9 +21591,9 @@ longsigid_EQUALS_list21 ()
 					       spec1, longsigid_EQUALS_list2) 
 ) end
 )
- in (LrTable.NT 112,(result,spec11left,longsigid_EQUALS_list21right),
+ in (LrTable.NT 120,(result,spec11left,longsigid_EQUALS_list21right),
 rest671) end
-| (297,(_,(MlyValue.longstrid_EQUALS_list2 longstrid_EQUALS_list21,_,
+| (346,(_,(MlyValue.longstrid_EQUALS_list2 longstrid_EQUALS_list21,_,
 longstrid_EQUALS_list2right as longstrid_EQUALS_list21right))::(_,(_,
 SHARINGleft as SHARING1left,_))::rest671) => let val result=
 MlyValue.spec1(fn _ => let val longstrid_EQUALS_list2 as 
@@ -19942,9 +21605,9 @@ longstrid_EQUALS_list21=longstrid_EQUALS_list21 ()
 				      longstrid_EQUALS_list2) 
 ) end
 )
- in (LrTable.NT 112,(result,SHARING1left,longstrid_EQUALS_list21right)
+ in (LrTable.NT 120,(result,SHARING1left,longstrid_EQUALS_list21right)
 ,rest671) end
-| (298,(_,(MlyValue.longstrid_EQUALS_list2 longstrid_EQUALS_list21,_,
+| (347,(_,(MlyValue.longstrid_EQUALS_list2 longstrid_EQUALS_list21,_,
 longstrid_EQUALS_list2right as longstrid_EQUALS_list21right))::_::(_,(
 MlyValue.spec1 spec11,spec1left as spec11left,_))::rest671) => let 
 val result=MlyValue.spec1(fn _ => let val spec1 as spec11=spec11 ()
@@ -19955,39 +21618,39 @@ longstrid_EQUALS_list21 ()
 				      spec1, longstrid_EQUALS_list2) 
 ) end
 )
- in (LrTable.NT 112,(result,spec11left,longstrid_EQUALS_list21right),
+ in (LrTable.NT 120,(result,spec11left,longstrid_EQUALS_list21right),
 rest671) end
-| (299,(_,(MlyValue.valdesc valdesc1,_,valdescright as valdesc1right))
+| (348,(_,(MlyValue.valdesc valdesc1,_,valdescright as valdesc1right))
 ::(_,(_,VALleft as VAL1left,_))::rest671) => let val result=
 MlyValue.spec1'(fn _ => let val valdesc as valdesc1=valdesc1 ()
  in ( VALSpec(I(VALleft,valdescright), valdesc) ) end
 )
- in (LrTable.NT 113,(result,VAL1left,valdesc1right),rest671) end
-| (300,(_,(MlyValue.valdesc valdesc1,_,valdescright as valdesc1right))
+ in (LrTable.NT 121,(result,VAL1left,valdesc1right),rest671) end
+| (349,(_,(MlyValue.valdesc valdesc1,_,valdescright as valdesc1right))
 ::(_,(_,FUNleft as FUN1left,_))::rest671) => let val result=
 MlyValue.spec1'(fn _ => let val valdesc as valdesc1=valdesc1 ()
  in ( FUNSpec(I(FUNleft,valdescright), valdesc) ) end
 )
- in (LrTable.NT 113,(result,FUN1left,valdesc1right),rest671) end
-| (301,(_,(MlyValue.typdesc typdesc1,_,typdescright as typdesc1right))
+ in (LrTable.NT 121,(result,FUN1left,valdesc1right),rest671) end
+| (350,(_,(MlyValue.typdesc typdesc1,_,typdescright as typdesc1right))
 ::(_,(_,TYPEleft as TYPE1left,_))::rest671) => let val result=
 MlyValue.spec1'(fn _ => let val typdesc as typdesc1=typdesc1 ()
  in ( TYPESpec(I(TYPEleft,typdescright), typdesc) ) end
 )
- in (LrTable.NT 113,(result,TYPE1left,typdesc1right),rest671) end
-| (302,(_,(MlyValue.typdesc typdesc1,_,typdescright as typdesc1right))
+ in (LrTable.NT 121,(result,TYPE1left,typdesc1right),rest671) end
+| (351,(_,(MlyValue.typdesc typdesc1,_,typdescright as typdesc1right))
 ::(_,(_,EQTYPEleft as EQTYPE1left,_))::rest671) => let val result=
 MlyValue.spec1'(fn _ => let val typdesc as typdesc1=typdesc1 ()
  in ( EQTYPESpec(I(EQTYPEleft,typdescright), typdesc) ) end
 )
- in (LrTable.NT 113,(result,EQTYPE1left,typdesc1right),rest671) end
-| (303,(_,(MlyValue.typdesc typdesc1,_,typdescright as typdesc1right))
+ in (LrTable.NT 121,(result,EQTYPE1left,typdesc1right),rest671) end
+| (352,(_,(MlyValue.typdesc typdesc1,_,typdescright as typdesc1right))
 ::(_,(_,EQEQTYPEleft as EQEQTYPE1left,_))::rest671) => let val result=
 MlyValue.spec1'(fn _ => let val typdesc as typdesc1=typdesc1 ()
  in ( EQEQTYPESpec(I(EQEQTYPEleft,typdescright), typdesc) ) end
 )
- in (LrTable.NT 113,(result,EQEQTYPE1left,typdesc1right),rest671) end
-| (304,(_,(MlyValue.WITHTYPE_typdesc_opt WITHTYPE_typdesc_opt1,_,
+ in (LrTable.NT 121,(result,EQEQTYPE1left,typdesc1right),rest671) end
+| (353,(_,(MlyValue.WITHTYPE_typdesc_opt WITHTYPE_typdesc_opt1,_,
 WITHTYPE_typdesc_optright as WITHTYPE_typdesc_opt1right))::(_,(
 MlyValue.datdesc0 datdesc01,_,_))::(_,(_,DATATYPEleft as DATATYPE1left
 ,_))::rest671) => let val result=MlyValue.spec1'(fn _ => let val 
@@ -20000,9 +21663,9 @@ WITHTYPE_typdesc_opt1 ()
 				       datdesc0, WITHTYPE_typdesc_opt) 
 ) end
 )
- in (LrTable.NT 113,(result,DATATYPE1left,WITHTYPE_typdesc_opt1right),
+ in (LrTable.NT 121,(result,DATATYPE1left,WITHTYPE_typdesc_opt1right),
 rest671) end
-| (305,(_,(MlyValue.WITHTYPE_typdesc_opt WITHTYPE_typdesc_opt1,_,
+| (354,(_,(MlyValue.WITHTYPE_typdesc_opt WITHTYPE_typdesc_opt1,_,
 WITHTYPE_typdesc_optright as WITHTYPE_typdesc_opt1right))::(_,(
 MlyValue.datdesc1 datdesc11,_,_))::(_,(_,DATATYPEleft as DATATYPE1left
 ,_))::rest671) => let val result=MlyValue.spec1'(fn _ => let val 
@@ -20015,9 +21678,9 @@ WITHTYPE_typdesc_opt1 ()
 				       datdesc1, WITHTYPE_typdesc_opt) 
 ) end
 )
- in (LrTable.NT 113,(result,DATATYPE1left,WITHTYPE_typdesc_opt1right),
+ in (LrTable.NT 121,(result,DATATYPE1left,WITHTYPE_typdesc_opt1right),
 rest671) end
-| (306,(_,(MlyValue.longtycon longtycon1,_,longtyconright as 
+| (355,(_,(MlyValue.longtycon longtycon1,_,longtyconright as 
 longtycon1right))::_::_::(_,(MlyValue.tycon tycon1,_,_))::(_,(_,
 DATATYPEleft as DATATYPE1left,_))::rest671) => let val result=
 MlyValue.spec1'(fn _ => let val tycon as tycon1=tycon1 ()
@@ -20027,9 +21690,9 @@ val longtycon as longtycon1=longtycon1 ()
 					  tycon, longtycon) 
 ) end
 )
- in (LrTable.NT 113,(result,DATATYPE1left,longtycon1right),rest671)
+ in (LrTable.NT 121,(result,DATATYPE1left,longtycon1right),rest671)
  end
-| (307,(_,(MlyValue.dcondesc dcondesc1,_,dcondescright as 
+| (356,(_,(MlyValue.dcondesc dcondesc1,_,dcondescright as 
 dcondesc1right))::(_,(_,CONSTRUCTORleft as CONSTRUCTOR1left,_))::
 rest671) => let val result=MlyValue.spec1'(fn _ => let val dcondesc
  as dcondesc1=dcondesc1 ()
@@ -20038,56 +21701,45 @@ rest671) => let val result=MlyValue.spec1'(fn _ => let val dcondesc
 					  dcondesc) )
  end
 )
- in (LrTable.NT 113,(result,CONSTRUCTOR1left,dcondesc1right),rest671)
+ in (LrTable.NT 121,(result,CONSTRUCTOR1left,dcondesc1right),rest671)
  end
-| (308,(_,(MlyValue.exdesc exdesc1,_,exdescright as exdesc1right))::(_
+| (357,(_,(MlyValue.exdesc exdesc1,_,exdescright as exdesc1right))::(_
 ,(_,EXCEPTIONleft as EXCEPTION1left,_))::rest671) => let val result=
 MlyValue.spec1'(fn _ => let val exdesc as exdesc1=exdesc1 ()
  in ( EXCEPTIONSpec(I(EXCEPTIONleft,exdescright), exdesc) ) end
 )
- in (LrTable.NT 113,(result,EXCEPTION1left,exdesc1right),rest671) end
-| (309,(_,(MlyValue.strdesc strdesc1,_,strdescright as strdesc1right))
+ in (LrTable.NT 121,(result,EXCEPTION1left,exdesc1right),rest671) end
+| (358,(_,(MlyValue.strdesc strdesc1,_,strdescright as strdesc1right))
 ::(_,(_,STRUCTUREleft as STRUCTURE1left,_))::rest671) => let val 
 result=MlyValue.spec1'(fn _ => let val strdesc as strdesc1=strdesc1 ()
  in ( STRUCTURESpec(I(STRUCTUREleft,strdescright), strdesc)) end
 )
- in (LrTable.NT 113,(result,STRUCTURE1left,strdesc1right),rest671) end
-| (310,(_,(MlyValue.sigdesc sigdesc1,_,sigdescright as sigdesc1right))
+ in (LrTable.NT 121,(result,STRUCTURE1left,strdesc1right),rest671) end
+| (359,(_,(MlyValue.sigdesc sigdesc1,_,sigdescright as sigdesc1right))
 ::(_,(_,SIGNATUREleft as SIGNATURE1left,_))::rest671) => let val 
 result=MlyValue.spec1'(fn _ => let val sigdesc as sigdesc1=sigdesc1 ()
  in ( SIGNATURESpec(I(SIGNATUREleft,sigdescright), sigdesc)) end
 )
- in (LrTable.NT 113,(result,SIGNATURE1left,sigdesc1right),rest671) end
-| (311,(_,(MlyValue.fundesc fundesc1,_,fundescright as fundesc1right))
+ in (LrTable.NT 121,(result,SIGNATURE1left,sigdesc1right),rest671) end
+| (360,(_,(MlyValue.fundesc fundesc1,_,fundescright as fundesc1right))
 ::(_,(_,FUNCTORleft as FUNCTOR1left,_))::rest671) => let val result=
 MlyValue.spec1'(fn _ => let val fundesc as fundesc1=fundesc1 ()
  in ( FUNCTORSpec(I(FUNCTORleft,fundescright), fundesc)) end
 )
- in (LrTable.NT 113,(result,FUNCTOR1left,fundesc1right),rest671) end
-| (312,(_,(MlyValue.sigexp sigexp1,_,sigexpright as sigexp1right))::(_
+ in (LrTable.NT 121,(result,FUNCTOR1left,fundesc1right),rest671) end
+| (361,(_,(MlyValue.sigexp sigexp1,_,sigexpright as sigexp1right))::(_
 ,(_,INCLUDEleft as INCLUDE1left,_))::rest671) => let val result=
 MlyValue.spec1'(fn _ => let val sigexp as sigexp1=sigexp1 ()
  in ( INCLUDESpec(I(INCLUDEleft,sigexpright), sigexp) ) end
 )
- in (LrTable.NT 113,(result,INCLUDE1left,sigexp1right),rest671) end
-| (313,(_,(MlyValue.longsigid_list2 longsigid_list21,_,
-longsigid_list2right as longsigid_list21right))::(_,(_,INCLUDEleft as 
-INCLUDE1left,_))::rest671) => let val result=MlyValue.spec1'(fn _ => 
-let val longsigid_list2 as longsigid_list21=longsigid_list21 ()
- in (
- INCLUDEMULTISpec(I(INCLUDEleft,longsigid_list2right),
-					   longsigid_list2) 
-) end
-)
- in (LrTable.NT 113,(result,INCLUDE1left,longsigid_list21right),
-rest671) end
-| (314,(_,(MlyValue.strid strid1,_,stridright as strid1right))::(_,(_,
+ in (LrTable.NT 121,(result,INCLUDE1left,sigexp1right),rest671) end
+| (362,(_,(MlyValue.strid strid1,_,stridright as strid1right))::(_,(_,
 PREBOUNDleft as PREBOUND1left,_))::rest671) => let val result=
 MlyValue.spec1'(fn _ => let val strid as strid1=strid1 ()
  in ( PREBOUNDSpec(I(PREBOUNDleft,stridright), strid) ) end
 )
- in (LrTable.NT 113,(result,PREBOUND1left,strid1right),rest671) end
-| (315,(_,(MlyValue.ty ty1,_,tyright as ty1right))::_::(_,(
+ in (LrTable.NT 121,(result,PREBOUND1left,strid1right),rest671) end
+| (363,(_,(MlyValue.ty ty1,_,tyright as ty1right))::_::(_,(
 MlyValue.tyvar tyvar1,_,_))::_::(_,(MlyValue.vid vid1,_,_))::(_,(
 MlyValue.OP_opt OP_opt1,_,_))::(_,(_,OVERLOADleft as OVERLOAD1left,_))
 ::rest671) => let val result=MlyValue.spec1'(fn _ => let val OP_opt
@@ -20100,8 +21752,8 @@ val ty as ty1=ty1 ()
 				       OP_opt, vid, tyvar, ty)
 ) end
 )
- in (LrTable.NT 113,(result,OVERLOAD1left,ty1right),rest671) end
-| (316,(_,(MlyValue.longvid longvid1,_,longvidright as longvid1right))
+ in (LrTable.NT 121,(result,OVERLOAD1left,ty1right),rest671) end
+| (364,(_,(MlyValue.longvid longvid1,_,longvidright as longvid1right))
 ::_::(_,(MlyValue.longtycon longtycon1,_,_))::_::(_,(MlyValue.vid vid1
 ,_,_))::(_,(MlyValue.OP_opt OP_opt1,_,_))::(_,(_,INSTANCEleft as 
 INSTANCE1left,_))::rest671) => let val result=MlyValue.spec1'(fn _ => 
@@ -20114,8 +21766,8 @@ val longvid as longvid1=longvid1 ()
 				       OP_opt, vid, longtycon, longvid) 
 ) end
 )
- in (LrTable.NT 113,(result,INSTANCE1left,longvid1right),rest671) end
-| (317,(_,(MlyValue.longtycon longtycon1,_,longtyconright as 
+ in (LrTable.NT 121,(result,INSTANCE1left,longvid1right),rest671) end
+| (365,(_,(MlyValue.longtycon longtycon1,_,longtyconright as 
 longtycon1right))::_::(_,(MlyValue.scon scon1,_,_))::(_,(_,
 INSTANCEleft as INSTANCE1left,_))::rest671) => let val result=
 MlyValue.spec1'(fn _ => let val scon as scon1=scon1 ()
@@ -20125,9 +21777,9 @@ val longtycon as longtycon1=longtycon1 ()
 					   scon, longtycon) 
 ) end
 )
- in (LrTable.NT 113,(result,INSTANCE1left,longtycon1right),rest671)
+ in (LrTable.NT 121,(result,INSTANCE1left,longtycon1right),rest671)
  end
-| (318,(_,(MlyValue.vid_list1 vid_list11,_,vid_list1right as 
+| (366,(_,(MlyValue.vid_list1 vid_list11,_,vid_list1right as 
 vid_list11right))::(_,(MlyValue.d_opt d_opt1,_,_))::(_,(_,INFIXleft
  as INFIX1left,_))::rest671) => let val result=MlyValue.spec1'(fn _
  => let val d_opt as d_opt1=d_opt1 ()
@@ -20137,8 +21789,8 @@ val vid_list1 as vid_list11=vid_list11 ()
 					 vid_list1) )
  end
 )
- in (LrTable.NT 113,(result,INFIX1left,vid_list11right),rest671) end
-| (319,(_,(MlyValue.vid_list1 vid_list11,_,vid_list1right as 
+ in (LrTable.NT 121,(result,INFIX1left,vid_list11right),rest671) end
+| (367,(_,(MlyValue.vid_list1 vid_list11,_,vid_list1right as 
 vid_list11right))::(_,(MlyValue.d_opt d_opt1,_,_))::(_,(_,INFIXRleft
  as INFIXR1left,_))::rest671) => let val result=MlyValue.spec1'(fn _
  => let val d_opt as d_opt1=d_opt1 ()
@@ -20148,8 +21800,8 @@ val vid_list1 as vid_list11=vid_list11 ()
 					  vid_list1) 
 ) end
 )
- in (LrTable.NT 113,(result,INFIXR1left,vid_list11right),rest671) end
-| (320,(_,(MlyValue.vid_list1 vid_list11,_,vid_list1right as 
+ in (LrTable.NT 121,(result,INFIXR1left,vid_list11right),rest671) end
+| (368,(_,(MlyValue.vid_list1 vid_list11,_,vid_list1right as 
 vid_list11right))::(_,(_,NONFIXleft as NONFIX1left,_))::rest671) => 
 let val result=MlyValue.spec1'(fn _ => let val vid_list1 as vid_list11
 =vid_list11 ()
@@ -20157,37 +21809,18 @@ let val result=MlyValue.spec1'(fn _ => let val vid_list1 as vid_list11
 					  vid_list1) 
 ) end
 )
- in (LrTable.NT 113,(result,NONFIX1left,vid_list11right),rest671) end
-| (321,(_,(MlyValue.typdesc typdesc1,_,typdesc1right))::(_,(_,
+ in (LrTable.NT 121,(result,NONFIX1left,vid_list11right),rest671) end
+| (369,(_,(MlyValue.typdesc typdesc1,_,typdesc1right))::(_,(_,
 WITHTYPE1left,_))::rest671) => let val result=
 MlyValue.WITHTYPE_typdesc_opt(fn _ => let val typdesc as typdesc1=
 typdesc1 ()
  in ( SOME typdesc ) end
 )
- in (LrTable.NT 114,(result,WITHTYPE1left,typdesc1right),rest671) end
-| (322,rest671) => let val result=MlyValue.WITHTYPE_typdesc_opt(fn _
+ in (LrTable.NT 122,(result,WITHTYPE1left,typdesc1right),rest671) end
+| (370,rest671) => let val result=MlyValue.WITHTYPE_typdesc_opt(fn _
  => ( NONE ))
- in (LrTable.NT 114,(result,defaultPos,defaultPos),rest671) end
-| (323,(_,(MlyValue.longsigid_list2 longsigid_list21,_,
-longsigid_list21right))::(_,(MlyValue.longsigid longsigid1,
-longsigid1left,_))::rest671) => let val result=
-MlyValue.longsigid_list2(fn _ => let val longsigid as longsigid1=
-longsigid1 ()
-val longsigid_list2 as longsigid_list21=longsigid_list21 ()
- in ( longsigid::longsigid_list2 ) end
-)
- in (LrTable.NT 115,(result,longsigid1left,longsigid_list21right),
-rest671) end
-| (324,(_,(MlyValue.longsigid longsigid2,_,longsigid2right))::(_,(
-MlyValue.longsigid longsigid1,longsigid1left,_))::rest671) => let val 
-result=MlyValue.longsigid_list2(fn _ => let val longsigid1=longsigid1 
-()
-val longsigid2=longsigid2 ()
- in ( longsigid1::longsigid2::[] ) end
-)
- in (LrTable.NT 115,(result,longsigid1left,longsigid2right),rest671)
- end
-| (325,(_,(MlyValue.longtycon_EQUALS_list1 longtycon_EQUALS_list11,_,
+ in (LrTable.NT 122,(result,defaultPos,defaultPos),rest671) end
+| (371,(_,(MlyValue.longtycon_EQUALS_list1 longtycon_EQUALS_list11,_,
 longtycon_EQUALS_list11right))::_::(_,(MlyValue.longtycon longtycon1,
 longtycon1left,_))::rest671) => let val result=
 MlyValue.longtycon_EQUALS_list1(fn _ => let val longtycon as 
@@ -20196,17 +21829,17 @@ val longtycon_EQUALS_list1 as longtycon_EQUALS_list11=
 longtycon_EQUALS_list11 ()
  in ( longtycon::longtycon_EQUALS_list1 ) end
 )
- in (LrTable.NT 116,(result,longtycon1left,
+ in (LrTable.NT 123,(result,longtycon1left,
 longtycon_EQUALS_list11right),rest671) end
-| (326,(_,(MlyValue.longtycon longtycon1,longtycon1left,
+| (372,(_,(MlyValue.longtycon longtycon1,longtycon1left,
 longtycon1right))::rest671) => let val result=
 MlyValue.longtycon_EQUALS_list1(fn _ => let val longtycon as 
 longtycon1=longtycon1 ()
  in ( longtycon::[] ) end
 )
- in (LrTable.NT 116,(result,longtycon1left,longtycon1right),rest671)
+ in (LrTable.NT 123,(result,longtycon1left,longtycon1right),rest671)
  end
-| (327,(_,(MlyValue.longtycon_EQUALS_list1 longtycon_EQUALS_list11,_,
+| (373,(_,(MlyValue.longtycon_EQUALS_list1 longtycon_EQUALS_list11,_,
 longtycon_EQUALS_list11right))::_::(_,(MlyValue.longtycon longtycon1,
 longtycon1left,_))::rest671) => let val result=
 MlyValue.longtycon_EQUALS_list2(fn _ => let val longtycon as 
@@ -20215,9 +21848,9 @@ val longtycon_EQUALS_list1 as longtycon_EQUALS_list11=
 longtycon_EQUALS_list11 ()
  in ( longtycon::longtycon_EQUALS_list1 ) end
 )
- in (LrTable.NT 117,(result,longtycon1left,
+ in (LrTable.NT 124,(result,longtycon1left,
 longtycon_EQUALS_list11right),rest671) end
-| (328,(_,(MlyValue.longsigid_EQUALS_list1 longsigid_EQUALS_list11,_,
+| (374,(_,(MlyValue.longsigid_EQUALS_list1 longsigid_EQUALS_list11,_,
 longsigid_EQUALS_list11right))::_::(_,(MlyValue.longsigid longsigid1,
 longsigid1left,_))::rest671) => let val result=
 MlyValue.longsigid_EQUALS_list1(fn _ => let val longsigid as 
@@ -20226,17 +21859,17 @@ val longsigid_EQUALS_list1 as longsigid_EQUALS_list11=
 longsigid_EQUALS_list11 ()
  in ( longsigid::longsigid_EQUALS_list1 ) end
 )
- in (LrTable.NT 118,(result,longsigid1left,
+ in (LrTable.NT 125,(result,longsigid1left,
 longsigid_EQUALS_list11right),rest671) end
-| (329,(_,(MlyValue.longsigid longsigid1,longsigid1left,
+| (375,(_,(MlyValue.longsigid longsigid1,longsigid1left,
 longsigid1right))::rest671) => let val result=
 MlyValue.longsigid_EQUALS_list1(fn _ => let val longsigid as 
 longsigid1=longsigid1 ()
  in ( longsigid::[] ) end
 )
- in (LrTable.NT 118,(result,longsigid1left,longsigid1right),rest671)
+ in (LrTable.NT 125,(result,longsigid1left,longsigid1right),rest671)
  end
-| (330,(_,(MlyValue.longsigid_EQUALS_list1 longsigid_EQUALS_list11,_,
+| (376,(_,(MlyValue.longsigid_EQUALS_list1 longsigid_EQUALS_list11,_,
 longsigid_EQUALS_list11right))::_::(_,(MlyValue.longsigid longsigid1,
 longsigid1left,_))::rest671) => let val result=
 MlyValue.longsigid_EQUALS_list2(fn _ => let val longsigid as 
@@ -20245,9 +21878,9 @@ val longsigid_EQUALS_list1 as longsigid_EQUALS_list11=
 longsigid_EQUALS_list11 ()
  in ( longsigid::longsigid_EQUALS_list1 ) end
 )
- in (LrTable.NT 119,(result,longsigid1left,
+ in (LrTable.NT 126,(result,longsigid1left,
 longsigid_EQUALS_list11right),rest671) end
-| (331,(_,(MlyValue.longstrid_EQUALS_list1 longstrid_EQUALS_list11,_,
+| (377,(_,(MlyValue.longstrid_EQUALS_list1 longstrid_EQUALS_list11,_,
 longstrid_EQUALS_list11right))::_::(_,(MlyValue.longstrid longstrid1,
 longstrid1left,_))::rest671) => let val result=
 MlyValue.longstrid_EQUALS_list1(fn _ => let val longstrid as 
@@ -20256,17 +21889,17 @@ val longstrid_EQUALS_list1 as longstrid_EQUALS_list11=
 longstrid_EQUALS_list11 ()
  in ( longstrid::longstrid_EQUALS_list1 ) end
 )
- in (LrTable.NT 120,(result,longstrid1left,
+ in (LrTable.NT 127,(result,longstrid1left,
 longstrid_EQUALS_list11right),rest671) end
-| (332,(_,(MlyValue.longstrid longstrid1,longstrid1left,
+| (378,(_,(MlyValue.longstrid longstrid1,longstrid1left,
 longstrid1right))::rest671) => let val result=
 MlyValue.longstrid_EQUALS_list1(fn _ => let val longstrid as 
 longstrid1=longstrid1 ()
  in ( longstrid::[] ) end
 )
- in (LrTable.NT 120,(result,longstrid1left,longstrid1right),rest671)
+ in (LrTable.NT 127,(result,longstrid1left,longstrid1right),rest671)
  end
-| (333,(_,(MlyValue.longstrid_EQUALS_list1 longstrid_EQUALS_list11,_,
+| (379,(_,(MlyValue.longstrid_EQUALS_list1 longstrid_EQUALS_list11,_,
 longstrid_EQUALS_list11right))::_::(_,(MlyValue.longstrid longstrid1,
 longstrid1left,_))::rest671) => let val result=
 MlyValue.longstrid_EQUALS_list2(fn _ => let val longstrid as 
@@ -20275,9 +21908,9 @@ val longstrid_EQUALS_list1 as longstrid_EQUALS_list11=
 longstrid_EQUALS_list11 ()
  in ( longstrid::longstrid_EQUALS_list1 ) end
 )
- in (LrTable.NT 121,(result,longstrid1left,
+ in (LrTable.NT 128,(result,longstrid1left,
 longstrid_EQUALS_list11right),rest671) end
-| (334,(_,(MlyValue.AND_valdesc_opt AND_valdesc_opt1,_,
+| (380,(_,(MlyValue.AND_valdesc_opt AND_valdesc_opt1,_,
 AND_valdesc_optright as AND_valdesc_opt1right))::(_,(MlyValue.ty ty1,_
 ,_))::_::(_,(MlyValue.vid vid1,_,_))::(_,(MlyValue.OP_opt OP_opt1,
 OP_optleft as OP_opt1left,_))::rest671) => let val result=
@@ -20286,22 +21919,39 @@ val vid as vid1=vid1 ()
 val ty as ty1=ty1 ()
 val AND_valdesc_opt as AND_valdesc_opt1=AND_valdesc_opt1 ()
  in (
- ValDesc(I(OP_optleft,AND_valdesc_optright),
+ NEWValDesc(I(OP_optleft,AND_valdesc_optright),
 				  OP_opt, vid, ty, AND_valdesc_opt) 
 ) end
 )
- in (LrTable.NT 122,(result,OP_opt1left,AND_valdesc_opt1right),rest671
+ in (LrTable.NT 129,(result,OP_opt1left,AND_valdesc_opt1right),rest671
 ) end
-| (335,(_,(MlyValue.valdesc valdesc1,_,valdesc1right))::(_,(_,AND1left
+| (381,(_,(MlyValue.AND_valdesc_opt AND_valdesc_opt1,_,
+AND_valdesc_optright as AND_valdesc_opt1right))::(_,(MlyValue.longvid 
+longvid1,_,_))::(_,(MlyValue.OP_opt OP_opt2,_,_))::_::(_,(MlyValue.vid
+ vid1,_,_))::(_,(MlyValue.OP_opt OP_opt1,OP_opt1left,_))::rest671) => 
+let val result=MlyValue.valdesc(fn _ => let val OP_opt1=OP_opt1 ()
+val vid as vid1=vid1 ()
+val OP_opt2=OP_opt2 ()
+val longvid as longvid1=longvid1 ()
+val AND_valdesc_opt as AND_valdesc_opt1=AND_valdesc_opt1 ()
+ in (
+ EQUALValDesc(I(OP_opt1left,AND_valdesc_optright),
+				       OP_opt1, vid,
+				       OP_opt2, longvid, AND_valdesc_opt) 
+) end
+)
+ in (LrTable.NT 129,(result,OP_opt1left,AND_valdesc_opt1right),rest671
+) end
+| (382,(_,(MlyValue.valdesc valdesc1,_,valdesc1right))::(_,(_,AND1left
 ,_))::rest671) => let val result=MlyValue.AND_valdesc_opt(fn _ => let 
 val valdesc as valdesc1=valdesc1 ()
  in ( SOME valdesc ) end
 )
- in (LrTable.NT 123,(result,AND1left,valdesc1right),rest671) end
-| (336,rest671) => let val result=MlyValue.AND_valdesc_opt(fn _ => (
+ in (LrTable.NT 130,(result,AND1left,valdesc1right),rest671) end
+| (383,rest671) => let val result=MlyValue.AND_valdesc_opt(fn _ => (
  NONE ))
- in (LrTable.NT 123,(result,defaultPos,defaultPos),rest671) end
-| (337,(_,(MlyValue.AND_typdesc_opt AND_typdesc_opt1,_,
+ in (LrTable.NT 130,(result,defaultPos,defaultPos),rest671) end
+| (384,(_,(MlyValue.AND_typdesc_opt AND_typdesc_opt1,_,
 AND_typdesc_optright as AND_typdesc_opt1right))::(_,(MlyValue.tycon 
 tycon1,_,_))::(_,(MlyValue.tyvarseq tyvarseq1,tyvarseqleft as 
 tyvarseq1left,_))::rest671) => let val result=MlyValue.typdesc(fn _
@@ -20313,9 +21963,9 @@ val AND_typdesc_opt as AND_typdesc_opt1=AND_typdesc_opt1 ()
 				     tyvarseq, tycon, AND_typdesc_opt) 
 ) end
 )
- in (LrTable.NT 124,(result,tyvarseq1left,AND_typdesc_opt1right),
+ in (LrTable.NT 131,(result,tyvarseq1left,AND_typdesc_opt1right),
 rest671) end
-| (338,(_,(MlyValue.AND_typdesc_opt AND_typdesc_opt1,_,
+| (385,(_,(MlyValue.AND_typdesc_opt AND_typdesc_opt1,_,
 AND_typdesc_optright as AND_typdesc_opt1right))::(_,(MlyValue.ty ty1,_
 ,_))::_::(_,(MlyValue.tycon tycon1,_,_))::(_,(MlyValue.tyvarseq 
 tyvarseq1,tyvarseqleft as tyvarseq1left,_))::rest671) => let val 
@@ -20329,18 +21979,18 @@ val AND_typdesc_opt as AND_typdesc_opt1=AND_typdesc_opt1 ()
 				       tyvarseq, tycon, ty, AND_typdesc_opt) 
 ) end
 )
- in (LrTable.NT 124,(result,tyvarseq1left,AND_typdesc_opt1right),
+ in (LrTable.NT 131,(result,tyvarseq1left,AND_typdesc_opt1right),
 rest671) end
-| (339,(_,(MlyValue.typdesc typdesc1,_,typdesc1right))::(_,(_,AND1left
+| (386,(_,(MlyValue.typdesc typdesc1,_,typdesc1right))::(_,(_,AND1left
 ,_))::rest671) => let val result=MlyValue.AND_typdesc_opt(fn _ => let 
 val typdesc as typdesc1=typdesc1 ()
  in ( SOME typdesc ) end
 )
- in (LrTable.NT 125,(result,AND1left,typdesc1right),rest671) end
-| (340,rest671) => let val result=MlyValue.AND_typdesc_opt(fn _ => (
+ in (LrTable.NT 132,(result,AND1left,typdesc1right),rest671) end
+| (387,rest671) => let val result=MlyValue.AND_typdesc_opt(fn _ => (
  NONE ))
- in (LrTable.NT 125,(result,defaultPos,defaultPos),rest671) end
-| (341,(_,(MlyValue.AND_datdesc_opt AND_datdesc_opt1,_,
+ in (LrTable.NT 132,(result,defaultPos,defaultPos),rest671) end
+| (388,(_,(MlyValue.AND_datdesc_opt AND_datdesc_opt1,_,
 AND_datdesc_optright as AND_datdesc_opt1right))::(_,(MlyValue.tycon 
 tycon1,_,_))::(_,(MlyValue.tyvarseq tyvarseq1,tyvarseqleft as 
 tyvarseq1left,_))::rest671) => let val result=MlyValue.datdesc(fn _
@@ -20352,9 +22002,9 @@ val AND_datdesc_opt as AND_datdesc_opt1=AND_datdesc_opt1 ()
 				      tyvarseq, tycon, AND_datdesc_opt) 
 ) end
 )
- in (LrTable.NT 126,(result,tyvarseq1left,AND_datdesc_opt1right),
+ in (LrTable.NT 133,(result,tyvarseq1left,AND_datdesc_opt1right),
 rest671) end
-| (342,(_,(MlyValue.AND_datdesc_opt AND_datdesc_opt1,_,
+| (389,(_,(MlyValue.AND_datdesc_opt AND_datdesc_opt1,_,
 AND_datdesc_optright as AND_datdesc_opt1right))::(_,(MlyValue.condesc 
 condesc1,_,_))::_::(_,(MlyValue.tycon tycon1,_,_))::(_,(
 MlyValue.tyvarseq tyvarseq1,tyvarseqleft as tyvarseq1left,_))::rest671
@@ -20368,9 +22018,9 @@ val AND_datdesc_opt as AND_datdesc_opt1=AND_datdesc_opt1 ()
 				     tyvarseq, tycon, condesc, AND_datdesc_opt)
 ) end
 )
- in (LrTable.NT 126,(result,tyvarseq1left,AND_datdesc_opt1right),
+ in (LrTable.NT 133,(result,tyvarseq1left,AND_datdesc_opt1right),
 rest671) end
-| (343,(_,(MlyValue.AND_datdesc_opt AND_datdesc_opt1,_,
+| (390,(_,(MlyValue.AND_datdesc_opt AND_datdesc_opt1,_,
 AND_datdesc_optright as AND_datdesc_opt1right))::(_,(MlyValue.tycon 
 tycon1,tyconleft as tycon1left,_))::rest671) => let val result=
 MlyValue.datdesc0(fn _ => let val tycon as tycon1=tycon1 ()
@@ -20381,9 +22031,9 @@ val AND_datdesc_opt as AND_datdesc_opt1=AND_datdesc_opt1 ()
 				      tycon, AND_datdesc_opt) 
 ) end
 )
- in (LrTable.NT 127,(result,tycon1left,AND_datdesc_opt1right),rest671)
+ in (LrTable.NT 134,(result,tycon1left,AND_datdesc_opt1right),rest671)
  end
-| (344,(_,(MlyValue.AND_datdesc_opt AND_datdesc_opt1,_,
+| (391,(_,(MlyValue.AND_datdesc_opt AND_datdesc_opt1,_,
 AND_datdesc_optright as AND_datdesc_opt1right))::(_,(MlyValue.condesc 
 condesc1,_,_))::_::(_,(MlyValue.tycon tycon1,tyconleft as tycon1left,_
 ))::rest671) => let val result=MlyValue.datdesc0(fn _ => let val tycon
@@ -20396,9 +22046,9 @@ val AND_datdesc_opt as AND_datdesc_opt1=AND_datdesc_opt1 ()
 					tycon, condesc, AND_datdesc_opt) 
 ) end
 )
- in (LrTable.NT 127,(result,tycon1left,AND_datdesc_opt1right),rest671)
+ in (LrTable.NT 134,(result,tycon1left,AND_datdesc_opt1right),rest671)
  end
-| (345,(_,(MlyValue.AND_datdesc_opt AND_datdesc_opt1,_,
+| (392,(_,(MlyValue.AND_datdesc_opt AND_datdesc_opt1,_,
 AND_datdesc_optright as AND_datdesc_opt1right))::(_,(MlyValue.tycon 
 tycon1,_,_))::(_,(MlyValue.tyvarseq1 tyvarseq11,tyvarseq1left as 
 tyvarseq11left,_))::rest671) => let val result=MlyValue.datdesc1(fn _
@@ -20410,9 +22060,9 @@ val AND_datdesc_opt as AND_datdesc_opt1=AND_datdesc_opt1 ()
 				      tyvarseq1, tycon, AND_datdesc_opt) 
 ) end
 )
- in (LrTable.NT 128,(result,tyvarseq11left,AND_datdesc_opt1right),
+ in (LrTable.NT 135,(result,tyvarseq11left,AND_datdesc_opt1right),
 rest671) end
-| (346,(_,(MlyValue.AND_datdesc_opt AND_datdesc_opt1,_,
+| (393,(_,(MlyValue.AND_datdesc_opt AND_datdesc_opt1,_,
 AND_datdesc_optright as AND_datdesc_opt1right))::(_,(MlyValue.condesc 
 condesc1,_,_))::_::(_,(MlyValue.tycon tycon1,_,_))::(_,(
 MlyValue.tyvarseq1 tyvarseq11,tyvarseq1left as tyvarseq11left,_))::
@@ -20427,18 +22077,18 @@ val AND_datdesc_opt as AND_datdesc_opt1=AND_datdesc_opt1 ()
 					AND_datdesc_opt) 
 ) end
 )
- in (LrTable.NT 128,(result,tyvarseq11left,AND_datdesc_opt1right),
+ in (LrTable.NT 135,(result,tyvarseq11left,AND_datdesc_opt1right),
 rest671) end
-| (347,(_,(MlyValue.datdesc datdesc1,_,datdesc1right))::(_,(_,AND1left
+| (394,(_,(MlyValue.datdesc datdesc1,_,datdesc1right))::(_,(_,AND1left
 ,_))::rest671) => let val result=MlyValue.AND_datdesc_opt(fn _ => let 
 val datdesc as datdesc1=datdesc1 ()
  in ( SOME datdesc ) end
 )
- in (LrTable.NT 129,(result,AND1left,datdesc1right),rest671) end
-| (348,rest671) => let val result=MlyValue.AND_datdesc_opt(fn _ => (
+ in (LrTable.NT 136,(result,AND1left,datdesc1right),rest671) end
+| (395,rest671) => let val result=MlyValue.AND_datdesc_opt(fn _ => (
  NONE ))
- in (LrTable.NT 129,(result,defaultPos,defaultPos),rest671) end
-| (349,(_,(MlyValue.BAR_condesc_opt BAR_condesc_opt1,_,
+ in (LrTable.NT 136,(result,defaultPos,defaultPos),rest671) end
+| (396,(_,(MlyValue.BAR_condesc_opt BAR_condesc_opt1,_,
 BAR_condesc_optright as BAR_condesc_opt1right))::(_,(
 MlyValue.OF_ty_opt OF_ty_opt1,_,_))::(_,(MlyValue.vid vid1,_,_))::(_,(
 MlyValue.OP_opt OP_opt1,OP_optleft as OP_opt1left,_))::rest671) => 
@@ -20452,18 +22102,18 @@ val BAR_condesc_opt as BAR_condesc_opt1=BAR_condesc_opt1 ()
 				  OP_opt, vid, OF_ty_opt, BAR_condesc_opt) 
 ) end
 )
- in (LrTable.NT 130,(result,OP_opt1left,BAR_condesc_opt1right),rest671
+ in (LrTable.NT 137,(result,OP_opt1left,BAR_condesc_opt1right),rest671
 ) end
-| (350,(_,(MlyValue.condesc condesc1,_,condesc1right))::(_,(_,BAR1left
+| (397,(_,(MlyValue.condesc condesc1,_,condesc1right))::(_,(_,BAR1left
 ,_))::rest671) => let val result=MlyValue.BAR_condesc_opt(fn _ => let 
 val condesc as condesc1=condesc1 ()
  in ( SOME condesc ) end
 )
- in (LrTable.NT 131,(result,BAR1left,condesc1right),rest671) end
-| (351,rest671) => let val result=MlyValue.BAR_condesc_opt(fn _ => (
+ in (LrTable.NT 138,(result,BAR1left,condesc1right),rest671) end
+| (398,rest671) => let val result=MlyValue.BAR_condesc_opt(fn _ => (
  NONE ))
- in (LrTable.NT 131,(result,defaultPos,defaultPos),rest671) end
-| (352,(_,(MlyValue.AND_dcondesc_opt AND_dcondesc_opt1,_,
+ in (LrTable.NT 138,(result,defaultPos,defaultPos),rest671) end
+| (399,(_,(MlyValue.AND_dcondesc_opt AND_dcondesc_opt1,_,
 AND_dcondesc_optright as AND_dcondesc_opt1right))::(_,(
 MlyValue.longtycon longtycon1,_,_))::(_,(MlyValue.tyvarseq tyvarseq1,_
 ,_))::_::(_,(MlyValue.OF_ty_opt OF_ty_opt1,_,_))::(_,(MlyValue.vid 
@@ -20481,9 +22131,9 @@ val AND_dcondesc_opt as AND_dcondesc_opt1=AND_dcondesc_opt1 ()
 				      tyvarseq, longtycon, AND_dcondesc_opt) 
 ) end
 )
- in (LrTable.NT 132,(result,OP_opt1left,AND_dcondesc_opt1right),
+ in (LrTable.NT 139,(result,OP_opt1left,AND_dcondesc_opt1right),
 rest671) end
-| (353,(_,(MlyValue.AND_dcondesc_opt AND_dcondesc_opt1,_,
+| (400,(_,(MlyValue.AND_dcondesc_opt AND_dcondesc_opt1,_,
 AND_dcondesc_optright as AND_dcondesc_opt1right))::(_,(
 MlyValue.longvid longvid1,_,_))::(_,(MlyValue.OP_opt OP_opt2,_,_))::_
 ::(_,(MlyValue.vid vid1,_,_))::(_,(MlyValue.OP_opt OP_opt1,OP_opt1left
@@ -20495,22 +22145,22 @@ val longvid as longvid1=longvid1 ()
 val AND_dcondesc_opt as AND_dcondesc_opt1=AND_dcondesc_opt1 ()
  in (
  EQUALDconDesc(I(OP_opt1left,AND_dcondesc_optright),
-					OP_opt1, vid, OP_opt2, longvid,
-					AND_dcondesc_opt) 
+					OP_opt1, vid,
+					OP_opt2, longvid, AND_dcondesc_opt) 
 ) end
 )
- in (LrTable.NT 132,(result,OP_opt1left,AND_dcondesc_opt1right),
+ in (LrTable.NT 139,(result,OP_opt1left,AND_dcondesc_opt1right),
 rest671) end
-| (354,(_,(MlyValue.dcondesc dcondesc1,_,dcondesc1right))::(_,(_,
+| (401,(_,(MlyValue.dcondesc dcondesc1,_,dcondesc1right))::(_,(_,
 AND1left,_))::rest671) => let val result=MlyValue.AND_dcondesc_opt(fn 
 _ => let val dcondesc as dcondesc1=dcondesc1 ()
  in ( SOME dcondesc ) end
 )
- in (LrTable.NT 133,(result,AND1left,dcondesc1right),rest671) end
-| (355,rest671) => let val result=MlyValue.AND_dcondesc_opt(fn _ => (
+ in (LrTable.NT 140,(result,AND1left,dcondesc1right),rest671) end
+| (402,rest671) => let val result=MlyValue.AND_dcondesc_opt(fn _ => (
  NONE ))
- in (LrTable.NT 133,(result,defaultPos,defaultPos),rest671) end
-| (356,(_,(MlyValue.AND_exdesc_opt AND_exdesc_opt1,_,
+ in (LrTable.NT 140,(result,defaultPos,defaultPos),rest671) end
+| (403,(_,(MlyValue.AND_exdesc_opt AND_exdesc_opt1,_,
 AND_exdesc_optright as AND_exdesc_opt1right))::(_,(MlyValue.OF_ty_opt 
 OF_ty_opt1,_,_))::(_,(MlyValue.vid vid1,_,_))::(_,(MlyValue.OP_opt 
 OP_opt1,OP_optleft as OP_opt1left,_))::rest671) => let val result=
@@ -20523,9 +22173,9 @@ val AND_exdesc_opt as AND_exdesc_opt1=AND_exdesc_opt1 ()
 	  			    OP_opt, vid, OF_ty_opt, AND_exdesc_opt) 
 ) end
 )
- in (LrTable.NT 134,(result,OP_opt1left,AND_exdesc_opt1right),rest671)
+ in (LrTable.NT 141,(result,OP_opt1left,AND_exdesc_opt1right),rest671)
  end
-| (357,(_,(MlyValue.AND_exdesc_opt AND_exdesc_opt1,_,
+| (404,(_,(MlyValue.AND_exdesc_opt AND_exdesc_opt1,_,
 AND_exdesc_optright as AND_exdesc_opt1right))::(_,(MlyValue.longvid 
 longvid1,_,_))::(_,(MlyValue.OP_opt OP_opt2,_,_))::_::(_,(MlyValue.vid
  vid1,_,_))::(_,(MlyValue.OP_opt OP_opt1,OP_opt1left,_))::rest671) => 
@@ -20536,22 +22186,22 @@ val longvid as longvid1=longvid1 ()
 val AND_exdesc_opt as AND_exdesc_opt1=AND_exdesc_opt1 ()
  in (
  EQUALExDesc(I(OP_opt1left,AND_exdesc_optright),
-				      OP_opt1, vid, OP_opt2, longvid,
-				      AND_exdesc_opt) 
+				      OP_opt1, vid,
+				      OP_opt2, longvid, AND_exdesc_opt) 
 ) end
 )
- in (LrTable.NT 134,(result,OP_opt1left,AND_exdesc_opt1right),rest671)
+ in (LrTable.NT 141,(result,OP_opt1left,AND_exdesc_opt1right),rest671)
  end
-| (358,(_,(MlyValue.exdesc exdesc1,_,exdesc1right))::(_,(_,AND1left,_)
+| (405,(_,(MlyValue.exdesc exdesc1,_,exdesc1right))::(_,(_,AND1left,_)
 )::rest671) => let val result=MlyValue.AND_exdesc_opt(fn _ => let val 
 exdesc as exdesc1=exdesc1 ()
  in ( SOME exdesc ) end
 )
- in (LrTable.NT 135,(result,AND1left,exdesc1right),rest671) end
-| (359,rest671) => let val result=MlyValue.AND_exdesc_opt(fn _ => (
+ in (LrTable.NT 142,(result,AND1left,exdesc1right),rest671) end
+| (406,rest671) => let val result=MlyValue.AND_exdesc_opt(fn _ => (
  NONE ))
- in (LrTable.NT 135,(result,defaultPos,defaultPos),rest671) end
-| (360,(_,(MlyValue.sigexp__AND_strdesc_opt sigexp__AND_strdesc_opt1,_
+ in (LrTable.NT 142,(result,defaultPos,defaultPos),rest671) end
+| (407,(_,(MlyValue.sigexp__AND_strdesc_opt sigexp__AND_strdesc_opt1,_
 ,sigexp__AND_strdesc_optright as sigexp__AND_strdesc_opt1right))::_::(
 _,(MlyValue.strid strid1,stridleft as strid1left,_))::rest671) => let 
 val result=MlyValue.strdesc(fn _ => let val strid as strid1=strid1 ()
@@ -20563,9 +22213,9 @@ sigexp__AND_strdesc_opt1 ()
 				     #2 sigexp__AND_strdesc_opt) 
 ) end
 )
- in (LrTable.NT 136,(result,strid1left,sigexp__AND_strdesc_opt1right),
+ in (LrTable.NT 143,(result,strid1left,sigexp__AND_strdesc_opt1right),
 rest671) end
-| (361,(_,(MlyValue.AND_strdesc_opt AND_strdesc_opt1,_,
+| (408,(_,(MlyValue.AND_strdesc_opt AND_strdesc_opt1,_,
 AND_strdesc_optright as AND_strdesc_opt1right))::(_,(
 MlyValue.longstrid longstrid1,_,_))::_::(_,(MlyValue.COLON_sigexp_opt 
 COLON_sigexp_opt1,_,_))::(_,(MlyValue.strid strid1,stridleft as 
@@ -20580,319 +22230,836 @@ val AND_strdesc_opt as AND_strdesc_opt1=AND_strdesc_opt1 ()
 				       AND_strdesc_opt) 
 ) end
 )
- in (LrTable.NT 136,(result,strid1left,AND_strdesc_opt1right),rest671)
+ in (LrTable.NT 143,(result,strid1left,AND_strdesc_opt1right),rest671)
  end
-| (362,(_,(MlyValue.strdesc strdesc1,_,strdesc1right))::(_,(_,AND1left
+| (409,(_,(MlyValue.strdesc strdesc1,_,strdesc1right))::(_,(_,AND1left
 ,_))::rest671) => let val result=MlyValue.AND_strdesc_opt(fn _ => let 
 val strdesc as strdesc1=strdesc1 ()
  in ( SOME strdesc ) end
 )
- in (LrTable.NT 137,(result,AND1left,strdesc1right),rest671) end
-| (363,rest671) => let val result=MlyValue.AND_strdesc_opt(fn _ => (
+ in (LrTable.NT 144,(result,AND1left,strdesc1right),rest671) end
+| (410,rest671) => let val result=MlyValue.AND_strdesc_opt(fn _ => (
  NONE ))
- in (LrTable.NT 137,(result,defaultPos,defaultPos),rest671) end
-| (364,(_,(MlyValue.AND_strdesc_opt AND_strdesc_opt1,_,
+ in (LrTable.NT 144,(result,defaultPos,defaultPos),rest671) end
+| (411,(_,(MlyValue.AND_strdesc_opt AND_strdesc_opt1,_,
 AND_strdesc_opt1right))::(_,(MlyValue.sigexp' sigexp'1,sigexp'1left,_)
 )::rest671) => let val result=MlyValue.sigexp__AND_strdesc_opt(fn _
  => let val sigexp' as sigexp'1=sigexp'1 ()
 val AND_strdesc_opt as AND_strdesc_opt1=AND_strdesc_opt1 ()
  in ( ( sigexp', AND_strdesc_opt ) ) end
 )
- in (LrTable.NT 138,(result,sigexp'1left,AND_strdesc_opt1right),
+ in (LrTable.NT 145,(result,sigexp'1left,AND_strdesc_opt1right),
 rest671) end
-| (365,(_,(MlyValue.tyreadesc__AND_strdesc_opt 
-tyreadesc__AND_strdesc_opt1,_,tyreadesc__AND_strdesc_optright as 
-tyreadesc__AND_strdesc_opt1right))::_::(_,(MlyValue.sigexp sigexp1,
-sigexpleft as sigexp1left,_))::rest671) => let val result=
-MlyValue.sigexp__AND_strdesc_opt(fn _ => let val sigexp as sigexp1=
-sigexp1 ()
-val tyreadesc__AND_strdesc_opt as tyreadesc__AND_strdesc_opt1=
-tyreadesc__AND_strdesc_opt1 ()
+| (412,(_,(MlyValue.sigexp__AND_strdesc_opt sigexp__AND_strdesc_opt1,_
+,sigexp__AND_strdesc_optright as sigexp__AND_strdesc_opt1right))::_::(
+_,(MlyValue.strpat strpat1,_,_))::(_,(_,FCTleft as FCT1left,_))::
+rest671) => let val result=MlyValue.sigexp__AND_strdesc_opt(fn _ => 
+let val strpat as strpat1=strpat1 ()
+val sigexp__AND_strdesc_opt as sigexp__AND_strdesc_opt1=
+sigexp__AND_strdesc_opt1 ()
  in (
- ( WHERETYPESigExp(I(sigexpleft,
-					      tyreadesc__AND_strdesc_optright),
-					   sigexp,
-					   #1 tyreadesc__AND_strdesc_opt),
-			    #2 tyreadesc__AND_strdesc_opt ) 
+ ( FCTSigExp(I(FCTleft,sigexp__AND_strdesc_optright),
+				      strpat, #1 sigexp__AND_strdesc_opt)
+			  , #2 sigexp__AND_strdesc_opt ) 
 ) end
 )
- in (LrTable.NT 138,(result,sigexp1left,
-tyreadesc__AND_strdesc_opt1right),rest671) end
-| (366,(_,(MlyValue.AND_tyreadesc_opt__AND_strdesc_opt 
-AND_tyreadesc_opt__AND_strdesc_opt1,_,
-AND_tyreadesc_opt__AND_strdesc_optright as 
-AND_tyreadesc_opt__AND_strdesc_opt1right))::(_,(MlyValue.ty ty1,_,_))
-::_::(_,(MlyValue.longtycon longtycon1,_,_))::(_,(MlyValue.tyvarseq 
-tyvarseq1,_,_))::(_,(_,TYPEleft as TYPE1left,_))::rest671) => let val 
-result=MlyValue.tyreadesc__AND_strdesc_opt(fn _ => let val tyvarseq
- as tyvarseq1=tyvarseq1 ()
+ in (LrTable.NT 145,(result,FCT1left,sigexp__AND_strdesc_opt1right),
+rest671) end
+| (413,(_,(MlyValue.rea__AND_strdesc_opt rea__AND_strdesc_opt1,_,
+rea__AND_strdesc_optright as rea__AND_strdesc_opt1right))::_::(_,(
+MlyValue.sigexp sigexp1,sigexpleft as sigexp1left,_))::rest671) => 
+let val result=MlyValue.sigexp__AND_strdesc_opt(fn _ => let val sigexp
+ as sigexp1=sigexp1 ()
+val rea__AND_strdesc_opt as rea__AND_strdesc_opt1=
+rea__AND_strdesc_opt1 ()
+ in (
+ ( WHEREREASigExp(I(sigexpleft,
+					     rea__AND_strdesc_optright),
+					   sigexp, #1 rea__AND_strdesc_opt)
+			  , #2 rea__AND_strdesc_opt ) 
+) end
+)
+ in (LrTable.NT 145,(result,sigexp1left,rea__AND_strdesc_opt1right),
+rest671) end
+| (414,(_,(MlyValue.AND_rea_opt__AND_strdesc_opt 
+AND_rea_opt__AND_strdesc_opt1,_,AND_rea_opt__AND_strdesc_optright as 
+AND_rea_opt__AND_strdesc_opt1right))::(_,(MlyValue.longvid longvid2,_,
+_))::(_,(MlyValue.OP_opt OP_opt2,_,_))::_::(_,(MlyValue.longvid 
+longvid1,_,_))::(_,(MlyValue.OP_opt OP_opt1,_,_))::(_,(_,VALleft as 
+VAL1left,_))::rest671) => let val result=MlyValue.rea__AND_strdesc_opt
+(fn _ => let val OP_opt1=OP_opt1 ()
+val longvid1=longvid1 ()
+val OP_opt2=OP_opt2 ()
+val longvid2=longvid2 ()
+val AND_rea_opt__AND_strdesc_opt as AND_rea_opt__AND_strdesc_opt1=
+AND_rea_opt__AND_strdesc_opt1 ()
+ in (
+ ( VALRea(I(VALleft,AND_rea_opt__AND_strdesc_optright),
+				   OP_opt1, longvid1, OP_opt2, longvid2,
+				   #1 AND_rea_opt__AND_strdesc_opt)
+			  , #2 AND_rea_opt__AND_strdesc_opt ) 
+) end
+)
+ in (LrTable.NT 146,(result,VAL1left,
+AND_rea_opt__AND_strdesc_opt1right),rest671) end
+| (415,(_,(MlyValue.AND_rea_opt__AND_strdesc_opt 
+AND_rea_opt__AND_strdesc_opt1,_,AND_rea_opt__AND_strdesc_optright as 
+AND_rea_opt__AND_strdesc_opt1right))::(_,(MlyValue.longvid longvid2,_,
+_))::(_,(MlyValue.OP_opt OP_opt2,_,_))::_::(_,(MlyValue.longvid 
+longvid1,_,_))::(_,(MlyValue.OP_opt OP_opt1,_,_))::(_,(_,FUNleft as 
+FUN1left,_))::rest671) => let val result=MlyValue.rea__AND_strdesc_opt
+(fn _ => let val OP_opt1=OP_opt1 ()
+val longvid1=longvid1 ()
+val OP_opt2=OP_opt2 ()
+val longvid2=longvid2 ()
+val AND_rea_opt__AND_strdesc_opt as AND_rea_opt__AND_strdesc_opt1=
+AND_rea_opt__AND_strdesc_opt1 ()
+ in (
+ ( FUNRea(I(FUNleft,AND_rea_opt__AND_strdesc_optright),
+				   OP_opt1, longvid1, OP_opt2, longvid2,
+				   #1 AND_rea_opt__AND_strdesc_opt)
+			  , #2 AND_rea_opt__AND_strdesc_opt ) 
+) end
+)
+ in (LrTable.NT 146,(result,FUN1left,
+AND_rea_opt__AND_strdesc_opt1right),rest671) end
+| (416,(_,(MlyValue.AND_rea_opt__AND_strdesc_opt 
+AND_rea_opt__AND_strdesc_opt1,_,AND_rea_opt__AND_strdesc_optright as 
+AND_rea_opt__AND_strdesc_opt1right))::(_,(MlyValue.longvid longvid2,_,
+_))::(_,(MlyValue.OP_opt OP_opt2,_,_))::_::(_,(MlyValue.longvid 
+longvid1,_,_))::(_,(MlyValue.OP_opt OP_opt1,_,_))::(_,(_,
+CONSTRUCTORleft as CONSTRUCTOR1left,_))::rest671) => let val result=
+MlyValue.rea__AND_strdesc_opt(fn _ => let val OP_opt1=OP_opt1 ()
+val longvid1=longvid1 ()
+val OP_opt2=OP_opt2 ()
+val longvid2=longvid2 ()
+val AND_rea_opt__AND_strdesc_opt as AND_rea_opt__AND_strdesc_opt1=
+AND_rea_opt__AND_strdesc_opt1 ()
+ in (
+ ( CONSTRUCTORRea(I(CONSTRUCTORleft,
+					     AND_rea_opt__AND_strdesc_optright),
+					   OP_opt1, longvid1, OP_opt2, longvid2,
+				           #1 AND_rea_opt__AND_strdesc_opt)
+			  , #2 AND_rea_opt__AND_strdesc_opt ) 
+) end
+)
+ in (LrTable.NT 146,(result,CONSTRUCTOR1left,
+AND_rea_opt__AND_strdesc_opt1right),rest671) end
+| (417,(_,(MlyValue.AND_rea_opt__AND_strdesc_opt 
+AND_rea_opt__AND_strdesc_opt1,_,AND_rea_opt__AND_strdesc_optright as 
+AND_rea_opt__AND_strdesc_opt1right))::(_,(MlyValue.longvid longvid2,_,
+_))::(_,(MlyValue.OP_opt OP_opt2,_,_))::_::(_,(MlyValue.longvid 
+longvid1,_,_))::(_,(MlyValue.OP_opt OP_opt1,_,_))::(_,(_,EXCEPTIONleft
+ as EXCEPTION1left,_))::rest671) => let val result=
+MlyValue.rea__AND_strdesc_opt(fn _ => let val OP_opt1=OP_opt1 ()
+val longvid1=longvid1 ()
+val OP_opt2=OP_opt2 ()
+val longvid2=longvid2 ()
+val AND_rea_opt__AND_strdesc_opt as AND_rea_opt__AND_strdesc_opt1=
+AND_rea_opt__AND_strdesc_opt1 ()
+ in (
+ ( EXCEPTIONRea(I(EXCEPTIONleft,
+					   AND_rea_opt__AND_strdesc_optright),
+					 OP_opt1, longvid1, OP_opt2, longvid2,
+					 #1 AND_rea_opt__AND_strdesc_opt)
+			  , #2 AND_rea_opt__AND_strdesc_opt ) 
+) end
+)
+ in (LrTable.NT 146,(result,EXCEPTION1left,
+AND_rea_opt__AND_strdesc_opt1right),rest671) end
+| (418,(_,(MlyValue.AND_rea_opt__AND_strdesc_opt 
+AND_rea_opt__AND_strdesc_opt1,_,AND_rea_opt__AND_strdesc_optright as 
+AND_rea_opt__AND_strdesc_opt1right))::(_,(MlyValue.ty ty1,_,_))::_::(_
+,(MlyValue.longtycon longtycon1,_,_))::(_,(MlyValue.tyvarseq tyvarseq1
+,_,_))::(_,(_,TYPEleft as TYPE1left,_))::rest671) => let val result=
+MlyValue.rea__AND_strdesc_opt(fn _ => let val tyvarseq as tyvarseq1=
+tyvarseq1 ()
 val longtycon as longtycon1=longtycon1 ()
 val ty as ty1=ty1 ()
-val AND_tyreadesc_opt__AND_strdesc_opt as 
-AND_tyreadesc_opt__AND_strdesc_opt1=
-AND_tyreadesc_opt__AND_strdesc_opt1 ()
+val AND_rea_opt__AND_strdesc_opt as AND_rea_opt__AND_strdesc_opt1=
+AND_rea_opt__AND_strdesc_opt1 ()
  in (
- ( TyReaDesc(I(TYPEleft,
-				       AND_tyreadesc_opt__AND_strdesc_optright),
-				      tyvarseq, longtycon, ty,
-				      #1 AND_tyreadesc_opt__AND_strdesc_opt),
-			    #2 AND_tyreadesc_opt__AND_strdesc_opt ) 
+ ( TYPERea(I(TYPEleft,
+				      AND_rea_opt__AND_strdesc_optright),
+				    tyvarseq, longtycon, ty,
+				    #1 AND_rea_opt__AND_strdesc_opt)
+			  , #2 AND_rea_opt__AND_strdesc_opt ) 
 ) end
 )
- in (LrTable.NT 139,(result,TYPE1left,
-AND_tyreadesc_opt__AND_strdesc_opt1right),rest671) end
-| (367,(_,(MlyValue.AND_strdesc_opt AND_strdesc_opt1,
+ in (LrTable.NT 146,(result,TYPE1left,
+AND_rea_opt__AND_strdesc_opt1right),rest671) end
+| (419,(_,(MlyValue.AND_rea_opt__AND_strdesc_opt 
+AND_rea_opt__AND_strdesc_opt1,_,AND_rea_opt__AND_strdesc_optright as 
+AND_rea_opt__AND_strdesc_opt1right))::(_,(MlyValue.longstrid 
+longstrid2,_,_))::_::(_,(MlyValue.COLON_sigexp_opt COLON_sigexp_opt1,_
+,_))::(_,(MlyValue.longstrid longstrid1,_,_))::(_,(_,STRUCTUREleft as 
+STRUCTURE1left,_))::rest671) => let val result=
+MlyValue.rea__AND_strdesc_opt(fn _ => let val longstrid1=longstrid1 ()
+val COLON_sigexp_opt as COLON_sigexp_opt1=COLON_sigexp_opt1 ()
+val longstrid2=longstrid2 ()
+val AND_rea_opt__AND_strdesc_opt as AND_rea_opt__AND_strdesc_opt1=
+AND_rea_opt__AND_strdesc_opt1 ()
+ in (
+ ( STRUCTURERea(I(STRUCTUREleft,
+					   AND_rea_opt__AND_strdesc_optright),
+				         longstrid1, COLON_sigexp_opt,
+					 longstrid2,
+				         #1 AND_rea_opt__AND_strdesc_opt)
+			  , #2 AND_rea_opt__AND_strdesc_opt ) 
+) end
+)
+ in (LrTable.NT 146,(result,STRUCTURE1left,
+AND_rea_opt__AND_strdesc_opt1right),rest671) end
+| (420,(_,(MlyValue.AND_rea_opt__AND_strdesc_opt 
+AND_rea_opt__AND_strdesc_opt1,_,AND_rea_opt__AND_strdesc_optright as 
+AND_rea_opt__AND_strdesc_opt1right))::(_,(MlyValue.longstrid 
+longstrid2,_,_))::_::(_,(MlyValue.COLON_sigexp_opt COLON_sigexp_opt1,_
+,_))::(_,(MlyValue.longstrid longstrid1,_,_))::(_,(_,FUNCTORleft as 
+FUNCTOR1left,_))::rest671) => let val result=
+MlyValue.rea__AND_strdesc_opt(fn _ => let val longstrid1=longstrid1 ()
+val COLON_sigexp_opt as COLON_sigexp_opt1=COLON_sigexp_opt1 ()
+val longstrid2=longstrid2 ()
+val AND_rea_opt__AND_strdesc_opt as AND_rea_opt__AND_strdesc_opt1=
+AND_rea_opt__AND_strdesc_opt1 ()
+ in (
+ ( FUNCTORRea(I(FUNCTORleft,
+					 AND_rea_opt__AND_strdesc_optright),
+				       longstrid1, COLON_sigexp_opt, longstrid2,
+				       #1 AND_rea_opt__AND_strdesc_opt)
+			  , #2 AND_rea_opt__AND_strdesc_opt ) 
+) end
+)
+ in (LrTable.NT 146,(result,FUNCTOR1left,
+AND_rea_opt__AND_strdesc_opt1right),rest671) end
+| (421,(_,(MlyValue.sigexp__AND_rea_opt__AND_strdesc_opt 
+sigexp__AND_rea_opt__AND_strdesc_opt1,_,
+sigexp__AND_rea_opt__AND_strdesc_optright as 
+sigexp__AND_rea_opt__AND_strdesc_opt1right))::_::(_,(
+MlyValue.strpat_list0 strpat_list01,_,_))::(_,(MlyValue.longsigid 
+longsigid1,_,_))::(_,(_,SIGNATUREleft as SIGNATURE1left,_))::rest671)
+ => let val result=MlyValue.rea__AND_strdesc_opt(fn _ => let val 
+longsigid as longsigid1=longsigid1 ()
+val strpat_list0 as strpat_list01=strpat_list01 ()
+val sigexp__AND_rea_opt__AND_strdesc_opt as 
+sigexp__AND_rea_opt__AND_strdesc_opt1=
+sigexp__AND_rea_opt__AND_strdesc_opt1 ()
+ in (
+ ( SIGNATURERea
+				(I(SIGNATUREleft,
+				   sigexp__AND_rea_opt__AND_strdesc_optright),
+				 longsigid, strpat_list0,
+				 #1 sigexp__AND_rea_opt__AND_strdesc_opt,
+				 #2 sigexp__AND_rea_opt__AND_strdesc_opt)
+			  , #3 sigexp__AND_rea_opt__AND_strdesc_opt ) 
+) end
+)
+ in (LrTable.NT 146,(result,SIGNATURE1left,
+sigexp__AND_rea_opt__AND_strdesc_opt1right),rest671) end
+| (422,(_,(MlyValue.AND_strdesc_opt AND_strdesc_opt1,
 AND_strdesc_opt1left,AND_strdesc_opt1right))::rest671) => let val 
-result=MlyValue.AND_tyreadesc_opt__AND_strdesc_opt(fn _ => let val 
+result=MlyValue.AND_rea_opt__AND_strdesc_opt(fn _ => let val 
 AND_strdesc_opt as AND_strdesc_opt1=AND_strdesc_opt1 ()
  in ( ( NONE, AND_strdesc_opt ) ) end
 )
- in (LrTable.NT 140,(result,AND_strdesc_opt1left,AND_strdesc_opt1right
+ in (LrTable.NT 147,(result,AND_strdesc_opt1left,AND_strdesc_opt1right
 ),rest671) end
-| (368,(_,(MlyValue.tyreadesc__AND_strdesc_opt 
-tyreadesc__AND_strdesc_opt1,_,tyreadesc__AND_strdesc_opt1right))::(_,(
-_,AND1left,_))::rest671) => let val result=
-MlyValue.AND_tyreadesc_opt__AND_strdesc_opt(fn _ => let val 
-tyreadesc__AND_strdesc_opt as tyreadesc__AND_strdesc_opt1=
-tyreadesc__AND_strdesc_opt1 ()
+| (423,(_,(MlyValue.rea__AND_strdesc_opt rea__AND_strdesc_opt1,_,
+rea__AND_strdesc_opt1right))::(_,(_,AND1left,_))::rest671) => let val 
+result=MlyValue.AND_rea_opt__AND_strdesc_opt(fn _ => let val 
+rea__AND_strdesc_opt as rea__AND_strdesc_opt1=rea__AND_strdesc_opt1 ()
  in (
- ( SOME(#1 tyreadesc__AND_strdesc_opt),
-				    #2 tyreadesc__AND_strdesc_opt ) 
+ ( SOME(#1 rea__AND_strdesc_opt)
+				  , #2 rea__AND_strdesc_opt ) )
+ end
+)
+ in (LrTable.NT 147,(result,AND1left,rea__AND_strdesc_opt1right),
+rest671) end
+| (424,(_,(MlyValue.AND_rea_opt__AND_strdesc_opt 
+AND_rea_opt__AND_strdesc_opt1,_,AND_rea_opt__AND_strdesc_opt1right))::
+(_,(MlyValue.appsigexp appsigexp1,appsigexp1left,_))::rest671) => let 
+val result=MlyValue.sigexp__AND_rea_opt__AND_strdesc_opt(fn _ => let 
+val appsigexp as appsigexp1=appsigexp1 ()
+val AND_rea_opt__AND_strdesc_opt as AND_rea_opt__AND_strdesc_opt1=
+AND_rea_opt__AND_strdesc_opt1 ()
+ in (
+ ( appsigexp
+		          , #1 AND_rea_opt__AND_strdesc_opt
+			  , #2 AND_rea_opt__AND_strdesc_opt ) 
 ) end
 )
- in (LrTable.NT 140,(result,AND1left,tyreadesc__AND_strdesc_opt1right)
-,rest671) end
-| (369,(_,(MlyValue.AND_sigdesc_opt AND_sigdesc_opt1,_,
-AND_sigdesc_optright as AND_sigdesc_opt1right))::(_,(MlyValue.sigid 
-sigid1,sigidleft as sigid1left,_))::rest671) => let val result=
+ in (LrTable.NT 148,(result,appsigexp1left,
+AND_rea_opt__AND_strdesc_opt1right),rest671) end
+| (425,(_,(MlyValue.AND_sigdesc_opt AND_sigdesc_opt1,_,
+AND_sigdesc_optright as AND_sigdesc_opt1right))::(_,(
+MlyValue.strpat_list0 strpat_list01,_,_))::(_,(MlyValue.sigid sigid1,
+sigidleft as sigid1left,_))::rest671) => let val result=
 MlyValue.sigdesc(fn _ => let val sigid as sigid1=sigid1 ()
+val strpat_list0 as strpat_list01=strpat_list01 ()
 val AND_sigdesc_opt as AND_sigdesc_opt1=AND_sigdesc_opt1 ()
  in (
  NEWSigDesc(I(sigidleft,AND_sigdesc_optright),
-				     sigid, AND_sigdesc_opt) 
+				     sigid, strpat_list0, AND_sigdesc_opt) 
 ) end
 )
- in (LrTable.NT 141,(result,sigid1left,AND_sigdesc_opt1right),rest671)
+ in (LrTable.NT 149,(result,sigid1left,AND_sigdesc_opt1right),rest671)
  end
-| (370,(_,(MlyValue.sigexp__AND_sigdesc_opt sigexp__AND_sigdesc_opt1,_
+| (426,(_,(MlyValue.sigexp__AND_sigdesc_opt sigexp__AND_sigdesc_opt1,_
 ,sigexp__AND_sigdesc_optright as sigexp__AND_sigdesc_opt1right))::_::(
-_,(MlyValue.sigid sigid1,sigidleft as sigid1left,_))::rest671) => let 
-val result=MlyValue.sigdesc(fn _ => let val sigid as sigid1=sigid1 ()
+_,(MlyValue.strpat_list0 strpat_list01,_,_))::(_,(MlyValue.sigid 
+sigid1,sigidleft as sigid1left,_))::rest671) => let val result=
+MlyValue.sigdesc(fn _ => let val sigid as sigid1=sigid1 ()
+val strpat_list0 as strpat_list01=strpat_list01 ()
 val sigexp__AND_sigdesc_opt as sigexp__AND_sigdesc_opt1=
 sigexp__AND_sigdesc_opt1 ()
  in (
  EQUALSigDesc(I(sigidleft,
 					 sigexp__AND_sigdesc_optright),
-				       sigid, #1 sigexp__AND_sigdesc_opt,
+				       sigid, strpat_list0,
+				       #1 sigexp__AND_sigdesc_opt,
 				       #2 sigexp__AND_sigdesc_opt) 
 ) end
 )
- in (LrTable.NT 141,(result,sigid1left,sigexp__AND_sigdesc_opt1right),
+ in (LrTable.NT 149,(result,sigid1left,sigexp__AND_sigdesc_opt1right),
 rest671) end
-| (371,(_,(MlyValue.sigdesc sigdesc1,_,sigdesc1right))::(_,(_,AND1left
+| (427,(_,(MlyValue.sigdesc sigdesc1,_,sigdesc1right))::(_,(_,AND1left
 ,_))::rest671) => let val result=MlyValue.AND_sigdesc_opt(fn _ => let 
 val sigdesc as sigdesc1=sigdesc1 ()
  in ( SOME sigdesc ) end
 )
- in (LrTable.NT 142,(result,AND1left,sigdesc1right),rest671) end
-| (372,rest671) => let val result=MlyValue.AND_sigdesc_opt(fn _ => (
+ in (LrTable.NT 150,(result,AND1left,sigdesc1right),rest671) end
+| (428,rest671) => let val result=MlyValue.AND_sigdesc_opt(fn _ => (
  NONE ))
- in (LrTable.NT 142,(result,defaultPos,defaultPos),rest671) end
-| (373,(_,(MlyValue.AND_sigdesc_opt AND_sigdesc_opt1,_,
+ in (LrTable.NT 150,(result,defaultPos,defaultPos),rest671) end
+| (429,(_,(MlyValue.AND_sigdesc_opt AND_sigdesc_opt1,_,
 AND_sigdesc_opt1right))::(_,(MlyValue.sigexp' sigexp'1,sigexp'1left,_)
 )::rest671) => let val result=MlyValue.sigexp__AND_sigdesc_opt(fn _
  => let val sigexp' as sigexp'1=sigexp'1 ()
 val AND_sigdesc_opt as AND_sigdesc_opt1=AND_sigdesc_opt1 ()
  in ( ( sigexp', AND_sigdesc_opt ) ) end
 )
- in (LrTable.NT 143,(result,sigexp'1left,AND_sigdesc_opt1right),
+ in (LrTable.NT 151,(result,sigexp'1left,AND_sigdesc_opt1right),
 rest671) end
-| (374,(_,(MlyValue.tyreadesc__AND_sigdesc_opt 
-tyreadesc__AND_sigdesc_opt1,_,tyreadesc__AND_sigdesc_optright as 
-tyreadesc__AND_sigdesc_opt1right))::_::(_,(MlyValue.sigexp sigexp1,
-sigexpleft as sigexp1left,_))::rest671) => let val result=
-MlyValue.sigexp__AND_sigdesc_opt(fn _ => let val sigexp as sigexp1=
-sigexp1 ()
-val tyreadesc__AND_sigdesc_opt as tyreadesc__AND_sigdesc_opt1=
-tyreadesc__AND_sigdesc_opt1 ()
+| (430,(_,(MlyValue.sigexp__AND_sigdesc_opt sigexp__AND_sigdesc_opt1,_
+,sigexp__AND_sigdesc_optright as sigexp__AND_sigdesc_opt1right))::_::(
+_,(MlyValue.strpat strpat1,_,_))::(_,(_,FCTleft as FCT1left,_))::
+rest671) => let val result=MlyValue.sigexp__AND_sigdesc_opt(fn _ => 
+let val strpat as strpat1=strpat1 ()
+val sigexp__AND_sigdesc_opt as sigexp__AND_sigdesc_opt1=
+sigexp__AND_sigdesc_opt1 ()
  in (
- ( WHERETYPESigExp(I(sigexpleft,
-					      tyreadesc__AND_sigdesc_optright),
-					   sigexp,
-					   #1 tyreadesc__AND_sigdesc_opt),
-			    #2 tyreadesc__AND_sigdesc_opt ) 
+ ( FCTSigExp(I(FCTleft,sigexp__AND_sigdesc_optright),
+				      strpat, #1 sigexp__AND_sigdesc_opt)
+			  , #2 sigexp__AND_sigdesc_opt ) 
 ) end
 )
- in (LrTable.NT 143,(result,sigexp1left,
-tyreadesc__AND_sigdesc_opt1right),rest671) end
-| (375,(_,(MlyValue.AND_tyreadesc_opt__AND_sigdesc_opt 
-AND_tyreadesc_opt__AND_sigdesc_opt1,_,
-AND_tyreadesc_opt__AND_sigdesc_optright as 
-AND_tyreadesc_opt__AND_sigdesc_opt1right))::(_,(MlyValue.ty ty1,_,_))
-::_::(_,(MlyValue.longtycon longtycon1,_,_))::(_,(MlyValue.tyvarseq 
-tyvarseq1,_,_))::(_,(_,TYPEleft as TYPE1left,_))::rest671) => let val 
-result=MlyValue.tyreadesc__AND_sigdesc_opt(fn _ => let val tyvarseq
- as tyvarseq1=tyvarseq1 ()
+ in (LrTable.NT 151,(result,FCT1left,sigexp__AND_sigdesc_opt1right),
+rest671) end
+| (431,(_,(MlyValue.rea__AND_sigdesc_opt rea__AND_sigdesc_opt1,_,
+rea__AND_sigdesc_optright as rea__AND_sigdesc_opt1right))::_::(_,(
+MlyValue.sigexp sigexp1,sigexpleft as sigexp1left,_))::rest671) => 
+let val result=MlyValue.sigexp__AND_sigdesc_opt(fn _ => let val sigexp
+ as sigexp1=sigexp1 ()
+val rea__AND_sigdesc_opt as rea__AND_sigdesc_opt1=
+rea__AND_sigdesc_opt1 ()
+ in (
+ ( WHEREREASigExp(I(sigexpleft,
+					     rea__AND_sigdesc_optright),
+					   sigexp, #1 rea__AND_sigdesc_opt)
+			  , #2 rea__AND_sigdesc_opt ) 
+) end
+)
+ in (LrTable.NT 151,(result,sigexp1left,rea__AND_sigdesc_opt1right),
+rest671) end
+| (432,(_,(MlyValue.AND_rea_opt__AND_sigdesc_opt 
+AND_rea_opt__AND_sigdesc_opt1,_,AND_rea_opt__AND_sigdesc_optright as 
+AND_rea_opt__AND_sigdesc_opt1right))::(_,(MlyValue.longvid longvid2,_,
+_))::(_,(MlyValue.OP_opt OP_opt2,_,_))::_::(_,(MlyValue.longvid 
+longvid1,_,_))::(_,(MlyValue.OP_opt OP_opt1,_,_))::(_,(_,VALleft as 
+VAL1left,_))::rest671) => let val result=MlyValue.rea__AND_sigdesc_opt
+(fn _ => let val OP_opt1=OP_opt1 ()
+val longvid1=longvid1 ()
+val OP_opt2=OP_opt2 ()
+val longvid2=longvid2 ()
+val AND_rea_opt__AND_sigdesc_opt as AND_rea_opt__AND_sigdesc_opt1=
+AND_rea_opt__AND_sigdesc_opt1 ()
+ in (
+ ( VALRea(I(VALleft,AND_rea_opt__AND_sigdesc_optright),
+				   OP_opt1, longvid1, OP_opt2, longvid2,
+				   #1 AND_rea_opt__AND_sigdesc_opt)
+			  , #2 AND_rea_opt__AND_sigdesc_opt ) 
+) end
+)
+ in (LrTable.NT 152,(result,VAL1left,
+AND_rea_opt__AND_sigdesc_opt1right),rest671) end
+| (433,(_,(MlyValue.AND_rea_opt__AND_sigdesc_opt 
+AND_rea_opt__AND_sigdesc_opt1,_,AND_rea_opt__AND_sigdesc_optright as 
+AND_rea_opt__AND_sigdesc_opt1right))::(_,(MlyValue.longvid longvid2,_,
+_))::(_,(MlyValue.OP_opt OP_opt2,_,_))::_::(_,(MlyValue.longvid 
+longvid1,_,_))::(_,(MlyValue.OP_opt OP_opt1,_,_))::(_,(_,FUNleft as 
+FUN1left,_))::rest671) => let val result=MlyValue.rea__AND_sigdesc_opt
+(fn _ => let val OP_opt1=OP_opt1 ()
+val longvid1=longvid1 ()
+val OP_opt2=OP_opt2 ()
+val longvid2=longvid2 ()
+val AND_rea_opt__AND_sigdesc_opt as AND_rea_opt__AND_sigdesc_opt1=
+AND_rea_opt__AND_sigdesc_opt1 ()
+ in (
+ ( FUNRea(I(FUNleft,AND_rea_opt__AND_sigdesc_optright),
+				   OP_opt1, longvid1, OP_opt2, longvid2,
+				   #1 AND_rea_opt__AND_sigdesc_opt)
+			  , #2 AND_rea_opt__AND_sigdesc_opt ) 
+) end
+)
+ in (LrTable.NT 152,(result,FUN1left,
+AND_rea_opt__AND_sigdesc_opt1right),rest671) end
+| (434,(_,(MlyValue.AND_rea_opt__AND_sigdesc_opt 
+AND_rea_opt__AND_sigdesc_opt1,_,AND_rea_opt__AND_sigdesc_optright as 
+AND_rea_opt__AND_sigdesc_opt1right))::(_,(MlyValue.longvid longvid2,_,
+_))::(_,(MlyValue.OP_opt OP_opt2,_,_))::_::(_,(MlyValue.longvid 
+longvid1,_,_))::(_,(MlyValue.OP_opt OP_opt1,_,_))::(_,(_,
+CONSTRUCTORleft as CONSTRUCTOR1left,_))::rest671) => let val result=
+MlyValue.rea__AND_sigdesc_opt(fn _ => let val OP_opt1=OP_opt1 ()
+val longvid1=longvid1 ()
+val OP_opt2=OP_opt2 ()
+val longvid2=longvid2 ()
+val AND_rea_opt__AND_sigdesc_opt as AND_rea_opt__AND_sigdesc_opt1=
+AND_rea_opt__AND_sigdesc_opt1 ()
+ in (
+ ( CONSTRUCTORRea(I(CONSTRUCTORleft,
+					     AND_rea_opt__AND_sigdesc_optright),
+					   OP_opt1, longvid1, OP_opt2, longvid2,
+				           #1 AND_rea_opt__AND_sigdesc_opt)
+			  , #2 AND_rea_opt__AND_sigdesc_opt ) 
+) end
+)
+ in (LrTable.NT 152,(result,CONSTRUCTOR1left,
+AND_rea_opt__AND_sigdesc_opt1right),rest671) end
+| (435,(_,(MlyValue.AND_rea_opt__AND_sigdesc_opt 
+AND_rea_opt__AND_sigdesc_opt1,_,AND_rea_opt__AND_sigdesc_optright as 
+AND_rea_opt__AND_sigdesc_opt1right))::(_,(MlyValue.longvid longvid2,_,
+_))::(_,(MlyValue.OP_opt OP_opt2,_,_))::_::(_,(MlyValue.longvid 
+longvid1,_,_))::(_,(MlyValue.OP_opt OP_opt1,_,_))::(_,(_,EXCEPTIONleft
+ as EXCEPTION1left,_))::rest671) => let val result=
+MlyValue.rea__AND_sigdesc_opt(fn _ => let val OP_opt1=OP_opt1 ()
+val longvid1=longvid1 ()
+val OP_opt2=OP_opt2 ()
+val longvid2=longvid2 ()
+val AND_rea_opt__AND_sigdesc_opt as AND_rea_opt__AND_sigdesc_opt1=
+AND_rea_opt__AND_sigdesc_opt1 ()
+ in (
+ ( EXCEPTIONRea(I(EXCEPTIONleft,
+					   AND_rea_opt__AND_sigdesc_optright),
+					 OP_opt1, longvid1, OP_opt2, longvid2,
+					 #1 AND_rea_opt__AND_sigdesc_opt)
+			  , #2 AND_rea_opt__AND_sigdesc_opt ) 
+) end
+)
+ in (LrTable.NT 152,(result,EXCEPTION1left,
+AND_rea_opt__AND_sigdesc_opt1right),rest671) end
+| (436,(_,(MlyValue.AND_rea_opt__AND_sigdesc_opt 
+AND_rea_opt__AND_sigdesc_opt1,_,AND_rea_opt__AND_sigdesc_optright as 
+AND_rea_opt__AND_sigdesc_opt1right))::(_,(MlyValue.ty ty1,_,_))::_::(_
+,(MlyValue.longtycon longtycon1,_,_))::(_,(MlyValue.tyvarseq tyvarseq1
+,_,_))::(_,(_,TYPEleft as TYPE1left,_))::rest671) => let val result=
+MlyValue.rea__AND_sigdesc_opt(fn _ => let val tyvarseq as tyvarseq1=
+tyvarseq1 ()
 val longtycon as longtycon1=longtycon1 ()
 val ty as ty1=ty1 ()
-val AND_tyreadesc_opt__AND_sigdesc_opt as 
-AND_tyreadesc_opt__AND_sigdesc_opt1=
-AND_tyreadesc_opt__AND_sigdesc_opt1 ()
+val AND_rea_opt__AND_sigdesc_opt as AND_rea_opt__AND_sigdesc_opt1=
+AND_rea_opt__AND_sigdesc_opt1 ()
  in (
- ( TyReaDesc(I(TYPEleft,
-				       AND_tyreadesc_opt__AND_sigdesc_optright),
-				      tyvarseq, longtycon, ty,
-				      #1 AND_tyreadesc_opt__AND_sigdesc_opt),
-			    #2 AND_tyreadesc_opt__AND_sigdesc_opt ) 
+ ( TYPERea(I(TYPEleft,
+				      AND_rea_opt__AND_sigdesc_optright),
+				    tyvarseq, longtycon, ty,
+				    #1 AND_rea_opt__AND_sigdesc_opt)
+			  , #2 AND_rea_opt__AND_sigdesc_opt ) 
 ) end
 )
- in (LrTable.NT 144,(result,TYPE1left,
-AND_tyreadesc_opt__AND_sigdesc_opt1right),rest671) end
-| (376,(_,(MlyValue.AND_sigdesc_opt AND_sigdesc_opt1,
+ in (LrTable.NT 152,(result,TYPE1left,
+AND_rea_opt__AND_sigdesc_opt1right),rest671) end
+| (437,(_,(MlyValue.AND_rea_opt__AND_sigdesc_opt 
+AND_rea_opt__AND_sigdesc_opt1,_,AND_rea_opt__AND_sigdesc_optright as 
+AND_rea_opt__AND_sigdesc_opt1right))::(_,(MlyValue.longstrid 
+longstrid2,_,_))::_::(_,(MlyValue.COLON_sigexp_opt COLON_sigexp_opt1,_
+,_))::(_,(MlyValue.longstrid longstrid1,_,_))::(_,(_,STRUCTUREleft as 
+STRUCTURE1left,_))::rest671) => let val result=
+MlyValue.rea__AND_sigdesc_opt(fn _ => let val longstrid1=longstrid1 ()
+val COLON_sigexp_opt as COLON_sigexp_opt1=COLON_sigexp_opt1 ()
+val longstrid2=longstrid2 ()
+val AND_rea_opt__AND_sigdesc_opt as AND_rea_opt__AND_sigdesc_opt1=
+AND_rea_opt__AND_sigdesc_opt1 ()
+ in (
+ ( STRUCTURERea(I(STRUCTUREleft,
+					   AND_rea_opt__AND_sigdesc_optright),
+				         longstrid1, COLON_sigexp_opt,
+					 longstrid2,
+				         #1 AND_rea_opt__AND_sigdesc_opt)
+			  , #2 AND_rea_opt__AND_sigdesc_opt ) 
+) end
+)
+ in (LrTable.NT 152,(result,STRUCTURE1left,
+AND_rea_opt__AND_sigdesc_opt1right),rest671) end
+| (438,(_,(MlyValue.AND_rea_opt__AND_sigdesc_opt 
+AND_rea_opt__AND_sigdesc_opt1,_,AND_rea_opt__AND_sigdesc_optright as 
+AND_rea_opt__AND_sigdesc_opt1right))::(_,(MlyValue.longstrid 
+longstrid2,_,_))::_::(_,(MlyValue.COLON_sigexp_opt COLON_sigexp_opt1,_
+,_))::(_,(MlyValue.longstrid longstrid1,_,_))::(_,(_,FUNCTORleft as 
+FUNCTOR1left,_))::rest671) => let val result=
+MlyValue.rea__AND_sigdesc_opt(fn _ => let val longstrid1=longstrid1 ()
+val COLON_sigexp_opt as COLON_sigexp_opt1=COLON_sigexp_opt1 ()
+val longstrid2=longstrid2 ()
+val AND_rea_opt__AND_sigdesc_opt as AND_rea_opt__AND_sigdesc_opt1=
+AND_rea_opt__AND_sigdesc_opt1 ()
+ in (
+ ( FUNCTORRea(I(FUNCTORleft,
+					 AND_rea_opt__AND_sigdesc_optright),
+				       longstrid1, COLON_sigexp_opt, longstrid2,
+				       #1 AND_rea_opt__AND_sigdesc_opt)
+			  , #2 AND_rea_opt__AND_sigdesc_opt ) 
+) end
+)
+ in (LrTable.NT 152,(result,FUNCTOR1left,
+AND_rea_opt__AND_sigdesc_opt1right),rest671) end
+| (439,(_,(MlyValue.sigexp__AND_rea_opt__AND_sigdesc_opt 
+sigexp__AND_rea_opt__AND_sigdesc_opt1,_,
+sigexp__AND_rea_opt__AND_sigdesc_optright as 
+sigexp__AND_rea_opt__AND_sigdesc_opt1right))::_::(_,(
+MlyValue.strpat_list0 strpat_list01,_,_))::(_,(MlyValue.longsigid 
+longsigid1,_,_))::(_,(_,SIGNATUREleft as SIGNATURE1left,_))::rest671)
+ => let val result=MlyValue.rea__AND_sigdesc_opt(fn _ => let val 
+longsigid as longsigid1=longsigid1 ()
+val strpat_list0 as strpat_list01=strpat_list01 ()
+val sigexp__AND_rea_opt__AND_sigdesc_opt as 
+sigexp__AND_rea_opt__AND_sigdesc_opt1=
+sigexp__AND_rea_opt__AND_sigdesc_opt1 ()
+ in (
+ ( SIGNATURERea
+				(I(SIGNATUREleft,
+				   sigexp__AND_rea_opt__AND_sigdesc_optright),
+				 longsigid, strpat_list0,
+				 #1 sigexp__AND_rea_opt__AND_sigdesc_opt,
+				 #2 sigexp__AND_rea_opt__AND_sigdesc_opt)
+			  , #3 sigexp__AND_rea_opt__AND_sigdesc_opt ) 
+) end
+)
+ in (LrTable.NT 152,(result,SIGNATURE1left,
+sigexp__AND_rea_opt__AND_sigdesc_opt1right),rest671) end
+| (440,(_,(MlyValue.AND_sigdesc_opt AND_sigdesc_opt1,
 AND_sigdesc_opt1left,AND_sigdesc_opt1right))::rest671) => let val 
-result=MlyValue.AND_tyreadesc_opt__AND_sigdesc_opt(fn _ => let val 
+result=MlyValue.AND_rea_opt__AND_sigdesc_opt(fn _ => let val 
 AND_sigdesc_opt as AND_sigdesc_opt1=AND_sigdesc_opt1 ()
  in ( ( NONE, AND_sigdesc_opt) ) end
 )
- in (LrTable.NT 145,(result,AND_sigdesc_opt1left,AND_sigdesc_opt1right
+ in (LrTable.NT 153,(result,AND_sigdesc_opt1left,AND_sigdesc_opt1right
 ),rest671) end
-| (377,(_,(MlyValue.tyreadesc__AND_sigdesc_opt 
-tyreadesc__AND_sigdesc_opt1,_,tyreadesc__AND_sigdesc_opt1right))::(_,(
-_,AND1left,_))::rest671) => let val result=
-MlyValue.AND_tyreadesc_opt__AND_sigdesc_opt(fn _ => let val 
-tyreadesc__AND_sigdesc_opt as tyreadesc__AND_sigdesc_opt1=
-tyreadesc__AND_sigdesc_opt1 ()
+| (441,(_,(MlyValue.rea__AND_sigdesc_opt rea__AND_sigdesc_opt1,_,
+rea__AND_sigdesc_opt1right))::(_,(_,AND1left,_))::rest671) => let val 
+result=MlyValue.AND_rea_opt__AND_sigdesc_opt(fn _ => let val 
+rea__AND_sigdesc_opt as rea__AND_sigdesc_opt1=rea__AND_sigdesc_opt1 ()
  in (
- ( SOME(#1 tyreadesc__AND_sigdesc_opt),
-				    #2 tyreadesc__AND_sigdesc_opt ) 
+ ( SOME(#1 rea__AND_sigdesc_opt)
+				  , #2 rea__AND_sigdesc_opt ) )
+ end
+)
+ in (LrTable.NT 153,(result,AND1left,rea__AND_sigdesc_opt1right),
+rest671) end
+| (442,(_,(MlyValue.AND_rea_opt__AND_sigdesc_opt 
+AND_rea_opt__AND_sigdesc_opt1,_,AND_rea_opt__AND_sigdesc_opt1right))::
+(_,(MlyValue.appsigexp appsigexp1,appsigexp1left,_))::rest671) => let 
+val result=MlyValue.sigexp__AND_rea_opt__AND_sigdesc_opt(fn _ => let 
+val appsigexp as appsigexp1=appsigexp1 ()
+val AND_rea_opt__AND_sigdesc_opt as AND_rea_opt__AND_sigdesc_opt1=
+AND_rea_opt__AND_sigdesc_opt1 ()
+ in (
+ ( appsigexp
+		          , #1 AND_rea_opt__AND_sigdesc_opt
+			  , #2 AND_rea_opt__AND_sigdesc_opt ) 
 ) end
 )
- in (LrTable.NT 145,(result,AND1left,tyreadesc__AND_sigdesc_opt1right)
-,rest671) end
-| (378,(_,(MlyValue.sigexp__AND_fundesc_opt sigexp__AND_fundesc_opt1,_
-,sigexp__AND_fundesc_optright as sigexp__AND_fundesc_opt1right))::_::_
-::(_,(MlyValue.sigexp sigexp1,_,_))::_::(_,(MlyValue.strid strid1,_,_)
-)::_::(_,(MlyValue.funid funid1,funidleft as funid1left,_))::rest671)
- => let val result=MlyValue.fundesc(fn _ => let val funid as funid1=
-funid1 ()
-val strid as strid1=strid1 ()
-val sigexp as sigexp1=sigexp1 ()
+ in (LrTable.NT 154,(result,appsigexp1left,
+AND_rea_opt__AND_sigdesc_opt1right),rest671) end
+| (443,(_,(MlyValue.sigexp__AND_fundesc_opt sigexp__AND_fundesc_opt1,_
+,sigexp__AND_fundesc_optright as sigexp__AND_fundesc_opt1right))::_::(
+_,(MlyValue.strpat_list0 strpat_list01,_,_))::(_,(MlyValue.strid 
+strid1,stridleft as strid1left,_))::rest671) => let val result=
+MlyValue.fundesc(fn _ => let val strid as strid1=strid1 ()
+val strpat_list0 as strpat_list01=strpat_list01 ()
 val sigexp__AND_fundesc_opt as sigexp__AND_fundesc_opt1=
 sigexp__AND_fundesc_opt1 ()
  in (
- FunDesc(I(funidleft,sigexp__AND_fundesc_optright),
-				  funid, strid, sigexp,
+ FunDesc(I(stridleft,sigexp__AND_fundesc_optright),
+				  strid, strpat_list0,
 				  #1 sigexp__AND_fundesc_opt,
 				  #2 sigexp__AND_fundesc_opt) 
 ) end
 )
- in (LrTable.NT 146,(result,funid1left,sigexp__AND_fundesc_opt1right),
+ in (LrTable.NT 155,(result,strid1left,sigexp__AND_fundesc_opt1right),
 rest671) end
-| (379,(_,(MlyValue.sigexp__AND_fundesc_opt sigexp__AND_fundesc_opt1,_
-,sigexp__AND_fundesc_optright as sigexp__AND_fundesc_opt1right))::_::_
-::(_,(MlyValue.spec spec1,_,_))::_::(_,(MlyValue.funid funid1,
-funidleft as funid1left,_))::rest671) => let val result=
-MlyValue.fundesc(fn _ => let val funid as funid1=funid1 ()
-val spec as spec1=spec1 ()
-val sigexp__AND_fundesc_opt as sigexp__AND_fundesc_opt1=
-sigexp__AND_fundesc_opt1 ()
- in (
- SPECFunDesc(I(funidleft,
-					sigexp__AND_fundesc_optright),
-				      funid, spec, #1 sigexp__AND_fundesc_opt,
-				      #2 sigexp__AND_fundesc_opt) 
-) end
-)
- in (LrTable.NT 146,(result,funid1left,sigexp__AND_fundesc_opt1right),
-rest671) end
-| (380,(_,(MlyValue.fundesc fundesc1,_,fundesc1right))::(_,(_,AND1left
+| (444,(_,(MlyValue.fundesc fundesc1,_,fundesc1right))::(_,(_,AND1left
 ,_))::rest671) => let val result=MlyValue.AND_fundesc_opt(fn _ => let 
 val fundesc as fundesc1=fundesc1 ()
  in ( SOME fundesc ) end
 )
- in (LrTable.NT 147,(result,AND1left,fundesc1right),rest671) end
-| (381,rest671) => let val result=MlyValue.AND_fundesc_opt(fn _ => (
+ in (LrTable.NT 156,(result,AND1left,fundesc1right),rest671) end
+| (445,rest671) => let val result=MlyValue.AND_fundesc_opt(fn _ => (
  NONE ))
- in (LrTable.NT 147,(result,defaultPos,defaultPos),rest671) end
-| (382,(_,(MlyValue.AND_fundesc_opt AND_fundesc_opt1,_,
+ in (LrTable.NT 156,(result,defaultPos,defaultPos),rest671) end
+| (446,(_,(MlyValue.AND_fundesc_opt AND_fundesc_opt1,_,
 AND_fundesc_opt1right))::(_,(MlyValue.sigexp' sigexp'1,sigexp'1left,_)
 )::rest671) => let val result=MlyValue.sigexp__AND_fundesc_opt(fn _
  => let val sigexp' as sigexp'1=sigexp'1 ()
 val AND_fundesc_opt as AND_fundesc_opt1=AND_fundesc_opt1 ()
  in ( ( sigexp', AND_fundesc_opt ) ) end
 )
- in (LrTable.NT 149,(result,sigexp'1left,AND_fundesc_opt1right),
+ in (LrTable.NT 157,(result,sigexp'1left,AND_fundesc_opt1right),
 rest671) end
-| (383,(_,(MlyValue.tyreadesc__AND_fundesc_opt 
-tyreadesc__AND_fundesc_opt1,_,tyreadesc__AND_fundesc_optright as 
-tyreadesc__AND_fundesc_opt1right))::_::(_,(MlyValue.sigexp sigexp1,
-sigexpleft as sigexp1left,_))::rest671) => let val result=
-MlyValue.sigexp__AND_fundesc_opt(fn _ => let val sigexp as sigexp1=
-sigexp1 ()
-val tyreadesc__AND_fundesc_opt as tyreadesc__AND_fundesc_opt1=
-tyreadesc__AND_fundesc_opt1 ()
+| (447,(_,(MlyValue.sigexp__AND_fundesc_opt sigexp__AND_fundesc_opt1,_
+,sigexp__AND_fundesc_optright as sigexp__AND_fundesc_opt1right))::_::(
+_,(MlyValue.strpat strpat1,_,_))::(_,(_,FCTleft as FCT1left,_))::
+rest671) => let val result=MlyValue.sigexp__AND_fundesc_opt(fn _ => 
+let val strpat as strpat1=strpat1 ()
+val sigexp__AND_fundesc_opt as sigexp__AND_fundesc_opt1=
+sigexp__AND_fundesc_opt1 ()
  in (
- ( WHERETYPESigExp(I(sigexpleft,
-					      tyreadesc__AND_fundesc_optright),
-					   sigexp,
-					   #1 tyreadesc__AND_fundesc_opt),
-			    #2 tyreadesc__AND_fundesc_opt ) 
+ ( FCTSigExp(I(FCTleft,sigexp__AND_fundesc_optright),
+				      strpat, #1 sigexp__AND_fundesc_opt)
+			  , #2 sigexp__AND_fundesc_opt ) 
 ) end
 )
- in (LrTable.NT 149,(result,sigexp1left,
-tyreadesc__AND_fundesc_opt1right),rest671) end
-| (384,(_,(MlyValue.AND_tyreadesc_opt__AND_fundesc_opt 
-AND_tyreadesc_opt__AND_fundesc_opt1,_,
-AND_tyreadesc_opt__AND_fundesc_optright as 
-AND_tyreadesc_opt__AND_fundesc_opt1right))::(_,(MlyValue.ty ty1,_,_))
-::_::(_,(MlyValue.longtycon longtycon1,_,_))::(_,(MlyValue.tyvarseq 
-tyvarseq1,_,_))::(_,(_,TYPEleft as TYPE1left,_))::rest671) => let val 
-result=MlyValue.tyreadesc__AND_fundesc_opt(fn _ => let val tyvarseq
- as tyvarseq1=tyvarseq1 ()
+ in (LrTable.NT 157,(result,FCT1left,sigexp__AND_fundesc_opt1right),
+rest671) end
+| (448,(_,(MlyValue.rea__AND_fundesc_opt rea__AND_fundesc_opt1,_,
+rea__AND_fundesc_optright as rea__AND_fundesc_opt1right))::_::(_,(
+MlyValue.sigexp sigexp1,sigexpleft as sigexp1left,_))::rest671) => 
+let val result=MlyValue.sigexp__AND_fundesc_opt(fn _ => let val sigexp
+ as sigexp1=sigexp1 ()
+val rea__AND_fundesc_opt as rea__AND_fundesc_opt1=
+rea__AND_fundesc_opt1 ()
+ in (
+ ( WHEREREASigExp(I(sigexpleft,
+					     rea__AND_fundesc_optright),
+					   sigexp, #1 rea__AND_fundesc_opt)
+			  , #2 rea__AND_fundesc_opt ) 
+) end
+)
+ in (LrTable.NT 157,(result,sigexp1left,rea__AND_fundesc_opt1right),
+rest671) end
+| (449,(_,(MlyValue.AND_rea_opt__AND_fundesc_opt 
+AND_rea_opt__AND_fundesc_opt1,_,AND_rea_opt__AND_fundesc_optright as 
+AND_rea_opt__AND_fundesc_opt1right))::(_,(MlyValue.longvid longvid2,_,
+_))::(_,(MlyValue.OP_opt OP_opt2,_,_))::_::(_,(MlyValue.longvid 
+longvid1,_,_))::(_,(MlyValue.OP_opt OP_opt1,_,_))::(_,(_,VALleft as 
+VAL1left,_))::rest671) => let val result=MlyValue.rea__AND_fundesc_opt
+(fn _ => let val OP_opt1=OP_opt1 ()
+val longvid1=longvid1 ()
+val OP_opt2=OP_opt2 ()
+val longvid2=longvid2 ()
+val AND_rea_opt__AND_fundesc_opt as AND_rea_opt__AND_fundesc_opt1=
+AND_rea_opt__AND_fundesc_opt1 ()
+ in (
+ ( VALRea(I(VALleft,AND_rea_opt__AND_fundesc_optright),
+				   OP_opt1, longvid1, OP_opt2, longvid2,
+				   #1 AND_rea_opt__AND_fundesc_opt)
+			  , #2 AND_rea_opt__AND_fundesc_opt ) 
+) end
+)
+ in (LrTable.NT 158,(result,VAL1left,
+AND_rea_opt__AND_fundesc_opt1right),rest671) end
+| (450,(_,(MlyValue.AND_rea_opt__AND_fundesc_opt 
+AND_rea_opt__AND_fundesc_opt1,_,AND_rea_opt__AND_fundesc_optright as 
+AND_rea_opt__AND_fundesc_opt1right))::(_,(MlyValue.longvid longvid2,_,
+_))::(_,(MlyValue.OP_opt OP_opt2,_,_))::_::(_,(MlyValue.longvid 
+longvid1,_,_))::(_,(MlyValue.OP_opt OP_opt1,_,_))::(_,(_,FUNleft as 
+FUN1left,_))::rest671) => let val result=MlyValue.rea__AND_fundesc_opt
+(fn _ => let val OP_opt1=OP_opt1 ()
+val longvid1=longvid1 ()
+val OP_opt2=OP_opt2 ()
+val longvid2=longvid2 ()
+val AND_rea_opt__AND_fundesc_opt as AND_rea_opt__AND_fundesc_opt1=
+AND_rea_opt__AND_fundesc_opt1 ()
+ in (
+ ( FUNRea(I(FUNleft,AND_rea_opt__AND_fundesc_optright),
+				   OP_opt1, longvid1, OP_opt2, longvid2,
+				   #1 AND_rea_opt__AND_fundesc_opt)
+			  , #2 AND_rea_opt__AND_fundesc_opt ) 
+) end
+)
+ in (LrTable.NT 158,(result,FUN1left,
+AND_rea_opt__AND_fundesc_opt1right),rest671) end
+| (451,(_,(MlyValue.AND_rea_opt__AND_fundesc_opt 
+AND_rea_opt__AND_fundesc_opt1,_,AND_rea_opt__AND_fundesc_optright as 
+AND_rea_opt__AND_fundesc_opt1right))::(_,(MlyValue.longvid longvid2,_,
+_))::(_,(MlyValue.OP_opt OP_opt2,_,_))::_::(_,(MlyValue.longvid 
+longvid1,_,_))::(_,(MlyValue.OP_opt OP_opt1,_,_))::(_,(_,
+CONSTRUCTORleft as CONSTRUCTOR1left,_))::rest671) => let val result=
+MlyValue.rea__AND_fundesc_opt(fn _ => let val OP_opt1=OP_opt1 ()
+val longvid1=longvid1 ()
+val OP_opt2=OP_opt2 ()
+val longvid2=longvid2 ()
+val AND_rea_opt__AND_fundesc_opt as AND_rea_opt__AND_fundesc_opt1=
+AND_rea_opt__AND_fundesc_opt1 ()
+ in (
+ ( CONSTRUCTORRea(I(CONSTRUCTORleft,
+					     AND_rea_opt__AND_fundesc_optright),
+					   OP_opt1, longvid1, OP_opt2, longvid2,
+				           #1 AND_rea_opt__AND_fundesc_opt)
+			  , #2 AND_rea_opt__AND_fundesc_opt ) 
+) end
+)
+ in (LrTable.NT 158,(result,CONSTRUCTOR1left,
+AND_rea_opt__AND_fundesc_opt1right),rest671) end
+| (452,(_,(MlyValue.AND_rea_opt__AND_fundesc_opt 
+AND_rea_opt__AND_fundesc_opt1,_,AND_rea_opt__AND_fundesc_optright as 
+AND_rea_opt__AND_fundesc_opt1right))::(_,(MlyValue.longvid longvid2,_,
+_))::(_,(MlyValue.OP_opt OP_opt2,_,_))::_::(_,(MlyValue.longvid 
+longvid1,_,_))::(_,(MlyValue.OP_opt OP_opt1,_,_))::(_,(_,EXCEPTIONleft
+ as EXCEPTION1left,_))::rest671) => let val result=
+MlyValue.rea__AND_fundesc_opt(fn _ => let val OP_opt1=OP_opt1 ()
+val longvid1=longvid1 ()
+val OP_opt2=OP_opt2 ()
+val longvid2=longvid2 ()
+val AND_rea_opt__AND_fundesc_opt as AND_rea_opt__AND_fundesc_opt1=
+AND_rea_opt__AND_fundesc_opt1 ()
+ in (
+ ( EXCEPTIONRea(I(EXCEPTIONleft,
+					   AND_rea_opt__AND_fundesc_optright),
+					 OP_opt1, longvid1, OP_opt2, longvid2,
+					 #1 AND_rea_opt__AND_fundesc_opt)
+			  , #2 AND_rea_opt__AND_fundesc_opt ) 
+) end
+)
+ in (LrTable.NT 158,(result,EXCEPTION1left,
+AND_rea_opt__AND_fundesc_opt1right),rest671) end
+| (453,(_,(MlyValue.AND_rea_opt__AND_fundesc_opt 
+AND_rea_opt__AND_fundesc_opt1,_,AND_rea_opt__AND_fundesc_optright as 
+AND_rea_opt__AND_fundesc_opt1right))::(_,(MlyValue.ty ty1,_,_))::_::(_
+,(MlyValue.longtycon longtycon1,_,_))::(_,(MlyValue.tyvarseq tyvarseq1
+,_,_))::(_,(_,TYPEleft as TYPE1left,_))::rest671) => let val result=
+MlyValue.rea__AND_fundesc_opt(fn _ => let val tyvarseq as tyvarseq1=
+tyvarseq1 ()
 val longtycon as longtycon1=longtycon1 ()
 val ty as ty1=ty1 ()
-val AND_tyreadesc_opt__AND_fundesc_opt as 
-AND_tyreadesc_opt__AND_fundesc_opt1=
-AND_tyreadesc_opt__AND_fundesc_opt1 ()
+val AND_rea_opt__AND_fundesc_opt as AND_rea_opt__AND_fundesc_opt1=
+AND_rea_opt__AND_fundesc_opt1 ()
  in (
- ( TyReaDesc(I(TYPEleft,
-				       AND_tyreadesc_opt__AND_fundesc_optright),
-				      tyvarseq, longtycon, ty,
-				      #1 AND_tyreadesc_opt__AND_fundesc_opt),
-			    #2 AND_tyreadesc_opt__AND_fundesc_opt ) 
+ ( TYPERea(I(TYPEleft,
+				      AND_rea_opt__AND_fundesc_optright),
+				    tyvarseq, longtycon, ty,
+				    #1 AND_rea_opt__AND_fundesc_opt)
+			  , #2 AND_rea_opt__AND_fundesc_opt ) 
 ) end
 )
- in (LrTable.NT 150,(result,TYPE1left,
-AND_tyreadesc_opt__AND_fundesc_opt1right),rest671) end
-| (385,(_,(MlyValue.AND_fundesc_opt AND_fundesc_opt1,
+ in (LrTable.NT 158,(result,TYPE1left,
+AND_rea_opt__AND_fundesc_opt1right),rest671) end
+| (454,(_,(MlyValue.AND_rea_opt__AND_fundesc_opt 
+AND_rea_opt__AND_fundesc_opt1,_,AND_rea_opt__AND_fundesc_optright as 
+AND_rea_opt__AND_fundesc_opt1right))::(_,(MlyValue.longstrid 
+longstrid2,_,_))::_::(_,(MlyValue.COLON_sigexp_opt COLON_sigexp_opt1,_
+,_))::(_,(MlyValue.longstrid longstrid1,_,_))::(_,(_,STRUCTUREleft as 
+STRUCTURE1left,_))::rest671) => let val result=
+MlyValue.rea__AND_fundesc_opt(fn _ => let val longstrid1=longstrid1 ()
+val COLON_sigexp_opt as COLON_sigexp_opt1=COLON_sigexp_opt1 ()
+val longstrid2=longstrid2 ()
+val AND_rea_opt__AND_fundesc_opt as AND_rea_opt__AND_fundesc_opt1=
+AND_rea_opt__AND_fundesc_opt1 ()
+ in (
+ ( STRUCTURERea(I(STRUCTUREleft,
+					   AND_rea_opt__AND_fundesc_optright),
+				         longstrid1, COLON_sigexp_opt,
+					 longstrid2,
+				         #1 AND_rea_opt__AND_fundesc_opt)
+			  , #2 AND_rea_opt__AND_fundesc_opt ) 
+) end
+)
+ in (LrTable.NT 158,(result,STRUCTURE1left,
+AND_rea_opt__AND_fundesc_opt1right),rest671) end
+| (455,(_,(MlyValue.AND_rea_opt__AND_fundesc_opt 
+AND_rea_opt__AND_fundesc_opt1,_,AND_rea_opt__AND_fundesc_optright as 
+AND_rea_opt__AND_fundesc_opt1right))::(_,(MlyValue.longstrid 
+longstrid2,_,_))::_::(_,(MlyValue.COLON_sigexp_opt COLON_sigexp_opt1,_
+,_))::(_,(MlyValue.longstrid longstrid1,_,_))::(_,(_,FUNCTORleft as 
+FUNCTOR1left,_))::rest671) => let val result=
+MlyValue.rea__AND_fundesc_opt(fn _ => let val longstrid1=longstrid1 ()
+val COLON_sigexp_opt as COLON_sigexp_opt1=COLON_sigexp_opt1 ()
+val longstrid2=longstrid2 ()
+val AND_rea_opt__AND_fundesc_opt as AND_rea_opt__AND_fundesc_opt1=
+AND_rea_opt__AND_fundesc_opt1 ()
+ in (
+ ( FUNCTORRea(I(FUNCTORleft,
+					 AND_rea_opt__AND_fundesc_optright),
+				       longstrid1, COLON_sigexp_opt, longstrid2,
+				       #1 AND_rea_opt__AND_fundesc_opt)
+			  , #2 AND_rea_opt__AND_fundesc_opt ) 
+) end
+)
+ in (LrTable.NT 158,(result,FUNCTOR1left,
+AND_rea_opt__AND_fundesc_opt1right),rest671) end
+| (456,(_,(MlyValue.sigexp__AND_rea_opt__AND_fundesc_opt 
+sigexp__AND_rea_opt__AND_fundesc_opt1,_,
+sigexp__AND_rea_opt__AND_fundesc_optright as 
+sigexp__AND_rea_opt__AND_fundesc_opt1right))::_::(_,(
+MlyValue.strpat_list0 strpat_list01,_,_))::(_,(MlyValue.longsigid 
+longsigid1,_,_))::(_,(_,SIGNATUREleft as SIGNATURE1left,_))::rest671)
+ => let val result=MlyValue.rea__AND_fundesc_opt(fn _ => let val 
+longsigid as longsigid1=longsigid1 ()
+val strpat_list0 as strpat_list01=strpat_list01 ()
+val sigexp__AND_rea_opt__AND_fundesc_opt as 
+sigexp__AND_rea_opt__AND_fundesc_opt1=
+sigexp__AND_rea_opt__AND_fundesc_opt1 ()
+ in (
+ ( SIGNATURERea
+				(I(SIGNATUREleft,
+				   sigexp__AND_rea_opt__AND_fundesc_optright),
+				 longsigid, strpat_list0,
+				 #1 sigexp__AND_rea_opt__AND_fundesc_opt,
+				 #2 sigexp__AND_rea_opt__AND_fundesc_opt)
+			  , #3 sigexp__AND_rea_opt__AND_fundesc_opt ) 
+) end
+)
+ in (LrTable.NT 158,(result,SIGNATURE1left,
+sigexp__AND_rea_opt__AND_fundesc_opt1right),rest671) end
+| (457,(_,(MlyValue.AND_fundesc_opt AND_fundesc_opt1,
 AND_fundesc_opt1left,AND_fundesc_opt1right))::rest671) => let val 
-result=MlyValue.AND_tyreadesc_opt__AND_fundesc_opt(fn _ => let val 
+result=MlyValue.AND_rea_opt__AND_fundesc_opt(fn _ => let val 
 AND_fundesc_opt as AND_fundesc_opt1=AND_fundesc_opt1 ()
  in ( ( NONE, AND_fundesc_opt ) ) end
 )
- in (LrTable.NT 151,(result,AND_fundesc_opt1left,AND_fundesc_opt1right
+ in (LrTable.NT 159,(result,AND_fundesc_opt1left,AND_fundesc_opt1right
 ),rest671) end
-| (386,(_,(MlyValue.tyreadesc__AND_fundesc_opt 
-tyreadesc__AND_fundesc_opt1,_,tyreadesc__AND_fundesc_opt1right))::(_,(
-_,AND1left,_))::rest671) => let val result=
-MlyValue.AND_tyreadesc_opt__AND_fundesc_opt(fn _ => let val 
-tyreadesc__AND_fundesc_opt as tyreadesc__AND_fundesc_opt1=
-tyreadesc__AND_fundesc_opt1 ()
+| (458,(_,(MlyValue.rea__AND_fundesc_opt rea__AND_fundesc_opt1,_,
+rea__AND_fundesc_opt1right))::(_,(_,AND1left,_))::rest671) => let val 
+result=MlyValue.AND_rea_opt__AND_fundesc_opt(fn _ => let val 
+rea__AND_fundesc_opt as rea__AND_fundesc_opt1=rea__AND_fundesc_opt1 ()
  in (
- ( SOME(#1 tyreadesc__AND_fundesc_opt),
-			    #2 tyreadesc__AND_fundesc_opt ) 
+ ( SOME(#1 rea__AND_fundesc_opt),
+			    #2 rea__AND_fundesc_opt ) )
+ end
+)
+ in (LrTable.NT 159,(result,AND1left,rea__AND_fundesc_opt1right),
+rest671) end
+| (459,(_,(MlyValue.AND_rea_opt__AND_fundesc_opt 
+AND_rea_opt__AND_fundesc_opt1,_,AND_rea_opt__AND_fundesc_opt1right))::
+(_,(MlyValue.appsigexp appsigexp1,appsigexp1left,_))::rest671) => let 
+val result=MlyValue.sigexp__AND_rea_opt__AND_fundesc_opt(fn _ => let 
+val appsigexp as appsigexp1=appsigexp1 ()
+val AND_rea_opt__AND_fundesc_opt as AND_rea_opt__AND_fundesc_opt1=
+AND_rea_opt__AND_fundesc_opt1 ()
+ in (
+ ( appsigexp
+		          , #1 AND_rea_opt__AND_fundesc_opt
+			  , #2 AND_rea_opt__AND_fundesc_opt ) 
 ) end
 )
- in (LrTable.NT 151,(result,AND1left,tyreadesc__AND_fundesc_opt1right)
-,rest671) end
-| (387,(_,(MlyValue.dec' dec'1,dec'left as dec'1left,dec'right as 
+ in (LrTable.NT 160,(result,appsigexp1left,
+AND_rea_opt__AND_fundesc_opt1right),rest671) end
+| (460,(_,(MlyValue.dec' dec'1,dec'left as dec'1left,dec'right as 
 dec'1right))::rest671) => let val result=MlyValue.program(fn _ => let 
 val dec' as dec'1=dec'1 ()
  in ( DECProgram(I(dec'left,dec'right),
 				     dec', NONE) ) end
 )
- in (LrTable.NT 152,(result,dec'1left,dec'1right),rest671) end
-| (388,(_,(MlyValue.program_opt' program_opt'1,_,program_opt'right as 
+ in (LrTable.NT 161,(result,dec'1left,dec'1right),rest671) end
+| (461,(_,(MlyValue.program_opt' program_opt'1,_,program_opt'right as 
 program_opt'1right))::_::(_,(MlyValue.dec' dec'1,dec'left as dec'1left
 ,_))::rest671) => let val result=MlyValue.program(fn _ => let val dec'
  as dec'1=dec'1 ()
@@ -20902,8 +23069,8 @@ val program_opt' as program_opt'1=program_opt'1 ()
 				     dec', program_opt') 
 ) end
 )
- in (LrTable.NT 152,(result,dec'1left,program_opt'1right),rest671) end
-| (389,(_,(MlyValue.program_opt' program_opt'1,_,program_opt'right as 
+ in (LrTable.NT 161,(result,dec'1left,program_opt'1right),rest671) end
+| (462,(_,(MlyValue.program_opt' program_opt'1,_,program_opt'right as 
 program_opt'1right))::_::(_,(MlyValue.exp exp1,expleft as exp1left,_))
 ::rest671) => let val result=MlyValue.program(fn _ => let val exp as 
 exp1=exp1 ()
@@ -20913,32 +23080,32 @@ val program_opt' as program_opt'1=program_opt'1 ()
 				     exp, program_opt') 
 ) end
 )
- in (LrTable.NT 152,(result,exp1left,program_opt'1right),rest671) end
-| (390,(_,(MlyValue.program program1,program1left,program1right))::
+ in (LrTable.NT 161,(result,exp1left,program_opt'1right),rest671) end
+| (463,(_,(MlyValue.program program1,program1left,program1right))::
 rest671) => let val result=MlyValue.program_opt(fn _ => let val 
 program as program1=program1 ()
  in ( SOME program ) end
 )
- in (LrTable.NT 153,(result,program1left,program1right),rest671) end
-| (391,rest671) => let val result=MlyValue.program_opt(fn _ => ( NONE 
+ in (LrTable.NT 162,(result,program1left,program1right),rest671) end
+| (464,rest671) => let val result=MlyValue.program_opt(fn _ => ( NONE 
 ))
- in (LrTable.NT 153,(result,defaultPos,defaultPos),rest671) end
-| (392,(_,(MlyValue.program_opt program_opt1,program_opt1left,
+ in (LrTable.NT 162,(result,defaultPos,defaultPos),rest671) end
+| (465,(_,(MlyValue.program_opt program_opt1,program_opt1left,
 program_opt1right))::rest671) => let val result=MlyValue.program_opt'(
 fn _ => let val program_opt as program_opt1=program_opt1 ()
  in ( program_opt ) end
 )
- in (LrTable.NT 154,(result,program_opt1left,program_opt1right),
+ in (LrTable.NT 163,(result,program_opt1left,program_opt1right),
 rest671) end
-| (393,(_,(MlyValue.program_opt' program_opt'1,_,program_opt'1right))
+| (466,(_,(MlyValue.program_opt' program_opt'1,_,program_opt'1right))
 ::(_,(_,SEMICOLON1left,_))::rest671) => let val result=
 MlyValue.program_opt'(fn _ => let val program_opt' as program_opt'1=
 program_opt'1 ()
  in ( program_opt' ) end
 )
- in (LrTable.NT 154,(result,SEMICOLON1left,program_opt'1right),rest671
+ in (LrTable.NT 163,(result,SEMICOLON1left,program_opt'1right),rest671
 ) end
-| (394,(_,(MlyValue.program_opt program_opt1,_,program_optright as 
+| (467,(_,(MlyValue.program_opt program_opt1,_,program_optright as 
 program_opt1right))::(_,(MlyValue.import0 import01,import0left as 
 import01left,_))::rest671) => let val result=MlyValue.component(fn _
  => let val import0 as import01=import01 ()
@@ -20948,18 +23115,18 @@ val program_opt as program_opt1=program_opt1 ()
 					    import0, program_opt) 
 ) end
 )
- in (LrTable.NT 155,(result,import01left,program_opt1right),rest671)
+ in (LrTable.NT 164,(result,import01left,program_opt1right),rest671)
  end
-| (395,(_,(MlyValue.import1 import11,import11left,import11right))::
+| (468,(_,(MlyValue.import1 import11,import11left,import11right))::
 rest671) => let val result=MlyValue.import0(fn _ => let val import1
  as import11=import11 ()
  in ( import1 ) end
 )
- in (LrTable.NT 156,(result,import11left,import11right),rest671) end
-| (396,rest671) => let val result=MlyValue.import0(fn _ => (
+ in (LrTable.NT 165,(result,import11left,import11right),rest671) end
+| (469,rest671) => let val result=MlyValue.import0(fn _ => (
  EMPTYImport(I(defaultPos,defaultPos)) ))
- in (LrTable.NT 156,(result,defaultPos,defaultPos),rest671) end
-| (397,(_,(MlyValue.STRING STRING1,_,STRINGright as STRING1right))::_
+ in (LrTable.NT 165,(result,defaultPos,defaultPos),rest671) end
+| (470,(_,(MlyValue.STRING STRING1,_,STRINGright as STRING1right))::_
 ::(_,(MlyValue.spec spec1,_,_))::(_,(_,IMPORTleft as IMPORT1left,_))::
 rest671) => let val result=MlyValue.import1(fn _ => let val spec as 
 spec1=spec1 ()
@@ -20969,8 +23136,8 @@ val STRING as STRING1=STRING1 ()
 					       spec, STRING) )
  end
 )
- in (LrTable.NT 157,(result,IMPORT1left,STRING1right),rest671) end
-| (398,(_,(MlyValue.import1 import12,_,import12right))::(_,(
+ in (LrTable.NT 166,(result,IMPORT1left,STRING1right),rest671) end
+| (471,(_,(MlyValue.import1 import12,_,import12right))::(_,(
 MlyValue.import1 import11,import11left,_))::rest671) => let val result
 =MlyValue.import1(fn _ => let val import11=import11 ()
 val import12=import12 ()
@@ -20979,11 +23146,11 @@ val import12=import12 ()
 					    import11, import12) 
 ) end
 )
- in (LrTable.NT 157,(result,import11left,import12right),rest671) end
-| (399,(_,(_,SEMICOLONleft as SEMICOLON1left,SEMICOLON1right))::
+ in (LrTable.NT 166,(result,import11left,import12right),rest671) end
+| (472,(_,(_,SEMICOLONleft as SEMICOLON1left,SEMICOLON1right))::
 rest671) => let val result=MlyValue.import1(fn _ => (
  EMPTYImport(I(SEMICOLONleft,SEMICOLONleft)) ))
- in (LrTable.NT 157,(result,SEMICOLON1left,SEMICOLON1right),rest671)
+ in (LrTable.NT 166,(result,SEMICOLON1left,SEMICOLON1right),rest671)
  end
 | _ => raise (mlyAction i392)
 end
@@ -21257,12 +23424,10 @@ structure DerivedForms :> DERIVED_FORMS =
     type Lab       = Grammar.Lab
     type VId       = Grammar.VId
     type StrId     = Grammar.StrId
-    type FunId     = Grammar.FunId
     type LongVId   = Grammar.LongVId
     type LongTyCon = Grammar.LongTyCon
     type LongStrId = Grammar.LongStrId
     type LongSigId = Grammar.LongSigId
-    type LongFunId = Grammar.LongFunId
 
     type Op        = Grammar.Op
     type AtExp     = Grammar.AtExp
@@ -21286,17 +23451,20 @@ structure DerivedForms :> DERIVED_FORMS =
     type Pat       = Grammar.Pat
     type Ty        = Grammar.Ty
     type TyVarSeq  = Grammar.TyVarSeq
+    type AtStrExp  = Grammar.AtStrExp
+    type AppStrExp = Grammar.StrExp
     type StrExp    = Grammar.StrExp
+    type StrPat    = Grammar.StrPat
     type StrBind   = Grammar.StrBind
-    type FunBind   = Grammar.FunBind
+    type FunBind   = Grammar.StrBind
+    type AppSigExp = Grammar.SigExp
     type SigExp    = Grammar.SigExp
-    type TyReaDesc = (Info * TyVarSeq * LongTyCon * Ty) list
     type Spec      = Grammar.Spec
     type ValDesc   = Grammar.ValDesc
     type TypDesc   = Grammar.TypDesc
     type DatDesc   = Grammar.DatDesc
     type ExDesc    = Grammar.DconDesc
-    type FunDesc   = Grammar.FunDesc
+    type FunDesc   = Grammar.StrDesc
     type Program   = Grammar.Program
 
 
@@ -21383,6 +23551,9 @@ structure DerivedForms :> DERIVED_FORMS =
 	    G.ARROWTy(I, replaceTy tyvarseq_tyseq ty1,
 			 replaceTy tyvarseq_tyseq ty2)
 
+      | replaceTy tyvarseq_tyseq (ty as G.PACKTy _) =
+	    ty
+
       | replaceTy tyvarseq_tyseq (G.PARTy(I, ty)) =
 	    G.PARTy(I, replaceTy tyvarseq_tyseq ty)
 
@@ -21420,6 +23591,9 @@ structure DerivedForms :> DERIVED_FORMS =
 
       | rewriteTy typbind (G.ARROWTy(I, ty1, ty2)) =
 	    G.ARROWTy(I, rewriteTy typbind ty1, rewriteTy typbind ty2)
+
+      | rewriteTy typbind (ty as G.PACKTy _) =
+	    ty
 
       | rewriteTy typbind (G.PARTy(I, ty)) =
 	    G.PARTy(I, rewriteTy typbind ty)
@@ -21584,6 +23758,7 @@ structure DerivedForms :> DERIVED_FORMS =
 
     val FUNDec       = G.FUNDec
     val EXCEPTIONDec = G.CONSTRUCTORDec
+    val FUNCTORDec   = G.STRUCTUREDec
     val FvalBind     = G.FvalBind
     val EQUALExBind  = G.EQUALDconBind
     val Fmatch       = G.Match
@@ -21642,25 +23817,10 @@ structure DerivedForms :> DERIVED_FORMS =
 	    G.SEQDec(I, G.NONFIXDec(I,longvid), NONFIXMULTIDec(I,longvids))
 
 
-    fun PRIMITIVEEXCEPTIONDec(I, op_opt, vid, ty_opt, s) =
-	    G.PRIMITIVECONSTRUCTORDec(I, op_opt, vid, ty_opt, G.Seq(I,[]),
-					 longtycon_EXN(I), s)
-
-    fun PRIMITIVEFUNCTORSPECDec(I, funid, spec, sigexp, s) =
-	let
-	    val I'      = G.infoSigExp sigexp
-	    val strid   = G.StrId(I', StrId.invent())
-	    val sigexp1 = G.SIGSigExp(G.infoSpec spec, spec)
-	in
-	    (* UNFINISHED: to translate, I either need LETSigExp,
-	       or LOCALSpec+OPENSpec. *)
-	    G.PRIMITIVEFUNCTORDec(I, funid, strid, sigexp1, sigexp, s)
-	end
-
-
     fun NEWExBind(I, op_opt, vid, ty_opt, dconbind_opt) =
 	    G.NEWDconBind(I, op_opt, vid, ty_opt,
 			     G.Seq(I,[]), longtycon_EXN(I), dconbind_opt)
+ 
 
     (* Structure bindings *)
 
@@ -21673,56 +23833,67 @@ structure DerivedForms :> DERIVED_FORMS =
     fun OPAQStrBind(I, strid, sigexp, strexp, strbind_opt) =
 	    G.StrBind(I, strid, G.OPAQStrExp(I, strexp, sigexp), strbind_opt)
 
+    fun WILDCARDStrBind(I, sigexp_opt, strexp, strbind_opt) =
+	    TRANSStrBind(I, G.StrId(I, StrId.invent()),
+			 sigexp_opt, strexp, strbind_opt)
+
 
     (* Structure expressions *)
 
-    fun PARStrExp(I, strexp) = strexp
+    val DECAtStrExp = G.STRUCTAtStrExp
+    val STRIDStrPat = G.StrPat
 
-    fun APPDECStrExp(I, longfunid, dec) =
-	    G.APPStrExp(I, longfunid, G.STRUCTStrExp(G.infoDec dec, dec))
+    fun FCTStrExp(I, strpat as G.StrPat(I1, G.StrId(I2, strid'), sigexp),
+		     strexp) =
+	if StrId.toString strid' <> "" then
+	    G.FCTStrExp(I, strpat, strexp)
+	else
+	let
+	    val I3     = G.infoStrExp strexp
+	    val strid  = G.StrId(I2, StrId.invent())
+
+	    val dec    = G.OPENDec(I3, G.SHORTLong(I3, strid))
+	    val letexp = G.ATSTREXPStrExp(I3, G.LETAtStrExp(I3, dec, strexp))
+	in
+	    G.FCTStrExp(I, G.StrPat(I1, strid, sigexp), letexp)
+	end
+
+    fun WILDCARDStrPat(I, sigexp) =
+	    G.StrPat(I, G.StrId(I, StrId.invent()), sigexp)
+
+    fun SPECStrPat(I, spec) =
+	let
+	    val I' = G.infoSpec spec
+	in
+	    G.StrPat(I, G.StrId(I, StrId.fromString ""),
+		     G.ATSIGEXPSigExp(I', G.SIGAtSigExp(I', spec)))
+	end
 
 
     (* Functor bindings *)
 
-    fun TRANSFunBind(I, funid, strid, sigexp, NONE, strexp, funbind_opt) =
-	    G.FunBind(I, funid, strid, sigexp, strexp, funbind_opt)
-
-      | TRANSFunBind(I, funid, strid,sigexp, SOME sigexp', strexp, funbind_opt)=
-	    G.FunBind(I, funid, strid, sigexp, G.TRANSStrExp(I, strexp,sigexp'),
-			 funbind_opt)
-
-    fun OPAQFunBind(I, funid, strid, sigexp, sigexp', strexp, funbind_opt) =
-	    G.FunBind(I, funid, strid, sigexp, G.OPAQStrExp(I, strexp, sigexp'),
-			 funbind_opt)
-
-
-    fun TRANSSPECFunBind(I, funid, spec, sigexp_opt, strexp, funbind_opt) =
+    fun FunBind(I, strid, strpats, strexp, funbind_opt) =
 	let
-	    val I'     = G.infoStrExp strexp
-	    val strid  = G.StrId(I', StrId.invent())
-	    val sigexp = G.SIGSigExp(G.infoSpec spec, spec)
+	    val I' = G.infoStrExp strexp
 
-	    val dec    = G.OPENDec(I',G.SHORTLong(I',strid))
-	    val strexp'= case sigexp_opt
-			   of NONE         => strexp
-			    | SOME sigexp' => G.TRANSStrExp(I', strexp, sigexp')
-	    val letexp = G.LETStrExp(I', dec, strexp')
+	    fun buildStrExp       []         = strexp
+	      | buildStrExp(strpat::strpats) =
+		    FCTStrExp(Source.over(G.infoStrPat strpat, I'),
+			      strpat, buildStrExp strpats)
 	in
-	    G.FunBind(I, funid, strid, sigexp, letexp, funbind_opt)
+	    G.StrBind(I, strid, buildStrExp strpats, funbind_opt)
 	end
 
-    fun OPAQSPECFunBind(I, funid, spec, sigexp', strexp, funbind_opt) =
-	let
-	    val I'     = G.infoStrExp strexp
-	    val strid  = G.StrId(I', StrId.invent())
-	    val sigexp = G.SIGSigExp(G.infoSpec spec, spec)
+    fun TRANSFunBind(I, strid, strpats, NONE, strexp, funbind_opt) =
+	    FunBind(I, strid, strpats, strexp, funbind_opt)
 
-	    val dec    = G.OPENDec(I',G.SHORTLong(I',strid))
-	    val strexp'= G.TRANSStrExp(I', strexp, sigexp')
-	    val letexp = G.LETStrExp(I', dec, strexp')
-	in
-	    G.FunBind(I, funid, strid, sigexp, letexp, funbind_opt)
-	end
+      | TRANSFunBind(I, strid, strpats, SOME sigexp, strexp, funbind_opt) =
+	    FunBind(I, strid, strpats, G.TRANSStrExp(I, strexp, sigexp),
+		       funbind_opt)
+
+    fun OPAQFunBind(I, strid, strpats, sigexp, strexp, funbind_opt) =
+	    FunBind(I, strid, strpats, G.OPAQStrExp(I, strexp, sigexp),
+		       funbind_opt)
 
 
     (* Specifications *)
@@ -21730,6 +23901,7 @@ structure DerivedForms :> DERIVED_FORMS =
     val FUNSpec       = G.VALSpec
     val SHARINGSpec   = G.SHARINGSpec
     val EXCEPTIONSpec = G.CONSTRUCTORSpec
+    val FUNCTORSpec   = G.STRUCTURESpec
     val EQUALExDesc   = G.EQUALDconDesc
 
     fun DATATYPESpec(I, datdesc, NONE)         = G.DATATYPESpec(I, datdesc)
@@ -21744,7 +23916,8 @@ structure DerivedForms :> DERIVED_FORMS =
     fun INCLUDEMULTISpec(I, [])             = G.EMPTYSpec(I)
       | INCLUDEMULTISpec(I, longsigid::longsigids') =
 	let
-	    val spec1 = G.INCLUDESpec(I, G.LONGSIGIDSigExp(I, longsigid))
+	    val sigexp = G.ATSIGEXPSigExp(I, G.LONGSIGIDAtSigExp(I, longsigid))
+	    val spec1  = G.INCLUDESpec(I, sigexp)
 	in
 	    G.SEQSpec(I, spec1, INCLUDEMULTISpec(I, longsigids'))
 	end
@@ -21770,68 +23943,118 @@ structure DerivedForms :> DERIVED_FORMS =
 	    G.NEWDconDesc(I, op_opt, vid, ty_opt, G.Seq(I,[]),
 			  longtycon_EXN(I), dcondesc_opt)
 
-    fun SPECFunDesc(I, funid, spec, sigexp, fundesc_opt) =
+    fun FunDesc(I, strid, strpats, sigexp, fundesc_opt) =
 	let
-	    val I'      = G.infoSigExp sigexp
-	    val strid   = G.StrId(I', StrId.invent())
-	    val sigexp1 = G.SIGSigExp(G.infoSpec spec, spec)
+	    val I' = G.infoSigExp sigexp
+
+	    fun buildSigExp       []         = sigexp
+	      | buildSigExp(strpat::strpats) =
+		    FCTSigExp(Source.over(G.infoStrPat strpat, I'),
+			      strpat, buildSigExp strpats)
 	in
-	    (* UNFINISHED: to translate, I either need LETSigExp,
-	       or LOCALSpec+OPENSpec. *)
-	    G.FunDesc(I, funid, strid, sigexp1, sigexp, fundesc_opt)
+	    G.NEWStrDesc(I, strid, buildSigExp strpats, fundesc_opt)
 	end
 
 
     (* Signature expressions *)
 
-    fun PARSigExp(I, sigexp) = sigexp
-
-    fun WHERESTRUCTURESigExp(I, sigexp, longstrid1, longstrid2) =
+    and FCTSigExp(I, strpat as G.StrPat(I1, G.StrId(I2, strid'), sigexp1),
+		     sigexp) =
+	if StrId.toString strid' <> "" then
+	    G.FCTSigExp(I, strpat, sigexp)
+	else
 	let
-	    val  I' = Source.over(G.infoLong longstrid1, G.infoLong longstrid2)
-	    val (strids',strid') = G.explodeLong longstrid1
+	    val I3     = G.infoSigExp sigexp
+	    val strid  = G.StrId(I2, StrId.invent())
 
-	    fun buildStrDesc [] =
-		    G.EQUALStrDesc(I', strid', NONE, longstrid2, NONE)
-	      | buildStrDesc(strid::strids) =
-		    G.NEWStrDesc(I', strid, buildSigExp strids, NONE)
+	    val dec    = G.OPENDec(I3, G.SHORTLong(I3, strid))
+	    val letexp = G.ATSIGEXPSigExp(I3, G.LETAtSigExp(I3, dec, sigexp))
+	in
+	    G.FCTSigExp(I, G.StrPat(I1, strid, sigexp1), letexp)
+	end
+
+
+    datatype Rea =
+	  VALRea         of Info * Op * LongVId * Op * LongVId * Rea option
+	| CONSTRUCTORRea of Info * Op * LongVId * Op * LongVId * Rea option
+	| TYPERea        of Info * TyVarSeq * LongTyCon * Ty * Rea option
+	| STRUCTURERea   of Info * LongStrId * SigExp option * LongStrId
+							     * Rea option
+	| SIGNATURERea   of Info * LongSigId * StrPat list * AppSigExp
+							   * Rea option
+
+    val FUNRea       = VALRea
+    val EXCEPTIONRea = CONSTRUCTORRea
+    val FUNCTORRea   = STRUCTURERea
+
+
+    fun buildValSpec (op_opt1, op_opt2, longvid) (I, vid) =
+	    G.VALSpec(I, G.EQUALValDesc(I, op_opt1, vid,
+					   op_opt2, longvid, NONE))
+    fun buildDconSpec (op_opt1, op_opt2, longvid) (I, vid) =
+	    G.CONSTRUCTORSpec(I, G.EQUALDconDesc(I, op_opt1, vid,
+						    op_opt2, longvid, NONE))
+    fun buildTypSpec (tyvarseq, ty) (I, tycon) =
+	    G.TYPESpec(I, G.EQUALTypDesc(I, tyvarseq, tycon, ty, NONE))
+    fun buildStrSpec (sigexp_opt, longstrid) (I, strid) =
+	    G.STRUCTURESpec(I, G.EQUALStrDesc(I, strid, sigexp_opt,
+						 longstrid, NONE))
+    fun buildSigSpec (strpats, sigexp) (I, sigid) =
+	    G.SIGNATURESpec(I, G.EQUALSigDesc(I, sigid, strpats, sigexp, NONE))
+
+
+    fun buildSigExp(buildInnerSpec, I, longid, rea_opt) =
+	let
+	    val (strids,id) = G.explodeLong longid
+
+	    fun buildSpec      []        = buildInnerSpec(I, id)
+	      | buildSpec(strid::strids) =
+		  G.STRUCTURESpec(I,
+			G.NEWStrDesc(I, strid, buildSigExp strids, NONE))
 
 	    and buildSigExp strids =
-		    G.SIGSigExp(I', G.STRUCTURESpec(I', buildStrDesc strids))
+		  G.ATSIGEXPSigExp(I,
+			G.SIGAtSigExp(I, buildSpec strids))
 	in
-	    G.WHERESigExp(I, sigexp, buildSigExp strids')
+	    ( buildSigExp strids, rea_opt )
 	end
 
-    fun WHERETYPESigExp'(I, sigexp, tyvarseq, longtycon, ty) =
+
+    fun Rea(VALRea(I, op_opt1, longvid1, op_opt2, longvid2, rea_opt)) =
+	    buildSigExp(buildValSpec(op_opt1, op_opt2, longvid2),
+			I, longvid1, rea_opt)
+      | Rea(CONSTRUCTORRea(I, op_opt1, longvid1, op_opt2, longvid2, rea_opt)) =
+	    buildSigExp(buildDconSpec(op_opt1, op_opt2, longvid2),
+			I, longvid1, rea_opt)
+      | Rea(TYPERea(I, tyvarseq, longtycon, ty, rea_opt)) =
+	    buildSigExp(buildTypSpec(tyvarseq, ty), I, longtycon, rea_opt)
+      | Rea(STRUCTURERea(I, longstrid1, sigexp_opt, longstrid2, rea_opt)) =
+	    buildSigExp(buildStrSpec(sigexp_opt, longstrid2),
+			I, longstrid1, rea_opt)
+      | Rea(SIGNATURERea(I, longsigid, strpats, sigexp, rea_opt)) =
+	    buildSigExp(buildSigSpec(strpats, sigexp), I, longsigid, rea_opt)
+
+    fun WHEREREASigExp'(I, sigexp, NONE)     = sigexp
+      | WHEREREASigExp'(I, sigexp, SOME rea) =
 	let
-	    val  I'             = Source.over(G.infoSeq tyvarseq, G.infoTy ty)
-	    val (strids',tycon) = G.explodeLong longtycon
-
-	    fun buildSpec [] =
-		  G.TYPESpec(I', G.EQUALTypDesc(I', tyvarseq, tycon, ty, NONE) )
-	      | buildSpec(strid::strids) =
-		  G.STRUCTURESpec(I',
-			G.NEWStrDesc(I', strid, buildSigExp strids, NONE) )
-
-	    and buildSigExp strids = G.SIGSigExp(I', buildSpec strids)
+	    val (sigexp2,rea_opt) = Rea rea
+	    val  I'               = Source.over(I, G.infoSigExp sigexp2)
+	    val  sigexp'          = G.WHERESigExp(I', sigexp, sigexp2)
 	in
-	    G.WHERESigExp(I, sigexp, buildSigExp strids')
+	    WHEREREASigExp'(I, sigexp', rea_opt)
 	end
 
-    fun WHERETYPESigExp(I, sigexp, [])                                = sigexp
-      | WHERETYPESigExp(I, sigexp, (I',tyvarseq,longtycon,ty)::reas') =
+    fun WHEREREASigExp(I, sigexp, rea) = WHEREREASigExp'(I, sigexp, SOME rea)
+
+
+    fun WHERELONGSTRIDSigExp(I, sigexp, longstrid1, longstrid2) =
 	let
-	    val sigexp' = WHERETYPESigExp'(I', sigexp, tyvarseq, longtycon, ty)
+	    val I' = Source.over(G.infoLong longstrid1, G.infoLong longstrid2)
 	in
-	    WHERETYPESigExp(I, sigexp', reas')
+	    WHEREREASigExp(I, sigexp,
+			   STRUCTURERea(I', longstrid1, NONE, longstrid2, NONE))
 	end
 
-
-    fun TyReaDesc(I, tyvarseq, longtycon, ty, NONE) =
-	    (I, tyvarseq, longtycon, ty)::[]
-
-      | TyReaDesc(I, tyvarseq, longtycon, ty, SOME tyreadesc) =
-	    (I, tyvarseq, longtycon, ty)::tyreadesc
 
 
     (* Programs *)
@@ -30822,6 +33045,7 @@ structure ParsingPhase :> PARSING_PHASE =
     (* Import *)
 
     structure Grammar = InputGrammar
+    structure E       = ParsingError
 
 
     (* Build Yacc parser *)
@@ -30857,7 +33081,7 @@ structure ParsingPhase :> PARSING_PHASE =
 
 	    val lexer = Parser.makeLexer yyinput
 
-	    fun onError(s, pos1, pos2) = Error.error((pos1,pos2), s)
+	    fun onError(s, pos1, pos2) = E.error((pos1,pos2), E.SyntaxError s)
 	in
 	    #1 (Parser.parse(0, lexer, onError, ()))
 	end
@@ -31345,19 +33569,30 @@ structure OutputImperativeGrammar :> OUTPUT_IMPERATIVE_GRAMMAR =
 		end
 	end
 
+	fun insert (x, ys as (y::yr)): int list =
+	    if x < y then x::ys else y::insert (x, yr)
+	  | insert (x, nil) = [x]
+
+	val sort = StampSet.fold insert nil
+
 	fun outputInfo (_, ref (Unknown | LoopStart | LoopEnd)) = NULL
-	  | outputInfo (_, ref (Use set)) = SEQ [S "use ...", NL]
-	  | outputInfo (_, ref (Kill set)) =
-	    if StampSet.isEmpty set then NULL
+	  | outputInfo (_, ref (Use set)) =
+	    if StampSet.isEmpty set then SEQ [S "(* use *)", NL]
 	    else
-		SEQ [S (StampSet.fold (fn (stamp, s) =>
-				       s ^ " " ^ Stamp.toString stamp)
-			"kill" set), NL]
+		SEQ [S (List.foldl (fn (stamp, s) =>
+				    s ^ " " ^ Stamp.toString stamp)
+			"(* use" (sort set)), S " *)", NL]
+	  | outputInfo (_, ref (Kill set)) =
+	    if StampSet.isEmpty set then SEQ [S "(* kill *)", NL]
+	    else
+		SEQ [S (List.foldl (fn (stamp, s) =>
+				    s ^ " " ^ Stamp.toString stamp)
+			"(* kill" (sort set)), S "*)", NL]
 
 	fun outputLit (WordLit w) = "word " ^ LargeWord.toString w
 	  | outputLit (IntLit i) = "int " ^ LargeInt.toString i
 	  | outputLit (CharLit c) = "char " ^ Char.toCString c
-	  | outputLit (StringLit s) = "string " ^ String.toCString s
+	  | outputLit (StringLit s) = "string \"" ^ String.toCString s ^ "\""
 	  | outputLit (RealLit r) = "real " ^ (*LargeReal.toString*) r
 
 	fun outputArgs (OneArg id) = ID id
@@ -31403,7 +33638,7 @@ structure OutputImperativeGrammar :> OUTPUT_IMPERATIVE_GRAMMAR =
 		  S "catch ", ID id, IN, NL, outputBody body2, EX, NL,
 		  S "cont", IN, NL, outputBody body3, EX])
 	  | outputStm (EndHandleStm (_, ref i)) =
-	    CO ("leave " ^ Int.toString i)
+	    S ("(* leave " ^ Int.toString i ^ " *)")
 	  | outputStm (TestStm (_, id, test, body1, body2)) =
 	    SEQ [S "case ", ID id, S " of ", IN, outputTest test, NL,
 		 outputBody body1, EX, NL, S "else", IN, NL, outputBody body2,
@@ -31419,7 +33654,7 @@ structure OutputImperativeGrammar :> OUTPUT_IMPERATIVE_GRAMMAR =
 	  | outputStm (ReturnStm (_, exp)) =
 	    SEQ [S "return ", IN, outputExp exp, EX]
 	  | outputStm (IndirectStm (_, ref bodyOpt)) =
-	    outputBody (valOf bodyOpt)
+	    SEQ [S "indirect", NL, outputBody (valOf bodyOpt)]
 	  | outputStm (ExportStm (_, exp)) =
 	    SEQ [S "export ", IN, outputExp exp, EX]
 	and outputExp (LitExp (_, lit)) = S (outputLit lit)
@@ -33581,6 +35816,10 @@ signature LIVENESS_ANALYSIS_PHASE =
  *)
 
 (*
+ * The `Use' set of a statement is the set of stamps that
+ * have already been initialized when the statement is reached
+ * and that are still going to be referenced within or after it.
+ *
  * Dead code elimination for defining occurrences without using occurrences:
  *    stm = ValDec (... stamp ...): stamp \in Kill(Cont(stm))
  *    stm = RecDec (... stamp ...): stamp \in Kill(Cont(stm))   (*--** check *)
@@ -33600,143 +35839,217 @@ structure LivenessAnalysisPhase :> LIVENESS_ANALYSIS_PHASE =
 	fun lazyValOf (Orig x) = x
 	  | lazyValOf (Copy x) = x
 
-	fun processArgs (OneArg id, set, x) = x (set, id)
-	  | processArgs (TupArgs ids, set, x) =
-	    List.app (fn id => x (set, id)) ids
-	  | processArgs (RecArgs labIdList, set, x) =
-	    List.app (fn (_, id) => x (set, id)) labIdList
+	fun processArgs (OneArg id, lset, x) = x (lset, id)
+	  | processArgs (TupArgs ids, lset, x) =
+	    List.foldl (fn (id, lset) => x (lset, id)) lset ids
+	  | processArgs (RecArgs labIdList, lset, x) =
+	    List.foldl (fn ((_, id), lset) => x (lset, id)) lset labIdList
 
 	(* Compute `Use' Sets *)
 
-	fun del (r as ref (Orig set), Id (_, stamp, _)) =
+	fun del (lset as (Orig set), Id (_, stamp, _)) =
 	    if StampSet.member (set, stamp) then
 		let
 		    val set' = StampSet.copy set
 		in
-		    r := Copy set'; StampSet.delete (set', stamp)
+		    StampSet.delete (set', stamp);
+		    Copy set'
 		end
-	    else ()
-	  | del (ref (Copy set), Id (_, stamp, _)) =
-	    StampSet.delete (set, stamp)
+	    else lset
+	  | del (lset as (Copy set), Id (_, stamp, _)) =
+	    (StampSet.delete (set, stamp); lset)
 
-	fun delList (set, ids) = List.app (fn id => del (set, id)) ids
+	fun delList (lset, ids) =
+	    List.foldl (fn (id, lset) => del (lset, id)) lset ids
 
-	fun ins (r as ref (Orig set), Id (_, stamp, _)) =
-	    if StampSet.member (set, stamp) then ()
+	fun ins (lset as (Orig set), Id (_, stamp, _)) =
+	    if StampSet.member (set, stamp) then lset
 	    else
 		let
 		    val set' = StampSet.copy set
 		in
-		    r := Copy set'; StampSet.insert (set', stamp)
+		    StampSet.insert (set', stamp);
+		    Copy set'
 		end
-	  | ins (ref (Copy set), Id (_, stamp, _)) =
-	    StampSet.insert (set, stamp)
+	  | ins (lset as (Copy set), Id (_, stamp, _)) =
+	    (StampSet.insert (set, stamp); lset)
 
-	fun insList (set, ids) = List.app (fn id => ins (set, id)) ids
+	fun insList (lset, ids) =
+	    List.foldl (fn (id, lset) => ins (lset, id)) lset ids
 
-	fun union (r as ref (Orig set), set') =
+	fun union (Orig set, set') =
 	    let
 		val set'' = StampSet.copy set
 	    in
-		r := Copy set''; StampSet.union (set'', set')
+		StampSet.union (set'', set');
+		Copy set''
 	    end
-	  | union (ref (Copy set), set') = StampSet.union (set, set')
+	  | union (lset as (Copy set), set') =
+	    (StampSet.union (set, set'); lset)
 
-	fun scanTest (LitTest _, _) = ()
-	  | scanTest (ConTest (id, NONE), set) = ins (set, id)
-	  | scanTest (ConTest (id1, SOME id2), set) =
-	    (ins (set, id1); del (set, id2))
-	  | scanTest (RefTest id, set) = del (set, id)
-	  | scanTest (TupTest ids, set) = delList (set, ids)
-	  | scanTest (RecTest labIdList, set) =
-	    List.app (fn (_, id) => del (set, id)) labIdList
-	  | scanTest (LabTest (_, id), set) = del (set, id)
-	  | scanTest (VecTest ids, set) = delList (set, ids)
+	fun scanTest (LitTest _, lset) = lset
+	  | scanTest (ConTest (id, NONE), lset) = ins (lset, id)
+	  | scanTest (ConTest (id1, SOME id2), lset) =
+	    del (ins (lset, id1), id2)
+	  | scanTest (RefTest id, lset) = del (lset, id)
+	  | scanTest (TupTest ids, lset) = delList (lset, ids)
+	  | scanTest (RecTest labIdList, lset) =
+	    List.foldl (fn ((_, id), lset) => del (lset, id)) lset labIdList
+	  | scanTest (LabTest (_, id), lset) = del (lset, id)
+	  | scanTest (VecTest ids, lset) = delList (lset, ids)
 
-	fun delStm (RecDec (_, idExpList, _), set) =
+	fun setInfo ((_, r as ref (Unknown | LoopStart | LoopEnd)), set) =
+	    r := Use set
+	  | setInfo ((_, ref (Use _)), _) = ()
+	  | setInfo ((_, ref (Kill _)), _) =
+	    raise Crash.Crash "LivenessAnalysisPhase.setInfo"
+
+	(* Annotate the `Use' set at each statement *)
+
+	fun scanBody (ValDec (i, id, exp, _)::stms, initial) =
 	    let
+		val lset = scanBody (stms, initial)
+		val set = lazyValOf (scanExp (exp, del (lset, id)))
+	    in
+		setInfo (i, set);
+		Orig set
+	    end
+	  | scanBody (RecDec (i, idExpList, _)::stms, initial) =
+	    let
+		val lset = scanBody (stms, initial)
+		val lset' =
+		    List.foldl (fn ((_, exp), lset) => scanExp (exp, lset))
+		    lset idExpList
+		val set = lazyValOf lset'
+		val _ = setInfo (i, set)
 		val set' = StampSet.copy set
 	    in
 		List.app (fn (Id (_, stamp, _), _) =>
 			  StampSet.delete (set', stamp)) idExpList;
 		Copy set'
 	    end
-	  | delStm (_, set) = Orig set
-
-	fun scanStm (ValDec (_, id, exp, _), set) =
-	    (del (set, id); scanExp (exp, set))
-	  | scanStm (RecDec (_, idExpList, _), set) =
-	    List.app (fn (_, exp) => scanExp (exp, set)) idExpList
-	  | scanStm (EvalStm (_, exp), set) = scanExp (exp, set)
-	  | scanStm (RaiseStm (_, id), set) = ins (set, id)
-	  | scanStm (HandleStm (_, body1, id, body2, body3, _), set) =
+	  | scanBody (EvalStm (i, exp)::stms, initial) =
 	    let
-		val set3 = scanBody (body3, Copy (StampSet.new ()))
-		val set2 = scanBody (body2, set3)
-		val set1 = scanBody (body1, set2)
+		val lset = scanBody (stms, initial)
+		val set = lazyValOf (scanExp (exp, lset))
 	    in
-		union (set, lazyValOf set1); union (set, lazyValOf set2);
-		union (set, lazyValOf set3); del (set, id)
+		setInfo (i, set);
+		Orig set
 	    end
-	  | scanStm (EndHandleStm (_, _), _) = ()
-	  | scanStm (TestStm (_, id, test, body1, body2), set) =
-	    (scanBody' (body1, set); scanTest (test, set);
-	     scanBody' (body2, set); ins (set, id))
-	  | scanStm (SharedStm ((_, r as ref Unknown), body, _), set) =
-	    (r := LoopStart; scanBody' (body, set); r := Unknown)
-	  | scanStm (SharedStm ((_, r as ref LoopStart), body, _), set) =
-	    (r := LoopEnd; scanBody' (body, set))
-	  | scanStm (SharedStm ((_, r as ref LoopEnd), _, _), set) = ()
-	  | scanStm (SharedStm ((_, ref (Use set')), _, _), set) =
-	    union (set, set')
-	  | scanStm (SharedStm ((_, ref (Kill _)), _, _), _) =
-	    raise Crash.Crash "LivenessAnalysisPhase.scanStm"
-	  | scanStm (ReturnStm (_, exp), set) = scanExp (exp, set)
-	  | scanStm (IndirectStm (_, ref bodyOpt), set) =
-	    scanBody' (valOf bodyOpt, set)
-	  | scanStm (ExportStm (_, exp), set) = scanExp (exp, set)
-	and scanExp (LitExp (_, _), _) = ()
-	  | scanExp (PrimExp (_, _), _) = ()
-	  | scanExp (NewExp (_, _, _), _) = ()
-	  | scanExp (VarExp (_, id), set) = ins (set, id)
-	  | scanExp (ConExp (_, id, _), set) = ins (set, id)
-	  | scanExp (RefExp _, _) = ()
-	  | scanExp (TupExp (_, ids), set) = insList (set, ids)
-	  | scanExp (RecExp (_, labIdList), set) =
-	    List.app (fn (_, id) => ins (set, id)) labIdList
-	  | scanExp (SelExp (_, _), _) = ()
-	  | scanExp (VecExp (_, ids), set) = insList (set, ids)
-	  | scanExp (FunExp (_, _, _, argsBodyList), set) =
-	    List.app (fn (args, body) =>
-		      (scanBody' (body, set);
-		       processArgs (args, set, del))) argsBodyList
-	  | scanExp (AppExp (_, id, args), set) =
-	    (ins (set, id); processArgs (args, set, ins))
-	  | scanExp (SelAppExp (_, _, id), set) = ins (set, id)
-	  | scanExp (ConAppExp (_, id, args), set) =
-	    (ins (set, id); processArgs (args, set, ins))
-	  | scanExp (RefAppExp (_, args), set) = processArgs (args, set, ins)
-	  | scanExp (PrimAppExp (_, _, ids), set) = insList (set, ids)
-	  | scanExp (AdjExp (_, id1, id2), set) =
-	    (ins (set, id1); ins (set, id2))
-	and scanBody (stm::stms, initial) =
+	  | scanBody ([RaiseStm (i, Id (_, stamp, _))], _) =
 	    let
-		val setRef = ref (scanBody (stms, initial))
-		val _ = scanStm (stm, setRef)
-		val set = lazyValOf (!setRef)
+		val set = StampSet.new ()
+		val _ = StampSet.insert (set, stamp)
 	    in
-		case infoStm stm of
-		    (_, r as ref (Unknown | LoopEnd)) => r := Use set
-		  | (_, ref (LoopStart | Use _)) => ()
-		  | (_, ref (Kill _)) =>
-			raise Crash.Crash "LivenessAnalysisPhase.scanBody";
-		delStm (stm, set)
+		setInfo (i, set);
+		Orig set
+	    end
+	  | scanBody ([HandleStm (i, body1, id, body2, body3, _)], initial) =
+	    let
+		val lset3 = scanBody (body3, initial)
+		val lset2 = scanBody (body2, lset3)
+		val lset1 = scanBody (body1, lset2)
+		val set = lazyValOf (del (lset1, id))
+	    in
+		setInfo (i, set);
+		Orig set
+	    end
+	  | scanBody ([EndHandleStm (i, _)], initial) =
+	    let
+		val set = lazyValOf initial
+	    in
+		setInfo (i, set);
+		Orig set
+	    end
+	  | scanBody ([TestStm (i, id, test, body1, body2)], initial) =
+	    let
+		val initial' = Orig (lazyValOf initial)
+		val lset1 = scanTest (test, scanBody (body1, initial'))
+		val lset2 = scanTest (test, scanBody (body2, initial'))
+		val lset1' = union (lset1, lazyValOf (ins (lset2, id)))
+		val set = lazyValOf lset1'
+	    in
+		setInfo (i, set);
+		Orig set
+	    end
+	  | scanBody ([SharedStm (i as (_, r as ref Unknown), body, _)],
+		      initial) =
+	    let
+		val _ = r := LoopStart
+		val set = lazyValOf (scanBody (body, initial))
+	    in
+		setInfo (i, set);
+		Orig set
+	    end
+	  | scanBody ([SharedStm (i as (_, r as ref LoopStart), body, _)],
+		      initial) =
+	    (r := LoopEnd; scanBody (body, initial))
+	  | scanBody ([SharedStm ((_, r as ref LoopEnd), _, _)],
+		      initial) = Copy (StampSet.new ())   (*--** or initial? *)
+	  | scanBody ([SharedStm ((_, ref (Use set')), _, _)], _) = Orig set'
+	  | scanBody ([SharedStm ((_, ref (Kill _)), _, _)], _) =
+	    raise Crash.Crash "LivenessAnalysisPhase.scanStm 1"
+	  | scanBody ([ReturnStm (i, exp)], _) =
+	    let
+		val set = lazyValOf (scanExp (exp, Copy (StampSet.new ())))
+	    in
+		setInfo (i, set);
+		Orig set
+	    end
+	  | scanBody ([IndirectStm (i, ref bodyOpt)], initial) =
+	    let
+		val set = lazyValOf (scanBody (valOf bodyOpt, initial))
+	    in
+		setInfo (i, set);
+		Orig set
+	    end
+	  | scanBody ([ExportStm (i, exp)], _) =
+	    let
+		val set = lazyValOf (scanExp (exp, Copy (StampSet.new ())))
+	    in
+		setInfo (i, set);
+		Orig set
 	    end
 	  | scanBody (nil, initial) = initial
-	and scanBody' (body, set) =
-	    union (set, lazyValOf (scanBody (body, Copy (StampSet.new ()))))
+	  | scanBody (_, _) =
+	    raise Crash.Crash "LivenessAnalysisPhase.scanStm 2"
+	and scanExp (LitExp (_, _), lset) = lset
+	  | scanExp (PrimExp (_, _), lset) = lset
+	  | scanExp (NewExp (_, _, _), lset) = lset
+	  | scanExp (VarExp (_, id), lset) = ins (lset, id)
+	  | scanExp (ConExp (_, id, _), lset) = ins (lset, id)
+	  | scanExp (RefExp _, lset) = lset
+	  | scanExp (TupExp (_, ids), lset) = insList (lset, ids)
+	  | scanExp (RecExp (_, labIdList), lset) =
+	    List.foldl (fn ((_, id), lset) => ins (lset, id)) lset labIdList
+	  | scanExp (SelExp (_, _), lset) = lset
+	  | scanExp (VecExp (_, ids), lset) = insList (lset, ids)
+	  | scanExp (FunExp (_, _, _, argsBodyList), lset) =
+	    List.foldl (fn ((args, body), lset) =>
+			let
+			    val set =
+				lazyValOf (scanBody (body,
+						     Copy (StampSet.new ())))
+			    val lset' = union (lset, set)
+			in
+			    processArgs (args, lset', del)
+			end) lset argsBodyList
+	  | scanExp (AppExp (_, id, args), lset) =
+	    processArgs (args, ins (lset, id), ins)
+	  | scanExp (SelAppExp (_, _, id), lset) = ins (lset, id)
+	  | scanExp (ConAppExp (_, id, args), lset) =
+	    processArgs (args, ins (lset, id), ins)
+	  | scanExp (RefAppExp (_, args), lset) = processArgs (args, lset, ins)
+	  | scanExp (PrimAppExp (_, _, ids), lset) = insList (lset, ids)
+	  | scanExp (AdjExp (_, id1, id2), lset) = ins (ins (lset, id1), id2)
 
 	(* Compute `Def' and `Kill' sets *)
+
+	fun processArgs (OneArg id, set, x) = x (set, id)
+	  | processArgs (TupArgs ids, set, x) =
+	    List.app (fn id => x (set, id)) ids
+	  | processArgs (RecArgs labIdList, set, x) =
+	    List.app (fn (_, id) => x (set, id)) labIdList
 
 	fun ins (set, Id (_, stamp, _)) = StampSet.insert (set, stamp)
 
@@ -33763,8 +36076,8 @@ structure LivenessAnalysisPhase :> LIVENESS_ANALYSIS_PHASE =
 		val set' = StampSet.copy set
 	    in
 		ins (set', id);
-		initBody (body2, set');
 		initBody (body1, StampSet.copy set);
+		initBody (body2, set');
 		initBody (body3, set)
 	    end
 	  | initStm (EndHandleStm (_, _), _) = ()
@@ -34889,69 +37202,69 @@ structure IL :> IL =
 
 structure StockWerk =
     struct
-	val Prebound         = ["StockWerk", "Prebound"]
-	val Komponist        = ["StockWerk", "Komponist"]
-	val ExceptionWrapper = ["StockWerk", "ExceptionWrapper"]
-	val RecordArity      = ["StockWerk", "RecordArity"]
-	val StockWert        = ["StockWerk", "StockWert"]
-	val Word             = ["StockWerk", "Word"]
-	val Int              = ["StockWerk", "Int"]
-	val Char             = ["StockWerk", "Char"]
-	val String           = ["StockWerk", "String"]
-	val Real             = ["StockWerk", "Real"]
-	val Name             = ["StockWerk", "Name"]
-	val NamedName        = ["StockWerk", "NamedName"]
-	val Constructor      = ["StockWerk", "Constructor"]
-	val NamedConstructor = ["StockWerk", "NamedConstructor"]
-	val ConVal           = ["StockWerk", "ConVal"]
-	val RefConstructor   = ["StockWerk", "RefConstructor"]
-	val Ref              = ["StockWerk", "Ref"]
-	val Tuple2           = ["StockWerk", "Tuple2"]
-	val Tuple3           = ["StockWerk", "Tuple3"]
-	val Tuple            = ["StockWerk", "Tuple"]
-	val Record           = ["StockWerk", "Record"]
-	val Vector           = ["StockWerk", "Vector"]
-	val Transient        = ["StockWerk", "Transient"]
-	val Promise          = ["StockWerk", "Promise"]
-	val Future           = ["StockWerk", "Future"]
-	val ByNeed           = ["StockWerk", "ByNeed"]
-	val Selector         = ["StockWerk", "Selector"]
-	val Procedure        = ["StockWerk", "Procedure"]
-	val Procedure0       = ["StockWerk", "Procedure0"]
-	val Procedure2       = ["StockWerk", "Procedure2"]
-	val Procedure3       = ["StockWerk", "Procedure3"]
+	val Prebound              = ["StockWerk", "Prebound"]
+	val Komponist             = ["StockWerk", "Komponist"]
+	val ExceptionWrapper      = ["StockWerk", "ExceptionWrapper"]
+	val RecordArity           = ["StockWerk", "RecordArity"]
+	val StockWert             = ["StockWerk", "StockWert"]
+	val Word                  = ["StockWerk", "Word"]
+	val Int                   = ["StockWerk", "Int"]
+	val Char                  = ["StockWerk", "Char"]
+	val String                = ["StockWerk", "String"]
+	val Real                  = ["StockWerk", "Real"]
+	val NongenericConstructor = ["StockWerk", "NongenericConstructor"]
+	val GenericConstructor    = ["StockWerk", "GenericConstructor"]
+	val ConVal                = ["StockWerk", "ConVal"]
+	val RefConstructor        = ["StockWerk", "RefConstructor"]
+	val Ref                   = ["StockWerk", "Ref"]
+	val Tuple2                = ["StockWerk", "Tuple2"]
+	val Tuple3                = ["StockWerk", "Tuple3"]
+	val Tuple4                = ["StockWerk", "Tuple4"]
+	val Tuple                 = ["StockWerk", "Tuple"]
+	val Record                = ["StockWerk", "Record"]
+	val Vector                = ["StockWerk", "Vector"]
+	val Transient             = ["StockWerk", "Transient"]
+	val Promise               = ["StockWerk", "Promise"]
+	val Future                = ["StockWerk", "Future"]
+	val ByNeed                = ["StockWerk", "ByNeed"]
+	val Selector              = ["StockWerk", "Selector"]
+	val Procedure             = ["StockWerk", "Procedure"]
+	val Procedure0            = ["StockWerk", "Procedure0"]
+	val Procedure2            = ["StockWerk", "Procedure2"]
+	val Procedure3            = ["StockWerk", "Procedure3"]
+	val Procedure4            = ["StockWerk", "Procedure4"]
 
-	val PreboundTy         = IL.ClassTy Prebound
-	val KomponistTy        = IL.ClassTy Komponist
-	val ExceptionWrapperTy = IL.ClassTy ExceptionWrapper
-	val RecordArityTy      = IL.ClassTy RecordArity
-	val StockWertTy        = IL.ClassTy StockWert
-	val WordTy             = IL.ClassTy Word
-	val IntTy              = IL.ClassTy Int
-	val CharTy             = IL.ClassTy Char
-	val StringTy           = IL.ClassTy String
-	val RealTy             = IL.ClassTy Real
-	val NameTy             = IL.ClassTy Name
-	val NamedNameTy        = IL.ClassTy NamedName
-	val ConstructorTy      = IL.ClassTy Constructor
-	val NamedConstructorTy = IL.ClassTy NamedConstructor
-	val ConValTy           = IL.ClassTy ConVal
-	val RefConstructorTy   = IL.ClassTy RefConstructor
-	val RefTy              = IL.ClassTy Ref
-	val Tuple2Ty           = IL.ClassTy Tuple2
-	val Tuple3Ty           = IL.ClassTy Tuple3
-	val TupleTy            = IL.ClassTy Tuple
-	val RecordTy           = IL.ClassTy Record
-	val VectorTy           = IL.ClassTy Vector
-	val TransientTy        = IL.ClassTy Transient
-	val PromiseTy          = IL.ClassTy Promise
-	val FutureTy           = IL.ClassTy Future
-	val ByNeedTy           = IL.ClassTy ByNeed
-	val SelectorTy         = IL.ClassTy Selector
-	val ProcedureTy        = IL.ClassTy Procedure
-	val Procedure0Ty       = IL.ClassTy Procedure0
-	val Procedure2Ty       = IL.ClassTy Procedure2
-	val Procedure3Ty       = IL.ClassTy Procedure3
+	val PreboundTy              = IL.ClassTy Prebound
+	val KomponistTy             = IL.ClassTy Komponist
+	val ExceptionWrapperTy      = IL.ClassTy ExceptionWrapper
+	val RecordArityTy           = IL.ClassTy RecordArity
+	val StockWertTy             = IL.ClassTy StockWert
+	val WordTy                  = IL.ClassTy Word
+	val IntTy                   = IL.ClassTy Int
+	val CharTy                  = IL.ClassTy Char
+	val StringTy                = IL.ClassTy String
+	val RealTy                  = IL.ClassTy Real
+	val NongenericConstructorTy = IL.ClassTy NongenericConstructor
+	val GenericConstructorTy    = IL.ClassTy GenericConstructor
+	val ConValTy                = IL.ClassTy ConVal
+	val RefConstructorTy        = IL.ClassTy RefConstructor
+	val RefTy                   = IL.ClassTy Ref
+	val Tuple2Ty                = IL.ClassTy Tuple2
+	val Tuple3Ty                = IL.ClassTy Tuple3
+	val Tuple4Ty                = IL.ClassTy Tuple4
+	val TupleTy                 = IL.ClassTy Tuple
+	val RecordTy                = IL.ClassTy Record
+	val VectorTy                = IL.ClassTy Vector
+	val TransientTy             = IL.ClassTy Transient
+	val PromiseTy               = IL.ClassTy Promise
+	val FutureTy                = IL.ClassTy Future
+	val ByNeedTy                = IL.ClassTy ByNeed
+	val SelectorTy              = IL.ClassTy Selector
+	val ProcedureTy             = IL.ClassTy Procedure
+	val Procedure0Ty            = IL.ClassTy Procedure0
+	val Procedure2Ty            = IL.ClassTy Procedure2
+	val Procedure3Ty            = IL.ClassTy Procedure3
+	val Procedure4Ty            = IL.ClassTy Procedure4
     end
 (* src # 132 *)
 (*
@@ -34990,29 +37303,27 @@ structure Builtins :> BUILTINS =
 	val builtinTable =
 	    let
 		val map: (string * IL.ty) Map.t = Map.new ()
-		val cty = StockWerk.ConstructorTy
 		val ty = StockWerk.StockWertTy
 	    in
-		Map.insert (map, "cons", ("cons", cty));
-		Map.insert (map, "ByNeed", ("ByNeed", cty));
 		Map.insert (map, "=", ("eq", ty));
 		Map.insert (map, "<>", ("ne", ty));
-		Map.insert (map, ":=", ("General$assign", ty));
-		Map.insert (map, "<", ("Int$less", ty));
 		Map.insert (map, "~", ("Int$uminus", ty));
-		Map.insert (map, "-", ("Int$minus", ty));
 		Map.insert (map, "+", ("Int$plus", ty));
+		Map.insert (map, "-", ("Int$minus", ty));
 		Map.insert (map, "*", ("Int$times", ty));
+		Map.insert (map, "div", ("Int$div", ty));
+		Map.insert (map, "mod", ("Int$mod", ty));
+		Map.insert (map, "<", ("Int$lt", ty));
 		Map.insert (map, ">", ("Int$gt", ty));
 		Map.insert (map, "<=", ("Int$le", ty));
 		Map.insert (map, ">=", ("Int$ge", ty));
-		Map.insert (map, "div", ("Int$div", ty));
-		Map.insert (map, "mod", ("Int$mod", ty));
+		Map.insert (map, ":=", ("General$assign", ty));
+		Map.insert (map, "Char.<=", ("Char$le", ty));
 		Map.insert (map, "String.^", ("String$conc", ty));
 		Map.insert (map, "Word.+", ("Word$plus", ty));
 		Map.insert (map, "Word.-", ("Word$minus", ty));
 		Map.insert (map, "Word.*", ("Word$times", ty));
-		Map.insert (map, "Word.<<", ("Word$shr", ty));
+		Map.insert (map, "Word.<<", ("Word$shl", ty));
 		Map.insert (map, "Word.>>", ("Word$lsr", ty));
 		Map.insert (map, "Word.~>>", ("Word$asr", ty));
 		Map.insert (map, "Word.fromInt'", ("Word$fromInt2", ty));
@@ -35136,15 +37447,14 @@ structure CodeStore :> CODE_STORE =
 		open Prebound
 		val scope = ScopedMap.new ()
 		val ty = StockWerk.StockWertTy
-		val cty = StockWerk.ConstructorTy
 	    in
 		ScopedMap.insert (scope, stamp_false, Prebound ("false", ty));
 		ScopedMap.insert (scope, stamp_true, Prebound ("true", ty));
 		ScopedMap.insert (scope, stamp_nil, Prebound ("nil", ty));
-		ScopedMap.insert (scope, stamp_cons, Prebound ("cons", cty));
+		ScopedMap.insert (scope, stamp_cons, Prebound ("cons", ty));
 		ScopedMap.insert (scope, stamp_ref, Prebound ("ref", ty));
-		ScopedMap.insert (scope, stamp_Match, Prebound ("Match", ty));
-		ScopedMap.insert (scope, stamp_Bind, Prebound ("Bind", ty));
+		ScopedMap.insert (scope, stamp_Match, Prebound ("General$Match", ty));
+		ScopedMap.insert (scope, stamp_Bind, Prebound ("General$Bind", ty));
 		scope
 	    end
 
@@ -35542,14 +37852,12 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	     emit (Ldfld (StockWerk.Real, "Value", Float32Ty));
 	     emit (LdcR4 s); emit (B (NE_UN, elseLabel)); emit Pop)
 	  | genTest (ConTest (id, NONE), elseLabel) =
-	    (emit Dup; emit (Isinst StockWerk.Name);
-	     emit (B (FALSE, elseLabel)); emit Dup;
-	     emitId id; emit (B (NE_UN, elseLabel)); emit Pop)
+	    (emit Dup; emitId id; emit (B (NE_UN, elseLabel)); emit Pop)
 	  | genTest (ConTest (id1, SOME id2), elseLabel) =
 	    (emit Dup; emit (Isinst StockWerk.ConVal);
 	     emit (B (FALSE, elseLabel));
 	     emit (Castclass StockWerk.ConVal); emit Dup;
-	     emit (Ldfld (StockWerk.ConVal, "Con", StockWerk.ConstructorTy));
+	     emit (Ldfld (StockWerk.ConVal, "Con", StockWerk.StockWertTy));
 	     emitId id1; emit (B (NE_UN, elseLabel));
 	     emit (Ldfld (StockWerk.ConVal, "Val", StockWerk.StockWertTy));
 	     declareLocal id2)
@@ -35582,6 +37890,18 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	     declareLocal id2;
 	     emit (Ldfld (StockWerk.Tuple3, "Value3", StockWerk.StockWertTy));
 	     declareLocal id3)
+	  | genTest (TupTest [id1, id2, id3, id4], elseLabel) =
+	    (emit Dup; emit (Isinst StockWerk.Tuple4);
+	     emit (B (FALSE, elseLabel));
+	     emit (Castclass StockWerk.Tuple4); emit Dup;
+	     emit (Ldfld (StockWerk.Tuple4, "Value1", StockWerk.StockWertTy));
+	     declareLocal id1; emit Dup;
+	     emit (Ldfld (StockWerk.Tuple4, "Value2", StockWerk.StockWertTy));
+	     declareLocal id2; emit Dup;
+	     emit (Ldfld (StockWerk.Tuple4, "Value3", StockWerk.StockWertTy));
+	     declareLocal id3;
+	     emit (Ldfld (StockWerk.Tuple4, "Value4", StockWerk.StockWertTy));
+	     declareLocal id4)
 	  | genTest (TupTest ids, elseLabel) =
 	    let
 		val thenLabel = newLabel ()
@@ -35602,7 +37922,7 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	    (emit Dup; emit (Isinst StockWerk.Record);
 	     emit (B (FALSE, elseLabel));
 	     emit (Castclass StockWerk.Record); emit Dup;
-	     emit (Ldfld (StockWerk.Record, "RecordArity",
+	     emit (Ldfld (StockWerk.Record, "Arity",
 			  StockWerk.RecordArityTy));
 	     emitRecordArity (List.map #1 labIdList);
 	     emit (B (NE_UN, elseLabel));
@@ -35650,13 +37970,19 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	     emit (Newobj (StockWerk.Int, [Int32Ty])))
 	  | genLit (CharLit c) =
 	    (emit (LdcI4 (Char.ord c));
-	     emit (Newobj (StockWerk.Char, [Int32Ty])))
+	     emit (Newobj (StockWerk.Char, [CharTy])))
 	  | genLit (StringLit s) =
 	    (emit (Ldstr s);
 	     emit (Newobj (StockWerk.String, [System.StringTy])))
 	  | genLit (RealLit s) =
 	    (emit (LdcR4 s);
 	     emit (Newobj (StockWerk.Real, [Float32Ty])))
+
+	fun checkSingleMethod [(OneArg _, [RaiseStm (_, Id (_, stamp, _))]),
+			       argsBody] =
+	    if stamp = Prebound.stamp_Match then SOME argsBody
+	    else NONE
+	  | checkSingleMethod _ = NONE
 
 	(*--** in EvalStm and declarations of unused variables,
 	 * remove all of exp but side-effects *)
@@ -35746,10 +38072,13 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	    in
 		emit (Ldsfld (StockWerk.Prebound, id, ty))
 	    end
-	  | genExp (NewExp (_, _, false), PREPARE) =
-	    emit (Newobj (StockWerk.Name, nil))
-	  | genExp (NewExp (_, _, true), PREPARE) =
-	    emit (Newobj (StockWerk.Constructor, nil))
+	  | genExp (NewExp (_, NONE, _), PREPARE) =
+	    emit (Newobj (StockWerk.GenericConstructor, nil))
+	  | genExp (NewExp (_, SOME s, _), PREPARE) =
+	    (emit (Ldstr s);
+	     emit (Call (false, StockWerk.NongenericConstructor, "Make",
+			 [System.StringTy],
+			 StockWerk.NongenericConstructorTy)))
 	  | genExp (VarExp (_, id), PREPARE) = emitId id
 	  | genExp (ConExp (_, id as Id (_, stamp, _), _), PREPARE) = emitId id
 	  | genExp (RefExp _, PREPARE) =
@@ -35789,6 +38118,27 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	     emit (Stfld (StockWerk.Tuple3, "Value2", StockWerk.StockWertTy));
 	     emit Dup; emitId id3;
 	     emit (Stfld (StockWerk.Tuple3, "Value3", StockWerk.StockWertTy)))
+	  | genExp (TupExp (_, [id1, id2, id3, id4]), PREPARE) =
+	    emit (Newobj (StockWerk.Tuple4, nil))
+	  | genExp (TupExp (_, [id1, id2, id3, id4]), FILL) =
+	    (emit Dup; emitId id1;
+	     emit (Stfld (StockWerk.Tuple4, "Value1", StockWerk.StockWertTy));
+	     emit Dup; emitId id2;
+	     emit (Stfld (StockWerk.Tuple4, "Value2", StockWerk.StockWertTy));
+	     emit Dup; emitId id3;
+	     emit (Stfld (StockWerk.Tuple4, "Value3", StockWerk.StockWertTy));
+	     emitId id4;
+	     emit (Stfld (StockWerk.Tuple4, "Value4", StockWerk.StockWertTy)))
+	  | genExp (TupExp (_, [id1, id2, id3, id4]), BOTH) =
+	    (emit (Newobj (StockWerk.Tuple4, nil));
+	     emit Dup; emitId id1;
+	     emit (Stfld (StockWerk.Tuple4, "Value1", StockWerk.StockWertTy));
+	     emit Dup; emitId id2;
+	     emit (Stfld (StockWerk.Tuple4, "Value2", StockWerk.StockWertTy));
+	     emit Dup; emitId id3;
+	     emit (Stfld (StockWerk.Tuple4, "Value3", StockWerk.StockWertTy));
+	     emit Dup; emitId id4;
+	     emit (Stfld (StockWerk.Tuple4, "Value4", StockWerk.StockWertTy)))
 	  | genExp (TupExp (_, ids), PREPARE) =
 	    (emit (LdcI4 (List.length ids));
 	     emit (Newarr StockWerk.StockWertTy);
@@ -35842,12 +38192,37 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	     emit Pop)
 	  | genExp (FunExp (coord, stamp, _, argsBodyList), PREPARE) =
 	    (emitCoord ("FunExp", coord); emit (Newobj (className stamp, nil));
-	     defineClass (stamp, StockWerk.Procedure, nil))
+	     case checkSingleMethod argsBodyList of
+		 SOME (TupArgs nil, _) =>
+		     defineClass (stamp, StockWerk.Procedure0, nil)
+	       | SOME (TupArgs [_, _], _) =>
+		     defineClass (stamp, StockWerk.Procedure2, nil)
+	       | SOME (TupArgs [_, _, _], _) =>
+		     defineClass (stamp, StockWerk.Procedure3, nil)
+	       | SOME (TupArgs [_, _, _, _], _) =>
+		     defineClass (stamp, StockWerk.Procedure4, nil)
+	       | _ =>
+		     defineClass (stamp, StockWerk.Procedure, nil))
 	  | genExp (FunExp (_, stamp, _, argsBodyList), FILL) =
-	    (case argsBodyList of
-		 (OneArg id, body)::rest =>
-		     (genFunBody (stamp, id, body, rest); emit Pop)
-	       | _ => raise Crash.Crash "CodeGenPhase.genExp")
+	    (case checkSingleMethod argsBodyList of
+		 SOME (TupArgs nil, body) =>
+		     (defineMethod (stamp, "Apply0", nil);
+		      genBody body; closeMethod ())
+	       | SOME (TupArgs (ids as [_, _]), body) =>
+		     (defineMethod (stamp, "Apply2", ids);
+		      genBody body; closeMethod ())
+	       | SOME (TupArgs (ids as [_, _, _]), body) =>
+		     (defineMethod (stamp, "Apply3", ids);
+		      genBody body; closeMethod ())
+	       | SOME (TupArgs (ids as [_, _, _, _]), body) =>
+		     (defineMethod (stamp, "Apply4", ids);
+		      genBody body; closeMethod ())
+	       | _ =>
+		     (case argsBodyList of
+			  (OneArg id, body)::rest =>
+			      genFunBody (stamp, id, body, rest)
+			| _ => raise Crash.Crash "CodeGenPhase.genExp");
+	     emit Pop)
 	  | genExp (AppExp (_, id1, OneArg id2), BOTH) =
 	    (emitId id1; emitId id2;
 	     emit (Callvirt (StockWerk.StockWert, "Apply",
@@ -35866,6 +38241,12 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	     emit (Callvirt (StockWerk.StockWert, "Apply3",
 			     [StockWerk.StockWertTy, StockWerk.StockWertTy,
 			      StockWerk.StockWertTy], StockWerk.StockWertTy)))
+	  | genExp (AppExp (_, id, TupArgs [id1, id2, id3, id4]), BOTH) =
+	    (emitId id; emitId id1; emitId id2; emitId id3; emitId id4;
+	     emit (Callvirt (StockWerk.StockWert, "Apply4",
+			     [StockWerk.StockWertTy, StockWerk.StockWertTy,
+			      StockWerk.StockWertTy, StockWerk.StockWertTy],
+			     StockWerk.StockWertTy)))
 	  | genExp (AppExp (coord, id, TupArgs ids), BOTH) =
 	    (emitId id; genExp (TupExp (coord, ids), BOTH);
 	     emit (Callvirt (StockWerk.StockWert, "Apply",
@@ -35879,8 +38260,8 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	     emit (Callvirt (StockWerk.StockWert, "Select", [System.StringTy],
 			     StockWerk.StockWertTy)))
 	  | genExp (ConAppExp (_, id, _), PREPARE) =
-	    (emitId id; emit (Castclass StockWerk.Constructor);
-	     emit (Newobj (StockWerk.ConVal, [StockWerk.ConstructorTy])))
+	    (emitId id;
+	     emit (Newobj (StockWerk.ConVal, [StockWerk.StockWertTy])))
 	  | genExp (ConAppExp (_, _, args), FILL) =
 	    (genArgs args;
 	     emit (Stfld (StockWerk.ConVal, "Val", StockWerk.StockWertTy)))
@@ -35908,7 +38289,8 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 		    (fn (args, body) =>
 		     case args of
 			 OneArg _ => raise Crash.Crash "CodeGen.genFunBody"
-		       | TupArgs (ids as (nil | [_, _] | [_, _, _])) =>
+		       | TupArgs (ids as (nil | [_, _] | [_, _, _] |
+					  [_, _, _, _])) =>
 			     let
 				 val name =
 				     "Apply" ^ Int.toString (List.length ids)
@@ -36070,14 +38452,18 @@ structure Main :> MAIN =
 
     fun debug outstream s =
 	let
-	    val s' = OutputImperativeGrammar.outputComponent (imperatify s)
+	    val x = imperatify s
+	    val _ = LivenessAnalysisPhase.annotate x
+	    val s' = OutputImperativeGrammar.outputComponent x
 	in
 	    TextIO.output (outstream, s')
 	end
 
     fun debug' outstream s =
 	let
-	    val s' = OutputImperativeGrammar.outputComponent (imperatify' s)
+	    val x = imperatify' s
+	    val _ = LivenessAnalysisPhase.annotate x
+	    val s' = OutputImperativeGrammar.outputComponent x
 	in
 	    TextIO.output (outstream, s')
 	end

@@ -508,7 +508,7 @@ structure DerivedForms :> DERIVED_FORMS =
 	    val dec    = G.OPENDec(I3, G.SHORTLong(I3, strid))
 	    val letexp = G.ATSTREXPStrExp(I3, G.LETAtStrExp(I3, dec, strexp))
 	in
-	    G.FCTStrExp(I, strpat, letexp)
+	    G.FCTStrExp(I, G.StrPat(I1, strid, sigexp), letexp)
 	end
 
     fun WILDCARDStrPat(I, sigexp) =
@@ -623,7 +623,7 @@ structure DerivedForms :> DERIVED_FORMS =
 	    val dec    = G.OPENDec(I3, G.SHORTLong(I3, strid))
 	    val letexp = G.ATSIGEXPSigExp(I3, G.LETAtSigExp(I3, dec, sigexp))
 	in
-	    G.FCTSigExp(I, strpat, letexp)
+	    G.FCTSigExp(I, G.StrPat(I1, strid, sigexp1), letexp)
 	end
 
 

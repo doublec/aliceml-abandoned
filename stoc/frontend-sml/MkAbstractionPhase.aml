@@ -1726,7 +1726,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		val (mod1',E1') = trStrExp E strexp
 		val (mod2',E2') = trAtStrExp E atstrexp
 	   in
-		( O.AppMod(i, mod1', mod2'), E2' )
+		( O.AppMod(i, mod1', mod2'), E1' )
 	   end
 
 	 | TRANSStrExp(i, strexp, sigexp) =>
