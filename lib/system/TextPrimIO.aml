@@ -13,8 +13,6 @@
 import structure PrimIO  from "PrimIO"
 import signature PRIM_IO from "PRIM_IO-sig"
 
-(*--** translation *)
-
 structure TextPrimIO :> PRIM_IO
     where type array = CharArray.array
       and type vector = CharVector.vector
