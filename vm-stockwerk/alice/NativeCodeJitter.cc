@@ -1701,6 +1701,7 @@ TagVal *NativeCodeJitter::InstrTry(TagVal *pc) {
   Finish();
   CompileBranch(TagVal::FromWordDirect(pc->Sel(0)));
   ImmediateEnv::Replace(handlerPC, Store::IntToWord(GetRelativePC()));
+  JITStore::LogMesg("executing exception handler\n");
   TagVal *idDef1 = TagVal::FromWord(pc->Sel(1));
   if (idDef1 != INVALID_POINTER) {
     Generic::Scheduler::GetZeroArg(JIT_R0);
@@ -2001,9 +2002,9 @@ TagVal *NativeCodeJitter::InstrConTest(TagVal *pc) {
 	JITAlice::ConVal::Sel(JIT_R0, ConVal, i);
 	LocalEnvPut(JIT_V2, idDef->Sel(0), JIT_R0);
       }
-      KillIdRef(pc->Sel(0)); // Some kills missing
-      CompileBranch(TagVal::FromWordDirect(triple->Sel(2)));
     }
+    KillIdRef(pc->Sel(0)); // Some kills missing
+    CompileBranch(TagVal::FromWordDirect(triple->Sel(2)));
     jit_patch(next_test_ref);
   }
   // Nullary Constructor
