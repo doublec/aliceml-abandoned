@@ -77,6 +77,7 @@ structure JVMInst =
 	  | Sipush of int
 	  | Swap
 	  | Tableswitch of int * (label list) * label
+	  | Var of int * string * ARG list * label * label
 	and CLASS =
 	    Class of CLASSACCESS list * classname * classname * FIELD list * METHOD list
 	(* klasse, oberklasse *)

@@ -76,6 +76,12 @@ structure CodeGen =
 	(* Dieser Label steht am Ende der Registerinitialisierung von Methoden. *)
 	val afterInit = "labelAfterInit"
 
+	(* alpha steht am Begin einer Methode *)
+	val alpha = "labelAlpha"
+
+	(* Omega kommt vor dem abschliessenden Areturn *)
+	val omega = "labelOmega"
+
 	(* Lokales JVM-Register, in dem das Übersetzungsergebnis festgehalten wird. *)
 	val mainpickle = ref ~1 (* JVM-Register, in dem Struktur steht *)
 
@@ -125,6 +131,17 @@ structure CodeGen =
 			case StampHash.lookup(lambda,stamp') of
 			    NONE => ~1
 			  | SOME lambda => lambda
+
+		    fun generateVariableTable rest =
+			StampHash.foldi
+			(fn (stamp',register',rest') =>
+			 Comment ("var "^(Int.toString register')^": ("^
+			      (case StampHash.lookup(fields, stamp') of
+				  NONE => "anonymous, "^(Stamp.toString stamp')
+				| SOME x => x^", "^(Stamp.toString stamp'))^")")::
+			 rest')
+			rest
+			register
 		end
 	    end
 
@@ -355,6 +372,12 @@ structure CodeGen =
 		    lithash
 	    end
 
+	fun psl (x::nil) = Stamp.toString x
+	  | psl (x::xs)  = Stamp.toString x^", "^(psl xs)
+	  | psl nil = ""
+
+	fun printStampList xs = print ("Free: ("^(psl xs)^")\n")
+
 	(* Berechnung der freien Variablen *)
 	local
 	    structure fV =
@@ -362,14 +385,23 @@ structure CodeGen =
 		    val free:ScopedStampSet.t= ScopedStampSet.new ()
 
 		    fun insert (Id (_,stamp',_)) =
-			 if Lambda.isSelfCall stamp'
+			(print ("insert free: "^(Stamp.toString stamp'));
+			 if stamp'=stamp_builtin orelse
+			     Lambda.isSelfCall stamp'
 			     then ()
 			 else
-			      ScopedStampSet.insert (free, stamp')
+			     ScopedStampSet.insert (free, stamp'))
 		    fun delete (Id (_,stamp',_)) =
-			 ScopedStampSet.delete(free, stamp')
+			(print ("delete free: "^(Stamp.toString stamp'));
+			 ScopedStampSet.delete(free, stamp'))
 
-		    fun get () = ScopedStampSet.foldScope (fn (x,xs) => x::xs) nil free
+		    fun get () =
+			let
+			    val x = ScopedStampSet.foldScope (fn (x,xs) => x::xs) nil free
+			in
+			    printStampList x;
+			    x
+			end
 
 		    (* Betreten einer neuen Subfunktion. *)
 		    fun enter () =
@@ -533,6 +565,7 @@ structure CodeGen =
 		  Initialisierungsarbeit geschieht in run. *)
 		 val main = Method([MStatic,MPublic],"main",([Arraysig, Classsig CString],[Voidsig]),
 				   Locals 1,
+				   Local.generateVariableTable
 				   [New name,
 				    Dup,
 				    Invokespecial (name, "<init>", ([], [Voidsig])),
@@ -826,6 +859,9 @@ structure CodeGen =
 			val _ = FreeVars.setFun (id''', Lambda.top())
 		    in
 			Comment "Hi9" ::
+			 (stampCode stamp') @
+			 [Instanceof CConVal,
+			  Ifeq elselabel] @
 			 (stampCode stamp') @
 			 [Checkcast CConVal,
 			  Invokeinterface (CConVal, "getConstructor",
@@ -1210,7 +1246,8 @@ structure CodeGen =
 		     (* 2. Klasse erzeugen *)
 		     let
 			 val className = classNameFromStamp stamp'
-			 val freeVarList = FreeVars.getVars id'
+			 val freeVarList = FreeVars.getVars id' (* yyy*)
+			     val _ = (print "FunExpFree: ";printStampList freeVarList)
 			 (*		val _ = annotateTailExp exp'*)
 			 (* 1. *)
 			 val object = let
@@ -1457,10 +1494,16 @@ fun labeliter ((l,_)::rest,i) = labelcode (l,i) @ labeliter(rest,i+1)
 		(* baut die Felder, d.h. die freien Variablen der Klasse *)
 		local
 		    fun fields (stamp'::stamps) =
-			(Field ([FPublic],fieldNameFromStamp stamp', [Classsig CVal]))::(fields stamps)
+			(Field ([FPublic],fieldNameFromStamp stamp', [Classsig CVal]))::
+			(fields stamps)
 		      | fields nil = nil
+		    fun vars (0, akku) = akku
+		      | vars (n, akku) =
+			vars (n-1,Var (n, "woasweisi"^(Int.toString n),
+			      [Classsig CVal], alpha, omega)::akku)
 		in
 		    val fieldscode = fields freeVarList
+		    val bd = vars (Local.max(),e)
 		end
 		local (* Register in apply initialisieren *)
 		    fun initializeLocals 0 = [Label afterInit]
@@ -1470,9 +1513,11 @@ fun labeliter ((l,_)::rest,i) = labelcode (l,i) @ labeliter(rest,i+1)
 		end
 		(* Wir bauen jetzt den Rumpf der Abstraktion *)
 		val ap =
-		    initRegister @
-		    e @
-		    [Areturn]
+		    (Label alpha::
+		     initRegister @
+		     bd @
+		     [Label omega,
+		      Areturn])
 		val applY = Method ([MPublic],
 				    "apply",
 				    ([Classsig CVal], [Classsig CVal]),

@@ -116,6 +116,7 @@ structure ToJasmin =
 	  | stackNeedInstruction (Sipush _) = 1
 	  | stackNeedInstruction Swap = 0
 	  | stackNeedInstruction (Tableswitch _) = ~1
+	  | stackNeedInstruction (Var _) = 0
 
 	(*fun stackNeed (inst::insts,need,max) =
 				  let
@@ -243,7 +244,14 @@ structure ToJasmin =
 				   "tableswitch "^(Int.toString low)^"\n"^
 				   (flatten labellist)^
 				   "default: "^label
-			       end
+			     end
+	      | instructionToJasmin (Var (number', name', descriptor', from', to'), isStatic) =
+			     ".var "^
+			     (Int.toString
+			      (if isStatic then number'-1 else number'))
+			     ^" is "^name'^" "^(desclist2string descriptor')^
+			     " from "^from'^" to "^to'
+
 	in
 	    fun instructionsToJasmin (insts, need, max, staticapply) =
 		let
