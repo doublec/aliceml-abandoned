@@ -13,6 +13,11 @@
 //
 
 #if defined(INTERFACE)
+#pragma implementation "adt/HashTable.hh"
+#endif
+#include "adt/HashTable.hh"
+
+#if defined(INTERFACE)
 #pragma implementation "adt/Queue.hh"
 #endif
 #include "adt/Queue.hh"

@@ -3,7 +3,7 @@ TOPDIR = ..
 include $(TOPDIR)/Makefile.vars
 include $(TOPDIR)/Makefile.rules
 
-SRCS = Outline.cc HashTable.cc
+SRCS = Outline.cc
 OBJS = $(SRCS:%.cc=%.o)
 
 all: libadt.a
