@@ -17,7 +17,7 @@
 #pragma interface "generic/Pickler.hh"
 #endif
 
-#include "generic/Interpreter.hh"
+#include "generic/Worker.hh"
 #include "generic/String.hh"
 
 class DllExport Pickler {
@@ -30,8 +30,8 @@ public:
   static void InitExceptions();
 
   // Pickler Functions
-  static Interpreter::Result Pack(word x);
-  static Interpreter::Result Save(String *filename, word x);
+  static Worker::Result Pack(word x);
+  static Worker::Result Save(String *filename, word x);
 };
 
 #endif
