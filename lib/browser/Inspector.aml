@@ -33,5 +33,13 @@ structure Inspector (* : INSPECTOR *) =
 		(val _ = UnsafeInspector.inspectMod (M.x, I.x))
 	    end
 
+	(* Doc Creator Interface *)
+	datatype limit       = datatype UnsafeInspector.limit
+	datatype color_class = datatype UnsafeInspector.color_class
+	datatype desc        = datatype UnsafeInspector.desc
+	datatype doc         = datatype UnsafeInspector.doc
+	type doc_create      = UnsafeInspector.doc_creator
+
+	val createValue  = UnsafeInspector.createValue
 	val registerType = UnsafeInspector.registerType
     end
