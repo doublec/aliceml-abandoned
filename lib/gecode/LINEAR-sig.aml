@@ -19,7 +19,10 @@ sig
 	type space
 	type intvar
 	type boolvar
-	type conlevel
+
+        datatype conlevel = 
+	         BND | DEF | DOM | VAL
+
 	infix  7  `*
 	infix  6  `+ `-
 	infix  5  `#

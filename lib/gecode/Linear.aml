@@ -28,7 +28,9 @@ structure Linear :> LINEAR 	where type space = Space.space
 	type space = Space.space
 	type intvar = FD.intvar
 	type boolvar = FD.boolvar
-	type conlevel = FD.conlevel
+
+        datatype conlevel = 
+	         BND | DEF | DOM | VAL
 
 
 	infix  7  `*

@@ -47,7 +47,7 @@ UnsafeGecode.dll: $(SOURCES:%.cc=%.o)
 
 %.o: %.cc
 	alicetool -v compile $(EXTRA_INCLUDES) $(CXXFLAGS) $(MY_CXXFLAGS) \
-	-c  $< -o $@
+	$(CPPFLAGS) -c  $< -o $@
 
 %.dll: %.o
 	alicetool -v link $(LDFLAGS) $(SOURCES:%.cc=%.o) \
@@ -70,7 +70,7 @@ distclean: veryclean
 depend:
 	alicedep *.aml > Makefile.depend
 	$(MAKEDEPEND) $(EXTRA_INCLUDES) $(MY_CXXFLAGS) $(CXXFLAGS) $(SOURCES) \
-	>> Makefile.depend
+	$(CPPFLAGS) >> Makefile.depend
 
 install: all
 	install -d $(INSTALLTO)
