@@ -76,7 +76,7 @@ struct
       | treeSearch (RelNode(r) as node,x,y) =  (case !(#counter(r)) of
 			  1  =>  treeSearch(!(#content(r)),x,y)
 			| _  =>  let
-				     val labellength =  String.length(#rep(r))
+				     val labellength =  String.size(#rep(r))
 				     val label_in_bb = x>=0
 					 andalso x < labellength
 					 andalso y = 0
