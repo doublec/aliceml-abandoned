@@ -163,8 +163,9 @@ fun make () =
 
 (* regcase test *)
 
-fun what () = regcase (TextIO.inputLine TextIO.stdIn) of
-    ( "b" _ * => ( print "\nDa war ein 'b' am Anfang!\n")
-  | _ {1,5} "\n" => ( print "\nDas '\\n' der Zeile wird mit uebergeben!\n" ))
+fun what () =
+    regcase (TextIO.inputLine TextIO.stdIn) of
+     "b" _ *       => ( print "\nDa war ein 'b' am Anfang!\n" )
+     | _ {1,5} "\n" => ( print "\nDas '\\n' der Zeile wird mit uebergeben!\n" )
 
 
