@@ -126,7 +126,7 @@ struct
     type Match     = G.Match
     type Mrule     = G.Mrule
     type Pat       = G.Pat
-    type ExBind    = G.DconBind
+    type ExBind    = G.EconBind
     type Fmatch    = G.Match
     type Fmrule    = G.Mrule
     type Fpat      = G.Pat
@@ -137,9 +137,9 @@ struct
     type FunBind   = G.StrBind
     type AppSigExp = G.SigExp
     type SigExp    = G.SigExp
-    type ExDesc    = G.DconDesc
+    type ExDesc    = G.EconDesc
     type FunDesc   = G.StrDesc
-    type ExItem    = G.DconItem
+    type ExItem    = G.EconItem
     type FunItem   = G.StrItem
 
 
@@ -290,14 +290,10 @@ struct
 			 Option.map (rewriteTy typbind) ty_opt,
 			 Option.map (rewriteConBind typbind) conbind_opt)
 
-    fun rewriteDatBind typbind (G.CLOSEDDatBind(I, tyvarseq, tycon, conbind,
+    fun rewriteDatBind typbind (G.DatBind(I, tyvarseq, tycon, conbind,
 							      datbind_opt)) =
-	    G.CLOSEDDatBind(I, tyvarseq, tycon, rewriteConBind typbind conbind,
-			       Option.map (rewriteDatBind typbind) datbind_opt)
-      | rewriteDatBind typbind (G.OPENDatBind(I, tyvarseq, tycon,
-							      datbind_opt)) =
-	    G.OPENDatBind(I, tyvarseq, tycon,
-			     Option.map (rewriteDatBind typbind) datbind_opt)
+	    G.DatBind(I, tyvarseq, tycon, rewriteConBind typbind conbind,
+			 Option.map (rewriteDatBind typbind) datbind_opt)
 
 
     fun toTy tyvar = G.TYVARTy(G.infoTyVar tyvar, tyvar)
@@ -316,22 +312,17 @@ struct
 			 Option.map (rewriteTy typbind) ty_opt,
 			 Option.map (rewriteConDesc typbind) condesc_opt)
 
-    fun rewriteDatDesc typbind (G.CLOSEDDatDesc(I, tyvarseq, tycon, condesc,
+    fun rewriteDatDesc typbind (G.DatDesc(I, tyvarseq, tycon, condesc,
 							      datdesc_opt)) =
-	    G.CLOSEDDatDesc(I, tyvarseq, tycon, rewriteConDesc typbind condesc,
-			       Option.map (rewriteDatDesc typbind) datdesc_opt)
-      | rewriteDatDesc typbind (G.OPENDatDesc(I, tyvarseq, tycon,
-							      datdesc_opt)) =
-	    G.OPENDatDesc(I, tyvarseq, tycon,
-			     Option.map (rewriteDatDesc typbind) datdesc_opt)
+	    G.DatDesc(I, tyvarseq, tycon, rewriteConDesc typbind condesc,
+			 Option.map (rewriteDatDesc typbind) datdesc_opt)
 
 
     (* Rewriting of abstype *)
 
     fun toTy tyvar = G.TYVARTy(G.infoTyVar tyvar, tyvar)
 
-    fun redeclare ( G.CLOSEDDatBind(I, tyvarseq, tycon, _, datbind_opt)
-		  | G.OPENDatBind(I, tyvarseq, tycon, datbind_opt)) =
+    fun redeclare(G.DatBind(I, tyvarseq, tycon, _, datbind_opt)) =
 	let
 	    val G.Seq(I',tyvarseq') = tyvarseq
 	    val tyseq     = G.Seq(I', List.map toTy tyvarseq')
@@ -498,7 +489,7 @@ struct
     val PRIMITIVEEQTYPEDec	= G.PRIMITIVETYPEDec
     val PRIMITIVEEQEQTYPEDec	= G.PRIMITIVETYPEDec
     val FvalBind		= G.FvalBind
-    val EQUALExBind		= G.EQUALDconBind
+    val EQUALExBind		= G.EQUALEconBind
     val Fmatch			= G.Match
     val Fmrule			= G.Mrule
 
@@ -571,9 +562,9 @@ struct
 	end
 
 
-    fun NEWExBind(I, op_opt, vid, ty_opt, dconbind_opt) =
-	    G.NEWDconBind(I, op_opt, vid, ty_opt,
-			     G.Seq(I,[]), longtycon_EXN(I), dconbind_opt)
+    fun NEWExBind(I, op_opt, vid, ty_opt, econbind_opt) =
+	    G.NEWEconBind(I, op_opt, vid, ty_opt,
+			     G.Seq(I,[]), longtycon_EXN(I), econbind_opt)
  
 
     (* Structure bindings *)
@@ -660,7 +651,7 @@ struct
     val FUNCTORSpec		= G.STRUCTURESpec
     val PRIMITIVEEQTYPESpec	= G.PRIMITIVETYPESpec
     val PRIMITIVEEQEQTYPESpec	= G.PRIMITIVETYPESpec
-    val EQUALExDesc		= G.EQUALDconDesc
+    val EQUALExDesc		= G.EQUALEconDesc
 
     fun DATATYPESpec(I, datdesc, NONE)         = G.DATATYPESpec(I, datdesc)
       | DATATYPESpec(I, datdesc, SOME typdesc) =
@@ -697,9 +688,9 @@ struct
 	    G.SEQSpec(I, G.NONFIXSpec(I,longvid), NONFIXMULTISpec(I,longvids))
 
 
-    fun NEWExDesc(I, op_opt, vid, ty_opt, dcondesc_opt) =
-	    G.NEWDconDesc(I, op_opt, vid, ty_opt, G.Seq(I,[]),
-			  longtycon_EXN(I), dcondesc_opt)
+    fun NEWExDesc(I, op_opt, vid, ty_opt, econdesc_opt) =
+	    G.NEWEconDesc(I, op_opt, vid, ty_opt, G.Seq(I,[]),
+			  longtycon_EXN(I), econdesc_opt)
 
     fun FunDesc(I, strid, strpats, sigexp, fundesc_opt) =
 	let
@@ -735,8 +726,8 @@ struct
     fun buildValSpec (op_opt1, op_opt2, longvid) (I, vid) =
 	    G.VALSpec(I, G.EQUALValDesc(I, op_opt1, vid,
 					   op_opt2, longvid, NONE))
-    fun buildDconSpec (op_opt1, op_opt2, longvid) (I, vid) =
-	    G.CONSTRUCTORSpec(I, G.EQUALDconDesc(I, op_opt1, vid,
+    fun buildEconSpec (op_opt1, op_opt2, longvid) (I, vid) =
+	    G.CONSTRUCTORSpec(I, G.EQUALEconDesc(I, op_opt1, vid,
 						    op_opt2, longvid, NONE))
     fun buildTypSpec (tyvarseq, ty) (I, tycon) =
 	    G.TYPESpec(I, G.EQUALTypDesc(I, tyvarseq, tycon, ty, NONE))
@@ -771,7 +762,7 @@ struct
 	    buildSigExp(buildValSpec(op_opt1, op_opt2, longvid2),
 			I, longvid1, rea_opt)
       | Rea(CONSTRUCTORRea(I, op_opt1, longvid1, op_opt2, longvid2, rea_opt)) =
-	    buildSigExp(buildDconSpec(op_opt1, op_opt2, longvid2),
+	    buildSigExp(buildEconSpec(op_opt1, op_opt2, longvid2),
 			I, longvid1, rea_opt)
       | Rea(TYPERea(I, tyvarseq, longtycon, ty, rea_opt)) =
 	    buildSigExp(buildTypSpec(tyvarseq, ty), I, longtycon, rea_opt)
@@ -820,7 +811,7 @@ struct
     val EQEQTYPEImp	= G.TYPEImp
     val EXCEPTIONImp	= G.CONSTRUCTORImp
     val FUNCTORImp	= G.STRUCTUREImp
-    val PLAINExItem	= G.PLAINDconItem
+    val PLAINExItem	= G.PLAINEconItem
     val PLAINFunItem	= G.PLAINStrItem
 
     fun INFIXMULTIImp(I, _, [])          = G.EMPTYImp(I)
@@ -840,9 +831,9 @@ struct
 	    G.SEQImp(I, G.NONFIXImp(I,longvid), NONFIXMULTIImp(I,longvids))
 
 
-    fun DESCExItem(I, op_opt, vid, ty, dconitem_opt) =
-	    G.DESCDconItem(I, op_opt, vid, SOME ty, G.Seq(I,[]),
-			      longtycon_EXN(I), dconitem_opt)
+    fun DESCExItem(I, op_opt, vid, ty, econitem_opt) =
+	    G.DESCEconItem(I, op_opt, vid, SOME ty, G.Seq(I,[]),
+			      longtycon_EXN(I), econitem_opt)
 
     fun DESCFunItem(I, strid, strpats, sigexp, funitem_opt) =
 	let
