@@ -46,10 +46,6 @@ IntermediateGrammar
  | MatchCompilationPhase:
  |	- Pattern matching compilation
  |	- Trivialisation of recursive bindings
- V
-SimplifiedGrammar
- |
- | ImperativePhase:
  |	- Linearisation
  V
 ImperativeGrammar

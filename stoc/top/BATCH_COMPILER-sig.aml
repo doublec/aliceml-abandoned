@@ -10,9 +10,6 @@ signature MAIN =
     val translateString :	string -> IntermediateGrammar.program
     val translateFile :		string -> IntermediateGrammar.program
 
-    val simplifyString :	string -> SimplifiedGrammar.program
-    val simplifyFile :		string -> SimplifiedGrammar.program
-
     val imperatifyString :	string -> ImperativeGrammar.program
     val imperatifyFile :	string -> ImperativeGrammar.program
 

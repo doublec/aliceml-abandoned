@@ -13,7 +13,7 @@
 signature MATCH_COMPILATION_PHASE =
     sig
 	structure I: INTERMEDIATE_GRAMMAR = IntermediateGrammar
-	structure O: SIMPLIFIED_GRAMMAR = SimplifiedGrammar
+	structure O: IMPERATIVE_GRAMMAR = ImperativeGrammar
 
-	val simplify: I.program -> O.program
+	val translate: I.program -> O.program
     end

@@ -40,7 +40,11 @@ structure ImperativeGrammar :> IMPERATIVE_GRAMMAR =
 	  | LabTest of string * id
 	  | VecTest of id list
 
-	datatype args = datatype SimplifiedGrammar.args
+	datatype 'a args =
+	    OneArg of 'a
+	  | TupArgs of 'a list
+	  | RecArgs of (string * 'a) list
+	    (* sorted, all labels distinct, no tuple *)
 
 	datatype stm =
 	    ValDec of coord * id * exp * isToplevel

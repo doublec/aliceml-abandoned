@@ -15,8 +15,7 @@ structure Main :> MAIN =
     val parse      = ParsingPhase.parse
     val abstract   = AbstractionPhase.translate BindEnv0.E0 o parse
     val translate  = TranslationPhase.translate o abstract
-    val simplify   = MatchCompilationPhase.simplify o translate
-    val imperatify = ImperativePhase.translate o simplify
+    val imperatify = MatchCompilationPhase.translate o translate
 
     fun ozify outstream s =
 	let
@@ -49,9 +48,6 @@ structure Main :> MAIN =
 
     val translateString		= processString translate
     val translateFile		= processFile translate
-
-    val simplifyString		= processString simplify
-    val simplifyFile		= processFile simplify
 
     val imperatifyString	= processString imperatify
     val imperatifyFile		= processFile imperatify

@@ -13,7 +13,7 @@
 signature SIMPLIFY_MATCH =
     sig
 	structure I: INTERMEDIATE_GRAMMAR = IntermediateGrammar
-	structure O: SIMPLIFIED_GRAMMAR = SimplifiedGrammar
+	structure O: IMPERATIVE_GRAMMAR = ImperativeGrammar
 
 	datatype test =
 	    LitTest of I.lit
@@ -32,15 +32,15 @@ signature SIMPLIFY_MATCH =
 
 	datatype testGraph =
 	    Node of pos * test * testGraph ref * testGraph ref * nodeStatus ref
-	  | Leaf of O.exp * O.exp option ref
+	  | Leaf of O.body * O.body option ref
 	  | Default
 	and nodeStatus =
 	    Initial
 	  | Raw of testGraph list * testGraph list
 	  | Cooked of (pos * test) list * (pos * test) list
 	  | Optimized of (pos * test) list * (pos * test) list
-	  | Simplified of O.exp
+	  | Translated of O.body
 
-	val buildGraph: (I.info * I.pat * O.exp) list * O.exp ->
-	    testGraph * (O.coord * O.exp option ref) list
+	val buildGraph: (I.info * I.pat * O.body) list * O.body ->
+	    testGraph * (O.coord * O.body option ref) list
     end

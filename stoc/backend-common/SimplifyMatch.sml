@@ -13,7 +13,7 @@
 structure SimplifyMatch :> SIMPLIFY_MATCH =
     struct
 	structure I = IntermediateGrammar
-	structure O = SimplifiedGrammar
+	structure O = ImperativeGrammar
 
 	open I
 	open IntermediateAux
@@ -128,16 +128,25 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 
 	datatype testGraph =
 	    Node of pos * test * testGraph ref * testGraph ref * nodeStatus ref
-	  | Leaf of O.exp * O.exp option ref
+	  | Leaf of O.body * O.body option ref
 	  | Default
 	and nodeStatus =
 	    Initial
 	  | Raw of testGraph list * testGraph list
 	  | Cooked of (pos * test) list * (pos * test) list
 	  | Optimized of (pos * test) list * (pos * test) list
-	  | Simplified of O.exp
+	  | Translated of O.body
 
 	(* Construction of Test Trees Needing Backtracking *)
+
+	fun labEq (Lab (_, s1), Lab (_, s2)) = s1 = s2
+
+	fun idEq (Id (_, stamp1, _), Id (_, stamp2, _)) = stamp1 = stamp2
+
+	fun longidEq (ShortId (_, id1), ShortId (_, id2)) = idEq (id1, id2)
+	  | longidEq (LongId (_, longid1, lab1), LongId (_, longid2, lab2)) =
+	    longidEq (longid1, longid2) andalso labEq (lab1, lab2)
+	  | longidEq (_, _) = false
 
 	fun testEq (LitTest lit1, LitTest lit2) = lit1 = lit2
 	  | testEq (ConTest (longid1, hasArgs1), ConTest (longid2, hasArgs2)) =

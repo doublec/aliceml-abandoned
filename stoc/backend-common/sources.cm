@@ -4,7 +4,6 @@ Group is
     ../error/sources.cm
     ../misc/sources.cm
 
-    simplified-grammar.cm
     imperative-grammar.cm
 
     LABEL_SORT.sig
@@ -20,6 +19,3 @@ Group is
     SimplifyRec.sml
     MATCH_COMPILATION_PHASE.sig
     MatchCompilationPhase.sml
-
-    IMPERATIVE_PHASE.sig
-    ImperativePhase.sml

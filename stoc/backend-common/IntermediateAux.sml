@@ -25,15 +25,6 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 
 	fun freshId coord = Id (coord, Stamp.new (), InId)
 
-	fun labEq (Lab (_, s1), Lab (_, s2)) = s1 = s2
-
-	fun idEq (Id (_, stamp1, _), Id (_, stamp2, _)) = stamp1 = stamp2
-
-	fun longidEq (ShortId (_, id1), ShortId (_, id2)) = idEq (id1, id2)
-	  | longidEq (LongId (_, longid1, lab1), LongId (_, longid2, lab2)) =
-	    longidEq (longid1, longid2) andalso labEq (lab1, lab2)
-	  | longidEq (_, _) = false
-
 	local
 	    fun patternVariablesOf' (WildPat _, ids) = ids
 	      | patternVariablesOf' (LitPat (_, _), ids) = ids

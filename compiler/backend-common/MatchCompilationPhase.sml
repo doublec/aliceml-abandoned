@@ -13,27 +13,24 @@
 structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
     struct
 	structure I = IntermediateGrammar
-	structure O = SimplifiedGrammar
+	structure O = ImperativeGrammar
 
 	open I
 	open IntermediateAux
 	open SimplifyMatch
 	open Prebound
 
-	val id_false = Id(Source.nowhere, stamp_false, ExId "false")
-	val id_true = Id(Source.nowhere, stamp_true,  ExId "true")
-	val id_ref = Id(Source.nowhere, stamp_ref,   ExId "ref")
-	val id_Match = Id(Source.nowhere, stamp_Match, ExId "Match")
-	val id_Bind = Id(Source.nowhere, stamp_Bind,  ExId "Bind")
+	val id_false = Id (Source.nowhere, stamp_false, ExId "false")
+	val id_true = Id (Source.nowhere, stamp_true, ExId "true")
+	val id_ref = Id (Source.nowhere, stamp_ref, ExId "ref")
+	val id_Match = Id (Source.nowhere, stamp_Match, ExId "Match")
+	val id_Bind = Id (Source.nowhere, stamp_Bind, ExId "Bind")
 
-	val longid_false = ShortId(Source.nowhere, id_false)
-	val longid_true = ShortId(Source.nowhere, id_true)
-	val longid_ref = ShortId(Source.nowhere, id_ref)
-	val longid_Match = ShortId(Source.nowhere, id_Match)
-	val longid_Bind = ShortId(Source.nowhere, id_Bind)
+	val longid_true = ShortId (Source.nowhere, id_true)
+	val longid_false = ShortId (Source.nowhere, id_false)
 
 	structure FieldLabelSort =
-	    MakeLabelSort(type 'a t = lab * longid
+	    MakeLabelSort(type 'a t = lab * id
 			  fun get (Lab (_, s), _) = s)
 
 	type mapping = (pos * id) list
@@ -46,33 +43,55 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 	fun mappingsToSubst (mapping0, mapping) =
 	    List.map (fn (pos, id) => (id, lookup (pos, mapping))) mapping0
 
-	fun makeRaise (coord, longid) =
-	    O.RaiseExp (coord, O.VarExp (coord, longid))
+	(* Translation *)
 
-	fun share exp =
-	    O.SharedExp (O.coordOf exp, exp, ref O.backendInfoDummy)
+	fun share nil = nil
+	  | share (stms as [O.SharedStm (_, _, _)]) = stms
+	  | share stms =   (*--** provide better coordinates *)
+	    [O.SharedStm (Source.nowhere, stms, ref 0)]
 
-	fun idToVarExp id =
+	datatype continuation =
+	    Decs of dec list * continuation
+	  | Goto of O.body
+	  | Share of O.body option ref * continuation
+	  | Export of id list
+
+	fun translateLongid (ShortId (_, id)) = (nil, id)
+	  | translateLongid (LongId (coord, longid, lab)) =
 	    let
-		val coord = infoId id
+		val (stms, id) = translateLongid longid
+		val id' = freshId coord
+		val stm =
+		    O.ValDec (coord, id', O.SelAppExp (coord, lab, id), false)
 	    in
-		VarExp (coord, ShortId (coord, id))
+		(stms @ [stm], id')
 	    end
 
-	fun simplifyDecs (ValDec (coord, VarPat (_, id), exp)::decr) =
-	    (* this is needed to end recursion with introduced WithPats *)
-	    O.OneDec (coord, id, simplifyExp exp)::simplifyDecs decr
-	  | simplifyDecs (ValDec (coord, pat, exp)::decr) =
+	fun translateCont (Decs (dec::decr, cont)) =
+	    translateDec (dec, Decs (decr, cont))
+	  | translateCont (Decs (nil, cont)) = translateCont cont
+	  | translateCont (Goto stms) = stms
+	  | translateCont (Share (r as ref NONE, cont)) =
 	    let
-		val ids = patternVariablesOf pat
-		val decExp = O.DecExp (coord, ids)
-		val matches = [(coord, pat, decExp)]
+		val stms = share (translateCont cont)
 	    in
-		O.ValDec (coord, ids,
-			  simplifyCase (coord, exp, matches, longid_Bind))::
-		simplifyDecs decr
+		r := SOME stms; stms
 	    end
-	  | simplifyDecs (RecDec (coord, decs)::decr) =
+	  | translateCont (Share (ref (SOME stms), _)) = stms
+	  | translateCont (Export ids) = [O.ExportStm (Source.nowhere, ids)]
+	and translateDec (ValDec (coord, VarPat (_, id), exp), cont) =
+	    let
+		fun declare exp' = O.ValDec (coord, id, exp', false)
+	    in
+		translateExp (exp, declare, cont)
+	    end
+	  | translateDec (ValDec (coord, pat, exp), cont) =
+	    let
+		val matches = [(coord, pat, translateCont cont)]
+	    in
+		simplifyCase (coord, exp, matches, id_Bind)
+	    end
+	  | translateDec (RecDec (coord, decs), cont) =
 	    let
 		val (conDecs, constraints, idExpList, subst) =
 		    SimplifyRec.derec decs
@@ -80,83 +99,94 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 		    List.map (fn (fromId, toId) =>
 			      let
 				  val coord = infoId toId
-				  val toExp =
-				      O.VarExp (coord, ShortId (coord, toId))
+				  val toExp = O.VarExp (coord, toId)
 			      in
-				  O.OneDec (infoId fromId, fromId, toExp)
+				  O.ValDec (infoId fromId, fromId, toExp,
+					    false)
 			      end) subst
+		val decs' =
+		    List.foldr (fn ((id, exp), decs) =>
+				translateExp (exp,
+					      fn exp' =>
+					      O.ValDec (infoExp exp, id, exp',
+							false),
+					      Goto decs)) nil idExpList
 		val idExpList' =
-		    List.foldr (fn ((id, exp), bindings) =>
-				let
-				    val (bindings', exp') =
-					unfoldExp (substExp (exp, subst))
-				in
-				    (id, exp')::(bindings' @ bindings)
-				end) nil idExpList
+		    List.map (fn dec =>
+			      case dec of
+				  O.ValDec (_, id, exp', _) => (id, exp')
+				| _ =>
+				      Error.error (Source.nowhere,   (*--** *)
+						   "not admissible"))
+		    decs'
+		val rest =
+		    O.RecDec (coord, idExpList', false)::aliasDecs @
+		    translateCont cont
 	    in
-		simplifyDecs conDecs @
 		(*--** generate constraints *)
-		O.RecDec (coord, idExpList')::(aliasDecs @ simplifyDecs decr)
+		translateCont (Decs (conDecs, Goto rest))
 	    end
-	  | simplifyDecs (ConDec (coord, id, hasArgs)::decr) =
-	    O.ConDec (coord, id, hasArgs)::simplifyDecs decr
-	  | simplifyDecs nil = nil
-	and simplifyTerm (VarExp (_, longid)) = (NONE, longid)
-	  | simplifyTerm exp =
+	  | translateDec (ConDec (coord, id, hasArgs), cont) =
+	    O.ConDec (coord, id, hasArgs, false)::translateCont cont
+	and unfoldTerm (VarExp (_, longid), cont) =
+	    let
+		val (stms, id) = translateLongid longid
+	    in
+		(stms @ translateCont cont, id)
+	    end
+	  | unfoldTerm (exp, cont) =
 	    let
 		val coord = infoExp exp
 		val id' = freshId coord
-		val dec' = O.OneDec (coord, id', simplifyExp exp)
+		val declare = fn exp' => O.ValDec (coord, id', exp', false)
+		val stms = translateExp (exp, declare, cont)
 	    in
-		(SOME dec', ShortId (coord, id'))
+		(stms, id')
 	    end
-	and simplifyExp exp =
-	    case unfoldExp exp of
-		(nil, exp') => exp'
-	      | (bindings as _::_, exp') =>
-		    O.LetExp (infoExp exp,
-			      List.map (fn (id, exp) =>
-					O.OneDec (infoId id, id, exp))
-			      bindings, exp')
-	and unfoldTerm (VarExp (_, longid)) = (nil, longid)
-	  | unfoldTerm exp =
+	and translateExp (LitExp (coord, lit), f, cont) =
+	    f (O.LitExp (coord, lit))::translateCont cont
+	  | translateExp (VarExp (coord, longid), f, cont) =
 	    let
-		val coord = infoExp exp
-		val id' = freshId coord
-		val (bindings, exp') = unfoldExp exp
+		val (stms, id) = translateLongid longid
 	    in
-		(bindings @ [(id', exp')], ShortId (coord, id'))
+		stms @ f (O.VarExp (coord, id))::translateCont cont
 	    end
-	and unfoldExp (LitExp (coord, lit)) = (nil, O.LitExp (coord, lit))
-	  | unfoldExp (VarExp (coord, longid)) =
-	    (nil, O.VarExp (coord, longid))
-	  | unfoldExp (ConExp (coord, longid, hasArgs)) =
-	    (nil, O.ConExp (coord, longid, NONE, hasArgs))
-	  | unfoldExp (RefExp coord) =
-	    (nil, O.ConExp (coord, longid_ref, NONE, true))
-	  | unfoldExp (TupExp (coord, exps)) =
+	  | translateExp (ConExp (coord, longid, hasArgs), f, cont) =
 	    let
-		val (bindings, longids) =
-		    List.foldr
-		    (fn (exp, (bindings, longids)) =>
-		     let
-			 val (bindings', longid) = unfoldTerm exp
-		     in
-			 (bindings' @ bindings, longid::longids)
-		     end) (nil, nil) exps
+		val (stms, id) = translateLongid longid
 	    in
-		(bindings, O.TupExp (coord, longids))
+		stms @ f (O.ConExp (coord, id, hasArgs))::translateCont cont
 	    end
-	  | unfoldExp (RowExp (coord, expFields)) =
+	  | translateExp (RefExp coord, f, cont) =
+	    f (O.ConExp (coord, id_ref, true))::translateCont cont
+	  | translateExp (TupExp (coord, exps), f, cont) =
 	    let
-		val (bindings, fields) =
-		    List.foldr
-		    (fn (Field (_, lab, exp), (bindings, fields)) =>
-		     let
-			 val (bindings', longid) = unfoldTerm exp
-		     in
-			 (bindings' @ bindings, (lab, longid)::fields)
-		     end) (nil, nil) expFields
+		val r = ref NONE
+		val rest = [O.IndirectStm (coord, r)]
+		val (stms, ids) =
+		    List.foldr (fn (exp, (stms, ids)) =>
+				let
+				    val (stms', id) =
+					unfoldTerm (exp, Goto stms)
+				in
+				    (stms', id::ids)
+				end) (rest, nil) exps
+	    in
+		r := SOME (f (O.TupExp (coord, ids))::translateCont cont);
+		stms
+	    end
+	  | translateExp (RowExp (coord, expFields), f, cont) =
+	    let
+		val r = ref NONE
+		val rest = [O.IndirectStm (coord, r)]
+		val (stms, fields) =
+		    List.foldr (fn (Field (_, lab, exp), (stms, fields)) =>
+				let
+				    val (stms', id) =
+					unfoldTerm (exp, Goto stms)
+				in
+				    (stms', (lab, id)::fields)
+				end) (rest, nil) expFields
 		val exp' =
 		    case FieldLabelSort.sort fields of
 			(fields', FieldLabelSort.Tup _) =>
@@ -164,222 +194,301 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 		      | (fields', FieldLabelSort.Rec) =>
 			    O.RecExp (coord, fields')
 	    in
-		(bindings, exp')
+		r := SOME (f exp'::translateCont cont);
+		stms
 	    end
-	  | unfoldExp (SelExp (coord, lab)) =
-	    (nil, O.SelExp (coord, lab, NONE))
-	  | unfoldExp (VecExp (coord, exps)) =
+	  | translateExp (SelExp (coord, lab), f, cont) =
+	    f (O.SelExp (coord, lab))::translateCont cont
+	  | translateExp (VecExp (coord, exps), f, cont) =
 	    let
-		val (bindings, longids) =
-		    List.foldr
-		    (fn (exp, (bindings, longids)) =>
-		     let
-			 val (bindings', longid) = unfoldTerm exp
-		     in
-			 (bindings' @ bindings, longid::longids)
-		     end) (nil, nil) exps
+		val r = ref NONE
+		val rest = [O.IndirectStm (coord, r)]
+		val (stms, ids) =
+		    List.foldr (fn (exp, (stms, ids)) =>
+				let
+				    val (stms', id) =
+					unfoldTerm (exp, Goto stms)
+				in
+				    (stms', id::ids)
+				end) (rest, nil) exps
 	    in
-		(bindings, O.VecExp (coord, longids))
+		r := SOME (f (O.VecExp (coord, ids))::translateCont cont);
+		stms
 	    end
-	  | unfoldExp (FunExp (coord, id, exp)) =
+	  | translateExp (FunExp (coord, id, exp), f, cont) =
 	    (*--** name propagation, multiple argument optimization *)
-	    (nil, O.FunExp (coord, "", [(O.OneArg id, simplifyExp exp)]))
-	  | unfoldExp (AppExp (coord, ConExp (_, longid, true), exp)) =
 	    let
-		val (bindings, longid') = unfoldTerm exp
+		fun return exp' = O.ReturnStm (infoExp exp, exp')
+		val body = translateExp (exp, return, Goto nil)
 	    in
-		(bindings, O.ConExp (coord, longid, SOME longid', true))
+		f (O.FunExp (coord, "", [(O.OneArg id, body)]))::
+		translateCont cont
 	    end
-	  | unfoldExp (AppExp (coord, RefExp _, exp)) =
+	  | translateExp (AppExp (coord, exp1, exp2), f, cont) =
 	    let
-		val (bindings, longid) = unfoldTerm exp
+		val r = ref NONE
+		val rest = [O.IndirectStm (coord, r)]
+		val (stms2, id2) = unfoldTerm (exp2, Goto rest)
 	    in
-		(bindings, O.ConExp (coord, longid_ref, SOME longid, true))
+		case exp2 of
+		    ConExp (_, longid, true) =>
+			let
+			    val (stms1, id1) = translateLongid longid
+			in
+			    r := SOME (f (O.ConAppExp (coord, id1, id2))::
+				       translateCont cont);
+			    stms1 @ stms2
+			end
+		  | RefExp _ =>
+			(r := SOME (f (O.ConAppExp (coord, id_ref, id2))::
+				    translateCont cont);
+			 stms2)
+		  | SelExp (_, lab) =>
+			(r := SOME (f (O.SelAppExp (coord, lab, id2))::
+				    translateCont cont);
+			 stms2)
+		  | _ =>
+			let
+			    val (stms1, id1) = unfoldTerm (exp1, Goto stms2)
+			in   (*--** TupArgs, RecArgs *)
+			    r := SOME (f (O.AppExp (coord, id1,
+						    O.OneArg id2))::
+				       translateCont cont);
+			    stms1
+			end
 	    end
-	  | unfoldExp (AppExp (coord, exp1, exp2)) =
+	  | translateExp (AdjExp (coord, exp1, exp2), f, cont) =
 	    let
-		val (bindings, longid) = unfoldTerm exp1
+		val r = ref NONE
+		val rest = [O.IndirectStm (coord, r)]
+		val (stms2, id2) = unfoldTerm (exp2, Goto rest)
+		val (stms1, id1) = unfoldTerm (exp1, Goto stms2)
 	    in
-		(bindings,
-		 O.AppExp (coord, longid, simplifyExp exp2, ref false))
+		r := SOME (f (O.AdjExp (coord, id1, id2))::translateCont cont);
+		stms1
 	    end
-	  | unfoldExp (AdjExp (coord, exp1, exp2)) =
+	  | translateExp (AndExp (coord, exp1, exp2), f, cont) =
+	    translateExp (IfExp (coord, exp1,
+				 exp2, VarExp (coord, longid_false)), f, cont)
+	  | translateExp (OrExp (coord, exp1, exp2), f, cont) =
+	    translateExp (IfExp (coord, exp1,
+				 VarExp (coord, longid_true), exp2), f, cont)
+	  | translateExp (IfExp (_, exp1, exp2, exp3), f, cont) =
 	    let
-		val (bindings1, longid1) = unfoldTerm exp1
-		val (bindings2, longid2) = unfoldTerm exp2
+		val cont' = Share (ref NONE, cont)
+		val stms2 = translateExp (exp2, f, cont')
+		val stms3 = translateExp (exp3, f, cont')
 	    in
-		(bindings1 @ bindings2, O.AdjExp (coord, longid1, longid2))
+		simplifyIf (exp1, stms2, stms3)
 	    end
-	  | unfoldExp (AndExp (coord, exp1, exp2)) =
-	    unfoldExp (IfExp (coord, exp1,
-			      exp2, VarExp (coord, longid_false)))
-	  | unfoldExp (OrExp (coord, exp1, exp2)) =
-	    unfoldExp (IfExp (coord, exp1,
-			      VarExp (coord, longid_true), exp2))
-	  | unfoldExp (IfExp (_, exp1, exp2, exp3)) =
-	    (nil, simplifyIf (exp1, simplifyExp exp2, simplifyExp exp3))
-	  | unfoldExp (WhileExp (coord, exp1, exp2)) =
-	    (nil, O.WhileExp (coord, simplifyExp exp1, simplifyExp exp2))
-	  | unfoldExp (SeqExp (coord, exps)) =
-	    (nil, O.SeqExp (coord, List.map simplifyExp exps))
-	  | unfoldExp (CaseExp (coord, exp, matches)) =
+	  | translateExp (WhileExp (coord, exp1, exp2), f, cont) =
 	    let
+		val r = ref NONE
+		val cont' = Goto [O.IndirectStm (coord, r)]
+		fun eval exp' = O.EvalStm (infoExp exp2, exp')
+		val coord' = infoExp exp1
+		val id = freshId coord'
+		val trueBody = translateExp (exp2, eval, cont')
+		val falseBody = translateExp (TupExp (coord, nil), f, cont)
+		val errorBody = [O.RaiseStm (coord', id_Match)]
+		val stms1 =
+		    [O.TestStm (coord', id, O.ConTest (id_true, NONE),
+				trueBody,
+				[O.TestStm (coord', id,
+					    O.ConTest (id_false, NONE),
+					    falseBody, errorBody)])]
+		val stms2 =
+		    translateDec (ValDec (coord', VarPat (coord', id), exp1),
+				  Goto stms1)
+		val stms = share stms2
+	    in
+		r := SOME stms; stms
+	    end
+	  | translateExp (SeqExp (_, exps), f, cont) =
+	    let
+		val isLast = ref true
+		fun translate (exp, stms) =
+		    if !isLast then
+			(case stms of
+			     nil => ()
+			   | _ => Crash.crash "ImperativePhase.translateExp";
+			 isLast := false; translateExp (exp, f, cont))
+		    else
+			translateExp (exp, (fn exp' =>
+					    O.EvalStm (infoExp exp, exp')),
+				      Goto stms)
+	    in
+		List.foldr (fn (exp, stms) => translate (exp, stms)) nil exps
+	    end
+	  | translateExp (CaseExp (coord, exp, matches), f, cont) =
+	    let
+		val cont' = Share (ref NONE, cont)
 		val matches' =
 		    List.map (fn Match (_, pat, exp) =>
-			      (infoExp exp, pat, simplifyExp exp)) matches
+			      (infoExp exp, pat, translateExp (exp, f, cont')))
+		    matches
 	    in
-		(nil, simplifyCase (coord, exp, matches', longid_Match))
+		simplifyCase (coord, exp, matches', id_Match)
 	    end
-	  | unfoldExp (RaiseExp (coord, exp)) =
-	    (nil, O.RaiseExp (coord, simplifyExp exp))
-	  | unfoldExp (HandleExp (coord, exp, matches)) =
+	  | translateExp (RaiseExp (coord, exp), _, _) =
 	    let
-		val id = freshId coord
-		val longid = ShortId (coord, id)
-		val varExp = VarExp (coord, longid)
+		val r = ref NONE
+		val rest = [O.IndirectStm (coord, r)]
+		val (stms, id) = unfoldTerm (exp, Goto rest)
+	    in
+		r := SOME [O.RaiseStm (coord, id)];
+		stms
+	    end
+	  | translateExp (HandleExp (coord, exp, matches), f, cont) =
+	    let
+		val coord' = infoExp exp
+		val id' = freshId coord'
+		val cont' = Share (ref NONE, cont)
+		val stms = f (O.VarExp (coord', id'))::translateCont cont'
+		val tryBody =
+		    translateDec (ValDec (coord', VarPat (coord', id'), exp),
+				  Goto [O.EndHandleStm (coord, stms)])
+		val catchId = freshId coord
+		val catchVarExp = VarExp (coord, ShortId (coord, catchId))
 		val matches' =
 		    List.map (fn Match (_, pat, exp) =>
-			      (infoExp exp, pat, simplifyExp exp)) matches
-		val exp' = simplifyCase (coord, varExp, matches', longid)
+			      (infoExp exp, pat, translateExp (exp, f, cont')))
+		    matches
 	    in
-		(nil, O.HandleExp (coord, simplifyExp exp, id, exp'))
+		[O.HandleStm (coord, tryBody, catchId,
+			      simplifyCase (coord, catchVarExp,
+					    matches', catchId))]
 	    end
-	  | unfoldExp (LetExp (coord, decs, exp)) =
-	    (nil, O.LetExp (coord, simplifyDecs decs, simplifyExp exp))
-	and simplifyIf (AndExp (_, exp1, exp2), thenExp, elseExp) =
+	  | translateExp (LetExp (coord, decs, exp), f, cont) =
 	    let
-		val elseExp' = share elseExp
-		val thenExp' = simplifyIf (exp2, thenExp, elseExp')
+		val stms = translateExp (exp, f, cont)
 	    in
-		simplifyIf (exp1, thenExp', elseExp')
+		translateCont (Decs (decs, Goto stms))
 	    end
-	  | simplifyIf (OrExp (_, exp1, exp2), thenExp, elseExp) =
+	and simplifyIf (AndExp (_, exp1, exp2), thenStms, elseStms) =
 	    let
-		val thenExp' = share thenExp
-		val elseExp' = simplifyIf (exp2, thenExp', elseExp)
+		val elseStms' = share elseStms
+		val thenStms' = simplifyIf (exp2, thenStms, elseStms')
 	    in
-		simplifyIf (exp1, thenExp', elseExp')
+		simplifyIf (exp1, thenStms', elseStms')
 	    end
-	  | simplifyIf (exp, thenExp, elseExp) =
+	  | simplifyIf (OrExp (_, exp1, exp2), thenStms, elseStms) =
+	    let
+		val thenStms' = share thenStms
+		val elseStms' = simplifyIf (exp2, thenStms', elseStms)
+	    in
+		simplifyIf (exp1, thenStms', elseStms')
+	    end
+	  | simplifyIf (exp, thenStms, elseStms) =
 	    let
 		val coord = infoExp exp
-		val (decOpt, longid) = simplifyTerm exp
-		val errExp = makeRaise (coord, longid_Match)
-		val exp' =
-		    O.TestExp (coord, longid,
-			       O.ConTest (longid_true, NONE), thenExp,
-			       O.TestExp (coord, longid,
-					  O.ConTest (longid_false, NONE),
-					  elseExp, errExp))
+		val r = ref NONE
+		val rest = [O.IndirectStm (coord, r)]
+		val (stms, id) = unfoldTerm (exp, Goto rest)
+		val errStms = [O.RaiseStm (coord, id_Match)]
 	    in
-		case decOpt of
-		    NONE => exp'
-		  | SOME dec' => O.LetExp (coord, [dec'], exp')
+		r := SOME [O.TestStm
+			   (coord, id, O.ConTest (id_true, NONE), thenStms,
+			    [O.TestStm (coord, id, O.ConTest (id_false, NONE),
+					elseStms, errStms)])];
+		stms
 	    end
-	and simplifyCase (coord, exp, matches, longid) =
+	and simplifyCase (coord, exp, matches, raiseId) =
 	    let
-		val (decOpt, id) =
-		    case exp of
-			VarExp (_, ShortId (_, id')) => (NONE, id')
-		      | _ => let
-				 val coord = infoExp exp
-				 val id' = freshId coord
-				 val dec' =
-				     O.OneDec (coord, id', simplifyExp exp)
-			     in
-				 (SOME dec', id')
-			     end
-		val errExp = O.RaiseExp (coord, O.VarExp (coord, longid))
-		val (graph, consequents) = buildGraph (matches, errExp)
-		val exp' = simplifyGraph (graph, [(nil, id)])
+		val r = ref NONE
+		val rest = [O.IndirectStm (coord, r)]
+		val (stms, id) = unfoldTerm (exp, Goto rest)
+		val errStms = [O.RaiseStm (coord, raiseId)]
+		val (graph, consequents) = buildGraph (matches, errStms)
 	    in
-		List.app (fn (coord, ref expOpt) =>
-			  case expOpt of
-			      NONE =>
-				  Error.error (coord, "unreachable expression")
-			    | SOME _ => ()) consequents;
-		case decOpt of
-		    NONE => exp'
-		  | SOME dec' => O.LetExp (coord, [dec'], exp')
+		r := SOME (translateGraph (graph, [(nil, id)]));
+		List.app (fn (coord, ref bodyOpt) =>
+			  if isSome bodyOpt then ()
+			  else Error.error (coord, "unreachable expression"))
+		consequents;
+		stms
 	    end
-	and simplifyGraph (Node (pos, test, ref thenGraph, ref elseGraph,
-				 status as ref (Optimized (_, _))), mapping) =
+	and translateGraph (Node (pos, test, ref thenGraph, ref elseGraph,
+				  status as ref (Optimized (_, _))), mapping) =
 	    let
-		val exp =
-		    share (simplifyNode (pos, test, thenGraph, elseGraph,
-					 mapping))
+		val stms =
+		    share (translateNode (pos, test, thenGraph, elseGraph,
+					  mapping))
 	    in
-		status := Simplified exp; exp
+		status := Translated stms; stms
 	    end
-	  | simplifyGraph (Node (_, _, _, _, ref (Simplified exp)), _) = exp
-	  | simplifyGraph (Leaf (exp, expOptRef as ref NONE), _) =
+	  | translateGraph (Node (_, _, _, _, ref (Translated stms)), _) = stms
+	  | translateGraph (Leaf (stms, stmsOptRef as ref NONE), _) =
 	    let
-		val exp' = share exp
+		val stms' = share stms
 	    in
-		expOptRef := SOME exp'; exp'
+		stmsOptRef := SOME stms'; stms'
 	    end
-	  | simplifyGraph (Leaf (_, ref (SOME exp)), _) = exp
-	  | simplifyGraph (_, _) =
-	    Crash.crash "MatchCompilationPhase.simplifyGraph"
-	and simplifyNode (pos, GuardTest (mapping0, exp),
-			  thenGraph, elseGraph, mapping) =
+	  | translateGraph (Leaf (_, ref (SOME stms)), _) = stms
+	  | translateGraph (_, _) =
+	    Crash.crash "MatchCompilationPhase.translateGraph"
+	and translateNode (pos, GuardTest (mapping0, exp),
+			   thenGraph, elseGraph, mapping) =
 	    let
-		val coord = Source.nowhere
-		val id = freshId coord
-		val longid = ShortId (coord, id)
+		val coord = infoExp exp
+		val r = ref NONE
+		val rest = [O.IndirectStm (coord, r)]
 		val subst = mappingsToSubst (mapping0, mapping)
-		val dec' =
-		    O.OneDec (coord, id, simplifyExp (substExp (exp, subst)))
-		val thenExp = simplifyGraph (thenGraph, mapping)
-		val elseExp = simplifyGraph (elseGraph, mapping)
-		val errExp = makeRaise (coord, longid_Match)
+		val (stms, id) = unfoldTerm (substExp (exp, subst), Goto rest)
+		val thenStms = translateGraph (thenGraph, mapping)
+		val elseStms = translateGraph (elseGraph, mapping)
+		val errStms = [O.RaiseStm (coord, id_Match)]
 	    in
-		O.LetExp (coord, [dec'],
-			  O.TestExp (coord, longid,
-				     O.ConTest (longid_true, NONE), thenExp,
-				     O.TestExp (coord, longid,
-						O.ConTest (longid_false, NONE),
-						elseExp, errExp)))
+		r := SOME [O.TestStm
+			   (coord, id, O.ConTest (id_true, NONE), thenStms,
+			    [O.TestStm (coord, id, O.ConTest (id_false, NONE),
+					elseStms, errStms)])];
+		stms
 	    end
-	  | simplifyNode (pos, DecTest (mapping0, coord, decs),
-			  thenGraph, _, mapping) =
+	  | translateNode (pos, DecTest (mapping0, coord, decs),
+			   thenGraph, _, mapping) =
 	    let
+		val thenStms = translateGraph (thenGraph, mapping)
 		val subst = mappingsToSubst (mapping0, mapping)
-		val decs' =
-		    simplifyDecs
-		    (List.map (fn dec => substDec (dec, subst)) decs)
-		val thenExp = simplifyGraph (thenGraph, mapping)
+		val cont = Decs (List.map (fn dec => substDec (dec, subst))
+				 decs, Goto thenStms)
 	    in
-		O.LetExp (coord, decs', thenExp)
+		translateCont cont
 	    end
-	  | simplifyNode (pos, test, thenGraph, elseGraph, mapping) =
+	  | translateNode (pos, test, thenGraph, elseGraph, mapping) =
 	    let
-		val longid = ShortId (Source.nowhere, lookup (pos, mapping))
-		val (test', mapping') = simplifyTest (test, pos, mapping)
-		val thenExp = simplifyGraph (thenGraph, mapping')
-		val elseExp = simplifyGraph (elseGraph, mapping')
+		val id = lookup (pos, mapping)
+		val (stms, test', mapping') =
+		    translateTest (test, pos, mapping)
 	    in
-		O.TestExp (Source.nowhere, longid, test', thenExp, elseExp)
+		stms @ [O.TestStm (Source.nowhere, id, test',
+				   translateGraph (thenGraph, mapping'),
+				   translateGraph (elseGraph, mapping'))]
 	    end
-	and simplifyTest (LitTest lit, _, mapping) =
-	    (O.LitTest lit, mapping)
-	  | simplifyTest (ConTest (longid, false), _, mapping) =
-	    (O.ConTest (longid, NONE), mapping)
-	  | simplifyTest (ConTest (longid, true), pos, mapping) =
+	and translateTest (LitTest lit, _, mapping) =
+	    (nil, O.LitTest lit, mapping)
+	  | translateTest (ConTest (longid, false), _, mapping) =
+	    let
+		val (stms, id) = translateLongid longid
+	    in
+		(stms, O.ConTest (id, NONE), mapping)
+	    end
+	  | translateTest (ConTest (longid, true), pos, mapping) =
+	    let
+		val (stms, id) = translateLongid longid
+		val id' = freshId Source.nowhere
+		val mapping' = ((""::pos), id')::mapping
+	    in
+		(stms, O.ConTest (id, SOME id'), mapping')
+	    end
+	  | translateTest (RefTest, pos, mapping) =
 	    let
 		val id = freshId Source.nowhere
 		val mapping' = ((""::pos), id)::mapping
 	    in
-		(O.ConTest (longid, SOME id), mapping')
+		(nil, O.ConTest (id_ref, SOME id), mapping')
 	    end
-	  | simplifyTest (RefTest, pos, mapping) =
-	    let
-		val id = freshId Source.nowhere
-		val mapping' = ((""::pos), id)::mapping
-	    in
-		(O.ConTest (longid_ref, SOME id), mapping')
-	    end
-	  | simplifyTest (TupTest n, pos, mapping) =
+	  | translateTest (TupTest n, pos, mapping) =
 	    let
 		val ids = List.tabulate (n, fn _ => freshId Source.nowhere)
 		val labs = List.tabulate (n, fn i => Int.toString (i + 1))
@@ -387,9 +496,9 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 		    foldli (fn (i, id, mapping) =>
 			    (Int.toString i::pos, id)::mapping) mapping ids
 	    in
-		(O.TupTest ids, mapping')
+		(nil, O.TupTest ids, mapping')
 	    end
-	  | simplifyTest (RecTest labs, pos, mapping) =
+	  | translateTest (RecTest labs, pos, mapping) =
 	    let
 		val stringIdList =
 		    List.map (fn s => (s, freshId Source.nowhere)) labs
@@ -398,16 +507,16 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 				    (s::pos, i)::mapping)
 		    mapping (labs, stringIdList)
 	    in
-		(O.RecTest stringIdList, mapping')
+		(nil, O.RecTest stringIdList, mapping')
 	    end
-	  | simplifyTest (LabTest string, pos, mapping) =
+	  | translateTest (LabTest string, pos, mapping) =
 	    let
 		val id = freshId Source.nowhere
 		val mapping' = ((string::pos), id)::mapping
 	    in
-		(O.LabTest (string, id), mapping')
+		(nil, O.LabTest (string, id), mapping')
 	    end
-	  | simplifyTest (VecTest n, pos, mapping) =
+	  | translateTest (VecTest n, pos, mapping) =
 	    let
 		val ids = List.tabulate (n, fn _ => freshId Source.nowhere)
 		val labs = List.tabulate (n, fn i => Int.toString (i + 1))
@@ -415,10 +524,10 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 		    foldli (fn (i, id, mapping) =>
 			    (Int.toString i::pos, id)::mapping) mapping ids
 	    in
-		(O.VecTest ids, mapping')
+		(nil, O.VecTest ids, mapping')
 	    end
-	  | simplifyTest ((GuardTest (_, _) | DecTest (_, _, _)), _, _) =
-	    Crash.crash "MatchCompilationPhase.simplifyTest"
+	  | translateTest ((GuardTest (_, _) | DecTest (_, _, _)), _, _) =
+	    Crash.crash "MatchCompilationPhase.translateTest"
 
-	fun simplify (decs, ids) = (simplifyDecs decs, ids)
+	fun translate (decs, ids) = translateCont (Decs (decs, Export ids))
     end

@@ -1,9 +1,0 @@
-Group is
-
-    ../error/sources.cm
-    ../common/sources.cm
-
-    (* Simplified intermediate language *)
-
-    SIMPLIFIED_GRAMMAR.sig
-    SimplifiedGrammar.sml
