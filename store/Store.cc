@@ -111,7 +111,12 @@ inline void Store::CheneyScan(HeapChunk *chunk, char *scan, const u_int gen) {
 	}
       }
       else if (l == DYNAMIC_LABEL) {
-	size = ((DynamicBlock *) p)->GetScanSize();
+    	size = ((DynamicBlock *) p)->GetScanSize();
+//  	// Purge non-active size
+//  	u_int scanSize = ((DynamicBlock *) p)->GetScanSize();
+//  	for (u_int i = size - 1; i >= scanSize; i--)
+//  	  p->InitArg(i, Store::IntToWord(0));
+//  	size = scanSize;
 	goto scan;
       }
     }

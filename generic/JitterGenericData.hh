@@ -117,6 +117,26 @@ namespace Generic {
       jit_subi_p(Dest, Dest, sizeof(word));
 #endif
     }
+    // Side Effect: Scratches JIT_R0, JIT_FP
+    static void PushFrameReg(u_int Dest, u_int Size) {
+      Assert(Dest != JIT_R0);
+      Assert(Dest != JIT_FP);
+      Assert(Size != JIT_R0);
+      Assert(Size != JIT_FP);
+      jit_insn *loop = jit_get_label();
+      jit_ldi_p(JIT_R0, &::Scheduler::stackTop);
+      jit_addr_p(JIT_R0, JIT_R0, Size);
+      jit_ldi_p(JIT_FP, &::Scheduler::stackMax);
+      jit_insn *succeeded = jit_bltr_p(jit_forward(), JIT_R0, JIT_FP);
+      JITStore::Prepare();
+      JITStore::Call(0, (void *) ::Scheduler::EnlargeTaskStack);
+      JITStore::Finish();
+      drop_jit_jmpi(loop);
+      jit_patch(succeeded);
+      jit_sti_p(&::Scheduler::stackTop, JIT_R0);
+      jit_movr_p(Dest, JIT_R0);
+      jit_subi_p(Dest, Dest, sizeof(word));
+    }
     // Side-Effect: Scratches JIT_R0, JIT_FP
     static void GetFrame(u_int This) {
 #if defined(JIT_ASSERT_INDEX)
@@ -242,6 +262,9 @@ namespace Generic {
     }
     static void InitConcreteCode(u_int This, u_int Value) {
       JITStore::InitArg(This, CONCRETE_CODE_POS, Value);
+    }
+    static void GetConcreteCode(u_int Dest, u_int This) {
+      JITStore::GetArg(Dest, This, CONCRETE_CODE_POS);
     }
     static void Sel(u_int This, u_int Dest, u_int pos) {
       JITStore::GetArg(Dest, This, BASE_SIZE + pos);

@@ -47,6 +47,9 @@ public:
   word GetConcreteCode() {
     return GetArg(CONCRETE_CODE_POS);
   }
+  void PutConcreteCode(word wConcreteCode) {
+    ReplaceArg(CONCRETE_CODE_POS, wConcreteCode);
+  }
   u_int GetSize() {
     return Block::GetSize() - BASE_SIZE;
   }
