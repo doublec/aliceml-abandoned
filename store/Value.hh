@@ -90,7 +90,7 @@ public:
 		(GetLabel() != REF_LABEL));
     AssertStore(l >= MIN_TRANSIENT_LABEL && l <= MAX_TRANSIENT_LABEL);
     HeaderOp::EncodeLabel(this, l);
-    Block::ReplaceArg(REF_POS, w);
+    Block::ReplaceArg(REF_POS, PointerOp::Deref(w));
   }
   void Become(BlockLabel l, s_int i) {
     AssertStore((GetLabel() >= MIN_TRANSIENT_LABEL) &&
