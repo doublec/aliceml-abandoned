@@ -304,11 +304,13 @@ DEFINE1(UnsafeValue_outArity) {
 } END
 
 word UnsafeValue() {
-  Record *record = Record::New(20);
+  Record *record = Record::New(21);
   INIT_STRUCTURE(record, "UnsafeValue", "cast",
 		 UnsafeValue_cast, 1, true);
   INIT_STRUCTURE(record, "UnsafeValue", "same",
 		 UnsafeValue_same, 2, true);
+  INIT_STRUCTURE(record, "UnsafeValue", "awaitRequest",
+		 UnsafeValue_awaitRequest, 1, true);
   INIT_STRUCTURE(record, "UnsafeValue", "proj",
 		 UnsafeValue_proj, 3, true);
   INIT_STRUCTURE(record, "UnsafeValue", "projTuple",
