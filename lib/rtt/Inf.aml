@@ -113,7 +113,7 @@ struct
     datatype space = FIX' | VAL' | TYP' | MOD' | INF'
 
     structure Tab = MkHashImpMap(type t = space * lab
-				 val equals = op=
+				 val equal = op=
 				 fun hash(_,l) = Label.hash l)
 
     datatype inf' =
@@ -431,7 +431,7 @@ struct
     and reduceEta(p1,j1,j2) =
 	case content j2
 	  of APPLY(j3,(p4,j4)) =>
-		if Path.equals(p1,p4) andalso not(occurs(p1,j3))
+		if Path.equal(p1,p4) andalso not(occurs(p1,j3))
 		then j3
 		else new(LAMBDA(p1,j1,j2))
 	   | ABBREV(_,j3) =>
@@ -694,7 +694,7 @@ struct
 					     buildNew(mj,j,j'))
 				       | NONE =>
 					 let val k'=buildKind(mj,mk,mt,rea,k) in
-					     if Cell.equals(k,k')
+					     if Cell.equal(k,k')
 					     then buildOld(mj,j)
 					     else buildNew(mj,j,abs'(k',p))
 					 end
@@ -718,7 +718,7 @@ struct
 				      build(mj,mk,mt, rea, j2)
 				      before PathMap.insert(#mod_rea rea,p,m))
 	in
-	    if Cell.equals(j1,j1') andalso Cell.equals(j2,j2')
+	    if Cell.equal(j1,j1') andalso Cell.equal(j2,j2')
 	    then buildOld(mj, j)
 	    else buildNew(mj, j, toInf(p,j1',j2'))
 	end
@@ -728,7 +728,7 @@ struct
 	    val j1' = build(mj,mk,mt, rea, j1)
 	    val j2' = build(mj,mk,mt, rea, j2)
 	in
-	    if Cell.equals(j1,j1') andalso Cell.equals(j2,j2')
+	    if Cell.equal(j1,j1') andalso Cell.equal(j2,j2')
 	    then buildOld(mj, j)
 	    else buildNew(mj, j, toInf(j1',j2'))
 	end
@@ -744,8 +744,8 @@ struct
 				      in (p',j2'') end
 				      handle Mismatch _ => raise Interface
 	in
-	    if Path.equals(p,p') andalso Cell.equals(j1,j1')
-				 andalso Cell.equals(j2,j2')
+	    if Path.equal(p,p') andalso Cell.equal(j1,j1')
+				andalso Cell.equal(j2,j2')
 	    then buildOld(mj, j)
 	    else buildNew(mj, j, toInf(j1',m'))
 	end
@@ -760,7 +760,7 @@ struct
 				      in (p',j1'') end
 				      handle Mismatch _ => raise Interface
 	in
-	    if Path.equals(p,p') andalso Cell.equals(j1,j1')
+	    if Path.equal(p,p') andalso Cell.equal(j1,j1')
 	    then buildOld(mj, j)
 	    else buildNew(mj, j, toInf m')
 	end
@@ -809,7 +809,7 @@ struct
 			     newItem(MOD(p,j''))
 			 end
 		    | NONE =>
-			 if Cell.equals(j,j')
+			 if Cell.equal(j,j')
 			 then item
 			 else newItem(MOD(p,j'))
 		end
@@ -825,7 +825,7 @@ struct
 			     newItem(INF(p,k))
 			 end
 		       | NONE =>
-			 if Cell.equals(k,k')
+			 if Cell.equal(k,k')
 			 then item
 			 else newItem(INF(p,k'))
 		end
@@ -853,7 +853,7 @@ struct
 	let
 	    val j' = build(mj,mk,mt, rea, j)
 	in
-	    if Cell.equals(j,j')
+	    if Cell.equal(j,j')
 	    then buildOldKind(mk, k)
 	    else buildNewKind(mk, k, toKind j')
 	end
@@ -867,7 +867,7 @@ struct
 				      buildKind(mj,mk,mt, rea, k1)
 				      before PathMap.insert(#mod_rea rea,p,m))
 	in
-	    if Cell.equals(j,j') andalso Cell.equals(k1,k1')
+	    if Cell.equal(j,j') andalso Cell.equal(k1,k1')
 	    then buildOldKind(mk, k)
 	    else buildNewKind(mk, k, toKind(p,j',k1'))
 	end
@@ -904,7 +904,7 @@ struct
 	     let
 		 val j2' = instance'(rea,p,j2)
 	     in
-		 if Cell.equals(j2,j2')
+		 if Cell.equal(j2,j2')
 		 then j
 		 else abbrev'(j1,j2')
 	     end
@@ -980,7 +980,7 @@ TextIO.print "\n";
 	   | THAT m		=> (minimiseMod(u,m) ; j)
 	   | FUN(p,j1,j2)	=> let val j2' = minimise(u,j2) in
 				       minimise'(u,j1);
-				       if Cell.equals(j2,j2') then j
+				       if Cell.equal(j2,j2') then j
 				       else if isTop' j2 then top'()
 				       else arrow'(p,j1,j2')
 				   end (* should remove p,j1 refs from u! *)
@@ -990,7 +990,7 @@ TextIO.print "\n";
 	   | APPLY(j,m)		=> (minimise'(u,j); minimiseMod(u,m); j)
 	   | ABBREV(j1,j2)	=> let val j2' = minimise(u,j2) in
 				       minimise'(u,j1);
-				       if Cell.equals(j2,j2') then j
+				       if Cell.equal(j2,j2') then j
 				       else if isTop' j2' then top'()
 				       else abbrev'(j1,j2')
 				   end
@@ -1021,7 +1021,7 @@ TextIO.print "\n";
 		else let
 		    val j' = minimise(u,j)
 		in
-		    if Cell.equals(j,j') then SOME item
+		    if Cell.equal(j,j') then SOME item
 		    else if isTop' j' then (change := true; NONE)
 		    else (change := true; SOME(MOD(p,j')))
 		    (* should remove p,j refs from u! *)
@@ -1157,7 +1157,7 @@ TextIO.print "\n";
 
     fun match(j1,j2) = match'(false,j1,j2)
     and match'(isNested,j1,j2) =
-	if Cell.equals(j1,j2) then (j2, newRea()) else
+	if Cell.equal(j1,j2) then (j2, newRea()) else
 	case (content j1, content j2)
 	  of (_, TOP) =>
 		(j2, newRea())
@@ -1165,7 +1165,7 @@ TextIO.print "\n";
 		let
 		    val (m,rea) = matchMod(isNested,m1,m2)
 		in
-		    if Cell.equals(#2 m2, #2 m)
+		    if Cell.equal(#2 m2, #2 m)
 		    then (j2, rea)
 		    else (sing' m, rea)
 		end
@@ -1176,7 +1176,7 @@ TextIO.print "\n";
 		    (sing'(p1,#1(instance(p1,j))), rea)
 		end
 	   | (ABS(_,p1), ABS(_,p2)) =>
-		if Path.equals(p1,p2)
+		if Path.equal(p1,p2)
 		then (j2, newRea())
 		else raise Mismatch(Incompatible(j1,j2))
 	   | (SIG s1, SIG s2) =>
@@ -1199,7 +1199,7 @@ TextIO.print "\n";
 		in
 		    (j2, newRea())
 		    (* For applicative functors this would be???
-		    if Cell.equals(j22,j22')
+		    if Cell.equal(j22,j22')
 		    then (j2, rea2)
 		    else (arrow'(p2,j21,j22'), rea2)
 		    *)
@@ -1222,7 +1222,7 @@ TextIO.print "\n";
 		in
 		    unionRea(rea2,rea1) handle PathMap.Collision _ =>
 			raise Mismatch(Incompatible(j1,j2));
-		    if Cell.equals(j2',j') andalso Cell.equals(#2 m2, #2 m')
+		    if Cell.equal(j2',j') andalso Cell.equal(#2 m2, #2 m')
 		    then (j2, rea2)
 		    else (apply'(j',m'), rea2)
 		end
@@ -1232,7 +1232,7 @@ TextIO.print "\n";
 	   | _ => raise Mismatch(Incompatible(j1,j2))
 
     and matchMod(isNested, (p1,j1), (p2,j2)) =
-	if not(Path.equals(p1,p2))
+	if not(Path.equal(p1,p2))
 	then raise Mismatch(IncompatibleMod(p1,p2)) else
 	let
 	    val (j2',rea) = match'(isNested,j1,j2)
@@ -1260,7 +1260,7 @@ TextIO.print "\n";
 			 else raise Mismatch(MismatchVal(l,t1,t2))
 		       | (TYP(p1,k1), TYP(p2,k2)) =>
 			 if Type.matchesKind(k1,k2) then
-			     if Type.equalsKind(k1,k2)
+			     if Type.equalKind(k1,k2)
 			     then item2
 			     else (change := true ; TYP(p2,k1))
 			 else raise Mismatch(MismatchTyp(l,k1,k2))
@@ -1268,14 +1268,14 @@ TextIO.print "\n";
 			 (let
 			     val (j2',_) = match'(true,j1,j2)
 			  in
-			     if Cell.equals(j2,j2')
+			     if Cell.equal(j2,j2')
 			     then item2
 			     else (change := true ; MOD(p2,j2'))
 			  end handle Mismatch mismatch =>
 			  raise Mismatch(MismatchMod(l, mismatch)))
 		       | (INF(p1,k1), INF(p2,k2)) =>
 			 ((matchKind(k1,k2);
-			     if Cell.equals(k1,k2)
+			     if Cell.equal(k1,k2)
 			     then item2
 			     else (change := true ; INF(p2,k1))
 			 ) handle Mismatch mismatch =>
@@ -1296,7 +1296,7 @@ TextIO.print "\n";
 	end
 
     and matchKind(k1,k2) =
-	if Cell.equals(k1,k2) then () else
+	if Cell.equal(k1,k2) then () else
 	case (content k1, content k2)
 	  of (GROUND, GROUND) => ()
 	   | (SING _, GROUND) => ()
@@ -1323,7 +1323,7 @@ TextIO.print "\n";
 
     fun intersect(j1,j2) = intersect'(false,j1,j2)
     and intersect'(isNested,j1,j2) =
-	if Cell.equals(j1,j2) then j2 else
+	if Cell.equal(j1,j2) then j2 else
 	case (content j1, content j2)
 	  of (TOP, _) =>
 		(* T /\ j2 = j2 *)
@@ -1335,7 +1335,7 @@ TextIO.print "\n";
 		let
 		    val m = intersectMod(isNested,m1,m2)
 		in
-		    if Cell.equals(#2 m2, #2 m)
+		    if Cell.equal(#2 m2, #2 m)
 		    then j2
 		    else sing' m
 		end
@@ -1352,7 +1352,7 @@ TextIO.print "\n";
 		    sing'(p2, #1(instance(p2,j)))
 		end
 	   | (ABS(_,p1), ABS(_,p2)) =>
-		if Path.equals(p1,p2)
+		if Path.equal(p1,p2)
 		then j2
 		else raise Mismatch(Incompatible(j1,j2))
 	   | (SIG s1, SIG s2) =>
@@ -1377,7 +1377,7 @@ TextIO.print "\n";
 				      handle Mismatch m =>
 					raise Mismatch(MismatchRan m)
 		in
-		    if Cell.equals(j22,j22')
+		    if Cell.equal(j22,j22')
 		    then (j2, rea2)
 		    else (arrow'(p2,j21,j22'), rea2)
 		end
@@ -1399,7 +1399,7 @@ TextIO.print "\n";
 		in
 		    unionRea(rea2,rea1) handle PathMap.Collision _ =>
 			raise Mismatch(Incompatible(j1,j2));
-		    if Cell.equals(j2',j') andalso Cell.equals(#2 m2, #2 m')
+		    if Cell.equal(j2',j') andalso Cell.equal(#2 m2, #2 m')
 		    then (j2, rea2)
 		    else (apply'(j',m'), rea2)
 		end
@@ -1409,7 +1409,7 @@ TextIO.print "\n";
 	   | _ => raise Mismatch(Incompatible(j1,j2))
 
     and intersectMod(isNested, (p1,j1), (p2,j2)) =
-	if not(Path.equals(p1,p2))
+	if not(Path.equal(p1,p2))
 	then raise Mismatch(IncompatibleMod(p1,p2)) else
 	let
 	    val j2' = intersect'(isNested,j1,j2)
@@ -1430,7 +1430,7 @@ TextIO.print "\n";
     and intersect'(rea, j1, ref TOP) = j1
       | intersect'(rea, ref TOP, j2) = j2
       | intersect'(rea, j1 as ref(CON(_,p1)), j2 as ref(CON(_,p2))) =
-	if Path.equals(p1,p2) then
+	if Path.equal(p1,p2) then
 	    j1
 	else
 	    raise Mismatch(Incompatible(j1,j2))
@@ -1508,7 +1508,7 @@ TextIO.print "\n";
 		     (* Nested structures are already realised.
 		      * We would loop during realisation if we inserted
 		      * identity realisations. *)
-		     ( if pair1(not(Path.equals(itemPath item1,itemPath item2)),
+		     ( if pair1(not(Path.equal(itemPath item1,itemPath item2)),
 				!item1, !item2) then ()
 		       else item1 :=: item2
 		     ; pair(tab1, items, (item1,item2)::pairs, left)
@@ -1608,14 +1608,14 @@ TextIO.print "\n";
       | intersectTypDef(l, SOME t1, NONE)	= SOME t1
       | intersectTypDef(l, NONE,    SOME t2)	= SOME t2
       | intersectTypDef(l, SOME t1, SOME t2)	=
-	    if Type.equals(t1,t2) then SOME t1 else
+	    if Type.equal(t1,t2) then SOME t1 else
 		raise Mismatch(ManifestTyp(l, SOME t1, t2))
 
     and intersectModDef(l, NONE,    NONE)	= NONE
       | intersectModDef(l, SOME p1, NONE)	= SOME p1
       | intersectModDef(l, NONE,    SOME p2)	= SOME p2
       | intersectModDef(l, SOME p1, SOME p2)	=
-	    if Path.equals(p1,p2) then SOME p1 else
+	    if Path.equal(p1,p2) then SOME p1 else
 		raise Mismatch(ManifestMod(l, SOME p1, p2))
 
     and intersectInfDef(l, NONE,    NONE)	= NONE
