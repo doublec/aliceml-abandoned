@@ -273,7 +273,7 @@ structure GuiMain =
                 val enditer = Gtk.textIterNew()
                 val _ = Gtk.textBufferGetEndIter(buf,enditer)
             in
-                Gtk.textBufferRemoveAllTags(buf, startiter, enditer);
+                (*Gtk.textBufferRemoveAllTags(buf, startiter, enditer);*)
                 BufferHighlight.highlight(buf, startiter, enditer)
             end
                                  | _ => ()
@@ -325,10 +325,7 @@ structure GuiMain =
             end
         fun new() = new' NONE
 
-        fun openFile () =
-            case FileDialog.openFile "Open file" of
-                NONE => ()
-              | SOME f =>
+        fun openGivenFile f =
                 let
                     val {buf,view,...} = Buffer.buffer {notebook=Gui.notebook1,
                                                         id=(!numberOfPages),
@@ -344,7 +341,12 @@ structure GuiMain =
                     numberOfPages := (!numberOfPages) + 1;
                     checkNotebookSize()
                 end
-                                  
+
+         fun openFile () =
+            case FileDialog.openFile "Open file" of
+                NONE => ()
+              | SOME f => openGivenFile f
+                                 
         fun saveFileAs () =
             case getCurrentPage() of NONE => ()
                                    | SOME id =>

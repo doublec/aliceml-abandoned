@@ -6,26 +6,26 @@ Bugs:
 * output stream synchronisation (how?)
 * paste should delete tags
 * highlighting displaced due to prompt
-* compile output in wrong buffer
 * jump-to-error does not work for compile
 * undo after open deletes buffer
 * scroll to bottom after layout change or resize
 * propagate output width on init and after resize
+* gui hangs when files are given on command line
 * switch layout compiler and i/o buffer
-* button texts in dialogues are not capitalized
 * undo shortcut not shown in menu
 * colorize compiler output?
+* dialogues at mouse position
 * about dialogue missing
 
 Missing Features:
 
-* signal shortcuts
+* signal shortcuts (Ctrl-B, Ctrl-I?)
+* shortcur for compile (Ctrl-K?)
 * cumulative undo
 * redo
 * overwrapping search
 * replace
 * incremental search
 * history
-* file names as command line arguments
 * general interactive highlighting
 * auto-indentation, indent/outdent commands

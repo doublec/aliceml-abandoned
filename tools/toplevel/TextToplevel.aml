@@ -72,12 +72,19 @@ struct
 
     (* Main *)
 
-    fun run () =
+    fun run nil =
 	(
 	    TextIO.print CoreToplevel.banner;
 	    CoreToplevel.init ();
 	    registerSignals ();
 	    loop ();
 	    TextIO.print CoreToplevel.bye
+	)
+      | run files =
+	(
+	    TextIO.print CoreToplevel.banner;
+	    CoreToplevel.init ();
+	    List.app CoreToplevel.use files;
+	    CoreToplevel.eval ("", lazy CoreToplevel.STOP)
 	)
 end

@@ -32,11 +32,14 @@ struct
 	(usage false; OS.Process.success)
       | main ("--version"::_) =
 	(TextIO.print CoreToplevel.banner; OS.Process.success)
-      | main (("--gui"|"-g")::_) =
-	(GuiToplevel.run (); OS.Process.success)
-      | main ("--no-gui"::_ | nil) =
-	(TextToplevel.run (); OS.Process.success)
-      | main (_::_) = (usage true; OS.Process.failure)
+      | main (("--gui"|"-g")::files) =
+	(GuiToplevel.run files; OS.Process.success)
+      | main ("--no-gui"::files | files as nil) =
+	(TextToplevel.run files; OS.Process.success)
+      | main (s::_) where (String.size s = 0 orelse String.sub (s,0) = #"-") =
+	(usage true; OS.Process.failure)
+      | main files =
+	(TextToplevel.run files; OS.Process.success)
 
     val _ = OS.Process.exit (main (CommandLine.arguments ()))
 end

@@ -7,12 +7,13 @@ import structure Evaluator from "Evaluator"
 
 structure GuiToplevel =
   struct
-    fun run () =
+    fun run files =
 	let
 	    structure S = GuiSignals (structure S = EventHandler)
 	in
 	    Gtk.widgetShowAll Gui.mainwidget;
 	    GuiMain.init ();
+	    List.app GuiMain.openGivenFile files;
 	    Evaluator.init ();
 	    await (Promise.future (Promise.promise ()))
 	end

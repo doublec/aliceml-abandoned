@@ -12,5 +12,5 @@
 
 signature TOPLEVEL =
 sig
-    val run : unit -> unit
+    val run : string list -> unit
 end

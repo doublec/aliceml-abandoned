@@ -22,8 +22,8 @@ structure BufferHighlight =
                           | COMMENT => "comment"
                           | ERRONEOUS => "error"
           in
-              Gtk.textBufferApplyTagByName(buf, tag,
-                                           startiter, enditer)
+              Gtk.textBufferRemoveAllTags(buf, startiter, enditer);
+              Gtk.textBufferApplyTagByName(buf, tag, startiter, enditer)
           end
 
       fun highlight (buf, startiter, enditer) =
