@@ -24,6 +24,7 @@
 #include "emulator/Scheduler.hh"
 #include "emulator/Backtrace.hh"
 #include "emulator/ConcreteCode.hh"
+#include "emulator/Properties.hh"
 
 typedef union {
   Transient *pt;
@@ -135,13 +136,17 @@ public:
   virtual void DumpFrame(word frame);
 };
 
-Interpreter::Result
-EmptyTaskInterpreter::Handle(word exn, Backtrace *trace, TaskStack *) {
-  fprintf(stderr, "uncaught exception:\n");
-  TaskStack::Dump(exn);
-  fprintf(stderr, "backtrace:\n");
-  trace->Dump();
-  return Interpreter::TERMINATE;
+Interpreter::Result EmptyTaskInterpreter::Handle(word exn, Backtrace *trace,
+						 TaskStack *taskStack) {
+  if (Properties::atExn == Store::IntToWord(0)) {
+    fprintf(stderr, "uncaught exception:\n");
+    TaskStack::Dump(exn);
+    fprintf(stderr, "backtrace:\n");
+    trace->Dump();
+    exit(1);
+  } else {
+    return taskStack->PushCall(Properties::atExn);
+  }
 }
 
 Interpreter::Result EmptyTaskInterpreter::Run(word, TaskStack *) {
