@@ -102,7 +102,7 @@ DEFINE1(String_size) {
 DEFINE2(String_sub) {
   DECLARE_STRING(string, x0);
   DECLARE_INT(index, x1);
-  if (index < 0 || index >= string->GetLength())
+  if (index < 0 || static_cast<u_int>(index) >= string->GetLength())
     RAISE(GlobalPrimitives::General_Subscript);
   RETURN_INT(string->GetValue()[index]);
 } END
