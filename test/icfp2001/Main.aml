@@ -30,5 +30,5 @@ struct
     fun main []       = main'(Promise.future(Promise.promise()))
       | main(time::_) = main'(Future.alarm(timeout(valOf(Int.fromString time))))
 
-(*    val _ = main(CommandLine.arguments())*)
+    val _ = main(CommandLine.arguments())
 end
