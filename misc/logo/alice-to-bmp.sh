@@ -15,7 +15,11 @@ process() {
 	read name xsize ysize
     done
 ) <<EOF
-alice-ps 2096 661
+alice-base-plain-black 2096 661
+alice-strikethrough-plain-black 2096 661
+alice-strikethrough-plain-black 2096 661
 alice-strikethrough-shadow-blue 2096 661
 alice-strikethrough-shadow-rainbow 2096 661
+alice-none-shadow-rainbow 2096 661
+alice-ps 2096 661
 EOF

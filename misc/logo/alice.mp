@@ -77,15 +77,17 @@ def drawalicewithshadow(expr nsteps) =
     endfor;
     yshadow := 0;
     drawalice(alice0,xbase,ybase,1.0,col0);
-    save baseline; path baseline;
-    pickup pensquare scaled ythick;
-    baseline = (xbase,ybase)--(xbase+xsize,ybase);
-    draw baseline shifted (0,-ythick) withpen rectangular withcolor background;
-    draw baseline withcolor col0;
+    draw (xbase,ybase-ythick/2)--(xbase+xsize,ybase-ythick/2)
+      withpen rectangular withcolor background;
   endgroup
 enddef;
 
-def strikethrough =
+def drawbaseline =
+  draw (xbase,ybase)--(xbase+xsize,ybase)
+    withcolor col0 withpen pensquare scaled ythick;
+enddef;
+
+def drawstrikethrough =
   pickup pensquare scaled ythick;
   draw (lft xbase,ybase+u/2)--(rt xbase+xsize,ybase+u/2)--
     (rt xbase+xsize,bot ybase)--(lft xbase,bot ybase)--cycle

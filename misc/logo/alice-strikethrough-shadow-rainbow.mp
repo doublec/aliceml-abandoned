@@ -39,7 +39,8 @@ beginfig(1)
   col5 = 1/4[3/4blue,background];
 
   drawalicewithshadow(32);
-  strikethrough;
+  drawbaseline;
+  drawstrikethrough;
 endfig;
 
 end;

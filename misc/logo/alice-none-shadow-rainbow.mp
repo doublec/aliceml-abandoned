@@ -12,8 +12,9 @@
 
 input alice
 
-color aliceblue;
-aliceblue = (23/255,102/255,231/255);
+color orange, yellow;
+orange = 1/2[red,yellow];
+yellow = red+green;
 
 beginfig(1)
   u = 30mm;
@@ -21,7 +22,7 @@ beginfig(1)
   ythick = 4mm;
   xseriflen = 3mm;
   yseriflen = ythick;
-  xshadowsize = 4.5mm;
+  xshadowsize = 9mm;
   xextra = 1/4xthick;
 
   xbase = ythick;
@@ -30,12 +31,16 @@ beginfig(1)
   ysize = 1.6u;
   ydot = 1.4u;
 
-  col0 = aliceblue/2;
-  col1 = col2 = col3 = col4 = col5 = 1/2[col0,background];
+  col0 = black;
+  col1 = 1/4[3/4red,background];
+  col2 = 1/4[3/4orange,background];
+  col3 = 1/4[3/4yellow,background];
+  col4 = 1/4[3/4green,background];
+  col5 = 1/4[3/4blue,background];
 
   drawalicewithshadow(32);
-  drawbaseline;
-  drawstrikethrough;
+  draw (xbase,ybase+u/2)--(xbase+xsize,ybase+u/2)
+    withpen pensquare scaled (ythick/4) withcolor col0;
 endfig;
 
 end;

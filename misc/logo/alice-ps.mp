@@ -39,7 +39,8 @@ beginfig(1)
     (xsize+2xbase,ysize+2ybase)--
     (0,ysize+2ybase)--cycle;
   drawalicewithshadow(32);
-  strikethrough;
+  drawbaseline;
+  drawstrikethrough;
 endfig;
 
 end;
