@@ -41,9 +41,6 @@ public:
     }
   };
 
-  // Handling code:
-  virtual ConcreteCode *Prepare(word abstractCode) = 0;
-
   // Handling stack frames:
   virtual void PushCall(TaskStack *taskStack, Closure *closure) = 0;
   virtual void PopFrame(TaskStack *taskStack) = 0;

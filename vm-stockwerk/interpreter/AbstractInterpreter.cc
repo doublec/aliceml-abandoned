@@ -22,17 +22,6 @@
 #include "interpreter/AbstractInterpreter.hh"
 
 //
-// This interpreter's concrete code representation
-//
-
-ConcreteCode *AbstractInterpreter::Prepare(word abstractCode) {
-  Assert(TagVal::FromWord(abstractCode)->GetTag() == Pickle::Function &&
-	 TagVal::FromWord(abstractCode)->GetWidth() == 3);
-  //--** block on all transients
-  return ConcreteCode::New(abstractCode, this, 0);
-}
-
-//
 // Local environment representation
 //
 
@@ -297,7 +286,9 @@ AbstractInterpreter::Run(TaskStack *taskStack, int nargs) {
       {
 	Vector *idRefs = Vector::FromWord(pc->Sel(1));
 	u_int nglobals = idRefs->GetLength();
-	Closure *closure = Closure::New(Prepare(pc->Sel(2)), nglobals);
+	//--** needs to be adapted to unpickling transformers
+	Closure *closure =
+	  Closure::New(ConcreteCode::New(pc->Sel(2), this, 0), nglobals);
 	for (u_int i = nglobals; i--; )
 	  closure->Init(i, GetIdRef(idRefs->Sub(i), globalEnv, localEnv));
 	localEnv->Add(pc->Sel(0), closure->ToWord());

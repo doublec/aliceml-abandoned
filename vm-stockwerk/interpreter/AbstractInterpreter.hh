@@ -21,7 +21,6 @@
 
 class AbstractInterpreter: public Interpreter {
 public:
-  virtual ConcreteCode *Prepare(word abstractCode);
   virtual void PushCall(TaskStack *taskStack, Closure *closure);
   virtual void PopFrame(TaskStack *taskStack);
   virtual Result Run(TaskStack *taskStack, int nargs);
