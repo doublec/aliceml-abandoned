@@ -103,7 +103,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
     val trTyCon = trId(lookupTy, infoTyCon, idTyCon,
 			TyCon.toString, errorTyCon, "type")
     val trStrId = trId(lookupStr, infoStrId, idStrId,
-			StrId.toString, errorStrId, "structue")
+			StrId.toString, errorStrId, "structure")
     val trSigId = trId(lookupSig, infoSigId, idSigId,
 			SigId.toString, errorSigId, "signature")
     val trFunId = trId(lookupFun, infoFunId, idFunId,
@@ -116,9 +116,9 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	end
 
 
+    val trTyVar_bind = trId_bind(infoTyVar, idTyVar, TyVar.toString)
     val trVId_bind'  = trId_bind(infoVId,   idVId,   VId.toString)
     val trTyCon_bind = trId_bind(infoTyCon, idTyCon, TyCon.toString)
-    val trTyVar_bind = trId_bind(infoTyVar, idTyVar, TyVar.toString)
     val trStrId_bind = trId_bind(infoStrId, idStrId, StrId.toString)
     val trSigId_bind = trId_bind(infoSigId, idSigId, SigId.toString)
     val trFunId_bind = trId_bind(infoFunId, idFunId, FunId.toString)
@@ -425,8 +425,8 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	   end
 
 
-    and trExp (E as ENV{IE,...}) =
-	fn exp as (ATEXPExp _|APPExp _)	=> trAppExp E (Infix.exp IE exp)
+    and trExp E =
+	fn exp as (ATEXPExp _|APPExp _)	=> trAppExp E (Infix.exp (infEnv E) exp)
  	 | TYPEDExp(i, exp, ty)		=> O.AnnExp(i,trExp E exp, trTy E ty)
 	 | ANDALSOExp(i, exp1, exp2)	=> O.AndExp(i,trExp E exp1,trExp E exp2)
 	 | ORELSEExp(i, exp1, exp2)	=> O.OrExp(i,trExp E exp1, trExp E exp2)
@@ -489,7 +489,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	end
 
 
-    and trAtPat (E, E' as ENV{VE=VE',...}) =
+    and trAtPat (E,E') =
 	fn WILDCARDAtPat(i)	=> O.JokPat(i)
 	 | SCONAtPat(i, scon)	=> O.LitPat(i, trSCon E scon)
 	 | LONGVIDAtPat(_, _, longvid as SHORTLong(i, vid as VId(i',vid'))) =>
@@ -523,7 +523,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		val  _    = insertScope E'
 		val pats' = trPats (E,E') pats
 	   in
-		if VIdMap.isEmptyScope VE' then
+		if isEmptyValScope E' then
 		    ( deleteScope E'
 		    ; O.AltPat(i, pats')
 		    )
@@ -552,8 +552,10 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	   end
 
 
-    and trPat (E as ENV{IE,...},E') =
-	fn pat as (ATPATPat _|APPPat _) => trAppPat (E,E') (Infix.pat IE pat)
+    and trPat (E,E') =
+	fn pat as (ATPATPat _|APPPat _) =>
+		trAppPat (E,E') (Infix.pat (infEnv E) pat)
+
 	 | TYPEDPat(i, pat, ty)	=> O.AnnPat(i, trPat (E,E') pat, trTy E ty)
 	 | NONPat(i, pat)	=> O.NegPat(i, trPat (E,Env.new()) pat)
 	 | ASPat(i, pat1, pat2) => O.AsPat(i,trPat (E,E') pat1,trPat(E,E') pat2)
@@ -755,6 +757,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		val decs' = trValBindo (E,E') (SOME valbind)
 		val  _    = deleteScope E
 		val  _    = union(E,E')
+		(* BUG: detect hiding and make correspondings decs local *)
 	   in
 		typvardecs(ids', decs')
 	   end
@@ -774,6 +777,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 				 O.ValDec(O.infoExp exp',
 					  O.VarPat(O.infoId id', id'), exp'))
 				(ids',exps')
+		(* BUG: detect hiding and make correspondings decs local *)
 	   in
 		typvardecs(ids'', [O.RecDec(i, decs')])
 	   end
@@ -783,6 +787,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		val E'    = Env.new()
 		val decs' = trTypBindo (E,E') (SOME typbind)
 		val  _    = union(E,E')
+		(* BUG: detect hiding and make correspondings decs local *)
 	   in
 		decs'
 	   end
@@ -792,8 +797,10 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		val E'    = Env.new()
 		val  _    = trDatBindo_lhs (E,E') (SOME datbind)
 		val  _    = union(E,E')
+		(* BUG: detect hiding and make correspondings decs local *)
 		val decs' = trDatBindo_rhs (E,E') (SOME datbind)
 		val  _    = union(E,E')
+		(* BUG: detect hiding and make correspondings decs local *)
 	   in
 		[O.RecDec(i, decs')]
 	   end
@@ -861,7 +868,8 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		val (longid', E') = trLongStrId E longstrid
 		val  _            = union(E,E')
 	   in
-		[O.OpenDec(i, longidToMod longid')]
+		(* UNFINISHED [O.OpenDec(i, longidToMod longid')]*)
+		[]
 	   end
 
 	 | EMPTYDec(i) =>
@@ -979,9 +987,9 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		    SOME(Match(i, fmrule, trFmatcho_lhs (E,E',vid1) matcho))
 	   end
 
-    and trFmrule_lhs (E as ENV{IE,...}) (Mrule(i, pat, exp)) =
+    and trFmrule_lhs E (Mrule(i, pat, exp)) =
 	   let
-		val fpat = Infix.pat IE pat
+		val fpat = Infix.pat (infEnv E) pat
 	   in
 		( trFpat_lhs E fpat, Mrule(i, fpat, exp) )
 	   end
@@ -1106,7 +1114,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	   | WITHVALPat(i,_,_) | WITHFUNPat(i,_,_) ) =>
 		error(i,"invalid function pattern")
 
-    and trFatPat_rhs (E,E' as ENV{VE=VE',...}) =
+    and trFatPat_rhs (E,E') =
 	fn ALTAtPat(i, fpats)	=>
 	   (* BUG: bindings not allowed *)
 	   let
@@ -1121,7 +1129,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 			error(O.infoPat pat', "inconsistent number of \
 					       \arguments in function clause")
 		   | NONE =>
-			if VIdMap.isEmptyScope VE' then
+			if isEmptyValScope E' then
 			    ( deleteScope E'
 			    ; ( O.AltPat(i, pats'), arity )
 			    )

@@ -13,6 +13,60 @@ structure TranslationPhase :> TRANSLATION_PHASE =
     structure O = IntermediateGrammar
 
 
+    (* Extract bound ids from declarations. *)
+
+    fun idsRow    idsZ (I.Row(i,fs,_), xs')  = idsFields idsZ (fs, xs')
+    and idsField  idsZ (I.Field(i,a,z), xs') = idsZ(z, xs')
+    and idsFields idsZ (fs, xs')	     = List.foldr (idsField idsZ) xs' fs
+
+    fun idsDec(I.ValDec(i,p,e), xs')	= idsPat(p, xs')
+      | idsDec(I.ConDec(i,c,t), xs')	= idsCon(c, xs')
+      | idsDec(I.TypDec(i,x,t), xs')	= idsTyp(t, xs')
+      | idsDec(I.DatDec(i,x,t), xs')	= idsTyp(t, xs')
+      | idsDec(I.ModDec(i,x,m), xs')	= x::xs'
+      | idsDec(I.InfDec(i,x,j), xs')	= xs'
+      | idsDec(I.RecDec(i,ds), xs')	= idsDecs(ds, xs')
+      | idsDec(I.TypvarDec(i,x,ds),xs')	= idsDecs(ds, xs')
+      | idsDec(I.LocalDec(i,ds), xs')	= xs'
+    and idsDecs(ds, xs')		= List.foldr idsDec xs' ds
+
+    and idsPat(I.JokPat(i), xs')	= xs'
+      | idsPat(I.LitPat(i,l), xs')	= xs'
+      | idsPat(I.VarPat(i,x), xs')	= x::xs'
+      | idsPat(I.ConPat(i,y,ps), xs')	= idsPats(ps, xs')
+      | idsPat(I.RefPat(i,p), xs')	= idsPat(p, xs')
+      | idsPat(I.TupPat(i,ps), xs')	= idsPats(ps, xs')
+      | idsPat(I.RowPat(i,r), xs')	= idsRow idsPat (r, xs')
+      | idsPat(I.VecPat(i,ps), xs')	= idsPats(ps, xs')
+      | idsPat(I.AsPat(i,p1,p2), xs')	= idsPat(p1, idsPat(p2, xs'))
+      | idsPat(I.AltPat(i,ps), xs')	= idsPats(ps, xs')
+      | idsPat(I.NegPat(i,p), xs')	= idsPat(p, xs')
+      | idsPat(I.GuardPat(i,p,e), xs')	= idsPat(p, xs')
+      | idsPat(I.AnnPat(i,p,t), xs')	= idsPat(p, xs')
+      | idsPat(I.WithPat(i,p,ds), xs')	= idsPat(p, idsDecs(ds, xs'))
+    and idsPats(ps, xs')		= List.foldr idsPat xs' ps
+
+    and idsCon(I.Con(i,x,ts), xs')	= x::xs'
+    and idsCons(cs, xs')		= List.foldr idsCon xs' cs
+
+    and idsTyp(I.AbsTyp(i), xs')	= xs'
+      | idsTyp(I.VarTyp(i,x), xs')	= xs'
+      | idsTyp(I.ConTyp(i,y), xs')	= xs'
+      | idsTyp(I.FunTyp(i,x,t), xs')	= idsTyp(t, xs')
+      | idsTyp(I.AppTyp(i,t1,t2), xs')	= idsTyp(t1, idsTyp(t2, xs'))
+      | idsTyp(I.RefTyp(i,t), xs')	= idsTyp(t, xs')
+      | idsTyp(I.TupTyp(i,ts), xs')	= idsTyps(ts, xs')
+      | idsTyp(I.RowTyp(i,r), xs')	= idsRow idsTyp (r, xs')
+      | idsTyp(I.ArrTyp(i,t1,t2), xs')	= idsTyp(t1, idsTyp(t2, xs'))
+      | idsTyp(I.SumTyp(i,cs), xs')	= idsCons(cs, xs')
+      | idsTyp(I.ExtTyp(i), xs')	= xs'
+      | idsTyp(I.AllTyp(i,x,t), xs')	= idsTyp(t, xs')
+      | idsTyp(I.ExTyp(i,x,t), xs')	= idsTyp(t, xs')
+      | idsTyp(I.SingTyp(i,y), xs')	= xs'
+    and idsTyps(ts, xs')		= List.foldr idsTyp xs' ts
+
+
+
     (* Literals *)
 
     fun trLit(I.WordLit w)		= O.WordLit w
@@ -128,7 +182,6 @@ structure TranslationPhase :> TRANSLATION_PHASE =
 					  end
       | trDec(I.InfDec(i,x,j), ds')	= ds'
       | trDec(I.RecDec(i,ds), ds')	= O.RecDec(i, trDecs ds) :: ds'
-      | trDec(I.OpenDec(i,m), ds')	= raise Fail "OpenDec"
       | trDec(I.TypvarDec(i,x,ds), ds')	= trDecs'(ds, ds')
       | trDec(I.LocalDec(i,ds), ds')	= trDecs'(ds, ds')
 
@@ -163,7 +216,8 @@ structure TranslationPhase :> TRANSLATION_PHASE =
 
     (* Programs *)
 
-    val translate = trDecs
+    fun translate program =
+	( trDecs program, List.map trId (idsDecs(program, [])) )
 
 
 

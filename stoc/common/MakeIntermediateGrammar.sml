@@ -93,7 +93,7 @@ functor MakeIntermediateGrammar(type info) :>
 
     (* Programs *)
 
-    type program = dec list
+    type program = dec list * id list
 
 
     (* Projections *)

@@ -8,30 +8,21 @@ signature BIND_ENV =
     type SigId = SigId.t
     type FunId = FunId.t
 
-    type stamp = AbstractGrammar.stamp
     type Info  = Source.position
-
+    type stamp = AbstractGrammar.stamp
 
     datatype InfAssoc  = datatype Infix.Assoc
     type     InfStatus = Infix.InfStatus
     datatype IdStatus  = V | C of int | R
 
-    datatype Env = ENV of { IE: Inf VIdMap.t
-			  , VE: Val VIdMap.t
-			  , TE: Ty  TyConMap.t
-			  , UE: Var TyVarMap.t
-			  , SE: Str StrIdMap.t
-			  , GE: Sig SigIdMap.t
-			  , FE: Fun FunIdMap.t
-			  }
-
-    withtype Inf = Info * InfStatus
-    and      Val = Info * stamp * IdStatus
-    and      Ty  = Info * stamp * Env
-    and      Var = Info * stamp
-    and      Str = Info * stamp * Env
-    and      Sig = Info * stamp * Env
-    and      Fun = Info * stamp * Env
+    type Env
+    type Inf = Info * InfStatus
+    type Var = Info * stamp
+    type Val = Info * stamp * IdStatus
+    type Ty  = Info * stamp * Env
+    type Str = Info * stamp * Env
+    type Sig = Info * stamp * Env
+    type Fun = Info * stamp * Env
 
 
     exception CollisionInf of VId
@@ -49,8 +40,8 @@ signature BIND_ENV =
 
     val insertScope :		Env -> unit
     val deleteScope :		Env -> unit
-    val delete2ndScope :	Env -> unit
     val mergeScope :		Env -> unit
+    val delete2ndScope :	Env -> unit
 
     val union :			Env * Env -> unit
     val unionDisjoint :		Env * Env -> unit	(* Collision* *)
@@ -84,6 +75,10 @@ signature BIND_ENV =
     val lookupScopeStr :	Env * StrId -> Str option
     val lookupScopeSig :	Env * SigId -> Sig option
     val lookupScopeFun :	Env * FunId -> Fun option
+
+    val isEmptyValScope :	Env -> bool
+
+    val infEnv :		Env -> Inf VIdMap.t
 
     val appVals :		( VId  * Val -> unit) -> Env -> unit
     val appTys :		(TyCon * Ty  -> unit) -> Env -> unit

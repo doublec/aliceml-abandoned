@@ -92,7 +92,7 @@ signature INTERMEDIATE_GRAMMAR =
 
     (* Programs *)
 
-    type program = dec list
+    type program = dec list * id list
 
 
     (* Operations *)

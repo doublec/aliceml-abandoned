@@ -133,9 +133,8 @@ signature ABSTRACT_GRAMMAR =
 	| ModDec    of info * id * mod		(* module *)
 	| InfDec    of info * id * inf		(* interface *)
 	| RecDec    of info * dec list		(* recursive declarations *)
-	| OpenDec   of info * mod		(* open (inheritance) *)
 	| TypvarDec of info * id * dec list	(* scoped type variable *)
-	| LocalDec  of info * dec list		(* local declaration *)
+	| LocalDec  of info * dec list		(* local declarations *)
 
     (* Specifications *)
 
@@ -147,7 +146,7 @@ signature ABSTRACT_GRAMMAR =
 	| ModSpec   of info * id * inf		(* module *)
 	| InfSpec   of info * id * inf		(* interface *)
 	| RecSpec   of info * spec list		(* recursive specifications *)
-	| OpenSpec  of info * mod		(* open *)
+	| LocalSpec of info * spec list		(* local specifications *)
 	| ExtSpec   of info * inf		(* extension (include) *)
 
     (* Programs *)
@@ -155,6 +154,9 @@ signature ABSTRACT_GRAMMAR =
     type program = dec list
 
     (* Operations *)
+
+    val stamp :		id	-> stamp
+    val lab :		lab	-> string
 
     val infoLab :	lab	-> info
     val infoId :	id	-> info
