@@ -29,11 +29,6 @@ class Set;
 struct timeval;
 #endif
 
-class Finalization {
-public:
-  virtual void Finalize(word value) = 0;
-};
-
 class Store {
 private:
   static MemChunk *roots[STORE_GENERATION_NUM];
@@ -46,7 +41,7 @@ private:
   static Set *intgenSet;
   static Set *wkDictSet;
   static u_int needGC;
-  static Finalization *handler;
+  static u_int nbBlkTables;
 #if defined(STORE_PROFILE)
   static struct timeval *sum_t;
 #endif
@@ -109,9 +104,6 @@ public:
   static void SetGCParams(u_int mem_free, u_int mem_tolerance);
   static void AddToIntgenSet(Block *v);
   static void RegisterWeakDict(WeakDictionary *v);
-  static void RegisterFinalizer(Finalization *handler) {
-    Store::handler = handler;
-  }
   static int NeedGC() {
     return needGC;
   }
