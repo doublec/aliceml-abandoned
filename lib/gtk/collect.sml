@@ -602,6 +602,24 @@ structure Collect : COLLECT =
 	     ps "end\n";
 	     sis ("                val imageGet : T.object -> T.object * T.object\n");
 	     is "         imageGet : ImageGet\n")
+	  | emitWrapperInterface(ps, is, sis, "gtk", FUNCTION("EditableGetChars", _))             =
+	    (ps "fun {EditableGetChars A0 A1 A2}\n";
+	     ps "  {GtkCore.editableGetChars {ObjectToPointer A0} A1 A2}\n";
+	     ps "end\n";
+	     sis ("                val editableGetChars : T.object * int * int -> string\n");
+	     is "         editableGetChars : EditableGetChars\n")
+	  | emitWrapperInterface(ps, is, sis, "gtk", FUNCTION("TextBackwardDelete", _))           =
+	    (ps "fun {TextBackwardDelete A0 A1}\n";
+	     ps "  {GtkCore.textBackwardDelete {ObjectToPointer A0} A1}\n";
+	     ps "end\n";
+	     sis ("                val textBackwardDelete : T.object * int -> int\n");
+	     is "         textBackwardDelete : TextBackwardDelete\n")
+	  | emitWrapperInterface(ps, is, sis, "gtk", FUNCTION("TextForwardDelete", _))           =
+	    (ps "fun {TextForwardDelete A0 A1}\n";
+	     ps "  {GtkCore.textForwardDelete {ObjectToPointer A0} A1}\n";
+	     ps "end\n";
+	     sis ("                val textForwardDelete : T.object * int -> int\n");
+	     is "         textForwardDelete : TextForwardDelete\n")
 	  | emitWrapperInterface(ps, is, sis, _, FUNCTION("CalendarGetDate", FUNCARGS(rt, args))) =
 	    (ps "fun {CalendarGetDate A0}\n";
              ps "   A1 A2 A3\n";
