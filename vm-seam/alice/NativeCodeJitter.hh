@@ -148,13 +148,13 @@ protected:
 public:
   static word currentConcreteCode; // Set by LazyCompile::Run 
   // NativeCodeJitter Static Constructor
+  static ::Chunk *CopyCode(char *start);
   static void Init(u_int bufferSize);
   // NativeCodeJitter Methods
   static word GetInitialPC() {
     return initialPC;
   }
   static NativeConcreteCode *Compile(TagVal *abstractCode);
-  static void PrintPC(const char *instr);
 #if defined(JIT_STORE_DEBUG)
   static void Disassemble(::Chunk *code);
 #endif

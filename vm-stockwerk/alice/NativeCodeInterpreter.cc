@@ -89,6 +89,8 @@ public:
 //
 // Interpreter Functions
 //
+word NativeCodeInterpreter::returnContinuation;
+word NativeCodeInterpreter::nativeContinuation;
 NativeCodeInterpreter *NativeCodeInterpreter::self;
 
 static inline StackFrame *MakeNativeFrame(word continuation, Closure *closure) {
@@ -125,7 +127,7 @@ u_int NativeCodeInterpreter::GetFrameSize(StackFrame *sFrame) {
 }
 
 void NativeCodeInterpreter::PushCall(Closure *closure) {
-  MakeNativeFrame(Store::IntToWord(0), closure);
+  MakeNativeFrame(returnContinuation, closure);
 }
 
 Worker::Result NativeCodeInterpreter::Run(StackFrame *sFrame) {

@@ -44,7 +44,9 @@ namespace Generic {
       jit_ldxi_p(Dest, Ptr, pos * sizeof(word));
     }
     static void PutArg(u_int Ptr, u_int pos, u_int Value) {
+#if defined(JIT_STORE_DEBUG)
       JITStore::LogSetArg(pos, Value);
+#endif
       jit_stxi_p(pos * sizeof(word), Ptr, Value);
     }
     static void GetZeroArg(u_int Dest) {
@@ -131,6 +133,11 @@ namespace Generic {
     static void PopFrame(u_int size) {
       jit_ldi_p(JIT_R0, &::Scheduler::stackTop);
       jit_subi_p(JIT_R0, JIT_R0, size * sizeof(word));
+      jit_sti_p(&::Scheduler::stackTop, JIT_R0);
+    }
+    static void PopFrameReg(u_int Reg) {
+      jit_ldi_p(JIT_R0, &::Scheduler::stackTop);
+      jit_subr_p(JIT_R0, JIT_R0, Reg);
       jit_sti_p(&::Scheduler::stackTop, JIT_R0);
     }
   };

@@ -518,6 +518,28 @@ u_int ImmediateEnv::size;
 Tuple *ImmediateEnv::values;
 
 //
+// NativeCodeJitter Debug Stuff
+//
+#if defined(JIT_STORE_DEBUG)
+
+#define JIT_LOG_REG(reg) \
+  JITStore::LogReg(reg);
+#define JIT_LOG_MESG(mesg) \
+  JITStore::LogMesg(mesg);
+
+#define JIT_PRINT_PC(instr) \
+  JITStore::LogMesg(instr); \
+  JITStore::LogReg(JIT_SP);
+
+#else
+
+#define JIT_LOG_REG(reg)
+#define JIT_LOG_MESG(mesg)
+#define JIT_PRINT_PC(instr)
+
+#endif
+
+//
 // NativeCodeJitter Variables
 //
 jit_insn *NativeCodeJitter::codeBuffer;
@@ -577,12 +599,14 @@ void NativeCodeJitter::KillIdRef(word idRef) {
 
 void NativeCodeJitter::GlobalEnvSel(u_int Dest, u_int Ptr, word pos) {
   Assert(Dest != Ptr);
+  Assert(Dest != JIT_FP); // We do not have segment override prefix
   NativeCodeFrame::GetClosure(Dest, Ptr);
   Generic::Closure::Sel(Dest, Dest, Store::WordToInt(pos));
 }
 
 void NativeCodeJitter::ImmediateSel(u_int Dest, u_int Ptr, u_int pos) {
   Assert(Dest != Ptr);
+  Assert(Dest != JIT_FP); // We do not have segment override prefix
   NativeCodeFrame::GetImmediateArgs(Dest, Ptr);
   JITStore::GetArg(Dest, Dest, pos);
 }
@@ -607,8 +631,8 @@ void NativeCodeJitter::LazySelClosureNew(u_int Record, UniqueString *label) {
 }
 
 #define RETURN() \
-  JITStore::LogReg(JIT_SP); \
-  JITStore::LogMesg("returning to base\n"); \
+  JIT_LOG_REG(JIT_SP); \
+  JIT_LOG_MESG("returning to base\n"); \
   jit_ret();
 
 void NativeCodeJitter::ResetRegister() {
@@ -640,7 +664,7 @@ void NativeCodeJitter::PushCall(u_int Closure, CallInfo *info) {
   case NATIVE_CALL:
     {
       jit_pushr_ui(Closure); // Closure
-      jit_movi_p(JIT_R0, Store::IntToWord(1));
+      jit_ldi_p(JIT_R0, &NativeCodeInterpreter::nativeContinuation);
       jit_pushr_ui(JIT_R0);  // Continuation
       JITStore::Call(2, (void *) NativeCodeInterpreter::FastPushCall);
       jit_movr_p(JIT_V2, JIT_R0); // Move to new frame
@@ -662,7 +686,7 @@ void NativeCodeJitter::PushCall(u_int Closure, CallInfo *info) {
       NativeCodeFrame::PutSize(JIT_V1, JIT_R0);
       NativeCodeFrame::GetImmediateArgs(JIT_R0, JIT_V2);
       NativeCodeFrame::PutImmediateArgs(JIT_V1, JIT_R0);
-      jit_movi_p(JIT_R0, Store::IntToWord(1));
+      jit_ldi_p(JIT_R0, &NativeCodeInterpreter::nativeContinuation);
       NativeCodeFrame::PutContinuation(JIT_V1, JIT_R0);
       NativeCodeFrame::GetCode(JIT_R0, JIT_V2);
       NativeCodeFrame::PutCode(JIT_V1, JIT_R0);
@@ -687,7 +711,7 @@ void NativeCodeJitter::PushCall(u_int Closure, CallInfo *info) {
 }
 
 void NativeCodeJitter::DirectCall(Interpreter *interpreter) {
-  JITStore::LogMesg("DirectCall\n");
+  JIT_LOG_MESG("DirectCall\n");
   jit_movi_p(JIT_R0, interpreter);
   jit_pushr_ui(JIT_R0);
   JITStore::Call(1, (void *) Primitive::Execute);
@@ -705,7 +729,7 @@ void NativeCodeJitter::TailCall(u_int Closure, CallInfo *info) {
   case NATIVE_CALL:
     {
       jit_pushr_ui(Closure); // Closure
-      jit_movi_p(JIT_R0, Store::IntToWord(0));
+      jit_ldi_p(JIT_R0, &NativeCodeInterpreter::returnContinuation);
       jit_pushr_ui(JIT_R0); // Continuation
       u_int size = NativeCodeFrame::GetFrameSize(currentNLocals);
       Generic::Scheduler::PopFrame(size);
@@ -754,16 +778,6 @@ u_int NativeCodeJitter::GetRelativePC() {
   return ((jit_get_ip().ptr - (char *) codeBuffer) + 2 * sizeof(word));
 }
 
-#if defined(JIT_STORE_DEBUG)
-void NativeCodeJitter::PrintPC(const char *instr) {
-  //fprintf(stderr, "%s at %p\n", instr, (codeBuffer + GetRelativePC() - 8));
-  JITStore::LogMesg(instr);
-  JITStore::LogReg(JIT_SP);
-}
-#else
-void NativeCodeJitter::PrintPC(const char *) {}
-#endif
-
 void NativeCodeJitter::SetRelativePC(word pc) {
   jit_movi_p(JIT_R0, pc);
   NativeCodeFrame::PutPC(JIT_V2, JIT_R0);
@@ -776,7 +790,7 @@ void NativeCodeJitter::CompileCCC(u_int calleeArity, bool update) {
   switch (calleeArity) {
   case Scheduler::ONE_ARG:
     {
-      JITStore::LogMesg("Worker::Construct\n");
+      JIT_LOG_MESG("Worker::Construct\n");
       JITStore::Prepare();
       JITStore::Call(0, (void *) Worker::Construct);
       JITStore::Finish();
@@ -792,11 +806,11 @@ void NativeCodeJitter::CompileCCC(u_int calleeArity, bool update) {
     break;
   default:
     {
-      JITStore::LogMesg("Deconstruct results\n");
+      JIT_LOG_MESG("Deconstruct results\n");
       JITStore::Prepare();
       JITStore::Call(0, (void *) Worker::Deconstruct);
       JITStore::Finish();
-      JITStore::LogReg(JIT_RET);
+      JIT_LOG_REG(JIT_RET);
       jit_insn *no_request = jit_beqi_ui(jit_forward(), JIT_R0, 0);
       jit_movi_ui(JIT_RET, Worker::REQUEST);
       RETURN();
@@ -850,41 +864,35 @@ u_int NativeCodeJitter::LoadIdRefKill(u_int Dest, word idRef) {
     tagVal = LookupSubst(Store::DirectWordToInt(tagVal->Sel(0)));
   switch (AbstractCode::GetIdRef(tagVal)) {
   case AbstractCode::Local:
-    {
-      u_int index = RefToIndex(tagVal->Sel(0));
-      Dest = LocalEnvSel(Dest, JIT_V2, index);
-      return Dest;
-    }
+    Dest = LocalEnvSel(Dest, JIT_V2, RefToIndex(tagVal->Sel(0))); break;
   case AbstractCode::LastUseLocal:
     {
       u_int index = RefToIndex(tagVal->Sel(0));
       Dest = LocalEnvSel(Dest, JIT_V2, index);
       livenessTable->SetKill(index);
-      return Dest;
     }
+    break;
   case AbstractCode::Global:
-    GlobalEnvSel(Dest, JIT_V2, tagVal->Sel(0));
-    return Dest;
+    GlobalEnvSel(Dest, JIT_V2, tagVal->Sel(0)); break;
   case AbstractCode::Immediate:
     {
       word val = tagVal->Sel(0);
       if (PointerOp::IsInt(val)) {
 	jit_movi_p(Dest, val);
       }
-      else {
-	u_int i1 = ImmediateEnv::Register(val);
-	ImmediateSel(Dest, JIT_V2, i1);
-      }
-      return Dest;
+      else
+	ImmediateSel(Dest, JIT_V2, ImmediateEnv::Register(val));
     }
+    break;
   default:
     Error("NativeCodeJitter::LoadIdRef: invalid idRef Tag");
   }
+  return Dest;
 }
 
 void NativeCodeJitter::Await(u_int Ptr, word pc) {
   jit_insn *ref[2];
-  DerefItem(Ptr, ref);
+  JITStore::DerefItem(Ptr, ref);
   jit_patch(ref[0]);
   BlockOnTransient(Ptr, pc);
   jit_patch(ref[1]);
@@ -897,35 +905,26 @@ u_int NativeCodeJitter::LoadIdRef(u_int Dest, word idRef, word pc) {
   switch (AbstractCode::GetIdRef(tagVal)) {
   case AbstractCode::Local:
   case AbstractCode::LastUseLocal:
-    {
-      u_int index = RefToIndex(tagVal->Sel(0));
-      Dest = LocalEnvSel(Dest, JIT_V2, index);
-      if (pc != (word) 0)
-	Await(Dest, pc);
-      return Dest;
-    }
+    Dest = LocalEnvSel(Dest, JIT_V2, RefToIndex(tagVal->Sel(0))); break;
   case AbstractCode::Global:
-    GlobalEnvSel(Dest, JIT_V2, tagVal->Sel(0));
-    if (pc != (word) 0)
-      Await(Dest, pc);
-    return Dest;
+    GlobalEnvSel(Dest, JIT_V2, tagVal->Sel(0)); break;
   case AbstractCode::Immediate:
     {
       word val = tagVal->Sel(0);
       if (PointerOp::IsInt(val)) {
 	jit_movi_p(Dest, val);
+	return Dest;
       }
-      else {
-	u_int i1 = ImmediateEnv::Register(val);
-	ImmediateSel(Dest, JIT_V2, i1);
-	if (pc != (word) 0)
-	  Await(Dest, pc);
-      }
+      else
+	ImmediateSel(Dest, JIT_V2, ImmediateEnv::Register(val));
     }
-    return Dest;
+    break;
   default:
     Error("NativeCodeJitter::LoadIdRef: invalid idRef Tag");
   }
+  if (pc != (word) 0)
+    Await(Dest, pc);
+  return Dest;
 }
 
 u_int NativeCodeJitter::ReloadIdRef(u_int Dest, word idRef) {
@@ -935,32 +934,25 @@ u_int NativeCodeJitter::ReloadIdRef(u_int Dest, word idRef) {
   switch (AbstractCode::GetIdRef(tagVal)) {
   case AbstractCode::Local:
   case AbstractCode::LastUseLocal:
-    {
-      u_int index = RefToIndex(tagVal->Sel(0));
-      Dest = LocalEnvSel(Dest, JIT_V2, index);
-      JITStore::SaveDeref(Dest);
-      return Dest;
-    }
+    Dest = LocalEnvSel(Dest, JIT_V2, RefToIndex(tagVal->Sel(0))); break;
   case AbstractCode::Global:
-    GlobalEnvSel(Dest, JIT_V2, tagVal->Sel(0));
-      JITStore::SaveDeref(Dest);
-    return Dest;
+    GlobalEnvSel(Dest, JIT_V2, tagVal->Sel(0)); break;
   case AbstractCode::Immediate:
     {
       word val = tagVal->Sel(0);
       if (PointerOp::IsInt(val)) {
 	jit_movi_p(Dest, val);
+	return Dest;
       }
-      else {
-	u_int i1 = ImmediateEnv::Register(val);
-	ImmediateSel(Dest, JIT_V2, i1);
-	JITStore::SaveDeref(Dest);
-      }
+      else
+	ImmediateSel(Dest, JIT_V2, ImmediateEnv::Register(val));
     }
-    return Dest;
+    break;
   default:
     Error("NativeCodeJitter::ReloadIdRef: invalid idRef Tag");
   }
+  JITStore::SaveDeref(Dest);
+  return Dest;
 }
 
 void NativeCodeJitter::KillVariables() {
@@ -1147,7 +1139,7 @@ void NativeCodeJitter::NormalAppPrim(Closure *closure, TagVal *pc) {
 }
 
 void NativeCodeJitter::CompileContinuation(TagVal *idDefArgsInstrOpt) {
-  JITStore::LogMesg("non-tail call\n");
+  JIT_LOG_MESG("non-tail call\n");
   Tuple *idDefArgsInstr = Tuple::FromWordDirect(idDefArgsInstrOpt->Sel(0));
   jit_insn *docall      = jit_jmpi(jit_forward());
   word contPC = Store::IntToWord(GetRelativePC());
@@ -1322,7 +1314,7 @@ TagVal *NativeCodeJitter::InstrKill(TagVal *pc) {
 
 // PutVar of id * idRef * instr
 TagVal *NativeCodeJitter::InstrPutVar(TagVal *pc) {
-  PrintPC("PutVar\n");
+  JIT_PRINT_PC("PutVar\n");
   u_int Reg = LoadIdRefKill(JIT_R0, pc->Sel(1));
   LocalEnvPut(JIT_V2, pc->Sel(0), Reg);
   return TagVal::FromWordDirect(pc->Sel(2));
@@ -1330,7 +1322,7 @@ TagVal *NativeCodeJitter::InstrPutVar(TagVal *pc) {
 
 // PutNew of id * string * instr
 TagVal *NativeCodeJitter::InstrPutNew(TagVal *pc) {
-  PrintPC("PutNew\n");
+  JIT_PRINT_PC("PutNew\n");
   u_int i1 = ImmediateEnv::Register(pc->Sel(1));
   ImmediateSel(JIT_R0, JIT_V2, i1);
   // DirectWordToBlock(JIT_R0) does nothing
@@ -1345,7 +1337,7 @@ TagVal *NativeCodeJitter::InstrPutNew(TagVal *pc) {
 
 // PutTag of id * int * idRef vector * instr
 TagVal *NativeCodeJitter::InstrPutTag(TagVal *pc) {
-  PrintPC("PutTag\n");
+  JIT_PRINT_PC("PutTag\n");
   Vector *idRefs = Vector::FromWordDirect(pc->Sel(2));
   u_int nArgs    = idRefs->GetLength();
   JITAlice::TagVal::New(JIT_V1, Store::DirectWordToInt(pc->Sel(1)), nArgs);
@@ -1360,7 +1352,7 @@ TagVal *NativeCodeJitter::InstrPutTag(TagVal *pc) {
 // PutCon of id * idRef * idRef vector * instr
 TagVal *NativeCodeJitter::InstrPutCon(TagVal *pc) {
   word instrPC = Store::IntToWord(GetRelativePC());
-  PrintPC("PutCon\n");
+  JIT_PRINT_PC("PutCon\n");
   u_int constr = LoadIdRef(JIT_V1, pc->Sel(1), instrPC);
   KillIdRef(pc->Sel(1));
   jit_pushr_ui(constr); // Save Constructor
@@ -1379,7 +1371,7 @@ TagVal *NativeCodeJitter::InstrPutCon(TagVal *pc) {
 
 // PutRef of id * idRef * instr
 TagVal *NativeCodeJitter::InstrPutRef(TagVal *pc) {
-  PrintPC("PutRef\n");
+  JIT_PRINT_PC("PutRef\n");
   JITAlice::Cell::New(JIT_V1);
   u_int reg = LoadIdRefKill(JIT_R0, pc->Sel(1));
   JITAlice::Cell::Put(JIT_V1, reg);
@@ -1389,7 +1381,7 @@ TagVal *NativeCodeJitter::InstrPutRef(TagVal *pc) {
 
 // PutTup of id * idRef vector * instr
 TagVal *NativeCodeJitter::InstrPutTup(TagVal *pc) {
-  PrintPC("PutTup\n");
+  JIT_PRINT_PC("PutTup\n");
   Vector *idRefs = Vector::FromWordDirect(pc->Sel(1));
   u_int nArgs    = idRefs->GetLength();
   if (nArgs == 0) {
@@ -1408,7 +1400,7 @@ TagVal *NativeCodeJitter::InstrPutTup(TagVal *pc) {
 
 // PutPolyRec of id * label vector * idRef vector * instr
 TagVal *NativeCodeJitter::InstrPutPolyRec(TagVal *pc) {
-  PrintPC("PutPolyRec\n");
+  JIT_PRINT_PC("PutPolyRec\n");
   Vector *labels = Vector::FromWordDirect(pc->Sel(1));
   Vector *idRefs = Vector::FromWordDirect(pc->Sel(2));
   Assert(labels->GetLength() == idRefs->GetLength());
@@ -1428,7 +1420,7 @@ TagVal *NativeCodeJitter::InstrPutPolyRec(TagVal *pc) {
 
 // PutVec of id * idRef vector * instr
 TagVal *NativeCodeJitter::InstrPutVec(TagVal *pc) {
-  PrintPC("PutVec\n");
+  JIT_PRINT_PC("PutVec\n");
   Vector *idRefs = Vector::FromWordDirect(pc->Sel(1));
   u_int nArgs    = idRefs->GetLength();
   JITAlice::Vector::New(JIT_V1, nArgs);
@@ -1442,7 +1434,7 @@ TagVal *NativeCodeJitter::InstrPutVec(TagVal *pc) {
 
 // Close of id * idRef vector * template * instr
 TagVal *NativeCodeJitter::InstrClose(TagVal *pc) {
-  PrintPC("Close\n");
+  JIT_PRINT_PC("Close\n");
   Vector *idRefs = Vector::FromWordDirect(pc->Sel(1));
   u_int nGlobals = idRefs->GetLength();
   Generic::Closure::New(JIT_V1, nGlobals);
@@ -1505,7 +1497,7 @@ TagVal *NativeCodeJitter::InstrClose(TagVal *pc) {
 // Design options: call NativeCodeConctructor directly or use
 // AliceLanguageLayer::concreteCodeConstructor
 TagVal *NativeCodeJitter::InstrSpecialize(TagVal *pc) {
-  PrintPC("Specialize\n");
+  JIT_PRINT_PC("Specialize\n");
   // Create specialized abstractCode
   JITAlice::TagVal::New(JIT_V1, AbstractCode::Function,
 			AbstractCode::functionWidth);
@@ -1578,9 +1570,9 @@ static const char *GetPrimitveName(word closureWord) {
 
 // AppPrim of value * idRef vector * (idDef * instr) option
 TagVal *NativeCodeJitter::InstrAppPrim(TagVal *pc) {
-  PrintPC("AppPrim\n");
+  JIT_PRINT_PC("AppPrim\n");
 #if defined(JIT_STORE_DEBUG)
-  JITStore::LogMesg(GetPrimitveName(pc->Sel(0)));
+  JIT_LOG_MESG(GetPrimitveName(pc->Sel(0)));
 #endif
   Closure *closure = Closure::FromWord(pc->Sel(0));
   Map *inlineMap   = Map::FromWordDirect(inlineTable);
@@ -1611,7 +1603,7 @@ TagVal *NativeCodeJitter::InstrAppPrim(TagVal *pc) {
 }
 
 TagVal *NativeCodeJitter::InstrAppVar(TagVal *pc) {
-  PrintPC("AppVar\n");
+  JIT_PRINT_PC("AppVar\n");
   TagVal *tagVal = TagVal::FromWord(pc->Sel(0));
   if (AbstractCode::GetIdRef(tagVal) == AbstractCode::Global)
     tagVal = LookupSubst(Store::DirectWordToInt(tagVal->Sel(0)));
@@ -1629,7 +1621,7 @@ TagVal *NativeCodeJitter::InstrAppVar(TagVal *pc) {
 }
 
 TagVal *NativeCodeJitter::InstrDirectAppVar(TagVal *pc) {
-  PrintPC("DirectAppVar\n");
+  JIT_PRINT_PC("DirectAppVar\n");
   TagVal *tagVal = TagVal::FromWord(pc->Sel(0));
   if (AbstractCode::GetIdRef(tagVal) == AbstractCode::Global)
     tagVal = LookupSubst(Store::DirectWordToInt(tagVal->Sel(0)));
@@ -1648,7 +1640,7 @@ TagVal *NativeCodeJitter::InstrDirectAppVar(TagVal *pc) {
 
 // GetRef of id * idRef * instr
 TagVal *NativeCodeJitter::InstrGetRef(TagVal *pc) {
-  PrintPC("GetRef\n");
+  JIT_PRINT_PC("GetRef\n");
   word instrPC = Store::IntToWord(GetRelativePC());
   u_int Cell   = LoadIdRef(JIT_V1, pc->Sel(1), instrPC);
   KillIdRef(pc->Sel(1));
@@ -1659,7 +1651,7 @@ TagVal *NativeCodeJitter::InstrGetRef(TagVal *pc) {
 
 // GetTup of idDef vector * idRef * instr
 TagVal *NativeCodeJitter::InstrGetTup(TagVal *pc) {
-  PrintPC("GetTup\n");
+  JIT_PRINT_PC("GetTup\n");
   word instrPC = Store::IntToWord(GetRelativePC());
   u_int Tuple  = LoadIdRef(JIT_V1, pc->Sel(1), instrPC);
   KillIdRef(pc->Sel(1));
@@ -1678,7 +1670,7 @@ TagVal *NativeCodeJitter::InstrGetTup(TagVal *pc) {
 
 // Sel of id * idRef * int * instr
 TagVal *NativeCodeJitter::InstrSel(TagVal *pc) {
-  PrintPC("Sel\n");
+  JIT_PRINT_PC("Sel\n");
   word instrPC = Store::IntToWord(GetRelativePC());
   u_int Tuple  = LoadIdRef(JIT_V1, pc->Sel(1), instrPC);
   KillIdRef(pc->Sel(1));
@@ -1689,14 +1681,14 @@ TagVal *NativeCodeJitter::InstrSel(TagVal *pc) {
 
 // LazyPolySel of id vector * idRef * label vector * instr
 TagVal *NativeCodeJitter::InstrLazyPolySel(TagVal *pc) {
-  PrintPC("LazyPolySel\n");
+  JIT_PRINT_PC("LazyPolySel\n");
   u_int WRecord = LoadIdRefKill(JIT_V1, pc->Sel(1));
   Vector *ids = Vector::FromWordDirect(pc->Sel(0));
   Vector *labels = Vector::FromWordDirect(pc->Sel(2));
   Assert(ids->GetLength() == labels->GetLength());
   JITStore::Deref(WRecord);
-  JITStore::LogMesg("Deref result\n");
-  JITStore::LogReg(WRecord);
+  JIT_LOG_MESG("Deref result\n");
+  JIT_LOG_REG(WRecord);
   jit_insn *poly_sel = jit_beqi_ui(jit_forward(), JIT_R0, BLKTAG);
   // Record yet unknown: create byneeds
   jit_pushr_ui(WRecord); // save WRecord
@@ -1735,7 +1727,7 @@ TagVal *NativeCodeJitter::InstrLazyPolySel(TagVal *pc) {
 
 // Raise of idRef
 TagVal *NativeCodeJitter::InstrRaise(TagVal *pc) {
-  PrintPC("Raise\n");
+  JIT_PRINT_PC("Raise\n");
   word instrPC = Store::IntToWord(GetRelativePC());
   u_int Reg = LoadIdRef(JIT_V1, pc->Sel(0), instrPC);
   KillIdRef(pc->Sel(0));
@@ -1752,7 +1744,7 @@ TagVal *NativeCodeJitter::InstrRaise(TagVal *pc) {
 
 // Reraise of idRef
 TagVal *NativeCodeJitter::InstrReraise(TagVal *pc) {
-  PrintPC("Reraise\n");
+  JIT_PRINT_PC("Reraise\n");
   u_int Reg = LoadIdRefKill(JIT_V1, pc->Sel(0));
   // DirectWordToBlock(JIT_V1) does nothing
   Generic::Tuple::Sel(JIT_R0, Reg, 0);
@@ -1766,16 +1758,16 @@ TagVal *NativeCodeJitter::InstrReraise(TagVal *pc) {
 
 // Try of instr * idDef * idDef * instr
 TagVal *NativeCodeJitter::InstrTry(TagVal *pc) {
-  PrintPC("Try\n");
+  JIT_PRINT_PC("Try\n");
   u_int handlerPC = ImmediateEnv::Register(Store::IntToWord(0));
   ImmediateSel(JIT_R0, JIT_V2, handlerPC);
-  Prepare();
+  JITStore::Prepare();
   jit_pushr_ui(JIT_R0); // Handler PC
   JITStore::Call(1, (void *) ::Scheduler::PushHandler);
-  Finish();
+  JITStore::Finish();
   CompileBranch(TagVal::FromWordDirect(pc->Sel(0)));
   ImmediateEnv::Replace(handlerPC, Store::IntToWord(GetRelativePC()));
-  JITStore::LogMesg("executing exception handler\n");
+  JIT_LOG_MESG("executing exception handler\n");
   TagVal *idDef1 = TagVal::FromWord(pc->Sel(1));
   if (idDef1 != INVALID_POINTER) {
     Generic::Scheduler::GetZeroArg(JIT_R0);
@@ -1791,16 +1783,16 @@ TagVal *NativeCodeJitter::InstrTry(TagVal *pc) {
 
 // EndTry of instr
 TagVal *NativeCodeJitter::InstrEndTry(TagVal *pc) {
-  PrintPC("EndTry\n");
-  Prepare();
+  JIT_PRINT_PC("EndTry\n");
+  JITStore::Prepare();
   JITStore::Call(0, (void *) ::Scheduler::PopHandler);
-  Finish();
+  JITStore::Finish();
   return TagVal::FromWordDirect(pc->Sel(0));
 }
 
 // EndHandle of instr
 TagVal *NativeCodeJitter::InstrEndHandle(TagVal *pc) {
-  PrintPC("EndHandle\n");
+  JIT_PRINT_PC("EndHandle\n");
   return TagVal::FromWordDirect(pc->Sel(0));
 }
 
@@ -1833,7 +1825,7 @@ void NativeCodeJitter::LookupTestTable(u_int Key, u_int table, bool isInt) {
 
 // IntTest of idRef * (int * instr) vector * instr
 TagVal *NativeCodeJitter::InstrIntTest(TagVal *pc) {
-  PrintPC("IntTest\n");
+  JIT_PRINT_PC("IntTest\n");
   word instrPC = Store::IntToWord(GetRelativePC());
   u_int IntVal = LoadIdRef(JIT_V1, pc->Sel(0), instrPC);
   KillIdRef(pc->Sel(0));
@@ -1858,7 +1850,7 @@ TagVal *NativeCodeJitter::InstrIntTest(TagVal *pc) {
 
 // CompactIntTest of idRef * int * instrs * instr
 TagVal *NativeCodeJitter::InstrCompactIntTest(TagVal *pc) {
-  PrintPC("CompactIntTest\n");
+  JIT_PRINT_PC("CompactIntTest\n");
   word instrPC = Store::IntToWord(GetRelativePC());
   u_int IntVal = LoadIdRef(JIT_V1, pc->Sel(0), instrPC);
   KillIdRef(pc->Sel(0));
@@ -1886,7 +1878,7 @@ TagVal *NativeCodeJitter::InstrCompactIntTest(TagVal *pc) {
 
 // RealTest of idRef * (real * instr) vector * instr
 TagVal *NativeCodeJitter::InstrRealTest(TagVal *pc) {
-  PrintPC("RealTest\n");
+  JIT_PRINT_PC("RealTest\n");
   word instrPC  = Store::IntToWord(GetRelativePC());
   u_int RealVal = LoadIdRef(JIT_V1, pc->Sel(0), instrPC);
   KillIdRef(pc->Sel(0));
@@ -1911,7 +1903,7 @@ TagVal *NativeCodeJitter::InstrRealTest(TagVal *pc) {
 
 // StringTest of idRef * (string * instr) vector * instr
 TagVal *NativeCodeJitter::InstrStringTest(TagVal *pc) {
-  PrintPC("StringTest\n");
+  JIT_PRINT_PC("StringTest\n");
   word instrPC    = Store::IntToWord(GetRelativePC());
   u_int StringVal = LoadIdRef(JIT_V1, pc->Sel(0), instrPC);
   KillIdRef(pc->Sel(0));
@@ -1937,11 +1929,11 @@ TagVal *NativeCodeJitter::InstrStringTest(TagVal *pc) {
 // TagTest of idRef * (int * instr) vector
 //         * (int * idDef vector * instr) vector * instr
 TagVal *NativeCodeJitter::InstrTagTest(TagVal *pc) {
-  PrintPC("TagTest\n");
+  JIT_PRINT_PC("TagTest\n");
   word instrPC = Store::IntToWord(GetRelativePC());
   u_int tagVal = LoadIdRef(JIT_V1, pc->Sel(0), (word) 0);
   jit_insn *ref[2];
-  Deref3(tagVal, ref);
+  JITStore::Deref3(tagVal, ref);
   // Integer branch (V1 is int word, nullary constructor)
   KillIdRef(pc->Sel(0));
   Vector *tests1 = Vector::FromWordDirect(pc->Sel(1));
@@ -2008,7 +2000,7 @@ TagVal *NativeCodeJitter::InstrTagTest(TagVal *pc) {
 
 // CompactTagTest of idRef * tagTests * instr option
 TagVal *NativeCodeJitter::InstrCompactTagTest(TagVal *pc) {
-  PrintPC("CompactTagTest\n");
+  JIT_PRINT_PC("CompactTagTest\n");
   word instrPC = Store::IntToWord(GetRelativePC());
   u_int tagVal = LoadIdRef(JIT_V1, pc->Sel(0), instrPC);
   KillIdRef(pc->Sel(0));
@@ -2064,7 +2056,7 @@ TagVal *NativeCodeJitter::InstrCompactTagTest(TagVal *pc) {
 // ConTest of idRef * (idRef * instr) vector
 //         * (idRef * idDef vector * instr) vector * instr
 TagVal *NativeCodeJitter::InstrConTest(TagVal *pc) {
-  PrintPC("ConTest\n");
+  JIT_PRINT_PC("ConTest\n");
   word instrPC = Store::IntToWord(GetRelativePC());
   u_int ConVal = LoadIdRef(JIT_V1, pc->Sel(0), instrPC);
   JITStore::Block::GetLabel(JIT_R0, ConVal);
@@ -2111,7 +2103,7 @@ TagVal *NativeCodeJitter::InstrConTest(TagVal *pc) {
 
 // VecTest of idRef * (idDef vector * instr) vector * instr
 TagVal *NativeCodeJitter::InstrVecTest(TagVal *pc) {
-  PrintPC("VecTest\n");
+  JIT_PRINT_PC("VecTest\n");
   word instrPC = Store::IntToWord(GetRelativePC());
   u_int VecVal = LoadIdRef(JIT_V1, pc->Sel(0), instrPC);
   KillIdRef(pc->Sel(0));
@@ -2147,7 +2139,7 @@ TagVal *NativeCodeJitter::InstrVecTest(TagVal *pc) {
 
 // Shared of stamp * instr
 TagVal *NativeCodeJitter::InstrShared(TagVal *pc) {
-  PrintPC("InstrShared\n");
+  JIT_PRINT_PC("InstrShared\n");
   word stamp = pc->Sel(0);
   if (sharedTable->IsMember(stamp)) {
     u_int offset = Store::DirectWordToInt(sharedTable->Get(stamp));
@@ -2163,7 +2155,7 @@ TagVal *NativeCodeJitter::InstrShared(TagVal *pc) {
 
 // Return of idRef args
 TagVal *NativeCodeJitter::InstrReturn(TagVal *pc) {
-  PrintPC("Return\n");
+  JIT_PRINT_PC("Return\n");
   TagVal *returnArgs = TagVal::FromWordDirect(pc->Sel(0));
   switch (AbstractCode::GetArgs(returnArgs)) {
   case AbstractCode::OneArg:
@@ -2200,25 +2192,12 @@ TagVal *NativeCodeJitter::InstrReturn(TagVal *pc) {
     }
     break;
   }
-  NativeCodeFrame::GetContinuation(JIT_R0, JIT_V2); // was JIT_V2
+  // Continuation expects current stack frame size in JIT_FP
   u_int size = NativeCodeFrame::GetFrameSize(currentNLocals);
-  Generic::Scheduler::PopFrame(size);
-  jit_movr_p(JIT_V2, JIT_R0); // Save continuation
-  // This test is necessary since return inlines next application
-  JITStore::LoadStatus(JIT_R0);
-  jit_insn *no_preempt = jit_beqi_ui(jit_forward(), JIT_R0, 0);
-  jit_movi_ui(JIT_R0, Worker::PREEMPT);
-  RETURN();
-  jit_patch(no_preempt);
-  // Hack alert
-  jit_insn *cont = jit_beqi_ui(jit_forward(), JIT_V2, Store::IntToWord(1));
-  jit_movi_ui(JIT_R0, Worker::CONTINUE);
-  RETURN();
-  jit_patch(cont);
-  Generic::Scheduler::GetFrame(JIT_V2);
-  RestoreRegister();
-  NativeCodeFrame::GetPC(JIT_R0, JIT_V2);
-  BranchToOffset(JIT_R0);
+  jit_movi_ui(JIT_FP, size * sizeof(word));
+  NativeCodeFrame::GetContinuation(JIT_R0, JIT_V2);
+  jit_addi_p(JIT_R0, JIT_R0, 2 * sizeof(word));
+  jit_jmpr(JIT_R0);
   return INVALID_POINTER;
 }
 
@@ -2227,8 +2206,8 @@ char *NativeCodeJitter::CompileProlog(const char *info) {
   jit_prolog(1);
   int arg1 = jit_arg_p();
   jit_getarg_p(JIT_V2, arg1);
-  JITStore::LogMesg(info);
-  JITStore::LogReg(JIT_SP);
+  JIT_LOG_MESG(info);
+  JIT_LOG_REG(JIT_SP);
   RestoreRegister();
   NativeCodeFrame::GetPC(JIT_R0, JIT_V2);
   BranchToOffset(JIT_R0);
@@ -2257,7 +2236,8 @@ static u_int dynamicCounts[AbstractCode::nInstrs];
 #endif
 
 void NativeCodeJitter::CompileInstr(TagVal *pc) {
-  while (pc != INVALID_POINTER) {
+  Assert(pc != INVALID_POINTER);
+  do {
     AbstractCode::instr opcode = AbstractCode::GetInstr(pc);
 #ifdef INSTRUCTION_COUNTS
     staticCounts[opcode]++;
@@ -2335,9 +2315,8 @@ void NativeCodeJitter::CompileInstr(TagVal *pc) {
     default:
       Error("NativeCodeJitter::CompileInstr: invalid abstractCode tag");
     }
-    if (pc != INVALID_POINTER)
-      JITStore::LogReg(JIT_SP);
   }
+  while (pc != INVALID_POINTER);
 }
 
 struct InlineEntry {
@@ -2355,6 +2334,16 @@ static InlineEntry inlines[] = {
   { static_cast<INLINED_PRIMITIVE>(0), NULL }
 };
 
+::Chunk *NativeCodeJitter::CopyCode(char *start) {
+  char *end = jit_get_ip().ptr;
+  //  jit_flush_code(start, end);
+  u_int size    = (end - start);
+  ::Chunk *code = Store::AllocChunk(size, STORE_GEN_OLDEST);
+  memcpy(code->GetBase(), start, size);
+  Assert(size <= codeBufferSize);
+  return code;
+}
+
 // NativeCodeJitter Static Constructor
 void NativeCodeJitter::Init(u_int bufferSize) {
 #ifdef INSTRUCTION_COUNTS
@@ -2363,7 +2352,9 @@ void NativeCodeJitter::Init(u_int bufferSize) {
     dynamicCounts[opcode] = 0;
   }
 #endif
+#if defined(JIT_STORE_DEBUG)
   JITStore::InitLoggging();
+#endif
   LazyCompileInterpreter::Init();
   codeBufferSize = bufferSize;
   codeBuffer     = (jit_insn *) malloc(sizeof(jit_insn) * bufferSize);
@@ -2382,6 +2373,35 @@ void NativeCodeJitter::Init(u_int bufferSize) {
   // Compute Initial PC
   CompileProlog("Dummy Information");
   initialPC = Store::IntToWord(GetRelativePC());
+  // Compile Return Continuation
+  {
+    char *start = jit_set_ip(codeBuffer).ptr;
+    Generic::Scheduler::PopFrameReg(JIT_FP);
+    JITStore::LoadStatus(JIT_FP);
+    jit_movi_ui(JIT_R0, Worker::CONTINUE);
+    jit_insn *no_preempt = jit_beqi_ui(jit_forward(), JIT_FP, 0);
+    jit_movi_ui(JIT_R0, Worker::PREEMPT);
+    jit_patch(no_preempt);
+    RETURN();
+    NativeCodeInterpreter::returnContinuation = CopyCode(start)->ToWord();
+  }
+  // Compile Native Continuation
+  {
+    char *start = jit_set_ip(codeBuffer).ptr;
+    Generic::Scheduler::PopFrameReg(JIT_FP);
+    JITStore::LoadStatus(JIT_R0);
+    jit_insn *no_preempt = jit_beqi_ui(jit_forward(), JIT_R0, 0);
+    jit_movi_ui(JIT_R0, Worker::PREEMPT);
+    RETURN();
+    jit_patch(no_preempt);
+    Generic::Scheduler::GetFrame(JIT_V2);
+    RestoreRegister();
+    NativeCodeFrame::GetPC(JIT_R0, JIT_V2);
+    BranchToOffset(JIT_R0);
+    NativeCodeInterpreter::nativeContinuation = CopyCode(start)->ToWord();
+  }
+  RootSet::Add(NativeCodeInterpreter::returnContinuation);
+  RootSet::Add(NativeCodeInterpreter::nativeContinuation);
 }
 
 // Function of coord * value option vector * string vector *
@@ -2464,13 +2484,7 @@ NativeConcreteCode *NativeCodeJitter::Compile(TagVal *abstractCode) {
   }
   // Compile function body
   CompileInstr(TagVal::FromWordDirect(abstractCode->Sel(4)));
-  char *end = jit_get_ip().ptr;
-  jit_flush_code(start, end);
-  // Copy generated code
-  u_int size    = (end - start);
-  ::Chunk *code = Store::AllocChunk(size, STORE_GEN_OLDEST);
-  memcpy(code->GetBase(), start, size);
-  Assert(size <= codeBufferSize);
+  ::Chunk *code = CopyCode(start);
 #if defined(JIT_CODE_SIZE_PROFILE)
   if (size > codeSize)
     codeSize = size;
