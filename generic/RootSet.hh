@@ -14,7 +14,7 @@
 #define __GENERIC__ROOT_SET_HH__
 
 #if defined(INTERFACE)
-#pragma interface "emulator/RootSet.hh"
+#pragma interface "generic/RootSet.hh"
 #endif
 
 #include "store/Store.hh"
