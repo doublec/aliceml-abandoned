@@ -90,14 +90,14 @@ sig
 
     type AppExp    = Exp
     type InfExp    = Exp
-    type ExBind    = DconBind
+    type ExBind    = EconBind
     type Fmatch    = Match
     type Fmrule    = Mrule
     type Fpat      = Pat
     type AppStrExp = StrExp
     type AppSigExp = SigExp
-    type ExDesc    = DconDesc
-    type ExItem    = DconItem
+    type ExDesc    = EconDesc
+    type ExItem    = EconItem
     type FunBind
     type FunDesc
     type FunItem
