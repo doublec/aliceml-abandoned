@@ -302,8 +302,28 @@ structure CodeEmitter :> CODE_EMITTER =
       | processProperties(doc, class, id, ("wrap", v)::ps) =
 	(* TODO *)
 	processProperties(doc, class, id, ps)
-      | processProperties(doc, "GtkMenuItem", id, ("use_underline", v)::ps) =
-	processProperties(doc, "GtkMenuItem", id, ps)
+      | processProperties(doc, class as ("GtkMenuItem" | "GtkCheckMenuItem" | "GtkImageMenuItem" | "GtkSeparatorMenuItem" | "GtkTearoffMenuItem"), id, ("use_underline", v)::ps) =
+	processProperties(doc, class, id, ps)
+      | processProperties(doc, "GtkScrolledWindow", id, ("window_placement", v)::ps) =
+	processProperties(doc, "GtkScrolledWindow", id, ("placement", v)::ps)
+      | processProperties(doc, "GtkScrolledWindow", id, ("hscrollbar_policy", v)::ps) =
+	let
+	    val (v', psr) = getProp(ps, "vscrollbar_policy")
+	    val v' = "Gtk."^(cvtGtkName (Option.getOpt (v', "GTK_POLICY_ALWAYS")))
+	    val v = "Gtk."^(cvtGtkName v)
+	in
+	    processProperties(doc, "GtkScrolledWindow", id,
+			      ("policy",v^","^v')::psr)
+	end
+      | processProperties(doc, "GtkScrolledWindow", id, ("vscrollbar_policy", v)::ps) =
+	let
+	    val (v', psr) = getProp(ps, "hscrollbar_policy")
+	    val v' = "Gtk."^(cvtGtkName (Option.getOpt (v', "GTK_POLICY_ALWAYS")))
+	    val v = "Gtk."^(cvtGtkName v)
+	in
+	    processProperties(doc, "GtkScrolledWindow", id,
+			      ("policy",v'^","^v)::psr)
+	end
       | processProperties(doc, class, id, ("draw_indicator", v)::ps) =
 	processProperties(doc, class, id, ps)
       | processProperties(doc, class, id, ("column_spacing",v)::ps) =
