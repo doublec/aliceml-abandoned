@@ -680,6 +680,20 @@ in
 		    else any
 		    end
 	    Emitter, GenericEmitCall(Which Reg Regs Instr R Arity Coord nil)
+
+	 [] vConsCall(_ Reg Regs Coord _) then Instr R Arity Which in
+	    Instr = consCall(R Arity)
+	    Which = case @continuations of nil then non_y   % tailCall
+		    else any
+		    end
+	    Emitter, GenericEmitCall(Which Reg Regs Instr R Arity Coord nil)
+	 [] vDeconsCall(_ Reg1 Reg2 Reg3 Coord _) then Instr R Which in
+	    Instr = deconsCall(R)
+	    Which = case @continuations of nil then non_y   % tailCall
+		    else any
+		    end
+	    Emitter, GenericEmitCall(Which Reg1 [Reg2 Reg3]
+				     Instr R _ Coord nil)
 	 [] vCallProcedureRef(_ ProcedureRef Regs Coord _) then Instr in
 	    Instr = callProcedureRef(ProcedureRef {Length Regs} * 2)
 	    Emitter, GenericEmitCall(none ~1 Regs Instr _ _ Coord nil)
@@ -1883,6 +1897,10 @@ in
 	    Emitter, PredictRegForCall(Reg ~1 Regs Cont ?R)
 	 [] vCall(_ Reg0 Regs _ Cont) then
 	    Emitter, PredictRegForCall(Reg Reg0 Regs Cont ?R)
+	 [] vConsCall(_ Reg0 Regs _ Cont) then
+	    Emitter, PredictRegForCall(Reg Reg0 Regs Cont ?R)
+	 [] vDeconsCall(_ Reg0 Reg1 Reg2 _ Cont) then
+	    Emitter, PredictRegForCall(Reg Reg0 [Reg1 Reg2] Cont ?R)
 	 [] vCallProcedureRef(_ _ Regs _ Cont) then
 	    Emitter, PredictRegForCall(Reg ~1 Regs Cont ?R)
 	 [] vCallConstant(_ _ Regs _ Cont) then

@@ -27,6 +27,8 @@ prepare
 		     vCallBuiltin: 5
 		     vCallGlobal: 5
 		     vCall: 5
+		     vConsCall: 5
+		     vDeconsCall: 6
 		     vCallProcedureRef: 5
 		     vCallConstant: 5
 		     vInlineDot: 7
@@ -242,6 +244,13 @@ define
 	    [] vCall(_ Reg Regs _ _) then
 	       CodeStore, RegOcc(Reg RS)
 	       CodeStore, RegOccs(Regs RS)
+	    [] vConsCall(_ Reg Regs _ _) then
+	       CodeStore, RegOcc(Reg RS)
+	       CodeStore, RegOccs(Regs RS)
+	    [] vDeconsCall(_ Reg1 Reg2 Reg3 _ _) then
+	       CodeStore, RegOcc(Reg1 RS)
+	       CodeStore, RegOcc(Reg2 RS)
+	       CodeStore, RegOcc(Reg3 RS)
 	    [] vCallProcedureRef(_ _ Regs _ _) then
 	       CodeStore, RegOccs(Regs RS)
 	    [] vCallConstant(_ _ Regs _ _) then
@@ -379,6 +388,8 @@ define
 	    [] vCallBuiltin(_ _ _ _ _) then skip
 	    [] vCallGlobal(_ _ _ _ _) then skip
 	    [] vCall(_ _ _ _ _) then skip
+	    [] vConsCall(_ _ _ _ _) then skip
+	    [] vDeconsCall(_ _ _ _ _ _) then skip
 	    [] vCallProcedureRef(_ _ _ _ _) then skip
 	    [] vCallConstant(_ _ _ _ _) then skip
 	    [] vInlineDot(_ _ _ _ _ _ _) then skip

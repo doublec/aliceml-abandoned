@@ -13,11 +13,15 @@
 functor
 import
    Open(file text)
-   System(printInfo)
-   Application(exit)
+   System(printInfo printError)
+   Application(getArgs exit)
+   Property(get)
    Pickle(save)
    Frontend(translateVirtualString)
    CodeGen(translate)
+prepare
+   OptSpecs = record(help(rightmost char: "h?" default: false)
+		     debug(rightmost default: false))
 define
    class TextFile from Open.file Open.text end
 
@@ -64,12 +68,27 @@ define
       end
    end
 
+   OptRec = try
+	       {Application.getArgs OptSpecs}
+	    catch error(ap(usage VS) ...) then
+	       {System.printError
+		{Property.get 'application.url'}#': '#VS#'\n'}
+	       {Application.exit 2}
+	       unit
+	    end
+
+   if OptRec.help then
+      {System.printError
+       'Usage: '#{Property.get 'application.url'}#' [--help] [--debug]\n'}
+      {Application.exit 0}
+   end
+
    proc {Loop File}
       case {ReadCommand File} of 'buildFunctor'#[Code] then
 	 case {Frontend.translateVirtualString Code} of unit then
 	    {System.printInfo 'Result: ~1\n\n'}
 	 elseof AST then Id in
-	    Id = {Put {CodeGen.translate AST}}
+	    Id = {Put {CodeGen.translate AST OptRec.debug}}
 	    {System.printInfo 'Result: '#Id#'\n\n'}
 	 end
       [] 'saveValue'#[OutFilename Id] then

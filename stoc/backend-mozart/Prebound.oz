@@ -13,14 +13,14 @@
 functor
 import
    BootName(newUnique: NewUniqueName) at 'x-oz://boot/Name'
-   System(show printInfo)
+   System(show)
    Application(exit)
 export
    BuiltinTable
    Env
 define
    fun {StringLess S1 S2}
-      {VirtualString.toAtom S1} < {VirtualString.toAtom S2}   %--* inefficient
+      {VirtualString.toAtom S1} < {VirtualString.toAtom S2}   %--** inefficient
    end
 
    CStringTab =
@@ -58,14 +58,14 @@ define
    BuiltinTable =
    builtinTable(
       'show': fun {$ X} {System.show X} '#' end
-      '=': fun {$ X#Y} X == Y end
-      ':=': fun {$ X#Y} {Assign X Y} '#' end
+      '=': fun {$ X Y} X == Y end
+      ':=': fun {$ X Y} {Assign X Y} '#' end
       '~': Number.'~'   %--** overloaded for word
-      '+': fun {$ X1#X2} X1 + X2 end   %--** overloaded for word
-      '-': fun {$ X1#X2} X1 - X2 end   %--** overloaded for word
-      '*': fun {$ X1#X2} X1 * X2 end   %--** overloaded for word
+      '+': fun {$ X1 X2} X1 + X2 end   %--** overloaded for word
+      '-': fun {$ X1 X2} X1 - X2 end   %--** overloaded for word
+      '*': fun {$ X1 X2} X1 * X2 end   %--** overloaded for word
       'div':
-	 fun {$ X1#X2}   %--** overloaded for word
+	 fun {$ X1 X2}   %--** overloaded for word
 	    try
 	       X1 div X2
 	    catch _ then
@@ -73,34 +73,34 @@ define
 	    end
 	 end
       'mod':
-	 fun {$ X1#X2}   %--** overloaded for word
+	 fun {$ X1 X2}   %--** overloaded for word
 	    X1 mod X2
 	 end
       '<':
-	 fun {$ X1#X2}
+	 fun {$ X1 X2}
 	    if {ByteString.is X1} then {StringLess X1 X2} else X1 < X2 end
 	 end
       '>':
-	 fun {$ X1#X2}
+	 fun {$ X1 X2}
 	    if {ByteString.is X1} then {StringLess X2 X1} else X1 > X2 end
 	 end
       '<=':
-	 fun {$ X1#X2}
+	 fun {$ X1 X2}
 	    if {ByteString.is X1} then {Not {StringLess X2 X1}}
 	    else X1 =< X2
 	    end
 	 end
       '>=':
-	 fun {$ X1#X2}
+	 fun {$ X1 X2}
 	    if {ByteString.is X1} then {Not {StringLess X1 X2}}
 	    else X1 >= X2
 	    end
 	 end
-      '<>': fun {$ X1#X2} X1 \= X2 end
+      '<>': fun {$ X1 X2} X1 \= X2 end
       'Application.exit':
 	 fun {$ I} {Application.exit I} '#' end
       'Array.array':
-	 fun {$ N#Init} {Array.new 0 N - 1 Init} end
+	 fun {$ N Init} {Array.new 0 N - 1 Init} end
       'Array.fromList':
 	 fun {$ Xs} Xs2 N A in
 	    Xs2 = {ImportList Xs}
@@ -112,7 +112,7 @@ define
       'Array.length':
 	 fun {$ A} {Array.high A} + 1 end
       'Array.sub':
-	 fun {$ A#I}
+	 fun {$ A I}
 	    try
 	       {Array.get A I}
 	    catch _ then
@@ -120,7 +120,7 @@ define
 	    end
 	 end
       'Array.update':
-	 fun {$ A#I#X}
+	 fun {$ A I X}
 	    try
 	       {Array.put A I X}
 	    catch _ then
@@ -128,7 +128,7 @@ define
 	    end
 	    '#'
 	 end
-      'Char.<=': fun {$ X1#X2} X1 =< X2 end
+      'Char.<=': fun {$ X1 X2} X1 =< X2 end
       'Char.ord': fun {$ C} C end
       'Char.chr':
 	 fun {$ C}
@@ -147,14 +147,14 @@ define
       'General.Div': {NewUniqueName 'General.Div'}
       'General.Domain': {NewUniqueName 'General.Domain'}
       'General.exchange':
-	 fun {$ C#New} {Exchange C $ New} end
+	 fun {$ C New} {Exchange C $ New} end
       'General.Fail': {NewUniqueName 'General.Fail'}
       'General.Overflow': {NewUniqueName 'General.Overflow'}
       'General.Size': {NewUniqueName 'General.Size'}
       'General.Span': {NewUniqueName 'General.Span'}
       'General.Subscript': {NewUniqueName 'General.Subscript'}
       'Int.compare':
-	 fun {$ I#J}
+	 fun {$ I J}
 	    if I == J then 'EQUAL'
 	    elseif I < J then 'LESS'
 	    else 'GREATER'
@@ -165,13 +165,13 @@ define
       'List.Empty': {NewUniqueName 'List.Empty'}
       'Option.Option': {NewUniqueName 'Option.Option'}
       'String.^':
-	 fun {$ S1#S2} {ByteString.append S1 S2} end
+	 fun {$ S1 S2} {ByteString.append S1 S2} end
       'String.str':
 	 fun {$ C} {ByteString.make [C]} end
       'String.size':
 	 fun {$ S} {ByteString.length S} end
       'String.sub':
-	 fun {$ S#I}
+	 fun {$ S I}
 	    try
 	       {ByteString.get S I}
 	    catch _ then
@@ -179,7 +179,7 @@ define
 	    end
 	 end
       'String.substring':
-	 fun {$ S#I#J}
+	 fun {$ S I J}
 	    try
 	       {ByteString.slice S I I + J}
 	    catch _ then
@@ -187,7 +187,7 @@ define
 	    end
 	 end
       'String.compare':
-	 fun {$ S#T}
+	 fun {$ S T}
 	    if {StringLess S T} then 'LESS'
 	    elseif {StringLess T S} then 'GREATER'
 	    else 'EQUAL'
@@ -210,7 +210,7 @@ define
 	    end
 	 end
       'Thread.injectException':
-	 fun {$ T#E} {Thread.injectException T E} '#' end
+	 fun {$ T E} {Thread.injectException T E} '#' end
       'Thread.isSuspended':
 	 fun {$ T} {Thread.isSuspended T} end
       'Thread.preempt':
@@ -228,15 +228,16 @@ define
       'Transient.byNeed':
 	 fun {$ P} {ByNeed fun {$} {P '#'} end} end
       'Transient.fulfill':
-	 fun {$ P#X} P = X '#' end
+	 fun {$ P X} P = X '#' end
       'Transient.future':
 	 fun {$ P} !!P end
       'Transient.promise':
 	 fun {$ '#'} _ end
+      'Unsafe.cast': fun {$ X} X end
       'Vector.fromList':
 	 fun {$ Xs} {List.toTuple vector {ImportList Xs}} end
       'Vector.sub':
-	 fun {$ V#I}
+	 fun {$ V I}
 	    try
 	       V.(I + 1)
 	    catch _ then

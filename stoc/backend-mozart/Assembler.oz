@@ -208,7 +208,11 @@ define
 	 'inlineDot': {GetInstructionSize 'inlineDot'}
 	 'testBI': {GetInstructionSize 'testBI'}
 	 'testLT': {GetInstructionSize 'testLT'}
-	 'testLE': {GetInstructionSize 'testLE'})
+	 'testLE': {GetInstructionSize 'testLE'}
+	 'deconsCall': {GetInstructionSize 'deconsCallX'}
+	 'tailDeconsCall': {GetInstructionSize 'tailDeconsCallX'}
+	 'consCall': {GetInstructionSize 'consCallX'}
+	 'tailConsCall': {GetInstructionSize 'tailConsCallX'})
 
       %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
       %%
@@ -316,8 +320,6 @@ define
 	 'tailCallG': {GetOpcode 'tailCallG'}
 	 'callConstant': {GetOpcode 'callConstant'}
 	 'callProcedureRef': {GetOpcode 'callProcedureRef'}
-	 'fastCall': {GetOpcode 'fastCall'}
-	 'fastTailCall': {GetOpcode 'fastTailCall'}
 	 'branch': {GetOpcode 'branch'}
 	 'exHandler': {GetOpcode 'exHandler'}
 	 'popEx': {GetOpcode 'popEx'}
@@ -369,7 +371,21 @@ define
 	 'inlineDot': {GetOpcode 'inlineDot'}
 	 'testBI': {GetOpcode 'testBI'}
 	 'testLT': {GetOpcode 'testLT'}
-	 'testLE': {GetOpcode 'testLE'})
+	 'testLE': {GetOpcode 'testLE'}
+	 'deconsCall':
+	    f(x: {GetOpcode 'deconsCallX'}
+	      y: {GetOpcode 'deconsCallY'}
+	      g: {GetOpcode 'deconsCallG'})
+	 'tailDeconsCall':
+	    f(x: {GetOpcode 'tailDeconsCallX'}
+	      g: {GetOpcode 'tailDeconsCallG'})
+	 'consCall':
+	    f(x: {GetOpcode 'consCallX'}
+	      y: {GetOpcode 'consCallY'}
+	      g: {GetOpcode 'consCallG'})
+	 'tailConsCall':
+	    f(x: {GetOpcode 'tailConsCallX'}
+	      g: {GetOpcode 'tailConsCallG'}))
 
       %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
       %%
@@ -791,6 +807,28 @@ define
 	    {StoreXRegisterIndex CodeBlock X2}
 	    {StoreXRegisterIndex CodeBlock X3}
 	    {StoreLabel CodeBlock X4 LabelDict}
+	 [] 'deconsCall'(X1) then
+	    Opcode = Opcodes.'deconsCall'.{Label X1}
+	 in
+	    {StoreOpcode CodeBlock Opcode}
+	    {StoreRegister CodeBlock X1}
+	 [] 'tailDeconsCall'(X1) then
+	    Opcode = Opcodes.'tailDeconsCall'.{Label X1}
+	 in
+	    {StoreOpcode CodeBlock Opcode}
+	    {StoreRegister CodeBlock X1}
+	 [] 'consCall'(X1 X2) then
+	    Opcode = Opcodes.'consCall'.{Label X1}
+	 in
+	    {StoreOpcode CodeBlock Opcode}
+	    {StoreRegister CodeBlock X1}
+	    {StoreInt CodeBlock X2}
+	 [] 'tailConsCall'(X1 X2) then
+	    Opcode = Opcodes.'tailConsCall'.{Label X1}
+	 in
+	    {StoreOpcode CodeBlock Opcode}
+	    {StoreRegister CodeBlock X1}
+	    {StoreInt CodeBlock X2}
 	 end
       end
 
@@ -1085,12 +1123,6 @@ define
       end
    end
 
-   fun {RecordArityWidth RecordArity}
-      if {IsInt RecordArity} then RecordArity
-      else {Length RecordArity}
-      end
-   end
-
    proc {GetClears Instrs ?Clears ?Rest}
       case Instrs of I1|Ir then
 	 case I1 of clear(_) then Cr in
@@ -1316,10 +1348,6 @@ define
 	 {MakeDeAllocate I Assembler}
 	 {Assembler append(callGlobal(G ArityAndIsTail + 1))}
 	 {EliminateDeadCode Rest Assembler}
-      [] callMethod(CMI 0)|deAllocateL(I)|return|Rest then
-	 {MakeDeAllocate I Assembler}
-	 {Assembler append(callMethod({AdjoinAt CMI 3 true} 0))}
-	 {EliminateDeadCode Rest Assembler}
       [] call(R Arity)|deAllocateL(I)|return|Rest then NewR in
 	 case R of y(_) then
 	    {Assembler append(move(R NewR=x(Arity)))}
@@ -1343,17 +1371,6 @@ define
       then
 	 {MakeDeAllocate I Assembler}
 	 {Assembler append(callConstant(Abstraction ArityAndIsTail + 1))}
-	 {EliminateDeadCode Rest Assembler}
-      [] sendMsg(Literal R RecordArity Cache)|deAllocateL(I)|return|Rest
-      then NewR in
-	 case R of y(_) then
-	    NewR = x({RecordArityWidth RecordArity})
-	    {Assembler append(move(R NewR))}
-	 else
-	    NewR = R
-	 end
-	 {MakeDeAllocate I Assembler}
-	 {Assembler append(tailSendMsg(Literal NewR RecordArity Cache))}
 	 {EliminateDeadCode Rest Assembler}
       [] (testBI(Builtinname Args L1)=I1)|Rest then NewInstrs in
 	 case Rest of branch(L2)|NewRest then BIInfo in
@@ -1413,6 +1430,24 @@ define
 	 else skip
 	 end
 	 {Peephole Rest1 Assembler}
+      [] deconsCall(R)|deAllocateL(I)|return|Rest then NewR in
+	 case R of y(_) then
+	    {Assembler append(move(R NewR=x(2)))}
+	 else
+	    NewR = R
+	 end
+	 {MakeDeAllocate I Assembler}
+	 {Assembler append(tailDeconsCall(NewR))}
+	 {EliminateDeadCode Rest Assembler}
+      [] consCall(R Arity)|deAllocateL(I)|return|Rest then NewR in
+	 case R of y(_) then
+	    {Assembler append(move(R NewR=x(Arity)))}
+	 else
+	    NewR = R
+	 end
+	 {MakeDeAllocate I Assembler}
+	 {Assembler append(tailConsCall(NewR Arity))}
+	 {EliminateDeadCode Rest Assembler}
       [] I1|Rest then
 	 {Assembler append(I1)}
 	 {Peephole Rest Assembler}
@@ -1445,9 +1480,10 @@ define
       end
    end
 
-   proc {Assemble Code Globals Switches ?P}
+   proc {Assemble Code Globals Switches ?P ?VS}
       Assembler = {InternalAssemble Code Switches}
    in
       {Assembler load(Globals ?P)}
+      VS = {ByNeed fun {$} {Assembler output($)} end}
    end
 end

@@ -13,7 +13,7 @@
 functor
 import
    CompilerSupport(isBuiltin) at 'x-oz://boot/CompilerSupport'
-   System(printName)
+   System(printName printError)
    Narrator('class')
    ErrorListener('class')
    CodeStore('class')
@@ -278,11 +278,26 @@ define
 	 VHd = vEquateRecord(_ '#' {Length Ids} Reg
 			     {Map Ids
 			      fun {$ Id} value({GetReg Id State}) end} VTl)
+      [] funExp(Coord _ _ tupArgs(Ids=_|_) Body) then
+	 PredId NLiveRegs ResReg FormalRegs BodyVInstr GRegs Code
+      in
+	 PredId = pid({VirtualString.toAtom 'n-ary line '#Coord.1}
+		      {Length Ids} + 1 {TranslateCoord Coord State}
+		      nil NLiveRegs)
+	 {State.cs startDefinition()}
+	 {State.cs newReg(?ResReg)}
+	 FormalRegs = {FoldR Ids
+		       fun {$ Id Rest} {MakeReg Id State}|Rest end [ResReg]}
+	 {TranslateBody Body ?BodyVInstr nil State ResReg}
+	 {State.cs
+	  endDefinition(BodyVInstr FormalRegs nil ?GRegs ?Code ?NLiveRegs)}
+	 VHd = vDefinition(_ Reg PredId unit GRegs Code VTl)
       [] funExp(Coord _ _ Args Body) then
 	 PredId NLiveRegs ResReg FormalRegs ArgReg
 	 BodyVInstr ThenVInstr ElseVInstr MatchReg ElseVInter GRegs Code
       in
-	 PredId = pid('' 2 {TranslateCoord Coord State} nil NLiveRegs)
+	 PredId = pid({VirtualString.toAtom 'line '#Coord.1}
+		      2 {TranslateCoord Coord State} nil NLiveRegs)
 	 {State.cs startDefinition()}
 	 {State.cs newReg(?ResReg)}
 	 FormalRegs = [ArgReg ResReg]
@@ -294,15 +309,6 @@ define
 	    BodyVInstr = vTestConstant(_ ArgReg '#'
 				       ThenVInstr ElseVInstr
 				       {TranslateCoord Coord State} nil)
-	 [] tupArgs(Ids) then ThenVInstr0 in
-	    {State.cs newReg(?ArgReg)}
-	    BodyVInstr = vMatch(_ ArgReg ElseVInstr
-				[onRecord('#' {Length Ids} ThenVInstr0)]
-				{TranslateCoord Coord State} nil)
-	    {FoldL Ids
-	     proc {$ VHd Id VTl}
-		VHd = vGetVariable(_ {MakeReg Id State} VTl)
-	     end ThenVInstr0 ThenVInstr}
 	 [] recArgs(FeatureIdList) then Arity ThenVInstr0 in
 	    {State.cs newReg(?ArgReg)}
 	    Arity = {Map FeatureIdList fun {$ F#_} F end}
@@ -323,11 +329,16 @@ define
 	 {State.cs
 	  endDefinition(BodyVInstr FormalRegs nil ?GRegs ?Code ?NLiveRegs)}
 	 VHd = vDefinition(_ Reg PredId unit GRegs Code VTl)
+      [] appExp(Coord Id tupArgs(Ids=_|_)) then
+	 VHd = vConsCall(_ {GetReg Id State}
+			 {FoldR Ids
+			  fun {$ Id Rest} {GetReg Id State}|Rest end [Reg]}
+			 {TranslateCoord Coord State} VTl)
       [] appExp(Coord Id Args) then ArgReg VInter in
 	 {State.cs newReg(?ArgReg)}
 	 {TranslateArgs Args ArgReg VHd VInter State}
-	 VInter = vCall(_ {GetReg Id State} [ArgReg Reg]
-			{TranslateCoord Coord State} VTl)
+	 VInter = vDeconsCall(_ {GetReg Id State} ArgReg Reg
+			      {TranslateCoord Coord State} VTl)
       [] selAppExp(Coord Lab Id) then
 	 VHd = vInlineDot(_ {GetReg Id State} Lab Reg false
 			  {TranslateCoord Coord State} VTl)
@@ -373,7 +384,7 @@ define
        end VHd VTl}
    end
 
-   fun {Translate Filename#Import#Body}
+   fun {Translate Filename#Import#Body Debug}
       NarratorObject Reporter CS RegDict Prebound ImportReg ExportReg
       State VInstr VInter GRegs Code NLiveRegs
    in
@@ -399,19 +410,24 @@ define
       {TranslateBody Body ?VInter nil State ExportReg}
       {CS endDefinition(VInstr [ImportReg ExportReg] nil
 			?GRegs ?Code ?NLiveRegs)}
-      case Code of Code1#Code2 then StartLabel EndLabel Res in
+      case Code of Code1#Code2 then StartLabel EndLabel Res P VS in
 	 StartLabel = {NewName}
 	 EndLabel = {NewName}
-	 {{Assembler.assemble
-	   (lbl(StartLabel)|
-	    definition(x(0) EndLabel
-		       pid('Component' 2 pos(Filename 1 0) nil NLiveRegs)
-		       unit {List.mapInd GRegs fun {$ I _} g(I) end}
-		       Code1)|
-	    endDefinition(StartLabel)|
-	    {Append Code2 [lbl(EndLabel) unify(x(0) g(0)) return]})
-	   Res|{Map GRegs fun {$ Reg} Prebound.Reg end}
-	   switches}}
+	 {Assembler.assemble
+	  (lbl(StartLabel)|
+	   definition(x(0) EndLabel
+		      pid({VirtualString.toAtom 'Component '#Filename} 2
+			  pos(Filename 1 0) nil NLiveRegs)
+		      unit {List.mapInd GRegs fun {$ I _} g(I) end}
+		      Code1)|
+	   endDefinition(StartLabel)|
+	   {Append Code2 [lbl(EndLabel) unify(x(0) g(0)) return]})
+	  Res|{Map GRegs fun {$ Reg} Prebound.Reg end}
+	  switches ?P ?VS}
+	 {P}
+	 if Debug then
+	    {System.printError VS}
+	 end
 	 {Functor.new
 	  {List.toRecord 'import' {Map Import
 				   fun {$ id(_ Stamp _)#URL}
