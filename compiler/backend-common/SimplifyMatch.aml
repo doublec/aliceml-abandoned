@@ -907,7 +907,8 @@ print("nonexhaustive:\n"^graphToString (graph, 0) ^ "\nT[" ^ testMapToString tru
 			       deconstructs pat orelse b) false matches)
 		handle (BindsAll | SideEffect | NotNAry) => false
 
-	    fun process (Arity.Unary, graph, consequents, region) =
+	    fun process ((Arity.Unary | Arity.Tuple 1 | Arity.Product #[_]),
+			 graph, consequents, region) =
 		let
 		    val id = O.freshId region
 		in

@@ -360,6 +360,14 @@ functor MkFlatteningPhase(structure Switches: SWITCHES) :> FLATTENING_PHASE =
 	    in
 		(stms, O.OneArg idRef)
 	    end
+	and unfoldFunArgs (exp as (TupExp (_, #[_]) |
+			           ProdExp (_, #[Fld (_, _, _)])), rest) =
+	    let
+		val (stms, idRef) = unfoldTerm (exp, Goto rest)
+	    in
+		(stms, O.OneArg idRef)
+	    end
+	  | unfoldFunArgs (exp, rest) = unfoldArgs (exp, rest)
 	and unfoldStrict (info, exp, cont) =
 	    let
 		val (stms, idRef) = unfoldTerm (exp, cont)
@@ -585,7 +593,7 @@ functor MkFlatteningPhase(structure Switches: SWITCHES) :> FLATTENING_PHASE =
 	    let
 		val r = ref NONE
 		val rest = [O.IndirectStm (#region info, r)]
-		val (stms2, args) = unfoldArgs (exp2, rest)
+		val (stms2, args) = unfoldFunArgs (exp2, rest)
 		val (stms1, idRef1) = unfoldTerm (exp1, Goto stms2)
 	    in
 		r := SOME (f (O.VarAppExp (#region info, idRef1, args))::
