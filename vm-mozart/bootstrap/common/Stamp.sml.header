@@ -1,0 +1,3 @@
+import
+    structure MakeStamp
+from "misc/MakeStamp.ozf"

@@ -1,0 +1,11 @@
+import
+    structure Stamp
+from "common/Stamp.ozf"
+
+import
+    structure Name
+from "common/Name.ozf"
+
+import
+    structure Path
+from "common/Path.ozf"

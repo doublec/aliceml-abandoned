@@ -1,0 +1,15 @@
+import
+    structure Source
+from "error/Source.ozf"
+
+import
+    structure Type
+from "common/Type.ozf"
+
+import
+    structure Inf
+from "common/Inf.ozf"
+
+import
+    structure MakeIntermediateGrammar
+from "common/MakeIntermediateGrammar.ozf"

@@ -24,8 +24,17 @@ TOPSOURCES = \
 	MakeEngine.sml SIGNATURE.sig COMPOSER.sig
 TOPFILES = $(TOPSOURCES:%=top/%)
 
+COMMONSOURCES = \
+	Stamp.sml StampSet.sml StampMap.sml NAME.sig Name.sml LABEL.sig \
+	Label.sml PATH.sig Path.sml PathSet.sml PathMap.sml TYPE.sig Type.sml \
+	PP_PATH.sig PPPath.sml PP_TYPE.sig PPType.sml FIXITY.sig Fixity.sml \
+	INF.sig Inf.sml PP_INF.sig PPInf.sml INTERMEDIATE_GRAMMAR.sig \
+	MakeIntermediateGrammar.sml IntermediateGrammar.sml PREBOUND.sig \
+	MakePrebound.sml Prebound.sml PREBOUND_TYPE.sig PreboundType.sml
+COMMONFILES = $(COMMONSOURCES:%=common/%)
+
 BODYFILES = $(NATIVESOURCES:%=lib/%.ozf.sig) lib/Word.sml \
-	$(MLYACCFILES) $(ERRORFILES) $(MISCFILES) $(TOPFILES)
+	$(MLYACCFILES) $(ERRORFILES) $(MISCFILES) $(TOPFILES) $(COMMONFILES)
 
 ALLFILES = lib/Base.sml $(NATIVEFILES) $(BODYFILES)
 
@@ -54,6 +63,9 @@ misc/%: ../../stoc/misc/% misc/%.header Base.import
 
 top/%: ../../stoc/top/% top/%.header Base.import
 	cat Base.import top/$*.header $< > $@
+
+common/%: ../../stoc/common/% common/%.header Base.import
+	cat Base.import common/$*.header $< > $@
 
 %.ozf: %.sml
 	$(STOC_MOZART) $< $@

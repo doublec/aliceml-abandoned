@@ -1,0 +1,7 @@
+import
+    structure Name
+from "common/Name.ozf"
+
+import
+    structure Label
+from "common/Label.ozf"
