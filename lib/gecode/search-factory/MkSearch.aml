@@ -113,7 +113,7 @@ struct
     | getLast (accu, x :: xs) = getLast (x :: accu, xs)
 
   fun getUnexploredPath () =
-      (print "Find some unexplored path." ;
+      (print "Find some unexplored path.\n" ;
        updateNodes
 	   (fn l => case l of ([] | [_]) => (l, NONE) | _ => getLast ([], l)))
 
