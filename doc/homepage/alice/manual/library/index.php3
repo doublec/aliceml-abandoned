@@ -27,7 +27,9 @@
 
 <?php section("toplevel", "top-level") ?>
 
-   <P><TT><A href="toplevel.php3">top-level environment</A></TT></P>
+   <P>The <A href="toplevel.php3">top-level environment</A> contains all
+   types, exceptions and values that are available unqualified.</P>
+
 
 <?php section("signatures", "signatures") ?>
 
