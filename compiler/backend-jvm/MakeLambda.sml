@@ -21,7 +21,7 @@ functor MakeLambda(structure StampSet:IMP_SET
 		       where type key=Stamp.t * int
 		   val toplevel:Stamp.t) :> LAMBDA =
     struct
-	open ImperativeGrammar
+	open FlatGrammar
 	open Common
 	open Abbrev
 

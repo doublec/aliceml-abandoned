@@ -232,28 +232,32 @@ structure CodeGen =
 	and freeVarsDecs (decs, free, curFun) =
 	    app (fn dec' => freeVarsDec (dec', free, curFun)) (List.rev decs)
 
-	(* check whether a stamp belongs to a builtin function and load this function, if true *)
+	(* check whether a stamp belongs to a builtin function
+	 * and load a static field if true
+	 *)
 	fun builtinStamp (stamp', curFun) =
-	    if stamp'=stamp_Match then (Getstatic BMatch,true) else
-		if stamp'=stamp_false then (Getstatic BFalse,true) else
-		    if stamp'=stamp_true then (Getstatic BTrue,true) else
-			if stamp'=stamp_nil then (Getstatic BNil,true) else
-			    if stamp'=stamp_cons then (Getstatic BCons,true) else
-				if stamp'=stamp_ref then (Getstatic BRef,true) else
-				    if stamp'=stamp_Bind then (Getstatic BBind,true) else
-					if stamp'=thisStamp orelse
-					    stamp'=parm1Stamp orelse
-					    stamp'=parm2Stamp orelse
-					    stamp'=parm3Stamp orelse
-					    stamp'=parm4Stamp orelse
-					    stamp'=parm5Stamp then (Aload stamp', true) else
-					    let
-						val parm = Lambda.getParmStamp(curFun, stamp')
-					    in
-						if parm <> stamp'
-						    then (Aload parm, true)
-						else (Nop,false)
-					    end
+	    if stamp'=valstamp_match then (Getstatic BMatch,true)
+	    else if stamp'=valstamp_false then (Getstatic BFalse,true)
+	    else if stamp'=valstamp_true then (Getstatic BTrue,true)
+	    else if stamp'=valstamp_nil then (Getstatic BNil,true)
+	    else if stamp'=valstamp_cons then (Getstatic BCons,true)
+	    else if stamp'=valstamp_ref then (Getstatic BRef,true)
+	    else if stamp'=valstamp_bind then (Getstatic BBind,true)
+	    else if stamp'=thisStamp
+		orelse stamp'=parm1Stamp
+		orelse stamp'=parm2Stamp
+		orelse stamp'=parm3Stamp
+		orelse stamp'=parm4Stamp
+		orelse stamp'=parm5Stamp
+	    then (Aload stamp', true)
+	    else
+		let
+		    val parm = Lambda.getParmStamp(curFun, stamp')
+		in
+		    if parm <> stamp'
+			then (Aload parm, true)
+		    else (Nop,false)
+		end
 
 	(* instantiate a class *)
 	fun create (classname, init) =
@@ -673,7 +677,7 @@ structure CodeGen =
 
 		  | testCode (ConTest (id'' as Id (_, stamp'', _),SOME (Id (_,stamp''',_)),_)) =
 			 [Dup,
-			  Multi (if stamp'' = stamp_cons then
+			  Multi (if stamp'' = valstamp_cons then
 				     [Instanceof CCons,
 				      Ifeq wrongclasslabel]
 				 else
@@ -837,7 +841,7 @@ structure CodeGen =
 			    else normal ()
 			  | findTup _ = normal ()
 		    in
-			if ConstProp.getStamp cstamp = stamp_cons then findTup body' else normal ()
+			if ConstProp.getStamp cstamp = valstamp_cons then findTup body' else normal ()
 		    end
 		  | checkForConsTest _ = normal ()
 	    end

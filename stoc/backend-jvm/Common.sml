@@ -13,8 +13,7 @@
 structure Common=
     struct
 	(* Intermediate Representation: *)
-	open IntermediateGrammar
-	open ImperativeGrammar
+	open FlatGrammar
 	open Prebound
 
 	open JVMInst
@@ -58,11 +57,11 @@ structure Common=
 	    (if stamp'=toplevel then "" else "class"^(Stamp.toString stamp'))
 	fun classNameFromId (Id (_,stamp',_)) = classNameFromStamp stamp'
 
-	val dummyIdInfo: IntermediateInfo.id_info =
+	val dummyIdInfo: FlatGrammar.id_info =
 	    {region = Source.nowhere}
-	val dummyExpInfo: ImperativeGrammar.exp_info =
+	val dummyExpInfo: FlatGrammar.exp_info =
 	    {region = Source.nowhere, typ = Type.unknown Type.STAR}
-	val dummyStmInfo: ImperativeGrammar.stm_info =
+	val dummyStmInfo: FlatGrammar.stm_info =
 	    {region = Source.nowhere, liveness = ref Unknown}
 
 	 (* A dummy stamp/id we sometimes write but should never read *)

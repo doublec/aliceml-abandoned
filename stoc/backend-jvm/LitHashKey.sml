@@ -10,9 +10,9 @@
  *   $Revision$
  *)
 
-structure LitHashKey :> HASH_KEY where type t = ImperativeGrammar.lit =
+structure LitHashKey :> HASH_KEY where type t = FlatGrammar.lit =
     struct
-	datatype lit = datatype ImperativeGrammar.lit
+	datatype lit = datatype FlatGrammar.lit
 	type t = lit
 
 	open LargeWord

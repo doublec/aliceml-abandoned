@@ -13,7 +13,7 @@
 signature LAMBDA =
     sig
 	type stamp = Stamp.t
-	type id = ImperativeGrammar.id
+	type id = FlatGrammar.id
 
 	val markForPickling: stamp * stamp -> unit
 
@@ -27,8 +27,8 @@ signature LAMBDA =
 	val getClassStamp: stamp * int -> stamp
 
 	val isInRecApply: stamp * int -> bool
-	val argSize: 'a ImperativeGrammar.args -> int
-	val insertRec: (id * ImperativeGrammar.exp) list -> unit
+	val argSize: 'a FlatGrammar.args -> int
+	val insertRec: (id * FlatGrammar.exp) list -> unit
 
 	val addToRecApply: JVMInst.instr list * stamp * int -> unit
 	val invokeRecApply: stamp * int -> Common.APPLY
