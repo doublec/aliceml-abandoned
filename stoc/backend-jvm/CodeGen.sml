@@ -393,7 +393,7 @@ structure CodeGen =
 
 	  | decCode (RecDec (_, nil, _), _, _) = nil
 	  | decCode (RecDec (info,idexps as ((recid,_)::rest),_), curFun, curCls) =
-	    (* RecDec of coord * (id * exp) list * isTopLevel *)
+	    (* RecDec of stm_info * (id * exp) list * isTopLevel *)
 	    (* 1. create a new object for each id and store it into a new register. *)
 	    (* 2. fill the empty FunExp closures *)
 	    let
@@ -1375,7 +1375,7 @@ structure CodeGen =
 
 	  | expCode (FunExp(info,thisFun, _, args, body), upperFun, upperCls) =
 	    (*--** may not have a OneArg *)
-	    (* FunExp of coord * function stamp * printname * id args * body *)
+	    (* FunExp of exp_info * fn stamp * printname * id args * body *)
 	    (* 1st build closure: - instantiate class *)
 	    (*                    - set free variables via putfields *)
 	    (* 2nd generate corresponding class file *)

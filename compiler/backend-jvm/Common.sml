@@ -58,9 +58,10 @@ structure Common=
 	    (if stamp'=toplevel then "" else "class"^(Stamp.toString stamp'))
 	fun classNameFromId (Id (_,stamp',_)) = classNameFromStamp stamp'
 
-	val dummyCoord:ImperativeGrammar.coord = Source.nowhere
-	val dummyExpInfo:ImperativeGrammar.expInfo = (dummyCoord, NONE)
-	val dummyStmInfo:ImperativeGrammar.stmInfo = (dummyCoord, ref Unknown)
+	val dummyExpInfo: ImperativeGrammar.exp_info =
+	    {region = Source.nowhere, typ = Type.unknown Type.STAR}
+	val dummyStmInfo: ImperativeGrammar.stm_info =
+	    {region = Source.nowhere, liveness = ref Unknown}
 
 	 (* A dummy stamp/id we sometimes write but should never read *)
 	 val illegalStamp = Stamp.new()
