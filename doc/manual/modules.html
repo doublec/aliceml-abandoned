@@ -94,7 +94,7 @@ href="incompatibilities.html#funid">incompatibilities</A>).</P>
 
 <?php subsection("higher-sigexp", "Functor signatures") ?>
 
-<P>The syntax for signatures has been extended to contain functor types.
+<P>The syntax of signatures has been extended to contain functor types.
 For example, functor <TT>F</TT> can be described by the following
 signature:</P>
 
@@ -712,59 +712,57 @@ expressions. Derived forms have been marked with (*).</P>
 
 <?php subsection("syntax-derived", "Derived forms") ?>
 
-<TABLE class="bnf dyptic">
+<TABLE class="bnf df">
   <TR>
-    <TD> <TT>(</TT> <I>dec</I> <TT>)</TT> </TD>
-    <TD> <TT>struct</TT> <I>dec</I> <TT>dec</TT> </TD>
+    <TD> <TT>(</TT>&nbsp;<I>dec</I>&nbsp;<TT>)</TT> </TD>
+    <TD> <TT>struct</TT>&nbsp;<I>dec</I>&nbsp;<TT>dec</TT> </TD>
   </TR>
   <TR>
-    <TD> <TT>(</TT> <TT>_</TT> <TT>:</TT> <I>sigexp</I> <TT>)</TT> </TD>
-    <TD> <TT>(</TT> <I>strid</I> <TT>:</TT> <I>sigexp</I> <TT>)</TT> 
-         <SUP>1</SUP> </TD>
+    <TD> <TT>(</TT>&nbsp;<TT>_</TT>&nbsp;<TT>:</TT>&nbsp;<I>sigexp</I>&nbsp;<TT>)</TT> </TD>
+    <TD> <TT>(</TT>&nbsp;<I>strid</I>&nbsp;<TT>:</TT>&nbsp;<I>sigexp</I>&nbsp;<TT>)</TT>&nbsp;<SUP>1</SUP> </TD>
   </TR>
   <TR>
-    <TD> <TT>(</TT> <I>spec</I> <TT>)</TT> </TD>
-    <TD> <TT>(</TT> <I>strid</I> <TT>:</TT> <TT>(</TT> <I>spec</I> <TT>))</TT> 
-         <SUP>1</SUP><SUP>2</SUP> </TD>
+    <TD> <TT>(</TT>&nbsp;<I>spec</I>&nbsp;<TT>)</TT> </TD>
+    <TD> <TT>(</TT>&nbsp;<I>strid</I>&nbsp;<TT>:</TT>&nbsp;<TT>(</TT>&nbsp;<I>spec</I>&nbsp;<TT>))</TT>&nbsp;<SUP>1</SUP><SUP>2</SUP> </TD>
   </TR>
   <TR></TR>
   <TR>
-    <TD> <TT>functor</TT> <I>funbind</I> </TD>
-    <TD> <TT>structure</TT> <I>funbind</I> </TD>
+    <TD> <TT>functor</TT>&nbsp;<I>funbind</I> </TD>
+    <TD> <TT>structure</TT>&nbsp;<I>funbind</I> </TD>
   </TR>
   <TR>
-    <TD> <I>strid</I> <I>strpat</I><SUB>1</SUB> ... <I>strpat</I><SUB><I>n</I></SUB>
-         <TT>=</TT> <I>strexp</I> <BR>
-         &lt;<TT>and</TT> <I>funbind</I>&gt; </TD>
-    <TD> <I>strid</I> <TT>=</TT>
-         <TT>fct</TT> <I>strpat</I><SUB>1</SUB> <TT>=></TT> ...
-	 <TT>fct</TT> <I>strpat</I><SUB><I>n</I></SUB> <TT>=></TT> <I>strexp</I> <BR>
-	 &lt;<TT>and</TT> <I>funbind</I>&gt; </TD>
+    <TD> <I>strid</I>&nbsp;<I>strpat</I><SUB>1</SUB>&nbsp;...&nbsp;<I>strpat</I><SUB><I>n</I></SUB>&nbsp;<!--
+	--><TT>=</TT>&nbsp;<I>strexp</I>&nbsp;<!--
+	-->&lt;<TT>and</TT>&nbsp;<I>funbind</I>&gt; </TD>
+    <TD> <I>strid</I>&nbsp;<TT>=</TT>&nbsp;<!--
+	--><TT>fct</TT>&nbsp;<I>strpat</I><SUB>1</SUB>&nbsp;<TT>=></TT>&nbsp;...&nbsp;<!--
+	--><TT>fct</TT>&nbsp;<I>strpat</I><SUB><I>n</I></SUB>&nbsp;<TT>=></TT>&nbsp;<I>strexp</I>&nbsp;<!--
+	-->&lt;<TT>and</TT>&nbsp;<I>funbind</I>&gt; </TD>
   </TR>
   <TR>
-    <TD> <TT>_</TT> &lt;<TT>:</TT> <I>sigexp</I>&gt; <TT>=</TT> <I>strexp</I> <BR>
-         &lt;<TT>and</TT> <I>strbind</I>&gt; </TD>
-    <TD> <I>strid</I> &lt;<TT>:</TT> <I>sigexp</I>&gt; <TT>=</TT> <I>strexp</I> <BR>
-         &lt;<TT>and</TT> <I>strbind</I>&gt; <SUP>1</SUP> </TD>
-  </TR>
-  <TR></TR>
-  <TR>
-    <TD> <TT>(</TT> <I>spec</I> <TT>)</TT> </TD>
-    <TD> <TT>sig</TT> <I>spec</I> <TT>end</TT> </TD>
+    <TD> <TT>_</TT>&nbsp;&lt;<TT>:</TT>&nbsp;<I>sigexp</I>&gt;&nbsp;<TT>=</TT>&nbsp;<I>strexp</I>&nbsp;<!--
+	-->&lt;<TT>and</TT>&nbsp;<I>strbind</I>&gt; </TD>
+    <TD> <I>strid</I>&nbsp;&lt;<TT>:</TT>&nbsp;<I>sigexp</I>&gt;&nbsp;<TT>=</TT>&nbsp;<I>strexp</I>&nbsp;<!--
+	-->&lt;<TT>and</TT>&nbsp;<I>strbind</I>&gt;&nbsp;<SUP>1</SUP> </TD>
   </TR>
   <TR></TR>
   <TR>
-    <TD> <TT>functor</TT> <I>fundesc</I> </TD>
-    <TD> <TT>structure</TT> <I>fundesc</I> </TD>
+    <TD> <TT>(</TT>&nbsp;<I>spec</I>&nbsp;<TT>)</TT> </TD>
+    <TD> <TT>sig</TT>&nbsp;<I>spec</I>&nbsp;<TT>end</TT> </TD>
+  </TR>
+  <TR></TR>
+  <TR>
+    <TD> <TT>functor</TT>&nbsp;<I>fundesc</I> </TD>
+    <TD> <TT>structure</TT>&nbsp;<I>fundesc</I> </TD>
   </TR>
   <TR>
-    <TD> <I>strid</I> <I>strpat</I><SUB>1</SUB> ... <I>strpat</I><SUB><I>n</I></SUB>
-         <TT>:</TT> <I>sigexp</I> <BR>
-         &lt;<TT>and</TT> <I>fundesc</I>&gt; </TD>
-    <TD> <I>strid</I> <TT>:</TT>
-	 <TT>fct</TT> <I>strpat</I><SUB>1</SUB> <TT>-></TT> ...
-	 <TT>fct</TT> <I>strpat</I><SUB><I>n</I></SUB> <TT>-></TT> <I>sigexp</I> <BR>
-         &lt;<TT>and</TT> <I>fundesc</I>&gt; </TD>
+    <TD> <I>strid</I>&nbsp;<I>strpat</I><SUB>1</SUB>&nbsp;...&nbsp;<I>strpat</I><SUB><I>n</I></SUB><!--
+	--><TT>:</TT>&nbsp;<I>sigexp</I>&nbsp;<!--
+	-->&lt;<TT>and</TT>&nbsp;<I>fundesc</I>&gt; </TD>
+    <TD> <I>strid</I>&nbsp;<TT>:</TT><!--
+	--><TT>fct</TT>&nbsp;<I>strpat</I><SUB>1</SUB>&nbsp;<TT>-></TT>&nbsp;...&nbsp;<!--
+	--><TT>fct</TT>&nbsp;<I>strpat</I><SUB><I>n</I></SUB>&nbsp;<TT>-></TT>&nbsp;<I>sigexp</I>&nbsp;<!--
+	-->&lt;<TT>and</TT>&nbsp;<I>fundesc</I>&gt; </TD>
   </TR>
 </TABLE>
 
