@@ -65,6 +65,21 @@ inspect ("Der Thread:",
 fulfill (p, 4)
 
 
+val x = promise ()
+val y = promise ()
+val z = promise ()
+val x' = future x
+val y' = future y
+val z' = future z
+
+inspect 5;
+
+concur (fn () => inspect (y' * z'))
+concur (fn () => inspect (x' + y' * z'))
+
+fulfill (y, 4)
+fulfill (z, 2)
+fulfill (x, 3)
 
 inspect (alarm (Time.fromSeconds 4));
 
@@ -122,3 +137,79 @@ Stream.close stream
 
 
 (* Komponenten *)
+
+
+(* MY_COMPONENT-sig.aml *)
+
+signature MY_COMPONENT =
+    sig
+	val fak: int -> int
+    end
+
+
+(* MyComponent.aml *)
+
+import signature MY_COMPONENT from "MY_COMPONENT-sig"
+
+structure MyComponent :> MY_COMPONENT =
+    struct
+	val _ = TextIO.print "Evaluating MyComponent\n"
+
+	fun fak 0 = 1
+	  | fak i = i * fak (i - 1)
+    end
+
+
+(* MyApplication.aml *)
+
+import structure MyComponent from "MyComponent"
+
+val _ = TextIO.print (Int.toString (MyComponent.fak 7) ^ "\n")
+val _ = OS.Process.exit OS.Process.success
+
+
+
+(* Pakete *)
+
+structure P =
+    Package.Pack(structure X = (val f = length)
+		 signature S = (val f : 'a list -> int))
+
+structure Length =
+    Package.Unpack(val package = P.package
+		   signature S = (val f: 'a list -> int))
+val _ = inspect("length [1,2,1] = ", Length.f [1,2,1])
+
+structure _ =
+    Package.Unpack(val package = P.package
+		   signature S = (val f: real option -> int))   (* Mismatch *)
+
+
+
+(* Persistenz *)
+
+signature NUM =
+    sig
+	type t
+	fun fromInt : int -> t
+	fun toInt : t -> int
+	fun add : t * t -> t
+    end
+
+structure Num :> NUM =
+    struct
+	type t = int
+	fun toInt n   = n
+	fun fromInt n = n
+	val add       = op+
+    end
+
+val file = "Num." ^ Pickle.extension
+structure  _ = Pickle.Save(val file = file
+			   structure X = Num
+			   signature S = NUM where type t = Num.t)
+
+structure Num' = Pickle.Load(val file = file
+			     signature S = NUM where type t = Num.t)
+
+import "/home/kornstae/stockhausen/doc/samples/Num"
