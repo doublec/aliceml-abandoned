@@ -1712,12 +1712,14 @@ Worker::Result ByteCodeInterpreter::Run() {
       break;
     case Instr::LCONST_0:
       {
-	Error("not implemented");
+	frame->Push(JavaLong::New(0, 0)->ToWord());
+	pc += 1;
       }
       break;
     case Instr::LCONST_1:
       {
-	Error("not implemented");
+	frame->Push(JavaLong::New(0, 1)->ToWord());
+	pc += 1;
       }
       break;
     case Instr::LDC:
