@@ -212,7 +212,7 @@ steps 3 and 4):
    stoc/common.  These sources should now be handled using
    aml2sml. Need to update import URI accordingly.
 
-   Move misc/BootstrapGlobalStamp to bootstrap.
+   Move stoc/misc/BootstrapGlobalStamp to bootstrap/GlobalStamp.
 
 7. Provide a new place for all files formerly in lib/bootstrap. (LK)
 
@@ -226,7 +226,18 @@ steps 3 and 4):
 
 8. Implement pass 2. (AR)
 
+   Rename RTT to DummyRTT to be consistent with other dummies.
+
+   Build fundamental, system, utility, and rtt in pass 2 without RTT. Use
+   DummyRTT as RTT component.
+
+   Use full RTT in pass 3. Use RTT component built in pass 2. Rebuild
+   everything except RTT component (for now, until we have a working
+   where-primitive-type to avoid generation of new type stamps).
+
 9. Test runtime types. (AR)
+
+   Urgh.
 
 ==================
  AFTER OPERETTE 2
