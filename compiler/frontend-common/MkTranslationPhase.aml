@@ -975,7 +975,7 @@ struct
 
     and trOpaqCoerceMod(E,i,m,j) =
 	(* [m :> j] = let val x1 = [m]
-	 *                val x2 = [j]
+	 *                val x2 = lazy [j]
 	 *            in abs [x1 : j1 :> x2 = j2]
 	 *)
 	if not(!Switches.Language.supportRtt) then
@@ -1011,7 +1011,7 @@ struct
 	       | SOME e' =>
 		 let
 		     val d1' = O.ValDec(i0, O.VarPat(i1,x1'), e1')
-		     val d2' = O.ValDec(i0, O.VarPat(i2,x2'), e2')
+		     val d2' = O.ValDec(i0, O.VarPat(i2,x2'), trLazy e2')
 		 in
 		     O.LetExp(i', #[d1',d2'], O.AbsExp(i', e'))
 		 end
