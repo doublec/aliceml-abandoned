@@ -175,6 +175,128 @@ structure IL :> IL =
 
 	val outputId = output
 
+	(* Compute Stack Size *)
+
+	structure Map =
+	    MakeHashImpMap(type t = label
+			   fun hash label = label)
+
+	val size = ref 0
+	val maxSize = ref 0
+	val map: int Map.t ref = ref (Map.new ())
+	val returnSize = ref 0
+
+	fun pop n =
+	    if !size = ~1 then ()
+	    else
+		let
+		    val i = !size - n
+		in
+		    if i < 0 then
+			Crash.crash ("stack underflow by " ^ Int.toString (~i))
+		    else size := i
+		end
+
+	fun push n =
+	    if !size = ~1 then ()
+	    else
+		let
+		    val i = !size + n
+		in
+		    size := i;
+		    if i > !maxSize then maxSize := i else ()
+		end
+
+	fun branch label =
+	    if !size = ~1 then
+		case Map.lookup (!map, label) of
+		    SOME n => size := n
+		  | NONE => ()
+	    else
+		case Map.lookup (!map, label) of
+		    SOME n =>
+			if !size = n then ()
+			else
+			    Crash.crash ("inconsistent stack size for label " ^
+					 Int.toString label ^ ": " ^
+					 Int.toString (!size) ^ " <> " ^
+					 Int.toString n)
+		  | NONE => Map.insertDisjoint (!map, label, !size)
+
+	fun catch label = Map.insertDisjoint (!map, label, 1)
+
+	fun invalidate () = size := ~1
+
+	fun return () =
+	    if !size = ~1 orelse !size = !returnSize then ()
+	    else
+		Crash.crash ("non-empty stack on return: " ^
+			     Int.toString (!size) ^ " <> " ^
+			     Int.toString (!returnSize))
+
+	fun eval (Add | AddOvf) = (pop 2; push 1)
+	  | eval And = (pop 2; push 1)
+	  | eval (B ((TRUE | FALSE), label)) = (pop 1; branch label)
+	  | eval (B (_, label)) = (pop 2; branch label)
+	  | eval (Br label) = (branch label; invalidate ())
+	  | eval (Call (isInstance, _, _, tys, ty)) =
+	    (pop ((if isInstance then 1 else 0) + List.length tys);
+	     case ty of VoidTy => () | _ => push 1)
+	  | eval (Callvirt (_, _, tys, ty)) =
+	    (pop (List.length tys + 1);
+	     case ty of VoidTy => () | _ => push 1)
+	  | eval (Castclass _) = (pop 1; push 1)
+	  | eval (Ceq | Cgt | CgtUn | Clt | CltUn) = (pop 2; push 1)
+	  | eval (Comment _) = ()
+	  | eval (Div | DivUn) = (pop 2; push 1)
+	  | eval Dup = (pop 1; push 2)
+	  | eval (Isinst _) = (pop 1; push 1)
+	  | eval (Label label) = branch label
+	  | eval (Ldarg _) = push 1
+	  | eval (LdcI4 _) = push 1
+	  | eval (LdcR4 _) = push 1
+	  | eval LdelemRef = (pop 2; push 1)
+	  | eval (Ldfld (_, _, _)) = (pop 1; push 1)
+	  | eval Ldlen = (pop 1; push 1)
+	  | eval (Ldloc _) = push 1
+	  | eval Ldnull = push 1
+	  | eval (Ldsfld (_, _, _)) = push 1
+	  | eval (Ldstr _) = push 1
+	  | eval (Leave label) = (branch label; invalidate ())
+	  | eval (Newarr _) = (pop 1; push 1)
+	  | eval (Newobj (_, tys)) = (pop (List.length tys); push 1)
+	  | eval Mul = (pop 2; push 1)
+	  | eval Neg = (pop 2; push 1)
+	  | eval Not = (pop 2; push 1)
+	  | eval Or = (pop 2; push 1)
+	  | eval Pop = pop 1
+	  | eval (Rem | RemUn) = (pop 2; push 1)
+	  | eval Ret = (return (); invalidate ())
+	  | eval Rethrow = invalidate ()
+	  | eval (Shl | Shr | ShrUn) = (pop 2; push 1)
+	  | eval (Starg _) = pop 2
+	  | eval StelemRef = pop 3
+	  | eval (Stfld (_, _, _)) = pop 2
+	  | eval (Stloc _) = pop 1
+	  | eval (Stsfld (_, _, _)) = pop 1
+	  | eval (Sub | SubOvf) = (pop 2; push 1)
+	  | eval (Switch labels) = (pop 1; List.app branch labels)
+	  | eval Tail = ()
+	  | eval Throw = (pop 1; invalidate ())
+	  | eval (Try (tryLabel, _, _, catchLabel, _)) =
+	    (branch tryLabel; catch catchLabel)
+	  | eval Xor = (pop 2; push 1)
+
+	fun outputMaxStack (q, instrs, ty) =
+	    (size := 0; maxSize := 0; map := Map.new ();
+	     returnSize := (case ty of VoidTy => 0 | _ => 1);
+	     List.app eval instrs;
+	     output (q, ".maxstack "); output (q, Int.toString (!maxSize));
+	     output (q, "\n"))
+	    handle Crash.Crash s => output (q, "//--** " ^ s ^ "\n.maxstack 1024\n")
+
+	(* Output IL Syntax *)
+
 	fun outputDottedname (q, [id]) = outputId (q, id)
 	  | outputDottedname (q, id::idr) =
 	    (outputId (q, id); output1 (q, #"."); outputDottedname (q, idr))
@@ -415,6 +537,7 @@ structure IL :> IL =
 	    (output (q, ".method "); outputMethAttr (q, attr);
 	     outputTy (q, ty); output1 (q, #" "); outputId (q, id);
 	     output1 (q, #"("); outputTys (q, tys); output (q, ") {\n");
+	     outputMaxStack (q, instrs, ty);
 	     outputLocals (q, locals); outputInstrs (q, instrs);
 	     output (q, "}\n"))
 
@@ -470,6 +593,7 @@ structure IL :> IL =
 	     outputTy (q, ty); output1 (q, #" "); outputId (q, id);
 	     output1 (q, #"("); outputTys (q, tys); output (q, ") {\n");
 	     if isEntrypoint then output (q, ".entrypoint\n") else ();
+	     outputMaxStack (q, instrs, ty);
 	     outputLocals (q, locals); outputInstrs (q, instrs);
 	     output (q, "}\n"))
 
