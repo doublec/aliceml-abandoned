@@ -45,7 +45,7 @@ in
 	      | Canvas      of {width:int, height:int}
 	      | Calendar    of GtkSignalHandler list
 	      | Notebook    of bool * ({label:string, note:GtkWidget} list)
-	      | Tree        of GtkTreeItem list
+	      | Tree        of GtkTreeItem list * (string * string -> unit)
 	      | HButtonBox  of GtkButtonBoxStyle * GtkWidget list
 	      | VButtonBox  of GtkButtonBoxStyle * GtkWidget list
 	      | MenuBar     of {label:string, submenu:GtkMenuItem list} list

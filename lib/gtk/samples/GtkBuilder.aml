@@ -49,7 +49,7 @@ in
 	      | Text        of {xdim:real, ydim:real, text:string list}
 	      | Calendar    of GtkSignalHandler list
 	      | Notebook    of bool * ({label:string, note:GtkWidget} list)
-	      | Tree        of GtkTreeItem list
+	      | Tree        of GtkTreeItem list * (string * string -> unit)
 	      | HButtonBox  of GtkButtonBoxStyle * GtkWidget list
 	      | VButtonBox  of GtkButtonBoxStyle * GtkWidget list
 	      | MenuBar     of {label:string, submenu:GtkMenuItem list} list
@@ -325,23 +325,31 @@ in
 		in
 		    (Gtk.notebookSetShowTabs(note, showlabel); MakeNoteEntries(note, entries); note)
 		end
-	    and MakeTreeItems(tree, nil)                       = ()
-	      | MakeTreeItems(tree, (TreeItem title)::ir)      =
-		(Gtk.treeAppend(tree, Gtk.treeItemNewWithLabel title); MakeTreeItems(tree, ir))
-	      | MakeTreeItems(tree, (SubTree(title, sub))::ir) =
+	    and MakeTreeItems(tree, handler, nil)                       = ()
+	      | MakeTreeItems(tree, handler, (TreeItem title)::ir)      =
+		let
+		    val item = Gtk.treeItemNewWithLabel title
+		in
+		    (Gtk.treeAppend(tree, item);
+		     signalConnect(item, "select", fn event => handler(title, "select"));
+		     signalConnect(item, "deselect", fn event => handler(title, "deselect"));
+		     MakeTreeItems(tree, handler, ir))
+		end
+	      | MakeTreeItems(tree, handler, (SubTree(title, sub))::ir) =
 		let
 		    val item    = Gtk.treeItemNewWithLabel title
-		    val subtree = MakeTree sub
+		    val subtree = MakeTree(sub, handler)
 		in
 		    (Gtk.treeAppend(tree, item);
 		     Gtk.treeItemSetSubtree(item, subtree);
-		     MakeTreeItems(tree, ir))
+		     Gtk.widgetShowAll subtree;
+		     MakeTreeItems(tree, handler, ir))
 		end
-	    and MakeTree entries =
+	    and MakeTree(entries, handler) =
 		let
 		    val tree = Gtk.treeNew ()
 		in
-		    (MakeTreeItems(tree, entries); tree)
+		    (MakeTreeItems(tree, handler, entries); tree)
 		end
 	    and MakeButtonBoxEntries (box, nil)      = ()
 	      | MakeButtonBoxEntries (box, desc::br) =
