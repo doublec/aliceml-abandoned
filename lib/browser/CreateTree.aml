@@ -358,7 +358,6 @@ struct
 	 let val lt_list   = row2list(row)
 	     val l_vector  = labelvector(lt_list)
 	     val index     = UnsafeValue.tag(va,l_vector)
-	     val label     = Label.toString(Vector.sub(l_vector,index))^" "
 	     val typ = #2(List.nth(lt_list,index))
 	     val intyp = if Type.isApply(typ) 
 		         andalso Type.isCon(#1(Type.asApply(typ))) 
@@ -370,6 +369,9 @@ struct
 		            Type.Prod(row') 
 			    => Type.isEmptyRow(row') 
 			  | _ => false
+	     val label = if emptyrow 
+			     then Label.toString(Vector.sub(l_vector,index))
+			 else  Label.toString(Vector.sub(l_vector,index))^" "
 	     val upperConcat = if emptyrow 
 				   then Empty 
 			       else createConcat(createValue(va,t),p,i,d,
