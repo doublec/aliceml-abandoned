@@ -1,5 +1,9 @@
 #ifndef _NATIVE_GDK_SPECIAL_HH_
-#define _NATIVE_GDK_SPECIAL_HH_ { 0, NULL }
+#define _NATIVE_GDK_SPECIAL_HH_
+
+#include "Alice.hh"
+#include "MyNativeAuthoring.hh"
+#include <gtk/gtk.h>
 
 DEFINE0(NativeGdk_init) {
   gdk_init(NULL,NULL);
