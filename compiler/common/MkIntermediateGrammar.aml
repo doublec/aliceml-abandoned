@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg, 2001-2003
  *
  * Last change:
  *   $Date$ by $Author$
@@ -13,6 +13,7 @@
 import structure Stamp                from "Stamp"
 import structure Name                 from "../../lib/rtt/Name"
 import structure Label                from "../../lib/rtt/Label"
+import structure Reflect              from "../../lib/system/Reflect"
 import structure Url                  from "../../lib/system/Url"
 import signature INTERMEDIATE_GRAMMAR from "INTERMEDIATE_GRAMMAR-sig"
 
@@ -63,6 +64,7 @@ struct
 	  LitExp    of exp_info * lit			(* literal *)
 	| VarExp    of exp_info * longid		(* variable *)
 	| PrimExp   of exp_info * string		(* primitive value *)
+	| ImmExp    of exp_info * Reflect.value		(* immediate value *)
 	| NewExp    of exp_info				(* new constructor *)
 	| TagExp    of exp_info * lab * exp		(* tagged value *)
 	| ConExp    of exp_info * longid * exp		(* constructed value *)
@@ -151,6 +153,7 @@ struct
     fun infoExp(LitExp(i,_))		= i
       | infoExp(VarExp(i,_))		= i
       | infoExp(PrimExp(i,_))		= i
+      | infoExp(ImmExp(i,_))		= i
       | infoExp(NewExp(i))		= i
       | infoExp(TagExp(i,_,_))		= i
       | infoExp(ConExp(i,_,_))		= i

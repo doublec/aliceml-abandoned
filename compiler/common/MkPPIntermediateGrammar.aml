@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg, 2001-2003
  *
  * Last change:
  *   $Date$ by $Author$
@@ -129,6 +129,9 @@ struct
 					  )
       | ppExp(PrimExp(i, s))		= exptree "Prim" i (
 					    ppString s
+					  )
+      | ppExp(ImmExp(i, v))		= exptree "Imm" i (
+					    text "_"
 					  )
       | ppExp(NewExp(i))		= exptree "New" i empty
       | ppExp(TagExp(i, lab, exp))	= exptree "Tag" i (

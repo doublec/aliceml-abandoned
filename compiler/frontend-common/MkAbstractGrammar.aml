@@ -142,6 +142,7 @@ struct
 	| PackExp   of exp_info * mod * inf	(* package introduction *)
 	| OverExp   of exp_info * exp vector
 				* varid * typlongid vector * typ (* overload *)
+	| OverallExp of exp_info * exp * varid * typ (* intensional overload *)
 
     and 'a row = Row of 'a row_info * 'a fld vector * bool
     and 'a fld = Fld of 'a fld_info * vallab * 'a
@@ -301,6 +302,7 @@ struct
       | infoExp(LetExp(i,_,_))		= i
       | infoExp(PackExp(i,_,_))		= i
       | infoExp(OverExp(i,_,_,_,_))	= i
+      | infoExp(OverallExp(i,_,_,_))	= i
 
     fun infoRow(Row(i,_,_))		= i
     fun infoFld(Fld(i,_,_))		= i
@@ -412,7 +414,8 @@ struct
 	       | RaiseExp(_, exp)
 	       | LazyExp(_, exp)
 	       | SpawnExp(_, exp)
-	       | AnnExp(_, exp, _) )		= isValue exp
+	       | AnnExp(_, exp, _)
+	       | OverallExp(_, exp, _, _) )	= isValue exp
       | isValue( TupExp(_, exps)
 	       | VecExp(_, exps)
 	       | OverExp(_, exps, _, _, _) )	= Vector.all isValue exps

@@ -315,6 +315,12 @@ struct
 					    ppTyplongids typlongids ^/^
 					    ppTyp typ
 					  )
+      | ppExp(OverallExp(i, exp, varid, typ))
+ 					= exptree "Overall" i (
+					    ppExp exp ^/^
+					    ppVarid varid ^/^
+					    ppTyp typ
+					  )
 
     and ppMats mats			= vec(Vector.map ppMat mats)
     and ppMat(Mat(i, pat, exp))		= tree "Mat" (ppMatInfo i) (

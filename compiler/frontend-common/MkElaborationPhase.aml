@@ -617,6 +617,27 @@ struct
 	    ( t, O.OverExp(typInfo(i,t), exps', varid', typlongids', typ') )
 	end
 
+      | elabExp(E, I.OverallExp(i, exp, varid, typ)) =
+	let
+	    val (t1,exp')  = elabExp(E,exp)
+	    val  _         = Env.insertScope E
+	    val  k         = Type.starKind()
+	    val (a,varid') = elabVarid_bind(E, k, Type.Intensional, varid)
+	    val (t2,typ')  = elabTyp(E, typ)
+	    val  _         = Env.removeScope E
+	    val  t         = Type.all(a,t2)
+	    val  t0        = Type.arrow(Type.unknown(Type.starKind()), t2)
+					(*UNFINISEHD: use typ_typ *)
+	    (*TODO: hack as long as we don't have 1st class polymorphism *)
+	    val exp' = case exp'
+			of O.VarExp(i,y) => O.VarExp(O.infoLongid y, y)
+			 | _ => raise Fail "elabExp OverallExp"
+	in
+	    Type.unify(t0, t1) handle Type.Mismatch(t3,t4) =>
+		error(I.infoExp exp, E.OverallExpMismatch(t0,t2,t3,t4));
+	    ( t, O.OverallExp(typInfo(i,t), exp', varid', typ') )
+	end
+
     and elabExps(E, exps) =
 	VectorPair.unzip(Vector.map (fn exp => elabExp(E,exp)) exps)
 

@@ -63,6 +63,7 @@ sig
 	| OverExpOverlap	of typ * typ
 	| OverExpKind		of typ
 	| OverExpMismatch	of typ_mismatch
+	| OverallExpMismatch	of typ_mismatch
 	(* Patterns *)
 	| TagPatLab		of lab
 	| TagPatArgMismatch	of typ_mismatch

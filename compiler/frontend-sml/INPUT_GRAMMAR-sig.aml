@@ -176,6 +176,7 @@ sig
 	| NONFIXDec       of Info * VId
 	| OVERLOADDec     of Info * TyVar * LongTyConSeq
 				  * Op * VId * Ty * LongVIdSeq
+	| OVERLOADALLDec  of Info * TyVar * Op * VId * Ty * LongVId
 	| PRIMITIVEVALDec         of Info * Op * VId * Ty * string
 	| PRIMITIVETYPEDec        of Info * TyVarSeq * TyCon * string
 	| PRIMITIVEEXTTYPEDec     of Info * TyVarSeq * TyCon * string

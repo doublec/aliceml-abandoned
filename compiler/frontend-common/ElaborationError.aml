@@ -81,6 +81,7 @@ struct
 	| OverExpOverlap	of typ * typ
 	| OverExpKind		of typ
 	| OverExpMismatch	of typ_mismatch
+	| OverallExpMismatch	of typ_mismatch
 	(* Patterns *)
 	| TagPatLab		of lab
 	| TagPatArgMismatch	of typ_mismatch
@@ -423,6 +424,10 @@ struct
 	ppTypMismatch4(
 	  textpar["type","mismatch","in","overloading:"],
 	  textpar["does","not","match","instance","type"], ue)
+      | ppError(OverallExpMismatch ue) =
+	ppTypMismatch4(
+	  textpar["type","mismatch","in","intensional","overloading:"],
+	  textpar["does","not","match","implementation","type"], ue)
       (* Patterns *)
       | ppError(TagPatRowMismatch ue) =
 	ppTypMismatch4(

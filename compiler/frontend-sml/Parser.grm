@@ -192,7 +192,8 @@
 (*					: sigexp = string		(DF)	*)
 (*	          ::= __primitive signature sigid strpat_1 ... strpat_n	(n>=0)	*)
 (*					= string				*)
-(*		  ::= __overload tyvar as longtyconseq <op>vid : ty =longvidseq	*)
+(*		  ::= __overload tyvar <op>vid : ty = longvid			*)
+(*		  ::= __overload longtyconseq as tyvar <op>vid : ty =longvidseq	*)
 (*	  spec    ::= __eqeqtype typdesc					*)
 (*	  ann     ::= import __primitive imp from string			*)
 (*	  	      import __primitive string					*)
@@ -864,6 +865,9 @@
 			( OVERLOADDec(I(OVERLOADleft,longvidseqright),
 				      tyvar, longtyconseq,
 				      OP_opt, vid, ty, longvidseq) )
+	| OVERLOAD tyvar OP_opt vid COLON ty EQUALS longvid
+			( OVERLOADALLDec(I(OVERLOADleft,longvidright),
+				      tyvar, OP_opt, vid, ty, longvid) )
 	| PRIMITIVE VAL OP_opt vid COLON ty EQUALS STRING
 			( PRIMITIVEVALDec(I(PRIMITIVEleft,STRINGright),
 					  OP_opt, vid, ty, STRING) )

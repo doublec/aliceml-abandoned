@@ -1501,7 +1501,28 @@ struct
 					O.VarExp(O.infoLongid vallongid',
 						 vallongid')) vallongids'
 		val  exp'           = O.OverExp(i, exps',
-					       varid', typlongids', typ')
+					        varid', typlongids', typ')
+		val  dec'           = O.ValDec(i, pat', exp')
+		val  _              = insertVal(E, vid', (i, stamp2, V))
+	   in
+		dec' :: acc
+	   end
+
+	 | OVERLOADALLDec(i, tyvar as TyVar(i1,tyvar'),
+		          _, vid as VId(i2,vid'), ty, longvid) =>
+	   let
+		val  E'             = env()
+		val  _              = insertScope E
+		val (varid',stamp1) = trTyVar_bind E tyvar
+		val  _              = insertDisjointVar(E, tyvar', (i, stamp1))
+		val (valid',stamp2) = trValVId_bind E vid
+		val  typ'           = trTy E ty
+		val (vallongid',_)  = trLongVId E longvid
+		val  _              = removeScope E
+		val  pat'           = O.VarPat(i2, valid')
+		val  exp0'          = O.VarExp(O.infoLongid vallongid',
+					       vallongid')
+		val  exp'           = O.OverallExp(i, exp0', varid', typ')
 		val  dec'           = O.ValDec(i, pat', exp')
 		val  _              = insertVal(E, vid', (i, stamp2, V))
 	   in

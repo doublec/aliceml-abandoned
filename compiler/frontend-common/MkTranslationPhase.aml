@@ -25,6 +25,7 @@ import structure Type			from "../../lib/rtt/Type"
 import structure Inf			from "../../lib/rtt/Inf"
 import structure PervasiveType		from "../../lib/rtt/PervasiveType"
 import structure PathMap		from "../../lib/rtt/PathMap"
+import structure Reflect		from "../../lib/system/Reflect"
 
 import structure NameTranslation	from "NameTranslation"
 import structure LabelTranslation	from "LabelTranslation"
@@ -174,10 +175,19 @@ struct
 	     of SOME t' => t'
 	      | NONE =>
 	    case Type.inspect t
-	     of Type.All(a,_) =>
+	     of Type.All(a,t1) =>
 		(case Type.constraintVar a
-		 of Type.Unconstrained     => t
-		  | Type.Intensional       => t (*TODO*)
+		 of Type.Unconstrained => t
+		  | Type.Intensional =>
+		    let
+			val k   = Type.kindVar a
+			val a'  = Type.newVar(k, Type.Unconstrained)
+			val t1' = Type.instanceWith(t, Type.var a')
+			val t'  = Type.all(a', Type.arrow(typ_typ E, t1'))
+		    in
+			Type.Map.insert(typHash, tcan, t');
+			t'
+		    end
 		  | Type.Extensional(p,ps) =>
 		    let
 			val k  = Type.kindVar a
@@ -576,16 +586,26 @@ struct
 
     fun trVarExp(E, i, y) =
 	let
+	    val r  = #region i
 	    val t1 = #typ i
 	    val t2 = #typ(I.infoLongid y)
 	    val y' = trVallongid(E, y)
-	    val e' = O.VarExp(i, y')
 	in
 	    case Type.inspect t2
 	     of Type.All(a,t) =>
 		(case Type.constraintVar a
-		 of Type.Unconstrained => e'
-		  | Type.Intensional   => e' (*TODO*)
+		 of Type.Unconstrained => O.VarExp(i, y')
+		  | Type.Intensional =>
+		    let
+			val t' = Type.arrow(typ_typ E, t1)
+			val t0 = Type.unknown(Type.kindVar a)
+		    in
+			Type.unify(t1, Type.instanceWith(t2,t0));
+			O.AppExp(i,
+			    O.VarExp(typInfo(r,t'), y'),
+			    O.ImmExp(typInfo(r,typ_typ E), Reflect.reflect t0)
+			)
+		    end
 		  | Type.Extensional(p,ps) =>
 		    let
 			val  k    = Type.kindVar a
@@ -595,12 +615,13 @@ struct
 							    (t2, Type.con(p,k)))
 					) (p::ps))
 		    in
-			O.SelExp(i, O.Lab(nonInfo(#region i),
-					  Label.fromInt(n+1)),
-				    O.VarExp(O.infoLongid y', y'))
+			O.SelExp(i,
+			    O.Lab(nonInfo r, Label.fromInt(n+1)),
+			    O.VarExp(O.infoLongid y', y')
+			)
 		    end
 		)
-	      | _ => e'
+	      | _ => O.VarExp(i, y')
 	end
 
     fun trExps(E, es)			= Vector.map (fn e => trExp(E,e)) es
@@ -639,6 +660,8 @@ struct
       | trExp(E, I.LetExp(i,ds,e))	= O.LetExp(i, trDecs(E,ds), trExp(E,e))
       | trExp(E, I.PackExp(i,m,j))	= trPackExp(E,i,m,j)
       | trExp(E, I.OverExp(i,es,x,ys,t))= trTuple(#region i, trExps(E,es))
+      | trExp(E, I.OverallExp(i,e,x,t))	= O.UnsealExp(trValInfo(E,i),trExp(E,e))
+					  (* Type.t is from different builds! *)
 
     and trExpRow(E, I.Row(i,fs,_))	= trExpFlds(E,fs)
     and trExpFlds(E, fs)		= Vector.map (trExpFld E) fs

@@ -115,6 +115,7 @@ sig
 	| PackExp   of exp_info * mod * inf	(* package introduction *)
 	| OverExp   of exp_info * exp vector
 				* varid * typlongid vector * typ (* overload *)
+	| OverallExp of exp_info * exp * varid * typ (* intensional overload *)
 
     and 'a row = Row of 'a row_info * 'a fld vector * bool
     and 'a fld = Fld of 'a fld_info * vallab * 'a

@@ -291,6 +291,20 @@ end
 		t
 	   end
 
+	(*          t : *
+	 * -------------------------
+	 * E |- 'value' : t => t
+	 *)
+	 | ImmExp(i, value) =>
+	   let
+		val t = #typ i
+		val k = Type.kind t
+	   in
+		check (Type.isStarKind k)
+		      (i, "ImmExp kind", #[KIND k, TYPE t]);
+		t
+	   end
+
 	(* t = conarrow (t1->t2)    t2 extensible
 	 * --------------------------------------
 	 *           E |- new : t => t

@@ -177,6 +177,7 @@ struct
 	| NONFIXDec       of Info * VId
 	| OVERLOADDec     of Info * TyVar * LongTyConSeq
 				  * Op * VId * Ty * LongVIdSeq
+	| OVERLOADALLDec  of Info * TyVar * Op * VId * Ty * LongVId
 	| PRIMITIVEVALDec         of Info * Op * VId * Ty * string
 	| PRIMITIVETYPEDec        of Info * TyVarSeq * TyCon * string
 	| PRIMITIVEEXTTYPEDec     of Info * TyVarSeq * TyCon * string
@@ -482,6 +483,7 @@ struct
       | infoDec(INFIXRDec(I,_,_))			= I
       | infoDec(NONFIXDec(I,_))				= I
       | infoDec(OVERLOADDec(I,_,_,_,_,_,_))		= I
+      | infoDec(OVERLOADALLDec(I,_,_,_,_,_))		= I
       | infoDec(PRIMITIVEVALDec(I,_,_,_,_))		= I
       | infoDec(PRIMITIVETYPEDec(I,_,_,_))		= I
       | infoDec(PRIMITIVEEXTTYPEDec(I,_,_,_))		= I
