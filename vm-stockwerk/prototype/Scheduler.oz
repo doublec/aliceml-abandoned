@@ -201,7 +201,8 @@ define
 	       {DumpTaskStack {Reverse Debug}}
 	       {Application.exit 1}
 	    elseof Closure then
-	       Scheduler, Run(args() {Closure.1.1.pushCall Closure TaskStack})
+	       Scheduler, Run(args()
+			      pushCall(PushCallInterpreter Closure)|TaskStack)
 	    end
 	 end
       end
