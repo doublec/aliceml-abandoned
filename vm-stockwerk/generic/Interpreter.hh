@@ -46,6 +46,8 @@ public:
   virtual function GetCFunction();
 #if PROFILE
   // Profiling
+  virtual word GetProfileKey(StackFrame *sFrame);
+  virtual String *GetProfileName(StackFrame *sFrame);
   virtual word GetProfileKey(ConcreteCode *concreteCode);
   virtual String *GetProfileName(ConcreteCode *concreteCode);
 #endif
