@@ -99,7 +99,16 @@ prepare
 
    BuiltinTable =
    builtinTable(
-      '=': Value.'=='
+      '=':
+\ifdef OLD_BYNEED
+	 Value.'=='
+\else
+	 fun {$ X Y}
+	    {Wait X} %--** works around Mozart 1.3 bug
+	    {Wait Y}
+	    X == Y
+	 end
+\endif
       '<>': Value.'\\='
       'Array.array':
 	 fun {$ N Init}
