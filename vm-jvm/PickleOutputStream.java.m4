@@ -12,12 +12,14 @@
  */
 package de.uni_sb.ps.dml.runtime;
 
-import java.rmi.server.*;
+import java.io.*;
 import java.lang.reflect.*;
+import java.rmi.server.*;
+import java.rmi.RemoteException;
 
 /** This is the OutputStream used to create pickles.
  */
-final public class PickleOutputStream extends java.io.ObjectOutputStream {
+final public class PickleOutputStream extends ObjectOutputStream {
 
     final static Class fcn; // class of Function
     final static Class ccn; // class of Constructor
@@ -79,12 +81,12 @@ final public class PickleOutputStream extends java.io.ObjectOutputStream {
     boolean waitforbind = false;
     int objectcounter = 0;
 
-    public PickleOutputStream() throws java.io.IOException {
+    public PickleOutputStream() throws IOException {
 	super();
 	enableReplaceObject(true);
     }
 
-    public PickleOutputStream(java.io.OutputStream out) throws java.io.IOException {
+    public PickleOutputStream(OutputStream out) throws IOException {
 	super(out);
 	enableReplaceObject(true);
     }
@@ -93,7 +95,7 @@ final public class PickleOutputStream extends java.io.ObjectOutputStream {
 	waitforbind=b;
     }
 
-    final protected void annotateClass(Class cls) throws java.io.IOException {
+    final protected void annotateClass(Class cls) throws IOException {
 	objectcounter++;
 	// System.out.println("annotateClass "+cls);
 	Class superClass = cls.getSuperclass();
@@ -114,20 +116,20 @@ final public class PickleOutputStream extends java.io.ObjectOutputStream {
 		bytes = PickleClassLoader.loader.getBytes(name);
 	    } else if (cl == null || cl==ClassLoader.getSystemClassLoader()) {
 		//System.out.println("POS: annotateClass "+cls+" came from somewhere else");
-		java.io.InputStream in = null;
-		java.io.DataInputStream din = null;
+		InputStream in = null;
+		DataInputStream din = null;
 		if (cl == null) {
 		    cl = ClassLoader.getSystemClassLoader();
 		}
-//              java.io.OutputStream out = null;
-//              java.io.DataOutputStream refout = null;
+//              OutputStream out = null;
+//              DataOutputStream refout = null;
 		try {
 		    in = cl.getResourceAsStream(name+".class");
-		    din = new java.io.DataInputStream(in);
+		    din = new DataInputStream(in);
 		    bytes = new byte[din.available()];
 		    din.readFully(bytes); // NICHT: read
-//                  out = new java.io.FileOutputStream("ref"+name);
-//                  refout = new java.io.DataOutputStream(out);
+//                  out = new FileOutputStream("ref"+name);
+//                  refout = new DataOutputStream(out);
 //                  refout.write(bytes,0,bytes.length);
 //                  refout.close();
 		}
@@ -141,7 +143,7 @@ final public class PickleOutputStream extends java.io.ObjectOutputStream {
 			    in.close();
 			if (din!=null)
 			    din.close();
-		    } catch (java.io.IOException e) {
+		    } catch (IOException e) {
 			e.printStackTrace();
 		    }
 		}
@@ -151,11 +153,11 @@ final public class PickleOutputStream extends java.io.ObjectOutputStream {
 		for(int i=0; i<urls.length; i++) {
 		    try {
 			// System.out.println("Trying: "+urls[i]);
-			java.io.DataInputStream in =new java.io.DataInputStream(urls[i].openStream());
+			DataInputStream in =new DataInputStream(urls[i].openStream());
 			bytes=new byte[in.available()];
 			in.readFully(bytes);
 			break;  // bei Erfolg for verlassen
-		    } catch (java.io.IOException io) {
+		    } catch (IOException io) {
 			System.err.println(urls[i]+" IOException");
 			io.printStackTrace();
 		    }
@@ -215,7 +217,7 @@ final public class PickleOutputStream extends java.io.ObjectOutputStream {
 		_RAISE(runtimeError,new STRING ("cannot pickle Reference"));
 	    } else
 		return obj;
-	} catch (java.rmi.RemoteException r) {
+	} catch (RemoteException r) {
 	    System.err.println(r);
 	    r.printStackTrace();
 	    return null;

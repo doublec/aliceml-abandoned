@@ -12,6 +12,8 @@
  */
 package de.uni_sb.ps.dml.runtime;
 
+import java.rmi.RemoteException;
+
 final public class ConVal implements DMLConVal {
 
     public DMLValue content = null;
@@ -27,33 +29,34 @@ final public class ConVal implements DMLConVal {
 	this.content = content;
     }
 
-    final public DMLValue get0() {
+    final public DMLValue get0() throws RemoteException {
+	_REQUEST(content,content);
 	if (content instanceof DMLTuple)
 	    return ((DMLTuple) content).get0();
 	else
 	    throw new ArrayIndexOutOfBoundsException();
     }
-    final public DMLValue get1() {
+
+    final public DMLValue get1() throws RemoteException {
+	_REQUEST(content,content);
 	if (content instanceof DMLTuple)
 	    return ((DMLTuple) content).get1();
 	else
 	    throw new ArrayIndexOutOfBoundsException();
     }
-    final public DMLValue get2() {
+
+    final public DMLValue get2() throws RemoteException {
+	_REQUEST(content,content);
 	if (content instanceof DMLTuple)
 	    return ((DMLTuple) content).get2();
 	else
 	    throw new ArrayIndexOutOfBoundsException();
     }
-    final public DMLValue get3() {
+
+    final public DMLValue get3() throws RemoteException {
+	_REQUEST(content,content);
 	if (content instanceof DMLTuple)
 	    return ((DMLTuple) content).get3();
-	else
-	    throw new ArrayIndexOutOfBoundsException();
-    }
-    final public DMLValue get4() {
-	if (content instanceof DMLTuple)
-	    return ((DMLTuple) content).get4();
 	else
 	    throw new ArrayIndexOutOfBoundsException();
     }
@@ -69,7 +72,7 @@ final public class ConVal implements DMLConVal {
 	    } else {
 		return false;
 	    }
-	} catch (java.rmi.RemoteException r) {
+	} catch (RemoteException r) {
 	    System.err.println(r);
 	    r.printStackTrace();
 	    return false;
@@ -84,9 +87,11 @@ final public class ConVal implements DMLConVal {
 	return constructor+"("+content+")";
     }
 
-    final private void writeObject(java.io.ObjectOutputStream out) throws java.io.IOException {
+    final private void writeObject(java.io.ObjectOutputStream out)
+	throws java.io.IOException {
 	if (this.constructor == Constants.reference) {
-	    _RAISE(runtimeError,new STRING ("cannot pickle reference"+this.toString()));
+	    _RAISE(runtimeError,
+		   new STRING ("cannot pickle reference"+this.toString()));
 	}
 	else {
 	    out.defaultWriteObject();

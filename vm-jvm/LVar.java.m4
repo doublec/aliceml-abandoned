@@ -12,6 +12,7 @@
  */
 package de.uni_sb.ps.dml.runtime;
 
+import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 
 final public class LVar extends UnicastRemoteObject
@@ -19,9 +20,9 @@ final public class LVar extends UnicastRemoteObject
 
     private DMLValue ref = null;
 
-    public LVar() throws java.rmi.RemoteException { }
+    public LVar() throws RemoteException { }
 
-    final synchronized public DMLValue getValue() throws java.rmi.RemoteException { // gibt Wert zurück ohne blockieren
+    final synchronized public DMLValue getValue() throws RemoteException { // gibt Wert zurück ohne blockieren
 	if (ref == null) {
 	    return this;
 	} else {
@@ -32,11 +33,11 @@ final public class LVar extends UnicastRemoteObject
 	}
     }
 
-    final synchronized public DMLValue request() throws java.rmi.RemoteException { // gibt Wert zurück wenn verfügbar
+    final synchronized public DMLValue request() throws RemoteException { // gibt Wert zurück wenn verfügbar
 	while (ref == null) {
 	    try {
 		this.wait();
-	    } catch (java.lang.InterruptedException e) {
+	    } catch (InterruptedException e) {
 		// This should never happen!
 		System.err.println(e);
 		e.printStackTrace();
@@ -51,7 +52,7 @@ final public class LVar extends UnicastRemoteObject
     // binds the variable and starts threads in
     // the suspend list
     final synchronized public DMLValue bind(DMLValue v)
-	throws java.rmi.RemoteException {
+	throws RemoteException {
 	if (ref != null) { // then this a second attempt to bind
 	    _RAISENAME(LVar.Rebind);
 	} else {
@@ -80,7 +81,7 @@ final public class LVar extends UnicastRemoteObject
 	try {
 	    return (val instanceof DMLTransient) &&
 		val.equals(request());
-	} catch (java.rmi.RemoteException r) {
+	} catch (RemoteException r) {
 	    System.err.println(r);
 	    return false;
 	}
@@ -90,7 +91,7 @@ final public class LVar extends UnicastRemoteObject
 	DMLValue val;
 	try {
 	    val=this.getValue();
-	} catch (java.rmi.RemoteException r) {
+	} catch (RemoteException r) {
 	    System.err.println(r);
 	    return null;
 	}
@@ -101,22 +102,22 @@ final public class LVar extends UnicastRemoteObject
 	}
     }
 
-    final public DMLValue apply(DMLValue v)  throws java.rmi.RemoteException {
+    final public DMLValue apply(DMLValue v)  throws RemoteException {
 	return this.request().apply(v);
     }
-    final public DMLValue apply0() throws java.rmi.RemoteException {
+    final public DMLValue apply0() throws RemoteException {
 	return this.request().apply0();
     }
     final public DMLValue apply2(DMLValue v1, DMLValue v2)
-	throws java.rmi.RemoteException {
+	throws RemoteException {
 	return this.request().apply2(v1,v2);
     }
     final public DMLValue apply3(DMLValue v1, DMLValue v2, DMLValue v3)
-	throws java.rmi.RemoteException {
+	throws RemoteException {
 	return this.request().apply3(v1,v2,v3);
     }
     final public DMLValue apply4(DMLValue v1, DMLValue v2, DMLValue v3, DMLValue v4)
-	throws java.rmi.RemoteException {
+	throws RemoteException {
 	return this.request().apply4(v1,v2,v3,v4);
     }
 

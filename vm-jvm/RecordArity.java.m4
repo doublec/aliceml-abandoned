@@ -12,14 +12,17 @@
  */
 package de.uni_sb.ps.dml.runtime;
 
-final public class RecordArity implements java.io.Serializable {
+import java.io.Serializable;
+import java.util.Hashtable;
+
+final public class RecordArity implements Serializable {
 
     final public java.lang.String[] labels;
-    final protected java.util.Hashtable hashtable;
+    final protected Hashtable hashtable;
 
     public RecordArity(java.lang.String[] labels) {
 	int l = labels.length;
-	hashtable = new java.util.Hashtable(l); // hashtable with default size l
+	hashtable = new Hashtable(l); // hashtable with default size l
 	this.labels = labels;
 
 	for(int i=0; i<l; i++) {

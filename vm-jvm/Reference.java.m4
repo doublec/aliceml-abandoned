@@ -12,6 +12,8 @@
  */
 package de.uni_sb.ps.dml.runtime;
 
+import java.rmi.RemoteException;
+
 /** This class is the representation of reference cells. It implements the
  *  mobile protocol when used in an distributed environment.
  *  SYNCHRONIZATION:<code>
@@ -33,8 +35,8 @@ final public class Reference implements DMLConVal {
     public DMLValue content = null;
     private CManager cmgr = null;     // Clientsite-Manager
 
-    public Reference(DMLValue ct) throws java.rmi.RemoteException {
-	content=ct;
+    public Reference(DMLValue ct) throws RemoteException {
+	content = ct;
     }
 
     final synchronized public DMLValue release() {
@@ -43,10 +45,12 @@ final public class Reference implements DMLConVal {
 	return t;
     }
 
-    final synchronized public DMLValue get0() throws java.rmi.RemoteException {
-	if (content==null) {
-	    content=mgr.request(cmgr);
+    final synchronized public DMLValue get0()
+	throws RemoteException {
+	if (content == null) {
+	    content = mgr.request(cmgr);
 	}
+	_REQUEST(content,content);
 	if (content instanceof DMLTuple) {
 	    return ((DMLTuple) content).get0();
 	} else {
@@ -55,59 +59,57 @@ final public class Reference implements DMLConVal {
     }
 
 
-    final synchronized public DMLValue get1() throws java.rmi.RemoteException {
-	if (content==null) {
-	    content=mgr.request(cmgr);
+    final synchronized public DMLValue get1()
+	throws RemoteException {
+	if (content == null) {
+	    content = mgr.request(cmgr);
 	}
+	_REQUEST(content,content);
 	if (content instanceof DMLTuple) {
 	    return ((DMLTuple) content).get1();
 	} else
 	    throw new ArrayIndexOutOfBoundsException();
     }
 
-    final synchronized public DMLValue get2() throws java.rmi.RemoteException {
-	if (content==null) {
-	    content=mgr.request(cmgr);
+    final synchronized public DMLValue get2()
+	throws RemoteException {
+	if (content == null) {
+	    content = mgr.request(cmgr);
 	}
+	_REQUEST(content,content);
 	if (content instanceof DMLTuple)
 	    return ((DMLTuple) content).get2();
 	else
 	    throw new ArrayIndexOutOfBoundsException();
     }
 
-    final synchronized public DMLValue get3() throws java.rmi.RemoteException {
-	if (content==null) {
-	    content=mgr.request(cmgr);
+    final synchronized public DMLValue get3()
+	throws RemoteException {
+	if (content == null) {
+	    content = mgr.request(cmgr);
 	}
+	_REQUEST(content,content);
 	if (content instanceof DMLTuple)
 	    return ((DMLTuple) content).get3();
 	else
 	    throw new ArrayIndexOutOfBoundsException();
     }
 
-    final synchronized public DMLValue get4() throws java.rmi.RemoteException {
-	if (content==null) {
-	    content=mgr.request(cmgr);
-	}
-	if (content instanceof DMLTuple)
-	    return ((DMLTuple) content).get4();
-	else
-	    throw new ArrayIndexOutOfBoundsException();
-    }
-
-    final synchronized public DMLValue getContent() throws java.rmi.RemoteException {
-	if (content==null) {
-	    content=mgr.request(cmgr);
+    final synchronized public DMLValue getContent()
+	throws RemoteException {
+	if (content == null) {
+	    content = mgr.request(cmgr);
 	}
 	return content;
     }
 
     /** setzt Wert auf val und gibt alten Wert zurueck */
-    final synchronized public DMLValue assign(DMLValue val) throws java.rmi.RemoteException {
-	if (content==null) {
-	    content=mgr.request(cmgr);
+    final synchronized public DMLValue assign(DMLValue val)
+	throws RemoteException {
+	if (content == null) {
+	    content = mgr.request(cmgr);
 	}
-	content=val;
+	content = val;
 	return Constants.dmlunit;
     }
 
@@ -127,9 +129,10 @@ final public class Reference implements DMLConVal {
 	return Constants.reference;
     }
 
-    final public synchronized DMLValue exchange(DMLValue val) throws java.rmi.RemoteException {
-	if (content==null) {
-	    content=mgr.request(cmgr);
+    final public synchronized DMLValue exchange(DMLValue val)
+	throws RemoteException {
+	if (content == null) {
+	    content = mgr.request(cmgr);
 	}
 	DMLValue ret = content;
 	content = val;
@@ -139,28 +142,28 @@ final public class Reference implements DMLConVal {
     final private void writeObject(java.io.ObjectOutputStream out)
 	throws java.io.IOException {
 	try {
-	    if (mgr==null) {
-		ClientManager CMGR=null;
-		if (cmgr==null) {
-		    CMGR = new ClientManager(this);
-		}
-		ServerManager MGR = new ServerManager(CMGR);
-		mgr=MGR;
-		DMLValue t = content;
-		content = null;
-		out.defaultWriteObject();
-		cmgr=CMGR;
-		content = t;
-	    } else {
-		CManager CMGR = cmgr;
-		cmgr=null;
-		DMLValue t = content;
-		content = null;
-		out.defaultWriteObject();
-		content = t;
-		cmgr = CMGR;
+	    // the client manager is not written to the stream
+	    // since the readObject method install a new one
+	    CManager CMGR = null;
+	    if (cmgr == null) { // i.e. we are on the home site
+		CMGR = new ClientManager(this);
+	    } else { // previously installed by readObject
+		CMGR = cmgr;
 	    }
-	} catch (java.rmi.RemoteException e) {
+	    cmgr = null;
+	    // the content will not be transferred immediately
+	    DMLValue t = content;
+	    content = null;
+	    // install and export the server manager
+	    if (mgr == null) { // i.e. we are at home
+		mgr = new ServerManager(CMGR);
+	    }
+	    // write Reference to stream and restore the client
+	    // manager and the content
+	    out.defaultWriteObject();
+	    cmgr = CMGR;
+	    content = t;
+	} catch (RemoteException e) {
 	    System.err.println(e);
 	}
     }

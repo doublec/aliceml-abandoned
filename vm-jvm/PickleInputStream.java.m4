@@ -12,21 +12,22 @@
  */
 package de.uni_sb.ps.dml.runtime;
 
+import java.io.*;
 import java.lang.reflect.*;
 
 /** This is the InputStream used to read pickles.
  */
-final public class PickleInputStream extends java.io.ObjectInputStream {
+final public class PickleInputStream extends ObjectInputStream {
 
-    public PickleInputStream() throws java.io.IOException {
+    public PickleInputStream() throws IOException {
 	super();
     }
 
-    public PickleInputStream(java.io.InputStream in)  throws java.io.IOException {
+    public PickleInputStream(InputStream in)  throws IOException {
 	super(in);
     }
 
-    final protected Class resolveClass(java.io.ObjectStreamClass osc) throws java.io.IOException, ClassNotFoundException {
+    final protected Class resolveClass(ObjectStreamClass osc) throws IOException, ClassNotFoundException {
 	//System.out.println("resolving Class " + osc);
 	if (readBoolean()) {
 //          System.out.println("reading class from pickle");
@@ -34,8 +35,8 @@ final public class PickleInputStream extends java.io.ObjectInputStream {
 	    byte[] bytes = new byte[length];
 	    readFully(bytes,0,length); // NICHT: read
 //          try {
-//              java.io.OutputStream out = new java.io.FileOutputStream("in"+osc.getName());
-//              java.io.DataOutputStream rout = new java.io.DataOutputStream(out);
+//              OutputStream out = new FileOutputStream("in"+osc.getName());
+//              DataOutputStream rout = new DataOutputStream(out);
 //              out.write(bytes,0,length);
 //          } catch (Exception e) {
 //              System.err.println("HUCH: "+e);

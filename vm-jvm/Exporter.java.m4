@@ -1,14 +1,14 @@
 /*
- * Author: 
+ * Author:
  *      Daniel Simon, <dansim@ps.uni-sb.de>
- * 
+ *
  * Copyright:
  *      Daniel Simon, 1999
  *
  * Last change:
  *    $Date$ by $Author$
  * $Revision$
- * 
+ *
  */
 package de.uni_sb.ps.dml.runtime;
 
@@ -16,30 +16,31 @@ import java.rmi.Naming;
 import java.rmi.RemoteException;
 import java.rmi.RMISecurityManager;
 import java.rmi.server.*;
+import java.util.Hashtable;
 
-final public class Exporter extends java.rmi.server.UnicastRemoteObject implements Export {
+final public class Exporter extends UnicastRemoteObject implements Export {
 
-    public static final java.util.Hashtable classfields = new java.util.Hashtable();
-    
-    private java.util.Hashtable hash;
+    public static final Hashtable classfields = new Hashtable();
 
-    public Exporter() throws java.rmi.RemoteException {}
+    private Hashtable hash;
 
-    public Exporter(java.util.Hashtable h) throws java.rmi.RemoteException {
+    public Exporter() throws RemoteException {}
+
+    public Exporter(Hashtable h) throws RemoteException {
 	hash=h;
     }
 
-    final public DMLValue get(java.lang.String what) throws java.rmi.RemoteException {
+    final public DMLValue get(java.lang.String what) throws RemoteException {
 	return (DMLValue) hash.get(what);
     }
 
-    final public byte[] getClass(java.lang.String className) throws java.rmi.RemoteException {
+    final public byte[] getClass(java.lang.String className) throws RemoteException {
 	return PickleClassLoader.loader.getBytes(className);
     }
 
     // This method returns the static fields of a function class
     // corresponds to the pickling process of storing static fields
-    final public Object getField(java.lang.String fieldName) throws java.rmi.RemoteException {
+    final public Object getField(java.lang.String fieldName) throws RemoteException {
 	return classfields.get(fieldName);
     }
 

@@ -14,6 +14,7 @@ package de.uni_sb.ps.dml.runtime;
 
 import java.io.*;
 import java.util.*;
+import java.rmi.RemoteException;
 
 /** This is the classloader used in conjunction with the pickle in/out streams
  *  to load the classes of pickled objects.
@@ -22,8 +23,7 @@ final public class PickleClassLoader extends ClassLoader {
 
     static final public PickleClassLoader loader = new PickleClassLoader();
     static java.lang.String path = null;
-    static boolean write = false;
-    static java.util.Hashtable hash = new java.util.Hashtable();
+    static Hashtable hash = new Hashtable();
     public Class findClass(java.lang.String name) throws ClassNotFoundException {
 	byte[] b = (byte[]) hash.get(name);
 	// System.out.print("Trying to define "+name);
@@ -35,39 +35,12 @@ final public class PickleClassLoader extends ClassLoader {
 	}
     }
 
-    public static void enter(java.lang.String cl, byte[] b) throws java.rmi.RemoteException {
+    public static void enter(java.lang.String cl, byte[] b) throws RemoteException {
 	hash.put(cl,b);
-	if (write) {
-	    writeClass(cl,b);
-	}
     }
 
     public static byte[] getBytes(java.lang.String cl) {
 	return (byte[]) hash.get(cl);
     }
 
-    public static void writeCodebase(java.lang.String p) throws java.rmi.RemoteException {
-	path = p;
-	write=true;
-	Enumeration e = loader.hash.keys();
-	while (e.hasMoreElements()) {
-	    Object name = e.nextElement();
-	    byte[] b = (byte[]) loader.hash.get(name);
-	    writeClass((java.lang.String) name,b);
-	}
-    }
-
-    private static void writeClass(java.lang.String name, byte[] b) throws java.rmi.RemoteException {
-	try {
-	    FileOutputStream fo = new FileOutputStream(path+name);
-	    DataOutputStream dout = new DataOutputStream(fo);
-	    dout.write(b,0,b.length);
-	    dout.flush();
-	    fo.close();
-	} catch (Exception e) {
-	    System.err.println(e);
-	    e.printStackTrace();
-	    _RAISE(runtimeError,new STRING ("panik"));
-	}
-    }
 }

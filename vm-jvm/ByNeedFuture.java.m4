@@ -12,6 +12,7 @@
  */
 package de.uni_sb.ps.dml.runtime;
 
+import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 
 final public class ByNeedFuture extends UnicastRemoteObject
@@ -28,17 +29,17 @@ final public class ByNeedFuture extends UnicastRemoteObject
 
     private int state = 0; // 0 - unbound, 1 ByNeed error, 2 = bound
 
-    public ByNeedFuture(DMLValue v) throws java.rmi.RemoteException {
+    public ByNeedFuture(DMLValue v) throws RemoteException {
 	closure = v;
 	ref = new LVar();
     }
 
-    final synchronized public DMLValue getValue() throws java.rmi.RemoteException { // gibt Wert zurück ohne blockieren
+    final synchronized public DMLValue getValue() throws RemoteException { // gibt Wert zurück ohne blockieren
 	return ref.getValue();
     }
 
     final synchronized public DMLValue request()
-	throws java.rmi.RemoteException {
+	throws RemoteException {
 	if (state == 2) {
 	    return ref.request();
 	}
@@ -77,7 +78,7 @@ final public class ByNeedFuture extends UnicastRemoteObject
 
     /** bind ist nicht erlaubt und wirft RuntimeError */
     final public DMLValue bind(DMLValue v)
-	throws java.rmi.RemoteException {
+	throws RemoteException {
 	_RAISENAME(ByNeedFuture.Rebind);
     }
 
@@ -85,7 +86,7 @@ final public class ByNeedFuture extends UnicastRemoteObject
 	DMLValue val=null;
 	try{
 	    val=this.getValue();
-	} catch (java.rmi.RemoteException r) {
+	} catch (RemoteException r) {
 	    System.out.println(r);
 	}
 	if (val instanceof LVar) {
@@ -95,22 +96,22 @@ final public class ByNeedFuture extends UnicastRemoteObject
 	}
     }
 
-    final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException {
+    final public DMLValue apply(DMLValue val) throws RemoteException {
 	return request().apply(val); // request() ist LVar !
     }
-    final public DMLValue apply0() throws java.rmi.RemoteException {
+    final public DMLValue apply0() throws RemoteException {
 	return request().apply0();
     }
     final public DMLValue apply2(DMLValue v1, DMLValue v2)
-	throws java.rmi.RemoteException {
+	throws RemoteException {
 	return request().apply2(v1,v2);
     }
     final public DMLValue apply3(DMLValue v1, DMLValue v2, DMLValue v3)
-	throws java.rmi.RemoteException {
+	throws RemoteException {
 	return request().apply3(v1,v2,v3);
     }
     final public DMLValue apply4(DMLValue v1, DMLValue v2, DMLValue v3, DMLValue v4)
-	throws java.rmi.RemoteException {
+	throws RemoteException {
 	return request().apply4(v1,v2,v3,v4);
     }
 

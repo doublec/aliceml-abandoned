@@ -12,6 +12,8 @@
  */
 package de.uni_sb.ps.dml.runtime;
 
+import java.rmi.RemoteException;
+
 final public class List {
     final public static Name nil = new UniqueName("List.nil");
 
@@ -23,7 +25,7 @@ final public class List {
 
 	_NOAPPLY0;_APPLY2;_NOAPPLY3;_NOAPPLY4;
 	final public DMLValue apply(DMLValue val)
-	    throws java.rmi.RemoteException {
+	    throws RemoteException {
 	    _fromTuple(args,val,2,"List.cons");
 	}
 	_SAPPLY2(v) {

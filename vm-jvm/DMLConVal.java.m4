@@ -12,20 +12,21 @@
  */
 package de.uni_sb.ps.dml.runtime;
 
+import java.rmi.RemoteException;
+
 public interface DMLConVal extends DMLValue {
 
     /** liefert den Inhalt */
-    public DMLValue getContent() throws java.rmi.RemoteException;
+    public DMLValue getContent() throws RemoteException;
 
     /** liefert den Constructor */
-    public Constructor getConstructor() throws java.rmi.RemoteException;
+    public Constructor getConstructor() throws RemoteException;
 
     /*
      * the get shortcuts
      */
-    public DMLValue get0() throws java.rmi.RemoteException;
-    public DMLValue get1() throws java.rmi.RemoteException;
-    public DMLValue get2() throws java.rmi.RemoteException;
-    public DMLValue get3() throws java.rmi.RemoteException;
-    public DMLValue get4() throws java.rmi.RemoteException;
+    public DMLValue get0() throws RemoteException;
+    public DMLValue get1() throws RemoteException;
+    public DMLValue get2() throws RemoteException;
+    public DMLValue get3() throws RemoteException;
 }

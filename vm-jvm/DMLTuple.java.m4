@@ -25,7 +25,6 @@ public interface DMLTuple extends DMLValue {
     public DMLValue get1();
     public DMLValue get2();
     public DMLValue get3();
-    public DMLValue get4();
 
     /** gibt den i-ten Eintrag des Tuples oder Records*/
     public DMLValue get(int i);

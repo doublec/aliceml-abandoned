@@ -12,6 +12,8 @@
  */
 package de.uni_sb.ps.dml.runtime;
 
+import java.rmi.RemoteException;
+
 /** This class represents the builtin type <code>vector</code>.
  *  @see Array
  */
@@ -36,7 +38,7 @@ final public class Vector implements DMLValue {
      *  @param n integer, to which <code>tabulate</code> is called
      */
     public Vector(DMLValue f, int n)
-	throws java.rmi.RemoteException {// das ist tabulate
+	throws RemoteException {// das ist tabulate
 	if (n<0 || maxLength<n) {
 	    _RAISENAME(General.Size);
 	} else {
@@ -77,7 +79,7 @@ final public class Vector implements DMLValue {
 	}
     }
 
-    protected Vector(DMLValue list)  throws java.rmi.RemoteException {
+    protected Vector(DMLValue list)  throws RemoteException {
 	DMLValue li = list;
 	if (list == List.nil)
 	    vec = new DMLValue[0];
@@ -116,7 +118,7 @@ final public class Vector implements DMLValue {
     }
 
     final public DMLValue app(DMLValue f)
-	throws java.rmi.RemoteException {
+	throws RemoteException {
 	int length = vec.length;
 	for(int i=0; i<length; i++)
 	    f.apply(vec[i]);
@@ -124,7 +126,7 @@ final public class Vector implements DMLValue {
     }
 
     final public DMLValue appi(int from, int to, DMLValue f)
-	throws java.rmi.RemoteException {
+	throws RemoteException {
 	if (to<0 || from<0 || vec.length<to || to<from) {
 	    _RAISENAME(General.Subscript);
 	} else {
@@ -136,7 +138,7 @@ final public class Vector implements DMLValue {
     }
 
     final public DMLValue foldl(DMLValue f, DMLValue init)
-	throws java.rmi.RemoteException {
+	throws RemoteException {
 	DMLValue[] args = new DMLValue[2];
 	int length=vec.length;
 	args[1]=init;
@@ -148,7 +150,7 @@ final public class Vector implements DMLValue {
     }
 
     final public DMLValue foldr(DMLValue f, DMLValue init)
-	throws java.rmi.RemoteException {
+	throws RemoteException {
 	DMLValue[] args = new DMLValue[2];
 	args[1]=init;
 	for(int i=vec.length-1; i>=0; i--) {
@@ -159,7 +161,7 @@ final public class Vector implements DMLValue {
     }
 
     final public DMLValue foldli(DMLValue f, DMLValue init, int from, int to)
-	throws java.rmi.RemoteException {
+	throws RemoteException {
 	int length = vec.length;
 	if (to<0 || from<0 || length<to || to<from) {
 	    _RAISENAME(General.Subscript);
@@ -176,7 +178,7 @@ final public class Vector implements DMLValue {
     }
 
     final public DMLValue foldri(DMLValue f, DMLValue init, int from, int to)
-	throws java.rmi.RemoteException {
+	throws RemoteException {
 	int length = vec.length;
 	if (to<0 || from<0 || length<to || to<from) {
 	    _RAISENAME(General.Subscript);
@@ -193,7 +195,7 @@ final public class Vector implements DMLValue {
     }
 
     final public DMLValue tabulate(int n, DMLValue f)
-	throws java.rmi.RemoteException {
+	throws RemoteException {
 	return new Vector(f,n);
     }
 
@@ -206,7 +208,7 @@ final public class Vector implements DMLValue {
     }
 
     final public DMLValue map(DMLValue f)
-	throws java.rmi.RemoteException {
+	throws RemoteException {
 	int size = vec.length;
 	Vector ret = new Vector(size);
 	DMLValue[] val = ret.vec;
@@ -217,7 +219,7 @@ final public class Vector implements DMLValue {
 
     /** @return Vector ein neuer Vektor */
     final public DMLValue mapi(DMLValue f, int from, int to)
-	throws java.rmi.RemoteException {
+	throws RemoteException {
 	int size = vec.length;
 	if (to<0 || from<0 || to<from || vec.length<to) {
 	    _RAISENAME(General.Subscript);
@@ -245,7 +247,7 @@ final public class Vector implements DMLValue {
     }
 
     final public static DMLValue concat(DMLValue list)
-	throws java.rmi.RemoteException {
+	throws RemoteException {
 	int total = 0;
 	if (list == List.nil)
 	    return new Vector(0);

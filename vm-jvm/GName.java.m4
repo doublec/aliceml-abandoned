@@ -12,14 +12,18 @@
  */
 package de.uni_sb.ps.dml.runtime;
 
-final public class GName implements java.io.Serializable {
+import java.io.Serializable;
+import java.rmi.dgc.VMID;
+import java.util.Hashtable;
 
-    final public static java.util.Hashtable gNames = new java.util.Hashtable();
+final public class GName implements Serializable {
 
-    final private java.rmi.dgc.VMID id;
+    final public static Hashtable gNames = new Hashtable();
+
+    final public VMID id;
 
     public GName() {
-	id = new java.rmi.dgc.VMID();
+	id = new VMID();
 //      System.out.println("created GName "+id);
     }
 

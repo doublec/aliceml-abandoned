@@ -396,13 +396,13 @@ final public class General {
 	    _NOAPPLY0;_NOAPPLY2;_NOAPPLY3;_NOAPPLY4;
 	    _APPLY(val) {
 		// _FROMSINGLE(val,"General.sel "+i);
+		_REQUEST(val,val);
 		if (val instanceof DMLTuple) {
 		    switch (i) {
 		    case 1: return ((DMLTuple) val).get0();
 		    case 2: return ((DMLTuple) val).get1();
 		    case 3: return ((DMLTuple) val).get2();
 		    case 4: return ((DMLTuple) val).get3();
-		    case 5: return ((DMLTuple) val).get4();
 		    default: return ((DMLTuple) val).get(i);
 		    }
 		} else {

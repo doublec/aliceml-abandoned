@@ -12,9 +12,11 @@
  */
 package de.uni_sb.ps.dml.runtime;
 
+import java.util.Hashtable;
+
 abstract public class Builtin implements DMLValue {
 
-    public static java.util.Hashtable builtins = new java.util.Hashtable();
+    public static Hashtable builtins = new Hashtable();
 
     public Builtin() {
 	super();

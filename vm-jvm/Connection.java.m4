@@ -12,21 +12,21 @@
  */
 package de.uni_sb.ps.dml.runtime;
 
-import java.rmi.Naming;
-import java.rmi.RemoteException;
-import java.rmi.RMISecurityManager;
+import java.net.*;
+import java.rmi.*;
 import java.rmi.server.*;
+import java.util.*;
 
 final public class Connection {
-    static java.util.Hashtable export = null;
+    static Hashtable export = null;
     static Exporter exp = null;
-    static java.util.Random rand = null;
+    static Random rand = null;
 
-    static java.net.InetAddress thisHost;
+    static InetAddress thisHost;
     static {
-	java.net.InetAddress i=null;
+	InetAddress i=null;
 	try {
-	    i = java.net.InetAddress.getLocalHost();
+	    i = InetAddress.getLocalHost();
 	} catch (java.net.UnknownHostException u) {
 	    System.err.println(u);
 	    u.printStackTrace();
@@ -38,8 +38,8 @@ final public class Connection {
 	}
     }
 
-    final private static void startServer() throws java.rmi.RemoteException {
-	java.util.Properties prop = System.getProperties();
+    final private static void startServer() throws RemoteException {
+	Properties prop = System.getProperties();
 	Object o = prop.get("java.security.policy");
 	if (o == null) {
 	    java.lang.String name = (java.lang.String) prop.get("user.name");
@@ -55,16 +55,16 @@ final public class Connection {
 		System.err.println("Policy-file used: "+prop.get("java.security.policy"));
 	    }
 	}
-	export = new java.util.Hashtable();
+	export = new Hashtable();
 	exp = new Exporter(export);
-	rand = new java.util.Random(42);
+	rand = new Random(42);
 
 	// System.out.println("starte registry");
 	java.rmi.registry.LocateRegistry.createRegistry(1099); // am Standardport
 	try {
 	    // System.out.println("binde exporter in registry");
 	    Naming.rebind("//localhost/exporter",exp);
-	} catch (java.net.MalformedURLException m) {
+	} catch (MalformedURLException m) {
 	    System.err.println(m);
 	    m.printStackTrace();
 	}
@@ -77,7 +77,7 @@ final public class Connection {
 	    if (export == null) {
 		try {
 		    startServer();
-		} catch (java.rmi.RemoteException n) {
+		} catch (RemoteException n) {
 		    System.err.println("Could not start server!");
 		    return new STRING ("invalid ticket");
 		}
@@ -96,7 +96,7 @@ final public class Connection {
 	    if (export == null) {
 		try {
 		    startServer();
-		} catch (java.rmi.RemoteException n) {
+		} catch (RemoteException n) {
 		    System.err.println("Could not start server!");
 		    return new STRING ("invalid ticket");
 		}
@@ -116,9 +116,9 @@ final public class Connection {
 	    try {
 		// System.out.println("looking for "+ticket+" on "+ip);
 		exp = (Export) Naming.lookup("//"+ip+"/exporter");
-	    } catch (java.rmi.NotBoundException n) {
+	    } catch (NotBoundException n) {
 		_error("ticket not bound",val);
-	    } catch (java.net.MalformedURLException m) {
+	    } catch (MalformedURLException m) {
 		System.err.println(m);
 		m.printStackTrace();
 		return null;

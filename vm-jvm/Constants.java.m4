@@ -12,6 +12,8 @@
  */
 package de.uni_sb.ps.dml.runtime;
 
+import java.rmi.RemoteException;
+
 final public class Constants {
 
     public static final Name dmlunit = new UniqueName("unit");
@@ -31,24 +33,24 @@ final public class Constants {
 	}
 
 	final public DMLValue apply(DMLValue val)
-	    throws java.rmi.RemoteException {
+	    throws RemoteException {
 	    return new Reference(val);
 	}
 
 	final public DMLValue apply0()
-	    throws java.rmi.RemoteException {
+	    throws RemoteException {
 	    _RAISENAME(General.Match);
 	}
 	final public DMLValue apply2(DMLValue v1, DMLValue v2)
-	    throws java.rmi.RemoteException {
+	    throws RemoteException {
 	    return new Reference(new Tuple2(v1,v2));
 	}
 	final public DMLValue apply3(DMLValue v1, DMLValue v2, DMLValue v3)
-	    throws java.rmi.RemoteException {
+	    throws RemoteException {
 	    return new Reference(new Tuple3(v1,v2,v3));
 	}
 	final public DMLValue apply4(DMLValue v1, DMLValue v2, DMLValue v3, DMLValue v4)
-	    throws java.rmi.RemoteException {
+	    throws RemoteException {
 	    return new Reference(new Tuple4(v1,v2,v3,v4));
 	}
     }

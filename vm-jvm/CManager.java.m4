@@ -12,8 +12,11 @@
  */
 package de.uni_sb.ps.dml.runtime;
 
-public interface CManager extends java.rmi.Remote {
+import java.rmi.Remote;
+import java.rmi.RemoteException;
 
-    public DMLValue release() throws java.rmi.RemoteException;
+public interface CManager extends Remote {
+
+    public DMLValue release() throws RemoteException;
 
 }

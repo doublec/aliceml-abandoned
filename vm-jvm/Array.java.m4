@@ -12,6 +12,8 @@
  */
 package de.uni_sb.ps.dml.runtime;
 
+import java.rmi.RemoteException;
+
 final public class Array implements DMLValue {
 
     private NoGood ng = null;
@@ -22,7 +24,7 @@ final public class Array implements DMLValue {
     protected DMLValue[] arr = null;
 
     /** diesen da für <code>fromList</code>*/
-    protected Array(DMLValue list) throws java.rmi.RemoteException {
+    protected Array(DMLValue list) throws RemoteException {
 	DMLValue li = list;
 	if (list==List.nil)
 	    arr = new DMLValue[0];
@@ -49,7 +51,7 @@ final public class Array implements DMLValue {
     }
 
     /** das ist tabulate */
-    public Array(DMLValue f, int n)  throws java.rmi.RemoteException {
+    public Array(DMLValue f, int n)  throws RemoteException {
 	if (n<0 || maxLength<n) {
 	    _RAISENAME(General.Size);
 	} else {
@@ -98,14 +100,14 @@ final public class Array implements DMLValue {
 	}
     }
 
-    final public DMLValue app(DMLValue f) throws java.rmi.RemoteException {
+    final public DMLValue app(DMLValue f) throws RemoteException {
 	int length = arr.length;
 	for(int i=0; i<length; i++)
 	    f.apply(arr[i]);
 	return Constants.dmlunit;
     }
 
-    final public DMLValue appi(int from, int to, DMLValue f)  throws java.rmi.RemoteException {
+    final public DMLValue appi(int from, int to, DMLValue f)  throws RemoteException {
 	if (to<0 || from<0 || arr.length<to || to<from) {
 	    _RAISENAME(General.Subscript);
 	} else {
@@ -116,7 +118,7 @@ final public class Array implements DMLValue {
 	}
     }
 
-    final public DMLValue foldl(DMLValue f, DMLValue init)  throws java.rmi.RemoteException {
+    final public DMLValue foldl(DMLValue f, DMLValue init)  throws RemoteException {
 	int length=arr.length;
 	DMLValue buff = init;
 	for(int i=0; i<length; i++) {
@@ -125,7 +127,7 @@ final public class Array implements DMLValue {
 	return buff;
     }
 
-    final public DMLValue foldr(DMLValue f, DMLValue init) throws java.rmi.RemoteException {
+    final public DMLValue foldr(DMLValue f, DMLValue init) throws RemoteException {
 	DMLValue buff = init;
 	for(int i=arr.length-1; i>=0; i--) {
 	    buff=f.apply2(arr[i],buff);
@@ -133,7 +135,7 @@ final public class Array implements DMLValue {
 	return buff;
     }
 
-    final public DMLValue foldli(DMLValue f, DMLValue init, int from, int to) throws java.rmi.RemoteException {
+    final public DMLValue foldli(DMLValue f, DMLValue init, int from, int to) throws RemoteException {
 	int length = arr.length;
 	if (to<0 || from<0 || length<to || to<from) {
 	    _RAISENAME(General.Subscript);
@@ -146,7 +148,7 @@ final public class Array implements DMLValue {
 	}
     }
 
-    final public DMLValue foldri(DMLValue f, DMLValue init, int from, int to) throws java.rmi.RemoteException {
+    final public DMLValue foldri(DMLValue f, DMLValue init, int from, int to) throws RemoteException {
 	int length = arr.length;
 	if (to<0 || from<0 || length<to || to<from) {
 	    _RAISENAME(General.Subscript);
@@ -159,14 +161,14 @@ final public class Array implements DMLValue {
 	}
     }
 
-    final public DMLValue modify(DMLValue f) throws java.rmi.RemoteException {
+    final public DMLValue modify(DMLValue f) throws RemoteException {
 	int length=arr.length;
 	for(int i=0; i<length; i++)
 	    arr[i]=f.apply(arr[i]);
 	return Constants.dmlunit;
     }
 
-    final public DMLValue modifyi(DMLValue f, int from, int to) throws java.rmi.RemoteException {
+    final public DMLValue modifyi(DMLValue f, int from, int to) throws RemoteException {
 	int length = arr.length;
 	if (to<0 || from<0 || length<to || to<from) {
 	    _RAISENAME(General.Subscript);
@@ -195,7 +197,7 @@ final public class Array implements DMLValue {
 	}
     }
 
-    final public DMLValue tabulate(int n, DMLValue f) throws java.rmi.RemoteException {
+    final public DMLValue tabulate(int n, DMLValue f) throws RemoteException {
 	return new Array(f,n);
     }
 

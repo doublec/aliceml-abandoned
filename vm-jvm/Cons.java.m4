@@ -26,7 +26,6 @@ final public class Cons implements DMLConVal {
     public DMLValue get1() { return cdr; }
     public DMLValue get2() { throw new ArrayIndexOutOfBoundsException(); }
     public DMLValue get3() { throw new ArrayIndexOutOfBoundsException(); }
-    public DMLValue get4() { throw new ArrayIndexOutOfBoundsException(); }
 
     final public DMLValue getContent() {
 	return new Tuple2(car,cdr);

@@ -12,8 +12,11 @@
  */
 package de.uni_sb.ps.dml.runtime;
 
+import java.rmi.Remote;
+import java.rmi.RemoteException;
+
 /** This is the remote interface for the server manager of a reference cell.
  */
-public interface SManager extends java.rmi.Remote {
-    public DMLValue request(CManager cm) throws java.rmi.RemoteException;
+public interface SManager extends Remote {
+    public DMLValue request(CManager cm) throws RemoteException;
 }

@@ -12,6 +12,8 @@
  */
 package de.uni_sb.ps.dml.runtime;
 
+import java.rmi.RemoteException;
+
 /** Tuple-Darstellung in DML.
  *  @see Record
  */
@@ -27,7 +29,6 @@ public class Tuple implements DMLTuple {
     final public DMLValue get1() { return vals[1]; }
     final public DMLValue get2() { return vals[2]; }
     final public DMLValue get3() { return vals[3]; }
-    final public DMLValue get4() { return vals[4]; }
 
     final public boolean equals(Object val) {
 	if (val instanceof DMLTuple) {
@@ -72,7 +73,7 @@ public class Tuple implements DMLTuple {
     final public DMLValue get(java.lang.String i) {
 	try {
 	    _RAISE(runtimeError,new STRING ("no such label in tuple: "+i));
-	} catch (java.rmi.RemoteException r) {
+	} catch (RemoteException r) {
 	    System.err.println(r);
 	    r.printStackTrace();
 	    return null;

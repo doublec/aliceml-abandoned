@@ -31,22 +31,6 @@ final public class Tuple2 implements DMLTuple {
     final public DMLValue get1() { return snd; }
     final public DMLValue get2() { throw new ArrayIndexOutOfBoundsException(); }
     final public DMLValue get3() { throw new ArrayIndexOutOfBoundsException(); }
-    final public DMLValue get4() { throw new ArrayIndexOutOfBoundsException(); }
-
-    final public void setContent(DMLValue eins,
-			DMLValue zwei) {
-	if (fst == null) {
-	    fst=eins;
-	    snd=zwei;
-	} else {
-	    try {
-		_RAISE(runtimeError, new STRING ("cannot set content twice"));
-	    } catch (java.rmi.RemoteException r) {
-		System.err.println(r);
-		r.printStackTrace();
-	    }
-	}
-    }
 
     /** Gleichheit der  und Inhalte */
     final public boolean equals(Object val) {

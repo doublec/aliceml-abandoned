@@ -12,6 +12,8 @@
  */
 package de.uni_sb.ps.dml.runtime;
 
+import java.rmi.RemoteException;
+
 /** Diese Klasse repräsentiert de.uni_sb.ps.dml.runtime.Threads.
  *  java.lang.Threads sind First-Class; indem das Interface <code>DMLValue</code>
  *  implementiert wird, können sie wie andere Werte in DML verwendet werden.
@@ -61,7 +63,7 @@ public class Thread extends java.lang.Thread implements DMLValue {
 		tail = null;
 		v = t.apply(v);
 	    }
-	} catch (java.rmi.RemoteException r) {
+	} catch (RemoteException r) {
 	    System.err.println(r);
 	    r.printStackTrace();
 	}

@@ -12,12 +12,14 @@
  */
 package de.uni_sb.ps.dml.runtime;
 
+import java.util.Hashtable;
+
 /** This class represents DML records. Records have an RecordArity and some
  *  associated values.
  */
 final public class Record implements DMLTuple {
 
-    static private java.util.Hashtable arityHash = new java.util.Hashtable();
+    static private Hashtable arityHash = new Hashtable();
 
     final public DMLValue vals[];
     final public RecordArity arity;
@@ -69,8 +71,6 @@ final public class Record implements DMLTuple {
     final public DMLValue get1() { return vals[1]; }
     final public DMLValue get2() { return vals[2]; }
     final public DMLValue get3() { return vals[3]; }
-    final public DMLValue get4() { return vals[4]; }
-
 
     final public DMLValue get(int i) {
 	int index = arity.getIndexOfLabel(java.lang.String.valueOf(i));
