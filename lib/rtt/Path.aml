@@ -22,7 +22,7 @@ import structure Label       from "Label"
 import signature PATH        from "PATH-sig"
 
 
-structure PathPrivate =
+structure Path :> PATH =
 struct
 
   (* Types *)
@@ -89,6 +89,3 @@ struct
     fun clone p = instance (fn _ => NONE) ((), p)
 
 end
-
-
-structure Path : PATH = PathPrivate

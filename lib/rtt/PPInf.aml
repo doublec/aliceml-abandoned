@@ -14,8 +14,7 @@ import structure Label       from "Label"
 import structure Path        from "Path"
 import structure Type        from "Type"
 import structure Fixity      from "Fixity"
-import structure Inf
-       structure InfPrivate  from "Inf"
+import structure Inf         from "Inf"
 
 import structure PrettyPrint from "../utility/PrettyPrint"
 import structure PPMisc      from "PPMisc"
@@ -29,7 +28,8 @@ struct
 
     (* Import *)
 
-    open InfPrivate
+    open Inf
+    open Fixity
     open PrettyPrint
     open PPMisc
 
@@ -38,15 +38,29 @@ struct
 
     (* Helpers *)
 
-    fun uncurry(ref(APPLY(j1,p,_))) = let val (j,ps) = uncurry j1
-				      in (j,ps@[p]) end
-      | uncurry j		    = (j,[])
+    fun uncurry j =
+	if isApply j then
+	    let
+		val (j1,p,j2) = asApply j
+		val (j',ps)   = uncurry j1
+	    in
+		(j,ps@[p])
+	    end
+	else
+	    (j,[])
 
 
     (* Simple objects *)
 
-    fun ppLab l		= text(Label.toString l)
-    fun ppCon (k,p)	= PPPath.ppPath p
+    fun ppLab l			= text(Label.toString l)
+    fun ppCon (k,p)		= PPPath.ppPath p
+
+    fun ppFix NONFIX		= text "nonfix"
+      | ppFix(PREFIX n)		= text "prefix" ^/^ text(Int.toString n)
+      | ppFix(POSTFIX n)	= text "postfix" ^/^ text(Int.toString n)
+      | ppFix(INFIX(n,LEFT))	= text "infix" ^/^ text(Int.toString n)
+      | ppFix(INFIX(n,RIGHT))	= text "infixr" ^/^ text(Int.toString n)
+      | ppFix(INFIX(n,NEITHER))	= text "infixn" ^/^ text(Int.toString n)
 
 
     (* Interfaces *)
@@ -56,46 +70,38 @@ struct
      *	1 : constructed type (inf(path))
      *)
 
-    fun ppInf(ref j') = fbox(below(ppInf' j'))
+    fun ppInf j = fbox(below(ppInf' j))
 
-    and ppInf'(TOP) =
+    and ppInf' j =
+	if isAbbrev j then
+	    ppInf'(#1(asAbbrev j))
+	else if isTop j then
 	    text "any"
-
-      | ppInf'(CON c) =
-	    ppCon c
-
-      | ppInf'(SIG s) =
-	    ppSig' s
-
-      | ppInf'(FUN(p,j1,j2)) =
-	let
-	    val doc = ppBinder("fct",p,j1,j2)
-	in
-	    fbox(below doc)
-	end
-
-      | ppInf'(LAMBDA(p,j1,j2)) =
-	let
-	    val doc = ppBinder("fn",p,j1,j2)
-	in
-	    fbox(below doc)
-	end
-
-      | ppInf'(j' as APPLY _) =
-	let
-	    val (j,ps) = uncurry(ref j')
-	in
-	    fbox(nest(List.foldl (fn(p,d) => d ^/^ paren(PPPath.ppPath p))
-				 (ppInf j) ps))
-	end
-
-      | ppInf'(ABBREV(j1,j2)) =
-	    ppInf j1
-
-      | ppInf'(LINK j) =
-(*DEBUG
-text "@" ^^*)
-	    ppInf j
+	else if isCon j then
+	    ppCon(asCon j)
+	else if isSig j then
+	    ppSig'(asSig j)
+	else if isArrow j then
+	    let
+		val (p,j1,j2) = asArrow j
+	    in
+		fbox(below(ppBinder("fct",p,j1,j2)))
+	    end
+	else if isLambda j then
+	    let
+		val (p,j1,j2) = asLambda j
+	    in
+		fbox(below(ppBinder("fn",p,j1,j2)))
+	    end
+	else if isApply j then
+	    let
+		val (j',ps) = uncurry j
+	    in
+		fbox(nest(List.foldl (fn(p,d) => d ^/^ paren(PPPath.ppPath p))
+				      (ppInf j') ps))
+	    end
+	else
+	    raise Assert.failure
 
     and ppBinder(s,p,j1,j2) =
 	    abox(
@@ -135,163 +141,157 @@ text "@" ^^*)
 	    ))
 	end
 
-    and ppSig(ref items, _) = vbox(List.foldl ppItem empty items)
+    and ppSig s = vbox(List.foldl ppItem empty (items s))
 
-    and ppItem(ref item', doc) = ppItem'(item', doc)
-
-    and ppItem'(VAL((p,l,0), t, d), doc) =
-	if String.sub(Label.toString l,0) = #"'" then
-	    doc
-	else
-	    abox(
+    and ppItem(item, doc) =
+	if isValItem item then
+	    let
+		val (l,t,d) = asValItem item
+	    in
+		if String.sub(Label.toString l,0) = #"'" then
+		    doc
+		else
+		    abox(
+			hbox(
+			    text "val" ^/^ ppLab l ^/^ text ":"
+			) ^^
+			nest(break ^^
+			    abox(PPType.ppTyp t)
+			) (* ^^
+			(case d of NONE => empty | SOME p =>
+			    if Path.equals(p,lookupValPath(s,l)) then
+				empty
+			    else
+				nest(break ^^
+				    abox(text "=" ^/^ PPPath.ppPath p)
+				)
+			) *)
+		    ) ^/^ doc
+	    end
+	else if isTypItem item then
+	    let
+		val (l,k,d) = asTypItem item
+	    in
+		if Option.isNone d then
+		    abox(
+			hbox(
+			    text "type" ^/^
+			    ppLab l ^/^
+			    text ":"
+			) ^^
+			nest(break ^^
+			    abox(PPType.ppKind k)
+			)
+		    ) ^/^ doc
+		else
+		    abox(
+			hbox(
+			    text "type" ^/^
+			    ppLab l ^/^
+			    text "="
+			) ^^
+			nest(break ^^
+			    abox(PPType.ppTyp(Option.valOf d))
+			)
+		    ) ^/^ doc
+	    end
+	else if isModItem item then
+	    let
+		val (l,j,d) = asModItem item
+	    in
+		abox(
+		    hbox(
+			text(if isArrow j then "functor"
+					  else "structure") ^/^
+			ppLab l ^/^
+			text ":"
+		    ) ^^
+		    nest(break ^^
+			abox(ppInf j) (* ^^
+			(case d of NONE => empty | SOME p =>
+			    if Path.equals(p,lookupModPath(s,l)) then
+				empty
+			    else
+				nest(break ^^
+				    hbox(text "=" ^/^ hbox(PPPath.ppPath p))
+				)
+			) *)
+		    )
+		) ^/^ doc
+	    end
+	else if isInfItem item then
+	    let
+		val (l,k,d) = asInfItem item
+	    in
+		if Option.isNone d then
+		    abox(
+			hbox(
+			    text "signature" ^/^
+			    ppLab l ^/^
+			    text ":"
+			) ^^
+			nest(break ^^
+			    abox(ppKind k)
+			)
+		    ) ^/^ doc
+		else
+		    abox(
+			hbox(
+			    text "signature" ^/^
+			    ppLab l ^/^
+			    text "="
+			) ^^
+			nest(break ^^
+			    abox(ppInf(Option.valOf d))
+			)
+		    ) ^/^ doc
+	    end
+	else if isFixItem item then
+	    let
+		val (l,f) = asFixItem item
+	    in
 		hbox(
-		    text "val" ^/^ ppLab l ^/^ text ":"
-(*DEBUG
-		    (if String.sub(Label.toString l,0) <> #"'" then
-			 text "val" ^/^ ppLab l
-		     else
-			 text "constructor" ^/^
-			 text(String.extract(Label.toString l, 1, NONE))
-		    ) ^/^
-(*DEBUG
-text "(" ^^ PPPath.ppPath p ^^ text ")" ^/^*)
-		    text ":"
-*)
-		) ^^
-		nest(break ^^
-		    abox(PPType.ppTyp t)
-		) ^^
-		(case d of NONE => empty | SOME p' =>
-		if Path.equals(p',p) then empty else
-		nest(break ^^
-		    abox(text "=" ^/^ PPPath.ppPath p')
-		))
-	    ) ^/^ doc
-
-      | ppItem'(TYP((p,l,0), k, d), doc) =
-	if Option.isNone d
-	orelse let val t = Option.valOf d
-	       in Type.isCon t andalso Path.equals(#3(Type.asCon t), p) end then
-	    abox(
-		hbox(
-		    text "type" ^/^
-		    ppLab l ^/^
-(*DEBUG
-text "(" ^^ PPPath.ppPath p ^^ text ")" ^/^*)
-		    text ":"
-		) ^^
-		nest(break ^^
-		    abox(PPType.ppKind k)
-		)
-	    ) ^/^ doc
-	else
-	    abox(
-		hbox(
-		    text "type" ^/^
-		    ppLab l ^/^
-		    text "="
-		) ^^
-		nest(break ^^
-		    abox(PPType.ppTyp(Option.valOf d))
-		)
-	    ) ^/^ doc
-
-      | ppItem'(MOD((p,l,0), j, d), doc) =
-	    abox(
-		hbox(
-		    text(if isArrow j then "functor" else "structure") ^/^
-		    ppLab l ^/^
-(*DEBUG
-text "(" ^^ PPPath.ppPath p ^^ text ")" ^/^*)
-		    text ":"
-		) ^^
-		nest(break ^^
-		    abox(ppInf j) ^^
-		    (case d of NONE => empty | SOME p' =>
-		     if Path.equals(p',p) then empty else
-		     nest(break ^^
-			 hbox(text "=" ^/^ hbox(PPPath.ppPath p'))
-		    ))
-		)
-	    ) ^/^ doc
-
-      | ppItem'(INF((p,l,0), k, d), doc) =
-	if Option.isNone d
-	orelse let val j = Option.valOf d
-	       in isCon j andalso Path.equals(#2(asCon j), p) end then          
-	    abox(
-		hbox(
-		    text "signature" ^/^
-		    ppLab l ^/^
-(*DEBUG
-text "(" ^^ PPPath.ppPath p ^^ text ")" ^/^*)
-		    text ":"
-		) ^^
-		nest(break ^^
-		    abox(ppKind k)
-		)
-	    ) ^/^ doc
-	else
-	    abox(
-		hbox(
-		    text "signature" ^/^
-		    ppLab l ^/^
-(*DEBUG
-text "(" ^^ PPPath.ppPath p ^^ text ")" ^/^*)
-		    text "="
-		) ^^
-		nest(break ^^
-		    abox(ppInf(Option.valOf d))
-		)
-	    ) ^/^ doc
-
-      | ppItem'(FIX((p,l,0), f), doc) =
-	    hbox(
-		let open Fixity in
-		    (case f
-		      of NONFIX    => text "nonfix"
-		       | PREFIX n  => text "prefix" ^/^ text(Int.toString n)
-		       | POSTFIX n => text "postfix" ^/^ text(Int.toString n)
-		       | INFIX(n,LEFT) => text "infix" ^/^ text(Int.toString n)
-		       | INFIX(n,RIGHT) =>
-				text "infixr" ^/^ text(Int.toString n)
-		       | INFIX(n,NEITHER) =>
-				text "infixn" ^/^ text(Int.toString n)
-		    ) ^/^
+		    ppFix f ^/^
 		    ppLab l
-		end
-	    ) ^/^ doc
-
-      | ppItem'(_, doc) = doc		(* hidden item *)
+		) ^/^ doc
+	    end
+	else
+	    raise Assert.failure
 
 
     (* Kinds *)
 
-    and ppKind(ref k') = fbox(below(ppKind' k'))
+    and ppKind k = fbox(below(ppKind' k))
 
-    and ppKind'(GROUND) =
+    and ppKind' k =
+	if isGround k then
 	    text "*"
-
-      | ppKind'(DEP(p,j,k)) =
-	    fbox(below(
-		abox(
-		    fbox(
-			text "PI" ^/^
-			text "(" ^^
-			below(break ^^
-			    PPPath.ppPath p ^/^
-			    text ":" ^^
-			    nest(break ^^
-				ppInf j
-			    )
-			) ^/^
-			text ")" ^/^
-			text "."
-		    ) ^^
-		    nest(break ^^
-			ppKind k
+	else if isDependent k then
+	    let
+		val (p,j,k') = asDependent k
+	    in
+		fbox(below(
+		    abox(
+			fbox(
+			    text "PI" ^/^
+			    text "(" ^^
+			    below(break ^^
+				PPPath.ppPath p ^/^
+				text ":" ^^
+				nest(break ^^
+				    ppInf j
+				)
+			    ) ^/^
+			    text ")" ^/^
+			    text "."
+			) ^^
+			nest(break ^^
+			    ppKind k
+			)
 		    )
-		)
-	    ))
+		))
+	    end
+	else
+	    raise Assert.failure
 
 end

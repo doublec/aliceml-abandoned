@@ -24,8 +24,8 @@ import signature INF          from "INF-sig"
 (* Interfaces contain state. This means that they must be instantiated
    at each occurance. *)
 
-structure InfPrivate =
-  struct
+structure Inf :> INF =
+struct
 
   (* Types *)
 
@@ -1351,7 +1351,4 @@ structure InfPrivate =
       | intersectInfDef(l, SOME j1, SOME j2)	=
 	    ( equalise(j1,j2) ; SOME j1 ) handle Mismatch mismatch =>
 		raise Mismatch(ManifestInf(l, SOME mismatch))
-  end
-
-
-structure Inf : INF = InfPrivate
+end
