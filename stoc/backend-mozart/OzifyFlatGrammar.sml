@@ -78,7 +78,7 @@ structure OzifyImperativeGrammar :> OZIFY_IMPERATIVE_GRAMMAR =
 	  | outputLit (q, IntLit n) =
 	    (f (q, "intLit"); outputLargeInt (q, n); r q)
 	  | outputLit (q, CharLit c) =
-	    (f (q, "charLit"); outputString (q, String.str c); r q)
+	    (f (q, "charLit"); output (q, Int.toString (Char.ord c)); r q)
 	  | outputLit (q, StringLit s) =
 	    (f (q, "stringLit"); outputString (q, s); r q)
 	  | outputLit (q, RealLit x) =
