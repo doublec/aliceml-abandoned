@@ -10,7 +10,7 @@
 
 \vspace*{\fill}
 \begin{center}
-\LARGE{\bf{Ein Browser f\"{u}r Alice}}
+\Huge{\bf{Ein Browser f\"{u}r Alice}}
 \end{center}
 
 \vspace{1cm}
@@ -18,12 +18,12 @@
 \begin{center}
   \begin{minipage}[center]{10cm}
     \begin{tabbing} 
-      Bernadette Blum \hspace{1cm}\= Marvin Schiller\\
-      \small{blum@ps.uni-sb.de} \> \small{schiller@ps.uni-sb.de} \\[1cm]
+      \large{Bernadette Blum} \hspace{1cm}\= \large{Marvin Schiller}\\
+      blum@ps.uni-sb.de \> schiller@ps.uni-sb.de\\[1cm]
 
       Betreuer: \\[2mm]
-      Thorsten Brunklaus \> Andreas Rossberg \\
-      \small{brunklaus@ps.uni-sb.de} \> \small{rossberg@ps.uni-sb.de}
+      \large{Thorsten Brunklaus} \> \large{Andreas Rossberg}\\
+      brunklaus@ps.uni-sb.de \> rossberg@ps.uni-sb.de
 
     \end{tabbing}
   \end{minipage}
@@ -34,36 +34,32 @@
 \Large{6. Mai 2003}
 \end{center}
 
-\vspace{8mm}
+\vspace{1cm}
 
 \begin{center}
-  \begin{minipage}[center]{15cm}
-    \begin{tabbing}
-     Leitung: \\
-     Prof. Dr. Gert Smolka \hspace{1cm}\= \small Fachbereich Informatik \\ 
-    \small{smolka@ps.uni-sb.de} \> \small Universit\"{a}t des Saarlandes\\ 
-    \> \small Im Stadtwald \\
-    \> \small  66123 Saarbr\"{u}cken \\[5mm]
-    \end{tabbing}
+  \begin{minipage}[center]{5cm}
+    Leitung:\\
+    \large{Prof. Dr. Gert Smolka}\\
+    smolka@ps.uni-sb.de
   \end{minipage}
 \end{center}
 
-\vspace{4mm}
+\vspace{5mm}
 
-%%%
-%%% \begin{center}
-%%%  \begin{minipage}[center]{5cm}
-%%%     \small
-%%%     Fachbereich Informatik\\
-%%%     Universit\"{a}t des Saarlandes\\
-%%%     Im Stadtwald \\
-%%%     66123 Saarbr\"{u}cken \\[5mm]
-%%%  \end{minipage}
-%%% \end{center}
+\begin{center}
+  \begin{minipage}[center]{5cm}
+    Fachbereich Informatik\\
+    Universit\"{a}t des Saarlandes\\
+    Im Stadtwald \\
+    66123 Saarbr\"{u}cken
+  \end{minipage}
+\end{center}
 
+\vspace*{\fill}
+
+\end{titlepage}
 
 \begin{abstract}
-\normalsize
 Dieser Bericht zeigt Design und Implementierung eines 
 interaktven Browser-Tools f\"{u}r die funktionale Programmiersprache 
 Alice. Da Alice-Werte nicht selbstbeschreibend sind, 
@@ -78,9 +74,6 @@ Unser Design kn\"{u}pft weitgehend an Thorsten Brunklaus' ''Oz Inspektor''
 \cite{br:oz} an.
 \end{abstract}
 
-\vspace*{\fill}
-
-\end{titlepage}
 
 %%% EINFUEHRUNG ==========================================================
 
@@ -133,10 +126,22 @@ darstellen zu k\"{o}nnen.
 Der Browser soll in der Lage sein, Alice-Werte 
 \"ubersichtlich auf einem graphischen Interface darzustellen. 
 Dies wird erreicht, indem die Werte in eine interne Beschreibung 
-transformiert werden, aus der die graphische Repr\"sentation 
-erzeugt werden kann. Die Transformation in 
+transformiert werden, aus der die graphische Repr\"asentation 
+erzeugt werden kann. 
+Dies wird in Abbildung 2.1 verdeutlicht. 
+Die Transformation in 
 die interne Beschreibung wird durch die 
 Typinformation der inspizierten Werte gesteuert. 
+
+%%% Bild: Wert, interne Darstellung, graphische Darstellung
+
+\begin{center}
+\epsfig{file = 3stepsgui.ps}
+\newline
+\nopagebreak
+Abbildung 2.1: Zusammenhang zwischen Wert- und Typinformation, interner 
+Wertbeschreibung und Darstellung auf der GUI
+\end{center}
 
 \subsection{Typregistrierung}
 
@@ -200,7 +205,9 @@ an einer Regel, wie sie u.a. Kennedy \cite{ke:dr} f\"ur
 das Baumzeichnen aufstellt: Gleiche Teilb\"aume werden 
 gleich dargestellt. 
 
-%%% Bild: Wert, interne Darstellung, graphische Darstellung
+
+
+
 
 %%% ENTWURF ============================================================
 
@@ -209,71 +216,10 @@ gleich dargestellt.
 %%% Bild: create -> layout -> draw
 
 \subsection{Interne Darstellung}
-F\"ur die interne Darstellung von Werten als B\"aume ben\"otigen wir einen 
-Typen. Diesen kann man sich abstrakt als \\[2mm]
-\begin{math}
-doc :=  simple \\  
-\hspace*{8mm} | \quad  doc_{1} \quad \hat{} \quad ... \quad \hat{} 
-                \quad doc_{n} \\         
-\hspace*{8mm} | \quad  
-\# \lbrack doc_{1}, ... , doc_{n}\rbrack 
-\\[2mm]
-\end{math}
-vorstellen. 
-
-\paragraph{}
-
-Dabei repr\"asentieren ``simples'' nur atomare Werte, die als Strings 
-dargestellt werden k\"onnen. Folglich muss es sich in der Baumdarstellung 
-bei ``simples'' stets um Bl\"atter eiens Baumes handeln.
-
-\paragraph{}
-
-Zusammengesetzte Werte bestehen im Gegensatz zu atomaren Werten aus einer
-Ineinanderschachtelung von Teilwerten. Zur Darstellung solcher nicht atomaren
-Werte stehen die Konkatenation \^\quad und die Akkumulation 
-\# \lbrack \, \rbrack \quad zur Verf\"ugung.
-W\"ahrend die Konkatenation stets horizontal anordnet (vergleichbar mit der 
-sogenannten ``hbox'' bei manchen Pretty Printern), 
-erfolgt bei der Akkumulation in der Aufbauphase 
-noch keine Entscheidung, ob die Kindknoten eines Knotens horizontal oder 
-vertikal dargestellt werden. Diese Entscheidung wird erst beim Layoutvorgang
-getroffen (n\"ahere Erl\"auterung dazu siehe 4.4).
-
-\paragraph{}
-
-Der Wert \large{(1, 2)} \normalsize wird in die folgende interne 
-baumartige Darstellung transformiert: \\
-
-
-\begin{center}
-\epsfig{file = ex_tree_bw.ps, width = 13cm}
-\linebreak Abbildung 4.1: Beispiel f\"ur interne Darstellung
-\end{center}
 
 \subsection{Typregistrierung}
 
 \subsection{Transientenverwaltung}
-
-\paragraph{}
-
-Transienten, die in Alice als Byneeds (bei der sogenannten ``Laziness''), 
-Promises oder Futures auftreten k\"onnen, werden in der Browserdarstellung
-als solche gekennzeichnet. Sobald sie zu einem Wert auswerten, muss
-die Darstellung des Browsers aktualisiert werden. Deshalb wird
-f\"ur jeden Transienten ein W\"achter ben\"otigt, der diesen \"uberwacht.
-Nimmt ein Transient, der in mehreren bereits dargestellten 
-Datenstrukturen bzw. mehrmals in der gleichen Datenstruktur auftritt, 
-einen konkreten Wert an, so l\"ost sein W\"achter einen Updatemechanismus 
-aus, der alle seine Auftreten durch diesen Wert ersetzt.
-Folglich muss jeder W\"achter den Transienten kennen, den er \"uberwacht, 
-und zus\"atzlich alle Knoten, die diesen Transienten repr\"asentieren. 
-
-\begin{center}
-\epsfig{file = transient1_bw.ps, width = 12cm}
-\linebreak 
-Abbildung 3.1: Transient mit W\"{a}chter
-\end{center}
 
 \subsection{Graphmodus}
 
@@ -294,7 +240,6 @@ Abbildung 3.1: Transient mit W\"{a}chter
 
 \subsection{Inkrementalit\"at} 
 
-
 \subsection{Transientenverwaltung}
 
 \subsection{Module}
@@ -304,32 +249,30 @@ Abbildung 3.1: Transient mit W\"{a}chter
 \linebreak Abbildung 4.6: Module des Browsers
 \end{center}
 
-Abbildung 4.6 zeigt die Module des Browsers. 
-Diese lassen sich nach ihrer Funktionalit\"at gruppieren.
-\newline
-Die Basismodule Doc und Node enthalten die Datentypen
-der internen Beschreibung - doc und node - und die
-entsprechenden Accessoren. Da diese w\"{a}hrend der 
-Erzeugnung, der Anordnungsberechnung, des Zeichnens 
-und der Darstellungsaktualisierung verwendet werden, 
-werden sie von vielen anderen Modulen benutzt. Zur Gruppe 
-der Basismodule z\"ahlt auch das Modul GtkSupport, das die
-Gtk-Funktionalit\"at gegen\"uber allen anderen Modulen des 
-Browsers abkapselt. Als einziges Modul hat es direkten Zugriff 
-auf die Gtk-Prozeduren, alle anderen Module greifen auf 
-GtkSupport zur\"uck. \newline \hspace*{5mm}
-Zur zweiten Gruppe geh\"oren die Module CreateTree, Layout, Draw 
-und Update. CreateTree, Layout, und Draw repr\"{a}sentieren 
-die drei Phasen des Inspektionsvorgangs, w\"ahrend  Update die 
-notwendigen Mechanismen zur Aktualisierung der Darstellung
-enth\"alt. \newline \hspace*{5mm}
-Mithilfe der Module Widget und UnsafeInspector wird die 
-Benutzerschnittstelle erzeugt. Widget verf\"ugt \"uber die 
-graphische Benutzeroberfl\"ache und steuert die 
-Darstellungserzeugung bzw. -ver\"anderung. UnsafeInspector macht 
-die f\"ur den Benutzer relevanten Prozeduren und Datentypen nach 
-au\ss en sichtbar. \newline \hspace*{5mm}
-Alle Aktionen des Browsers \"uber den Server synchronisiert.
+Abbildung 4.6 zeigt die Module des Browsers.
+Dieser verf\"{u}gt \"{u}ber zwei Module, die 
+die Datentypen der internen Beschreibung  - doc und node - enthalten. 
+Neben den Datentypen beinhalten die Module \"{u}ber 
+entsprechende Accessoren.
+Da diese w\"{a}hrend der 
+Erzeugnung, der Anordnungsberechnung, dem Zeichnen 
+und der Darstellungsab\"{a}nderung verwendet werden, 
+werden diese Module in vielen anderen Modulen benutzt.\\
+Das Modul GtkSupport kapselt die Gtk-Funktionalit\"{a}t 
+gegen\"{u}ber allen anderen Modulen des Browsers ab. 
+Als einziges Modul hat es direkten Zugriff auf die 
+Gtk-Prozeduren. Die anderen Module des Browsers 
+greifen dabei auf GtkSupport zur\"{u}ck.
+Die Module CreateTree, Layout, und Draw repr\"{a}sentieren 
+die drei Phasen des Inspektionsvorgangs, w\"ahrend das Modul 
+Update die notwendigen Mechanismen repr\"asentiert, 
+um die Darstellung an Ver\"{a}nderungen anzupassen. 
+Das Modul Widget verf\"{u}gt \"{u}ber die 
+graphische Benutzeroberfl\"{a}che und steuert 
+die Darstellungserzeugung bzw. Ver\"{a}nderung. 
+Letztendlich macht das Modul UnsafeInspector die f\"{u}r den 
+Benutzer relevanten Prozeduren und Datentypen nach au\ss en sichtbar.
+
 
 
 %%% AUSBLICK ===========================================================
