@@ -14,7 +14,6 @@
 
 #include <cstring>
 #include "emulator/Authoring.hh"
-#include "emulator/BootLinker.hh"
 
 DEFINE2(String_opconcat) {
   DECLARE_STRING(string1, x0);
