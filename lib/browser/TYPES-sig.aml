@@ -139,6 +139,8 @@ sig
 
      | EMBEDDED of Reflect.value * Type.t
 
+     | EMBEDDED_INF of Reflect.value * Inf.t
+
    (* zur Behandlung von Listen *)
    datatype 'a list_desc = Det of 'a list * bool (* ohne Future *)
                          | Indet of 'a list * 'a list (* mit Future *)

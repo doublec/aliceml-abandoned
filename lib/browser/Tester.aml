@@ -3,9 +3,7 @@ import structure Layout from "Layout";
 import structure UnsafeInspector from "UnsafeInspector";
 import structure Reflect from "x-alice:/lib/system/Reflect";
 
-import structure Dictionaries from "Dictionaries";
-
-UnsafeInspector.init();
+(* ganz einfache Werte *)
 
 structure IntList = Reflect.ReflectType(type t = int vector list * int vector);
 UnsafeInspector.inspect(([#[4,5]],#[4,5]),IntList.x);
@@ -80,7 +78,7 @@ UnsafeInspector.inspect (l,int_list); *)
 
 
 (* Futures *)
-structure Fut = Reflect.ReflectType (type t = int vector Promise.promise list);
+structure Fut = Reflect.ReflectType (type t = int vector list);
 val fut = Fut.x;
 val prom1 = Promise.promise();
 val prom2 = Promise.promise();

@@ -1,0 +1,87 @@
+(*
+ * Authors:
+ *   Bernadette Blum <blum@ps.uni-sb.de>
+ *   Marvin Schiller <schiller@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Bernadette Blum, 2002
+ *   Marvin Schiller, 2002
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
+import structure Inf from "x-alice:/lib/rtt/Inf"
+import structure Type from "x-alice:/lib/rtt/Type"
+import structure PervasiveType from "x-alice:/lib/rtt/PervasiveType"
+import structure Label from "x-alice:/lib/rtt/Label"
+import structure Component from "x-alice:/lib/system/Component"
+(*
+import structure ComponentManager from "x-alice:/lib/system/ComponentManager"
+*)
+import structure Url from "x-alice:/lib/utility/Url" 
+import structure Types from "Types"
+import structure CreateDoc from "CreateDoc"
+import structure MkColorTable from "MkColorTable"
+import signature INIT from "INIT-sig"
+
+local 
+    open Types CreateDoc MkColorTable
+in
+   
+structure Init :> INIT = 
+struct
+
+(*
+    val sign = Inf.asSig(Option.valOf
+		(Component.inf(ComponentManager.link
+		  (Url.fromString "x-alice:/lib/fundamental/Fundamental"))))
+    
+    fun lookupPath(modLab,typLab) =
+	let
+	    val sign' = Inf.asSig(Inf.lookupMod(sign, Label.fromString modLab))
+	    val typ = Inf.lookupTyp'(sign', Label.fromString typLab)
+	    val typ' = if Type.isApply typ 
+			   then #1(Type.asApply typ) 
+		       else typ
+	in
+	    Type.asCon typ'
+	end
+    
+    val path_promise = lookupPath("Promise","promise")
+
+    val path_package = lookupPath("Package","package")
+*)
+ 
+    (* init *)
+    fun init () = ( registerType(PervasiveType.path_int, createInt)
+		   ; registerType(PervasiveType.path_string, createString)
+		   ; registerType(PervasiveType.path_char, createChar)
+		   ; registerType(PervasiveType.path_word, createWord)
+		   ; registerType(PervasiveType.path_real, createReal)
+		   ; registerType(PervasiveType.path_exn, createExn)
+		   ; registerType(PervasiveType.path_ref, createRef)
+		   ; registerType(PervasiveType.path_vec, createVector)
+		   ; registerType(PervasiveType.path_array, createArray)
+               (*  ; registerType(path_promise, createPromise)
+                   ; registerType(path_package, createPackage)  *) 
+		   ; registerColor(INT_COLOR,  allocColor(0,45000,0))
+		   ; registerColor(REAL_COLOR, allocColor(0,45000,0))
+		   ; registerColor(CHAR_COLOR, allocColor(45000,0,50000))     
+		   ; registerColor(STR_COLOR, allocColor(45000,0,50000)) 
+		   ; registerColor(WORD_COLOR, allocColor(0,43000,0))
+		   ; registerColor(EXN_COLOR,  allocColor (60000,40000,0))
+		   ; registerColor(REF_COLOR, allocColor(0,0,0))
+		   ; registerColor(LABEL_COLOR, allocColor (0,10000,65535))
+		   ; registerColor(SEP_COLOR, allocColor(0,0,0))
+	           ; registerColor(EQU_COLOR, allocColor(0,0,0))
+	           ; registerColor(LIMIT_COLOR, allocColor (65535,10000,0))
+	           ; registerColor(BRACK_COLOR, allocColor (0,5000,47000))
+	           ; registerColor(REL_COLOR, allocColor (60000,20000,0))
+	           ; registerColor(DEFAULT, allocColor(0,0,0)) )
+
+end
+
+end

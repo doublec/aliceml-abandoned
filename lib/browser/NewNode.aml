@@ -150,43 +150,45 @@ struct
 	    
     (* createUsualGraph *)
     and createUsualGraph (va,t,p,i,d) = 
-	(case Type.inspect t of
-	   Type.Con path 
-	   => newPath (va,t,p,i,d,path)
-         | Type.Arrow _ 
-	   => if d > !max_depth
-		  then createLimit (createValue(va,t,NO_ACTIONS),DEPTH_LIMIT,
-				    p,i,d,setGroup)
-	      else createSimple (createValue(va,t,NO_ACTIONS),p,i,d,"fn",
-				 DEFAULT,setGroup)
-	 | Type.All(var,typ) 
-	   => createGraph (va,typ,p,i,d)
-	 | Type.Exist(var,typ) 
-	   => createGraph (va,typ,p,i,d)
-         | Type.Lambda(var,typ) 
-	   => raise  createGraph_unknownNode 
-         | Type.Apply(t1,t2)
-           => (case unApply (Type.inspect(t)) of 
-               (Type.Con path, ts) 
-		=> if Path.isName path  
-		   andalso String.equal("promise", 
-					(Name.toString(Path.asName(path))) ) 
-		       then createTransient(va,t,p,i,d,t2)
-		   else newPath (va,t,p,i,d,path)
-             | _ => let val typ = #1(Type.asApply(t)) 
-		    in if Type.equal(typ,compList) (* Liste *)
-			   then let val vv = castList va
-				    val listdesc = inspectList(!max_width,vv)
-				in queryDepthL (va,t,p,i,d,listdesc,
-						listdescToNode)
-				end
-		       else raise createGraph_unknownNode
-		    end)  
-         | Type.Prod(row) => queryDepth(va,t,p,i,d,row,treatProd)
-	 | Type.Mu(sum) => createGraph (va,sum,p,i,d)
-         | Type.Sum(row) => queryDepth(va,t,p,i,d,row,treatSum) 
-         | _ => raise  createGraph_unknownNode )
-
+	let val fut = UnsafeValue.cast va
+	in if not(Future.isDetermined(fut))
+	       then createFutureNode (va,t,p,i,d)
+	   else
+	   (case Type.inspect t of
+	    Type.Con path 
+	    => newPath (va,t,p,i,d,path)
+	   | Type.Arrow _ 
+	     => if d > !max_depth
+		    then createLimit (createValue(va,t,NO_ACTIONS),DEPTH_LIMIT,
+				      p,i,d,setGroup)
+		else createSimple (createValue(va,t,NO_ACTIONS),p,i,d,"fn",
+				   DEFAULT,setGroup)
+	   | Type.All(var,typ) 
+	     => createGraph (va,typ,p,i,d)
+	   | Type.Exist(var,typ) 
+	     => createGraph (va,typ,p,i,d)
+	   | Type.Lambda(var,typ) 
+	     => raise  createGraph_unknownNode 
+           | Type.Apply(t1,t2)
+             => (case unApply (Type.inspect(t)) of 
+                 (Type.Con path, ts) 
+		  => newPath (va,t,p,i,d,path)
+		| _ => let val typ = #1(Type.asApply(t)) 
+		       in if Type.equal(typ,compList) (* Liste *)
+			      then let val vv = castList va
+				       val listdesc = inspectList(!max_width,
+								  vv)
+				   in queryDepthL (va,t,p,i,d,listdesc,
+						   listdescToNode)
+				   end
+			  else raise createGraph_unknownNode
+		       end)  
+	   | Type.Prod(row) => queryDepth(va,t,p,i,d,row,treatProd)
+	   | Type.Mu(sum) => createGraph (va,sum,p,i,d)
+	   | Type.Sum(row) => queryDepth(va,t,p,i,d,row,treatSum) 
+	   | _ => raise  createGraph_unknownNode )
+	end
+		
 (* spezielle Behandlung von Listen *)
 
    (* listdescToNode *)
@@ -524,11 +526,33 @@ struct
          | LIMIT(r) => createLimit(#desc(r),#sort(r),p,i,d,setGroup) 
          | EMBEDDED(v,t) => (createGraph(v,t,p,i,d)) )
 
-(* spezielle Behandlung von Promises und Futures *)
+(* spezielle Behandlung von Futures *)
    
-    (* createTransient *) 
+    (* createFutureNode *)
+    and createFutureNode (va,t,p,i,d) = 
+	let val desc = createValue(va,t,NO_ACTIONS)
+            val fut = UnsafeValue.cast va
+	    val simple =  createSimple (desc,p,i,d,"Future",DEFAULT,setGroup)
+	in ( case TransientDictionary.iterLookup  
+	                   (transdict, 
+			    fn (vv,li) 
+			    => List.exists(fn n  
+					   => UnsafeValue.same  
+					   (getValue(getDesc(n)),va))  
+			    li 
+			    handle General.Match => false) of 
+	      SOME ((vv,li),i)   
+	      => TransientDictionary.update(transdict,  
+					    (i,(vv,List.append(li,[simple])))) 
+            | NONE  
+	      => (TransientDictionary.insertI(transdict,(va,[simple]))
+		  ; Update.watcher(fut,va,createGraph,createGraphInf) ; ())
+          ; simple )
+	end 	
+(*
     and createTransient (va,t,p,i,d,tt) = 
-	let val future = UnsafeValue.cast va
+	let val prom = castPromise va
+	    val future = Promise.future prom
 	    val desc = createValue(va,t,NO_ACTIONS) 
             val indesc = createValue(va,tt,NO_ACTIONS) 
 	    val concat = createConcat(desc,p,i,d,Array.array(3,Empty),setGroup)
@@ -566,6 +590,7 @@ struct
 		 ; Update.watcher(future,va,createGraph,createGraphInf) ; () )
 	   ; concat)    
 	end  
+*)
   
 (* entsprechende Funktionen zur internen Darstellung von Strukturen und
    Funktoren - analog zu newNode, createGraph und createUsualGraph (s.o.) *)

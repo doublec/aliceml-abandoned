@@ -13,21 +13,15 @@
  *
  *)
 
-import structure PervasiveType from "x-alice:/lib/rtt/PervasiveType"
 import structure Types from "Types"
-import structure MkColorTable from "MkColorTable"
-import structure CreateDoc from "CreateDoc"
 import structure NewNode from "NewNode"
 import structure Layout from "Layout"
 import structure WindowManager from "WindowManager"
 import structure DrawNodes from "DrawNodes"
 import structure Settings from "Settings"
 import structure WindowHelper from "WindowHelper"
+import structure Init from "Init"
 import signature UNSAFE_INSPECTOR from "UNSAFE_INSPECTOR-sig"
-
-import structure Update from "Update"
-
-open Types MkColorTable CreateDoc
 
 structure UnsafeInspector :> UNSAFE_INSPECTOR = 
 struct
@@ -69,30 +63,6 @@ struct
 
     and set_tokenmode b = Settings.tokenmode := b
 
-    and  init () = ( registerType(PervasiveType.path_int, createInt)
-		  ; registerType(PervasiveType.path_string, createString)
-		  ; registerType(PervasiveType.path_char, createChar)
-		  ; registerType(PervasiveType.path_word, createWord)
-	          ; registerType(PervasiveType.path_real, createReal)
-	          ; registerType(PervasiveType.path_exn, createExn)
-	          ; registerType(PervasiveType.path_ref, createRef)
-	          ; registerType(PervasiveType.path_vec, createVector)
-	          ; registerType(PervasiveType.path_array, createArray) 
-		  ; registerColor(INT_COLOR,  allocColor(0,45000,0))
-                  ; registerColor(REAL_COLOR, allocColor(0,45000,0))
-                  ; registerColor(CHAR_COLOR, allocColor(45000,0,50000))     
-                  ; registerColor(STR_COLOR, allocColor(45000,0,50000)) 
-                  ; registerColor(WORD_COLOR, allocColor(0,43000,0))
-                  ; registerColor(EXN_COLOR,  allocColor (60000,40000,0))
-                  ; registerColor(REF_COLOR, allocColor(0,0,0))
-                  ; registerColor(LABEL_COLOR, allocColor (0,10000,65535))
-                  ; registerColor(SEP_COLOR, allocColor(0,0,0))
-                  ; registerColor(EQU_COLOR, allocColor(0,0,0))
-                  ; registerColor(LIMIT_COLOR, allocColor (65535,10000,0))
-                  ; registerColor(BRACK_COLOR, allocColor (0,5000,47000))
-	          ; registerColor(REL_COLOR, allocColor (60000,20000,0))
-                  ; registerColor(DEFAULT, allocColor(0,0,0)) )
-	
-    val _  = init ()
+    val _  = Init.init ()
 
 end

@@ -132,8 +132,6 @@ struct
 			  end 
 		 else ()
                ; DrawNodes.draw(node,0,y_pos,DrawNodes.move') 
-	  (*     ; TextIO.print ("UPDATE: drawing with y = "
-			       ^Int.toString(y_pos)^"\n")    *)
 	       ; let val dy =  Layout.get_ydim(node) - old_ydim
 		 in ( WindowManager.incr_act_line dy
 		     ; iterMove (Dictionaries.dict,dy,getIndex(anc) + 1,
@@ -182,24 +180,24 @@ struct
 	end   
 
        (* watcher *)
-	and watcher (future,va,f,g) = 
-	    Thread.thread 
-	    (fn () 
-	     => ( case TransientDictionary.iterLookup 
-		                (Dictionaries.transdict, 
-				 fn (_,l) =>
-				 List.exists 
-				 (fn n
-				  => UnsafeValue.same(getValue(getDesc(n)),
-						      va)) l) of 
-		  NONE => () 
-		| SOME((vv,ll),i)  
-		  => ( Future.await(future)
-		     ; let val new_l = #2(valOf(TransientDictionary.lookup
-						(Dictionaries.transdict,i)))
-		       in Server.serve(fn () => tell(va,new_l,f,g))
-		       end ) ))
-
+    and watcher (future,va,f,g) = 
+	Thread.thread 
+	(fn () 
+	 => ( case TransientDictionary.iterLookup 
+	               (Dictionaries.transdict, 
+			fn (_,l) =>
+			List.exists 
+			(fn n
+			 => UnsafeValue.same(getValue(getDesc(n)),
+					     va)) l) of 
+	      NONE => () 
+	    | SOME((vv,ll),i)  
+	      => ( Future.await(future)
+		  ; let val new_l = #2(valOf(TransientDictionary.lookup
+					     (Dictionaries.transdict,i)))
+		    in Server.serve(fn () => tell(va,new_l,f,g))
+		    end ) ))
+	
     (* reinspect *)
     and reinspect (n,f,g) = 
        (Thread.thread
