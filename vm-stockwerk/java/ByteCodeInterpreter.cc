@@ -1775,7 +1775,7 @@ Worker::Result ByteCodeInterpreter::Run() {
 	JavaDebug::Print("ISHR");
 	s_int v2 = JavaInt::FromWord(frame->Pop());
 	u_int v1 = JavaInt::FromWord(frame->Pop());
-	frame->Push(JavaInt::ToWord(v2 / (1 << (v1 % 32))));
+	frame->Push(JavaInt::ToWord(v1 / (1 << (v2 % 32))));
 	pc += 1;
       }
       break;
@@ -1793,7 +1793,7 @@ Worker::Result ByteCodeInterpreter::Run() {
 	JavaDebug::Print("IUSHR");
 	u_int v2 = JavaInt::FromWord(frame->Pop());
 	u_int v1 = JavaInt::FromWord(frame->Pop());
-	frame->Push(JavaInt::ToWord(v2 / (1 << (v1 % 32))));
+	frame->Push(JavaInt::ToWord(v1 / (1 << (v2 % 32))));
 	pc += 1;
       }
       break;
