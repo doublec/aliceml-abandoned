@@ -62,46 +62,6 @@ private:
   static DWORD __stdcall ReaderThread(void *p);
   static DWORD __stdcall WriterThread(void *p);
 public:
-  static int SocketPair(int type, int *sv) {
-    int newsock = socket(AF_INET, type, 0);
-    if (newsock < 0) return -1;
-    // bind the socket to any unused port
-    struct sockaddr_in sock_in;
-    sock_in.sin_family = AF_INET;
-    sock_in.sin_port = 0;
-    sock_in.sin_addr.s_addr = INADDR_ANY;
-    if (bind(newsock, (struct sockaddr *) &sock_in, sizeof(sock_in)) < 0)
-      return -1;
-    int len = sizeof(sock_in);
-    if (getsockname(newsock, (struct sockaddr *) &sock_in, &len) < 0) {
-      closesocket(newsock);
-      return -1;
-    }
-    listen(newsock, 2);
-    // create a connecting socket
-    int outsock = socket(AF_INET, type, 0);
-    if (outsock < 0) {
-      closesocket(newsock);
-      return -1;
-    }
-    sock_in.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
-    // Do a connect and accept the connection
-    if (connect(outsock, (struct sockaddr *) &sock_in, sizeof(sock_in)) < 0) {
-      closesocket(newsock);
-      closesocket(outsock);
-      return -1;
-    }
-    int insock = accept(newsock, (struct sockaddr *) &sock_in, &len);
-    if (insock < 0) {
-      closesocket(newsock);
-      closesocket(outsock);
-      return -1;
-    }
-    closesocket(newsock);
-    sv[0] = insock;
-    sv[1] = outsock;
-    return 0;
-  }
   static void CreateReader(SOCKET s, HANDLE h) {
     DWORD threadId;
     HANDLE hThread =
@@ -265,7 +225,7 @@ IODesc *IODesc::NewForwarded(u_int dir, String *name, HANDLE handle) {
   int fd;
   // Forward from the handle to a socket, so that we can use select():
   int sv[2];
-  if (IOForwarder::SocketPair(SOCK_STREAM, sv) == -1)
+  if (IOHandler::SocketPair(SOCK_STREAM, sv) == -1)
     Error("socketpair failed");
   switch (dir) {
   case DIR_READER:
@@ -860,8 +820,6 @@ static IODesc *MakeStdIODescHandle(const char *name, DWORD nStdHandle, u_int dir
 IODesc *IODesc::NewFromStdIn() {
   IODesc *ioDesc =
     MakeStdIODesc("stdIn", STD_INPUT_HANDLE, IODesc::DIR_READER);
-  if (ioDesc->GetType() != IODesc::TYPE_CLOSED)
-    IOHandler::SetDefaultBlockFD(ioDesc->GetFD());
   return ioDesc;
 }
 IODesc *IODesc::NewFromStdOut() {
@@ -888,8 +846,6 @@ static IODesc *MakeStdIODesc(const char *name, int fd, u_int dir) {
 
 IODesc *IODesc::NewFromStdIn() {
   IODesc *ioDesc = MakeStdIODesc("stdIn", 0, IODesc::DIR_READER);
-  if (ioDesc->GetType() != IODesc::TYPE_CLOSED)
-    IOHandler::SetDefaultBlockFD(ioDesc->GetFD());
   return ioDesc;
 }
 IODesc *IODesc::NewFromStdOut() {

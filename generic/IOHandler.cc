@@ -23,10 +23,13 @@
 #define GetLastError() WSAGetLastError()
 #elif USE_POSIX_SELECT
 #include <sys/select.h>
+#include <sys/socket.h>
+#include <sys/types.h>
 #define GetLastError() errno
 #else
 #include <sys/types.h>
 #include <sys/time.h>
+#include <sys/socket.h>
 #include <unistd.h>
 #define GetLastError() errno
 #endif
@@ -130,10 +133,58 @@ namespace {
   word Readable, Writable;
 };
 
+int IOHandler::SocketPair(int type, int *sv) {
+#if !USE_WINSOCK
+  return socketpair(PF_UNIX, type, 0, sv);
+#else
+  int newsock = socket(AF_INET, type, 0);
+  if (newsock < 0) return -1;
+  // bind the socket to any unused port
+  struct sockaddr_in sock_in;
+  sock_in.sin_family = AF_INET;
+  sock_in.sin_port = 0;
+  sock_in.sin_addr.s_addr = INADDR_ANY;
+  if (bind(newsock, (struct sockaddr *) &sock_in, sizeof(sock_in)) < 0)
+    return -1;
+  int len = sizeof(sock_in);
+  if (getsockname(newsock, (struct sockaddr *) &sock_in, &len) < 0) {
+    closesocket(newsock);
+    return -1;
+  }
+  listen(newsock, 2);
+  // create a connecting socket
+  int outsock = socket(AF_INET, type, 0);
+  if (outsock < 0) {
+    closesocket(newsock);
+    return -1;
+  }
+  sock_in.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+  // Do a connect and accept the connection
+  if (connect(outsock, (struct sockaddr *) &sock_in, sizeof(sock_in)) < 0) {
+    closesocket(newsock);
+    closesocket(outsock);
+    return -1;
+  }
+  int insock = accept(newsock, (struct sockaddr *) &sock_in, &len);
+  if (insock < 0) {
+    closesocket(newsock);
+    closesocket(outsock);
+    return -1;
+  }
+  closesocket(newsock);
+  sv[0] = insock;
+  sv[1] = outsock;
+  return 0;
+#endif
+}
+
 int IOHandler::defaultFD;
 
 void IOHandler::Init() {
-  defaultFD = -1;
+  int sv[2];
+  if (SocketPair(SOCK_STREAM, sv) == -1)
+    Error("socketpair failed");
+  defaultFD = sv[0];
   Readable = Set::New()->ToWord();
   Writable = Set::New()->ToWord();
   RootSet::Add(Readable);
@@ -175,14 +226,8 @@ void IOHandler::Block() {
   struct timeval *ptimeout = NULL;
   // select does not allow all wait sets to be empty - therefore
   // always wait on stdin
-  //--** stdin can be closed!  We need a better solution.
-  //--** Should we create a socket (using socketpair) on which nothing is
-  //--** ever written just so that we can wait on it?
-  if (defaultFD != -1)
-    if (!FD_ISSET(defaultFD, &readFDs)) {
-      FD_SET(defaultFD, &readFDs);
-      maxRead = maxRead > defaultFD? maxRead: defaultFD;
-    }
+  FD_SET(defaultFD, &readFDs);
+  maxRead = maxRead > defaultFD? maxRead: defaultFD;
   int max = maxRead > maxWrite? maxRead: maxWrite;
 #if USE_WINSOCK
   // signals (such as timer events) do not interrupt the select call,

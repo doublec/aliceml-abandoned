@@ -26,9 +26,6 @@ protected:
   static int defaultFD;
 public:
   static void Init();
-  static void SetDefaultBlockFD(int fd) {
-    defaultFD = fd;
-  }
   static void Poll();
   static void Block();
   static void Purge();
@@ -40,6 +37,8 @@ public:
   static Future *WaitWritable(int fd);
 
   static void Close(int fd);
+
+  static int SocketPair(int type, int *sv);
 };
 
 #endif
