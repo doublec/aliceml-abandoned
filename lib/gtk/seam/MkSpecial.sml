@@ -72,6 +72,7 @@ functor MkSpecial(val space : Util.spaces) :> SPECIAL =
                              "gtk_text_iter_copy",
                              "gtk_object_get",
                              "gtk_object_set",
+			     "gtk_widget_add_accelerator",
 			     "_GtkSocket",
 			     "_GtkPlug"] (* not available for win32 *)
 	      | Util.GDK => ["gdk_init",
@@ -152,7 +153,14 @@ functor MkSpecial(val space : Util.spaces) :> SPECIAL =
 		      [STRING(false,false)]),
 		 FUNC("gtk_text_buffer_connect_special_signals",
                       VOID,
-		      [POINTER (false, STRUCTREF "_GktTextBuffer")])]
+		      [POINTER (false, STRUCTREF "_GktTextBuffer")]),
+		FUNC("gtk_widget_add_accelerator", VOID,
+		     [POINTER (false, STRUCTREF "GtkWidget"),
+		      STRING(true,true),
+		      POINTER (false, STRUCTREF "GtkAccelGroup"),
+		      NUMERIC(true, false, INT),
+		      NUMERIC(true, false, INT),
+		      NUMERIC(true, false, INT)])]
 
 	 | Util.GDK =>
 	       [FUNC("gdk_pixbuf_new_from_xpm_data", POINTER (false, VOID),

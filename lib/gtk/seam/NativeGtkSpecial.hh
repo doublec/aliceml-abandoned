@@ -236,4 +236,16 @@ DEFINE1(NativeGtk_pangoFontDescriptionFromString) {
   RETURN(OBJECT_TO_WORD(fontDesc, TYPE_UNKNOWN));
 } END
 
+// void gtk_widget_add_accelerator(GtkWidget*, const guchar*, GtkAccelGroup*, int, int, int)
+DEFINE6(NativeGtk_widgetAddAccelerator) {
+  DECLARE_OBJECT(in0, x0);
+  DECLARE_CSTRING(in1, x1);
+  DECLARE_OBJECT(in2, x2);
+  DECLARE_INT(in3, x3);
+  DECLARE_INT(in4, x4);
+  DECLARE_INT(in5, x5);
+  gtk_widget_add_accelerator(((GtkWidget*)(in0)), ((const gchar*)(in1)), ((GtkAccelGroup*)(in2)), ((int)(in3)), ((GdkModifierType)(in4)), ((GtkAccelFlags)(in5)));
+  RETURN_UNIT;
+} END
+
 #endif
