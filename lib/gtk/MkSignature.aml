@@ -165,7 +165,7 @@ functor MkSignature(structure TypeManager : TYPE_MANAGER
 	    val prefix = (case space of
 			      "gdk"        => "gdk"
 			    | "gtk"        => "gtk"
-			    | "gtk_canvas" => "gtkCanvas")
+			    | "gtk_canvas" => "gtk") (* was gtkCanvas *)
 
 	    fun emitField' p {field, ptrs, alias} =
 		let
