@@ -13,6 +13,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include "emulator/Authoring.hh"
+#include "emulator/RootSet.hh"
 
 typedef enum {
   IO_IN  = MIN_DATA_LABEL,
@@ -93,14 +94,14 @@ static String *Concat(String *a, char *b, u_int bLen) {
   return s;
 }
 
-DEFINE1(UnsafeIO_PrimeIo) {
-  // to be done
-  RETURN_UNIT;
-} END
+static word IoConstructor;
 
-DEFINE1(UnsafeIO_Io) {
-  // to be done
-  RETURN_UNIT;
+DEFINE3(UnsafeIO_Io) {
+  ConVal *conVal = ConVal::New(Constructor::FromWordDirect(IoConstructor), 3);
+  conVal->Init(0, x0);
+  conVal->Init(1, x1);
+  conVal->Init(2, x2);
+  RETURN(conVal->ToWord());
 } END
 
 DEFINE1(UnsafeIO_closeIn) {
@@ -234,7 +235,7 @@ DEFINE2(UnsafeIO_output1) {
 
 DEFINE1(UnsafeIO_print) {
   DECLARE_STRING(s, x0);
-  fprintf(stdout, "%.*s", s->GetSize(), s->GetValue());
+  fprintf(stdout, "%.*s", (int) s->GetSize(), s->GetValue());
   fflush(stdout);
   RETURN_UNIT;
 } END
@@ -252,8 +253,11 @@ DEFINE1(UnsafeIO_stdOut) {
 } END
 
 word UnsafeIO(void) {
+  IoConstructor = UniqueConstructor::New(String::New("IO.Io"))->ToWord();
+  RootSet::Add(IoConstructor);
+
   Tuple *t = Tuple::New(16);
-  t->Init(0, Primitive::MakeFunction(UnsafeIO_PrimeIo, 1));
+  t->Init(0, IoConstructor);
   t->Init(1, Primitive::MakeFunction(UnsafeIO_Io, 1));
   t->Init(2, Primitive::MakeFunction(UnsafeIO_closeIn, 1));
   t->Init(3, Primitive::MakeFunction(UnsafeIO_closeOut, 1));
