@@ -83,7 +83,7 @@
 	    val ++ : 'a list * 'a list -> 'a list
 	  end
 
-	structure S: SIG =
+	structure S : SIG =
 	  struct
 	    infix ++
 	    fun l1++l2 = l1 @ l2
@@ -152,7 +152,7 @@
 
   <PRE>
 	type     t = int * real
-	datatype t = A of int * real | B of {a:bool, b:string} | C of t
+	datatype t = A of int * real | B of {a : bool, b : string} | C of t
   </PRE>
 
   <P>
@@ -207,7 +207,7 @@
   </UL>
 
   <P>
-    The same restrictions are imposed in Moscow ML.
+    The same restrictions are imposed by Moscow ML.
   </P>
 
   <P>
