@@ -361,7 +361,7 @@ structure Renderer :> RENDERER =
 	    else
 		Color.scale
 		(k, List.foldr (fn (x, sum) =>
-				Color.add (sum, Color.nclamp (f x))) i xs)
+				Color.add (sum, Color.clamp (f x))) i xs)
 
 	fun trace (base, dir, ambient, lights, scene, depth) =
 	    case intersect (scene, base, dir) of
