@@ -198,10 +198,50 @@
 
 <?php section("linker", "linker") ?>
 
+  <P>The linker is a tool that takes a root component, bundles it with
+    the components it depends on, and writes an output component that
+    has the same export signature as the root component.  Components
+    can be selected for inclusion depending on the URL they reside on.</P>
+
   <P>Synopsis:</P>
   <DL>
     <DT><TT>alicelink</TT> [<I>&lt;options&gt;</I>]
-      <I>&lt;input file&gt;</I> ...</DT>
+      <I>&lt;root url&gt;</I> [<I>&lt;options&gt;</I>]</DT>
+  </DL>
+
+  <P>The following options are recognized:</P>
+  <DL>
+    <DT><TT>--help</TT>, <TT>--usage</TT>, <TT>-h</TT>, <TT>-?</TT></DT>
+    <DD><P>Print usage information.  Note that, due to the linker
+      being based on the Mozart linker, the help message speaks of
+      functors instead of components and mentions options not supported
+      for Alice.</P></DD>
+    <DT><TT>--out=</TT>&lt;<I>file</I>&gt;</DT>
+    <DD><P>Specify where to write the output component.
+      If omitted, do not produce any output.</P></DD>
+    <DT><TT>--</TT>[<TT>no</TT>]<TT>verbose</TT> (default: false)</DT>
+    <DD><P>Whether or not to print messages on activities performed.</P></DD>
+    <DT><TT>--</TT>[<TT>no</TT>]<TT>relative</TT> (default: true)</DT>
+    <DD><P>Include components referred to by relative paths.
+      Import URLs in the resulting component remain relative.</P></DD>
+    <DT><TT>--include=</TT>&lt;<I>url</I>&gt;<TT>,</TT>...<TT>,</TT>&lt;<I
+      >url</I>&gt; (default: none, see <TT>--relative</TT>)</DT>
+    <DD><P>Include components with these URL prefixes.</P></DD>
+    <DT><TT>--exclude=</TT>&lt;<I>url</I>&gt;<TT>,</TT>...<TT>,</TT>&lt;<I
+      >url</I>&gt; (default: <TT>x-oz://</TT>)</DT>
+    <DD><P>Exclude components with these URL prefixes.</P></DD>
+    <DT><TT>--</TT>[<TT>no</TT>]<TT>sequential</TT> (default: false)</DT>
+    <DD><P>Assume that components can be executed sequentially.</P></DD>
+    <DT><TT>--rewrite=</TT>&lt;<I>rule</I>&gt;<TT>,</TT>...<TT>,</TT>&lt;<I
+      >rule</I>&gt;</DT>
+    <DD><P>Specifies how to replace import URL prefixes in resulting component,
+      where a RULE is of the form &lt;<I>from</I>&gt;<TT>=</TT>&lt;<I
+      >to</I>&gt;.</P></DD>
+    <DT><TT>--</TT>[<TT>no</TT>]<TT>executable</TT> (default: false)</DT>
+    <DD><P>Output the component as an executable.</P></DD>
+    <DT><TT>--compress=</TT>&lt;<I>n</I>&gt;, <TT>-z </TT>&lt;<I>n</I>&gt;
+      (&lt;<I>n</I>&gt;: 0 to 9, default 0)</DT>
+    <DD><P>Use compression level &lt;<I>n</I>&gt; for created pickle.</P></DD>
   </DL>
 
 <?php footing() ?>
