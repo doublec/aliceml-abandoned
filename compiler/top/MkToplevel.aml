@@ -196,6 +196,11 @@ struct
 				    else " while linking \"" ^
 					 Url.toString url ^ "\"\n"));
 		    SOME context)
+	     | Assert (file, line) =>
+		   (TextIO.output (TextIO.stdErr,
+				   "internal assertion failure at " ^
+				   file ^ ":" ^ Int.toString line ^ "\n");
+		    SOME context)   (*--** is this cool or what? *)
 	     | exn =>
 		   (TextIO.output (TextIO.stdErr,
 				   "internal exception " ^
