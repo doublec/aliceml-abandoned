@@ -22,7 +22,7 @@ struct
 	{
          tick           = Time.fromMilliseconds 300,
 	 timeout        = Time.fromSeconds 100,
-	 dimensions     = (15,15),
+	 dimensions     = (20,30),
 	 goodie         = 5,
 	 lives          = NONE,
 	 maxPlayers     = 1,

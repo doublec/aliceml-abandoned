@@ -40,8 +40,9 @@ struct
     val empty = nil
 
 
-    fun merge (high, p : points list,player,lvl) = 
+    fun merge (high, p : points list,lvl) = 
 	let
+            val player  = List.length p
 	    val convert = 
 		List.foldl (fn(point,xs) => {name = #name point,
 					     color = #color point,

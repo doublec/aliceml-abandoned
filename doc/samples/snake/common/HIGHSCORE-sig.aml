@@ -38,10 +38,10 @@ sig
 
     val empty: highscore
 
-    val merge:  highscore * points list * int * int -> highscore
-    (** [merge (h,p,player,level)] merges the highscore [h] with 
-     the result of a tournament and the amount of player and played
-     level [p] creating a new highscore. [p] does NOT need to be sorted.
+    val merge:  highscore * points list * int -> highscore
+    (** [merge (h,p,level)] merges the highscore [h] with 
+     the result of a tournament and played level [p] 
+     creating a new highscore. [p] does NOT need to be sorted.
       *)
 
     val foldl:  (entry * 'a -> 'a) -> 'a -> highscore -> 'a 
