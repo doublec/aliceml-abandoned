@@ -541,7 +541,7 @@ IODesc::result IODesc::Read(const char *buf, int n, int &out) {
   case TYPE_HANDLE:
     {
       DWORD nRead;
-      if (ReadFile(GetHandle(), const_cast<char *>(buf) , n, &nRead, NULL)) 
+      if (ReadFile(GetHandle(), const_cast<char *>(buf) , n, &nRead, NULL))
 	return result_system_error;
       out = nRead;
       return result_ok;
@@ -596,7 +596,7 @@ IODesc::result IODesc::Write(const char *buf, int n, int &out) {
   case TYPE_HANDLE:
     {
       DWORD nWritten;
-      if (WriteFile(GetHandle(), buf, n, &nWritten, NULL)) 
+      if (WriteFile(GetHandle(), buf, n, &nWritten, NULL))
 	return result_system_error;
       out = nWritten;
       return result_ok;
