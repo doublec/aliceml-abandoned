@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2003
+ *   Andreas Rossberg, 2001-2004
  *
  * Last change:
  *   $Date$ by $Author$
@@ -38,6 +38,7 @@ import signature PATH        from "PATH-sig"
 
 structure Path :> PATH =
 struct
+    structure Stamp = GlobalStamp
 
   (* Types *)
 
@@ -52,8 +53,8 @@ struct
 
   (* Creation *)
 
-    fun pervasive s	= (GlobalStamp.fromString s, ref(NAME(Name.ExId s)))
-    fun new p'		= (GlobalStamp.stamp(), ref p')
+    fun pervasive s	= (Stamp.fromString s, ref(NAME(Name.ExId s)))
+    fun new p'		= (Stamp.stamp(), ref p')
 
     fun invent()	= new(NAME(Name.InId))
     fun name n		= new(NAME n)
@@ -73,6 +74,9 @@ struct
 	| Dot    of path * lab
 
     exception Path
+
+    fun isPervasive (z, ref(NAME n))	= Stamp.toString z = Name.toString n
+      | isPervasive _			= false
 
     fun inspect (_, ref p')		= inspect' p'
     and inspect' (NAME n)		= Name n
@@ -102,7 +106,7 @@ struct
   (* Comparison and hashing *)
 
     fun equal((stamp1,_), (stamp2,_))	= stamp1 = stamp2
-    fun hash (stamp, _)			= GlobalStamp.hash stamp
+    fun hash (stamp, _)			= Stamp.hash stamp
 
 
   (* Hiding *)

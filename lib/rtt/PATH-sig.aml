@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg, 2001-2004
  *
  * Last change:
  *   $Date$ by $Author$
@@ -41,6 +41,8 @@ sig
     val inspect :	path -> desc
 
     exception Path
+
+    val isPervasive :	path -> bool
 
     val isName :	path -> bool
     val isHidden :	path -> bool
