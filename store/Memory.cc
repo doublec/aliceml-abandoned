@@ -32,15 +32,24 @@ void MemChunk::Free(char *p) {
   }
 }
 #else
+#include <cstdlib>
 #include <unistd.h>
 #include <sys/mman.h>
 char *MemChunk::Alloc(u_int size) {
+#if defined(STORE_ALLOC_MMAP)
   return (char *) mmap(NULL, size,
 		       (PROT_READ | PROT_WRITE), MAP_PRIVATE,
 		       -1, (off_t) 0);
+#else
+  return (char *) std::malloc(size);
+#endif
 }
 
 void MemChunk::Free(char *p) {
+#if defined(STORE_ALLOC_MMAP)
   munmap((char *) p, (u_int) (max - base));
+#else
+  std::free(p);
+#endif
 }
 #endif
