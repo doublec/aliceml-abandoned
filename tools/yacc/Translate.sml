@@ -48,10 +48,11 @@ struct
 	    val parsers = List.length t1
 	    val t2 = t1@[((eop,NONE),parsers)]
 	    val t3 = List.filter (fn A.TokenDec _ => true | _ => false) l 
-	    val t3 = (List.last
-		 (List.map (fn A.TokenDec t => toDict (parsers+1) t  | _ => []) t3))
+	    val t3 = if List.null t3 then []
+		     else (List.last
+			   (List.map (fn A.TokenDec t => toDict (parsers+1) t
+			 | _ => []) t3))
 	    fun pr ((s,_),i) = print ("("^s^","^(Int.toString i)^")")
-	    (* val _ = List.app pr (t2@t3) *)
 	in 
 	    t2@t3
 	end
