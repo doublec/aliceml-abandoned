@@ -31,54 +31,9 @@
 #include "generic/IODesc.hh"
 #include "alice/Authoring.hh"
 
-static word SysErrConstructor;
 static word ClosedStreamConstructor;
-
-//
-// Error Handling
-//
-static String *ErrorCodeToString(int errorCode) {
-#if defined(__MINGW32__) || defined(_MSC_VER)
-  char *lpMsgBuf;
-  int n = FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER |
-			FORMAT_MESSAGE_IGNORE_INSERTS |
-			FORMAT_MESSAGE_FROM_SYSTEM |
-			FORMAT_MESSAGE_MAX_WIDTH_MASK, NULL, errorCode,
-			MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-			(LPTSTR) &lpMsgBuf, 0, NULL);
-  String *s;
-  if (!n) {
-    static char buffer[32];
-    std::sprintf(buffer, "Error code %d", errorCode);
-    s = String::New(buffer);
-  } else
-    s = String::New(lpMsgBuf, n);
-  LocalFree(lpMsgBuf);
-  return s;
-#else
-  return String::New(strerror(errorCode));
-#endif
-}
-
-static word MakeSysErr(int errorCode, String *message) {
-  TagVal *some = TagVal::New(Types::SOME, 1);
-  some->Init(0, Store::IntToWord(errorCode));
-  ConVal *sysErr =
-    ConVal::New(Constructor::FromWordDirect(SysErrConstructor), 2);
-  sysErr->Init(0, message->ToWord());
-  sysErr->Init(1, some->ToWord());
-  return sysErr->ToWord();
-}
-
-#define RAISE_SYS_ERR() {					\
-  int errorCode = GetLastError();				\
-  RAISE(MakeSysErr(errorCode, ErrorCodeToString(errorCode)));	\
-}
-
-#define RAISE_SOCK_ERR() {					\
-  int errorCode = WSAGetLastError();				\
-  RAISE(MakeSysErr(errorCode, ErrorCodeToString(errorCode)));	\
-}
+static word SysErrConstructor;
+#include "SysErr.icc"
 
 //
 // Primitives
