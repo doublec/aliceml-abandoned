@@ -2025,7 +2025,6 @@ structure Vector : VECTOR =
     __primitive val tabulate :	int * (int -> 'a) -> 'a vector
 							= "Vector.tabulate"
 
-    fun tabulate(n,f)		= fromList(List.tabulate(n,f)) (*INEFFICIENT*)
     fun extract(v,i,no)		= tabulate(sliceLength(v,i,no),
 					   fn k => sub'(v,i+k))
     fun concat vs		= fromList(List.concat(List.map toList vs))
