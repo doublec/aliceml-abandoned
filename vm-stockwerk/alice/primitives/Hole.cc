@@ -17,12 +17,7 @@ DEFINE2(Hole_fail) {
   Transient *transient = Store::WordToTransient(x0);
   if (transient == INVALID_POINTER || transient->GetLabel() != HOLE_LABEL)
     RAISE(PrimitiveTable::Hole_Hole);
-  Constructor *constructor =
-    Constructor::FromWordDirect(PrimitiveTable::Future_Future);
-  ConVal *exn = ConVal::New(constructor, 1);
-  exn->Init(0, x1);
-  //--** if there is an associated future, fail it too (waking up threads)
-  transient->Become(CANCELLED_LABEL, exn->ToWord());
+  static_cast<Hole *>(transient)->Fail(x1);
   RETURN_UNIT;
 } END
 
