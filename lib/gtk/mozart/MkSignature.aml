@@ -107,6 +107,14 @@ functor MkSignature(structure TypeManager : TYPE_MANAGER
 	(* WidgetGet Code *)
 	val widgetGetCode =
 	    [indent, "val widgetGet : object * string -> arg\n"]
+
+	(* CanvasNew, Popvisual and ImageItemNew Code *)
+	val canvasNewCode =
+	    [indent, "val new : int -> object\n",
+	     indent, "val popvisual : object -> unit\n",
+	     indent, "val imageItemNew : ",
+	     "object * object * object * int * int * int * int * int -> ",
+	     "object\n"] 
     
 	(* CanvasItemNew and -Set Code *)
 	val canvasItemCode =
@@ -130,6 +138,7 @@ functor MkSignature(structure TypeManager : TYPE_MANAGER
 	  | emit (FUNCTION("gtk_signal_emit", _))       = ()
 	  | emit (FUNCTION("gtk_canvas_item_set", _))   = ()
 	  | emit (FUNCTION("gtk_widget_get", _))        = psl widgetGetCode
+	  | emit (FUNCTION("gtk_canvas_new", _))        = psl canvasNewCode
 	  | emit (FUNCTION("gtk_canvas_item_new", _))   = psl canvasItemCode
 	  | emit (FUNCTION("gtk_color_selection_get_color", _)) =
 	    psl colorSelectionGetColorCode

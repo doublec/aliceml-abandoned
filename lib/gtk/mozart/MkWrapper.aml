@@ -146,7 +146,11 @@ functor MkWrapper(structure TypeManager : TYPE_MANAGER
 	end
        
 	(* Function Decl Emitter *)
-	fun emitDecl (FUNCTION(name, _)) =
+	fun emitDecl (FUNCTION("gtk_canvas_new", _)) =
+	    psl [Util.indent 3, "'new' : CanvasNew\n",
+		 Util.indent 3, "'popVisual' : PopVisual\n",
+		 Util.indent 3, "'imageItemNew' : ImageItemNew\n"]
+	  | emitDecl (FUNCTION(name, _)) =
 	    let
 		val name = Util.computeWrapperName (space, name)
 	    in
@@ -185,7 +189,22 @@ functor MkWrapper(structure TypeManager : TYPE_MANAGER
 	     "      Result = unit\n",
 	     "   end\n"]
 
-	(* CanvasItemNew and -Set Code *)
+	(* CanvasNew, PopVisual and CanvasImageItemNew Code *)
+	val canvasNewCode =
+	    ["  proc {CanvasNew WithImages Result}\n",
+             "    Flag = (WithImages == 1)\n",
+	     "  in\n",
+	     "     Result = {New GTKCANVAS.canvas new(Flag)}\n",
+	     "  end\n",
+	     "   proc {PopVisual Canvas Result}\n",
+	     "      {Canvas popvisual}\n",
+	     "      Result = unit\n",
+	     "   end\n",
+	     "   proc {ImageItemNew Canvas Group Image X Y W H A Result}\n",
+	     "      Result = {Canvas newImageItem(Group Image X Y W H A)}\n",
+	     "   end\n"]
+
+	(* CanvasItemNew, and -Set Code *)
 	val canvasItemCode =
 	    ["   proc {ItemNew Group Type Args Result}\n",
 	     "      Result = {GOZCore.canvasItemNew Group Type Args}\n",
@@ -203,6 +222,7 @@ functor MkWrapper(structure TypeManager : TYPE_MANAGER
 	  | emit (FUNCTION("gtk_signal_handler_unblock", _)) = ()
 	  | emit (FUNCTION("gtk_canvas_item_set", _))        = ()
 	  | emit (FUNCTION("gtk_widget_get", _))        = psl widgetGetCode
+	  | emit (FUNCTION("gtk_canvas_new", _))        = psl canvasNewCode
 	  | emit (FUNCTION("gtk_canvas_item_new", _))   = psl canvasItemCode
 	  | emit (FUNCTION("gtk_color_selection_get_color", _)) =
 	    psl colorSelectionGetColorCode
