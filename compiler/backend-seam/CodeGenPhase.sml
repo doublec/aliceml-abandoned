@@ -411,6 +411,7 @@ structure CodeGenPhase: CODE_GEN_PHASE =
 	  | translateExp (PrimAppExp (_, name, ids), id, instr, env) =
 	    O.AppPrim (O.IdDef id, name, translateIds (ids, env), SOME instr)
 	  | translateExp (VarAppExp (_, id, args), id', instr, env) =
+	    (*--** also generate tail calls *)
 	    let
 		val (returnArgs, instr) =
 		    case detup (instr, id') of
