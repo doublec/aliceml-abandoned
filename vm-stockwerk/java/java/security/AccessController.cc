@@ -19,7 +19,7 @@ static word wPrivilegedActionRunMethodRef;
 DEFINE1(doPrivileged) {
   DECLARE_OBJECT(object, x0);
   Assert(object != INVALID_POINTER);
-  InterfaceMethodRef *methodRef = 
+  InterfaceMethodRef *methodRef =
     InterfaceMethodRef::FromWord(wPrivilegedActionRunMethodRef);
   if (methodRef == INVALID_POINTER) REQUEST(wPrivilegedActionRunMethodRef);
   Closure *closure = object->GetClass()->
