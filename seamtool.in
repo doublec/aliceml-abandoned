@@ -19,7 +19,7 @@ libdir=@libdir@
 
 DEFAULT_INCLUDES="-I. -I${pkgincludedir}"
 
-function usage () {
+usage () {
     echo "Usage: $0 [OPTION]... MODE [MODE-ARG]...                   " >&2
     echo "Compilation utility for SEAM                               " >&2
     echo "                                                           " >&2
@@ -35,22 +35,24 @@ function usage () {
     echo "MODE-ARGs vary depending on the MODE.                      " >&2
 }
 
-function version () {
+version () {
     echo "$0 (SEAM compilation utility) @PACKAGE_VERSION@" >&2
     echo "                                                           " >&2
     echo "Copyright (C) 2003  Programming Systems Lab                " >&2
     echo "See the source for copying conditions.                     " >&2
 }
 
-function cmd () {
+cmd () {
     if [ $verbose -ne 0 ]; then echo "$@"; fi
     "$@" || exit $?
 }
 
 if [ $# -lt 1 ]; then
     usage
-    exit 2 # TODO: Is this the right exit code?
+    exit 1 # TODO: Is this the right exit code?
 fi
+
+verbose=0
 
 case "$1" in
     -h|--help)
@@ -83,7 +85,7 @@ case "$mode" in
     *)
 	echo "$0: unknown mode `$mode'" >&2
 	echo "Try `$0 --help' for more information." >&2
-	exit 2
+	exit 1
 	;;
 esac
 
