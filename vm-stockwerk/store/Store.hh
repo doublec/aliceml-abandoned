@@ -48,8 +48,8 @@ private:
   static Block *HandleWeakDictionaries(u_int dst_gen, u_int cpy_gen);
   static void SetInitMark(u_int size);
   static char *GCAlloc(u_int s, u_int header, u_int gen);
-  static Block *AllocFinSet(u_int size, u_int dst_gen, u_int cpy_gen);
-  static Block *PushToFinSet(Block *p, Handler *h, word value, u_int dst_gen, u_int cpy_gen);
+  static Block *TempAlloc(u_int size, u_int dst_gen, u_int cpy_gen);
+  static Block *AddToFinSet(Block *p, Handler *h, word value, u_int dst_gen, u_int cpy_gen);
   static void SwitchToNewChunk(MemChunk *chunk);
   static void AllocNewMemChunk();
   static void AllocNewMemChunk(u_int size, const u_int gen);

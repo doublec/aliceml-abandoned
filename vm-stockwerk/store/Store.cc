@@ -127,7 +127,7 @@ inline char *Store::GCAlloc(u_int size, u_int header, u_int gen) {
   }
 }
 
-inline Block *Store::AllocFinSet(u_int size, u_int dst_gen, u_int cpy_gen) {
+inline Block *Store::TempAlloc(u_int size, u_int dst_gen, u_int cpy_gen) {
   u_int header = HeaderOp::EncodeHeader(MIN_DATA_LABEL, size, cpy_gen);
   Block *p     = (Block *) Store::GCAlloc((size + 1) * sizeof(u_int), header, dst_gen);
 
@@ -138,7 +138,7 @@ inline Block *Store::AllocFinSet(u_int size, u_int dst_gen, u_int cpy_gen) {
   return p;
 }
 
-inline Block *Store::PushToFinSet(Block *p, Handler *h, word value, u_int dst_gen, u_int cpy_gen) {
+inline Block *Store::AddToFinSet(Block *p, Handler *h, word value, u_int dst_gen, u_int cpy_gen) {
   u_int size   = p->GetSize();
   u_int top    = Store::DirectWordToInt(p->GetArg(0));
   u_int newtop = (top + 2);
@@ -147,7 +147,7 @@ inline Block *Store::PushToFinSet(Block *p, Handler *h, word value, u_int dst_ge
   if (newtop >= size) {
     u_int newsize = ((size * 3) >> 1);
     
-    np = Store::AllocFinSet(newsize, dst_gen, cpy_gen);
+    np = Store::TempAlloc(newsize, dst_gen, cpy_gen);
     std::memcpy(np->GetBase(), p->GetBase(), (size * sizeof(u_int)));
   }
   else {
@@ -391,13 +391,18 @@ inline Block *Store::HandleWeakDictionaries(u_int dst_gen, u_int cpy_gen) {
 #endif
 
   // Alloc Fin Set
-  Block *finset = Store::AllocFinSet(120, dst_gen, cpy_gen);
+  Block *finset = Store::TempAlloc(120, dst_gen, cpy_gen);
+  finset->InitArg(0, 1);
 
   u_int rs_size = wkdict_set->GetSize();
   wkdict_set->MakeEmpty();
+  Block *db_set = Store::TempAlloc((rs_size + 1), dst_gen, cpy_gen);
+  std::memcpy(db_set->GetBase(), ((Block *) wkdict_set)->GetBase(),
+	      ((rs_size + 1) * sizeof(u_int)));
+
   // Phase One: Forward all Dictionaries but not the contents
-  for (u_int i = 2; i <= rs_size; i++) {
-    word dict  = wkdict_set->GetArg(i);
+  for (u_int i = rs_size; i >= 1; i--) {
+    word dict  = db_set->GetArg(i);
     Block *dp  = Store::DirectWordToBlock(dict);
     word ndict;
 
@@ -414,7 +419,7 @@ inline Block *Store::HandleWeakDictionaries(u_int dst_gen, u_int cpy_gen) {
       ndict = PointerOp::EncodeTag(newp, PointerOp::DecodeTag(dict));
       // Finalize only empty dict
       if (((WeakDictionary *) newp)->GetCounter() == 0) {
-	finset = Store::PushToFinSet(finset, h, ndict, dst_gen, cpy_gen);
+	finset = Store::AddToFinSet(finset, h, ndict, dst_gen, cpy_gen);
       }
       // Keep it alive (thanks to Denys for pointing that out)
       else {
@@ -426,8 +431,8 @@ inline Block *Store::HandleWeakDictionaries(u_int dst_gen, u_int cpy_gen) {
       ndict = dict;
       wkdict_set->Push(ndict);
     }
-    // Keep Dict References complete for working (kapputt; kann nicht funktionieren)
-    wkdict_set->InitArg(i, ndict);
+    // Keep Dict References complete for working
+    db_set->InitArg(i, ndict);
 
     // Now Process Dict Table but NOT its content
     WeakDictionary *p = WeakDictionary::FromWordDirect(ndict);
@@ -443,7 +448,7 @@ inline Block *Store::HandleWeakDictionaries(u_int dst_gen, u_int cpy_gen) {
 
   // Phase Two: Forward Dictionary Contents and record Finalize Candiates
   for (u_int i = rs_size; i >= 1; i--) {
-    WeakDictionary *dict = WeakDictionary::FromWordDirect(wkdict_set->GetArg(i));
+    WeakDictionary *dict = WeakDictionary::FromWordDirect(db_set->GetArg(i));
     Handler *h           = dict->GetHandler();
     Block *table         = dict->GetTable();
     u_int table_size     = table->GetSize();
@@ -472,9 +477,9 @@ inline Block *Store::HandleWeakDictionaries(u_int dst_gen, u_int cpy_gen) {
 	    if ((l != WEAK_DICT_LABEL) ||
 		((l == WEAK_DICT_LABEL) && ((WeakDictionary *) valp)->GetCounter() == 0)) {
 	      dict->RemoveEntry(node);
-	      finset = Store::PushToFinSet(finset, h,
-					   ForwardBlock(val, dst_gen, cpy_gen),
-					   dst_gen, cpy_gen);
+	      finset = Store::AddToFinSet(finset, h,
+					  ForwardBlock(val, dst_gen, cpy_gen),
+					  dst_gen, cpy_gen);
 	    }
 	    // No, save it again
 	    else {
@@ -486,7 +491,6 @@ inline Block *Store::HandleWeakDictionaries(u_int dst_gen, u_int cpy_gen) {
     }
     Store::ScanChunks(dst_gen, cpy_gen, anchor, (Block *) scan);
   }
-
 #if defined(STORE_DEBUG)
   std::printf("new_weakdict_size is %d\n", wkdict_set->GetSize());
 #endif
