@@ -4,7 +4,8 @@
 %%%   Ralf Scheidhauer <scheidhr@ps.uni-sb.de>
 %%%
 %%% Copyright:
-%%%   Leif Kornstaedt and Ralf Scheidhauer, 1997
+%%%   Leif Kornstaedt, 1997-2000
+%%%   Ralf Scheidhauer, 1997
 %%%
 %%% Last change:
 %%%   $Date$ by $Author$
@@ -1400,6 +1401,16 @@ define
 	 end
       [] testRecord(R '|' 2 L)|Rest then
 	 {Assembler append(testList(R L))}
+	 {Peephole Rest Assembler}
+      [] match(R ht(ElseL [onScalar(true TrueL) onScalar(false FalseL)]))|Rest
+	 andthen {HasLabel Rest TrueL}
+      then
+	 {Assembler append(testBool(R FalseL ElseL))}
+	 {Peephole Rest Assembler}
+      [] match(R ht(ElseL [onScalar(false FalseL) onScalar(true TrueL)]))|Rest
+	 andthen {HasLabel Rest TrueL}
+      then
+	 {Assembler append(testBool(R FalseL ElseL))}
 	 {Peephole Rest Assembler}
       [] match(R ht(ElseL [onScalar(X L)]))|Rest andthen {HasLabel Rest L} then
 	 if {IsNumber X} then

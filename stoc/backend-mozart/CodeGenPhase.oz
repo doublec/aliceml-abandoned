@@ -25,6 +25,12 @@ define
       {String.toAtom {ByteString.toString S}}
    end
 
+   fun {TrOption Option TrX}
+      case Option of 'NONE' then none
+      [] 'SOME'(X) then some({TrX X})
+      end
+   end
+
    fun {TrInfo '#'(region: Region ...)}
       Region
    end
@@ -44,12 +50,8 @@ define
       end
    end
 
-   fun {TrId 'Id'(Info Stamp Name)}
-      id({TrInfo Info} Stamp {TrName Name})
-   end
-
-   fun {TrLab Lab}
-      case Lab of 'NUM'(I) then I
+   fun {TrLabel Label}
+      case Label of 'NUM'(I) then I
       [] 'ALPHA'(S) then
 	 case {StringToAtom S} of 'true' then true
 	 [] 'false' then false
@@ -59,21 +61,14 @@ define
       end
    end
 
-   fun {TrOption Option Tr}
-      case Option of 'NONE' then non
-      [] 'SOME'(X) then some({Tr X})
-      end
+   fun {TrId 'Id'(Info Stamp Name)}
+      id({TrInfo Info} Stamp {TrName Name})
    end
 
-   fun {TrArity Arity}
-      case Arity of 'Unary' then unary
-      [] 'TupArity'(I) then tupArity(I)
-      [] 'RowArity'(Labs) then rowArity({Map Labs TrLab})
+   fun {TrIdDef IdDef}
+      case IdDef of 'IdDef'(Id) then idDef({TrId Id})
+      [] 'Wildcard' then wildcard
       end
-   end
-
-   fun {TrConArity ConArity}
-      {TrOption ConArity TrArity}
    end
 
    fun {TrFunFlag FunFlag}
@@ -83,62 +78,90 @@ define
       end
    end
 
-   fun {TrArgs Args}
-      case Args of 'OneArg'(Id) then oneArg({TrId Id})
-      [] 'TupArgs'(Ids) then tupArgs({Map Ids TrId})
-      [] 'RowArgs'(LabIdList) then
-	 rowArgs({Map LabIdList fun {$ Lab#Id} {TrLab Lab}#{TrId Id} end})
+   fun {TrCon Con}
+      case Con of 'Con'(Id) then con({TrId Id})
+      [] 'StaticCon'(Stamp) then staticCon(Stamp)
       end
    end
 
-   fun {TrTest Test}
-      case Test of 'LitTest'(Lit) then litTest({TrLit Lit})
-      [] 'TagTest'(Lab N) then tagTest({TrLab Lab} N)
-      [] 'TagAppTest'(Lab N Args) then
-	 tagAppTest({TrLab Lab} N {TrArgs Args})
-      [] 'ConTest'(Id) then conTest({TrId Id})
-      [] 'ConAppTest'(Id Args) then
-	 conAppTest({TrId Id} {TrArgs Args})
-      [] 'StaticConTest'(Stamp) then staticConTest(Stamp)
-      [] 'StaticConAppTest'(Stamp Args) then
-	 staticConAppTest(Stamp {TrArgs Args})
-      [] 'VecTest'(Ids) then vecTest({Map Ids TrId})
+   fun {TrArity Arity}
+      case Arity of 'Unary' then unary
+      [] 'TupArity'(I) then tupArity(I)
+      [] 'ProdArity'(Labels) then prodArity({Map Labels TrLabel})
       end
+   end
+
+   fun {TrConArity ConArity}
+      {TrOption ConArity TrArity}
+   end
+
+   fun {TrArgs Args TrX}
+      case Args of 'OneArg'(X) then oneArg({TrX X})
+      [] 'TupArgs'(Xs) then tupArgs({Map Xs TrX})
+      [] 'ProdArgs'(LabelXList) then
+	 prodArgs({Map LabelXList fun {$ Label#X} {TrLabel Label}#{TrX X} end})
+      end
+   end
+
+   fun {TrConArgs ConArgs TrX}
+      {TrOption ConArgs fun {$ Args} {TrArgs Args TrX} end}
    end
 
    proc {TrStm Stm Hd Tl ShareDict}
-      case Stm of 'ValDec'(Info Id Exp) then
-	 Hd = valDec({TrInfo Info} {TrId Id} {TrExp Exp ShareDict})|Tl
-      [] 'RecDec'(Info IdExpList) then
+      case Stm of 'ValDec'(Info IdDef Exp) then
+	 Hd = valDec({TrInfo Info} {TrIdDef IdDef} {TrExp Exp ShareDict})|Tl
+      [] 'RecDec'(Info IdDefExpList) then
 	 Hd = recDec({TrInfo Info}
-		     {Map IdExpList
-		      fun {$ Id#Exp} {TrId Id}#{TrExp Exp ShareDict} end})|Tl
-      [] 'RefAppDec'(Info Id1 Id2) then
-	 Hd = refAppDec({TrInfo Info} {TrId Id1} {TrId Id2})|Tl
-      [] 'TupDec'(Info Ids Id) then
-	 Hd = tupDec({TrInfo Info} {Map Ids TrId} {TrId Id})|Tl
-      [] 'RowDec'(Info LabIdList Id) then
-	 Hd = rowDec({TrInfo Info}
-		     {Map LabIdList fun {$ Lab#Id} {TrLab Lab}#{TrId Id} end}
-		     {TrId Id})|Tl
-      [] 'EvalStm'(Info Exp) then
-	 Hd = evalStm({TrInfo Info} {TrExp Exp ShareDict})|Tl
+		     {Map IdDefExpList
+		      fun {$ IdDef#Exp}
+			 {TrIdDef IdDef}#{TrExp Exp ShareDict}
+		      end})|Tl
+      [] 'RefAppDec'(Info IdDef Id) then
+	 Hd = refAppDec({TrInfo Info} {TrIdDef IdDef} {TrId Id})|Tl
+      [] 'TupDec'(Info IdDefs Id) then
+	 Hd = tupDec({TrInfo Info} {Map IdDefs TrIdDef} {TrId Id})|Tl
+      [] 'ProdDec'(Info LabelIdDefList Id) then
+	 Hd = prodDec({TrInfo Info}
+		      {Map LabelIdDefList
+		       fun {$ Label#IdDef} {TrLabel Label}#{TrIdDef IdDef} end}
+		      {TrId Id})|Tl
       [] 'RaiseStm'(Info Id) then
 	 Hd = raiseStm({TrInfo Info} {TrId Id})|Tl
       [] 'ReraiseStm'(Info Id) then
 	 Hd = reraiseStm({TrInfo Info} {TrId Id})|Tl
-      [] 'HandleStm'(Info Body1 Id Body2 Body3 Stamp) then
-	 Hd = handleStm({TrInfo Info} {TrBody Body1 $ nil ShareDict} {TrId Id}
-			{TrBody Body2 $ nil ShareDict}
+      [] 'HandleStm'(Info Body1 IdDef Body2 Body3 Stamp) then
+	 Hd = handleStm({TrInfo Info} {TrBody Body1 $ nil ShareDict}
+			{TrIdDef IdDef} {TrBody Body2 $ nil ShareDict}
 			{TrBody Body3 $ nil ShareDict} Stamp)|Tl
       [] 'EndHandleStm'(Info Stamp) then
 	 Hd = endHandleStm({TrInfo Info} Stamp)|Tl
-      [] 'TestStm'(Info Id TestBodyList Body) then
+      [] 'TestStm'(Info Id Tests Body) then
 	 Hd = testStm({TrInfo Info} {TrId Id}
-		      {Map TestBodyList
-		       fun {$ Test#Body}
-			  {TrTest Test}#{TrBody Body $ nil ShareDict}
-		       end}
+		      case Tests of 'LitTests'(LitBodyList) then
+			 litTests({Map LitBodyList
+				   fun {$ Lit#Body}
+				      {TrLit Lit}#{TrBody Body $ nil ShareDict}
+				   end})
+		      [] 'TagTests'(TagBodyList) then
+			 tagTests({Map TagBodyList
+				   fun {$ Label#N#ConArgs#Body}
+				      {TrLabel Label}#N#
+				      {TrConArgs ConArgs TrIdDef}#
+				      {TrBody Body $ nil ShareDict}
+				   end})
+		      [] 'ConTests'(ConBodyList) then
+			 conTests({Map ConBodyList
+				   fun {$ Con#ConArgs#Body}
+				      {TrCon Con}#{TrConArgs ConArgs TrIdDef}#
+				      {TrBody Body $ nil ShareDict}
+				   end})
+		      [] 'VecTests'(VecBodyList) then
+			 vecTests({Map VecBodyList
+				   fun {$ IdDefs#Body}
+				      {Map IdDefs TrIdDef}#
+				      {TrBody Body $ nil ShareDict}
+				   end})
+		      end
 		      {TrBody Body $ nil ShareDict})|Tl
       [] 'SharedStm'(Info Body Stamp) then
 	 case {Dictionary.condGet ShareDict Stamp unit} of unit then NewStm in
@@ -167,37 +190,34 @@ define
       [] 'NewExp'(Info ConArity) then
 	 newExp({TrInfo Info} {TrConArity ConArity})
       [] 'VarExp'(Info Id) then varExp({TrInfo Info} {TrId Id})
-      [] 'TagExp'(Info Lab N ConArity) then
-	 tagExp({TrInfo Info} {TrLab Lab} N {TrConArity ConArity})
-      [] 'ConExp'(Info Id ConArity) then
-	 conExp({TrInfo Info} {TrId Id} {TrConArity ConArity})
-      [] 'StaticConExp'(Info Stamp ConArity) then
-	 staticConExp({TrInfo Info} Stamp {TrConArity ConArity})
+      [] 'TagExp'(Info Label N ConArity) then
+	 tagExp({TrInfo Info} {TrLabel Label} N {TrConArity ConArity})
+      [] 'ConExp'(Info Con ConArity) then
+	 conExp({TrInfo Info} {TrCon Con} {TrConArity ConArity})
       [] 'RefExp'(Info) then refExp({TrInfo Info})
       [] 'TupExp'(Info Ids) then tupExp({TrInfo Info} {Map Ids TrId})
-      [] 'RowExp'(Info LabIdList) then
-	 rowExp({TrInfo Info}
-		{Map LabIdList fun {$ Lab#Id} {TrLab Lab}#{TrId Id} end})
-      [] 'SelExp'(Info Lab N) then selExp({TrInfo Info} {TrLab Lab} N)
+      [] 'ProdExp'(Info LabelIdList) then
+	 prodExp({TrInfo Info}
+		 {Map LabelIdList
+		  fun {$ Label#Id} {TrLabel Label}#{TrId Id} end})
+      [] 'SelExp'(Info Label N) then selExp({TrInfo Info} {TrLabel Label} N)
       [] 'VecExp'(Info Ids) then vecExp({TrInfo Info} {Map Ids TrId})
       [] 'FunExp'(Info Stamp Flags Args Body) then
 	 funExp({TrInfo Info} Stamp {Map Flags TrFunFlag}
-		{TrArgs Args} {TrBody Body $ nil ShareDict})
+		{TrArgs Args TrIdDef} {TrBody Body $ nil ShareDict})
       [] 'PrimAppExp'(Info String Ids) then
 	 primAppExp({TrInfo Info} {StringToAtom String} {Map Ids TrId})
       [] 'VarAppExp'(Info Id Args) then
-	 varAppExp({TrInfo Info} {TrId Id} {TrArgs Args})
-      [] 'TagAppExp'(Info Lab N Args) then
-	 tagAppExp({TrInfo Info} {TrLab Lab} N {TrArgs Args})
-      [] 'ConAppExp'(Info Id Args) then
-	 conAppExp({TrInfo Info} {TrId Id} {TrArgs Args})
-      [] 'StaticConAppExp'(Info Stamp Args) then
-	 staticConAppExp({TrInfo Info} Stamp {TrArgs Args})
+	 varAppExp({TrInfo Info} {TrId Id} {TrArgs Args TrId})
+      [] 'TagAppExp'(Info Label N Args) then
+	 tagAppExp({TrInfo Info} {TrLabel Label} N {TrArgs Args TrId})
+      [] 'ConAppExp'(Info Con Args) then
+	 conAppExp({TrInfo Info} {TrCon Con} {TrArgs Args TrId})
       [] 'RefAppExp'(Info Id) then refAppExp({TrInfo Info} {TrId Id})
-      [] 'SelAppExp'(Info Lab N Id) then
-	 selAppExp({TrInfo Info} {TrLab Lab} N {TrId Id})
+      [] 'SelAppExp'(Info Label N Id) then
+	 selAppExp({TrInfo Info} {TrLabel Label} N {TrId Id})
       [] 'FunAppExp'(Info Id Stamp Args) then
-	 funAppExp({TrInfo Info} {TrId Id} Stamp {TrArgs Args})
+	 funAppExp({TrInfo Info} {TrId Id} Stamp {TrArgs Args TrId})
       end
    end
 

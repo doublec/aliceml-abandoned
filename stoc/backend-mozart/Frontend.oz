@@ -1,9 +1,9 @@
 %%%
 %%% Author:
-%%%   Leif Kornstaedt <kornstae@@ps.uni-sb.de>
+%%%   Leif Kornstaedt <kornstae@ps.uni-sb.de>
 %%%
 %%% Copyright:
-%%%   Leif Kornstaedt, 1999
+%%%   Leif Kornstaedt, 1999-2000
 %%%
 %%% Last change:
 %%%   $Date$ by $Author$
@@ -55,24 +55,42 @@ define
    end
 
    fun {ShareStm Stm ShareDict}
-      case Stm of valDec(Region Id Exp) then
-	 valDec(Region Id {ShareExp Exp ShareDict})
-      [] recDec(Region IdExpList) then
-	 recDec(Region
-		{Map IdExpList fun {$ Id#Exp} Id#{ShareExp Exp ShareDict} end})
+      case Stm of valDec(Region IdDef Exp) then
+	 valDec(Region IdDef {ShareExp Exp ShareDict})
+      [] recDec(Region IdDefExpList) then
+	 recDec(Region {Map IdDefExpList
+			fun {$ IdDef#Exp} IdDef#{ShareExp Exp ShareDict} end})
       [] refAppDec(_ _ _) then Stm
       [] tupDec(_ _ _) then Stm
-      [] rowDec(_ _ _) then Stm
-      [] evalStm(Region Exp) then evalStm(Region {ShareExp Exp ShareDict})
-      [] handleStm(Region Body1 Id Body2 Body3 Stamp) then
-	 handleStm(Region {ShareBody Body1 ShareDict} Id
+      [] prodDec(_ _ _) then Stm
+      [] handleStm(Region Body1 IdDef Body2 Body3 Stamp) then
+	 handleStm(Region {ShareBody Body1 ShareDict} IdDef
 		   {ShareBody Body2 ShareDict} {ShareBody Body3 ShareDict}
 		   Stamp)
       [] endHandleStm(_ _) then Stm
-      [] testStm(Region Id TestBodyList Body) then
+      [] testStm(Region Id Tests Body) then
 	 testStm(Region Id
-		 {Map TestBodyList
-		  fun {$ Test#Body} Test#{ShareBody Body ShareDict} end}
+		 case Tests of litTests(LitBodyList) then
+		    litTests({Map LitBodyList
+			      fun {$ Lit#Body}
+				 Lit#{ShareBody Body ShareDict}
+			      end})
+		 [] tagTests(TagBodyList) then
+		    tagTests({Map TagBodyList
+			      fun {$ Label#N#ConArgs#Body}
+				 Label#N#ConArgs#{ShareBody Body ShareDict}
+			      end})
+		 [] conTests(ConBodyList) then
+		    conTests({Map ConBodyList
+			      fun {$ Con#ConArgs#Body}
+				 Con#ConArgs#{ShareBody Body ShareDict}
+			      end})
+		 [] vecTests(VecBodyList) then
+		    vecTests({Map VecBodyList
+			      fun {$ IdDefs#Body}
+				 IdDefs#{ShareBody Body ShareDict}
+			      end})
+		 end
 		 {ShareBody Body ShareDict})
       [] raiseStm(_ _) then Stm
       [] reraiseStm(_ _) then Stm

@@ -891,6 +891,7 @@ in
 	    Emitter, EmitAddrInLocalEnv(Addr2 HasLocalEnv)
 	    Emitter, RestoreAllRegisterMappings(RegMap2)
 	 [] vMatch(_ Reg Addr VHashTableEntries Coord Cont) then
+	    %--** emit testBool if possible
 	    HasLocalEnv R Dest NewVHashTableEntries RegMap
 	 in
 	    Emitter, MayAllocateEnvLocally(?HasLocalEnv)
