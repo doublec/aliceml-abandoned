@@ -41,11 +41,8 @@ endif
 java.exe: JavaMain.o Base.o $(LIBS)
 	$(LD) $(LDFLAGS) -o $@ $< Base.o $(LDLIBS)
 
-%.def: $(OBJS) $(LIBS)
-	$(DLLTOOL) --output-def $@ --dllname $*.dll $^
-
-%.dll: %.def $(OBJS) $(LIBS)
-	$(DLLWRAP) $(LDFLAGS) -o $@ --def $< $(OBJS) $(LDLIBS)
+%.dll: $(OBJS) $(LIBS)
+	$(LD) $(LDFLAGS) -shared -o $@ $(OBJS) $(LDLIBS)
 
 all-subdirs:
 	for i in $(SUBDIRS); do (cd $$i && $(MAKE) all) || exit 1; done
