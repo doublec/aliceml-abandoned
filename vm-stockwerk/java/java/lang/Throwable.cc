@@ -19,6 +19,7 @@ static word wStackTraceElementClass;
 
 DEFINE1(fillInStackTrace) {
   DECLARE_OBJECT(_this, x0);
+  Assert(_this != INVALID_POINTER);
   Backtrace *backtrace = Backtrace::New();
   TaskStack *taskStack = Scheduler::currentTaskStack;
   for (u_int i = Scheduler::nFrames; i--; ) {
@@ -32,6 +33,7 @@ DEFINE1(fillInStackTrace) {
 
 DEFINE1(getStackTraceDepth) {
   DECLARE_OBJECT(_this, x0);
+  Assert(_this != INVALID_POINTER);
   word wBacktrace = _this->GetInstanceField(0);
   if (wBacktrace == null) RETURN_INT(0);
   RETURN_INT(Backtrace::FromWordDirect(wBacktrace)->GetNumberOfElements());
@@ -39,6 +41,7 @@ DEFINE1(getStackTraceDepth) {
 
 DEFINE2(getStackTraceElement) {
   DECLARE_OBJECT(_this, x0);
+  Assert(_this != INVALID_POINTER);
   DECLARE_INT(i, x1);
   word wBacktrace = _this->GetInstanceField(0);
   if (wBacktrace == null)
