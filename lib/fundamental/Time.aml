@@ -23,7 +23,7 @@ import structure IEEEReal                            from "IEEEReal"
 import signature TIME                                from "TIME-sig"
 
 
-structure Time :> (TIME (*TODO where __primitive type time = "time"*)) =
+structure Time :> TIME =
 struct
     open LargeInt		(* +, -, <, >, <=, >=, compare *)
 

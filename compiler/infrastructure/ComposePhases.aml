@@ -17,7 +17,7 @@ import signature PHASE   from "PHASE-sig"
 
 functor ComposePhases'(
 	structure Phase1:  PHASE
-	structure Phase2:  PHASE where type I.t = Phase1.O.t
+	structure Phase2:  PHASE where I = Phase1.O
 	structure Context: CONTEXT
 	val context1: Context.t -> Phase1.C.t
 	val context2: Context.t -> Phase2.C.t
@@ -33,7 +33,7 @@ functor ComposePhases'(
   end
 
 functor ComposePhases(structure Phase1: PHASE
-		      structure Phase2: PHASE where I = Phase1.O): PHASE =
+		      structure Phase2: PHASE where I = Phase1.O) : PHASE =
     let
 	structure C: CONTEXT =
 	    struct

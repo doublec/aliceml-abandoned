@@ -201,19 +201,19 @@ struct
       | seqexp [exp]       = exp
       | seqexp(exp1::exps) =
 	let val exp2 = seqexp exps in
-	    O.SeqExp(Source.over(O.infoExp exp1, O.infoExp exp2), exp1, exp2)
+	    O.SeqExp(Source.span(O.infoExp exp1, O.infoExp exp2), exp1, exp2)
 	end
 
     fun altpat []          = raise Crash.Crash "AbstractionPhase.altpat"
       | altpat [pat]       = pat
       | altpat(pat1::pats) =
 	let val pat2 = altpat pats in
-	    O.AltPat(Source.over(O.infoPat pat1, O.infoPat pat2), pat1, pat2)
+	    O.AltPat(Source.span(O.infoPat pat1, O.infoPat pat2), pat1, pat2)
 	end
 
     fun funexp(valids, exp) =
 	List.foldr (fn(valid,exp) =>
-	     let val i = Source.over(O.infoId valid, O.infoExp exp) in
+	     let val i = Source.span(O.infoId valid, O.infoExp exp) in
 		O.FunExp(i, #[O.Mat(i, O.VarPat(O.infoId valid, valid), exp)])
 	     end
 	    ) exp valids
@@ -230,7 +230,7 @@ struct
 
     fun apptyp(typs, typ) =
 	List.foldl (fn(typ1,typ2) =>
-	      O.AppTyp(Source.over(O.infoTyp typ1, O.infoTyp typ2), typ2, typ1)
+	      O.AppTyp(Source.span(O.infoTyp typ1, O.infoTyp typ2), typ2, typ1)
 	    ) typ typs
 
     fun jokapptyp(k, typ) =
@@ -240,12 +240,12 @@ struct
 
     fun arrtyp(typs, typ) =
 	List.foldr (fn(typ1,typ2) =>
-	      O.ArrTyp(Source.over(O.infoTyp typ1, O.infoTyp typ2), typ1, typ2)
+	      O.ArrTyp(Source.span(O.infoTyp typ1, O.infoTyp typ2), typ1, typ2)
 	    ) typ typs
 
     fun funinf(modid_infs, inf) =
 	List.foldr (fn((modid,inf1),inf2) =>
-	      O.FunInf(Source.over(O.infoId modid, O.infoInf inf2),
+	      O.FunInf(Source.span(O.infoId modid, O.infoInf inf2),
 		       modid, inf1, inf2)
 	    ) inf modid_infs
 
@@ -735,7 +735,7 @@ struct
 
 	 | SOME(ROWExpRow(i, lab as Lab(i',lab'), exp, exprowo)) =>
 	   let
-		val i1'  = Source.over(i', infoExp exp)
+		val i1'  = Source.span(i', infoExp exp)
 		val fld' = O.Fld(i1', trLab E lab, trExp E exp)
 		val _    = insertDisjointFld(E, lab', i')
 			   handle CollisionFld _ =>
@@ -961,7 +961,7 @@ struct
 
 	 | SOME(ROWPatRow(i, lab as Lab(i',lab'), pat, patrowo)) =>
 	   let
-		val i1'  = Source.over(i', infoPat pat)
+		val i1'  = Source.span(i', infoPat pat)
 		val fld' = O.Fld(i1', trLab E lab, trPat (E,E') pat)
 		val _    = insertDisjointFld(E, lab', i')
 			   handle CollisionFld _ =>
@@ -1175,7 +1175,7 @@ struct
 
 	 | SOME(ROWTyRow(i, lab as Lab(i',lab'), ty, tyrowo)) =>
 	   let
-		val i1'  = Source.over(i', infoTy ty)
+		val i1'  = Source.span(i', infoTy ty)
 		val fld' = O.Fld(i1', trLab E lab, trTy E ty)
 		val _    = insertDisjointFld(E, lab', i')
 			   handle CollisionFld _ =>
@@ -1655,7 +1655,7 @@ struct
 
 	 | SOME(PLAINValBind(_, pat, exp, valbindo)) =>
 	   let
-		val i    = Source.over(infoPat pat, infoExp exp)
+		val i    = Source.span(infoPat pat, infoExp exp)
 		val pat' = trPat (E,E') pat
 		val exp' = trExp E exp
 		val dec' = O.ValDec(i, pat', exp')
@@ -1670,7 +1670,7 @@ struct
 		val exps' = trRecValBindo_rhs E (SOME valbind)
 		val decs' = VectorPair.map
 				(fn(pat',exp') =>
-				 O.ValDec(Source.over(O.infoPat pat',
+				 O.ValDec(Source.span(O.infoPat pat',
 						      O.infoExp exp'),
 					  pat', exp'))
 				(pats',exps')
@@ -2015,7 +2015,7 @@ struct
 
 	 | SOME(NEWTypBind(_, tyvarseq, tycon as TyCon(i',tycon'), typbindo)) =>
 	   let
-		val  i             = Source.over(infoSeq tyvarseq, i')
+		val  i             = Source.span(infoSeq tyvarseq, i')
 		val (typid',stamp) = trTyCon_bind E tycon
 		val  _             = insertScope E
 		val  varids'       = trTyVarSeq E tyvarseq
@@ -2033,7 +2033,7 @@ struct
 	 | SOME(EQUALTypBind(_, tyvarseq, tycon as TyCon(i',tycon'), ty,
 								typbindo)) =>
 	   let
-		val  i             = Source.over(infoSeq tyvarseq, infoTy ty)
+		val  i             = Source.span(infoSeq tyvarseq, infoTy ty)
 		val (typid',stamp) = trTyCon_bind E tycon
 		val  _             = insertScope E
 		val  varids'       = trTyVarSeq E tyvarseq
@@ -2077,7 +2077,7 @@ struct
 								datbindo)) =>
 	   let
 		val  i'           = infoConBind conbind
-		val  i            = Source.over(infoSeq tyvarseq, i')
+		val  i            = Source.span(infoSeq tyvarseq, i')
 		val (typid',E'')  = trTyCon E tycon	(* bound before *)
 		val  _            = insertScope E
 		val  varids'      = trTyVarSeq E tyvarseq
@@ -2149,7 +2149,7 @@ struct
 
 	 | SOME(ExtBind(_, tyvarseq, tycon as TyCon(i',tycon'), extbindo)) =>
 	   let
-		val  i             = Source.over(infoSeq tyvarseq, i')
+		val  i             = Source.span(infoSeq tyvarseq, i')
 		val (typid',stamp) = trTyCon_bind E tycon
 		val  _             = insertScope E
 		val  varids'       = trTyVarSeq E tyvarseq
@@ -2170,7 +2170,7 @@ struct
 	 | SOME(NEWEconBind(_, _, vid as VId(i',vid'), tyo, tyvarseq, longtycon,
 								 econbindo)) =>
 	   let
-		val  i               = Source.over(i', infoLong longtycon)
+		val  i               = Source.span(i', infoLong longtycon)
 		val (valid1',stamp1) = trConVId_bind' E vid
 		val (valid2',stamp2) = trVId_bind E vid
 		val  vallongid1'     = O.ShortId(i, valid1')
@@ -2210,7 +2210,7 @@ struct
 	 | SOME(EQUALEconBind(_, _, vid as VId(i',vid'), _,
 							longvid, econbindo)) =>
 	   let
-		val  i               = Source.over(i', infoLong longvid)
+		val  i               = Source.span(i', infoLong longvid)
 		val (valid1',stamp1) = trConVId_bind' E vid
 		val (valid2',stamp2) = trVId_bind E vid
 		val  vallongid1'     = trConLongVId E longvid
@@ -2280,7 +2280,7 @@ struct
 
 	 | SOME(StrBind(_, strid as StrId(i',strid'), strexp, strbindo)) =>
 	   let
-		val  i             = Source.over(i', infoStrExp strexp)
+		val  i             = Source.span(i', infoStrExp strexp)
 		val (modid',stamp) = trStrId_bind E strid
 		val (mod',F)       = trStrExp E strexp
 		val  F'            = strengthen(stamp,F)
@@ -2299,7 +2299,7 @@ struct
 	 | SOME(SigBind(_, sigid as SigId(i',sigid'), strpats, sigexp,
 								sigbindo)) =>
 	   let
-		val  i             = Source.over(i', infoSigExp sigexp)
+		val  i             = Source.span(i', infoSigExp sigexp)
 		val (infid',stamp) = trSigId_bind E sigid
 		val  _             = insertScope E
 		val  modid_infs'   = trStrPats E strpats
@@ -2373,7 +2373,7 @@ struct
 		val (mod',F1) = trStrExp E strexp
 		val (inf',F2) = trSigExp E sigexp
 	   in
-		( O.AbsMod(i, mod', inf'), F2 )
+		( O.SealMod(i, mod', inf'), F2 )
 	   end
 
 	 | FCTStrExp(i, strpat, strexp) =>
@@ -2675,7 +2675,7 @@ struct
 
 	 | SOME(NEWValDesc(_, _, vid as VId(i',vid'), ty, valdesco)) =>
 	   let
-		val  i             = Source.over(i', infoTy ty)
+		val  i             = Source.span(i', infoTy ty)
 		val (valid',stamp) = trVId_bind E vid
 		val  _             = insertScope E
 		val  varids'       = trAllTy E ty
@@ -2709,7 +2709,7 @@ struct
 
 	 | SOME(NEWTypDesc(_, tyvarseq, tycon as TyCon(i',tycon'), typdesco)) =>
 	   let
-		val  i             = Source.over(infoSeq tyvarseq, i')
+		val  i             = Source.span(infoSeq tyvarseq, i')
 		val (typid',stamp) = trTyCon_bind E tycon
 		val  _             = insertScope E
 		val  varids'       = trTyVarSeq E tyvarseq
@@ -2727,7 +2727,7 @@ struct
 	 | SOME(EQUALTypDesc(_, tyvarseq, tycon as TyCon(i',tycon'),
 							ty, typdesco)) =>
 	   let
-		val  i             = Source.over(infoSeq tyvarseq, infoTy ty)
+		val  i             = Source.span(infoSeq tyvarseq, infoTy ty)
 		val (typid',stamp) = trTyCon_bind E tycon
 		val  _             = insertScope E
 		val  varids'       = trTyVarSeq E tyvarseq
@@ -2772,7 +2772,7 @@ struct
 								datdesco)) =>
 	   let
 		val  i'            = infoConDesc condesc
-		val  i             = Source.over(infoSeq tyvarseq, i')
+		val  i             = Source.span(infoSeq tyvarseq, i')
 		val (typid',E')    = trTyCon E tycon	(* bound before *)
 		val  _             = insertScope E
 		val  varids'       = trTyVarSeq E tyvarseq
@@ -2834,7 +2834,7 @@ struct
 
 	 | SOME(ExtDesc(_, tyvarseq, tycon as TyCon(i',tycon'), extdesco)) =>
 	   let
-		val  i             = Source.over(infoSeq tyvarseq, i')
+		val  i             = Source.span(infoSeq tyvarseq, i')
 		val (typid',stamp) = trTyCon_bind E tycon
 		val  _             = insertScope E
 		val  varids'       = trTyVarSeq E tyvarseq
@@ -2855,7 +2855,7 @@ struct
 	 | SOME(NEWEconDesc(_, _, vid as VId(i',vid'), tyo, tyvarseq, longtycon,
 								 econdesco)) =>
 	   let
-		val  i               = Source.over(i', infoLong longtycon)
+		val  i               = Source.span(i', infoLong longtycon)
 		val (valid1',stamp1) = trConVId_bind' E vid
 		val (valid2',stamp2) = trVId_bind E vid
 		val  _               = insertScope E
@@ -2888,7 +2888,7 @@ struct
 	 | SOME(EQUALEconDesc(_, _, vid as VId(i',vid'), _, longvid,
 								econdesco)) =>
 	   let
-		val  i               = Source.over(i', infoLong longvid)
+		val  i               = Source.span(i', infoLong longvid)
 		val (valid1',stamp1) = trConVId_bind' E vid
 		val (valid2',stamp2) = trVId_bind E vid
 		val  vallongid1'     = trConLongVId E longvid
@@ -2916,7 +2916,7 @@ struct
 
 	 | SOME(NEWStrDesc(_, strid as StrId(i',strid'), sigexp, strdesco)) =>
 	   let
-		val  i             = Source.over(i', infoSigExp sigexp)
+		val  i             = Source.span(i', infoSigExp sigexp)
 		val (modid',stamp) = trStrId_bind E strid
 		val (inf',F)       = trSigExp E sigexp
 		val  F'            = strengthen(stamp,F)
@@ -2932,7 +2932,7 @@ struct
 								strdesco)) =>
 	   let
 		val  i2             = infoLong longstrid
-		val  i              = Source.over(i', i2)
+		val  i              = Source.span(i', i2)
 		val (modid',stamp)  = trStrId_bind E strid
 		val (modlongid',F)  = trLongStrId E longstrid
 		val  mod'           = O.VarMod(i2, modlongid')
@@ -2942,7 +2942,7 @@ struct
 					 | SOME sigexp =>
 					let
 					    val (inf',F'') = trSigExp E sigexp
-					    val i''   = Source.over
+					    val i''   = Source.span
 							 (infoSigExp sigexp, i2)
 					    val mod'' = O.AnnMod(i'', mod',inf')
 					in
@@ -2980,7 +2980,7 @@ struct
 	 | SOME(EQUALSigDesc(_, sigid as SigId(i',sigid'), strpats, sigexp,
 								sigdesco)) =>
 	   let
-		val  i             = Source.over(i', infoSigExp sigexp)
+		val  i             = Source.span(i', infoSigExp sigexp)
 		val (infid',stamp) = trSigId_bind E sigid
 		val  _             = insertScope E
 		val  modid_infs'   = trStrPats E strpats
@@ -3174,7 +3174,7 @@ struct
 
 	 | SOME(DESCValItem(_, _, vid as VId(i',vid'), ty, valitemo)) =>
 	   let
-		val  i             = Source.over(i', infoTy ty)
+		val  i             = Source.span(i', infoTy ty)
 		val (valid',stamp) = trVId_bind E vid
 		val  _             = insertScope E
 		val  varids'       = trAllTy E ty
@@ -3212,7 +3212,7 @@ struct
 
 	 | SOME(DESCTypItem(_, tyvarseq, tycon as TyCon(i',tycon'), typitemo)) =>
 	   let
-		val  i             = Source.over(infoSeq tyvarseq, i')
+		val  i             = Source.span(infoSeq tyvarseq, i')
 		val (typid',stamp) = trTyCon_bind E tycon
 		val  _             = insertScope E
 		val  varids'       = trTyVarSeq E tyvarseq
@@ -3275,7 +3275,7 @@ struct
 								   datitemo)) =>
 	   let
 		val  i'           = infoConItem conitem
-		val  i            = Source.over(infoSeq tyvarseq, i')
+		val  i            = Source.span(infoSeq tyvarseq, i')
 		val (typid',E'')  = trTyCon E tycon
 		val  _            = insertScope E
 		val  varids'      = trTyVarSeq E tyvarseq
@@ -3358,7 +3358,7 @@ struct
 
 	 | SOME(DESCExtItem(_, tyvarseq, tycon as TyCon(i',tycon'), extitemo)) =>
 	   let
-		val  i             = Source.over(infoSeq tyvarseq, i')
+		val  i             = Source.span(infoSeq tyvarseq, i')
 		val (typid',stamp) = trTyCon_bind E tycon
 		val  _             = insertScope E
 		val  varids'       = trTyVarSeq E tyvarseq
@@ -3402,7 +3402,7 @@ struct
 	 | SOME(DESCEconItem(_, _, vid as VId(i',vid'), tyo, tyvarseq,longtycon,
 								 econitemo)) =>
 	   let
-		val  i               = Source.over(i', infoLong longtycon)
+		val  i               = Source.span(i', infoLong longtycon)
 		val (valid1',stamp1) = trConVId_bind' E vid
 		val (valid2',stamp2) = trVId_bind E vid
 		val  _               = insertScope E
@@ -3453,7 +3453,7 @@ struct
 
 	 | SOME(DESCStrItem(_, strid as StrId(i',strid'), sigexp, stritemo)) =>
 	   let
-		val  i             = Source.over(i', infoSigExp sigexp)
+		val  i             = Source.span(i', infoSigExp sigexp)
 		val (modid',stamp) = trStrId_bind E strid
 		val (inf',F)       = trSigExp E sigexp
 		val  F'            = case lookupStr(E', strid')

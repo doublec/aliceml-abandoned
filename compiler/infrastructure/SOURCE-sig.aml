@@ -28,7 +28,7 @@ sig
     val toString:		source -> string
 
     val nowhere:		region
-    val over:			region * region -> region
+    val span:			region * region -> region
     val between:		region * region -> region
 
     val regionToString:		region -> string

@@ -115,7 +115,7 @@ struct
 
     fun singleton(inf, modlongid) =
 	let
-	    val i   = Source.over(infoInf inf, infoLongid modlongid)
+	    val i   = Source.span(infoInf inf, infoLongid modlongid)
 	    val mod = AnnMod(i, VarMod(i, modlongid), inf)
 	in
 	    SingInf(i, mod)
@@ -126,7 +126,7 @@ struct
 	let
 	    val inf2  = buildSig'(modlongid, SigInf(infoSpec spec, #[spec]))
 	in
-	    InterInf(Source.over(infoInf inf1, i), inf1, inf2)
+	    InterInf(Source.span(infoInf inf1, i), inf1, inf2)
 	end
 
     and buildSig'(ShortId(i, modid), inf) =
