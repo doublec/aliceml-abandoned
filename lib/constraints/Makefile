@@ -78,7 +78,7 @@ $(PREFIX)/lib/constraints/%.ozf: %.ozf
 ##
 
 clean:
-	-rm -f $(OZSOURCES:%.oz=Untyped%.ozf) $(COMPONENTS) *.ozm *.ozp
+	-rm -f $(OZSOURCES:%.oz=Untyped%.ozf) $(COMPONENTS)
 
 veryclean: clean
 
