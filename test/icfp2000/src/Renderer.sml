@@ -390,7 +390,8 @@ print ("k2 = " ^ Real.toString k2 ^ "\n");*)
 	    if Real.== (k, 0.0) then Color.black
 	    else
 		Color.scale
-		(k, List.foldr (fn (x, sum) => Color.add (sum, f x)) i xs)
+		(k, List.foldr (fn (x, sum) =>
+				Color.add (sum, Color.nclamp (f x))) i xs)
 
 	fun trace (base, dir, ambient, lights, scene, depth) =
 	    case intersect (scene, base, dir) of

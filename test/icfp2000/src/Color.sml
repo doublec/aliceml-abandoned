@@ -8,6 +8,7 @@ signature COLOR =
 	val add: color * color -> color
 	val prod: color * color -> color
 	val clamp: color -> color
+	val nclamp: color -> color
     end
 
 
@@ -33,4 +34,8 @@ structure Color :> COLOR =
 	fun clamp {red, green, blue} =
 	    {red = clamp' red, green = clamp' green, blue = clamp' blue}
 	and clamp' x = if x < 0.0 then 0.0 else if x > 1.0 then 1.0 else x
+
+	fun nclamp {red, green, blue} =
+	    {red = clamp' red, green = clamp' green, blue = clamp' blue}
+	and nclamp' x = if x < 0.0 then 0.0 else x
     end
