@@ -2,7 +2,7 @@
 
 # Change this to reflect your installation directory
 # INSTALLDIR = ../../install
-INSTALLDIR = ../../vm-stockwerk/build3/install
+INSTALLDIR = ../../vm-seam/build3/install
 
 
 ## No changes needed below this
