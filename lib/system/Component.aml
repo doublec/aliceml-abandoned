@@ -115,10 +115,10 @@ struct
 	datatype component = datatype component
 
 	val map: (inf * mod) UrlMap.t =
-	    UrlMap.new (Vector.map (fn (s, inf, mod) =>
-				       (Url.fromString ("x-alice:/" ^ s),
-					(inf, mod)))
-				   initialTable)
+	    lazy UrlMap.new (Vector.map (fn (s, inf, mod) =>
+					 (Url.fromString ("x-alice:/" ^ s),
+					  (inf, mod)))
+			     initialTable)
 
 	fun strictTypeCheck (SOME inf, SOME importInf, mod) =
 	    (Inf.match (inf, importInf); mod) (*--** coercion *)
