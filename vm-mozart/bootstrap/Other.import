@@ -5,31 +5,31 @@
 import
     signature IO
     structure IO
-from "x-alice:/lib/IO"
+from "x-alice:/lib/system/IO"
 
 import
     signature TEXT_IO
     structure TextIO
     val print
-from "x-alice:/lib/TextIO"
+from "x-alice:/lib/system/TextIO"
 
 import
     signature OS_PROCESS
     signature OS
     structure OS
-from "x-alice:/lib/OS"
+from "x-alice:/lib/ststem/OS"
 
 import
     signature UNIX
     structure Unix
-from "x-alice:/lib/Unix"
+from "x-alice:/lib/system/Unix"
 
 import
     signature COMMAND_LINE
     structure CommandLine
-from "x-alice:/lib/CommandLine"
+from "x-alice:/lib/system/CommandLine"
 
 import
     signature TOOLS
     structure Tools
-from "x-alice:/lib/Tools"
+from "x-alice:/lib/system/Tools"
