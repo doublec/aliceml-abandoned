@@ -32,6 +32,14 @@ href="#environment-variables">below</A> for notes on how it is
 interpreted. <I>&lt;output file&gt;</I> may only be omitted if
 <I>&lt;input file&gt;</I> represents a local file.</P>
 
+<P>If <I>&lt;input file&gt;</I> has the file extension <TT>.sml</TT> or
+<TT>.sig</TT>, then the compiler looks for a file with the same name but the
+extension <TT>.import</TT>. If found, the contents of that file is prepended to
+the actual input file. That feature allows putting import announcements into
+separate files and hence easier source exchange between Alice and other
+Standard ML systems, which employ different approaches for separate
+compilation.</P>
+
 <!--
 <P>In the second form, <I>&lt;input file&gt;</I> is compiled as an Alice source
 and an executable component is written as output.  If <I>&lt;output

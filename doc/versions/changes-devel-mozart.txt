@@ -1,11 +1,14 @@
 Library:
 
 * Fixed broken string type in GTK.
+* Renamed UniqueString to Atom.
+* Added WideText and WideChar{Vector,Array}[Slice].
 * Added List.split.
 
 Compiler:
 
 * Implemented naming convention warning.
+* Automatic .import file prepending for .sml sources.
 
 
 Alice 0.9.1 (Stockhausen Operette 3 Remix 1) - 2003/02/13
