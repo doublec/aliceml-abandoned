@@ -14,6 +14,7 @@
 #include "Alice.hh"
 #include "GecodeSpace.hh"
 #include "GecodeBAB.hh"
+#include "gecode-int.hh"
 
 #define DECLARE_SPACE(s, x)                       \
   GecodeSpace *s;                                                  \
@@ -154,8 +155,8 @@ DEFINE2(gc_fdvar) {
     pairs[i][0] = tmp0;
     pairs[i][1] = tmp1;
   }
-  
-  int newVar = s->AddIntVariable(pairs, noOfPairs);
+  DomSpec ds(pairs, noOfPairs);
+  int newVar = s->AddIntVariable(ds);
   RETURN_INT(newVar);
 } END
 
@@ -175,7 +176,8 @@ DEFINE3(gc_fdvarr) {
     pairs[i][1] = tmp1;
   }
   
-  int newVar = s->AddIntVariableR(pairs, noOfPairs, boolVar);
+  DomSpec ds(pairs, noOfPairs);
+  int newVar = s->AddIntVariableR(ds, boolVar);
   RETURN_INT(newVar);
 } END
 
@@ -214,7 +216,8 @@ DEFINE3(gc_dom) {
     pairs[i][1] = tmp1;
   }
 
-  s->tdom(i, pairs, noOfPairs);
+  DomSpec ds(pairs, noOfPairs);
+  s->tdom(i, ds);
   RETURN_UNIT;
 } END
 
@@ -235,7 +238,8 @@ DEFINE4(gc_domr) {
     pairs[i][1] = tmp1;
   }
 
-  s->tdom(i, pairs, noOfPairs, boolvar);
+  DomSpec ds(pairs, noOfPairs);
+  s->tdom(i, ds, boolvar);
   RETURN_UNIT;
 } END
 
@@ -287,14 +291,12 @@ DEFINE4(gc_eqv) {
   DECLARE_INT(cl, x2);
   int noOfVars = v->GetLength();
 
-  int *vars = new int[noOfVars];
+  IntArgs vars(noOfVars);
   for (int i=noOfVars; i--;) {
     DECLARE_INT(tmp, v->Sub(i));
     vars[i] = tmp;
   }
-
-  s->teq(vars, noOfVars, UnsafeGecode::int2cl[cl]);
-  delete vars;
+  s->teq(vars, UnsafeGecode::int2cl[cl]);
 } END
 
 DEFINE5(gc_eqr) {
@@ -313,15 +315,13 @@ DEFINE5(gc_eqvr) {
   DECLARE_INT(boolVar, x4);
 
   int noOfVars = v->GetLength();
-
-  int *vars = new int[noOfVars];
+  IntArgs vars(noOfVars);
   for (int i=noOfVars; i--;) {
     DECLARE_INT(tmp, v->Sub(i));
     vars[i] = tmp;
   }
 
-  s->teqR(vars, noOfVars, boolVar, UnsafeGecode::int2cl[cl]);
-  delete vars;
+  s->teqR(vars, boolVar, UnsafeGecode::int2cl[cl]);
 } END
 
 DEFINE3(gc_distinct) {
@@ -330,14 +330,12 @@ DEFINE3(gc_distinct) {
   DECLARE_INT(cl, x2);
 
   int noOfVars = v->GetLength();
-
-  int *vars = new int[noOfVars];
+  IntArgs vars(noOfVars);
   for (int i=noOfVars; i--;) {
     DECLARE_INT(tmp, v->Sub(i));
     vars[i] = tmp;
   }
-  s->tdistinct(vars, noOfVars, UnsafeGecode::int2cl[cl]);
-  delete vars;
+  s->tdistinct(vars, UnsafeGecode::int2cl[cl]);
   RETURN_UNIT;
 } END
 
@@ -347,9 +345,9 @@ DEFINE3(gc_distincti) {
   DECLARE_INT(cl, x2);
 
   int noOfVars = v->GetLength();
+  IntArgs vars(noOfVars);
+  IntArgs offsets(noOfVars);
 
-  int *vars = new int[noOfVars];
-  int *offsets = new int[noOfVars];
   for (int i=noOfVars; i--;) {
     DECLARE_TUPLE(t, v->Sub(i));
     DECLARE_INT(tmp1, t->Sel(0));
@@ -357,9 +355,7 @@ DEFINE3(gc_distincti) {
     DECLARE_INT(tmp2, t->Sel(1));
     vars[i] = tmp2;
   }
-  s->tdistinct(offsets, vars, noOfVars, UnsafeGecode::int2cl[cl]);
-  delete offsets;
-  delete vars;
+  s->tdistinct(offsets, vars, UnsafeGecode::int2cl[cl]);
   RETURN_UNIT;
 } END
 
@@ -371,8 +367,8 @@ DEFINE5(gc_linear) {
   DECLARE_INT(cl, x4);
 
   int noOfVars = v->GetLength();
-  int *vars = new int[noOfVars];
-  int *offsets = new int[noOfVars];
+  IntArgs vars(noOfVars);
+  IntArgs offsets(noOfVars);
   for (int i=noOfVars; i--;) {
     DECLARE_TUPLE(t, v->Sub(i));
     DECLARE_INT(tmp1, t->Sel(0));
@@ -380,7 +376,7 @@ DEFINE5(gc_linear) {
     DECLARE_INT(tmp2, t->Sel(1));
     vars[i] = tmp2;
   }
-  s->tlinear(offsets, vars, noOfVars, UnsafeGecode::int2reltype[rel], c,
+  s->tlinear(offsets, vars, UnsafeGecode::int2reltype[rel], c,
 	     UnsafeGecode::int2cl[cl]);
 } END
 
@@ -393,8 +389,8 @@ DEFINE6(gc_linearr) {
   DECLARE_INT(cl, x5);
 
   int noOfVars = v->GetLength();
-  int *vars = new int[noOfVars];
-  int *offsets = new int[noOfVars];
+  IntArgs vars(noOfVars);
+  IntArgs offsets(noOfVars);
   for (int i=noOfVars; i--;) {
     DECLARE_TUPLE(t, v->Sub(i));
     DECLARE_INT(tmp1, t->Sel(0));
@@ -402,7 +398,7 @@ DEFINE6(gc_linearr) {
     DECLARE_INT(tmp2, t->Sel(1));
     vars[i] = tmp2;
   }
-  s->tlinearR(offsets, vars, noOfVars, UnsafeGecode::int2reltype[rel], c,
+  s->tlinearR(offsets, vars, UnsafeGecode::int2reltype[rel], c,
 	      boolVar, UnsafeGecode::int2cl[cl]);
 } END
     
@@ -459,14 +455,13 @@ DEFINE3(gc_bool_andv) {
   DECLARE_INT(b, x2);
 
   int noOfVars = v->GetLength();
-  int *vars = new int[noOfVars];
+  IntArgs vars(noOfVars);
 
   for (int i=noOfVars; i--;) {
     DECLARE_INT(tmp1, v->Sub(i));
     vars[i] = tmp1;
   }
-  s->tbool_and(vars, noOfVars, b);
-  delete vars;
+  s->tbool_and(vars, b);
 } END
 
 DEFINE3(gc_bool_orv) {
@@ -475,14 +470,12 @@ DEFINE3(gc_bool_orv) {
   DECLARE_INT(b, x2);
 
   int noOfVars = v->GetLength();
-  int *vars = new int[noOfVars];
-
+  IntArgs vars(noOfVars);
   for (int i=noOfVars; i--;) {
     DECLARE_INT(tmp1, v->Sub(i));
     vars[i] = tmp1;
   }
-  s->tbool_or(vars, noOfVars, b);
-  delete vars;
+  s->tbool_or(vars, b);
 } END
 
 DEFINE4(gc_branch) {
@@ -492,16 +485,14 @@ DEFINE4(gc_branch) {
   DECLARE_INT(valsel, x3);
 
   int noOfVars = v->GetLength();
-
-  int *vars = new int[noOfVars];
+  IntArgs vars(noOfVars);
 
   for (int i=noOfVars; i--;) {
     DECLARE_INT(tmp1, v->Sub(i));
     vars[i] = tmp1;
   }
-  s->tbranch(vars, noOfVars, UnsafeGecode::int2bvarsel[varsel],
+  s->tbranch(vars, UnsafeGecode::int2bvarsel[varsel],
 	     UnsafeGecode::int2bvalsel[valsel]);
-  delete vars;
   RETURN_UNIT;
 } END
 
@@ -659,13 +650,13 @@ DEFINE6(gc_countii) {
   DECLARE_INT(j, x5);
 
   int noOfVars = v->GetLength();
-  int *vars = new int[noOfVars];
+  IntArgs vars(noOfVars);
   for (int i=noOfVars; i--;) {
     DECLARE_INT(tmp, v->Sub(i));
     vars[i] = tmp;
   }
 
-  s->tcountii(vars, noOfVars, UnsafeGecode::int2reltype[rel],
+  s->tcountii(vars, UnsafeGecode::int2reltype[rel],
 	      i, UnsafeGecode::int2reltype[rel2], j);
   RETURN_UNIT;
 } END
@@ -679,15 +670,14 @@ DEFINE6(gc_countvi) {
   DECLARE_INT(j, x5);
 
   int noOfVars = v->GetLength();
-  int *vars = new int[noOfVars];
+  IntArgs vars(noOfVars);
   for (int i=noOfVars; i--;) {
     DECLARE_INT(tmp, v->Sub(i));
     vars[i] = tmp;
   }
 
-  s->tcountvi(vars, noOfVars, UnsafeGecode::int2reltype[rel],
+  s->tcountvi(vars, UnsafeGecode::int2reltype[rel],
 	      i, UnsafeGecode::int2reltype[rel2], j);
-
   RETURN_UNIT;
 } END
 
@@ -700,15 +690,14 @@ DEFINE6(gc_countiv) {
   DECLARE_INT(j, x5);
 
   int noOfVars = v->GetLength();
-  int *vars = new int[noOfVars];
+  IntArgs vars(noOfVars);
   for (int i=noOfVars; i--;) {
     DECLARE_INT(tmp, v->Sub(i));
     vars[i] = tmp;
   }
 
-  s->tcountiv(vars, noOfVars, UnsafeGecode::int2reltype[rel],
+  s->tcountiv(vars, UnsafeGecode::int2reltype[rel],
 	      i, UnsafeGecode::int2reltype[rel2], j);
-
   RETURN_UNIT;
 } END
 
@@ -721,16 +710,14 @@ DEFINE6(gc_countvv) {
   DECLARE_INT(j, x5);
 
   int noOfVars = v->GetLength();
-  int *vars = new int[noOfVars];
+  IntArgs vars(noOfVars);
   for (int i=noOfVars; i--;) {
     DECLARE_INT(tmp, v->Sub(i));
     vars[i] = tmp;
   }
 
-  s->tcountvv(vars, noOfVars, UnsafeGecode::int2reltype[rel],
+  s->tcountvv(vars, UnsafeGecode::int2reltype[rel],
 	      i, UnsafeGecode::int2reltype[rel2], j);
-
-  delete vars;
   RETURN_UNIT;
 } END
 
@@ -741,15 +728,13 @@ DEFINE4(gc_element) {
   DECLARE_INT(j, x3);
 
   int noOfVars = v->GetLength();
-  int *vars = new int[noOfVars];
+  IntArgs vars(noOfVars);
   for (int i=noOfVars; i--;) {
     DECLARE_INT(tmp, v->Sub(i));
     vars[i] = tmp;
   }
 
-  s->telement(vars, noOfVars, i, j);
-
-  delete vars;
+  s->telement(vars, i, j);
   RETURN_UNIT;
 } END
 
@@ -760,15 +745,13 @@ DEFINE4(gc_elementi) {
   DECLARE_INT(j, x3);
 
   int noOfArgs = v->GetLength();
-  int *args = new int[noOfArgs];
+  IntArgs args(noOfArgs);
   for (int i=noOfArgs; i--;) {
     DECLARE_INT(tmp, v->Sub(i));
     args[i] = tmp;
   }
 
-  s->telementi(args, noOfArgs, i, j);
-
-  delete args;
+  s->telementi(args, i, j);
   RETURN_UNIT;
 } END
 
@@ -779,23 +762,20 @@ DEFINE4(gc_lex) {
   DECLARE_VECTOR(v2, x3);
 
   int noOfVars1 = v1->GetLength();
-  int *vars1 = new int[noOfVars1];
+  IntArgs vars1(noOfVars1);
   for (int i=noOfVars1; i--;) {
     DECLARE_INT(tmp, v1->Sub(i));
     vars1[i] = tmp;
   }
 
   int noOfVars2 = v2->GetLength();
-  int *vars2 = new int[noOfVars2];
+  IntArgs vars2(noOfVars2);
   for (int i=noOfVars2; i--;) {
     DECLARE_INT(tmp, v2->Sub(i));
     vars2[i] = tmp;
   }
 
-  s->tlex(vars1, noOfVars1, UnsafeGecode::int2reltype[rel], vars2, noOfVars2);
-
-  delete vars1;
-  delete vars2;
+  s->tlex(vars1, UnsafeGecode::int2reltype[rel], vars2);
   RETURN_UNIT;
 } END
 
@@ -804,15 +784,13 @@ DEFINE3(gc_min) {
   DECLARE_VECTOR(v, x1);
   DECLARE_INT(i, x2);
   int noOfVars = v->GetLength();
-  int *vars = new int[noOfVars];
+  IntArgs vars(noOfVars);
   for (int i=noOfVars; i--;) {
     DECLARE_INT(tmp, v->Sub(i));
     vars[i] = tmp;
   }
 
-  s->tmin(vars, noOfVars, i);
-
-  delete vars;
+  s->tmin(vars, i);
   RETURN_UNIT;
 } END
 
@@ -821,15 +799,13 @@ DEFINE3(gc_max) {
   DECLARE_VECTOR(v, x1);
   DECLARE_INT(i, x2);
   int noOfVars = v->GetLength();
-  int *vars = new int[noOfVars];
+  IntArgs vars(noOfVars);
   for (int i=noOfVars; i--;) {
     DECLARE_INT(tmp, v->Sub(i));
     vars[i] = tmp;
   }
 
-  s->tmax(vars, noOfVars, i);
-
-  delete vars;
+  s->tmax(vars, i);
   RETURN_UNIT;
 } END
 
@@ -861,15 +837,13 @@ DEFINE3(gc_assign) {
   DECLARE_INT(avalsel, x2);
 
   int noOfVars = v->GetLength();
-  int *vars = new int[noOfVars];
+  IntArgs vars(noOfVars);
   for (int i=noOfVars; i--;) {
     DECLARE_INT(tmp, v->Sub(i));
     vars[i] = tmp;
   }
 
-  s->tassign(vars, noOfVars, UnsafeGecode::int2avalsel[avalsel]);
-
-  delete vars;
+  s->tassign(vars, UnsafeGecode::int2avalsel[avalsel]);
   RETURN_UNIT;
 } END
 

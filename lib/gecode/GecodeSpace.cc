@@ -13,24 +13,11 @@
 
 #include "GecodeSpace.hh"
 
-// int GecodeSpace::AddIntVariable(int i, int j) {
-//   if (noOfIntVars >= intArraySize) {
-//     EnlargeIntVarArray();
-//   }
-  
-//   IntVarArray tmp(1, i, j);
-//   is[noOfIntVars] = tmp[0];
-
-//   noOfIntVars++;
-//   return noOfIntVars-1;
-// }
-
-int GecodeSpace::AddIntVariable(int pairs[][2], int noOfPairs) {
+int GecodeSpace::AddIntVariable(DomSpec& ds) {
   if (noOfIntVars >= intArraySize) {
     EnlargeIntVarArray();
   }
   
-  DomSpec ds(pairs, noOfPairs);
   IntVarArray tmp(1, ds);
   is[noOfIntVars] = tmp[0];
 
@@ -38,25 +25,11 @@ int GecodeSpace::AddIntVariable(int pairs[][2], int noOfPairs) {
   return noOfIntVars-1;
 }
 
-// int GecodeSpace::AddIntVariableR(int i, int j, int boolVar) {
-//   if (noOfIntVars >= intArraySize) {
-//     EnlargeIntVarArray();
-//   }
-  
-//   IntVarArray tmp(1, i, j);
-//   is[noOfIntVars] = tmp[0];
-//   dom(tmp[0], i, j, static_cast<BoolVar>(is[boolVar].core()));
-
-//   noOfIntVars++;
-//   return noOfIntVars-1;
-// }
-
-int GecodeSpace::AddIntVariableR(int pairs[][2], int noOfPairs, int boolVar) {
+int GecodeSpace::AddIntVariableR(DomSpec& ds, int boolVar) {
   if (noOfIntVars >= intArraySize) {
     EnlargeIntVarArray();
   }
   
-  DomSpec ds(pairs, noOfPairs);
   IntVarArray tmp(1, ds);
   is[noOfIntVars] = tmp[0];
   dom(tmp[0], ds, intvar2boolvar(is[boolVar]));
@@ -109,16 +82,14 @@ int GecodeSpace::vmax(int var) {
 }
 
 // Domain
-void GecodeSpace::tdom(int var, int pairs[][2], int noOfPairs) {
+void GecodeSpace::tdom(int var, DomSpec& ds) {
   enter();
-  DomSpec ds(pairs, noOfPairs);
   if (!failed())
     dom(is[var], ds);
 }
 
-void GecodeSpace::tdom(int var, int pairs[][2], int noOfPairs, int boolvar) {
+void GecodeSpace::tdom(int var, DomSpec& ds, int boolvar) {
   enter();
-  DomSpec ds(pairs, noOfPairs);
   if (!failed())
     dom(is[var], ds, intvar2boolvar(is[boolvar]));
 }
@@ -149,8 +120,8 @@ void GecodeSpace::teq(int var1, int var2, conlevel cl) {
   if (!failed())
     eq(is[var1], is[var2], cl);
 }
-void GecodeSpace::teq(int vars[], int noOfVars, conlevel cl) {
-  makeintvararray(a,vars,noOfVars);
+void GecodeSpace::teq(const IntArgs& vars, conlevel cl) {
+  makeintvararray(a,vars);
   enter();
   if (!failed())
     eq(a, cl);
@@ -160,42 +131,41 @@ void GecodeSpace::teqR(int var1, int var2, int boolVar, conlevel cl) {
   if (!failed())
     eq(is[var1], is[var2], intvar2boolvar(is[boolVar]));
 }
-void GecodeSpace::teqR(int vars[], int noOfVars, int boolVar, conlevel cl) {
-  makeintvararray(a,vars,noOfVars);
+void GecodeSpace::teqR(const IntArgs& vars, int boolVar, conlevel cl) {
+  makeintvararray(a,vars);
   enter();
   if (!failed())
     eq(a, intvar2boolvar(is[boolVar]), cl);
 }
 
 // Distinct constraints
-void GecodeSpace::tdistinct(int vars[], int noOfVars, conlevel cl) {
-  makeintvararray(a,vars,noOfVars);
+void GecodeSpace::tdistinct(const IntArgs& vars, conlevel cl) {
+  makeintvararray(a,vars);
   enter();
   if (!failed())
     distinct(a, cl);
 }
-void GecodeSpace::tdistinct(int offsets[], int vars[],
-			   int noOfVars, conlevel cl) {
-  makeintvararray(a,vars,noOfVars);
+void GecodeSpace::tdistinct(const IntArgs& offsets, const IntArgs& vars,
+			    conlevel cl) {
+  makeintvararray(a,vars);
   enter();
   if (!failed())
     distinct(offsets,a, cl);
 }
 
-
-void GecodeSpace::tlinear(int coefficients[], int vars[], int noOfVars,
+void GecodeSpace::tlinear(const IntArgs& coefficients, const IntArgs& vars,
 			  reltype rel,
 			  int constant, conlevel cl) {
-  makeintvararray(a, vars, noOfVars);
+  makeintvararray(a, vars);
   enter();
   if (!failed())
     linear(coefficients, a, rel, constant, cl);
 }
 
-void GecodeSpace::tlinearR(int coefficients[], int vars[], int noOfVars,
+void GecodeSpace::tlinearR(const IntArgs& coefficients, const IntArgs& vars,
 			   reltype rel,
 			   int constant, int boolVar, conlevel cl) {
-  makeintvararray(a, vars, noOfVars);
+  makeintvararray(a, vars);
   enter();
   if (!failed())
     linear(coefficients, a, rel, constant, 
@@ -203,30 +173,30 @@ void GecodeSpace::tlinearR(int coefficients[], int vars[], int noOfVars,
 }
 
 // Counting constraints
-void GecodeSpace::tcountii(int vars[], int noOfVars, reltype rel,
+void GecodeSpace::tcountii(const IntArgs& vars, reltype rel,
 			   int i, reltype rel2, int j) {
-  makeintvararray(a, vars, noOfVars);
+  makeintvararray(a, vars);
   enter();
   if (!failed())
     count(a, rel, i, rel2, j);
 }
-void GecodeSpace::tcountiv(int vars[], int noOfVars, reltype rel,
+void GecodeSpace::tcountiv(const IntArgs& vars, reltype rel,
 			   int i, reltype rel2, int j) {
-  makeintvararray(a, vars, noOfVars);
+  makeintvararray(a, vars);
   enter();
   if (!failed())
     count(a, rel, i, rel2, is[j]);
 }
-void GecodeSpace::tcountvi(int vars[], int noOfVars, reltype rel,
+void GecodeSpace::tcountvi(const IntArgs& vars, reltype rel,
 			   int i, reltype rel2, int j) {
-  makeintvararray(a, vars, noOfVars);
+  makeintvararray(a, vars);
   enter();
   if (!failed())
     count(a, rel, is[i], rel2, j);
 }
-void GecodeSpace::tcountvv(int vars[], int noOfVars, reltype rel,
+void GecodeSpace::tcountvv(const IntArgs& vars, reltype rel,
 			   int i, reltype rel2, int j) {
-  makeintvararray(a, vars, noOfVars);
+  makeintvararray(a, vars);
   enter();
   if (!failed())
     count(a, rel, is[i], rel2, is[j]);
@@ -235,21 +205,21 @@ void GecodeSpace::tcountvv(int vars[], int noOfVars, reltype rel,
 
 // Access constraints
 
-void GecodeSpace::telement(int vars[], int noOfVars, int i, int j) {
-  makeintvararray(a, vars, noOfVars);
+void GecodeSpace::telement(const IntArgs& vars, int i, int j) {
+  makeintvararray(a, vars);
   enter();
   if(!failed())
     element(a, is[i], is[j]);
 }
-void GecodeSpace::telementi(int args[], int noOfArgs, int i, int j) {
+void GecodeSpace::telementi(const IntArgs& args, int i, int j) {
   enter();
   if(!failed())
-    element(args, noOfArgs, is[i], is[j]);
+    element(args, is[i], is[j]);
 }
-void GecodeSpace::tlex(int vars1[], int noOfVars1, reltype rel,
-		       int vars2[], int noOfVars2) {
-  makeintvararray(a, vars1, noOfVars1);
-  makeintvararray(b, vars2, noOfVars2);
+void GecodeSpace::tlex(const IntArgs& vars1, reltype rel,
+		       const IntArgs& vars2) {
+  makeintvararray(a, vars1);
+  makeintvararray(b, vars2);
   enter();
   if(!failed())
     lex(a, rel, b);
@@ -299,14 +269,14 @@ void GecodeSpace::tbool_xor(int a, int b, int c) {
 	     intvar2boolvar(is[b]),
 	     intvar2boolvar(is[c]));
 }
-void GecodeSpace::tbool_and(int vars[], int noOfVars, int b) {
-  makeboolvararray(a, vars, noOfVars);
+void GecodeSpace::tbool_and(const IntArgs& vars, int b) {
+  makeboolvararray(a, vars);
   enter();
   if (!failed())
     bool_and(a, intvar2boolvar(is[b]));
 }
-void GecodeSpace::tbool_or(int vars[], int noOfVars, int b) {
-  makeboolvararray(a, vars, noOfVars);
+void GecodeSpace::tbool_or(const IntArgs& vars, int b) {
+  makeboolvararray(a, vars);
   enter();
   if (!failed())
     bool_or(a, intvar2boolvar(is[b]));
@@ -315,14 +285,14 @@ void GecodeSpace::tbool_or(int vars[], int noOfVars, int b) {
 
 // Arithmetic constraints
 
-void GecodeSpace::tmin(int vars[], int noOfVars, int i) {
-  makeintvararray(a, vars, noOfVars);
+void GecodeSpace::tmin(const IntArgs& vars, int i) {
+  makeintvararray(a, vars);
   enter();
   if(!failed())
     min(a, is[i]);
 }
-void GecodeSpace::tmax(int vars[], int noOfVars, int i) {
-  makeintvararray(a, vars, noOfVars);
+void GecodeSpace::tmax(const IntArgs& vars, int i) {
+  makeintvararray(a, vars);
   enter();
   if(!failed())
     max(a, is[i]);
@@ -340,16 +310,16 @@ void GecodeSpace::tmult(int i, int j, int k) {
 
 // Value assignment
 
-void GecodeSpace::tassign(int vars[], int noOfVars, AvalSel as) {
-  makeintvararray(a, vars, noOfVars);
+void GecodeSpace::tassign(const IntArgs& vars, AvalSel as) {
+  makeintvararray(a, vars);
   enter();
   if(!failed())
     assign(a, as);
 }
 
-void GecodeSpace::tbranch(int vars[], int noOfVars,
+void GecodeSpace::tbranch(const IntArgs& vars,
 			 BvarSel varSel, BvalSel valSel) {
-  makeintvararray(a,vars,noOfVars);
+  makeintvararray(a,vars);
   enter();
   if (!failed())
     branch(a,varSel,valSel);
