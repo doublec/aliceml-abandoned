@@ -36,11 +36,14 @@ DEFINE2(Word_opshr) {
 } END
 
 DEFINE2(Word_oparithshr) {
-  //--** this is actually unspecified by ANSI C++
   DECLARE_INT(i, x0);
   DECLARE_INT(j, x1);
-  signed int v = i << 1;
-  RETURN_INT(v >> (j + 1));
+  //--** this can be improved on many architectures
+  if (i & (1 << 31)) {
+    RETURN_INT((i >> j) | 1 << 31);
+  } else {
+    RETURN_INT(i >> j);
+  }
 } END
 
 WORD_WORD_TO_WORD_OP(Word_andb, &)
