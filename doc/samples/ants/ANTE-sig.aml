@@ -50,6 +50,7 @@ sig
     val times	: int -> stmt -> stmt
     val repeat	: int -> stmt -> stmt
     val try	: (stmt -> stmt) -> otherwise -> stmt -> stmt
+    val proc	: label -> stmt -> stmt
 
     val turnto	: condition -> yesno -> stmt -> stmt
 

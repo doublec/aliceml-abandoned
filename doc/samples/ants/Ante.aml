@@ -130,6 +130,8 @@ struct
 	    f (goto l1) ++ goto l2 ++ label l1 ++ b ++ label l2
 	end
 
+    fun proc l b = label l ++ b
+
 
   (* Complex abstractions *)
 
