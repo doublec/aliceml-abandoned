@@ -6,6 +6,10 @@ COMPONENTS=$(addsuffix .stc, $(basename $(SOURCES)))
 
 all: $(COMPONENTS)
 
+
+%.ozf : %.aml
+	$(ALICEC) $< -o $@	
+
 %.stc : %.aml
 	$(ALICEC) $< -o $@	
 

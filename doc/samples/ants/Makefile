@@ -55,7 +55,7 @@ submission:
 	cp $(SOURCES) $(TEAM)/tools
 	cp parsec/*.aml $(TEAM)/tools/parsec
 	cp Makefile.mozart $(TEAM)/tools/Makefile
-	cp compile HOWTO $(TEAM)/tools
+	cp compile sim HOWTO $(TEAM)/tools
 	cp anttrax.ante $(TEAM)/tools
 	tar -czf $(TEAM).tar.gz $(TEAM)
 	rm -rf $(TEAM)

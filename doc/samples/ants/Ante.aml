@@ -243,6 +243,7 @@ struct
 		val e = E.insert(e,l,(p,true))
 		val result as (s',l',n',e') = traverse n e a i'
 	    in
+		(* Ugh! Wild hack because Future.Cyclic does not work... *)
 		if UnsafeValue.same (s', future p)
 		then (fulfill(p, n); (n, I.Flip(1,n,n,a)::l', n'+1, e'))
 		else (fulfill(p, s'); result)
@@ -333,21 +334,3 @@ struct
 	    Vector.fromList l
 	end
 end
-
-
-
-(*
-    fun continue k (Cont)		= k
-      | continue k (Fail)		= Fail
-      | continue k (Goto l)		= Goto l
-      | continue k (Label(l,k'))	= Label(l, continue k k')
-      | continue k (Mark(m,k'))		= Mark(m, continue k k')
-      | continue k (Unmark(m,k'))	= Unmark(m, continue k k')
-      | continue k (Turn(s,k'))		= Turn(s, continue k k')
-      | continue k (Move(k1,k2))	= Move(continue k k1, continue k k2)
-      | continue k (Pick(k1,k2))	= Pick(continue k k1, continue k k2)
-      | continue k (Drop k')		= Drop(continue k k')
-      | continue k (Sense(d,c,k1,k2))	= Sense(d, c, continue k k1,
-						      continue k k2)
-      | continue k (Flip(n,k1,k2))	= Flip(n,continue k k1, continue k k2)
-*)
