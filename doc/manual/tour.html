@@ -431,115 +431,60 @@ import "/home/kornstae/stockhausen/doc/samples/Url"
 
 
 <?php section("constraints", "constraints") ?>
+  <P>
+    Alice ML provides expressive constraint functionality in a typeful way.
+    To illustrate this, consider the <I>Send More Money</I> problem.
+  </P>
+    The <I>Send More Money</I> problem consists in finding distinct
+    digits for the letters <TT>S</TT>, <TT>E</TT>,
+    <TT>N</TT>, <TT>D</TT>, <TT>M</TT>, <TT>O</TT>,
+    <TT>R</TT>, <TT>Y</TT> such that <TT>S</TT>
+    and <TT>M</TT> are different from zero (no leading zeros) and the equation
+  </P>
+    <PRE class=pre>
+       SEND + MORE = MONEY</PRE>
+  <P>
+    is satisfied. The unique solution of the problem is
+    <TT>9567 + 1085 = 10652</TT>.
+  </P>
+  <P>
+    Using Alice, the problem can be written as follows.
+  </P>
+  <PRE>
+    import structure FD       from "x-alice:/lib/constraints/FD"
+    import structure FS       from "x-alice:/lib/constraints/FS"
+    import structure Search   from "x-alice:/lib/constraints/Search"
+    import structure Linear   from "x-alice:/lib/constraints/Linear"
+    import structure Explorer from "x-alice:/lib/tools/Explorer"
 
-import structure FD       from "x-alice:/lib/constraints/FD"
-
-val x = FD.range (1, 5)
-val y = FD.range (1, 5)
-
-Inspector.inspect (x, y);
-
-FD.less (x, y);
-
-FD.notequal (x, FD.fromInt 3);
-
-FD.equal (x, FD.fromInt 4);
-
-
-
-import structure Search   from "x-alice:/lib/constraints/Search";
-import structure Explorer from "x-alice:/lib/constraints/Explorer";
-
-(*
- * Send + More = Money
- *)
-
-fun money() =
+    fun Money () =
     let
-	val digits as #[S, E, N, D, M, O, R, Y] = FD.rangeVec(8, (0,9))
-	val send                                = FD.fd NONE
-	val more                                = FD.fd NONE
-	val money                               = FD.fd NONE
-	val zero                                = FD.fromInt 0
+	val V as #[S, E, N, D, M, O, R, Y] =
+	    vec(8, [0`#9])
     in
-	FD.sumC(#[(1000, S), (100, E), (10, N), (1, D)],
-		FD.EQUAL, send);
-	FD.sumC(#[(1000, M), (100, O), (10, R), (1, E)],
-		FD.EQUAL, more);
-	FD.sumC(#[(10000, M), (1000, O), (100, N), (10, E), (1, Y)],
-		FD.EQUAL, money);
-	FD.notequal(S, zero);
-	FD.notequal(M, zero);
-	FD.distinct(digits);
-	FD.plus(send, more, money);
-	FD.distribute(FD.FIRSTFAIL, digits);
+	distinct V;
+	post (S `<> `0);
+	post (M `<> `0);
+	post (`1000`*S `+ `100`*E `+ `10`*N `+ D `+
+	      `1000`*M `+ `100`*O `+ `10`*R `+ E `=
+              `10000`*M `+ `1000`*O `+ `100`*N `+ `10`*E `+ Y );
+	distribute(FD.FIRSTFAIL, V);
 	{S, E, N, D, M, O, R, Y}
-    end
-
-val _ = Explorer.exploreAll money
-
-(*
- * Aligning for a Photo
- *)
-
-structure Photo =
-    struct
-	datatype person = ALICE | BERT | CHRIS | DEB | EVAN
-
-	val nPersons = 5
-
-	fun personIndex ALICE = 0
-	  | personIndex BERT  = 1
-	  | personIndex CHRIS = 2
-	  | personIndex DEB   = 3
-	  | personIndex EVAN  = 4
-
-	val prefs = #[(ALICE, CHRIS),
-		      (BERT, EVAN),
-		      (CHRIS, DEB),
-		      (CHRIS, EVAN),
-		      (DEB, ALICE),
-		      (DEB, EVAN),
-		      (EVAN, BERT)]
-
-	fun photo() =
-	    let
-		val pos as #[alice, bert, chris, deb, evan]
-			= FD.rangeVec(nPersons, (1, nPersons))
-		val sat = FD.range(0, Vector.length prefs)
-		val ful = Vector.map
-		    (fn (a, b) =>
-		     let
-			 val c1     = FD.bin()
-			 val c2     = FD.bin()
-			 val result = FD.bin()
-			 val zero   = FD.fromInt 0
-			 val one    = FD.fromInt 1
-			 val posA   = Vector.sub(pos, personIndex a)
-			 val posB   = Vector.sub(pos, personIndex b)
-		     in
-			 FD.Reified.sumC(#[(1, one), (1, posA), (~1, posB)],
-					 FD.EQUAL, zero, c1);
-			 FD.Reified.sumC(#[(1, posA), (~1, posB)],
-					 FD.EQUAL, one, c2);
-			 FD.Reified.sum(#[c1, c2],
-					FD.EQUAL, one, result);
-			 result
-		     end) prefs
-	    in
-		FD.distinct pos;
-		FD.sum(ful, FD.EQUAL, sat);
-		FD.distribute(FD.NAIVE, pos);
-		({alice, bert, chris, deb, evan}, ful, sat)
-	    end
-
-	fun pruner((_, _, a), (_, _, b)) = FD.lessEq(a, b)
-    end
-
-(* Explore the Solution(s) *)
-val _ = Explorer.exploreBest(Photo.photo, Photo.pruner)
-
-
+    end;</PRE>
+  <P>
+    To obtain possibly existing solutions of the problem given above, you can
+    either use
+  </P>
+  <PRE>
+    Explorer.exploreAll Money;</PRE>
+  <P>
+    to interactively explore the search tree as displayed on the screen or
+  </P>
+  <PRE>
+    inspect (Search.searchAll Money);</PRE>
+  <P>
+    to inspect the computed list of solutions.
+  </P>
 <?php section("interop", "interoperability") ?>
 
 
