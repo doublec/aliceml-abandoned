@@ -1,17 +1,59 @@
+(*
+ * Author:
+ *   Jens Regenberg, <jens@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Jens Regenberg, 2002
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
 import signature DEBUGGER from "DEBUGGER-sig"
 import structure UnsafeDebugger from "UnsafeDebugger"
+import structure Reflect from "Reflect"
+import structure Type from "../rtt/Type"
 
 structure Debugger :> DEBUGGER =
     struct
+
+	exception UnknownThread      = UnsafeDebugger.UnknownThread
+	exception InvalidThreadState = UnsafeDebugger.InvalidThreadState
+	exception InvalidBreakpoint  = UnsafeDebugger.InvalidBreakpoint
+
 	type value = Reflect.value
 	type position = string * int * int
-	type environment = (string * value) list list
+	type environment = (Type.t * (string * value * Type.t) list) list
+	type eventstream
 
-	datatype event = C (* ... *)
+	datatype 'a args = 
+	    OneArg of 'a
+	  | TupArg of 'a vector
+
+	datatype step_point_type =
+	    Application of value * Type.t * value args
+	  | Conditional of value * Type.t
+	  | Handler     of exn
+	  | Raise       of exn
+	  | Spawn
+
+	datatype event = 
+	    Entry      of Thread.thread * position * step_point_type
+	  | Breakpoint of Thread.thread * position * step_point_type
+	  | Exit       of Thread.thread * position * value * Type.t option
+	  | UnCaught   of Thread.thread * exn
+	  | Blocked    of Thread.thread
+	  | Runnable   of Thread.thread
+	  | Terminated of Thread.thread
 
 	val getEventStream = UnsafeDebugger.getEventStream
+	val readEventStream = UnsafeDebugger.readEventStream
 	val singleStep = UnsafeDebugger.singleStep
 	val detach = UnsafeDebugger.detach
-	val setBreakpoint = UnsafeDebugger.setBreakpoint
+	val breakpoint = UnsafeDebugger.breakpoint
 	val getRuntimeEnvironment = UnsafeDebugger.getRuntimeEnvironment
+	val lookup = UnsafeDebugger.lookup
+
+	val valueToString = UnsafeDebugger.valueToString
     end

@@ -1,0 +1,27 @@
+import structure Socket from "x-alice:/lib/system/Socket"
+
+
+fun run port = 
+    let 
+	val socket = Socket.client("localhost", port)
+	fun show() = 
+	    let
+		val line = Socket.inputLine socket	
+		val _ = print line
+	    in 
+		show () 
+	    end
+    in
+	show()
+    end
+
+
+
+val _ = let 
+	    val args = CommandLine.arguments()
+	in case args of 
+	    [port] => run (Option.valOf(Int.fromString port))
+	  | _      => print "invalid number of arguments\n"
+	end
+
+

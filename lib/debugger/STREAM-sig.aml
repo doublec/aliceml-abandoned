@@ -1,0 +1,20 @@
+(*
+ * Author:
+ *   Jens Regenberg <jens@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Jens Regenberg, 2002
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+signature STREAM =
+    sig
+	type 'a stream
+	    
+	val new : unit -> 'a stream 
+	val read : 'a stream -> 'a list
+	val write : 'a stream * 'a -> 'a stream
+    end

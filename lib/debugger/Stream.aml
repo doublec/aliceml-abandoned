@@ -1,0 +1,35 @@
+(*
+ * Author:
+ *   Jens Regenberg <jens@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Jens Regenberg, 2002
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature STREAM from "STREAM-sig"
+
+structure Stream :> STREAM = 
+    struct
+	type 'a stream = ('a list) *  ('a list Promise.promise)
+
+	fun new () = 
+	    let 
+		val s = Promise.promise ()
+	    in 
+		(Promise.future s, s)
+	    end
+
+	fun read ((hd,p):'a stream) = hd
+	    
+	fun write ((hd, p), e) =
+	    let
+		val p' = Promise.promise ()
+	    in
+		Promise.fulfill(p,e::(Promise.future p')) ;
+		(hd, p')
+	    end
+    end

@@ -1,0 +1,88 @@
+(*
+ * Author:
+ *   Jens Regenberg <jens@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Jens Regenberg, 2002
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Debugger from "x-alice:/lib/system/Debugger"
+import structure Reflect  from "x-alice:/lib/system/Reflect"
+import structure Type     from "x-alice:/lib/rtt/Type"
+
+signature MODEL =
+    sig
+	exception Unknown_Thread
+	
+	type value = Reflect.value
+	type position = Debugger.position
+	type step_point_type = Debugger.step_point_type
+
+	datatype thread_state =
+	    BLOCKED
+	  | RUNNABLE
+	  | STOPPED_RUNNABLE
+	  | STOPPED_BLOCKED 
+	  | TERMINATED 
+
+	datatype event =
+	    (* VM Events *)
+	    Entry      of Thread.thread * position * step_point_type
+	  | Exit       of Thread.thread * position * value * Type.t option
+	  | Breakpoint of Thread.thread * position * step_point_type
+	  | UnCaught   of Thread.thread * exn
+	  | Blocked    of Thread.thread
+	  | Runnable   of Thread.thread
+	  | Terminated of Thread.thread
+
+	    (* User Events *) 
+	  | Step             of Thread.thread
+	  | Next             of Thread.thread
+	  | Continue         of Thread.thread
+	  | Suspend          of Thread.thread
+	  | Resume           of Thread.thread
+	  | SetBreakpoint    of Thread.thread * position
+	  | RemoveBreakpoint of Thread.thread * position
+	  | Detach           of Thread.thread
+	  | Unleash          of Thread.thread * int
+	  | SetType          of Thread.thread * string * Type.t
+	  | ResetType        of Thread.thread * string
+
+	datatype stackstp = 
+	    APP     of value * Type.t * (value * Type.t) list
+	  | COND    of value * Type.t
+	  | HANDLER of exn * Type.t
+	  | RAISE   of exn * Type.t
+	  | SPAWN
+
+	datatype stackentry = 
+	    ENTRY    of Thread.thread * position * stackstp
+	  | BREAK    of Thread.thread * position * stackstp
+	  | EXIT     of Thread.thread * position * value * Type.t
+	  | UNCAUGHT of Thread.thread * exn * Type.t
+
+	type model
+
+	val new                : unit -> model
+
+	val addView            : model * (Thread.thread -> unit)  -> unit
+	val addController      : model * (unit -> unit)           -> unit
+
+	val notify             : model * Thread.thread            -> unit
+	val handleEvent        : model -> event                   -> unit
+
+	val getCurrentposition : model * Thread.thread            -> position 
+	val getCurrentStepPoint: model * Thread.thread            -> stackstp
+	val getEnvironment     : model * Thread.thread            -> Debugger.environment
+	val lookup             : model * Thread.thread * string   -> Reflect.value * Type.t
+	val getThreadState     : model * Thread.thread            -> thread_state
+	val getThreadIDs       : model                            -> Thread.thread list
+	val getEventStack      : model * Thread.thread            -> stackentry list
+	val getType            : model * Thread.thread            -> string -> Type.t option
+    end
+
+
