@@ -139,8 +139,8 @@ structure OzifyFlatGrammar :> CODE where type t = string * FlatGrammar.t =
 	    (f (q, "conTest"); outputId (q, id); m q;
 	     outputOption outputId (q, idOpt); m q;
 	     outputConArity (q, conArity); r q)
-	  | outputTest (q, RefTest id) =
-	    (f (q, "refTest"); outputId (q, id); r q)
+	  | outputTest (q, RefAppTest id) =
+	    (f (q, "refAppTest"); outputId (q, id); r q)
 	  | outputTest (q, TupTest ids) =
 	    (f (q, "tupTest"); outputList outputId (q, ids); r q)
 	  | outputTest (q, RecTest labelIdList) =
@@ -266,9 +266,9 @@ structure OzifyFlatGrammar :> CODE where type t = string * FlatGrammar.t =
 	    (f (q, "conAppExp"); outputExpInfo (q, info); m q;
 	     outputId (q, id); m q; outputArgs outputId (q, args); m q;
 	     outputConArity (q, conArity); r q)
-	  | outputExp (q, RefAppExp (info, args)) =
+	  | outputExp (q, RefAppExp (info, id)) =
 	    (f (q, "refAppExp"); outputExpInfo (q, info); m q;
-	     outputArgs outputId (q, args); r q)
+	     outputId (q, id); r q)
 	  | outputExp (q, PrimAppExp (info, string, ids)) =
 	    (f (q, "primAppExp"); outputExpInfo (q, info); m q;
 	     outputAtom (q, string); m q; outputList outputId (q, ids); r q)

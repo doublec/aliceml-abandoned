@@ -25,7 +25,7 @@ signature SIMPLIFY_MATCH =
 	    LitTest of I.lit
 	  | TagTest of Label.t * typ option * O.conArity
 	  | ConTest of I.longid * typ option * O.conArity
-	  | RefTest of typ
+	  | RefAppTest of typ
 	  | TupTest of typ list
 	  | RecTest of (Label.t * typ) list
 	    (* sorted, all labels distinct, no tuple *)

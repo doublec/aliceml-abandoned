@@ -63,7 +63,7 @@ structure FlatGrammar: FLAT_GRAMMAR =
 	    LitTest of lit
 	  | TagTest of label * id option * conArity
 	  | ConTest of id * id option * conArity
-	  | RefTest of id
+	  | RefAppTest of id
 	  | TupTest of id list
 	  | RecTest of (label * id) list
 	    (* sorted, all labels distinct, no tuple *)
@@ -103,7 +103,7 @@ structure FlatGrammar: FLAT_GRAMMAR =
 	  | SelAppExp of exp_info * label * id
 	  | TagAppExp of exp_info * label * id args * conArity
 	  | ConAppExp of exp_info * id * id args * conArity
-	  | RefAppExp of exp_info * id args
+	  | RefAppExp of exp_info * id
 	  | PrimAppExp of exp_info * string * id list
 	  | AdjExp of exp_info * id * id
 	withtype body = stm list

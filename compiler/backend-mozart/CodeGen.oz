@@ -149,7 +149,7 @@ define
 			       ThenVInstr0 ElseVInstr VTl)
 	    ThenVInstr0 = vInlineDot(_ Reg0 1 {MakeReg Id2 State} false
 				     unit ThenVInstr)
-	 [] refTest(Id) then ThenVInstr0 in
+	 [] refAppTest(Id) then ThenVInstr0 in
 	    VHd = vTestBuiltin(_ 'Cell.is' [Reg0 {State.cs newReg($)}]
 			       ThenVInstr0 ElseVInstr VTl)
 	    ThenVInstr0 = vCallBuiltin(_ 'Cell.access'
@@ -390,9 +390,9 @@ define
 	 {TranslateArgs Args ArgReg VInter2 VInter3 State}
 	 VInter3 = vInlineDot(_ ResReg 1 ArgReg false Pos VInter4)
 	 VInter4 = vUnify(_ Reg ResReg VTl)
-      [] refAppExp(Coord Args) then ArgReg VInter in
+      [] refAppExp(Coord Id) then ArgReg VInter in
 	 {State.cs newReg(?ArgReg)}
-	 {TranslateArgs Args ArgReg VHd VInter State}
+	 VHd = vUnify(_ ArgReg {GetReg Id State} VInter)
 	 VInter = vCallBuiltin(_ 'Cell.new' [ArgReg Reg]
 			       {TranslateCoord Coord State} VTl)
       [] primAppExp(Coord Builtinname Ids) then Value Regs in

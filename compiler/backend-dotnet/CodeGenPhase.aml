@@ -155,7 +155,7 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	     emitId id1; emit (B (NE_UN, elseLabel));
 	     emit (Ldfld (StockWerk.ConVal, "Val", StockWerk.StockWertTy));
 	     declareLocal id2)
-	  | genTest (RefTest id, elseLabel) =
+	  | genTest (RefAppTest id, elseLabel) =
 	    (emit Dup; emit (Isinst StockWerk.Ref);
 	     emit (B (FALSE, elseLabel));
 	     emit (Castclass StockWerk.Ref);
@@ -587,8 +587,8 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	     emit (Stfld (StockWerk.ConVal, "Val", StockWerk.StockWertTy)))
 	  | genExp (RefAppExp (_, _), PREPARE) =
 	    emit (Newobj (StockWerk.Ref, nil))
-	  | genExp (RefAppExp (_, args), FILL) =
-	    (genArgs args;
+	  | genExp (RefAppExp (_, id), FILL) =
+	    (emitId id;
 	     emit (Call (true, StockWerk.Ref, "Assign",
 			 [StockWerk.StockWertTy], VoidTy)))
 	  | genExp (PrimAppExp (_, name, ids), BOTH) =

@@ -109,8 +109,8 @@ structure CodeGen =
 	  | freeVarsExp (ConAppExp (_, id', idargs, _), free, curFun) =
 	    (markfree (free, id', curFun, "ConAppExp");
 	     argApp (markfree, idargs, free, curFun, "ConAppExp2"))
-	  | freeVarsExp (RefAppExp (_, idargs), free, curFun) =
-	    argApp (markfree, idargs, free, curFun, "RefAppExp")
+	  | freeVarsExp (RefAppExp (_, id), free, curFun) =
+	    markfree (free, id, curFun, "RefAppExp")
 	  | freeVarsExp (TupExp (_,ids), free, curFun) =
 	    app (fn id' => markfree (free, id', curFun, "TupExp")) ids
 	  | freeVarsExp (RecExp (_,labids), free, curFun) =
@@ -219,8 +219,8 @@ structure CodeGen =
 	  | freeVarsTest (ConTest(id',SOME id'',_), free, curFun) =
 	    (markfree (free, id', curFun, "ConTest some");
 	     markbound (free, id'', curFun, "ConTest some2"))
-	  | freeVarsTest (RefTest id'', free, curFun) =
-	    markbound (free, id'', curFun, "RefTest")
+	  | freeVarsTest (RefAppTest id'', free, curFun) =
+	    markbound (free, id'', curFun, "RefAppTest")
 	  | freeVarsTest (RecTest labids, free, curFun) =
 	    app (fn (_,id') => markbound (free, id', curFun, "RecTest")) labids
 	  | freeVarsTest (TupTest labs, free, curFun) =
@@ -444,8 +444,8 @@ structure CodeGen =
 		    createTuple (SOME id'', ids, akku, curFun, curCls)
 		  | fillClosure ((id'', VecExp (_, ids)), akku) =
 		    createVector (SOME id'', ids, akku, curFun, curCls)
-		  | fillClosure ((id'', RefAppExp (_, ids)), akku) =
-		    createRefAppExp (SOME id'', ids, akku, curFun, curCls)
+		  | fillClosure ((id'', RefAppExp (_, id)), akku) =
+		    createRefAppExp (SOME id'', id, akku, curFun, curCls)
 		  | fillClosure (_,akku) = akku
 
 	    in
@@ -694,7 +694,7 @@ structure CodeGen =
 					   ([],[Classsig IVal])),
 			  Astore stamp''']
 
-		  | testCode (RefTest (Id (_,stamp''',_))) =
+		  | testCode (RefAppTest (Id (_,stamp''',_))) =
 			 [Dup,
 			  Instanceof CReference,
 			  Ifeq wrongclasslabel,
@@ -1118,11 +1118,11 @@ structure CodeGen =
 		       init)
 
 	and
-	    createRefAppExp (idop, idargs, init, curFun, curCls) =
+	    createRefAppExp (idop, id, init, curFun, curCls) =
 	    createOrLoad (idop, CReference) ::
-	    idArgCode (idargs, curFun,curCls,
-		       Putfield (CReference^"/content", [Classsig IVal]) ::
-		       init)
+	    idCode (id, curFun, curCls) ::
+	    Putfield (CReference^"/content", [Classsig IVal]) ::
+	    init
 
 	and
 	    idArgCode (OneArg id', curFun, curCls, init) =
@@ -1334,8 +1334,7 @@ structure CodeGen =
 	    Line (lineRegion (#region info)) ::
 	    invokeRecApply (stamp', args, curFun, false, curCls, false)
 
-	  | expCode (NewExp (info, _, _), _, _) =
-	    (*--** genericity? *)
+	  | expCode (NewExp (info, _), _, _) =
 	    if Type.isArrow (#typ info) then
 		[Line (lineRegion (#region info)),
 		 New CConstructor,
@@ -1441,9 +1440,9 @@ structure CodeGen =
 	    Line (lineRegion (#region info')) ::
 	    createConVal (NONE, id', idargs, curFun, curCls)
 
-	  | expCode (RefAppExp (info, idargs), curFun, curCls) =
+	  | expCode (RefAppExp (info, id), curFun, curCls) =
 	    Line (lineRegion (#region info)) ::
-	    createRefAppExp (NONE, idargs, nil, curFun, curCls)
+	    createRefAppExp (NONE, id, nil, curFun, curCls)
 
 	  | expCode (SelAppExp (info', label', id'), curFun, curCls) =
 	    let

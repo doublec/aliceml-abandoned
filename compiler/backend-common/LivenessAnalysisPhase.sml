@@ -88,7 +88,7 @@ structure LivenessAnalysisPhase :> LIVENESS_ANALYSIS_PHASE =
 	  | scanTest (ConTest (id, NONE, _), lset) = ins (lset, id)
 	  | scanTest (ConTest (id1, SOME id2, _), lset) =
 	    del (ins (lset, id1), id2)
-	  | scanTest (RefTest id, lset) = del (lset, id)
+	  | scanTest (RefAppTest id, lset) = del (lset, id)
 	  | scanTest (TupTest ids, lset) = delList (lset, ids)
 	  | scanTest (RecTest labIdList, lset) =
 	    List.foldl (fn ((_, id), lset) => del (lset, id)) lset labIdList
@@ -247,7 +247,7 @@ structure LivenessAnalysisPhase :> LIVENESS_ANALYSIS_PHASE =
 	    processArgs (args, lset, ins)
 	  | scanExp (ConAppExp (_, id, args, _), lset) =
 	    processArgs (args, ins (lset, id), ins)
-	  | scanExp (RefAppExp (_, args), lset) = processArgs (args, lset, ins)
+	  | scanExp (RefAppExp (_, id), lset) = ins (lset, id)
 	  | scanExp (PrimAppExp (_, _, ids), lset) = insList (lset, ids)
 	  | scanExp (AdjExp (_, id1, id2), lset) = ins (ins (lset, id1), id2)
 
@@ -268,7 +268,7 @@ structure LivenessAnalysisPhase :> LIVENESS_ANALYSIS_PHASE =
 	  | initTest (TagTest (_, SOME id, _), set) = ins (set, id)
 	  | initTest (ConTest (_, NONE, _), _) = ()
 	  | initTest (ConTest (_, SOME id, _), set) = ins (set, id)
-	  | initTest (RefTest id, set) = ins (set, id)
+	  | initTest (RefAppTest id, set) = ins (set, id)
 	  | initTest (TupTest ids, set) = insList (set, ids)
 	  | initTest (RecTest labIdList, set) =
 	    List.app (fn (_, id) => ins (set, id)) labIdList

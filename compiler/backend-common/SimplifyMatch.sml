@@ -30,7 +30,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	    LitTest of I.lit
 	  | TagTest of Label.t * typ option * O.conArity
 	  | ConTest of I.longid * typ option * O.conArity
-	  | RefTest of typ
+	  | RefAppTest of typ
 	  | TupTest of typ list
 	  | RecTest of (Label.t * typ) list
 	    (* sorted, all labels distinct, no tuple *)
@@ -141,7 +141,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	    end
 	  | makeTestSeq (AppPat (_, RefPat _, pat), pos, rest, mapping) =
 	    makeTestSeq (pat, LABEL (Label.fromString "ref")::pos,
-			 Test (pos, RefTest (typPat pat))::rest, mapping)
+			 Test (pos, RefAppTest (typPat pat))::rest, mapping)
 	  | makeTestSeq (TupPat (_, pats), pos, rest, mapping) =
 	    Misc.List_foldli
 	    (fn (i, pat, (rest, mapping)) =>
@@ -232,7 +232,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	  | testToString (TagTest (label, _, _)) =
 	    "tag " ^ Label.toString label
 	  | testToString (ConTest (_, _, _)) = "con"
-	  | testToString (RefTest _) = "ref"
+	  | testToString (RefAppTest _) = "ref"
 	  | testToString (TupTest typs) =
 	    "tup " ^ Int.toString (List.length typs)
 	  | testToString (RecTest labelTyplist) = "rec"

@@ -118,7 +118,7 @@ structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
 	    SEQ [outputCon conArity, S " ", ID id]
 	  | outputTest (ConTest (id1, SOME id2, conArity)) =
 	    SEQ [S "(", outputCon conArity, S " ", ID id1, S ") ", ID id2]
-	  | outputTest (RefTest id) = SEQ [S "ref ", ID id]
+	  | outputTest (RefAppTest id) = SEQ [S "ref ", ID id]
 	  | outputTest (TupTest ids) =
 	    SEQ [S "(", SEP (S ", ", List.map ID ids), S ")"]
 	  | outputTest (RecTest labelIdList) =
@@ -202,8 +202,8 @@ structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
 	  | outputExp (ConAppExp (_, id, args, conArity)) =
 	    SEQ [S "(", outputCon conArity, S " ", ID id, S ") ",
 		 outputArgs args]
-	  | outputExp (RefAppExp (_, args)) =
-	    SEQ [S "ref ", outputArgs args]
+	  | outputExp (RefAppExp (_, id)) =
+	    SEQ [S "ref ", ID id]
 	  | outputExp (PrimAppExp (_, s, ids)) =
 	    SEQ [S (s ^ " "), SEP (S ", ", List.map ID ids)]
 	  | outputExp (AdjExp (_, id1, id2)) =

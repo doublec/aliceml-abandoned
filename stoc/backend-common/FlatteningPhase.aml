@@ -332,9 +332,9 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 	    let
 		val r = ref NONE
 		val rest = [O.IndirectStm (stmInfo (#region info), r)]
-		val (stms2, args) = unfoldArgs (exp2, rest)
+		val (stms2, id) = unfoldTerm (exp2, Goto rest)
 	    in
-		(r := SOME (f (O.RefAppExp (info, args))::translateCont cont);
+		(r := SOME (f (O.RefAppExp (info, id))::translateCont cont);
 		 stms2)
 	    end
 	  | translateExp (AppExp (info, SelExp (_, Lab (_, label)), exp2),
@@ -607,13 +607,13 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 	    in
 		(stms, O.ConTest (id, SOME id', conArity), mapping')
 	    end
-	  | translateTest (RefTest typ, pos, mapping) =
+	  | translateTest (RefAppTest typ, pos, mapping) =
 	    let
 		val id = freshId (exp_info (Source.nowhere, typ))
 		val mapping' =
 		    (LABEL (Label.fromString "ref")::pos, id)::mapping
 	    in
-		(nil, O.RefTest id, mapping')
+		(nil, O.RefAppTest id, mapping')
 	    end
 	  | translateTest (TupTest typs, pos, mapping) =
 	    let
