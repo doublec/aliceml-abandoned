@@ -1,3 +1,4 @@
+## @configure_input@
 ##
 ## Author:
 ##   Leif Kornstaedt <kornstae@ps.uni-sb.de>
@@ -121,12 +122,8 @@ $(bindir)/%: %
 $(includedir)/seam/%: %
 	$(INSTALL) -c -m 444 $< $@
 
-Makefile: Makefile.in config.status
-	./config.status
-Makefile.vars: Makefile.vars.in config.status
-	./config.status
-seamtool: seamtool.in config.status
-	./config.status
+%: %.in config.status
+	./config.status $@
 
 Makefile.depend: Makefile $(SOURCES) store/StoreConfig.hh
 	$(MAKEDEPEND) $(SOURCES:%=$(srcdir)/%) > Makefile.depend
