@@ -193,6 +193,7 @@ public:
   void fs_the(int, int);
   void fs_min(int, int);
   void fs_max(int, int);
+  void fs_match(int, const IntArgs&);
   void fs_card(int, int);
   void fs_cardRange(int, int, int);
 
@@ -205,6 +206,8 @@ public:
   void fs_distinct(int, int);
   void fs_distinctn(const IntArgs&);
   void fs_equals(int, int);
+  void fs_convex(int);
+  void fs_convexHull(int, int);
   void fs_union(int, int, int);
   void fs_complement(int, int);
   void fs_intersection(int, int, int);

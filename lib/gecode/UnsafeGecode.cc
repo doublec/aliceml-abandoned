@@ -1323,6 +1323,32 @@ DEFINE3(gc_fsMax) {
   RETURN_UNIT;
 } END
 
+DEFINE3(gc_fsMatch) {
+  DBGMSG("fsMatch");
+  DECLARE_SPACE(s, stamp, pstamp, x0);
+  CHECK_SPACE(s);
+
+  DECLARE_VAR(var1, stamp, pstamp, x1);
+
+  DECLARE_VECTOR(v, x2);
+  int noOfVars = v->GetLength();
+
+  if (noOfVars==0) {
+    s->fs_cardRange(var1,0,0);
+    RETURN_UNIT;
+  }
+
+  IntArgs vars(noOfVars);
+  for (int i=noOfVars; i--;) {
+    DECLARE_VAR(tmp, stamp, pstamp, v->Sub(i));
+    vars[i] = tmp;
+  }
+
+  DBGMSG("done");
+  s->fs_match(var1, vars);
+  RETURN_UNIT;
+} END
+
 DEFINE3(gc_fsCard) {
   DBGMSG("fsCard");
   DECLARE_SPACE(s, stamp, pstamp, x0);
@@ -1460,6 +1486,31 @@ DEFINE3(gc_fsEquals) {
 
   DBGMSG("done");
   s->fs_equals(var1, var2);
+  RETURN_UNIT;
+} END
+
+DEFINE2(gc_fsConvex) {
+  DBGMSG("fsConvex");
+  DECLARE_SPACE(s, stamp, pstamp, x0);
+  CHECK_SPACE(s);
+
+  DECLARE_VAR(var1, stamp, pstamp, x1);
+
+  DBGMSG("done");
+  s->fs_convex(var1);
+  RETURN_UNIT;
+} END
+
+DEFINE3(gc_fsConvexHull) {
+  DBGMSG("fsConvexHull");
+  DECLARE_SPACE(s, stamp, pstamp, x0);
+  CHECK_SPACE(s);
+
+  DECLARE_VAR(var1, stamp, pstamp, x1);
+  DECLARE_VAR(var2, stamp, pstamp, x2);
+
+  DBGMSG("done");
+  s->fs_convexHull(var1, var2);
   RETURN_UNIT;
 } END
 
@@ -1940,7 +1991,7 @@ static word UnsafeGecodeFD() {
 }
 
 static word UnsafeGecodeFS() {
-  Record *record = Record::New(44);
+  Record *record = Record::New(47);
 
   INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeFS", "setvar",
 		 gc_fsvar, 1);
@@ -1958,6 +2009,8 @@ static word UnsafeGecodeFS() {
 		 gc_fsMin, 3);
   INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeFS", "max",
 		 gc_fsMax, 3);
+  INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeFS", "match",
+		 gc_fsMatch, 3);
   INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeFS", "card",
 		 gc_fsCard, 3);
   INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeFS", "cardRange",
@@ -1990,6 +2043,10 @@ static word UnsafeGecodeFS() {
 		 gc_fsDistinctN, 2);
   INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeFS", "equals",
 		 gc_fsEquals, 3);
+  INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeFS", "convex",
+		 gc_fsConvex, 2);
+  INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeFS", "convexHull",
+		 gc_fsConvexHull, 3);
   INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeFS", "partition",
 		 gc_fsPartition, 4);
   INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeFS", "partitionN",

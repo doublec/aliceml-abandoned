@@ -66,12 +66,13 @@ struct
 
    structure Int =
        struct
-          val incl = UnsafeGecodeFS.incl
-          val excl = UnsafeGecodeFS.excl
-          val the  = UnsafeGecodeFS.the
-          val min  = UnsafeGecodeFS.min
-          val max  = UnsafeGecodeFS.max
-          val card = UnsafeGecodeFS.card
+          val incl  = UnsafeGecodeFS.incl
+          val excl  = UnsafeGecodeFS.excl
+          val the   = UnsafeGecodeFS.the
+          val min   = UnsafeGecodeFS.min
+          val max   = UnsafeGecodeFS.max
+          val match = UnsafeGecodeFS.match
+          val card  = UnsafeGecodeFS.card
        end
 
    structure Reified =

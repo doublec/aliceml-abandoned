@@ -381,6 +381,11 @@ void GecodeSpace::fs_max(int d, int s) {
   if (!enter()) return;
   ::maxElement(fss[s], is[d]);
 }
+void GecodeSpace::fs_match(int s, const IntArgs& vars) {
+  if (!enter()) return;
+  makeintvararray(a, vars);
+  ::match(fss[s], a);
+}
 void GecodeSpace::fs_card(int s, int d) {
   if (!enter()) return;
   ::card(fss[s], is[d]);
@@ -423,6 +428,14 @@ void GecodeSpace::fs_distinctn(const IntArgs& vars) {
 void GecodeSpace::fs_equals(int s1, int s2) {
   if (!enter()) return;
   ::equals(fss[s1], fss[s2]);
+}
+void GecodeSpace::fs_convex(int s) {
+  if (!enter()) return;
+  ::convex(fss[s]);
+}
+void GecodeSpace::fs_convexHull(int s1, int s2) {
+  if (!enter()) return;
+  ::convexHull(fss[s1], fss[s2]);
 }
 void GecodeSpace::fs_union(int s1, int s2, int s3) {
   if (!enter()) return;

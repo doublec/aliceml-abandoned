@@ -47,7 +47,8 @@ sig
     val partition : Space.space * setvar * setvar * setvar -> unit
     val partitionN : Space.space * setvar vector * setvar -> unit
     val equals : Space.space * setvar * setvar -> unit
-
+    val convex : Space.space * setvar -> unit
+    val convexHull : Space.space * setvar * setvar -> unit
 
     structure Value :
 	sig
@@ -66,8 +67,7 @@ sig
 	    val min : Space.space * FD.intvar * setvar -> unit
 	    val max : Space.space * FD.intvar * setvar -> unit
             val card : Space.space * FD.intvar * setvar -> unit
-(*	    val convex : setvar -> unit *)
-(*	    val match : setvar * FD.intvar vector -> unit *)
+	    val match : Space.space * setvar * FD.intvar vector -> unit
 (*	    val minN : setvar * FD.intvar vector -> unit *)
 (*	    val maxN : setvar * FD.intvar vector -> unit *)
 	end

@@ -104,6 +104,7 @@ sig
 	    val the : 'space * 'intvar * 'setvar -> unit
             val min : 'space * 'intvar * 'setvar -> unit
             val max : 'space * 'intvar * 'setvar -> unit
+            val match : 'space * 'setvar * 'intvar vector -> unit
 	    val card : 'space * 'setvar * 'intvar -> unit
 	    val cardRange : 'space * int * int * 'setvar -> unit
 	    val superOfInter : 'space * 'setvar * 'setvar * 'setvar -> unit
@@ -122,6 +123,8 @@ sig
             val distinct : 'space * 'setvar * 'setvar -> unit
             val distinctN : 'space * 'setvar vector -> unit
             val equals : 'space * 'setvar * 'setvar -> unit
+            val convex : 'space * 'setvar -> unit
+            val convexHull : 'space * 'setvar * 'setvar -> unit
 
 	    val universal : 'space -> 'setvar
 	    val is : 'space * 'setvar -> bool
