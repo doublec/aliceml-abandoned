@@ -90,7 +90,7 @@ INSTALLFILES = \
 
 all: $(ALLFILES) backend-mozart/CodeGenPhase.ozf top/Main.ozf stoc.ozf
 
-stoc.ozf:
+stoc.ozf: top/Main.ozf
 	OZ_LOAD=prefix=x-alice\\:/=./:prefix=http\\://www.mozart-oz.org/home-1.1.1/=$(OZHOME)/ \
 	$(OZL) -z9 --include=x-alice: -v x-alice:/top/Main.ozf -o $@
 
