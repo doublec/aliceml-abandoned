@@ -4,17 +4,17 @@
 
 
 
-<?php section("streamadd", "stream adder") ?>
+<?php section("streams", "streams") ?>
 
   <P>
-    This program does pairwise addition of the elements of two integer streams,
-    producing a third stream. The user can interactively put numbers on both
-    of the two source streams. All three streams are displayed in the
-    Inspector.
+    This program allows the user to interactively put numbers on two streams.
+    Several other streams are concurrently produced by different combinations
+    of those two streams (addition, zipping, mapping, etc.). All streams are
+    displayed in the Inspector.
   </P>
 
   <UL>
-    <LI> <A href="examples/streamadd.aml"><TT>streamadd.aml</TT></A> </LI>
+    <LI> <A href="examples/streams.aml"><TT>streams.aml</TT></A> </LI>
   </UL>
 
 
