@@ -26,7 +26,7 @@
   DEFINE1(name) {					\
     DECLARE_REAL(real, x0);				\
     double value = real->GetValue();			\
-    if (isnan(value))					\
+    if (std::isnan(value))				\
       RAISE(PrimitiveTable::General_Domain);      	\
     double result = op(value);				\
     if (result > STATIC_CAST(double, MAX_VALID_INT) ||	\
@@ -40,10 +40,10 @@
   DEFINE1(name) {				\
     DECLARE_REAL(real, x0);			\
     double value = real->GetValue();		\
-    if (isnan(value))				\
+    if (std::isnan(value))			\
       RAISE(PrimitiveTable::General_Domain);	\
     double result = op(value);			\
-    if (isinf(result)) {			\
+    if (std::isinf(result)) {			\
       RAISE(PrimitiveTable::General_Overflow);	\
     }						\
     BigInt *b = BigInt::New(result);		\
@@ -168,8 +168,8 @@ DEFINE1(Real_toString) {
       hasDecimalPoint = true;
     }
   if (!hasDecimalPoint &&
-      !isnan(value) &&
-      !isinf(value)) std::strcpy(&buf[i - 1], ".0");
+      !std::isnan(value) &&
+      !std::isinf(value)) std::strcpy(&buf[i - 1], ".0");
   RETURN(String::New(buf)->ToWord());
 } END
 
