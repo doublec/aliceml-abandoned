@@ -61,12 +61,12 @@ ifdef([[FUTURE_AWAIT_EITHER_IS_PRIMITIVE]],[[
 		val t2 = Hole.hole ()
 	    in
 		spawn (Hole.fill (t1, currentThread ());
-		       (await a; ()) handle _ => ();
-		       Hole.fill (c, FST a) handle Hole.Hole => ();
+		       (await a; ()) handle non AwaitEitherTerminate => ();
+		       Hole.fill (c, FST a);
 		       raiseIn (Hole.future t2, AwaitEitherTerminate));
 		spawn (Hole.fill (t2, currentThread ());
-		       (await b; ()) handle _ => ();
-		       Hole.fill (c, SND b) handle Hole.Hole => ();
+		       (await b; ()) handle non AwaitEitherTerminate => ();
+		       Hole.fill (c, SND b);
 		       raiseIn (Hole.future t1, AwaitEitherTerminate));
 		await (Hole.future c)
 	    end
