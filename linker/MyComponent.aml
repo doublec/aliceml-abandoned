@@ -12,7 +12,6 @@
 
 import structure Url             from "../lib/utility/Url"
 import structure Signature       from "../lib/system/Signature"
-import structure Label           from "../lib/rtt/Label"
 import structure IO              from "../lib/system/IO"
 import structure OS              from "../lib/system/OS"
 import structure Reflect         from "../lib/system/Reflect"
@@ -26,8 +25,8 @@ struct
     type str = Reflect.value
 
     datatype component =
-	UNEVALUATED of { imports: (Label.t * string * sign) vector,
-			 body:    (Label.t * str) vector -> str,
+	UNEVALUATED of { imports: (string * sign) vector,
+			 body:    str vector -> str,
 			 sign:    sign }
       | EVALUATED of sign * str
     type t = component
@@ -70,8 +69,7 @@ struct
 
     fun stripImportSigns (UNEVALUATED {imports, body, sign}) =
 	let
-	    val imports' =
-		Vector.map (fn (label, s, _) => (label, s, NONE)) imports
+	    val imports' = Vector.map (fn (s, _) => (s, NONE)) imports
 	in
 	    UNEVALUATED {imports = imports', body, sign}
 	end
