@@ -117,7 +117,6 @@ struct
 
 	    fun updatePoints plist = 
 		let
-		    val _ = Inspector.inspect ("MainWindow", ("updatePoints", plist))
 		    fun toString' ({name, 
 				    color, 
 				    points, 

@@ -203,7 +203,7 @@ struct
                         |   Part.FINISHED _                     => true
                         |   Part.HALF_FINISHED _                => true
                         |   Part.DEAD ({deathCount,...},_)  
-                           where (isSome (#lives config) orelse
+                           where (isNone (#lives config) orelse
                             !deathCount < valOf (#lives config))=> true
                         |   _                                   => false)
 
@@ -361,7 +361,9 @@ struct
                         Part.PLAYING (state, _) =>
                         (#nextDir state) := dir
                     |   _                       =>
+                        (*
                         raise P.Protocol "Server: invalid call to turn"
+                        *) ()
                 ))
 
 

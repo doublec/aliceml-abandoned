@@ -19,8 +19,9 @@ struct
             val guiGame     = Promise.future promise
             fun playersJoined players = #playersJoined gui_join players
             
-            fun tournamentStarted () = (* ispawn (_file_, _line_)
-                                            (#gameStarted gui_join) () *) ()
+            fun tournamentStarted () = #gameStarted gui_join ()
+                                        (* ispawn (_file_, _line_)
+                                            (#gameStarted gui_join) () *) 
 
             fun levelStarted levelInfo = 
                 #startLevel guiGame levelInfo
@@ -85,6 +86,8 @@ struct
                             Inspector.inspect ("leaving: " ^ name ^ " with exception", e);
                             raise e
                         ))
+            
+            fun locked name f = Lock.sync lock f
         in
             (* return locked but not yet proxied client interface! *)
             ({
