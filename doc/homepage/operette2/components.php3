@@ -1,6 +1,6 @@
 <?php include("macros.php3"); ?>
 
-<?php heading("Stockhausen Operette 1 - Components", "components") ?>
+<?php heading("Oz for Lightning - Components", "components") ?>
 
 
 
@@ -9,7 +9,7 @@
   <P>
     SML does not deal with separate compilation. Alice repairs
     this by adding a component system to the language. Alice
-    components were inspired by Mozart "functors". They support lazy linking
+    components were inspired by Oz "functors". They support lazy linking
     and loading from remote URLs, but add static and dynamic type checking.
     Components are architecture independent and can be executed on any system.
   </P>
@@ -69,12 +69,12 @@
 <?php section("execution", "execution") ?>
 
   <P>
-    A Stockhausen program is executed by starting a component. In general, a
+    An Alice program is executed by starting a component. In general, a
     component relies on other components. These other components are loaded
     and evaluated by need by the <I>Komponist</I>, who is part of the runtime
     system.
     A component that is never actually accessed at runtime will not get loaded.
-    URL resolving is handled similar to Mozart.
+    URL resolving is handled similar to Oz.
   </P>
 
   <P>

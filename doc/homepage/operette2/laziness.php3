@@ -1,6 +1,6 @@
 <?php include("macros.php3"); ?>
 
-<?php heading("Stockhausen Operette 1 - Laziness", "laziness") ?>
+<?php heading("Oz for Lightning - Laziness", "laziness") ?>
 
 
 

@@ -1,6 +1,6 @@
 <?php include("macros.php3"); ?>
 
-<?php heading("Stockhausen Operette 1 - Threads", "threads") ?>
+<?php heading("Oz for Lightning - Threads", "threads") ?>
 
 
 
@@ -10,7 +10,7 @@
     Alice provides concurrency as a fundamental language feature. The
     concurrency model is tightly coupled with
     <A href="futures.php3">futures</A>.
-    The library design regarding threads is not finalized in Operette 1.
+    The library design regarding threads is not finalized yet.
     Currently, the basic primitive is available from the structure
     <A href="futures.php3#future"><TT>Future</TT></A>:
   </P>

@@ -1,16 +1,16 @@
 <?php include("macros.php3"); ?>
 
-<?php heading("Stockhausen Operette 1 - Usage", "usage") ?>
+<?php heading("Oz for Lightning - Usage", "usage") ?>
 
 <?php section("overview", "overview") ?>
-  <P>The interface to the Stockhausen system features:</P>
+  <P>The interface to the Alice system features:</P>
   <UL>
     <LI><A href="#compiler">the compiler</A>
     <LI><A href="#vm">the virtual machine</A>
   </UL>
 
 <?php section("compiler", "compiler") ?>
-  <P>The Stockhausen compiler can be invoked in one of the following ways:</P>
+  <P>The Alice compiler can be invoked in one of the following ways:</P>
   <DL>
     <DT><TT>stoc</TT> [<I>&lt;options&gt;</I>] [<TT>-c</TT>]
       <I>&lt;input file&gt;</I> [<TT>-o</TT> <I>&lt;output file&gt;</I>]</DT>
@@ -59,7 +59,7 @@
     performed by its body's side-effects.</P>
   <P>An application is executed either by starting an executable component
     produced by <TT>stoc</TT> from the command line or by invoking the
-    Stockhausen Virtual Machine directly thus:</P>
+    Virtual Machine directly thus:</P>
   <DL>
     <DT><TT>stow</TT> <I>&lt;application url&gt;</I>
       <I>&lt;args&gt;</I> ...</DT>
@@ -67,15 +67,11 @@
       <I>&lt;application url&gt;</I>, denoting a compiled or executable
       component.
   </DL>
+<!--
   <P>(<TT>stow</TT> is short for <I>Stockwerk</I>, the name of the virtual
     machine.)</P>
+-->
   <P>To terminate an application, the <TT>OS.Process.terminate</TT>
     function must be invoked.</P>
-
-<?php section("installation", "installation") ?>
-  <P>In the lab, Stockhausen Operette 1 is installed in the directory</P>
-  <PRE>        /opt/stockhausen-operette1/</PRE>
-  <P>The <TT>bin</TT> subdirectory has been added to the default <TT>PATH</TT>,
-    so that the commands described above are immediately available.</P>
 
 <?php footing() ?>

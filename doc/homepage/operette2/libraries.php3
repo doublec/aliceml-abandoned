@@ -1,13 +1,13 @@
 <?php include("macros.php3"); ?>
 
-<?php heading("Stockhausen Operette 1 - Libraries", "libraries") ?>
+<?php heading("Oz for Lighning - Libraries", "libraries") ?>
 
 
 
 <?php section("overview", "overview") ?>
 
   <P>
-    Stockhausen is equipped with <A href="#basis">parts</A> of the
+    Alice is equipped with <A href="#basis">parts</A> of the
     <A href="http://www.dina.kvl.dk/~sestoft/sml/sml-std-basis.html">Standard
     ML Basis Library</A>. In addition, we currently provide structures
     dealing with <A href="futures.php3">futures</A> and
@@ -34,13 +34,13 @@
   </P>
 
   <P>
-    Note however that Stockhausen does not currently support overloading,
+    Note however that Alice does not currently support overloading,
     so all overloaded operations in the top-level evironment are only
     available at their default type.
   </P>
 
   <P>
-    Stockhausen adds the functions <TT>byneed</TT> and <TT>concur</TT> to the
+    Alice adds the functions <TT>byneed</TT> and <TT>concur</TT> to the
     top-level, to provide for easy <A href="laziness.php3">laziness</A> and
     <A href="futures.php3">concurrency with futures</A>.
   </P>
@@ -49,7 +49,7 @@
 <?php section("basis", "basis library") ?>
 
   <P>
-    Stockhausen Operette 1 only provides parts of the
+    Alice for Lightning only provides parts of the
     <A href="http://www.dina.kvl.dk/~sestoft/sml/sml-std-basis.html">SML
     Basis Library</A>. The following structures are complete:
   </P>
@@ -191,7 +191,7 @@
 
   <P>
     Structures from the Standard ML Basis Library not listed above are not
-    available in Operette 1.
+    available in Alice for Lightning.
   </P>
 
   <P>
