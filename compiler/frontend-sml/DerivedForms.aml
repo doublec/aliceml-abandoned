@@ -170,6 +170,9 @@ structure DerivedForms :> DERIVED_FORMS =
       | replaceTy tyvarseq_tyseq (G.RECORDTy(I, tyrow_opt)) =
 	    G.RECORDTy(I, Option.map (replaceTyRow tyvarseq_tyseq) tyrow_opt)
 
+      | replaceTy tyvarseq_tyseq (G.TUPLETy(I, tys)) =
+	    G.TUPLETy(I, List.map (replaceTy tyvarseq_tyseq) tys)
+
       | replaceTy tyvarseq_tyseq (G.TYCONTy(I, tyseq', tycon)) =
 	    G.TYCONTy(I, replaceTySeq tyvarseq_tyseq tyseq', tycon)
 
@@ -192,6 +195,9 @@ structure DerivedForms :> DERIVED_FORMS =
 
       | rewriteTy typbind (G.RECORDTy(I, tyrow_opt)) =
 	    G.RECORDTy(I, Option.map (rewriteTyRow typbind) tyrow_opt)
+
+      | rewriteTy typbind (G.TUPLETy(I, tys)) =
+	    G.TUPLETy(I, List.map (rewriteTy typbind) tys)
 
       | rewriteTy typbind (ty as G.TYCONTy(I, tyseq, longtycon as G.DOTLong _))=
 	    G.TYCONTy(I, rewriteTySeq typbind tyseq, longtycon)
@@ -368,15 +374,7 @@ structure DerivedForms :> DERIVED_FORMS =
     (* Types *)
 
     fun TUPLETy(I, [ty]) = ty
-      | TUPLETy(I,  tys) =
-	let
-	    fun toTyRow(n, [])       = NONE
-	      | toTyRow(n, ty::tys') =
-		  SOME(G.ROWTyRow(I, G.Lab(I, Lab.fromInt n), ty,
-				     toTyRow(n+1, tys')))
-	in
-	    G.RECORDTy(I, toTyRow(1, tys))
-	end
+      | TUPLETy(I,  tys) = G.TUPLETy(I, tys)
 
 
     (* Declarations *)

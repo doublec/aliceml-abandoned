@@ -31,7 +31,7 @@
  *
  * Notes:
  *   For easier interfacing with the back end we keep several derived forms:
- *   - tuple expressions and patterns
+ *   - tuple expressions, patterns, and types
  *   - selector functions
  *   - case, if, orelse, andalso expressions
  *   - sequential expressions
@@ -209,6 +209,7 @@ signature INPUT_GRAMMAR =
     and Ty =
 	  TYVARTy        of Info * TyVar
 	| RECORDTy       of Info * TyRow option
+	| TUPLETy        of Info * Ty list
 	| TYCONTy        of Info * TySeq * LongTyCon
 	| ARROWTy        of Info * Ty * Ty
 	| PARTy          of Info * Ty

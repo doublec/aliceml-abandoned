@@ -31,7 +31,7 @@
  *
  * Notes:
  *   For easier interfacing with the back end we keep several derived forms:
- *   - tuple expressions and patterns
+ *   - tuple expressions, patterns, and types
  *   - selector functions
  *   - case, if, orelse, andalso expressions
  *   - sequential expressions
@@ -209,6 +209,7 @@ functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
     and Ty =
 	  TYVARTy        of Info * TyVar
 	| RECORDTy       of Info * TyRow option
+	| TUPLETy        of Info * Ty list
 	| TYCONTy        of Info * TySeq * LongTyCon
 	| ARROWTy        of Info * Ty * Ty
 	| PARTy          of Info * Ty
@@ -414,6 +415,7 @@ functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
 
     fun infoTy(TYVARTy(I,_))				= I
       | infoTy(RECORDTy(I,_))				= I
+      | infoTy(TUPLETy(I,_))				= I
       | infoTy(TYCONTy(I,_,_))				= I
       | infoTy(ARROWTy(I,_,_))				= I
       | infoTy(PARTy(I,_))				= I

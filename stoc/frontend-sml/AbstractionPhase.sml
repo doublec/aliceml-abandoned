@@ -389,6 +389,9 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
       | unguardedTyVarsTy E (RECORDTy(_, tyrow_opt)) =
 	    ?unguardedTyVarsTyRow E tyrow_opt
 
+      | unguardedTyVarsTy E (TUPLETy(_, tys)) =
+	    List.concat(List.map (unguardedTyVarsTy E) tys)
+
       | unguardedTyVarsTy E (TYCONTy(_, tyseq, longtycon)) =
 	    unguardedTyVarsTyseq E tyseq
 
@@ -758,9 +761,17 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		O.RowTyp(i, row')
 	   end
 
+	 | TUPLETy(i, tys) =>
+	   let
+		val typs' = trTys E tys
+	   in
+		O.TupTyp(i, typs')
+	   end
+
 	 | ARROWTy(i, ty1, ty2) => O.ArrTyp(i, trTy E ty1, trTy E ty2)
 	 | PARTy(i, ty)         => trTy E ty
 
+    and trTys E = List.map (trTy E)
 
 
     and trTyRowo E =
@@ -826,9 +837,10 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	   end
 
 	 | TYCONTy(i, tyseq, longtycon) => trAllTySeq E tyseq
-	 | RECORDTy(i, tyrowo)          => trAllTyRowo E tyrowo
-	 | ARROWTy(i, ty1, ty2)         => trAllTy E ty1 @ trAllTy E ty2
-	 | PARTy(i, ty)                 => trAllTy E ty
+	 | RECORDTy(i, tyrowo)   => trAllTyRowo E tyrowo
+	 | TUPLETy(i, tys)       => List.concat(List.map (trAllTy E) tys)
+	 | ARROWTy(i, ty1, ty2)  => trAllTy E ty1 @ trAllTy E ty2
+	 | PARTy(i, ty)          => trAllTy E ty
 
     and trAllTyRowo E =
 	fn NONE                               => []
