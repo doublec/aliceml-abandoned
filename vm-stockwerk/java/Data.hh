@@ -157,7 +157,7 @@ public:
   enum type { Byte, Char, Double, Float, Int, Long, Short, Boolean };
 protected:
   enum {
-    BASE_TYPE_POS, // int(BaseType)
+    BASE_TYPE_POS, // int (type)
     SIZE
   };
 public:
@@ -167,6 +167,10 @@ public:
     Block *b = Store::AllocBlock(JavaLabel::BaseType, SIZE);
     b->InitArg(BASE_TYPE_POS, baseType);
     return static_cast<BaseType *>(b);
+  }
+
+  type GetBaseType() {
+    return static_cast<type>(Store::DirectWordToInt(GetArg(BASE_TYPE_POS)));
   }
 };
 
@@ -189,18 +193,22 @@ public:
 //
 // Data Layer
 //
-class DllExport JavaLong: private Chunk {
-protected:
-  static const u_int SIZE = 64 / sizeof(char);
+class DllExport JavaLong: public Chunk {
 public:
-  using Block::ToWord;
-
   static JavaLong *New(s_int32 high, s_int32 low) {
-    Chunk *chunk = Store::AllocChunk(SIZE);
+    Chunk *chunk = Store::AllocChunk(8);
     char *p = chunk->GetBase();
     p[0] = high >> 24; p[1] = high >> 16; p[2] = high >> 8; p[3] = high;
     p[4] = low >> 24; p[5] = low >> 16; p[6] = low >> 8; p[7] = low;
     return static_cast<JavaLong *>(chunk);
+  }
+  static JavaLong *New(u_char *p) {
+    Chunk *chunk = Store::AllocChunk(8);
+    std::memcpy(chunk->GetBase(), p, 8);
+    return static_cast<JavaLong *>(chunk);
+  }
+  static JavaLong *FromWordDirect(word x) {
+    return static_cast<JavaLong *>(Store::DirectWordToChunk(x));
   }
 };
 
@@ -302,6 +310,7 @@ public:
   }
 
   Class *GetClass() {
+    //--** may fail for strings
     return Class::FromWordDirect(GetArg(CLASS_POS));
   }
   bool IsInstanceOf(Class *aClass) {
@@ -442,60 +451,201 @@ public:
     Assert(index < GetLength());
     InitArg(BASE_SIZE + index, value);
   }
-  void Assign(u_int index, word value) {
-    Assert(index < GetLength());
-    ReplaceArg(BASE_SIZE + index, value);
-  }
-  word Get(u_int index) {
+  word Load(u_int index) {
     Assert(index < GetLength());
     return GetArg(BASE_SIZE + index);
+  }
+  void Store(u_int index, word value) {
+    Assert(index < GetLength());
+    ReplaceArg(BASE_SIZE + index, value);
   }
 };
 
-class BaseArray: private Block {
+class BaseArray: private Chunk {
 protected:
   enum {
-    TYPE_POS, // ArrayType (Type == BaseType);
-    LENGTH_POS, // int
+    BASE_TYPE_POS, // byte (BaseType::type);
     BASE_SIZE
     // ... elements
   };
+  u_char *GetElementPointer(u_int index, u_int elemSize) {
+    Assert(index < (GetSize() - BASE_SIZE) / elemSize);
+    return reinterpret_cast<u_char *>
+      (GetBase() + BASE_SIZE + index * elemSize);
+  }
 public:
   using Block::ToWord;
 
-  static BaseArray *New(BaseType *type, u_int length) {
-    Block *b = Store::AllocBlock(JavaLabel::BaseArray, BASE_SIZE + length);
-    b->InitArg(TYPE_POS, type->ToWord());
-    b->InitArg(LENGTH_POS, Store::IntToWord(length));
-    // to be done: proper initialization
-    for (u_int i = length; i--; ) b->InitArg(BASE_SIZE + i, null);
-    return static_cast<BaseArray *>(b);
+  static BaseArray *New(BaseType::type baseType, u_int length) {
+    u_int elemSize;
+    switch (baseType) {
+    case BaseType::Boolean:
+    case BaseType::Byte:
+      elemSize = 1;
+      break;
+    case BaseType::Char:
+    case BaseType::Short:
+      elemSize = 2;
+      break;
+    case BaseType::Int:
+    case BaseType::Float:
+      elemSize = 4;
+      break;
+    case BaseType::Long:
+    case BaseType::Double:
+      elemSize = 8;
+      break;
+    default:
+      Error("invalid base type");
+    }
+    Chunk *chunk = Store::AllocChunk(BASE_SIZE + length * elemSize);
+    char *p = chunk->GetBase();
+    for (u_int i = length * elemSize; i--; ) p[BASE_SIZE + i] = 0;
+    p[BASE_TYPE_POS] = baseType;
+    return static_cast<BaseArray *>(chunk);
   }
   static BaseArray *FromWord(word x) {
-    Block *b = Store::WordToBlock(x);
-    Assert(b == INVALID_POINTER || b->GetLabel() == JavaLabel::BaseArray);
-    return static_cast<BaseArray *>(b);
+    return static_cast<BaseArray *>(Store::WordToChunk(x));
   }
   static BaseArray *FromWordDirect(word x) {
-    Block *b = Store::DirectWordToBlock(x);
-    Assert(b->GetLabel() == JavaLabel::BaseArray);
-    return static_cast<BaseArray *>(b);
+    return static_cast<BaseArray *>(Store::DirectWordToChunk(x));
   }
 
+  BaseType::type GetBaseType() {
+    return static_cast<BaseType::type>(GetBase()[BASE_TYPE_POS]);
+  }
   u_int GetLength() {
-    return Store::DirectWordToInt(GetArg(LENGTH_POS));
+    switch (GetBaseType()) {
+    case BaseType::Boolean:
+    case BaseType::Byte:
+      return GetSize() - BASE_SIZE;
+    case BaseType::Char:
+    case BaseType::Short:
+      return (GetSize() - BASE_SIZE) / 2;
+    case BaseType::Int:
+    case BaseType::Float:
+      return (GetSize() - BASE_SIZE) / 4;
+    case BaseType::Long:
+    case BaseType::Double:
+      return (GetSize() - BASE_SIZE) / 8;
+    default:
+      Error("invalid base type");
+    }
   }
-  void Init(u_int index, word value) {
-    Assert(index < GetLength());
-    InitArg(BASE_SIZE + index, value);
+
+  u_int LoadBoolean(u_int index) {
+    Assert(GetBaseType() == BaseType::Boolean);
+    return GetElementPointer(index, 1)[0];
   }
-  void Assign(u_int index, word value) {
-    Assert(index < GetLength());
-    ReplaceArg(BASE_SIZE + index, value);
+  u_int LoadByte(u_int index) {
+    Assert(GetBaseType() == BaseType::Byte);
+    return GetElementPointer(index, 1)[0];
   }
-  word Get(u_int index) {
-    Assert(index < GetLength());
-    return GetArg(BASE_SIZE + index);
+  u_int LoadChar(u_int index) {
+    Assert(GetBaseType() == BaseType::Char);
+    u_char *p = GetElementPointer(index, 2);
+    return (p[0] << 8) | p[1];
+  }
+  u_int LoadShort(u_int index) {
+    Assert(GetBaseType() == BaseType::Short);
+    u_char *p = GetElementPointer(index, 2);
+    return (p[0] << 8) | p[1];
+  }
+  u_int LoadInt(u_int index) {
+    Assert(GetBaseType() == BaseType::Short);
+    u_char *p = GetElementPointer(index, 4);
+    return (p[0] << 24) | (p[1] << 16) | (p[2] << 8) | p[3];
+  }
+  JavaLong *LoadLong(u_int index) {
+    Assert(GetBaseType() == BaseType::Short);
+    return JavaLong::New(GetElementPointer(index, 8));
+  }
+  //--** LoadFloat
+  //--** LoadDouble
+  word Load(u_int index) {
+    //--** remove
+    switch (GetBaseType()) {
+    case BaseType::Boolean:
+      return Store::IntToWord(LoadBoolean(index));
+    case BaseType::Byte:
+      return Store::IntToWord(LoadByte(index));
+    case BaseType::Char:
+      return Store::IntToWord(LoadChar(index));
+    case BaseType::Short:
+      return Store::IntToWord(LoadShort(index));
+    case BaseType::Int:
+      return Store::IntToWord(LoadInt(index));
+    case BaseType::Long:
+      return LoadLong(index)->ToWord();
+    case BaseType::Float:
+    case BaseType::Double:
+      Error("unimplemented"); //--**
+    default:
+      Error("invalid base type");
+    }
+  }
+
+  void StoreBoolean(u_int index, u_int value) {
+    Assert(GetBaseType() == BaseType::Boolean);
+    GetElementPointer(index, 1)[0] = value & 1;
+  }
+  void StoreByte(u_int index, u_int value) {
+    Assert(GetBaseType() == BaseType::Byte);
+    GetElementPointer(index, 1)[0] = value;
+  }
+  void StoreChar(u_int index, u_int value) {
+    Assert(GetBaseType() == BaseType::Char);
+    u_char *p = GetElementPointer(index, 2);
+    p[0] = value >> 8;
+    p[1] = value;
+  }
+  void StoreShort(u_int index, u_int value) {
+    Assert(GetBaseType() == BaseType::Short);
+    u_char *p = GetElementPointer(index, 2);
+    p[0] = value >> 8;
+    p[1] = value;
+  }
+  void StoreInt(u_int index, u_int value) {
+    Assert(GetBaseType() == BaseType::Short);
+    u_char *p = GetElementPointer(index, 4);
+    p[0] = value >> 24;
+    p[1] = value >> 16;
+    p[2] = value >> 8;
+    p[3] = value;
+  }
+  void StoreLong(u_int index, JavaLong *value) {
+    Assert(GetBaseType() == BaseType::Short);
+    std::memcpy(GetElementPointer(index, 8), value->GetBase(), 8);
+  }
+  //--** StoreFloat
+  //--** StoreDouble
+  void Store(u_int index, word value) {
+    //--** remove
+    switch (GetBaseType()) {
+    case BaseType::Boolean:
+      StoreBoolean(index, Store::DirectWordToInt(value));
+      break;
+    case BaseType::Byte:
+      StoreByte(index, Store::DirectWordToInt(value));
+      break;
+    case BaseType::Char:
+      StoreChar(index, Store::DirectWordToInt(value));
+      break;
+    case BaseType::Short:
+      StoreShort(index, Store::DirectWordToInt(value));
+      break;
+    case BaseType::Int:
+      StoreInt(index, Store::DirectWordToInt(value));
+      break;
+    case BaseType::Long:
+      StoreLong(index, JavaLong::FromWordDirect(value));
+      break;
+    case BaseType::Float:
+    case BaseType::Double:
+      Error("unimplemented"); //--**
+    default:
+      Error("invalid base type");
+    }
   }
 };
 

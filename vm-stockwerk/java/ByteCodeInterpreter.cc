@@ -421,6 +421,7 @@ public:
   }
 };
 
+//--** to be done: move to Data.hh
 class JavaInt {
 public:
   static word ToWord(int value) {
@@ -431,26 +432,6 @@ public:
   }
   static word Zero() {
     return Store::IntToWord(0);
-  }
-};
-
-// to be done: this should reside in data
-class JavaByteArray : public Chunk {
-public:
-  unsigned char Get(u_int i) {
-    return ((unsigned char *) GetBase())[i];
-  }
-  void Put(u_int i, unsigned char value) {
-    ((unsigned char *) GetBase())[i] = value;
-  }
-  u_int GetLength() {
-    return GetSize();
-  }
-  static JavaByteArray *New(u_int size) {
-    return static_cast<JavaByteArray *>(Store::AllocChunk(size));
-  }
-  static JavaByteArray *FromWord(word array) {
-    return static_cast<JavaByteArray *>(Store::WordToChunk(array));
   }
 };
 
@@ -622,7 +603,7 @@ Worker::Result ByteCodeInterpreter::Run() {
       frame->Push(Scheduler::currentArgs[0]);
     pc = frame->GetContPC();
   }
-  while (1) {
+  while (true) {
     switch (static_cast<Instr::Opcode>(code[pc])) {
     case Instr::AALOAD:
       {
@@ -631,7 +612,7 @@ Worker::Result ByteCodeInterpreter::Run() {
 	ObjectArray *array = ObjectArray::FromWord(frame->Pop());
 	if (array != INVALID_POINTER) {
 	  if (index < array->GetLength())
-	    frame->Push(array->Get(index));
+	    frame->Push(array->Load(index));
 	  else {
 	    RAISE_VM_EXCEPTION(ArrayIndexOutOfBoundsException, "AALOAD");
 	  }
@@ -642,6 +623,7 @@ Worker::Result ByteCodeInterpreter::Run() {
 	pc += 1;
       }
       break;
+    case Instr::BALOAD:
     case Instr::CALOAD:
     case Instr::DALOAD: // reals are boxed
     case Instr::FALOAD: // reals are boxed
@@ -654,7 +636,7 @@ Worker::Result ByteCodeInterpreter::Run() {
 	BaseArray *array = BaseArray::FromWord(frame->Pop());
 	if (array != INVALID_POINTER) {
 	  if (index < array->GetLength())
-	    frame->Push(array->Get(index));
+	    frame->Push(array->Load(index)); //--** do not use
 	  else {
 	    RAISE_VM_EXCEPTION(ArrayIndexOutOfBoundsException,
 			       "(C|D||F|I|L|S)ALOAD");
@@ -680,7 +662,7 @@ Worker::Result ByteCodeInterpreter::Run() {
 	    if ((type->GetLabel() == JavaLabel::Class) &&
 		((object == INVALID_POINTER) ||
 		 object->IsInstanceOf(static_cast<Class *>(type))))
-	      array->Assign(index, value);
+	      array->Store(index, value);
 	    else {
 	      RAISE_VM_EXCEPTION(ArrayStoreException, "AASTORE");
 	    }
@@ -695,6 +677,7 @@ Worker::Result ByteCodeInterpreter::Run() {
 	pc += 1;
       }
       break;
+    case Instr::BASTORE:
     case Instr::CASTORE:
     case Instr::DASTORE: // reals are boxed
     case Instr::FASTORE: // reals are boxed
@@ -708,7 +691,7 @@ Worker::Result ByteCodeInterpreter::Run() {
 	BaseArray *array = BaseArray::FromWord(frame->Pop());
 	if (array != INVALID_POINTER) {
 	  if (index < array->GetLength())
-	    array->Assign(index, value);
+	    array->Store(index, value); //--** do not use
 	  else {
 	    RAISE_VM_EXCEPTION(ArrayIndexOutOfBoundsException,
 			       "(C|D|F|I|L|S)ASTORE");
@@ -829,12 +812,6 @@ Worker::Result ByteCodeInterpreter::Run() {
 	if (p != INVALID_POINTER) {
 	  u_int length;
 	  switch (p->GetLabel()) {
-	  case CHUNK_LABEL:
-	    {
-	      JavaByteArray *array = static_cast<JavaByteArray *>(p);
-	      length = array->GetLength();
-	    }
-	    break;
 	  case JavaLabel::ObjectArray:
 	    {
 	      ObjectArray *array = static_cast<ObjectArray *>(p);
@@ -926,45 +903,6 @@ Worker::Result ByteCodeInterpreter::Run() {
 	}
 	else {
 	  RAISE_VM_EXCEPTION(NullPointerException, "ATHROW");
-	}
-      }
-      break;
-    case Instr::BALOAD:
-      {
-	JavaDebug::Print("(BALOAD");	
-	u_int index          = Store::DirectWordToInt(frame->Pop());
-	JavaByteArray *array = JavaByteArray::FromWord(frame->Pop());
-	if (array != INVALID_POINTER) {
-	  if (index < array->GetLength()) {
-	    frame->Push(Store::IntToWord(array->Get(index)));
-	    pc += 1;
-	  }
-	  else {
-	    RAISE_VM_EXCEPTION(ArrayIndexOutOfBoundsException, "BALOAD");
-	  }
-	}
-	else {
-	  RAISE_VM_EXCEPTION(NullPointerException, "BALOAD");
-	}
-      }
-      break;
-    case Instr::BASTORE:
-      {
-	JavaDebug::Print("(BASTORE");
-	u_int value          = Store::DirectWordToInt(frame->Pop());
-	u_int index          = Store::DirectWordToInt(frame->Pop());
-	JavaByteArray *array = JavaByteArray::FromWord(frame->Pop());
-	if (array != INVALID_POINTER) {
-	  if (index < array->GetLength()) {
-	    array->Put(index, value);
-	    pc += 1;
-	  }
-	  else {
-	    RAISE_VM_EXCEPTION(ArrayIndexOutOfBoundsException, "BASTORE");
-	  }
-	}
-	else {
-	  RAISE_VM_EXCEPTION(NullPointerException, "BASTORE");
 	}
       }
       break;
@@ -2012,22 +1950,36 @@ Worker::Result ByteCodeInterpreter::Run() {
 	JavaDebug::Print("NEWARRAY");
 	int count = Store::DirectWordToInt(frame->Pop());
 	if (count >= 0) {
-	  word array;
-	  BaseType::type baseType = static_cast<BaseType::type>(code[pc + 1]);
-	  switch (baseType) {
-	  case BaseType::Byte:
-	  case BaseType::Boolean:
-	    {
-	      array = JavaByteArray::New(count)->ToWord();
-	    }
+	  BaseArray *baseArray;
+	  switch (code[pc + 1]) {
+	  case 4:
+	    baseArray = BaseArray::New(BaseType::Boolean, count);
+	    break;
+	  case 5:
+	    baseArray = BaseArray::New(BaseType::Char, count);
+	    break;
+	  case 6:
+	    baseArray = BaseArray::New(BaseType::Float, count);
+	    break;
+	  case 7:
+	    baseArray = BaseArray::New(BaseType::Double, count);
+	    break;
+	  case 8:
+	    baseArray = BaseArray::New(BaseType::Byte, count);
+	    break;
+	  case 9:
+	    baseArray = BaseArray::New(BaseType::Short, count);
+	    break;
+	  case 10:
+	    baseArray = BaseArray::New(BaseType::Int, count);
+	    break;
+	  case 11:
+	    baseArray = BaseArray::New(BaseType::Long, count);
 	    break;
 	  default:
-	    {
-	      BaseType *type = BaseType::New(baseType);
-	      array = BaseArray::New(type, count)->ToWord();
-	    }
+	    Error("invalid base type");
 	  }
-	  frame->Push(array);
+	  frame->Push(baseArray->ToWord());
 	}
 	else {
 	  RAISE_VM_EXCEPTION(NegativeArraySizeException, "newarray");
