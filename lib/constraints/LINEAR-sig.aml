@@ -32,7 +32,7 @@ signature LINEAR =
 	type domain = domain_element list
 
 	datatype term =
-	    fd of FD.fd
+	    FD of FD.fd
 	  | `  of int
 	  | `+ of term * term
 	  | `- of term * term

@@ -33,7 +33,7 @@ structure Linear :> LINEAR =
 	type domain = domain_element list
 
 	datatype term =
-	    fd of FD.fd
+	    FD of FD.fd
 	  | `  of int
 	  | `+ of term * term
 	  | `- of term * term
@@ -107,7 +107,7 @@ structure Linear :> LINEAR =
 	    flatten'(l, a, b::ts)
 	  | flatten'(label, t, ts) = map flatten (t::ts)
 
-	fun getFD (Id (fd v))  = v
+	fun getFD (Id (FD v))  = v
 	  | getFD (Id (op` i)) = FD.fromInt i
 	  | getFD _            = raise Subscript
 
@@ -116,12 +116,12 @@ structure Linear :> LINEAR =
 
 	fun isSum ts            = List.all checkS ts
 	and checkS (Id (op` i)) = i >= 0
-	  | checkS (Id (fd v))  = true
+	  | checkS (Id (FD v))  = true
 	  | checkS _            = false
 				  
 	fun isSumC ts                                 = List.all checkSC ts
-	and checkSC (Op(MUL, [Id(op` _), Id(fd _)]))  = true
-	  | checkSC (Op(MUL, [Id(fd _), Id(op` _)]))  = true
+	and checkSC (Op(MUL, [Id(op` _), Id(FD _)]))  = true
+	  | checkSC (Op(MUL, [Id(FD _), Id(op` _)]))  = true
 	  | checkSC (Op(MUL, [Id(op` _), Id(op` _)])) = true
 	  | checkSC (Id _)                            = true
 	  | checkSC _                                 = false
@@ -142,7 +142,7 @@ structure Linear :> LINEAR =
 					  
 	fun analyzeCN ts = if allAtomic ts then SUMCN else raise Subscript
 
-	fun analyze (Id (fd v))                  = ATOMIC v
+	fun analyze (Id (FD v))                  = ATOMIC v
 	  | analyze (Id (op` i))                 = ATOMIC (FD.fromInt i)
 	  | analyze (Op(MUL, [Id(op` _), Id _])) = SUMC
 	  | analyze (Op(MUL, ts))                = analyzeCN ts
@@ -163,7 +163,7 @@ structure Linear :> LINEAR =
 
 	fun computeInt(nil, k, nil)             = (k, [FD.fromInt 1])
 	  | computeInt(nil, k, vs)              = (k, vs)
-	  | computeInt((Id (fd v))::tr, k, vs)  = computeInt (tr, k, v::vs) 
+	  | computeInt((Id (FD v))::tr, k, vs)  = computeInt (tr, k, v::vs) 
 	  | computeInt((Id (op` i))::tr, k, vs) = computeInt(tr, k * i, vs)
 	  | computeInt _                        = raise Subscript
 
@@ -174,7 +174,7 @@ structure Linear :> LINEAR =
 	      (i, Vector.fromList ts)
 	    end
 	  | createSumCNEntry (Id (op` i)) = (i, #[FD.fromInt 1])
-	  | createSumCNEntry (Id (fd v))  = (1, Vector.fromList([v]))
+	  | createSumCNEntry (Id (FD v))  = (1, Vector.fromList([v]))
 	  | createSumCNEntry  _           = raise Subscript
 
 	fun createSumCNVector (Op(PLUS, ts)) =
@@ -213,18 +213,18 @@ structure Linear :> LINEAR =
 		
 	    fun convertDomain ts = Vector.fromList (map convertElem ts)
 		
-	    fun fdToTerm v = fd v
+	    fun fdToTerm v = FD v
 	in
-	    fun var NONE          = fd(FD.fd NONE)
-	      | var (SOME domain) = fd(FD.fd (SOME (convertDomain domain)))
+	    fun var NONE          = FD(FD.fd NONE)
+	      | var (SOME domain) = FD(FD.fd (SOME (convertDomain domain)))
 
-	    fun bin () = fd(FD.bin ())
+	    fun bin () = FD(FD.bin ())
 
 	    fun vec(n, domain) =
 		(Vector.map fdToTerm (FD.fdVec(n, convertDomain domain)))
 	end
 
-	fun termToFD (fd v)  = v
+	fun termToFD (FD v)  = v
 	  | termToFD (op` i) = FD.fromInt i
 	  | termToFD _       = raise Subscript
 
