@@ -5,7 +5,7 @@ Group
 
 is
 
-    ../misc/sources.cm
+    ../../lib/utility/sources.cm
     ../infrastructure/sources.cm
     ../common/name.cm
     ../common/id-stamp.cm
