@@ -107,7 +107,6 @@ ALICEC2 = ALICE_HOME=build1/install build1/install/bin/alicec --seam
 ALICEC_EXTRA_OPTS = --no-warn-conventions
 ALICEC_OPTS = --check-intermediate --implicit-import-file - $(ALICEC_EXTRA_OPTS)
 
-
 ALICELINK1 = ALICE_HOME=build1/install build1/install/bin/alicelink
 ALICELINK2 = ALICE_HOME=build1/install build1/install/bin/alicelink
 
@@ -124,11 +123,7 @@ M4 = m4
 ## Enumerate All Files Making Up the Source Tree
 ##
 
-ifdef WINDOWS
 SEAMFILES = stow.exe stow.dll
-else
-SEAMFILES = stow.exe
-endif
 
 LIBSYSTEMNATIVES0 = \
 	Config IODesc OS Unix CommandLine Component Debug Foreign Socket Rand \
