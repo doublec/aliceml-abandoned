@@ -36,7 +36,7 @@ signature UPDATE =
 
         (* constraint watcher *) 
         val watcher: 
-	    'a  * Reflect.value * 
+	    'a  * Reflect.value * int *
 	    (int option * Reflect.value * Type.t  * node * int * int * GtkSupport.tag -> node) * 
 	    (Reflect.module * Inf.t  * node * int * int * GtkSupport.tag -> node) *
 	    GtkSupport.tag -> Thread.thread

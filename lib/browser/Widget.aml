@@ -693,7 +693,7 @@ fun updateIterate = re_inspect
    | deleteNode (Simple(r) as node)  =   ( objectDestroy(getGroup(node))
 	     ; (if not(Future.isDetermined(UnsafeValue.cast (getValue(getDesc(node)))))	
 	     then case Dictionaries.Transient.iterLookup
-		 (Dictionaries.transdict,fn (v,n) => 
+		 (Dictionaries.transdict,fn (v,_,n) => 
 		  v = getValue(getDesc(node))) 
 		 of
 		     SOME (n,i) => Dictionaries.Transient.delete

@@ -76,7 +76,7 @@ struct
      fun newNode (va,t,i,root) = createGraph (NONE,va,t,Empty,i,0,root)
 			     
     (* createGraph *)
-    and createGraph (opt,va,t,p,i,d,root) = ( (*Window.testIfStop() *) ()
+    and createGraph (opt,va,t,p,i,d,root) = ( (*Window.testIfStop() *)(* Thread.sleep(Time.fromSeconds(1)) *)()
 	;if !relmode (* Konstruktion im Relationsmodus *)
 	 andalso not(isAtomType(t))
 	     then let val ind = if p = Empty then i else getAncIndex p 
@@ -584,18 +584,23 @@ struct
 	    val simple =  createSimple (desc,p,i,d,str,DEFAULT,root)
 	in ( case Transient.iterLookup  
 	                   (transdict, 
-			    fn (vv,li) 
+			    fn (vv,_,li) 
 			    => List.exists(fn n  
 					   => UnsafeValue.same  
 					   (getValue(getDesc(n)),va))  
 			    li 
 			    handle General.Match => false) of 
-	      SOME ((vv,li),i)   
+	      SOME ((vv,thr,li),i)   
 	      => Transient.update(transdict,  
-					    (i,(vv,li@[simple]))) 
+					    (i,(vv,thr,li@[simple]))) 
             | NONE  
-	      => (Transient.insertI(transdict,(va,[simple]))
-		  ; Update.watcher(fut,va,createGraph,createGraphInf,root) ; ())
+	      => (let 
+		      val id = 
+			  Dictionaries.Transient.getHighestIndexAssigned(Dictionaries.transdict) +1
+		      val watcher = Update.watcher(fut,va,id,createGraph,createGraphInf,root)
+		  in
+			(  Transient.insertI(transdict,(va,watcher,[simple])) ; ())
+		  end)
           ; simple )
 	end 	
   

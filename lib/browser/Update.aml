@@ -81,22 +81,6 @@ struct
       | Empty => () 
       | _ => raise UpdateError
 	    
-    (* setDazzled *)
-    fun setDazzled n = 
-	case n of
-	Simple(r) => ( #status(r) := DAZZLED
-		      ; setDazzled(getParent(n)) )
-      | Concat(r) => ( #status(r) := DAZZLED
-		      ; setDazzled(getParent(n)) )
-      | Container(r) => ( #status(r) := DAZZLED
-			 ; setDazzled(getParent(n)) )
-      | RelNode(r) => ( #status(r) := DAZZLED
- 		       ; setDazzled(getParent(n)) )
-      | RelRefNode(r) => ( #status(r) := DAZZLED
-			  ; setDazzled(getParent(n)) )
-      | Limit(r) => ( #status(r) := DAZZLED
-		     ; setDazzled(getParent(n)) )
-      | Empty => () 
 	    
     (* iterMove *)
     fun iterMove(dy,i) =
@@ -236,25 +220,16 @@ struct
 	end   
 
     (* watcher *)
-    and watcher (future,va,f,g,root) = 
+    and watcher (future,va,i,f,g,root) = 
 	Thread.thread 
 	(fn () 
-	 => ( case Dictionaries.Transient.iterLookup 
-	               (Dictionaries.transdict, 
-			fn (_,l) =>
-			List.exists 
-			(fn n
-			 => UnsafeValue.same(getValue(getDesc(n)),
-					     va)) l) of 
-	      NONE => () 
-	    | SOME((vv,ll),i)  
-	      => ( if Future.isLazy  future
+	 =>  (if Future.isLazy  future
 		       then UnsafeValue.awaitRequest(future)
 		   else Future.await(future)
-		  ; let val new_l = #2(valOf(Dictionaries.Transient.lookup
+		  ; let val new_l = #3(valOf(Dictionaries.Transient.lookup
 					     (Dictionaries.transdict,i)))
 		    in Server.serve(fn () => tell(va,new_l,f,g,root))
-		    end ) ))
+		    end ))
 	
     (* reinspect *)
     and reinspect (n,f,g,root) = 
