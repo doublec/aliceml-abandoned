@@ -1,0 +1,27 @@
+(*
+ * Authors:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2002
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure __pervasive from "Pervasive"
+import structure Vector      from "Vector"
+import structure Word8       from "Word8"
+import signature MONO_VECTOR from "MONO_VECTOR-sig"
+
+structure Word8Vector :> MONO_VECTOR where type elem = Word8.word =
+struct
+    open Vector
+
+    type vector = Word8.word vector
+    type t = vector							(**)
+    type elem = Word8.word
+end

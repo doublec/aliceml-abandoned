@@ -1,0 +1,78 @@
+(*
+ * Authors:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2002
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure __pervasive                   from "Pervasive"
+import type string and char and unit and int
+       datatype list and option                from "ToplevelTypes"
+import infix 4 = < > infix 6 - +
+       val op< and op> and op- and op+ and op= from "ToplevelValues"
+import structure General                       from "General"
+import structure String                        from "String"
+import signature MONO_VECTOR                   from "MONO_VECTOR-sig"
+
+structure CharVector : MONO_VECTOR =
+struct
+    type vector = string
+    type t = vector							(**)
+    type elem = char
+
+    val maxLen   = String.maxSize
+    val fromList = String.implode
+    val tabulate = String.tabulate
+    val length   = String.size
+    val sub      = String.sub
+    val extract  = String.extract
+    val concat   = String.concat
+
+    __primitive val sub' : vector * int -> elem = "Unsafe.String.sub"
+
+    fun sliceLength(v,i,NONE) where (i > length v)
+				= raise General.Subscript
+      | sliceLength(v,i,NONE)	= length v - i
+      | sliceLength(v,i,SOME n) where (i+n > length v orelse n < 0)
+				= raise General.Subscript
+      | sliceLength(v,i,SOME n)	= n
+
+    fun map f v			= tabulate(length v, fn i => f(sub'(v,i)))
+
+    fun mapi f (v,i,no)		= tabulate(sliceLength(v,i,no),
+					   fn k => f(i+k, sub'(v,i+k)))
+
+    fun app  f v		= app'(f,v,0)
+    and app'(f,v,i) where (i = length v)
+				= ()
+      | app'(f,v,i)		= (f(sub'(v,i)) ; app'(f,v,i+1))
+
+    fun appi f (v,i,no)		= appi'(f, v, i, sliceLength(v,i,no))
+    and appi'(f,v,i,0)		= ()
+      | appi'(f,v,i,n)		= (f(i, sub'(v,i)) ; appi'(f,v,i+1,n-1))
+
+    fun foldl  f x v		= foldl'(f,x,v,0)
+    and foldl'(f,x,v,i) where (i = length v)
+				= x
+      | foldl'(f,x,v,i)		= foldl'(f, f(sub'(v,i),x), v, i+1)
+
+    fun foldr  f x v		= foldr'(f, x, v, length v - 1)
+    and foldr'(f,x,v,~1)	= x
+      | foldr'(f,x,v,i)		= foldr'(f, f(sub'(v,i),x), v, i-1)
+
+    fun foldli f x (v,i,no)	= foldli'(f, x, v, i, sliceLength(v,i,no))
+    and foldli'(f,x,v,i,0)	= x
+      | foldli'(f,x,v,i,n)	= foldli'(f, f(i, sub'(v,i), x), v, i+1, n-1)
+
+    fun foldri f x (v,i,no)	= foldri'(f, x, v, i-1+sliceLength(v,i,no), i)
+    and foldri'(f,x,v,i,j) where (i < j)
+				= x
+      | foldri'(f,x,v,i,j)	= foldri'(f, f(i, sub'(v,i),x), v, i-1, j)
+end
