@@ -68,4 +68,10 @@
     echo("<H2><A name=" . $tag . ">" . $name . "&nbsp;" . $bar .
 	 "</A></H2> <BR><BR>");
   };
+
+  function subsection($tag, $name)
+  {
+    echo("<H3><A name=" . $tag . ">" . $name . "&nbsp;" . $bar .
+	 "</A></H3>");
+  };
 ?>
