@@ -9,7 +9,6 @@ signature SYMTABLE =
     type 'a symtable
     type 'a t = 'a symtable
 
-    exception Lookup
     exception Collision of key
 
     val new :		unit -> 'a symtable
@@ -26,8 +25,8 @@ signature SYMTABLE =
     val plus :		'a symtable * 'a symtable -> unit
     val plusDisjoint :	'a symtable * 'a symtable -> unit	(* Collision *)
 
-    val lookup :	'a symtable * key -> 'a			(* Lookup *)
-    val lookupScope :	'a symtable * key -> 'a			(* Lookup *)
+    val lookup :	'a symtable * key -> 'a option
+    val lookupScope :	'a symtable * key -> 'a option
     val isEmpty :	'a symtable -> bool
     val isEmptyScope :	'a symtable -> bool
 

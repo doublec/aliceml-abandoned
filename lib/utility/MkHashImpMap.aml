@@ -5,7 +5,7 @@ functor Hashtable(Key: HASH_KEY) :> HASHTABLE where type key = Key.t =
     type 'a hashtable = (key * 'a) list array
     type 'a t         = 'a hashtable
 
-    exception Lookup
+    exception Delete
     exception Collision of key
 
 
@@ -25,19 +25,24 @@ functor Hashtable(Key: HASH_KEY) :> HASHTABLE where type key = Key.t =
     fun isEmpty t		= Misc.Array_all List.null t
 
     fun lookup(t,k)		= let val kas = Array.sub(t, hash(t,k)) in
-				      case List.find (isEntryFor k) kas
-					of NONE      => raise Lookup
-					 | SOME(k,a) => a
+				    Option.map #2 (List.find (isEntryFor k) kas)
 				  end
 
-    fun delete'(  [],    k)	= raise Lookup
+    fun delete'(  [],    k)	= raise Delete
       | delete'(ka::kas, k)	= if #1 ka = k then kas : (key * 'a) list
 					       else ka::delete'(kas,k)
+
+    fun delete(t,k)		= let val i    = hash(t,k)
+				      val kas  = Array.sub(t,i)
+				      val kas' = delete'(kas,k)
+				  in
+				      Array.update(t, i, kas')
+				  end
 
     fun insert(t,k,a)		= let val i    = hash(t,k)
 				      val kas  = Array.sub(t,i)
 				      val kas' = delete'(kas,k)
-						 handle Lookup => kas
+						 handle Delete => kas
 				  in
 				      Array.update(t, i, (k,a)::kas')
 				  end

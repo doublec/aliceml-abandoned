@@ -7,7 +7,6 @@ functor Symtable(Key: HASH_KEY) :> SYMTABLE where type key = Key.t =
     type 'a symtable    = 'a Hashtable.t list ref
     type 'a t           = 'a symtable
 
-    exception Lookup    = Hashtable.Lookup
     exception Collision = Hashtable.Collision
 
 
@@ -27,9 +26,10 @@ functor Symtable(Key: HASH_KEY) :> SYMTABLE where type key = Key.t =
 				  end
 
 
-    fun lookup'( [],   k)	= raise Lookup
-      | lookup'(t::ts, k)	= Hashtable.lookup(t,k)
-				  handle Hashtable.Lookup => lookup'(ts,k)
+    fun lookup'( [],   k)	= NONE
+      | lookup'(t::ts, k)	= case Hashtable.lookup(t,k)
+				    of NONE => lookup'(ts,k)
+				     | some => some
 
     fun lookup(ref ts, k)	= lookup'(ts,k)
 

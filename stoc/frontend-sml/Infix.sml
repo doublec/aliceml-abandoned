@@ -38,9 +38,9 @@ structure Infix :> INFIX =
 
     fun categoriseVId (IE: InfEnv) (at, vid as VId(i,vid')) =
 	(case VIdSymtable.lookup(IE,vid')
-	   of (_,NONE)             => NONFIX(at)
-	    | (_,SOME(assoc,prec)) => INFIX(assoc, prec, vid))
-        handle VIdSymtable.Lookup => NONFIX(at)
+	   of ( NONE | SOME(_,NONE) )  => NONFIX(at)
+	    | SOME(_,SOME(assoc,prec)) => INFIX(assoc, prec, vid)
+	)
 
     fun categoriseLongVId IE (at, SHORTLong(i, vid)) =
 	    categoriseVId IE (at, vid)
