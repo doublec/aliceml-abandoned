@@ -93,14 +93,21 @@ define
 	      end
 	   'prod':
 	      fun {$ LabelValueVec}
-		 {List.toRecord '#'
-		  {Record.foldR LabelValueVec
-		   fun {$ Label#Value In}
-		      {LabelToOz Label}#Value|In
-		   end nil}}
+		 case LabelValueVec of '#[]' then unit
+		 else
+		    {List.toRecord '#'
+		     {Record.foldR LabelValueVec
+		      fun {$ Label#Value In}
+			 {LabelToOz Label}#Value|In
+		      end nil}}
+		 end
 	      end
 	   'tuple':
-	      fun {$ X} {Adjoin X '#'} end
+	      fun {$ X}
+		 case X of '#[]' then unit
+		 else {Adjoin X '#'}
+		 end
+	      end
 	   'tagged':
 	      fun {$ Labels I LabelValueVec}
 		 {List.toRecord {LabelToOz Labels.(I + 1)}
