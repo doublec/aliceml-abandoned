@@ -53,7 +53,8 @@ DEFINE1(Future_isFailed) {
 DEFINE1(Future_isFuture) {
   Transient *transient = Store::WordToTransient(x0);
   RETURN_BOOL(transient != INVALID_POINTER &&
-	      transient->GetLabel() == FUTURE_LABEL);
+	      (transient->GetLabel() == FUTURE_LABEL ||
+	       transient->GetLabel() == BYNEED_LABEL));
 } END
 
 void PrimitiveTable::RegisterFuture() {
