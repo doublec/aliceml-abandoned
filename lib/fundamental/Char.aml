@@ -185,17 +185,17 @@ struct
 	case getc src
 	  of SOME(#"\\", src')                   => SOME src'
 	   | SOME(  c,   src') where (isSpace c) => scanGap getc src'
-	   | NONE                                => NONE
+	   | _                                   => NONE
 
     and scan' getc src =
 	case getc src
 	  of SOME(#"\\", src')                   => scanEscape getc src'
 	   | SOME(  c,   src') where (isPrint c) => SOME(c, src')
-	   | NONE                                => NONE
+	   | _                                   => NONE
     and scan getc src =
 	case scan' getc src
-	  of NONE                                => NONE
-	   | SOME(c, src')                       => scanTrailGap getc src' c
+	  of SOME(c, src')                       => scanTrailGap getc src' c
+	   | NONE                                => NONE
     and scanTrailGap getc src c =
 	case getc src
 	  of SOME(#"\\", src') =>
