@@ -1,11 +1,11 @@
 ../../lib/bootstrap/Bootstrap.aus
 ../../lib/bootstrap/Word.aus
 ../../lib/bootstrap/TextIO.aus
-/opt/smlnj/src/ml-yacc/lib/base.sig
-/opt/smlnj/src/ml-yacc/lib/join.sml
-/opt/smlnj/src/ml-yacc/lib/lrtable.sml
-/opt/smlnj/src/ml-yacc/lib/stream.sml
-/opt/smlnj/src/ml-yacc/lib/parser2.sml
+../../lib/bootstrap/ml-yacc/base.sig
+../../lib/bootstrap/ml-yacc/join.sml
+../../lib/bootstrap/ml-yacc/lrtable.sml
+../../lib/bootstrap/ml-yacc/stream.sml
+../../lib/bootstrap/ml-yacc/parser2.sml
 ../misc/Assert.sml
 ../misc/HASH_KEY.sig
 ../misc/StringHashKey.sml
