@@ -31,11 +31,17 @@ structure ToJasmin =
 		fun enter (Label lab'::Goto lab''::rest) =
 		    (StringHash.insert (!labelMerge, lab', lab'');
 		     enter rest)
+		  | enter (Label lab'::Label lab''::rest) =
+		    (StringHash.insert (!labelMerge, lab', lab'');
+		     enter rest)
 		  | enter (_::rest) = enter rest
 		  | enter nil = ()
 		fun merge (Label lab'::Goto lab''::rest) =
 		    Goto (directJump lab'')::merge rest
-		  | merge x = x
+		  | merge (Label lab'::(rest as (Label lab''::_))) =
+		    merge rest
+		  | merge (x::rest) = x::merge rest
+		  | merge nil = nil
 	    in
 	    labelMerge := StringHash.new();
 	    enter insts;
@@ -204,7 +210,7 @@ structure ToJasmin =
 	      | instructionToJasmin (Athrow,_) = "athrow"
 	      | instructionToJasmin (Bipush i,_) = "bipush "^intToString i
 	      | instructionToJasmin (Catch(cn,from,to,use),_) =
-		".catch "^cn^" from "^from^" to "^to^" using "^use
+		".catch "^cn^" from "^(directJump from)^" to "^(directJump to)^" using "^(directJump use)
 	      | instructionToJasmin (Checkcast cn,_) = "checkcast "^cn
 	      | instructionToJasmin (Comment c,_) =
 		if !DEBUG>=1
@@ -230,14 +236,14 @@ structure ToJasmin =
 	      | instructionToJasmin (Iconst i,_) =
 			     if i = ~1 then "iconst_m1" else "iconst_"^Int.toString i
 	      | instructionToJasmin (Iadd,_) = "iadd"
-	      | instructionToJasmin (Ifacmpeq l,_) = "if_acmpeq "^l
-	      | instructionToJasmin (Ifacmpne l,_) = "if_acmpne "^l
-	      | instructionToJasmin (Ifeq l,_) = "ifeq "^l
-	      | instructionToJasmin (Ificmpeq l,_) = "if_icmpeq "^l
-	      | instructionToJasmin (Ificmplt l,_) = "if_icmplt "^l
-	      | instructionToJasmin (Ificmpne l,_) = "if_icmpne "^l
-	      | instructionToJasmin (Ifneq l,_) = "ifne "^l
-	      | instructionToJasmin (Ifnull l,_) = "ifnull "^l
+	      | instructionToJasmin (Ifacmpeq l,_) = "if_acmpeq "^(directJump l)
+	      | instructionToJasmin (Ifacmpne l,_) = "if_acmpne "^(directJump l)
+	      | instructionToJasmin (Ifeq l,_) = "ifeq "^(directJump l)
+	      | instructionToJasmin (Ificmpeq l,_) = "if_icmpeq "^(directJump l)
+	      | instructionToJasmin (Ificmplt l,_) = "if_icmplt "^(directJump l)
+	      | instructionToJasmin (Ificmpne l,_) = "if_icmpne "^(directJump l)
+	      | instructionToJasmin (Ifneq l,_) = "ifne "^(directJump l)
+	      | instructionToJasmin (Ifnull l,_) = "ifnull "^(directJump l)
 	      | instructionToJasmin (Ifstatic _,_) = raise Error ""
 	      | instructionToJasmin (Iload j,s) =
 				 let
@@ -284,12 +290,12 @@ structure ToJasmin =
 	      | instructionToJasmin (Swap,_) = "swap"
 	      | instructionToJasmin (Tableswitch(low,labellist, label),_) =
 			     let
-				 fun flatten (lab::labl) = ("\t"^lab^"\n")^(flatten labl)
+				 fun flatten (lab::labl) = ("\t"^(directJump lab)^"\n")^(flatten labl)
 				   | flatten nil = ""
 			     in
 				   "tableswitch "^(Int.toString low)^"\n"^
 				   (flatten labellist)^
-				   "default: "^label
+				   "default: "^(directJump label)
 			     end
 	      | instructionToJasmin (Var (number', name', descriptor', from', to'), isStatic) =
 			     if (!DEBUG >= 1) then
@@ -297,13 +303,14 @@ structure ToJasmin =
 				 (Int.toString
 				  (if isStatic then number'-1 else number'))
 				 ^" is "^name'^" "^(desclist2string descriptor')^
-				 " from "^from'^" to "^to'
+				 " from "^(directJump from')^" to "^(directJump to')
 			     else ""
 
 	in
 	    fun instructionsToJasmin (insts, need, max, staticapply, ziel) =
 		let
 		    fun noStack (Comment _) = true
+		      | noStack (Label _) = true
 		      | noStack _ = false
 		    fun recurse (i::is, need, max) =
 			let
@@ -316,7 +323,7 @@ structure ToJasmin =
 					  then'
 				      else else',
 					  need, max);
-					  recurse (is, !stackneed,!stackmax))
+				      recurse (is, !stackneed,!stackmax))
 			      | Goto l' =>
 				    (case is of
 					Goto l''::rest =>
@@ -330,11 +337,11 @@ structure ToJasmin =
 					if noStack i
 					    then ()
 					else
-					    if !DEBUG>=1
+					    (if !DEBUG>=1
 						then (TextIO.output (ziel,"\t\t.line "^line());
 						      TextIO.output (ziel,"\t; Stack: "^Int.toString need^
 								     " Max: "^Int.toString max^"\n"))
-					    else ();
+					    else ());
 					    if ins <> "" then TextIO.output (ziel,ins^"\n") else ();
 						if nd<=0 then
 						    recurse (is, nd+need, max)
@@ -365,7 +372,6 @@ structure ToJasmin =
 				   (mAccessToString access)^
 				   methodname^
 				   (descriptor2string methodsig)^"\n");
-		     instructionsToJasmin(catches,0,0, staticapply, io);
 		     (* Seiteneffekt: stackneed und stackmax werden gesetzt *)
 		     instructionsToJasmin
 		     (mergeLabels instructions,
@@ -383,10 +389,11 @@ structure ToJasmin =
 		      else
 			  print ("\n\nStack Verification Error. Stack="^Int.toString (!stackneed)^
 				 " in "^(!actclass)^"."^methodname^".\n"));
-			  TextIO.output(io,".limit locals "^Int.toString(perslocs+1)^"\n");
-			  TextIO.output(io,".limit stack "^Int.toString
-					((if !DEBUG>=2 then 2 else 0)+(!stackmax))^"\n");
-			  TextIO.output(io,".end method\n"))
+		      TextIO.output(io,".limit locals "^Int.toString(perslocs+1)^"\n");
+		      TextIO.output(io,".limit stack "^Int.toString
+				    ((if !DEBUG>=2 then 2 else 0)+(!stackmax))^"\n");
+		      instructionsToJasmin(catches,0,0, staticapply, io);
+		      TextIO.output(io,".end method\n"))
 	    in
 		actclass:=name;
 		TextIO.output(io,
