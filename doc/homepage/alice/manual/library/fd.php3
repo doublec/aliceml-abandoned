@@ -363,8 +363,7 @@
     <DD>
       <P>creates a propagator for
       <PRE>
-        v1 + ... + vn - r <I>rel</I> 0
-      </PRE>
+        v1 + ... + vn - r <I>rel</I> 0</PRE>
       <P>For the precise operational semantics, see
          <A href="http://www.mozart-oz.org/documentation/system/node21.html#section.fd.arithmetic">here</A>.
       <P>In case, <I>rel</I> denotes <TT>NOTEQUAL</TT>,
@@ -380,8 +379,7 @@
     <DD>
       <P>creates a propagator for
       <PRE>
-        i1 * v1 + ... + in * vn - r <I>rel</I> 0
-      </PRE>
+        i1 * v1 + ... + in * vn - r <I>rel</I> 0</PRE>
       <P>For the precise operational semantics, see
          <A href="http://www.mozart-oz.org/documentation/system/node21.html#section.fd.arithmetic">here</A>.
     </DD>
@@ -392,8 +390,7 @@
     <DD>
       <P>creates a propagator for the absolute value of the scalar product
       <PRE>
-        |iv * v| = |i1 * v1 + ... + in * vn| <I>rel</I> r
-      </PRE>
+        |iv * v| = |i1 * v1 + ... + in * vn| <I>rel</I> r</PRE>
       <P>For the precise operational semantics, see
          <A href="http://www.mozart-oz.org/documentation/system/node21.html#section.fd.arithmetic">here</A>.
     </DD>
@@ -404,8 +401,7 @@
     <DD>
       <P>creates a propagator for
       <PRE>
-        i1 * v1 * ... * v1m1 + ... + in * vn1 * ... *vnmn - r <I>rel</I> 0
-      </PRE>
+        i1 * v1 * ... * v1m1 + ... + in * vn1 * ... *vnmn - r <I>rel</I> 0</PRE>
       <P>For the precise operational semantics, see
          <A href="http://www.mozart-oz.org/documentation/system/node21.html#section.fd.arithmetic">here</A>.
     </DD>
@@ -416,8 +412,7 @@
     <DD>
       <P>creates a propagator for
       <PRE>
-        |i1 * v1 * ... * v1m1 + ... + in * vn1 * ... *vnmn| <I>rel</I> r
-      </PRE>
+        |i1 * v1 * ... * v1m1 + ... + in * vn1 * ... *vnmn| <I>rel</I> r</PRE>
       <P>For the precise operational semantics, see
          <A href="http://www.mozart-oz.org/documentation/system/node21.html#section.fd.arithmetic">here</A>.
     </DD>
@@ -663,7 +658,7 @@
          If one element becomes determined,
          the remaining elements are constrained to be different from it.
          If two variables become equal, the propagator fails, e. g.
-         <TT>FD.distinct #[a,a, b]} will fail even if <I>a</I> 
+         <TT>FD.distinct #[a,a, b]</TT> will fail even if <I>a</I> 
          is not determined. 
     </DD>
 
