@@ -964,9 +964,9 @@ prepare
       'Word8.toLargeInt': BootWord.toInt
       'Word8.toLargeIntX': BootWord.toIntX
       'Word8.toLarge':
-	 fun {$ W} {BootWord.make 31 {BootWord.toInt W}} end
+	 fun {$ W} {BootWord.make 32 {BootWord.toInt W}} end
       'Word8.toLargeX':
-	 fun {$ W} {BootWord.make 31 {BootWord.toIntX W}} end
+	 fun {$ W} {BootWord.make 32 {BootWord.toIntX W}} end
       'Word8.wordSize': 31
       'Word8.xorb': BootWord.'xorb'
       'Word8Array.array':
@@ -1123,9 +1123,58 @@ prepare
       'Word31.toLargeInt': BootWord.toInt
       'Word31.toLargeIntX': BootWord.toIntX
       'Word31.toLarge':
-	 fun {$ W} {BootWord.make 31 {BootWord.toInt W}} end
+	 fun {$ W} {BootWord.make 32 {BootWord.toInt W}} end
       'Word31.toLargeX':
-	 fun {$ W} {BootWord.make 31 {BootWord.toIntX W}} end
+	 fun {$ W} {BootWord.make 32 {BootWord.toIntX W}} end
       'Word31.wordSize': 31
-      'Word31.xorb': BootWord.'xorb')
+      'Word31.xorb': BootWord.'xorb'
+      'Word32.+': BootWord.'+'
+      'Word32.-': BootWord.'-'
+      'Word32.*': BootWord.'*'
+      'Word32.<<': BootWord.'<<'
+      'Word32.>>': BootWord.'>>'
+      'Word32.~>>': BootWord.'~>>'
+      'Word32.<': BootWord.'<'
+      'Word32.>': BootWord.'>'
+      'Word32.<=': BootWord.'=<'
+      'Word32.>=': BootWord.'>='
+      'Word32.andb': BootWord.'andb'
+      'Word32.div':
+	 fun {$ W1 W2}
+	    try
+	       {BootWord.'div' W1 W2}
+	    catch _ then
+	       {Exception.raiseError alice(BuiltinTable.'General.Div')}
+	       unit
+	    end
+	 end
+      'Word32.fromInt':
+	 fun {$ I} {BootWord.make 32 I} end
+      'Word32.fromLargeInt':
+	 fun {$ I} {BootWord.make 32 I} end
+      'Word32.fromLarge':
+	 fun {$ W} W end
+      'Word32.fromLargeX':
+	 fun {$ W} {BootWord.make 32 {BootWord.toIntX W}} end
+      'Word32.mod':
+	 fun {$ W1 W2}
+	    try
+	       {BootWord.'mod' W1 W2}
+	    catch _ then
+	       {Exception.raiseError alice(BuiltinTable.'General.Div')}
+	       unit
+	    end
+	 end
+      'Word32.notb': BootWord.notb
+      'Word32.orb': BootWord.orb
+      'Word32.toInt': BootWord.toInt
+      'Word32.toIntX': BootWord.toIntX
+      'Word32.toLargeInt': BootWord.toInt
+      'Word32.toLargeIntX': BootWord.toIntX
+      'Word32.toLarge':
+	 fun {$ W} W end
+      'Word32.toLargeX':
+	 fun {$ W} {BootWord.make 32 {BootWord.toIntX W}} end
+      'Word32.wordSize': 32
+      'Word32.xorb': BootWord.'xorb')
 end
