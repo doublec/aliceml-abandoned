@@ -63,7 +63,7 @@ public:
 };
 
 class Transient : private Block {
-private:
+protected:
   static const u_int REF_POS = 0;
 public:
   using Block::GetLabel;
