@@ -12,8 +12,8 @@
 //   $Revision$
 //
 
-#include "emulator/Authoring.hh"
-#include "emulator/Properties.hh"
+#include "generic/Properties.hh"
+#include "alice/primitives/Authoring.hh"
 
 DEFINE0(UnsafeCommandLine_name) {
   RETURN(Properties::rootUrl);
