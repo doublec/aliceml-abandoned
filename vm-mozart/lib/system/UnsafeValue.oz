@@ -40,9 +40,10 @@ define
 	   'tag': fun {$ Value Tags} {FindTag Tags {Label Value} 0} end
 	   'projTagged': ProjRecord
 	   'projTaggedTuple': ProjTuple
-	   'con': fun {$ _} raise notImplemented end end %--**
+	   'con': Label
 	   'projConstructed': ProjRecord
 	   'projConstructedTuple': ProjTuple
+	   'conType': fun {$ _} raise notImplemented end end %--**
 	   'conName':
 	      fun {$ Value}
 		 'ExId'({ByteString.make {System.printName Value}})
