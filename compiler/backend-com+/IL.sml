@@ -648,11 +648,6 @@ structure IL :> IL =
 		outputDottedname (q, super);
 		outputImplements (q, interfaces);
 		output (q, " {\n");
-		output (q, (".comtype " ^
-			    (case attr of
-				 (true, _) => "public "
-			       | (false, _) => "") ^ "'"));
-		outputId (q, id); output (q, "'\n{\n}\n");
 		outputClassDecls (q, members);
 		output (q, "}\n");
 		case namespace of
