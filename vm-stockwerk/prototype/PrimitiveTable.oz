@@ -18,6 +18,9 @@ import
    FloatChunk(toOz fromOz) at 'FloatChunk.so{native}'
    Scheduler(object)
    ByneedInterpreter(interpreter)
+require
+   Helper(deref: Deref construct: Construct deconstruct: Deconstruct
+	  pushCall: PushCall)
 export
    ImportOzModule
    Values
@@ -56,15 +59,6 @@ define
 
    fun {I2W X}
       {BootWord.make WordSize X}
-   end
-
-   fun {Deref X}
-      case X of transient(TransientState) then
-	 case {Access TransientState} of ref(Y) then {Deref Y}
-	 else X
-	 end
-      else X
-      end
    end
 
    fun {IsCyclic X TransientState}
@@ -652,7 +646,7 @@ define
 		       V = {Tuple.make vector N}
 		       NewFrame = vectorTabulate(VectorTabulateInterpreter
 						 V F 1 N)
-		       continue(arg(0) {F.1.1.pushCall F NewFrame|TaskStack.2})
+		       {PushCall arg(0) F NewFrame|TaskStack.2}
 		    else
 		       continue(arg(vector()) TaskStack.2)
 		    end
@@ -719,18 +713,6 @@ define
 	      'Word.xorb':
 		 fun {$ X Y} {W2I {BootWord.'xorb' {I2W X} {I2W Y}}} end#rr_v)
 
-   fun {Construct Args}
-      case Args of arg(X) then X
-      [] args(...) then {Adjoin Args tuple}
-      end
-   end
-
-   fun {Deconstruct Args}
-      case Args of arg(X) then {Deref X}
-      [] args(...) then Args
-      end
-   end
-
    VectorTabulateInterpreter =
    vectorTabulateInterpreter(
       run:
@@ -741,7 +723,7 @@ define
 	       else NewFrame in
 		  NewFrame = vectorTabulate(VectorTabulateInterpreter
 					    V F I + 1 N)
-		  continue(arg(I) {F.1.1.pushCall F NewFrame|Rest})
+		  {PushCall arg(I) F NewFrame|Rest}
 	       end
 	    end
 	 end
@@ -935,7 +917,7 @@ define
 			      exception(Frame|Debug Exn Rest)
 			   end
 			pushCall:
-			   fun {$ closure(P) TaskStack}
+			   fun {$ _ P TaskStack}
 			      P|TaskStack
 			   end
 			abstract:
