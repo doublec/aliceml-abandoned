@@ -67,9 +67,13 @@ define
 		     end
 		  'save':
 		     fun {$ Filename Type Value}
-			{Pickle.saveWithCells
-			 {Functor.new 'import' sig({NewName}#Type)
-			  fun {$ _} Value end} Filename '' 9}
+			try
+			   {Pickle.saveWithCells
+			    {Functor.new 'import' sig({NewName}#Type)
+			     fun {$ _} Value end} Filename '' 9}
+			catch error(dp(generic 'pickle:nogoods' ...) ...) then
+			   {Exception.raiseError alice(CorruptException)}
+			end
 			unit
 		     end
 		  'loadSign':
