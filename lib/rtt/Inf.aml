@@ -1036,7 +1036,7 @@ structure InfPrivate =
 	    val pairs = pair(m1, items2, [])
 	in
 	    realiseSig(rea, s2);
-	    List.app matchItem pairs;
+	    List.appr matchItem pairs;
 	    rea
 	end
 

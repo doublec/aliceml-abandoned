@@ -201,7 +201,8 @@ COMPILERFRONTENDCOMMONSOURCES0 = \
 	INF_REFLECTION-sig.aml InfReflection.aml \
 	ABSTRACT_GRAMMAR-sig.aml MkAbstractGrammar.aml \
 	PP_ABSTRACT_GRAMMAR-sig.aml MkPPAbstractGrammar.aml \
-	AbstractGrammar.aml TypedGrammar.aml ENV-sig.aml Env.aml \
+	AbstractGrammar.aml TypedGrammar.aml \
+	ENV-sig.aml Env.aml USE_ENV-sig.aml UseEnv.aml \
 	ELABORATION_ERROR-sig.aml ElaborationError.aml \
 	ELABORATION_PHASE-sig.aml MkElaborationPhase.aml \
 	TRANSLATION_PHASE-sig.aml MkTranslationPhase.aml MkFrontendCommon.aml
