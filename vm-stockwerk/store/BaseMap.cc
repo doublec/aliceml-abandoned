@@ -10,11 +10,6 @@
 //   $Revision$
 //
 
-#if defined(INTERFACE)
-#pragma implementation "store/MapNode.hh"
-#pragma implementation "store/BaseMap.hh"
-#endif
-
 #include "store/BaseMap.hh"
 #include "store/MapNode.hh"
 

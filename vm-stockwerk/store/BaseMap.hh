@@ -12,10 +12,6 @@
 #ifndef __STORE__BASE_MAP_HH__
 #define __STORE__BASE_MAP_HH__
 
-#if defined(INTERFACE)
-#pragma interface "store/BaseMap.hh"
-#endif
-
 #include "store/Store.hh"
 
 typedef void (*item_apply)(word key, word item);
