@@ -31,6 +31,9 @@ all: generate compile documentation
 
 generate: rungenerator $(MAINSIG) removetemp
 
+$(COMPSCAP:%=%_CORE-sig.aml): rungenerator ;
+$(COMPSCAP:%=%_ENUMS-sig.aml): rungenerator ;
+
 rungenerator: gtkclean.c
 	if test ! -d $(OUTDIR) ; then mkdir $(OUTDIR) ; fi
 	echo 'CM.make();main "$(OUTDIR)";' | sml
@@ -52,7 +55,7 @@ removetemp:
 compile: $(NATIVES:%=%.dll) $(COMPFILES:%.aml=%.stc)
 
 %.o: %.cc
-	$(ALICETOOL) -v cc -c $< -o $@
+	$(ALICETOOL) -v cc `pkg-config --cflags gtk+-2.0` -c $< -o $@
 
 %.dll: %.o
 	$(ALICETOOL) -v ld -Wl,-S `pkg-config --libs gtk+-2.0` $< -o $@
