@@ -17,8 +17,8 @@
 ## all:
 ##    Identical to build3-install.
 ## depend:
-##    Creates the file Makefile.depend, which contains the dependencies
-##    needed for Pass 3.
+##    Creates the file Makefile.depend,
+##    which contains the dependencies needed for Pass 3.
 ## clean:
 ##    Removes all files created by previous builds.
 ## veryclean:
@@ -29,7 +29,7 @@
 ## Pass 1
 ## ------
 ##
-## The goal is to build a compiler using the hybrid SML/NJ+Mozart compiler.
+## The goal is to build a compiler using the bootstrap compiler.
 ## This is performed via the following targets.
 ##
 ## build1-src:
@@ -37,7 +37,7 @@
 ## build1-all:
 ##    The native components are created using ozc.  The component
 ##    Build1.ozf (and all its imports, transitively) are built
-##    using the hybrid compiler via recursive invocation.
+##    using the bootstrap compiler via recursive invocation.
 ## build1-install:
 ##    A minimal but working system (only consisting of a compiler,
 ##    without libraries) is installed to subdirectory build1/install.
@@ -53,10 +53,6 @@
 ## build2-all:
 ##    Libraries implemented in Alice are compiled using the system
 ##    installed in Pass 1.
-## build2-install:
-##    A system with libraries (as far as they are needed to build
-##    a system with runtime type information) is installed to
-##    subdirectory build2/install.
 ##
 ## Pass 3
 ## ------
@@ -93,7 +89,7 @@
 # Configurable directories
 
 SRCTOP = ..
-BOOTSTRAPDIR = ../bootstrap
+BOOTSTRAPDIR = $(SRCTOP)/bootstrap
 OZHOME = /opt/mozart-devel
 PREFIX = /opt/stockhausen-devel
 
@@ -102,19 +98,17 @@ PREFIX = /opt/stockhausen-devel
 VPATH = $(SRCTOP)
 
 ALICEC0 = $(BOOTSTRAPDIR)/alicec # --profile
-ALICEC1 = STOCKHOME=build1/install build1/install/bin/alicec
-ALICEC2 = STOCKHOME=build2/install build2/install/bin/alicec
+ALICEC1 = STOCKHOME=build1/install build1/install/bin/alicec --mozart
+ALICEC2 = STOCKHOME=build1/install build1/install/bin/alicec --mozart
 
 ALICEC_OPTS = \
 	--check-intermediate \
 	--no-dump-elaboration-sig --implicit-import-file - $(ALICEC_EXTRA_OPTS)
-ALICEC_EXTRA_OPTS = --dump-target
+ALICEC_EXTRA_OPTS = 
 
-ALICELINK0 = OZ_LOAD=pattern='?{x}'='?{x}'.ozf:cache=$(OZHOME)/cache/ ozl
 ALICELINK1 = STOCKHOME=build1/install build1/install/bin/alicelink
 ALICELINK2 = STOCKHOME=build1/install build1/install/bin/alicelink
 
-ALICELINK0_OPTS = -z9 --sequential
 ALICELINK_OPTS = -v
 
 ALICEDEP = sml @SMLload=$(BOOTSTRAPDIR)/alicedep
@@ -380,20 +374,17 @@ BUILD1DIRS = build1 $(SOURCEDIRS:%=build1/%)
 BUILD1SOURCES = \
 	build1/Build1.aml build1/lib/fundamental/RTT.aml \
 	$(ALLSOURCES:%=build1/%)
+BUILD1OZSOURCES = $(filter %.oz, $(BUILD1SOURCES))
 
-INSTALL1DIRS = build1/install build1/install/bin build1/install/lib \
-	build1/install/lib/system build1/install/compiler build1/install/linker
+INSTALL1DIRS = build1/install build1/install/bin \
+	build1/install/compiler build1/install/linker
 INSTALL1TOPFILES = VMMain.ozf
 INSTALL1BINFILES = alicerun alicec aliceserv alicelink
-INSTALL1LIBFILES = system/ComponentManager.ozf
-INSTALL1COMPILERFILES = CompilerMain.ozf CompileServerMain.ozf
-INSTALL1LINKERFILES = Main.ozf
+INSTALL1COMPILERFILES = CompilerMain.ozf
 INSTALL1FILES = \
-	$(INSTALL1TOPFILES:%=build1/install/%) \
 	$(INSTALL1BINFILES:%=build1/install/bin/%) \
-	$(INSTALL1LIBFILES:%=build1/install/lib/%) \
-	$(INSTALL1COMPILERFILES:%=build1/install/compiler/%) \
-	$(INSTALL1LINKERFILES:%=build1/install/linker/%)
+	$(BUILD1OZSOURCES:%.oz=%.ozf) \
+	$(INSTALL1COMPILERFILES:%=build1/install/compiler/%)
 
 ##
 ## Creating the Source Tree for Build 1
@@ -524,9 +515,7 @@ build1/%.oz: %.oz
 ## Performing Build 1
 ##
 
-build1-all: build1-src \
-	build1/LinkedVMMain.ozf build1/compiler/LinkedCompilerMain.ozf \
-	build1/compiler/LinkedCompileServerMain.ozf
+build1-all: build1-src build1/VMMain.ozf build1/Build1.ozf
 
 build1/%.ozf: build1/%.oz
 	$(OZC) -c $< -o $@
@@ -534,27 +523,6 @@ build1/%.ozf: build1/%.oz
 build1/%.ozf: build1/%.aml
 	$(ALICEC0) $(ALICEC_OPTS) --recursive-compilation \
 	--trace-component-access --no-rtt -c $< -o $@
-
-BUILD1OZSOURCES = $(filter %.oz, $(BUILD1SOURCES))
-BUILD1OZLINPUTS = \
-	$(LIBNATIVES:%=build1/%) \
-	$(BUILD1OZSOURCES:%.oz=%.ozf) \
-	build1/Build1.ozf
-
-build1/LinkedVMMain.ozf: build1/VMMain.ozf $(BUILD1OZLINPUTS)
-	$(ALICELINK0) $(ALICELINK0_OPTS) --include=.. $< -o $@
-
-build1/compiler/LinkedCompilerMain.ozf: $(BUILD1OZLINPUTS)
-	$(ALICELINK0) $(ALICELINK0_OPTS) --include=.. \
-	build1/compiler/CompilerMain.ozf -o $@
-
-build1/compiler/LinkedCompileServerMain.ozf: $(BUILD1OZLINPUTS)
-	$(ALICELINK0) $(ALICELINK0_OPTS) --include=.. \
-	build1/compiler/CompileServerMain.ozf -o $@
-
-build1/linker/LinkedMain.ozf: $(BUILD1OZLINPUTS)
-	$(ALICELINK0) $(ALICELINK0_OPTS) --include=.. \
-	build1/linker/Main.ozf -o $@
 
 ##
 ## Installing Build 1
@@ -565,22 +533,9 @@ build1-install: build1-all $(INSTALL1DIRS) $(INSTALL1FILES)
 $(INSTALL1DIRS):
 	mkdir -p $@
 
-build1/install/VMMain.ozf: build1/LinkedVMMain.ozf
-	install -c -m 444 $< $@
-
-$(INSTALL1LIBFILES:%=build1/install/lib/%): build1/install/lib/%: build1/lib/%
-	install -c -m 444 $< $@
-
-build1/install/compiler/CompilerMain.ozf: \
-	build1/compiler/LinkedCompilerMain.ozf
-	install -c -m 444 $< $@
-
-build1/install/compiler/CompileServerMain.ozf: \
-	build1/compiler/LinkedCompileServerMain.ozf
-	install -c -m 444 $< $@
-
-build1/install/linker/Main.ozf: build1/linker/LinkedMain.ozf
-	install -c -m 444 $< $@
+build1/install/compiler/CompilerMain.ozf:
+	(cd build1 && tar cf - `find . -name '*.ozf'`) | \
+	(cd build1/install && tar xvf -)
 
 build1/install/bin/%: %
 	install -c -m 555 $< $@
@@ -596,26 +551,11 @@ BUILD2SOURCES = \
 	build2/lib/fundamental/RTT.aml build2/lib/rtt/RTT.aml \
 	$(LIBSOURCES:%=build2/%)
 
-INSTALL2DIRS = build2/install build2/install/bin \
-	build2/install/lib build2/install/lib/fundamental \
-	build2/install/lib/system build2/install/lib/utility \
-	build2/install/lib/rtt build2/install/lib/ml-yacc \
-	build2/install/compiler
-INSTALL2TOPFILES = VMMain.ozf alicec.import
-INSTALL2BINFILES = alicerun alicec aliceserv alicelink alicedep
-INSTALL2LIBFILES = rtt/RTT.ozf system/ComponentManager.ozf
-INSTALL2COMPILERFILES = CompilerMain.ozf CompileServerMain.ozf
-INSTALL2FILES = \
-	$(INSTALL2TOPFILES:%=build2/install/%) \
-	$(INSTALL2BINFILES:%=build2/install/bin/%) \
-	$(INSTALL2LIBFILES:%=build2/install/lib/%) \
-	$(INSTALL2COMPILERFILES:%=build2/install/compiler/%)
-
 ##
 ## Creating the Source Tree for Build 2
 ##
 
-build2-src: build1-install $(BUILD2DIRS) $(BUILD2SOURCES) \
+build2-src: build1-install $(BUILD2DIRS) $(BUILD2SOURCES)
 
 $(BUILD2DIRS):
 	mkdir -p $@
@@ -629,17 +569,10 @@ build2/%.aml: build1/%.aml
 build2/%.asig: build1/%.asig
 	cp $< $@
 
-build2/LinkedVMMain.ozf build2/compiler/LinkedCompilerMain.ozf \
-	build2/compiler/LinkedCompileServerMain.ozf: build2/%: build1/%
-	cp $< $@
-
 build2/alicec.import: lib/fundamental/Fundamental.import lib/Other.import
 	cat $^ > $@
 
 $(LIBNATIVES:%=build2/%): build2/%: build1/%
-	cp $< $@
-
-$(LIBNATIVES:%.ozf=build2/%.asig): build2/%: build1/%
 	cp $< $@
 
 ##
@@ -652,38 +585,10 @@ build2/%.ozf: build2/%.aml
 	$(ALICEC1) $(ALICEC_OPTS) --no-rtt -c $< -o $@
 
 build2/lib/rtt/LinkedRTT.ozf: build2/lib/rtt/RTT.ozf
-	$(ALICELINK1) $(ALICELINK_OPTS) --include build2 build2/lib/rtt/RTT -o $@
+	$(ALICELINK1) $(ALICELINK_OPTS) build2/lib/rtt/RTT \
+	--include build2 -o $@
 
 $(LIBNATIVES:%.ozf=build2/%.asig): %.asig: %.ozf
-
-##
-## Installing Build 2
-##
-
-build2-install: build2-all $(INSTALL2DIRS) $(INSTALL2FILES)
-
-$(INSTALL2DIRS):
-	mkdir -p $@
-
-build2/install/VMMain.ozf: build1/install/VMMain.ozf
-	install -c -m 444 $< $@
-
-build2/install/%.import: build2/%.import
-	install -c -m 444 $< $@
-
-$(INSTALL2BINFILES:%=build2/install/bin/%): build2/%: build1/%
-	install -c -m 555 $< $@
-
-$(INSTALL2LIBFILES:%=build2/install/lib/%): build2/install/%: build2/%
-	install -c -m 444 $< $@
-
-build2/install/compiler/CompilerMain.ozf: \
-	build1/install/compiler/CompilerMain.ozf
-	install -c -m 444 $< $@
-
-build2/install/compiler/CompileServerMain.ozf: \
-	build1/install/compiler/CompileServerMain.ozf
-	install -c -m 444 $< $@
 
 ########################################################################
 ### BUILD 3
@@ -698,13 +603,13 @@ INSTALL3DIRS = build3/install build3/install/bin \
 	build3/install/lib/rtt build3/install/lib/ml-yacc \
 	build3/install/compiler build3/install/compiler/top \
 	build3/install/linker build3/install/depend
-INSTALL3TOPFILES = $(INSTALL2TOPFILES) alice.import
-INSTALL3BINFILES = $(INSTALL2BINFILES) alice
+INSTALL3TOPFILES = $(INSTALL1TOPFILES) alice.import
+INSTALL3BINFILES = $(INSTALL1BINFILES) alice
 INSTALL3LIBFILES = \
 	$(filter %.ozf, $(LIBSOURCES0:%.aml=%.ozf)) \
 	$(filter %.ozf, $(LIBSOURCES0:%.asig=%.ozf)) system/UnsafeValue.asig \
 	fundamental/Fundamental.ozf
-INSTALL3COMPILERFILES = $(INSTALL2COMPILERFILES) ToplevelMain.ozf
+INSTALL3COMPILERFILES = $(INSTALL1COMPILERFILES) ToplevelMain.ozf
 INSTALL3COMPILERTOPFILES = \
 	SMLToMozartRecursiveCompiler.ozf \
 	SMLToDotNetRecursiveCompiler.ozf \
@@ -735,7 +640,7 @@ $(BUILD3SOURCES): build3/%: build1/%
 ## Performing Build 3
 ##
 
-build3-all: build2-install $(BUILD3DIRS) $(BUILD3SOURCES) \
+build3-all: build2-all $(BUILD3DIRS) $(BUILD3SOURCES) \
 	$(LIBNATIVES:%=build3/%) \
 	build3/lib/fundamental/LinkedFundamental.ozf \
 	build3/compiler/LinkedCompilerMain.ozf \
@@ -743,7 +648,7 @@ build3-all: build2-install $(BUILD3DIRS) $(BUILD3SOURCES) \
 	build3/compiler/LinkedToplevelMain.ozf \
 	build3/compiler/top/LinkedSMLToMozartRecursiveCompiler.ozf \
 	build3/compiler/top/LinkedSMLToDotNetRecursiveCompiler.ozf \
-	build3/LinkedVMMain.ozf
+	build3/VMMain.ozf
 
 build3/lib/fundamental/RTT.ozf: build2/lib/rtt/LinkedRTT.ozf
 	cp $< $@
@@ -751,8 +656,7 @@ build3/lib/fundamental/RTT.ozf: build2/lib/rtt/LinkedRTT.ozf
 build3/%.ozf: build3/%.oz
 	$(OZC) -c $< -o $@
 
-$(LIBNATIVES:%=build3/%): \
-	build3/lib/%.ozf: lib/%.oz
+$(LIBNATIVES:%=build3/%): build3/lib/%.ozf: lib/%.oz
 	$(OZC) -c $< -o $@
 
 build3/alicec.import: lib/fundamental/Fundamental.import lib/Other.import
@@ -770,10 +674,6 @@ build3/lib/fundamental/LinkedFundamental.ozf: \
 	$(ALICELINK2) $(ALICELINK_OPTS) --rewrite build3/=../../ \
 	--include build3 \
 	build3/lib/fundamental/Fundamental -o $@
-
-build3/LinkedVMMain.ozf: build3/VMMain.ozf build3/lib/system/Url.ozf \
-	build3/lib/system/Boot.ozf
-	$(ALICELINK0) $(ALICELINK0_OPTS) --include=.. $< -o $@
 
 build3/compiler/LinkedCompilerMain.ozf: build3/compiler/CompilerMain.ozf
 	$(ALICELINK2) $(ALICELINK_OPTS) --rewrite build3/=../ \
@@ -840,7 +740,7 @@ build3-install: build3-all $(INSTALL3DIRS) $(INSTALL3FILES)
 $(INSTALL3DIRS):
 	mkdir -p $@
 
-build3/install/VMMain.ozf: build3/LinkedVMMain.ozf
+build3/install/VMMain.ozf: build3/VMMain.ozf
 	install -c -m 444 $< $@
 
 build3/install/%.import: build3/%.import
