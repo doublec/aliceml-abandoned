@@ -333,7 +333,7 @@ baumartige Darstellung transformiert: \\
 \put(87,200){\line(0,-4){50}}
 
 
-\end{picture}
+\end{picture} \newline
 Abbildung 3.3: Beispiel f\"ur interne Darstellung
 \end{center}
 
@@ -822,26 +822,37 @@ betrieben, um zur neuen Darstellung zu gelangen.
 
 Abbildung 4.4 stellt die interne (baumartige) Beschreibung einer 
 Datenstruktur dar. Es wird angenommen, dass die Darstellung 
-des markierten Teilbaums ersetzt werden muss.
+des durch Knoten A repr\"{a}sentierten 
+Wertes ersetzt werden muss.
 
 \begin{center}
 \epsfig{file = inkrem2.eps, width = 10cm}
 \newline Abbildung 4.5: inkrementelle Ver\"anderung 
 \end{center}
 
-Abbildung 4.5 zeigt die n\"otigen Schritte, um zu einer 
+
+Abbildung 4.5 zeigt die n\"otigen Schritte, um 
+zu einer 
 neuen Beschreibung und zu einer neuen Darstellung 
 auf der Benutzeroberfl\"ache zu gelangen. 
-Der betroffene Teilbaum selbst muss vollkommen neu konstruiert 
+Der betroffene Teilbaum selbst, hier der Knoten A', 
+ muss vollkommen neu konstruiert 
 und angeordnet werden, und dessen graphische Repr\"asentation 
-muss neu gezeichnet werden. Da dies die Anordnung des 
-gesamten Knoten st\"oren kann, muss auf dem Pfad von 
+muss neu gezeichnet werden. Da dies die Anordnung der 
+graohischen Repr\"asentationen der gesamten 
+baumartigen Beschreibung st\"oren kann, muss auf dem Pfad von 
 diesem Teilbaum zum Wurzelknoten die Anordnung neu berechnet werden. 
-Dies kann zur Folge haben, dass von der \"Anderung nicht direkt 
+In diesem Beispiel betrifft das den Knoten B.
+Dies kann zur Folge haben, dass die Textdarstellungen 
+der von der \"Anderung nicht direkt 
 betroffene Teilb\"aume an neue Positionen verschoben 
 werden m\"ussen. Von diesen Positions\"{a}nderungen 
 abgesehen k\"onnen diese Teilb\"aume unver\"andert 
-beibehalten werden. Das ist g\"unstiger, als den gesamten 
+beibehalten werden.
+In dem Beispiel m\"ussen die textuellen Repr\"asentationen
+des Teilbaums {C,D,E} auf der graphischen Benutzeroberfl\"ache 
+verschoben werden.
+Das ist g\"unstiger, als den gesamten 
 Baum neu zu konstruieren, anzuordnen und zu zeichnen.   
  
 
