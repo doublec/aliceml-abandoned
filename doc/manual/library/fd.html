@@ -12,7 +12,7 @@
     and propagators.
   </P>
   <P>
-    Finite domain variables are variables whose values are sets of integers.
+    Finite domain variables are variables whose values are non-negative integers.
   </P>
   <P>
     If a propagator is invoked, it tries to narrow the domains of the
@@ -28,7 +28,7 @@
     both schemes. 
   </P>
   <P>
-    A propagator ceases to exist at least if all the variables
+    A propagator ceases to exist if all the variables
     it is posted on are determined. In the following sections,
     only exceptions from this rule are mentioned,
     i. e. if the propagator ceases to exist earlier.
@@ -792,7 +792,7 @@
       <TT>Reified.card (<I>i1</I>, <I>v</I>, <I>i2</I>, <I>c</I>)</TT>
     </DT>
     <DD>
-      <P>For detailed documentation, click
+      <P>For detailed documentation, see
          <A HREF="http://www.mozart-oz.org/documentation/system/node24.html#label216">here</A>.
     </P></DD>
 
@@ -925,11 +925,12 @@
             a choice point for <TT>x = m</TT> and
             <TT>x <> m</TT> where <I>m</I>
             is the middle of the domain of <I>x</I> (see <TT>Reflect.mid</TT>).
-        <LI><TT>NBSUSPS</TT>Selects the variable with the largest number
+        <LI><TT>NBSUSPS</TT> selects the variable with the largest number
             of suspensions. If several variables suspend on the maximal
             number of constraints, the leftmost variable
             whose domain is minimal is selected.
       </UL>
+      <P></P>
     </DD>
 
     <DT>
