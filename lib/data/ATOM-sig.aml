@@ -13,16 +13,16 @@
 import structure __pervasive                   from "Pervasive"
 import __primitive type int and bool and order from "ToplevelTypes"
 
-signature UNIQUE_STRING =					(**)
+signature ATOM =					(**)
 sig
     eqtype string
-    eqtype unique_string
-    type t = unique_string
+    eqtype atom
+    type t = atom
 
-    val unique :	string -> unique_string
-    val string :	unique_string -> string
+    val atom :		string -> atom
+    val toString :	atom -> string
 
-    val equal :		unique_string * unique_string -> bool
-    val compare :	unique_string * unique_string -> order
-    val hash :		unique_string -> int
+    val equal :		atom * atom -> bool
+    val compare :	atom * atom -> order
+    val hash :		atom -> int
 end

@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2002
+ *   Andreas Rossberg, 2001-2003
  *
  * Last change:
  *   $Date$ by $Author$
@@ -44,13 +44,14 @@ import __primitive structure WideString		from "WideString"
 import __primitive signature SUBSTRING		from "SUBSTRING-sig"
 import __primitive structure Substring		from "Substring"
 import __primitive structure WideSubstring	from "WideSubstring"
-import __primitive signature UNIQUE_STRING	from "UNIQUE_STRING-sig"
-import __primitive structure UniqueString	from "UniqueString"
-import __primitive structure WideUniqueString	from "WideUniqueString"
 import __primitive signature STRING_CVT		from "STRING_CVT-sig"
 import __primitive structure StringCvt		from "StringCvt"
 import __primitive signature TEXT		from "TEXT-sig"
 import __primitive structure Text		from "Text"
+import __primitive structure WideText		from "WideText"
+import __primitive signature ATOM		from "ATOM-sig"
+import __primitive structure Atom		from "Atom"
+import __primitive structure WideAtom		from "WideAtom"
 
 import __primitive signature INTEGER		from "INTEGER-sig"
 import __primitive structure Int		from "Int"
@@ -79,9 +80,11 @@ import __primitive signature VECTOR_SLICE	from "VECTOR_SLICE-sig"
 import __primitive structure VectorSlice	from "VectorSlice"
 import __primitive signature MONO_VECTOR	from "MONO_VECTOR-sig"
 import __primitive structure CharVector		from "CharVector"
+import __primitive structure WideCharVector	from "WideCharVector"
 import __primitive structure Word8Vector	from "Word8Vector"
 import __primitive signature MONO_VECTOR_SLICE	from "MONO_VECTOR_SLICE-sig"
 import __primitive structure CharVectorSlice	from "CharVectorSlice"
+import __primitive structure WideCharVectorSlice from "WideCharVectorSlice"
 import __primitive structure Word8VectorSlice	from "Word8VectorSlice"
 import __primitive signature ARRAY		from "ARRAY-sig"
 import __primitive structure Array		from "Array"
@@ -89,9 +92,11 @@ import __primitive signature ARRAY_SLICE	from "ARRAY_SLICE-sig"
 import __primitive structure ArraySlice		from "ArraySlice"
 import __primitive signature MONO_ARRAY		from "MONO_ARRAY-sig"
 import __primitive structure CharArray		from "CharArray"
+import __primitive structure WideCharArray	from "WideCharArray"
 import __primitive structure Word8Array		from "Word8Array"
 import __primitive signature MONO_ARRAY_SLICE	from "MONO_ARRAY_SLICE-sig"
 import __primitive structure CharArraySlice	from "CharArraySlice"
+import __primitive structure WideCharArraySlice	from "WideCharArraySlice"
 import __primitive structure Word8ArraySlice	from "Word8ArraySlice"
 import __primitive signature BYTE		from "BYTE-sig"
 import __primitive structure Byte		from "Byte"
@@ -146,13 +151,14 @@ structure WideString		= WideString
 signature SUBSTRING		= SUBSTRING
 structure Substring		= Substring
 structure WideSubstring		= WideSubstring
-signature UNIQUE_STRING		= UNIQUE_STRING
-structure UniqueString		= UniqueString
-structure WideUniqueString	= WideUniqueString
 signature STRING_CVT		= STRING_CVT
 structure StringCvt		= StringCvt
 signature TEXT			= TEXT
 structure Text			= Text
+structure WideText		= WideText
+signature ATOM			= ATOM
+structure Atom			= Atom
+structure WideAtom		= WideAtom
 
 signature INTEGER		= INTEGER
 structure Int			= Int
@@ -181,9 +187,11 @@ signature VECTOR_SLICE		= VECTOR_SLICE
 structure VectorSlice		= VectorSlice
 signature MONO_VECTOR		= MONO_VECTOR
 structure CharVector		= CharVector
+structure WideCharVector	= WideCharVector
 structure Word8Vector		= Word8Vector
 signature MONO_VECTOR_SLICE	= MONO_VECTOR_SLICE
 structure CharVectorSlice	= CharVectorSlice
+structure WideCharVectorSlice	= WideCharVectorSlice
 structure Word8VectorSlice	= Word8VectorSlice
 signature ARRAY			= ARRAY
 structure Array			= Array
@@ -191,9 +199,11 @@ signature ARRAY_SLICE		= ARRAY_SLICE
 structure ArraySlice		= ArraySlice
 signature MONO_ARRAY		= MONO_ARRAY
 structure CharArray		= CharArray
+structure WideCharArray		= WideCharArray
 structure Word8Array		= Word8Array
 signature MONO_ARRAY_SLICE	= MONO_ARRAY_SLICE
 structure CharArraySlice	= CharArraySlice
+structure WideCharArraySlice	= WideCharArraySlice
 structure Word8ArraySlice	= Word8ArraySlice
 signature BYTE			= BYTE
 structure Byte			= Byte

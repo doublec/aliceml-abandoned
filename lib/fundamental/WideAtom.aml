@@ -1,0 +1,21 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2002-2003
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(*
+ *  Items marked with (**) are extensions to the Standard Basis.
+ *)
+
+import structure __pervasive from "Pervasive"
+import structure Atom        from "Atom"
+import signature ATOM        from "ATOM-sig"
+
+structure WideAtom : ATOM = Atom
