@@ -18,7 +18,7 @@
 (*	  pat ::= pat as pat			(R)				*)
 (*   - alternative and guarded patterns:					*)
 (*	  atpat ::= ( pat_1 | ... | pat_n )	(n>=2)				*)
-(*	  pat   ::= pat when atexp		(L)				*)
+(*	  pat   ::= pat where atexp		(L)				*)
 (*   - negated patterns:							*)
 (*	  pat ::= non pat							*)
 (*   - with patterns:								*)
@@ -178,7 +178,7 @@
 	| RAISE | REC | THEN | TYPE | VAL | WITH | WITHTYPE | WHILE
 	| LPAR | RPAR | LBRACK | RBRACK | LBRACE | RBRACE | COMMA | COLON
 	| SEMICOLON | DOTS | UNDERBAR | BAR | EQUALS | DARROW | ARROW | HASH
-	| CONSTRUCTOR | NON | WHEN | WITHFUN | WITHVAL | DOT | HASHBRACK
+	| CONSTRUCTOR | NON | WITHFUN | WITHVAL | DOT | HASHBRACK
 	| IMPORT | FROM
 	| PRIMITIVE | OVERLOAD | INSTANCE | PREBOUND | EQEQTYPE
 
@@ -202,7 +202,7 @@
 	 RAISE REC THEN TYPE VAL WITH WITHTYPE WHILE
 	 EQTYPE FUNCTOR INCLUDE SHARING SIG
 	 SIGNATURE STRUCT STRUCTURE WHERE
-	 CONSTRUCTOR NON WHEN
+	 CONSTRUCTOR NON WITHFUN WITHVAL
 	 IMPORT FROM
 	 PRIMITIVE OVERLOAD INSTANCE PREBOUND EQEQTYPE
 
@@ -226,7 +226,7 @@
 %right HANDLE
 %right ORELSE
 %right ANDALSO
-%left  WHEN
+%left  WHERE
 %left  WITHVAL
 %left  WITHFUN
 %right AS
@@ -952,7 +952,7 @@
 	| pat COLON ty	( TYPEDPat(I(patleft,tyright), pat, ty) )
 	| NON pat	( NONPat(I(NONleft,patright), pat) )
 	| pat AS pat	( ASPat(I(pat1left,pat2right), pat1, pat2) )
-	| pat WHEN atexp
+	| pat WHERE atexp
 			( WHENPat(I(patleft,atexpright), pat, atexp) )
 	| pat WITHVAL valbind END
 			( WITHVALPat(I(patleft,ENDright), pat, valbind) )

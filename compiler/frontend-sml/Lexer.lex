@@ -10,7 +10,6 @@
  *     so the LONGID token is substituted by a DOT token
  *   - #[ keyword for vector expressions
  *   - CONSTRUCTOR keyword for constructor declarations
- *   - WHEN keyword for guarded patterns
  *   - NON keyword added for negated patterns
  *   - WITHVAL and WITHFUN keywords for bindings inside pattern
  *   - IMPORT and FROM keywords added
@@ -312,7 +311,6 @@
   <INITIAL>"then"	=> ( token(THEN,      yypos, yytext) );
   <INITIAL>"type"	=> ( token(TYPE,      yypos, yytext) );
   <INITIAL>"val"	=> ( token(VAL,       yypos, yytext) );
-  <INITIAL>"when"	=> ( token(WHEN,      yypos, yytext) );
   <INITIAL>"where"	=> ( token(WHERE,     yypos, yytext) );
   <INITIAL>"while"	=> ( token(WHILE,     yypos, yytext) );
   <INITIAL>"with"	=> ( token(WITH,      yypos, yytext) );
