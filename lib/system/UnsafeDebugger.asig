@@ -1,0 +1,11 @@
+signature UNSAFE_DEBUGGER_COMPONENT =
+    sig
+	structure UnsafeDebugger =
+	    struct
+		val getEventStream: unit -> 'event list
+		val singleStep: Thread.thread -> unit
+		val detach: Thread.thread -> unit
+		val setBreakpoint: Thread.thread * 'position -> unit
+		val getRuntimeEnvironment: Thread.thread -> 'environment
+	    end
+    end

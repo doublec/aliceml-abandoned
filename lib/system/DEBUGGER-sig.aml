@@ -1,0 +1,16 @@
+import structure Reflect from "Reflect"
+
+signature DEBUGGER =
+    sig
+	type value = Reflect.value
+	type position = string * int * int
+	type environment = (string * value) list list
+
+	datatype event = C (* ... *)
+
+	val getEventStream: unit -> event list
+	val singleStep: Thread.thread -> unit
+	val detach: Thread.thread -> unit
+	val setBreakpoint: Thread.thread * position -> unit
+	val getRuntimeEnvironment: Thread.thread -> environment
+    end

@@ -1,0 +1,17 @@
+import signature DEBUGGER from "DEBUGGER-sig"
+import structure UnsafeDebugger from "UnsafeDebugger"
+
+structure Debugger :> DEBUGGER =
+    struct
+	type value = Reflect.value
+	type position = string * int * int
+	type environment = (string * value) list list
+
+	datatype event = C (* ... *)
+
+	val getEventStream = UnsafeDebugger.getEventStream
+	val singleStep = UnsafeDebugger.singleStep
+	val detach = UnsafeDebugger.detach
+	val setBreakpoint = UnsafeDebugger.setBreakpoint
+	val getRuntimeEnvironment = UnsafeDebugger.getRuntimeEnvironment
+    end
