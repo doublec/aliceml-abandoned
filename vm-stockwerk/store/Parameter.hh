@@ -61,6 +61,7 @@
     "THREAD", \
     "CLOSURE", \
     "TUPLE", \
+    "CONCRETE", \
     "TRANSFORM", \
     "ARGS" \
   }
