@@ -4,7 +4,7 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg and Leif Kornstaedt, 1999-2001
+ *   Andreas Rossberg and Leif Kornstaedt, 1999-2002
  *
  * Last change:
  *   $Date$ by $Author$
@@ -25,19 +25,26 @@ import infix 4 = <> < > >= infixr 5 :: infix 6 + -
 import structure General                           from "General"
 import structure Bool                              from "Bool"
 import structure List                              from "List"
-import signature VECTOR                            from "VECTOR-sig"
+import signature MONO_VECTOR                       from "MONO_VECTOR-sig"
 
-structure Vector : VECTOR =
+functor MkMonoVector(BaseMonoVector: sig
+    type vector
+    type elem
+
+    val maxLen: int
+    val fromList: elem list -> vector
+    val length: vector -> int
+    val sub: vector * int -> elem
+    val tabulate: int * (int -> elem) -> vector
+end) :> MONO_VECTOR
+    where type vector = BaseMonoVector.vector
+      and type elem = BaseMonoVector.elem =
 struct
-    type 'a vector = 'a vector
-    type 'a t      = 'a vector						(**)
+    open BaseMonoVector
 
-    __primitive val maxLen :	int			= "Vector.maxLen"
+    type t = vector							(**)
 
-    __primitive val fromList :	'a list -> 'a vector	= "Vector.fromList"
-    __primitive val length :	'a vector -> int	= "Vector.length"
-    __primitive val sub :	'a vector * int -> 'a	= "Vector.sub"
-    __primitive val sub' :	'a vector * int -> 'a	= "Unsafe.Vector.sub"
+    val sub' = sub (*INEFFICIENT*)
 
     fun toList v		= toList'(v, length v - 1, [])		(**)
     and toList'(v, ~1, xs)	= xs
@@ -49,9 +56,6 @@ struct
       | sliceLength(v,i,SOME n) where (i+n > length v orelse n < 0)
 				= raise General.Subscript
       | sliceLength(v,i,SOME n)	= n
-
-    __primitive val tabulate :	int * (int -> 'a) -> 'a vector
-							= "Vector.tabulate"
 
     fun extract(v,0,NONE)	= v
       | extract(v,i,no)		= tabulate(sliceLength(v,i,no),
@@ -114,11 +118,6 @@ struct
     fun exists  f v		= exists'(f,v,0)			(**)
     and exists'(f,v,i) 		= i <> length v andalso
 				  (f(sub'(v,i)) orelse exists'(f,v,i+1))
-
-    fun contains v x		= contains'(v,x,0)			(**)
-    and contains'(v,x,i)	= i <> length v andalso
-				  (x = sub'(v,i) orelse contains'(v,x,i+1))
-    fun notContains v x		= Bool.not(contains'(v,x,0))		(**)
 
     fun find  f v					= find'(f,v,0)	(**)
     and find'(f,v,i) where (i = length v)		= NONE
