@@ -41,11 +41,6 @@ AC_DEFUN([AC_SEAM_ARG_ENABLE_CHECKED],
    AC_MSG_CHECKING(whether to build with debug symbols and assertions)
    if test "${enable_checked:-no}" = "yes"; then
       AC_MSG_RESULT(yes)
-      AC_SEAM_CHECK_CXXFLAG(-fno-inline-functions)
-      AC_SEAM_CHECK_CXXFLAG(-fimplement-inlines)
-      AC_SEAM_CHECK_CXXFLAG(-ggdb,,
-         AC_SEAM_CHECK_CXXFLAG(-g))
-
       AC_SEAM_CHECK_CXXFLAG_SEAMTOOL(-fno-inline-functions)
       AC_SEAM_CHECK_CXXFLAG_SEAMTOOL(-fimplement-inlines)
       AC_SEAM_CHECK_CXXFLAG_SEAMTOOL(-ggdb,
@@ -54,9 +49,6 @@ AC_DEFUN([AC_SEAM_ARG_ENABLE_CHECKED],
       AC_SEAM_ADD_TO_CXXFLAGS_SEAMTOOL(-DINTERFACE \
                                        -DDEBUG_CHECK \
                                        -DSTORE_DEBUG)
-      AC_DEFINE(INTERFACE)
-      AC_DEFINE(DEBUG_CHECK)
-      AC_DEFINE(STORE_DEBUG)
    else
       AC_MSG_RESULT(no)
    fi])dnl
@@ -230,6 +222,21 @@ AC_DEFUN([AC_SEAM_ADD_TO_LDFLAGS_SEAMTOOL],
     AC_SUBST(SEAMTOOL_LDFLAGS)])
 
 dnl Macros:
+dnl   AC_SEAM_ADD_TO_CXXFLAGS ([FLAG...])
+dnl   AC_SEAM_ADD_TO_LDFLAGS ([FLAG...])
+dnl
+dnl Description:
+dnl   Add the flags to the corresponding variables
+dnl
+dnl Author:
+dnl   Marco Kuhlmann <kuhlmann@ps.uni-sb.de>
+dnl
+AC_DEFUN([AC_SEAM_ADD_TO_CXXFLAGS],
+   [CXXFLAGS="${CXXFLAGS}${CXXFLAGS:+ }$1"])
+AC_DEFUN([AC_SEAM_ADD_TO_LDFLAGS],
+   [LDFLAGS="${LDFLAGS}${LDFLAGS:+ }$1"])
+
+dnl Macros:
 dnl   AC_SEAM_CHECK_CXXFLAG_SEAMTOOL (FLAGS...)
 dnl   AC_SEAM_CHECK_LDFLAG_SEAMTOOL (FLAGS...)
 dnl
@@ -243,10 +250,14 @@ dnl   Marco Kuhlmann <kuhlmann@ps.uni-sb.de>
 dnl
 AC_DEFUN([AC_SEAM_CHECK_CXXFLAG_SEAMTOOL],
    [AC_REQUIRE([AC_SEAM_CHECK_CXXFLAG])
-    AC_SEAM_CHECK_CXXFLAG($1, AC_SEAM_ADD_TO_CXXFLAGS_SEAMTOOL([$1]))])
+    AC_SEAM_CHECK_CXXFLAG($1,
+       AC_SEAM_ADD_TO_CXXFLAGS_SEAMTOOL([$1])
+       AC_SEAM_ADD_TO_CXXFLAGS([$1]))])
 AC_DEFUN([AC_SEAM_CHECK_LDFLAG_SEAMTOOL],
    [AC_REQUIRE([AC_SEAM_CHECK_CXXFLAG])
-    AC_SEAM_CHECK_LDFLAG($1, AC_SEAM_ADD_TO_LDFLAGS_SEAMTOOL([$1]))])
+    AC_SEAM_CHECK_LDFLAG($1,
+       AC_SEAM_ADD_TO_LDFLAGS_SEAMTOOL([$1])
+       AC_SEAM_ADD_TO_LDFLAGS([$1]))])
 
 # ---------------------------------------------------------------
 # Macros used in the build process of SEAM extensions

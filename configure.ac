@@ -69,11 +69,9 @@ AC_SEAM_CHECK_LDFLAG([-Wl,--export-dynamic])
 # checks for library functions
 
 AC_CHECK_DECL(VirtualAlloc,
-  [AC_DEFINE(HAVE_VIRTUALALLOC, 1)],
-  [AC_CHECK_FUNC(malloc,
-     [AC_DEFINE(HAVE_VIRTUALALLOC, 0)],
-     [AC_MSG_ERROR(cannot find a suitable memory allocation mechanism)])],
-  [[#include <windows.h>]])
+   [AC_DEFINE(HAVE_VIRTUALALLOC, 1)],
+   [AC_DEFINE(HAVE_VIRTUALALLOC, 0)]
+   [[#include <windows.h>]])
 
 # checks for system services
 
