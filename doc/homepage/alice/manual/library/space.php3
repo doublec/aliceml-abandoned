@@ -107,7 +107,7 @@
       </P>
       <P>If <I>s</I> is merged, <TT>MERGED</TT> is returned.
       </P>
-      <P>If <I>s</I> is stable and failed, <TT>failed</TT> is returned.
+      <P>If <I>s</I> is stable and failed, <TT>FAILED</TT> is returned.
       </P>
       <P>If <I>s</I> is stable and succeeded and there are no threads
          in <I>s</I> synchronizing on choices, <TT>SUCCEEDED</TT> is returned.
@@ -129,7 +129,7 @@
     </DT>
     <DD>
       <P>returns the status of <I>s</I> in verbose form. Reduces immediately,
-         even is <I>s</I> not yet stable.
+         even if is <I>s</I> not yet stable.
       </P>
       <P>If <I>s</I> becomes merged, <TT>VERBOSE_MERGED</TT> is returned.
       </P>
@@ -144,14 +144,14 @@
          in <I>s</I> synchronizing on choices, either
          <TT>VERBOSE_SUCCEEDED_STUCK</TT>,
          or <TT>VERBOSE_SUCCEEDED_ENTAILED</TT> is returned.
-         There former happens when <I>s</I> still contains threads.
+         The former happens when <I>s</I> still contains threads.
       </P>
       <P>If <I>s</I> is stable and succeeded and there is at least one thread
          in <I>s</I> which synchronizes on a choice,
          <TT>VERBOSE_ALTERNATIVES <I>i</I></TT> is returned,
          where <I>i</I> gives the number of alternatives on the selected choice.
       </P>
-      <P>Des not synchronize on stability of <I>s</I>.
+      <P>Does not synchronize on stability of <I>s</I>.
       </P>
       <P>Raises a runtime error if the current space is not addmissible for
         <I>s</I>.
@@ -179,11 +179,11 @@
       <P>blocks until <I>s</I> becomes stable and then commits
          to alternatives of the selected choice of <I>s<I>.
       </P>
-      <P>if <I>c<I> is <TT>RANGE(l, h)</TT>, then all but
+      <P>if <I>c</I> is <TT>RANGE(l, h)</TT>, then all but
          the <TT>l,l+1,...,h</TT> alternatives of the selected choice of
          <I>s</I> are discarded. If a single alternative remains,
          the topmost choice is replaced by this alternative.
-        If no alternative remains, the space is failed. 
+         If no alternative remains, the space is failed. 
       </P>
       <P><TT>SINGLE i</TT> is an abbreviation for <TT>RANGE(i, i)</TT>.
       </P>
