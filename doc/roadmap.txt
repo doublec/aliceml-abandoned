@@ -1,0 +1,64 @@
+STOC ROAD-MAP
+
+
+Source text
+ |
+ | -------- Front End -------------------
+ |
+ | ParsingPhase:
+ |	- Lexing
+ |	- Parsing
+ |	- Derived form elimination
+ V
+InputGrammar
+ |
+ | AbstractionPhase:
+ |	- Fixity resolution
+ |	- Binding analysis
+ |	- more Derived form elimination
+ V
+AbstractGrammar
+ |
+ | ElaborationPhase:
+ |	- Type inference
+ |	- Overloading resolution
+ |	- Interface checking
+ V
+TypedGrammar (= AbstractGrammar')
+ |
+ | TranslationPhase:
+ |	- Type elimination
+ |	- Module translation
+ |
+ | -------------------------------------
+ V
+IntermediateGrammar
+ |
+ | -------- Middle End -----------------
+ |
+ | MatchCompilationPhase:
+ |	- Pattern matching compilation
+ V
+SimplifiedGrammar
+ |
+ | PartialEvaluationPhase:
+ |	- Value propagation
+ |	- Constant folding
+ |	- Lifeness analysis
+ |	- Dead code elimination
+ |	- Inlining
+ |	- Specialisation
+ |
+ | -------------------------------------
+ V
+SimplifiedGrammar'
+ |
+ | -------- Back End -------------------
+ |
+ | GenerationPhase:
+ |	- Register allocation
+ |	- Code generation
+ |
+ | -------------------------------------
+ V
+Stockwerk code
