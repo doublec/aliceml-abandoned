@@ -18,26 +18,30 @@ structure Package :> PACKAGE =
 struct
     type package
     type t = package
-    type val_package
+    type val_package = package
 
     type      mismatch = __pervasive.Inf.mismatch
     exception Mismatch = __pervasive.Inf.Mismatch
     exception MismatchVal
 
-    __primitive functor Pack :      fct(signature S structure X : S) ->
-				    (val package : package) = "Pack"
-    __primitive functor Unpack :    fct(val package : package signature S) ->
-				    S = "Unpack"
-    __primitive functor PackVal :   fct(type t val x : t) ->
-				    (val package : val_package) = "PackVal"
-    __primitive functor UnpackVal': fct(val package : val_package type t) ->
-				    (val x : t) = "UnpackVal"
+    __primitive functor Pack :
+	fct(signature S structure X : S) -> (val package : package) = "Pack"
+    __primitive functor Unpack :
+	fct(val package : package signature S) -> S = "Unpack"
 
-    functor UnpackVal(Arg : sig val package : val_package type t end) =
-	struct
-	    val x = let structure X = UnpackVal'(Arg) in X.x end
-		    handle Bind => raise MismatchVal
-	end
+    signature VAL_PACKAGE = sig type t val x : t end
+
+    functor PackVal(Arg : VAL_PACKAGE) =
+	Pack(signature S = VAL_PACKAGE where type t = Arg.t
+	     structure X = Arg)
+
+    functor UnpackVal(val package : val_package type t) =
+	(val x = let structure X =
+		    Unpack(val package = package
+			   signature S = VAL_PACKAGE where type t = t)
+		in X.x end
+		handle Mismatch _ => raise MismatchVal
+	)
 end
 *)
 
@@ -46,21 +50,16 @@ struct
     type package'
     datatype package = Package__ of package'
     type t = package
-    type val_package'
-    datatype val_package = ValPackage__ of val_package'
+    datatype val_package = ValPackage__ of package'
 
     type      mismatch = __pervasive.Inf.mismatch
     exception Mismatch = __pervasive.Inf.Mismatch
     exception MismatchVal
 
-    __primitive functor Pack' :     fct(signature S structure X : S) ->
-				    (val package : package') = "Pack"
-    __primitive functor Unpack' :   fct(val package : package' signature S) ->
-				    S = "Unpack"
-    __primitive functor PackVal' :  fct(type t val x : t) ->
-				    (val package : val_package') = "PackVal"
-    __primitive functor UnpackVal': fct(val package : val_package' type t) ->
-				    (val x : t) = "UnpackVal"
+    __primitive functor Pack' :
+	fct(signature S structure X : S) -> (val package : package') = "Pack"
+    __primitive functor Unpack' :
+	fct(val package : package' signature S) -> S = "Unpack"
 
     functor Pack(Arg : sig signature S structure X : S end) =
     let
@@ -76,9 +75,12 @@ struct
 	Unpack'(val package = package' signature S = S)
     end
 
-    functor PackVal(Arg : sig type t val x : t end) =
+    signature VAL_PACKAGE = sig type t val x : t end
+
+    functor PackVal(Arg : VAL_PACKAGE) =
     let
-	structure P = PackVal'(Arg)
+	structure P = Pack'(signature S = VAL_PACKAGE where type t = Arg.t
+			    structure X = Arg)
     in
 	(val package = ValPackage__(P.package))
     end
@@ -87,10 +89,11 @@ struct
     let
 	val ValPackage__ package' = package
     in
-	(val x = let structure X = UnpackVal'(val package = package'
-						 type t = t)
-		    in X.x end
-		    handle Bind => raise MismatchVal
+	(val x = let structure X =
+		    Unpack'(val package = package'
+			    signature S = VAL_PACKAGE where type t = t)
+		in X.x end
+		handle Mismatch _ => raise MismatchVal
 	)
     end
 end
