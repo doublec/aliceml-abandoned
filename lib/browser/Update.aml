@@ -85,10 +85,23 @@ struct
 	  else
 	      case MainDictionary.lookup(dict,i) of
 	      NONE => iterMove(dict,dy,i+1,highest_i)
-            | SOME node 
+            | SOME (node,line) 
 	      => ( Services.moveGroup(getGroup(node),0,dy)
-                 ; iterMove (dict,dy,i+1,highest_i) )
-	
+		 ;  Services.yPosSepRel(line,dy)
+		       (* let
+		       val dy' =(Real.fromInt
+				 (Services.fontHeight() * dy))
+		       val _ = TextIO.print(" dy' is "
+					    ^ (Real.toString dy')
+					    ^ " and Index is "
+					    ^ Int.toString(i)
+					    ^ "\n")
+		   in
+		    (* Services.yPosSepLine(line,getGroup(node)) *)
+		      Services.yPosSepRel(line,dy) 
+		   end *)
+		  ; iterMove (dict,dy,i+1,highest_i) )
+		  
     (* update *)
     and update (n,va,f,g) = 
 	if !(Settings.relmode) andalso isRelNode(getParent(n)) 
@@ -96,7 +109,7 @@ struct
 	else 
 	( setDazzled n 
 	 ; let val ind = getAncIndex n 
-	       val anc = valOf(MainDictionary.lookup 
+	       val (anc,ancline) = valOf(MainDictionary.lookup 
 			       (Dictionaries.dict,ind)) 
 	       val old_ydim = Layout.get_ydim(anc)
 	       val p = if isRelNode(getParent(n))
@@ -127,13 +140,13 @@ struct
 					            List.append([new],ri_rel)))
 			  end 
 		 else ()
-	       ; showChanges (anc,node,old_ydim,ind,y_pos) )
+	       ; showChanges (anc,ancline,node,old_ydim,ind,y_pos) )
 	   end )
 
     (* showChanges *)
-    and showChanges (anc,node,old_ydim,ind,y_pos) = 
+    and showChanges (anc,ancline,node,old_ydim,ind,y_pos) = 
         (Layout.layout(node)
-	 ; MainDictionary.update(Dictionaries.dict, (ind,node)) 
+	 ; MainDictionary.update(Dictionaries.dict, (ind,(node,ancline))) 
          ; DrawNodes.draw(node,0,y_pos,DrawNodes.move') 
 	 ; let val dy =  Layout.get_ydim(node) - old_ydim
 	   in ( WindowManager.incr_act_line dy
@@ -218,7 +231,7 @@ struct
 	(setDazzled n
 	; Settings.set_depth(!Settings.max_depth + i)
 	; let val ind = getAncIndex n 
-	      val anc = valOf(MainDictionary.lookup 
+	      val (anc,ancline) = valOf(MainDictionary.lookup 
 			      (Dictionaries.dict,ind)) 
 	      val old_ydim = Layout.get_ydim(anc) 
 	      val va = getValue(getDesc(n))
@@ -233,7 +246,7 @@ struct
 	      val node = if getParent(new) = Empty then new else anc
 	      val (_,y_pos) = Services.getPosition(getGroup(anc))
 	  in ( Gtk.objectDestroy(getGroup(n))
-	      ;  showChanges (anc,node,old_ydim,ind,y_pos) 
+	      ;  showChanges (anc,ancline,node,old_ydim,ind,y_pos) 
 	      ; Settings.set_depth(!Settings.max_depth - i) )
 	  end))
 

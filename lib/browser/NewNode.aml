@@ -37,6 +37,7 @@ import structure MkPathTable from "MkPathTable"
 import structure Services from "Services"
 import structure Settings from "Settings"
 import structure NewNodeHelper from "NewNodeHelper"
+import structure WindowManager from "WindowManager"
 import signature NEW_NODE from "NEW_NODE-sig"
 
 local
@@ -57,6 +58,9 @@ struct
 			    val _ = RelManDictionary.update(reldict,(i,nil))
                             val _ = relnumber := 0
 			    val node =  createGraph (va,t,Empty,i,0)
+			    val line = Services.createSepLine
+				(!WindowManager.canvasroot,
+				 !WindowManager.act_line)
 			    val (x1,y1,x2,y2) = Services.getCoordinates(
 							 getGroup(node))
 			    val _ = TextIO.print("NEWNODE: x1 = "
@@ -68,7 +72,7 @@ struct
 						 ^ " y2 = "
 						  ^ Int.toString(y2)
 						 ^" \n" )
-			in (MainDictionary.insertI(dict,(node)) ; node)
+			in (MainDictionary.insertI(dict,(node,line)) ; node)
 			end
   
     (* createGraph *)
@@ -600,8 +604,12 @@ struct
 				   getHighestIndexAssigned(dict) +1 
 			       val _ = RelManDictionary.update(reldict,(i,nil))
 			       val _ = Settings.relnumber := 0 
-			       val node = createGraphInf (va,t,Empty,i,0) 
-			   in (MainDictionary.insertI(dict,(node)) ; node) 
+			       val node = createGraphInf (va,t,Empty,i,0)
+			       val line = Services.createSepLine
+				(!WindowManager.canvasroot,
+				 !WindowManager.act_line)
+			   in (MainDictionary.insertI(dict,(node,line)) 
+			       ; node) 
 			   end   
  
     (* createGraphInf *)

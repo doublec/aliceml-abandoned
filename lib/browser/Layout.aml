@@ -172,7 +172,7 @@ struct
        else
 	   case MainDictionary.lookup(dict,i) of
 	       NONE => calcMaxXDim(dict,i+1)
-	     | SOME node => Int.max( get_xdim(node),calcMaxXDim(dict,i+1)) 
+	     | SOME (node,_) => Int.max( get_xdim(node),calcMaxXDim(dict,i+1)) 
 				
 
     fun setVisible (x,y) = let

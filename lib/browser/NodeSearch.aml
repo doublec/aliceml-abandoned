@@ -171,7 +171,7 @@ struct
 	else
 	    case MainDictionary.lookup(dict,i) of
 		NONE => iterate(dict,x,y,i+1,highest_i)
-	      | SOME node => case treeSearch(node,x,y) 
+	      | SOME (node,line) =>( case treeSearch(node,x,y) 
 		    of
 			NONE => iterate (dict,
 					 x,
@@ -183,7 +183,9 @@ struct
 				    => if !(#counter(r)) = 1
 					   then SOME n
 				       else SOME (getParent(n))
-                                  | _ => SOME n)
+                                  | _ => SOME n))
+	      | _ => (TextIO.print("NodeSearch unknown case") 
+		      ; NONE)
 				   
 						     
     fun search (dict,real_x, real_y) = 

@@ -20,6 +20,8 @@ import structure Gtk from "x-alice:/lib/gtk/Gtk"
 import structure Settings from "Settings"
 import structure GtkCanvas from "x-alice:/lib/gtk/GtkCanvas"
 import structure WindowHelper from "WindowHelper"
+import structure MkColorTable from "MkColorTable" 
+import structure MainDictionary from "MainDictionary"
 import signature SERVICES from "SERVICES-sig"
 
        structure Services :> SERVICES =
@@ -147,7 +149,95 @@ import signature SERVICES from "SERVICES-sig"
 					^ "\n"))
 	       end
 
-	  
+	   fun createSepLine (group,actline)= 
+	       if actline > 0 
+		   then
+		       let
+			   val mx = Real.trunc(!Settings.max_x)
+			   val linepos = actline * fontHeight()
+			       - (fontHeight() div 2)
+			       in
+				GtkCanvas.itemNew(group,   		 
+						  GtkCanvas.LINE, 
+						  [("points", 
+				     Gdk.POINTS ([0, linepos, mx, linepos])),
+						   ("fill_color_gdk", 
+		  Gdk.OBJECT(MkColorTable.allocColor(60000,60000,60000)) ),
+		 ("width_pixels", Gdk.INT 2)])  
+		       end
+	       else WindowHelper.uglyNULL 
+
+	   fun resizeSepLines (dict,rx) = 
+	       let
+		   val x = Real.trunc rx
+		   val highest_i = MainDictionary.getHighestIndexAssigned(dict)
+	       in
+		   resizeSepLinesIterate(dict,x,0,highest_i)
+	       end
+
+     and  resizeSepLinesIterate(dict,x,i,highest_i) =
+	 if i > highest_i 
+	     then ()
+	 else
+	     (case MainDictionary.lookup(dict,i) of
+		 NONE =>
+		     resizeSepLinesIterate(dict,x,i+1,highest_i)
+	       | SOME (_,line) => 
+		     if line = WindowHelper.uglyNULL 
+			 then  resizeSepLinesIterate(dict,x,i+1,highest_i)
+		     else
+			 let
+			     val (rx1,ry1,rx2,ry2) = 
+				 GtkCanvas.itemGetBounds(line, 0.0,
+					       0.0,
+					       0.0,
+					       0.0)
+				 val y1 = Real.trunc(Real.+(ry1,2.0))
+			 in
+			     (GtkCanvas.itemSet(line,
+					  "points", 
+					    Gdk.POINTS ([0, y1, x, y1]))
+			      ;  resizeSepLinesIterate(dict,x,i+1,highest_i))
+			 end)
+
+		  (* UNNEEDED! *)
+	   fun yPosSepLine (item,group) = 
+	       let
+		   val (_,ry1,_,_) = 
+		       GtkCanvas.itemGetBounds(group, 0.0,
+					       0.0,
+					       0.0,
+					       0.0)
+		   val y = Real.trunc(ry1) - (fontHeight() div 2)
+		   val (_,_,lx2,_) = 
+				 GtkCanvas.itemGetBounds(item, 0.0,
+					       0.0,
+					       0.0,
+					       0.0)
+	       in
+		   GtkCanvas.itemSet(item,
+				     "points", 
+				     Gdk.POINTS ([0, y, 
+						  Real.trunc(lx2), 
+						  y]))   
+	       end 
+	
+	   fun yPosSepRel (item,dy) = 
+	       let
+		   val (_,_,lx2,_) = 
+				 GtkCanvas.itemGetBounds(item, 0.0,
+					       0.0,
+					       0.0,
+					       0.0)
+		   val y = fontHeight() * dy
+	       in
+		   GtkCanvas.itemSet(item,
+				     "points", 
+				     Gdk.POINTS ([0, y, 
+						  Real.trunc(lx2), 
+						  y]))   
+	       end 
+   
 
 	   end
        

@@ -197,7 +197,9 @@ fun handleResize (scrolled,hadj,vadj,resize) = (fn _ =>  serve' (fn () => let
 			     val v = if (Real.< (page_sv,(!(Settings.max_y)))) 
 					 then !(Settings.max_y) else page_sv
 			   in
-			       resize(h,v,scrolled,valueh,valuev  )  
+			       (resize(h,v,scrolled,valueh,valuev  )
+				; Services.resizeSepLines(Dictionaries.dict,
+							  h))
 			 end))
 
 (* Scrolling *)
@@ -416,11 +418,18 @@ struct
 	 in
 	     (case desc of
 		 Types.INTERPUNCT => 0
-	       |  Types.VALUE(r) => 
+	       |  Types.VALUE(r) => let
+					val text = PrettyPrint.toString
+					      (PPType.ppTyp(#typ(r)),1000)
+				    in
+					if
+					    String.length(text) > 50 
+					    then
 		     postType("  " 
-			      ^String.extract( PrettyPrint.toString
-					      (PPType.ppTyp(#typ(r)),
-					       50), 0,SOME(50)))
+			      ^String.extract(text, 0,SOME(50)))
+		     else
+			 postType("  " ^ text)
+			 end
 	       | Types.I_VALUE(r) =>
 		     postType("  " 
 			      ^ String.extract(PrettyPrint.toString
@@ -457,12 +466,12 @@ struct
 							    0.0,
 							    x2,
 							    y2)
-				in
-				    (postT n
-				    ;GtkCanvas.itemLowerToBottom(re)
-				    ;destroySelectionMarkings()
-				    ;selection := SOME (n,re)
-				    ;setSelectionMenuSensitive(bar,true)
+				in                                             
+				    (  postT n  
+				    ; GtkCanvas.itemLowerToBottom(re) 
+				    ; destroySelectionMarkings() 
+				    ; selection := SOME (n,re) 
+				    ; setSelectionMenuSensitive(bar,true) 
 				    ; case b of
 				       1 => ()
 				    |  3 => 
@@ -471,7 +480,7 @@ struct
 				    depthhandler = handleDepth(n), 
 				    reinspecthandler = handleReinspect(n)})
 					    ;())
-				    | _   => () )
+				    | _   => () ) 
 				end
 			  | NONE => ( setSelectionMenuSensitive(bar,false)
 				     ; destroySelectionMarkings()

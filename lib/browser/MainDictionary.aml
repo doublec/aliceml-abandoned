@@ -15,6 +15,7 @@
 
 import structure MkDictionary from "MkDictionary" 
 import structure Types from "Types"
+import structure Services from "Services"
 
 local 
     
@@ -22,7 +23,7 @@ local
 
 in
 
-    structure MainDictionary = MkDictionary(type t = node)
+    structure MainDictionary = MkDictionary(type t = node * Services.tag )
 
 end
 
