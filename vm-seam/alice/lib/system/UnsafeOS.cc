@@ -17,6 +17,7 @@
 #include <unistd.h>
 #include "emulator/Authoring.hh"
 #include "emulator/RootSet.hh"
+#include "emulator/Properties.hh"
 
 // to be done: respect windows/unix differences
 
@@ -37,13 +38,14 @@ static char *ExportChar(String *s) {
 // Global OS.sysErr Exception
 static word SysErrConstructor;
 
-#define RAISE_SYS_ERR_EXCEPTION(A, B)                            \
-  Constructor *ccVal = Constructor::FromWord(SysErrConstructor); \
-  ConVal *conVal = ConVal::New(ccVal, 2);                        \
-  conVal->Init(0, A);                                            \
-  conVal->Init(1, B);                                            \
-  Scheduler::currentData = conVal->ToWord();                     \
-  return Interpreter::RAISE;
+#define RAISE_SYS_ERR(a, b)						\
+  {									\
+    ConVal *conVal =							\
+      ConVal::New(Constructor::FromWordDirect(SysErrConstructor), 2);	\
+    conVal->Init(0, a);							\
+    conVal->Init(1, b);							\
+    RAISE(conVal->ToWord());						\
+  }
 
 // FileSys Functor
 DEFINE1(FileSys_chDir) {
@@ -51,7 +53,7 @@ DEFINE1(FileSys_chDir) {
   int res = chdir(ExportChar(name));
   if (res) {
     const char *err = "chDir: cannot change directory";
-    RAISE_SYS_ERR_EXCEPTION(String::New(err)->ToWord(), Store::IntToWord(0));
+    RAISE_SYS_ERR(String::New(err)->ToWord(), Store::IntToWord(0));
   }
   else {
     RETURN_UNIT;
@@ -67,7 +69,7 @@ DEFINE1(FileSys_fileSize) {
   }
   else {
     const char *err = "fileSize: cannot get file size";
-    RAISE_SYS_ERR_EXCEPTION(String::New(err)->ToWord(), Store::IntToWord(0));
+    RAISE_SYS_ERR(String::New(err)->ToWord(), Store::IntToWord(0));
   }
 } END
 
@@ -78,7 +80,7 @@ DEFINE0(FileSys_getDir) {
   }
   else {
     const char *err = "getDir: cannot get directory";
-    RAISE_SYS_ERR_EXCEPTION(String::New(err)->ToWord(), Store::IntToWord(0));
+    RAISE_SYS_ERR(String::New(err)->ToWord(), Store::IntToWord(0));
   }
 } END
 
@@ -93,7 +95,7 @@ DEFINE1(FileSys_mkDir) {
   }
   else {
     const char *err = "mkDir: cannot create directory";
-    RAISE_SYS_ERR_EXCEPTION(String::New(err)->ToWord(), Store::IntToWord(0));
+    RAISE_SYS_ERR(String::New(err)->ToWord(), Store::IntToWord(0));
   }
 } END
 
@@ -106,7 +108,7 @@ DEFINE1(FileSys_modTime) {
   }
   else {
     const char *err = "modTime: cannot get file time";
-    RAISE_SYS_ERR_EXCEPTION(String::New(err)->ToWord(), Store::IntToWord(0));
+    RAISE_SYS_ERR(String::New(err)->ToWord(), Store::IntToWord(0));
   }
 } END
 
@@ -118,7 +120,7 @@ DEFINE1(FileSys_remove) {
   }
   else {
     const char *err = "remove: cannot remove file";
-    RAISE_SYS_ERR_EXCEPTION(String::New(err)->ToWord(), Store::IntToWord(0));
+    RAISE_SYS_ERR(String::New(err)->ToWord(), Store::IntToWord(0));
   }
 } END
 
@@ -146,13 +148,13 @@ DEFINE0(FileSys_tmpName) {
 
 static word FileSys(void) {
   Tuple *t = Tuple::New(8);
-  t->Init(0, Primitive::MakeClosure(FileSys_chDir, 1));
-  t->Init(1, Primitive::MakeClosure(FileSys_fileSize, 1));
-  t->Init(2, Primitive::MakeClosure(FileSys_getDir, 0));
-  t->Init(3, Primitive::MakeClosure(FileSys_mkDir, 1));
-  t->Init(4, Primitive::MakeClosure(FileSys_modTime, 1));
-  t->Init(5, Primitive::MakeClosure(FileSys_remove, 1));
-  t->Init(6, Primitive::MakeClosure(FileSys_tmpName, 1));
+  t->Init(0, Primitive::MakeClosure("FileSys.chDir", FileSys_chDir, 1));
+  t->Init(1, Primitive::MakeClosure("FileSys.fileSize", FileSys_fileSize, 1));
+  t->Init(2, Primitive::MakeClosure("FileSys.getDir", FileSys_getDir, 0));
+  t->Init(3, Primitive::MakeClosure("FileSys.mkDir", FileSys_mkDir, 1));
+  t->Init(4, Primitive::MakeClosure("FileSys.modTime", FileSys_modTime, 1));
+  t->Init(5, Primitive::MakeClosure("Filesys.remove", FileSys_remove, 1));
+  t->Init(6, Primitive::MakeClosure("FileSys.tmpName", FileSys_tmpName, 1));
   return t->ToWord();
 }
 
@@ -164,8 +166,7 @@ DEFINE1(Process_system) {
 
 DEFINE1(Process_atExn) {
   DECLARE_CLOSURE(closure, x0);
-  // to be done: Storing the closure
-  closure = closure;
+  Properties::atExn = closure->ToWord();
   RETURN_UNIT;
 } END
 
@@ -190,12 +191,12 @@ DEFINE1(Process_getEnv) {
 
 static word Process(void) {
   Tuple *t = Tuple::New(6);
-  t->Init(0, Primitive::MakeClosure(Process_atExn, 1));
-  t->Init(1, Primitive::MakeClosure(Process_exit, 1));
-  t->Init(2, Store::IntToWord(0)); // failure,  to be done
-  t->Init(3, Primitive::MakeClosure(Process_getEnv, 1));
-  t->Init(4, Store::IntToWord(1)); // success, to be done
-  t->Init(5, Primitive::MakeClosure(Process_system, 1));
+  t->Init(0, Primitive::MakeClosure("Process.atExn", Process_atExn, 1));
+  t->Init(1, Primitive::MakeClosure("Process.exit", Process_exit, 1));
+  t->Init(2, Store::IntToWord(1)); // Process.failure
+  t->Init(3, Primitive::MakeClosure("Process.getEnv", Process_getEnv, 1));
+  t->Init(4, Store::IntToWord(0)); // Process.success
+  t->Init(5, Primitive::MakeClosure("Process.system", Process_system, 1));
   return t->ToWord();
 }
 
