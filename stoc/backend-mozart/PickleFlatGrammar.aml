@@ -12,6 +12,22 @@
  *   $Revision$
  *)
 
+import
+    structure Source
+from "../infrastructure/Source"
+
+import
+    structure FlatGrammar
+from "../backend-common/FlatGrammar"
+
+import
+    signature CODE
+from "../backend-common/CODE-sig"
+
+import
+    structure PickleOutStream
+from "PickleOutStream"
+
 structure PickleFlatGrammar :> CODE
     where type t = Source.desc * string option ref * FlatGrammar.t =
     struct

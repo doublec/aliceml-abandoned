@@ -1,8 +1,8 @@
 Group
 
     structure PickleFlatGrammar
-    functor MakeMozartTarget
-    functor MakeBackendMozart
+    functor MkMozartTarget
+    functor MkBackendMozart
 
 is
 
@@ -16,5 +16,5 @@ is
     (* Externalisation (into Oz syntax) *)
 
     pickle-out-stream.cm
-    PickleFlatGrammar.sml
-    MakeBackendMozart.sml
+    PickleFlatGrammar.aml
+    BootstrapMkBackendMozart.aml

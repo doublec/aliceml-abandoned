@@ -8,5 +8,5 @@ is
     ../infrastructure/crash.cm
 
     crc.cm
-    PICKLE_OUT_STREAM.sig
-    PickleOutStream.sml
+    PICKLE_OUT_STREAM-sig.aml
+    PickleOutStream.aml

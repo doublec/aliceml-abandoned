@@ -1,5 +1,3 @@
-(* -*- sml -*- *)
-
 (*
  * Author:
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
@@ -14,11 +12,11 @@
 
 import
     signature SWITCHES
-from "../infrastructure/SWITCHES"
+from "../infrastructure/SWITCHES-sig"
 
 import
     signature PHASE
-from "../infrastructure/PHASE"
+from "../infrastructure/PHASE-sig"
 
 import
     structure EmptyContext
@@ -26,15 +24,15 @@ from "../infrastructure/EmptyContext"
 
 import
     signature SIGNATURE
-from "../infrastructure/SIGNATURE"
+from "../infrastructure/SIGNATURE-sig"
 
 import
-    structure MakeTracingPhase
-from "../infrastructure/MakeTracingPhase"
+    structure MkTracingPhase
+from "../infrastructure/MkTracingPhase"
 
 import
     signature TARGET
-from "../infrastructure/TARGET"
+from "../infrastructure/TARGET-sig"
 
 import
     structure FlatGrammar
@@ -44,9 +42,9 @@ import
     structure CodeGenPhase
 from "CodeGenPhase"
 
-functor MakeMozartTarget(structure Switches: SWITCHES
-			 structure Sig: SIGNATURE
-			     where type t = FlatGrammar.sign): TARGET =
+functor MkMozartTarget(structure Switches: SWITCHES
+		       structure Sig: SIGNATURE
+			   where type t = FlatGrammar.sign): TARGET =
     struct
 	structure C = EmptyContext
 	structure Sig = Sig
@@ -61,17 +59,17 @@ functor MakeMozartTarget(structure Switches: SWITCHES
 	fun apply () component = CodeGenPhase.apply component
     end
 
-functor MakeBackendMozart(structure Switches: SWITCHES
-			  structure MozartTarget: TARGET
-			      where type t = CodeGenPhase.t): PHASE =
-    MakeTracingPhase(structure Phase =
-			 struct
-			     structure C = CodeGenPhase.C
-			     structure I = FlatGrammar
-			     structure O = MozartTarget
+functor MkBackendMozart(structure Switches: SWITCHES
+			structure MozartTarget: TARGET
+			    where type t = CodeGenPhase.t): PHASE =
+    MkTracingPhase(structure Phase =
+		       struct
+			   structure C = CodeGenPhase.C
+			   structure I = FlatGrammar
+			   structure O = MozartTarget
 
-			     fun translate env (desc, component) =
-				 CodeGenPhase.translate (env, desc, component)
-			 end
-		     structure Switches = Switches
-		     val name = "Assembling")
+			   fun translate env (desc, component) =
+			       CodeGenPhase.translate (env, desc, component)
+		       end
+		   structure Switches = Switches
+		   val name = "Assembling")
