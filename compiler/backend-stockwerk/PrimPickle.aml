@@ -10,27 +10,28 @@
  *   $Revision$
  *)
 
-import structure BinIO       from "../../lib/system/BinIO"
-import structure Crash       from "../infrastructure/Crash"
-import structure StringMap   from "../infrastructure/StringMap"
-import signature PRIM_PICKLE from "PRIM_PICKLE-sig"
+import structure BinIO        from "../../lib/system/BinIO"
+import structure MkHashImpMap from "../../lib/utility/MkHashImpMap"
+import structure Crash        from "../infrastructure/Crash"
+import structure StringMap    from "../infrastructure/StringMap"
+import signature PRIM_PICKLE  from "PRIM_PICKLE-sig"
 
 structure PrimPickle :> PRIM_PICKLE =
     struct
 	open LargeInt
 
+	structure UniqueStringMap = MkHashImpMap(UniqueString)
+
 	type id = int
 
 	type outstream =
-	     BinIO.outstream * id ref * id StringMap.t * int ref
+	     {stream: BinIO.outstream,
+	      id: id ref,
+	      stringMap: id StringMap.t,
+	      uniqueStringMap: id UniqueStringMap.t,
+	      expect: int ref}
 
-	fun inc (_, r as ref id, _, _) = (r := id + 1; id)
-
-	fun lookupString ((_, _, stringMap, _), s) =
-	    StringMap.lookup (stringMap, s)
-
-	fun insertString ((_, _, stringMap, _), s, id) =
-	    StringMap.insertDisjoint (stringMap, s, id)
+	fun inc ({id = r as ref id, ...}: outstream) = (r := id + 1; id)
 
 	type label = int
 	type size = Int.int
@@ -38,13 +39,15 @@ structure PrimPickle :> PRIM_PICKLE =
 	val tPOSINT    = Word8.fromInt 0
 	val tNEGINT    = Word8.fromInt 1
 	val tCHUNK     = Word8.fromInt 2
-	val tBLOCK     = Word8.fromInt 3
-	val tTUPLE     = Word8.fromInt 4
-	val tCLOSURE   = Word8.fromInt 5
-	val tREF       = Word8.fromInt 6
-	val tTRANSFORM = Word8.fromInt 7
+	val tUNIQUE    = Word8.fromInt 3
+	val tBLOCK     = Word8.fromInt 4
+	val tTUPLE     = Word8.fromInt 5
+	val tCLOSURE   = Word8.fromInt 6
+	val tREF       = Word8.fromInt 7
+	val tTRANSFORM = Word8.fromInt 8
 
-	fun outputByte ((outstream, _, _, _), w) = BinIO.output1 (outstream, w)
+	fun outputByte ({stream, ...}: outstream, w) =
+	    BinIO.output1 (stream, w)
 
 	fun outputUInt (q, i) =
 	    if i >= 0x80 then
@@ -54,10 +57,15 @@ structure PrimPickle :> PRIM_PICKLE =
 	    else raise Crash.Crash "PrimPickle.outputUInt"
 
 	fun openOut name: outstream =
-	    (BinIO.openOut name, ref 0, StringMap.new (), ref 1)
+	    {stream = BinIO.openOut name,
+	     id = ref 0,
+	     stringMap = StringMap.new (),
+	     uniqueStringMap = UniqueStringMap.new (),
+	     expect = ref 1}
 
-	fun done (_, _, _, r as ref n) = r := n - 1
-	fun more ((_, _, _, r as ref n), m) = r := n - 1 + fromInt m
+	fun done ({expect = r as ref n, ...}: outstream) = r := n - 1
+	fun more ({expect = r as ref n, ...}: outstream, m) =
+	    r := n - 1 + fromInt m
 
 	fun outputInt (q, i) =
 	    if i >= 0 then (done q; outputByte (q, tPOSINT); outputUInt (q, i))
@@ -67,6 +75,9 @@ structure PrimPickle :> PRIM_PICKLE =
 	    (done q; outputByte (q, tCHUNK);
 	     outputUInt (q, fromInt (Vector.length bytes));
 	     Vector.app (fn b => outputByte (q, b)) bytes; inc q)
+
+	fun outputUnique q =
+	    (more (q, 1); outputByte (q, tUNIQUE); inc q)
 
 	fun outputBlock (q, label, size) =
 	    (more (q, size); outputByte (q, tBLOCK);
@@ -83,18 +94,31 @@ structure PrimPickle :> PRIM_PICKLE =
 	fun outputReference (q, id) =
 	    (done q; outputByte (q, tREF); outputUInt (q, id))
 
-	fun outputString (q, s) =
-	    case lookupString (q, s) of
+	fun outputString (q as {stringMap, ...}: outstream, s) =
+	    case StringMap.lookup (stringMap, s) of
 		SOME id => (outputReference (q, id); id)
 	      | NONE =>
 		    let
 			val id = inc q
 		    in
-			insertString (q, s, id);
+			StringMap.insertDisjoint (stringMap, s, id);
 			done q; outputByte (q, tCHUNK);
 			outputUInt (q, fromInt (String.size s));
 			CharVector.app
 			(fn c => outputByte (q, Word8.fromInt (Char.ord c))) s;
+			id
+		    end
+
+	fun outputUniqueString (q as {uniqueStringMap, ...}: outstream, s) =
+	    case UniqueStringMap.lookup (uniqueStringMap, s) of
+		SOME id => (outputReference (q, id); id)
+	      | NONE =>
+		    let
+			val id = outputUnique q
+		    in
+			UniqueStringMap.insertDisjoint
+			    (uniqueStringMap, s, id);
+			outputString (q, UniqueString.string s);
 			id
 		    end
 
@@ -106,8 +130,8 @@ structure PrimPickle :> PRIM_PICKLE =
 		outputString (q, name); id
 	    end
 
-	fun closeOut (outstream, _, _, ref n) =
-	    (BinIO.closeOut outstream;
+	fun closeOut ({stream, expect = ref n, ...}: outstream) =
+	    (BinIO.closeOut stream;
 	     if n = 0 then ()
 	     else
 		 let
