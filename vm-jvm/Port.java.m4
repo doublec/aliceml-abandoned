@@ -5,15 +5,20 @@ import java.rmi.RemoteException;
 
 final public class Port {
     final public static class NewPort extends DMLBuiltin {
-	final public DMLValue apply(DMLValue val) {
+	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 	    DMLValue[] args=fromTuple(val,1,"Port.newPort");
-	    return new DMLPort();
+	    try {
+		return new DMLPort();
+	    } catch (RemoteException r) {
+		System.err.println(r);
+		return null;
+	    }
 	}
     }
     final public static NewPort newPort = new NewPort();
 
     final public static class Send extends DMLBuiltin {
-	final public DMLValue apply(DMLValue val) {
+	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 	    DMLValue[] args=fromTuple(val,2,"Port.send");
 	    DMLValue p = args[0].request();
 	    if (!(p instanceof DMLPort))
@@ -30,7 +35,7 @@ final public class Port {
     final public static Send send = new Send();
 
     final public static class Recieve extends DMLBuiltin {
-	final public DMLValue apply(DMLValue val) {
+	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 	    DMLValue[] args=fromTuple(val,1,"Port.recieve");
 	    DMLValue p = args[0].request();
 	    if (!(p instanceof DMLPort))
@@ -50,7 +55,7 @@ final public class Port {
     final public static DMLValue[] fromTuple
 	(DMLValue v, /** <code>value-Tuple</code>*/
 	 int ea,     // erwartete Anzahl Argumente
-	 java.lang.String errMsg) {
+	 java.lang.String errMsg) throws java.rmi.RemoteException {
 	v=v.request();
 	if (v instanceof DMLTuple) {
 	    DMLTuple t=(DMLTuple) v;
@@ -69,7 +74,7 @@ final public class Port {
     }
 
     final protected static DMLValue error
-	(java.lang.String msg, DMLValue v) {
+	(java.lang.String msg, DMLValue v) throws java.rmi.RemoteException {
 	// sonst: Fehler
 	DMLValue[] err = {
 	    new DMLString(msg),

@@ -13,7 +13,7 @@ final public class List {
     final public static DMLName Empty = new DMLName("List.Empty");
 
     final public static class IsNull extends DMLBuiltin {
-	final public DMLValue apply(DMLValue val) {
+	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 	    DMLValue[] args=fromTuple(val,1,"List.null");
 	    DMLValue l = args[0].request();
 	    if (l instanceof Cons)
@@ -28,7 +28,7 @@ final public class List {
     final public static IsNull isNull = new IsNull();
 
     final public static class Length extends DMLBuiltin {
-	final public DMLValue apply(DMLValue val) {
+	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 	    DMLValue[] args=fromTuple(val,1,"List.length");
 	    DMLValue l = args[0].request();
 	    int length = 0;
@@ -46,7 +46,7 @@ final public class List {
     final public static Length length = new Length();
 
     final public static class Append extends DMLBuiltin {
-	final public DMLValue apply(DMLValue val) {
+	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 	    DMLValue[] args=fromTuple(val,2,"List.append");
 	    DMLValue first = args[0].request();
 	    if (first==nil)
@@ -74,7 +74,7 @@ final public class List {
     final public static Append append = new Append();
 
     final public static class Hd extends DMLBuiltin {
-	final public DMLValue apply(DMLValue val) {
+	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 	    DMLValue[] args=fromTuple(val,1,"List.hd");
 	    DMLValue first = args[0].request();
 	    if (first instanceof Cons)
@@ -89,7 +89,7 @@ final public class List {
     final public static Hd hd = new Hd();
 
     final public static class Tl extends DMLBuiltin {
-	final public DMLValue apply(DMLValue val) {
+	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 	    DMLValue[] args=fromTuple(val,1,"List.tl");
 	    DMLValue first = args[0].request();
 	    if (first instanceof Cons)
@@ -104,7 +104,7 @@ final public class List {
     final public static Tl tl = new Tl();
 
     final public static class Last extends DMLBuiltin {
-	final public DMLValue apply(DMLValue val) {
+	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 	    DMLValue[] args=fromTuple(val,1,"List.last");
 	    DMLValue first = args[0].request();
 	    if (first==nil)
@@ -128,7 +128,7 @@ final public class List {
     final public static Last last = new Last();
 
     final public static class GetItem extends DMLBuiltin {
-	final public DMLValue apply(DMLValue val) {
+	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 	    DMLValue[] args=fromTuple(val,1,"List.getItem");
 	    DMLValue first = args[0].request();
 	    if (first==nil)
@@ -145,7 +145,7 @@ final public class List {
     final public static GetItem getItem = new GetItem();
 
     final public static class Nth extends DMLBuiltin {
-	final public DMLValue apply(DMLValue val) {
+	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 	    DMLValue[] args=fromTuple(val,2,"List.nth");
 	    DMLValue n = args[1].request();
 	    if (!(n instanceof DMLInt))
@@ -180,7 +180,7 @@ final public class List {
     final public static Nth nth = new Nth();
 
     final public static class Take extends DMLBuiltin {
-	final public DMLValue apply(DMLValue val) {
+	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 	    DMLValue[] args=fromTuple(val,2,"List.take");
 	    DMLValue n = args[1].request();
 	    if (!(n instanceof DMLInt))
@@ -220,7 +220,7 @@ final public class List {
     final public static Take take = new Take();
 
     final public static class Drop extends DMLBuiltin {
-	final public DMLValue apply(DMLValue val) {
+	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 	    DMLValue[] args=fromTuple(val,2,"List.drop");
 	    DMLValue n = args[1].request();
 	    if (!(n instanceof DMLInt))
@@ -255,7 +255,7 @@ final public class List {
     final public static Drop drop = new Drop();
 
     final public static class Rev extends DMLBuiltin {
-	final public DMLValue apply(DMLValue val) {
+	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 	    DMLValue[] args=fromTuple(val,1,"List.rev");
 	    DMLValue first = args[0].request();
 	    if (first==nil)
@@ -281,7 +281,7 @@ final public class List {
     final public static Rev rev = new Rev();
 
     final public static class Concat extends DMLBuiltin {
-	final public DMLValue apply(DMLValue val) {
+	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 	    DMLValue[] args=fromTuple(val,1,"List.concat");
 	    DMLValue first = args[0].request();
 	    if (first==nil)
@@ -319,7 +319,7 @@ final public class List {
     final public static Concat concat = new Concat();
 
     final public static class RevAppend extends DMLBuiltin {
-	final public DMLValue apply(DMLValue val) {
+	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 	    DMLValue[] args=fromTuple(val,2,"List.revAppend");
 	    DMLValue first = args[0].request();
 	    if (first==nil)
@@ -345,14 +345,14 @@ final public class List {
     final public static RevAppend revAppend = new RevAppend();
 
     final public static class App extends DMLBuiltin {
-	final public DMLValue apply(DMLValue val) {
+	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 	    DMLValue[] args=fromTuple(val,1,"List.app");
 	    return new App1(args[0]);
 	}
 	final public static class App1 extends DMLBuiltin {
 	    DMLValue fun = null;
 	    App1(DMLValue f) { fun=f; }
-	    final public DMLValue apply(DMLValue val) {
+	    final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 		DMLValue[] args=fromTuple(val,1,"List.app1");
 		DMLValue l = args[0].request();
 		while (l instanceof Cons) {
@@ -371,14 +371,14 @@ final public class List {
     final public static App app = new App();
 
     final public static class Map extends DMLBuiltin {
-	final public DMLValue apply(DMLValue val) {
+	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 	    DMLValue[] args=fromTuple(val,1,"List.map");
 	    return new Map1(args[0]);
 	}
 	final public static class Map1 extends DMLBuiltin {
 	    DMLValue fun = null;
 	    Map1(DMLValue f) { fun=f; }
-	    final public DMLValue apply(DMLValue val) {
+	    final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 		DMLValue[] args=fromTuple(val,1,"List.map1");
 		DMLValue l = args[0].request();
 		if (l==nil)
@@ -405,14 +405,14 @@ final public class List {
     final public static Map map = new Map();
 
     final public static class MapPartial extends DMLBuiltin {
-	final public DMLValue apply(DMLValue val) {
+	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 	    DMLValue[] args=fromTuple(val,1,"List.mapPartial");
 	    return new MapPartial1(args[0]);
 	}
 	final public static class MapPartial1 extends DMLBuiltin {
 	    DMLValue fun = null;
 	    MapPartial1(DMLValue f) { fun=f; }
-	    final public DMLValue apply(DMLValue val) {
+	    final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 		DMLValue[] args=fromTuple(val,1,"List.mapPartial1");
 		DMLValue l = args[0].request();
 		if (l==nil)
@@ -441,14 +441,14 @@ final public class List {
     final public static MapPartial mapPartial = new MapPartial();
 
     final public static class Find extends DMLBuiltin {
-	final public DMLValue apply(DMLValue val) {
+	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 	    DMLValue[] args=fromTuple(val,1,"List.find");
 	    return new Find1(args[0]);
 	}
 	final public static class Find1 extends DMLBuiltin {
 	    DMLValue fun = null;
 	    Find1(DMLValue f) { fun=f; }
-	    final public DMLValue apply(DMLValue val) {
+	    final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 		DMLValue[] args=fromTuple(val,1,"List.find1");
 		DMLValue l = args[0].request();
 		if (l==nil)
@@ -472,14 +472,14 @@ final public class List {
     final public static Find find = new Find();
 
     final public static class Filter extends DMLBuiltin {
-	final public DMLValue apply(DMLValue val) {
+	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 	    DMLValue[] args=fromTuple(val,1,"List.filter");
 	    return new Filter1(args[0]);
 	}
 	final public static class Filter1 extends DMLBuiltin {
 	    DMLValue fun = null;
 	    Filter1(DMLValue f) { fun=f; }
-	    final public DMLValue apply(DMLValue val) {
+	    final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 		DMLValue[] args=fromTuple(val,1,"List.filter1");
 		DMLValue l = args[0].request();
 		if (l==nil)
@@ -508,14 +508,14 @@ final public class List {
     final public static Filter filter = new Filter();
 
     final public static class Partition extends DMLBuiltin {
-	final public DMLValue apply(DMLValue val) {
+	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 	    DMLValue[] args=fromTuple(val,1,"List.partition");
 	    return new Partition1(args[0]);
 	}
 	final public static class Partition1 extends DMLBuiltin {
 	    DMLValue fun = null;
 	    Partition1(DMLValue f) { fun=f; }
-	    final public DMLValue apply(DMLValue val) {
+	    final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 		DMLValue[] args=fromTuple(val,1,"List.partition1");
 		DMLValue l = args[0].request();
 		if (l==nil)
@@ -551,14 +551,14 @@ final public class List {
     final public static Partition partition = new Partition();
 
     final public static class Foldl extends DMLBuiltin {
-	final public DMLValue apply(DMLValue val) {
+	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 	    DMLValue[] args=fromTuple(val,1,"List.foldl");
 	    return new Foldl1(args[0]);
 	}
 	final public static class Foldl1 extends DMLBuiltin {
 	    DMLValue fun = null;
 	    Foldl1(DMLValue f) { fun=f; }
-	    final public DMLValue apply(DMLValue val) {
+	    final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 		DMLValue[] args=fromTuple(val,1,"List.foldl1");
 		return new Foldl2(fun,args[0]);
 	    }
@@ -568,7 +568,7 @@ final public class List {
 		    fun=f;
 		    init = i;
 		}
-		final public DMLValue apply(DMLValue val) {
+		final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 		    DMLValue[] args=fromTuple(val,1,"List.foldl2");
 		    DMLValue li = args[0].request();
 		    if (li==nil)
@@ -594,14 +594,14 @@ final public class List {
     final public static Foldl foldl = new Foldl();
 
     final public static class Foldr extends DMLBuiltin {
-	final public DMLValue apply(DMLValue val) {
+	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 	    DMLValue[] args=fromTuple(val,1,"List.foldr");
 	    return new Foldr1(args[0]);
 	}
 	final public static class Foldr1 extends DMLBuiltin {
 	    DMLValue fun = null;
 	    Foldr1(DMLValue f) { fun=f; }
-	    final public DMLValue apply(DMLValue val) {
+	    final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 		DMLValue[] args=fromTuple(val,1,"List.foldr1");
 		return new Foldr2(fun,args[0]);
 	    }
@@ -611,7 +611,7 @@ final public class List {
 		    fun=f;
 		    init = i;
 		}
-		final public DMLValue apply(DMLValue val) {
+		final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 		    DMLValue[] args=fromTuple(val,1,"List.foldr2");
 		    DMLValue li = args[0].request();
 		    if (li==nil)
@@ -649,14 +649,14 @@ final public class List {
     final public static Foldr foldr = new Foldr();
 
     final public static class Exists extends DMLBuiltin {
-	final public DMLValue apply(DMLValue val) {
+	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 	    DMLValue[] args=fromTuple(val,1,"List.exists");
 	    return new Exists1(args[0]);
 	}
 	final public static class Exists1 extends DMLBuiltin {
 	    DMLValue fun = null;
 	    Exists1(DMLValue f) { fun=f; }
-	    final public DMLValue apply(DMLValue val) {
+	    final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 		DMLValue[] args=fromTuple(val,1,"List.exists1");
 		DMLValue l = args[0].request();
 		if (l==nil)
@@ -680,14 +680,14 @@ final public class List {
     final public static Exists exists = new Exists();
 
     final public static class All extends DMLBuiltin {
-	final public DMLValue apply(DMLValue val) {
+	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 	    DMLValue[] args=fromTuple(val,1,"List.all");
 	    return new All1(args[0]);
 	}
 	final public static class All1 extends DMLBuiltin {
 	    DMLValue fun = null;
 	    All1(DMLValue f) { fun=f; }
-	    final public DMLValue apply(DMLValue val) {
+	    final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 		DMLValue[] args=fromTuple(val,1,"List.all1");
 		DMLValue l = args[0].request();
 		if (l==nil)
@@ -711,7 +711,7 @@ final public class List {
     final public static All all = new All();
 
     final public static class Tabulate extends DMLBuiltin {
-	final public DMLValue apply(DMLValue val) {
+	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 	    DMLValue[] args=fromTuple(val,2,"List.tabulate");
 	    DMLValue n = args[0].request();
 	    if (!(n instanceof DMLInt))
@@ -737,7 +737,7 @@ final public class List {
     final private static DMLValue[] fromTuple
 	(DMLValue v, /*value-Tuple*/
 	 int ea,     // erwartete Anzahl Argumente
-	 java.lang.String errMsg) {
+	 java.lang.String errMsg) throws java.rmi.RemoteException {
 	v=v.request();
 	if (v instanceof DMLTuple) {
 	    DMLTuple t=(DMLTuple) v;
@@ -756,7 +756,7 @@ final public class List {
     }
 
     final private static DMLValue error
-	(java.lang.String msg, DMLValue v) {
+	(java.lang.String msg, DMLValue v) throws java.rmi.RemoteException {
 	// sonst: Fehler
 	DMLValue[] err = {
 	    new DMLString(msg),

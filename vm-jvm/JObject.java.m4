@@ -17,7 +17,7 @@ final public class DMLObject implements DMLValue {
 	return this;
     }
 
-    final public DMLValue apply(DMLValue v) {
+    final public DMLValue apply(DMLValue v) throws java.rmi.RemoteException {
 	return DMLConstants.runtimeError.apply( new DMLString("cannot apply "+this+" to "+v)).raise();
     }
 

@@ -2,13 +2,15 @@ package de.uni_sb.ps.dml.builtin;
 
 import de.uni_sb.ps.dml.runtime.*;
 import java.rmi.RemoteException;
+import java.rmi.server.UnicastRemoteObject;
 
-final public class DMLPort implements DMLValue, RemotePort {
+final public class DMLPort extends UnicastRemoteObject
+    implements DMLValue, RemotePort {
 
     DMLValue first = null;
     DMLLVar last = null;
 
-    public DMLPort() {
+    public DMLPort() throws RemoteException {
 	last = new DMLLVar();
 	first = last;
     }
@@ -41,7 +43,7 @@ final public class DMLPort implements DMLValue, RemotePort {
 	return this;
     }
 
-    final public DMLValue apply(DMLValue val) {
+    final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException {
 	return DMLConstants.runtimeError.apply( new DMLString("cannot apply "+this+" to "+val)).raise();
     }
 

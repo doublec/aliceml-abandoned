@@ -61,7 +61,12 @@ final public class ConVal implements DMLConVal {
 	    return DMLConstants.dmlunit;
 	}
 	else
-	    return DMLConstants.runtimeError.apply(new DMLString("cannot assign "+val+" to "+this)).raise();
+	    try {
+		return DMLConstants.runtimeError.apply(new DMLString("cannot assign "+val+" to "+this)).raise();
+	    } catch (java.rmi.RemoteException r) {
+		System.err.println(r);
+		return null;
+	    }
     }
 
     final public String toString() {
@@ -76,8 +81,13 @@ final public class ConVal implements DMLConVal {
 	return this;
     }
 
-    final public DMLValue apply(DMLValue v) {
-	return DMLConstants.runtimeError.apply(new DMLString("cannot apply "+this+" to "+v)).raise();
+    final public DMLValue apply(DMLValue v) throws java.rmi.RemoteException {
+	try {
+	    return DMLConstants.runtimeError.apply(new DMLString("cannot apply "+this+" to "+v)).raise();
+	} catch (java.rmi.RemoteException r) {
+	    System.out.println(r);
+	    return null;
+	}
     }
 
     final public DMLValue raise() {

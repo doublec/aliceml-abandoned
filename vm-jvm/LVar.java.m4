@@ -4,11 +4,9 @@ public class DMLLVar implements DMLValue, DMLRemoteValue {
 
     protected DMLValue ref=null;
 
-    public DMLLVar() {
-	super();
-    }
+    public DMLLVar() { }
 
-    final synchronized public DMLValue getValue() { // gibt Wert zurück ohne blockieren
+    final synchronized public DMLValue getValue() throws java.rmi.RemoteException { // gibt Wert zurück ohne blockieren
 	if (ref==null)
 	    return this;
 	else
@@ -16,7 +14,7 @@ public class DMLLVar implements DMLValue, DMLRemoteValue {
 	return ref;
     }
 
-    synchronized public DMLValue request() { // gibt Wert zurück wenn verfügbar
+    synchronized public DMLValue request() throws java.rmi.RemoteException { // gibt Wert zurück wenn verfügbar
 	if (ref==null)
 	    try {
 		this.wait();
@@ -25,7 +23,7 @@ public class DMLLVar implements DMLValue, DMLRemoteValue {
 	return ref;
     }
 
-    synchronized public DMLValue bind(DMLValue v) { // bindet Variable und startet Threads aus suspendVector-Liste
+    synchronized public DMLValue bind(DMLValue v) throws java.rmi.RemoteException { // bindet Variable und startet Threads aus suspendVector-Liste
 	ref=v;
 	this.notifyAll();
 	return DMLConstants.dmlunit;
@@ -33,21 +31,32 @@ public class DMLLVar implements DMLValue, DMLRemoteValue {
 
     /** Gleichheit der referenzierten Werte, blockiert auf beiden Werten */
     final public boolean equals(Object val) {
-	return (val instanceof DMLLVar) && this.request().equals(((DMLLVar) val).request());
+	try {
+	    return (val instanceof DMLLVar) && this.request().equals(((DMLLVar) val).request());
+	} catch (java.rmi.RemoteException r) {
+	    System.err.println(r);
+	    return false;
+	}
     }
 
     public String toString() {
-	DMLValue val=this.getValue();
+	DMLValue val;
+	try {
+	    val=this.getValue();
+	} catch (java.rmi.RemoteException r) {
+	    System.err.println(r);
+	    return null;
+	}
 	if (val instanceof DMLLVar) return "<unresolved>: lvar";
 	return val.toString();
     }
 
 
-    public DMLValue apply(DMLValue v) {
+    public DMLValue apply(DMLValue v)  throws java.rmi.RemoteException{
 	return this.request().apply(v);
     }
 
-    final public DMLValue raise() {
+    final public DMLValue raise()  throws java.rmi.RemoteException {
 	throw new DMLExceptionWrapper(this);
     }
 

@@ -37,7 +37,11 @@ public class DMLThread extends Thread implements DMLValue {
      *  verworfen.
      */
     final public void run() {
-	fcn.apply(DMLConstants.dmlunit);
+	try {
+	    fcn.apply(DMLConstants.dmlunit);
+	} catch (java.rmi.RemoteException r) {
+	    System.err.println(r);
+	}
     }
 
     /** Stringdarstellung des DMLThread.
@@ -64,7 +68,7 @@ public class DMLThread extends Thread implements DMLValue {
      *  @param val wird nicht requested
      *  @return DMLValue es wird immer eine Exception geworfen.
      */
-    final public DMLValue apply(DMLValue v) {
+    final public DMLValue apply(DMLValue v) throws java.rmi.RemoteException {
 	return DMLConstants.runtimeError.apply(new DMLString("cannot apply "+this+" to "+v)).raise();
     }
 

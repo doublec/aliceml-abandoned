@@ -29,7 +29,7 @@ final public class General {
     final public static DMLName Subscript = new DMLName("General.Subscript");
 
     final public static class Deref extends DMLBuiltin {
-	final public DMLValue apply(DMLValue val) {
+	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 	    DMLValue[] args = fromTuple(val,1,"deref");
 	    DMLValue arg = args[0].request();
 	    if (arg instanceof DMLConVal) {
@@ -44,7 +44,7 @@ final public class General {
     final public static Deref deref  = new Deref();
 
     final public static class Assign extends DMLBuiltin {
-	final public DMLValue apply(DMLValue val) {
+	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 	    DMLValue[] args = fromTuple(val,2,"assign");
 	    DMLValue car=args[0].request();
 	    if (car instanceof DMLConVal) {
@@ -64,11 +64,11 @@ final public class General {
 		this.f=f;
 		this.g=g;
 	    }
-	    final public DMLValue apply(DMLValue v) {
+	    final public DMLValue apply(DMLValue v) throws java.rmi.RemoteException{
 		return f.apply(g.apply(v));
 	    }
 	}
-	final public DMLValue apply(DMLValue val) {
+	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 	    DMLValue[] args = fromTuple(val,2,"assign");
 	    DMLValue f = args[0].request();
 	    DMLValue g = args[1].request();
@@ -79,7 +79,7 @@ final public class General {
     final public static Compose o = new Compose();
 
     final public static class Before extends DMLBuiltin {
-	final public DMLValue apply(DMLValue val) {
+	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 	    DMLValue[] args  = fromTuple(val,2,"before");
 	    return args[0];
 	}
@@ -89,7 +89,7 @@ final public class General {
     final public static Before before = new Before();
 
     final public static class Ignore extends DMLBuiltin {
-	final public DMLValue apply(DMLValue val) {
+	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 	    return DMLConstants.dmlunit;
 	}
     }
@@ -97,7 +97,7 @@ final public class General {
     final public static Ignore ignore = new Ignore();
 
     final public static class LVar extends DMLBuiltin {
-	final public DMLValue apply(DMLValue val) {
+	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 	    return new DMLLVar();
 	}
     }
@@ -106,7 +106,7 @@ final public class General {
 
     /** Ref-Zellen-Konstruktor, entspricht etwa NewCell oder so.*/
     final public static class Ref extends DMLBuiltin {
-	final synchronized public DMLValue apply(DMLValue val) {
+	final synchronized public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 	    // --> Tuple?
 	    return new Reference(val);
 	}
@@ -115,7 +115,7 @@ final public class General {
     final public static Ref ref = new Ref();
 
     final public static class Spawn extends DMLBuiltin {
-	final public DMLValue apply(DMLValue val) {
+	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 	    DMLValue[] args=fromTuple(val,1,"spawn");
 	    DMLThread t=new DMLThread(args[0]);
 	    t.start();
@@ -129,7 +129,7 @@ final public class General {
     final public static Spawn spawn = new Spawn();
 
     final public static class Equals extends DMLBuiltin {
-	final public DMLValue apply(DMLValue val) {
+	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 	    DMLValue[] args=fromTuple(val,2,"equals");
 	    DMLValue car=args[0].request();
 	    DMLValue cdr=args[1].request();
@@ -149,7 +149,7 @@ final public class General {
     final public static DMLValue[] fromTuple
 	(DMLValue v, // Value-Tuple
 	 int ea,     // erwartete Anzahl Argumente
-	 java.lang.String errMsg) {
+	 java.lang.String errMsg) throws java.rmi.RemoteException {
 	v=v.request();
 	if (v instanceof DMLTuple) {
 	    DMLTuple t=(DMLTuple) v;
@@ -168,7 +168,7 @@ final public class General {
     }
 
     final public static DMLValue error
-	(java.lang.String msg, DMLValue v) {
+	(java.lang.String msg, DMLValue v) throws java.rmi.RemoteException {
 	// sonst: Fehler
 	DMLValue[] err = {
 	    new DMLString(msg),

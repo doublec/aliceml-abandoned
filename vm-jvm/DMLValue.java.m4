@@ -6,17 +6,17 @@ package de.uni_sb.ps.dml.runtime;
 public interface DMLValue extends java.io.Serializable {
 
     /** gibt Wert \in Wert zurueck */
-    public DMLValue getValue();
+    public DMLValue getValue() throws java.rmi.RemoteException;
 
     /** gibt Wert \in Wert \minus LVar zurueck */
-    public DMLValue request();
+    public DMLValue request() throws java.rmi.RemoteException;
 
     /** Funktionale Werte und Konstruktoren können mit dieser Methode
      *  appliziert werden. Andere Werte erzeugen Laufzeitfehler.
      *  @param val der formale Parameter der Funktion/des Konstruktors
      *  @return DMLValue das Ergebnis der Applikation
      */
-    public DMLValue apply(DMLValue val);
+    public DMLValue apply(DMLValue val) throws java.rmi.RemoteException;
 
     /** Stringdarstellungen sollen von jedem Wert implementiert werden.
      *  @return String Darstellung des DMLValue
@@ -25,5 +25,5 @@ public interface DMLValue extends java.io.Serializable {
 
     /** In DML kann jeder Wert als Exception geworfen werden.
      */
-    public DMLValue raise();
+    public DMLValue raise() throws java.rmi.RemoteException;
 }

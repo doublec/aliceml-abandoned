@@ -70,11 +70,14 @@ final public class DMLObjectOutputStream extends java.io.ObjectOutputStream {
 
     final protected Object replaceObject(Object obj) {
 	if (obj instanceof DMLLVar)
-	    if (waitforbind)
-		obj = ((DMLLVar) obj).request();
-	    else
-		obj = ((DMLLVar) obj).getValue();
-
+	    try {
+		if (waitforbind)
+		    obj = ((DMLLVar) obj).request();
+		else
+		    obj = ((DMLLVar) obj).getValue();
+	    } catch (java.rmi.RemoteException r) {
+		System.err.println(r);
+	    }
 	if (obj instanceof DMLConstructor)
 	    return ((DMLConstructor) obj).globalize();
 	else

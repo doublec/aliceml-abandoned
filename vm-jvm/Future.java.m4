@@ -17,12 +17,17 @@ public class DMLFuture extends DMLLVar {
     }
 
     /** bind ist nicht erlaubt und wirft RuntimeError */
-    public DMLValue bind(DMLValue v) {
+    public DMLValue bind(DMLValue v)  throws java.rmi.RemoteException {
 	return DMLConstants.runtimeError.apply(new DMLString("cannot bind future to "+v)).raise();
     }
 
     public String toString() {
-	DMLValue val=this.getValue();
+	DMLValue val = null;
+	try {
+	    this.getValue();
+	} catch (java.rmi.RemoteException r) {
+	    System.err.println(r);
+	}
 	if (val instanceof DMLLVar)
 	    return "<unresolved>: future";
 	else
@@ -30,7 +35,7 @@ public class DMLFuture extends DMLLVar {
     }
 
     /** die Referenz der DMLFuture wird appliziert */
-    public DMLValue apply(DMLValue val) {
+    public DMLValue apply(DMLValue val) throws java.rmi.RemoteException {
 	return ref.apply(val); // ref ist DMLLVar !
     }
 }

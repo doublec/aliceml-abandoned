@@ -13,7 +13,7 @@ public class DMLByNeedFuture extends DMLFuture {
 	ref = new DMLLVar();
     }
 
-    synchronized public DMLValue request() {
+    synchronized public DMLValue request() throws java.rmi.RemoteException {
 	if (closure==null)
 	    return ref.request();
 	else {
@@ -23,15 +23,18 @@ public class DMLByNeedFuture extends DMLFuture {
 		ref.bind(temp.apply(DMLConstants.dmlunit));
 	    } catch (Throwable t) {
 		System.err.println(t);
-		closure = temp;
-		return this;
 	    }
 	    return ref.request();
 	}
     }
 
     public String toString() {
-	DMLValue val=this.getValue();
+	DMLValue val=null;
+	try{
+	    val=this.getValue();
+	} catch (java.rmi.RemoteException r) {
+	    System.out.println(r);
+	}
 	if (val instanceof DMLLVar)
 	    return "<unresolved>: byneed-future";
 	else

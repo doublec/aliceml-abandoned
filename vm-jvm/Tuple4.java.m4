@@ -64,7 +64,7 @@ public class Tuple4 implements DMLTuple {
 	return this;
     }
 
-    final public DMLValue apply(DMLValue val) {
+    final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException {
 	return DMLConstants.runtimeError.apply(new DMLString("cannot apply "+this+" to "+val)).raise();
     }
 

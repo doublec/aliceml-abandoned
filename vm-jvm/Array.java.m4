@@ -7,7 +7,7 @@ final public class Array {
     final public static DMLInt maxLen = new DMLInt(DMLArray.maxLen);
 
     final public static class ArraY extends DMLBuiltin {
-	final public DMLValue apply(DMLValue val) {
+	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 	    DMLValue[] args=fromTuple(val,2,"Array.array");
 	    DMLValue arg=args[0].request();
 	    int ar=0;
@@ -22,7 +22,7 @@ final public class Array {
     final public static ArraY array = new ArraY();
 
     final public static class FromList extends DMLBuiltin {
-	final public DMLValue apply(DMLValue val) {
+	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 	    DMLValue[] args=fromTuple(val,1,"Array.fromList");
 	    DMLValue arg=args[0].request();
 	    return new DMLArray(arg);
@@ -32,7 +32,7 @@ final public class Array {
     final public static FromList fromList = new FromList();
 
     final public static class Tabulate extends DMLBuiltin {
-	final public DMLValue apply(DMLValue val) {
+	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 	    DMLValue[] args=fromTuple(val,2,"Array.tabulate");
 	    int ar=0;
 	    DMLValue arg=args[0].request();
@@ -47,7 +47,7 @@ final public class Array {
     final public static Tabulate tabulate = new Tabulate();
 
     final public static class Length extends DMLBuiltin {
-	final public DMLValue apply(DMLValue val) {
+	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 	    DMLValue[] args=fromTuple(val,1,"Array.length");
 	    DMLValue arg=args[0].request();
 	    if (arg instanceof DMLArray)
@@ -60,7 +60,7 @@ final public class Array {
     final public static Length length = new Length();
 
     final public static class Sub extends DMLBuiltin {
-	final public DMLValue apply(DMLValue val) {
+	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 	    DMLValue[] args=fromTuple(val,2,"Array.sub");
 	    DMLValue array = args[0].request();
 	    if (array instanceof DMLArray) {
@@ -78,7 +78,7 @@ final public class Array {
     final public static Sub sub = new Sub();
 
     final public static class Update extends DMLBuiltin {
-	final public DMLValue apply(DMLValue val) {
+	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 	    DMLValue[] args=fromTuple(val,3,"Array.update");
 	    DMLValue array = args[0].request();
 	    if (array instanceof DMLArray) {
@@ -97,7 +97,7 @@ final public class Array {
     final public static Update update = new Update();
 
     final public static class Extract extends DMLBuiltin {
-	final public DMLValue apply(DMLValue val) {
+	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 	    DMLValue[] args=fromTuple(val,3,"Array.extract");
 	    DMLValue array = args[0].request();
 	    if (array instanceof DMLArray) {
@@ -132,7 +132,7 @@ final public class Array {
     final public static Extract extract = new Extract();
 
     final public static class Copy extends DMLBuiltin {
-	final public DMLValue apply(DMLValue val) {
+	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 	    DMLValue[] args=fromTuple(val,5,"Array.copy");
 	    DMLValue array = args[0].request();
 	    if (array instanceof DMLArray) {
@@ -174,7 +174,7 @@ final public class Array {
     final public static Copy copy = new Copy();
 
     final public static class CopyVec extends DMLBuiltin {
-	final public DMLValue apply(DMLValue val) {
+	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 	    DMLValue[] args=fromTuple(val,5,"Array.copyVec");
 	    DMLValue vector = args[0].request();
 	    //	    System.err.println("vector: "+vector.getClass());
@@ -217,14 +217,14 @@ final public class Array {
     final public static CopyVec copyVec = new CopyVec();
 
     final public static class Appi extends DMLBuiltin {
-	final public DMLValue apply(DMLValue val) {
+	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 	    DMLValue[] args=fromTuple(val,1,"Array.appi");
 	    return new Appi1(args[0].request());
 	}
 	final public static class Appi1 extends DMLBuiltin {
 	    public DMLValue fun = null;
 	    public Appi1(DMLValue f) { fun=f; }
-	    final public DMLValue apply(DMLValue val) {
+	    final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 		DMLValue[] args=fromTuple(val,3,"Array.appi1");
 		DMLValue array = args[0].request();
 		if (!(array instanceof DMLArray))
@@ -258,14 +258,14 @@ final public class Array {
     final public static Appi appi = new Appi();
 
     final public static class App extends DMLBuiltin {
-	final public DMLValue apply(DMLValue val) {
+	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 	    DMLValue[] args=fromTuple(val,1,"Array.app");
 	    return new App1(args[0].request());
 	}
 	final public static class App1 extends DMLBuiltin {
 	    DMLValue fun = null;
 	    App1(DMLValue f) { fun=f; }
-	    final public DMLValue apply(DMLValue val) {
+	    final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 		DMLValue[] args=fromTuple(val,1,"Array.app1");
 		DMLValue array = args[0].request();
 		if (!(array instanceof DMLArray))
@@ -278,21 +278,21 @@ final public class Array {
     final public static App app = new App();
 
     final public static class Foldli extends DMLBuiltin {
-	final public DMLValue apply(DMLValue val) {
+	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 	    DMLValue[] args=fromTuple(val,1,"Array.foldli");
 	    return new Foldli1(args[0].request());
 	}
 	final public static class Foldli1 extends DMLBuiltin {
 	    DMLValue fun = null;
 	    Foldli1(DMLValue f) { fun=f; }
-	    final public DMLValue apply(DMLValue val) {
+	    final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 		DMLValue[] args=fromTuple(val,1,"Array.foldli1");
 		return new Foldli2(fun, args[0].request());
 	    }
 	    final public static class Foldli2 extends DMLBuiltin {
 		DMLValue init = null; DMLValue fun = null;
 		Foldli2(DMLValue f, DMLValue i) { init=i; fun=f;}
-		final public DMLValue apply(DMLValue val) {
+		final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 		DMLValue[] args=fromTuple(val,3,"Array.foldli2");
 		DMLValue array = args[0].request();
 		if (!(array instanceof DMLArray))
@@ -327,21 +327,21 @@ final public class Array {
     final public static Foldli foldli = new Foldli();
 
     final public static class Foldri extends DMLBuiltin {
-	final public DMLValue apply(DMLValue val) {
+	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 	    DMLValue[] args=fromTuple(val,1,"Array.foldri");
 	    return new Foldri1(args[0].request());
 	}
 	final public static class Foldri1 extends DMLBuiltin {
 	    DMLValue fun = null;
 	    Foldri1(DMLValue f) { fun=f; }
-	    final public DMLValue apply(DMLValue val) {
+	    final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 		DMLValue[] args=fromTuple(val,1,"Array.foldri1");
 		return new Foldri2(fun, args[0].request());
 	    }
 	    final public static class Foldri2 extends DMLBuiltin {
 		DMLValue init = null; DMLValue fun = null;
 		Foldri2(DMLValue f, DMLValue i) { init=i; fun=f; }
-		final public DMLValue apply(DMLValue val) {
+		final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 		DMLValue[] args=fromTuple(val,3,"Array.foldri2");
 		DMLValue array = args[0].request();
 		if (!(array instanceof DMLArray))
@@ -376,21 +376,21 @@ final public class Array {
     final public static Foldri foldri = new Foldri();
 
     final public static class Foldl extends DMLBuiltin {
-	final public DMLValue apply(DMLValue val) {
+	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 	    DMLValue[] args=fromTuple(val,1,"Array.foldl");
 	    return new Foldl1(args[0].request());
 	}
 	final public static class Foldl1 extends DMLBuiltin {
 	    DMLValue fun = null;
 	    Foldl1(DMLValue f) { fun=f; }
-	    final public DMLValue apply(DMLValue val) {
+	    final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 		DMLValue[] args=fromTuple(val,1,"Array.foldl1");
 		return new Foldl2(fun, args[0]);
 	    }
 	    final public static class Foldl2 extends DMLBuiltin {
 		DMLValue init = null; DMLValue fun = null;
 		Foldl2(DMLValue f,DMLValue i) { init=i; fun=f; }
-		final public DMLValue apply(DMLValue val) {
+		final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 		    DMLValue[] args=fromTuple(val,1,"Array.foldl2");
 		    DMLValue array = args[0].request();
 		    if (!(array instanceof DMLArray))
@@ -404,21 +404,21 @@ final public class Array {
     final public static Foldl foldl = new Foldl();
 
     final public static class Foldr extends DMLBuiltin {
-	final public DMLValue apply(DMLValue val) {
+	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 	    DMLValue[] args=fromTuple(val,1,"Array.foldr");
 	    return new Foldr1(args[0].request());
 	}
 	final public static class Foldr1 extends DMLBuiltin {
 	    DMLValue fun = null;
 	    Foldr1(DMLValue f) { fun=f; }
-	    final public DMLValue apply(DMLValue val) {
+	    final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 		DMLValue[] args=fromTuple(val,1,"Array.foldr1");
 		return new Foldr2(fun, args[0]);
 	    }
 	    final public static class Foldr2 extends DMLBuiltin {
 		DMLValue init = null; DMLValue fun = null;
 		Foldr2(DMLValue f, DMLValue i) { init=i; fun=f; }
-		final public DMLValue apply(DMLValue val) {
+		final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 		    DMLValue[] args=fromTuple(val,1,"Array.foldr2");
 		    DMLValue array = args[0].request();
 		    if (!(array instanceof DMLArray))
@@ -432,14 +432,14 @@ final public class Array {
     final public static Foldr foldr = new Foldr();
 
     final public static class Modifyi extends DMLBuiltin {
-	final public DMLValue apply(DMLValue val) {
+	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 	    DMLValue[] args=fromTuple(val,1,"Array.modifyi");
 	    return new Modifyi1(args[0].request());
 	}
 	final public static class Modifyi1 extends DMLBuiltin {
 	    DMLValue fun = null;
 	    Modifyi1(DMLValue f) { fun=f; }
-	    final public DMLValue apply(DMLValue val) {
+	    final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 		DMLValue[] args=fromTuple(val,3,"Array.modifyi1");
 		DMLValue array = args[0].request();
 		if (!(array instanceof DMLArray))
@@ -472,14 +472,14 @@ final public class Array {
     final public static Modifyi modifyi = new Modifyi();
 
     final public static class Modify extends DMLBuiltin {
-	final public DMLValue apply(DMLValue val) {
+	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 	    DMLValue[] args=fromTuple(val,1,"Array.modify");
 	    return new Modify1(args[0]);
 	}
 	final public static class Modify1 extends DMLBuiltin {
 	    DMLValue fun = null;
 	    Modify1(DMLValue f) { fun=f; }
-	    final public DMLValue apply(DMLValue val) {
+	    final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 		DMLValue[] args=fromTuple(val,1,"Array.modify1");
 		DMLValue array = args[0].request();
 	    if (!(array instanceof DMLArray))
@@ -496,7 +496,7 @@ final public class Array {
     final public static DMLValue[] fromTuple
 	(DMLValue v, /** <code>value-Tuple</code>*/
 	 int ea,     // erwartete Anzahl Argumente
-	 java.lang.String errMsg) {
+	 java.lang.String errMsg) throws java.rmi.RemoteException {
 	v=v.request();
 	if (v instanceof DMLTuple) {
 	    DMLTuple t=(DMLTuple) v;
@@ -515,7 +515,7 @@ final public class Array {
     }
 
     final protected static DMLValue error
-	(java.lang.String msg, DMLValue v) {
+	(java.lang.String msg, DMLValue v) throws java.rmi.RemoteException {
 	// sonst: Fehler
 	DMLValue[] err = {
 	    new DMLString(msg),

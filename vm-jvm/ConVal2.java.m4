@@ -34,7 +34,12 @@ final public class ConValTuple2 implements DMLConVal {
 
     /** setzt Wert auf val und gibt alten Wert zurueck */
     final public DMLValue assign(DMLValue val) {
-	return DMLConstants.runtimeError.apply(new DMLString("cannot assign "+val+" to "+this)).raise();
+	try {
+	    return DMLConstants.runtimeError.apply(new DMLString("cannot assign "+val+" to "+this)).raise();
+	} catch (java.rmi.RemoteException r) {
+	    System.out.println(r);
+	    return null;
+	}
     }
 
     final public String toString() {
@@ -50,7 +55,12 @@ final public class ConValTuple2 implements DMLConVal {
     }
 
     final public DMLValue apply(DMLValue v) {
-	return DMLConstants.runtimeError.apply(new DMLString("cannot apply "+this+" to "+v)).raise();
+	try {
+	    return DMLConstants.runtimeError.apply(new DMLString("cannot apply "+this+" to "+v)).raise();
+	} catch (java.rmi.RemoteException r) {
+	    System.out.println(r);
+	    return null;
+	}
     }
 
     final public DMLValue raise() {
