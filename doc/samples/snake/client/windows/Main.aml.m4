@@ -156,7 +156,7 @@ struct
 			                 int * Gtk.object * 
 				         ArenaWidget.arena_widget -> unit,
 			    displayCountDown : (int option -> unit) option ref,
-			    gameMode :  change_window_mode -> unit
+			    gameMode :  change_window_mode -> unit,
 			    menuGiveUpItem : Gtk.object,
 			    menuMenuItem : Gtk.object,
 			    rightHBox : Gtk.object,
@@ -351,6 +351,7 @@ struct
 				    mode,
 				    displayCountDown,
 				    canvas,
+				    reset,
 				    update,
 				    updatePoints,
 				    timeLabel,
@@ -374,10 +375,15 @@ struct
 		  (log ("startSinglePlayer", "has been called");
 		   startSingleCB mainWindowWidget)
 	    (* procedure called by pressing GiveUp - button *)
-	    fun giveUp () = (log ("giveUp", "has been called");
-			     reset ();
-			     giveUpCB ())
-
+	    fun giveUp (p : mainwindow_type) = 
+		      (log ("giveUp", "has been called");
+		       #reset p {mode = #mode p,
+				 menuGiveUpItem = #menuGiveUpItem p,
+				 menuMenuItem = #menuMenuItem p,
+				 canvas = #canvas p,
+				 rightHBox = #rightHBox p};
+		       giveUpCB ())
+		      
 	    fun backToStart () = 
 		(case !mode of
 		    START  => (log ("backToStart", "in START mode");
@@ -387,7 +393,7 @@ struct
 			    val _ = log ("backToStart", "in GAME mode")
 			    fun cancel () = ()
 			    fun no ()     = ()
-			    fun yes ()    = giveUp ()
+			    fun yes ()    = giveUp mainWindowWidget
                             val answer    = {yes, no, cancel}
 			in
 			    Question.mkQuestionBox 
@@ -410,21 +416,21 @@ struct
                             | ("r" | "R") => (if b 
 					      then Gtk.widgetHide radarWidget
                                               else Gtk.widgetShow radarWidget;
-					      mode := GAME(not b))
-			    |   _         => ())
-		    |    _   => ())
+					      mode := GAME(not b);NONE)
+			    |   _         => NONE)
+		    |    _   => NONE)
 
 	    ifdef([[GTK2]],[[
 	    (* catches the canvas events *)
 	    fun canvasEvent [Gtk.EVENT event] = 
 		(case event of
-		     Gdk.EVENT_KEY_PRESS {keyval, ...}	=> key keyval
+		     Gdk.EVENT_KEY_PRESS {keyval, ...}	=> (key keyval;())
 		   |            _                  	=> ())
 	      |  canvasEvent       x            = ()
 	    ]],[[
 	    fun canvasEvent [Gtk.EVENT event] = 
 		(case event of
-		     Gtk.GDK_KEY_PRESS {keyval, ...}	=> key keyval
+		     Gtk.GDK_KEY_PRESS {keyval, ...}	=> (key keyval;())
 		   |            _                  	=> ())
 	      |  canvasEvent       x            = ()
             ]])
@@ -470,7 +476,7 @@ struct
 	    Gtk.signalConnect (menuQuit, "activate", 
 			       fn _ => backToStart ());
 	    Gtk.signalConnect (menuGiveUpItem, "activate",
-			       fn _ => giveUp ());
+			       fn _ => giveUp mainWindowWidget);
 	    
 	    Gtk.boxPackStart (labelVBox, timeLabel, false, false, 0);
 	    Gtk.boxPackStart (labelVBox, pointsLabel, false, false, 0);
