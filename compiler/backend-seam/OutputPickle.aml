@@ -29,7 +29,6 @@ structure OutputPickle :> OUTPUT_PICKLE =
 		datatype t =
 		    ARRAY
 		  | CELL
-		  | CONSTRUCTOR
 		  | CON_VAL
 		  | VECTOR
 		  | TAG of LargeInt.int
@@ -81,10 +80,9 @@ structure OutputPickle :> OUTPUT_PICKLE =
 
 		fun toInt ARRAY        = 0
 		  | toInt CELL         = 1
-		  | toInt CONSTRUCTOR  = 2
-		  | toInt CON_VAL      = 3
-		  | toInt VECTOR       = 4
-		  | toInt (TAG i)      = 5 + i
+		  | toInt CON_VAL      = 2
+		  | toInt VECTOR       = 3
+		  | toInt (TAG i)      = 4 + i
 	    end
 
 	type context = {outstream: PrimPickle.outstream,
