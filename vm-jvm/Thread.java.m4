@@ -21,16 +21,13 @@ public class Thread extends java.lang.Thread implements DMLValue {
      *  die der java.lang.Thread ausführt.
      *  Die Funktion sollte den Typ fcn : unit -> 'a haben.
      */
-    protected DMLValue fcn=null;
+    final public DMLValue fcn;
 
     /** Gesamtzahl de.uni_sb.ps.dml.runtime.Threads */
     public static int totalNumber=0;
 
     /** Nummer des java.lang.Threads */
     private int threadNumber=0;
-
-    public Thread() {
-    }
 
     /** Erzeugt einen neuen de.uni_sb.ps.dml.runtime.Thread.
      *  @param v sollte eine Funktion f : unit-> 'a sein.

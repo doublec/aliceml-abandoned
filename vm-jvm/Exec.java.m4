@@ -13,6 +13,7 @@ public class Exec extends de.uni_sb.ps.dml.runtime.Thread {
     DMLValue arglist = null;
 
     public Exec(java.lang.String[] arg) {
+	super(null);
 	filename = arg[0];
 	if (arg.length<2) {
 	    arglist = List.nil;
