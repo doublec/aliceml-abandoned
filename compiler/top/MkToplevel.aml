@@ -35,7 +35,7 @@ struct
     fun usage() = TextIO.output(TextIO.stdErr, "Usage: alice [options]\n" ^
 						OptionParser.helpText)
 
-    val banner     = "Alice (Stockhausen Operette 3 draft scores)\n"
+    val banner     = "Alice (Stockhausen Operette 3)\n"
     val prompt     = "- "
     val contPrompt = "  "
 
