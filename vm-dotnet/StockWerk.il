@@ -14,7 +14,7 @@
 // Design of Serialization:
 // -- StockWert implements ISerializable with the default serialization
 //    behaviour
-// -- replicable data structures (literals, tuples, records, names,
+// -- replicable data structures (literals, tuples, records, vectors, names,
 //    constructors including the reference constructor, and constructed
 //    values except references) inherit the default serialization mechanism
 // -- the abstract class Global represents entities that have a Guid.
@@ -40,7 +40,8 @@
 
 .namespace StockWerk {
   .class sealed public Prebound extends System.Object {
-    // Names and Exceptions
+    // Names, Constructors, and Exceptions
+    .field static public initonly class StockWerk.StockWert ref
     .field static public initonly class StockWerk.StockWert Unit
     .field static public initonly class StockWerk.StockWert TypeError
     .field static public initonly class StockWerk.StockWert Promise
@@ -58,6 +59,8 @@
     .field static public initonly class StockWerk.StockWert currentThread
     .method public static void .cctor() {
       // Names and Exceptions
+      newobj instance void StockWerk.RefConstructor::.ctor()
+      stsfld class StockWerk.StockWert StockWerk.Prebound::ref
       ldstr "()"
       newobj instance void StockWerk.NamedName::.ctor(class System.String)
       stsfld class StockWerk.StockWert StockWerk.Prebound::Unit
@@ -95,6 +98,37 @@
       stsfld class StockWerk.StockWert StockWerk.Prebound::thread
       newobj instance void StockWerk.Builtins.BICurrentThread::.ctor()
       stsfld class StockWerk.StockWert StockWerk.Prebound::currentThread
+      ret
+    }
+  }
+
+  .class sealed public ExceptionWrapper extends System.RuntimeException {
+    .field public initonly class StockWerk.StockWert Value
+    .field public initonly int32 Line
+    .method public void .ctor(class StockWerk.StockWert) {
+      ldarg.0
+      ldarg.1
+      ldc.i4.M1
+      tail. call instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert, int32)
+      ret
+    }
+    .method public void .ctor(class StockWerk.StockWert, int32) {
+      ldarg.0
+      ldarg.1
+      callvirt instance class System.String System.Object::ToString()
+      newobj instance void System.StringBuilder::.ctor(class System.String)
+      ldstr " thrown at line "
+      call instance class System.StringBuilder System.StringBuilder::Append(class System.String)
+      ldarg.2
+      call instance class System.StringBuilder System.StringBuilder::Append(int32)
+      call instance class System.String System.StringBuilder::ToString()
+      call instance void System.RuntimeException::.ctor(class System.String)
+      ldarg.0
+      ldarg.1
+      stfld class StockWerk.StockWert StockWerk.ExceptionWrapper::Value
+      ldarg.0
+      ldarg.2
+      stfld int32 StockWerk.ExceptionWrapper::Line
       ret
     }
   }
@@ -244,18 +278,6 @@
     }
   }
 
-  .class sealed public ExceptionWrapper extends System.RuntimeException {
-    .field public initonly class StockWerk.StockWert Value
-    .method public void .ctor(class StockWerk.StockWert) {
-      ldarg.0
-      tail. call instance void System.RuntimeException::.ctor()
-      ldarg.0
-      ldarg.1
-      stfld class StockWerk.StockWert StockWerk.ExceptionWrapper::Value
-      ret
-    }
-  }
-
   //
   // Value Representation
   //
@@ -283,7 +305,6 @@
       isinst StockWerk.Transient
       brfalse.s retFalse
       ldarg.1
-      castclass StockWerk.Transient
       callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
       starg.s 1
       br.s retry
@@ -457,7 +478,43 @@
   // Literals
   //
 
-  .class public Int extends StockWerk.StockWert {
+  .class sealed public Word extends StockWerk.StockWert {
+    .field public initonly int32 Value
+    .method public void .ctor(int32) {
+      ldarg.0
+      call instance void StockWerk.StockWert::.ctor()
+      ldarg.0
+      ldarg.1
+      stfld int32 StockWerk.Word::Value
+      ret
+    }
+    .method virtual public bool Equals(class StockWerk.StockWert) {
+    retry:
+      ldarg.1
+      isinst StockWerk.Word
+      brfalse.s testTransient
+      ldarg.1
+      castclass StockWerk.Word
+      ldfld int32 StockWerk.Word::Value
+      ldarg.0
+      ldfld int32 StockWerk.Word::Value
+      ceq
+      ret
+    testTransient:
+      ldarg.1
+      isinst StockWerk.Transient
+      brfalse.s retFalse
+      ldarg.1
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 1
+      br.s retry
+    retFalse:
+      ldc.i4.0
+      ret
+    }
+  }
+
+  .class sealed public Int extends StockWerk.StockWert {
     .field public initonly int32 Value
     .method public void .ctor(int32) {
       ldarg.0
@@ -484,7 +541,6 @@
       isinst StockWerk.Transient
       brfalse.s retFalse
       ldarg.1
-      castclass StockWerk.Transient
       callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
       starg.s 1
       br.s retry
@@ -494,20 +550,38 @@
     }
   }
 
-  .class sealed public Word extends StockWerk.Int {
+  .class sealed public Char extends StockWerk.StockWert {
+    .field public initonly int32 Value
     .method public void .ctor(int32) {
       ldarg.0
+      call instance void StockWerk.StockWert::.ctor()
+      ldarg.0
       ldarg.1
-      tail. call instance void StockWerk.Int::.ctor(int32)
+      stfld int32 StockWerk.Char::Value
       ret
     }
-  }
-
-  .class sealed public Char extends StockWerk.Int {
-    .method public void .ctor(int32) {
-      ldarg.0
+    .method virtual public bool Equals(class StockWerk.StockWert) {
+    retry:
       ldarg.1
-      tail. call instance void StockWerk.Int::.ctor(int32)
+      isinst StockWerk.Char
+      brfalse.s testTransient
+      ldarg.1
+      castclass StockWerk.Char
+      ldfld int32 StockWerk.Char::Value
+      ldarg.0
+      ldfld int32 StockWerk.Char::Value
+      ceq
+      ret
+    testTransient:
+      ldarg.1
+      isinst StockWerk.Transient
+      brfalse.s retFalse
+      ldarg.1
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 1
+      br.s retry
+    retFalse:
+      ldc.i4.0
       ret
     }
   }
@@ -539,7 +613,6 @@
       isinst StockWerk.Transient
       brfalse.s retFalse
       ldarg.1
-      castclass StockWerk.Transient
       callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
       starg.s 1
       br.s retry
@@ -576,7 +649,6 @@
       isinst StockWerk.Transient
       brfalse.s retFalse
       ldarg.1
-      castclass StockWerk.Transient
       callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
       starg.s 1
       br.s retry
@@ -596,6 +668,10 @@
       tail. call instance void StockWerk.Global::.ctor()
       ret
     }
+    .method virtual public class System.String ToString() {
+      ldstr "<N>"
+      ret
+    }
   }
 
   .class sealed public NamedName extends StockWerk.Name {
@@ -608,6 +684,17 @@
       stfld class System.String StockWerk.NamedName::Name
       ret
     }
+    .method virtual public class System.String ToString() {
+      ldstr "<N:"
+      newobj instance void System.StringBuilder::.ctor(class System.String)
+      ldarg.0
+      ldfld class System.String StockWerk.NamedName::Name
+      call instance class System.StringBuilder System.StringBuilder::Append(class System.String)
+      ldstr ">"
+      call instance class System.StringBuilder System.StringBuilder::Append(class System.String)
+      tail. call instance class System.String System.StringBuilder::ToString()
+      ret
+    }
   }
 
   .class public Constructor extends StockWerk.Global {
@@ -618,8 +705,14 @@
     }
     .method virtual public class StockWerk.StockWert Apply(class StockWerk.StockWert) {
       ldarg.0
+      newobj instance void StockWerk.ConVal::.ctor(class StockWerk.Constructor)
+      dup
       ldarg.1
-      newobj instance void StockWerk.ConVal::.ctor(class StockWerk.Constructor, class StockWerk.StockWert)
+      stfld class StockWerk.StockWert StockWerk.ConVal::Val
+      ret
+    }
+    .method virtual public class System.String ToString() {
+      ldstr "<C>"
       ret
     }
   }
@@ -634,20 +727,28 @@
       stfld class System.String StockWerk.NamedConstructor::Name
       ret
     }
+    .method virtual public class System.String ToString() {
+      ldstr "<C:"
+      newobj instance void System.StringBuilder::.ctor(class System.String)
+      ldarg.0
+      ldfld class System.String StockWerk.NamedConstructor::Name
+      call instance class System.StringBuilder System.StringBuilder::Append(class System.String)
+      ldstr ">"
+      call instance class System.StringBuilder System.StringBuilder::Append(class System.String)
+      tail. call instance class System.String System.StringBuilder::ToString()
+      ret
+    }
   }
 
   .class sealed public ConVal extends StockWerk.StockWert {
     .field public initonly class StockWerk.Constructor Con
-    .field public initonly class StockWerk.StockWert Val
-    .method public void .ctor(class StockWerk.Constructor, class StockWerk.StockWert) {
+    .field public class StockWerk.StockWert Val
+    .method public void .ctor(class StockWerk.Constructor) {
       ldarg.0
       call instance void StockWerk.StockWert::.ctor()
       ldarg.0
       ldarg.1
       stfld class StockWerk.Constructor StockWerk.ConVal::Con
-      ldarg.0
-      ldarg.2
-      stfld class StockWerk.StockWert StockWerk.ConVal::Val
       ret
     }
     .method virtual public bool Equals(class StockWerk.StockWert) {
@@ -675,7 +776,6 @@
       isinst StockWerk.Transient
       brfalse.s retFalse
       ldarg.1
-      castclass StockWerk.Transient
       callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
       starg.s 1
       br.s retry
@@ -705,7 +805,6 @@
       isinst StockWerk.Transient
       brfalse.s retFalse
       ldarg.1
-      castclass StockWerk.Transient
       callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
       starg.s 1
       br.s retry
@@ -716,13 +815,10 @@
   }
 
   .class sealed public Ref extends StockWerk.StockWert {
-    .field private class StockWerk.StockWert Value
-    .method public void .ctor(class StockWerk.StockWert) {
+    .field public class StockWerk.StockWert Value
+    .method public void .ctor() {
       ldarg.0
-      call instance void StockWerk.StockWert::.ctor()
-      ldarg.0
-      ldarg.1
-      stfld class StockWerk.StockWert StockWerk.Ref::Value
+      tail. call instance void StockWerk.StockWert::.ctor()
       ret
     }
     .method public class StockWerk.StockWert Access() {
@@ -748,17 +844,11 @@
   //
 
   .class public Tuple2 extends StockWerk.StockWert {
-    .field public initonly class StockWerk.StockWert Value1
-    .field public initonly class StockWerk.StockWert Value2
-    .method public void .ctor(class StockWerk.StockWert, class StockWerk.StockWert) {
+    .field public class StockWerk.StockWert Value1
+    .field public class StockWerk.StockWert Value2
+    .method public void .ctor() {
       ldarg.0
-      call instance void StockWerk.StockWert::.ctor()
-      ldarg.0
-      ldarg.1
-      stfld class StockWerk.StockWert StockWerk.Tuple2::Value1
-      ldarg.0
-      ldarg.2
-      stfld class StockWerk.StockWert StockWerk.Tuple2::Value2
+      tail. call instance void StockWerk.StockWert::.ctor()
       ret
     }
     .method virtual public bool Equals(class StockWerk.StockWert) {
@@ -789,7 +879,6 @@
       isinst StockWerk.Transient
       brfalse.s retFalse
       ldarg.1
-      castclass StockWerk.Transient
       callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
       starg.s 1
       br.s retry
@@ -873,7 +962,6 @@
       isinst StockWerk.Transient
       brfalse.s retFalse
       ldarg.1
-      castclass StockWerk.Transient
       callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
       starg.s 1
       br.s retry
@@ -946,7 +1034,6 @@
       isinst StockWerk.Transient
       brfalse.s retFalse
       ldarg.1
-      castclass StockWerk.Transient
       callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
       starg.s 1
       br.s retry
@@ -965,6 +1052,71 @@
       ldarg.1
       call instance int32 StockWerk.RecordArity::Select(class System.String)
       ldelem.ref
+      ret
+    }
+  }
+
+  .class public Vector extends StockWerk.StockWert {
+    .field public initonly class StockWerk.StockWert[] Values
+    .method public void .ctor(class StockWerk.StockWert[]) {
+      ldarg.0
+      call instance void StockWerk.StockWert::.ctor()
+      ldarg.0
+      ldarg.1
+      stfld class StockWerk.StockWert StockWerk.Vector::Values
+      ret
+    }
+    .method virtual public bool Equals(class StockWerk.StockWert) {
+      .locals(class StockWerk.StockWert[], class StockWerk.StockWert[], int32)
+    retry:
+      ldarg.1
+      isinst StockWerk.Vector
+      brfalse.s testTransient
+      ldarg.1
+      castclass StockWerk.Vector
+      ldfld class StockWerk.Values[] StockWerk.Vector::Values
+      dup
+      stloc.1
+      ldlen
+      ldarg.0
+      ldfld class StockWerk.Values[] StockWerk.Vector::Values
+      dup
+      stloc.0
+      ldlen
+      bne.un.s retFalse
+      ldc.i4.0
+      stloc.2
+    loop:
+      ldloc.2
+      ldloc.0
+      ldlen
+      bge.s retTrue
+      ldloc.0
+      ldloc.2
+      ldelem.ref
+      ldloc.1
+      ldloc.2
+      ldelem.ref
+      callvirt instance bool StockWerk.StockWert::Equals(class StockWerk.StockWert)
+      brfalse.s retFalse
+      ldloc.2
+      ldc.i4.1
+      add
+      stloc.2
+      br.s loop
+    testTransient:
+      ldarg.1
+      isinst StockWerk.Transient
+      brfalse.s retFalse
+      ldarg.1
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 1
+      br.s retry
+    retFalse:
+      ldc.i4.0
+      ret
+    retTrue:
+      ldc.i4.1
       ret
     }
   }
@@ -1349,7 +1501,6 @@
       isinst StockWerk.Transient
       brfalse.s retFalse
       ldarg.1
-      castclass StockWerk.Transient
       callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
       starg.s 1
       br.s retry
@@ -1421,7 +1572,6 @@
       isinst StockWerk.Transient
       brfalse.s raise
       ldarg.1
-      castclass StockWerk.Transient
       callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
       starg.s 1
       br.s retry
@@ -1459,7 +1609,6 @@
       isinst StockWerk.Transient
       brfalse.s raise
       ldarg.1
-      castclass StockWerk.Transient
       callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
       starg.s 1
       br.s retry
@@ -1525,7 +1674,6 @@
       isinst StockWerk.Transient
       brfalse.s retFalse
       ldarg.1
-      castclass StockWerk.Transient
       callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
       starg.s 1
       br.s retry
