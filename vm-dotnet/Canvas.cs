@@ -21,10 +21,10 @@ class Helper {
 	return ((a > b) ? a : b);
     }
     public static void Print(System.String s) {
-	return;
+	//	System.Console.Write(s);
     }
     public static void PrintLn(System.String s) {
-	return;
+	//	System.Console.WriteLine(s);
     }
 }
 
@@ -136,7 +136,7 @@ class Canvas {
 	    DrawAllItems(dc, curVertPos, Helper.Min((curVertPos + info.cyPage), maxY));
 
 	    User.EndPaint(wnd, ps);
-
+	    Helper.PrintLn("Canvas: Leaving Paint Handler");
 	    return 0;
 	case WinMsg.VScroll: {
 	    int newVertPos;
@@ -519,7 +519,7 @@ class IntNode : SimpleNode {
 		return val.ToString();
 	    }
 	}
-	else { 
+	else {
 	    return val.ToString();
 	}
     }
@@ -636,7 +636,7 @@ class FutureNode : SimpleNode {
     }
     public virtual void Run() {
 	Helper.PrintLn((System.String) "FutureNode:Run: Thread Launched");
-	val = ((Alice.Values.Transient) val).Await();
+	val = ((Alice.Values.Transient) val).Await(); // to be determined
 	Helper.Print((System.String) "FutureNode:Run: calling update with");
 	Helper.PrintLn((System.String) val.ToString());
 	lock (Lock) {
@@ -979,6 +979,9 @@ class ListNode : ContainerNode {
 	Helper.PrintLn((System.String) val.ToString());
 
 	while (i <= width) {
+	    if (val is Alice.Values.Transient) {
+		val = ((Alice.Values.Transient) val).Deref();
+	    }
 	    if (val is Alice.Values.TagVal) {
 		Alice.Values.TagVal tval = (Alice.Values.TagVal) val;
 
@@ -1004,18 +1007,21 @@ class ListNode : ContainerNode {
 		    else {
 			Put(i, Inspector.CreateNode(this, val, tyVal, i, newDepth));
 		    }
-		}
-		else if ((val is System.Int32) && (((Int32) val) == (Int32) 1)) {
-		    width      = (i - 1);
-		    showBraces = true;
-		    ChangeSeparator();
+		    break;
 		}
 		else {
-		    width      = i;
-		    showBraces = false;
-		    Put(i, Inspector.CreateNode(this, val, tyVal.type, i, newDepth));
+		    if ((val is System.Int32) && (((Int32) val) == (Int32) 1)) {
+			width      = (i - 1);
+			showBraces = true;
+			ChangeSeparator();
+		    }
+		    else {
+			width      = i;
+			showBraces = false;
+			Put(i, Inspector.CreateNode(this, val, tyVal.type, i, newDepth));
+		    }
+		    break;
 		}
-		break;
 	    }
 	}
 	Helper.PrintLn((System.String) "Leaving ListNode: PerformInsertion");
@@ -1218,6 +1224,9 @@ class Inspector {
 	Helper.Print((System.String) "Inspector: CreateNode: tyVal is ");
 	Helper.PrintLn((System.String) tyVal.ToString());
 	if (depth <= maxDepth) {
+	    if (val is Alice.Values.Transient) {
+		val = ((Alice.Values.Transient) val).Deref();
+	    }
 	    if (Alice.Builtins.Future_isFuture.StaticApply(val).Equals((Int32) 1)) {
 		if (Alice.Builtins.Future_isFailed.StaticApply(val).Equals((Int32) 1)) {
 		    return new SimpleStringNode(parent, "<Failed>", tyVal, index, canvas, depth);
@@ -1377,35 +1386,44 @@ class TranslateType {
 
 class MakeBasicType : Alice.Values.Procedure {
     public Object StaticApply(Object obj) {
-	String str = (System.String) obj;
+	String str   = (System.String) obj;
+	Object value = null;
 
+	Helper.PrintLn("Entered MakeBasicType");
 	if (str.Equals("int")) {
-	    return TranslateType.NewType(new Types.Int());
+	    value = TranslateType.NewType(new Types.Int());
 	}
 	else if (str.Equals("word")) {
-	    return TranslateType.NewType(new Types.Word());
+	    value = TranslateType.NewType(new Types.Word());
 	}
 	else if (str.Equals("char")) {
-	    return TranslateType.NewType(new Types.Char());
+	    value = TranslateType.NewType(new Types.Char());
 	}
 	else if (str.Equals("real")) {
-	    return TranslateType.NewType(new Types.Real());
+	    value = TranslateType.NewType(new Types.Real());
 	}
 	else if (str.Equals("bool")) {
-	    return TranslateType.NewType(new Types.Bool());
+	    value = TranslateType.NewType(new Types.Bool());
 	}
 	else {
-	    return TranslateType.NewType(new Types.String((System.String) str));
+	    value = TranslateType.NewType(new Types.String((System.String) str));
 	}
+	Helper.PrintLn("Leaving MakeBasicType");
+	return value;
     }
     public override Object Apply(Object obj) {
 	return StaticApply(obj);
     }
 }
 
-class MakeArrowType : Alice.Values.Procedure3 {
+public class MakeArrowType : Alice.Values.Procedure3 {
     public static Object StaticApply(Object a, Object b, Object c) {
-	return TranslateType.NewType(new Types.Fun());
+	Object value = null;
+
+	Helper.PrintLn("Entered MakeArrowType");
+	value = TranslateType.NewType(new Types.Fun());
+	Helper.PrintLn("Leaving MakeArrowType");
+	return value;
     }
     public override Object Apply(Object a, Object b, Object c) {
 	return StaticApply(a, b, c);
@@ -1414,7 +1432,12 @@ class MakeArrowType : Alice.Values.Procedure3 {
 
 class MakeListType : Alice.Values.Procedure {
     public static Object StaticApply(Object obj) {
-	return TranslateType.NewType(new Types.List(obj));
+	Object value = null;
+
+	Helper.PrintLn("Entered MakeListType");
+	value = TranslateType.NewType(new Types.List(obj));
+	Helper.PrintLn("Leaving MakeListType");
+	return value;
     }
     public override Object Apply(Object obj) {
 	return StaticApply(obj);
@@ -1423,7 +1446,12 @@ class MakeListType : Alice.Values.Procedure {
 
 class MakeRecordType : Alice.Values.Procedure {
     public static Object StaticApply(Object obj) {
-	return TranslateType.NewType(new Types.Record((Object[]) obj));
+	Object value = null;
+
+	Helper.PrintLn("Entered MakeRecordType");
+	value = TranslateType.NewType(new Types.Record((Object[]) obj));
+	Helper.PrintLn("Leaving MakeRecordType");
+	return value;
     }
     public override Object Apply(Object obj) {
 	return StaticApply(obj);
@@ -1432,7 +1460,12 @@ class MakeRecordType : Alice.Values.Procedure {
 
 class MakeTupleType : Alice.Values.Procedure {
     public static Object StaticApply(Object obj) {
-	return TranslateType.NewType(new Types.Tuple((Object[]) obj));
+	Object value = null;
+
+	Helper.PrintLn("Entered MakeTupleType");
+	value = TranslateType.NewType(new Types.Tuple((Object[]) obj));
+	Helper.PrintLn("Leaving MakeTupleType");
+	return value;
     }
     public override Object Apply(Object obj) {
 	return StaticApply(obj);
