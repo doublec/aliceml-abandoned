@@ -56,6 +56,12 @@ public:
   void Init(u_int index, word value) {
     InitArg(index + BASE_SIZE, value);
   }
+  void Update(u_int index, s_int value) {
+    ReplaceArg(index + BASE_SIZE, value);
+  }
+  void Update(u_int index, word value) {
+    ReplaceArg(index + BASE_SIZE, value);
+  }
   word Sub(u_int index) {
     return GetArg(index + BASE_SIZE);
   }
