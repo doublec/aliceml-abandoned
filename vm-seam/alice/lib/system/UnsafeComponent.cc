@@ -10,6 +10,7 @@
 //   $Revision$
 //
 
+#include "Base.hh"
 #include <cstdio>
 #include <cstring>
 #if defined(__MINGW32__) || defined(_MSC_VER)
