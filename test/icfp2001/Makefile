@@ -24,7 +24,8 @@ Linked.ozf:	Main.ozf Select.ozf Smurf.ozf
 	ozc -c $< -o $@
 
 clean:
-	rm *.o *.so-* *.ozf *.ozm
+	-rm -f *.o *.so-* *.ozf *.ozm runme
+	-rm -f *.aux *.log *.dvi *.ps
 
 Tag.ozf:	
 Doc.ozf:	Tag.ozf
