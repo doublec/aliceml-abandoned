@@ -215,7 +215,8 @@ public:
 	    ((accessFlags & ACC_FINAL) != 0) +
 	    ((accessFlags & ACC_ABSTRACT) != 0) <= 1) ||
 	   (accessFlags & ACC_ABSTRACT) != 0);
-    Assert(accessFlags & ACC_SUPER); // not supported by this implementation
+    // class files with ACC_SUPER unset not supported by this implementation
+    Assert((accessFlags & (ACC_INTERFACE | ACC_SUPER)) != 0);
     Block *b = Store::AllocBlock(JavaLabel::ClassInfo, SIZE);
     b->InitArg(CLASS_LOADER_POS, classLoader->ToWord());
     b->InitArg(ACCESS_FLAGS_POS, accessFlags);
