@@ -57,5 +57,13 @@ signature UNSAFE_VALUE_COMPONENT =
 		(* Inspection *)
 
 		val conName: 'con_value -> Name.t
+
+		(* These return one of:
+		 *   -2      could not be determined
+		 *   -1      single-argument
+		 *   n >= 0  tuple/record with n fields
+		 *)
+		val inArity: 'function_value * bool -> int
+		val outArity: 'function_value * bool -> int
 	    end
     end
