@@ -15,7 +15,7 @@ sig
     eqtype stamp
     type t = stamp
 
-    val reset :		unit -> unit
+    (*val reset :	unit -> unit*)
     val stamp :		unit -> stamp
     val toString :	stamp -> string
 
