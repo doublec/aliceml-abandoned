@@ -32,6 +32,7 @@ structure PS :
            | Triangle of {c1:pos,c2:pos,c3:pos,
                           outline:color,
                           fill:color}
+           | Group of path list
 
     val emit : string * path list -> unit
 
@@ -56,6 +57,7 @@ structure PS :
            | Triangle of {c1:pos,c2:pos,c3:pos,
                           outline:color,
                           fill:color}
+           | Group of path list
 
     fun rToS x = (if x<0.0 then "-" else "")^(Real.toString (Real.abs x))
     fun iToS x = (if x<0 then "-" else "")^(Int.toString (Int.abs x))
@@ -110,6 +112,8 @@ structure PS :
         in
             boundingBox (bbMin(min,bbMin(c1,c2)), bbMax(max,bbMax(c1,c2))) dr
         end
+      | boundingBox mm ( (Group ps)::dr) =
+        boundingBox (boundingBox mm ps) dr
 
     fun emitDrawing f (Line {a,b,outline}) =
         let
@@ -259,6 +263,7 @@ structure PS :
           "grestore\n"
           )
         end
+      | emitDrawing f (Group ds) = app (emitDrawing f) ds
 
     fun emitHeader f =
         TextIO.output(f,
