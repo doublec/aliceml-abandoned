@@ -211,7 +211,7 @@ structure Renderer :> RENDERER =
 		else SOME color   (*--** attenuation *)
 	    end
 
-	fun render {ambient, lights, scene, vision, width, height, depth} =
+	fun mkRender {ambient, lights, scene, vision, width, height, depth} =
 	    let
 		fun trace (base, dir) =
 		    case intersect (scene, base, dir) of
@@ -228,7 +228,7 @@ structure Renderer :> RENDERER =
 				    (fn light => intensity (light, scene, p))
 				    lights
 			    in
-				ambient (*UNF*)
+				ambient (*UNFINISHED*)
 			    end
 		      | (_, _, Exit)::_ => raise Crash
 		      | nil => ambient
@@ -238,4 +238,8 @@ structure Renderer :> RENDERER =
 	    in
 		render'
 	    end
+
+	fun render {ambient, lights, scene, vision, width, height, depth,
+		    outstream = q} = ()
+	    (*UNFINISHED*)
     end
