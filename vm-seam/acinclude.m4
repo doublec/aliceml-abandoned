@@ -81,6 +81,7 @@ AC_DEFUN([AC_SEAM_ARG_ENABLE_OPTIMIZED],
                              -fno-keep-static-consts \
                              -fno-implicit-templates \
                              -fno-implicit-inline-templates)
+      AC_SEAM_CHECK_LDFLAG([[-Wl,-S]])
       AC_SEAM_CHECK_LDFLAG_SEAMTOOL([[-Wl,-S]])
    else
       AC_MSG_RESULT(no)
@@ -104,10 +105,11 @@ AC_DEFUN([AC_SEAM_ARG_ENABLE_PROFILER],
    AC_MSG_CHECKING(whether to build with user-level profiling support)
    if test "${enable_profiler:-no}" = "yes"; then
       AC_MSG_RESULT(yes)
-      AC_SEAM_ADD_TO_CXXFLAGS_SEAMTOOL(-DPROFILE)
+      AC_SEAM_ADD_TO_CXXFLAGS_SEAMTOOL([-DPROFILE=1])
       AC_DEFINE(PROFILE, 1)
    else
       AC_MSG_RESULT(no)
+      AC_SEAM_ADD_TO_CXXFLAGS_SEAMTOOL([-DPROFILE=0])
       AC_DEFINE(PROFILE, 0)
    fi])
 
@@ -223,6 +225,21 @@ AC_DEFUN([AC_SEAM_ADD_TO_LDFLAGS_SEAMTOOL],
     AC_SUBST(SEAMTOOL_LDFLAGS)])
 
 dnl Macros:
+dnl   AC_SEAM_ADD_TO_CXXFLAGS ([FLAG...])
+dnl   AC_SEAM_ADD_TO_LDFLAGS ([FLAG...])
+dnl
+dnl Description:
+dnl   Add the flags to the corresponding variables
+dnl
+dnl Author:
+dnl   Marco Kuhlmann <kuhlmann@ps.uni-sb.de>
+dnl
+AC_DEFUN([AC_SEAM_ADD_TO_CXXFLAGS],
+   [CXXFLAGS="${CXXFLAGS}${CXXFLAGS:+ }$1"])
+AC_DEFUN([AC_SEAM_ADD_TO_LDFLAGS],
+   [LDFLAGS="${LDFLAGS}${LDFLAGS:+ }$1"])
+
+dnl Macros:
 dnl   AC_SEAM_CHECK_CXXFLAG_SEAMTOOL (FLAGS...)
 dnl   AC_SEAM_CHECK_LDFLAG_SEAMTOOL (FLAGS...)
 dnl
@@ -236,10 +253,14 @@ dnl   Marco Kuhlmann <kuhlmann@ps.uni-sb.de>
 dnl
 AC_DEFUN([AC_SEAM_CHECK_CXXFLAG_SEAMTOOL],
    [AC_REQUIRE([AC_SEAM_CHECK_CXXFLAG])
-    AC_SEAM_CHECK_CXXFLAG($1, AC_SEAM_ADD_TO_CXXFLAGS_SEAMTOOL([$1]))])
+    AC_SEAM_CHECK_CXXFLAG($1,
+       AC_SEAM_ADD_TO_CXXFLAGS_SEAMTOOL([$1])
+       AC_SEAM_ADD_TO_CXXFLAGS([$1]))])
 AC_DEFUN([AC_SEAM_CHECK_LDFLAG_SEAMTOOL],
    [AC_REQUIRE([AC_SEAM_CHECK_CXXFLAG])
-    AC_SEAM_CHECK_LDFLAG($1, AC_SEAM_ADD_TO_LDFLAGS_SEAMTOOL([$1]))])
+    AC_SEAM_CHECK_LDFLAG($1,
+       AC_SEAM_ADD_TO_LDFLAGS_SEAMTOOL([$1])
+       AC_SEAM_ADD_TO_LDFLAGS([$1]))])
 
 # ---------------------------------------------------------------
 # Macros used in the build process of SEAM extensions
@@ -266,9 +287,9 @@ AC_DEFUN(AC_PROG_SEAMTOOL,
    AC_SUBST(SEAMTOOL)
    AC_MSG_CHECKING(where to install SEAM extensions)
    if test "${SEAMTOOL}" != "none"; then
-      seamlibdir=$(${SEAMTOOL} config libdir)
+      seamlibdir=$(${SEAMTOOL} config seamlibdir)
    else
-      seamlibdir='${libdir}/seam'
+      seamlibdir=${libdir}/seam
    fi
    AC_MSG_RESULT(${seamlibdir})
    AC_SUBST(seamlibdir)
