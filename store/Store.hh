@@ -16,7 +16,7 @@
 #pragma interface "store/Store.hh"
 #endif
 
-#include "Base.hh"
+#include "store/Base.hh"
 #include "store/Types.hh"
 #include "store/HeaderOp.hh"
 #include "store/PointerOp.hh"
@@ -59,11 +59,11 @@ private:
     return top;
   }
   static Block *InternalAllocBlock(BlockLabel l, u_int s) {
-    Assert(s > INVALID_BLOCKSIZE);
-    Assert(s <= MAX_BLOCKSIZE);
+    AssertStore(s > INVALID_BLOCKSIZE);
+    AssertStore(s <= MAX_BLOCKSIZE);
 
     Block *t = (Block *) Store::FastAlloc((s + 1) << 2);
-    Assert(t != NULL);
+    AssertStore(t != INVALID_POINTER);
     HeaderOp::EncodeHeader(t, l, s);
 
     return t;
@@ -83,25 +83,25 @@ public:
 
   // DataLabel Function
   static BlockLabel MakeLabel(u_int l) {
-    Assert(l <= MAX_HELPER_LABEL);
+    AssertStore(l <= MAX_HELPER_LABEL);
     return (BlockLabel) l;
   }
   // Allocation Functions
   static Block *AllocBlock(BlockLabel l, u_int s) {
-    Assert(l >= MIN_DATA_LABEL);
-    Assert(l <= MAX_HELPER_LABEL);
+    AssertStore(l >= MIN_DATA_LABEL);
+    AssertStore(l <= MAX_HELPER_LABEL);
     return InternalAllocBlock(l, s);
   }
   static Block *AllocChunk(u_int s) {
     return Store::InternalAllocBlock(CHUNK_LABEL, s);
   }
   static Transient *AllocTransient(BlockLabel l) {
-    Assert((l >= MIN_TRANSIENT_LABEL) && (l <= MAX_TRANSIENT_LABEL));
+    AssertStore((l >= MIN_TRANSIENT_LABEL) && (l <= MAX_TRANSIENT_LABEL));
     return (Transient *) Store::InternalAllocBlock(l, 1);
   }
   static Block *AllocBlockWithHandler(u_int s, Handler *h) {
     Block *t = Store::InternalAllocBlock(HANDLER_BLOCK_LABEL, (s + 1));
-    Assert(t != NULL);
+    AssertStore(t != INVALID_POINTER);
     // ugly hack to avoid regrouping the items
     ((word *) t)[1] = PointerOp::EncodeUnmanagedPointer((void *) h);
     return t;
@@ -126,18 +126,18 @@ public:
     return PointerOp::DecodeUnmanagedPointer(PointerOp::Deref(x));
   }
   static int DirectWordToInt(word x) {
-    Assert(((u_int) x & INTTAG) == INTTAG);
+    AssertStore(((u_int) x & INTTAG) == INTTAG);
     return PointerOp::DecodeInt(x);
   }
   static Block *DirectWordToBlock(word x) {
-    Assert(((u_int) x & TAGMASK) == BLKTAG);
+    AssertStore(((u_int) x & TAGMASK) == BLKTAG);
     return PointerOp::DecodeBlock(x);
   }
   static void *DirectWordToUnmanagedPointer(word x) {
-    Assert(((u_int) x & TAGMASK) == BLKTAG);
+    AssertStore(((u_int) x & TAGMASK) == BLKTAG);
     return PointerOp::DecodeUnmanagedPointer(x);
   }
-#if defined(DEBUG_CHECK)
+#if defined(STORE_DEBUG)
   static void MemStat();
   static void ForceGCGen(u_int gen);
 #endif

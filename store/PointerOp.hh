@@ -30,15 +30,14 @@ public:
   }
   // Block<->Word Conversion
   static word EncodeBlock(Block *p) {
-    //--** this code assumes that BLKTAG == 0
-    return (word) p;
+    return (word) ((u_int) p | (u_int) BLKTAG);
   }
   static Block *DecodeBlock(word p) {
     return (Block *) ((((u_int) p & (u_int) TAGMASK) == (u_int) BLKTAG) ? p : INVALID_POINTER);
   }
   // Transient<->Word Conversion
   static word EncodeTransient(Transient *p) {
-    Assert(((u_int) p & (u_int) TAGMASK) == (u_int) BLKTAG);
+    AssertStore(((u_int) p & (u_int) TAGMASK) == (u_int) BLKTAG);
     return (word) ((u_int) p | (u_int) TRTAG);
   }
   static Transient *DecodeTransient(word p) {
@@ -51,8 +50,8 @@ public:
   }
   // int<->Word Conversion
   static word EncodeInt(int v) {
-    Assert(v >= MIN_VALID_INT);
-    Assert(v <= MAX_VALID_INT);
+    AssertStore(v >= MIN_VALID_INT);
+    AssertStore(v <= MAX_VALID_INT);
     return (word) ((((u_int) v) << 1) | (u_int) INTTAG);
   }
   static int DecodeInt(word v) {
@@ -65,11 +64,11 @@ public:
     }
   }
   static word EncodeUnmanagedPointer(void *v) {
-    Assert(((u_int) v & (1 << (STORE_WORD_WIDTH - 1))) == 0);
+    AssertStore(((u_int) v & (1 << (STORE_WORD_WIDTH - 1))) == 0);
     return (word) (((u_int) v << 1) | (u_int) INTTAG); 
   }
   static void *DecodeUnmanagedPointer(word v) {
-    Assert((u_int) v & INTMASK);
+    AssertStore((u_int) v & INTMASK);
     return (void *) ((u_int) v >> 1);
   }
   // Deref Function
