@@ -11,12 +11,24 @@
  *)
 
 import
-    structure Source
-from "../infrastructure/Source"
+    structure Url
+from "../../lib/utility/Url"
 
 import
-    structure Url
-from "../misc/Url"
+    structure Name
+from "../../lib/rtt/Name"
+
+import
+    structure Label
+from "../../lib/rtt/Label"
+
+import
+    structure Type
+from "../../lib/rtt/Type"
+
+import
+    structure Source
+from "../infrastructure/Source"
 
 import
     structure Stamp
@@ -25,18 +37,6 @@ from "../common/Stamp"
 import
     structure StampSet
 from "../common/StampSet"
-
-import
-    structure Name
-from "../common/Name"
-
-import
-    structure Label
-from "../common/Label"
-
-import
-    structure Type
-from "../common/Type"
 
 import
     structure IntermediateInfo

@@ -12,19 +12,19 @@
 
 import
     signature IMP_SET
-from "../misc/IMP_SET-sig"
+from "../../lib/utility/IMP_SET-sig"
+
+import
+    structure Label
+from "../../lib/rtt/Label"
+
+import
+    structure Type
+from "../../lib/rtt/Type"
 
 import
     structure Stamp
 from "../common/Stamp"
-
-import
-    structure Label
-from "../common/Label"
-
-import
-    structure Type
-from "../common/Type"
 
 import
     signature INTERMEDIATE_GRAMMAR

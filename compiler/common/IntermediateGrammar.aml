@@ -21,11 +21,11 @@ Invariants of type annotations:
 *)
 
 import structure Source                from "../infrastructure/Source"
-import structure Type                  from "Type"
-import structure Inf                   from "Inf"
+import structure Type                  from "../../lib/rtt/Type"
+import structure Inf                   from "../../lib/rtt/Inf"
 import functor MkIntermediateGrammar   from "MkIntermediateGrammar"
 import functor MkPPIntermediateGrammar from "MkPPIntermediateGrammar"
-import structure PrettyPrint           from "../misc/PrettyPrint"
+import structure PrettyPrint           from "../../lib/utility/PrettyPrint"
 
 
 structure IntermediateInfo =

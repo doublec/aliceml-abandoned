@@ -11,9 +11,9 @@
  *)
 
 import structure Stamp                from "Stamp"
-import structure Name                 from "Name"
-import structure Label                from "Label"
-import structure Url                  from "../misc/Url"
+import structure Name                 from "../../lib/rtt/Name"
+import structure Label                from "../../lib/rtt/Label"
+import structure Url                  from "../../lib/utility/Url"
 import signature INTERMEDIATE_GRAMMAR from "INTERMEDIATE_GRAMMAR-sig"
 
 

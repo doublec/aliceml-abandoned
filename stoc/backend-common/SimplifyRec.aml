@@ -11,6 +11,18 @@
  *)
 
 import
+    structure Label
+from "../../lib/rtt/Label"
+
+import
+    structure Type
+from "../../lib/rtt/Type"
+
+import
+    structure PervasiveType
+from "../../lib/rtt/PervasiveType"
+
+import
     structure Crash
 from "../infrastructure/Crash"
 
@@ -21,18 +33,6 @@ from "../infrastructure/Source"
 import
     structure Error
 from "../infrastructure/Error"
-
-import
-    structure Label
-from "../common/Label"
-
-import
-    structure Type
-from "../common/Type"
-
-import
-    structure PervasiveType
-from "../common/PervasiveType"
 
 import
     signature INTERMEDIATE_GRAMMAR
