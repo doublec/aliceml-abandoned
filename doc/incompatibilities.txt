@@ -1,0 +1,61 @@
+Almost all Stockhausen extensions to SML'97 are conservative. There remain some
+minor syntactic incompatibilies to SML'97 however. All of them are quite
+pathological, caught on compile time, and can easily be fixed in an SML
+compatible way.
+
+* Open pulls in infix status. Opening a structure that
+  (1) contains infix declarations, and
+  (2) has not been constrained by a signature
+  will change the infix environment, while in SML it wouldn't.
+
+  Example:
+
+	structure S =
+	  struct
+	    infix ++
+	    fun l1++l2 = l1 @ l2
+	  end
+
+	open S
+
+	val l = ++([1],[2])		(* Error in Stockhausen *)
+
+  Fixes:
+  (1) Use appropriate signature constraints (always a good idea anyway):
+
+	signature SIG =
+	  sig
+	    val ++ : 'a list * 'a list -> 'a list
+	  end
+
+	structure S: SIG =
+	  struct
+	    infix ++
+	    fun l1++l2 = l1 @ l2
+	  end
+
+	open S
+
+	val l = ++([1],[2])
+
+  (2) Or insert op on every use of such identifiers:
+
+	val l = op++([1],[2])
+
+
+* Datatype replication is recursive. Replicating a datatype with the same
+  (non-long) type constructor on the left and right hand side will not work,
+  while in SML'97 this is no problem.
+
+  Example:
+
+	datatype bool = datatype bool	(* Error in Stockhausen *)
+
+  Fixes:
+  (1) Use a long type constructor on the right hand side:
+
+	datatype bool = datatype Bool.bool
+
+  (2) Or rename the type constructor.
+
+	datatype bool' = datatype bool
