@@ -553,7 +553,10 @@ build2/%.stc: build2/%.aml
 	$(ALICEC1) $(ALICEC_OPTS) --no-rtt -c $< -o $@
 
 build2/lib/rtt/LinkedRTT.stc: build2/lib/rtt/RTT.stc
-	$(ALICELINK1) $(ALICELINK_OPTS) build2/lib/rtt/RTT --exclude build2/lib/utility/Unsafe --include build2 --rewrite build2/lib/=../ -o $@
+	$(ALICELINK1) $(ALICELINK_OPTS) build2/lib/rtt/RTT \
+	--exclude build2/lib/utility/Unsafe \
+	--exclude build2/lib/system/Unsafe \
+	--include build2 --rewrite build2/lib/=../ -o $@
 
 ##
 ## Installing Build 2
