@@ -1450,4 +1450,6 @@ val implode = String.implode
 val substring = String.substring
 val op^ = String.^
 
+val real = Real.fromInt
+
 val spawn = Thread.spawn
