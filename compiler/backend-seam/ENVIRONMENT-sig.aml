@@ -23,8 +23,7 @@ signature ENVIRONMENT =
 
 	val startTop: string * AbstractCodeGrammar.value StampMap.t -> t
 	val endTop: t -> string vector
-	val startClose: t -> unit
-	val startSpecialize: t -> unit
+	val startFn: t -> unit
 	val endFn: t -> FlatGrammar.id vector * string vector
 	val filename: t -> string
 	val declare: t * FlatGrammar.id -> AbstractCodeGrammar.id
