@@ -596,10 +596,9 @@ public:
     mpz_tdiv_qr(big(), b->big(), q->big(), r->big());
   }
 
-  BigInt *pow(BigInt *exp) {
+  BigInt *pow(unsigned long int exp) {
     BigInt *n = BigInt::New();
-    mpz_t mod; mpz_init_set_ui(mod, 1);
-    mpz_powm(n->big(), big(), exp->big(), mod);
+    mpz_pow_ui(n->big(), big(), exp);
     return n;
   }
 

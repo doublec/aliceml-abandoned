@@ -214,7 +214,7 @@ MKOP1(notb, notb, ~);
 #define MKOP2(op, bigop, smallop) \
 DEFINE2(IntInf_ ## op) { \
   TEST_INTINF(i, x0);             \
-  TEST_INTINF(j, x0);             \
+  TEST_INTINF(j, x1);             \
   if (i==INVALID_INT) {           \
     if (j==INVALID_INT) {         \
       DECLARE_INTINF(a, x0);      \
@@ -331,9 +331,20 @@ DEFINE2(IntInf_opmul) {
 } END
 
 DEFINE2(IntInf_pow) {
+  TEST_INTINF(base, x0);
+  DECLARE_INT(exp, x1);
+  if (exp==0)
+    RETURN_INT(1);
+  if (exp<0) {
+    if (base==0)
+      RAISE(PrimitiveTable::General_Div);
+    if (base==1 || base==~1) {
+      RETURN_INT(base);
+    }
+    RETURN_INT(0);
+  }
   DECLARE_INTINF_PROMOTE(a, x0);
-  DECLARE_INTINF_PROMOTE(b, x1);
-  RETURN_INTINF(a->pow(b));
+  RETURN_INTINF(a->pow(exp));
 } END
 
 // division operators
