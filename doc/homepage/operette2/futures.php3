@@ -1,6 +1,6 @@
 <?php include("macros.php3"); ?>
 
-<?php heading("Oz for Lightning - Futures", "futures") ?>
+<?php heading("Stockhausen Operette 1 - Futures", "futures") ?>
 
 
 
@@ -152,6 +152,14 @@
   <P>
     tests whether its argument is a failed future.
   </P>
+
+  <P class=note>
+    Note: In Operette 1, the operation <TT>isFuture</TT> does return
+    <TT>true</TT> for failed futures, due to limitations
+    of the Mozart virtual machine. Similarly, <TT>isFailed</TT> will always
+    deliver <TT>false</TT>.
+  </P>
+
 
 
 

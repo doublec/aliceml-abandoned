@@ -1,6 +1,6 @@
 <?php include("macros.php3"); ?>
 
-<?php heading("Oz for Lightning - SML Core Language Extensions",
+<?php heading("Stockhausen Operette 1 - Core Language Extensions",
 		"core <BR> language <BR> extensions") ?>
 
 
@@ -9,7 +9,7 @@
 
   <P>
     Besides <A href="modules.php3">extensions to the SML module system</A>,
-    Alice also extends the SML core language with several features:
+    Stockhausen also extends the SML core language with several features:
   </P>
 
   <UL>
@@ -22,7 +22,7 @@
   </UL>
 
   <P>
-    Other important features of Alice, like
+    Other important features of Stockhausen, like
     <A href="laziness.php3">lazy evaluation</A>,
     <A href="futures.php3">futures</A>, and 
     <A href="threads.php3">threads</A>, show up as
@@ -54,7 +54,6 @@
 
   <P>
     This relaxation is particularly interesting for distributed programming.
-    Structural datatypes correspond to atoms in Oz.
   </P>
 
 
@@ -94,10 +93,6 @@
     Note that - like exceptions - open datatypes cannot admit equality (since
     it is unknown whether there will be any constructors for it prohibiting
     that).
-  </P>
-
-  <P>
-    Constructors of open datatypes correspond to Oz names.
   </P>
 
   <P>
@@ -306,7 +301,7 @@
 
   <P>
     SML only allows function expressions on the right hand side of <TT>val</TT>
-    <TT>rec</TT>. Alice is a bit more permissive. Roughly, it allows any
+    <TT>rec</TT>. Stockhausen is a bit more permissive. Roughly, it allows any
     right hand side which is a syntactic value.
   </P>
 
