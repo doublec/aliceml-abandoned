@@ -16,7 +16,7 @@
  *)
 
 import structure UnsafeInspector from "UnsafeInspector"
-import signature INSPECTOR from "INSPECTOR-sig"
+import signature INSPECTOR       from "INSPECTOR-sig"
 
 structure Inspector :> INSPECTOR =
     struct
@@ -66,6 +66,8 @@ structure Inspector :> INSPECTOR =
 	  | PARENTHESES       of color
 	  | MISC              of color
 	  | TYPEDINDICATOR    of color
+	  | PROMISE           of color
+	  | PACKAGE           of color
 
 	open UnsafeInspector
     end
