@@ -37,8 +37,11 @@ word PrimitiveTable::Hole_Hole;
 word PrimitiveTable::Thread_Terminated;
 
 void PrimitiveTable::Init() {
-  valueTable    = HashTable::New(HashTable::BLOCK_KEY, 19)->ToWord();
-  functionTable = HashTable::New(HashTable::BLOCK_KEY, 19)->ToWord();
+  // The following values have been derived from the count of
+  // 158 functions, 186 values (see the fprintf below)
+  // with a fill ratio of ca. 2/3
+  valueTable    = HashTable::New(HashTable::BLOCK_KEY, 280)->ToWord();
+  functionTable = HashTable::New(HashTable::BLOCK_KEY, 240)->ToWord();
   RootSet::Add(valueTable);
   RootSet::Add(functionTable);
   RootSet::Add(PrimitiveTable::Future_Future);
@@ -70,6 +73,9 @@ void PrimitiveTable::Init() {
   RegisterUnsafe();
   RegisterVector();
   RegisterWord();
+  //  fprintf(stderr, "%d functions, %d values\n",
+  //	  HashTable::FromWordDirect(functionTable)->GetSize(),
+  //	  HashTable::FromWordDirect(valueTable)->GetSize());
 }
 
 void PrimitiveTable::Register(const char *name, word value) {
