@@ -31,17 +31,19 @@ functor MkArray(type 'a array
 		type 'a dst_array
 		type 'a vector
 		type 'a dst_vector
+		type 'a elem
 		val maxLen :   int
 		val length :   'a array -> int
-		val sub :      'a array * int -> 'a
-		val update :   'a array * int * 'a -> unit
+		val sub :      'a array * int -> 'a elem
+		val update :   'a array * int * 'a elem -> unit
 		val dlength :  'a dst_array -> int
-		val dupdate :  'a dst_array * int * 'a -> unit
+		val dupdate :  'a dst_array * int * 'a elem -> unit
 		val dextract : 'a dst_array * int * int -> 'a dst_vector
 		val vlength :  'a vector -> int
-		val vsub :     'a vector * int -> 'a) =
+		val vsub :     'a vector * int -> 'a elem) =
 struct
     structure Row = MkRow(type row   = array
+			  type elem  = elem
 			  val length = length
 			  val sub    = sub)
     open Row

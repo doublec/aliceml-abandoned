@@ -24,15 +24,17 @@ import functor MkSlice               from "MkSlice"
 import __primitive functor MkVector  from "MkVector"
 
 functor MkVectorSlice(type 'a vector
+		      type 'a elem
 		      val vlength :   'a vector -> int
-		      val vsub :      'a vector * int -> 'a
+		      val vsub :      'a vector * int -> 'a elem
 		      val vextract :  'a vector * int * int -> 'a vector
-		      val vtabulate : int * (int -> 'a) -> 'a vector
+		      val vtabulate : int * (int -> 'a elem) -> 'a vector
 		      val vconcat :   'a vector list -> 'a vector
-		      val vfromList : 'a list -> 'a vector) =
+		      val vfromList : 'a elem list -> 'a vector) =
 struct
     structure Slice = MkSlice(type row     = vector
 			      type vector  = vector
+			      type elem    = elem
 			      val rlength  = vlength
 			      val rsub     = vsub
 			      val rextract = vextract)
@@ -41,6 +43,7 @@ struct
 
     structure Vector = MkVector(type dst_vector = vector
 				type vector     = Slice.t
+				type elem       = elem
 				val maxLen      = 0
 				val length      = Slice.length
 				val sub         = Slice.sub

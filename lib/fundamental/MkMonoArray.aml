@@ -40,26 +40,25 @@ struct
     type array  = array
     type t      = array
 
-    __primitive val cast : 'a -> 'b = "Unsafe.cast"
-
     structure Array = MkArray(type 'a array   = array
 			      type dst_array  = array
 			      type 'a vector  = vector
 			      type dst_vector = vector
+			      type 'a elem    = elem
 			      val maxLen      = maxLen
-			      val length      = cast length
-			      val sub         = cast sub
-			      val update      = cast update
-			      val dlength     = cast length
-			      val dupdate     = cast update
-			      val dextract    = cast extract
-			      val vlength     = cast Vector.length
-			      val vsub        = cast Vector.sub)
+			      val length      = length
+			      val sub         = sub
+			      val update      = update
+			      val dlength     = length
+			      val dupdate     = update
+			      val dextract    = extract
+			      val vlength     = Vector.length
+			      val vsub        = Vector.sub)
     open Array
 
-    val array          = cast array
-    val tabulate       = cast tabulate
-    val fromList       = cast fromList
-    val toList         = cast toList
-    val fromVector     = cast fromVector
+    val array      = array
+    val tabulate   = tabulate
+    val fromList   = fromList
+    val toList     = toList
+    val fromVector = fromVector
 end

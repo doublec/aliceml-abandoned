@@ -24,8 +24,9 @@ import __primitive
        val op + and op -                           from "ToplevelValues"
 
 functor MkRow(type 'a row
+	      type 'a elem
 	      val length : 'a row -> int
-	      val sub :    'a row * int -> 'a) =
+	      val sub :    'a row * int -> 'a elem) =
 struct
     val length			= length
     val sub			= sub

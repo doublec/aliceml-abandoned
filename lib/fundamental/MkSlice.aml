@@ -28,8 +28,9 @@ import __primitive functor   MkRow                 from "MkRow"
 
 functor MkSlice(type 'a row
 		type 'a vector
+		type 'a elem
 		val rlength :  'a row -> int
-		val rsub :     'a row * int -> 'a
+		val rsub :     'a row * int -> 'a elem
 		val rextract : 'a row * int * int -> 'a vector) =
 struct
     type 'a slice		= 'a row * int * int

@@ -30,15 +30,14 @@ functor MkMonoVectorSlice(type elem
 :> MONO_VECTOR_SLICE where type elem   = elem
 		       and type vector = vector =
 struct
-    __primitive val cast : 'a -> 'b = "Unsafe.cast"
-
     structure VectorSlice = MkVectorSlice(type 'a vector = vector
-					  val vlength    = cast vlength
-					  val vsub       = cast vsub
-					  val vextract   = cast vextract
-					  val vtabulate  = cast vtabulate
-					  val vconcat    = cast vconcat
-					  val vfromList  = cast vfromList)
+					  type 'a elem   = elem
+					  val vlength    = vlength
+					  val vsub       = vsub
+					  val vextract   = vextract
+					  val vtabulate  = vtabulate
+					  val vconcat    = vconcat
+					  val vfromList  = vfromList)
     open VectorSlice
 
     type elem   = elem

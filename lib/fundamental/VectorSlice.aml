@@ -25,7 +25,8 @@ struct
     type v = vector
 
     structure VectorSlice = MkVectorSlice(
-	type vector = vector
+	type vector  = vector
+	type 'a elem = 'a
 	__primitive val vlength :   'a v -> int		= "Vector.length"
 	__primitive val vsub :	    'a v * int -> 'a	= "Vector.sub"
 	__primitive val vextract :  'a v * int * int -> 'a v = "Vector.toList"

@@ -27,16 +27,18 @@ import functor MkSlice                        from "MkSlice"
 functor MkArraySlice(type 'a array
 		     type 'a vector
 		     type 'a vector_slice
+		     type 'a elem
 		     val alength :   'a array -> int
-		     val asub :      'a array * int -> 'a
-		     val aupdate :   'a array * int * 'a -> unit
+		     val asub :      'a array * int -> 'a elem
+		     val aupdate :   'a array * int * 'a elem -> unit
 		     val aextract :  'a array * int * int -> 'a vector
-		     val vtabulate : int * (int -> 'a) -> 'a vector
+		     val vtabulate : int * (int -> 'a elem) -> 'a vector
 		     val vsllength : 'a vector_slice -> int
-		     val vslsub :    'a vector_slice * int -> 'a) =
+		     val vslsub :    'a vector_slice * int -> 'a elem) =
 struct
     structure Slice = MkSlice(type row     = array
 			      type vector  = vector
+			      type elem    = elem
 			      val rlength  = alength
 			      val rsub     = asub
 			      val rextract = aextract)
@@ -54,6 +56,7 @@ struct
 			      type array      = Slice.t
 			      type dst_vector = vector
 			      type vector     = vector_slice
+			      type elem       = elem
 			      val maxLen      = 0
 			      val length      = Slice.length
 			      val sub         = Slice.sub

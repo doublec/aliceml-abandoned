@@ -53,7 +53,7 @@ sig
 
     val app :		(elem -> unit) -> slice -> unit
     val appr :		(elem -> unit) -> slice -> unit			(**)
-    val map :		(elem -> 'a) -> slice -> vector
+    val map :		(elem -> elem) -> slice -> vector
     val foldl :		(elem * 'a -> 'a) -> 'a -> slice -> 'a
     val foldr :		(elem * 'a -> 'a) -> 'a -> slice -> 'a
     val all :		(elem -> bool) -> slice -> bool
@@ -62,7 +62,7 @@ sig
 
     val appi :		(int * elem -> unit) -> slice -> unit
     val appri :		(int * elem -> unit) -> slice -> unit		(**)
-    val mapi :		(int * elem -> 'a) -> slice -> vector
+    val mapi :		(int * elem -> elem) -> slice -> vector
     val foldli :	(int * elem * 'a -> 'a) -> 'a -> slice -> 'a
     val foldri :	(int * elem * 'a -> 'a) -> 'a -> slice -> 'a
     val alli :		(int * elem -> bool) -> slice -> bool		(**)

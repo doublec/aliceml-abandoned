@@ -35,18 +35,17 @@ functor MkMonoArraySlice(type elem
 		      and type array        = array
 		      and type vector_slice = vector_slice =
 struct
-    __primitive val cast : 'a -> 'b = "Unsafe.cast"
-
     structure ArraySlice = MkArraySlice(type 'a array        = array
 					type 'a vector       = vector
 					type 'a vector_slice = vector_slice
-					val alength          = cast alength
-					val asub             = cast asub
-					val aupdate          = cast aupdate
-					val aextract         = cast aextract
-					val vtabulate        = cast vtabulate
-					val vsllength        = cast vsllength
-					val vslsub           = cast vslsub)
+					type 'a elem         = elem
+					val alength          = alength
+					val asub             = asub
+					val aupdate          = aupdate
+					val aextract         = aextract
+					val vtabulate        = vtabulate
+					val vsllength        = vsllength
+					val vslsub           = vslsub)
     open ArraySlice
 
     type elem         = elem

@@ -34,16 +34,15 @@ struct
     type vector = vector
     type t      = vector
 
-    __primitive val cast : 'a -> 'b = "Unsafe.cast"
-
     structure Vector = MkVector(type 'a vector  = vector
 				type dst_vector = vector
+				type 'a elem    = elem
 				val maxLen      = maxLen
-				val length      = cast length
-				val sub         = cast sub
-				val tabulate    = cast tabulate
-				val fromList    = cast fromList
-				val toList      = cast toList
-				val concat      = cast concat)
+				val length      = length
+				val sub         = sub
+				val tabulate    = tabulate
+				val fromList    = fromList
+				val toList      = toList
+				val concat      = concat)
     open Vector
 end

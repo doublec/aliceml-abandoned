@@ -23,15 +23,17 @@ import __primitive functor MkRow         from "MkRow"
 
 functor MkVector(type 'a vector
 		 type 'a dst_vector
+		 type 'a elem
 		 val maxLen :   int
 		 val length :   'a vector -> int
-		 val sub :      'a vector * int -> 'a
-		 val toList :   'a vector -> 'a list
-		 val tabulate : int * (int -> 'a) -> 'a dst_vector
-		 val fromList : 'a list -> 'a dst_vector
+		 val sub :      'a vector * int -> 'a elem
+		 val toList :   'a vector -> 'a elem list
+		 val tabulate : int * (int -> 'a elem) -> 'a dst_vector
+		 val fromList : 'a elem list -> 'a dst_vector
 		 val concat :   'a vector list -> 'a dst_vector) =
 struct
     structure Row = MkRow(type row   = vector
+			  type elem  = elem
 			  val length = length
 			  val sub    = sub)
     open Row
