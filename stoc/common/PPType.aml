@@ -15,16 +15,11 @@ structure PPType :> PP_TYPE =
     fun uncurry(ref(APP(t1,t2)))= let val (t,ts) = uncurry t1 in (t,ts@[t2]) end
       | uncurry t		= (t,[])
 
-    fun makeVar(t as ref t') =
-	let
-	    val k = kindVar t
-	    val x = Stamp.new()
-	    val n = "'" ^ Stamp.toString x
-	    val c = (k, CLOSED, Path.PLAIN(x, Name.ExId n))
-	    val _ = t := CON c
-	in
-	    t'
-	end
+    fun parenPrec p (p',doc) =
+	if p > p' then
+	    paren doc
+	else
+	    doc
 
 
     (* Simple objects *)
@@ -36,6 +31,16 @@ structure PPType :> PP_TYPE =
       | ppPath(Path.DOT(p,l))	= ppPath p ^^ text "." ^^ ppLab l
 
     fun ppCon (k,_,p)		= ppPath p
+
+    fun varToString(isBound, n) =
+	let
+	    fun rep(0,c) = c
+	      | rep(n,c) = c ^ rep(n-1,c)
+
+	    val c = String.str(Char.chr(Char.ord #"a" + n mod 26))
+	in
+	    (if isBound then "'" else "'_") ^ rep(n div 26, c)
+	end
 
 
     (* Kinds *)
@@ -52,10 +57,7 @@ structure PPType :> PP_TYPE =
 	let
 	    val doc = ppKindPrec 1 k1 ^/^ text "->" ^/^ ppKindPrec 0 k2
 	in
-	    if p > 0 then
-		paren doc
-	    else
-		doc
+	    parenPrec p (0, doc)
 	end
 
 
@@ -69,214 +71,220 @@ structure PPType :> PP_TYPE =
      *	4 : constructed type (tyseq tycon)
      *)
 
-    fun ppType t = fbox(below(ppTypePrec 0 t))
+    fun ppType t =
+	let
+	    val trail = ref []
+	    val a     = ref 0
 
-    and ppTypePrec p (t as ref(REC t1 | MARK(REC t1))) =
+	    fun makeVar(isBound, t as ref t') =
+		let
+		    val k = kindVar t
+		    val x = Stamp.new()
+		    val n = varToString(isBound, !a before a := !a+1)
+		    val c = (k, CLOSED, Path.PLAIN(x, Name.ExId n))
+		    val _ = t := CON c
+		    val _ = if isBound then () else trail := (t,t')::(!trail)
+		in
+		    t'
+		end
+
+	    fun ppType t = fbox(below(ppTypePrec 0 t))
+
+	    and ppTypePrec p (t as ref(HOLE(k,n))) =
+		let
+		    val t'  = makeVar(false, t)
+		    val doc = ppTypePrec' p (!t)
+		in
+		    if k = STAR then
+			doc
+(*DEBUG*)
+^^ text("_" ^ Int.toString n)
+		    else
+			parenPrec p (0, doc ^/^ text ":" ^/^ ppKind k)
+
+		end
+
+	      | ppTypePrec p (t as ref(REC t1 | MARK(REC t1))) =
 (*DEBUG*)
 ((*print("[pp " ^ pr(!t) ^ "]");*)
-	if occurs(t,t1) then
-	    let
+		if occurs(t,t1) then
+		    let
 (*val _=print"recursive\n"
-*)		val t'  = makeVar t
-		val doc = (case t' of MARK _ => text "!MU" | _ => text "MU") ^/^
-			    abox(
-				hbox(
-				    ppType t ^/^
-				    text "."
-				) ^^
-				below(break ^^
-				    ppTypePrec' 1 t'
-				)
-			    )
-		val _   = t := t'
-	    in
-		if p > 1 then
-		    paren doc
+*)			val t'  = makeVar(true, t)
+			val doc = (case t' of MARK _ => text "!MU"
+					    | _      => text "MU") ^/^
+				  abox(
+					hbox(
+					    ppType t ^/^
+					    text "."
+					) ^^
+					below(break ^^
+					    ppTypePrec 1 t1
+					)
+				  )
+			val _   = t := t'
+		    in
+			parenPrec p (1, fbox(below(nest(doc))))
+		    end
 		else
-		    fbox(below(nest doc))
-	    end
-	else
 (*(print"not recursive\n";*)
-	    ppTypePrec p t1
+		    ppTypePrec p t1
 )
 
-      | ppTypePrec p (t as ref(APP _)) =
-       ( reduce t ;
+	      | ppTypePrec p (t as ref(APP _)) =
+	        ( reduce t ;
 (*print("[pp APP]");*)
-        ppTypePrec' p (!t) )
+		  if isApp t then ppTypePrec' p (!t)
+			     else ppTypePrec p t
+		)
 
-      | ppTypePrec  p (ref t') = ppTypePrec' p t'
+	      | ppTypePrec  p (ref t') = ppTypePrec' p t'
 (*(*DEBUG*)
-    | ppTypePrec p (t as ref t') =
+	      | ppTypePrec p (t as ref t') =
 let
 val _=print("[pp " ^ pr t' ^ "]")
 (*val _=TextIO.inputLine TextIO.stdIn*)
 in
-
 	if foldl1'(t', fn(t1,b) => b orelse occursIllegally(t,t1), false) then
-	    let
+		    let
 (*DEBUG*)
 val _=print"RECURSIVE!\n"
-		val a'  = makeVar t
-		val doc = text "MU" ^/^
-			    abox(
-				hbox(
-				    ppType t ^/^
-				    text "."
-				) ^^
-				below(break ^^
-				    ppTypePrec' 1 t'
-				)
-			    )
-		val _   = t := a'
-	    in
-		if p > 1 then
-		    paren doc
+			val a'  = makeVar(true, t)
+			val doc = text "MU" ^/^
+				    abox(
+					hbox(
+					    ppType t ^/^
+					    text "."
+					) ^^
+					below(break ^^
+					    ppTypePrec' 1 t'
+					)
+				    )
+			val _   = t := a'
+		    in
+			parenPrec p (1, fbox(below(nest(doc))))
+		    end
 		else
-		    fbox(below(nest doc))
-	    end
-	else
-	    ppTypePrec' p t'
+		    ppTypePrec' p t'
 end
 *)
 
-    and ppTypePrec' p (HOLE(k,n)) =
-	if k = STAR then
-	    text "'_?"
-	else
-	    let
-	        val doc = text "'_?" ^/^ text ":" ^/^ ppKind k
-	    in
-		if p > 0 then
-		    paren doc
+	    and ppTypePrec' p (LINK t) =
+		    ppTypePrec p t
+
+	      | ppTypePrec' p (MARK t') =
+		    text "!" ^^ ppTypePrec' p t'
+
+	      | ppTypePrec' p (ARR(t1,t2)) =
+		let
+		    val doc = ppTypePrec 3 t1 ^/^ text "->" ^/^ ppTypePrec 2 t2
+		in
+		    parenPrec p (2, doc)
+		end
+
+	      | ppTypePrec' p (TUP []) =
+		    text "unit"
+
+	      | ppTypePrec' p (TUP ts) =
+		let
+		    val doc = ppStarList (ppTypePrec 4) ts
+		in
+		    parenPrec p (3, fbox(below(nest doc)))
+		end
+
+	      | ppTypePrec' p (ROW r) =
+		    brace(fbox(below(ppRow r)))
+
+	      | ppTypePrec' p (SUM r) =
+		    paren(fbox(below(ppSum r)))
+
+	      | ppTypePrec' p (VAR(k,n)) =
+		if k = STAR then
+		    text "'?"
+(*DEBUG*)
+^^ text("[" ^ Int.toString n ^ "]")
 		else
-		    doc
-	    end
+		    paren (text "'?" ^/^ text ":" ^/^ ppKind k)
 
-      | ppTypePrec' p (LINK t) =
-	    ppTypePrec p t
+	      | ppTypePrec' p (CON c) =
+		    ppCon c
 
-      | ppTypePrec' p (MARK t') =
-	    text "!" ^^ ppTypePrec' p t'
+	      | ppTypePrec' p (ALL(a,t)) =
+		let
+		    val doc = text "ALL" ^/^ ppBinder(a,t)
+		in
+		    parenPrec p (1, fbox(below doc))
+		end
 
-      | ppTypePrec' p (ARR(t1,t2)) =
-	let
-	    val doc = ppTypePrec 3 t1 ^/^ text "->" ^/^ ppTypePrec 2 t2
-	in
-	    if p > 2 then
-		paren doc
-	    else
-		doc
-	end
+	      | ppTypePrec' p (EX(a,t)) =
+		let
+		    val doc = text "EX" ^/^ ppBinder(a,t)
+		in
+		    parenPrec p (1, fbox(below doc))
+		end
 
-      | ppTypePrec' p (TUP []) =
-	    text "unit"
+	      | ppTypePrec' p (LAM(a,t)) =
+		let
+		    val doc = text "FN" ^/^ ppBinder(a,t)
+		in
+		    parenPrec p (1, fbox(below doc))
+		end
 
-      | ppTypePrec' p (TUP ts) =
-	let
-	    val doc = ppStarList (ppTypePrec 4) ts
-	in
-	    if p > 3 then
-		paren doc
-	    else
-		fbox(below(nest doc))
-	end
+	      | ppTypePrec' p (t' as APP _) =
+		let
+		    val (t,ts) = uncurry(ref t')
+		in
+		    fbox(nest(ppSeqPrec ppTypePrec 4 ts ^/^ ppTypePrec 5 t))
+		end
 
-      | ppTypePrec' p (ROW r) =
-	    brace(fbox(below(ppRow r)))
+	      | ppTypePrec' p (HOLE _) =
+		    Crash.crash "PPType.ppType: bypassed HOLE"
 
-      | ppTypePrec' p (SUM r) =
-	    paren(fbox(below(ppSum r)))
-
-      | ppTypePrec' p (VAR(k,n)) =
-	if k = STAR then
-	    text "'?"
-	else
-	    paren (text "'?" ^/^ text ":" ^/^ ppKind k)
-
-      | ppTypePrec' p (CON c) =
-	    ppCon c
-
-      | ppTypePrec' p (ALL(a,t)) =
-	let
-	    val doc = text "ALL" ^/^ ppBinder(a,t)
-	in
-	    if p > 1 then
-		paren doc
-	    else
-		fbox(below doc)
-	end
-
-      | ppTypePrec' p (EX(a,t)) =
-	let
-	    val doc = text "EX" ^/^ ppBinder(a,t)
-	in
-	    if p > 1 then
-		paren doc
-	    else
-		fbox(below doc)
-	end
-
-      | ppTypePrec' p (LAM(a,t)) =
-	let
-	    val doc = text "FN" ^/^ ppBinder(a,t)
-	in
-	    if p > 1 then
-		paren doc
-	    else
-		fbox(below doc)
-	end
-
-      | ppTypePrec' p (t' as APP _) =
-	let
-	    val (t,ts) = uncurry(ref t')
-	in
-	    fbox(nest(ppSeqPrec ppTypePrec 4 ts ^/^ ppTypePrec 5 t))
-	end
-
-(*DEBUG
-      | ppTypePrec' p (REC t) = Crash.crash "PPType.ppType: bypassed REC"
-*)      | ppTypePrec' p (REC t) = ppTypePrec p t
+	      | ppTypePrec' p (REC _) =
+		    Crash.crash"PPType.ppType: bypassed REC"
 
 
-    and ppRow NIL		= empty
-      | ppRow RHO		= text "..."
-      | ppRow(FLD(l,ts,NIL))	= ppField(l,ts)
-      | ppRow(FLD(l,ts,r))	= ppField(l,ts) ^^ text "," ^/^ ppSum r
+	    and ppRow NIL		= empty
+	      | ppRow RHO		= text "..."
+	      | ppRow(FLD(l,ts,NIL))	= ppField(l,ts)
+	      | ppRow(FLD(l,ts,r))	= ppField(l,ts) ^^ text "," ^/^ ppRow r
 
-    and ppSum NIL		= empty
-      | ppSum RHO		= text "..."
-      | ppSum(FLD(l,ts,NIL))	= ppField(l,ts)
-      | ppSum(FLD(l,ts,r))	= ppField(l,ts) ^/^ text "|" ^/^ ppSum r
+	    and ppSum NIL		= empty
+	      | ppSum RHO		= text "..."
+	      | ppSum(FLD(l,ts,NIL))	= ppField(l,ts)
+	      | ppSum(FLD(l,ts,r))	= ppField(l,ts) ^/^ text "|" ^/^ ppSum r
 
-    and ppField(l,[]) = ppLab l
-      | ppField(l,ts) =
-	    abox(
-		hbox(
-		    ppLab l ^/^
-		    text ":"
-		) ^^
-		below(break ^^
-		    ppCommaList ppType ts
-		)
-	    )
+	    and ppField(l,[]) = ppLab l
+	      | ppField(l,ts) =
+		    abox(
+			hbox(
+			    ppLab l ^/^
+			    text ":"
+			) ^^
+			below(break ^^
+			    ppCommaList ppType ts
+			)
+		    )
 
-    and ppBinder(a,t) =
-	let
-	    val a' = makeVar a
-	in
-	    abox(
-		hbox(
-		    ppType a ^/^
+	    and ppBinder(a,t) =
+		let
+		    val a' = makeVar(true, a)
+		in
+		    abox(
+			hbox(
+			    ppType a ^/^
 (*DEBUG*)
 (*text"(" ^^ ppTypePrec' 0 a' ^^ text")" ^/^*)
-		    text "."
-		) ^^
-		below(break ^^
-		    ppType t
-		)
-	    )
-	    before a := a'
+			    text "."
+			) ^^
+			below(break ^^
+			    ppType t
+			)
+		    )
+		    before a := a'
+		end
+	in
+	    ppType t before List.app op:= (!trail)
 	end
 
   end

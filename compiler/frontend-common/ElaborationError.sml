@@ -1,6 +1,14 @@
 structure ElaborationError :> ELABORATION_ERROR =
   struct
 
+    open PrettyPrint
+    open PPMisc
+
+    infixr ^^ ^/^
+
+    val par = paragraph
+
+
     type typ    = Type.t
     type kind   = Type.kind
     type longid = AbstractGrammar.longid
@@ -45,67 +53,146 @@ structure ElaborationError :> ELABORATION_ERROR =
 	| DatSpecUnify		of unify_error
 
 
-    fun toString(VecExpUnify ue) =
-	"inconsistent types in vector expression"
-      | toString(AppExpFunUnify	ue) =
-	"applied value is not a function"
-      | toString(AppExpArgUnify	ue) =
-	"argument type mismatch"
-      | toString(AndExpUnify ue) =
-	"operand has not type bool"
-      | toString(OrExpUnify ue) =
-	"operand has not type bool"
-      | toString(IfExpCondUnify	ue) =
-	"expression has not type bool"
-      | toString(IfExpBranchUnify ue) =
-	"inconsistent types in branches of if expression"
-      | toString(WhileExpCondUnify ue) =
-	"expression has not type bool"
-      | toString(RaiseExpUnify ue) =
-	"operand has not type exn"
-      | toString(HandleExpUnify	ue) =
-	"inconsistent types in handle epxression"
-      | toString(AnnExpUnify ue) =
-	"expression does not match annotated type"
-      | toString(MatchPatUnify ue) =
-	"inconsistent types in match patterns"
-      | toString(MatchExpUnify ue) =
-	"inconsistent types in match branches"
-      | toString(ConPatFewArgs y) =
-	"too few arguments in constructor pattern"
-      | toString(ConPatManyArgs	y) =
-	"too many arguments in constructor pattern"
-      | toString(ConPatUnify ue) =
-	"constructor argument type mismatch"
-      | toString(VecPatUnify ue) =
-	"inconsistent types in vector pattern"
-      | toString(AsPatUnify ue) =
-	"inconsistent types in as pattern"
-      | toString(AltPatUnify ue) =
-	"inconsistent types in pattern alternatives"
-      | toString(GuardPatUnify ue) =
-	"expression has not type bool"
-      | toString(AnnPatUnify ue) =
-	"pattern does not match annotated type"
-      | toString(StarTypKind k) =
-	"missing arguments in type expression"
-      | toString(AppTypFunKind k) =
-	"type expression is not a type function"
-      | toString(AppTypArgKind(k1,k2)) =
-	"missing arguments in type expression"
-      | toString(RefTypKind k) =
-	"missing arguments in type expression"
-      | toString(ValDecUnify ue) =
-	"expression type does not match pattern"
-      | toString(TypDecUnify ue) =
-	"missing arguments in type expression"
-      | toString(DatDecUnify ue) =
-	"missing arguments in type expression"
-      | toString(TypSpecUnify ue) =
-	"missing arguments in type expression"
-      | toString(DatSpecUnify ue) =
-	"missing arguments in type expression"
+    (* Pretty printing *)
 
+    fun ppLab'(AbstractGrammar.Lab(_,l)) = l
+
+    fun ppId'(AbstractGrammar.Id(_,_, AbstractGrammar.ExId x)) = x
+      | ppId'(AbstractGrammar.Id(_,_, AbstractGrammar.InId))   = "?"
+
+    fun ppLongid'(AbstractGrammar.ShortId(_,x))  = ppId' x
+      | ppLongid'(AbstractGrammar.LongId(_,y,l)) = ppLongid' y ^ "." ^ ppLab' l
+
+    fun ppLongid y = "`" ^ ppLongid' y ^ "'"
+
+
+    fun ppUnify2(d1, d2, (t1,t2,t3,t4)) =
+	vbox(
+	    d1 ^^
+	    nest(break ^^ below(PPType.ppType t1)) ^/^
+	    d2 ^^
+	    nest(break ^^ below(PPType.ppType t2))
+	)
+
+    fun ppUnify4(d1, d2, (t1,t2,t3,t4)) =
+	vbox(
+	    d1 ^^
+	    nest(break ^^ below(PPType.ppType t1)) ^/^
+	    d2 ^^
+	    nest(break ^^ below(PPType.ppType t2)) ^/^
+	    par["Reason: could","not","unify"] ^^
+	    nest(break ^^ below(PPType.ppType t3)) ^/^
+	    par["and"] ^^
+	    nest(break ^^ below(PPType.ppType t4))
+	)
+
+    fun pp(VecExpUnify ue) =
+	ppUnify2(
+	  par["inconsistent","types","in","vector","expression:"],
+	  par["does","not","agree","with","previous","element","type"], ue)
+      | pp(AppExpFunUnify ue) =
+	ppUnify2(
+	  par["applied","value","is","not","a","function:"],
+	  par["does","not","match","function","type"], ue)
+      | pp(AppExpArgUnify ue) =
+	ppUnify4(
+	  par["argument","type","mismatch:"],
+	  par["does","not","match","argument","type"], ue)
+      | pp(AndExpUnify ue) =
+	ppUnify2(
+	  par["operand","of","`andalso'","is","not","a","boolean:"],
+	  par["does","not","match","type"], ue)
+      | pp(OrExpUnify ue) =
+	ppUnify2(
+	  par["operand","of","`orelse'","is","not","a","boolean:"],
+	  par["does","not","match","type"], ue)
+      | pp(IfExpCondUnify ue) =
+	ppUnify2(
+	  par["operand","of","`if'","is","not","a","boolean:"],
+	  par["does","not","match","type"], ue)
+      | pp(IfExpBranchUnify ue) =
+	ppUnify4(
+	  par["inconsistent","types","in","branches","of","`if':"],
+	  par["does","not","agree","with","type"], ue)
+      | pp(WhileExpCondUnify ue) =
+	ppUnify2(
+	  par["operand","of","`while'","is","not","a","boolean:"],
+	  par["does","not","match","type"], ue)
+      | pp(RaiseExpUnify ue) =
+	ppUnify2(
+	  par["operand","of","`raise'","is","not","an","exception:"],
+	  par["does","not","match","type"], ue)
+      | pp(HandleExpUnify ue) =
+	ppUnify4(
+	  par["inconsistent","types","in","branches","of","`handle':"],
+	  par["does","not","agree","with","type"], ue)
+      | pp(AnnExpUnify ue) =
+	ppUnify4(
+	  par["expression","does","not","match","annotation:"],
+	  par["does","not","match","type"], ue)
+      | pp(MatchPatUnify ue) =
+	ppUnify4(
+	  par["inconsistent","types","in","`case'","patterns:"],
+	  par["does","not","agree","with","previous","type"], ue)
+      | pp(MatchExpUnify ue) =
+	ppUnify4(
+	  par["inconsistent","types","in","branches","of","`case':"],
+	  par["does","not","agree","with","previous","type"], ue)
+      | pp(ConPatFewArgs y) =
+	  par["missing","argument","to","constructor",ppLongid y,"in","pattern"]
+      | pp(ConPatManyArgs y) =
+	  par["surplus","argument","to","constructor",ppLongid y,"in","pattern"]
+      | pp(ConPatUnify ue) =
+	ppUnify4(
+	  par["ill-typed","constructor","argument:"],
+	  par["does","not","match","argument","type"], ue)
+      | pp(VecPatUnify ue) =
+	ppUnify2(
+	  par["inconsistent","types","in","vector","pattern:"],
+	  par["does","not","agree","with","previous","element","type"], ue)
+      | pp(AsPatUnify ue) =
+	ppUnify4(
+	  par["inconsistent","types","in","`as'","pattern:"],
+	  par["does","not","agree","with","type"], ue)
+      | pp(AltPatUnify ue) =
+	ppUnify4(
+	  par["inconsistent","types","in","pattern","alternatives:"],
+	  par["does","not","agree","with","previous","type"], ue)
+      | pp(GuardPatUnify ue) =
+	ppUnify2(
+	  par["pattern","guard","is","not","a","boolean:"],
+	  par["does","not","match","type"], ue)
+      | pp(AnnPatUnify ue) =
+	ppUnify4(
+	  par["pattern","does","not","match","annotation:"],
+	  par["does","not","match","type"], ue)
+      | pp(StarTypKind k) =
+	  par["missing","arguments","in","type","expression"]
+      | pp(AppTypFunKind k) =
+	  par["type","expression","is","not","a","type","function"]
+      | pp(AppTypArgKind(k1,k2)) =
+	  par["missing","arguments","in","type","expression"]
+      | pp(RefTypKind k) =
+	  par["missing","arguments","in","type","expression"]
+      | pp(ValDecUnify ue) =
+	ppUnify4(
+	  par["expression","does","not","match","pattern","type:"],
+	  par["does","not","match","type"], ue)
+      | pp(TypDecUnify ue) =
+	  par["missing","arguments","in","type","expression",
+	      "in","type","declaration"]
+      | pp(DatDecUnify ue) =
+	  par["missing","arguments","in","type","expression",
+	      "in","datatype","declaration"]
+      | pp(TypSpecUnify ue) =
+	  par["missing","arguments","in","type","expression",
+	      "in","type","specification"]
+      | pp(DatSpecUnify ue) =
+	  par["missing","arguments","in","type","expression",
+	      "in","datatype","specification"]
+
+
+    fun toString err = PrettyPrint.toString(pp err, 75)
 
     fun error(i, err) = Error.error(i, toString err)
 

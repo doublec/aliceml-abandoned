@@ -53,6 +53,7 @@ structure ElaborationPhase :> ELABORATION_PHASE =
   (* Check value restriction *)
 
     fun isValue( I.LitExp _
+	       | I.PrimExp _
 	       | I.VarExp _
 	       | I.ConExp _
 	       | I.SelExp _
@@ -136,15 +137,15 @@ handle Lookup _ => ()
 		    handle Lookup _ =>
 			let val t = Type.unknown Type.STAR in
 (*DEBUG*)
-print "'_? (* not found *)\n";
+print "'_a (* not found *)\n";
 			    insertVal(E, stamp, (id,t)) ; t
 			end
-(*(*DEBUG*)
-val x= case Name.toString(I.name id) of "?" => "?" | x => x
+(*DEBUG*)
+(*val x= case Name.toString(I.name id) of "?" => "?" | x => x
 val _=print("-- instantiated " ^ x ^ "(" ^ Stamp.toString stamp ^ ") : ")
 val _=(PrettyPrint.output(TextIO.stdOut, PPType.ppType t, 600)
-;print "\n")
-*)
+;print(" (* current level = " ^ Int.toString(!TypePrivate.level) ^ " *)\n"))
+"*)
 	in
 	    ( t, O.Id(typInfo(i,t), stamp, name) )
 	end
@@ -221,9 +222,9 @@ val _=(PrettyPrint.output(TextIO.stdOut, PPType.ppType t, 600)
       | elabExp(E, I.SelExp(i, lab)) =
 	let
 	    val (l,lab') = elabLab(E, lab)
-	    val  r       = Type.extendRow(l, [Type.unknown Type.STAR],
-					     Type.unknownRow())
-	    val  t       = Type.inRow r
+	    val  t1      = Type.unknown Type.STAR
+	    val  r       = Type.extendRow(l, [t1], Type.unknownRow())
+	    val  t       = Type.inArrow(Type.inRow r, t1)
 	in
 	    ( t, O.SelExp(typInfo(i,t), lab') )
 	end
@@ -256,27 +257,13 @@ val _=(PrettyPrint.output(TextIO.stdOut, PPType.ppType t, 600)
 	    val  t11       = Type.unknown Type.STAR
 	    val  t12       = Type.unknown Type.STAR
 	    val  t1'       = Type.inArrow(t11,t12)
-	    val  _         = Type.unify(t1',t1)
+	    val  _         = Type.unify(t1,t1')
 			     handle Type.Unify(t3,t4) =>
 				error(I.infoExp exp1,
-				      E.AppExpFunUnify(t1', t1, t3, t4))
+				      E.AppExpFunUnify(t1, t1', t3, t4))
 	    val  _         = Type.unify(t11,t2)
 			     handle Type.Unify(t3,t4) =>
-((*DEBUG*)
-print "function domain:  ";
-PrettyPrint.output(TextIO.stdOut, PPType.ppType t11, 600);
-print "\n";
-print "argument type:    ";
-PrettyPrint.output(TextIO.stdOut, PPType.ppType t2, 600);
-print "\n";
-print "mismatch between: ";
-PrettyPrint.output(TextIO.stdOut, PPType.ppType t3, 600);
-print "\n";
-print "and:              ";
-PrettyPrint.output(TextIO.stdOut, PPType.ppType t4, 600);
-print "\n";
 				error(i, E.AppExpArgUnify(t11, t2, t3, t4))
-)
 	in
 	    ( t12, O.AppExp(typInfo(i,t12), exp1', exp2') )
 	end
@@ -637,7 +624,7 @@ handle Lookup _ => ()
 		    handle Lookup _ =>
 			let val t = Type.unknown k in
 (*DEBUG*)
-print"'_? (* not found *)\n";
+print"'_a (* not found *)\n";
 			    insertTyp(E, stamp, (id,t)) ; t
 			end
 	in
@@ -886,10 +873,20 @@ print"'_? (* not found *)\n";
 
       | elabTypRep(E, id', t0, buildTyp, buildKind, I.SumTyp(i, cons)) =
 	let
+	    val O.Id(_,stamp,name) = id'
+	    val  p        = Path.PLAIN(stamp, name)
+	    val  t        = Type.inCon (buildKind Type.STAR, Type.CLOSED, p)
+	    val (_,cons') = elabConReps(E, t0, cons)
+	in
+	    ( t, O.SumTyp(typInfo(i,t), cons') )
+	end
+	(* Note: structural datatypes would work this way:
+	let
 	    val (t,cons') = elabConReps(E, t0, cons)
 	in
 	    ( buildTyp t, O.SumTyp(typInfo(i,t), cons') )
 	end
+	*)
 
       | elabTypRep(E, id', t0, buildTyp, buildKind, typ) =
 	    elabTyp(E, typ)
@@ -1283,6 +1280,8 @@ val x= case Name.toString(I.name id) of "?" => "?" ^ Stamp.toString(I.stamp id) 
 val _= print("datatype " ^ x ^ " = ")
 val _=PrettyPrint.output(TextIO.stdOut, PPType.ppType t1, 600)
 val _=print "\n"
+	    val  _        = insertTyp(E, O.stamp id', (id,t1))
+			    handle Collision _ => ()	(* due to rec *)
 	    val  _        = appVals (fn(x,(id,t)) =>
 (*DEBUG*)
 ((let val x= case Name.toString(I.name id) of "?" => "?" ^ Stamp.toString x | x => x
@@ -1325,6 +1324,7 @@ print " (* constructor *)\n");
 	    val E'     = splitScope E
 infix andthen
 fun a andthen b = b
+	    (* ASSUME that only types and values are declared in a rec *)
 	    val _      = appTyps (fn(x,entry) => insertTyp(E, x, entry)) E'
 	    val _      = appVals (fn(x,(id,t)) =>
 (*DEBUG*)
@@ -1340,11 +1340,23 @@ print "\n") andthen
 
       | elabDec(E, I.TypvarDec(i, id, decs)) =
 	let
+	    val  _      = Type.enterLevel()
+	    val  _      = insertScope E
 	    val (a,id') = elabVarId(E, Type.STAR, id)
 	    val  decs'  = elabDecs(E, decs)
-	(*UNFINISHED: check that a does not appear in top scope of E*)
+	    val  E'     = splitScope E
+	    val  _      = Type.exitLevel()
+	    (* ASSUME that only values are declared under type abstraction *)
+infix andthen
+fun a andthen b = b
+	    val _       = appVals (fn(x,(id,t)) =>
+(*DEBUG*)
+(let val x= case Name.toString(I.name id) of "?" => "?" ^ Stamp.toString x | x => x
+in print("val " ^ x ^ " : ") end;
+PrettyPrint.output(TextIO.stdOut, PPType.ppType(Type.close t), 600);
+print "\n") andthen
+					insertVal(E, x, (id, Type.close t))) E'
 	in
-	    unfinished i "elabDec" "scoped type variables";
 	    O.TypvarDec(nonInfo(i), id', decs')
 	end
 
@@ -1359,7 +1371,15 @@ print "\n") andthen
 
 
     and elabDecs(E, decs) = List.map (fn dec => elabDec(E, dec)) decs
-
+(*(*DEBUG*)
+	let
+	    val _     = Type.enterLevel()
+	    val decs' = List.map (fn dec => elabDec(E, dec)) decs
+	    val _     = Type.exitLevel()
+	in
+	    decs'
+	end
+*)
 
   (* Recursive declarations *)
 
@@ -1406,7 +1426,9 @@ print "\n") andthen
 
     and elabRHSRecDec(E, r as ref((t1,pat')::tpats'), I.ValDec(i, pat, exp)) =
 	let
+	    val  _        = insertScope E
 	    val (t2,exp') = elabExp(E, exp)
+	    val  _        = deleteScope E
 	    val  _        = r := tpats'
 	    val  _        = Type.unify(t1,t2)
 			    handle Type.Unify(t3,t4) =>
@@ -1478,6 +1500,8 @@ print "\n") andthen
 			    handle Type.Unify(t3,t4) =>
 				error(I.infoTyp typ,
 				      E.DatSpecUnify(t1, t2, t3, t4))
+	    val  _        = insertTyp(E, O.stamp id', (id,t1))
+			    handle Collision _ => ()	(* due to rec *)
 	    val  _        = appVals (fn(x,(id,t)) =>
 					 insertVal(E, x, (id, Type.close t))
 				    ) E'

@@ -68,7 +68,10 @@ fun pr(ARR(t1,t2))	= "ARR"
     val level = ref 1
 
     fun enterLevel() = level := !level+1
+(*DEBUG*)
+before print(">> enter type level " ^ Int.toString(!level) ^ "\n")
     fun exitLevel()  = level := !level-1
+before print("<< exit type level " ^ Int.toString(!level+1) ^ "\n")
 
 
     (* Follow a path of links (performing path compression on the fly) *)
@@ -95,6 +98,7 @@ fun pr(ARR(t1,t2))	= "ARR"
       | kind'(CON(k,_,_))	= k
       | kind'(LAM(a,t))		= ARROW(kind a, kind t)
       | kind'(APP(t1,t2))	= rangeKind(kind t1)
+      | kind'(MARK t')		= kind' t'
       | kind' _			= STAR
 
     val kindVar			= kind
@@ -391,6 +395,7 @@ before print"MARK updated (by dup)\n"
       | instance' t			= t
 
     fun instance(t as ref(ALL _| EX _))	= instance'(clone t)
+      | instance(ref(LINK t))		= instance t
       | instance t			= t
 
 (*(*DEBUG*)
@@ -413,6 +418,7 @@ end)
       | skolem' t			= t
 
     fun skolem(t as ref(ALL _| EX _))	= skolem'(clone t)
+      | skolem(ref(LINK t))		= skolem t
       | skolem t			= t
 
 
@@ -471,10 +477,20 @@ end)
 	end
 
 
-    (* Unification *)
+    (* Shifting of hole variable levels *)
 
-    exception Unify of typ * typ
+    fun shiftLevel(t,n) =
+	if n = !level then () else
+	let
+	    fun shift(t as ref(HOLE(k,n'))) =
+		if n' < n then () else t := HOLE(k,n)
+	      | shift t = ()
+	in
+	    app shift t
+	end
 
+
+    (* Occur check (2 versions: strict and weaker one used by unify) *)
 
     fun occurs(t1,t2) =
 	let
@@ -523,6 +539,11 @@ before print"<occursIllegally\n"*)
 	end
 
 
+    (* Unification *)
+
+    exception Unify of typ * typ
+
+
     fun unify(t1,t2) =
 	let
 	    val t1 as ref t1' = follow t1
@@ -569,7 +590,7 @@ else
 		 if n1 < n2 then t2 := LINK t1
 			    else t1 := LINK t2
 
-	       | (HOLE(k1,_), _) =>
+	       | (HOLE(k1,n), _) =>
 (*DEBUG*)
 if k1 <> kind' t2' then
 Crash.crash "Type.unify: kind mismatch"
@@ -577,9 +598,9 @@ else
 		 if occursIllegally(t1,t2) then
 		     raise Unify(t1,t2)
 		 else
-		     t1 := LINK t2
+		     ( shiftLevel(t2,n) ; t1 := LINK t2 )
 
-	       | (_, HOLE(k2,_)) =>
+	       | (_, HOLE(k2,n)) =>
 (*DEBUG*)
 if k2 <> kind' t1' then
 Crash.crash "Type.unify: kind mismatch"
@@ -587,7 +608,7 @@ else
 		 if occursIllegally(t2,t1) then
 		     raise Unify(t1,t2)
 		 else
-		     t2 := LINK t1
+		     ( shiftLevel(t1,n) ; t2 := LINK t1 )
 
 	       | (REC(t3), REC(t4)) =>
 		 recurse unify (t3,t4)
