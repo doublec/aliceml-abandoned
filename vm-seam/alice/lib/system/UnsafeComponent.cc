@@ -3,7 +3,7 @@
 //   Leif Kornstaedt <kornstae@ps.uni-sb.de>
 //
 // Copyright:
-//   Leif Kornstaedt, 2002
+//   Leif Kornstaedt, 2002-2003
 //
 // Last Change:
 //   $Date$ by $Author$
@@ -195,28 +195,28 @@ word UnsafeComponent() {
   record->Init("NotFound", NotFoundConstructor);
   record->Init("'Mismatch", MismatchConstructor);
   INIT_STRUCTURE(record, "UnsafeComponent", "Mismatch",
-		 UnsafeComponent_Mismatch, 3, true);
+		 UnsafeComponent_Mismatch, 3);
   record->Init("'Eval", EvalConstructor);
   INIT_STRUCTURE(record, "UnsafeComponent", "Eval",
-		 UnsafeComponent_Eval, 1, true);
+		 UnsafeComponent_Eval, 1);
   record->Init("'Failure", FailureConstructor);
   INIT_STRUCTURE(record, "UnsafeComponent", "Failure",
-		 UnsafeComponent_Failure, 2, true);
+		 UnsafeComponent_Failure, 2);
   record->Init("'Native", NativeConstructor);
   INIT_STRUCTURE(record, "UnsafeComponent", "Native",
-		 UnsafeComponent_Native, 1, true);
+		 UnsafeComponent_Native, 1);
   record->Init("extension", String::New("stc")->ToWord());
   INIT_STRUCTURE(record, "UnsafeComponent", "getInitialTable",
-		 UnsafeComponent_getInitialTable, 0, true);
+		 UnsafeComponent_getInitialTable, 0);
   INIT_STRUCTURE(record, "UnsafeComponent", "save",
-		 UnsafeComponent_save, 2, true);
+		 UnsafeComponent_save, 2);
   INIT_STRUCTURE(record, "UnsafeComponent", "load",
-		 UnsafeComponent_load, 1, true);
+		 UnsafeComponent_load, 1);
   INIT_STRUCTURE(record, "UnsafeComponent", "linkNative",
-		 UnsafeComponent_linkNative, 1, true);
+		 UnsafeComponent_linkNative, 1);
   INIT_STRUCTURE(record, "UnsafeComponent", "pack_",
-		 UnsafeComponent_pack_, 1, true);
+		 UnsafeComponent_pack_, 1);
   INIT_STRUCTURE(record, "UnsafeComponent", "unpack_",
-		 UnsafeComponent_unpack_, 1, true);
+		 UnsafeComponent_unpack_, 1);
   RETURN_STRUCTURE("UnsafeComponent$", record);
 }
