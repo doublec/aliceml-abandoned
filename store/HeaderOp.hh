@@ -43,6 +43,14 @@ public:
     AssertStore(p != INVALID_POINTER);
     return (BlockLabel) ((((u_int *) p)[0] & TAG_MASK) >> TAG_SHIFT);
   }
+  static u_int DecodeImmutableFlag(Block *p) {
+    AssertStore(p != INVALID_POINTER);
+    return (u_int) ((((u_int *) p)[0] & IMMUTABLE_MASK) >> IMMUTABLE_SHIFT);
+  }
+  static void EncodeImmutableFlag(Block *p, u_int f) {
+    AssertStore(p != INVALID_POINTER);
+    ((u_int *) p)[0] = ((((u_int *) p)[0] & ~IMMUTABLE_MASK) | (f << IMMUTABLE_SHIFT));
+  }
   // Size Creation and Access
   static void EncodeSize(Block *p, u_int s) {
     AssertStore(p != INVALID_POINTER);

@@ -83,13 +83,15 @@ static void CreateHeader(std::FILE *f, unsigned int header_size_width) {
   unsigned long SIZESHIFT_SHIFT  = (HEADER_GEN_GC_MARK_WIDTH);
   unsigned long SIZE_SHIFT       = (SIZESHIFT_SHIFT + HEADER_SIZESHIFT_WIDTH);
   unsigned long TAG_SHIFT        = (SIZE_SHIFT + header_size_width);
-  unsigned long CHILDISH_SHIFT   = (TAG_SHIFT + HEADER_TAG_WIDTH);
+  unsigned long IMMUTABLE_SHIFT  = (TAG_SHIFT + HEADER_TAG_WIDTH);
+  unsigned long CHILDISH_SHIFT   = (IMMUTABLE_SHIFT + HEADER_IMMUTABLE_WIDTH);
   unsigned long MAX_TAGSIZE      = ((1 << HEADER_TAG_WIDTH) - 1);
   unsigned long MAX_BLOCKSIZE    = ((1 << HEADER_SIZE_WIDTH) - 1); // to be determined
   unsigned long GEN_GC_MASK      = ComputeMask(GEN_GC_SHIFT, HEADER_GEN_GC_MARK_WIDTH);
   unsigned long SIZESHIFT_MASK   = ComputeMask(SIZESHIFT_SHIFT, HEADER_SIZESHIFT_WIDTH);
   unsigned long SIZE_MASK        = ComputeMask(SIZE_SHIFT, header_size_width);
   unsigned long TAG_MASK         = ComputeMask(TAG_SHIFT, HEADER_TAG_WIDTH);
+  unsigned long IMMUTABLE_MASK   = ComputeMask(IMMUTABLE_SHIFT, HEADER_IMMUTABLE_WIDTH);
   unsigned long CHILDISH_MASK    = ComputeMask(CHILDISH_SHIFT, HEADER_CHILDISH_WIDTH);
   unsigned long BIGSIZE_MIN      = (1 << SIZESHIFT_MASK);
   unsigned long MAX_BIGBLOCKSIZE = (MAX_BLOCKSIZE << SIZESHIFT_MASK);
@@ -100,6 +102,7 @@ static void CreateHeader(std::FILE *f, unsigned int header_size_width) {
   std::fprintf(f, "  SIZESHIFT_SHIFT  = 0x%lx,\n", SIZESHIFT_SHIFT);
   std::fprintf(f, "  SIZE_SHIFT       = 0x%lx,\n", SIZE_SHIFT);
   std::fprintf(f, "  TAG_SHIFT        = 0x%lx,\n", TAG_SHIFT);
+  std::fprintf(f, "  IMMUTABLE_SHIFT  = 0x%lx,\n", IMMUTABLE_SHIFT);
   std::fprintf(f, "  CHILDISH_SHIFT   = 0x%lx,\n", CHILDISH_SHIFT);
 
   std::fprintf(f, "  MAX_TAGSIZE      = 0x%lx,\n", MAX_TAGSIZE);
@@ -111,6 +114,7 @@ static void CreateHeader(std::FILE *f, unsigned int header_size_width) {
   std::fprintf(f, "  SIZESHIFT_MASK   = 0x%lx,\n", SIZESHIFT_MASK);
   std::fprintf(f, "  SIZE_MASK        = 0x%lx,\n", SIZE_MASK);
   std::fprintf(f, "  TAG_MASK         = 0x%lx,\n", TAG_MASK);
+  std::fprintf(f, "  IMMUTABLE_MASK   = 0x%lx,\n", IMMUTABLE_MASK);
   std::fprintf(f, "  CHILDISH_MASK    = 0x%lx,\n", CHILDISH_MASK);
 
   std::fprintf(f, "} HeaderWord;\n\n");
@@ -173,6 +177,7 @@ int main(int argc, char **argv) {
 			    HEADER_SIZESHIFT_WIDTH +
 			    HEADER_SIZE_WIDTH +
 			    HEADER_TAG_WIDTH +
+			    HEADER_IMMUTABLE_WIDTH +
 			    HEADER_CHILDISH_WIDTH)) {
     std::fprintf(stderr, "%s: illegal HEADER parameter selection. Field-Sum must match full width\n",
 	    argv[0]);
