@@ -1,0 +1,24 @@
+(*
+ * Authors:
+ *   Bernadette Blum <blum@ps.uni-sb.de>
+ *   Marvin Schiller <schiller@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Bernadette Blum, 2002
+ *   Marvin Schiller, 2002
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
+import structure MainDictionary from "MainDictionary"
+import structure RelManDictionary from "RelManDictionary"
+import signature DICTIONARIES from "DICTIONARIES-sig"
+
+structure Dictionaries :> DICTIONARIES =
+struct
+    val dict = MainDictionary.empty
+    val reldict = RelManDictionary.empty
+end
