@@ -1,0 +1,155 @@
+(*
+ * Authors:
+ *   Bernadette Blum <blum@ps.uni-sb.de>
+ *   Marvin Schiller <schiller@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Bernadette Blum, 2002
+ *   Marvin Schiller, 2002
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
+import structure Inf from "x-alice:/lib/rtt/Inf"
+import structure UnsafeValue from "x-alice:/lib/system/UnsafeValue"
+import structure Reflect from "x-alice:/lib/system/Reflect"
+import structure Types from "Types"
+import structure Helper from "Helper"
+import structure MainDictionary from "MainDictionary"
+import structure RelManDictionary from "RelManDictionary"
+import structure Dictionaries from "Dictionaries"
+import structure Settings from "Settings"
+import structure NewNode from "NewNode"
+import signature NEW_NODE_INF from "NEW_NODE_INF-sig"
+
+local 
+    open Types Helper Dictionaries NewNode 
+in
+
+structure NewNodeInf :> NEW_NODE_INF =
+struct
+    
+    (* newNodeInf *)
+    fun newNodeInf (v,t) = let val va = UnsafeValue.cast v: Reflect.value
+			       val i = MainDictionary.
+				   getHighestIndexAssigned(dict) +1
+			       val _ = RelManDictionary.update(reldict,(i,nil))
+			       val _ = Settings.relnumber := 0
+			       val node = createGraphInf (va,t,Empty,i,0)
+			   in (MainDictionary.insertI(dict,(node)) ; node)
+			   end 
+
+    (* createGraphInf *)
+    and createGraphInf (va,t,p,i,d) = 
+	if !(Settings.relmode) 
+	    then let val ind = if p = Empty then i else getAncIndex p
+		     val relman = case RelManDictionary.lookup(reldict,ind)
+			 of SOME x => x
+		          | NONE => []
+		     val str = "Ref"^Int.toString(!(Settings.relnumber))
+		     val f = if !(Settings.tokenmode)
+				 then fn x   
+				     => if getDesc(x) = INTERPUNCT  
+					    then false  
+					else UnsafeValue.same
+					    (getValue(getDesc(x)),va)   
+			     else fn x   
+				 => if getDesc(x) = INTERPUNCT  
+					then false  
+				    else getValue(getDesc(x)) = va 
+		 in 
+		     (case List.find f relman of   
+			  NONE 
+			  => let val desc = createIValue(va,t,NO_ACTIONS)   
+				 val node = createRelNode (desc,Empty,p,i,d,
+							   str^" as ",
+							   relman,setGroup)
+				 val c = createUsualGraphInf (va,t,node,0,d) 
+				 val actrelman = case 
+				     RelManDictionary.lookup(reldict,
+							     ind)
+				     of SOME x => x
+				      | NONE => []
+			     in ( case c of     
+				 Simple(_) => c
+			       | Empty => c    
+			       | _ => ( setContent (node,c)   
+				       ; RelManDictionary.update(reldict,
+								 (ind,
+		       			        List.append([node],actrelman)))
+				       ; node ) )
+			     end     
+			| SOME n => let val rep = ( case n of 
+						   RelNode(rr) => #rep(rr)
+						 | _ => "_")
+					val str = iterTake rep	
+					val m = incrCounter n 
+					val node = 
+					    createRelRefNode (INTERPUNCT,p,i,d,
+							      str,m,setGroup)
+					val actrelman = case 
+					    RelManDictionary.lookup(reldict,
+								    ind)
+					    of SOME x => x
+					     | NONE => []
+					val part = List.partition 
+					                    (fn x => x = n)
+							    actrelman
+					val restlist = #2(part)
+				    in (RelManDictionary.update(reldict,
+								(ind,
+	       					 List.append([m],restlist)))
+					; node)
+				    end)
+		 end
+	else createUsualGraphInf (va,t,p,i,d)
+	    
+    (* createUsualGraphInf *)
+    and createUsualGraphInf (va,t,p,i,d) = 
+	(case Inf.inspect t of 
+	 Inf.Sig(s) => let val ilist = Inf.items(s)
+		       in treatSig (va,t,p,i,d,ilist)
+		       end 
+       | Inf.Arrow(path,i1,i2) 
+	 => if d > !(Settings.max_depth)
+		then createLimit (createIValue(va,t,NO_ACTIONS),DEPTH_LIMIT,
+				  p,i,d,setGroup)
+	    else createSimple (createIValue(va,t,NO_ACTIONS),p,i,d,"fn",
+			       DEFAULT,setGroup)
+       | Inf.Exist(path,i1,i2) => createUsualGraphInf (va,i2,p,i,d)
+       | Inf.Sing(m) => let val ti = #2(Inf.asMod(m))
+			  in createUsualGraphInf (va,ti,p,i,d)
+			  end
+       | _ => if d > !(Settings.max_depth)
+		  then createLimit (createIValue(va,t,NO_ACTIONS),DEPTH_LIMIT,
+				    p,i,d,setGroup)  
+	      else createSimple (INTERPUNCT,p,i,d,"_",DEFAULT,setGroup) )
+
+    (* treatSig *)
+    and treatSig (va,t,p,i,d,ilist) = 
+	if d > !(Settings.max_depth)
+	    then createLimit (createIValue(va,t,NO_ACTIONS),DEPTH_LIMIT,p,i,d,
+			      setGroup)
+	else let val uppercont = createContainer(createIValue(va,t,NO_ACTIONS),
+						 p,i,d,Array.array(3,Empty),
+						 ~1,~1,~1,setGroup)
+		 val s_begin = createSimple(INTERPUNCT,uppercont,0,d,"struct",
+					    DEFAULT,setGroup)
+		 val container = createContainer(INTERPUNCT,uppercont,1,d,
+						Array.array(List.length(ilist),
+							    Empty),
+						 ~1,~1,~1,setGroup)
+		 val s_end = createSimple(INTERPUNCT,uppercont,2,d,"end",
+					  DEFAULT,setGroup)
+	     in ( Array.update(getKids(uppercont),0,s_begin)
+		 ; Array.update(getKids(uppercont),1,container)
+		 ; Array.update(getKids(uppercont),2,s_end)
+		 ; uppercont )
+	     end 
+							    
+end (* struct *)
+
+end
