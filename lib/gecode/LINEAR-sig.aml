@@ -14,11 +14,12 @@
  * First attempt for gecode-FD linear wrapper
  *)
 
-import structure FD from "FD"
-import structure Space from "Space"
-
 signature LINEAR =
-    sig
+sig
+	type space
+	type intvar
+	type boolvar
+	type conlevel
 	infix  7  `*
 	infix  6  `+ `-
 	infix  5  `#
@@ -40,7 +41,7 @@ signature LINEAR =
 	type domain = domain_element list
 
 	datatype term =
-	    FD of FD.intvar
+	    FD of intvar
 	  | `  of int
 	  | `+ of term * term
 	  | `- of term * term
@@ -54,14 +55,14 @@ signature LINEAR =
 	  | `>=  of term * term
 	  | `>   of term * term
 	 
-	val fdterm : Space.space * domain -> term
-	val fdtermVec : Space.space * int * domain -> term vector
+	val fdterm : space * domain -> term
+	val fdtermVec : space * int * domain -> term vector
 	
-	val post : Space.space * rel * FD.conlevel -> unit
+	val post : space * rel * conlevel -> unit
 
 
 	datatype b_term = 
-	  BV of FD.boolvar
+	  BV of boolvar
 	 | BC of bool
 	 | HOLDS of rel
 	 | `== of b_term * b_term
@@ -72,9 +73,9 @@ signature LINEAR =
 	 | XOR of b_term * b_term
 	 | `| of b_term * b_term
 
-	val boolterm : Space.space -> b_term
-	val booltermVec : Space.space * int -> b_term vector
+	val boolterm : space -> b_term
+	val booltermVec : space * int -> b_term vector
 
-	val postTrue : Space.space * b_term -> unit
+	val postTrue : space * b_term -> unit
 
     end

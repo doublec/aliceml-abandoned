@@ -15,11 +15,21 @@
  *)
 
 import structure FD     from "FD"
+import structure Space  from "Space"
 import signature LINEAR from "LINEAR-sig"
 (*import structure Print     from "x-alice:/lib/system/Print" *)
 
-structure Linear :> LINEAR =
+structure Linear :> LINEAR 	where type space = Space.space
+							where type intvar = FD.intvar
+							where type boolvar = FD.boolvar
+							where type conlevel = FD.conlevel =
     struct
+
+	type space = Space.space
+	type intvar = FD.intvar
+	type boolvar = FD.boolvar
+	type conlevel = FD.conlevel
+
 
 	infix  7  `*
 	infix  6  `+ `-
@@ -34,7 +44,7 @@ structure Linear :> LINEAR =
 	type domain = domain_element list
 
 	datatype term =
-	    FD of FD.intvar
+	    FD of intvar
 	  | `  of int
 	  | `+ of term * term
 	  | `- of term * term
@@ -47,7 +57,7 @@ structure Linear :> LINEAR =
 	  | `<>  of term * term
 	  | `>=  of term * term
 	  | `>   of term * term
-	(*  | `<-> of rel * FD.boolvar *)
+	(*  | `<-> of rel * boolvar *)
 
 (*Bool stuff*)
 (*Somebody help me with priorities please!*)
@@ -59,7 +69,7 @@ structure Linear :> LINEAR =
 	infix  3  XOR
 
 	datatype b_term = 
-	  BV of FD.boolvar
+	  BV of boolvar
 	 | BC of bool
 	 | HOLDS of rel
 	 | `-> of b_term * b_term
