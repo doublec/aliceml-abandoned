@@ -28,6 +28,12 @@ static u_int StringToHexValue(char *s) {
   return val;
 }
 
+#if defined(STORE_DEBUG)
+void AssertOutline(const char *file, int line, const char *message) {
+  std::fprintf(stderr, "%s: line %d: %s\n", file, line, message);
+}
+#endif
+
 int main(void) {
   u_int memLimits[STORE_GENERATION_NUM];
   Block *p;
@@ -46,12 +52,13 @@ int main(void) {
   p->InitArg(1, 667);
   //printf("%d\n", Store::WordToInt(p->GetArg(1)));
   std::printf("Leave\n");
+
   p->InitArg(1, Stack::New(2)->ToWord());
   //  p->InitArg(2, Store::AllocBlock((BlockLabel) 0, 1024)->ToWord());
   //  p->InitArg(3, Store::AllocBlock((BlockLabel) 0, 1024)->ToWord());
 
   root = p->ToWord();
-#if defined(DEBUG_CHECK)
+#if defined(STORE_DEBUG)
   Store::MemStat();
   Store::ForceGCGen(0);
   std::printf("GCing gen 0...\n");
@@ -71,7 +78,7 @@ int main(void) {
     s->SlowPush(Store::IntToWord(i));
   }
 
-#if defined(DEBUG_CHECK)
+#if defined(STORE_DEBUG)
   Store::MemStat();
   std::printf("GCing gen 0,1...\n");
   Store::ForceGCGen(1);
@@ -90,7 +97,7 @@ int main(void) {
     std::printf("Popped: %d\n", v);
   }
 
-#if defined(DEBUG_CHECK)
+#if defined(STORE_DEBUG)
   Store::ForceGCGen(0);
   std::printf("GCing gen 0...\n");
   root = Store::DoGC(root);
