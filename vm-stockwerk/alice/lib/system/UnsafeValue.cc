@@ -11,6 +11,7 @@
 //
 
 #include "generic/Tuple.hh"
+#include "generic/ConcreteCode.hh"
 #include "alice/Authoring.hh"
 
 DEFINE1(UnsafeValue_cast) {
@@ -63,14 +64,6 @@ DEFINE3(UnsafeValue_projConstructed) {
   RETURN(conVal->Sel(i));
 } END
 
-DEFINE1(UnsafeValue_conName) {
-  DECLARE_CONSTRUCTOR(constructor, x0);
-  String *name = constructor->GetName();
-  TagVal *exId = TagVal::New(Types::ExId, 1);
-  exId->Init(0, name->ToWord());
-  RETURN(exId->ToWord());
-} END
-
 DEFINE2(UnsafeValue_projPoly) {
   DECLARE_RECORD(record, x0);
   DECLARE_TAGVAL(tagVal, x1);
@@ -88,8 +81,83 @@ DEFINE2(UnsafeValue_projPoly) {
   }
 } END
 
+DEFINE1(UnsafeValue_prod) {
+  DECLARE_VECTOR(labelValueVec, x0);
+  u_int length = labelValueVec->GetLength();
+  if (length == 0) RETURN_UNIT;
+  Tuple *tuple = Tuple::New(length);
+  for (u_int i = length; i--; ) {
+    Tuple *labelValuePair = Tuple::FromWord(labelValueVec->Sub(i));
+    if (labelValuePair == INVALID_POINTER) REQUEST(labelValueVec->Sub(i));
+    tuple->Init(i, labelValuePair->Sel(1));
+  }
+  RETURN(tuple->ToWord());
+} END
+
+DEFINE1(UnsafeValue_tuple) {
+  DECLARE_VECTOR(values, x0);
+  u_int length = values->GetLength();
+  if (length == 0) RETURN_UNIT;
+  Tuple *tuple = Tuple::New(length);
+  for (u_int i = length; i--; )
+    tuple->Init(i, values->Sub(i));
+  RETURN(tuple->ToWord());
+} END
+
+DEFINE3(UnsafeValue_tagged) {
+  x0 = x0; // ignored
+  DECLARE_INT(tag, x1);
+  DECLARE_VECTOR(labelValueVec, x2);
+  u_int length = labelValueVec->GetLength();
+  if (length == 0) RETURN_INT(tag);
+  TagVal *tagVal = TagVal::New(tag, length);
+  for (u_int i = length; i--; ) {
+    Tuple *labelValuePair = Tuple::FromWord(labelValueVec->Sub(i));
+    if (labelValuePair == INVALID_POINTER) REQUEST(labelValueVec->Sub(i));
+    tagVal->Init(i, labelValuePair->Sel(1));
+  }
+  RETURN(tagVal->ToWord());
+} END
+
+DEFINE3(UnsafeValue_taggedTuple) {
+  x0 = x0; // ignored
+  DECLARE_INT(tag, x1);
+  DECLARE_VECTOR(values, x2);
+  u_int length = values->GetLength();
+  if (length == 0) RETURN_INT(tag);
+  TagVal *tagVal = TagVal::New(tag, length);
+  for (u_int i = length; i--; )
+    tagVal->Init(i, values->Sub(i));
+  RETURN(tagVal->ToWord());
+} END
+
+DEFINE2(UnsafeValue_closure) {
+  DECLARE_TAGVAL(abstractCode, x0);
+  DECLARE_VECTOR(vector, x1);
+  u_int nglobals = vector->GetLength();
+  word wConcreteCode =
+    AliceLanguageLayer::concreteCodeConstructor(abstractCode);
+  Closure *closure = Closure::New(wConcreteCode, nglobals);
+  for (u_int i = nglobals; i--; )
+    closure->Init(i, vector->Sub(i));
+  RETURN(closure->ToWord());
+} END
+
+DEFINE1(UnsafeValue_prim) {
+  DECLARE_STRING(name, x0);
+  RETURN(PrimitiveTable::LookupValue(static_cast<Chunk *>(name)));
+} END
+
+DEFINE1(UnsafeValue_conName) {
+  DECLARE_CONSTRUCTOR(constructor, x0);
+  String *name = constructor->GetName();
+  TagVal *exId = TagVal::New(Types::ExId, 1);
+  exId->Init(0, name->ToWord());
+  RETURN(exId->ToWord());
+} END
+
 word UnsafeValue() {
-  Record *record = Record::New(12);
+  Record *record = Record::New(18);
   INIT_STRUCTURE(record, "UnsafeValue", "cast",
 		 UnsafeValue_cast, 1, true);
   INIT_STRUCTURE(record, "UnsafeValue", "same",
@@ -110,9 +178,21 @@ word UnsafeValue() {
 		 UnsafeValue_projConstructed, 3, true);
   INIT_STRUCTURE(record, "UnsafeValue", "projConstructedTuple",
 		 UnsafeValue_projConstructed, 3, true);
-  INIT_STRUCTURE(record, "UnsafeValue", "conName",
-		 UnsafeValue_conName, 1, true);
   INIT_STRUCTURE(record, "UnsafeValue", "projPoly",
 		 UnsafeValue_projPoly, 2, true);
+  INIT_STRUCTURE(record, "UnsafeValue", "prod",
+		 UnsafeValue_prod, 1, true);
+  INIT_STRUCTURE(record, "UnsafeValue", "tuple",
+		 UnsafeValue_tuple, 1, true);
+  INIT_STRUCTURE(record, "UnsafeValue", "tagged",
+		 UnsafeValue_tagged, 3, true);
+  INIT_STRUCTURE(record, "UnsafeValue", "taggedTuple",
+		 UnsafeValue_taggedTuple, 3, true);
+  INIT_STRUCTURE(record, "UnsafeValue", "closure",
+		 UnsafeValue_closure, 2, true);
+  INIT_STRUCTURE(record, "UnsafeValue", "prim",
+		 UnsafeValue_prim, 1, true);
+  INIT_STRUCTURE(record, "UnsafeValue", "conName",
+		 UnsafeValue_conName, 1, true);
   RETURN_STRUCTURE("UnsafeValue$", record);
 }
