@@ -1,0 +1,22 @@
+import structure Instructions from "Instructions"
+
+structure Ant =
+  struct
+  
+  type id = int
+
+  datatype direction =  E | SE | SW | W | NW | NE
+
+  datatype color = Red | Black
+
+  fun otherColor Red   = Black
+    | otherColor Black = Red
+
+  type ant = {id : id,
+              color : color,
+              state : Instructions.state,
+              resting : int,
+              direction : direction,
+              has_food : bool}
+
+  end

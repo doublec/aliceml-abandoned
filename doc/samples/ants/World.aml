@@ -1,0 +1,69 @@
+import structure Ant from "Ant"
+
+structure World =
+  struct
+
+  type cell = {rocky : bool,
+               ant : Ant.ant option,
+               food : int,
+               redMarkers : bool vector,
+               blackMarkers : bool vector,
+               redHill : bool,
+               blackHill : bool}
+  val emptyCell = {rocky = false,
+                   ant = NONE,
+                   food = 0,
+                   redMarkers = #[],
+                   blackMarkers = #[],
+                   redHill = false,
+                   blackHill = false}
+
+  (* world = x_size * cell array *)
+  type world = int * cell array
+
+  (* Managing the world *)
+  fun newWorld(x_size, y_size) = Array.array(x_size*y_size,emptyCell)
+                                             
+  fun getCellAt((xs, cells):world, (x,y)) =
+      Array.sub(cells, xs*x+y)
+  fun setCellAt((xs, cells):world, (x,y), cell) =
+      Array.update(cells, xs*x+y, cell)
+  fun existsCell((_, cells):world, f) =
+      Array.exists f cells
+  fun findCell((_, cells):world, f) =
+      Array.find f cells
+
+  (* Cartography *)
+
+
+  (* Ant manipulation in the world*)
+  fun someAntIsAt(world, pos) = #ant (getCellAt(world, pos)) <> NONE
+  fun antAt(world, pos) = valOf (#ant (getCellAt(world, pos)))
+  fun setAntAt(world, pos, a : Ant.ant) =
+      setCellAt(world, pos,
+                {(getCellAt(world, pos)) where ant=SOME a})
+  fun clearAntAt(world, pos, a : Ant.ant) =
+      setCellAt(world, pos,
+                {(getCellAt(world, pos)) where ant=NONE})
+
+  fun antIsAlive(world, id) = existsCell(world,
+                                         fn c => case #ant c of
+                                                     NONE   => false
+                                                   | SOME a => #id a = id)
+  fun findAnt(world, id) = valOf (findCell(world,
+                                           fn c => case #ant c of
+                                                       NONE   => false
+                                                     | SOME a => #id a = id))
+  val killAntAt = clearAntAt
+
+  (* Food manipulation in the world *)
+  fun foodAt(world, pos) = #food (getCellAt(world, pos))
+  fun setFoodAt(world, pos, f) = 
+      setCellAt(world, pos,
+                {(getCellAt(world, pos)) where food=f})
+  fun anthillAt(world, pos, Ant.Red) =
+      #redHill (getCellAt(world, pos))
+    | anthillAt(world, pos, Ant.Black) =
+      #blackHill (getCellAt(world, pos))
+
+  end

@@ -5,8 +5,7 @@ structure Instructions =
 
   type marker = int
 
-  datatype dir =
-           E | SE | SW | W | NW | NE
+  datatype sense_dir = Here | Ahead | LeftAhead | RightAhead
 
   datatype condition =
            Friend
@@ -23,7 +22,7 @@ structure Instructions =
   datatype leftorright = LEFT | RIGHT
 
   datatype 'a instruction =
-           Sense of dir * state * state * condition * 'a
+           Sense of sense_dir * state * state * condition * 'a
          | Mark of marker * state * 'a
          | Unmark of marker * state * 'a
          | PickUp of state * state * 'a
