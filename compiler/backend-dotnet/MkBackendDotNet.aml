@@ -1,3 +1,4 @@
+
 (*
  * Author:
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
@@ -24,7 +25,7 @@ import structure CodeGenPhase   from "CodeGenPhase"
 
 functor MkBackendDotNet(structure Switches: SWITCHES): PHASE =
     let
-	fun sign (_, exportSign) = exportSign
+	fun inf (_, exportInf) = exportInf
 
 	fun save program filename =
 	    let
@@ -52,7 +53,7 @@ functor MkBackendDotNet(structure Switches: SWITCHES): PHASE =
 					   CodeGenPhase.translate () x
 				   in
 				       Target.FOREIGN {save = save program,
-						       sign = sign program}
+						       inf = inf program}
 				   end
 			   end
 		       structure Switches = Switches

@@ -7,7 +7,6 @@ Group
 
 is
 
-    ../../lib/system/signature.cm
     ../../lib/utility/sources.cm
     ../../lib/rtt/name.cm
     ../../lib/rtt/type.cm
