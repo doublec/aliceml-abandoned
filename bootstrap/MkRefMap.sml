@@ -13,5 +13,5 @@
 functor MkRefMap(structure Stamp : STAMP
 		 type t  val stamp : t -> Stamp.t) : SIMPLE_IMP_MAP =
 	MkHashImpMap(type t = t ref
-		     val equals = op=
+		     val equal = op=
 		     fun hash(ref x) = Stamp.hash(stamp x))
