@@ -27,12 +27,8 @@ structure Debugger :> DEBUGGER =
 	type environment = (Type.t * (string * value * Type.t) list) list
 	type eventstream
 
-	datatype 'a args = 
-	    OneArg of 'a
-	  | TupArg of 'a vector
-
 	datatype step_point_type =
-	    Application of value * Type.t * value args
+	    Application of value * Type.t * value vector
 	  | Conditional of value * Type.t
 	  | Handler     of exn
 	  | Raise       of exn
