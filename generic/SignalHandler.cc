@@ -228,6 +228,7 @@ static BOOL CALLBACK MyConsoleCtrlHandler(DWORD signal) {
     if (static_cast<DWORD>(sigHandlers[i].signal) == signal &&
 	sigHandlers[i].handlers != Store::IntToWord(0)) {
       sigHandlers[i].pending++;
+      StatusWord::SetStatus(SignalHandler::SignalStatus());
       return TRUE;
     }
   return FALSE;
@@ -237,6 +238,7 @@ static void MySignalHandler(int signal) {
   for (u_int i = 0; sigHandlers[i].signal != SIGLAST; i++)
     if (sigHandlers[i].signal == signal) {
       sigHandlers[i].pending++;
+      StatusWord::SetStatus(SignalHandler::SignalStatus());
       return;
     }
 }
