@@ -1,0 +1,18 @@
+WHAT DO WE NEED TYPES FOR DURING COMPILATION?
+
+
+- Translation of constructors
+
+- Translation of module language:
+  * signature coercions
+
+- Translation of type classes:
+  * dictionary passing
+  * signature coercions
+
+- Representation analysis:
+  * overloaded literals
+  * statically detect constructor arity mismatches
+  * optimize tags
+  * optimize partial record patterns
+  * boxing/unboxing ?
