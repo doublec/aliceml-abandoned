@@ -24,6 +24,7 @@
 #pragma implementation "generic/StackFrame.hh"
 #pragma implementation "generic/Backtrace.hh"
 #pragma implementation "generic/Pickle.hh"
+#pragma implementation "generic/Double.hh"
 #endif
 
 #include "generic/FinalizationSet.hh"
@@ -39,3 +40,4 @@
 #include "generic/StackFrame.hh"
 #include "generic/Backtrace.hh"
 #include "generic/Pickle.hh"
+#include "generic/Double.hh"

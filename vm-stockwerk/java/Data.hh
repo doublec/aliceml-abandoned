@@ -22,6 +22,7 @@
 #include "generic/Closure.hh"
 #include "generic/Transients.hh"
 #include "generic/Worker.hh"
+#include "generic/Double.hh"
 
 typedef u_char u_int8;
 typedef short s_int16; //--** ensure that this is always 16-bit

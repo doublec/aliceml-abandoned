@@ -35,7 +35,7 @@
 #define DECLARE_CONVAL(conVal, x) DECLARE_BLOCKTYPE(ConVal, conVal, x)
 #define DECLARE_CONSTRUCTOR(constructor, x) \
   DECLARE_BLOCKTYPE(Constructor, constructor, x)
-#define DECLARE_REAL(real, x) DECLARE_BLOCKTYPE(Real, real, x)
+#define DECLARE_REAL(real, x) DECLARE_DOUBLE(real, x)
 #define DECLARE_RECORD(record, x) DECLARE_BLOCKTYPE(Record, record, x)
 #define DECLARE_TAGVAL(tagVal, x) DECLARE_BLOCKTYPE(TagVal, tagVal, x)
 #define DECLARE_THREAD(thread, x) DECLARE_BLOCKTYPE(Thread, thread, x)

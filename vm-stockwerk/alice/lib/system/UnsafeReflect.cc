@@ -21,7 +21,7 @@ DEFINE1(UnsafeReflect_cast) {
 DEFINE1(UnsafeReflect_realToVector) {
   DECLARE_REAL(r, x0);
   Vector *vector = Vector::New(sizeof(double));
-  u_char *c = r->GetBigEndianRepresentation();
+  u_char *c = r->GetNetworkRepresentation();
   for (u_int i = sizeof(double); i--; )
     vector->Init(i, Store::IntToWord(c[i]));
   RETURN(vector->ToWord());

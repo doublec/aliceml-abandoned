@@ -22,6 +22,7 @@
 #include <cstring>
 #include "generic/UniqueString.hh"
 #include "generic/ConcreteRepresentation.hh"
+#include "generic/Double.hh"
 
 class Transform;
 
@@ -203,45 +204,7 @@ public:
   }
 };
 
-class DllExport Real: private Chunk {
-public:
-  using Chunk::ToWord;
-
-  static Real *New(double value) {
-    Chunk *chunk = Store::AllocChunk(sizeof(double));
-    char *to = chunk->GetBase(), *from = reinterpret_cast<char *>(&value);
-#if DOUBLE_LITTLE_ENDIAN
-    for (u_int i = sizeof(double); i--; *to++ = from[i]);
-#else
-    std::memcpy(to, from, sizeof(double));
-#endif
-    return static_cast<Real *>(chunk);
-  }
-  static Real *FromWord(word x) {
-    Chunk *chunk = Store::WordToChunk(x);
-    Assert(chunk == INVALID_POINTER || chunk->GetSize() == sizeof(double));
-    return static_cast<Real *>(chunk);
-  }
-  static Real *FromWordDirect(word x) {
-    Chunk *chunk = Store::DirectWordToChunk(x);
-    Assert(chunk->GetSize() == sizeof(double));
-    return static_cast<Real *>(chunk);
-  }
-
-  double GetValue() {
-    double result;
-    char *to = reinterpret_cast<char *>(&result), *from = GetBase();
-#if DOUBLE_LITTLE_ENDIAN
-    for (u_int i = sizeof(double); i--; *to++ = from[i]);
-#else
-    std::memcpy(to, from, sizeof(double));
-#endif
-    return result;
-  }
-  u_char *GetBigEndianRepresentation() {
-    return reinterpret_cast<u_char *>(GetBase());
-  }
-};
+#define Real Double
 
 class DllExport TagVal: private Block {
 public:
