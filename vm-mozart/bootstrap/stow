@@ -19,6 +19,6 @@ fi
 
 OZ_LOAD=prefix=x-alice\\:/=$STOCKHOME/:$OZ_LOAD
 
-export OZHOME PATH OZ_LOAD
+export STOCKHOME PATH OZ_LOAD
 
 exec ozengine x-alice:/stow.ozf "$@"
