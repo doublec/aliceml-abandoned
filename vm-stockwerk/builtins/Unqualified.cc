@@ -12,11 +12,10 @@
 //   $Revision$
 //
 
+#include "scheduler/Interpreter.hh"
 #include "builtins/Authoring.hh"
 
-/*--** currently broken
-static Interpreter::result Compare(TaskStack *taskStack,
-				   word x0, word x1, word &out) {
+static Interpreter::Result Compare(TaskStack *taskStack, word x0, word x1) {
   Block *a = Store::WordToBlock(x0);
   Block *b = Store::WordToBlock(x1);
   if (a == INVALID_POINTER) { // a is Transient or int
@@ -33,46 +32,51 @@ static Interpreter::result Compare(TaskStack *taskStack,
   }
   // from here, both a and b are blocks
   BlockLabel label = a->GetLabel();
-  if (label == AliceLabel::ToBlockLabel(AliceLabel::Array) ||
-      label == AliceLabel::ToBlockLabel(AliceLabel::ArrayZero) ||
-      label == AliceLabel::ToBlockLabel(AliceLabel::Builtin) ||
-      label == AliceLabel::ToBlockLabel(AliceLabel::Constructor) ||
-      label == AliceLabel::ToBlockLabel(AliceLabel::Cell)) {
-    RETURN_BOOL(a == b);
-  } else if (label == b->GetLabel()) {
-    int size = a->GetSize();
-    if (b->GetSize() != size)
-      RETURN_BOOL(false);
-    for (int i = 1; i <= size; i++) {
-      if (Compare(taskStack,
-		  a->GetArg(i), b->GetArg(i), out) == Primitive::CONTINUE) {
-	if (!Store::WordToInt(out)) {
-	  RETURN_BOOL(false);
+  switch (label) {
+  case Alice::ConVal:
+  case Alice::Real:
+  case Alice::String:
+  case Alice::Tuple:
+  case Alice::Vector:
+  case Alice::VectorZero:
+  case Alice::WideString:
+    {
+      u_int size = a->GetSize();
+      if (b->GetSize() != size)
+	RETURN_BOOL(false);
+      for (u_int i = 1; i <= size; i++) {
+	Interpreter::Result result =
+	  Compare(taskStack, a->GetArg(i), b->GetArg(i));
+	if (result.code == Interpreter::Result::CONTINUE) {
+	  bool b = taskStack->GetInt(0);
+	  taskStack->PopFrame(1);
+	  if (!b) RETURN_BOOL(false);
+	} else {
+	  return result;
 	}
-      } else {
-	return Primitive::REQUEST;
       }
     }
     RETURN_BOOL(true);
+  default:
+    if (label == b->GetLabel()) {
+      RETURN_BOOL(a == b);
+    }
   }
   RETURN_BOOL(false);
 }
 
 DEFINE2(opeq) {
-  return Compare(taskStack, x0, x1, out);
-}
+  return Compare(taskStack, x0, x1);
+} END
 
 DEFINE2(opnoteq) {
-  if (Compare(taskStack, x0, x1, out) == Primitive::CONTINUE) {
-    out = Store::IntToWord(!Store::WordToInt(out));
-    return Primitive::CONTINUE;
-  } else {
-    return Primitive::REQUEST;
-  }
-}
+  Interpreter::Result result = Compare(taskStack, x0, x1);
+  if (result.code == Interpreter::Result::CONTINUE)
+    taskStack->PutInt(0, !taskStack->GetInt(0));
+  return result;
+} END
 
 void Primitive::RegisterUnqualified() {
-  Register("=", opeq);
-  Register("<>", opnoteq);
+  Register("=", opeq, 2);
+  Register("<>", opnoteq, 2);
 }
-*/
