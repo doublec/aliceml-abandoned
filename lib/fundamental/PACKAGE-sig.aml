@@ -10,6 +10,8 @@
  *   $Revision$
  *)
 
+import structure __pervasive from "Pervasive"
+
 signature PACKAGE =
 sig
     type package
@@ -20,8 +22,9 @@ sig
     exception Mismatch of mismatch
     exception MismatchVal
 
-    functor Pack(signature S structure X : S) : (val x : package)
-    functor Unpack(val x : package signature S) : S		(* Mismatch *)
-    functor PackVal(type t val x : t) : (val x : val_package)
-    functor UnpackVal(val x : val_package type t) : (val x : t) (* MismatchVal*)
+    functor Pack(signature S structure X : S) : (val package : package)
+    functor Unpack(val package : package signature S) : S	(* Mismatch *)
+    functor PackVal(type t val x : t) : (val package : val_package)
+    functor UnpackVal(val package : val_package type t) : (val x : t)
+								(* MismatchVal*)
 end
