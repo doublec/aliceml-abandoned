@@ -18,8 +18,8 @@ final class DMLOut extends java.io.ObjectOutputStream {
 	    String name = cls.getName();
 	    ClassLoader cl = cls.getClassLoader();
 	    try {
-		if (cl instanceof Loader)
-		    bytes = ((Loader) cl).getBytes(name);
+		if (cl==DMLLoader.loader)
+		    bytes = ((DMLLoader) cl).getBytes(name);
 		else {
 		    java.io.InputStream in = cl.getResourceAsStream(name+".class");
 		    java.io.DataInputStream din = new java.io.DataInputStream(in);
