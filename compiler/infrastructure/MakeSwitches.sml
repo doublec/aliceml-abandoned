@@ -1,16 +1,19 @@
-functor MakeSwitches() :> SWITCHES =
-  struct
+functor MakeSwitches(val logOut : TextIO.outstream) :> SWITCHES =
+struct
 
     structure Bootstrap =
-      struct
+    struct
 	datatype rtt_level = NO_RTT | CORE_RTT | FULL_RTT
 
 	val implicitImport			= ref true
 	val rttLevel				= ref NO_RTT
-      end
+    end
 
     structure Debug =
-      struct
+    struct
+	val logOut				= logOut
+	val logWidth				= ref 79
+
 	val dumpPhase				= ref true
 	val dumpAbstractionResult		= ref false
 	val dumpElaborationResult		= ref false
@@ -22,10 +25,10 @@ functor MakeSwitches() :> SWITCHES =
 	val dumpLivenessAnalysisIntermediate	= ref false
 	val dumpLivenessAnalysisResult		= ref false
 	val dumpTarget				= ref false
-      end
+    end
 
     (* Backward compatibility... *)
 
     val implicitImport		= Bootstrap.implicitImport
     val outputAssembly		= Debug.dumpTarget
-  end
+end
