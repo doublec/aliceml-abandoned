@@ -60,9 +60,6 @@ Mozart:
    steppen bis {ReadFile ...}, dann 'next'.
 
 Alice-Postings:
--- [Design] Representation of Alice Components
--- [Design] Alice Component Managers
--- [Design] The Alice Static Linker
 -- [Announcement] Prototype of the Alice VM (aka The Stockwerk)
 -- [Programming Methodology] Functional vs. Imperative Threads
 -- [Problem] Concurrent Pickling of Stateful Data Structures
