@@ -633,9 +633,13 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 	fun translate (imports, exports, decs) =
 	    let
 		val exportExp =
-		    O.RecExp (Source.nowhere,
-			      List.map (fn id => (getPrintName id, id))
-			      (#1 (IdSort.sort exports)))
+		    case IdSort.sort exports of
+			(exports', IdSort.Tup _) =>
+			    O.TupExp (Source.nowhere, exports')
+		      | (exports', IdSort.Rec) =>
+			    O.RecExp (Source.nowhere,
+				      List.map (fn id => (getPrintName id, id))
+				      exports')
 	    in
 		(imports, exports,
 		 translateCont (Decs (decs, Export exportExp)))
