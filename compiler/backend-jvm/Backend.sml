@@ -169,6 +169,7 @@ structure Backend=
 		(* create a new record arity and return its JVM field *)
 		fun insert (stamp', strings as (s::_)) =
 		    let
+			val _ = print ("create "^s^" ... in "^Stamp.toString stamp'^"\n")
 			val l =
 			    case StampHash.lookup (arity, stamp') of
 				NONE =>
@@ -196,47 +197,49 @@ structure Backend=
 		    end
 		  | insert _ = Crash.crash "RecordLabel.insert: empty Stringlist"
 
-		(* Generate the record arities of a certain class at compilitaion time. *)
-		fun generate stamp' =
+		(* Generate the record arities of a certain class at compilation time. *)
+		fun generate () =
 		    let
-			fun codeall (strs, aritynumber, acc) =
+			fun mapAll (stamp', slh, akku) =
 			    let
-				val size=List.length strs
-				fun codeone (str, (acc, n)) =
+				fun codeall (strs, aritynumber, acc) =
 				    let
-					val c =
-					    (Dup::
-					     (atCodeInt n)::
-					     (Ldc (JVMString str))::
-					     Aastore::
-					     acc)
-					val d = LargeInt.+ (n, Int.toLarge 1)
-				    in
-					if d=(Int.toLarge size)
-					    then
-						(atCodeInt (Int.toLarge size)::
-						 (Anewarray CString)::
-						 c,d)
-					else (c,d)
-				    end
+					val size=List.length strs
+					fun codeone (str, (acc, n)) =
+					    let
+						val c =
+						    (Dup::
+						     (atCodeInt n)::
+						     (Ldc (JVMString str))::
+						     Aastore::
+						     acc)
+						val d = LargeInt.+ (n, Int.toLarge 1)
+					    in
+						if d=(Int.toLarge size)
+						    then
+							(atCodeInt (Int.toLarge size)::
+							 (Anewarray CString)::
+							 c,d)
+						else (c,d)
+					    end
 
-				val (r,_) = List.foldr
-				    codeone
-				    (Putstatic (staticfield (stamp', aritynumber))::
-				     acc,
-				     0)
-				    strs
+					val (r,_) = List.foldr
+					    codeone
+					    (Putstatic (staticfield (stamp', aritynumber))::
+					     acc,
+					     0)
+					    strs
+				    in
+					r
+				    end
 			    in
-				r
+				StringListHash.foldi
+				codeall
+				akku
+				slh
 			    end
 		    in
-			(case StampHash.lookup (arity, stamp') of
-			     NONE => [Return]
-			   | SOME a =>
-				 (StringListHash.foldi
-				  codeall
-				  nil
-				  a))
+			StampHash.foldi mapAll nil arity
 		    end
 
 		(* Generate field entries for the record arities of a certain class. *)

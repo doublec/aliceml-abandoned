@@ -277,7 +277,7 @@ structure CodeGen =
 				  ([Multi (Lambda.generatePickleFn
 					   (Literals.generate,
 					    toplevel,
-					    RecordLabel.generate toplevel)),
+					    RecordLabel.generate ())),
 				    Multi decs,
 				    Return]))
 
@@ -404,7 +404,8 @@ structure CodeGen =
 	    let
 		val danach = Label.new ()
 		val elselabel = Label.new ()
-		val ilselabel = Label.new ()
+		val wrongclasslabel = Label.new ()
+		val popelselabel = Label.new ()
 		val retry = Label.new ()
 		val stampcode' = idCode (id', curCls)
 		val behind = Label.new ()
@@ -481,6 +482,8 @@ structure CodeGen =
 				     Dup ::
 				     storeCode (stamp', curFun, curCls) ::
 				     Goto retry ::
+				     Label popelselabel ::
+				     Pop ::
 				     Label elselabel ::
 				     decListCode (body'', curFun, curCls),
 				     number::switchlist,
@@ -530,7 +533,7 @@ structure CodeGen =
 		    Label retry ::
 		    Dup ::
 		    Instanceof cls ::
-		    Ifeq ilselabel ::
+		    Ifeq wrongclasslabel ::
 		    Checkcast cls ::
 		    Getfield (cls^"/value", ret) ::
 		    cmpcode
@@ -585,10 +588,10 @@ structure CodeGen =
 			  Dup,
 			  Multi (if stamp'' = stamp_cons then
 				     [Instanceof CCons,
-				      Ifeq ilselabel]
+				      Ifeq wrongclasslabel]
 				 else
 				     [Instanceof IConVal,
-				      Ifeq ilselabel,
+				      Ifeq wrongclasslabel,
 				      Checkcast IConVal,
 				      Invokeinterface (IConVal, "getConstructor",
 						       ([], [Classsig CConstructor])),
@@ -605,7 +608,7 @@ structure CodeGen =
 			  Label retry,
 			  Dup,
 			  Instanceof CReference,
-			  Ifeq ilselabel,
+			  Ifeq wrongclasslabel,
 			  Checkcast CReference,
 			  Invokevirtual (CReference, "getContent",
 					 ([],[Classsig IVal])),
@@ -618,23 +621,23 @@ structure CodeGen =
 			fun stringids2strings ((l, _)::stringids',s')=
 			    stringids2strings (stringids', l::s')
 			  | stringids2strings (nil, s') = s'
-			fun bindit ((_,Id (_,stamp'',_))::nil,i) =
+			fun bindrec ((_,Id (_,stamp'',_))::nil,i) =
 			    [atCodeInt i,
 			     Aaload,
 			     Astore stamp'']
-			  | bindit ((_,Id (_,stamp'',_))::rest,i) =
+			  | bindrec ((_,Id (_,stamp'',_))::rest,i) =
 			    Dup ::
 			    atCodeInt i ::
 			    Aaload ::
 			    Astore stamp'' ::
-			    bindit(rest,i+1)
-			  | bindit (nil,_) = nil
+			    bindrec(rest,i+1)
+			  | bindrec (nil,_) = nil
 		    in
 			stampcode' ::
 			Label retry ::
 			Dup ::
 			Instanceof CRecord ::
-			Ifeq ilselabel ::
+			Ifeq wrongclasslabel ::
 			Checkcast CRecord ::
 			Getstatic (RecordLabel.insert
 				   (curCls, stringids2strings (stringid, nil))) ::
@@ -642,8 +645,8 @@ structure CodeGen =
 				       ([Arraysig, Classsig CString],
 					[Arraysig, Classsig IVal])) ::
 			Dup ::
-			Ifnull ilselabel ::
-			bindit (stringid,0)
+			Ifnull popelselabel ::
+			bindrec (stringid,0)
 		    end
 
 		  | testCode (TupTest ids) =
@@ -654,6 +657,7 @@ structure CodeGen =
 			if lgt = 0
 			    then
 				[stampcode',
+				 Label retry,
 				 Getstatic BUnit,
 				 Ifacmpne elselabel]
 			else
@@ -674,26 +678,20 @@ structure CodeGen =
 				 in
 				     Dup ::
 				     Instanceof thisTup ::
-				     Ifeq ilselabel ::
+				     Ifeq wrongclasslabel ::
 				     Checkcast thisTup ::
 				     specBind (lgt-1, nil)
 				 end
 			     else
 				 Dup ::
-				 Instanceof ITuple ::
-				 Ifeq ilselabel ::
-				 Checkcast ITuple ::
-				 Invokeinterface
-				 (ITuple, "getArity",
-				  ([], [Intsig])) ::
+				 Instanceof CTuple ::
+				 Ifeq wrongclasslabel ::
+				 Checkcast CTuple ::
+				 Getfield (CTuple^"/vals", [Arraysig, Classsig IVal]) ::
+				 Dup ::
+				 Arraylength ::
 				 atCodeInt (Int.toLarge lgt) ::
-				 Ificmpne elselabel ::
-				 stampcode' ::
-				 Checkcast ITuple ::
-				 Invokeinterface
-				 (ITuple,"getVals",
-				  ([],[Arraysig,
-				       Classsig IVal])) ::
+				 Ificmpne popelselabel ::
 				 bindit(ids,0))
 		    end
 
@@ -702,10 +700,12 @@ structure CodeGen =
 		     Label retry,
 		     Dup,
 		     Instanceof ITuple,
-		     Ifeq ilselabel,
+		     Ifeq wrongclasslabel,
 		     Checkcast ITuple,
 		     Ldc (JVMString s'),
 		     Invokeinterface (ITuple,"get",([Classsig CString],[Classsig IVal])),
+		     Dup,
+		     Ifnull popelselabel,
 		     Astore stamp'']
 
 		  | testCode (VecTest ids) =
@@ -717,16 +717,14 @@ structure CodeGen =
 			Label retry ::
 			Dup ::
 			Instanceof CVector ::
-			Ifeq ilselabel ::
+			Ifeq wrongclasslabel ::
 			Checkcast CVector ::
-			Invokevirtual
-			(CVector, "length",
-			 ([], [Intsig])) ::
+			Getfield (CVector^"/vec", [Arraysig, Classsig IVal]) ::
+			Dup ::
+			Arraylength ::
 			atCodeInt (Int.toLarge lgt) ::
 			Ificmpne elselabel ::
 			stampcode' ::
-			Checkcast CVector ::
-			Getfield (CVector^"/vec", [Arraysig, Classsig IVal]) ::
 			bindit(ids,0)
 		    end
 
@@ -736,7 +734,7 @@ structure CodeGen =
 		    (decListCode (body', curFun, curCls)) ::
 		    Comment "Test: Goto danach" ::
 		    Goto danach ::
-		    Label ilselabel ::
+		    Label wrongclasslabel ::
 		    Instanceof ITransient ::
 		    Ifeq elselabel ::
 		    stampcode' ::
@@ -745,6 +743,8 @@ structure CodeGen =
 		    Dup ::
 		    storeCode (stamp', curFun, curCls) ::
 		    Goto retry ::
+		    Label popelselabel ::
+		    Pop ::
 		    Label elselabel ::
 		    Multi
 		    (decListCode (body'', curFun, curCls)) ::
