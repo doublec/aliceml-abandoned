@@ -131,7 +131,7 @@ private:
   enum { NAME_POS, TRANSFORM_POS, SIZE };
   static ConcreteRepresentationHandler *handler;
 public:
-  using Block::ToWord;
+  using ConcreteRepresentation::ToWord;
 
   static void Init();
 
@@ -242,12 +242,12 @@ class AliceDll UniqueConstructor: public Constructor {
 public:
   static UniqueConstructor *New(String *name, String *id) {
     return static_cast<UniqueConstructor *>
-      (Constructor::New(name, static_cast<Block *>(id)));
+      (Constructor::New(name, Store::DirectWordToBlock(id->ToWord())));
   }
   static UniqueConstructor *New(const char *name, const char *id) {
     return static_cast<UniqueConstructor *>
       (Constructor::New(String::New(name),
-			static_cast<Block *>(String::New(id))));
+			Store::DirectWordToBlock(String::New(id)->ToWord())));
   }
   static UniqueConstructor *FromWord(word x) {
     return static_cast<UniqueConstructor *>(Constructor::FromWord(x));
@@ -302,7 +302,7 @@ class AliceDll Word8Array: private String {
 public:
   static const u_int maxLen = String::maxSize;
 
-  using Chunk::ToWord;
+  using String::ToWord;
   using String::GetValue;
 
   static Word8Array *New(u_int length) {
@@ -336,7 +336,7 @@ class AliceDll Word8Vector: private String {
 public:
   static const u_int maxLen = String::maxSize;
 
-  using Chunk::ToWord;
+  using String::ToWord;
   using String::GetValue;
 
   static Word8Vector *New(u_int length) {

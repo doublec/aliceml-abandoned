@@ -55,8 +55,9 @@ static Transform *MakeConstructorTransform(String *name, word key) {
   Tuple *tuple = Tuple::New(2);
   tuple->Init(0, name->ToWord());
   tuple->Init(1, key);
-  Chunk *transformName = static_cast<Chunk *>
-    (String::FromWordDirect(AliceLanguageLayer::TransformNames::constructor));
+  String *string =
+    String::FromWordDirect(AliceLanguageLayer::TransformNames::constructor);
+  Chunk *transformName = Store::DirectWordToChunk(string->ToWord());
   return Transform::New(transformName, tuple->ToWord());
 }
 
