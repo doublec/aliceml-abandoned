@@ -262,3 +262,6 @@ Main.aus: $(MAIN_FILES)
 clean:
 	-rm -rf $(COMPONENTS:%=%.aus)
 	-rm -rf $(COMPONENTS:%=%.ozf)
+
+veryclean: clean
+	-rm -rf stoc-mozart
