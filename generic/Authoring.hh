@@ -18,29 +18,33 @@
 #include "emulator/Interpreter.hh"
 #include "emulator/Scheduler.hh"
 
-#define DEFINE0(name)							\
-  static Interpreter::Result name(word, TaskStack *taskStack) {         \
-    word prim_self = taskStack->GetFrame();                             \
+#define DEFINE0(name)						\
+  static Interpreter::Result name(word, TaskStack *taskStack) {	\
+    word prim_self = taskStack->GetFrame();			\
+    prim_self = prim_self;					\
     taskStack->PopFrame();
 #define DEFINE1(name)							\
   static Interpreter::Result name(word args, TaskStack *taskStack) {	\
-    word prim_self = taskStack->GetFrame();                             \
-    taskStack->PopFrame();                                              \
+    word prim_self = taskStack->GetFrame();				\
+    prim_self = prim_self;						\
+    taskStack->PopFrame();						\
     word x0 = args;
 #define DEFINE2(name)							\
   static Interpreter::Result name(word args, TaskStack *taskStack) {	\
-    Block *pargs = Store::DirectWordToBlock(args);                      \
-    word prim_self = taskStack->GetFrame();                             \
-    taskStack->PopFrame();                                              \
-    word x0 = pargs->GetArg(0);			         		\
+    Block *pargs = Store::DirectWordToBlock(args);			\
+    word prim_self = taskStack->GetFrame();				\
+    prim_self = prim_self;						\
+    taskStack->PopFrame();						\
+    word x0 = pargs->GetArg(0);						\
     word x1 = pargs->GetArg(1);
 #define DEFINE3(name)							\
   static Interpreter::Result name(word args, TaskStack *taskStack) {	\
-    Block *pargs = Store::DirectWordToBlock(args);                      \
-    word prim_self = taskStack->GetFrame();                             \
-    taskStack->PopFrame();                                              \
-    word x0 = pargs->GetArg(0);		        			\
-    word x1 = pargs->GetArg(1);			        		\
+    Block *pargs = Store::DirectWordToBlock(args);			\
+    word prim_self = taskStack->GetFrame();				\
+    prim_self = prim_self;						\
+    taskStack->PopFrame();						\
+    word x0 = pargs->GetArg(0);						\
+    word x1 = pargs->GetArg(1);						\
     word x2 = pargs->GetArg(2);
 
 #define END }
