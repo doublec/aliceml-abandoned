@@ -559,7 +559,7 @@ define
 	    fun {$ id(_ Stamp _)#Sign#URL}
 	       {VirtualString.toAtom Stamp}#info('from': URL 'type': sig(Sign))
 	    end}}
-	  sig(Sign) Res}#VS
+	  sig(Sign) Res}#VS#Sign
       end
    end
 end

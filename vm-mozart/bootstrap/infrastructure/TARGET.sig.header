@@ -1,3 +1,7 @@
 import
     signature CONTEXT
 from "x-alice:/infrastructure/CONTEXT.ozf"
+
+import
+    signature SIGNATURE
+from "x-alice:/infrastructure/SIGNATURE.ozf"

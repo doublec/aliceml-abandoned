@@ -7,6 +7,7 @@
 
 signature COMPILER =
   sig
+    structure Switches: SWITCHES
     structure Target: TARGET
 
     type context

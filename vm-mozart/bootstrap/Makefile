@@ -1,4 +1,4 @@
-PREFIX = /opt/stockhausen-operette1
+PREFIX = /opt/stockhausen-devel
 
 STOC = STOC_MOZART=../../stoc/backend-mozart/stoc-mozart.exe \
 	sml @SMLload=../../stoc/stoc-mozart
@@ -27,9 +27,10 @@ MISCFILES = $(MISCSOURCES:%=misc/%)
 
 INFRASTRUCTURESOURCES = \
 	CRASH.sig Crash.sml SOURCE.sig Source.sml ERROR.sig Error.sml \
-	SWITCHES.sig Switches.sml CONTEXT.sig REPRESENTATION.sig PHASE.sig \
-	PHASE_ERROR.sig ComposePhases.sml EmptyContext.sml SIGNATURE.sig \
-	COMPOSER.sig TARGET.sig
+	SWITCHES.sig MakeSwitches.sml CONTEXT.sig REPRESENTATION.sig \
+	PHASE.sig PHASE_ERROR.sig ComposePhases.sml EmptyContext.sml \
+	SIGNATURE.sig COMPOSER.sig TARGET.sig INITIAL_CONTEXT.sig \
+	InitialEmptyContext.sml
 INFRASTRUCTUREFILES = $(INFRASTRUCTURESOURCES:%=infrastructure/%)
 
 COMMONSOURCES = \
@@ -46,7 +47,8 @@ FRONTENDCOMMONSOURCES = \
 	AbstractGrammar.sml TypedGrammar.sml ENV.sig Env.sml ENV0.sig \
 	Env0.sml ELABORATION_ERROR.sig ElaborationError.sml \
 	ELABORATION_PHASE.sig MakeElaborationPhase.sml TRANSLATION_PHASE.sig \
-	TranslationPhase.sml MakeFrontendCommon.sml
+	TranslationPhase.sml MakeFrontendCommon.sml \
+	FrontendCommonInitialContext.sml
 FRONTENDCOMMONFILES = $(FRONTENDCOMMONSOURCES:%=frontend-common/%)
 
 FRONTENDSMLSOURCES = \
@@ -58,7 +60,8 @@ FRONTENDSMLSOURCES = \
 	ABSTRACTION_PHASE.sig MakeAbstractionPhase.sml DERIVED_FORMS.sig \
 	PARSER.sig Parser.sml DerivedForms.sml LEXER_ERROR.sig \
 	LexerError.sml Lexer.lex.sml CountPosLexer.sml PARSING_PHASE.sig \
-	ParsingPhase.sml BIND_ENV0.sig BindEnv0.sml MakeFrontendSML.sml
+	ParsingPhase.sml BIND_ENV0.sig BindEnv0.sml MakeFrontendSML.sml \
+	FrontendSMLInitialContext.sml
 FRONTENDSMLFILES = $(FRONTENDSMLSOURCES:%=frontend-sml/%)
 
 BACKENDCOMMONSOURCES = \
@@ -67,17 +70,22 @@ BACKENDCOMMONSOURCES = \
 	INTERMEDIATE_AUX.sig IntermediateAux.sml SIMPLIFY_MATCH.sig \
 	SimplifyMatch.sml SIMPLIFY_REC.sig SimplifyRec.sml \
 	FLATTENING_PHASE.sig FlatteningPhase.sml LIVENESS_ANALYSIS_PHASE.sig \
-	LivenessAnalysisPhase.sml CODE.sig ENGINE.sig MakeEngine.sml
+	LivenessAnalysisPhase.sml CODE.sig ENGINE.sig MakeEngine.sml \
+	BackendCommon.sml
 BACKENDCOMMONFILES = $(BACKENDCOMMONSOURCES:%=backend-common/%)
 
-TOPSOURCES = Signature.sml Composer.sml
+BACKENDMOZARTSOURCES = CodeGenPhase.ozf.sig MozartGenerationPhase.sml
+BACKENDMOZARTFILES = $(BACKENDMOZARTSOURCES:%=backend-mozart/%)
+
+TOPSOURCES = Signature.sml Composer.sml COMPILER.sig MakeCompiler.sml \
+	SMLToMozartCompiler.sml MAIN.sig MakeMain.sml
 TOPFILES = $(TOPSOURCES:%=top/%)
 
 ALLFILES = \
 	$(NATIVEFILES) $(LIBFILES) $(MLYACCFILES) $(MISCFILES) \
-	$(INFRASTRUCTUREFILES) $(TOPFILES) $(COMMONFILES) \
-	$(FRONTENDCOMMONFILES) $(FRONTENDSMLFILES) $(BACKENDCOMMONFILES) \
-	backend-mozart/CodeGenPhase.ozf.sig top/Main.sml
+	$(INFRASTRUCTUREFILES) $(COMMONFILES) $(FRONTENDCOMMONFILES) \
+	$(FRONTENDSMLFILES) $(BACKENDCOMMONFILES) $(BACKENDMOZARTFILES) \
+	$(TOPFILES)
 
 INSTALLDIRS = $(PREFIX) $(PREFIX)/bin $(PREFIX)/lib
 INSTALLFILES0 = stow.ozf stoc.ozf Default.import
@@ -120,14 +128,11 @@ $(NATIVEFILES): lib/%: ../%
 %: %.body Base.import
 	cat Base.import $< > $@
 
-top/Main.sml: top/Main.sml.body Base.import
-	cat Base.import $< > $@
-
-misc/GlobalStamp.sml: misc/GlobalStamp.sml.body Base.import
-	cat Base.import $< > $@
-
 lib/ml-yacc/%: ../../lib/bootstrap/ml-yacc/% lib/ml-yacc/%.header Base.import
 	cat Base.import lib/ml-yacc/$*.header $< > $@
+
+misc/%: misc/%.body Base.import
+	cat Base.import $< > $@
 
 misc/%: ../../stoc/misc/% misc/%.header Base.import
 	cat Base.import misc/$*.header $< > $@
@@ -135,9 +140,6 @@ misc/%: ../../stoc/misc/% misc/%.header Base.import
 infrastructure/%: ../../stoc/infrastructure/% infrastructure/%.header \
 	Base.import
 	cat Base.import infrastructure/$*.header $< > $@
-
-top/%: ../../stoc/top/% top/%.header Base.import
-	cat Base.import top/$*.header $< > $@
 
 common/%: ../../stoc/common/% common/%.header Base.import
 	cat Base.import common/$*.header $< > $@
@@ -160,6 +162,12 @@ frontend-sml/Parser.sml: ../../stoc/frontend-sml/Parser.grm.sml \
 backend-common/%: ../../stoc/backend-common/% backend-common/%.header \
 	Base.import
 	cat Base.import backend-common/$*.header $< > $@
+
+top/%: top/%.body Base.import
+	cat Base.import $< > $@
+
+top/%: ../../stoc/top/% top/%.header Base.import
+	cat Base.import top/$*.header $< > $@
 
 %.ozf: %.sml
 	$(STOC) -c $< -o $@

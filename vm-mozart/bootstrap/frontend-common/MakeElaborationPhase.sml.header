@@ -28,8 +28,8 @@ import
 from "x-alice:/infrastructure/Error.ozf"
 
 import
-    structure Switches
-from "x-alice:/infrastructure/Switches.ozf"
+    signature SWITCHES
+from "x-alice:/infrastructure/SWITCHES.ozf"
 
 import
     signature COMPOSER

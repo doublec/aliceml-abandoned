@@ -1,0 +1,83 @@
+import
+    structure TextIO
+from "x-alice:/lib/TextIO.ozf"
+
+import
+    structure IO
+from "x-alice:/lib/IO.ozf"
+
+import
+    structure OS
+from "x-alice:/lib/OS.ozf"
+
+import
+    structure Pickle
+from "x-alice:/lib/Pickle.ozf"
+
+import
+    structure Url
+from "x-alice:/misc/Url.ozf"
+
+import
+    structure Crash
+from "x-alice:/infrastructure/Crash.ozf"
+
+import
+    structure Source
+from "x-alice:/infrastructure/Source.ozf"
+
+import
+    structure Error
+from "x-alice:/infrastructure/Error.ozf"
+
+import
+    signature COMPOSER'
+from "x-alice:/infrastructure/COMPOSER.ozf"
+
+import
+    structure Inf
+from "x-alice:/common/Inf.ozf"
+
+import   (*DEBUG*)
+    structure ParsingPhase
+from "x-alice:/frontend-sml/ParsingPhase.ozf"
+
+import   (*DEBUG*)
+    structure BindEnv
+from "x-alice:/frontend-sml/BindEnv.ozf"
+
+import   (*DEBUG*)
+    structure BindEnv0
+from "x-alice:/frontend-sml/BindEnv0.ozf"
+
+import   (*DEBUG*)
+    structure MakeAbstractionPhase
+from "x-alice:/frontend-sml/MakeAbstractionPhase.ozf"
+
+import   (*DEBUG*)
+    structure Env
+from "x-alice:/frontend-common/Env.ozf"
+
+import   (*DEBUG*)
+    structure Env0
+from "x-alice:/frontend-common/Env0.ozf"
+
+import   (*DEBUG*)
+    structure MakeElaborationPhase
+from "x-alice:/frontend-common/MakeElaborationPhase.ozf"
+
+import   (*DEBUG*)
+    structure TranslationPhase
+from "x-alice:/frontend-common/TranslationPhase.ozf"
+
+import   (*DEBUG*)
+    structure FlatteningPhase
+from "x-alice:/backend-common/FlatteningPhase.ozf"
+
+import
+    structure Signature
+from "x-alice:/top/Signature.ozf"
+
+import
+    signature COMPILER
+from "x-alice:/top/COMPILER.ozf"

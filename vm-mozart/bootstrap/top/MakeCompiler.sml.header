@@ -1,0 +1,23 @@
+import
+    structure Source
+from "x-alice:/infrastructure/Source.ozf"
+
+import
+    signature SWITCHES
+from "x-alice:/infrastructure/SWITCHES.ozf"
+
+import
+    signature PHASE
+from "x-alice:/infrastructure/PHASE.ozf"
+
+import
+    signature TARGET
+from "x-alice:/infrastructure/TARGET.ozf"
+
+import
+    signature INITIAL_CONTEXT
+from "x-alice:/infrastructure/INITIAL_CONTEXT.ozf"
+
+import
+    signature COMPILER
+from "x-alice:/top/COMPILER.ozf"

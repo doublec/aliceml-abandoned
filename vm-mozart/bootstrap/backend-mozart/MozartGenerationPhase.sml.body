@@ -1,0 +1,64 @@
+(* -*- sml -*- *)
+
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2000
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import
+    signature PHASE
+from "x-alice:/infrastructure/PHASE.ozf"
+
+import
+    structure EmptyContext
+from "x-alice:/infrastructure/EmptyContext.ozf"
+
+import
+    signature SIGNATURE
+from "x-alice:/infrastructure/SIGNATURE.ozf"
+
+import
+    signature TARGET
+from "x-alice:/infrastructure/TARGET.ozf"
+
+import
+    structure FlatGrammar
+from "x-alice:/backend-common/FlatGrammar.ozf"
+
+import
+    structure CodeGenPhase
+from "x-alice:/backend-mozart/CodeGenPhase.ozf"
+
+functor MakeMozartTarget(Sig: SIGNATURE where type t = FlatGrammar.sign):
+    TARGET =
+    struct
+	structure C = EmptyContext
+	structure Sig = Sig
+
+	type t = CodeGenPhase.t
+
+	fun sign component = CodeGenPhase.sign component
+
+	fun apply () component = CodeGenPhase.apply component
+
+	fun save () filename component =
+	    CodeGenPhase.save (filename, component)
+    end
+
+functor MakeMozartGenerationPhase(MozartTarget: TARGET
+				  where type t = CodeGenPhase.t): PHASE =
+    struct
+	structure C = EmptyContext
+	structure I = FlatGrammar
+	structure O = MozartTarget
+
+	fun translate () (desc, component) =
+	    CodeGenPhase.translate (desc, component)
+    end

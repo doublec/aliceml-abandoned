@@ -25,11 +25,27 @@ structure MozartTargetContext: CONTEXT =
 	fun clone engine = engine
     end
 
-structure MozartTarget: TARGET =
+structure MozartTargetInitialContext: INITIAL_CONTEXT =
+    struct
+	type t = MozartEngine.t
+
+	val engine: MozartEngine.t option ref = ref NONE
+
+	fun initial () =
+	    (if (isSome (!engine)) then ()
+	     else engine := SOME (MozartEngine.start ());
+	     valOf (!engine))
+    end
+
+functor MakeMozartTarget(Sig: SIGNATURE where type t = FlatGrammar.sign):
+    TARGET =
     struct
 	structure C = MozartTargetContext
+	structure Sig = Sig
 
 	type t = string * FlatGrammar.t
+
+	fun sign (_, (_, (_, exportSign))) = exportSign
 
 	fun apply engine component =
 	    raise Crash.Crash "MozartTarget.eval: not implemented"
@@ -39,7 +55,8 @@ structure MozartTarget: TARGET =
 	    (MozartEngine.buildFunctor engine component)
     end
 
-structure MozartGenerationPhase: PHASE =
+functor MakeMozartGenerationPhase
+    (MozartTarget: TARGET where type t = string * FlatGrammar.t): PHASE =
     struct
 	structure C = EmptyContext
 	structure I = FlatGrammar

@@ -11,7 +11,8 @@
  *)
 
 functor MakeElaborationPhase(
-		Composer: COMPOSER where type Sig.t = Inf.sign
+		structure Composer: COMPOSER where type Sig.t = Inf.sign
+		structure Switches: SWITCHES
 	) :> ELABORATION_PHASE =
   struct
 

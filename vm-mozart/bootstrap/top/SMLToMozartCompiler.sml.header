@@ -1,0 +1,40 @@
+import
+    structure MakeSwitches
+from "x-alice:/infrastructure/MakeSwitches.ozf"
+
+import
+    structure MakeFrontendCommon
+from "x-alice:/frontend-common/MakeFrontendCommon.ozf"
+
+import
+    structure FrontendCommonInitialContext
+from "x-alice:/frontend-common/FrontendCommonInitialContext.ozf"
+
+import
+    structure MakeFrontendSML
+from "x-alice:/frontend-sml/MakeFrontendSML.ozf"
+
+import
+    structure FrontendSMLInitialContext
+from "x-alice:/frontend-sml/FrontendSMLInitialContext.ozf"
+
+import
+    structure BackendCommon
+from "x-alice:/backend-common/BackendCommon.ozf"
+
+import
+    structure MakeMozartTarget
+    structure MakeMozartGenerationPhase
+from "x-alice:/backend-mozart/MozartGenerationPhase.ozf"
+
+import
+    structure Signature
+from "x-alice:/top/Signature.ozf"
+
+import
+    structure Composer
+from "x-alice:/top/Composer.ozf"
+
+import
+    structure MakeCompiler
+from "x-alice:/top/MakeCompiler.ozf"

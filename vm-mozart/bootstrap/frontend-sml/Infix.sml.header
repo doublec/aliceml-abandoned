@@ -23,5 +23,9 @@ import
 from "x-alice:/frontend-sml/ParsingError.ozf"
 
 import
+    structure AbstractionError
+from "x-alice:/frontend-sml/AbstractionError.ozf"
+
+import
     signature INFIX
 from "x-alice:/frontend-sml/INFIX.ozf"

@@ -12,10 +12,23 @@
  *   $Revision$
  *)
 
-structure Compiler =
-    MakeCompiler(structure Target           = MozartTarget
-		 structure FrontendSpecific = MakeFrontendSML(Composer)
-		 structure FrontendCommon   = MakeFrontendCommon(Composer)
+structure Switches = MakeSwitches()
+
+structure MozartTarget = MakeMozartTarget(Signature)
+
+structure FrontendSML = MakeFrontendSML(Composer)
+
+structure FrontendCommon =
+    MakeFrontendCommon(structure Composer = Composer
+		       structure Switches = Switches)
+
+structure MozartGenerationPhase = MakeMozartGenerationPhase(MozartTarget)
+
+structure SMLToMozartCompiler =
+    MakeCompiler(structure Switches         = Switches
+		 structure Target           = MozartTarget
+		 structure FrontendSpecific = FrontendSML
+		 structure FrontendCommon   = FrontendCommon
 		 structure BackendCommon    = BackendCommon
 		 structure BackendSpecific  = MozartGenerationPhase
 

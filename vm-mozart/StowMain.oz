@@ -26,9 +26,11 @@ define
       end
    end
 
-   case {Application.getArgs plain} of Name|Rest then
+   case {Application.getArgs plain} of Name|Rest then ModuleManager in
       {Property.put 'ozd.args' Rest}
-      {{New Module.manager init(TypeCheck)} link(url: Name)}
+      ModuleManager = {New Module.manager init(TypeCheck)}
+      {Property.put 'alice.modulemanager' ModuleManager}
+      {ModuleManager link(url: Name)}
    [] nil then
       {System.printError
        'Usage: '#{Property.get 'application.url'}#' <name> <args> ...\n'}

@@ -41,7 +41,7 @@ infrastructure/Source.sml
 infrastructure/ERROR.sig
 infrastructure/Error.sml
 infrastructure/SWITCHES.sig
-infrastructure/Switches.sml
+infrastructure/MakeSwitches.sml
 infrastructure/CONTEXT.sig
 infrastructure/REPRESENTATION.sig
 infrastructure/PHASE.sig
@@ -52,6 +52,7 @@ infrastructure/SIGNATURE.sig
 infrastructure/COMPOSER.sig
 infrastructure/TARGET.sig
 infrastructure/INITIAL_CONTEXT.sig
+infrastructure/InitialEmptyContext.sml
 common/Stamp.sml
 common/StampSet.sml
 common/StampMap.sml
@@ -160,6 +161,7 @@ backend-common/LivenessAnalysisPhase.sml
 backend-common/CODE.sig
 backend-common/ENGINE.sig
 backend-common/MakeEngine.sml
+backend-common/BackendCommon.sml
 backend-mozart/OzifyFlatGrammar.sml
 backend-mozart/MozartGenerationPhase.sml
 backend-com+/IL.sig
@@ -175,6 +177,8 @@ top/Signature.sml
 top/Composer.sml
 top/COMPILER.sig
 top/MakeCompiler.sml
-top/Compiler.sml
+top/Pickle.sml
 top/MAIN.sig
+top/MakeMain.sml
+top/SMLToMozartCompiler.sml
 top/Main.sml

@@ -1,5 +1,6 @@
 Group is
 
-	../infrastructure/phase.cm
+	phase.cm
+	signature.cm
 
 	TARGET.sig

@@ -5,7 +5,8 @@
  *)
 
 functor MakeCompiler(
-	structure Target:   TARGET
+	structure Switches:         SWITCHES
+	structure Target:           TARGET
 	structure FrontendSpecific: PHASE where I = Source
 	structure FrontendCommon:   PHASE where I = FrontendSpecific.O
 	structure BackendCommon:    PHASE where I = FrontendCommon.O
@@ -22,6 +23,7 @@ functor MakeCompiler(
        ) :> COMPILER where Target = Target
   =
   struct
+    structure Switches = Switches
     structure Target = Target
 
     type context =

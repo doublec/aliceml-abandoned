@@ -1,2 +1,2 @@
-CodeGenPhase.ozf.sig
-*.ozf
+*.sig *.sml
+*.ozf *.ozm

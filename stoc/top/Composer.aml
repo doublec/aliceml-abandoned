@@ -10,7 +10,7 @@
  *   $Revision$
  *)
 
-structure Composer :> COMPOSER' where type Sig.t = Inf.sign =
+structure Composer: COMPOSER' =
     struct
 	structure Sig = Signature
 

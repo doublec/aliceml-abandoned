@@ -1,4 +1,4 @@
-structure Switches :> SWITCHES =
+functor MakeSwitches() :> SWITCHES =
   struct
     val printComponentSig		= ref true
     val defaultImport			= ref true

@@ -1,9 +1,9 @@
 Group
 
     structure OzifyFlatGrammar
-    structure MozartEngine
-    structure MozartTarget
-    structure MozartGenerationPhase
+    structure MozartTargetInitialContext
+    functor MakeMozartTarget
+    functor MakeMozartGenerationPhase
 
 is
 

@@ -93,7 +93,7 @@ define
 	 case {Frontend.translateVirtualString Code} of unit then
 	    {System.printInfo 'Result: ~1\n\n'}
 	 [] Filename#AST then F VS in
-	    F#VS = {CodeGen.translate Filename AST}
+	    F#VS#_ = {CodeGen.translate Filename AST}
 	    {WriteFile VS Filename#'.ozm'}
 	    {System.printInfo 'Result: '#{Put F}#'\n\n'}
 	 end

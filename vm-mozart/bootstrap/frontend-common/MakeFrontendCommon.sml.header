@@ -1,4 +1,8 @@
 import
+    signature SWITCHES
+from "x-alice:/infrastructure/SWITCHES.ozf"
+
+import
     signature COMPOSER
 from "x-alice:/infrastructure/COMPOSER.ozf"
 

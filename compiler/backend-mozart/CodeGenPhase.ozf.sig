@@ -13,6 +13,14 @@
  *)
 
 import
+    structure Source
+from "x-alice:/infrastructure/Source.ozf"
+
+import
+    structure Inf
+from "x-alice:/common/Inf.ozf"
+
+import
     structure FlatGrammar
 from "x-alice:/backend-common/FlatGrammar.ozf"
 
@@ -20,12 +28,11 @@ signature CODE_GEN_PHASE_COMPONENT =
     sig
 	structure CodeGenPhase:
 	    sig
-		val translate:
-		    string *                  (* input filename *)
-		    FlatGrammar.component *   (* component *)
-		    string *                  (* output filename *)
-		    string option *           (* assembly filename *)
-		    string ->                 (* pickle header *)
-		    unit
+		type t
+
+		val translate: Source.desc * FlatGrammar.component -> t
+		val sign: t -> Inf.sign
+		val apply: t -> unit
+		val save: string * t -> unit
 	    end
     end
