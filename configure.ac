@@ -436,6 +436,27 @@ case "$seam_enable_profiler" in
 esac
 
 dnl
+dnl  Test for --enable-debugger
+dnl
+AC_MSG_CHECKING([whether to build with user-level debugging support])
+AC_ARG_ENABLE([profiler],
+	      AC_HELP_STRING([--enable-debugger],
+			     [build with user-level debugging support
+			      (default: no)]),
+	      [seam_enable_debugger="$enable_debugger"],
+	      [seam_enable_debugger=no])
+AC_MSG_RESULT($seam_enable_debugger)
+
+case "$seam_enable_debugger" in
+    no)
+	AC_DEFINE(DEBUGGER, 0)
+	;;
+    yes)
+	AC_DEFINE(DEBUGGER, 1)
+	;;
+esac
+
+dnl
 dnl  Output Files
 dnl
 AC_CONFIG_FILES([Makefile store/Makefile seamtool])

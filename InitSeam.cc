@@ -29,6 +29,9 @@
 #include "generic/Profiler.hh"
 #endif
 #include "generic/Broker.hh"
+#if DEBUGGER
+#include "generic/DebugInterpreter.hh"
+#endif
 
 static u_int mb(u_int n) {
   return n << 20;
@@ -59,4 +62,7 @@ SeamDll void InitSeam() {
   Pickler::Init();
   Hole::Init();
   Broker::Init();
+#if DEBUGGER
+  DebugInterpreter::Init();
+#endif
 }

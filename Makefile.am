@@ -98,7 +98,12 @@ nobase_dist_pkginclude_HEADERS = \
 	generic/Profiler.hh \
 	generic/Broker.hh \
 	generic/Authoring.hh \
-	generic/JitterGenericData.hh
+	generic/JitterGenericData.hh \
+	generic/DebugWorker.hh \
+	generic/Debugger.hh \
+	generic/DebuggerEvent.hh \
+	generic/GenericDebuggerEvent.hh \
+	generic/Stream.hh
 nobase_nodist_pkginclude_HEADERS = \
 	store/StoreConfig.hh
 
@@ -132,7 +137,12 @@ libseam_la_SOURCES = \
 	generic/Unpickler.cc \
 	generic/Pickler.cc \
 	generic/Profiler.cc \
-	generic/Broker.cc
+	generic/Broker.cc \
+	generic/DebugWorker.cc \
+	generic/Debugger.cc \
+	generic/DebuggerEvent.cc \
+	generic/GenericDebuggerEvent.cc \
+	generic/Stream.cc
 nodist_libseam_la_SOURCES = \
 	store/StoreConfig.hh
 libseam_la_LDFLAGS = $(EXTRA_LDFLAGS)
