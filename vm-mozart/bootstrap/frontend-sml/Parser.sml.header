@@ -1,0 +1,44 @@
+import
+    structure Source
+from "error/Source.ozf"
+
+import
+    structure LargeWord
+from "lib/Word.ozf"
+
+import
+    signature TOKEN
+from "lib/ml-yacc/base.ozf"
+
+import
+    structure WideChar
+    structure WideString
+from "misc/Wide.ozf"
+
+import
+    structure SCon
+from "frontend-sml/SCon.ozf"
+
+import
+    structure Lab
+from "frontend-sml/Lab.ozf"
+
+import
+    structure VId
+    structure TyCon
+    structure TyVar
+    structure SigId
+    structure StrId
+from "frontend-sml/Ids.ozf"
+
+import
+    structure InputGrammar
+from "frontend-sml/InputGrammar.ozf"
+
+import
+    signature DERIVED_FORMS
+from "frontend-sml/DERIVED_FORMS.ozf"
+
+import
+    signature Parser_TOKENS
+from "frontend-sml/PARSER.ozf"

@@ -1,0 +1,3 @@
+import
+    structure AbstractGrammar
+from "frontend-common/AbstractGrammar.ozf"

@@ -1,0 +1,7 @@
+import
+    signature INPUT_GRAMMAR
+from "frontend-sml/INPUT_GRAMMAR.ozf"
+
+import
+    structure InputGrammar
+from "frontend-sml/InputGrammar.ozf"

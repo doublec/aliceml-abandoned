@@ -1,0 +1,95 @@
+import
+    structure Crash
+from "error/Crash.ozf"
+
+import
+    structure Source
+from "error/Source.ozf"
+
+import
+    structure Url
+from "misc/Url.ozf"
+
+import
+    structure Stamp
+from "common/Stamp.ozf"
+
+import
+    structure Name
+from "common/Name.ozf"
+
+import
+    structure Label
+from "common/Label.ozf"
+
+import
+    structure Fixity
+from "common/Fixity.ozf"
+
+import
+    structure Inf
+from "common/Inf.ozf"
+
+import
+    signature CONTEXT
+from "top/PHASE.ozf"
+
+import
+    signature COMPOSER
+from "top/COMPOSER.ozf"
+
+import
+    signature ABSTRACT_GRAMMAR
+from "frontend-common/ABSTRACT_GRAMMAR.ozf"
+
+import
+    structure AbstractGrammar
+from "frontend-common/AbstractGrammar.ozf"
+
+import
+    structure SCon
+from "frontend-sml/SCon.ozf"
+
+import
+    structure Lab
+from "frontend-sml/Lab.ozf"
+
+import
+    structure VId
+    structure TyCon
+    structure TyVar
+    structure SigId
+    structure StrId
+from "frontend-sml/Ids.ozf"
+
+import
+    signature INPUT_GRAMMAR
+from "frontend-sml/INPUT_GRAMMAR.ozf"
+
+import
+    structure InputGrammar
+from "frontend-sml/InputGrammar.ozf"
+
+import
+    structure Infix
+from "frontend-sml/Infix.ozf"
+
+import
+    structure BindEnv
+from "frontend-sml/BindEnv.ozf"
+
+import
+    structure BindEnvFromSig
+from "frontend-sml/BindEnvFromSig.ozf"
+
+import
+    structure Sharing
+from "frontend-sml/Sharing.ozf"
+
+import
+    structure AbstractionError
+from "frontend-sml/AbstractionError.ozf"
+
+import
+    signature ABSTRACTION_PHASE
+from "frontend-sml/ABSTRACTION_PHASE.ozf"

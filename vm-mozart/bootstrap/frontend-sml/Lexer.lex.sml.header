@@ -1,0 +1,32 @@
+import
+    structure LargeWord
+from "lib/Word.ozf"
+
+import
+    structure Crash
+from "error/Crash.ozf"
+
+import
+    structure WideChar
+    structure WideString
+from "misc/Wide.ozf"
+
+import
+    structure Misc
+from "misc/Misc.ozf"
+
+import
+    signature Parser_TOKENS
+from "frontend-sml/PARSER.ozf"
+
+import
+    structure ParsingError
+from "frontend-sml/ParsingError.ozf"
+
+import
+    signature LEXER_ERROR
+from "frontend-sml/LEXER_ERROR.ozf"
+
+import
+    structure LexerError
+from "frontend-sml/LexerError.ozf"

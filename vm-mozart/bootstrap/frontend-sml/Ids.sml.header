@@ -1,0 +1,7 @@
+import
+    structure MakeStamp
+from "misc/MakeStamp.ozf"
+
+import
+    structure MakeId
+from "frontend-sml/MakeId.ozf"
