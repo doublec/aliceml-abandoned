@@ -51,11 +51,11 @@ rm -rf %{buildroot}
 %setup -q -D -a 0 -c
 
 %build
-cd ../alice-%{version}
+cd alice-%{version}
 %configure
 
 %install
-cd ../alice-%{version}
+cd alice-%{version}
 %makeinstall
 
 %clean
@@ -69,7 +69,6 @@ rm -rf %{buildroot}
 %{_bindir}/*
 %{_includedir}/*
 %{_libdir}/*
-%{_datadir}/%{name}
 
 %changelog
 * Mon Dec 20 2004 Guido Tack <tack@ps.uni-sb.de>
