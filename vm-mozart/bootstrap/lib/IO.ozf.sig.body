@@ -14,8 +14,10 @@
 
 signature IO_COMPONENT =
     sig
-	structure IO:
+	signature IO =
 	    sig
 		exception Io of {name: string, function: string, cause: exn}
 	    end
+
+	structure IO: IO
     end

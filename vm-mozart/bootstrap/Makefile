@@ -6,7 +6,7 @@ OZHOME = /opt/mozart-1.1.1
 OZC = ozc
 OZL = ozl
 
-NATIVESOURCES = IO TextIO OS Unix CommandLine Browser Pickle Debug
+NATIVESOURCES = IO TextIO OS Unix CommandLine Tools Pickle Debug
 NATIVEFILES = $(NATIVESOURCES:%=lib/%.ozf)
 
 LIBSOURCES = Base.sml $(NATIVESOURCES:%=%.ozf.sig)
@@ -79,7 +79,8 @@ ALLFILES = \
 INSTALLDIRS = $(PREFIX) $(PREFIX)/bin $(PREFIX)/lib
 INSTALLFILES0 = stow.ozf stoc.ozf Default.import
 INSTALLBINFILES0 = stoc stow
-INSTALLLIBFILES0 = Base.ozf IO.ozf TextIO.ozf OS.ozf Unix.ozf CommandLine.ozf
+INSTALLLIBFILES0 = Base.ozf IO.ozf TextIO.ozf OS.ozf Unix.ozf CommandLine.ozf \
+	Tools.ozf
 INSTALLFILES = \
 	$(INSTALLFILES0:%=$(PREFIX)/%) \
 	$(INSTALLBINFILES0:%=$(PREFIX)/bin/%) \
@@ -164,8 +165,8 @@ $(INSTALLDIRS):
 $(INSTALLFILES0:%=$(PREFIX)/%): $(PREFIX)/%: %
 	install -c -m 444 $< $@
 
-Default.import: Base.import TextIO.import
-	cat Base.import TextIO.import > $@
+Default.import: Base.import Other.import
+	cat Base.import Other.import > $@
 
 $(PREFIX)/bin/%: %
 	install -c -m 555 $< $@

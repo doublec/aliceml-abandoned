@@ -1,0 +1,35 @@
+(* -*- sml -*- *)
+
+(* This file is prepended to every file compiled by stoc. *)
+
+import
+    signature IO
+    structure IO
+from "x-alice:/lib/IO.ozf"
+
+import
+    signature TEXT_IO
+    structure TextIO
+    val print
+from "x-alice:/lib/TextIO.ozf"
+
+import
+    signature OS_PROCESS
+    signature OS
+    structure OS
+from "x-alice:/lib/OS.ozf"
+
+import
+    signature UNIX
+    structure Unix
+from "x-alice:/lib/Unix.ozf"
+
+import
+    signature COMMAND_LINE
+    structure CommandLine
+from "x-alice:/lib/CommandLine.ozf"
+
+import
+    signature TOOLS
+    structure Tools
+from "x-alice:/lib/Tools.ozf"

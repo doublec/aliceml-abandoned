@@ -14,7 +14,7 @@
 
 signature TEXT_IO_COMPONENT =
     sig
-	structure TextIO:
+	signature TEXT_IO =
 	    sig
 		type instream
 		type outstream
@@ -36,6 +36,8 @@ signature TEXT_IO_COMPONENT =
 		val closeOut : outstream -> unit
 		val print : string -> unit
 	    end
+
+	structure TextIO: TEXT_IO
 
 	val print : string -> unit
     end

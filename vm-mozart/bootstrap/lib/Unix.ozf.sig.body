@@ -18,11 +18,13 @@ from "x-alice:/lib/TextIO.ozf"
 
 signature UNIX_COMPONENT =
     sig
-	structure Unix:
+	signature UNIX =
 	    sig
 		type proc
 
 		val execute: string * string list -> proc
 		val streamsOf: proc -> TextIO.instream * TextIO.outstream
 	    end
+
+	structure Unix: UNIX
     end

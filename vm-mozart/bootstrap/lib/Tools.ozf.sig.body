@@ -12,10 +12,17 @@
  *   $Revision$
  *)
 
-signature BROWSER_COMPONENT =
+signature TOOLS_COMPONENT =
     sig
-	structure Browser:
+	signature TOOLS =
 	    sig
+		val setPrintDepth: int -> unit
+		val setPrintWidth: int -> unit
+
+		val print: 'a -> unit
 		val browse: 'a -> unit
+		val inspect: 'a -> unit
 	    end
+
+	structure Tools: TOOLS
     end
