@@ -508,12 +508,14 @@ Component *BootLinker::LookupComponent(Chunk *key) {
   }
 }
 
+static word urlWord;
+
 word BootLinker::Link(Chunk *url) {
   traceFlag = getenv("ALICE_TRACE_BOOT_LINKER") != NULL;
   TaskStack *taskStack = TaskStack::New();
   LoadInterpreter::PushFrame(taskStack, url);
   Scheduler::NewThread(Interpreter::EmptyArg(), taskStack);
-  word urlWord = url->ToWord();
+  urlWord = url->ToWord();
   RootSet::Add(urlWord);
   Scheduler::Run();
   RootSet::Remove(urlWord);
