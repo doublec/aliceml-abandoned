@@ -265,14 +265,7 @@ DEFINE1(UnsafeSocket_close) {
 } END
 
 word UnsafeSocket() {
-#if defined(__MINGW32__) || defined(_MSC_VER)
-  WSADATA wsa_data;
-  WORD req_version = MAKEWORD(1, 1);
-  if (WSAStartup(req_version, &wsa_data) != 0) {
-    Error("No usable WinSock DLL found");
-  }
-#endif
-
+  // to be done: Windows Socket startup moved to UnsafeIO.cc
   Record *record = Record::New(8);
   INIT_STRUCTURE(record, "UnsafeSocket", "server",
 		 UnsafeSocket_server, 1, true);

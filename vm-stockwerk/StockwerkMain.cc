@@ -18,6 +18,7 @@
 #include "generic/Transients.hh"
 #include "generic/TaskStack.hh"
 #include "generic/IOHandler.hh"
+#include "generic/SignalHandler.hh"
 #include "generic/Scheduler.hh"
 #include "generic/Primitive.hh"
 #include "generic/Unpickler.hh"
@@ -82,6 +83,7 @@ int main(int argc, char *argv[]) {
   Properties::Init();
   TaskStack::Init();
   IOHandler::Init();
+  SignalHandler::Init();
   Scheduler::Init();
 #if PROFILE
   Profiler::Init();
@@ -126,7 +128,7 @@ int main(int argc, char *argv[]) {
       word boot = record->PolySel(UniqueString::New(String::New("boot")));
       Scheduler::NewThread(boot, Scheduler::ONE_ARG, Properties::rootUrl);
       // Restart Scheduler to execute module
-      Scheduler::Run();
+      Scheduler::Run(true);
 #if PROFILE
       Profiler::DumpInfo();
 #endif

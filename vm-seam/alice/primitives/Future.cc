@@ -15,10 +15,15 @@
 #include "generic/ByneedInterpreter.hh"
 #include "generic/PushCallInterpreter.hh"
 #include "generic/Scheduler.hh"
+#include "generic/SignalHandler.hh"
 #include "alice/primitives/Authoring.hh"
 
 DEFINE1(Future_alarmQuote) {
-  Error("Future.alarm not implemented"); //--** to be done
+  DECLARE_INT(nanos, x0);
+  Future *future = Future::New();
+  // Register expects milliseconds
+  SignalHandler::Register(SIGALRM, future->ToWord(), nanos / 1000);
+  RETURN(future->ToWord());
 } END
 
 DEFINE1(Future_await) {
