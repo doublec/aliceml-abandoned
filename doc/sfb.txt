@@ -68,12 +68,7 @@ Exportierte Daten werden stets mit ihrer Typbeschreibung gebündelt. Beim Import 
 
 Neuartig für ein Laufzeittypsystem ist weiterhin, dass nicht nur die Typen der Kernsprache unterstützt werden, sondern das System auch die vollständige Modulsprache umfasst. Dies ermöglicht den dynamischen In- und Export kompletter Programmmodule oder Modulhierarchien. Alice identifiziert derartige externalisierte Module mit Komponenten, was die flexible dynamische Generation und Konfiguration beliebiger Programmsysteme möglich macht.
 
-Die gegenüber SML erweiterte Modulsprache höherer Ordnung erlaubte es, Laufzeittypen und sie benötigende dynamische Operationen wie Pickling zu integrieren, ohne das dafür spezielle Sprachkonstrukte hinzugefügt werden mussten. Aus Sicht der Quellsprache handelt es sich lediglich um spezielle Bibliotheksfunktionalität.
-
-
-Typklassen
-
-[Objektstudie, Typklassen, Dipl Gerhard, Future Work, existentielle Typen]
+Die gegenüber SML erweiterte Modulsprache höherer Ordnung erlaubte es, Laufzeittypen und sie benötigende dynamische Operationen wie Pickling zu integrieren, ohne das dafür spezielle Sprachkonstrukte hinzugefügt werden mussten. Aus Sicht der Quellsprache handelt es sich lediglich um spezielle Bibliotheksfunktionalität. Allgemeiner lassen sich beliebige extensional polymorphe Operationen auf diese Weise in die Sprache integrieren. Ebenso lässt sich dynamische Typisierung auf diesem Weg verfügbar machen.
 
 
 Implementierung
@@ -85,22 +80,41 @@ Implementierung
 
 ZIELE FÜR DEN FOLGEZEITRAUM
 
-(Formalisierung Laufzeittypen)
+Formalisierung von Laufzeittypen
+
+Der Mechanismus zur dynamischen Typüberprüfung nimmt in der Alice-Semantik einen zentralen Platz ein. Bisher sind Laufzeittypen jedoch nur in Ansätzen formalisiert worden. Es soll im folgenden Projektabschnitt eine formale Fundierung für die Semantik von Laufzeittypen geschaffen werden.
 
 
 Strukturen für die offene Programmierung
 
-Beim Entwurf offener und flexibler Programmstrukturen spielen herkömmlicherweise objektorientierte Strukturen eine grosse Rolle. Insbesondere die objektorientierte Programmiersprache Java wird gerne als Beispiel eines offenen Programmiermodells angeführt. Jedoch gibt es nach wie vor keine befriedigende Lösung zur Integration funktionaler und objektorientierter Sprachkonstrukte.
+Beim Entwurf offener und flexibler Programmstrukturen, aber auch bei Bibliotheken wie denen zu grafischen Benutzeroberflächen, spielen herkömmlicherweise objektorientierte Strukturen eine grosse Rolle. Insbesondere die objektorientierte Programmiersprache Java wird gerne als Beispiel eines offenen Programmiermodells angeführt. Jedoch gibt es nach wie vor keine befriedigende Lösung zur Integration funktionaler und objektorientierter Sprachkonstrukte.
 
 Zu Beginn des aktuellen Projektzeitraums wurde ein an Java angelehntes Objektmodell für SML entworfen. Das Design wies jedoch einen hohen Komplexitätsgrad auf und es war nicht offensichtlich, inwiefern dieser durch die gewonnene Expressivität zu rechtfertigen war. Zudem war der Entwurf nicht ohne Weiteres in Einklang zu bringen mit SMLs polymorpher Typinferenz.
 
-Im Kontext des SML-Modulsystems sind 
+Im Kontext des SML-Modulsystems sind mittlerweile Erweiterungen verfügbar, die Module als First-Class-Entities zur Verfügung stellen. Dies erhöht noch einmal die Expressivität des Modulsystems und erlaubt es, Module dynamisch berechnen zu lassen. Es ist dadurch denkbar, Module selbst als Objekte zu benutzen. Diese Möglichkeit soll als Alternative zu einem traditionellen Objektsystem untersucht werden.
 
-In jüngerer Zeit weisen einige Veröffentlichungen darauf hin, dass das Konzept von Typklassen, wie es beispielsweise in der Sprache Haskell zu finden ist, ä
-
-GUIs
+In jüngerer Zeit weisen einige Veröffentlichungen darauf hin, dass das Konzept von Typklassen, wie es beispielsweise in der Sprache Haskell zu finden ist, einen ähnlichen Expressivitätsgrad aufweist, wie objektorientierte Konstrukte. Gleichzeitig besitzen Typklassen eine wesentlich geringere Komplexität. Im laufenden Projektzeitraum wurde bereits eine Studie vorgenommen, die erfolgreich die Möglichkeit der Integration von Typklassen in SML untersucht hat. Die Interaktion mit dem Modulsystem von SML bietet dabei einerseits interessante Möglichkeiten, führt aber andererseits zu Komplikationen. Insbesondere zeigte sich, dass die orthogonale Integration zu einer Duplikation von Konzepten geführt hat, die aus sprachökonomischer Sicht unbefriedigend, und für den Benutzer schwer zu handhaben ist. Eine der Forschungsschwerpunkte des kommenden Projektabschnitts soll deshalb sein, beide Sprachkonstrukte in einem vereinheitlichten Rahmen zusammen zu führen und in Alice zu integrieren.
 
 
-Integration von Typklassen und existentiellen Typen
-Untersuchung weiterer Erweiterungen des Typsystems (polymorphe Records und Varianten, HO-Polymorphismus, First-Class-Modules)
-First-Class Compiler
+Weitere Erweiterungen des Typsystems
+
+Zwar bietet Alice bereits ein recht flexibles und ausdrucksstarkes Typsystem, jedoch führt es an einigen Stellen trotzdem zu erheblichen Einschränkungen gegenüber der dynamischen Typisierung von Oz. So ist beispielsweise die Handhabung von Records und anderen Datenstrukturen wesentlich restriktiver, da sie nur einen vergleichsweise geringen Grad an Polymorphismus aufweist. Es bleibt zu untersuchen, ob diese Einschränkungen in der Praxis zu Problemen führen. Insbesondere im Zusammenhang mit Constraints und verteilter Programmierung könnte sich Verbesserungsbedarf offenbaren.
+
+Mögliche Wege zur Flexibilisierung des Typsystems wären die Verallgemeinerung zu polymorphen Records und Varianten, oder die Hinzunahme von Polymorphismus höherer Ordnung. 
+
+
+Reflektive Elemente
+
+Das Oz-System ist in hohem Masse dynamisch und kann deshalb zu sehr grossen Teilen in Oz selbst ausgedrückt werden. Insbesondere sind der Compiler und der Komponentenmanager komplett in Oz geschrieben. Für eine statisch typisierte Sprache ergeben sich hier einige Probleme. Zwar ist auch der Alice-Compiler in Alice selbst verfasst, jedoch enthält diese Formulierung einige Lücken, bei denen das statische Typsystem umgangen werden muss. Dasselbe gilt für den Komponentenmanager. Das expressive Modulsystem von Alice und die Unterstützung von Laufzeittypisierung sollte es aber im Prinzip ermöglichen, diese Lücken zu schliessen und das Alice-System weitgehend geschlossen in Alice auszudrücken. Die geeignete Modellierung ist jedoch nicht trivial.
+
+[noch mehr? Leif?]
+
+
+Reimplementierung der virtuellen Maschine
+
+[]
+
+
+Werkzeuge
+
+[noch in Oz-Syntax, nutzen Typen bisher nicht, teilweise neu für Stockwerk]
