@@ -340,13 +340,20 @@ functor MkRecursiveCompiler(structure ComponentManager: COMPONENT_MANAGER
 	    end
 
 	fun acquireMod (desc, url) =
-	    if Compiler.isCrossCompiler then
-		raise IO.Io {name = Url.toStringRaw url,
-			     function = "load",
-			     cause = Component.NotFound}
-	    else
-		(*--** support evaluation during recursive compilation; *)
-		ComponentManager.eval (url, ComponentManager.link url)
+	    let
+		val url' =
+		    case Source.url desc of
+			SOME base => Url.resolve base url
+		      | NONE => resolveWrtCwd url
+	    in
+		if Compiler.isCrossCompiler then
+		    raise IO.Io {name = Url.toStringRaw url',
+				 function = "load",
+				 cause = Component.NotFound}
+		else
+		    (*--** support evaluation during recursive compilation; *)
+		    ComponentManager.eval (url', ComponentManager.link url')
+	    end
 
 	local
 	    fun compile' context (desc, s) =
