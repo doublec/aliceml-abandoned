@@ -87,7 +87,7 @@ void Interpreter::PrepareForGC(Block *) {
   return;
 }
 
-Block *Interpreter::GetAbstractRepresentation() {
+Block *Interpreter::GetAbstractRepresentation(Block *) {
   return INVALID_POINTER;
 }
 

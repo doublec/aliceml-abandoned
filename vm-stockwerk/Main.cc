@@ -17,6 +17,7 @@
 #include "emulator/Transients.hh"
 #include "emulator/TaskStack.hh"
 #include "emulator/Scheduler.hh"
+#include "emulator/Primitive.hh"
 #include "emulator/PrimitiveTable.hh"
 #include "emulator/Unpickler.hh"
 #include "emulator/BootLinker.hh"
@@ -73,6 +74,7 @@ int main(int argc, char *argv[]) {
   Future::Init();
   TaskStack::Init();
   Scheduler::Init();
+  Primitive::Init();
   PrimitiveTable::Init();
   // Setup Interpreters
   PushCallInterpreter::Init();

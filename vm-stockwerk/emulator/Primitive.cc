@@ -21,9 +21,11 @@
 #include "emulator/ConcreteCode.hh"
 #include "emulator/TaskStack.hh"
 #include "emulator/Scheduler.hh"
+#include "emulator/RootSet.hh"
 #include "emulator/StackFrame.hh"
 #include "emulator/Alice.hh"
 #include "emulator/Primitive.hh"
+#include "emulator/Transform.hh"
 
 // Primitive Frame
 class PrimitiveFrame : private StackFrame {
@@ -59,7 +61,7 @@ public:
 		       u_int n, u_int m, bool local):
     name(s), function(f), arity(n), frameSize(m + 1), sited(local) {}
   // Handler Methods
-  virtual Block *GetAbstractRepresentation();
+  virtual Block *GetAbstractRepresentation(Block *blockWithHandler);
   // Frame Handling
   virtual void PushCall(TaskStack *taskStack, Closure *closure);
   // Execution
@@ -72,12 +74,15 @@ public:
 //
 // PrimitiveInterpreter Functions
 //
-Block *PrimitiveInterpreter::GetAbstractRepresentation() {
+Block *
+PrimitiveInterpreter::GetAbstractRepresentation(Block *blockWithHandler) {
   if (sited) {
     return INVALID_POINTER;
   }
   else {
-    return INVALID_POINTER; // to be done
+    ConcreteCode *concreteCode =
+      reinterpret_cast<ConcreteCode *>(blockWithHandler);
+    return Store::DirectWordToBlock(concreteCode->Get(0));
   }
 }
 
@@ -126,11 +131,17 @@ void PrimitiveInterpreter::DumpFrame(word) {
 //
 // Primitive Functions
 //
+word Primitive::aliceTransformName;
+
 word Primitive::MakeFunction(const char *name,
 			     Primitive::function value, u_int arity, bool s) {
   // to be done (transforms)
   ConcreteCode *concreteCode =
-    ConcreteCode::New(new PrimitiveInterpreter(name, value, arity, 0, s), 0);
+    ConcreteCode::New(new PrimitiveInterpreter(name, value, arity, 0, s), 1);
+  Transform *transform =
+    Transform::New(Store::DirectWordToChunk(aliceTransformName),
+		   String::New(name)->ToWord());
+  concreteCode->Init(0, transform->ToWord());
   return concreteCode->ToWord();
 }
 
@@ -138,4 +149,9 @@ word Primitive::MakeClosure(const char *name,
 			    Primitive::function value, u_int arity, bool s) {
   word concreteCode = MakeFunction(name, value, arity, s);
   return Closure::New(concreteCode, 0)->ToWord();
+}
+
+void Primitive::Init() {
+  RootSet::Add(aliceTransformName);
+  aliceTransformName = String::New("Alice.primitive.function")->ToWord();
 }
