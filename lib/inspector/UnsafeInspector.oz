@@ -21,9 +21,7 @@ import
    Inspector(inspect inspectN configure)
    TreeNodesComponent('nodes' : TreeNodes) at 'TreeNodes'
 export
-   '$INSPECTOR$': INSPECTOR
-   'Inspector$': AliceInspector
-   'inspect' : AliceInspect
+   'UnsafeInspector$': UnsafeInspector
 define
    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
    %% Change Default Inspector Bindings
@@ -168,12 +166,6 @@ define
    in
       {Inspector.configure typeConversion ConversionTable}
    end
-
-   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-   %% Create Exported Signature
-   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-   INSPECTOR = 'INSPECTOR'()   %--** rtt not implemented
 
    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
    %% Create Exported Structure
@@ -423,117 +415,38 @@ define
    end
 
    %% Create Inspector Interface
-   AliceInspector =
-   'Inspector'(%% Types
-	       'value$':  {Value.byNeedFail rttNotImplemented}
-	       'color$':  {Value.byNeedFail rttNotImplemented}
-	       'width$':  {Value.byNeedFail rttNotImplemented}
-	       'depth$':  {Value.byNeedFail rttNotImplemented}
-	       'action$': {Value.byNeedFail rttNotImplemented}
-	       'option$': {Value.byNeedFail rttNotImplemented}
-
-	       %% Constructors
-	       'KEEP_COLOR':           'KEEP_COLOR'
-	       '\'KEEP_COLOR':         'KEEP_COLOR'
-	       'SET_COLOR':            fun {$ X} 'SET_COLOR'(X) end
-	       '\'SET_COLOR':          'SET_COLOR'
-	       'ConfigurationError':   ConfigurationError
-	       '\'ConfigurationError': ConfigurationError
-	       'KEEP_WIDTHS':          'KEEP_WIDTHS'
-	       '\'KEEP_WIDTHS':        'KEEP_WIDTHS'
-	       'REPLACE_WIDTHS':       fun {$ X} 'REPLACE_WIDTHS'(X) end
-	       '\'REPLACE_WIDTHS':     'REPLACE_WIDTHS'
-	       'APPEND_WIDTH':         fun {$ X} 'APPEND_WIDTH'(X) end
-	       '\'APPEND_WIDTH':       'APPEND_WIDTH'
-	       'REMOVE_WIDTH':         fun {$ X} 'REMOVE_WIDTH'(X) end
-	       '\'REMOVE_WIDTH':       'REMOVE_WIDTH'
-	       'KEEP_DEPTHS':          'KEEP_DEPTHS'
-	       '\'KEEP_DEPTHS':        'KEEP_DEPTHS'
-	       'REPLACE_DEPTHS':       fun {$ X} 'REPLACE_DEPTHS'(X) end
-	       '\'REPLACE_DEPTHS':     'REPLACE_DEPTHS'
-	       'APPEND_DEPTH':         fun {$ X} 'APPEND_DEPTH'(X) end
-	       '\'APPEND_DEPTH':       'APPEND_DEPTH'
-	       'REMOVE_DEPTH':         fun {$ X} 'REMOVE_DEPTH'(X) end
-	       '\'REMOVE_DEPTH':       'REMOVE_DEPTH'
-	       'KEEP_ACTIONS':         'KEEP_ACTIONS'
-	       '\'KEEP_ACTIONS':       'KEEP_ACTIONS'
-	       'REPLACE_ACTIONS':      fun {$ X} 'REPLACE_ACTIONS'(X) end
-	       '\'REPLACE_ACTIONS':    'REPLACE_ACTIONS'
-	       'APPEND_ACTION':        fun {$ X} 'APPEND_ACTION'(X) end
-	       '\'APPEND_ACTION':      'APPEND_ACTION'
-	       'REMOVE_ACTION':        fun {$ X} 'REMOVE_ACTION'(X) end
-	       '\'REMOVE_ACTION':      'REMOVE_ACTION'
-	       'NUMBER':               fun {$ X} 'NUMBER'(X) end
-	       '\'NUMBER':             'NUMBER'
-	       'FUNCTION':             fun {$ X} 'FUNCTION'(X) end
-	       '\'FUNCTION':           'FUNCTION'
-	       'STRING':               fun {$ X} 'STRING'(X) end
-	       '\'STRING':             'STRING'
-	       'HOLE':                 fun {$ X} 'HOLE'(X) end
-	       '\'HOLE':               'HOLE'
-	       'FUTURE':               fun {$ X} 'FUTURE'(X) end
-	       '\'FUTURE':             'FUTURE'
-	       'CONSTRUCTOR':          fun {$ X} 'CONSTRUCTOR'(X) end
-	       '\'CONSTRUCTOR':        'CONSTRUCTOR'
-	       'REFERENCE':            fun {$ X} 'REFERENCE'(X) end
-	       '\'REFERENCE':          'REFERENCE'
-	       'FD':                   fun {$ X} 'FD'(X) end
-	       '\'FD':                 'FD'
-	       'FSET':                 fun {$ X} 'FSET'(X) end
-	       '\'FSET':               'FSET'
-	       'TUPLE':                fun {$ X} 'TUPLE'(X) end
-	       '\'TUPLE':              'TUPLE'
-	       'RECORD':               fun {$ X} 'RECORD'(X) end
-	       '\'RECORD':             'RECORD'
-	       'LIST':                 fun {$ X} 'LIST'(X) end
-	       '\'LIST':               'LIST'
-	       'CONSTRUCTED_VALUE':    fun {$ X} 'CONSTRUCTED_VALUE'(X) end
-	       '\'CONSTRUCTED_VALUE':  'CONSTRUCTED_VALUE'
-	       'VECTOR':               fun {$ X} 'VECTOR'(X) end
-	       '\'VECTOR':             'VECTOR'
-	       'RECORD_LABEL':         fun {$ X} 'RECORD_LABEL'(X) end
-	       '\'RECORD_LABEL':       'RECORD_LABEL'
-	       'ALIAS_DEFINITION':     fun {$ X} 'ALIAS_DEFINITION'(X) end
-	       '\'ALIAS_DEFINITION':   'ALIAS_DEFINITION'
-	       'ALIAS_REFERENCE':      fun {$ X} 'ALIAS_REFERENCE'(X) end
-	       '\'ALIAS_REFERENCE':    'ALIAS_REFERENCE'
-	       'WIDTH_ARROW':          fun {$ X} 'WIDTH_ARROW'(X) end
-	       '\'WIDTH_ARROW':        'WIDTH_ARROW'
-	       'DEPTH_ARROW':          fun {$ X} 'DEPTH_ARROW'(X) end
-	       '\'DEPTH_ARROW':        'DEPTH_ARROW'
-	       'PARENTHESES':          fun {$ X} 'PARENTHESES'(X) end
-	       '\'PARENTHESES':        'PARENTHESES'
-	       'MISC':                 fun {$ X} 'MISC'(X) end
-	       '\'MISC':               'MISC'
-
-	       %% Functions
-	       'inspect': AliceInspect
-	       'inspectN':
-		  fun {$ N V}
-		     {Inspector.inspectN N V}
-		     unit
-		  end
-	       'InspectType$':
-		  fun {$ X}
-		     {Inspector.inspect X.'$t'}
-		     unit
-		  end
-	       'InspectSig$':
-		  fun {$ X}
-		     {Inspector.inspect
-		      {X.'$S$' unit}}
-		     unit
-		  end
-	       'InspectValSig$':
-		  fun {$ X}
-		     {Inspector.inspect
-		      '#'('val':X.x 'sig':{X.'$S$' unit})}
-		     unit
-		  end
-	       'Inspect$':
-		  fun {$ X}
-		     {Inspector.inspect X.'X$'}
-		     unit
-		  end
-	       'configure': Configure)
+   UnsafeInspector = 'UnsafeInspector'(
+			%% Exception
+			'ConfigurationError' : ConfigurationError
+			'\'ConfigurationError' : ConfigurationError
+			%% Functions
+			'inspect': AliceInspect
+			'inspectN':
+			   fun {$ N V}
+			      {Inspector.inspectN N V}
+			      unit
+			   end
+			'InspectType$':
+			   fun {$ X}
+			      {Inspector.inspect X.'$t'}
+			      unit
+			   end
+			'InspectSig$':
+			   fun {$ X}
+			      {Inspector.inspect
+			       {X.'$S$' unit}}
+			      unit
+			   end
+			'InspectValSig$':
+			   fun {$ X}
+			      {Inspector.inspect
+			       '#'('val':X.x 'sig':{X.'$S$' unit})}
+			      unit
+			   end
+			'Inspect$':
+			   fun {$ X}
+			      {Inspector.inspect X.'X$'}
+			      unit
+			   end
+			'configure': Configure)
 end

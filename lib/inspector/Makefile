@@ -17,6 +17,7 @@
 PREFIX = /opt/stockhausen-devel
 
 SRCTOP = ../..
+BOOTSTRAPDIR = ../../bootstrap
 
 # No configuration needed from here
 
@@ -25,14 +26,14 @@ VPATH = $(SRCDIR)
 
 OZC = ozc
 OZCOPTS = -z9
-OZL = stol
 OZLOPTS = -z9
-STOC = stoc
-STOCOPTS = --no-dump-elaboration-sig
-
+STOC = alicec
+STOL = alicelink
+STODEP = sml @SMLload=$(BOOTSTRAPDIR)/alicedep
+STOCOPTS = --recursive-compilation
 OZSOURCES = \
 	CreateObjects.oz LayoutObjects.oz DrawObjects.oz TreeNodes.oz \
-	Helper.oz InspectorMain.oz
+	Helper.oz UnsafeInspector.oz
 
 OZLINPUTS = $(OZSOURCES:%.oz=%.ozf)
 
@@ -45,16 +46,16 @@ INSTALLFILES = $(PREFIX)/lib/tools/Inspector.ozf
 ## Building
 ##
 
-all: Inspector.ozf
+all: LinkedInspector.ozf
 
 depend:
-	touch Makefile.depend
+	$(STODEP) Inspector.aml INSPECTOR-sig.aml > Makefile.depend
 
-UntypedInspector.ozf: $(OZLINPUTS)
-	$(OZL) $(OZLOPTS) InspectorMain.ozf -o $@
+Inspector.ozf: UnsafeInspector.asig Inspector.aml
+	$(STOC) $(STOCOPTS) -c Inspector.aml -o Inspector.ozf
 
-Inspector.ozf: UntypedInspector.ozf Inspector.asig
-	$(STOC) $(STOCOPTS) --replacesign $^ $@
+LinkedInspector.ozf: $(OZLINPUTS) Inspector.ozf
+	$(STOL) $(OZLOPTS) Inspector.ozf -o LinkedInspector.ozf
 
 %.ozf: %.oz
 	$(OZC) $(OZCOPTS) -c $< -o $@
@@ -70,7 +71,7 @@ install: $(INSTALLDIRS) $(INSTALLFILES)
 $(INSTALLDIRS):
 	mkdir -p $@
 
-$(PREFIX)/lib/tools/%.ozf: %.ozf
+$(PREFIX)/lib/tools/%.ozf: Linked%.ozf
 	install -c -m 444 $< $@
 
 ##
@@ -78,7 +79,7 @@ $(PREFIX)/lib/tools/%.ozf: %.ozf
 ##
 
 clean:
-	-rm -f $(OZLINPUTS) UntypedInspector.ozf Inspector.ozf
+	-rm -f $(OZLINPUTS) UnsafeInspector.ozf Inspector.ozf INSPECTOR-sig.ozf LinkedInspector.ozf
 
 veryclean: clean
 
