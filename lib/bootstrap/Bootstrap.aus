@@ -515,6 +515,9 @@ structure Int =
 
 	__primitive toString : int -> string = "Int.toString"
 
+	__primitive >= : int * int -> bool = "Int.>="
+	__primitive < : int * int  -> bool = "Int.<"
+
 	val fromString = scanString (scan DEC)   (*--** crashes *)
 
 	fun max (i, j) = if i < j then j else i
@@ -532,6 +535,7 @@ signature INTEGER =
 
 	val + : int * int -> int
 	val >= : int * int -> bool
+	val < : int * int -> bool
 
 	val scan:
 	    StringCvt.radix -> (char, 'a) StringCvt.reader -> 'a ->
@@ -661,6 +665,10 @@ structure Real =
 	val scan = 0   (*--** *)
 	val toString = 0   (*--** *)
 	val toString = 0   (*--** *)
+	val fromString = 0 (*--** *)
+	val compare = 0 (*--** *)
+	val trunc = 0 (*--** *)
+	val op < = 0 (*--** *)
     end
 
 structure LargeReal = Real
