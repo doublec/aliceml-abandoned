@@ -18,8 +18,8 @@
 #pragma implementation "generic/SignalHandler.hh"
 #endif
 
-#include "store/Store.hh"
 #include "generic/SignalHandler.hh"
+#include "store/Store.hh"
 #include "generic/Scheduler.hh"
 #include "generic/RootSet.hh"
 #include "generic/Transients.hh"

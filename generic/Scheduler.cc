@@ -16,6 +16,7 @@
 #pragma implementation "generic/Scheduler.hh"
 #endif
 
+#include "generic/SignalHandler.hh"
 #include <cstdio>
 #include "generic/RootSet.hh"
 #include "generic/ConcreteCode.hh"
@@ -25,7 +26,6 @@
 #include "generic/BindFutureWorker.hh"
 #include "generic/PushCallWorker.hh"
 #include "generic/IOHandler.hh"
-#include "generic/SignalHandler.hh"
 
 #if PROFILE
 #include "generic/Profiler.hh"
