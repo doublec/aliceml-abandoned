@@ -30,7 +30,7 @@ signature LINK =
 	val collect: boundary vector -> Url.t ->
 		     {componentMap: MyComponent.t UrlMap.t,
 		      includeMap: Url.t vector UrlMap.t,
-		      excludeMap: MyComponent.sign UrlMap.t}
+		      excludeMap: MyComponent.inf UrlMap.t}
 		     (* Empty, Mismatch, Conflict *)
 
 	val sort: Url.t vector UrlMap.t * 'a UrlMap.t -> Url.t list
