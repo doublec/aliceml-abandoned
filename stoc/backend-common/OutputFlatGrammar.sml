@@ -62,7 +62,7 @@ structure OutputImperativeGrammar :> OUTPUT_IMPERATIVE_GRAMMAR =
 		end
 	end
 
-	fun outputInfo (_, ref Unknown) = NULL
+	fun outputInfo (_, ref (Unknown | LoopStart | LoopEnd)) = NULL
 	  | outputInfo (_, ref (Use set)) = SEQ [S "use ...", NL]
 	  | outputInfo (_, ref (Kill set)) =
 	    if StampSet.isEmpty set then NULL
