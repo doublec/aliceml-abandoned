@@ -1850,147 +1850,6 @@ structure Time :> TIME =
 
 
 (*****************************************************************************
- * Transient
- *****************************************************************************)
-
-signature TRANSIENT =
-  sig
-    exception Promise
-    exception Future
-    exception Fulfill
-    exception ByNeed of exn
-
-    val promise :	unit -> 'a
-    val future :	'a -> 'a
-    val byNeed :	(unit -> 'a) -> 'a
-
-    val fulfill :	'a * 'a -> unit
-    val fail :		'a * exn -> unit
-    val await :		'a -> 'a
-    val awaitOne :	'a * 'b -> 'a
-
-    val isPromise :	'a -> bool
-    val isFuture :	'a -> bool
-  end
-
-
-structure Transient : TRANSIENT =
-  struct
-    __primitive constructor Promise : exn		= "Transient.Promise"
-    __primitive constructor Future :  exn		= "Transient.Future"
-    __primitive constructor Fulfill : exn		= "Transient.Fulfill"
-    __primitive constructor ByNeed of exn : exn		= "Transient.ByNeed"
-
-    __primitive val promise :	unit -> 'a		= "Transient.promise"
-    __primitive val future :	'a -> 'a		= "Transient.future"
-    __primitive val byNeed :	(unit -> 'a) -> 'a	= "Transient.byNeed"
-
-    __primitive val fulfill :	'a * 'a -> unit		= "Transient.fulfill"
-    __primitive val fail :	'a * exn -> unit	= "Transient.fail"
-    __primitive val await :	'a -> 'a		= "Transient.await"
-    __primitive val awaitOne :	'a * 'b -> 'a		= "Transient.awaitOne"
-
-    __primitive val isPromise :	'a -> bool		= "Transient.isPromise"
-    __primitive val isFuture :	'a -> bool		= "Transient.isFuture"
-  end
-
-
-structure Transient' =
-  struct
-    type 'a promise
-
-    __primitive constructor Promise : exn		= "Transient.Promise"
-    __primitive constructor Future :  exn		= "Transient.Future"
-    __primitive constructor Fulfill : exn		= "Transient.Fulfill"
-    __primitive constructor ByNeed of exn : exn		= "Transient.ByNeed"
-
-    __primitive val promise :	unit -> 'a promise	= "Transient.promise"
-    __primitive val future :	'a promise -> 'a	= "Transient.future"
-    __primitive val byNeed :	(unit -> 'a) -> 'a	= "Transient.byNeed"
-
-    __primitive val fulfill :	'a promise * 'a -> unit	= "Transient.fulfill"
-    __primitive val fail :	'a promise * exn-> unit	= "Transient.fail"
-    __primitive val await :	'a -> 'a		= "Transient.await"
-    __primitive val awaitOne :	'a * 'b -> 'a		= "Transient.awaitOne"
-
-    __primitive val isPromise :	'a promise -> bool	= "Transient.isPromise"
-    __primitive val isFuture :	'a -> bool		= "Transient.isFuture"
-  end
-
-
-
-(*****************************************************************************
- * Future
- *****************************************************************************)
-
-signature FUTURE =
-  sig
-    exception Future of exn
-
-    val concur :	(unit -> 'a) -> 'a
-    val byneed :	(unit -> 'a) -> 'a
-    val alarm :		Time.time -> unit
-
-    val await :		'a -> 'a
-    val awaitOne :	'a * 'b -> 'a
-
-    val isFuture :	'a -> bool
-    val isFailed :	'a -> bool
-  end
-
-
-structure Future : FUTURE =
-  struct
-    __primitive constructor Future of exn : exn		= "Transient.ByNeed"
-
-    __primitive val concur :	(unit -> 'a) -> 'a	= "Thread.spawn"
-    __primitive val byneed :	(unit -> 'a) -> 'a	= "Transient.byNeed"
-    __primitive val alarm :	Time.time -> unit	= "Transient.alarm'"
-
-    __primitive val await :	'a -> 'a		= "Transient.await"
-    __primitive val awaitOne :	'a * 'b -> 'a		= "Transient.awaitOne"
-
-    __primitive val isFuture :	'a -> bool		= "Transient.isFuture"
-
-    fun isFailed x = false	(*UNFINISHED*)
-  end
-
-
-
-(*****************************************************************************
- * Promise
- *****************************************************************************)
-
-signature PROMISE =
-  sig
-    type 'a promise
-
-    exception Promise
-
-    val promise :	unit -> 'a promise
-    val future :	'a promise -> 'a
-
-    val fulfill :	'a promise * 'a  -> unit	(* Promise *)
-    val fail :		'a promise * exn -> unit	(* Promise *)
-  end
-
-
-structure Promise : PROMISE =
-  struct
-    type 'a promise
-
-    __primitive constructor Promise : exn		= "Transient.Promise"
-
-    __primitive val promise :	unit -> 'a promise	= "Transient.promise"
-    __primitive val future :	'a promise -> 'a	= "Transient.future"
-
-    __primitive val fulfill :	'a promise * 'a -> unit	= "Transient.fulfill"
-    __primitive val fail :	'a promise * exn-> unit	= "Transient.fail"
-  end
-
-
-
-(*****************************************************************************
  * Cell
  *****************************************************************************)
 
@@ -2034,17 +1893,105 @@ signature HOLE =
 
 structure Hole : HOLE =
   struct
-    __primitive constructor Hole : exn			= "Transient.Promise"
+    __primitive constructor Hole : exn			= "Hole.Hole"
 
-    __primitive val hole :	unit -> 'a		= "Transient.promise"
-    __primitive val future :	'a -> 'a		= "Transient.future"
+    __primitive val hole :	unit -> 'a		= "Hole.hole"
+    __primitive val future :	'a -> 'a		= "Hole.future"
 
-    __primitive val fill :	'a * 'a  -> unit	= "Transient.fulfill"
-    __primitive val fail :	'a * exn -> unit	= "Transient.fail"
+    __primitive val fill :	'a * 'a  -> unit	= "Hole.fill"
+    __primitive val fail :	'a * exn -> unit	= "Hole.fail"
 
-    __primitive val isHole :	'a -> bool		= "Transient.isHole"
+    __primitive val isHole :	'a -> bool		= "Hole.isHole"
+    __primitive val isFailed :	'a -> bool		= "Hole.isFailed"
+  end
 
-    fun isFailed x = false	(*UNFINISHED*)
+
+
+(*****************************************************************************
+ * Future
+ *****************************************************************************)
+
+signature FUTURE =
+  sig
+    exception Future of exn
+
+    val concur :	(unit -> 'a) -> 'a
+    val byneed :	(unit -> 'a) -> 'a
+    val alarm :		Time.time -> unit
+
+    val await :		'a -> 'a
+    val awaitOne :	'a * 'b -> 'a
+
+    val isFuture :	'a -> bool
+    val isFailed :	'a -> bool
+  end
+
+
+structure Future : FUTURE =
+  struct
+    __primitive constructor Future of exn : exn		= "Future.Future"
+
+    __primitive val concur :	(unit -> 'a) -> 'a	= "Future.concur"
+    __primitive val byneed :	(unit -> 'a) -> 'a	= "Future.byneed"
+    __primitive val alarm :	Time.time -> unit	= "Future.alarm'"
+
+    __primitive val await :	'a -> 'a		= "Future.await"
+    __primitive val awaitOne :	'a * 'b -> 'a		= "Future.awaitOne"
+
+    __primitive val isFuture :	'a -> bool		= "Future.isFuture"
+    __primitive val isFailed :	'a -> bool		= "Future.isFailed"
+  end
+
+
+
+(*****************************************************************************
+ * Promise
+ *****************************************************************************)
+
+signature PROMISE =
+  sig
+    type 'a promise
+
+    exception Promise
+
+    val promise :	unit -> 'a promise
+    val future :	'a promise -> 'a
+
+    val fulfill :	'a promise * 'a  -> unit	(* Promise *)
+    val fail :		'a promise * exn -> unit	(* Promise *)
+  end
+
+
+structure Promise :> PROMISE =
+  struct
+    open Cell
+
+    type 'a promise	= bool cell * 'a
+
+    exception Promise	= Hole.Hole
+
+    fun promise()	= (cell false, Hole.hole())
+    fun future(_,h)	= Hole.future h
+
+    fun fulfill((c,h), x) =
+	let
+	    val b = Hole.hole()
+	in
+	    if exchange(c,b) then
+	        (Hole.fill(b,true); raise Promise)
+	    else
+	        (Hole.fill(h,x); Hole.fill(b,true))
+	end
+
+    fun fail((c,h), e) =
+	let
+	    val b = Hole.hole()
+	in
+	    if exchange(c,b) then
+	        (Hole.fill(b,true); raise Promise)
+	    else
+	        (Hole.fail(h,e); Hole.fill(b,true))
+	end
   end
 
 
@@ -2083,7 +2030,6 @@ structure Thread : THREAD =
 
     __primitive constructor Terminate : exn		= "Thread.Terminate"
 
-    __primitive val spawn' :	(unit -> 'a) -> 'a	= "Thread.spawn"
     __primitive val current :	unit -> thread		= "Thread.current"
     __primitive val state :	thread -> state		= "Thread.state"
 
@@ -2097,7 +2043,7 @@ structure Thread : THREAD =
     fun spawn f =
 	let
 	    val t = Promise.promise()
-	    val x = spawn'(fn() => (Promise.fulfill(t, current()); f()))
+	    val x = Future.concur(fn() => (Promise.fulfill(t, current()); f()))
 	in
 	    (Future.await(Promise.future t), x)
 	end
