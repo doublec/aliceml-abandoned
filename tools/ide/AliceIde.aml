@@ -1,6 +1,8 @@
 import structure AliceIdeGUI from "AliceIdeGUI"
 import structure Gtk from "x-alice:/lib/gtk/Gtk"
 import structure Gdk from "x-alice:/lib/gtk/Gdk"
+import structure Key from "x-alice:/lib/gtk/Key"
+import structure Inspector from "x-alice:/lib/tools/Inspector"
 
 structure AliceIde =
     struct
@@ -15,6 +17,8 @@ structure AliceIde =
 
         val numberOfPages = ref 1
         val currentPage = ref 0
+
+        val feedParagraphHiddenMenu = Gtk.menuItemNewWithMnemonic("Special Paragraph")
 
         fun write stream text =
             let
@@ -70,6 +74,56 @@ structure AliceIde =
                 write compileroutP str
             end
 
+
+        fun findNextEOL iter next =
+            if next iter then
+                let
+                    val c = chr (Gtk.textIterGetChar iter)
+                in
+                    if c = #"\n" then ()
+                    else if Char.isSpace c then findNextEOL iter next
+                    else findEOP iter next
+                end
+            else ()
+        and findEOP iter next =
+            let
+                val c = Gtk.textIterGetChar iter
+            in
+                if c=0 then ()
+                else
+                    if c=ord #"\n" then
+                        findNextEOL iter next
+                    else if next iter then
+                        findEOP iter next
+                    else ()
+            end
+
+        fun paragraphIters(buf) =
+            let
+                val cursor = Gtk.textBufferGetInsert(buf)
+                val startiter = Gtk.textIterNew()
+                val _ = Gtk.textBufferGetIterAtMark(buf,startiter,cursor)
+                val c = Gtk.textIterGetChar startiter
+                val _ = if c = ord #"\n" orelse c=0 then
+                            Gtk.textIterBackwardChar startiter else false
+                val enditer = Gtk.textIterCopy(startiter)
+                val _ = findEOP startiter Gtk.textIterBackwardChar
+                val _ = findEOP enditer Gtk.textIterForwardChar
+            in
+                (startiter, enditer)
+            end
+
+        fun feedParagraph() =
+            let
+                val buf = Gtk.textViewGetBuffer (!curtextview)
+                val (startiter, enditer) = paragraphIters(buf)
+                val str = Gtk.textBufferGetText(buf, startiter, enditer, false)
+            in
+                Gtk.textIterFree startiter;
+                Gtk.textIterFree enditer;
+                write compileroutP str
+            end
+            
         fun copy() =
             let
                 val buf = Gtk.textViewGetBuffer (!curtextview)
@@ -134,4 +188,16 @@ structure AliceIde =
         fun close () = if !currentPage=0 then ()
                        else (Gtk.notebookRemovePage(AliceIdeGUI.notebook1, !currentPage);
                              currentPage := Gtk.notebookGetCurrentPage AliceIdeGUI.notebook1)
+        fun init () =
+            let
+                val buf = Gtk.textViewGetBuffer AliceIdeGUI.scratchpad
+            in
+                Gtk.windowAddAccelGroup(AliceIdeGUI.mainwidget,
+                                        AliceIdeGUI.Helpers.accelGroup);
+                Gtk.widgetAddAccelerator(AliceIdeGUI.feedparagraph, "activate",
+                                         AliceIdeGUI.Helpers.accelGroup,
+                                         Key.keyvalToInt Key.K_Return,
+                                         Gdk.CONTROL_MASK, Gtk.ACCEL_LOCKED)
+            end
+
     end

@@ -4,12 +4,28 @@ import structure AliceIdeGUI from "AliceIdeGUI"
 import functor AliceIdeGUISignals from "AliceIdeGUISignals"
 import structure OutputWriters from "OutputWriters"
 import structure EventHandler from "EventHandler"
+(*import structure Evaluator from "Evaluator"*)
 
 structure Main =
   struct
     structure S = AliceIdeGUISignals(structure S = EventHandler)
 
+    val (logStream, writer) = TextPrimIO.openVectorListWr ()
+    val compilerLogStream = TextIO.StreamIO.mkOutstream (writer, IO.LINE_BUF)
+
+    val (traceStream, writer) = TextPrimIO.openVectorListWr ()
+    val compilerTraceStream = TextIO.StreamIO.mkOutstream (writer, IO.LINE_BUF)
+
+    val (stdOutStream, writer) = TextPrimIO.openVectorListWr ()
+    val progStdOutStream = TextIO.StreamIO.mkOutstream (writer, IO.LINE_BUF)                              
+
     val _ = Gtk.widgetShowAll AliceIdeGUI.mainwidget
-    val _ = OutputWriters.makeWriters(AliceIde.progOut,
-                                      AliceIde.compilerOut)
+    val _ = AliceIde.init()
+    val _ = OutputWriters.makeWriters {logStream,
+                                       traceStream,
+                                       stdOutStream}
+(*
+    val _ = Evaluator.setLogStream compilerLogStream
+    val _ = Evaluator.setTraceStream compilerTraceStream
+*)
   end

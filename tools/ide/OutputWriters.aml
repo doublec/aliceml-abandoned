@@ -6,14 +6,17 @@ structure OutputWriters =
       fun fillBuf buffer text =
           Gtk.textBufferInsertAtCursor(buffer, text, size text)
 
-      fun makeWriters(progOut, compilerOut) =
+      fun makeWriters {logStream,
+                       traceStream,
+                       stdOutStream} =
           let
               val progBuf = Gtk.textBufferNew Gtk.NULL
               val compilerBuf = Gtk.textBufferNew Gtk.NULL
           in
               Gtk.textViewSetBuffer(AliceIdeGUI.progout, progBuf);
               Gtk.textViewSetBuffer(AliceIdeGUI.compilerout, compilerBuf);
-              spawn app (fillBuf progBuf) progOut;
-              spawn app (fillBuf compilerBuf) compilerOut
+              spawn app (fillBuf progBuf) stdOutStream;
+              spawn app (fillBuf compilerBuf) logStream;
+              spawn app (fillBuf compilerBuf) traceStream
           end
    end
