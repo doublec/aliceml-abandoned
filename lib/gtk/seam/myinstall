@@ -1,0 +1,15 @@
+#!/bin/sh
+
+# This little shell script tests whether install has the -C option,
+# and uses it if it exists. 
+# "-C" only installs (copies) a file, unless it exists and has the same
+# contents, in which case the modification date is left unchanged,
+# thus saving time during the make process.
+
+if install -C $0 $0 >& /dev/null ; then
+  install -C $* ;
+else
+  install $* ;
+fi
+
+
