@@ -679,7 +679,7 @@ end
 		val _  = Env.insertScope E
 		val _  = chDecs E decs
 		val t' = chExp E exp
-		val _  = Env.deleteScope E
+		val _  = Env.removeScope E
 	   in
 		check (Type.equal(t',t))
 		      (i, "LetExp type", #[TYPE_PAIR(t',t)]);
@@ -725,7 +725,7 @@ end
 	    val _  = Env.insertScope E
 	    val t1 = chPat E pat
 	    val t2 = chExp E exp
-	    val _  = Env.deleteScope E
+	    val _  = Env.removeScope E
 	in
 	    (t1,t2)
 	end
@@ -977,7 +977,7 @@ end
 		val t  = #typ i
 		val _  = Env.insertScope E
 		val t' = chPat E pat
-		val _  = Env.deleteScope E
+		val _  = Env.removeScope E
 	   in
 		check (Type.equal(t',t))
 		      (i, "NegPat type", #[TYPE_PAIR(t',t)]);
@@ -1045,7 +1045,7 @@ end
 		chRecDecsLHS E decs;
 		Env.insertScope E;
 		chDecs E decs;
-		Env.deleteScope E
+		Env.removeScope E
 	   end
 
     and chRecDecsLHS E decs = Vector.app (chRecDecLHS E) decs
