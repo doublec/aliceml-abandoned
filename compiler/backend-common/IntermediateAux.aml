@@ -3,7 +3,7 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 1999-2001
+ *   Leif Kornstaedt, 1999-2002
  *
  * Last change:
  *   $Date$ by $Author$
@@ -116,7 +116,7 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	and substMats' (mats, subst) =
 	    Vector.map (fn Mat (info, pat, exp) =>
 			Mat (info, substPat' (pat, subst),
-			       substExp' (exp, subst))) mats
+			     substExp' (exp, subst))) mats
 	and substPat' (pat as JokPat _, _) = pat
 	  | substPat' (pat as LitPat (_, _), _) = pat
 	  | substPat' (pat as VarPat (_, _), _) = pat
