@@ -39,7 +39,7 @@ structure PickleFlatGrammar :> CODE where type t = string * FlatGrammar.t =
 	fun outputVector _ (q, #[]) = ignore (outputAtom (q, "#[]"))
 	  | outputVector outputX (q, xs) =
 	    (outputTuple (q, "#[]", Vector.length xs);
-	     Vector.app (fn x => ignore (outputX (q, x))) xs)
+	     Vector.appr (fn x => ignore (outputX (q, x))) xs)
 
 	fun outputChar (q, c) = outputInt (q, WideChar.ord c)
 
