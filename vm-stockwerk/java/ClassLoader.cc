@@ -117,7 +117,8 @@ Worker::Result PreloadWorker::Run() {
     Class *theClass = Class::FromWord(Scheduler::currentArgs[0]);
     Assert(theClass != INVALID_POINTER);
     Hole *hole = frame->GetHole();
-    hole->Fill(theClass->ToWord());
+    bool result = hole->Fill(theClass->ToWord());
+    Assert(result); result = result;
   }
   Queue *preloadQueue = Queue::FromWordDirect(wPreloadQueue);
   if (preloadQueue->IsEmpty()) {
