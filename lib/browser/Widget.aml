@@ -218,21 +218,7 @@ open GtkSupport Node Doc Color PervasiveType
 
 (*********** Ende Knotensuche ***************)
 
-
-
-
-val selection = ref NONE
-    
-fun destroySelectionMarkings () = case !selection of 
-    NONE => ()
-  | SOME(_,rect,rect') =>( objectDestroy(rect)
-			  ; objectDestroy(rect'))
-
-
-fun getSelectionNode() = case !selection of 
-    NONE => Node.Empty
-  | SOME(n,_,_) => n  
-
+(*********** Begin  Separation Line Resize Mechanism  ***************)
 
 fun  resizeSepLinesIterate(dict,x,i,highest_i) =
      if i > highest_i 
@@ -256,145 +242,7 @@ fun resizeSepLines (dict,rx) =
 	 resizeSepLinesIterate(dict,x,0,highest_i)
      end
 
-fun canvaswidth (hadj) = let
-			 val page_sh = adjustmentGetFieldPageSize(hadj)
-			 val h = if (Real.< (page_sh,(!(Settings.max_x)))) 
-				     then !(Settings.max_x) else page_sh
-		     in
-			 h
-		     end
-
-(* invokes canvas resize *)	
-fun handleResize (scrolled,hadj,vadj,resize) = (fn _ =>  Server.serve (fn () => let
-			     val upperh = adjustmentGetFieldUpper(hadj)
-			     val valueh = adjustmentGetFieldValue(hadj)
-			     val upperv = adjustmentGetFieldUpper(vadj)
-			     val valuev = adjustmentGetFieldValue(vadj) 
-			     val page_sv = adjustmentGetFieldPageSize(vadj)
-			     val h = canvaswidth(hadj)
-			     val v = if (Real.< (page_sv,(!(Settings.max_y)))) 
-					 then !(Settings.max_y) else page_sv
-			   in
-			       (resize(h,v,scrolled,valueh,valuev  )
-				; resizeSepLines(Dictionaries.maindict,
-							  h)
-				; ())
-			 end))
-
-(* Popup window for selection *)
- fun makePopup {node = n, widthhandler = w, depthhandler = d, 
-		   reinspecthandler = r, forcehandler = f, deletehandler = del} = 
-	let 
-	    val reinspect_active = not(Node.getDesc(n) = Node.INTERPUNCT)
-	    val force_active = (Node.isByneed n) handle _ => false
-	    val delete_active = getParent(n) = Empty orelse 
-		                (isRelNode(getParent(n)) andalso getParent(getParent(n)) = Empty)
-	    val width_item_list = [EntryObj(LABEL("-5"),
-					      [Handler("activate",w(~5))],
-						       true),
-				   EntryObj(LABEL("-4"),
-					    [Handler("activate",w(~4))],
-					    true),
-				   EntryObj(LABEL("-3"),
-					      [Handler("activate",w(~3))],
-					         true),
-				     EntryObj(LABEL("-2"),
-					      [Handler("activate",w(~2))],
-					      true),
-				     EntryObj(LABEL("-1"),
-					      [Handler("activate",w(~1))],
-					      true),
-				     EntryObj(SEP,[],true),
-				     EntryObj(LABEL("+1"),
-					      [Handler("activate",w(1))],
-					      true),
-				     EntryObj(LABEL("+2"),
-					      [Handler("activate",w(2))],
-					      true),
-				     EntryObj(LABEL("+3"),
-					      [Handler("activate",w(3))],
-					      true),
-				     EntryObj(LABEL("+4"),
-					      [Handler("activate",w(4))],
-						       true),
-				     EntryObj(LABEL("+5"),
-					      [Handler("activate",w(5))]
-					      ,true),
-				     EntryObj(SEP,[],true),
-				     EntryObj(LABEL("+10"),
-					      [Handler("activate",w(10))],
-					      true) 
-				     ]
-		val depth_item_list = [EntryObj(LABEL("-5"),
-					      [Handler("activate",d(~5))],
-						       true),
-				   EntryObj(LABEL("-4"),
-					    [Handler("activate",d(~4))],
-					    true),
-				   EntryObj(LABEL("-3"),
-					      [Handler("activate",d(~3))],
-					         true),
-				     EntryObj(LABEL("-2"),
-					      [Handler("activate",d(~2))],
-					      true),
-				     EntryObj(LABEL("-1"),
-					      [Handler("activate",d(~1))],
-					      true),
-				     EntryObj(SEP,[],true),
-				     EntryObj(LABEL("+1"),
-					      [Handler("activate",d(1))],
-					      true),
-				     EntryObj(LABEL("+2"),
-					      [Handler("activate",d(2))],
-					      true),
-				     EntryObj(LABEL("+3"),
-					      [Handler("activate",d(3))],
-					      true),
-				     EntryObj(LABEL("+4"),
-					      [Handler("activate",d(4))],
-						       true),
-				     EntryObj(LABEL("+5"),
-					      [Handler("activate",d(5))]
-					      ,true),
-				     EntryObj(SEP,[],true),
-				     EntryObj(LABEL("+10"),
-					      [Handler("activate",d(10))],
-					      true) 
-				     ]
-	in
-	case n of
-	Node.RelNode _ => ()
-      | Node.RelRefNode _ => ()
-      | _ =>
-	Server.serve (fn () => 
-	       (createMenu
-		(PopupObj
-		 [MenuObj{title = "Explore Tree",
-			  items = [MenuObj
-				   {title = "width",
-				    items = width_item_list,
-				    sensitive = true},
-				   MenuObj
-				   {title = "depth",
-				    items = depth_item_list,
-			  sensitive = true}],
-			  sensitive = true},
-		  MenuObj{title = "Filter",
-			  items = [],
-			  sensitive = true},
-		  MenuObj{title = "Actions",
-			  items = [EntryObj(LABEL("reinspect"),
-					    [Handler("activate",r)],
-					    reinspect_active),
-				  EntryObj(LABEL("force evaluation"),
-					   [Handler("activate",f)],
-					   force_active),
-				   EntryObj(LABEL("delete tree"),
-					    [Handler("activate",fn _ => del n)],
-					    delete_active)],
-			  sensitive = true}])
-		;()))
-	end
+(*********** End  Separation Line Resize Mechanism  ***************)
 
 in
 
@@ -414,7 +262,19 @@ struct
 			    ; TextIO.print(" and now is "
 					   ^ Int.toString(!act_line)^"\n"))
 
-    fun Delete _ = (widgetHideAll(window)
+    val selection = ref NONE
+    
+    fun destroySelectionMarkings () = case !selection of 
+	NONE => ()
+      | SOME(_,rect,rect') =>( objectDestroy(rect)
+			  ; objectDestroy(rect'))
+
+
+    fun getSelectionNode() = case !selection of 
+	NONE => Node.Empty
+      | SOME(n,_,_) => n  
+
+    fun DeleteWindow _ = (widgetHideAll(window)
 		    ;Settings.max_x :=0.0
 		    ;Settings.max_y :=0.0
 		    ;Dictionaries.Main.dumpAll(Dictionaries.maindict)
@@ -431,6 +291,41 @@ struct
 
      fun show() = if !alive then widgetShowAll(window) else ()
     
+(********************************* Resize Mechanism *******************************)
+
+
+     fun canvaswidth (hadj) = let
+				  val page_sh = adjustmentGetFieldPageSize(hadj)
+				  val h = if (Real.< (page_sh,(!(Settings.max_x)))) 
+					      then !(Settings.max_x) else page_sh
+			      in
+				  h
+			      end
+
+     (* invokes canvas resize *)	
+     fun handleResize (scrolled,hadj,vadj,resize) = 
+	 (fn _ =>  
+	  Server.serve (fn () => 
+			let
+			    val upperh = adjustmentGetFieldUpper(hadj)
+			    val valueh = adjustmentGetFieldValue(hadj)
+			    val upperv = adjustmentGetFieldUpper(vadj)
+			    val valuev = adjustmentGetFieldValue(vadj) 
+			    val page_sv = adjustmentGetFieldPageSize(vadj)
+			    val h = canvaswidth(hadj)
+			    val v = if (Real.< (page_sv,(!(Settings.max_y)))) 
+					then !(Settings.max_y) else page_sv
+			in
+			    (resize(h,v,scrolled,valueh,valuev  )
+			     ; resizeSepLines(Dictionaries.maindict,
+					      h)
+			     ; ())
+			end))
+	 
+(*****************************************************************************)
+
+(**************************** Stop Button Mechnism****************************)
+
      val stopButtonActive = ref false
 
      val stopButton = let
@@ -463,6 +358,8 @@ struct
 
      fun testIfStop() = if not(stopButtonIsActive()) then raise stopped
 			else ()
+
+(**************************** Handler ****************************)
 		    
      fun update_reinspect n = Update.reinspect(n,NewNode.createGraph,
 					       NewNode.createGraphInf,!canvasroot)
@@ -569,6 +466,8 @@ fun updateIterate = re_inspect
 
 				      ; updateIterate(i-1,no+1,diffh))
 	       |_ => () *)
+
+
  (* Handles ok Button in Preferences Window *)
      fun okHandler(w,
 	      width_s,
@@ -734,7 +633,7 @@ fun updateIterate = re_inspect
 			   EntryObj(SEP,[],true),
 			   EntryObj(LABEL "Close",
 				    [Handler("activate",
-					     Delete)],true)],
+					     DeleteWindow)],true)],
 		  sensitive = true},
 		 MenuObj
 		 {title = "Selection",
@@ -772,23 +671,26 @@ fun updateIterate = re_inspect
 	 in
 	     (case desc of
 		 Node.INTERPUNCT => 0
-	       |  Node.VALUE(r) => let
-					val text = PrettyPrint.toString
-					      (PPType.ppTyp(#typ(r)),1000)
-				    in
-					if
-					   (String.size(text)) > positions_displayed 
-					    then
-		     postType("  " 
+	       |  Node.VALUE(r) => 
+		     let
+			 val text = PrettyPrint.toString
+			     (PPType.ppTyp(#typ(r)),1000)
+		     in
+			 if
+			     (String.size(text)) > positions_displayed 
+			     then
+				 postType("  " 
 			      ^String.extract(text, 0,SOME( positions_displayed)) ^ " ... ")
-		     else
-			 postType("  " ^ text)
-			 end
+			 else
+			     postType("  " ^ text)
+		     end
 	       | Node.I_VALUE(r) =>
 		     postType("  " 
 			      ^ String.extract(PrettyPrint.toString
 					       (PPInf.ppInf(#typ(r)),
-					 positions_displayed	),0,SOME( positions_displayed)) ^ " ... ")
+						positions_displayed	),
+					       0,
+					       SOME( positions_displayed)) ^ " ... ")
 		     ;()) handle _ => ()
 	 end
    
@@ -838,6 +740,124 @@ fun updateIterate = re_inspect
 				    <> zu Widget.setVisible ! *)
 	end
 
+fun makePopup n = 
+	let 
+	    val w = handleWidth(n)
+	    val d = handleDepth(n)
+	    val r = handleReinspect(n)
+	    val f = handleForce(n)
+	    val reinspect_active = not(Node.getDesc(n) = Node.INTERPUNCT)
+	    val force_active = (Node.isByneed n) handle _ => false
+	    val delete_active = getParent(n) = Empty orelse 
+		                (isRelNode(getParent(n)) andalso getParent(getParent(n)) = Empty)
+	    val width_item_list = [EntryObj(LABEL("-5"),
+					      [Handler("activate",w(~5))],
+						       true),
+				   EntryObj(LABEL("-4"),
+					    [Handler("activate",w(~4))],
+					    true),
+				   EntryObj(LABEL("-3"),
+					      [Handler("activate",w(~3))],
+					         true),
+				     EntryObj(LABEL("-2"),
+					      [Handler("activate",w(~2))],
+					      true),
+				     EntryObj(LABEL("-1"),
+					      [Handler("activate",w(~1))],
+					      true),
+				     EntryObj(SEP,[],true),
+				     EntryObj(LABEL("+1"),
+					      [Handler("activate",w(1))],
+					      true),
+				     EntryObj(LABEL("+2"),
+					      [Handler("activate",w(2))],
+					      true),
+				     EntryObj(LABEL("+3"),
+					      [Handler("activate",w(3))],
+					      true),
+				     EntryObj(LABEL("+4"),
+					      [Handler("activate",w(4))],
+						       true),
+				     EntryObj(LABEL("+5"),
+					      [Handler("activate",w(5))]
+					      ,true),
+				     EntryObj(SEP,[],true),
+				     EntryObj(LABEL("+10"),
+					      [Handler("activate",w(10))],
+					      true) 
+				     ]
+		val depth_item_list = [EntryObj(LABEL("-5"),
+					      [Handler("activate",d(~5))],
+						       true),
+				   EntryObj(LABEL("-4"),
+					    [Handler("activate",d(~4))],
+					    true),
+				   EntryObj(LABEL("-3"),
+					      [Handler("activate",d(~3))],
+					         true),
+				     EntryObj(LABEL("-2"),
+					      [Handler("activate",d(~2))],
+					      true),
+				     EntryObj(LABEL("-1"),
+					      [Handler("activate",d(~1))],
+					      true),
+				     EntryObj(SEP,[],true),
+				     EntryObj(LABEL("+1"),
+					      [Handler("activate",d(1))],
+					      true),
+				     EntryObj(LABEL("+2"),
+					      [Handler("activate",d(2))],
+					      true),
+				     EntryObj(LABEL("+3"),
+					      [Handler("activate",d(3))],
+					      true),
+				     EntryObj(LABEL("+4"),
+					      [Handler("activate",d(4))],
+						       true),
+				     EntryObj(LABEL("+5"),
+					      [Handler("activate",d(5))]
+					      ,true),
+				     EntryObj(SEP,[],true),
+				     EntryObj(LABEL("+10"),
+					      [Handler("activate",d(10))],
+					      true) 
+				     ]
+	in
+	case n of
+	Node.RelNode _ => ()
+      | Node.RelRefNode _ => ()
+      | _ =>
+	Server.serve (fn () => 
+	       (createMenu
+		(PopupObj
+		 [MenuObj{title = "Explore Tree",
+			  items = [MenuObj
+				   {title = "width",
+				    items = width_item_list,
+				    sensitive = true},
+				   MenuObj
+				   {title = "depth",
+				    items = depth_item_list,
+			  sensitive = true}],
+			  sensitive = true},
+		  MenuObj{title = "Filter",
+			  items = [],
+			  sensitive = true},
+		  MenuObj{title = "Actions",
+			  items = [EntryObj(LABEL("reinspect"),
+					    [Handler("activate",r)],
+					    reinspect_active),
+				  EntryObj(LABEL("force evaluation"),
+					   [Handler("activate",f)],
+					   force_active),
+				   EntryObj(LABEL("delete tree"),
+					    [Handler("activate",
+					   fn _ => deleteNodeTree n)],
+					    delete_active)],
+			  sensitive = true}])
+		;()))
+	end
+
 (* Handelt Mouseclick *)
      fun handleEvent event = Server.serve (fn () =>
      let
@@ -847,10 +867,10 @@ fun updateIterate = re_inspect
      in
 	case position of 
 	  SOME ((x,y),b)=> 
-		    let 
-			val node = search(x,y)      
-		    in 
-		       (case node of 
+		let 
+		    val node = search(x,y)      
+		in 
+		    (case node of 
 			    SOME(n) => 
 				let 
 				    val ydim =Node.get_ydim(n) 
@@ -875,8 +895,8 @@ fun updateIterate = re_inspect
 							    y2')
 				in                                             
 				    (  postT n   
-				  ; itemLowerToBottom(re) 
-				 ; itemLowerToBottom(re') 
+				    ; itemLowerToBottom(re) 
+				    ; itemLowerToBottom(re') 
 				    ; destroySelectionMarkings()
 				    ; selection := SOME (n,re,re') 
 				    ; setSelectionMenuSensitive(bar,true)
@@ -886,14 +906,7 @@ fun updateIterate = re_inspect
 				       | _ => setExpandSensitive(bar,false)
 				    ; case b of
 				       1 => ()
-				    |  3 => 
-					   (makePopup({node = n,
-				    widthhandler = handleWidth(n), 
-				    depthhandler = handleDepth(n), 
-				    reinspecthandler = handleReinspect(n),
-				    forcehandler = handleForce(n),
-				    deletehandler = deleteNodeTree})
-					    ;())
+				    |  3 =>( makePopup n; ())
 				    | _   => () ) 
 				end
 			  | NONE => ( setSelectionMenuSensitive(bar,false)
@@ -907,9 +920,8 @@ fun updateIterate = re_inspect
      fun handleWindowEvent event = 
 	 Server.serve (fn () => handleGdkKeyPress(event,scrolled,hadj,vadj,!Settings.max_x,!Settings.max_y))
 
-     
+(**************************************************************************)
 
-    
  fun new _ = if !alive then()
      else
 	let
@@ -941,7 +953,7 @@ fun updateIterate = re_inspect
      val _ = (windowSetTitle (window, "Alice Browser V 0.2")
 	      ; widgetSetUsize (window, 200, 100) 
 	      ; windowSetDefaultSize(window, 500,400)
-	      ;signalConnect (window, "delete-event", Delete)
+	      ;signalConnect (window, "delete-event", DeleteWindow)
 	      ;setSelectionMenuSensitive (bar,false)  
 	      ;containerAdd(window,createVBox[(bar,
 						    false (* 0 *)
