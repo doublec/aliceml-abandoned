@@ -55,14 +55,14 @@ val windowHeight = 300
 fun colorConv n = Real.round (65535.0 * n)
 
 
-structure ArenaWidget (*:> ARENAWIDGET *)=
+structure ArenaWidget :> ARENAWIDGET =
 struct
 
     type arena_field = Gtk.object * Protocol.field
 	
     type arena_widget = 
 	{
-	 object : Gtk.object ref,
+	 canvas : Gtk.object,
 	 state  : arena_field Array2.array ref,
 	 view   : Pos.pos ref
 	 }
@@ -107,32 +107,24 @@ in
 	
 end
 
-    (* hier is irgendwas im argen... *)
-
     fun initialize () = 
-	{object = ref Gtk.null,
-	 state  = ref (Array2.array(1,1,(Gtk.null,P.EMPTY))),
+	{canvas = GtkCanvas.new 0,
+	 state  = ref (Array2.array(1, 1, (Gtk.null () , P.EMPTY))),
 	 view   = ref (0,0)
 	 }
 	
-    fun toObject ({object = obj, ... } : arena_widget) : Gtk.object  = !obj
+    fun toObject ({canvas, ... } : arena_widget) : Gtk.object  = canvas
 	
-    fun initLevel ({object = object, state = state, view = view},
-		   {dimensions = dim} : P.level_info) =
+    fun initLevel ({canvas, state, view}, {dimensions = dim} : P.level_info) =
 	let
 	    val (rows, cols) = dim
-	    val canvas = GtkCanvas.new 0
-	    val _ = GtkCanvas.setScrollRegion (canvas, 
-					       0.0,
-					       0.0,
+	    val _ = GtkCanvas.setScrollRegion (canvas, 0.0, 0.0,
 					       Real.fromInt(cols * cellSize),
 					       Real.fromInt(rows * cellSize))
-	    val _ = Gtk.widgetSetUsize (canvas, windowWidth2, windowHeight2)
-	    val arena = Array2.array (rows, cols, (Gtk.null, P.EMPTY))
+	    val _ = Gtk.widgetSetUsize (canvas, windowWidth, windowHeight)
+	    val arena = Array2.array (rows, cols, (Gtk.null (), P.EMPTY))
 	    val middle = (rows div 2, cols div 2)
-	    val root = GtkCanvas.root canvas
 	in
-	    object := root;
 	    state  := arena;
 	    view   := middle
 	end
@@ -250,64 +242,67 @@ end
 				 fill_color = red,
 				 outline_color = red})
 
-    fun update ({object = object, state = state, view = view}, difflist) =
+    fun update ({canvas, state = ref arena, view}, difflist) =
 	let
-	    val can = !object
-	    val arena = !state
+            val can = GtkCanvas.root canvas
+
+            fun changeField (oldObj:Gtk.object, r, c, field) =
+                (if oldObj <> Gtk.null () then Gtk.objectDestroy oldObj
+                 else ();
+                 case field of
+		    P.EMPTY              => Array2.update (arena, r, c, 
+                                                            (Gtk.null (), 
+								 field))
+                  | P.WALL               => Array2.update (arena, 
+                                                           r, 
+                                                           c, 
+                                                           (insertWall (can,
+                                                                        r, 
+                                                                        c),
+                                                            field))
+                  | P.GOODIE _           => Array2.update (arena,
+                                                           r,
+                                                           c,
+                                                          (insertGoodie (can,
+                                                                         r,
+                                                                         c),
+                                                           field))
+
+                  | P.GATE col           => Array2.update (arena, 
+                                                           r, 
+                                                           c, 
+                                                           (insertGate (can,
+                                                                        r, 
+                                                                        c, 
+                                                                        color col),
+                                                            field))
+                  | P.SNAKE_HEAD (d, col) => Array2.update (arena, 
+                                                           r, 
+                                                           c, 
+                                                           (insertHead (can,
+                                                                        r, 
+                                                                        c, 
+                                                                        d, 
+                                                                        color col),
+                                                            field))
+                  | P.SNAKE_BODY col      => Array2.update (arena, 
+                                                           r, 
+                                                           c, 
+                                                           (insertBody (can,
+                                                                        r, 
+                                                                        c, 
+                                                                        color col),
+                                                            field)))
+
+
 	    fun insert ((r, c), field) = 
 		let
 		    val (obj, f) = Array2.sub(arena, r, c)
 		in 
-		    if f = field 
+		    if f = field  (* shouldn't happen normally *)
 			then () 
-		    else case field of
-		        P.EMPTY              => (Gtk.objectDestroy obj;
-						 Array2.update (arena, 
-								r, 
-								c, 
-								(Gtk.null, 
-								 field)))
-		      | P.WALL               => Array2.update (arena, 
-							       r, 
-							       c, 
-							       (insertWall (can,
-									    r, 
-									    c),
-								field))
-		      | P.GOODIE _           => Array2.update (arena,
-							       r,
-							       c,
-							      (insertGoodie (can,
-									     r,
-									     c),
-							       field))
-
-		      | P.GATE col           => Array2.update (arena, 
-							       r, 
-							       c, 
-							       (insertGate (can,
-									    r, 
-									    c, 
-									    color col),
-								field))
-		      | P.SNAKE_HEAD (d, col) => Array2.update (arena, 
-							       r, 
-							       c, 
-							       (insertHead (can,
-									    r, 
-									    c, 
-									    d, 
-									    color col),
-								field))
-		      | P.SNAKE_BODY col      => Array2.update (arena, 
-							       r, 
-							       c, 
-							       (insertBody (can,
-									    r, 
-									    c, 
-									    color col),
-								field))
-
+		    else 
+                        changeField (obj, r, c, field)
 		end
 	in
 	    List.app insert difflist
@@ -318,7 +313,7 @@ end
 						    y * cellSize - windowHeight2)
 	
 end
-(*
+
 
 val testfield = Array2.array(10,10,P.EMPTY)
 
@@ -347,4 +342,4 @@ fun test () =
 	ArenaWidget.changeView (testarena,(5,5))
 
     end
-*)
+
