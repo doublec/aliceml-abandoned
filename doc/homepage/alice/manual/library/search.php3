@@ -295,7 +295,7 @@ signature SEARCH =
     </DD>
 
     <DT>
-      <TT>searchBestBAB (<I>s</I>, <I>o</I>, <I>rcd<(I>)</TT>
+      <TT>searchBestBAB (<I>s</I>, <I>o</I>, <I>rcd</I>)</TT>
     </DT>
     <DD>
       <P>returns the best solution with respect to
@@ -314,7 +314,7 @@ signature SEARCH =
     </DD>
 
     <DT>
-      <TT>searchBestBABS (<I>s</I>, <I>o</I>, <I>rcd<(I>)</TT>
+      <TT>searchBestBABS (<I>s</I>, <I>o</I>, <I>rcd</I>)</TT>
     </DT>
     <DD>
       <P>returns the succeed space containing the best solution
@@ -334,7 +334,7 @@ signature SEARCH =
     </DD>
 
     <DT>
-      <TT>searchBestRestart (<I>s</I>, <I>o</I>, <I>rcd<(I>)</TT>
+      <TT>searchBestRestart (<I>s</I>, <I>o</I>, <I>rcd</I>)</TT>
     </DT>
     <DD>
       <P>returns the best solution with respect to
@@ -353,7 +353,7 @@ signature SEARCH =
     </DD>
 
     <DT>
-      <TT>searchBestRestartS (<I>s</I>, <I>o</I>, <I>rcd<(I>)</TT>
+      <TT>searchBestRestartS (<I>s</I>, <I>o</I>, <I>rcd</I>)</TT>
     </DT>
     <DD>
       <P>returns the succeed space containing the best solution with respect to
