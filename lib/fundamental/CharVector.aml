@@ -14,7 +14,7 @@
 import structure __pervasive                             from "Pervasive"
 import __primitive type string and char and int and list from "ToplevelTypes"
 import __primitive structure Char                        from "Char"
-import __primitive structure MkMonoVector                from "MkMonoVector"
+import functor MkMonoVector                              from "MkMonoVector"
 
 structure CharVector = MkMonoVector(
     type vector = string

@@ -13,7 +13,7 @@
 import structure __pervasive                  from "Pervasive"
 import __primitive type int and list and unit from "ToplevelTypes"
 import __primitive structure Word8Vector      from "Word8Vector"
-import __primitive structure MkMonoArray      from "MkMonoArray"
+import functor MkMonoArray                    from "MkMonoArray"
 
 structure Word8Array = MkMonoArray(
     structure Vector = Word8Vector
