@@ -70,15 +70,15 @@ structure General =
     type exn  = exn
 
     exception Bind = Bind
-    __primitive exception Chr = "General.Chr"
-    __primitive exception Div = "General.Div"
-    __primitive exception Domain = "General.Domain"
-    __primitive exception Fail of string = "General.Fail"
+    __primitive constructor Chr: exn = "General.Chr"
+    __primitive constructor Div: exn = "General.Div"
+    __primitive constructor Domain: exn = "General.Domain"
+    __primitive constructor Fail of string: exn = "General.Fail"
     exception Match = Match
-    __primitive exception Overflow = "General.Overflow"
-    __primitive exception Size = "General.Size"
-    __primitive exception Span = "General.Span"
-    __primitive exception Subscript = "General.Subscript"
+    __primitive constructor Overflow: exn = "General.Overflow"
+    __primitive constructor Size: exn = "General.Size"
+    __primitive constructor Span: exn = "General.Span"
+    __primitive constructor Subscript: exn = "General.Subscript"
 
     datatype order = LESS | EQUAL | GREATER
 
@@ -102,7 +102,7 @@ structure Option =
 
     datatype 'a option = NONE | SOME of 'a
 
-    __primitive exception Option = "Option.Option"
+    __primitive constructor Option: exn = "Option.Option"
 
     fun getOpt(SOME v, _) = v
       | getOpt(NONE,   a) = a
@@ -164,7 +164,7 @@ structure List =
 
     datatype list = datatype list
 
-    __primitive exception Empty = "List.Empty"
+    __primitive constructor Empty: exn = "List.Empty"
 
     fun null [] = true
       | null _  = false
