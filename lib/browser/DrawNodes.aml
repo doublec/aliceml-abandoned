@@ -128,7 +128,9 @@ struct
 	    val _ =  TextIO.print(" Node fits in bounding_box:  " 
 				  ^ Bool.toString(in_bounding_box)  ^ "\n")
 	in
-	    if (in_bounding_box  andalso not(interpunct)) orelse toBeDisplayed 
+	    if (in_bounding_box  andalso not(interpunct)) 
+		orelse (in_bounding_box  andalso getParent(n) = Empty) 
+		orelse toBeDisplayed
 		then (x (* + String.length(rep) *),
 		      y,
 		      SOME(n))
@@ -173,8 +175,7 @@ struct
     (* drawConcat *) 
     and drawConcat (n,x,y,intent) = case n of
 	Concat(r)
-		=> let
-	       val _ = TextIO.print("Concat: starting search" ^ "\n")
+	=> let val _ = TextIO.print("Concat: starting search" ^ "\n")
 	       val (search,sx,sy) = case intent of
 		   DRAW => (false,0,0)
 		 | SEARCH(xs,ys) => (true,xs,ys)
@@ -214,7 +215,8 @@ struct
 				     then (x+get_xdim(n),y+get_ydim(n)-1,NONE) 
 				 else
 				 let val (new_x,new_y,new_found) = 
-				     (Array.foldl hor_funct (x,y,NONE) (#kids(r))) 
+				     (Array.foldl hor_funct (x,y,NONE) 
+				      (#kids(r))) 
 				     handle NodeFound (foundx,foundy,n) 
 				     => let val _ = TextIO.print(
 					       "Concat: found node!" ^ "\n")
@@ -260,12 +262,12 @@ struct
 				  => let
 					 val (new_x,new_y,new_found) 
 					     = case found of
-					     SOME n => if not(search) 
-							   then draw(a,x,y,intent)
-						       else raise NodeFound(x,y,n)
+					     SOME n 
+					     => if not(search) 
+						    then draw(a,x,y,intent)
+						else raise NodeFound(x,y,n)
 					   | NONE => draw(a,x,y,intent)
-				     in
-					 (new_x,new_y,0,new_found)
+				     in (new_x,new_y,0,new_found)
 				     end)
                              val ver_funct = 
 				 (fn (a,(x,y,_,found)) 
@@ -289,7 +291,8 @@ struct
 				     then (x+get_xdim(n),y+get_ydim(n),NONE) 
 				 else
 				 let val (new_x',new_y',new_x2,new_found) = 
-				     (Array.foldl funct (x,y,0,NONE) (#kids(r))) 
+				     (Array.foldl funct (x,y,0,NONE) 
+				      (#kids(r))) 
 				     handle NodeFound (foundx,foundy,n) 
 				     => let val _ = TextIO.print(
 					       "Container: found node!" ^ "\n")
@@ -301,9 +304,10 @@ struct
 				      val new_x = if vertical 
 						      then new_x2
 							  else new_x'
-				      val new_y = if vertical andalso nothing_found 
+				      val new_y = if vertical 
+					           andalso nothing_found 
 						      then new_y' -1
-							  else new_y'
+						  else new_y'
 				 in if search 
 				     andalso in_bounding_box 
 				     andalso nothing_found

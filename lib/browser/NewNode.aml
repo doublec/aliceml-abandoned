@@ -289,8 +289,6 @@ struct
 	    val index     = UnsafeValue.tag(va,l_vector)
 	    val label     = Label.toString(Vector.sub(l_vector,index))
 	                    ^" "
-	    val labelnode =  createSimple (INTERPUNCT,upperConcat,
-					   0,label,LABEL_COLOR,setGroup)
 	    val typ = #2(List.nth(lt_list,index))
 	    val intyp = if Type.isApply(typ) 
                         andalso Type.isCon(#1(Type.asApply(typ))) 
@@ -323,6 +321,12 @@ struct
 		     in 
 			 node 
 		     end
+	    val labelnode =  createSimple (INTERPUNCT,
+					   if container = Empty
+					       then p else upperConcat,
+					   if container = Empty
+					       then i else 0,label,
+					   LABEL_COLOR,setGroup) 
 	    val upperKids = getKids(upperConcat)
 	in
 	    if container = Empty 

@@ -35,30 +35,6 @@ UnsafeInspector.inspect ({ref = ref "hallo",vec1 = #[(4,5),(6,7)],
 (* Datentyp *)
 
 datatype foo = A 
-      structure STuple = Reflect.ReflectType 
-    (type t = int * real * string * char * word * exn);
-val s_tuple = STuple.x;
-exception Error;
-
-UnsafeInspector.inspect ((1,5.0,"hi",#"a",0w17,Error),s_tuple);
-
-(* Record mit Referenz, Vektor und Array - zum Testen des RelModus mit
-   struktureller Gleichheit geeignet *)
-
-structure RVARec = Reflect.ReflectType 
-    (type t = {ref: string ref,vec1: (int * int) vector,
-	       vec2: (int * int) vector, arr: real array});
-val rva_rec = RVARec.x;
-val my_array = let val a = Array.array(2,1.0)
-		   val _ = Array.update(a,0,2.0)
-	       in a end;
-
-UnsafeInspector.inspect ({ref = ref "hallo",vec1 = #[(4,5),(6,7)],
-                          vec2 = #[(6,7),(4,5)], arr = my_array},rva_rec); 
-
-(* Datentyp *)
-
-datatype foo = A 
              | B of int ref list
              | C of foo 
              | D of (string vector vector * int vector vector) list;
@@ -75,13 +51,15 @@ UnsafeInspector.inspect (D [{1 = #[#["hi","du"],#["guck","mal"]],
 			     2 = #[#[0,8,1,5],#[4,7,1,1]] } ],
 			 data_type);
 
+(*
 structure IntList = Reflect.ReflectType (type t = (int * int) list);
 val int_list = IntList.x;
 val rec l = (3,4)::l;
 
-UnsafeInspector.inspect (l,int_list);
- 
-       | B of int ref list
+UnsafeInspector.inspect (l,int_list); *)
+
+datatype foo = A
+             | B of int ref list
              | C of foo 
              | D of (string vector vector * int vector vector) list;
 structure DataType = Reflect.ReflectType (type t = foo);
@@ -97,6 +75,7 @@ UnsafeInspector.inspect (D [{1 = #[#["hi","du"],#["guck","mal"]],
 			     2 = #[#[0,8,1,5],#[4,7,1,1]] } ],
 			 data_type);
 
+(* Futures *)
 structure Fut = Reflect.ReflectType (type t = int vector Promise.promise list);
 val fut = Fut.x;
 val prom1 = Promise.promise();
