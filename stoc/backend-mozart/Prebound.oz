@@ -13,7 +13,8 @@
 functor
 import
    BootName(newUnique: NewUniqueName) at 'x-oz://boot/Name'
-   System(show)
+   System(show printInfo)
+   Browser(browse)
    Application(exit)
 export
    BuiltinTable
@@ -51,7 +52,6 @@ define
 
    BuiltinTable =
    builtinTable(
-      'show': fun {$ X} {System.show X} unit end
       '=': fun {$ X Y} X == Y end
       ':=': fun {$ X Y} {Assign X Y} unit end
       '~': Number.'~'   %--** overloaded for word
@@ -231,7 +231,10 @@ define
 	    catch _ then
 	       {Exception.raiseError BuiltinTable.'General.Subscript'} unit
 	    end
-	 end)
+	 end
+      'Debug.show': fun {$ X} {System.show X} unit end
+      'Debug.print': fun {$ X} {System.printInfo X} unit end
+      'Debug.browse': fun {$ X} {Browser.browse X} unit end)
 
    Env = env('false': false
 	     'true': true
