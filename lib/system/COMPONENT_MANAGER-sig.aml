@@ -20,8 +20,8 @@ signature COMPONENT_MANAGER =
 
 	type component
 
-	functor Eval(val url: Url.t
-		     val component: component
+	functor Eval(val component: component
+		     val url: Url.t
 		     signature S): S                (* Mismatch *)
 
 	functor Link(val url: Url.t
