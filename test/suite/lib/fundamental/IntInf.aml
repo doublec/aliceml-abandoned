@@ -39,14 +39,6 @@ struct
     fun testPrecision () =
 	Test.test (fn m => IntInf.precision = m) NONE
 
-    fun testToFromInt () = 
-	(Test.test (fn x => IntInf.toInt (fromI x) = x) 
-	                                                (valOf Int.maxInt);
-	 Test.test (fn x => IntInf.toInt (fromI x) = x) 
-	                                                (valOf Int.minInt);
-	 Gen.try 1000 Gen.int 
-	    (Test.test (fn x => IntInf.toInt (fromI x) = x)))
-
     fun testToInt () = 
 	let
 	    val x1 = fromI (valOf Int.maxInt)
@@ -58,20 +50,49 @@ struct
 	end
 
     fun testFromInt () =
-	Test.test (fn _ => raise Test.NotYetImplemented) ()
+	let
+	    val max = IntInf.- (IntInf.pow (fromI 2, valOf Int.precision - 1),
+				fromI 1)
+	    val min = IntInf.~ (IntInf.pow (fromI 2, valOf Int.precision - 1))
+	in
+	    Test.test (fn x => IntInf.fromInt x = max) (valOf Int.maxInt);
+	    Test.test (fn x => IntInf.fromInt x = min) (valOf Int.minInt);
+	    Gen.try 1000 Gen.int 
+	        (Test.test (fn x => (IntInf.fromInt x; true)))
+	end
+
+    fun testToFromInt () =
+	let
+	    fun t x = x = IntInf.toInt (IntInf.fromInt x)
+	in
+	    Gen.try 10000 Gen.int (Test.test t)
+	end
 
     fun testToLarge () =
-	Test.test (fn _ => raise Test.NotYetImplemented) ()
+	let
+	    fun t x = x = IntInf.toLarge x
+	in
+	    Gen.try 10000 largeInt (Test.test t)
+	end
 
     fun testFromLarge () =
-	Test.test (fn _ => raise Test.NotYetImplemented) ()
+	let
+	    fun t x = x = IntInf.fromLarge x
+	in
+	    Gen.try 10000 largeInt (Test.test t)
+	end
 
     fun testToFromLarge () =
-	Test.test (fn _ => raise Test.NotYetImplemented) ()
+	let
+	    fun t x = x = IntInf.fromLarge (IntInf.toLarge x)
+	in
+	    Gen.try 10000 largeInt (Test.test t)
+	end
 
     fun testDiv () =
 	let
-	    fun t (a, b) = IntInf.equal (a, b * IntInf.div(a, b) + IntInf. mod(a, b)) 
+	    fun t (a, b) = IntInf.equal (a, b * IntInf.div(a, b) + 
+					        IntInf. mod(a, b)) 
 				     handle Div => IntInf.equal (b, fromI 0)
 	in
 	    Gen.try 10 (Gen.pair (largeInt, largeInt)) (Test.test t)
@@ -97,7 +118,8 @@ struct
 
     fun testQuot () =
 	let
-	    fun t (a, b) = IntInf.equal (a, b * IntInf.quot(a, b) + IntInf. rem(a, b)) 
+	    fun t (a, b) = IntInf.equal (a, b * IntInf.quot(a, b) + 
+					        IntInf. rem(a, b)) 
 				     handle Div => IntInf.equal (b, fromI 0)
 	in
 	    Gen.try 10 (Gen.pair (largeInt, largeInt)) (Test.test t)
@@ -144,17 +166,19 @@ struct
 
     fun testHash () =
 	let
-	    fun t i = case Int.maxInt of 
-		               NONE   => IntInf.toInt (IntInf.abs i)
-			     | SOME m => IntInf.toInt (IntInf.mod (IntInf.abs i, 
-								   IntInf.fromInt m))
+	    fun t i = 
+		case Int.maxInt of 
+		    NONE   => IntInf.toInt (IntInf.abs i)
+		  | SOME m => IntInf.toInt (IntInf.mod (IntInf.abs i, 
+							IntInf.fromInt m))
 	in
 	    Gen.try 1000 largeInt (Test.test (fn x => IntInf.hash x = t x))
 	end
 
     fun testDivMod () =
 	let
-	    fun t (a, b) = IntInf.divMod (a, b) = (IntInf.div (a, b), IntInf.mod (a, b)) 
+	    fun t (a, b) = IntInf.divMod (a, b) = 
+		           (IntInf.div (a, b), IntInf.mod (a, b)) 
 		              handle Div => b = (fromI 0)
 	in
 	    Gen.try 1000 (Gen.pair (largeInt, largeInt)) (Test.test t)
@@ -162,26 +186,74 @@ struct
 
     fun testQuotRem () =
 	let
-	    fun t (a, b) = IntInf.quotRem (a, b) = (IntInf.quot (a, b), IntInf.rem (a, b)) 
+	    fun t (a, b) = IntInf.quotRem (a, b) = 
+		           (IntInf.quot (a, b), IntInf.rem (a, b)) 
 		              handle Div => b = (fromI 0)
 	in
 	    Gen.try 1000 (Gen.pair (largeInt, largeInt)) (Test.test t)
 	end
 
     fun testPow () =
-	Test.test (fn _ => raise Test.NotYetImplemented) ()
+	let
+	    val zero = fromI 0
+	    val one  = fromI 1
+
+	    fun pow' (a, b, c) = if b = 0 then c 
+				 else pow' (a, b - 1, IntInf.* (c, a))
+
+	    fun t (i, j) = if j = 0
+			       then pow' (i, j, one)
+			   else if j < 0
+				    then if IntInf.equal (i, zero)
+					     then raise Div
+					 else if IntInf.abs i = one 
+						  then pow' (i, j, one)
+					      else zero
+				else pow' (i, j, one)
+	in
+	    Gen.try 1000 (Gen.pair (largeInt, Gen.int))
+	       (Test.test (fn x => IntInf.equal (IntInf.pow x, t x)))
+	end
 
     fun testLog2 () =
-	Test.test (fn _ => raise Test.NotYetImplemented) ()
+	let
+	    fun findK (i, k) = if IntInf.pow (fromI 2, k) > i 
+				   then k - 1
+			       else findK (i, k + 1)
 
-    fun testOrB () =
-	Test.test (fn _ => raise Test.NotYetImplemented) ()
+	    fun t i = if i <= (fromI 0) then NONE
+		      else SOME (findK (i, 0)) handle Overflow => NONE
+	in
+	    Gen.try 10000 largeInt 
+	      (Test.test (fn x => 
+			    let
+				val r = t x
+			    in
+				IntInf.log2 x = valOf r 
+				          handle _ => Option.isNone r
+			    end))
+	end
+
+    fun testOrB () = (* or (a, b) = ~(~a ^ ~b) *)
+	let
+	    fun t (a, b) = IntInf.notb (IntInf.andb (IntInf.notb a, 
+						     IntInf.notb b))
+	in
+	    Gen.try 10000 (Gen.pair (largeInt, largeInt))
+	       (Test.test (fn x => IntInf.orb x = t x))
+	end
 
     fun testAndB () =
 	Test.test (fn _ => raise Test.NotYetImplemented) ()
 
-    fun testXorB () =
-	Test.test (fn _ => raise Test.NotYetImplemented) ()
+    fun testXorB () = (* xor (a, b) = (~a ^ b) v (a ^~b) *)
+	let
+	    fun t (a, b) = IntInf.orb (IntInf.andb (IntInf.notb a, b), 
+				       IntInf.andb (a, IntInf.notb b))
+	in
+	    Gen.try 10000 (Gen.pair (largeInt, largeInt))
+	       (Test.test (fn x => IntInf.xorb x = t x))
+	end
 
     fun testNotB () =
 	let
@@ -191,14 +263,26 @@ struct
 	end
 
     fun testLeftShift () =
-	Test.test (fn _ => raise Test.NotYetImplemented) ()
+	let
+	    fun t (i, w) = i * IntInf.pow (fromI 2, Word.toInt w)
+	in
+	    Gen.try 10000 (Gen.pair (largeInt, Gen.word))
+	      (Test.test (fn x => t x = IntInf.<< x))
+	end
 
     fun testRightShift () =
-	Test.test (fn _ => raise Test.NotYetImplemented) ()
+	let
+	    fun t (i, w) = IntInf.div (i, IntInf.pow (fromI 2, Word.toInt w))
+	in
+	    Gen.try 10000 (Gen.pair (largeInt, Gen.word))
+	      (Test.test (fn x => t x = IntInf.<< x))
+	end
 
     fun testAbs () =
 	let
-	    fun t x = if x < (fromI 0) then IntInf.abs x = IntInf.~ x else IntInf.abs x = x
+	    fun t x = if x < (fromI 0) 
+			  then IntInf.abs x = IntInf.~ x 
+		      else IntInf.abs x = x
 	in
 	    Gen.try 10000 largeInt (Test.test t)
 	end 
@@ -239,9 +323,12 @@ struct
 
     fun testSameSign () =
 	let
-	    fun t' (x1, x2) = if x1 = (fromI 0) andalso x2 = (fromI 0) then true
-			     else if x1 > (fromI 0) andalso x2 > (fromI 0) then true
-				  else if x1 < (fromI 0) andalso x2 < (fromI 0) then true
+	    fun t' (x1, x2) = if x1 = (fromI 0) andalso x2 = (fromI 0) 
+				  then true
+			      else if x1 > (fromI 0) andalso x2 > (fromI 0) 
+				       then true
+				   else if x1 < (fromI 0) andalso 
+				           x2 < (fromI 0) then true
 				      else false
 	    fun t x = IntInf.sameSign x = t' x
 	in
@@ -249,7 +336,22 @@ struct
 	end
 
     fun testArithmetic () = 
-	Test.test (fn _ => raise Test.NotYetImplemented) ()
+	let
+	    fun tS (x1, x2) = if x2 = (fromI 0) 
+				  then IntInf.sameSign (x1, fromI ~1)
+			      else x1 div x2 = (fromI 0)
+	    fun tE (x1, x2) = if x2 = (fromI 0) then x1 = (fromI 0) 
+			      else (x1 div x2 = (fromI 1) orelse 
+				    x1 div x2 = (fromI ~1))
+				  andalso (x1 mod x2 = (fromI 0))
+            fun tG x = (Bool.not (tS x)) andalso (Bool.not (tE x))
+	    fun t' (x1, x2) = 
+		((tS (x1, x2)) = (x1 < x2)) andalso
+		((tG (x1, x2)) = (x1 > x2)) andalso
+		((tE (x1, x2)) = (x1 = x2))
+	in
+	    Gen.try 10000 (Gen.pair (largeInt, largeInt)) (Test.test t')
+	end
 
     fun testToString () =
 	Test.test (fn _ => raise Test.NotYetImplemented) ()
@@ -265,7 +367,7 @@ struct
 	in
             (Test.test (fn x => toFrom x = x handle _ => false) x1;
 	     Test.test (fn x => toFrom x = x handle _ => false) x2;
-	     Gen.try 1000 Gen.int 
+	     Gen.try 10000 Gen.int 
 		     (Test.test (fn x => let
 					   val t = fromI x
 				         in
