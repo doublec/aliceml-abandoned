@@ -64,4 +64,10 @@ sig
     val scan       : (char, 'a) StringCvt.reader
                        -> (date, 'a) StringCvt.reader
     val fromString : string -> date option
+
+    val scanISO :   (char, 'a) StringCvt.reader -> (date, 'a) StringCvt.reader
+
+    val fromISO :   string -> date option
+
+    val toISO :     date -> string
 end

@@ -36,5 +36,5 @@ struct
 	    WIN32 => #";"
 	  | UNIX => #":"
 
-    val buildDate = valOf (Date.fromString ("substr(esyscmd(date "+%a %b %d %H:%M:%S %Y"), 0, 24)"))
+    val buildDate = valOf (Date.fromISO ("substr(esyscmd(date "-I"), 0, 10)"))
 end

@@ -268,30 +268,38 @@ struct
             internalDate () handle Date => d
         end
 
+
+
+    fun getdig getc s =
+        case getc s of
+            NONE => NONE
+          | SOME (c, s') =>
+              if Char.isDigit c then
+                  SOME (Char.ord c - Char.ord #"0", s')
+              else NONE
+
+    fun get2dig getc s =
+        case getdig getc s of
+            SOME (c1, s') =>
+              (case getdig getc s' of
+                   SOME (c2, s'') => SOME (10 * c1 + c2, s'')
+                 | NONE => NONE)
+          | NONE => NONE
+
+    fun expect getc c s f =
+        case getc s of
+            NONE => NONE
+          | SOME (c', s') => if c = c' then f s' else NONE
+
+
+
     fun scan getc s = let
 
         fun getword s = StringCvt.splitl Char.isAlpha getc s
 
-        fun expect c s f =
-            case getc s of
-                NONE => NONE
-              | SOME (c', s') => if c = c' then f s' else NONE
-
-        fun getdig s =
-            case getc s of
-                NONE => NONE
-              | SOME (c, s') =>
-                  if Char.isDigit c then
-                      SOME (Char.ord c - Char.ord #"0", s')
-                  else NONE
-
-        fun get2dig s =
-            case getdig s of
-                SOME (c1, s') =>
-                  (case getdig s' of
-                       SOME (c2, s'') => SOME (10 * c1 + c2, s'')
-                     | NONE => NONE)
-              | NONE => NONE
+        val expect = expect getc
+        val getdig  = getdig getc
+        val get2dig = get2dig getc
 
         fun year0 (wday, mon, d, hr, mn, sc) s =
             case Int.scan StringCvt.DEC getc s of
@@ -375,7 +383,39 @@ struct
 
     val toString = fmt "%a %b %d %H:%M:%S %Y"
 
+    val toISO    = fmt "%F"
 
+    fun scanISO getc s =
+        let
+            fun day (y, m) s =
+                case get2dig getc s of
+                    NONE        => NONE
+                  | SOME (d, s) => SOME (
+                            date { year = y, month = monthFromInt (m-1), day = d,
+                                   hour = 0, minute = 0, second = 0, 
+                                   offset = NONE 
+                                 }, s )
+
+            fun month y s =
+                case get2dig getc s of
+                    NONE        => NONE
+                  | SOME (m, s) => expect getc #"-" s (day (y, m))
+            
+            fun year s =
+                case get2dig getc s of
+                    NONE         => NONE
+                  | SOME (y1, s) => 
+                    case get2dig getc s of
+                        NONE         => NONE
+                      | SOME (y2, s) => 
+                        expect getc #"-" s ( month (y1 * 100 + y2) )
+        in
+            year s
+        end
+
+    fun fromISO s = StringCvt.scanString scanISO s
+
+    
     (* comparison does not take into account the offset
      * thus, it does not compare dates in different time zones
      *)
