@@ -172,77 +172,53 @@ struct
 	    
     (* drawConcat *) 
     and drawConcat (n,x,y,intent) = case n of
-	Concat(r) 
-	=> let
+	Concat(r)
+		=> let
+	       val _ = TextIO.print("Concat: starting search" ^ "\n")
 	       val (search,sx,sy) = case intent of
 		   DRAW => (false,0,0)
-		 | SEARCH(sx,sy) => (true,sx,sy)
-	       val _ = TextIO.print("Concat: starting search"  ^ "\n")
+		 | SEARCH(xs,ys) => (true,xs,ys)
+	       val in_bounding_box = sx >= x 
+		   andalso sx < x + !(#width(r))
+		   andalso sy >= y 
+		   andalso sy < y + !(#height(r))
 	   in
-	       if !(#status(r)) = DIRTY  orelse search
-		   then 
-		   let val kids_list = Array.toList(#kids(r))
-		       val l = List.length(kids_list) - 1
-		       val i = ref 0
-		       val in_bounding_box = sx >= x 
-			   andalso sx < x + !(#width(r))
-			   andalso sy >= y 
-			   andalso sy < y + !(#height(r))
-		       val _ = TextIO.print("Concat: in bounding box: " 
-					    ^ Bool.toString(in_bounding_box)
-					 ^ " because sx = " ^Int.toString(sx)
-					    ^ " and sy = " ^Int.toString(sy)
-					    ^ " and x = " ^Int.toString(x)
-					    ^ " and y = " ^Int.toString(y)
-					    ^ "\n")
-		   in 
-		       if search andalso (not(in_bounding_box)) 
-			   then let
-				    val _ = TextIO.print(
-		        " Concat was not in bounding box, search abandoned \n")
-				in (x+get_xdim(n),y+get_ydim(n)-1,NONE)
-				end
-		       else 
-		       (while !i <= l do
-			(let val li = List.take(kids_list,!i)
-			     val sum_xdim = 
-				 if !i = l 
-				     andalso !i > 0
-				     andalso setsVertical (List.nth(kids_list,
-								    !i-1))
-				     then 
-					 let val li' = List.take(kids_list,
-								 !i-1)
-					 in sum_up(li',get_xdim,get_l_xdim) +
-					     get_l_xdim(List.nth(kids_list,
-								 !i-1))
-					 end 
-				 else sum_up(li,get_xdim,get_l_xdim)
-			     val max_ydim =  max(li,get_ydim)
-			     val (x2,y2,found) = draw (List.nth(kids_list,!i),
-						       x + sum_xdim,
-						       if !i = 0 then y 
-						       else y + max_ydim - 1,
-							   intent)
-			     val _ = case found 
-				 of SOME n => raise NodeFound(n)
-			       | NONE => ()
-			 in
-			     ()
-			 end ; i := !i + 1) 
-			     ; #status(r) := CLEAN
-			     ; (x+get_xdim(n),y+get_ydim(n) - 1,
-				if in_bounding_box then SOME (n)
-				else NONE) )
-			    handle NodeFound(n) 
-			    => let
-				   val _ = TextIO.print(
-						  "Concat: found node!"^"\n")
-			       in
-				   (x,y,SOME(n))
-			       end
-		   end
-	       
+	       if !(#status(r)) = DIRTY orelse search 
+		   then if Array.length(#kids(r)) = 0
+			    then (x,y,if in_bounding_box then SOME(n) 
+				      else NONE)
+			else 
+			(let val _ = if not(search) 
+					 then #status(r) := Types.CLEAN
+				     else ()
+			     val hor_funct = 
+				 (fn (a,(x,y,found)) 
+				  => case found of
+				     SOME n => if not(search) 
+						   then draw(a,x,y,intent)
+					       else raise NodeFound(n)
+				   | NONE => draw(a,x,y,intent))
+			     in
+				 if search andalso not(in_bounding_box) 
+				     then (x+get_xdim(n),y+get_ydim(n),NONE) 
+				 else
+				 let val (new_x,new_y,new_found) = 
+				     (Array.foldl hor_funct (x,y,NONE) (#kids(r))) 
+				     handle NodeFound n 
+				     => let val _ = TextIO.print(
+					       "Concat: found node!" ^ "\n")
+					in (x,y,SOME(n))
+					end
+				     val nothing_found = case new_found of
+					                 NONE => true
+						       | SOME _ => false
+				 in if search 
+				     andalso in_bounding_box 
+				     andalso nothing_found
+					then (new_x,new_y,SOME(n))
+				    else (new_x,new_y,new_found)
+				 end
+			     end)
 	       else (x+get_xdim(n),y+get_ydim(n),NONE)
 	   end
       | _ => raise DrawError
@@ -285,7 +261,8 @@ struct
 					     SOME n => raise NodeFound(n)
 					   | NONE => (x,y1+1,found2)
 				     end)
-			     val funct = if setsVertical(n) 
+			     val vertical = setsVertical(n)
+			     val funct = if vertical 
 					     then ver_funct
 					 else hor_funct
 			     val _ = TextIO.print(
@@ -295,7 +272,7 @@ struct
 				 if search andalso not(in_bounding_box) 
 				     then (x+get_xdim(n),y+get_ydim(n),NONE) 
 				 else
-				 let val (new_x,new_y,new_found) = 
+				 let val (new_x',new_y',new_found) = 
 				     (Array.foldl funct (x,y,NONE) (#kids(r))) 
 				     handle NodeFound n 
 				     => let val _ = TextIO.print(
@@ -305,6 +282,12 @@ struct
 				     val nothing_found = case new_found of
 					                 NONE => true
 						       | SOME _ => false
+				      val new_x = if vertical 
+						      then x + get_xdim(Array.sub(#kids(r),Array.length(#kids(r))-1))
+							  else new_x'
+				      val new_y = if vertical 
+						      then new_y' -1
+							  else new_y'
 				 in if search 
 				     andalso in_bounding_box 
 				     andalso nothing_found
