@@ -282,11 +282,16 @@ local
 
     fun usage () =
 	TextIO.output (TextIO.stdErr,
-		       "Usage:\n" ^
-		       "\tstoc [--nodefaultimport] [-c|-x] <input file> " ^
-		       "[-o <output file>]\n" ^
-		       "\tstoc --replacesign <input url> <signature file> " ^
-		       "<output file>\n")
+		       "Usage:\n\
+		       \\tstoc [<option> ...] [-c|-x] <input file> \
+		       \[-o <output file>]\n\
+		       \\tstoc --replacesign <input url> <signature file> \
+		       \<output file>\n\
+		       \Options:\n\
+		       \\t--nodefaultimport\n\
+		       \\t\tDo not make the SML Standard Basis available.\n\
+		       \\t--outputassembly\n\
+		       \\t\tWrite an .ozm file with the assembly code.\n")
 
     fun stoc' ([infile] | ["-c", infile]) =
 	stoc_c (infile, basename infile ^ ".ozf")

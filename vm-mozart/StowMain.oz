@@ -31,7 +31,7 @@ define
       {{New Module.manager init(TypeCheck)} link(url: Name)}
    [] nil then
       {System.printError
-       'usage: '#{Property.get 'application.url'}#' <name> <args> ...\n'}
+       'Usage: '#{Property.get 'application.url'}#' <name> <args> ...\n'}
       {Application.exit 2}
    end
 end
