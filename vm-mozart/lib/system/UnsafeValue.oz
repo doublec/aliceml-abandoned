@@ -15,7 +15,7 @@ import
    System(eq printName show)
    Error(printException)
 export
-   'UnsafeValue$': Value
+   'UnsafeValue$': UnsafeValue
 define
    fun {Handle F E X}
       {System.show F}
@@ -72,9 +72,10 @@ define
       end
    end
 
-   Value =
+   UnsafeValue =
    'Value'('cast': fun {$ A} A end
 	   'same': System.eq
+	   'awaitRequest': fun {$ X} {Value.waitQuiet X} X end
 	   'proj': ProjRecord
 	   'projTuple': ProjTuple
 	   'tag':

@@ -124,7 +124,6 @@ MLYACC = ml-yacc
 VMSOURCES = VMMain.oz
 
 LIBSYSTEMNATIVES0 = \
-	BrowserSupport \
         Config IODesc OS Unix CommandLine Component Debug Socket Rand Reflect
 LIBUTILITYNATIVES0 = \
 	Cell Addr
@@ -172,7 +171,7 @@ LIBSYSTEMSOURCES0 = \
 	TEXT_IO-sig.aml TextIO.aml IO_DESC-sig.aml OS_FILE_SYS-sig.aml \
 	OS_PROCESS-sig.aml OS_IO-sig.aml OS-sig.aml UNIX-sig.aml \
 	COMMAND_LINE-sig.aml COMPONENT-sig.aml DEBUG-sig.aml SOCKET-sig.aml \
-	RAND-sig.aml REFLECT-sig.aml BROWSER_SUPPORT-sig.aml \
+	RAND-sig.aml REFLECT-sig.aml \
 	$(LIBSYSTEMNATIVES0:%=%.aml) \
 	PICKLE-sig.aml Pickle.aml URL-sig.aml Url.aml \
 	HTTP-sig.aml Http.aml HTTP_SERVER-sig.aml HttpServer.aml \

@@ -24,6 +24,7 @@ signature UNSAFE_VALUE_COMPONENT =
 
 		val cast: 'a_value -> 'a
 		val same: 'a * 'a -> bool
+		val awaitRequest : 'a -> 'a
 
 		(* Projections *)
 
