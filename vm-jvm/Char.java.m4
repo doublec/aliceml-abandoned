@@ -26,12 +26,8 @@ final public class Char implements DMLValue {
 	return value+" : char";
     }
 
-    final public char getChar() {
-	return value;
-    }
-
     _apply_fails;
-    
+
     // eqtype string
     /** <code>val minChar : char </code>*/
     /** <code>val maxChar : char </code>*/

@@ -13,7 +13,7 @@ package de.uni_sb.ps.dml.runtime;
 public class UniqueName extends Name {
 
     public UniqueName(java.lang.String name) {
-	this.name=name;
+	super(name);
 	GName.gNames.put(name,this);
     }
 

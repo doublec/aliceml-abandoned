@@ -45,12 +45,6 @@ final public class Int implements DMLValue {
 	return value+": int";
     }
 
-    /** Den Java-Wert des Int auslesen.
-     *  @return int Java-Wert der dem Int-Wert entspricht
-     */
-    final public int getInt() {
-	return value;
-    }
     _apply_fails;
 
     _BUILTIN(Uminus) {

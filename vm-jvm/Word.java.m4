@@ -41,13 +41,6 @@ final public class Word implements DMLValue {
 	return value+": word";
     }
 
-    /** Den Java-Wert des Word auslesen.
-     *  @return long Java-Wert der dem Word-Wert entspricht
-     */
-    final public long getLong() {
-	return value;
-    }
-
     _apply_fails;
 
     /** <code>val wordSize : int </code>*/

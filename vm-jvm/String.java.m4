@@ -42,12 +42,6 @@ final public class String implements DMLValue {
 	return "\""+value+"\": string";
     }
 
-    /** Den Java-Wert des STRING  auslesen.
-     *  @return java.lang.String Java-Wert der dem STRING -Wert entspricht
-     */
-    final public java.lang.String getString() {
-	return value;
-    }
     _apply_fails;
     
     _BUILTIN(Size) {

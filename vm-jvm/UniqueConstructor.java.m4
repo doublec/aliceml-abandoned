@@ -12,7 +12,7 @@ package de.uni_sb.ps.dml.runtime;
 final public class UniqueConstructor extends Constructor {
 
     public UniqueConstructor(java.lang.String name) {
-	this.name=name;
+	super(name);
 	GName.gNames.put(name,this);
     }
 
