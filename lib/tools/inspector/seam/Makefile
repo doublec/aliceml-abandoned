@@ -36,7 +36,7 @@ COMPONENTS = $(SOURCES:%.aml=%.alc)
 LINKCOMPONENTS = $(SOURCES:%.aml=--include %)
 INSTALLTO = `alice-config --alicelibdir`/tools
 
-.PHONY: all depend clean veryclean distclean
+.PHONY: all depend clean veryclean distclean install
 
 all: $(COMPONENTS)
 	@echo "Schnitzel time"

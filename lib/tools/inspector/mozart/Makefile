@@ -14,20 +14,18 @@
 
 # Configurable directories
 
-PREFIX = /opt/alice-devel
-
-SRCTOP = ../..
-BOOTSTRAPDIR = ../../bootstrap
+PREFIX = /opt/stockhausen-devel
 
 # No configuration needed from here
 
-SRCDIR = $(SRCTOP)/lib/inspector
+SRCTOP = ../../../..
+SRCDIR = $(SRCTOP)/lib/tools/inspector/mozart
 VPATH = $(SRCDIR)
 
 OZC = ozc
 OZCOPTS = -z9
 ALICEC = alicec
-ALICEC_OPTS = --implicit-import-file ../fundamental/Fundamental.import
+ALICEC_OPTS = --implicit-import-file ../../../fundamental/Fundamental.import
 ALICELINK = alicelink
 ALICELINK_OPTS = -v
 ALICEDEP = alicedep
