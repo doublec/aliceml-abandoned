@@ -15,16 +15,20 @@ import
 from "../../lib/utility/HASH_KEY-sig"
 
 import
-    structure MkHashScopedImpMap
-from "../../lib/utility/MkHashScopedImpMap"
-
-import
     structure Crash
 from "../infrastructure/Crash"
 
 import
+    structure MkHashScopedImpMap
+from "../infrastructure/MkHashScopedImpMap"
+
+import
     structure Stamp
 from "../common/Stamp"
+
+import
+    structure StampSet
+from "../common/StampSet"
 
 import
     structure StampMap

@@ -30,12 +30,12 @@
  *)
 
 import
-    structure FlatGrammar
-from "../../backend-common/FlatGrammar"
-
-import
     structure StampSet
 from "../common/StampSet"
+
+import
+    structure FlatGrammar
+from "../backend-common/FlatGrammar"
 
 import
     structure IL

@@ -27,6 +27,10 @@ import
 from "../backend-common/FlatGrammar"
 
 import
+    structure Skeleton
+from "Skeleton"
+
+import
     signature IL
 from "IL-sig"
 
@@ -518,7 +522,7 @@ structure IL :> IL =
 	     else (output1 (q, #" "); output (q, intToString i)))
 	  | outputInstr (q, LdcR8 r) =
 	    (output (q, "ldc.r8 ");
-	     output (q, (CharVector.map (fn c => if c = #"~" then #"-" else c)
+	     output (q, (String.map (fn c => if c = #"~" then #"-" else c)
 			 (LargeReal.toString r))))
 	  | outputInstr (q, LdelemRef) = output (q, "ldelem.ref")
 	  | outputInstr (q, Ldfld (dottedname, id, ty)) =
