@@ -13,7 +13,7 @@
   </P>
   <P>
     For example, the expression
-    <PRE>Inspector.inspect x</PRE>
+    <PRE>inspect x</PRE>
   </P>
   <P>
     tells the Inspector to show the value <TT>x</TT>.
@@ -25,12 +25,13 @@
 <?php section("import", "import"); ?>
 
   <PRE>
-    import signature INSPECTOR from "x-alice:/lib/tools/INSECTOR-sig"
-    import structure Inspector from "x-alice:/lib/tools/Inspector"</PRE>
+    import structure Inspector from "x-alice:/lib/tools/Inspector"
+    import signature INSPECTOR from "x-alice:/lib/tools/INSECTOR-sig"</PRE>
 
   <P>
     In the <A href="http://www.ps.uni-sb.de/alice/usage.php3#interactive">interactive toplevel</A> the
-    inspector is readily available without further import announcements.
+    inspector is available without further import announcements. The function
+    <TT>inspect</TT> is available unqualified.
   </P>
 
 <?php section("interface", "interface"); ?>
@@ -42,7 +43,7 @@
 
 	datatype color =
 	    KEEP_COLOR
-	  | SET_COLOR       of {red: int, green: int, blue: int}
+	  | SET_COLOR       of {red : int, green : int, blue : int}
 	datatype width =
 	    KEEP_WIDTHS
 	  | REPLACE_WIDTHS  of int vector
@@ -89,9 +90,11 @@
 
 	exception ConfigurationError
 
-	val inspect: 'a -> unit
-	val inspectN: int * 'a -> unit
-	val configure: option vector -> unit   (* ConfigurationError *)</PRE>
+	val inspect :   'a -> unit
+	val inspectN :  int * 'a -> unit
+	val configure : option vector -> unit
+    end
+  </PRE>
 
 <?php section("description", "description"); ?>
 

@@ -178,7 +178,7 @@
     <TR> <TD><A href="socket.php3">Socket</A></TD> </TR>
     <TR> <TD><A href="text-io.php3">TextIO</A></TD> </TR>
     <TR> <TD><A href="prim-io.php3">TextPrimIO</A></TD> </TR>
-    <TR> <TD><A href="text-stream-io.php3">TextIO.StreamIO</A></TD> </TR>
+    <TR> <TD><A href="text-io.php3">TextIO.StreamIO</A></TD> </TR>
     <TR> <TD><A href="unix.php3">Unix</A></TD> </TR>
     <TR> <TD><A href="url.php3">Url</A></TD> </TR>
   </TABLE>

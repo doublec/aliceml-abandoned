@@ -17,7 +17,7 @@
   <P>See also:
     <A href="bin-io.php3"><TT>BinIO</TT></A>,
     <A href="imperative-io.php3"><TT>IMPERATIVE_IO</TT></A>,
-    <A href="text-stream-io.php3"><TT>TEXT_STREAM_IO</TT></A>
+    <A href="text-stream-io.php3"><TT>TEXT_STREAM_IO</TT></A>,
     <A href="text-prim-io.php3"><TT>TextPrimIO</TT></A>
   </P>
 
