@@ -12,6 +12,7 @@
 
 functor
 import
+   Open(file)
    System(show)
 export
    BuiltinTable
@@ -47,61 +48,120 @@ define
       end
    end
 
+   fun {TextIOInputAll F}
+      case {F getS($)} of false then ""
+      [] S then S#'\n'#{TextIOInputAll F}
+      end
+   end
+
    BuiltinTable =
    builtinTable(
-      'System.show': fun {$ X} {System.show X} '#' end
       '~': Number.'~'   %--** overloaded for word
       '+': fun {$ X1#X2} X1 + X2 end   %--** overloaded for word
       '-': fun {$ X1#X2} X1 - X2 end   %--** overloaded for word
       '*': fun {$ X1#X2} X1 * X2 end   %--** overloaded for word
       'div': fun {$ X1#X2} X1 div X2 end   %--** overloaded for word
       'mod': fun {$ X1#X2} X1 mod X2 end   %--** overloaded for word
-      '<': fun {$ X1#X2}
-	      if {ByteString.is X1} then {StringLess X1 X2} else X1 < X2 end
-	   end
-      '>': fun {$ X1#X2}
-	      if {ByteString.is X1} then {StringLess X2 X1} else X1 > X2 end
-	   end
-      '<=': fun {$ X1#X2}
-	       if {ByteString.is X1} then {Not {StringLess X2 X1}}
-	       else X1 =< X2
-	       end
+      '<':
+	 fun {$ X1#X2}
+	    if {ByteString.is X1} then {StringLess X1 X2} else X1 < X2 end
+	 end
+      '>':
+	 fun {$ X1#X2}
+	    if {ByteString.is X1} then {StringLess X2 X1} else X1 > X2 end
+	 end
+      '<=':
+	 fun {$ X1#X2}
+	    if {ByteString.is X1} then {Not {StringLess X2 X1}}
+	    else X1 =< X2
 	    end
-      '>=': fun {$ X1#X2}
-	       if {ByteString.is X1} then {Not {StringLess X1 X2}}
-	       else X1 >= X2
-	       end
+	 end
+      '>=':
+	 fun {$ X1#X2}
+	    if {ByteString.is X1} then {Not {StringLess X1 X2}}
+	    else X1 >= X2
 	    end
+	 end
       '<>': fun {$ X1 X2} X1 \= X2 end
       'Char.ord': fun {$ C} C end
       'Char.chr': fun {$ C} C end
       'Char.isDigit': Char.isDigit
       'Char.isHexDigit': Char.isXDigit
       'Char.isSpace': Char.isSpace
-      'Char.toCString': fun {$ C} {ByteString.make &"|{ToCString C "\""}} end
-      'Int.compare\'': fun {$ I#J}
-			  if I == J then 0
-			  elseif I < J then ~1
-			  else 1
-			  end
-		       end
+      'Char.toCString':
+	 fun {$ C} {ByteString.make &"|{ToCString C "\""}} end
+      'Int.compare\'':
+	 fun {$ I#J}
+	    if I == J then 0
+	    elseif I < J then ~1
+	    else 1
+	    end
+	 end
       'Int.toString': Int.toString
-      'String.^': fun {$ S1#S2} {ByteString.append S1 S2} end
-      'String.toCString': fun {$ X}
-			     {ByteString.make &"|{FoldR {ByteString.toString X}
-						  ToCString "\""}}
-			  end
-      'String.str': fun {$ C} {ByteString.make [C]} end
-      'String.size': fun {$ S} {ByteString.length S} end
-      'String.sub': fun {$ S#I} {ByteString.get S I} end
-      'String.substring': fun {$ S#I#J} {ByteString.slice S I I + J} end
-      'String.compare\'': fun {$ S#T}
-			     if {StringLess S T} then ~1
-			     elseif {StringLess T S} then 1
-			     else 0
-			     end
-			  end
-      )
+      'String.^':
+	 fun {$ S1#S2} {ByteString.append S1 S2} end
+      'String.toCString':
+	 fun {$ X}
+	    {ByteString.make &"|{FoldR {ByteString.toString X}
+				 ToCString "\""}}
+	 end
+      'String.str':
+	 fun {$ C} {ByteString.make [C]} end
+      'String.size':
+	 fun {$ S} {ByteString.length S} end
+      'String.sub':
+	 fun {$ S#I} {ByteString.get S I} end
+      'String.substring':
+	 fun {$ S#I#J} {ByteString.slice S I I + J} end
+      'String.compare\'':
+	 fun {$ S#T}
+	    if {StringLess S T} then ~1
+	    elseif {StringLess T S} then 1
+	    else 0
+	    end
+	 end
+      'Array.array':
+	 fun {$ N#Init} {Array.new 0 N - 1 Init} end
+      'Array.fromList':
+	 fun {$ Xs} N A in
+	    N = {Length Xs}
+	    A = {Array.new 0 N - 1 unit}
+	    {List.forAllInd Xs proc {$ I X} {Array.put A I - 1 X} end}
+	    A
+	 end
+      'Array.length':
+	 fun {$ A} {Array.high A} + 1 end
+      'Array.sub':
+	 fun {$ A#I} {Array.get A I} end
+      'Array.update':
+	 fun {$ A#I#X} {Array.put A I X} '#' end
+      'Vector.fromList':
+	 fun {$ Xs} {List.toTuple vector Xs} end
+      'Vector.sub':
+	 fun {$ V I} V.(I + 1) end
+      'TextIO.stdIn':
+	 {New Open.file init(name: stdin flags: [read])}
+      'TextIO.openIn':
+	 fun {$ S}
+	    {New Open.file init(name: S flags: [read])}
+	 end
+      'TextIO.inputAll': TextIOInputAll
+      'TextIO.closeIn':
+	 fun {$ F} {F close()} '#' end
+      'TextIO.stdOut':
+	 {New Open.file init(name: stdout flags: [write])}
+      'TextIO.openOut':
+	 fun {$ S}
+	    {New Open.file init(name: S flags: [write create truncate])}
+	 end
+      'TextIO.output':
+	 fun {$ F#S} {F write(vs: S)} '#' end
+      'TextIO.output1':
+	 fun {$ F#C} {F write(vs: [C])} '#' end
+      'TextIO.closeOut':
+	 fun {$ F} {F close()} '#' end
+      'TextIO.print':
+	 fun {$ X} {System.show X} '#' end)
 
    Match = {NewName}
    Bind = {NewName}
