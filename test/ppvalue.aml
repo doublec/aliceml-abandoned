@@ -1,0 +1,53 @@
+import "x-alice:/lib/utility/PrettyPrint";
+import "x-alice:/lib/system/PPValue";
+import "x-alice:/lib/system/Reflect";
+functor P(type t val x : t) = let structure T = Reflect.ReflectType(type t = t) in (val _ = print "val _ = " val _ = PrettyPrint.output(TextIO.stdOut, PPValue.ppVal T.x x, 80) val _ = print "\n") end;
+
+structure _ = P(type t = int val x = 56);
+structure _ = P(type t = word val x = 0w56);
+structure _ = P(type t = real val x = 3.1415);
+structure _ = P(type t = char val x = #"\097");
+structure _ = P(type t = string val x = "Hi!\n");
+structure _ = P(type t = exn val x = Future.await Div);
+structure _ = P(type t = exn val x = Fail "ouch!");
+structure _ = P(type t = exn val x = let exception Oempel in Oempel end);
+structure _ = P(type t = int ref val x = ref 2);
+structure _ = P(type t = int vector val x = #[2,4,0,2]);
+structure _ = P(type t = int array val x = Array.tabulate(10, fn i => i*i));
+structure _ = P(type t = int array array val x = Array.tabulate(10, fn i => Array.tabulate(10-i, fn j => i*j)));
+
+structure _ = P(type t = int * int -> unit val x = fn(_,_) => ());
+
+structure _ = P(type t = unit val x = ());
+structure _ = P(type t = int * real * int val x = (56, 0.7, 90));
+structure _ = P(type t = int * string val x = (0, "yoo"));
+structure _ = P(type t = int * string val x = {1=0, 2="yoo"});
+structure _ = P(type t = int * string val x = {2="yoo", 1=0});
+structure _ = P(type t = {1:int, 2:string} val x = (0, "yoo"));
+structure _ = P(type t = {1:int, 2:string} val x = {1=0, 2="yoo"});
+structure _ = P(type t = {2:string, 1:int} val x = {1=0, 2="yoo"});
+structure _ = P(type t = {1:int} val x = {1=0});
+structure _ = P(type t = {b:int, a:real, 2:string} val x = {2="yoo", b=42, a=0.0});
+
+structure _ = P(type t = bool val x = true);
+structure _ = P(type t = bool val x = false);
+structure _ = P(type t = int option val x = NONE);
+structure _ = P(type t = int option val x = SOME 9);
+structure _ = P(type t = (int * int) option val x = SOME(9,10));
+structure _ = P(type t = bool list val x = []);
+structure _ = P(type t = bool list val x = [true, false, true]);
+structure _ = P(type t = int list val x = 1::2::3::(lazy [3+1]));
+structure _ = P(type t = int list list val x = [[],[],[]]);
+structure _ = P(datatype ('a,'b) u = A of 'a | B of 'b | C of ('a,'b) u * ('b,'a) u type t = (int,real) u val x = C(A 4,B 5));
+
+structure _ = P(exttype t val x = let constructor C : t in C end);
+structure _ = P(exttype t val x = let constructor D of int : t in D 5 end);
+structure _ = P(exttype t val x = let constructor E of int * int : t in E(6,7) end);
+structure _ = P(exttype 'a u type t = int u * int u * (int * int) u val x = let constructor A of 'a : 'a u constructor B of real : 'a u in (A 6, B 4.5, A(4,5)) end);
+
+structure _ = P(structure X :> (type t val x : t) = (type t = int val x = 42) type t = X.t * X.t val x = (X.x,X.x));
+
+structure _ = P(type t = int val x = lazy 56+1);
+structure _ = P(type t = int val x = spawn 56+1);
+structure _ = P(type t = int val x = lazy 56 div 0);
+structure _ = P(type t = int val x = spawn 56 div 0);
