@@ -149,9 +149,11 @@ public:
   }
 };
 
+#if defined(JIT_STORE_DEBUG)
 static u_int max(u_int a, u_int b) {
   return ((a >= b) ? a : b);
 }
+#endif
 
 class RegisterBank {
 protected:
@@ -846,9 +848,6 @@ u_int NativeCodeJitter::LoadIdRefKill(u_int Dest, word idRef) {
       }
       return Dest;
     }
-  case AbstractCode::Toplevel:
-    ImmediateSel(Dest, JIT_V2, Store::DirectWordToInt(tagVal->Sel(0)));
-    return Dest;
   default:
     Error("NativeCodeJitter::LoadIdRef: invalid idRef Tag");
   }
@@ -892,11 +891,6 @@ u_int NativeCodeJitter::LoadIdRef(u_int Dest, word idRef, word pc) {
 	  Await(Dest, pc);
       }
     }
-    return Dest;
-  case AbstractCode::Toplevel:
-    ImmediateSel(Dest, JIT_V2, Store::DirectWordToInt(tagVal->Sel(0)));
-    if (pc != (word) 0)
-      Await(Dest, pc);
     return Dest;
   default:
     Error("NativeCodeJitter::LoadIdRef: invalid idRef Tag");
@@ -1365,13 +1359,32 @@ TagVal *NativeCodeJitter::InstrPutVec(TagVal *pc) {
   return TagVal::FromWordDirect(pc->Sel(2));
 }
 
-// Close of id * idRef vector * value * instr
+// Close of id * idRef vector * template * instr
 TagVal *NativeCodeJitter::InstrClose(TagVal *pc) {
   PrintPC("Close\n");
   Vector *idRefs = Vector::FromWordDirect(pc->Sel(1));
   u_int nGlobals = idRefs->GetLength();
   Generic::Closure::New(JIT_V1, nGlobals);
-  u_int i1 = ImmediateEnv::Register(pc->Sel(2));
+  // Instantiate the template into an abstract code:
+  TagVal *abstractCode =
+    TagVal::New(AbstractCode::Function, AbstractCode::functionWidth);
+  TagVal *template_ = TagVal::FromWordDirect(pc->Sel(2));
+  template_->AssertWidth(AbstractCode::functionWidth);
+  abstractCode->Init(0, template_->Sel(0));
+  Assert(static_cast<u_int>(Store::DirectWordToInt(template_->Sel(1))) ==
+	 nGlobals);
+  Vector *subst = Vector::New(nGlobals);
+  for (u_int i = nGlobals; i--; )
+    subst->Init(0, Store::IntToWord(0)); // NONE
+  abstractCode->Init(1, subst->ToWord());
+  abstractCode->Init(2, template_->Sel(2));
+  abstractCode->Init(3, template_->Sel(3));
+  abstractCode->Init(4, template_->Sel(4));
+  abstractCode->Init(5, template_->Sel(5));
+  // Construct concrete code from abstract code:
+  word wConcreteCode =
+    AliceLanguageLayer::concreteCodeConstructor(abstractCode);
+  u_int i1 = ImmediateEnv::Register(wConcreteCode);
   ImmediateSel(JIT_R0, JIT_V2, i1);
   Generic::Closure::InitCC(JIT_V1, JIT_R0);
 #if PROFILE
@@ -1389,17 +1402,22 @@ TagVal *NativeCodeJitter::InstrClose(TagVal *pc) {
 }
 
 // Specialize of id * idRef vector * template * instr
-// template = Template of coord * int * int * idDef args * instr * liveness
-// abstractcode:
-// Specialized of coord * value vector * int * idDef args * instr * liveness
-// Design options: call NativeCodeConctructor directly or using
+// where   template = Template of coord * int * string vector *
+//                    idDef args * instr * liveness
+// abstractCode =
+//    Function of coord * value option vector * string vector *
+//                idDef args * instr * liveness
+// Design options: call NativeCodeConctructor directly or use
 // AliceLanguageLayer::concreteCodeConstructor
 TagVal *NativeCodeJitter::InstrSpecialize(TagVal *pc) {
   PrintPC("Specialize\n");
   // Create specialized abstractCode
-  JITAlice::TagVal::New(JIT_V1, AbstractCode::Specialized, 6);
+  JITAlice::TagVal::New(JIT_V1, AbstractCode::Function,
+			AbstractCode::functionWidth);
   jit_pushr_ui(JIT_V0); // Save V0
-  u_int i1 = ImmediateEnv::Register(pc->Sel(2)); // Save template_
+  TagVal *template_ = TagVal::FromWordDirect(pc->Sel(2));
+  template_->AssertWidth(AbstractCode::functionWidth);
+  u_int i1 = ImmediateEnv::Register(template_->ToWord()); // Save template_
   ImmediateSel(JIT_V0, JIT_V2, i1); // Load template_
 #if PROFILE
   Prepare();
@@ -1420,23 +1438,34 @@ TagVal *NativeCodeJitter::InstrSpecialize(TagVal *pc) {
   JITAlice::TagVal::Put(JIT_V1, 5, JIT_R0);
   jit_popr_ui(JIT_V0); // Restore V0
   jit_pushr_ui(JIT_V1); // Save abstractCode
-  // Create Value Vector
-  Vector *idRefs   = Vector::FromWordDirect(pc->Sel(1));
-  u_int nToplevels = idRefs->GetLength();
-  JITAlice::Vector::New(JIT_V1, nToplevels);
-  for (u_int i = nToplevels; i--;) {
-    u_int Reg = LoadIdRefKill(JIT_R0, idRefs->Sub(i));
-    JITAlice::Vector::Put(JIT_V1, i, Reg);
+  // Create Substitution (value option vector)
+  Vector *idRefs = Vector::FromWordDirect(pc->Sel(1));
+  u_int nGlobals = idRefs->GetLength();
+  Assert(static_cast<u_int>(Store::DirectWordToInt(template_->Sel(1))) ==
+	 nGlobals);
+  JITAlice::Vector::New(JIT_V1, nGlobals);
+  for (u_int i = nGlobals; i--;) {
+    jit_pushr_ui(JIT_V1); // save subst vector
+    JITAlice::TagVal::New(JIT_V1, 1, 1); // SOME ...
+    u_int Reg = LoadIdRef(JIT_R0, idRefs->Sub(i), (word) 0);
+    JITAlice::TagVal::Put(JIT_V1, 0, Reg);
+    jit_movr_p(JIT_R0, JIT_V1); // move TagVal (SOME value) to R0
+    jit_popr_ui(JIT_V1); // restore subst vector
+    JITAlice::Vector::Put(JIT_V1, i, JIT_R0);
   }
-  jit_movr_p(JIT_R0, JIT_V1); // Move value vector to R0
+  jit_movr_p(JIT_R0, JIT_V1); // Move subst vector to R0
   jit_popr_ui(JIT_V1); // Restore abstractCode
-  JITAlice::TagVal::Put(JIT_V1, 1, JIT_R0); // Store value vector
+  JITAlice::TagVal::Put(JIT_V1, 1, JIT_R0); // Store subst vector
   Prepare();
   jit_pushr_ui(JIT_V1); // abstractCode
-  Generic::Closure::New(JIT_V1, 0);
+  Generic::Closure::New(JIT_V1, nGlobals);
   JITStore::Call(1, (void *) AliceLanguageLayer::concreteCodeConstructor);
   Finish();
   Generic::Closure::InitCC(JIT_V1, JIT_RET);
+  for (u_int i = nGlobals; i--;) {
+    u_int Reg = LoadIdRefKill(JIT_R0, idRefs->Sub(i));
+    Generic::Closure::Put(JIT_V1, i, Reg);
+  }
   LocalEnvPut(JIT_V2, pc->Sel(0), JIT_V1);
   return TagVal::FromWordDirect(pc->Sel(3));
 }
@@ -1492,9 +1521,6 @@ TagVal *NativeCodeJitter::InstrAppVar(TagVal *pc) {
   switch (AbstractCode::GetIdRef(tagVal)) {
   case AbstractCode::Immediate:
     wClosure = tagVal->Sel(0);
-    break;
-  case AbstractCode::Toplevel:
-    wClosure = ImmediateEnv::Sel(Store::DirectWordToInt(tagVal->Sel(0)));
     break;
   default:
     wClosure = Store::IntToWord(0);
@@ -2249,8 +2275,8 @@ void NativeCodeJitter::Init(u_int bufferSize) {
   RootSet::Add(defaultContinuation);
 }
 
-// Function of coord * int * int * idDef args * instr * liveness
-// Specialized of coord * value vector * int * idDef args * instr * liveness
+// Function of coord * value option vector * string vector *
+//             idDef args * instr * liveness
 NativeConcreteCode *NativeCodeJitter::Compile(TagVal *abstractCode) {
 #if 0
   // Diassemble AbstractCode
@@ -2286,21 +2312,6 @@ NativeConcreteCode *NativeCodeJitter::Compile(TagVal *abstractCode) {
 #else
   char *start = CompileProlog("Dummy info\n");
 #endif
-  // Transfer toplevel values to immediate env
-  switch (AbstractCode::GetAbstractCode(abstractCode)) {
-  case AbstractCode::Function:
-    break;
-  case AbstractCode::Specialized:
-    {
-      Vector *values = Vector::FromWordDirect(abstractCode->Sel(1));
-      u_int nValues  = values->GetLength();
-      for (u_int i = 0; i < nValues; i++)
-	ImmediateEnv::Register(values->Sub(i));
-    }
-    break;
-  default:
-    Error("NativeCodeJitter::Compile: invalid abstractCode tag");
-  };
   // Perform Register Allocation
   Vector *localNames = Vector::FromWordDirect(abstractCode->Sel(2));
   u_int nLocals = localNames->GetLength();
