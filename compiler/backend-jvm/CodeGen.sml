@@ -327,18 +327,15 @@ structure CodeGen =
 	(* Codegenerierung für Deklarationen *)
 	and decCode (ValDec(_, id' as Id (_,stamp',_), exp',_)) =
 	    let
+		val l=Local.get stamp'
 		val loc =
-		    let
-			val l=Local.get stamp'
-		    in
-			if l = 1
-			    then Local.assign(id', Local.nextFree())
-			else l
-		    end
+		    if l = 1
+			then Local.assign(id', Local.nextFree())
+		    else l
 	    in
 		(Lambda.pushFun id';
 		 (expCode exp' @
-		  [Comment "Store 2", Astore loc])
+		  [Comment ("Store 2. Stamp = "^Stamp.toString stamp'^(if l = 1 then " NEU " else " ALT ")), Astore loc])
 		 before Lambda.popFun())
 	    end
 	  | decCode (RecDec (_, nil, _)) = nil
@@ -473,52 +470,53 @@ structure CodeGen =
 	    let
 		val danach = Label.new ()
 		val elselabel = Label.new ()
+		val stampcode' = stampCode stamp'
 
 		fun testCode (LitTest lit') =
 		    let
 			val eq = case lit' of
 			    WordLit w' =>
-				stampCode stamp' @
+				stampcode' @
 				[Instanceof CWord,
 				 Ifeq elselabel] @
-				(stampCode stamp') @
+				stampcode' @
 				[Checkcast CWord,
 				 Getfield (CWord^"/value", [Intsig]),
 				 atCodeWord w',
 				 Ificmpne elselabel]
 			  | IntLit i' =>
-				stampCode stamp' @
+				stampcode' @
 				[Instanceof CInt,
 				 Ifeq elselabel] @
-				(stampCode stamp') @
+				stampcode' @
 				[Checkcast CInt,
 				 Getfield (CInt^"/value", [Intsig]),
 				 atCodeInt i',
 				 Ificmpne elselabel]
 			  | CharLit c' =>
-				stampCode stamp' @
+				stampcode' @
 				[Instanceof CChar,
 				 Ifeq elselabel] @
-				(stampCode stamp') @
+				stampcode' @
 				[Checkcast CChar,
 				 Getfield (CChar^"/value", [Charsig]),
 				 atCodeInt (Int.toLarge (Char.ord c')),
 				 Ificmpne elselabel]
 			  | StringLit s' =>
-				stampCode stamp' @
+				stampcode' @
 				[Instanceof CStr,
 				 Ifeq elselabel] @
-				(stampCode stamp') @
+				stampcode' @
 				[Checkcast CStr,
 				 Getfield (CStr^"/value", [Classsig CString]),
 				 Ldc (JVMString s'),
 				 Invokevirtual (CString,"equals",([Classsig CObj],[Boolsig])),
 				 Ifeq elselabel]
 			  | r as (RealLit r') =>
-				stampCode stamp' @
+				stampcode' @
 				[Instanceof CReal,
 				 Ifeq elselabel] @
-				(stampCode stamp') @
+				stampcode' @
 				[Checkcast CReal,
 				 Getfield (CReal^"/value", [Floatsig]),
 				 atCode r,
@@ -529,7 +527,7 @@ structure CodeGen =
 		    end
 		  | testCode (ConTest (id'',NONE)) =
 		    Comment "Hi8" ::
-		    (stampCode stamp') @
+		    stampcode' @
 		    (idCode id'') @
 		    [Ifacmpne elselabel]
 		  | testCode (ConTest(id'',SOME id''')) =
@@ -538,10 +536,10 @@ structure CodeGen =
 			val _ = FreeVars.setFun (id''', Lambda.top())
 		    in
 			Comment "Hi9" ::
-			 (stampCode stamp') @
+			 stampcode' @
 			 [Instanceof CConVal,
 			  Ifeq elselabel] @
-			 (stampCode stamp') @
+			 stampcode' @
 			 [Checkcast CConVal,
 			  Invokeinterface (CConVal, "getConstructor",
 					   ([], [Classsig CConstructor])),
@@ -584,7 +582,7 @@ structure CodeGen =
 			  | bindit (nil,_) = nil
 		    in
 			Comment "Hi11" ::
-			stampCode stamp' @
+			stampcode' @
 			(Instanceof CRecord::
 			 Ifeq elselabel::
 			 New CRecordArity ::
@@ -594,12 +592,12 @@ structure CodeGen =
 			 Invokespecial (CRecordArity,"<init>",
 					([Arraysig,Classsig CLabel],
 					 [Voidsig])) ::
-			 (stampCode stamp')) @
+			 stampcode') @
 			(Checkcast CRecord::
 			 Invokevirtual (CRecord,"getArity",
 					 ([],[Classsig CRecordArity])) ::
 			 Ifacmpne elselabel ::
-			 (stampCode stamp')) @
+			 stampcode') @
 			[Checkcast CRecord,
 			 Invokevirtual (CRecord,"getValues",
 					([],[Arraysig, Classsig CVal]))] @
@@ -633,18 +631,38 @@ structure CodeGen =
 			  | bindit (nil,_) = nil
 		    in
 			Comment "Hi 99"::
-			stampCode stamp'@
+			stampcode' @
+			[Instanceof CDMLTuple,
+			 Ifeq elselabel] @
+			stampcode' @
 			[Checkcast CDMLTuple,
 			 Invokeinterface (CDMLTuple,"getArity",([],[Intsig])),
 			 atCodeInt (Int.toLarge (length ids)),
 			 Ificmpne elselabel] @
-			(stampCode stamp') @
+			stampcode' @
 			[Checkcast CDMLTuple,
 			 Invokeinterface (CDMLTuple,"getVals",
 					([],[Arraysig, Classsig CVal]))] @
 			(bindit(ids,0))
 		    end
-		  | testCode test' = raise Debug (Test test')
+		  | testCode (LabTest (s', id' as Id (_,stamp'',_))) =
+		    let
+			val r = Local.get stamp''
+			val n = if r = 1
+				    then Local.assign(id', r)
+				else r
+		    in
+			Comment "Hi 69"::
+			stampcode' @
+			[Instanceof CDMLTuple,
+			 Ifeq elselabel] @
+			stampcode' @
+			[Checkcast CDMLTuple,
+			 Ldc (JVMString s'),
+			 Invokeinterface (CDMLTuple,"get",([],[Classsig CVal])),
+			 Astore n]
+		    end
+		      | testCode test' = raise Debug (Test test')
 
 	    in
 		(*zuerst @ *)
@@ -912,7 +930,7 @@ structure CodeGen =
 						  [Classsig CVal]))])]
 	    end
 
-	  | expCode (BuiltinAppExp (_, name, ids)) =
+	  | expCode (PrimAppExp (_, name, ids)) =
 		(case name of
 		     "print" => (Getstatic COut::
 				 (idCode (hd ids))@
