@@ -676,7 +676,7 @@ build3/alicec.import: lib/fundamental/Fundamental.import lib/Other.import
 
 build3/alice.import: lib/fundamental/Fundamental.import lib/Other.import \
 	compiler/top/Toplevel.import
-	cat $^ > $@
+	grep -hv 'x-alice:/lib/tools/Inspector' $^ > $@
 
 build3/%.stc: build3/%.aml
 	$(ALICEC2) $(ALICEC_OPTS) -c $< -o $@
