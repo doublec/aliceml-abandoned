@@ -125,16 +125,28 @@ define
       fun {IsNative URL}
 	 {HasFeature {CondSelect URL info info} 'native'}
       end
+
+      fun {HackInfo S}
+	 case S of &%|&7|&b|Rest then &{|{HackInfo Rest}
+	 [] &%|&7|&d|Rest then &}|{HackInfo Rest}
+	 [] &%|&7|&B|Rest then &{|{HackInfo Rest}
+         [] &%|&7|&D|Rest then &}|{HackInfo Rest} 
+	 [] C|Rest then C|{HackInfo Rest}
+	 [] nil then nil
+	 end
+      end
    in
-      fun {Load U} URL in
-	 URL = {OzURL.make U}
+      fun {Load U}
+	 HU  = {HackInfo {ByteString.toString U}} 
+	 URL = {OzURL.make HU}
+      in
 	 if {IsOzScheme URL} then
 	    %--** just acquire (do not link)
-	    'EVALUATED'('NONE' {Module.link [U]}.1)
+	    'EVALUATED'('NONE' {Module.link [HU]}.1)
 	 elseif {IsNative URL} then
-	    'EVALUATED'('NONE' {Module.link [U]}.1)
+	    'EVALUATED'('NONE' {Module.link [HU]}.1)
 	 else
-	    {FunctorToComponent try {Pickle.load U}
+	    {FunctorToComponent try {Pickle.load HU}
 				catch E=error(url(load _) ...) then
 				   {RaiseIoException U 'load' E} unit
 				end}
