@@ -24,6 +24,7 @@ sig
     val copy     : elemtyp array * elemtyp array * int  -> unit 
     val insert'  : elemtyp * dictionary * int -> int  
     val insert   : elemtyp * dictionary -> int 
-    val delete   : int  * dictionary -> unit
-    val return   : int  * dictionary -> elemtyp
+    val delete   : int * dictionary -> unit
+    val return   : int * dictionary -> elemtyp
+    val update   : int * dictionary * elemtyp -> unit
 end 
