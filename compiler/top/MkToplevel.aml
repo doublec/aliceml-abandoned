@@ -46,7 +46,7 @@ struct
     val banner     = "Alice 1.0 (\"" ^
 		     (case Config.vm
 		       of "mozart" => "Stockhausen Operette 4 Original Mix"
-		        | "seam" => "Kraftwerk Release 1"
+		        | "seam" => "Kraftwerk Album 1"
 			| _ => "Alien Invaderz Breakz Mix"
 		     ) ^ "\"), mastered " ^
 		     Date.fmt "%Y/%m/%d" Config.buildDate ^ "\n"
