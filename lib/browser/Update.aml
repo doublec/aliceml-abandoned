@@ -25,11 +25,10 @@ import structure Dictionaries from "Dictionaries"
 
 import structure Node from "Node"
 import structure Layout from "Layout"
-import structure DrawNodes from "DrawNodes"
+import structure Draw from "Draw"
 import structure Server from "Server"
 import structure GtkSupport from "GtkSupport"
 import structure Settings from "Settings"
-import structure NewNodeHelper from "NewNodeHelper"
 
 import signature UPDATE from "UPDATE-sig"
 
@@ -174,7 +173,7 @@ struct
                ; Layout.layout(node)  
 	       ; Dictionaries.Main.update(Dictionaries.maindict,
 					  (ind,(node,ancline)))
-	       ; DrawNodes.draw(node,0,y_pos,true)  
+	       ; Draw.draw(node,0,y_pos,true)  
 	       ; let val dy = get_ydim(node) - old_ydim
 		 in ( TextIO.print("\nUPDATE: act_line incremented by "^Int.toString(dy)^"\n")
 		     ; (!incrActLine) dy

@@ -31,9 +31,9 @@ import structure Settings from "Settings"
 
 import structure Dictionaries from "Dictionaries"
 
-import structure NewNode from "NewNode"
+import structure CreateTree from "CreateTree"
 import structure Layout from "Layout"
-import structure DrawNodes from "DrawNodes"
+import structure Draw from "Draw"
 import structure Update from "Update"
 import structure Server from "Server"
 
@@ -362,8 +362,8 @@ struct
 
 (**************************** Handler ****************************)
 		    
-     fun update_reinspect n = Update.reinspect(n,NewNode.createGraph,
-					       NewNode.createGraphInf,!canvasroot)
+     fun update_reinspect n = Update.reinspect(n,CreateTree.createGraph,
+					       CreateTree.createGraphInf,!canvasroot)
 
      fun handleReinspect node = fn _ => ( setStopButtonOnOff(update_reinspect,node ))
      
@@ -376,8 +376,8 @@ struct
 	     Update.findHighestDepth n
 			    in if diff >= 0 
 				   then ()
-			       else Update.foldDepth(n,diff-1,NewNode.createGraph,
-						     NewNode.createGraphInf,!canvasroot)
+			       else Update.foldDepth(n,diff-1,CreateTree.createGraph,
+						     CreateTree.createGraphInf,!canvasroot)
 			    end
 	 in
 	     setStopButtonOnOff(update_shrink, getSelectionNode())
@@ -386,8 +386,8 @@ struct
      fun handleExpandSelection _  = 
 	 let
 	     val update_expand =  fn n 
-			     => Update.foldDepth(n,1,NewNode.createGraph,
-						 NewNode.createGraphInf,!canvasroot)
+			     => Update.foldDepth(n,1,CreateTree.createGraph,
+						 CreateTree.createGraphInf,!canvasroot)
 	 in
 	 setStopButtonOnOff(update_expand, getSelectionNode())
 	 end
@@ -395,8 +395,8 @@ struct
      fun handleWidth node =  
 	 let
 	     val update_width = fn (n,i) => (print "starting width !!!!!\n"
-					     ;Update.foldWidth(n,i,NewNode.createGraph,
-							       NewNode.createGraphInf,!canvasroot))
+					     ;Update.foldWidth(n,i,CreateTree.createGraph,
+							       CreateTree.createGraphInf,!canvasroot))
 	 in
 	     fn i => fn _ => setStopButtonOnOff(update_width,(node,i))
 	 end
@@ -404,8 +404,8 @@ struct
      fun handleDepth node =
 	 let
 	     val update_depth = fn (n,i) => (print "starting depth !!!!\n"
-					     ;Update.foldDepth(n,i,NewNode.createGraph,
-							       NewNode.createGraphInf,!canvasroot))
+					     ;Update.foldDepth(n,i,CreateTree.createGraph,
+							       CreateTree.createGraphInf,!canvasroot))
 	 in
 	     fn i => fn _ => setStopButtonOnOff(update_depth,(node,i))
 	 end
@@ -986,13 +986,13 @@ fun makePopup n =
 
      
 
-     val path_promise = NewNode.lookupPath(NewNode.coreSign,
+     val path_promise = CreateTree.lookupPath(CreateTree.coreSign,
 					   "Promise","promise")   
 	 
-     val path_package = NewNode.lookupPath(NewNode.packageSign,
+     val path_package = CreateTree.lookupPath(CreateTree.packageSign,
 					   "Package","package") 
 	 
-     val path_val_package = NewNode.lookupPath(NewNode.packageSign,
+     val path_val_package = CreateTree.lookupPath(CreateTree.packageSign,
 					       "Package","val_package") 
 
      fun init () = ( registerType(path_int, createInt)
@@ -1055,7 +1055,7 @@ fun setVisible (x,y) = let
 			;!canvasroot)
 	    val save_settings = (!Settings.max_width,!Settings.max_depth)
 	    val n = (stopButtonSetActive(true)
-		     ;NewNode.newNode(va,t,i,root))		
+		     ;CreateTree.newNode(va,t,i,root))		
             val line = (stopButtonSetActive(false)
 			; if !stopflag 
 			      then ( Settings.set_width(#1(save_settings))
@@ -1067,7 +1067,7 @@ fun setVisible (x,y) = let
 			;createSepLine(root,!act_line,canvaswidth(hadj),
 				       Settings.getFontHeight()))
 	in
-	    ( DrawNodes.draw(n,0,!act_line,false)
+	    ( Draw.draw(n,0,!act_line,false)
 	    ; incr_act_line(get_ydim(n) + 1)
 	    ; TextIO.print ("Widget: changing actline by " 
 			    ^ Int.toString (get_ydim(n)+1)
@@ -1088,7 +1088,7 @@ fun setVisible (x,y) = let
 			;!canvasroot)
 	    val save_settings = (!Settings.max_width,!Settings.max_depth)
 	    val n = (stopButtonSetActive(true)
-		     ;NewNode.newNodeInf(va,t,i,root))
+		     ;CreateTree.newNodeInf(va,t,i,root))
             val line =(stopButtonSetActive(false) 
 		       ; if !stopflag 
 			      then ( Settings.set_width(#1(save_settings))
@@ -1100,7 +1100,7 @@ fun setVisible (x,y) = let
 		       ;createSepLine(root,!act_line,canvaswidth(hadj),
 				      Settings.getFontHeight() ))
 	in
-	    ( DrawNodes.draw(n,0,!act_line,false)
+	    ( Draw.draw(n,0,!act_line,false)
 	    ; incr_act_line(get_ydim(n) + 1)
 	    ; setVisible(get_xdim(n),get_ydim(n)+1)
 	    ; (!resize)()
