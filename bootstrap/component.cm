@@ -1,6 +1,7 @@
 Group is
 
     ../lib/rtt/interface.cm
+    ../lib/system/sources.cm
     ../lib/utility/sources.cm
 
     UNSAFE_COMPONENT-sig.sml
