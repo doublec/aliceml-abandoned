@@ -86,6 +86,8 @@ Group is
     Simplified.sml
     LABELSORT.sig
     LabelSort.sml
+    DEBUG.sig
+    Debug.sml
     INTERMEDIATEAUX.sig
     IntermediateAux.sml
     SIMPLIFY.sig
