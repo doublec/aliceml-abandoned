@@ -1,6 +1,7 @@
 <?php include("macros.php3"); ?>
 <?php heading("The Inspector structure", "The <TT>Inspector</TT> structure"); ?>
 
+<P></P>
 <?php section("synopsis", "synopsis") ?>
   <PRE>
     signature INSPECTOR
