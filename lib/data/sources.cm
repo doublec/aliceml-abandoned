@@ -6,7 +6,6 @@ Group is
 
 	GLOBAL_STAMP-sig.aml
 	../../bootstrap/GlobalStamp.sml
-	../../bootstrap/DummyAddr.sml
 
 	ORDERED-sig.aml
 
