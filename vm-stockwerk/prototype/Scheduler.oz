@@ -18,6 +18,8 @@ import
    Debug(dumpTaskStack: DumpTaskStack)
    PrimitiveTable(values)
    ByneedInterpreter(interpreter)
+require
+   Helper(pushCallInterpreter: PushCallInterpreter)
 export
    Object
 define
@@ -96,9 +98,8 @@ define
       meth newThread(closure: Closure <= unit
 		     args: Args <= args()
 		     taskStack: TaskStack0 <= nil) TaskStack in
-	 TaskStack = case Closure of closure(Function ...) then
-			{Function.1.pushCall Closure TaskStack0}
-		     [] unit then TaskStack0
+	 TaskStack = case Closure of unit then TaskStack0
+		     else pushCall(PushCallInterpreter Closure)|TaskStack0
 		     end
 	 Scheduler, Enqueue({New Thread init(args: Args stack: TaskStack)})
       end
