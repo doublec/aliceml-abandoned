@@ -1,10 +1,11 @@
 Group is
 
+	../../lib/rtt/name.cm
+	../../lib/rtt/label.cm
+	../../lib/rtt/fixity.cm
 	../infrastructure/source.cm
 	../infrastructure/pp-misc.cm
 	../common/id-stamp.cm
-	../common/name.cm
-	../common/fixity.cm
 
 	ABSTRACT_GRAMMAR-sig.aml
 	MkAbstractGrammar.aml
