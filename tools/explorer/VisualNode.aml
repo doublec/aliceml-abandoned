@@ -1,0 +1,133 @@
+(*
+ * Author:
+ *   Guido Tack <tack@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Guido Tack, 2003
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Types from "Types"
+import structure GtkNode from "GtkNodes"
+import structure TreeNode from "TreeNode"
+
+structure VisualNode =
+  struct
+
+  fun dirtyUp (Types.N({dirty=ref true,...},_,_)) = ()
+    | dirtyUp (Types.N({dirty=dirty,...},ref parent, _)) =
+      (dirty:=true;
+       case parent of
+	   NONE => ()
+	 | SOME p => dirtyUp p)
+
+  fun undrawAndDirtyUp node =
+      (GtkNode.undrawSubtree node;
+       dirtyUp node);
+
+  fun adjust state (v as Types.N({dirty=dirty,oldOffset=oldOffset,vNode=vNode,
+				  offset=offset,status=ref status,
+				  connection=connection,
+				  hidden=ref hidden, groupOffset=ref groupOffset,...},
+				 ref mom,ref children))
+	     momX momByX myY momGroupOffset =
+      let
+	  val myOffset = !offset
+	  val myByX = momByX + myOffset -
+		      (case !oldOffset of NONE => myOffset
+					| SOME x => x)
+      in
+	  oldOffset := NONE;
+	  if (!dirty) then
+	      (dirty := false;
+	       case (!vNode) of NONE =>
+				GtkNode.drawNode state momX (myY-TreeNode.verSpaceI) v
+			   | SOME v =>
+			     (GtkNode.moveNode state (v, myByX);
+			      (case mom of NONE => ()
+					 | SOME m =>
+					   ((case (!connection) of NONE => ()
+								 | SOME c => GtkNode.unconnect c);
+					    connection := SOME (GtkNode.connect
+								    state hidden status
+								    (TreeNode.getStatus m)
+								    (momX+myOffset)
+								    myY
+								    momX 
+								    (myY-TreeNode.verSpaceI))));
+			      if hidden then ()
+			      else Vector.app
+				       (fn k => adjust state k
+						       (momX+myOffset-groupOffset)
+						       myByX (myY+TreeNode.verSpaceI)
+						       groupOffset) children))
+	  else
+	      if myByX<>0 then
+		  (GtkNode.moveTree state (v, myByX);
+		   case mom of NONE => ()
+			     | SOME m =>
+			       ((case (!connection) of NONE => ()
+						     | SOME c => GtkNode.unconnect c);
+				connection := SOME (GtkNode.connect state hidden status
+								    (TreeNode.getStatus m)
+								    (momX+myOffset)
+								    myY
+								    momX
+								    (myY-TreeNode.verSpaceI))))
+	      else
+		  ()
+      end
+
+
+  fun toggleHide (ref (SOME ({currentNode=ref (SOME v),tree=tree,...}
+			     : Types.explorer_state))) =
+      (case v of
+	   Types.N(_,_,ref #[]) => ()
+	 | Types.N({hidden=hidden as ref true,...},_,_) =>
+	   (GtkNode.undrawSubtree v;
+	    hidden:=false;
+	    dirtyUp v)
+	 | Types.N({hidden=hidden,...},_,_) =>
+	   (GtkNode.undrawSubtree v;
+	    hidden:=true;
+	    dirtyUp v))	    
+    | toggleHide _ = ()
+
+
+  fun doUnhideAll (v as Types.N({hidden=hidden,...},_,children)) =
+      if (!hidden) then
+	  (GtkNode.undrawSubtree v;
+	   hidden:=false;
+	   dirtyUp v;
+	   Vector.app doUnhideAll (!children))  
+      else
+	  Vector.app doUnhideAll (!children)
+
+
+  fun unhideAll (state as ref (SOME ({tree=ref v,...}
+				     : Types.explorer_state))) =
+      doUnhideAll v
+    | unhideAll _ = ()
+
+
+  fun doHideFailed (v as Types.N({hidden=hidden,status=status,hasSolBelow=hasSolBelow,...},_,children)) =
+      if (!hidden) then ()
+      else
+	  case (!status) of
+	      Types.FAILED => ()
+	    | _ => if (!hasSolBelow) then
+		       Vector.app doHideFailed (!children)
+		   else
+		       (GtkNode.undrawSubtree v;
+			hidden:=true;
+			dirtyUp v)
+
+  fun hideFailed (state as ref (SOME ({tree=ref v,...}
+				      : Types.explorer_state))) =
+      doHideFailed v
+    | hideFailed _ = ()
+
+  end

@@ -1,0 +1,51 @@
+(*
+ * Authors:
+ *   Guido Tack <tack@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Guido Tack, 2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Space     from "x-alice:/lib/gecode/Space"
+import structure FD        from "x-alice:/lib/gecode/FD"
+import structure Explorer  from "x-alice:/tools/Explorer"
+
+fun queens n cl =
+    let
+	val space = Space.new()
+	open FD
+
+	val v = rangeVec(space, n, (0, n-1))
+	val v1 = Vector.tabulate (n, fn n => (n, Vector.sub(v,n)))
+	val v2 = Vector.tabulate (n, fn n => (~n, Vector.sub(v,n)))
+    in
+	distinctOffset(space, v1, cl);
+	distinctOffset(space, v2, cl);
+	distinct(space, v, cl);
+	branch(space, v, B_SIZE_MIN, B_MIN);
+	(v, space)
+    end
+
+val (v, s) = queens 6 FD.BND
+
+fun inspect1 s = (print "inspect1!\n";
+		 Vector.app (fn v => print ("("^Int.toString (FD.Reflect.min(s,v))^"/"^
+					    Int.toString (FD.Reflect.max(s,v))^") ")) v;
+		 print "\n")
+fun inspect2 s = (print "inspect2!\n";
+		 Vector.app (fn v => print ("("^Int.toString (FD.Reflect.min(s,v))^"/"^
+					    Int.toString (FD.Reflect.max(s,v))^") ")) v;
+		 print "\n")
+fun inspect3 s = (print "inspect3!\n";
+		 Vector.app (fn v => print ("("^Int.toString (FD.Reflect.min(s,v))^"/"^
+					    Int.toString (FD.Reflect.max(s,v))^") ")) v;
+		 print "\n")
+
+val e = Explorer.initWithSpace s
+val _ = Explorer.addInfoAction(e, inspect1, "inspect")
+val _ = Explorer.addInfoAction(e, inspect2, "inspect2")
+val _ = Explorer.addInfoAction(e, inspect3, "inspect3")

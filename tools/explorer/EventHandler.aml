@@ -1,0 +1,177 @@
+(*
+ * Author:
+ *   Guido Tack <tack@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Guido Tack, 2003
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Gtk          from "x-alice:/lib/gtk/Gtk"
+import structure Gdk          from "x-alice:/lib/gtk/Gdk"
+import structure GnomeCanvas from "x-alice:/lib/gtk/GnomeCanvas"
+
+import structure Types        from "Types"
+import structure TreeNode     from "TreeNode"
+import structure VisualNode   from "VisualNode"
+import structure GtkNode      from "GtkNodes"
+import structure ExplorerNode from "ExplorerNode"
+import structure ExplorerSearch from "ExplorerSearch"
+import structure OptionsWindow from "OptionsWindow"
+
+structure EventHandler =
+  struct
+
+  open Types
+
+  fun nodeEvent state serve event =
+      case (!state) of
+	  SOME(state as ({canvas={canvas=canvas,...},tree=tree,
+			  currentNode=currentNode,
+			  inspect=inspect,
+                          curInspAction=curInspAction,
+			  scale=scale,...}:
+			 Types.explorer_state)) =>
+	  (case event of
+	       (_, [Gdk.EVENT event]) =>
+	       serve (fn () =>
+			 case event of
+			     Gdk.EVENT_BUTTON_PRESS {x=x,y=y,...} =>
+			     let
+				 val (findX, depth) = GtkNode.findByXY(canvas,!scale,
+									    x,y)
+				 val t = !tree
+				 val n = TreeNode.findByX t (depth, 0, findX)
+				 val (x,y) = TreeNode.getCenter n
+			     in
+                                 case ExplorerNode.curNodeStatus n of
+                                     Types.FAILED => ()
+                                   | _ => 
+				     (currentNode := SOME n;
+				      GtkNode.drawShadow state x y n)
+			     end
+                           | Gdk.EVENT_2BUTTON_PRESS {x=x,y=y,...} =>
+			     let
+				 val (findX, depth) = GtkNode.findByXY(canvas,!scale,
+									    x,y)
+				 val t = !tree
+				 val n = TreeNode.findByX t (depth, 0, findX)
+				 val (x,y) = TreeNode.getCenter n
+			     in
+                                 case ExplorerNode.curNodeStatus n of
+                                     Types.FAILED => ()
+                                   | _ => 
+				     (currentNode := SOME n;
+				      GtkNode.drawShadow state x y n);
+                                     List.app (fn (i,s) => if s= !curInspAction then
+                                                               i (ExplorerNode.recomputeSpace n)
+                                                           else ()) (!inspect)
+			     end
+			   | _ => ())
+	     | _ => ())
+	| _ => ()
+
+  val itr = Real.fromInt
+
+  fun destroyMainWindow (mainWindow as ref (SOME {window=window,...})
+			 : explorer_state option ref) =
+      (Gtk.widgetDestroy window;
+       mainWindow:=NONE)
+    | destroyMainWindow _ = ()
+
+  fun setBBox (ref (SOME ({canvas={canvas=canvas,...}, ...}: explorer_state)))
+	      (minx, maxx, depth) =
+      let
+	  val xMin   = Real.round((itr (minx-TreeNode.horSpaceI))* (TreeNode.defScale))
+	  val xMax   = Real.round((itr (maxx+TreeNode.horSpaceI))* (TreeNode.defScale))
+	  val xDim   = abs xMin + (abs xMax)
+	  val yDim   = Real.round((itr((depth+2)*TreeNode.verSpaceI) *
+				   TreeNode.defScale))
+      in
+	  GnomeCanvas.setScrollRegion(canvas, itr xMin, 0.0,
+				      itr xMax, Real.fromInt yDim)
+      end
+    | setBBox _ _ = ()
+
+  fun refresh serve cmw state =
+      case !state of
+          (SOME (rstate as {tree=ref tree,
+			    currentNode=ref cn,...}
+		 : explorer_state)) =>
+          let
+	      val shape = TreeNode.layoutNode tree
+	      val (minx, maxx, depth) = TreeNode.getBBox shape
+          in
+	      setBBox state (minx, maxx, depth);
+	      VisualNode.adjust rstate tree 0 0 TreeNode.verSpaceI 0;
+	      case cn of NONE => ()
+		       | SOME cn =>
+		         let
+			     val (x,y) = TreeNode.getCenter cn
+		         in
+			     GtkNode.drawShadow rstate x y cn
+		         end
+          end
+        | NONE =>(state := !(cmw serve);
+		  refresh serve cmw state)
+
+  fun exitHandler serve cmw state _ = (serve (fn () => destroyMainWindow state))
+  fun nodeHideHandler serve cmw state _ = (serve (fn () =>
+						 (VisualNode.toggleHide state;
+						  refresh serve cmw state)))
+  fun nodeUnhideHandler serve cmw state _ = (serve (fn () =>
+						   (VisualNode.unhideAll state;
+						    refresh serve cmw state)))
+  fun hideFailedHandler serve cmw state _ = (serve (fn () =>
+						   (VisualNode.hideFailed state;
+						    refresh serve cmw state)))
+
+  fun exploreOneHandler serve refresh state _ = (serve (fn () =>
+                                                       case !state of
+                                                           SOME {currentNode=ref (SOME cn),...} =>
+                                                           ExplorerSearch.searchOneFrom serve state cn refresh
+                                                         | _ => ()))
+  fun exploreAllHandler serve refresh state _ = (serve (fn () =>
+                                                           case !state of
+                                                               SOME {currentNode=ref (SOME cn),...} =>
+                                                               ExplorerSearch.searchAllFrom serve state cn refresh
+                                                             | _ => ()))
+
+  fun exploreNHandler serve refresh state _ = (serve (fn () =>
+                                                           case !state of
+                                                               SOME {currentNode=ref (SOME cn),...} =>
+                                                               ExplorerSearch.searchNFrom serve state cn refresh
+                                                             | _ => ()))
+                                                
+  fun resetHandler serve refresh state _ = (serve (fn () =>
+                                                      case !state of
+                                                          SOME {rootSpace=ref (SOME rs),...} =>
+                                                          ExplorerSearch.initSearch serve state refresh rs
+                                                        | _ => ()))
+
+  fun selectInspectionAction serve (state : explorer_state option ref) event = 
+      (serve (fn () =>
+                 case !state of
+                     SOME {curInspAction=curInspAction,...} =>
+                     (case event of (obj, _) =>
+                                    if (Gtk.checkMenuItemGetFieldActive obj)=1 then
+                                        let
+                                            val label = Gtk.binGetChild obj
+                                        in
+                                            curInspAction := Gtk.labelGetText label
+                                        end
+                                    else
+                                        ())
+                   | _ => ()))
+
+  fun viewOptionsHandler mw serve state _ =
+      let
+          val configure = OptionsWindow.newOptionsWindow mw serve state
+      in
+          Gtk.widgetShowAll configure
+      end
+
+  end

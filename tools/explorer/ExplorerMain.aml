@@ -1,0 +1,111 @@
+(*
+ * Author:
+ *   Guido Tack <tack@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Guido Tack, 2003
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure ExplorerSearch from "ExplorerSearch"
+import structure MainWindow     from "MainWindow"
+import structure Types          from "Types"
+
+structure Explorer =
+  struct
+
+  type explorer = Types.explorer_state option ref
+  
+  fun newServer() = 
+      let
+	  val tail   = Promise.promise ()
+	  val stream = Ref.ref tail
+		       
+	  fun process s = (case s of
+			       nil   => ()
+			     | p::pr => (p (); process pr))
+	  fun send p =
+	      let
+		  val newtail = Promise.promise ()
+		  val tail    = Ref.exchange(stream, newtail)
+	      in
+		  Promise.fulfill(tail, p::(Promise.future newtail))
+	      end
+      in
+	  (spawn (process(Promise.future tail));
+	   send)
+      end
+
+  val serve = newServer ()
+
+  fun makeState () =
+      MainWindow.createMainWindow serve
+      : Types.explorer_state option ref
+
+  val defaultExplorer = ref NONE
+
+  fun initExplorer () = case !defaultExplorer of
+			    NONE =>
+			    let
+				val s = makeState()
+			    in
+				defaultExplorer := SOME s;
+				s
+			    end
+			  | SOME s => s
+
+  fun initWithSpace s =
+      let
+	  val state = initExplorer()
+      in
+          serve (fn () => ExplorerSearch.initSearch serve state MainWindow.refresh s);
+	  state
+      end
+
+  fun exploreAll s =
+      let
+	  val state = initExplorer()
+      in
+          serve (fn () => ExplorerSearch.initSearch serve state MainWindow.refresh s);
+	  serve (fn () => ExplorerSearch.searchAll serve state MainWindow.refresh);
+	  state
+      end
+
+  fun exploreOne s =
+      let
+	  val state = initExplorer()
+      in
+          serve (fn () => ExplorerSearch.initSearch serve state MainWindow.refresh s);
+	  serve (fn () => ExplorerSearch.searchOne serve state MainWindow.refresh);
+	  state
+      end
+
+  fun exploreBest (s,b) =
+      let
+	  val state = initExplorer()
+      in
+          serve (fn () => ExplorerSearch.initSearch serve state MainWindow.refresh s);
+	  serve (fn () => ExplorerSearch.searchBest serve state MainWindow.refresh);
+	  state
+      end
+
+  fun addInfoAction (e, action, name) =
+      case (!e) of
+	  SOME {inspect=inspect,...} =>
+	  (inspect := (action, name)::(!inspect);
+	   serve (fn () =>
+		     MainWindow.updateInspectionActionsMenu (!inspect) serve e))
+	| _ => ()
+
+  fun deleteInfoAction (e, name) =
+      case (!e) of
+	  SOME ({inspect=inspect,...} : Types.explorer_state) =>
+	  (inspect := List.filter (fn (_,n) => n<>name) (!inspect);
+	   serve (fn () =>
+		     MainWindow.updateInspectionActionsMenu (!inspect) serve e))
+	| _ => ()
+
+  end

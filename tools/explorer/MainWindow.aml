@@ -1,0 +1,129 @@
+(*
+ * Author:
+ *   Guido Tack <tack@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Guido Tack, 2003
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Gtk         from "x-alice:/lib/gtk/Gtk"
+
+import structure Space from "x-alice:/lib/gecode/Space"
+
+import structure Defaults     from "Defaults"
+import structure EventHandler from "EventHandler"
+import structure Types        from "Types"
+import structure CanvasHelper from "CanvasHelper"
+import structure ExplorerNode from "ExplorerNode"
+
+import structure ExplorerGUI            from "ExplorerGUI"
+import functor   ExplorerGUISignals
+       signature EXPLORERGUISIGNALS_SIG from "ExplorerGUISignals"
+
+signature MAINWINDOW =
+  sig
+      val updateInspectionActionsMenu :
+          ((Space.space -> unit) * string) list -> ((unit -> unit) -> unit) ->
+          Types.explorer_state option ref -> unit
+      val createMainWindow : ((unit -> unit) -> unit) -> Types.explorer_state option ref
+      val refresh : ((unit -> unit) -> unit) -> Types.explorer_state option ref -> unit
+  end
+
+structure MainWindow :> MAINWINDOW =
+  struct
+
+  val itr = Real.fromInt
+
+  open Types
+
+  fun updateInspectionActionsMenu actionsList serve
+	                          (state as ref (SOME {menu={inspectionActions=inspectionActions},...})
+	                           : explorer_state option ref) =
+	  let
+	      val sub = Gtk.menuNew()
+
+	      val entries =
+		  List.foldl (fn ((_,n),nil) =>
+                                 let
+                                     val mi = 
+				         Gtk.radioMenuItemNewWithLabel(Gtk.NULL, n)
+                                 in
+                                     Gtk.signalConnect(mi, "toggled",
+                                                       EventHandler.selectInspectionAction 
+                                                           serve state);
+                                     [mi]
+                                 end
+			       | ((_,n),res as (prev::_)) =>
+				 let
+				     val mi =
+					 Gtk.radioMenuItemNewWithLabel(Gtk.radioMenuItemGetGroup prev, n)
+(*					 Gtk.radioMenuItemNewWithLabel(Gtk.NULL, n)*)
+				 in
+                                     Gtk.signalConnect(mi, "toggled",
+                                                       EventHandler.selectInspectionAction 
+                                                           serve state);
+				     mi::res
+				 end)
+			     nil
+			     actionsList
+              val _ = ()
+	  in
+	      List.app (fn m => Gtk.menuShellAppend(sub, m)) entries;
+              Gtk.menuItemRemoveSubmenu(!inspectionActions);
+	      Gtk.menuItemSetSubmenu((!inspectionActions), sub);
+	      Gtk.widgetShowAll (!inspectionActions)
+	  end
+    | updateInspectionActionsMenu _ _ _ = ()
+
+  fun createMainWindow serve =
+      let
+	  val state = ref NONE
+	  val xDim = 400
+	  val yDim = 250
+	  val canvas = CanvasHelper.createCanvas state serve xDim yDim
+
+          val w = ExplorerGUI.aliceexplorer
+          val _ = Gtk.containerAdd(ExplorerGUI.scrolledwindow, #canvas canvas)
+
+          structure Signals : EXPLORERGUISIGNALS_SIG =
+            struct
+              fun on_save_activate _ = ()
+              fun on_save_as_activate _ = ()
+              val on_reset_activate = EventHandler.resetHandler serve refresh state
+              val on_quit_activate = EventHandler.exitHandler serve createMainWindow state
+              val on_unhide_activate = EventHandler.nodeHideHandler serve createMainWindow state
+              val on_unhide_all_activate   = EventHandler.nodeUnhideHandler serve createMainWindow state
+              val on_hide_failed_activate = EventHandler.hideFailedHandler serve createMainWindow state
+              val on_next_solution_activate = EventHandler.exploreOneHandler serve refresh state
+              val on_next_n_solutions_activate = EventHandler.exploreNHandler serve refresh state
+              val on_all_solutions_activate = EventHandler.exploreAllHandler serve refresh state
+              val on_view_activate = EventHandler.viewOptionsHandler w serve state
+              fun on_about_activate _ = ()
+              val on_scale_value_changed =
+                  CanvasHelper.scaleCanvasHandler serve state ExplorerGUI.scale
+            end
+          
+          structure S = ExplorerGUISignals(structure S = Signals)
+
+      in
+	  Gtk.widgetShowAll w;
+	  state := SOME {canvas=canvas, window=w,
+			 menu={inspectionActions=ref ExplorerGUI.inspection1},
+			 scale=ref Defaults.defScale,
+			 tree=ref (ExplorerNode.createNode NONE 0),
+                         rootSpace=ref NONE,
+			 inspect=ref nil,
+                         curInspAction=ref "",
+			 currentNode=ref NONE,
+                         refreshAfter=ref 1
+			 };
+	  state
+      end
+
+  and refresh serve state = EventHandler.refresh serve createMainWindow state
+
+  end

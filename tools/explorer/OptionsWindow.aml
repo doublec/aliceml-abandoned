@@ -1,0 +1,52 @@
+(*
+ * Authors:
+ *   Guido Tack <tack@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Guido Tack, 2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Gtk          from "x-alice:/lib/gtk/Gtk"
+import structure Types        from "Types"
+
+
+structure OptionsWindow =
+  struct
+    fun newOptionsWindow mw serve (state : Types.explorer_state option ref) =
+        case !state of
+            SOME {refreshAfter=refreshAfter,...} =>
+            let
+                val configure = Gtk.windowNew(Gtk.WINDOW_TOPLEVEL)
+                val _ = Gtk.windowSetTitle(configure,"Options")
+                val _ = Gtk.windowSetModal(configure,true)
+                val table1 = Gtk.tableNew(1,2,false)
+                val _ = Gtk.widgetShow table1
+                val _ = Gtk.tableSetRowSpacings(table1,0)
+                val _ = Gtk.tableSetColSpacings(table1,0)
+                val label1 = Gtk.labelNew("Refresh after how many solutions: ")
+                val _ = Gtk.widgetShow label1
+                val _ = Gtk.miscSetAlignment(label1,0.0,0.5)
+                val solutions_adj = Gtk.adjustmentNew(Real.fromInt (!refreshAfter),
+                                                      0.0,10000.0,1.0,10.0,10.0)
+                val solutions = Gtk.spinButtonNew(solutions_adj,1.0,0)
+                val _ = Gtk.tableAttach(table1,label1,0,1,0,1,Gtk.FILL,Gtk.FILL,0,0)
+                val _ = Gtk.tableAttach(table1,solutions,1,2,0,1,Gtk.FILL,Gtk.FILL,0,0)
+                val _ = Gtk.containerAdd(configure,table1)
+                        
+                fun valueChangedHandler _ = serve (fn () =>
+                                                      case !state of
+                                                          SOME {refreshAfter=refreshAfter,...} =>
+                                                          refreshAfter :=
+                                                          Real.round (Gtk.adjustmentGetValue solutions_adj)
+                                                        | _ => ())
+                                            
+                val _ = Gtk.signalConnect(solutions_adj, "value_changed", valueChangedHandler)
+            in
+                configure
+            end
+          | _ => raise Empty
+  end
