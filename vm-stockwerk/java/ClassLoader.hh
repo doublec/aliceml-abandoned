@@ -34,6 +34,11 @@ public:
   static void Init();
 
   static ClassLoader *New();
+  static ClassLoader *FromWord(word x) {
+    Block *b = Store::WordToBlock(x);
+    Assert(b == INVALID_POINTER || b->GetLabel() == JavaLabel::ClassLoader);
+    return static_cast<ClassLoader *>(b);
+  }
   static ClassLoader *FromWordDirect(word x) {
     Block *b = Store::DirectWordToBlock(x);
     Assert(b->GetLabel() == JavaLabel::ClassLoader);
