@@ -1,20 +1,14 @@
 (*
  * Authors:
- *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 2000-2001
- *   Andreas Rossberg, 2000
+ *   Andreas Rossberg and Leif Kornstaedt, 2000-2003
  *
  * Last change:
  *   $Date$ by $Author$
  *   $Revision$
- *)
-
-(*
- * Mmh, how about parameterization of Phases over error output formatting...?
- * Problem is, this requires applicative functors with extended paths.
  *)
 
 import structure Source           from "../infrastructure/Source"
@@ -25,51 +19,45 @@ import structure Target           from "../infrastructure/Target"
 import signature BACKEND_SPECIFIC from "../infrastructure/BACKEND_SPECIFIC-sig"
 import signature COMPILER         from "COMPILER-sig"
 
-
-functor MkCompiler(
-	structure Switches:         SWITCHES
-	structure FrontendSpecific: PHASE where type I.t = Source.t
-	structure FrontendCommon:   PHASE where type I.t = FrontendSpecific.O.t
-	structure BackendCommon:    PHASE where type I.t = FrontendCommon.O.t
-	structure BackendSpecific:  BACKEND_SPECIFIC
-					where type I.t = BackendCommon.O.t
-					where type O.t = Target.t
-       ) :> COMPILER =
+functor MkCompiler (
+    structure Switches :         SWITCHES
+    structure FrontendSpecific : PHASE where type I.t = Source.t
+    structure FrontendCommon :   PHASE where type I.t = FrontendSpecific.O.t
+    structure BackendCommon :    PHASE where type I.t = FrontendCommon.O.t
+    structure BackendSpecific :  BACKEND_SPECIFIC
+				 where type I.t = BackendCommon.O.t
+				 where type O.t = Target.t
+) :> COMPILER =
 struct
     structure Switches = Switches
 
+    structure Context =
+    struct
+	type t =
+	    { feSpec : FrontendSpecific.C.t
+	    , feComm : FrontendCommon.C.t
+	    , beComm : BackendCommon.C.t
+	    , beSpec : BackendSpecific.C.t
+	    }
+
+	val empty =
+	    { feSpec = FrontendSpecific.C.empty
+	    , feComm = FrontendCommon.C.empty
+	    , beComm = BackendCommon.C.empty
+	    , beSpec = BackendSpecific.C.empty
+	    }
+    end
+
     exception Error
 
-    type context =
-	{ feSpec : FrontendSpecific.C.t
-	, feComm : FrontendCommon.C.t
-	, beComm : BackendCommon.C.t
-	, beSpec : BackendSpecific.C.t
-	}
-
-    val empty =
-	{ feSpec = FrontendSpecific.C.new()
-	, feComm = FrontendCommon.C.new()
-	, beComm = BackendCommon.C.new()
-	, beSpec = BackendSpecific.C.new()
-	}
-
-    fun clone {feSpec,feComm,beComm,beSpec} =
-	{ feSpec = FrontendSpecific.C.clone feSpec
-	, feComm = FrontendCommon.C.clone feComm
-	, beComm = BackendCommon.C.clone beComm
-	, beSpec = BackendSpecific.C.clone beSpec
-	}
-
-    fun compile(C, desc, source) =
+    fun compile (desc, {feSpec, feComm, beComm, beSpec}, source) =
 	let
-	    val C' = clone C
-	    val rep = FrontendSpecific.translate (#feSpec C') (desc, source)
-	    val rep = FrontendCommon.translate (#feComm C') (desc, rep)
-	    val rep = BackendCommon.translate (#beComm C') (desc, rep)
-	    val target = BackendSpecific.translate (#beSpec C') (desc, rep)
+	    val (c1,rep) = FrontendSpecific.translate (desc, feSpec, source)
+	    val (c2,rep) = FrontendCommon.translate (desc, feComm, rep)
+	    val (c3,rep) = BackendCommon.translate (desc, beComm, rep)
+	    val (c4,target) = BackendSpecific.translate (desc, beSpec, rep)
 	in
-	    (C', target)
+	    ({feSpec = c1, feComm = c2, beComm = c3, beSpec = c4}, target)
 	end
 	handle Error.Error _ => raise Error
 
