@@ -109,16 +109,16 @@ val direct =
     sense2 here (marker validmarker) ifyes (
       switch (List.tabulate(6,turnHome))
     ) ifnot (
-      switch (List.tabulate(6,markWithState)) ++
-      scan360for (marker validmarker) nop
+      switch (List.tabulate(6,markWithState))(* ++
+      scan360for (marker validmarker) nop*)
     )
 
 val directBack =
     sense2 here (marker validmarker) ifyes (
       switch (List.tabulate(6,fn i => turnHome ((i+3) mod 6)))
     ) ifnot (
-      switch (List.tabulate(6,markWithState)) ++
-      scan360for (marker validmarker) nop
+      switch (List.tabulate(6,markWithState))(* ++
+      scan360for (marker validmarker) nop*)
     )
 
 val markTrail =
@@ -217,8 +217,7 @@ val turnToFree =
 fun explorer (probTurn) collector worker =
         loop (markTrail ++
               sense here home ifnot (
-              myturnto (turn left) (turn left)
-                       (turn right) (turn right) food ifyes collector
+              turnto food ifyes collector
               ) ++
               flip probTurn ifyes (turn left) ++
               flip 20 ifyes worker ++
@@ -275,6 +274,7 @@ fun worker (probTurn) follow_food_marks collector =
 (* Collector, follow streets with food marker and bring food home *)
 fun collector worker follow_food_marks =
     domove otherwise worker ++
+    markTrail ++
     pick ifnot worker ++
     deliver_food follow_food_marks
 
@@ -336,7 +336,7 @@ fun step become_worker =
 end
 
 fun specialise pioneer explorer guard lazybone =
-    is_explorer pioneer ++ flip 20 ifyes guard ++ lazybone
+    is_explorer pioneer ++ (*flip 20 ifyes guard*) lazybone
 (*    flip 10 ifnot lazybone ++
     move ifyes (flip 2 ifyes pioneer ++ explorer) ++
     turn right ++
