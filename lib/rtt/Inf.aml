@@ -94,6 +94,9 @@ import structure PPPath       from "PPPath"
 import structure PPType       from "PPType"
 (**)
 
+(*DEBUG*)
+structure TextIO = struct val stdOut = TexTIO.stdOut fun print s = () end
+
 structure Inf :> INF =
 struct
   (* Types *)
