@@ -14,6 +14,9 @@ structure ToJasmin =
 	  | makeArityString (n,x) = makeArityString (n-1, x^"[")
 
 	fun intToString i = if i<0 then "-"^Int.toString(~i) else Int.toString i
+	fun int32ToString i = if LargeInt.< (i, Int.toLarge 0) then "-"^LargeInt.toString(~i)
+			      else LargeInt.toString i
+	fun realToString r = if Real.<(r,0.0) then "-"^Real.toString(~r) else Real.toString r
 
 	local
 	    val linecount = ref 0
@@ -53,6 +56,7 @@ structure ToJasmin =
 	  | desclist2string (Voidsig::dls) = "V"^(desclist2string dls)
 	  | desclist2string (Floatsig::dls) = "F"^(desclist2string dls)
 	  | desclist2string (Arraysig::dls) = "["^(desclist2string dls)
+	  | desclist2string (Charsig::dls) = "C"^(desclist2string dls)
 	  | desclist2string nil = ""
 
 	fun descriptor2string (arglist, ret) =
@@ -225,8 +229,8 @@ structure ToJasmin =
 	      | instructionToJasmin (Label l,_) = l^": "
 	      | instructionToJasmin (Lcmp,_) = "lcmp"
 	      | instructionToJasmin (Ldc(JVMString s),_) = "ldc \""^s^"\""
-	      | instructionToJasmin (Ldc(JVMFloat r),_) = "ldc "^Real.toString r
-	      | instructionToJasmin (Ldc(JVMInt i),_) = "ldc "^Int32.toString i
+	      | instructionToJasmin (Ldc(JVMFloat r),_) = "ldc "^realToString r
+	      | instructionToJasmin (Ldc(JVMInt i),_) = "ldc "^int32ToString i
 	      | instructionToJasmin (New cn,_) = "new "^cn
 	      | instructionToJasmin (Pop,_) = "pop"
 	      | instructionToJasmin (Putfield(cn,arg),_) = "putfield "^cn^" "^
@@ -253,7 +257,7 @@ structure ToJasmin =
 			     " from "^from'^" to "^to'
 
 	in
-	    fun instructionsToJasmin (insts, need, max, staticapply) =
+	    fun instructionsToJasmin (insts, need, max, staticapply, ziel) =
 		let
 		    fun noStack (Comment _) = true
 		      | noStack _ = false
@@ -263,95 +267,74 @@ structure ToJasmin =
 			in
 			    case i of
 				Ifstatic (stamp', then', else') =>
-				    recurse
-				    (if Lambda.isStatic stamp' then
-					 then'
-				     else else',
-					 need, max)^
-					 recurse (is, !stackneed,!stackmax)
-			      | _ => (if noStack i
-					  then ""
-				      else
-					  ((*"\t\t.line "^line()^*)
-					   "\t; Stack: "^Int.toString need^
-					   " Max: "^Int.toString max))
-					      ^"\n"^
-					      (instructionToJasmin (i, staticapply))^"\n"^
-					      (if nd<0 then
-						   recurse (is, nd+need, max)
-					       else recurse (is, nd+need, Int.max(nd+need,max)))
+				    (recurse
+				     (if Lambda.isStatic stamp' then
+					  then'
+				      else else',
+					  need, max);
+				     recurse (is, !stackneed,!stackmax))
+			      | _ => ((if noStack i
+					   then ()
+				       else
+					   (TextIO.output (ziel,"\t\t.line "^line());
+					    TextIO.output (ziel,"\t; Stack: "^Int.toString need^
+							   " Max: "^Int.toString max^"\n"));
+					   TextIO.output (ziel,instructionToJasmin (i, staticapply)^"\n");
+					   (if nd<0 then
+						recurse (is, nd+need, max)
+					    else recurse (is, nd+need, (Int.max (nd+need,max))))))
 			end
 		      | recurse (nil,need,max) =
 			(stackneed:= need;
-			 stackmax := max;
-			 "")
+			 stackmax := max)
 		in
 		    recurse (insts, need, max)
 		end
 	end
 
-	local
-	    fun fieldToJasmin (Field(access,fieldname,arg)) =
-		let
-		    val fcc = fAccessToString access
-		in
-		    ".field "^fcc^" "^fieldname^" "^(desclist2string arg)^"\n"
-		end
-	in
-	    fun fieldsToJasmin (f::fs) = (fieldToJasmin f)^(fieldsToJasmin fs)
-	      | fieldsToJasmin nil = ""
-	end
+	fun classToJasmin (Class(access,name,super,fields,methods),ziel) =
+	  let
+	      fun fieldToJasmin (Field(access,fieldname,arg)) =
+		  TextIO.output(ziel,".field "^
+				fAccessToString access
+				^" "^fieldname^" "^(desclist2string arg)^"\n")
+	      fun methodToJasmin (Method(access,methodname,methodsig,Locals perslocs,
+					 instructions, catches, staticapply)) =
+		  (* apply hat derzeit oft ein doppeltes Areturn am Ende.
+		   Wird spaeter wegoptimiert. *)
+		  ((if !stackneed = 0
+			orelse
+			!stackneed = ~1
+			andalso
+			((methodname="apply")
+			 orelse (methodname="sapply"))
+			then ()
+		    else
+			print ("\n\nStack Verification Error. Stack="^Int.toString (!stackneed)^
+			       " in "^(!actclass)^"."^methodname^".\n"));
+		    TextIO.output(ziel,".method "^
+				  (mAccessToString access)^
+				  methodname^
+				  (descriptor2string methodsig)^"\n");
+		    instructionsToJasmin(catches,0,0, staticapply, ziel);
+		    (* Seiteneffekt: stackneed und stackmax werden gesetzt *)
+		    instructionsToJasmin(instructions,0,0, staticapply, ziel);
+		    TextIO.output(ziel,".limit locals "^Int.toString(perslocs+1)^"\n");
+		    TextIO.output(ziel,".limit stack "^Int.toString (!stackmax)^"\n");
+		    TextIO.output(ziel,".end method\n"))
+	  in
+	      actclass:=name;
+	      TextIO.output(ziel,
+			    ".source "^name^".j\n");
+	      TextIO.output(ziel,
+			    ".class "^(cAccessToString access)^name^"\n"^
+			    ".super "^super^"\n");
+	      app fieldToJasmin fields;
+	      app methodToJasmin methods
+	  end
 
-	fun methodToJasmin (Method(access,methodname,methodsig,Locals perslocs,
-				   instructions, catches, staticapply)) =
-	    let
-		val mcc = mAccessToString access
-		val catchinsts = instructionsToJasmin(catches,0,0, staticapply)
-		(* Seiteneffekt: stackneed und stackmax werden gesetzt *)
-		val insts = instructionsToJasmin(instructions,0,0, staticapply)
-		(*val _ = if methodname="apply" then
-		    raise Debug (methodname, instructions) else ()*)
-	    in
-		(* apply hat derzeit immer ein doppeltes Areturn am Ende.
-		 Wird spaeter wegoptimiert. *)
-		(if !stackneed = 0
-		     orelse
-		     !stackneed = ~1
-		     andalso
-		     ((methodname="apply")
-		      orelse (methodname="sapply"))
-		     then ()
-		 else
-		     print ("\n\nStack Verification Error. Stack="^Int.toString (!stackneed)^
-			    " in "^(!actclass)^"."^methodname^".\n"));
-		     ".method "^mcc^methodname^(descriptor2string methodsig)^"\n"^
-		     ".limit locals "^Int.toString(perslocs+1)^"\n"^
-		     ".limit stack "^Int.toString (!stackmax)^"\n"^
-		     insts^"\n"^
-		     catchinsts^"\n"^
-		     ".end method\n"
-	    end
-	fun methodsToJasmin (m::ms) = (methodToJasmin m)^(methodsToJasmin ms)
-	  | methodsToJasmin nil = ""
-
-	fun classToJasmin (Class(access,name,super,fields,methods)) =
-	    let
-		val acc = cAccessToString(access)
-	    in
-		actclass:=name;
-		".class "^acc^name^"\n"^
-		".super "^super^"\n"^
-		fieldsToJasmin(fields)^
-		methodsToJasmin(methods)
-	    end
-
-	fun schreibs (wohin,was) =
-	    let
-		val bla=TextIO.openOut wohin
-	    in
-		TextIO.output(bla,was);
-		TextIO.closeOut bla
-	    end
+	val schreibsAuf = TextIO.openOut
+	val schreibsZu  = TextIO.closeOut
 
 	fun schreibsDran (wohin,was) =
 	    let

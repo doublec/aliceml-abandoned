@@ -213,6 +213,18 @@ structure CodeGen =
 				then Sipush (Int.fromLarge i)
 			    else Ldc (JVMInt i)
 
+	fun atCodeWord (i:Word32.word) =
+	    if LargeWord.>= (i, Word.toLargeWord (Word.fromInt ~1)) andalso
+		LargeWord.<= (i, Word.toLargeWord (Word.fromInt 5))
+		then Iconst (Int.fromLarge (LargeWord.toLargeInt i)) else
+		    if LargeWord.>= (i, Word.toLargeWord(Word.fromInt ~128))
+			andalso LargeWord.<= (i, Word.toLargeWord(Word.fromInt 127))
+			then Bipush (Int.fromLarge (LargeWord.toLargeInt i)) else
+			    if LargeWord.>= (i, Word.toLargeWord(Word.fromInt ~32768))
+				andalso LargeWord.<= (i, Word.toLargeWord (Word.fromInt 32767))
+				then Sipush (Int.fromLarge (LargeWord.toLargeInt i))
+			    else Ldc (JVMWord i)
+
 	fun atCode (CharLit c) = atCodeInt(Int.toLarge (ord c))
 	  | atCode (IntLit i)  = atCodeInt i
 	  | atCode (RealLit r) =
@@ -316,7 +328,7 @@ structure CodeGen =
 		val lithash: int LitHash.t = LitHash.new ()
 		val number = ref 0
 
-		fun litClass (CharLit _) = CInt
+		fun litClass (CharLit _) = CChar
 		  | litClass (IntLit _)    = CInt
 		  | litClass (RealLit _)   = CReal
 		  | litClass (StringLit _) = CStr
@@ -342,7 +354,7 @@ structure CodeGen =
 			 fun codelits (lit', constnumber, acc) =
 			     let
 				 val jType = case lit' of
-				     CharLit _   => ([Intsig],[Voidsig])
+				     CharLit _   => ([Charsig],[Voidsig])
 				   | IntLit _    => ([Intsig],[Voidsig])
 				   | RealLit _   => ([Floatsig],[Voidsig])
 				   | StringLit _ => ([Classsig CString], [Voidsig])
@@ -385,20 +397,23 @@ structure CodeGen =
 		    val free:ScopedStampSet.t= ScopedStampSet.new ()
 
 		    fun insert (Id (_,stamp',_)) =
-			(print ("insert free: "^(Stamp.toString stamp'));
+			(print ("Top "^(Stamp.toString (Lambda.top()))^
+				". insert free: "^(Stamp.toString stamp')^"\n");
 			 if stamp'=stamp_builtin orelse
 			     Lambda.isSelfCall stamp'
 			     then ()
 			 else
 			     ScopedStampSet.insert (free, stamp'))
 		    fun delete (Id (_,stamp',_)) =
-			(print ("delete free: "^(Stamp.toString stamp'));
+			(print ("Top "^(Stamp.toString (Lambda.top()))^
+				" delete free: "^(Stamp.toString stamp')^"\n");
 			 ScopedStampSet.delete(free, stamp'))
 
 		    fun get () =
 			let
 			    val x = ScopedStampSet.foldScope (fn (x,xs) => x::xs) nil free
 			in
+			    print ("Top "^(Stamp.toString (Lambda.top())));
 			    printStampList x;
 			    x
 			end
@@ -535,7 +550,7 @@ structure CodeGen =
 
 	(* Den Klassennamen einer Id bestimmen, die üblicherweise die Id eines formalen
 	 Funktionsparameters ist. *)
-	fun classNameFromStamp stamp' = Class.getInitial()^"$class"^(Stamp.toString stamp')
+	fun classNameFromStamp stamp' = Class.getInitial()^"class"^(Stamp.toString stamp')
 	fun classNameFromId (Id (_,stamp',_)) = classNameFromStamp stamp'
 
 	(* Einstiegspunkt *)
@@ -592,7 +607,12 @@ structure CodeGen =
 				  Locals (Local.max()+1),
 				   iL @
 				   insts @
-				   [Getstatic CPickle,
+				   [Getstatic ("java/lang/System/out",[Classsig "java/io/PrintStream"]),
+				    Aload (!mainpickle),
+				    Invokevirtual ("java/io/PrintStream","print",
+						   ([Classsig "java/lang/Object"],
+						   [Voidsig])),
+				    Getstatic CPickle,
 				    New CTuple,
 				    Dup,
 				    Iconst 2,
@@ -625,8 +645,12 @@ structure CodeGen =
 				   Literals.makefields
 				   (RecordLabel.makefields ()),
 				   [main, clinit, init, run])
+		 val ziel = schreibsAuf (name^".j");
 	     in
-		 schreibs(name^".j",classToJasmin class)
+		 print "Erzeuge Hauptklasse...";
+		 classToJasmin (class,ziel);
+		 schreibsZu ziel;
+		 print "ferdich\n"
 	     end
 	 )
 
@@ -804,9 +828,8 @@ structure CodeGen =
 				(stampCode stamp') @
 				[Checkcast CWord,
 				 Getfield (CWord^"/value", [Wordsig]),
-				 Ldc (JVMWord w'),
-				 Lcmp,
-				 Ifneq elselabel]
+				 atCodeWord w',
+				 Ificmpne elselabel]
 			  | IntLit i' =>
 				stampCode stamp' @
 				[Instanceof CInt,
@@ -814,7 +837,7 @@ structure CodeGen =
 				(stampCode stamp') @
 				[Checkcast CInt,
 				 Getfield (CInt^"/value", [Intsig]),
-				 Ldc (JVMInt i'),
+				 atCodeInt i',
 				 Ificmpne elselabel]
 			  | CharLit c' =>
 				stampCode stamp' @
@@ -833,7 +856,7 @@ structure CodeGen =
 				[Checkcast CStr,
 				 Getfield (CStr^"/value", [Classsig CString]),
 				 Ldc (JVMString s'),
-				 Invokevirtual (CString,"equals",([Classsig CString],[Boolsig])),
+				 Invokevirtual (CString,"equals",([Classsig CObj],[Boolsig])),
 				 Ifeq elselabel]
 			  | r as (RealLit r') =>
 				stampCode stamp' @
@@ -843,7 +866,7 @@ structure CodeGen =
 				[Checkcast CReal,
 				 Getfield (CReal^"/value", [Floatsig]),
 				 atCode r,
-				 Invokevirtual (CString,"equals",([Classsig CString],[Boolsig])),
+				 Invokevirtual (CString,"equals",([Classsig CObj],[Boolsig])),
 				 Ifeq elselabel]
 		    in
 			eq
@@ -1247,7 +1270,7 @@ structure CodeGen =
 		     let
 			 val className = classNameFromStamp stamp'
 			 val freeVarList = FreeVars.getVars id' (* yyy*)
-			     val _ = (print "FunExpFree: ";printStampList freeVarList)
+			 (*			     val _ = (print "FunExpFree: ";printStampList freeVarList)*)
 			 (*		val _ = annotateTailExp exp'*)
 			 (* 1. *)
 			 val object = let
@@ -1406,7 +1429,7 @@ fun labeliter ((l,_)::rest,i) = labelcode (l,i) @ labeliter(rest,i+1)
 			   | StringLit _ => ([Classsig CString], [Voidsig])
 			   | WordLit _   => ([Intsig],[Voidsig])*)
 			 val scon = case lit' of
-			     CharLit _   => CInt
+			     CharLit _   => CChar
 			   | IntLit _    => CInt
 			   | RealLit _   => CReal
 			   | StringLit _ => CStr
@@ -1488,6 +1511,7 @@ fun labeliter ((l,_)::rest,i) = labelcode (l,i) @ labeliter(rest,i+1)
 	and
 	    expCodeClass (OneArg id',body') =
 	    let
+		val _ = print ("create Class "^(Class.getCurrent())^"\n")
 		val e = List.concat (map decCode body')
 		val className = classNameFromId id'
 		val freeVarList = FreeVars.getVars id'
@@ -1547,8 +1571,10 @@ fun labeliter ((l,_)::rest,i) = labelcode (l,i) @ labeliter(rest,i+1)
 				   (if Lambda.sapplyPossible () then
 					[sapply]
 				    else nil)))
+		val ziel = schreibsAuf (className^".j");
 	    in
-		schreibs(className^".j",classToJasmin class)
+		classToJasmin (class,ziel);
+		schreibsZu ziel
 	    end
 and
     compile prog = genProgramCode ("Emil", imperatifyString prog)
