@@ -88,7 +88,7 @@ protected:
   static void SetRelativePC(word pc);
   // Calling Convention Conversion
   static void CompileCCC(u_int calleeArity, bool update = false);
-  static void LoadFormalArguments(u_int calleeArity, TagVal *idDefArgs);
+  static void StoreResults(u_int calleeArity, TagVal *idDefArgs);
   // NativeCodeJitter Instruction Helpers
   static u_int LoadIdRefKill(u_int Dest, word idRef);
   static void Await(u_int Ptr, word pc);
@@ -99,14 +99,10 @@ protected:
   static void LoadStatus(u_int Dest);
   static void CheckPreempt(u_int pc);
   static void LookupTestTable(u_int Key, u_int table, bool isInt = true);
-  static u_int CompilePrimitive(INLINED_PRIMITIVE primitive,
-				Vector *actualIdRefs);
-  static void NormalAppPrim(Closure *closure, TagVal *pc);
+  static u_int InlinePrimitive(word wPrimitive, Vector *actualIdRefs);
   static void CompileContinuation(TagVal *idDefArgsInstrOpt);
   static void LoadArguments(TagVal *actualArgs);
-  static void AppVarPrim(TagVal *pc, Interpreter *interpreter);
-  static void AppVar(TagVal *pc, word wClosure);
-  static void DirectAppVar(TagVal *pc, word wClosure);
+  static TagVal *Apply(TagVal *pc, Closure *closure, bool direct);
   // NativeCodeJitter Instructions
   static TagVal *InstrKill(TagVal *pc);
   static TagVal *InstrPutVar(TagVal *pc);
@@ -120,8 +116,7 @@ protected:
   static TagVal *InstrClose(TagVal *pc);
   static TagVal *InstrSpecialize(TagVal *pc);
   static TagVal *InstrAppPrim(TagVal *pc);
-  static TagVal *InstrAppVar(TagVal *pc);
-  static TagVal *InstrDirectAppVar(TagVal *pc);
+  static TagVal *InstrAppVar(TagVal *pc, bool direct = false);
   static TagVal *InstrGetRef(TagVal *pc);
   static TagVal *InstrGetTup(TagVal *pc);
   static TagVal *InstrSel(TagVal *pc);
