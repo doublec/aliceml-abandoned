@@ -87,8 +87,10 @@ structure BindEnvFromSig :> BIND_ENV_FROM_SIG =
 		    val (a,ts) = Type.headRow r
 		    val  x     = Stamp.new()
 		    val  name  = Label.toString a
+		    val  name' = "'" ^ name
 		    val  vid   = VId.fromString name
-		    val  a'    = Label.fromString("'" ^ name)
+		    val  vid'  = VId.fromString name'
+		    val  a'    = Label.fromString name'
 		    val  is    = idStatusFromTyp(Inf.lookupVal(s,a'))
 		    (* UNFINISHED: check that the constructor actually
 		     * constructs the type in question.
@@ -96,6 +98,7 @@ structure BindEnvFromSig :> BIND_ENV_FROM_SIG =
 		     * by following members???
 		     *)
 		in
+		    insertVal(E, vid', (I,x,V)) ;
 		    insertVal(E, vid, (I,x,is)) ;
 		    loop(Type.tailRow r)
 		end
