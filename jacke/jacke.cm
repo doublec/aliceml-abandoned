@@ -6,6 +6,7 @@ smlnj-lib.cm
 jacke.lex	
 jacke.grm
 ErrorMsg.sml
+Set.sml
 AbsSyn.sml
 NormalForm.sml
 jacke.sml

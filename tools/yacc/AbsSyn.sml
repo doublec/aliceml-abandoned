@@ -2,6 +2,8 @@
 
 structure AbsSyn =
 struct
+    structure E = ErrorMsg
+
     datatype bnfexp =
 	Skip
       | Symbol of string
@@ -24,51 +26,58 @@ struct
 	rule = string * string option * bnfexp
     and idlist = string list
 
-    exception MultipleDefinition of string
 
-
-    (* check that
-     0. each token occurs at most once in all the nonassoc, assocr, assocl decls (* still missing *)
-     1. only one token declaration in program  (too strict ?)
-     2. only one rule declaration per rule name  (too strict ?) *)
-
-    fun checkAdmissibility p = 
-	let fun chk (NONE,env') (TokenDec t) = (SOME (), env')
-	      | chk (SOME (),env') (TokenDec t) = raise MultipleDefinition ("token")
-	      | chk (t,env') (RuleDec []) = (t,env')
-	      | chk (t,env') (RuleDec ((r,_,b)::rs)) = if List.exists (fn x =>x=r) env' then 
-	                                                   raise MultipleDefinition ("rule "^r)
-						       else chk (t,r::env') (RuleDec rs)
-	      | chk env _ = env
-	in (foldr (fn (p,(t,env')) => chk (t,env') p) (NONE,[]) p; true) 
-	end handle MultipleDefinition _ => false
-
-
-
-
-    fun toString _ = ""   (* missing *)
-	
-    fun pr t =
-	let fun indent 0 = ""
-	      | indent n = " "^(indent (n-1))
-	    fun f ind Skip = (indent ind)^"Skip\n"
-	      | f ind (Symbol s) = (indent ind)^"Symbol ("^s^")\n"
-	      | f ind (As (s,b)) = (indent ind)^"Symbol ("^s^") As\n"^ (f (ind+4) b)
-	      | f ind (Alt []) = ""
-	      | f ind (Alt (b::bs)) = (f ind b)^(f ind (Alt bs))
-	      | f ind (Prec (b,s)) = (indent ind)^"Prec\n"^(f (ind+4) b)^(indent (ind+4))^"Symbol ("^s^")\n"
-	      | f ind (Transform (b,s)) = (indent ind)^"Transform\n"^(f (ind+4) b)
-		                          ^(indent (ind+4))^(foldr (fn (s,b)=>s^" "^b) "\n" s) 
-	      | f ind (Seq []) = ""
-	      | f ind (Seq (b::bs)) = (f ind b)^(f ind (Seq bs))
-	    fun g ind (TokenDec l) = (indent ind)^"TokenDec\n"^(indent (ind+4))^(foldr (fn ((s,_),b)=>s^" "^b) "\n" l)
-	      | g ind (AssoclDec l) = (indent ind)^"AssoclDec\n"
-	      | g ind (AssocrDec l) = (indent ind)^"AssocrDec\n"
-	      | g ind (NonassocDec l) = (indent ind)^"NonassocDec\n"
-	      | g ind (ParserDec l) = (indent ind)^"ParserDec\n"^(indent (ind+4))^(foldr (fn ((s,_,t),b)=>s^" = "^t^"  "^b) "" l)
-	      | g ind (RuleDec l) = (indent ind)^"RuleDec\n"^(foldr (fn ((s,_,r),b) => (indent (ind+4))^s^"\n"^(f (ind+8) r)^b) "\n" l)
-	      | g ind (MLCode m) = (indent ind)^"MLCode\n"^(indent(ind+4))^(foldr(fn (s,b)=>s^" "^b) "\n" m)
-
-	in foldr (fn (s,b)=>(g 2 s)^b) "\n" t
+    fun checkOnlyOneTokenDec t = 
+	let val l = List.filter (fn (TokenDec _) => true | _ => false) t
+	    val l' = if List.length l <= 0 then []
+		     else case (hd l) of 
+			 TokenDec  d => List.map (fn x => #1 x) d
+	    val b = List.length l<=1
+ 	in 
+	    if b then (b, l') 
+	    else (E.error 0 "Multiple Token Definitions"; (b,l'))
 	end
+
+    fun checkRulenames b rs [] = (b, rs)
+      | checkRulenames b rs (t::ts) =
+	let fun chk b [] rs = (b,rs) 
+	      | chk b ((r,_,_)::s) rs = 
+	    if List.all (fn y => y<>r) rs then chk b s (r::rs)
+	    else (E.error 0 ("Multiple definition of rule "^r); chk false s rs)
+	in case t of
+	    RuleDec r => 
+		let val (b',r') = (chk b r rs)
+		in checkRulenames b' r' ts end
+   	  | _ => checkRulenames b rs ts
+	end
+
+    fun checkDisjointness toks rules =
+	if List.all (fn t => List.all (fn r => r<>t) rules) toks
+	    then true 
+	else (E.error 0 "Token and rule names not disjoint";false)
+
+    fun checkAssocDecs rs [] = (true, rs)
+      | checkAssocDecs rs (t::ts) =
+	let fun chk [] rs = rs 
+	      | chk (r::s) rs = 
+	    if List.all (fn y => y<>r) rs then chk s (r::rs)
+	    else (E.error 0 ("Multiple occurrence in assoc declaration of token "^r); chk s rs)
+	in case t of
+	    AssoclDec r => checkAssocDecs (chk r rs) ts
+	  | AssocrDec r => checkAssocDecs (chk r rs) ts
+	  | NonassocDec r => checkAssocDecs (chk r rs) ts
+   	  | _ => checkAssocDecs rs ts
+	end
+
+    fun subset s1 s2 = 
+	List.all (fn x => if List.exists 
+		  (fn y => x=y) s2 then true else (E.error 0 ("undefined identifier "^x); false)) s1
+
+    fun semanticalAnalysis t =
+	let val (b1,tok) = checkOnlyOneTokenDec t
+	    val (b2,rules) = checkRulenames true [] t
+	    val b3 = checkDisjointness tok rules 
+	    val (b4,tok') = checkAssocDecs [] t
+	    val b5 = subset tok' tok 
+	in List.all (fn x => x) [b1,b2,b3,b4,b5] end
 end

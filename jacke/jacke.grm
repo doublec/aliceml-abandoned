@@ -98,7 +98,7 @@ rulebinds : rulebind ([rulebind])
 	| rulebinds AND rulebind (rulebind::rulebinds)
 
 rulebind : ID EQ bnfexp ((ID,NONE,bnfexp))
-	| ID COLON ID EQ bnfexp ((ID,SOME ID,bnfexp))
+	| ID COLON ID EQ bnfexp ((ID1,SOME ID2,bnfexp))
 
 parsbinds : parsbind ([parsbind])
 	| parsbinds AND parsbind (parsbind::parsbinds)
