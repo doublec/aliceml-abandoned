@@ -26,6 +26,7 @@
 #include "alice/AliceDebuggerEvent.hh"
 #if DEBUGGER
 #include "alice/DebugEnvironment.hh"
+#include "alice/AliceDebuggerEvent.hh"
 #endif
 #if DEBUG_CHECK
 #include "alice/AbstractCodeFrame.hh"
@@ -153,6 +154,7 @@ void AliceLanguageLayer::Init(const char *home, int argc, const char *argv[]) {
 #if DEBUGGER
   // Initialize Debugger Components
   DebugEnvironment::Init();
+  AliceEventAccessor::Init();
 #endif
   undefinedValue = Store::IntToWord(42);
   RootSet::Add(undefinedValue);

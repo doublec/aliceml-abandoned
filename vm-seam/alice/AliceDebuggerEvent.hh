@@ -21,9 +21,7 @@
 
 class AliceEventAccessor : public EventAccessor {
 private:
-  AliceEventAccessor() {
-    return;
-  }
+  AliceEventAccessor();
 public:
   static AliceEventAccessor *self;
   static void Init() {

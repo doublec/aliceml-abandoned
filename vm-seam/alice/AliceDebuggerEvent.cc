@@ -18,4 +18,7 @@
 #include "alice/AliceDebuggerEvent.hh"
 
 AliceEventAccessor *AliceEventAccessor::self;
+AliceEventAccessor::AliceEventAccessor() {
+  return;
+}
 #endif
