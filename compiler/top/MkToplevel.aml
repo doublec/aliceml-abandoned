@@ -43,7 +43,7 @@ struct
                                    "Usage: alice [options]\n" ^
 				   OptionParser.helpText)
 
-    val date       = Date.fromTimeLocal (Time.now ())
+    val date       = Config.buildDate
     val banner     = "Alice 1.0.0 (\"" ^
 		     (case Config.vm
 		       of "mozart" => "Stockhausen Operette 4 Original Mix"
