@@ -1,19 +1,31 @@
+(*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
 signature HASH_KEY =
-  sig
+sig
     type t
     val equals :  t * t -> bool
     val hash :    t -> int
-  end
+end
 
 signature EQ_HASH_KEY =
-  sig
+sig
     eqtype t
     val hash :    t -> int
-  end
+end
 
 functor FromEqHashKey(EqHashKey: EQ_HASH_KEY) : HASH_KEY =
-  struct
+struct
     type t	= EqHashKey.t
     val equals	= op=
     val hash	= EqHashKey.hash
-  end
+end
