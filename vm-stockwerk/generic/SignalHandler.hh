@@ -18,17 +18,14 @@
 #endif
 
 #include <signal.h>
+#include "store/Store.hh"
 
-#if defined(__MINGW32__) || defined(_MSC_VER)
-#define SIGALRM 0
-#endif
-
+//--** avoid magic constant:
 #define SIGNAL_HANDLER_SIGNAL_ARRIVED_STATUS 2
 
+class Future;
+
 class SignalHandler {
-protected:
-  static void PushCall(word closure, int signal);
-  static void CheckTimerEvents();
 public:
   // SignalHandler Static Constructor
   static void Init();
@@ -36,10 +33,8 @@ public:
   static u_int SignalStatus() {
     return (1 << SIGNAL_HANDLER_SIGNAL_ARRIVED_STATUS);
   }
-  static void BlockSignals();
-  static void UnblockSignals();
-  static void Register(int signal, word closure, u_int delay = 0);
-  static bool PendingTimerEvents();
+  static void RegisterSignal(int signal, word closure);
+  static Future *RegisterAlarm(u_int milliseconds);
   static void HandlePendingSignals();
 };
 
