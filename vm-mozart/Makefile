@@ -257,8 +257,7 @@ COMPILERBACKENDCOMMONSOURCES0 = \
 	SimplifyRec.aml FLATTENING_PHASE-sig.aml MkFlatteningPhase.aml \
 	PRIM_OPS-sig.aml PrimOps.aml VALUE_PROPAGATION_PHASE-sig.aml \
 	ValuePropagationPhase.aml LIVENESS_ANALYSIS_PHASE-sig.aml \
-	MkLivenessAnalysisPhase.aml DEAD_CODE_ELIMINATION_PHASE-sig.aml \
-	DeadCodeEliminationPhase.aml MkBackendCommon.aml
+	MkLivenessAnalysisPhase.aml MkBackendCommon.aml
 COMPILERBACKENDCOMMONSOURCES = \
 	$(COMPILERBACKENDCOMMONSOURCES0:%=compiler/backend-common/%)
 
