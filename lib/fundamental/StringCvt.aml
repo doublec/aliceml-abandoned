@@ -20,8 +20,9 @@ import __primitive
        type int and string and char
        datatype bool and option and list    from "ToplevelTypes"
 import __primitive
-       infix 4 = <= infixr 5 :: infix 6 +
-       val op = and op <= and op +          from "ToplevelValues"
+       infix 4 = <= < infixr 5 :: infix 6 + -
+       val op = and op <= and op + and op - 
+       and op <                             from "ToplevelValues"
 import __primitive structure List           from "List"
 import __primitive signature STRING_CVT     from "STRING_CVT-sig"
 
@@ -47,10 +48,17 @@ local
 						    = "CharVector.tabulate"
 	__primitive val char_isSpace : char -> bool = "Char.isSpace"
 
-	fun padLeft c i s	= if i <= 0 then s else
-				  string_tabulate(i, fn _=> c) ^ s
+	fun padLeft c i s	= if i <= 0 then s else 
+                                  let val n = i - string_size s in
+                                    if n < 0 then s else
+				    string_tabulate(n, fn _=> c) ^ s
+                                  end
+
 	fun padRight c i s	= if i <= 0 then s else
-				  s ^ string_tabulate(i, fn _=> c)
+                                  let val n = i - string_size s in
+				    if n < 0 then s else 
+                                    s ^ string_tabulate(n, fn _=> c)
+                                  end
 
 	fun splitl p f src	= splitl'(p, f, src, nil)
 	and splitl'(p,f,src,cs)	= case f src
