@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2003
+ *   Andreas Rossberg, 2001-2004
  *
  * Last change:
  *   $Date$ by $Author$
@@ -76,8 +76,9 @@ struct
     val error = E.error
     val warn  = E.warn
 
-    fun warnUnused((_,(0,_)), warning) = ()
-      | warnUnused(region, warning)    = warn(region, warning)
+    fun warnUnused(region as (_,(lin,_)), warning) =
+	if lin = 0 andalso region <> Source.nowhere then () else
+	warn(region, warning)
 
   (* UNFINISHED... *)
 
