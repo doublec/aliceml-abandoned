@@ -14,8 +14,8 @@ signature ENV =
     type env
     type t = env
 
-    type val_entry = { id: valid, path: path, typ: typ, sort: Inf.val_sort }
-    type typ_entry = { id: typid, path: path, typ: typ, sort: Inf.typ_sort }
+    type val_entry = { id: valid, path: path, typ: typ }
+    type typ_entry = { id: typid, path: path, typ: typ }
     type var_entry = { id: typid, var: var }
     type mod_entry = { id: modid, path: path, inf: inf }
     type inf_entry = { id: infid, path: path, inf: inf }

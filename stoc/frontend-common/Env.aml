@@ -23,8 +23,8 @@ structure Env :> ENV =
 		 | MOD of mod_entry
 		 | INF of inf_entry
 
-    withtype val_entry = { id: valid, path: path, typ: typ, sort: Inf.val_sort }
-    and      typ_entry = { id: typid, path: path, typ: typ, sort: Inf.typ_sort }
+    withtype val_entry = { id: valid, path: path, typ: typ }
+    and      typ_entry = { id: typid, path: path, typ: typ }
     and      var_entry = { id: typid, var: var }
     and      mod_entry = { id: modid, path: path, inf: inf }
     and      inf_entry = { id: infid, path: path, inf: inf }
