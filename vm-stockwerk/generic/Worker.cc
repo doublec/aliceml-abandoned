@@ -17,7 +17,6 @@
 #endif
 
 #include "generic/Interpreter.hh"
-#include "generic/TaskStack.hh"
 #include "generic/Scheduler.hh"
 #include "generic/Backtrace.hh"
 
@@ -80,7 +79,7 @@ Block *Interpreter::GetAbstractRepresentation(Block *) {
   return INVALID_POINTER; // default: may not be pickled
 }
 
-void Interpreter::PushCall(TaskStack *, Closure *) {
+void Interpreter::PushCall(Closure *) {
   Error("Interpreter::PushCall must never be called");
 }
 
@@ -88,10 +87,9 @@ void Interpreter::PurgeFrame(word) {
   return; // default: nothing to do
 }
 
-Interpreter::Result Interpreter::Handle(TaskStack *taskStack) {
+Interpreter::Result Interpreter::Handle() {
   // default: pass the exception up the stack
-  Scheduler::currentBacktrace->Enqueue(taskStack->GetFrame());
-  taskStack->PopFrame();
+  Scheduler::currentBacktrace->Enqueue(Scheduler::GetAndPopFrame());
   return Interpreter::RAISE;
 }
 
