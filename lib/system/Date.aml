@@ -22,7 +22,7 @@ import structure UnsafeDate     from "UnsafeDate"
 
 import structure Time           from "Time"
 
-structure Date :> DATE =
+structure Date : DATE =
 struct
     structure LInt  = LargeInt 
     

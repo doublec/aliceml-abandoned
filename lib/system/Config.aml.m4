@@ -4,13 +4,14 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt and Andreas Rossberg, 2001-2003
+ *   Leif Kornstaedt and Andreas Rossberg, 2001-2004
  *
  * Last change:
  *   $Date$ by $Author$
  *   $Revision$
  *)
 
+import structure Date         from "Date"
 import structure OS           from "OS"
 import signature CONFIG       from "CONFIG-sig"
 import structure UnsafeConfig from "UnsafeConfig"
@@ -34,4 +35,6 @@ struct
 	case platform of
 	    WIN32 => #";"
 	  | UNIX => #":"
+
+    val buildDate = valOf (Date.fromString ("substr(esyscmd(date "+%a %b %d %H:%M:%S %Y"), 0, 24)"))
 end

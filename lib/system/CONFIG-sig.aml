@@ -4,12 +4,14 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt and Andreas Rossberg, 2001-2003
+ *   Leif Kornstaedt and Andreas Rossberg, 2001-2004
  *
  * Last change:
  *   $Date$ by $Author$
  *   $Revision$
  *)
+
+import structure Date from "Date"
 
 signature CONFIG =
 sig
@@ -22,4 +24,6 @@ sig
 
     val pathEscape : char option
     val pathSeparator : char
+
+    val buildDate : Date.t
 end
