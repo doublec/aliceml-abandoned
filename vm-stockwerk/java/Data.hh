@@ -68,6 +68,13 @@ public:
 	   b->GetLabel() == JavaLabel::ArrayType);
     return static_cast<Type *>(b);
   }
+  static Type *FromWordDirect(word x) {
+    Block *b = Store::DirectWordToBlock(x);
+    Assert(b->GetLabel() == JavaLabel::Class ||
+	   b->GetLabel() == JavaLabel::BaseType ||
+	   b->GetLabel() == JavaLabel::ArrayType);
+    return static_cast<Type *>(b);
+  }
 };
 
 class DllExport Class: protected Type {
@@ -324,6 +331,9 @@ public:
     return static_cast<ObjectArray *>(b);
   }
 
+  Type *GetType() {
+    return Type::FromWordDirect(GetArg(TYPE_POS));
+  }
   u_int GetLength() {
     return Store::DirectWordToInt(GetArg(LENGTH_POS));
   }
