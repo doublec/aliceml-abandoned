@@ -105,7 +105,7 @@ structure HttpServer :> HTTP_SERVER =
 		val response = handler request
 		    handle _ =>
 			   Http.makeResponse
-			       {statusCode = 501, contentType = "text/plain",
+			       {statusCode = 500, contentType = "text/plain",
 				body = "Internal server error"}
 		val connectionTokens = parseConnectionHeader request
 	    in
@@ -121,16 +121,21 @@ structure HttpServer :> HTTP_SERVER =
 		 | Http.Closed => ()
 
 	fun start portOpt =
-	    case !myPort of
-		SOME port => port
-	      | NONE =>
-		    let
-			val (_, serverPort) =
-			    Socket.server (portOpt, handleConnection)
-		    in
-			myPort := SOME serverPort;
-			serverPort
-		    end
+	    let
+		val p = Promise.promise ()
+	    in
+		case Ref.exchange (myPort, Promise.future p) of
+		    portOpt as SOME port =>
+			(Promise.fulfill (p, portOpt); port)
+		  | NONE =>
+			let
+			    val (_, serverPort) =
+				Socket.server (portOpt, handleConnection)
+			in
+			    Promise.fulfill (p, SOME serverPort);
+			    serverPort
+			end
+	    end
 
 	fun register (uri, handler) =
 	    let
