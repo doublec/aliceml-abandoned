@@ -50,6 +50,7 @@ Library:
 
 * Constraint library now based on Gecode, with changed interface.
 * A new binding for Gtk 2.2, with a lot of interface changes.
+* Word32 added. The more efficient Word31 remains the default word type.
 * Default int type is now 31 bit, infinite precision integers are
   available through the IntInf structure.
 * FixedInt added.
