@@ -225,7 +225,7 @@ structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
 	    SEQ #[S "#[", SEP (S ", ", Vector.map IDREF idRefs), S "]"]
 	  | formatExp (FunExp (_, _, _, args, body)) =
 	    SEQ #[NL, S "fn ", formatArgs IDDEF args, S " =>",
-		  IN, NL, formatBody (body, StampSet.new ()), EX]
+		  IN, NL, formatBody (body, StampSet.set ()), EX]
 	  | formatExp (PrimAppExp (_, name, idRefs)) =
 	    SEQ #[S "prim \"", S name, S "\" (",
 		  SEP (S ", ", Vector.map IDREF idRefs), S ")"]
@@ -246,7 +246,7 @@ structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
 			 (List.map (fn stm => formatStm (stm, shared)) stms))
 
 	fun bodyToString body =
-	    format (SEQ #[formatBody (body, StampSet.new ()), NL])
+	    format (SEQ #[formatBody (body, StampSet.set ()), NL])
 
 	fun componentToString {imports, body, exports, sign} =
 	    format (SEQ #[SEQ (Vector.map
@@ -256,5 +256,5 @@ structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
 					     S "import ", ID id,
 					     S " from ", S (Url.toString url),
 					     S "\n"]) imports),
-			  formatBody (body, StampSet.new ()), NL])
+			  formatBody (body, StampSet.set ()), NL])
     end
