@@ -29,11 +29,17 @@ struct
 	case String.tokens Char.isSpace line
 	  of []         => loop compile connection
 	   | ["--exit"] => OS.Process.exit OS.Process.success
-	   | args       => (compile args; loop compile connection)
+	   | args       =>
+	     ( (*Socket.output(socket, if compile args = OS.Process.success
+				     then "success\n" else "failure\n")
+	     ; Socket.flushOut socket*)compile args
+	     ; loop compile connection
+	     )
 	handle IO.Io{name, function, ...} =>
 	    (TextIO.output(TextIO.stdErr, "aliceserv: I/O error (in " ^ 
 					  function ^ ")\n");
 	     loop compile connection)
+	     | _ => loop compile connection
 
 (*UNFINISHED: why do I need "fn(s,h,p) => loop compile (s,h,p)"
  instead of "loop compile"??? (raises illegal number of arguments exception) *)
