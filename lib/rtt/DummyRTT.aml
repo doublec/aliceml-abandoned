@@ -21,7 +21,7 @@ local
 	__primitive exttype exn      = "exn"
     end
 in
-    structure RTT =
+    structure __pervasive =
     struct
 	structure Inf =		(* required by Package *)
 	struct

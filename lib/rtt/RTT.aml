@@ -217,7 +217,9 @@ local
 	val lookup :		string -> Type.t
     end
 in
-    structure RTT =
+    (* structure is named __pervasive to avoid spurious warnings during
+     * bootstrapping (about unavailable RTTs). *)
+    structure __pervasive =
     struct
 	structure Label         = Label :> LABEL'
 	structure Path          = Path :> PATH'
