@@ -221,7 +221,7 @@ structure Main :> MAIN =
 			  | NONE =>
 				(TextIO.print
 				 ("### warning: could not locate source for " ^
-				  targetFilename);
+				  targetFilename ^ "\n");
 				 Inf.empty ())
 	end
 
