@@ -1,0 +1,42 @@
+import signature GDK from "x-alice:/lib/gtk/GDK-sig"
+import signature GTK from "x-alice:/lib/gtk/GTK-sig"
+import signature COMPONENT_MANAGER
+   from "x-alice:/lib/system/COMPONENT_MANAGER-sig"
+
+structure Egg =
+   struct
+	val f = BinIO.openIn "egg.txt"
+
+	val str : string = Byte.bytesToString (BinIO.inputAll f)
+
+	signature TOPLEVEL_IT =
+	    sig
+		val it : unit -> unit
+	    end
+
+	functor MkToplevelIt (CM : COMPONENT_MANAGER) : TOPLEVEL_IT =
+	    struct
+		structure GtkComp = CM.Link (val url = Url.fromString "x-alice:/lib/gtk/Gtk"
+					 signature S = (structure Gtk : GTK))
+		structure GdkComp = CM.Link (val url = Url.fromString "x-alice:/lib/gtk/Gdk"
+					 signature S = (structure Gdk : GDK))
+		structure Gtk = GtkComp.Gtk
+		structure Gdk = GdkComp.Gdk
+		fun it () =
+		    let
+		     	val mw = Gtk.windowNew(Gtk.WINDOW_TOPLEVEL)
+		     	val _ = Gtk.windowSetTitle(mw,"Alice")
+			val (buf,_) = Gdk.pixbufNewFromInline(~1, str, false)
+			val img = Gtk.imageNewFromPixbuf buf
+		    in
+			Gtk.containerAdd(mw, img);
+			Gtk.widgetShowAll mw
+		    end
+	    end
+
+	structure ToplevelIt = Component.Create(signature S = TOPLEVEL_IT
+						structure F = MkToplevelIt)
+
+	val _ = Component.save("ToplevelIt."^Pickle.extension, ToplevelIt.component)
+	val _ = OS.Process.exit OS.Process.success
+   end
