@@ -19,7 +19,7 @@ sig
     val platform : platform
     val vm : string
 
-    val homeDir : string option
+    val homeDir : unit -> string
 
     val pathEscape : char option
     val pathSeparator : char
@@ -36,7 +36,10 @@ struct
 
     val vm = "smlnj"
 
-    val homeDir = OS.Process.getEnv "STOCKHOME"
+    fun homeDir () =
+	case OS.Process.getEnv "STOCKHOME" of
+	    SOME s => s
+	  | NONE => OS.FileSys.getDir ()
 
     val pathEscape =
 	case platform of
