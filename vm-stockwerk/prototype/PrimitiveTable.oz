@@ -75,14 +75,14 @@ define
 
    fun {RequestList Xs N}
       case {Deref Xs} of Transient=transient(_) then request(Transient)
-      [] tuple(!CONS _ Xr) then {RequestList Xr N + 1}
+      [] tag(!CONS _ Xr) then {RequestList Xr N + 1}
       [] !NIL then N
       end
    end
 
    fun {RequestListAndElements Xs}
       case {Deref Xs} of Transient=transient(_) then request(Transient)
-      [] tuple(!CONS X Xr) then
+      [] tag(!CONS X Xr) then
 	 case {Deref X} of Transient=transient(_) then request(Transient)
 	 else {RequestListAndElements Xr}
 	 end
@@ -91,7 +91,7 @@ define
    end
 
    proc {MyForAllInd Xs I F}
-      case {Deref Xs} of tuple(!CONS X Xr) then
+      case {Deref Xs} of tag(!CONS X Xr) then
 	 {F I X}
 	 {MyForAllInd Xr I + 1 F}
       [] !NIL then skip
@@ -99,7 +99,7 @@ define
    end
 
    fun {ListToOz Xs}
-      case {Deref Xs} of tuple(!CONS X Xr) then {Deref X}|{ListToOz Xr}
+      case {Deref Xs} of tag(!CONS X Xr) then {Deref X}|{ListToOz Xr}
       [] !NIL then nil
       end
    end
@@ -141,7 +141,7 @@ define
 
    fun {StringExplode S I N}
       if I == N then NIL
-      else tuple(CONS {ByteString.get S I} {StringExplode S I + 1 N})
+      else tag(CONS {ByteString.get S I} {StringExplode S I + 1 N})
       end
    end
 
@@ -199,7 +199,7 @@ define
 		       request(Transient arg(Xs) TaskStack)
 		    elseof N then A in
 		       A = {Array.new 0 N - 1 unit}
-		       {MyForAllInd Xs 1 proc {$ I X} A.I := X end}
+		       {MyForAllInd Xs 0 proc {$ I X} A.I := X end}
 		       continue(arg(A) TaskStack.2)
 		    end
 		 end#i_t
@@ -691,11 +691,11 @@ define
 		       exception(nil Table.'General.Div' TaskStack.2)
 		    end
 		 end#rr_t
-	      'Word.fromInt\'': fun {$ 31 X} X end#rr_v   %--** size
+	      'Word.fromInt\'': fun {$ _ X} X end#rr_v   %--** size
 	      'Word.fromWord\'':
-		 fun {$ 31 X} X end#rr_v   %--** size
+		 fun {$ _ X} X end#rr_v   %--** size
 	      'Word.fromWordX\'':
-		 fun {$ 31 X} X end#rr_v   %--** size
+		 fun {$ _ X} X end#rr_v   %--** size
 	      'Word.mod':
 		 fun {$ W1 W2 TaskStack}
 		    try
@@ -907,6 +907,23 @@ define
 		     case {Deref T.3} of Transient=transient(_) then
 			request(Transient args(T1 T2 Transient) TaskStack)
 		     elseof T3 then {F T1 T2 T3 TaskStack}
+		     end
+		  end
+	       end
+	    end
+	 [] rrr_v then
+	    case {Deconstruct Args} of Transient=transient(_) then
+	       request(Transient Args TaskStack)
+	    elseof T then
+	       case {Deref T.1} of Transient=transient(_) then
+		  request(Transient args(Transient T.2 T.3) TaskStack)
+	       elseof T1 then
+		  case {Deref T.2} of Transient=transient(_) then
+		     request(Transient args(T1 Transient T.3) TaskStack)
+		  elseof T2 then
+		     case {Deref T.3} of Transient=transient(_) then
+			request(Transient args(T1 T2 Transient) TaskStack)
+		     elseof T3 then continue(arg({F T1 T2 T3}) Rest)
 		     end
 		  end
 	       end
