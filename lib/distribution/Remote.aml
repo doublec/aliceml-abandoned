@@ -23,6 +23,11 @@ import structure UnsafeRemote      from "UnsafeRemote"
 
 import structure Debug from "x-alice:/lib/system/Debug"
 
+(* additional imports needed by the new remote implementation *)
+import structure Socket		   from "x-alice:/lib/system/Socket"
+import structure MkHashImpMap	   from "x-alice:/lib/data/MkHashImpMap"
+import structure Stream      	   from "x-alice:/lib/data/Stream"
+
 signature REMOTE_PORT =
     sig
 	type ticket = Url.t
@@ -38,117 +43,485 @@ signature REMOTE_PORT =
 	val call: ticket -> string -> string
     end
 
-structure HttpRemotePort :> REMOTE_PORT =
+(********* start of the binary remote related stuff **********)
+
+structure BinaryMessage :>
+sig
+    type tag	= int	
+    (** The type of a tag,
+	which identifies the type
+	of a message.
+        range: 0 - 255 *)
+	
+    type path	= int	(* range: 0 - 2^30 *)
+    
+
+    val tagNotFound:	    int
+    val tagInvalid:	    int
+    val tagInternalError:   int
+    val tagClose:	    int
+    val tagUser:	    int	    
+    (** If a user of this module needs any new
+	tags he should use only those in the
+	range tagUser - 255
+      *)
+
+    type message = path * tag * string
+
+    val read:	Socket.socket -> message
+    val write:	Socket.socket * message -> unit
+end
+=
+struct
+    type tag	= int	(* range: 0 - 255 *)
+    type path	= int
+
+    val tagNotFound	    = 0
+    val tagInvalid	    = 1
+    val tagInternalError    = 2
+    val tagClose	    = 3
+    val tagUser		    = 4
+
+    type message = path * tag * string
+
+    fun uintToStr i =	(* convert a integer into a 4 byte binary encoded string *)
+	let val part3 = i div (256 * 256 * 256) 
+	    val rest3 = i mod (256 * 256 * 256)
+	    val part2 = rest3 div (256 * 256)
+	    val rest2 = rest3 mod (256 * 256)
+	    val part1 = rest2 div 256
+	    val rest  = rest2 mod 256 
+	in
+	    implode [Char.chr part3, Char.chr part2, Char.chr part1, Char.chr rest]
+	end
+
+    fun strToUint (s, off) =	
+	(* the reverse of uintToStr. starts at offset [off] in 
+           the str [s] using exactly 4 characters (bytes).
+	 *)
+	let val part3 = Char.ord (String.sub (s, off)) 
+	    val part2 = Char.ord (String.sub (s, off + 1))
+	    val part1 = Char.ord (String.sub (s, off + 2))
+	    val rest  = Char.ord (String.sub (s, off + 3))
+	in
+	    part3 * 256 * 256 * 256 + part2 * 256 * 256 + part1* 256 + rest
+	end
+
+    fun read socket =
+	let
+	    val header	= Socket.inputN (socket, 9)
+	    val _	= if String.size header <> 9 then 
+			    raise Fail "readMessage:inputError" 
+			  else ()
+	    val path	= strToUint (header, 0)
+	    val tag	= Char.ord (String.sub (header, 4))
+	    val	len	= strToUint (header, 5)
+	    val str = if len = 0 then "" else Socket.inputN (socket, len)
+	in
+	    (path, tag, str)
+	end
+
+    fun write (socket, (path, tag, content)) =
+	let
+	    val len	= String.size content
+	    val message	= String.concat [
+		uintToStr path, 
+		String.str (Char.chr tag),
+		uintToStr len,
+		content
+	    ]
+	in
+	    (* Note that creating the message in memory using
+	       String.concat and using only a single Socket.output
+	       resulted in a big speed up
+	     *)
+	    Socket.output (socket, message)
+	end
+end
+
+
+structure BinaryServer :> 
+sig
+    (** BinaryServer is mostly a straightforward 
+	adaption of HttpServer (read copy & paste )
+      *)
+    type message = BinaryMessage.message 
+
+    type handler = message -> message
+
+    val start: int option -> int   
+
+    val register:   int * handler -> unit
+end
+=
+struct
+    type message    = BinaryMessage.message
+    type handler    = message -> message
+
+
+    val logOut: TextIO.outstream option ref = ref NONE
+
+    fun trace (s:string) = 
+	case !logOut of
+	    SOME q => TextIO.output (q, s)
+	  | NONE => ()
+
+    val idleTime = ref (Time.fromSeconds 30)
+
+    val myPort: int option ref = ref NONE
+
+    fun notFoundHandler (request: message) = (#1 request, BinaryMessage.tagNotFound, "")
+
+    structure IntMap = MkHashImpMap(Int)
+
+    val handlerMap: handler IntMap.t = IntMap.map ()
+
+    fun findHandler i =
+	case IntMap.lookup (handlerMap, i) of
+	    SOME handler => handler
+	|   NONE => (trace ("couldn't find handler for: " ^ Int.toString i ^ "\n"); notFoundHandler)
+
+    (*--**  Currently have to pass token stream as reference
+	    in order to work around infamous thread space leak
+	    (particularly under Mozart). *)
+    fun closeIdle (tokens, socket) =
+	(Future.awaitEither (Future.alarm (!idleTime), !tokens);
+	 if Future.isDetermined (!tokens) then
+	     case !tokens of
+		 ()::tokens' => (tokens := tokens';
+				 closeIdle (tokens, socket))
+	       | nil =>
+		    (trace "explicitly closing connection\n";
+		     Socket.close socket)
+	 else
+	     (trace "closing idle connection\n";
+	      Socket.close socket))
+   
+    fun handleExchange (socket, host, port, stream) =
+	let
+	    val request = BinaryMessage.read socket
+	    val p = Promise.promise ()
+	    val _ = Stream.send (stream, Promise.future p)
+	    val handler = findHandler (#1 request)
+	    val response = handler request
+		handle _ => (#1 request, BinaryMessage.tagInternalError, "")
+	in
+	    BinaryMessage.write (socket, response);
+	    Promise.fulfill (p, ());
+	    #2 request <> BinaryMessage.tagClose
+	end
+
+    fun handleConnection' (socket, host, port, stream) =
+	let
+	    val _ = trace ("connection from " ^ host ^ ":" ^
+			   Int.toString port ^ "\n")
+	in
+	    if handleExchange (socket, host, port, stream) then
+		handleConnection' (socket, host, port, stream)
+	    else
+		Stream.close stream
+	end
+
+    fun handleConnection (socket, host, port) =
+	let
+	    val (stream, tokens) = Stream.stream ()
+	in
+	    spawn handleConnection' (socket, host, port, stream);
+	    spawn closeIdle (ref tokens, socket)
+	end
+
+    fun start portOpt =
+	let
+	    val p = Promise.promise ()
+	in
+	    case Ref.exchange (myPort, Promise.future p) of
+		portOpt as SOME port =>
+		    (Promise.fulfill (p, portOpt); port)
+	      | NONE =>
+		    let
+			val (_, serverPort) =
+			    Socket.server (portOpt, handleConnection)
+		    in
+			Promise.fulfill (p, SOME serverPort);
+			serverPort
+		    end
+	end
+
+    fun register (id, handler) = IntMap.insert (handlerMap, id, handler)
+end
+
+structure BinaryClient :>
+sig
+    (** BinaryClient is mostly a straightforward adaption
+	of HttpClient (read copy & paste) 
+      *)
+    exception Authority 
+
+    val post: Url.t * BinaryMessage.message -> BinaryMessage.message
+end
+=
+struct
+    exception Authority
+
+    structure Connection =
     struct
-	type ticket = Url.t
+	structure Map =
+	    MkHashImpMap(type t = string * int
+			 val equal = op=
+			 fun hash (host, port) =
+			     String.hash host + port)
 
-	exception Ticket
-	exception Sited = Component.Sited
-	exception Protocol of int * string
+	val map: Socket.t list Map.t = Map.map ()
+	val lock = Lock.lock ()
 
-	val pickleContentType = "application/x-alice-pickle"
+	fun new' (host, port) =
+	    case Map.lookup (map, (host, port)) of
+		SOME [socket] =>
+		    (Map.removeExistent (map, (host, port)); socket)
+	      | SOME (socket::rest) =>
+		    (Map.insert (map, (host, port), rest); socket)
+	      | (NONE | SOME nil) => Socket.client (host, port)
 
-	val rootUrl =
-	    lazy (Url.fromString
-		      ("http://" ^ (UnsafeRemote.getLocalIP ()) ^ ":" ^
-		       Int.toString (HttpServer.start NONE) ^ "/"))
+	val new = Lock.sync lock new'
 
-	val counter = ref 0
-
-	fun register handler =
+	fun idle' (host, port, socket) =
 	    let
-		val p = Promise.promise ()
-		val n = Ref.exchange (counter, Promise.future p)
-		val uri = Url.setPath (Url.empty, ["export", Int.toString n])
+		val sockets =
+		    case Map.lookup (map, (host, port)) of
+			SOME sockets => sockets
+		      | NONE => nil
 	    in
-		Promise.fulfill (p, n + 1);
-		HttpServer.register (uri, handler);
-		Url.resolve rootUrl uri
+(*--** spawn thread to close this connection after some idle time *)
+		Map.insert (map, (host, port), socket::sockets)
 	    end
 
-	(* Error Handling *)
-
-	exception Response of Http.response
-
-	val ok                   = 200
-	val badRequest           = 400
-	val methodNotAllowed     = 405
-	val unsupportedMediaType = 415
-
-	fun errorResponse statusCode =
-	    Http.makeResponse
-		{statusCode,
-		 contentType = "text/plain",
-		 body = Http.reasonPhrase statusCode}
-
-	fun checkMethod (request: Http.request, method) =
-	    if #method request <> method then
-		let
-		    val response = errorResponse methodNotAllowed
-		in
-		    Http.StringMap.insert (#headers response, "Allow", method);
-		    raise Response response
-		end
-	    else ()
-
-	fun checkContentType (request: Http.request, contentType) =
-	    case Http.StringMap.lookup (#headers request, "content-type") of
-		SOME s where (s = contentType) => ()
-	      | SOME _ => raise Response (errorResponse unsupportedMediaType)
-	      | NONE => raise Response (errorResponse badRequest)
-
-	(* Provided Functionality *)
-
-	fun export packedValue =
-	    let
-		fun handler request =
-		    (checkMethod (request, "GET");
-		     Http.makeResponse
-			 {statusCode = ok,
-			  contentType = pickleContentType,
-			  body = packedValue})
-		    handle Response response => response
-	    in
-		register handler
-	    end
-
-	fun download url =
-	    let
-		val response =
-		    HttpClient.get url
-		    handle HttpClient.Authority => raise Ticket
-	    in
-		#body response
-	    end
-
-	fun exportFn f =
-	    let
-		fun handler request =
-		    (checkMethod (request, "POST");
-		     checkContentType (request, pickleContentType);
-		     Http.makeResponse
-			 {statusCode = ok,
-			  contentType = pickleContentType,
-			  body = f (#body request)})
-		    handle Response response => response
-	    in
-		register handler
-	    end
-
-	fun call url packedValue =
-	    let
-		val response =
-		    HttpClient.post (url, {contentType = pickleContentType,
-					   body = packedValue})
-		    handle HttpClient.Authority => raise Ticket
-	    in
-		(*--** check "content-type" header *)
-		case #statusCode response of
-		    200 => #body response
-		  | statusCode =>
-			raise Protocol (statusCode, #reasonPhrase response)
-	    end
+	val idle = Lock.sync lock idle'
     end
+
+    fun parseAuthority authority =
+	case CharVector.findi (fn (_, c) => c = #":") authority of
+	    SOME (i, _) =>
+		let
+		    val host = String.substring (authority, 0, i)
+		    val port = String.extract (authority, i + 1, NONE)
+		in
+		    (host,
+		     case Int.fromString port of
+			 SOME port => port
+		       | NONE => raise Authority)
+		end
+	  | NONE => (* (authority, 80) *) raise Authority
+
+
+    fun request (url, (path, tag, text)) =
+	let
+	    val authority =
+		case Url.getAuthority url of
+		    SOME authority => authority
+		  | NONE => raise Authority
+	    val (host, port) = parseAuthority authority
+	    val path	    = Option.valOf (Int.fromString ( hd (Url.getPath url)))
+	in
+	    request' (host, port, (path, tag, text))
+	end
+    and request' (host, port, request) =
+	let
+	    val socket = Connection.new (host, port)
+	    val closed =
+		(BinaryMessage.write (socket, request); false)
+		handle IO.Io {...} => true   
+	in
+	    if closed then request' (host, port, request)
+	    else
+		BinaryMessage.read socket
+		before Connection.idle (host, port, socket)
+	end
+
+    fun post (url, msg) = request (url, msg)
+end
+
+
+(** I needed quite some time to digest what exactly happens / should
+    happend when certain functions of the Remote structure are called.  
+    So let me give you a simple overview here:
+
+    Let us have a look at this short piece of code 
+    <<
+        structure   S = (val f = Remote.proxy (fn x => x * x))
+    >>
+    
+        Remote.proxy g:
+            calls RemotePort.exportFn on a newly
+            created function f', which acts as a
+            wrapper around g of type
+        
+        f': string -> string 
+            Using UnsafeRemote.unpackValue / UnsafeRemote.packValue
+            to convert the returned / applied value to a string.
+            
+        RemotePort.exportFn f'
+            Registers a new handler at the underlying BinaryServer
+            (therefore creating a new ticket).  Messages send to this
+            handler (i.e BinaryMessages transmitted on the socket this
+            Server is listening on, with path = path of the new ticket)
+            must be of tag tagCall and f' is applied on their content.  
+            The resulting value is returned as the content of a new 
+            message of tag tagReturn by the handler. And therefore 
+            transmitted on the socket.  
+
+            Another procedure is created by RemotePort.exportFn:
+                fn x => dynamicCall (ticket, x)     (* let's call it g *)   
+            - ticket is the newly created ticket mentioned above
+            - dynamicCall is a special primitive ("Remote.call")
+              which calls the procedure ProxyCallback registered
+              using UnsafeRemote.SetCallback.  It's only needed
+              so that there are NO sited values in g because g is
+              returned by RemotePort.exportFn (and therefore by
+              Remote.proxy) and will be pickled later by 
+              Remote.offer.
+ 
+   Now let's assume the structure S is packaged and offered
+   <<
+        val ticket = Remote.offer (pack S :> (val f = int -> int))
+   >>
+
+        Remote.offer p
+            calls RemotePort.export (UnsafeRemote.packValue p) and
+            returns the returned url (the ticket) as a string
+            
+        RemotePort.export v 
+            Registers a new handler at the underlying BinaryServer
+            (again creating a new ticket, which is returned).  
+            Messages send to this handler must be of tag tagImport 
+            (empty content).  The handler then return v as the
+            content of a new message of tag tagExport.
+    
+   Now let's assume this ticket is taken (possibly by another process):
+   <<
+        val p   = Remote.take ticket
+   >>
+
+        Remote.take ticket
+            calls RemotePort.download ticket and returns the resulting
+            value after unpacking it using UnsafeRemote.unpackValue.
+        
+        RemotePort.download ticket
+            sends a empty message with tag tagImport to the server denoted
+            by the ticket.  It then returns the content of the received 
+            answer (with tag tagExport).  See the explanation of
+            RemotePort.export
+
+   And after unpack f being called:
+   <<
+        structure S = unpack p : (val f : int -> int)
+        val res     = S.f 3
+   >>
+
+        As you might probably remember S.f is actually the procedure g
+        returned by Remote (quite possibly in another process or even
+        on a different machine).  If you do not remember you are strongly
+        encouraged to read the section on RemotePort.exportFn again ;-)
+
+        So we know that S.f 3 results in a call to ProxyCallback (ticket, 3)
+        where ticket is the one created by RemotePort.exportFn and transmitted 
+        in the closure of g.  
+
+    ProxyCallback (ticket, v)
+        converts v (which is in this example 3) to a string s (again using 
+        UnsafeRemote.packValue).  And calls RemotePort.call (ticket, s).
+        
+    RemotePort.call (ticket, s) now creates a Message of tag tagCall
+        and content s and sends that to the server denoted by ticket. The
+        content of the returned Message of tag tagReturn is returned.
+
+        Converted by ProxyCallback back into a value (using 
+        UnsafeRemote.unpackValue) and returned.
+
+    Well that is it.  More or less.  I skipped the issue of functions 
+    which raise exceptions completely.  It boils down to using a variant
+    type (RETURN v | RAISE e).  I also skipped the issue of error detection
+    and especially error handling.  Which is also not yet completely
+    (read: not at all) implemented yet.  Even worse I am not really sure
+    what we should do in these cases and what a client of the library 
+    should be able to influence (like timeout handling and so on...).
+*)
+        
+ 
+structure BinaryRemotePort :> REMOTE_PORT =
+struct
+    type ticket = Url.t
+
+    exception Ticket
+    exception Sited	= Component.Sited
+    exception Protocol of int * string
+
+    val rootUrl =
+	lazy (Url.fromString
+		("http://" ^ (UnsafeRemote.getLocalIP ()) ^ ":" ^ 
+			Int.toString (BinaryServer.start NONE) ^ "/"))
+
+    val counter = ref 0
+
+    fun register handler =
+	let
+	    val p   = Promise.promise ()
+	    val n   = Ref.exchange (counter, Promise.future p)
+	    val uri = Url.setPath (Url.empty, [Int.toString n])
+	in
+	    Promise.fulfill (p, n + 1);
+	    BinaryServer.register (n, handler);
+	    Url.resolve rootUrl uri
+	end
+
+   
+    val tagImport   = BinaryMessage.tagUser 
+    val tagExport   = tagImport + 1
+    
+    val tagCall	    = tagExport + 1
+    val tagReturn   = tagCall	+ 1
+
+   
+    fun checkTag (expected, actual) = if expected <> actual then raise Fail "checkTag" else ()
+
+    fun export packedValue =
+	let 
+	    fun handler (path, tag, msg) =
+		(checkTag (tagImport, tag);
+		 (path, tagExport, packedValue))
+	in
+	    register handler
+	end
+
+    
+    fun download url =
+	let
+	    val answer =
+		BinaryClient.post (url, (0, tagImport, ""))
+	in
+	    checkTag (tagExport, #2 answer);
+	    #3 answer
+	end
+
+    fun exportFn f =
+	let
+	    fun handler (path, tag, msg) =
+		(checkTag (tagCall, tag);
+		 (path, tagReturn, f msg))
+	in
+	    register handler
+	end
+
+    fun call url value =
+	let
+	    val (path, tag, res) = BinaryClient.post (url, (0, tagCall, value))
+	in
+	    checkTag (tagReturn, tag);
+	    res
+	end
+end
+
+(********* end of the binary remote related stuff **********)
+
 
 functor MkRemote(RemotePort: REMOTE_PORT) :> REMOTE =
     struct
@@ -173,7 +546,7 @@ functor MkRemote(RemotePort: REMOTE_PORT) :> REMOTE =
 
 	val _ = UnsafeRemote.setCallback proxyCallback
 
-	__primitive val dynamicCall : HttpRemotePort.ticket * 'a -> 'b =
+	__primitive val dynamicCall : BinaryRemotePort.ticket * 'a -> 'b =
 	    "Remote.dynamicCall"
 
 	fun proxy f =
@@ -259,4 +632,4 @@ functor MkRemote(RemotePort: REMOTE_PORT) :> REMOTE =
 	    end
     end
 
-structure Remote = MkRemote(HttpRemotePort)
+structure Remote = MkRemote(BinaryRemotePort)
