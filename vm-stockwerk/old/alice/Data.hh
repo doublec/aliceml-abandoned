@@ -217,7 +217,7 @@ public:
 
 class Real: private Chunk {
 public:
-  using Block::ToWord;
+  using Chunk::ToWord;
 
   static Real *New(double value) {
     Chunk *chunk = Store::AllocChunk(sizeof(double));
@@ -246,7 +246,8 @@ class String: private Chunk {
 public:
   static const u_int maxSize = MAX_SIZE(char);
 
-  using Block::ToWord;
+  using Chunk::ToWord;
+  using Chunk::GetSize;
 
   static String *New(u_int len) {
     return static_cast<String *>(Store::AllocChunk(len));
@@ -268,9 +269,6 @@ public:
     return static_cast<String *>(chunk);
   }
 
-  u_int GetSize() {
-    return Chunk::GetSize();
-  }
   char *GetValue() {
     return GetBase();
   }
@@ -438,12 +436,10 @@ public:
 };
 
 class WideString: private Chunk {
-private:
-  static const u_int LEN_POS = 1;
 public:
   static const u_int maxSize = MAX_SIZE(wchar_t);
 
-  using Block::ToWord;
+  using Chunk::ToWord;
 
   static WideString *New(wchar_t *str, u_int len) {
     u_int nchars = len * sizeof(wchar_t);
