@@ -19,7 +19,6 @@
 #pragma interface "alice/BootLinker.hh"
 #endif
 
-#include "Seam.hh"
 #include "alice/Base.hh"
 
 class String;

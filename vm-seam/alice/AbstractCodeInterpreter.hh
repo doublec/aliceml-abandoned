@@ -19,7 +19,6 @@
 #pragma interface "alice/AbstractCodeInterpreter.hh"
 #endif
 
-#include "Seam.hh"
 #include "alice/Base.hh"
 
 class AliceDll AbstractCodeInterpreter: public Interpreter {

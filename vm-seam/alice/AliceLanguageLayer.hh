@@ -17,7 +17,6 @@
 #pragma interface "alice/AliceLanguageLayer.hh"
 #endif
 
-#include "Seam.hh"
 #include "alice/Base.hh"
 
 class TagVal;
