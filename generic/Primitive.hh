@@ -21,23 +21,11 @@
 
 #include "generic/Interpreter.hh"
 
-class PrimitiveArity : public Interpreter {
-protected:
-  u_int arity;
-public:
-  PrimitiveArity(u_int _arity) : arity(_arity) {}
-  u_int GetArity() {
-    return arity;
-  }
-};
-
 class Primitive {
 public:
-  typedef Interpreter::Result (*function)();
-
-  static word MakeFunction(const char *name, function function,
+  static word MakeFunction(const char *name, Interpreter::function function,
 			   u_int arity, bool sited = false);
-  static word MakeClosure(const char *name, function function,
+  static word MakeClosure(const char *name, Interpreter::function function,
 			  u_int arity, bool sited = false);
 
   // Push a new primitive frame and call primitive directly
