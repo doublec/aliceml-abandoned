@@ -36,7 +36,7 @@
          a tool for dynamically inspecting Alice values
     <LI> <A href="usage.php3#stot"><I>interactive development</I></A>:
 	 an interpreter-like interactive toplevel
-    <LI> <A href="usage.php3#stol"><I>static linking</I></A>:
+    <LI> <A href="usage.php3#linker"><I>static linking</I></A>:
 	 type-safe bundling of components
     <LI> <A href="gtk.php3"><I>Gtk+</I></A>:
 	 a binding for the Gnome toolkit GUI library
