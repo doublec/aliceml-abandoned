@@ -4,8 +4,8 @@
 //   Leif Kornstaedt <kornstae@ps.uni-sb.de>
 //
 // Copyright:
-//   Thorsten Brunklaus, 2000
-//   Leif Kornstaedt, 2000
+//   Thorsten Brunklaus, 2000-2002
+//   Leif Kornstaedt, 2000-2002
 //
 // Last Change:
 //   $Date$ by $Author$
@@ -13,7 +13,6 @@
 //
 
 #include "emulator/Authoring.hh"
-#include <cstdio>
 
  // NON-ABSTRACT TASK STACK USE
 static int Compare(word x0, word x1) {
@@ -87,9 +86,6 @@ DEFINE2(opeq) {
     return Interpreter::REQUEST;
   }
   else {
-    fprintf(stderr, "§§§§§§§§§§§§§§§§§§§§\n");
-    TaskStack::Dump(x0);
-    TaskStack::Dump(x1);
     RETURN_BOOL(result);
   }
 } END
