@@ -7,27 +7,38 @@
 class HeaderOp : private HeaderDef {
 public:
   // Header Creation and Acess
-  static void EncodeHeader(Tuple *t, t_label l, t_size s, u_int g) {
-    ((u_int *) t)[0] =  0x00 | (((u_int) s) << SIZE_SHIFT) |
-      (((u_int) l) << TAG_SHIFT) | (g << GEN_SHIFT);
+  static void EncodeHeader(Block *t, t_label l, u_int s, u_int g) {
+    Assert(t != NULL);
+    ((u_int *) t)[0] =  0x00 | (s << SIZE_SHIFT) | (((u_int) l) << TAG_SHIFT) | (g << GEN_SHIFT);
   }
-  static u_int GetHeader(Tuple *p) {
-    return *((u_int *) p);
+  static u_int GetHeader(Block *p) {
+    Assert(p != NULL); return *((u_int *) p);
   }
   // Label Access
   static void EncodeLabel(Transient *p, t_label l) {
+    Assert(p != NULL);
     ((u_int *) p)[0] = ((((u_int *) p)[0] & ~TAG_MASK) | (((u_int) l) << TAG_SHIFT));
   }
-  static t_label DecodeLabel(Tuple *p) {
+  static t_label DecodeLabel(Block *p) {
+    Assert(p != NULL);
     return (t_label) ((((u_int *) p)[0] & TAG_MASK) >> TAG_SHIFT);
   }
   // Size Access
-  static t_size BlankDecodeSize(Tuple *p) {
-    return (t_size) ((((u_int *) p)[0] & SIZE_MASK) >> SIZE_SHIFT);
+  static u_int BlankDecodeSize(Block *p) {
+    Assert (p != NULL);
+    return (u_int) ((((u_int *) p)[0] & SIZE_MASK) >> SIZE_SHIFT);
   }
-  static t_size DecodeSize(Tuple *p) {
-    t_size s = BlankDecodeSize(p);
-    return (t_size) ((s < MAX_HBSIZE) ? s : (*((u_int *) ((char *) p - 4)) >> 1));
+  static u_int DecodeSize(Block *p) {
+    u_int s = BlankDecodeSize(p);
+    return (u_int) ((s < MAX_HBSIZE) ? s : (*((u_int *) ((char *) p - 4)) >> 1));
+  }
+  static void EncodeSize(Block *p, u_int s) {
+    if (HeaderOp::BlankDecodeSize(p) == HeaderDef::MAX_HBSIZE) {
+      *((u_int *) ((char *) p - 4)) = s;
+    }
+    else {
+      *((u_int *) p) = ((((u_int *) p)[0] & ~SIZE_MASK) | (s << SIZE_SHIFT));
+    }
   }
 };
 

@@ -6,29 +6,30 @@
 class PointerOp {
 public:
   // Core Tag Operations
-  static word EncodeTag(Tuple *p, u_int tag) {
+  static word EncodeTag(Block *p, u_int tag) {
     return (word) ((u_int) p | tag);
   }
   static u_int DecodeTag(word p) {
     return ((u_int) p & (u_int) TAGMASK);
   }
-  static Tuple *RemoveTag(word p) {
-    return (Tuple *) ((u_int) p & ~((u_int) TAGMASK));
+  static Block *RemoveTag(word p) {
+    return (Block *) ((u_int) p & ~((u_int) TAGMASK));
   }
-  // Tuple<->Word Conversion
-  static word EncodeTuple(Tuple *p) {
+  // Block<->Word Conversion
+  static word EncodeBlock(Block *p) {
     return (word) p;
   }
-  static Tuple *DecodeTuple(word p) {
-    return (Tuple *) ((((u_int) p & (u_int) TAGMASK) == 0) ? p : INVALID_POINTER);
+  static Block *DecodeBlock(word p) {
+    return (Block *) ((((u_int) p & (u_int) TAGMASK) == (u_int) BLKTAG) ? p : INVALID_POINTER);
   }
   // Transient<->Word Conversion
   static word EncodeTransient(Transient *p) {
-    Assert(((u_int) p & (u_int) TAGMASK) == 0);
+    Assert(((u_int) p & (u_int) TAGMASK) == (u_int) BLKTAG);
     return (word) ((u_int) p | (u_int) TRTAG);
   }
   static Transient *DecodeTransient(word p) {
-    return (Transient *) ((((u_int) p & (u_int) TAGMASK) == 2) ? ((char *) p-2) : INVALID_POINTER);
+    return (Transient *) ((((u_int) p & (u_int) TAGMASK) == (u_int) TRTAG) ?
+			  ((char *) p - (u_int) TRTAG) : INVALID_POINTER);
   }
   // int Test
   static int IsInt(word v) {
@@ -41,19 +42,19 @@ public:
     return (word) ((((u_int) v) << 1) | (u_int) INTTAG);
   }
   static int DecodeInt(word v) {
-    Assert((((u_int) v) & INTMASK) == 1);
+    Assert((((u_int) v) & INTMASK) == INTTAG);
     return (int) ((u_int) v >> 1);
   }
   // Deref Function
   static word Deref(word v) {
     while (true) {
-      u_int vi  = (u_int) v;
+      u_int vi = (u_int) v;
  
       Assert(v != NULL);
-      if ((vi & TAGMASK) == 2) {
-	vi -= 2;
-	if (HeaderOp::DecodeLabel((Tuple *) vi) == REF) {
-	  v = (word) ((u_int *) vi)[1];
+      if ((vi & TAGMASK) == (u_int) TRTAG) {
+	vi -= (u_int) TRTAG;
+	if (HeaderOp::DecodeLabel((Block *) vi) == REF) {
+	  v = ((word *) vi)[1];
 	}
 	else {
 	  return v;
