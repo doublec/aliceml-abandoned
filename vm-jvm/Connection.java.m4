@@ -80,9 +80,13 @@ final public class Connection {
 	    }
 	    java.lang.String ti = ((STRING) val).value;
 	    // System.out.println("ti = "+ti);
-	    java.lang.String ip = ti.substring(0,ti.indexOf('\\'));
+	    int indexofbackslash = ti.indexOf('\\');
+	    if (indexofbackslash < 0) {
+		_error("ticket invalid",val);
+	    }
+	    java.lang.String ip = ti.substring(0,indexofbackslash);
 	    // System.out.println("ip = "+ip);
-	    java.lang.String ticket = ti.substring(ti.indexOf('\\')+1);
+	    java.lang.String ticket = ti.substring(indexofbackslash+1);
 	    // System.out.println("ticket = "+ticket);
 	    Export exp = null;
 	    try {
