@@ -134,6 +134,7 @@ DEFINE1(UnsafeComponent_load) {
 DEFINE1(UnsafeComponent_linkNative) {
   DECLARE_STRING(filename, x0);
 #if defined(__MINGW32__) || defined(_MSC_VER)
+  //--** this can produce the error message "... is not a valid Windows image."
   HMODULE hModule = LoadLibrary(filename->ExportC());
   if (hModule == NULL) RAISE(MakeNativeError());
   word (*InitComponent)() =
