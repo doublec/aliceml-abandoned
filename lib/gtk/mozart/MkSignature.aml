@@ -12,7 +12,6 @@
  *)
 
 import structure GtkTreeTypes  from "GtkTreeTypes"
-import structure MkTypeManager from "MkTypeManager"
 import structure Util          from "Util"
 import signature TYPE_MANAGER  from "TYPE_MANAGER-sig"
 import signature SIGNATURE     from "SIGNATURE-sig"
