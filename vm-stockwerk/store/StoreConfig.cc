@@ -74,29 +74,23 @@ static void CreateHeader(FILE *f, int width, int tag, int size, int generations,
 }
 
 static void CreateLabel(FILE *f, int size) {
-  u_int MIN_LSIZE = 0;
-  u_int STACK     = (size - 6);
-  u_int MAX_LSIZE = (size - 6);
-  u_int CHUNK     = (size - 5);
-  u_int HOLE      = (size - 4);
-  u_int FUTURE    = (size - 3);
-  u_int REF       = (size- 2);
-  u_int CANCELLED = (size - 1);
-  u_int BYNEED    = size;
-
   fprintf(f, "typedef enum {\n");
 
-  fprintf(f, "  MIN_LSIZE = 0x%x,\n", MIN_LSIZE);
-  fprintf(f, "  STACK     = 0x%x,\n", STACK);
-  fprintf(f, "  MAX_LSIZE = 0x%x,\n", MAX_LSIZE);
-  fprintf(f, "  CHUNK     = 0x%x,\n", CHUNK);
-  fprintf(f, "  MIN_TRANSIENT = 0x%x,\n", HOLE);
-  fprintf(f, "  HOLE      = 0x%x,\n", HOLE);
-  fprintf(f, "  FUTURE    = 0x%x,\n", FUTURE);
-  fprintf(f, "  REF       = 0x%x,\n", REF);
-  fprintf(f, "  CANCELLED = 0x%x,\n", CANCELLED);
-  fprintf(f, "  BYNEED    = 0x%x,\n", BYNEED);
-  fprintf(f, "  MAX_TRANSIENT = 0x%x\n", BYNEED);
+  fprintf(f, "  MIN_DATALABELSIZE   = 0x%x,\n", 0);
+  fprintf(f, "  MAX_DATALABELSIZE   = 0x%x,\n", (size - 135));
+  fprintf(f, "  MIN_HELPERLABELSIZE = 0x%x,\n", (size - 134)); // 128 Helper Labels Reserved
+  fprintf(f, "  MAX_HELPERLABELSIZE = 0x%x,\n", (size - 7));
+  fprintf(f, "  MIN_STORELABELSIZE  = 0x%x,\n", (size - 6));
+  fprintf(f, "  STACK               = 0x%x,\n", (size - 6));
+  fprintf(f, "  CHUNK               = 0x%x,\n", (size - 5));
+  fprintf(f, "  HOLE                = 0x%x,\n", (size - 4));
+  fprintf(f, "  MIN_TRANSIENT       = 0x%x,\n", (size - 4)); 
+  fprintf(f, "  FUTURE              = 0x%x,\n", (size - 3));
+  fprintf(f, "  REF                 = 0x%x,\n", (size - 2));
+  fprintf(f, "  CANCELLED           = 0x%x,\n", (size - 1));
+  fprintf(f, "  BYNEED              = 0x%x,\n", size);
+  fprintf(f, "  MAX_TRANSIENT       = 0x%x,\n", size);
+  fprintf(f, "  MAX_STORELABELSIZE  = 0x%x\n", size);
 
   fprintf(f, "} BlockLabel;\n\n");
 }

@@ -39,6 +39,12 @@ public:
   static u_int DecodeGen(Block *p) {
     return ((((u_int *) p)[0] & GEN_MASK) >> GEN_SHIFT);
   }
+  static void AdjustSmallSize(Block *p, u_int size) {
+    *((u_int *) p) = (*((u_int *) p) & ~SIZE_MASK) | (size << SIZE_SHIFT);
+  }
+  static void AdjustBigSize(Block *p, u_int size) {
+    *((u_int *) ((word *) p - 1)) = ((size << 1) | (u_int) INTTAG);
+  }
 };
 
 #endif

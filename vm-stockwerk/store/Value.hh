@@ -39,7 +39,7 @@ public:
   word GetArg(u_int f) {
     Assert(f > INVALID_FIELD);
     Assert(f <= GetSize());
-    return (word) ar[f];
+    return ar[f];
   }
   void InitArg(u_int f, word v) {
     Assert(f > INVALID_FIELD);
@@ -52,22 +52,12 @@ public:
     if (!PointerOp::IsInt(v)) {
       u_int valgen = HeaderOp::DecodeGeneration(PointerOp::RemoveTag(v));
       u_int mygen  = HeaderOp::DecodeGeneration(this);
-
+      
       if ((valgen < mygen) && (!HeaderOp::HasIntgenMark(this))) {
-	  Store::AddToIntgenSet(this);
+	Store::AddToIntgenSet(this);
       }
     }
     ar[f] = v;
-  }
-  Block *Enlarge() {
-    u_int size    = GetSize();
-    u_int newsize = ((size * 3) >> 1);
-    Block *b   = Store::AllocBlock(GetLabel(), newsize);
-
-    std::memcpy(b + 1, ar + 1, size * sizeof(word));
-    std::memset(b + (size + 1), 1, (newsize - size) * sizeof(word));
-
-    return b;
   }
   word ToWord() {
     return PointerOp::EncodeBlock(this);
@@ -101,116 +91,119 @@ public:
 
 class Stack : private Block {
 private:
-  Stack *Enlarge() {
-    u_int size = Block::GetSize();
-    Stack *s   = (Stack *) Store::AllocBlock(STACK, (size << 1));
-    
-    std::memcpy(s + 1, GetBase(), size * sizeof(word));
-    std::memset(s + (size + 1), 1, size * sizeof(word));
+  static const u_int TOP_POS = 1;
+protected:
+  Stack *Enlarge(u_int oldsize, u_int newsize) {
+    Block *p = Store::AllocStack(newsize);
 
-    return s;
+    std::memcpy(p->GetBase(), GetBase(), oldsize * sizeof(word));
+    return (Stack *) p;
   }
   void ConvertToReference(Stack *s) {
     HeaderOp::EncodeLabel((Transient *) this, REF);
-    InitArg(1, s->ToWord());
+    InitArg(TOP_POS, s->ToWord());
   }
 public:
-  using Block::GetLabel;
   using Block::ToWord;
 
-  // to be determined
-  void InitStack() {
-    u_int size = GetSize();
-
-    InitArg(1, Store::IntToWord(2));
-    std::memset(GetBase() + 1, 1,(size - 2) * sizeof(word));
+  u_int GetSize() {
+    return (u_int) (Store::WordToInt(GetArg(TOP_POS)) - 1);
   }
   void AllocArgFrame(u_int fsize) {
-    u_int top = (u_int) Store::WordToInt(GetArg(1));
-    u_int max = GetSize();
+    u_int top  = (u_int) Store::WordToInt(GetArg(TOP_POS));
+    u_int max  = Block::GetSize();
+    u_int size = (top + fsize);
 
-    InitArg(1, Store::IntToWord(top + fsize));
-    if ((top + fsize) > max) {
-      ConvertToReference(Stack::Enlarge());
+    InitArg(TOP_POS, Store::IntToWord(size));
+    if (size > max) {
+      ConvertToReference(Stack::Enlarge(max, (size << 1)));
     }
   }
   void ClearArgFrame(u_int fsize) {
-    int top    = Store::WordToInt(GetArg(1));
-    int newtop = top - fsize;
+    int top    = Store::WordToInt(GetArg(TOP_POS));
+    int newtop = (top - fsize);
 
-    InitArg(1, Store::IntToWord(newtop));
+    InitArg(TOP_POS, Store::IntToWord(newtop));
     InitArg((newtop - 1), GetArg(top - 1));
   }
   void AllocFrame(u_int fsize) {
-    u_int top = (u_int) Store::WordToInt(GetArg(1));
-    u_int max = Block::GetSize();
-    
-    if ((top + fsize) > max) {
-      ConvertToReference(Stack::Enlarge());
+    u_int top  = (u_int) Store::WordToInt(GetArg(TOP_POS));
+    u_int max  = Block::GetSize();
+    u_int size = (top + fsize);
+
+    if (size > max) {
+      ConvertToReference(Stack::Enlarge(max, (size << 1)));
     }
   }
   void ClearFrame(u_int fsize) {
-    int top    = Store::WordToInt(GetArg(1));
-    int newtop = top - fsize;
+    int top    = Store::WordToInt(GetArg(TOP_POS));
+    int newtop = (top - fsize);
 
-    InitArg(1, Store::IntToWord(newtop));
+    InitArg(TOP_POS, Store::IntToWord(newtop));
   }
   void Push(word v) {
-    int top = Store::WordToInt(GetArg(1));
+    int top = Store::WordToInt(GetArg(TOP_POS));
     
-    Assert(top <= (int) GetSize());
-    InitArg(1, Store::IntToWord(top + 1));
+    Assert(top <= (int) Block::GetSize());
+    InitArg(TOP_POS, Store::IntToWord(top + 1));
     ReplaceArg((u_int) top, v);
   }
   void SlowPush(word v) {
-    u_int top = (u_int) Store::WordToInt(GetArg(1));
-    u_int max = GetSize();
-    
-    InitArg(1, Store::IntToWord((int) (top + 1)));
+    u_int top = (u_int) Store::WordToInt(GetArg(TOP_POS));
+    u_int max = Block::GetSize();
+
+    InitArg(TOP_POS, Store::IntToWord((int) (top + 1)));
     if (top <= max) {
       ReplaceArg(top, v);
     }
     else {
-      Stack *s = Stack::Enlarge();
+      Stack *s = Stack::Enlarge(max, (max << 1));
 
       s->ReplaceArg(top, v);
       ConvertToReference(s);
     }
   }
   word Top() {
-    return GetArg((u_int) Store::WordToInt(GetArg(1)) - 1);
+    return GetArg((u_int) Store::WordToInt(GetArg(TOP_POS)) - 1);
   }
   word GetFrameArg(u_int f) {
-    return GetArg(((u_int) Store::WordToInt(GetArg(1)) - 1 - f));
+    u_int top = (u_int) Store::WordToInt(GetArg(TOP_POS));
+    u_int pos = (top - 1 - f);
+    
+    Assert(pos >= 2);
+    return GetArg(pos);
   }
   word Pop() {
-    static word zero = Store::IntToWord(0);
-    int top          = Store::WordToInt(GetArg(1)) - 1;
-    word value       = GetArg((u_int) top);
+    u_int top  = (Store::WordToInt(GetArg(TOP_POS)) - 1);
+    word value = GetArg(top);
 
-    InitArg(1, Store::IntToWord(top));
-    InitArg(top, zero);
+    InitArg(TOP_POS, Store::IntToWord(top));
     return value;
   }
-  void Clear() {
-   int top = Store::WordToInt(GetArg(1));
-
-    InitArg(1, Store::IntToWord(2));
-    std::memset(GetBase() + 1, 1, (top - 2) * sizeof(word));
-  }
   int IsEmpty() {
-    return (Store::WordToInt(GetArg(1)) == 2);
+    return (Store::WordToInt(GetArg(TOP_POS)) == 2);
   }
 
+  static Stack *FromBlock(Block *x) {
+    return (Stack *) x;
+  }
   static Stack *New(u_int s) {
-    Stack *gs = (Stack *) Store::AllocBlock(STACK, (s + 1));
+    Block *p = Store::AllocStack((s + 1));
 
-    gs->InitStack();
-    return gs;
+    p->InitArg(TOP_POS, Store::IntToWord(2));
+    return FromBlock(p);
+  }
+  static Stack *FromWord(word x) {
+    Block *p = Store::WordToBlock(x);
+
+    Assert((p == INVALID_POINTER) || (p->GetLabel() == STACK));
+    return FromBlock(p);
   }
 };
 
 class Set : public Stack {
+private:
+  static const u_int TOP_POS = 1;
 public:
   word GetArg(u_int f) {
     return ((Block *) this)->GetArg(f);
@@ -218,22 +211,18 @@ public:
   void InitArg(u_int f, word v) {
     ((Block *) this)->InitArg(f, v);
   }
-  u_int GetSize() {
-    return (u_int) (Store::WordToInt(((Block *) this)->GetArg(1)) - 1);
-  }
   void MakeEmpty() {
-    ((Block *) this)->InitArg(1, Store::IntToWord(2));
-  }
-  void Push(word v) {
-    int top = Store::WordToInt(GetArg(1));
-    
-    Assert(top <= (int) GetSize());
-    InitArg(1, Store::IntToWord(top + 1));
-    InitArg((u_int) top, v);
+    ((Block *) this)->InitArg(TOP_POS, Store::IntToWord(2));
   }
 
   static Set *New(u_int s) {
     return (Set *) Stack::New(s);
+  }
+  static Set *FromWord(word x) {
+    Block *p = Store::WordToBlock(x);
+
+    Assert((p == INVALID_POINTER) || (p->GetLabel() == STACK));
+    return (Set *) p;
   }
 };
 
