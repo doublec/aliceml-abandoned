@@ -30,6 +30,11 @@ structure GtkSupport :> GTK_SUPPORT =
 	type tag = Gtk.object
 	type color = Gtk.object
 
+(************ Primitive Gtk Instructions **************)
+
+fun widgetDestroy widget = Gtk.widgetDestroy(widget)
+
+
 (************ Window creation helpers ******************)
 
 (* SEP represents separation lines on the menu window *)

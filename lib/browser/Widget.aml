@@ -1092,6 +1092,20 @@ fun setVisible (x,y) = let
 	    ; stopButtonSetActive(false)
 	    ; Dictionaries.Main.insertI(Dictionaries.maindict,(n,line)); ())
 	end 
+
+    fun deleteNode node = (Array.app deleteNode (getKids(node))
+			   ; widgetDestroy(getGroup(node))
+			   ; (* Test, ob Transient und Austrag aus 
+			      Transient Dictionary *)())
+
+    fun deleteNodeTree node = 
+	(deleteNode node
+	 ;if getParent(node)=Empty 
+	      then (Dictionaries.Main.delete(Dictionaries.maindict,
+					    getIndex(node))
+		    ;Dictionaries.RelMan.delete(Dictionaries.reldict,
+					    getIndex(node)))
+	  else ())
 	 
 end (* structure Widget end *)
 

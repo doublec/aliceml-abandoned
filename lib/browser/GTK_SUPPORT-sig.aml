@@ -22,6 +22,10 @@ signature GTK_SUPPORT =
 	type tag = Gtk.object
 	type color = Gtk.object
 	
+(* Primitve Gtk Instructions *)
+
+	    val widgetDestroy: tag -> unit
+
 (* Window Creation Toolkit *)
     
 	datatype MenuLabel = SEP | LABEL of string
