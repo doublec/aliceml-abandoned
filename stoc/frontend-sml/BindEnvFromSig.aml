@@ -54,6 +54,36 @@ structure BindEnvFromSig :> BIND_ENV_FROM_SIG =
 	    end
 
 
+    fun envFromTyp(I,t) =
+	if Type.isSum t then
+	    envFromRow(I, Type.asSum t)
+	else if Type.isLambda t then
+	    envFromTyp(I, #2(Type.asLambda t))
+	else if Type.isMu t then
+	    envFromTyp(I, Type.asMu t)
+	else
+	    new()
+
+    and envFromRow(I,r) =
+	let
+	    val E = new()
+
+	    fun loop r =
+		if Type.isEmptyRow r then () else
+		let
+		    val (l,t) = Type.headRow r
+		    val  x    = Stamp.new()
+		    val  vid  = VId.fromString(Label.toString l)
+		    val  is   = idStatusFromSort(Inf.CONSTRUCTOR, List.hd t)
+		in
+		    insertVal(E, vid, (I,x,is)) ;
+		    loop(Type.tailRow r)
+		end
+	in
+	    E
+	end
+
+
     fun envFromInf(I,j) =
 	if Inf.isTop j orelse Inf.isCon j then
 	    new()
@@ -96,10 +126,12 @@ structure BindEnvFromSig :> BIND_ENV_FROM_SIG =
 	    end
 	else if Inf.isTypItem item then
 	    let
-		val (l,k,w,_) = Inf.asTypItem item
+		val (l,k,w,d) = Inf.asTypItem item
 		val  tycon    = TyCon.fromString(Label.toString l)
 		val  x        = Stamp.new()
-		val  E'       = new()
+		val  E'       = case d
+				  of NONE   => new()
+				   | SOME t => envFromTyp(I, t)
 	    in
 		insertTy(E, tycon, (I,x,E'))
 	    end
