@@ -12,8 +12,9 @@
  *) 
 
 import structure UnsafeMinimizer from "UnsafeMinimizer"
+import signature MINIMIZER       from "MINIMIZER-sig"
 
-structure Minimizer =
+structure Minimizer : MINIMIZER =
   struct
     fun minimize a = let
         val b = UnsafeMinimizer.newPartition()
