@@ -12,6 +12,10 @@ case $system in
 	OZARCH=linux-i486
 	SMLNJARCH=x86-linux
    ;;
+   i[3456]86\ FreeBSD\ *)
+        OZARCH=freebsdelf-i486
+        SMLNJARCH=x86-bsd
+   ;;
    *i[3456]86*CYGWIN*)
 	OZARCH=win32-i486
 	SMLNJARCH=x86-win32
