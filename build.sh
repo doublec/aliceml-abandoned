@@ -6,6 +6,7 @@ AUTOMAKE="yes"
 LIGHTNING=1
 BUILD_GMP=0
 BUILD_SQLITE=0
+BUILD_LIBXML=0
 SUPPORTDIR="$(pwd)"
 : ${prefix="$SUPPORTDIR/install"}
 
@@ -146,6 +147,32 @@ then
 	mkdir -p "${SUPPORTDIR}/build/sqlite" 2>/dev/null &&
 	cd "${SUPPORTDIR}/build/sqlite" &&
 	"${SUPPORTDIR}/sqlite/sqlite-${sqliteversion}/configure" CC="$CC" --prefix="$prefix" --disable-tcl --disable-shared --enable-static &&
+	echo "### - building and installing" >&2 &&
+	make all install
+    ) || exit 1
+fi
+fi
+
+##
+## Build Support Libraries: libxml2
+##
+# libxml version to use
+libxml2version=2.6.17
+
+if [ "$BUILD_LIBXML" -ne 0 ]
+then
+if [ ! -f "$prefix/include/libxml2/libxml/parser.h" ]
+then
+    (
+	echo "### Building libxml2" >&2
+        cd "$SUPPORTDIR/libxml2" &&
+	echo "### - extracting the source" >&2 &&
+	tar xzf libxml2-${libxml2version}.tar.gz &&
+	echo "### - reconfiguring the source" >&2 &&
+	cd "${SUPPORTDIR}/libxml2/libxml2-${libxml2version}" &&
+	"./configure" \
+        CC="$CC" CXX="$CXX" --prefix="$prefix" \
+	--with-minimum --with-sax1 --with-tree --with-output &&
 	echo "### - building and installing" >&2 &&
 	make all install
     ) || exit 1
