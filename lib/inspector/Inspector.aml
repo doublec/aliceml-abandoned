@@ -68,6 +68,8 @@ structure Inspector :> INSPECTOR =
 	  | TYPEDINDICATOR    of color
 	  | PROMISE           of color
 	  | PACKAGE           of color
+	  (* cell update (ms) *)
+          | CELL_POLL_INTERVAL of int
 
 	open UnsafeInspector
     end
