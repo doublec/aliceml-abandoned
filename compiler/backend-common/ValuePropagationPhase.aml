@@ -139,11 +139,6 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 	fun idOf (IdDef id) = id
 	  | idOf (Wildcard) = raise Crash.Crash "ValuePropagationPhase.idOf"
 
-	fun conEq (Con (Id (_, stamp, _)), Con (Id (_, stamp', _))) =
-	    stamp = stamp'
-	  | conEq (StaticCon stamp, StaticCon stamp') = stamp = stamp'
-	  | conEq (_, _) = false
-
 	structure IdMap =
 	    MkHashScopedImpMap(type t = id
 			       val equals = idEq
@@ -162,7 +157,7 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 	  | PrimVal of string
 	  | VarVal of id
 	  | TagVal of label * int * idDef args
-	  | ConVal of con * idDef args
+	  | ConVal of id * idDef args
 	  | RefVal of idDef
 	  | ProdVal of idDef vector
 	  | VecVal of idDef vector
@@ -187,8 +182,8 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 	  | expToValue (VarExp (_, id)) = VarVal id
 	  | expToValue (TagExp (_, label, n, args)) =
 	    TagVal (label, n, mapArgs IdDef args)
-	  | expToValue (ConExp (_, con, args)) =
-	    ConVal (con, mapArgs IdDef args)
+	  | expToValue (ConExp (_, id, args)) =
+	    ConVal (id, mapArgs IdDef args)
 	  | expToValue (RefExp (_, id)) = RefVal (IdDef id)
 	  | expToValue (TupExp (_, ids)) = ProdVal (Vector.map IdDef ids)
 	  | expToValue (ProdExp (_, labelIdVec)) =
@@ -428,8 +423,8 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 				   patchArgs (args, lazySels) @
 				   patchBody (body, lazySels, shared))) tests)
 	  | patchTests (ConTests tests, lazySels, shared) =
-	    ConTests (Vector.map (fn (con, args, body) =>
-				  (con, args,
+	    ConTests (Vector.map (fn (id, args, body) =>
+				  (id, args,
 				   patchArgs (args, lazySels) @
 				   patchBody (body, lazySels, shared))) tests)
 	  | patchTests (VecTests tests, lazySels, shared) =
@@ -478,8 +473,8 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 	  | valueMin (TagVal (label, n, args), TagVal (_, n', args')) =
 	    if n = n' then TagVal (label, n, argsMin (args, args'))
 	    else UnknownVal
-	  | valueMin (ConVal (con, args), ConVal (con', args')) =
-	    if conEq (con, con') then ConVal (con, argsMin (args, args'))
+	  | valueMin (ConVal (id, args), ConVal (id', args')) =
+	    if idEq (id, id') then ConVal (id, argsMin (args, args'))
 	    else UnknownVal
 	  | valueMin (value as RefVal idDef, RefVal idDef') =
 	    if idDefEq (idDef, idDef') then value else UnknownVal
@@ -522,8 +517,8 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 	      | (VarVal id', _) => varExp (info, id', env)
 	      | (TagVal (label, n, TupArgs #[]), _) =>
 		    TagExp (info, label, n, TupArgs #[])
-	      | (ConVal (con, TupArgs #[]), _) =>
-		    ConExp (info, con, TupArgs #[])
+	      | (ConVal (id', TupArgs #[]), _) =>
+		    ConExp (info, id', TupArgs #[])
 	      | (_, _) => VarExp (info, id)
 
 	fun deref (id, env) =
@@ -956,14 +951,7 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 		    Vector.foldr
 		    (fn ((con, args, body), (conBodyList, elseBody)) =>
 		     let
-			 val con =
-			     case con of
-				 Con id =>
-				     (case IdMap.lookupExistent (env, id) of
-					  (ConVal (con as StaticCon _, _), _)
-					      => con
-					| (_, _) => Con (deref (id, env)))
-			       | StaticCon _ => con
+			 val con = deref (con, env)
 			 val env = IdMap.cloneTop env
 			 val state = {env = env, isToplevel = isToplevel,
 				      shared = shared, export = export,
@@ -975,7 +963,7 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 		     in
 			 case entry of
 			     (ConVal (con', args'), _) =>
-				 if conEq (con, con') then
+				 if idEq (con, con') then
 				     (aliasArgs (args, args', env, isToplevel);
 				      (nil, vpBody (body, state)))
 				 else
@@ -1030,23 +1018,12 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 		 Error.error (#region info, "unknown primitive " ^ name);
 	     (nil, exp))
 	  | vpExp (exp as NewExp (_, _), _, _, _) = (nil, exp)
-	    (*--** generate StaticCon if on toplevel *)
 	  | vpExp (VarExp (info, id), env, _, _) =
 	    (nil, varExp (info, id, env))
 	  | vpExp (TagExp (info, label, n, args), env, _, _) =
 	    (nil, TagExp (info, label, n, derefArgs (args, env)))
-	  | vpExp (ConExp (info, Con id, args), env, _, _) =
-	    let
-		val id = deref (id, env)
-		val args = derefArgs (args, env)
-	    in
-		case IdMap.lookupExistent (env, id) of
-		    (ConVal (con as StaticCon _, _), _) =>
-			(nil, ConExp (info, con, args))
-		  | (_, _) => (nil, ConExp (info, Con id, args))
-	    end
-	  | vpExp (ConExp (info, con as StaticCon _, args), env, _, _) =
-	    (nil, ConExp (info, con, derefArgs (args, env)))
+	  | vpExp (ConExp (info, id, args), env, _, _) =
+	    (nil, ConExp (info, deref (id, env), derefArgs (args, env)))
 	  | vpExp (RefExp (info, id), env, _, _) =
 	    (nil, RefExp (info, deref (id, env)))
 	  | vpExp (TupExp (info, ids), env, _, _) =
