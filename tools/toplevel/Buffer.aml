@@ -17,8 +17,6 @@ import structure Core from "x-alice:/lib/gtk/Core"
 import structure FileDialog from "FileDialog"
 import structure Config from "Config"
 
-blub
-
 structure Buffer =
    struct
       open Config
@@ -87,7 +85,24 @@ structure Buffer =
           end
         | deleteText _ _ = print "Gtk is crazy: delete"
 
-      fun insertText id (buf,[Gtk.INT off, _, Gtk.INT length]) =
+      fun findStartOfLine iter =
+	  if Gtk.textIterGetChar iter = Char.ord #"\n" then
+	      ignore (Gtk.textIterForwardChar iter)
+	  else if Gtk.textIterIsStart iter then
+	      ()
+	  else
+	      (Gtk.textIterBackwardChar iter; findStartOfLine iter)
+
+      fun findNonSpace iter =
+	  let
+	      val c = Char.chr (Gtk.textIterGetChar iter)
+	  in
+	      if c = #" " orelse c = #"\t" then
+	          (Gtk.textIterForwardChar iter; findNonSpace iter)
+	      else ()
+	  end
+
+      fun insertText id (buf,[Gtk.INT off, Gtk.STRING txt, Gtk.INT length]) =
           let
               val {undo,...} = BufferMap.lookupExistent(bufferMap, id)
           in
@@ -95,7 +110,19 @@ structure Buffer =
                   ((WAIT_INSERT _ | WAIT_DELETE _)::ur) =>
                   undo := ur
                 | _ =>
-                  undo := INSERT(off, off+length) :: (!undo)
+                  undo := INSERT(off, off+length) :: (!undo);
+	      if txt <> "\n" orelse off = 0 then () else
+	      let
+		  val startiter = Gtk.textIterNew()
+		  val _ = Gtk.textBufferGetIterAtOffset(buf, startiter, off-1)
+		  val _ = findStartOfLine startiter
+		  val enditer = Gtk.textIterCopy startiter
+		  val _ = findNonSpace enditer
+		  val indent = Gtk.textBufferGetText(buf, startiter, enditer, false)
+	      in
+		  Gtk.textBufferGetIterAtOffset(buf, startiter, off+1);
+		  Gtk.textBufferInsert(buf, startiter, indent, ~1)
+	      end
           end
         | insertText _ _ = print "Gtk is crazy: insert"
 
