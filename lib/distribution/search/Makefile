@@ -12,7 +12,7 @@
 
 # Configurable directories
 
-PREFIX = /opt/stockhausen-devel
+#PREFIX = /opt/stockhausen-devel
 
 SRCTOP = ../../../
 BOOTSTRAPDIR = $(SRCTOP)/bootstrap
@@ -26,6 +26,7 @@ STOCOPTS = --rtt-level=no
 SOURCES = SERVER-sig.aml Server.aml \
           WORKER_DICT-sig.aml WorkerDict.aml \
           Trace.aml TRACE_SPACE-sig.aml TYPES_CONV-sig.aml MkTraceSpace.aml \
+          LOGGER-sig.aml \
           SCRIPT-sig.aml \
           MANAGER-sig.aml \
 	  PLAIN_WORKER-sig.aml BEST_WORKER-sig.aml \
