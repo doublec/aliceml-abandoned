@@ -23,6 +23,7 @@ signature TOOLS_COMPONENT =
 		val inspect: 'a -> unit
 
 		functor InspectType(type t): any
+		functor InspectSig(signature S): any
 		functor Inspect(signature S structure X: S): any
 	    end
 

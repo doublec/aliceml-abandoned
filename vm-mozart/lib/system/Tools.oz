@@ -36,8 +36,10 @@ define
 		      fun {$ X} {Inspector.inspect X} unit end
 		   'InspectType$':
 		      fun {$ X} {Inspector.inspect X} unit end
+		   'InspectSig$':
+		      fun {$ X} {Inspector.inspect X} unit end
 		   'Inspect$':
-		      fun {$ S X} {Inspector.inspect X} unit end
+		      fun {$ X} {Inspector.inspect X} unit end
 		   'browse':
 		      fun {$ X} {Browser.browse X} unit end)
 end
