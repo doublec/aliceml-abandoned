@@ -30,7 +30,7 @@
 #endif
 #include "generic/Broker.hh"
 #if DEBUGGER
-#include "generic/DebugInterpreter.hh"
+#include "generic/DebugWorker.hh"
 #endif
 
 static u_int mb(u_int n) {
@@ -63,6 +63,6 @@ SeamDll void InitSeam() {
   Hole::Init();
   Broker::Init();
 #if DEBUGGER
-  DebugInterpreter::Init();
+  DebugWorker::Init();
 #endif
 }
