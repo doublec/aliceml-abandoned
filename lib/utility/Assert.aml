@@ -16,7 +16,7 @@
 	raise Assert.failure
    for definite failures.
 
-   In Stockhausen assert will be a toplevel builtin (probably a keyword).
+   In Alice assert will be a toplevel builtin (probably a keyword).
    Its type will be bool -> 'a (delivering a NoGood on return). Definite
    failures can then be written as
 	assert false
