@@ -148,6 +148,43 @@ prepare
       'Char.isUpper': Char.isUpper
       'Char.toLower': Char.toLower
       'Char.toUpper': Char.toUpper
+      'CharArray.array':
+	 fun {$ N Init}
+	    if 0 =< N andthen N < BuiltinTable.'CharArray.maxLen' then
+	       {Array.new 0 N - 1 Init}
+	    else
+	       {Exception.raiseError alice(BuiltinTable.'General.Size')}
+	       unit
+	    end
+	 end
+      'CharArray.fromList':
+	 fun {$ Xs} N A in
+	    N = {Length Xs}
+	    A = {Array.new 0 N - 1 unit}
+	    {List.forAllInd Xs proc {$ I X} {Array.put A I - 1 X} end}
+	    A
+	 end
+      'CharArray.length':
+	 fun {$ A} {Array.high A} + 1 end
+      'CharArray.maxLen': 0x7FFFFFF
+      'CharArray.sub':
+	 fun {$ A I}
+	    try
+	       {Array.get A I}
+	    catch error(kernel(array ...) ...) then
+	       {Exception.raiseError alice(BuiltinTable.'General.Subscript')}
+	       unit
+	    end
+	 end
+      'CharArray.update':
+	 fun {$ A I X}
+	    try
+	       {Array.put A I X}
+	    catch error(kernel(array ...) ...) then
+	       {Exception.raiseError alice(BuiltinTable.'General.Subscript')}
+	    end
+	    unit
+	 end
       'CharVector.concat':
 	 fun {$ Ss} {ByteString.make {List.toTuple '#' Ss}} end
       'CharVector.fromList': ByteString.make

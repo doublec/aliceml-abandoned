@@ -53,6 +53,12 @@ structure PrimOps :> PRIM_OPS =
 		ins ("Char.isUpper", SOME Unary);
 		ins ("Char.toLower", SOME Unary);
 		ins ("Char.toUpper", SOME Unary);
+		ins ("CharArray.array", SOME (Tuple 2));
+		ins ("CharArray.fromList", SOME Unary);
+		ins ("CharArray.length", SOME Unary);
+		ins ("CharArray.maxLen", NONE);
+		ins ("CharArray.sub", SOME (Tuple 2));
+		ins ("CharArray.update", SOME (Tuple 3));
 		ins ("CharVector.concat", SOME Unary);
 		ins ("CharVector.fromList", SOME Unary);
 		ins ("CharVector.maxLen", NONE);
