@@ -21,6 +21,8 @@ structure Remote :> REMOTE =
 	type ticket = string
 
 	fun proxy f = UnsafeRemote.proxy (fn x => f x)
+	val offer = UnsafeRemote.offer
+	val take = UnsafeRemote.take
 
 	functor Offer(signature S structure X: S) =
 	    (val ticket =
@@ -28,10 +30,10 @@ structure Remote :> REMOTE =
 		     structure P =
 			 Package.Pack(signature S = S structure X = X)
 		 in
-		     UnsafeRemote.offer P.package
+		     offer P.package
 		 end)
 
 	functor Take(val ticket: string signature S) =
-	    Package.Unpack(val package = UnsafeRemote.take ticket
+	    Package.Unpack(val package = take ticket
 			   signature S = S)
     end

@@ -18,6 +18,8 @@ signature REMOTE =
 	type ticket = string
 
 	val proxy: ('a -> 'b) -> 'a -> 'b
+	val offer: Package.package -> string
+	val take: string -> Package.package               (* Ticket *)
 
 	functor Offer(signature S structure X: S):
 		(val ticket: ticket)                      (* Pickle.Sited *)

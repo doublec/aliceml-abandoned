@@ -17,7 +17,7 @@ signature UNSAFE_REMOTE_COMPONENT =
 		exception Ticket
 
 		val proxy: ('a -> 'b) -> ('a -> 'b)
-		val offer: 'a -> string
-		val take: string -> 'a                (* Ticket *)
+		val offer: Package.package -> string
+		val take: string -> Package.package        (* Ticket *)
 	    end
     end
