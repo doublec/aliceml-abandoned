@@ -452,8 +452,6 @@ void TransformWorker::DumpFrame(StackFrame *) {
 }
 
 Worker::Result TransformWorker::Run(StackFrame *sFrame) {
-
-  fprintf(stderr, "running transformworker\n");
   TransformFrame *frame = STATIC_CAST(TransformFrame *, sFrame);
   Assert(sFrame->GetWorker() == this);
 
