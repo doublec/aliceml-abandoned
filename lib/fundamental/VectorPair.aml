@@ -112,6 +112,6 @@ struct
     fun findi  f (v1,v2)	= findi'(f, v1, v2, 0, length(v1,v2))
     and findi'(f,v1,v2,i,0)	= NONE
       | findi'(f,v1,v2,i,n) withval (x,y) = (sub'(v1,i), sub'(v2,i)) where (f(i,x,y))
-				= SOME xy
+				= SOME (i,x,y)
       | findi'(f,v1,v2,i,n)	= findi'(f,v1,v2,i+1,n-1)
 end

@@ -44,6 +44,6 @@ sig
 			   'a vector * 'b vector * int * int option -> 'c
     val foldri :	(int * 'a * 'b * 'c -> 'c) -> 'c ->
 			   'a vector * 'b vector * int * int option -> 'c
-    val findi :		(int 'a * 'b -> bool) -> 'a vector * 'b vector
-					      -> (int * 'a * 'b) option
+    val findi :		(int * 'a * 'b -> bool) -> 'a vector * 'b vector
+						-> (int * 'a * 'b) option
 end
