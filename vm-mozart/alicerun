@@ -12,8 +12,11 @@ fi
 : ${OZ_LOAD=cache=$OZHOME/cache/}
 
 PATH=$OZHOME/bin:$STOCKHOME/bin:$PATH
-OZ_LOAD=pattern='?{x}'='?{x}.ozf':pattern=x-alice\\:/'?{x}'=$STOCKHOME/'?{x}'.ozf:pattern=x-alice\\:/'?{x}'=$STOCKHOME/'?{x}':$OZ_LOAD
 
-export STOCKHOME PATH OZ_LOAD
+ALICE_LOAD=pattern='?{x}'='?{x}':pattern='?{x}'='?{x}.ozf':pattern=x-alice\\:/'?{x}'.ozf=$STOCKHOME/'?{x}'.ozf:pattern=x-alice\\:/'?{x}'=$STOCKHOME/'?{x}'.ozf
+
+OZ_LOAD=$ALICE_LOAD:$OZ_LOAD
+
+export STOCKHOME PATH OZ_LOAD ALICE_LOAD
 
 exec ozengine x-alice:/VMMain "$@"
