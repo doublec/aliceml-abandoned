@@ -145,7 +145,7 @@ LIBFUNDAMENTALSOURCES0 = \
 	LOCK-sig.aml MATH-sig.aml MONO_ARRAY-sig.aml MONO_VECTOR-sig.aml \
 	MONO_ARRAY_SLICE-sig.aml MONO_VECTOR_SLICE-sig.aml \
 	OPTION-sig.aml PACK_REAL-sig.aml PAIR-sig.aml PROMISE-sig.aml \
-	REAL-sig.aml REF-sig.aml STREAM-sig.aml STRING-sig.aml \
+	REAL-sig.aml REF-sig.aml STRING-sig.aml \
 	STRING_CVT-sig.aml SUBSTRING-sig.aml \
 	TEXT-sig.aml THREAD-sig.aml TIME-sig.aml \
 	VECTOR-sig.aml VECTOR_PAIR-sig.aml VECTOR_SLICE-sig.aml \
@@ -158,7 +158,7 @@ LIBFUNDAMENTALSOURCES0 = \
 	MkSlice.aml MkVectorSlice.aml MkArraySlice.aml \
 	MkMonoVectorSlice.aml MkMonoArraySlice.aml \
 	MkWord.aml Option.aml Pair.aml \
-	Position.aml Promise.aml Real.aml Ref.aml Stream.aml String.aml \
+	Position.aml Promise.aml Real.aml Ref.aml String.aml \
 	StringCvt.aml Substring.aml \
 	Text.aml Thread.aml Time.aml Toplevel.aml \
 	Vector.aml VectorPair.aml VectorSlice.aml WideAtom.aml WideChar.aml \
@@ -167,6 +167,12 @@ LIBFUNDAMENTALSOURCES0 = \
 	Word.aml Word8.aml Word8Array.aml Word8ArraySlice.aml \
 	Word8Vector.aml Word8VectorSlice.aml Word31.aml \
 	Package.aml ByNeed.aml
+LIBDATASOURCES0 = \
+	STAMP-sig.aml MkStamp.aml GLOBAL_STAMP-sig.aml GlobalStamp.aml \
+	HASHABLE-sig.aml ORDERED-sig.aml \
+	SET-sig.aml MAP-sig.aml MkRedBlackSet.aml MkRedBlackMap.aml \
+	IMP_SET-sig.aml IMP_MAP-sig.aml MkHashImpSet.aml MkHashImpMap.aml \
+	STACK-sig.aml Stack.aml STREAM-sig.aml Stream.aml \
 LIBSYSTEMSOURCES0 = \
 	$(LIBSYSTEMNATIVES0:%=Unsafe%.asig) UnsafeValue.asig \
 	CONFIG-sig.aml IO-sig.aml IO.aml PRIM_IO-sig.aml PrimIO.aml \
@@ -187,10 +193,7 @@ LIBSYSTEMSOURCES0 = \
 	PP_COMPONENT-sig.aml PPComponent.aml
 LIBUTILITYSOURCES0 = \
 	$(LIBUTILITYNATIVES0:%=Unsafe%.asig) \
-	ASSERT-sig.aml Assert.aml STAMP-sig.aml MkStamp.aml \
-	GLOBAL_STAMP-sig.aml GlobalStamp.aml \
-	HASH_KEY-sig.aml \
-	IMP_SET-sig.aml MkHashImpSet.aml IMP_MAP-sig.aml MkHashImpMap.aml \
+	ASSERT-sig.aml Assert.aml \
 	SCOPED_IMP_SET-sig.aml MkScopedImpSet.aml SCOPED_IMP_MAP-sig.aml \
 	MkScopedImpMap.aml \
 	CELL-sig.aml \
@@ -208,6 +211,7 @@ LIBRTTSOURCES0 = \
 LIBMLYACCSOURCES0 = base-sig.aml join.aml lrtable.aml stream.aml parser2.aml
 
 LIBSOURCES0 = \
+	$(LIBDATASOURCES0:%=data/%) \
 	$(LIBSYSTEMSOURCES0:%=system/%) \
 	$(LIBUTILITYSOURCES0:%=utility/%) \
 	$(LIBRTTSOURCES0:%=rtt/%) \
@@ -343,7 +347,7 @@ ALLSOURCES = \
 	$(LIBSOURCES) $(COMPILERSOURCES) $(LINKERSOURCES) $(DEPENDSOURCES)
 
 SOURCEDIRS = \
-	lib lib/fundamental lib/system lib/utility lib/rtt lib/ml-yacc \
+	lib lib/fundamental lib/data lib/system lib/utility lib/rtt lib/ml-yacc \
 	compiler compiler/infrastructure compiler/common compiler/top \
 	compiler/frontend-common compiler/frontend-sml \
 	compiler/backend-common compiler/backend-mozart \
@@ -588,8 +592,8 @@ build1/install/bin/%: bin/%
 ########################################################################
 
 BUILD2DIRS = \
-	build2 build2/lib build2/lib/fundamental build2/lib/system \
-	build2/lib/utility build2/lib/rtt build2/lib/ml-yacc
+	build2 build2/lib build2/lib/fundamental build2/lib/data \
+	build2/lib/system build2/lib/utility build2/lib/rtt build2/lib/ml-yacc
 BUILD2SOURCES = \
 	build2/lib/fundamental/RTT.aml build2/lib/rtt/RTT.aml \
 	$(LIBSOURCES:%=build2/%)
@@ -641,14 +645,24 @@ BUILD3DIRS = build3 $(SOURCEDIRS:%=build3/%)
 BUILD3SOURCES = $(ALLSOURCES:%=build3/%)
 
 INSTALL3DIRS = \
-	build3/install build3/install/include build3/install/include/store \
-	build3/install/include/adt build3/install/include/generic \
-	build3/install/include/alice build3/install/bin \
-	build3/install/lib build3/install/lib/fundamental \
-	build3/install/lib/system build3/install/lib/utility \
-	build3/install/lib/rtt build3/install/lib/ml-yacc \
-	build3/install/compiler build3/install/compiler/top \
-	build3/install/linker build3/install/depend
+	build3/install \
+	build3/install/include \
+	build3/install/include/store \
+	build3/install/include/adt \
+	build3/install/include/generic \
+	build3/install/include/alice \
+	build3/install/bin \
+	build3/install/lib \
+	build3/install/lib/fundamental \
+	build3/install/lib/data \
+	build3/install/lib/system \
+	build3/install/lib/utility \
+	build3/install/lib/rtt \
+	build3/install/lib/ml-yacc \
+	build3/install/compiler \
+	build3/install/compiler/top \
+	build3/install/linker \
+	build3/install/depend
 INSTALL3INCLUDEFILES = $(INCLUDES)
 #---**
 INSTALL3TOPFILES = alicec.import alice.import COPYING
@@ -822,12 +836,24 @@ depend: $(BUILD1DIRS) $(BUILD2DIRS) $(BUILD3DIRS) \
 ##
 
 INSTALLDIRS = \
-	$(PREFIX) $(PREFIX)/include $(PREFIX)/include/store \
-	$(PREFIX)/include/adt $(PREFIX)/include/generic \
-	$(PREFIX)/include/alice $(PREFIX)/bin $(PREFIX)/lib \
-	$(PREFIX)/lib/fundamental $(PREFIX)/lib/system $(PREFIX)/lib/utility \
-	$(PREFIX)/lib/rtt $(PREFIX)/lib/ml-yacc $(PREFIX)/compiler \
-	$(PREFIX)/compiler/top $(PREFIX)/linker $(PREFIX)/depend
+	$(PREFIX) \
+	$(PREFIX)/include \
+	$(PREFIX)/include/store \
+	$(PREFIX)/include/adt \
+	$(PREFIX)/include/generic \
+	$(PREFIX)/include/alice \
+	$(PREFIX)/bin \
+	$(PREFIX)/lib \
+	$(PREFIX)/lib/fundamental \
+	$(PREFIX)/lib/data \
+	$(PREFIX)/lib/system \
+	$(PREFIX)/lib/utility \
+	$(PREFIX)/lib/rtt \
+	$(PREFIX)/lib/ml-yacc \
+	$(PREFIX)/compiler \
+	$(PREFIX)/compiler/top \
+	$(PREFIX)/linker \
+	$(PREFIX)/depend
 INSTALLFILES = \
 	$(STOCKWERKFILES:%=$(PREFIX)/%) \
 	$(INSTALL3TOPFILES:%=$(PREFIX)/%) \

@@ -511,7 +511,7 @@ void CellMapFindWorker::DumpFrame(word wFrame) {
 // Primitives
 //
 
-DEFINE1(UnsafeCell_new) {
+DEFINE1(UnsafeCell_cell) {
   RETURN(Cell::New(x0)->ToWord());
 } END
 
@@ -526,7 +526,7 @@ DEFINE2(UnsafeCell_replace) {
   RETURN_UNIT;
 } END
 
-DEFINE0(UnsafeCell_Map_new) {
+DEFINE0(UnsafeCell_Map_map) {
   RETURN(CellMap::New()->ToWord());
 } END
 
@@ -671,8 +671,8 @@ DEFINE2(UnsafeCell_Map_findi) {
 
 static word UnsafeCell_Map() {
   Record *record = Record::New(14);
-  INIT_STRUCTURE(record, "UnsafeCell.Map", "new",
-		 UnsafeCell_Map_new, 0);
+  INIT_STRUCTURE(record, "UnsafeCell.Map", "map",
+		 UnsafeCell_Map_map, 0);
   INIT_STRUCTURE(record, "UnsafeCell.Map", "clone",
 		 UnsafeCell_Map_clone, 1);
   INIT_STRUCTURE(record, "UnsafeCell.Map", "insertWithi",
@@ -708,8 +708,8 @@ word UnsafeCell() {
   CellMapFindWorker::Init();
 
   Record *record = Record::New(4);
-  INIT_STRUCTURE(record, "UnsafeCell", "new",
-		 UnsafeCell_new, 1);
+  INIT_STRUCTURE(record, "UnsafeCell", "cell",
+		 UnsafeCell_cell, 1);
   INIT_STRUCTURE(record, "UnsafeCell", "content",
 		 UnsafeCell_content, 1);
   INIT_STRUCTURE(record, "UnsafeCell", "replace",
