@@ -209,10 +209,12 @@ define
 
       Actions = ['Reinspect'(reinspect)
 		 'Show'(System.show)]
+
+      Force = 'Force Evaluation'(Wait)
       
       ContainerMenus = [
 			cellMenu   # menu(nil       nil       nil Actions)
-			futureMenu # menu(nil       nil       nil Actions)
+			futureMenu # menu(nil       nil       nil Force|Actions)
 			tupleMenu  # menu(WidthList DepthList nil Actions)
 			vectorMenu # menu(WidthList DepthList nil Actions)
 			convalMenu # menu(WidthList DepthList nil Actions)

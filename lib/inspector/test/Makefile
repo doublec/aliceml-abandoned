@@ -2,10 +2,12 @@ STOC     = stoc
 STOCOPTS =
 
 SRCS = values.aml \
-       relation.aml
+       relation.aml \
+       killer.aml
 
 OBJS = values.ozf \
-       relation.ozf
+       relation.ozf \
+       killer.ozf
 
 %.ozf : %.aml
 	$(STOC) $(STOCOPTS) -c $< -o $@

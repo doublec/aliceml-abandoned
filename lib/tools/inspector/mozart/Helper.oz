@@ -101,8 +101,6 @@ define
    end
    
    class LabelNode from OzLabelNode
-      prop
-	 final
       meth layoutX($)
 	 XDim = @xDim
       in
@@ -127,6 +125,23 @@ define
       end
    end
 
+   class LabelRecordNode from LabelNode
+      meth drawX(X Y $)
+	 Visual  = @visual
+	 XDim    = @xDim
+	 StringX = (XDim - 1)
+      in
+	 if @dirty
+	 then
+	    dirty <- false
+	    {Visual printXY(X Y @string @tag constructor)}
+	    {Visual printXY((X + StringX) Y @limStr @secTag record)}
+	 else {Visual doublePlace(X Y StringX @tag @secTag)}
+	 end
+	 (X + XDim)
+      end
+   end
+   
    class MarkerNode from OzLabelNode
       meth layoutX($)
 	 XDim = @xDim
@@ -504,17 +519,18 @@ define
    end
 
    %% Create The Export Record
-   Nodes = 'nodes'(convert   : ConvertAtom
-		   convertBS : ConvertByteString
-		   atom      : AtomNode
-		   ozAtom    : OzAtomNode
-		   label     : LabelNode
-		   marker    : MarkerNode
-		   separator : SeparatorNode
-		   empty     : EmptyNode
-		   bitmap    : BitmapNode
-		   tuple     : TupleNode
-		   vector    : VectorNode
-		   record    : RecordNode
-		   recordInd : RecordIndNode)
+   Nodes = 'nodes'(convert     : ConvertAtom
+		   convertBS   : ConvertByteString
+		   atom        : AtomNode
+		   ozAtom      : OzAtomNode
+		   label       : LabelNode
+		   labelRecord : LabelRecordNode
+		   marker      : MarkerNode
+		   separator   : SeparatorNode
+		   empty       : EmptyNode
+		   bitmap      : BitmapNode
+		   tuple       : TupleNode
+		   vector      : VectorNode
+		   record      : RecordNode
+		   recordInd   : RecordIndNode)
 end

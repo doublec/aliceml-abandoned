@@ -354,7 +354,10 @@ define
 	    @type     = record
 	    @maxWidth = {Width Value}
 	    @arity    = {Record.arity Value}
-	    @label    = {New Helper.ozAtom create('{' self 0 Visual record)}
+	    @label    = case {Record.label Value}
+			of '#' then {New Helper.ozAtom create('{' self 0 Visual record)}
+			[] L   then {New Helper.labelRecord create(L '{' self Visual)}
+			end
 	    @brace    = {New Helper.ozAtom create('}' self 0 Visual record)}
 	    OzRecordCreateObject, adjustWidth({Visual getWidth($)} 1)
 	 end
