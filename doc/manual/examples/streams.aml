@@ -69,11 +69,10 @@ and loop' (p1,p2) =
        | SOME "\n" => loop' (p1,p2)
        | SOME s    =>
     case String.tokens Char.isSpace s
-      of non [_,_] => loop (p1,p2)
-       | [s1,s2]   =>
+      of ([] | [_] | _::_::_::_) => loop (p1,p2)
+       | [s1,s2] =>
     case (Int.fromString s1, Int.fromString s2)
-      of non (SOME (1|2), SOME _) => loop (p1,p2)
-       | (SOME k, SOME n)         =>
+      of (SOME (k as (1|2)), SOME n) =>
 	 let
 	     val p' = promise ()
 	 in
@@ -82,5 +81,6 @@ and loop' (p1,p2) =
 	     else
 		(fulfill (p2, n::future p'); loop' (p1,p'))
 	 end
+       | _ => loop (p1,p2)
 
 val _ = main()
