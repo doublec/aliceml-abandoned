@@ -105,6 +105,9 @@ protected:
   static void LoadArguments(TagVal *actualArgs);
   static TagVal *CheckBoolTest(word pos, u_int Result, word next);
   static TagVal *Apply(TagVal *pc, Closure *closure, bool direct);
+  static void CompileConsequent(word conseq, u_int TagValue);
+  static void NullaryBranches(u_int Tag, Vector *tests);
+  static void NonNullaryBranches(u_int Tag, Vector *tests);
   // NativeCodeJitter Instructions
   static TagVal *InstrKill(TagVal *pc);
   static TagVal *InstrPutVar(TagVal *pc);

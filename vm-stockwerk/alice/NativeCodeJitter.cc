@@ -1300,6 +1300,56 @@ TagVal *NativeCodeJitter::Apply(TagVal *pc, Closure *closure, bool direct) {
   return INVALID_POINTER;
 }
 
+void NativeCodeJitter::CompileConsequent(word conseq, u_int TagValue) {
+  Tuple *tuple      = Tuple::FromWordDirect(conseq);
+  TagVal *idDefsOpt = TagVal::FromWord(tuple->Sel(0));
+  if (idDefsOpt != INVALID_POINTER) {
+    Vector *idDefs = Vector::FromWordDirect(idDefsOpt->Sel(0));
+    for (u_int j = idDefs->GetLength(); j--;) {
+      TagVal *idDef = TagVal::FromWord(idDefs->Sub(j));
+      if (idDef != INVALID_POINTER) {
+	JITAlice::TagVal::Sel(JIT_R0, TagValue, j);
+	LocalEnvPut(JIT_V2, idDef->Sel(0), JIT_R0);
+      }
+    }
+  }
+  CompileBranch(TagVal::FromWordDirect(tuple->Sel(1)));
+}
+
+void NativeCodeJitter::NullaryBranches(u_int Tag, Vector *tests) {
+  u_int nTests    = tests->GetLength();
+  Tuple *branches = Tuple::New(nTests);
+  u_int i1        = ImmediateEnv::Register(branches->ToWord());
+  Assert(Tag != JIT_V1);
+  ImmediateSel(JIT_V1, JIT_V2, i1);
+  Generic::Tuple::IndexSel(JIT_R0, JIT_V1, Tag);
+  BranchToOffset(JIT_R0);
+  for (u_int i = nTests; i--;) {
+    u_int offset = GetRelativePC();
+    branches->Init(i, Store::IntToWord(offset));
+    Tuple *tuple = Tuple::FromWordDirect(tests->Sub(i));
+    CompileBranch(TagVal::FromWordDirect(tuple->Sel(1)));
+  }
+}
+
+void NativeCodeJitter::NonNullaryBranches(u_int Tag, Vector *tests) {
+  u_int nTests    = tests->GetLength();
+  Tuple *branches = Tuple::New(nTests);
+  u_int i1        = ImmediateEnv::Register(branches->ToWord());
+  Assert(Tag != JIT_V1);
+  ImmediateSel(JIT_V1, JIT_V2, i1);
+  Generic::Tuple::IndexSel(JIT_R0, JIT_V1, Tag);
+  BranchToOffset(JIT_R0);
+  // Invariant: TagVal ptr is on the stack
+  for (u_int i = nTests; i--;) {
+    u_int offset = GetRelativePC();
+    branches->Init(i, Store::IntToWord(offset));
+      // Invariant: Arbiter must reside in temporary register
+    jit_popr_ui(JIT_V1); // Restore int/tagval ptr
+    CompileConsequent(tests->Sub(i), JIT_V1);
+  }
+}
+
 //
 // Instructions
 //
@@ -1854,8 +1904,8 @@ TagVal *NativeCodeJitter::InstrIntTest(TagVal *pc) {
   LookupTestTable(IntVal, i1);
   jit_insn *else_ref = jit_beqi_ui(jit_forward(), JIT_RET, 0);
   BranchToOffset(JIT_RET);
-  // Create Branches (order is significant)
-  for (u_int i = 0; i < nTests; i++) {
+  // Create Branches
+  for (u_int i = nTests; i--;) {
     Tuple *pair  = Tuple::FromWordDirect(tests->Sub(i));
     word key     = pair->Sel(0);
     u_int offset = GetRelativePC();
@@ -1907,8 +1957,8 @@ TagVal *NativeCodeJitter::InstrRealTest(TagVal *pc) {
   LookupTestTable(RealVal, i1, false);
   jit_insn *else_ref = jit_beqi_ui(jit_forward(), JIT_RET, 0);
   BranchToOffset(JIT_RET);
-  // Create Branches (order is significant)
-  for (u_int i = 0; i < nTests; i++) {
+  // Create Branches
+  for (u_int i = nTests; i--;) {
     Tuple *pair  = Tuple::FromWordDirect(tests->Sub(i));
     word key     = pair->Sel(0);
     u_int offset = GetRelativePC();
@@ -1932,8 +1982,8 @@ TagVal *NativeCodeJitter::InstrStringTest(TagVal *pc) {
   LookupTestTable(StringVal, i1, false);
   jit_insn *else_ref = jit_beqi_ui(jit_forward(), JIT_RET, 0);
   BranchToOffset(JIT_RET);
-  // Create Branches (order is significant)
-  for (u_int i = 0; i < nTests; i++) {
+  // Create Branches
+  for (u_int i = nTests; i--;) {
     Tuple *pair  = Tuple::FromWordDirect(tests->Sub(i));
     word key     = pair->Sel(0);
     u_int offset = GetRelativePC();
@@ -1966,8 +2016,8 @@ TagVal *NativeCodeJitter::InstrTagTest(TagVal *pc) {
     LookupTestTable(tagVal, i1);
     else_ref1 = jit_beqi_ui(jit_forward(), JIT_RET, 0);
     BranchToOffset(JIT_RET);
-    // Create Branches (order is significant)
-    for (u_int i = 0; i < nTests1; i++) {
+    // Create Branches
+    for (u_int i = nTests1; i--;) {
       Tuple *pair  = Tuple::FromWordDirect(tests1->Sub(i));
       word key     = pair->Sel(0);
       u_int offset = GetRelativePC();
@@ -1991,8 +2041,8 @@ TagVal *NativeCodeJitter::InstrTagTest(TagVal *pc) {
     LookupTestTable(JIT_R0, i2);
     jit_insn *else_ref2 = jit_beqi_ui(jit_forward(), JIT_RET, 0);
     BranchToOffset(JIT_RET);
-    // Create Branches (order is significant)
-    for (u_int i = 0; i < nTests2; i++) {
+    // Create Branches
+    for (u_int i = nTests2; i--;) {
       Tuple *triple  = Tuple::FromWordDirect(tests2->Sub(i));
       word key       = triple->Sel(0);
       u_int offset   = GetRelativePC();
@@ -2035,8 +2085,6 @@ TagVal *NativeCodeJitter::InstrTagTest(TagVal *pc) {
 // *    n    *     0     *  -   **   -   *  x *    -   * table   *   Bool    *
 // *    0    *     m     *  -   **   -   *  x *    -   * table   *    -      *
 // ***************************************************************************
-// *    n    *     0     *  x   **   x   *  x *    -   * table   *    -      *
-// *    0    *     m     *  x   **   x   *  x *    -   * table   * Comp. AST *
 // *    n    *     m     *  -   **   -   *  - *    x   * table   *    -      *
 // *    n    *     m     *  x   **   x   *  - *    x   * table   * most gen'l*
 // ***************************************************************************
@@ -2044,58 +2092,121 @@ TagVal *NativeCodeJitter::InstrTagTest(TagVal *pc) {
 // *    0    *     2/3   *  -/x **   -/x *  x *    -   * cascade *    -      *
 // ***************************************************************************
 
+static inline void CountArities(Vector *tests, u_int &n, u_int &m) {
+  for (u_int i = tests->GetLength(); i--;) {
+    Tuple *tuple     = Tuple::FromWordDirect(tests->Sub(i));
+    TagVal *idDefsOpt = TagVal::FromWord(tuple->Sel(0));
+    if (idDefsOpt == INVALID_POINTER)
+      n++;
+    else
+      m++;
+  }
+}
+
 // CompactTagTest of idRef * tagTests * instr option
 TagVal *NativeCodeJitter::InstrCompactTagTest(TagVal *pc) {
   JIT_PRINT_PC("CompactTagTest\n");
-  word instrPC = Store::IntToWord(GetRelativePC());
-  u_int tagVal = LoadIdRef(JIT_V1, pc->Sel(0), instrPC);
-  KillIdRef(pc->Sel(0));
-  jit_insn *have_constructor = jit_beqi_ui(jit_forward(), JIT_R0, BLKTAG);
-  DirectWordToInt(JIT_R0, tagVal);
-  jit_insn *skip_tagload = jit_jmpi(jit_forward());
-  // Block branch (v1 is non-nullary constructor)
-  jit_patch(have_constructor);
-  JITAlice::TagVal::GetTag(JIT_R0, tagVal);
-  jit_patch(skip_tagload);
   Vector *tests         = Vector::FromWordDirect(pc->Sel(1));
-  u_int nTests          = tests->GetLength();
-  TagVal *someElseInstr = TagVal::FromWord(pc->Sel(2));
-  jit_insn *else_ref    = NULL;
-  if (someElseInstr != INVALID_POINTER) {
-    else_ref = jit_bgei_ui(jit_forward(), JIT_R0, nTests);
-  }
-  Tuple *branches       = Tuple::New(nTests);
-  u_int i1              = ImmediateEnv::Register(branches->ToWord());
-  jit_pushr_ui(tagVal); // Save int/tagval ptr
-  ImmediateSel(JIT_V1, JIT_V2, i1);
-  Generic::Tuple::IndexSel(JIT_R0, JIT_V1, JIT_R0); // R0 holds branch offset
-  BranchToOffset(JIT_R0);
-  // Create Branches (order is significant)
-  Assert(nTests != 0);
-  for (u_int i = 0; i < nTests; i++) {
-    u_int offset = GetRelativePC();
-    branches->Init(i, Store::IntToWord(offset));
-    Tuple *tuple      = Tuple::FromWordDirect(tests->Sub(i));
-    TagVal *idDefsOpt = TagVal::FromWord(tuple->Sel(0));
-    jit_popr_ui(JIT_V1); // Restore int/tagval ptr
-    if (idDefsOpt != INVALID_POINTER) {
-      Vector *idDefs = Vector::FromWordDirect(idDefsOpt->Sel(0));
-      for (u_int j = idDefs->GetLength(); j--;) {
-	TagVal *idDef = TagVal::FromWord(idDefs->Sub(j));
-	if (idDef != INVALID_POINTER) {
-	  JITAlice::TagVal::Sel(JIT_R0, JIT_V1, j);
-	  LocalEnvPut(JIT_V2, idDef->Sel(0), JIT_R0);
-	}
+  TagVal *someElseInstr = TagVal::FromWord(pc->Sel(2)); 
+  u_int n = 0, m = 0;
+  CountArities(tests, n, m);
+  Assert((n + m) > 0);
+  if (someElseInstr == INVALID_POINTER) {
+    if (m == 0) {
+      word instrPC = Store::IntToWord(GetRelativePC());
+      u_int Arbiter = LoadIdRef(JIT_V1, pc->Sel(0), instrPC);
+      if (n == 1) {
+  	// Invariant: No else, thus test must always succeed and we skip it
+ 	// but we had to request the tag value
+  	Tuple *tuple = Tuple::FromWordDirect(tests->Sub(0));
+  	CompileBranch(TagVal::FromWordDirect(tuple->Sel(1)));
+      } else {
+	DirectWordToInt(JIT_R0, Arbiter);
+	NullaryBranches(JIT_R0, tests);
       }
+    } else if (n == 0) {
+      word instrPC = Store::IntToWord(GetRelativePC());
+      u_int Arbiter = LoadIdRef(JIT_V1, pc->Sel(0), instrPC);
+      if (m == 1) {
+	// Invariant: No else, thus test must always succeed and we skip it
+	// but we had to request the tag value
+	// Invariant: Arbiter must reside in temporary register
+	if (Arbiter != JIT_V1) {
+	  jit_movr_p(JIT_V1, Arbiter);
+	}
+	CompileConsequent(tests->Sub(0), JIT_V1);
+      } else {
+	jit_pushr_ui(Arbiter); // Save Arbiter
+	JITAlice::TagVal::GetTag(JIT_R0, Arbiter);
+	NonNullaryBranches(JIT_R0, tests);
+      }
+    } else if ((n == 1) && (m == 1)) {
+      Tuple *test0 = Tuple::FromWordDirect(tests->Sub(0));
+      Tuple *test1 = Tuple::FromWordDirect(tests->Sub(1));
+      // Adjust nullary test information
+      if (TagVal::FromWord(test0->Sel(0)) != INVALID_POINTER) {
+	Tuple *tmp = test0;
+	test0 = test1;
+	test1 = tmp;
+      }
+      // Invariant: No else, thus one of the tests must always succeed
+      // test0 = nullary, test1 = n-ary
+      word instrPC = Store::IntToWord(GetRelativePC());
+      u_int Arbiter = LoadIdRef(JIT_V1, pc->Sel(0), (word) 0);
+      jit_insn *ref[2];
+      JITStore::Deref3(Arbiter, ref);
+      // Integer Branch
+      CompileBranch(TagVal::FromWordDirect(test0->Sel(1)));
+      // Transient Branch
+      jit_patch(ref[0]);
+      BlockOnTransient(Arbiter, instrPC);
+      // Block Branch
+      jit_patch(ref[1]);
+      // Invariant: Arbiter must reside in temporary register
+      if (Arbiter != JIT_V1) {
+	jit_movr_p(JIT_V1, Arbiter);
+      }
+      CompileConsequent(test1->ToWord(), JIT_V1);
+    } else {
+      word instrPC = Store::IntToWord(GetRelativePC());
+      u_int Arbiter = LoadIdRef(JIT_V1, pc->Sel(0), (word) 0);
+      jit_insn *ref[2];
+      JITStore::Deref3(Arbiter, ref);
+      // Integer Branch
+      JITStore::DirectWordToInt(JIT_R0, Arbiter);
+      jit_insn *branches = jit_jmpi(jit_forward());
+      // Transient Branch
+      jit_patch(ref[0]);
+      BlockOnTransient(Arbiter, instrPC);
+      // Block Branch
+      jit_patch(ref[1]);
+      JITAlice::TagVal::GetTag(JIT_R0, Arbiter);
+      jit_patch(branches);
+      jit_pushr_ui(Arbiter);
+      NonNullaryBranches(JIT_R0, tests);
     }
-    CompileBranch(TagVal::FromWordDirect(tuple->Sel(1)));
-  }
-  // else branch
-  if (someElseInstr != INVALID_POINTER) {
-    jit_patch(else_ref);
-    return TagVal::FromWordDirect(someElseInstr->Sel(0));
-  } else {
     return INVALID_POINTER;
+  }
+  else {
+    word instrPC = Store::IntToWord(GetRelativePC());
+    u_int Arbiter = LoadIdRef(JIT_V1, pc->Sel(0), (word) 0);
+    jit_insn *ref[2];
+    JITStore::Deref3(Arbiter, ref);
+    // Integer Branch
+    JITStore::DirectWordToInt(JIT_R0, Arbiter);
+    jit_insn *branches = jit_jmpi(jit_forward());
+    // Transient Branch
+    jit_patch(ref[0]);
+    BlockOnTransient(Arbiter, instrPC);
+    // Block Branch
+    jit_patch(ref[1]);
+    JITAlice::TagVal::GetTag(JIT_R0, Arbiter);
+    jit_patch(branches);
+    jit_insn *no_match = jit_bgei_ui(jit_forward(), JIT_R0, n + m);
+    jit_pushr_ui(Arbiter);
+    NonNullaryBranches(JIT_R0, tests);
+    jit_patch(no_match);
+    return TagVal::FromWordDirect(someElseInstr->Sel(0));
   }
 }
 
@@ -2120,10 +2231,14 @@ TagVal *NativeCodeJitter::InstrConTest(TagVal *pc) {
     jit_insn *next_test_ref = jit_bner_ui(jit_forward(), constr, JIT_R0);
     Vector *idDefs          = Vector::FromWordDirect(triple->Sel(1));
     ConVal                  = ReloadIdRef(JIT_V1, pc->Sel(0));
+    // Invariant: Arbiter must reside in temporary register
+    if (ConVal != JIT_V1) {
+      jit_movr_p(JIT_V1, ConVal);
+    }
     for (u_int i = idDefs->GetLength(); i--;) {
       TagVal *idDef = TagVal::FromWord(idDefs->Sub(i));
       if (idDef != INVALID_POINTER) {
-	JITAlice::ConVal::Sel(JIT_R0, ConVal, i);
+	JITAlice::ConVal::Sel(JIT_R0, JIT_V1, i);
 	LocalEnvPut(JIT_V2, idDef->Sel(0), JIT_R0);
       }
     }
@@ -2163,8 +2278,8 @@ TagVal *NativeCodeJitter::InstrVecTest(TagVal *pc) {
   jit_popr_ui(JIT_V1); // Restore vector ptr
   jit_insn *else_ref = jit_beqi_ui(jit_forward(), JIT_RET, 0);
   BranchToOffset(JIT_RET);
-  // Create Branches (order is significant)
-  for (u_int i = 0; i < nTests; i++) {
+  // Create Branches
+  for (u_int i = nTests; i--;) {
     Tuple *pair    = Tuple::FromWordDirect(tests->Sub(i));
     Vector *idDefs = Vector::FromWordDirect(pair->Sel(0));
     word key       = Store::IntToWord(idDefs->GetLength());
@@ -2468,13 +2583,14 @@ NativeConcreteCode *NativeCodeJitter::Compile(TagVal *abstractCode) {
   // Diassemble AbstractCode
   Tuple *coord1 = Tuple::FromWordDirect(abstractCode->Sel(0));
   char *filename = String::FromWordDirect(coord1->Sel(0))->ExportC();
-  if (!strcmp(filename, "file:d:/cygwin/home/bruni/devel/alice/test/bench/benches.aml") && (Store::DirectWordToInt(coord1->Sel(1)) == 82)) {
-    fprintf(stderr, "Disassembling function at %s:%d.%d\n\n",
-	    String::FromWordDirect(coord1->Sel(0))->ExportC(),
-	    Store::DirectWordToInt(coord1->Sel(1)),
-	    Store::DirectWordToInt(coord1->Sel(2)));
-  TagVal *pc = TagVal::FromWordDirect(abstractCode->Sel(4));
-  AbstractCode::Disassemble(stderr, pc);
+  if (!strcmp(filename, "file:d:/cygwin/home/bruni/devel/alice/vm-stockwerk/build3/lib/system/Resolver.aml") && (Store::DirectWordToInt(coord1->Sel(1)) == 113)) {
+    allowOpt = 1;
+//      fprintf(stderr, "Disassembling function at %s:%d.%d\n\n",
+//  	    String::FromWordDirect(coord1->Sel(0))->ExportC(),
+//  	    Store::DirectWordToInt(coord1->Sel(1)),
+//  	    Store::DirectWordToInt(coord1->Sel(2)));
+//    TagVal *pc = TagVal::FromWordDirect(abstractCode->Sel(4));
+//    AbstractCode::Disassemble(stderr, pc);
   }
 #endif
 #if defined(JIT_CODE_SIZE_PROFILE)
