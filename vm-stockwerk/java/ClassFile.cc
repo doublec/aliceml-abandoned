@@ -146,6 +146,48 @@ ConstantPoolEntry *ClassFile::ParseConstantPoolEntry(u_int &offset) {
   }
 }
 
+Array *ClassFile::ParseInterfaces(u_int &offset, ConstantPool *constantPool) {
+  u_int interfacesCount = GetU2(offset);
+  Array *interfaces = Array::New(interfacesCount);
+  for (u_int i = 0; i < interfacesCount; i++)
+    interfaces->Assign(i, constantPool->Get(GetU2(offset)));
+  return interfaces;
+}
+
+Array *ClassFile::ParseFields(u_int &offset, ConstantPool *constantPool) {
+  u_int fieldsCount = GetU2(offset);
+  Array *fields = Array::New(fieldsCount);
+  for (u_int i = 0; i < fieldsCount; i++)
+    fields->Assign(i, ParseFieldInfo(offset, constantPool)->ToWord());
+  return fields;
+}
+
+FieldInfo *ClassFile::ParseFieldInfo(u_int &offset,
+				     ConstantPool *constantPool) {
+  u_int accessFlags = GetU2(offset);
+  JavaString *name = constantPool->GetString(GetU2(offset));
+  JavaString *descriptor = constantPool->GetString(GetU2(offset));
+  //--** skip attributes
+  return FieldInfo::New(accessFlags, name, descriptor);
+}
+
+Array *ClassFile::ParseMethods(u_int &offset, ConstantPool *constantPool) {
+  u_int methodsCount = GetU2(offset);
+  Array *methods = Array::New(methodsCount);
+  for (u_int i = 0; i < methodsCount; i++)
+    methods->Assign(i, ParseMethodInfo(offset, constantPool)->ToWord());
+  return methods;
+}
+
+MethodInfo *ClassFile::ParseMethodInfo(u_int &offset,
+				       ConstantPool *constantPool) {
+  u_int accessFlags = GetU2(offset);
+  JavaString *name = constantPool->GetString(GetU2(offset));
+  JavaString *descriptor = constantPool->GetString(GetU2(offset));
+  //--** skip attributes
+  return MethodInfo::New(accessFlags, name, descriptor);
+}
+
 ClassFile *ClassFile::NewFromFile(char *filename) {
   //--**
 }
@@ -155,5 +197,11 @@ ClassInfo *ClassFile::Parse() {
   if (!ParseMagic(offset)) return INVALID_POINTER;
   if (!ParseVersion(offset)) return INVALID_POINTER;
   ConstantPool *constantPool = ParseConstantPool(offset);
-  //--**
+  u_int accessFlags = GetU2(offset);
+  u_int thisClassIndex = GetU2(offset);
+  u_int superClassIndex = GetU2(offset);
+  Array *interfaces = ParseInterfaces(offset, constantPool);
+  Array *fields = ParseFields(offset, constantPool);
+  Array *methods = ParseMethods(offset, constantPool);
+  //--** skip attributes
 }

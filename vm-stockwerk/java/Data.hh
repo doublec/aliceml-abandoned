@@ -58,6 +58,12 @@ public:
     std::memcpy(string->GetBase(), s, length * sizeof(u_wchar));
     return string;
   }
+  static JavaString *FromWord(word x) {
+    return static_cast<JavaString *>(Chunk::FromWord(x));
+  }
+  static JavaString *FromWordDirect(word x) {
+    return static_cast<JavaString *>(Chunk::FromWordDirect(x));
+  }
 };
 
 class DllExport Array: private Block {
@@ -161,9 +167,20 @@ protected:
   enum {
     ACCESS_FLAGS_POS, // access_flags
     NAME_POS, // String
-    TYPE_POS, // String
+    DESCRIPTOR_POS, // String
     SIZE
   };
+public:
+  using Block::ToWord;
+
+  static FieldInfo *New(u_int accessFlags, JavaString *name,
+			JavaString *descriptor) {
+    Block *b = Store::AllocBlock(JavaLabel::FieldInfo, SIZE);
+    b->InitArg(ACCESS_FLAGS_POS, accessFlags);
+    b->InitArg(NAME_POS, name->ToWord());
+    b->InitArg(DESCRIPTOR_POS, descriptor->ToWord());
+    return static_cast<FieldInfo *>(b);
+  }
 };
 
 class DllExport ExceptionTableEntry: private Block {
@@ -205,10 +222,22 @@ protected:
   enum {
     ACCESS_FLAGS_POS, // access_flags
     NAME_POS, // String
-    TYPE_POS, // String
+    DESCRIPTOR_POS, // String
     BYTE_CODE_POS, // JavaByteCode | int(0)
     SIZE
   };
+public:
+  using Block::ToWord;
+
+  static MethodInfo *New(u_int accessFlags, JavaString *name,
+			 JavaString *descriptor) {
+    Block *b = Store::AllocBlock(JavaLabel::FieldInfo, SIZE);
+    b->InitArg(ACCESS_FLAGS_POS, accessFlags);
+    b->InitArg(NAME_POS, name->ToWord());
+    b->InitArg(DESCRIPTOR_POS, descriptor->ToWord());
+    b->InitArg(BYTE_CODE_POS, 0); //--**
+    return static_cast<MethodInfo *>(b);
+  }
 };
 
 class DllExport ClassInfo: private Block {
@@ -224,11 +253,11 @@ protected:
   enum {
     ACCESS_FLAGS_POS, // access_flags
     NAME_POS, // String
-    CONSTANT_POOL_POS, // Array(word)
     SUPER_POS, // Class
     INTERFACES_POS, // Array(Class)
     FIELDS_POS, // Array(FieldInfo)
     METHODS_POS, // Array(MethodInfo)
+    CONSTANT_POOL_POS, // Array(word)
     SIZE
   };
 public:
@@ -312,6 +341,10 @@ public:
   word Get(u_int offset) {
     Assert(offset >= 1 && offset <= Store::DirectWordToInt(GetArg(SIZE_POS)));
     return GetArg(offset - 1 + BASE_SIZE);
+  }
+
+  JavaString *GetString(u_int offset) {
+    return JavaString::FromWordDirect(Get(offset));
   }
 };
 

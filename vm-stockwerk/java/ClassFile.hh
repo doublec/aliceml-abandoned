@@ -53,6 +53,11 @@ private:
   bool ParseVersion(u_int &offset);
   ConstantPool *ParseConstantPool(u_int &offset);
   ConstantPoolEntry *ParseConstantPoolEntry(u_int &offset);
+  Array *ParseInterfaces(u_int &offset, ConstantPool *constantPool);
+  Array *ParseFields(u_int &offset, ConstantPool *constantPool);
+  FieldInfo *ParseFieldInfo(u_int &offset, ConstantPool *constantPool);
+  Array *ParseMethods(u_int &offset, ConstantPool *constantPool);
+  MethodInfo *ParseMethodInfo(u_int &offset, ConstantPool *constantPool);
 public:
   using Chunk::ToWord;
 
