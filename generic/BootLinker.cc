@@ -13,18 +13,17 @@
 //
 
 #if defined(INTERFACE)
-#pragma implementation "emulator/BootLinker.hh"
+#pragma implementation "generic/BootLinker.hh"
 #endif
 
 #include <cstdio>
-#include "emulator/BootLinker.hh"
-
-#include "emulator/RootSet.hh"
-#include "emulator/Interpreter.hh"
-#include "emulator/Scheduler.hh"
-#include "emulator/Unpickler.hh"
-#include "emulator/Alice.hh"
-#include "emulator/Properties.hh"
+#include "generic/BootLinker.hh"
+#include "generic/RootSet.hh"
+#include "generic/Interpreter.hh"
+#include "generic/Scheduler.hh"
+#include "generic/Unpickler.hh"
+#include "generic/Properties.hh"
+#include "alice/Data.hh" //--** avoid Alice dependencies
 
 enum ComponentTag {
   EVALUATED, UNEVALUATED
@@ -482,9 +481,10 @@ void BootLinker::Init(NativeComponent *nativeComponents) {
   // Enter built-in native components
   while (nativeComponents->name != NULL) {
     word (*init)(void) = nativeComponents->init;
-    EnterComponent(static_cast<Chunk *>(String::New(nativeComponents->name)),
-		   Store::IntToWord(0), // NONE
-		   init());
+    u_int n = std::strlen(nativeComponents->name);
+    Chunk *key = Store::AllocChunk(n);
+    std::memcpy(key->GetBase(), nativeComponents->name, n);
+    EnterComponent(key, Store::IntToWord(0), init()); // 0 = NONE
     nativeComponents++;
   }
 }
