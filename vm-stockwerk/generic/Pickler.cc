@@ -398,6 +398,7 @@ Worker::Result PickleWorker::Run() {
   case CHUNK_MAP_LABEL:
   case THREAD_LABEL:
   case TASKSTACK_LABEL:
+  case IODESC_LABEL:
     Scheduler::currentData      = Pickler::Sited;
     Scheduler::currentBacktrace = Backtrace::New(frame->ToWord());
     return Worker::RAISE;
