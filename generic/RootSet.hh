@@ -19,7 +19,7 @@
 
 #include "store/Store.hh"
 
-class RootSet {
+class DllExport RootSet {
 public:
   static void Init();
   static void Add(word &root);
