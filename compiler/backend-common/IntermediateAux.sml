@@ -355,7 +355,7 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	    fun parseRow row =
 		if Type.isEmptyRow row then
 		    if Type.isUnknownRow row then
-			raise Crash.Crash "IntermediateAus.parseRow 1"
+			raise Crash.Crash "IntermediateAux.parseRow 1"
 		    else nil
 		else
 		    case Type.headRow row of
