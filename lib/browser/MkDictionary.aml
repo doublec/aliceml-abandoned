@@ -67,7 +67,20 @@ struct
 		    SOME (k,v) => SOME v
 		  | NONE => NONE
 	end
-    
+
+    fun iterLookup' ((a,fill_count,next_i) as dict,i,f) = 
+	if i >=  !next_i
+	    then NONE
+	else let val content = case lookup (dict,i) of
+	                       NONE => default
+                             | SOME x => x
+	     in if f content
+		    then SOME (content,i)
+		else iterLookup'(dict,i+1,f) 
+	     end
+
+    fun iterLookup(dict,f) = iterLookup'(dict,0,f) 
+
     (* deletes all objects with specified key *)
     fun delete  ((a,fill_count,_),key) = 
 	let

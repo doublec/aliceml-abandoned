@@ -91,6 +91,9 @@ sig
     val createRelRefNode : 
 	desc * node * int * string * node * (node -> Gtk.object) -> node
 
+    val createTransient :
+	Reflect.value * Type.t  * node * int * int * Type.t -> node
+
     val queryDepth :  
 	Reflect.value * Type.t  * node * int * int * Type.row * 
 	(Reflect.value * Type.t  * node * int * int * Type.row -> node) 

@@ -15,10 +15,11 @@
 
 import structure Gdk           from "x-alice:/lib/gtk/Gdk"
 import structure Gtk           from "x-alice:/lib/gtk/Gtk"
-import structure GtkCanvas     from "x-alice:/lib/gtk/GtkCanvas"
+import structure GtkCanvas           from "x-alice:/lib/gtk/GtkCanvas"
 import structure Type from "x-alice:/lib/rtt/Type"
 import structure PervasiveType from "x-alice:/lib/rtt/PervasiveType"
 import structure Path from "x-alice:/lib/rtt/Path"
+import structure Name from "x-alice:/lib/rtt/Name"
 import structure PathMap from "x-alice:/lib/rtt/PathMap"
 import structure Label from "x-alice:/lib/rtt/Label"
 import structure Reflect from "x-alice:/lib/system/Reflect"
@@ -27,6 +28,7 @@ import structure Types from "Types"
 import structure Helper from "Helper"
 import structure MainDictionary from "MainDictionary"
 import structure RelManDictionary from "RelManDictionary"
+import structure TransientDictionary from "TransientDictionary"
 import structure Dictionaries from "Dictionaries"
 import structure MkPathTable from "MkPathTable"
 import structure Settings from "Settings"
@@ -41,6 +43,7 @@ in
 structure NewNode :> NEW_NODE =
 struct
     
+    exception Future
     exception createGraph_unknownNode
 
     fun createGroupItem (parent,x,y) = 
@@ -54,6 +57,8 @@ struct
       | Container(r) => createGroupItem(#group(r),0.0,0.0) 
       | Concat(r)    => createGroupItem(#group(r),0.0,0.0) 
       | Limit(r)     => createGroupItem(#group(r),0.0,0.0) 
+      | RelNode(r) => createGroupItem(#group(r),0.0,0.0) 
+      | RelRefNode(r) => createGroupItem(#group(r),0.0,0.0) 
       | Empty        => let 
 			    val _ = WindowManager.new()
 			in
@@ -64,7 +69,8 @@ struct
 
     (* newNode *)
     fun newNode (v,t) = let val va = UnsafeValue.cast v: Reflect.value
-                            val i = MainDictionary.getHighestIndexAssigned(dict) +1
+                            val i = MainDictionary.
+				getHighestIndexAssigned(dict) +1
 			    val _ = RelManDictionary.update(reldict,(i,nil))
                             val _ = relnumber := 0
 			    val node =  createGraph (va,t,Empty,i,0)
@@ -150,7 +156,12 @@ struct
 	   => raise  createGraph_unknownNode 
          | Type.Apply(t1,t2)
            => (case unApply (Type.inspect(t)) of 
-               (Type.Con path, ts) => newPath (va,t,p,i,d,path)
+               (Type.Con path, ts) 
+		=> if Path.isName path  
+		   andalso String.equal("promise", 
+					(Name.toString(Path.asName(path))) ) 
+		       then createTransient(va,t,p,i,d,t2)
+		   else newPath (va,t,p,i,d,path)
              | _ => let val typ = #1(Type.asApply(t)) 
 		    in if Type.equal(typ,compList) (* Liste *)
 			   then let val vv = castList va
@@ -405,10 +416,11 @@ struct
     (* newPath *)
     and newPath (v,t,p,i,d,path) =
         (case PathMap.lookup(pathTable, path) of
-	   NONE => if d > !max_depth
-		       then createLimit(INTERPUNCT,DEPTH_LIMIT,p,i,d,setGroup)
-		   else createSimple(INTERPUNCT,p,i,"_",DEFAULT,setGroup)
-         | SOME create 
+	   NONE 
+	   => if d > !max_depth
+		  then createLimit(INTERPUNCT,DEPTH_LIMIT,p,i,d,setGroup)
+	      else createSimple(INTERPUNCT,p,i,"_",DEFAULT,setGroup)
+	 | SOME create 
 	   => let val doc = create (!max_width,d,v,t)
 	      in  docToNode (doc,p,i,d) 
 	      end )
@@ -554,8 +566,46 @@ struct
 		    width = ref(String.length(str)), 
 		    color = REL_COLOR, 
 		    status = ref DAZZLED,  
-		    group = f(p)}  
-                                                    
+		    group = f(p)}
+
+    (* createTransient *) 
+    and createTransient (va,t,p,i,d,tt) = 
+	let val desc = createValue(va,t,NO_ACTIONS)
+            val indesc = createValue(va,tt,NO_ACTIONS)
+	    val concat = createConcat(desc,p,i,Array.array(3,Empty),~1,~1,
+				      setGroup)
+	    val first = createSimple(INTERPUNCT,concat,0,"promise {|",
+				     DEFAULT,setGroup)
+            val middle = 
+		let val future = UnsafeValue.cast va
+		in if Future.isDetermined future 
+		       then createGraph (va,tt,concat,1,d+1) 
+		   else if d+1 <= !max_depth
+			    then createSimple(indesc,concat,1,"future",
+					      DEFAULT,setGroup)
+			else createLimit(indesc,DEPTH_LIMIT,concat,1,d+1,
+					 setGroup)
+		end
+            val last = createSimple(INTERPUNCT,concat,2,"|}",DEFAULT,setGroup)
+	in (Array.update(getKids(concat),0,first)
+	    ; Array.update(getKids(concat),1,middle)
+	    ; Array.update(getKids(concat),2,last)
+	    ; case TransientDictionary.iterLookup 
+	               (transdict,
+			fn li 
+			=> List.exists(fn n 
+				       => UnsafeValue.same
+				       (getValue(getDesc(n)),va)) 
+			               li
+		        handle General.Match => false) of
+	      SOME (li,i)  
+	      => TransientDictionary.update(transdict, 
+					 (i,List.append(li,[concat]))) 
+            | NONE 
+	      => (TransientDictionary.insertI(transdict,[concat]) ; () ) 
+	    ; concat)
+	end 
+    
     (* queryDepth *)
     and queryDepth (va,t,p,i,d,row,f) = 
 	if d > !max_depth 

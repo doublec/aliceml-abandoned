@@ -108,6 +108,10 @@ struct
                             | RelNode(r) => #desc(r)
                             | RelRefNode(r) => #desc(r)
                             | Empty => INTERPUNCT
+
+    fun getValue desc = case desc of INTERPUNCT => raise Match
+                                   | VALUE(r) => #value(r)
+
 	                  			 
     fun checkContKids (a,i) = if i >=  Array.length(a) 
 				  then false
@@ -160,9 +164,6 @@ struct
 
     fun castList value = UnsafeValue.cast value : 'a list
 
-    fun getValue desc = case desc of INTERPUNCT => raise Match
-	                           | VALUE(r) => #value(r)
-
     fun setContent (n,c) = case n of RelNode(r) => #content(r) := c
                                    | _ => ()
                                         
@@ -181,6 +182,8 @@ struct
 		  then a
 	      else iterTake' (str,i+1, String.append(a,Char.toString(test)))
 	   end  
+
+   fun castPromise value = UnsafeValue.cast value : 'a Promise.promise
 
 end
 

@@ -15,9 +15,11 @@
 
 import structure MainDictionary from "MainDictionary"
 import structure RelManDictionary from "RelManDictionary"
+import structure TransientDictionary from "TransientDictionary"
 
 signature DICTIONARIES = 
 sig 
     val dict: MainDictionary.dictionary
     val reldict: RelManDictionary.dictionary
+    val transdict: TransientDictionary.dictionary
 end

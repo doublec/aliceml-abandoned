@@ -21,11 +21,15 @@ sig
     val default : elemtype
     val empty    : dictionary
 
-    val insert   : dictionary * (int * elemtype) -> unit
-    val lookup   : dictionary * int -> elemtype option
-    val delete   : dictionary * int -> unit
-    val insertI  : dictionary * elemtype -> int
-    val update   : dictionary * (int * elemtype) -> unit
+    val insert     : dictionary * (int * elemtype) -> unit
+    val lookup     : dictionary * int -> elemtype option
+    val iterLookup': 
+	dictionary * int * (elemtype -> bool) -> (elemtype * int) option 
+    val iterLookup : 
+	dictionary * (elemtype -> bool) -> (elemtype * int) option 
+    val delete     : dictionary * int -> unit
+    val insertI    : dictionary * elemtype -> int
+    val update     : dictionary * (int * elemtype) -> unit
     val getHighestIndexAssigned: dictionary -> int
 
     

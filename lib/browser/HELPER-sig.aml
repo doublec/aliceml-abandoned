@@ -52,6 +52,7 @@ sig
     val getIndex : node -> int
     val getAncIndex : node -> int
     val getDesc : node -> desc
+    val getValue : desc -> Reflect.value
 
     val checkContKids : node array * int -> bool
     val checkConcKids : node array * int -> bool
@@ -63,12 +64,13 @@ sig
     val castList : 'a -> 'b list
 
     (* Relation-Nodes *)
-    val getValue : desc -> Reflect.value
     val setContent : node * node -> unit
     val incrCounter : node -> node
 
     (* Strings *)
     val iterTake : string -> string
     val iterTake' : string * int * string -> string
+
+    val castPromise : 'a -> 'b Promise.promise 
 
 end;

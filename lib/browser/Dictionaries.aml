@@ -15,10 +15,14 @@
 
 import structure MainDictionary from "MainDictionary"
 import structure RelManDictionary from "RelManDictionary"
+import structure TransientDictionary from "TransientDictionary"
 import signature DICTIONARIES from "DICTIONARIES-sig"
 
 structure Dictionaries :> DICTIONARIES =
 struct
+    
     val dict = MainDictionary.empty
     val reldict = RelManDictionary.empty
+    val transdict = TransientDictionary.empty
+	
 end
