@@ -34,23 +34,20 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 	type isToplevel = bool
 	type env = (value * isToplevel) IdMap.t
 
-	type sharedEntry = body option ref * env
+	datatype sharedEntry =
+	    UNIQUE
+	  | SHARED
+	  | SHARED_ANN of body option ref * env
 
 	local
-	    fun node ((edgeMap, countMap), stamp) =
-		(StampMap.insertDisjoint (edgeMap, stamp, nil);
-		 case StampMap.lookup (countMap, stamp) of
-		     SOME _ => ()
-		   | NONE => StampMap.insertDisjoint (countMap, stamp, 0))
+	    fun node ((edgeMap, _), stamp) =
+		StampMap.insertDisjoint (edgeMap, stamp, nil)
 
-	    fun edge ((edgeMap, countMap), pred, succ) =
+	    fun edge ((edgeMap, _), pred, succ) =
 		let
 		    val stamps = StampMap.lookupExistent (edgeMap, pred)
 		in
-		    StampMap.insert (edgeMap, pred, succ::stamps);
-		    case StampMap.lookup (countMap, succ) of
-			SOME n => StampMap.insert (countMap, succ, n + 1)
-		      | NONE => StampMap.insert (countMap, succ, 1)
+		    StampMap.insert (edgeMap, pred, succ::stamps)
 		end
 
 	    fun sortStm (ValDec (_, _, _), _, _, _) = ()
@@ -71,12 +68,16 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 		(List.app (fn (_, body) =>
 			   sortBody (body, pred, graph, path)) testBodyList;
 		 sortBody (body, pred, graph, path))
-	      | sortStm (SharedStm (_, body, stamp), pred, graph, path) =
-		if StampSet.member (path, stamp) then ()   (* ignore loops *)
-		else
-		    (edge (graph, pred, stamp);
-		     if StampMap.member (#1 graph, stamp) then ()
-		     else sortSharedBody (body, stamp, graph, path))
+	      | sortStm (SharedStm (_, body, stamp), pred,
+			 graph as (edgeMap, shared), path) =
+		(StampMap.insert (shared, stamp,
+				  if StampMap.member (shared, stamp)
+				  then SHARED else UNIQUE);
+		 if StampSet.member (path, stamp) then ()   (* ignore loops *)
+		 else
+		     (edge (graph, pred, stamp);
+		      if StampMap.member (edgeMap, stamp) then ()
+		      else sortSharedBody (body, stamp, graph, path)))
 	      | sortStm (ReturnStm (_, _), _, _, _) = ()
 	      | sortStm (IndirectStm (_, ref bodyOpt), pred, graph, path) =
 		sortBody (valOf bodyOpt, pred, graph, path)
@@ -97,13 +98,11 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 	in
 	    fun sortShared (body, stamp) =
 		let
-		    val edgeMap: stamp list StampMap.t = StampMap.new ()
-		    val countMap: int StampMap.t = StampMap.new ()
-		    val shared: sharedEntry StampMap.t = StampMap.new ()
+		    val edgeMap = StampMap.new ()
+		    val shared = StampMap.new ()
 		in
-		    sortSharedBody (body, stamp, (edgeMap, countMap),
+		    sortSharedBody (body, stamp, (edgeMap, shared),
 				    StampSet.new ());
-		    (*--** use results from countMap *)
 		    (DepthFirstSearch.search edgeMap, shared)
 		end
 	end
@@ -168,22 +167,30 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 
 	fun derefArgs (args, env) = mapArgs (fn id => deref (id, env)) args
 
-	fun gatherTests ([TestStm (_, id, testBodyList, elseBody)], id', env) =
+	fun gatherTests ([TestStm (_, id, testBodyList, elseBody)],
+			 id', env, shared) =
 	    let
 		val id = deref (id, env)
 	    in
 		if idEq (id, id') then
 		    let
 			val (testBodyList', elseBody') =
-			    gatherTests (elseBody, id', env)
+			    gatherTests (elseBody, id', env, shared)
 		    in
 			(testBodyList @ testBodyList', elseBody')
 		    end
 		else (nil, elseBody)
 	    end
-	  | gatherTests ([IndirectStm (_, ref bodyOpt)], id, env) =
-	    gatherTests (valOf bodyOpt, id, env)
-	  | gatherTests (body, _, _) = (nil, body)
+(*--** still buggy
+	  | gatherTests (body as [SharedStm (_, body', stamp)],
+			 id, env, shared) =
+	    (case StampMap.lookupExistent (shared, stamp) of
+		 UNIQUE => gatherTests (body', id, env, shared)
+	       | _ => (nil, body))
+*)
+	  | gatherTests ([IndirectStm (_, ref bodyOpt)], id, env, shared) =
+	    gatherTests (valOf bodyOpt, id, env, shared)
+	  | gatherTests (body, _, _, _) = (nil, body)
 
 	fun doSelTup (info, ids, n) = VarExp (info, List.nth (ids, n))
 
@@ -407,7 +414,7 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 		   env, isToplevel, shared) =
 	    let
 		val bodyOptRef = ref (SOME body3)
-		val entry = (bodyOptRef, IdMap.clone env)
+		val entry = SHARED_ANN (bodyOptRef, IdMap.clone env)
 		val _ = StampMap.insertDisjoint (shared, stamp, entry)
 		val body1 = vpBody (body1, env, isToplevel, shared)
 		val _ = IdMap.insertScope env
@@ -420,12 +427,15 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 		HandleStm (info, body1, id, body2, body3, stamp)
 	    end
 	  | vpStm (stm as EndHandleStm (_, stamp), env, isToplevel, shared) =
-	    (unionEnv (#2 (StampMap.lookupExistent (shared, stamp)), env);
-	     stm)
+	    (case StampMap.lookupExistent (shared, stamp) of
+		 SHARED_ANN (_, env') =>
+		     (unionEnv (env', env); stm)
+	       | _ => raise Crash.Crash "ValuePropagationPhase.vpStm")
 	  | vpStm (stm as TestStm (info, id, _, _), env, isToplevel, shared) =
 	    let
 		val id = deref (id, env)
-		val (testBodyList, elseBody) = gatherTests ([stm], id, env)
+		val (testBodyList, elseBody) =
+		    gatherTests ([stm], id, env, shared)
 		val _ = IdMap.insertScope env
 		val elseBody = vpBody (elseBody, env, isToplevel, shared)
 		val _ = IdMap.deleteScope env
@@ -452,23 +462,33 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 		  | nil => IndirectStm (info, ref (SOME elseBody))
 	    end
 	  | vpStm (SharedStm (info, body, stamp), env, isToplevel, shared) =
-	    let
-		val bodyOptRef =
-		    case StampMap.lookup (shared, stamp) of
-			NONE =>
-			    let
-				val bodyOptRef = ref (SOME body)
-				val entry = (bodyOptRef, IdMap.clone env)
-			    in
-				StampMap.insertDisjoint (shared, stamp, entry);
-				bodyOptRef
-			    end
-		      | SOME (bodyOptRef, env') =>
-			    (unionEnv (env', env); bodyOptRef)
-		val info' = {region = #region info, liveness = ref Unknown}
-	    in
-		SharedStm (info, [IndirectStm (info', bodyOptRef)], stamp)
-	    end
+	    (case StampMap.lookupExistent (shared, stamp) of
+		 UNIQUE =>
+		     let
+			 val body' = vpBody (body, env, isToplevel, shared)
+		     in
+			 IndirectStm (info, ref (SOME body'))
+		     end
+	       | SHARED =>
+		     let
+			 val bodyOptRef = ref (SOME body)
+			 val entry = SHARED_ANN (bodyOptRef, IdMap.clone env)
+			 val info' = {region = #region info,
+				      liveness = ref Unknown}
+		     in
+			 StampMap.insert (shared, stamp, entry);
+			 SharedStm (info, [IndirectStm (info', bodyOptRef)],
+				    stamp)
+		     end
+	       | SHARED_ANN (bodyOptRef, env') =>
+		     let
+			 val _ = unionEnv (env', env)
+			 val info' = {region = #region info,
+				      liveness = ref Unknown}
+		     in
+			 SharedStm (info, [IndirectStm (info', bodyOptRef)],
+				    stamp)
+		     end)
 	  | vpStm (ReturnStm (info, exp), env, isToplevel, shared) =
 	    ReturnStm (info, vpExp (exp, env, isToplevel, shared))
 	  | vpStm (stm as IndirectStm (info, bodyOptRef as ref bodyOpt),
@@ -590,15 +610,23 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 		       let
 			   val _ = Assert.assert (List.null (List.tl stamps))
 			   val stamp = List.hd stamps
-			   val (bodyOptRef, env) =
-			       StampMap.lookupExistent (shared, stamp)
-			   val body = valOf (!bodyOptRef)
 		       in
-			   bodyOptRef :=
-			   SOME (vpBody (body, env, isToplevel, shared))
+			   case StampMap.lookupExistent (shared, stamp) of
+			       UNIQUE => ()
+			     | SHARED =>
+				   raise Crash.Crash
+				       "ValuePropagationPhase.vpBodyShared 1"
+			     | SHARED_ANN (bodyOptRef, env) =>
+				   let
+				       val body = valOf (!bodyOptRef)
+				   in
+				       bodyOptRef :=
+				       SOME (vpBody (body, env, isToplevel,
+						     shared))
+				   end
 		       end) sorted)
 	       | (_, _) =>
-		     raise Crash.Crash "ValuePropagationPhase.vpBodyShared")
+		     raise Crash.Crash "ValuePropagationPhase.vpBodyShared 2")
 
 	fun newEnv () =
 	    let
@@ -632,15 +660,20 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 
 	fun translate () (_, component as (imports, (body, sign))) =
 	    let
-		(*DEBUG val _ = debug component *)
 		val env = newEnv ()
 		val _ =
 		    List.app (fn (id, _, _) =>
 			      declareId (id, env, true)) imports
-		val body' = vpBodyShared (body, Stamp.new (), env, true)
+		val topStamp = Stamp.new ()
+		val body' = vpBodyShared (body, topStamp, env, true)
 		val component' = (imports, (body', sign))
-		(*DEBUG val _ = debug component' *)
 	    in
 		component'
 	    end
+	    handle exn =>
+		(TextIO.print
+		 "\nValuePropagationPhase crashed: \
+		 \debug information follows\n";
+		 debug component;
+		 raise exn)
     end
