@@ -1,0 +1,134 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Name                from "../../lib/rtt/Name"
+import structure Label               from "../../lib/rtt/Label"
+import structure Path                from "../../lib/rtt/Path"
+import structure Type                from "../../lib/rtt/Type"
+import structure Fixity              from "../../lib/rtt/Fixity"
+import structure Inf                 from "../../lib/rtt/Inf"
+import signature INF_TRANSLATION     from "INF_TRANSLATION-sig"
+
+structure InfTranslation :> INF_TRANSLATION =
+struct
+    fun vallab s	= Label.fromString s
+    fun typlab s	= Label.fromString s
+    fun modlab s	= Label.fromString s
+
+  (* Module and type field names *)
+
+    val modlab_inf	= modlab "Inf"
+    structure Inf	= Inf					(* verify *)
+
+    val typlab_con	= typlab "con"
+    type con		= Inf.con				(* verify *)
+    val typlab_kind	= typlab "kind"
+    type kind		= Inf.kind				(* verify *)
+    val typlab_inf	= typlab "t"
+    type inf		= Inf.t					(* verify *)
+    val typlab_sig	= typlab "sign"
+    type sign		= Inf.sign				(* verify *)
+    val typlab_rea	= typlab "rea"
+    type rea		= Inf.rea				(* verify *)
+
+
+  (* Operations *)
+
+    type fix		= Fixity.t
+    type lab		= Label.t
+    type path		= Path.t
+    type typ		= Type.t
+    type tkind		= Type.kind
+
+    val lab_empty	= vallab "empty"
+    val _		= Inf.empty : unit -> sign		(* verify *)
+
+    val lab_newVal	= vallab "newVal"
+    val _		= Inf.newVal : sign * lab -> path	(* verify *)
+    val lab_newTyp	= vallab "newTyp"
+    val _		= Inf.newTyp : sign * lab -> path	(* verify *)
+    val lab_newMod	= vallab "newMod"
+    val _		= Inf.newMod : sign * lab -> path	(* verify *)
+    val lab_newInf	= vallab "newInf"
+    val _		= Inf.newInf : sign * lab -> path	(* verify *)
+    val lab_newFix	= vallab "newFix"
+    val _		= Inf.newFix : sign * lab -> path	(* verify *)
+
+    val lab_extendVal	= vallab "extendVal"
+    val _		= Inf.extendVal :
+			  sign * path * typ * path option -> unit (* verify *)
+    val lab_extendTyp	= vallab "extendTyp"
+    val _		= Inf.extendTyp :
+			  sign * path * tkind * typ option -> unit (* verify *)
+    val lab_extendMod	= vallab "extendMod"
+    val _		= Inf.extendMod :
+			  sign * path * inf * path option -> unit (* verify *)
+    val lab_extendInf	= vallab "extendInf"
+    val _		= Inf.extendInf :
+			  sign * path * kind * inf option -> unit (* verify *)
+    val lab_extendFix	= vallab "extendFix"
+    val _		= Inf.extendFix :
+			  sign * path * fix -> unit		(* verify *)
+
+    val lab_lookupVal	= vallab "lookupVal"
+    val _		= Inf.lookupVal : sign * lab -> typ	(* verify *)
+    val lab_lookupTyp	= vallab "lookupTyp"
+    val _		= Inf.lookupTyp : sign * lab -> typ	(* verify *)
+    val lab_lookupMod	= vallab "lookupMod"
+    val _		= Inf.lookupMod : sign * lab -> inf	(* verify *)
+    val lab_lookupInf	= vallab "lookupInf"
+    val _		= Inf.lookupInf : sign * lab -> inf	(* verify *)
+    val lab_lookupFix	= vallab "lookupFix"
+    val _		= Inf.lookupFix : sign * lab -> fix	(* verify *)
+
+    val lab_inTop	= vallab "inTop"
+    val _		= Inf.inTop : unit -> inf		(* verify *)
+    val lab_inCon	= vallab "inCon"
+    val _		= Inf.inCon : con -> inf		(* verify *)
+    val lab_inSig	= vallab "inSig"
+    val _		= Inf.inSig : sign -> inf		(* verify *)
+    val lab_inArrow	= vallab "inArrow"
+    val _		= Inf.inArrow : path * inf * inf -> inf	(* verify *)
+    val lab_inLambda	= vallab "inLambda"
+    val _		= Inf.inLambda : path * inf * inf -> inf (* verify *)
+    val lab_inApply	= vallab "inApply"
+    val _		= Inf.inApply : inf * path * inf -> inf	(* verify *)
+
+    val lab_asCon	= vallab "asCon"
+    val _		= Inf.asCon : inf -> con		(* verify *)
+    val lab_asSig	= vallab "asSig"
+    val _		= Inf.asSig : inf -> sign		(* verify *)
+    val lab_asArrow	= vallab "asArrow"
+    val _		= Inf.asArrow : inf -> path * inf * inf	(* verify *)
+    val lab_asLambda	= vallab "asLambda"
+    val _		= Inf.asLambda : inf -> path * inf * inf (* verify *)
+    val lab_asApply	= vallab "asApply"
+    val _		= Inf.asApply : inf -> inf * path * inf	(* verify *)
+
+    val lab_inGround	= vallab "inGround"
+    val _		= Inf.inGround : unit -> kind		(* verify *)
+    val lab_inDependent	= vallab "inDependent"
+    val _		= Inf.inDependent : path * inf * kind -> kind (*verify*)
+
+    val lab_kind	= vallab "kind"
+    val _		= Inf.kind : inf -> kind		(* verify *)
+    val lab_instance	= vallab "instance"
+    val _		= Inf.instance : inf -> inf		(* verify *)
+    val lab_strengthen	= vallab "strengthen"
+    val _		= Inf.strengthen : path * inf -> unit	(* verify *)
+    val lab_match	= vallab "match"
+    val _		= Inf.match : inf * inf -> rea		(* verify *)
+    val lab_intersect	= vallab "intersect"
+    val _		= Inf.intersect : inf * inf -> inf	(* verify *)
+    val lab_mismatch	= vallab "Mismatch"
+    val _		= Inf.Mismatch : Inf.mismatch -> exn	(* verify *)
+end
