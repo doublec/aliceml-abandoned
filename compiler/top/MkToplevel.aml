@@ -44,6 +44,7 @@ struct
 		        | "seam" => "Kraftwerk Album 1 Demo Tape"
 			| _ => "Alien Invaderz Breakbeats"
 		     ) ^ ")\n"
+    val bye        = "That's all, said Humpty Dumpty. Good-bye.\n"
     val prompt     = "- "
     val contPrompt = "  "
 
@@ -166,7 +167,7 @@ struct
     fun loop context =
 	case interruptable readInput
 	 of NONE => (TextIO.print "\ninterrupted\n"; loop context)
-	  | SOME NONE => TextIO.print "\nSee you later!\n"
+	  | SOME NONE => TextIO.print ("\n" ^ bye)
 	  | SOME (SOME source) =>
 	case evalString (true, source, context)
 	 of NONE => (TextIO.print "interrupted\n"; loop context)
