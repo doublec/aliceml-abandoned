@@ -522,41 +522,30 @@ UNFINISHED: obsolete after bootstrapping:
 
   (* Extract bound ids from declarations. *)
 
-    fun idsId trId xs' x t =
-	case trId x
-	  of x' as O.Id(_,_,Name.ExId s') => StringMap.insert(xs',s',x')
-	   | _                            => ()
+    fun idsId xs' (x as O.Id(_,_,Name.ExId s))	= StringMap.insert(xs',s,x)
+      | idsId xs'  _				= ()
 
-    fun idsDec xs' (I.ValDec(i,p,e))	= idsPat xs' p
-      | idsDec xs' (I.TypDec(i,x,t))	= idsId trTypid xs' x (typ_typ)
-      | idsDec xs' (I.ModDec(i,x,m))	= idsId trModid xs' x
-						(infToTyp(#inf(I.infoMod m)))
-      | idsDec xs' (I.InfDec(i,x,j))	= () (*UNFINISHED*)
-      | idsDec xs' (I.FixDec(i,x,q))	= ()
-      | idsDec xs' (I.VarDec(i,x,d))	= idsDec xs' d
-      | idsDec xs' (I.RecDec(i,ds))	= idsDecs xs' ds
-      | idsDec xs' (I.LocalDec(i,ds))	= ()
+    fun idsDec xs' (O.ValDec(i,p,e))	= idsPat xs' p
+      | idsDec xs' (O.RecDec(i,ds))	= idsDecs xs' ds
     and idsDecs xs'			= Vector.app(idsDec xs')
 
-    and idsPat xs' (I.JokPat(i))	= ()
-      | idsPat xs' (I.LitPat(i,l))	= ()
-      | idsPat xs' (I.VarPat(i,x))	= idsId trValid xs' x (#typ i)
-      | idsPat xs' (I.TagPat(i,l,p))	= idsPat xs' p
-      | idsPat xs' (I.ConPat(i,y,p))	= idsPat xs' p
-      | idsPat xs' (I.RefPat(i,p))	= idsPat xs' p
-      | idsPat xs' (I.TupPat(i,ps))	= idsPats xs' ps
-      | idsPat xs' (I.ProdPat(i,r))	= idsRow xs' r
-      | idsPat xs' (I.VecPat(i,ps))	= idsPats xs' ps
-      | idsPat xs' (I.AsPat(i,p1,p2))	= ( idsPat xs' p1 ; idsPat xs' p2 )
-      | idsPat xs' (I.AltPat(i,ps))	= idsPats xs' ps
-      | idsPat xs' (I.NegPat(i,p))	= idsPat xs' p
-      | idsPat xs' (I.GuardPat(i,p,e))	= idsPat xs' p
-      | idsPat xs' (I.AnnPat(i,p,t))	= idsPat xs' p
-      | idsPat xs' (I.WithPat(i,p,ds))	= ( idsPat xs' p ; idsDecs xs' ds )
+    and idsPat xs' (O.JokPat(i))	= ()
+      | idsPat xs' (O.VarPat(i,x))	= idsId xs' x
+      | idsPat xs' (O.LitPat(i,l))	= ()
+      | idsPat xs' (O.TagPat(i,l,p,b))	= idsPat xs' p
+      | idsPat xs' (O.ConPat(i,y,p,b))	= idsPat xs' p
+      | idsPat xs' (O.RefPat(i,p))	= idsPat xs' p
+      | idsPat xs' (O.TupPat(i,ps))	= idsPats xs' ps
+      | idsPat xs' (O.ProdPat(i,fs))	= idsFields xs' fs
+      | idsPat xs' (O.VecPat(i,ps))	= idsPats xs' ps
+      | idsPat xs' (O.AsPat(i,p1,p2))	= ( idsPat xs' p1 ; idsPat xs' p2 )
+      | idsPat xs' (O.AltPat(i,ps))	= idsPats xs' ps
+      | idsPat xs' (O.NegPat(i,p))	= idsPat xs' p
+      | idsPat xs' (O.GuardPat(i,p,e))	= idsPat xs' p
+      | idsPat xs' (O.WithPat(i,p,ds))	= ( idsPat xs' p ; idsDecs xs' ds )
     and idsPats xs'			= Vector.app(idsPat xs')
 
-    and idsRow    xs' (I.Row(i,fs,_))   = idsFields xs' fs
-    and idsField  xs' (I.Field(i,l,z))  = idsPat xs' z
+    and idsField  xs' (O.Field(i,l,p))  = idsPat xs' p
     and idsFields xs'			= Vector.app(idsField xs')
 
     fun ids ds				= let val xs' = StringMap.new() in
@@ -682,10 +671,10 @@ UNFINISHED: obsolete after bootstrapping:
 						    O.ShortId(trValInfo i', x'))
 					  end
       | trMod(I.StrMod(i,ds))		= let val i'   = trModInfo i
-					      val ids' = ids ds
+					      val ds'  = trDecs ds
+					      val ids' = ids ds'
 					      val fs'  = Vector.map idToField
 								    ids'
-					      val ds'  = trDecs ds
 					  in O.LetExp(i',ds',O.ProdExp(i',fs'))
 					  end
       | trMod(I.SelMod(i,l,m))		= O.SelExp(trModInfo i, trModlab l,
@@ -992,7 +981,15 @@ UNFINISHED: obsolete after bootstrapping:
 
   (* Imports and annotations *)
 
-    fun trAnns'(a_s, ds') = Vector.foldl trAnn ([],ds') a_s
+    fun trAnns a_s =
+	let
+	    val (rxsus',ds') = Vector.foldl trAnn ([],[]) a_s
+	    val  xsus'       = Vector.rev(Vector.fromList rxsus')
+	    val  ds''        = Vector.rev(Vector.fromList ds')
+	in
+	    ( xsus', ds'' )
+	end
+
     and trAnn(I.ImpAnn(i,is,u),(xsus',ds')) =
 	let
 	    val r    = #region i
@@ -1024,16 +1021,16 @@ UNFINISHED: obsolete after bootstrapping:
 
     fun trComp(I.Comp(i,a_s,ds)) =
 	let
-	    val (rxsus',ds') = trAnns'(a_s, [])
-	    val  xsus' = Vector.fromList(List.rev rxsus')
-	    val  ds''  = Vector.fromList(List.rev(trDecs'(ds,ds')))
-	    val  ids'  = ids ds
-	    val  fs'   = Vector.map idToField ids'
-	    val  r     = Vector.foldl idToRow (Type.emptyRow()) ids'
-	    val  i'    = typInfo(#region i, Type.inProd r)
-	    val  exp'  = O.LetExp(i', ds'', O.ProdExp(i', fs'))
-	    val  s     = #sign i
-	    val  _     = Inf.stripSig s
+	    val (xsus',ds1') = trAnns a_s
+	    val  ds2'        = trDecs ds
+	    val  ds'         = Vector.append(ds1',ds2')
+	    val  ids'        = ids ds2'
+	    val  fs'         = Vector.map idToField ids'
+	    val  r           = Vector.foldl idToRow (Type.emptyRow()) ids'
+	    val  i'          = typInfo(#region i, Type.inProd r)
+	    val  exp'        = O.LetExp(i', ds', O.ProdExp(i', fs'))
+	    val  s           = #sign i
+	    val  _           = Inf.stripSig s
 	in
 	    ( xsus', (exp',s) )
 	end
