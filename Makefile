@@ -130,8 +130,8 @@ clean-seam: clean-common
 	(cd lib/distribution && make TARGET=seam distclean) || exit 1
 	(cd lib/test && make distclean) || exit 1
 	(cd lib/gtk/seam && make distclean) || exit 1
-	(cd lib/tools/toplevel && make distclean) || exit 1
 	(cd lib/tools/inspector/seam && make distclean) || exit 1
+	(cd tools/toplevel && make distclean) || exit 1
 	(cd tools/lex && make distclean) || exit 1
 	(cd tools/yacc && make distclean) || exit 1
 
