@@ -17,7 +17,7 @@
 #pragma interface "interpreter/bootstrap/Environment.hh"
 #endif
 
-#include "datalayer/alicedata.hh"
+#include "datalayer/Alice.hh"
 
 class Environment: private Array {
 private:

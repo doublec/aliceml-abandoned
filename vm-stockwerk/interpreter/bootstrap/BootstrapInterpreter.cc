@@ -16,7 +16,6 @@
 
 #include "scheduler/Closure.hh"
 #include "scheduler/Scheduler.hh"
-#include "datalayer/alicedata.hh"
 #include "builtins/Primitive.hh"
 #include "builtins/GlobalPrimitives.hh"
 #include "interpreter/Pickle.hh"
