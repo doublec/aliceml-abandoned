@@ -18,10 +18,10 @@ import java.rmi.server.*;
 import java.util.*;
 
 final public class Connection {
-    static Hashtable export = null;
+    public static Hashtable export = null;
     static Exporter exp = null;
     static Random rand = null;
-    static int exporterNumber = 0;
+    public static int exporterNumber = 0;
     static InetAddress thisHost;
     static {
 	InetAddress i=null;
@@ -38,7 +38,7 @@ final public class Connection {
 	}
     }
 
-    final protected static void startServer() throws RemoteException {
+    final public static void startServer() throws RemoteException {
 	Properties prop = System.getProperties();
 	Object o = prop.get("java.security.policy");
 	if (o == null) {
@@ -57,13 +57,14 @@ final public class Connection {
 	}
 	export = new Hashtable();
 	exp = new Exporter(export);
-	//	rand = new Random(42);
+	// rand = new Random(42);
 	rand = new Random((new Date()).getTime());
 
 	// System.out.println("starte registry");
 	try {
 	    java.rmi.registry.Registry r = java.rmi.registry.LocateRegistry.getRegistry(1099);
 	    exporterNumber = r.list().length;
+	    System.out.println("ExporterNumber : " +exporterNumber);
 	} catch (RemoteException _) {
 	    java.rmi.registry.LocateRegistry.createRegistry(1099); // am Standardport
 	    // exporterNumber = 0;
