@@ -14,6 +14,7 @@ import structure Assert        from "../utility/Assert"
 import structure MkHashImpMap  from "../utility/MkHashImpMap"
 import structure Url           from "../utility/Url"
 import structure Config        from "Config"
+import structure BinIO         from "BinIO"
 import structure TextIO        from "TextIO"
 import structure IO            from "IO"
 import structure OS            from "OS"
@@ -258,7 +259,7 @@ structure Resolver: RESOLVER =
 	    let
 		val s = Url.toStringRaw url
 	    in
-		TextIO.closeIn (TextIO.openIn s);
+		BinIO.closeIn (BinIO.openIn s);
 		trace ("[" ^ name ^ "] ...localize succeeded\n");
 		SOME (FILE s)
 	    end handle IO.Io _ => NONE
