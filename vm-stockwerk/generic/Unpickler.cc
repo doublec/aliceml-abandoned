@@ -495,19 +495,20 @@ void PushUnpickleFrame(word block, u_int i, u_int n) {
   }
 }
 
-static inline
-void Set(word block, u_int i, word y) {
+static inline void Set(word block, u_int i, word y) {
   Store::DirectWordToBlock(block)->ReplaceArg(i, y);
 }
 
-static inline
-void AddToEnv(word env, word value) {
+static inline void AddToEnv(word env, word value) {
   Stack::FromWordDirect(env)->SlowPush(value);
 }
 
-static inline
-word SelFromEnv(word env, u_int index) {
-  return Stack::FromWordDirect(env)->GetAbsoluteArg(index);
+static inline word SelFromEnv(word env, u_int index) {
+  Stack *stack = Stack::FromWordDirect(env);
+  if (index < stack->GetStackSize())
+    return stack->GetAbsoluteArg(index);
+  else
+    return 0;
 }
 
 // End of Buffer requires rereading;
@@ -520,11 +521,19 @@ word SelFromEnv(word env, u_int index) {
     return Interpreter::CONTINUE;		\
   } else {}
 
-#define CONTINUE()				\
+#define CONTINUE() {				\
   if (StatusWord::GetStatus() != 0)		\
     return Interpreter::PREEMPT;		\
   else						\
-    return Interpreter::CONTINUE;
+    return Interpreter::CONTINUE;		\
+}
+
+#define CORRUPT() {					\
+  Scheduler::currentData = Unpickler::Corrupt;		\
+  Scheduler::currentBacktrace =				\
+    Backtrace::New(Scheduler::GetAndPopFrame());	\
+  return Interpreter::RAISE;				\
+}
 
 // Core Unpickling Function
 Interpreter::Result UnpickleInterpreter::Run() {
@@ -543,6 +552,7 @@ Interpreter::Result UnpickleInterpreter::Run() {
     case Pickle::POSINT:
       {
 	u_int y = is->GetUInt(); CHECK_EOB();
+	if (y > MAX_VALID_INT) CORRUPT();
 	Set(x, i, Store::IntToWord(y));
 	is->Commit();
 	PushUnpickleFrame(x, i + 1, n);
@@ -552,6 +562,7 @@ Interpreter::Result UnpickleInterpreter::Run() {
     case Pickle::NEGINT:
       {
 	u_int y = is->GetUInt(); CHECK_EOB();
+	if (y > MAX_VALID_INT) CORRUPT();
 	Set(x, i, Store::IntToWord(-(y + 1)));
 	is->Commit();
 	PushUnpickleFrame(x, i + 1, n);
@@ -594,10 +605,7 @@ Interpreter::Result UnpickleInterpreter::Run() {
 	  }
 	  break;
 	default:
-	  Scheduler::currentData = Unpickler::Corrupt;
-	  Scheduler::currentBacktrace =
-	    Backtrace::New(Scheduler::GetAndPopFrame());
-	  return Interpreter::RAISE;
+	  CORRUPT();
 	}
 	is->Commit();
 	word wUnique = UniqueString::New(s)->ToWord();
@@ -670,10 +678,7 @@ Interpreter::Result UnpickleInterpreter::Run() {
 	CONTINUE();
       }
     default:
-      Scheduler::currentData = Unpickler::Corrupt;
-      Scheduler::currentBacktrace =
-	Backtrace::New(Scheduler::GetAndPopFrame());
-      return Interpreter::RAISE;
+      CORRUPT();
     }
   }
 }
