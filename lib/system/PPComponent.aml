@@ -230,7 +230,8 @@ struct
 	  | Inf.TypItem(p,k) =>
 	    let
 		val (ks,k') = unarrowTKind k
-		val  vs     = List.map Type.newVar ks
+		val  vs     = List.map
+				(fn k => Type.newVar(k, Type.Unconstrained)) ks
 		val (vs',to,isDatatype) =
 				if not(Type.isSingKind k)
 				then (vs,NONE,false) else
