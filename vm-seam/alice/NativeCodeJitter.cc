@@ -498,7 +498,8 @@ public:
     return (LivenessTable *) clone;
   }
   void Clone(LivenessTable *clone) {
-    u_int size = ((Block *) this)->GetSize();
+    //--** why break abstraction barriers?
+    u_int size = ((::Block *) this)->GetSize();
     memcpy(clone, this,  (size + 1) * sizeof(word));
   }
   // LivenessTable Constructor
@@ -782,7 +783,7 @@ void NativeCodeJitter::SetRelativePC(word pc) {
 //
 // Calling Convention Conversion
 //
-void NativeCodeJitter::CompileCCC(TagVal *idDefArgs, bool update = false) {
+void NativeCodeJitter::CompileCCC(TagVal *idDefArgs, bool update) {
   switch(AbstractCode::GetArgs(idDefArgs)) {
   case AbstractCode::OneArg:
     {
@@ -1768,8 +1769,7 @@ static void *LookupChunkTable(ChunkMap *map, word key) {
     return 0;
 }
 
-void NativeCodeJitter::LookupTestTable(u_int Key, u_int table,
-				       bool isInt = true) {
+void NativeCodeJitter::LookupTestTable(u_int Key, u_int table, bool isInt) {
   Prepare();
   jit_pushr_ui(Key); // Key Argument
   ImmediateSel(JIT_R0, JIT_V2, table);

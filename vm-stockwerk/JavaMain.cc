@@ -13,6 +13,8 @@
 //
 
 #include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #if defined(__MINGW32__) || defined(_MSC_VER)
 #include <winsock.h>
 #endif
