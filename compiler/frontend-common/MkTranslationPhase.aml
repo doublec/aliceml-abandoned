@@ -546,7 +546,7 @@ struct
 	in
 	    O.LetExp(i, #[d'], O.ProdExp(i, r''))
 	end
-	
+
     and trUpdExp'(tr,i,e',r',fs) =
 	if Type.isEmptyRow tr then	(* check for unknown necessary? *)
 	    Vector.fromList fs

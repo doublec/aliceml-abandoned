@@ -630,8 +630,8 @@ structure Vector : VECTOR =
 				  f(sub(v,i)) andalso all'(f,v,i+1)
 
     fun exists  f v		= exists'(f,v,0)
-    and exists'(f,v,i) 		= i = length v orelse
-				  f(sub(v,i)) orelse exists'(f,v,i+1)
+    and exists'(f,v,i) 		= i <> length v andalso
+				  (f(sub(v,i)) orelse exists'(f,v,i+1))
 
     fun find  f v		= find'(f,v,0)
     and find'(f,v,i) 		= if i = length v then NONE else
@@ -832,8 +832,8 @@ structure Array : ARRAY =
 				  f(sub(a,i)) andalso all'(f,a,i+1)
 
     fun exists  f a		= exists'(f,a,0)
-    and exists'(f,a,i) 		= i = length a orelse
-				  f(sub(a,i)) orelse exists'(f,a,i+1)
+    and exists'(f,a,i) 		= i <> length a andalso
+				  (f(sub(a,i)) orelse exists'(f,a,i+1))
 
     fun find  f a		= find'(f,a,0)
     and find'(f,a,i) 		= if i = length a then NONE else
