@@ -7,6 +7,7 @@ functor MakeHashImpMap(Key: HASH_KEY) :> IMP_MAP where type key = Key.t =
 
     exception Delete    of key
     exception Collision of key
+    exception Lookup    of key
 
 
     val initialSize		= 19
@@ -39,6 +40,13 @@ functor MakeHashImpMap(Key: HASH_KEY) :> IMP_MAP where type key = Key.t =
 
     fun lookup((ref t,_), k)	= let val kas = Array.sub(t, hash(t,k)) in
 				    Option.map #2 (List.find (isEntryFor k) kas)
+				  end
+
+    fun lookupExistent((ref t,_), k)
+    				= let val kas = Array.sub(t, hash(t,k)) in
+				    case List.find (isEntryFor k) kas
+				      of NONE      => raise Lookup k
+				       | SOME(k,a) => a
 				  end
 
     exception Delete'

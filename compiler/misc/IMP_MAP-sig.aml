@@ -7,6 +7,7 @@ signature IMP_MAP =
 
     exception Delete    of key
     exception Collision of key
+    exception Lookup    of key
 
     val new :		unit -> 'a map
     val copy :		'a map -> 'a map
@@ -26,6 +27,8 @@ signature IMP_MAP =
     val unionWithi :	(key * 'a * 'a -> 'a) -> 'a map * 'a map -> unit
 
     val lookup :	'a map * key -> 'a option
+    val lookupExistent:	'a map * key -> 'a		(* Lookup *)
+
     val size :		'a map -> int
     val isEmpty :	'a map -> bool
 

@@ -8,6 +8,7 @@ functor MakeScopedImpMap(ImpMap: IMP_MAP) :>
 
     exception Delete    = ImpMap.Delete
     exception Collision = ImpMap.Collision
+    exception Lookup    = ImpMap.Lookup
 
 
     fun new()			= ref[ImpMap.new()]
@@ -30,14 +31,17 @@ functor MakeScopedImpMap(ImpMap: IMP_MAP) :>
     fun mergeScopeWithi f	= mergeScope'(ImpMap.unionWithi f)
 
 
-    fun lookup'( [],   k)	= NONE
+    fun lookup'( [],   k)	= raise Lookup k
+      | lookup'([m],   k)	= ImpMap.lookupExistent(m,k)
       | lookup'(m::ms, k)	= case ImpMap.lookup(m,k)
-				    of NONE => lookup'(ms,k)
-				     | some => some
+				    of NONE   => lookup'(ms,k)
+				     | SOME a => a
 
-    fun lookup(ref ms, k)	= lookup'(ms,k)
-
-    fun lookupScope(ref ms, k)	= ImpMap.lookup(List.hd ms, k)
+    fun lookup(ref ms, k)		= SOME(lookup'(ms,k))
+					  handle Lookup _ => NONE
+    fun lookupExistent(ref ms, k)	= lookup'(ms,k)
+    fun lookupScope(ref ms, k)		= ImpMap.lookup(List.hd ms, k)
+    fun lookupExistentScope(ref ms, k)	= ImpMap.lookupExistent(List.hd ms, k)
 
     fun isEmptyScope(ref ms)	= ImpMap.isEmpty(List.hd ms)
     fun isEmpty(ref ms)		= List.all ImpMap.isEmpty ms

@@ -11,6 +11,7 @@ signature SCOPED_IMP_MAP =
 
     exception Delete    of key
     exception Collision of key
+    exception Lookup    of key
 
     val new :			unit -> 'a map
 
@@ -18,8 +19,8 @@ signature SCOPED_IMP_MAP =
     val copyScope :		'a map -> 'a map
 
     val insertScope :		'a map -> unit
-    val inheritScope :		'a map * 'a map -> unit
     val deleteScope :		'a map -> unit
+    val inheritScope :		'a map * 'a map -> unit
     val splitScope :		'a map -> 'a map
 
     val mergeScope :		'a map -> unit
@@ -43,6 +44,8 @@ signature SCOPED_IMP_MAP =
 
     val lookup :		'a map * key -> 'a option
     val lookupScope :		'a map * key -> 'a option
+    val lookupExistent :	'a map * key -> 'a		(* Lookup *)
+    val lookupExistentScope :	'a map * key -> 'a		(* Lookup *)
 
     val size :			'a map -> int
     val sizeScope :		'a map -> int
