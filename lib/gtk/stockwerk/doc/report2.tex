@@ -66,6 +66,8 @@ In diesem Alice-GTK+-Binding werden nur Schnittstellen f"ur die Bibliotheken
 GTK und GDK generiert, denn auf die anderen Bibliotheken muss in der Regel beim
 Programmieren von GTK-Anwendungen nicht direkt zugegriffen werden.
 
+(??? Hinweis: GTK und GTK+ Sprachgebrauch)
+
 \subsection{GnomeCanvas}
 
 Dar"uberhinaus enth"alt das Binding eine Schnittstelle f"ur die GnomeCanvas-
@@ -80,127 +82,81 @@ nutzen.
 
 \section{Alice-Schnittstellen f"ur C-Bibliotheken}
 
-Dieser Abschnitt enth"alt allgemeine Betrachtungen zur Entwicklung von
-Alice-Schnittstellen f"ur C-Bibliotheken. Gleichzeitig wird angedeutet,
-wie gewisse Probleme in der GTK-Schnittstelle gel"ost sind.
+In diesem Abschnitt werden allgemeine Konzepte f"ur die Entwicklung von
+Alice-Bindings er"ortert. Gleichzeitig wird erkl"art,
+wie gewisse Probleme speziell in der GTK-Schnittstelle gel"ost sind.
+
+Eine C-Bibliothek besteht im Wesentlichen eine Reihe von Funktionen.
+Zus"atzlich werden komplexe Datentypen deklariert, die bei der Verwendung
+mit den Funktionen sinnvoll sind. Ein Binding hat die Aufgabe, diese
+Funktionen und Datentypen dem Alice-Programmierer zur Verf"ugung zu stellen.
 
 \subsection{Funktions-Abbildung}
 
-Eine Alice-Schnittstelle soll die Funktionalit"at einer C-Bibliothek
-in Alice verf"ugbar machen. Die C-Schnittstelle einer solchen Bibliothek
-besteht dabei im Wesentlichen aus Deklarationen von Funktionen und von
-komplexen Datentypen.
+Bei den Funktionen geschieht dies, indem f"ur alle Funktionen ein Wrapper
+geschrieben wird, der von Alice aus sichtbar ist und der den eigentlichen
+Funktionsaufruf t"atigt. (Fussnote: direkter Aufruf geht nicht)
 
-Es spricht wenig dagegen, Wrapper um die Bibliotheksfunktion zu schreiben,
-so dass diese als Alice-Funktionen verf"ugbar sind. 
-
-Diese Bibliotheksfunktionen nehmen jedoch C-Werte entgegen und liefern sie
-zur"uck, und daher es stellt sich die Frage, wie diese C-Werte in Alice
-dargestellt werden sollen, d.h. wie primitive und komplexe C-Datentypen
-auf Alice-Typen abgebildet werden.
-Hierf"ur gibt es verschiedene M"oglichkeiten.
+Ein Wrapper muss zus"atzlich ein Datenmarshalling durchf"uhren, d.h. vor
+dem eigentlichen Funktionsaufruf Alice-Werte in C-Werte umwandeln und
+umgekehrt. Die genaue Arbeitsweise h"angt nat"urlich davon ab, wie mit
+C-Datentypen in Alice umgegangen wird.
 
 \subsection{Datentyp-Abbildung}
 
-Eine L"osung besteht darin, alle C-Werte in Alice als Werte von abstrakten
+Es gibt zwei ``extreme'' M"oglichkeiten f"ur die Datentyp-Abbildung.
+
+Eine M"oglichkeit besteht darin, alle C-Werte in Alice als Werte von abstrakten
 Datentypen darzustellen. In diesem Fall muss die Schnittstelle aber Operatoren
 f"ur diese abstrakten Typen zur Verf"ugung stellen, wie z.B. Zuweisungs- und
 Vergleichsoperatoren f"ur C-Integers.
-Zwar erh"alt dieser Weg die gesamten M"oglichkeiten einer C-Bibliothek,
+Zwar umschifft dieser Weg einige grunds"atzliche Probleme,
 jedoch wird durch den indirekten Zugriff auf C-Werte die Programmierung
 unter Alice deutlich erschwert.
 
-Als Alternative kann man versuchen, f"ur alle C-Typen ein m"oglichst
-"ahnliches Alice-Pendant zu finden. Das erleichtert den Umgang mit der
-Schnittstelle, jedoch entsteht im Binding ein zus"atzlicher, ineffizienter
-Overhead f"ur die st"andige Datenkonversion, und nicht immer gibt es
-ein passendes Typ-"Aquivalent in Alice. Oft ist es ohne Meta-Daten auch nicht
-ersichtlich, anhand der C-Schnittstelle einer Bibliothek die Semantik eines
-Typs zu erschlie"sen. (Fussnote Erklaerung)
+Als Alternative k"onnte man versuchen, f"ur alle C-Typen ein m"oglichst
+"ahnliches Alice-Pendant zu finden, was den Umgang mit der Schnittstelle
+f"ur den Alice-Programmierer ungemein erleichtert. Allerdings entsteht
+dadurch im Binding ein ineffizienter Overhead f"ur die st"andige
+Datenkonversion, vor allem aber gibt es nicht immer
+ein passendes Typ-"Aquivalent in Alice.
 
-Das GTK-Binding geht einen Mittelweg zwischen beiden genannten ``Extremen'',
-welcher im Abschnitt ??? erkl"art wird.
-Da es keine Annotation der Schnittstelle mit Meta-Daten gibt, werden an einigen
-Stellen einfach Annahmen gemacht, die zumindest auf die GTK+-Bibliotheken
-zutreffen.
+Das GTK-Binding geht einen Mittelweg zwischen beiden genannten M"oglichkeiten:
+primitive Datentypen und Enumerationstypen werden auf "ahnliche Alice-Typen
+abgebildet, w"ahrend Verbundtypen in Alice abstrakt bleiben.
+Gr"unde f"ur diese Entscheidung und Implementationsdetails werden in Abschnitt
+??? erkl"art.
 
-\subsection{Automatische Generierung und manuelle Behandlung}
+\subsection{Die automatische Generierung und ihre Grenzen}
 
-Sobald man sich auf eine bestimmte Abbildung festgelegt hat, k"onnen diese
-Aspekte der Schnittstelle weitestgehend automatisch anhand der Bibliotheks-
-Deklarationen generiert werden. Der Aufbau des Generators f"ur das GTK-Binding
-wird in Abschnitt ??? erkl"art.
+Sobald man sich auf eine bestimmte Abbildung festgelegt hat, liegt es nahe,
+das Binding anhand der Bibliothekssignatur (???) automatisch generieren zu
+lassen. Leider enthalten reine C-Deklarationen manchmal zuwenig semantische
+Informationen, um eine m"oglichst akkurate Alice-Schnittstelle generieren
+zu k"onnen. (Fussnote: Erklaerung) Weil auch dies auch bei GTK+ der Fall
+ist und eine Annotierung mit Meta-Daten nicht vorliegt, macht der Generator
+an einigen Stellen bestimmte Annahmen, die zumindest f"ur die GTK+-Bibliothek
+zutreffen. Ausserdem kann f"ur Einzelf"alle eine gesonderte Code-Generierung
+festgelegt werden.
 
+(*
 Die so generierte Alice-Schnittstelle ist im Wesentlichen eine 1:1-Abbildung
 der C-Bibliothek. Weil die Bibliothek unter Alice also genauso benutzt wird
 wie unter C, sind die entstehenden Alice-Programme reichlich imperativ und auf
 Seiteneffekten beruhend. W"unschenswert w"are hier eine Abstraktion der
 einzelnen Funktionsaufrufe in einer h"oheren, funktionalen Schicht.
 Dies ist jedoch nicht Teil dieses Fopras.
+*)
 
-Es kann jedoch passieren, dass gewisse Teile der Schnittstelle auf jeden Fall
-von Hand geschrieben werden m"ussen, weil eine naive Benutzung der Bibliothek
-fundamentale Alice-Konzepte wie Nebenl"aufigkeit aushebelt. Die
-GTK-Schnittstelle fasst diese Spezialbehandlungen im sogenannten ``Core''
-zusammen, welcher in Abschnitt ??? erkl"art wird.
+Trotz allem m"ussen unter Umst"anden gewisse Teile der Schnittstelle manuell
+geschrieben werden, weil eine naive Benutzung der Bibliothek fundamentale
+Alice-Konzepte wie die Nebenl"aufigkeit aushebeln w"urde. Bei GTK sind
+dies die Hauptschleife, die Ereignisbehandlung sowie die Garbage Collection,
+welche im n"achsten Abschnitt erkl"art werden.
 
-\section{GTK-Schnittstelle}
+\section{Hauptschleife und Ereignisbehandlung}
 
-(Uebersicht; relativ grob; wie auf Folie)
-
-\section{Abbildung der Datentypen}
-
-Allgemein werden C-Objekte nach dem Schema in Tabelle ??? abgebildet.
-Die folgenden Unterabschnitte beschreiben besondere Details. 
-
-\textbf{Primitive Datentypen} werden auf m"oglichst "ahnliche primitive
-Alice-Typen abgebildet. Ein "Uberblick gibt Tabelle ???.
-(object, object list erklaeren)
-
-\textbf{Enumerationstypen} werden auf Alice-Datatypes mit nullstelligen
-Konstruktoren abgebildet. Dadurch wird eine Typsicherheit erreicht, die
-unter C nicht vorhanden war. Allerdings leidet die Geschwindigkeit ein
-wenig darunter, weil vor jedem Bibliotheks-Funktionsaufruf der Konstruktor
-in die entsprechende Enumerationskonstante konvertiert werden muss
-(und zur"uck). (Fussnote: nicht allzusehr, da nicht so haeufig)
-Eine andere M"oglichkeit w"are, die Enumerationskonstanten,
-die nichts anderes als ganzzahlige Werte darstellen, direkt als
-Integerkonstanten unter Alice verf"ugbar zu machen. Dann ist aber z.B.
-der folgende Code nicht mehr m"oglich:
-
-(case-Beispiel)
-
-\textbf{Verbundtypen} (Fussnote: structs und unions), oder besser,
-Zeiger auf Verbundtypen sind von entscheidender
-Bedeutung in GTK und werden daher aus Performanzgr"unden nicht auf die
-naheliegenden Alice-Records abgebildet.
-Stattdessen gibt es f"ur jeden Verbundtyp Zugriffsfunktionen,
-die einen Zugriff auf die einzelnen Felder eines Verbunds erlauben.
-Konstruktor- und Destruktorfunktionen sind dabei nicht n"otig, da GTK alle
-seine Verbunde selbst erzeugt und entfernt.
-
-\textbf{Typaliasnamen und externe Variablendeklarationen} werden nicht weiter
-behandelt. Unter C k"onnen nur primitive Typen an Funktionen "ubergeben werden,
-und diese werden immer entsprechend Tabelle ??? konvertiert. 
-(Fussnote Wenn man statt eines nicht n"aher spezifizierten Typs object 
-einen Typ 'a pointer benutzen w"urde, w"urde der Abbildung auf 
-Alice-type-Deklarationen Sinn machen.)
-Zugriff auf externe Variablen ist bei der GTK-Programmierung in aller Regel
-nicht n"otig.
-
-\subsection{Funktionen}
-
-(Funktionswrapper; Namenskonvention; Ein-/Ausgabe; variable Argumentlisten?)
-
-\section{Generator}
-
-(Aufbau wie auf Folien; Phasen)
-
-\section{Core}
-
-\subsection{Hauptschleife und Event-Handling}
-
-\subsubsection{Ereignisbehandlung in C}
+\subsection{Problem}
 
 Der Kontrollfluss eines in C geschriebenen GTK-Programms sieht normalerweise
 wie folgt aus: (Bild)
@@ -220,23 +176,19 @@ Zu beachten ist dabei, dass die Ereignisse synchron abgearbeitet werden,
 d.h. erst wenn die Callback-Funktion zur"uckgekehrt ist, kann die Hauptschleife
 wieder neue Ereignisse abarbeiten.
 
+Der naheliegende Ansatz, dieses Konzept unver"andert auf Alice-Programme
+zu "ubertragen, muss aus zwei Gr"unden scheitern.
+ 
+Zum einen sind Aufrufe von C-Funktionen f"ur die Alice-VM atomar. W"ahrend die
+Programmkontrolle bei der Hauptschleife liegt, was fast immer der Fall ist,
+ist die virtuelle Maschine blockiert. Dadurch kann sie keine weiteren
+Alice-Threads mehr abarbeiten, und die Nebenl"aufigkeit ist nicht mehr
+sichergestellt. (Fussnote: GC auch nicht).
 
-\subsubsection{Naiver Ansatz / Probleme}
+Zum anderen k"onnen Alice-Callback-Funktionen nicht bei GTK registriert werden,
+geschweige denn von C aus aufgerufen werden.
 
-Eine naive Umsetzung dieses Prozesses muss aus folgenden Gr"unden scheitern:
-
-\begin{itemize}
-\item Aufrufe von C-Funktionen sind f"ur die Alice-VM atomar. Die virtuelle
-      Maschine ist daher blockiert, solange die Hauptschleife l"auft, 
-      was fast immer der Fall ist. Dadurch kann die VM keine weiteren Alice-
-      Threads mehr abgearbeiten, und die Nebenl"aufigkeit ist nicht mehr
-      sichergestellt. (Fussnote: GC auch nicht)
-\item Alice-Callback-Funktionen k"onnen nicht bei GTK registriert werden,
-      geschweige denn von C aus aufgerufen werden.
-
-\end{itemize}
-
-\subsubsection{L"osung}
+\subsection{Implementierung in Alice}
 
 Die Probleme werden wie folgt gel"ost:
 
@@ -247,7 +199,6 @@ Die Probleme werden wie folgt gel"ost:
 \end{itemize}
 
 Eine schematische "Ubersicht liefert Abbildung ???.
-Die genaue Implementierung sieht wie folgt aus:
 
 Die Hauptschleife wird aufgeteilt in einen C- und einen Alice-Teil.
 (Fussnote: kein Hack) In einem eigenen Alice-Thread wird dabei das Verhalten
@@ -256,29 +207,19 @@ GTK-Funktionen auf, die "uberpr"ufen, ob Ereignisse vorliegen bzw. diese
 abarbeiten. Durch diese Konstruktion kehrt der Programmfluss immer wieder
 zu Alice zur"uck, wodurch die VM nicht blockiert wird.
 
-Bei der Bindung einer Alice-Funktion f an ein Objekt o f"ur ein Ereignis e
-laufen die folgenden Dinge ab:
+Der indirekte Aufruf l"auft in folgenden Schritten ab:
 
 \begin{enumerate}
-\item Bei GTK wird ein in C geschriebener ``generischer Marshaller''
-      f"ur Objekt o und Ereignis e registriert. (Fussnote: GTK bietet diese
-      M"oglichkeit) GTK liefert daraufhin eine Verbindungsnummer ID zur"uck.
-\item Die Alice-Funktion f wird in einer Hash-Tabelle eingetragen;
-      der Schl"ussel zur Funktion ist die ID.
-\end{enumerate}
-
-Bei der Ausl"osung von Ereignis e bei Objekt o passiert folgendes:
-
-\begin{enumerate}
-\item Die Hauptschleife ruft den ``generischen Marshaller'' auf. Als Argumente
-      bekommt dieser die ID, das Objekt o, sowie eine variable Liste von
-      Argumenten args f"ur das Ereignis e.
-\item Der Marshaller schreibt ID, o und args auf den Ereignisstrom.
+\item Soll eine Alice-Callback-Funktion f"ur ein Ereignis registriert werden,
+      wird f"ur sie eine eindeutige ID generiert. 
+      Bei GTK wird statt der Funktion ein in C geschriebener
+      ``generischer Marshaller'' registriert, und zwar so, dass er bei jedem
+      Aufruf die ID als Argument erh"alt.
+\item Wird das Ereignis ausgel"ost, ruft GTK den Marshaller mit der ID auf.
+      Dieser schreibt die ID auf den Ereignisstrom.
 \item Auf Alice-Seite wartet ein ``listener-Thread'' auf Daten vom Strom.
-      Der Thread liest ID, o und args, und findet mit der Hash-Tabelle anhand
-      der ID die Callback-Funktion f heraus.
-\item Der Thread ruft f mit o und args als Argumenten auf. Sobald f beendet
-      ist, wird wieder auf neue Daten vom Strom gewartet.
+      Dieser Thread kann anhand einer ankommenden ID die zugeh"orige
+      Alice-Callback-Funktion herausfinden und aufrufen.
 \end{enumerate}
 
 Durch den Strom werden die Ereignisse nacheinander in der richtigen
@@ -288,7 +229,7 @@ abgearbeitet, d.h. die Hauptschleife kann bereits ein Ereignis bearbeiten,
 w"ahrend ein anderes noch in einer Alice-Callback-Funktion abgearbeitet wird.
 (Grund??? Probleme???)
 
-\subsection{Garbage-Collection}
+\section{Garbage-Collection}
 
 GTK+ besitzt eine eigene interne Speicherverwaltung, die daf"ur sorgt,
 das GTK-Objekte entfernt werden, sobald sie nicht mehr ben"otigt werden.
@@ -304,9 +245,7 @@ daher entfernt, weil die Bibliothek keine Kenntnis von der Alice-Referenz
 besitzt. Wird die Alice-Referenz dann weiterhin benutzt, kann das fatale
 Folgen haben.
 
-Die L"osung des Problems besteht darin, den Referenzz"ahler eines Objekts
-solange um eins erh"oht zu halten, wie eine Referenz auf das Objekt in
-Alice sichtbar ist:
+Daher erh"oht die Schnittstelle selbst den Referenzz"ahler automatisch:
 
 \begin{itemize}
 \item Sobald eine GTK-Funktion eine Objekt-Referenz liefert und es noch keine
@@ -316,13 +255,276 @@ Alice sichtbar ist:
       dessen Z"ahler wieder um eins verringert (Fussnote: ueber AliceFinalis)
 \end{itemize}
 
-Solange eine Referenz auf ein Objekt in Alice also besteht, muss der
+Solange eine Referenz auf ein Objekt in Alice also sichtbar ist, muss der
 GTK-Referenzz"ahler mindestens 1 sein, was GTK am Entfernen des Objekts
 hindert.
 
-\subsection{Weitere Funktionen}
 
-(init, NULL, TRUE, FALSE ?)
+\section{GTK-Schnittstelle}
+
+(Uebersicht; relativ grob; wie auf Folie)
+
+\section{Generator}
+
+(Aufbau wie auf Folien; Phasen)
+
+\section{Abbildung der Datentypen}
+
+F"ur welche konkreten Elemente kann das Binding "uberhaupt eine Schnittstelle
+liefern? Neben den primitiven Datentypen von C sind dies die in der Bibliothek
+deklarierten Funktionen, Enumerationstypen, Verbundtypen, Typ-Aliasnamen
+und externen Variablen.
+
+\textbf{Primitive Datentypen} werden in der Regel auf m"oglichst
+"ahnliche primitive Alice-Typen abgebildet. Einen "Uberblick gibt Tabelle ???.
+(Fussnote: object list)
+
+Dabei sind die folgenden Dinge zu beachten:
+
+object ist ein abstrakter Datentyp, der einen C-Zeiger repr"asentiert.
+Es ist ohne die GTK-Bibliothek nicht m"oglich, ein Wert vom Typ object zu
+konstruieren oder zu dereferenzieren, lediglich ein Vergleich ist m"oglich.
+Mehr ist auch nicht n"otig, denn f"ur Zeiger auf Verbundtypen gibt es
+Zugriffsfunktionen, und Zeiger auf andere Werte werden als Ausgabeparameter
+betrachtet (siehe unten).
+
+Bei Strings, Arrays und Listen kann sich in C der Zustand/Inhalt "andern,
+ohne dass diese "Anderungen auf Alice-Seite reflektiert werden. Anhand der
+Konzeption von GTK+ kann jedoch davon ausgegangen werden, dass diese Typen
+nur als ``Container'' f"ur den Datentransport benutzt werden, und etwaige
+"Anderungen durch eine GTK-Funktion in einem neuen ``Container'' zur"uckkommen.
+
+\textbf{Enumerationstypen} werden auf Alice-Datatypes mit nullstelligen
+Konstruktoren abgebildet. Dadurch wird eine neue Typsicherheit eingef"uhrt,
+die unter C nicht vorhanden war, da dort alle Enumerationskonstanten im Grunde
+Integer-Werte sind. Allerdings leidet durch die Konstruktor-Integer-Konversion
+die Geschwindigkeit ein wenig. 
+(Fussnote: nicht allzusehr, da nicht so haeufig)
+Eine andere M"oglichkeit w"are, auf Kosten der Typsicherheit 
+die Enumerationskonstanten direkt als Integerkonstanten (Variablen) unter Alice
+zur Verf"ugung zu stellen. Allerdings sind z.B. pattern matchings nur "uber
+Konstruktoren, nicht aber "uber Variablen m"oglich.
+
+Bei \textbf{Verbundtypen} (Fussnote: structs und unions) liegt es nahe, sie
+als Alice-Records zu repr"asentieren. Das ist aber sehr teuer, zumal in C
+nur Zeiger auf Verbunde, nicht jedoch Verbunde selbst
+an Funktionen "ubergeben werden k"onnen.
+Daher reicht der Typ ``object'' f"ur die Benutzung von Verbunden aus.
+Zudem kann und sollte der Programmierer GTK-Verbunde nie selbst
+erstellen oder entfernen, sondern nur die entsprechenden Funktionen benutzen.
+Die Schnittstelle muss sich also nicht um eigene Konstruktoren und Destruktoren
+k"ummern. Allerdings erfordert die GTK-Programmierung bisweilen einen direkten
+Zugriff auf Felder eines Verbunds zugreift. Daher werden f"ur jeden
+Verbundtyp Feldzugriffsfunktionen generiert.
+
+\textbf{Typaliasnamen und externe Variablen} (Fussnote: Typedefs) werden von
+der Schnittstelle nicht behandelt. Eine Abbildung von Typaliasnamen auf
+type-Deklarationen in Alice w"urde erst richtig Sinn machen, wenn man
+statt des nicht n"aher spezifizierten ``object'' einen polymorphen
+``$\alpha$ pointer'' benutzen w"urde. Ein Zugriff auf externe Variablen
+ist bei der GTK-Programmierung in aller Regel nicht n"otig.
+
+\subsection{Funktionen}
+
+F"ur jede Funktion wird ein Funktionswrapper generiert, der das
+Datenmarshalling durchf"uhrt, d.h. Werte eines Alice-Typs in Werte eines
+C-Typs konvertiert und umgekehrt. Der Alice-Funktionstyp folgt dabei der
+C-Funktionsdeklaration; mehrere Argumente werden als Tupel "ubergeben.
+Die Funktionsnamen sind nach der ``lower caml case''-Konvention
+umgewandelt.
+
+Abbildung ??? zeigt ein Beispiel.
+
+\subsection{Ein- und Ausgabeparameter}
+
+Manche GTK-Funktionen nehmen Zeiger auf primitive Typen entgegen:
+(Beispiel)
+
+Mittels solcher Zeiger kann die Funktion zus"atzliche Ausgabewerte
+zur"uckliefern. Da in Alice mehrere R"uckgabewerte (als Tupel) m"oglich sind,
+betrachtet die Schnittstelle alle Zeiger mit Ausnahme von Verbundzeigern,
+Strings und Listen als Ausgabeparameter und erstellt daher den folgende
+Wrapper:
+
+(Beispiel)
+
+M"oglicherweise greift die GTK-Funktion aber zus"atzlich noch lesend auf 
+einen solchen Wert zu. Aufgrund fehlender semantischer Informationen kann
+der Generator nicht wissen, ob es sich um einen kombinierten Ein- und
+Ausgabe-Parameter handelt.
+Daher wird f"ur eine solche Funktion ein weiterer Wrapper generiert,
+der jeden Ausgabeparametern zus"atzlich als Eingabeparameter betrachtet:
+
+(Beispiel)
+
+Es liegt dann am Programmierer, die richtige Variante verantwortungsbewusst
+zu benutzen.
+
+\subsection{Funktionen mit variablen Argumentlisten}
+
+Im Bereich der Sprachanbindungen ist dies eines der d"ustersten Kapitel,
+welches hier aber trotzdem nicht verschwiegen werden soll, denn leider
+macht GTK+ intensiv von diesem ``Feature'' Gebrauch.
+
+Funktionen mit variablen Argumentlisten k"onnen beliebig viele Argumente
+erhalten, und jedes Argument kann von einem beliebigen Typ sein.
+
+Die "Ubergabe der Argumente von Alice an die Schnittstelle l"asst sich dabei
+noch halbwegs elegant gestalten. Auf Alice-Seite wird eine Liste vom Typ
+``arg list'' "ubergeben, wobei ``arg'' wie folgt definiert ist:
+
+(...)
+
+(Fussnote: EVENT hier nicht wichtig)
+
+Das eigentliche Problem besteht darin, dass zur "Ubersetzungszeit
+\textit{der Schnittstelle} Anzahl und Typen der Argumente bekannt sein m"ussen.
+Sie werden aber fr"uhestens zur "Ubersetzungszeit des
+Alice-Programms bekannt.
+
+Es gibt in C keine plattformunabh"angige M"oglichkeit,
+variable Argumentlisten zur Laufzeit zu bauen und einer Funktion zu "ubergeben.
+Die GTK-Schnittstelle l"ost das Problem momentan auf eine Art, die
+auf x86-Plattformen unter Windows und Linux keine Probleme
+zu bereiten scheint. Man kann die Plattformunabh"angigkeit noch ``steigern'',
+indem auf Alice-Seite solche Funktionen mit h"ochstens einem Argument
+aufgerufen werden.
+
+Eine bessere L"osung w"are es, eine spezielle low-level-Bibliothek
+wie ``libffi'' zu benutzen, die das plattformabh"angige dynamische "Ubergeben
+von variablen Argumenten abstrahiert.
+
+
+
+
+
+%% \section{Core}
+
+%% \subsection{Hauptschleife und Event-Handling}
+
+%% \subsubsection{Ereignisbehandlung in C}
+
+%% Der Kontrollfluss eines in C geschriebenen GTK-Programms sieht normalerweise
+%% wie folgt aus: (Bild)
+
+%% \begin{enumerate}
+%% \item Es werden sogenannte ``Callback-Funktionen'' bei GTK registriert, die
+%%       bei bestimmten Ereignissen reagieren sollen.
+%% \item Das Hauptprogramm "ubergibt die Kontrolle an die GTK-Hauptschleife,
+%%       welche erst zum Ende des Programms zur"uckkehrt.
+%% \item Die Hauptscheife "uberpr"uft regelm"a"sig, ob Ereignisse vorliegen.
+%% \item Wenn ein Ereignis eintritt (z.B. der Benutzer eine Schaltfl"ache 
+%%       dr"uckt), werden die f"ur dieses Ereignis registrierten
+%%       ``Callback-Funktionen'' aufgerufen.
+%% \end{enumerate}
+
+%% Zu beachten ist dabei, dass die Ereignisse synchron abgearbeitet werden,
+%% d.h. erst wenn die Callback-Funktion zur"uckgekehrt ist, kann die Hauptschleife
+%% wieder neue Ereignisse abarbeiten.
+
+
+%% \subsubsection{Naiver Ansatz / Probleme}
+
+%% Eine naive Umsetzung dieses Prozesses muss aus folgenden Gr"unden scheitern:
+
+%% \begin{itemize}
+%% \item Aufrufe von C-Funktionen sind f"ur die Alice-VM atomar. Die virtuelle
+%%       Maschine ist daher blockiert, solange die Hauptschleife l"auft, 
+%%       was fast immer der Fall ist. Dadurch kann die VM keine weiteren Alice-
+%%       Threads mehr abgearbeiten, und die Nebenl"aufigkeit ist nicht mehr
+%%       sichergestellt. (Fussnote: GC auch nicht)
+%% \item Alice-Callback-Funktionen k"onnen nicht bei GTK registriert werden,
+%%       geschweige denn von C aus aufgerufen werden.
+
+%% \end{itemize}
+
+%% \subsubsection{L"osung}
+
+%% Die Probleme werden wie folgt gel"ost:
+
+%% \begin{itemize}
+%% \item Teile der Hauptschleife werden nach Alice ``hochgezogen''.
+%% \item Alice-Callbacks werden indirekt "uber ein Ereignisstrom-Modell
+%%       aufgerufen.
+%% \end{itemize}
+
+%% Eine schematische "Ubersicht liefert Abbildung ???.
+%% Die genaue Implementierung sieht wie folgt aus:
+
+%% Die Hauptschleife wird aufgeteilt in einen C- und einen Alice-Teil.
+%% (Fussnote: kein Hack) In einem eigenen Alice-Thread wird dabei das Verhalten
+%% der GTK-Hauptschleife ``simuliert'': Der Thread ruft periodisch
+%% GTK-Funktionen auf, die "uberpr"ufen, ob Ereignisse vorliegen bzw. diese
+%% abarbeiten. Durch diese Konstruktion kehrt der Programmfluss immer wieder
+%% zu Alice zur"uck, wodurch die VM nicht blockiert wird.
+
+%% Bei der Bindung einer Alice-Funktion f an ein Objekt o f"ur ein Ereignis e
+%% laufen die folgenden Dinge ab:
+
+%% \begin{enumerate}
+%% \item Bei GTK wird ein in C geschriebener ``generischer Marshaller''
+%%       f"ur Objekt o und Ereignis e registriert. (Fussnote: GTK bietet diese
+%%       M"oglichkeit) GTK liefert daraufhin eine Verbindungsnummer ID zur"uck.
+%% \item Die Alice-Funktion f wird in einer Hash-Tabelle eingetragen;
+%%       der Schl"ussel zur Funktion ist die ID.
+%% \end{enumerate}
+
+%% Bei der Ausl"osung von Ereignis e bei Objekt o passiert folgendes:
+
+%% \begin{enumerate}
+%% \item Die Hauptschleife ruft den ``generischen Marshaller'' auf. Als Argumente
+%%       bekommt dieser die ID, das Objekt o, sowie eine variable Liste von
+%%       Argumenten args f"ur das Ereignis e.
+%% \item Der Marshaller schreibt ID, o und args auf den Ereignisstrom.
+%% \item Auf Alice-Seite wartet ein ``listener-Thread'' auf Daten vom Strom.
+%%       Der Thread liest ID, o und args, und findet mit der Hash-Tabelle anhand
+%%       der ID die Callback-Funktion f heraus.
+%% \item Der Thread ruft f mit o und args als Argumenten auf. Sobald f beendet
+%%       ist, wird wieder auf neue Daten vom Strom gewartet.
+%% \end{enumerate}
+
+%% Durch den Strom werden die Ereignisse nacheinander in der richtigen
+%% Reihenfolge abgearbeitet. Es gibt jedoch einen wichtigen Unterschied
+%% zur Ereignisbehandlung bei einem C-Programm: Die Ereignisse werden asynchron
+%% abgearbeitet, d.h. die Hauptschleife kann bereits ein Ereignis bearbeiten,
+%% w"ahrend ein anderes noch in einer Alice-Callback-Funktion abgearbeitet wird.
+%% (Grund??? Probleme???)
+
+%% \subsection{Garbage-Collection}
+
+%% GTK+ besitzt eine eigene interne Speicherverwaltung, die daf"ur sorgt,
+%% das GTK-Objekte entfernt werden, sobald sie nicht mehr ben"otigt werden.
+%% Dies wird "uber einen Z"ahler realisiert, der festh"alt, wieviele
+%% Referenzen auf das Objekt bestehen. Sobald der Z"ahler auf 0 sinkt,
+%% entfernt GTK das Objekt aus dem Speicher.
+
+%% Das Problem dabei ist, das der Z"ahler zun"achst nur bibliotheksintern
+%% verwaltet wird. Nachdem eine GTK-Funktion eine Referenz
+%% auf ein Objekt geliefert hat und diese Referenz in Alice sichtbar ist,
+%% kann es passieren, dass GTK das Objekt intern nicht mehr ben"otigt und
+%% daher entfernt, weil die Bibliothek keine Kenntnis von der Alice-Referenz
+%% besitzt. Wird die Alice-Referenz dann weiterhin benutzt, kann das fatale
+%% Folgen haben.
+
+%% Die L"osung des Problems besteht darin, den Referenzz"ahler eines Objekts
+%% solange um eins erh"oht zu halten, wie eine Referenz auf das Objekt in
+%% Alice sichtbar ist:
+
+%% \begin{itemize}
+%% \item Sobald eine GTK-Funktion eine Objekt-Referenz liefert und es noch keine
+%%       Referenz von Alice auf das Objekt gibt, wird der GTK-Referenzz"ahler
+%%       um eins erh"oht.
+%% \item Sobald unter Alice letzte Referenz auf das Objekt verschwindet, wird
+%%       dessen Z"ahler wieder um eins verringert (Fussnote: ueber AliceFinalis)
+%% \end{itemize}
+
+%% Solange eine Referenz auf ein Objekt in Alice also besteht, muss der
+%% GTK-Referenzz"ahler mindestens 1 sein, was GTK am Entfernen des Objekts
+%% hindert.
+
+%% \subsection{Weitere Funktionen}
+
+%% (init, NULL, TRUE, FALSE ?)
 
 \section{Ausblick}
 
