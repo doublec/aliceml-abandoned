@@ -28,7 +28,7 @@
 //
 // Well-formedness conditions:
 // -- Only backward references are allowed.
-// -- The reference within a transform must not reference another transform.
+// -- The reference directly below a transform must not be another transform.
 //
 
 class PrimPickle {
