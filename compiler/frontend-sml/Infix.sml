@@ -12,7 +12,6 @@ structure Infix :> INFIX =
 
     structure Grammar = PostParseGrammar_Core
 
-    open BasicObjects_Core
     open Grammar
 
 
@@ -35,7 +34,7 @@ structure Infix :> INFIX =
     (* Categorisation of atomic expressions and patterns *)
 
     datatype 'a FixityCategory = NONFIX of 'a
-			       | INFIX  of Assoc * int * Grammar.VId
+			       | INFIX  of Assoc * int * VId
 
     fun categoriseVId (IE: InfEnv) (at, vid as VId(i,vid')) =
 	(case VIdSymtable.lookup(IE,vid')

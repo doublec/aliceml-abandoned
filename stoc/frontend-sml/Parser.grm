@@ -80,9 +80,6 @@
 
     (* Import *)
 
-    open BasicObjects_Core
-    open BasicObjects_Module
-
     open PostParseGrammar_Core
     open PostParseGrammar_Module
     open PostParseGrammar_Program

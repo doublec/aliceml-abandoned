@@ -23,8 +23,8 @@ Group is
     TYVAR.sig
     TyVar.sml
 
-    BasicObjects_Core.sml
-    BasicObjects_Module.sml
+    Ids_Core.sml
+    Ids_Module.sml
 
     GRAMMAR_CORE.sig
     GRAMMAR_MODULE.sig
