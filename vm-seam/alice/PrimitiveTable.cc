@@ -85,7 +85,7 @@ void PrimitiveTable::Register(const char *name, word value) {
 }
 
 void PrimitiveTable::Register(const char *name,
-			      Primitive::function value, u_int arity) {
+			      Interpreter::function value, u_int arity) {
   word function = Primitive::MakeFunction(name, value, arity);
   word closure  = Closure::New(function, 0)->ToWord();
   Register(name, closure);
