@@ -90,7 +90,6 @@
 	val alarm :        Time.time -> unit
 
 	val await :        'a -> 'a
-	val awaitQuiet     'a -> 'a
 	val awaitEither :  'a * 'b -> ('a,'b) alt
 
 	val status :       'a -> status
@@ -170,6 +169,7 @@
       <TT><I>ex</I></TT>.</P>
     </DD>
 
+<!--
     <DT>
       <TT>awaitQuiet <I>v</I></TT>
     </DT>
@@ -179,6 +179,7 @@
       determined or failed. It can be utilized to write procedures that are
       invoked upon status change of a future.</P>
     </DD>
+-->
 
     <DT>
       <TT>awaitEither (<I>v1</I>, <I>v2</I>)</TT>

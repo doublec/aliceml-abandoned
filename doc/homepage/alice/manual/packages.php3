@@ -259,10 +259,11 @@ href="library/package.php3"><TT>Package.Mismatch</TT></A>.</LI>
 
 </UL>
 
-<P>Note that polymorphic functions are still interpreted in a type erasure
-semantics. To pass type information, a function has to be lifted to the functor
-level. Due to <A href="modules.php3#local">local modules</A> this is possible
-most of the times.</P>
+<P>Note that polymorphic functions are still parametric and thus can be
+interpreted in a type erasure semantics. To pass type information, a function
+has to be lifted to the functor level. Due to <A
+href="modules.php3#local">local modules</A> this is possible most of the
+times.</P>
 
 <P>Packing performs sealing to ensure consistency between the package signature
 and dynamic types contained in the packaged module. If no sealing took place,

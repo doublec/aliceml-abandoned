@@ -67,12 +67,11 @@
 
 	val <A href="#defaultResolver">defaultResolver</A> : <A href="resolver.php3#t">Resolver.t</A>
 
-	functor <A href="#Create">Create</A>(signature S  structure X : S) :
-	    sig  val component : component  end
+	functor <A href="#Create">Create</A>(signature S  structure X : S) : (val component : component)
 
-	val <A href="#load">load</A>: <A href="url.php3#t">Url.t</A> -> component
-	val <A href="#save">save</A>: string * component -> unit
-	val <A href="#inf">inf</A>: component -> Inf.t option
+	val <A href="#load">load</A> : <A href="url.php3#t">Url.t</A> -> component
+	val <A href="#save">save</A> : string * component -> unit
+	val <A href="#inf">inf</A> :  component -> Inf.t option
 
 	functor <A href="#MkManager">MkManager</A>(val resolver : <A href="resolver.php3#t">Resolver.t</A>) : <A href="component-manager.php3">COMPONENT_MANAGER</A> where type <A href="component-manager.php3#component">component</A> = component
     end</PRE>

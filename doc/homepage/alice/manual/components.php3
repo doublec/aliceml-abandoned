@@ -1,95 +1,100 @@
 <?php include("macros.php3"); ?>
-
 <?php heading("Components", "components") ?>
-
 
 
 <?php section("overview", "overview") ?>
 
-  <P>
-    SML does not deal with separate compilation. Alice repairs
-    this by adding a component system to the language. Alice
-    components were inspired by Mozart "functors". They support lazy linking
-    and loading from remote URLs, but add static and dynamic type checking.
-    Components are architecture independent and can be executed on any system.
-  </P>
+<P>A <EM>component</EM> is the entity of compilation and deployment. The
+<EM>export</EM> of a component is a module expression that will be evaluated
+when executing the component. A component can <EM>import</EM> other components,
+which may reside at remote URLs. Imported components are loaded and evaluated
+lazily. This <EM>linking</EM> operation includes a dynamic type check between
+import and export signatures. An <EM>application</EM> is defined by a set of
+components and a designated <EM>root</EM> component that represents its main
+body.</P>
 
-  <P>
-    A component is an SML program headed by a set of <I>import
-    announcements</I> of the form:
-  </P>
 
-  <PRE>
-	import <I>imp</I> from "url"
-  </PRE>
+<?php section("source", "defining components") ?>
 
-  <P>
-    The URL describes where to find the component, while the import <I>imp</I>
-    denotes what kind of item is imported from that particular component.
-    For example,
-  </P>
+<P>Syntactically, a component is an SML program headed by a set of <I>import
+announcements</I> of the form</P>
 
-  <PRE>
-	import structure Foo from "http://ps.uni-sb.de/stockhausen/Foo"
-  </PRE>
+<PRE class=code>
+import <I>imp</I> from "url"</PRE>
 
-  <P>
-    An import can contain any language entity, like values, types, structures,
-    signatures, etc. Imports can be given in plain form like above (in which
-    case the compiler looks up the actual type of the entity in the component
-    itself) or in description form similar to specifications (in which case
-    the compiler verifies that the description matches the actual component):
-  </P>
+<P>The URL describes where to find the component, while the import description
+<I>imp</I> denotes what kind of item is imported from that particular
+component. For example,</P>
 
-  <PRE>
-	import signature FOO       from "http://ps.uni-sb.de/stockhausen/FOO-sig"
-	import structure Foo : FOO from "http://ps.uni-sb.de/stockhausen/Foo"
-  </PRE>
+<PRE class=code>
+import structure Foo from "http://ps.uni-sb.de/stockhausen/Foo"</PRE>
 
-  <P>
-    Each component exports exactly its body environment, i.e. all entities
-    declared on its toplevel. For example, the component
-  </P>
+<P>An import can contain any language entity, like values, types, structures,
+signatures, etc. (see <A href="#syntax">below</A>). Imports can be given in
+plain form like above, in which case the compiler will look up the actual type
+of the entity in the component itself, or in description form similar to
+specifications, in which case the compiler verifies that the description
+matches the actual component:</P>
 
-  <PRE>
-	import structure Y from "other"
+<PRE class=code>
+import signature FOO       from "http://ps.uni-sb.de/stockhausen/FOO-sig"
+import structure Foo : FOO from "http://ps.uni-sb.de/stockhausen/Foo"</PRE>
 
-	signature S = sig end
-	structure X :> S = struct end
-  </PRE>
+<P>Each component exports exactly its body environment, i.e. all entities
+declared on its toplevel. For example, the component</P>
 
-  <P>
-	enables other components to import a signature <TT>S</TT> and a
-	structure <TT>X</TT> from it. Structure <TT>Y</TT> is not exported
-	(but can be by a simple rebinding, of course).
-  </P>
+<PRE class=code>
+import structure Y from "other"
 
+signature S = sig end
+structure X :> S = struct end</PRE>
+
+<P>exports a signature item <TT>S</TT> and a structure <TT>X</TT>. The export
+signature of the component will consist of these two items. Structure
+<TT>Y</TT> is not exported (but may be by a simple rebinding, if desired).</P>
+
+<P>A compiled component also includes information about all its import
+signatures. These are determined by the export signatures found in the
+imported components at compile time.</P>
 
 
 <?php section("execution", "execution") ?>
 
-  <P>
-    An Alice program is executed by starting a component. In general, a
-    component relies on other components. These other components are loaded
-    and evaluated by need by the <I>Composer</I>, who is part of the runtime
-    system.
-    A component that is never actually accessed at runtime will not get loaded.
-    URI resolving is handled similar to Mozart.
-  </P>
+<P>An application is executed by evaluating its root component. In general, a
+component imports other components. Imported components are loaded and
+evaluated lazily by the default <A
+href="library/component-manager.php3"><I>component manager</I></A>, which is
+part of the runtime system. A component that is never actually accessed will
+not get loaded. URL resolving is handled by the component manager's <A
+href="library/resolver.php3"><I>resolver</I></A>.</P>
 
-  <P>
-    When a component is loaded, its signature is matched against the signature
-    expected by the dependent component - the signature that was found when
-    the dependent component was compiled. A runtime exception is raised
-    when the signature does not match. If the check was successful, the
-    component is executed in a separate thread.
-  </P>
+<P>Lazy linking is achieved by representing imports by <A
+href="futures.php3#lazy">lazy futures</A> of their result module. A component
+gets linked when the future is <A href="futures.php3#request">requested</A>.
+The first step of linking is matching the export signature of the linked
+component against the corresponding import signature of the component that 
+requested it. If the check is succesful, the component is evaluated <A
+href="futures.php3#spawn">concurrently</A> and the future is replaced by a
+concurrent future of the result of the evaluation. Otherwise the future is <A
+href="futures.php3#failed">failed</A>.</P>
 
-  <P>
-    Every component is loaded and executed at most once in a single process.
-    If several other components load a component from the same URI, they will
-    share a reference to the same instantiation of that component.
-  </P>
+<P>Every component is loaded and evaluated at most once in a single process. If
+multiple components request an import from the same (resolved) URL, they
+will share a reference to the same instantiation of that component.</P>
+
+
+<?php section("firstclass", "first-class components") ?>
+
+<P>Components generated by the compiler are always ground, i.e. they return a
+structure containing the items declared on the top-level of the component.
+However, components can also be created or loaded dynamically by means of the <A
+href="library/components.php3"><TT>Component</TT></A> structure. Such
+first-class components are not restricted to ground signatures, but may
+have any higher-order signature. Components with higher-order signatures cannot
+be imported by import announcements, though. They can be evaluated only
+through the <A
+href="library/component-manager.php3#Eval"><TT>ComponentManager.Eval</TT></A>
+functor.</P>
 
   <P>
     Note the close connection of components to the Alice
@@ -97,9 +102,23 @@
   </P>
 
 
+<?php section("firstclass-higher", "higher-order components") ?>
+
+<P>Components generated by the compiler are always ground, i.e. they return a
+structure containing the items declared on the top-level of the component.
+However, components can also be created or loaded dynamically by means of the <A
+href="library/components.php3"><TT>Component</TT></A> structure. Such
+first-class components are not restricted to ground signatures, but may
+have any higher-order signature. Components with higher-order signatures cannot
+be imported by import announcements, though. They can be evaluated only
+through the <A
+href="library/component-manager.php3#Eval"><TT>ComponentManager.Eval</TT></A>
+functor.</P>
+
+
 <?php section("syntax", "syntax") ?>
 
-  <TABLE>
+  <TABLE class=bnf>
     <TR>
       <TD> <I>component</I> </TD>
       <TD align="center">::=</TD>

@@ -342,6 +342,12 @@ another <I>sigexp</I>, or a <I>spec</I>:</P>
 <PRE class=code>
 signature S = (type t val x : int)</PRE>
 
+<P>Functor parameters may also be specified as a <I>spec</I>, generalising the
+SML functor binding derived forms:</P>
+
+<PRE class=code>
+structure F = fct (type t val x : int) => struct val x = x end</PRE>
+
 
 <?php subsection("sugar-wildcards", "Module wildcards") ?>
 

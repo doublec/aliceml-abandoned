@@ -67,6 +67,8 @@ programming language (SML), as defined in</P>
 
   <LI> <A href="components.php3">Components:</A>
   <UL>
+    <LI> <A href="components.php3#source">separate compilation</A> </LI>
+    <LI> <A href="components.php3#execution">lazy linking</A> </LI>
   </UL>
   </LI>
 
@@ -126,12 +128,12 @@ relative to Standard ML. Derived forms are marked (*).
     <TD></TD> <TD></TD>
     <TD> <TT>#[</TT> <I>exp</I><SUB>1</SUB> <TT>,</TT> ... <TT>,</TT>
                      <I>exp</I><SUB><I>n</I></SUB> <TT>]</TT> </TD>
-    <TD> vector (<I>n</I>&ge;0) </TD>
+    <TD> <A href="sugar.php3#vectors">vector</A> (<I>n</I>&ge;0) </TD>
   </TR>
   <TR>
     <TD></TD> <TD></TD>
     <TD> <TT>{</TT> <I>atexp</I> <TT>where</TT> <I>exprow</I> <TT>}</TT> </TD>
-    <TD> record update </TD>
+    <TD> <A href="sugar.php3#records-update">record update</A> </TD>
   </TR>
 
   <TR></TR>
@@ -144,22 +146,22 @@ relative to Standard ML. Derived forms are marked (*).
   <TR>
     <TD></TD> <TD></TD>
     <TD> <TT>lazy</TT> <I>exp</I> </TD>
-    <TD> lazy </TD>
+    <TD> <A href="futures.php3#lazy">lazy</A> </TD>
   </TR>
   <TR>
     <TD></TD> <TD></TD>
     <TD> <TT>spawn</TT> <I>exp</I> </TD>
-    <TD> concurrent </TD>
+    <TD> <A href="futures.php3#spawn">concurrent</A> </TD>
   </TR>
   <TR>
     <TD></TD> <TD></TD>
     <TD> <TT>rec</TT> <I>pat</I> <TT>=></TT> <I>exp</I> </TD>
-    <TD> recursion (*) </TD>
+    <TD> <A href="sugar.php3#rec-expression">recursion</A> (*) </TD>
   </TR>
   <TR>
     <TD></TD> <TD></TD>
     <TD> <TT>pack</TT> <I>strexp</I> <TT>:></TT> <I>sigexp</I> </TD>
-    <TD> packing </TD>
+    <TD> <A href="packages.php3#package-pack">packing</A> </TD>
   </TR>
 
   <TR></TR>
@@ -173,7 +175,7 @@ relative to Standard ML. Derived forms are marked (*).
     <TD></TD> <TD></TD>
     <TD> <I>vid</I> &lt;<TT>:</TT> <I>ty</I>&gt;
                     &lt;<TT>,</TT> <I>exprow</I>&gt; </TD>
-    <TD> label as expression (*) </TD>
+    <TD> <A href="sugar.php3#records-punning">label as expression</A> (*) </TD>
   </TR>
 </TABLE>
 
@@ -191,13 +193,13 @@ relative to Standard ML. Derived forms are marked (*).
     <TD></TD> <TD></TD>
     <TD> <TT>#[</TT> <I>pat</I><SUB>1</SUB> <TT>,</TT> ... <TT>,</TT>
                      <I>pat</I><SUB><I>n</I></SUB> <TT>]</TT> </TD>
-    <TD> vector (<I>n</I>&ge;0) </TD>
+    <TD> <A href="sugar.php3#vectors">vector</A> (<I>n</I>&ge;0) </TD>
   </TR>
   <TR valign=baseline>
     <TD></TD> <TD></TD>
     <TD> <TT>(</TT> <I>pat</I><SUB>1</SUB> <TT>|</TT> ... <TT>|</TT>
                     <I>pat</I><SUB><I>n</I></SUB> <TT>)</TT> </TD>
-    <TD> alternative (<I>n</I>&ge;2) </TD>
+    <TD> <A href="sugar.php3#patterns-alt">alternative</A> (<I>n</I>&ge;2) </TD>
   </TR>
 
   <TR>&nbsp;</TR>
@@ -210,17 +212,17 @@ relative to Standard ML. Derived forms are marked (*).
   <TR>
     <TD></TD> <TD></TD>
     <TD> <I>pat</I> <TT>as</TT> <I>pat</I> </TD>
-    <TD> layered (R) </TD>
+    <TD> <A href="sugar.php3#patterns-layered">layered</A> (R) </TD>
   </TR>
   <TR>
     <TD></TD> <TD></TD>
     <TD> <TT>non</TT> <I>pat</I> </TD>
-    <TD> negated </TD>
+    <TD> <A href="sugar.php3#patterns-negated">negated</A> </TD>
   </TR>
   <TR>
     <TD></TD> <TD></TD>
     <TD> <I>pat</I> <TT>where</TT> <I>atexp</I> </TD>
-    <TD> guarded (L) </TD>
+    <TD> <A href="sugar.php3#patterns-guard">guarded</A> (L) </TD>
   </TR>
 </TABLE>
 
@@ -237,7 +239,7 @@ relative to Standard ML. Derived forms are marked (*).
   <TR>
     <TD></TD> <TD></TD>
     <TD> <TT>_</TT> </TD>
-    <TD> wildcard </TD>
+    <TD> <A href="types.php3#wildcards">wildcard</A> </TD>
   </TR>
 </TABLE>
 
@@ -249,17 +251,17 @@ relative to Standard ML. Derived forms are marked (*).
     <TD> <I>dec</I> </TD>
     <TD align="center">::=</TD>
     <TD> ... </TD>
-    <TD> <SUP>1</SUP> </TD>
+    <TD> <SUP>1</SUP>) </TD>
   </TR>
   <TR>
     <TD></TD> <TD></TD>
     <TD> <TT>exttype</TT> <I>extbind</I> </TD>
-    <TD> extensible datatype </TD>
+    <TD> <A href="types.php3#exttype">extensible datatype</A> </TD>
   </TR>
   <TR>
     <TD></TD> <TD></TD>
     <TD> <TT>constructor</TT> <I>econbind</I> </TD>
-    <TD> generative constructor </TD>
+    <TD> <A href="types.php3#exttype">generative constructor</A> </TD>
   </TR>
 
   <TR></TR>
@@ -267,7 +269,8 @@ relative to Standard ML. Derived forms are marked (*).
     <TD> <I>fvalbind</I> </TD>
     <TD align="center">::=</TD>
     <TD> &lt;<TT>lazy</TT> | <TT>spawn</TT>&gt; </TD>
-    <TD> (<I>m</I>,<I>n</I>&ge;1) (*) </TD>
+    <TD> <A href="futures.php3#lazy-sugar">lazy</A>/<A href="futures.php3#spawn-sugar">concurrent</A> function
+	 (<I>m</I>,<I>n</I>&ge;1) (*) </TD>
   </TR><TR>
     <TD></TD><TD></TD>
     <TD> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
@@ -296,7 +299,7 @@ relative to Standard ML. Derived forms are marked (*).
     <TD> <I>extbind</I> </TD>
     <TD align="center">::=</TD>
     <TD> <I>tyvarseq</I> <I>tycon</I> </TD>
-    <TD> extensible datatype </TD>
+    <TD> <A href="types.php3#exttype">extensible datatype</A> </TD>
   </TR>
 
   <TR></TR>
@@ -306,14 +309,14 @@ relative to Standard ML. Derived forms are marked (*).
     <TD> &lt;<TT>op</TT>&gt; <I>vid</I> &lt;<TT>of</TT> <I>ty</I>&gt;
          <TT>:</TT> <I>tyvarseq</I> <I>longtycon</I>
 	 &lt;<TT>and</TT> <I>econbind</I>&gt; </TD>
-    <TD> new constructor </TD>
+    <TD> <A href="types.php3#exttype">new constructor</A> </TD>
   </TR>
   <TR>
     <TD></TD> <TD></TD>
     <TD> &lt;<TT>op</TT>&gt; <I>vid</I>
          <TT>=</TT> &lt;<TT>op</TT>&gt; <I>longvid</I>
 	 &lt;<TT>and</TT> <I>econbind</I>&gt; </TD>
-    <TD> synonym </TD>
+    <TD> <A href="types.php3#exttype">synonym</A> </TD>
   </TR>
 
   <TR></TR>
@@ -327,7 +330,7 @@ relative to Standard ML. Derived forms are marked (*).
     <TD></TD> <TD></TD>
     <TD> <TT>_</TT> &lt;<TT>:</TT> <I>sigexp</I>&gt; <TT>=</TT> <I>strexp</I>
          &lt;<TT>and</TT> <I>strbind</I>&gt; </TD>
-    <TD> anonymous structure (*) </TD>
+    <TD> <A href="modules.php3#sugar-wildcards">anonymous structure</A> (*) </TD>
   </TR>
 
   <TR></TR>
@@ -337,7 +340,7 @@ relative to Standard ML. Derived forms are marked (*).
     <TD> <I>strid</I> <I>strpat</I><SUB>1</SUB> ... <I>strpat</I><SUB><I>n</I></SUB>
          <TT>=</TT> <I>strexp</I>
          &lt;<TT>and</TT> <I>funbind</I>&gt; </TD>
-    <TD> functor binding (<I>n</I>&ge;1) (*) </TD>
+    <TD> <A href="modules.php3#higher-strexp">functor binding</A> (<I>n</I>&ge;1) (*) </TD>
   </TR>
 
 <!--
@@ -348,7 +351,7 @@ relative to Standard ML. Derived forms are marked (*).
     <TD> <I>sigid</I> <I>strpat</I><SUB>1</SUB> ... <I>strpat</I><SUB><I>n</I></SUB>
          <TT>=</TT> <I>sigexp</I>
          &lt;<TT>and</TT> <I>sigbind</I>&gt; </TD>
-    <TD> signature binding (<I>n</I>&ge;0) </TD>
+    <TD> <A href="modules.php3#paramsig">signature binding</A> (<I>n</I>&ge;0) </TD>
   </TR>
 -->
 </TABLE>
@@ -368,27 +371,27 @@ ML's <I>dec</I>, <I>strdec</I> and <I>topdec</I>.</P>
   <TR>
     <TD></TD> <TD></TD>
     <TD> <TT>(</TT> <I>strexp</I> <TT>)</TT> </TD>
-    <TD> parentheses </TD>
+    <TD> <A href="modules.php3#sugar-parens">parentheses</A> </TD>
   </TR>
   <TR>
     <TD></TD> <TD></TD>
     <TD> <TT>(</TT> <I>dec</I> <TT>)</TT> </TD>
-    <TD> structure (*) </TD>
+    <TD> <A href="modules.php3#sugar-parens">structure</A> (*) </TD>
   </TR>
   <TR>
     <TD></TD> <TD></TD>
     <TD> <I>strexp</I> <I>strexp</I> </TD>
-    <TD> functor application <SUP>1</SUP> </TD>
+    <TD> <A href="modules.php3#higher-strexp">functor application</A> <SUP>1</SUP> </TD>
   </TR>
   <TR>
     <TD></TD> <TD></TD>
     <TD> <TT>unpack</TT> <I>infexp</I> <TT>:</TT> <I>sigexp</I> </TD>
-    <TD> unpacking </TD>
+    <TD> <A href="packages.php3#package-unpack">unpacking</A> </TD>
   </TR>
   <TR>
     <TD></TD> <TD></TD>
     <TD> <TT>fct</TT> <I>strpat</I> <TT>=></TT> <I>strexp</I> </TD>
-    <TD> functor </TD>
+    <TD> <A href="modules.php3#higher-strexp">functor</A> </TD>
   </TR>
 
   <TR></TR>
@@ -396,17 +399,17 @@ ML's <I>dec</I>, <I>strdec</I> and <I>topdec</I>.</P>
     <TD> <I>strpat</I> </TD>
     <TD align="center">::=</TD>
     <TD> <TT>(</TT> <I>strid</I> <TT>:</TT> <I>sigexp</I> <TT>)</TT> </TD>
-    <TD> parameter </TD>
+    <TD> <A href="modules.php3#higher-strexp">parameter</A> </TD>
   </TR>
   <TR>
     <TD></TD> <TD></TD>
     <TD> <TT>(</TT> <TT>_</TT> <TT>:</TT> <I>sigexp</I> <TT>)</TT> </TD>
-    <TD> anonymous parameter (*) </TD>
+    <TD> <A href="modules.php3#sugar-wildcards">anonymous parameter</A> (*) </TD>
   </TR>
   <TR>
     <TD></TD> <TD></TD>
     <TD> <TT>(</TT> <I>spec</I> <TT>)</TT> </TD>
-    <TD> signature as parameter (*) </TD>
+    <TD> <A href="modules.php3#sugar-parens">signature as parameter</A> (*) </TD>
   </TR>
 </TABLE>
 
@@ -424,15 +427,17 @@ application.</P>
     <TD> ... </TD>
     <TD> </TD>
   </TR>
+<!--
   <TR>
     <TD></TD> <TD></TD>
     <TD> <TT>any</TT> </TD>
-    <TD> top </TD>
+    <TD> <A href="modules.php3#top">top</A> </TD>
   </TR>
+-->
   <TR>
     <TD></TD> <TD></TD>
     <TD> <I>longsigid</I> </TD>
-    <TD> signature identifier </TD>
+    <TD> <A href="modules.php3#sigmembers">signature identifier</A> </TD>
   </TR>
 <!--
   <TR>
@@ -444,12 +449,12 @@ application.</P>
   <TR>
     <TD></TD> <TD></TD>
     <TD> <TT>(</TT> <I>sigexp</I> <TT>)</TT> </TD>
-    <TD> parentheses </TD>
+    <TD> <A href="modules.php3#sugar-parens">parentheses</A> </TD>
   </TR>
   <TR>
     <TD></TD> <TD></TD>
     <TD> <TT>(</TT> <I>spec</I> <TT>)</TT> </TD>
-    <TD> signature (*) </TD>
+    <TD> <A href="modules.php3#sugar-parens">signature</A> (*) </TD>
   </TR>
   <TR></TR>
 <!--
@@ -462,7 +467,7 @@ application.</P>
   <TR>
     <TD></TD> <TD></TD>
     <TD> <I>appsigexp</I> <I>atstrexp</I> </TD>
-    <TD> signature application </TD>
+    <TD> <A href="modules.php3#paramsig">signature application</A> </TD>
   </TR>
   <TR></TR>
   <TR>
@@ -481,13 +486,13 @@ application.</P>
   <TR>
     <TD></TD> <TD></TD>
     <TD> <TT>fct</TT> <I>strpat</I> <TT>-></TT> <I>sigexp</I> </TD>
-    <TD> functor </TD>
+    <TD> <A href="modules.php3#higher-sigexp">functor</A> </TD>
   </TR>
 <!--
   <TR>
     <TD></TD> <TD></TD>
     <TD> <I>sigexp</I> <TT>where</TT> <I>rea</I> </TD>
-    <TD> specialization </TD>
+    <TD> <A href="modules.php3#sigmembers-rea">specialization</A> </TD>
   </TR>
   <TR></TR>
   <TR>
@@ -536,22 +541,22 @@ application.</P>
   <TR>
     <TD></TD> <TD></TD>
     <TD> <TT>exttype</TT> <I>extdesc</I> </TD>
-    <TD> extensible datatype </TD>
+    <TD> <A href="types.php3#exttype">extensible datatype</A> </TD>
   </TR>
   <TR>
     <TD></TD> <TD></TD>
     <TD> <TT>constructor</TT> <I>econdesc</I> </TD>
-    <TD> generative constructor </TD>
+    <TD> <A href="types.php3#exttype">generative constructor</A> </TD>
   </TR>
   <TR>
     <TD></TD> <TD></TD>
     <TD> <TT>functor</TT> <I>fundesc</I> </TD>
-    <TD> functor specification (*) </TD>
+    <TD> <A href="modules.php3#higher-sigexp">functor specification</A> (*) </TD>
   </TR>
   <TR>
     <TD></TD> <TD></TD>
     <TD> <TT>signature</TT> <I>sigdesc</I> </TD>
-    <TD> signature specification </TD>
+    <TD> <A href="modules.php3#sigmembers">signature specification</A> </TD>
   </TR>
 
   <TR></TR>
@@ -559,7 +564,7 @@ application.</P>
     <TD> <I>extdesc</I> </TD>
     <TD align="center">::=</TD>
     <TD> <I>tyvarseq</I> <I>tycon</I> </TD>
-    <TD> extensible datatype </TD>
+    <TD> <A href="types.php3#exttype">extensible datatype</A> </TD>
   </TR>
 
   <TR></TR>
@@ -569,7 +574,7 @@ application.</P>
     <TD> &lt;<TT>op</TT>&gt; <I>vid</I> &lt;<TT>of</TT> <I>ty</I>&gt;
          <TT>:</TT> <I>tyvarseq</I> <I>longtycon</I>
 	 &lt;<TT>and</TT> <I>econdesc</I>&gt; </TD>
-    <TD> new constructor </TD>
+    <TD> <A href="types.php3#exttype">new constructor</A> </TD>
   </TR>
 <!--
   <TR>
@@ -577,7 +582,7 @@ application.</P>
     <TD> &lt;<TT>op</TT>&gt; <I>vid</I>
          <TT>=</TT> &lt;<TT>op</TT>&gt; <I>longvid</I>
 	 &lt;<TT>and</TT> <I>econdesc</I>&gt; </TD>
-    <TD> synonym </TD>
+    <TD> <A href="types.php3#exttype">synonym</A> </TD>
 -->
   </TR>
 
@@ -588,7 +593,7 @@ application.</P>
     <TD> <I>strid</I> <I>strpat</I><SUB>1</SUB> ... <I>strpat</I><SUB><I>n</I></SUB>
          <TT>:</TT> <I>sigexp</I>
          &lt;<TT>and</TT> <I>fundesc</I>&gt; </TD>
-    <TD> functor description (<I>n</I>&ge;1) (*) </TD>
+    <TD> <A href="modules.php3#higher-sigexp">functor description</A> (<I>n</I>&ge;1) (*) </TD>
   </TR>
 
   <TR></TR>
@@ -597,7 +602,7 @@ application.</P>
     <TD align="center">::=</TD>
     <TD> <I>sigid</I> &lt;<TT>=</TT> <I>sigexp</I>&gt;
          &lt;<TT>and</TT> <I>sigdesc</I>&gt; </TD>
-    <TD> signature description </TD>
+    <TD> <A href="modules.php3#sigmembers">signature description</A> </TD>
   </TR>
 <!--
   <TR>
@@ -606,7 +611,7 @@ application.</P>
     <TD> <I>sigid</I> <I>strpat</I><SUB>1</SUB> ... <I>strpat</I><SUB><I>n</I></SUB>
          &lt;<TT>=</TT> <I>sigexp</I>&gt;
          &lt;<TT>and</TT> <I>sigdesc</I>&gt; </TD>
-    <TD> signature description (<I>n</I>&ge;0) </TD>
+    <TD> <A href="modules.php3#sigmembers">signature description</A> (<I>n</I>&ge;0) </TD>
   </TR>
 -->
 </TABLE>
