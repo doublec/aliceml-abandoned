@@ -165,6 +165,8 @@ define
 	 fun {$ F} {F close()} '#' end
       'TextIO.stdOut':
 	 {New Open.file init(name: stdout flags: [write])}
+      'TextIO.stdErr':
+	 {New Open.file init(name: stderr flags: [write])}
       'TextIO.openOut':
 	 fun {$ S}
 	    {New Open.file init(name: S flags: [write create truncate])}

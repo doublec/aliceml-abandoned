@@ -14,13 +14,13 @@ declare
 [Frontend CodeGen Assembler] =
 {Module.link ['Frontend.ozf' 'CodeGen.ozf' 'Assembler.ozf']}
 
-{Browse {Frontend.translateFile 'raise.aus'}}
+{Browse {Frontend.translateFile '../../test/bug.aus'}}
 
-{Browse {CodeGen.translate {Frontend.translateFile 'raise.aus'}}}
+{Browse {CodeGen.translate {Frontend.translateFile '../../test/bug.aus'}}}
 
 {System.showInfo 'parsing and simplifying ...'}
-case {Frontend.translateFile
-      '/home/kornstae/stockhausen/lib/bootstrap/Bootstrap.aus'}
+case {Frontend.translateFile '../../test/infer.aus'}
+%      '/home/kornstae/stockhausen/lib/bootstrap/Bootstrap.aus'}
 of unit then skip
 elseof AST then
    {System.showInfo 'generating code ...'}
