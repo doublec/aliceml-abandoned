@@ -33,9 +33,6 @@ STOL = alicelink
 STOLOPTS = -v
 
 ALICESOURCES = \
-	HTTP-sig.aml Http.aml \
-	HTTP_SERVER-sig.aml HttpServer.aml \
-	HTTP_CLIENT-sig.aml HttpClient.aml \
 	HttpServerMain.aml HttpClientMain.aml \
 	REMOTE-sig.aml Remote.aml \
 	TestServer.aml TestClient.aml \
