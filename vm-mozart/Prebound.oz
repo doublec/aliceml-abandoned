@@ -12,6 +12,7 @@
 
 functor
 import
+   BootName(newUnique: NewUniqueName) at 'x-oz://boot/Name'
    System(show printInfo)
 export
    BuiltinTable
@@ -62,8 +63,18 @@ define
       '+': fun {$ X1#X2} X1 + X2 end   %--** overloaded for word
       '-': fun {$ X1#X2} X1 - X2 end   %--** overloaded for word
       '*': fun {$ X1#X2} X1 * X2 end   %--** overloaded for word
-      'div': fun {$ X1#X2} X1 div X2 end   %--** overloaded for word
-      'mod': fun {$ X1#X2} X1 mod X2 end   %--** overloaded for word
+      'div':
+	 fun {$ X1#X2}   %--** overloaded for word
+	    try
+	       X1 div X2
+	    catch _ then
+	       {Raise BuiltinTable.'General.Div'} '#'
+	    end
+	 end
+      'mod':
+	 fun {$ X1#X2}   %--** overloaded for word
+	    X1 mod X2
+	 end
       '<':
 	 fun {$ X1#X2}
 	    if {ByteString.is X1} then {StringLess X1 X2} else X1 < X2 end
@@ -86,12 +97,25 @@ define
 	 end
       '<>': fun {$ X1 X2} X1 \= X2 end
       'Char.ord': fun {$ C} C end
-      'Char.chr': fun {$ C} C end
+      'Char.chr':
+	 fun {$ C}
+	    if {Char.is C} then C
+	    else {Raise BuiltinTable.'General.Chr'} '#'
+	    end
+	 end
       'Char.isDigit': Char.isDigit
       'Char.isHexDigit': Char.isXDigit
       'Char.isSpace': Char.isSpace
       'Char.toCString':
 	 fun {$ C} {ByteString.make &"|{ToCString C "\""}} end
+      'General.Chr': {NewUniqueName 'General.Chr'}
+      'General.Div': {NewUniqueName 'General.Div'}
+      'General.Domain': {NewUniqueName 'General.Domain'}
+      'General.Fail': {NewUniqueName 'General.Fail'}
+      'General.Overflow': {NewUniqueName 'General.Overflow'}
+      'General.Size': {NewUniqueName 'General.Size'}
+      'General.Span': {NewUniqueName 'General.Span'}
+      'General.Subscript': {NewUniqueName 'General.Subscript'}
       'Int.compare\'':
 	 fun {$ I#J}
 	    if I == J then 0
@@ -101,6 +125,8 @@ define
 	 end
       'Int.toString':
 	 fun {$ I} {ByteString.make {Int.toString I}} end
+      'List.Empty': {NewUniqueName 'List.Empty'}
+      'Option.Option': {NewUniqueName 'Option.Option'}
       'String.^':
 	 fun {$ S1#S2} {ByteString.append S1 S2} end
       'String.toCString':
@@ -112,9 +138,21 @@ define
       'String.size':
 	 fun {$ S} {ByteString.length S} end
       'String.sub':
-	 fun {$ S#I} {ByteString.get S I} end
+	 fun {$ S#I}
+	    try
+	       {ByteString.get S I}
+	    catch _ then
+	       {Raise BuiltinTable.'General.Subscript'} '#'
+	    end
+	 end
       'String.substring':
-	 fun {$ S#I#J} {ByteString.slice S I I + J} end
+	 fun {$ S#I#J}
+	    try
+	       {ByteString.slice S I I + J}
+	    catch _ then
+	       {Raise BuiltinTable.'General.Subscript'} '#'
+	    end
+	 end
       'String.compare\'':
 	 fun {$ S#T}
 	    if {StringLess S T} then ~1
@@ -142,22 +180,38 @@ define
       'Array.length':
 	 fun {$ A} {Array.high A} + 1 end
       'Array.sub':
-	 fun {$ A#I} {Array.get A I} end
+	 fun {$ A#I}
+	    try
+	       {Array.get A I}
+	    catch _ then
+	       {Raise BuiltinTable.'General.Subscript'} '#'
+	    end
+	 end
       'Array.update':
-	 fun {$ A#I#X} {Array.put A I X} '#' end
+	 fun {$ A#I#X}
+	    try
+	       {Array.put A I X}
+	    catch _ then
+	       {Raise BuiltinTable.'General.Subscript'}
+	    end
+	    '#'
+	 end
       'Vector.fromList':
 	 fun {$ Xs} {List.toTuple vector {ImportList Xs}} end
       'Vector.sub':
-	 fun {$ V#I} V.(I + 1) end)
-
-   Match = {NewName}
-   Bind = {NewName}
+	 fun {$ V#I}
+	    try
+	       V.(I + 1)
+	    catch _ then
+	       {Raise BuiltinTable.'General.Subscript'} '#'
+	    end
+	 end)
 
    Env = env('false': false
 	     'true': true
 	     'nil': nil
 	     'cons': '::'
 	     'ref': NewCell
-	     'Match': Match
-	     'Bind': Bind)
+	     'Match': {NewUniqueName 'General.Match'}
+	     'Bind': {NewUniqueName 'General.Bind'})
 end
