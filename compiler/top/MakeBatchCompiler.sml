@@ -163,7 +163,7 @@ functor MakeBatchCompiler(structure RecursiveCompiler: RECURSIVE_COMPILER
 	  | checkBooleanSwitches (_, nil) = false
 
 	fun options ("--version"::rest) =
-	    (print (version ^ "\n");
+	    (TextIO.output (TextIO.stdOut, version ^ "\n");
 	     options rest)
 	  | options ("--rtt-level=no"::rest) =
 	    (Bootstrap.rttLevel := Bootstrap.NO_RTT;
