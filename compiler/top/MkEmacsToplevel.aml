@@ -17,7 +17,7 @@ functor MakeEmacsToplevel(structure RecursiveCompiler: RECURSIVE_COMPILER):
 
 	fun readUntilEOF q =
 	    case TextIO.inputLine q of
-		"\^D\n" => nil
+		";\n" => nil
 	      | line => line::readUntilEOF q
 
 	fun readSource q =
@@ -37,6 +37,7 @@ functor MakeEmacsToplevel(structure RecursiveCompiler: RECURSIVE_COMPILER):
 		RecursiveCompiler.Target.apply targetContext target;
 		(compilerContext, targetContext)
 	    end
+	    handle Error.Error _ => (compilerContext, targetContext)
 
 	fun loop (compilerContext, targetContext) =
 	    loop (eval (readSource TextIO.stdIn,
