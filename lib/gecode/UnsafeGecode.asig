@@ -66,7 +66,6 @@ sig
 	    val equal : 'space * 'intvar * 'intvar * 'conlevel -> unit
 	    val equalV : 'space * 'intvar vector * 'conlevel -> unit
 	    val equalR : 'space * 'intvar * 'intvar * 'boolvar * 'conlevel -> unit
-	    val equalVR : 'space * 'intvar vector * 'boolvar * 'conlevel -> unit
 
 	    val linear : 'space * (int * 'intvar) vector * 'relation * 
 			 int * 'conlevel -> unit

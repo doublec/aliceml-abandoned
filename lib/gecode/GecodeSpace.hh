@@ -18,19 +18,19 @@
 #include "gecode-set.hh"
 //#include "gecode-search.hh"
 
-#define makeintvararray(a,vars)                                 \
-  IntVarArray a(vars.size(), 0,0);                              \
+#define makeintvarargs(a,vars)                                 \
+  IntVarArgs a(vars.size());                                   \
 { int s = vars.size(); for (int i=s; i--;) a[i] = is[vars[i]]; }
 
 #define intvar2boolvar(intvar)        \
   static_cast<BoolVar>(intvar.core())
 
-#define makeboolvararray(a,vars)           \
-  BoolVarArray a(vars.size());             \
+#define makeboolvarargs(a,vars)           \
+  BoolVarArgs a(vars.size());             \
 { int s = vars.size(); for (int i=s; i--;) \
   a[i] = intvar2boolvar(is[vars[i]]); }
 
-#define makefsvararray(a,vars)                                 \
+#define makefsvarargs(a,vars)                                 \
   SetVarArgs a(vars.size());                              \
 { int s = vars.size(); for (int i=s; i--;) a[i] = fss[vars[i]]; }
 
@@ -94,7 +94,6 @@ public:
   void eq(int, int, conlevel);
   void eqV(const IntArgs& a, conlevel);
   void eqR(int, int, int, conlevel);
-  void eqVR(const IntArgs& a, int, conlevel);
 
   // Distinct constraints
   void distinct(const IntArgs& a, conlevel cl);
@@ -157,9 +156,9 @@ public:
 
   int AddSetVariable();
   
-  RangesRangeList fs_upperBound(int);
-  RangesRangeList fs_lowerBound(int);
-  RangesMinus<RangesRangeList, RangesRangeList> fs_unknown(int);
+  UBIter<SetVar> fs_upperBound(int);
+  LBIter<SetVar> fs_lowerBound(int);
+  RangesMinus<UBIter<SetVar>, LBIter<SetVar> > fs_unknown(int);
   int fs_cardinalityMin(int);
   int fs_cardinalityMax(int);
   bool fs_assigned(int);

@@ -11,7 +11,6 @@
  *)
 
 import signature FD           from "FD-sig"
-import structure Space        from "Space"
 import structure UnsafeGecode from "UnsafeGecode"
 import structure UnsafeValue  from "x-alice:/lib/system/UnsafeValue"
 
@@ -81,7 +80,6 @@ struct
 	   val rel = UnsafeGecodeFD.relR
 	   val relI = UnsafeGecodeFD.relIR
 	   val equal = UnsafeGecodeFD.equalR
-	   val equalV = UnsafeGecodeFD.equalVR
 	   val linear = UnsafeGecodeFD.linearR
        end
 

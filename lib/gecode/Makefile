@@ -39,12 +39,12 @@ EXTRA_INCLUDES = -I../..
 MAKEDEPEND = alicetool makedepend
 
 GECODEOBJ = \
-	set/libgecodeset.a \
-	int/libgecodeint.a \
-	kernel/libgecodekernel.a
+	set/.libs/libgecodeset.a \
+	int/.libs/libgecodeint.a \
+	kernel/.libs/libgecodekernel.a
 
-#CXXFLAGS=-O2 -Dforceinline=inline -DNDEBUG -pipe
-CXXFLAGS=-Dforceinline=inline -pipe -g
+CXXFLAGS=-O2 -Dforceinline=inline -DNDEBUG -pipe
+#CXXFLAGS=-Dforceinline=inline -pipe -g
 
 all: $(NATIVES:%=%.dll) $(TARGETS)
 

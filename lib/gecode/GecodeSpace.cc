@@ -113,7 +113,7 @@ void GecodeSpace::eq(int var1, int var2, conlevel cl) {
   ::eq(is[var1], is[var2], cl);
 }
 void GecodeSpace::eqV(const IntArgs& vars, conlevel cl) {
-  makeintvararray(a,vars);
+  makeintvarargs(a,vars);
   if (!enter()) return;
   ::eq(a, cl);
 }
@@ -121,21 +121,16 @@ void GecodeSpace::eqR(int var1, int var2, int boolVar, conlevel cl) {
   if (!enter()) return;
   ::eq(is[var1], is[var2], intvar2boolvar(is[boolVar]));
 }
-void GecodeSpace::eqVR(const IntArgs& vars, int boolVar, conlevel cl) {
-  makeintvararray(a,vars);
-  if (!enter()) return;
-  ::eq(a, intvar2boolvar(is[boolVar]), cl);
-}
 
 // Distinct constraints
 void GecodeSpace::distinct(const IntArgs& vars, conlevel cl) {
-  makeintvararray(a,vars);
+  makeintvarargs(a,vars);
   if (!enter()) return;
   ::distinct(a, cl);
 }
 void GecodeSpace::distinctI(const IntArgs& offsets, const IntArgs& vars,
 			    conlevel cl) {
-  makeintvararray(a,vars);
+  makeintvarargs(a,vars);
   if (!enter()) return;
   ::distinct(offsets,a, cl);
 }
@@ -143,7 +138,7 @@ void GecodeSpace::distinctI(const IntArgs& offsets, const IntArgs& vars,
 void GecodeSpace::linear(const IntArgs& coefficients, const IntArgs& vars,
 			 reltype rel,
 			 int constant, conlevel cl) {
-  makeintvararray(a, vars);
+  makeintvarargs(a, vars);
   if (!enter()) return;
   ::linear(coefficients, a, rel, constant, cl);
 }
@@ -151,7 +146,7 @@ void GecodeSpace::linear(const IntArgs& coefficients, const IntArgs& vars,
 void GecodeSpace::linearR(const IntArgs& coefficients, const IntArgs& vars,
 			   reltype rel,
 			   int constant, int boolVar, conlevel cl) {
-  makeintvararray(a, vars);
+  makeintvarargs(a, vars);
   if (!enter()) return;
   ::linear(coefficients, a, rel, constant, 
 	   intvar2boolvar(is[boolVar]), cl);
@@ -160,25 +155,25 @@ void GecodeSpace::linearR(const IntArgs& coefficients, const IntArgs& vars,
 // Counting constraints
 void GecodeSpace::countII(const IntArgs& vars, reltype rel,
 			   int i, reltype rel2, int j) {
-  makeintvararray(a, vars);
+  makeintvarargs(a, vars);
   if (!enter()) return;
   ::count(a, rel, i, rel2, j);
 }
 void GecodeSpace::countIV(const IntArgs& vars, reltype rel,
 			   int i, reltype rel2, int j) {
-  makeintvararray(a, vars);
+  makeintvarargs(a, vars);
   if (!enter()) return;
   ::count(a, rel, i, rel2, is[j]);
 }
 void GecodeSpace::countVI(const IntArgs& vars, reltype rel,
 			   int i, reltype rel2, int j) {
-  makeintvararray(a, vars);
+  makeintvarargs(a, vars);
   if (!enter()) return;
   ::count(a, rel, is[i], rel2, j);
 }
 void GecodeSpace::countVV(const IntArgs& vars, reltype rel,
 			   int i, reltype rel2, int j) {
-  makeintvararray(a, vars);
+  makeintvarargs(a, vars);
   if (!enter()) return;
   ::count(a, rel, is[i], rel2, is[j]);
 }
@@ -187,7 +182,7 @@ void GecodeSpace::countVV(const IntArgs& vars, reltype rel,
 // Access constraints
 
 void GecodeSpace::element(const IntArgs& vars, int i, int j) {
-  makeintvararray(a, vars);
+  makeintvarargs(a, vars);
   if (!enter()) return;
   ::element(a, is[i], is[j]);
 }
@@ -197,8 +192,8 @@ void GecodeSpace::elementI(const IntArgs& args, int i, int j) {
 }
 void GecodeSpace::lex(const IntArgs& vars1, reltype rel,
 		      const IntArgs& vars2) {
-  makeintvararray(a, vars1);
-  makeintvararray(b, vars2);
+  makeintvarargs(a, vars1);
+  makeintvarargs(b, vars2);
   if (!enter()) return;
   ::lex(a, rel, b);
 }
@@ -231,9 +226,9 @@ void GecodeSpace::bool_imp(int a, int b, int c) {
 }
 void GecodeSpace::bool_eq(int a, int b, int c) {
   if (!enter()) return;
-  ::bool_eq(intvar2boolvar(is[a]),
-	    intvar2boolvar(is[b]),
-	    intvar2boolvar(is[c]));
+  ::bool_eqv(intvar2boolvar(is[a]),
+             intvar2boolvar(is[b]),
+             intvar2boolvar(is[c]));
 }
 void GecodeSpace::bool_xor(int a, int b, int c) {
   if (!enter()) return;
@@ -242,12 +237,12 @@ void GecodeSpace::bool_xor(int a, int b, int c) {
 	     intvar2boolvar(is[c]));
 }
 void GecodeSpace::bool_andV(const IntArgs& vars, int b) {
-  makeboolvararray(a, vars);
+  makeboolvarargs(a, vars);
   if (!enter()) return;
   ::bool_and(a, intvar2boolvar(is[b]));
 }
 void GecodeSpace::bool_orV(const IntArgs& vars, int b) {
-  makeboolvararray(a, vars);
+  makeboolvarargs(a, vars);
   if (!enter()) return;
   ::bool_or(a, intvar2boolvar(is[b]));
 }
@@ -256,12 +251,12 @@ void GecodeSpace::bool_orV(const IntArgs& vars, int b) {
 // Arithmetic constraints
 
 void GecodeSpace::min(const IntArgs& vars, int i) {
-  makeintvararray(a, vars);
+  makeintvarargs(a, vars);
   if (!enter()) return;
   ::min(a, is[i]);
 }
 void GecodeSpace::max(const IntArgs& vars, int i) {
-  makeintvararray(a, vars);
+  makeintvarargs(a, vars);
   if (!enter()) return;
   ::max(a, is[i]);
 }
@@ -275,20 +270,20 @@ void GecodeSpace::mult(int i, int j, int k) {
 }
 void GecodeSpace::power(int i, int j, int k) {
   if (!enter()) return;
-  ::powerB(is[i], is[j], is[k]);
+  ::pow(is[i], is[j], is[k]);
 }
 
 // Value assignment
 
 void GecodeSpace::assign(const IntArgs& vars, AvalSel as) {
-  makeintvararray(a, vars);
+  makeintvarargs(a, vars);
   if (!enter()) return;
   ::assign(a, as);
 }
 
 void GecodeSpace::branch(const IntArgs& vars,
 			 BvarSel varSel, BvalSel valSel) {
-  makeintvararray(a,vars);
+  makeintvarargs(a,vars);
   if (!enter()) return;
   ::branch(a,varSel,valSel);
 }
@@ -325,19 +320,21 @@ void GecodeSpace::EnlargeSetVarArray() {
   return;
 }
 
-RangesRangeList GecodeSpace::fs_upperBound(int s) {
+UBIter<SetVar> GecodeSpace::fs_upperBound(int s) {
   enter();
-  return fss[s].rangesUpperBound();
+  UBIter<SetVar> ub(fss[s]);
+  return ub;
 }
-RangesRangeList GecodeSpace::fs_lowerBound(int s) {
+LBIter<SetVar> GecodeSpace::fs_lowerBound(int s) {
   enter();
-  return fss[s].rangesLowerBound();
+  LBIter<SetVar> lb(fss[s]);
+  return lb;
 }
-RangesMinus<RangesRangeList, RangesRangeList> GecodeSpace::fs_unknown(int s) {
+RangesMinus<UBIter<SetVar>, LBIter<SetVar> > GecodeSpace::fs_unknown(int s) {
   enter();
-  RangesRangeList ub = fss[s].rangesUpperBound();
-  RangesRangeList lb = fss[s].rangesLowerBound();
-  RangesMinus<RangesRangeList, RangesRangeList> m(ub,lb);
+  UBIter<SetVar> ub(fss[s]);
+  LBIter<SetVar> lb(fss[s]);
+  RangesMinus<UBIter<SetVar>, LBIter<SetVar> > m(ub,lb);
   return m;
 }
 
@@ -383,7 +380,7 @@ void GecodeSpace::fs_max(int d, int s) {
 }
 void GecodeSpace::fs_match(int s, const IntArgs& vars) {
   if (!enter()) return;
-  makeintvararray(a, vars);
+  makeintvarargs(a, vars);
   ::match(fss[s], a);
 }
 void GecodeSpace::fs_card(int s, int d) {
@@ -422,7 +419,7 @@ void GecodeSpace::fs_distinct(int s1, int s2) {
 }
 void GecodeSpace::fs_distinctn(const IntArgs& vars) {
   if (!enter()) return;
-  makefsvararray(a, vars);
+  makefsvarargs(a, vars);
   ::distinct(a);
 }
 void GecodeSpace::fs_equals(int s1, int s2) {
@@ -459,17 +456,17 @@ void GecodeSpace::fs_partition(int s1, int s2, int s3) {
 }
 void GecodeSpace::fs_unionn(const IntArgs& vars, int s) {
   if (!enter()) return;
-  makefsvararray(a, vars);
+  makefsvarargs(a, vars);
   ::fsunion(a, fss[s]);
 }
 void GecodeSpace::fs_intersectionn(const IntArgs& vars, int s) {
   if (!enter()) return;
-  makefsvararray(a, vars);
+  makefsvarargs(a, vars);
   ::intersection(a, fss[s]);
 }
 void GecodeSpace::fs_partitionn(const IntArgs& vars, int s) {
   if (!enter()) return;
-  makefsvararray(a, vars);
+  makefsvarargs(a, vars);
   ::partition(a, fss[s]);
 }
 void GecodeSpace::fs_includeR(int d, int s, int b) {
@@ -490,24 +487,24 @@ void GecodeSpace::fs_subsetR(int s1, int s2, int b) {
 }
 void GecodeSpace::fs_selectUnion(int s, const IntArgs& vars, int ss) {
   if (!enter()) return;
-  makefsvararray(a, vars);
+  makefsvarargs(a, vars);
   ::selectUnion(fss[s], a, fss[ss]);
 }
 void GecodeSpace::fs_selectInter(int s, const IntArgs& vars, int ss) {
   if (!enter()) return;
-  makefsvararray(a, vars);
+  makefsvarargs(a, vars);
   ::selectUnion(fss[s], a, fss[ss]);
 }
 void GecodeSpace::fs_selectSets(int s, const IntArgs& vars, int d) {
   if (!enter()) return;
-  makefsvararray(a, vars);
+  makefsvarargs(a, vars);
   ::selectSets(fss[s], a, is[d]);
 }
 
 void GecodeSpace::fs_branch(const IntArgs& vars, SetBvarSel varSel, 
 			    SetBvalSel valSel) {
   if (!enter()) return;
-  makefsvararray(a, vars);
+  makefsvarargs(a, vars);
   ::branch(a, varSel, valSel);
 }
 

@@ -124,8 +124,6 @@ sig
 		       boolvar -> unit
 	    val equal : Space.space * intvar * intvar *
 			boolvar * conlevel -> unit
-	    val equalV : Space.space * intvar vector * boolvar *
-			 conlevel -> unit
 	    val linear : Space.space * (int * intvar) vector * relation *
 			 int * boolvar * conlevel -> unit
 	end

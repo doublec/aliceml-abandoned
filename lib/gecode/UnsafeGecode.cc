@@ -434,29 +434,6 @@ DEFINE5(gc_eqr) {
   RETURN_UNIT;
 } END
 
-DEFINE5(gc_eqvr) {
-  DBGMSG("eqvr");
-  DECLARE_SPACE(s, stamp, pstamp, x0);
-  CHECK_SPACE(s);
-  DECLARE_VECTOR(v, x1);
-  DECLARE_INT(cl, x2);
-  DECLARE_VAR(boolVar, stamp, pstamp, x4);
-
-  int noOfVars = v->GetLength();
-
-  if (noOfVars==0) RETURN_UNIT; /** make boolvar true? **/
-
-  IntArgs vars(noOfVars);
-  for (int i=noOfVars; i--;) {
-    DECLARE_VAR(tmp, stamp, pstamp, v->Sub(i));
-    vars[i] = tmp;
-  }
-
-  s->eqVR(vars, boolVar, UnsafeGecode::int2cl[cl]);
-  DBGMSG("done");
-  RETURN_UNIT;
-} END
-
 DEFINE3(gc_distinct) {
   DBGMSG("distinct");
   DECLARE_SPACE(s, stamp, pstamp, x0);
@@ -1086,10 +1063,10 @@ DEFINE2(gc_fsUB) {
   DBGMSG("done");
 
   unsigned int ubsize = 0;
-  for(RangesRangeList ubs = s->fs_upperBound(var);
+  for(UBIter<SetVar> ubs = s->fs_upperBound(var);
       ubs(); ++ubs) ubsize++;
 
-  RangesRangeList ub = s->fs_upperBound(var);
+  UBIter<SetVar> ub = s->fs_upperBound(var);
   Vector *v = 
     Vector::New(ubsize);
   if(ubsize>0) {
@@ -1115,10 +1092,10 @@ DEFINE2(gc_fsLB) {
   DBGMSG("done");
 
   unsigned int lbsize = 0;
-  for(RangesRangeList lbs = s->fs_lowerBound(var);
+  for(LBIter<SetVar> lbs = s->fs_lowerBound(var);
       lbs(); ++lbs) lbsize++;
 
-  RangesRangeList lb = s->fs_lowerBound(var);
+  LBIter<SetVar> lb = s->fs_lowerBound(var);
   Vector *v = 
     Vector::New(lbsize);
 
@@ -1144,9 +1121,9 @@ DEFINE2(gc_fsUnknown) {
   DECLARE_VAR(var, stamp, pstamp, x1);
   DBGMSG("done");
 
-  RangesMinus<RangesRangeList, RangesRangeList> unknown =
+  RangesMinus<UBIter<SetVar>, LBIter<SetVar> > unknown =
     s->fs_unknown(var);
-  RangesCache<RangesMinus<RangesRangeList, RangesRangeList> >
+  RangesCache<RangesMinus<UBIter<SetVar>, LBIter<SetVar> > >
     unknownC(unknown);
 
   unsigned int usize = 0;
@@ -1211,7 +1188,7 @@ DEFINE2(gc_fsGetCardUnknown) {
   DECLARE_VAR(var, stamp, pstamp, x1);
   DBGMSG("done");
 
-  RangesMinus<RangesRangeList, RangesRangeList> unknown =
+  RangesMinus<UBIter<SetVar>, LBIter<SetVar> > unknown =
     s->fs_unknown(var);
 
   RETURN_INT(iteratorSize(unknown));
@@ -1902,7 +1879,7 @@ static word UnsafeGecodeBase() {
 }
 
 static word UnsafeGecodeFD() {
-  Record *record = Record::New(41);
+  Record *record = Record::New(40);
 
   INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeFD", "intvar",
 		 gc_fdvar, 2);
@@ -1950,8 +1927,6 @@ static word UnsafeGecodeFD() {
 		 gc_eqv, 3);
   INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeFD", "equalR",
 		 gc_eqr, 5);
-  INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeFD", "equalVR",
-		 gc_eqvr, 4);
   INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeFD", "linear",
 		 gc_linear, 5);  
   INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeFD", "linearR",
