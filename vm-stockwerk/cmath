@@ -1,6 +1,0 @@
-// -*- c++ -*-
-// Dummy replacement for systems which do not have it.
-namespace std {
-#include <math.h>
-}
-using namespace std;

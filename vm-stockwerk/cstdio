@@ -1,8 +1,0 @@
-// -*- c++ -*-
-// Dummy replacement for systems which do not have it.
-namespace std {
-extern "C" {
-#include <stdio.h>
-}
-}
-using namespace std;
