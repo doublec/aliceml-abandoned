@@ -51,8 +51,6 @@
 ../frontend-common/PathSet.sml
 ../frontend-common/TYPE.sig
 ../frontend-common/Type.sml
-../frontend-common/SIGN.sig
-../frontend-common/Sign.sml
 ../frontend-common/INF.sig
 ../frontend-common/Inf.sml
 ../frontend-common/ABSTRACT_GRAMMAR.sig
