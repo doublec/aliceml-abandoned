@@ -141,8 +141,12 @@ structure OutputImperativeGrammar :> OUTPUT_IMPERATIVE_GRAMMAR =
 	    SEQ [S "export ", IN, outputExp exp, EX]
 	and outputExp (LitExp (_, lit)) = S (outputLit lit)
 	  | outputExp (PrimExp (_, s)) = S ("prim \"" ^ s ^ "\"")
-	  | outputExp (NewExp (_, false)) = SEQ [S "con"]
-	  | outputExp (NewExp (_, true)) = SEQ [S "nam"]
+	  | outputExp (NewExp (_, NONE, true)) = S "nam"
+	  | outputExp (NewExp (_, SOME string, true)) =
+	    S ("nam \"" ^ string ^ "\"")
+	  | outputExp (NewExp (_, NONE, false)) = S "con"
+	  | outputExp (NewExp (_, SOME string, false)) =
+	    S ("con \"" ^ string ^ "\"")
 	  | outputExp (VarExp (_, id)) = ID id
 	  | outputExp (ConExp (_, id, false)) = SEQ [S "nam ", ID id]
 	  | outputExp (ConExp (_, id, true)) = SEQ [S "con ", ID id]

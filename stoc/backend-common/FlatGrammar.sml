@@ -85,7 +85,7 @@ structure ImperativeGrammar: IMPERATIVE_GRAMMAR =
 	and exp =
 	    LitExp of coord * lit
 	  | PrimExp of coord * string
-	  | NewExp of coord * hasArgs
+	  | NewExp of coord * string option * hasArgs
 	  | VarExp of coord * id
 	  | ConExp of coord * id * hasArgs
 	  | RefExp of coord
