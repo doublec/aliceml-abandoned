@@ -1,3 +1,6 @@
+//-- Alles Stuss - geht doch mit readResolve und writeReplace
+// Name, Constructor, Array und Vector (und ?) müssen also mit
+// writeReplace und readResolve ausgestattet werden
 package de.uni_sb.ps.dml.runtime;
 
 public class Name implements DMLValue {
@@ -28,6 +31,8 @@ public class Name implements DMLValue {
     }
 
     final public boolean equals(java.lang.Object o) {
+	//	return (o instanceof Name) &&
+	//  ((Name) o).gName == gName;
 	return (this == o);
     }
 
@@ -46,13 +51,35 @@ public class Name implements DMLValue {
     final public DMLValue raise() {
 	throw new ExceptionWrapper(this);
     }
-    final public GName globalize() {
+
+    /** Falls der Name noch keinen GName hat, wird jetzt ein
+     *  neuer GName erzeugt und der Name wird unter dem GName in
+     *  der globalen Hashtabelle eingetragen.
+     */
+    private void writeObject(java.io.ObjectOutputStream out)
+	throws java.io.IOException {
 	if (gName==null) {
-	    gName = new GName(0);
-	    Constructor.gNames.put(gName,this);
-	    return gName;
+	    gName=new GName();
+	    GName.gNames.put(gName,this);
 	}
-	else
-	    return gName;
+	out.defaultWriteObject();
+    }
+
+    /** Beim Einlesen wird nachgeschaut, ob bereits ein Objekt mit
+     *  diesem GName existiert. Falls nicht, wird das aktuelle
+     *  Objekt mit einem neuen GName in die Hashtabelle
+     *  eingetragen. Sonst wird das Objekt aus der Hashtabelle
+     *  zurückgeliefert.
+     */
+    private java.lang.Object readResolve()
+	throws java.io.ObjectStreamException {
+	java.lang.Object o = GName.gNames.get(gName);
+	if (o==null) {
+	    gName=new GName();
+	    GName.gNames.put(gName,this);
+	    return this;
+	} else {
+	    return o;
+	}
     }
 }

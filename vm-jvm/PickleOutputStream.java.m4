@@ -86,12 +86,6 @@ final public class PickleOutputStream extends java.io.ObjectOutputStream {
 	    } catch (java.rmi.RemoteException r) {
 		System.err.println(r);
 	    }
-	if (obj instanceof Constructor)
-	    return ((Constructor) obj).globalize();
-	else
-	    if (obj instanceof Name)
-		return ((Name) obj).globalize();
-	    else
-		return obj;
+	return obj;
     }
 }

@@ -22,23 +22,4 @@ final public class PickleInputStream extends java.io.ObjectInputStream {
 	else
 	    return super.resolveClass(osc);
     }
-
-    final protected java.lang.Object resolveObject(java.lang.Object obj) {
-	if (obj instanceof GName) {
-	    java.lang.Object o = Constructor.gNames.get(obj);
-	    if (o==null) {
-		DMLValue newc = null;
-		if (((GName) obj).isName())
-		    newc = new Name((GName) obj);
-		else
-		    newc = new Constructor((GName) obj);
-		Constructor.gNames.put(obj,newc);
-		return newc;
-	    }
-	    else
-		return o;
-	}
-	else
-	    return obj;
-    }
 }

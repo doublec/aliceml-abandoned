@@ -21,9 +21,8 @@ public class Thread extends java.lang.Thread implements DMLValue {
     private int threadNumber=0;
 
     public Thread() {
-	super();
     }
-    
+
     /** Erzeugt einen neuen de.uni_sb.ps.dml.runtime.Thread.
      *  @param v sollte eine Funktion f : unit-> 'a sein.
      */

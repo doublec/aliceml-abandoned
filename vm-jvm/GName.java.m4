@@ -2,29 +2,20 @@ package de.uni_sb.ps.dml.runtime;
 
 final public class GName implements java.io.Serializable {
 
-    private static long gidcount = 0l;
-    private int arity = 0;
-    private long gid = 0l;
-    private java.lang.String osname = null;
-    private long time = 0l;
+    public static java.util.Hashtable gNames = new java.util.Hashtable();
 
-    public GName(int ar) {
-	super();
-	gid=gidcount++;
-	osname=System.getProperty("os.name");
-	time=System.currentTimeMillis();
-	arity=ar;
-    }
+    private java.rmi.dgc.VMID id = null;
 
-    public boolean isName() {
-	return (arity==0);
+    public GName() {
+	id = new java.rmi.dgc.VMID();
     }
 
     public int hashCode() {
-	return osname.hashCode();
+	return id.hashCode();
     }
 
     public boolean equals(java.lang.Object o) {
-	return (o instanceof GName) && osname.equals(((GName) o).osname);
+	return (o instanceof GName) &&
+	    id.equals(((GName) o).id);
     }
 }

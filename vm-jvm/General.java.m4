@@ -174,6 +174,38 @@ final public class General {
 
     final public static Pickle pickle = new Pickle();
 
+    final public static class Unpickle extends Builtin {
+	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
+	    DMLValue[] args=fromTuple(val,2,"General.unpickle");
+	    DMLValue fst=args[0].request();
+	    if (!(fst instanceof de.uni_sb.ps.dml.runtime.String))
+		return error("argument #1 not de.uni_sb.ps.dml.runtime.String",val);
+	    java.lang.String wherefrom=((de.uni_sb.ps.dml.runtime.String) fst).getString();
+	    DMLValue ex=null;
+	    java.io.FileInputStream inf=null;
+	    PickleInputStream in=null;
+	    DMLValue result = null;
+	    try{
+		inf=new java.io.FileInputStream(wherefrom);
+		in=new PickleInputStream(inf);
+		result=(DMLValue) in.readObject();
+	    } catch (Exception e) {
+		ex=Constants.runtimeError.apply(new de.uni_sb.ps.dml.runtime.String(e.getMessage()));
+	    }
+	    finally {
+		try {
+		    inf.close();
+		} catch (Exception e) {
+		System.err.println(e);}
+		if (ex != null)
+		    ex.raise();
+	    }
+	    return result;
+	}
+    }
+
+    final public static Unpickle unpickle = new Unpickle();
+
     // val exnName : exn -> string 
     // val exnMessage : exn -> string
 

@@ -1,36 +1,32 @@
 import java.io.*;
 import de.uni_sb.ps.dml.runtime.*;
+import de.uni_sb.ps.dml.runtime.PickleInputStream;
 
-public class Exec extends de.uni_sb.ps.dml.runtime.DMLThread {
+public class Exec extends de.uni_sb.ps.dml.runtime.Thread {
 
-    private void bla() {
-	DMLValue a = new DMLInt(88);
-	DMLValue b = new DMLString("99");
-	a.equals(b);
-    }
     private static void usage() {
 	System.out.println("Exec:\nUsage: java Exec <filename> [runtimeargs]\n");
     }
-    String[] argv = null;
+    java.lang.String[] argv = null;
 
-    public Exec(String[] arg) {
+    public Exec(java.lang.String[] arg) {
 	argv=arg;
     }
 
     public void run() {
 	try {
 	FileInputStream fin = new FileInputStream(argv[0]);
-	DMLObjectInputStream in = new DMLObjectInputStream(fin);
+	PickleInputStream in = new PickleInputStream(fin);
 	DMLValue r = (DMLValue) in.readObject();
 	System.out.println(r);
-	System.out.println(((DMLRecord) r).getByLabel("main").apply(DMLConstants.dmlunit));
+	System.out.println(((Record) r).getByLabel("main").apply(Constants.dmlunit));
 	} catch (Exception e) {
 	    System.err.println(e);
 	    e.printStackTrace();
 	}
     }
 
-    public static void main(String[] args) {
+    public static void main(java.lang.String[] args) {
 	if (args.length<1) {
 	    usage();
 	    System.exit(2);
