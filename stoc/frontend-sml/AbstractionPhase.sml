@@ -1064,67 +1064,73 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		)
 
 
-    and trOpenDecVal (E,i,longido') (vid', (_,stamp,is), acc) =
+    and trOpenDecVal (E,i,longido') (vid', (_,stamp1,is), acc) =
 	let
 	    val name    = VId.toString vid'
-	    val id'     = O.Id(i, stamp, O.ExId name)
+	    val stamp2  = Stamp.new()
+	    val id1'    = O.Id(i, stamp1, O.ExId name)
+	    val id2'    = O.Id(i, stamp2, O.ExId name)
 	    val longid' = case longido'
 			    of SOME longid' => O.LongId(i,longid',O.Lab(i,name))
-			     | NONE         => O.ShortId(i, id')
-	    val pat'    = O.VarPat(i, id')
+			     | NONE         => O.ShortId(i, id1')
+	    val pat'    = O.VarPat(i, id2')
 	    val exp'    = O.VarExp(i, longid')
-	    val _       = insertVal(E, vid', (i,stamp,is))
+	    val _       = insertVal(E, vid', (i,stamp2,is))
 	in
 	    (case is
-	       of V => O.ValDec(i, O.VarPat(i, id'), O.VarExp(i, longid'))
-		| _ => O.ConDec(i, O.Con(i, id', []), O.SingTyp(i, longid'))
+	       of V => O.ValDec(i, O.VarPat(i, id2'), O.VarExp(i, longid'))
+		| _ => O.ConDec(i, O.Con(i, id2', []), O.SingTyp(i, longid'))
 	    ) :: acc
 	end
 
-    and trOpenDecTy (E,i,longid) (tycon', (_,stamp,E'), acc) =
+    and trOpenDecTy (E,i,longid) (tycon', (_,stamp1,E'), acc) =
 	let
 	    val name    = TyCon.toString tycon'
-	    val id'     = O.Id(i, stamp, O.ExId name)
+	    val stamp2  = Stamp.new()
+	    val id'     = O.Id(i, stamp2, O.ExId name)
 	    val lab'    = O.Lab(i, name)
 	    val longid' = O.LongId(i, longid, lab')
 	    val typ'    = O.ConTyp(i, longid')
-	    val _       = insertTy(E, tycon', (i,stamp,E'))
+	    val _       = insertTy(E, tycon', (i,stamp2,E'))
 	in
 	    O.TypDec(i, id', typ') :: acc
 	end
 
-    and trOpenDecStr (E,i,longid) (strid', (_,stamp,E'), acc) =
+    and trOpenDecStr (E,i,longid) (strid', (_,stamp1,E'), acc) =
 	let
 	    val name    = StrId.toString strid'
-	    val id'     = O.Id(i, stamp, O.ExId name)
+	    val stamp2  = Stamp.new()
+	    val id'     = O.Id(i, stamp2, O.ExId name)
 	    val lab'    = O.Lab(i, name)
 	    val longid' = O.LongId(i, longid, lab')
 	    val mod'    = longidToMod longid'
-	    val _       = insertStr(E, strid', (i,stamp,E'))
+	    val _       = insertStr(E, strid', (i,stamp2,E'))
 	in
 	    O.ModDec(i, id', mod') :: acc
 	end
 
-    and trOpenDecFun (E,i,longid) (funid', (_,stamp,E'), acc) =
+    and trOpenDecFun (E,i,longid) (funid', (_,stamp1,E'), acc) =
 	let
 	    val name    = FunId.toString funid'
-	    val id'     = O.Id(i, stamp, O.ExId(fromFunName name))
+	    val stamp2  = Stamp.new()
+	    val id'     = O.Id(i, stamp2, O.ExId(fromFunName name))
 	    val lab'    = O.Lab(i, name)
 	    val longid' = O.LongId(i, longid, lab')
 	    val mod'    = longidToMod longid'
-	    val _       = insertFun(E, funid', (i,stamp,E'))
+	    val _       = insertFun(E, funid', (i,stamp2,E'))
 	in
 	    O.ModDec(i, id', mod') :: acc
 	end
 
-    and trOpenDecSig (E,i,longid) (sigid', (_,stamp,E'), acc) =
+    and trOpenDecSig (E,i,longid) (sigid', (_,stamp1,E'), acc) =
 	let
 	    val name    = SigId.toString sigid'
-	    val id'     = O.Id(i, stamp, O.ExId name)
+	    val stamp2  = Stamp.new()
+	    val id'     = O.Id(i, stamp2, O.ExId name)
 	    val lab'    = O.Lab(i, name)
 	    val longid' = O.LongId(i, longid, lab')
 	    val inf'    = O.ConInf(i, longid')
-	    val _       = insertSig(E, sigid', (i,stamp,E'))
+	    val _       = insertSig(E, sigid', (i,stamp2,E'))
 	in
 	    O.InfDec(i, id', inf') :: acc
 	end
@@ -1895,22 +1901,24 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		)
 
 
-    and trOpenSpecVal (E,i,longido') (vid', (_,stamp,is), acc) =
+    and trOpenSpecVal (E,i,longido') (vid', (_,stamp1,is), acc) =
 	let
 	    val name    = VId.toString vid'
-	    val id'     = O.Id(i, stamp, O.ExId name)
+	    val stamp2  = Stamp.new()
+	    val id1'    = O.Id(i, stamp1, O.ExId name)
+	    val id2'    = O.Id(i, stamp2, O.ExId name)
 	    val longid' = case longido'
 			    of SOME longid' => O.LongId(i,longid',O.Lab(i,name))
-			     | NONE         => O.ShortId(i, id')
+			     | NONE         => O.ShortId(i, id1')
 	    val typ'    = O.SingTyp(i, longid')
-	    val _       = insertDisjointVal(E, vid', (i,stamp,is))
+	    val _       = insertDisjointVal(E, vid', (i,stamp2,is))
 			  handle CollisionVal _ =>
 			  error(i, "duplicate value or constructor " ^
 				   VId.toString vid' ^ " in signature")
 	in
 	    (case is
-	       of V => O.ValSpec(i, id', typ')
-	        | _ => O.ConSpec(i, O.Con(i, id', []), typ')
+	       of V => O.ValSpec(i, id1', typ')
+	        | _ => O.ConSpec(i, O.Con(i, id1', []), typ')
 	    ) :: acc
 	end
 
