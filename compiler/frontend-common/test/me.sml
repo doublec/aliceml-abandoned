@@ -23,6 +23,7 @@ type     word   = Prebound.word
 type     real   = Prebound.real
 type     string = Prebound.string
 type     char   = Prebound.char
+type  'a vector = 'a Prebound.vector
 datatype list   = datatype Prebound.list
 datatype ref    = datatype Prebound.ref
 datatype exn    = datatype Prebound.exn
@@ -322,9 +323,11 @@ structure Char =
 	__primitive val ord : char -> int = "Char.ord"
 	__primitive val chr : int -> char = "Char.chr"
 
+	__primitive val isAlphaNum : char -> bool = "Char.isAlphaNum"
 	__primitive val isDigit :    char -> bool = "Char.isDigit"
 	__primitive val isHexDigit : char -> bool = "Char.isHexDigit"
 	__primitive val isSpace :    char -> bool = "Char.isSpace"
+	__primitive val toLower :    char -> char = "Char.toLower"
 
 	__primitive val toCString :  char -> string = "Char.toCString"
     end
@@ -350,7 +353,7 @@ structure String =
 	fun concat l = List.foldr (fn (s, rest) => s ^ rest) "" l
 
 	fun toCString s =
-		List.foldr (fn (c, rest) => Char.toCString c ^ rest) "" (explode s)
+	    List.foldr (fn (c, rest) => Char.toCString c ^ rest) "" (explode s)
 
 	fun implode l = concat (List.map str l)
 
@@ -635,7 +638,7 @@ type array = Array.array
 
 structure Vector =
     struct
-	eqtype 'a vector
+	type 'a vector = 'a vector
 
 	__primitive val fromList : 'a list -> 'a vector = "Vector.fromList"
 	__primitive val sub : 'a vector * int -> 'a = "Vector.sub"
@@ -824,8 +827,8 @@ val print = TextIO.print
 (* ML-Yacc Parser Generator (c) 1989 Andrew W. Appel, David R. Tarditi 
  *
  * $Log$
- * Revision 1.3  2000-01-07 15:41:40  rossberg
- * Bug fixes in the translation of functors - can bootstrap again.
+ * Revision 1.4  2000-01-25 16:16:20  rossberg
+ * Fixes to bootstrap.
  *
  * Revision 1.3  1999/11/15 12:21:54  rossberg
  * Reverted to original state because we can deal with sharing now.
@@ -1146,8 +1149,8 @@ signature ARG_PARSER =
 (* ML-Yacc Parser Generator (c) 1989 Andrew W. Appel, David R. Tarditi 
  *
  * $Log$
- * Revision 1.3  2000-01-07 15:41:40  rossberg
- * Bug fixes in the translation of functors - can bootstrap again.
+ * Revision 1.4  2000-01-25 16:16:20  rossberg
+ * Fixes to bootstrap.
  *
  * Revision 1.4  1999/11/15 12:21:54  rossberg
  * Reverted to original state because we can deal with sharing now.
@@ -1269,8 +1272,8 @@ end;
 (* ML-Yacc Parser Generator (c) 1989 Andrew W. Appel, David R. Tarditi 
  *
  * $Log$
- * Revision 1.3  2000-01-07 15:41:40  rossberg
- * Bug fixes in the translation of functors - can bootstrap again.
+ * Revision 1.4  2000-01-25 16:16:20  rossberg
+ * Fixes to bootstrap.
  *
  * Revision 1.1  1999/10/04 09:44:08  kornstae
  * Moved ML-YACC files here from distribution
@@ -1346,8 +1349,8 @@ end;
 (* ML-Yacc Parser Generator (c) 1989 Andrew W. Appel, David R. Tarditi 
  *
  * $Log$
- * Revision 1.3  2000-01-07 15:41:40  rossberg
- * Bug fixes in the translation of functors - can bootstrap again.
+ * Revision 1.4  2000-01-25 16:16:20  rossberg
+ * Fixes to bootstrap.
  *
  * Revision 1.1  1999/10/04 09:44:08  kornstae
  * Moved ML-YACC files here from distribution
@@ -1385,8 +1388,8 @@ end;
 (* ML-Yacc Parser Generator (c) 1989 Andrew W. Appel, David R. Tarditi 
  *
  * $Log$
- * Revision 1.3  2000-01-07 15:41:40  rossberg
- * Bug fixes in the translation of functors - can bootstrap again.
+ * Revision 1.4  2000-01-25 16:16:20  rossberg
+ * Fixes to bootstrap.
  *
  * Revision 1.1  1999/10/04 09:44:08  kornstae
  * Moved ML-YACC files here from distribution
@@ -2985,6 +2988,511 @@ structure PPMisc :> PP_MISC =
   end
 (* src # 30 *)
 (*
+ * Authors:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2000
+ *   Andreas Rossberg, 2000
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+signature URL =
+    sig
+	eqtype url
+	type t = url
+
+	type scheme = string option
+	type authority = string option
+	type device = char option
+	type path = string list
+	type query = string option
+	type fragment = string option
+
+	exception Malformed
+
+	val empty: url
+	val fromString: string -> url              (* Malformed *)
+	val toString: url -> string
+	val isAbsolute: url -> bool
+	val resolve: url -> url -> url
+	val compare: url * url -> order
+	val hash: url -> int
+
+	(* Accessing URL Constituents *)
+
+	val getScheme: url -> scheme
+	val getAuthority: url -> authority
+	val getDevice: url -> device
+	val isAbsolutePath: url -> bool
+	val getPath: url -> path
+	val getQuery: url -> query
+	val getFragment: url -> fragment
+
+	val setScheme: url * scheme -> url         (* Malformed *)
+	val setAuthority: url * authority -> url   (* Malformed *)
+	val setDevice: url * device -> url         (* Malformed *)
+	val makeAbsolutePath: url -> url
+	val makeRelativePath: url -> url
+	val setPath: url * path -> url
+	val setQuery: url * query -> url           (* Malformed *)
+	val setFragment: url * fragment -> url
+    end
+(* src # 31 *)
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2000
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(*
+ * Parts of this have been adapted from Mozart's URL module
+ * which has been written Denys Duchier and Christian Schulte.
+ *)
+
+structure Url :> URL =
+    struct
+	type scheme = string option
+	type authority = string option
+	type device = char option
+	type path = string list
+	type query = string option
+	type fragment = string option
+
+	type url = {scheme: scheme,
+		    authority: authority,
+		    device: device,
+		    absolute: bool,
+		    path: path,
+		    query: query,
+		    fragment: fragment}
+	type t = url
+
+	exception Malformed
+	exception Crash of string (*--** *)
+
+
+	(*
+	 * Split a string at the 1st occurrence of a separator character.
+	 * Return a tuple (prefix, sep, suffix).  The argument function
+	 * has to return true iff a given character is a separator.
+	 * If the input is exhausted without finding a separator character,
+	 * the prefix contains the whole string, the suffix is nil, and
+	 * NONE is returned as separator.
+	 *)
+
+	fun split f cs =
+	    let
+		fun split' (c::cr, f, prefix) =
+		    if f c then (List.rev prefix, SOME c, cr)
+		    else split' (cr, f, c::prefix)
+		  | split' (nil, _, _) = (cs, NONE, nil)
+	    in
+		split' (cs, f, nil)
+	    end
+
+	(*
+	 * Decode/encode a path component using '%xx' escapes.
+	 *)
+
+	local
+	    fun hexval c =
+		let
+		    val i = Char.ord c
+		in
+		    if Char.ord #"0" <= i andalso i <= Char.ord #"9"
+		    then i - Char.ord #"0"
+		    else if Char.ord #"A" <= i andalso i <= Char.ord #"F"
+		    then i - Char.ord #"A" + 10
+		    else if Char.ord #"a" <= i andalso i <= Char.ord #"f"
+		    then i - Char.ord #"a" + 10
+		    else raise Malformed
+		end
+	in
+	    fun decode (#"%"::c1::c2::rest) =
+		Char.chr (hexval c1 * 16 + hexval c2)::decode rest
+	      | decode (#"%"::_) = raise Malformed
+	      | decode (c::rest) = c::decode rest
+	      | decode nil = nil
+	end
+
+	fun isPathChar #";" = true   (*--** should not be *)
+	  | isPathChar (#"-" | #"_" | #"." | #"!") = true
+	  | isPathChar (#"~" | #"*" | #"'" | #"(") = true
+	  | isPathChar (#")" | #":" | #"@" | #"&") = true
+	  | isPathChar (#"=" | #"+" | #"$" | #",") = true
+	  | isPathChar c = Char.isAlphaNum c
+
+	local
+	    val hex = #[#"0", #"1", #"2", #"3", #"4", #"5", #"6", #"7",
+			#"8", #"9", #"A", #"B", #"C", #"D", #"E", #"F"]
+
+	    fun encode' (c1::cr, f) =
+		if f c1 then c1::encode' (cr, f)
+		else
+		    let
+			(*--** does not work for unicode characters *)
+			val i = Char.ord c1
+			val h1 = Vector.sub (hex, i div 16)
+			val h2 = Vector.sub (hex, i mod 16)
+		    in
+			#"%"::h1::h2::encode' (cr, f)
+		    end
+	      | encode' (nil, _) = nil
+	in
+	    fun encode f s = String.implode (encode' (String.explode s, f))
+	end
+
+	(*
+	 * A path is represented by a sequence of strings.
+	 * Normalizing a path is the process of eliminating occurrences
+	 * of path components "." and ".." by interpreting them relative
+	 * to the stack of path components.  A leading "." may not be
+	 * thrown out because ./foo and foo should be treated differently:
+	 * the first one is really an absolute path, whereas the second
+	 * one is relative.
+	 *)
+
+	local
+	    fun normalizePath' (["."], nil) = nil
+	      | normalizePath' (["."], stack) = List.rev (""::stack)
+	      | normalizePath' ("."::rest, stack) =
+		normalizePath' (rest, stack)
+	      | normalizePath' ([".."], nil) = [".."]
+	      | normalizePath' ([".."], _::stack) = List.rev (""::stack)
+	      | normalizePath' (".."::rest, nil) =
+		".."::normalizePath' (rest, nil)
+	      | normalizePath' (".."::rest, _::stack) =
+		normalizePath' (rest, stack)
+	      | normalizePath' (s::rest, stack) =
+		normalizePath' (rest, s::stack)
+	      | normalizePath' (nil, stack) = List.rev stack
+	in
+	    fun normalizePath ("."::rest) = "."::normalizePath' (rest, nil)
+	      | normalizePath s = normalizePath' (s, nil)
+	end
+
+	fun toLower cs = String.implode (List.map Char.toLower cs)
+
+	fun toDevice c =
+	    if
+		Char.ord c >= Char.ord #"a" andalso Char.ord c <= Char.ord #"z"
+		orelse
+		Char.ord c >= Char.ord #"A" andalso Char.ord c <= Char.ord #"Z"
+	    then Char.toLower c
+	    else raise Malformed
+
+	fun isStart (#"/" | #"\\" | #":" | #"?" | #"#") = true
+	  | isStart _ = false
+
+	fun isPath (#"/" | #"\\" | #"?" | #"#") = true
+	  | isPath _ = false
+
+	fun isQuery #"#" = true
+	  | isQuery _ = false
+
+	(* Accessing URL Constituents *)
+
+	fun getScheme ({scheme, ...}: url) = scheme
+	fun getAuthority ({authority, ...}: url) = authority
+	fun getDevice ({device, ...}: url) = device
+	fun isAbsolutePath ({absolute, ...}: url) = absolute
+	fun getPath ({path, ...}: url) = path
+	fun getQuery ({query, ...}: url) = query
+	fun getFragment ({fragment, ...}: url) = fragment
+
+	fun setScheme ({scheme = _, authority, device, absolute, path,
+			query, fragment}: url, scheme) =
+	    (if isSome scheme then
+		 case split isStart (String.explode (valOf scheme)) of
+		     (_, NONE, _) => ()
+		   | (_, SOME _, _) => raise Malformed
+	     else ();
+	     {scheme = scheme, authority = authority, device = device,
+	      absolute = absolute, path = path, query = query,
+	      fragment = fragment})
+
+	fun setAuthority ({scheme, authority = _, device, absolute, path,
+			   query, fragment}: url, authority) =
+	    (if isSome authority then
+		 case split isStart (String.explode (valOf authority)) of
+		     (_, NONE, _) => ()
+		   | (_, SOME _, _) => raise Malformed
+	     else ();
+	     {scheme = scheme, authority = authority, device = device,
+	      absolute = absolute, path = path, query = query,
+	      fragment = fragment})
+
+	fun setDevice ({scheme, authority, device = _, absolute, path,
+			query, fragment}: url, device) =
+	    {scheme = scheme, authority = authority,
+	     device = Option.map toDevice device,
+	     absolute = absolute, path = path, query = query,
+	     fragment = fragment}
+
+	fun makeAbsolutePath ({scheme, authority, device, absolute = _, path,
+			       query, fragment}: url) =
+	    {scheme = scheme, authority = authority, device = device,
+	     absolute = true, path = path, query = query,
+	     fragment = fragment}
+
+	fun makeRelativePath ({scheme, authority, device, absolute = _, path,
+			       query, fragment}: url) =
+	    {scheme = scheme, authority = authority, device = device,
+	     absolute = false, path = path, query = query,
+	     fragment = fragment}
+
+	fun setPath ({scheme, authority, device, absolute, path = _,
+		      query, fragment}: url, path) =
+	    {scheme = scheme, authority = authority, device = device,
+	     absolute = absolute, path = path, query = query,
+	     fragment = fragment}
+
+	fun setQuery ({scheme, authority, device, absolute, path,
+		       query = _, fragment}: url, query) =
+	    (if isSome query then
+		 case split isQuery (String.explode (valOf query)) of
+		     (_, NONE, _) => ()
+		   | (_, SOME _, _) => raise Malformed
+	     else ();
+	     {scheme = scheme, authority = authority, device = device,
+	      absolute = absolute, path = path, query = query,
+	      fragment = fragment})
+
+	fun setFragment ({scheme, authority, device, absolute, path,
+			  query, fragment = _}: url, fragment) =
+	    {scheme = scheme, authority = authority, device = device,
+	     absolute = absolute, path = path, query = query,
+	     fragment = fragment}
+
+	val empty =
+	    {scheme = NONE, authority = NONE, device = NONE,
+	     absolute = false, path = nil, query = NONE, fragment = NONE}
+
+	(*
+	 * This parser traverses the string only once and uses character
+	 * sets to recognize the crucial characters that determine the
+	 * breaking points in a url.
+	 *
+	 * This parser is a state machine, with 6 states, each of which is
+	 * implemented by a procedure:
+	 *
+	 * parseStart		the initial state: what is at the front of the
+	 *			url is disambiguated by the 1st separator we
+	 *			find or the eos
+	 * parseAuthority	entered when we encounter the // thing
+	 * parsePathDev		recognize a device or the next path component
+	 * parsePath		recognize the next path component
+	 * parseQuery		after `?'
+	 * parseFragment	after `#'
+	 *)
+
+	(*--** when we have the {url where absolute = true} syntax,
+	 * this should be rewritten to not use state for simplicity
+	 *)
+
+	fun fromString s =
+	    let
+		val scheme: string option ref = ref NONE
+		val authority: string option ref = ref NONE
+		val device: char option ref = ref NONE
+		val absolute = ref false
+		val path: string list ref = ref nil
+		val query: string option ref = ref NONE
+		val fragment: string option ref = ref NONE
+
+		fun pushPath s = path := String.implode (decode s)::(!path)
+
+		fun parseStart cs =
+		    case split isStart cs of
+			(prefix, NONE, _) =>
+			    (* hit the end without finding a separator *)
+			    pushPath prefix
+		      | ([c], SOME #":", suffix) =>
+			    (* found the device separator *)
+			    (device := SOME (toDevice c);
+			     case suffix of
+				 (#"/" | #"\\")::rest =>
+				     (absolute := true; parsePath rest)
+			       | _::_ => parsePathDev suffix
+			       | nil => ())
+		      | (prefix, SOME #":", suffix) =>
+			    (* found the scheme separator *)
+			    (scheme := SOME (toLower prefix);
+			     (* check for //authority *)
+			     case suffix of
+				 (#"/" | #"\\")::(#"/" | #"\\")::rest =>
+				     parseAuthority rest
+			       | (#"/" | #"\\")::rest =>
+				     (absolute := true; parsePath rest)
+			       | _ => parsePathDev suffix)
+		      | (nil, SOME (#"/" | #"\\"), (#"/" | #"\\")::rest) =>
+			    (* found //authority at start *)
+			    parseAuthority rest
+		      | (nil, SOME (#"/" | #"\\"), suffix) =>
+			    (* found absolute path at start *)
+			    (absolute := true; parsePath suffix)
+		      | (prefix, SOME (#"/" | #"\\"), suffix) =>
+			    (pushPath prefix; parsePath suffix)
+		      | (prefix, SOME #"?", suffix) =>
+			    (case prefix of
+				 _::_ => pushPath prefix
+			       | nil => ();
+			     parseQuery suffix)
+		      | (prefix, SOME #"#", suffix) =>
+			    (case prefix of
+				 _::_ => pushPath prefix
+			       | nil => ();
+			     parseFragment suffix)
+		      | (_, SOME _, _) =>
+			    raise Crash "Url.fromString parseStart"
+		and parseAuthority cs =
+		    let
+			val (prefix, sep, suffix) = split isPath cs
+		    in
+			authority := SOME (toLower prefix);
+			case sep of
+			    NONE => ()
+			  | SOME (#"/" | #"\\") =>
+				(absolute := true; parsePath suffix)
+			  | SOME #"?" => parseQuery suffix
+			  | SOME #"#" => parseFragment suffix
+			  | SOME _ =>
+				raise Crash
+				    "Url.fromString parseAuthority"
+		    end
+		and parsePathDev (c::(#":")::cr) =
+		    (device := SOME (toDevice c); parsePath cr)
+		  | parsePathDev cs = parsePath cs
+		and parsePath cs =
+		    let
+			val (prefix, sep, suffix) = split isPath cs
+		    in
+			pushPath prefix;
+			case sep of
+			    NONE => ()
+			  | SOME (#"/" | #"\\") => parsePath suffix
+			  | SOME #"?" => parseQuery suffix
+			  | SOME #"#" => parseFragment suffix
+			  | SOME _ =>
+				raise Crash "Url.fromString parsePath"
+		    end
+		and parseQuery cs =
+		    let
+			val (prefix, sep, suffix) = split isQuery cs
+		    in
+			query := SOME (String.implode prefix);
+			case sep of
+			    NONE => ()
+			  | SOME #"#" => parseFragment suffix
+			  | SOME _ =>
+				raise Crash "Url.fromString parseQuery"
+		    end
+		and parseFragment cs = fragment := SOME (String.implode cs)
+	    in
+		parseStart (String.explode s);
+		{scheme = !scheme,
+		 authority = !authority,
+		 device = !device,
+		 absolute = !absolute,
+		 path = normalizePath (List.rev (!path)),
+		 query = !query,
+		 fragment = !fragment}
+	    end
+
+	fun slashit nil = nil
+	  | slashit (ss as "/"::_) = ss
+	  | slashit ss = "/"::ss
+
+	fun toString {scheme, authority, device, absolute, path,
+		      query, fragment} =
+	    let
+		val l = if isSome fragment then ["#", valOf fragment] else nil
+		val l = if isSome query then "?"::valOf query::l else l
+		val l =
+		    List.foldr (fn (s, rest) =>
+				encode isPathChar s::slashit rest) nil path @ l
+		val l = if absolute then slashit l else l
+		val l =
+		    if isSome device then String.str (valOf device)::":"::l
+		    else l
+		val l =
+		    if isSome authority then
+			"/"::"/"::valOf authority::slashit l
+		    else l
+		val l = if isSome scheme then valOf scheme::":"::l else l
+	    in
+		String.concat l
+	    end
+
+	fun isAbsolute ({scheme, device, absolute, path, ...}: url) =
+	    isSome scheme orelse isSome device orelse absolute orelse
+	    (case path of
+		 ("." | "..")::_ => true
+	       | ""::_ => false
+	       | s::_ => String.sub (s, 0) = #"~"
+	       | nil => false)
+
+	exception Done of url
+
+	(*--** use {rel where scheme = scheme} instead of setScheme *)
+
+	fun atLast (nil, ss2) = ss2
+	  | atLast (ss1, ss2) = List.revAppend (List.tl (List.rev ss1), ss2)
+
+	fun resolve _ (rel as {scheme = SOME _, ...}) = rel
+	  | resolve (base as {scheme, authority, device, ...}: url) rel =
+	    let
+		val rel =
+		    if isSome scheme then setScheme (rel, scheme)
+		    else rel
+		val _ = if isSome (#authority rel) then raise Done rel else ()
+		val rel =
+		    if isSome authority then setAuthority (rel, authority)
+		    else rel
+		val _ = if isSome (#device rel) then raise Done rel else ()
+		val rel =
+		    if isSome device then setDevice (rel, device)
+		    else rel
+		val _ = if #absolute rel then raise Done rel else ()
+		val rel =
+		    if #absolute base then makeAbsolutePath rel
+		    else rel
+		val basePath = #path base
+		val relPath =
+		    case #path rel of
+			nil => [""]
+		      | (path as _::_) => path
+	    in
+		setPath (rel, normalizePath (atLast (basePath, relPath)))
+	    end
+	    handle Done url => url
+
+	(*--**
+	 * Check whether there may be cases where
+	 *    URL.fromString s1 <> URL.fromString s2
+	 * but
+	 *    URL.compare (URL.fromString s1, URL.fromString s2) = EQUAL
+	 * This must not happen!
+	 *)
+
+	fun compare (url1, url2) =
+	    String.compare (toString url1, toString url2)
+
+	fun hash url = StringHashKey.hash (toString url)
+    end
+(* src # 32 *)
+(*
  * A source file.
  *)
 
@@ -3003,7 +3511,7 @@ signature SOURCE =
     val regionToString:	region -> string
 
   end
-(* src # 31 *)
+(* src # 33 *)
 (*
  * A source file
  *)
@@ -3031,7 +3539,7 @@ structure Source :> SOURCE =
 	    posToString pos1 ^ "-" ^ posToString pos2
 
   end
-(* src # 32 *)
+(* src # 34 *)
 (*
  * Handling of internal inconsistencies.
  *)
@@ -3040,7 +3548,7 @@ signature CRASH =
   sig
     exception Crash of string
   end
-(* src # 33 *)
+(* src # 35 *)
 (*
  * Handling of internal inconsistencies.
  *)
@@ -3049,7 +3557,7 @@ structure Crash :> CRASH =
   struct
     exception Crash of string
   end
-(* src # 34 *)
+(* src # 36 *)
 (*
  * Error handling.
  *)
@@ -3071,7 +3579,7 @@ signature ERROR =
     val warn :	region * string -> unit
 
   end
-(* src # 35 *)
+(* src # 37 *)
 (*
  * Error handling.
  *)
@@ -3097,336 +3605,13 @@ structure Error :> ERROR =
     fun warn (reg, message) =   print(reg, "warning: " ^ message)
 
   end
-(* src # 36 *)
-structure Stamp = MakeStamp()
-(* src # 37 *)
-signature INTERMEDIATE_GRAMMAR =
-  sig
-
-    (* Generic *)
-
-    type info
-
-    (* Literals *)
-
-    datatype lit =
-	  WordLit   of LargeWord.word
-	| IntLit    of LargeInt.int
-	| CharLit   of WideChar.char
-	| StringLit of WideString.string
-(*	| RealLit   of LargeReal.real
-UNFINISHED: obsolete after bootstrapping:
-*)	| RealLit   of string
-
-    (* Identifiers *)
-
-    type stamp      = Stamp.t
-
-    datatype name   = ExId of string | InId
-
-    datatype lab    = Lab     of info * string
-    datatype id     = Id      of info * stamp * name
-    datatype longid = ShortId of info * id
-		    | LongId  of info * longid * lab
-
-    (* Expressions *)
-
-    datatype exp =
-	  LitExp    of info * lit
-	| PrimExp   of info * string
-	| NewExp    of info * string option * bool (* has args *)
-	| VarExp    of info * longid
-	| ConExp    of info * longid * bool
-	| RefExp    of info
-	| TupExp    of info * exp list
-	| RowExp    of info * exp field list
-			(* all labels distinct *)
-	| SelExp    of info * lab
-	| VecExp    of info * exp list
-	| FunExp    of info * id * exp
-	| AppExp    of info * exp * exp
-	| AdjExp    of info * exp * exp
-	| AndExp    of info * exp * exp
-	| OrExp     of info * exp * exp
-	| IfExp     of info * exp * exp * exp
-	| WhileExp  of info * exp * exp
-	| SeqExp    of info * exp list
-	| CaseExp   of info * exp * match list
-	| RaiseExp  of info * exp
-	| HandleExp of info * exp * match list
-	| LetExp    of info * dec list * exp
-
-    and 'a field = Field of info * lab * 'a
-
-    and match    = Match of info * pat * exp
-
-    (* Patterns (always linear) *)
-
-    and pat =
-	  WildPat   of info
-	| LitPat    of info * lit
-	| VarPat    of info * id
-	| ConPat    of info * longid * pat option
-			(* pat present iff longid has arguments *)
-	| RefPat    of info * pat
-	| TupPat    of info * pat list
-	| RowPat    of info * pat field list * bool (* dots *)
-			(* all labels distinct *)
-	| VecPat    of info * pat list
-	| AsPat     of info * pat * pat
-	| AltPat    of info * pat list
-			(* all patterns bind same ids *)
-	| NegPat    of info * pat
-	| GuardPat  of info * pat * exp
-	| WithPat   of info * pat * dec list
-
-    (* Declarations *)
-
-    and dec =
-	  ValDec    of info * pat * exp
-	  		(* if inside RecDec, then
-			 * (1) pat may not contain AltPat, NegPat, GuardPat,
-			 *     WithPat
-			 * (2) exp may only contain LitExp, VarExp, ConExp,
-			 *     RefExp, TupExp, RowExp, VecExp, FunExp, AppExp
-			 * (3) AppExps may only contain ConExp or RefExp
-			 *     as first argument
-			 * (4) if an VarExp on the LHS structurally corresponds
-			 *     to an VarExp on the RHS then the RHS id may not
-			 *     be bound on the LHS *)
-	| RecDec    of info * dec list
-
-    (* Components *)
-
-    type component = (id * string) list * id list * dec list
-
-
-    (* Operations *)
-
-    val infoLab :	lab	-> info
-    val infoId :	id	-> info
-    val infoLongid :	longid	-> info
-    val infoExp :	exp	-> info
-    val infoField :	'a field-> info
-    val infoMatch :	match	-> info
-    val infoPat :	pat	-> info
-    val infoDec :	dec	-> info
-
-  end
 (* src # 38 *)
-functor MakeIntermediateGrammar(type info) :>
-  INTERMEDIATE_GRAMMAR where type info = info =
-  struct
-
-    (* Generic *)
-
-    type info = info
-
-    (* Literals *)
-
-    datatype lit =
-	  WordLit   of LargeWord.word
-	| IntLit    of LargeInt.int
-	| CharLit   of WideChar.char
-	| StringLit of WideString.string
-(*	| RealLit   of LargeReal.real
-UNFINISHED: obsolete after bootstrapping:
-*)	| RealLit   of string
-
-    (* Identifiers *)
-
-    type stamp      = Stamp.t
-
-    datatype name   = ExId of string | InId
-
-    datatype lab    = Lab     of info * string
-    datatype id     = Id      of info * stamp * name
-    datatype longid = ShortId of info * id
-		    | LongId  of info * longid * lab
-
-    (* Expressions *)
-
-    datatype exp =
-	  LitExp    of info * lit
-	| PrimExp   of info * string
-	| NewExp    of info * string option * bool (* has args *)
-	| VarExp    of info * longid
-	| ConExp    of info * longid * bool
-	| RefExp    of info
-	| TupExp    of info * exp list
-	| RowExp    of info * exp field list
-			(* all labels distinct *)
-	| SelExp    of info * lab
-	| VecExp    of info * exp list
-	| FunExp    of info * id * exp
-	| AppExp    of info * exp * exp
-	| AdjExp    of info * exp * exp
-	| AndExp    of info * exp * exp
-	| OrExp     of info * exp * exp
-	| IfExp     of info * exp * exp * exp
-	| WhileExp  of info * exp * exp
-	| SeqExp    of info * exp list
-	| CaseExp   of info * exp * match list
-	| RaiseExp  of info * exp
-	| HandleExp of info * exp * match list
-	| LetExp    of info * dec list * exp
-
-    and 'a field = Field of info * lab * 'a
-
-    and match    = Match of info * pat * exp
-
-    (* Patterns (always linear) *)
-
-    and pat =
-	  WildPat   of info
-	| LitPat    of info * lit
-	| VarPat    of info * id
-	| ConPat    of info * longid * pat option
-			(* pat present iff longid has arguments *)
-	| RefPat    of info * pat
-	| TupPat    of info * pat list
-	| RowPat    of info * pat field list * bool (* dots *)
-			(* all labels distinct *)
-	| VecPat    of info * pat list
-	| AsPat     of info * pat * pat
-	| AltPat    of info * pat list
-			(* all patterns bind same ids *)
-	| NegPat    of info * pat
-	| GuardPat  of info * pat * exp
-	| WithPat   of info * pat * dec list
-
-    (* Declarations *)
-
-    and dec =
-	  ValDec    of info * pat * exp
-	  		(* if inside RecDec, then
-			 * (1) pat may not contain AltPat, NegPat, GuardPat,
-			 *     WithPat
-			 * (2) exp may only contain LitExp, VarExp, ConExp,
-			 *     RefExp, TupExp, RowExp, VecExp, FunExp, AppExp
-			 * (3) AppExps may only contain ConExp or RefExp
-			 *     as first argument
-			 * (4) if an VarExp on the LHS structurally corresponds
-			 *     to an VarExp on the RHS then the RHS id may not
-			 *     be bound on the LHS *)
-	| RecDec    of info * dec list
-
-    (* Components *)
-
-    type component = (id * string) list * id list * dec list
-
-
-    (* Projections *)
-
-    fun infoLab(Lab(i,_))		= i
-    fun infoId(Id(i,_,_))		= i
-    fun infoLongid(ShortId(i,_))	= i
-      | infoLongid(LongId(i,_,_))	= i
-
-    fun infoExp(LitExp(i,_))		= i
-      | infoExp(PrimExp(i,_))		= i
-      | infoExp(NewExp(i,_,_))		= i
-      | infoExp(VarExp(i,_))		= i
-      | infoExp(ConExp(i,_,_))		= i
-      | infoExp(RefExp(i))		= i
-      | infoExp(TupExp(i,_))		= i
-      | infoExp(RowExp(i,_))		= i
-      | infoExp(SelExp(i,_))		= i
-      | infoExp(VecExp(i,_))		= i
-      | infoExp(FunExp(i,_,_))		= i
-      | infoExp(AppExp(i,_,_))		= i
-      | infoExp(AdjExp(i,_,_))		= i
-      | infoExp(AndExp(i,_,_))		= i
-      | infoExp(OrExp(i,_,_))		= i
-      | infoExp(IfExp(i,_,_,_))		= i
-      | infoExp(WhileExp(i,_,_))	= i
-      | infoExp(SeqExp(i,_))		= i
-      | infoExp(CaseExp(i,_,_))		= i
-      | infoExp(RaiseExp(i,_))		= i
-      | infoExp(HandleExp(i,_,_))	= i
-      | infoExp(LetExp(i,_,_))		= i
-
-    fun infoField(Field(i,_,_))		= i
-    fun infoMatch(Match(i,_,_))		= i
-
-    fun infoPat(WildPat(i))		= i
-      | infoPat(LitPat(i,_))		= i
-      | infoPat(VarPat(i,_))		= i
-      | infoPat(ConPat(i,_,_))		= i
-      | infoPat(RefPat(i,_))		= i
-      | infoPat(TupPat(i,_))		= i
-      | infoPat(RowPat(i,_,_))		= i
-      | infoPat(VecPat(i,_))		= i
-      | infoPat(AsPat(i,_,_))		= i
-      | infoPat(AltPat(i,_))		= i
-      | infoPat(NegPat(i,_))		= i
-      | infoPat(GuardPat(i,_,_))	= i
-      | infoPat(WithPat(i,_,_))		= i
-
-    fun infoDec(ValDec(i,_,_))		= i
-      | infoDec(RecDec(i,_))		= i
-
-  end
+structure Stamp = MakeStamp()
 (* src # 39 *)
-structure IntermediateGrammar =
-		MakeIntermediateGrammar(type info = Source.region)
+structure StampSet = MakeHashImpSet(Stamp)
 (* src # 40 *)
-signature PREBOUND =
-  sig
-
-    type stamp = Stamp.t
-
-    val stamp_false :	stamp
-    val stamp_true :	stamp
-    val stamp_nil :	stamp
-    val stamp_cons :	stamp
-    val stamp_ref :	stamp
-    val stamp_Match :	stamp
-    val stamp_Bind :	stamp
-
-    val stamp_bool :	stamp
-    val stamp_int :	stamp
-    val stamp_word :	stamp
-    val stamp_real :	stamp
-    val stamp_string :	stamp
-    val stamp_char :	stamp
-    val stamp_list :	stamp
-    val stamp_vec :	stamp
-    val stamp_tref :	stamp
-    val stamp_exn :	stamp
-
-  end
-(* src # 41 *)
-structure Prebound :> PREBOUND =
-  struct
-
-    type stamp = Stamp.t
-
-    val stamp_false	= Stamp.new()
-    val stamp_true	= Stamp.new()
-    val stamp_nil	= Stamp.new()
-    val stamp_cons	= Stamp.new()
-    val stamp_ref	= Stamp.new()
-    val stamp_Match	= Stamp.new()
-    val stamp_Bind	= Stamp.new()
-
-    val stamp_bool	= Stamp.new()
-    val stamp_int	= Stamp.new()
-    val stamp_word	= Stamp.new()
-    val stamp_real	= Stamp.new()
-    val stamp_string	= Stamp.new()
-    val stamp_char	= Stamp.new()
-    val stamp_list	= Stamp.new()
-    val stamp_vec	= Stamp.new()
-    val stamp_tref	= Stamp.new()
-    val stamp_exn	= Stamp.new()
-
-  end
-(* src # 42 *)
-structure StringMap = MakeHashImpMap(StringHashKey)
-(* src # 43 *)
 structure StampMap = MakeHashImpMap(Stamp)
-(* src # 44 *)
+(* src # 41 *)
 signature NAME =
   sig
 
@@ -3438,7 +3623,7 @@ signature NAME =
     val toString :	name -> string
 
   end
-(* src # 45 *)
+(* src # 42 *)
 structure Name :> NAME =
   struct
 
@@ -3457,8 +3642,8 @@ structure Name :> NAME =
       | toString InId			= "?"
 
   end
-(* src # 46 *)
-signature LAB =
+(* src # 43 *)
+signature LABEL =
   sig
 
     eqtype lab					(* [lab,l] *)
@@ -3472,13 +3657,14 @@ signature LAB =
     val fromName :	Name.t -> lab
     val toName :	lab    -> Name.t
     val toString :	lab    -> string
+    val toInt :		lab    -> int option
 
     val compare :	lab * lab -> order
     val hash :		lab -> int
 
   end
-(* src # 47 *)
-structure Lab :> LAB =
+(* src # 44 *)
+structure Label :> LABEL =
   struct
 
     datatype lab = NUM of int | ALPHA of string		(* [lab,l] *)
@@ -3503,19 +3689,22 @@ structure Lab :> LAB =
     fun toString(NUM n)		= Int.toString n
       | toString(ALPHA s)	= s
 
+    fun toInt(NUM n)		= SOME n
+      | toInt(ALPHA s)		= NONE
+
 
     (* Ordering and hashing *)
 
     fun compare(NUM n1,   NUM n2)	= Int.compare(n1,n2)
-      | compare(NUM n1,   ALPHA s2)	= String.compare(Int.toString n1, s2)
-      | compare(ALPHA s1, NUM n2)	= String.compare(s1, Int.toString n2)
       | compare(ALPHA s1, ALPHA s2)	= String.compare(s1,s2)
+      | compare(NUM n1,   ALPHA s2)	= LESS
+      | compare(ALPHA s1, NUM n2)	= GREATER
 
     fun hash(NUM n)			= n
       | hash(ALPHA s)			= StringHashKey.hash s
 
   end
-(* src # 48 *)
+(* src # 45 *)
 (* Since SML allows multiple definitions of the same id in a structure,
    labels are not enough for paths. So we added an index. *)
 
@@ -3524,8 +3713,9 @@ signature PATH =
 
   (* Types *)
 
-    type lab   = Lab.t
+    type lab   = Label.t
     type name  = Name.t
+    type url   = Url.t
 
     eqtype path
     type t = path
@@ -3534,6 +3724,7 @@ signature PATH =
 
     val invent :	unit -> path
     val fromLab :	lab  -> path
+    val fromUrl :	url  -> path
     val toLab :		path -> lab
     val path :		path * lab * int -> path
 
@@ -3548,7 +3739,7 @@ signature PATH =
     val instance :	('rea * path -> path option) -> 'rea * path -> path
 
   end
-(* src # 49 *)
+(* src # 46 *)
 (* Notes:
  * - Paths are shared, i.e. each path has to be unique.
  * - Since SML allows multiple definitions of the same id in a structure,
@@ -3560,15 +3751,14 @@ structure PathPrivate =
 
   (* Types *)
 
-    type lab   = Lab.t
+    type lab   = Label.t
     type name  = Name.t
+    type url   = Url.t
 
     datatype path' =
-	  PLAIN  of name
-	| DOT    of path * lab * int
-	(*UNFINISHED
-	| IMPORT of string * lab * int
-	*)
+	  PLAIN of name
+	| URL   of url
+	| DOT   of path * lab * int
 
     withtype path = path' ref
     type t = path
@@ -3577,10 +3767,11 @@ structure PathPrivate =
   (* Creation and projection *)
 
     fun invent()		= ref(PLAIN(Name.InId))
-    fun fromLab l		= ref(PLAIN(Lab.toName l))
+    fun fromLab l		= ref(PLAIN(Label.toName l))
+    fun fromUrl url		= ref(URL url)
     fun path pln		= ref(DOT pln)
 
-    fun toLab(ref(PLAIN n))	= Lab.fromName n
+    fun toLab(ref(PLAIN n))	= Label.fromName n
       | toLab _			= raise Crash.Crash "Path.toLab"
 
     fun isDot(ref(DOT _))	= true
@@ -3592,21 +3783,26 @@ structure PathPrivate =
 
   (* Ordering and hashing *)
 
+    fun idx(PLAIN _)		= 0
+      | idx(URL _)		= 1
+      | idx(DOT _)		= 2
+
     fun compare(p1 as ref p1', p2 as ref p2')	= if p1 = p2 then EQUAL
 						  else compare'(p1', p2')
-    and compare'(PLAIN _,       DOT _)		= LESS
-      | compare'(DOT _,         PLAIN _)	= GREATER
-      | compare'(PLAIN(x1),     PLAIN(x2))	= Name.compare(x1,x2)
+    and compare'(PLAIN(x1),     PLAIN(x2))	= Name.compare(x1,x2)
+      | compare'(URL(u1),       URL(u2))	= Url.compare(u1,u2)
       | compare'(DOT(p1,l1,n1), DOT(p2,l2,n2))	= (case compare(p1,p2)
 						     of r as (LESS|GREATER) => r
 						      | EQUAL =>
-						   case Lab.compare(l1,l2)
+						   case Label.compare(l1,l2)
 						     of r as (LESS|GREATER) => r
 						      | EQUAL =>
 						   Int.compare(n1,n2))
+      | compare'(p1,            p2)		= Int.compare(idx p1, idx p2)
 
     fun hash(ref(PLAIN x))	= Name.hash x
-      | hash(ref(DOT(p,l,n)))	= Lab.hash l
+      | hash(ref(URL u))	= Url.hash u
+      | hash(ref(DOT(p,l,n)))	= Label.hash l
 
 
   (* Strengthening *)
@@ -3628,6 +3824,7 @@ structure PathPrivate =
 		  | NONE    =>
 		case !p1
 		 of p' as PLAIN _ => ref p'
+		  | p' as URL _   => p1
 		  | DOT(p,l,n)    => ref(DOT(clone p, l, n))
 	in
 	    clone p
@@ -3635,11 +3832,12 @@ structure PathPrivate =
   end
 
 
-structure Path : PATH = PathPrivate
-(* src # 50 *)
+structure Path : (*DEBUG :>*) PATH = PathPrivate
+(* src # 47 *)
 structure PathSet = MakeHashImpSet(Path)
+(* src # 48 *)
 structure PathMap = MakeHashImpMap(Path)
-(* src # 51 *)
+(* src # 49 *)
 signature TYPE =
   sig
 
@@ -3648,7 +3846,7 @@ signature TYPE =
     datatype sort = OPEN | CLOSED
     datatype kind = STAR | ARROW of kind * kind		(* [kappa,k] *)
 
-    type lab  = Lab.t					(* [lab,l] *)
+    type lab  = Label.t					(* [lab,l] *)
     type path = Path.t					(* [pi,p] *)
     type con  = kind * sort * path			(* [chi,c] *)
 
@@ -3763,7 +3961,7 @@ signature TYPE =
     val resetLevel :	unit -> unit
 
   end
-(* src # 52 *)
+(* src # 50 *)
 (* NOTE: Reduction is still a bit strange for recursive type functions -
 	 we get some non-wellformed lambdas in-between.
 	 Have to look into it later... *)
@@ -3776,7 +3974,7 @@ structure TypePrivate =
     datatype sort = OPEN | CLOSED
     datatype kind = STAR | ARROW of kind * kind		(* [kappa,k] *)
 
-    type lab  = Lab.t					(* [lab,l] *)
+    type lab  = Label.t					(* [lab,l] *)
     type path = Path.t					(* [pi,p] *)
     type con  = kind * sort * path			(* [chi,c] *)
 
@@ -4222,7 +4420,7 @@ structure TypePrivate =
 
     fun extendRow(l,ts, r as (RHO _ | NIL))	= FLD(l,ts,r)
       | extendRow(l1,ts1, r1 as FLD(l2,ts2,r2)) =
-	case Lab.compare(l1,l2)
+	case Label.compare(l1,l2)
 	  of EQUAL   => raise Row
 	   | LESS    => FLD(l1, ts1, r1)
 	   | GREATER => FLD(l2, ts2, extendRow(l1,ts1,r2))
@@ -4230,7 +4428,7 @@ structure TypePrivate =
     fun tupToRow ts =
 	let
 	    fun loop(n,  []  ) = NIL
-	      | loop(n, t::ts) = FLD(Lab.fromInt n, [t], loop(n+1,ts))
+	      | loop(n, t::ts) = FLD(Label.fromInt n, [t], loop(n+1,ts))
 	in
 	    loop(1,ts)
 	end
@@ -4431,7 +4629,7 @@ if kind' t1' <> k2 then raise Assert.failure else
 			    FLD(l,ts, loop(r, b1, rho, true))
 		      | loop(r1 as FLD(l1,ts1,r1'), b1,
 			     r2 as FLD(l2,ts2,r2'), b2) =
-			(case Lab.compare(l1,l2)
+			(case Label.compare(l1,l2)
 			   of EQUAL   => ( ListPair.app unify (ts1,ts2)
 					 ; FLD(l1,ts1, loop(r1',b1, r2',b2)) )
 			    | LESS    => FLD(l1,ts1, loop(r1',b1, r2,true))
@@ -4606,14 +4804,680 @@ if kind' t1' <> k2 then raise Assert.failure else
   end
 
 
-structure Type : TYPE = TypePrivate
+structure Type : (*DEBUG :>*) TYPE = TypePrivate
+(* src # 51 *)
+signature PP_PATH =
+  sig
+
+    type doc  = PrettyPrint.doc
+    type path = Path.t
+
+    val ppPath : path -> doc
+
+  end
+(* src # 52 *)
+structure PPPath :> PP_PATH =
+  struct
+
+    (* Import *)
+
+    open PathPrivate
+    open PrettyPrint
+    open PPMisc
+
+    infixr ^^ ^/^
+
+
+    fun ppName n		= text(Name.toString n)
+    fun ppLab l			= text(Label.toString l)
+
+    fun ppHiddenLab(0,l)	= ppLab l
+      | ppHiddenLab(i,l)	= text "?" ^^ ppHiddenLab(i-1, l)
+
+    fun ppPath(ref(PLAIN n))	= ppName n
+      | ppPath(ref(URL _))	= raise Crash.Crash "PPPath.ppPath: URL path"
+      | ppPath(ref(DOT(p,l,i)))	= (case !p of URL _ => text ""
+					    | _     => ppPath p ^^ text ".")
+				  ^^ ppHiddenLab(i, l)
+
+  end
 (* src # 53 *)
+signature PP_TYPE =
+  sig
+
+    type doc  = PrettyPrint.doc
+    type typ  = Type.typ
+    type kind = Type.kind
+
+    val ppTyp :		typ -> doc
+    val ppKind :	kind -> doc
+
+  end
+(* src # 54 *)
+structure PPType :> PP_TYPE =
+  struct
+
+    (* Import *)
+
+    open TypePrivate
+    open PrettyPrint
+    open PPMisc
+
+    infixr ^^ ^/^
+
+
+    (* Helpers *)
+
+    fun uncurry(ref(APP(t1,t2)))= let val (t,ts) = uncurry t1 in (t,ts@[t2]) end
+      | uncurry t		= (t,[])
+
+    fun parenPrec p (p',doc) =
+	if p > p' then
+	    paren doc
+	else
+	    doc
+
+
+    (* Simple objects *)
+
+    fun ppLab l		= text(Label.toString l)
+    fun ppCon (k,_,p)	= PPPath.ppPath p
+
+    fun varToString(isBound, n) =
+	let
+	    fun rep(0,c) = c
+	      | rep(n,c) = c ^ rep(n-1,c)
+
+	    val c = String.str(Char.chr(Char.ord #"a" + n mod 26))
+	in
+	    (if isBound then "'" else "'_") ^ rep(n div 26, c)
+	end
+
+
+    (* Kinds *)
+
+    (* Precedence:
+     *	0 : arrow (ty1 -> ty2)
+     *	1 : star
+     *)
+
+    fun ppKind k = fbox(below(ppKindPrec 0 k))
+
+    and ppKindPrec p  STAR		= text "*"
+      | ppKindPrec p (ARROW(k1,k2))	= 
+	let
+	    val doc = ppKindPrec 1 k1 ^/^ text "->" ^/^ ppKindPrec 0 k2
+	in
+	    parenPrec p (0, doc)
+	end
+
+
+    (* Types *)
+
+    (* Precedence:
+     *  0 : sums (con of ty1 | ... | con of tyn), kind annotation (ty : kind)
+     *	1 : binders (LAM ty1 . ty2)
+     *	2 : function arrow (ty1 -> ty2)
+     *	3 : tuple (ty1 * ... * tyn)
+     *	4 : constructed type (tyseq tycon)
+     *)
+
+    fun ppTyp t =
+	let
+	    val trail = ref []
+	    val a     = ref 0
+
+	    fun makeVar(isBound, t as ref t') =
+		let
+		    val k = kindVar t
+		    val s = varToString(isBound, !a before a := !a+1)
+		    val c = (k, CLOSED, Path.fromLab(Label.fromString s))
+		    val _ = t := CON c
+		    val _ = if isBound then () else trail := (t,t')::(!trail)
+		in
+		    t'
+		end
+
+	    fun ppTyp t = fbox(below(ppTypPrec 0 t))
+
+	    and ppTypPrec p (t as ref(HOLE(k,n))) =
+		let
+		    val t'  = makeVar(false, t)
+		    val doc = ppTypPrec' p (!t)
+		in
+		    if k = STAR then
+			doc
+(*DEBUG*)
+^^ text("_" ^ Int.toString n)
+		    else
+			parenPrec p (0, doc ^/^ text ":" ^/^ ppKind k)
+
+		end
+
+	      | ppTypPrec p (t as ref(REC t1 | MARK(REC t1))) =
+(*DEBUG*)
+((*print("[pp " ^ pr(!t) ^ "]");*)
+		if occurs(t,t1) then
+		    let
+(*val _=print"recursive\n"
+*)			val t'  = makeVar(true, t)
+			val doc = (case t' of MARK _ => text "!MU"
+					    | _      => text "MU") ^/^
+				  abox(
+					hbox(
+					    ppTyp t ^/^
+					    text "."
+					) ^^
+					below(break ^^
+					    ppTypPrec 1 t1
+					)
+				  )
+			val _   = t := t'
+		    in
+			parenPrec p (1, fbox(below(nest(doc))))
+		    end
+		else
+(*(print"not recursive\n";*)
+		    ppTypPrec p t1
+)
+
+	      | ppTypPrec p (t as ref(APP _)) =
+	        ( reduce t ;
+(*print("[pp APP]");*)
+		  if isApp t then ppTypPrec' p (!t)
+			     else ppTypPrec p t
+		)
+
+	      | ppTypPrec p (ref t') = ppTypPrec' p t'
+(*(*DEBUG*)
+	      | ppTypPrec p (t as ref t') =
+let
+val _=print("[pp " ^ pr t' ^ "]")
+(*val _=TextIO.inputLine TextIO.stdIn*)
+in
+	if foldl1'(t', fn(t1,b) => b orelse occursIllegally(t,t1), false) then
+		    let
+(*DEBUG*)
+val _=print"RECURSIVE!\n"
+			val a'  = makeVar(true, t)
+			val doc = text "MU" ^/^
+				    abox(
+					hbox(
+					    ppTyp t ^/^
+					    text "."
+					) ^^
+					below(break ^^
+					    ppTypPrec' 1 t'
+					)
+				    )
+			val _   = t := a'
+		    in
+			parenPrec p (1, fbox(below(nest(doc))))
+		    end
+		else
+		    ppTypPrec' p t'
+end
+*)
+
+	    and ppTypPrec' p (LINK t) =
+(*DEBUG
+text "@" ^^*)
+		    ppTypPrec p t
+
+	      | ppTypPrec' p (MARK t') =
+		    text "!" ^^ ppTypPrec' p t'
+
+	      | ppTypPrec' p (ARR(t1,t2)) =
+		let
+		    val doc = ppTypPrec 3 t1 ^/^ text "->" ^/^ ppTypPrec 2 t2
+		in
+		    parenPrec p (2, doc)
+		end
+
+	      | ppTypPrec' p (TUP [] | ROW NIL) =
+		    text "unit"
+
+	      | ppTypPrec' p (TUP ts) =
+		let
+		    val doc = ppStarList (ppTypPrec 4) ts
+		in
+		    parenPrec p (3, fbox(below(nest doc)))
+		end
+
+	      | ppTypPrec' p (ROW r) =
+		    brace(fbox(below(ppRow r)))
+
+	      | ppTypPrec' p (SUM r) =
+		    paren(fbox(below(ppSum r)))
+
+	      | ppTypPrec' p (VAR(k,n)) =
+		if k = STAR then
+		    text "'?"
+(*DEBUG*)
+^^ text("[" ^ Int.toString n ^ "]")
+		else
+		    paren (text "'?" ^/^ text ":" ^/^ ppKind k)
+
+	      | ppTypPrec' p (CON c) =
+		    ppCon c
+
+	      | ppTypPrec' p (ALL(a,t)) =
+		let
+		    val doc = ppBinder("ALL",a,t)
+		in
+		    parenPrec p (1, fbox(below doc))
+		end
+
+	      | ppTypPrec' p (EX(a,t)) =
+		let
+		    val doc = ppBinder("EX",a,t)
+		in
+		    parenPrec p (1, fbox(below doc))
+		end
+
+	      | ppTypPrec' p (LAM(a,t)) =
+		let
+		    val doc = ppBinder("FN",a,t)
+		in
+		    parenPrec p (1, fbox(below doc))
+		end
+
+	      | ppTypPrec' p (t' as APP _) =
+		let
+		    val (t,ts) = uncurry(ref t')
+		in
+		    fbox(nest(ppSeqPrec ppTypPrec 4 ts ^/^ ppTypPrec 5 t))
+		end
+
+	      | ppTypPrec' p (HOLE _) =
+		    raise Crash.Crash "PPType.ppTyp: bypassed HOLE"
+
+	      | ppTypPrec' p (REC _) =
+		    raise Crash.Crash "PPType.ppTyp: bypassed REC"
+
+
+	    and ppRow NIL		= empty
+	      | ppRow(RHO _)		= text "..."
+	      | ppRow(FLD(l,ts,NIL))	= ppField(l,ts)
+	      | ppRow(FLD(l,ts,r))	= ppField(l,ts) ^^ text "," ^/^ ppRow r
+
+	    and ppSum NIL		= empty
+	      | ppSum(RHO _)		= text "..."
+	      | ppSum(FLD(l,ts,NIL))	= ppField(l,ts)
+	      | ppSum(FLD(l,ts,r))	= ppField(l,ts) ^/^ text "|" ^/^ ppSum r
+
+	    and ppField(l,[]) = ppLab l
+	      | ppField(l,ts) =
+		    abox(
+			hbox(
+			    ppLab l ^/^
+			    text ":"
+			) ^^
+			below(break ^^
+			    ppCommaList ppTyp ts
+			)
+		    )
+
+	    and ppBinder(s,a,t) =
+		let
+		    val a' = makeVar(true, a)
+		in
+		    abox(
+			hbox(
+			    text s ^/^
+			    ppTyp a ^/^
+(*DEBUG*)
+(*text"(" ^^ ppTypPrec' 0 a' ^^ text")" ^/^*)
+			    text "."
+			) ^^
+			nest(break ^^
+			    ppTyp t
+			)
+		    )
+		    before a := a'
+		end
+	in
+	    ppTyp t before List.app op:= (!trail)
+	end
+
+  end
+(* src # 55 *)
+signature INTERMEDIATE_GRAMMAR =
+  sig
+
+    (* Generic *)
+
+    type info
+    type sign
+
+    (* Literals *)
+
+    datatype lit =
+	  WordLit   of LargeWord.word		(* modulo arithmetic *)
+	| IntLit    of LargeInt.int		(* integer arithmetic *)
+	| CharLit   of WideChar.char		(* character *)
+	| StringLit of WideString.string	(* character string *)
+(*	| RealLit   of LargeReal.real		(* floating point *)
+UNFINISHED: obsolete after bootstrapping:
+*)	| RealLit   of string			(* floating point *)
+
+    (* Identifiers *)
+
+    datatype lab    = Lab     of info * Label.t
+    datatype id     = Id      of info * Stamp.t * Name.t
+    datatype longid = ShortId of info * id
+		    | LongId  of info * longid * lab
+
+    (* Expressions *)
+
+    datatype exp =
+	  LitExp    of info * lit		(* literal *)
+	| PrimExp   of info * string		(* primitive value *)
+	| NewExp    of info * string option * bool (* new constructor *)
+				(* bool : is n-ary *)
+	| VarExp    of info * longid		(* variable *)
+	| ConExp    of info * longid * bool	(* constructor *)
+				(* bool : is n-ary *)
+	| RefExp    of info			(* reference constructor *)
+	| TupExp    of info * exp list		(* tuple *)
+	| RowExp    of info * exp field list	(* record / module *)
+			(* all labels distinct *)
+	| SelExp    of info * lab		(* field selector *)
+	| VecExp    of info * exp list		(* vector *)
+	| FunExp    of info * id * exp		(* function / functor *)
+	| AppExp    of info * exp * exp		(* application *)
+	| AdjExp    of info * exp * exp		(* record adjunction *)
+	| UpExp     of info * exp		(* up cast *)
+	| AndExp    of info * exp * exp		(* conjunction *)
+	| OrExp     of info * exp * exp		(* disjunction *)
+	| IfExp     of info * exp * exp * exp	(* conditional *)
+	| WhileExp  of info * exp * exp		(* conditional loop *)
+	| SeqExp    of info * exp list		(* sequential *)
+	| CaseExp   of info * exp * match list	(* case switch *)
+	| RaiseExp  of info * exp		(* exception raise *)
+	| HandleExp of info * exp * match list	(* exception handler *)
+	| LetExp    of info * dec list * exp	(* local binding *)
+
+    and 'a field = Field of info * lab * 'a
+
+    and match    = Match of info * pat * exp
+
+    (* Patterns (always linear) *)
+
+    and pat =
+	  WildPat   of info			(* wildcard *)
+	| LitPat    of info * lit		(* literal *)
+	| VarPat    of info * id		(* variable *)
+	| ConPat    of info * longid * pat option * bool (* constructed *)
+			(* bool : is n-ary *)
+			(* pat present iff longid has arguments *)
+	| RefPat    of info * pat		(* reference *)
+	| TupPat    of info * pat list		(* tuple *)
+	| RowPat    of info * pat field list	(* record *)
+			(* all labels distinct *)
+	| VecPat    of info * pat list		(* vector *)
+	| AsPat     of info * pat * pat		(* conjunction *)
+	| AltPat    of info * pat list		(* disjunction *)
+			(* all patterns bind same ids *)
+	| NegPat    of info * pat		(* negation *)
+	| GuardPat  of info * pat * exp		(* guard *)
+	| WithPat   of info * pat * dec list	(* local bindings *)
+
+    (* Declarations *)
+
+    and dec =
+	  ValDec    of info * pat * exp		(* value / module *)
+	  		(* if inside RecDec, then
+			 * (1) pat may not contain AltPat, NegPat, GuardPat,
+			 *     WithPat
+			 * (2) exp may only contain LitExp, VarExp, ConExp,
+			 *     RefExp, TupExp, RowExp, VecExp, FunExp, AppExp
+			 * (3) AppExps may only contain ConExp or RefExp
+			 *     as first argument
+			 * (4) if an VarExp on the LHS structurally corresponds
+			 *     to an VarExp on the RHS then the RHS id may not
+			 *     be bound on the LHS *)
+	| RecDec    of info * dec list		(* recursive definition *)
+
+    (* Components *)
+
+    type component = (id * sign * Url.t) list * (exp * sign)
+
+
+    (* Operations *)
+
+    val infoLab :	lab	-> info
+    val infoId :	id	-> info
+    val infoLongid :	longid	-> info
+    val infoExp :	exp	-> info
+    val infoField :	'a field-> info
+    val infoMatch :	match	-> info
+    val infoPat :	pat	-> info
+    val infoDec :	dec	-> info
+
+  end
+(* src # 56 *)
+functor MakeIntermediateGrammar(type info type sign) :>
+  INTERMEDIATE_GRAMMAR where type info = info
+ 		       where type sign = sign =
+  struct
+
+    (* Generic *)
+
+    type info = info
+    type sign = sign
+
+    (* Literals *)
+
+    datatype lit =
+	  WordLit   of LargeWord.word		(* modulo arithmetic *)
+	| IntLit    of LargeInt.int		(* integer arithmetic *)
+	| CharLit   of WideChar.char		(* character *)
+	| StringLit of WideString.string	(* character string *)
+(*	| RealLit   of LargeReal.real		(* floating point *)
+UNFINISHED: obsolete after bootstrapping:
+*)	| RealLit   of string			(* floating point *)
+
+    (* Identifiers *)
+
+    datatype lab    = Lab     of info * Label.t
+    datatype id     = Id      of info * Stamp.t * Name.t
+    datatype longid = ShortId of info * id
+		    | LongId  of info * longid * lab
+
+    (* Expressions *)
+
+    datatype exp =
+	  LitExp    of info * lit		(* literal *)
+	| PrimExp   of info * string		(* primitive value *)
+	| NewExp    of info * string option * bool (* new constructor *)
+				(* bool : is n-ary *)
+	| VarExp    of info * longid		(* variable *)
+	| ConExp    of info * longid * bool	(* constructor *)
+				(* bool : is n-ary *)
+	| RefExp    of info			(* reference constructor *)
+	| TupExp    of info * exp list		(* tuple *)
+	| RowExp    of info * exp field list	(* record / module *)
+			(* all labels distinct *)
+	| SelExp    of info * lab		(* field selector *)
+	| VecExp    of info * exp list		(* vector *)
+	| FunExp    of info * id * exp		(* function / functor *)
+	| AppExp    of info * exp * exp		(* application *)
+	| AdjExp    of info * exp * exp		(* record adjunction *)
+	| UpExp     of info * exp		(* up cast *)
+	| AndExp    of info * exp * exp		(* conjunction *)
+	| OrExp     of info * exp * exp		(* disjunction *)
+	| IfExp     of info * exp * exp * exp	(* conditional *)
+	| WhileExp  of info * exp * exp		(* conditional loop *)
+	| SeqExp    of info * exp list		(* sequential *)
+	| CaseExp   of info * exp * match list	(* case switch *)
+	| RaiseExp  of info * exp		(* exception raise *)
+	| HandleExp of info * exp * match list	(* exception handler *)
+	| LetExp    of info * dec list * exp	(* local binding *)
+
+    and 'a field = Field of info * lab * 'a
+
+    and match    = Match of info * pat * exp
+
+    (* Patterns (always linear) *)
+
+    and pat =
+	  WildPat   of info			(* wildcard *)
+	| LitPat    of info * lit		(* literal *)
+	| VarPat    of info * id		(* variable *)
+	| ConPat    of info * longid * pat option * bool (* constructed *)
+			(* bool : is n-ary *)
+			(* pat present iff longid has arguments *)
+	| RefPat    of info * pat		(* reference *)
+	| TupPat    of info * pat list		(* tuple *)
+	| RowPat    of info * pat field list	(* record *)
+			(* all labels distinct *)
+	| VecPat    of info * pat list		(* vector *)
+	| AsPat     of info * pat * pat		(* conjunction *)
+	| AltPat    of info * pat list		(* disjunction *)
+			(* all patterns bind same ids *)
+	| NegPat    of info * pat		(* negation *)
+	| GuardPat  of info * pat * exp		(* guard *)
+	| WithPat   of info * pat * dec list	(* local bindings *)
+
+    (* Declarations *)
+
+    and dec =
+	  ValDec    of info * pat * exp		(* value / module *)
+	  		(* if inside RecDec, then
+			 * (1) pat may not contain AltPat, NegPat, GuardPat,
+			 *     WithPat
+			 * (2) exp may only contain LitExp, VarExp, ConExp,
+			 *     RefExp, TupExp, RowExp, VecExp, FunExp, AppExp
+			 * (3) AppExps may only contain ConExp or RefExp
+			 *     as first argument
+			 * (4) if an VarExp on the LHS structurally corresponds
+			 *     to an VarExp on the RHS then the RHS id may not
+			 *     be bound on the LHS *)
+	| RecDec    of info * dec list		(* recursive definition *)
+
+    (* Components *)
+
+    type component = (id * sign * Url.t) list * (exp * sign)
+
+
+    (* Projections *)
+
+    fun infoLab(Lab(i,_))		= i
+    fun infoId(Id(i,_,_))		= i
+    fun infoLongid(ShortId(i,_))	= i
+      | infoLongid(LongId(i,_,_))	= i
+
+    fun infoExp(LitExp(i,_))		= i
+      | infoExp(PrimExp(i,_))		= i
+      | infoExp(NewExp(i,_,_))		= i
+      | infoExp(VarExp(i,_))		= i
+      | infoExp(ConExp(i,_,_))		= i
+      | infoExp(RefExp(i))		= i
+      | infoExp(TupExp(i,_))		= i
+      | infoExp(RowExp(i,_))		= i
+      | infoExp(SelExp(i,_))		= i
+      | infoExp(VecExp(i,_))		= i
+      | infoExp(FunExp(i,_,_))		= i
+      | infoExp(AppExp(i,_,_))		= i
+      | infoExp(AdjExp(i,_,_))		= i
+      | infoExp(UpExp(i,_))		= i
+      | infoExp(AndExp(i,_,_))		= i
+      | infoExp(OrExp(i,_,_))		= i
+      | infoExp(IfExp(i,_,_,_))		= i
+      | infoExp(WhileExp(i,_,_))	= i
+      | infoExp(SeqExp(i,_))		= i
+      | infoExp(CaseExp(i,_,_))		= i
+      | infoExp(RaiseExp(i,_))		= i
+      | infoExp(HandleExp(i,_,_))	= i
+      | infoExp(LetExp(i,_,_))		= i
+
+    fun infoField(Field(i,_,_))		= i
+    fun infoMatch(Match(i,_,_))		= i
+
+    fun infoPat(WildPat(i))		= i
+      | infoPat(LitPat(i,_))		= i
+      | infoPat(VarPat(i,_))		= i
+      | infoPat(ConPat(i,_,_,_))	= i
+      | infoPat(RefPat(i,_))		= i
+      | infoPat(TupPat(i,_))		= i
+      | infoPat(RowPat(i,_))		= i
+      | infoPat(VecPat(i,_))		= i
+      | infoPat(AsPat(i,_,_))		= i
+      | infoPat(AltPat(i,_))		= i
+      | infoPat(NegPat(i,_))		= i
+      | infoPat(GuardPat(i,_,_))	= i
+      | infoPat(WithPat(i,_,_))		= i
+
+    fun infoDec(ValDec(i,_,_))		= i
+      | infoDec(RecDec(i,_))		= i
+
+  end
+(* src # 57 *)
+structure IntermediateGrammar =
+		MakeIntermediateGrammar(type info = Source.region
+					type sign = unit)
+(* src # 58 *)
+signature PREBOUND =
+  sig
+
+    type stamp = Stamp.t
+
+    val stamp_false :	stamp
+    val stamp_true :	stamp
+    val stamp_nil :	stamp
+    val stamp_cons :	stamp
+    val stamp_ref :	stamp
+    val stamp_Match :	stamp
+    val stamp_Bind :	stamp
+
+    val stamp_bool :	stamp
+    val stamp_int :	stamp
+    val stamp_word :	stamp
+    val stamp_real :	stamp
+    val stamp_string :	stamp
+    val stamp_char :	stamp
+    val stamp_list :	stamp
+    val stamp_vec :	stamp
+    val stamp_tref :	stamp
+    val stamp_exn :	stamp
+
+  end
+(* src # 59 *)
+structure Prebound :> PREBOUND =
+  struct
+
+    type stamp = Stamp.t
+
+    val stamp_false	= Stamp.new()
+    val stamp_true	= Stamp.new()
+    val stamp_nil	= Stamp.new()
+    val stamp_cons	= Stamp.new()
+    val stamp_ref	= Stamp.new()
+    val stamp_Match	= Stamp.new()
+    val stamp_Bind	= Stamp.new()
+
+    val stamp_bool	= Stamp.new()
+    val stamp_int	= Stamp.new()
+    val stamp_word	= Stamp.new()
+    val stamp_real	= Stamp.new()
+    val stamp_string	= Stamp.new()
+    val stamp_char	= Stamp.new()
+    val stamp_list	= Stamp.new()
+    val stamp_vec	= Stamp.new()
+    val stamp_tref	= Stamp.new()
+    val stamp_exn	= Stamp.new()
+
+  end
+(* src # 60 *)
+structure StringMap = MakeHashImpMap(StringHashKey)
+(* src # 61 *)
 signature INF =
   sig
 
   (* Types *)
 
-    type lab   = Lab.t
+    type lab   = Label.t
     type name  = Name.t
     type stamp = Stamp.t
     type path  = Path.t
@@ -4755,7 +5619,7 @@ signature INF =
     val intersect :	inf * inf -> inf		(* Mismatch *)
 
   end
-(* src # 54 *)
+(* src # 62 *)
 (* Interfaces contain state. This means that they must be instantiated
    at each occurance. *)
 
@@ -4764,7 +5628,7 @@ structure InfPrivate =
 
   (* Types *)
 
-    type lab	= Lab.t
+    type lab	= Label.t
     type name	= Name.t
     type stamp	= Stamp.t
     type path	= Path.t
@@ -4783,7 +5647,7 @@ structure InfPrivate =
     datatype space = VAL' | TYP' | MOD' | INF'
 
     structure Map = MakeHashImpMap(struct type t = space * lab
-					  fun hash(_,l) = Lab.hash l end)
+					  fun hash(_,l) = Label.hash l end)
 
 
     datatype inf' =
@@ -5806,7 +6670,7 @@ structure InfPrivate =
 
 
 structure Inf : INF = InfPrivate
-(* src # 55 *)
+(* src # 63 *)
 signature ABSTRACT_GRAMMAR =
   sig
 
@@ -5825,10 +6689,8 @@ signature ABSTRACT_GRAMMAR =
 
     (* Identifiers *)
 
-    type     stamp  = Stamp.t
-    datatype name   = datatype Name.name
-    datatype lab    = Lab     of info * string
-    datatype id     = Id      of info * stamp * name
+    datatype lab    = Lab     of info * Label.t
+    datatype id     = Id      of info * Stamp.t * Name.t
     datatype longid = ShortId of info * id
 		    | LongId  of info * longid * lab
 
@@ -5961,17 +6823,18 @@ signature ABSTRACT_GRAMMAR =
 
     and comp = Comp of info * imp list * dec list
 
-    and imp  = Imp of info * spec list * string
+    and imp  = Imp of info * spec list * Url.t
 
     type component = comp
 
 
     (* Operations *)
 
-    val stamp :		id	-> stamp
-    val name :		id	-> name
-    val lab :		lab	-> string
+    val stamp :		id	-> Stamp.t
+    val name :		id	-> Name.t
+    val lab :		lab	-> Label.t
     val idToLab :	id	-> lab
+    val labToId :	lab	-> id
     val conToId :	con	-> id
 
     val infoLab :	lab	-> info
@@ -5992,7 +6855,7 @@ signature ABSTRACT_GRAMMAR =
     val infoImp :	imp	-> info
 
   end
-(* src # 56 *)
+(* src # 64 *)
 functor MakeAbstractGrammar(type info) :>
   ABSTRACT_GRAMMAR where type info = info =
   struct
@@ -6012,10 +6875,8 @@ functor MakeAbstractGrammar(type info) :>
 
     (* Identifiers *)
 
-    type     stamp  = Stamp.t
-    datatype name   = datatype Name.name
-    datatype lab    = Lab     of info * string
-    datatype id     = Id      of info * stamp * name
+    datatype lab    = Lab     of info * Label.t
+    datatype id     = Id      of info * Stamp.t * Name.t
     datatype longid = ShortId of info * id
 		    | LongId  of info * longid * lab
 
@@ -6148,7 +7009,7 @@ functor MakeAbstractGrammar(type info) :>
 
     and comp = Comp of info * imp list * dec list
 
-    and imp  = Imp of info * spec list * string
+    and imp  = Imp of info * spec list * Url.t
 
     type component = comp
 
@@ -6160,9 +7021,8 @@ functor MakeAbstractGrammar(type info) :>
     fun lab(Lab(_,a))			= a
 
     fun conToId(Con(_,x,_))		= x
-
-    fun idToLab(Id(i,_,ExId s))		= Lab(i,s)
-      | idToLab(Id(i,_,InId))		= Lab(i,"")
+    fun labToId(Lab(i,l))		= Id(i, Stamp.new(), Label.toName l)
+    fun idToLab(Id(i,_,n))		= Lab(i, Label.fromName n)
 
     fun infoLab(Lab(i,_))		= i
     fun infoId(Id(i,_,_))		= i
@@ -6276,9 +7136,9 @@ functor MakeAbstractGrammar(type info) :>
     fun infoImp(Imp(i,_,_))		= i
 
   end
-(* src # 57 *)
+(* src # 65 *)
 structure AbstractGrammar = MakeAbstractGrammar(type info = Source.region)
-(* src # 58 *)
+(* src # 66 *)
 structure TypedInfo =
   struct
     datatype annotation = NON | TYP of Type.t | INF of Inf.t
@@ -6286,12 +7146,12 @@ structure TypedInfo =
   end
 
 structure TypedGrammar = MakeAbstractGrammar(TypedInfo)
-(* src # 59 *)
+(* src # 67 *)
 signature ENV =
   sig
 
-    type stamp = AbstractGrammar.stamp
     type id    = AbstractGrammar.id
+    type stamp = Stamp.t
     type path  = Path.t
     type typ   = Type.t
     type var   = Type.var
@@ -6344,12 +7204,12 @@ signature ENV =
     val foldInfs :	(stamp * inf_entry * 'a -> 'a) -> 'a -> env -> 'a
 
   end
-(* src # 60 *)
+(* src # 68 *)
 structure Env :> ENV =
   struct
 
-    type stamp = AbstractGrammar.stamp
     type id    = AbstractGrammar.id
+    type stamp = Stamp.t
     type path  = Path.t
     type typ   = Type.t
     type var   = Type.var
@@ -6437,12 +7297,12 @@ structure Env :> ENV =
     fun foldInfs f a (ENV E)		= Map.foldi (foldInf f) a E
 
   end
-(* src # 61 *)
+(* src # 69 *)
 signature ENV0 =
   sig
     val E0 :	Env.t
   end
-(* src # 62 *)
+(* src # 70 *)
 structure Env0 :> ENV0 =
   struct
 
@@ -6472,16 +7332,16 @@ structure Env0 :> ENV0 =
     val s_vec		= "vector"
     val s_list		= "list"
 
-    val path_int	= Path.fromLab(Lab.fromString s_int)
-    val path_word	= Path.fromLab(Lab.fromString s_word)
-    val path_char	= Path.fromLab(Lab.fromString s_char)
-    val path_string	= Path.fromLab(Lab.fromString s_string)
-    val path_real	= Path.fromLab(Lab.fromString s_real)
-    val path_bool	= Path.fromLab(Lab.fromString s_bool)
-    val path_exn	= Path.fromLab(Lab.fromString s_exn)
-    val path_ref	= Path.fromLab(Lab.fromString s_ref)
-    val path_vec	= Path.fromLab(Lab.fromString s_vec)
-    val path_list	= Path.fromLab(Lab.fromString s_list)
+    val path_int	= Path.fromLab(Label.fromString s_int)
+    val path_word	= Path.fromLab(Label.fromString s_word)
+    val path_char	= Path.fromLab(Label.fromString s_char)
+    val path_string	= Path.fromLab(Label.fromString s_string)
+    val path_real	= Path.fromLab(Label.fromString s_real)
+    val path_bool	= Path.fromLab(Label.fromString s_bool)
+    val path_exn	= Path.fromLab(Label.fromString s_exn)
+    val path_ref	= Path.fromLab(Label.fromString s_ref)
+    val path_vec	= Path.fromLab(Label.fromString s_vec)
+    val path_list	= Path.fromLab(Label.fromString s_list)
 
     val con_word	= (STAR, CLOSED, path_word)
     val con_int		= (STAR, CLOSED, path_int)
@@ -6538,13 +7398,13 @@ structure Env0 :> ENV0 =
     val s_match		= "Match"
     val s_bind		= "Bind"
 
-    val path_false	= Path.fromLab(Lab.fromString s_false)
-    val path_true	= Path.fromLab(Lab.fromString s_true)
-    val path_nil	= Path.fromLab(Lab.fromString s_nil)
-    val path_cons	= Path.fromLab(Lab.fromString s_cons)
-    val path_ref	= Path.fromLab(Lab.fromString s_ref)
-    val path_match	= Path.fromLab(Lab.fromString s_match)
-    val path_bind	= Path.fromLab(Lab.fromString s_bind)
+    val path_false	= Path.fromLab(Label.fromString s_false)
+    val path_true	= Path.fromLab(Label.fromString s_true)
+    val path_nil	= Path.fromLab(Label.fromString s_nil)
+    val path_cons	= Path.fromLab(Label.fromString s_cons)
+    val path_ref	= Path.fromLab(Label.fromString s_ref)
+    val path_match	= Path.fromLab(Label.fromString s_match)
+    val path_bind	= Path.fromLab(Label.fromString s_bind)
 
     fun poly typF =
 	let
@@ -6583,340 +7443,7 @@ structure Env0 :> ENV0 =
     val _ = insertCon'(P.stamp_Bind,  path_bind,  typ_Bind,  s_bind)
 
   end
-(* src # 63 *)
-signature PP_PATH =
-  sig
-
-    type doc  = PrettyPrint.doc
-    type path = Path.t
-
-    val ppPath : path -> doc
-
-  end
-(* src # 64 *)
-structure PPPath :> PP_PATH =
-  struct
-
-    (* Import *)
-
-    open PathPrivate
-    open PrettyPrint
-    open PPMisc
-
-    infixr ^^ ^/^
-
-
-    fun ppName n		= text(Name.toString n)
-    fun ppLab l			= text(Lab.toString l)
-
-    fun ppHiddenLab(0,l)	= ppLab l
-      | ppHiddenLab(i,l)	= text "?" ^^ ppHiddenLab(i-1, l)
-
-    fun ppPath(ref(PLAIN n))	= ppName n
-      | ppPath(ref(DOT(p,l,i)))	= ppPath p ^^ text "." ^^ ppHiddenLab(i, l)
-
-  end
-(* src # 65 *)
-signature PP_TYPE =
-  sig
-
-    type doc  = PrettyPrint.doc
-    type typ  = Type.typ
-    type kind = Type.kind
-
-    val ppTyp :		typ -> doc
-    val ppKind :	kind -> doc
-
-  end
-(* src # 66 *)
-structure PPType :> PP_TYPE =
-  struct
-
-    (* Import *)
-
-    open TypePrivate
-    open PrettyPrint
-    open PPMisc
-
-    infixr ^^ ^/^
-
-
-    (* Helpers *)
-
-    fun uncurry(ref(APP(t1,t2)))= let val (t,ts) = uncurry t1 in (t,ts@[t2]) end
-      | uncurry t		= (t,[])
-
-    fun parenPrec p (p',doc) =
-	if p > p' then
-	    paren doc
-	else
-	    doc
-
-
-    (* Simple objects *)
-
-    fun ppLab l		= text(Lab.toString l)
-    fun ppCon (k,_,p)	= PPPath.ppPath p
-
-    fun varToString(isBound, n) =
-	let
-	    fun rep(0,c) = c
-	      | rep(n,c) = c ^ rep(n-1,c)
-
-	    val c = String.str(Char.chr(Char.ord #"a" + n mod 26))
-	in
-	    (if isBound then "'" else "'_") ^ rep(n div 26, c)
-	end
-
-
-    (* Kinds *)
-
-    (* Precedence:
-     *	0 : arrow (ty1 -> ty2)
-     *	1 : star
-     *)
-
-    fun ppKind k = fbox(below(ppKindPrec 0 k))
-
-    and ppKindPrec p  STAR		= text "*"
-      | ppKindPrec p (ARROW(k1,k2))	= 
-	let
-	    val doc = ppKindPrec 1 k1 ^/^ text "->" ^/^ ppKindPrec 0 k2
-	in
-	    parenPrec p (0, doc)
-	end
-
-
-    (* Types *)
-
-    (* Precedence:
-     *  0 : sums (con of ty1 | ... | con of tyn), kind annotation (ty : kind)
-     *	1 : binders (LAM ty1 . ty2)
-     *	2 : function arrow (ty1 -> ty2)
-     *	3 : tuple (ty1 * ... * tyn)
-     *	4 : constructed type (tyseq tycon)
-     *)
-
-    fun ppTyp t =
-	let
-	    val trail = ref []
-	    val a     = ref 0
-
-	    fun makeVar(isBound, t as ref t') =
-		let
-		    val k = kindVar t
-		    val s = varToString(isBound, !a before a := !a+1)
-		    val c = (k, CLOSED, Path.fromLab(Lab.fromString s))
-		    val _ = t := CON c
-		    val _ = if isBound then () else trail := (t,t')::(!trail)
-		in
-		    t'
-		end
-
-	    fun ppTyp t = fbox(below(ppTypPrec 0 t))
-
-	    and ppTypPrec p (t as ref(HOLE(k,n))) =
-		let
-		    val t'  = makeVar(false, t)
-		    val doc = ppTypPrec' p (!t)
-		in
-		    if k = STAR then
-			doc
-(*DEBUG*)
-^^ text("_" ^ Int.toString n)
-		    else
-			parenPrec p (0, doc ^/^ text ":" ^/^ ppKind k)
-
-		end
-
-	      | ppTypPrec p (t as ref(REC t1 | MARK(REC t1))) =
-(*DEBUG*)
-((*print("[pp " ^ pr(!t) ^ "]");*)
-		if occurs(t,t1) then
-		    let
-(*val _=print"recursive\n"
-*)			val t'  = makeVar(true, t)
-			val doc = (case t' of MARK _ => text "!MU"
-					    | _      => text "MU") ^/^
-				  abox(
-					hbox(
-					    ppTyp t ^/^
-					    text "."
-					) ^^
-					below(break ^^
-					    ppTypPrec 1 t1
-					)
-				  )
-			val _   = t := t'
-		    in
-			parenPrec p (1, fbox(below(nest(doc))))
-		    end
-		else
-(*(print"not recursive\n";*)
-		    ppTypPrec p t1
-)
-
-	      | ppTypPrec p (t as ref(APP _)) =
-	        ( reduce t ;
-(*print("[pp APP]");*)
-		  if isApp t then ppTypPrec' p (!t)
-			     else ppTypPrec p t
-		)
-
-	      | ppTypPrec p (ref t') = ppTypPrec' p t'
-(*(*DEBUG*)
-	      | ppTypPrec p (t as ref t') =
-let
-val _=print("[pp " ^ pr t' ^ "]")
-(*val _=TextIO.inputLine TextIO.stdIn*)
-in
-	if foldl1'(t', fn(t1,b) => b orelse occursIllegally(t,t1), false) then
-		    let
-(*DEBUG*)
-val _=print"RECURSIVE!\n"
-			val a'  = makeVar(true, t)
-			val doc = text "MU" ^/^
-				    abox(
-					hbox(
-					    ppTyp t ^/^
-					    text "."
-					) ^^
-					below(break ^^
-					    ppTypPrec' 1 t'
-					)
-				    )
-			val _   = t := a'
-		    in
-			parenPrec p (1, fbox(below(nest(doc))))
-		    end
-		else
-		    ppTypPrec' p t'
-end
-*)
-
-	    and ppTypPrec' p (LINK t) =
-(*DEBUG
-text "@" ^^*)
-		    ppTypPrec p t
-
-	      | ppTypPrec' p (MARK t') =
-		    text "!" ^^ ppTypPrec' p t'
-
-	      | ppTypPrec' p (ARR(t1,t2)) =
-		let
-		    val doc = ppTypPrec 3 t1 ^/^ text "->" ^/^ ppTypPrec 2 t2
-		in
-		    parenPrec p (2, doc)
-		end
-
-	      | ppTypPrec' p (TUP [] | ROW NIL) =
-		    text "unit"
-
-	      | ppTypPrec' p (TUP ts) =
-		let
-		    val doc = ppStarList (ppTypPrec 4) ts
-		in
-		    parenPrec p (3, fbox(below(nest doc)))
-		end
-
-	      | ppTypPrec' p (ROW r) =
-		    brace(fbox(below(ppRow r)))
-
-	      | ppTypPrec' p (SUM r) =
-		    paren(fbox(below(ppSum r)))
-
-	      | ppTypPrec' p (VAR(k,n)) =
-		if k = STAR then
-		    text "'?"
-(*DEBUG*)
-^^ text("[" ^ Int.toString n ^ "]")
-		else
-		    paren (text "'?" ^/^ text ":" ^/^ ppKind k)
-
-	      | ppTypPrec' p (CON c) =
-		    ppCon c
-
-	      | ppTypPrec' p (ALL(a,t)) =
-		let
-		    val doc = ppBinder("ALL",a,t)
-		in
-		    parenPrec p (1, fbox(below doc))
-		end
-
-	      | ppTypPrec' p (EX(a,t)) =
-		let
-		    val doc = ppBinder("EX",a,t)
-		in
-		    parenPrec p (1, fbox(below doc))
-		end
-
-	      | ppTypPrec' p (LAM(a,t)) =
-		let
-		    val doc = ppBinder("FN",a,t)
-		in
-		    parenPrec p (1, fbox(below doc))
-		end
-
-	      | ppTypPrec' p (t' as APP _) =
-		let
-		    val (t,ts) = uncurry(ref t')
-		in
-		    fbox(nest(ppSeqPrec ppTypPrec 4 ts ^/^ ppTypPrec 5 t))
-		end
-
-	      | ppTypPrec' p (HOLE _) =
-		    raise Crash.Crash "PPType.ppTyp: bypassed HOLE"
-
-	      | ppTypPrec' p (REC _) =
-		    raise Crash.Crash "PPType.ppTyp: bypassed REC"
-
-
-	    and ppRow NIL		= empty
-	      | ppRow(RHO _)		= text "..."
-	      | ppRow(FLD(l,ts,NIL))	= ppField(l,ts)
-	      | ppRow(FLD(l,ts,r))	= ppField(l,ts) ^^ text "," ^/^ ppRow r
-
-	    and ppSum NIL		= empty
-	      | ppSum(RHO _)		= text "..."
-	      | ppSum(FLD(l,ts,NIL))	= ppField(l,ts)
-	      | ppSum(FLD(l,ts,r))	= ppField(l,ts) ^/^ text "|" ^/^ ppSum r
-
-	    and ppField(l,[]) = ppLab l
-	      | ppField(l,ts) =
-		    abox(
-			hbox(
-			    ppLab l ^/^
-			    text ":"
-			) ^^
-			below(break ^^
-			    ppCommaList ppTyp ts
-			)
-		    )
-
-	    and ppBinder(s,a,t) =
-		let
-		    val a' = makeVar(true, a)
-		in
-		    abox(
-			hbox(
-			    text s ^/^
-			    ppTyp a ^/^
-(*DEBUG*)
-(*text"(" ^^ ppTypPrec' 0 a' ^^ text")" ^/^*)
-			    text "."
-			) ^^
-			nest(break ^^
-			    ppTyp t
-			)
-		    )
-		    before a := a'
-		end
-	in
-	    ppTyp t before List.app op:= (!trail)
-	end
-
-  end
-(* src # 67 *)
+(* src # 71 *)
 signature PP_INF =
   sig
 
@@ -6928,7 +7455,7 @@ signature PP_INF =
     val ppSig : sign -> doc
 
   end
-(* src # 68 *)
+(* src # 72 *)
 structure PPInf :> PP_INF =
   struct
 
@@ -6949,7 +7476,7 @@ structure PPInf :> PP_INF =
 
     (* Simple objects *)
 
-    fun ppLab l		= text(Lab.toString l)
+    fun ppLab l		= text(Label.toString l)
     fun ppCon (k,p)	= PPPath.ppPath p
 
 
@@ -7149,11 +7676,11 @@ text "(" ^^ PPPath.ppPath p ^^ text ")" ^/^*)
 	    ))
 
   end
-(* src # 69 *)
+(* src # 73 *)
 signature ELABORATION_ERROR =
   sig
 
-    type lab    = Lab.t
+    type lab    = Label.t
     type typ    = Type.t
     type var    = Type.var
     type kind   = Type.kind
@@ -7220,7 +7747,7 @@ signature ELABORATION_ERROR =
     val warn :	Source.region * warning -> unit
 
   end
-(* src # 70 *)
+(* src # 74 *)
 structure ElaborationError :> ELABORATION_ERROR =
   struct
 
@@ -7235,7 +7762,7 @@ structure ElaborationError :> ELABORATION_ERROR =
 
   (* Types *)
 
-    type lab    = Lab.t
+    type lab    = Label.t
     type typ    = Type.t
     type var    = Type.var
     type kind   = Type.kind
@@ -7303,9 +7830,9 @@ structure ElaborationError :> ELABORATION_ERROR =
 
     fun ppQuoted s	= "`" ^ s ^ "'"
 
-    fun ppLab'(AbstractGrammar.Lab(_,l)) = l
+    fun ppLab'(AbstractGrammar.Lab(_,l)) = Label.toString l
 
-    fun ppId'(AbstractGrammar.Id(_,_,name)) = Name.toString name
+    fun ppId'(AbstractGrammar.Id(_,_,n)) = Name.toString n
     fun ppId x = ppQuoted(ppId' x)
 
     fun ppLongid'(AbstractGrammar.ShortId(_,x))  = ppId' x
@@ -7313,7 +7840,7 @@ structure ElaborationError :> ELABORATION_ERROR =
     fun ppLongid y = ppQuoted(ppLongid' y)
 
 
-    fun ppLab l = ppQuoted(Lab.toString l)
+    fun ppLab l = ppQuoted(Label.toString l)
 
 
     fun ppUnify2(d1, d2, (t1,t2,t3,t4)) =
@@ -7415,7 +7942,7 @@ structure ElaborationError :> ELABORATION_ERROR =
 	    d ^^
 	    nest(break ^^
 		fbox(nest(
-		    text(Lab.toString l) ^/^
+		    text(Label.toString l) ^/^
 		    text ":" ^/^
 		    below(PPType.ppTyp t)
 		))
@@ -7580,7 +8107,7 @@ structure ElaborationError :> ELABORATION_ERROR =
     fun warn(region, w)   = Error.warn(region, warningToString w)
 
   end
-(* src # 71 *)
+(* src # 75 *)
 signature ELABORATION_PHASE =
   sig
 
@@ -7592,7 +8119,7 @@ signature ELABORATION_PHASE =
     val elab :	env -> I.component -> O.component
 
   end
-(* src # 72 *)
+(* src # 76 *)
 (* UNFINISHED:
    - packages
    - appropriate treatment of value paths
@@ -7689,7 +8216,7 @@ structure ElaborationPhase :> ELABORATION_PHASE =
 
   (* Rows (polymorphic, thus put here) *)
 
-    fun elabLab(E, I.Lab(i, s)) = ( Lab.fromString s, O.Lab(nonInfo(i), s) )
+    fun elabLab(E, I.Lab(i, l)) = ( l, O.Lab(nonInfo(i), l) )
 
     fun elabRow(elabX, E, I.Row(i, fields, b)) =
 	let
@@ -7729,7 +8256,7 @@ structure ElaborationPhase :> ELABORATION_PHASE =
 val x=case Name.toString(I.name id) of "?" => "?" | x => x
 val _=print("-- insert val " ^ x ^ "(" ^ Stamp.toString stamp ^ ")")
 *)
-	    val  p      = Inf.newVal(s, Lab.fromName name)
+	    val  p      = Inf.newVal(s, Label.fromName name)
 	    val  t      = Type.unknown(Type.STAR)
 	    (*UNFINISHED: use punning: *)
 	    val (p',t') = ( insertVal(E, stamp, {id=id, path=p, typ=t, sort=w})
@@ -7783,7 +8310,7 @@ val _=print "\n"
 	let
 	    val (s,_) = elabModLongid_path(E, longid)
 	in
-	    Inf.lookupValPath(s, Lab.fromString l)
+	    Inf.lookupValPath(s, l)
 	end
 
 
@@ -8009,7 +8536,7 @@ val _=print "\n"
 	    val  s       = Inf.empty()
 	    val  decs'   = elabDecs(E, s, decs)
 (*DEBUG*)
-val _ = Inf.strengthenSig(Path.fromLab(Lab.fromString "?let"), s)
+val _ = Inf.strengthenSig(Path.fromLab(Label.fromString "?let"), s)
 	    val  _       = Inf.strengthenSig(Path.invent(), s)
 	    val (t,exp') = elabExp(E, exp)
 	    val  _       = deleteScope E
@@ -8449,7 +8976,7 @@ val _=print "\n"
     and elabCon(E, I.Con(i, id as I.Id(i', stamp, name), typs)) =
 	let
 	    val  id'       = O.Id(nonInfo(i'), stamp, name)
-	    val  l         = Lab.fromName name
+	    val  l         = Label.fromName name
 	    val (ts,typs') = elabStarTyps(E, typs)
 	in
 	    ( l, ts, O.Con(nonInfo(i), id', typs') )
@@ -8527,7 +9054,7 @@ val _=print "\n"
 
     and elabConRep(E, s, t0, I.Con(i, id, typs)) =
 	let
-	    val  l         = Lab.fromName(I.name id)
+	    val  l         = Label.fromName(I.name id)
 	    val (ts,typs') = elabStarTyps(E, typs)
 	    val (t,p,id')  = elabValId_bind(E, s, Inf.CONSTRUCTOR, id)
 	    val  _         = Type.unify(t, List.foldr Type.inArrow t0 ts)
@@ -8650,7 +9177,7 @@ val _=print "\n"
 	    val  _        = insertScope E
 	    val (j1,inf') = elabGroundInf(E, inf)
 	    val  j1'      = Inf.clone j1
-	    val  p        = Path.fromLab(Lab.fromName(I.name id))
+	    val  p        = Path.fromLab(Label.fromName(I.name id))
 	    val  _        = Inf.strengthen(p, j1')
 	    val  id'      = elabModId_bind(E, p, j1', id)
 	    val (j2,mod') = elabMod(E, mod)
@@ -8681,7 +9208,7 @@ print "\n"
 	    val  p2         = case elabMod_path(E, mod2)
 				of SOME(p2,_) => p2
 (*DEBUG*)
-| NONE => Path.fromLab(Lab.fromString "?arg")(*
+| NONE => Path.fromLab(Label.fromString "?arg")(*
 				 | NONE       => Path.invent()
 *)
 	    val  _          = Inf.strengthen(p2, j2)
@@ -8731,7 +9258,7 @@ print "\n"
 	    val  decs'   = elabDecs(E, s, decs)
 	    val  p       = Path.invent()
 (*DEBUG*)
-val p = Path.fromLab(Lab.fromString "?let")
+val p = Path.fromLab(Label.fromString "?let")
 	    val  _       = Inf.strengthenSig(Path.invent(), s)
 	    val (j,mod') = elabMod(E, mod)
 	    val  _       = deleteScope E
@@ -8764,7 +9291,6 @@ val p = Path.fromLab(Lab.fromString "?let")
 	    | SOME(_,j) =>
 	      let
 		  val s = Inf.asSig j
-		  val l = Lab.fromString l
 		  val j = Inf.lookupMod(s, l)
 		  val p = Inf.lookupModPath(s, l)
 	      in
@@ -8865,7 +9391,7 @@ val _=print "\n"
 	    val  _         = insertScope E
 	    val (j1,inf1') = elabGroundInf(E, inf1)
 	    val  j1'       = Inf.clone j1
-	    val  p         = Path.fromLab(Lab.fromName(I.name id))
+	    val  p         = Path.fromLab(Label.fromName(I.name id))
 	    val  _         = Inf.strengthen(p, j1')
 	    (* UNFINISHED: revert renaming of paths somehow *)
 	    val  id'       = elabModId_bind(E, p, j1', id)
@@ -8918,7 +9444,7 @@ print "\n\
 	    val  _         = insertScope E
 	    val (j1,inf1') = elabGroundInf(E, inf1)
 	    val  j1'       = Inf.clone j1
-	    val  p         = Path.fromLab(Lab.fromName(I.name id))
+	    val  p         = Path.fromLab(Label.fromName(I.name id))
 	    val  _         = Inf.strengthen(p, j1')
 	    val  id'       = elabModId_bind(E, p, j1', id)
 	    val (j2,inf2') = elabGroundInf(E, inf2)
@@ -8932,7 +9458,7 @@ print "\n\
 	let
 	    val (j,mod') = elabMod(E, mod)
 (*DEBUG*)
-val _ = Inf.strengthen(Path.fromLab(Lab.fromString "?singleton"), j)
+val _ = Inf.strengthen(Path.fromLab(Label.fromString "?singleton"), j)
 	    val  _       = Inf.strengthen(Path.invent(), j)
 (*DEBUG
 val _ = (
@@ -8969,7 +9495,7 @@ print "\n\
 	    val  _             = insertScope E
 	    val (j1,inf1')     = elabGroundInf(E, inf1)
 	    val  j1'           = Inf.clone j1
-	    val  p             = Path.fromLab(Lab.fromName(I.name id))
+	    val  p             = Path.fromLab(Label.fromName(I.name id))
 	    val  _             = Inf.strengthen(p, j1')
 	    val  id'           = elabModId_bind(E, p, j1', id)
 	    val (j2,gen,inf2') = elabInfRep(E, p',
@@ -9031,7 +9557,7 @@ print "\n\
 
       | elabDec(E, s, vars, I.TypDec(i, id, typ)) =
 	let
-	    val  p       = Inf.newTyp(s, Lab.fromName(I.name id))
+	    val  p       = Inf.newTyp(s, Label.fromName(I.name id))
 	    val (t,typ') = elabTyp(E, typ)
 	    val  id'     = elabTypId_bind(E, p, t, Type.CLOSED, id)
 	    val  _       = Inf.extendTyp(s, p, Type.kind t, Type.CLOSED, SOME t)
@@ -9047,7 +9573,7 @@ val _=print "\n"
 
       | elabDec(E, s, vars, I.DatDec(i, id, typ)) =
 	let
-	    val  p           = Inf.newTyp(s, Lab.fromName(I.name id))
+	    val  p           = Inf.newTyp(s, Label.fromName(I.name id))
 	    val  _           = insertScope E
 	    val  _           = Type.enterLevel()
 	    val  k           = elabTypKind(E, typ)
@@ -9071,7 +9597,7 @@ val _=print "\n"
 
       | elabDec(E, s, vars, I.ModDec(i, id, mod)) =
 	let
-	    val  p       = Inf.newMod(s, Lab.fromName(I.name id))
+	    val  p       = Inf.newMod(s, Label.fromName(I.name id))
 	    val (j,mod') = elabMod(E, mod)
 	    val  _       = Inf.strengthen(p, j)
 	    val  p'      = case elabMod_path(E, mod)
@@ -9085,7 +9611,7 @@ val _=print "\n"
 
       | elabDec(E, s, vars, I.InfDec(i, id, inf)) =
 	let
-	    val  p         = Inf.newInf(s, Lab.fromName(I.name id))
+	    val  p         = Inf.newInf(s, Label.fromName(I.name id))
 	    val (j,_,inf') = elabInfRep(E, p, fn k'=>k', inf)
 	    val  k         = Inf.kind j
 	    val  id'       = elabInfId_bind(E, p, j, id)
@@ -9126,7 +9652,7 @@ val _=print "\n"
 	    val decs' = elabDecs(E, s', decs)
 	    val p     = Path.invent()
 (*DEBUG*)
-val p = Path.fromLab(Lab.fromString "?local")
+val p = Path.fromLab(Label.fromString "?local")
 	    val _     = Inf.strengthenSig(p, s')
 	in
 	    O.LocalDec(nonInfo(i), decs')
@@ -9171,7 +9697,7 @@ print(if w = Inf.CONSTRUCTOR then " (* constructor *)\n" else if isPoly then "\n
 
       | elabLHSRecDec(E, s, I.DatDec(i, id, typ)) =
 	let
-	    val p = Inf.newTyp(s, Lab.fromName(I.name id))
+	    val p = Inf.newTyp(s, Label.fromName(I.name id))
 	    val k = elabTypKind(E, typ)
 	    val t = Type.inRec(Type.unknown k)
 	    (* ASSUME that typ does not contain ExtTyp *)
@@ -9261,7 +9787,7 @@ val _=print "\n"
 
       | elabSpec(E, s, vars, I.TypSpec(i, id, typ)) =
 	let
-	    val  p       = Inf.newTyp(s, Lab.fromName(I.name id))
+	    val  p       = Inf.newTyp(s, Label.fromName(I.name id))
 	    val (t,typ') = elabTyp(E, typ)
 	    val  id'     = elabTypId_bind(E, p, t, Type.CLOSED, id)
 	    val  _       = Inf.extendTyp(s, p, Type.kind t, Type.CLOSED, SOME t)
@@ -9271,7 +9797,7 @@ val _=print "\n"
 
       | elabSpec(E, s, vars, I.DatSpec(i, id, typ)) =
 	let
-	    val  p             = Inf.newTyp(s, Lab.fromName(I.name id))
+	    val  p             = Inf.newTyp(s, Label.fromName(I.name id))
 	    val  _             = insertScope E
 	    val  _             = Type.enterLevel()
 	    val  k             = elabTypKind(E, typ)
@@ -9291,7 +9817,7 @@ val _=print "\n"
 
       | elabSpec(E, s, vars, I.ModSpec(i, id, inf)) =
 	let
-	    val  p       = Inf.newMod(s, Lab.fromName(I.name id))
+	    val  p       = Inf.newMod(s, Label.fromName(I.name id))
 	    val (j,inf') = elabGroundInf(E, inf)
 	    val  j'      = Inf.clone j
 (*DEBUG
@@ -9330,7 +9856,7 @@ print "\n\
 
       | elabSpec(E, s, vars, I.InfSpec(i, id, inf)) =
 	let
-	    val  p           = Inf.newInf(s, Lab.fromName(I.name id))
+	    val  p           = Inf.newInf(s, Label.fromName(I.name id))
 	    val (j,gen,inf') = elabInfRep(E, p, fn k'=>k', inf)
 	    val  k           = Inf.kind j
 	    val  id'         = elabInfId_bind(E, p, j, id)
@@ -9369,7 +9895,7 @@ print "\n\
 	    val specs' = elabSpecs(E, s, specs)
 	    val p      = Path.invent()
 (*DEBUG*)
-val p = Path.fromLab(Lab.fromString "?localSpec")
+val p = Path.fromLab(Label.fromString "?localSpec")
 	    val _      = Inf.strengthenSig(p, s')
 	in
 	    O.LocalSpec(nonInfo(i), specs')
@@ -9396,7 +9922,7 @@ val p = Path.fromLab(Lab.fromString "?localSpec")
 
     and elabLHSRecSpec(E, s, I.DatSpec(i, id, typ)) =
 	let
-	    val p = Inf.newTyp(s, Lab.fromName(I.name id))
+	    val p = Inf.newTyp(s, Label.fromName(I.name id))
 	    val k = elabTypKind(E, typ)
 	    val t = Type.inRec(Type.unknown k)
 	    (* ASSUME that typ does not contain ExtTyp *)
@@ -9481,7 +10007,7 @@ val _ = print "\n"
 	    )
 
   end
-(* src # 73 *)
+(* src # 77 *)
 signature TRANSLATION_PHASE =
   sig
 
@@ -9491,7 +10017,7 @@ signature TRANSLATION_PHASE =
     val translate :	I.component -> O.component
 
   end
-(* src # 74 *)
+(* src # 78 *)
 (* Untyped translation *)
 
 structure TranslationPhase :> TRANSLATION_PHASE =
@@ -9503,16 +10029,13 @@ structure TranslationPhase :> TRANSLATION_PHASE =
 
     (* Create fields for all structures and values in an environment *)
 
-    fun idToField(x' as O.Id(i,_,O.ExId s)) =
-	    O.Field(i, O.Lab(i,s), O.VarExp(i, O.ShortId(i, x')))
+    fun idToField(x' as O.Id(i,_,n)) =
+	    O.Field(i, O.Lab(i,Label.fromName n), O.VarExp(i, O.ShortId(i, x')))
 
-      | idToField _ = raise Crash.Crash"TranslationPhase.idToField: internal id"
-
-    fun idToDec(x' as O.Id(i, z, O.ExId s), y) =
-	    O.ValDec(i, O.VarPat(i, O.Id(i, z, O.ExId s)),
-			O.AppExp(i, O.SelExp(i, O.Lab(i,s)), O.VarExp(i,y)))
-
-      | idToDec _ = raise Crash.Crash "TranslationPhase.idToDec: internal id"
+    fun idToDec(O.Id(i, z, n), y) =
+	    O.ValDec(i, O.VarPat(i, O.Id(i, z, n)),
+			O.AppExp(i, O.SelExp(i, O.Lab(i,Label.fromName n)),
+				    O.VarExp(i,y)))
 
 
     (* Curry-convert expressions *)
@@ -9523,7 +10046,7 @@ structure TranslationPhase :> TRANSLATION_PHASE =
     fun curryExp(i, (0|1), exp') = exp'
       | curryExp(i,   k,   exp') =
 	let
-	    val ids'  = List.tabulate(k, fn _ => O.Id(i,Stamp.new(),O.InId))
+	    val ids'  = List.tabulate(k, fn _ => O.Id(i,Stamp.new(),Name.InId))
 	    val exps' = List.map (fn id' => O.VarExp(i, O.ShortId(i,id'))) ids'
 	in
 	    funExp(i, ids', O.AppExp(i, exp', O.TupExp(i, exps')))
@@ -9543,17 +10066,18 @@ UNFINISHED: obsolete after bootstrapping:
 
     (* Identifiers *)
 
-    fun trName  s			= s
-    fun trName' s			= "$" ^ s
+    fun trName  n			= n
+    fun trName'(n as Name.InId)		= n
+      | trName'(Name.ExId s)		= Name.ExId("$" ^ s)
 
-    fun trLab(I.Lab(i,s))		= O.Lab(i, trName  s)
-    fun trLab'(I.Lab(i,s))		= O.Lab(i, trName' s)
+    fun trLabel l			= Label.fromName(trName(Label.toName l))
+    fun trLabel' l			= Label.fromName(trName'(Label.toName l))
 
-    fun trId(I.Id(i,z,I.InId))		= O.Id(i, z, O.InId)
-      | trId(I.Id(i,z,I.ExId s))	= O.Id(i, z, O.ExId(trName s))
+    fun trLab(I.Lab(i,l))		= O.Lab(i, trLabel  l)
+    fun trLab'(I.Lab(i,l))		= O.Lab(i, trLabel' l)
 
-    fun trId'(I.Id(i,z,I.InId))		= O.Id(i, z, O.InId)
-      | trId'(I.Id(i,z,I.ExId s))	= O.Id(i, z, O.ExId(trName' s))
+    fun trId(I.Id(i,z,n))		= O.Id(i, z, trName n)
+    fun trId'(I.Id(i,z,n))		= O.Id(i, z, trName' n)
 
     fun trLongid'(I.ShortId(i,x))	= O.ShortId(i, trId' x)
       | trLongid'(I.LongId(i,y,a))	= O.LongId(i, trLongid' y, trLab' a)
@@ -9566,8 +10090,8 @@ UNFINISHED: obsolete after bootstrapping:
 
     fun idsId trId xs' x =
 	case trId x
-	  of x' as O.Id(_,_,O.ExId s') => StringMap.insert(xs', s', x')
-	   | _                         => ()
+	  of x' as O.Id(_,_,Name.ExId s') => StringMap.insert(xs', s', x')
+	   | _                            => ()
 
     fun idsRow    idsZ xs' (I.Row(i,fs,_))   = idsFields idsZ xs' fs
     and idsField  idsZ xs' (I.Field(i,a,z))  = idsZ xs' z
@@ -9632,7 +10156,7 @@ UNFINISHED: obsolete after bootstrapping:
       | trExp(I.PrimExp(i,s,t))		= O.PrimExp(i, s)
       | trExp(I.VarExp(i,y))		= O.VarExp(i, trLongid y)
       | trExp(I.ConExp(i,k,y))		= let val y' = trLongid y in
-					      curryExp(i,k,O.ConExp(i,y',k>0))
+					      curryExp(i,k,O.ConExp(i,y',false))
 					  end
       | trExp(I.RefExp(i))		= O.RefExp(i)
       | trExp(I.TupExp(i,es))		= O.TupExp(i, trExps es)
@@ -9641,7 +10165,7 @@ UNFINISHED: obsolete after bootstrapping:
       | trExp(I.VecExp(i,es))		= O.VecExp(i, trExps es)
       | trExp(I.FunExp(i,x,e))		= O.FunExp(i, trId x, trExp e)
       | trExp(I.AppExp(i,e1,e2))	= O.AppExp(i, trExp e1, trExp e2)
-      | trExp(I.CompExp(i,e1,e2))	= O.AdjExp(i, trExp e2, trExp e2)
+      | trExp(I.CompExp(i,e1,e2))	= O.AdjExp(i, trExp e1, trExp e2)
       | trExp(I.AndExp(i,e1,e2))	= O.AndExp(i, trExp e1, trExp e2)
       | trExp(I.OrExp(i,e1,e2))		= O.OrExp(i, trExp e1, trExp e2)
       | trExp(I.IfExp(i,e1,e2,e3))	= O.IfExp(i, trExp e1, trExp e2, trExp e3)
@@ -9669,11 +10193,12 @@ UNFINISHED: obsolete after bootstrapping:
     and trPat(I.JokPat(i))		= O.WildPat(i)
       | trPat(I.LitPat(i,l))		= O.LitPat(i, trLit l)
       | trPat(I.VarPat(i,x))		= O.VarPat(i, trId x)
-      | trPat(I.ConPat(i,y,ps))		= O.ConPat(i, trLongid y, trArgPats ps)
+      | trPat(I.ConPat(i,y,ps))		= O.ConPat(i, trLongid y, trArgPats ps,
+						      false)
       | trPat(I.RefPat(i,p))		= O.RefPat(i, trPat p)
       | trPat(I.TupPat(i,ps))		= O.TupPat(i, trPats ps)
       | trPat(I.RowPat(i,r))		= let val (fs',b') = trPatRow r in
-					      O.RowPat(i, fs', b')
+					      O.RowPat(i, fs')
 					  end
       | trPat(I.VecPat(i,ps))		= O.VecPat(i, trPats ps)
       | trPat(I.AsPat(i,p1,p2))		= O.AsPat(i, trPat p1, trPat p2)
@@ -9716,7 +10241,6 @@ UNFINISHED: obsolete after bootstrapping:
       | trMod(I.UnpackMod(i,e,j))	= trExp e
 
 
-
     (* Declarations *)
 
     and trDec(I.ValDec(i,p,e), ds')	= O.ValDec(i, trPat p, trExp e) :: ds'
@@ -9742,13 +10266,12 @@ UNFINISHED: obsolete after bootstrapping:
     and trEqCon(I.Con(i,x,ts), y', ds')	= O.ValDec(i, O.VarPat(i,trId x),
 						   O.VarExp(i,y')):: ds'
     and trNewCon(I.Con(i,x,ts), ds')	= O.ValDec(i, O.VarPat(i,trId x),
-						   O.NewExp(i, NONE,
-						      List.length ts > 0)):: ds'
+						   O.NewExp(i,NONE,false)):: ds'
     and trCon(I.Con(i,x,ts), ds')	= O.ValDec(i,
 						O.VarPat(i,trId x),
 						O.NewExp(i,
 						  SOME(Name.toString(I.name x)),
-						  List.length ts > 0)):: ds'
+						  false)) :: ds'
     and trCons(cs, ds')			= List.foldr trCon ds' cs
 
     and trTyp(I.AbsTyp(i), ds')		= ds'
@@ -9778,20 +10301,23 @@ UNFINISHED: obsolete after bootstrapping:
 
     fun trComp(I.Comp(i,is,ds))		=
 	let
-	    val (xus',ds') = trImps'(is, trDecs ds)
+	    val  ids'       = ids ds
+	    val (xsus',ds') = trImps'(is, trDecs ds)
+	    val  fs'        = List.map idToField ids'
+	    val  exp'       = O.LetExp(i, ds', O.RowExp(i, fs'))
 	in
-	    ( xus', ids ds, ds' )
+	    ( xsus', (exp',()) )
 	end
 
     and trImps'(is, ds')		= List.foldr trImp ([],ds') is
 
-    and trImp(I.Imp(i,ss,u),(xus',ds'))	=
+    and trImp(I.Imp(i,ss,u),(xsus',ds')) =
 	let
-	    val x'  = O.Id(i, Stamp.new(), O.InId)
+	    val x'  = O.Id(i, Stamp.new(), Name.InId)
 	    val y'  = O.ShortId(i, x')
 	    val ds' = trSpecs(ss, y', ds')
 	in
-	    ( (x',u)::xus', ds' )
+	    ( (x',(),u)::xsus', ds' )
 	end
 
     and trSpecs(ss, y, ds')		= List.foldr (trSpec y) ds' ss
@@ -9840,7 +10366,7 @@ UNFINISHED: obsolete after bootstrapping:
     val translate = trComp
 
   end
-(* src # 75 *)
+(* src # 79 *)
 (*
  * Standard ML label identifiers
  *
@@ -9865,7 +10391,7 @@ signature LAB =
 
   end
 (*DEBUG*) where type Lab = string
-(* src # 76 *)
+(* src # 80 *)
 (*
  * Standard ML label identifiers
  *
@@ -9895,7 +10421,7 @@ structure Lab :> LAB =
 	 | NONE    => false
 
   end
-(* src # 77 *)
+(* src # 81 *)
 (*
  * Standard ML identifiers
  *
@@ -9923,7 +10449,7 @@ signature ID =
 
   end
 (*DEBUG*) where type Id = string
-(* src # 78 *)
+(* src # 82 *)
 (*
  * Standard ML identifiers
  *
@@ -9950,7 +10476,7 @@ functor MakeId(Stamp: STAMP) : (*DEBUG :>*) ID =
     val compare = String.compare
 
   end
-(* src # 79 *)
+(* src # 83 *)
 (*
  * Standard ML basic objects (shared between syntax and semantics)
  *
@@ -9971,7 +10497,7 @@ structure TyVar	= MakeId(Stamp)
 structure StrId	= MakeId(Stamp)
 structure SigId = MakeId(Stamp)
 end
-(* src # 80 *)
+(* src # 84 *)
 (*
  * Standard ML special constants
  *
@@ -9998,7 +10524,7 @@ signature SCON =
     val toString: SCon -> string
 
   end
-(* src # 81 *)
+(* src # 85 *)
 (*
  * Standard ML special constants
  *
@@ -10025,7 +10551,7 @@ structure SCon :> SCON =
       | toString(REAL r)   = LargeReal.toString r
 
   end
-(* src # 82 *)
+(* src # 86 *)
 (*
  * Stockhausen input grammar
  *
@@ -10423,7 +10949,7 @@ signature INPUT_GRAMMAR =
     val explodeLong :	'a Long		-> StrId list * 'a
 
   end
-(* src # 83 *)
+(* src # 87 *)
 (*
  * Stockhausen input grammar
  *
@@ -10977,9 +11503,9 @@ functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
       | explodeLong'(DOTLong(_,longid,id), ids)	= explodeLong'(longid, id::ids)
 
   end
-(* src # 84 *)
+(* src # 88 *)
 structure InputGrammar = MakeInputGrammar(type Info = Source.region)
-(* src # 85 *)
+(* src # 89 *)
 signature PARSING_ERROR =
   sig
 
@@ -11010,7 +11536,7 @@ signature PARSING_ERROR =
     val warn :	Source.region * warning -> unit
 
   end
-(* src # 86 *)
+(* src # 90 *)
 structure ParsingError :> PARSING_ERROR =
   struct
 
@@ -11102,7 +11628,7 @@ structure ParsingError :> PARSING_ERROR =
     fun warn(region, w)   = Error.warn(region, warningToString w)
 
   end
-(* src # 87 *)
+(* src # 91 *)
 signature ABSTRACTION_ERROR =
   sig
 
@@ -11176,7 +11702,7 @@ signature ABSTRACTION_ERROR =
     val warn :	Source.region * warning -> unit
 
   end
-(* src # 88 *)
+(* src # 92 *)
 structure AbstractionError :> ABSTRACTION_ERROR =
   struct
 
@@ -11269,9 +11795,9 @@ structure AbstractionError :> ABSTRACTION_ERROR =
     fun ppStrId strid	= ppQuoted(StrId.toString strid)
     fun ppSigId sigid	= ppQuoted(SigId.toString sigid)
 
-    fun ppLab'(AbstractGrammar.Lab(_,l)) = l
+    fun ppLab'(AbstractGrammar.Lab(_,l)) = Label.toString l
 
-    fun ppId'(AbstractGrammar.Id(_,_,name)) = Name.toString name
+    fun ppId'(AbstractGrammar.Id(_,_,n)) = Name.toString n
     fun ppId x = ppQuoted(ppId' x)
 
     fun ppLongid'(AbstractGrammar.ShortId(_,x))  = ppId' x
@@ -11413,7 +11939,7 @@ structure AbstractionError :> ABSTRACTION_ERROR =
     fun warn(region, w)   = Error.warn(region, warningToString w)
 
   end
-(* src # 89 *)
+(* src # 93 *)
 (*
  * Standard ML infix resolution
  *
@@ -11443,7 +11969,7 @@ signature INFIX =
     val pat :	InfEnv -> Grammar.Pat -> Grammar.Pat
 
   end
-(* src # 90 *)
+(* src # 94 *)
 (*
  * Standard ML infix resolution
  *
@@ -11628,7 +12154,7 @@ structure Infix :> INFIX =
 		    infoPat, infoAtPat, categoriseAtPat, flattenPat)
 
   end
-(* src # 91 *)
+(* src # 95 *)
 signature BIND_ENV =
   sig
 
@@ -11640,7 +12166,7 @@ signature BIND_ENV =
     type SigId = SigId.t
 
     type Info  = Source.region
-    type stamp = AbstractGrammar.stamp
+    type stamp = Stamp.t
 
     datatype InfAssoc  = datatype Infix.Assoc
     type     InfStatus = Infix.InfStatus
@@ -11735,12 +12261,12 @@ signature BIND_ENV =
     val infEnv :		Env -> VId -> InfStatus
 
   end
-(* src # 92 *)
+(* src # 96 *)
 structure BindEnv :> BIND_ENV =
   struct
 
     type Info  = Source.region
-    type stamp = AbstractGrammar.stamp
+    type stamp = Stamp.t
 
 
     (* The environment's domain *)
@@ -11956,7 +12482,7 @@ structure BindEnv :> BIND_ENV =
 						     | SOME(_,inf) => inf
 
   end
-(* src # 93 *)
+(* src # 97 *)
 signature SHARING =
   sig
 
@@ -11968,7 +12494,7 @@ signature SHARING =
     val shareStr :	spec list * longid list -> spec list  (* -> reversed *)
 
   end
-(* src # 94 *)
+(* src # 98 *)
 (*
  * Translation of sharing constraints.
  *
@@ -12067,8 +12593,6 @@ structure Sharing :> SHARING =
 	in
 	    SingInf(i, mod)
 	end
-
-    fun labToId(Lab(i, s))  = Id(i, Stamp.new(), Name.ExId s)
 
     fun constrain(class, inf1, ShortId _, longid) =
 	    raise Crash.Crash "Sharing.constrain"
@@ -12180,7 +12704,7 @@ structure Sharing :> SHARING =
     val shareStr = share STR
 
   end
-(* src # 95 *)
+(* src # 99 *)
 signature ABSTRACTION_PHASE =
   sig
 
@@ -12192,7 +12716,7 @@ signature ABSTRACTION_PHASE =
     val translate :	Env -> I.Component -> O.component
 
   end
-(* src # 96 *)
+(* src # 100 *)
 structure AbstractionPhase :> ABSTRACTION_PHASE =
   struct
 
@@ -12224,10 +12748,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
     fun stamp_prebound E = #2 (prebound E)
     fun Env_prebound   E = #3 (prebound E)
 
-    fun inventId i = O.Id(i, Stamp.new(), O.InId)
-
-    fun idToLab(O.Id(i, stamp, O.ExId s)) = O.Lab(i, s)
-      | idToLab _ = raise Crash.Crash "idToLab: InId encountered"
+    fun inventId i = O.Id(i, Stamp.new(), Name.InId)
 
     fun longidToMod(O.ShortId(i, id))         = O.VarMod(i, id)
       | longidToMod(O.LongId(i, longid, lab)) =
@@ -12287,7 +12808,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	 | SCon(i, SCon.STRING s)	=> O.StringLit s
 	 | SCon(i, SCon.REAL x)		=> O.RealLit x
 
-    fun trLab E (Lab(i, lab)) = O.Lab(i, Lab.toString lab)
+    fun trLab E (Lab(i, lab)) = O.Lab(i, Label.fromString(Lab.toString lab))
 
     fun trTyVar E (tyvar as TyVar(i, tyvar')) =
 	let
@@ -12296,7 +12817,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		  of SOME xx => xx
 		   | NONE    => error(i, E.TyVarUnbound tyvar')
 	in
-	    O.Id(i, stamp, O.ExId(TyVar.toString tyvar'))
+	    O.Id(i, stamp, Name.ExId(TyVar.toString tyvar'))
 	end
 
     fun trId (lookup,infoId,idId,toString,Unbound) E id =
@@ -12307,7 +12828,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 				of SOME xx => xx
 				 | NONE    => error(i, Unbound id')
 	in
-	    ( O.Id(i, stamp, O.ExId(toString id')), x )
+	    ( O.Id(i, stamp, Name.ExId(toString id')), x )
 	end
 
     val trVId   = trId(lookupVal, infoVId, idVId, VId.toString, E.VIdUnbound)
@@ -12328,7 +12849,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	    val _     = if not(Option.isSome(lookup(E, id'))) then () else
 			   warn(i, Shadowed id')
 	in
-	    ( O.Id(i, stamp, O.ExId name), stamp )
+	    ( O.Id(i, stamp, Name.ExId name), stamp )
 	end
 
 
@@ -12364,7 +12885,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		val (id',x)       = trStrId E' strid
 		val  longid'      =
 		     case longido'
-		       of SOME longid' => O.LongId(i, longid', idToLab id')
+		       of SOME longid' => O.LongId(i, longid', O.idToLab id')
 			| NONE         => O.ShortId(i, id')
 
 	   in
@@ -12388,7 +12909,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		val (id',x)       = trId E' id
 	   in
 		case longido'
-		  of SOME longid' => ( O.LongId(i,longid', idToLab id'), x )
+		  of SOME longid' => ( O.LongId(i,longid', O.idToLab id'), x )
 		   | NONE         => ( O.ShortId(i,id'), x )
 	   end
 
@@ -12777,7 +13298,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 			case lookupVal(E', vid')
 			  of NONE            => trVId_bind E vid
 			   | SOME(_,stamp,_) => ( O.Id(i', stamp,
-						      O.ExId(VId.toString vid'))
+						   Name.ExId(VId.toString vid'))
 						, stamp )
 		    val _ = insertVal(E', vid', (i',stamp,V))
 		 in
@@ -13310,10 +13831,11 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	let
 	    val name    = VId.toString vid'
 	    val stamp2  = Stamp.new()
-	    val id1'    = O.Id(i, stamp1, O.ExId name)
-	    val id2'    = O.Id(i, stamp2, O.ExId name)
+	    val id1'    = O.Id(i, stamp1, Name.ExId name)
+	    val id2'    = O.Id(i, stamp2, Name.ExId name)
 	    val longid' = case longido'
-			    of SOME longid' => O.LongId(i,longid',O.Lab(i,name))
+			    of SOME longid' => O.LongId(i,longid',O.Lab(i,
+							Label.fromString name))
 			     | NONE         => O.ShortId(i, id1')
 	    val pat'    = O.VarPat(i, id2')
 	    val exp'    = O.VarExp(i, longid')
@@ -13329,8 +13851,8 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	let
 	    val name    = TyCon.toString tycon'
 	    val stamp2  = Stamp.new()
-	    val id'     = O.Id(i, stamp2, O.ExId name)
-	    val lab'    = O.Lab(i, name)
+	    val id'     = O.Id(i, stamp2, Name.ExId name)
+	    val lab'    = O.Lab(i, Label.fromString name)
 	    val longid' = O.LongId(i, longid, lab')
 	    val typ'    = O.ConTyp(i, longid')
 	    val _       = insertTy(E, tycon', (i,stamp2,E'))
@@ -13342,8 +13864,8 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	let
 	    val name    = StrId.toString strid'
 	    val stamp2  = Stamp.new()
-	    val id'     = O.Id(i, stamp2, O.ExId name)
-	    val lab'    = O.Lab(i, name)
+	    val id'     = O.Id(i, stamp2, Name.ExId name)
+	    val lab'    = O.Lab(i, Label.fromString name)
 	    val longid' = O.LongId(i, longid, lab')
 	    val mod'    = longidToMod longid'
 	    val _       = insertStr(E, strid', (i,stamp2,E'))
@@ -13355,8 +13877,8 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	let
 	    val name    = SigId.toString sigid'
 	    val stamp2  = Stamp.new()
-	    val id'     = O.Id(i, stamp2, O.ExId name)
-	    val lab'    = O.Lab(i, name)
+	    val id'     = O.Id(i, stamp2, Name.ExId name)
+	    val lab'    = O.Lab(i, Label.fromString name)
 	    val longid' = O.LongId(i, longid, lab')
 	    val inf'    = O.ConInf(i, longid')
 	    val _       = insertSig(E, sigid', (i,stamp2,E'))
@@ -14184,10 +14706,11 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	let
 	    val name    = VId.toString vid'
 	    val stamp2  = Stamp.new()
-	    val id1'    = O.Id(i, stamp1, O.ExId name)
-	    val id2'    = O.Id(i, stamp2, O.ExId name)
+	    val id1'    = O.Id(i, stamp1, Name.ExId name)
+	    val id2'    = O.Id(i, stamp2, Name.ExId name)
 	    val longid' = case longido'
-			    of SOME longid' => O.LongId(i,longid',O.Lab(i,name))
+			    of SOME longid' => O.LongId(i,longid',O.Lab(i,
+							Label.fromString name))
 			     | NONE         => O.ShortId(i, id1')
 	    val typ'    = O.SingTyp(i, longid')
 	    val _       = insertDisjointVal(E, vid', (i,stamp2,is))
@@ -14503,8 +15026,9 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	fn IMPORTImport(i, spec, s) =>
 	   let
 		val specs' = trSpec E spec
+		val url    = Url.fromString s
 	   in
-		O.Imp(i, specs', s) :: acc
+		O.Imp(i, specs', url) :: acc
 	   end
 
 	 | EMPTYImport(i) =>
@@ -14517,7 +15041,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
     val translate = trComponent
 
   end
-(* src # 97 *)
+(* src # 101 *)
 (*
  * Standard ML derived forms
  *
@@ -14748,7 +15272,7 @@ signature DERIVED_FORMS =
     val EXPProgram:       Info * Exp * Program option -> Program
 
   end
-(* src # 98 *)
+(* src # 102 *)
 signature Parser_TOKENS =
 sig
 type ('a,'b) token
@@ -14850,7 +15374,7 @@ structure ParserData:PARSER_DATA
 sharing type ParserData.Token.token = Tokens.token
 sharing type ParserData.svalue = Tokens.svalue
 end
-(* src # 99 *)
+(* src # 103 *)
 
 functor LrVals(structure Token:        TOKEN
 			structure DerivedForms: DERIVED_FORMS
@@ -23344,7 +23868,7 @@ fun ETYVAR (i,p1,p2) = Token.TOKEN (ParserData.LrTable.T 88,(
 ParserData.MlyValue.ETYVAR (fn () => i),p1,p2))
 end
 end
-(* src # 100 *)
+(* src # 104 *)
 (*
  * Standard ML derived forms
  *
@@ -24073,7 +24597,7 @@ structure DerivedForms :> DERIVED_FORMS =
 	end
 
   end
-(* src # 101 *)
+(* src # 105 *)
 signature LEXER_ERROR =
   sig
 
@@ -24086,7 +24610,7 @@ signature LEXER_ERROR =
     val error :	(int * int) * error -> 'a
 
   end
-(* src # 102 *)
+(* src # 106 *)
 functor LexerError(structure Tokens: Parser_TOKENS
 		   type error) : LEXER_ERROR =
   struct
@@ -24100,7 +24624,7 @@ functor LexerError(structure Tokens: Parser_TOKENS
     fun error pos_e = raise Error pos_e
 
   end
-(* src # 103 *)
+(* src # 107 *)
  functor Lexer(structure Tokens:     Parser_TOKENS
 			structure LexerError: LEXER_ERROR
 			  where type token = (Tokens.svalue,int) Tokens.token
@@ -32948,7 +33472,7 @@ end
   in lex
   end
 end
-(* src # 104 *)
+(* src # 108 *)
 functor CountPosLexer(
 	structure Lexer: LEXER
 	where type UserDeclarations.pos = int
@@ -33031,14 +33555,14 @@ functor CountPosLexer(
 	end
 
   end
-(* src # 105 *)
+(* src # 109 *)
 signature PARSING_PHASE =
   sig
 
     val parse: Source.source -> InputGrammar.Component
 
   end
-(* src # 106 *)
+(* src # 110 *)
 structure ParsingPhase :> PARSING_PHASE =
   struct
 
@@ -33087,14 +33611,14 @@ structure ParsingPhase :> PARSING_PHASE =
 	end
 
   end
-(* src # 107 *)
+(* src # 111 *)
 signature BIND_ENV0 =
   sig
 
     val E0 :	BindEnv.Env
 
   end
-(* src # 108 *)
+(* src # 112 *)
 structure BindEnv0 :> BIND_ENV0 =
   struct
 
@@ -33127,6 +33651,7 @@ structure BindEnv0 :> BIND_ENV0 =
     val _ = insertTy(E, TyCon.fromString "real",   (i, P.stamp_real,   E_empty))
     val _ = insertTy(E, TyCon.fromString "char",   (i, P.stamp_char,   E_empty))
     val _ = insertTy(E, TyCon.fromString "string", (i, P.stamp_string, E_empty))
+    val _ = insertTy(E, TyCon.fromString "vector", (i, P.stamp_vec,    E_empty))
     val _ = insertTy(E, TyCon.fromString "list",   (i, P.stamp_list,   E_list))
     val _ = insertTy(E, TyCon.fromString "ref",    (i, P.stamp_tref,   E_ref))
     val _ = insertTy(E, TyCon.fromString "exn",    (i, P.stamp_exn,    E_empty))
@@ -33147,7 +33672,7 @@ structure BindEnv0 :> BIND_ENV0 =
     val _  = insertStr(E0, StrId.fromString "", (i, Stamp.new(), E))
 
   end
-(* src # 109 *)
+(* src # 113 *)
 (*
  * Author:
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
@@ -33176,7 +33701,7 @@ signature DEBUG =
 	val labToString: Intermediate.lab -> string
 	val patToString: Intermediate.pat -> string
     end
-(* src # 110 *)
+(* src # 114 *)
 (*
  * Author:
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
@@ -33205,11 +33730,11 @@ structure Debug :> DEBUG =
 	fun posToString pos =
 	    seqToString "." (fn x => x) (List.rev ("e"::pos))
 
-	fun labToString (Lab (_, s)) = s
+	fun labToString (Lab (_, label)) = Label.toString label
 
-	fun idToString (Id (_, stamp, InId)) =
+	fun idToString (Id (_, stamp, Name.InId)) =
 	    "$" ^ Stamp.toString stamp
-	  | idToString (Id (_, stamp, ExId s)) =
+	  | idToString (Id (_, stamp, Name.ExId s)) =
 	    s ^ "$" ^ Stamp.toString stamp
 
 	fun longidToString (LongId (_, longid, lab)) =
@@ -33233,17 +33758,22 @@ structure Debug :> DEBUG =
 	fun patToString (WildPat _) = "_"
 	  | patToString (LitPat (_, lit)) = litToString lit
 	  | patToString (VarPat (_, id)) = idToString id
-	  | patToString (ConPat (_, longid, NONE)) = longidToString longid
-	  | patToString (ConPat (_, longid, SOME pat)) =
+	  | patToString (ConPat (_, longid, NONE, _)) = longidToString longid
+	  | patToString (ConPat (_, longid, SOME pat, _)) =
 	    "(" ^ longidToString longid ^ " " ^ patToString pat ^ ")"
 	  | patToString (RefPat (_, pat)) = "(ref " ^ patToString pat ^ ")"
 	  | patToString (TupPat (_, pats)) =
 	    "(" ^ listToString patToString pats ^ ")"
-	  | patToString (RowPat (_, patFields, hasDots)) =
-	    "{" ^
-	    listToString (fn Field (_, lab, pat) =>
-			  labToString lab ^ ": " ^ patToString pat) patFields ^
-	    (if hasDots then ", ..." else "") ^ "}"
+	  | patToString (RowPat (_, patFields)) =
+	    let
+		val hasDots = true   (*--** derive from info type *)
+	    in
+		"{" ^
+		listToString (fn Field (_, lab, pat) =>
+			      labToString lab ^ ": " ^ patToString pat)
+		patFields ^
+		(if hasDots then ", ..." else "") ^ "}"
+	    end
 	  | patToString (VecPat (_, pats)) =
 	    "#[" ^ listToString patToString pats ^ "]"
 	  | patToString (AsPat (_, pat1, pat2)) =
@@ -33256,7 +33786,7 @@ structure Debug :> DEBUG =
 	  | patToString (WithPat (_, pat, _)) =
 	    "(" ^ patToString pat ^ " with <decs>)"
     end
-(* src # 111 *)
+(* src # 115 *)
 (*
  * Author:
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
@@ -33279,12 +33809,12 @@ signature IMPERATIVE_GRAMMAR =
 
 	(* Identifiers *)
 
-	type stamp = IntermediateGrammar.stamp
+	type stamp = Stamp.t
+	type name = Name.t
 
-	datatype name = datatype IntermediateGrammar.name
 	datatype id = datatype IntermediateGrammar.id
 
-	type lab = string
+	type lab = Label.t
 
 	(* Expressions and Declarations *)
 
@@ -33330,6 +33860,7 @@ signature IMPERATIVE_GRAMMAR =
 	    (* all ids distinct *)
 	  | EvalStm of info * exp
 	  | RaiseStm of info * id
+	  | ReraiseStm of info * id
 	  (* the following must always be last *)
 	  | HandleStm of info * body * id * body * body * shared
 	  | EndHandleStm of info * shared
@@ -33360,11 +33891,12 @@ signature IMPERATIVE_GRAMMAR =
 	  | AdjExp of coord * id * id
 	withtype body = stm list
 
-	type component = (id * string) list * id list * body
+	type sign = IntermediateGrammar.sign
+	type component = (id * sign * Url.t) list * (body * sign)
 
 	val infoStm: stm -> info
     end
-(* src # 112 *)
+(* src # 116 *)
 (*
  * Author:
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
@@ -33388,12 +33920,12 @@ structure ImperativeGrammar: IMPERATIVE_GRAMMAR =
 
 	(* Identifiers *)
 
-	type stamp = IntermediateGrammar.stamp
+	type stamp = Stamp.t
+	type name = Name.t
 
-	datatype name = datatype IntermediateGrammar.name
 	datatype id = datatype IntermediateGrammar.id
 
-	type lab = string
+	type lab = Label.t
 
 	(* Expressions and Declarations *)
 
@@ -33441,6 +33973,7 @@ structure ImperativeGrammar: IMPERATIVE_GRAMMAR =
 	    (* all ids distinct *)
 	  | EvalStm of info * exp
 	  | RaiseStm of info * id
+	  | ReraiseStm of info * id
 	  (* the following must always be last *)
 	  | HandleStm of info * body * id * body * body * shared
 	  | EndHandleStm of info * shared
@@ -33471,12 +34004,14 @@ structure ImperativeGrammar: IMPERATIVE_GRAMMAR =
 	  | AdjExp of coord * id * id
 	withtype body = stm list
 
-	type component = (id * string) list * id list * body
+	type sign = IntermediateGrammar.sign
+	type component = (id * sign * Url.t) list * (body * sign)
 
 	fun infoStm (ValDec (info, _, _, _)) = info
 	  | infoStm (RecDec (info, _, _)) = info
 	  | infoStm (EvalStm (info, _)) = info
 	  | infoStm (RaiseStm (info, _)) = info
+	  | infoStm (ReraiseStm (info, _)) = info
 	  | infoStm (HandleStm (info, _, _, _, _, _)) = info
 	  | infoStm (EndHandleStm (info, _)) = info
 	  | infoStm (TestStm (info, _, _, _, _)) = info
@@ -33485,7 +34020,7 @@ structure ImperativeGrammar: IMPERATIVE_GRAMMAR =
 	  | infoStm (IndirectStm (info, _)) = info
 	  | infoStm (ExportStm (info, _)) = info
     end
-(* src # 113 *)
+(* src # 117 *)
 (*
  * Authors:
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
@@ -33504,7 +34039,7 @@ signature OUTPUT_IMPERATIVE_GRAMMAR =
 
 	val outputComponent: I.component -> string
     end
-(* src # 114 *)
+(* src # 118 *)
 (*
  * Authors:
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
@@ -33544,9 +34079,9 @@ structure OutputImperativeGrammar :> OUTPUT_IMPERATIVE_GRAMMAR =
 		  | format' NL =
 		    "\n" ^ String.concat (List.tabulate
 					  (!indent, fn _ => "  "))
-		  | format' (ID (Id (_, stamp, InId))) =
+		  | format' (ID (Id (_, stamp, Name.InId))) =
 		    "$" ^ Stamp.toString stamp
-		  | format' (ID (Id (_, stamp, ExId s))) =
+		  | format' (ID (Id (_, stamp, Name.ExId s))) =
 		    s ^ "$" ^ Stamp.toString stamp
 		  | format' (CO s) = "   (* " ^ s ^ " *)"
 		  | format' NULL = ""
@@ -33601,7 +34136,8 @@ structure OutputImperativeGrammar :> OUTPUT_IMPERATIVE_GRAMMAR =
 	  | outputArgs (RecArgs labIdList) =
 	    SEQ [S "{", SEP (S ", ",
 			     List.map (fn (lab, id) =>
-				       SEQ [S (lab ^ "="), ID id]) labIdList),
+				       SEQ [S (Label.toString lab ^ "="),
+					    ID id]) labIdList),
 		 S "}"]
 
 	fun outputTest (LitTest lit) = S (outputLit lit)
@@ -33614,10 +34150,11 @@ structure OutputImperativeGrammar :> OUTPUT_IMPERATIVE_GRAMMAR =
 	  | outputTest (RecTest labIdList) =
 	    SEQ [S "{", SEP (S ", ",
 			     List.map (fn (lab, id) =>
-				       SEQ [S (lab ^ "="), ID id]) labIdList),
+				       SEQ [S (Label.toString lab ^ "="),
+					    ID id]) labIdList),
 		 S "}"]
 	  | outputTest (LabTest (lab, id)) =
-	    SEQ [S ("{" ^ lab ^ "="), ID id, S "...}"]
+	    SEQ [S ("{" ^ Label.toString lab ^ "="), ID id, S "...}"]
 	  | outputTest (VecTest ids) =
 	    SEQ [S "#[", SEP (S ", ", List.map ID ids), S "]"]
 
@@ -33643,8 +34180,8 @@ structure OutputImperativeGrammar :> OUTPUT_IMPERATIVE_GRAMMAR =
 	    SEQ [S "case ", ID id, S " of ", IN, outputTest test, NL,
 		 outputBody body1, EX, NL, S "else", IN, NL, outputBody body2,
 		 EX]
-	  | outputStm (RaiseStm (_, id)) =
-	    SEQ [S "raise ", ID id]
+	  | outputStm (RaiseStm (_, id)) = SEQ [S "raise ", ID id]
+	  | outputStm (ReraiseStm (_, id)) = SEQ [S "reraise ", ID id]
 	  | outputStm (SharedStm (_, body, shared as ref 0)) =
 	    (shared := gen ();
 	     SEQ [S ("label " ^ (Int.toString (!shared)) ^ ":"), NL,
@@ -33674,9 +34211,10 @@ structure OutputImperativeGrammar :> OUTPUT_IMPERATIVE_GRAMMAR =
 	  | outputExp (RecExp (_, labIdList)) =
 	    SEQ [S "{", SEP (S ", ",
 			     List.map (fn (lab, id) =>
-				       SEQ [S (lab ^ "="), ID id]) labIdList),
+				       SEQ [S (Label.toString lab ^ "="),
+					    ID id]) labIdList),
 		 S "}"]
-	  | outputExp (SelExp (_, lab)) = SEQ [S ("#" ^ lab)]
+	  | outputExp (SelExp (_, lab)) = SEQ [S ("#" ^ Label.toString lab)]
 	  | outputExp (VecExp (_, ids)) =
 	    SEQ [S "#[", SEP (S ", ", List.map ID ids), S "]"]
 	  | outputExp (FunExp (_, _, s, argsBodyList)) =
@@ -33688,7 +34226,7 @@ structure OutputImperativeGrammar :> OUTPUT_IMPERATIVE_GRAMMAR =
 	  | outputExp (AppExp (_, id, args)) =
 	    SEQ [ID id, S " ", outputArgs args]
 	  | outputExp (SelAppExp (_, lab, id)) =
-	    SEQ [S ("#" ^ lab ^ " "), ID id]
+	    SEQ [S ("#" ^ Label.toString lab ^ " "), ID id]
 	  | outputExp (ConAppExp (_, id, args)) =
 	    SEQ [S "(con ", ID id, S ") ", outputArgs args]
 	  | outputExp (RefAppExp (_, args)) =
@@ -33702,14 +34240,14 @@ structure OutputImperativeGrammar :> OUTPUT_IMPERATIVE_GRAMMAR =
 		 List.map (fn stm =>
 			   SEQ [outputInfo (infoStm stm), outputStm stm]) stms)
 
-	fun outputComponent (idStringList, _, body) =
+	fun outputComponent (importList, (body, _)) =
 	    format (SEQ [SEQ (List.map
-			      (fn (id, string) =>
+			      (fn (id, _, url) =>
 			       SEQ [S "import ", ID id,
-				    S (" from " ^ string ^ "\n")])
-			      idStringList), outputBody body, NL])
+				    S (" from " ^ Url.toString url ^ "\n")])
+			      importList), outputBody body, NL])
     end
-(* src # 115 *)
+(* src # 119 *)
 (*
  * Author:
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
@@ -33744,7 +34282,7 @@ signature INTERMEDIATE_AUX =
 
 	val separateAlt: Intermediate.pat -> Intermediate.pat
     end
-(* src # 116 *)
+(* src # 120 *)
 (*
  * Author:
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
@@ -33770,7 +34308,7 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	    fun foldli f z xs = foldli' (xs, f, z, 1)
 	end
 
-	fun freshId coord = Id (coord, Stamp.new (), InId)
+	fun freshId coord = Id (coord, Stamp.new (), Name.InId)
 
 	fun idEq (Id (_, stamp1, _), Id (_, stamp2, _)) = stamp1 = stamp2
 
@@ -33798,6 +34336,7 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	    occursInExp (exp1, id) orelse occursInExp (exp2, id)
 	  | occursInExp (AdjExp (_, exp1, exp2), id) =
 	    occursInExp (exp1, id) orelse occursInExp (exp2, id)
+	  | occursInExp (UpExp (_, exp), id) = occursInExp (exp, id)
 	  | occursInExp (AndExp (_, exp1, exp2), id) =
 	    occursInExp (exp1, id) orelse occursInExp (exp2, id)
 	  | occursInExp (OrExp (_, exp1, exp2), id) =
@@ -33824,12 +34363,13 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	and occursInPat (WildPat _, _) = false
 	  | occursInPat (LitPat (_, _), _) = false
 	  | occursInPat (VarPat (_, _), _) = false
-	  | occursInPat (ConPat (_, _, NONE), _) = false
-	  | occursInPat (ConPat (_, _, SOME pat), id) = occursInPat (pat, id)
+	  | occursInPat (ConPat (_, _, NONE, _), _) = false
+	  | occursInPat (ConPat (_, _, SOME pat, _), id) =
+	    occursInPat (pat, id)
 	  | occursInPat (RefPat (_, pat), id) = occursInPat (pat, id)
 	  | occursInPat (TupPat (_, pats), id) =
 	    List.exists (fn pat => occursInPat (pat, id)) pats
-	  | occursInPat (RowPat (_, patFields, _), id) =
+	  | occursInPat (RowPat (_, patFields), id) =
 	    List.exists (fn Field (_, _, pat) => occursInPat (pat, id))
 	    patFields
 	  | occursInPat (VecPat (_, pats), id) =
@@ -33849,14 +34389,14 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	    fun patternVariablesOf' (WildPat _, ids) = ids
 	      | patternVariablesOf' (LitPat (_, _), ids) = ids
 	      | patternVariablesOf' (VarPat (_, id), ids) = id::ids
-	      | patternVariablesOf' (ConPat (_, _, NONE), ids) = ids
-	      | patternVariablesOf' (ConPat (_, _, SOME pat), ids) =
+	      | patternVariablesOf' (ConPat (_, _, NONE, _), ids) = ids
+	      | patternVariablesOf' (ConPat (_, _, SOME pat, _), ids) =
 		patternVariablesOf' (pat, ids)
 	      | patternVariablesOf' (RefPat (_, pat), ids) =
 		patternVariablesOf' (pat, ids)
 	      | patternVariablesOf' (TupPat (_, pats), ids) =
 		foldr patternVariablesOf' ids pats
-	      | patternVariablesOf' (RowPat (_, fieldPats, _), ids) =
+	      | patternVariablesOf' (RowPat (_, fieldPats), ids) =
 		foldr (fn (Field (_, _, pat), ids) =>
 		       patternVariablesOf' (pat, ids)) ids fieldPats
 	      | patternVariablesOf' (VecPat (_, pats), ids) =
@@ -33920,6 +34460,8 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	    AppExp (coord, substExp (exp1, subst), substExp (exp2, subst))
 	  | substExp (AdjExp (coord, exp1, exp2), subst) =
 	    AdjExp (coord, substExp (exp1, subst), substExp (exp2, subst))
+	  | substExp (UpExp (coord, exp), subst) =
+	    UpExp (coord, substExp (exp, subst))
 	  | substExp (AndExp (coord, exp1, exp2), subst) =
 	    AndExp (coord, substExp (exp1, subst), substExp (exp2, subst))
 	  | substExp (OrExp (coord, exp1, exp2), subst) =
@@ -33948,20 +34490,20 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	and substPat (pat as WildPat _, _) = pat
 	  | substPat (pat as LitPat (_, _), _) = pat
 	  | substPat (pat as VarPat (_, _), _) = pat
-	  | substPat (ConPat (coord, longid, NONE), subst) =
-	    ConPat (coord, substLongId (longid, subst), NONE)
-	  | substPat (ConPat (coord, longid, SOME pat), subst) =
+	  | substPat (ConPat (coord, longid, NONE, isNAry), subst) =
+	    ConPat (coord, substLongId (longid, subst), NONE, isNAry)
+	  | substPat (ConPat (coord, longid, SOME pat, isNAry), subst) =
 	    ConPat (coord, substLongId (longid, subst),
-		    SOME (substPat (pat, subst)))
+		    SOME (substPat (pat, subst)), isNAry)
 	  | substPat (RefPat (coord, pat), subst) =
 	    RefPat (coord, substPat (pat, subst))
 	  | substPat (TupPat (coord, pats), subst) =
 	    TupPat (coord, List.map (fn pat => substPat (pat, subst)) pats)
-	  | substPat (RowPat (coord, patFields, hasDots), subst) =
+	  | substPat (RowPat (coord, patFields), subst) =
 	    RowPat (coord,
 		    List.map (fn Field (coord, lab, pat) =>
 			      Field (coord, lab, substPat (pat, subst)))
-		    patFields, hasDots)
+		    patFields)
 	  | substPat (VecPat (coord, pats), subst) =
 	    VecPat (coord, List.map (fn pat => substPat (pat, subst)) pats)
 	  | substPat (AsPat (coord, pat1, pat2), subst) =
@@ -34019,12 +34561,12 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	    in
 		(VarPat (coord, id'), (id, id')::subst)
 	    end
-	  | relax (pat as ConPat (_, _, NONE), subst) = (pat, subst)
-	  | relax (ConPat (coord, longid, SOME pat), subst) =
+	  | relax (pat as ConPat (_, _, NONE, _), subst) = (pat, subst)
+	  | relax (ConPat (coord, longid, SOME pat, isNAry), subst) =
 	    let
 		val (pat', subst') = relax (pat, subst)
 	    in
-		(ConPat (coord, longid, SOME pat'), subst')
+		(ConPat (coord, longid, SOME pat', isNAry), subst')
 	    end
 	  | relax (RefPat (coord, pat), subst) =
 	    let
@@ -34044,7 +34586,7 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	    in
 		(TupPat (coord, pats'), subst')
 	    end
-	  | relax (RowPat (coord, patFields, hasDots), subst) =
+	  | relax (RowPat (coord, patFields), subst) =
 	    let
 		val (patFields', subst') =
 		    List.foldr
@@ -34055,7 +34597,7 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 			 (Field (coord, lab, pat')::patFields, subst')
 		     end) (nil, subst) patFields
 	    in
-		(RowPat (coord, patFields', hasDots), subst')
+		(RowPat (coord, patFields'), subst')
 	    end
 	  | relax (VecPat (coord, pats), subst) =
 	    let
@@ -34093,7 +34635,7 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 		(WithPat (coord, pat', substDecs (decs, subst')), subst')
 	    end
     end
-(* src # 117 *)
+(* src # 121 *)
 (*
  * Author:
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
@@ -34116,7 +34658,7 @@ signature LABEL_SORT =
 
 	val sort: 'a t list -> 'a t list * arity
     end
-(* src # 118 *)
+(* src # 122 *)
 (*
  * Author:
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
@@ -34129,7 +34671,7 @@ signature LABEL_SORT =
  *   $Revision$
  *)
 
-functor MakeLabelSort(type 'a t val get: 'a t -> string) :> LABEL_SORT
+functor MakeLabelSort(type 'a t val get: 'a t -> Label.t) :> LABEL_SORT
     where type 'a t = 'a t =
     struct
 	type 'a t = 'a t
@@ -34147,22 +34689,13 @@ functor MakeLabelSort(type 'a t val get: 'a t -> string) :> LABEL_SORT
 		(x1::xr1, x2::xr2)
 	    end
 
-	fun labelLess (x1, x2) =
-	    let
-		val s1 = get x1
-		val s2 = get x2
-	    in
-		case Int.fromString s1 of
-		    SOME i1 =>
-			(case Int.fromString s2 of
-			     SOME i2 => i1 < i2
-			   | NONE => true)
-		  | NONE => String.< (s1, s2)
-	    end
+	fun labelLess (x1, x2) = Label.compare (get x1, get x2)
 
 	fun merge (xs as x::xr, ys as y::yr) =
-	    if labelLess (x, y) then x::merge (xr, ys)
-	    else y::merge (xs, yr)
+	    (case labelLess (x, y) of
+		 LESS => x::merge (xr, ys)
+	       | EQUAL => raise Crash.Crash "MakeLabelSort.merge"
+	       | GREATER => y::merge (xs, yr))
 	  | merge (nil, ys) = ys
 	  | merge (xs, nil) = xs
 
@@ -34176,7 +34709,7 @@ functor MakeLabelSort(type 'a t val get: 'a t -> string) :> LABEL_SORT
 	    end
 
 	fun isTuple (x::xr, i) =
-	    if get x = Int.toString i then isTuple (xr, i + 1)
+	    if get x = Label.fromInt i then isTuple (xr, i + 1)
 	    else NONE
 	  | isTuple (nil, i) = SOME (i - 1)
 
@@ -34189,7 +34722,7 @@ functor MakeLabelSort(type 'a t val get: 'a t -> string) :> LABEL_SORT
 		  | NONE => (xs', Rec)
 	    end
     end
-(* src # 119 *)
+(* src # 123 *)
 (*
  * Author:
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
@@ -34207,20 +34740,20 @@ signature SIMPLIFY_MATCH =
 	structure I: INTERMEDIATE_GRAMMAR = IntermediateGrammar
 	structure O: IMPERATIVE_GRAMMAR = ImperativeGrammar
 
+	type pos = Label.t list
+
 	datatype test =
 	    LitTest of I.lit
 	  | ConTest of I.longid * bool   (* has args *)
 	  | RefTest
 	  | TupTest of int
-	  | RecTest of string list
+	  | RecTest of Label.t list
 	    (* sorted, all labels distinct, no tuple *)
-	  | LabTest of string
+	  | LabTest of Label.t
 	  | VecTest of int
 	  | GuardTest of mapping * I.exp
 	  | DecTest of mapping * I.info * I.dec list
-	withtype mapping = (string list * I.id) list
-
-	type pos = string list
+	withtype mapping = (pos * I.id) list
 
 	datatype testGraph =
 	    Node of pos * test * testGraph ref * testGraph ref * nodeStatus ref
@@ -34243,7 +34776,7 @@ signature SIMPLIFY_MATCH =
 	val buildFunArgs: I.id * (I.info * I.pat * O.body) list * bodyFun ->
 	    (O.id O.args * testGraph * mapping * consequent list) list
     end
-(* src # 120 *)
+(* src # 124 *)
 (*
  * Author:
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
@@ -34266,22 +34799,22 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 
 	(* Tests *)
 
+	type pos = Label.t list
+
 	datatype test =
 	    LitTest of lit
 	  | ConTest of longid * bool   (* has args *)
 	  | RefTest
 	  | TupTest of int
-	  | RecTest of string list
+	  | RecTest of Label.t list
 	    (* sorted, all labels distinct, no tuple *)
-	  | LabTest of string
+	  | LabTest of Label.t
 	  | VecTest of int
 	  | GuardTest of mapping * exp
 	  | DecTest of mapping * O.coord * dec list
-	withtype mapping = (string list * id) list
+	withtype mapping = (pos * id) list
 
 	(* Test Sequences *)
-
-	type pos = string list
 
 	datatype testSeqElem =
 	    Test of pos * test
@@ -34291,50 +34824,59 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 
 	(* Test Sequence Construction *)
 
-	structure StringLabelSort =
-	    MakeLabelSort(type 'a t = string fun get x = x)
+	structure LabelSort =
+	    MakeLabelSort(type 'a t = Label.t fun get x = x)
 
 	fun makeTestSeq (WildPat _, _, rest, mapping) = (rest, mapping)
 	  | makeTestSeq (LitPat (_, lit), pos, rest, mapping) =
 	    (Test (pos, LitTest lit)::rest, mapping)
 	  | makeTestSeq (VarPat (_, id), pos, rest, mapping) =
 	    (rest, (pos, id)::mapping)
-	  | makeTestSeq (ConPat (_, longid, patOpt), pos, rest, mapping) =
+	  | makeTestSeq (ConPat (_, longid, patOpt, _), pos, rest, mapping) =
 	    (case patOpt of
 		 SOME pat =>
-		     makeTestSeq (pat, ""::pos,
+		     makeTestSeq (pat, Label.fromString ""::pos,
 				  Test (pos, ConTest (longid, true))::rest,
 				  mapping)
 	       | NONE => (Test (pos, ConTest (longid, false))::rest, mapping))
 	  | makeTestSeq (RefPat (_, pat), pos, rest, mapping) =
-	    makeTestSeq (pat, ""::pos, Test (pos, RefTest)::rest, mapping)
+	    makeTestSeq (pat, Label.fromString ""::pos,
+			 Test (pos, RefTest)::rest, mapping)
 	  | makeTestSeq (TupPat (_, pats), pos, rest, mapping) =
 	    foldli (fn (i, pat, (rest, mapping)) =>
-		    makeTestSeq (pat, Int.toString i::pos, rest, mapping))
+		    makeTestSeq (pat, Label.fromInt i::pos, rest, mapping))
 	    (Test (pos, TupTest (List.length pats))::rest, mapping)
 	    pats
-	  | makeTestSeq (RowPat (_, patFields, true), pos, rest, mapping) =
-	    List.foldl (fn (Field (_, Lab (_, s), pat), (rest, mapping)) =>
-			makeTestSeq (pat, s::pos, rest, mapping))
-	    (List.foldl (fn (Field (_, Lab (_, s), _), rest) =>
-			 Test (pos, LabTest s)::rest) rest patFields,
-	     mapping) patFields
-	  | makeTestSeq (RowPat (_, patFields, false), pos, rest, mapping) =
+	  | makeTestSeq (RowPat (_, patFields), pos, rest, mapping) =
 	    let
-		val labs =
-		    List.map (fn Field (_, Lab (_, s), _) => s) patFields
-		val test =
-		    case StringLabelSort.sort labs of
-			(_, StringLabelSort.Tup i) => TupTest i
-		      | (labs', StringLabelSort.Rec) => RecTest labs'
+		val hasDots = true   (*--** deduce from info type *)
 	    in
-		List.foldl (fn (Field (_, Lab (_, s), pat), (rest, mapping)) =>
-			    makeTestSeq (pat, s::pos, rest, mapping))
-		(Test (pos, test)::rest, mapping) patFields
+		if hasDots then
+		    List.foldl (fn (Field (_, Lab (_, s), pat),
+				    (rest, mapping)) =>
+				makeTestSeq (pat, s::pos, rest, mapping))
+		    (List.foldl (fn (Field (_, Lab (_, l), _), rest) =>
+				 Test (pos, LabTest l)::rest) rest patFields,
+		     mapping) patFields
+		else
+		    let
+			val labels =
+			    List.map (fn Field (_, Lab (_, label), _) => label)
+			    patFields
+			val test =
+			    case LabelSort.sort labels of
+				(_, LabelSort.Tup i) => TupTest i
+			      | (labels', LabelSort.Rec) => RecTest labels'
+		    in
+			List.foldl (fn (Field (_, Lab (_, s), pat),
+					(rest, mapping)) =>
+				    makeTestSeq (pat, s::pos, rest, mapping))
+			(Test (pos, test)::rest, mapping) patFields
+		    end
 	    end
 	  | makeTestSeq (VecPat (_, pats), pos, rest, mapping) =
 	    foldli (fn (i, pat, (rest, mapping)) =>
-		    makeTestSeq (pat, Int.toString i::pos, rest, mapping))
+		    makeTestSeq (pat, Label.fromInt i::pos, rest, mapping))
 	    (Test (pos, VecTest (List.length pats))::rest, mapping)
 	    pats
 	  | makeTestSeq (AsPat (_, pat1, pat2), pos, rest, mapping) =
@@ -34604,22 +35146,24 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	    datatype args =
 		ONE
 	      | TUP of int
-	      | REC of string list
+	      | REC of Label.t list
 
 	    exception NonArgable
 
 	    fun normalize (_, LitPat (_, _), _) = ONE
-	      | normalize (_, ConPat (_, _, _), _) = ONE
+	      | normalize (_, ConPat (_, _, _, _), _) = ONE
 	      | normalize (_, RefPat (_, _), _) = ONE
 	      | normalize (_, TupPat (_, pats), _) = TUP (List.length pats)
-	      | normalize (_, RowPat (_, patFields, false), _) =
+	      | normalize (_, RowPat (_, patFields), _) =
+		(*--** only if info type is a closed record *)
 		let
-		    val labs =
-			List.map (fn Field (_, Lab (_, s), _) => s) patFields
+		    val labels =
+			List.map (fn Field (_, Lab (_, label), _) => label)
+			patFields
 		in
-		    case StringLabelSort.sort labs of
-			(_, StringLabelSort.Tup i) => TUP i
-		      | (labs', StringLabelSort.Rec) => REC labs'
+		    case LabelSort.sort labels of
+			(_, LabelSort.Tup i) => TUP i
+		      | (labels', LabelSort.Rec) => REC labels'
 		end
 	      | normalize (_, VecPat (_, _), _) = ONE
 	      | normalize (_, _, _) = raise NonArgable
@@ -34636,7 +35180,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	    fun makeArg (match, argsMatchesList) =
 		insertMatch (argsMatchesList, normalize match, match)
 
-	    fun freshId coord = Id (coord, Stamp.new (), InId)
+	    fun freshId coord = Id (coord, Stamp.new (), Name.InId)
 
 	    fun process (ONE, graph, consequents, id) =
 		(O.OneArg id, graph, [(nil, id)], consequents)
@@ -34649,7 +35193,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 		    val ids = List.map #2 intIdList
 		    val mapping =
 			List.foldr (fn ((i, id), mapping) =>
-				    ([Int.toString i], id)::mapping)
+				    ([Label.fromInt i], id)::mapping)
 			nil intIdList
 		in
 		    if i = i' then ()
@@ -34690,7 +35234,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 		end
 	end
     end
-(* src # 121 *)
+(* src # 125 *)
 (*
  * Author:
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
@@ -34713,7 +35257,7 @@ signature SIMPLIFY_REC =
 
 	val derec: I.dec list -> constraint list * binding list * alias list
     end
-(* src # 122 *)
+(* src # 126 *)
 (*
  * Author:
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
@@ -34870,8 +35414,8 @@ structure SimplifyRec :> SIMPLIFY_REC =
 	    let
 		val n = length exps
 	    in
-		if List.all (fn Field (_, Lab (_, s), _) =>
-			     case Int.fromString s of
+		if List.all (fn Field (_, Lab (_, label), _) =>
+			     case Label.toInt label of
 				 SOME i => i >= 1 andalso i <= n
 			       | NONE => false) patFields
 		then
@@ -35004,9 +35548,9 @@ structure SimplifyRec :> SIMPLIFY_REC =
 	fun preprocess (I.WildPat coord) = (nil, WildPat coord)
 	  | preprocess (I.LitPat (coord, lit)) = (nil, LitPat (coord, lit))
 	  | preprocess (I.VarPat (coord, id)) = (nil, VarPat (coord, id))
-	  | preprocess (I.ConPat (coord, longid, NONE)) =
+	  | preprocess (I.ConPat (coord, longid, NONE, _)) =
 	    (nil, ConPat (coord, longid, NONE))
-	  | preprocess (I.ConPat (coord, longid, SOME pat)) =
+	  | preprocess (I.ConPat (coord, longid, SOME pat, _)) =
 	    let
 		val (constraints, pat') = preprocess pat
 	    in
@@ -35030,8 +35574,9 @@ structure SimplifyRec :> SIMPLIFY_REC =
 	    in
 		(constraints, TupPat (coord, pats))
 	    end
-	  | preprocess (I.RowPat (coord, patFields, hasDots)) =
+	  | preprocess (I.RowPat (coord, patFields)) =
 	    let
+		val hasDots = true   (*--** deduce from info type *)
 		val (patFields', arity) = FieldSort.sort patFields
 		val (constraints, patFields'') =
 		    List.foldr (fn (Field (coord, lab, pat), (cr, fieldr)) =>
@@ -35113,7 +35658,7 @@ structure SimplifyRec :> SIMPLIFY_REC =
 	    end
 	  | derec nil = (nil, nil, nil)
     end
-(* src # 123 *)
+(* src # 127 *)
 (*
  * Author:
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
@@ -35133,7 +35678,7 @@ signature MATCH_COMPILATION_PHASE =
 
 	val translate: I.component -> O.component
     end
-(* src # 124 *)
+(* src # 128 *)
 (*
  * Author:
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
@@ -35155,17 +35700,21 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 	open IntermediateAux
 	open SimplifyMatch
 
-	val id_false = Id (Source.nowhere, Prebound.stamp_false, ExId "false")
-	val id_true = Id (Source.nowhere, Prebound.stamp_true, ExId "true")
-	val id_Match = Id (Source.nowhere, Prebound.stamp_Match, ExId "Match")
-	val id_Bind = Id (Source.nowhere, Prebound.stamp_Bind, ExId "Bind")
+	val id_false =
+	    Id (Source.nowhere, Prebound.stamp_false, Name.ExId "false")
+	val id_true =
+	    Id (Source.nowhere, Prebound.stamp_true, Name.ExId "true")
+	val id_Match =
+	    Id (Source.nowhere, Prebound.stamp_Match, Name.ExId "Match")
+	val id_Bind =
+	    Id (Source.nowhere, Prebound.stamp_Bind, Name.ExId "Bind")
 
 	val longid_true = ShortId (Source.nowhere, id_true)
 	val longid_false = ShortId (Source.nowhere, id_false)
 
 	structure FieldLabelSort =
-	    MakeLabelSort(type 'a t = string * id
-			  fun get (s, _) = s)
+	    MakeLabelSort(type 'a t = Label.t * id
+			  fun get (label, _) = label)
 
 	type mapping = (pos * id) list
 
@@ -35189,7 +35738,6 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 	    Decs of dec list * continuation
 	  | Goto of O.body
 	  | Share of O.body option ref * continuation
-	  | Export of O.exp
 
 	fun translateLongid (ShortId (_, id)) = (nil, id)
 	  | translateLongid (LongId (coord, longid, Lab (_, s))) =
@@ -35222,8 +35770,6 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 		r := SOME stms; stms
 	    end
 	  | translateCont (Share (ref (SOME stms), _)) = stms
-	  | translateCont (Export exp) =
-	    [O.ExportStm (info Source.nowhere, exp)]
 	and translateDec (ValDec (coord, VarPat (_, id), exp), cont) =
 	    let
 		fun declare exp' = O.ValDec (info coord, id, exp', false)
@@ -35234,7 +35780,7 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 	    let
 		val matches = [(coord, pat, translateCont cont)]
 	    in
-		simplifyCase (coord, exp, matches, id_Bind)
+		simplifyCase (coord, exp, matches, id_Bind, false)
 	    end
 	  | translateDec (RecDec (coord, decs), cont) =
 	    let
@@ -35469,6 +36015,8 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 		r := SOME (f (O.AdjExp (coord, id1, id2))::translateCont cont);
 		stms1
 	    end
+	  | translateExp (UpExp (_, exp), f, cont) =
+	    translateExp (exp, f, cont)   (*--** *)
 	  | translateExp (AndExp (coord, exp1, exp2), f, cont) =
 	    translateExp (IfExp (coord, exp1,
 				 exp2, VarExp (coord, longid_false)), f, cont)
@@ -35531,7 +36079,7 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 			      (infoExp exp, pat, translateExp (exp, f, cont')))
 		    matches
 	    in
-		simplifyCase (coord, exp, matches', id_Match)
+		simplifyCase (coord, exp, matches', id_Match, false)
 	    end
 	  | translateExp (RaiseExp (coord, exp), _, _) =
 	    let
@@ -35557,7 +36105,7 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 			      (infoExp exp, pat, translateExp (exp, f', cont')))
 		    matches
 		val catchBody =
-		    simplifyCase (coord, catchVarExp, matches', catchId)
+		    simplifyCase (coord, catchVarExp, matches', catchId, true)
 		val contBody =
 		    translateExp  (VarExp (coord', ShortId (coord', id')),
 				   f, cont)
@@ -35605,12 +36153,14 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 		      if isSome bodyOpt then ()
 		      else Error.warn (coord, "unreachable expression"))
 	    consequents
-	and simplifyCase (coord, exp, matches, raiseId) =
+	and simplifyCase (coord, exp, matches, raiseId, isReraise) =
 	    let
 		val r = ref NONE
 		val rest = [O.IndirectStm (info coord, r)]
 		val (stms, id) = unfoldTerm (exp, Goto rest)
-		val errStms = [O.RaiseStm (info coord, raiseId)]
+		val errStms =
+		    if isReraise then [O.ReraiseStm (info coord, raiseId)]
+		    else [O.RaiseStm (info coord, raiseId)]
 		val (graph, consequents) = buildGraph (matches, errStms)
 	    in
 		r := SOME (translateGraph (graph, [(nil, id)]));
@@ -35707,24 +36257,24 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 	    let
 		val (stms, id) = translateLongid longid
 		val id' = freshId Source.nowhere
-		val mapping' = ((""::pos), id')::mapping
+		val mapping' = ((Label.fromString ""::pos), id')::mapping
 	    in
 		(stms, O.ConTest (id, SOME id'), mapping')
 	    end
 	  | translateTest (RefTest, pos, mapping) =
 	    let
 		val id = freshId Source.nowhere
-		val mapping' = ((""::pos), id)::mapping
+		val mapping' = ((Label.fromString ""::pos), id)::mapping
 	    in
 		(nil, O.RefTest id, mapping')
 	    end
 	  | translateTest (TupTest n, pos, mapping) =
 	    let
 		val ids = List.tabulate (n, fn _ => freshId Source.nowhere)
-		val labs = List.tabulate (n, fn i => Int.toString (i + 1))
+		val labs = List.tabulate (n, fn i => Label.fromInt (i + 1))
 		val mapping' =
 		    foldli (fn (i, id, mapping) =>
-			    (Int.toString i::pos, id)::mapping) mapping ids
+			    (Label.fromInt i::pos, id)::mapping) mapping ids
 	    in
 		(nil, O.TupTest ids, mapping')
 	    end
@@ -35749,40 +36299,30 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 	  | translateTest (VecTest n, pos, mapping) =
 	    let
 		val ids = List.tabulate (n, fn _ => freshId Source.nowhere)
-		val labs = List.tabulate (n, fn i => Int.toString (i + 1))
+		val labs = List.tabulate (n, fn i => Label.fromInt (i + 1))
 		val mapping' =
 		    foldli (fn (i, id, mapping) =>
-			    (Int.toString i::pos, id)::mapping) mapping ids
+			    (Label.fromInt i::pos, id)::mapping) mapping ids
 	    in
 		(nil, O.VecTest ids, mapping')
 	    end
 	  | translateTest ((GuardTest (_, _) | DecTest (_, _, _)), _, _) =
 	    raise Crash.Crash "MatchCompilationPhase.translateTest"
 
-	fun getPrintName (Id (_, _, ExId s)) = s
-	  | getPrintName (Id (_, _, InId)) =
-	    raise Crash.Crash "MatchCompilationPhase.getPrintName"
+	fun getPrintName (Id (_, _, name)) = Label.fromName name
 
 	structure IdSort =
 	    MakeLabelSort(type 'a t = id
 			  val get = getPrintName)
 
-	fun translate (imports, exports, decs) =
+	fun translate (imports, (exportExp, sign)) =
 	    let
-		val exportExp =
-		    case IdSort.sort exports of
-			(exports', IdSort.Tup _) =>
-			    O.TupExp (Source.nowhere, exports')
-		      | (exports', IdSort.Rec) =>
-			    O.RecExp (Source.nowhere,
-				      List.map (fn id => (getPrintName id, id))
-				      exports')
+		fun export exp = O.ExportStm (info (infoExp exportExp), exp)
 	    in
-		(imports, exports,
-		 translateCont (Decs (decs, Export exportExp)))
+		(imports, (translateExp (exportExp, export, Goto nil), sign))
 	    end
     end
-(* src # 125 *)
+(* src # 129 *)
 (*
  * Author:
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
@@ -35802,7 +36342,7 @@ signature LIVENESS_ANALYSIS_PHASE =
 	val annotate: I.component -> unit
     end
 
-(* src # 126 *)
+(* src # 130 *)
 (*
  * Author:
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
@@ -35944,6 +36484,14 @@ structure LivenessAnalysisPhase :> LIVENESS_ANALYSIS_PHASE =
 		setInfo (i, set);
 		Orig set
 	    end
+	  | scanBody ([ReraiseStm (i, Id (_, stamp, _))], _) =
+	    let
+		val set = StampSet.new ()
+		val _ = StampSet.insert (set, stamp)
+	    in
+		setInfo (i, set);
+		Orig set
+	    end
 	  | scanBody ([HandleStm (i, body1, id, body2, body3, _)], initial) =
 	    let
 		val lset3 = scanBody (body3, initial)
@@ -36071,6 +36619,7 @@ structure LivenessAnalysisPhase :> LIVENESS_ANALYSIS_PHASE =
 	    List.app (fn (id, exp) => (ins (set, id); initExp exp)) idExpList
 	  | initStm (EvalStm (_, exp), _) = initExp exp
 	  | initStm (RaiseStm (_, _), _) = ()
+	  | initStm (ReraiseStm (_, _), _) = ()
 	  | initStm (HandleStm (_, body1, id, body2, body3, _), set) =
 	    let
 		val set' = StampSet.copy set
@@ -36123,11 +36672,11 @@ structure LivenessAnalysisPhase :> LIVENESS_ANALYSIS_PHASE =
 	       | (_, ref (Kill _)) => ())
 	  | initBody (nil, _) = ()
 
-	fun annotate (_, _, body) =
+	fun annotate (_, (body, _)) =
 	    (scanBody (body, Copy (StampSet.new ()));
 	     initBody (body, StampSet.new ()))
     end
-(* src # 127 *)
+(* src # 131 *)
 (*
  * Authors:
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
@@ -36148,7 +36697,7 @@ signature OZIFY_IMPERATIVE_GRAMMAR =
 
 	val outputComponent: TextIO.outstream * I.component -> unit
     end
-(* src # 128 *)
+(* src # 132 *)
 (*
  * Authors:
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
@@ -36249,17 +36798,17 @@ structure OzifyImperativeGrammar :> OZIFY_IMPERATIVE_GRAMMAR =
 	  | outputLit (q, RealLit x) =
 	    (f (q, "realLit"); outputLargeReal (q, x); r q)
 
-	fun outputLab (q, s) =
-	    case Int.fromString s of
-		NONE => outputAtom (q, s)
+	fun outputLab (q, lab) =
+	    case Label.toInt lab of
+		NONE => outputAtom (q, Label.toString lab)
 	      | SOME n => outputInt (q, n)
 
 	fun outputId (q, Id (coord, stamp, name)) =
 	    (f (q, "id"); outputCoord (q, coord); m q;
 	     outputStamp (q, stamp); m q;
 	     case name of
-		 ExId s => (f (q, "exId"); outputAtom (q, s); r q)
-	       | InId => output (q, "inId");
+		 Name.ExId s => (f (q, "exId"); outputAtom (q, s); r q)
+	       | Name.InId => output (q, "inId");
 	     r q)
 
 	fun outputTest (q, LitTest lit) =
@@ -36318,6 +36867,9 @@ structure OzifyImperativeGrammar :> OZIFY_IMPERATIVE_GRAMMAR =
 	     outputBody (q, body1); m q; outputBody (q, body2); r q)
 	  | outputStm (q, RaiseStm (info, id)) =
 	    (f (q, "raiseStm"); outputInfo (q, info); m q;
+	     outputId (q, id); r q)
+	  | outputStm (q, ReraiseStm (info, id)) =
+	    (f (q, "reraiseStm"); outputInfo (q, info); m q;
 	     outputId (q, id); r q)
 	  | outputStm (q, SharedStm (info, body, shared)) =
 	    (if !shared = 0 then
@@ -36392,14 +36944,15 @@ structure OzifyImperativeGrammar :> OZIFY_IMPERATIVE_GRAMMAR =
 	     outputId (q, id1); m q; outputId (q, id2); r q)
 	and outputBody (q, stms) = outputList outputStm (q, stms)
 
-	fun outputComponent (q, (idStringList, ids, stms)) =
+	fun outputComponent (q, (importList, (stms, _))) =
 	    (output1 (q, #"(");
-	     outputList (outputPair (outputId, outputString))
-	     (q, idStringList); output1 (q, #"#");
-	     outputList outputId (q, ids); output1 (q, #"#");
+	     outputList (fn (q, (id, _, url)) =>
+			 outputPair (outputId, outputString)
+			 (q, (id, Url.toString url))) (q, importList);
+	     output1 (q, #"#");
 	     outputList outputStm (q, stms); output1 (q, #")"))
     end
-(* src # 129 *)
+(* src # 133 *)
 (*
  * Author:
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
@@ -36572,7 +37125,7 @@ signature IL =
 
 	val outputProgram: TextIO.outstream * program -> unit
     end
-(* src # 130 *)
+(* src # 134 *)
 (*
  * Author:
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
@@ -36942,6 +37495,31 @@ structure IL :> IL =
 	    if i < 0 then "-" ^ Int.toString (~i)
 	    else Int.toString i
 
+	local
+	    fun toOct i = String.str (Char.chr (i mod 8 + Char.ord #"0"))
+
+	    fun charToCString #"\\" = "\\\\"
+	      | charToCString #"\"" = "\\\""
+	      | charToCString #"\a" = "\\a"
+	      | charToCString #"\b" = "\\b"
+	      | charToCString #"\t" = "\\t"
+	      | charToCString #"\n" = "\\n"
+	      | charToCString #"\v" = "\\v"
+	      | charToCString #"\f" = "\\f"
+	      | charToCString #"\r" = "\\r"
+	      | charToCString c =
+		let
+		    val i = Char.ord c
+		in
+		    if i < 32 then "\\0" ^ toOct (i div 8) ^ toOct i
+		    else String.str c
+		end
+	in
+	    fun stringToCString s =
+		List.foldr (fn (c, rest) => charToCString c ^ rest) ""
+		(explode s)
+	end
+
 	fun outputInstr (q, Add) = output (q, "add")
 	  | outputInstr (q, AddOvf) = output (q, "add.ovf")
 	  | outputInstr (q, And) = output (q, "and")
@@ -37033,7 +37611,7 @@ structure IL :> IL =
 	     outputDottedname (q, dottedname); output (q, "::");
 	     outputId (q, id))
 	  | outputInstr (q, Ldstr s) =
-	    (output (q, "ldstr \""); output (q, String.toCString s);
+	    (output (q, "ldstr \""); output (q, stringToCString s);
 	     output1 (q, #"\""))
 	  | outputInstr (q, Leave label) =   (*--** short form? *)
 	    (output (q, "leave "); outputLabel (q, label))
@@ -37187,7 +37765,7 @@ structure IL :> IL =
 	     outputProgram (q, declr))
 	  | outputProgram (_, nil) = ()
     end
-(* src # 131 *)
+(* src # 135 *)
 (*
  * Author:
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
@@ -37266,7 +37844,7 @@ structure StockWerk =
 	val Procedure3Ty            = IL.ClassTy Procedure3
 	val Procedure4Ty            = IL.ClassTy Procedure4
     end
-(* src # 132 *)
+(* src # 136 *)
 (*
  * Author:
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
@@ -37283,7 +37861,7 @@ signature BUILTINS =
     sig
 	val lookup: string -> IL.id * IL.ty
     end
-(* src # 133 *)
+(* src # 137 *)
 (*
  * Author:
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
@@ -37337,7 +37915,7 @@ structure Builtins :> BUILTINS =
 		    (String.map (fn c => if c = #"." then #"$" else c) name,
 		     StockWerk.StockWertTy)
     end
-(* src # 134 *)
+(* src # 138 *)
 (*
  * Author:
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
@@ -37389,7 +37967,7 @@ signature CODE_STORE =
 	val closeMethod: unit -> unit
 	val close: unit -> IL.program
     end
-(* src # 135 *)
+(* src # 139 *)
 (*
  * Author:
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
@@ -37684,7 +38262,7 @@ structure CodeStore :> CODE_STORE =
 		 end) [mainMethod] (!classes)
 	    end
     end
-(* src # 136 *)
+(* src # 140 *)
 (*
  * Author:
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
@@ -37704,7 +38282,7 @@ signature CODE_GEN_PHASE =
 
 	val genComponent: I.component -> O.program
     end
-(* src # 137 *)
+(* src # 141 *)
 (*
  * Author:
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
@@ -37812,7 +38390,8 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	fun emitRecordArity labs =
 	    (emit (LdcI4 (List.length labs)); emit (Newarr System.StringTy);
 	     appi (fn (i, lab) =>
-		   (emit Dup; emit (LdcI4 i); emit (Ldstr lab);
+		   (emit Dup; emit (LdcI4 i);
+		    emit (Ldstr (Label.toString lab));
 		    emit (StelemRef))) labs;
 	     emit (Call (false, StockWerk.RecordArity, "MakeRecordArity",
 			 [ArrayTy System.StringTy], StockWerk.RecordArityTy)))
@@ -37938,7 +38517,7 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 		emit Dup; emit (Isinst StockWerk.Record);
 		emit (B (FALSE, elseLabel));
 		emit (Castclass StockWerk.Record); emit Dup;
-		emit (Ldstr lab);
+		emit (Ldstr (Label.toString lab));
 		emit (Call (true, StockWerk.Record, "CondSelect",
 			    [System.StringTy], StockWerk.StockWertTy));
 		emit Dup; emit (B (TRUE, thenLabel));
@@ -38022,6 +38601,7 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	    (emitId id; emit (LdcI4 i);
 	     emit (Newobj (StockWerk.ExceptionWrapper,
 			   [StockWerk.StockWertTy, Int32Ty])); emit Throw)
+	  | genStm (ReraiseStm (_, _)) = emit Rethrow
 	  | genStm (SharedStm (_, body, shared as ref 0)) =
 	    let
 		val label = newLabel ()
@@ -38177,8 +38757,8 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	     labIdList;
 	     emit (Newobj (StockWerk.Record, [StockWerk.RecordArityTy,
 					      ArrayTy StockWerk.StockWertTy])))
-	  | genExp (SelExp (_, s), BOTH) =
-	    (emit (Ldstr s);
+	  | genExp (SelExp (_, lab), BOTH) =
+	    (emit (Ldstr (Label.toString lab));
 	     emit (Newobj (StockWerk.Selector, [System.StringTy])))
 	  | genExp (VecExp (_, ids), PREPARE) =
 	    (emit (LdcI4 (List.length ids));
@@ -38255,8 +38835,8 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	    (emitId id; genExp (RecExp (coord, labIdList), BOTH);
 	     emit (Callvirt (StockWerk.StockWert, "Apply",
 			     [StockWerk.StockWertTy], StockWerk.StockWertTy)))
-	  | genExp (SelAppExp (_, s, id), BOTH) =
-	    (emitId id; emit (Ldstr s);
+	  | genExp (SelAppExp (_, lab, id), BOTH) =
+	    (emitId id; emit (Ldstr (Label.toString lab));
 	     emit (Callvirt (StockWerk.StockWert, "Select", [System.StringTy],
 			     StockWerk.StockWertTy)))
 	  | genExp (ConAppExp (_, id, _), PREPARE) =
@@ -38328,18 +38908,18 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	     genStm stm; genBody stms)
 	  | genBody nil = ()
 
-	fun genComponent (component as (imports, _, body)) =
+	fun genComponent (component as (imports, (body, _))) =
 	    (LivenessAnalysisPhase.annotate component;
 	     init ["Test"];
-	     List.app (fn (id, string) =>
+	     List.app (fn (id, _, url) =>
 		       (emit (Ldarg 0);
-			emit (Ldstr string);
+			emit (Ldstr (Url.toString url));
 			emit (Call (true, StockWerk.Komponist, "Import",
 				    [System.StringTy], StockWerk.StockWertTy));
 			declareLocal id)) imports;
 	     genBody body; close())
     end
-(* src # 138 *)
+(* src # 142 *)
 signature MAIN =
   sig
 
@@ -38393,7 +38973,7 @@ signature MAIN =
     val comifyFileToFile' :	string * string -> unit
 
   end
-(* src # 139 *)
+(* src # 143 *)
 structure Main :> MAIN =
   struct
 

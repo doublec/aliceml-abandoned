@@ -19,6 +19,7 @@ Group
 is
 
 	../misc/sources.cm
+	../error/sources.cm
 	name.cm
 
 	PATH.sig
