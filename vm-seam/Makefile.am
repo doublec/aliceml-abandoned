@@ -17,6 +17,7 @@ alice_dll_LIBADD = \
 bin_SCRIPTS = \
 	bin/alicerun \
 	bin/alicetool \
+	bin/aliceremote \
 	bin/alice-config
 
 include_HEADERS = \
@@ -25,4 +26,5 @@ include_HEADERS = \
 EXTRA_DIST = \
 	bin/alicerun.in \
 	bin/alicetool.in \
+	bin/aliceremote \
 	bin/alice-config.in

@@ -1,10 +1,10 @@
 Package: alice
 Version: 1.1
-Revision: 1
-Source: http://www.ps.uni-sb.de/alice/download/%n-%v.tar.gz
+Revision: 2
+Source: http://www.ps.uni-sb.de/alice/download/sources/%n-%v.tar.gz
 Maintainer: Guido Tack <tack@ps.uni-sb.de>
 HomePage: http://www.ps.uni-sb.de/alice
 License: BSD
 Description: Alice Language Layer for Seam
 Source-MD5: INSERTMD5HERE
-Depends: seam-shlibs, seam
+Depends: seam-shlibs, seam, gmp-shlibs
