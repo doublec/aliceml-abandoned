@@ -23,7 +23,7 @@
 <P class=margin>
   <?php pslab_uni(); ?>
   <?php pslab_menu(); ?>
-  <BR><BR><BR>
+  <BR><BR>
   <A href="http://www.coli.uni-sb.de/sfb378/"
     ><IMG src="/images/sfb378.gif" border=0 vspace=8></A>
 </P>
