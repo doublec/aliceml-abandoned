@@ -768,7 +768,7 @@ struct
     (*UNFINISHED: quick hack *)
 
     and trPrimMod(i,"Pack",j) =
-	(* fn {[x]=x1,[t]=x2} -> cast (x1,x2) *)
+	(* fn {[x]=x1,[t]=x2} -> {[x']=cast (x1,x2)} *)
 	(let
 	    val  i'     = trModInfo i
 	    val  r      = #region i'
@@ -776,14 +776,17 @@ struct
 	    val  t      = #typ i'
 	    val (t1,t2) = Type.asArrow' t
 	    val (l1,t11,l2,t12) = findValTyp(Type.asProd t1)
+	    val (l3,t21)        = Type.headRow(Type.asProd' t2)
 	    val  x1'    = O.Id(typInfo(r,t11), Stamp.new(), Name.InId)
 	    val  x2'    = O.Id(typInfo(r,t12), Stamp.new(), Name.InId)
 	    val  p'     = O.ProdPat(typInfo(r,t1),
 				#[O.Field(i0', O.Lab(i0',l1), idToPat x1'),
 				  O.Field(i0', O.Lab(i0',l2), idToPat x2')])
-	    val  e'     = O.CastExp(typInfo(r,t2), 
+	    val  e1'    = O.CastExp(typInfo(r,t21), 
 				O.TupExp(typInfo(r,Type.inTuple #[t11,t12]),
 					 #[idToExp x1', idToExp x2']))
+	    val  e'     = O.ProdExp(typInfo(r,t2),
+				    #[O.Field(i0', O.Lab(i0',l3), e1')])
 	in
 	    O.FunExp(i', #[O.Match(nonInfo r, p', e')])
 	end
@@ -979,7 +982,11 @@ struct
 					    Switches.Language.FULL_RTT then
 			(x1, isntIdentity)
 		    else
-			(x2, isntIdentity orelse Option.isNone d)
+			(x2, true)
+			(*UNFINISHED: rethink all this strengthening biz
+			(x2, isntIdentity orelse Option.isNone d
+					  orelse Type.equals(Option.valOf d,
+						Type.inCon(k, Type.CLOSED, p))*)
 		val i   = typInfo(r, typ_typ)
 		val i'  = nonInfo r
 		val l'  = O.Lab(i', trTypLabel a)
@@ -1038,7 +1045,7 @@ struct
 			(x1, isntIdentity)
 		    else
 			(x2, isntIdentity orelse Option.isNone d)
-		val t1  = infToInstTyp(Inf.lookupMod(s1,a))
+		val t1  = infToInstTyp(Inf.lookupInf(s1,a))
 		val t2  = case d of SOME j => infToInstTyp j
 				  | NONE =>
 					(* new abstract type *)

@@ -1,9 +1,35 @@
-type package
-exception Unpack = General.Bind
-
-__primitive functor Pack :   fct(type t val x : t) -> (val x : package) = "Pack"
-__primitive functor Unpack : fct(val x : package type t) -> (val x : t) = "Unpack"
-
 (*
 __primitive functor ByNeed : fct(signature S structure X : S) -> S = "ByNeed"
 *)
+
+import "x-alice:/lib/tools/Inspector"
+
+
+type package
+exception Unpack = General(*__pervasive.Type*).Bind
+__primitive functor Pack :   fct(type t val x : t) -> (val x : package) = "Pack"
+__primitive functor Unpack : fct(val x : package type t) -> (val x : t) = "Unpack"
+
+
+structure X1 = Pack(type t = {bla:string, umpf:int}
+                    val  x = {bla="hug me, please!\n", umpf=42})
+structure X2 = Pack(type t = {bla:string, umpf:LargeInt.int}
+                    val  x = {bla="pikachu!\n", umpf=43})
+structure X3 = Pack(type t = {bla:string, umpf:int, oertel:real}
+                    val  x = {bla="f***ing stiff!\n", umpf=0, oertel=Math.pi})
+structure X4 = Pack(struct type t = {bla:string, umpf:int}
+                           val  x = {bla="squirrel!\n", umpf=1}
+		    end : sig type t val x : t end)
+structure X5 = Pack(struct type t = {bla:string, umpf:int}
+                           val  x = {bla="hut ab, das geht ja gut ab!\n", umpf=1}
+		    end :> sig type t val x : t end)
+
+fun unwrap p =
+    let
+	structure Y = Unpack(type t = {umpf:Int.int, bla:string} val x = p)
+    in
+	print(#bla Y.x)
+    end
+    handle Unpack => print "oooh...\n"
+
+val _ = List.app unwrap [X1.x, X2.x, X3.x, X4.x, X5.x]
