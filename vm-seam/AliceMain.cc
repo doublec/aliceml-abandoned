@@ -70,7 +70,8 @@ static void InitAlice(int argc, const char *argv[]) {
   if (!initialized) {
     char *home = std::getenv("ALICE_HOME");
     if (home == NULL) {
-      Error("could not determine installation directory");
+      fprintf(stderr, "alice.dll: ALICE_HOME not set\n");
+      exit(EXIT_FAILURE);
     }
     AliceLanguageLayer::Init(home, argc, argv);
     BootLinker::Init(nativeComponents);
