@@ -265,12 +265,12 @@ struct
     fun update(no,va,f,g,canvas) = 
 	let
 	    val (topnode,old_ydim,y_pos) = 
-		(GtkSupport.busyButtonSetActive(true)
+		(GtkSupport.stopButtonSetActive(true)
 		 ;GtkSupport.layoutFreeze(canvas)
 	         ;updateTree (no,va,f,g,canvas))
 	in
 	    (layoutDrawTree(topnode,canvas,old_ydim,y_pos) 
-	     ;GtkSupport.busyButtonSetActive(false)
+	     ;GtkSupport.stopButtonSetActive(false)
 	     ;GtkSupport.layoutThaw(canvas))
 	end
 			       
@@ -293,7 +293,7 @@ struct
 		    (layoutDrawTree(topnode,canvas,old_ydim,y_pos)
 		     ;updateCycle(restlist))
 		end
-	    val _ = GtkSupport.busyButtonSetActive(true)
+	    val _ = GtkSupport.stopButtonSetActive(true)
 	    val new_li = List.sort (fn (n,m) => Int.compare(getAncIndex n, 
 							    getAncIndex m)) 
 		li
@@ -301,17 +301,25 @@ struct
 	    (GtkSupport.layoutFreeze(canvas)
 	     ; updateCycle new_li
 	     ;(!resize)() 
-	     ; GtkSupport.busyButtonSetActive(false)
+	     ; GtkSupport.stopButtonSetActive(false)
 	     ; GtkSupport.layoutThaw(canvas)
 	     ; Dictionaries.Transient.delete(Dictionaries.transdict,i) )
 	end
 
+    (* UnsafeValue.awaitRequest is broken *)
+    local
+	val delay = Time.fromMilliseconds (LargeInt.fromInt 10)
+    in
+	fun futurePoll future =
+	    if Future.isLazy future then
+		(Future.alarm delay; futurePoll future)
+	    else Future.await future
+    end
+
     fun watcher (future,va,i,f,g,canvas) = 
 	Thread.thread 
 	(fn () 
-	 =>  ( if Future.isLazy  future
-		   then UnsafeValue.awaitRequest(future)
-	       else Future.await(future)
+	 =>  ( futurePoll future
 	     ; let val new_l = #3(valOf(Dictionaries.Transient.lookup
 					(Dictionaries.transdict,i)))
 	       in Server.serve(fn () => tell(va,i,new_l,f,g,canvas))
