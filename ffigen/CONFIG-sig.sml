@@ -24,7 +24,8 @@ signature CONFIG =
 
 	val readCFGFile : string -> unit
 	val applyFilter : string -> filter_cmd
-	val isSpecialType : string -> type_descr option
+	val getDefinedTypes : unit -> string list
+   	val isSpecialType : string -> type_descr option
 	val getUserFuns : unit -> user_fun list
 	val handleAsInt : string -> bool
 	val getTypeDep : unit -> (string * bool * string) list
