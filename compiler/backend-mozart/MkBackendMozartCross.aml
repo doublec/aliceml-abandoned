@@ -58,7 +58,7 @@ functor MkBackendMozart(structure ComponentManager: COMPONENT_MANAGER
 				       Target.FOREIGN
 					   {save = save (context, program,
 							 dumpTarget),
-					    inf = #4 component}
+					    inf = #sign component}
 				   end
 			   end
 		       structure Switches = Switches

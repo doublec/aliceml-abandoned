@@ -64,7 +64,7 @@ signature SCOPED_IMP_MAP =
 	val insert: 'a map * key * 'a -> unit
 	val insertDeep: 'a map * key * 'a -> unit   (* Lookup *)
 	val lookup: 'a map * key -> 'a option
-	val lookupExistent: 'a map * key -> 'a            (* Lookup *)
+	val lookupExistent: 'a map * key -> 'a      (* Lookup *)
 	val appiScope: (key * 'a -> unit) -> 'a map -> unit
 	val foldi: (key * 'a * 'b -> 'b) -> 'b -> 'a map -> 'b
     end
@@ -1238,27 +1238,31 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 		TextIO.closeOut q
 	    end
 
-	fun translate env (_, component as (imports, body, exportDesc, sign)) =
+	fun translate env (_, component as {imports, body, exports, sign}) =
 	    let
 		val env' = IdMap.clone env
 		val _ =
-		    Vector.app (fn (id, _, _) =>
+		    (*--** handle compile-time imports *)
+		    Vector.app (fn (id, _, _, _) =>
 				declareUnknown (env', IdDef id, true)) imports
 		val _ = IdMap.insertScope env'
 		val lazySels = IdMap.new ()
 		val body =
 		    vpBodyShared (body, Stamp.new (),
 				  {env = env', isToplevel = true,
-				   export = SOME (env, exportDesc),
+				   export = SOME (env, exports),
 				   lazySels = lazySels})
+		val body =
+		    IdMap.foldi (fn (id, _, rest) =>
+				    patchIdDef (IdDef id, lazySels) @ rest)
+				nil env @
+		    patchIdDefs (Vector.map
+				     (fn (id, _, _, _) => IdDef id) imports,
+				 lazySels) @
+		    patchBody (body, lazySels, StampMap.new ())
 	    in
-		(imports,
-		 IdMap.foldi (fn (id, _, rest) =>
-			      patchIdDef (IdDef id, lazySels) @ rest) nil env @
-		 patchIdDefs (Vector.map (fn (id, _, _) => IdDef id) imports,
-			      lazySels) @
-		 patchBody (body, lazySels, StampMap.new ()),
-		 exportDesc, sign)
+		{imports = imports, body = body,
+		 exports = exports, sign = sign}
 	    end
 	    (*--**DEBUG*)
 	    handle exn as Error.Error (_, _) => raise exn

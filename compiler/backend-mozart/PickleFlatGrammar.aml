@@ -273,7 +273,17 @@ structure PickleFlatGrammar :> CODE
 	    (outputTuple (q, "FailExp", 1); outputExpInfo (q, info))
 	and outputBody (q, stms) = outputList outputStm (q, stms)
 
-	fun parseUrl NONE = NONE   (*--** use OS.Path.fromUrl *)
+	fun outputComponent (q, {imports, body, exports, sign}) =
+	    (outputTuple (q, "#", 4);
+	     outputUnit' (q, sign);
+	     outputVector (outputPair (outputLabel, outputId))
+			  (q, exports);
+	     outputBody (q, body);
+	     outputVector (outputQuadruple
+			       (outputId, outputUnit', outputUrl, outputUnit'))
+			  (q, imports))
+
+	fun parseUrl NONE = NONE   (*--** use Url.getLocalPath instead *)
 	  | parseUrl (SOME url) =
 	    case (Url.getScheme url, Url.getAuthority url) of
 		(NONE, NONE) =>
@@ -298,17 +308,8 @@ structure PickleFlatGrammar :> CODE
 		val outstream = BinIO.openOut filename'
 	    in
 		StampMap.deleteAll visited;
-		outputPair (outputString,
-			    outputQuadruple (outputVector
-					     (outputTriple (outputId,
-							    outputUnit',
-							    outputUrl)),
-					     outputBody,
-					     outputVector
-					     (outputPair (outputLabel,
-							  outputId)),
-					     outputUnit'))
-		(q, (sourcename, component));
+		outputPair (outputString, outputComponent)
+			   (q, (sourcename, component));
 		BinIO.output (outstream, closeOut q);
 		BinIO.closeOut outstream;
 		OS.FileSys.fullPath filename'

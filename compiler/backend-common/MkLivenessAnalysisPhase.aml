@@ -539,7 +539,7 @@ functor MkLivenessAnalysisPhase(Switches: SWITCHES) :>
 	    end
 	  | laExp (exp as FailExp _, _, _) = (#[], exp)
 
-	fun translate () (_, (imports, body, exports, sign)) =
+	fun translate () (_, {imports, body, exports, sign}) =
 	    let
 		val shared = StampMap.new ()
 		val dontKill = IdSet.new ()
@@ -547,11 +547,14 @@ functor MkLivenessAnalysisPhase(Switches: SWITCHES) :>
 		val _ =
 		    Vector.app (fn (_, id) => IdSet.insert (use, id)) exports
 		val imports =
-		    Vector.foldr (fn ((id, sign, url), rest) =>
+		    Vector.foldr (fn ((id, sign, url, compileTime), rest) =>
 				     case laIdDef (IdDef id, use) of
-					 IdDef id => (id, sign, url)::rest
+					 IdDef id =>
+					 (id, sign, url, compileTime)::rest
 				       | Wildcard => rest) nil imports
+		val imports = Vector.fromList imports
 	    in
-		(Vector.fromList imports, body, exports, sign)
+		{imports = imports, body = body,
+		 exports = exports, sign = sign}
 	    end
     end

@@ -678,7 +678,7 @@ define
       end
    end
 
-   fun {Translate Filename Import#Body#_#Sign StampValueList}
+   fun {Translate Filename Imports#Body#_#Sign StampValueList}
       NarratorObject Reporter CS ImportReg ExportReg
       State RegToValueMapping VInstr VInter GRegs Code NLiveRegs
    in
@@ -698,8 +698,8 @@ define
       {CS startDefinition()}
       {CS newReg(?ImportReg)}
       {CS newReg(?ExportReg)}
-      {Record.foldLInd Import
-       proc {$ I VHd Id#_#_ VTl}
+      {Record.foldLInd Imports
+       proc {$ I VHd Id#_#_#_ VTl}
 	  VHd = vInlineDot(_ ImportReg I {MakeReg 'IdDef'(Id) State}
 			   false unit VTl)
        end VInstr VInter}
@@ -726,8 +726,8 @@ define
 	 {P}
 	 {Functor.new
 	  {List.toRecord 'import'
-	   {Record.foldRInd Import
-	    fun {$ I _#Sign#URL In}
+	   {Record.foldRInd Imports
+	    fun {$ I _#Sign#URL#_ In}
 	       I#info('from': URL 'type': sig(Sign))|In
 	    end nil}}
 	  sig(Sign) Res}#VS

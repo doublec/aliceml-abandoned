@@ -647,21 +647,21 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 		else O.TagTest (idRef, nullaryTests, naryTests, elseInstr)
 	    end
 
-	fun translate context (desc, (imports, body, exportDesc, sign)) =
+	fun translate context (desc, {imports, body, exports, sign}) =
 	    let
 		val filename =
 		    case Source.url desc of
 			SOME url => Url.toString url
 		      | NONE => ""
 		val imports' =
-		    Vector.map (fn (_, sign, url) =>
+		    Vector.map (fn (_, sign, url, _) =>
 				   V.tuple #[V.string (Url.toStringRaw url),
 					     V.sign (SOME sign)]) imports
 		val env = startTop (filename, context)
 		val formalId = fresh env
 		val idDefs =
-		    Vector.map (fn (id, _, _) => O.IdDef (declare (env, id)))
-			       imports
+		    Vector.map (fn (id, _, _, _) =>
+				   O.IdDef (declare (env, id))) imports
 		val instr = translateBody (body, env)
 		val localNames = endTop env
 		val elseInstr =
@@ -675,9 +675,9 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 		    O.Function ((filename, 0, 0), #[], localNames,
 				args, bodyInstr, liveness)
 		val concreteCode = V.concreteCode abstractCode
-		val exportDesc =
+		val exports =
 		    Vector.map (fn (label, Id (_, stamp, _)) => (stamp, label))
-			       exportDesc
+			       exports
 	    in
 		(* This is an instance of the component type
 		 * defined in lib/system/Component.aml:
@@ -686,6 +686,6 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 				#[V.closure (concreteCode, #[]), (* body     *)
 				  V.vector imports',             (* imports  *)
 				  V.sign (SOME sign)]),          (* sign     *)
-		 exportDesc)
+		 exports)
 	    end
     end

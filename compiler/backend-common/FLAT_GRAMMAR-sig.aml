@@ -3,7 +3,7 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 1999-2001
+ *   Leif Kornstaedt, 1999-2002
  *
  * Last change:
  *   $Date$ by $Author$
@@ -117,7 +117,10 @@ signature FLAT_GRAMMAR =
 
 	type sign = IntermediateGrammar.sign
 	type component =
-	     (id * sign * Url.t) vector * body * (label * id) vector * sign
+	     {imports: (id * sign * Url.t * bool) vector,
+	      body: body,
+	      exports: (label * id) vector,
+	      sign: sign}
 	type t = component
 
 	val freshId: id_info -> id

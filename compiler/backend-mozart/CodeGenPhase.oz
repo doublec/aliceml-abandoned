@@ -198,12 +198,13 @@ define
        end Hd Tl}
    end
 
-   fun {TrComponent Import#Body#ExportDesc#Sign}
-      {Record.map Import
-       fun {$ Id#Sign#U}
-	  {TrId Id}#Sign#{VirtualString.toAtom {Url.toString U}}
+   fun {TrComponent '#'(imports: Imports body: Body
+			exports: Exports sign: Sign)}
+      {Record.map Imports
+       fun {$ Id#Sign#U#B}
+	  {TrId Id}#Sign#{VirtualString.toAtom {Url.toString U}}#B
        end}#{TrBody Body $ nil {NewDictionary}}#
-      {Record.map ExportDesc
+      {Record.map Exports
        fun {$ Label#Id} {TrLabel Label}#{TrId Id} end}#Sign
    end
 
@@ -211,10 +212,10 @@ define
       InFilename = case Desc of 'SOME'(U) then {Url.toString U}
 		   [] 'NONE' then ''
 		   end
-      case {TrComponent Component} of ComponentTr=_#_#ExportDesc#_ then
+      case {TrComponent Component} of ComponentTr=_#_#Exports#_ then
 	 case {CodeGen.translate InFilename ComponentTr
 	       {Dictionary.entries Env}}
-	 of F#VS then F#VS#ExportDesc#Env
+	 of F#VS then F#VS#Exports#Env
 	 end
       end
    end
@@ -227,9 +228,9 @@ define
       {UnsafeComponent.functorToComponent F}
    end
 
-   fun {Eval _#_#ExportDesc#Env M}
+   fun {Eval _#_#Exports#Env M}
       {Wait M}
-      {Record.forAll ExportDesc
+      {Record.forAll Exports
        proc {$ Label#'Id'(_ Stamp _)}
 	  {Dictionary.put Env Stamp M.Label}
        end}
