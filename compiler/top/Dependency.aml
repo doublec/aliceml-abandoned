@@ -107,14 +107,8 @@ struct
 	  | (f,  s') => parseTokens(s', f::fs)
 
     fun resolve(path, rel) =
-	if OS.Path.isAbsolute path orelse OS.Path.isAbsolute rel then path else
-	let
-	    val dir = OS.Path.dir rel
-	in
-	    if dir = ""
-	    then path
-	    else OS.Path.mkRelative{path = "/" ^ path, relativeTo = "/" ^ dir}
-	end
+	OS.Path.mkRelative{path = path, relativeTo = OS.Path.dir rel}
+	handle OS.Path.Path => path
 
     fun parseLine(s, d) =
 	let
