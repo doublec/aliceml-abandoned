@@ -92,6 +92,7 @@ Class *Class::New(ClassInfo *classInfo) {
   return static_cast<Class *>(b);
 }
 
+//--** these should be defined in Data.hh
 ClassInfo *Class::GetClassInfo() {
   return ClassInfo::FromWordDirect(GetArg(CLASS_INFO_POS));
 }
