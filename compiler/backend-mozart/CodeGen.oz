@@ -462,6 +462,8 @@ define
 	 Rec = {List.toRecord '#' Args}
 	 VInter = vEquateRecord(_ '#' {Arity Rec} Reg {Record.toList Rec} VTl)
 	 VHd
+      [] 'PolyProdExp'(Info LabelIdRefVec) then
+	 {TranslateExp 'ProdExp'(Info LabelIdRefVec) Reg VTl State}
       [] 'VecExp'(_ '#[]') then
 	 vEquateConstant(_ '#[]' Reg VTl)
       [] 'VecExp'(_ IdRefs) then VHd VInter Args in
@@ -629,12 +631,12 @@ define
 	 VInter3 = vCall(_ Reg0 [ArgReg Reg]
 			 {TranslateRegion Region State} VTl)
 	 VHd
-      [] 'SelAppExp'(Region _ Label _ IdRef) then Reg0 VHd VInter in
+      [] 'SelExp'(Region _ Label _ IdRef) then Reg0 VHd VInter in
 	 Reg0 = {GetReg IdRef VHd VInter State}
 	 VInter = vInlineDot(_ Reg0 Label Reg false
 			     {TranslateRegion Region State} VTl)
 	 VHd
-      [] 'LazySelAppExp'(Region _ Label _ IdRef)
+      [] 'LazyPolySelExp'(Region Label IdRef)
       then LabelReg Reg0 VHd VInter1 VInter2 in
 	 {State.cs newReg(?LabelReg)}
 	 Reg0 = {GetReg IdRef VHd VInter1 State}
