@@ -1,12 +1,26 @@
-functor MakeIntermediateGrammar(type info type sign) :>
-  INTERMEDIATE_GRAMMAR where type info = info
- 		       where type sign = sign =
+functor MakeIntermediateGrammar(type lab_info
+				type id_info
+				type longid_info
+				type exp_info
+				type pat_info
+				type 'a field_info
+				type match_info
+				type dec_info
+				type sign) : INTERMEDIATE_GRAMMAR =
   struct
 
     (* Generic *)
 
-    type info = info
-    type sign = sign
+    type lab_info	= lab_info
+    type id_info	= id_info
+    type longid_info	= longid_info
+    type exp_info	= exp_info
+    type pat_info	= pat_info
+    type 'a field_info	= 'a field_info
+    type match_info	= match_info
+    type dec_info	= dec_info
+
+    type sign		= sign
 
     (* Literals *)
 
@@ -21,72 +35,72 @@ UNFINISHED: obsolete after bootstrapping:
 
     (* Identifiers *)
 
-    datatype lab    = Lab     of info * Label.t
-    datatype id     = Id      of info * Stamp.t * Name.t
-    datatype longid = ShortId of info * id
-		    | LongId  of info * longid * lab
+    datatype lab    = Lab     of lab_info * Label.t
+    datatype id     = Id      of id_info * Stamp.t * Name.t
+    datatype longid = ShortId of longid_info * id
+		    | LongId  of longid_info * longid * lab
 
     (* Expressions *)
 
     datatype exp =
-	  LitExp    of info * lit		(* literal *)
-	| PrimExp   of info * string		(* primitive value *)
-	| NewExp    of info * string option * bool (* new constructor *)
+	  LitExp    of exp_info * lit			(* literal *)
+	| PrimExp   of exp_info * string		(* primitive value *)
+	| NewExp    of exp_info * string option * bool	(* new constructor *)
 				(* bool : is n-ary *)
-	| VarExp    of info * longid		(* variable *)
-	| ConExp    of info * longid * bool	(* constructor *)
+	| VarExp    of exp_info * longid		(* variable *)
+	| ConExp    of exp_info * longid * bool		(* constructor *)
 				(* bool : is n-ary *)
-	| RefExp    of info			(* reference constructor *)
-	| TupExp    of info * exp list		(* tuple *)
-	| RowExp    of info * exp field list	(* record / module *)
+	| RefExp    of exp_info				(* reference *)
+	| TupExp    of exp_info * exp list		(* tuple *)
+	| RowExp    of exp_info * exp field list	(* record / module *)
 			(* all labels distinct *)
-	| SelExp    of info * lab		(* field selector *)
-	| VecExp    of info * exp list		(* vector *)
-	| FunExp    of info * match list	(* function / functor *)
-	| AppExp    of info * exp * exp		(* application *)
-	| AdjExp    of info * exp * exp		(* record adjunction *)
-	| UpExp     of info * exp		(* up cast *)
-	| AndExp    of info * exp * exp		(* conjunction *)
-	| OrExp     of info * exp * exp		(* disjunction *)
-	| IfExp     of info * exp * exp * exp	(* conditional *)
-	| WhileExp  of info * exp * exp		(* conditional loop *)
-	| SeqExp    of info * exp list		(* sequential *)
-	| CaseExp   of info * exp * match list	(* case switch *)
-	| RaiseExp  of info * exp		(* exception raise *)
-	| HandleExp of info * exp * match list	(* exception handler *)
-	| LetExp    of info * dec list * exp	(* local binding *)
+	| SelExp    of exp_info * lab			(* field selector *)
+	| VecExp    of exp_info * exp list		(* vector *)
+	| FunExp    of exp_info * match list		(* function / functor *)
+	| AppExp    of exp_info * exp * exp		(* application *)
+	| AdjExp    of exp_info * exp * exp		(* record adjunction *)
+	| UpExp     of exp_info * exp			(* up cast *)
+	| AndExp    of exp_info * exp * exp		(* conjunction *)
+	| OrExp     of exp_info * exp * exp		(* disjunction *)
+	| IfExp     of exp_info * exp * exp * exp	(* conditional *)
+	| WhileExp  of exp_info * exp * exp		(* conditional loop *)
+	| SeqExp    of exp_info * exp list		(* sequential *)
+	| CaseExp   of exp_info * exp * match list	(* case switch *)
+	| RaiseExp  of exp_info * exp			(* exception raise *)
+	| HandleExp of exp_info * exp * match list	(* exception handler *)
+	| LetExp    of exp_info * dec list * exp	(* local binding *)
 
-    and 'a field = Field of info * lab * 'a
+    and 'a field = Field of 'a field_info * lab * 'a
 
-    and match    = Match of info * pat * exp
+    and match    = Match of match_info * pat * exp
 
     (* Patterns (always linear) *)
 
     and pat =
-	  WildPat   of info			(* wildcard *)
-	| LitPat    of info * lit		(* literal *)
-	| VarPat    of info * id		(* variable *)
-	| ConPat    of info * longid * bool	(* constructed *)
+	  WildPat   of pat_info				(* wildcard *)
+	| LitPat    of pat_info * lit			(* literal *)
+	| VarPat    of pat_info * id			(* variable *)
+	| ConPat    of pat_info * longid * bool		(* constructed *)
 			(* bool : is n-ary *)
 			(* pat present iff longid has arguments *)
-	| RefPat    of info			(* reference *)
-	| TupPat    of info * pat list		(* tuple *)
-	| RowPat    of info * pat field list	(* record *)
+	| RefPat    of pat_info				(* reference *)
+	| TupPat    of pat_info * pat list		(* tuple *)
+	| RowPat    of pat_info * pat field list	(* record *)
 			(* all labels distinct *)
-	| VecPat    of info * pat list		(* vector *)
-	| AppPat    of info * pat * pat		(* constructor application *)
+	| VecPat    of pat_info * pat list		(* vector *)
+	| AppPat    of pat_info * pat * pat		(* construction *)
 			(* first must be ConPat or RefPat *)
-	| AsPat     of info * pat * pat		(* conjunction *)
-	| AltPat    of info * pat list		(* disjunction *)
+	| AsPat     of pat_info * pat * pat		(* conjunction *)
+	| AltPat    of pat_info * pat list		(* disjunction *)
 			(* all patterns bind same ids *)
-	| NegPat    of info * pat		(* negation *)
-	| GuardPat  of info * pat * exp		(* guard *)
-	| WithPat   of info * pat * dec list	(* local bindings *)
+	| NegPat    of pat_info * pat			(* negation *)
+	| GuardPat  of pat_info * pat * exp		(* guard *)
+	| WithPat   of pat_info * pat * dec list	(* local bindings *)
 
     (* Declarations *)
 
     and dec =
-	  ValDec    of info * pat * exp		(* value / module *)
+	  ValDec    of dec_info * pat * exp		(* value / module *)
 	  		(* if inside RecDec, then
 			 * (1) pat may not contain AltPat, NegPat, GuardPat,
 			 *     WithPat
@@ -94,10 +108,10 @@ UNFINISHED: obsolete after bootstrapping:
 			 *     RefExp, TupExp, RowExp, VecExp, FunExp, AppExp
 			 * (3) AppExps may only contain ConExp or RefExp
 			 *     as first argument
-			 * (4) if an VarExp on the LHS structurally corresponds
+			 * (4) if an VarPat on the LHS structurally corresponds
 			 *     to an VarExp on the RHS then the RHS id may not
 			 *     be bound on the LHS *)
-	| RecDec    of info * dec list		(* recursive definition *)
+	| RecDec    of dec_info * dec list		(* recursion *)
 
     (* Components *)
 
@@ -105,6 +119,10 @@ UNFINISHED: obsolete after bootstrapping:
 
 
     (* Projections *)
+
+    fun stamp(Id(_,x,_))		= x
+    fun name(Id(_,_,n))			= n
+    fun lab(Lab(_,a))			= a
 
     fun infoLab(Lab(i,_))		= i
     fun infoId(Id(i,_,_))		= i

@@ -1,12 +1,14 @@
 structure IntermediateInfo =
   struct
-    type t = Source.region * Type.t option
-    exception Info
-    fun region(r, to)  = r
-    fun typ(r, SOME t) = t
-      | typ(r, NONE)   = raise Info
+    type lab_info	= { region: Source.region }
+    type id_info	= { region: Source.region }
+    type longid_info	= { region: Source.region }
+    type exp_info	= { region: Source.region, typ: Type.t }
+    type pat_info	= { region: Source.region, typ: Type.t }
+    type 'a field_info	= { region: Source.region }
+    type match_info	= { region: Source.region }
+    type dec_info	= { region: Source.region }
   end
 
-structure IntermediateGrammar =
-	  MakeIntermediateGrammar(type info = IntermediateInfo.t
-				  type sign = unit)
+structure IntermediateGrammar = MakeIntermediateGrammar(open IntermediateInfo
+							type sign = unit)

@@ -1,10 +1,42 @@
-functor MakeAbstractGrammar(type info) :>
-  ABSTRACT_GRAMMAR where type info = info =
+functor MakeAbstractGrammar(type lab_info
+			    type id_info
+			    type longid_info
+			    type exp_info
+			    type pat_info
+			    type 'a row_info
+			    type 'a field_info
+			    type match_info
+			    type typ_info
+			    type con_info
+			    type mod_info
+			    type inf_info
+			    type dec_info
+			    type spec_info
+			    type comp_info
+			    type imp_info
+			    val labToIdInfo: lab_info -> id_info
+			    val idToLabInfo: id_info -> lab_info
+			   ) : ABSTRACT_GRAMMAR =
   struct
 
     (* Generic *)
 
-    type info = info
+    type lab_info	= lab_info
+    type id_info	= id_info
+    type longid_info	= longid_info
+    type exp_info	= exp_info
+    type pat_info	= pat_info
+    type 'a row_info	= 'a row_info
+    type 'a field_info	= 'a field_info
+    type match_info	= match_info
+    type typ_info	= typ_info
+    type con_info	= con_info
+    type mod_info	= mod_info
+    type inf_info	= inf_info
+    type dec_info	= dec_info
+    type spec_info	= spec_info
+    type comp_info	= comp_info
+    type imp_info	= imp_info
 
     (* Literals *)
 
@@ -17,155 +49,155 @@ functor MakeAbstractGrammar(type info) :>
 
     (* Identifiers *)
 
-    datatype lab    = Lab     of info * Label.t
-    datatype id     = Id      of info * Stamp.t * Name.t
-    datatype longid = ShortId of info * id
-		    | LongId  of info * longid * lab
+    datatype lab    = Lab     of lab_info * Label.t
+    datatype id     = Id      of id_info * Stamp.t * Name.t
+    datatype longid = ShortId of longid_info * id
+		    | LongId  of longid_info * longid * lab
 
     (* Expressions *)
 
     datatype exp =
-	  LitExp    of info * lit		(* literal *)
-	| PrimExp   of info * string * typ	(* builtin values *)
-	| VarExp    of info * longid		(* variable *)
-	| ConExp    of info * int * longid	(* constructor *)
-	| RefExp    of info			(* reference constructor *)
-	| TupExp    of info * exp list		(* tuple *)
-	| RowExp    of info * exp row		(* row (record) *)
-	| SelExp    of info * lab		(* row selector *)
-	| VecExp    of info * exp list		(* vector *)
-	| FunExp    of info * match list	(* function *)
-	| AppExp    of info * exp * exp		(* application *)
-	| CompExp   of info * exp * exp		(* adjunction *)
-	| AndExp    of info * exp * exp		(* short-circuit conjunction *)
-	| OrExp     of info * exp * exp		(* short-circuit disjunction *)
-	| IfExp     of info * exp * exp * exp	(* conditional *)
-	| WhileExp  of info * exp * exp		(* while loop *)
-	| SeqExp    of info * exp list		(* sequential expressions *)
-	| CaseExp   of info * exp * match list	(* case *)
-	| RaiseExp  of info * exp		(* exception raising *)
-	| HandleExp of info * exp * match list	(* exception handling *)
-	| AnnExp    of info * exp * typ		(* type annotation *)
-	| LetExp    of info * dec list * exp	(* let *)
-	| PackExp   of info * mod		(* package introduction *)
+	  LitExp    of exp_info * lit		(* literal *)
+	| PrimExp   of exp_info * string * typ	(* builtin values *)
+	| VarExp    of exp_info * longid	(* variable *)
+	| ConExp    of exp_info * int * longid	(* constructor *)
+	| RefExp    of exp_info			(* reference constructor *)
+	| TupExp    of exp_info * exp list	(* tuple *)
+	| RowExp    of exp_info * exp row	(* row (record) *)
+	| SelExp    of exp_info * lab		(* row selector *)
+	| VecExp    of exp_info * exp list	(* vector *)
+	| FunExp    of exp_info * match list	(* function *)
+	| AppExp    of exp_info * exp * exp	(* application *)
+	| CompExp   of exp_info * exp * exp	(* adjunction *)
+	| AndExp    of exp_info * exp * exp	(* short-circuit conjunction *)
+	| OrExp     of exp_info * exp * exp	(* short-circuit disjunction *)
+	| IfExp     of exp_info * exp * exp * exp (* conditional *)
+	| WhileExp  of exp_info * exp * exp	(* while loop *)
+	| SeqExp    of exp_info * exp list	(* sequential expressions *)
+	| CaseExp   of exp_info * exp * match list (* case *)
+	| RaiseExp  of exp_info * exp		(* exception raising *)
+	| HandleExp of exp_info * exp * match list (* exception handling *)
+	| AnnExp    of exp_info * exp * typ	(* type annotation *)
+	| LetExp    of exp_info * dec list * exp (* let *)
+	| PackExp   of exp_info * mod		(* package introduction *)
 
-    and 'a row   = Row   of info * 'a field list * bool
-    and 'a field = Field of info * lab * 'a
+    and 'a row   = Row   of 'a row_info * 'a field list * bool
+    and 'a field = Field of 'a field_info * lab * 'a
 
-    and match    = Match of info * pat * exp
+    and match    = Match of match_info * pat * exp
 
     (* Patterns *)
 
     and pat =
-	  JokPat    of info			(* joker (wildcard) *)
-	| LitPat    of info * lit		(* literal *)
-	| VarPat    of info * id		(* variable *)
-	| ConPat    of info * int * longid	(* constructor (fully applied)*)
-	| RefPat    of info			(* reference (fully applied) *)
-	| TupPat    of info * pat list		(* tuple *)
-	| RowPat    of info * pat row		(* row (record) *)
-	| VecPat    of info * pat list		(* vector *)
-	| AppPat    of info * pat * pat		(* constructor application *)
-	| AsPat     of info * pat * pat		(* as (layered) pattern *)
-	| AltPat    of info * pat list		(* alternative pattern *)
-	| NegPat    of info * pat		(* negated pattern *)
-	| GuardPat  of info * pat * exp		(* guarded pattern *)
-	| AnnPat    of info * pat * typ		(* type annotation *)
-	| WithPat   of info * pat * dec list	(* local declarations *)
+	  JokPat    of pat_info			(* joker (wildcard) *)
+	| LitPat    of pat_info * lit		(* literal *)
+	| VarPat    of pat_info * id		(* variable *)
+	| ConPat    of pat_info * int * longid	(* constructor (fully applied)*)
+	| RefPat    of pat_info			(* reference (fully applied) *)
+	| TupPat    of pat_info * pat list	(* tuple *)
+	| RowPat    of pat_info * pat row	(* row (record) *)
+	| VecPat    of pat_info * pat list	(* vector *)
+	| AppPat    of pat_info * pat * pat	(* constructor application *)
+	| AsPat     of pat_info * pat * pat	(* as (layered) pattern *)
+	| AltPat    of pat_info * pat list	(* alternative pattern *)
+	| NegPat    of pat_info * pat		(* negated pattern *)
+	| GuardPat  of pat_info * pat * exp	(* guarded pattern *)
+	| AnnPat    of pat_info * pat * typ	(* type annotation *)
+	| WithPat   of pat_info * pat * dec list (* local declarations *)
 
     (* Types *)
 
     and typ =
-	  AbsTyp    of info			(* abstract type *)
-	| VarTyp    of info * id		(* variable *)
-	| ConTyp    of info * longid		(* constructor *)
-	| FunTyp    of info * id * typ		(* type function *)
-	| AppTyp    of info * typ * typ		(* constructor application *)
-	| RefTyp    of info * typ		(* reference type *)
-	| TupTyp    of info * typ list		(* tuple (cartesian) type *)
-	| RowTyp    of info * typ row		(* row (record) type *)
-	| ArrTyp    of info * typ * typ		(* arrow (function) type *)
-	| SumTyp    of info * con list		(* sum type (datatype) *)
-	| ExtTyp    of info			(* extensible sum type *)
-	| AllTyp    of info * id * typ		(* universal quantification *)
-	| ExTyp     of info * id * typ		(* existential quantification *)
-	| PackTyp   of info * inf		(* package type *)
-	| SingTyp   of info * longid		(* singleton type *)
+	  AbsTyp    of typ_info			(* abstract type *)
+	| VarTyp    of typ_info * id		(* variable *)
+	| ConTyp    of typ_info * longid	(* constructor *)
+	| FunTyp    of typ_info * id * typ	(* type function *)
+	| AppTyp    of typ_info * typ * typ	(* constructor application *)
+	| RefTyp    of typ_info * typ		(* reference type *)
+	| TupTyp    of typ_info * typ list	(* tuple (cartesian) type *)
+	| RowTyp    of typ_info * typ row	(* row (record) type *)
+	| ArrTyp    of typ_info * typ * typ	(* arrow (function) type *)
+	| SumTyp    of typ_info * con list	(* sum type (datatype) *)
+	| ExtTyp    of typ_info			(* extensible sum type *)
+	| AllTyp    of typ_info * id * typ	(* universal quantification *)
+	| ExTyp     of typ_info * id * typ	(* existential quantification *)
+	| PackTyp   of typ_info * inf		(* package type *)
+	| SingTyp   of typ_info * longid	(* singleton type *)
 
-    and con =   Con of info * id * typ list	(* data constructor *)
+    and con =   Con of con_info * id * typ list	(* data constructor *)
 
     (* Modules *)
 
     and mod =
-	  PrimMod   of info * string * inf	(* builtin modules *)
-	| VarMod    of info * id		(* module id *)
-	| StrMod    of info * dec list		(* structure *)
-	| SelMod    of info * mod * lab		(* selection *)
-	| FunMod    of info * id * inf * mod	(* functor *)
-	| AppMod    of info * mod * mod		(* application *)
-	| AnnMod    of info * mod * inf		(* annotation *)
-	| UpMod     of info * mod * inf		(* coercion *)
-	| LetMod    of info * dec list * mod	(* let *)
-	| UnpackMod of info * exp * inf		(* package elimination *)
+	  PrimMod   of mod_info * string * inf	(* builtin modules *)
+	| VarMod    of mod_info * id		(* module id *)
+	| StrMod    of mod_info * dec list	(* structure *)
+	| SelMod    of mod_info * mod * lab	(* selection *)
+	| FunMod    of mod_info * id * inf * mod (* functor *)
+	| AppMod    of mod_info * mod * mod	(* application *)
+	| AnnMod    of mod_info * mod * inf	(* annotation *)
+	| UpMod     of mod_info * mod * inf	(* coercion *)
+	| LetMod    of mod_info * dec list * mod (* let *)
+	| UnpackMod of mod_info * exp * inf	(* package elimination *)
 
     (* Interfaces *)
 
     and inf =
-	  TopInf    of info			(* top interface *)
-	| AbsInf    of info			(* abstract interface *)
-	| ConInf    of info * longid		(* interface constructor *)
-	| SigInf    of info * spec list		(* signature *)
-	| FunInf    of info * id * inf * inf	(* interface function *)
-	| AppInf    of info * inf * mod		(* interface application *)
-	| CompInf   of info * inf * inf		(* composition *)
-	| ArrInf    of info * id * inf * inf	(* arrow (functor) interface *)
-	| SingInf   of info * mod		(* singleton interface *)
+	  TopInf    of inf_info			(* top interface *)
+	| AbsInf    of inf_info			(* abstract interface *)
+	| ConInf    of inf_info * longid	(* interface constructor *)
+	| SigInf    of inf_info * spec list	(* signature *)
+	| FunInf    of inf_info * id * inf * inf (* interface function *)
+	| AppInf    of inf_info * inf * mod	(* interface application *)
+	| CompInf   of inf_info * inf * inf	(* composition *)
+	| ArrInf    of inf_info * id * inf * inf (* arrow (functor) interface *)
+	| SingInf   of inf_info * mod		(* singleton interface *)
 
     (* Declarations *)
 
     and dec =
-	  ValDec    of info * pat * exp		(* values *)
-	| ConDec    of info * con * typ		(* constructor *)
-	| TypDec    of info * id * typ		(* type *)
-	| DatDec    of info * id * typ		(* data type *)
-	| ModDec    of info * id * mod		(* module *)
-	| InfDec    of info * id * inf		(* interface *)
-	| VarDec    of info * id * dec		(* scoped type variable *)
-	| RecDec    of info * dec list		(* recursive declarations *)
-	| LocalDec  of info * dec list		(* local declarations *)
+	  ValDec    of dec_info * pat * exp	(* values *)
+	| ConDec    of dec_info * con * typ	(* constructor *)
+	| TypDec    of dec_info * id * typ	(* type *)
+	| DatDec    of dec_info * id * typ	(* data type *)
+	| ModDec    of dec_info * id * mod	(* module *)
+	| InfDec    of dec_info * id * inf	(* interface *)
+	| VarDec    of dec_info * id * dec	(* scoped type variable *)
+	| RecDec    of dec_info * dec list	(* recursive declarations *)
+	| LocalDec  of dec_info * dec list	(* local declarations *)
 
     (* Specifications *)
 
     and spec =
-	  ValSpec   of info * id * typ		(* value *)
-	| ConSpec   of info * con * typ		(* constructor *)
-	| TypSpec   of info * id * typ		(* type *)
-	| DatSpec   of info * id * typ		(* data type *)
-	| ModSpec   of info * id * inf		(* module *)
-	| InfSpec   of info * id * inf		(* interface *)
-	| VarSpec   of info * id * spec		(* scoped type variable *)
-	| RecSpec   of info * spec list		(* recursive specifications *)
-	| LocalSpec of info * spec list		(* local specifications *)
-	| ExtSpec   of info * inf		(* extension (include) *)
+	  ValSpec   of spec_info * id * typ	(* value *)
+	| ConSpec   of spec_info * con * typ	(* constructor *)
+	| TypSpec   of spec_info * id * typ	(* type *)
+	| DatSpec   of spec_info * id * typ	(* data type *)
+	| ModSpec   of spec_info * id * inf	(* module *)
+	| InfSpec   of spec_info * id * inf	(* interface *)
+	| VarSpec   of spec_info * id * spec	(* scoped type variable *)
+	| RecSpec   of spec_info * spec list	(* recursive specifications *)
+	| LocalSpec of spec_info * spec list	(* local specifications *)
+	| ExtSpec   of spec_info * inf		(* extension (include) *)
 
     (* Components *)
 
-    and comp = Comp of info * imp list * dec list
+    and comp = Comp of comp_info * imp list * dec list
 
-    and imp  = Imp of info * spec list * Url.t
+    and imp  = Imp of imp_info * spec list * Url.t
 
     type component = comp
 
 
     (* Projections *)
 
-    fun stamp(Id(_,x,_))		= x
-    fun name(Id(_,_,n))			= n
-    fun lab(Lab(_,a))			= a
+    fun stamp(Id(_,x,_))	= x
+    fun name(Id(_,_,n))		= n
+    fun lab(Lab(_,a))		= a
 
-    fun conToId(Con(_,x,_))		= x
-    fun labToId(Lab(i,l))		= Id(i, Stamp.new(), Label.toName l)
-    fun idToLab(Id(i,_,n))		= Lab(i, Label.fromName n)
+    fun conToId(Con(_,x,_))	= x
+    fun labToId(Lab(i,l))	= Id(labToIdInfo i, Stamp.new(), Label.toName l)
+    fun idToLab(Id(i,_,n))	= Lab(idToLabInfo i, Label.fromName n)
 
     fun infoLab(Lab(i,_))		= i
     fun infoId(Id(i,_,_))		= i

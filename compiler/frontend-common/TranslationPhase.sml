@@ -6,6 +6,8 @@ structure TranslationPhase :> TRANSLATION_PHASE =
     structure I = TypedGrammar
     structure O = IntermediateGrammar
 
+    open TypedInfo
+
 
   (* Names and labels *)
 
@@ -91,42 +93,34 @@ structure TranslationPhase :> TRANSLATION_PHASE =
 		r
 	end
 
-    fun annotation TypedInfo.NON	= NONE
-      | annotation(TypedInfo.TYP t)	= SOME t
-      | annotation(TypedInfo.INF j)	= SOME(infToTyp j)
-
-    fun trInfo(i,ann) = (i, annotation ann)
+    fun trInfo {region,inf} = { region = region, typ = infToTyp inf }
+    (*UNFINISHED: use punning*)
 
 
   (* Create fields for all structures and values in an environment *)
 
-    fun idToField(x' as O.Id(i,_,n)) =
-	    O.Field(i, O.Lab(i,Label.fromName n), O.VarExp(i, O.ShortId(i, x')))
+    fun idToField(x' as O.Id(i,_,n), t) =
+	    O.Field(i, O.Lab(i,Label.fromName n),
+		       O.VarExp(typInfo(#region i,t), O.ShortId(i, x')))
 
-    fun idToDec(O.Id(i, z, n), y) =
-	    O.ValDec(i, O.VarPat(i, O.Id(i, z, n)),
-			O.AppExp(i, O.SelExp(i, O.Lab(i,Label.fromName n)),
-				    O.VarExp(i,y)))
-
-
-  (* Curry-convert expressions *)
-
-    fun funExp(i,    [],     exp') = exp'
-      | funExp(i, id'::ids', exp') =
+    fun idToDec(O.Id(i as {region=r,...}, z, n), y, t) =
 	let
-	    val match' = O.Match(i, O.VarPat(i, id'), funExp(i, ids', exp'))
+	    val l    = Label.fromName n
+	    val tMod = Type.inRow(Type.extendRow(l, [t], Type.unknownRow()))
+	    val tSel = Type.inArrow(tMod, t)
 	in
-	    O.FunExp(i, [match'])
+	    O.ValDec(i, O.VarPat(typInfo(r,t), O.Id(i,z,n)),
+			O.AppExp(typInfo(r,t),
+				 O.SelExp(typInfo(r,tSel), O.Lab(i,l)),
+				 O.VarExp(typInfo(r,tMod), y)))
 	end
 
-    fun curryExp(i, (0|1), exp') = exp'
-      | curryExp(i,   k,   exp') =
-	let
-	    val ids'  = List.tabulate(k, fn _ => O.Id(i,Stamp.new(),Name.InId))
-	    val exps' = List.map (fn id' => O.VarExp(i, O.ShortId(i,id'))) ids'
-	in
-	    funExp(i, ids', O.AppExp(i, exp', O.TupExp(i, exps')))
-	end
+    fun idsToRow'(     [],    r) = r
+      | idsToRow'((x,t)::ids, r) =
+	Type.extendRow(Label.fromName(O.name x), [t], r)
+
+    fun idsToRow ids = idsToRow'(ids, Type.emptyRow())
+
 
 
   (* Literals *)
@@ -142,26 +136,24 @@ UNFINISHED: obsolete after bootstrapping:
 
   (* Identifiers *)
 
-    fun trLab(I.Lab(i,l))		= O.Lab(trInfo i, trLabel  l)
-    fun trLab'(I.Lab(i,l))		= O.Lab(trInfo i, trLabel' l)
+    fun trLab(I.Lab(i,l))		= O.Lab(i, trLabel  l)
+    fun trLab'(I.Lab(i,l))		= O.Lab(i, trLabel' l)
 
-    fun trId(I.Id(i,z,n))		= O.Id(trInfo i, z, trName n)
-    fun trId'(I.Id(i,z,n))		= O.Id(trInfo i, z, trName' n)
+    fun trId(I.Id(i,z,n))		= O.Id(i, z, trName n)
+    fun trId'(I.Id(i,z,n))		= O.Id(i, z, trName' n)
 
-    fun trLongid'(I.ShortId(i,x))	= O.ShortId(trInfo i, trId' x)
-      | trLongid'(I.LongId(i,y,a))	= O.LongId(trInfo i, trLongid' y,
-							     trLab' a)
+    fun trLongid'(I.ShortId(i,x))	= O.ShortId(i, trId' x)
+      | trLongid'(I.LongId(i,y,a))	= O.LongId(i, trLongid' y, trLab' a)
 
-    fun trLongid(I.ShortId(i,x))	= O.ShortId(trInfo i, trId x)
-      | trLongid(I.LongId(i,y,a))	= O.LongId(trInfo i, trLongid' y,
-							     trLab a)
+    fun trLongid(I.ShortId(i,x))	= O.ShortId(i, trId x)
+      | trLongid(I.LongId(i,y,a))	= O.LongId(i, trLongid' y, trLab a)
 
 
   (* Extract bound ids from declarations. *)
 
-    fun idsId trId xs' x =
+    fun idsId trId xs' x t =
 	case trId x
-	  of x' as O.Id(_,_,Name.ExId s') => StringMap.insert(xs', s', x')
+	  of x' as O.Id(_,_,Name.ExId s') => StringMap.insert(xs', s', (x',t))
 	   | _                            => ()
 
     fun idsRow    idsZ xs' (I.Row(i,fs,_))   = idsFields idsZ xs' fs
@@ -173,6 +165,7 @@ UNFINISHED: obsolete after bootstrapping:
       | idsDec xs' (I.TypDec(i,x,t))	= ()
       | idsDec xs' (I.DatDec(i,x,t))	= idsTyp xs' t
       | idsDec xs' (I.ModDec(i,x,m))	= idsId trId' xs' x
+						(infToTyp(#inf(I.infoMod m)))
       | idsDec xs' (I.InfDec(i,x,j))	= ()
       | idsDec xs' (I.VarDec(i,x,d))	= idsDec xs' d
       | idsDec xs' (I.RecDec(i,ds))	= idsDecs xs' ds
@@ -181,7 +174,7 @@ UNFINISHED: obsolete after bootstrapping:
 
     and idsPat xs' (I.JokPat(i))	= ()
       | idsPat xs' (I.LitPat(i,l))	= ()
-      | idsPat xs' (I.VarPat(i,x))	= idsId trId xs' x
+      | idsPat xs' (I.VarPat(i,x))	= idsId trId xs' x (#typ i)
       | idsPat xs' (I.ConPat(i,k,y))	= ()
       | idsPat xs' (I.RefPat(i))	= ()
       | idsPat xs' (I.TupPat(i,ps))	= idsPats xs' ps
@@ -196,7 +189,7 @@ UNFINISHED: obsolete after bootstrapping:
       | idsPat xs' (I.WithPat(i,p,ds))	= ( idsPat xs' p ; idsDecs xs' ds )
     and idsPats xs'			= List.app(idsPat xs')
 
-    and idsCon xs' (I.Con(i,x,ts))	= idsId trId xs' x
+    and idsCon xs' (I.Con(i,x,ts))	= idsId trId xs' x (#typ i)
     and idsCons xs'			= List.app(idsCon xs')
 
     and idsTyp xs' (I.AbsTyp(i))	= ()
@@ -224,78 +217,63 @@ UNFINISHED: obsolete after bootstrapping:
 
   (* Expressions *)
 
-    fun trExp(I.LitExp(i,l))		= O.LitExp(trInfo i, trLit l)
-      | trExp(I.PrimExp(i,s,t))		= O.PrimExp(trInfo i, s)
-      | trExp(I.VarExp(i,y))		= O.VarExp(trInfo i, trLongid y)
-      | trExp(I.ConExp(i,k,y))		= let val i' = trInfo i
-					      val y' = trLongid y in
-					      curryExp(i', k,
-							O.ConExp(i',y',false))
-					  end
-      | trExp(I.RefExp(i))		= O.RefExp(trInfo i)
-      | trExp(I.TupExp(i,es))		= O.TupExp(trInfo i, trExps es)
-      | trExp(I.RowExp(i,r))		= O.RowExp(trInfo i, trExpRow r)
-      | trExp(I.SelExp(i,a))		= O.SelExp(trInfo i, trLab a)
-      | trExp(I.VecExp(i,es))		= O.VecExp(trInfo i, trExps es)
-      | trExp(I.FunExp(i,ms))		= O.FunExp(trInfo i, trMatchs ms)
-      | trExp(I.AppExp(i,e1,e2))	= O.AppExp(trInfo i, trExp e1, trExp e2)
-      | trExp(I.CompExp(i,e1,e2))	= O.AdjExp(trInfo i, trExp e1, trExp e2)
-      | trExp(I.AndExp(i,e1,e2))	= O.AndExp(trInfo i, trExp e1, trExp e2)
-      | trExp(I.OrExp(i,e1,e2))		= O.OrExp(trInfo i, trExp e1, trExp e2)
-      | trExp(I.IfExp(i,e1,e2,e3))	= O.IfExp(trInfo i, trExp e1, trExp e2,
-							    trExp e3)
-      | trExp(I.WhileExp(i,e1,e2))	= O.WhileExp(trInfo i, trExp e1,
-							       trExp e2)
-      | trExp(I.SeqExp(i,es))		= O.SeqExp(trInfo i, trExps es)
-      | trExp(I.CaseExp(i,e,ms))	= O.CaseExp(trInfo i, trExp e,
-							      trMatchs ms)
-      | trExp(I.RaiseExp(i,e))		= O.RaiseExp(trInfo i, trExp e)
-      | trExp(I.HandleExp(i,e,ms))	= O.HandleExp(trInfo i, trExp e,
-								trMatchs ms)
+    fun trExp(I.LitExp(i,l))		= O.LitExp(i, trLit l)
+      | trExp(I.PrimExp(i,s,t))		= O.PrimExp(i, s)
+      | trExp(I.VarExp(i,y))		= O.VarExp(i, trLongid y)
+      | trExp(I.ConExp(i,k,y))		= O.ConExp(i, trLongid y, k>1)
+      | trExp(I.RefExp(i))		= O.RefExp(i)
+      | trExp(I.TupExp(i,es))		= O.TupExp(i, trExps es)
+      | trExp(I.RowExp(i,r))		= O.RowExp(i, trExpRow r)
+      | trExp(I.SelExp(i,a))		= O.SelExp(i, trLab a)
+      | trExp(I.VecExp(i,es))		= O.VecExp(i, trExps es)
+      | trExp(I.FunExp(i,ms))		= O.FunExp(i, trMatchs ms)
+      | trExp(I.AppExp(i,e1,e2))	= O.AppExp(i, trExp e1, trExp e2)
+      | trExp(I.CompExp(i,e1,e2))	= O.AdjExp(i, trExp e1, trExp e2)
+      | trExp(I.AndExp(i,e1,e2))	= O.AndExp(i, trExp e1, trExp e2)
+      | trExp(I.OrExp(i,e1,e2))		= O.OrExp(i, trExp e1, trExp e2)
+      | trExp(I.IfExp(i,e1,e2,e3))	= O.IfExp(i, trExp e1, trExp e2,
+							       trExp e3)
+      | trExp(I.WhileExp(i,e1,e2))	= O.WhileExp(i, trExp e1, trExp e2)
+      | trExp(I.SeqExp(i,es))		= O.SeqExp(i, trExps es)
+      | trExp(I.CaseExp(i,e,ms))	= O.CaseExp(i, trExp e, trMatchs ms)
+      | trExp(I.RaiseExp(i,e))		= O.RaiseExp(i, trExp e)
+      | trExp(I.HandleExp(i,e,ms))	= O.HandleExp(i, trExp e, trMatchs ms)
       | trExp(I.AnnExp(i,e,t))		= trExp e
-      | trExp(I.LetExp(i,ds,e))		= O.LetExp(trInfo i, trDecs ds, trExp e)
+      | trExp(I.LetExp(i,ds,e))		= O.LetExp(i, trDecs ds, trExp e)
       | trExp(I.PackExp(i,m))		= trMod m
 
     and trExps es			= List.map trExp es
 
     and trExpRow(I.Row(i,fs,_))		= trExpFields fs
-    and trExpField(I.Field(i,a,e))	= O.Field(trInfo i, trLab a, trExp e)
+    and trExpField(I.Field(i,a,e))	= O.Field(i, trLab a, trExp e)
     and trExpFields fs			= List.map trExpField fs
 
 
   (* Matches and Patterns *)
 
-    and trMatch(I.Match(i,p,e))		= O.Match(trInfo i, trPat p, trExp e)
+    and trMatch(I.Match(i,p,e))		= O.Match(i, trPat p, trExp e)
     and trMatchs ms			= List.map trMatch ms
 
-    and trPat(I.JokPat(i))		= O.WildPat(trInfo i)
-      | trPat(I.LitPat(i,l))		= O.LitPat(trInfo i, trLit l)
-      | trPat(I.VarPat(i,x))		= O.VarPat(trInfo i, trId x)
-      | trPat(I.ConPat(i,k,y))		= O.ConPat(trInfo i, trLongid y, false)
-      | trPat(I.RefPat(i))		= O.RefPat(trInfo i)
-      | trPat(I.TupPat(i,ps))		= O.TupPat(trInfo i, trPats ps)
-      | trPat(I.RowPat(i,r))		= let val (fs',b') = trPatRow r in
-					      O.RowPat(trInfo i, fs')
-					  end
-      | trPat(I.VecPat(i,ps))		= O.VecPat(trInfo i, trPats ps)
-      | trPat(I.AppPat(i,p1,p2))	= O.AppPat(trInfo i, trPat p1, trPat p2)
-      | trPat(I.AsPat(i,p1,p2))		= O.AsPat(trInfo i, trPat p1, trPat p2)
-      | trPat(I.AltPat(i,ps))		= O.AltPat(trInfo i, trPats ps)
-      | trPat(I.NegPat(i,p))		= O.NegPat(trInfo i, trPat p)
-      | trPat(I.GuardPat(i,p,e))	= O.GuardPat(trInfo i, trPat p, trExp e)
+    and trPat(I.JokPat(i))		= O.WildPat(i)
+      | trPat(I.LitPat(i,l))		= O.LitPat(i, trLit l)
+      | trPat(I.VarPat(i,x))		= O.VarPat(i, trId x)
+      | trPat(I.ConPat(i,k,y))		= O.ConPat(i, trLongid y, k>1)
+      | trPat(I.RefPat(i))		= O.RefPat(i)
+      | trPat(I.TupPat(i,ps))		= O.TupPat(i, trPats ps)
+      | trPat(I.RowPat(i,r))		= O.RowPat(i, trPatRow r)
+      | trPat(I.VecPat(i,ps))		= O.VecPat(i, trPats ps)
+      | trPat(I.AppPat(i,p1,p2))	= O.AppPat(i, trPat p1, trPat p2)
+      | trPat(I.AsPat(i,p1,p2))		= O.AsPat(i, trPat p1, trPat p2)
+      | trPat(I.AltPat(i,ps))		= O.AltPat(i, trPats ps)
+      | trPat(I.NegPat(i,p))		= O.NegPat(i, trPat p)
+      | trPat(I.GuardPat(i,p,e))	= O.GuardPat(i, trPat p, trExp e)
       | trPat(I.AnnPat(i,p,t))		= trPat p
-      | trPat(I.WithPat(i,p,ds))	= O.WithPat(trInfo i, trPat p,trDecs ds)
+      | trPat(I.WithPat(i,p,ds))	= O.WithPat(i, trPat p,trDecs ds)
 
     and trPats ps			= List.map trPat ps
 
-    and trArgPats []			= NONE
-      | trArgPats[p]			= SOME(trPat p)
-      | trArgPats ps			= SOME(O.TupPat(
-						trInfo(I.infoPat(List.hd ps)),
-						trPats ps))
-
-    and trPatRow(I.Row(i,fs,b))		= (trPatFields fs, b)
-    and trPatField(I.Field(i,a,p))	= O.Field(trInfo i, trLab a, trPat p)
+    and trPatRow(I.Row(i,fs,b))		= trPatFields fs
+    and trPatField(I.Field(i,a,p))	= O.Field(i, trLab a, trPat p)
     and trPatFields fs			= List.map trPatField fs
 
 
@@ -312,14 +290,23 @@ UNFINISHED: obsolete after bootstrapping:
 					      val ds'  = trDecs ds in
 					      O.LetExp(i',ds', O.RowExp(i',fs'))
 					  end
-      | trMod(I.SelMod(i,m,a))		= let val i' = trInfo i in
-					      O.AppExp(i',O.SelExp(i',trLab' a),
-						      trMod m)
+      | trMod(I.SelMod(i,m,a))		= let val i' = trInfo i
+					      val r  = #region i'
+					      val e' = trMod m
+					      val t1 = #typ(O.infoExp e')
+					      val t2 = #typ i'
+					      val t  = Type.inArrow(t1,t2) in
+					      O.AppExp(i',O.SelExp(typInfo(r,t),
+							           trLab' a),e')
 					  end
       | trMod(I.FunMod(i,x,j,m))	= let val i' = trInfo i
-					      val p' = O.VarPat(i', trId' x)
-					      val m' = O.Match(i',p',trMod m) in
-					      O.FunExp(trInfo i, [m'])
+					      val r  = #region(I.infoId x)
+					      val e' = trMod m
+					      val t  = #typ(O.infoExp e')
+					      val p' = O.VarPat(typInfo(r,t),
+								trId' x)
+					      val m' = O.Match(nonInfo r,p',e')
+					      in O.FunExp(i', [m'])
 					  end
       | trMod(I.AppMod(i,m1,m2))	= O.AppExp(trInfo i, trMod m1, trMod m2)
       | trMod(I.AnnMod(i,m,j))		= O.UpExp(trInfo i, trMod m)
@@ -330,8 +317,7 @@ UNFINISHED: obsolete after bootstrapping:
 
   (* Declarations *)
 
-    and trDec(I.ValDec(i,p,e), ds')	= O.ValDec(trInfo i, trPat p,
-							trExp e) :: ds'
+    and trDec(I.ValDec(i,p,e), ds')	= O.ValDec(i, trPat p, trExp e) :: ds'
       | trDec(I.ConDec(i,c,t), ds')	= (case t
 					   of I.SingTyp(_,y) =>
 						trEqCon(c,trLongid y,ds')
@@ -339,33 +325,31 @@ UNFINISHED: obsolete after bootstrapping:
 					  )
       | trDec(I.TypDec(i,x,t), ds')	= ds'
       | trDec(I.DatDec(i,x,t), ds')	= trTyp(t, ds')
-      | trDec(I.ModDec(i,x,m), ds')	= let val x' as O.Id(i',_,_)= trId' x in
-					      O.ValDec(trInfo i,O.VarPat(i',x'),
-						       trMod m) :: ds'
+      | trDec(I.ModDec(i,x,m), ds')	= let val r  = #region(I.infoId x)
+					      val e' = trMod m
+					      val t  = #typ(O.infoExp e') in
+					      O.ValDec(i, O.VarPat(typInfo(r,t),
+							trId' x), e') :: ds'
 					  end
       | trDec(I.InfDec(i,x,j), ds')	= ds'
       | trDec(I.VarDec(i,x,d), ds')	= trDec(d, ds')
-      | trDec(I.RecDec(i,ds), ds')	= O.RecDec(trInfo i, trDecs ds) :: ds'
+      | trDec(I.RecDec(i,ds), ds')	= O.RecDec(i, trDecs ds) :: ds'
       | trDec(I.LocalDec(i,ds), ds')	= trDecs'(ds, ds')
 
     and trDecs ds			= trDecs'(ds, [])
     and trDecs'(ds, ds')		= List.foldr trDec ds' ds
 
-    and trEqCon(I.Con(i,x,ts), y', ds')	= let val i' = trInfo i in
-					      O.ValDec(i', O.VarPat(i',trId x),
-							O.VarExp(i',y')) :: ds'
-					  end
-    and trNewCon(I.Con(i,x,ts), ds')	= let val i' = trInfo i in
-					      O.ValDec(i', O.VarPat(i',trId x),
-						 O.NewExp(i',NONE,false)) :: ds'
-					  end
-    and trCon(I.Con(i,x,ts), ds')	= let val i' = trInfo i in
-					      O.ValDec(i',
-						O.VarPat(i',trId x),
-						O.NewExp(i',
-						  SOME(Name.toString(I.name x)),
-						  false)) :: ds'
-					  end
+    and trEqCon(I.Con(i,x,ts), y', ds')	= O.ValDec(nonInfo(#region i),
+						   O.VarPat(i,trId x),
+						   O.VarExp(i,y')) :: ds'
+    and trNewCon(I.Con(i,x,ts), ds')	= O.ValDec(nonInfo(#region i),
+						   O.VarPat(i,trId x),
+						   O.NewExp(i,NONE,false)):: ds'
+    and trCon(I.Con(i,x,ts), ds')	= O.ValDec(nonInfo(#region i),
+						   O.VarPat(i,trId x),
+						   O.NewExp(i,SOME(
+						       Name.toString(I.name x)),
+						       false)) :: ds'
     and trCons(cs, ds')			= List.foldr trCon ds' cs
 
     and trTyp(I.AbsTyp(i), ds')		= ds'
@@ -395,22 +379,22 @@ UNFINISHED: obsolete after bootstrapping:
 
     fun trComp(I.Comp(i,is,ds))		=
 	let
-	    val  i'         = trInfo i
 	    val  ids'       = ids ds
 	    val (xsus',ds') = trImps'(is, trDecs ds)
 	    val  fs'        = List.map idToField ids'
+	    val  t          = Type.inRow(idsToRow ids')
+	    val  i'         = typInfo(#region i,t)
 	    val  exp'       = O.LetExp(i', ds', O.RowExp(i', fs'))
 	in
 	    ( xsus', (exp',()) )
 	end
 
-    and trImps'(is, ds')		= List.foldr trImp ([],ds') is
+    and trImps'(is, ds') = List.foldr trImp ([],ds') is
 
     and trImp(I.Imp(i,ss,u),(xsus',ds')) =
 	let
-	    val i'  = trInfo i
-	    val x'  = O.Id(i', Stamp.new(), Name.InId)
-	    val y'  = O.ShortId(i', x')
+	    val x'  = O.Id(i, Stamp.new(), Name.InId)
+	    val y'  = O.ShortId(i, x')
 	    val ds' = trSpecs(ss, y', ds')
 	in
 	    ( (x',(),u)::xsus', ds' )
@@ -418,11 +402,14 @@ UNFINISHED: obsolete after bootstrapping:
 
     and trSpecs(ss, y, ds')		= List.foldr (trSpec y) ds' ss
 
-    and trSpec y (I.ValSpec(i,x,e),ds')	= idToDec(trId x, y)::ds'
-      | trSpec y (I.ConSpec(i,c,t),ds')	= idToDec(trId(I.conToId c), y)::ds'
+    and trSpec y (I.ValSpec(i,x,t),ds')	= idToDec(trId x, y, #typ(I.infoTyp t))
+								       :: ds'
+      | trSpec y (I.ConSpec(i,c,t),ds')	= idToDec(trId(I.conToId c), y,
+						  #typ(I.infoTyp t)) :: ds'
       | trSpec y (I.TypSpec(i,x,t),ds')	= ds'
       | trSpec y (I.DatSpec(i,x,t),ds')	= trRep(t, y, ds')
-      | trSpec y (I.ModSpec(i,x,m),ds')	= idToDec(trId' x, y)::ds'
+      | trSpec y (I.ModSpec(i,x,j),ds')	= idToDec(trId' x, y,
+					     infToTyp(#inf(I.infoInf j))) :: ds'
       | trSpec y (I.InfSpec(i,x,j),ds')	= ds'
       | trSpec y (I.VarSpec(i,x,s),ds') = trSpec y (s, ds')
       | trSpec y (I.RecSpec(i,ss), ds')	= trSpecs(ss, y, ds')
@@ -432,7 +419,8 @@ UNFINISHED: obsolete after bootstrapping:
 
     and trCons'(cs, y, ds')		=
 	List.foldr (fn(c as I.Con(i,x,ts), ds') =>
-			trEqCon(c, O.LongId(trInfo i,y,trLab(I.idToLab x)), ds')
+			trEqCon(c, O.LongId(nonInfo(#region i), y,
+					    trLab(I.idToLab x)), ds')
 		   ) ds' cs
 
     and trRep(I.AbsTyp(i), y, ds')	= ds'

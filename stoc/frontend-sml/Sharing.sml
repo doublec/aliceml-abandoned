@@ -51,8 +51,8 @@ structure Sharing :> SHARING =
     datatype annotated_spec =
 	  Plain     of spec
 	| Annotated of spec * longid
-	| Recursive of info * annotated_spec list
-	| Local     of info * annotated_spec list
+	| Recursive of Source.region * annotated_spec list
+	| Local     of Source.region * annotated_spec list
 	(* UNFINISHED: what about ExtSpec? *)
 
 

@@ -18,6 +18,7 @@ structure ElaborationPhase :> ELABORATION_PHASE =
     structure E = ElaborationError
 
     open Env
+    open TypedInfo
 
     nonfix mod
 
@@ -46,13 +47,6 @@ structure ElaborationPhase :> ELABORATION_PHASE =
     fun refTyp(E,t)	= Type.inApp(#typ(lookupTyp(E, Prebound.stamp_tref)), t)
     fun vecTyp(E,t)	= Type.inApp(#typ(lookupTyp(E, Prebound.stamp_vec)), t)
     fun listTyp(E,t)	= Type.inApp(#typ(lookupTyp(E, Prebound.stamp_list)), t)
-
-
-  (* Output info field *)
-
-    fun nonInfo(i)	= (i, TypedInfo.NON)
-    fun typInfo(i,t)	= (i, TypedInfo.TYP t)
-    fun infInfo(i,j)	= (i, TypedInfo.INF j)
 
 
   (* Check value restriction *)
