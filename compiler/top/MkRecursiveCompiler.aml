@@ -45,6 +45,7 @@ functor MkRecursiveCompiler(structure ComponentManager: COMPONENT_MANAGER
 	val isCrossCompiler = Compiler.isCrossCompiler
 
 	exception Error = Compiler.Error
+	exception Crash = Crash.Crash
 
 	val extension = extension
 
@@ -228,13 +229,13 @@ functor MkRecursiveCompiler(structure ComponentManager: COMPONENT_MANAGER
 		 fileStack := sourceFilename::(!fileStack);
 		 processFile (compile' targetFilename) sourceFilename
 		 before (trace ("wrote file " ^ targetFilename);
-			 case fileStack of
-			     ref (_::(rest as resumeFilename::_)) =>
+			 case !fileStack of
+			     _::(rest as resumeFilename::_) =>
 				 (fileStack := rest;
 				  trace ("resuming compilation of " ^
 					 resumeFilename))
-			   | ref [_] => fileStack := nil
-			   | ref nil => ()))
+			   | [_] => fileStack := nil
+			   | nil => ()))
 	end
 
 	(* Define signature acquisition via recursive compiler invocation *)
