@@ -174,9 +174,9 @@ struct
 			       imports
 	    in
 		trace ("evaluating " ^ Url.toString baseUrl);
-		body imports'
-		handle e as (non (Failure (_, _))) =>
-		    raise Failure (baseUrl, Eval e)
+		(body imports'
+		 handle e as (non (Failure (_, _))) =>
+		     raise Failure (baseUrl, Eval e))
 		before
 		trace ("evaluated  " ^ Url.toString baseUrl)
 	    end
