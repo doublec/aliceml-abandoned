@@ -18,7 +18,7 @@ functor MkOptionParser(Switches: SWITCHES) :> OPTION_PARSER =
     struct
 	val version = "Build " ^
 			(*TODO Date.toString(Date.fromTimeLocal(Time.now()))*)
-			"2001/??/??"
+			"2003/??/??"
 
 	val helpText =
 	    "Gobal options:\n\
