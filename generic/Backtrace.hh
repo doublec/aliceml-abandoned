@@ -16,12 +16,12 @@
 #define __GENERIC__BACKTRACE_HH__
 
 #if defined(INTERFACE)
-#pragma interface "emulator/Backtrace.hh"
+#pragma interface "generic/Backtrace.hh"
 #endif
 
 #include "adt/Queue.hh"
-#include "emulator/Interpreter.hh"
-#include "emulator/StackFrame.hh"
+#include "generic/Interpreter.hh"
+#include "generic/StackFrame.hh"
 
 class Backtrace: private Queue {
 private:
