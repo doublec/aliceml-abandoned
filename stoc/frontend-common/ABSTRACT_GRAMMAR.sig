@@ -27,7 +27,7 @@ signature ABSTRACT_GRAMMAR =
 
     datatype exp =
 	  LitExp    of info * lit		(* literal *)
-	| PrimExp   of info * string * typ	(* primitive values *)
+	| PrimExp   of info * string * typ	(* builtin values *)
 	| VarExp    of info * longid		(* variable *)
 	| ConExp    of info * int * longid	(* constructor *)
 	| RefExp    of info			(* reference constructor *)
@@ -95,7 +95,8 @@ signature ABSTRACT_GRAMMAR =
     (* Modules *)
 
     and mod =
-	  VarMod    of info * id		(* module id *)
+	  PrimMod   of info * string * inf	(* builtin modules *)
+	| VarMod    of info * id		(* module id *)
 	| StrMod    of info * dec list		(* structure *)
 	| SelMod    of info * mod * lab		(* selection *)
 	| FunMod    of info * id * inf * mod	(* functor *)

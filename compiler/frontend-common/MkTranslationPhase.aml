@@ -192,7 +192,8 @@ UNFINISHED: obsolete after bootstrapping:
 
     (* Modules *)
 
-    and trMod(I.VarMod(i,x))		= let val x' as O.Id(i',_,_)= trId' x in
+    and trMod(I.PrimMod(i,s,j))		= O.PrimExp(i, s)
+      | trMod(I.VarMod(i,x))		= let val x' as O.Id(i',_,_)= trId' x in
 					      O.VarExp(i, O.ShortId(i', x'))
 					  end
       | trMod(I.StrMod(i,ds))		= let val ids' = idsDecs(ds, [])

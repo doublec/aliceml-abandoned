@@ -28,7 +28,7 @@ functor MakeAbstractGrammar(type info) :>
 
     datatype exp =
 	  LitExp    of info * lit		(* literal *)
-	| PrimExp   of info * string * typ	(* primitive values *)
+	| PrimExp   of info * string * typ	(* builtin values *)
 	| VarExp    of info * longid		(* variable *)
 	| ConExp    of info * int * longid	(* constructor *)
 	| RefExp    of info			(* reference constructor *)
@@ -96,7 +96,8 @@ functor MakeAbstractGrammar(type info) :>
     (* Modules *)
 
     and mod =
-	  VarMod    of info * id		(* module id *)
+	  PrimMod   of info * string * inf	(* builtin modules *)
+	| VarMod    of info * id		(* module id *)
 	| StrMod    of info * dec list		(* structure *)
 	| SelMod    of info * mod * lab		(* selection *)
 	| FunMod    of info * id * inf * mod	(* functor *)
@@ -227,7 +228,8 @@ functor MakeAbstractGrammar(type info) :>
 
     fun infoCon(Con(i,_,_))		= i
 
-    fun infoMod(VarMod(i,_))		= i
+    fun infoMod(PrimMod(i,_,_))		= i
+      | infoMod(VarMod(i,_))		= i
       | infoMod(StrMod(i,_))		= i
       | infoMod(SelMod(i,_,_))		= i
       | infoMod(FunMod(i,_,_,_))	= i

@@ -958,7 +958,17 @@ print"'_a (* not found *)\n";
 	end
 
 
-    and elabMod(E, I.VarMod(i, id)) =
+    and elabMod(E, I.PrimMod(i, s, inf)) =
+	let
+	    val (j1,inf') = elabInf(E, inf)
+	(*UNFINISHED*)
+	    val  j        = ()
+	in
+	    unfinished i "elabMod" "primitive modules";
+	    ( j, O.PrimMod(infInfo(i,j), s, inf') )
+	end
+
+      | elabMod(E, I.VarMod(i, id)) =
 	let
 	    val (j,id') = elabModId(E, id)
 	in
