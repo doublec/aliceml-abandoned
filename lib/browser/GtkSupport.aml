@@ -201,7 +201,8 @@ structure GtkSupport =
 	    let
 		val t = Gtk.labelNew title
 	    in
-		Gtk.notebookAppendPage(n, page, t)
+		Gtk.notebookAppendPage(n, page, t);
+                ()
 	    end
 
 	(* createNotebook - takes string * Gtk.object list 
