@@ -20,6 +20,7 @@ AC_PROG_CXX
 AC_PROG_INSTALL
 
 AC_LANG(C++)
+AC_SUBST(INCLUDES)
 
 dnl
 dnl  C++ Extensions
@@ -60,13 +61,6 @@ case "$seam_cv_ldflags_export_dynamic" in
 esac
 
 dnl
-dnl  Libraries
-dnl
-AC_CHECK_LIB(dl, dlopen)
-
-AC_SUBST(INCLUDES)
-
-dnl
 dnl  Unix Sockets vs. WinSock
 dnl
 AC_CACHE_CHECK([for Unix select vs. WinSock], [seam_cv_socket_flavor],
@@ -99,8 +93,7 @@ esac
 dnl
 dnl  VirtualAlloc
 dnl
-AC_CACHE_CHECK([for VirtualAlloc],
-  [seam_cv_have_virtualalloc],
+AC_CACHE_CHECK([for VirtualAlloc], [seam_cv_have_virtualalloc],
   [AC_LINK_IFELSE(AC_LANG_PROGRAM([[#include <windows.h>]],
 				  [[VirtualAlloc(NULL, 0, 0, 0);]]),
 		  seam_cv_have_virtualalloc=yes,
@@ -112,6 +105,25 @@ case "$seam_cv_have_virtualalloc" in
 	;;
     yes)
 	AC_DEFINE(HAVE_VIRTUALALLOC, 1)
+	;;
+esac
+
+dnl
+dnl  dlopen
+dnl
+AC_CHECK_LIB(dl, dlopen)
+AC_CACHE_CHECK([for dlopen], [seam_cv_have_dlopen],
+  [AC_LINK_IFELSE(AC_LANG_PROGRAM([[#include <dlfcn.h>]],
+				  [[dlopen("foo", RTLD_NOW | RTLD_GLOBAL);]]),
+		  seam_cv_have_dlopen=yes,
+		  seam_cv_have_dlopen=no)])
+
+case "$seam_cv_have_dlopen" in
+    no)
+	AC_DEFINE(HAVE_DLOPEN, 0)
+	;;
+    yes)
+	AC_DEFINE(HAVE_DLOPEN, 1)
 	;;
 esac
 
