@@ -60,6 +60,11 @@ structure SimplifyRec :> SIMPLIFY_REC =
 	    end
 	  | unalias pat = (nil, SOME pat)
 
+	fun mkRefTyp typ =
+	    Type.inArrow (typ,
+			  Type.inApp (Type.inCon (Type.STAR, Type.CLOSED,
+						  Prebound.typpath_ref), typ))
+
 	fun patToExp (WildPat info) =
 	    let
 		val id = freshId info
@@ -84,8 +89,8 @@ structure SimplifyRec :> SIMPLIFY_REC =
 	  | patToExp (RefPat (info, pat)) =
 	    let
 		val (pat', exp') = patToExp pat
-		val info' = exp_info (#region info, Type.unknown Type.STAR)
-		    (*--** type of ref constructor *)
+		val info' =
+		    exp_info (#region info, mkRefTyp (#typ (infoPat pat)))
 	    in
 		(RefPat (info, pat'), AppExp (info, RefExp info', exp'))
 	    end

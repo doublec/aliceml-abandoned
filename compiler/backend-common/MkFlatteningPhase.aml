@@ -19,15 +19,18 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 	open IntermediateAux
 	open SimplifyMatch
 
-	(*--** provide types for the following six ids: *)
 	val id_false = Id ({region = Source.nowhere},
-			   Prebound.valstamp_false, Name.ExId "false")
+			   Prebound.valstamp_false,
+			   Prebound.valname_false)
 	val id_true = Id ({region = Source.nowhere},
-			  Prebound.valstamp_true, Name.ExId "true")
+			  Prebound.valstamp_true,
+			  Prebound.valname_true)
 	val id_Match = Id ({region = Source.nowhere},
-			   Prebound.valstamp_match, Name.ExId "Match")
+			   Prebound.valstamp_match,
+			   Prebound.valname_match)
 	val id_Bind = Id ({region = Source.nowhere},
-			  Prebound.valstamp_bind, Name.ExId "Bind")
+			  Prebound.valstamp_bind,
+			  Prebound.valname_bind)
 
 	val longid_true = ShortId ({region = Source.nowhere}, id_true)
 	val longid_false = ShortId ({region = Source.nowhere}, id_false)
@@ -441,7 +444,9 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 		    O.ValDec (stmInfo (#region info'), id', exp', false)
 		val tryBody = translateExp (exp, f', cont')
 		val catchInfo =
-		    exp_info (#region info, Type.unknown Type.STAR)   (*--** exn type *)
+		    exp_info (#region info,
+			      Type.inCon (Type.STAR, Type.OPEN,
+					  Prebound.typpath_exn))
 		val catchId = freshId catchInfo
 		val catchVarExp =
 		    VarExp (catchInfo, ShortId (id_info catchInfo, catchId))
