@@ -199,6 +199,16 @@
 		      </child>
 
 		      <child>
+			<widget class="GtkMenuItem" id="paragraphnewline">
+			  <property name="visible">True</property>
+			  <property name="label" translatable="yes">Paragraph+Newline</property>
+			  <property name="use_underline">True</property>
+			  <signal name="activate" handler="on_paragraphnewline_activate" last_modification_time="Tue, 01 Mar 2005 16:42:12 GMT"/>
+			  <accelerator key="Return" modifiers="GDK_CONTROL_MASK" signal="activate"/>
+			</widget>
+		      </child>
+
+		      <child>
 			<widget class="GtkMenuItem" id="feedselection">
 			  <property name="visible">True</property>
 			  <property name="label" translatable="yes">Selection</property>
@@ -296,7 +306,7 @@
 	  <child>
 	    <widget class="GtkNotebook" id="notebook1">
 	      <property name="width_request">600</property>
-	      <property name="height_request">800</property>
+	      <property name="height_request">600</property>
 	      <property name="visible">True</property>
 	      <property name="can_focus">True</property>
 	      <property name="show_tabs">True</property>
@@ -452,7 +462,7 @@
       </child>
 
       <child>
-	<widget class="GtkStatusbar" id="statusbar1">
+	<widget class="GtkStatusbar" id="statusbar">
 	  <property name="visible">True</property>
 	  <property name="has_resize_grip">True</property>
 	</widget>

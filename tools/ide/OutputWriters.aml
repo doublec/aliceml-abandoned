@@ -1,12 +1,65 @@
 import structure Gtk from "x-alice:/lib/gtk/Gtk"
 import structure AliceIdeGUI from "AliceIdeGUI"
+import structure Gdk from "x-alice:/lib/gtk/Gdk"
+import structure PangoEnums from "x-alice:/lib/gtk/PangoEnums"
 
 structure OutputWriters =
    struct
-      fun fillBuf buffer head text =
-          (Gtk.textBufferInsertAtCursor(buffer, head, size head);
-	   Gtk.textBufferInsertAtCursor(buffer, text, size text))
 
+      fun fillBuf view buffer tag text =
+          let
+              val cursor = Gtk.textBufferGetInsert buffer
+              val iter = Gtk.textIterNew()
+              val _ = Gtk.textBufferGetIterAtMark(buffer,iter,cursor)
+	      val startOffset = Gtk.textIterGetOffset iter
+	      val start = Gtk.textIterCopy iter
+          in
+	      Gtk.textBufferInsert(buffer, iter, text, size text);
+	      Gtk.textBufferGetIterAtOffset (buffer, start, startOffset) ;
+              Gtk.textBufferApplyTag(buffer,tag,start,iter);
+              Gtk.textViewScrollToMark(view,
+                                       Gtk.textBufferGetInsert buffer,
+                                       0.0,false,0.0,0.0)
+          end
+              
+              
+(*       fun fillBuf view buffer head text = *)
+(*           (Gtk.textBufferInsertAtCursor(buffer, head, size head); *)
+(* 	   Gtk.textBufferInsertAtCursor(buffer, text, size text); *)
+(*            Gtk.textViewScrollToMark(view, *)
+(*                                     Gtk.textBufferGetInsert buffer, *)
+(*                                     0.0,false,0.0,0.0)) *)
+
+      val contextId = Gtk.statusbarGetContextId(AliceIdeGUI.statusbar,
+                                                "Alice IDE")
+      val _ = Gtk.statusbarPush(AliceIdeGUI.statusbar,contextId,
+                                "Ready.");
+
+      fun setStatus msg = 
+          let
+              val msg = if String.isPrefix "-- " msg then
+                            String.extract(msg, 3, NONE)
+                        else msg
+              val msg = String.map (fn #"\n" => #" " | c => c) msg
+          in
+              (Gtk.statusbarPop(AliceIdeGUI.statusbar, contextId);
+               Gtk.statusbarPush(AliceIdeGUI.statusbar, contextId, msg);
+               ())
+          end
+
+	val cmap   = Gdk.colormapGetSystem ()
+        val textColor = Gdk.colorNew(0xf0f0, 0x2020, 0xa0a0)
+	val black = Gdk.colorNew(0, 0, 0)
+	val white = Gdk.colorNew(65535, 65535, 65535)
+	val _ = Gdk.colormapAllocColor(cmap, black, false, true)
+	val _ = Gdk.colormapAllocColor(cmap, white, false, true)
+	val _ = Gdk.colormapAllocColor(cmap, textColor, false, true)
+
+      fun makeTags buf =
+          {errorTag = Gtk.textBufferCreateTag(buf, "error", "foreground-gdk", Gtk.OBJECT textColor),
+           logTag = Gtk.textBufferCreateTag(buf, "log", "style", Gtk.INT (PangoEnums.PangoStyleToInt PangoEnums.STYLE_ITALIC)),
+           stdTag = Gtk.textBufferCreateTag(buf, "std", "foreground-gdk", Gtk.OBJECT black)}
+          
       fun makeWriters {inStream,
                        outStream,
 		       errStream,
@@ -16,14 +69,16 @@ structure OutputWriters =
           let
               val progBuf = Gtk.textBufferNew Gtk.NULL
               val compilerBuf = Gtk.textBufferNew Gtk.NULL
+              val {errorTag=pErr,logTag=pLog,stdTag=pStd} = makeTags progBuf
+              val {errorTag=cErr,logTag=cLog,stdTag=cStd} = makeTags compilerBuf
           in
               Gtk.textViewSetBuffer(AliceIdeGUI.progout, progBuf);
               Gtk.textViewSetBuffer(AliceIdeGUI.compilerout, compilerBuf);
-              spawn app (fillBuf compilerBuf ">> ") inStream;
-              spawn app (fillBuf compilerBuf "<< ") outStream;
-              spawn app (fillBuf compilerBuf "!! ") errStream;
-              spawn app (fillBuf compilerBuf "") traceStream;
-              spawn app (fillBuf progBuf "") stdOutStream;
-              spawn app (fillBuf progBuf "") stdErrStream
+              spawn app (fillBuf AliceIdeGUI.compilerout compilerBuf cStd) inStream;
+              spawn app (fillBuf AliceIdeGUI.compilerout compilerBuf cLog) outStream;
+              spawn app (fillBuf AliceIdeGUI.compilerout compilerBuf cErr) errStream;
+              spawn app setStatus traceStream;
+              spawn app (fillBuf AliceIdeGUI.progout progBuf pStd) stdOutStream;
+              spawn app (fillBuf AliceIdeGUI.progout progBuf pErr) stdErrStream
           end
    end

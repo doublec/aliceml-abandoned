@@ -6,6 +6,7 @@ import structure Key from "x-alice:/lib/gtk/Key"
 import structure OutputWriters from "OutputWriters"
 import structure Evaluator from "Evaluator"
 import structure Inspector from "x-alice:/lib/tools/Inspector"
+import functor MkHashImpMap from "x-alice:/lib/data/MkHashImpMap"
 
 structure AliceIde =
     struct
@@ -39,22 +40,13 @@ structure AliceIde =
 	val compilerTrace = TextIO.StreamIO.mkOutstream (writer, IO.LINE_BUF)
 	val _ = Evaluator.setTraceStream compilerTrace
 
-	val _ = OutputWriters.makeWriters {inStream = inText,
-					   outStream = outText,
-					   errStream = errText,
-					   traceStream = traceText,
-					   stdOutStream = stdOutText,
-					   stdErrStream = stdErrText}
-
-
+        (* Buffers *)
 
         val curtextview = ref AliceIdeGUI.scratchpad
         val clipboard = Gtk.clipboardGet(Gdk.atomIntern("CLIPBOARD", false))
 
-        val numberOfPages = ref 1
+        val numberOfPages = ref 0
         val currentPage = ref 0
-
-        val feedParagraphHiddenMenu = Gtk.menuItemNewWithMnemonic("Special Paragraph")
 
         fun eval "" = ()
 	  | eval text =
@@ -136,6 +128,16 @@ structure AliceIde =
                     else ()
             end
 
+        fun findNonWS iter next =
+            let
+                val c = Gtk.textIterGetChar iter
+            in
+                if c=0 then ()
+                else if Char.isSpace (chr c) then
+                    (next iter; findNonWS iter next)
+                else ()
+            end
+
         fun paragraphIters(buf) =
             let
                 val cursor = Gtk.textBufferGetInsert(buf)
@@ -147,6 +149,8 @@ structure AliceIde =
                 val enditer = Gtk.textIterCopy(startiter)
                 val _ = findEOP startiter Gtk.textIterBackwardChar
                 val _ = findEOP enditer Gtk.textIterForwardChar
+                val _ = findNonWS startiter Gtk.textIterForwardChar
+                val _ = findNonWS enditer Gtk.textIterBackwardChar
             in
                 (startiter, enditer)
             end
@@ -159,7 +163,20 @@ structure AliceIde =
             in
                 Gtk.textIterFree startiter;
                 Gtk.textIterFree enditer;
-                eval str
+                eval (str^"\n")
+            end
+
+        fun feedParagraphNewline() =
+            let
+                val buf = Gtk.textViewGetBuffer (!curtextview)
+                val (startiter, enditer) = paragraphIters(buf)
+                val str = Gtk.textBufferGetText(buf, startiter, enditer, false)
+                val _ = Gtk.textBufferPlaceCursor(buf, enditer)
+                val _ = Gtk.textBufferInsertAtCursor(buf, "\n\n", 2)
+            in
+                Gtk.textIterFree startiter;
+                Gtk.textIterFree enditer;
+                eval (str^"\n")
             end
             
         fun copy() =
@@ -211,7 +228,8 @@ structure AliceIde =
                 val _ = Gtk.textViewSetLeftMargin(newSource,0)
                 val _ = Gtk.textViewSetRightMargin(newSource,0)
                 val _ = Gtk.textViewSetIndent(newSource,0)
-                val _ = Gtk.textBufferSetText(Gtk.textViewGetBuffer newSource,"",~1)
+                val buf = Gtk.textViewGetBuffer newSource
+                val _ = Gtk.textBufferSetText(buf,"",~1)
                 val _ = Gtk.containerAdd(scrolledwindow2,newSource)
                 val label1 = Gtk.labelNew("New File"^Int.toString (!numberOfPages))
                 val _ = Gtk.widgetShow label1
@@ -230,9 +248,15 @@ structure AliceIde =
             let
                 val buf = Gtk.textViewGetBuffer AliceIdeGUI.scratchpad
             in
+	        OutputWriters.makeWriters {inStream = inText,
+					   outStream = outText,
+					   errStream = errText,
+					   traceStream = traceText,
+					   stdOutStream = stdOutText,
+					   stdErrStream = stdErrText};
                 Gtk.windowAddAccelGroup(AliceIdeGUI.mainwidget,
                                         AliceIdeGUI.Helpers.accelGroup);
-                Gtk.widgetAddAccelerator(AliceIdeGUI.feedparagraph, "activate",
+                Gtk.widgetAddAccelerator(AliceIdeGUI.paragraphnewline, "activate",
                                          AliceIdeGUI.Helpers.accelGroup,
                                          Key.keyvalToInt Key.K_Return,
                                          Gdk.CONTROL_MASK, Gtk.ACCEL_LOCKED)

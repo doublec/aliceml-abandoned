@@ -19,6 +19,7 @@ structure EventHandler : ALICEIDEGUISIGNALS_SIG =
         fun on_delete1_activate _ = AliceIde.delete()
         fun on_feedline_activate _ = AliceIde.feedLine()
         fun on_feedparagraph_activate _ = AliceIde.feedParagraph()
+        fun on_paragraphnewline_activate _ = AliceIde.feedParagraphNewline()
         fun on_feedselection_activate _ = AliceIde.feedSelection()
         fun on_feedfile_activate _ = AliceIde.feedFile()
         val on_about1_activate = const()
