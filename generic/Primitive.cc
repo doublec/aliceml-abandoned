@@ -65,6 +65,9 @@ public:
   Interpreter::function GetFunction() {
     return function;
   }
+  word GetFrame() {
+    return frame;
+  }
   static Interpreter::Result Run(PrimitiveInterpreter *interpreter);
   // Handler Methods
   virtual Block *GetAbstractRepresentation(Block *blockWithHandler);
@@ -123,7 +126,7 @@ PrimitiveInterpreter::GetAbstractRepresentation(Block *blockWithHandler) {
 void PrimitiveInterpreter::PushCall(Closure *closure) {
   Assert(ConcreteCode::FromWord(closure->GetConcreteCode())->
 	 GetInterpreter() == this); closure = closure;
-  Scheduler::PushFrame(frame);
+  Scheduler::PushFrame(GetFrame());
 }
 
 Interpreter::Result PrimitiveInterpreter::Run() {
@@ -176,14 +179,14 @@ word Primitive::MakeClosure(const char *name, Interpreter::function function,
 Interpreter::Result Primitive::Execute(Interpreter *interpreter) {
   PrimitiveInterpreter *primitive =
     static_cast<PrimitiveInterpreter *>(interpreter);
-  Scheduler::PushFrame(PrimitiveFrame::New(primitive)->ToWord());
+  Scheduler::PushFrame(primitive->GetFrame());
   return PrimitiveInterpreter::Run(primitive);
 }
 
 Interpreter::Result Primitive::ExecuteNoCCC(Interpreter *interpreter) {
   PrimitiveInterpreter *primitive =
     static_cast<PrimitiveInterpreter *>(interpreter);
-  Scheduler::PushFrame(PrimitiveFrame::New(primitive)->ToWord());
+  Scheduler::PushFrame(primitive->GetFrame());
   Interpreter::function function = primitive->GetFunction();
   return function();
 }
