@@ -143,7 +143,7 @@ static void CreateLabel(std::FILE *f, unsigned long size) {
 }
 
 int main(int argc, char **argv) {
-  const char *int_val;
+  const char *int_val = NULL;
   std::FILE *f;
 
   if (((sizeof(unsigned long) * 8) < HEADER_FULL_WIDTH)) {
