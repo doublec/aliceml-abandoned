@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 1999-2004
+ *   Andreas Rossberg, 1999-2005
  *
  * Last change:
  *   $Date$ by $Author$
@@ -14,14 +14,14 @@
  *  Items marked with (**) are extensions to the Standard Basis.
  *)
 
-import structure __pervasive                  from "Pervasive"
-import __primitive type unit and int          from "ToplevelTypes"
+import structure __pervasive                         from "Pervasive"
+import __primitive type unit and int                 from "ToplevelTypes"
 import __primitive
-       infix 4 < <= infix 6 +
-       val < and op <= and op +               from "ToplevelValues"
-import __primitive structure General          from "General"
-import __primitive functor MkArray            from "MkArray"
-import functor MkSlice                        from "MkSlice"
+       infix 4 = < <= infix 6 + -
+       val op = and op < and op <= and op + and op - from "ToplevelValues"
+import __primitive structure General                 from "General"
+import __primitive functor MkArray                   from "MkArray"
+import functor MkSlice                               from "MkSlice"
 
 functor MkArraySlice(type 'a array
 		     type 'a vector
@@ -67,4 +67,16 @@ struct
 			      val vsub        = vslsub)
     open Array
     open Slice
+
+    (* Copying has to take extra care for overlapping ranges *)
+
+    fun copy{src, dst, di} =
+	if di < 0 orelse alength dst < di + length src
+	then raise General.Subscript
+	else if di < #2 src then copy'(src, dst, di, 0, length src, 1)
+			    else copy'(src, dst, di, length src - 1, ~1, ~1)
+    and copy'(src, dst, di, i, to, by) =
+	if i = to then () else
+	( aupdate(dst, di+i, sub(src, i));
+	  copy'(src, dst, di, i+by, to, by) )
 end

@@ -88,5 +88,4 @@ struct
     fun dropl f sl		= #2(splitl f sl)
     fun taker f sl		= #2(splitr f sl)
     fun dropr f sl		= #1(splitr f sl)
-
 end
