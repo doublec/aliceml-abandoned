@@ -15,6 +15,7 @@
 #if defined(INTERFACE)
 #pragma implementation "emulator/Scheduler.hh"
 #endif
+
 #include <cstdio>
 #include "emulator/RootSet.hh"
 #include "emulator/Interpreter.hh"
@@ -22,6 +23,7 @@
 #include "emulator/Transients.hh"
 #include "emulator/ByneedInterpreter.hh"
 #include "emulator/Guid.hh"
+#include "emulator/IOHandler.hh"
 
 word Scheduler::root;
 ThreadQueue *Scheduler::threadQueue;
@@ -87,6 +89,7 @@ static inline void GetThreadArgs(Thread *thread) {
 void Scheduler::Run() {
   //--** start timer thread
   while ((currentThread = threadQueue->Dequeue()) != INVALID_POINTER) {
+  retry:
     // Make sure we can execute the selected thread
     Assert(currentThread->GetState() == Thread::RUNNABLE);
     Assert(!currentThread->IsSuspended());
@@ -176,6 +179,9 @@ void Scheduler::Run() {
       threadQueue = ThreadQueue::FromWordDirect(root);
     }
 #endif
+    IOHandler::Poll();
   }
-  //--* select(...)
+  IOHandler::Block();
+  if ((currentThread = threadQueue->Dequeue()) != INVALID_POINTER)
+    goto retry;
 }

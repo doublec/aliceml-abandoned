@@ -22,6 +22,7 @@ GENERICSRCS = \
 	RootSet.cc \
 	Outline.cc \
 	TaskStack.cc \
+	IOHandler.cc \
 	Scheduler.cc \
 	Transients.cc \
 	Interpreter.cc \
