@@ -69,7 +69,7 @@ DEFINE1(Thread_state) {
   case Thread::TERMINATED:
     RETURN(Store::IntToWord(2));
   }
-  Error("inconsistent state returned by Thread::GetState to Thread_state");
+  Error("Thread_state: unknown state returned by Thread::GetState");
 } END
 
 DEFINE1(Thread_suspend) {
