@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2002
+ *   Andreas Rossberg, 2002-2003
  *
  * Last change:
  *   $Date$ by $Author$
@@ -186,7 +186,7 @@ struct
 	    end
 	  | Future.DETERMINED =>
 	case inspect t
-	 of (Unknown | Var _) =>
+	 of (Unknown _ | Var _) =>
 		ppKeyword fm absDoc
 	  | Con p =>
 		ppCon p t fm x
