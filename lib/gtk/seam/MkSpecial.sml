@@ -1,8 +1,30 @@
+(*
+ * Authors:
+ *   Robert Grabowski <grabow@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Robert Grabowski, 2003
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
+(*
+  This functor defines the items for which a special binding
+  (or no binding at all) should be generated.
+*)
 
 functor MkSpecial(val space : Util.spaces) :> SPECIAL =
     struct
 	open TypeTree
 
+	(* includeFile: file that is included in the generated native code.  *)
+        (* The triple means: 1. name of the included file (or "" if none)    *)
+        (*                   2. name of a possible init function in the file *)
+        (*                   3. number of entries the init function adds to  *)
+        (*                      the structure.                               *)
 	val includeFile =
 	    case space of
 		Util.GTK => ("NativeGtkSpecial.hh", "", 0)
@@ -18,19 +40,21 @@ functor MkSpecial(val space : Util.spaces) :> SPECIAL =
 			     "gtk_true",  
 			     "gtk_false", 
 			     "gtk_tree_store_new",
-			     "gtk_type_init" (**),
-			     "gtk_signal_compat_matched" (**),
+			     "gtk_type_init",
+			     "gtk_signal_compat_matched",
 			     "_GtkSocket",
 			     "_GtkPlug"] (* not available for win32 *)
 	      | Util.GDK => ["gdk_init",
 			     "gdk_init_check",
 			     "gdk_pixbuf_new_from_xpm_data"]
 	      | Util.GNOMECANVAS => ["gnome_canvas_item_new",
-				     "gnome_canvas_join_gdk_to_art", (**)
-				     "gnome_canvas_cap_gdk_to_art" (**)]
+				     "gnome_canvas_join_gdk_to_art",
+				     "gnome_canvas_cap_gdk_to_art"]
 	      | _ => nil
 
-        (* specialFuns: generate asig, but no code for: *)
+        (* specialFuns: for these functions, generate a full binding except
+	   for the native wrapper code. (This code should then be written
+           manually into the includeFile specified above.) *)
 	val specialFuns = case space of
 	    Util.GTK => 
 		[FUNC("gtk_text_iter_new", POINTER (STRUCTREF "_GtkTextIter"), 
@@ -60,7 +84,7 @@ functor MkSpecial(val space : Util.spaces) :> SPECIAL =
 		     [POINTER VOID, NUMERIC (true,false,INT)])]
 	  | _ => nil
 
-       (* changedFuns: generate different asig and code for: *)
+       (* changedFuns: assume different type information for: *)
        val changedFuns = case space of
 	   Util.GTK =>
 	       [FUNC("gtk_combo_set_popdown_strings", VOID, 
@@ -68,7 +92,8 @@ functor MkSpecial(val space : Util.spaces) :> SPECIAL =
 		       LIST ("GList", STRING true)])]
 	 | _ => nil
 
-       (* ignoreSafeItems: do not generate any safe code for: *)
+       (* ignoreSafeItems: *)
+       (* do not generate any code in the unsafe component for: *)
        val ignoreSafeItems =
 	   case space of
 	       Util.GTK => ["gtk_init",
@@ -85,7 +110,7 @@ functor MkSpecial(val space : Util.spaces) :> SPECIAL =
 	     | _ => nil
 
 
-
+       (* isIgnored: true if no binding should be generated for an item *)
        fun isIgnored (FUNC (n,_,_)) = 
 	   (Util.contains n ignoreItems) orelse
            (List.exists (fn (FUNC (n',_,_)) => n=n' | _ => false) changedFuns)
@@ -93,6 +118,8 @@ functor MkSpecial(val space : Util.spaces) :> SPECIAL =
 	 | isIgnored (ENUM (n, _)) = Util.contains n ignoreItems
 	 | isIgnored _ = false
 
+       (* isIgnoredSafe: true if no binding in the unsafe component *)
+       (*                should be generated for an item *)
        fun isIgnoredSafe (FUNC (n,_,_)) = Util.contains n ignoreSafeItems
 	 | isIgnoredSafe (STRUCT (n, _)) = Util.contains n ignoreSafeItems
 	 | isIgnoredSafe (ENUM (n, _)) = Util.contains n ignoreSafeItems

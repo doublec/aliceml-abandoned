@@ -1,3 +1,21 @@
+(*
+ * Authors:
+ *   Robert Grabowski <grabow@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Robert Grabowski, 2003
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
+(*
+  This is the main component of the generator. 
+  It parses a C file and generates native, unsafe and enum components.
+*)
+
 local
     structure SGDK = MkSpecial (val space = Util.GDK)
     structure UGDK = MkNative(structure TypeManager = TypeManager
@@ -41,9 +59,9 @@ local
 
 in
 
-    fun main dir =
+    fun main dir file =
     let
-	val tree = Parser.parse "gtkclean.c"
+	val tree = Parser.parse file
     in
 	(OS.FileSys.chDir dir ;
 	 UGTK.create tree ;
@@ -61,9 +79,14 @@ in
     fun run _ =
     let
 	val args = SMLofNJ.getArgs()
-	val dir = if null args then "." else hd args
+	val (outdir,source) = 
+	    case args of
+		nil                 => (".", "gtkclean.c")
+	      | [outdir']           => (outdir', "gtkclean.c")
+	      | outdir'::source'::_ => (outdir', source')
+
     in
-        ( main dir ;
+        ( main outdir source;
  	  OS.Process.exit OS.Process.success )
     end
       handle _ => OS.Process.exit OS.Process.failure

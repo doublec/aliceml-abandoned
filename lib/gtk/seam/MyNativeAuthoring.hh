@@ -1,8 +1,27 @@
+//
+// Author:
+//   Robert Grabowski <grabow@ps.uni-sb.de>
+//
+// Copyright:
+//   Robert Grabowski, 2003
+//
+// Last Change:
+//   $Date$ by $Author$
+//   $Revision$
+//
+
+/*
+  This header file is included in every generated native source file.
+  It contains general conversion macros that should be incorporated
+  into the general Alice.hh authoring header file one day.
+*/
+
 #ifndef _MY_NATIVE_AUTHORING_HH_
 #define _MY_NATIVE_AUTHORING_HH_
 
 #include "Alice.hh"
 
+// extending the existing DEFINE0..DEFINE4
 #ifndef DEFINE5
 #define DEFINE5(name)					\
   static Interpreter::Result name() {			\
@@ -216,18 +235,21 @@
 
 // macro for "normal" unmanaged C pointers (that are simply used
 // as words in Alice)
-//#define DECLARE_UNMANAGED_POINTER(pointer, x)                       \
-//  void *pointer = NULL;                                             \
-//  if (Store::WordToTransient(x) != INVALID_POINTER) { REQUEST(x); } \
-//  else { pointer = Store::WordToUnmanagedPointer(x); }     
+#define DECLARE_UNMANAGED_POINTER(pointer, x)                       \
+  void *pointer = NULL;                                             \
+  if (Store::WordToTransient(x) != INVALID_POINTER) { REQUEST(x); } \
+  else { pointer = Store::WordToUnmanagedPointer(x); }     
 
-#define DECLARE_ENUM DECLARE_INT
+// DECLARE_STRING, DECLARE_REAL and DECLARE_ARRAY only return
+// the Alice classes String, Real and Array. The following macros
+// convert them into the C types.
 #define DECLARE_CSTRING(str,x)                           \
   DECLARE_STRING(str##__temp,x);                         \
   char *str = str##__temp->ExportC();
 #define DECLARE_CDOUBLE(dbl,x)                           \
   DECLARE_REAL(dbl##__temp,x);                           \
   double dbl = dbl##__temp->GetValue();
+// type = array member C type; F = conversion macro (like DECLARE_INT,etc.)
 #define DECLARE_CARRAY(a,x,type,F)                       \
   DECLARE_ARRAY(a##__temp,x);                            \
   type a [a##__temp->GetLength()];                       \
@@ -279,10 +301,10 @@
   result->Init(5,y5);                                    \
   RETURN(result->ToWord());
 
+// General macros that wrap the heterogenous "ToWord" conversion
 #define INT_TO_WORD(i) Store::IntToWord(i)
 #define REAL_TO_WORD(r) Real::New(r)->ToWord()
 #define STRING_TO_WORD(s) String::New( \
                             reinterpret_cast<const char *>(s))->ToWord()
-#define ENUM_TO_WORD INT_TO_WORD
-
+#define UNMANAGED_POINTER_TO_WORD(p) Store::UnmanagedPointerToWord(p)
 #endif

@@ -1,3 +1,20 @@
+(*
+ * Authors:
+ *   Robert Grabowski <grabow@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Robert Grabowski, 2003
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
+(*
+  This functor generates the native structure (.cc) and signature (.asig).
+*)
+
 
 functor MkNative(structure TypeManager : TYPE_MANAGER
 		 structure Special : SPECIAL
@@ -41,34 +58,6 @@ functor MkNative(structure TypeManager : TYPE_MANAGER
 		  "\n\n"] ,
              outro = []
             } : Util.fileInfo
-
-        local
-	    val classes = ref nil
-	    exception NoUnref
-
-	    fun buildClassList' (STRUCT (name,(_,t)::_)) =
-		(case removeTypeRefs t of
-		     STRUCTREF sup => ( classes := ((sup,name)::(!classes)) )
-		   | _             => () 
-		)
-	      | buildClassList' _ = ()
-
-	    fun getParentClass name nil = raise NoUnref
-	      | getParentClass name ((sup, n)::cs) = 
-		if n=name then sup else getParentClass name cs
-
-	    fun getUnrefFun' "_GObject"   = "TYPE_G_OBJECT"
-	      | getUnrefFun' "_GtkObject" = "TYPE_GTK_OBJECT"
-	      | getUnrefFun' name        = 
-		      getUnrefFun' (getParentClass name (!classes))
-	in
-	    fun buildClassList tree = List.app buildClassList' tree
-	    fun getTypeInfo t = 
-		(case removeTypeRefs t of 
-		     STRUCTREF name => getUnrefFun' name
-		   | _              => raise NoUnref)
-		     handle _ => "TYPE_UNKNOWN"
-	end
 	    
         (* SIGNATURE CODE GENERATION *)
 	fun sigEntry(funName, ret, arglist, doinout) =
@@ -94,52 +83,30 @@ functor MkNative(structure TypeManager : TYPE_MANAGER
 		 if doinout then "_" else "", ") {\n"]
 
             (* declaration of input or input/output arguments *)
-	    local
-		fun inDeclare (NUMERIC(_,false,_))= "DECLARE_INT"
-		  | inDeclare (NUMERIC(_,true, _))= "DECLARE_CDOUBLE"
-		  | inDeclare (ELLIPSES true)     = "DECLARE_ELLIPSES"
-		  | inDeclare (ELLIPSES false)    = "DECLARE_VALIST"
-		  | inDeclare BOOL                = "DECLARE_BOOL"
-		  | inDeclare (POINTER _)         = "DECLARE_OBJECT"
-		  | inDeclare (STRING _)          = "DECLARE_CSTRING"
-		  | inDeclare (FUNCTION _)        = "DECLARE_OBJECT"
-		  | inDeclare (ENUMREF _)         = "DECLARE_ENUM"
-		  | inDeclare (TYPEREF (_,t))     = inDeclare t
-		  | inDeclare _                   = "DECLARE_UNKNOWN";
-		val xcounter = ref 0
-		fun xcinc () = let val x = Int.toString (!xcounter) 
-			       in  (xcounter := !xcounter+1 ; x)
-			       end
-		val funprefix = fn "GSList" => "g_slist" | _ => "g_list"
+	    fun inDeclLine (t,name,i) =
+	    let
+		val (macro, args) = fromWord t
 	    in
-		fun inDeclLine (ARRAY (_,t'),name) =
-		        [wrIndent, "DECLARE_CARRAY(", name, ",x", xcinc(), ",",
-			 getCType(t'), ",", inDeclare(t'), ");\n"]
-		  | inDeclLine (LIST (ctype,t),name) =
-			[wrIndent, "DECLARE_GLIST(", name, ",x", xcinc(), ",", 
-			 ctype, ",", funprefix ctype, ",", inDeclare t, ");\n"]
-		  | inDeclLine (t,name) =
-			[wrIndent,inDeclare(t),"(",name,",x",xcinc(),");\n"]
+		[wrIndent, macro, "(", Util.makeTuple 
+		 ", " "" (name::("x"^(Int.toString i))::args), ");\n"]
 	    end
 
 	    (* declaration of output arguments *)
-	    local
-		fun outInit (NUMERIC _)      = " = 4711"
-		  | outInit BOOL             = " = true"
-		  | outInit (TYPEREF (_,t))  = outInit t
-		  | outInit _                = ""
-	    in
-		fun outDeclLine (t,name) = 
-		        [wrIndent, getCType t, " ", name, outInit t, ";\n"]
-	    end  
+	    fun outDeclLine (t,name) = 
+		    [wrIndent, getCType t, " ", name, outInit t, ";\n"]
 
 	    (* all declarations *)
 	    local
-		fun declare (IN, name, t) = inDeclLine (t,name)
+		val xCount = ref 0
+		fun xCountInc () = ((!xCount) before xCount := (!xCount)+1)
+
+		fun declare (IN, name, t) = inDeclLine (t,name,xCountInc())
 		  | declare (OUT, name, t) =
-		    if doinout then inDeclLine(t,name) else outDeclLine(t,name)
+		    if doinout 
+			then inDeclLine(t,name,xCountInc()) 
+		        else outDeclLine(t,name)
 	    in
-		val allDecls = map String.concat(map declare arglist)
+		val allDecls = map String.concat (map declare arglist)
 	    end
 
 	    (* C function call *)
@@ -187,21 +154,13 @@ functor MkNative(structure TypeManager : TYPE_MANAGER
 		    if ret = VOID then arglist else (OUT, "ret", ret)::arglist
 		val (_,outs) = splitInOuts (alwithret, doinout)
 
-		fun retConv (NUMERIC(_,false,_)) n = "INT_TO_WORD("^n^")"
-		  | retConv (NUMERIC(_,true ,_)) n = "REAL_TO_WORD("^n^")"
-		  | retConv BOOL                 n = "BOOL_TO_WORD("^n^")"
-		  | retConv (POINTER p)          n =
-		         "PointerToObject("^n^","^(getTypeInfo p)^")"
-                  | retConv (STRING _)           n ="STRING_TO_WORD("^n^")"
-		  | retConv(LIST(tname,STRING _))n =tname^"ToStringList("^n^")"
-		  | retConv(LIST(tname,_))       n =tname^"ToObjectList("^n^")"
-		  | retConv (FUNCTION _)         n =
-			 "PointerToObject((void*)("^n^"),0)"
-		  | retConv (TYPEREF(_,t))       n = retConv t n
-		  | retConv (ENUMREF _)          n = "ENUM_TO_WORD("^n^")"
-		  | retConv _                    n = n
-  
-		fun makeOutArg (_,name,t) = retConv t name
+		fun makeOutArg (_,name,t) =
+		let
+		    val (macro, args) = toWord t
+		in
+		    macro ^ "(" ^ (Util.makeTuple ", " "" (name::args)) ^ ")"
+		end
+
 		val retList = Util.makeTuple ", " "" (map makeOutArg outs)
 	    in
 		val retLine = 
@@ -327,7 +286,7 @@ functor MkNative(structure TypeManager : TYPE_MANAGER
 	    val (_, initFun, addEntries) = Special.includeFile
 	    val header = 
 		["word InitComponent() {\n",
-		 wrIndent, "Record *record = CreateRecord(", 
+		 wrIndent, "Record *record = Record::New(", 
 		   Int.toString ((length initLines)+addEntries), ");\n"] @
 		(if initFun = "" 
 		     then nil 

@@ -1,5 +1,5 @@
 ###
-# GTK+ 2.0 Bindings for Alice - Makefile
+# GTK+ 2.0 Binding for Alice - Makefile
 
 # The generator creates full code for the following name spaces
 COMPS = Gdk Gtk GnomeCanvas
@@ -22,6 +22,8 @@ GENNATIVES = $(COMPS:%=Native%.asig) $(COMPS:%=Native%.cc)
 GENFILES = $(GENNATIVES) $(ENUMS) $(UNSAFE)
 GENSIGS = $(COMPSCAP:%=%-sig.aml) 
 
+# C input file
+INPUTFILE = gtkclean.c
 # temporary output directory
 OUTDIR = output
 
@@ -62,9 +64,9 @@ full: generate depend compile docs
 
 $(GENFILES): $(LASTGENERATE)
 
-$(LASTGENERATE) generate: gtkclean.c $(GENERATOR)
+$(LASTGENERATE) generate: $(INPUTFILE) $(GENERATOR)
 	if test ! -d $(OUTDIR) ; then mkdir $(OUTDIR) ; fi
-	$(SML) @SMLload=$(GENERATOR) $(OUTDIR)
+	$(SML) @SMLload=$(GENERATOR) $(OUTDIR) $(INPUTFILE)
 	$(INSTALL) $(GENFILES:%=$(OUTDIR)/%) .
 	rm -f $(OUTDIR)/*
 	rmdir $(OUTDIR)
@@ -75,11 +77,11 @@ $(GENERATOR):
 	echo 'CM.make(); compile();' | $(SML)
 	test -e $(GENERATOR) || exit 1
 
-gtkclean.c:
+$(INPUTFILE):
 	(cd prepare ; $(MAKE) )
 
 %-sig.aml: %-sig.tml %_UNSAFE-sig.aml %_ENUMS-sig.aml
-	gawk -f includesig.awk -v filename=includesig.awk $< > $@
+	gawk -f includesig.awk $< > $@
 
 
 ### COMPILATION #################################
@@ -126,7 +128,7 @@ clean:
 	rm -f $(LASTGENERATE)
 
 veryclean: clean
-	rm -f gtkclean.c
+	rm -f $(INPUTFILE)
 	rm -f $(NATIVES:%=%.dll)
 	rm -f $(NATIVES:%=%.dll.def)
 	rm -f Makefile.depend

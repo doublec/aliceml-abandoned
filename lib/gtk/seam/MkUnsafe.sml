@@ -1,3 +1,20 @@
+(*
+ * Authors:
+ *   Robert Grabowski <grabow@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Robert Grabowski, 2003
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
+(*
+  This functor generates the unsafe component (structure and signature).
+*)
+
 
 functor MkUnsafe(structure TypeManager : TYPE_MANAGER
 	         structure Special : SPECIAL

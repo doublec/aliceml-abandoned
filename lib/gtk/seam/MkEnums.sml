@@ -1,3 +1,20 @@
+(*
+ * Authors:
+ *   Robert Grabowski <grabow@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Robert Grabowski, 2003
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
+(*
+  This functor generates the enums component (structure and signature).
+*)
+
 
 functor MkEnums(structure TypeManager : TYPE_MANAGER
 	        structure Special : SPECIAL
@@ -66,7 +83,8 @@ functor MkEnums(structure TypeManager : TYPE_MANAGER
 	let
 	    val members' = map (fn (name,num) => 
 				(Util.computeEnumName (space,name), 
-				Int.toString num)) members
+				LargeInt.toString num)) 
+		               (List.filter checkEnumMember members)
 	in
 	    if null members 
 		then ( nil, nil )
