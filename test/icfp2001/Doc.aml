@@ -1,22 +1,31 @@
-structure Doc =
+import structure Tag from "Tag"
+
+signature DOC =
+sig
+    datatype item =
+	  TEXT   of string list	(* reversed *)
+	| TAGGED of Tag.tag * doc
+    withtype doc = item list
+
+    val output : TextIO.outstream * doc -> unit
+end
+
+structure Doc : DOC =
 struct
-    datatype color = R | G | B | C | M | Y | K | W | UNKNOWN
+    datatype item =
+	  TEXT   of string list	(* reversed *)
+	| TAGGED of Tag.tag * doc
+    withtype doc = item list
 
-    type property =
-	{ b :		bool
-	, em :		bool
-	, i :		bool
-	, s :		bool
-	, tt :		bool
-	, u :		int	(* 0..3 *)
-	, size :	int	(* 0..9 *)
-	, color :	color
-	}
-
-    (* All lists are reversed! *)
-
-    datatype item = string list * pool * property
-	(* The bool flag is true iff all strings are spaces. *)
-
-    type doc = item list
+    fun output(out, items) = List.app (fn x => output'(out, x)) items
+    and output'(out, TEXT ss) =
+	    List.appr (fn s => TextIO.output(out, s)) ss
+      | output'(out, TAGGED(t,doc)) =
+	let
+	    val tag = Tag.toString t
+	in
+	    TextIO.output(out, "<" ^ tag ^ ">");
+	    output(out, doc);
+	    TextIO.output(out, "</" ^ tag ^ ">")
+	end
 end
