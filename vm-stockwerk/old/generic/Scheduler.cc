@@ -149,8 +149,9 @@ void Scheduler::Run() {
       //--** add Primitive::table
       //--** add threads waiting for I/O as well as properties
       threadQueue->PurgeAll();
-      threadQueue =
-	ThreadQueue::FromWordDirect(Store::DoGC(threadQueue->ToWord()));
+      word w = threadQueue->ToWord();
+      Store::DoGC(w);
+      threadQueue = ThreadQueue::FromWordDirect(w);
     }
   }
   //--* select(...)
