@@ -267,9 +267,7 @@ functor MkValuePropagationPhase(val isCross: bool
 	structure C: CONTEXT =
 	    struct
 		type t = env
-
-		val new = IdMap.map
-		val clone = IdMap.clone
+		val empty = IdMap.map () : env
 	    end
 
 	(*
@@ -1809,7 +1807,7 @@ functor MkValuePropagationPhase(val isCross: bool
 	  | declareImport (_, env) (id, _, _, false) = 
 	    declareUnknown (env, IdDef id, true)
 
-	fun translate env (desc, component as {imports, body, exports, sign}) =
+	fun translate (desc, env, component as {imports, body, exports, sign}) =
 	    let
 		val env' = IdMap.clone env
 (*--** enter values from context into env' *)
@@ -1830,8 +1828,8 @@ functor MkValuePropagationPhase(val isCross: bool
 				 lazySels) @
 		    patchBody (body, lazySels, StampMap.map ())
 	    in
-		{imports = imports, body = body,
-		 exports = exports, sign = sign}
+		(env, {imports = imports, body = body,
+		       exports = exports, sign = sign})
 	    end
 	    (*--**DEBUG*)
 	    handle exn as Error.Error (_, _) => raise exn
