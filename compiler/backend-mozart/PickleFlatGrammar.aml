@@ -208,9 +208,9 @@ structure PickleFlatGrammar :> CODE
 	     outputVector (outputPair (outputLit, outputBody)) (q, litBodyVec))
 	  | outputTests (q, TagTests (labels, tagBodyVec)) =
 	    (outputTuple (q, "TagTests", 2);
-	     outputVector outputLabel (q, labels);
 	     outputVector (outputTriple (outputInt, outputArgs outputIdDef,
-					 outputBody)) (q, tagBodyVec))
+					 outputBody)) (q, tagBodyVec);
+	     outputVector outputLabel (q, labels))
 	  | outputTests (q, ConTests conBodyVec) =
 	    (outputTuple (q, "ConTests", 1);
 	     outputVector (outputTriple (outputIdRef, outputArgs outputIdDef,
