@@ -20,7 +20,7 @@
 #include "generic/Worker.hh"
 #include "java/Data.hh"
 
-class ThrowWorker: public Worker {
+class DllExport ThrowWorker: public Worker {
 private:
   ThrowWorker() {}
 public:
