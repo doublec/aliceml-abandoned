@@ -37,7 +37,7 @@ structure Main :> MAIN =
 	      handle Parser.ParseError s => 
 		     (CodeEmitter.close doc;
 		      TextIO.output(TextIO.stdErr,
-				    "alice-glade Error: "^s^"\n");
+				    "aliceglade Error: "^s^"\n");
 		      OS.Process.failure)
 	  end
 
@@ -55,12 +55,12 @@ structure Main :> MAIN =
 
 
       fun usage (SOME s, status) =
-	  (TextIO.output (TextIO.stdErr, "alice-glade: " ^ s ^ "\n");
+	  (TextIO.output (TextIO.stdErr, "aliceglade: " ^ s ^ "\n");
 	   usage (NONE, status))
 	| usage (NONE, status) =
 	  (TextIO.output
 	       (TextIO.stdErr,
-		"Usage: alice-glade [<option> ...] <glade file>\n\n\
+		"Usage: aliceglade [<option> ...] <glade file>\n\n\
 	 \Options:\n\
 	 \-?, -h, --help, --usage\n\
 	 \    Display this message.\n\
