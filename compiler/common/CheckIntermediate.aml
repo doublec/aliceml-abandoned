@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg, 2001-2002
  *
  * Last change:
  *   $Date$ by $Author$
@@ -103,18 +103,15 @@ struct
 (*DEBUG
     fun matchesRow(r1,r2) =
 	(*UNFINISHED: allow row variables? *)
-	Type.isEmptyRow r1 orelse
-	not(Type.isEmptyRow r2) andalso
-	let
-	    val (l1,t1) = Type.hdRow r1
-	    val (l2,t2) = Type.hdRow r2
-	in
-	    case Label.compare(l1,l2)
-	      of EQUAL   => Type.equal(t1,t2) andalso
-			    matchesRow(Type.tlRow r1, Type.tlRow r2)
-	       | LESS    => false
-	       | GREATER => matchesRow(r1, Type.tlRow r2)
-	end
+	case (Type.inspectRow r1, Type.inspectRow r2)
+	 of (Type.EmptyRow, _) => true
+	  | (Type.FieldRow(l1,t1,r1'), FieldRow(l2,t2,r2') =>
+	    (case Label.compare(l1,l2)
+	     of EQUAL   => Type.equal(t1,t2) andalso matchesRow(r1',r2')
+	      | LESS    => false
+	      | GREATER => matchesRow(r1,r2')
+	    )
+	  | _ => false
 *)
 
     exception HigherKind
@@ -227,7 +224,7 @@ end
 		val t  = #typ i
 		val l  = chLab E lab
 		val t1 = chLongid E longid
-		val r  = checked Type.asProd' t1
+		val r  = checked Type.asProd(Type.unroll t1)
 			 (i, "LongId sel type", #[LONGID longid, TYPE t1])
 		val t' = checked Type.lookupRow(r,l)
 			 (i, "LongId label", #[LAB l, TYPE t1])
@@ -335,7 +332,7 @@ end
 		val t   = #typ i
 		val l   = chLab E lab
 		val t'  = chExp E exp
-		val r   = checked Type.asSum' t
+		val r   = checked Type.asSum(Type.unroll t)
 			  (i, "TagExp type", #[TYPE t])
 		val t1  = checked Type.lookupRow(r,l)
 			  (i, "TagExp label", #[LAB l, TYPE t])
@@ -423,7 +420,7 @@ end
 		val t  = #typ i
 		val l  = chLab E lab
 		val t' = chExp E exp
-		val r  = checked Type.asProd' t'
+		val r  = checked Type.asProd(Type.unroll t')
 			 (i, "SelExp type", #[LAB l, TYPE t'])
 		val t1 = checked Type.lookupRow(r,l)
 			 (i, "SelExp label", #[LAB l, TYPE t'])
@@ -789,7 +786,7 @@ end
 		val t   = #typ i
 		val l   = chLab E lab
 		val t'  = chPat E pat
-		val r   = checked Type.asSum' t
+		val r   = checked Type.asSum(Type.unroll t)
 			  (i, "TagPat type", #[TYPE t])
 		val t1  = checked Type.lookupRow(r,l)
 			  (i, "TagPat label", #[LAB l, TYPE t])
