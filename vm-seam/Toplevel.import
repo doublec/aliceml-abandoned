@@ -61,7 +61,7 @@ import structure Remote from "x-alice:/lib/distribution/Remote"
 
 (* import signature INSPECTOR from "x-alice:/lib/tools/INSPECTOR-sig" *)
 (* import signature EXPLORER from "x-alice:/lib/tools/EXPLORER-sig" *)
-import structure Inspector and Inspector' from "x-alice:/lib/tools/Inspector"
+import structure Inspector from "x-alice:/lib/tools/Inspector"
 (* import structure Explorer from "x-alice:/lib/tools/Explorer" *)
 
 import "x-alice:/compiler/ToplevelMain"
@@ -102,4 +102,4 @@ __overload (int, IntInf.t, word, Word8.t, real, char, string) as 'numtxt
 
 __overload 'a printVal :  'a -> unit = Print'.printVal'
 __overload 'a printType : 'a -> unit = Print'.printType'
-__overload 'a inspect : 'a -> unit = Inspector'.inspect'
+__overload 'a inspect : 'a -> unit = Inspector.inspectVal
