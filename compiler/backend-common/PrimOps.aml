@@ -165,6 +165,7 @@ structure PrimOps :> PRIM_OPS =
 		ins ("String.substring", SOME (Tuple 3));
 		ins ("String.str", SOME Unary);
 		ins ("Thread.Terminate", NONE);
+		ins ("Thread.Terminated", NONE);
 		ins ("Thread.current", SOME (Tuple 0));
 		ins ("Thread.isSuspended", SOME Unary);
 		ins ("Thread.raiseIn", SOME (Tuple 2));
