@@ -1,3 +1,12 @@
+(*
+import structure Stamp	from "Stamp"
+import structure Name	from "Name"
+import structure Label	from "Label"
+
+import structure Url	from "Url"
+*)
+
+
 signature INTERMEDIATE_GRAMMAR =
   sig
 
@@ -64,6 +73,7 @@ UNFINISHED: obsolete after bootstrapping:
 	| FailExp   of exp_info				(* lazy failure *)
 	| LazyExp   of exp_info * exp			(* by-need suspension *)
 	| LetExp    of exp_info * dec list * exp	(* local binding *)
+	| UpExp     of exp_info * exp			(* type abstraction *)
 
     and 'a field = Field of 'a field_info * lab * 'a
 

@@ -1,3 +1,14 @@
+(*
+import structure Stamp	from "Stamp"
+import structure Name	from "Name"
+import structure Label	from "Label"
+
+import structure Url	from "Url"
+
+import signature INTERMEDIATE_GRAMMAR	from "INTERMEDIATE_GRAMMAR"
+*)
+
+
 functor MakeIntermediateGrammar(type lab_info
 				type id_info
 				type longid_info
@@ -71,6 +82,7 @@ UNFINISHED: obsolete after bootstrapping:
 	| FailExp   of exp_info				(* lazy failure *)
 	| LazyExp   of exp_info * exp			(* by-need suspension *)
 	| LetExp    of exp_info * dec list * exp	(* local binding *)
+	| UpExp     of exp_info * exp			(* type abstraction *)
 
     and 'a field = Field of 'a field_info * lab * 'a
 
@@ -158,6 +170,7 @@ UNFINISHED: obsolete after bootstrapping:
       | infoExp(FailExp(i))		= i
       | infoExp(LazyExp(i,_))		= i
       | infoExp(LetExp(i,_,_))		= i
+      | infoExp(UpExp(i,_))		= i
 
     fun infoField(Field(i,_,_))		= i
     fun infoMatch(Match(i,_,_))		= i
