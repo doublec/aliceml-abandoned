@@ -26,6 +26,25 @@
 
 #include "alice/Authoring.hh"
 
+static word SitedArgumentConstructor;
+static word SitedResultConstructor;
+static word ProxyConstructor;
+static word ProtocolConstructor;
+
+DEFINE1(UnsafeComponent_Proxy) {
+  ConVal *conVal =
+    ConVal::New(Store::DirectWordToBlock(ProxyConstructor), 1);
+  conVal->Init(0, x0);
+  RETURN(conVal->ToWord());
+} END
+
+DEFINE1(UnsafeComponent_Protocol) {
+  ConVal *conVal =
+    ConVal::New(Store::DirectWordToBlock(ProtocolConstructor), 1);
+  conVal->Init(0, x0);
+  RETURN(conVal->ToWord());
+} END
+
 DEFINE0(UnsafeRemote_getLocalIP) {
 #if defined(__MINGW32__) || defined(_MSC_VER)
   char nodeName[256];
@@ -75,14 +94,33 @@ DEFINE1(UnsafeRemote_unpackValue) {
 static word SitedConstructor;
 
 AliceDll word UnsafeRemote() {
-  SitedConstructor =
-    UniqueConstructor::New("UnsafeRemote.Sited",
-			   "UnsafeRemote.Sited")->ToWord();
-  RootSet::Add(SitedConstructor);
+  SitedArgumentConstructor =
+    UniqueConstructor::New("SitedArgument",
+			   "UnsafeRemote.SitedArgument")->ToWord();
+  RootSet::Add(SitedArgumentConstructor);
+  SitedResultConstructor =
+    UniqueConstructor::New("SitedResult", "UnsafeRemote.SitedResult")->ToWord();
+  RootSet::Add(SitedResultConstructor);
+  ProxyConstructor =
+    UniqueConstructor::New("Proxy", "UnsafeRemote.Proxy")->ToWord();
+  RootSet::Add(ProxyConstructor);
+  ProtocolConstructor =
+    UniqueConstructor::New("Protocol", "UnsafeRemote.Protocol")->ToWord();
+  RootSet::Add(ProtocolConstructor);
 
-  Record *record = Record::New(6);
-  record->Init("'Sited", SitedConstructor);
-  record->Init("Sited", SitedConstructor);
+  Record *record = Record::New(14);
+  record->Init("'SitedInternal", Pickler::Sited);
+  record->Init("SitedInternal", Pickler::Sited);
+  record->Init("'SitedArgument", SitedArgumentConstructor);
+  record->Init("SitedArgument", SitedArgumentConstructor);
+  record->Init("'SitedResult", SitedResultConstructor);
+  record->Init("SitedResult", SitedResultConstructor);
+  record->Init("'Proxy", ProxyConstructor);
+  INIT_STRUCTURE(record, "UnsafeComponent", "Proxy",
+		 UnsafeComponent_Proxy, 1);
+  record->Init("'Protocol", ProtocolConstructor);
+  INIT_STRUCTURE(record, "UnsafeComponent", "Protocol",
+		 UnsafeComponent_Protocol, 1);
   INIT_STRUCTURE(record, "UnsafeRemote", "getLocalIP",
 		 UnsafeRemote_getLocalIP, 0);
   INIT_STRUCTURE(record, "UnsafeRemote", "setCallback",

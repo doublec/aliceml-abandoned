@@ -27,6 +27,7 @@ export
    %% For use by Alice programs:
    'UnsafeComponent$': Component
 define
+   SitedInternalException = {NewUniqueName 'Component.SitedInternal'}
    SitedException    = {NewUniqueName 'Component.Sited'}
    CorruptException  = {NewUniqueName 'Component.Corrupt'}
    NotFoundException = {NewUniqueName 'Component.NotFound'}
@@ -186,7 +187,9 @@ define
    end
 
    Component =
-   'Component'('Sited': SitedException
+   'Component'('SitedInternal': SitedInternalException
+	       '\'SitedInternal': SitedInternalException
+	       'Sited': SitedException
 	       '\'Sited': SitedException
 	       'Corrupt': CorruptException
 	       '\'Corrupt': CorruptException

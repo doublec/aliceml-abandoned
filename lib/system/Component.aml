@@ -114,7 +114,9 @@ struct
 
     fun save (name, component) =
 	UnsafeComponent.save (name, component)
-	handle cause => raise IO.Io {name, function = "save", cause}
+	handle UnsafeComponent.SitedInternal =>
+		   raise IO.Io {name, function = "save", cause = Sited}
+	     | cause => raise IO.Io {name, function = "save", cause}
 
     fun inf component = inf' (cast component)
     and inf' (UNEVALUATED {inf, ...}) = inf

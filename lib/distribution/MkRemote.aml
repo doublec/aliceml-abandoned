@@ -185,7 +185,7 @@ struct
     fun proxyCallback (url, unpackedArgument) =
         let
             val packedArgument = UnsafeRemote.packValue unpackedArgument
-                                 handle UnsafeRemote.Sited =>
+                                 handle UnsafeRemote.SitedInternal =>
                                      raise Proxy SitedArgument
             val packedResult = RemotePort.call (url, packedArgument)
                                handle e => raise Proxy e
@@ -221,7 +221,7 @@ struct
                     val unpackedResult = RETURN (f unpackedArgument)
                 in
                     UnsafeRemote.packValue unpackedResult
-                    handle UnsafeRemote.Sited => raise Proxy SitedResult
+                    handle UnsafeRemote.SitedInternal => raise Proxy SitedResult
                 end
                 handle e =>
                     UnsafeRemote.packValue (RAISE e)
@@ -242,7 +242,7 @@ struct
 
     fun offer value =
         Url.toString (RemotePort.export (UnsafeRemote.packValue value))
-	handle UnsafeRemote.Sited => raise Pickle.Sited
+	handle UnsafeRemote.SitedInternal => raise Pickle.Sited
 
     fun take ticket =
         let

@@ -51,7 +51,7 @@ sig
 end
 =
 struct
-    exception Protocol of string
+    exception Protocol = UnsafeRemote.Protocol
 
     type tag	= int	(* range: 0 - 255 *)
     type path	= int
@@ -359,9 +359,9 @@ struct
     type ticket = Url.t
 
     exception Ticket
-    exception Proxy of exn
-    exception SitedArgument
-    exception SitedResult
+    exception Proxy = UnsafeRemote.Proxy
+    exception SitedArgument = UnsafeRemote.SitedArgument
+    exception SitedResult = UnsafeRemote.SitedResult
     exception Protocol = BinaryMessage.Protocol
 
     val rootUrl =

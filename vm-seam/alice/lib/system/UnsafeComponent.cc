@@ -16,6 +16,7 @@
 #include "alice/Authoring.hh"
 #include "alice/BootLinker.hh"
 
+static word SitedConstructor;
 static word NotFoundConstructor;
 static word MismatchConstructor;
 static word EvalConstructor;
@@ -131,6 +132,9 @@ DEFINE1(UnsafeComponent_unpack_) {
 } END
 
 AliceDll word UnsafeComponent() {
+  SitedConstructor =
+    UniqueConstructor::New("Sited", "UnsafeComponent.Sited")->ToWord();
+  RootSet::Add(SitedConstructor);
   NotFoundConstructor =
     UniqueConstructor::New("NotFound", "UnsafeComponent.NotFound")->ToWord();
   RootSet::Add(NotFoundConstructor);
@@ -147,9 +151,11 @@ AliceDll word UnsafeComponent() {
     UniqueConstructor::New("Native", "UnsafeComponent.Native")->ToWord();
   RootSet::Add(NativeConstructor);
 
-  Record *record = Record::New(21);
-  record->Init("'Sited", Pickler::Sited);
-  record->Init("Sited", Pickler::Sited);
+  Record *record = Record::New(23);
+  record->Init("'Sited", SitedConstructor);
+  record->Init("Sited", SitedConstructor);
+  record->Init("'SitedInternal", Pickler::Sited);
+  record->Init("SitedInternal", Pickler::Sited);
   record->Init("'Corrupt", Unpickler::Corrupt);
   record->Init("Corrupt", Unpickler::Corrupt);
   record->Init("'NotFound", NotFoundConstructor);

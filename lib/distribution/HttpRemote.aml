@@ -29,10 +29,10 @@ structure HttpRemotePort :> REMOTE_PORT =
 	type ticket = Url.t
 
 	exception Ticket
-	exception Proxy of exn
-	exception SitedArgument
-	exception SitedResult
-	exception Protocol of string
+	exception Proxy = UnsafeRemote.Proxy
+	exception SitedArgument = UnsafeRemote.SitedArgument
+	exception SitedResult = UnsafeRemote.SitedResult
+	exception Protocol = UnsafeRemote.Protocol
 
 	val pickleContentType = "application/x-alice-pickle"
 
