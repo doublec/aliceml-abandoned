@@ -2,6 +2,9 @@
 // Authors:
 //   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
 //
+// Contributors:
+//   Leif Kornstaedt <kornstaedt@ps.uni-sb.de>
+//
 // Copyright:
 //   Thorsten Brunklaus, 2002
 //
@@ -253,7 +256,7 @@ word UnsafeIO(void) {
 
   Tuple *t = Tuple::New(16);
   t->Init(0, IoConstructor);
-  t->Init(1, Primitive::MakeFunction(UnsafeIO_Io, 1));
+  t->Init(1, Primitive::MakeFunction(UnsafeIO_Io, 3));
   t->Init(2, Primitive::MakeFunction(UnsafeIO_closeIn, 1));
   t->Init(3, Primitive::MakeFunction(UnsafeIO_closeOut, 1));
   t->Init(4, Primitive::MakeFunction(UnsafeIO_flushOut, 1));
