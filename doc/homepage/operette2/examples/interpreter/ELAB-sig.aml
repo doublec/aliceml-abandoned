@@ -5,9 +5,9 @@
  *)
 
 
-import structure Syntax from "Syntax.ozf"
-import structure Type   from "Type.ozf"
-import structure Env    from "Env.ozf"
+import structure Syntax from "Syntax"
+import structure Type   from "Type"
+import structure Env    from "Env"
 
 
 signature ELAB =

@@ -5,8 +5,8 @@
  *)
 
 
-import structure Token  from "Token.ozf"
-import structure Syntax from "Syntax.ozf"
+import structure Token  from "Token"
+import structure Syntax from "Syntax"
 
 
 signature PARSER =

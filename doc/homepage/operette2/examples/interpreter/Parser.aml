@@ -26,9 +26,9 @@
  *)
 
 
-import structure Token  from "Token.ozf"
-import structure Syntax from "Syntax.ozf"
-import signature PARSER from "PARSER.ozf"
+import structure Token  from "Token"
+import structure Syntax from "Syntax"
+import signature PARSER from "PARSER-sig"
 
 
 structure Parser :> PARSER =

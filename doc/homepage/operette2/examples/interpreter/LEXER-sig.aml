@@ -5,7 +5,7 @@
  *)
 
 
-import structure Token from "Token.ozf"
+import structure Token from "Token"
 
 
 signature LEXER =
