@@ -41,7 +41,7 @@ endif
 ##
 ## Do it!
 ##
-install: install-mozart man
+install: install-seam man
 	@echo -------------------------------------------------------------------------------
 	@echo Installation of Alice for $(PLATFORM) complete.
 	@echo Time for build 1:
@@ -58,7 +58,7 @@ install-prelude:
 ##
 ## Sync the global installation with local one
 ##
-install-global: install
+install-global: #install
 	(cd $(PREFIX) && tar -cf - *) | \
 	(cd $(GLOBAL_PREFIX) && tar -xvf -)
 
@@ -90,6 +90,7 @@ clean-mozart: clean-common
 	(cd lib/inspector && make distclean) || exit 1
 	(cd lib/constraints && make distclean) || exit 1
 	(cd lib/distribution && make distclean) || exit 1
+	(cd lib/test && make distclean) || exit 1
 	(cd lib/gtk && ([ -f Makefile ] && make distclean || exit 0)) || exit 1
 
 clean-seam: clean-common
@@ -97,6 +98,9 @@ clean-seam: clean-common
 	(cd vm-seam && make clean WINDOWS=$(WINDOWS)) || exit
 	(cd vm-seam && make -f Makefile.bootstrap distclean) || exit 1
 	(cd lib/distribution && make TARGET=seam distclean) || exit 1
+	(cd lib/test && make distclean) || exit 1
+	(cd lib/gtk/stockwerk && make distclean) || exit 1
+	(cd lib/browser && make distclean) || exit 1
 
 clean-common:
 	(cd bootstrap && make clean) || exit 1

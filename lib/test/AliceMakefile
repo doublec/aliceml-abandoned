@@ -67,10 +67,12 @@ SH_ROOT := $(addsuffix $(SH_EXT), $(ROOT))
 export SH_ROOT
 SW_ROOT := $(addsuffix $(SW_ROOT), $(ROOT))
 
-all: sh_components
-clean: sh_clean
-#all: sw_components
-#clean: sw_clean
+#all: sh_components
+#clean: sh_clean
+all: sw_components
+clean: sw_clean sh_clean
+veryclean: clean
+distclean: veryclean
 
 depend: Makefile.depend
 
