@@ -13,10 +13,13 @@
 #ifndef __ALICE__AUTHORING_HH__
 #define __ALICE__AUTHORING_HH__
 
+#include "generic/Transform.hh"
+#include "generic/Closure.hh"
 #include "generic/Authoring.hh"
 #include "alice/Data.hh"
 #include "alice/Types.hh"
 #include "alice/PrimitiveTable.hh"
+#include "alice/AliceLanguageLayer.hh"
 
 #define BOOL_TO_WORD(b) Store::IntToWord((b)? Types::_true: Types::_false)
 
@@ -64,8 +67,14 @@
 #define RETURN_BOOL(b) RETURN(BOOL_TO_WORD(b));
 #define RETURN_REAL(r) RETURN(Real::New(r)->ToWord());
 
-#define INIT_STRUCTURE(r, s1, s2, f, i, b)			\
-  r->Init(s2, Primitive::MakeClosure(s1 "." s2, f, i, b));
+#define INIT_STRUCTURE(r, s1, s2, f, i, b) {				      \
+  word transformName = AliceLanguageLayer::TransformNames::primitiveFunction; \
+  Transform *abstract =							      \
+    Transform::New(Store::DirectWordToChunk(transformName),		      \
+		   String::New(s1 "." s2)->ToWord());			      \
+  word function = Primitive::MakeFunction(abstract, s1 "." s2, f, i, b);      \
+  r->Init(s2, Closure::New(function, 0)->ToWord());			      \
+}
 
 #define RETURN_STRUCTURE(label, record)		\
   {						\

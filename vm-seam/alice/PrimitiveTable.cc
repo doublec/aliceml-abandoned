@@ -19,9 +19,11 @@
 #include <cstdio>
 #include "adt/HashTable.hh"
 #include "generic/RootSet.hh"
+#include "generic/Transform.hh"
 #include "generic/Closure.hh"
 #include "alice/Data.hh"
 #include "alice/PrimitiveTable.hh"
+#include "alice/AliceLanguageLayer.hh"
 
 word PrimitiveTable::valueTable;
 word PrimitiveTable::functionTable;
@@ -87,7 +89,11 @@ void PrimitiveTable::Register(const char *name, word value) {
 
 void PrimitiveTable::Register(const char *name,
 			      Interpreter::function value, u_int arity) {
-  word function = Primitive::MakeFunction(name, value, arity);
+  word transformName = AliceLanguageLayer::TransformNames::primitiveFunction;
+  Transform *abstract =
+    Transform::New(Store::DirectWordToChunk(transformName),
+		   String::New(name)->ToWord());
+  word function = Primitive::MakeFunction(abstract, name, value, arity);
   word closure  = Closure::New(function, 0)->ToWord();
   Register(name, closure);
   HashTable::FromWordDirect(functionTable)->
