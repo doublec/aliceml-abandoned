@@ -4,8 +4,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 2002-2003
- *   Andreas Rossberg, 2002
+ *   Leif Kornstaedt and Andreas Rossberg, 2002-2004
  *
  * Last change:
  *   $Date$ by $Author$
@@ -17,5 +16,5 @@ import structure CommandLine       from "../lib/system/CommandLine"
 import structure SMLToSeamToplevel from "top/SMLToSeamToplevel"
 
 val use = SMLToSeamToplevel.use
-val quit = fn () => OS.Process.exit OS.Process.success;
+val exit = fn () => OS.Process.exit OS.Process.success
 val _ = spawn OS.Process.exit(SMLToSeamToplevel.main(CommandLine.arguments()))
