@@ -22,6 +22,7 @@
 #include "generic/RootSet.hh"
 #include "generic/String.hh"
 #include "alice/Data.hh" //--**
+#include "alice/Types.hh" //--**
 
 word Properties::aliceHome;
 word Properties::rootUrl;
@@ -55,10 +56,10 @@ void Properties::Init(char *home, u_int argc, char *argv[]) {
   }
 
   // Initialize commandLineArguments:
-  word list = Store::IntToWord(1); // nil
+  word list = Store::IntToWord(Types::nil);
   argv++; argc--;
   for (u_int i = argc; i--; ) {
-    TagVal *cons = TagVal::New(0, 2); // ::
+    TagVal *cons = TagVal::New(Types::cons, 2);
     cons->Init(0, String::New(argv[i])->ToWord());
     cons->Init(1, list);
     list = cons->ToWord();
