@@ -11,11 +11,10 @@ import
    Explorer
 \endif
    Select at 'x-ozlib://duchier/cp/Select.ozf'
+   TagComponent('Tag$': Tag) at 'Tag.ozf'
 export
    'Smurf$': SmurfModule
 define
-   MinCostPerElement = 7   %--** import from Tag
-
    AttributeNames = [b ems i tt u size color]
 
    RootAttributes = attributes(b: 1 ems: 1 i: 1 tt: 1 u: 1
@@ -69,8 +68,7 @@ define
 		case A of size then Out = I
 		else Out = In
 		end
-	     end
-	  cost: 7)
+	     end)
    end
 
    fun {MkColorTag Color I}
@@ -79,33 +77,10 @@ define
 		case A of color then Out = I
 		else Out = In
 		end
-	     end
-	  cost: 7)
+	     end)
    end
 
-   Tags = tags(tag(p: proc {$ _ In Out} Out = In end   % epsilon
-		   cost: 0)
-	       tag(name: 'B'
-		   p: proc {$ A In Out}
-			 case A of b then Out = 2
-			 else Out = In
-			 end
-		      end
-		   cost: 7)
-	       tag(name: 'EM'
-		   p: proc {$ A In Out}
-			 case A of ems then Out = {Select.fd [2 1 3] In}
-			 else Out = In
-			 end
-		      end
-		   cost: 9)
-	       tag(name: 'I'
-		   p: proc {$ A In Out}
-			 case A of i then Out = 2
-			 else Out = In
-			 end
-		      end
-		   cost: 7)
+   Tags = tags(tag(p: proc {$ _ In Out} Out = In end)   % epsilon
 	       tag(name: 'PL'
 		   p: proc {$ A In Out}
 			 case A of b then Out = 1
@@ -115,29 +90,43 @@ define
 			 [] u then Out = 1
 			 else Out = In
 			 end
-		      end
-		   cost: 9)
+		      end)
+	       tag(name: 'B'
+		   p: proc {$ A In Out}
+			 case A of b then Out = 2
+			 else Out = In
+			 end
+		      end)
+	       tag(name: 'EM'
+		   p: proc {$ A In Out}
+			 case A of ems then Out = {Select.fd [2 1 3] In}
+			 else Out = In
+			 end
+		      end)
+	       tag(name: 'I'
+		   p: proc {$ A In Out}
+			 case A of i then Out = 2
+			 else Out = In
+			 end
+		      end)
 	       tag(name: 'S'
 		   p: proc {$ A In Out}
 			 case A of ems then Out = 3
 			 else Out = In
 			 end
-		      end
-		   cost: 7)
+		      end)
 	       tag(name: 'TT'
 		   p: proc {$ A In Out}
 			 case A of tt then Out = 2
 			 else Out = In
 			 end
-		      end
-		   cost: 9)
+		      end)
 	       tag(name: 'U'
 		   p: proc {$ A In Out}
 			 case A of u then Out = {FD.min {FD.plus In 1} 4}
 			 else Out = In
 			 end
-		      end
-		   cost: 7)
+		      end)
 	       {MkSizeTag 1}
 	       {MkSizeTag 2}
 	       {MkSizeTag 3}
@@ -162,7 +151,8 @@ define
 
    RootI = 1
 
-   fun {Constrain Meaning NumberOfElements}
+   fun {Constrain Meaning SourceCost}
+      NumberOfElements = SourceCost div Tag.minCost
       NumberOfDataItems = {Length Meaning}
 \ifdef DEBUG
 {System.show numberOf(elements: NumberOfElements dataItems: NumberOfDataItems)}
@@ -308,16 +298,14 @@ define
 
       %% Cost function
       TagCosts = for I in 1..MaxTag collect: Collect do
-		    {Collect Tags.I.cost}
+		    if I \= Epsilon then
+		       {Collect {Tag.cost Tags.I.name}}
+		    else
+		       {Collect 0}
+		    end
 		 end
 
-/*--**
-      TagCosts = for I in 1..MaxTag collect: Collect do
-		    {TagModule.cost Tags.Tag.name}
-		 end
-*/
-
-      Cost = {FD.int 0#(NumberOfElements * MinCostPerElement)}
+      Cost = {FD.int 0#SourceCost}
       Cost = {FD.sum for I in FirstElementI..LastElementI collect: Collect do
 			{Collect {Select.fd TagCosts V.I.tag}}
 		     end '=:'}
@@ -325,15 +313,10 @@ define
       V#Cost
    end
 
-   fun {Script Meaning NumberOfElements}
+   fun {Script Meaning SourceCost}
       proc {$ Res} V in
-	 Res = {Constrain {Reverse Meaning} NumberOfElements}
+	 Res = {Constrain {Reverse Meaning} SourceCost}
 	 V = Res.1
-%	 {FS.distribute naive
-%	  for I in 1..{Width V} collect: Collect do
-%	     {Collect V.I.daughters}
-%	  end}
-/*
 	 {FD.distribute ff
 	  {Append
 	   for I in 1..{Width V} collect: Collect do
@@ -346,7 +329,26 @@ define
 	      elseof Tag then {Collect Tag}
 	      end
 	   end}}
+/*
+	 %% interleaved distribution of mothers and tags is much better
+	 %% if there are opportunities of applying PL:
+	 {FD.distribute ff
+	  for I in 1..{Width V} collect: Collect do
+	     case {CondSelect V.I mother unit} of unit then skip
+	     elseof Mother then {Collect Mother}
+	     end
+	     case {CondSelect V.I tag unit} of unit then skip
+	     elseof Tag then {Collect Tag}
+	     end
+	  end}
 */
+/*
+	 %% distributing mothers seems to be more efficient than
+	 %% distributing daughters
+%	 {FS.distribute naive
+%	  for I in 1..{Width V} collect: Collect do
+%	     {Collect V.I.daughters}
+%	  end}
 	 {FD.distribute ff
 	  for I in 1..{Width V} collect: Collect do
 	     case {CondSelect V.I mother unit} of unit then skip
@@ -359,6 +361,7 @@ define
 	     elseof Tag then {Collect Tag}
 	     end
 	  end}
+*/
       end
    end
 
@@ -406,19 +409,19 @@ define
 	 end
       end
    in
-      fun {Smurf Meaning NumberOfElements} O Docs in
+      fun {Smurf Meaning SourceCost} O Docs in
 	 O = {New Search.object
-	      script({Script Meaning NumberOfElements} Order)}
+	      script({Script Meaning SourceCost} Order)}
 	 thread {SmurfSub O Docs} end
 	 !!Docs
       end
    end
 \else
-   fun {Smurf Meaning NumberOfElements} O Docs in
-      {Inspector.inspect {Reverse Meaning}}
-%      {Explorer.one {Script Meaning NumberOfElements}}
-      {Explorer.best {Script Meaning NumberOfElements} Order}
-      {Inspector.inspect {ToDoc {Search.base.best {Script Meaning NumberOfElements} Order}.1}}
+   fun {Smurf Meaning SourceCost}
+%      {Inspector.inspect {Reverse Meaning}}
+%      {Explorer.one {Script Meaning SourceCost}}
+      {Explorer.best {Script Meaning SourceCost} Order}
+%      {Inspector.inspect {ToDoc {Search.base.best {Script Meaning SourceCost} Order}.1}}
       _
    end
 \endif
