@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg, 2001-2003
  *
  * Last change:
  *   $Date$ by $Author$
@@ -16,7 +16,7 @@ import structure IO                       from "../lib/system/IO"
 import structure OS                       from "../lib/system/OS"
 import structure CommandLine              from "../lib/system/CommandLine"
 import structure SMLToMozartBatchCompiler from "top/SMLToMozartBatchCompiler"
-import structure SMLToDotNetBatchCompiler from "top/SMLToDotNetBatchCompiler"
+import structure SMLToSeamBatchCompiler   from "top/SMLToSeamBatchCompiler"
 
 structure Main : sig end =
 struct
@@ -55,7 +55,7 @@ struct
 	)
       | main' compile args = (usage(); OS.Process.exit OS.Process.failure)
 
-    fun main("--dotnet"::args) = main' SMLToDotNetBatchCompiler.main args
+    fun main("--seamt"::args)  = main' SMLToSeamBatchCompiler.main args
       | main("--mozart"::args) = main' SMLToMozartBatchCompiler.main args
       | main             args  = main' SMLToMozartBatchCompiler.main args
 
