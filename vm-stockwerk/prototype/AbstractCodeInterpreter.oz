@@ -75,32 +75,32 @@ define
       end
    end
 
-   fun {NullaryConCase I N C Cases G L ElseInstr}
+   fun {NullaryConCase I N C Cases Closure L ElseInstr}
       if I > N then ElseInstr
       elsecase Cases.I of Con0#ThenInstr then C2 in
 	 C2 = case Con0 of tag(!Con IdRef) then
 		 case IdRef of tag(!Local Id) then L.Id
-		 [] tag(!Global J) then G.J
+		 [] tag(!Global J) then Closure.(J + 1)
 		 end
 	      [] tag(!StaticCon X) then X
 	      end
 	 if C == C2 then ThenInstr
-	 else {NullaryConCase I + 1 N C Cases G L ElseInstr}
+	 else {NullaryConCase I + 1 N C Cases Closure L ElseInstr}
 	 end
       end
    end
 
-   fun {NAryConCase I N C Cases G L}
+   fun {NAryConCase I N C Cases Closure L}
       if I > N then unit
       elsecase Cases.I of Case=Con0#_#_ then C2 in
 	 C2 = case Con0 of tag(!Con IdRef) then
 		 case IdRef of tag(!Local Id) then L.Id
-		 [] tag(!Global J) then G.J
+		 [] tag(!Global J) then Closure.(J + 1)
 		 end
 	      [] tag(!StaticCon X) then X
 	      end
 	 if C == C2 then Case
-	 else {NAryConCase I + 1 N C Cases G L}
+	 else {NAryConCase I + 1 N C Cases Closure L}
 	 end
       end
    end
@@ -113,134 +113,137 @@ define
       end
    end
 
-   fun {Emulate Instr G L TaskStack}
+   fun {Emulate Instr Closure L TaskStack}
       case Instr of tag(!Kill Ids NextInstr) then
 	 for I in 1..{Width Ids} do
 	    L.(Ids.I) := unit
 	 end
-	 {Emulate NextInstr G L TaskStack}
+	 {Emulate NextInstr Closure L TaskStack}
       [] tag(!PutConst Id X NextInstr) then
 	 L.Id := X
-	 {Emulate NextInstr G L TaskStack}
+	 {Emulate NextInstr Closure L TaskStack}
       [] tag(!PutVar Id IdRef NextInstr) then
 	 L.Id := case IdRef of tag(!Local Id2) then L.Id2
-		 [] tag(!Global I) then G.I
+		 [] tag(!Global I) then Closure.(I + 1)
 		 end
-	 {Emulate NextInstr G L TaskStack}
+	 {Emulate NextInstr Closure L TaskStack}
       [] tag(!PutNew Id NextInstr) then
 	 L.Id := {NewName}
-	 {Emulate NextInstr G L TaskStack}
+	 {Emulate NextInstr Closure L TaskStack}
       [] tag(!PutTag Id I IdRefs NextInstr) then N T in
 	 N = {Width IdRefs}
 	 T = {MakeTuple tag N + 1}
 	 T.1 = I
 	 for J in 1..N do
 	    T.(J + 1) = case IdRefs.J of tag(!Local Id2) then L.Id2
-			[] tag(!Global K) then G.K
+			[] tag(!Global K) then Closure.(K + 1)
 			end
 	 end
 	 L.Id := T
-	 {Emulate NextInstr G L TaskStack}
+	 {Emulate NextInstr Closure L TaskStack}
       [] tag(!PutCon Id Con0 IdRefs NextInstr) then N T in
 	 N = {Width IdRefs}
 	 T = {MakeTuple con N + 1}
 	 T.1 = case Con0 of tag(!Con IdRef) then
 		  case IdRef of tag(!Local Id2) then L.Id2
-		  [] tag(!Global I) then G.I
+		  [] tag(!Global I) then Closure.(I + 1)
 		  end
 	       [] tag(!StaticCon X) then X
 	       end
 	 for J in 1..N do
 	    T.(J + 1) = case IdRefs.J of tag(!Local Id2) then L.Id2
-			[] tag(!Global K) then G.K
+			[] tag(!Global K) then Closure.(K + 1)
 			end
 	 end
 	 L.Id := T
-	 {Emulate NextInstr G L TaskStack}
+	 {Emulate NextInstr Closure L TaskStack}
       [] tag(!PutRef Id IdRef NextInstr) then
 	 L.Id := {NewCell case IdRef of tag(!Local Id2) then L.Id2
-			  [] tag(!Global I) then G.I
+			  [] tag(!Global I) then Closure.(I + 1)
 			  end}
-	 {Emulate NextInstr G L TaskStack}
+	 {Emulate NextInstr Closure L TaskStack}
       [] tag(!PutTup Id IdRefs NextInstr) then N T in
 	 N = {Width IdRefs}
 	 T = {MakeTuple tuple N}
 	 for J in 1..N do
 	    T.J = case IdRefs.J of tag(!Local Id2) then L.Id2
-		  [] tag(!Global K) then G.K
+		  [] tag(!Global K) then Closure.(K + 1)
 		  end
 	 end
 	 L.Id := T
-	 {Emulate NextInstr G L TaskStack}
+	 {Emulate NextInstr Closure L TaskStack}
       [] tag(!PutVec Id IdRefs NextInstr) then N T in
 	 N = {Width IdRefs}
 	 T = {MakeTuple vector N}
 	 for J in 1..N do
 	    T.J = case IdRefs.J of tag(!Local Id2) then L.Id2
-		  [] tag(!Global K) then G.K
+		  [] tag(!Global K) then Closure.(K + 1)
 		  end
 	 end
 	 L.Id := T
-	 {Emulate NextInstr G L TaskStack}
-      [] tag(!PutFun Id IdRefs Function NextInstr) then N NewG in
+	 {Emulate NextInstr Closure L TaskStack}
+      [] tag(!PutFun Id IdRefs Function NextInstr) then N NewClosure in
 	 N = {Width IdRefs}
-	 NewG = {MakeTuple globals N}
+	 NewClosure = {MakeTuple closure N + 1}
+	 NewClosure.1 = Function
 	 for J in 1..N do
-	    NewG.J = case IdRefs.J of tag(!Local Id2) then L.Id2
-		     [] tag(!Global K) then G.K
-		     end
+	    NewClosure.(J + 1) = case IdRefs.J of tag(!Local Id2) then L.Id2
+				 [] tag(!Global K) then Closure.(K + 1)
+				 end
 	 end
-	 L.Id := closure(Function NewG)
-	 {Emulate NextInstr G L TaskStack}
+	 L.Id := NewClosure
+	 {Emulate NextInstr Closure L TaskStack}
       [] tag(!AppPrim Op IdRefs IdDefInstrOpt) then N Args in
 	 N = {Width IdRefs}
 	 Args = {MakeTuple args N}
 	 for J in 1..N do X in
 	    X = case IdRefs.J of tag(!Local Id) then L.Id
-		[] tag(!Global K) then G.K
+		[] tag(!Global K) then Closure.(K + 1)
 		end
 	    Args.J = X
 	 end
 	 case IdDefInstrOpt of !NONE then   % tail call
 	    continue(Args Op|TaskStack)
 	 [] tag(!SOME tuple(IdDef NextInstr)) then NewFrame in
-	    NewFrame = frame(Interpreter tag(!OneArg IdDef) NextInstr G L)
+	    NewFrame = frame(Interpreter tag(!OneArg IdDef)
+			     NextInstr Closure L)
 	    continue(Args Op|NewFrame|TaskStack)
 	 end
       [] tag(!AppVar IdRef IdRefArgs IdDefArgsInstrOpt) then Op in
 	 Op = case IdRef of tag(!Local Id) then L.Id
-	      [] tag(!Global I) then G.I
+	      [] tag(!Global I) then Closure.(I + 1)
 	      end
-	 {Emulate tag(AppConst Op IdRefArgs IdDefArgsInstrOpt) G L TaskStack}
+	 {Emulate tag(AppConst Op IdRefArgs IdDefArgsInstrOpt)
+	  Closure L TaskStack}
       [] tag(!AppConst Op IdRefArgs IdDefArgsInstrOpt) then Args in
 	 %% construct argument:
 	 case IdRefArgs of tag(!OneArg IdRef) then
 	    Args = arg(case IdRef of tag(!Local Id) then L.Id
-		       [] tag(!Global I) then G.I
+		       [] tag(!Global I) then Closure.(I + 1)
 		       end)
 	 [] tag(!TupArgs IdRefs) then N in
 	    N = {Width IdRefs}
 	    Args = {MakeTuple args N}
 	    for J in 1..N do
 	       Args.J = case IdRefs.J of tag(!Local Id) then L.Id
-			[] tag(!Global K) then G.K
+			[] tag(!Global K) then Closure.(K + 1)
 			end
 	    end
 	 end
 	 case IdDefArgsInstrOpt of !NONE then   % tail call
 	    continue(Args Op|TaskStack)
 	 [] tag(!SOME tuple(IdDefArgs NextInstr)) then NewFrame in
-	    NewFrame = frame(Interpreter IdDefArgs NextInstr G L)
+	    NewFrame = frame(Interpreter IdDefArgs NextInstr Closure L)
 	    continue(Args Op|NewFrame|TaskStack)
 	 end
       [] tag(!GetRef Id IdRef NextInstr) then
 	 L.Id := {Access case IdRef of tag(!Local Id2) then L.Id2
-			 [] tag(!Global I) then G.I
+			 [] tag(!Global I) then Closure.(I + 1)
 			 end}
-	 {Emulate NextInstr G L TaskStack}
+	 {Emulate NextInstr Closure L TaskStack}
       [] tag(!GetTup IdDefs IdRef NextInstr) then T N in
 	 T = case IdRef of tag(!Local Id) then L.Id
-	     [] tag(!Global I) then G.I
+	     [] tag(!Global I) then Closure.(I + 1)
 	     end
 	 N = {Width IdDefs}
 	 for J in 1..N do
@@ -249,60 +252,60 @@ define
 	    [] !Wildcard then skip
 	    end
 	 end
-	 {Emulate NextInstr G L TaskStack}
+	 {Emulate NextInstr Closure L TaskStack}
       [] tag(!Raise IdRef) then Exn in
 	 Exn = case IdRef of tag(!Local Id) then L.Id
-	       [] tag(!Global I) then G.I
+	       [] tag(!Global I) then Closure.(I + 1)
 	       end
 	 exception(nil Exn TaskStack)
       [] tag(!Reraise IdRef) then X in
 	 X = case IdRef of tag(!Local Id) then L.Id
-	     [] tag(!Global I) then G.I
+	     [] tag(!Global I) then Closure.(I + 1)
 	     end
 	 case X of package(Debug Exn) then
 	    exception(Debug Exn TaskStack)
 	 end
       [] tag(!Try TryInstr IdDef1 IdDef2 HandleInstr) then
-	 {Emulate TryInstr G L
-	  handler(IdDef1 IdDef2 HandleInstr G L)|TaskStack}
+	 {Emulate TryInstr Closure L
+	  handler(IdDef1 IdDef2 HandleInstr Closure L)|TaskStack}
       [] tag(!EndTry NextInstr) then
 	 case TaskStack of handler(_ _ _ _)|Rest then
-	    {Emulate NextInstr G L Rest}
+	    {Emulate NextInstr Closure L Rest}
 	 end
       [] tag(!EndHandle NextInstr) then
-	 {Emulate NextInstr G L TaskStack}
+	 {Emulate NextInstr Closure L TaskStack}
       [] tag(!IntTest IdRef IntInstrVec ElseInstr) then I ThenInstr in
 	 I = case IdRef of tag(!Local Id) then L.Id
-	     [] tag(!Global J) then G.J
+	     [] tag(!Global J) then Closure.(J + 1)
 	     end
 	 ThenInstr = {LitCase 1 {Width IntInstrVec} I IntInstrVec ElseInstr}
-	 {Emulate ThenInstr G L TaskStack}
+	 {Emulate ThenInstr Closure L TaskStack}
       [] tag(!RealTest IdRef RealInstrVec ElseInstr) then F ThenInstr in
 	 F = case IdRef of tag(!Local Id) then L.Id
-	     [] tag(!Global I) then G.I
+	     [] tag(!Global I) then Closure.(I + 1)
 	     end
 	 ThenInstr = {LitCase 1 {Width RealInstrVec} F RealInstrVec ElseInstr}
-	 {Emulate ThenInstr G L TaskStack}
+	 {Emulate ThenInstr Closure L TaskStack}
       [] tag(!StringTest IdRef StringInstrVec ElseInstr) then S ThenInstr in
 	 S = case IdRef of tag(!Local Id) then L.Id
-	     [] tag(!Global I) then G.I
+	     [] tag(!Global I) then Closure.(I + 1)
 	     end
 	 ThenInstr = {LitCase 1 {Width StringInstrVec}
 		      S StringInstrVec ElseInstr}
-	 {Emulate ThenInstr G L TaskStack}
+	 {Emulate ThenInstr Closure L TaskStack}
 /*--**
       [] tag(!WideStringTest IdRef _ ElseInstr) then
 	 %--**
-	 {Emulate ElseInstr G L TaskStack}
+	 {Emulate ElseInstr Closure L TaskStack}
 */
       [] tag(!TagTest IdRef NullaryCases NAryCases ElseInstr) then T in
 	 T = case IdRef of tag(!Local Id) then L.Id
-	     [] tag(!Global I) then G.I
+	     [] tag(!Global I) then Closure.(I + 1)
 	     end
 	 if {IsInt T} then ThenInstr in
 	    ThenInstr = {LitCase 1 {Width NullaryCases}
 			 T NullaryCases ElseInstr}
-	    {Emulate ThenInstr G L TaskStack}
+	    {Emulate ThenInstr Closure L TaskStack}
 	 elsecase {TagCase 1 {Width NAryCases} T.1 NAryCases}
 	 of _#IdDefs#ThenInstr then N in
 	    N = {Width IdDefs}
@@ -312,19 +315,19 @@ define
 	       [] !Wildcard then skip
 	       end
 	    end
-	    {Emulate ThenInstr G L TaskStack}
+	    {Emulate ThenInstr Closure L TaskStack}
 	 [] unit then
-	    {Emulate ElseInstr G L TaskStack}
+	    {Emulate ElseInstr Closure L TaskStack}
 	 end
       [] tag(!ConTest IdRef NullaryCases NAryCases ElseInstr) then C in
 	 C = case IdRef of tag(!Local Id) then L.Id
-	     [] tag(!Global I) then G.I
+	     [] tag(!Global I) then Closure.(I + 1)
 	     end
 	 if {IsName C} then ThenInstr in
 	    ThenInstr = {NullaryConCase 1 {Width NullaryCases}
-			 C NullaryCases G L ElseInstr}
-	    {Emulate ThenInstr G L TaskStack}
-	 elsecase {NAryConCase 1 {Width NAryCases} C.1 NAryCases G L}
+			 C NullaryCases Closure L ElseInstr}
+	    {Emulate ThenInstr Closure L TaskStack}
+	 elsecase {NAryConCase 1 {Width NAryCases} C.1 NAryCases Closure L}
 	 of _#IdDefs#ThenInstr then N in
 	    N = {Width IdDefs}
 	    for J in 1..N do
@@ -333,13 +336,13 @@ define
 	       [] !Wildcard then skip
 	       end
 	    end
-	    {Emulate ThenInstr G L TaskStack}
+	    {Emulate ThenInstr Closure L TaskStack}
 	 [] unit then
-	    {Emulate ElseInstr G L TaskStack}
+	    {Emulate ElseInstr Closure L TaskStack}
 	 end
       [] tag(!VecTest IdRef IdDefsInstrVec ElseInstr) then V in
 	 V = case IdRef of tag(!Local Id) then L.Id
-	     [] tag(!Global I) then G.I
+	     [] tag(!Global I) then Closure.(I + 1)
 	     end
 	 case {VecCase 1 {Width IdDefsInstrVec} {Width V} IdDefsInstrVec}
 	 of IdDefs#ThenInstr then N in
@@ -350,24 +353,24 @@ define
 	       [] !Wildcard then skip
 	       end
 	    end
-	    {Emulate ThenInstr G L TaskStack}
+	    {Emulate ThenInstr Closur L TaskStack}
 	 [] unit then
-	    {Emulate ElseInstr G L TaskStack}
+	    {Emulate ElseInstr Closure L TaskStack}
 	 end
       [] tag(!Shared _ NextInstr) then
-	 {Emulate NextInstr G L TaskStack}
+	 {Emulate NextInstr Closure L TaskStack}
       [] tag(!Return IdRefArgs) then Args in
 	 %% construct arguments to call the continuation with:
 	 case IdRefArgs of tag(!OneArg IdRef) then
 	    Args = arg(case IdRef of tag(!Local Id) then L.Id
-		       [] tag(!Global I) then G.I
+		       [] tag(!Global I) then Closure.(I + 1)
 		       end)
 	 [] tag(!TupArgs IdRefs) then N in
 	    N = {Width IdRefs}
 	    Args = {MakeTuple args N}
 	    for J in 1..N do
 	       Args.J = case IdRefs.J of tag(!Local Id) then L.Id
-			[] tag(!Global K) then G.K
+			[] tag(!Global K) then Closure.(K + 1)
 			end
 	    end
 	 end
@@ -376,7 +379,7 @@ define
    end
 
    fun {Run Args TaskStack}
-      case TaskStack of frame(_ IdDefArgs Instr G L)|Rest then
+      case TaskStack of frame(_ IdDefArgs Instr Closure L)|Rest then
 	 case IdDefArgs of tag(!OneArg IdDef) then
 	    case IdDef of tag(!IdDef Id) then
 	       L.Id := case Args of arg(X) then X
@@ -396,13 +399,13 @@ define
 	       end
 	    end
 	 end
-	 {Emulate Instr G L Rest}
+	 {Emulate Instr Closure L Rest}
       [] nil then terminate
       end
    end
 
    fun {Handle Debug Exn TaskStack}
-      case TaskStack of handler(IdDef1 IdDef2 Instr G L)|Rest then
+      case TaskStack of handler(IdDef1 IdDef2 Instr Closure L)|Rest then
 	 case IdDef1 of tag(!IdDef Id) then
 	    L.Id := package(Debug Exn)
 	 [] !Wildcard then skip
@@ -411,7 +414,7 @@ define
 	    L.Id := Exn
 	 [] !Wildcard then skip
 	 end
-	 {Emulate Instr G L Rest}
+	 {Emulate Instr Closure L Rest}
       [] Frame=frame(_ _ _ _ _)|Rest then
 	 exception(Frame|Debug Exn Rest)
       end
