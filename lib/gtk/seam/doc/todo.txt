@@ -1,7 +1,7 @@
 
 *** Allgemein/Ideen ***
 
-- Binding fuer Windows
+* Binding fuer Windows
 - Dokumentation
 * zwei seg faults in AliceTour: a) Fehler im GC(!) b) unmittelbar nach condget
 * nicht beliebig viele set/get-Methode moeglich
