@@ -9,6 +9,7 @@ final public class PickleOutputStream extends java.io.ObjectOutputStream {
     boolean waitforbind = false;
 
     public PickleOutputStream() throws java.io.IOException {
+	super();
 	if (fcn==null)
 	    try{
 		fcn=Class.forName("de.uni_sb.ps.dml.runtime.Function");
@@ -21,10 +22,12 @@ final public class PickleOutputStream extends java.io.ObjectOutputStream {
     }
 
     public PickleOutputStream(java.io.OutputStream out) throws java.io.IOException {
+	super(out);
+	System.out.println("HelloPickle");
 	if (fcn==null)
 	    try{
 		fcn=Class.forName("de.uni_sb.ps.dml.runtime.Function");
-		System.err.println("Class zum Vergleichen: "+fcn);
+		//		System.err.println("Class zum Vergleichen: "+fcn);
 	    } catch (ClassNotFoundException e) {
 		System.err.println("DMLFcnClosure must be accessable by the same ClassLoader as java.lang.ObjectOutputStream.");
 		e.printStackTrace();
@@ -37,26 +40,32 @@ final public class PickleOutputStream extends java.io.ObjectOutputStream {
     }
 
     final protected void annotateClass(Class cls) throws java.io.IOException {
+	System.out.println("POS: annotateClass "+cls);
 	if (fcn.isAssignableFrom(cls.getSuperclass())) {
+	    System.out.println("POS: annotateClass "+cls+" must be annotated");
 	    byte[] bytes = null;
 	    java.lang.String name = cls.getName();
 	    ClassLoader cl = cls.getClassLoader();
-	    if (cl instanceof java.net.URLClassLoader) { // Klasse wurde über Netz geladen
-		java.net.URL[] urls = ((java.net.URLClassLoader) cl).getURLs();
-		for(int i=0; i<urls.length; i++) {
-		    try {
-			java.io.DataInputStream in =new java.io.DataInputStream(urls[i].openStream());
-			bytes=new byte[in.available()];
-			in.readFully(bytes);
-			break; // bei Erfolg for verlassen
-		    } catch (java.io.IOException io) {
-			System.err.println(urls[i]+" IOException");
-			io.printStackTrace();
-		    }
-		}
-	    } else if (cl==PickleClassLoader.loader)
+	    if (cl==PickleClassLoader.loader) {
+		System.out.println("POS: annotateClass "+cls+" came from a pickle");
 		bytes = ((PickleClassLoader) cl).getBytes(name);
-	    else {
+	    } else { //  if (cl instanceof java.net.URLClassLoader) { // Klasse wurde über Netz geladen
+//  		System.out.println("POS: annotateClass "+cls+" has been loaded via Network");
+//  		java.net.URL[] urls = ((java.net.URLClassLoader) cl).getURLs();
+//  		for(int i=0; i<urls.length; i++) {
+//  		    try {
+//  			System.out.println
+//  			java.io.DataInputStream in =new java.io.DataInputStream(urls[i].openStream());
+//  			bytes=new byte[in.available()];
+//  			in.readFully(bytes);
+//  			break; // bei Erfolg for verlassen
+//  		    } catch (java.io.IOException io) {
+//  			System.err.println(urls[i]+" IOException");
+//  			io.printStackTrace();
+//  		    }
+//  		}
+//  	    } else {
+		System.out.println("POS: annotateClass "+cls+" came from somewhere else");
 		java.io.InputStream in = null;
 		java.io.DataInputStream din = null;
 		try {
@@ -95,6 +104,7 @@ final public class PickleOutputStream extends java.io.ObjectOutputStream {
     */
 
     final protected java.lang.Object replaceObject(java.lang.Object obj) {
+	System.out.println("POS: replaceObject "+obj);
 	try {
 	    if (obj instanceof LVar) {
 		if (waitforbind)
