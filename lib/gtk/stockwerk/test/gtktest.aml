@@ -72,6 +72,7 @@ in
 	| show (STRING s)  = "STRING: "^s
 	| show (OBJECT ob) = "OBJECT: "^(getobj ob)
 	| show (LIST l)    = "LIST"
+	| show (EVENT e)   = "EVENT"
   in
       ( print (">callback function called for widget: "^(getobj widget)^"<\n");
         print ("Number of arguments: "^(Int.toString (length arglist))^"\n");
