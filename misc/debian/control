@@ -1,13 +1,14 @@
 Source: alice
 Section: devel
 Priority: optional
-Build-Depends: debhelper (>= 4.1.6)
+Build-Depends: debhelper (>= 4.0.0)
 Maintainer: Marco Kuhlmann <kuhlmann@ps.uni-sb.de>
-Standards-Version: 3.5.7
+Standards-Version: 3.5.8
 
 Package: alice
-Architecture: any
-Depends: mozart (>= 1.3.0)
+Architecture: all
+Depends: mozart (>= 1.2.5)
+Recommends: mozart-gtk, www-browser
 Suggests: sml-mode
 Description: The Alice Programming System
  Alice is a functional programming language based on Standard ML, extended
