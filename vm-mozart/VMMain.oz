@@ -3,7 +3,7 @@
 %%%   Leif Kornstaedt <kornstae@ps.uni-sb.de>
 %%%
 %%% Copyright:
-%%%   Leif Kornstaedt, 1999-2001
+%%%   Leif Kornstaedt, 1999-2002
 %%%
 %%% Last change:
 %%%   $Date$ by $Author$
@@ -12,7 +12,7 @@
 
 functor
 import
-   BootName(newUnique: NewUniqueName '<' hash) at 'x-oz://boot/Name'
+   BootName('<' hash) at 'x-oz://boot/Name'
    Application(getArgs exit)
    Property(put)
    Module(manager)
@@ -73,16 +73,6 @@ define
       end
    end
 
-   FutureException = {NewUniqueName 'Future.Future'}
-
-   fun {FormatFutureExn InnerE} Msg in
-      Msg = {Error.exceptionToMessage InnerE}
-      {AdjoinAt Msg msg
-       case {CondSelect Msg msg unit} of unit then 'Future'
-       [] M then 'Future of '#M
-       end}
-   end
-
    {Error.registerFormatter alice
     fun {$ E} T in
        T = 'Alice exception'
@@ -94,7 +84,6 @@ define
 	  error(kind: T
 		msg: 'Evaluated failed expression'
 		items: [hint(l: 'At' m: pos(F I J))])
-       [] alice(FutureException(InnerE)) then {FormatFutureExn InnerE}
        [] alice(InnerE ...) then
 	  error(kind: T
 		items: (hint(l: 'Exception' m: oz(InnerE))|
@@ -104,11 +93,6 @@ define
 	  error(kind: T
 		items: [line(oz(E))])
        end
-    end}
-
-   {Error.registerFormatter FutureException
-    fun {$ FutureException(InnerE)}
-       {FormatFutureExn InnerE}
     end}
 
    case {Application.getArgs plain} of Name|Rest then
