@@ -49,9 +49,13 @@ structure HttpServerMain :> HTTP_SERVER_MAIN =
 	val blackHole: unit = Promise.future (Promise.promise ())
 
 	fun start port =
-	    (HttpServer.start (SOME port);
-	     HttpServer.registerFor (Url.fromString "/", debugHandler);
-	     Future.await blackHole)
+	    let
+		val url = HttpServer.start (SOME port)
+	    in
+		HttpServer.registerFor (Url.empty, debugHandler);
+		TextIO.print ("started server at " ^ Url.toString url ^ "\n");
+		Future.await blackHole
+	    end
 
 	fun usage s =
 	    (TextIO.output
