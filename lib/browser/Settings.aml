@@ -34,6 +34,7 @@ struct
     val fontHeight = ref (Gdk.fontGetFieldAscent(!font)+
 			   Gdk.fontGetFieldDescent(!font) )
     val fontWidth = ref (Gdk.stringWidth(!font,"W"))
+    val fontSize = ref 14
 
     fun set_width w = max_width := w
 

@@ -105,7 +105,7 @@ struct
 	 ; let val ind = getAncIndex n 
 	       val (anc,ancline) = valOf(MainDictionary.lookup 
 			       (Dictionaries.dict,ind)) 
-	       val old_ydim = Layout.get_ydim(anc)
+	       val old_ydim = Helper.get_ydim(anc)
 	       val (p,index) = if !(Settings.relmode) 
 				   then (getParent(n),getIndex(n)) 
 			       else getNoRelAnc n	
@@ -141,12 +141,12 @@ struct
 	       ; MainDictionary.update(Dictionaries.dict, (ind,(node,ancline)))
 	       ; DrawNodes.draw(node,0,y_pos,true)
 	       ; TextIO.print(" Drawing done \n")  
-	       ; let val dy =  Layout.get_ydim(node) - old_ydim 
+	       ; let val dy =  Helper.get_ydim(node) - old_ydim 
 		 in ( Window.incr_act_line dy 
 		     ; iterMove (Dictionaries.dict,dy,getIndex(anc) + 1, 
 				 MainDictionary.getHighestIndexAssigned 
 				 (Dictionaries.dict)) 
-		     ; Layout.setVisible(Layout.get_xdim(node),dy)) 
+		     ; Layout.setVisible(Helper.get_xdim(node),dy)) 
 		 end
 	       ; TextIO.print(" Iter move done \n") )
 	   end ) handle MissingColor => Inspector.inspect ("MissingColor")
@@ -291,7 +291,7 @@ handle _ => Inspector.inspect("exception at reinspect"))
 	let val ind = getAncIndex n  
 	    val (anc,ancline) = valOf(MainDictionary.lookup  
 					(Dictionaries.dict,ind))  
-	    val old_ydim = Layout.get_ydim(anc)  
+	    val old_ydim = Helper.get_ydim(anc)  
 	    val va = getReflectValue n  
 	    val va_inf = UnsafeValue.cast va : Reflect.module 
 	    val (p,index) = getNoRelAnc n 
@@ -310,12 +310,12 @@ handle _ => Inspector.inspect("exception at reinspect"))
 	    ; TextIO.print("FOLD: rufe jetzt draw auf\n")
 	    ; DrawNodes.draw(node,0,y_pos,true)  
             ; TextIO.print("FOLD: draw geschafft :-)!\n")
-	    ; let val dy =  Layout.get_ydim(node) - old_ydim 
+	    ; let val dy =  Helper.get_ydim(node) - old_ydim 
 	      in ( Window.incr_act_line dy 
 		  ; iterMove (Dictionaries.dict,dy,getIndex(anc) + 1, 
 			      MainDictionary.getHighestIndexAssigned 
 			      (Dictionaries.dict)) 
-		  ; Layout.setVisible(Layout.get_xdim(node),dy)) 
+		  ; Layout.setVisible(Helper.get_xdim(node),dy)) 
 	      end  
 	    ; !Window.resize() ) 
 	end  

@@ -14,8 +14,9 @@
  *)
 
 import structure Types from "Types"
+import structure Helper from "Helper"
 import structure NewNode from "NewNode"
-import structure Layout from "Layout"
+import structure Layout from "Layout" 
 import structure Window from "Window"
 import structure DrawNodes from "DrawNodes"
 import structure Settings from "Settings"
@@ -36,8 +37,8 @@ struct
 			       !Window.act_line
 			       ,false)
 	     ; Window.incr_act_line
-	     (Layout.get_ydim(n) + 1)
-	     ; Layout.setVisible(Layout.get_xdim(n),Layout.get_ydim(n)+1)
+	     (Helper.get_ydim(n) + 1)
+	     ; Layout.setVisible(Helper.get_xdim(n),Helper.get_ydim(n)+1)
 	     ; (!Window.resize())
 	     ; Window.show ()
 	     ; Window.stopButtonSetActive(false))
@@ -52,8 +53,8 @@ struct
 	     ;  DrawNodes.draw(n,0,!Window.act_line
 			       , false)
 	     ; Window.incr_act_line
-	     (Layout.get_ydim(n) + 1)
-	     ; Layout.setVisible(Layout.get_xdim(n),Layout.get_ydim(n)+1)
+	     (Helper.get_ydim(n) + 1)
+	     ; Layout.setVisible(Helper.get_xdim(n),Helper.get_ydim(n)+1)
 	     ; (!Window.resize())
 	     ; (Window.show) ()
 	     ; Window.stopButtonSetActive(false))

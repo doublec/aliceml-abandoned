@@ -64,6 +64,7 @@ fun about _ = serve' (fn () =>  () (*
 fun okHandler(w,
 	      width_s,
 	      depth_s,
+	      font_s,
 	      treemode_button,
 	      relmode_button, 
 	      tokenmode_button) = (fn _ => 
@@ -83,6 +84,8 @@ fun okHandler(w,
 			    Gtk.spinButtonGetValueAsInt(width_s) 
 			    ;Settings.max_depth := 
 			    Gtk.spinButtonGetValueAsInt(depth_s)
+			    ; changeFontSize(
+			      Gtk.spinButtonGetValueAsInt(font_s))
 			    ;Settings.relmode := (
 			    Gtk.toggleButtonGetActive(relmode_button) = 1
 						  orelse 
@@ -139,6 +142,16 @@ fun Preferences _ = serve' (fn () =>
 					      relmode_button,
 					      tokenmode_button]
 
+	    val font_lab = Gtk.labelNew("Set Font Size to...")	
+	    val font_s = createSpinButton{init =(!Settings.fontSize) , 
+					  lower = 8, 
+					   upper = 50, 
+					   inc = 1, 
+					   dec = 0}
+	    val app_table = createTable{rows = 2, cols = 4, 
+				    entries = [(font_lab,0,2,0,1),
+					       (font_s,2,3,0,1)]}
+
 	   (* val fontpicker = Gtk.fontSelectionNew() *)
 
 	   (*  val colorsel = Gtk.colorSelectionNew() *)
@@ -151,6 +164,7 @@ fun Preferences _ = serve' (fn () =>
 					  (okHandler(w,
 						     width_s,
 						     depth_s,
+						     font_s,
 						     treemode_button,
 						     relmode_button,
 						     tokenmode_button)   ))]),
@@ -161,8 +175,8 @@ fun Preferences _ = serve' (fn () =>
 				       borderwidth = 20}
 
 	    val n = createNotebook[("Width & Depth Limit Settings",frame),
-				   ("Mode Settings",radiobox) (* ,
-				   ("Colors",colorsel) *) ] 
+				   ("Mode Settings",radiobox),
+				   ("Appearance",app_table)  ] 
 
 	    val vbox = createVBoxDefaults[n,bbox]
 		in
@@ -582,16 +596,16 @@ struct
 		       (case node of 
 			    SOME(n) => 
 				let 
-				    val ydim =Layout.get_ydim(n) 
+				    val ydim =Helper.get_ydim(n) 
 				    val group = Helper.getGroup(n)
 				    val x2 = Real.fromInt(font_width 
-					    	* Layout.get_xdim(n))
+					    	* Helper.get_xdim(n))
 				    val y2 = Real.fromInt(font_height 
 						  * ydim)
 				    val y2' = Real.fromInt(font_height 
 						  * (ydim-1))
 				    val lx =Real.fromInt(font_width 
-				     *  Layout.get_l_xdim(n))
+				     *  Helper.get_l_xdim(n))
 				    val re =createRectangle(group,
 							    0.0,
 							    0.0,
