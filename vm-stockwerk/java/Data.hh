@@ -313,13 +313,12 @@ class DllExport InstanceFieldRef: public FieldRef {
 
 class DllExport MethodRef: private Block {
 public:
+  Class *GetClass();
   u_int GetIndex();
   u_int GetNumberOfArguments();
 };
 
 class DllExport StaticMethodRef: public MethodRef {
-public:
-  Class *GetClass();
 };
 
 class DllExport VirtualMethodRef: public MethodRef {
