@@ -35,7 +35,7 @@ import
 require
    Helper(deref: Deref)
 export
-   %--**Unpack
+   Unpack
    Load
    Pack
    Save
@@ -147,6 +147,22 @@ define
       end
       meth close()
 	 {@File close()}
+      end
+   end
+
+   class StringInputStream from InputStreamBase
+      attr String
+      meth init(S)
+	 String <- S
+      end
+      meth fillBuffer(Args TaskStack $)
+	 case @String of unit then
+	    exception(nil CorruptException TaskStack.2)
+	 elseof S then
+	    InputStreamBase, appendToBuffer({ByteString.toString S})
+	    String <- unit
+	    continue(Args TaskStack.2)
+	 end
       end
    end
 
@@ -282,7 +298,7 @@ define
 		     continue(args(InputStream Env Count + 1)
 			      unpickling(UnpickleInterpreter Y 0 Size)|
 			      {PushUnpickleFrame X I + 1 N Rest})
-		  [] !GLOBAL_STAMP then fail   %--**
+		  [] !GLOBAL_STAMP then fail   %--** same as CONSTRUCTOR?
 		  [] !VECTOR then
 		     case {InputStream getByte($)} of eob then
 			continue(Args input(InputInterpreter)|TaskStack)
@@ -366,6 +382,25 @@ define
 	    exception(Frame|Debug Exn Rest)
 	 end
       toString: fun {$ unpickling(_ _ I N)} 'Unpickling Task '#I#' of '#N end)
+
+   PickleUnpackInterpreter =
+   pickleUnpackInterpreter(
+      run:
+	 fun {$ _ pickleUnpack(_ X)|Rest}
+	    continue(arg(X.1) Rest)
+	 end
+      handle:
+	 fun {$ Debug Exn Frame|Rest}
+	    exception(Frame|Debug Exn Rest)
+	 end
+      toString: fun {$ _} 'Pickle Unpack' end)
+
+   fun {Unpack S TaskStack} X in
+      X = tuple(_)
+      continue(args({New StringInputStream init(S)} {NewDictionary} 0)
+	       unpickling(UnpickleInterpreter X 0 1)|
+	       pickleUnpack(PickleUnpackInterpreter X)|TaskStack.2)
+   end
 
    PickleLoadInterpreter =
    pickleLoadInterpreter(
