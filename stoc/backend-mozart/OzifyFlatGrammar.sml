@@ -94,7 +94,16 @@ structure OzifyImperativeGrammar :> OZIFY_IMPERATIVE_GRAMMAR =
 
 	fun outputId (q, Id (coord, stamp, name)) =
 	    (f (q, "id"); outputCoord (q, coord); m q;
-	     outputStamp (q, stamp); m q;
+	     if stamp = Prebound.stamp_false then outputAtom (q, "false")
+	     else if stamp = Prebound.stamp_true then outputAtom (q, "true")
+	     else if stamp = Prebound.stamp_nil then outputAtom (q, "nil")
+	     else if stamp = Prebound.stamp_cons then outputAtom (q, "cons")
+	     else if stamp = Prebound.stamp_ref then outputAtom (q, "ref")
+	     else if stamp = Prebound.stamp_Match then outputAtom (q, "Match")
+	     else if stamp = Prebound.stamp_Bind then outputAtom (q, "Bind")
+	     else if stamp = Prebound.stamp_eq then outputAtom (q, "eq")
+	     else if stamp = Prebound.stamp_assign then outputAtom (q, "assign")
+	     else outputStamp (q, stamp); m q;
 	     case name of
 		 ExId s => (f (q, "exId"); outputAtom (q, s); r q)
 	       | InId => output (q, "inId");
