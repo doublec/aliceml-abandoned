@@ -39,6 +39,11 @@ typedef enum {
   NATIVE_CALL
 } CALL_MODE;
 
+typedef struct {
+  CALL_MODE mode;
+  u_int pc;
+} CallInfo;
+
 #define ALICE_REGISTER_NB 3
 
 class NativeCodeJitter : private JITStore {
@@ -72,12 +77,12 @@ protected:
   // StackFrame Accessors
   static void Prepare();
   static void Finish();
-  static void Reset();
+  static void ResetRegister();
   static void SaveRegister();
   static void RestoreRegister();
-  static void PushCall(u_int Closure, CALL_MODE mode, u_int offset);
+  static void PushCall(u_int Closure, CallInfo *info);
   static void DirectCall(Interpreter *interpreter, void *ptr);
-  static void TailCall(u_int Closure, CALL_MODE mode, u_int offset);
+  static void TailCall(u_int Closure, CallInfo *info);
   static void BranchToOffset(u_int wOffset);
   static u_int GetRelativePC();
   static void SetRelativePC(word pc);
