@@ -651,8 +651,8 @@ void NativeCodeJitter::TailCall(u_int Closure, bool isSelf) {
 
 void NativeCodeJitter::BranchToOffset(u_int wOffset) {
   Assert(wOffset == JIT_R0);
-  NativeCodeFrame::GetCode(JIT_FP, JIT_V2);
   JITStore::DirectWordToInt(wOffset, wOffset);
+  NativeCodeFrame::GetCode(JIT_FP, JIT_V2);
   jit_addr_ui(wOffset, wOffset, JIT_FP);
   jit_jmpr(wOffset);
 }
@@ -1849,14 +1849,9 @@ char *NativeCodeJitter::CompileProlog(const char *info) {
   jit_getarg_p(JIT_V2, arg1);
   JITStore::LogMesg(info);
   JITStore::LogReg(JIT_SP);
-  NativeCodeFrame::GetPC(JIT_R0, JIT_V2); // PC is base-adjusted
-  DirectWordToInt(JIT_R0, JIT_R0);
-  NativeCodeFrame::GetCode(JIT_V1, JIT_V2);
-  jit_addr_ui(JIT_R0, JIT_R0, JIT_V1);
-  JITStore::LogMesg("branching to ");
-  JITStore::LogReg(JIT_R0);
   RestoreRegister();
-  jit_jmpr(JIT_R0);
+  NativeCodeFrame::GetPC(JIT_R0, JIT_V2);
+  BranchToOffset(JIT_R0);
   return start;
 }
 
