@@ -1,0 +1,59 @@
+Group
+
+    signature PARSING_PHASE
+    signature ABSTRACTION_PHASE
+    structure ParsingPhase
+    structure AbstractionPhase
+    signature BIND_ENV
+    structure BindEnv
+
+is
+
+    (* Utilities *)
+
+    ml-yacc-lib.cm
+    ../misc/sources.cm
+    ../error/sources.cm
+
+    (* SML syntax *)
+
+    SCON.sig
+    SCon.sml
+    LAB.sig
+    Lab.sml
+    ID.sig
+    MakeId.sml
+
+    Ids.sml
+
+    INPUT_GRAMMAR.sig
+    MakeInputGrammar.sml
+    InputGrammar.sml
+
+    (* Parsing *)
+
+    Lexer.lex
+    Parser.grm
+
+    DERIVED_FORMS.sig
+    DerivedForms.sml
+
+    PARSING_PHASE.sig
+    ParsingPhase.sml
+
+
+    (* Abstract syntax *)
+
+    ../frontend-common/abstract-grammar.cm
+
+    (* Translation into abstract syntax (binding analysis) *)
+
+    ImpTables.sml
+    BIND_ENV.sig
+    BindEnv.sml
+
+    INFIX.sig
+    Infix.sml
+
+    ABSTRACTION_PHASE.sig
+    AbstractionPhase.sml
