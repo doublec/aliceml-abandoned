@@ -137,6 +137,8 @@ structure BinIO :> BIN_IO =
 	fun openIn name =
 	    let
 		val iodesc = UnsafeIODesc.openIn name
+		    handle cause =>
+			raise IO.Io {cause, function = "openIn", name}
 		val reader = mkReader iodesc
 		val v = Word8Vector.fromList nil
 	    in
@@ -146,6 +148,8 @@ structure BinIO :> BIN_IO =
 	fun openOut name =
 	    let
 		val iodesc = UnsafeIODesc.openOut name
+		    handle cause =>
+			raise IO.Io {cause, function = "openOut", name}
 		val writer = mkWriter iodesc
 	    in
 		BinImperativeIO.mkOutstream
@@ -155,6 +159,8 @@ structure BinIO :> BIN_IO =
 	fun openAppend name =
 	    let
 		val iodesc = UnsafeIODesc.openAppend name
+		    handle cause =>
+			raise IO.Io {cause, function = "openAppend", name}
 		val writer = mkWriter iodesc
 	    in
 		BinImperativeIO.mkOutstream

@@ -17,6 +17,8 @@ import structure StreamIO     from "StreamIO"
 import structure ImperativeIO from "ImperativeIO"
 import signature TEXT_IO      from "TEXT_IO-sig"
 
+(*--** newline translation missing *)
+
 structure TextIO :> TEXT_IO =
     struct
 	structure TextStreamIO =
@@ -137,6 +139,8 @@ structure TextIO :> TEXT_IO =
 	fun openIn name =
 	    let
 		val iodesc = UnsafeIODesc.openIn name
+		    handle cause =>
+			raise IO.Io {cause, function = "openIn", name}
 		val reader = mkReader iodesc
 		val v = CharVector.fromList nil
 	    in
@@ -156,6 +160,8 @@ structure TextIO :> TEXT_IO =
 	fun openOut name =
 	    let
 		val iodesc = UnsafeIODesc.openOut name
+		    handle cause =>
+			raise IO.Io {cause, function = "openOut", name}
 		val writer = mkWriter iodesc
 	    in
 		TextImperativeIO.mkOutstream
@@ -165,6 +171,8 @@ structure TextIO :> TEXT_IO =
 	fun openAppend name =
 	    let
 		val iodesc = UnsafeIODesc.openAppend name
+		    handle cause =>
+			raise IO.Io {cause, function = "openAppend", name}
 		val writer = mkWriter iodesc
 	    in
 		TextImperativeIO.mkOutstream
