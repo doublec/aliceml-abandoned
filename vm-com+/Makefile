@@ -2,7 +2,7 @@ OBJS = Alice.dll stow.exe Base.dll IO.dll OS.dll TextIO.dll CommandLine.dll
 SIGS = IO.dll.sig OS.dll.sig TextIO.dll.sig CommandLine.dll.sig
 INSPECTOR_OBJS = Win32.dll Canvas.dll Dialog.dll Tools.dll
 
-all: stoc-com+.x86-win32 $(OBJS) $(SIGS) inspector
+all: stoc-com+.x86-win32 $(OBJS) $(SIGS) inspector streams.dll
 
 stoc-com+.x86-win32: ../stoc/stoc-com+.x86-win32
 	copy "..\stoc\stoc-com+.x86-win32" "stoc-com+.x86-win32"
@@ -65,6 +65,9 @@ Dialog.dll: Dialog.cs Win32.dll Alice.dll
 
 Tools.dll: Tools.aml stoc-com+.x86-win32 Skeleton.il
 	stoc -c Tools.aml -o $@
+
+streams.dll: examples/streams.aml
+	stoc -c examples/streams.aml -o $@
 
 clean:
 	@-del /f /q *~ *.pdb

@@ -1,5 +1,5 @@
 @ECHO OFF
 
-SET STOCKHOME=Y:\stockhausen\vm-com+
+SET STOCKHOME=C:\Program Files\Alice
 SET PATH=%STOCKHOME%\SML\bin;%PATH%
 SET CORPATH=%STOCKHOME%
