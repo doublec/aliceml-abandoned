@@ -126,7 +126,7 @@ private:
     Assert((accessFlags & ACC_ABSTRACT) == 0 ||
 	   (accessFlags & (ACC_FINAL|ACC_NATIVE|ACC_PRIVATE|ACC_STATIC|
 			   ACC_STRICT|ACC_SYNCHRONIZED)) == 0);
-    Block *b = Store::AllocBlock(JavaLabel::FieldInfo, SIZE);
+    Block *b = Store::AllocBlock(JavaLabel::MethodInfo, SIZE);
     b->InitArg(ACCESS_FLAGS_POS, accessFlags);
     b->InitArg(NAME_POS, name->ToWord());
     b->InitArg(DESCRIPTOR_POS, descriptor->ToWord());
