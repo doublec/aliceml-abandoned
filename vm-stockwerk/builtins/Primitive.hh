@@ -13,7 +13,9 @@
 #ifndef __BUILTINS__PRIMITIVE_HH__
 #define __BUILTINS__PRIMITIVE_HH__
 
+#if defined(INTERFACE)
 #pragma interface "builtins/Primitive.hh"
+#endif
 
 #include "datalayer/alicedata.hh"
 #include "scheduler/Interpreter.hh"

@@ -10,7 +10,9 @@
 //   $Revision$
 //
 
+#if defined(INTERFACE)
 #pragma implementation "builtins/GlobalPrimitives.hh"
+#endif
 
 #include "builtins/Primitive.hh"
 #include "builtins/GlobalPrimitives.hh"

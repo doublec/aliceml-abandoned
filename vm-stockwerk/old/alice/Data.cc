@@ -10,6 +10,7 @@
 //   $Revision$
 //
 
+#if defined(INTERFACE)
 #pragma implementation "datalayer/alicedata.hh"
-
+#endif
 #include "datalayer/alicedata.hh"

@@ -15,7 +15,9 @@
 #ifndef __DATALAYER__ALICEDATA_HH__
 #define __DATALAYER__ALICEDATA_HH__
 
+#if defined(INTERFACE)
 #pragma interface "datalayer/alicedata.hh"
+#endif
 
 #include "store/store.hh"
 

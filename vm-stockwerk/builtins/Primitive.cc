@@ -10,7 +10,9 @@
 //   $Revision$
 //
 
+#if defined(INTERFACE)
 #pragma implementation "builtin/Primitive.hh"
+#endif
 
 #include "scheduler/Closure.hh"
 #include "scheduler/TaskStack.hh"
