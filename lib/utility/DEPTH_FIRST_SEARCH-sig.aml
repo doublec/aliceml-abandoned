@@ -10,6 +10,10 @@
  *   $Revision$
  *)
 
+import
+    signature IMP_MAP
+from "IMP_MAP-sig"
+
 signature DEPTH_FIRST_SEARCH =
     sig
 	structure Map: IMP_MAP
