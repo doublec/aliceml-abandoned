@@ -30,14 +30,14 @@ final public class General {
 
     final public static class Deref extends Builtin {
 	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
-	    DMLValue[] args = fromTuple(val,1,"deref");
+	    _fromTuple(args,val,1,"deref");
 	    DMLValue arg = args[0].request();
 	    if (arg instanceof DMLConVal) {
 		DMLConVal cv = (DMLConVal) arg;
 		if (cv.getConstructor()==Constants.reference)
 		    return cv.getContent();
 	    }
-	    return error("wrong argument #1 for deref",val);
+	    return _error(`"wrong argument #1 for deref"',val);
 	}
     }
     /** <code>val ! : 'a ref -> 'a</code>*/
@@ -45,13 +45,13 @@ final public class General {
 
     final public static class Assign extends Builtin {
 	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
-	    DMLValue[] args = fromTuple(val,2,"assign");
+	    _fromTuple(args,val,2,"assign");
 	    DMLValue car=args[0].request();
 	    if (car instanceof DMLConVal) {
 		return ((DMLConVal) car).assign(args[1]);
 	    }
 	    else
-		return error("wrong argument #1 for assign",val);
+		return _error(`"wrong argument #1 for assign"',val);
 	}
     }
     /** <code>val := : ('a ref * 'a) -> unit</code>*/
@@ -69,7 +69,7 @@ final public class General {
 	    }
 	}
 	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
-	    DMLValue[] args = fromTuple(val,2,"assign");
+	    _fromTuple(args,val,2,"assign");
 	    DMLValue f = args[0].request();
 	    DMLValue g = args[1].request();
 	    return new Composer(f,g);
@@ -80,7 +80,7 @@ final public class General {
 
     final public static class Before extends Builtin {
 	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
-	    DMLValue[] args  = fromTuple(val,2,"before");
+	    _fromTuple(args,val,2,"before");
 	    return args[0];
 	}
     }
@@ -107,7 +107,7 @@ final public class General {
     /** Ref-Zellen-Konstruktor, entspricht etwa NewCell oder so.*/
     final public static class Ref extends Builtin {
 	final synchronized public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
-	    DMLValue[] args = fromTuple(val,1,"General.ref");
+	    _fromTuple(args,val,1,"General.ref");
 	    return new Reference(args[0]);
 	}
     }
@@ -116,7 +116,7 @@ final public class General {
 
     final public static class Spawn extends Builtin {
 	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
-	    DMLValue[] args=fromTuple(val,1,"spawn");
+	    _fromTuple(args,val,1,"spawn");
 	    de.uni_sb.ps.dml.runtime.Thread t=new de.uni_sb.ps.dml.runtime.Thread(args[0]);
 	    t.start();
 	    return Constants.dmlunit;
@@ -130,7 +130,7 @@ final public class General {
 
     final public static class Equals extends Builtin {
 	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
-	    DMLValue[] args=fromTuple(val,2,"equals");
+	    _fromTuple(args,val,2,"equals");
 	    DMLValue car=args[0].request();
 	    DMLValue cdr=args[1].request();
 	    if (car.equals(cdr))
@@ -144,10 +144,10 @@ final public class General {
 
     final public static class Pickle extends Builtin {
 	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
-	    DMLValue[] args=fromTuple(val,2,"General.pickle");
+	    _fromTuple(args,val,2,"General.pickle");
 	    DMLValue fst=args[0].request();
 	    if (!(fst instanceof de.uni_sb.ps.dml.runtime.String))
-		return error("argument #1 not de.uni_sb.ps.dml.runtime.String",val);
+		return _error(`"argument #1 not de.uni_sb.ps.dml.runtime.String"',val);
 	    java.lang.String whereto=((de.uni_sb.ps.dml.runtime.String) fst).getString();
 	    DMLValue ex=null;
 	    java.io.FileOutputStream outf=null;
@@ -181,10 +181,10 @@ final public class General {
 
     final public static class Unpickle extends Builtin {
 	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
-	    DMLValue[] args=fromTuple(val,2,"General.unpickle");
+	    _fromTuple(args,val,2,"General.unpickle");
 	    DMLValue fst=args[0].request();
 	    if (!(fst instanceof de.uni_sb.ps.dml.runtime.String))
-		return error("argument #1 not de.uni_sb.ps.dml.runtime.String",val);
+		return _error(`"argument #1 not de.uni_sb.ps.dml.runtime.String"',val);
 	    java.lang.String wherefrom=((de.uni_sb.ps.dml.runtime.String) fst).getString();
 	    DMLValue ex=null;
 	    java.io.FileInputStream inf=null;
@@ -195,6 +195,8 @@ final public class General {
 		in=new PickleInputStream(inf);
 		result=(DMLValue) in.readObject();
 	    } catch (Exception e) {
+		System.err.println(e);
+		e.printStackTrace();
 		ex=Constants.runtimeError.apply(new de.uni_sb.ps.dml.runtime.String(e.getMessage()));
 	    }
 	    finally {
@@ -213,36 +215,4 @@ final public class General {
 
     // val exnName : exn -> string 
     // val exnMessage : exn -> string
-
-    // Hilfsfunktionen
-    final public static DMLValue[] fromTuple
-	(DMLValue v, // Value-Tuple
-	 int ea,     // erwartete Anzahl Argumente
-	 java.lang.String errMsg) throws java.rmi.RemoteException {
-	v=v.request();
-	if (v instanceof DMLTuple) {
-	    DMLTuple t=(DMLTuple) v;
-	    if (t.getArity()==ea) {
-		DMLValue[] vals = new DMLValue[ea];
-		for(int i=0; i<ea; i++)
-		    vals[i]=t.getByIndex(i);
-		return vals;
-	    }
-	    else
-		error("wrong number of arguments in "+errMsg, v);
-	}
-	else
-	    error("wrong argument type for "+errMsg,v);
-	return null;
-    }
-
-    final public static DMLValue error
-	(java.lang.String msg, DMLValue v) throws java.rmi.RemoteException {
-	// sonst: Fehler
-	DMLValue[] err = {
-	    new de.uni_sb.ps.dml.runtime.String(msg),
-	    v};
-	return Constants.
-	    runtimeError.apply(new Tuple(err)).raise();
-    }
 }

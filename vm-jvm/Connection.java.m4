@@ -12,7 +12,7 @@ final public class Connection {
 
     final public static class Offer extends Builtin {
 	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException {
-	    DMLValue[] args=fromTuple(val,1,"Connection.offer");
+	    _fromTuple(args,val,1,"Connection.offer");
 	    java.net.InetAddress i=null;
 	    try {
 		i=java.net.InetAddress.getLocalHost();
@@ -56,10 +56,10 @@ final public class Connection {
 
     final public static class Take extends Builtin {
 	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException {
-	    DMLValue[] args=fromTuple(val,1,"Connection.take");
+	    _fromTuple(args,val,1,"Connection.take");
 	    DMLValue t = args[0].request();
 	    if (!(t instanceof de.uni_sb.ps.dml.runtime.String)) {
-		return error("argumetn not String",val);
+		return _error(`"argumetn not String"',val);
 	    }
 	    java.lang.String ti = ((de.uni_sb.ps.dml.runtime.String) t).getString();
 	    java.lang.String ip = ti.substring(0,ti.indexOf('\\'));
@@ -68,7 +68,7 @@ final public class Connection {
 	    try {
 		exp = (Exporter) Naming.lookup("//"+ip+"/exporter");
 	    } catch (java.rmi.NotBoundException n) {
-		return error("ticket not bound",val);
+		return _error(`"ticket not bound"',val);
 	    } catch (java.net.MalformedURLException m) {
 		System.err.println(m);
 		m.printStackTrace();
@@ -79,37 +79,4 @@ final public class Connection {
     }
 
     final public static Take take = new Take();
-
-
-	    // Hilfsfunktionen
-    final public static DMLValue[] fromTuple
-	(DMLValue v, // Value-Tuple
-	 int ea,     // erwartete Anzahl Argumente
-	 java.lang.String errMsg) throws java.rmi.RemoteException {
-	v=v.request();
-	if (v instanceof DMLTuple) {
-	    DMLTuple t=(DMLTuple) v;
-	    if (t.getArity()==ea) {
-		DMLValue[] vals = new DMLValue[ea];
-		for(int i=0; i<ea; i++)
-		    vals[i]=t.getByIndex(i);
-		return vals;
-	    }
-	    else
-		error("wrong number of arguments in "+errMsg, v);
-	}
-	else
-	    error("wrong argument type for "+errMsg,v);
-	return null;
-    }
-
-    final public static DMLValue error
-	(java.lang.String msg, DMLValue v) throws java.rmi.RemoteException {
-	// sonst: Fehler
-	DMLValue[] err = {
-	    new de.uni_sb.ps.dml.runtime.String(msg),
-	    v};
-	return Constants.
-	    runtimeError.apply(new Tuple(err)).raise();
-    }
 }
