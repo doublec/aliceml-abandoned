@@ -11,10 +11,10 @@
 
 import signature ARENA    from "ARENA-sig"
 import structure Protocol from "../common/Protocol"
+import structure Inspector from "x-alice:/lib/tools/Inspector"
 import structure Snake    from "Snake"
 import structure Pos      from "../common/Pos"
 import structure Random   from "x-alice:/lib/utility/Random"
-import "x-alice:/lib/tools/Inspector"
 
 structure Arena :> ARENA =
 struct
@@ -74,6 +74,8 @@ struct
 	      | P.RIGHT  => ((Array2.update(arena,r,c,v);
 			     setWall (r,c+1) (n-1) d v ((r,c)::xs)) handle Subscript => setWall (0,0) 0 d v nil)
 
+	    fun setWall a b c d e = (Inspector.inspect(a,b,c,d,e);setWall a b c d e)
+
 	    fun child 0 _ _   _     _   = ()
 	      | child _ _ _   _    nil  = ()
 	      | child n c 4 dlist slist =
@@ -93,12 +95,12 @@ struct
 		    val d = List.nth(dlist,Random.int (List.length dlist))
 		    val start = List.nth(slist,Random.int(List.length dlist)) (* letzten beiden net !! *)
 		    val l = Random.int ((rows + cols) div 10)
-		    val e = case Random.int 2 of 
+		    val e = case Random.int 3 of 
 			      0 => P.WALL
 			    | 1 => P.EMPTY
+			    | 2 => P.WALL
 			    | _ => assert false
 		    val news = setWall start l d e nil
-		    val _ = Inspector.inspect news
 		    val newd = if d = P.LEFT orelse d = P.RIGHT
 				   then [P.UP,P.DOWN]
 			       else [P.LEFT,P.RIGHT]
@@ -127,12 +129,15 @@ struct
 		    val newd = if d = P.LEFT orelse d = P.RIGHT
 				   then [P.UP,P.DOWN]
 			       else [P.LEFT,P.RIGHT]
+				   
+		    val len = Random.int ((rows+cols) div 10)
 
 		    val news = setWall ((rows div 4) + Random.int (rows div 2) ,(cols div 4) + Random.int (cols div 2)) 
-			               (Random.int ((rows+cols) div 10)) 
+			               len
 				       d 
 				       P.WALL 
 				       nil
+		    val _ = Inspector.inspect(news,d,len)
 		in
 		    child walls 1 1 newd news
 		end
@@ -218,8 +223,7 @@ struct
 				 if col <> color 
 				     then killSnake snake
 				 else ()
-		       |     _      => (assert false;
-					killSnake snake)
+		       |     _      => killSnake snake
 		end
 
 	    fun placeBody snake =
