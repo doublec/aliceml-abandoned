@@ -51,8 +51,13 @@ struct
     fun urlToString url =
 	case (Url.getScheme url, Url.getAuthority url) of
 	    ((NONE | SOME "file"), NONE) =>
-	    OS.Path.mkRelative{path = Url.toString(Url.setScheme(url, NONE)),
-			       relativeTo = OS.FileSys.getDir()}
+	    let
+		val cwd  = OS.FileSys.getDir()
+		val file = OS.Path.getVolume cwd ^
+			   Url.toString(Url.setScheme(url, NONE))
+	    in
+		OS.Path.mkRelative{path = file, relativeTo = cwd}
+	    end
 	  | _ =>
 	    Url.toString url
 
