@@ -14,6 +14,7 @@
 #pragma implementation "adt/ChunkMap.hh"
 #endif
 
+#include <cstring>
 #include "adt/ChunkMap.hh"
 
 // String hashing function is taken from
