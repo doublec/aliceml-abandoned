@@ -1,0 +1,111 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+
+(*
+ *  Items marked with (**) are extensions to the Standard Basis.
+ *)
+
+import structure __pervasive                from "Pervasive"
+import type int and vector datatype option  from "ToplevelTypes"
+import infix 4 = <> < > infix 6 + -
+       val op = and op <> and op < and op >
+       val op + and op -                    from "ToplevelValues"
+import structure General                    from "General"
+import structure Int                        from "Int"
+import structure List                       from "List"
+import structure Vector                     from "Vector"
+import signature VECTOR_PAIR                from "VECTOR_PAIR-sig"
+
+
+structure VectorPair : VECTOR_PAIR =					(**)
+struct
+    __primitive val sub' :	'a vector * int -> 'a	= "Unsafe.Vector.sub"
+
+    fun length (v1,v2)		= Int.min(Vector.length v1, Vector.length v2)
+    fun sliceLength(v1,v2,i,NONE) where (i > Vector.length v1 orelse
+				         i > Vector.length v2)
+				= raise General.Subscript
+      | sliceLength(v1,v2,i,NONE)
+				= Int.min(Vector.length v1, Vector.length v2) -i
+      | sliceLength(v1,v2,i,SOME n) where (i+n > Vector.length v1 orelse
+ 					   i+n > Vector.length v2 orelse n < 0)
+				= raise General.Subscript
+      | sliceLength(v1,v2,i,SOME n)
+				= n
+
+
+    fun zip(v1,v2)		= Vector.tabulate(length(v1,v2),
+				     fn i => (sub'(v1,i), sub'(v2,i)))
+    fun unzip(v: ('a*'b)vector)	= (Vector.map #1 v, Vector.map #2 v)
+
+    fun map f (v1,v2)		= Vector.tabulate(length(v1,v2),
+				     fn i => f(sub'(v1,i), sub'(v2,i)))
+    fun mapi f (v1,v2,i,no)	= Vector.tabulate(sliceLength(v1,v2,i,no),
+				     fn k => f(i+k, sub'(v1,i+k), sub'(v2,i+k)))
+
+    fun app f (v1,v2)		= app'(f, v1, v2, 0, length(v1,v2))
+    and app'(f,v1,v2,i,0)	= ()
+      | app'(f,v1,v2,i,n)	= (f(sub'(v1,i), sub'(v2,i)) ;
+				   app'(f,v1,v2,i+1,n-1))
+
+    fun appr f (v1,v2)		= appr'(f, v1, v2, length(v1,v2)-1)
+    and appr'(f,v1,v2,~1)	= ()
+      | appr'(f,v1,v2,i)	= (f(sub'(v1,i),sub'(v2,i)); appr'(f,v1,v2,i-1))
+
+    fun foldl f x (v1,v2)	= foldl'(f, x, v1, v2, 0, length(v1,v2))
+    and foldl'(f,x,v1,v2,i,0)	= x
+      | foldl'(f,x,v1,v2,i,n)	= foldl'(f, f(sub'(v1,i), sub'(v2,i), x),
+					 v1, v2, i+1, n-1)
+
+    fun foldr f x (v1,v2)	= foldr'(f, x, v1, v2, length(v1,v2)-1)
+    and foldr'(f,x,v1,v2,~1)	= x
+      | foldr'(f,x,v1,v2,i)	= foldr'(f, f(sub'(v1,i), sub'(v2,i), x),
+					 v1, v2, i-1)
+
+    fun appi f (v1,v2,i,no)	= appi'(f, v1, v2, i, sliceLength(v1,v2,i,no))
+    and appi'(f,v1,v2,i,0)	= ()
+      | appi'(f,v1,v2,i,n)	= (f(i, sub'(v1,i), sub'(v2,i)) ;
+				   appi'(f,v1,v2,i+1,n-1))
+
+    fun appri f (v1,v2,i,no)	= appri'(f,v1,v2,i, i-1+sliceLength(v1,v2,i,no))
+    and appri'(f,v1,v2,i,j) where (i < j)
+				= ()
+      | appri'(f,v1,v2,i,j)	= (f(i, sub'(v1,i), sub'(v2,i)) ;
+  				   appri'(f,v1,v2,i-1,j))
+
+    fun foldli f x (v1,v2,i,no)	= foldli'(f,x,v1,v2, i, sliceLength(v1,v2,i,no))
+    and foldli'(f,x,v1,v2,i,0)	= x
+      | foldli'(f,x,v1,v2,i,n)	= foldli'(f, f(i, sub'(v1,i), sub'(v2,i), x),
+					  v1, v2, i+1, n-1)
+
+    fun foldri f x (v1,v2,i,no)	= foldri'(f, x, v1, v2,
+					  i-1+sliceLength(v1,v2,i,no), i)
+    and foldri'(f,x,v1,v2,i,j) where (i < j)
+				= x
+      | foldri'(f,x,v1,v2,i,j)	= foldri'(f, f(i, sub'(v1,i), sub'(v2,i), x),
+					  v1, v2, i-1, j)
+
+    fun all f (v1,v2)		= all'(f, v1, v2, 0, length(v1,v2))
+    and all'(f,v1,v2,i,n) 	= n = 0 orelse ( f(sub'(v1,i), sub'(v2,i))
+					andalso  all'(f,v1,v2,i+1,n-1) )
+
+    fun exists f (v1,v2)	= exists'(f, v1, v2, 0, length(v1,v2))
+    and exists'(f,v1,v2,i,n)	= n <> 0 andalso ( f(sub'(v1,i), sub'(v2,i))
+					 orelse  exists'(f,v1,v2,i+1,n-1) )
+
+    fun find  f (v1,v2)		= find'(f, v1, v2, 0, length(v1,v2))
+    and find'(f,v1,v2,i,0)	= NONE
+      | find'(f,v1,v2,i,n) withval xy = (sub'(v1,i), sub'(v2,i)) where (f xy)
+				= SOME xy
+      | find'(f,v1,v2,i,n)	= find'(f,v1,v2,i+1,n-1)
+end
