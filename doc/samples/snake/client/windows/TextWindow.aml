@@ -3,46 +3,43 @@ import structure Gdk       from "x-alice:/lib/gtk/Gdk"
 import structure GtkCanvas from "x-alice:/lib/gtk/GtkCanvas"
 import structure Protocol  from "../../common/Protocol"
 
-local
+structure TextWindow =
+struct
 
     fun mkTextWindow (title, mode) = 
 	let
 
-	val show_text	  = Gtk.windowNew Gtk.WINDOW_TOPLEVEL
-	val dialog_vbox1  = Gtk.vboxNew (false, 0)
-	val adj1	  = Gtk.adjustmentNew (50.0, 0.0, 100.0, 1.0, 1.0, 1.0)
-	val adj2	  = Gtk.adjustmentNew (50.0, 0.0, 100.0, 1.0, 1.0, 1.0)
-	val button1    	  = Gtk.buttonNewWithLabel "  Close  "
-	val button_box	  = Gtk.hbuttonBoxNew ()
-
-	val label         = case mode of
-	                   Protocol.Protocol s => Gtk.labelNew s
-			 |         _           => assert false
-	
+	    val show_text    = Gtk.windowNew Gtk.WINDOW_TOPLEVEL
+	    val dialog_vbox1 = Gtk.vboxNew (false, 0)
+	    val adj1	     = Gtk.adjustmentNew (50.0, 0.0, 100.0, 
+						  1.0, 1.0, 1.0)
+	    val adj2	     = Gtk.adjustmentNew (50.0, 0.0, 100.0, 
+						  1.0, 1.0, 1.0)
+	    val button1      = Gtk.buttonNewWithLabel "  Close  "
+	    val button_box   = Gtk.hbuttonBoxNew ()
+		
+	    val label         = Gtk.labelNew mode
+		    
 	in
-
-	Gtk.windowSetTitle (show_text, title);
-	Gtk.windowSetModal (show_text, true);
-	Gtk.windowSetPosition (show_text, Gtk.WIN_POS_CENTER);
-	Gtk.signalConnect (show_text , "delete-event", 
-			   fn _ => Gtk.widgetDestroy show_text);
-	Gtk.containerSetBorderWidth (show_text , 20);
-	Gtk.windowSetDefaultSize(show_text, 200, 150);
-	Gtk.signalConnect (button1, "clicked", 
-			   fn _ => Gtk.widgetDestroy show_text);
-
-	Gtk.boxPackStart (dialog_vbox1, label, false, false, 10);
-	Gtk.boxPackStart (dialog_vbox1, button_box, false, false, 15);
-
-	Gtk.containerAdd (button_box, button1);
-	Gtk.containerAdd (show_text, dialog_vbox1);
-
-	Gtk.widgetShowAll show_text
+	    
+	    Gtk.windowSetTitle (show_text, title);
+	    Gtk.windowSetModal (show_text, true);
+	    Gtk.windowSetPosition (show_text, Gtk.WIN_POS_CENTER);
+	    Gtk.signalConnect (show_text , "delete-event", 
+			       fn _ => Gtk.widgetDestroy show_text);
+	    Gtk.containerSetBorderWidth (show_text , 20);
+	    Gtk.windowSetDefaultSize(show_text, 200, 150);
+	    Gtk.signalConnect (button1, "clicked", 
+			       fn _ => Gtk.widgetDestroy show_text);
+	    
+	    Gtk.boxPackStart (dialog_vbox1, label, false, false, 10);
+	    Gtk.boxPackStart (dialog_vbox1, button_box, false, false, 15);
+	    
+	    Gtk.containerAdd (button_box, button1);
+	    Gtk.containerAdd (show_text, dialog_vbox1);
+	    
+	    Gtk.widgetShowAll show_text
 
 	end
 
-in
-    val _ = mkTextWindow ("An error occured!!!",
-			  Protocol.Protocol "Du hast sch... programmiert,\n 
-			  deshalb geht hier jetzt nix!!!")
 end

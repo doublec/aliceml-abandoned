@@ -14,7 +14,9 @@ import structure Gtk           from "x-alice:/lib/gtk/Gtk"
 import structure Gdk           from "x-alice:/lib/gtk/Gdk"
 import structure GtkCanvas     from "x-alice:/lib/gtk/GtkCanvas"
 import functor   MkRedBlackMap from "x-alice:/lib/data/MkRedBlackMap"
+(*
 import structure GtkBuilder    from "GtkBuilder"
+*)
 import structure Protocol      from "../common/Protocol"
 import structure Color         from "../common/Color"
 import structure Pos           from "../common/Pos"
@@ -265,8 +267,8 @@ struct
 				    ("y1", Gtk.DOUBLE 0.0),
 				    ("x2", Gtk.DOUBLE (real cellSize)),
 				    ("y2", Gtk.DOUBLE (real cellSize)),
-				    ("fill_color_gdk", Gtk.OBJECT black),
-				    ("outline_color_gdk", Gtk.OBJECT red)])
+				    ("fill_color_gdk", Gtk.OBJECT red),
+				    ("outline_color_gdk", Gtk.OBJECT black)])
 		
 	in
 	    wall
@@ -366,7 +368,7 @@ fun testfield () =
 		      P.GATE(Color.fromString "brown"));
 	testfield
     end
-
+(*
 val testfield = testfield ()
 
 fun test () = 
@@ -390,3 +392,4 @@ fun test () =
     end
 
 val _ = test ()
+*)
