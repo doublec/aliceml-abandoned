@@ -37,7 +37,7 @@ public class Constructor implements DMLValue {
 
     public DMLValue apply0()
 	throws RemoteException {
-	_RAISENAME(General.Match);
+	return new ConVal(this,Constants.dmlunit);
     }
 
     public DMLValue apply2(DMLValue v1, DMLValue v2)
