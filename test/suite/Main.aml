@@ -27,6 +27,7 @@ import structure TestIntInf   from "lib/fundamental/IntInf"
 import structure TestByte     from "lib/fundamental/Byte"
 import structure TestList     from "lib/fundamental/List"
 import structure TestArray    from "lib/fundamental/Array"
+import structure TestVector   from "lib/fundamental/Vector"
 import structure TestTime     from "lib/system/Time"
 import structure TestCompiler from "lib/compiler/Compiler"
 
@@ -37,6 +38,7 @@ fun randomizeTests () =
 			TestBool.randomize,
 			TestChar.randomize,
 			TestArray.randomize,
+			TestVector.randomize,
 			TestGeneral.randomize,
 			TestOption.randomize, 
 			TestString.randomize,
@@ -56,14 +58,15 @@ val allTests = [TestCompiler.suite,
 		TestGeneral.suite,
 		TestOption.suite, 
 		TestArray.suite,
+		TestVector.suite,
 		TestList.suite,
 		TestChar.suite,
 		TestString.suite,
 		TestIEEEReal.suite,
 		TestInteger.suite(*,
 		TestIntInf.suite*),
-		TestByte.suite(*,
-		TestTime.suite*)]
+		TestByte.suite,
+		TestTime.suite]
 
 val defaultConfig = {
 	    timeout = Time.fromSeconds (Int.toLarge 20),
