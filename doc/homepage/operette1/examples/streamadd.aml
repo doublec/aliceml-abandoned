@@ -32,7 +32,7 @@ fun main() =
 	val stream2 = future p2
 	val stream3 = plus(stream1, stream2)
     in
-	Tools.browse{stream1=stream1, stream2=stream2, stream3=stream3} ;
+	Tools.inspect {stream1=stream1, stream2=stream2, stream3=stream3} ;
 	loop(p1,p2) ;
 	OS.Process.exit(OS.Process.success)
     end
