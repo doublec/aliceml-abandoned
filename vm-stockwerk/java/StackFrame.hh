@@ -24,7 +24,9 @@ static const FrameLabel RESOLVE_FRAME =
   (FrameLabel) (MIN_LANGUAGE_LAYER_FRAME + 2);
 static const FrameLabel JAVA_BYTE_CODE_FRAME =
   (FrameLabel) (MIN_LANGUAGE_LAYER_FRAME + 3);
-static const FrameLabel RUN_MAIN_FRAME =
+static const FrameLabel UNLOCK_FRAME =
   (FrameLabel) (MIN_LANGUAGE_LAYER_FRAME + 4);
+static const FrameLabel RUN_MAIN_FRAME =
+  (FrameLabel) (MIN_LANGUAGE_LAYER_FRAME + 5);
 
 #endif
