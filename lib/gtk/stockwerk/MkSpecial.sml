@@ -66,12 +66,17 @@ functor MkSpecial(val space : Util.spaces) :> SPECIAL =
 			     "gtk_radio_menu_item_new",
 			     "gtk_radio_menu_item_new_with_label",
 			     "gtk_radio_menu_item_new_with_mnemonic",
+                             "gtk_icon_theme_set_search_path",
+                             "gtk_icon_theme_get_search_path",
 			     "_GtkSocket",
 			     "_GtkPlug"] (* not available for win32 *)
 	      | Util.GDK => ["gdk_init",
 			     "gdk_init_check",
 			     "gdk_pixbuf_new_from_xpm_data",
-			     "gdk_pixbuf_composite_color"]
+			     "gdk_pixbuf_composite_color",
+                             "gdk_spawn_on_screen",
+                             "gdk_spawn_on_screen_with_pipes"
+                             ]
 	      | Util.GNOMECANVAS => ["gnome_canvas_item_new",
 				     "gnome_canvas_join_gdk_to_art",
 				     "gnome_canvas_cap_gdk_to_art"]
