@@ -26,7 +26,7 @@ COMPONENTS = $(ALICESOURCES:%.aml=%.ozf)
 all: $(COMPONENTS)
 
 clean:
-	-rm -f $(COMPONENTS) *.ozp *.ozm
+	-rm -f $(COMPONENTS)
 
 veryclean: clean
 
