@@ -40,6 +40,7 @@ private:
 		       bool isVirtual);
 
   static void java_lang_Object(JavaString *className);
+  static void java_lang_Double(JavaString *className);
 public:
   static void Init();
 

@@ -29,6 +29,7 @@ void NativeMethodTable::Init() {
   wTable = HashTable::New(HashTable::BLOCK_KEY, initialSize)->ToWord();
   RootSet::Add(wTable);
   java_lang_Object(JavaString::New("java/lang/Object"));
+  java_lang_Double(JavaString::New("java/lang/Double"));
 }
 
 void NativeMethodTable::Register(JavaString *className, JavaString *name,

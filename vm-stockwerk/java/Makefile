@@ -15,7 +15,7 @@ TOPDIR = ..
 include $(TOPDIR)/Makefile.vars
 include $(TOPDIR)/Makefile.rules
 
-JAVA_LANG_SOURCES = Object.cc
+JAVA_LANG_SOURCES = Object.cc Double.cc
 SOURCES = \
 	Outline.cc Data.cc ThrowWorker.cc ClassLoader.cc JavaByteCode.cc \
 	ClassInfo.cc NativeMethodTable.cc ClassFile.cc ByteCodeInterpreter.cc \
