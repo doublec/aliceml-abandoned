@@ -334,6 +334,6 @@ structure Resolver: RESOLVER =
 		SOME (url', handlers') =>
 		    (case exists (resolver, url') of
 			 result as SOME _ => result
-		       | NONE => localize' (handlers, apply, resolver))
+		       | NONE => localize' (handlers', apply, resolver))
 	       | NONE => NONE
     end
