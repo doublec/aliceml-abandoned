@@ -13,15 +13,36 @@
 functor
 import
    BootName(newUnique: NewUniqueName) at 'x-oz://boot/Name'
+   OzURL(make toVirtualString) at 'x-oz://system/URL'
+   Module(link)
    Pickle(load saveWithCells)
-   DefaultURL(functorExt)
+   DefaultURL(functorExt ozScheme nameToUrl)
    Property(get)
+   Resolve(trace)
+   System(printError)
+   UrlComponent('Url$': Url) at '../utility/Url'
 export
-   'UnsafePickle$': UnsafePickle_Module
+   %% For use by other Oz programs:
+   ComponentToFunctor
+   FunctorToComponent
+   %% For use by Alice programs:
+   'UnsafeComponent$': Component
 define
    IoException = {NewUniqueName 'IO.Io'}
-   SitedException = {NewUniqueName 'Pickle.Sited'}
-   CorruptException = {NewUniqueName 'Pickle.Corrupt'}
+   SitedException = {NewUniqueName 'Component.Sited'}
+   CorruptException = {NewUniqueName 'Component.Corrupt'}
+
+   proc {Trace Title Msg}
+      if {Resolve.trace.get} then
+	 {System.printError '['#Title#'] '#Msg#'\n'}
+      end
+   end
+
+   proc {RaiseIoException U N E}
+      %--** cause not of type exn
+      {Exception.raiseError
+       alice(IoException(name: U function: {ByteString.make N} cause: E))}
+   end
 
    Extension = {ByteString.make
 		case {VirtualString.toString DefaultURL.functorExt}
@@ -29,68 +50,127 @@ define
 		[] S then S
 		end}
 
-   fun {LoadPickleAndSign U}
-      try F in
-	 F = {Pickle.load U}
-	 case F.'export'
-	 of sig(unit) then
-	    %% component produced by the hybrid compiler
-	    'NONE'
-	 [] sig(Sig) then
-	    %% Stockhausen component
-	    'SOME'(F#Sig)
-	 else
-	    %% non-Stockhausen component
-	    'NONE'
-	 end
-      catch E=error(url(load _) ...) then
-	 %% load error
-	 {Exception.raiseError
-	  alice(IoException(name: U
-			    function: {ByteString.make 'loadSign'}
-			    cause: E))}   %--** cause not of type exn
-	 unit
+   fun {LabelToOz Label}
+      case Label of 'NUM'(I) then I
+      [] 'ALPHA'(S) then {VirtualString.toAtom S}
       end
    end
 
-   UnsafePickle_Module =
-   'UnsafePickle'('Sited': SitedException
-		  '\'Sited': SitedException
-		  'Corrupt': CorruptException
-		  '\'Corrupt': CorruptException
-		  'extension': Extension
-		  'load':
-		     fun {$ URL}
-			case {LoadPickleAndSign URL} of 'SOME'(F#(_#Type)) then
-			   Type#{{Property.get 'alice.modulemanager'}
-				 apply(url: URL F $)}
-			[] 'NONE' then
-			   {Exception.raiseError alice(CorruptException)} unit
-			end
+   fun {OzToLabel F}
+      if {IsInt F} then 'NUM'(F)
+      else 'ALPHA'({ByteString.make F})
+      end
+   end
+
+   fun {SigToOz SigOpt}
+      case SigOpt of 'NONE' then nil
+      [] 'SOME'(Sig) then sig(Sig)
+      end
+   end
+
+   fun {OzToSig Sig}
+      case Sig of sig(unit) then 'NONE'   % produced by the hybrid compiler
+      [] sig(Sig) then 'SOME'(Sig)   % Stockhausen component
+      else 'NONE'   % non-Stockhausen component
+      end
+   end
+
+   fun {ComponentToFunctor Component}
+      case Component
+      of 'UNEVALUATED'(imports: Imports body: Body sign: Sig) then
+	 {Functor.new
+	  {List.toRecord 'import'
+	   {Record.foldR Imports
+	    fun {$ Label#URL#Sig In}
+	       {LabelToOz Label}#
+	       info('from': {VirtualString.toAtom {Url.toString URL}}
+		    'type': {SigToOz Sig})|In
+	    end nil}}
+	  {SigToOz Sig} Body}
+      [] 'EVALUATED'(Sig Str) then
+	 {Functor.new 'import' {SigToOz Sig} fun {$ _} Str end}
+      end
+   end
+
+   fun {FunctorToComponent F}
+      if {Not {Functor.is F}} then
+	 {Exception.raiseError alice(CorruptException)}
+      end
+      'UNEVALUATED'(imports:
+		       {List.toTuple '#[]'
+			{Record.foldRInd F.'import'
+			 fun {$ ModName Desc Rest}
+			    {OzToLabel ModName}#
+			    {Url.fromString
+			     {ByteString.make
+			      case {CondSelect Desc 'from' unit}
+			      of unit then
+				 {OzURL.toVirtualString
+				  {DefaultURL.nameToUrl ModName}}
+			      [] URL then URL
+			      end}}#
+			    {OzToSig {CondSelect Desc 'type' nil}}|Rest
+			 end nil}}
+		    body: F.apply
+		    sign: {OzToSig F.'export'})
+   end
+
+   local
+      OzScheme = {VirtualString.toString DefaultURL.ozScheme}
+
+      fun {IsOzScheme URL}
+	 {CondSelect URL scheme unit} == OzScheme
+      end
+
+      fun {IsNative URL}
+	 {HasFeature {CondSelect URL info info} 'native'}
+      end
+   in
+      fun {Load U} URL in
+	 URL = {OzURL.make U}
+	 if {IsOzScheme URL} then
+	    %--** just acquire (do not link)
+	    'EVALUATED'('NONE' {Module.link [U]}.1)
+	 elseif {IsNative URL} then
+	    'EVALUATED'('NONE' {Module.link [U]}.1)
+	 else
+	    {FunctorToComponent try {Pickle.load U}
+				catch E=error(url(load _) ...) then
+				   {RaiseIoException U 'load' E} unit
+				end}
+	 end
+      end
+   end
+
+   Component =
+   'Component'('Sited': SitedException
+	       '\'Sited': SitedException
+	       'Corrupt': CorruptException
+	       '\'Corrupt': CorruptException
+	       'extension': Extension
+	       'save':
+		  fun {$ Filename Component}
+		     {Trace 'component' 'save '#Filename}
+		     try
+			{Pickle.saveWithCells {ComponentToFunctor Component}
+			 Filename '' 9}
+		     catch error(dp(generic 'pickle:nogoods' ...) ...)
+		     then {Exception.raiseError alice(SitedException)}
 		     end
-		  'save':
-		     fun {$ Filename Type Value}
-			try
-			   {Pickle.saveWithCells
-			    {Functor.new 'import' sig({NewName}#Type)
-			     fun {$ _} Value end} Filename '' 9}
-			catch error(dp(generic 'pickle:nogoods' ...) ...) then
-			   {Exception.raiseError alice(SitedException)}
-			end
-			unit
-		     end
-		  'loadSign':
-		     fun {$ URL}
-			case {LoadPickleAndSign URL}
-			of 'SOME'(_#Sign) then 'SOME'(Sign)
-			[] 'NONE' then 'NONE'
-			end
-		     end
-		  'replaceSign':
-		     fun {$ U Sig Filename} F1 F2 in
-			F1 = {Pickle.load U}
-			F2 = {Functor.new F1.'import' sig(Sig) F1.'apply'}
-			{Pickle.saveWithCells F2 Filename '' 9}
-			unit
-		     end)
+		     unit
+		  end
+	       'load':
+		  fun {$ URL} U in
+		     U = {Url.toString URL}
+		     {Trace 'component' 'load '#U}
+		     {Load U}
+		  end
+	       'apply':
+		  fun {$ Body Imports}
+		     {Body {List.toRecord 'IMPORT'
+			    {Record.foldR Imports
+			     fun {$ Label#Str Rest}
+				{LabelToOz Label}#Str|Rest
+			     end nil}}}
+		  end)
 end
