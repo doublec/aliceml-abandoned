@@ -233,7 +233,7 @@ define
    end
 
    fun {Save F#VS#_#_ OutFilename OutputAssembly}
-      {Pickle.saveWithCells F OutFilename '' 0}
+      {Pickle.saveWithCells F OutFilename '' 9}
       if OutputAssembly then
 	 {WriteFile VS OutFilename#'.ozm'}
       end

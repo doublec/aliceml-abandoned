@@ -96,7 +96,7 @@ define
 	    end
 	 end
       [] ["Command"#"save" "Valref"#S "String"#OutFilename] then
-	 {Pickle.saveWithCells {Get {String.toInt S}} OutFilename '' 0}
+	 {Pickle.saveWithCells {Get {String.toInt S}} OutFilename '' 9}
 	 {System.printInfo '\n'}
       [] "Command"#"apply"|"Valref"#S|Rest then
 	 case {Get {String.toInt S}} of F then M in

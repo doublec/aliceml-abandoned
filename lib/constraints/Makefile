@@ -25,7 +25,7 @@ SRCDIR = $(SRCTOP)/lib/constraints
 VPATH = $(SRCDIR)
 
 OZC = ozc
-OZCOPTS =
+OZCOPTS = -z9
 STOC = stoc
 STOCOPTS = --no-dump-elaboration-sig
 STODEP = sml @SMLload=$(BOOTSTRAPDIR)/stodep

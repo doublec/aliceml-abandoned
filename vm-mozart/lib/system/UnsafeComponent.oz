@@ -32,7 +32,7 @@ define
 		     fun {$ U Sig Filename} F1 F2 in
 			F1 = {Pickle.load U}
 			F2 = {Functor.new F1.'import' sig(Sig) F1.'apply'}
-			{Pickle.saveWithCells F2 Filename '' 0}
+			{Pickle.saveWithCells F2 Filename '' 9}
 			unit
 		     end)
 end
