@@ -225,6 +225,8 @@ structure CodeStore :> CODE_STORE =
 		indicesRef := indices
 	    end
 
+	fun args n = List.tabulate (n, fn _ => StockWerk.StockWertTy)
+
 	fun closeMethod () =
 	    case !env of
 		(stamp, id, narg, (scope, _, ref nloc, _), ref instrs)::envr =>
@@ -236,12 +238,8 @@ structure CodeStore :> CODE_STORE =
 			val _ = env := envr
 			val method =
 			    Method (id, (Public, Virtual),
-				    List.tabulate
-				    (narg, fn _ => StockWerk.StockWertTy),
-				    StockWerk.StockWertTy,
-				    (List.tabulate
-				     (nloc, fn _ => StockWerk.StockWertTy),
-				     false), List.rev instrs)
+				    args narg, StockWerk.StockWertTy,
+				    (args nloc, false), List.rev instrs)
 			val newClassDecls =
 			    ScopedMap.foldi
 			    (fn (stamp, reg, classDecls) =>
@@ -275,10 +273,13 @@ structure CodeStore :> CODE_STORE =
 		val mainMethod =
 		    case !env of
 			[(_, id, 0, (_, _, ref n, _), ref instrs)] =>
-			    GlobalMethod
-			    (id, true, nil, VoidTy, true,
-			     (List.tabulate (n, fn _ => StockWerk.StockWertTy),
-			      false), List.rev instrs)
+			    Class (["Main"], (true, SealedClass),
+				   ["System", "Object"], nil,
+				   [Method (id, (Public, Static),
+					    [StockWerk.KomponistTy],
+					    StockWerk.StockWertTy,
+					    (args n, false),
+					    List.rev instrs)])
 		      | _ => Crash.crash "CodeStore.close"
 	    in
 		Map.foldi
