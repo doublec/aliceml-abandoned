@@ -3,7 +3,7 @@
 %%%   Leif Kornstaedt <kornstae@ps.uni-sb.de>
 %%%
 %%% Copyright:
-%%%   Leif Kornstaedt, 2001
+%%%   Leif Kornstaedt, 2001-2002
 %%%
 %%% Last change:
 %%%   $Date$ by $Author$
@@ -20,5 +20,6 @@ define
    'Config'('platform':
 	       case {Property.get 'platform.os'} of win32 then 'WIN32'
 	       else 'UNIX'
-	       end)
+	       end
+	    'vm': {ByteString.make 'mozart'})
 end

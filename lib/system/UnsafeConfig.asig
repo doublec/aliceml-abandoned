@@ -3,7 +3,7 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 2001
+ *   Leif Kornstaedt, 2001-2002
  *
  * Last change:
  *   $Date$ by $Author$
@@ -15,5 +15,6 @@ signature UNSAFE_CONFIG_COMPONENT =
 	structure UnsafeConfig:
 	    sig
 		val platform: 'platform
+		val vm: string
 	    end
 end
