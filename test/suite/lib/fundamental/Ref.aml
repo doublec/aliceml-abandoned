@@ -1,0 +1,94 @@
+(*
+ * Authors:
+ *   Sebastian Germesin <germi@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Sebastian Germesin, 2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature TESTSUITE from "../../src/TESTSUITE-sig"
+
+import structure Gen       from "x-alice:/lib/test/Gen"
+import structure Test      from "../../src/Test"
+
+structure TestRef :> TESTSUITE = (* the ref test suite *)
+struct
+
+    val randomize = Gen.randomize
+
+    fun testUnref () =
+	Gen.try 1000 Gen.int (Test.test (fn x =>  !(ref x) = x))
+
+    fun testRefer () =
+	Gen.try 1000 (Gen.pair (Gen.refOf Gen.int, Gen.int))
+	  (Test.test (fn (r, i) => (r := i; !r = i)))
+
+    fun testSwap () =
+	Gen.try 1000 (Gen.pair (Gen.refOf Gen.int,
+				Gen.refOf Gen.int))
+	  (Test.test (fn (a, b) => 
+			 let
+			     val a1 = !a
+			     val b1 = !b
+			 in
+			     a :=: b;
+			     !a = b1 andalso !b = a1
+			 end))
+
+    fun testExchange () =
+	Gen.try 1000 (Gen.pair (Gen.refOf Gen.int, Gen.int))
+	  (Test.test (fn (r, x) =>
+			 let
+			     val r1 = !r
+			 in
+			     r1 = Ref.exchange (r, x) andalso x = !r
+			 end))
+
+    fun testApp () = 
+	Gen.try 1000 (Gen.refOf Gen.int)
+	   (Test.test (fn r => let
+			           val res = ref 0
+		         	   val r1 = !r
+			       in 
+			         (Ref.app (fn a => res := a + 1) r;
+				  !res = r1 + 1)
+			       end))
+			       
+
+    fun testMap () = 
+	Gen.try 1000 (Gen.refOf Gen.int) 
+	  (Test.test (fn r => 
+			 let
+			     val r1 = !r
+			     val r2 = Ref.map (fn a => a + 1) r
+			 in
+			     r <> r2 andalso
+			     !r2 = r1 + 1
+			 end))
+
+    fun testModify () = 
+	Gen.try 1000 (Gen.refOf Gen.int)
+	  (Test.test (fn r =>
+			 let
+			     val r1 = !r
+			 in
+			     Ref.modify (fn a => a + 1) r;
+			     r1 + 1 = !r
+			 end))
+
+    fun testEqual () =
+	(Test.test (fn r => Ref.equal (r, r) = true) (ref []);
+	 Test.test (fn r => Ref.equal r = false) (ref [], ref []))
+
+    val suite = ("Ref", [("!", testUnref),
+			 (":=", testRefer),
+			 (":=:", testSwap),
+			 ("exchange", testExchange),
+			 ("app", testApp),
+			 ("map", testMap),
+			 ("modify", testModify)])
+end

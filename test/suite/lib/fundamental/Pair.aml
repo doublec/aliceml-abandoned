@@ -1,0 +1,141 @@
+(*
+ * Authors:
+ *   Sebastian Germesin <germi@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Sebastian Germesin, 2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature TESTSUITE from "../../src/TESTSUITE-sig"
+
+import structure Gen       from "x-alice:/lib/test/Gen"
+import structure Test      from "../../src/Test"
+
+structure TestPair :> TESTSUITE = (* the pair test suite *)
+struct
+
+    val randomize = Gen.randomize
+
+    fun testFst () = 
+	Gen.try 1000 (Gen.pair (Gen.int, Gen.int))
+	    (Test.test (fn (a, b) => Pair.fst (a, b) = a))
+
+    fun testSnd () = 
+	Gen.try 1000 (Gen.pair (Gen.int, Gen.int))
+	    (Test.test (fn (a, b) => Pair.snd (a, b) = b))
+
+    fun testApp () = 
+	let
+	    val xs = ref []
+
+	    fun clean () = xs := nil
+
+	    fun f a = xs := a :: !xs
+	in
+	    Gen.try 1000 (Gen.pair (Gen.int, Gen.int))
+	      (Test.test (fn (a, b) => (Pair.app (f, f) (a, b);
+					!xs before (clean ())) = [b, a]))
+	end
+
+    fun testAppFst () = 
+	let
+	    val xs = ref []
+
+	    fun clean () = xs := nil
+
+	    fun f a = xs := a :: !xs
+	in
+	    Gen.try 1000 (Gen.pair (Gen.int, Gen.int))
+	      (Test.test (fn (a, b) => (Pair.appFst f (a, b);
+					!xs before (clean ())) = [a]))
+	end
+
+    fun testAppSnd () = 
+	let
+	    val xs = ref []
+
+	    fun clean () = xs := nil
+
+	    fun f a = xs := a :: !xs
+	in
+	    Gen.try 1000 (Gen.pair (Gen.int, Gen.int))
+	      (Test.test (fn (a, b) => (Pair.appSnd f (a, b);
+					!xs before (clean ())) = [b]))
+	end
+
+    fun testMap () =
+	let
+	    fun f a = a + 1
+	in
+	    Gen.try 1000 (Gen.pair (Gen.int, Gen.int))
+	      (Test.test (fn (a, b) => Pair.map (f, f) (a, b) = 
+				       (a + 1, b + 1)))
+	end
+
+    fun testMapFst () =
+	let
+	    fun f a = a + 1
+	in
+	    Gen.try 1000 (Gen.pair (Gen.int, Gen.int))
+	      (Test.test (fn (a, b) => Pair.mapFst f (a, b) = (a + 1, b)))
+	end
+
+    fun testMapSnd () =
+	let
+	    fun f a = a + 1
+	in
+	    Gen.try 1000 (Gen.pair (Gen.int, Gen.int))
+	      (Test.test (fn (a, b) => Pair.mapSnd f (a, b) = (a, b + 1)))
+	end
+
+    fun testEqual () =
+	let
+	    fun t ((a, b), (c, d)) = a = c andalso b = d
+	in
+	    Gen.try 10000 (Gen.pair (Gen.pair (Gen.int, Gen.int),
+				     Gen.pair (Gen.int, Gen.int)))
+	       (Test.test (fn (a, b) => Pair.equal (Int.equal, Int.equal)
+						   (a, b) = t (a, b)))
+	end
+
+    fun testCollate () = 
+	let
+	    fun t ((a, b), (c, d)) = 
+			   let 
+			       val r = (Int.compare (a, c), Int.compare (b, d))
+			   in
+			       case r of 
+				   (LESS, LESS)       => LESS
+				 | (EQUAL, EQUAL)     => EQUAL
+				 | (GREATER, GREATER) => GREATER
+				 | (LESS, EQUAL)      => LESS
+				 | (EQUAL, LESS)      => LESS
+				 | (LESS, GREATER)    => LESS
+				 | (GREATER, LESS)    => GREATER
+				 | (EQUAL, GREATER)   => GREATER
+				 | (GREATER, EQUAL)   => GREATER
+			   end
+	in
+	    Gen.try 10000 (Gen.pair (Gen.pair (Gen.int, Gen.int),
+				     Gen.pair (Gen.int, Gen.int)))
+	       (Test.test (fn (a, b) => Pair.collate (Int.compare,
+						      Int.compare) (a, b) = 
+					t (a, b)))
+	end	
+	    	    
+	
+    val suite = ("Pair", [("fst", testFst),
+			  ("snd", testSnd),
+			  ("app", testApp),
+			  ("appFst", testAppFst),
+			  ("appSnd", testAppSnd),
+			  ("map", testMap),
+			  ("mapFst", testMapFst),
+			  ("mapSnd", testMapSnd),
+			  ("equal", testEqual),
+			  ("collate", testCollate)])
+end

@@ -166,21 +166,21 @@ struct
 	end
 
 
-    val suite = ("Time", [("testToFromString", testToFromString),
-			  ("testToString", testToString),
-			  ("testFromString", testFromString),
-                          ("testCompare", testCompare),
-			  ("testLess", testLess),
-			  ("testGreater", testGreater),
-                          ("testEqual", testEqual),
-			  ("testHash", testHash),
-			  ("testToFromNanoseconds", testToFromNanoseconds),
-			  ("testToFromMicroseconds", testToFromMicroseconds),
-			  ("testToFromMilliseconds", testToFromMilliseconds),
-			  ("testToFromReal", testToFromReal),
-			  ("testToFromSeconds", testToFromSeconds),
-			  ("testFmt", testFmt),
-			  ("testScan", testScan),
-			  ("testArithmetic", testArithmetic),
-			  ("testZeroTime", testZeroTime)])
+    val suite = ("Time", [("toFromString", testToFromString),
+			  ("toString", testToString),
+			  ("fromString", testFromString),
+                          ("compare", testCompare),
+			  ("less", testLess),
+			  ("greater", testGreater),
+                          ("equal", testEqual),
+			  ("hash", testHash),
+			  ("toFromNanoseconds", testToFromNanoseconds),
+			  ("toFromMicroseconds", testToFromMicroseconds),
+			  ("toFromMilliseconds", testToFromMilliseconds),
+			  ("toFromReal", testToFromReal),
+			  ("toFromSeconds", testToFromSeconds),
+			  ("fmt", testFmt),
+			  ("scan", testScan),
+			  ("arithmetic", testArithmetic),
+			  ("zeroTime", testZeroTime)])
 end

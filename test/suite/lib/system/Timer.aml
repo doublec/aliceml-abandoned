@@ -1,0 +1,74 @@
+(*
+ * Authors:
+ *   Sebastian Germesin <germi@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Sebastian Germesin, 2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature TESTSUITE from "../../src/TESTSUITE-sig"
+
+import structure Gen       from "x-alice:/lib/test/Gen"
+import structure Test      from "../../src/Test"
+
+import structure Time      from "x-alice:/lib/system/Time"
+import structure Timer     from "x-alice:/lib/system/Timer"
+
+structure TestTimer :> TESTSUITE = (* the timer test suite *)
+struct
+
+    val randomize = Gen.randomize
+
+    fun testRealTimer () = 
+	let
+	    fun t i = 
+		let
+		    val t = Timer.startRealTimer ()
+		    val t1 = Timer.checkRealTimer t
+		    val t1' = Time.now ()
+		    val t' = Time.fromSeconds (IntInf.fromInt i)
+		    val _ = Thread.sleep t'
+		    val t2 = Timer.checkRealTimer t
+		    val t2' = Time.now ()
+		    val t3 = Time.-(t2, t1)
+		    val t3' = Time.-(t2', t1')
+		in
+		    IntInf.toInt (Time.toSeconds t1) < 1 andalso
+		    IntInf.toInt (Time.toSeconds t3) = i andalso
+		    IntInf.toInt (Time.toSeconds t3) = i
+		end
+	in
+	    Gen.try 5 Gen.int (Test.test t)
+	end
+
+
+    fun testStartCPUTimer () =
+	Test.test (fn _ => raise Test.MissingFunction) ()
+
+    fun testCheckCPUTimes () =
+	Test.test (fn _ => raise Test.MissingFunction) ()
+
+    fun testCheckCPUTimer () =
+	Test.test (fn _ => raise Test.MissingFunction) ()
+
+    fun testCheckGCTime () =
+	Test.test (fn _ => raise Test.MissingFunction) ()
+
+    fun testTotalCPUTimer () =
+	Test.test (fn _ => raise Test.MissingFunction) ()
+
+
+
+    val suite = ("Timer", [("startRealTimer", testRealTimer),
+			   ("checkRealTimer", testRealTimer),
+			   ("totalRealTimer", testRealTimer),
+			   ("startCPUTimer", testStartCPUTimer),
+			   ("checkCPUTimes", testCheckCPUTimes),
+			   ("checkCPUTimer", testCheckCPUTimer),
+			   ("checkGCTime", testCheckGCTime),
+			   ("totalCPUTimer", testTotalCPUTimer)])
+end

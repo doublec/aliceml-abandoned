@@ -30,7 +30,54 @@ struct
         Test.test (fn _ => raise Test.NotYetImplemented) ()
 
     fun testFromString () = 
-	Test.test (fn _ => raise Test.NotYetImplemented) ()
+	let
+	    fun h (NONE, NONE)      = true
+	      | h (SOME _, NONE)    = false
+	      | h (NONE, SOME _)    = false
+	      | h (SOME (r : IEEEReal.decimal_approx), 
+		   SOME (r': IEEEReal.decimal_approx)) = 
+		               #digits r = #digits r' andalso
+			       #exp r = #exp r' andalso
+			       #kind r = #kind r' andalso
+			       #sign r = #sign r'
+
+	    fun t s = StringCvt.scanString IEEEReal.scan s
+	    fun t' (s, x) = 
+		let 
+		    val r = IEEEReal.fromString s
+	        in
+		    h (r, SOME x)
+		end
+
+	    val res1 = {digits = [], exp = 0, 
+			kind = IEEEReal.INF, sign = false}
+	    val res2 = {digits = [], exp = 0, 
+			kind = IEEEReal.INF, sign = false}
+	    val res3 = {digits = [], exp = 0, 
+			kind = IEEEReal.INF, sign = true}
+	    val res4 = {digits = [], exp = 0, 
+			kind = IEEEReal.INF, sign = false}
+	    val res5 = {digits = [], exp = 0, kind = IEEEReal.INF, sign = true}
+	    val res6 = {digits = [], exp = 0, kind = IEEEReal.INF, sign = true}
+	    val res7 = {digits = [], exp = 0, 
+			kind = IEEEReal.NAN, sign = false}
+	    val res8 = {digits = [], exp = 0, 
+			kind = IEEEReal.NAN, sign = false}
+	    val res9 = {digits = [], exp = 0, kind = IEEEReal.NAN, sign = true}
+			
+	in 
+	    Gen.try 1000 Gen.string 
+		    (Test.test (fn s => IEEEReal.fromString s = t s));
+	    Test.test (fn x => t' x) ("inf", res1);
+	    Test.test (fn x => t' x) ("iNf", res2);
+	    Test.test (fn x => t' x) ("~inf", res3);
+	    Test.test (fn x => t' x) ("infinity", res4);
+	    Test.test (fn x => t' x) ("~infinity", res5);
+	    Test.test (fn x => t' x) ("~infInity", res6);
+	    Test.test (fn x => t' x) ("nan", res7);
+	    Test.test (fn x => t' x) ("Nan", res8);
+	    Test.test (fn x => t' x) ("~naN", res9)
+	end
 
     fun testScan () = 
 	Test.test (fn _ => raise Test.NotYetImplemented) ()

@@ -21,6 +21,90 @@ struct
 
     val randomize = Gen.randomize
 
+    fun testArray () =
+	let
+	    fun t' (r, c, x, b) = (Array2.array (r, c, x); b) 
+			          handle Size => not b
+
+
+	    fun t (r, c, x) = let 
+				  val a = SOME (Array2.array (r, c, x)) 
+					   handle Size => NONE
+			      in
+		                  if Option.isNone a then
+				      r < 0 orelse c < 0
+				  else (r >= 0 andalso c >= 0 andalso
+					Array2.nRows (valOf a) = r andalso
+					Array2.nCols (valOf a) = c andalso
+					Array2.sub ((valOf a), Gen.int r,
+						    Gen.int c) = x)
+				       handle Subscript => r = 0 orelse c = 0
+			      end
+	in
+	    Test.test t' (~2, ~1, 0, false); 
+	    Test.test t' (~2,  1, 0, false); 
+	    Test.test t' ( 2, ~1, 0, false);
+	    Test.test t' ( 2,  1, 0, true);
+	    Gen.try 1000 (Gen.triple (Gen.int, Gen.int, Gen.int)) (Test.test t)
+	end
+
+    fun testNRows () =
+	let
+	    fun t' (a, i) =  (Array2.sub (a, i, 0); t' (a, i + 1))
+			       handle Subscript => i
+
+	    fun t a = t' (a, 0) = Array2.nRows a orelse Array2.nCols a = 0
+	in
+	    Gen.try 100 (Gen.array2 Gen.int) (Test.test t)
+	end
+
+    fun testNCols () =
+	let
+	    fun t' (a, i) =  (Array2.sub (a, 0, i); t' (a, i + 1))
+			       handle Subscript => i
+
+	    fun t a = t' (a, 0) = Array2.nCols a orelse Array2.nRows a = 0
+
+	in
+	    Gen.try 100 (Gen.array2 Gen.int) (Test.test t)
+	end
+
+    fun testDimensions () =
+	let
+	    fun t a = Array2.dimensions a = (Array2.nRows a, Array2.nCols a)
+	in
+	    Gen.try 100 (Gen.array2 Gen.int) (Test.test t)
+	end
+
+    fun testRow () = 
+	let
+	    fun t' (a, r, c) l = if c < Array2.nCols a
+				  then t' (a, r, c + 1) 
+				          (Array2.sub (a, r, c)::l)
+				  else Vector.fromList (rev l)
+				      
+	    fun t (a, i) = 
+		    Vector.equal Int.equal (t' (a, i, 0) [], Array2.row (a, i))
+		    handle Subscript => Array2.nRows a <= i orelse i < 0
+	in
+	    Gen.try 100 (Gen.pair (Gen.array2 Gen.int, Gen.int)) (Test.test t)
+	end
+
+    fun testColumn () = 
+	let
+	    fun t' (a, r, c) l = if r < Array2.nRows a
+				  then t' (a, r + 1, c) 
+				          (Array2.sub (a, r, c)::l)
+				  else Vector.fromList (rev l)
+				      
+	    fun t (a, i) = 
+		    Vector.equal Int.equal (t' (a, 0, i) [], 
+					    Array2.column (a, i))
+		    handle Subscript => Array2.nCols a <= i orelse i < 0
+	in
+	    Gen.try 100 (Gen.pair (Gen.array2 Gen.int, Gen.int)) (Test.test t)
+	end
+
     fun testSub () =
 	let
 	    fun t (xss, a, r, c) = if List.null xss orelse 
@@ -65,38 +149,47 @@ struct
 
     fun testEqual () = 
 	let
-	    (* TODO: testen auf eihaltung der richtung *)
+	    val xs = ref []
+
+	    fun swap a = 
+		let
+		    val a2 = Array2.array (Array2.nCols a, Array2.nRows a, 0)
+
+		    fun s' (r, c) = if c < Array2.nCols a2
+				    then if r < Array2.nRows a2
+					 then (Array2.update (a2, r, c, 
+							 Array2.sub (a, c, r));
+					       s' (r + 1, c))
+					 else s' (0, c + 1)
+				    else ()
+		in
+		    s' (0, 0);
+		    a2
+		end
+		    
+
 	    fun t (xss1, xss2) = List.equal (List.equal Int.equal) (xss1, xss2)
 	in
-	    Gen.try 100 (Gen.pair (Gen.list (Gen.list Gen.int),
-				   Gen.list (Gen.list Gen.int)))
-	      (Test.test (fn (xss1, xss2) => 
+	    Gen.try 100 (Gen.pair (Gen.array2 Gen.int,
+				   Gen.array2 Gen.int))
+	      (Test.test (fn (a1, a2) => 
 			      let
-				  val a1 = Array2.fromList xss1
-				  val a2 = Array2.fromList xss2
+				  fun eqT (a, b) = (xs := a :: !xs; a = b)
+
 				  val eq1 = Array2.equal Array2.RowMajor 
-				                         Int.equal (a1, a2)
+				                         eqT (a1, a2)
+				  val eq1' = !xs before xs := []
 				  val eq2 = Array2.equal Array2.ColMajor
-				                         Int.equal (a1, a2)
+				                         eqT (a1, a2)
+				  val eq3 = Array2.equal Array2.ColMajor
+							 eqT (swap a1, swap a2)
+				  val eq3' = !xs before xs := []
 			      in
 				  eq1 = eq2 andalso 
-				  eq1 = t (xss1, xss2)
+				  eq1 = t (Array2.toList a1, 
+					   Array2.toList a2) andalso
+				  eq1' = eq3'
 			      end))
-	end
-    fun testArray () =
-	let
-	    fun t (r, c, x) = let 
-				  val a = Array2.array (r, c, x)
-			      in
-				  Array2.nRows a = r andalso
-				  Array2.nCols a = c andalso
-				  Array2.sub (a, Gen.int r,
-					      Gen.int c) = x
-				   handle Subscript => r = 0 orelse c = 0
-			      end
-	in
-	    Gen.try 1000 (Gen.triple (Gen.int, Gen.int, Gen.int))
-	      (Test.test t)
 	end
 
     fun testFromList () =
@@ -136,17 +229,59 @@ struct
 	    Gen.try 100 (Gen.list (Gen.list Gen.int)) (Test.test t)
 	end
 
+    fun testTabulate () = 
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+    fun testCopy () = 
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+    fun testApp () = 
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+    fun testAppi () = 
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+    fun testModify () = 
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+    fun testModifyi () = 
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+    fun testFold () = 
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+    fun testFoldi () = 
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+    fun testAll () = 
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+    fun testAlli () = 
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+    fun testExists () = 
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+    fun testExistsi () = 
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+    fun testContains () = 
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+    fun testNotContains () = 
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
 
     val suite = ("Array2", [("array", testArray),
 			    ("toList", testToList),
 			    ("fromList", testFromList),
+			    ("tabulate", testTabulate),
 			    ("sub", testSub),
-			    ("update", testUpdate)(*,
+			    ("dimensions", testDimensions),
+			    ("nRows", testNRows),
+			    ("nCols", testNCols),
+			    ("row", testRow),
+			    ("column", testColumn),
+			    ("copy", testCopy),
+			    ("app", testApp),
+			    ("modify", testModify),
+			    ("fold", testFold),
 			    ("all", testAll),
-			    ("alli", testAlli),
 			    ("exists", testExists),
+			    ("appi", testAppi),
+			    ("modifyi", testModifyi),
+			    ("foldi", testFoldi),
+			    ("alli", testAlli),
 			    ("existsi", testExistsi),
 			    ("contains", testContains),
-			    ("notContains", testNotContains)*),
+			    ("notContains", testNotContains),
+			    ("update", testUpdate),
 			    ("equal", testEqual)])
 end

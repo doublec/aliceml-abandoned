@@ -168,7 +168,12 @@ struct
 	end
 
     fun testFromString () = 
-	Test.test (fn _ => raise Test.NotYetImplemented) ()
+	let
+	    fun t s = StringCvt.scanString (Int.scan StringCvt.DEC) s
+	in 
+	    Gen.try 1000 Gen.string 
+		    (Test.test (fn s => Int.fromString s = t s))
+	end
 
     fun testToString () =
 	let

@@ -42,5 +42,5 @@ struct
 	(Test.test (fn _ => testEval' ()) ())
 
 
-    val suite = ("Compiler", [("testEval", testEval)])
+    val suite = ("Compiler", [("Eval", testEval)])
 end

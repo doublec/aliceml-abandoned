@@ -1,0 +1,320 @@
+(*
+ * Authors:
+ *   Sebastian Germesin <germi@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Sebastian Germesin, 2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature TESTSUITE from "../../src/TESTSUITE-sig"
+
+import structure Gen       from "x-alice:/lib/test/Gen"
+import structure Test      from "../../src/Test"
+
+
+structure TestListPair :> TESTSUITE = (* the listpair test suite *)
+struct
+
+    val randomize = Gen.randomize
+    
+    fun testZip () = 
+	let
+	    fun t' (  _  ,   [] ) zs = List.rev zs
+	      | t' (  [] ,   _  ) zs = List.rev zs
+	      | t' (x::xs, y::ys) zs = t' (xs, ys) ((x,y)::zs)
+
+	    fun t x = t' x [] = ListPair.zip x
+	    
+	in
+	    Gen.try 100 (Gen.pair (Gen.list Gen.int,
+				   Gen.list Gen.int)) (Test.test t)
+	end
+
+    fun testZipEq () = 
+	let
+	    fun t' (  [] ,  []  ) zs = SOME (List.rev zs)
+	      | t' (  _  ,   [] ) zs = NONE
+	      | t' (  [] ,   _  ) zs = NONE
+	      | t' (x::xs, y::ys) zs = t' (xs, ys) ((x,y)::zs)
+
+	    fun t x = 
+		let
+		    val r = t' x []
+		    val r1 = SOME (ListPair.zip x) 
+			           handle UnequalLengths => NONE
+		in 
+		    r = r1
+		end
+	    
+	in
+	    Gen.try 100 (Gen.pair (Gen.list Gen.int,
+				   Gen.list Gen.int)) (Test.test t)
+	end
+
+    fun testUnzip () =
+	let
+	    fun t' ([], ys, zs) = (List.rev ys, List.rev zs)
+	      | t' ((y,z)::xs, ys, zs) = t' (xs, y::ys, z::zs)
+
+	    fun t xs = t' (xs, [], []) = ListPair.unzip xs
+	in
+	    Gen.try 1000 (Gen.list (Gen.pair (Gen.int, Gen.int))) (Test.test t)
+	end
+
+    fun testApp () =
+	let
+	    val xs = ref nil
+	    val ys = ref nil
+
+	    fun f x (a, b) = x := (a, b) :: !x
+
+	    fun t x = ListPair.app (f xs) x = 
+		      List.app (f ys) (ListPair.zip x)
+	in
+	    Gen.try 1000 (Gen.pair (Gen.list Gen.int, Gen.list Gen.int))
+	       (Test.test (fn x => (t x; (!xs = !ys andalso
+					  !xs = List.rev (ListPair.zip x))
+					  before (xs := nil;
+						  ys := nil))))
+	end
+
+    fun testAppi () =
+	let
+	    val xs = ref nil
+	    val ys = ref nil
+	    val zs = ref nil
+
+	    fun g (i, (a, b)) = (i, a, b)
+
+	    fun f x (i, a, b) = x := (a + i, b + i) :: !x
+	    fun f' x (i, a, b) = x := (a, b) :: !x
+
+	    fun t x = (ListPair.appi (f' zs) x;
+		       ListPair.appi (f xs) x = 
+		       List.appi (f ys o g) (ListPair.zip x))
+	in
+	    Gen.try 1000 (Gen.pair (Gen.list Gen.int, Gen.list Gen.int))
+	       (Test.test (fn x => (t x; (!xs = !ys andalso
+					  !zs = List.rev ((ListPair.zip x)))
+					  before (xs := nil;
+						  ys := nil))))
+	end
+
+    fun testAppr () =
+	let
+	    val xs = ref nil
+	    val ys = ref nil
+	    val zs = ref nil
+
+	    fun f x (a, b) = x := (a, b) :: !x
+
+	    fun t x = (ListPair.app (f zs) x;
+		       ListPair.appr (f xs) x = 
+		       List.appr (f ys) (ListPair.zip x))
+
+	in
+	    Gen.try 1000 (Gen.pair (Gen.list Gen.int, Gen.list Gen.int))
+	       (Test.test (fn x => (t x; (!xs = !ys andalso
+					  !xs = (List.rev (!zs))) before 
+					 (xs := nil;
+					  ys := nil;
+					  zs := nil))))
+	end
+
+    fun testAppri () =
+	let
+	    val xs = ref nil
+	    val ys = ref nil
+	    val zs = ref nil
+
+	    fun g (i, (a, b)) = (i, a, b)
+
+	    fun f x (i, a, b) = x := (a + i, b + i) :: !x
+
+	    fun t x = (ListPair.appi (f zs) x;
+		       ListPair.appri (f xs) x = 
+		       List.appri (f ys o g) (ListPair.zip x))
+
+	in
+	    Gen.try 1000 (Gen.pair (Gen.list Gen.int, Gen.list Gen.int))
+	       (Test.test (fn x => (t x; (!xs = !ys andalso
+					  !xs = (List.rev (!zs))) before 
+					 (xs := nil;
+					  ys := nil))))
+	end
+
+    fun testAppEq () =
+	let
+	    val xs = ref nil
+	    val ys = ref nil
+
+	    fun f x (a, b) = x := (a, b) :: !x
+
+	    fun t x = 
+		let
+		    val r = SOME (ListPair.appEq (f xs) x)
+			handle UnequalLengths => NONE
+		    val r1 = SOME (List.app (f ys) (ListPair.zipEq x))
+			handle UnsequalLengths => NONE
+		in
+		    r = r1
+		end
+		
+	in
+	    Gen.try 1000 (Gen.pair (Gen.list Gen.int, Gen.list Gen.int))
+	       (Test.test (fn x => (t x; (!xs = !ys andalso
+					  !xs = List.rev (ListPair.zip x))
+					  before (xs := nil;
+						  ys := nil))))
+	end
+
+    fun testAppiEq () =
+	let
+	    val xs = ref nil
+	    val ys = ref nil
+	    val zs = ref nil
+
+	    fun g (i, (a, b)) = (i, a, b)
+
+	    fun f x (i, a, b) = x := (a + i, b + i) :: !x
+
+	    fun t x = 
+		let
+		    val r = SOME (ListPair.appiEq (f xs) x)
+			handle UnequalLengths => NONE
+		    val r1 = SOME (List.appi (f ys o g) (ListPair.zipEq x))
+			handle UnsequalLengths => NONE
+		in
+		    r = r1
+		end
+		
+	in
+	    Gen.try 1000 (Gen.pair (Gen.list Gen.int, Gen.list Gen.int))
+	       (Test.test (fn x => (t x; !xs = !ys before (xs := nil;
+							   ys := nil))))
+	end
+
+    fun testMap () =
+	let
+	    val xs = ref nil
+	    val ys = ref nil
+
+	    fun f x (a, b) = (x := (a, b) :: !x; a + b)
+
+	    fun t x = ListPair.map (f xs) x = 
+		      List.map (f ys) (ListPair.zip x)
+	in
+	    Gen.try 1000 (Gen.pair (Gen.list Gen.int, Gen.list Gen.int))
+	       (Test.test (fn x => (t x; !xs = !ys before (xs := nil;
+							   ys := nil))))
+	end
+
+    fun testMapi () =
+	let
+	    val xs = ref nil
+	    val ys = ref nil
+
+	    fun g (i, (a, b)) = (i, a, b)
+
+	    fun f x (i, a, b) = (x := (a + i, b + i) :: !x; a + i + b)
+
+	    fun t x = ListPair.mapi (f xs) x = 
+		      List.mapi (f ys o g) (ListPair.zip x)
+	in
+	    Gen.try 1000 (Gen.pair (Gen.list Gen.int, Gen.list Gen.int))
+	       (Test.test (fn x => (t x; !xs = !ys before (xs := nil;
+							   ys := nil))))
+	end
+
+    fun testMapEq () =
+	let
+	    val xs = ref nil
+	    val ys = ref nil
+
+	    fun f x (a, b) = (x := (a, b) :: !x; a + b)
+
+	    fun t x = 
+		let
+		    val r = SOME (ListPair.mapEq (f xs) x)
+			handle UnequalLengths => NONE
+		    val r1 = SOME (List.map (f ys) (ListPair.zipEq x))
+			handle UnsequalLengths => NONE
+		in
+		    r = r1
+		end
+		
+	in
+	    Gen.try 1000 (Gen.pair (Gen.list Gen.int, Gen.list Gen.int))
+	       (Test.test (fn x => (t x; !xs = !ys before (xs := nil;
+							   ys := nil))))
+	end
+
+    fun testMapiEq () =
+	let
+	    val xs = ref nil
+	    val ys = ref nil
+
+	    fun g (i, (a, b)) = (i, a, b)
+
+	    fun f x (i, a, b) = (x := (a + i, b + i) :: !x; a + i + b)
+
+	    fun t x = 
+		let
+		    val r = SOME (ListPair.mapiEq (f xs) x)
+			handle UnequalLengths => NONE
+		    val r1 = SOME (List.mapi (f ys o g) (ListPair.zipEq x))
+			handle UnsequalLengths => NONE
+		in
+		    r = r1
+		end
+		
+	in
+	    Gen.try 1000 (Gen.pair (Gen.list Gen.int, Gen.list Gen.int))
+	       (Test.test (fn x => (t x; !xs = !ys before (xs := nil;
+							   ys := nil))))
+	end
+
+    fun testFind () =
+	let
+	    fun t f (xs, ys) = ListPair.find f (xs, ys) = 
+			       List.find f (ListPair.zip (xs, ys))
+			       
+	in
+	    Gen.try 1000 (Gen.pair (Gen.list Gen.int, Gen.list Gen.int))
+	     (Test.test (fn x => t Int.equal x))
+	end
+
+    fun testFindi () =
+	let
+	    fun g (i, (a, b)) = (i, a, b)
+
+	    fun t f (xs, ys) = 
+		ListPair.findi f (xs, ys) =
+		Option.map g (List.findi (f o g) (ListPair.zip (xs, ys)))
+			       
+	in
+	    Gen.try 1000 (Gen.pair (Gen.list Gen.int, Gen.list Gen.int))
+	     (Test.test (fn x => t (fn (i, a, b) => a = (b + i)) x))
+	end
+
+
+    val suite = ("ListPair", [("zip", testZip),
+		              ("zipEq", testZipEq),
+			      ("unzip", testUnzip),
+			      ("app", testApp),
+			      ("appi", testAppi),
+			      ("appiEq", testAppiEq),
+			      ("appEq", testAppEq),
+			      ("map", testMap),
+			      ("mapi", testMapi),
+			      ("mapiEq", testMapiEq),
+			      ("mapEq", testMapEq),
+			      ("find", testFind),
+			      ("findi", testFindi)])
+end
+
+

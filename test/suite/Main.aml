@@ -27,10 +27,14 @@ import structure TestInteger     from "lib/fundamental/Integer"
 import structure TestIntInf      from "lib/fundamental/IntInf"
 import structure TestByte        from "lib/fundamental/Byte"
 import structure TestList        from "lib/fundamental/List"
+import structure TestListPair    from "lib/fundamental/ListPair"
 import structure TestArray       from "lib/fundamental/Array"
 import structure TestArray2      from "lib/fundamental/Array2"
 import structure TestVector      from "lib/fundamental/Vector"
+import structure TestPair        from "lib/fundamental/Pair"
+import structure TestRef         from "lib/fundamental/Ref"
 import structure TestTime        from "lib/system/Time"
+import structure TestTimer       from "lib/system/Timer"
 import structure TestCompiler    from "lib/compiler/Compiler"
 import structure TestRegressions from "lib/regression/tests/TestRegressions"
 
@@ -50,20 +54,27 @@ fun randomizeTests () =
 			TestIntInf.randomize,
 			TestByte.randomize,
 			TestList.randomize,
+			TestListPair.randomize,
 			TestTime.randomize,
+			TestTimer.randomize,
 			TestArray2.randomize,
+			TestRef.randomize,
+			TestPair.randomize,
 		        TestRegressions.randomize]
     in
 	List.app (fn x => x ()) allTests
     end
 
-val allTests = [TestRegressions.suite,
+val allTests = [(*TestRegressions.suite,*)
 		TestCompiler.suite,
+		TestPair.suite,
+		TestRef.suite,
 		TestAlt.suite,
 		TestBool.suite,
 		TestGeneral.suite,
 		TestOption.suite, 
 		TestList.suite,
+		TestListPair.suite,
 		TestArray2.suite,
 		TestArray.suite,
 		TestVector.suite,
@@ -72,7 +83,8 @@ val allTests = [TestRegressions.suite,
 		TestIEEEReal.suite,
 		TestInteger.suite(*,
 		TestIntInf.suite*),
-		TestByte.suite(*,
+		TestByte.suite,
+		TestTimer.suite(*,
 		TestTime.suite*)]
 
 val defaultConfig = {
