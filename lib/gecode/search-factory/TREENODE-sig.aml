@@ -1,0 +1,30 @@
+import structure Space  from "x-alice:/lib/gecode/Space"
+import signature POLICY from "SPACENODE-sig"
+
+signature POLICY = POLICY
+
+signature TREENODE =
+sig
+  type tree_node
+  type t = tree_node
+
+  (* new root
+   * Creates a new tree_node from the initial gecode-space 'root'.
+   * root status is asked, then cloned and never modified again. *)
+  val new : Space.space -> tree_node
+
+  (* Returns the left (right) child, raise ???Exception if no child. *)
+  val getLeft  : tree_node -> tree_node
+  val getRight : tree_node -> tree_node
+
+  (* getSpace node
+   * returns the computation space associated with this node. *)
+  val getSpace : tree_node -> Space.space
+
+  (* Like Space.status *)
+  val status : tree_node -> Space.status
+
+  (* Returns the path corresponding to this node. *)
+  val getPath : tree_node -> int list
+
+end

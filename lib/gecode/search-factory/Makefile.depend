@@ -1,0 +1,19 @@
+Debug.stc:
+
+SPACENODE-sig.stc: \
+
+MkSpaceNode.stc: \
+	SPACENODE-sig.stc \
+	SPACENODE-sig.stc
+
+TREENODE-sig.stc: \
+	SPACENODE-sig.stc
+
+MkTreeNode.stc: \
+	TREENODE-sig.stc \
+	TREENODE-sig.stc \
+	MkSpaceNode.stc
+
+Test.stc: \
+	MkTreeNode.stc \
+

@@ -1,0 +1,26 @@
+structure Debug =
+struct
+
+    type db_mask = Word31.t
+
+    infix &&
+    infix ||
+    fun a && b = Word31.andb (a,b)  (* AND two masks *)
+    fun a || b = Word31.orb (a,b)   (* OR two masks *)
+
+    (* Creates a new debug mask. *)
+    fun newDB i = Word31.<< (Word.fromInt 1, Word.fromInt i)
+
+    val dbExc    = newDB 0 (* Exceptions. *)
+    val dbRecomp = newDB 1 (* Recomputation. *)
+
+    val dbZero = Word31.fromInt 0 (* Empty mask *)
+    val dbNone = dbZero
+    val dbAll  = Word31.notb dbZero (* Full mask *)
+
+    (* Print the debug message according to the masks. *)
+    fun dbPrint (mask1, mask2, message) =
+	if Word31.compare (dbZero, mask1 && mask2) = EQUAL
+	    then () else print message
+
+end

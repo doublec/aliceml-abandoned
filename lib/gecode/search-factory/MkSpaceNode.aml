@@ -1,0 +1,121 @@
+import structure Space     from "x-alice:/lib/gecode/Space"
+import signature SPACENODE from "SPACENODE-sig"
+import signature POLICY    from "SPACENODE-sig"
+
+
+functor MkSpaceNode (Policy:POLICY) :> SPACENODE =
+struct
+
+  exception Child
+
+  datatype space_node = Node of node_rep
+
+  withtype node_rep =
+    {mom    : space_node ,  (* Ancestor *)
+     altNum : int ,         (* Which alternative, 0 means root node *)
+     space  : Space.space option ref , (* Working space *)
+     copy   : Space.space option ref ,
+     status : Space.status ,
+     depth  : int }
+
+  type t = space_node
+
+  fun new root =
+    Node {mom    = lazy assert false ,
+          altNum = 0 ,
+          space  = ref (SOME (Space.clone root)) ,
+          copy   = ref (SOME root)  ,
+          status = Space.status root ,
+          depth  = 0 }
+
+  fun depth (Node node) = #depth node
+
+  (* Tail-recursive getPath *)
+  fun getTailPath (Node node, tail) =
+    let val altNum = #altNum node in
+      if altNum = 0 then tail
+      else getTailPath (#mom node, altNum :: tail)
+    end
+
+  fun getPath node = getTailPath (node, [])
+
+  (* Debug *)
+  fun print_path node =
+    (List.app
+     (fn i => print ((Int.toString i) ^ ", "))
+     (getPath node);
+     print "\n")
+
+  fun status (Node node) = #status node
+
+  (* Recomputes the space of this node. *)
+  fun recompute node =
+    let
+      val mom = #mom node
+      val space = getWorkingSpace mom
+    in
+      case status mom of
+        Space.BRANCH descr =>
+          (Space.commitDescription (space, #altNum node, descr) ;
+           space)
+      | _ => assert false
+    end
+
+  and getWorkingSpace (Node node) =
+    let
+      val rspace = #space node
+      val rcopy  = #copy node
+    in
+      (*    wspace & copy *)
+      case (!rspace, !rcopy) of 
+        (NONE  , SOME s) => Space.clone s  (* clone copy   *)
+      | (NONE  , NONE  ) => recompute node (* recomputation *)
+      | (SOME s, acopy ) =>                (* donate space *)
+          (rspace := NONE ;
+           if acopy = NONE andalso Policy.copyq (#depth node)
+             then (print "CLONE at path " ;
+                   print_path (Node node) ;
+                   rcopy := SOME (Space.clone s))
+             else () ;
+           s)
+          
+    end
+
+  fun updateRef (r,v) = (assert (!r = NONE) ; r:=SOME v ; v)
+
+  fun getSpace (Node node) = 
+    let
+      val rcopy  = #copy node
+      val rspace = #space node
+      val readOnlySpace =
+        (*     copy & wspace *)
+        case (!rcopy, !rspace) of
+          (SOME s, _     ) => s
+        | (NONE  , SOME s) => updateRef (rcopy, Space.clone s)
+        | (NONE  , NONE  ) => updateRef (rcopy, recompute node)
+    in
+      Space.clone readOnlySpace
+    end
+
+  fun newChild (node, i) =
+    let
+      val spaceRef = ref NONE
+        
+      val status = lazy
+        let val space = updateRef (spaceRef, getWorkingSpace node)
+        in
+          case status node (* cached *) of
+            Space.BRANCH descr => (Space.commitDescription (space, i, descr) ;
+                                   Space.status space)
+          | _ => raise Child
+        end
+    in
+      Node {mom    = node ,
+            altNum = i ,
+            space  = spaceRef ,
+            copy   = ref NONE ,
+            status = status, 
+            depth  = depth node + 1 }
+    end
+    
+end

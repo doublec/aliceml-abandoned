@@ -1,0 +1,6 @@
+- Which exception is raised when "commit" is applied on a non-branching space ?
+         => Patch TREENODE-sig and SPACENODE-sig
+
+- Print each time a space is CLONED (and print the path).
+- May be the datatype Space.status should be changed as in SPACENODE-sig
+
