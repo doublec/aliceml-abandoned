@@ -14,8 +14,8 @@ import structure OS          from "x-alice:/lib/system/OS"
 import structure TextIO      from "x-alice:/lib/system/TextIO"
 import structure CommandLine from "x-alice:/lib/system/CommandLine"
 import structure Url         from "x-alice:/lib/utility/Url"
-import structure Http        from "Http"
-import structure HttpClient  from "HttpClient"
+import structure Http        from "x-alice:/lib/system/Http"
+import structure HttpClient  from "x-alice:/lib/system/HttpClient"
 
 signature HTTP_CLIENT_MAIN =
     sig

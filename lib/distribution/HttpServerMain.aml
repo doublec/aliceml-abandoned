@@ -14,8 +14,8 @@ import structure OS          from "x-alice:/lib/system/OS"
 import structure TextIO      from "x-alice:/lib/system/TextIO"
 import structure CommandLine from "x-alice:/lib/system/CommandLine"
 import structure Url         from "x-alice:/lib/utility/Url"
-import structure Http        from "Http"
-import structure HttpServer  from "HttpServer"
+import structure Http        from "x-alice:/lib/system/Http"
+import structure HttpServer  from "x-alice:/lib/system/HttpServer"
 
 signature HTTP_SERVER_MAIN =
     sig
@@ -54,9 +54,9 @@ structure HttpServerMain :> HTTP_SERVER_MAIN =
 	    let
 		val port = HttpServer.start (SOME port)
 	    in
-		HttpServer.registerFor
+		HttpServer.register
 		    (Url.setPath (Url.empty, ["debug"]), debugHandler);
-		HttpServer.registerFor (Url.empty, documentHandler);
+		HttpServer.register (Url.empty, documentHandler);
 		TextIO.print ("started server at port " ^
 			      Int.toString port ^ "\n");
 		Future.await blackHole
