@@ -4,92 +4,70 @@
 
 import
 
-    type unit
-    datatype bool
-    type int
-    type word
-    type real
-    type string
-    type char
-    type 'a vector
-    datatype list
     datatype ref
-    datatype exn
+    val =
+    val <>
 
+    signature GENERAL
+    structure General
+    type unit
+    datatype exn
+    datatype order
     exception Match
     exception Bind
-
-    infix  7  * / div mod
-    infix  6  + - ^
-    infixr 5  :: @
-    infix  4  = <> > >= < <=
-    infix  3  := o
-    infix  0  before
-
-    val op=
-    val op<>
-
-    val op~
-
-    val op+
-    val op-
-    val op*
-
-    val op<
-    val op>
-    val op<=
-    val op>=
-
-    structure General
-
     exception Chr
     exception Div
     exception Domain
-    exception Fail of string
-
+    exception Fail
     exception Overflow
     exception Size
     exception Span
     exception Subscript
-
-    datatype order
-
     val !
-    val op:=
-
-    val op o
-    val op before
+    val :=
+    val o
+    val before
     val ignore
 
+    signature OPTION
     structure Option
     datatype option
     val getOpt
     val isSome
     val valOf
 
+    signature BOOL
     structure Bool
+    datatype bool
     val not
 
+    signature LIST
     structure List
+    datatype list
     val null
     val hd
     val tl
     val length
     val rev
-    val op@
+    val @
     val app
     val map
     val foldl
     val foldr
 
+    signature LIST_PAIR
     structure ListPair
 
+    signature CHAR
     structure Char
+    type char
     val ord
     val chr
 
+    signature STRING
     structure String
-    val op^
+    type string
+    val ^
     val str
     val size
     val substring
@@ -97,31 +75,70 @@ import
     val concat
     val implode
 
+    signature STRING_CVT
     structure StringCvt
 
+    signature INTEGER
     structure Int
-    val op div
-    val op mod
+    type int
+    val ~
+    val +
+    val -
+    val *
+    val <
+    val >
+    val <=
+    val >=
+    val div
+    val mod
     val abs
-
     structure LargeInt
 
+    signature WORD
     structure Word
-
+    type word
     structure LargeWord
 
+    signature REAL
     structure Real
-
+    type real
     structure LargeReal
+    val real
+    val /
 
+    signature ARRAY
     structure Array
     type array
 
+    signature VECTOR
     structure Vector
+    type 'a vector
     val vector
 
+    signature TRANSIENT
     structure Transient
+    exception Promise
+    exception Future
+    exception Fulfill
+    exception ByNeed
+    val promise
+    val fulfill
+    val future
+    val byNeed
+    val await
+    val isPromise
+    val isFuture
+    structure Transient'
 
+    signature THREAD
     structure Thread
+    val spawn
+
+    infix  7  * / div mod
+    infix  6  + - ^
+    infixr 5  :: @
+    infix  4  = <> > >= < <=
+    infix  3  := o
+    infix  0  before
 
 from "x-alice:/lib/Base.ozf"
