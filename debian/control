@@ -1,8 +1,8 @@
 Source: seam
 Section: devel
 Priority: optional
-Build-Depends: debhelper (>= 4.0.0), zlib1g-dev
-Maintainer: Marco Kuhlmann <mk@debian.org>
+Build-Depends: debhelper (>= 4.0.0)
+Maintainer: Guido Tack <tack@ps.uni-sb.de>
 Standards-Version: 3.6.0
 
 Package: seam

@@ -1,4 +1,4 @@
-SUBDIRS = libltdl store adt generic lightning
+SUBDIRS = libltdl store adt generic lightning debian
 INCLUDES = $(LTDLINCL)
 
 # SEAM library
