@@ -1142,7 +1142,8 @@ signature ARRAY =
   end
 
 
-structure Array : ARRAY where type 'a vector = 'a vector
+structure Array : ARRAY where type 'a array  = 'a array
+			where type 'a vector = 'a vector
 
 
 
@@ -1189,7 +1190,7 @@ signature TIME =
   end
 
 
-structure Time : TIME
+structure Time : TIME (* where type time = __pervasive.Time.time *)
 
 
 
@@ -1277,7 +1278,7 @@ signature PROMISE =
   end
 
 
-structure Promise : PROMISE
+structure Promise : PROMISE (* where type promise = __pervasive.Promise.promise *)
 
 
 
