@@ -10,7 +10,7 @@
  *   $Revision$
  *)
 
-signature CODE_GEN =
+signature CODE_GEN_PHASE =
     sig
 	structure I: IMPERATIVE_GRAMMAR = ImperativeGrammar
 	structure O: IL = IL

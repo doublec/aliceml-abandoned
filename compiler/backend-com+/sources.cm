@@ -1,8 +1,13 @@
 Group is
 
     ../error/sources.cm
+    ../misc/sources.cm
     ../backend-common/imperative-grammar.cm
 
     IL.sig
     IL.sml
-    CODE_GEN.sig
+    StockWerk.sml
+    CODE_STORE.sig
+    CodeStore.sml
+    CODE_GEN_PHASE.sig
+    CodeGenPhase.sml
