@@ -13,7 +13,9 @@
 
 functor
 import
+   System
    FD
+   Schedule
 export
    'UnsafeFD$' : UnsafeFD
 define
@@ -63,6 +65,24 @@ define
       [] 'MAX' then max
       end
    end
+
+   fun {ToAtom S}
+      {String.toAtom {ByteString.toString S}}
+   end
+
+   fun {ConvertT T}
+      {List.toRecord tasksR
+       {Record.foldR T fun {$ '#'(S Rs) E}
+			  ({ToAtom S}#{Map Rs fun {$ X} {ToAtom X} end})|E
+		       end nil}}
+   end
+
+   fun {ConvertS L S}
+      {List.toRecord L
+       {Record.foldR S fun {$ '#'(S X) E}
+			  ({ToAtom S}#X)|E
+		       end nil}}
+   end
    
    %% Interface Functions
    fun {FDFun DO}
@@ -97,8 +117,8 @@ define
    end
 
    %% Assignment Function
-   fun {AssignFun T X}
-      {FD.assign {AliceAssignToOzAssign T} X}
+   fun {AssignFun T XV}
+      {FD.assign {AliceAssignToOzAssign T} XV}
       unit
    end
    
@@ -407,6 +427,74 @@ define
 	 unit
       end
    end
+
+   %% Cumulative Scheduling
+   local
+      fun {CallCumulative F TasksR StartR DurR UseR CapR}
+	 {F
+	  {ConvertT TasksR}
+	  {ConvertS startR StartR}
+	  {ConvertS durR DurR}
+	  {ConvertS useR UseR}
+	  {ConvertS capR CapR}}
+	 unit
+      end
+   in
+      fun {CumulativeFun TasksR StartR DurR UseR CapR}
+	 {CallCumulative Schedule.cumulative TasksR StartR DurR UseR CapR}
+      end
+      fun {CumulativeEFFun TasksR StartR DurR UseR CapR}
+	 {CallCumulative Schedule.cumulativeEF TasksR StartR DurR UseR CapR}
+      end
+      fun {CumulativeTIFun TasksR StartR DurR UseR CapR}
+	 {CallCumulative Schedule.cumulativeTI TasksR StartR DurR UseR CapR}
+      end
+      fun {CumulativeUpFun TasksR StartR DurR UseR CapR}
+	 {CallCumulative Schedule.cumulativeUp TasksR StartR DurR UseR CapR}
+      end
+   end
+
+   %% Schedule Distribution
+   fun {SchedDisjointFun D1 I1 D2 I2}
+      {Schedule.disjoint D1 I1 D2 I2}
+      unit
+   end
+   fun {FirstsDistFun TasksR StartR DurR}
+      {Schedule.firstsDist {ConvertT TasksR} {ConvertS startR StartR} {ConvertS durR DurR}}
+      unit
+   end
+   fun {LastsDistFun TasksR StartR DurR}
+      {Schedule.lastsDist {ConvertT TasksR} {ConvertS startR StartR} {ConvertS durR DurR}}
+      unit
+   end
+   fun {FirstsLastsDistFun TasksR StartR DurR}
+      {Schedule.firstsLastsDist {ConvertT TasksR} {ConvertS startR StartR} {ConvertS durR DurR}}
+      unit
+   end
+   fun {TaskIntervalsDistPFun TasksR StartR DurR}
+      {Schedule.taskIntervalsDistP {ConvertT TasksR}
+       {ConvertS startR StartR} {ConvertS durR DurR}}
+      unit
+   end
+   fun {TaskIntervalsDistOFun TasksR StartR DurR}
+      {Schedule.taskIntervalsDistO {ConvertT TasksR}
+       {ConvertS startR StartR} {ConvertS durR DurR}}
+      unit
+   end
+   
+   %% Serialized Scheduling
+   fun {SerializedDisjFun TasksR StartR DurR}
+      {Schedule.serializedDisj {ConvertT TasksR} {ConvertS startR StartR} {ConvertS durR DurR}}
+      unit
+   end
+   fun {SerializedFun TasksR StartR DurR}
+      {Schedule.serialized {ConvertT TasksR} {ConvertS startR StartR} {ConvertS durR DurR}}
+      unit
+   end
+   fun {TaskIntervalsFun TasksR StartR DurR}
+      {Schedule.taskIntervals {ConvertT TasksR} {ConvertS startR StartR} {ConvertS durR DurR}}
+      unit
+   end
    
    %% Create Interface
    UnsafeFD = 'UnsafeFD'('fd'                  : FDFun
@@ -481,8 +569,22 @@ define
 			 'reflect_dom'         : ReflectDomainFun
 			 'reflect_domList'     : FD.reflect.domList
 			 'reflect_nbSusps'     : FD.reflect.nbSusps
+			 'reflect_eq'          : System.eq
 			 'watch_min'           : FD.watch.min
 			 'watch_max'           : FD.watch.max
 			 'watch_size'          : FD.watch.size
-			 'distribute'          : DistFun)
+			 'distribute'          : DistFun
+			 'schedule_cumulative' : CumulativeFun
+			 'schedule_cumulativeEF' : CumulativeEFFun
+			 'schedule_cumulativeTI' : CumulativeTIFun
+			 'schedule_cumulativeUp' : CumulativeUpFun
+			 'schedule_disjoint' : SchedDisjointFun
+			 'schedule_firstsDist' : FirstsDistFun
+			 'schedule_lastsDist' : LastsDistFun
+			 'schedule_firstsLastsDist' : FirstsLastsDistFun
+			 'schedule_taskIntervalsDistP' : TaskIntervalsDistPFun
+			 'schedule_taskIntervalsDistO' : TaskIntervalsDistOFun
+			 'schedule_serializedDisj' : SerializedDisjFun
+			 'schedule_serialized' : SerializedFun
+			 'schedule_taskIntervals' : TaskIntervalsFun)
 end
