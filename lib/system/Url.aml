@@ -399,8 +399,6 @@ structure Url :> URL =
 
 	exception Done of url
 
-	(*--** use {rel where scheme = scheme} instead of setScheme *)
-
 	fun atLast (nil, ss2) = ss2
 	  | atLast (ss1, ss2) = List.revAppend (List.tl (List.rev ss1), ss2)
 
@@ -435,9 +433,9 @@ structure Url :> URL =
 
 	(*--**
 	 * Check whether there may be cases where
-	 *    URL.fromString s1 <> URL.fromString s2
+	 *    Url.fromString s1 <> Url.fromString s2
 	 * but
-	 *    URL.compare (URL.fromString s1, URL.fromString s2) = EQUAL
+	 *    Url.compare (Url.fromString s1, Url.fromString s2) = EQUAL
 	 * This must not happen!
 	 *)
 
