@@ -20,8 +20,6 @@ structure FD :> FD =
 	type fd
 	type bin = fd
 	    
-        exception Tell of {cause: exn}
-
 	datatype domain_element =
 	    SINGLE of int
 	  | RANGE  of int * int

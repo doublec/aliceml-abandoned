@@ -462,6 +462,9 @@ define
    %% Create Interface
    UnsafeFD = {Record.map
 	       'UnsafeFD'('\'Tell'              : Tell
+			  'Tell'                : fun {$ E}
+						     alice(Tell(cause: E))
+						  end
 		          'inf'                 : FD.inf
 			  'sup'                 : FD.sup
 			  'unsafeFD'            : FDFun

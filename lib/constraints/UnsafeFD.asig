@@ -19,6 +19,8 @@ signature UNSAFE_FD_COMPONENT =
                 val inf : int
 		val sup : int
 
+		exception Tell of {cause : exn}
+
 		(* Allocation Functions *)
 		val unsafeFD : 'a
 		val unsafeFDVec : 'a
