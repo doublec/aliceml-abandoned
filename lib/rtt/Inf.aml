@@ -93,11 +93,11 @@ struct
 		   , inf_rea : inf_rea
 		   }
 
-    fun emptyRea() = { val_rea = PathMap.new()
-		     , typ_rea = PathMap.new()
-		     , mod_rea = PathMap.new()
-		     , inf_rea = PathMap.new()
-		     } : rea
+    fun newRea() = { val_rea = PathMap.new()
+		   , typ_rea = PathMap.new()
+		   , mod_rea = PathMap.new()
+		   , inf_rea = PathMap.new()
+		   } : rea
 
 
   (* Simple accessors *)
@@ -417,7 +417,7 @@ struct
       | realise'(rea, APPLY(j1,p,j2))	= ( realise(rea, j1)
 					  ; realise(rea, j2)
 					  (* UNFINISHED: do reduction *)
-					  ; APPLY(j1, realisePath(#mod_rea rea,
+					  ; APPLY(j1, replacePath(#mod_rea rea,
 								  p), j2)
 					  )
 
@@ -447,11 +447,11 @@ struct
 		       end
 	   | NONE   => ( realiseKind(rea, k) ; CON kp )
 
-    and realisePath(rea', p)		= case PathMap.lookup(rea', p)
+    and replacePath(rea', p)		= case PathMap.lookup(rea', p)
 					    of NONE    => p
-					     | SOME p' => realisePath(rea', p')
+					     | SOME p' => replacePath(rea', p')
     and realisePathDef(rea', NONE  )	= NONE
-      | realisePathDef(rea', SOME p)	= SOME(realisePath(rea', p))
+      | realisePathDef(rea', SOME p)	= SOME(replacePath(rea', p))
 
     and realiseValDef(rea, d)		= realisePathDef(#val_rea rea, d)
     and realiseModDef(rea, d)		= realisePathDef(#mod_rea rea, d)
@@ -483,7 +483,7 @@ struct
 	    val cloneState = Type.cloneStart()
 	    val j1         = instanceInf(rea', cloneState, j)
 	in
-	    realiseT(rea', j1) ;
+	    realisePath(rea', j1) ;
 	    j1
 	end
 
@@ -499,13 +499,13 @@ struct
 							 instanceInf(r,z,j1),
 							 instanceInf(r,z,j2))
       | instanceInf'(r,z, APPLY(j1,p,j2))	= APPLY(instanceInf(r,z,j1),
-							realisePath(r,p),
+							replacePath(r,p),
 							instanceInf(r,z,j2))
       | instanceInf'(r,z, ABBREV(j1,j2))	= ABBREV(instanceInf(r,z,j1),
 							 instanceInf(r,z,j2))
 
     and instanceCon(r,z, (k,p))			= ( instanceKind(r,z,k),
-						    realisePath(r,p) )
+						    replacePath(r,p) )
 
     and instanceKind (r,z, ref k')		= ref(instanceKind'(r,z,k'))
     and instanceKind'(r,z, GROUND)		= GROUND
@@ -592,7 +592,7 @@ struct
 	end
 
     and instancePathDef(rea, NONE  )	= NONE
-      | instancePathDef(rea, SOME p)	= SOME(realisePath(rea, p))
+      | instancePathDef(rea, SOME p)	= SOME(replacePath(rea, p))
 
     and instanceTypDef(r,z, NONE  )	= NONE
       | instanceTypDef(r,z, SOME t)	= SOME(instanceTyp(r,z,t))
@@ -605,45 +605,45 @@ struct
 						Type.realisePath(r,t')
 					     here! *)
 
-    and realiseT (rea', ref j')			= realiseT'(rea', j')
-    and realiseT'(rea', LINK j)			= realiseT(rea', j)
-      | realiseT'(rea', (TOP | CON _))		= ()
-      | realiseT'(rea', SIG s)			= realiseTSig(rea', s)
-      | realiseT'(rea', (FUN(_,j1,j2) | LAMBDA(_,j1,j2) | ABBREV(j1,j2))) =
-						  ( realiseT(rea', j1)
-						  ; realiseT(rea', j2)
+    and realisePath (rea', ref j')		= realisePath'(rea', j')
+    and realisePath'(rea', LINK j)		= realisePath(rea', j)
+      | realisePath'(rea', (TOP | CON _))	= ()
+      | realisePath'(rea', SIG s)		= realisePathSig(rea', s)
+      | realisePath'(rea', (FUN(_,j1,j2) | LAMBDA(_,j1,j2) | ABBREV(j1,j2))) =
+						  ( realisePath(rea', j1)
+						  ; realisePath(rea', j2)
 						  )
-      | realiseT'(rea', APPLY(j1,p,j2))		= ( realiseT(rea', j1)
-						  ; realiseT(rea', j2)
-						  )
-
-    and realiseTKind (rea', ref k')		= realiseTKind'(rea', k')
-    and realiseTKind'(rea, GROUND)		= ()
-      | realiseTKind'(rea, DEP(_,j,k))		= ( realiseT(rea, j)
-						  ; realiseTKind(rea, k)
+      | realisePath'(rea', APPLY(j1,p,j2))	= ( realisePath(rea', j1)
+						  ; realisePath(rea', j2)
 						  )
 
-    and realiseTSig(rea', (ref items, _))	=
-	    List.app (fn item => realiseTItem(rea', item)) items
-
-    and realiseTItem(rea', ref item')		= realiseTItem'(rea', item')
-    and realiseTItem'(rea', VAL(x,t,d))		= realiseTTyp(rea', t)
-      | realiseTItem'(rea', TYP(x,k,d))		= realiseTTypDef(rea', d)
-      | realiseTItem'(rea', MOD(x,j,d))		= realiseT(rea', j)
-      | realiseTItem'(rea', INF(x,k,d))		= ( realiseTKind(rea', k)
-						  ; realiseTInfDef(rea', d)
+    and realisePathKind (rea', ref k')		= realisePathKind'(rea', k')
+    and realisePathKind'(rea, GROUND)		= ()
+      | realisePathKind'(rea, DEP(_,j,k))	= ( realisePath(rea, j)
+						  ; realisePathKind(rea, k)
 						  )
-      | realiseTItem'(rea', FIX _)		= ()
 
-    and realiseTCon(rea', (k,p))		= realiseTKind(rea', k)
+    and realisePathSig(rea', (ref items, _))	=
+	    List.app (fn item => realisePathItem(rea', item)) items
 
-    and realiseTTypDef(rea', NONE  )		= ()
-      | realiseTTypDef(rea', SOME t)		= realiseTTyp(rea', t)
+    and realisePathItem(rea', ref item')	= realisePathItem'(rea', item')
+    and realisePathItem'(rea', VAL(x,t,d))	= realisePathTyp(rea', t)
+      | realisePathItem'(rea', TYP(x,k,d))	= realisePathTypDef(rea', d)
+      | realisePathItem'(rea', MOD(x,j,d))	= realisePath(rea', j)
+      | realisePathItem'(rea', INF(x,k,d))	= ( realisePathKind(rea', k)
+						  ; realisePathInfDef(rea', d)
+						  )
+      | realisePathItem'(rea', FIX _)		= ()
 
-    and realiseTInfDef(rea', NONE  )		= ()
-      | realiseTInfDef(rea', SOME j)		= realiseT(rea', j)
+    and realisePathCon(rea', (k,p))		= realisePathKind(rea', k)
 
-    and realiseTTyp(rea', t)			= Type.realisePath(rea', t)
+    and realisePathTypDef(rea', NONE  )		= ()
+      | realisePathTypDef(rea', SOME t)		= realisePathTyp(rea', t)
+
+    and realisePathInfDef(rea', NONE  )		= ()
+      | realisePathInfDef(rea', SOME j)		= realisePath(rea', j)
+
+    and realisePathTyp(rea', t)			= Type.realisePath(rea', t)
 
 
 
@@ -746,7 +746,8 @@ struct
     and singletonTyp(z, t)		= Type.cloneCont(z,t)
 
 
-  (* Cloning (does not instantiate paths!) *)
+  (* Cloning (does not instantiate paths!),
+   * only used in conjunction with strengthening *)
 
     fun clone(ref j')		= ref(clone' j')
     and clone'(LINK j)		= clone'(!j)
@@ -832,6 +833,27 @@ struct
 								raise Interface
     fun pathCon(_,p)	= p
     fun path j		= pathCon(asCon j)
+
+
+  (* Quantified paths *)
+
+    fun paths j				= paths'([], [], !j)
+    and paths'(tps, jps, SIG s)		= pathsSig(tps,jps,s)
+      | paths'(tps, jps, LINK j)	= paths'(tps,jps,!j)
+      | paths'(tps, jps, ABBREV(j1,j2))	= paths'(tps,jps,!j2)
+      | paths'(tps, jps, _)		= (tps,jps)
+
+    and pathsSig(tps, jps, (ref items, _)) =
+	List.foldl (fn(item,(tps,jps)) => pathsItem(tps,jps,item))
+		   (tps,jps) items
+
+    and pathsItem(tps, jps, ref(TYP(x,k,NONE))) =
+	    ((idPath x, k)::tps, jps)
+      | pathsItem(tps, jps, ref(INF(x,k,NONE))) =
+	    (tps, (idPath x, k)::jps)
+      | pathsItem(tps, jps, ref(MOD(x,j,d))) =
+	    paths'(tps, jps, !j)
+      | pathsItem(tps, jps, _) = (tps, jps)
 
 
   (* Strengthening *)
@@ -951,11 +973,11 @@ struct
 
 
     fun match(_, ref TOP) =
-	    emptyRea()
+	    newRea()
 
       | match(j1 as ref(CON(_,p1)), j2 as ref(CON(_,p2))) =
 	if Path.equals(p1,p2) then
-	    emptyRea()
+	    newRea()
 	else
 	    raise Mismatch(Incompatible(j1,j2))
 
@@ -978,7 +1000,7 @@ struct
 
       | match(ref(LAMBDA(p1,j11,j12)), ref(LAMBDA(p2,j21,j22))) =
 	(*UNFINISHED*)
-	    emptyRea()
+	    newRea()
 
       | match(ref(APPLY(j11,p1,j12)), ref(APPLY(j21,p2,j22))) =
 	if Path.equals(p1,p2) then
@@ -997,7 +1019,7 @@ struct
     and matchSig(s1 as (ref items1, _), s2 as (ref items2, _)) =
 	let
 	    val m1 = getMap s1
-	    val rea as {val_rea, typ_rea, mod_rea, inf_rea} = emptyRea()
+	    val rea as {val_rea, typ_rea, mod_rea, inf_rea} = newRea()
 
 	    fun pair(m1,      [],      pairs) = List.rev pairs
 	      | pair(m1, item2::items, pairs) =
@@ -1045,34 +1067,35 @@ struct
 	    rea
 	end
 
-    and matchItem(ref item1', item2 as ref item2') =
-	( matchItem'(item1', item2') ; item2 := item1' )
-
-    and matchItem'(VAL(x1,t1,d1), VAL(x2,t2,d2)) =
+    and matchItem(ref(VAL(x1,t1,d1)), item2 as ref(VAL(x2,t2,d2))) =
 	let val l = idLab x2 in
 	    matchTyp(l, t1, t2) ;
-	    matchValDef(l, d1, d2)
+	    matchValDef(l, d1, d2) ;
+	    item2 := VAL(x1,t2,d1)
 	end
-      | matchItem'(TYP(x1,k1,d1), TYP(x2,k2,d2)) =
+      | matchItem(ref(item1' as TYP(x1,k1,d1)), item2 as ref(TYP(x2,k2,d2))) =
 	let val l = idLab x2 in
 	    matchTKind(l, k1, k2) ;
-	    matchTypDef(l, d1, d2)
+	    matchTypDef(l, d1, d2) ;
+	    item2 := item1'
 	end
-      | matchItem'(MOD(x1,j1,d1), MOD(x2,j2,d2)) =
+      | matchItem(ref(MOD(x1,j1,d1)), item2 as ref(MOD(x2,j2,d2))) =
 	let val l = idLab x2 in
 	    matchInf(l, j1, j2) ;
-	    matchModDef(l, d1, d2)
+	    matchModDef(l, d1, d2) ;
+	    item2 := MOD(x1,j2,d1)
 	end
-      | matchItem'(INF(x1,k1,d1), INF(x2,k2,d2)) =
+      | matchItem(ref(item1' as INF(x1,k1,d1)), item2 as ref(INF(x2,k2,d2))) =
 	let val l = idLab x2 in
 	    matchKind(l, k1, k2) ;
-	    matchInfDef(l, d1, d2)
+	    matchInfDef(l, d1, d2) ;
+	    item2 := item1'
 	end
-      | matchItem'(FIX(x1,q1), FIX(x2,q2)) =
+      | matchItem(ref(FIX(x1,q1)), item2 as ref(FIX(x2,q2))) =
 	let val l = idLab x2 in
 	    matchFix(l, q1, q2)
 	end
-      | matchItem' _ = raise Assert.failure
+      | matchItem _ = raise Assert.failure
 
     and matchTyp(l,t1,t2) =
 	if Type.matches(t1,t2) then () else
@@ -1138,7 +1161,7 @@ struct
 	let
 	    val j1' = clone j1
 	    val j2' = clone j2
-	    val rea = emptyRea()
+	    val rea = newRea()
 	in
 	    intersect'(rea, j1', j2')
 	end
@@ -1310,7 +1333,7 @@ struct
 	    raise Mismatch(MismatchTyp(l,k1,k2))
 
     and intersectInf(l,j1,j2) =
-	intersect'(emptyRea(), j1, j2)
+	intersect'(newRea(), j1, j2)
 	handle Mismatch mismatch =>
 	    raise Mismatch(MismatchMod(l, mismatch))
 

@@ -48,6 +48,8 @@ sig
 		   , inf_rea : inf_rea
 		   }
 
+    val newRea : unit -> rea
+
   (* Injections *)
 
     val inTop :		unit		 -> inf
@@ -79,12 +81,15 @@ sig
     val asApply :	inf -> inf * path * inf		(* Interface *)
     val asAbbrev :	inf -> inf * inf		(* Interface *)
 
+    val paths :		inf -> (path * tkind) list * (path * kind) list
+
   (* Cloning etc. *)
 
     val clone :		inf -> inf
     val instance :	inf -> inf
     val singleton :	inf -> inf
     val realise :	rea  * inf -> unit
+    val realisePath :	mod_rea * inf -> unit
     val strengthen :	path * inf -> unit
     val strengthenSig :	path * sign -> unit
 
