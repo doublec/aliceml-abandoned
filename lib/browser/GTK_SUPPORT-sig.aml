@@ -77,6 +77,10 @@ signature GTK_SUPPORT =
 
 	val changeFontSize: int -> unit
 	
+(* More complex stuff *)
+
+	val aboutWindow: unit -> unit
+
 (* Canvas Items & Handling *)
 
 	val allocColor : int * int * int -> tag

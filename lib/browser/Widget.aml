@@ -221,26 +221,6 @@ open GtkSupport Node Doc Color PervasiveType
 (*********** Ende Knotensuche ***************)
 
 
-(* "About..."-WindowHandler *)
-fun about _ = Server.serve (fn () =>  
-     let
-	 val dialog = Gtk.dialogNew()
-	 val ddialog = (fn _ =>  Gtk.widgetDestroy(dialog)) 
-	 val ok = createButton(BObj("ok",[Handler("clicked",ddialog)]))
-	 val l = 
-		      Gtk.labelNew("Alice Browser \n"
-				   ^ "Created by \n"
-				   ^ "Bernadette Blum & Marvin Schiller")
-     in
-	( Gtk.windowSetTitle(dialog,"information")
-	 ; Gtk.containerAdd((Gtk.dialogGetFieldActionArea(dialog)),
-			    ok)
-	 ; Gtk.containerAdd((Gtk.dialogGetFieldVbox(dialog)),l)
-	 ;Gtk.widgetShowAll(dialog))
-     end)  
-
-
-
 (* Hilfsprozedur fuer setSelectionMenuSensitive *)
 fun getSelectionMenu bar = 
     let
@@ -805,6 +785,8 @@ struct
 		     ;Gtk.widgetShowAll(w))
 	end)
 
+	
+
 
 	 (* Menu-Bar *)
      val bar = GtkSupport.createMenu
@@ -813,7 +795,7 @@ struct
 		  items = [EntryObj
 			   (LABEL "About...",
 			    [Handler("activate",
-				    about)],true),
+				   fn _ => Server.serve (aboutWindow) )],true),
 			   EntryObj(SEP,[],true),
 			   EntryObj(LABEL "Close",
 				    [Handler("activate",
