@@ -627,14 +627,19 @@ application.</P>
     <TD> <I>component</I> </TD>
     <TD align="center">::=</TD>
     <TD> <I>ann</I> &lt;<I>program</I>&gt; </TD>
-    <TD> <A href="components.php3">component</A> </TD>
+    <TD> <A href="components.php3#source">component</A> </TD>
   </TR>
   <TR></TR>
   <TR>
     <TD> <I>ann</I> </TD>
     <TD align="center">::=</TD>
     <TD> <TT>import</TT> <I>imp</I> <TT>from</TT> <I>string</I> </TD>
-    <TD> <A href="components.php3">import announcement</A> </TD>
+    <TD> <A href="components.php3#source">import announcement</A> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>import</TT> <I>string</I> </TD>
+    <TD> <A href="components.php3#source-interactive">import all</A> (*)</TD>
   </TR>
   <TR>
     <TD></TD> <TD></TD>

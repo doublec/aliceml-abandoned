@@ -58,6 +58,18 @@ signatures. These are determined by the export signatures found in the
 imported components at compile time.</P>
 
 
+<?php subsection("source-interactive", "interactive import") ?>
+
+<P>For convenience, it is possible to abbreviate import announcements as
+follows in the <A href="interactive.php3">interactive top-level</A>:</P>
+
+<PRE class=code>
+import "http://www.mydomain.net/Foo"</PRE>
+
+<P>Such an announcement will import all items exported by the corresponding
+component.</P>
+
+
 <?php section("execution", "execution") ?>
 
 <P>An application is executed by evaluating its root component. In general, a
@@ -181,6 +193,11 @@ handled by that respective manager. This particularly allows setting up custom
     <TD align="center">::=</TD>
     <TD> <TT>import</TT> <I>imp</I> <TT>from</TT> <I>string</I> </TD>
     <TD> import announcement </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>import</TT> <I>string</I> </TD>
+    <TD> import all (*)</TD>
   </TR>
   <TR>
     <TD></TD> <TD></TD>
@@ -402,6 +419,5 @@ handled by that respective manager. This particularly allows setting up custom
   </TR>
 -->
 </TABLE>
-
-
+ 
 <?php footing() ?>

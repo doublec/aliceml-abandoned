@@ -30,6 +30,7 @@
   <H1>
   alice<BR>
   manual.<BR>
+  <BR><BR>
   </H1>
 
   <?php include("menu.php3") ?>

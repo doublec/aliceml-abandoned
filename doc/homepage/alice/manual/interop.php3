@@ -1,7 +1,7 @@
 <?php include("macros.php3"); ?>
 
 <?php heading("Interoperability with Mozart",
-	      "mozart <BR> interoperability") ?>
+	      "mozart\ninteroperability") ?>
 
 <?php section("overview", "overview") ?>
   <P>The current Alice system is based on <A href="http://www.mozart-oz.org/"
@@ -193,7 +193,7 @@
   <P>Alice exceptions are wrapped into <TT>alice(...)</TT> and raised
     as Oz error exceptions.</P>
 
-<?php section("ozfromalice", "oz from alice") ?>
+<?php section("ozfromalice", "Oz from Alice") ?>
   <P>Alice compiled components are annotated with signatures denoting
     the expected types of the component it imports and the actual type
     of the structure it computes.  Compatibility of actual and expected
@@ -230,7 +230,7 @@
     does not truthfully describe the Oz component, run-time errors will
     occur.</P>
 
-<?php section("alicefromoz", "alice from oz") ?>
+<?php section("alicefromoz", "Alice from Oz") ?>
   <P>Since Oz does not type-check its imports at link-time, Alice components
     can be directly imported into Oz functors without conversion.</P>
   <P>For example, assume the following Alice component is available at

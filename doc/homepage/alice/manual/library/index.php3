@@ -56,21 +56,11 @@ signature, although the library pages usually contain the synopsis for both.
 Signatures only need to be imported if used explicitly.</P>
 
 
-<?php subsection("import-all", "Interactive import") ?>
+<?php subsection("import-interactive", "Interactive top-level") ?>
 
 <P>The <A href="usage.php#interactive">interactive toplevel</A> system imports
 the <EM>complete</EM> library, except <TT>/lib/gtk/</TT>, implicitly. Loading of
-components is performed lazily, though.</P>
-
-<P>To access non-library components (e.g. compiled programs) in the toplevel,
-import announcements must still be used. For convenience, it is possible to
-abbreviate import announcements as follows interactively:</P>
-
-<PRE class=code>
-import "build/HelloWorld"</PRE>
-
-<P>Such an announcement will import everything exported by the corresponding
-component.</P>
+the respective components is performed lazily.</P>
 
 
 <!--
@@ -316,6 +306,13 @@ types, exceptions and values that are available unqualified.</P>
     <TR> <TD><A href="explorer.php3">Explorer</A></TD> </TR>
     <TR> <TD><A href="inspector.php3">Inspector</A></TD> </TR>
   </TABLE>
+
+
+<?php section("gtk", "Gtk library") ?>
+
+<?php subsection("gtk-sigs", "Signatures") ?>
+
+<?php subsection("gtk-structs", "Structures") ?>
 
 
 <?php footing() ?>

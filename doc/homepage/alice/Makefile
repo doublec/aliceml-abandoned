@@ -21,7 +21,9 @@ INSTALLFILES_MANUAL_0 = \
 	language.php3 futures.php3 types.php3 modules.php3 sugar.php3 \
 	threads.php3 components.php3 distribution.php3 \
 	packages.php3 pickling.php3 constraints.php3 gtk.php3 \
-	incompatibilities.php3 usage.php3 \
+	incompatibilities.php3 limitations.php3 \
+	tools.php3 interactive.php3 compiler.php3 machine.php3 \
+	linker.php3 depend.php3 \
 	explorer.php3 interop.php3 examples.php3 tour.php3 \
 	mozart_cartoon.jpg
 INSTALLFILES_MANUAL_LIBRARY_0 = \
