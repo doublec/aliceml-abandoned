@@ -1,7 +1,5 @@
 #!/bin/sh
 
-OZHOME=/opt/mozart-1.1.1
-
 howcalled=$0
 
 if test -z "${STOCKHOME}"
@@ -12,10 +10,8 @@ fi
 
 PATH=$OZHOME/bin:$STOCKHOME/bin:$PATH
 
-if test -z "${OZ_LOAD}"
-then
-  OZ_LOAD=cache=$OZHOME/cache/
-fi
+: ${OZHOME=/opt/mozart-1.1.1}
+: ${OZ_LOAD=cache=$OZHOME/cache/}
 
 OZ_LOAD=pattern='?{x}'='?{x}.ozf':pattern=x-alice\\:/'?{x}'=$STOCKHOME/'?{x}'.ozf:pattern=x-alice\\:/'?{x}'=$STOCKHOME/'?{x}':$OZ_LOAD
 
