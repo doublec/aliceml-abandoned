@@ -22,7 +22,11 @@ import
    Scheduler(object)
 export
    Link
+   GetInitialTable
 define
+   NONE = 0
+   %SOME = 1
+
    EVALUATED   = 0
    UNEVALUATED = 1
 
@@ -48,7 +52,7 @@ define
       for Url in Natives do OzModule Module in
 	 OzModule = {ModuleManager link(url: AliceHome#Url#'.ozf' $)}
 	 Module = {PrimitiveTable.importOzModule OzModule.module}
-	 ModuleTable.{VirtualString.toAtom Url} := Module
+	 ModuleTable.{VirtualString.toAtom Url} := NONE#Module
       end
    end
 
@@ -58,8 +62,10 @@ define
 	 if {Access Trace} then
 	    {System.showError '[boot-linker] loading '#Url}
 	 end
-	 case {Pickle.load Url#'.stc'} of tag(!EVALUATED _ X) then Module = X
-	 [] tag(!UNEVALUATED BodyClosure Imports _) then N Modules in
+	 case {Pickle.load Url#'.stc'} of tag(!EVALUATED Sign X) then
+	    Module = X
+	    ModuleTable.Key := Sign#Module
+	 [] tag(!UNEVALUATED BodyClosure Imports Sign) then N Modules in
 	    N = {Width Imports}
 	    Modules = {MakeTuple vector N}
 	    for I in 1..N do Url2 in
@@ -68,9 +74,17 @@ define
 	    end
 	    {Scheduler.object newThread(BodyClosure arg(Modules) ?Module)}
 	    {Scheduler.object run()}
+	    ModuleTable.Key := Sign#Module
 	 end
-	 ModuleTable.Key := Module
       elseof M then Module = M
       end
+   end
+
+   fun {GetInitialTable}
+      {List.toTuple vector
+       {Map {Dictionary.items ModuleTable}
+	fun {$ Key#(Sign#Module)}
+	   tuple({ByteString.make Key} Sign Module)
+	end}}
    end
 end
