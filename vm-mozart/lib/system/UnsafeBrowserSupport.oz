@@ -11,14 +11,12 @@
 %%%
 
 functor
-import
-   Value(waitQuit)
 export
    'UnsafeBrowserSupport$': UnsafeBrowserSupport
 define
    UnsafeBrowserSupport =
    'UnsafeBrowserSupport'('waitRequest':
 			     fun {$ X}
-				{Value.waitQuit X} X
+				{Value.waitQuiet X} X
 			     end)
 end
