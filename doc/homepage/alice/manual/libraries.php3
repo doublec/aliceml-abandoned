@@ -282,8 +282,7 @@
 
   <P>
     The only component in the tools namespace currently is the
-    <A href="inspector.php3"><I>Alice Inspector</I></A>
-    (aka. <I>Data Hauser</I>).
+    <A href="inspector.php3"><I>Alice Inspector</I></A>.
   </P>
 
 
