@@ -28,7 +28,8 @@ struct
     val initialSize		= 19
 
     fun new()			= (ref(Array.array(initialSize,[])), ref 0)
-    fun deleteAll (s,k)		= ( s := Array.array(initialSize,[]) ; k := 0 )
+    fun deleteAll (s,k)		= if !k = 0 then () else
+				  ( s := Array.array(initialSize,[]) ; k := 0 )
 
     fun size(_, ref n)		= n
     fun isEmpty(_, ref n)	= n = 0
