@@ -19,123 +19,114 @@ import signature SIMPLE_IMP_MAP from "../utility/SIMPLE_IMP_MAP-sig"
 
 signature TYPE =
 sig
-
   (* Types *)
-
-    datatype sort = OPEN | CLOSED
-    datatype kind = STAR | ARROW of kind * kind		(* [kappa,k] *)
 
     type lab  = Label.t					(* [lab,l] *)
     type path = Path.t					(* [pi,p] *)
-    type con  = kind * sort * path			(* [chi,c] *)
 
-    type row						(* [rho,r] *)
-    type var						(* [alpha,a] *)
+    type kind						(* [kappa,k] *)
     type typ						(* [tau,t] *)
+    type var						(* [alpha,a] *)
+    type row						(* [rho,r] *)
     type t = typ
 
-    type path_rea = path PathMap.t
-    type typ_rea  = typ PathMap.t
+    type rea = typ PathMap.t
+
+
+  (* Maps of types *)
 
     type canonical_typ
-    val canonical : typ -> canonical_typ
-    val fromCanonical : canonical_typ -> typ
-    structure Map : SIMPLE_IMP_MAP where type key = canonical_typ
+
+    val canonical :	typ -> canonical_typ
+    val fromCanonical :	canonical_typ -> typ
+
+    structure Map :	SIMPLE_IMP_MAP where type key = canonical_typ
 
 
   (* Kinds *)
 
     exception Kind
 
-    val isStar :	kind -> bool
-    val domKind :	kind -> kind			(* [Kind] *)
-    val ranKind :	kind -> kind			(* [Kind] *)
+    val starKind :	unit -> kind
+    val extKind :	unit -> kind
+    val arrowKind :	kind * kind -> kind
+    val singKind :	typ -> kind
 
-  (* Injections *)
+    val isStarKind :	kind -> bool			(* module subkinding *)
+    val isExtKind :	kind -> bool
+    val isArrowKind :	kind -> bool
+    val isSingKind :	kind -> bool
 
-    val unknown :	kind      -> typ
-    val inArrow :	typ * typ -> typ
-    val inTuple :	typ vector -> typ
-    val inProd :	row       -> typ
-    val inSum :		row       -> typ
-    val inVar :		var       -> typ
-    val inCon :		con       -> typ
-    val inAll :		var * typ -> typ
-    val inExist :	var * typ -> typ
-    val inLambda :	var * typ -> typ
-    val inApply :	typ * typ -> typ
-    val inMu :		typ       -> typ
-    val inAbbrev :	typ * typ -> typ
+    val asArrowKind :	kind -> kind * kind		(* Kind *)
+    val asSingKind :	kind -> typ			(* Kind *)
 
-    val var :		kind -> var
-
-  (* Inquiries *)
-
-    val isUnknown :	typ -> bool	(* modulo abbreviations *)
-    val isArrow :	typ -> bool
-    val isTuple :	typ -> bool
-    val isProd :	typ -> bool
-    val isSum :		typ -> bool
-    val isVar :		typ -> bool
-    val isCon :		typ -> bool
-    val isAll :		typ -> bool
-    val isExist :	typ -> bool
-    val isLambda :	typ -> bool
-    val isApply :	typ -> bool
-    val isMu :		typ -> bool
-    val isAbbrev :	typ -> bool	(* precise *)
-(*
-    val isUnknown' :	typ -> bool	(* modulo unrolling *)
-    val isArrow' :	typ -> bool
-*)    val isTuple' :	typ -> bool
-    val isProd' :	typ -> bool
-    val isSum' :	typ -> bool
-(*    val isVar' :	typ -> bool
-    val isCon' :	typ -> bool
-    val isAll' :	typ -> bool
-    val isExist' :	typ -> bool
-    val isLambda' :	typ -> bool
-    val isApply' :	typ -> bool
-*)
-
-  (* Projections *)
-
-    exception Type
-
-    val asArrow :	typ -> typ * typ		(* [Type] *)
-    val asTuple :	typ -> typ vector		(* [Type] *)
-    val asProd :	typ -> row			(* [Type] *)
-    val asSum :		typ -> row			(* [Type] *)
-    val asVar :		typ -> var			(* [Type] *)
-    val asCon :		typ -> con			(* [Type] *)
-    val asAll :		typ -> var * typ		(* [Type] *)
-    val asExist :	typ -> var * typ		(* [Type] *)
-    val asLambda :	typ -> var * typ		(* [Type] *)
-    val asApply :	typ -> typ * typ		(* [Type] *)
-    val asMu :		typ -> typ			(* [Type] *)
-    val asAbbrev : 	typ -> typ * typ		(* [Type] *)
-(*
-    val asArrow' :	typ -> typ * typ		(* [Type] *)
-*)    val asTuple' :	typ -> typ vector		(* [Type] *)
-    val asProd' :	typ -> row			(* [Type] *)
-    val asSum' :	typ -> row			(* [Type] *)
-(*    val asVar' :	typ -> var			(* [Type] *)
-    val asCon' :	typ -> con			(* [Type] *)
-    val asAll' :	typ -> var * typ		(* [Type] *)
-    val asExist' :	typ -> var * typ		(* [Type] *)
-    val asLambda' :	typ -> var * typ		(* [Type] *)
-    val asApply' :	typ -> typ * typ		(* [Type] *)
-*)
-
-  (* Complex extractions *)
+    val equalsKind :	kind * kind -> bool
+    val matchesKind :	kind * kind -> bool
 
     val kind :		typ -> kind
     val kindVar :	var -> kind
 
-    val path :		typ -> path			(* [Type] *)
-    val pathCon :	con -> path
 
-    val paths :		typ -> kind PathMap.t
+  (* Injections *)
+
+    exception Type
+    exception Fix
+
+    val newVar :	kind -> var
+
+    val unknown :	kind      -> typ
+    val var :		var       -> typ
+    val abs :		kind * path -> typ
+    val arrow :		typ * typ   -> typ		(* Kind *)
+    val tuple :		typ vector  -> typ		(* Kind *)
+    val prod :		row       -> typ
+    val sum :		row       -> typ
+    val all :		var * typ -> typ		(* Type, Kind *)
+    val exist :		var * typ -> typ		(* Type, Kind *)
+    val lambda :	var * typ -> typ		(* Type *)
+    val apply :		typ * typ -> typ		(* Kind *)
+    val abbrev :	typ * typ -> typ		(* Kind *)
+
+    val fix :		(typ * typ) vector -> unit	(* Fix *)
+
+  (* Inquiries *)
+
+    val isUnknown :	typ -> bool	(* modulo abbreviations *)
+    val isVar :		typ -> bool
+    val isAbs :		typ -> bool
+    val isArrow :	typ -> bool
+    val isTuple :	typ -> bool
+    val isProd :	typ -> bool
+    val isSum :		typ -> bool
+    val isMu :		typ -> bool
+    val isAll :		typ -> bool
+    val isExist :	typ -> bool
+    val isLambda :	typ -> bool
+    val isApply :	typ -> bool
+    val isAbbrev :	typ -> bool	(* precise *)
+
+    val isTuple' :	typ -> bool	(* modulo abbreviations & unrolling *)
+    val isProd' :	typ -> bool
+    val isSum' :	typ -> bool
+
+  (* Projections *)
+
+    val asVar :		typ -> var			(* Type *)
+    val asAbs :		typ -> path			(* Type *)
+    val asArrow :	typ -> typ * typ		(* Type *)
+    val asTuple :	typ -> typ vector		(* Type *)
+    val asProd :	typ -> row			(* Type *)
+    val asSum :		typ -> row			(* Type *)
+    val asMu :		typ -> typ			(* Type *)
+    val asAll :		typ -> var * typ		(* Type *)
+    val asExist :	typ -> var * typ		(* Type *)
+    val asLambda :	typ -> var * typ		(* Type *)
+    val asApply :	typ -> typ * typ		(* Type *)
+    val asAbbrev : 	typ -> typ * typ		(* Type *)
+
+    val asTuple' :	typ -> typ vector		(* Type *)
+    val asProd' :	typ -> row			(* Type *)
+    val asSum' :	typ -> row			(* Type *)
 
   (* Operations on rows *)
 
@@ -143,39 +134,38 @@ sig
 
     val unknownRow :	unit -> row
     val emptyRow :	unit -> row
-    val openRow :	row  -> row
-    val extendRow :	lab * typ * row -> row		(* [Row] *)
+    val extendRow :	lab * typ * row -> row		(* Row *)
 
-    val isEmptyRow :	row -> bool			(* no known fields *)
     val isUnknownRow :	row -> bool
-    val headRow :	row -> lab * typ		(* sorted, [Row] *)
-    val tailRow :	row -> row			(* sorted, [Row] *)
-    val lookupRow :	row * lab -> typ		(* [Row] *)
+    val isEmptyRow :	row -> bool
+    val hdRow :		row -> lab * typ		(* sorted, Row *)
+    val tlRow :		row -> row			(* sorted, Row *)
+    val lookupRow :	row * lab -> typ		(* Row *)
 
   (* Copying and instantiation *)
 
     val instance :	typ -> typ
     val skolem :	typ -> typ
-    val clone :		typ -> typ
 
-    type clone_state
-    val cloneStart :	unit -> clone_state
-    val cloneCont :	clone_state * typ -> typ
+    type realise_state
+    val realiseStart :	unit -> realise_state
+    val realiseCont :	realise_state * rea * typ -> typ	(* Kind *)
+    val realiseKindCont: realise_state * rea * kind -> kind	(* Kind *)
 
-    val realise :	typ_rea  * typ -> unit
-    val realisePath :	path_rea * typ -> unit
+    val realise :	rea * typ -> typ			(* Kind *)
+    val realiseKind :	rea * kind -> kind			(* Kind *)
 
   (* Unification and closure *)
 
-    exception Fill
+    exception Lift  of var
     exception Unify of typ * typ
-    exception Intersect
 
-    val fill :		typ * typ  -> unit	(* does no occur check! *)
-    val unify :		typ * typ  -> unit	(* [Unify] *)
-    val intersect :	typ * typ  -> unit
+    val lift :		typ  -> unit			(* Lift *)
+    val unify :		typ * typ  -> unit		(* Unify, Lift *)
     val close :		typ list -> typ list
     val isClosed :	typ -> bool
+
+    val paths :		typ -> kind PathMap.t
 
   (* Comparison *)
 
@@ -185,13 +175,11 @@ sig
   (* Hashing *)
 
     val hash :		typ -> int
-    val same :		typ * typ  -> bool	(* identitiy, yuck... *)
+    val same :		typ * typ -> bool	(* for efficiency hacks... *)
+    val sameKind :	kind * kind -> bool
 
   (* Level management *)
 
-    exception Lift of var
-
-    val lift :		typ  -> unit		(* [Lift] *)
     val enterLevel :	unit -> unit
     val exitLevel :	unit -> unit
     val resetLevel :	unit -> unit

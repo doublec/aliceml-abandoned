@@ -10,85 +10,53 @@
  *   $Revision$
  *)
 
-import structure Assert   from "../utility/Assert"
-import functor   MkStamp  from "../utility/MkStamp"
-import functor   MkRefMap from "../utility/MkRefMap"
-import structure Name     from "Name"
-import structure Label    from "Label"
-import structure Path     from "Path"
-import structure PathMap  from "PathMap"
-import signature TYPE     from "TYPE-sig"
-
-
 (*******************************************************************************
-On Tuples and Records:
 
-As in SML, tuples are just a special case of records. We treat them specially
-however for reasons of efficiency. Tuple and record types can be freely
-interconverted.
+Types represent the type terms of the core type system, as used in the compiler
+for type inference, for annotating the intermediate language, and at runtime to
+implement dynamic typing. We have to make certain compromises to make the
+implementation suitable for all these purposes.
 
-On Type Functions:
-
-We evaluate type application lazily. Reduction is triggered on demand, i.e. by
-unification or by inspection. Not all applications can be reduced (in
-particular applications to abstract type constructors) so we deal with some
-sort of head normal form.
-
-We don't normally do eta-reduction, since it is expensive. During unification
-eta reduction is not needed since lambdas may only show up there under very
-restrictive circumstances anyway (see below). Eta-reduction is still needed
-however for equals, to equate eta-convertible type functions. It's done on
-demand.
+Note that we use the term `type' to include type constructors, i.e. our type
+language includes a full lambda calculus.
 
 On Sharing:
 
 For efficiency reasons, we try to maximise sharing of type structures. This
-reduces space cost and speeds up comparison and unification, as a simple
-reference comparison often suffices. Not only unification but even the equality
-test (used by module type checking) merges types silently whenever possible.
+reduces space cost and speeds up comparison and unification. It is particularly
+important to maintain sharing between subgraphs of different type terms on
+signature substitution. Not doing this can lead to a quadratic blowup of type
+terms during module type checking, particularly desastrous in the presence of
+structural datatypes. Therefore, we need a special interface for realising a
+sequence of related types.
 
-There are several cases where we have to clone a type:
+An alternative would be hash-consing, but that is difficult to exploit in the
+presence of circular structure and named variables, and the integration with
+unification is non-obvious.
 
-* Type functions before reduction of type application.
-* Type schemes (types with toplevel quantifiers) on instantiation.
-* All sorts of types on signature instantiation.
+On Thread Safety:
 
-For the first two it would be sufficient to only clone subgraphs containing the
-variables bound by the lambdas/quantifiers; for the third we only would need to
-clone subgraphs containing signature-local constructors. But since minimizing
-cloning is difficult in the presence of cycles (we have recursive types) and
-the pay-off is unclear, we currently don't do it.
+To be appropriate for runtime typing, most operations have to be thread-safe.
+We conjecture that thread-safety is given for all operations as long as they
+don't operate on types containing holes. In the particular case of matching,
+which creates fresh holes, they are safe because they can never escape the
+thread.
 
-It is very important to maintain sharing between subgraphs of different type
-terms on signature instantiation. Not doing this can lead to a quadratic blowup
-of type terms during module type checking, particularly desastrous in the
-presence of structural datatypes. Therefor we need a special-and-ugly interface
-for cloning a sequence of related types.
+On Kinds:
 
-On Recursive Types:
+Extensible types must be represented by a special kind EXT. This implies atomic
+subkinding between EXT and STAR. In order to have a nice encoding of modules
+we also support singleton kinds. At some places we must therefore not just check
+kind equality but allow for subkinding.
 
-Stockhausen makes datatypes structural sum types. This is a problem since
-SML has non-uniform recursive datatypes. So in fact we not only get recursive
-types but recursive type functions. It is not obvious whether type checking
-remains decidable in the general case (in our current scheme with lazy
-application unification might fail to terminate).
+On Tuples and Records:
 
-To stay on the safe side we use an iso-recursive interpretation of types:
-applications to such functions are never reduced. That is, there is no implicit
-unrolling of recursive types, mu is completely structural. For two recursive
-types to be compatible they must therefor be constructed from equal type
-functions. As a consequence, List(Int) and IntList will not be compatible in
-the following example:
+As in SML, tuples are just a special case of records. We treat tuple rows
+specially however for efficiency reasons. Such indexed rows can be freely
+interconverted with named rows by using numeric labels.
 
-	List a  = Nil | Cons(a, List a)
-	IntList = Nil | Cons(Int, IntList)
-
-Maybe this can be made a bit more permissive, but in general it seems
-impossible to have non-uniform datatypes as well as arbitrary (equi) recursive
-types - type checking would become undecidable.
-
-It is also unclear to me whether some sort of hash-consing can be applied to
-recursive types or even recursive type functions.
+TODO: Make rows into types and reflect them properly in the kind system.
+Currently, row variables are not really proper.
 
 On Type Abbreviations:
 
@@ -96,85 +64,222 @@ We try to maintain type abbreviations to generate more user friendly output.
 This is managed through a special node ABBREV, which refers to the original
 type term as well as to the reduced/substituted one.
 
+On Recursive Types:
+
+Stockhausen makes datatypes structural sum types. This is a problem since
+SML has non-uniform recursive datatypes. So in fact we not only get recursive
+types but recursive type functions. It is not obvious whether type checking
+remains decidable in the general case.
+
+In order to stay on the safe side we restrict recursive types to the form
+mu.\a1...\an.tau where tau is either a sum or a product type. Recursive type
+functions never get reduced, we use (mu.\a1...\an.tau)(t1)..(tn) as the normal
+form and define equality fully structural. Note that this implies a variation
+of an iso-recursive interpretation, as there is no implicit unrolling. For two
+recursive types to be compatible they must be constructed from equal type
+functions. As a consequence, List(Int) and IntList will not be compatible in
+the following example:
+
+	List a  = Nil | Cons(a, List a)
+	IntList = Nil | Cons(Int, IntList)
+
+As a further restriction, a recursive type (function) may not contain any free
+type variables. This allows more efficient substitution and unification for
+(the potentially large) representations of mutual recursive types.
+
+On Well-formedness and Normal Forms:
+
+We do eager reduction, so all types are always in normal form. We thus define
+a type t to be well-formed (wf) iff is well-kinded, all nested types and rows
+are wf, and
+
+	t = HOLE(k,_)	and k <> SING _
+	t = VAR(k,_)	and k <> SING _
+	t = ABS(k,_)	and k <> SING _
+	t = LINK t'
+	t = FUN(t1,t2)
+	t = PROD r
+	t = SUM r
+	t = MU t'	and t' mu-wf
+	t = ALL(a,t')	and a = VAR _
+	t = EXIST(a,t')	and a = VAR _
+	t = LAMBDA(a,t') and a = VAR _ and t'* <> APPLY(t'',a) where a notin t''
+	t = APPLY(t1,t2) and t1* <> LAMBDA _
+	t = ABBREV(t1,t2)
+
+and t is mu-wf iff it is wf and
+
+	t = LINK t'	and t' mu-wf
+	t = PROD r	and holes(r) = 0
+	t = SUM r	and holes(r) = 0
+	t = LAMBDA(a,t') and t' mu-wf
+
+and a row r is wf iff all nested types are wf and
+
+	r = INDEXED ts
+	r = NAMED(lts,_) and forall li,lj in lts, li<lj if i<j
+
+where t* is defined as follows:
+
+	t* = t'*	if t = LINK t'
+	t* = t'*	if t = ABBREV(_,t')
+	t* = t		otherwise
+
+All public operations ought to guarantee well-formedness.
+
+Note that unification only correctly deals with a subset of all well-formed
+types. TODO: Have to specify this in detail.
+
+On Type Levels and other Annotations:
+
+As usual, holes carry a number indicating their scope level, to allow for
+efficient generalisation. Likewise, variables - which can be used as skolem
+types - carry a level to detect existential type variables escaping their
+scope easily.
+
+To keep the representation compact (we externalise it) we do not annotate the
+type level at each individual node. Neither do we annotate free variables at
+each node, like some other implementations do. Unification seems to be
+reasonable efficient without it (presuming the restriction about free variables
+under MU).
+
+On Unification:
+
+Unification is kinded. But to keep decidability, variables (holes) may not be
+unified with lambda terms. To deal with the normal form of recursive types we
+allow unification with recursive type functions, however, as well as structural
+unification of two lambda terms. Both are safe, as they never produce a redex.
+
+Occurences of MU cut off the occur check. Note that since there are no free
+type variables allowed under MU, there can never be a hole either, anyway.
+
 *******************************************************************************)
+
+import structure Assert  from "../utility/Assert"
+import structure Cell    from "../utility/Cell"
+import structure Name    from "Name"
+import structure Label   from "Label"
+import structure Path    from "Path"
+import structure PathMap from "PathMap"
+import signature TYPE    from "TYPE-sig"
+
+(*DEBUG
+import fun print from "../system/TextIO"
+*)
 
 structure Type :> TYPE =
 struct
-
   (* Types *)
 
-    structure Stamp = MkStamp()
-
-    datatype sort = OPEN | CLOSED
-    datatype kind = STAR | ARROW of kind * kind		(* [kappa,k] *)
+    open Cell
 
     type lab  = Label.t					(* [lab,l] *)
     type path = Path.t					(* [pi,p] *)
-    type con  = kind * sort * path			(* [chi,c] *)
 
     datatype typ' =					(* [tau',t'] *)
-	  HOLE   of kind * int	(* variable for inference *)
-	| LINK   of typ		(* forward (needed for unification) *)
-	| FUN    of typ * typ	(* arrow type *)
-	| TUPLE  of typ vector	(* tuple *)
-	| PROD   of row		(* record *)
-	| SUM    of row		(* sum type (datatype) *)
+	  LINK   of typ		(* forward (needed for unification) *)
+	| HOLE   of kind * int	(* variable for inference *)
 	| VAR    of kind * int	(* bound variable or skolem types *)
-	| CON    of con		(* constructor (of arbitrary kind) *)
+	| ABS    of kind * path	(* constructor (of arbitrary kind) *)
+	| FUN    of typ * typ	(* arrow type *)
+	| PROD   of row		(* product (tuple or record) *)
+	| SUM    of row		(* sum type (datatype) *)
+	| MU     of typ		(* recursive type *)
 	| ALL    of var * typ	(* universal quantification *)
 	| EXIST  of var * typ	(* existential quantification *)
 	| LAMBDA of var * typ	(* abstraction (type function) *)
 	| APPLY  of typ * typ	(* application *)
-	| MU     of typ		(* recursive type barrier *)
 	| ABBREV of typ * typ	(* abbreviations (#2 is unabbreviated type) *)
 
-    and row =						(* [rho,r] *)
-	  NIL
-	| RHO   of int ref * row
-	| FIELD of lab * typ * row
+    and kind' =						(* [kappa',k'] *)
+	  STAR			(* plain type *)
+	| EXT			(* extensible type *)
+	| ARROW  of kind * kind	(* type function *)
+	| SING   of typ		(* singleton *)
 
-    (*TODO: I would rather delete TUPLE types and change row to
-     *   TUPLE  of typ vector
-     * | RECORD of (lab * typ) list * int option ref
-     * On the other hand, this is probably less compatible with poly records...
-     *)
+    and row' =						(* [rho,r] *)
+	  INDEXED of typ vector
+	| NAMED   of (lab * typ) list * int option
 
-    withtype typ = (typ' * Stamp.t) ref			(* [tau,t] *)
-    and      var = (typ' * Stamp.t) ref			(* [alpha,a] *)
+    withtype typ	= typ' cell			(* [tau,t] *)
+    and      var	= typ' cell			(* [alpha,a] *)
+    and      row	= row'
+    and      kind	= kind' cell			(* [kappa,k] *)
 
-    type t = typ
-    type canonical_typ = typ
+    structure Map	= Cell.MkMap(type t = typ')
+    structure KindMap	= Cell.MkMap(type t = kind')
 
-    type path_rea = path PathMap.t
-    type typ_rea  = typ PathMap.t
+    type t		= typ
+    type canonical_typ	= typ
+    type rea		= typ PathMap.t
+    type subst		= typ Map.t
 
 
-    (*
-     * We establish the following invariants:
-     * - rows are sorted by label, rho variables appear as head only
-     * - types are always in head normal form
-     * - sequential quantifiers are ordered such that the bound variables
-     *   appear in depth-first leftmost traversal order inside the body
-     *)
+  (* Level management *)
+
+    val globalLevel	= 0
+    val level		= ref(globalLevel+1)
+
+    fun enterLevel()	= level := !level+1
+    fun exitLevel()	= level := !level-1
+    fun resetLevel()	= level := globalLevel+1
 
 
   (* Very basic helpers *)
 
-    fun typ'(ref(t',_))			= t'
-    fun new t'				= ref(t', Stamp.new())
-    fun replace(t as ref(_,z), t')	= t := (t',z)
-    val same				= op=
-    fun hash(ref(_,z))			= Stamp.hash z
+    val same		= Cell.equals
+    val sameKind	= Cell.equals
 
-    fun canonical(ref(LINK t,_))	= canonical t
-      | canonical t			= t
+    fun fromCanonical t	= t
+    fun canonical t	= case content t of LINK t => canonical t | _ => t
 
-    fun fromCanonical t			= t
+    (* Almost everything in this module is mutually recursive. To avoid
+     * confusing reordering and allow for easy tracing (see below) we use
+     * the old forward reference trick.
+     *)
+
+    val appFwd 		= ref NONE : ((typ -> unit) -> typ -> unit) option ref
+    val equalsFwd 	= ref NONE : (typ * typ -> bool) option ref
+    val substFwd	= ref NONE : (subst * typ -> typ) option ref
+
+    fun app f		= Option.valOf(!appFwd)    f
+    fun equals(t1,t2)	= Option.valOf(!equalsFwd) (t1,t2)
+    fun subst(m,t)	= Option.valOf(!substFwd)  (m,t)
 
 
-    fun trace f s = f
+  (* Debugging aids *)
+
+    fun trace f s	= f
+    val newKind		= new
 
     (*DEBUG: The following allows tracing of all type nodes.
+
+    fun id t = Int.toString(hash t)
+
+    val rec typ'ToString =
+	fn LINK t	=> "LINK(" ^ id t ^ ")"
+	 | HOLE _	=> "HOLE"
+	 | VAR _	=> "VAR"
+	 | ABS(_,p)	=> "ABS(" ^ Label.toString(Path.toLab p) ^ "["
+				  ^ Int.toString(Path.hash p) ^ "])"
+	 | FUN(t1,t2)	=> "FUN(" ^ id t1 ^ "," ^ id t2 ^ ")"
+	 | PROD r	=> "PROD(" ^ rowToString r ^ ")"
+	 | SUM r	=> "SUM(" ^ rowToString r ^ ")"
+	 | MU t		=> "MU(" ^ id t ^ ")"
+	 | ALL(a,t)	=> "ALL(" ^ id a ^ "," ^ id t ^ ")"
+	 | EXIST(a,t)	=> "EXIST(" ^ id a ^ "," ^ id t ^ ")"
+	 | LAMBDA(a,t)	=> "LAMBDA(" ^ id a ^ "," ^ id t ^ ")"
+	 | APPLY(t1,t2)	=> "APPLY(" ^ id t1 ^ "," ^ id t2 ^ ")"
+	 | ABBREV(t1,t2) => "ABBREV(" ^ id t1 ^ "," ^ id t2 ^ ")"
+
+    and rowToString =
+	fn INDEXED ts   => String.separate "," (Vector.toList(Vector.map id ts))
+	 | NAMED(lts,d) => String.separate "," (List.map fieldToString lts @
+				      (if Option.isNone d then [] else ["..."]))
+    and fieldToString =
+	fn (l,t)        => Label.toString l ^ ":" ^ id t
+
+    fun typToString t = id t ^ "=" ^ typ'ToString(content t)
 
     val currentFn = ref "external"
 
@@ -187,93 +292,489 @@ struct
 	    handle e => (currentFn := s' ; raise e)
 	end
 
-    fun id(ref(_,z)) = Stamp.toString z
-
-    val printTyp' =
-	fn HOLE _	=> "HOLE"
-	 | LINK t	=> "LINK(" ^ id t ^ ")"
-	 | FUN(t1,t2)	=> "FUN(" ^ id t1 ^ "," ^ id t2 ^ ")"
-	 | TUPLE ts	=> "TUPLE(" ^ String.separate ","
-					(Vector.toList(Vector.map id ts)) ^ ")"
-	 | PROD _	=> "PROD(...)"
-	 | SUM _	=> "SUM(...)"
-	 | VAR _	=> "VAR"
-	 | CON _	=> "CON"
-	 | ALL(a,t)	=> "ALL(" ^ id a ^ "," ^ id t ^ ")"
-	 | EXIST(a,t)	=> "EXIST(" ^ id a ^ "," ^ id t ^ ")"
-	 | LAMBDA(a,t)	=> "LAMBDA(" ^ id a ^ "," ^ id t ^ ")"
-	 | APPLY(t1,t2)	=> "APPLY(" ^ id t1 ^ "," ^ id t2 ^ ")"
-	 | MU t		=> "MU(" ^ id t ^ ")"
-	 | ABBREV(t1,t2) => "ABBREV(" ^ id t1 ^ "," ^ id t2 ^ ")"
-
-    fun new t' =
+    val new = fn t' =>
 	let
-	    val z = Stamp.new()
+	    val t = new t'
 	in
-	    print("new " ^ Stamp.toString z ^ " = " ^ printTyp' t' ^
+	    print("new " ^ id t ^ " = " ^ typ'ToString t' ^
 		  " by " ^ !currentFn ^ "\n");
-	    ref(t',z)
+	    t
 	end
 
-    fun replace(t as ref(t'',z), t') =
-	( print("replace " ^ Stamp.toString z ^ " = " ^ printTyp' t'' ^
-		" with " ^ printTyp' t' ^ " by " ^ !currentFn ^ "\n");
-	  t := (t',z)
+    val replace = fn(t,t') =>
+	( print("replace " ^ id t ^ " = " ^ typ'ToString(content t) ^
+		" with " ^ typ'ToString t' ^ " by " ^ !currentFn ^ "\n");
+	  replace(t,t')
 	)
+
+    val replace = fn(t1,t2') =>
+	let val t1' = content t1 in
+	    replace(t1,t2');
+	    if case (t1', t2')
+		 of (HOLE _, LAMBDA _)	=> false
+		  | ( (HOLE _, _)
+		    | (_, LINK _)
+		    | (PROD _, PROD _)
+		    | (SUM _, SUM _)
+		    | (VAR _, VAR _)
+		    | (MU _, MU _) )	=> true
+		  | _ => false
+	    then () else ( print "!!!!"; TextIO.inputLine TextIO.stdIn; () )
+	end
     *)
-
-
-  (* Level management *)
-
-    val globalLevel	= 0
-    val level		= ref(globalLevel+1)
-
-    fun enterLevel()	= level := !level+1
-    fun exitLevel()	= level := !level-1
-    fun resetLevel()	= level := 1
 
 
   (* Kinds *)
 
     exception Kind
 
-    fun isStar STAR		= true
-      | isStar _		= false
+    val kStar			= newKind STAR
+    val kExt			= newKind EXT
+    fun starKind()		= kStar
+    fun extKind()		= kExt
+    fun arrowKind(k1,k2)	= newKind(ARROW(k1,k2))
+    fun singKind t		= let val k = kind t in
+				      if isSingKind k
+				      then k
+				      else newKind(SING t)
+				  end
 
-    fun domKind(ARROW(k1,k2))	= k1
-      | domKind STAR		= raise Kind
+    and kindVar a		= kind a
+    and kind t =
+	case content t
+	  of ( LINK t | MU t
+	     | ABBREV(_,t) )	=> kind t
+	   | HOLE(k,_)		=> k
+	   | VAR(k,_)		=> k
+	   | ABS(k,_)		=> k
+	   | LAMBDA(a,t)	=> arrowKind(kind a, kind t)
+	   | APPLY(t1,t2)	=> #2(asArrowKind(kind t1))
+	   | _			=> starKind()
 
-    fun ranKind(ARROW(k1,k2))	= k2
-      | ranKind STAR		= raise Kind
+    and asArrowKind k =
+	case content k
+	  of (STAR | EXT)	=> raise Kind
+	   | ARROW kk		=> kk
+	   | SING t		=> asArrowKind(kind t)
+    and asSingKind k =
+	case content k
+	  of SING t		=> t
+	   | _			=> raise Kind
+
+    and isStarKind k =
+	case content k
+	  of (STAR | EXT)	=> true
+	   | ARROW _		=> false
+	   | SING t		=> isStarKind(kind t)
+    and isExtKind k =
+	case content k
+	  of EXT		=> true
+	   | (STAR | ARROW _)	=> false
+	   | SING t		=> isExtKind(kind t)
+    and isArrowKind k =
+	case content k
+	  of (STAR | EXT)	=> false
+	   | ARROW _		=> true
+	   | SING t		=> isArrowKind(kind t)
+    and isSingKind k =
+	case content k
+	  of SING _		=> true
+	   | _			=> false
+
+    fun equalsKind(k1,k2) =
+	Cell.equals(k1,k2) orelse
+	case (content k1, content k2)
+	  of (STAR, STAR)	=> true
+	   | (EXT,  EXT)	=> true
+	   | (ARROW(k11,k12),
+	      ARROW(k21,k22))	=> equalsKind(k21,k11) andalso
+				   equalsKind(k12,k22)
+	   | (SING t1, SING t2)	=> equals(t1,t2)
+	   | _			=> false
+
+    fun matchesKind(k1,k2) =
+	Cell.equals(k1,k2) orelse
+	case (content k1, content k2)
+	  of (STAR, STAR)	=> true
+	   | (EXT,  STAR)	=> true
+	   | (EXT,  EXT)	=> true
+	   | (ARROW(k11,k12),
+	      ARROW(k21,k22))	=> matchesKind(k21,k11) andalso
+				   matchesKind(k12,k22)
+	   | (SING t1, SING t2)	=> equals(t1,t2)
+	   | (SING t1, _)	=> matchesKind(kind t1, k2)
+	   | _			=> false
 
 
-    fun kind t			= kind'(typ' t)
-    and kind'(LINK t | MU t)	= kind t
-      | kind'(ABBREV(_,t))	= kind t
-      | kind'(HOLE(k,_))	= k
-      | kind'(VAR(k,_))		= k
-      | kind'(CON(k,_,_))	= k
-      | kind'(LAMBDA(a,t))	= ARROW(kind a, kind t)
-      | kind'(APPLY(t1,t2))	= ranKind(kind t1)
-      | kind' _			= STAR
+  (* Creation and injection, reduction *)
 
-    val kindVar			= kind
+    exception Type
+
+    fun asType t =
+	case content t
+	  of (LINK t | ABBREV(_,t))	=> asType t
+	   | _				=> t
+    fun asType' t = content(asType t)
+
+    fun canonicalVar t	=
+	let val t' = canonical t in
+	    case content t'
+	      of VAR(k,n)		=> if n = globalLevel then ()
+					   else replace(t', VAR(k,globalLevel))
+	       | HOLE(k,n)		=> replace(t', VAR(k,globalLevel))
+	       | _			=> raise Type;
+	    t'
+	end
+
+    fun unknown' k	= new(HOLE(k, !level))
+    fun newVar' k	= new(VAR(k, !level))
+
+    fun abs'(k,p)	= new(ABS(k,p))
+    fun arrow'(t1,t2)	= new(FUN(t1,t2))
+    fun tuple' ts	= new(PROD(INDEXED ts))
+    fun prod' r		= new(PROD r)
+    fun sum' r		= new(SUM r)
+    fun mu' t		= new(MU t)
+    fun all'(a,t)	= new(ALL(canonicalVar a, t))
+    fun exist'(a,t)	= new(EXIST(canonicalVar a, t))
+
+    fun abbrev'(t1,t2)	= new(ABBREV(reduceAbbrevL t1, reduceAbbrevR t2))
+    and reduceAbbrevL t	=
+	case content t
+	  of (ABBREV(t1,_) | LINK t1)	=> reduceAbbrevL t1
+	   | _				=> t
+    and reduceAbbrevR t	=
+	case content t
+	  of (ABBREV(_,t2) | LINK t2)	=> reduceAbbrevR t2
+	   | _				=> t
+
+    fun lambda'(a,t) = reduceEta(canonicalVar a, t)
+    and reduceEta(a,t) =
+	case content t
+	  of APPLY(t1,t2) =>
+		if Cell.equals(a, asType t2) andalso not(occurs(a,t1))
+		then t1
+		else new(LAMBDA(a,t))
+	   | (LINK t1 | ABBREV(_,t1)) =>
+		reduceEta(a,t1)
+	   (* Not needed, since k is never singleton
+	   | (HOLE(k,_) | VAR(k,_) | ABS(k,_)) =>
+		if isSingKind k
+		then reduceEta(a, asSingKind k)
+		else new(LAMBDA(a,t))
+	   *)
+	   | _ =>
+		new(LAMBDA(a,t))
+    and occurs(t1,t2) =
+	let
+	    exception Occurs
+	    fun occurs1 t = if Cell.equals(t1,t) then raise Occurs else ()
+	in
+	    ( app occurs1 t2 ; false ) handle Occurs => true
+	end
+
+    fun apply'(t1,t2) = reduceBeta(t1, t1, canonical t2, NONE)
+    and reduceBeta(t1, t1', t2, to) =
+	case content t1'
+	  of LAMBDA(a,t3) =>
+	     let
+		 val m   = Map.new()
+		 val _   = Map.insert(m, a, t2)
+		 val t3' = subst(m,t3)
+	     in
+		 case to of NONE    => t3'
+			  | SOME t4 => abbrev'(apply'(t4,t2), t3')
+	     end
+	   | LINK t1' =>
+		reduceBeta(t1, t1', t2, to)
+	   | ABBREV(t11,t12) =>
+		reduceBeta(t1, t12, t2, SOME(Option.getOpt(to,t11)))
+	   (* Not needed, since k is never singleton
+	   | (HOLE(k,_) | VAR(k,_) | ABS(k,_)) =>
+		if isSingKind k
+		then reduceBeta(t1, asSingKind k, t2, to)
+		else new(APPLY(t1,t2))
+	   *)
+	   | _ =>
+		new(APPLY(t1,t2))
+
+    (*DEBUG*)
+    val abbrev' = trace abbrev' "abbrev'"
+    val lambda' = trace lambda' "lambda'"
+    val apply'  = trace apply'  "apply'"
+
+    (* kind-safe interface *)
+
+    fun canonicalStar t	= let val t' = canonical t in
+			      if isStarKind(kind t')
+			      then t'
+			      else raise Kind
+			  end
+
+    fun unknown k	= if isSingKind k then asSingKind k else unknown' k
+    val newVar		= newVar'
+    fun var a		= let val k = kind a in
+			  if isSingKind k then asSingKind k else a end
+    fun abs(k,p)	= if isSingKind k then asSingKind k else abs'(k,p)
+    fun arrow(t1,t2)	= arrow'(canonicalStar t1, canonicalStar t2)
+    fun tuple ts	= tuple'(Vector.map canonicalStar ts)
+    val prod		= prod'
+    val sum		= sum'
+    fun all(a,t)	= all'(a, canonicalStar t)
+    fun exist(a,t)	= exist'(a, canonicalStar t)
+    fun abbrev(t1,t2)	= if matchesKind(kind t2, kind t1)
+			  then abbrev'(t1,t2)
+			  else raise Kind
+    val lambda		= lambda'
+    fun apply(t1,t2)	= if matchesKind(kind t2, #1(asArrowKind(kind t1)))
+			  then apply'(t1,t2)
+			  else raise Kind
 
 
-  (* Type graph traversal *)
+  (* Rows *)
 
-    structure Map = MkRefMap(structure Stamp = Stamp
-			     type t          = typ' * Stamp.t
-			     val stamp       = #2 : 'a * 'b -> 'b)
+    exception Row
 
-    (* We have two ways to traverse types:
+    fun emptyRow()		= INDEXED #[]
+    fun unknownRow()		= NAMED([], SOME(!level))
+
+    fun isIndexed r =
+	case r
+	  of INDEXED _		=> true
+	   | NAMED(lts,d)	=> Option.isNone d andalso isIndexed'(lts,1)
+    and isIndexed'(lts,i) =
+	case lts
+	  of []			=> true
+	   | (l,t)::lts'	=>
+	case Label.toInt l
+	  of NONE		=> false
+	   | SOME i'		=> i' = i andalso isIndexed'(lts',i+1)
+
+    fun indexedToNamed ts =
+	List.tabulate(Vector.length ts,
+		      fn i => (Label.fromInt(i+1), Vector.sub(ts,i)))
+
+    fun namedToIndexed lts =
+	Vector.rev(Vector.fromList(List.mapi namedToIndexed' lts))
+	handle Overflow => raise Row
+    and namedToIndexed'(i,(l,t)) =
+	case Label.toInt l
+	  of NONE		=> raise Row
+	   | SOME i'		=> if i' = i+1 then t else raise Row
+
+    fun asIndexed r =
+	case r
+	  of INDEXED ts		=> ts
+	   | NAMED(lts,NONE)	=> namedToIndexed lts
+	   | NAMED(_,SOME _)	=> raise Row
+    fun asNamed r =
+	case r
+	  of INDEXED ts		=> (indexedToNamed ts, NONE)
+	   | NAMED x		=> x
+
+    fun extendRow(l,t,r)	= let val (lts,d) = asNamed r in
+				     NAMED(extendRow'(l,canonicalStar t,lts), d)
+				  end
+    and extendRow'(l,t, [])                   = [(l,t)]
+      | extendRow'(l,t, lts as (l',t')::lts') =
+	case Label.compare(l,l')
+	  of EQUAL		=> raise Row
+	   | LESS		=> (l,t)::lts
+	   | GREATER		=> (l',t')::extendRow'(l,t,lts')
+
+    fun isEmptyRow r =
+	case r
+	  of INDEXED #[]	=> true
+	   | NAMED([],_)	=> true
+	   | _			=> false
+
+    fun isUnknownRow r =
+	case r
+	  of INDEXED _		=> false
+	   | NAMED(_,d)		=> isSome d
+
+    fun hdRow r =
+	(case r
+	   of INDEXED ts	=> (Label.fromInt 1, Vector.sub(ts,0))
+	    | NAMED(lts,d)	=> List.hd lts
+	)
+	handle(Subscript|Empty)	=> raise Row
+
+    fun tlRow r =
+	let
+	    val (lts,d) = asNamed r
+	in
+	    NAMED(List.tl lts, d) handle Empty => raise Row
+	end
+
+    fun lookupRow(r,l) =
+	case r
+	  of INDEXED ts		=> (Vector.sub(ts,Option.valOf(Label.toInt l)-1)
+				    handle (Option | Subscript) => raise Row)
+	   | NAMED(lts,d)	=> lookupRow'(lts,l)
+    and lookupRow'([], l) =
+	    raise Row
+      | lookupRow'((l',t)::lts, l) =
+	case Label.compare(l',l)
+	  of EQUAL		=> t
+	   | LESS		=> lookupRow'(lts,l)
+	   | GREATER		=> raise Row
+
+
+  (* Fixed point for recursive types *)
+
+    (*
+     * The fix function takes a list of type equations of the form
+     *   ci = \vi1 .. \vin . tau
+     * where tau is a sum or product type without holes, and constructs the
+     * fixed point type graph of these mutual recursive equations. The function
+     * raises Domain if one of the LHSs is not a hole (or an abbreviation
+     * thereof) or a RHS does not meet the above requirements.
+     *)
+
+    exception Fix
+
+    fun fixLHS(t, to) =
+	case content t
+	  of LINK t1       => fixLHS(t1, to)
+	   | ABBREV(t1,t2) => fixLHS(t2, SOME(Option.getOpt(to, t1)))
+	   | HOLE _        => (t, to)
+	   | _             => raise Fix
+
+    fun fixRHS t =
+	case content t
+	  of (LINK t1 | ABBREV(_,t1) | LAMBDA(_,t1)) => fixRHS t1
+	   | (PROD _ | SUM _) => () (*if isClosed t then () else raise Fix*)
+	   | _                => raise Fix
+
+    fun tie(t1,t2) =
+	let
+	    val (t1',to) = fixLHS(t1, NONE)
+	    val  _       = fixRHS t2
+	    val  t2'     = mu' t2
+	in
+	    if not(matchesKind(kind t2', kind t1')) then raise Fix else
+	    replace(t1', case to of NONE    => LINK t2'
+				  | SOME t3 => ABBREV(t3,t2'))
+	end
+
+    val fix = Vector.app tie
+
+    (*DEBUG*)
+    val fix = trace fix "fix"
+
+
+  (* Projections and extractions *)
+
+    fun isAbbrev t =
+	case content t
+	  of LINK t1			=> isAbbrev t1
+	   | ABBREV _			=> true
+	   | _				=> false
+    fun asAbbrev t =
+	case content t
+	  of LINK t1			=> asAbbrev t1
+	   | ABBREV tt			=> tt
+	   | _				=> raise Type
+
+    fun isUnknown t	= case asType' t of HOLE _   => true | _ => false
+    fun isVar t		= case asType' t of VAR _    => true | _ => false
+    fun isAbs t		= case asType' t of ABS _    => true | _ => false
+    fun isArrow t	= case asType' t of FUN _    => true | _ => false
+    fun isTuple t	= case asType' t of PROD r   => isIndexed r | _ => false
+    fun isProd t	= case asType' t of PROD _   => true | _ => false
+    fun isSum t		= case asType' t of SUM _    => true | _ => false
+    fun isMu t		= case asType' t of MU _     => true | _ => false
+    fun isAll t		= case asType' t of ALL _    => true | _ => false
+    fun isExist t	= case asType' t of EXIST _  => true | _ => false
+    fun isLambda t	= case asType' t of LAMBDA _ => true | _ => false
+    fun isApply t	= case asType' t of APPLY _  => true | _ => false
+
+    fun asVar t		= case asType' t of VAR _     => t  | _ => raise Type
+    fun asAbs t		= case asType' t of ABS(k,p)  => p  | _ => raise Type
+    fun asArrow t	= case asType' t of FUN tt    => tt | _ => raise Type
+    fun asTuple t	= case asType' t of PROD r    => (asIndexed r handle Row
+								=> raise Type)
+							    | _ => raise Type
+    fun asProd t	= case asType' t of PROD r    => r  | _ => raise Type
+    fun asSum t		= case asType' t of SUM r     => r  | _ => raise Type
+    fun asMu t		= case asType' t of MU t      => t  | _ => raise Type
+    fun asAll t		= case asType' t of ALL at    => at | _ => raise Type
+    fun asExist t	= case asType' t of EXIST at  => at | _ => raise Type
+    fun asLambda t	= case asType' t of LAMBDA at => at | _ => raise Type
+    fun asApply t	= case asType' t of APPLY tt  => tt | _ => raise Type
+
+    (* modulo unrolling *)
+
+    fun isType' t =
+	case content t
+	  of (LINK t1 | ABBREV(_,t1))
+				=> isType' t1
+	   | APPLY _		=> isTypeApply(t,0)
+	   | t'			=> t'
+    and isTypeApply(t, n) =
+	case content t
+	  of (LINK t1 | ABBREV(_,t1))
+				=> isTypeApply(t1,n)
+	   | APPLY(t1,t2)	=> isTypeApply(t1,n+1)
+	   | MU t1		=> isTypeFunc(t1,n)
+	   | _			=> APPLY(t,t)	(*dummy*)
+    and isTypeFunc(t, 0) = content t
+      | isTypeFunc(t, n) =
+	case content t
+	  of (LINK t1 | MU t1)	=> isTypeFunc(t1,n)
+	   | ABBREV(t1,t2)	=> isTypeFunc(t2,n)
+	   | LAMBDA(a,t1)	=> isTypeFunc(t1,n-1)
+	   | _			=> APPLY(t,t)	(*dummy*)
+
+    fun isTuple' t	= case isType' t of PROD r   => isIndexed r | _ => false
+    fun isProd' t	= case isType' t of PROD _   => true | _ => false
+    fun isSum' t	= case isType' t of SUM _    => true | _ => false
+
+    fun asType' t =
+	case content t
+	  of (LINK t1 | ABBREV(_,t1))	=> asType' t1
+	   | MU t1			=> content t1
+	   | t' as APPLY _		=> asTypeApply(t',t,[])
+	   | t'				=> t'
+    and asTypeApply(t',t,ts) =
+	case content t
+	  of APPLY(t1,t2)		=> asTypeApply(t',t1,t2::ts)
+	   | (LINK t1 | ABBREV(_,t1))	=> asTypeApply(t',t1,ts)
+	   | MU t1			=> let val m = Map.new() in
+					       Map.insert(m,t,t);
+					       asTypeLambda(t',m,t1,ts)
+					   end
+	   | _				=> t'
+    and asTypeLambda(t',m,t,ts) =
+	case (content t, ts)
+	  of (_, [])			=> content(subst(m,t))
+	   | (LAMBDA(a,t1), t2::ts')	=> (Map.insert(m,a,t2);
+					    asTypeLambda(t',m,t1,ts'))
+	   | ((LINK t1|ABBREV(_,t1)),_)	=> asTypeLambda(t',m,t1,ts)
+	   |  _				=> t'
+
+    (*DEBUG*)
+    val asType'		= trace asType' "asType'"
+
+    fun asTuple' t	= case asType' t of PROD r => (asIndexed r handle Row =>
+								   raise Type)
+							 | _ => raise Type
+    fun asProd' t	= case asType' t of PROD r => r  | _ => raise Type
+    fun asSum' t	= case asType' t of SUM r  => r  | _ => raise Type
+
+
+  (* General purpose type graph traversal *)
+
+    (* We have two ways of traversing types:
      * - ignoring abbreviations (eg. for closure check)
      * - not ignoring abbreviations (eg. realisations, lifting)
      *)
 
-    fun app1'(( HOLE _
+    fun app1(t,f,b)			= app1'(content t, f, b)
+    and app1'(( HOLE _
 	      | VAR _
-	      | CON _ ), f, b)		= ()
+	      | ABS _ ), f, b)		= ()
       | app1'(( LINK t
 	      | MU t ), f, b)		= f t
       | app1'(( ALL(a,t)
@@ -282,18 +783,17 @@ struct
       | app1'(( FUN(t1,t2)
 	      | APPLY(t1,t2) ), f, b)	= (f t1 ; f t2)
       | app1'(( ABBREV(t1,t2) ), f, b)	= if b then (f t1 ; f t2) else f t2
-      | app1'(( TUPLE ts ), f, b)	= Vector.app f ts
       | app1'(( PROD r
-	      | SUM r ), f, b)		= appRow(r,f)
+	      | SUM r ), f, b)		= appRow1(r,f)
 
-    and appRow(FIELD(_,t,r), f)		= (f t ; appRow(r,f))
-      | appRow(RHO(_,r), f)		= appRow(r,f)
-      | appRow(NIL, f)			= ()
+    and appRow1(INDEXED ts, f)		= Vector.app f ts
+      | appRow1(NAMED(lts,d), f)	= List.app (f o #2) lts
 
 
-    fun foldl1'(( HOLE _
+    fun foldl1(t,f,c,b)			= foldl1'(content t, f, c, b)
+    and foldl1'(( HOLE _
 		| VAR _
-		| CON _ ), f,c,b)	= c
+		| ABS _ ), f,c,b)	= c
       | foldl1'(( LINK t
 		| MU t ), f,c,b)	= f(t,c)
       | foldl1'(( ALL(a,t)
@@ -302,439 +802,298 @@ struct
       | foldl1'(( FUN(t1,t2)
 		| APPLY(t1,t2)), f,c,b)	= f(t2, f(t1,c))
       | foldl1'(( ABBREV(t1,t2)),f,c,b)	= if b then f(t2, f(t1,c)) else f(t2,c)
-      | foldl1'(( TUPLE ts ), f,c,b)	= Vector.foldl f c ts
       | foldl1'(( PROD r
-		| SUM r ), f,c,b)	= foldlRow(r,f,c)
+		| SUM r ), f,c,b)	= foldlRow1(r,f,c)
 
-    and foldlRow(FIELD(_,t,r), f,c)	= foldlRow(r, f, f(t,c))
-      | foldlRow(RHO(_,r), f,c)		= foldlRow(r, f, c)
-      | foldlRow(NIL, f,c)		= c
+    and foldlRow1(INDEXED ts, f,c)	= Vector.foldl f c ts
+      | foldlRow1(NAMED(lts,d), f,c)	= List.foldl (fn((l,t),c)=>f(t,c)) c lts
 
-    fun appHow(b,f,t) =
+    fun app'(b,f,t) =
 	let
 	    val m = Map.new()
 
-	    fun app t = if Map.member(m,t) then () else
-			( f t;
-			  Map.insert(m,t,());
-			  app1'(typ' t, app, b)
-			)
+	    fun app t =
+		if Map.member(m,t) then () else
+		( f t;
+		  Map.insert(m,t,());
+		  app1(t,app,b)
+		)
 	in
 	    app t
 	end
 
-    fun app f t          = appHow(true, f, t)
-    fun appNoAbbrevs f t = appHow(false, f, t)
+    fun app f t          = app'(true, f, t)
+    fun appNoAbbrevs f t = app'(false, f, t)
 
-    fun foldlHow(b,f,c,t) =
+    fun foldl'(b,f,c,t) =
 	let
 	    val m = Map.new()
 
-	    fun fold(t,c) = if Map.member(m,t) then c else
-			    let
-				val c' = f(t,c)
-			    in
-				Map.insert(m,t,());
-				foldl1'(typ' t, fold, c', b)
-			    end
-	in
-	    fold(t,c)
-	end
-
-    fun foldl f b t          = foldlHow(true, f, b, t)
-    fun foldlNoAbbrevs f b t = foldlHow(false, f, b, t)
-
-
-  (* Cloning *)
-
-    type clone_state   = typ Map.t
-
-    fun cloneStart()   = Map.new()
-    fun cloneCont(m,t) =
-	let
-	    (* We want to be able to handle recursive types, so we have to
-	     * implement graph copying here.
-	     *)
-
-	    fun dup t1 =
-(*ASSERT	assert not(Map.member(m,t1)) *)
-		if Map.member(m,t1) then raise Assert.failure else
-		(* Without cycles, this could be
+	    fun foldl(t,c) =
+		if Map.member(m,t) then c else
 		let
-		    val t2 = new(clone'(typ' t1'))
+		    val c' = f(t,c)
 		in
-		    Map.insert(m,t1,t2);
-		    t2
+		    Map.insert(m,t,());
+		    foldl1(t,foldl,c',b)
 		end
-		*)
-		let
-		    val t1' = typ' t1
-		    val t2  = new t1'
-		in
-		    Map.insert(m,t1,t2);
-		    replace(t2, clone' t1');
-		    t2
-		end
-
-	    and clone t1 =
-		case typ' t1
-		  of LINK t  => clone t
-		   | HOLE _  => t1
-		   | VAR _   => Option.getOpt(Map.lookup(m,t1), t1)
-		   | _       =>
-		case Map.lookup(m,t1)
-		  of SOME t2 => t2
-		   | NONE    => dup t1
-
-	    and clone'(FUN(t1,t2))	= FUN(clone t1, clone t2)
-	      | clone'(TUPLE ts)	= TUPLE(Vector.map clone ts)
-	      | clone'(PROD r)		= PROD(cloneRow r)
-	      | clone'(SUM r)		= SUM(cloneRow r)
-	      | clone'(t' as ( CON _
-	      		     | VAR _ ))	= t'
-	      | clone'(ALL(a,t))	= ALL(dup(canonical a), clone t)
-	      | clone'(EXIST(a,t))	= EXIST(dup(canonical a), clone t)
-	      | clone'(LAMBDA(a,t))	= LAMBDA(dup(canonical a), clone t)
-	      | clone'(APPLY(t1,t2))	= APPLY(clone t1, clone t2)
-	      | clone'(MU t)		= MU(clone t)
-	      | clone'(ABBREV(t1,t2))	= ABBREV(clone t1, clone t2)
-	      | clone' _		= raise Assert.failure
-
-	    and cloneRow(FIELD(a,t,r))	= FIELD(a, clone t, cloneRow r)
-	      | cloneRow(RHO(n,r))	= RHO(ref(!n), cloneRow r)
-	      | cloneRow(NIL)		= NIL
 	in
-	    clone t
+	    foldl(t,c)
 	end
 
-    (*DEBUG*)
-    val cloneCont = trace cloneCont "clone"
-
-    fun clone t = cloneCont(cloneStart(), t)
+    fun foldl f c t          = foldl'(true, f, c, t)
+    fun foldlNoAbbrevs f c t = foldl'(false, f, c, t)
 
 
-  (* Occur check (not used by unification) *)
+  (* Cloning for substitution. *)
 
-    exception Occurs
-
-    fun occurs(t1,t2) =
-	let
-	    fun occurs t = if t1 = t then raise Occurs else ()
-	in
-	    ( app occurs t2 ; false ) handle Occurs => true
-	end
-
-
-  (* Reduction to head normal form *)
-
-    (*UNFINISHED: avoid multiple cloning of curried lambdas somehow *)
-
-    fun reduce t =
-	case typ' t
-	  of APPLY(t1,t2)		=> reduceApply(t, t1, t2, NONE)
-	   | (LINK t1 | ABBREV(_,t1))	=> reduce t1
-	   | _				=> ()
-
-    and reduceApply(t, t1, t2, to) =
-	case typ' t1
-	  of LAMBDA(a,_) =>
-	     ( replace(t, HOLE(kind a, !level))
-	     ; case typ'(clone t1)
-		 of LAMBDA(a,t11) =>
-		     ( replace(a, LINK t2)
-		     ; replace(t, case to
-				    of NONE   => LINK t11
-				     | SOME t => ABBREV(new(APPLY(t,t2)), t11))
-		     ; reduce t
-		     )
-		  | _ => raise Assert.failure
-	     )
-	   | LINK t1		=> reduceApply(t, t1, t2, to)
-	   | ABBREV(t11,t12)	=> reduceApply(t, t12, t2,
-					       SOME(Option.getOpt(to,t11)))
-	   | _			=> ()
-
-    (*DEBUG*)
-    val reduce = trace reduce "reduce"
-
-    (*
-     * We don't normally do eta-reduction, since it is expensive.
-     * During unification we curently allow no lambdas anyway.
-     * Eta-reduction is still needed however for equals, to equate
-     * eta-convertible type functions. It's done on demand.
+    (* Minimizes the part of the graph that is being copied.
+     *
+     * To make handling of recursive types efficient we only descent
+     * below MU if the rea is non-empty! Since we only use the function
+     * with empty rea to substitute type variables, and no free variables
+     * may appear below mu, this is okay. Otherwise one could still enter
+     * some dummy entry...
+     *
+     * For recursive types, we do not take care of inner sharing to avoid
+     * another map (inner sharing will be rare because the compiler does not
+     * construct recursive types by unification, they have to
+     * be explicitly written down by the programmer which limits their size
+     * to linear unfoldings).
+     * --- I don't understand this comment anymore... 8-}
      *)
 
-    fun reduceEta t = reduceEta'(t, false)
+    fun build(mt,mk, rea, t) =
+	case Map.lookup(mt,t)
+	  of SOME t'		=> t'
+	   | NONE		=>
+	case content t
+	  of LINK t1		=> build(mt,mk, rea, t1)
+	   | (HOLE _ | VAR _)	=> buildOld(mt,t)
+				   (* Mh, we cannot handle substitution in
+				    * singleton kinds in holes and vars... *)
+	   | ABS(k,p) 		=> (case PathMap.lookup(rea, p)
+				      of SOME t' =>
+					     if matchesKind(kind t',k)
+					     then buildNew(mt,t,t')
+					     else raise Kind
+				       | NONE =>
+					 let val k' = buildKind(mt,mk,rea,k) in
+					     if Cell.equals(k,k')
+					     then buildOld(mt,t)
+					     else buildNew(mt,t,abs'(k',p))
+					 end
+				   )
+	   | FUN(t1,t2)		=> buildPair(mt,mk, rea, t, arrow',t1,t2)
+	   | PROD r		=> buildRow(mt,mk, rea, t, prod',r)
+	   | SUM r		=> buildRow(mt,mk, rea, t, sum',r)
+	   | ALL(a,t1)		=> buildBind(mt,mk, rea, t, all',a,t1)
+	   | EXIST(a,t1)	=> buildBind(mt,mk, rea, t, exist',a,t1)
+	   | LAMBDA(a,t1)	=> buildBind(mt,mk, rea, t, lambda',a,t1)
+	   | APPLY(t1,t2)	=> buildPair(mt,mk, rea, t, apply',t1,t2)
+	   | ABBREV(t1,t2)	=> buildPair(mt,mk, rea, t, abbrev',t1,t2)
+	   | MU t1		=> if not(hasFree(ref [t], mt,mk, rea, t1))
+				   then buildOld(mt, t)
+				   else let
+				       val t'  = buildNew(mt, t, new(MU t1))
+				       val t1' = build(mt,mk, rea, t1)
+				   in
+				       replace(t', MU t1'); t'
+				   end
+    and buildOld(mt,t)    = (Map.insert(mt,t,t); t)
+    and buildNew(mt,t,t') = (Map.insert(mt,t,t'); t')
 
-    and reduceEta'(t, modified) =
-	case typ' t
-	  of (LINK t1 | ABBREV(_,t1))	=> reduceEta'(t1, modified)
-	   | LAMBDA _			=> reduceLambda(t, t, [], modified)
-	   | _				=> modified
-
-    and reduceLambda(t, t0, vs, modified) =
-	case (typ' t0, vs)
-	  of ((LINK t1 | ABBREV(_,t1)), vs)
-	   				=> reduceLambda(t, t1, vs, modified)
-	   | (LAMBDA(a,t1), vs)		=> reduceLambda(t, t1, a::vs, modified)
-	   | (APPLY(t1,t2), a::vs)	=> reduceLambda'(t,t1,t2,a,vs,modified)
-	   | (_, [])			=> ( replace(t, LINK t0);
-					     reduceEta'(t, true) )
-	   | _				=> modified
-
-    and reduceLambda'(t, t1, t2, a, vs, modified) =
-	case typ' t2
-	  of (LINK t21 | ABBREV(_,t21))	=> reduceLambda'(t,t1,t21,a,vs,modified)
-	   | _				=> reduceLambda''(t,t1,t2,a,vs,modified)
-
-    and reduceLambda''(t, t1, t2, a, vs, modified) =
-	case typ' a
-	  of LINK b 			=> reduceLambda''(t,t1,t2,b,vs,modified)
-	   | _       			=> if t2 = a andalso not(occurs(a,t1))
-					   then reduceLambda(t,t1, vs, modified)
-					   else modified
-
-    (*DEBUG*)
-    val reduceEta = trace reduceEta "reduceEta"
-
-
-  (* Creation and injections *)
-
-    fun unknown' k	= HOLE(k, !level)
-    fun unknown k	= new(unknown' k)
-
-    fun inArrow tt	= new(FUN tt)
-    fun inTuple ts	= new(TUPLE ts)
-    fun inProd r	= new(PROD r)
-    fun inSum r		= new(SUM r)
-    fun inVar a		= a
-    fun inCon c		= new(CON c)
-    fun inAll at	= new(ALL at)
-    fun inExist at	= new(EXIST at)
-    fun inLambda at	= let val t = new(LAMBDA at) in reduceEta t ; t end
-    fun inApply(t1,t2)	= let val t = new(APPLY(t1,t2)) in reduce t ; t end
-    fun inMu t		= new(MU t)	(* t must be lambdas of sum/prod/tuple*)
-    fun inAbbrev(t1,t2)	= new(ABBREV(t1,t2))
-
-    fun var k		= new(VAR(k, !level))
-
-
-  (* Operations on rows *)
-
-    exception Row
-
-    fun unknownRow()		= RHO(ref(!level), NIL)
-    fun emptyRow()		= NIL
-
-    fun openRow(r as RHO _)	= r
-      | openRow r		= RHO(ref(!level), r)
-
-    fun extendRow(l,t,NIL)	= FIELD(l,t,NIL)
-      | extendRow(l,t,RHO(n,r))	= RHO(n, extendRow(l,t,r))
-      | extendRow(l1,t1, r1 as FIELD(l2,t2,r2)) =
-	case Label.compare(l1,l2)
-	  of EQUAL   => raise Row
-	   | LESS    => FIELD(l1, t1, r1)
-	   | GREATER => FIELD(l2, t2, extendRow(l1,t1,r2))
-
-    fun tupToRow  ts			= tupToRow'(ts,0)
-    and tupToRow'(ts,i)			= if i = Vector.length ts then
-					      NIL
-					  else
-					      FIELD(Label.fromInt(i+1),
-						    Vector.sub(ts,i),
-						    tupToRow'(ts,i+1))
-
-    fun rowToTup r			= rowToTup'(r,1,[])
-    and rowToTup'(RHO _,i,ts)		= raise Row
-      | rowToTup'(NIL,i,ts)		= Vector.rev(Vector.fromList ts)
-      | rowToTup'(FIELD(a,t,r),i,ts)	= case Label.toLargeInt a
-					    of NONE     => raise Row
-					     | SOME i'  =>
-					  (if Int.fromLarge i' <> i then
-					      raise Row
-					   else
-					      rowToTup'(r,i+1,t::ts)
-					  ) handle Overflow => raise Row
-
-    fun isTupRow r			= (rowToTup r; true) handle Row => false
-
-    fun isEmptyRow(NIL | RHO(_,NIL))	= true
-      | isEmptyRow _			= false
-
-    fun isUnknownRow(RHO _)		= true
-      | isUnknownRow _			= false
-
-    fun headRow(FIELD(a,t,r))		= (a,t)
-      | headRow(RHO(_,r))		= headRow r
-      | headRow(NIL)			= raise Row
-
-    fun tailRow(FIELD(a,t,r))		= r
-      | tailRow(RHO(n,r))		= RHO(n, tailRow r)
-      | tailRow(NIL)			= raise Row
-
-    fun lookupRow(NIL, a)		= raise Row
-      | lookupRow(RHO(_,r), a)		= lookupRow(r,a)
-      | lookupRow(FIELD(a',t,r), a)	= case Label.compare(a',a)
-					    of EQUAL   => t
-					     | LESS    => lookupRow(r,a)
-					     | GREATER => raise Row
-
-
-  (* Projections and extractions *)
-
-    exception Type
-
-    fun isAbbrev t			= isAbbrev'(typ' t)
-    and isAbbrev'(LINK t)		= isAbbrev t
-      | isAbbrev'(ABBREV _)		= true
-      | isAbbrev' _			= false
-
-    fun asAbbrev t			= asAbbrev'(typ' t)
-    and asAbbrev'(LINK t)		= asAbbrev t
-      | asAbbrev'(ABBREV tt)		= tt
-      | asAbbrev' _			= raise Type
-
-    fun asType t =
-	case typ' t
-	  of (LINK t | ABBREV(_,t))	=> asType t
-(*NEW	   | t' as LAMBDA _		=> if reduceEta t then asType t else t' *)
-	   | t'				=> t'
-
-    fun isUnknown t	= case asType t of HOLE _   => true | _ => false
-    fun isArrow t	= case asType t of FUN _    => true | _ => false
-    fun isTuple t	= case asType t of PROD r   => isTupRow r
-					 | TUPLE _  => true | _ => false
-    fun isProd t	= case asType t of PROD _   => true
-					 | TUPLE _  => true | _ => false
-    fun isSum t		= case asType t of SUM _    => true | _ => false
-    fun isVar t		= case asType t of VAR _    => true | _ => false
-    fun isCon t		= case asType t of CON _    => true | _ => false
-    fun isAll t		= case asType t of ALL _    => true | _ => false
-    fun isExist t	= case asType t of EXIST _  => true | _ => false
-    fun isLambda t	= case asType t of LAMBDA _ => true | _ => false
-    fun isApply t	= case asType t of APPLY _  => true | _ => false
-    fun isMu t		= case asType t of MU _     => true | _ => false
-
-    fun asArrow t	= case asType t of FUN tt    => tt | _ => raise Type
-    fun asTuple t	= case asType t of PROD r    => (rowToTup r handle Row
-							       => raise Type)
-					 | TUPLE ts  => ts | _ => raise Type
-    fun asProd t	= case asType t of TUPLE ts  => tupToRow ts
-					 | PROD r    => r  | _ => raise Type
-    fun asSum t		= case asType t of SUM r     => r  | _ => raise Type
-    fun asVar t		= case asType t of VAR _     => t  | _ => raise Type
-    fun asCon t		= case asType t of CON c     => c  | _ => raise Type
-    fun asAll t		= case asType t of ALL at    => at | _ => raise Type
-    fun asExist t	= case asType t of EXIST at  => at | _ => raise Type
-    fun asLambda t	= case asType t of LAMBDA at => at | _ => raise Type
-    fun asApply t	= case asType t of APPLY tt  => tt | _ => raise Type
-    fun asMu t		= case asType t of MU t      => t  | _ => raise Type
-
-    fun isType t =
-	case typ' t
-	  of (LINK t1 | MU t1 | ABBREV(_,t1))
-				=> isType t1
-	   | APPLY _		=> isTypeApply(t,0)
-(*NEW	   | t' as LAMBDA _	=> if reduceEta t then isType t else t'*)
-	   | t'			=> t'
-    and isTypeApply(t, n) =
-	case typ' t
-	  of (LINK t1 | MU t1)	=> isTypeFunc(t1,n)
-	   | APPLY(t1,t2)	=> isTypeApply(t1,n+1)
-	   | ABBREV(t1,t2)	=> isTypeApply(t2,n)
-	   | _			=> APPLY(t,t)	(*dummy*)
-    and isTypeFunc(t, 0) = typ' t
-      | isTypeFunc(t, n) =
-	case typ' t
-	  of (LINK t1 | MU t1)	=> isTypeFunc(t1,n)
-	   | ABBREV(t1,t2)	=> isTypeFunc(t2,n)
-	   | LAMBDA(a,t1)	=> isTypeFunc(t1,n-1)
-	   | _			=> APPLY(t,t)	(*dummy*)
-
-    fun isUnknown' t	= case isType t of HOLE _   => true | _ => false
-    fun isArrow' t	= case isType t of FUN _    => true | _ => false
-    fun isTuple' t	= case isType t of PROD r   => isTupRow r
-					 | TUPLE _  => true | _ => false
-    fun isProd' t	= case isType t of PROD _   => true
-					 | TUPLE _  => true | _ => false
-    fun isSum' t	= case isType t of SUM _    => true | _ => false
-    fun isVar' t	= case isType t of VAR _    => true | _ => false
-    fun isCon' t	= case isType t of CON _    => true | _ => false
-    fun isAll' t	= case isType t of ALL _    => true | _ => false
-    fun isExist' t	= case isType t of EXIST _  => true | _ => false
-    fun isLambda' t	= case isType t of LAMBDA _ => true | _ => false
-    fun isApply' t	= case isType t of APPLY _  => true | _ => false
-
-    fun asType t =
-	case typ' t
-	  of (LINK t1 | MU t1 | ABBREV(_,t1))
-					=> asType t1
-	   | t' as APPLY _		=> asTypeApply(t',t,[])
-(*NEW	   | t' as LAMBDA _		=> if reduceEta t then asType t else t'*)
-	   | t'				=> t'
-    (* Note that we can only legally have a LAMBDA node following an APPLY
-       node if there is a MU node inbetween. *)
-    and asTypeApply(t', t, ts) =
-	case typ' t
-	  of (LINK t1 | ABBREV(_,t1))	=> asTypeApply(t', t1, ts)
-	   | APPLY(t1,t2)		=> asTypeApply(t', t1, t2::ts)
-	   | MU _			=> let (* unroll *)
-					       val tt = clone t
-					       val t1 = asMu tt
-					   in
-					       replace(tt, LINK t);
-					       asTypeFunc(t1, ts)
-					   end
-	   | _				=> t'
-    and asTypeFunc(t, []) = typ' t
-      | asTypeFunc(t, t2::ts) =
-	case typ' t
-	  of (LINK t1 | MU t1 | ABBREV(_,t1))
-					=> asTypeFunc(t1,ts)
-	   | LAMBDA(a,t1)		=> ( replace(a, LINK t2);
-					     asTypeFunc(t1, ts)
-					   )
-	   | _				=> asTypeFunc(new(APPLY(t,t2)), ts)
-
-    (*DEBUG*)
-    val asType = trace asType "asType"
-
-    fun asArrow' t	= case asType t of FUN tt    => tt | _ => raise Type
-    fun asTuple' t	= case asType t of PROD r    => (rowToTup r handle Row
-							       => raise Type)
-					 | TUPLE ts  => ts | _ => raise Type
-    fun asProd' t	= case asType t of TUPLE ts  => tupToRow ts
-					 | PROD r    => r  | _ => raise Type
-    fun asSum' t	= case asType t of SUM r     => r  | _ => raise Type
-    fun asVar' t	= case asType t of VAR _     => t  | _ => raise Type
-    fun asCon' t	= case asType t of CON c     => c  | _ => raise Type
-    fun asAll' t	= case asType t of ALL at    => at | _ => raise Type
-    fun asExist' t	= case asType t of EXIST at  => at | _ => raise Type
-    fun asLambda' t	= case asType t of LAMBDA at => at | _ => raise Type
-    fun asApply' t	= case asType t of APPLY tt  => tt | _ => raise Type
-
-
-    fun pathCon(_,_,p)	= p
-    fun path t		= pathCon(asCon t)
-
-    fun paths t =
-    	let
-	    val s = PathMap.new()
-
-	    fun path t = case typ' t of CON(k,_,p) => PathMap.insert(s,p,k)
-				      | _          => ()
+    and buildBind(mt,mk, rea, t, toTyp, a,t1) =
+	let
+	    val t1  = canonical t1
+	    val t1' = case Map.lookup(mt,a)
+			of NONE    => build(mt,mk,rea,t1)
+			 | SOME a' => (Map.insert(mt,a,a);
+				       build(mt,mk,rea,t1)
+				       before Map.insert(mt,a,a'))
 	in
-	    appNoAbbrevs path t;
-	    s
+	    if Cell.equals(t1,t1')
+	    then buildOld(mt, t)
+	    else buildNew(mt, t, toTyp(a,t1'))
 	end
+
+    and buildPair(mt,mk, rea, t, toTyp, t1,t2) =
+	let
+	    val t1  = canonical t1
+	    val t2  = canonical t2
+	    val t1' = build(mt,mk,rea,t1)
+	    val t2' = build(mt,mk,rea,t2)
+	in
+	    if Cell.equals(t1,t1') andalso Cell.equals(t2,t2')
+	    then buildOld(mt, t)
+	    else buildNew(mt, t, toTyp(t1',t2'))
+	end
+
+    and buildRow(mt,mk, rea, t, toTyp, INDEXED ts) =
+	let
+	    val ts' = Vector.map (fn ti => build(mt,mk,rea,ti)) ts
+	in
+	    if VectorPair.all (fn(t,t') => Cell.equals(canonical t,t')) (ts,ts')
+	    then buildOld(mt, t)
+	    else buildNew(mt, t, toTyp(INDEXED ts'))
+	end
+      | buildRow(mt,mk, rea, t, toTyp, NAMED(lts,d)) =
+	let
+	    val lts' = List.map (fn(li,ti) => (li, build(mt,mk,rea,ti))) lts
+	in
+(*ASSERT    assert isNone d => *)
+	    if isSome d then raise Assert.failure else
+	    if ListPair.all (fn((_,t),(_,t')) => Cell.equals(canonical t,t'))
+			    (lts,lts')
+	    then buildOld(mt, t)
+	    else buildNew(mt, t, toTyp(NAMED(lts',d)))
+	end
+
+    and buildKind(mt,mk, rea, k) =
+	case KindMap.lookup(mk,k)
+	  of SOME k'		=> k'
+	   | NONE		=>
+	case content k
+	  of (STAR | EXT)	=> buildOldKind(mk,k)
+	   | ARROW(k1,k2)	=>
+		let
+		    val k1' = buildKind(mt,mk,rea,k1)
+		    val k2' = buildKind(mt,mk,rea,k2)
+		in
+		    if Cell.equals(k1,k1') andalso Cell.equals(k2,k2')
+		    then buildOldKind(mk, k)
+		    else buildNewKind(mk, k, arrowKind(k1',k2'))
+		end
+	   | SING t		=>
+		let
+		    val t' = build(mt,mk,rea,t)
+		in
+		    if Cell.equals(t,t')
+		    then buildOldKind(mk, k)
+		    else buildNewKind(mk, k, singKind t')
+		end
+
+    and buildOldKind(mk,k)    = (KindMap.insert(mk,k,k); k)
+    and buildNewKind(mk,k,k') = (KindMap.insert(mk,k,k'); k')
+
+    and hasFree(mus, mt,mk, rea, t) =
+	(*ASSUME that if rea is empty we are only substituting vars! *)
+	not(PathMap.isEmpty rea) andalso
+	not(List.exists (fn t' => Cell.equals(t',t)) (!mus)) andalso
+	case Map.lookup(mt,t)
+	  of SOME t'		=> not(Cell.equals(t,t'))
+	   | NONE		=>
+	case content t
+	  of LINK t1		=> hasFree(mus, mt,mk, rea, t1)
+	   | (HOLE _ | VAR _)	=> false (* cannot treat singletons... *)
+	   | ABS(k,p) 		=> Option.isSome(PathMap.lookup(rea, p))
+				   orelse kindHasFree(mus, mt,mk, rea, k)
+	   | ( FUN(t1,t2)
+	     | APPLY(t1,t2)
+	     | ABBREV(t1,t2) )	=> hasFree(mus,mt,mk,rea,t1) orelse
+				   hasFree(mus,mt,mk,rea,t2)
+	   | (PROD r | SUM r)	=> rowHasFree(mus,mt,mk,rea,r)
+	   | MU t1		=> (mus := t :: !mus; hasFree(mus,mt,mk,rea,t1))
+	   | ( ALL(a,t1)
+	     | EXIST(a,t1) 
+	     | LAMBDA(a,t1) )	=> hasFree(mus, mt,mk, rea, t1)
+
+    and rowHasFree(mus, mt,mk, rea, r) =
+	case r
+	  of INDEXED ts   => Vector.exists (fn t => hasFree(mus,mt,mk,rea,t)) ts
+	   | NAMED(lts,_) => List.exists (fn(l,t)=>hasFree(mus,mt,mk,rea,t)) lts
+
+    and kindHasFree(mus, mt,mk, rea, k) =
+	case KindMap.lookup(mk,k)
+	  of SOME k'		=> not(Cell.equals(k,k'))
+	   | NONE		=>
+	case content k
+	  of (STAR | EXT)	=> false
+	   | ARROW(k1,k2)	=> kindHasFree(mus,mt,mk,rea,k1) orelse
+				   kindHasFree(mus,mt,mk,rea,k2)
+	   | SING t		=> hasFree(mus,mt,mk,rea,t)
+
+
+  (* Substitution and realisation *)
+
+    fun subst(m, t) =
+	if Map.isEmpty m
+	then t
+	else build(m, KindMap.new(), PathMap.new(), t)
+
+    fun realise(rea, t) =
+	if PathMap.isEmpty rea
+	then t
+	else build(Map.new(), KindMap.new(), rea, t)
+
+    fun realiseKind(rea, k) =
+	if PathMap.isEmpty rea
+	then k
+	else buildKind(Map.new(), KindMap.new(), rea, k)
+
+    type realise_state = {typ : typ Map.t, kind : kind KindMap.t}
+
+    fun realiseStart() = {typ = Map.new(), kind = KindMap.new()}
+
+    fun realiseCont(m : realise_state, rea, t) =
+	if PathMap.isEmpty rea
+	then t
+	else build(#typ m, #kind m, rea, t)
+
+    fun realiseKindCont(m : realise_state, rea, k) =
+	if PathMap.isEmpty rea
+	then k
+	else buildKind(#typ m, #kind m, rea, k)
+
+
+    (*DEBUG*)
+    val subst           = trace subst "subst"
+    val realise         = trace realise "realise"
+    val realiseCont     = trace realiseCont "realiseCont"
+    val realiseKind     = trace realiseKind "realiseKind"
+    val realiseKindCont = trace realiseKindCont "realiseKindCont"
+
+
+  (* Instantiation *)
+
+    (* Instantiate universally quantified types, skolemise
+     * existentially qualified types.
+     * Skolemisation does it the other way round (needed for checking rank 2
+     * signature applications and existential types).
+     *)
+
+    fun instance t = instance'(Map.new(), t)
+    and instance'(m, t) =
+	case content t
+	  of LINK t	=> instance'(m,t)
+	   | ABBREV(t1,t2) => instance'(m,t2)
+	   | ALL(a,t)	=> (Map.insert(m, a, unknown'(kind a));
+			    instance'(m,t))
+	   | EXIST(a,t)	=> (Map.insert(m, a, newVar'(kind a));
+			    instance'(m,t))
+	   | _		=> subst(m, t)
+
+    fun skolem t = skolem'(Map.new(), t)
+    and skolem'(m, t) =
+	case content t
+	  of LINK t	=> skolem'(m,t)
+	   | ABBREV(t1,t2) => skolem'(m,t2)
+	   | ALL(a,t)	=> (Map.insert(m, a, newVar'(kind a));
+			    instance'(m,t))
+	   | EXIST(a,t)	=> (Map.insert(m, a, unknown'(kind a));
+			    instance'(m,t))
+	   | _		=> subst(m, t)
+
+    (*DEBUG*)
+    val instance = trace instance "instance"
+    val skolem   = trace skolem "skolem"
 
 
   (* Check for holes *)
 
     exception Unclosed
 
-    fun checkClosedRow(RHO _)		= raise Unclosed
+    fun checkClosedRow(NAMED(_,SOME _))	= raise Unclosed
       | checkClosedRow _		= ()
 
     fun checkClosed'(HOLE _)		= raise Unclosed
@@ -742,506 +1101,317 @@ struct
       | checkClosed' _			= ()
 
     fun isClosed t =
-	( appNoAbbrevs (fn t => checkClosed'(typ' t)) t ; true )
+	( appNoAbbrevs (fn t => checkClosed'(content t)) t ; true )
 	handle Unclosed => false
-
-
-  (* Instantiation *)
-
-    (* Instantiate universally quantified types, skolemise
-     * existentially qualified types. If there is any quantification,
-     * then we have to copy the type.
-     * Skolemisation does it the other way round (needed for checking rank 2
-     * signature applications and existential types).
-     *)
-
-    (*ASSUME that no quantifiers appear under abbreviations or links
-   	(this might break with higher-order polymorphism!) *)
-
-    fun instance' t =
-	case typ' t
-	  of ALL(a,t)		=> (replace(a, unknown'(kind a)) ; instance' t)
-	   | EXIST(a,t)		=> instance' t
-	   | _			=> t
-
-    (*DEBUG*)
-    val instance' = trace instance' "instance'"
-
-    fun instance t =
-	case typ' t
-	  of LINK t		=> instance t
-	   | (ALL _| EXIST _)	=> instance'(clone t)
-	   | _			=> t
-
-    fun skolem' t =
-	case typ' t
-	  of ALL(a,t)		=> skolem' t
-	   | EXIST(a,t)		=> (replace(a, unknown'(kind a)) ; skolem' t)
-	   | _			=> t
-
-    (*DEBUG*)
-    val skolem' = trace skolem' "skolem'"
-
-    fun skolem t =
-	case typ' t
-	  of LINK t		=> skolem t
-	   | (ALL _| EXIST _)	=> skolem'(clone t)
-	   | _			=> t
 
 
   (* Closure *)
 
+    (* Quantifies over all holes with level larger than current
+     * and replaces them by variables.
+     *)
+
     fun close ts =
 	let
 	    val generalise =
-		foldl close1 (fn t => t) (inTuple(Vector.fromList ts))
-		(* UNFINISHED: This should better use foldlNoAbbrev, but then
-		 * we had to lift free vars in abbreviations somehow. *)
+		foldl close1 (fn t => t) (tuple'(Vector.fromList ts))
+		(* TODO: This should better use foldlNoAbbrev, but then
+		 * we had to lift holes in abbreviations somehow. *)
 	in
 	    List.map generalise ts
 	end
 
     and close1(t, f) =
-	case typ' t
-	  of HOLE(k,n)	=> if n <= !level then f else
-			   (replace(t, VAR(k,globalLevel)) ;
-			    fn t2 => f(inAll(t,t2)))
+	case content t
+	  of HOLE(k,n)	=> if n <= !level then f else (fn t2 => f(all'(t,t2)))
 	   | PROD r	=> (replace(t, PROD(closeRow r)) ; f)
 	   | SUM r	=> (replace(t, SUM(closeRow r)) ; f)
 	   | _		=> f
 
-    and closeRow(r as RHO(n,r')) = if !n <= !level then r else r'
-      | closeRow r               = r
+    and closeRow r =
+	case r
+	  of NAMED(r',SOME n)	=> if n <= !level then r else NAMED(r',NONE)
+	   | _			=> r
 
     (*DEBUG*)
     val close = trace close "close"
 
 
-  (* Lifting a type to the current level *)
+  (* Combined occur check and lifting of a type to the current level *)
 
-    exception Lift of var
-
-    fun lift t = app lift1 t
-    and lift1 t =
-	case typ' t
-	  of t' as HOLE(k,n)	=> if n <= !level then () else
-				   replace(t, HOLE(k,!level))
-	  | VAR(k,n)		=> if n <= !level then () else raise Lift t
-	  | (PROD r | SUM r)	=> liftRow r
-	  | (LAMBDA(a,_) | ALL(a,_) | EXIST(a,_)) =>
-				   replace(a, VAR(kindVar a, globalLevel))
-	  | _			=> ()
-
-    and liftRow(RHO(n,r))	= if !n > !level then n := !level else ()
-      | liftRow _		= ()
-
-    (*DEBUG*)
-    val lift = trace lift "lift"
-
-
-  (* Filling *)
-
-    exception Fill
-
-    fun fill(t1, t2) =
-	case typ' t1
-	  of HOLE(k,n)	=>
-(*Assertions trigger lazy types...
-(*ASSERT		   assert k1 = kind t2 =>*)
-			   if k <> kind t2 then raise Assert.failure else
-(*ASSERT		   assert not(isLambda t2) =>*) (* should be MU! *)
-			   if isLambda t2 then raise Assert.failure else
-*)
-			   replace(t1, LINK t2)
-	   | _		=> raise Fill
-
-    (*DEBUG*)
-    val fill = trace fill "fill" : typ * typ -> unit
-
-
-
-  (* Unification *)
-
+    exception Lift  of var
     exception Unify of typ * typ
-
 
     fun liftAndCheck(n,t1,t2) =
 	let
 	    val m = Map.new()
 
 	    fun lift t =
+		if Cell.equals(t1,t) then raise Unify(t1,t2) else
 		if Map.member(m,t) then () else
-		( Map.insert(m,t,());
-		  case typ' t
-		    of HOLE(k,n') => if n'<=n then () else replace(t, HOLE(k,n))
-		     | t' as (PROD r | SUM r)
-				  => (liftRow r; app1'(t', lift, true))
-		     | t'         => app1'(t', lift, true)
+		Map.insert(m,t,()) before
+		(case content t
+		  of HOLE(k,n')	=> if n' <= n then () else replace(t, HOLE(k,n))
+		   | VAR(k,n')	=> if n' <= n then () else raise Lift t
+		   | PROD r	=> liftRow(t, PROD, r)
+		   | SUM r	=> liftRow(t, SUM, r)
+		   | MU _	=> ()	(*ASSUME no holes under mu *)
+		   | t'		=> app1'(t', lift, true)
 		)
-
-	    and liftRow(RHO(n',r)) = if !n' <= n then () else n' := n
-	      | liftRow _          = ()
-
-	    fun check t =
-		if t1 = t then raise Unify(t1,t2) else
-		if Map.member(m,t) then () else
-		( Map.insert(m,t,());
-		  case typ' t
-		    of HOLE(k,n') => if n'<=n then () else replace(t, HOLE(k,n))
-		     | t' as MU _ => app1'(t', lift, true)
-		     | t'         => app1'(t', check, true)
+	    and liftRow(t, CONS, r) =
+		(case r
+		   of NAMED(fs,SOME n')	=>
+			if n' <= n then ()
+			else replace(t, CONS(NAMED(fs,SOME n)))
+		    | _			=> ();
+		 appRow1(r, lift)
 		)
 	in
-	    check t2
+	    lift t2
 	end
 
-
-    fun unify(t1,t2) =
-	let
-	    val trail = ref []
-
-	    fun unify(t1,t2) =
-		let
-		    val t1' = typ' t1
-		    val t2' = typ' t2
-
-		    fun recur f x =
-			( replace(t1, LINK t2)
-			; trail := (t1,t1') :: !trail
-			; f x
-			)
-
-		    fun recurBinder(a1, a2, t1, t2) =
-			let
-			    val a1' = typ' a1
-			in
-			    ( replace(a1, LINK a2)
-			    ; trail := (a1,a1') :: !trail
-			    ; recur unify (t1,t2)
-			    )
-			end
-		in
-		    if t1 = t2 then () else
-		    case (t1',t2')
-		      of (LINK t11, _) => unify(t11,t2)
-		       | (_, LINK t21) => unify(t1,t21)
-
-		       | (HOLE(k1,n1), HOLE(k2,n2)) =>
-(*ASSERT		 assert k1 = k2 =>*)
-			 if k1 <> k2 then raise Assert.failure else
-			 if n1 < n2 then replace(t2, LINK t1)
-				    else replace(t1, LINK t2)
-
-		       | (HOLE(k1,n), _) =>
-(*ASSERT		 assert k1 = kind' t2' =>*)
-			 if k1 <> kind' t2' then raise Assert.failure else
-(*ASSERT		 assert not(isLambda t2) =>*)
-			 if isLambda t2 then raise Assert.failure else
-			 ( liftAndCheck(n,t1,t2) ; replace(t1, LINK t2) )
-
-		       | (_, HOLE(k2,n)) =>
-(*ASSERT		 assert kind' t1' = k2 =>*)
-			 if kind' t1' <> k2 then raise Assert.failure else
-(*ASSERT		 assert not(isLambda t1) =>*)
-			 if isLambda t1 then raise Assert.failure else
-			 ( liftAndCheck(n,t2,t1) ; replace(t2, LINK t1) )
-
-		       | (ABBREV(t11,t12), _) => unify (t12,t2)
-		       | (_, ABBREV(t21,t22)) => unify (t1,t22)
-		       | (MU(t11), MU(t21))   => recur unify (t11,t21)
-		       | (FUN(tt1), FUN(tt2)) => recur unifyPair (tt1,tt2)
-
-		       | (TUPLE(ts1), TUPLE(ts2)) =>
-			 (recur unifyVector (ts1,ts2)
-			  handle Domain => raise Unify(t1,t2))
-
-		       | (TUPLE(ts), PROD(r)) =>
-			 (recur unifyTupleProd (ts,r,t2)
-			  handle Domain => raise Unify(t1,t2))
-
-		       | (PROD(r), TUPLE(ts)) =>
-			 (recur unifyTupleProd (ts,r,t1)
-			  handle Domain => raise Unify(t1,t2))
-
-		       | (PROD(r1), PROD(r2)) =>
-			 recur unifyRow (t1, t2, r1, r2, PROD)
-
-		       | (SUM(r1), SUM(r2)) =>
-			 recur unifyRow (t1, t2, r1, r2, SUM)
-
-		       | (CON(_,_,p1), CON(_,_,p2)) =>
-			 if Path.equals(p1,p2) then replace(t1, LINK t2)
-					       else raise Unify(t1,t2)
-
-		       | (APPLY(tt1), APPLY(tt2)) =>
-(*NEW			 (* Note that we do not allow general lambdas during
-			  * unification, so application is considered to be
-			  * in normal form. *)
-*)			 recur unifyPair (tt1,tt2)
-
-		       | (LAMBDA(a1,t11), LAMBDA(a2,t21)) =>
-(*NEW			 (* The only place lambdas might occur during
-			  * unification is below mu and as arguments to
-			  * abstract type constructors. The type functions
-			  * must be equal in both cases. *)
-			 (*UNFINISHED: do we need eta reduction?*)
-*)			 recurBinder(a1, a2, t11, t21)
-
-		       | ( (ALL(a1,t11), ALL(a2,t21))
-			 | (EXIST(a1,t11), EXIST(a2,t21)) ) =>
-			 recurBinder(a1, a2, t11, t21)
-
-		       | _ => raise Unify(t1,t2)
-		end
-
-	    and unifyPair((t11,t12), (t21,t22)) =
-		( unify(t11,t21) ; unify(t12,t22) )
-
-	    and unifyVector(ts1,ts2) =
-		if Vector.length ts1 <> Vector.length ts2 then
-		    raise Domain
-		else
-		    VectorPair.app unify (ts1,ts2)
-
-	    and unifyTupleProd(ts,r,t) = unifyTupleProd'(ts,r,t,0,false)
-	    and unifyTupleProd'(ts, RHO(_,r), t, i, b) =
-		unifyTupleProd'(ts, r, t, i, true)
-	      | unifyTupleProd'(ts, NIL, t, i, b) =
-		if b orelse i = Vector.length ts then
-		    replace(t, TUPLE ts)
-		else
-		    raise Domain
-	      | unifyTupleProd'(ts, r as FIELD(a,t',r'), t, i, b) =
-		case Label.toLargeInt a
-		  of NONE     => raise Domain
-		   | SOME i'  =>
-		case Int.compare(Int.fromLarge i', i+1)
-		     handle Overflow => raise Domain
-		  of EQUAL   => ( unify(t', Vector.sub(ts,i))
-				  handle Subscript => raise Domain
-				; unifyTupleProd'(ts, r', t, i+1, b) )
-		   | GREATER => if not b then raise Domain else
-				  unifyTupleProd'(ts, r, t, i+1, b)
-		   | LESS    => raise Domain (* cannot happen *)
-
-	    and unifyRow(t1, t2, r1, r2, PRODorSUM) =
-		let
-		    fun loop(RHO(n1,r1), _,  RHO(n2,r2), _ ) =
-			    RHO(ref(Int.min(!n1, !n2)), loop(r1,true, r2,true))
-		      | loop(RHO(_,r1), _, r2, _) =
-			    loop(r1, true, r2, false)
-		      | loop(r1, _, RHO(_,r2), _) =
-			    loop(r1, false, r2, true)
-		      | loop(NIL, _, NIL, _) =
-			    NIL
-		      | loop(NIL, true, FIELD(l,t,r2'), b2) =
-			    FIELD(l,t, loop(NIL, true, r2', b2))
-		      | loop(FIELD(l,t,r1'), b1, NIL, true) =
-			    FIELD(l,t, loop(r1', b1, NIL, true))
-		      | loop(r1 as FIELD(l1,t11,r1'), b1,
-			     r2 as FIELD(l2,t21,r2'), b2) =
-			(case Label.compare(l1,l2)
-			   of EQUAL   => ( unify(t11,t21)
-					 ; FIELD(l1,t11, loop(r1',b1, r2',b2)) )
-			    | LESS    => if not b2 then raise Unify(t1,t2) else
-					 FIELD(l1,t11, loop(r1',b1, r2,b2))
-			    | GREATER => if not b1 then raise Unify(t1,t2) else
-					 FIELD(l2,t21, loop(r1,b1, r2',b2))
-			)
-		      | loop _ = raise Unify(t1,t2)
-		in
-		    replace(t2, PRODorSUM(loop(r1, false, r2, false)))
-		end
-	in
-	    unify(t1,t2)
-	    handle Unify tt => ( List.app replace (!trail) ; raise Unify tt )
-	end
+    val dummy      = newVar(starKind())
+    fun lift'(n,t) = liftAndCheck(n, dummy, t)
+    fun lift t     = liftAndCheck(!level, dummy, t)
 
     (*DEBUG*)
-    val unify = trace unify "unify"
+    val liftAndCheck = trace liftAndCheck "liftAndCheck"
+    val lift'        = trace lift' "lift'"
+    val lift         = trace lift "lift"
 
 
+  (* Unification *)
 
-  (* Matching *)
+    (* Unification has to be thread-safe, at least in the absence of holes.
+     * However, we want to maximise sharing and thus merge any types that have
+     * been discovered to be equal. We use the following algorithm:
+     *
+     * We maintain a map m that maps any bound variable or MU we encountered on
+     * the current path from t1's root, to its counterpart in t2. When we see it
+     * again we simply lookup the counterpart and see if it is the same as the
+     * other type (modulo links that may have been introduced by concurrent
+     * threads in the meantime).
+     *
+     * Moreover, every step returns the list of types in the domain of m
+     * it encountered during traversal. If this list is empty we can safely
+     * merge the types because it does not contain free variables.
+     *
+     * Note that it would be simpler if we used de Bruijn notation and syntactic
+     * mu - we would not need the map.
+     *)
+
+    fun merge(t1,t2,ts) =
+	(if List.null ts
+	 then replace(t1, LINK(canonical t2))
+	 else ();
+	 ts)
+
+    fun bind(mayBind,n1,t1,t2,k1) =
+	if mayBind andalso matchesKind(kind t2, k1) andalso not(isLambda t2)
+	then (liftAndCheck(n1,t1,t2) ; replace(t1, LINK(canonical t2)) ; [])
+	else raise Unify(t1,t2)
+
+    fun unify'(mayBind,m,t1,t2) =
+	if Cell.equals(t1,t2) then [] else
+	case Map.lookup(m,t1)
+	  of SOME t3 => (unifyBound(t3,t2) ; [t1])
+	   | NONE =>
+	case (content t1, content t2)
+	  of (LINK t11, _) => unify'(mayBind,m,t11,t2)
+	   | (_, LINK t21) => unify'(mayBind,m,t1,t21)
+
+	   | (HOLE(k1,n1), HOLE(k2,n2)) =>
+		(bind(mayBind,n1,t1,t2,k1)
+		 handle Unify _ => bind(mayBind,n2,t2,t1,k2)
+		)
+	   | (HOLE(k1,n1), _) =>
+		bind(mayBind,n1,t1,t2,k1)
+	   | (_, HOLE(k2,n2)) =>
+		bind(mayBind,n2,t2,t1,k2)
+
+	   | (ABBREV(t11,t12), _) => unify'(mayBind,m,t12,t2)
+	   | (_, ABBREV(t21,t22)) => unify'(mayBind,m,t1,t22)
+
+	   | (ABS(k1,p1), ABS(k2,p2)) =>
+		if Path.equals(p1,p2) andalso equalsKind(k1,k2)
+		then merge(t1,t2,[])
+		else raise Unify(t1,t2)
+
+	   | ( (FUN(t11,t12), FUN(t21,t22))
+	     | (APPLY(t11,t12), APPLY(t21,t22)) )=>
+		merge(t1,t2, unify'(mayBind,m,t11,t21) @
+			     unify'(mayBind,m,t12,t22))
+
+	   | ( (t1' as PROD(r1), PROD(r2))
+	     | (t1' as SUM(r1), SUM(r2)) ) =>
+		(* Mh, row variables cannot be treated correctly under binders.
+		 * If they occur, we immediately link the types, no matter
+		 * what binders are in scope. This means that row variables
+		 * should not appear under binders.
+		 * TODO: Fix this by having proper row variables, i.e. holes
+		 * of row kind. *)
+		(case (r1, r2)
+		   of (INDEXED ts1, INDEXED ts2) =>
+			merge(t1,t2, unifyIndexed(mayBind,m, t1,t2, ts1,ts2))
+		    | (NAMED(lts1,d1), INDEXED ts2) =>
+			merge(t1,t2,
+			      unifyIndexedRow'(mayBind,m, t1,t2, ts2, lts1,d1))
+			(* d1 will be deleted by merge (assuming there is no
+			 * binder delaying the merge). *)
+		    | (INDEXED ts1, NAMED(lts2,d2)) =>
+			merge(t2,t1,
+			      unifyIndexedRow'(mayBind,m, t2,t1, ts1, lts2,d2))
+			(* d2 will be deleted by merge (assuming there is no
+			 * binder delaying the merge). *)
+		    | (NAMED(lts1,d1), NAMED(lts2,d2)) =>
+			let
+			    val (lts,d,ts) =
+				unifyRow'(mayBind,m, t1,t2, lts1,d1,lts2,d2)
+			    val CONS = case t1' of PROD _ => PROD | _ => SUM
+			in
+			    if mayBind andalso
+			       (Option.isSome d1 orelse Option.isSome d2)
+			    then let val r' = CONS(NAMED(lts,d))
+				 in replace(t1,r'); replace(t2,r') end
+			    else ();
+			    merge(t1,t2,ts)
+			end
+		)
+	   | (MU(t11), MU(t21)) =>
+		(Map.insert(m,t1,t2);
+		 merge(t1,t2, List.filter (fn t => not(Cell.equals(t,t1)))
+					  (unify'(mayBind,m,t11,t21)))
+		 before Map.delete(m,t1)
+		)
+	   | ( (LAMBDA(a1,t11), LAMBDA(a2,t21))
+	     | (ALL(a1,t11), ALL(a2,t21))
+	     | (EXIST(a1,t11), EXIST(a2,t21)) ) =>
+		let
+		    val ao = Map.lookup(m,a1)
+		in
+		    Map.insert(m,a1,a2);
+		    merge(t1,t2, List.filter (fn t => not(Cell.equals(t,a1)))
+					     (unify'(mayBind,m,t11,t21)))
+		    before (case ao of NONE    => Map.delete(m,a1)
+				     | SOME a' => Map.insert(m,a1,a'))
+		end
+	   | _ => raise Unify(t1,t2)
+
+    and unifyBound(t3,t2) =
+	Cell.equals(t3,t2) orelse
+	case (content t3, content t2)
+	  of ((LINK t3 | ABBREV(_,t3)), _) => unifyBound(t3,t2)
+	   | (_, (LINK t2 | ABBREV(_,t2))) => unifyBound(t3,t2)
+	   | _ => raise Unify(t3,t2)
+
+    and unifyIndexed(mayBind,m, t1,t2, ts1,ts2) =
+	if Vector.length ts1 = Vector.length ts2
+	then VectorPair.foldl (fn(t1,t2,ts) => unify'(mayBind,m,t1,t2) @ ts) []
+			      (ts1,ts2)
+	else raise Unify(t1,t2)
+
+    and unifyIndexedRow'(mayBind,m, t1,t2, ts1, lts2,d2) =
+	let
+	    fun nth i  = Vector.sub(ts1, i)
+	    fun fail _ = raise Unify(t1,t2)
+	    val lift   = if not mayBind then fail else
+			 case d2 of NONE   => fail
+				  | SOME n => fn t => lift'(n,t)
+
+	    fun unifyFields(i, [], ts) =
+		    (Vector.appi (lift o #2) (ts1,i,NONE) ; ts)
+	      | unifyFields(i, lts2 as (l,t2)::lts2', ts) =
+		    if i = Vector.length ts1 then fail() else
+		    case Label.toInt l
+		      of NONE    => fail()
+		       | SOME i' =>
+		    case Int.compare(i,i'-1)
+		      of LESS    => (lift(nth i) ; unifyFields(i+1, lts2, ts))
+		       | GREATER => fail()	(* l might have been 0 *)
+		       | EQUAL   => let val ts' = unify'(mayBind, m, nth i, t2)
+				    in unifyFields(i+1, lts2', ts'@ts) end
+	in
+	    unifyFields(0, lts2, [])
+	end
+
+    and unifyRow'(mayBind,m, t1,t2, lts1,d1, lts2,d2) =
+	let
+	    fun fail t = raise Unify(t1,t2)
+	    fun lift d = if not mayBind then fail else
+			 case d of NONE   => fail
+				 | SOME n => fn t => lift'(n,t)
+	    val lift1 = lift d1
+	    val lift2 = lift d2
+
+	    fun unifyFields([], [], lts, ts) = (List.rev lts, ts)
+	      | unifyFields([], (l,t)::lts2', lts, ts) =
+		    (lift1 t; unifyFields([], lts2', (l,t)::lts, ts))
+	      | unifyFields((l,t)::lts1', [], lts, ts) =
+		    (lift2 t; unifyFields(lts1', [], (l,t)::lts, ts))
+	      | unifyFields(lts1 as (l1,t1')::lts1',
+			    lts2 as (l2,t2')::lts2', lts, ts) =
+		case Label.compare(l1,l2)
+		  of LESS =>
+			(lift2 t1'; unifyFields(lts1', lts2, (l1,t1')::lts, ts))
+		   | GREATER =>
+			(lift1 t2'; unifyFields(lts1, lts2', (l2,t2')::lts, ts))
+		   | EQUAL =>
+			let val ts' = unify'(mayBind,m,t1',t2')
+			in unifyFields(lts1', lts2', (l1,t1')::lts, ts'@ts) end
+
+	    val (lts,ts) = unifyFields(lts1,lts2,[],[])
+	    val  d       = if Option.isSome d1 andalso Option.isSome d2
+			   then SOME(Int.min(Option.valOf d1, Option.valOf d2))
+			   else NONE
+	in
+	    (lts,d,ts)
+	end
+
+    val unify' = fn(mayBind,m,t1,t2) =>
+(*ASSERT assert List.null(unify'(mayBind,m,t1,t2)) => ()*)
+	if List.null(unify'(mayBind,m,t1,t2))
+	then ()
+	else raise Assert.failure
+	  
+
+  (* Equality, matching, and public interface to unification *)
+
+    fun unify(t1,t2) = unify'(true, Map.new(), t1, t2)
+
+    fun equals(t1,t2) =
+	(unify'(false, Map.new(), t1, t2) ; true) handle Unify _ => false
 
     fun matches(t1,t2) =
 	let
 	    val t1' = instance t1
 	    val t2' = skolem t2
 	in
-	    ( unify(t1',t2') ; true ) handle Unify _ => false
+	    (unify(t1',t2') ; true) handle Unify _ => false
 	end
 
+    (*DEBUG*)
+    val unify   = trace unify "unify"
+    val equals  = trace equals "equals"
+    val matches = trace matches "matches"
 
-  (* Comparison *)
 
-    (* To maximise sharing, links are kept after comparison iff the
-     * types are equal. If the types are not equal, all updates are
-     * undone. This could be optimized by keeping equal subtrees, but what for?
-     *)
+  (* Free paths *)
 
-    fun equals(t1,t2) =
-	let
-	    val trail = ref []
+    fun paths t =
+    	let
+	    val s = PathMap.new()
 
-	    fun equals(t1,t2) =
-		let
-		    val t1' = typ' t1
-		    val t2' = typ' t2
-
-		    fun recur p x =
-			( replace(t1, LINK t2)
-			; trail := (t1,t1') :: !trail
-			; p x
-			)
-
-		    fun recurBinder(a1, a2, t1, t2) =
-			let
-			    val a1' = typ' a1
-			in
-			    replace(a1, LINK a2);
-			    trail := (a1,a1') :: !trail;
-			    recur equals (t1,t2)
-			end
-
-		    fun equalsTupProd(ts, r, t) =
-			let
-			    val ts' = rowToTup r
-			    val t'  = typ' t
-			in
-			    replace(t, TUPLE ts');
-			    trail := (t,t') :: !trail;
-			    recur equalsVector (ts,ts')
-			end
-			handle Row => false
-		in
-		    t1 = t2 orelse
-		    case (t1',t2')
-		      of (LINK t11, _) => equals(t11,t2)
-		       | (_, LINK t21) => equals(t1,t21)
-		       | (ABBREV(t11,t12), _) =>
-			 equals(t12,t2)
-
-		       | (_, ABBREV(t21,t22)) =>
-			 equals(t1,t22)
-
-		       | (MU(t11), MU(t21)) =>
-			 recur equals (t11,t21)
-
-		       | (FUN(tt1), FUN(tt2)) =>
-			 recur equalsPair (tt1,tt2)
-
-		       | (TUPLE(ts1), TUPLE(ts2)) =>
-			 recur equalsVector (ts1,ts2)
-
-		       | (TUPLE(ts), PROD(r)) =>
-			 equalsTupProd(ts,r,t2)
-
-		       | (PROD(r), TUPLE(ts)) =>
-			 equalsTupProd(ts,r,t1)
-
-		       | ( (PROD(r1), PROD(r2))
-			 | (SUM(r1),  SUM(r2)) ) =>
-			 recur equalsRow (r1,r2)
-
-		       | (CON(_,_,p1), CON(_,_,p2)) =>
-			 Path.equals(p1,p2)
-
-		       | (APPLY(tt1), APPLY(tt2)) =>
-			 recur equalsPair (tt1,tt2)
-
-		       | (LAMBDA(a1,t11), LAMBDA(a2,t21)) =>
-(*NEW			 if reduceEta t1 orelse reduceEta t2 then
-			     equals(t1,t2)
-			 else
-*)
-			 recurBinder(a1, a2, t11, t21)
-
-(*		       | (LAMBDA _, _) =>
-			 reduceEta t1 andalso equals(t1,t2)
-
-		       | (_, LAMBDA _) =>
-			 reduceEta t2 andalso equals(t1,t2)
-*)
-		       | ( (ALL(a1,t11),   ALL(a2,t21))
-			 | (EXIST(a1,t11), EXIST(a2,t21)) ) =>
-			 recurBinder(a1, a2, t11, t21)
-
-		       | _ => false
-		end
-
-	    and equalsPair((t11,t12), (t21,t22)) =
-		equals(t11,t21) andalso equals (t12,t22)
-
-	    and equalsVector(ts1,ts2) =
-		Vector.length ts1 = Vector.length ts2 andalso
-		VectorPair.all equals (ts1,ts2)
-
-	    and equalsRow(NIL,             NIL)             = true
-	      | equalsRow(RHO(_,r1),       RHO(_,r2))       = equalsRow(r1,r2)
-	      | equalsRow(FIELD(l1,t1,r1), FIELD(l2,t2,r2)) =
-		l1 = l2 andalso equals(t1,t2) andalso equalsRow(r1,r2)
-	      | equalsRow _ = false
+	    fun path t = case content t of ABS(k,p) => PathMap.insert(s,p,k)
+					 | _        => ()
 	in
-	    equals(t1,t2) orelse ( List.app replace (!trail) ; false )
+	    appNoAbbrevs path t;
+	    s
 	end
 
-    (*DEBUG*)
-    val equals = trace equals "equals"
 
+  (* Tie forwarding knots *)
 
-
-  (* Realisation *)
-
-    fun realisePath(rea, t) = app (realisePath1 rea) t
-    and realisePath1 rea t =
-	case typ' t
-	  of CON(k,s,p)	=> (case PathMap.lookup(rea, p)
-			      of SOME p' => replace(t, CON(k,s,p'))
-			       | NONE    => ()
-			   )
-	   | _		=> ()
-
-    (*DEBUG*)
-    val realisePath = trace realisePath "realisePath"
-
-
-    (*
-     * Realisations need not be idempotent (fully expanded). Would be nice
-     * to have this property because it would make substitution more efficient,
-     * but full expansion is difficult to achieve for the intersect function).
-     *)
-
-    fun realise(rea, t) =
-	let
-	    val apps = ref[]
-	    val lams = ref[]
-
-	    fun realise1 t1 =
-		case typ' t1
-		  of CON(k,s,p) => (case PathMap.lookup(rea, p)
-				      of SOME t2 => replace(t1, LINK t2)
-					(*UNFINISHED: do we have to clone t2? *)
-				       | NONE    => ()
-				   )
-	      | APPLY _		=> apps := t1::(!apps)
-	      | LAMBDA _	=> lams := t1::(!lams)
-	      | _		=> ()
-	in
-	    app realise1 t;
-	    List.app reduce (!apps);
-	    List.app (ignore o reduceEta) (!lams)
-	end
-
-    (*DEBUG*)
-    val realise = trace realise "realise"
-
-
-  (* Intersection *)
-
-    exception Intersect
-
-    fun intersect(t1:typ, t2:typ) = ()
-    (* UNFINISHED *)
-
+    val _ = appFwd    := SOME app
+    val _ = equalsFwd := SOME equals
+    val _ = substFwd  := SOME subst
 end
