@@ -11,8 +11,8 @@
  *)
 
 import signature CTRL   from "CTRL-sig"
-import structure OS     from "x-alice:/lib/system/OS"
-import structure TextIO from "x-alice:/lib/system/TextIO"
+import structure OS     from "../system/OS"
+import structure TextIO from "../system/TextIO"
 
 
 structure Ctrl :> CTRL =

@@ -27,6 +27,10 @@ import val dummyClient          from "DummyClient"
 import val log                  from "../common/Log"
 
 
+fun not_yet_implemented s =
+    log ("Server", "TODO: " ^ s ^ " not yet implemented.")
+
+
 structure Server :> SERVER =
 struct
     
@@ -280,15 +284,13 @@ struct
 
             fun changeView id = Lock.sync lock (
                 withParticipant () ("changeView", id, fn (part, hint) => 
-                    (*TODO: implement *)
-                    ()
+                    not_yet_implemented ("changeView")
                 ))
 
 
             fun giveUp id = Lock.sync lock (
                 withParticipant () ("giveUp", id, fn (part, ()) => 
-                    (*TODO: implement *)
-                    ()
+                    not_yet_implemented ("giveUp")
                 ))
 
            
@@ -296,6 +298,7 @@ struct
 
             fun finishTournament () = (
                 (* compute highscore *)
+                not_yet_implemented ("highscore");
                 (*TODO: compute it ;-) *)
                 invokeSeveral (allConnected (), #tournamentFinished, Highscore.empty);
                 raise TournamentFinished
@@ -390,6 +393,7 @@ struct
                         end) deadSnakes;
                             
                     (* inform the snakes *)
+                    (* TODO *)
                     
                     (* change state of participants whose snake 
                        finished to FINISHED *)
@@ -409,7 +413,8 @@ struct
                         end) halfFinishedSnakes;
                         
                     (* inform the snakes *)
-
+                    (* TODO *)
+                    
                     (* change state of participants whose snake 
                        are completely finished from FINISHED 
                        (_, ownId, false) to (_, otherId, true) *)
