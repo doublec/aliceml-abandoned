@@ -19,7 +19,7 @@ do
     if [ $i -lt $n ]
     then
 	echo '(* src #' $i $src '*)'
-	cat $src
+	cat $src || exit 1
 	i=`expr $i + 1`
     fi
 done

@@ -82,6 +82,12 @@ common/IntermediateGrammar.sml
 common/PERVASIVE_TYPE.sig
 common/MakePervasiveType.sml
 common/PervasiveType.sml
+common/LABEL_REFLECTION.sig
+common/LabelReflection.sml
+common/PATH_REFLECTION.sig
+common/PathReflection.sml
+common/TYPE_REFLECTION.sig
+common/TypeReflection.sml
 frontend-common/StringMap.sml
 frontend-common/ABSTRACT_GRAMMAR.sig
 frontend-common/MakeAbstractGrammar.sml
@@ -89,14 +95,12 @@ frontend-common/AbstractGrammar.sml
 frontend-common/TypedGrammar.sml
 frontend-common/ENV.sig
 frontend-common/Env.sml
-frontend-common/ENV0.sig
-frontend-common/Env0.sml
 frontend-common/ELABORATION_ERROR.sig
 frontend-common/ElaborationError.sml
 frontend-common/ELABORATION_PHASE.sig
 frontend-common/MakeElaborationPhase.sml
 frontend-common/TRANSLATION_PHASE.sig
-frontend-common/TranslationPhase.sml
+frontend-common/MakeTranslationPhase.sml
 frontend-common/MakeFrontendCommon.sml
 frontend-sml/LAB.sig
 frontend-sml/Lab.sml
@@ -132,8 +136,6 @@ frontend-sml/Lexer.lex.sml
 frontend-sml/CountPosLexer.sml
 frontend-sml/PARSING_PHASE.sig
 frontend-sml/ParsingPhase.sml
-frontend-sml/BIND_ENV0.sig
-frontend-sml/BindEnv0.sml
 frontend-sml/MakeFrontendSML.sml
 backend-common/LABEL_SORT.sig
 backend-common/MakeLabelSort.sml
