@@ -181,6 +181,13 @@ int IOHandler::SocketPair(int type, int *sv) {
 int IOHandler::defaultFD;
 
 void IOHandler::Init() {
+#if USE_WINSOCK
+  WSADATA wsa_data;
+  WORD req_version = MAKEWORD(1, 1);
+  if (WSAStartup(req_version, &wsa_data) != 0)
+    Error("no usable WinSock DLL found");
+#endif
+
   int sv[2];
   if (SocketPair(SOCK_STREAM, sv) == -1)
     Error("socketpair failed");
