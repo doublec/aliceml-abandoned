@@ -59,10 +59,16 @@ import structure Url from "x-alice:/lib/system/Url"
 import signature REMOTE from "x-alice:/lib/distribution/REMOTE-sig"
 import structure Remote from "x-alice:/lib/distribution/Remote"
 
+import structure Space from "x-alice:/lib/gecode/Space"
+import structure Search from "x-alice:/lib/gecode/Search"
+import structure Linear from "x-alice:/lib/gecode/Linear"
+import structure FD from "x-alice:/lib/gecode/FD"
+import structure FS from "x-alice:/lib/gecode/FS"
+
 (* import signature INSPECTOR from "x-alice:/lib/tools/INSPECTOR-sig" *)
 (* import signature EXPLORER from "x-alice:/lib/tools/EXPLORER-sig" *)
 import structure Inspector from "x-alice:/lib/tools/Inspector"
-(* import structure Explorer from "x-alice:/lib/tools/Explorer" *)
+import structure Explorer from "x-alice:/lib/tools/Explorer"
 
 import "x-alice:/compiler/ToplevelMain"
 
