@@ -127,12 +127,12 @@ LIBFUNDAMENTALSOURCES0 = \
 	Position.aml Promise.aml Real.aml Ref.aml String.aml StringCvt.aml \
 	Substring.aml Thread.aml Time.aml Toplevel.aml Vector.aml \
 	VectorPair.aml WideChar.aml WideString.aml Word.aml
-LIBSOURCES0 = $(NATIVECOMPONENTS:%=%.asig)
+LIBSYSTEMSOURCES0 = $(NATIVECOMPONENTS:%=%.asig)
 MLYACCSOURCES0 = base-sig.aml join.aml lrtable.aml stream.aml parser2.aml
 
 LIBSOURCES = \
 	$(LIBFUNDAMENTALSOURCES0:%=lib/fundamental/%) \
-	$(LIBSOURCES0:%=lib/%) \
+	$(LIBSYSTEMSOURCES0:%=lib/system/%) \
 	$(MLYACCSOURCES0:%=lib/ml-yacc/%)
 
 STOCMISCSOURCES0 = \
@@ -232,8 +232,9 @@ STOCSOURCES = \
 ALLSOURCES = Init.oz $(LIBSOURCES) $(STOCSOURCES)
 
 SOURCEDIRS = \
-	lib lib/fundamental lib/ml-yacc stoc stoc/misc stoc/infrastructure \
-	stoc/common stoc/frontend-common stoc/frontend-sml \
+	lib lib/fundamental lib/system lib/ml-yacc \
+	stoc stoc/misc stoc/infrastructure stoc/common \
+	stoc/frontend-common stoc/frontend-sml \
 	stoc/backend-common stoc/backend-mozart stoc/top
 
 ##
@@ -286,17 +287,17 @@ Rel1.import: ../../lib/fundamental/Fundamental.import
 Rel2.import: ../../lib/fundamental/Fundamental.import
 	sed 's|x-alice:/|../../|g' < $< > $@
 
-build1/lib/%: ../%
-	cp $< $@
-
 build1/lib/fundamental/%: ../../lib/fundamental/%
 	cp $< $@
 
 build1/lib/fundamental/RTT.aml: ../../lib/fundamental/RTTDummy.aml
 	cp $< $@
 
-build1/lib/%.asig: ../../lib/system/%.asig Rel1.import
-	cat Rel1.import $< > $@
+build1/lib/system/%.oz: ../%.oz
+	cp $< $@
+
+build1/lib/system/%.asig: ../../lib/system/%.asig Rel2.import
+	cat Rel2.import $< > $@
 
 build1/lib/ml-yacc/%.aml: ../../lib/ml-yacc/%.aml Rel2.import
 	cat Rel2.import $< > $@
@@ -339,9 +340,6 @@ build1/stoc/frontend-sml/Parser.aml: build1/stoc/frontend-sml/Parser.grm.sml \
 build1/stoc/backend-common/%.aml: ../../stoc/backend-common/%.aml Rel2.import
 	cat Rel2.import $< > $@
 
-build1/lib/%.asig: ../../lib/system/%.asig Rel1.import
-	cat Rel1.import $< > $@
-
 build1/stoc/backend-mozart/%.aml: ../../stoc/backend-mozart/%.aml Rel2.import
 	cat Rel2.import $< > $@
 
@@ -373,7 +371,7 @@ build1/%.ozf: build1/%.aml
 BUILD1OZSOURCES = $(filter %.oz, $(BUILD1SOURCES))
 BUILD1OZLINPUTS = \
 	$(BUILD1SOURCES) \
-	$(NATIVECOMPONENTS:%=build1/lib/%.ozf) \
+	$(NATIVECOMPONENTS:%=build1/lib/system/%.ozf) \
 	$(filter-out build1/stoc/backend-mozart/CodeEmitter.ozf, \
 	  $(BUILD1OZSOURCES:%.oz=%.ozf)) \
 	build1/stoc/top/StocMain.ozf
@@ -406,16 +404,17 @@ build1/install/bin/%: %
 ### BUILD 2
 ########################################################################
 
-BUILD2DIRS = build2 build2/lib build2/lib/fundamental
+BUILD2DIRS = build2 build2/lib build2/lib/fundamental build2/lib/system
 BUILD2SOURCES = $(LIBFUNDAMENTALSOURCES0:%=build2/lib/fundamental/%)
 
 INSTALL2DIRS = build2/install build2/install/bin \
-	build2/install/lib build2/install/lib/fundamental
+	build2/install/lib build2/install/lib/fundamental \
+	build2/install/lib/system
 INSTALL2TOPFILES = stow.ozf stoc.ozf Default.import
 INSTALL2BINFILES = stow stoc
 INSTALL2LIBFILES = \
 	$(LIBFUNDAMENTALSOURCES0:%.aml=fundamental/%.ozf) \
-	$(NATIVECOMPONENTS:%=%.ozf)
+	$(NATIVECOMPONENTS:%=system/%.ozf)
 INSTALL2FILES = \
 	$(INSTALL2TOPFILES:%=build2/install/%) \
 	$(INSTALL2BINFILES:%=build2/install/bin/%) \
@@ -437,10 +436,7 @@ build2/stow.ozf build2/stoc.ozf: build2/%: build1/%
 build2/Default.import: ../../lib/fundamental/Fundamental.import Other.import
 	cat ../../lib/fundamental/Fundamental.import Other.import > $@
 
-build2/lib/fundamental/RTT.aml: ../../lib/fundamental/RTTDummy.aml
-	cp $< $@
-
-$(NATIVECOMPONENTS:%=build2/lib/%.asig): build2/%: build1/%
+$(NATIVECOMPONENTS:%=build2/lib/system/%.asig): build2/%: build1/%
 	cp $< $@
 
 ##
@@ -453,11 +449,11 @@ build2-all: build1-install $(BUILD2DIRS) $(BUILD2SOURCES) \
 build2/%.ozf: build2/%.aml
 	$(STOC1) $(STOC_OPTS) -c $< -o $@
 
-$(NATIVECOMPONENTS:%=build2/lib/%.ozf): build2/%.ozf: \
+$(NATIVECOMPONENTS:%=build2/lib/system/%.ozf): build2/%.ozf: \
 	build1/%.ozf build2/%.asig
-	$(STOC1) $(STOC_OPTS) --replacesign $< $@.sig $@
+	$(STOC1) $(STOC_OPTS) --replacesign $< build2/$*.asig $@
 
-build2/lib/Unix.ozf: build2/lib/TextIO.ozf
+build2/lib/system/Unix.ozf: build2/lib/system/TextIO.ozf
 
 ##
 ## Installing Build 2
@@ -494,12 +490,13 @@ BUILD3DIRS = build3 $(SOURCEDIRS:%=build3/%)
 BUILD3SOURCES = $(ALLSOURCES:%=build3/%)
 
 INSTALL3DIRS = build3/install build3/install/bin \
-	build3/install/lib build3/install/lib/fundamental
+	build3/install/lib build3/install/lib/fundamental \
+	build3/install/lib/system
 INSTALL3TOPFILES = stow.ozf stoc.ozf stot.ozf Default.import
 INSTALL3BINFILES = stow stoc stol stot
 INSTALL3LIBFILES = \
 	$(LIBFUNDAMENTALSOURCES0:%.aml=fundamental/%.ozf) \
-	$(NATIVECOMPONENTS:%=%.ozf)
+	$(NATIVECOMPONENTS:%=system/%.ozf)
 INSTALL3FILES = \
 	$(INSTALL3TOPFILES:%=build3/install/%) \
 	$(INSTALL3BINFILES:%=build3/install/bin/%) \
@@ -523,7 +520,7 @@ BUILD3OZSOURCES = $(filter %.oz, $(BUILD3SOURCES))
 BUILD3ALICESOURCES = $(filter %.aml, $(BUILD3SOURCES))
 
 BUILD3OZLINPUTS = \
-	$(NATIVECOMPONENTS:%=build3/lib/%.ozf) \
+	$(NATIVECOMPONENTS:%=build3/lib/system/%.ozf) \
 	$(filter-out build3/stoc/backend-mozart/CodeEmitter.ozf, \
 	  $(BUILD3OZSOURCES:%.oz=%.ozf)) \
 	$(BUILD3ALICESOURCES:%.aml=%.ozf)
@@ -537,11 +534,11 @@ build3/%.ozf: build3/%.oz
 build3/%.ozf: build3/%.aml
 	$(STOC2) $(STOC_OPTS) -c $< -o $@
 
-$(NATIVECOMPONENTS:%=build3/lib/%.ozf): build3/%.ozf: \
+$(NATIVECOMPONENTS:%=build3/lib/system/%.ozf): build3/%.ozf: \
 	build1/%.ozf build3/%.asig build3/lib/fundamental/Fundamental.ozf
-	$(STOC2) $(STOC_OPTS) --replacesign $< $@.sig $@
+	$(STOC2) $(STOC_OPTS) --replacesign $< build3/$*.asig $@
 
-build3/lib/Unix.ozf: build3/lib/TextIO.ozf
+build3/lib/system/Unix.ozf: build3/lib/system/TextIO.ozf
 
 build3/stow.ozf: $(BUILD3OZLINPUTS)
 	$(OZL) --include=.. build3/Init.ozf -o $@
