@@ -29,11 +29,14 @@ functor MkCompiler(
 	structure Switches:         SWITCHES
 	structure Target:           TARGET
 	structure FrontendSpecific: PHASE where type I.t = Source.t
-	structure FrontendCommon:   PHASE where I = FrontendSpecific.O
-	structure BackendCommon:    PHASE where I = FrontendCommon.O
-	structure BackendSpecific:  PHASE where I = BackendCommon.O
+	structure FrontendCommon:   PHASE where type I.t = FrontendSpecific.O.t
+	structure BackendCommon:    PHASE where type I.t = FrontendCommon.O.t
+	structure BackendSpecific:  PHASE where type I.t = BackendCommon.O.t
 					  where type O.t = Target.t
-       ) :> COMPILER where Target = Target =
+       ) :> COMPILER (*TODO where Target = Target*)
+	    where type Target.t     = Target.t
+	    where type Target.C.t   = Target.C.t
+	    where type Target.Sig.t = Target.Sig.t =
 struct
     structure Switches = Switches
     structure Target = Target
