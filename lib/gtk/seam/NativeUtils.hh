@@ -148,11 +148,18 @@ inline word OBJECT_TO_WORD(const void *p) {
 
 const char *Alice_Gtk_OBJECT_TO_WORD = "Alice.Gtk.OBJECT_TO_WORD";
 
-static void InitLocalInstance() {
+static word LazyBrokerLookup(const void *objectPointer, int type) {
   word value = Broker::Lookup(String::New(Alice_Gtk_OBJECT_TO_WORD));
+  if (value == (word) 0)
+    Error("LazyBrokerLookup: OBJECT_TO_WORD not registered");
   void *pointer = Store::DirectWordToUnmanagedPointer(value);
   Assert(pointer != INVALID_POINTER);
   OBJECT_TO_WORD_instance = (word (*)(const void *, int)) pointer;
+  return OBJECT_TO_WORD_instance(objectPointer, type);
+}
+
+static void InitLocalInstance() {
+  OBJECT_TO_WORD_instance = (word (*)(const void *, int)) LazyBrokerLookup;
 }
 
 /***********************************************************************/
