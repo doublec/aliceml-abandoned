@@ -736,6 +736,8 @@ namespace Win32 {
 		public static extern int DefWindowProc(int wnd, int msg, int w, int l);
 	
 	    [sysimport(dll="user32.dll")]
+		public static extern int FillRect(int dc, Rect rect, int brush);
+	    [sysimport(dll="user32.dll")]
 		public static extern int MessageBoxW
 		(
 		 int handle,

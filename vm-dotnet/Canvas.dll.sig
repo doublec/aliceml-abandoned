@@ -5,6 +5,6 @@ signature Canvas =
     val makeArrowType : ty * ty -> ty
     val makeBasicType : string -> ty
     val makeListType : ty -> ty
-    val makeRecordType : (string * ty) vector -> ty
+    val makeRecordType : ty vector -> ty
     val makeTupleType : ty vector -> ty
   end

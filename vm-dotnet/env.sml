@@ -25,7 +25,7 @@ fun clean(file) =
 (* Build Base Environment *)
 
 local
-  val EnvS    = ["Base", "CommandLine", "IO", "OS", "TextIO", "Tools"]
+  val EnvS    = ["CommandLine", "IO", "OS", "TextIO", "Tools"]
   fun Make(s) = make("", s)
 in
   fun makeEnv()  = List.map Make EnvS
