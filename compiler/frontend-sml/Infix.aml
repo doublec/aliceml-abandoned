@@ -38,9 +38,9 @@ structure Infix :> INFIX =
 			       | INFIX  of Assoc * int * Grammar.VId
 
     fun categoriseVId (IE: InfEnv) (at, vid as VId(i,vid')) =
-	case VIdSymtable.lookup(IE,vid')
-	  of (_,NONE)             => NONFIX(at)
-	   | (_,SOME(assoc,prec)) => INFIX(assoc, prec, vid)
+	(case VIdSymtable.lookup(IE,vid')
+	   of (_,NONE)             => NONFIX(at)
+	    | (_,SOME(assoc,prec)) => INFIX(assoc, prec, vid))
         handle VIdSymtable.Lookup => NONFIX(at)
 
     fun categoriseLongVId IE (at, SHORTLong(i, vid)) =
