@@ -1,11 +1,19 @@
-.SUFFIXES: .il .exe
+SRCS   = Alice.cs
+OBJS   = Alice.dll
+ILOBJS = foo.dll
 
-.il.exe:
-	ilasm $<
+all: Start.cs $(OBJS) $(ILOBJS)
+	coolc -nologo -import:Alice.dll -assembly+ Start.cs
 
-all: Alice.dll
-	coolc /dll Alice.cs
+%.dll : %.cs
+	coolc -nologo -dll -assembly+ -out:$@ $<
+
+%.dll : %.il
+	ilasm -nologo -quit -dll -out=$@ $<
 
 clean:
-	@-del Alice.dll
+	rm -rf $(OBJS) $(ILOBJS) Start.exe
+
+distclean: clean
+	rm -rf *~ *.pdb
 
