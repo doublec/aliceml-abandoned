@@ -24,7 +24,7 @@ import structure Settings from "Settings"
 
 import signature GTK_SUPPORT from "GTK_SUPPORT-sig"
  
-structure GtkSupport :> GTK_SUPPORT =
+structure GtkSupport :> GTK_SUPPORT  =
     struct
 	
 	type tag = Gtk.object
@@ -32,8 +32,42 @@ structure GtkSupport :> GTK_SUPPORT =
 
 (************ Primitive Gtk Instructions **************)
 
-fun widgetDestroy widget = Gtk.widgetDestroy(widget)
-fun objectDestroy object = Gtk.objectDestroy(object)
+fun toplevelWindowNew() = Gtk.windowNew Gtk.WINDOW_TOPLEVEL
+val windowSetTitle = Gtk.windowSetTitle
+val windowSetPolicy = Gtk.windowSetPolicy
+val windowSetDefaultSize = Gtk.windowSetDefaultSize
+val widgetSetUsize =  Gtk.widgetSetUsize
+val widgetSetDefaultSize = Gtk.windowSetDefaultSize
+val widgetShowAll = Gtk.widgetShowAll 
+val widgetHideAll = Gtk.widgetHideAll
+val widgetDestroy = Gtk.widgetDestroy
+val objectDestroy = Gtk.objectDestroy
+val containerAdd = Gtk.containerAdd
+val signalConnect = Gtk.signalConnect
+val labelNew = Gtk.labelNew
+val radioButtonNewWithLabel = Gtk.radioButtonNewWithLabel
+val radioButtonGroup = Gtk.radioButtonGroup
+val toggleButtonSetActive = Gtk.toggleButtonSetActive
+val toggleButtonGetActive = Gtk.toggleButtonGetActive
+val spinButtonGetValueAsInt = Gtk.spinButtonGetValueAsInt
+val adjustmentGetFieldPageSize = Gtk.adjustmentGetFieldPageSize
+val adjustmentGetFieldUpper = Gtk.adjustmentGetFieldUpper
+val adjustmentGetFieldValue = Gtk.adjustmentGetFieldValue
+val layoutFreeze = Gtk.layoutFreeze
+val layoutThaw = Gtk.layoutThaw
+val menuBarAppend = Gtk.menuBarAppend
+val menuItemNewWithLabel = Gtk.menuItemNewWithLabel
+val menuItemRightJustify = Gtk.menuItemRightJustify
+
+val itemLowerToBottom = GtkCanvas.itemLowerToBottom
+
+(************ Gdk Primitives **************************)
+
+val fontLoad = Gdk.fontLoad
+val fontGetFieldAscent = Gdk.fontGetFieldAscent
+val stringWidth = Gdk.stringWidth
+
+type event = Gdk.event
 
 (************ Window creation helpers ******************)
 
@@ -340,6 +374,69 @@ fun scroll (d,scrolled,adj,max) =
 	  else  Gtk.adjustmentSetValue(adj,Real.+(value,d))
 	      ;())
     end  
+
+fun handleGdkKeyPress ([Gdk.EVENT(event)],scrolled,hadj,vadj,max_x,max_y) = 
+    case event of 
+	Gdk.GDK_KEY_PRESS({keyval = 65361,...}) => 
+	    scroll(~10.0,scrolled,hadj,max_x) 
+      | Gdk.GDK_KEY_PRESS({keyval = 65363,...}) => 
+	    scroll(10.0,scrolled,hadj,max_x) 
+      | Gdk.GDK_KEY_PRESS({keyval = 65362,...}) => 
+	    scroll(~10.0,scrolled,vadj,max_y)    
+      | Gdk.GDK_KEY_PRESS({keyval = 65364,...}) => 
+	    scroll(10.0,scrolled,vadj,max_y)
+      | _ => ()
+
+(* Yields coordinates relative to the whole canvas *)
+ fun calcAbsoluteMousePointerPosition(x,y,hadj,vadj) = 
+     let
+	 val valueh = adjustmentGetFieldValue(hadj)
+	 val valuev = adjustmentGetFieldValue(vadj) 
+	 val x = Real.+ (x,valueh)
+	 val y = Real.+ (y,valuev)
+     in
+	 (x,y)
+     end
+
+ fun getMouseClickEventInfo ([Gdk.EVENT(event)],hadj,vadj) = 
+     case event of
+	 Gdk.GDK_BUTTON_PRESS({button = b, ...} as r) => 
+	     SOME(calcAbsoluteMousePointerPosition(#x(r),#y(r),hadj,vadj),b)
+       | _ => NONE
+	     
+(* Hilfsprozedur fuer setSelectionMenuSensitive *)
+fun getSelectionMenu bar = 
+    let
+	val menu_heading_items = UnsafeValue.cast 
+		(Gtk.containerChildren(bar)) : Gtk.object list
+	val menu_heading_selection = List.nth(menu_heading_items,1)
+	val submenu = Gtk.menuItemGetFieldSubmenu(menu_heading_selection)
+    in
+	(menu_heading_selection,submenu)
+    end
+
+(* Switches "selection" menu on/off *)
+fun setSelectionMenuSensitive (bar,sensitive) = 
+    let
+	val (menu_heading_selection,submenu) = getSelectionMenu bar
+	val selection_menu = hd
+		(UnsafeValue.cast 
+		 (Gtk.containerChildren(menu_heading_selection)) 
+		 : Gtk.object list)    
+    in
+	(setSensitive(selection_menu,sensitive)
+	 ;setSensitive(submenu,sensitive))
+    end
+
+fun setExpandSensitive (bar,sensitive)= 
+    let
+	val (menu_heading_selection,submenu) = getSelectionMenu bar
+	val children = UnsafeValue.cast 
+		(Gtk.containerChildren(submenu)) : Gtk.object list
+	val expand = List.nth(children,0)
+    in
+	setSensitive(expand,sensitive)
+    end
      
 (******************** Canvas Items ***************************)
 

@@ -20,9 +20,6 @@ import structure PervasiveType from "x-alice:/lib/rtt/PervasiveType"
 import structure PPInf from "x-alice:/lib/rtt/PPInf"
 import structure UnsafeValue from "x-alice:/lib/system/UnsafeValue"
 import structure Reflect from "x-alice:/lib/system/Reflect"
-import structure Gtk from "x-alice:/lib/gtk/Gtk"
-import structure Gdk from "x-alice:/lib/gtk/Gdk"
-import structure GtkCanvas from "x-alice:/lib/gtk/GtkCanvas"
 
 import structure Node from "Node"
 import structure Doc from "Doc"
@@ -222,46 +219,14 @@ open GtkSupport Node Doc Color PervasiveType
 (*********** Ende Knotensuche ***************)
 
 
-(* Hilfsprozedur fuer setSelectionMenuSensitive *)
-fun getSelectionMenu bar = 
-    let
-	val menu_heading_items = UnsafeValue.cast 
-		(Gtk.containerChildren(bar)) : Gtk.object list
-	val menu_heading_selection = List.nth(menu_heading_items,1)
-	val submenu = Gtk.menuItemGetFieldSubmenu(menu_heading_selection)
-    in
-	(menu_heading_selection,submenu)
-    end
 
-(* Switches "selection" menu on/off *)
-fun setSelectionMenuSensitive (bar,sensitive) = 
-    let
-	val (menu_heading_selection,submenu) = getSelectionMenu bar
-	val selection_menu = hd
-		(UnsafeValue.cast 
-		 (Gtk.containerChildren(menu_heading_selection)) 
-		 : Gtk.object list)    
-    in
-	(setSensitive(selection_menu,sensitive)
-	 ;setSensitive(submenu,sensitive))
-    end
-
-fun setExpandSensitive (bar,sensitive)= 
-    let
-	val (menu_heading_selection,submenu) = getSelectionMenu bar
-	val children = UnsafeValue.cast 
-		(Gtk.containerChildren(submenu)) : Gtk.object list
-	val expand = List.nth(children,0)
-    in
-	setSensitive(expand,sensitive)
-    end
 
 val selection = ref NONE
     
 fun destroySelectionMarkings () = case !selection of 
     NONE => ()
-  | SOME(_,rect,rect') =>( Gtk.objectDestroy(rect)
-			  ; Gtk.objectDestroy(rect'))
+  | SOME(_,rect,rect') =>( objectDestroy(rect)
+			  ; objectDestroy(rect'))
 
 
 fun getSelectionNode() = case !selection of 
@@ -292,7 +257,7 @@ fun resizeSepLines (dict,rx) =
      end
 
 fun canvaswidth (hadj) = let
-			 val page_sh = Gtk.adjustmentGetFieldPageSize(hadj)
+			 val page_sh = adjustmentGetFieldPageSize(hadj)
 			 val h = if (Real.< (page_sh,(!(Settings.max_x)))) 
 				     then !(Settings.max_x) else page_sh
 		     in
@@ -301,11 +266,11 @@ fun canvaswidth (hadj) = let
 
 (* invokes canvas resize *)	
 fun handleResize (scrolled,hadj,vadj,resize) = (fn _ =>  Server.serve (fn () => let
-			     val upperh = Gtk.adjustmentGetFieldUpper(hadj)
-			     val valueh = Gtk.adjustmentGetFieldValue(hadj)
-			     val upperv = Gtk.adjustmentGetFieldUpper(vadj)
-			     val valuev = Gtk.adjustmentGetFieldValue(vadj) 
-			     val page_sv = Gtk.adjustmentGetFieldPageSize(vadj)
+			     val upperh = adjustmentGetFieldUpper(hadj)
+			     val valueh = adjustmentGetFieldValue(hadj)
+			     val upperv = adjustmentGetFieldUpper(vadj)
+			     val valuev = adjustmentGetFieldValue(vadj) 
+			     val page_sv = adjustmentGetFieldPageSize(vadj)
 			     val h = canvaswidth(hadj)
 			     val v = if (Real.< (page_sv,(!(Settings.max_y)))) 
 					 then !(Settings.max_y) else page_sv
@@ -431,25 +396,14 @@ fun handleResize (scrolled,hadj,vadj,resize) = (fn _ =>  Server.serve (fn () => 
 		;()))
 	end
 
- fun calcAbsoluteMousePointerPosition(x,y,hadj,vadj) = 
-     let
-	 val valueh = Gtk.adjustmentGetFieldValue(hadj)
-	 val valuev = Gtk.adjustmentGetFieldValue(vadj) 
-	 val x = Real.+ (x,valueh)
-	 val y = Real.+ (y,valuev)
-     in
-	 (x,y)
-     end
-
 in
 
 structure Widget :> WIDGET =
 struct
 
-    val window = Gtk.windowNew Gtk.WINDOW_TOPLEVEL
-
-    val canvas = ref GtkSupport.uglyNULL
-    val canvasroot = ref GtkSupport.uglyNULL
+    val window = toplevelWindowNew()
+    val canvas = ref uglyNULL
+    val canvasroot = ref uglyNULL
     val resize = ref (fn () => ())
     val alive = ref false
     val act_line = ref 0
@@ -460,7 +414,7 @@ struct
 			    ; TextIO.print(" and now is "
 					   ^ Int.toString(!act_line)^"\n"))
 
-    fun Delete _ = (Gtk.widgetHideAll(window)
+    fun Delete _ = (widgetHideAll(window)
 		    ;Settings.max_x :=0.0
 		    ;Settings.max_y :=0.0
 		    ;Dictionaries.Main.dumpAll(Dictionaries.maindict)
@@ -472,18 +426,18 @@ struct
 	 
     val (scrolled,hadj,vadj) =  createScrollWindowDefaults(20.0,50.0)
 
- fun freezeThaw(x) = (Gtk.layoutFreeze(x)
-			  ; Gtk.layoutThaw(x))
+    fun freezeThaw(x) = (layoutFreeze(x)
+		       ; layoutThaw(x))
 
-     fun show() = if !alive then Gtk.widgetShowAll(window) else ()
+     fun show() = if !alive then widgetShowAll(window) else ()
     
      val stopButtonActive = ref false
 
      val stopButton = let
-			  val button = Gtk.menuItemNewWithLabel("stop") 
+			  val button = menuItemNewWithLabel("stop") 
 		      in
 			  (GtkSupport.setSensitive(button,false) 
-			   ;Gtk.signalConnect
+			   ;signalConnect
 			   (button,
 			    "activate",
 			    fn _ => (stopButtonActive := false
@@ -510,28 +464,17 @@ struct
      fun testIfStop() = if not(stopButtonIsActive()) then raise stopped
 			else ()
 		    
-     fun handleReinspect node = 
-	 let
-	     val update_reinspect = fn (n,_) => Update.reinspect(n,NewNode.createGraph,
-								 NewNode.createGraphInf,!canvasroot)
-	 in
-	     fn _ => ( setStopButtonOnOff(update_reinspect,(node,0)) )
-	 end
+     fun update_reinspect n = Update.reinspect(n,NewNode.createGraph,
+					       NewNode.createGraphInf,!canvasroot)
+
+     fun handleReinspect node = fn _ => ( setStopButtonOnOff(update_reinspect,node ))
      
-    fun handleReinspectSelection _ = 
-	let
-	    val update_reinspect = 
-		fn (n,_) => Update.reinspect(n,NewNode.createGraph,
-					     NewNode.createGraphInf,!canvasroot)
-	in
-	    setStopButtonOnOff(update_reinspect, (getSelectionNode(),0))
-	end
-    
+     fun handleReinspectSelection _ = setStopButtonOnOff(update_reinspect, getSelectionNode())
   
      fun handleShrinkSelection _  = 
 	 let
 	 val update_shrink 
-	     = fn (n,_)  => let val diff = getDepth(n) - 
+	     = fn n  => let val diff = getDepth(n) - 
 	     Update.findHighestDepth n
 			    in if diff >= 0 
 				   then ()
@@ -539,16 +482,16 @@ struct
 						     NewNode.createGraphInf,!canvasroot)
 			    end
 	 in
-	     setStopButtonOnOff(update_shrink, (getSelectionNode(),0))
+	     setStopButtonOnOff(update_shrink, getSelectionNode())
 	 end
 
      fun handleExpandSelection _  = 
 	 let
-	     val update_expand =  fn (n,_) 
+	     val update_expand =  fn n 
 			     => Update.foldDepth(n,1,NewNode.createGraph,
 						 NewNode.createGraphInf,!canvasroot)
 	 in
-	 setStopButtonOnOff(update_expand, (getSelectionNode(),0))
+	 setStopButtonOnOff(update_expand, getSelectionNode())
 	 end
 
      fun handleWidth node =  
@@ -571,7 +514,7 @@ struct
 
      fun handleForce node _ = 
 	 let
-	     val update_force =  fn (n,_) 
+	     val update_force =  fn n 
 			     => let val b_future = case getDesc n of  
 				    VALUE(r) => UnsafeValue.cast (#value(r)) 
 				  | I_VALUE(r) => UnsafeValue.cast (#value(r)) 
@@ -580,7 +523,7 @@ struct
 				end
 	 in
 	     setStopButtonOnOff
-	     (update_force, (getSelectionNode(),0))
+	     (update_force, getSelectionNode())
 	 end
 
 
@@ -639,47 +582,47 @@ fun updateIterate = re_inspect
 				    (fontpicker)
 			    in
 				(Settings.fontname := fontname
-				;Settings.font:= Gdk.fontLoad(fontname)
+				;Settings.font:= fontLoad(fontname)
 				;Settings.fontHeight :=
-				 (Gdk.fontGetFieldAscent(!Settings.font)+
+				 (fontGetFieldAscent(!Settings.font)+
 			   Gdk.fontGetFieldDescent(!Settings.font) )
 				;Settings.fontWidth:=
-				 (Gdk.stringWidth(!Settings.font,"W")))
+				 (stringWidth(!Settings.font,"W")))
 			    end
 			    ;  *) Settings.max_width := 
-			    Gtk.spinButtonGetValueAsInt(width_s) 
+			    spinButtonGetValueAsInt(width_s) 
 			    ;Settings.max_depth := 
-			    Gtk.spinButtonGetValueAsInt(depth_s)
+			    spinButtonGetValueAsInt(depth_s)
 			    (* Fontgroesse *) (*
 			    ;  let
 				  val new_size = 
-				      Gtk.spinButtonGetValueAsInt(font_s)
+				      spinButtonGetValueAsInt(font_s)
 			      in
 				  if !Settings.fontSize = new_size then ()
 				  else ( Settings.setFontSize(new_size)
 				       ; updateIterate())
 			      end *)
 			    (* Debug Aid *)
-			    ;if Gtk.toggleButtonGetActive(relmode_button) = 
+			    ;if toggleButtonGetActive(relmode_button) = 
 			      true
 			      (* 1 *)
 			      orelse 
-			   Gtk.toggleButtonGetActive(tokenmode_button) = 
+			   toggleButtonGetActive(tokenmode_button) = 
 			       true
 			       then print ("Relmode-Button set\n")
 				   else print ("Relmode-Button not set\n")
 			    ;Settings.relmode := (
-			    Gtk.toggleButtonGetActive(relmode_button) = true
+			    toggleButtonGetActive(relmode_button) = true
 						  (* 1 *)
 						  orelse 
-			   Gtk.toggleButtonGetActive(tokenmode_button) = true 
+			   toggleButtonGetActive(tokenmode_button) = true 
 						  (* 1 *) )
 			    ;Settings.tokenmode :=  
-			    Gtk.toggleButtonGetActive(tokenmode_button) = true
+			    toggleButtonGetActive(tokenmode_button) = true
 			    (* 1 *)
-			    ;Gtk.widgetDestroy(w)
+			    ;widgetDestroy(w)
 			    ;if 
-			    Gtk.toggleButtonGetActive(treemode_button) = true 
+			    toggleButtonGetActive(treemode_button) = true 
 			    (* 1 *)
 				 then (Dictionaries.RelMan.dumpAll
 				       (Dictionaries.reldict)
@@ -691,7 +634,7 @@ fun updateIterate = re_inspect
      fun Preferences _ = Server.serve (fn () =>
        	   let	
            (* Width & Depth Settings *)
-	   val width_lab = Gtk.labelNew("Set Width Limit to...")	       
+	   val width_lab = labelNew("Set Width Limit to...")	       
 	   val width_s = createSpinButton{init =(!Settings.max_width) , 
 					   lower = 0, 
 					   upper = 100, 
@@ -702,7 +645,7 @@ fun updateIterate = re_inspect
 					   upper = 100, 
 					   inc = 1, 
 					   dec = 0}
-	    val depth_lab = Gtk.labelNew("Set Depth Limit to...")
+	    val depth_lab = labelNew("Set Depth Limit to...")
 	    val table = createTable{rows = 2, cols = 4, 
 				    entries = [(width_lab,0,2,0,1),
 				     (width_s,2,3,0,1),
@@ -710,28 +653,28 @@ fun updateIterate = re_inspect
 				     (depth_s,2,3,1,2)]}
 	    val frame = createFrame("",table)
 	    (* Mode Settings *)
-	    val treemode_button = Gtk.radioButtonNewWithLabel(uglyNULL, 
+	    val treemode_button =radioButtonNewWithLabel(uglyNULL, 
        			      "Tree Mode")
-	    val group = Gtk.radioButtonGroup(treemode_button)
-	    val tokenmode_button = Gtk.radioButtonNewWithLabel(group, 
+	    val group = radioButtonGroup(treemode_button)
+	    val tokenmode_button = radioButtonNewWithLabel(group, 
 				"Relational Mode - Token Equality")
-	    val group = Gtk.radioButtonGroup(tokenmode_button)
-	    val relmode_button = Gtk.radioButtonNewWithLabel(group, 
+	    val group = radioButtonGroup(tokenmode_button)
+	    val relmode_button = radioButtonNewWithLabel(group, 
 				"Relational Mode - Structural Equality")
 	    val _ = if !Settings.tokenmode 
-			then Gtk.toggleButtonSetActive(tokenmode_button,true 
+			then toggleButtonSetActive(tokenmode_button,true 
 						       (* 1 *) )
 		    else if !Settings.relmode then 
-			Gtk.toggleButtonSetActive(relmode_button,true 
+			toggleButtonSetActive(relmode_button,true 
 						  (* 1 *))
 			else
-			Gtk.toggleButtonSetActive(treemode_button,true (* 1 *))
+			toggleButtonSetActive(treemode_button,true (* 1 *))
 
 	    val radiobox = createVBoxDefaults[treemode_button,
 					      relmode_button,
 					      tokenmode_button]
 (*
-	    val font_lab = Gtk.labelNew("Set Font Size to...")	
+	    val font_lab = labelNew("Set Font Size to...")	
 	    val font_s = createSpinButton{init =(!Settings.fontSize) , 
 					  lower = 8, 
 					   upper = 50, 
@@ -747,7 +690,7 @@ fun updateIterate = re_inspect
 
 	    (* Buttonbox *)
 
-	    val w = Gtk.windowNew Gtk.WINDOW_TOPLEVEL
+	    val w = toplevelWindowNew()
 	    val bbox = createButtonBox{buttons = 
 		      [BObj("ok",[Handler("clicked",
 					  (okHandler(w,
@@ -760,7 +703,7 @@ fun updateIterate = re_inspect
 		       BObj("apply",[]),
 		       BObj("cancel",
 			    [Handler("clicked",fn _ => 
-				     Gtk.widgetDestroy(w))])],
+				     widgetDestroy(w))])],
 				       borderwidth = 20}
 
 	    val n = createNotebook[("Width & Depth Limit Settings",frame),
@@ -769,12 +712,12 @@ fun updateIterate = re_inspect
 
 	    val vbox = createVBoxDefaults[n,bbox]
 		in
-		    (Gtk.windowSetTitle (w, "Preferences")
-		    ;Gtk.windowSetPolicy(w,0,0,1)
-	            ;Gtk.containerAdd(w,vbox)
-	            ;Gtk.signalConnect (w, "delete-event", 
-					fn _ => Gtk.widgetDestroy(w) )
-		     ;Gtk.widgetShowAll(w))
+		    (windowSetTitle (w, "Preferences")
+		    ;windowSetPolicy(w,0,0,1)
+	            ;containerAdd(w,vbox)
+	            ;signalConnect (w, "delete-event", 
+					fn _ => widgetDestroy(w) )
+		     ;widgetShowAll(w))
 	end)
 
 	
@@ -817,14 +760,15 @@ fun updateIterate = re_inspect
 
      
 		  
-	val _ = Gtk.menuBarAppend(bar,stopButton)
-	val _ = Gtk.menuItemRightJustify(stopButton)
+	val _ = menuBarAppend(bar,stopButton)
+	val _ = menuItemRightJustify(stopButton)
 
  
 (* Sendet Typinformation eines Knotens an den Statusbar *)
      fun postT n = 
 	 let  
 	     val desc = Node.getDesc(n)
+	     val positions_displayed = Real.trunc(canvaswidth(hadj)) div 6 
 	 in
 	     (case desc of
 		 Node.INTERPUNCT => 0
@@ -833,10 +777,10 @@ fun updateIterate = re_inspect
 					      (PPType.ppTyp(#typ(r)),1000)
 				    in
 					if
-					   (String.size(text)) > 50 
+					   (String.size(text)) > positions_displayed 
 					    then
 		     postType("  " 
-			      ^String.extract(text, 0,SOME(50)))
+			      ^String.extract(text, 0,SOME( positions_displayed)) ^ " ... ")
 		     else
 			 postType("  " ^ text)
 			 end
@@ -844,7 +788,7 @@ fun updateIterate = re_inspect
 		     postType("  " 
 			      ^ String.extract(PrettyPrint.toString
 					       (PPInf.ppInf(#typ(r)),
-						50),0,SOME(50)))
+					 positions_displayed	),0,SOME( positions_displayed)) ^ " ... ")
 		     ;()) handle _ => ()
 	 end
    
@@ -893,20 +837,17 @@ fun updateIterate = re_inspect
 	 ;Update.setVisible(0,dy)) (* Update.setVisible ist wichtig - 
 				    <> zu Widget.setVisible ! *)
 	end
- 
+
 (* Handelt Mouseclick *)
-     fun handleEvent [Gdk.EVENT(event)] = Server.serve (fn () =>
+     fun handleEvent event = Server.serve (fn () =>
      let
-	 val font_width = GtkSupport.fontWidth()
-	 val font_height = GtkSupport.fontHeight()  
+	 val font_width = !Settings.fontWidth
+	 val font_height = !Settings.fontHeight  
+	 val position = getMouseClickEventInfo(event,hadj,vadj) (* uses Gdk datatype -> GtkSupport *)
      in
-	case event of
-	  Gdk.GDK_BUTTON_PRESS({button = b, ...} as r) => 
+	case position of 
+	  SOME ((x,y),b)=> 
 		    let 
-			val (x,y) = calcAbsoluteMousePointerPosition(#x(r),
-								     #y(r),
-								     hadj,
-								     vadj)
 			val node = search(x,y)      
 		    in 
 		       (case node of 
@@ -934,8 +875,8 @@ fun updateIterate = re_inspect
 							    y2')
 				in                                             
 				    (  postT n   
-				  ; GtkCanvas.itemLowerToBottom(re) 
-				 ; GtkCanvas.itemLowerToBottom(re') 
+				  ; itemLowerToBottom(re) 
+				 ; itemLowerToBottom(re') 
 				    ; destroySelectionMarkings()
 				    ; selection := SOME (n,re,re') 
 				    ; setSelectionMenuSensitive(bar,true)
@@ -959,22 +900,12 @@ fun updateIterate = re_inspect
 				     ; destroySelectionMarkings()
 					 ; selection := NONE))
 		    end
-        | _ => ()
+        | NONE => ()
      end)
 
 (* Handlet Tastendruck *)
-     fun handleWindowEvent [Gdk.EVENT(event)] = 
-	 Server.serve (fn () => 
-		case event of  
-		    Gdk.GDK_KEY_PRESS({keyval = 65361,...}) => 
-			scroll(~10.0,scrolled,hadj,!Settings.max_x) 
-		  | Gdk.GDK_KEY_PRESS({keyval = 65363,...}) => 
-			scroll(10.0,scrolled,hadj,!Settings.max_x) 
-		  | Gdk.GDK_KEY_PRESS({keyval = 65362,...}) => 
-			scroll(~10.0,scrolled,vadj,!Settings.max_y)    
-		  | Gdk.GDK_KEY_PRESS({keyval = 65364,...}) => 
-			scroll(10.0,scrolled,vadj,!Settings.max_y)
-		  | _ => () )
+     fun handleWindowEvent event = 
+	 Server.serve (fn () => handleGdkKeyPress(event,scrolled,hadj,vadj,!Settings.max_x,!Settings.max_y))
 
      
 
@@ -984,7 +915,7 @@ fun updateIterate = re_inspect
 	let
 	    val _ = if !canvas =GtkSupport.uglyNULL
 			then ()
-		    else Gtk.objectDestroy(!canvas)
+		    else objectDestroy(!canvas)
 	    structure DA  =  MkDrawingArea(val xsize = !Settings.max_x 
 					   val ysize = !Settings.max_y) 
 		                           : DRAWING_AREA
@@ -993,26 +924,26 @@ fun updateIterate = re_inspect
 	    ;canvasroot := DA.root
 	    ;resize :=  (handleResize(scrolled,hadj,vadj,DA.resize))
 	    ;Update.resize := !resize
-	    ;Gtk.containerAdd(scrolled,DA.canvas)
-	    ;Gtk.signalConnect(scrolled,"size_allocate",
+	    ;containerAdd(scrolled,DA.canvas)
+	    ;signalConnect(scrolled,"size_allocate",
 				 fn _ => !resize())
-	    ;Gtk.signalConnect(hadj,"value_changed",fn _ => 
+	    ;signalConnect(hadj,"value_changed",fn _ => 
 			      freezeThaw(DA.canvas))
-	    ;Gtk.signalConnect(vadj,"value_changed",fn _ => 
+	    ;signalConnect(vadj,"value_changed",fn _ => 
 			      freezeThaw(DA.canvas)) 
-	    ;Gtk.signalConnect(DA.canvas,"event",handleEvent)
-	    ;Gtk.widgetShowAll(window)
+	    ;signalConnect(DA.canvas,"event",handleEvent)
+	    ;widgetShowAll(window)
 	    ; alive :=true) 
 	end
 
  val _ = new()
 
-     val _ = (Gtk.windowSetTitle (window, "Alice Browser V 0.2")
-	      ; Gtk.widgetSetUsize (window, 200, 100) 
-	      ; Gtk.windowSetDefaultSize(window, 500,400)
-	      ;Gtk.signalConnect (window, "delete-event", Delete)
+     val _ = (windowSetTitle (window, "Alice Browser V 0.2")
+	      ; widgetSetUsize (window, 200, 100) 
+	      ; windowSetDefaultSize(window, 500,400)
+	      ;signalConnect (window, "delete-event", Delete)
 	      ;setSelectionMenuSensitive (bar,false)  
-	      ;Gtk.containerAdd(window,createVBox[(bar,
+	      ;containerAdd(window,createVBox[(bar,
 						    false (* 0 *)
 						   ,false (* 0 *),
 						    0),
@@ -1023,7 +954,7 @@ fun updateIterate = re_inspect
 						   false ,
 						  (*  0 *)
 						  false  ,0)])
-	      ;Gtk.signalConnect(window,"event",handleWindowEvent))
+	      ;signalConnect(window,"event",handleWindowEvent))
 
 (**** Initialisierung ****)
 
