@@ -295,7 +295,7 @@ structure World =
                            let val (x,y) = indexToCoords(xs,i) 
                            	   val _ = if (x=0) then
                            	    	if y mod 2 = 0 then print "\n" 
-                           	    	else print " \n"
+                           	    	else print "\n "
                            	    else ()
                            in
                                print ((cellToChar c)^" ")
