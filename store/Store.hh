@@ -155,6 +155,12 @@ public:
     Store::CheckAlive((char *) p);
     return p;
   }
+  static Transient *DirectWordToTransient(word v) {
+    AssertStore(((u_int) x & TAGMASK) == TRTAG);
+    Transient *p = PointerOp::DirectDecodeTransient(PointerOp::Deref(v));
+    Store::CheckAlive((char *) p);
+    return p;
+  }
   static Transient *WordToTransient(word v) {
     Transient *p = PointerOp::DecodeTransient(PointerOp::Deref(v));
     Store::CheckAlive((char *) p);
@@ -173,22 +179,22 @@ public:
   }
   static int DirectWordToInt(word x) {
     AssertStore(((u_int) x & INTTAG) == INTTAG);
-    return PointerOp::DecodeInt(x);
+    return PointerOp::DirectDecodeInt(x);
   }
   static Block *DirectWordToBlock(word x) {
     AssertStore(((u_int) x & TAGMASK) == BLKTAG);
-    Block *p = PointerOp::DecodeBlock(x);
+    Block *p = PointerOp::DirectDecodeBlock(x);
     Store::CheckAlive((char *) p);
     return p;
   }
   static Chunk *DirectWordToChunk(word x) {
-    Chunk *p = PointerOp::DecodeChunk(x);
+    Chunk *p = PointerOp::DirectDecodeChunk(x);
     Store::CheckAlive((char *) p);
     return p;
   }
   static void *DirectWordToUnmanagedPointer(word x) {
     AssertStore(((u_int) x & TAGMASK) == BLKTAG);
-    return PointerOp::DecodeUnmanagedPointer(x);
+    return PointerOp::DirectDecodeUnmanagedPointer(x);
   }
   // Calculate Block Size according to given size (used only for assertions)
   static u_int SizeToBlockSize(u_int size) {
