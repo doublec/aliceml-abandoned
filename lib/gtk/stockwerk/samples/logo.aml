@@ -78,9 +78,8 @@ local
     fun toRainbow _ = 
 	Gtk.imageSetFromFile(image, "logo.png")
 
-    fun delete _  = OS.Process.exit OS.Process.success
+    fun delete _  = serve (fn _ => OS.Process.exit OS.Process.success)
     val window    = Gtk.windowNew Gtk.WINDOW_TOPLEVEL
-
 in
     val _ = (Gtk.windowSetTitle (window, "Alice Logo Demo");
 	     Gtk.containerSetBorderWidth (window, 10);
