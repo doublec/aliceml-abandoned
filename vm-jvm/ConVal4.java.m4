@@ -53,11 +53,33 @@ final public class ConValTuple4 implements DMLConVal {
 
     /** Gleichheit der  und Inhalte */
     final public boolean equals(java.lang.Object val) {
-	return (val instanceof ConValTuple4) &&
-	    fst.equals(((ConValTuple4) val).fst) &&
-	    snd.equals(((ConValTuple4) val).snd) &&
-	    thr.equals(((ConValTuple4) val).thr) &&
-	    fur.equals(((ConValTuple4) val).fur);
+	try {
+	    if (val instanceof ConValTuple4) {
+	    ConValTuple4 v = (ConValTuple4) val;
+	    return
+		fst.equals(v.fst) &&
+		snd.equals(v.snd) &&
+		thr.equals(v.thr) &&
+		fur.equals(v.fur);
+	} else if (val instanceof DMLConVal) {
+	    DMLTuple t = (DMLTuple) ((DMLConVal) val).getContent();
+	    if (t.getArity()!=4) {
+		return false;
+	    } else {
+		return
+		    t.getByIndex(0).equals(fst) &&
+		    t.getByIndex(1).equals(snd) &&
+		    t.getByIndex(2).equals(thr) &&
+		    t.getByIndex(3).equals(fur);
+	    }
+	} else {
+	    return false;
+	}
+	} catch (java.rmi.RemoteException r) {
+	    System.err.println(r);
+	    r.printStackTrace();
+	    return false;
+	}
     }
 
     final public DMLValue assign(DMLValue val) {

@@ -25,10 +25,25 @@ final public class Tuple2 implements DMLTuple {
     final public DMLValue get3() { throw new ArrayIndexOutOfBoundsException(); }
     final public DMLValue get4() { throw new ArrayIndexOutOfBoundsException(); }
 
+    /** Gleichheit der  und Inhalte */
     final public boolean equals(java.lang.Object val) {
-	return (val instanceof Tuple2) &&
-	    fst.equals(((Tuple2) val).fst) &&
-	    snd.equals(((Tuple2) val).snd);
+	if (val instanceof Tuple2) {
+	    Tuple2 v = (Tuple2) val;
+	    return
+		fst.equals(v.fst) &&
+		snd.equals(v.snd);
+	} else if (val instanceof DMLTuple) {
+	    DMLTuple t = (DMLTuple) val;
+	    if (t.getArity()!=2) {
+		return false;
+	    } else {
+		return
+		    t.getByIndex(0).equals(fst) &&
+		    t.getByIndex(1).equals(snd);
+	    }
+	} else {
+	    return false;
+	}
     }
 
     final public java.lang.String toString() {

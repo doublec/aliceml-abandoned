@@ -27,11 +27,27 @@ final public class Tuple3 implements DMLTuple {
     public DMLValue get3() { throw new ArrayIndexOutOfBoundsException(); }
     public DMLValue get4() { throw new ArrayIndexOutOfBoundsException(); }
 
+    /** Gleichheit der  und Inhalte */
     final public boolean equals(java.lang.Object val) {
-	return (val instanceof Tuple3) &&
-	    fst.equals(((Tuple3) val).fst) &&
-	    snd.equals(((Tuple3) val).snd) &&
-	    thr.equals(((Tuple3) val).thr);
+	if (val instanceof Tuple3) {
+	    Tuple3 v = (Tuple3) val;
+	    return
+		fst.equals(v.fst) &&
+		snd.equals(v.snd) &&
+		thr.equals(v.thr);
+	} else if (val instanceof DMLTuple) {
+	    DMLTuple t = (DMLTuple) val;
+	    if (t.getArity()!=3) {
+		return false;
+	    } else {
+		return
+		    t.getByIndex(0).equals(fst) &&
+		    t.getByIndex(1).equals(snd) &&
+		    t.getByIndex(2).equals(thr);
+	    }
+	} else {
+	    return false;
+	}
     }
 
     public java.lang.String toString() {

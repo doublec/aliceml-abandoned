@@ -31,12 +31,29 @@ final public class Tuple4 implements DMLTuple {
     public DMLValue get3() { return fur; }
     public DMLValue get4() { throw new ArrayIndexOutOfBoundsException(); }
 
+    /** Gleichheit der  und Inhalte */
     final public boolean equals(java.lang.Object val) {
-	return (val instanceof Tuple4) &&
-	    fst.equals(((Tuple4) val).fst) &&
-	    snd.equals(((Tuple4) val).snd) &&
-	    thr.equals(((Tuple4) val).thr) &&
-	    fur.equals(((Tuple4) val).fur);
+	if (val instanceof Tuple4) {
+	    Tuple4 v = (Tuple4) val;
+	    return
+		fst.equals(v.fst) &&
+		snd.equals(v.snd) &&
+		thr.equals(v.thr) &&
+		fur.equals(v.fur);
+	} else if (val instanceof DMLTuple) {
+	    DMLTuple t = (DMLTuple) val;
+	    if (t.getArity()!=4) {
+		return false;
+	    } else {
+		return
+		    t.getByIndex(0).equals(fst) &&
+		    t.getByIndex(1).equals(snd) &&
+		    t.getByIndex(2).equals(thr) &&
+		    t.getByIndex(3).equals(fur);
+	    }
+	} else {
+	    return false;
+	}
     }
 
     final public java.lang.String toString() {

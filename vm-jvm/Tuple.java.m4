@@ -24,10 +24,9 @@ public class Tuple implements DMLTuple {
     public DMLValue get4() { return vals[4]; }
 
     public boolean equals(java.lang.Object val) {
-	if (!(val instanceof Tuple) ||
-	     (val instanceof Record))
+	if (val instanceof Record) {
 	    return false;
-	else {
+	} else if (val instanceof Tuple) {
 	    Tuple r = (Tuple) val;
 	    if (r.vals.length != this.vals.length)
 		return false;
@@ -36,6 +35,46 @@ public class Tuple implements DMLTuple {
 		if (!vals[i].equals(r.vals[i]))
 		    return false;
 	    return true;
+	} else if (val instanceof DMLTuple) {
+	    switch (vals.length) {
+	    case 1:
+		if (val instanceof Tuple1) {
+		    return vals[0].equals(((Tuple1) val).getByIndex(0));
+		} else {
+		    return false;
+		}
+	    case 2:
+		if (val instanceof Tuple2) {
+		    return
+			vals[0].equals(((Tuple2) val).getByIndex(0)) &&
+			vals[1].equals(((Tuple2) val).getByIndex(1));
+		} else {
+		    return false;
+		}
+	    case 3:
+		if (val instanceof Tuple3) {
+		    return
+			vals[0].equals(((Tuple3) val).getByIndex(0)) &&
+			vals[1].equals(((Tuple3) val).getByIndex(1)) &&
+			vals[2].equals(((Tuple3) val).getByIndex(2));
+		} else {
+		    return false;
+		}
+	    case 4:
+		if (val instanceof Tuple4) {
+		    return
+			vals[0].equals(((Tuple4) val).getByIndex(0)) &&
+			vals[1].equals(((Tuple4) val).getByIndex(1)) &&
+			vals[2].equals(((Tuple4) val).getByIndex(2)) &&
+			vals[3].equals(((Tuple4) val).getByIndex(3));
+		} else {
+		    return false;
+		}
+	    default:
+		return false;
+	    }
+	} else {
+	    return false;
 	}
     }
 
