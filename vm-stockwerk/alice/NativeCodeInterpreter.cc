@@ -163,7 +163,7 @@ Worker::Result NativeCodeInterpreter::Run() {
     Store::AddToIntgenSet(p);
   }
 #endif
-  Assert(frame->GetInterpreter() == this);
+  Assert(frame->GetWorker() == this);
   Chunk *code        = frame->GetCode();
   native_fun execute = (native_fun) code->GetBase();
   return execute(frame);
