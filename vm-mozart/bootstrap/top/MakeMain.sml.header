@@ -47,7 +47,7 @@ import   (*DEBUG*)
 from "x-alice:/common/PPInf.ozf"
 
 import   (*DEBUG*)
-    structure ParsingPhase
+    structure MakeParsingPhase
 from "x-alice:/frontend-sml/ParsingPhase.ozf"
 
 import   (*DEBUG*)
