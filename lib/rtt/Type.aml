@@ -525,16 +525,15 @@ structure TypePrivate =
 
     exception Type
 
-    fun function(ref(LINK t))		= function t
-      | function(ref(ABBREV(_,t)))	= function t
-      | function(ref(APPLY(t,_)))	= function t
-      | function t			= t
-
     fun isAbbrev t	= case !(follow t) of ABBREV _  => true | _ => false
     fun asAbbrev t	= case !(follow t) of ABBREV tt => tt | _ => raise Type
 
     fun asType(ref(LINK t))		= asType t
       | asType(ref(ABBREV(_,t)))	= asType t
+      | asType(t as ref(LAMBDA _))	= (reduceEta t;
+					   case !t of t' as LAMBDA _ => t'
+						    | _              => asType t
+					  )
       | asType(ref t')			= t'
 
     fun isUnknown t	= case asType t of HOLE _   => true | _ => false
@@ -566,6 +565,11 @@ structure TypePrivate =
       | isType'(ref(ABBREV(_,t)))		= isType' t
       | isType'(t as ref(APPLY _))		= isTypeApply'(t,0)
       | isType'(ref(MU t))			= isType' t
+      | isType'(t as ref(LAMBDA _))		= (reduceEta t;
+						   case !t
+						     of t' as LAMBDA _ => t'
+						      | _ => isType' t
+						  )
       | isType'(ref t')				= t'
     and isTypeApply'(ref(LINK t1 | MU t1), n)	= isTypeApply''(t1,n)
       | isTypeApply'(ref(APPLY(t1,t2)), n)	= isTypeApply'(t1,n+1)
@@ -593,6 +597,11 @@ structure TypePrivate =
       | asType'(ref(ABBREV(_,t)))		= asType' t
       | asType'(t as ref(t' as APPLY _))	= asTypeApply'(t',t,[])
       | asType'(ref(MU t))			= asType' t
+      | asType'(t as ref(LAMBDA _))		= (reduceEta t;
+						   case !t
+						     of t' as LAMBDA _ => t'
+						      | _ => asType' t
+						  )
       | asType'(ref t')				= t'
     (* Note that we can only legally have a LAMBDA node following an APPLY
        node if there is a MU node inbetween. *)

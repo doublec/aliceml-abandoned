@@ -77,8 +77,6 @@ signature TYPE =
 
     exception Type
 
-    val function :	typ -> typ
-
     val asArrow :	typ -> typ * typ		(* [Type] *)
     val asTuple :	typ -> typ vector		(* [Type] *)
     val asProd :	typ -> row			(* [Type] *)
