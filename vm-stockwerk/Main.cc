@@ -78,8 +78,6 @@ int main(int argc, char *argv[]) {
   // Setup Datastructures
   RootSet::Init();
   Properties::Init();
-  Constructor::Init(); //--** should be below in the Alice layer
-  Hole::Init();
   TaskStack::Init();
   IOHandler::Init();
   Scheduler::Init();
@@ -89,9 +87,13 @@ int main(int argc, char *argv[]) {
   ByneedInterpreter::Init();
   Unpickler::Init();
   Pickler::Init();
-  BootLinker::Init(nativeComponents);
   // Setup Alice Layer
   AliceLanguageLayer::Init();
+  // Setup Alice Exceptions used in lower Layers
+  //--** should not be here
+  Unpickler::InitExceptions();
+  Pickler::InitExceptions();
+  BootLinker::Init(nativeComponents);
   // Parse command line
   if (argc < 2) {
     fprintf(stderr, "usage: %s component\n", argv[0]);

@@ -15,6 +15,7 @@
 #endif
 
 #include "generic/RootSet.hh"
+#include "generic/Transients.hh"
 #include "generic/Unpickler.hh"
 #include "alice/AliceLanguageLayer.hh"
 #include "alice/PrimitiveTable.hh"
@@ -24,18 +25,38 @@
 #include "alice/AliceConcreteCode.hh"
 
 word AliceLanguageLayer::functionTransformName;
+word AliceLanguageLayer::constructorTransformName;
 
-word AliceFunctionHandler(word x) {
+static word AliceFunctionHandler(word x) {
   return AliceConcreteCode::New(TagVal::FromWordDirect(x))->ToWord();
 }
 
+static word AliceConstructorHandler(word x) {
+  Tuple *tuple = Tuple::FromWordDirect(x);
+  tuple->AssertWidth(2);
+  Constructor *constructor =
+    Constructor::New(tuple->Sel(0), Store::WordToBlock(tuple->Sel(1)));
+  return constructor->ToWord();
+}
+
 void AliceLanguageLayer::Init() {
-  PrimitiveTable::Init();
+  String *aliceFunction = String::New("Alice.function");
+  functionTransformName = aliceFunction->ToWord();
+  RootSet::Add(functionTransformName);
+  Unpickler::RegisterHandler(static_cast<Chunk *>(aliceFunction),
+			     AliceFunctionHandler);
+
+  String *aliceConstructor = String::New("Alice.constructor");
+  constructorTransformName = aliceConstructor->ToWord();
+  RootSet::Add(constructorTransformName);
+  Unpickler::RegisterHandler(static_cast<Chunk *>(aliceConstructor),
+			     AliceConstructorHandler);
+
+  Constructor::Init();
   Guid::Init();
   LazySelInterpreter::Init();
   AbstractCodeInterpreter::Init();
-  String *name = String::New("Alice.function");
-  functionTransformName = name->ToWord();
-  RootSet::Add(functionTransformName);
-  Unpickler::RegisterHandler(static_cast<Chunk *>(name), AliceFunctionHandler);
+
+  Hole::InitExceptions(); //--** should not be here
+  PrimitiveTable::Init();
 }

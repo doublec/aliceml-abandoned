@@ -20,6 +20,7 @@
 class AliceLanguageLayer {
 public:
   static word functionTransformName;
+  static word constructorTransformName;
 
   static void Init();
 };

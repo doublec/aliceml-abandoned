@@ -487,13 +487,6 @@ word ApplyTransform(Chunk *f, word x) {
     Block *xp = Store::WordToBlock(x);
     //--** xp->AssertWidth(1);
     return PrimitiveTable::LookupFunction(Chunk::FromWord(xp->GetArg(0)));
-  } else if ((len == sizeof("Alice.constructor") - 1) &&
-	     !std::memcmp(fs, "Alice.constructor", len)) {
-    Block *xp = Store::WordToBlock(x);
-    //--** xp->AssertWidth(2);
-    Constructor *constructor =
-      Constructor::New(xp->GetArg(0), Store::WordToBlock(xp->GetArg(1)));
-    return constructor->ToWord();
   } else {
     HashTable *table = HashTable::FromWordDirect(handlerTable);
     if (table->IsMember(f->ToWord())) {
@@ -1001,11 +994,14 @@ void Unpickler::Init() {
   UnpickleInterpreter::Init();
   PickleUnpackInterpeter::Init();
   PickleLoadInterpreter::Init();
-  Corrupt = UniqueConstructor::New(String::New("Component.Corrupt"))->ToWord();
-  RootSet::Add(Corrupt);
   handlerTable =
     HashTable::New(HashTable::BLOCK_KEY, initialHandlerTableSize)->ToWord();
   RootSet::Add(handlerTable);
+}
+
+void Unpickler::InitExceptions() {
+  Corrupt = UniqueConstructor::New(String::New("Component.Corrupt"))->ToWord();
+  RootSet::Add(Corrupt);
 }
 
 void Unpickler::RegisterHandler(Chunk *name, handler handler) {
