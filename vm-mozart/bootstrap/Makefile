@@ -2,7 +2,7 @@ PREFIX = /opt/stockhausen-devel
 
 STOC = STOC_MOZART=../../stoc/backend-mozart/stoc-mozart.exe \
 	sml @SMLload=../../stoc/stoc-mozart
-STOC_OPTS = --noprintcomponentsig --noimplicitimport
+STOC_OPTS = --no-dump-elaboration-sig --no-implicit-import
 OZHOME = /opt/mozart-1.1.1
 OZC = ozc
 OZL = ozl
@@ -190,10 +190,10 @@ $(PREFIX)/bin/%: %
 	install -c -m 555 $< $@
 
 $(PREFIX)/lib/Base.ozf: lib/Base.sml $(MINIMALINSTALL)
-	$(PREFIX)/bin/stoc --noimplicitimport -c $< -o $@
+	$(PREFIX)/bin/stoc --no-implicit-import -c $< -o $@
 
 $(PREFIX)/lib/%: lib/% lib/%.sig $(MINIMALINSTALL)
-	$(PREFIX)/bin/stoc --noimplicitimport --replacesign $< $<.sig $@
+	$(PREFIX)/bin/stoc --no-implicit-import --replacesign $< $<.sig $@
 
 clean:
 	-rm -f $(ALLFILES)
