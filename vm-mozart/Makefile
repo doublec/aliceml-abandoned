@@ -621,21 +621,8 @@ build3/Default.import: lib/fundamental/Fundamental.import lib/Other.import
 
 build3/lib/system/Unix.ozf: build3/lib/system/TextIO.ozf
 
-#--** --rtt-level=core is a problem for compiler/frontend-sml/MkParsingPhase.aml
-build3/lib/fundamental/%.ozf: build3/lib/fundamental/%.aml
-	$(ALICEC2) $(ALICEC_OPTS) --rtt-level=full -c $< -o $@
-
-build3/lib/system/%.ozf: build3/lib/system/%.aml
-	$(ALICEC2) $(ALICEC_OPTS) --rtt-level=full -c $< -o $@
-
-build3/lib/utility/URL-sig.ozf: build3/lib/utility/URL-sig.aml
-	$(ALICEC2) $(ALICEC_OPTS) --rtt-level=full -c $< -o $@
-
-build3/lib/utility/Url.ozf: build3/lib/utility/Url.aml
-	$(ALICEC2) $(ALICEC_OPTS) --rtt-level=full -c $< -o $@
-
 build3/%.ozf: build3/%.aml
-	$(ALICEC2) $(ALICEC_OPTS) --rtt-level=no -c $< -o $@
+	$(ALICEC2) $(ALICEC_OPTS) -c $< -o $@
 
 BUILD3 := $(shell pwd)/build3
 TOP3 = $(BUILD3)/compiler/top
