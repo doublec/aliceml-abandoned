@@ -26,11 +26,15 @@
 
 #if defined(__MINGW32__) || defined(_MSC_VER)
 #include <windows.h>
+typedef int sig_atomic_t;
 #else
 #include <sys/types.h>
 #include <time.h>
 #include <sys/time.h>
 #endif
+
+//--** to be done: GetTime() wraps around every 71 weeks
+//--** to be done: we use BlockSignals more often than necessary
 
 static const u_int TIME_SLICE = 10; // milliseconds
 
@@ -38,14 +42,46 @@ word alarmHandlers; // sorted by time (ascending)
 
 struct SigHandler {
   int signal;
-  bool pending;
+  volatile sig_atomic_t pending;
   word handlers;
 };
 
 #define SIGLAST -1
 
 static SigHandler sigHandlers[] =  {
-  { SIGLAST, false, Store::IntToWord(0) }
+#if defined(__MINGW32__) || defined(_MSC_VER)
+  { CTRL_C_EVENT, 0, Store::IntToWord(0) },
+  { CTRL_BREAK_EVENT, 0, Store::IntToWord(0) },
+  { CTRL_CLOSE_EVENT, 0, Store::IntToWord(0) },
+  { CTRL_LOGOFF_EVENT, 0, Store::IntToWord(0) },
+  { CTRL_SHUTDOWN_EVENT, 0, Store::IntToWord(0) },
+#else
+#ifdef SIGHUP
+  { SIGHUP, 0, Store::IntToWord(0) },
+#endif
+#ifdef SIGINT
+  { SIGINT, 0, Store::IntToWord(0) },
+#endif
+#ifdef SIGPIPE
+  { SIGPIPE, 0, Store::IntToWord(0) },
+#endif
+#ifdef SIGTERM
+  { SIGTERM, 0, Store::IntToWord(0) },
+#endif
+#ifdef SIGCHLD
+  { SIGCHLD, 0, Store::IntToWord(0) },
+#endif
+#ifdef SIGWINCH
+  { SIGWINCH, 0, Store::IntToWord(0) },
+#endif
+#ifdef SIGUSR1
+  { SIGUSR1, 0, Store::IntToWord(0) },
+#endif
+#ifdef SIGUSR2
+  { SIGUSR2, 0, Store::IntToWord(0) },
+#endif
+#endif
+  { SIGLAST, 0, Store::IntToWord(0) }
 };
 
 class SignalEntry: public Block {
@@ -156,7 +192,7 @@ HANDLE Timer::thread;
 #else
 class Timer {
 private:
-  static u_int time;
+  static volatile sig_atomic_t time;
 
   static void Update(int) {
     time++;
@@ -183,7 +219,27 @@ public:
   }
 };
 
-u_int Timer::time;
+volatile sig_atomic_t Timer::time;
+#endif
+
+#if defined(__MINGW32__) || defined(_MSC_VER)
+static BOOL CALLBACK MyConsoleCtrlHandler(DWORD signal) {
+  for (u_int i = 0; sigHandlers[i].signal != SIGLAST; i++)
+    if (static_cast<DWORD>(sigHandlers[i].signal) == signal &&
+	sigHandlers[i].handlers != Store::IntToWord(0)) {
+      sigHandlers[i].pending++;
+      return TRUE;
+    }
+  return FALSE;
+}
+#else
+static void MySignalHandler(int signal) {
+  for (u_int i = 0; sigHandlers[i].signal != SIGLAST; i++)
+    if (sigHandlers[i].signal == signal) {
+      sigHandlers[i].pending++;
+      return;
+    }
+}
 #endif
 
 static void BlockSignals() {
@@ -192,10 +248,6 @@ static void BlockSignals() {
 #else
   sigset_t set;
   sigfillset(&set);
-  // These signals should not be blocked
-  sigdelset(&set, SIGINT);
-  sigdelset(&set, SIGHUP);
-  sigdelset(&set, SIGTERM);
   sigprocmask(SIG_SETMASK, &set, NULL);
 #endif
 }
@@ -219,6 +271,9 @@ void SignalHandler::Init() {
   for (u_int i = 0; sigHandlers[i].signal != SIGLAST; i++)
     RootSet::Add(sigHandlers[i].handlers);
   Timer::Init();
+#if defined(__MINGW32__) || defined(_MSC_VER)
+  SetConsoleCtrlHandler(MyConsoleCtrlHandler, TRUE);
+#endif
 }
 
 static int FindSignal(int signal) {
@@ -228,9 +283,13 @@ static int FindSignal(int signal) {
   Error("illegal signal");
 }
 
-void SignalHandler::RegisterSignal(int signal, word closure) {
+void SignalHandler::RegisterSignal(int _signal, word closure) {
   BlockSignals();
-  u_int i = FindSignal(signal);
+  u_int i = FindSignal(_signal);
+#if !defined(__MINGW32__) && !defined(_MSC_VER)
+  if (sigHandlers[i].handlers == Store::IntToWord(0))
+    signal(_signal, MySignalHandler);
+#endif
   sigHandlers[i].handlers =
     SignalEntry::New(closure, sigHandlers[i].handlers)->ToWord();
   UnblockSignals();
@@ -284,8 +343,8 @@ void SignalHandler::HandlePendingSignals() {
   BlockSignals();
   CheckAlarms();
   for (u_int i = 0; sigHandlers[i].signal != SIGLAST; i++)
-    if (sigHandlers[i].pending) {
-      sigHandlers[i].pending = false;
+    while (sigHandlers[i].pending > 0) {
+      sigHandlers[i].pending--;
       word handlers = sigHandlers[i].handlers;
       while (handlers != Store::IntToWord(0)) {
 	SignalEntry *entry = SignalEntry::FromWordDirect(handlers);
