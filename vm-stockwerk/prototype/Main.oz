@@ -16,14 +16,14 @@ import
    System(showError show)
    Property(get put)
    Linker(link)
-   PrimitiveTable(table)
+   PrimitiveTable(values)
    Scheduler(object)
 define
    Args = {Application.getArgs record()}
 
    case Args.1 of ComponentName|Rest then
       Transient = {Linker.link ComponentName}
-      AwaitClosure = PrimitiveTable.table.'Future.await'
+      AwaitClosure = PrimitiveTable.values.'Future.await'
       Res
    in
       {Property.put 'stockwerk.args' Rest}
