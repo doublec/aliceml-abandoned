@@ -1,0 +1,25 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2002
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure PrimIO  from "PrimIO"
+import signature PRIM_IO from "PRIM_IO-sig"
+
+structure BinPrimIO :> PRIM_IO
+    where type array = Word8Array.t
+      and type vector = Word8Vector.t
+      and type elem = Word8.t
+      and type pos = Position.int =
+    PrimIO(structure A = Word8Array
+	   structure V = Word8Vector
+	   val someElem = Word8.fromInt 0
+	   type pos = Position.int
+	   val compare = Position.compare)
