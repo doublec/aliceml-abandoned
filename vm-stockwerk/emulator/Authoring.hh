@@ -49,4 +49,11 @@
 
 #define DECLARE_IOSTREAM(file, x) DECLARE_BLOCKTYPE(FILE, file, x);
 
+#define RETURN_STRUCTURE(t)           \
+  {                                   \
+    Tuple *structure = Tuple::New(1); \
+    structure->Init(0, t->ToWord());  \
+    return structure->ToWord();       \
+  }
+
 #endif

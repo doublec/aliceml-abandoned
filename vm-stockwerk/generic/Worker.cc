@@ -23,6 +23,7 @@
 // Calling Convention Conversion
 word Interpreter::Construct(word args) {
   Block *p = Store::WordToBlock(args);
+  Assert(p != INVALID_POINTER);
   switch (p->GetLabel()) {
   case EMPTYARG_LABEL:
     return p->GetArg(0);

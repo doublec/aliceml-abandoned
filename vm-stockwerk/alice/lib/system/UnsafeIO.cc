@@ -256,20 +256,20 @@ word UnsafeIO(void) {
 
   Tuple *t = Tuple::New(16);
   t->Init(0, IoConstructor);
-  t->Init(1, Primitive::MakeFunction(UnsafeIO_Io, 3));
-  t->Init(2, Primitive::MakeFunction(UnsafeIO_closeIn, 1));
-  t->Init(3, Primitive::MakeFunction(UnsafeIO_closeOut, 1));
-  t->Init(4, Primitive::MakeFunction(UnsafeIO_flushOut, 1));
-  t->Init(5, Primitive::MakeFunction(UnsafeIO_inputAll, 1));
-  t->Init(6, Primitive::MakeFunction(UnsafeIO_inputLine, 1));
-  t->Init(7, Primitive::MakeFunction(UnsafeIO_openAppend, 2));
-  t->Init(8, Primitive::MakeFunction(UnsafeIO_openIn, 2));
-  t->Init(9, Primitive::MakeFunction(UnsafeIO_openOut, 2));
-  t->Init(10, Primitive::MakeFunction(UnsafeIO_output, 2));
-  t->Init(11, Primitive::MakeFunction(UnsafeIO_output1, 2));
-  t->Init(12, Primitive::MakeFunction(UnsafeIO_print, 1));
+  t->Init(1, Primitive::MakeClosure(UnsafeIO_Io, 3));
+  t->Init(2, Primitive::MakeClosure(UnsafeIO_closeIn, 1));
+  t->Init(3, Primitive::MakeClosure(UnsafeIO_closeOut, 1));
+  t->Init(4, Primitive::MakeClosure(UnsafeIO_flushOut, 1));
+  t->Init(5, Primitive::MakeClosure(UnsafeIO_inputAll, 1));
+  t->Init(6, Primitive::MakeClosure(UnsafeIO_inputLine, 1));
+  t->Init(7, Primitive::MakeClosure(UnsafeIO_openAppend, 2));
+  t->Init(8, Primitive::MakeClosure(UnsafeIO_openIn, 2));
+  t->Init(9, Primitive::MakeClosure(UnsafeIO_openOut, 2));
+  t->Init(10, Primitive::MakeClosure(UnsafeIO_output, 2));
+  t->Init(11, Primitive::MakeClosure(UnsafeIO_output1, 2));
+  t->Init(12, Primitive::MakeClosure(UnsafeIO_print, 1));
   t->Init(13, OutStream::New(stderr, String::New("stderr"))->ToWord());
   t->Init(14, InStream::New(stdin, String::New("stdin"))->ToWord());
   t->Init(15, OutStream::New(stdout, String::New("stdout"))->ToWord());
-  return t->ToWord();
+  RETURN_STRUCTURE(t);
 }

@@ -34,6 +34,7 @@ extern word UnsafeReflect(void);
 extern word UnsafeIO(void);
 extern word UnsafeComponent(void);
 extern word UnsafeOS(void);
+extern word UnsafeConfig(void);
 
 static prim_table builtins[] =
 { { "lib/utility/UnsafeMkRefMap", UnsafeMkRefMap},
@@ -41,6 +42,7 @@ static prim_table builtins[] =
   { "lib/system/UnsafeIO", UnsafeIO},
   { "lib/system/UnsafeComponent", UnsafeComponent},
   { "lib/system/UnsafeOS", UnsafeOS},
+  { "lib/system/UnsafeConfig", UnsafeConfig},
   {NULL, NULL} };
 
 static inline
@@ -90,7 +92,6 @@ int main(int argc, char *argv[]) {
     RootSet::Add(urlWord);
     word module = BootLinker::Link(bootUrl); // might yield GC
     RootSet::Remove(urlWord);
-    exit(0);
     if (module != Store::IntToWord(0)) {
       Tuple *tuple    = Tuple::FromWord(module);
       tuple->AssertWidth(1);

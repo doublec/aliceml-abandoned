@@ -32,6 +32,7 @@ public:
   using Stack::IsEmpty;
   // TaskStack Functions
   static void Dump(word x);
+  void DumpTaskStack();
   void PushFrame(word frame) {
     Stack::SlowPush(frame);
   }

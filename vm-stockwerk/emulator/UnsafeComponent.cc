@@ -18,21 +18,25 @@
 static word SitedConstructor;
 
 DEFINE0(UnsafeComponent_getInitialTable) {
-  u_int numberOfEntries = BootLinker::GetNumberOfEntries();
-  Queue *keyQueue = BootLinker::GetKeyQueue();
-  Vector *vector = Vector::New(numberOfEntries);
-  while (numberOfEntries--) {
-    Chunk *key = Store::DirectWordToChunk(keyQueue->Dequeue());
-    Component *component = BootLinker::LookupComponent(key);
-    Assert(component != INVALID_POINTER);
-    Tuple *triple = Tuple::New(3);
-    triple->Init(0, key->ToWord());
-    triple->Init(1, component->GetSign());
-    triple->Init(2, component->GetStr());
-    vector->Init(numberOfEntries, triple->ToWord());
+  static word result = Store::IntToWord(0);
+  if (result == Store::IntToWord(0)) {
+    u_int numberOfEntries = BootLinker::GetNumberOfEntries();
+    Queue *keyQueue = BootLinker::GetKeyQueue();
+    Vector *vector = Vector::New(numberOfEntries);
+    while (numberOfEntries--) {
+      Chunk *key = Store::DirectWordToChunk(keyQueue->Dequeue());
+      Component *component = BootLinker::LookupComponent(key);
+      Assert(component != INVALID_POINTER);
+      Tuple *triple = Tuple::New(3);
+      triple->Init(0, key->ToWord());
+      triple->Init(1, component->GetSign());
+      triple->Init(2, component->GetStr());
+      vector->Init(numberOfEntries, triple->ToWord());
+    }
+    Assert(keyQueue->IsEmpty());
+    result = vector->ToWord();
   }
-  Assert(keyQueue->IsEmpty());
-  RETURN(vector->ToWord());
+  RETURN(result);
 } END
 
 DEFINE1(UnsafeComponent_load) {
@@ -57,8 +61,8 @@ word UnsafeComponent(void) {
   t->Init(2, Unpickler::Corrupt);
   t->Init(3, SitedConstructor);
   t->Init(4, String::New("stc")->ToWord());
-  t->Init(5, Primitive::MakeFunction(UnsafeComponent_getInitialTable, 0));
-  t->Init(6, Primitive::MakeFunction(UnsafeComponent_load, 1));
-  t->Init(7, Primitive::MakeFunction(UnsafeComponent_save, 2));
-  return t->ToWord();
+  t->Init(5, Primitive::MakeClosure(UnsafeComponent_getInitialTable, 0));
+  t->Init(6, Primitive::MakeClosure(UnsafeComponent_load, 1));
+  t->Init(7, Primitive::MakeClosure(UnsafeComponent_save, 2));
+  RETURN_STRUCTURE(t);
 }

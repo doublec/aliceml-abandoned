@@ -128,13 +128,13 @@ DEFINE0(FileSys_tmpName) {
 
 static word FileSys(void) {
   Tuple *t = Tuple::New(8);
-  t->Init(0, Primitive::MakeFunction(FileSys_chDir, 1));
-  t->Init(1, Primitive::MakeFunction(FileSys_fileSize, 1));
-  t->Init(2, Primitive::MakeFunction(FileSys_getDir, 0));
-  t->Init(3, Primitive::MakeFunction(FileSys_mkDir, 1));
-  t->Init(4, Primitive::MakeFunction(FileSys_modTime, 1));
-  t->Init(5, Primitive::MakeFunction(FileSys_remove, 1));
-  t->Init(6, Primitive::MakeFunction(FileSys_tmpName, 1));
+  t->Init(0, Primitive::MakeClosure(FileSys_chDir, 1));
+  t->Init(1, Primitive::MakeClosure(FileSys_fileSize, 1));
+  t->Init(2, Primitive::MakeClosure(FileSys_getDir, 0));
+  t->Init(3, Primitive::MakeClosure(FileSys_mkDir, 1));
+  t->Init(4, Primitive::MakeClosure(FileSys_modTime, 1));
+  t->Init(5, Primitive::MakeClosure(FileSys_remove, 1));
+  t->Init(6, Primitive::MakeClosure(FileSys_tmpName, 1));
   return t->ToWord();
 }
 
@@ -160,7 +160,7 @@ DEFINE1(Process_exit) {
 DEFINE1(Process_getEnv) {
   DECLARE_STRING(envVar, x0);
   char *envVal = getenv(ExportChar(envVar));
-  if (envVar != NULL) {
+  if (envVal != NULL) {
     TagVal *val = TagVal::New(0, 1); // SOME Tag?
     val->Init(0, String::New(envVal)->ToWord());
     RETURN(val->ToWord());
@@ -172,12 +172,12 @@ DEFINE1(Process_getEnv) {
 
 static word Process(void) {
   Tuple *t = Tuple::New(6);
-  t->Init(0, Primitive::MakeFunction(Process_atExn, 1));
-  t->Init(1, Primitive::MakeFunction(Process_exit, 1));
+  t->Init(0, Primitive::MakeClosure(Process_atExn, 1));
+  t->Init(1, Primitive::MakeClosure(Process_exit, 1));
   t->Init(2, Store::IntToWord(0)); // failure,  to be done
-  t->Init(3, Primitive::MakeFunction(Process_getEnv, 1));
+  t->Init(3, Primitive::MakeClosure(Process_getEnv, 1));
   t->Init(4, Store::IntToWord(1)); // success, to be done
-  t->Init(5, Primitive::MakeFunction(Process_system, 1));
+  t->Init(5, Primitive::MakeClosure(Process_system, 1));
   return t->ToWord();
 }
 
@@ -197,9 +197,9 @@ word UnsafeOS(void) {
   RootSet::Add(SysErrConstructor);
 
   Tuple *t = Tuple::New(4);
-  t->Init(0, SysErrConstructor);
-  t->Init(1, Primitive::MakeFunction(UnsafeOS_SysErr, 2));
-  t->Init(2, FileSys());
-  t->Init(3, Process());
-  return t->ToWord();
+  t->Init(0, Primitive::MakeClosure(UnsafeOS_SysErr, 2));
+  t->Init(1, FileSys());
+  t->Init(2, Process());
+  t->Init(3, SysErrConstructor);
+  RETURN_STRUCTURE(t);
 }
