@@ -92,6 +92,11 @@
       stream by default, but can be redirected using the <TT>withStreams</TT>
       function below. The second variant uses <TT>initialEnv</TT> as the
       default environment.</P>
+      <P>Note that incremental
+      compilation is likely to create a component that is sited and can hence
+      not be exported. With non-incremental compilation this problem does not
+      occur, because all external entities will be referenced indirectly through
+      imports in the created component.</P>
     </DD>
 
     <DT>
@@ -108,12 +113,15 @@
       was not successful. A respective error message
       is written to the <TT><A href="text-io.html">TextIO.stdErr</A></TT>
       stream by default, but can be redirected using the <TT>withStreams</TT>
-      function below.</P>
-      </P>The first variant compiles under the given environemnt, the second
-      uses <TT>initialEnv</TT> as the default environment. Note that using
-      something else than the default environment can easily fail with an
-      <TT><A href="io.html">IO.Io</A></TT> exception, since
-      the created component will be sited most of the times.</P>
+      function below.
+      The first variant compiles under the given environemnt, the second
+      uses <TT>initialEnv</TT> as the default environment.
+      <P>Note that incremental
+      compilation is likely to create a sited component and hence can easily
+      fail with an <TT><A href="io.html">IO.Io</A></TT>
+      exception. With non-incremental compilation this problem does not
+      occur, because all external entities will be referenced indirectly through
+      imports in the created component.</P>
     </DD>
 
     <DT>
