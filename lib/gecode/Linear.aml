@@ -16,6 +16,7 @@
 
 import structure FD     from "FD"
 import signature LINEAR from "LINEAR-sig"
+(*import structure Print     from "x-alice:/lib/system/Print" *)
 
 structure Linear :> LINEAR =
     struct
@@ -234,12 +235,12 @@ fun isProduct (FD _) = true
 	fun post''(s, a, b, rel,e,linear) =
 	    let
 		val a' = sumAddables (multiplyAllConstants (collapse(toDNF(unMinus(op`-(a,b))))))
-		val (b'',a'') = constsNTerms a'
+		val (b'' ,a'') = constsNTerms a'
 	    in
 		(*Special cases should be detected for rel and relI*)
 		(*Then instead of linear only, the full range of FD would be needed as an argument*)
 		if isLinear a'' then 		
-			linear(s, createLinearList a'', rel, b'',e)
+			linear(s, createLinearList a'', rel, (~1)*b'',e)
 		else
 			(*Hmm, could provide the functionality using FD.times and aux variables...*)
 			raise SumCNNotImplemented
@@ -253,7 +254,8 @@ fun isProduct (FD _) = true
 	  | post' (s, op`>(a, b),e,l)   = post''(s, a, b, FD.GR,e,l)	
 
 	fun post(s,r,e) = post'(s,r,e,FD.linear)	
-
+(*	fun post(s,r,e) = post'(s,r,e,fn x => let val _=Print.printVal x in FD.linear x end)	*)
+	
 	fun postReified(s,r,c,e) = post'(s,r,e,(fn(s',a',r',b',e')=>FD.Reified.linear(s',a',r',b',c,e')))
 
 (*boolean stuff*)
