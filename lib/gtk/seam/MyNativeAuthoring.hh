@@ -24,7 +24,7 @@
 // extending the existing DEFINE0..DEFINE5
 #define DEFINE6(name)					\
   static Worker::Result name() {			\
-    Assert(Scheduler::nArgs == 5);			\
+    Assert(Scheduler::nArgs == 6);			\
     POP_PRIM_SELF(); \
     word x0 = Scheduler::currentArgs[0];		\
     word x1 = Scheduler::currentArgs[1];		\
@@ -34,7 +34,7 @@
     word x5 = Scheduler::currentArgs[5];
 #define DEFINE7(name)					\
   static Worker::Result name() {			\
-    Assert(Scheduler::nArgs == 5);			\
+    Assert(Scheduler::nArgs == 7);			\
     POP_PRIM_SELF(); \
     word x0 = Scheduler::currentArgs[0];		\
     word x1 = Scheduler::currentArgs[1];		\
@@ -45,7 +45,7 @@
     word x6 = Scheduler::currentArgs[6];                
 #define DEFINE8(name)					\
   static Worker::Result name() {			\
-    Assert(Scheduler::nArgs == 5);			\
+    Assert(Scheduler::nArgs == 8);			\
     POP_PRIM_SELF(); \
     word x0 = Scheduler::currentArgs[0];		\
     word x1 = Scheduler::currentArgs[1];		\
@@ -57,7 +57,7 @@
     word x7 = Scheduler::currentArgs[7];                
 #define DEFINE9(name)					\
   static Worker::Result name() {			\
-    Assert(Scheduler::nArgs == 5);			\
+    Assert(Scheduler::nArgs == 9);			\
     POP_PRIM_SELF(); \
     word x0 = Scheduler::currentArgs[0];		\
     word x1 = Scheduler::currentArgs[1];		\
@@ -70,7 +70,7 @@
     word x8 = Scheduler::currentArgs[8];                
 #define DEFINE10(name)					\
   static Worker::Result name() {			\
-    Assert(Scheduler::nArgs == 5);			\
+    Assert(Scheduler::nArgs == 10);			\
     POP_PRIM_SELF(); \
     word x0 = Scheduler::currentArgs[0];		\
     word x1 = Scheduler::currentArgs[1];		\
@@ -84,7 +84,7 @@
     word x9 = Scheduler::currentArgs[9];                
 #define DEFINE11(name)					\
   static Worker::Result name() {			\
-    Assert(Scheduler::nArgs == 5);			\
+    Assert(Scheduler::nArgs == 11);			\
     POP_PRIM_SELF(); \
     word x0 = Scheduler::currentArgs[0];		\
     word x1 = Scheduler::currentArgs[1];		\
@@ -99,7 +99,7 @@
     word x10= Scheduler::currentArgs[10];               
 #define DEFINE12(name)					\
   static Worker::Result name() {			\
-    Assert(Scheduler::nArgs == 5);			\
+    Assert(Scheduler::nArgs == 12);			\
     POP_PRIM_SELF(); \
     word x0 = Scheduler::currentArgs[0];		\
     word x1 = Scheduler::currentArgs[1];		\
@@ -115,7 +115,7 @@
     word x11= Scheduler::currentArgs[11];               
 #define DEFINE13(name)					\
   static Worker::Result name() {			\
-    Assert(Scheduler::nArgs == 5);			\
+    Assert(Scheduler::nArgs == 13);			\
     POP_PRIM_SELF(); \
     word x0 = Scheduler::currentArgs[0];		\
     word x1 = Scheduler::currentArgs[1];		\
@@ -132,7 +132,7 @@
     word x12= Scheduler::currentArgs[12];               
 #define DEFINE14(name)					\
   static Worker::Result name() {			\
-    Assert(Scheduler::nArgs == 5);			\
+    Assert(Scheduler::nArgs == 14);			\
     POP_PRIM_SELF(); \
     word x0 = Scheduler::currentArgs[0];		\
     word x1 = Scheduler::currentArgs[1];		\
@@ -150,7 +150,7 @@
     word x13= Scheduler::currentArgs[13];               
 #define DEFINE15(name)					\
   static Worker::Result name() {			\
-    Assert(Scheduler::nArgs == 5);			\
+    Assert(Scheduler::nArgs == 15);			\
     POP_PRIM_SELF(); \
     word x0 = Scheduler::currentArgs[0];		\
     word x1 = Scheduler::currentArgs[1];		\
@@ -169,7 +169,7 @@
     word x14= Scheduler::currentArgs[14];               
 #define DEFINE16(name)					\
   static Worker::Result name() {			\
-    Assert(Scheduler::nArgs == 5);			\
+    Assert(Scheduler::nArgs == 16);			\
     POP_PRIM_SELF(); \
     word x0 = Scheduler::currentArgs[0];		\
     word x1 = Scheduler::currentArgs[1];		\
