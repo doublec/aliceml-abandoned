@@ -25,49 +25,45 @@
 
 import structure NativeRegex from "NativeRegex"
 
-signature REGEX_SIG =
+signature REGEX =
   sig
 
     type match
 
-    infix matches
+    infix 2 =~
 
-    val match      : string -> string -> match option     (* MalformedRE *)
-    val matches    : string * string -> bool              (* MalformedRE *)
-    val search     : string -> string -> match option     (* MalformedRE *)
+    exception Malformed
+    exception NoSuchGroup
 
-    val nGroups    : match -> int
+    val match      : string -> string -> match option     (* Malformed *)
+    val =~         : string * string -> bool              (* Malformed *)
+
     val groups     : match -> string vector
     val group      : match * int -> string                (* NoSuchGroup *)
     val groupStart : match * int -> int                   (* NoSuchGroup *)
     val groupEnd   : match * int -> int                   (* NoSuchGroup *)
     val groupSpan  : match * int -> (int * int)           (* NoSuchGroup *)
 
-    val regex      : match -> string
-    val goal       : match -> string
-
   end
 
-structure Regex :> REGEX_SIG =
+structure Regex :> REGEX =
   struct
 
-    type match = {regx : string,
-		  goal : string,
-		  mtch : (int * int) vector}
+    type match = {goal : string, match : (int * int) vector}
 
-    infix matches
+    infix 2 =~
 
-    exception MalformedRE
+    exception Malformed
     exception NoSuchGroup
 
     fun compile pattern =
 	case NativeRegex.regcomp (pattern)
 	  of SOME(r) => r
-	   | NONE    => raise MalformedRE
+	   | NONE    => raise Malformed
 
-    fun matchAux (pattern, compiledPattern, matchAgainst) =
+    fun matchAux (compiledPattern, matchAgainst) =
 	case NativeRegex.regexec (compiledPattern, matchAgainst)
-	  of SOME(m) => SOME({regx = pattern, goal = matchAgainst, mtch = m})
+	  of SOME(m) => SOME({goal = matchAgainst, match = m})
 	   | NONE    => NONE
 
     fun match pattern =
@@ -75,56 +71,30 @@ structure Regex :> REGEX_SIG =
 	  val compiledPattern = compile pattern
 	in
 	  fn matchAgainst =>
-	     matchAux (pattern, compiledPattern, matchAgainst)
+	     matchAux (compiledPattern, matchAgainst)
 	end
 
-    fun p matches s = Option.isSome (match p s)
-	 
-    fun searchAux (pattern, compiledPattern, searchIn) =
-	case matchAux (pattern, compiledPattern, searchIn)
-	  of SOME(_) as match => match
-	   | NONE => let val size = String.size searchIn in
-		       if size > 0 then
-			 searchAux (pattern, compiledPattern,
-				    String.extract (searchIn, 1, NONE))
-		       else
-			 NONE
-		     end
-
-    fun search pattern =
-	let
-	  val compiledPattern = compile pattern
-	in
-	  fn searchIn =>
-	     searchAux (pattern, compiledPattern, searchIn)
-	end
+    fun p =~ s = Option.isSome (match p s)
 
     fun substring s =
 	fn (i, j) => String.substring (s, i, j-i)
 
-    fun groupAccess ({regx = _, goal = _, mtch = m} : match, i) =
+    fun groupAccess ({goal = _, match = m} : match, i) =
 	if 0 <= i andalso i < Vector.length m then
 	  Vector.sub (m, i)
 	else
 	  raise NoSuchGroup
 
-    fun group (match as {regx = _, goal = s, mtch = m}, i) =
+    fun group (match as {goal = s, match = m}, i) =
 	substring s (groupAccess (match, i))
 	  
-    fun groups {regx = _, goal = s, mtch = m} =
+    fun groups ({goal = s, match = m} : match) =
 	Vector.map (substring s) m
-
-    fun nGroups {regx = _, goal = _, mtch = m} =
-	Vector.length m
 
     fun groupStart (match, i) = #1(groupAccess (match, i))
 
     fun groupEnd (match, i) = #2(groupAccess (match, i))
 
     fun groupSpan (match, i) = groupAccess (match, i)
-
-    fun regex ({regx = s, goal = _, mtch = _} : match) = s
-
-    fun goal ({regx = _, goal = s, mtch = _} : match) = s
 
   end
