@@ -40,6 +40,7 @@
 MemChunk *Store::roots[STORE_GENERATION_NUM];
 u_int Store::memMax[STORE_GENERATION_NUM];
 u_int Store::memFree;
+u_int Store::memTolerance;
 
 char *Store::curChunkMax;
 s_int Store::curChunkTop;
@@ -244,7 +245,7 @@ inline void Store::CheneyScan(MemChunk *chunk, Block *scan) {
   }
 }
 
-void Store::InitStore(u_int mem_max[STORE_GENERATION_NUM], u_int mem_free) {
+void Store::InitStore(u_int mem_max[STORE_GENERATION_NUM], u_int mem_free, u_int mem_tolerance) {
   for (u_int i = STORE_GENERATION_NUM; i--;) {
     MemChunk *lanchor  = new MemChunk();
     MemChunk *ranchor  = new MemChunk();
@@ -255,8 +256,9 @@ void Store::InitStore(u_int mem_max[STORE_GENERATION_NUM], u_int mem_free) {
     Store::roots[i]  = lanchor;
     Store::memMax[i] = mem_max[i];
   }
-  Store::memFree = mem_free;
-  // Prepare Fast Memory Allocation
+  Store::memFree      = mem_free;
+  Store::memTolerance = mem_tolerance;
+  // Prepare Memory Allocation
   MemChunk *anchor = roots[0]->GetNext();
   curChunkTop = anchor->GetTop();
   curChunkMax = anchor->GetMax();
@@ -490,6 +492,10 @@ inline Block *Store::HandleWeakDictionaries() {
   return finset;
 }
 
+static inline u_int min(u_int a, u_int b) {
+  return ((a <= b) ? a : b);
+}
+
 inline void Store::DoGC(word &root, const u_int gen) {
   dstGen = (gen + 1);
   hdrGen = ((dstGen == (STORE_GENERATION_NUM - 1)) ? gen : dstGen);
@@ -539,9 +545,21 @@ inline void Store::DoGC(word &root, const u_int gen) {
     roots[STORE_GENERATION_NUM - 1] = tmp;
   }
 
-  // Clear GC Flag and adjust Generation Limit
-  needGC         = 0;
-  memMax[hdrGen] = ((GetMemUsage(roots[hdrGen]) * 100) / (100 - memFree));
+  // Clear GC Flag and Calc Limits for next gen GC
+  needGC = 0;
+  // Calc Limits for next GC
+  u_int wanted = ((GetMemUsage(roots[hdrGen]) * 100) / (100 - memFree));
+
+  // Try to align them to block size
+  s_int block_size = STORE_MEMCHUNK_SIZE;
+  s_int block_dist = wanted % block_size;
+
+  if (block_dist > 0) {
+    block_dist = block_size - block_dist;
+  }
+
+  wanted += min(block_dist, ((wanted * memTolerance) / 100));
+  memMax[hdrGen] = wanted;
 
   // Switch back to Generation Zero and Adjust Root Set
   SwitchToChunk(roots[0]->GetNext());
@@ -599,6 +617,11 @@ void Store::DoGC(word &root) {
   sum_t->tv_usec += (end_t.tv_usec - start_t.tv_usec);
   gcLiveMem += (GetMemUsage(roots[hdrGen]) - memUsage);
 #endif
+}
+
+void Store::SetGCParams(u_int mem_free, u_int mem_tolerance) {
+  Store::memFree      = mem_free;
+  Store::memTolerance = mem_tolerance;
 }
 
 #if (defined(STORE_DEBUG) || defined(STORE_PROFILE))

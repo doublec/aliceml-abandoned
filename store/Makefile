@@ -40,7 +40,7 @@ $(OBJS): StoreConfig.hh
 
 clean:
 	rm -f StoreConfig.o StoreConfig StoreConfig.exe
-	rm -f $(OBJS)
+	rm -f $(OBJS) libstore.a
 
 veryclean: clean
 	rm -f test StoreConfig.hh libstore.a
