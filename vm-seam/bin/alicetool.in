@@ -22,6 +22,8 @@ pkgincludedir=@includedir@/@PACKAGE@
 libdir=@libdir@
 pkglibdir=@libdir@/@PACKAGE@
 seamlibdir=@seamlibdir@
+gmpincludes=@gmpincludes@
+gmplib=@gmplib@
 
 usage () {
     echo "Usage: $0 [OPTION]... MODE [MODE-ARG]...                   " >&2
@@ -74,13 +76,13 @@ shift
 
 case "$mode" in
     makedepend)
-	exec seamtool ${verbose} makedepend -I"${includedir}" "$@"
+	exec seamtool ${verbose} makedepend "${gmpincludes}" -I"${includedir}" "$@"
 	;;
     compile)
-	exec seamtool ${verbose} compile -I"${includedir}" "$@"
+	exec seamtool ${verbose} compile "${gmpincludes}" -I"${includedir}" "$@"
 	;;
     link)
-	exec seamtool ${verbose} link "$@" "${seamlibdir}"/alice.dll
+	exec seamtool ${verbose} link "$@" "${gmplib}" "${seamlibdir}"/alice.dll
 	;;
     *)
 	echo "$0: unknown mode \`$1\'" >&2

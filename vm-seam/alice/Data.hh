@@ -467,7 +467,7 @@ public:
   }
 };
 
-class BigInt : private Chunk {
+class AliceDll BigInt : private Chunk {
 private:
   static const int SIZE = sizeof(MP_INT);
 public:

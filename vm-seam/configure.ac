@@ -28,7 +28,28 @@ AC_PROG_RANLIB
 
 AC_SEAM_CHECK_SOCKET_FLAVOR
 
-AC_CHECK_LIB(gmp, __gmpz_init)
+AC_ARG_WITH(gmp,
+   AC_HELP_STRING([--with-gmp],
+     [use the gmp arbitrary precision arithmetic library @<:@default=yes@:>@]))
+
+if test "${with_gmp:-yes}" = "no"; then
+   AC_MSG_ERROR([Alice/Seam depends on gmp. Please supply the correct paths.])
+else
+   if test "${with_gmp}" != "yes"; then
+      CPPFLAGS="${CPPFLAGS}${CPPFLAGS:+ }-I${with_gmp}"
+      CPPFLAGS="${CPPFLAGS} -I${with_gmp}/include"
+      LDFLAGS="${LDFLAGS}${LDFLAGS:+ }-L${with_gmp}/lib"
+      gmpincludes=-I${with_gmp}/include
+      gmplib=-L${with_gmp}/lib
+      AC_SUBST(gmpincludes)
+      AC_SUBST(gmplib)
+   fi
+   AC_CHECK_LIB(gmp, __gmpz_init, ,
+     [AC_MSG_ERROR(
+       [cannot find the gmp library, see http://swox.com/gmp])
+     ])
+fi
+
 
 # checks for header files
 
