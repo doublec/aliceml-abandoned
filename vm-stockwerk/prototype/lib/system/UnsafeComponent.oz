@@ -33,9 +33,6 @@ define
    %I_imports = 3
    %I_sign    = 4
 
-   ALPHA = 0
-   NUM   = 1
-
    NONE = 0
    %SOME = 1
 
@@ -53,12 +50,6 @@ define
    end
 
    Extension = "stc"
-
-   fun {LabelToOz Label}
-      case Label of tag(!NUM I) then I
-      [] tag(!ALPHA S) then {VirtualString.toAtom S}
-      end
-   end
 
    local
       OzScheme = {VirtualString.toString DefaultURL.ozScheme}
@@ -126,10 +117,6 @@ define
 	    end#r_t
 	 I_apply:
 	    fun {$ Body Imports TaskStack}
-	       %--** suspend on labels
-	       continue(arg({Record.map Imports
-			     fun {$ tuple(Label Str)}
-				{LabelToOz Label}#Str
-			     end}) TaskStack.2)
+	       continue(arg(Imports) {Body.1.1.pushCall Body TaskStack.2})
 	    end#rr_t)
 end
