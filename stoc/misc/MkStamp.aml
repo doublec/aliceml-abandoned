@@ -3,7 +3,7 @@
  *)
 
 
-functor MakeStamp() : (*DEBUG :>*) STAMP =
+functor MakeStamp() :> STAMP =
   struct
 
     type stamp = int
