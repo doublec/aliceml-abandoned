@@ -3,9 +3,7 @@ TOPDIR = ..
 include $(TOPDIR)/Makefile.vars
 include $(TOPDIR)/Makefile.rules
 
-OBJS = \
-	Outline.o \
-	Hashtable.o
+OBJS = Outline.o Hashtable.o
 
 all: libadt.a
 
