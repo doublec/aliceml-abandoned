@@ -28,12 +28,11 @@
 #if PROFILE
 #include "generic/Profiler.hh"
 #endif
+#include "generic/Broker.hh"
 
 static u_int mb(u_int n) {
   return n << 20;
 }
-
-extern "C" void InitSeam();
 
 SeamDll void InitSeam() {
   // Set up the store:
@@ -59,4 +58,5 @@ SeamDll void InitSeam() {
   Unpickler::Init();
   Pickler::Init();
   Hole::Init();
+  Broker::Init();
 }

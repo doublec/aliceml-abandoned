@@ -55,12 +55,24 @@
 #include "generic/Unpickler.hh"
 #include "generic/Pickler.hh"
 #include "generic/Profiler.hh"
+#include "generic/Broker.hh"
 #include "generic/Authoring.hh"
 #if LIGHTNING
 #include "store/JITStore.hh"
 #include "generic/JitterGenericData.hh"
 #endif
 
-extern "C" SeamDll void InitSeam();
+SeamDll void InitSeam();
+
+// These must be extern "C" because the symbols are accessed
+// via GetProcAddress/dlsym.  We cannot use the SeamDll macro
+// because it would expand to __declspec(dllexport) here.
+#if defined(__MINGW32__) || defined(_MSC_VER)
+extern "C" __declspec(dllexport) void Start(int argc, char *argv[]);
+extern "C" __declspec(dllexport) Worker::Result Load(String *name);
+#else
+extern "C" void Start(int argc, char *argv[]);
+extern "C" Worker::Result Load(String *name);
+#endif
 
 #endif
