@@ -13,7 +13,7 @@
 import signature STAMP from "STAMP-sig"
 
 
-functor MakeStamp() :> STAMP =
+functor MkStamp() :> STAMP =
 struct
     type stamp = int
     type t     = stamp

@@ -10,7 +10,7 @@
  *   $Revision$
  *)
 
-import structure PrettyPrint from "../misc/PrettyPrint"
+import structure PrettyPrint from "../utility/PrettyPrint"
 import structure Type        from "Type"
 
 signature PP_TYPE =
