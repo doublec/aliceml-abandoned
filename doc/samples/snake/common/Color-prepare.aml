@@ -12,7 +12,6 @@
 import signature COLOR from "COLOR-sig"
 import structure OS    from "x-alice:/lib/system/OS"
 
-
 structure Color :> COLOR = 
 struct
 
@@ -38,7 +37,7 @@ struct
     (** [toString c] returns the [english] name of [c]. *)
  
     fun fromString s = 
-	case List.find (fn x => toString x = s) all of
+        case List.find (fn x => toString x = s) all of
 	    NONE   => raise Unknown
 	  | SOME x => x
 
