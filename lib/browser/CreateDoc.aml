@@ -14,8 +14,8 @@
  *)
 
 import structure Type from "x-alice:/lib/rtt/Type"
-import structure PathMap from "x-alice:/lib/rtt/PathMap"
 import structure Name from "x-alice:/lib/rtt/Name"
+import structure PathMap from "x-alice:/lib/rtt/PathMap"
 import structure UnsafeValue from "x-alice:/lib/system/UnsafeValue"
 import structure Reflect from "x-alice:/lib/system/Reflect"
 import structure Types from "Types"
@@ -30,7 +30,7 @@ structure CreateDoc :> CREATE_DOC =
 struct
 
     type doc_creator = int * int * Reflect.value * Type.t -> doc  
-    
+
     fun registerType (path, f) = PathMap.insert (pathTable, path, f)
 
     fun castVector value  = UnsafeValue.cast value : 'a vector
