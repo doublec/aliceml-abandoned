@@ -60,12 +60,16 @@ static NativeComponent nativeComponents[] = {
   {NULL, NULL}
 };
 
+static u_int mb(u_int n) {
+  return n << 20;
+}
+
 int main(int argc, char *argv[]) {
   // Setup the store
   u_int memLimits[STORE_GENERATION_NUM];
-  for (u_int i = 0; i < STORE_GENERATION_NUM; i++) {
-    memLimits[i] = (i + 1) * STORE_MEMCHUNK_SIZE;
-  }
+  memLimits[0] = mb(4);
+  memLimits[1] = mb(15);
+  memLimits[2] = mb(30);
   Store::InitStore(memLimits, 75, 20);
   // Setup Datastructures
   RootSet::Init();
