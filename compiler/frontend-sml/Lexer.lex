@@ -9,6 +9,7 @@
  *   - longids have been moved to the context-free grammar,
  *     so the LONGID token is substituted by a DOT token
  *   - #[ keyword for vector expressions
+ *   - CON keyword for constructor declarations
  *   - WHEN keyword for guarded patterns
  *
  * Notes:
@@ -277,6 +278,7 @@
   <INITIAL>"andalso"	=> ( token(ANDALSO,   yypos, yytext) );
   <INITIAL>"as"		=> ( token(AS,        yypos, yytext) );
   <INITIAL>"case"	=> ( token(CASE,      yypos, yytext) );
+  <INITIAL>"con"	=> ( token(CON,       yypos, yytext) );
   <INITIAL>"datatype"	=> ( token(DATATYPE,  yypos, yytext) );
   <INITIAL>"do"		=> ( token(DO,        yypos, yytext) );
   <INITIAL>"else"	=> ( token(ELSE,      yypos, yytext) );

@@ -10,8 +10,7 @@ functor Intermediate(type info
     (* Literals *)
 
     datatype lit =
-	  BoolLit   of bool
-	| WordLit   of word
+	  WordLit   of word
 	| IntLit    of int
 	| CharLit   of char
 	| StringLit of string
@@ -73,7 +72,7 @@ functor Intermediate(type info
 
     and dec =
 	  ValDec    of info * id list * exp
-	| ConDec    of info * id * int (* arity *)
+	| ConDec    of info * id * bool (* has args *)
 
 
     (* Projections *)
@@ -150,11 +149,7 @@ functor Intermediate(type info
 					  ; output1(q,#"]")
 					  )
 
-    fun output_lit(q, BoolLit b)	= ( f(q,"BoolLit")
-					  ; output_boof(q,b)
-					  ; r(q)
-					  )
-      | output_lit(q, WordLit w)	= ( f(q,"WordLit")
+    fun output_lit(q, WordLit w)	= ( f(q,"WordLit")
 					  ; output_int(q,Word.toInt w)
 					  ; r(q)
 					  )
@@ -361,10 +356,10 @@ functor Intermediate(type info
 					  ; output_list output_id (q,xs); m(q)
 					  ; output_exp(q,e) ; r(q)
 					  )
-      | output_dec(q, ConDec(i,x,n))	= ( f(q,"ConDec")
+      | output_dec(q, ConDec(i,x,b))	= ( f(q,"ConDec")
 					  ; output_info(q,i) ; m(q)
 					  ; output_id(q,x) ; m(q)
-					  ; output_int(q,n) ; r(q)
+					  ; output_bool(q,b) ; r(q)
 					  )
 
   end
