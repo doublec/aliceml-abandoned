@@ -43,7 +43,7 @@ fun countlines s =
 %s COMMENT;
 
 
-formatting'= [\ \t\011\012\013]+;
+formatting'= [\ \t\011\012\013];
 formatting = {formatting'} | "\n";
 symbol     = [-!%&$#+/:<=>?@\\~`|*^];
 digit      = [0-9];
@@ -57,7 +57,7 @@ printable  = [^\000-\032"\127\\];
 escape     = "\\a" | "\\b" | "\\t" | "\\n" | "\\v" | "\\f" | "\\r"
            | ("\\^"[@-_])  | ("\\"{digit}{3})  | ("\\u"{hexdigit}{4})
            | "\\\"" | "\\\\";
-gap        = "\\" {formatting} "\\";
+gap        = "\\" {formatting}+ "\\";
 stringchar = {printable} | " " | {escape};
 string     = "\""({stringchar} | {gap})*"\"";
 char       = "#\""{gap}*{stringchar}{gap}*"\"";
