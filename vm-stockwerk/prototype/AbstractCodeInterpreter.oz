@@ -496,7 +496,7 @@ define
 
    fun {Run Args TaskStack}
       try
-	 case TaskStack of frame(_ IdDefArgs Instr Closure L)|Rest then
+	 case TaskStack of (Frame=frame(_ IdDefArgs Instr Closure L))|Rest then
 	    case IdDefArgs of tag(!OneArg IdDef0) then
 	       case IdDef0 of tag(!IdDef Id) then
 		  L.Id := case Args of arg(X) then X
@@ -520,7 +520,11 @@ define
 		  end
 	       end
 	    end
-	    {Emulate Instr Closure L Rest}
+	    case {Emulate Instr Closure L Rest}
+	    of exception(nil Exn TaskStack) then
+	       exception([Frame] Exn TaskStack)
+	    elseof Res then Res
+	    end
 	 end
       catch Request=request(_ _ _) then Request
       end
@@ -537,7 +541,7 @@ define
 	 [] !Wildcard then skip
 	 end
 	 {Emulate Instr Closure L Rest}
-      [] Frame=frame(_ _ _ _ _)|Rest then
+      [] (Frame=frame(_ _ _ _ _))|Rest then
 	 exception(Frame|Debug Exn Rest)
       end
    end
