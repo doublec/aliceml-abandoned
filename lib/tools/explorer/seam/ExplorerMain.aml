@@ -17,10 +17,11 @@ import structure Type            from "x-alice:/lib/rtt/Type"
 import structure ExplorerInspect from "ExplorerInspect"
 import structure Types           from "Types"
 import structure CanvasHelper    from "CanvasHelper"
+(*import structure Exn             from "x-alice:/lib/fundamental/Exn"*)
 
 signature EXPLORER =
   sig
-      type explorer = Types.explorer_state option ref
+      type explorer (*= Types.explorer_state option ref*)
       val serve : (unit -> unit) -> unit
       val initExplorer : unit -> explorer
       val initWithSpace : Space.space * string -> explorer
@@ -32,6 +33,10 @@ signature EXPLORER =
 
       val initScript' : Type.typ -> (Space.space -> 'a) -> explorer
       val exploreAllScript' : Type.typ -> (Space.space -> 'a) -> explorer
+      val exploreBestScript' :
+	  Type.typ ->
+	  (Space.space -> 'a * (Space.space * Space.space -> unit))
+	  -> explorer
       val exploreAllRoot' : Type.typ -> Space.space -> 'a -> explorer
       val exploreOneScript' : Type.typ -> (Space.space -> 'a) -> explorer
   end
@@ -47,7 +52,13 @@ structure ExplorerMain :> EXPLORER =
 		       
 	  fun process s = (case s of
 			       nil   => ()
-			     | p::pr => (p (); process pr))
+			     | p::pr => ((Exn.catch (fn packet => 
+						     (print ("Uncaught exception "^
+							     Exn.name (Exn.fromPacket packet)^"\n");
+						      print ("Message: "^
+							     Exn.message (Exn.fromPacket packet)^"\n");
+						      Exn.dumpTrace packet)) p);
+					 process pr))
 	  fun send p =
 	      let
 		  val newtail = Promise.promise ()
@@ -85,7 +96,7 @@ structure ExplorerMain :> EXPLORER =
           serve (fn () => MainWindow.setWindowTitle name) ;
           serve (fn () => ExplorerSearch.initSearch
                               (serve, state, MainWindow.refresh,
-                               CanvasHelper.resetCanvas, s));
+                               CanvasHelper.resetCanvas, s, NONE));
 	  state
       end
 
@@ -95,7 +106,7 @@ structure ExplorerMain :> EXPLORER =
       in
           serve (fn () => ExplorerSearch.initSearch
                               (serve, state, MainWindow.refresh,
-                               CanvasHelper.resetCanvas, s));
+                               CanvasHelper.resetCanvas, s, NONE));
 	  serve (fn () => ExplorerSearch.search
                               (serve, state,
                                MainWindow.refresh, MainWindow.setStatusMsg,
@@ -109,7 +120,7 @@ structure ExplorerMain :> EXPLORER =
       in
           serve (fn () => ExplorerSearch.initSearch
                               (serve, state, MainWindow.refresh,
-                               CanvasHelper.resetCanvas, s));
+                               CanvasHelper.resetCanvas, s, NONE));
 	  serve (fn () => ExplorerSearch.search
                               (serve, state,
                                MainWindow.refresh, MainWindow.setStatusMsg,
@@ -123,9 +134,11 @@ structure ExplorerMain :> EXPLORER =
       in
           serve (fn () => ExplorerSearch.initSearch
                               (serve, state, MainWindow.refresh,
-                               CanvasHelper.resetCanvas, s));
-	  serve (fn () => ExplorerSearch.searchBest
-                              (serve, state, MainWindow.refresh));
+                               CanvasHelper.resetCanvas, s, SOME b));
+	  serve (fn () => ExplorerSearch.search
+                              (serve, state,
+                               MainWindow.refresh, MainWindow.setStatusMsg,
+                               0, NONE));
 	  state
       end
 
@@ -175,6 +188,16 @@ structure ExplorerMain :> EXPLORER =
           val space = Space.new()
           val root = script space
           val e = exploreOne space
+      in
+          addInfoAction(e, ExplorerInspect.inspect t root, "default");
+          e
+      end
+
+  fun exploreBestScript' t script =
+      let
+          val space = Space.new()
+          val (root, better) = script space
+          val e = exploreBest(space, better)
       in
           addInfoAction(e, ExplorerInspect.inspect t root, "default");
           e

@@ -5,14 +5,15 @@ structure Explorer =
   struct
     type explorer = ExplorerMain.explorer
     
-    val exploreAll : Space.space -> explorer = ExplorerMain.exploreAll
-
-  __overload 'a initScript : (Space.space -> 'a) -> explorer =
+  __overload 'a init : (Space.space -> 'a) -> explorer =
      ExplorerMain.initScript'
-  __overload 'a exploreAllScript : (Space.space -> 'a) -> explorer =
+  __overload 'a exploreAll : (Space.space -> 'a) -> explorer =
      ExplorerMain.exploreAllScript'
-  __overload 'a exploreOneScript : (Space.space -> 'a) -> explorer =
+  __overload 'a exploreOne : (Space.space -> 'a) -> explorer =
      ExplorerMain.exploreOneScript'
+  __overload 'a exploreBest :
+     (Space.space -> 'a * (Space.space * Space.space -> unit)) -> explorer =
+     ExplorerMain.exploreBestScript'
   __overload 'a exploreAllRoot : Space.space -> 'a -> explorer =
      ExplorerMain.exploreAllRoot'
   end

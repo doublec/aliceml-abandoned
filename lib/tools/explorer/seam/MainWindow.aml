@@ -158,8 +158,10 @@ structure MainWindow :> MAINWINDOW =
                               menu={inspectionActions=
                                     ref ExplorerGUI.inspection1},
                               contextId=ref cid},
-                         tree={tree=ref (ExplorerNode.createNode NONE 0),
+                         tree={tree=ref (ExplorerNode.createNode(state, NONE, 0)),
                                rootSpace=ref NONE,
+			       bestSpace=ref NONE,
+			       constrain=ref NONE,
 			       currentNode=ref NONE},
 			 inspect=ref nil,
                          curInspAction=ref "",

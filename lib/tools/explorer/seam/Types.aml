@@ -28,6 +28,7 @@ structure Types =
 		    shape : (int * int) list ref,
 		    vNode : Core.object option ref,
 		    space : Space.space option ref,
+		    ownBest : Space.space option ref,
 		    alternative : int,
 		    connection : Core.object option ref}
 		   
@@ -45,6 +46,9 @@ structure Types =
                                 contextId : int ref },
                          tree : {tree : tree ref,
                                  rootSpace : Space.space option ref,
+				 bestSpace : Space.space option ref,
+				 constrain : (Space.space * Space.space -> 
+					      unit) option ref,
 			         currentNode : tree option ref},
 			 inspect : ((Space.space -> unit) * string) list ref,
                          curInspAction : string ref,
@@ -78,6 +82,14 @@ structure Types =
       debug:=flag
     | setDebug _ _ = ()
 
+  fun getBestSpace (ref (SOME ({tree={bestSpace,...},...}:
+			       explorer_state))) = !bestSpace
+    | getBestSpace _ = raise Empty
+
+  fun getConstrain (ref (SOME ({tree={constrain,...},...}:
+			       explorer_state))) = !constrain
+    | getConstrain _ = NONE
+
   (* Status accessors *)
   fun getSearchState (ref (SOME ({status={choice,failed,solved,...},...}:
                                  explorer_state))) =
@@ -99,9 +111,12 @@ structure Types =
       (failed := (!failed) + 1)
     | addFailed _ = ()
 
-  fun addSolved (ref (SOME ({status={solved,...},...}:
-                            explorer_state))) =
-      (solved := (!solved) + 1)
+  fun addSolved (ref (SOME ({status={solved,...},
+			     tree={bestSpace,constrain,...},...}:
+                            explorer_state)), s) =
+      (solved := (!solved) + 1;
+       case !constrain of NONE => ()
+	 | SOME c => bestSpace := SOME s)
     | addSolved _ = ()
 
   fun cancelSearch (ref (SOME ({cancelSearch=cs,...}:

@@ -32,8 +32,8 @@ structure EventHandler =
 
   open Types           
           
-  fun nodeEvent (state, serve) event =
-      case (!state) of
+  fun nodeEvent (st, serve) event =
+      case (!st) of
 	  SOME(state as ({gtk={canvas,scale,...},
                           tree={tree=tree,
 			        currentNode=currentNode,
@@ -79,9 +79,9 @@ structure EventHandler =
 			      GtkNode.drawShadow (state, x, y, n);
                               List.app
                                   (fn (i,s) => 
-                                      if s= !curInspAction then
-                                          i (ExplorerNode.recomputeSpace n)
-                                      else ()) (!inspect))
+                                    if s= !curInspAction then
+                                      i (ExplorerNode.recomputeSpace(st, n))
+				    else ()) (!inspect))
 		     end
 		   | _ => ())
 	     | _ => ())
@@ -260,13 +260,13 @@ structure EventHandler =
   fun resetHandler (cmw, resetCanvas, serve, state) _ =
       serve (fn () =>
                 case !state of
-                    SOME {tree={rootSpace=ref (SOME rs),...},...} =>
+                    SOME {tree={rootSpace=ref (SOME rs),constrain,...},...} =>
                     (Types.resetSearchState state;
                      Types.resetCancelSearch state;
                      refreshStatusbar state;
                      ExplorerSearch.initSearch (serve, state,
                                                 fn (x,y) => refresh (cmw,x,y),
-                                                resetCanvas, rs))
+                                                resetCanvas, rs, !constrain))
                   | _ => ())
 
   fun selectInspectionAction (serve,

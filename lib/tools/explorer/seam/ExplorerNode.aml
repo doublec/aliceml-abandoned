@@ -22,7 +22,22 @@ struct
 
     exception SearchDone
 
-    fun createNode mom alternative =
+    fun createNode(state, 
+		   mom,
+		   alternative) =
+	let
+	    val best =
+		case Types.getConstrain state of NONE => NONE
+		  | _ =>
+		    let
+			val best = Types.getBestSpace state
+		    in
+			case mom of NONE => best
+		      | SOME (N({ownBest=momBest,...},_,_)) =>
+			    if best = !momBest then NONE
+			    else best
+		    end
+	in
         N({offset=ref 0,
 	   oldOffset=ref NONE,
 	   groupOffset=ref 0,
@@ -33,9 +48,11 @@ struct
 	   hasSolBelow=ref false,
 	   vNode=ref NONE,
 	   space=ref NONE,
+	   ownBest=ref best,
 	   connection=ref NONE,
 	   alternative=alternative,
 	   shape =ref nil}, ref mom, ref #[])
+	end
 
     fun setMom (N(_,mom,_)) newMom = mom := newMom
     fun decOpenChildren (N({openChildren=openChildren,space=space,...},
@@ -61,14 +78,19 @@ struct
          openChildren := Vector.length newCh)
     fun setSpace (N({space=space,...},_,_)) newSpace = space := newSpace
 
-    fun recomputeSpace (N({space=ref (SOME s),...},_,_)) = Space.clone s
-      | recomputeSpace (N({alternative=i,space=space,...},ref (SOME mom),_)) =
+    fun recomputeSpace (state,N({space=ref (SOME s),...},_,_)) = Space.clone s
+      | recomputeSpace (state,
+			N({alternative=i,space=space,ownBest=ownBest,...},
+			  ref (SOME mom),_)) =
 	let
-	    val s = recomputeSpace mom
+	    val s = recomputeSpace(state,mom)
 	in
           case Space.status s of
             Space.BRANCH (_,desc) =>
               (Space.commit(s, i, desc);
+	       (case Types.getConstrain state of
+		    NONE => ()
+		  | SOME c => Option.app (fn b => c(s, b)) (!ownBest));
                Space.status s;
                space := SOME s;
                s)
@@ -76,13 +98,18 @@ struct
 	end
       | recomputeSpace _ = raise Subscript
 
-    fun getSpace (N({space=ref (SOME s),...},_,_)) = s
-      | getSpace n = recomputeSpace n
+    fun getSpace (state,N({space=ref (SOME s),...},_,_)) = s
+      | getSpace (state,n) = recomputeSpace (state,n)
 
-    fun nodeStatus (state, node as N({status=status,...},_,_)) =
+    fun nodeStatus (state, node as N({status=status,ownBest=ownBest,...},_,_)) =
         case !status of Types.UNKNOWN =>
                         let
-                            val s = getSpace node
+			    val _ = (case Types.getConstrain state of
+					 NONE => ()
+				       | SOME _ =>
+					     ownBest := Types.getBestSpace state
+					     )
+                            val s = getSpace(state, node)
                         in
                             case Space.status s of
                                 Space.FAILED => (setStatus node Types.FAILED;
@@ -90,7 +117,7 @@ struct
                                                  Types.FAILED)
                               | Space.SOLVED => (setStatus node Types.SOLVED;
                                                  TreeNode.setHasSolBelow node;
-                                                 Types.addSolved state;
+                                                 Types.addSolved(state,s);
                                                  Types.SOLVED)
                               | Space.BRANCH(alt,desc) 
                                 => (setStatus node (Types.CHOICE alt);
@@ -116,7 +143,7 @@ struct
                            | Types.CHOICE n =>
                              (setChildren node 
                                 (Vector.tabulate(n,
-                                   fn i => createNode (SOME node) i));
+                                   fn i => createNode(state, SOME node, i)));
                               n)
                            | Types.UNKNOWN => raise Subscript (* can't happen*)
                                                     )
