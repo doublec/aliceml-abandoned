@@ -19,7 +19,7 @@ Core language:
 + generalized layered patterns
 + with patterns
 - matches in valbinds? (val SOME x = exp1 | x = exp2)
-- rec expressions
++ rec expressions derived form
 * nonlinear patterns? (better not, requires structural equality)
 
 * overloaded literals (allows 4*3.3 and 0wx3f<<6)

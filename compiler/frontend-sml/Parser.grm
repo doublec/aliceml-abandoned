@@ -9,6 +9,8 @@
 (*	  atpat ::= #[ pat_1 , ... , pat_n ]	(n>=0)				*)
 (*   - punning in record expressions (derived form):				*)
 (*	  exprow ::= vid <: ty> <, exprow>					*)
+(*   - recursive expressions (derived form):					*)
+(*	  exp ::= rec pat => exp						*)
 (*   - more relaxed constructor pattern syntax:					*)
 (*	  pat ::= pat atpat			(R)				*)
 (*   - generalized layered patterns:						*)
@@ -530,6 +532,7 @@
 	| WHILE exp DO exp	( WHILEExp(I(WHILEleft,exp2right), exp1, exp2) )
 	| CASE exp OF match	( CASEExp(I(CASEleft,matchright), exp, match) )
 	| FN match		( FNExp(I(FNleft,matchright), match) )
+	| REC pat DARROW exp	( RECExp(I(RECleft,expright), pat, exp) )
 
 
 
