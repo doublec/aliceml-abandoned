@@ -30,12 +30,24 @@ RM = rm -f
 ALICEC = alicec --no-warn-conventions
 HOSE = ../hose
 JACKE = ../../yacc/jacke
+LINKEDNAME= AliceLex.alc
+LINKFILES= $(FILES:%.aml=--include %)
+ROOTCOMPONENT= Hose
+INSTALLTO= `alice-config --alicelibdir`/tools
 
-.PHONY: all clean distclean copy
+.PHONY: all compile_all clean distclean copy
 
 
-all: copy $(FILES:%.aml=%.alc)
+all: $(FILES:%.aml=%.alc)
+	@echo "Schnitzel time"
+	
+	
+$(LINKEDNAME):	compile_all
+	alicelink -v $(LINKFILES) $(ROOTCOMPONENT) -o $(LINKEDNAME)
+	
 
+compile_all: copy $(FILES:%.aml=%.alc)
+	
 copy:
 	cp ../hose-image* .
 	cp ../../yacc/jacke-image* .
@@ -51,6 +63,11 @@ $(J-FILE).aml: $(J-FILE)
 
 clean:
 	$(RM) *~
+
+
+install: $(LINKEDNAME)
+	mkdir -p -m 755 $(INSTALLTO)
+	install -c -m 444 $(LINKEDNAME) $(INSTALLTO)/AliceLex.alc
 
 
 distclean: clean
