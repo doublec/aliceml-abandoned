@@ -145,7 +145,7 @@ inline word OBJECT_TO_WORD(const void *p, int type) {
 }
 
 inline word OBJECT_TO_WORD(const void *p) {
-  OBJECT_TO_WORD(p, TYPE_UNKNOWN);
+  return OBJECT_TO_WORD(p, TYPE_UNKNOWN);
 }
 
 #define FUNCTION_TO_WORD(f) OBJECT_TO_WORD((void*)f, TYPE_UNKNOWN)
