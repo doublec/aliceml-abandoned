@@ -17,12 +17,7 @@
  * Referenzen Code auf andere Closures macht.  Idee: Code wird nicht
  * in assemblierter Form in ein PEFile geschrieben (denn Code kann nicht
  * reflektiert werden), sondern in Zwischendarstellung als StockWert
- * gespeichert (bei jeder Closure in einem statischen Feld):
- * -- Verzeichnis aller TypeToken
- * -- Verzeichnis aller FieldToken
- * -- Verzeichnis aller MethodToken
- * -- IL-Code (wobei Tokens als Indizes in obige Verzeichnisse
- *    repraesentiert werden)
+ * gespeichert (bei jeder Closure in einem statischen Feld).
  * Bei Serialisierung wird der transitive Abschluss aller Closures
  * gebildet.  Closures werden ausserdem mit ihrer Definition
  * rausgeschrieben (also mit den Werten ihrer statischen Felder).
@@ -71,22 +66,19 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	structure I = ImperativeGrammar
 	structure O = IL
 
+	structure System =
+	    struct
+		val Object = ["System", "Object"]
+		val ObjectTy = O.ClassTy Object
+		val Int32 = ["System", "Int32"]
+		val Int32Ty = O.ClassTy Int32
+		val String = ["System", "String"]
+		val StringTy = O.ClassTy String
+	    end
+
 	open I
 	open O
 	open CodeStore
-
-	structure System =
-	    struct
-		val String = ["System", "String"]
-		val StringTy = ClassTy String
-	    end
-
-	local
-	    fun appi' (x::xr, f, i) = (f (i, x); appi' (xr, f, i + 1))
-	      | appi' (nil, _, _) = ()
-	in
-	    fun appi f xs = appi' (xs, f, 0)
-	end
 
 	local
 	    val count = ref 0
@@ -102,14 +94,20 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	fun emitCoord (s, ((a, b), _)) =
 	    emit (Comment (s ^ " at " ^ Int.toString a ^ "." ^ Int.toString b))
 
-	fun emitRecordArity labs =
-	    (emit (LdcI4 (List.length labs)); emit (Newarr System.StringTy);
-	     appi (fn (i, lab) =>
-		   (emit Dup; emit (LdcI4 i);
-		    emit (Ldstr (Label.toString lab));
-		    emit (StelemRef))) labs;
+	fun emitRecordArity labelIdList =
+	    (emit (LdcI4 (List.length labelIdList));
+	     emit (Newarr System.ObjectTy);
+	     Misc.List_appi (fn (i, (label, _)) =>
+			     (emit Dup; emit (LdcI4 i);
+			      case Label.toInt label of
+				  SOME i =>
+				      (emit (LdcI4 i);
+				       emit (Newobj (System.Int32, [Int32Ty])))
+				| NONE =>
+				      emit (Ldstr (Label.toString label));
+			      emit (StelemRef))) labelIdList;
 	     emit (Call (false, StockWerk.RecordArity, "MakeRecordArity",
-			 [ArrayTy System.StringTy], StockWerk.RecordArityTy)))
+			 [ArrayTy System.ObjectTy], StockWerk.RecordArityTy)))
 
 	datatype expMode =
 	    PREPARE
@@ -145,9 +143,9 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	     emit Dup; emit (Castclass StockWerk.Real);
 	     emit (Ldfld (StockWerk.Real, "Value", Float32Ty));
 	     emit (LdcR4 s); emit (B (NE_UN, elseLabel)); emit Pop)
-	  | genTest (ConTest (id, NONE), elseLabel) =
+	  | genTest (ConTest (id, NONE, _), elseLabel) =
 	    (emit Dup; emitId id; emit (B (NE_UN, elseLabel)); emit Pop)
-	  | genTest (ConTest (id1, SOME id2), elseLabel) =
+	  | genTest (ConTest (id1, SOME id2, _), elseLabel) =
 	    (emit Dup; emit (Isinst StockWerk.ConVal);
 	     emit (B (FALSE, elseLabel));
 	     emit (Castclass StockWerk.ConVal); emit Dup;
@@ -197,48 +195,38 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	     emit (Ldfld (StockWerk.Tuple4, "Value4", StockWerk.StockWertTy));
 	     declareLocal id4)
 	  | genTest (TupTest ids, elseLabel) =
-	    let
-		val thenLabel = newLabel ()
-	    in
-		emit Dup; emit (Isinst StockWerk.Tuple);
-		emit (B (FALSE, elseLabel));
-		emit (Castclass StockWerk.Tuple); emit Dup;
-		emit (Ldfld (StockWerk.Tuple, "Values",
-			     ArrayTy StockWerk.StockWertTy));
-		emit Dup; emit Ldlen; emit (LdcI4 (List.length ids));
-		emit (B (EQ, thenLabel)); emit Pop; emit (Br elseLabel);
-		emit (Label thenLabel);
-		appi (fn (i, id) =>
-		      (emit Dup; emit (LdcI4 i); emit LdelemRef;
-		       declareLocal id)) ids; emit Pop; emit Pop
-	    end
-	  | genTest (RecTest labIdList, elseLabel) =
+	    (emit Dup; emit (Isinst StockWerk.Tuple);
+	     emit (B (FALSE, elseLabel));
+	     emit (Castclass StockWerk.Tuple);
+	     emit (Ldfld (StockWerk.Tuple, "Values",
+			  ArrayTy StockWerk.StockWertTy));
+	     Misc.List_appi (fn (i, id) =>
+			     (emit Dup; emit (LdcI4 i); emit LdelemRef;
+			      declareLocal id)) ids;
+	     emit Pop)
+	  | genTest (RecTest labelIdList, elseLabel) =
 	    (emit Dup; emit (Isinst StockWerk.Record);
 	     emit (B (FALSE, elseLabel));
-	     emit (Castclass StockWerk.Record); emit Dup;
-	     emit (Ldfld (StockWerk.Record, "Arity",
-			  StockWerk.RecordArityTy));
-	     emitRecordArity (List.map #1 labIdList);
-	     emit (B (NE_UN, elseLabel));
+	     emit (Castclass StockWerk.Record);
 	     emit (Ldfld (StockWerk.Record, "Values",
 			  ArrayTy StockWerk.StockWertTy));
-	     appi (fn (i, (_, id)) =>
-		   (emit Dup; emit (LdcI4 i); emit LdelemRef;
-		    declareLocal id)) labIdList; emit Pop)
-	  | genTest (LabTest (lab, id), elseLabel) =
-	    let
-		val thenLabel = newLabel ()
-	    in
-		emit Dup; emit (Isinst StockWerk.Record);
-		emit (B (FALSE, elseLabel));
-		emit (Castclass StockWerk.Record); emit Dup;
-		emit (Ldstr (Label.toString lab));
-		emit (Call (true, StockWerk.Record, "CondSelect",
-			    [System.StringTy], StockWerk.StockWertTy));
-		emit Dup; emit (B (TRUE, thenLabel));
-		emit Pop; emit (Br elseLabel);
-		emit (Label thenLabel); declareLocal id; emit Pop
-	    end
+	     Misc.List_appi (fn (i, (_, id)) =>
+			     (emit Dup; emit (LdcI4 i); emit LdelemRef;
+			      declareLocal id)) labelIdList;
+	     emit Pop)
+	  | genTest (LabTest (label, id), elseLabel) =
+	    (emit Dup; emit (Isinst StockWerk.Record);
+	     emit (B (FALSE, elseLabel));
+	     case Label.toInt label of
+		 SOME i =>
+		     (emit (LdcI4 i);
+		      emit (Call (true, StockWerk.StockWert, "CondSelect",
+				  [Int32Ty], StockWerk.StockWertTy)))
+	       | NONE =>
+		     (emit (Ldstr (Label.toString label));
+		      emit (Call (true, StockWerk.StockWert, "CondSelect",
+				  [System.StringTy], StockWerk.StockWertTy)));
+	     declareLocal id)
 	  | genTest (VecTest ids, elseLabel) =
 	    let
 		val thenLabel = newLabel ()
@@ -251,9 +239,10 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 		emit Dup; emit Ldlen; emit (LdcI4 (List.length ids));
 		emit (B (EQ, thenLabel)); emit Pop; emit (Br elseLabel);
 		emit (Label thenLabel);
-		appi (fn (i, id) =>
-		      (emit Dup; emit (LdcI4 i); emit LdelemRef;
-		       declareLocal id)) ids; emit Pop
+		Misc.List_appi (fn (i, id) =>
+				(emit Dup; emit (LdcI4 i); emit LdelemRef;
+				 declareLocal id)) ids;
+		emit Pop
 	    end
 
 	fun genLit (WordLit w) =
@@ -271,12 +260,6 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	  | genLit (RealLit s) =
 	    (emit (LdcR4 s);
 	     emit (Newobj (StockWerk.Real, [Float32Ty])))
-
-	fun checkSingleMethod [(OneArg _, [RaiseStm (_, Id (_, stamp, _))]),
-			       argsBody] =
-	    if stamp = Prebound.stamp_Match then SOME argsBody
-	    else NONE
-	  | checkSingleMethod _ = NONE
 
 	(*--** in EvalStm and declarations of unused variables,
 	 * remove all of exp but side-effects *)
@@ -308,9 +291,9 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	  | genStm (EndHandleStm (_, shared)) = emit (Leave (!shared))
 	  | genStm (stm as TestStm (_, id, _, _, _)) =
 	    let
-		val (testBodyFunList, elseBody) = gatherTests ([stm], id)
+		val (testBodyList, elseBody) = gatherTests ([stm], id)
 	    in
-		genTestStm (id, testBodyFunList, elseBody)
+		genTestStm (id, testBodyList, fn () => genBody elseBody)
 	    end
 	  | genStm (RaiseStm ((((i, _), (_, _)), _), id)) =
 	    (emitId id; emit (LdcI4 i);
@@ -330,35 +313,33 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	and gatherTests ([TestStm (_, id, test, thenBody, elseBody)], id') =
 	    if idEq (id, id') then
 		let
-		    val (testBodyFunList, elseBody') =
-			gatherTests (elseBody, id')
-		    fun thenBodyFun () = genBody thenBody
+		    val (testBodyList, elseBody') = gatherTests (elseBody, id')
 		in
-		    ((test, thenBodyFun)::testBodyFunList, elseBody')
+		    ((test, thenBody)::testBodyList, elseBody')
 		end
 	    else (nil, elseBody)
 	  | gatherTests (body, _) = (nil, body)
-	and genTestStm (_, nil, elseBody) = genBody elseBody
-	  | genTestStm (id, testBodyFunList, elseBody) =
+	and genTestStm (_, nil, elseBodyFun) = elseBodyFun ()
+	  | genTestStm (id, testBodyList, elseBodyFun) =
 	    let
 		val retryLabel = newLabel ()
 		val falseLabel = newLabel ()
 	    in
 		emitId id; emit (Label retryLabel);
-		List.app (fn (test, bodyFun) =>
+		List.app (fn (test, body) =>
 			  let
 			      val elseLabel = newLabel ()
 			      val regState = saveRegState ()
 			  in
-			      genTest (test, elseLabel); bodyFun ();
+			      genTest (test, elseLabel); genBody body;
 			      emit (Label elseLabel); restoreRegState regState
-			  end) testBodyFunList;
+			  end) testBodyList;
 		emit Dup; emit (Isinst StockWerk.Transient);
 		emit (B (FALSE, falseLabel));
 		emit (Callvirt (StockWerk.StockWert, "Await", nil,
 				StockWerk.StockWertTy));
 		emit (Br retryLabel); emit (Label falseLabel);
-		emit Pop; genBody elseBody
+		emit Pop; elseBodyFun ()
 	    end
 	and genExp (LitExp (_, lit), PREPARE) = genLit lit
 	  | genExp (PrimExp (_, name), PREPARE) =
@@ -441,40 +422,48 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	  | genExp (TupExp (_, ids), FILL) =
 	    (emit (Ldfld (StockWerk.Tuple, "Values",
 			  ArrayTy StockWerk.StockWertTy));
-	     appi (fn (i, id) =>
-		   (emit Dup; emit (LdcI4 i); emitId id; emit StelemRef)) ids;
+	     Misc.List_appi (fn (i, id) =>
+			     (emit Dup; emit (LdcI4 i); emitId id;
+			      emit StelemRef)) ids;
 	     emit Pop)
 	  | genExp (TupExp (_, ids), BOTH) =
 	    (emit (LdcI4 (List.length ids));
 	     emit (Newarr StockWerk.StockWertTy);
-	     appi (fn (i, id) =>
-		   (emit Dup; emit (LdcI4 i); emitId id; emit StelemRef)) ids;
+	     Misc.List_appi (fn (i, id) =>
+			     (emit Dup; emit (LdcI4 i); emitId id;
+			      emit StelemRef)) ids;
 	     emit (Newobj (StockWerk.Tuple, [ArrayTy StockWerk.StockWertTy])))
-	  | genExp (RecExp (_, labIdList), PREPARE) =
-	    (emitRecordArity (List.map #1 labIdList);
-	     emit (LdcI4 (List.length labIdList));
+	  | genExp (RecExp (_, labelIdList), PREPARE) =
+	    (emitRecordArity labelIdList;
+	     emit (LdcI4 (List.length labelIdList));
 	     emit (Newarr StockWerk.StockWertTy);
 	     emit (Newobj (StockWerk.Record, [StockWerk.RecordArityTy,
 					      ArrayTy StockWerk.StockWertTy])))
-	  | genExp (RecExp (_, labIdList), FILL) =
+	  | genExp (RecExp (_, labelIdList), FILL) =
 	    (emit (Ldfld (StockWerk.Record, "Values",
 			  ArrayTy StockWerk.StockWertTy));
-	     appi (fn (i, (_, id)) =>
-		   (emit Dup; emit (LdcI4 i); emitId id; emit StelemRef))
-	     labIdList;
+	     Misc.List_appi (fn (i, (_, id)) =>
+			     (emit Dup; emit (LdcI4 i); emitId id;
+			      emit StelemRef)) labelIdList;
 	     emit Pop)
-	  | genExp (RecExp (_, labIdList), BOTH) =
-	    (emitRecordArity (List.map #1 labIdList);
-	     emit (LdcI4 (List.length labIdList));
+	  | genExp (RecExp (_, labelIdList), BOTH) =
+	    (emitRecordArity labelIdList;
+	     emit (LdcI4 (List.length labelIdList));
 	     emit (Newarr StockWerk.StockWertTy);
-	     appi (fn (i, (_, id)) =>
-		   (emit Dup; emit (LdcI4 i); emitId id; emit StelemRef))
-	     labIdList;
+	     Misc.List_appi (fn (i, (_, id)) =>
+			     (emit Dup; emit (LdcI4 i); emitId id;
+			      emit StelemRef)) labelIdList;
 	     emit (Newobj (StockWerk.Record, [StockWerk.RecordArityTy,
 					      ArrayTy StockWerk.StockWertTy])))
-	  | genExp (SelExp (_, lab), BOTH) =
-	    (emit (Ldstr (Label.toString lab));
-	     emit (Newobj (StockWerk.Selector, [System.StringTy])))
+	  | genExp (SelExp (_, label), BOTH) =
+	    (case Label.toInt label of
+		 SOME i =>
+		     (emit (LdcI4 i);
+		      emit (Newobj (StockWerk.IntSelector, [Int32Ty])))
+	       | NONE =>
+		     (emit (Ldstr (Label.toString label));
+		      emit (Newobj (StockWerk.StringSelector,
+				    [System.StringTy]))))
 	  | genExp (VecExp (_, ids), PREPARE) =
 	    (emit (LdcI4 (List.length ids));
 	     emit (Newarr StockWerk.StockWertTy);
@@ -482,41 +471,62 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	  | genExp (VecExp (_, ids), FILL) =
 	    (emit (Ldfld (StockWerk.Vector, "Values",
 			  ArrayTy StockWerk.StockWertTy));
-	     appi (fn (i, id) =>
-		   (emit Dup; emit (LdcI4 i); emitId id; emit StelemRef)) ids;
+	     Misc.List_appi (fn (i, id) =>
+			     (emit Dup; emit (LdcI4 i); emitId id;
+			      emit StelemRef)) ids;
 	     emit Pop)
-	  | genExp (FunExp ((coord, _), stamp, _, argsBodyList), PREPARE) =
+	  | genExp (FunExp ((coord, _), stamp, _, args, body), PREPARE) =
 	    (emitCoord ("FunExp", coord); emit (Newobj (className stamp, nil));
-	     case checkSingleMethod argsBodyList of
-		 SOME (TupArgs nil, _) =>
+	     case args of
+		 TupArgs nil =>
 		     defineClass (stamp, StockWerk.Procedure0, nil)
-	       | SOME (TupArgs [_, _], _) =>
+	       | TupArgs [_, _] =>
 		     defineClass (stamp, StockWerk.Procedure2, nil)
-	       | SOME (TupArgs [_, _, _], _) =>
+	       | TupArgs [_, _, _] =>
 		     defineClass (stamp, StockWerk.Procedure3, nil)
-	       | SOME (TupArgs [_, _, _, _], _) =>
+	       | TupArgs [_, _, _, _] =>
 		     defineClass (stamp, StockWerk.Procedure4, nil)
 	       | _ =>
 		     defineClass (stamp, StockWerk.Procedure, nil))
-	  | genExp (FunExp (_, stamp, _, argsBodyList), FILL) =
-	    (case checkSingleMethod argsBodyList of
-		 SOME (TupArgs nil, body) =>
+	  | genExp (FunExp (_, stamp, _, args, body), FILL) =
+	    (case args of
+		 OneArg id =>
+		     (defineMethod (stamp, "Apply", [id]);
+		      genBody body; closeMethod ())
+	       | TupArgs nil =>
 		     (defineMethod (stamp, "Apply0", nil);
 		      genBody body; closeMethod ())
-	       | SOME (TupArgs (ids as [_, _]), body) =>
+	       | TupArgs (ids as [_, _]) =>
 		     (defineMethod (stamp, "Apply2", ids);
 		      genBody body; closeMethod ())
-	       | SOME (TupArgs (ids as [_, _, _]), body) =>
+	       | TupArgs (ids as [_, _, _]) =>
 		     (defineMethod (stamp, "Apply3", ids);
 		      genBody body; closeMethod ())
-	       | SOME (TupArgs (ids as [_, _, _, _]), body) =>
+	       | TupArgs (ids as [_, _, _, _]) =>
 		     (defineMethod (stamp, "Apply4", ids);
 		      genBody body; closeMethod ())
 	       | _ =>
-		     (case argsBodyList of
-			  (OneArg id, body)::rest =>
-			      genFunBody (stamp, id, body, rest)
-			| _ => raise Crash.Crash "CodeGenPhase.genExp");
+		     let
+			 val info = (Source.nowhere, NONE)
+			 val id = Id (info, Stamp.new (), Name.InId)
+			 val test =
+			     case args of
+				 OneArg _ =>
+				     raise Crash.Crash "CodeGen.genExp: FunExp"
+			       | TupArgs ids => TupTest ids
+			       | RecArgs labelIdList => RecTest labelIdList
+			 fun elseBodyFun () =
+			     (emit (Ldsfld (StockWerk.Prebound,
+					    "General$Match",
+					    StockWerk.StockWertTy));
+			      emit (Newobj (StockWerk.ExceptionWrapper,
+					    [StockWerk.StockWertTy]));
+			      emit Throw)
+		     in
+			 defineMethod (stamp, "Apply", [id]);
+			 genTestStm (id, [(test, body)], elseBodyFun);
+			 closeMethod ()
+		     end;
 	     emit Pop)
 	  | genExp (AppExp (_, id1, OneArg id2), BOTH) =
 	    (emitId id1; emitId id2;
@@ -546,18 +556,26 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	    (emitId id; genExp (TupExp (coord, ids), BOTH);
 	     emit (Callvirt (StockWerk.StockWert, "Apply",
 			     [StockWerk.StockWertTy], StockWerk.StockWertTy)))
-	  | genExp (AppExp (coord, id, RecArgs labIdList), BOTH) =
-	    (emitId id; genExp (RecExp (coord, labIdList), BOTH);
+	  | genExp (AppExp (coord, id, RecArgs labelIdList), BOTH) =
+	    (emitId id; genExp (RecExp (coord, labelIdList), BOTH);
 	     emit (Callvirt (StockWerk.StockWert, "Apply",
 			     [StockWerk.StockWertTy], StockWerk.StockWertTy)))
-	  | genExp (SelAppExp (_, lab, id), BOTH) =
-	    (emitId id; emit (Ldstr (Label.toString lab));
-	     emit (Callvirt (StockWerk.StockWert, "Select", [System.StringTy],
-			     StockWerk.StockWertTy)))
-	  | genExp (ConAppExp (_, id, _), PREPARE) =
+	  | genExp (SelAppExp (_, label, id), BOTH) =
+	    (emitId id;
+	     case Label.toInt label of
+		 SOME i =>
+		     (emit (LdcI4 i);
+		      emit (Callvirt (StockWerk.StockWert, "Select", [Int32Ty],
+				      StockWerk.StockWertTy)))
+	       | NONE =>
+		     (emit (Ldstr (Label.toString label));
+		      emit (Callvirt (StockWerk.StockWert, "Select",
+				      [System.StringTy],
+				      StockWerk.StockWertTy))))
+	  | genExp (ConAppExp (_, id, _, _), PREPARE) =
 	    (emitId id;
 	     emit (Newobj (StockWerk.ConVal, [StockWerk.StockWertTy])))
-	  | genExp (ConAppExp (_, _, args), FILL) =
+	  | genExp (ConAppExp (_, _, args, _), FILL) =
 	    (genArgs args;
 	     emit (Stfld (StockWerk.ConVal, "Val", StockWerk.StockWertTy)))
 	  | genExp (RefAppExp (_, _), PREPARE) =
@@ -567,51 +585,14 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	     emit (Call (true, StockWerk.Ref, "Assign",
 			 [StockWerk.StockWertTy], VoidTy)))
 	  | genExp (PrimAppExp (_, name, ids), BOTH) =
-	    (*--** *)
-	    raise Crash.Crash "CodeGenPhase.genExp: PrimAppExp"
+	    raise Crash.Crash "CodeGenPhase.genExp: PrimAppExp"   (*--** *)
 	  | genExp (AdjExp (_, id1, id2), BOTH) =
-	    (*--** *)
-	    raise Crash.Crash "CodeGenPhase.genExp: AdjExp"
+	    raise Crash.Crash "CodeGenPhase.genExp: AdjExp"   (*--** *)
 	  | genExp (exp, PREPARE) =
 	    raise Crash.Crash "CodeGenPhase.genExp: not admissible"
 	  | genExp (_, FILL) = emit Pop
 	  | genExp (exp, BOTH) =
 	    (genExp (exp, PREPARE); emit Dup; genExp (exp, FILL))
-	and genFunBody (stamp, id, body, argsBodyList) =
-	    let
-		val testBodyFunList =
-		    List.map
-		    (fn (args, body) =>
-		     case args of
-			 OneArg _ => raise Crash.Crash "CodeGen.genFunBody"
-		       | TupArgs (ids as (nil | [_, _] | [_, _, _] |
-					  [_, _, _, _])) =>
-			     let
-				 val name =
-				     "Apply" ^ Int.toString (List.length ids)
-			     in
-				 defineMethod (stamp, name, ids);
-				 genBody body; closeMethod ();
-				 (TupTest ids,
-				  fn () =>
-				  (emit (Ldarg 0); List.map emitId ids;
-				   emit Tail;
-				   emit (Call (true, className stamp, name,
-					       List.map
-					       (fn _ => StockWerk.StockWertTy)
-					       ids, StockWerk.StockWertTy));
-				   emit Ret))
-			     end
-		       | TupArgs ids =>
-			     (TupTest ids, fn () => genBody body)
-		       | RecArgs labIdList =>
-			     (RecTest labIdList, fn () => genBody body))
-		    argsBodyList
-	    in
-		defineMethod (stamp, "Apply", [id]);
-		genTestStm (id, testBodyFunList, body);
-		closeMethod ()
-	    end
 	and genArgs (OneArg id) = emitId id
 	  | genArgs (TupArgs ids) =   (*--** type below *)
 	    genExp (TupExp ((Source.nowhere, NONE), ids), BOTH)
