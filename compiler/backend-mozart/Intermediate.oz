@@ -41,16 +41,16 @@
 %%        |  varPat(<info> <id>)
 %%        |  conPat(<info> <long id> <optional pat>)
 %%        |  tupPat(<info> [<pat>])
-%%        |  recPat(<info> [<field pat>] <is open>)
+%%        |  recPat(<info> [<field pat>] <has dots>)
 %%        |  asPat(<info> <id> <pat>)
 %%        |  altPat(<info> [<pat>])
 %%        |  negPat(<info> <pat>)
 %%        |  guardPat(<info> <pat> <exp>)
-%%        |  withPat(<info> <pat> <dec>)
+%%        |  withPat(<info> <pat> [<dec>])
 %% <optional pat> ::= none
 %%                 |  some(<pat>)
 %% <field pat> ::= field(<info> <lab> <pat>)
-%% <is open> ::= <bool>
+%% <has dots> ::= <bool>
 %%
 %% <lit> ::= wordLit(<int>)
 %%        |  intLit(<int>)

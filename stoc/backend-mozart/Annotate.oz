@@ -160,43 +160,41 @@ define
       end
    end
 
-   local
-      fun {CombineValReps Reg#V1 _#V2}
-	 Reg#case V1 of top then V2
-	     elsecase V1 of conval(N ValRep1) then
-		case V2 of conval(!N ValRep2) then
-		   conval(N {CombineValReps ValRep1 ValRep2})
-		else V1
-		end
-	     elseif {Label V1} == record andthen {Label V2} == record
-		andthen {Arity V1} == {Arity V2}
-	     then
-		{Record.zip V1 V2 CombineValReps}
+   fun {CombineValReps Reg#V1 _#V2}
+      Reg#case V1 of top then V2
+	  elsecase V1 of conval(N ValRep1) then
+	     case V2 of conval(!N ValRep2) then
+		conval(N {CombineValReps ValRep1 ValRep2})
 	     else V1
 	     end
-      end
-   in
-      proc {Bind Reg#V1 ValRep2=_#V2 State}
-	 %% arguments: ValRep of arbiter, ValRep of pattern
-	 {ForAll {GetRegStamps State Reg}
-	  proc {$ Stamp}
-	     {EnterValRep State Stamp
-	      {CombineValReps {LookupValRep State Stamp} ValRep2}}
-	  end}
-	 case V1 of conval(N ValRep1) then
-	    case V2 of conval(!N ValRep2) then
-	       {Bind ValRep1 ValRep2 State}
-	    else skip
-	    end
-	 elseif {Label V1} == record andthen {Label V2} == record
-	    andthen {Arity V1} == {Arity V2}
-	 then
-	    {Record.forAllInd V1
-	     proc {$ Feature ValRep1}
-		{Bind ValRep1 V2.Feature State}
-	     end}
+	  elseif {Label V1} == record andthen {Label V2} == record
+	     andthen {Arity V1} == {Arity V2}
+	  then
+	     {Record.zip V1 V2 CombineValReps}
+	  else V1
+	  end
+   end
+
+   proc {Bind Reg#V1 ValRep2=_#V2 State}
+      %% arguments: ValRep of arbiter, ValRep of pattern
+      {ForAll {GetRegStamps State Reg}
+       proc {$ Stamp}
+	  {EnterValRep State Stamp
+	   {CombineValReps {LookupValRep State Stamp} ValRep2}}
+       end}
+      case V1 of conval(N ValRep1) then
+	 case V2 of conval(!N ValRep2) then
+	    {Bind ValRep1 ValRep2 State}
 	 else skip
 	 end
+      elseif {Label V1} == record andthen {Label V2} == record
+	 andthen {Arity V1} == {Arity V2}
+      then
+	 {Record.forAllInd V1
+	  proc {$ Feature ValRep1}
+	     {Bind ValRep1 V2.Feature State}
+	  end}
+      else skip
       end
    end
 
@@ -436,17 +434,29 @@ define
 	     {Map Pats
 	      fun {$ Pat} {AnnotatePat Pat State {NewReg State}#top} end}}
 	 end
-      [] recPat(_ FieldPats IsOpen) then PatArity V in
-	 if IsOpen then
-	    raise notImplemented(annotatePat Pat) end   %--**
-	 end
+      [] recPat(_ FieldPats HasDots) then PatArity V in
 	 PatArity = {Arity {List.toRecord x
 			    {Map FieldPats
 			     fun {$ field(_ lab(_ S) _)}
 				{Intermediate.labToFeature S}#unit
 			     end}}}
 	 V = {ValRepToValue ValRep}
-	 if {Label V} == record andthen {Arity V} == PatArity then
+	 if HasDots then
+	    %--** value propagation can be improved if we handle
+	    %--** partially known record values
+	    if {Label V} == record andthen {List.sub PatArity {Arity V}} then
+	       {ForAll FieldPats
+		proc {$ field(_ lab(_ S) Pat)}
+		   _ = {AnnotatePat Pat State V.{Intermediate.labToFeature S}}
+		end}
+	    else
+	       {ForAll FieldPats
+		proc {$ field(_ _ Pat)}
+		   _ = {AnnotatePat Pat State {NewReg State}#top}
+		end}
+	    end
+	    top
+	 elseif {Label V} == record andthen {Arity V} == PatArity then
 	    {List.toRecord record
 	     {Map FieldPats
 	      fun {$ field(_ lab(_ S) Pat)}
@@ -461,20 +471,36 @@ define
 		 {AnnotatePat Pat State {NewReg State}#top}
 	      end}}
 	 end
-      [] asPat(_ id(_ Stamp _) Pat) then
-	 %--** annotate the value constructed by Pat at Id
-	 {EnterValRep State Stamp ValRep}
-	 {AnnotatePat Pat State ValRep}
-      [] altPat(_ _) then
-	 raise notImplemented(annotatePat Pat) end   %--**
-      [] negPat(_ _) then
-	 raise notImplemented(annotatePat Pat) end   %--**
+      [] asPat(_ id(_ Stamp _) Pat) then ValRep1 ValRep2 in
+	 ValRep1 = _#_
+	 {EnterValRep State Stamp ValRep1}
+	 ValRep2 = {AnnotatePat Pat State ValRep}
+	 ValRep1 = {CombineValReps ValRep ValRep2}
+	 {ValRepToValue ValRep2}
+      [] altPat(_ Pats) then
+	 case Pats of [Pat] then {AnnotatePat Pat State ValRep}
+	 else
+	    {ForAll Pats
+	     proc {$ Pat}
+		{Save State}
+		_ = {AnnotatePat Pat State ValRep}
+		{Restore State}
+	     end}
+	    top
+	 end
+      [] negPat(_ Pat) then
+	 {Save State}
+	 _ = {AnnotatePat Pat State ValRep}
+	 {Restore State}
+	 top
       [] guardPat(_ Pat Exp) then PatValRep in
 	 PatValRep = {AnnotatePat Pat State ValRep}
 	 _ = {AnnotateExp Exp State}
-	 PatValRep
-      [] withPat(_ _ _) then
-	 raise notImplemented(annotatePat Pat) end   %--**
+	 {ValRepToValue PatValRep}
+      [] withPat(_ Pat Decs) then PatValRep in
+	 PatValRep = {AnnotatePat Pat State ValRep}
+	 {ForAll Decs proc {$ Dec} {AnnotateDec Dec State} end}
+	 {ValRepToValue PatValRep}
       end
    end
 end
