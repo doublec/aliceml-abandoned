@@ -4,7 +4,7 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg & Leif Kornstaedt, 2001-2004
+ *   Andreas Rossberg & Leif Kornstaedt, 2001-2005
  *
  * Last change:
  *   $Date$ by $Author$
@@ -129,17 +129,30 @@ struct
 
 	val currentArc			= "."
 	val parentArc			= ".."
-	fun isArcSep c			= c = #"/"
+	fun isArcSep c			= c = #"/" orelse c = #"\\"
 	fun isExtSep c			= c = #"."
 
+	fun getVolume s =
+	    if String.size s >= 2 andalso String.sub(s,1) = #":" andalso
+		Char.isAlpha(String.sub(s,0))
+	    then String.substring(s, 0, 2)
+	    else ""
+
 	fun validVolume{isAbs, vol=""}	= true
+	  | validVolume{isAbs=true,vol}	= getVolume vol = vol
 	  | validVolume _		= false
 
 	fun fromString s =
-	    case String.fields isArcSep s
-	      of ""::nil  => {isAbs=false, vol="", arcs=nil}
-	       | ""::arcs => {isAbs=true,  vol="", arcs=arcs}
-	       | arcs     => {isAbs=false, vol="", arcs=arcs}
+	    let
+		val vol = getVolume s
+		val s'  = if vol = "" then s
+			  else String.extract(s, String.size vol, NONE)
+	    in
+		case String.fields isArcSep s'
+		  of ""::nil  => {isAbs=false, vol, arcs=nil}
+		   | ""::arcs => {isAbs=true,  vol, arcs}
+		   | arcs     => {isAbs=false, vol, arcs}
+	    end
 
 	fun validArc arc =
 	    case fromString arc
@@ -148,27 +161,30 @@ struct
 
 	fun toString{isAbs=false, vol, arcs=""::_} = raise Path
 	  | toString{isAbs, vol, arcs} =
-	    if Bool.not(validVolume{isAbs=isAbs, vol=vol}) then
+	    if Bool.not(validVolume{isAbs, vol}) then
 		raise Path
 	    else if Bool.not(List.all validArc arcs) then
 		raise InvalidArc
 	    else
-		(if isAbs then "/" else "") ^ String.concatWith "/" arcs
+		vol ^ (if isAbs then "/" else "") ^ String.concatWith "/" arcs
 
-	fun getVolume s = ""
+	fun isRoot s =
+	    case fromString s
+	     of {isAbs=true, vol, arcs=[""]} => true
+	      | _                            => false
 
 	fun getParent s =
-	    if s = "/" then s else
 	    let
 		val {isAbs, vol, arcs} = fromString s
 	    in
+		if isAbs andalso arcs = [""] then s else
 		case splitLast arcs
 		  of NONE          => ".."
 		   | SOME(_, "")   => s ^ ".."
 		   | SOME(_, ".")  => s ^ "."
 		   | SOME(_, "..") => s ^ "/.."
-		   | SOME(nil, _)  => toString{isAbs=isAbs, vol=vol, arcs=["."]}
-		   | SOME(arcs, _) => toString{isAbs=isAbs, vol=vol, arcs=arcs}
+		   | SOME(nil, _)  => toString{isAbs, vol, arcs=["."]}
+		   | SOME(arcs, _) => toString{isAbs, vol, arcs}
 	    end
 
 	fun splitDirFile s =
@@ -177,25 +193,22 @@ struct
 	    in
 		case splitLast arcs
 		  of NONE =>
-		     {dir  = toString{isAbs=isAbs, vol=vol, arcs=nil},
-		      file = ""}
+		     {dir = toString{isAbs, vol, arcs=nil}, file = ""}
 		   | SOME(arcs, arc) =>
-		     {dir  = toString{isAbs=isAbs, vol=vol, arcs=arcs},
-		      file = arc}
+		     {dir = toString{isAbs, vol, arcs}, file = arc}
 	    end
 
 	fun joinDirFile{dir, file} =
-	    if dir = "" then file else
 	    let
 		val {isAbs, vol, arcs} = fromString dir
 	    in
 		case splitLast arcs
 		  of SOME(arcs', "") =>
-		     toString{isAbs=isAbs, vol=vol, arcs=arcs'@[file]}
+		     toString{isAbs, vol, arcs=arcs'@[file]}
 		   | SOME(arcs', ".") =>
-		     toString{isAbs=isAbs, vol=vol, arcs=arcs'@[file]}
+		     toString{isAbs, vol, arcs=arcs'@[file]}
 		   | _ =>
-		     toString{isAbs=isAbs, vol=vol, arcs=arcs@[file]}
+		     toString{isAbs, vol, arcs=arcs@[file]}
 	    end
 
 	fun splitArcBaseExt arc =
@@ -216,13 +229,12 @@ struct
 	    in
 		case splitLast arcs
 		  of NONE =>
-		     {base = toString{isAbs=isAbs, vol=vol, arcs=nil},
-		      ext = NONE}
+		     {base = toString{isAbs, vol, arcs=nil}, ext = NONE}
 		   | SOME(arcs, arc) =>
 		case splitArcBaseExt arc
-		  of NONE => {base=s, ext=NONE}
+		  of NONE => {base = s, ext = NONE}
 		   | SOME{base, ext} =>
-		     {base = toString{isAbs=isAbs, vol=vol, arcs=arcs@[base]},
+		     {base = toString{isAbs, vol, arcs=arcs@[base]},
 		      ext  = SOME ext}
 	    end
 
@@ -257,13 +269,12 @@ struct
 		val {isAbs, vol, arcs} = fromString s
 		val arcs' = mkCanonicalArcs(isAbs, arcs, nil)
 	    in
-		toString{isAbs=isAbs, vol=vol, arcs=arcs'}
+		toString{isAbs, vol, arcs=arcs'}
 	    end
 
 	fun isCanonical s = s = mkCanonical s
 	fun isAbsolute s  = #isAbs(fromString s)
 	fun isRelative s  = Bool.not(isAbsolute s)
-	fun isRoot s      = s = "/" orelse s = "/."
 
 	fun concatArcs(arcs1, arcs2) =
 	    case splitLast arcs1
@@ -312,6 +323,6 @@ struct
 	    end
 
 	fun fromUnixPath s = s
-	fun toUnixPath s   = s
+	fun toUnixPath s   = String.map (fn #"\\" => #"/" | c => c) s
     end
 end
