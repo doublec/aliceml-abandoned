@@ -30,7 +30,7 @@ OZLOPTS = -z9
 STOC = alicec
 STOL = alicelink
 STODEP = sml @SMLload=$(BOOTSTRAPDIR)/alicedep
-STOCOPTS = --recursive-compilation
+STOCOPTS = 
 OZSOURCES = \
 	CreateObjects.oz LayoutObjects.oz DrawObjects.oz TreeNodes.oz \
 	Helper.oz UnsafeInspector.oz
