@@ -23,9 +23,9 @@ fun printDesc desc =
   | Struct => "Struct"
   | Decl (FixItem _) => "Decl FixItem"
   | Decl (ValItem _) => "Decl ValItem"
-  | Decl (TypItem) => "Decl TypItem"
+  | Decl (TypItem _) => "Decl TypItem"
   | Decl (ModItem _) => "Decl ModItem"
-  | Decl (SigItem) => "Decl SigItem"
+  | Decl (SigItem _) => "Decl SigItem"
 
 fun info elem =
   case elem of

@@ -19,9 +19,9 @@ struct
   datatype declaration =
 	   FixItem of Label.t * Fixity.t
 	 | ValItem of string * Type.typ * Reflect.value
-	 | TypItem
+	 | TypItem of string * Type.typ
 	 | ModItem of string * Inf.t * Reflect.module
-	 | SigItem
+	 | SigItem of string * Inf.t
 
   datatype 'a item = 
     NestedRow of Type.typ option

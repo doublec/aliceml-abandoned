@@ -161,9 +161,9 @@ struct
       case decl of
 	AbsTree.FixItem _ => "Fixity declaration"
       | AbsTree.ValItem (_, t, _) => pptype t
-      | AbsTree.TypItem => "Type declaration"
+      | AbsTree.TypItem (_, t) => pptype t
       | AbsTree.ModItem (_, s, _) => ppsig s
-      | AbsTree.SigItem => "Signature declaration"
+      | AbsTree.SigItem (_, s) => ppsig s
 
   fun tooltip (x, y) = 
     case Selection.findSelectionAt (x, y) of

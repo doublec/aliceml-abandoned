@@ -196,6 +196,7 @@ struct
   val fixStyle    = newStyle ("fixity", !fontname, (0,50000,25000), false)
   val valStyle    = newStyle ("val", !fontname, (0,50000,25000), false)
   val labStyle    = newStyle ("label", !fontname, (20000,10000,25000), false)
+  val typStyle    = newStyle ("type", !fontname, (60000,10000,20000), false)
 
   (* Limit symbols. *)
   val limitStyle = newStyle ("limit", !fontname, (0,0,0), false)

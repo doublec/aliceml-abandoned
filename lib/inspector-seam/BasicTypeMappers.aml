@@ -160,6 +160,8 @@ struct
   val pMod = ("structure ", Prefs.structStyle)
   val pModL = [pMod]
   val pFctL = [("functor ", Prefs.structStyle)]
+  val pTypL = [("type ", Prefs.typStyle)]
+  val pSigL = [("signature ", Prefs.typStyle)]
 
   (* From lib/system/DynMatch *)
   fun trName f (Name.ExId s)	= Name.ExId(f s)
@@ -172,6 +174,8 @@ struct
 
   fun getVal (modl, label) = UnsafeValue.projPoly (modl, trValLab label)
   fun getMod (modl, label) = UnsafeValue.projPoly (modl, trModLab label)
+  fun getSig (modl, label) = UnsafeValue.projPoly (modl, trInfLab label)
+  fun getTyp (modl, label) = UnsafeValue.projPoly (modl, trTypLab label)
 
   (* Maps a declaration to an abstract tree. *)
   fun mapDecl (modl, depth, decl) =
@@ -193,8 +197,11 @@ struct
 	  Concat {prefix, tree, suffix=[], orient = AbsTree.orientSon}
 	end
 
-      | TypItem => AbsTree.simpleText (Decl decl, "type ... not done",
-                                       Prefs.labStyle)
+      | TypItem (l, typ) =>
+        let val tree = AbsTree.simpleText (Decl decl, l, Prefs.labStyle)
+        in
+          Concat {prefix = pTypL, tree, suffix=[], orient = AbsTree.orientSon}
+        end
 
       | ModItem (label, msig, mvalue) =>
         let
@@ -204,8 +211,11 @@ struct
           Concat {prefix, tree, suffix=[], orient = AbsTree.orientSon}
         end
 
-      | SigItem => AbsTree.simpleText (Decl decl, "signature ... not done",
-                                       Prefs.labStyle)
+      | SigItem (l, sign) =>
+        let val tree = AbsTree.simpleText (Decl decl, l, Prefs.labStyle)
+        in
+          Concat {prefix = pSigL, tree, suffix=[], orient = AbsTree.orientSon}
+        end
 
   (* Expands a declaration. *)
   fun fromDecl (module, decl) =
@@ -222,7 +232,7 @@ struct
                             orient = AbsTree.orientSonStrict})
             end
 
-      | TypItem => NONE
+      | TypItem (l, typ) => NONE
 
       | ModItem (l, msig, mvalue) =>
         if Inf.isArrow msig then NONE else
@@ -235,7 +245,7 @@ struct
                           orient = AbsTree.orientSonStrict})
           end
 
-      | SigItem => NONE
+      | SigItem (l, sign) => NONE
 
   fun addDecl (_, _, _, index, size, []) = (assert index = size ; [])
     | addDecl (modl, depth, kids, index, size, (el :: elems) as rest) =
@@ -267,7 +277,13 @@ struct
         if String.sub (label, 0) = #"'" then NONE
         else SOME (ValItem (label, typ, getVal (modl, lab)))
       end
-    | mapItem (modl, Inf.TypItem _) = SOME TypItem
+    | mapItem (modl, Inf.TypItem (path, _)) =
+      let
+        val lab   = Path.toLab path
+        val label = Label.toString lab
+      in
+        SOME (TypItem (label, getTyp (modl, lab)))
+      end
     | mapItem (modl, Inf.ModItem (path, inf)) =
       let
         val lab   = Path.toLab path
@@ -275,7 +291,13 @@ struct
       in
         SOME (ModItem (label, inf, getMod (modl, lab)))
       end
-    | mapItem (modl, Inf.InfItem _) = SOME SigItem
+    | mapItem (modl, Inf.InfItem (path, _)) = 
+      let
+        val lab = Path.toLab path
+        val label = Label.toString lab
+      in
+          SOME (SigItem (label, getSig (modl, lab)))
+      end
     | mapItem (modl, Inf.HiddenItem _) = NONE
 
   fun filterItems (modl, [], acc, n) = (acc, n)
