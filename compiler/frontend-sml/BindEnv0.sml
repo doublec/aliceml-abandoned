@@ -22,7 +22,7 @@ structure BindEnv0 :> BIND_ENV0 =
     val _ = insertVal(E_bool, VId.fromString "true",  (i,P.stamp_true, C 0))
     val _ = insertVal(E_list, VId.fromString "nil",   (i,P.stamp_nil,  C 0))
     val _ = insertVal(E_list, VId.fromString "::",    (i,P.stamp_cons, C 1))
-    val _ = insertVal(E_ref,  VId.fromString "ref",   (i,P.stamp_ref,  C 1))
+    val _ = insertVal(E_ref,  VId.fromString "ref",   (i,P.stamp_ref,  R))
 
     val _ = insertTy(E, TyCon.fromString "bool",   (i, Stamp.new(), E_bool))
     val _ = insertTy(E, TyCon.fromString "int",    (i, Stamp.new(), E_empty))
