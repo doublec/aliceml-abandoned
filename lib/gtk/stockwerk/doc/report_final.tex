@@ -3,14 +3,14 @@
 \setlength{\textwidth}{14cm}
 \setlength{\oddsidemargin}{1cm}
 
-\usepackage{verbatim}
-\newenvironment{code}{\verbatim}{\endverbatim}
-\usepackage{shortvrb}
-\MakeShortVerb{\§}
-
 \usepackage{graphics}
 \newcommand{\showimage}[1]{\begin{center}\includegraphics{#1.eps}\end{center}}
 %\newcommand{\showimage}[1]{\begin{picture}(100,100)\end{picture}}
+
+\usepackage{verbatim}
+\newenvironment{code}{\verbatim}{\endverbatim}
+\usepackage{shortvrb}
+\MakeShortVerb{\#}
 
 \begin{document}
 
@@ -27,7 +27,7 @@
     \vspace{1cm}
 
     Robert Grabowski\\
-    §grabow@ps.uni-sb.de§\\
+    #grabow@ps.uni-sb.de#\\
     Programming Systems Lab
 
     \vspace{2cm}
@@ -413,11 +413,11 @@ Tabelle \ref{PrimTab}.
 \begin{center}
   \begin{tabular}{|c|c||c|c|}
   \hline \textbf{C-Typ}     & \textbf{Alice-Typ} &
-         \textbf{C-Typ}     &\textbf{Alice-Typ}\\
-  \hline §void§             & §unit§ & §char*§            & §string§     \\
-  \hline (ganzzahliger Typ) & §int§  & \emph{t}§[]§       & \emph{t}§ array§ \\
-  \hline (Flie"skomma-Typ)  & §real§ & \emph{t}§*§        & §object§ \\
-  \hline §gboolean§         & §bool§ & §GList*§/§GSList*§ & §object list§ \\
+         \textbf{C-Typ}     & \textbf{Alice-Typ}\\
+  \hline #void#             & #unit# & #char*#            & #string#     \\
+  \hline (ganzzahliger Typ) & #int#  & \emph{t}#[]#       & \emph{t}# vector#\\
+  \hline (Flie"skomma-Typ)  & #real# & \emph{t}#*#        & #object# \\
+  \hline #gboolean#         & #bool# & #GList*#/#GSList*# & #object list# \\
   \hline
   \end{tabular}
 \end{center}
@@ -427,15 +427,15 @@ Tabelle \ref{PrimTab}.
 
 \begin{itemize}
 \item
-§object§ ist dabei ein abstrakter Datentyp, der einen C-Zeiger repr"asentiert.
-Es ist ohne die GTK-Bibliothek nicht m"oglich, ein Wert vom Typ §object§ zu
+#object# ist dabei ein abstrakter Datentyp, der einen C-Zeiger repr"asentiert.
+Es ist ohne die GTK-Bibliothek nicht m"oglich, ein Wert vom Typ #object# zu
 konstruieren oder zu dereferenzieren, lediglich ein Vergleich ist m"oglich.
 Mehr ist auch nicht n"otig, denn f"ur Zeiger auf Verbundtypen gibt es
 Zugriffsfunktionen, und Zeiger auf andere Werte werden als Ausgabeparameter
 betrachtet (siehe unten).
 
 \item 
-§GList§ und §GSList§ sind GTK-Datenstrukturen f"ur die Verwaltung von Listen.
+#GList# und #GSList# sind GTK-Datenstrukturen f"ur die Verwaltung von Listen.
 
 \item
 Bei Strings, Arrays und Listen kann sich in C der Zustand/Inhalt "andern,
@@ -478,7 +478,7 @@ liegt es nahe,
 sie als Alice-Records zu repr"asentieren. Das ist aber sehr teuer, zumal in C
 nur Zeiger auf Verbunde, nicht jedoch Verbunde selbst
 an Funktionen "ubergeben werden k"onnen.
-Daher reicht der Typ §object§ f"ur die Benutzung von Verbunden aus.
+Daher reicht der Typ #object# f"ur die Benutzung von Verbunden aus.
 Zudem kann und sollte der Programmierer GTK-Verbunde nie selbst
 erstellen oder entfernen, sondern nur die entsprechenden Funktionen benutzen.
 Die Schnittstelle muss sich also nicht um eigene Konstruktoren und Destruktoren
@@ -491,8 +491,8 @@ Verbundtyp Feldzugriffsfunktionen generiert.
 Diese werden von
 der Schnittstelle nicht behandelt. Eine Abbildung von Typaliasnamen auf
 type-Deklarationen in Alice w"urde erst richtig Sinn machen, wenn man
-statt des nicht n"aher spezifizierten §object§ einen polymorphen
-``$\alpha$ §pointer§'' benutzen w"urde. Ein Zugriff auf externe Variablen
+statt des nicht n"aher spezifizierten #object# einen polymorphen
+``$\alpha$ #pointer#'' benutzen w"urde. Ein Zugriff auf externe Variablen
 ist bei der GTK-Programmierung in aller Regel nicht n"otig.
 
 \subsection{Funktionswrapper}
@@ -551,7 +551,7 @@ Funktionen mit variablen Argumentlisten k"onnen beliebig viele Argumente
 erhalten, und jedes Argument kann von einem beliebigen Typ sein.
 Die "Ubergabe der Argumente von Alice an die Schnittstelle l"asst sich dabei
 noch halbwegs elegant gestalten. Auf Alice-Seite wird eine Liste vom Typ
-§arg list§ "ubergeben, wobei §arg§ die variablen Typen repr"asentiert:
+#arg list# "ubergeben, wobei #arg# die variablen Typen repr"asentiert:
 
 \begin{verbatim}
 datatype arg = INT of int | BOOL of bool | STRING of string | ...
@@ -616,24 +616,24 @@ eine Anbindung an Alice generieren kann.
 
 \begin{thebibliography}{99}
   \bibitem{wwwgtkorg}GTK+ Homepage\\
-                     §http://www.gtk.org/§
+                     #http://www.gtk.org/#
 
   \bibitem{inspector}Bernadette Blum, Marvin Schiller.
                      \emph{Ein Browser f"ur Alice} (Fopra), 2003.\\
-                     §http://www.ps.uni-sb.de/~schiller/inspector.html§
+                     #http://www.ps.uni-sb.de/~schiller/inspector.html#
 
   \bibitem{blume}Matthias Blume. \emph{No-Longer-Foreign: Teaching an
                  ML compiler to speak C ``natively''}, 2001.\\
-                 §http://people.cs.uchicago.edu/~blume/papers/nlffi.pdf§
+                 #http://people.cs.uchicago.edu/~blume/papers/nlffi.pdf#
 
   \bibitem{ckit}CKIT f"ur SML/NJ\\
-                §http://www.smlnj.org/doc/ckit/§
+                #http://www.smlnj.org/doc/ckit/#
                  
   \bibitem{fudgets}Magnus Carlsson, Thomas Hallgren.
                    \emph{Fudgets -- Purely Functional Processes with
                    applications to Graphical User Interfaces} (PhD thesis), 
                    1998.\\
-                   §http://www.cs.chalmers.se/~hallgren/Thesis§
+                   #http://www.cs.chalmers.se/~hallgren/Thesis#
 \end{thebibliography}
 
 \end{document}
