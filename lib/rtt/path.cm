@@ -1,5 +1,4 @@
 Group
-
 	signature NAME
 	structure Name
 	signature LABEL
@@ -11,12 +10,11 @@ Group
 
 	signature PP_PATH
 	structure PPPath
-
 is
-
-	../misc/sources.cm
-	../infrastructure/crash.cm
+	../utility/sources.cm
+	pp-misc.cm
 	name.cm
+	label.cm
 
 	PATH-sig.aml
 	Path.aml

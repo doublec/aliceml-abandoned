@@ -1,5 +1,4 @@
 Group
-
 	structure Name
 	structure Label
 	structure Path
@@ -12,13 +11,11 @@ Group
 
 	structure PPPath
 	structure PPType
-
 is
-
-	../misc/sources.cm
-	../infrastructure/crash.cm
-	id-stamp.cm
+	../utility/sources.cm
+	pp-misc.cm
 	name.cm
+	label.cm
 	path.cm
 
 	TYPE-sig.aml
