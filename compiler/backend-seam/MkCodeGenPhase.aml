@@ -150,10 +150,10 @@ functor MkCodeGenPhase(structure AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR
 			 fn instr => O.PutVar (id, idRef, instr))
 	  | detup (O.PutNew (id, s, instr), id') =
 	    detup' (detup (instr, id'), fn instr => O.PutNew (id, s, instr))
-	  | detup (O.PutTag (id, tag, idRefs, instr), id') =
+	  | detup (O.PutTag (id, nLabels, tag, idRefs, instr), id') =
 	    if isIdInVec (idRefs, id') then USED
 	    else detup' (detup (instr, id'),
-			 fn instr => O.PutTag (id, tag, idRefs, instr))
+			 fn instr => O.PutTag (id, nLabels, tag, idRefs, instr))
 	  | detup (O.PutCon (_, _, _, _), _) = SIDE_EFFECTING
 	  | detup (O.PutRef (id, idRef, instr), id') =
 	    if isId (idRef, id') then USED
@@ -211,8 +211,8 @@ functor MkCodeGenPhase(structure AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR
 	  | detup (O.CompactIntTest (_, _, _, _), _) = UNKNOWN
 	  | detup (O.RealTest (_, _, _), _) = UNKNOWN
 	  | detup (O.StringTest (_, _, _), _) = UNKNOWN
-	  | detup (O.TagTest (_, _, _, _), _) = UNKNOWN
-	  | detup (O.CompactTagTest (_, _, _), _) = UNKNOWN
+	  | detup (O.TagTest (_, _, _, _, _), _) = UNKNOWN
+	  | detup (O.CompactTagTest (_, _, _, _), _) = UNKNOWN
 	  | detup (O.ConTest (_, _, _, _), _) = UNKNOWN
 	  | detup (O.VecTest (_, _, _), _) = UNKNOWN
 	  | detup (O.Shared (_, _), _) = UNKNOWN
@@ -570,8 +570,9 @@ functor MkCodeGenPhase(structure AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR
 	    O.PutVar (id, translateIdRef (idRef, env), instr)
 	  | translateExp (TagExp (_, _, tag, TupArgs #[]), id, instr, _) =
 	    O.PutVar (id, O.Immediate (V.int (LargeInt.fromInt tag)), instr)
-	  | translateExp (TagExp (_, _, tag, args), id, instr, env) =
-	    O.PutTag (id, tag, translateIdRefs (argsToVector args, env), instr)
+	  | translateExp (TagExp (_, labels, tag, args), id, instr, env) =
+	    O.PutTag (id, Vector.length labels, 
+		      tag, translateIdRefs (argsToVector args, env), instr)
 	  | translateExp (ConExp (_, idRef, TupArgs #[]), id, instr, env) =
 	    O.PutVar (id, translateIdRef (idRef, env), instr)
 	  | translateExp (ConExp (_, idRef, args), id, instr, env) =
@@ -774,18 +775,21 @@ functor MkCodeGenPhase(structure AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR
 				       Int.max (i, max))))
 				 (min, max) naryTests
 		val elseInstr = translateBody (elseBody, env)
+		val nLabels = Vector.length labels
 	    in
 		if min = 0 andalso max + 1 = Vector.length tagTests then
 		    let
 			fun lookup i = IntMap.lookupExistent (map, i)
 		    in
 			O.CompactTagTest (idRef,
+					  nLabels,
 					  Vector.tabulate (max + 1, lookup),
-					  if Vector.length labels = max + 1
+					  if nLabels = max + 1
 					  then NONE
 					  else SOME elseInstr)
 		    end
-		else O.TagTest (idRef, nullaryTests, naryTests, elseInstr)
+		else O.TagTest (idRef, nLabels, nullaryTests, naryTests,
+				elseInstr)
 	    end
 
 	fun translate (desc, context, {imports, body, exports, sign}) =

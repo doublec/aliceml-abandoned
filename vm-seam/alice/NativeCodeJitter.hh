@@ -209,9 +209,9 @@ protected:
   void LoadArguments(Vector *actualIdRefs);
   TagVal *CheckBoolTest(word pos, u_int Result, word next);
   TagVal *Apply(TagVal *pc, word wClosure);
-  void CompileConsequent(word conseq, u_int TagValue);
+  void CompileConsequent(word conseq, u_int tagSel, u_int TagValue);
   void NullaryBranches(u_int Tag, Vector *tests);
-  void NonNullaryBranches(u_int Tag, Vector *tests);
+  void NonNullaryBranches(u_int Tag, u_int tagSel, Vector *tests);
   // AbstractCode Instructions
   TagVal *InstrKill(TagVal *pc);
   TagVal *InstrPutVar(TagVal *pc);

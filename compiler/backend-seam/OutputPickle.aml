@@ -36,6 +36,7 @@ structure OutputPickle :> OUTPUT_PICKLE =
 		  | CON_VAL
 		  | RECORD
 		  | VECTOR
+		  | BIG_TAG
 		  | TAG of LargeInt.int
 		  | TUPLE
 		  | CLOSURE
@@ -124,10 +125,16 @@ structure OutputPickle :> OUTPUT_PICKLE =
 		  | toInt CON_VAL = 2
 		  | toInt RECORD  = 3
 		  | toInt VECTOR  = 4
-		  | toInt (TAG i) = 5 + i
+		  | toInt BIG_TAG = 5
+		  | toInt (TAG i) = 6 + i
 		  | toInt TUPLE   = 243
 		  | toInt CLOSURE = 242
 		  | toInt TRANSFORM = 245
+
+		(* alice/Data.hh: Alice::MAX_TAG - Alice::MIN_TAG *)
+		val maxSmallTag = 221
+
+		fun isBigTagValue nLabels = nLabels > maxSmallTag
 	    end
 
 	type context = {outstream: PrimPickle.outstream,
@@ -253,10 +260,15 @@ structure OutputPickle :> OUTPUT_PICKLE =
  	    outputWideString (context, s)
  	  | outputValue (context, V.Real r) =
  	    outputReal (context, r)
-  	  | outputValue (context, V.TaggedValue (i, values)) =
+  	  | outputValue (context, V.TaggedValue (nLabels, i, values)) =
  	    (Vector.app (fn value => outputValue (context, value))
  	     (Vector.rev values);
- 	     outputBlock (context, Label.TAG i, Vector.length values))
+	     if Label.isBigTagValue(nLabels) then
+		 (outputInt (context, i);
+ 		  outputBlock (context, Label.BIG_TAG,
+			       Vector.length values + 1))
+	     else
+ 		 outputBlock (context, Label.TAG i, Vector.length values))
   	  | outputValue (context, V.Tuple values) =
  	    (Vector.app (fn value => outputValue (context, value))
  	     (Vector.rev values);
@@ -301,12 +313,13 @@ structure OutputPickle :> OUTPUT_PICKLE =
  	     outputString (context, s);
  	     outputId (context, id);
  	     outputBlock (context, Label.putNew, 3))
-  	  | outputInstr (context, PutTag (id, tag, idRefs, instr)) =
+  	  | outputInstr (context, PutTag (id, nLabels, tag, idRefs, instr)) =
  	    (outputInstr (context, instr);
   	     outputVector outputIdRef (context, idRefs);
  	     outputInt (context, LargeInt.fromInt tag);
+	     outputInt (context, LargeInt.fromInt nLabels);
  	     outputId (context, id);
- 	     outputBlock (context, Label.putTag, 4))
+ 	     outputBlock (context, Label.putTag, 5))
   	  | outputInstr (context, PutCon (id, idRef, idRefs, instr)) =
  	    (outputInstr (context, instr);
   	     outputVector outputIdRef (context, idRefs);
@@ -437,7 +450,8 @@ structure OutputPickle :> OUTPUT_PICKLE =
  			    outputTuple (context, 2))) (context, tests);
   	     outputIdRef (context, idRef);
  	     outputBlock (context, Label.stringTest, 3))
- 	  | outputInstr (context, TagTest (idRef, tests1, tests2, instr)) =
+ 	  | outputInstr (context,
+			 TagTest (idRef, nLabels, tests1, tests2, instr)) =
  	    (outputInstr (context, instr);
   	     outputVector (fn (context, (tag, idDefs, instr)) =>
  			   (outputInstr (context, instr);
@@ -450,9 +464,11 @@ structure OutputPickle :> OUTPUT_PICKLE =
  			    outputInt (context, LargeInt.fromInt tag);
  			    outputTuple (context, 2)))
  	     (context, tests1);
+	     outputInt (context, LargeInt.fromInt nLabels);
   	     outputIdRef (context, idRef);
- 	     outputBlock (context, Label.tagTest, 4))
- 	  | outputInstr (context, CompactTagTest (idRef, tests, instrOpt)) =
+ 	     outputBlock (context, Label.tagTest, 5))
+ 	  | outputInstr (context,
+			 CompactTagTest (idRef, nLabels, tests, instrOpt)) =
  	    (outputOption outputInstr (context, instrOpt);
   	     outputVector (fn (context, (idDefsOpt, instr)) =>
  			   (outputInstr (context, instr);
@@ -462,8 +478,9 @@ structure OutputPickle :> OUTPUT_PICKLE =
  			     outputIdDef (context, idDefs))
  			    (context, idDefsOpt);
  			    outputTuple (context, 2))) (context, tests);
+	     outputInt (context, LargeInt.fromInt nLabels);
   	     outputIdRef (context, idRef);
- 	     outputBlock (context, Label.compactTagTest, 3))
+ 	     outputBlock (context, Label.compactTagTest, 4))
  	  | outputInstr (context, ConTest (idRef, tests1, tests2, instr)) =
  	    (outputInstr (context, instr);
   	     outputVector (fn (context, (idRef, idDefs, instr)) =>

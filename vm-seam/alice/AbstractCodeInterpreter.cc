@@ -488,17 +488,25 @@ Worker::Result AbstractCodeInterpreter::Run(StackFrame *sFrame) {
 	pc = TagVal::FromWordDirect(pc->Sel(2));
       }
       break;
-    case AbstractCode::PutTag: // of id * int * idRef vector * instr
+    case AbstractCode::PutTag: // of id * int * int * idRef vector * instr
       {
-	Vector *idRefs = Vector::FromWordDirect(pc->Sel(2));
+	Vector *idRefs = Vector::FromWordDirect(pc->Sel(3));
 	u_int nargs = idRefs->GetLength();
-	TagVal *tagVal =
-	  TagVal::New(Store::DirectWordToInt(pc->Sel(1)), nargs);
+	TagVal *tagVal;
+	u_int offset;
+	if (Alice::IsBigTagVal(Store::DirectWordToInt(pc->Sel(1)))) {
+	  tagVal =
+	    (TagVal *) BigTagVal::New(Store::DirectWordToInt(pc->Sel(2)), nargs);
+	  offset = BigTagVal::GetOffset();
+	} else {
+	  tagVal = TagVal::New(Store::DirectWordToInt(pc->Sel(2)), nargs);
+	  offset = TagVal::GetOffset();
+	}
 	for (u_int i = nargs; i--; )
-	  tagVal->Init(i, GetIdRefKill(idRefs->Sub(i), pc,
-				       globalEnv, localEnv));
+	  tagVal->Init(i + offset,
+		       GetIdRefKill(idRefs->Sub(i), pc, globalEnv, localEnv));
 	localEnv->Add(pc->Sel(0), tagVal->ToWord());
-	pc = TagVal::FromWordDirect(pc->Sel(3));
+	pc = TagVal::FromWordDirect(pc->Sel(4));
       }
       break;
     case AbstractCode::PutCon: // of id * idRef * idRef vector * instr
@@ -909,16 +917,20 @@ Worker::Result AbstractCodeInterpreter::Run(StackFrame *sFrame) {
       }
       break;
     case AbstractCode::TagTest:
-      // of idRef * (int * instr) vector
+      // of idRef * int * (int * instr) vector
       //          * (int * idDef vector * instr) vector * instr
       {
 	word requestWord = GetIdRef(pc->Sel(0), globalEnv, localEnv);
-	TagVal *tagVal = TagVal::FromWord(requestWord);
+	TagVal *tagVal;
+	if (Alice::IsBigTagVal(Store::DirectWordToInt(pc->Sel(1))))
+	  tagVal = (TagVal *) BigTagVal::FromWord(requestWord);
+	else
+	  tagVal = TagVal::FromWord(requestWord);
 	if (tagVal == INVALID_POINTER) { // nullary constructor or transient
 	  s_int tag = Store::WordToInt(requestWord);
 	  if (tag == INVALID_INT) REQUEST(requestWord);
 	  KillIdRef(pc->Sel(0), pc, globalEnv, localEnv);
-	  Vector *tests = Vector::FromWordDirect(pc->Sel(1));
+	  Vector *tests = Vector::FromWordDirect(pc->Sel(2));
 	  u_int ntests = tests->GetLength();
 	  for (u_int i = 0; i < ntests; i++) {
 	    Tuple *pair = Tuple::FromWordDirect(tests->Sub(i));
@@ -929,36 +941,48 @@ Worker::Result AbstractCodeInterpreter::Run(StackFrame *sFrame) {
 	  }
 	} else { // non-nullary constructor
 	  KillIdRef(pc->Sel(0), pc, globalEnv, localEnv);
-	  s_int tag = tagVal->GetTag();
-	  Vector *tests = Vector::FromWordDirect(pc->Sel(2));
+	  s_int tag;
+	  u_int offset;
+	  if (Alice::IsBigTagVal(Store::DirectWordToInt(pc->Sel(1)))) {
+	    tag    = ((BigTagVal *) tagVal)->GetTag();
+	    offset = BigTagVal::GetOffset();
+	  } else {
+	    tag    = tagVal->GetTag();
+	    offset = TagVal::GetOffset();
+	  }
+	  Vector *tests = Vector::FromWordDirect(pc->Sel(3));
 	  u_int ntests = tests->GetLength();
 	  for (u_int i = 0; i < ntests; i++) {
 	    Tuple *triple = Tuple::FromWordDirect(tests->Sub(i));
 	    if (Store::DirectWordToInt(triple->Sel(0)) == tag) {
 	      Vector *idDefs = Vector::FromWordDirect(triple->Sel(1));
-	      tagVal->AssertWidth(idDefs->GetLength());
+	      tagVal->AssertWidth(idDefs->GetLength() + offset);
 	      for (u_int i = idDefs->GetLength(); i--; ) {
 		TagVal *idDef = TagVal::FromWord(idDefs->Sub(i));
 		if (idDef != INVALID_POINTER) // IdDef id
-		  localEnv->Add(idDef->Sel(0), tagVal->Sel(i));
+		  localEnv->Add(idDef->Sel(0), tagVal->Sel(i + offset));
 	      }
 	      pc = TagVal::FromWordDirect(triple->Sel(2));
 	      goto loop;
 	    }
 	  }
 	}
-	pc = TagVal::FromWordDirect(pc->Sel(3));
+	pc = TagVal::FromWordDirect(pc->Sel(4));
       }
       break;
-    case AbstractCode::CompactTagTest: // of idRef * tagTests * instr option
+    case AbstractCode::CompactTagTest: //of idRef * int * tagTests * instr option
       {
 	word requestWord = GetIdRef(pc->Sel(0), globalEnv, localEnv);
-	TagVal *tagVal = TagVal::FromWord(requestWord);
+	TagVal *tagVal;
+	if (Alice::IsBigTagVal(Store::DirectWordToInt(pc->Sel(1))))
+	  tagVal = (TagVal *) BigTagVal::FromWord(requestWord);
+	else
+	  tagVal = TagVal::FromWord(requestWord);
 	if (tagVal == INVALID_POINTER) { // nullary constructor or transient
-	  int tag = Store::WordToInt(requestWord);
+	  s_int tag = Store::WordToInt(requestWord);
 	  if (tag == INVALID_INT) REQUEST(requestWord);
 	  KillIdRef(pc->Sel(0), pc, globalEnv, localEnv);
-	  Vector *tests = Vector::FromWordDirect(pc->Sel(1));
+	  Vector *tests = Vector::FromWordDirect(pc->Sel(2));
 	  if (STATIC_CAST(u_int, tag) < tests->GetLength()) {
 	    Tuple *tuple = Tuple::FromWordDirect(tests->Sub(tag));
 	    Assert(tuple->Sel(0) == Store::IntToWord(Types::NONE));
@@ -967,23 +991,31 @@ Worker::Result AbstractCodeInterpreter::Run(StackFrame *sFrame) {
 	  }
 	} else { // non-nullary constructor
 	  KillIdRef(pc->Sel(0), pc, globalEnv, localEnv);
-	  int tag = tagVal->GetTag();
-	  Vector *tests = Vector::FromWordDirect(pc->Sel(1));
+	  s_int tag;
+	  u_int offset;
+	  if (Alice::IsBigTagVal(Store::DirectWordToInt(pc->Sel(1)))) {
+	    tag    = ((BigTagVal *) tagVal)->GetTag();
+	    offset = BigTagVal::GetOffset();
+	  } else {
+	    tag    = tagVal->GetTag();
+	    offset = TagVal::GetOffset();
+	  }
+	  Vector *tests = Vector::FromWordDirect(pc->Sel(2));
 	  if (STATIC_CAST(u_int, tag) < tests->GetLength()) {
 	    Tuple *tuple = Tuple::FromWordDirect(tests->Sub(tag));
 	    TagVal *idDefsOpt = TagVal::FromWordDirect(tuple->Sel(0));
 	    Vector *idDefs = Vector::FromWordDirect(idDefsOpt->Sel(0));
-	    tagVal->AssertWidth(idDefs->GetLength());
+	    tagVal->AssertWidth(idDefs->GetLength() + offset);
 	    for (u_int i = idDefs->GetLength(); i--; ) {
 	      TagVal *idDef = TagVal::FromWord(idDefs->Sub(i));
 	      if (idDef != INVALID_POINTER) // IdDef id
-		localEnv->Add(idDef->Sel(0), tagVal->Sel(i));
+		localEnv->Add(idDef->Sel(0), tagVal->Sel(i + offset));
 	    }
 	    pc = TagVal::FromWordDirect(tuple->Sel(1));
 	    goto loop;
 	  }
 	}
-	TagVal *someElseInstr = TagVal::FromWordDirect(pc->Sel(2));
+	TagVal *someElseInstr = TagVal::FromWordDirect(pc->Sel(3));
 	pc = TagVal::FromWordDirect(someElseInstr->Sel(0));
       }
       break;

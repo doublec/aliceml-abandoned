@@ -3,7 +3,7 @@
 //   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
 //
 // Copyright:
-//   Thorsten Brunklaus, 2002-2003
+//   Thorsten Brunklaus, 2002-2004
 //
 // Last Change:
 //   $Date$ by $Author$
@@ -1185,11 +1185,11 @@ TagVal *NativeCodeJitter::CheckBoolTest(word pos, u_int Result, word next) {
   boolTest = 0;
   TagVal *pc = TagVal::FromWordDirect(next);
   AbstractCode::instr opcode = AbstractCode::GetInstr(pc);
-  // CompactTagTest of idRef * tagTests * instr option
+  // CompactTagTest of idRef * int * tagTests * instr option
   if (opcode == AbstractCode::CompactTagTest) {
-    Vector *tests = Vector::FromWordDirect(pc->Sel(1));
+    Vector *tests = Vector::FromWordDirect(pc->Sel(2));
     u_int nTests  = tests->GetLength();
-    TagVal *someElseInstr = TagVal::FromWord(pc->Sel(2));
+    TagVal *someElseInstr = TagVal::FromWord(pc->Sel(3));
     if ((nTests == 2) && (someElseInstr == INVALID_POINTER)) {
       TagVal *tagVal           = TagVal::FromWord(pc->Sel(0));
       AbstractCode::idRef type = AbstractCode::GetIdRef(tagVal);
@@ -1461,11 +1461,12 @@ TagVal *NativeCodeJitter::Apply(TagVal *pc, word wClosure) {
   return INVALID_POINTER;
 }
 
-void NativeCodeJitter::CompileConsequent(word conseq, u_int TagValue) {
+void NativeCodeJitter::CompileConsequent(word conseq,
+					 u_int tagSel, u_int TagValue) {
   Tuple *tuple      = Tuple::FromWordDirect(conseq);
   TagVal *idDefsOpt = TagVal::FromWord(tuple->Sel(0));
   if (idDefsOpt != INVALID_POINTER)
-    BindIdDefs(idDefsOpt->Sel(0), TagValue, TagVal_Sel());
+    BindIdDefs(idDefsOpt->Sel(0), TagValue, tagSel);
   CompileBranch(TagVal::FromWordDirect(tuple->Sel(1)));
 }
 
@@ -1485,7 +1486,8 @@ void NativeCodeJitter::NullaryBranches(u_int Tag, Vector *tests) {
   }
 }
 
-void NativeCodeJitter::NonNullaryBranches(u_int Tag, Vector *tests) {
+void NativeCodeJitter::NonNullaryBranches(u_int Tag,
+					  u_int tagSel, Vector *tests) {
   u_int nTests    = tests->GetLength();
   Tuple *branches = Tuple::New(nTests);
   u_int i1        = ImmediateEnv::Register(branches->ToWord());
@@ -1499,7 +1501,7 @@ void NativeCodeJitter::NonNullaryBranches(u_int Tag, Vector *tests) {
     branches->Init(i, Store::IntToWord(offset));
       // Invariant: Arbiter must reside in temporary register
     jit_popr_ui(JIT_V1); // Restore int/tagval ptr
-    CompileConsequent(tests->Sub(i), JIT_V1);
+    CompileConsequent(tests->Sub(i), tagSel, JIT_V1);
   }
 }
 
@@ -1537,18 +1539,26 @@ TagVal *NativeCodeJitter::InstrPutNew(TagVal *pc) {
   return TagVal::FromWordDirect(pc->Sel(2));
 }
 
-// PutTag of id * int * idRef vector * instr
+// PutTag of id * int * int * idRef vector * instr
 TagVal *NativeCodeJitter::InstrPutTag(TagVal *pc) {
   JIT_PRINT_PC("PutTag\n");
-  Vector *idRefs = Vector::FromWordDirect(pc->Sel(2));
+  Vector *idRefs = Vector::FromWordDirect(pc->Sel(3));
   u_int nArgs    = idRefs->GetLength();
-  TagVal_New(JIT_V1, Store::DirectWordToInt(pc->Sel(1)), nArgs);
+  u_int offset;
+  if (Alice::IsBigTagVal(Store::DirectWordToInt(pc->Sel(1)))) {
+    offset = BigTagVal_Sel();
+    BigTagVal_New(JIT_V1, Store::DirectWordToInt(pc->Sel(2)), nArgs);
+  }
+  else {
+    offset = TagVal_Sel();
+    TagVal_New(JIT_V1, Store::DirectWordToInt(pc->Sel(2)), nArgs);
+  }
   for (u_int i = nArgs; i--;) {
     u_int Reg = LoadIdRefKill(JIT_R0, idRefs->Sub(i));
-    TagVal_Put(JIT_V1, i, Reg);
+    TagVal_Put(JIT_V1, i + offset, Reg);
   }
   LocalEnvPut(JIT_V2, pc->Sel(0), JIT_V1);
-  return TagVal::FromWordDirect(pc->Sel(3));
+  return TagVal::FromWordDirect(pc->Sel(4));
 }
 
 // PutCon of id * idRef * idRef vector * instr
@@ -2140,7 +2150,7 @@ TagVal *NativeCodeJitter::InstrStringTest(TagVal *pc) {
   return TagVal::FromWordDirect(pc->Sel(2));
 }
 
-// TagTest of idRef * (int * instr) vector
+// TagTest of idRef * int * (int * instr) vector
 //         * (int * idDef vector * instr) vector * instr
 TagVal *NativeCodeJitter::InstrTagTest(TagVal *pc) {
   JIT_PRINT_PC("TagTest\n");
@@ -2150,7 +2160,7 @@ TagVal *NativeCodeJitter::InstrTagTest(TagVal *pc) {
   JITStore::Deref3(tagVal, ref);
   // Integer branch (V1 is int word, nullary constructor)
   KillIdRef(pc->Sel(0));
-  Vector *tests1 = Vector::FromWordDirect(pc->Sel(1));
+  Vector *tests1 = Vector::FromWordDirect(pc->Sel(2));
   u_int nTests1  = tests1->GetLength();
   jit_insn *else_ref1;
   if (nTests1 == 0) {
@@ -2176,11 +2186,19 @@ TagVal *NativeCodeJitter::InstrTagTest(TagVal *pc) {
   jit_patch(ref[1]); // Block Branch
   // Block branch (V1 is Non-nullary constructor)
   KillIdRef(pc->Sel(0));
-  Vector *tests2 = Vector::FromWordDirect(pc->Sel(2));
+  Vector *tests2 = Vector::FromWordDirect(pc->Sel(3));
   u_int nTests2  = tests2->GetLength();
   if (nTests2 != 0) {
-    TagVal_GetTag(JIT_R0, tagVal);
-    IntToWord(JIT_R0, JIT_R0);
+    u_int tagSel;
+    if (Alice::IsBigTagVal(Store::DirectWordToInt(pc->Sel(1)))) {
+      tagSel = BigTagVal_Sel();
+      BigTagVal_GetTagWord(JIT_R0, tagVal);
+    } else {
+      tagSel = TagVal_Sel();
+      TagVal_GetTag(JIT_R0, tagVal);
+      IntToWord(JIT_R0, JIT_R0);
+    }
+    // Invariant: JIT_R0 holds tag as word
     jit_pushr_ui(tagVal); // Save TagVal Ptr
     IntMap *map2 = IntMap::New(nTests2 * 2);
     u_int i2     = ImmediateEnv::Register(map2->ToWord());
@@ -2194,7 +2212,7 @@ TagVal *NativeCodeJitter::InstrTagTest(TagVal *pc) {
       u_int offset   = GetRelativePC();
       map2->Put(key, Store::IntToWord(offset));
       jit_popr_ui(JIT_V1); // Restore TagVal Ptr
-      BindIdDefs(triple->Sel(1), JIT_V1, TagVal_Sel());
+      BindIdDefs(triple->Sel(1), JIT_V1, tagSel);
       CompileBranch(TagVal::FromWordDirect(triple->Sel(2)));
     }
     jit_patch(else_ref2);
@@ -2202,7 +2220,7 @@ TagVal *NativeCodeJitter::InstrTagTest(TagVal *pc) {
     jit_popr_ui(JIT_V1);
   }
   jit_patch(else_ref1);
-  return TagVal::FromWordDirect(pc->Sel(3));
+  return TagVal::FromWordDirect(pc->Sel(4));
 }
 
 // CompactTagTest Table
@@ -2242,12 +2260,14 @@ static inline void CountArities(Vector *tests, u_int &n, u_int &m) {
   }
 }
 
-// CompactTagTest of idRef * tagTests * instr option
+// CompactTagTest of idRef * int * tagTests * instr option
 TagVal *NativeCodeJitter::InstrCompactTagTest(TagVal *pc) {
   JIT_PRINT_PC("CompactTagTest\n");
-  Vector *tests         = Vector::FromWordDirect(pc->Sel(1));
-  TagVal *someElseInstr = TagVal::FromWord(pc->Sel(2)); 
+  Vector *tests         = Vector::FromWordDirect(pc->Sel(2));
+  TagVal *someElseInstr = TagVal::FromWord(pc->Sel(3));
   u_int n = 0, m = 0;
+  u_int tagSel = (Alice::IsBigTagVal(Store::DirectWordToInt(pc->Sel(1))) ?
+		  BigTagVal_Sel() : TagVal_Sel());
   CountArities(tests, n, m);
   Assert((n + m) > 0);
   if (someElseInstr == INVALID_POINTER) {
@@ -2282,11 +2302,11 @@ TagVal *NativeCodeJitter::InstrCompactTagTest(TagVal *pc) {
 	if (Arbiter != JIT_V1) {
 	  jit_movr_p(JIT_V1, Arbiter);
 	}
-	CompileConsequent(tests->Sub(0), JIT_V1);
+	CompileConsequent(tests->Sub(0), tagSel, JIT_V1);
       } else {
 	jit_pushr_ui(Arbiter); // Save Arbiter
-	TagVal_GetTag(JIT_R0, Arbiter);
-	NonNullaryBranches(JIT_R0, tests);
+	TestTagVal_GetTag(JIT_R0, Arbiter, tagSel);
+	NonNullaryBranches(JIT_R0, tagSel, tests);
       }
     } else if ((n == 1) && (m == 1)) {
       Tuple *test0 = Tuple::FromWordDirect(tests->Sub(0));
@@ -2314,7 +2334,7 @@ TagVal *NativeCodeJitter::InstrCompactTagTest(TagVal *pc) {
       if (Arbiter != JIT_V1) {
 	jit_movr_p(JIT_V1, Arbiter);
       }
-      CompileConsequent(test1->ToWord(), JIT_V1);
+      CompileConsequent(test1->ToWord(), tagSel, JIT_V1);
     } else {
       word instrPC = Store::IntToWord(GetRelativePC());
       u_int Arbiter = LoadIdRef(JIT_V1, pc->Sel(0), (word) 0);
@@ -2328,10 +2348,10 @@ TagVal *NativeCodeJitter::InstrCompactTagTest(TagVal *pc) {
       BlockOnTransient(Arbiter, instrPC);
       // Block Branch
       jit_patch(ref[1]);
-      TagVal_GetTag(JIT_R0, Arbiter);
+      TestTagVal_GetTag(JIT_R0, Arbiter, tagSel);
       jit_patch(branches);
       jit_pushr_ui(Arbiter);
-      NonNullaryBranches(JIT_R0, tests);
+      NonNullaryBranches(JIT_R0, tagSel, tests);
     }
     return INVALID_POINTER;
   }
@@ -2348,11 +2368,11 @@ TagVal *NativeCodeJitter::InstrCompactTagTest(TagVal *pc) {
     BlockOnTransient(Arbiter, instrPC);
     // Block Branch
     jit_patch(ref[1]);
-    TagVal_GetTag(JIT_R0, Arbiter);
+    TestTagVal_GetTag(JIT_R0, Arbiter, tagSel);
     jit_patch(branches);
     jit_insn *no_match = jit_bgei_ui(jit_forward(), JIT_R0, n + m);
     jit_pushr_ui(Arbiter);
-    NonNullaryBranches(JIT_R0, tests);
+    NonNullaryBranches(JIT_R0, tagSel, tests);
     jit_patch(no_match);
     return TagVal::FromWordDirect(someElseInstr->Sel(0));
   }

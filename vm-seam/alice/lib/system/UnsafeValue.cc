@@ -235,31 +235,49 @@ DEFINE1(UnsafeValue_tuple) {
   RETURN(tuple->ToWord());
 } END
 
+// TagVal Template
+#define UNSAFE_VALUE_TAGGED(TAGVAL_TYPE) {					\
+  TAGVAL_TYPE *tagVal = TAGVAL_TYPE::New(tag, length);				\
+  for (u_int i = length; i--; ) {						\
+    Tuple *labelValuePair = Tuple::FromWord(labelValueVec->Sub(i));		\
+    if (labelValuePair == INVALID_POINTER) REQUEST(labelValueVec->Sub(i));	\
+    tagVal->Init(i, labelValuePair->Sel(1));					\
+  }										\
+  RETURN(tagVal->ToWord());							\
+}
+
 DEFINE3(UnsafeValue_tagged) {
-  x0 = x0; // ignored
+  DECLARE_VECTOR(labels, x0);
   DECLARE_INT(tag, x1);
   DECLARE_VECTOR(labelValueVec, x2);
   u_int length = labelValueVec->GetLength();
   if (length == 0) RETURN_INT(tag);
-  TagVal *tagVal = TagVal::New(tag, length);
-  for (u_int i = length; i--; ) {
-    Tuple *labelValuePair = Tuple::FromWord(labelValueVec->Sub(i));
-    if (labelValuePair == INVALID_POINTER) REQUEST(labelValueVec->Sub(i));
-    tagVal->Init(i, labelValuePair->Sel(1));
+  if (Alice::IsBigTagVal(labels->GetLength())) {
+    UNSAFE_VALUE_TAGGED(BigTagVal);
+  } else {
+    UNSAFE_VALUE_TAGGED(TagVal);
   }
-  RETURN(tagVal->ToWord());
 } END
 
+// TagVal Template
+#define UNSAFE_VALUE_TAGGED_TUPLE(TAGVAL_TYPE) {	\
+  TAGVAL_TYPE *tagVal = TAGVAL_TYPE::New(tag, length);	\
+  for (u_int i = length; i--; )				\
+    tagVal->Init(i, values->Sub(i));			\
+  RETURN(tagVal->ToWord());				\
+}
+
 DEFINE3(UnsafeValue_taggedTuple) {
-  x0 = x0; // ignored
+  DECLARE_VECTOR(labels, x0);
   DECLARE_INT(tag, x1);
   DECLARE_VECTOR(values, x2);
   u_int length = values->GetLength();
   if (length == 0) RETURN_INT(tag);
-  TagVal *tagVal = TagVal::New(tag, length);
-  for (u_int i = length; i--; )
-    tagVal->Init(i, values->Sub(i));
-  RETURN(tagVal->ToWord());
+  if (Alice::IsBigTagVal(labels->GetLength())) {
+    UNSAFE_VALUE_TAGGED_TUPLE(BigTagVal);
+  } else {
+    UNSAFE_VALUE_TAGGED_TUPLE(TagVal);
+  }
 } END
 
 DEFINE2(UnsafeValue_closure) {

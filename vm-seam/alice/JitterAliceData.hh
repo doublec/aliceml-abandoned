@@ -24,6 +24,7 @@ protected:
   enum { CONVAL_CON_POS, CONVAL_BASE_SIZE };
   enum { VECTOR_LENGTH_POS, VECTOR_BASE_SIZE };
   enum { RECORD_WIDTH_POS, RECORD_BASE_SIZE };
+  enum { BIGTAGVAL_TAG_POS, BIGTAGVAL_BASE_SIZE };
 public:
   void Cell_New(u_int This) {
     JITStore::AllocBlock(This, Alice::Cell, CELL_SIZE);
@@ -72,6 +73,29 @@ public:
   void TagVal_GetTag(u_int Dest, u_int This) {
     JITStore::Block_GetLabel(Dest, This);
     jit_subi_ui(Dest, Dest, Alice::MIN_TAG);
+  }
+
+  void BigTagVal_New(u_int This, u_int tag, u_int size) {
+    JITStore::AllocBlock(This, Alice::BIG_TAG, size + BIGTAGVAL_BASE_SIZE);
+    jit_movi_p(JIT_R0, Store::IntToWord(tag));
+    JITStore::InitArg(This, BIGTAGVAL_TAG_POS, JIT_R0);
+  }
+  void BigTagVal_GetTag(u_int Dest, u_int This) {
+    TagVal_Sel(Dest, This, BIGTAGVAL_TAG_POS);
+    JITStore::DirectWordToInt(Dest, Dest);
+  }
+  void BigTagVal_GetTagWord(u_int Dest, u_int This) {
+    TagVal_Sel(Dest, This, BIGTAGVAL_TAG_POS);
+  }
+  u_int BigTagVal_Sel() {
+    return BIGTAGVAL_BASE_SIZE;
+  }
+
+  void TestTagVal_GetTag(u_int Dest, u_int This, u_int tagSel) {
+    if (tagSel == BigTagVal_Sel())
+      BigTagVal_GetTag(Dest, This);
+    else
+      TagVal_GetTag(Dest, This);
   }
 
   void Vector_New(u_int This, u_int size) {

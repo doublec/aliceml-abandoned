@@ -47,7 +47,7 @@ signature ABSTRACT_CODE_GRAMMAR =
 	  | Kill of id vector * instr
 	  | PutVar of id * idRef * instr
 	  | PutNew of id * string * instr
-	  | PutTag of id * int * idRef vector * instr
+	  | PutTag of id * int * int * idRef vector * instr
 	  | PutCon of id * idRef * idRef vector * instr
 	  | PutRef of id * idRef * instr
 	  | PutTup of id * idRef vector * instr
@@ -71,10 +71,10 @@ signature ABSTRACT_CODE_GRAMMAR =
 	  | CompactIntTest of idRef * LargeInt.int * instr vector * instr
 	  | RealTest of idRef * (Real.real * instr) vector * instr
 	  | StringTest of idRef * (String.string * instr) vector * instr
-	  | TagTest of idRef * (int * instr) vector *
+	  | TagTest of idRef * int * (int * instr) vector *
 		       (int * idDef vector * instr) vector * instr
-	  | CompactTagTest of idRef * (idDef vector option * instr) vector *
-			      instr option
+	  | CompactTagTest of idRef * int *
+		       (idDef vector option * instr) vector * instr option
 	  | ConTest of idRef * (idRef * instr) vector *
 		       (idRef * idDef vector * instr) vector * instr
 	  | VecTest of idRef * (idDef vector * instr) vector * instr

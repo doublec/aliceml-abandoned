@@ -22,7 +22,7 @@ structure Value (* : VALUE - must be transparent *) =
 	  | String of String.string
 	  | WideString of WideString.string
 	  | Real of Real.real
-	  | TaggedValue of LargeInt.int * 'a t vector
+	  | TaggedValue of int * LargeInt.int * 'a t vector
 	  | Tuple of 'a t vector
 	  | Vector of 'a t vector
 	  | Closure of 'a * 'a t vector
@@ -33,8 +33,9 @@ structure Value (* : VALUE - must be transparent *) =
 	val string = String
 	val wideString = WideString
 	val real = Real
-	fun taggedValue (_, i, labelValueVec) =
-	    TaggedValue (LargeInt.fromInt i,
+	fun taggedValue (labels, i, labelValueVec) =
+	    TaggedValue (Vector.length labels,
+			 LargeInt.fromInt i,
 			 Vector.map (fn (_, value) => value) labelValueVec)
 	val tuple = Tuple
 	val vector = Vector

@@ -31,11 +31,15 @@ public:
   static const BlockLabel ConVal  = (BlockLabel) (MIN_DATA_LABEL + 2);
   static const BlockLabel Record  = (BlockLabel) (MIN_DATA_LABEL + 3);
   static const BlockLabel Vector  = (BlockLabel) (MIN_DATA_LABEL + 4);
-  static const BlockLabel MIN_TAG = (BlockLabel) (MIN_DATA_LABEL + 5);
+  static const BlockLabel BIG_TAG = (BlockLabel) (MIN_DATA_LABEL + 5);
+  static const BlockLabel MIN_TAG = (BlockLabel) (MIN_DATA_LABEL + 6);
   static const BlockLabel MAX_TAG = MAX_DATA_LABEL;
 
   static bool IsTag(BlockLabel l) {
     return l >= MIN_TAG && l <= MAX_TAG;
+  }
+  static bool IsBigTagVal(u_int nLabels) {
+    return (MIN_TAG + nLabels > MAX_TAG);
   }
   static BlockLabel TagToLabel(u_int l) {
     Assert(l <= MAX_TAG - MIN_TAG);
@@ -235,6 +239,48 @@ public:
   }
   word Sel(u_int index) {
     return GetArg(index);
+  }
+  static u_int GetOffset() {
+    return 0;
+  }
+};
+
+class AliceDll BigTagVal: private Block {
+protected:
+  enum { BIG_TAG_POS, BASE_SIZE };
+public:
+  using Block::ToWord;
+
+  static BigTagVal *New(u_int tag, u_int n) {
+    Block *b = Store::AllocBlock(Alice::BIG_TAG, n + BASE_SIZE);
+    b->InitArg(BIG_TAG_POS, Store::IntToWord(tag));
+    return STATIC_CAST(BigTagVal *, b);
+  }
+  static BigTagVal *FromWord(word x) {
+    Block *p = Store::WordToBlock(x);
+    Assert(p == INVALID_POINTER || p->GetLabel() == Alice::BIG_TAG);
+    return STATIC_CAST(BigTagVal *, p);
+  }
+  static BigTagVal *FromWordDirect(word x) {
+    Block *p = Store::DirectWordToBlock(x);
+    Assert(p->GetLabel() == Alice::BIG_TAG);
+    return STATIC_CAST(BigTagVal *, p);
+  }
+
+  u_int GetTag() {
+    return Store::DirectWordToInt(GetArg(BIG_TAG_POS));
+  }
+  void AssertWidth(u_int n) {
+    Assert(Store::SizeToBlockSize(BASE_SIZE + n) == GetSize()); n = n;
+  }
+  void Init(u_int index, word value) {
+    InitArg(BASE_SIZE + index, value);
+  }
+  word Sel(u_int index) {
+    return GetArg(BASE_SIZE + index);
+  }
+  static u_int GetOffset() {
+    return BASE_SIZE;
   }
 };
 

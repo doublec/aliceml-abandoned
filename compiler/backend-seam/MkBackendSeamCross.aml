@@ -33,7 +33,7 @@ functor MkBackendSeam(structure ComponentManager: COMPONENT_MANAGER
 			   structure Switches = Switches)
 
 	fun inf (Value.TaggedValue
-		     (_, #[_, _, Value.Sign (SOME exportInf)])) = exportInf
+		     (_, _, #[_, _, Value.Sign (SOME exportInf)])) = exportInf
 	  | inf _ = raise Crash.Crash "MkBackendSeam.inf"
 
 	fun save value filename =

@@ -87,7 +87,7 @@ functor MkLiveness(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR): LIVENESS =
 		    lIdRef (idRef, lId (id, lInstr (instr, i) + 1) + 1)
 		  | lInstr (PutNew (id, _, instr), i) =
 		    lId (id, lInstr (instr, i) + 1)
-		  | lInstr (PutTag (id, _, idRefs, instr), i) =
+		  | lInstr (PutTag (id, _, _, idRefs, instr), i) =
 		    (* two program points: first a node is allocated and
 		     * initialized in a temporary, then it is moved to id *)
 		    lId (id, lIdRefs (idRefs, lInstr (instr, i) + 1) + 1)
@@ -180,7 +180,7 @@ functor MkLiveness(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR): LIVENESS =
   			    Vector.foldr (fn ((_, thenInstr), i) =>
   					     lInstr (thenInstr, i))
 					 (lInstr (elseInstr, i)) tests + 1)
-		  | lInstr (TagTest (idRef, nullaryTests, naryTests,
+		  | lInstr (TagTest (idRef, _, nullaryTests, naryTests,
 				     elseInstr), i) =
 		    let
 			val i =
@@ -199,7 +199,7 @@ functor MkLiveness(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR): LIVENESS =
 		    in
 			lIdRef (idRef, i + 1)
 		    end
-		  | lInstr (CompactTagTest (idRef, tests, elseInstrOpt), i) =
+		  | lInstr (CompactTagTest (idRef, _, tests, elseInstrOpt), i) =
 		    (* same as TagTest *)
 		    lIdRef (idRef,
 			    Vector.foldr
