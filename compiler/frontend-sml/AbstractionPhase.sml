@@ -832,10 +832,13 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	   let
 		val (id',stamp)  = trTyCon_bind E tycon
 		val (longid',E') = trLongTyCon E longtycon
+		val  longido'    = case longid'
+				     of O.LongId(_,longid',_) => SOME longid'
+				      | O.ShortId _           => NONE
 		val _            = insertTy(E, tycon', (i', stamp, E'))
 	   in
 		O.TypDec(i, id', O.ConTyp(infoLong longtycon, longid')) ::
-		foldVals (trOpenDecVal (E,i,longid')) [] E'
+		foldVals (trOpenDecVal (E,i,longido')) [] E'
 	   end
 
 	 | CONDec(i, dconbind) =>
@@ -891,7 +894,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		val (longid', E') = trLongStrId E longstrid
 		val   _           = unionInf(E,E')
 	   in
-		(foldVals (trOpenDecVal(E,i,longid')) 
+		(foldVals (trOpenDecVal(E,i,SOME longid')) 
 		(foldTys  (trOpenDecTy (E,i,longid'))
 		(foldStrs (trOpenDecStr(E,i,longid'))
 		(foldFuns (trOpenDecFun(E,i,longid'))
@@ -920,12 +923,13 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		)
 
 
-    and trOpenDecVal (E,i,longid) (vid', (_,stamp,is), decs') =
+    and trOpenDecVal (E,i,longido') (vid', (_,stamp,is), decs') =
 	let
 	    val name    = VId.toString vid'
 	    val id'     = O.Id(i, stamp, O.ExId name)
-	    val lab'    = O.Lab(i, name)
-	    val longid' = O.LongId(i, longid, lab')
+	    val longid' = case longido'
+			    of SOME longid' => O.LongId(i,longid',O.Lab(i,name))
+			     | NONE         => O.ShortId(i, id')
 	    val pat'    = O.VarPat(i, id')
 	    val exp'    = O.VarExp(i, longid')
 	    val _       = insertVal(E, vid', (i,stamp,is))
@@ -1578,6 +1582,9 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	   let
 		val (id',stamp)  = trTyCon_bind E tycon
 		val (longid',E') = trLongTyCon E longtycon
+		val  longido'    = case longid'
+				     of O.LongId(_,longid',_) => SOME longid'
+				      | O.ShortId _           => NONE
 		val _ = insertDisjointTy(E, tycon', (i', stamp, E'))
 			handle CollisionTy _ =>
 			errorTyCon("duplicate type constructor ", tycon,
@@ -1587,7 +1594,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 				 " in signature")
 	   in
 		O.TypSpec(i, id', O.ConTyp(infoLong longtycon, longid')) ::
-		foldVals (trOpenSpecVal (E,i,longid')) [] E'
+		foldVals (trOpenSpecVal (E,i,longido')) [] E'
 	   end
 
 	 | CONSpec(i, dcondesc) =>
@@ -1660,12 +1667,13 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		)
 
 
-    and trOpenSpecVal (E,i,longid) (vid', (_,stamp,is), specs') =
+    and trOpenSpecVal (E,i,longido') (vid', (_,stamp,is), specs') =
 	let
 	    val name    = VId.toString vid'
 	    val id'     = O.Id(i, stamp, O.ExId name)
-	    val lab'    = O.Lab(i, name)
-	    val longid' = O.LongId(i, longid, lab')
+	    val longid' = case longido'
+			    of SOME longid' => O.LongId(i,longid',O.Lab(i,name))
+			     | NONE         => O.ShortId(i, id')
 	    val typ'    = O.SingTyp(i, longid')
 	    val _       = insertDisjointVal(E, vid', (i,stamp,is))
 			  handle CollisionVal _ =>
