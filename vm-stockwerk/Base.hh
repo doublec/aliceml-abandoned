@@ -21,6 +21,8 @@
 # endif
 #endif
 
+#include <cstdlib>
+
 void AssertOutline(const char *file, int line, const char *message);
 #define AssertBase(cond, message)					\
   if (!(cond)) { AssertOutline(__FILE__, __LINE__, message); exit(0); } else;
@@ -36,4 +38,4 @@ void AssertOutline(const char *file, int line, const char *message);
 void ErrorOutline(const char *file, int line, const char *message);
 #define Error(message) ErrorOutline(__FILE__, __LINE__, message); exit(0);
 
-#endif __BASE_HH__
+#endif
