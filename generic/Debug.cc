@@ -75,10 +75,15 @@ PerformDump(FILE *file, word x, u_int index, u_int level, u_int depth) {
   else if (x == static_cast<word>(NULL)) {
     std::fprintf(file, "%*cNULL POINTER[%d]\n", level, ' ', index);
   }
-  else if ((w.pt = Store::WordToTransient(x)) != INVALID_POINTER) {
+  else if (PointerOp::IsInt(x)) {
+    w.pi = Store::WordToInt(x);
+    std::fprintf(file, "%*cINT[%d]=%d\n", level, ' ', index, w.pi);
+  }
+  else if (PointerOp::IsTransient(x)) {
+    Block *p = PointerOp::RemoveTag(x);
     std::fprintf(file, "%*cTRANSIENT(%s)[%d]\n", level, ' ',
-		 TransLabel(w.pb->GetLabel()), index);
-    PerformDump(file, w.pb->GetArg(0), 0, level + 2, depth + 1);
+		 TransLabel(p->GetLabel()), index);
+    PerformDump(file, p->GetArg(0), 0, level + 2, depth + 1);
     std::fprintf(file, "%*cENDTRANSIENT\n", level, ' ');
   }
   else if ((w.pc = Store::WordToChunk(x)) != INVALID_POINTER) {
@@ -95,11 +100,6 @@ PerformDump(FILE *file, word x, u_int index, u_int level, u_int depth) {
       PerformDump(file, w.pb->GetArg(i), i, level + 2, depth + 1);
     }
     std::fprintf(file, "%*cENDBLOCK\n", level, ' ');
-  }
-  // Assume Int
-  else {
-    w.pi = Store::WordToInt(x);
-    std::fprintf(file, "%*cINT[%d]=%d\n", level, ' ', index, w.pi);
   }
 }
 
