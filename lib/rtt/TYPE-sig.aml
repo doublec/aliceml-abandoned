@@ -113,7 +113,7 @@ sig
 
     val inspect :	typ -> desc
 
-    val isUnknown :	typ -> bool			(* modulo abbrevs... *)
+    val isUnknown :	typ -> bool
     val isVar :		typ -> bool
     val isCon :		typ -> bool
     val isArrow :	typ -> bool

@@ -622,10 +622,12 @@ struct
 			      else raise Kind
 			  end
 
-    fun unknown k	= case content k of SING t => t | _ => unknown' k
+    fun unknown k	= if isSingKind k then asSingKind k else unknown' k
     val newVar		= newVar'
-    fun var a		= case content(kind a) of SING t => t | _ => a
-    fun con(p,k)	= case content k of SING t => t | _ => con'(p,k)
+    fun var a		= let val k = kind a in
+			      if isSingKind k then asSingKind k else a
+			  end
+    fun con(p,k)	= if isSingKind k then asSingKind k else con'(p,k)
     fun arrow(t1,t2)	= arrow'(canonicalStar t1, canonicalStar t2)
     fun tuple ts	= tuple'(Vector.map canonicalStar ts)
     val prod		= prod'

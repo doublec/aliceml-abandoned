@@ -41,15 +41,15 @@ struct
     (* Helpers *)
 
     fun uncurry j =
-	if isApply j then
+	case inspect j
+	 of Apply(j1,m) =>
 	    let
-		val (j1,m)  = asApply j
 		val (p,_)   = asMod m
 		val (j',ps) = uncurry j1
 	    in
 		(j',ps@[p])
 	    end
-	else
+	  | _ =>
 	    (j,[])
 
 
@@ -76,16 +76,35 @@ struct
 
     and ppInf'(ps,j) =
 	if isAbbrev j then
-(*DEBUG
-	    paren(
-*)
-	    ppInf'(ps, #1(asAbbrev j))
-(*
-	    ^/^ text "as" ^/^ ppInf'(ps, #2(asAbbrev j)) )
-*)
-	else if isSing j then
 	    let
-		val (p,j') = asMod(asSing j)
+		val (j1,j2) = asAbbrev j
+	    in
+		ppInf'(ps,j1)
+(*DEBUG
+		paren(ppInf'(ps,j1) ^/^ text "as" ^/^ ppInf'(ps,j2))
+*)
+	    end
+	else case inspect j
+	 of Top   => text "any"
+	  | Con p => PPPath.ppPath' ps p
+	  | Sig s => ppSig'(ps, s)
+	  | Arrow(p,j1,j2) => fbox(below(ppBinder("fct",ps,p,j1,j2)))
+	  | Exist(p,j1,j2) => ppInf'(ps,j2)
+(*DEBUG
+			      fbox(below(ppBinder("ex",ps,p,j1,j2)))
+*)
+	  | Lambda(p,j1,j2) => fbox(below(ppBinder("fn",ps,p,j1,j2)))
+	  | Apply _ =>
+	    let
+		val (j',ps') = uncurry j
+	    in
+		fbox(nest(List.foldl
+				(fn(p,d) => d ^/^ paren(PPPath.ppPath' ps p))
+				(ppInf'(ps,j')) ps'))
+	    end
+	  | Sing m =>
+	    let
+		val (p,j') = asMod m
 	    in
 		abox(
 		    fbox(
@@ -101,44 +120,6 @@ struct
 		    )
 		)
 	    end
-	else if isTop j then
-	    text "any"
-	else if isCon j then
-	    PPPath.ppPath' ps (asCon j)
-	else if isSig j then
-	    ppSig'(ps, asSig j)
-	else if isArrow j then
-	    let
-		val (p,j1,j2) = asArrow j
-	    in
-		fbox(below(ppBinder("fct",ps,p,j1,j2)))
-	    end
-	else if isExist j then
-(*DEBUG*)
-	    ppInf'(ps, #3(asExist j))
-(*
-	    let
-		val (p,j1,j2) = asExist j
-	    in
-		fbox(below(ppBinder("ex",ps,p,j1,j2)))
-	    end
-*)
-	else if isLambda j then
-	    let
-		val (p,j1,j2) = asLambda j
-	    in
-		fbox(below(ppBinder("fn",ps,p,j1,j2)))
-	    end
-	else if isApply j then
-	    let
-		val (j',ps') = uncurry j
-	    in
-		fbox(nest(List.foldl
-				(fn(p,d) => d ^/^ paren(PPPath.ppPath' ps p))
-				(ppInf'(ps,j')) ps'))
-	    end
-	else
-	    raise Assert.failure
 
     and ppBinder(s,ps,p,j1,j2) =
 	    abox(
@@ -183,80 +164,66 @@ struct
     and ppSig''(ps,s) = vbox(List.foldl (ppItem ps) empty (items s))
 
     and ppItem ps (item, doc) =
-	if isFixItem item then
-	    let
-		val (l,f) = asFixItem item
-	    in
+	case inspectItem item
+	 of FixItem(l,f) =>
 		hbox(
 		    ppFix f ^/^
 		    ppLab l
 		) ^/^ doc
-	    end
-	else if isValItem item then
-	    let
-		val (l,t) = asValItem item
-	    in
-		if String.sub(Label.toString l,0) = #"'" then
-		    doc
-		else
-		    abox(
-			hbox(
-			    text "val" ^/^ ppLab l ^/^ text ":"
-			) ^^
-			nest(break ^^
-			    abox(PPType.ppTyp' ps t)
-			)
-		    ) ^/^ doc
-	    end
-	else if isTypItem item then
-	    let
-		val (p,k) = asTypItem item
-	    in
-		if Type.isSingKind k then
-		    abox(
-			hbox(
-			    text "type" ^/^
-			    ppLab(Path.toLab p) ^/^
+	  | ValItem(l,t) =>
+	    if String.sub(Label.toString l,0) = #"'" then
+		doc
+	    else
+		abox(
+		    hbox(
+			text "val" ^/^ ppLab l ^/^ text ":"
+		    ) ^^
+		    nest(break ^^
+			abox(PPType.ppTyp' ps t)
+		    )
+		) ^/^ doc
+	  | TypItem(p,k) =>
+	    if Type.isSingKind k then
+		abox(
+		    hbox(
+			text "type" ^/^
+			ppLab(Path.toLab p) ^/^
 (*DEBUG
-			    PPPath.ppPath' ps p ^/^
+			PPPath.ppPath' ps p ^/^
 *)
-			    text "="
-			) ^^
-			nest(break ^^
-			    let
-				val t  = Type.asSingKind k
-				val t' = if not(Type.isAbbrev t) then t else
-					 let val (t1,t2) = Type.asAbbrev t in
-					     case Type.inspect t1
-					     of Type.Con p1 =>
-					        if Path.equal(p1,p) then t2
-						else t
-					      | _ => t
-					 end
-			    in
-				abox(PPType.ppTyp' ps t')
-			    end
-			)
-		    ) ^/^ doc
-		else
-		    abox(
-			hbox(
-			    text "type" ^/^
-			    ppLab(Path.toLab p) ^/^
+			text "="
+		    ) ^^
+		    nest(break ^^
+			let
+			    val t  = Type.asSingKind k
+			    val t' = if not(Type.isAbbrev t) then t else
+				     let val (t1,t2) = Type.asAbbrev t in
+					 case Type.inspect t1
+					 of Type.Con p1 =>
+					    if Path.equal(p1,p) then t2
+					    else t
+					  | _ => t
+				     end
+			in
+			    abox(PPType.ppTyp' ps t')
+			end
+		    )
+		) ^/^ doc
+	    else
+		abox(
+		    hbox(
+			text "type" ^/^
+			ppLab(Path.toLab p) ^/^
 (*DEBUG
-			    PPPath.ppPath' ps p ^/^
+			PPPath.ppPath' ps p ^/^
 *)
-			    text ":"
-			) ^^
-			nest(break ^^
-			    abox(PPType.ppKind k)
-			)
-		    ) ^/^ doc
-	    end
-	else if isModItem item then
-	    let
-		val (p,j) = asModItem item
-	    in
+			text ":"
+		    ) ^^
+		    nest(break ^^
+			abox(PPType.ppKind k)
+		    )
+		) ^/^ doc
+	  | ModItem(p,j) =>
 		abox(
 		    hbox(
 			text(if isArrow j then "functor"
@@ -280,78 +247,61 @@ struct
 			)
 		    )
 		) ^/^ doc
-	    end
-	else if isInfItem item then
-	    let
-		val (p,k) = asInfItem item
-	    in
-		if isSingKind k then
-		    abox(
-			hbox(
-			    text "signature" ^/^
-			    ppLab(Path.toLab p) ^/^
+	  | InfItem(p,k) =>
+	    if isSingKind k then
+		abox(
+		    hbox(
+			text "signature" ^/^
+			ppLab(Path.toLab p) ^/^
 (*DEBUG
-			    PPPath.ppPath' ps p ^/^
+			PPPath.ppPath' ps p ^/^
 *)
-			    text "="
-			) ^^
-			nest(break ^^
-			    let
-				val j  = asSingKind k
-				val j' = if not(isAbbrev j) then j else
-					 let val (j1,j2) = asAbbrev j in
-					     if isCon j1 andalso
-					        Path.equal(asCon j1, p)
-					     then j2
-					     else j
-					 end
-			    in
-				abox(ppInf'(ps, j'))
-			    end
-			)
-		    ) ^/^ doc
-		else
-		    abox(
-			hbox(
-			    text "signature" ^/^
-			    ppLab(Path.toLab p) ^/^
+			text "="
+		    ) ^^
+		    nest(break ^^
+			let
+			    val j  = asSingKind k
+			    val j' = if not(isAbbrev j) then j else
+				     let val (j1,j2) = asAbbrev j in
+					 if isCon j1 andalso
+					    Path.equal(asCon j1, p)
+					 then j2
+					 else j
+				     end
+			in
+			    abox(ppInf'(ps, j'))
+			end
+		    )
+		) ^/^ doc
+	    else
+		abox(
+		    hbox(
+			text "signature" ^/^
+			ppLab(Path.toLab p) ^/^
 (*DEBUG
-			    PPPath.ppPath' ps p ^/^
+			PPPath.ppPath' ps p ^/^
 *)
-			    text ":"
-			) ^^
-			nest(break ^^
-			    abox(ppKind'(ps,k))
-			)
-		    ) ^/^ doc
-	    end
-	else (* hidden *)
-	    empty
+			text ":"
+		    ) ^^
+		    nest(break ^^
+			abox(ppKind'(ps,k))
+		    )
+		) ^/^ doc
+	  | HiddenItem item' =>
+		doc
 (*DEBUG
-	    ^^ text "? " ^^ ppItem ps (asHiddenItem item, doc)
+		text "? " ^^ ppItem ps (item', doc)
 *)
+
 
     (* Kinds *)
 
     and ppKind k = fbox(below(ppKind' k))
 
     and ppKind'(ps,k) =
-	if isSingKind k then
-	    abox(
-		fbox(
-		    text "<" ^^
-		    below(break ^^
-			ppInf'(ps, asSingKind k)
-		    ) ^/^
-		    text ">"
-		)
-	    )
-	else if isGroundKind k then
-	    text "#"
-	else if isDepKind k then
-	    let
-		val (p,j,k') = asDepKind k
-	    in
+	case inspectKind k
+	 of GroundKind => text "#"
+	  | DepKind(p,j,k') =>
 		fbox(below(
 		    abox(
 			fbox(
@@ -372,7 +322,14 @@ struct
 			)
 		    )
 		))
-	    end
-	else
-	    raise Assert.failure
+	  | SingKind j =>
+		abox(
+		    fbox(
+			text "<" ^^
+			below(break ^^
+			    ppInf'(ps,j)
+			) ^/^
+			text ">"
+		    )
+		)
 end

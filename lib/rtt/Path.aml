@@ -54,6 +54,7 @@ struct
 
     fun pervasive s	= (GlobalStamp.fromString s, ref(NAME(Name.ExId s)))
     fun new p'		= (GlobalStamp.new(), ref p')
+
     fun invent()	= new(NAME(Name.InId))
     fun name n		= new(NAME n)
     fun hidden n	= new(HIDDEN n)
@@ -61,9 +62,21 @@ struct
     fun fromLab l	= new(NAME(Label.toName l))
     fun fromString s	= new(NAME(Name.ExId s))
 
-  (* Inspection, projection *)
+    fun instance (_, ref p') = new p'
+
+
+  (* Inspection *)
+
+    datatype desc =
+	  Name   of name
+	| Hidden of name
+	| Dot    of path * lab
 
     exception Path
+
+    fun inspect (_, ref(NAME n))	= Name n
+      | inspect (_, ref(HIDDEN n))	= Hidden n
+      | inspect (_, ref(DOT pl))	= Dot pl
 
     fun isName (_, ref(NAME _))		= true
       | isName  _			= false

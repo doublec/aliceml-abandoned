@@ -31,24 +31,19 @@ struct
     infixr ^^
 
     fun ppPath' ps p =
-	if List.exists (fn p' => Path.equal(p,p')) ps then
-	    empty
-	else if isName p then
-	    text(Name.toString(asName p))
-	else if isHidden p then
-	    text "_" ^^ text "." ^^ text(Name.toString(asHidden p))
-	else if isDot p then
+	if List.exists (fn p' => Path.equal(p,p')) ps then empty else
+	case inspect p
+	 of Name n    => text(Name.toString n)
+	  | Hidden n  => text "_" ^^ text "." ^^ text(Name.toString n)
+	  | Dot(p',l) =>
 	    let
-		val (p',l) = asDot p
-		val  doc1  = ppPath' ps p'
-		val  doc2  = text(Label.toString l)
+		val doc1 = ppPath' ps p'
+		val doc2 = text(Label.toString l)
 	    in
 		if isEmpty doc1
 		then doc2
 		else doc1 ^^ text "." ^^ doc2
 	    end
-	else
-	    raise Assert.failure
 
     fun ppPath p =
 	let

@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg, 2001-2002
  *
  * Last change:
  *   $Date$ by $Author$
@@ -154,12 +154,9 @@ struct
 		    let
 			val (t1,t2) = asAbbrev t
 		    in
-(*DEBUG
-			paren(
-*)
 			ppTypPrec p t1
-(*
-			^/^ text "as" ^/^ ppTypPrec p t2)
+(*DEBUG
+			paren(ppTypPrec p t1 ^/^ text "as" ^/^ ppTypPrec p t2)
 *)
 		    end
 		else case inspect t
