@@ -18,6 +18,7 @@
 #endif
 
 #include "generic/Interpreter.hh"
+#include "generic/String.hh"
 
 class Unpickler {
 public:
@@ -29,11 +30,11 @@ public:
   static void InitExceptions();
 
   typedef word (*handler)(word);
-  static void RegisterHandler(Chunk *name, handler handler);
+  static void RegisterHandler(String *name, handler handler);
 
   // Unpickler Functions
-  static Interpreter::Result Unpack(Chunk *string, TaskStack *taskStack);
-  static Interpreter::Result Load(Chunk *filename, TaskStack *taskStack);
+  static Interpreter::Result Unpack(String *string, TaskStack *taskStack);
+  static Interpreter::Result Load(String *filename, TaskStack *taskStack);
 };
 
 #endif
