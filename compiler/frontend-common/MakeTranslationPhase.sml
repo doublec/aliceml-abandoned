@@ -805,10 +805,10 @@ struct
       | trMod(I.AppMod(i,m1,m2))	= let val i1  = I.infoMod m1
 					      val i2  = I.infoMod m2
 					      val j1  = #inf i1
-					      val j12 = #3(Inf.asArrow j1)
+					      val j11 = #2(Inf.asArrow j1)
 					  in O.AppExp(trModInfo i, trMod m1,
 						      trTransCoerceMod
-							(#region i2, m2, j12))
+							(#region i2, m2, j11))
 					  end
       | trMod(I.AnnMod(i,m,j))		= trTransCoerceMod(#region i, m, #inf i)
       | trMod(I.UpMod(i,m,j))		= trOpaqCoerceMod(i,m,j)
