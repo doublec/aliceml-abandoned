@@ -562,20 +562,29 @@ before print"<occursIllegally\n"*)
 	    if t1 = t2 then () else
 	    case (t1',t2')
 	      of (HOLE(k1,n1), HOLE(k2,n2)) =>
-		 if k1 <> k2 then
-		     raise Unify(t1,t2)
-		 else
-		     if n1 < n2 then t2 := LINK t1
-				else t1 := LINK t2
+(*DEBUG*)
+if k1 <> k2 then
+Crash.crash "Type.unify: kind mismatch"
+else
+		 if n1 < n2 then t2 := LINK t1
+			    else t1 := LINK t2
 
 	       | (HOLE(k1,_), _) =>
-		 if k1 <> kind' t2' orelse occursIllegally(t1,t2) then
+(*DEBUG*)
+if k1 <> kind' t2' then
+Crash.crash "Type.unify: kind mismatch"
+else
+		 if occursIllegally(t1,t2) then
 		     raise Unify(t1,t2)
 		 else
 		     t1 := LINK t2
 
 	       | (_, HOLE(k2,_)) =>
-		 if k2 <> kind' t1' orelse occursIllegally(t2,t1) then
+(*DEBUG*)
+if k2 <> kind' t1' then
+Crash.crash "Type.unify: kind mismatch"
+else
+		 if occursIllegally(t2,t1) then
 		     raise Unify(t1,t2)
 		 else
 		     t2 := LINK t1
