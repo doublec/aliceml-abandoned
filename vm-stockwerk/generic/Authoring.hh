@@ -14,30 +14,30 @@
 #define __GENERIC__AUTHORING_HH__
 
 #include "adt/HashTable.hh"
-#include "generic/Interpreter.hh"
+#include "generic/Worker.hh"
 #include "generic/Scheduler.hh"
 #include "generic/Backtrace.hh"
 
 #define DEFINE0(name)					\
-  static Interpreter::Result name() {			\
+  static Worker::Result name() {			\
     Assert(Scheduler::nArgs == 0);			\
     word prim_self = Scheduler::GetAndPopFrame();	\
     prim_self = prim_self;
 #define DEFINE1(name)					\
-  static Interpreter::Result name() {			\
+  static Worker::Result name() {			\
     Assert(Scheduler::nArgs == Scheduler::ONE_ARG);	\
     word prim_self = Scheduler::GetAndPopFrame();	\
     prim_self = prim_self;				\
     word x0 = Scheduler::currentArgs[0];
 #define DEFINE2(name)					\
-  static Interpreter::Result name() {			\
+  static Worker::Result name() {			\
     Assert(Scheduler::nArgs == 2);			\
     word prim_self = Scheduler::GetAndPopFrame();	\
     prim_self = prim_self;				\
     word x0 = Scheduler::currentArgs[0];		\
     word x1 = Scheduler::currentArgs[1];
 #define DEFINE3(name)					\
-  static Interpreter::Result name() {			\
+  static Worker::Result name() {			\
     Assert(Scheduler::nArgs == 3);			\
     word prim_self = Scheduler::GetAndPopFrame();	\
     prim_self = prim_self;				\
@@ -45,7 +45,7 @@
     word x1 = Scheduler::currentArgs[1];		\
     word x2 = Scheduler::currentArgs[2];
 #define DEFINE4(name)					\
-  static Interpreter::Result name() {			\
+  static Worker::Result name() {			\
     Assert(Scheduler::nArgs == 4);			\
     word prim_self = Scheduler::GetAndPopFrame();	\
     prim_self = prim_self;				\
@@ -57,25 +57,25 @@
 
 #define RETURN0 {				\
   Scheduler::nArgs = 0;				\
-  return Interpreter::CONTINUE;			\
+  return Worker::CONTINUE;			\
 }
 #define RETURN1(w) {				\
   Scheduler::nArgs = Scheduler::ONE_ARG;	\
   Scheduler::currentArgs[0] = w;		\
-  return Interpreter::CONTINUE;			\
+  return Worker::CONTINUE;			\
 }
 #define RETURN2(w1, w2) {			\
   Scheduler::nArgs = 2;				\
   Scheduler::currentArgs[0] = w1;		\
   Scheduler::currentArgs[1] = w2;		\
-  return Interpreter::CONTINUE;			\
+  return Worker::CONTINUE;			\
 }
 #define RETURN3(w1, w2, w3) {			\
   Scheduler::nArgs = 3;				\
   Scheduler::currentArgs[0] = w1;		\
   Scheduler::currentArgs[1] = w2;		\
   Scheduler::currentArgs[2] = w3;		\
-  return Interpreter::CONTINUE;			\
+  return Worker::CONTINUE;			\
 }
 
 #define RETURN(w) RETURN1(w)
@@ -84,21 +84,21 @@
 
 #define PREEMPT0 {				\
   Scheduler::nArgs = 0;				\
-  return Interpreter::PREEMPT;			\
+  return Worker::PREEMPT;			\
 }
 
-#define SUSPEND return Interpreter::SUSPEND;
+#define SUSPEND return Worker::SUSPEND;
 
 #define RAISE(w) {						\
   Scheduler::currentData = w;					\
   Scheduler::currentBacktrace = Backtrace::New(prim_self);	\
-  return Interpreter::RAISE;					\
+  return Worker::RAISE;						\
 }
 
 #define REQUEST(w) {				\
   Scheduler::currentData = w;			\
   Scheduler::PushFrameNoCheck(prim_self);	\
-  return Interpreter::REQUEST;			\
+  return Worker::REQUEST;			\
 }
 
 #define DECLARE_INT(i, x)			\

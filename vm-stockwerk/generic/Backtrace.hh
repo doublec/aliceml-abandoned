@@ -20,7 +20,7 @@
 #endif
 
 #include "adt/Queue.hh"
-#include "generic/Interpreter.hh"
+#include "generic/Worker.hh"
 #include "generic/StackFrame.hh"
 
 class DllExport Backtrace: private Queue {
@@ -46,9 +46,9 @@ public:
   void Dump() {
     while (!IsEmpty()) {
       word frame = Dequeue();
-      Interpreter *interpreter =
-	StackFrame::FromWordDirect(frame)->GetInterpreter();
-      interpreter->DumpFrame(frame);
+      Worker *worker =
+	StackFrame::FromWordDirect(frame)->GetWorker();
+      worker->DumpFrame(frame);
     }
   }
 };

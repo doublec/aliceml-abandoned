@@ -39,11 +39,9 @@ public:
     return Store::WordToInt(GetArg(NUMBEROFELEMENTS_POS));
   }
   // VectorTabulateFrame Constructor
-  static VectorTabulateFrame *New(Interpreter *interpreter,
-				  Vector *vector, word closure,
+  static VectorTabulateFrame *New(Worker *worker, Vector *vector, word closure,
 				  u_int index, u_int numberOfElements) {
-    StackFrame *frame =
-      StackFrame::New(VECTOR_TABULATE_FRAME, interpreter, SIZE);
+    StackFrame *frame = StackFrame::New(VECTOR_TABULATE_FRAME, worker, SIZE);
     frame->InitArg(VECTOR_POS, vector->ToWord());
     frame->InitArg(CLOSURE_POS, closure);
     frame->InitArg(INDEX_POS, index);
@@ -58,16 +56,16 @@ public:
   }
 };
 
-// Vector.tabulate Interpreter
-class VectorTabulateInterpreter: public Interpreter {
+// Vector.tabulate Worker
+class VectorTabulateWorker: public Worker {
 private:
-  static VectorTabulateInterpreter *self;
-  // VectorTabulateInterpreter Constructor
-  VectorTabulateInterpreter(): Interpreter() {}
+  static VectorTabulateWorker *self;
+  // VectorTabulateWorker Constructor
+  VectorTabulateWorker(): Worker() {}
 public:
-  // VectorTabulateInterpreter Static Constructor
+  // VectorTabulateWorker Static Constructor
   static void Init() {
-    self = new VectorTabulateInterpreter();
+    self = new VectorTabulateWorker();
   }
   // Frame Handling
   static void PushFrame(Vector *vector, word closure, u_int i, u_int n);
@@ -79,18 +77,18 @@ public:
 };
 
 //
-// VectorTabulateInterpreter Functions
+// VectorTabulateWorker Functions
 //
-VectorTabulateInterpreter *VectorTabulateInterpreter::self;
+VectorTabulateWorker *VectorTabulateWorker::self;
 
-void VectorTabulateInterpreter::PushFrame(Vector *vector,
-					  word closure, u_int i, u_int n) {
+void VectorTabulateWorker::PushFrame(Vector *vector,
+				     word closure, u_int i, u_int n) {
   VectorTabulateFrame *frame =
     VectorTabulateFrame::New(self, vector, closure, i, n);
   Scheduler::PushFrame(frame->ToWord());
 }
 
-Interpreter::Result VectorTabulateInterpreter::Run() {
+Worker::Result VectorTabulateWorker::Run() {
   VectorTabulateFrame *frame =
     VectorTabulateFrame::FromWordDirect(Scheduler::GetFrame());
   Vector *vector = frame->GetVector();
@@ -103,7 +101,7 @@ Interpreter::Result VectorTabulateInterpreter::Run() {
     Scheduler::PopFrame();
     Scheduler::nArgs = Scheduler::ONE_ARG;
     Scheduler::currentArgs[0] = vector->ToWord();
-    return Interpreter::CONTINUE;
+    return Worker::CONTINUE;
   } else {
     frame->UpdateIndex(i);
     Scheduler::nArgs = Scheduler::ONE_ARG;
@@ -112,11 +110,11 @@ Interpreter::Result VectorTabulateInterpreter::Run() {
   }
 }
 
-const char *VectorTabulateInterpreter::Identify() {
-  return "VectorTabulateInterpreter";
+const char *VectorTabulateWorker::Identify() {
+  return "VectorTabulateWorker";
 }
 
-void VectorTabulateInterpreter::DumpFrame(word frameWord) {
+void VectorTabulateWorker::DumpFrame(word frameWord) {
   VectorTabulateFrame *frame = VectorTabulateFrame::FromWordDirect(frameWord);
   std::fprintf(stderr, "Vector Tabulate %d of %d\n",
 	       frame->GetIndex(), frame->GetNumberOfElements());
@@ -158,7 +156,7 @@ DEFINE2(Vector_tabulate) {
   } else {
     word wClosure = x1;
     Vector *vector = Vector::New(length);
-    VectorTabulateInterpreter::PushFrame(vector, wClosure, 0, length);
+    VectorTabulateWorker::PushFrame(vector, wClosure, 0, length);
     Scheduler::nArgs = Scheduler::ONE_ARG;
     Scheduler::currentArgs[0] = Store::IntToWord(0);
     return Scheduler::PushCall(wClosure);
@@ -166,7 +164,7 @@ DEFINE2(Vector_tabulate) {
 } END
 
 void PrimitiveTable::RegisterVector() {
-  VectorTabulateInterpreter::Init();
+  VectorTabulateWorker::Init();
   Register("Vector.fromList", Vector_fromList, 1);
   Register("Vector.maxLen", Store::IntToWord(Vector::maxLen));
   Register("Vector.length", Vector_length, 1);
