@@ -1144,7 +1144,7 @@ struct
 				     val l   = Label.fromInt 3
 				     val e52 = O.SelExp(typInfo(r, typ_inf E),
 							O.Lab(i',l), e51)
-				     val e5  = e52
+				     val e5  = trLazy e52
 				     (*UNFINISHED: realise *)
 				     val d2  = O.ValDec(i', idToPat x5', e5)
 				 in
@@ -1771,7 +1771,7 @@ struct
 	    val ds1' = trLHSRecDecs'(E,map, ds, ds')
 	    val d3'  = O.RecDec(i, trRecDecs(E,ds))
 	in
-	    if not(!Switches.Language.supportRtt) then
+	    if List.null ds1' orelse not(!Switches.Language.supportRtt) then
 		d3' :: ds1'
 	    else let
 		val es'  = Vector.fromList(trRHSRecDecs(E,map, ds))
