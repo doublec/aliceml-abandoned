@@ -164,10 +164,11 @@ namespace Generic {
   class Primitive {
   public:
     static void Return1(u_int Value) {
-      Assert(Value != JIT_R0);
       Scheduler::PutZeroArg(Value);
       jit_movi_ui(JIT_R0, ::Scheduler::ONE_ARG);
       Scheduler::PutNArgs(JIT_R0);
+      jit_movi_ui(JIT_R0, Interpreter::CONTINUE);
+      jit_ret();
     }
   };
 };
