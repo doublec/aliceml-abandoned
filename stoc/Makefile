@@ -12,4 +12,4 @@ stoc-mozart.$(PLATFORM):
 
 stoc-com+.$(PLATFORM):
 	-rm -f $@
-	(cd top && echo 'use "top/Exec-com+.sml";' | $(SML))
+	(cd top && echo 'use "Exec-com+.sml";' | $(SML))
