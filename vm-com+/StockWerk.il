@@ -10,6 +10,22 @@
 //   $Revision$
 //
 
+//
+// Serialization:
+// -- replicable data structures use default serialization mechanism
+// -- the abstract superclass Global represents entities that have a global
+//    identity.  Global implements IObjectReference, replacing itself by a
+//    unique instance of the entity if it was already present in the system
+// -- names and constructors extend Global
+// -- Promise implements ISerializable to throw an exception
+// -- Future and ByNeed implement ISerializable to block until bound
+//    and then serialize a Ref object
+// -- Ref implements IObjectReference in order to remove the
+//    indirection upon deserialization
+//
+//--** TODO: add implementations for ISerializable
+//
+
 //--** use brinst and brnull instead of brtrue and brfalse
 
 .namespace StockWerk {
@@ -20,7 +36,81 @@
     .field static public initonly class StockWerk.StockWert Future
     .field static public initonly class StockWerk.StockWert Fulfill
     .field static public initonly class StockWerk.StockWert ByNeed
+    .method public static void Initialize() {
+      ldstr "()"
+      newobj instance void StockWerk.NamedName::.ctor(class System.String)
+      stsfld class StockWerk.StockWert StockWerk.Prebound::Unit
+      ldstr "TypeError"
+      newobj instance void StockWerk.NamedName::.ctor(class System.String)
+      stsfld class StockWerk.StockWert StockWerk.Prebound::TypeError
+      ldstr "Promise"
+      newobj instance void StockWerk.NamedName::.ctor(class System.String)
+      stsfld class StockWerk.StockWert StockWerk.Prebound::Promise
+      ldstr "Future"
+      newobj instance void StockWerk.NamedName::.ctor(class System.String)
+      stsfld class StockWerk.StockWert StockWerk.Prebound::Future
+      ldstr "Fulfill"
+      newobj instance void StockWerk.NamedName::.ctor(class System.String)
+      stsfld class StockWerk.StockWert StockWerk.Prebound::Fulfill
+      ldstr "ByNeed"
+      newobj instance void StockWerk.NamedConstructor::.ctor(class System.String)
+      stsfld class StockWerk.StockWert StockWerk.Prebound::ByNeed
+	  ret
+	}
   }
+
+  .class sealed public State extends System.Object {
+    .field static private initonly class System.Collections.Hashtable GuidTable
+	.method public static void Initialize() {
+	  newobj instance void System.Collections.Hashtable::.ctor()
+	  stsfld class System.Collections.Hashtable StockWerk.State::GuidTable
+	  ret
+	}
+	.method public static void EnterGuid(class System.Object, class StockWerk.StockWert) {
+	  ldsfld class System.Collections.Hashtable StockWerk.State::GuidTable
+	  ldarg.0
+	  ldarg.1
+	  tail. call instance void System.Collections.Hashtable::Add(class System.Object, class System.Object)
+	  ret
+	}
+	.method public static class System.Object Globalize(class StockWerk.StockWert) {
+	  .locals(value class System.Guid, class System.Object)
+      ldloca.s 0
+      call instance void System.Guid::.ctor()
+	  ldloca.s 0
+      box System.Guid
+	  stloc.1
+	  ldsfld class System.Collections.Hashtable StockWerk.State::GuidTable
+	  ldloc.1
+	  ldarg.0
+	  call instance void System.Collections.Hashtable::Add(class System.Object, class System.Object)
+	  ldloc.1
+	  ret
+	}
+	.method public static class StockWerk.StockWert LookupGuid(class System.Object) {
+	  ldsfld class System.Collections.Hashtable StockWerk.State::GuidTable
+	  ldarg.0
+	  call instance class System.Object System.Collections.Hashtable::get$Item(class System.Object)
+	  castclass StockWerk.StockWert
+	  ret
+	}
+  }
+
+  .class sealed public ExceptionWrapper extends System.RuntimeException {
+    .field public initonly class StockWerk.StockWert Value
+    .method public void .ctor(class StockWerk.StockWert) {
+      ldarg.0
+      tail. call instance void System.RuntimeException::.ctor()
+      ldarg.0
+      ldarg.1
+      stfld class StockWerk.StockWert StockWerk.ExceptionWrapper::Value
+      ret
+    }
+  }
+
+  //
+  // Value Representation
+  //
 
   .class abstract public StockWert extends System.Object {
     .method public void .ctor() {
@@ -55,17 +145,50 @@
     }
   }
 
-  .class sealed public ExceptionWrapper extends System.RuntimeException {
-    .field public initonly class StockWerk.StockWert Value
-    .method public void .ctor(class StockWerk.StockWert) {
+  .class abstract public Global extends StockWerk.StockWert
+  implements System.Serialization.IObjectReference {
+    .field private class System.Object Guid
+    .method public void .ctor() {
       ldarg.0
-      tail. call instance void System.RuntimeException::.ctor()
-      ldarg.0
-      ldarg.1
-      stfld class StockWerk.StockWert StockWerk.ExceptionWrapper::Value
+      call instance void StockWerk.StockWert::.ctor()
+	  ldarg.0
+	  ldnull
+	  stfld class System.Object StockWerk.Global::Guid
       ret
     }
+    .method public void MakeGuid() {
+	  ldarg.0
+	  ldfld class System.Object StockWerk.Global::Guid
+	  brtrue.s return
+	  ldarg.0
+	  dup
+	  call class System.Object StockWerk.State::Globalize(class StockWerk.StockWert)
+	  stfld class System.Object StockWerk.Global::Guid
+	return:
+	  ret
+    }
+	.method public class System.Object GetRealObject() {
+	  .locals(class StockWerk.StockWert)
+	  ldarg.0
+	  ldfld class System.Object StockWerk.Global::Guid
+	  call class StockWerk.StockWert StockWerk.State::LookupGuid(class System.Object)
+	  dup
+	  brfalse.s enter
+	  ret
+	enter:
+	  pop
+	  ldarg.0
+	  ldfld class System.Object StockWerk.Global::Guid
+	  ldarg.0
+	  call void StockWerk.State::EnterGuid(class System.Object, class StockWerk.StockWert)
+	  ldarg.0
+	  ret
+	}
   }
+
+  //
+  // Literals
+  //
 
   .class sealed public Int extends StockWerk.StockWert {
     .field public initonly int32 Value
@@ -106,10 +229,14 @@
     }
   }
 
-  .class public Name extends StockWerk.StockWert {
+  //
+  // Names, Constructors, and Constructed Values
+  //
+
+  .class public Name extends StockWerk.Global {
     .method public void .ctor() {
       ldarg.0
-      tail. call instance void StockWerk.StockWert::.ctor()
+      tail. call instance void StockWerk.Global::.ctor()
       ret
     }
   }
@@ -126,10 +253,17 @@
     }
   }
 
-  .class public Constructor extends StockWerk.StockWert {
+//--**  .class sealed public UniqueName extends StockWerk.StockWert {
+//  }
+
+  .class public Constructor extends StockWerk.Global {
+    .field private class System.Object Guid
     .method public void .ctor() {
       ldarg.0
-      tail. call instance void StockWerk.StockWert::.ctor()
+      call instance void StockWerk.Global::.ctor()
+	  ldarg.0
+	  ldnull
+	  stfld class System.Object StockWerk.Constructor::Guid
       ret
     }
     .method virtual public class StockWerk.StockWert Apply(class StockWerk.StockWert) {
@@ -197,6 +331,14 @@
       br.s retry
     }
   }
+
+  //
+  //--** Tuples and Records
+  //
+
+  //
+  // Transients
+  //
 
   .class public abstract Transient extends StockWerk.StockWert {
     .method public void .ctor() {
@@ -329,6 +471,25 @@
     }
   }
 
+  .class sealed public Ref extends StockWerk.StockWert
+  implements System.Serialization.IObjectReference {
+    // this class is only instantiated during serialization
+    .field private class StockWerk.StockWert Ref
+	.method public void .ctor(class StockWerk.StockWert) {
+	  ldarg.0
+	  call instance void StockWerk.StockWert::.ctor()
+	  ldarg.0
+	  ldarg.1
+	  stfld class StockWerk.StockWert StockWerk.Ref::Ref
+	  ret
+    }
+    .method virtual public class System.Object GetRealObject() {
+	  ldarg.0
+	  ldfld class StockWerk.StockWert StockWerk.Ref::Ref
+	  ret
+	}
+  }
+
   .class sealed public ByNeed extends StockWerk.Transient {
     .field private int32 State
     .field private class StockWerk.StockWert Ref
@@ -423,10 +584,14 @@
     }
   }
 
-  .class public abstract Procedure extends StockWerk.StockWert {
+  //
+  // Procedures
+  //
+
+  .class public abstract Procedure extends StockWerk.Global {
     .method public void .ctor() {
       ldarg.0
-      tail. call instance void StockWerk.StockWert::.ctor()
+      tail. call instance void StockWerk.Global::.ctor()
       ret
     }
   }
@@ -532,24 +697,8 @@
 
 .method public static void DllMain() {
   .entrypoint
-  ldstr "()"
-  newobj instance void StockWerk.NamedName::.ctor(class System.String)
-  stsfld class StockWerk.StockWert StockWerk.Prebound::Unit
-  ldstr "TypeError"
-  newobj instance void StockWerk.NamedName::.ctor(class System.String)
-  stsfld class StockWerk.StockWert StockWerk.Prebound::TypeError
-  ldstr "Promise"
-  newobj instance void StockWerk.NamedName::.ctor(class System.String)
-  stsfld class StockWerk.StockWert StockWerk.Prebound::Promise
-  ldstr "Future"
-  newobj instance void StockWerk.NamedName::.ctor(class System.String)
-  stsfld class StockWerk.StockWert StockWerk.Prebound::Future
-  ldstr "Fulfill"
-  newobj instance void StockWerk.NamedName::.ctor(class System.String)
-  stsfld class StockWerk.StockWert StockWerk.Prebound::Fulfill
-  ldstr "ByNeed"
-  newobj instance void StockWerk.NamedConstructor::.ctor(class System.String)
-  stsfld class StockWerk.StockWert StockWerk.Prebound::ByNeed
+  call void StockWerk.State::Initialize()
+  call void StockWerk.Prebound::Initialize()
   //--** the following instructions just make the DLL verifiable:
   newobj instance void StockWerk.Builtins.BIAwait::.ctor()
   pop
