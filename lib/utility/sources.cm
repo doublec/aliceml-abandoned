@@ -17,6 +17,9 @@ Group is
 	LargeIntHashKey.aml
 	StringHashKey.aml
 
+	SIMPLE_IMP_MAP-sig.aml
+	../../bootstrap/MkRefMap.sml
+
 	IMP_MAP-sig.aml
 	IMP_SET-sig.aml
 	MkHashImpMap.aml
