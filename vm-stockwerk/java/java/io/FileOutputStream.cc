@@ -17,5 +17,10 @@ DEFINE0(initIDs) {
 } END
 
 void NativeMethodTable::java_io_FileOutputStream(JavaString *className) {
+  //--** open
+  //--** openAppend
+  //--** write
+  //--** writeBytes
+  //--** close0
   Register(className, "initIDs", "()V", initIDs, 0, false);
 }

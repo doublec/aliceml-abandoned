@@ -17,5 +17,6 @@ DEFINE0(initIDs) {
 } END
 
 void NativeMethodTable::java_io_FileDescriptor(JavaString *className) {
+  //--** sync
   Register(className, "initIDs", "()V", initIDs, 0, false);
 }
