@@ -75,7 +75,6 @@ static word MakeSysErr(int errorCode, String *message) {
   RAISE(MakeSysErr(errorCode, ErrorCodeToString(errorCode)));	\
 }
 
-//--** the ErrorCodeToString is the wrong one:
 #define RAISE_SOCK_ERR() {					\
   int errorCode = WSAGetLastError();				\
   RAISE(MakeSysErr(errorCode, ErrorCodeToString(errorCode)));	\
