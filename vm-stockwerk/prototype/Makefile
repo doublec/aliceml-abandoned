@@ -22,11 +22,9 @@ SRCS = \
 	Main.oz
 
 LIB_SYSTEM_SRCS0 = \
-	Config IO TextIO OS Unix CommandLine Component Debug \
-	Reflect
+	Config IO OS Unix CommandLine Component Debug Reflect
 LIB_SYSTEM_SRCS = $(LIB_SYSTEM_SRCS0:%=lib/system/Unsafe%.oz)
-#	Config IO TextIO OS Unix CommandLine Component Debug Socket Rand \
-#	Reflect
+#	Config IO OS Unix CommandLine Component Debug Socket Rand Reflect
 
 LIB_UTILITY_SRCS0 = MkRefMap
 LIB_UTILITY_SRCS = $(LIB_UTILITY_SRCS0:%=lib/utility/Unsafe%.oz)
