@@ -22,7 +22,9 @@ int main(int argc, char *argv[]) {
 
   while (G_IS_OBJECT(w)) {
     if (counter > 0) 
-      if (++counter == 100000) gtk_widget_unref(w);
+      if (++counter == 100000) {
+	gtk_widget_unref(w);
+      }
     if (gtk_events_pending() == TRUE)
       gtk_main_iteration();
   }
