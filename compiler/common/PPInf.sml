@@ -202,8 +202,8 @@ text "(" ^^ PPPath.ppPath p ^^ text ")" ^/^*)
 		       | INFIX(n,NEITHER) =>
 				text "infixn" ^/^ text(Int.toString n)
 		    ) ^/^
-		    ppLab l ^/^
-		end ^^
+		    ppLab l
+		end
 	    ) ^/^ doc
 
       | ppItem'(_, doc) = doc		(* hidden item *)
