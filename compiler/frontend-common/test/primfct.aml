@@ -1,0 +1,9 @@
+type package
+exception Unpack = General.Bind
+
+__primitive functor Pack :   fct(type t val x : t) -> (val x : package) = "Pack"
+__primitive functor Unpack : fct(val x : package type t) -> (val x : t) = "Unpack"
+
+(*
+__primitive functor ByNeed : fct(signature S structure X : S) -> S = "ByNeed"
+*)
