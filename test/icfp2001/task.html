@@ -3,7 +3,7 @@
 <HTML>
 <HEAD><TITLE>ICFP 2001 Programming Contest 
 Challenge Task 
-version 5</TITLE>
+version 6</TITLE>
 <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
 <META name="GENERATOR" content="hevea 1.06-5 of 2000-09-09">
 </HEAD>
@@ -17,7 +17,7 @@ version 5</TITLE>
 
 <H1 ALIGN=center>ICFP 2001 Programming Contest<BR>
 Challenge Task<BR>
-version 5</H1>
+version 6</H1>
 
 <H3 ALIGN=center>Damien Doligez, Luc Maranget, Pierre Weis</H3>
 <DIV ALIGN=center><I>This document is also available as </I><A HREF="task.pdf"><I>PDF</I></A><I>, </I><A HREF="task.ps"><I>Postcript</I></A><I> and </I><A HREF="task.txt"><I>plain text</I></A><I>.</I></DIV><BR>
@@ -59,9 +59,9 @@ tag <CODE>&lt;b&gt;</CODE>.<BR>
 <BR>
 All tags in a document appear in pairs, composed of an open tag and the
 corresponding closing tag (in this order). The region of the document
-between two matching tags is called the <EM>range</EM> of this pair.
-For example, in <CODE>&lt;b&gt;bar&lt;/b&gt;</CODE>, the range of the <CODE>&lt;b&gt;</CODE>, <CODE>&lt;/b&gt;</CODE> pair
-is the text <CODE>bar</CODE>.<BR>
+between two matching tags (including the tags) is called the <EM>range</EM> of this pair.
+For example, in <CODE>foo&lt;b&gt;bar&lt;/b&gt;</CODE>, the range of the <CODE>&lt;b&gt;</CODE>,
+<CODE>&lt;/b&gt;</CODE> pair is <CODE>&lt;b&gt;bar&lt;/b&gt;</CODE>.<BR>
 <BR>
 Tags are properly nested: for any two ranges, either they are disjoint
 or one is entirely included in the other.<BR>
