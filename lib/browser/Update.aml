@@ -98,9 +98,6 @@ struct
 		  
     (* update *)
     and update (n,va,f,g) = 
-	if !(Settings.relmode) andalso isRelNode(getParent(n)) 
-	    then ()
-	else 
 	( setDazzled n 
 	 ; let val ind = getAncIndex n 
 	       val (anc,ancline) = valOf(MainDictionary.lookup 
@@ -210,7 +207,11 @@ struct
     and reinspect (n,f,g) = 
         let val va = getReflectValue n
 			           : Reflect.value
-	in  Server.serve(fn () => (update(n,va,f,g) ; !Window.resize()) )
+	in  Server.serve(fn () => 
+			 (if !(Settings.relmode) 
+			      andalso isRelNode(getParent(n)) 
+			      then ()
+			  else update(n,va,f,g) ; !Window.resize()) )
 	end
     handle General.Match => raise UpdateError
 	
@@ -218,13 +219,16 @@ struct
     and foldDepth (n,i,f,g) = 
 	Server.serve
 	(fn () => 
-	 let val old_depth = !(Settings.max_depth)
+	 let val _ = TextIO.print("FOLD_DEPTH: aufgerufen!\n")
+	     val old_depth = !(Settings.max_depth)
 	 in 
 	     ( setDazzled n
 	      ; let val new_depth = findHighestDepth n + i 
-		in Settings.set_depth(if new_depth < 0 then 0 else new_depth) 
+		    val va = getReflectValue n
+		in ( Settings.set_depth(if new_depth < 0 then 0 else new_depth)
+                    ; TextIO.print("FOLD_DEPTH: rufe jetzt Update auf\n")
+		    ; update (n,va,f,g) ) 
 		end 
-	      ; fold (n,f,g)
 	      ; Settings.set_depth(old_depth) )
 	 end)
 
@@ -232,16 +236,19 @@ struct
     and foldWidth (n,i,f,g) = 
 	Server.serve
 	(fn () => 
-	 let val new_n = if not(isLimit(n)) 
+	 let val _ = TextIO.print("FOLD_WIDTH: aufgerufen!\n")
+	     val new_n = if not(getDesc(n) = INTERPUNCT) 
 			     then n
 			 else let val cp = getParent(n)
 			      in case getDesc(cp) of 
 				 INTERPUNCT => getValueAnc(cp)
 			       | _ => cp
-			      end	     
-	     val old_width = !(Settings.max_width)
+			      end	
+	     val _ = TextIO.print("FOLD_WIDTH: new_n erfolgreich berechnet\n")
+     	     val old_width = !(Settings.max_width)
 	 in 
 	     ( setDazzled new_n
+              ; TextIO.print("FOLD_WIDTH: setDazzled beendet\n")
 	      ; let val sub = let val first = List.nth
 	                                        (Array.toList(getKids(new_n)),
 						 0)
@@ -250,12 +257,16 @@ struct
 				     then 1 else 0
 			      end 
 		    val new_width = findHighestWidth new_n + i - sub 
-		in Settings.set_width(if new_width < 0 then 0 else new_width)
+		    val _ = TextIO.print("FOLD_WIDTH: highestWidth bestimmt\n")
+		    val va = getReflectValue new_n
+		in ( Settings.set_width(if new_width < 0 then 0 else new_width)
+		    ; TextIO.print("FOLD_WIDTH: rufe jetzt Update auf\n")
+		    ; update (new_n,va,f,g) )
 		end
-	      ; fold (new_n,f,g) 
 	      ; Settings.set_width(old_width) )
 	 end )
-	
+
+(*	
     (* fold *)
     and fold (n,f,g) = 
 	let val ind = getAncIndex n 
@@ -286,6 +297,7 @@ struct
 	      end 
 	    ; !Window.resize() )
 	end 
+*)
 
     (* findHighestDepth *)
     and findHighestDepth n = case n of
@@ -304,12 +316,13 @@ struct
     and findHighestWidth n = 
 	let val new_i = ref 0 
 	in ( findHighestWidth' (n,0,new_i)
+            ; TextIO.print("FiHiWi: durchlaufen\n")
 	    ; !new_i )
 	end 
 
     and findHighestWidth' (n,i,new_i) = case n of
 	Concat(r) => array_map(fn no => findHighestWidth'(no,!new_i,new_i),
-				  #kids(r))
+			       #kids(r))
       | RelNode(r) => findHighestWidth'(!(#content(r)),i,new_i)
       | Container(r) 
 	    => ( let val li = Array.toList(#kids(r))
@@ -323,7 +336,7 @@ struct
 		 end  
 		; array_map(fn no => findHighestWidth'(no,!new_i,new_i),
 			    #kids(r)) )
-	  | _ => ()
+      |  _ => ()
    
 end (* struct *)
 

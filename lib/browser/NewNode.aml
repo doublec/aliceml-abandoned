@@ -42,13 +42,11 @@ import signature NEW_NODE from "NEW_NODE-sig"
 
 local
     open Types Helper MkPathTable Settings Dictionaries NewNodeHelper
- 
 in	
     
 structure NewNode :> NEW_NODE =
 struct
     
-    exception Future
     exception createGraph_unknownNode
 
     (* newNode *)
@@ -218,16 +216,21 @@ struct
       | Det(l,b) 
         => let val desc = createValue(va,t,NO_ACTIONS)
 	       val length = List.length l
-               val na = if b then Array.array(length + 1,Empty)
+               val na = if b orelse !relmode 
+			    then Array.array(length + 1,Empty)
 			else Array.array(length,Empty)
 	       val inty = #2(Type.asApply(t))   
-	   in if b
+	   in if b orelse !relmode
 		  then let val cont = createContainer (desc,p,i,d,na,setGroup)
 			   val nodearray = listElemArray(l,length,inty,cont,
 							 d+1,b)
-			   val limit = createLimit (INTERPUNCT,WIDTH_LIMIT,
-						    cont,length,d+1,setGroup)
-		       in ( Array.update(na,length,limit)
+			   val last = 
+			       if b 
+				   then createLimit (INTERPUNCT,WIDTH_LIMIT,
+						     cont,length,d+1,setGroup)
+			       else createSimple (INTERPUNCT,cont,length,d+1,
+						  "nil",DEFAULT,setGroup)
+		       in ( Array.update(na,length,last)
 			  ; copyArray(nodearray,na)
 			  ; cont )
 		       end
@@ -263,7 +266,7 @@ struct
                  val inva = UnsafeValue.cast(List.nth(list,!rl))
                             : Reflect.value
                  val elem = createGraph(inva,listtyp,concat,0,d+1)
-                 val repr = if b = true then "::" else ", "
+                 val repr = if b orelse !relmode then "::" else ", "
                  val sep = createSimple(INTERPUNCT,concat,1,d,repr,SEP_COLOR,
 					setGroup)
 	     in ( Array.update(getKids(concat),0,elem)
@@ -539,8 +542,7 @@ struct
    
     (* createFutureNode *)
     and createFutureNode (va,t,p,i,d) = 
-	let val _ = () (* TextIO.print("CREATE_FUTURE_NODE: wurde gestarted!\n") *)
-	    val desc = createValue(va,t,NO_ACTIONS)
+	let val desc = createValue(va,t,NO_ACTIONS)
             val fut = UnsafeValue.cast va
 	    val str = if Future.isLazy fut then "byneed" else "future"
 	    val simple =  createSimple (desc,p,i,d,str,DEFAULT,setGroup)

@@ -1,6 +1,12 @@
 import structure UnsafeInspector from "UnsafeInspector";
 import structure Reflect from "x-alice:/lib/system/Reflect";
 
+(* ganz einfache Liste *)
+
+structure SList = Reflect.ReflectType (type t = int list);
+
+UnsafeInspector.inspect ([1,2,3,4,5,6,7],SList.x);
+
 (* Tupel mir verschiedenen "einfachen" Werten - zum Testen des Breitenfilters
    geeignet *)
 
