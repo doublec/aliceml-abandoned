@@ -35,7 +35,7 @@ signature LEXER =
 	    * int ref                (* line counter *)
 	    * 'a                     (* the lexer tuple again *)
 	    ->
-	    (unit -> 'b * position * position)             (* the lexer *)
+	    (unit -> 'b)             (* the lexer *)
 
 
 	(* some getString generators *)
