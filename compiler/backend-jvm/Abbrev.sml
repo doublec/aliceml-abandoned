@@ -1,12 +1,12 @@
 structure Abbrev  =
     struct
 	val CBind          = ("de/uni_sb/ps/dml/runtime/Constants/dmlbind","de/uni_sb/ps/dml/runtime/Name")
-	val CCons          = ("de/uni_sb/ps/dml/builtin/Constants/cons","de/uni-sb/ps/dml/runtime/Constructor")
-	val CFalse         = ("de/uni_sb/ps/dml/builtin/Constants/dmlfalse","de/uni_sb/ps/dml/runtime/Name")
+	val CCons          = ("de/uni_sb/ps/dml/runtime/Constants/cons","de/uni-sb/ps/dml/runtime/Constructor")
+	val CFalse         = ("de/uni_sb/ps/dml/runtime/Constants/dmlfalse","de/uni_sb/ps/dml/runtime/Name")
 	val CMatch         = ("de/uni_sb/ps/dml/runtime/Constants/dmlmatch","de/uni_sb/ps/dml/runtime/Name")
-	val CNil          = ("de/uni_sb/ps/dml/builtin/Constants/dmlnil","de/uni_sb/ps/dml/runtime/Name")
-	val CPickle        = ("de/uni_sb/ps/dml/builtin/General/pickle", "de/uni_sb/ps/dml/builtin/General$Pickle")
-	val CTrue          = ("de/uni_sb/ps/dml/builtin/Constants/dmltrue","de/uni_sb/ps/dml/runtime/Name")
+	val CNil          = ("de/uni_sb/ps/dml/runtime/Constants/dmlnil","de/uni_sb/ps/dml/runtime/Name")
+	val CPickle        = ("de/uni_sb/ps/dml/runtime/General/pickle", "de/uni_sb/ps/dml/runtime/DMLValue")
+	val CTrue          = ("de/uni_sb/ps/dml/runtime/Constants/dmltrue","de/uni_sb/ps/dml/runtime/Name")
 	val CUnit          = ("de/uni_sb/ps/dml/runtime/Constants/dmlunit","de/uni_sb/ps/dml/runtime/Name")
 	val CName          = "de/uni_sb/ps/dml/runtime/Name"
 	val CConstants     = "de/uni_sb/ps/dml/runtime/Constants"
@@ -35,14 +35,16 @@ structure Abbrev  =
 	val CString        = "java/lang/String"
 	val CThread        = "java/lang/Thread"
 	val CVector        = "java/util/Vector"
-	val CPlus          = ("de/uni_sb/ps/dml/builtin/Primitives/primitive_plus","de/uni_sb/ps/dml/builtin/Plus")
-	val CEquals        = ("de/uni_sb/ps/dml/builtin/Primitives/primitive_equals","de/uni_sb/ps/dml/builtin/Equals")
-	val CNot           = ("de/uni_sb/ps/dml/builtin/Primitives/primitive_not","de/uni_sb/ps/dml/builtin/Not")
-	val CDeref         = ("de/uni_sb/ps/dml/builtin/Primitives/primitive_deref","de/uni_sb/ps/dml/builtin/Deref")
-	val CRef           = ("de/uni_sb/ps/dml/builtin/Primitives/primitive_ref","de/uni_sb/ps/dml/builtin/Ref")
-	val CAssign        = ("de/uni_sb/ps/dml/builtin/Primitives/primitive_assign","de/uni_sb/ps/dml/builtin/Assign")
-	val CIntFromString = ("de/uni_sb/ps/dml/builtin/Primitives/primitive_intfromstring","de/uni_sb/ps/dml/builtin/IntFromString")
-	val CBoolFromString = ("de/uni_sb/ps/dml/builtin/Primitives/primitive_boolfromstring","de/uni_sb/ps/dml/builtin/BoolFromString")
-	val CRealFromString = ("de/uni_sb/ps/dml/builtin/Primitives/primitive_realfromstring","de/uni_sb/ps/dml/builtin/RealFromString")
-	val CSel            = "de/uni_sb/ps/dml/builtin/Sel"
+	val CPlus          = ("de/uni_sb/ps/dml/runtime/Int/plus","de/uni_sb/ps/dml/runtime/DMLValue")
+
+	(* Ab hier nur Unfug! *)
+	val CEquals        = ("de/uni_sb/ps/dml/runtime/Builtin","de/uni_sb/ps/dml/runtime/Equals")
+	val CNot           = ("de/uni_sb/ps/dml/runtime/Builtin","de/uni_sb/ps/dml/runtime/Not")
+	val CDeref         = ("de/uni_sb/ps/dml/runtime/Builtin","de/uni_sb/ps/dml/runtime/Deref")
+	val CRef           = ("de/uni_sb/ps/dml/runtime/Builtin","de/uni_sb/ps/dml/runtime/Ref")
+	val CAssign        = ("de/uni_sb/ps/dml/runtime/Builtin","de/uni_sb/ps/dml/runtime/Assign")
+	val CIntFromString = ("de/uni_sb/ps/dml/runtime/Builtin","de/uni_sb/ps/dml/runtime/IntFromString")
+	val CBoolFromString = ("de/uni_sb/ps/dml/runtime/Builtin","de/uni_sb/ps/dml/runtime/BoolFromString")
+	val CRealFromString = ("de/uni_sb/ps/dml/runtime/Builtin","de/uni_sb/ps/dml/runtime/RealFromString")
+	val CSel            = "de/uni_sb/ps/dml/runtime/Builtin"
     end
