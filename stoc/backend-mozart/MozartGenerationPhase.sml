@@ -11,12 +11,13 @@
  *)
 
 structure MozartEngine =
-    MakeEngine (val cmd = "/bin/sh"
-		val args = ["stoc-mozart.exe"]
-(*--** for debugging:
-		val args = ["stoc-mozart.exe", "--debug"]
- *)
-		structure Code = OzifyFlatGrammar)
+    MakeEngine(fun cmd () =
+		   ("/bin/sh",
+		    [case OS.Process.getEnv "STOC_MOZART" of
+			 SOME s => s
+		       | NONE => "stoc-mozart.exe"])
+		    (*--** for debugging: ..., "--debug" *)
+	       structure Code = OzifyFlatGrammar)
 
 structure MozartTargetContext :> CONTEXT where type t = MozartEngine.t =
     struct
