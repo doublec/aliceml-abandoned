@@ -89,12 +89,6 @@ define
    proc {TrStm Stm Hd Tl ShareDict}
       case Stm of 'ValDec'(Info IdDef Exp) then
 	 Hd = 'ValDec'({TrInfo Info} {TrIdDef IdDef} {TrExp Exp ShareDict})|Tl
-      [] 'RecDec'(Info IdDefExpVec) then
-	 Hd = 'RecDec'({TrInfo Info}
-		       {Record.map IdDefExpVec
-			fun {$ IdDef#Exp}
-			   {TrIdDef IdDef}#{TrExp Exp ShareDict}
-			end})|Tl
       [] 'RefAppDec'(Info IdDef Id) then
 	 Hd = 'RefAppDec'({TrInfo Info} {TrIdDef IdDef} {TrId Id})|Tl
       [] 'TupDec'(Info IdDefs Id) then
