@@ -72,9 +72,9 @@ static String *ErrorCodeToString(int errorCode) {
 #endif
 }
 
-static word MakeSysErr() {
+static word MakeSysErr(int errorCode) {
   TagVal *some = TagVal::New(1, 1); // SOME
-  some->Init(0, Store::IntToWord(GetLastError()));
+  some->Init(0, Store::IntToWord(errorCode));
   ConVal *sysErr =
     ConVal::New(Constructor::FromWordDirect(SysErrConstructor), 2);
   sysErr->Init(0, ErrorCodeToString(GetLastError())->ToWord());
@@ -82,7 +82,7 @@ static word MakeSysErr() {
   return sysErr->ToWord();
 }
 
-#define RAISE_SYS_ERR() RAISE(MakeSysErr())
+#define RAISE_SYS_ERR() RAISE(MakeSysErr(GetLastError()))
 
 //
 // UnsafeOS.FileSys Structure
@@ -138,6 +138,16 @@ DEFINE1(UnsafeOS_FileSys_mkDir) {
   RETURN_UNIT;
 } END
 
+DEFINE1(UnsafeOS_FileSys_rmDir) {
+  DECLARE_STRING(name, x0);
+#if defined(__MINGW32__) || defined(_MSC_VER)
+  if (RemoveDirectory(name->ExportC()) == FALSE) RAISE_SYS_ERR();
+#else
+  if (rmdir(name->ExportC())) RAISE_SYS_ERR();
+#endif
+  RETURN_UNIT;
+} END
+
 DEFINE1(UnsafeOS_FileSys_isDir) {
   DECLARE_STRING(name, x0);
 #if defined(__MINGW32__) || defined(_MSC_VER)
@@ -149,6 +159,46 @@ DEFINE1(UnsafeOS_FileSys_isDir) {
   Interruptible(res, stat(name->ExportC(), &info));
   if (res) RAISE_SYS_ERR();
   RETURN_BOOL(S_ISDIR(info.st_mode));
+#endif
+} END
+
+DEFINE1(UnsafeOS_FileSys_isLink) {
+  DECLARE_STRING(name, x0);
+#if defined(__MINGW32__) || defined(_MSC_VER)
+  DWORD attr = GetFileAttributes(name->ExportC());
+  if (attr == INVALID_FILE_ATTRIBUTES) RAISE_SYS_ERR();
+  RETURN_BOOL(false); // no support for symbolic links
+#else
+  struct stat info;
+  Interruptible(res, lstat(name->ExportC(), &info));
+  if (res) RAISE_SYS_ERR();
+  RETURN_BOOL(S_ISLNK(info.st_mode));
+#endif
+} END
+
+DEFINE1(UnsafeOS_FileSys_readLink) {
+  DECLARE_STRING(name, x0);
+#if defined(__MINGW32__) || defined(_MSC_VER)
+  // raise SysErr unconditionally
+  name = name;
+  ConVal *sysErr =
+    ConVal::New(Constructor::FromWordDirect(SysErrConstructor), 2);
+  sysErr->Init(0, String::New("symbolic links not supported")->ToWord());
+  sysErr->Init(1, Store::IntToWord(0)); // NONE
+  RAISE(sysErr->ToWord());
+#else
+  String *buffer = String::FromWordDirect(wBufferString);
+  u_int size = buffer->GetSize();
+ retry:
+  int res = readlink(name->ExportC(), (char *) buffer->GetValue(), size);
+  if (res < 0) RAISE_SYS_ERR();
+  if (static_cast<u_int>(res) == size) {
+    size = size * 3 / 2;
+    buffer = String::New(size);
+    wBufferString = buffer->ToWord();
+    goto retry;
+  }
+  RETURN(String::New((char *) buffer->GetValue(), res)->ToWord());
 #endif
 } END
 
@@ -238,15 +288,21 @@ DEFINE0(UnsafeOS_FileSys_tmpName) {
 } END
 
 static word UnsafeOS_FileSys() {
-  Record *record = Record::New(8);
+  Record *record = Record::New(11);
   INIT_STRUCTURE(record, "UnsafeOS.FileSys", "chDir",
 		 UnsafeOS_FileSys_chDir, 1, true);
   INIT_STRUCTURE(record, "UnsafeOS.FileSys", "getDir",
 		 UnsafeOS_FileSys_getDir, 0, true);
   INIT_STRUCTURE(record, "UnsafeOS.FileSys", "mkDir",
 		 UnsafeOS_FileSys_mkDir, 1, true);
+  INIT_STRUCTURE(record, "UnsafeOS.FileSys", "rmDir",
+		 UnsafeOS_FileSys_rmDir, 1, true);
   INIT_STRUCTURE(record, "UnsafeOS.FileSys", "isDir",
 		 UnsafeOS_FileSys_isDir, 1, true);
+  INIT_STRUCTURE(record, "UnsafeOS.FileSys", "isLink",
+		 UnsafeOS_FileSys_isLink, 1, true);
+  INIT_STRUCTURE(record, "UnsafeOS.FileSys", "readLink",
+		 UnsafeOS_FileSys_readLink, 1, true);
   INIT_STRUCTURE(record, "UnsafeOS.FileSys", "fileSize",
 		 UnsafeOS_FileSys_fileSize, 1, true);
   INIT_STRUCTURE(record, "UnsafeOS.FileSys", "modTime",
