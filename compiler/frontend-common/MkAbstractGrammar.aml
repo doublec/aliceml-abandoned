@@ -195,7 +195,7 @@ struct
 	| FunMod    of mod_info * modid * inf * mod (* functor *)
 	| AppMod    of mod_info * mod * mod	(* application *)
 	| AnnMod    of mod_info * mod * inf	(* annotation *)
-	| AbsMod    of mod_info * mod * inf	(* abstraction *)
+	| SealMod   of mod_info * mod * inf	(* sealing *)
 	| LetMod    of mod_info * dec vector * mod (* let *)
 	| UnpackMod of mod_info * exp * inf	(* package elimination *)
 
@@ -344,7 +344,7 @@ struct
       | infoMod(FunMod(i,_,_,_))	= i
       | infoMod(AppMod(i,_,_))		= i
       | infoMod(AnnMod(i,_,_))		= i
-      | infoMod(AbsMod(i,_,_))		= i
+      | infoMod(SealMod(i,_,_))		= i
       | infoMod(LetMod(i,_,_))		= i
       | infoMod(UnpackMod(i,_,_))	= i
 
