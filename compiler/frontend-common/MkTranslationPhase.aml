@@ -1091,7 +1091,7 @@ struct
 	     *     fct(x3:j21) => let x4 = (abs x1)(abs [x3 : j21 :> _ = j11])
 	     *                        x5 = Inf.realise(
 	     *                                [rea x3 : j22] (*UNFINISHED*),
-	     *			              #3(Inf.asArrow x2))
+	     *			              j22)
 	     *                    in unabs [x4 : j12 :> x5 = j22]
 	     * [x1 : fct(x11:j11)->j12 :> _ = fct(x21:j21)->j22] =
 	     *     fct(x3:j21) => let x4 = x1(abs [x3 : j21 :> _ = j11])
