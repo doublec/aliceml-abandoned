@@ -100,16 +100,6 @@ public:
 #define DECLARE_INSTREAM(file, x)  DECLARE_BLOCKTYPE(InStream, file, x);
 #define DECLARE_OUTSTREAM(file, x) DECLARE_BLOCKTYPE(OutStream, file, x);
 
-// String Handling
-static char *ExportCString(String *s) {
-  u_int sLen = s->GetSize();
-  String *e  = String::New(sLen + 1);
-  u_char *eb = e->GetValue();
-  std::memcpy(eb, s->GetValue(), sLen);
-  eb[sLen] = '\0';
-  return reinterpret_cast<char *>(eb);
-}
-
 static String *Concat(String *a, const char *b, u_int bLen) {
   u_int aLen = a->GetSize();
   String *s  = String::New(aLen + bLen);
@@ -194,7 +184,7 @@ DEFINE2(UnsafeIO_openAppend) {
   DECLARE_BOOL(binary, x0);
   DECLARE_STRING(name, x1);
   const char *flags = (binary ? "wab" : "wa");
-  std::FILE *file = std::fopen(ExportCString(name), flags);
+  std::FILE *file = std::fopen(name->ExportC(), flags);
   if (file != NULL) {
     RETURN(OutStream::New(file, name)->ToWord());
   } else {
@@ -206,7 +196,7 @@ DEFINE2(UnsafeIO_openIn) {
   DECLARE_BOOL(binary, x0);
   DECLARE_STRING(name, x1);
   const char *flags = (binary ? "rb" : "r");
-  std::FILE *file = std::fopen(ExportCString(name), flags);
+  std::FILE *file = std::fopen(name->ExportC(), flags);
   if (file != NULL) {
     RETURN(InStream::New(file, name)->ToWord());
   } else {
@@ -218,7 +208,7 @@ DEFINE2(UnsafeIO_openOut) {
   DECLARE_BOOL(binary, x0);
   DECLARE_STRING(name, x1);
   const char *flags = (binary ? "wb" : "w");
-  std::FILE *file = std::fopen(ExportCString(name), flags);
+  std::FILE *file = std::fopen(name->ExportC(), flags);
   if (file != NULL) {
     RETURN(OutStream::New(file, name)->ToWord());
   } else {
