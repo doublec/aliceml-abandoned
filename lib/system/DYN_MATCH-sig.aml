@@ -22,5 +22,6 @@ sig
     val match :      Reflect.module * Inf.t -> Inf.rea
     val match' :     Inf.rea * Reflect.module * Inf.t -> unit
     val strengthen : Reflect.module * Inf.t -> Inf.t
+    val thin :       Reflect.module * Inf.t -> Reflect.module
     val seal :       Reflect.module * Inf.t -> Reflect.module
 end

@@ -48,7 +48,7 @@ import signature TRANSLATION_PHASE   from "TRANSLATION_PHASE-sig"
 
 (*DEBUG
 import structure Source from "../infrastructure/Source"
-import val print from "../../lib/system/TextIO"
+import val print structure TextIO from "../../lib/system/TextIO"
 import structure PrettyPrint from "../../lib/utility/PrettyPrint"
 *)
 
@@ -936,16 +936,16 @@ struct
 	 * below) if we are doing a transparent coercion.
 	 *)
 	case (Inf.inspect j1, Inf.inspect j2)
-	 of (Inf.Top, Inf.Top) =>
+	 of (_, Inf.Top) =>
 	    (* [x1 : j1 :> x2 = any] = () *)
-		NONE
-	  | (_, Inf.Top) =>
-	    (* [x1 : j1 :> x2 = any] = () *)
-		SOME(unitExp r)
+	    (case x2o
+	     of NONE    => NONE
+	      | SOME x2 => SOME(unitExp r)
+	    )
 	  | (_, Inf.Con p2) =>
 	    (case x2o
 	     of NONE =>
-		(* [x1 : p1 :> _ = p2] = () *)
+		(* [x1 : p1 :> _ = p2] = x1 *)
 		(*UNFINISHED: this should not be...*)
 		(* Note: If we match transparently and have two constructors
 		 * then they are necessarily the same at runtime.
@@ -959,6 +959,9 @@ struct
 		if not(Path.equal(Inf.asCon j1, Inf.asCon j2')))
 		then assert false else
 		 *)
+		(*TODO: Should perform dynamic thinning here. However,
+		 *      that would require computing signatures for transparent
+		 *      annotations (costly). To obscure for now. *)
 		NONE
 	      | SOME x2 =>
 		(* [x1 : j1 :> x2 = p] =
@@ -1605,6 +1608,11 @@ struct
 	in
 	    SOME exp'
 	end
+
+      | trInfRep'(env, mkKind, pathexp', I.ConInf(i, longid)) =
+	(* [longid]_p = [longid] *)
+	SOME(longidExp(trInflongid(env, longid))
+	     handle VirtualModule => trVirtInflongid(env, longid))
 
       | trInfRep'(env, mkKind, pathexp', inf) = NONE
 

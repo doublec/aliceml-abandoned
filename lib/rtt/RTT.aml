@@ -229,6 +229,7 @@ local
 	type module
 	val match :		module * Inf.inf -> Inf.rea
 	val strengthen :	module * Inf.inf -> Inf.inf
+	val thin :		module * Inf.inf -> module
 	val seal :		module * Inf.inf -> module
     end
 in

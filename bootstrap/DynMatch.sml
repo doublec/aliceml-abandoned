@@ -20,5 +20,6 @@ struct
     val match      = dummy
     val strengthen = dummy
     val match'     = dummy
+    val thin       = dummy
     val seal       = dummy
 end

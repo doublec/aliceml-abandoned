@@ -40,6 +40,8 @@ struct
     val _		= DynMatch.match : module * inf -> rea	(* verify *)
     val lab_strengthen	= vallab "strengthen"
     val _		= DynMatch.strengthen : module * inf -> inf (* verify *)
+    val lab_thin	= vallab "thin"
+    val _		= DynMatch.thin : module * inf -> module (* verify *)
     val lab_seal	= vallab "seal"
     val _		= DynMatch.seal : module * inf -> module (* verify *)
 end

@@ -156,6 +156,65 @@ struct
 		end
 	  | Inf.HiddenItem _ => raise Hidden
 
+
+    fun thin(m, j) =
+	case Inf.inspect j
+	 of Inf.Sig s =>
+	    let
+		val lvs = thinSig([], m, Inf.items s)
+	    in
+		UnsafeValue.prodPoly(Vector.fromList lvs)
+	    end
+	  | Inf.Arrow(p,j1,j2) =>
+	    UnsafeValue.cast (
+		fn x =>
+		let
+		    val rea = match(x,j1)
+		    val j2' = Inf.realise(rea,j2)
+		in
+		    thin(x,j2')
+		end)
+	  | Inf.Sing m' => thin(m, #2(Inf.asMod m'))
+	  | (Inf.Top | Inf.Con _ | Inf.Apply _) => m
+	  | Inf.Exist _ => raise Hidden
+	  | Inf.Lambda _ => raise Inf.Interface
+
+    and thinSig(lvs, m, []) = lvs
+      | thinSig(lvs, m, item::items) =
+	case Inf.inspectItem item
+	 of Inf.FixItem _ =>
+	        thinSig(lvs, m, items)
+	  | Inf.ValItem(l,_) =>
+	    let
+		val l' = trValLabel l
+		val v  = UnsafeValue.projPoly(m,l')
+	    in
+	        thinSig((l',v)::lvs, m, items)
+	    end
+	  | Inf.TypItem(p,k) =>
+	    let
+		val l' = trTypLabel(Path.toLab p)
+		val v  = UnsafeValue.projPoly(m,l')
+	    in
+	        thinSig((l',v)::lvs, m, items)
+	    end
+	  | Inf.ModItem(p,j) =>
+	    let
+		val l' = trModLabel(Path.toLab p)
+		val v  = UnsafeValue.cast(thin(UnsafeValue.projPoly(m,l'), j))
+	    in
+	        thinSig((l',v)::lvs, m, items)
+	    end
+	  | Inf.InfItem(p,k) =>
+	    let
+		val l' = trInfLabel(Path.toLab p)
+		val v  = UnsafeValue.projPoly(m,l')
+	    in
+	        thinSig((l',v)::lvs, m, items)
+	    end
+	  | Inf.HiddenItem _ => raise Hidden
+
+
     fun seal(m, j) =
 	case Inf.inspect j
 	 of Inf.Sig s =>
@@ -173,7 +232,8 @@ struct
 		in
 		    seal(x,j2')
 		end)
-	  | (Inf.Top | Inf.Con _ | Inf.Apply _ | Inf.Sing _) => m
+	  | Inf.Sing m' => thin(m, #2(Inf.asMod m'))
+	  | (Inf.Top | Inf.Con _ | Inf.Apply _) => m
 	  | Inf.Exist _ => raise Hidden
 	  | Inf.Lambda _ => raise Inf.Interface
 

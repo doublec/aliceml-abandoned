@@ -268,9 +268,12 @@ struct
 
   (* Projections *)
 
-    fun stamp(Id(_,x,_))	= x
-    fun name(Id(_,_,n))		= n
-    fun lab(Lab(_,a))		= a
+    fun stamp(Id(_,x,_))		= x
+    fun name(Id(_,_,n))			= n
+    fun lab(Lab(_,a))			= a
+
+    fun longname(ShortId(_,id))		= name id
+      | longname(LongId(_,_,l))		= Label.toName(lab l)
 
     fun infoLab(Lab(i,_))		= i
     fun infoId(Id(i,_,_))		= i

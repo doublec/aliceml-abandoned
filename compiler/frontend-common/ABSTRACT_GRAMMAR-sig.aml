@@ -245,6 +245,7 @@ sig
 
     val stamp :		'a id			-> Stamp.t
     val name :		'a id			-> Name.t
+    val longname :	('a,'b,'c) longid	-> Name.t
     val lab :		'a lab			-> Label.t
 
     val infoLab :	'a lab			-> 'a

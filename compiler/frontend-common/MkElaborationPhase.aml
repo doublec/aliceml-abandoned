@@ -893,9 +893,10 @@ struct
 	end
 
 
-    and elabTypid_bind(E, p, t, typid as I.Id(i, stamp, name)) =
+    and elabTypid_bind(E, p, abbrev, t, typid as I.Id(i, stamp, name)) =
 	let
-	    val t' = Type.abbrev(Type.con(p, Type.kind t), t)
+	    val t' = if not abbrev then t else
+		     Type.abbrev(Type.con(p, Type.kind t), t)
 	    val u  = ref false
 	    val _  = Env.insertTyp(E, stamp, {id=typid, path=p, typ=t', use=u})
 	in
@@ -1470,9 +1471,10 @@ TextIO.print "\n";
 
   (* Interface identifiers *)
 
-    and elabInfid_bind(E, p, j, infid as I.Id(i, stamp, name)) =
+    and elabInfid_bind(E, p, abbrev, j, infid as I.Id(i, stamp, name)) =
 	let
-	    val j' = Future.byneed(fn() => Inf.abbrev(Inf.con(p,Inf.kind j), j))
+	    val j' = if not abbrev then j else
+		     Future.byneed(fn() => Inf.abbrev(Inf.con(p,Inf.kind j), j))
 	    val u  = ref false
 	    val _  = Env.insertInf(E, stamp, {id=infid, path=p, inf=j', use=u})
 	in
@@ -1710,7 +1712,23 @@ TextIO.print "\n";
 	in
 	    O.FixDec(nonInfo(i), vallab', fix')
 	end
-
+(*TODO: does not work, because of strange unification bug in sig matching :-(
+      | elabDec(E, s,po,varids, I.ValDec(i, I.VarPat(i1, valid),
+					    I.VarExp(i2, vallongid))) =
+	let
+	    (* Keep full polymorphism (esp. wrt overloading!) *)
+	    val (t1,qt,valid')  = elabValid_bind(E, s, valid)
+	    val (t2,vallongid') = elabVallongid(E, vallongid)
+	    val  _              = Type.unify(t1,t2)
+	    val  _              = Type.unify(qt,t2)
+	    val  pat'           = O.VarPat(typInfo(i,t1), valid')
+	    val  exp'           = O.VarExp(typInfo(i,t2), vallongid')
+	    val  l              = Label.fromName(I.name valid)
+	    val  _              = Inf.extendVal(s, l, qt)
+	in
+	    O.ValDec(nonInfo(i), pat', exp')
+	end
+*)
       | elabDec(E, s,po,varids, I.ValDec(i, pat, exp)) =
 	let
 	    val  _        = Env.insertScope E
@@ -1732,9 +1750,12 @@ TextIO.print "\n";
 
       | elabDec(E, s,po,varids, I.TypDec(i, typid, typ)) =
 	let
+	    val abbrev = case typ of I.ConTyp(_,typlongid) =>
+				     I.longname typlongid <> I.name typid
+				   | _ => true
 	    val  p           = elabNewPath(po, I.name typid)
 	    val (t,gen,typ') = elabTypRep(E, p, General.id, typ)
-	    val (t',typid')  = elabTypid_bind(E, p, t, typid)
+	    val (t',typid')  = elabTypid_bind(E, p, abbrev, t, typid)
 	    val  k           = (if gen then Type.kind else Type.singKind) t'
 	    val  _           = Inf.extendTyp(s, p, k)
 	in
@@ -1760,9 +1781,12 @@ TextIO.print "\n";
 
       | elabDec(E, s,po,varids, I.InfDec(i, infid, inf)) =
 	let
+	    val abbrev = case inf of I.ConInf(_,inflongid) =>
+				     I.longname inflongid <> I.name infid
+				   | _ => true
 	    val  p           = elabNewPath(po, I.name infid)
 	    val (j,gen,inf') = elabInfRep(E, p, General.id, inf)
-	    val (j',infid')  = elabInfid_bind(E, p, j, infid)
+	    val (j',infid')  = elabInfid_bind(E, p, abbrev, j, infid)
 	    val  k           = Future.byneed(fn() =>
 			       (if gen then Inf.kind else Inf.singKind) j')
 	    val  _           = Inf.extendInf(s, p, k)
@@ -1891,7 +1915,7 @@ TextIO.print "\n";
 	    val p = elabNewPath(po, I.name typid)
 	    val k = elabTypKind(E, typ)
 	    val t = Type.unknown k
-	    val _ = elabTypid_bind(E, p, t, typid)
+	    val _ = elabTypid_bind(E, p, true, t, typid)
 	in
 	    []
 	end
@@ -1975,9 +1999,12 @@ TextIO.print "\n";
 
       | elabSpec(E, s,po, I.TypSpec(i, typid, typ)) =
 	let
+	    val abbrev = case typ of I.ConTyp(_,typlongid) =>
+				     I.longname typlongid <> I.name typid
+				   | _ => true
 	    val  p           = elabNewPath(po, I.name typid)
 	    val (t,gen,typ') = elabTypRep(E, p, General.id, typ)
-	    val (t',typid')  = elabTypid_bind(E, p, t, typid)
+	    val (t',typid')  = elabTypid_bind(E, p, abbrev, t, typid)
 	    val  k           = (if gen then Type.kind else Type.singKind) t'
 	    val  _           = Inf.extendTyp(s, p, k)
 	in
@@ -1996,9 +2023,12 @@ TextIO.print "\n";
 
       | elabSpec(E, s,po, I.InfSpec(i, infid, inf)) =
 	let
+	    val abbrev = case inf of I.ConInf(_,inflongid) =>
+				     I.longname inflongid <> I.name infid
+				   | _ => true
 	    val  p           = elabNewPath(po, I.name infid)
 	    val (j,gen,inf') = elabInfRep(E, p, General.id, inf)
-	    val (j',infid')  = elabInfid_bind(E, p, j, infid)
+	    val (j',infid')  = elabInfid_bind(E, p, abbrev, j, infid)
 	    val  k           = (if gen then Inf.kind else Inf.singKind) j'
 	    val  _           = Inf.extendInf(s, p, k)
 	in
@@ -2035,7 +2065,7 @@ TextIO.print "\n";
 	    val p = elabNewPath(po, I.name typid)
 	    val k = elabTypKind(E, typ)
 	    val t = Type.unknown k
-	    val _ = elabTypid_bind(E, p, t, typid)
+	    val _ = elabTypid_bind(E, p, true, t, typid)
 	in
 	    ()
 	end
@@ -2172,7 +2202,7 @@ TextIO.print "\n";
 			Type.exitLevel();
 			(k2, t2, O.SomeDesc(typInfo(i',t2), typ'))
 		    end
-	    val (_,typid') = elabTypid_bind(E, p, t2, typid)
+	    val (_,typid') = elabTypid_bind(E, p, true, t2, typid)
 	in
 	    Inf.extendTyp(s', p, k2);
 	    O.TypImp(nonInfo(i), typid', desc')
@@ -2234,7 +2264,7 @@ TextIO.print "\n";
 			Type.exitLevel();
 			(k2, j2, O.SomeDesc(infInfo(i',j2),inf'))
 		    end
-	    val (_,infid') = elabInfid_bind(E, p, j2, infid)
+	    val (_,infid') = elabInfid_bind(E, p, true, j2, infid)
 	in
 	    Inf.extendInf(s', p, k2);
 	    O.InfImp(nonInfo(i), infid', desc')
@@ -2275,7 +2305,7 @@ TextIO.print "\n";
 			    error(i, E.ImpMismatch(Inf.MismatchTyp(l,k1,k2,m)));
 			Type.exitLevel()
 		    end
-	    val _  = elabTypid_bind(E, p, t1, typid)
+	    val _  = elabTypid_bind(E, p, true, t1, typid)
 	in
 	    ()
 	end

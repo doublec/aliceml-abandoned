@@ -19,5 +19,6 @@ sig
 
     val lab_match :		Label.t
     val lab_strengthen :	Label.t
+    val lab_thin :		Label.t
     val lab_seal :		Label.t
 end
