@@ -1,7 +1,6 @@
 Group
 
     structure PickleFlatGrammar
-    functor MkMozartTarget
     functor MkBackendMozart
 
 is
