@@ -190,3 +190,4 @@ $(PREFIX)/lib/%: lib/% lib/%.sig $(MINIMALINSTALL)
 clean:
 	-rm -f $(ALLFILES)
 	-rm -f *.ozf */*.ozf */*/*.ozf
+	-rm -f *.ozm */*.ozm */*/*.ozm
