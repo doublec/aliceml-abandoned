@@ -199,10 +199,6 @@ IODescFinalizationSet *IODesc::finalizationSet;
 
 void IODesc::Init() {
   finalizationSet = new IODescFinalizationSet();
-#if defined(DEBUG_CHECK) && (defined(__MINGW32__) || defined(_MSC_VER))
-  FreeConsole();
-  AllocConsole();
-#endif
 }
 
 IODesc *IODesc::NewClosed(String *name) {
