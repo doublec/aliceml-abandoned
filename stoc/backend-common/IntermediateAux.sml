@@ -183,7 +183,7 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	    let
 		val (pat', subst') = relax (pat, subst)
 	    in
-		(RefPat (info, pat), subst')
+		(RefPat (info, pat'), subst')
 	    end
 	  | relax (TupPat (info, pats), subst) =
 	    let
