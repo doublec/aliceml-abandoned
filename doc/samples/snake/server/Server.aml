@@ -139,27 +139,31 @@ struct
                 if not (! $ #disconnected event) then
                     let
                         val rpc     = Channel.receive chan
-                        
+                       
+                        fun remove (event : event, chan, num) =
+                            (print ("registering not responding client as " ^
+                                        "disconnected after " ^
+                                    Int.toString num ^ " tries to talk to him");
+                             #disconnected event := true;
+                             Channel.destroy chan;
+                             false)
+
                         fun try (rpc, event : event, chan, num) =
-                            if num <= 0 then (
-                                print "removing not responding client\n";
-                                #disconnected event := true;
-                                Channel.destroy chan;
-                                false
-                            ) else 
+                            if num >= 3 then remove (event, chan, num)
+                            else 
                                     (rpc (); true)
                                 handle Remote.Proxy _ =>
                                     (* RPC call failed.
                                        this shouldn't happen,
                                        try again *)
-                                    try (rpc, event, chan, num - 1)
+                                    try (rpc, event, chan, num + 1)
                                 |   _   =>
                                     (* client has raised an exception
                                        this shouldn't happen therefore remove 
                                        it *)
-                                    try (rpc, event, chan, 0)
+                                    remove (event, chan, num)
                     in
-                        if try (rpc, event, chan, 3) then
+                        if try (rpc, event, chan, 1) then
                             actualInvoke' (event, chan)
                         else ()
                     end 

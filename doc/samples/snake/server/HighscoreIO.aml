@@ -11,28 +11,54 @@
 
 import signature HIGHSCORE_IO from "HIGHSCORE_IO-sig"
 import structure Highscore    from "../common/Highscore"
-
+import structure Color        from "../common/Color"
+import structure TextIO       from "x-alice:/lib/system/TextIO"
 
 structure HighscoreIO :> HIGHSCORE_IO =
 struct
 
     val path = "highscore.hs"
 
-    fun load () = 
-	let
-	    structure H = 
-		unpack (Pickle.load path handle _ =>
-			(pack (val h = Highscore.empty) 
-		           :> (val h : Highscore.highscore))) 
-		     : (val h : Highscore.highscore)
-	in
-	    H.h
-	end
-    (* load the highscore, create a new one if no highscore exists *)
+    fun intFromString s =
+        case Int.fromString s of
+            NONE    => raise Fail "invalid int"
+        |   SOME i  => i
 
-    fun save hs = 
-	Pickle.save (path, pack (val h = hs) 
-			:> (val h : Highscore.highscore))
+    fun writeEntry file {name, color, points, player, level } =
+        TextIO.output (file, 
+            name ^ "\t" ^ Color.toString color ^ "\t" ^ Int.toString points ^
+                        "\t" ^ Int.toString player ^ "\t" ^ Int.toString level ^ "\n")
+
+    fun decodeEntry s =
+        case String.fields (fn c => c = #"\t") s of
+            [name, color, points, player, level] =>
+                { name, color = Color.fromString color, 
+                    points = intFromString points,
+                    player = intFromString player, 
+                    level  = intFromString level  }
+        |   _   => raise Fail "invalid entry"
+
+    fun load () = 
+        (* load the highscore, create a new one if no highscore exists *)
+	let
+            val f = TextIO.openIn path 
+	    
+            fun load' (f, res) =
+                case TextIO.inputLine f of
+                    NONE    => List.rev res
+                |   SOME "\n" => load' (f, res) (* skip empty lines *)
+                |   SOME l  => 
+                    load' (f, decodeEntry (
+                        String.substring (l, 0, String.size l - 1)) :: res)
+        in
+            load' (f, []) before TextIO.closeIn f
+	end handle _ => Highscore.empty
+
+    fun save hs =
+        let val f   = TextIO.openOut path in
+            List.app (writeEntry f) hs;
+            TextIO.closeOut f
+        end handle _ => ()
 
 end
 

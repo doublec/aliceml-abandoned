@@ -148,6 +148,10 @@ struct
 		   {dimensions = dim} : P.level_info) =
 	let
 	    val _ = log ("initLevel", "starts")
+	    fun destroyOldItem (obj, _) = if obj <> Gtk.null 
+                                             then Gtk.objectDestroy obj
+					  else ()
+	    val _ = Array2.app Array2.RowMajor destroyOldItem (!state)   
 	    val (rows, cols) = dim
 	    val _ = Gtk.widgetSetSizeRequest (canvas, windowWidth, 
 					      windowHeight)
@@ -451,8 +455,7 @@ struct
                     changeObj numObj
                 end
         in
-            display;
-	    log ("startCountDown", "ends")
+            display before log ("startCountDown", "ends")
         end
                 
 end

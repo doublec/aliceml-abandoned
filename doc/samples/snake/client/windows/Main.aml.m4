@@ -61,7 +61,7 @@ fun highscoreToString score =
 		""	=> "Highscore is empty."
 	    |	s 	=> s
     in
-	log ("highscoreToString", "ends") before toString score
+        toString score before log ("highscoreToString", "ends")
     end
 
 (* creates a string from a given time with : h : m : s *)
@@ -80,8 +80,9 @@ fun highscoreToString score =
                 then "0"
                 else "") ^ Int.toString d 
     in
-	log ("timeToString", "ends") 
-            before toStr hours ^ " : " ^ toStr minutes ^ " : " ^ toStr seconds 
+        toStr hours ^ " : " ^ toStr minutes ^ " : " ^ toStr seconds 
+	before log ("timeToString", "ends") 
+
     end
 
 

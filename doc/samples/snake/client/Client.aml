@@ -13,6 +13,7 @@ import structure Protocol   from "../common/Protocol"
 import structure Gui        from "Gui"
 import signature CLIENT     from "CLIENT-sig"
 import structure Ctrl       from "x-alice:/lib/utility/Ctrl"
+import val log              from "../common/Log"
 
 open Ctrl
 
@@ -97,13 +98,13 @@ struct
 
             fun locked name f =
                 Lock.sync lock (fn a => 
-                      let   val _   = print ("calling: " ^ name); 
+                      let   val _   = log ("Client.aml", "calling: " ^ name); 
                             val res = f a
                         in
-                            print ("leaving: " ^ name);
+                            log ("Client.aml", "leaving: " ^ name);
                             res
                         end handle e => (
-                            print ("leaving: " ^ name ^ " with exception " ^ exnName e);
+                            log ("Client.aml", "leaving: " ^ name ^ " with exception " ^ exnName e);
                             raise e
                         ))
             (*
