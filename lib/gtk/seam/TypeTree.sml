@@ -19,7 +19,7 @@ structure TypeTree =
 
       datatype ty =
 	 VOID
-       | ELLIPSES
+       | ELLIPSES of bool    (* if true: ..., if false: va_list *)
        | BOOL
        | NUMERIC of bool * bool * numKind  (* signed? / real? / kind *)
        | POINTER of ty

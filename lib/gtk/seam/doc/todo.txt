@@ -2,13 +2,16 @@
 *** Allgemein/Ideen ***
 
 * stockwerk-gtk-binding in den CVS main trunk
-- stockhausen neu bauen
+- stockhausen neu bauen -> Problem!!
+- datatype arg auch in GtkUnsafe verfuegbar machen
+- Makefile hat noch ein Problem (Aenderungen an .cc fuehren nicht zum Rebuild)
+
 
 * Enums
 - GC (Weak Dictionary)
 * datatypes/Signals bauen
 * Dateien komplett umbenennen, 
-- GtkCanvas
+* libgnomecanvas statt GtkCanvas installieren
 - Windows
 
 * Test-Programm besser

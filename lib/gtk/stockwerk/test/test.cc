@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <gtk/gtk.h>
-//#include "generic/NativeAuthoring.hh"
+#include "../NativeUtils.hh"
 
 #define PRINT(a) printf(a)
 #define EXECUTE(f,x) f(x)

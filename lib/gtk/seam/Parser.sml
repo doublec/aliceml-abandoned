@@ -75,18 +75,22 @@ struct
 	    fun isBool "gboolean" = true
 	      | isBool _          = false
 
+	    fun isValist "va_list" = true
+	      | isValist _         = false
+
             fun makePointer (TYPEREF("GList",_))  = LIST("GList",POINTER VOID)
 	      | makePointer (TYPEREF("GSList",_)) = LIST("GSList",POINTER VOID)
 	      | makePointer (NUMERIC (sg,_,CHAR)) = STRING sg
 	      | makePointer (tr as TYPEREF(_,t))  =
 		   (case makePointer t of LIST l   => LIST l
+			                | ELLIPSES t => ELLIPSES t
 		                        | STRING s => STRING s
                                         | _        => POINTER tr)
 	      | makePointer t                      = POINTER t
                                 
 	in
 	    fun convType Ast.Void         = VOID
-	      | convType Ast.Ellipses     = ELLIPSES
+	      | convType Ast.Ellipses     = ELLIPSES true
 	      | convType (Ast.Qual (_,t)) = convType t
 	      | convType (Ast.Numeric(_,_,sign,kind,tag)) = 
   	        NUMERIC (not (sign=Ast.UNSIGNED andalso tag=Ast.SIGNDECLARED),
@@ -102,7 +106,9 @@ struct
 	      | convType (Ast.UnionRef id)   = UNIONREF  (getTypeNameFromID id)
 	      | convType (Ast.EnumRef id)    = ENUMREF   (findEnumName id)
 	      | convType (Ast.TypeRef id)    = 
-                  if isBool (getTypeNameFromID id) then BOOL else followType id
+                  if isBool (getTypeNameFromID id) then BOOL else 
+		  if isValist (getTypeNameFromID id) then ELLIPSES false else
+		      followType id
 	      | convType Error               = raise EUnknown
 
 	    and followType id = 

@@ -72,7 +72,6 @@ void push_front(word *list, word value) {
   *list = cons->ToWord();
 }
 
-enum { BOOL, INT, LIST, OBJECT, REAL, STRING };
 GType G_LIST_TYPE = g_type_from_name("GList");
 GType G_SLIST_TYPE = g_type_from_name("GSList");
 

@@ -25,7 +25,8 @@ struct
 		    | LONGDOUBLE => "long double")
     in
 	fun getCType VOID                     = "void"
-	  | getCType ELLIPSES                 = "..."
+	  | getCType (ELLIPSES true)          = "..."
+	  | getCType (ELLIPSES false)         = "va_list"
 	  | getCType BOOL                     = "gboolean"
 	  | getCType (NUMERIC (sign,_,kind))  = numericToCType sign kind
 	  | getCType (POINTER t)              = (getCType t)^"*"
@@ -45,7 +46,8 @@ struct
     end
 
     fun getAliceType VOID                  = "unit"
-      | getAliceType ELLIPSES              = raise EEllipses
+      | getAliceType (ELLIPSES true)       = raise EEllipses
+      | getAliceType (ELLIPSES false)      = "arg list"
       | getAliceType BOOL                  = "bool"
       | getAliceType (NUMERIC (_,false,_)) = "int"
       | getAliceType (NUMERIC (_,true,_))  = "real"
@@ -63,8 +65,9 @@ struct
 	let 
 	    val s = getAliceType t
 	in  
-	    if Util.checkPrefix "object" s then "'"^s else 
-	      case removeTypeRefs t of (ENUMREF _) => "real" | _ => s
+	    if (Util.checkPrefix "object" s orelse Util.checkPrefix "arg" s)
+		then "'"^s 
+	        else case removeTypeRefs t of (ENUMREF _) => "real" | _ => s
 	end
       
     local
