@@ -106,7 +106,7 @@ AC_CACHE_CHECK([for Unix select vs. WinSock], [seam_cv_socket_flavor],
 		     [[WSADATA wsa_data;
 		       WORD req_version = MAKEWORD(1, 1);
 		       return WSAStartup(req_version, &wsa_data);]]),
-		     [seam_cv_socket_flavor=windows],
+		     [seam_cv_socket_flavor=winsock],
 		     [seam_cv_socket_flavor=none])
 		   LIBS="$seam_save_LIBS"])])
 
@@ -114,7 +114,7 @@ case "$seam_cv_socket_flavor" in
     unix)
 	AC_DEFINE(USE_WINSOCK, 0)
 	;;
-    windows)
+    winsock)
 	AC_DEFINE(USE_WINSOCK, 1)
 	LIBS="-lwsock32 $LIBS"
 	;;
@@ -126,18 +126,30 @@ esac
 dnl
 dnl  Test for VirtualAlloc
 dnl
-AC_CACHE_CHECK([for VirtualAlloc], [seam_cv_have_virtualalloc],
+AC_CACHE_CHECK([which memory allocation mechanism to use],
+	       [seam_cv_alloc_flavor],
   [AC_LINK_IFELSE(AC_LANG_PROGRAM([[#include <windows.h>]],
 				  [[VirtualAlloc(NULL, 0, 0, 0);]]),
-		  seam_cv_have_virtualalloc=yes,
-		  seam_cv_have_virtualalloc=no)])
+		  [seam_cv_alloc_flavor=virtualalloc],
+		  [AC_LINK_IFELSE(AC_LANG_PROGRAM([[#include <sys/mman.h>]],
+		     [[mmap(NULL, 16,
+			    PROT_READ | PROT_WRITE,
+			    MAP_PRIVATE | MAP_ANONYMOUS,
+			    -1, (off_t) 0) == MAP_FAILED]]),
+		     [seam_cv_alloc_flavor=mmap],
+		     [seam_cv_alloc_flavor=malloc])])])
 
-case "$seam_cv_have_virtualalloc" in
-    no)
-	AC_DEFINE(HAVE_VIRTUALALLOC, 0)
-	;;
-    yes)
+case "$seam_cv_alloc_flavor" in
+    virtualalloc)
 	AC_DEFINE(HAVE_VIRTUALALLOC, 1)
+	;;
+    mmap)
+	AC_DEFINE(HAVE_VIRTUALALLOC, 0)
+	AC_DEFINE(HAVE_MMAP, 1)
+	;;
+    malloc)
+	AC_DEFINE(HAVE_VIRTUALALLOC, 0)
+	AC_DEFINE(HAVE_MMAP, 0)
 	;;
 esac
 
