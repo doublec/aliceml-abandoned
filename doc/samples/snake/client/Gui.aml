@@ -15,7 +15,7 @@ import structure Pos        from "../common/Pos"
 import structure Color      from "../common/Color"
 import structure Protocol   from "../common/Protocol"
 import structure Config     from "../server/Config"
-import structure MainWindow from "windows/MainWindow"
+import structure Main       from "windows/Main"
 
 
 structure Gui :> GUI =
@@ -97,7 +97,7 @@ struct
 	 }
 
 
-    val execute = MainWindow.mkMainWindow
+    val execute = Main.mkMainWindow
 
 
 end
