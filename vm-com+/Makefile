@@ -1,17 +1,29 @@
-OBJS = Alice.dll Base.dll IO.dll OS.dll TextIO.dll CommandLine.dll
+OBJS = Alice.dll stow.exe Base.dll IO.dll OS.dll TextIO.dll CommandLine.dll
 SIGS = IO.dll.sig OS.dll.sig TextIO.dll.sig CommandLine.dll.sig
 INSPECTOR_OBJS = Win32.dll Canvas.dll Dialog.dll Tools.dll
 
 .il.dll:
 	ilasm -nologo -quiet -dll -out=$@ $<
 
-all: stoc-com+.x86-win32 $(OBJS) $(SIGS) stow.exe inspector
+all: stoc-com+.x86-win32 $(OBJS) $(SIGS) inspector
 
 stoc-com+.x86-win32: ../stoc/stoc-com+.x86-win32
 	copy "..\stoc\stoc-com+.x86-win32" "stoc-com+.x86-win32"
 
 Alice.dll: Alice.cs
 	csc -nologo -t:library Alice.cs
+
+stow.exe: stow.cs Alice.dll
+	csc -nologo -t:exe -r:Alice.dll stow.cs
+
+stow.il: stow.exe
+	ildasm /text /out=stow.il stow.exe
+
+HashCode.exe: HashCode.cs
+	csc -nologo -t:exe HashCode.cs
+
+Skeleton.il: HashCode.exe stow.il
+	HashCode stow.il Skeleton.il
 
 Base.aml: ../lib/bootstrap/Bootstrap.aus
 	copy ..\lib\bootstrap\Bootstrap.aus Base.aml
@@ -43,9 +55,6 @@ TextIO.dll.sig: ../lib/bootstrap/TextIO.sig
 
 CommandLine.dll.sig: ../lib/bootstrap/CommandLine.sig
 	copy ..\lib\bootstrap\CommandLine.sig CommandLine.dll.sig
-
-stow.exe: stow.cs Alice.dll
-	csc -nologo -t:exe -r:Alice.dll stow.cs
 
 inspector: $(INSPECTOR_OBJS)
 
