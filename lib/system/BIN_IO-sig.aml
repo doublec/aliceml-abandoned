@@ -1,10 +1,9 @@
 (*
- * Authors:
+ * Author:
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
- *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt and Andreas Rossberg, 2000-2002
+ *   Leif Kornstaedt, 2002
  *
  * Last change:
  *   $Date$ by $Author$
@@ -16,9 +15,13 @@ import signature STREAM_IO from "STREAM_IO-sig"
 signature BIN_IO =
     sig
 	structure StreamIO: STREAM_IO
+	    where type vector = Word8Vector.vector
+	      and type elem = Word8.word
+	      and type pos = Position.int
 
-	type vector = Word8Vector.vector
-	type elem = Word8.word
+	type vector = StreamIO.vector
+	type elem = StreamIO.elem
+
 	type instream
 	type outstream
 
