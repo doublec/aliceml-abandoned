@@ -6,6 +6,7 @@ PWD := $(shell pwd)
 
 GLOBAL_PREFIX = /opt/alice-devel
 PREFIX = $(PWD)/install
+DEBUG = 0
 
 OPTS1= # '--dump-phases' # --dump-abstraction-result' # --dump-intermediate'
 OPTS2= # '--dump-phases'
@@ -13,6 +14,12 @@ OPTS3= # '--dump-phases' # --dump-intermediate'
 
 TARGET=<no-target-specified>
 DEFAULT_TARGET=seam
+
+ifeq ($(DEBUG), 0)
+    CONFIGURE_OPTS =
+else
+    CONFIGURE_OPTS = --enable-checked
+endif
 
 PLATFORM = $(shell bootstrap/platform.sh smlnj)
 ifeq ($(PLATFORM:%win32=win32), win32)
@@ -47,7 +54,7 @@ export PREFIX TARGET WINDOWS
 ## Do it!
 ##
 install:
-	make PREFIX=$(PREFIX) TARGET=$(DEFAULT_TARGET) install-rec
+	make PREFIX=$(PREFIX) TARGET=$(DEFAULT_TARGET) DEBUG=$(DEBUG) install-rec
 install-rec: install-$(TARGET)-rec man
 	@echo -------------------------------------------------------------------------------
 	@echo Installation of Alice for $(PLATFORM) complete.
@@ -131,7 +138,7 @@ distclean: veryclean
 ## Install Alice on Mozart
 ##
 install-mozart:
-	make PREFIX=$(PREFIX) TARGET=mozart install-mozart-rec
+	make PREFIX=$(PREFIX) TARGET=mozart DEBUG=$(DEBUG) install-mozart-rec
 install-mozart-rec: install-common bootstrap-mozart libs-mozart
 
 bootstrap-mozart:
@@ -170,12 +177,12 @@ libs-mozart:
 ## Install Alice on Seam
 ##
 install-seam:
-	make PREFIX=$(PREFIX) TARGET=seam install-seam-rec
+	make PREFIX=$(PREFIX) TARGET=seam DEBUG=$(DEBUG) install-seam-rec
 install-seam-rec: install-common build-seam bootstrap-seam libs-seam
 
 reinstall-seam:
-	make PREFIX=$(PREFIX) TARGET=seam reinstall-seam-rec
-reinstall-seam-rec: install-common bootstrap-seam libs-seam
+	make PREFIX=$(PREFIX) TARGET=seam DEBUG=$(DEBUG) reinstall-seam-rec
+reinstall-seam-rec: bootstrap-seam libs-seam
 
 bootstrap-seam:
 	unset ALICE_HOME ;\
@@ -211,5 +218,5 @@ libs-seam:
 build-seam:
 	(cd vm-seam && \
 	 make -f Makefile.cvs && \
-	 ./configure --prefix=$(PREFIX) && \
+	 ./configure --prefix=$(PREFIX) $(CONFIGURE_OPTS) && \
 	 make install) || exit 1
