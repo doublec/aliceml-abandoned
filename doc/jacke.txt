@@ -129,20 +129,22 @@ in Gump. The following modifications are necessary:
 
 A rule binding containing symid parameters is parameterised over the
 corresponding number of actual BNF expressions. When the rule identifier appears
-on some right hand side it has to be supplied with these BNF expressions. An
-example for a rule template is the notion of sequences in the SML grammar:
+on some right hand side it has to be supplied with these BNF expressions. Some
+simple examples for rule templates are the following combinators:
 
-	rule commaList X =
-		  X				=> X
-		| X, COMMA, xs as commaList X	=> X::xs
+	rule opt X =
+		  skip	=> NONE
+		| X	=> SOME X
 
-	rule seq X =
-		  skip				=> []
-		| X				=> [X]
-		| LPAR, xs as commaList X, RPAR	=> xs
+	rule many X =
+		  skip => []
+		| some X
 
-Templates are just expanded on use. For convenience, it might be nice to allow
-infix identifiers.
+	and some X =
+		  X			=> [X]
+		| X, xs as many X	=> X::xs
+
+For convenience, it might be nice to allow infix identifiers.
 
 Of course, the start symbol refered to in a parser binding may not be a
 template rule.
@@ -189,7 +191,7 @@ right hand sides of lex rules can contain recursive calls to the same (or to
 another) lexer, as in OCaml's Yacc. This allows continuation after recognition
 of non-token strings, such as comments.
 
-The only interesting thing to note here is the ability is the ability to pass
-an additional argument to a lexer. This has been proposed by Christian Lindig
-and allows stateless scanning of stuff like nested comments when used in
-recursive lexer calls.
+The only interesting thing to note here is the ability to pass an additional
+argument to a lexer. This has been proposed by Christian Lindig and allows
+stateless scanning of stuff like nested comments when used in recursive lexer
+calls.
