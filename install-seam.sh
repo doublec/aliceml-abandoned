@@ -53,7 +53,7 @@ export TIMEDIR
 (cd vm-seam && /usr/bin/time -po ${TIMEDIR}1 make -f Makefile.bootstrap ALICEC_EXTRA_OPTS="$OPTS1" build1-install) || exit 1
 (cd vm-seam && make -f Makefile.bootstrap ALICEC_EXTRA_OPTS="$OPTS2" build2-install) || exit 1
 (cd vm-seam && /usr/bin/time -po ${TIMEDIR}3 make -f Makefile.bootstrap ALICEC_EXTRA_OPTS="$OPTS3" build3-install) || exit 1
-(cd vm-seam && make -f Makefile.bootstrap PREFIX=$prefix install) || exit 1
+(cd vm-seam && make -f Makefile.bootstrap install) || exit 1
 
 ##
 ## Build Libraries
@@ -62,7 +62,7 @@ PATH=$prefix/bin:$PATH
 export PATH
 unset ALICE_HOME
 (cd lib/distribution && make TARGET=seam depend) || exit 1
-(cd lib/distribution && make TARGET=seam all PREFIX=$prefix install) || exit 1
+(cd lib/distribution && make TARGET=seam all PREFIX=$prefix/share/alice install) || exit 1
 
 ##
 ## Install documentation
