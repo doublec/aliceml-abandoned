@@ -29,9 +29,9 @@ functor MkBackendStockwerk(structure ComponentManager: COMPONENT_MANAGER
     let
 	structure CodeGenPhase = MkCodeGenPhase(AbstractCodeGrammar)
 
-	fun sign (Value.TaggedValue
-		     (_, #[_, _, Value.Sign (SOME exportSign)])) = exportSign
-	  | sign _ = raise Crash.Crash "MkBackendStockwerk.sign"
+	fun inf (Value.TaggedValue
+		     (_, #[_, _, Value.Sign (SOME exportInf)])) = exportInf
+	  | inf _ = raise Crash.Crash "MkBackendStockwerk.inf"
 
 	fun save value filename =
 	    let
@@ -53,7 +53,7 @@ functor MkBackendStockwerk(structure ComponentManager: COMPONENT_MANAGER
 					   CodeGenPhase.translate context x
 				   in
 				       Target.FOREIGN {save = save value,
-						       sign = sign value}
+						       inf = inf value}
 				   end
 			   end
 		       structure Switches = Switches
