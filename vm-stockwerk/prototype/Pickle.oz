@@ -28,9 +28,12 @@
 functor
 import
    Open(file)
-   System(eq)
-   PrimitiveTable(table)
+   System(eq showInfo
+show)
+   PrimitiveTable(values functions)
    AbstractCodeInterpreter(interpreter)
+Inspector(inspect)
+Property(put)
 export
    Unpack
    Load
@@ -59,9 +62,13 @@ define
 
    fun {ApplyTransform F X}
       %--** implement using byneeds
-      case F of 'Alice.primitive' then
+      case F of 'Alice.primitive.value' then
 	 case X of tag(0 Name) then
-	    PrimitiveTable.table.{VirtualString.toAtom Name}
+	    PrimitiveTable.values.{VirtualString.toAtom Name}
+	 end
+      [] 'Alice.primitive.function' then
+	 case X of tag(0 Name) then
+	    PrimitiveTable.functions.{VirtualString.toAtom Name}
 	 end
       [] 'Alice.function' then
 	 case X of tag(0 tuple(F L C) NG NL IdDefArgs Instr)
@@ -74,12 +81,15 @@ define
    class PickleParser
       %--** implement as an interpreter
       attr BS: unit Index: 0 Dict: unit Counter: unit
-      meth init(V $)
+      meth init(V ?X)
+try
 	 BS <- {ByteString.make V}
 	 Index <- 0
 	 Dict <- {NewDictionary}
 	 Counter <- 0
-	 PickleParser, ParsePickle($)
+	 PickleParser, ParsePickle(?X)
+{System.showInfo 'read '#@Index#' bytes from pickle'}
+catch _ then {Inspector.inspect {Dictionary.toRecord dict @Dict}} {Inspector.inspect X} {Wait _} end
       end
       meth Next($) I in
 	 I = @Index
@@ -130,11 +140,29 @@ define
 	 PickleParser, Remember(T)
 	 PickleParser, ParseUInt(?Label)
 	 PickleParser, ParseUInt(?Size)
-	 case Label
-	 of !ARRAY then fail   %--**
-	 [] !CELL then fail   %--**
-	 [] !CONSTRUCTOR then fail   %--**
-	 [] !CON_VAL then fail   %--**
+	 case Label of !ARRAY then RealSize in
+	    PickleParser, ParsePickle(?RealSize)
+	    T = {NewArray 0 RealSize - 1 unit}
+	    for I in 1..RealSize do
+	       T.I := PickleParser, ParsePickle($)
+	    end
+%--** the following fails when debugging:
+%	    for I in RealSize+1..Size-1 do
+%	       PickleParser, ParsePickle(_)
+%	    end
+	 [] !CELL then
+	    T = {NewCell unit}
+	    {Assign T PickleParser, ParsePickle($)}
+	 [] !CONSTRUCTOR then
+	    T = {NewName}
+	    for I in 1..Size do
+	       PickleParser, ParsePickle(_)   %--**
+	    end
+	 [] !CON_VAL then
+	    T = {MakeTuple vector Size}
+	    for I in 1..Size do
+	       PickleParser, ParsePickle(?T.I)
+	    end
 	 [] !GLOBAL_STAMP then fail   %--**
 	 [] !VECTOR then RealSize in
 	    PickleParser, ParsePickle(?RealSize)
@@ -172,6 +200,7 @@ define
       end
       meth ParseTransform(?Transform) F X in
 	 PickleParser, Remember(Transform)
+%Transform = transform(F X)
 	 PickleParser, ParsePickle(?F)
 	 PickleParser, ParsePickle(?X)
 	 Transform = {ApplyTransform {VirtualString.toAtom F} X}
@@ -281,6 +310,7 @@ define
 	       {OutputStream putByte(BLOCK)}
 	       {OutputStream putUInt(CONSTRUCTOR)}
 	       {OutputStream putUInt(1)}
+	       {OutputStream putByte(POSINT)}
 	       {OutputStream putUInt(0)}   %--** print name?
 	       continue(args(Id + 1 OutputStream X#Id|Seen) Rest)
 	    [] atom then
@@ -290,6 +320,8 @@ define
 	       [] vector then
 		  {OutputStream putByte(BLOCK)}
 		  {OutputStream putUInt(VECTOR)}
+		  {OutputStream putUInt(1)}
+		  {OutputStream putByte(POSINT)}
 		  {OutputStream putUInt(0)}
 	       end
 	       continue(args(Id + 1 OutputStream X#Id|Seen) Rest)
@@ -324,6 +356,8 @@ define
 	       [] vector then
 		  {OutputStream putByte(BLOCK)}
 		  {OutputStream putUInt(VECTOR)}
+		  {OutputStream putUInt({Width X} + 1)}
+		  {OutputStream putByte(POSINT)}
 		  {OutputStream putUInt({Width X})}
 		  continue(args(Id + 1 OutputStream X#Id|Seen)
 			   {Record.foldR X
@@ -331,8 +365,7 @@ define
 			       pickling(PicklingInterpreter Y)|Rest
 			    end Rest})
 	       [] closure then
-		  {OutputStream putByte(BLOCK)}
-		  {OutputStream putUInt(CLOSURE)}
+		  {OutputStream putByte(CLOSURE)}
 		  {OutputStream putUInt({Width X})}
 		  continue(args(Id + 1 OutputStream X#Id|Seen)
 			   {Record.foldR X
@@ -340,6 +373,9 @@ define
 			       pickling(PicklingInterpreter Y)|Rest
 			    end Rest})
 	       [] function then
+		  continue(Args
+			   pickling(PicklingInterpreter {X.1.abstract X})|Rest)
+	       [] primitive then
 		  continue(Args
 			   pickling(PicklingInterpreter {X.1.abstract X})|Rest)
 	       [] transform then
@@ -402,9 +438,20 @@ define
 	       picklePack(PicklePackInterpreter)|TaskStack.2)
    end
 
-   fun {PickleSaveInterpreterRun args(_ OutputStream _) TaskStack}
+   fun {PickleSaveInterpreterRun args(_ OutputStream Seen) TaskStack}
       case TaskStack of pickleSave(_)|Rest then
+
+{Property.put 'print.depth' 10}
+{Property.put 'print.width' 50}
+A = {FoldR Seen fun {$ X#I In} if I < 46 then I#X|In else In end end nil}
+{System.show A}
+B = {List.toRecord dict A}
+in
+{System.show B}
+{Inspector.inspect B}
+
 	 {OutputStream close()}
+{Wait _}
 	 continue(args() Rest)
       end
    end
