@@ -116,17 +116,22 @@
 
     fun toInt(s,i) =
 	case String.sub(s,0)
-	  of #"~" => ~(toInt(String.extract(s,1,NONE), i))
-	   | #"0" => (if String.size s = 1 then 0 else
-		      case String.sub(s,1)
-			of #"b" => toInt'(String.extract(s,2,NONE), BIN, i)
-			 | #"x" => toInt'(String.extract(s,2,NONE), HEX, i)
-			 |   _  => toInt'(s, DEC, i)
-		     )
-	   |   _  => toInt'(s, DEC, i)
+	  of #"~" => toInt'("~", String.extract(s,1,NONE), i)
+	   |   _  => toInt'("", s, i)
+	(* Be careful to handle minInt correctly - let scan do the trick... *)
 
-    and toInt'(s,b,i) = Option.valOf(StringCvt.scanString (LargeInt.scan b) s)
-			handle Overflow => error(i, E.IntTooLarge)
+    and toInt'(s0,s,i) =
+	case String.sub(s,0)
+	  of #"0" => (if String.size s = 1 then 0 else
+		      case String.sub(s,1)
+			of #"b" => toInt''(s0^String.extract(s,2,NONE), BIN, i)
+			 | #"x" => toInt''(s0^String.extract(s,2,NONE), HEX, i)
+			 |   _  => toInt''(s0^s, DEC, i)
+		     )
+	   |   _  => toInt''(s0^s, DEC, i)
+
+    and toInt''(s,b,i) = Option.valOf(StringCvt.scanString (LargeInt.scan b) s)
+			 handle Overflow => error(i, E.IntTooLarge)
 
     fun toWord(s,i) =
 	case (String.sub(s,1), String.sub(s,2))
