@@ -33,7 +33,8 @@ signature GTK_SUPPORT =
 	val widgetShowAll:           tag -> unit 
 	val widgetHideAll:           tag -> unit
 	val containerAdd:            tag * tag -> unit
-	val signalConnect:           tag * string * (Gtk.arg list -> unit) -> int 
+	val signalConnect:           tag * string * (Gtk.arg list -> unit) 
+	                             -> int 
 	val labelNew:                string -> tag
 	val radioButtonNewWithLabel: tag * string -> tag
 	val radioButtonGroup:        tag -> tag
@@ -42,7 +43,8 @@ signature GTK_SUPPORT =
 	val spinButtonGetValueAsInt: tag -> int 
 	val widgetDestroy:           tag -> unit
 	val objectDestroy:           tag -> unit
-	val adjustmentNew:           real * real * real * real * real * real -> tag 
+	val adjustmentNew:           real * real * real * real * real * real 
+	                             -> tag 
 	val widgetSetScrollAdjustments: tag * tag * tag -> bool
 	val adjustmentGetFieldPageSize: tag -> real
 	val adjustmentGetFieldUpper: tag -> real
@@ -52,6 +54,7 @@ signature GTK_SUPPORT =
 	val menuBarAppend:           tag * tag -> unit
 	val menuItemNewWithLabel:    string -> tag
 	val menuItemRightJustify:    tag -> unit
+	val menuBarInsert:           tag * tag * int -> unit
 
 	(** GtkCanvas Primitives **)
 
@@ -131,6 +134,9 @@ signature GTK_SUPPORT =
 	
 	val stopButton: tag
 	val stopButtonSetActive: bool -> unit
+
+	val busyButton: tag
+	val busyButtonSetActive: bool -> unit
 
 	val createTextWindow: unit -> (string -> unit)
 	    
