@@ -1,0 +1,52 @@
+(* Alice Snake 2.0 - Operations on colors
+ *
+ *  Authors: Benedikt Grundmann / Sebastian Germesin
+ *
+ *  $Revision$
+ *
+ *  Last updated: $Date$ by $Author$
+ * 
+ *
+ *)
+
+structure Color :> COLOR = 
+struct
+
+    exception Unknown
+
+    datatype color = C of string * real * real * real
+
+    type t = color
+
+    fun equal (f,s) = f = s
+    
+    val all = [C("brown",,,),
+	       C("red",,,),
+	       C("blue",,,),
+	       C("green",,,),
+	       C("yellow",,,)]
+    (** [all] is a list of all available colors *)
+    
+    fun toString C(s,_,_,_) = s
+    (** [toString c] returns the [english] name of [c]. *)
+ 
+    fun fromString s = 
+	if List.exists (fn x => toString x = s) all
+	    then x
+	else raise Unknown
+
+    (** [fromString name] is the inverse operation of toString.
+        In case you apply ofString to a invalid/unknown color name
+        [Unknown] is raised.
+      *)
+
+    fun rgb (C(_,r,g,b)) = (r,g,b)
+
+    (** [rgb color] returns a triple [(red, green, blue)], with
+        the usual meaning and range [0.0 - 1.0]
+      *)
+
+end
+
+
+
