@@ -50,6 +50,8 @@ signature BIND_ENV =
     val delete2ndScope :	Env -> unit
     val mergeScope :		Env -> unit
     val mergeDisjointScope :	Env -> unit		(* Collision* *)
+    val inheritScope :		Env * Env -> unit
+    val splitScope :		Env -> Env
 
     val union :			Env * Env -> unit
     val unionDisjoint :		Env * Env -> unit	(* Collision* *)

@@ -118,8 +118,10 @@ structure BindEnv :> BIND_ENV =
     fun new()				= ENV(Map.new())
     fun copy(ENV E)			= ENV(Map.copy E)
     fun copyScope(ENV E)		= ENV(Map.copyScope E)
+    fun splitScope(ENV E)		= ENV(Map.splitScope E)
 
     fun insertScope(ENV E)		= Map.insertScope E
+    fun inheritScope(ENV E1, ENV E2)	= Map.inheritScope(E1,E2)
     fun deleteScope(ENV E)		= Map.deleteScope E
     fun delete2ndScope(ENV E)		= Map.delete2ndScope E
     fun mergeScope(ENV E)		= Map.mergeScope E

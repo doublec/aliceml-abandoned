@@ -489,8 +489,9 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 
     and trMrule E (Mrule(i, pat, exp)) =
 	let
-		val  _   = insertScope E
-		val pat' = trPat (E,E) pat
+		val E'   = Env.new()
+		val pat' = trPat (E,E') pat
+		val  _   = inheritScope(E,E')
 		val exp' = trExp E exp
 		val  _   = deleteScope E
 	in
@@ -585,14 +586,13 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	 | ASPat(i, pat1, pat2) => O.AsPat(i,trPat (E,E') pat1,trPat(E,E') pat2)
 	 | WHENPat(i, pat, atexp) =>
 	   let
-		val E''  = Env.new()
-		val pat' = trPat (E,E'') pat
-		val  _   = insertScope E
-		val  _   = union(E,E'')
+		val  _   = insertScope E'
+		val pat' = trPat (E,E') pat
+		val  _   = inheritScope(E, copyScope E')
 		val exp' = trAtExp E atexp
 		val  _   = deleteScope E
-		val  _   = unionDisjoint(E',E'') handle CollisionVal vid' =>
-				errorVId'("duplicate variable ", E'', vid',
+		val  _   = mergeDisjointScope E' handle CollisionVal vid' =>
+				errorVId'("duplicate variable ", E', vid',
 					  " in pattern or binding group")
 	   in
 		O.GuardPat(i, pat', exp')
@@ -600,20 +600,17 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 
 	 | WITHVALPat(i, pat, valbind) =>
 	   let
-		val E''  = Env.new()
-		val pat' = trPat (E,E'') pat
-		val  _   = insertScope E
-		val  _   = union(E,E'')
-		val  _   = insertScope E''
-		val decs'= trValBindo (E,E'') (SOME valbind)
-		val E''' = copyScope E''
-		val  _   = deleteScope E''
+		val  _   = insertScope E'
+		val pat' = trPat (E,E') pat
+		val  _   = inheritScope(E, copyScope E')
+		val  _   = insertScope E'
+		val decs'= trValBindo (E,E') (SOME valbind)
 		val  _   = deleteScope E
-		val  _   = unionDisjoint(E'',E''') handle CollisionVal vid' =>
-				errorVId'("pattern variable ", E''', vid',
+		val  _   = mergeDisjointScope E' handle CollisionVal vid' =>
+				errorVId'("pattern variable ", E', vid',
 					  " rebound inside value binding")
-		val  _   = unionDisjoint(E',E'') handle CollisionVal vid' =>
-				errorVId'("duplicate variable ", E'', vid',
+		val  _   = mergeDisjointScope E' handle CollisionVal vid' =>
+				errorVId'("duplicate variable ", E', vid',
 					  " in pattern or binding group")
 	   in
 		O.WithPat(i, pat', decs')
@@ -621,26 +618,25 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 
 	 | WITHFUNPat(i, pat, fvalbind) =>
 	   let
-		val E''  = Env.new()
-		val pat' = trPat (E,E'') pat
-		val  _   = insertScope E
-		val  _   = insertScope E''
-		val (ids',fmatches) = trFvalBindo_lhs (E,E'') (SOME fvalbind)
-		val  _   = union(E,E'')
+		val  _   = insertScope E'
+		val pat' = trPat (E,E') pat
+		val  _   = inheritScope(E, copyScope E')
+		val  _   = insertScope E'
+		val (ids',fmatches) = trFvalBindo_lhs (E,E') (SOME fvalbind)
+		val  _   = inheritScope(E, copyScope E')
 		val exps'= trFmatches_rhs E fmatches
 		val decs'= ListPair.map
 				(fn(id',exp') =>
 				 O.ValDec(O.infoExp exp',
 					  O.VarPat(O.infoId id', id'), exp'))
 				(ids',exps')
-		val E''' = copyScope E''
-		val  _   = deleteScope E''
 		val  _   = deleteScope E
-		val  _   = unionDisjoint(E'',E''') handle CollisionVal vid' =>
-				errorVId'("pattern variable ", E''', vid',
+		val  _   = deleteScope E
+		val  _   = mergeDisjointScope E' handle CollisionVal vid' =>
+				errorVId'("pattern variable ", E', vid',
 					  " rebound inside value binding")
-		val  _   = unionDisjoint(E',E'') handle CollisionVal vid' =>
-				errorVId'("duplicate variable ", E'', vid',
+		val  _   = mergeDisjointScope E' handle CollisionVal vid' =>
+				errorVId'("duplicate variable ", E', vid',
 					  " in pattern or binding group")
 	   in
 		O.WithPat(i, pat', [O.RecDec(infoFvalBind fvalbind, decs')])
@@ -676,8 +672,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	let
 	    val _    = insertScope E'
 	    val pat' = trPat (E,E') pat
-	    val E''  = copyScope E'
-	    val _    = deleteScope E'
+	    val E''  = splitScope E'
 	    val _    = if Env.sizeScope E' = Env.sizeScope E'' then () else
 			  error(infoPat pat, "inconsistent pattern alternative")
 	    val _    = Env.appiVals
@@ -1202,8 +1197,9 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 
     and trFmrule_rhs E (Mrule(i, fpat, exp)) =
 	   let
-		val  _           = insertScope E
-		val (pat',arity) = trFpat_rhs (E,E) fpat
+		val  E'          = Env.new()
+		val (pat',arity) = trFpat_rhs (E,E') fpat
+		val  _   = inheritScope(E,E')
 		val  exp'        = trExp E exp
 		val  _           = deleteScope E
 	   in
@@ -1226,15 +1222,14 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 
 	 | WHENPat(i, fpat, atexp) =>
 	   let
-		val E''  = Env.new()
-		val (pat',arity) = trFpat_rhs (E,E'') fpat
-		val  _   = insertScope E
-		val  _   = union(E,E'')
+		val  _   = insertScope E'
+		val (pat',arity) = trFpat_rhs (E,E') fpat
+		val  _   = inheritScope(E, copyScope E')
 		val exp' = trAtExp E atexp
 		val  _   = deleteScope E
-		val  _   = unionDisjoint(E',E'') handle CollisionVal vid' =>
-				errorVId'("duplicate variable ", E'', vid',
-					  " in pattern")
+		val  _   = mergeDisjointScope E' handle CollisionVal vid' =>
+				errorVId'("duplicate variable ", E', vid',
+					  " in pattern or binding group")
 	   in
 		( O.GuardPat(i, pat', exp'), arity )
 	   end
@@ -1337,7 +1332,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	   let
 		val i'        = infoConBind conbind
 		val i         = Source.over(infoSeq tyvarseq, i')
-		val (id',E'') = trTyCon E tycon
+		val (id',E'') = trTyCon E tycon		(* bound before *)
 		val _         = insertScope E
 		val ids'      = trTyVarSeq E tyvarseq
 		val cons'     = trConBindo (E,E'') (SOME conbind)
@@ -1354,7 +1349,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	   let
 		val i'        = infoTyCon tycon
 		val i         = Source.over(infoSeq tyvarseq, i')
-		val (id',E'') = trTyCon E tycon
+		val (id',E'') = trTyCon E tycon		(* bound before *)
 		val _         = insertScope E
 		val ids'      = trTyVarSeq E tyvarseq
 		val _         = deleteScope E
@@ -1506,8 +1501,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	   let
 		val _     = insertScope E
 		val decs' = trDec E dec
-		val E'    = copyScope E
-		val _     = deleteScope E
+		val E'    = splitScope E
 	   in
 		( O.StrMod(i, decs'), E' )
 	   end
@@ -1564,8 +1558,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	   let
 		val _      = insertScope E
 		val specs' = trSpec E spec
-		val E'     = copyScope E
-		val _      = deleteScope E
+		val E'     = splitScope E
 	   in
 		( O.SigInf(i, specs'), E' )
 	   end
