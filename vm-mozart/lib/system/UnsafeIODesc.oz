@@ -182,7 +182,7 @@ define
 	       end
 	    'readVec':
 	       fun {$ Desc I}
-		  {Desc read(I $)}
+		  {ByteString.make {Desc read(I $)}}
 	       end
 	    'readArr': fun {$ _} raise unimplemented end end %--**
 	    'readVecNB': fun {$ _} raise unimplemented end end %--**
