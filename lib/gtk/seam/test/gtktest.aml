@@ -9,11 +9,12 @@ in
   (*val _ = widgetShow (colorSelectionDialogNew "Farbe auswaehlen...")*)
 
   val gdkpic = Gdk.pixbufNewFromXpmData Image.pixmap
+
   val window = windowNew WINDOW_TOPLEVEL
+
   val _ = windowSetTitle(window, "Hallo Welt!")
   val _ = containerSetBorderWidth(window,10)
 
-  val gdkpic = Gdk.pixbufNewFromXpmData Image.pixmap
   val image = imageNewFromPixbuf gdkpic
   val ibox = eventBoxNew()
   val _ = containerAdd(ibox, image)
@@ -78,6 +79,7 @@ in
       ( print (">callback function called for widget: "^(getobj widget)^"<\n");
         print ("Number of arguments: "^(Int.toString (length arglist))^"\n");
         List.app (fn a => print ((show a)^"\n")) arglist;
+	gdkpic ;
         print "---\n"
       )
   end
