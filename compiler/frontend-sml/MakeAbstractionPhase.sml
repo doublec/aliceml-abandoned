@@ -365,7 +365,7 @@ functor MakeAbstractionPhase(
       | unguardedTyVarsPat E (ASPat(_, pat1, pat2)) =
 	    unguardedTyVarsPat E pat1 @ unguardedTyVarsPat E pat2
 
-      | unguardedTyVarsPat E (WHENPat(_, pat, atexp)) =
+      | unguardedTyVarsPat E (WHEREPat(_, pat, atexp)) =
 	    unguardedTyVarsPat E pat @ unguardedTyVarsAtExp E atexp
 
       | unguardedTyVarsPat E (WITHVALPat(_, pat, valbind)) =
@@ -652,7 +652,7 @@ functor MakeAbstractionPhase(
 	 | TYPEDPat(i, pat, ty)	=> O.AnnPat(i, trPat (E,E') pat, trTy E ty)
 	 | NONPat(i, pat)	=> O.NegPat(i, trPat (E,BindEnv.new()) pat)
 	 | ASPat(i, pat1, pat2) => O.AsPat(i,trPat (E,E') pat1,trPat(E,E') pat2)
-	 | WHENPat(i, pat, atexp) =>
+	 | WHEREPat(i, pat, atexp) =>
 	   let
 		val  _   = insertScope E'
 		val pat' = trPat (E,E') pat
@@ -1294,7 +1294,7 @@ functor MakeAbstractionPhase(
 	fn fpat as (ATPATPat _ | APPPat _) =>
 		trFappPat_lhs E (Infix.pat (infEnv E) fpat)
 	 | ( TYPEDPat(i, fpat, _)
-	   | WHENPat(i, fpat, _) )	=> trFpat_lhs E fpat
+	   | WHEREPat(i, fpat, _) )	=> trFpat_lhs E fpat
 	 | ( NONPat(i,_)
 	   | ASPat(i,_,_)
 	   | WITHVALPat(i,_,_)
@@ -1415,7 +1415,7 @@ functor MakeAbstractionPhase(
 		( pat', arity, typ'::typs' )
 	   end
 
-	 | WHENPat(i, fpat, atexp) =>
+	 | WHEREPat(i, fpat, atexp) =>
 	   let
 		val  _   = insertScope E'
 		val (pat',arity,typs') = trFpat_rhs (E,E') fpat

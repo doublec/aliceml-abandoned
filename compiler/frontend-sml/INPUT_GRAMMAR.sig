@@ -210,7 +210,7 @@ signature INPUT_GRAMMAR =
 	| TYPEDPat       of Info * Pat * Ty
 	| NONPat         of Info * Pat
 	| ASPat          of Info * Pat * Pat
-	| WHENPat        of Info * Pat * AtExp
+	| WHEREPat       of Info * Pat * AtExp
 	| WITHVALPat     of Info * Pat * ValBind
 	| WITHFUNPat     of Info * Pat * FvalBind
 

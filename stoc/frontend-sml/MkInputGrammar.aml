@@ -210,7 +210,7 @@ functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
 	| TYPEDPat       of Info * Pat * Ty
 	| NONPat         of Info * Pat
 	| ASPat          of Info * Pat * Pat
-	| WHENPat        of Info * Pat * AtExp
+	| WHEREPat       of Info * Pat * AtExp
 	| WITHVALPat     of Info * Pat * ValBind
 	| WITHFUNPat     of Info * Pat * FvalBind
 
@@ -486,7 +486,7 @@ functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
       | infoPat(TYPEDPat(I,_,_))			= I
       | infoPat(NONPat(I,_))				= I
       | infoPat(ASPat(I,_,_))				= I
-      | infoPat(WHENPat(I,_,_))				= I
+      | infoPat(WHEREPat(I,_,_))			= I
       | infoPat(WITHVALPat(I,_,_))			= I
       | infoPat(WITHFUNPat(I,_,_))			= I
 

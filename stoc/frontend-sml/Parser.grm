@@ -24,8 +24,8 @@
 (*   - negated patterns:							*)
 (*	  pat ::= non pat							*)
 (*   - with patterns:								*)
-(*	  pat ::= pat withval valbind end					*)
-(*	      ::= pat withfun fvalbind end	(derived form)			*)
+(*	  pat ::= pat withval valbind where atexp				*)
+(*	      ::= pat withfun fvalbind where atexp	(derived form)		*)
 (*   - open datatypes (exception declarations become a derived form),		*)
 (*     constructor synonym specifications:					*)
 (*        dec      ::= constructor dconbind					*)
@@ -1012,11 +1012,17 @@
 	| NON pat	( NONPat(I(NONleft,patright), pat) )
 	| pat AS pat	( ASPat(I(pat1left,pat2right), pat1, pat2) )
 	| pat WHERE atexp
-			( WHENPat(I(patleft,atexpright), pat, atexp) )
-	| pat WITHVAL valbind END
-			( WITHVALPat(I(patleft,ENDright), pat, valbind) )
-	| pat WITHFUN fvalbind END
-			( WITHFUNPat(I(patleft,ENDright), pat, fvalbind) )
+			( WHEREPat(I(patleft,atexpright), pat, atexp) )
+	| pat WITHVAL valbind WHERE atexp
+			( WHEREPat(I(patleft,atexpright),
+				   WITHVALPat(I(patleft,valbindright),
+					      pat, valbind),
+				   atexp) )
+	| pat WITHFUN fvalbind WHERE atexp
+			( WHEREPat(I(patleft,atexpright),
+				   WITHFUNPat(I(patleft,fvalbindright),
+					      pat, fvalbind),
+				   atexp) )
 
 
 
