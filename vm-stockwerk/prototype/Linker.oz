@@ -141,9 +141,9 @@ define
 	       N = {Width Imports}
 	       Modules = {MakeTuple vector N}
 	    in
-	       for I in 1..N do Key in
-		  Key = {URL.toAtom {URL.resolve Key Imports.I.2}}
-		  Modules.I = ModuleTable.Key.2
+	       for I in 1..N do Key2 in
+		  Key2 = {URL.toAtom {URL.resolve Key Imports.I.2}}
+		  Modules.I = ModuleTable.Key2.2
 	       end
 	       continue(arg(Modules)
 			{BodyClosure.1.1.pushCall BodyClosure Rest})
