@@ -14,14 +14,6 @@
 
 #include "alice/Authoring.hh"
 
-static bool littleEndian;
-
-union FloatChunk {
-  unsigned char c[sizeof(double)];
-  int i[sizeof(double) / sizeof(int)];
-  double d;
-};
-
 DEFINE1(UnsafeReflect_cast) {
   RETURN(x0);
 } END
@@ -29,15 +21,9 @@ DEFINE1(UnsafeReflect_cast) {
 DEFINE1(UnsafeReflect_realToVector) {
   DECLARE_REAL(r, x0);
   Vector *vector = Vector::New(sizeof(double));
-  FloatChunk x;
-  x.d = r->GetValue();
-  if (littleEndian) {
-    for (u_int i = 0; i < sizeof(double); i++)
-      vector->Init(i, Store::IntToWord(x.c[sizeof(double) - 1 - i]));
-  } else {
-    for (u_int i = 0; i < sizeof(double); i++)
-      vector->Init(i, Store::IntToWord(x.c[i]));
-  }
+  unsigned char *c = r->GetBigEndianRepresentation();
+  for (u_int i = sizeof(double); i--; )
+    vector->Init(i, Store::IntToWord(c[i]));
   RETURN(vector->ToWord());
 } END
 
@@ -68,15 +54,6 @@ DEFINE1(UnsafeReflect_UnreflectSig) {
 } END
 
 word UnsafeReflect() {
-  FloatChunk x;
-  x.i[0] = 1;
-  for (u_int i = 1; i < sizeof(double) / sizeof(int); i++)
-    x.i[i] = 0;
-  if (x.c[0] == 1)
-    littleEndian = true;
-  else
-    littleEndian = false;
-
   Record *record = Record::New(6);
   INIT_STRUCTURE(record, "UnsafeReflect", "cast",
 		 UnsafeReflect_cast, 1, true);
