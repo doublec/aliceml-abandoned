@@ -12,6 +12,7 @@
 
 import structure Space     from "x-alice:/lib/gecode/Space"
 import structure FS        from "x-alice:/lib/gecode/FS"
+import structure Print     from "x-alice:/lib/system/Print"
 
 	(**
 	* Asserts v holds for all solutions, performs f if failed node met.
@@ -43,7 +44,7 @@ import structure FS        from "x-alice:/lib/gecode/FS"
 	let
 		val space = Space.new()
 		val root as #[a,b,c] = FS.setvarVec (space, 3)
-		val top = FS.Value.make (space,#[(0,3)])
+		val top = FS.Value.make (space,#[(0,5)])
 	in
 		FS.subset (space, a, top);
 		FS.subset (space, b, top);
@@ -56,7 +57,41 @@ import structure FS        from "x-alice:/lib/gecode/FS"
 	fun fakeVerify _ = true
 	
 	
+	fun doUnion (a,b) = IntInf.orb (a,b)	
+
+	fun range2II (i1,i2) = 
+	let
+		val _= assert (i1 >= 0);
+		val diff = i2 - i1
+		val ones = IntInf.<< ((IntInf.fromInt 2),Word.fromInt diff ) - (IntInf.fromInt 1)
+	in
+		IntInf.<<(ones, Word.fromInt i1)
+	end
+
+	fun dom2II nil = IntInf.fromInt 0
+	| dom2II (h::t) = IntInf.orb ((range2II h),(dom2II t))
+	
+	(*Eta forewa! :-) *)
+	val vdom2II = Vector.foldl ( fn (r,a)=> IntInf.orb ((range2II r),a) ) (IntInf.fromInt 0)
+	
+	fun vUnion (root as #[a,b,c]) space =
+	let
+		val ad = vdom2II ( FS.Reflect.lowerBound (space,a) )
+		val bd = vdom2II ( FS.Reflect.lowerBound(space,b) )
+		val cd = vdom2II ( FS.Reflect.lowerBound(space,c) )
+		val a2d = doUnion(bd,cd)
+	in
+		if ad=a2d then true else 
+			(Print.printVal([ad,bd,cd,a2d]); print"\n"; 
+			 Print.printVal(FS.Reflect.lowerBound (space,a)); print"\n"; 
+			 Print.printVal(FS.Reflect.lowerBound (space,b)); print"\n"; 
+			 Print.printVal(FS.Reflect.lowerBound (space,c)); print"\n"; 			 			 
+			 false
+			)
+(*		ad = a2d *)
+	end
+	
 	val (root, space)= unionTest ()
-	val _ = testVerifySimple space fakeVerify
+	val _ = testVerifySimple space (vUnion root)
 	val _ = print "done.\n";
 	val _ = OS.Process.exit OS.Process.success
