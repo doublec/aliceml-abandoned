@@ -1175,13 +1175,176 @@ alicelink -d Fac50
 See the <A href="components.html#evaluated">manual pages</A> on components for
 more information on evaluated components.</P>
 
+<?php subsection("components-manager", "Component managers") ?>
+
+<P>Linking of components is handled by the system's <EM>component manager</EM>.
+Applications may configure the component manager and the attached
+<EM>resolver</EM> to adapt to their needs, or may even set up their own
+component managers. Component managers essentially allow to achieve what is
+often called <EM>sandbox security</EM> for untrusted components. See the <A
+href="library/component-manager.html">library reference</A> for more
+detail.</P>
+
+
 
 <?php section("distribution", "distribution") ?>
 
-<!-- TODO -->
+<P><A href="#components">Components</A> and <A href="#pickling">pickles</A>
+already provide a primitive form of distributed programming, since they may be
+imported or loaded from arbitrary locations across a local network or even the
+Internet. But Alice also provides high-level means for processes at different
+sites to communicate directly.</P>
 
-<P>To be done...
-See the respective <A href="distribution.html">manual page</A> for now.</P>
+<?php subsection("distribution-tickets", "Tickets") ?>
+
+<P>The first mechanism that allows sites to establish peer-to-peer connections
+is <EM>offer and take</EM>. A process can create a package and make it available
+to other processes, for example the <TT>Num</TT> structure from the previous
+section:</P>
+
+<PRE class=code>
+val t = Remote.offer (pack Num :> NUM)
+<I>### loaded signature from x-alice:/lib/distribution/Remote
+val t : ticket = "http://134.96.18\..."</I></PRE>
+
+<P>Offering a package opens a communication port and returns an URI for that
+port. The URI is called a <EM>ticket</EM>. A ticket can be transferred to other
+sites, say by email or through some web document or root site. Other sites can
+then obtain the available package using the ticket. Of course, the exporting
+site may also obtain it itself (which we will do in this interactive example for
+reasons of simplicity):</P>
+
+<PRE class=code>
+val p = Remote.take t
+<I>val p : Package.package = package{|...|}</I>
+structure Num' = unpack p : NUM
+<I>structure Num' : NUM</I>
+Num'.toInt (Num'.fromInt 444)
+<I>val it : int = 444</I></PRE>
+
+<P>In general, <TT>take</TT> establishes a connection to the communication port
+denoted by the ticket, and retrieves the offered package. Transfer of the
+package is defined by the pickling/unpickling semantics, i.e. the whole closure
+of the package is transferred to the client, including any code representing
+embedded functions.</P>
+
+<?php subsection("distribution-proxies", "Proxies") ?>
+
+<P>Tickets are intended merely as a means to establish an initial connection
+between sites. All subsequent communication should be dealt with by the
+functions in the offered package. Alice provides a very simple feature to
+enable this idiom: <EM>proxies</EM>. A proxy is a mobile reference to a
+stationary function, that can be used in place of the function it
+references.</P>
+
+<P>The library function <TT>proxy:</TT> <TT>('a->'b)</TT> <TT>-></TT>
+<TT>('a->'b)</TT> creates a proxy for an arbitrary function:<P>
+
+<PRE class=code>
+fun fib (0 | 1) = 1
+  | fib n       = fib (n-1) + fib (n-2)
+<I>val fib : int -> int = fn</I>
+val fib' = Remote.proxy fib
+<I>val fib' : int -> int = fn</I></PRE>
+
+<P>The resulting function has the same type as the function it references. When
+it is applied, all arguments are forwarded to the original function, and the
+result is transferred back:</P>
+
+<PRE class=code>
+fib' 20
+<I>val it : int = 10946</I></PRE>
+
+<P>However, pickling a proxy does only pickle the respective reference and not
+the referenced function itself. When the proxy is transferred to a different
+site - e.g. by offering it as part of a package - and then applied at that
+site, all arguments will be automatically transferred to the site hosting the
+referenced function, the result will be computed there, and finally transferred
+back to the client site. That is, applying a proxy is practically a remote
+procedure call (RPC). Transfer is again defined by pickling semantics.</P>
+
+<?php subsection("distribution-example", "Example") ?>
+
+<P>As a most general example consider a <EM>compute server</EM>, a server which
+offers its computational resources to clients. Such a server can be described
+by the following signature:</P>
+
+<PRE class=code>
+signature COMPUTE_SERVER =
+sig
+    val compute : ('a -> 'b) * 'a -> 'b
+end</PRE>
+
+<P>It can be given a function and an appropriate argument and it will compute
+the result of applying the function to the argument.</P>
+
+<P>Such a server is easily set up by packaging the straight-forward
+implementation of this signature and offering it to other processes. Note the
+use of a proxy:</P>
+
+<PRE class=code>
+structure ComputeServer : COMPUTE_SERVER =
+struct
+    val compute = Remote.proxy (fn (f,x) => f x)
+end
+<I>structure ComputeServer : sig val compute : ('a -> 'b) * 'a -> 'b end</I>
+val ticket = Remote.offer (pack ComputeServer :> COMPUTE_SERVER)
+<I>val ticket : ticket = "http://134.96.18\..."</I></PRE>
+
+<P>Assume that the local HTTP server's domain is <TT>www.mydomain.net</TT> and
+the root of its document tree is in directory <TT>/www</TT> of the local file
+system. The server may store the ticket as a WWW document:</P>
+
+<PRE class=code>
+Pickle.save ("/www/computeserver.ticket", pack (val x = ticket) :> (val x : string))
+<I>val it : unit = ()</I></PRE>
+
+<P>A client can retrieve the (dynamically created) ticket from the (statically
+known) ticket URL:</P>
+
+<PRE class=code>
+structure Ticket = unpack Pickle.load "http://www.mydomain.net/computeserver.ticket" : (val x : string)
+<I>structure Ticket : sig val x : string end</I></PRE>
+
+<P>It can then establish a connection by taking the offered package and
+unpacking it under the agreed-upon signature:</P>
+
+<PRE class=code>
+structure Server = unpack (Remote.take Ticket.x) : COMPUTE_SERVER
+<I>structure Server : COMPUTE_SERVER</I></PRE>
+
+<P>Using the <TT>Server</TT> stub the client can shift its comutational load to
+the compute server:<P>
+
+<PRE class=code>
+Server.compute (fib, 30)
+<I>val it : int = 1346269</I></PRE>
+
+<P>The application transfers the function <TT>fib</TT>, as well as the argument
+<TT>30</TT>, to the server, which evaluates it. When it is done, it returns the
+result.</P>
+
+<P>You will have noticed that this remote call is synchronous, i.e. the client
+will not proceed before the server delivers the result. However, a synchronous
+call can trivially be transformed into an asynchrounous one using <A
+href="#concurrency">functional threads</A>!</P>
+
+<PRE class=code>
+spawn Server.compute (fib, 30)
+<I>val it : int = future</I></PRE>
+
+<P>Functional threads and futures hence are a high-level mechanism to improve
+<EM>lag latency</EM> in distributed applications - a client can proceed
+concurrently to the server and has to suspend only when it actually requires
+the result of a remote operation that the server has not yet delivered.</P>
+
+<?php subsection("distribution-remote", "Remote execution") ?>
+
+<P>Sometimes applications themselves need to create new processes at remote
+sites. This is known as <EM>remote execution</EM>. Remote execution can be
+initiated using the <A href="library/remote.html#Execute">Execute</A> library
+functor. See the respective <A href="distribution.html">manual page</A> for
+more about distribution in general and remote exection in particular.</P>
 
 
 
@@ -1367,8 +1530,10 @@ Explorer.exploreAll money
 
 <P align=center><IMG src="explorer.jpg" border=0 alt="Alice Explorer"></P>
 
-<P>Clicking on the only solution node in the tree (the green diamond) will open
-an Inspector window displaying the variable assignment of the solution.</P>
+<P>Double-clicking on the only solution node in the search tree (the green
+diamond) will open an Inspector window displaying the variable assignments of
+the solution. Chosing an inner node will display the information available at
+the respective point of the search tree.</P>
 
 
 <?php section("interop", "interoperability") ?>
