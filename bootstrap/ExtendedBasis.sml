@@ -815,7 +815,7 @@ structure Atom =
     open Atom
     type t = atom
     val equal = sameAtom
-    fun hash a = Word.toInt(Atom.hash a)
+    fun hash a = Word.toIntX(Atom.hash a)
   end
 
 
