@@ -60,7 +60,7 @@
     "CLOSURE", \
     "TUPLE", \
     "TRANSFORM", \
-    "EMPTYARG", "ONEARG", "TUPARGS" \
+    "ARGS" \
   }
 
 #endif
