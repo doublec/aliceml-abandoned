@@ -13,7 +13,6 @@
 package de.uni_sb.ps.dml.runtime;
 
 /** Wrapper, um DML-Werte als Exception werfen zu können.
- *  @see DMLValue#raise()
  */
 final public class ExceptionWrapper extends RuntimeException {
 

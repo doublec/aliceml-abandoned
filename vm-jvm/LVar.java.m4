@@ -69,7 +69,7 @@ public class LVar extends UnicastRemoteObject
 	    }
 	}
 	if (hasSelfRef) {
-	    _RAISENAME(General.Fulfill);
+	    _RAISENAME(LVar.Fulfill);
 	}
 
 	ref=v;
@@ -114,5 +114,6 @@ public class LVar extends UnicastRemoteObject
 	_RAISE(runtimeError,new STRING ("cannot pickle LVar"));
     }
 
-    _raise ;
+    /** <code> exception Fulfill </code>*/
+    final public static Name Fulfill = new UniqueName("LVar.Fullfil");
 }

@@ -24,9 +24,6 @@ final public class TextIO {
 	    in = is;
 	}
 	_apply_fails ;
-	_request_id ;
-	_getValue_id ;
-	_raise ;
     }
 
     final public static class OStream implements DMLValue {
@@ -36,9 +33,6 @@ final public class TextIO {
 	    out = os;
 	}
 	_apply_fails ;
-	_request_id ;
-	_getValue_id ;
-	_raise ;
     }
 
     /** val stdIn : instream */

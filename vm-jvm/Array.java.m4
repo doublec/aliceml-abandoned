@@ -208,9 +208,6 @@ final public class Array implements DMLValue {
     }
 
     _apply_fails ;
-    _request_id ;
-    _getValue_id ;
-    _raise ;
 
     final public java.lang.String toString() {
 	java.lang.String s="["+arr[0];

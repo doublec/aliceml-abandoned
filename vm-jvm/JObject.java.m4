@@ -33,9 +33,6 @@ final public class JObject implements DMLValue {
     }
 
     _apply_fails ;
-    _request_id ;
-    _getValue_id ;
-    _raise ;
 
     /** Builtin zur Benutzung von java API Objekt/Klassen-Methoden
      *  @author Daniel

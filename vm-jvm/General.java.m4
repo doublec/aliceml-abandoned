@@ -38,8 +38,6 @@ final public class General {
     /** <code>exception Subscript</code>*/
     final public static Name Subscript = new UniqueName("General.Subscript");
 
-    /** <code> exception Fulfill </code>*/
-    final public static Name Fulfill = new UniqueName("General.Fullfil");
     _BUILTIN(Deref) {
 	_APPLY(val) {
 	    // _FROMSINGLE(val,"deref");

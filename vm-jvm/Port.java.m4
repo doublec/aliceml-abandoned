@@ -46,9 +46,6 @@ final public class Port extends UnicastRemoteObject
     }
 
     _apply_fails ;
-    _request_id ;
-    _getValue_id ;
-    _raise ;
 
     final public java.lang.String toString() {
 	return first.toString()+": port";
