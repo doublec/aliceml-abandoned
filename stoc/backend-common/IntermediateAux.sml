@@ -292,9 +292,7 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 		rowToArity (Type.asSum typ)
 	    else Arity.Unary
 
-	fun isZeroTyp typ =
-	    Type.isCon typ andalso
-	    Path.equals (#3 (Type.asCon typ), PervasiveType.path_zero)
+	fun isZeroTyp typ = Type.equals (typ, PervasiveType.typ_zero)
 
 	fun makeConArity (typ, isNAry) =
 	    if isZeroTyp typ then NONE
