@@ -47,14 +47,9 @@ typedef enum {
   STRING_INPUT_STREAM = (FILE_INPUT_STREAM + 1)
 } IN_STREAM_TYPE;
 
-class InputStream : private Block {
+class InputStream: private Block {
 private:
-  static const u_int HD_POS     = 0;
-  static const u_int TL_POS     = 1;
-  static const u_int RD_POS     = 2;
-  static const u_int EOB_POS    = 3;
-  static const u_int BUFFER_POS = 4;
-  static const u_int SIZE       = 5;
+  enum { HD_POS, TL_POS, RD_POS, EOB_POS, BUFFER_POS, SIZE };
 public:
   using Block::ToWord;
   // InputStream Accessors
@@ -193,58 +188,44 @@ public:
   }
 };
 
+static const u_int READ_BUFFER_SIZE = 8192; // to be checked
+
 // FileInputStream
 class FileInputStream : public InputStream { //--** finalization to be done
 private:
-  static const u_int RD_BUF_POS    = 0;
-  static const u_int FILE_POS      = 1;
-  static const u_int EXCEPTION_POS = 2;
-  static const u_int SIZE          = 3;
+  enum { RD_BUF_POS, FILE_POS, EXCEPTION_POS, SIZE };
 
-  static const u_int RD_SIZE       = 8192;
-public:
-  // FileInputStream Accessors
   Chunk *GetRdBuf() {
     return Store::DirectWordToChunk(GetArg(RD_BUF_POS));
   }
-  void SetRdBuf(Chunk *buf) {
-    ReplaceArg(RD_BUF_POS, buf->ToWord());
-  }
   FILE *GetFile() {
     return (FILE *) Store::DirectWordToUnmanagedPointer(GetArg(FILE_POS));
-  } 
-  void SetFile(FILE *file) {
-    ReplaceArg(FILE_POS, Store::UnmanagedPointerToWord(file));
   }
-  u_int GetException() {
+public:
+  // FileInputStream Accessors
+  bool HasException() {
     return Store::DirectWordToInt(GetArg(EXCEPTION_POS));
   }
-  void SetException(u_int exception) {
-    InitArg(EXCEPTION_POS, Store::IntToWord(exception));
-  }
   // FileInputStream Constructor
-  static FileInputStream *New(char *filename) {
-    FileInputStream *is =
-      (FileInputStream *) InputStream::New(FILE_INPUT_STREAM, SIZE);
-    Chunk *rdBuf    = Store::AllocChunk(RD_SIZE);
+  static FileInputStream *New(const char *filename) {
+    InputStream *is = InputStream::New(FILE_INPUT_STREAM, SIZE);
+    Chunk *rdBuf    = Store::AllocChunk(READ_BUFFER_SIZE);
     FILE *file      = fopen(filename, "rb");
     u_int exception = (file == NULL);
-    is->SetRdBuf(rdBuf);
-    is->SetFile(file);
-    is->SetException(exception);
-    return is;
+    is->InitArg(RD_BUF_POS, rdBuf->ToWord());
+    is->InitArg(FILE_POS, Store::UnmanagedPointerToWord(file));
+    is->InitArg(EXCEPTION_POS, Store::IntToWord(exception));
+    return static_cast<FileInputStream *>(is);
   }
   // FileInputStream Functions
-  bool GotException() {
-    return GetException();
-  }
   void Close() {
     std::fclose(GetFile());
   }
   Interpreter::Result FillBuffer(TaskStack *taskStack) {
     u_char *rdBuf = (u_char *) GetRdBuf()->GetBase();
     FILE *file    = GetFile();
-    u_int nread   = (u_int) std::fread(rdBuf, sizeof(u_char), RD_SIZE, file);
+    u_int nread   = (u_int) std::fread(rdBuf, sizeof(u_char),
+				       READ_BUFFER_SIZE, file);
     if (ferror(file)) {
       Error("FileInputStream::FillBuffer"); //--** raise Io exception
     } else if (nread == 0) {
@@ -263,8 +244,7 @@ public:
 // StringInputStream
 class StringInputStream : public InputStream {
 private:
-  static const u_int STRING_POS = 0;
-  static const u_int SIZE       = 1;
+  enum { STRING_POS, SIZE };
 public:
   // StringInputStream Accessors
   word GetString() {
@@ -328,9 +308,7 @@ Interpreter::Result InputStream::FillBuffer(TaskStack *taskStack) {
 // Pickle Arguments
 class UnpickleArgs {
 private:
-  static const u_int STREAM_POS = 0;
-  static const u_int ENV_POS    = 1;
-  static const u_int SIZE       = 2;
+  enum { STREAM_POS, ENV_POS, SIZE };
 public:
   static void New(InputStream *is, word env) {
     Scheduler::nArgs = SIZE;
@@ -392,9 +370,7 @@ void InputInterpreter::DumpFrame(word) {
 // TransformInterpreter Frame
 class TransformFrame : private StackFrame {
 private:
-  static const u_int FUTURE_POS = 0;
-  static const u_int TUPLE_POS  = 1;
-  static const u_int SIZE       = 2;
+  enum { FUTURE_POS, TUPLE_POS, SIZE };
 public:
   using Block::ToWord;
 
@@ -492,10 +468,7 @@ void TransformInterpreter::DumpFrame(word) {
 // UnpickleInterpreter Frame
 class UnpickleFrame : private StackFrame {
 private:
-  static const u_int BLOCK_POS     = 0;
-  static const u_int INDEX_POS     = 1;
-  static const u_int NUM_ELEMS_POS = 2;
-  static const u_int SIZE          = 3;
+  enum { BLOCK_POS, INDEX_POS, NUM_ELEMS_POS, SIZE };
 public:
   using Block::ToWord;
 
@@ -761,8 +734,7 @@ void UnpickleInterpreter::DumpFrame(word frameWord) {
 // PickleUnpackInterpeter Frame
 class PickleUnpackFrame : private StackFrame {
 private:
-  static const u_int TUPLE_POS = 0;
-  static const u_int SIZE      = 1;
+  enum { TUPLE_POS, SIZE };
 public:
   using Block::ToWord;
 
@@ -836,8 +808,7 @@ void PickleUnpackInterpeter::DumpFrame(word) {
 // PickleLoadInterpreter Frame
 class PickleLoadFrame : private StackFrame {
 private:
-  static const u_int TUPLE_POS = 0;
-  static const u_int SIZE      = 1;
+  enum { TUPLE_POS, SIZE };
 public:
   using Block::ToWord;
 
@@ -928,7 +899,7 @@ Interpreter::Result Unpickler::Unpack(String *s, TaskStack *taskStack) {
 Interpreter::Result Unpickler::Load(String *filename, TaskStack *taskStack) {
   char *szFileName    = filename->ExportC();
   FileInputStream *is = FileInputStream::New(szFileName);
-  if (is->GotException()) {
+  if (is->HasException()) {
     delete is;
     Scheduler::currentData = Store::IntToWord(0); // to be done
     fprintf(stderr, "file '%s' not found\n", szFileName);
