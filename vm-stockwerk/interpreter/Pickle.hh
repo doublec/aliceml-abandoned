@@ -19,8 +19,6 @@
 
 class Pickle {
 public:
-  //--** exception handling missing
-
   enum con {
     Con, StaticCon
   };
@@ -34,9 +32,9 @@ public:
   };
 
   enum instr {
-    AppPrim, AppVar, ConTest, GetTup, IntTest, Kill, PutCon, PutConst,
-    PutFun, PutGlobal, PutNew, PutRef, PutSel, PutTag, PutTup, PutVec,
-    RealTest, Return, StringTest, TagTest, VecTest
+    AppPrim, AppVar, ConTest, EndHandle, EndTry, GetTup, IntTest, Kill,
+    PutCon, PutConst, PutFun, PutGlobal, PutNew, PutRef, PutSel, PutTag,
+    PutTup, PutVec, RealTest, Return, StringTest, TagTest, Try, VecTest
   };
 
   static con GetCon(TagVal *tagVal) {
