@@ -23,4 +23,4 @@ structure SMLToStockwerkBatchCompiler =
 			SMLToStockwerkRecursiveCompiler
 		    val executableHeader =
 			"#!/bin/sh\nexec alicerun $0 \"$@\"\n"
-		    val extension = "dll")
+		    val extension = "stc")
