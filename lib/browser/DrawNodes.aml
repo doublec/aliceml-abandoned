@@ -1,0 +1,45 @@
+(*
+ * Authors:
+ *   Bernadette Blum <blum@ps.uni-sb.de>
+ *   Marvin Schiller <schiller@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Bernadette Blum, 2002
+ *   Marvin Schiller, 2002
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
+import structure Services from "Services"
+import structure Types from "Types"
+import signature DRAW_NODES from "DRAW_NODES-sig"
+import structure ColorMap from "ColorMap"
+import structure MkColorTable from "MkColorTable"
+
+       structure DrawNodes :> DRAW_NODES =
+	   struct
+	       exception  MissingColor
+	       type node = Types.node
+		   
+	       fun draw (node,x,y)  = case node of
+		   Types.Simple(r) =>( let
+					   val color = case ColorMap.lookup
+					       (MkColorTable.colorTable,
+						#color(r))
+					       of 
+						   SOME x => x
+						 | NONE   => raise MissingColor
+					   val _ = Services.printXY (#rep(r),
+								     #group(r),
+								     x,
+								     y,
+								     color,
+								     "8x13")
+				       in ()	
+				       end )
+		 | _ => ()
+	   end
+       

@@ -1,0 +1,43 @@
+(*
+ * Authors:
+ *   Bernadette Blum <blum@ps.uni-sb.de>
+ *   Marvin Schiller <schiller@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Bernadette Blum, 2002
+ *   Marvin Schiller, 2002
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
+import structure Gtk from "x-alice:/lib/gtk/Gtk"
+import structure MkDrawingArea from "MkDrawingArea"
+import signature MK_WINDOW from "MK_WINDOW-sig"
+
+
+functor MkWindow () :> MK_WINDOW =
+struct
+
+    type tag = Gtk.object
+	
+    val window = Gtk.windowNew Gtk.WINDOW_TOPLEVEL
+    val _  = (Gtk.windowSetTitle (window, "Ye Olde Inspector")
+	      ; Gtk.widgetSetUsize (window, 600, 400)   )
+ 
+    structure A = 
+	struct
+	    val x = 1000.0
+	    val y = 700.0
+	    val root = window
+	end
+    
+    structure DA  =  MkDrawingArea(structure AreaArgs = A) 
+
+    val canvas = DA.canvas
+    val canvasroot = DA.root  
+    val alive = ref true
+	
+end

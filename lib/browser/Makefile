@@ -19,9 +19,9 @@ ALICELINK = alicelink
 ALICELINK_OPTS = -x
 ALICEDEP = alicedep
 
-SIGS		= TYPES HELPER COLOR DICTIONARY MK_PATH_TABLE NEW_NODE CREATE_DOC LAYOUT UNSAFE_INSPECTOR WINDOW
+SIGS		= TYPES HELPER COLOR DICTIONARY MK_PATH_TABLE NEW_NODE CREATE_DOC LAYOUT UNSAFE_INSPECTOR WINDOW MK_DRAWING_AREA_ARG MK_DRAWING_AREA MK_WINDOW DRAW_NODES SERVICES WINDOW2 
 
-STRUCTS		= Types Helper Color ColorMap MkColorTable Dictionary MkPathTable NewNode CreateDoc Layout UnsafeInspector Window
+STRUCTS		= Types Helper Color ColorMap MkColorTable Dictionary MkPathTable NewNode CreateDoc Layout UnsafeInspector Window MkDrawingArea MkWindow DrawNodes Services MkWindow2
 
 SIGSOURCES 	= $(SIGS:%=%-sig.aml)
 STRUCTSOURCES	= $(STRUCTS:%=%.aml)

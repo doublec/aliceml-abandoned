@@ -1,0 +1,54 @@
+(*
+ * Authors:
+ *   Bernadette Blum <blum@ps.uni-sb.de>
+ *   Marvin Schiller <schiller@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Bernadette Blum, 2002
+ *   Marvin Schiller, 2002
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+import structure Gtk from "x-alice:/lib/gtk/Gtk"
+import structure GtkCanvas from "x-alice:/lib/gtk/GtkCanvas"
+import structure MkColorTable from "MkColorTable"
+import signature MK_DRAWING_AREA from "MK_DRAWING_AREA-sig"
+import signature AS from "MK_DRAWING_AREA_ARG-sig"
+
+functor MkDrawingArea (structure AreaArgs: AS) : MK_DRAWING_AREA
+=
+struct
+
+    type tag = Gtk.object
+    val canvas =  GtkCanvas.new 0
+	
+    structure A = AreaArgs
+	
+    val _ =  (let
+		  val x = A.x
+		  val y = A.y
+		  val _ = GtkCanvas.setScrollRegion 
+		      (canvas,0.0,0.0,x,y)
+		  val _ =  GtkCanvas.itemNew 
+		      ( GtkCanvas.root(canvas), 
+		       GtkCanvas.RECTANGLE,
+		       [("x1", Gtk.DOUBLE 0.0),
+			("y1", Gtk.DOUBLE 0.0),
+			("x2", Gtk.DOUBLE x),
+			("y2", Gtk.DOUBLE y),
+			("fill_color_gdk", 
+			 Gtk.OBJECT (MkColorTable.allocColor(0,0,0))),
+			("outline_color_gdk", 
+			 Gtk.OBJECT (MkColorTable.allocColor(0,0,0)))]) 
+	      in
+		  Gtk.containerAdd(AreaArgs.root,canvas)  
+	      end)
+    val root = GtkCanvas.root(canvas)
+	
+end
+
+
+    
