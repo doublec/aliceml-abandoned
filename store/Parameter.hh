@@ -55,8 +55,8 @@
   { "GENSET", \
     "INT_MAP", "CHUNK_MAP", "MAP", \
     "HASHNODEARRAY", "HASHNODE", "HANDLEDHASHNODE", \
-    "QUEUE", "QUEUEARRAY", \
-    "STACK", "STACKARRAY", \
+    "QUEUE", \
+    "STACK", \
     "ROOTSETELEMENT", \
     "UNIQUESTRING", \
     "THREAD", "TASKSTACK", \

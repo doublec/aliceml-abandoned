@@ -34,7 +34,7 @@ protected:
   }
   void Enlarge(u_int oldsize, u_int newsize) {
     Block *oa = GetArray();
-    Block *na = Store::AllocBlock(STACKARRAY_LABEL, newsize);
+    Block *na = Store::AllocBlock(MIN_DATA_LABEL, newsize);
 
     std::memcpy(na->GetBase(), oa->GetBase(), oldsize * sizeof(u_int));
     ReplaceArg(ARR_POS, na->ToWord());
@@ -107,7 +107,7 @@ public:
     Block *a  = GetArray();
     u_int max = a->GetSize();
 
-    Assert(a->GetLabel() == STACKARRAY_LABEL);
+    Assert(a->GetLabel() == MIN_DATA_LABEL);
 
     SetTop((top + 1));
     if (top < max) {
@@ -123,7 +123,7 @@ public:
     Block *a  = GetArray();
     u_int max = a->GetSize();
 
-    Assert(a->GetLabel() == STACKARRAY_LABEL);
+    Assert(a->GetLabel() == MIN_DATA_LABEL);
 
     SetTop((top + 1));
     if (top < max) {
@@ -167,7 +167,7 @@ public:
     Block *a  = GetArray();
 
     // Assert(top >= 0);
-    Assert(a->GetLabel() == STACKARRAY_LABEL);
+    Assert(a->GetLabel() == MIN_DATA_LABEL);
     word value = a->GetArg(top);
 
     SetTop(top);
@@ -178,7 +178,7 @@ public:
     Block *a  = GetArray();
 
     // Assert(top >= 0);
-    Assert(a->GetLabel() == STACKARRAY_LABEL);
+    Assert(a->GetLabel() == MIN_DATA_LABEL);
     word value = a->GetArg(top);
     a->InitArg(top, 0);
     SetTop(top);
@@ -202,7 +202,7 @@ public:
   }
   static Stack *New(u_int s) {
     Block *p = Store::AllocBlock(STACK_LABEL, SIZE);
-    Block *a = Store::AllocBlock(STACKARRAY_LABEL, s);
+    Block *a = Store::AllocBlock(MIN_DATA_LABEL, s);
     
     p->InitArg(TOP_POS, 0);
     p->InitArg(ARR_POS, a->ToWord());
