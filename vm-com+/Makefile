@@ -1,6 +1,6 @@
 OBJS = Alice.dll Base.dll IO.dll OS.dll TextIO.dll CommandLine.dll
 SIGS = IO.dll.sig OS.dll.sig TextIO.dll.sig CommandLine.dll.sig
-INSPECTOR_OBJS = Win32.dll Canvas.dll Dialog.dll Helper.dll Tools.dll
+INSPECTOR_OBJS = Win32.dll Canvas.dll Dialog.dll Tools.dll
 
 .il.dll:
 	ilasm -nologo -quiet -dll -out=$@ $<
@@ -49,7 +49,7 @@ stow.exe: stow.cs Alice.dll
 
 inspector: $(INSPECTOR_OBJS)
 
-Win32.dll: Alice.cs
+Win32.dll: Win32.cs
 	csc -nologo -t:library Win32.cs
 
 Canvas.dll: Canvas.cs Win32.dll Alice.dll
@@ -57,9 +57,6 @@ Canvas.dll: Canvas.cs Win32.dll Alice.dll
 
 Dialog.dll: Dialog.cs Win32.dll Alice.dll
 	csc -nologo -t:library -r:Win32.dll -r:Alice.dll Dialog.cs
-
-Helper.dll: Helper.cs Alice.dll
-	csc -nologo -t:library -r:Alice.dll Helper.cs
 
 Tools.dll: Tools.aml stoc-com+.x86-win32 Skeleton.il
 	stoc -c Tools.aml -o Tools.il
