@@ -1,0 +1,74 @@
+(* TODO-frontend.txt *)
+
+General:
+
+- Consistent error design
+- Improve pretty-printing
+- Consistent state cleanup (especially on errors)
+
+Missing from Standard Core Language:
+
+- Equality types (equality is allowed on any type)
+  [deferred until design on type classes is finished]
+- Overloading (only defaults available)
+  [deferred until design on type classes is finished]
+- Checks for non-redundancy and exhaustiveness of matches
+  [Leif]
+
+Missing from Standard Module Language:
+
+- Matching of datatype constructors does not check equality of constructor sets
+  [deferred until decision on structural datatypes is made]
+- Sharing constraints (have to be substituted by where constraints)
+  [should be translated into where constraints automatically - but is this
+   always possible?]
+- Include (no work-around)
+  [maybe will also be translated into where expressions]
+
+Missing from Extended Core Language:
+
+- Record update (not type-checked yet)
+  [simple update will be typable soon]
+- Structural datatypes
+  [seems to require a form of higher-order unification]
+- Specifications as declarations
+  [how model them in elaboration rules?]
+- Explicit quantification syntax
+  [not difficult]
+- Higher-kind type expressions and declarations, kind annotations
+  [need to finalize design first]
+- Existential constructors
+  [not to useful without type classes]
+- Universal constructors
+  [deferred to be designed together with existential constructors]
+- Type classes
+  [design not finished]
+- Polymorphic records
+  [deferred until we have type classes]
+
+Missing from Extended Module Language:
+
+- Syntax for functor expressions and signatures (use functor
+  declarations and specifications for now)
+  [easy, provided we give up separation of StrId and FunId as well as
+   where type .. and type derived form]
+- Open in signatures
+  [not difficult, but do we want it? (required for some derived forms);
+   probably local specifications should contain declarations]
+- Full manifest values
+  [not too difficult, but do we want them?]
+- Singleton signatures (can use manifest structures in most cases)
+  [syntax? how do they colaborate with manifest structures?]
+- Functor paths
+  [how can they coexist with generative functors?]
+- Specialization (intersection) of value specifications
+  [need to intersect quantified types]
+- Full signature intersection
+  [how treat conflicting dependencies?]
+- Hiding / signature subtraction
+  [worthwhile?]
+- Parameterized signatures
+  [checking application, reduction, matching, kind analysis, kind matching,
+   intersection]
+- First-class modules
+  [heavily messes up architecture of type checker]
