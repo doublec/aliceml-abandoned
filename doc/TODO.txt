@@ -143,11 +143,12 @@ steps 3 and 4):
 
    Alternatively, generate SML/NJ sources as temporaries only.
 
-   Maybe we want to do some renamings at the same time:
+   Some renamings happen at the same time:
 
       Make* -> Mk*
       CountPosLexer -> MkCountPosLexer
       ParsingPhase -> MkParsingPhase
+      frontend-common/StringMap -> misc/StringMap
 
 4. Get vm-mozart-bootstrap to work again. (LK)
 
@@ -208,7 +209,9 @@ steps 3 and 4):
    This involves building a stodep tool and invoking it to
    build dependencies for the build2 and build3 directories.
 
-13. Let stoc lose its special status.
+13. Let stoc lose its special status. (AR)
 
    Move the Makefile one level up.  The files are then
    generated within the toplevel directory.
+
+14. Adapt inspector, gtk, constraints to new build procedure. (LK/TB)
