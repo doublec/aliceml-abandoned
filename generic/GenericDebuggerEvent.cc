@@ -19,6 +19,10 @@
 
 GenericEventAccessor *GenericEventAccessor::self;
 
+GenericEventAccessor::GenericEventAccessor() {
+  return;
+}
+
 GenericDebuggerEvent *GenericDebuggerEvent::FromWord(word w) {
   Block *b = Store::WordToBlock(w);
   Assert(b == INVALID_POINTER || b->GetLabel() == (BlockLabel) GENERIC_EVENT_LABEL);

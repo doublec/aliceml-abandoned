@@ -33,6 +33,7 @@
 #if DEBUGGER
 #include "generic/DebugWorker.hh"
 #include "generic/Debugger.hh"
+#include "generic/GenericDebuggerEvent.hh"
 #endif
 
 static u_int mb(u_int n) {
@@ -68,5 +69,6 @@ extern "C" SeamDll void InitSeam() {
 #if DEBUGGER
   DebugWorker::Init();
   Debugger::Init();
+  GenericEventAccessor::Init();
 #endif
 }
