@@ -25,9 +25,9 @@ define
 	 QueueHd <- Empty
 	 QueueTl <- Empty
       end
-      meth newThread(Closure Args ?Res) TaskStack in
-	 case Closure of closure(Function ...) then
-	    TaskStack = {Function.1.pushCall Closure nil}
+      meth newThread(Closure Args ?Res <= _ taskStack: TaskStack0 <= nil)
+	 case Closure of closure(Function ...) then TaskStack in
+	    TaskStack = {Function.1.pushCall Closure TaskStack0}
 	    Scheduler, enqueue('thread'(args: Args
 					stack: TaskStack
 					result: Res))
@@ -94,16 +94,10 @@ define
 	    end
 	 end
       end
-      meth Byneed(Transient Closure)
+      meth Byneed(Transient Closure) TaskStack in
 	 %--** when can this be done in the current thread?
-	 case Closure of closure(Function ...) then
-	    TaskStack0 = [byneedFrame(ByneedInterpreter.interpreter Transient)]
-	    TaskStack = {Function.1.pushCall Closure TaskStack0}
-	 in
-	    Scheduler, enqueue('thread'(args: args()
-					stack: TaskStack
-					result: _))
-	 end
+	 TaskStack = [byneedFrame(ByneedInterpreter.interpreter Transient)]
+	 Scheduler, newThread(Closure args() taskStack: TaskStack)
       end
    end
 
