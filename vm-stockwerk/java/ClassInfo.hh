@@ -76,7 +76,7 @@ public:
   }
 
   bool IsStatic() {
-    return GetAccessFlags() & ACC_STATIC;
+    return (GetAccessFlags() & ACC_STATIC) != 0;
   }
   JavaString *GetName() {
     return JavaString::FromWordDirect(GetArg(NAME_POS));
@@ -155,13 +155,13 @@ public:
   }
 
   bool IsStatic() {
-    return GetAccessFlags() & ACC_STATIC;
+    return (GetAccessFlags() & ACC_STATIC) != 0;
   }
   bool IsAbstract() {
-    return GetAccessFlags() & ACC_ABSTRACT;
+    return (GetAccessFlags() & ACC_ABSTRACT) != 0;
   }
   bool IsNative() {
-    return GetAccessFlags() & ACC_NATIVE;
+    return (GetAccessFlags() & ACC_NATIVE) != 0;
   }
   JavaString *GetClassName() {
     return JavaString::FromWordDirect(GetArg(CLASS_NAME_POS));
