@@ -44,8 +44,9 @@ public:
   virtual Block *GetAbstractRepresentation(Block *blockWithHandler);
   // Calling Convention Conversion
   static void Construct();
-  //   Deconstruct returns 1 iff argument needs to be requested; 0 otherwise
-  //   Sets Scheduler::currentData as a side-effect;
+  //   Deconstruct returns 1 iff argument needs to be requested,
+  //   in which case it sets Scheduler::currentData as a side-effect;
+  //   returns 0 iff deconstruction was immediately successful
   static u_int Deconstruct();
   // Frame Handling
   virtual void PushCall(TaskStack *taskStack, Closure *closure);
