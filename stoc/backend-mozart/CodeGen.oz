@@ -359,9 +359,8 @@ define
 			     {Record.foldR Ids
 			      fun {$ Id In} value({GetReg Id State})|In end
 			      nil} VTl)
-      [] 'FunExp'(Region _ _ 'TupArgs'(IdDefs) Body) then
-	 PredId NLiveRegs ResReg FormalRegs BodyVInstr GRegs Code
-      in
+      [] 'FunExp'(Region _ _ 'TupArgs'(IdDefs) Body) andthen {Width IdDefs} > 0
+      then PredId NLiveRegs ResReg FormalRegs BodyVInstr GRegs Code in
 	 PredId = pid({VirtualString.toAtom
 		       State.filename#':'#Region.1.1#'.'#Region.1.2#'/'#
 		       {Width IdDefs}#'-ary'}
