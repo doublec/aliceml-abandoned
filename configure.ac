@@ -222,14 +222,46 @@ case "$seam_with_lightning" in
 esac
 
 dnl
+dnl  Test for --enable-checked
+dnl
+AC_MSG_CHECKING([whether to perform a checked build])
+AC_ARG_ENABLE([checked],
+	      AC_HELP_STRING([--enable-checked],
+			     [build with debug symbols and assertions
+			      (default: no)]),
+	      [seam_enable_checked="$enable_checked"],
+	      [seam_enable_checked=no])
+AC_MSG_RESULT($seam_enable_checked)
+
+case "$seam_enable_checked" in
+    no)
+	;;
+    yes)
+	SEAM_CHECK_CXXFLAGS([-fno-inline-functions -fimplement-inlines])
+	SEAM_CHECK_CXXFLAG([-ggdb], , SEAM_CHECK_CXXFLAG([-g]))
+	AC_DEFINE(INTERFACE)
+	AC_DEFINE(DEBUG_CHECK)
+	AC_DEFINE(STORE_DEBUG)
+	;;
+esac
+
+dnl
 dnl  Test for --enable-optimized
 dnl
 AC_MSG_CHECKING([whether to build with optimization])
 AC_ARG_ENABLE([optimized],
 	      AC_HELP_STRING([--enable-optimized],
-			     [build with optimization (default: yes)]),
+			     [build with optimization
+			      (default: yes, unless checked build)]),
 	      [seam_enable_optimized="$enable_optimized"],
-	      [seam_enable_optimized=yes])
+	      [case "$seam_enable_checked" in
+		   no)
+		       seam_enable_optimized=yes
+		       ;;
+		   yes)
+		       seam_enable_optimized=no
+		       ;;
+	       esac])
 AC_MSG_RESULT($seam_enable_optimized)
 
 case "$seam_enable_optimized" in
@@ -248,30 +280,6 @@ case "$seam_enable_optimized" in
 			     -fno-keep-static-consts -fno-implicit-templates \
 			     -fno-implicit-inline-templates])
 	SEAM_CHECK_LDFLAG([[-Wl,-S]])
-	;;
-esac
-
-dnl
-dnl  Test for --enable-debug
-dnl
-AC_MSG_CHECKING([whether to build for debugging])
-AC_ARG_ENABLE([debug],
-	      AC_HELP_STRING([--enable-debug],
-			     [build with debug symbols and assertions
-			      (default: no)]),
-	      [seam_enable_debug="$enable_debug"],
-	      [seam_enable_debug=no])
-AC_MSG_RESULT($seam_enable_debug)
-
-case "$seam_enable_debug" in
-    no)
-	;;
-    yes)
-	SEAM_CHECK_CXXFLAGS([-fno-inline-functions -fimplement-inlines])
-	SEAM_CHECK_CXXFLAG([-ggdb], , SEAM_CHECK_CXXFLAG([-g]))
-	AC_DEFINE(INTERFACE)
-	AC_DEFINE(DEBUG_CHECK)
-	AC_DEFINE(STORE_DEBUG)
 	;;
 esac
 
