@@ -91,7 +91,8 @@ define
 		case A of size then Out = I
 		else Out = In
 		end
-	     end)
+	     end
+	  illegal: ILLEGAL_SIZE)
    end
 
    fun {MkColorTag Color I}
@@ -100,56 +101,33 @@ define
 		case A of color then Out = I
 		else Out = In
 		end
-	     end)
+	     end
+	  illegal: ILLEGAL_COLOR)
    end
 
-   Tags = tags(tag(p: proc {$ _ In Out} Out = In end)   % epsilon
-	       tag(name: 'PL'
-		   p: proc {$ A In Out}
-			 case A of b then Out = 1
-			 [] ems then Out = 1
-			 [] i then Out = 1
-			 [] tt then Out = 1
-			 [] u then Out = 1
-			 else Out = In
-			 end
-		      end)
+   Tags = tags(tag(p: proc {$ _ In Out} Out = In end   % epsilon
+		   illegal: ILLEGAL_EPSILON)
 	       tag(name: 'B'
 		   p: proc {$ A In Out}
 			 case A of b then Out = 2
 			 else Out = In
 			 end
-		      end)
-	       tag(name: 'EM'
-		   p: proc {$ A In Out}
-			 case A of ems then Out = {Select.fd [2 1 3] In}
-			 else Out = In
-			 end
-		      end)
+		      end
+		   illegal: ILLEGAL_B)
 	       tag(name: 'I'
 		   p: proc {$ A In Out}
 			 case A of i then Out = 2
 			 else Out = In
 			 end
-		      end)
-	       tag(name: 'S'
-		   p: proc {$ A In Out}
-			 case A of ems then Out = 3
-			 else Out = In
-			 end
-		      end)
+		      end
+		   illegal: ILLEGAL_I)
 	       tag(name: 'TT'
 		   p: proc {$ A In Out}
 			 case A of tt then Out = 2
 			 else Out = In
 			 end
-		      end)
-	       tag(name: 'U'
-		   p: proc {$ A In Out}
-			 case A of u then Out = {FD.min {FD.plus In 1} 4}
-			 else Out = In
-			 end
-		      end)
+		      end
+		   illegal: ILLEGAL_TT)
 	       {MkSizeTag 1}
 	       {MkSizeTag 2}
 	       {MkSizeTag 3}
@@ -167,10 +145,52 @@ define
 	       {MkColorTag 'M' 5}
 	       {MkColorTag 'Y' 6}
 	       {MkColorTag 'K' 7}
-	       {MkColorTag 'W' 8})
+	       {MkColorTag 'W' 8}
+	       tag(name: 'U'
+		   p: proc {$ A In Out}
+			 case A of u then Out = {FD.min {FD.plus In 1} 4}
+			 else Out = In
+			 end
+		      end
+		   illegal: ILLEGAL_U)
+	       tag(name: 'EM'
+		   p: proc {$ A In Out}
+			 case A of ems then Out = {Select.fd [2 1 3] In}
+			 else Out = In
+			 end
+		      end
+		   illegal: ILLEGAL_EMS)
+	       tag(name: 'S'
+		   p: proc {$ A In Out}
+			 case A of ems then Out = 3
+			 else Out = In
+			 end
+		      end
+		   illegal: ILLEGAL_EMS)
+	       tag(name: 'PL'
+		   p: proc {$ A In Out}
+			 case A of b then Out = 1
+			 [] ems then Out = 1
+			 [] i then Out = 1
+			 [] tt then Out = 1
+			 [] u then Out = 1
+			 else Out = In
+			 end
+		      end
+		   illegal: ILLEGAL_PL))
 
    Epsilon = 1
-   MaxTag = {Width Tags}
+   MaxTag = {Width Tags} = 26
+
+   ILLEGAL_EPSILON = {FS.value.make 1#27}
+   ILLEGAL_B       = {FS.value.make 1#2}
+   ILLEGAL_I       = {FS.value.make 1#3}
+   ILLEGAL_TT      = {FS.value.make 1#4}
+   ILLEGAL_SIZE    = {FS.value.make 1#14}
+   ILLEGAL_COLOR   = {FS.value.make 1#22}
+   ILLEGAL_U       = {FS.value.make 1#22}
+   ILLEGAL_EMS     = {FS.value.make 1#25}
+   ILLEGAL_PL      = {FS.value.make 1#26}
 
    RootI = 1
 
