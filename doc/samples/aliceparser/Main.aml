@@ -1,0 +1,39 @@
+(* AliceParser -- A small program to test the alice parser
+ *
+ *  Authors: Benedikt Grundmann (bgrund@ps.uni-sb.de) 
+ *
+ *  $Revision$
+ *
+ *  Last updated: $Date$ by $Author$
+ * 
+ *)
+
+import structure Lexer          from "x-alice:/lib/lex/Lexer"
+import structure TextIO         from "x-alice:/lib/system/TextIO"
+import structure AliceLexer     from "AliceLexer"
+import structure AliceParser    from "AliceParser"
+import structure OS             from "x-alice:/lib/system/OS"
+import structure CommandLine    from "x-alice:/lib/system/CommandLine"
+
+fun posToString (line, col) = Int.toString line ^ "." ^ Int.toString col
+
+fun parseFile file =
+      AliceParser.parseComponent (AliceLexer.lex (Lexer.fromStream (TextIO.openIn file)))
+      handle Lexer.RegMatch s =>
+        (print (s ^ "\n");
+         OS.Process.exit OS.Process.success)
+      handle AliceParser.Error (leftPos, rightPos) =>
+        (print ("syntax error near " ^ posToString leftPos ^ " - " ^ posToString rightPos ^ "\n");
+         OS.Process.exit OS.Process.success)
+       | e =>
+        (print (General.exnName e ^ "\n");
+         OS.Process.exit OS.Process.success)
+
+
+fun main [] = OS.Process.exit OS.Process.success
+  | main (f :: fs) =
+    (parseFile f; main fs)
+
+
+val _ = main (CommandLine.arguments ())
+    
