@@ -3,7 +3,6 @@ TODO list for the Alice IDE
 
 Bugs:
 
-* undo all marks buffer unchanged
 * jump-to-error with paths
 * scroll to bottom after layout change or resize
 * propagate output width on init and after resize
