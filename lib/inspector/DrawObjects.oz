@@ -12,10 +12,15 @@
 
 functor $
 import
+   System(eq)
    Inspector('nodes' : TreeNodes)
 %   HelperComponent('nodes' : Helper) at 'Helper'
 export
    nameGrDrawObject      : NameGrDrawObject
+   cellDrawObject        : CellDrawObject
+   cellIndDrawObject     : CellIndDrawObject
+   cellGrDrawObject      : CellGrDrawObject
+   cellGrIndDrawObject   : CellGrIndDrawObject
    vectorIndDrawObject   : VectorIndDrawObject
    vectorGrIndDrawObject : VectorGrIndDrawObject
    listGrMDrawObject     : ListGrMDrawObject
@@ -44,6 +49,63 @@ define
    %% Container Objects
    %%
 
+   proc {WatchCell Node Cell Value WidPort PollMS}
+      if {System.eq {Access Cell} Value}
+      then {Delay PollMS} {WatchCell Node Cell Value WidPort PollMS}
+      else {Port.send WidPort updateCell(Node)}
+      end
+   end
+
+   class CellUpdate
+      meth watchCell
+	 Cell     = @savedValue
+	 OldValue = {Access Cell}
+	 WidPort  = {@visual getServer($)}
+	 PollMS   = {@visual get(widgetCellPollInterval $)}
+      in
+	 thread {WatchCell self Cell OldValue WidPort PollMS} end 
+      end
+      meth tell($)
+	 case @dirty
+	 of false then
+	    Parent = @parent
+	    Index  = @index
+	    RI     = {Parent getRootIndex(Index $)}
+	 in
+	    {Parent replace(Index @savedValue replaceNormal)} RI
+	 else true
+	 end
+      end
+   end
+   
+   class CellDrawObject from LabelTupleDrawObject CellUpdate
+      meth drawBody(X Y)
+	 LabelTupleDrawObject, drawBody(X Y)
+	 CellUpdate, watchCell
+      end
+   end
+
+   class CellIndDrawObject from LabelTupleIndDrawObject CellUpdate
+      meth drawBody(X Y)
+	 LabelTupleIndDrawObject, drawBody(X Y)
+	 CellUpdate, watchCell
+      end
+   end
+
+   class CellGrDrawObject from LabelTupleGrDrawObject CellUpdate
+      meth drawBody(X Y)
+	 LabelTupleGrDrawObject, drawBody(X Y)
+	 CellUpdate, watchCell
+      end
+   end
+
+   class CellGrIndDrawObject from LabelTupleGrIndDrawObject CellUpdate
+      meth drawBody(X Y)
+	 LabelTupleGrIndDrawObject, drawBody(X Y)
+	 CellUpdate, watchCell
+      end
+   end
+   
    class VectorIndDrawObject from LabelTupleDrawObject LabelTupleIndDrawObject
       meth drawBody(X Y)
 	 case @type
