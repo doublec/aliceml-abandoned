@@ -10,8 +10,10 @@
 //   $Revision$
 //
 
-#ifndef __CONCRETE_CODE_HH__
-#define __CONCRETE_CODE_HH__
+#ifndef __SCHEDULER__CONCRETE_CODE_HH__
+#define __SCHEDULER__CONCRETE_CODE_HH__
+
+#pragma interface "scheduler/ConcreteCode.hh"
 
 #include "store/store.hh"
 
@@ -54,4 +56,4 @@ public:
   }
 };
 
-#endif __CONCRETE_CODE_HH__
+#endif __SCHEDULER__CONCRETE_CODE_HH__

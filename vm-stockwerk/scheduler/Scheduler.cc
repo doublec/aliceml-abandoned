@@ -10,10 +10,9 @@
 //   $Revision$
 //
 
+#pragma implementation "scheduler/Scheduler.hh"
+
 #include "scheduler/Transients.hh"
-#include "scheduler/Scheduler.hh"
-#include "scheduler/Thread.hh"
-#include "scheduler/TaskStack.hh"
 #include "scheduler/Interpreter.hh"
 #include "builtins/GlobalPrimitives.hh"
 

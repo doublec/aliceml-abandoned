@@ -10,8 +10,10 @@
 //   $Revision$
 //
 
-#ifndef __SCHEDULER_HH__
-#define __SCHEDULER_HH__
+#ifndef __SCHEDULER__SCHEDULER_HH__
+#define __SCHEDULER__SCHEDULER_HH__
+
+#pragma interface "scheduler/Scheduler.hh"
 
 #include "scheduler/ThreadPool.hh"
 #include "scheduler/Thread.hh"
@@ -48,4 +50,4 @@ public:
   }
 };
 
-#endif
+#endif __SCHEDULER__SCHEDULER_HH__

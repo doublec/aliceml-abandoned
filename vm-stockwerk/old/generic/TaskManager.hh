@@ -10,8 +10,8 @@
 //   $Revision$
 //
 
-#ifndef __INTERPRETER_HH__
-#define __INTERPRETER_HH__
+#ifndef __SCHEDULER__INTERPRETER_HH__
+#define __SCHEDULER__INTERPRETER_HH__
 
 #include "scheduler/ConcreteCode.hh"
 
@@ -47,4 +47,4 @@ public:
   virtual Result Run(TaskStack *taskStack, int nargs) = 0;
 };
 
-#endif __INTERPRETER_HH__
+#endif __SCHEDULER__INTERPRETER_HH__

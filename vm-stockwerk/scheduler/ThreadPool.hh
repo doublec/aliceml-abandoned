@@ -10,8 +10,10 @@
 //   $Revision$
 //
 
-#ifndef __THREADPOOL_HH__
-#define __THREADPOOL_HH__
+#ifndef __SCHEDULER__THREADPOOL_HH__
+#define __SCHEDULER__THREADPOOL_HH__
+
+#pragma interface "scheduler/ThreadPool.hh"
 
 #include "store/store.hh"
 
@@ -21,13 +23,11 @@ class ThreadPool: private Block { // priority queue
 public:
   using Block::ToWord;
 
-  static ThreadPool *New();
-  Thread *Dequeue(); // returns INVALID_POINTER if queue empty
-  void Enqueue(Thread *thread);
+  static ThreadPool *New(); //--** implement
+  static ThreadPool *FromWord(word w); //--** implement
 
-  static ThreadPool *FromWord(word w) {
-    return static_cast<ThreadPool *>(Store::WordToBlock(w));
-  }
+  Thread *Dequeue(); //--** implement; returns INVALID_POINTER if queue empty
+  void Enqueue(Thread *thread); //--** implement
 };
 
-#endif
+#endif __SCHEDULER__THREADPOOL_HH__

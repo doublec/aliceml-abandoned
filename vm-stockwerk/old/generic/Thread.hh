@@ -10,8 +10,10 @@
 //   $Revision$
 //
 
-#ifndef __THREAD_HH__
-#define __THREAD_HH__
+#ifndef __SCHEDULER__THREAD_HH__
+#define __SCHEDULER__THREAD_HH__
+
+#pragma interface "scheduler/Thread.hh"
 
 #include "scheduler/TaskStack.hh"
 
@@ -72,4 +74,4 @@ public:
   }
 };
 
-#endif __THREAD_HH__
+#endif __SCHEDULER__THREAD_HH__

@@ -10,6 +10,6 @@
 //   $Revision$
 //
 
-#include "scheduler/Thread.hh"
+#pragma implementation "scheduler/Thread.hh"
 
-//--** is this file needed?
+#include "scheduler/Thread.hh"

@@ -10,8 +10,10 @@
 //   $Revision$
 //
 
-#ifndef __TASKSTACK_HH__
-#define __TASKSTACK_HH__
+#ifndef __SCHEDULER__TASKSTACK_HH__
+#define __SCHEDULER__TASKSTACK_HH__
+
+#pragma interface "scheduler/TaskStack.hh"
 
 #include "store/store.hh"
 
@@ -59,4 +61,4 @@ public:
   }
 };
 
-#endif
+#endif __SCHEDULER__TASKSTACK_HH__

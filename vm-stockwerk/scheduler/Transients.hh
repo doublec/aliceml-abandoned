@@ -10,9 +10,13 @@
 //   $Revision$
 //
 
+#ifndef __SCHEDULER__TRANSIENTS_HH__
+#define __SCHEDULER__TRANSIENTS_HH__
+
+#pragma interface "scheduler/Transients.hh"
+
 #include "store/store.hh"
 #include "scheduler/Scheduler.hh"
-#include "scheduler/Thread.hh"
 
 //
 // Transient Representation:
@@ -106,3 +110,5 @@ public:
     return static_cast<Byneed *>(t);
   }
 };
+
+#endif __SCHEDULER__TRANSIENTS_HH__

@@ -10,6 +10,6 @@
 //   $Revision$
 //
 
-#pragma implementation "scheduler/ThreadPool.hh"
+#pragma implementation "scheduler/ConcreteCode.hh"
 
-#include "scheduler/ThreadPool.hh"
+#include "scheduler/ConcreteCode.hh"

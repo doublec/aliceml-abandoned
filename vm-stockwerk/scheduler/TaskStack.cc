@@ -10,6 +10,6 @@
 //   $Revision$
 //
 
-#include "scheduler/TaskStack.hh"
+#pragma implementation "scheduler/TaskStack.hh"
 
-//--** is this file needed?
+#include "scheduler/TaskStack.hh"
