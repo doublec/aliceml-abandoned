@@ -10,6 +10,8 @@ import
 export
    'Smurf$': SmurfModule
 define
+   MinCostPerElement = 7   %--** import from Tag
+
    AttributeNames = [b ems i tt u size color]
 
    RootAttributes = attributes(b: 1 ems: 1 i: 1 tt: 1 u: 1
@@ -74,25 +76,29 @@ define
       end
    end
 
-   Tags = tags(tag(p: proc {$ _ In Out} Out = In end)   % epsilon
+   Tags = tags(tag(p: proc {$ _ In Out} Out = In end   % epsilon
+		   cost: 0)
 	       tag(name: 'B'
 		   p: proc {$ A In Out}
 			 case A of b then Out = 2
 			 else Out = In
 			 end
-		      end)
+		      end
+		   cost: 7)
 	       tag(name: 'EM'
 		   p: proc {$ A In Out}
 			 case A of ems then Out = {Select.fd [2 1 3] In}
 			 else Out = In
 			 end
-		      end)
+		      end
+		   cost: 9)
 	       tag(name: 'I'
 		   p: proc {$ A In Out}
 			 case A of i then Out = 2
 			 else Out = In
 			 end
-		      end)
+		      end
+		   cost: 7)
 	       tag(name: 'PL'
 		   p: proc {$ A In Out}
 			 case A of b then Out = 1
@@ -102,61 +108,83 @@ define
 			 [] u then Out = 1
 			 else Out = In
 			 end
-		      end)
+		      end
+		   cost: 9)
 	       tag(name: 'S'
 		   p: proc {$ A In Out}
 			 case A of em then Out = 3
 			 else Out = In
 			 end
-		      end)
+		      end
+		   cost: 7)
 	       tag(name: 'TT'
 		   p: proc {$ A In Out}
 			 case A of tt then Out = 2
 			 else Out = In
 			 end
-		      end)
+		      end
+		   cost: 9)
 	       tag(name: 'U'
 		   p: proc {$ A In Out}
 			 case A of u then Out = {FD.max {FD.plus In 1} 4}
 			 else Out = In
 			 end
-		      end)
+		      end
+		   cost: 7)
 	       tag(name: 'SIZE'(0)
-		   p: {MkSizeProc 1})
+		   p: {MkSizeProc 1}
+		   cost: 7)
 	       tag(name: 'SIZE'(1)
-		   p: {MkSizeProc 2})
+		   p: {MkSizeProc 2}
+		   cost: 7)
 	       tag(name: 'SIZE'(2)
-		   p: {MkSizeProc 3})
+		   p: {MkSizeProc 3}
+		   cost: 7)
 	       tag(name: 'SIZE'(3)
-		   p: {MkSizeProc 4})
+		   p: {MkSizeProc 4}
+		   cost: 7)
 	       tag(name: 'SIZE'(4)
-		   p: {MkSizeProc 5})
+		   p: {MkSizeProc 5}
+		   cost: 7)
 	       tag(name: 'SIZE'(5)
-		   p: {MkSizeProc 6})
+		   p: {MkSizeProc 6}
+		   cost: 7)
 	       tag(name: 'SIZE'(6)
-		   p: {MkSizeProc 7})
+		   p: {MkSizeProc 7}
+		   cost: 7)
 	       tag(name: 'SIZE'(7)
-		   p: {MkSizeProc 8})
+		   p: {MkSizeProc 8}
+		   cost: 7)
 	       tag(name: 'SIZE'(8)
-		   p: {MkSizeProc 9})
+		   p: {MkSizeProc 9}
+		   cost: 7)
 	       tag(name: 'SIZE'(9)
-		   p: {MkSizeProc 10})
+		   p: {MkSizeProc 10}
+		   cost: 7)
 	       tag(name: 'COLOR'('R')
-		   p: {MkColorProc 1})
+		   p: {MkColorProc 1}
+		   cost: 7)
 	       tag(name: 'COLOR'('G')
-		   p: {MkColorProc 2})
+		   p: {MkColorProc 2}
+		   cost: 7)
 	       tag(name: 'COLOR'('B\'')
-		   p: {MkColorProc 3})
+		   p: {MkColorProc 3}
+		   cost: 7)
 	       tag(name: 'COLOR'('C')
-		   p: {MkColorProc 4})
+		   p: {MkColorProc 4}
+		   cost: 7)
 	       tag(name: 'COLOR'('M')
-		   p: {MkColorProc 5})
+		   p: {MkColorProc 5}
+		   cost: 7)
 	       tag(name: 'COLOR'('Y')
-		   p: {MkColorProc 6})
+		   p: {MkColorProc 6}
+		   cost: 7)
 	       tag(name: 'COLOR'('K')
-		   p: {MkColorProc 7})
+		   p: {MkColorProc 7}
+		   cost: 7)
 	       tag(name: 'COLOR'('W')
-		   p: {MkColorProc 8}))
+		   p: {MkColorProc 8}
+		   cost: 7))
 
    RootI = 1
    Epsilon = 1
@@ -286,8 +314,24 @@ define
 	 (W.tag =: Epsilon) =: {FS.reified.equal W.scope FS.value.empty}
 	 (W.tag =: Epsilon) =<: (W.mother =: RootI)
       end
+
+      %% Cost function
+      TagCosts = for I in 1..MaxTag collect: Collect do
+		    {Collect Tags.I.cost}
+		 end
+
+/*--**
+      TagCosts = for I in 1..MaxTag collect: Collect do
+		    {TagModule.cost Tags.Tag.name}
+		 end
+*/
+
+      Cost = {FD.int 0#(NumberOfElements * MinCostPerElement)}
+      Cost = {FD.sum for I in FirstElementI..LastElementI collect: Collect do
+			{Collect {Select.fd TagCosts V.I.tag}}
+		     end '=:'}
    in
-      V
+      V#Cost
    end
 
    local
@@ -303,20 +347,28 @@ define
 	  end nil}
       end
    in
-      fun {ToDoc V}
+      fun {ToDoc V#_}
 	 {ToDocSub V.RootI.daughters V}
       end
    end
 
+   fun {Script Meaning NumberOfElements}
+      proc {$ Res} V in
+	 Res = {Constrain {Reverse Meaning} NumberOfElements}
+	 V = Res.1
+	 {FS.distribute naive
+	  for I in 1..{Width V} collect: Collect do
+	     {Collect V.I.daughters}
+	  end}
+      end
+   end
+
+   proc {Order _#OldCost _#NewCost}
+      OldCost >: NewCost
+   end
+
    fun {Smurf Meaning NumberOfElements}
-      {ToDoc {Search.base.one
-	      proc {$ V}
-		 V = {Constrain {Reverse Meaning} NumberOfElements}
-		 {FS.distribute naive
-		  for I in 1..{Width V} collect: Collect do
-		     {Collect V.I.daughters}
-		  end}
-	      end}.1}
+      {ToDoc {Search.base.best {Script Meaning NumberOfElements} Order}.1}
    end
 
    SmurfModule = 'Smurf'(smurf: Smurf)
@@ -328,13 +380,7 @@ define
 		    [{ByteString.make 'a'}]#false#SampleProperty]
 
    proc {SmurfTest Meaning NumberOfElements}
-      {Explorer.all proc {$ V}
-		       V = {Constrain {Reverse Meaning} NumberOfElements}
-		       {FS.distribute naive
-			for I in 1..{Width V} collect: Collect do
-			   {Collect V.I.daughters}
-			end}
-		    end}
+      {Explorer.best {Script Meaning NumberOfElements} Order}
    end
 
    {SmurfTest SampleMeaning 5}
