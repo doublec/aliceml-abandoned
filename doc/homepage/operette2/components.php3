@@ -30,7 +30,7 @@
   </P>
 
   <PRE>
-	import structure Foo from "http://ps.uni-sb.de/stockhausen/Foo.xtc"
+	import structure Foo from "http://ps.uni-sb.de/stockhausen/Foo"
   </PRE>
 
   <P>
@@ -42,8 +42,8 @@
   </P>
 
   <PRE>
-	import signature FOO       from "http://ps.uni-sb.de/stockhausen/FOO.xtc"
-	import structure Foo : FOO from "http://ps.uni-sb.de/stockhausen/Foo.xtc"
+	import signature FOO       from "http://ps.uni-sb.de/stockhausen/FOO"
+	import structure Foo : FOO from "http://ps.uni-sb.de/stockhausen/Foo"
   </PRE>
 
   <P>
@@ -52,7 +52,7 @@
   </P>
 
   <PRE>
-	import structure Y from "other.xtc"
+	import structure Y from "other"
 
 	signature S = sig end
 	structure X :> S = struct end
