@@ -9,7 +9,7 @@
 \begin{center}
 \begin{huge}Benutzungshinweise f"ur die Alice-GTK-Bindings\end{huge}
 
-Entwurf vom 01.10.02
+Entwurf vom 16.10.02
 
 Robert Grabowski
 
@@ -43,7 +43,7 @@ Alle Werte aus Enumerations-Typen (C-Aufz"ahlungs-Typen) sind in der
 Schnittstelle als \texttt{datatype}s mit nullstelligen Konstruktoren
 deklariert.
 
-Dabei tragen die Konstruktoren die selben Namen wie die enstprechenden
+Dabei tragen die Konstruktoren die selben Namen wie die entsprechenden
 Enum-Konstanten unter C, jedoch ohne das Pr"afix \texttt{GTK\_},
 \texttt{GDK\_} bzw. \texttt{GNOME\_CANVAS\_}. 
 
@@ -51,7 +51,7 @@ Beispiele:
 
 Der Aufz"ahlungstyp GtkWindowType ist im Binding deklariert als
 
-\texttt{datatype GtkWindowType = WINDOW_TOPLEVEL | WINDOW_POPUP}
+\texttt{datatype GtkWindowType = WINDOW\_TOPLEVEL | WINDOW\_POPUP}
 
 Das Pr"afix bei den Konstruktornamen wird allerdings \textit{nicht} entfernt,
 falls der Name ohne das Pr"afix mit einer Ziffer beginnen und damit
@@ -63,7 +63,7 @@ Beispiel:
   \texttt{Gdk.GDK\_2BUTTON\_PRESS}
 
 Manchmal kommt es vor, dass mehrere Konstanten in einem C-Enum-Typ denselben
-Wert haben. Daher sind auch im Binding die Konstruktoren
+Wert haben. Daher sind auch im Binding beispielsweise die Konstruktoren
 \texttt{ANCHOR\_SOUTH\_WEST} und \texttt{ANCHOR\_SW} gleichbedeutend
 und k"onnen beide als Funktionsparameter verwendet werden. Wenn eine Funktion
 jedoch einen Enum-Wert zur"uckliefert, wird sie immer nur denjenigen
@@ -91,8 +91,8 @@ Beispiel: Die Funktion \texttt{gtk\_window\_set\_title} hei"st unter Alice
 \texttt{Gtk.windowSetTitle}.
 
 \subsection{Funktionsargumente}
-Die C-Typen der Argumente und des R"uckgabewerts wurden nach folgender Tabelle
-auf Alice-Typen umgewandelt:
+Die C-Typen der Argumente und des R"uckgabewerts werden entsprechend folgender
+Tabelle auf Alice-Typen abgebildet:
 
 \begin{tabular}{|c|c|}
 \hline \textbf{C-Typ}     & \textbf{Alice-Typ} \\
@@ -105,16 +105,26 @@ auf Alice-Typen umgewandelt:
 \hline t[]                & t array    \\
 \hline t*                 & object     \\
 \hline GList*/GSList*     & object list\\
+\hline .../valist         & arg list\\
 \hline
 \end{tabular}
 
-F"ur jeden C-Enum-Typ gibt es eine entsprechenden datatype-Deklaration
-unter Alice. Mehr dazu in Abschnitt ???.
+Anmerkungen:
 
-Der Typ \texttt{object} ist ein abstrakter Datentyp, der lediglich einen
-Zeiger auf beliebige Datenstrukturen darstellt. Werte vom Typ \texttt{object}
-k"onnen auf Gleichheit "uberpr"uft werden. Der Typ ist in der Komponente 
-``Gtk'' deklariert; die Komponente ``Gdk'' verwendet ``Gtk.object''.
+\begin{itemize}
+\item F"ur jeden C-Enum-Typ gibt es eine entsprechenden datatype-Deklaration
+      unter Alice. Mehr dazu in Abschnitt ???.
+
+\item Der Typ \texttt{object} ist ein abstrakter Datentyp, der lediglich einen
+      Zeiger auf beliebige Datenstrukturen darstellt. Werte vom Typ
+      \texttt{object} k"onnen auf Gleichheit "uberpr"uft werden. Der Typ ist
+      in allen Komponenten vorhanden und gleich.
+
+\item Es gibt Funktionen, die in C eine variable Anzahl von Parametern nehmen.
+      Diesen Funktionen wird in Alice eine \texttt{arg list} "ubergeben.
+      Mehr dazu in Abschnitt ???.
+
+\end{itemize}
 
 Hat die Funktion mehrere Argumente, so werden diese als Tupel "ubergeben.
 
@@ -171,80 +181,13 @@ Beispiel: Obige Funktion imageGetStock hat noch eine zweite Variante, und zwar
         -> string * GtkIconSize}
 
 
+\subsection{Funktionen mit variablen Argumenten}
 
-\section{Besonderheiten}
+???
 
-Zus"atzlich zu den beschriebenen Umwandlungsregeln gibt es ein paar Ausnahmen
-und Besonderheiten zu beachten.
 
-\subsection{Konstanten}
 
-Die Struktur ``Gtk'' stellt folgende Konstanten zu Verf"ugung:
-\begin{itemize}
-\item \texttt{val NULL : object}\\
-      stellt einen NULL-Zeiger zur Verf"ugung. Dies wird f"ur einige Funktionen
-      ben"otigt.
-\item \texttt{val TRUE : int}\\
-      \texttt{val FALSE : int}\\
-      entsprechen den gleichnamigen Konstanten aus der C-Bibliothek.
-      Achtung: Das Alice-Pendant zu \texttt{gboolean} ist \texttt{bool}, man
-      kann also fast immer das gew"ohnliche ``true'' und ``false'' benutzen.
-      Die Konstanten Gtk.TRUE und Gtk.FALSE sind f"ur Funktionen gedacht, die
-      ein \texttt{int} verlangen, aber trotzdem ein TRUE oder FALSE erwarten.
-\end{itemize}
-
-\subsection{String-Listen}
-
-Bei manchen Funktionen wird ein Parameter vom Typ \texttt{GList*} oder 
-\texttt{GSList*} nicht auf den Typ \texttt{object list}, sondern auf den Typ
-\texttt{string list} abgebildet.
-So erwartet zum Beispiel Gtk.comboSetPopdownStrings eine \texttt{string list}.
-
-\subsection{Typ-"Uberpr"ufungen f"ur \texttt{object}s}
-
-GTK+ besitzt eine eigene Klassenhierarchie, wobei \texttt{GObject} die
-Basisklasse f"ur alle GTK+-Objekte ist. Ferner besitzt die Bibliothek ein
-eigenes Typsystem, mit dem z.B. die Klasse eines Objekts zur Laufzeit 
-"uberpr"uft werden kann. 
-
-Die Alice-Schnittstelle macht sich dieses Feature zunutze, um
-unmittelbar vor dem eigentlichen Bibliotheks-Funktionsaufruf f"ur alle
-Eingabeargumente vom Alice-Typ \texttt{object} zu "uberpr"ufen, ob diese den
-richtigen Typ haben. 
-
-Falls die Funktion ein Objekt einer bestimmten Klasse A
-verlangt, falls das "ubergebene \texttt{object} ein Objekt der Klasse B ist
-und falls B weder A noch eine abgeleitete Klasse von A ist, wird eine Ausnahme
-vom Typ Gtk.TypeMismatch geworfen. Diese ist deklariert als
-\texttt{exception TypeMismatch of string},
-der string enth"alt eine Fehlermeldung.
-
-Aus Performance-Gr"unden kann diese Typ"uberpr"ufung abgeschaltet werden, und
-zwar mit \texttt{Gtk.enableTypeChecking(false)}. Die Bibliothek selbst nimmt
-auch eine Typpr"ufung vor. Leider werden deren Fehlermeldungen direkt auf dem
-Bildschirm ausgegeben.
-
-F"ur alle anderen Typen "ubernimmt die Schnittstelle keine Typ-"Uberpr"ufung.
-
-\subsection{Nicht verf"ugbare Enum-Werte}
-
-Bestimmte Enum-Werte stehen nicht als Konstante zur Verf"ugung, weil sie 
-einfach zu gro"s sind, um in ein 31-Bit-Alice-\texttt{int} zu passen.
-Dazu z"ahlen ???.
-
-\subsection{Nicht verf"ugbare Funktionen}
-
-Folgende Funktionen sind nicht verf"ugbar:
-\begin{itemize}
-\item Alle Funktionen, die unter C mit einer Ellipse (``...'') deklariert sind
-      und daher eine variable Anzahl von Parametern nehmen. Es ist nicht
-      m"oglich, dieses Feature irgendwie auf Alice abzubilden.
-\item Alle Funktionen, die nur als Makro definiert sind.
-\item gtk\_true und gtk\_false. Ihr Verhalten l"asst sich aber mit
-      \texttt{(fn () => Gtk.TRUE)} bzw. \texttt{(fn () => Gtk.FALSE)}
-      nachbilden.
-\item gtk\_init, gtk\_init\_check und gtk\_main (siehe unten).
-\end{itemize}
+\section{Konzepte}
 
 \subsection{Die Hauptschleife}
 
@@ -278,6 +221,67 @@ Beispiel:
 \texttt{val button = Gtk.buttonNewWithTitle(``Click me'')\\
         fun showMessage \_ = print ``button clicked!''\\
         val connid = Gtk.signalConnect(button, ``clicked'', showMessage)}
+
+
+\subsection{Typ-"Uberpr"ufungen f"ur \texttt{object}s}
+
+GTK+ besitzt eine eigene Klassenhierarchie, wobei \texttt{GObject} die
+Basisklasse f"ur alle GTK+-Objekte ist. Ferner besitzt die Bibliothek ein
+eigenes Typsystem, mit dem z.B. die Klasse eines Objekts zur Laufzeit 
+"uberpr"uft werden kann. Genau dies tut die Bibliothek, so dass bei einem
+Typenkonflikt eine Fehlermeldung direkt auf dem Bildschirm ausgegeben wird.
+
+Wenn die Native-DLLs der Schnittstelle mit der Compiler-Option \texttt{-DDEBUG}
+"ubersetzt werden, wird vor jedem Bibliotheks-Funktionsaufruf eine eigene
+Typ"uberpr"ufung f"ur Werte vom Typ \texttt{object} vorgenommen.
+
+Falls die Funktion ein Objekt einer bestimmten Klasse A
+verlangt, falls das "ubergebene \texttt{object} ein Objekt der Klasse B ist
+und falls B weder A noch eine abgeleitete Klasse von A ist, wird eine Ausnahme
+vom Typ Gtk.TypeMismatch geworfen. Diese ist deklariert als
+\texttt{exception TypeMismatch of string}; der string enth"alt eine
+Fehlermeldung.
+
+Falls das DEBUG-Flag nicht gesetzt ist, bleibt die Typ"uberpr"ufung aus
+Performance-Gr"unden aber abgeschaltet.
+
+
+
+\section{Besonderheiten und Ausnahmen}
+
+\subsection{Konstanten}
+
+Die Struktur ``Gtk'' stellt folgende Konstanten zu Verf"ugung:
+\begin{itemize}
+\item \texttt{val NULL : object}\\
+      stellt einen NULL-Zeiger zur Verf"ugung. Dies wird f"ur einige Funktionen
+      ben"otigt.
+\item \texttt{val TRUE : int}\\
+      \texttt{val FALSE : int}\\
+      entsprechen den gleichnamigen Konstanten aus der C-Bibliothek.
+      Achtung: Das Alice-Pendant zu \texttt{gboolean} ist \texttt{bool}, man
+      kann also fast immer das gew"ohnliche ``true'' und ``false'' benutzen.
+      Die Konstanten Gtk.TRUE und Gtk.FALSE sind f"ur Funktionen gedacht, die
+      ein \texttt{int} verlangen, aber trotzdem ein TRUE oder FALSE erwarten.
+\end{itemize}
+
+\subsection{String-Listen}
+
+Bei manchen Funktionen wird ein Parameter vom Typ \texttt{GList*} oder 
+\texttt{GSList*} nicht auf den Typ \texttt{object list}, sondern auf den Typ
+\texttt{string list} abgebildet.
+So erwartet zum Beispiel Gtk.comboSetPopdownStrings eine \texttt{string list}.
+
+\subsection{Nicht verf"ugbare Funktionen}
+
+Folgende Funktionen sind nicht verf"ugbar:
+\begin{itemize}
+\item Alle Funktionen, die nur als Makro definiert sind.
+\item gtk\_true und gtk\_false. Ihr Verhalten l"asst sich aber mit
+      \texttt{(fn () => Gtk.TRUE)} bzw. \texttt{(fn () => Gtk.FALSE)}
+      nachbilden.
+\item gtk\_init, gtk\_init\_check und gtk\_main (siehe ???).
+\end{itemize}
 
 \end{document}             
 
