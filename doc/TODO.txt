@@ -178,25 +178,18 @@ steps 3 and 4):
 
 4. Get vm-mozart-bootstrap to work again. (LK)
 
-   For most files, a simple copy suffices instead of concatenating
-   with headers - the import of the fundamental library will be handled
-   by replacing --no-implicit-import by --implicit-import-file.
+   Adapt the Makefile to all renamings that have happened in the
+   previous step.
 
-   Exceptions to this are:
-   -- Lexer.aml, PARSER-sig.aml, Parser.sml, generated via ml-lex/ml-yacc:
-      Concatenate as before, because our imports are not supported.
-
-   To handle the special treatment of the basic library files
-   (for now: only Base.aml), add a new option
-
-      --no-implicit-import-for <file>,<file>,...
-
-   to the batch compiler.
+   Most headers are not needed any more (if the source is an Alice
+   source file anyway).  Exceptions to this are the files generated
+   via ml-lex/ml-yacc (Lexer.aml, PARSER-sig.aml, Parser.sml) - these
+   tools do not support our concept of imports.
 
 5. Provide a new place for all files formerly in lib/bootstrap. (LK)
 
    This means that TextIO.sig (et al.) are moved to lib/system.
-   The module Pickle.sig needs Url, which also should move to system.
+   The Pickle component needs Url, which also should move to system.
    Pickle itself should be renamed to UnsafePickle.
    The vm-mozart/bootstrap/Makefile needs to be adapted.
 
