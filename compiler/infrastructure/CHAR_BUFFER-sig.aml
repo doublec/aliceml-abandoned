@@ -10,8 +10,8 @@
  *   $Revision$
  *)
 
-import structure Word8Vector from "x-alice:/lib/fundamental/Word8Vector"
-import structure Word8 from "x-alice:/lib/fundamental/Word8"
+import structure Word8Vector from "../../lib/fundamental/Word8Vector"
+import structure Word8 from "../../lib/fundamental/Word8"
 
 signature CHAR_BUFFER =
     sig
