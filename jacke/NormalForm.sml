@@ -140,8 +140,8 @@ struct
       | semAction (A.Prec (A.Transform (bnf,c),s)) = 
 	A.Prec (A.Transform (toSeq bnf,c), s)
       | semAction (A.Prec (bnf,s)) = 
-		A.Prec (A.Transform (toSeq bnf, [tupling(names bnf)]),s)
-      | semAction bnf = A.Transform (toSeq bnf, [tupling(names bnf)])
+		A.Prec (A.Transform (toSeq bnf, (NONE, [tupling(names bnf)])),s)
+      | semAction bnf = A.Transform (toSeq bnf, (NONE, [tupling(names bnf)]))
  
     (* normalization *)
     fun norm (A.Prec (bnf,s)) = 
@@ -173,7 +173,7 @@ struct
       | normalizeSubexps ((A.As (s,A.Skip))::xs) =
 	let val (a,rs) =normalizeSubexps xs
 	    val r = newRulename()
-	    val r' = (r,NONE,A.Transform(A.Seq[],["()"]))
+	    val r' = (r,NONE,A.Transform(A.Seq[],(NONE, ["()"])))
 	in
 	    (A.As (s,A.Symbol r)::a, r'::rs)
 	end

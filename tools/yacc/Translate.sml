@@ -108,7 +108,7 @@ struct
 			     (A.Seq [A.As(tok,A.Symbol(tok)),
 				     A.As(stsym,A.Symbol(stsym)),
 				     A.As(eop,A.Symbol(eop))],
-			      ["SValue.S"^(Int.toString pnum)^" ( "^ stsym^" )"]))::rules)
+			      (NONE,["SValue.S"^(Int.toString pnum)^" ( "^ stsym^" )"])))::rules)
 		end
 	in
 	    toRule [] enumParsers

@@ -3,7 +3,8 @@
 structure AbsSyn =
 struct
     structure E = ErrorMsg
-	(* wo steht das im erzeugten jacke.grm.sml ??? *)
+
+    (* wo steht das pos im erzeugten jacke.grm.sml ??? *)
     type pos = int
 
     datatype bnfexpWithPos =
@@ -34,7 +35,7 @@ struct
       | As of string * bnfexp
       | Seq of bnfexp list
       | Prec of bnfexp * string
-      | Transform of bnfexp * string list
+      | Transform of bnfexp * (string option * string list)
       | Alt of bnfexp list
 	
     and parsetree =
@@ -57,7 +58,12 @@ struct
 	      | rfbnfexp (PAs (s,bnf,_,_)) = As (s, rfbnfexp bnf)
 	      | rfbnfexp (PSeq (bnfs,_,_)) = Seq (List.map rfbnfexp bnfs)
 	      | rfbnfexp (PPrec (bnf,s,_,_)) = Prec (rfbnfexp bnf,s)
-	      | rfbnfexp (PTransform (bnf,sl,_,_)) = Transform (rfbnfexp bnf,sl)
+	      | rfbnfexp (PTransform (bnf,sl,p1,p2)) = 
+	        let val lPos = Int.toString p1
+		    val rPos = Int.toString p2
+		in Transform (rfbnfexp bnf,
+			      (SOME ("(* Position in source: "^lPos^"-"^rPos^" *)"), sl))
+		end
 	      | rfbnfexp (PAlt (bnfs,_,_)) = Alt (List.map rfbnfexp bnfs)
 	    and rfptree (PTokenDec (tl,_,_)) = TokenDec tl
 	      | rfptree (PAssoclDec (il,_,_)) = AssoclDec il

@@ -103,7 +103,7 @@ struct
 	end
 
     fun printActions stringToNonterm rules = 
-	let fun printActions n ((r as (lhs,t,A.Transform(bnf,code)))::rs) = 
+	let fun printActions n ((r as (lhs,t,A.Transform(bnf,(posInfo,code))))::rs) = 
 	    let fun mkPat rulenum rhs = 
 		let fun prRhs first [] = "rest671"
 		      | prRhs first ((A.As(s,A.Symbol t))::rhs) =
@@ -127,8 +127,10 @@ struct
 		val rightpos = if List.null rhs then "defPos"
 			       else let val A.As(name,_) = List.hd rhs
 			       in name^"right" end
+		val posInfo = case posInfo of SOME s => s^"\n" | _ => ""  
 	    in
-		(blank 1)^(mkPat n (List.rev rhs))
+		(blank 1)^posInfo
+		^(blank 1)^(mkPat n (List.rev rhs))
 		^(blank 12)^"=> let val result =\n"
 		^(blank 20)^"SValue."^lhs^" (fn () => let\n"
 		^(mkMatch rhs)
