@@ -25,9 +25,7 @@ public:
   // ByteCodeInterpreter Constructor
   ByteCodeInterpreter() : Interpreter() {}
   // ByteCodeInterpreter Static Constructor
-  static void Init() {
-    self = new ByteCodeInterpreter();
-  }
+  static void Init();
   // Handler Methods
   virtual Block *GetAbstractRepresentation(ConcreteRepresentation *);
   // Frame Handling

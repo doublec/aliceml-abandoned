@@ -332,6 +332,12 @@ public:
 //
 class UnlockWorker : public Worker {
 public:
+  static UnlockWorker *self;
+  
+  static void Init() {
+    self = new UnlockWorker();
+  }
+
   static void PushFrame(Lock *lock);
   static void Release();
   
@@ -340,6 +346,8 @@ public:
   virtual const char *Identify();
   virtual void DumpFrame(word frame);
 };
+
+UnlockWorker *UnlockWorker::self;
 
 class UnlockFrame : public StackFrame {
 protected:
@@ -368,8 +376,7 @@ public:
 };
 
 void UnlockWorker::PushFrame(Lock *lock) {
-  static UnlockWorker *self = new UnlockWorker();
-  Scheduler::PushFrame(UnlockFrame::New(self, lock)->ToWord());
+  Scheduler::PushFrame(UnlockFrame::New(UnlockWorker::self, lock)->ToWord());
 }
 
 void UnlockWorker::Release() {
@@ -556,6 +563,11 @@ public:
 // Interpreter Functions
 //
 ByteCodeInterpreter *ByteCodeInterpreter::self;
+
+void ByteCodeInterpreter::Init() {
+  UnlockWorker::Init();
+  self = new ByteCodeInterpreter();
+}
 
 Block *
 ByteCodeInterpreter::GetAbstractRepresentation(ConcreteRepresentation *) {
