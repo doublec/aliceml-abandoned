@@ -78,7 +78,7 @@ define
 	    N = {Width Imports}
 	    Modules = {MakeTuple vector N}
 	    for I in 1..N do Url2 in
-	       Url2 = {URL.toVirtualString {URL.resolve Url Imports.I.1}}
+	       Url2 = {URL.toVirtualString {URL.resolve Url Imports.I.2}}
 	       Modules.I = {Link Url2}
 	    end
 	    {Scheduler.object newThread(BodyClosure arg(Modules) ?Module)}
