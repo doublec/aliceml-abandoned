@@ -39,7 +39,11 @@ typedef enum {
 typedef enum {
   NORMAL_CALL,
   SELF_CALL,
-  NATIVE_CALL
+  NATIVE_CALL,
+  NATIVE_REQUEST_CALL,
+#if defined(JIT_APPLY_STATISTIC)
+  POLY_SEL_CALL
+#endif
 } CALL_MODE;
 
 typedef struct {
@@ -196,7 +200,7 @@ protected:
   void CompileContinuation(TagVal *idDefArgsInstrOpt, u_int nLocals = 0);
   void LoadArguments(TagVal *actualArgs);
   TagVal *CheckBoolTest(word pos, u_int Result, word next);
-  TagVal *Apply(TagVal *pc, Closure *closure, bool direct);
+  TagVal *Apply(TagVal *pc, word wClosure, bool direct);
   void CompileConsequent(word conseq, u_int TagValue);
   void NullaryBranches(u_int Tag, Vector *tests);
   void NonNullaryBranches(u_int Tag, Vector *tests);
@@ -246,7 +250,7 @@ public:
   NativeCodeJitter();
   ~NativeCodeJitter();
 
-  NativeConcreteCode *Compile(word concreteCode, TagVal *abstractCode);
+  NativeConcreteCode *Compile(LazyCompileClosure *lazyCompileClosure);
 #ifdef INSTRUCTION_COUNTS
   void DumpInstructionCounts();
 #endif

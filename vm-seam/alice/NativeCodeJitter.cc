@@ -330,36 +330,6 @@ protected:
     return Store::IntToWord(ActiveSet::AddMem(expiration, useFresh));
   }
 public:
-  static Tuple *Run(u_int nLocals, Vector *liveness) {
-    Tuple *assignment = Tuple::New(nLocals);
-    u_int size        = liveness->GetLength();
-    ActiveSet::Reset();
-    for (u_int i = 0; i < size; i += 3) {
-      u_int curIndex = Store::DirectWordToInt(liveness->Sub(i));
-      u_int curStart = Store::DirectWordToInt(liveness->Sub(i + 1));
-      u_int curEnd   = Store::DirectWordToInt(liveness->Sub(i + 2));
-      ActiveSet::ExpireRegs(curStart);
-      ActiveSet::ExpireSlots(curStart);
-      if (RegisterBank::HaveRegister()) {
-	u_int reg = ActiveSet::Add(curIndex, curEnd);
-	assignment->Init(curIndex, NewReg(reg));
-      }
-      else {
-	RegisterNode *node = ActiveSet::Spill();
-	if (node->expiration > curEnd) {
-	  u_int nodeIndex      = node->index;
-	  u_int nodeExpiration = node->expiration;
-	  ActiveSet::Remove(node);
-	  assignment->Init(nodeIndex, NewMem(nodeExpiration, true));
-	  u_int reg = ActiveSet::Add(curIndex, curEnd);
-	  assignment->Init(curIndex, NewReg(reg));
-	}
-	else
-	  assignment->Init(curIndex, NewMem(curEnd));
-      }
-    }
-    return assignment;
-  }
 #if defined(JIT_STORE_DEBUG)
   static void Dump(word wCoord, u_int nLocals, Tuple *assignment) {
     u_int mem   = 0;
@@ -395,6 +365,44 @@ public:
     nLocals, reg, mem, MemoryNode::GetNbSlots(), name->ExportC(), line);
   }
 #endif
+  static void Run(s_int *resNLocals,
+		  Tuple **resAssignment,
+		  TagVal *abstractCode) {
+    u_int nLocals = Vector::FromWordDirect(abstractCode->Sel(2))->GetLength();
+    Vector *liveness  = Vector::FromWordDirect(abstractCode->Sel(5));
+    Tuple *assignment = Tuple::New(nLocals);
+    u_int size        = liveness->GetLength();
+    ActiveSet::Reset();
+    for (u_int i = 0; i < size; i += 3) {
+      u_int curIndex = Store::DirectWordToInt(liveness->Sub(i));
+      u_int curStart = Store::DirectWordToInt(liveness->Sub(i + 1));
+      u_int curEnd   = Store::DirectWordToInt(liveness->Sub(i + 2));
+      ActiveSet::ExpireRegs(curStart);
+      ActiveSet::ExpireSlots(curStart);
+      if (RegisterBank::HaveRegister()) {
+	u_int reg = ActiveSet::Add(curIndex, curEnd);
+	assignment->Init(curIndex, NewReg(reg));
+      }
+      else {
+	RegisterNode *node = ActiveSet::Spill();
+	if (node->expiration > curEnd) {
+	  u_int nodeIndex      = node->index;
+	  u_int nodeExpiration = node->expiration;
+	  ActiveSet::Remove(node);
+	  assignment->Init(nodeIndex, NewMem(nodeExpiration, true));
+	  u_int reg = ActiveSet::Add(curIndex, curEnd);
+	  assignment->Init(curIndex, NewReg(reg));
+	}
+	else
+	  assignment->Init(curIndex, NewMem(curEnd));
+      }
+    }
+    *resNLocals    = MemoryNode::GetNbSlots();
+    *resAssignment = assignment;
+#if defined(JIT_STORE_DEBUG)
+    RegisterAllocator::Dump(abstractCode->Sel(0), nLocals, assignment);
+#endif
+  }
 };
 
 // LivenessTable
@@ -607,6 +615,13 @@ void NativeCodeJitter::RestoreRegister() {
   NativeCodeFrame_GetEnv(JIT_V0, JIT_V2, 2);
 }
 
+static Worker::Result PushCall(ConcreteCode *concreteCode, Closure *closure) {
+  Assert(concreteCode != INVALID_POINTER);
+  Assert(closure != INVALID_POINTER);
+  concreteCode->GetInterpreter()->PushCall(closure);
+  return (StatusWord::GetStatus() ? Worker::PREEMPT : Worker::CONTINUE);
+}
+
 void NativeCodeJitter::PushCall(CallInfo *info) {
 #if PROFILE
   if (info->mode != NORMAL_CALL) {
@@ -618,6 +633,7 @@ void NativeCodeJitter::PushCall(CallInfo *info) {
 #else
   switch (info->mode) {
   case NATIVE_CALL:
+  case NATIVE_REQUEST_CALL:
     {
       if (currentStack >= info->nLocals)
 	NativeCodeFrame_NewNoCheck(JIT_V1, info->nLocals);
@@ -626,7 +642,13 @@ void NativeCodeJitter::PushCall(CallInfo *info) {
       ImmediateSel(JIT_R0, JIT_V2, info->closure);
       NativeCodeFrame_PutClosure(JIT_V1, JIT_R0);
       jit_movr_p(JIT_V2, JIT_V1); // Move to new frame
-      Closure_GetConcreteCode(JIT_V1, JIT_R0);
+      if (info->mode == NATIVE_REQUEST_CALL) {
+	// Invariant: Requested ConcreteCode is on the stack
+	jit_popr_ui(JIT_V1);
+      }
+      else {
+	Closure_GetConcreteCode(JIT_V1, JIT_R0);
+      }
       NativeConcreteCode_GetImmediateArgs(JIT_R0, JIT_V1);
       NativeCodeFrame_PutImmediateArgs(JIT_V2, JIT_R0);
       NativeConcreteCode_GetNativeCode(JIT_R0, JIT_V1);
@@ -659,8 +681,8 @@ void NativeCodeJitter::PushCall(CallInfo *info) {
     break;
   case NORMAL_CALL:
     {
-      // Invariant: Closure is on the stack
-      JITStore::Call(1, (void *) Scheduler::PushCall);
+      // Invariant: concreteCode and closure are on the stack
+      JITStore::Call(2, (void *) ::PushCall);
       RETURN();
     }
     break;
@@ -692,6 +714,7 @@ void NativeCodeJitter::TailCall(CallInfo *info) {
 #else
   switch (info->mode) {
   case NATIVE_CALL:
+  case NATIVE_REQUEST_CALL:
     {
       u_int nLocals = info->nLocals;
       ImmediateSel(JIT_R0, JIT_V2, info->closure);
@@ -717,7 +740,13 @@ void NativeCodeJitter::TailCall(CallInfo *info) {
       jit_popr_ui(JIT_R0);
     reuse:
       NativeCodeFrame_PutClosure(JIT_V2, JIT_R0);
-      Closure_GetConcreteCode(JIT_V1, JIT_R0);
+      if (info->mode == NATIVE_REQUEST_CALL) {
+	// Invariant: Requested ConcreteCode is on the stack
+	jit_popr_ui(JIT_V1);
+      }
+      else {
+	Closure_GetConcreteCode(JIT_V1, JIT_R0);
+      }
       NativeConcreteCode_GetImmediateArgs(JIT_R0, JIT_V1);
       NativeCodeFrame_PutImmediateArgs(JIT_V2, JIT_R0);
       NativeConcreteCode_GetNativeCode(JIT_R0, JIT_V1);
@@ -738,10 +767,9 @@ void NativeCodeJitter::TailCall(CallInfo *info) {
     break;
   case NORMAL_CALL:
     {
-      // Invariant: Closure is on the stack
       u_int size = NativeCodeFrame_GetFrameSize(currentNLocals);
       Scheduler_PopFrame(size);
-      JITStore::Call(1, (void *) Scheduler::PushCall);
+      JITStore::Call(2, (void *) ::PushCall);
       RETURN();
     }
     break;
@@ -1162,8 +1190,36 @@ TagVal *NativeCodeJitter::CheckBoolTest(word pos, u_int Result, word next) {
   return pc;
 }
 
+#if defined(JIT_APPLY_STATISTIC)
+static applyCountedTotal = 0;
+static applyNormal = 0;
+static applySelf   = 0;
+static applyPrim   = 0;
+static applyNative = 0;
+static applyNativeRequest = 0;
+static applyPolySel = 0;
+
+void DumpApplyStatistics() {
+  u_int totalApply = applyNormal + applySelf + applyPrim +
+    applyNative + applyNativeRequest + applyPolySel;
+  if (totalApply == applyCountedTotal)
+    fprintf(stderr, "Counting is exaustive\n");
+  else
+    fprintf(stderr, "Counting is *not* exaustive\n");
+  fprintf(stderr, "Total JIT Application count: %d t, %d n, %d s, %d p, %d n, %d nr, %d lpl\n", totalApply, applyNormal, applySelf, applyPrim, applyNative,
+	  applyNativeRequest, applyPolySel);
+  fflush(stderr);
+}
+
+#define JIT_APPLY_COUNT(v) v++;
+#else
+#define JIT_APPLY_COUNT(v)
+#endif
+
 // DirectAppVar/AppVar of idRef * idRef args * (idDef args * instr) option
-TagVal *NativeCodeJitter::Apply(TagVal *pc, Closure *closure, bool direct) {
+TagVal *NativeCodeJitter::Apply(TagVal *pc, word wClosure, bool direct) {
+  JIT_APPLY_COUNT(applyCountedTotal);
+  Closure *closure   = Closure::FromWord(wClosure);
   TagVal *actualArgs = TagVal::FromWordDirect(pc->Sel(1));
   CallInfo info;
   info.mode    = NORMAL_CALL;
@@ -1173,6 +1229,7 @@ TagVal *NativeCodeJitter::Apply(TagVal *pc, Closure *closure, bool direct) {
     word wConcreteCode         = closure->GetConcreteCode();
     ConcreteCode *concreteCode = ConcreteCode::FromWord(wConcreteCode);
     if (wConcreteCode == currentConcreteCode) {
+      JIT_APPLY_COUNT(applySelf);
       info.mode    = SELF_CALL;
       info.closure = ImmediateEnv::Register(closure->ToWord());
       if (SkipCCC(direct, actualArgs, currentArgs))
@@ -1188,6 +1245,7 @@ TagVal *NativeCodeJitter::Apply(TagVal *pc, Closure *closure, bool direct) {
 	NativeConcreteCode *nativeCode =
 	  static_cast<NativeConcreteCode *>(concreteCode);
 	closure->SetConcreteCode(concreteCode->ToWord());
+	JIT_APPLY_COUNT(applyNative);
 	info.mode    = NATIVE_CALL;
 	info.closure = ImmediateEnv::Register(closure->ToWord());
 	info.nLocals = nativeCode->GetNLocals();
@@ -1198,6 +1256,7 @@ TagVal *NativeCodeJitter::Apply(TagVal *pc, Closure *closure, bool direct) {
       if (cFunction != NULL) {
 	IntMap *inlineMap = IntMap::FromWordDirect(inlineTable);
 	word wCFunction = Store::UnmanagedPointerToWord(cFunction);
+	JIT_APPLY_COUNT(applyPrim);
 	if ((direct || (calleeArity == actualArity)) &&
 	    inlineMap->IsMember(wCFunction)) {
 	  Vector *actualIdRefs = GetActualIdRefs(actualArgs);
@@ -1275,12 +1334,65 @@ TagVal *NativeCodeJitter::Apply(TagVal *pc, Closure *closure, bool direct) {
 	  return INVALID_POINTER;
 	}
       }
+    } else {
+      Transient *transient = Store::WordToTransient(wConcreteCode);
+      if ((transient != INVALID_POINTER) &&
+	  (transient->GetLabel() == BYNEED_LABEL)) {
+	Closure *byneedClosure = static_cast<Byneed *>(transient)->GetClosure();
+	wConcreteCode = byneedClosure->GetConcreteCode();
+	if (wConcreteCode == LazyCompileInterpreter::concreteCode) {
+	  LazyCompileClosure *lazyCompileClosure =
+	    LazyCompileClosure::FromWordDirect(byneedClosure->ToWord());
+	  TagVal *abstractCode = lazyCompileClosure->GetAbstractCode();
+	  s_int nLocals        = lazyCompileClosure->GetNLocals();
+	  if (nLocals == -1) {
+	    Tuple *assignment;
+	    RegisterAllocator::Run(&nLocals, &assignment, abstractCode);
+	    lazyCompileClosure->SetNLocals(nLocals);
+	    lazyCompileClosure->SetAssignment(assignment);
+	  }
+	  JIT_APPLY_COUNT(applyNativeRequest);
+	  info.mode    = NATIVE_REQUEST_CALL;
+	  info.nLocals = nLocals;
+	  info.closure = ImmediateEnv::Register(closure->ToWord());
+	  word instrPC = Store::IntToWord(GetRelativePC());
+	  ImmediateSel(JIT_R0, JIT_V2, info.closure);
+	  Closure_GetConcreteCode(JIT_V1, JIT_R0);
+	  Await(JIT_V1, instrPC);
+	  jit_pushr_ui(JIT_V1); // Save derefed ConcreteCode
+	  goto no_request;
+	}
+      }
     }
+  } else {
+#if defined(JIT_APPLY_STATISTIC)
+    Transient *transient = Store::WordToTransient(wClosure);
+    if ((transient != INVALID_POINTER) &&
+	(transient->GetLabel() == BYNEED_LABEL)) {
+      Closure *byneedClosure = static_cast<Byneed *>(transient)->GetClosure();
+      ConcreteCode *concreteCode =
+	ConcreteCode::FromWord(byneedClosure->GetConcreteCode());
+      if ((concreteCode != INVALID_POINTER) &&
+	  (concreteCode->GetInterpreter() == LazySelInterpreter::self)) {
+	JIT_APPLY_COUNT(applyPolySel);
+	info.mode = POLY_SEL_CALL;
+	goto no_normal;
+      }
+    }
+#endif
   }
+#if defined(JIT_APPLY_STATISTIC)
+  JIT_APPLY_COUNT(applyNormal);
+ no_normal:
+#endif
   {
     word instrPC  = Store::IntToWord(GetRelativePC());
     u_int closure = LoadIdRef(JIT_V1, pc->Sel(0), instrPC);
-    jit_pushr_ui(closure); // Save Closure
+    jit_movr_p(JIT_FP, closure); // Save closure
+    Closure_GetConcreteCode(JIT_V1, closure);
+    Await(JIT_V1, instrPC);
+    jit_pushr_ui(JIT_FP); // Derefed Closure
+    jit_pushr_ui(JIT_V1); // Derefed ConcreteCode
   }
  no_request:
   TagVal *idDefArgsInstrOpt = TagVal::FromWord(pc->Sel(2));
@@ -1700,7 +1812,7 @@ TagVal *NativeCodeJitter::InstrAppVar(TagVal *pc, bool direct) {
     wClosure = Store::IntToWord(0);
     break;
   }
-  return Apply(pc, Closure::FromWord(wClosure), direct);
+  return Apply(pc, wClosure, direct);
 }
 
 // GetRef of id * idRef * instr
@@ -2526,16 +2638,18 @@ NativeCodeJitter::~NativeCodeJitter() {
 
 // Function of coord * value option vector * string vector *
 //             idDef args * instr * liveness
-NativeConcreteCode *NativeCodeJitter::Compile(word concreteCode,
-					      TagVal *abstractCode) {
+NativeConcreteCode *
+NativeCodeJitter::Compile(LazyCompileClosure *lazyCompileClosure) {
+  TagVal *abstractCode = TagVal::FromWordDirect(lazyCompileClosure->Sub(0));
+  word concreteCode    = lazyCompileClosure->Sub(1);
 #if 0
   // Diassemble AbstractCode
   Tuple *coord1 = Tuple::FromWordDirect(abstractCode->Sel(0));
   char *filename = String::FromWordDirect(coord1->Sel(0))->ExportC();
-  if (!strcmp(filename, "file:d:/cygwin/home/bruni/devel/alice/test/bench/benches.aml")) {
+  if (!strcmp(filename, "file:d:/cygwin/home/bruni/devel/alice/vm-seam/test.aml")) {
     fprintf(stderr, "Disassembling function at %s:%d.%d\n\n",
-	    String::FromWordDirect(coord1->Sel(0))->ExportC(),
-	    Store::DirectWordToInt(coord1->Sel(1)),
+  	    String::FromWordDirect(coord1->Sel(0))->ExportC(),
+  	    Store::DirectWordToInt(coord1->Sel(1)),
 	    Store::DirectWordToInt(coord1->Sel(2)));
     fflush(stderr);
     TagVal *pc = TagVal::FromWordDirect(abstractCode->Sel(4));
@@ -2558,16 +2672,19 @@ NativeConcreteCode *NativeCodeJitter::Compile(word concreteCode,
 #endif
   initialPC = Store::IntToWord(GetRelativePC());
   // Perform Register Allocation
-  Vector *localNames = Vector::FromWordDirect(abstractCode->Sel(2));
-  u_int nLocals = localNames->GetLength();
-  Vector *liveness = Vector::FromWordDirect(abstractCode->Sel(5));
-  assignment = RegisterAllocator::Run(nLocals, liveness);
-#if defined(JIT_STORE_DEBUG)
-  RegisterAllocator::Dump(abstractCode->Sel(0), nLocals, assignment);
-#endif
+  s_int closureNLocals = lazyCompileClosure->GetNLocals();
+  if (closureNLocals != -1) {
+    currentNLocals = closureNLocals;
+    assignment     = lazyCompileClosure->GetAssignment();
+  }
+  else {
+    RegisterAllocator::Run(&closureNLocals, &assignment, abstractCode);
+    currentNLocals = static_cast<u_int>(closureNLocals);
+    lazyCompileClosure->SetNLocals(currentNLocals);
+    lazyCompileClosure->SetAssignment(assignment);
+  }
   currentConcreteCode = concreteCode;
   currentStack        = 0;
-  currentNLocals      = MemoryNode::GetNbSlots();
   currentArgs         = TagVal::FromWord(abstractCode->Sel(3));
   livenessTable       = LivenessTable::New(currentNLocals);
   livenessFreeList    = NULL;
