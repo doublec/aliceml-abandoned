@@ -38,8 +38,8 @@ structure OutputPickle :> OUTPUT_PICKLE =
 		val idDef = TAG 0
 		val wildcard = 0: LargeInt.int
 
-		val local_ = TAG 0
-		val global = TAG 1
+		val global = TAG 0
+		val local_ = TAG 1
 
 		val oneArg = TAG 0
 		val tupArgs = TAG 1
@@ -247,6 +247,8 @@ structure OutputPickle :> OUTPUT_PICKLE =
 	     outputFunction (context, function); outputInstr (context, instr))
 	  | outputInstr (context, AppPrim (name, idRefs, idDefInstrOpt)) =
 	    (outputBlock (context, Label.appPrim, 3);
+	     outputTransform (context, "Alice.primitive");
+	     outputBlock (context, Label.TAG 0, 1);
 	     outputString (context, name);
 	     outputVector outputIdRef (context, idRefs);
 	     outputOption (fn (context, (idDef, instr)) =>
