@@ -180,8 +180,10 @@ struct
 	let val new_li = List.sort (fn (n,m) => Int.compare(getAncIndex n, 
 							    getAncIndex m)) 
 	                           li
-	in ( List.map (fn n => update(n,va,f,g)) new_li 
-	    ; !Window.resize() )
+	in (Window.stopButtonSetActive(true)
+	    ; List.map (fn n => update(n,va,f,g)) new_li 
+	    ; !Window.resize()
+	    ; Window.stopButtonSetActive(false))
 	end   
 
     (* watcher *)
