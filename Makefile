@@ -19,7 +19,7 @@ include $(TOPDIR)/Makefile.rules
 SUBDIRS = store adt generic alice java
 SUBDIRSR = java alice generic adt store
 
-SRCS = Base.cc AliceMain.cc
+SRCS = Base.cc InitSeam.o AliceMain.cc
 OBJS = $(SRCS:%.cc=%.o)
 LIBS = $(shell for i in $(SUBDIRS); do echo $$i/lib$$i.a; done)
 
@@ -31,17 +31,17 @@ LDLIBS = $(SUBDIRS:%=-L%) $(SUBDIRSR:%=-l%) \
 all: all-subdirs $(TARGETS)
 
 ifdef WINDOWS
-stow.exe: Main.o stow.dll
+stow.exe: InitSeam.o stow.dll
 	$(LD) $(LDFLAGS) -o $@ Main.o stow.dll
 else
-stow.exe: Main.o $(OBJS) $(LIBS)
+stow.exe: InitSeam.o $(OBJS) $(LIBS)
 	$(LD) $(LDFLAGS) -o $@ Main.o $(OBJS) $(LDLIBS)
 endif
 
-java.exe: JavaMain.o Base.o $(LIBS)
-	$(LD) $(LDFLAGS) -o $@ $< Base.o $(LDLIBS)
+java.exe: Base.o InitSeam.o JavaMain.o $(LIBS)
+	$(LD) $(LDFLAGS) -o $@ Base.o InitSeam.o JavaMain.o $(LDLIBS)
 
-%.dll: $(OBJS) $(LIBS)
+stow.dll: $(OBJS) $(LIBS)
 	$(LD) $(LDFLAGS) -shared -o $@ $(OBJS) $(LDLIBS)
 
 all-subdirs:
