@@ -10,13 +10,9 @@
  *   $Revision$
  *)
 
-import structure __pervasive                          from "Pervasive"
-import __primitive type int and string datatype order from "ToplevelTypes"
-import __primitive infix 4 = val op =                 from "ToplevelValues"
-import __primitive structure String                   from "String"
-import __primitive signature ATOM                     from "ATOM-sig"
+import signature ATOM from "ATOM-sig"
 
-structure Atom :> ATOM where type string = string =	(**)
+structure Atom :> ATOM where type string = string =
 struct
     type string = string
     eqtype atom
