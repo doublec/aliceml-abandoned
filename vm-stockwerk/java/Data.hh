@@ -189,6 +189,8 @@ protected:
     // ... instance fields
   };
 public:
+  using Block::ToWord;
+
   static Object *New(Class *theClass) {
     u_int size = theClass->GetNumberOfInstanceFields();
     Block *b = Store::AllocBlock(JavaLabel::Object, BASE_SIZE + size);
@@ -199,6 +201,11 @@ public:
   }
   static Object *FromWord(word x) {
     Block *b = Store::WordToBlock(x);
+    Assert(b == INVALID_POINTER || b->GetLabel() == JavaLabel::Object);
+    return static_cast<Object *>(b);
+  }
+  static Object *FromWordDirect(word x) {
+    Block *b = Store::DirectWordToBlock(x);
     Assert(b->GetLabel() == JavaLabel::Object);
     return static_cast<Object *>(b);
   }
