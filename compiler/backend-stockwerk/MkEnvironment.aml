@@ -27,6 +27,7 @@ functor MkEnvironment(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 	type index = int
 
 	type t = {filename: string,
+		  context: AbstractCodeGrammar.value StampMap.t,
 		  stack: (scope * index * index * globals) list ref,
 		  scope: scope ref,
 		  localIndex: index ref,
@@ -35,19 +36,10 @@ functor MkEnvironment(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 		  shared: AbstractCodeGrammar.instr StampMap.t}
 
 	fun new (filename, context) =
-	    let
-		val scope = StampMap.new ()
-	    in
-		StampMap.appi (fn (stamp, value) =>
-				  StampMap.insertDisjoint
-				      (scope, stamp,
-				       AbstractCodeGrammar.Immediate value))
-			      context;
-		{filename = filename,
-		 stack = ref nil, scope = ref scope,
-		 localIndex = ref 0, globalIndex = ref 0, globals = ref nil,
-		 shared = StampMap.new ()}
-	    end
+	    {filename = filename, context = context,
+	     stack = ref nil, scope = ref (StampMap.new ()),
+	     localIndex = ref 0, globalIndex = ref 0, globals = ref nil,
+	     shared = StampMap.new ()}
 
 	fun filename ({filename, ...}: t) = filename
 
@@ -95,8 +87,11 @@ functor MkEnvironment(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 		i
 	    end
 
-	fun lookup ({scope, globalIndex, globals, ...}: t,
+	fun lookup ({context, scope, globalIndex, globals, ...}: t,
 		    id as FlatGrammar.Id (_, stamp, _)) =
+	    case StampMap.lookup (context, stamp) of
+		SOME value => AbstractCodeGrammar.Immediate value
+	      | NONE =>
 	    case StampMap.lookup (!scope, stamp) of
 		SOME idRef => idRef
 	      | NONE =>
