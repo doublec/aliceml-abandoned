@@ -15,11 +15,12 @@
  *)
 
 import structure __pervasive                            from "Pervasive"
-import type unit and int and char and string and option from "ToplevelTypes"
-import structure Word8                                  from "Word8"
-import structure Word8Vector                            from "Word8Vector"
-import structure Word8Array                             from "Word8Array"
-import structure Substring                              from "Substring"
+import __primitive
+       type unit and int and char and string and option from "ToplevelTypes"
+import __primitive structure Word8                      from "Word8"
+import __primitive structure Word8Vector                from "Word8Vector"
+import __primitive structure Word8Array                 from "Word8Array"
+import __primitive structure Substring                  from "Substring"
 
 signature BYTE =
 sig
