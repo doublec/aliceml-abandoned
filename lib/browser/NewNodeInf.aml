@@ -138,9 +138,8 @@ struct
 			      setGroup)
 	else let val a_length = 2 + List.length(ilist)
 		 val container = 
-	             createContainer(createIValue(va,t,NO_ACTIONS),
-				     p,i,d,Array.array(a_length,Empty),
-				     ~1,~1,~1,setGroup)
+	             createContainer(createIValue(va,t,NO_ACTIONS),p,i,d,
+				     Array.array(a_length,Empty),setGroup)
 		 val s_begin = createSimple(INTERPUNCT,container,0,d,"struct",
 					    DEFAULT,setGroup)
 		 val s_end = createSimple(INTERPUNCT,container,a_length-1,d,
@@ -185,7 +184,7 @@ struct
 	   end 
       | Inf.ValItem(l,t) 
 	=> let val conc = createConcat (INTERPUNCT,p,i,d,Array.array(4,Empty),
-					~1,~1,setGroup)
+					setGroup)
 	       val s_val = createSimple (INTERPUNCT,conc,0,d,"  val ",DEFAULT,
 					 setGroup)
 	       val lab = createSimple (INTERPUNCT,conc,1,d,
@@ -208,7 +207,7 @@ struct
 	   end  (* Tiefe! *)
       | Inf.ModItem(path,inf)
 	=> let val conc = createConcat (INTERPUNCT,p,i,d,
-					Array.array(4,Empty),~1,~1,setGroup)
+					Array.array(4,Empty),setGroup)
 	       val s_struct = createSimple (INTERPUNCT,conc,1,d,"  structure ",
 					    DEFAULT,setGroup)
 	       val name = createSimple (INTERPUNCT,conc,1,d,
@@ -226,8 +225,7 @@ struct
 	   end
       | Inf.InfItem(path,_)
 	=> let val conc = createConcat (INTERPUNCT,p,i,d,
-					Array.array(2,Empty),~1,~1,
-					setGroup)
+					Array.array(2,Empty),setGroup)
 	       val s_sig = createSimple (INTERPUNCT,conc,0,d,"  signature ",
 					 DEFAULT,setGroup)
 	       val name = createSimple (INTERPUNCT,conc,1,d,
@@ -240,8 +238,7 @@ struct
 	   end
       | Inf.HiddenItem(item') 
 	=> let val conc = createConcat (INTERPUNCT,p,i,d,
-					Array.array(2,Empty),~1,~1,
-					setGroup)
+					Array.array(2,Empty),setGroup)
 	       val ask = createSimple (INTERPUNCT,conc,0,d,"  ? ",
 				       DEFAULT,setGroup) 
 	       val h_item = createItemNode (vv,item',conc,1,d)

@@ -203,7 +203,7 @@ struct
                val length = List.length l
 	       val na = Array.array(length,Empty)
 	       val inty = #2(Type.asApply(t))   
-	       val cont = createContainer (desc,p,i,d,na,~1,~1,~1,setGroup)
+	       val cont = createContainer (desc,p,i,d,na,setGroup)
 	       val nodearray = listElemArray(l,length,inty,cont,d+1,true)
 	       val future = createSimple (INTERPUNCT,cont,length,d+1,"_",
 					  DEFAULT,setGroup)
@@ -218,8 +218,7 @@ struct
 			else Array.array(length,Empty)
 	       val inty = #2(Type.asApply(t))   
 	   in if b
-		  then let val cont = createContainer (desc,p,i,d,na,~1,~1,~1,
-						       setGroup)
+		  then let val cont = createContainer (desc,p,i,d,na,setGroup)
 			   val nodearray = listElemArray(l,length,inty,cont,
 							 d+1,b)
 			   val limit = createLimit (INTERPUNCT,WIDTH_LIMIT,
@@ -229,14 +228,13 @@ struct
 			  ; cont )
 		       end
 	      else let val concat = createConcat(desc,p,i,d,
-						 Array.array(3,Empty),
-						 ~1,~1,setGroup) 
-		       val lbra = createSimple (INTERPUNCT,concat,0,d,
+						 Array.array(3,Empty),setGroup)
+ 		       val lbra = createSimple (INTERPUNCT,concat,0,d,
 						"[",BRACK_COLOR,setGroup)
 		       val rbra = createSimple (INTERPUNCT,concat,2,d,
 						"]",BRACK_COLOR,setGroup)
 		       val cont = createContainer (INTERPUNCT,concat,1,d,
-						   na,~1,~1,~1,setGroup)
+						   na,setGroup)
 		       val nodearray = listElemArray(List.take(l,length-1),
 						     length-1,inty,cont,d,b)
 		       val last = let val inva = UnsafeValue.cast(List.last(l))
@@ -258,8 +256,7 @@ struct
 	    val na = Array.array(length,Empty)
 	in ( while !rl < length do
             (let val concat = createConcat(INTERPUNCT,p,!rl,d,
-					   Array.array(2,Empty),
-                                           ~1,~1,setGroup) 
+					   Array.array(2,Empty),setGroup) 
                  val inva = UnsafeValue.cast(List.nth(list,!rl))
                             : Reflect.value
                  val elem = createGraph(inva,listtyp,concat,0,d+1)
@@ -277,8 +274,8 @@ struct
     and treatProd (va,t,p,i,d,row) = 
 	let
 	      val upperConcat = createConcat(createValue(va,t,NO_ACTIONS),
-					     p,i,d,Array.array(3,Empty)
-					     ,~1,~1,setGroup)
+					     p,i,d,Array.array(3,Empty),
+					     setGroup)
 	      val (lbra,rbra) = if Type.isTupleRow(row) 
 				    then ("(",")")
 				else ("{","}")
@@ -320,22 +317,20 @@ struct
 	    val upperConcat = if emptyrow 
 				  then Empty 
 		    else createConcat(createValue(va,t,NO_ACTIONS),
-					   p,i,d,Array.array(4,Empty),
-					   ~1,~1,setGroup)
+				      p,i,d,Array.array(4,Empty),setGroup)
 	    val (lbra,rbra) =  let val row' = Type.asProd(intyp)
 			       in if Type.isTupleRow(row')
 				      then ("(",")")
 				   else ("{","}")
 			       end
 			       handle Type.Type => ("_","_")
-	    val (lbraNode,rbraNode) = if lbra = "_" orelse emptyrow
-					  then (Empty,Empty) 
-				      else (createSimple (INTERPUNCT,upperConcat,
-						     1,d,lbra,BRACK_COLOR,
-						     setGroup),
-				       createSimple (INTERPUNCT,upperConcat,
-						     3,d,rbra,BRACK_COLOR,
-						     setGroup))
+	    val (lbraNode,rbraNode) = 
+		if lbra = "_" orelse emptyrow
+		    then (Empty,Empty) 
+		else (createSimple(INTERPUNCT,upperConcat,1,d,lbra,BRACK_COLOR,
+				   setGroup),
+		      createSimple (INTERPUNCT,upperConcat,3,d,rbra,
+				    BRACK_COLOR,setGroup))
 	    val container = case Type.inspect(intyp) of 
 		Type.Prod(row') 
 		=> if Type.isEmptyRow(row') 
@@ -375,9 +370,8 @@ struct
 	    val l         = if wlimit then !max_width
 			    else List.length(lt_list)
 	    val al = if wlimit then !max_width +1 else l
-	    val container = createContainer(INTERPUNCT,
-					    p,i,d,Array.array(al,Empty)
-					    ,~1,~1,~1,setGroup)
+	    val container = createContainer(INTERPUNCT,p,i,d,
+					    Array.array(al,Empty),setGroup)
 	    val createProdC = if Type.isTupleRow(row)
 				  then createProdConcatTuple
 			      else createProdConcat
@@ -405,8 +399,7 @@ struct
 	    val last = (i = l-1) 
 	    val c_length = if last then 3 else 4
 	    val concat = createConcat (INTERPUNCT,p,i,d,
-				       Array.array(c_length,Empty),
-				       ~1,~1,setGroup)
+				       Array.array(c_length,Empty),setGroup)
 	    val l_node = createSimple (INTERPUNCT,concat,0,d,label,
 				       LABEL_COLOR,setGroup)
 	    val eq_node = createSimple (INTERPUNCT,concat,1,d," = ",
@@ -435,7 +428,7 @@ struct
 	    val concat = if last then Empty
 			 else createConcat (INTERPUNCT,p,i,d,
 					    Array.array(c_length,Empty),
-					    ~1,~1,setGroup)
+					    setGroup)
 	    val sep_node = if last 
 			       then Empty 
 			   else createSimple (INTERPUNCT,concat,1,d,", ",
@@ -505,7 +498,7 @@ struct
 	      end  
         | CONCAT(r) => let val na = Array.array(Vector.length(#kids(r)),
 						 Empty)
-                            val concat = createConcat(#desc(r),p,i,d,na,~1,~1,
+                            val concat = createConcat(#desc(r),p,i,d,na,
 						      setGroup)
                             val rl = ref 0
 			in (while !rl <= (Vector.length(#kids(r)) - 1) do
@@ -520,8 +513,7 @@ struct
          | CONTAINER(r) => let val na = Array.array(Vector.length(#kids(r)),
 						    Empty)
                                val container = createContainer(#desc(r),p,i,d,
-                                                               na,~1,~1,~1,
-							       setGroup)
+                                                               na,setGroup)
 			       val rl = ref 0
 			   in (while !rl <= (Vector.length(#kids(r)) - 1) do
 			       (Array.update(na,
@@ -549,26 +541,26 @@ struct
 							group = f(p)}
 	
     (* createConcat *)
-    and createConcat (desc,p,i,d,na,w,h,f) =  Concat {desc = desc,
+    and createConcat (desc,p,i,d,na,f) =  Concat {desc = desc,
 						      parent = p,
 						      index  = i,
 						      depth = d,
 						      kids = na, 
-						      width  = ref w,
-						      height = ref h,
+						      width  = ref ~1,
+						      height = ref ~1,
 						      status = ref DAZZLED,
 						      group = f(p)}
 
     (* createContainer *)
-    and createContainer (desc,p,i,d,na,w,h,l_w,f) =  
+    and createContainer (desc,p,i,d,na,f) =  
 	Container {desc = desc, 
 		   parent = p,
 		   index = i,
 		   depth = d,
 		   kids = na, 
-		   width = ref w,
-		   height = ref h,
-		   l_width = ref l_w,
+		   width = ref ~1,
+		   height = ref ~1,
+		   l_width = ref ~1,
 		   status = ref DAZZLED,
 		   group = f(p)}
 
@@ -618,9 +610,8 @@ struct
 	let val future = UnsafeValue.cast va
 	    val desc = createValue(va,t,NO_ACTIONS) 
             val indesc = createValue(va,tt,NO_ACTIONS) 
-	    val concat = createConcat(desc,p,i,d,Array.array(3,Empty),~1,~1, 
-				      setGroup) 
-	    val first = createSimple(INTERPUNCT,concat,0,d,"promise {|", 
+	    val concat = createConcat(desc,p,i,d,Array.array(3,Empty),setGroup)
+ 	    val first = createSimple(INTERPUNCT,concat,0,d,"promise {|", 
 				     DEFAULT,setGroup) 
             val middle =  
 		if Future.isDetermined future  
