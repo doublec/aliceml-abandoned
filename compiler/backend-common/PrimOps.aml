@@ -177,6 +177,10 @@ structure PrimOps :> PRIM_OPS =
 		ins ("Unsafe.String.sub", SOME (Tuple 2));
 		ins ("Unsafe.Vector.sub", SOME (Tuple 2));
 		ins ("Unsafe.cast", SOME Unary);
+		ins ("Unsafe.getPrimitiveByName", SOME Unary);
+		ins ("Unsafe.makeClosure", SOME (Tuple 2));
+		ins ("Unsafe.makeTaggedValue", SOME (Tuple 2));
+		ins ("Unsafe.makeTuple", SOME Unary);
 		ins ("Vector.fromList", SOME Unary);
 		ins ("Vector.maxLen", NONE);
 		ins ("Vector.length", SOME Unary);

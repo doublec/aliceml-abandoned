@@ -617,6 +617,27 @@ define
 	      'Unsafe.String.sub': ByteString.get#rr_v
 	      'Unsafe.Vector.sub': fun {$ V I} V.(I + 1) end#rr_v
 	      'Unsafe.cast': fun {$ X} X end#i_v
+	      'Unsafe.getPrimitiveByName':
+		 fun {$ Name} Values.{VirtualString.toAtom Name} end#r_v
+	      'Unsafe.makeClosure':
+		 fun {$ Function Vs} Closure in
+		    Closure = {MakeTuple closure {Width Vs} + 1}
+		    Closure.1 = Function
+		    for I in 1..{Width Vs} do
+		       Closure.(I + 1) = Vs.I
+		    end
+		    Closure
+		 end#ri_v
+	      'Unsafe.makeTaggedValue':
+		 fun {$ I Vs} T in
+		    T = {MakeTuple tag {Width Vs} + 1}
+		    T.1 = I
+		    for I in 1..{Width Vs} do
+		       T.(I + 1) = Vs.I
+		    end
+		    T
+		 end#rr_v
+	      'Unsafe.makeTuple': fun {$ Vs} {Adjoin Vs tuple} end#r_v
 	      'Stockwerk.realToVector':
 		 fun {$ S}
 		    {List.toTuple vector {ByteString.toString S}}
