@@ -367,6 +367,31 @@ structure IL :> IL =
 	    if i < 0 then "-" ^ Int.toString (~i)
 	    else Int.toString i
 
+	local
+	    fun toOct i = String.str (Char.chr (i mod 8 + Char.ord #"0"))
+
+	    fun charToCString #"\\" = "\\\\"
+	      | charToCString #"\"" = "\\\""
+	      | charToCString #"\a" = "\\a"
+	      | charToCString #"\b" = "\\b"
+	      | charToCString #"\t" = "\\t"
+	      | charToCString #"\n" = "\\n"
+	      | charToCString #"\v" = "\\v"
+	      | charToCString #"\f" = "\\f"
+	      | charToCString #"\r" = "\\r"
+	      | charToCString c =
+		let
+		    val i = Char.ord c
+		in
+		    if i < 32 then "\\0" ^ toOct (i div 8) ^ toOct i
+		    else String.str c
+		end
+	in
+	    fun stringToCString s =
+		List.foldr (fn (c, rest) => charToCString c ^ rest) ""
+		(explode s)
+	end
+
 	fun outputInstr (q, Add) = output (q, "add")
 	  | outputInstr (q, AddOvf) = output (q, "add.ovf")
 	  | outputInstr (q, And) = output (q, "and")
@@ -458,7 +483,7 @@ structure IL :> IL =
 	     outputDottedname (q, dottedname); output (q, "::");
 	     outputId (q, id))
 	  | outputInstr (q, Ldstr s) =
-	    (output (q, "ldstr \""); output (q, String.toCString s);
+	    (output (q, "ldstr \""); output (q, stringToCString s);
 	     output1 (q, #"\""))
 	  | outputInstr (q, Leave label) =   (*--** short form? *)
 	    (output (q, "leave "); outputLabel (q, label))
