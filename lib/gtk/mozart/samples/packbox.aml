@@ -11,77 +11,79 @@
  *
  *)
 
-import structure OS from "x-alice:/lib/system/OS"
-import structure GTK from "x-alice:/lib/gtk/GTK"
+import structure GtkCore from "x-alice:/lib/gtk/GtkCore"
+import structure Gtk from "x-alice:/lib/gtk/Gtk"
 
 local
-    fun deleteEvent _ = GTK.exit ()
+    open GtkCore
+
+    fun deleteEvent _ = OS.Process.exit OS.Process.success
     
     fun makeBox(Homogeneous, Spacing, Expand, Fill, Padding) =
 	let
-	    val Box     = GTK.hboxNew(Homogeneous, Spacing)
-	    val Button1 = GTK.buttonNewWithLabel "{Box packStart("
-	    val Button2 = GTK.buttonNewWithLabel "Button"
-	    val Button3 = GTK.buttonNewWithLabel (Bool.toString Expand)
-	    val Button4 = GTK.buttonNewWithLabel (Bool.toString Fill)
-	    val Button5 = GTK.buttonNewWithLabel ((Int.toString Padding) ^ ")}")
-	    val show    = fn button => (GTK.boxPackStart(Box, button, Expand, Fill, Padding);
-					GTK.widgetShow  button)
+	    val Box     = Gtk.hboxNew(Homogeneous, Spacing)
+	    val Button1 = Gtk.buttonNewWithLabel "{Box packStart("
+	    val Button2 = Gtk.buttonNewWithLabel "Button"
+	    val Button3 = Gtk.buttonNewWithLabel (Bool.toString Expand)
+	    val Button4 = Gtk.buttonNewWithLabel (Bool.toString Fill)
+	    val Button5 = Gtk.buttonNewWithLabel ((Int.toString Padding) ^ ")}")
+	    val show    = fn button => (Gtk.boxPackStart(Box, button, Expand, Fill, Padding);
+					Gtk.widgetShow  button)
 	in
 	    map show [Button1, Button2, Button3, Button4, Button5]; Box
 	end
 
     fun runDemo demo =
 	let
-	    val Window  = GTK.windowNew GTK.WINDOW_TOPLEVEL
-	    val Box1    = GTK.vboxNew(false, 0)
-	    val QuitBox = GTK.hboxNew(false, 0)
-	    val Button  = GTK.buttonNewWithLabel "Quit"
+	    val Window  = Gtk.windowNew Gtk.WINDOW_TOPLEVEL
+	    val Box1    = Gtk.vboxNew(false, 0)
+	    val QuitBox = Gtk.hboxNew(false, 0)
+	    val Button  = Gtk.buttonNewWithLabel "Quit"
 	in
-	    (GTK.signalConnect(Window, "delete_event", deleteEvent);
-	     GTK.containerSetBorderWidth(Window, 10);
+	    (Gtk.signalConnect(Window, "delete_event", deleteEvent);
+	     Gtk.containerSetBorderWidth(Window, 10);
 	     demo Box1;
-	     GTK.signalConnect(Button, "clicked", fn () => GTK.exit ());
-	     GTK.boxPackStart(Box1, QuitBox, false, false, 0);
-	     GTK.containerAdd(Window, Box1);
-	     GTK.widgetShow(Button);
-	     GTK.widgetShow(QuitBox);
-	     GTK.widgetShow(Box1);
-	     GTK.widgetShow(Window))
+	     Gtk.signalConnect(Button, "clicked", fn _ => ());
+	     Gtk.boxPackStart(Box1, QuitBox, false, false, 0);
+	     Gtk.containerAdd(Window, Box1);
+	     Gtk.widgetShow(Button);
+	     Gtk.widgetShow(QuitBox);
+	     Gtk.widgetShow(Box1);
+	     Gtk.widgetShow(Window))
 	end
 
     fun demoOne Box1 =
 	let
-	    val Label1     = GTK.labelNew "Box = {New GTK.hBox init(false 0)}"
+	    val Label1     = Gtk.labelNew "Box = {New Gtk.hBox init(false 0)}"
 	    val Box2       = makeBox(false, 0, false, false, 0)
 	    val Box3       = makeBox(false, 0, true, false, 0)
 	    val Box4       = makeBox(false, 0, true, true, 0)
-	    val Separator1 = GTK.hseparatorNew ()
-	    val Label2     = GTK.labelNew "Box = {GTK.hBox init(true 0)}"
+	    val Separator1 = Gtk.hseparatorNew ()
+	    val Label2     = Gtk.labelNew "Box = {Gtk.hBox init(true 0)}"
 	    val Box5       = makeBox(true, 0, true, false, 0)
 	    val Box6       = makeBox(true, 0, true, true, 0)
-	    val Separator2 = GTK.hseparatorNew ()
+	    val Separator2 = Gtk.hseparatorNew ()
 	in
-	    (GTK.miscSetAlignment(Label1, 0.0, 0.0);
-	     GTK.boxPackStart(Box1, Label1, false , false, 0);
-	     GTK.widgetShow Label1;
-	     GTK.boxPackStart(Box1, Box2, false , false, 0);
-	     GTK.widgetShow Box2;
-	     GTK.boxPackStart(Box1, Box3, false, false, 0);
-	     GTK.widgetShow Box3;
-	     GTK.boxPackStart(Box1, Box4, false, false, 0);
-	     GTK.widgetShow Box4;
-	     GTK.boxPackStart(Box1, Separator1, false, true, 5);
-	     GTK.widgetShow Separator1;
-	     GTK.miscSetAlignment(Label2, 0.0, 0.0);
-	     GTK.boxPackStart(Box1, Label2, false, false, 0);
-	     GTK.widgetShow Label2;
-	     GTK.boxPackStart(Box1, Box5, false, false, 0);
-	     GTK.widgetShow Box5;
-	     GTK.boxPackStart(Box1, Box6, false, false, 0);
-	     GTK.widgetShow Box6;
-	     GTK.boxPackStart(Box1, Separator2, false, true, 5);
-	     GTK.widgetShow Separator2)
+	    (Gtk.miscSetAlignment(Label1, 0.0, 0.0);
+	     Gtk.boxPackStart(Box1, Label1, false , false, 0);
+	     Gtk.widgetShow Label1;
+	     Gtk.boxPackStart(Box1, Box2, false , false, 0);
+	     Gtk.widgetShow Box2;
+	     Gtk.boxPackStart(Box1, Box3, false, false, 0);
+	     Gtk.widgetShow Box3;
+	     Gtk.boxPackStart(Box1, Box4, false, false, 0);
+	     Gtk.widgetShow Box4;
+	     Gtk.boxPackStart(Box1, Separator1, false, true, 5);
+	     Gtk.widgetShow Separator1;
+	     Gtk.miscSetAlignment(Label2, 0.0, 0.0);
+	     Gtk.boxPackStart(Box1, Label2, false, false, 0);
+	     Gtk.widgetShow Label2;
+	     Gtk.boxPackStart(Box1, Box5, false, false, 0);
+	     Gtk.widgetShow Box5;
+	     Gtk.boxPackStart(Box1, Box6, false, false, 0);
+	     Gtk.widgetShow Box6;
+	     Gtk.boxPackStart(Box1, Separator2, false, true, 5);
+	     Gtk.widgetShow Separator2)
 	end
 in
     val _ = runDemo demoOne
