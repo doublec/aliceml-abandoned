@@ -806,8 +806,8 @@ struct
 	    val  i0'     = nonInfo r
 	    val  t       = #typ i'
 	    val (t1,t2)  = Type.asArrow t
-	    val (l1,t11) = findFld(isInfName, t1)
-	    val (l2,t21) = findFld(isValName, t2)
+	    val (l1,t11) = findFld(isValName, t1)
+	    val (l2,t21) = findFld(isInfName, t2)
 	    val  x1'     = O.Id(typInfo(r,t11), Stamp.new(), Name.InId)
 	    val  p'      = O.ProdPat(typInfo(r,t1),
 				     #[O.Fld(i0',O.Lab(i0',l1), idToPat x1')])
