@@ -30,7 +30,7 @@
     { % flat: rays according to angle from origin to (u, v)
       u 0.5 subf /u v 0.5 subf /v
       u u v dist apply divf /b
-      0.0 v lessf { b asin } { 360.0 b asin subf } if 30.0 divf
+      0.0 v lessf { b asin } { 360.0 b asin subf } if 180.0 addf 30.0 divf
       floor 2 modi 1 eqi { col1 } { col2 } if
     }
     if
