@@ -613,7 +613,7 @@ Interpreter::Result UnpickleInterpreter::Run(word args, TaskStack *taskStack) {
       break;
     case Tag::TRANSFORM:
       {
-	Transient *y = (Transient *) Future::New(); // to be checked
+	Transient *y = (Transient *) Future::New();
 	word yw = y->ToWord();
 	Set(x, i, yw);
 	AddToEnv(env, count, yw);
