@@ -447,7 +447,27 @@ struct
                     raise TournamentFinished
                 end
 
-           
+            
+            val countDownStart  = 3
+
+            fun countDown (n, res) =
+                let
+                    val p = Promise.promise ()
+                    
+                    fun countDown' n =
+                        if n < 0 
+                            then Promise.fulfill (p, res)
+                            else (Thread.sleep (Time.fromMilliseconds 990);
+                                  invokeSeveral
+                                    (Part.allConnected $ ! participants, 
+                                        #countdown, n);
+                                  countDown' (n - 1))
+                in
+                    ispawn (_file_, _line_) countDown' n;
+                    Promise.future p
+                end
+
+                
             fun startNextLevel (levels, arena, startPos) =
                 let
                     val _   = events := Events.events ()
@@ -493,8 +513,10 @@ struct
                     
                     log ("Server", ("sending initial points"));
                     sendPoints ();
-
-                    {levels, oldArena, ticks = 0, newArena=arena, goodies = 0}
+                    
+                    (* send countdown signals *)
+                    countDown (countDownStart,
+                        {levels, oldArena, ticks = 0, newArena=arena, goodies = 0})
                 end
             
             
@@ -763,7 +785,7 @@ struct
 
                     fun loop state =
                         let 
-                            val state = tick state
+                            val state = tick $ Future.await state
                         in
                             Thread.sleep (#tick config);
                             loop state
