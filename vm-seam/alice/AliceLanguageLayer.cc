@@ -28,6 +28,7 @@ word AliceLanguageLayer::TransformNames::primitiveValue;
 word AliceLanguageLayer::TransformNames::primitiveFunction;
 word AliceLanguageLayer::TransformNames::function;
 word AliceLanguageLayer::TransformNames::constructor;
+word AliceLanguageLayer::TransformNames::uniqueString;
 
 static word AlicePrimitiveValueHandler(word x) {
   TagVal *tagVal = TagVal::FromWordDirect(x);
@@ -55,6 +56,10 @@ static word AliceConstructorHandler(word x) {
   return constructor->ToWord();
 }
 
+static word AliceUniqueStringHandler(word x) {
+  return UniqueString::New(String::FromWordDirect(x))->ToWord();
+}
+
 void AliceLanguageLayer::Init() {
   String *alicePrimitiveValue = String::New("Alice.primitive.value");
   TransformNames::primitiveValue = alicePrimitiveValue->ToWord();
@@ -77,7 +82,13 @@ void AliceLanguageLayer::Init() {
   RootSet::Add(TransformNames::constructor);
   Unpickler::RegisterHandler(aliceConstructor, AliceConstructorHandler);
 
+  String *aliceUniqueString = String::New("Alice.uniqueString");
+  TransformNames::uniqueString = aliceUniqueString->ToWord();
+  RootSet::Add(TransformNames::uniqueString);
+  Unpickler::RegisterHandler(aliceUniqueString, AliceUniqueStringHandler);
+
   Constructor::Init();
+  UniqueString::Init();
   Guid::Init();
   LazySelInterpreter::Init();
   AbstractCodeInterpreter::Init();
