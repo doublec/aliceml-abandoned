@@ -15,21 +15,28 @@
 #include <mysql/mysql.h>
 #include <stdio.h>
 
-#define DECLARE_MYSQL(mysql, x)                       \
+#define FLAG_MYSQL 0
+#define FLAG_MYSQL_RESULT 1
+
+#define DECLARE_MYSQL(mysql, is_closed, x)                       \
   MYSQL *mysql;                                                  \
   int is_closed = 0;                                             \
   ConcreteRepresentation *mcr;                                   \
   if (Store::WordToTransient(x) != INVALID_POINTER) { REQUEST(x); } \
   { mcr = ConcreteRepresentation::FromWordDirect(x); \
+    if (Store::DirectWordToInt(mcr->Get(2)) != FLAG_MYSQL)          \
+       RAISE(MakeMySQLError(String::New("Internal mysql binding error.")));      \
     mysql = (MYSQL *) Store::WordToUnmanagedPointer(mcr->Get(0)); \
     is_closed = Store::WordToInt(mcr->Get(1)); }
 
-#define DECLARE_MYSQL_RES(result, x)                       \
+#define DECLARE_MYSQL_RES(result, is_free, x)                       \
   MYSQL_RES *result;                                                  \
   int is_free = 0;                                                    \
   ConcreteRepresentation *rcr;                                        \
   if (Store::WordToTransient(x) != INVALID_POINTER) { REQUEST(x); } \
   { rcr = ConcreteRepresentation::FromWordDirect(x); \
+    if (Store::DirectWordToInt(rcr->Get(2)) != FLAG_MYSQL_RESULT)   \
+       RAISE(MakeMySQLError(String::New("Internal mysql binding error.")));      \
     result = (MYSQL_RES *) Store::WordToUnmanagedPointer(rcr->Get(0)); \
     is_free = Store::WordToInt(rcr->Get(1)); }
 
@@ -43,17 +50,6 @@ class MySQLHandler : public ConcreteRepresentationHandler {
 
 static MySQLHandler *mysqlHandler;
 
-class MySQLResultHandler : public ConcreteRepresentationHandler {
-  Transform
-  *MySQLResultHandler::GetAbstractRepresentation(ConcreteRepresentation *)
-  {
-    return INVALID_POINTER;
-  }
-};
-
-static MySQLResultHandler *mysqlResultHandler;
-
-
 class MySQLFinalizationSet: public FinalizationSet {
 public:
   virtual void Finalize(word value);
@@ -62,8 +58,27 @@ public:
 // Garbage Collection
 void MySQLFinalizationSet::Finalize(word value) {
   ConcreteRepresentation *cr = ConcreteRepresentation::FromWordDirect(value);
-  word ptr = cr->Get(0);
-  // ...
+  switch(Store::DirectWordToInt(cr->Get(2))) {
+  case FLAG_MYSQL:
+    {
+      if(! Store::DirectWordToInt(cr->Get(1))) {
+	MYSQL *mysql = (MYSQL *) Store::WordToUnmanagedPointer(cr->Get(0));
+	mysql_close(mysql);
+	free(mysql);
+      }
+    }
+    break;
+  case FLAG_MYSQL_RESULT:
+    {
+      if(! Store::DirectWordToInt(cr->Get(1))) {
+	MYSQL_RES *result = (MYSQL_RES *) Store::WordToUnmanagedPointer(cr->Get(0));
+	mysql_free_result(result);
+      }
+    }
+    break;
+  default:
+    break;
+  }
 }
 
 static MySQLFinalizationSet *mysqlFinalizationSet;
@@ -101,16 +116,17 @@ DEFINE4(_mysql_connect) {
   }
 
   // to make MYSQL-resources unpickable:
-  ConcreteRepresentation *cr = ConcreteRepresentation::New(mysqlHandler, 2);
+  ConcreteRepresentation *cr = ConcreteRepresentation::New(mysqlHandler, 3);
   cr->Init(0, Store::UnmanagedPointerToWord(mysql));
   cr->Init(1, Store::IntToWord(0));
+  cr->Init(2, Store::IntToWord(FLAG_MYSQL));
   // garbage collection
   mysqlFinalizationSet->Register(cr->ToWord());
   RETURN(cr->ToWord());
 } END
 
 DEFINE3(_mysql_query) {
-  DECLARE_MYSQL(mysql,x0);
+  DECLARE_MYSQL(mysql,is_closed,x0);
   DECLARE_STRING(query,x1);
   DECLARE_BOOL(store_result,x2);
 
@@ -137,9 +153,10 @@ DEFINE3(_mysql_query) {
 
   // to make MYSQL-resources unpickable
   ConcreteRepresentation *cr = 
-    ConcreteRepresentation::New(mysqlResultHandler, 2);
+    ConcreteRepresentation::New(mysqlHandler, 3);
   cr->Init(0, Store::UnmanagedPointerToWord(result));
   cr->Init(1, Store::IntToWord(0));
+  cr->Init(2, Store::IntToWord(FLAG_MYSQL_RESULT));
   // garbage collection
 
   // fprintf(stderr,"Collecting Garbage...\n"); // DEBUG
@@ -157,8 +174,8 @@ DEFINE3(_mysql_query) {
 } END
 
 DEFINE2(_mysql_fetch_row) {
-  DECLARE_MYSQL(mysql,x0);
-  DECLARE_MYSQL_RES(result,x1);
+  DECLARE_MYSQL(mysql,is_closed,x0);
+  DECLARE_MYSQL_RES(result,is_free,x1);
 
   if (is_closed) {
     RAISE(MakeMySQLError(String::New("Internal Error, mysql_fetch_row: Connection lost or closed earlier")));
@@ -197,7 +214,7 @@ DEFINE2(_mysql_fetch_row) {
 } END
 
 DEFINE1(_mysql_fetch_fields) {
-  DECLARE_MYSQL_RES(result,x0);
+  DECLARE_MYSQL_RES(result,is_free,x0);
 
   if (is_free) {
       RAISE(MakeMySQLError(String::New("Internal Error, mysql_fetch_fields: Result was freed before")));
@@ -224,7 +241,7 @@ DEFINE1(_mysql_fetch_fields) {
 } END
 
 DEFINE1(_mysql_free_result) {
-  DECLARE_MYSQL_RES(result,x0);
+  DECLARE_MYSQL_RES(result,is_free,x0);
   if (is_free) {
     RAISE(MakeMySQLError(String::New("Internal Error, mysql_free_result: Result resource is already free")));
   } else {
@@ -235,7 +252,7 @@ DEFINE1(_mysql_free_result) {
 } END
 
 DEFINE1(_mysql_close) {
-  DECLARE_MYSQL(mysql,x0);
+  DECLARE_MYSQL(mysql,is_closed,x0);
   if (is_closed) {
     RAISE(MakeMySQLError(String::New("Internal Error, mysql_close: Connection is already closed")));
   } else {
@@ -247,7 +264,7 @@ DEFINE1(_mysql_close) {
 } END
 
 DEFINE1(_mysql_character_set_name) {
-  DECLARE_MYSQL(mysql,x0);
+  DECLARE_MYSQL(mysql,is_closed,x0);
 
   if (is_closed) {
     RAISE(MakeMySQLError(String::New("Internal Error, mysql_character_set_name: Connection lost or closed earlier")));
@@ -257,7 +274,7 @@ DEFINE1(_mysql_character_set_name) {
 } END
 
 DEFINE1(_mysql_ping) {
-  DECLARE_MYSQL(mysql,x0);
+  DECLARE_MYSQL(mysql,is_closed,x0);
 
   if (is_closed) {
     RAISE(MakeMySQLError(String::New("Internal Error, mysql_ping: Connection lost or closed earlier")));
@@ -277,7 +294,6 @@ DEFINE1(_mysql_ping) {
 word InitComponent() {
   mysqlFinalizationSet = new MySQLFinalizationSet();
   mysqlHandler = new MySQLHandler();
-  mysqlResultHandler = new MySQLResultHandler();
 
   MySQLErrorConstructor =
     UniqueConstructor::New("MySQLError",
