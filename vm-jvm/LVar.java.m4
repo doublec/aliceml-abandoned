@@ -47,7 +47,31 @@ public class LVar extends UnicastRemoteObject
 	return ref;
     }
 
-    synchronized public DMLValue bind(DMLValue v) throws java.rmi.RemoteException { // bindet Variable und startet java.lang.Threads aus suspendVector-Liste
+    // bindet Variable und startet Threads aus
+    // suspendVector-Liste
+    synchronized public DMLValue bind(DMLValue v)
+	throws java.rmi.RemoteException {
+	// here I must check if the value v is admissible
+	// avoid cycles
+	// path compression is performed during checking
+	boolean hasSelfRef = false;
+	while (v instanceof DMLLVar) {
+	    if (v == this) { // we detect a self-cycle
+		hasSelfRef = true;
+		break;
+	    }
+	    DMLValue vv = ((DMLLVar) v).getValue();
+	    if (v == vv) { // we run into an unbound variable
+		// hasSelfRef = false;
+		break;
+	    } else {
+		v = vv;
+	    }
+	}
+	if (hasSelfRef) {
+	    _RAISENAME(General.Fulfill);
+	}
+
 	ref=v;
 	this.notifyAll();
 	return Constants.dmlunit;
