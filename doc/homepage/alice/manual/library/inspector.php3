@@ -11,6 +11,16 @@
     The <I>Alice Inspector</I> is a tool that allows to interactively
     display and inspect Alice data structures.
   </P>
+  <P>
+    For example,
+    <PRE>Inspector.inspect x</PRE>
+  </P>
+  <P>
+    tells the inspector to show the value <TT>x</TT>.
+    The inspector will popup a window and pretty-print the value <TT>x</TT>.
+    Different types can be assigned different colors to
+    make output more readable.
+  </P>
 
 <?php section("import", "import"); ?>
 
