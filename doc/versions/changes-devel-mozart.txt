@@ -60,6 +60,7 @@ Library:
 * Hole: future now simply returns argument if not a hole (no exception).
 * Alt: added mapBoth.
 * Pair: added mapBoth.
+* Vector, {Char,Word8}Vector: fixed update to raise Subscript for bad indices.
 * VectorSlice: fixed toVector.
 * String: fixed isSubstring.
 * Substring: fixed isSubstring.

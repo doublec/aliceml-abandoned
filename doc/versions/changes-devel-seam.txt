@@ -1,3 +1,11 @@
+Library:
+
+* IntInf: fixed handling of division by 0.
+* Vector, {Char,Word8}Vector: fixed update to raise Subscript for bad indices.
+* Date: added fromISO, toISO, scanISO for locale-independent date formats.
+* Minimize: several bugfixes.
+
+
 Alice 1.0 (Kraftwerk Album 1) - 2004/12/22
 ------------------------------------------
 
