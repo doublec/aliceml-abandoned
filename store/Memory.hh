@@ -39,7 +39,10 @@ public:
     max    = (block + size);
     top    = (sizeof(u_int) - size);
     anchor = 0;
-    std::memset(block, 1, (u_int) size);
+    for (u_int i = size; i--;) {
+      block[i] = (char) 1;
+    }
+    // std::memset(block, 1, (u_int) size);
 #if (defined(STORE_DEBUG) || defined(STORE_PROFILE))
     id = counter++;
 #endif
@@ -51,13 +54,15 @@ public:
   }
 
   void Clear(){
-    s_int size = (s_int) (max - block);
+    u_int size = (max - block);
 
-    top = (s_int) (sizeof(u_int) - size);
-    std::memset(block, 1, size);
+    top = (sizeof(u_int) - size);
+    for (u_int i = size; i--;) {
+      block[i] = (char) 1;
+    }
+    //std::memset(block, 1, size);
   }
   s_int GetTop()              { return top; }
-  s_int *GetTopAddr()         { return &top; }
   void SetTop(s_int top)      { MemChunk::top = top; } 
   char *GetMax()              { return max; }
   char *GetBottom()           { return block; }
