@@ -12,6 +12,8 @@
 
 #if defined(INTERFACE)
 #pragma implementation "java/Data.hh"
+#pragma implementation "java/ClassInfo.hh"
 #endif
 
 #include "java/Data.hh"
+#include "java/ClassInfo.hh"

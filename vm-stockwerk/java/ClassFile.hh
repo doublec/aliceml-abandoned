@@ -18,7 +18,7 @@
 #endif
 
 #include <cstdlib>
-#include "java/Data.hh"
+#include "java/ClassInfo.hh"
 
 class ConstantPool;
 class ConstantPoolEntry;
