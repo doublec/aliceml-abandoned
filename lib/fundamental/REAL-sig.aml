@@ -108,7 +108,7 @@ sig
     val fromLarge :	IEEEReal.rounding_mode -> LargeReal.real -> real
 (*TODO
     val toDecimal :	real -> IEEEReal.decimal_approx
-    val fromDecimal :	IEEEReal.decimal_approx -> real
+    val fromDecimal :	IEEEReal.decimal_approx -> real option
 *)
 
     val toString :	real -> string
