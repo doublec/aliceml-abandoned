@@ -4,7 +4,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt and Andreas Rossberg, 2001
+ *   Leif Kornstaedt and Andreas Rossberg, 2001-2003
  *
  * Last change:
  *   $Date$ by $Author$
@@ -36,7 +36,7 @@ struct
     fun usage() = TextIO.output(TextIO.stdErr, "Usage: alice [options]\n" ^
 						OptionParser.helpText)
 
-    val banner     = "Alice 0.9 (Stockhausen Operette 3)\n"
+    val banner     = "Alice 0.9.1 (Stockhausen Operette 3 Remix 1)\n"
     val prompt     = "- "
     val contPrompt = "  "
 
@@ -149,7 +149,7 @@ struct
     fun main arguments =
 	if RecursiveCompiler.isCrossCompiler then
 	    (TextIO.output (TextIO.stdErr,
-			    "Cross-compilation not supported in \
+			    "alice: cross-compilation not supported by \
 			    \interactive toplevel\n");
 	     OS.Process.failure)
 	else
@@ -165,4 +165,9 @@ struct
 		Global.traceComponentAccess := true;
 		main'(OptionParser.parse arguments)
 	    end
+	    handle exn =>
+		(TextIO.output(TextIO.stdErr,
+			       "alice: uncaught internal exception " ^
+			       General.exnName exn ^ "\n");
+		 OS.Process.failure)
 end
