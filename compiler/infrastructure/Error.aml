@@ -1,15 +1,24 @@
 (*
- * Error handling.
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
  *)
 
+(* Error handling. *)
+
+import signature ERROR from "ERROR-sig"
 
 structure Error :> ERROR =
-  struct
-
+struct
     (* Import *)
 
     type region = Source.region
-
 
     (* Export *)
 
@@ -21,5 +30,4 @@ structure Error :> ERROR =
 
     fun error(reg, message) = ( print(reg,message) ; raise Error(reg,message) )
     fun warn (reg, message) =   print(reg, "warning: " ^ message)
-
-  end
+end
