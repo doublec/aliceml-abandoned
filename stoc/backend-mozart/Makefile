@@ -16,4 +16,7 @@ CodeStore.ozf: CodeEmitter.oz
 clean:
 	-rm -f *.ozf
 
+veryclean: clean
+	-rm -f stoc-mozart
+
 .PHONY: all clean
