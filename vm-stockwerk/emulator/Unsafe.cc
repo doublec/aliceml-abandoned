@@ -105,5 +105,5 @@ void PrimitiveTable::RegisterUnsafe() {
   Register("Unsafe.makeFunction", Unsafe_makeFunction, 1);
   Register("Unsafe.makeClosure", Unsafe_makeClosure, 2);
   Register("Unsafe.makeTaggedValue", Unsafe_makeTaggedValue, 2);
-  Register("Unsafe.makeTuple", Unsafe_makeTuple, 2);
+  Register("Unsafe.makeTuple", Unsafe_makeTuple, 1);
 }
