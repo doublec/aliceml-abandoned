@@ -39,6 +39,16 @@ Dependency Analyzer:
 * Translate backslashes to slashes.
 
 
+HTTP Server and Client:
+
+* Implemented persistent connections.
+
+
+Distribution:
+
+* Proxies are now concurrent instead of sequential.
+
+
 Documentation:
 
 * Added Oz-to-Alice migration page.
