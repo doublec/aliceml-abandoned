@@ -2,15 +2,15 @@ Group is
 
 	../infrastructure/source.cm
 
-	SCON.sig
-	SCon.sml
-	LAB.sig
-	Lab.sml
-	ID.sig
-	MakeId.sml
+	SCON-sig.aml
+	SCon.aml
+	LAB-sig.aml
+	Lab.aml
+	ID-sig.aml
+	MkId.aml
 
-	Ids.sml
+	Ids.aml
 
-	INPUT_GRAMMAR.sig
-	MakeInputGrammar.sml
-	InputGrammar.sml
+	INPUT_GRAMMAR-sig.aml
+	MkInputGrammar.aml
+	InputGrammar.aml
