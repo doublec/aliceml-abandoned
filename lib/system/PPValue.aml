@@ -175,7 +175,7 @@ struct
     and ppVal' t fm x =
 	if #depth fm <= 0 then text "_" else
 	case Future.status x
-	 of Future.FAILED => ppKeyword fm (text "raise") else
+	 of Future.FAILED => ppKeyword fm (text "raise")
 	  | Future.FUTURE => ppKeyword fm (text(if Future.isLazy x
 						then "lazy" else "future"))
 	  | Future.DETERMINED =>
