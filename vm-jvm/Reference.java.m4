@@ -128,10 +128,6 @@ final public class Reference implements DMLConVal, DMLReference {
 
     private void writeObject(java.io.ObjectOutputStream out)
 	throws java.io.IOException {
-	if (out instanceof PickleOutputStream) {// damit beim Pickling keine Probleme auftreten
-	    out.defaultWriteObject();
-	    return;
-	}
 	try {
 	    if (mgr==null) {
 		ClientManager CMGR=null;
@@ -160,12 +156,7 @@ final public class Reference implements DMLConVal, DMLReference {
 
     private void readObject(java.io.ObjectInputStream in)
 	throws java.io.IOException, ClassNotFoundException {
-	if (in instanceof PickleInputStream) { // Pickling !
-	    in.defaultReadObject();
-	    return;
-	} else {
 	in.defaultReadObject();
 	cmgr = new ClientManager(this);
-	}
     }
 }
