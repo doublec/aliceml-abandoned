@@ -10,9 +10,9 @@
  *   $Revision$
  *)
 
-import "SEARCH-sig"
-import "Space"
-import "UnsafeGecode"
+import signature SEARCH       from "SEARCH-sig"
+import structure Space        from "Space"
+import structure UnsafeGecode from "UnsafeGecode"
 
 structure Search :> SEARCH =
 struct
@@ -38,7 +38,7 @@ struct
 	    nextSol()
 	end
 
-    val searchOne = next o getSearchEngine
+    fun searchOne s = next (getSearchEngine s)
 
     fun searchBest (s, constrain) =
 	let
@@ -52,5 +52,30 @@ struct
 		     nextSol())
 	in
 	    lazy nextSol()
+	end
+
+    fun bab (space, constrain) =
+	let
+	    fun babe fs bs best =
+		case fs of
+		    nil =>
+		    (case bs of nil => best
+			      | b::br => (constrain(b, valOf best);
+					  babe [b] br best))
+		  | f::fr =>
+		    case Space.status f of
+			Space.FAILED => (Space.discard f;
+					 babe fr bs best)
+		      | Space.SOLVED => babe nil (fr@bs) (SOME f)
+		      | Space.BRANCH =>
+			let
+			    val c = Space.clone f
+			in
+			    Space.commit(f, 1);
+			    Space.commit(c, 2);
+			    babe (f::c::fr) bs best
+			end
+	in
+	    babe [Space.clone space] nil NONE
 	end
 end

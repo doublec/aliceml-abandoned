@@ -18,7 +18,7 @@
 #include "gecode-search.hh"
 
 #define makeintvararray(a,vars)               \
-  IntVarArray a(vars.size());                             \
+  IntVarArray a(vars.size(), 0,0);                             \
 { int s = vars.size(); for (int i=s; i--;) a[i] = is[vars[i]]; }
 
 #define intvar2boolvar(intvar)                \
@@ -40,7 +40,8 @@ protected:
 
   
 public:
-  GecodeSpace() : is(10), noOfIntVars(0), intArraySize(10), tmpVar(1,0,0)
+  GecodeSpace() : tmpVar(1,0,0), is(10, 0,0), noOfIntVars(0),
+		  intArraySize(10)
   {
     for (int i=10; i--;)
       is[i] = tmpVar[0];

@@ -18,7 +18,7 @@ TARGETS = \
 	Search.stc
 
 EXTRA_LIBS =
-EXTRA_INCLUDES = -I../.. -Dforceinline=inline
+EXTRA_INCLUDES = -I../..
 
 MAKEDEPEND = alicetool makedepend
 
@@ -71,16 +71,18 @@ GECODEOBJ = \
 	int/branching/assign.o \
 	int/branching/posvaldesc.o
 
+CXXFLAGS=-O2 -Dforceinline=inline -DNDEBUG -pipe
+
 all: $(NATIVES:%=%.dll) $(TARGETS)
 
 UnsafeGecode.dll: $(SOURCES:%.cc=%.o) $(GECODEOBJ:%=../../%)
 
 %.o: %.cc
-	alicetool -v compile $(EXTRA_INCLUDES) \
+	alicetool compile $(EXTRA_INCLUDES) $(CXXFLAGS) \
 	-c  $< -o $@
 
 %.dll: %.o
-	alicetool -v link $(LDFLAGS) $(SOURCES:%.cc=%.o) $(GECODEOBJ:%=../../%) \
+	alicetool link $(LDFLAGS) $(SOURCES:%.cc=%.o) $(GECODEOBJ:%=../../%) \
 	$(EXTRA_LIBS) -o $@
 
 %.stc: %.aml

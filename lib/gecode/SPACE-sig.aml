@@ -13,8 +13,6 @@
 signature SPACE =
 sig
     type 'problem space
-    type 'problem fdvar
-    type 'problem boolvar
 
     (* Exception thrown by all operations on spaces *)
     (* if the space has been discarded *)

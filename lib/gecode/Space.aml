@@ -10,8 +10,8 @@
  *   $Revision$
  *)
 
-import "SPACE-sig"
-import "UnsafeGecode"
+import signature SPACE        from "SPACE-sig"
+import structure UnsafeGecode from "UnsafeGecode"
 
 structure Space :> SPACE =
 struct

@@ -10,13 +10,19 @@
  *   $Revision$
  *)
 
-import "Space"
+import structure Space from "Space"
 
 signature SEARCH =
 sig
+    (* Standard search engines (imported from UnsafeGecode) *)
     val searchOne : 'p Space.space -> 'p Space.space option
     val searchAll : 'p Space.space -> 'p Space.space list
     val searchBest : 'p Space.space *
 		     ('p Space.space * 'p Space.space -> unit) ->
 		     'p Space.space list
+
+    (* Branch and bound search engine written in Alice *)
+    val bab : 'p Space.space *
+	      ('p Space.space * 'p Space.space -> unit) ->
+	      'p Space.space option
 end

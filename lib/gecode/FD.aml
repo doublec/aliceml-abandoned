@@ -10,9 +10,10 @@
  *   $Revision$
  *)
 
-import "FD-sig"
-import "UnsafeGecode"
-import "x-alice:/lib/system/UnsafeValue"
+import signature FD           from "FD-sig"
+import structure Space        from "Space"
+import structure UnsafeGecode from "UnsafeGecode"
+import structure UnsafeValue  from "x-alice:/lib/system/UnsafeValue"
 
 structure FD :> FD =
 struct
@@ -54,6 +55,35 @@ struct
 
    open UnsafeGecode
 
+   type 'problem fdvar
+   type 'problem boolvar
+
+   datatype domain_element =
+	    SINGLE of int
+	  | RANGE  of int * int
+		      
+   type domain = domain_element vector
+		 
+   fun fdvar(space,v) = UnsafeGecode.fdvar(space,
+					   Vector.map
+					       (fn SINGLE i => (i,i)
+						 | RANGE r => r) v)
+		 
+   fun fdvarR(space,v, b) = UnsafeGecode.fdvarR(space,
+						Vector.map
+						    (fn SINGLE i => (i,i)
+						      | RANGE r => r) v,
+						b)
+		      
+   fun fdvarVec(space,n, v) = Vector.tabulate (n, fn _ => fdvar(space,v))
+   fun fdvarVecR(space,n, v, b) = Vector.tabulate (n, fn _ => fdvarR(space,v,b))
+			    
+   fun range(space,r) = fdvar (space,#[RANGE r])
+   fun rangeVec(space,n,r) = fdvarVec(space, n, #[RANGE r])
+		       
+   fun boolvar space = UnsafeGecode.boolvar space
+   fun boolvarVec(space,n) = Vector.tabulate (n, fn _ => boolvar space)
+		      
    val boolvar2fdvar = UnsafeValue.cast
 
    fun getVal (s,v) =

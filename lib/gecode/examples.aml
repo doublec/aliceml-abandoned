@@ -1,5 +1,5 @@
-import "MkProblem"
-import "FD"
+import functor   MkProblem from "MkProblem"
+import structure FD        from "FD"
 
 fun queens n cl =
     let
@@ -7,7 +7,7 @@ fun queens n cl =
 	open S
 	open FD
 
-	val v = rangeVec(n, (0, n-1))
+	val v = rangeVec(space, n, (0, n-1))
 	val v1 = Vector.tabulate (n, fn n => (n, Vector.sub(v,n)))
 	val v2 = Vector.tabulate (n, fn n => (~n, Vector.sub(v,n)))
     in
@@ -24,7 +24,7 @@ fun money cl =
 	open S
 	open FD
 
-	val v as #[s,e,n,d,m,o',r,y] = rangeVec(8, (0,9))
+	val v as #[s,e,n,d,m,o',r,y] = rangeVec(space, 8, (0,9))
 
 	val v1 = #[(1000,   s),
 		   (100,    e),
@@ -61,10 +61,11 @@ fun photo () =
 			(4,0), (4,1)]
 	val small = {n_names=5, n_prefs=8, prefs=s_prefs}
 	val spec = small
-	val pos = rangeVec(#n_names spec,
+	val pos = rangeVec(space,
+			   #n_names spec,
 			   (0,(#n_names spec)-1))
-	val sat = range(0, #n_prefs spec)
-	val ful = boolvarVec (#n_prefs spec)
+	val sat = range(space, (0, #n_prefs spec))
+	val ful = boolvarVec (space, #n_prefs spec)
 
 	val eq = Vector.tabulate ((#n_prefs spec)+1,
             fn n => 
@@ -78,7 +79,7 @@ fun photo () =
     in
 	Vector.appi (fn (i,(pa, pb)) =>
 			let
-			    val b = boolvarVec 2
+			    val b = boolvarVec(space,2)
 			in
 			    linearR(space,
 				    #[(1, Vector.sub(pos, pb)),
@@ -120,8 +121,8 @@ fun golomb n cl =
 	val nn = n*n
 	val dn = (n*n-n) div 2
 
-	val k = rangeVec(n, (0,nn))
-	val d = rangeVec(dn,(0,nn))
+	val k = rangeVec(space, n, (0,nn))
+	val d = rangeVec(space, dn,(0,nn))
 
 	fun better(s1, s2) =
 	    relI(s1, Vector.sub(k, n-1), LE,

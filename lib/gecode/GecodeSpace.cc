@@ -53,7 +53,7 @@ int GecodeSpace::AddBoolVariable() {
 }
 
 void GecodeSpace::EnlargeIntVarArray() {
-  IntVarArray na(intArraySize*2);
+  IntVarArray na(intArraySize*2, 0,0);
   for (int i=noOfIntVars; i--;)
     na[i] = is[i];
   for (int i = noOfIntVars; i<intArraySize*2; i++) {
