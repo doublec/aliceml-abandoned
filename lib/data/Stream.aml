@@ -28,7 +28,7 @@ structure Stream :> STREAM =
 
 	exception Closed
 
-	fun new () =
+	fun stream () =
 	    let
 		val p = Promise.promise ()
 	    in

@@ -24,7 +24,7 @@ signature STREAM =					(**)
 
 	exception Closed
 
-	val new: unit -> 'a stream * 'a list
+	val stream: unit -> 'a stream * 'a list
 	val send: 'a stream * 'a -> unit	(* Closed *)
 	val close: 'a stream -> unit
     end
