@@ -1,0 +1,20 @@
+signature MYSQL =
+    sig
+        type mysql
+	exception MySQLError of string
+
+	val connect : 
+	    string * string * string option * string -> mysql
+	    (* host, user, password, database *)
+
+	val storeResult : bool ref
+	val query : mysql * string -> string vector * string option vector list
+
+	val close : mysql -> unit
+
+	(* auxiliary stuff *)
+	    (* 
+	val ping  : mysql -> unit
+	val cset  : mysql -> string
+	     *)
+   end
