@@ -340,7 +340,7 @@ DEFINE1(UnsafeOS_Process_atExn) {
 
 DEFINE1(UnsafeOS_Process_getEnv) {
   DECLARE_STRING(envVar, x0);
-  char *envVal = getenv(envVar->ExportC());
+  char *envVal = std::getenv(envVar->ExportC());
   if (envVal != NULL) {
     TagVal *val = TagVal::New(Types::SOME, 1);
     val->Init(0, String::New(envVal)->ToWord());
