@@ -26,7 +26,6 @@ import signature FUTURE           from "FUTURE-sig"
 
 structure Future : FUTURE =				(**)
 struct
-    __primitive exception Future of exn			= "Future.Future"
     exception Cyclic = Hole.Cyclic
 
     __primitive val concur :	(unit -> 'a) -> 'a	= "Future.concur"
@@ -64,7 +63,4 @@ struct
 
     __primitive val isFuture :	'a -> bool		= "Future.isFuture"
     __primitive val isFailed :	'a -> bool		= "Future.isFailed"
-
-    fun innerExn(Future e) = innerExn e
-      | innerExn e         = e
 end

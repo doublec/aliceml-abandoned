@@ -24,7 +24,6 @@ import structure Time             from "Time"
 
 signature FUTURE =					(**)
 sig
-    exception Future of exn
     exception Cyclic
 
     val concur :	(unit -> 'a) -> 'a
@@ -36,6 +35,4 @@ sig
 
     val isFuture :	'a -> bool
     val isFailed :	'a -> bool
-
-    val innerExn :	exn -> exn
 end
