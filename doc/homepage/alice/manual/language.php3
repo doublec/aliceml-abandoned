@@ -40,14 +40,14 @@ programming language (SML), as defined in</P>
   <UL>
     <LI> <A href="modules.php3#local">local modules</A> </LI>
     <LI> <A href="modules.php3#higher">higher-order functors</A> </LI>
-    <LI> <A href="modules.php3#sigmembers">signature members</A> </LI>
+    <LI> <A href="modules.php3#sigmembers">signature members and abstract signatures</A> </LI>
 <!--
     <LI> <A href="modules.php3#paramsig">parameterized signatures</A> </LI>
     <LI> <A href="modules.php3#singleton">singleton signatures</A> </LI>
 -->
-    <LI> <A href="modules.php3#fixity">fixity specifications</A> </LI>
-    <LI> <A href="modules.php3#wildcards">wildcard bindings</A> </LI>
     <LI> <A href="modules.php3#lazy">lazy evaluation</A> </LI>
+    <LI> <A href="modules.php3#fixity">fixity specifications</A> </LI>
+    <LI> <A href="modules.php3#sugar">syntax enhancements</A> </LI>
   </UL>
   </LI>
 
@@ -99,13 +99,13 @@ programming language (SML), as defined in</P>
 	lazy   pack          spawn      unpack   withfun    withval
 </PRE>
 
-
-<?php subsection("grammar", "Grammar") ?>
-
 <P>The following grammar collects all syntactic extensions of Alice ML
 relative to Standard ML. Derived forms are marked (*).
 
-<TABLE>
+
+<?php subsection("syntax-exps", "Expressions") ?>
+
+<TABLE class=bnf>
   <TR>
     <TD> <I>atexp</I> </TD>
     <TD align="center">::=</TD>
@@ -142,18 +142,20 @@ relative to Standard ML. Derived forms are marked (*).
     <TD> <I>exprow</I> </TD>
     <TD align="center">::=</TD>
     <TD> ... </TD>
-    <TD> label as expression (*) </TD>
+    <TD> </TD>
   </TR>
   <TR>
     <TD></TD> <TD></TD>
     <TD> <I>vid</I> &lt;<TT>:</TT> <I>ty</I>&gt;
                     &lt;<TT>,</TT> <I>exprow</I>&gt; </TD>
-    <TD> </TD>
+    <TD> label as expression (*) </TD>
   </TR>
+</TABLE>
 
-  <TR></TR>
-  <TR></TR>
 
+<?php subsection("syntax-pats", "Patterns") ?>
+
+<TABLE class=bnf>
   <TR>
     <TD> <I>atpat</I> </TD>
     <TD align="center">::=</TD>
@@ -195,10 +197,12 @@ relative to Standard ML. Derived forms are marked (*).
     <TD> <I>pat</I> <TT>where</TT> <I>atexp</I> </TD>
     <TD> guarded (L) </TD>
   </TR>
+</TABLE>
 
-  <TR></TR>
-  <TR></TR>
 
+<?php subsection("syntax-tys", "Types") ?>
+
+<TABLE class=bnf>
   <TR>
     <TD> <I>ty</I> </TD>
     <TD align="center">::=</TD>
@@ -207,13 +211,15 @@ relative to Standard ML. Derived forms are marked (*).
   </TR>
   <TR>
     <TD></TD> <TD></TD>
-    <TD width="100"> <TT>_</TT> </TD>
+    <TD> <TT>_</TT> </TD>
     <TD> wildcard </TD>
   </TR>
+</TABLE>
 
-  <TR></TR>
-  <TR></TR>
 
+<?php subsection("syntax-decs", "Declarations") ?>
+
+<TABLE class=bnf>
   <TR>
     <TD> <I>dec</I> </TD>
     <TD align="center">::=</TD>
@@ -255,10 +261,12 @@ relative to Standard ML. Derived forms are marked (*).
 	 &lt;<TT>and</TT> <I>econbind</I>&gt; </TD>
     <TD> synonym </TD>
   </TR>
+</TABLE>
 
-  <TR></TR>
-  <TR></TR>
 
+<?php subsection("syntax-specs", "Specifications") ?>
+
+<TABLE class=bnf>
   <TR>
     <TD> <I>spec</I> </TD>
     <TD align="center">::=</TD>

@@ -15,15 +15,11 @@
   <BODY>
 
 
-  <H1 class="margin">
-<!--
-  <TABLE cellpadding=8 bgcolor=white>
-    <TR><TD>
-      <IMG class=logo src="alice.gif">
-    </TD></TR>
-  </TABLE>
-  <BR>
--->
+  <!-- margin-color: #83a2eb -->
+
+  <DIV class=margin>
+
+  <H1>
   alice<BR>
   manual.<BR>
   </H1>
@@ -32,11 +28,17 @@
     include("menu.php3")
   ?>
 
+  <A href="http://www.ps.uni-sb.de/alice/">
+  <IMG src="/alice/logos/alice-strikethrough-shadow-blue-72x22.gif"
+       border=0
+       alt="Alice Project">
+  </A>
+
+  </DIV>
+
   <H1>
   <?php echo($chapter) ?>
   </H1>
-
-  <IMG class="logo" align="right" src="alice.gif" alt="Alice">
 
 <?php
   };
@@ -59,15 +61,16 @@
 
   function section($tag, $name)
   {
-    $n = 40 - strlen($name);
+    $n = 60 - strlen($name);
 
     for ($bar = ""; $n > 0; $n--)
     {
 	$bar .= "_";
     };
 
-    echo("<BR><H2><A name=" . $tag . ">" . $name . "&nbsp;" . $bar .
-	 "</A></H2>");
+    echo("<BR><H2><A name=" . $tag . "><SUP><TT>________&nbsp;</TT></SUP>" .
+	 ucfirst($name) .
+	 "<SUP><TT>&nbsp;" . $bar . "</TT></SUP></A></H2>");
   };
 
   function subsection($tag, $name)

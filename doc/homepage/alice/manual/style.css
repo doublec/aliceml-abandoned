@@ -1,7 +1,7 @@
 BODY {
 	background:	url(bg.gif) repeat-y white;
 	position:	relative;
-	margin-left:	200px;
+	margin-left:	210px;
 	margin-right:	10px;
 }
 
@@ -16,7 +16,7 @@ BODY {
 .logo {
 	position:	absolute;
 	top:		0px;
-	right:		0px;
+	left:		0px;
 	margin-top:	20px;
 	margin-right:	20px;
 }
@@ -35,30 +35,49 @@ A:hover {
 	text-decoration: underline;
 }
 
-H1, H2 {
-	font-weight:	bold;
-	font-family:	"Courier New", Courier, Monospace;
-	text-align:	left;
+.menu A {
+	color:		#ecf17d;
+}
+
+.menu A:link {
+	color:		#ecf17d;
+	text-decoration: none;
+}
+
+.menu A:visited {
+	color:		#ecf17d;
+	text-decoration: none;
+}
+
+.menu A:hover {
+	text-decoration: underline;
 }
 
 H1 {
+	text-align:	left;
+	font-weight:	bold;
+	font-family:	"Courier New", courier, monospace;
 	font-size:	150%;
+	color:		#83a2eb;
 }
 
-H1.margin {
-	position:	absolute;
+.margin H1 {
 	font-size:	150%;
 	color:		white;
 }
 
 H2 {
+	margin-left:	-80px;
+	text-align:	left;
+	font-family:	arial, helvetica, sans-serif;
 	font-size:	130%;
-	color:		#ff8833;
+	color:		#0b3373;
 }
 
 H3 {
-	font-size:	110%;
 	font-family:	arial, helvetica, sans-serif;
+	font-size:	100%;
+	color:		#83a2eb;
 }
 
 PRE.code {
@@ -70,8 +89,8 @@ P.quote {
 	font-style:	italic;
 }
 
-A.url, TT {
-	font-family:	"Courier New", Courier, Monospace;
+A.url, TT, PRE.code {
+	font-family:	"Courier New", courier, monospace;
 }
 
 P.note, DIV.note {
@@ -79,23 +98,26 @@ P.note, DIV.note {
 }
 
 P.menu {
-	margin-top:	2cm;
+	margin-top:	40px;
+	margin-bottom:	40px;
 	width:		100%;
 	font-family:	arial, helvetica, sans-serif;
+	color:		#ff8833;
 }
 
 TABLE TR {
 	vertical-align:	baseline;
 }
+
 TABLE.bnf {
-	font-family:	"Times New Roman", Times, Helvetica, Serif;
+	font-family:	"Times New Roman", times, serif;
 	border-style:	none;
 }
 
-
-TABLE.bnf TT {
-	font-family:	"Courier New", Courier, Monospace;
-	font-size:	100%;
+TABLE.bnf TR TD {
+	padding-left:	10px;
+	padding-right:	10px;
+	vertical-align:	baseline;
 }
 
 TABLE.dyptic {

@@ -10,10 +10,10 @@
 <P>Alice ML has an extended type language featuring:</P>
 
 <UL>
-  <LI> <A href="#datatype">structural datatypes</A> </LI>
-  <LI> <A href="#exttype">extensible datatypes</A> </LI>
-  <LI> <A href="#wildcard">type wildcards</A> </LI>
-  <LI> <A href="#packages">dynamic typing</A> </LI>
+  <LI> <A href="#datatype">Structural datatypes</A> </LI>
+  <LI> <A href="#exttype">Extensible datatypes</A> </LI>
+  <LI> <A href="#wildcard">Type wildcards</A> </LI>
+  <LI> <A href="#packages">Dynamic typing</A> </LI>
 </UL>
 
 
@@ -23,17 +23,17 @@
 that have structurally equivalent definitions are compatible. For example, the
 following program will elaborate:</P>
 
-<PRE>
-	datatype 'a t = A | B of 'a | C of 'a t
-	val x = C(B 0)
+<PRE class=code>
+datatype 'a t = A | B of 'a | C of 'a t
+val x = C(B 0)
 
-	datatype 'a u = B of 'a | C of 'a u | A
-	val y = B 20
+datatype 'a u = B of 'a | C of 'a u | A
+val y = B 20
 
-	datatype 'a v = B of 'a | C of 'a t | A
-	val z = A
+datatype 'a v = B of 'a | C of 'a t | A
+val z = A
 
-	val l = [x,y,z]</PRE>
+val l = [x,y,z]</PRE>
 
 <P>This relaxation is particularly interesting for
 <A href="distribution.php3">distributed programming</A>.</P>
@@ -48,47 +48,31 @@ which have a potentially unlimited set of constructors.</P>
 
 <P>An extensible type is declared as follows:</P>
 
-<PRE>
-	exttype 'a message</PRE>
+<PRE class=code>
+exttype 'a message</PRE>
 
 <P>Fresh constructors are introduced as follows:</P>
 
-<PRE>
-	constructor DoThis of int : 'a message
-	constructor DoThat of bool * 'a : 'a message
-	constructor StopIt : 'a message
-	constructor Abort = StopIt</PRE>
+<PRE class=code>
+constructor DoThis of int : 'a message
+constructor DoThat of bool * 'a : 'a message
+constructor StopIt : 'a message
+constructor Abort = StopIt</PRE>
 
 <P>Constructors can be added at any point. Like exceptions in SML, constructor
 declarations are dynamically generative, i.e. the following function returns a
 different constructor on each call:</P>
 
-<PRE>
-	fun genMsg() = let constructor C : 'a message in C end</PRE>
+<PRE class=code>
+fun genMsg() = let constructor C : 'a message in C end</PRE>
 
 <P>Note that - like exceptions - extensible types do not admit equality, since
-it is unknown whether there will be any constructors prohibiting that.
-</P>
+it is unknown whether there will be any constructors prohibiting that.</P>
 
-<P>Exception declarations and specifications are derived forms in Alice ML,
-e.g.</P>
 
-<TABLE>
-  <TR>
-    <TD> <TT>exception</TT> <I>vid</I> &lt;<TT>of</TT> <I>ty</I>&gt; </TD>
-    <TD> &nbsp;&nbsp;==>&nbsp;&nbsp; </TD>
-    <TD> <TT>constructor</TT> <I>vid</I> &lt;<TT>of</TT> <I>ty</I>&gt; <TT>: exn</TT></TD>
-  </TR>
-  <TR>
-    <TD> <TT>exception</TT> <I>vid</I><SUB>1</SUB> <TT>=</TT> <I>vid</I><SUB>2</SUB> </TD>
-    <TD> &nbsp;&nbsp;==>&nbsp;&nbsp; </TD>
-    <TD> <TT>constructor</TT> <I>vid</I><SUB>1</SUB> <TT>=</TT> <I>vid</I><SUB>2</SUB> </TD>
-  </TR>
-</TABLE>
+<?php subsection("exttype-syntax", "Extensible types syntax") ?>
 
-<P>Here is the complete syntax dealing with extensible datatypes:</P>
-
-<TABLE>
+<TABLE class=bnf>
   <TR>
     <TD> <I>dec</I> </TD>
     <TD align="center">::=</TD>
@@ -172,24 +156,41 @@ e.g.</P>
   </TR>
 </TABLE>
 
+<P>Exception declarations and specifications are derived forms in Alice ML,
+e.g.</P>
+
+<TABLE class=bnf>
+  <TR>
+    <TD> <TT>exception</TT> <I>vid</I> &lt;<TT>of</TT> <I>ty</I>&gt; </TD>
+    <TD> ==> </TD>
+    <TD> <TT>constructor</TT> <I>vid</I> &lt;<TT>of</TT> <I>ty</I>&gt; <TT>: exn</TT></TD>
+  </TR>
+  <TR>
+    <TD> <TT>exception</TT> <I>vid</I><SUB>1</SUB> <TT>=</TT> <I>vid</I><SUB>2</SUB> </TD>
+    <TD> ==> </TD>
+    <TD> <TT>constructor</TT> <I>vid</I><SUB>1</SUB> <TT>=</TT> <I>vid</I><SUB>2</SUB> </TD>
+  </TR>
+</TABLE>
+
 
 
 <?php section("wildcards", "type wildcards") ?>
 
 <P>Type annotations may contain underscores as unspecified subcomponents:</P>
 
-<PRE>
-	fun mapSnd (f : _ -> _ * _) l = List.map (#2 o f) l</PRE>
+<PRE class=code>
+fun mapSnd (f : _ -> _ * _) l = List.map (#2 o f) l</PRE>
 
 <P>Unlike type variables, type wildcards do not enforce polymorphic typing. They
 are thus suitable to leave out any part of a type annotation:</P>
 
-<PRE>
-	(3,4,[]) : (_ * int * _ list)</PRE>
+<PRE class-code>
+(3,4,[]) : (_ * int * _ list)</PRE>
 
-<P>Syntactically, type wildcards are a simple extension:</P>
 
-<TABLE>
+<?php subsection("wildcards-syntax", "Wildcard syntax") ?>
+
+<TABLE class=bnf>
   <TR>
     <TD> <I>ty</I> </TD>
     <TD align="center">::=</TD>
@@ -198,7 +199,7 @@ are thus suitable to leave out any part of a type annotation:</P>
   </TR>
   <TR>
     <TD></TD> <TD></TD>
-    <TD width="100"> <TT>_</TT> </TD>
+    <TD> <TT>_</TT> </TD>
     <TD> wildcard </TD>
   </TR>
 </TABLE>
