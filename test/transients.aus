@@ -1,3 +1,9 @@
+(*
+import
+val show: 'a -> {}
+from "../../vm-mozart/Debug.ozf"
+*)
+
 infix  7  * / div mod
 infix  6  + - ^
 infixr 5  :: @
@@ -33,9 +39,7 @@ __primitive val fulfill: 'a * 'a -> unit = "Transient.fulfill"
 __primitive val await: 'a -> 'a = "Transient.await"
 __primitive val byNeed: (unit -> 'a) -> 'a = "Transient.byNeed"
 
-__primitive val exit: int -> 'a = "Application.exit"
-
-__primitive val show: (unit -> 'a) -> 'a = "show"
+__primitive val show: 'a -> unit = "show"
 
 fun concurrent f =
     let
@@ -149,5 +153,3 @@ val xs = [future p1, future p2, future p3, future p4]
 val _ = show ("waiting", xs)
 val _ = app await xs
 val _ = show ("done", xs)
-
-val _ = exit 0
