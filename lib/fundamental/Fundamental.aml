@@ -67,6 +67,9 @@ import signature VECTOR		from "VECTOR-sig"
 import structure Vector		from "Vector"
 import signature VECTOR_PAIR	from "VECTOR_PAIR-sig"
 import structure VectorPair	from "VectorPair"
+import signature MONO_VECTOR	from "MONO_VECTOR-sig"
+import structure CharVector	from "CharVector"
+import structure Word8Vector	from "Word8Vector"
 import signature ARRAY		from "ARRAY-sig"
 import structure Array		from "Array"
 
@@ -144,6 +147,9 @@ signature VECTOR	= VECTOR
 structure Vector	= Vector
 signature VECTOR_PAIR	= VECTOR_PAIR
 structure VectorPair	= VectorPair
+signature MONO_VECTOR	= MONO_VECTOR
+structure CharVector	= CharVector
+structure Word8Vector	= Word8Vector
 signature ARRAY		= ARRAY
 structure Array		= Array
 
