@@ -809,14 +809,13 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	   end
 
 	 | REPLICATIONDec(i, tycon as TyCon(i',tycon'), longtycon) =>
-	   (* BUG: ignores constructors *)
 	   let
 		val (id',stamp)  = trTyCon_bind E tycon
 		val (longid',E') = trLongTyCon E longtycon
 		val _            = insertTy(E, tycon', (i', stamp, E'))
-		val _            = union(E,E')
 	   in
-		[O.TypDec(i, id', O.ConTyp(infoLong longtycon, longid'))]
+		O.TypDec(i, id', O.ConTyp(infoLong longtycon, longid')) ::
+		foldVals (trOpenDecVal (E,i,longid')) [] E'
 	   end
 
 	 | CONDec(i, dconbind) =>
@@ -872,11 +871,11 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		val (longid', E') = trLongStrId E longstrid
 		val   _           = unionInf(E,E')
 	   in
-		(foldVals (trOpenVal(E,i,longid')) 
-		(foldTys  (trOpenTy (E,i,longid'))
-		(foldStrs (trOpenStr(E,i,longid'))
-		(foldFuns (trOpenFun(E,i,longid'))
-		(foldSigs (trOpenSig(E,i,longid')) [] E') E') E') E') E')
+		(foldVals (trOpenDecVal(E,i,longid')) 
+		(foldTys  (trOpenDecTy (E,i,longid'))
+		(foldStrs (trOpenDecStr(E,i,longid'))
+		(foldFuns (trOpenDecFun(E,i,longid'))
+		(foldSigs (trOpenDecSig(E,i,longid')) [] E') E') E') E') E')
 	   end
 
 	 | EMPTYDec(i) =>
@@ -901,67 +900,70 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		)
 
 
-    and trOpenVal (E,i,longid) (vid, (_,stamp,is), decs') =
+    and trOpenDecVal (E,i,longid) (vid', (_,stamp,is), decs') =
 	let
-	    val name    = VId.toString vid
+	    val name    = VId.toString vid'
 	    val id'     = O.Id(i, stamp, O.ExId name)
 	    val lab'    = O.Lab(i, name)
 	    val longid' = O.LongId(i, longid, lab')
 	    val pat'    = O.VarPat(i, id')
 	    val exp'    = O.VarExp(i, longid')
-	    val _       = insertVal(E, vid, (i,stamp,is))
+	    val _       = insertVal(E, vid', (i,stamp,is))
 	    (* BUG: detect hiding and make correspondings decs local *)
 	in
-	    O.ValDec(i, pat', exp') :: decs'
+	    (case is
+	       of V => O.ValDec(i, O.VarPat(i, id'), O.VarExp(i, longid'))
+		| _ => O.ConDec(i, O.Con(i, id', []), O.SingTyp(i, longid'))
+	    ) :: decs'
 	end
 
-    and trOpenTy (E,i,longid) (tycon, (_,stamp,E'), decs') =
+    and trOpenDecTy (E,i,longid) (tycon', (_,stamp,E'), decs') =
 	let
-	    val name    = TyCon.toString tycon
+	    val name    = TyCon.toString tycon'
 	    val id'     = O.Id(i, stamp, O.ExId name)
 	    val lab'    = O.Lab(i, name)
 	    val longid' = O.LongId(i, longid, lab')
 	    val typ'    = O.ConTyp(i, longid')
-	    val _       = insertTy(E, tycon, (i,stamp,E'))
+	    val _       = insertTy(E, tycon', (i,stamp,E'))
 	    (* BUG: detect hiding and make correspondings decs local *)
 	in
 	    O.TypDec(i, id', typ') :: decs'
 	end
 
-    and trOpenStr (E,i,longid) (strid, (_,stamp,E'), decs') =
+    and trOpenDecStr (E,i,longid) (strid', (_,stamp,E'), decs') =
 	let
-	    val name    = StrId.toString strid
+	    val name    = StrId.toString strid'
 	    val id'     = O.Id(i, stamp, O.ExId name)
 	    val lab'    = O.Lab(i, name)
 	    val longid' = O.LongId(i, longid, lab')
 	    val mod'    = longidToMod longid'
-	    val _       = insertStr(E, strid, (i,stamp,E'))
+	    val _       = insertStr(E, strid', (i,stamp,E'))
 	    (* BUG: detect hiding and make correspondings decs local *)
 	in
 	    O.ModDec(i, id', mod') :: decs'
 	end
 
-    and trOpenFun (E,i,longid) (funid, (_,stamp,E'), decs') =
+    and trOpenDecFun (E,i,longid) (funid', (_,stamp,E'), decs') =
 	let
-	    val name    = FunId.toString funid
+	    val name    = FunId.toString funid'
 	    val id'     = O.Id(i, stamp, O.ExId(fromFunName name))
 	    val lab'    = O.Lab(i, name)
 	    val longid' = O.LongId(i, longid, lab')
 	    val mod'    = longidToMod longid'
-	    val _       = insertFun(E, funid, (i,stamp,E'))
+	    val _       = insertFun(E, funid', (i,stamp,E'))
 	    (* BUG: detect hiding and make correspondings decs local *)
 	in
 	    O.ModDec(i, id', mod') :: decs'
 	end
 
-    and trOpenSig (E,i,longid) (sigid, (_,stamp,E'), decs') =
+    and trOpenDecSig (E,i,longid) (sigid', (_,stamp,E'), decs') =
 	let
-	    val name    = SigId.toString sigid
+	    val name    = SigId.toString sigid'
 	    val id'     = O.Id(i, stamp, O.ExId name)
 	    val lab'    = O.Lab(i, name)
 	    val longid' = O.LongId(i, longid, lab')
 	    val inf'    = O.ConInf(i, longid')
-	    val _       = insertSig(E, sigid, (i,stamp,E'))
+	    val _       = insertSig(E, sigid', (i,stamp,E'))
 	    (* BUG: detect hiding and make correspondings decs local *)
 	in
 	    O.InfDec(i, id', inf') :: decs'
@@ -1553,7 +1555,6 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	   end
 
 	 | REPLICATIONSpec(i, tycon as TyCon(i', tycon'), longtycon) =>
-	   (* BUG: ignores constructors *)
 	   let
 		val (id',stamp)  = trTyCon_bind E tycon
 		val (longid',E') = trLongTyCon E longtycon
@@ -1565,7 +1566,8 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 			errorVId'("duplicate value or constructor ", E', vid',
 				 " in signature")
 	   in
-		[O.TypSpec(i, id', O.ConTyp(infoLong longtycon, longid'))]
+		O.TypSpec(i, id', O.ConTyp(infoLong longtycon, longid')) ::
+		foldVals (trOpenSpecVal (E,i,longid')) [] E'
 	   end
 
 	 | CONSpec(i, dcondesc) =>
@@ -1636,6 +1638,27 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 				 \identifier ", vid, " in signature")
 		; []
 		)
+
+
+    and trOpenSpecVal (E,i,longid) (vid', (_,stamp,is), specs') =
+	let
+	    val name    = VId.toString vid'
+	    val id'     = O.Id(i, stamp, O.ExId name)
+	    val lab'    = O.Lab(i, name)
+	    val longid' = O.LongId(i, longid, lab')
+	    val typ'    = O.SingTyp(i, longid')
+	    val _       = insertDisjointVal(E, vid', (i,stamp,is))
+			  handle CollisionVal _ =>
+			  errorVId'("duplicate value or constructor ", E, vid',
+				    " in signature")
+	in
+	    (case is
+	       of V => O.ValSpec(i, id', typ')
+	        | _ => O.ConSpec(i, O.Con(i, id', []), typ')
+	    ) :: specs'
+	end
+
+
 
 
     (* Descriptions *)

@@ -1,10 +1,4 @@
-(* Q&D Untyped translation *)
-
-(* What does not work yet:
-   - structures
-   - open
-   - datatype replication
-*)
+(* Untyped translation *)
 
 structure TranslationPhase :> TRANSLATION_PHASE =
   struct
@@ -198,7 +192,10 @@ structure TranslationPhase :> TRANSLATION_PHASE =
     (* Declarations *)
 
     and trDec(I.ValDec(i,p,e), ds')	= O.ValDec(i, trPat p, trExp e) :: ds'
-      | trDec(I.ConDec(i,c,t), ds')	= trCon(c, ds')
+      | trDec(I.ConDec(i,c,t), ds')	= (case t
+					   of I.SingTyp(_,y) => trEqCon(c,y,ds')
+					    | _              => trCon(c,ds')
+					  )
       | trDec(I.TypDec(i,x,t), ds')	= trTyp(t, ds')
       | trDec(I.ModDec(i,x,m), ds')	= let val x' as O.Id(i',_,_) = trId x in
 					      O.ValDec(i, O.VarPat(i',x'),
@@ -212,6 +209,8 @@ structure TranslationPhase :> TRANSLATION_PHASE =
     and trDecs ds			= trDecs'(ds, [])
     and trDecs'(ds, ds')		= List.foldr trDec ds' ds
 
+    and trEqCon(I.Con(i,x,ts), y, ds')	= O.ValDec(i, O.VarPat(i,trId x),
+						   O.VarExp(i,trLongid y)):: ds'
     and trCon(I.Con(i,x,ts), ds')	= O.ConDec(i, trId x,
 						      List.length ts > 0) :: ds'
     and trCons(cs, ds')			= List.foldr trCon ds' cs
