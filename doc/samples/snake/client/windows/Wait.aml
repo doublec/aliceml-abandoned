@@ -34,7 +34,7 @@ struct
 
     (* builds the waiting window *)
     fun mkWaitingWindow (alreadyConnected, {start, disconnect}, 
-			 guiJoin, serverUrlStr, gameMode) =
+			 guiJoin, serverUrlStr, {reset, gameMode}) =
 	let
 	    val waiting          = Gtk.windowNew Gtk.WINDOW_TOPLEVEL
 	    val dialogVBox       = Gtk.vboxNew (false, 0)
@@ -75,7 +75,7 @@ struct
 		
 	    (* the mainQuit procedure resets also the used refs *)
 	    fun mainQuit () = (disconnect (); Gtk.widgetDestroy waiting;
-		               raise Error.Error "")
+		               reset NONE)
 		
 		
 	    (* inserts all connected players into text widget *)
@@ -107,7 +107,7 @@ struct
 			 FST (mGame, guiGame) => 
 			     gameMode ({disconnect}, mGame, guiGame)
 		       | SND   errorMsg       =>
-			     raise Error.Error errorMsg
+			     reset (SOME ("ERROR!!", errorMsg))
 		 end)
 	in
 

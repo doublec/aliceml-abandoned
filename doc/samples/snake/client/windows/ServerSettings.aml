@@ -25,7 +25,7 @@ struct
 
 	
 	
-    fun mkServerSettings ({startServer}, gameMode) = 
+    fun mkServerSettings ({startServer}, {reset, gameMode}) = 
 	let
 
 	    val serverSettings     = Gtk.windowNew Gtk.WINDOW_TOPLEVEL
@@ -133,8 +133,7 @@ struct
 		mkhScale (levelsHBox, "Levels", 50.0, 1.0, 31.0)
 
 
-	    fun mainQuit () = (Gtk.widgetDestroy serverSettings; 
-                               raise Error.Error "")
+	    fun mainQuit () = (Gtk.widgetDestroy serverSettings; reset NONE)
 		
 	    fun changedNameText () = 
 		if Gtk.entryGetText nameText = ""
@@ -277,8 +276,8 @@ struct
 			FST (mStart, guiJoin, serverUrl) => 
 			           Wait.mkWaitingWindow 
 				       (!alreadyConn, mStart, 
-					guiJoin, serverUrl, gameMode)
-		      | SND     errorMsg => raise Error.Error errorMsg
+					guiJoin, serverUrl, {reset, gameMode})
+		      | SND     errorMsg => reset (SOME ("ERROR!!", errorMsg))
 		end
 
 	in
