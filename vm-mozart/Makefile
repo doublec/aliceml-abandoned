@@ -91,8 +91,8 @@
 
 # Configurable directories
 
-SRCTOP = ../..
-BOOTSTRAPDIR = ../../bootstrap
+SRCTOP = ..
+BOOTSTRAPDIR = ../bootstrap
 OZHOME = /opt/mozart-1.1.1
 PREFIX = /opt/stockhausen-devel
 
@@ -300,9 +300,6 @@ build1/lib/fundamental/%.aml: lib/fundamental/%.aml
 	cp $< $@
 
 build1/lib/fundamental/RTT.aml: lib/fundamental/DummyRTT.aml
-	cp $< $@
-
-build1/lib/system/%.oz: vm-mozart/%.oz
 	cp $< $@
 
 build1/%.oz: vm-mozart/%.oz
@@ -549,8 +546,9 @@ build3/%.ozf: build3/%.oz
 build3/stoc/%.ozf: build3/stoc/%.aml
 	$(STOC2) $(STOC_OPTS) -c $< -o $@
 
+#--** --rtt-level=full crashes - failed assertion in line 889 of Type.aml
 build3/%.ozf: build3/%.aml
-	$(STOC2) $(STOC_OPTS) --rtt-level=full -c $< -o $@
+	$(STOC2) $(STOC_OPTS) -c $< -o $@
 
 $(NATIVECOMPONENTS:%=build3/lib/system/%.ozf): build3/%.ozf: \
 	build1/%.ozf build3/%.asig build3/lib/fundamental/Fundamental.ozf
