@@ -55,11 +55,15 @@ static void *LoadLanguageLayer(String *languageId) {
     word w = languageLayerTable->Get(wLanguageId);
     return Store::DirectWordToUnmanagedPointer(w);
   } else {
+    u_int n = languageId->GetSize();
+    String *filename = String::New(n + 4);
+    std::memcpy(filename->GetValue(), languageId->GetValue(), n);
+    std::memcpy(filename->GetValue() + n, ".dll", 4);
     void *handle =
 #if defined(__MINGW32__) || defined(_MSC_VER)
-      (void *) LoadLibrary(languageId->ExportC());
+      (void *) LoadLibrary(filename->ExportC());
 #else
-      dlopen(languageId->ExportC(), RTLD_NOW | RTLD_GLOBAL);
+      dlopen(filename->ExportC(), RTLD_NOW | RTLD_GLOBAL);
 #endif
     if (handle != NULL)
       languageLayerTable->Put(wLanguageId,
