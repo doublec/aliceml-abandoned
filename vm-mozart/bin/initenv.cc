@@ -72,7 +72,11 @@ static char *mozartKey = "SOFTWARE\\Mozart Consortium\\Mozart\\1.2.5";
 char *getOzHome(bool toUnix)
 {
   char *ozhome = getRegistry(mozartKey,"OZHOME");
-  ozhome = strdup(ozhome);
+  if (ozhome == NULL)
+    panic(true, "Could not locate value `%s\\%s´ in registry\n",
+	  mozartKey, "OZHOME");
+  else
+    ozhome = strdup(ozhome);
   normalizePath(ozhome,toUnix);
   return ozhome;
 }
