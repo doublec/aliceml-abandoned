@@ -20,7 +20,8 @@ import structure CanvasHelper    from "CanvasHelper"
 
 signature EXPLORER =
   sig
-      type explorer
+      type explorer = Types.explorer_state option ref
+      val serve : (unit -> unit) -> unit
       val initExplorer : unit -> explorer
       val initWithSpace : Space.space -> explorer
       val exploreAll : Space.space -> explorer
