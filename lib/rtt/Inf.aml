@@ -291,6 +291,29 @@ structure InfPrivate =
       | stripItem' _		= ()
 
 
+  (* Hashing *)
+
+    val same	= op=
+    val sameSig	= op=
+
+    fun plusHash(a,b)		= a + b handle Overflow =>
+					if a < b then plusHash(a, b mod a)
+						 else plusHash(a mod b, b)
+
+    fun hash(ref j')		= hash' j'
+    and hash' TOP		= 0
+      | hash'(CON c)		= hashCon c
+      | hash'(SIG s)		= hashSig s
+      | hash'(FUN(p,j1,j2))	= plusHash(hash j1, hash j2)
+      | hash'(LAMBDA(p,j1,j2))	= plusHash(hash j1, hash j2)
+      | hash'(APPLY(j1,p,j2))	= plusHash(hash j1, hash j2)
+      | hash'(LINK j)		= hash j
+      | hash'(ABBREV(j1,j2))	= hash j2
+
+    and hashSig(ref is, _)	= List.foldl plusHash 0 (List.map hashItem is)
+    and hashItem item		= Path.hash(itemPath item)
+    and hashCon(k,p)		= Path.hash p
+
 
   (* Closure check *)
 

@@ -73,6 +73,13 @@ signature INF =
     val strip :		inf  -> unit
     val stripSig :	sign -> unit
 
+  (* Hashing *)
+
+    val hash :		inf  -> int
+    val hashSig :	sign -> int
+    val same :		inf  * inf  -> bool	(* identitiy, yuck... *)
+    val sameSig :	sign * sign -> bool
+
   (* Kinds *)
 
     exception Kind
