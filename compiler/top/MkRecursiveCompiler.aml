@@ -60,26 +60,6 @@ functor MkRecursiveCompiler(structure ComponentManager: COMPONENT_MANAGER
 		TextIO.print ("### " ^ message ^ "\n")
 	    else ()
 
-	local
-	    val homeRef: string option ref = ref NONE
-	in
-	    fun home () =
-		case !homeRef of
-		    NONE =>
-			let
-			    val home =
-				case Config.homeDir of
-				    SOME s => s ^ "/"
-				  | NONE =>
-					(warn ("could not determine " ^
-					       "installation directory");
-					 "")
-			in
-			    homeRef := SOME home; home
-			end
-		  | SOME home => home
-	end
-
 	fun resolveWrtCwd url =
 	    let
 		val base =
@@ -139,8 +119,8 @@ functor MkRecursiveCompiler(structure ComponentManager: COMPONENT_MANAGER
 		SOME url =>
 		    ((Url.toLocalFile url =
 		      Url.toLocalFile
-			  (resolveWrtCwd
-			       (Url.fromString (home () ^ "Base.asig"))))
+			  (resolveWrtCwd (Url.fromString (Config.homeDir () ^
+							  "Base.asig"))))
 		     handle Url.NotLocal => false)
 	      | NONE => false
 
