@@ -183,16 +183,20 @@ structure LivenessAnalysisPhase1 :> LIVENESS_ANALYSIS_PHASE =
 			      union (lset, lset'')
 			  end) (Copy (StampSet.new ())) tagBodyVec
 	  | scanTests (ConTests conBodyVec) =
-	    Vector.foldl (fn ((_, conArgs, body), lset) =>
+	    Vector.foldl (fn ((con, conArgs, body), lset) =>
 			  let
 			      val lset' = scanBody body
-			      val lset'' =
+			      val lset' =
+				  case con of
+				      Con id => ins (lset', id)
+				    | StaticCon _ => lset'
+			      val lset' =
 				  case conArgs of
 				      SOME args =>
 					  processArgs (args, lset', delDef)
 				    | NONE => lset'
 			  in
-			      union (lset, lset'')
+			      union (lset, lset')
 			  end) (Copy (StampSet.new ())) conBodyVec
 	  | scanTests (VecTests vecBodyVec) =
 	    Vector.foldl (fn ((idDefs, body), lset) =>
@@ -329,6 +333,7 @@ structure LivenessAnalysisPhase2 :> LIVENESS_ANALYSIS_PHASE =
 		     let
 			 val killSet = StampSet.new ()
 		     in
+			 (* killSet = difference (defSet, useSet) *)
 			 StampSet.app
 			 (fn stamp =>
 			  if StampSet.member (useSet, stamp) then ()
