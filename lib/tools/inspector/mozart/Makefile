@@ -30,7 +30,7 @@ ALICEC = alicec
 ALICEC_OPTS = --implicit-import-file ../fundamental/Fundamental.import
 ALICELINK = alicelink
 ALICELINK_OPTS = -v
-ALICEDEP = sml @SMLload=$(BOOTSTRAPDIR)/alicedep
+ALICEDEP = alicedep
 OZSOURCES = \
 	CreateObjects.oz LayoutObjects.oz DrawObjects.oz TreeNodes.oz \
 	Helper.oz UnsafeInspector.oz
