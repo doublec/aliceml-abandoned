@@ -19,8 +19,9 @@
 #pragma interface "emulator/Scheduler.hh"
 #endif
 
-#include "emulator/ThreadQueue.hh"
 #include "emulator/Thread.hh"
+#include "emulator/ThreadQueue.hh"
+#include "emulator/PushCallInterpreter.hh"
 
 class Backtrace;
 
@@ -36,54 +37,54 @@ public:
   // Scheduler public data
   static word currentData;            // Transient or Exception
   static word currentArgs;            // Arguments
-  static Backtrace *currentBacktrace; // Backtrace (Queue)
+  static Backtrace *currentBacktrace; // Backtrace
   static word vmGUID;
+  // Scheduler Static Constructor
+  static void Init();
+
   // Scheduler Main Function
   static void Run();
+
   // Scheduler Accessors
   static Thread *GetCurrentThread() {
     return currentThread;
   }
   // Scheduler Functions
-  static void NewThread(word closure, word args, TaskStack *taskStack0) {
-    TaskStack *taskStack = taskStack0;
-    if (closure != Store::IntToWord(0)) {
-      taskStack->PushCall(closure);
-    }
+  static void NewThread(word args, TaskStack *taskStack) {
     Thread *thread = Thread::New(args, taskStack);
     threadQueue->Enqueue(thread);
   }
-  static void AddThread(Thread *thread) {
+  static void NewThread(word closure, word args, TaskStack *taskStack) {
+    PushCallInterpreter::PushFrame(taskStack, closure);
+    NewThread(args, taskStack);
+  }
+  static void ScheduleThread(Thread *thread) {
+    //--** precondition: must not be scheduled
     Assert(thread->GetState() == Thread::RUNNABLE);
     threadQueue->Enqueue(thread);
   }
   static void WakeupThread(Thread *thread) {
-    if (thread->GetState() == Thread::BLOCKED) {
-      // The thread can already have been woken up
-      // if it awaited more than one future.
-      thread->Wakeup();
-      if (!thread->IsSuspended())
-	AddThread(thread);
-    }
+    Assert(thread->GetState() == Thread::BLOCKED);
+    thread->Wakeup();
+    if (!thread->IsSuspended())
+      ScheduleThread(thread);
   }
   static void SuspendThread(Thread *thread) {
     thread->Suspend();
     thread->GetTaskStack()->Purge();
     if (thread->GetState() == Thread::RUNNABLE)
       threadQueue->Remove(thread);
- }
+  }
   static void ResumeThread(Thread *thread) {
     if (thread->IsSuspended()) {
       thread->Resume();
       if (thread->GetState() == Thread::RUNNABLE)
-	AddThread(thread);
+	ScheduleThread(thread);
     }
   }
   static bool TestPreempt() {
     return preempt;
   }
-  // Scheduler Static Constructor
-  static void Init();
 };
 
 #endif

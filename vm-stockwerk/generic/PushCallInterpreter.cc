@@ -15,9 +15,9 @@
 #endif
 
 #include <cstdio>
-#include "emulator/PushCallInterpreter.hh"
 #include "emulator/TaskStack.hh"
 #include "emulator/Scheduler.hh"
+#include "emulator/PushCallInterpreter.hh"
 
 // PushCall Frame
 class PushCallFrame : private StackFrame {
@@ -26,15 +26,11 @@ private:
   static const u_int SIZE        = 1;
 public:
   using Block::ToWord;
-  using StackFrame::GetInterpreter;
-  // PushCallFrame Accessors
-  word GetClosure() {
-    return StackFrame::GetArg(CLOSURE_POS);
-  }
+
   // PushCallFrame Constructor
   static PushCallFrame *New(Interpreter *interpreter, word closure) {
     StackFrame *frame = StackFrame::New(CALL_FRAME, interpreter, SIZE);
-    frame->ReplaceArg(CLOSURE_POS, closure);
+    frame->InitArg(CLOSURE_POS, closure);
     return static_cast<PushCallFrame *>(frame);
   }
   // PushCallFrame Untagging
@@ -43,12 +39,16 @@ public:
     Assert(p->GetLabel() == CALL_FRAME);
     return static_cast<PushCallFrame *>(p);
   }
+
+  // PushCallFrame Accessors
+  word GetClosure() {
+    return StackFrame::GetArg(CLOSURE_POS);
+  }
 };
 
 //
 // PushCallInterpreter Functions
 //
-
 PushCallInterpreter *PushCallInterpreter::self;
 
 void PushCallInterpreter::PushFrame(TaskStack *taskStack, word closure) {
@@ -68,5 +68,5 @@ const char *PushCallInterpreter::Identify() {
 }
 
 void PushCallInterpreter::DumpFrame(word) {
-  fprintf(stderr, "Push Call\n");
+  std::fprintf(stderr, "Push Call\n");
 }
