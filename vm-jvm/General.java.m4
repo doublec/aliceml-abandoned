@@ -73,6 +73,23 @@ final public class General {
 	Builtin.builtins.put(":=",assign);
     }
 
+    _BUILTIN(Exchange) {
+	_NOAPPLY0;_APPLY2;_NOAPPLY3;_NOAPPLY4;
+	_APPLY(val) {
+	    _fromTuple(args,val,2,"exchange");
+	}
+	_SAPPLY2(v) {
+	    _REQUESTDEC(DMLValue car,v1);
+	    try {
+		return ((Reference) car).exchange(v2);
+	    } catch (ClassCastException c) {
+		_RAISENAME(General.Match);
+	    }
+	}
+    }
+    /** <code>val exchange : ('a ref * 'a) -> 'a</code>*/
+    _FIELD(General,exchange);
+
     _BUILTIN(Bind) {
 	_NOAPPLY0;_APPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
@@ -145,6 +162,15 @@ final public class General {
     /** <code>val byNeed : (unit -> 'a) -> unit</code>*/
     _FIELD(General,byNeed);
 
+    _BUILTIN(Future) {
+	_NOAPPLY0;_NOAPPLY2;_NOAPPLY3;_NOAPPLY4;
+	_APPLY(lvar) {
+	    return new de.uni_sb.ps.dml.runtime.Future(lvar);
+	}
+    }
+    /** <code>val future : 'a -> 'a</code>*/
+    _FIELD(General,future);
+
     _BUILTIN(Wait) {
 	_NOAPPLY0;_NOAPPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
@@ -193,6 +219,7 @@ final public class General {
 	    return Constants.dmlunit;
 	}
     }
+
     /** <code>val spawn : (_ -> 'a) -> unit</code>
      *  spawn startet einen neuen de.uni_sb.ps.dml.runtime.Thread, der das Argument
      *  von <code>apply</code> appliziert.
