@@ -35,6 +35,10 @@ structure CodeGen =
 		 List.app constPropDec body'')
 	  | constPropDec (ReturnStm (_, exp')) = (constPropExp exp'; ())
 	  | constPropDec (IndirectStm (_, ref (SOME body'))) = List.app constPropDec body'
+	  | constPropDec (SharedStm (_,body',shared')) =
+		if shared' = ref ~1 then () else
+		    (shared' := ~1;
+		     List.app constPropDec body')
 	  | constPropDec _ = ()
 	and
 	    constPropExp (f as FunExp (_, _, _, idargsbody)) =
@@ -66,9 +70,10 @@ structure CodeGen =
 	  | destClassDec (TestStm(_,id',test',body',body'')) =
 	    (destClassDecs body'';
 	     destClassDecs body')
-	  | destClassDec (SharedStm(_,body',raf as ref 0)) =
-	    (raf := ~1;
-	     destClassDecs body')
+	  | destClassDec (SharedStm(_,body', shared')) =
+	    if shared' = ref ~2 then () else
+		(shared' := ~1;
+		 destClassDecs body')
 	  | destClassDec (ValDec(_, id', exp', _)) = destClassExp exp'
 	  | destClassDec (RecDec(_,idsexps, _)) =
 	    (Lambda.insertRec idsexps;
@@ -189,10 +194,10 @@ structure CodeGen =
 	     freeVarsDecs (body', free, curFun);
 	     freeVarsTest (test', free, curFun);
 	     markfree (free, id', curFun, "TestStm"))
-	  | freeVarsDec (SharedStm(_,body',raf as ref ~1), free, curFun) =
-	    (raf := 0;
-	     freeVarsDecs (body', free, curFun))
-	  | freeVarsDec (SharedStm _, _, _) = ()
+	  | freeVarsDec (SharedStm(_,body', shared'), free, curFun) =
+	    if shared' = ref ~2 then () else
+		(shared' := ~2;
+		 freeVarsDecs (body', free, curFun))
 	  | freeVarsDec (ValDec(_, id', exp', _), free, curFun) =
 	    (freeVarsExp (exp', free, curFun);
 	     markbound (free, id', curFun, "ValDec"))
@@ -783,12 +788,45 @@ structure CodeGen =
 			bindit(ids,0)
 		    end
 
-		fun normalTest () =
+	    (* generate ConsTest if possible. If not, generate ordinary test *)
+	    local
+		fun normal () =
+		    Multi (testCode test') ::
+		    decListCode (body', curFun, curCls)
+	    in
+		fun checkForConsTest (ConTest (Id (_, cstamp, _), SOME (Id (_, contentStamp',_)))) =
+		    let
+			fun findTup (SharedStm (_, b', _)::_) = findTup b'
+			  | findTup (IndirectStm (_, ref (SOME b'))::_) = findTup b'
+			  | findTup (TestStm (_, Id (_, contentStamp'',_),
+					      TupTest [Id (_,t1Stamp,_), Id (_,t2Stamp,_)], b', _)::_) =
+			    if contentStamp' = contentStamp'' then
+				Multi
+				[Dup,
+				 Instanceof CCons,
+				 Ifeq wrongclasslabel,
+				 Checkcast CCons,
+				 Dup,
+				 Getfield (CCons^"/car", [Classsig IVal]),
+				 storeCode (t1Stamp, curFun, curCls),
+				 Getfield (CCons^"/cdr", [Classsig IVal]),
+				 storeCode (t2Stamp, curFun, curCls)] ::
+				decListCode (b', curFun, curCls)
+			    else normal ()
+			  | findTup _ = normal ()
+		    in
+			if ConstProp.getStamp cstamp = stamp_cons then findTup body' else normal ()
+		    end
+		  | checkForConsTest _ = normal ()
+	    end
+
+	    fun normalTest () =
 		    stampcode' ::
 		    Label retry ::
-		    Multi (testCode test') ::
+		    Multi (checkForConsTest test') ::
+(*		    Multi (testCode test') ::
 		    Multi
-		    (decListCode (body', curFun, curCls)) ::
+		    (decListCode (body', curFun, curCls)) ::*)
 		    Comment "Test: Goto danach" ::
 		    Goto danach ::
 		    Label wrongclasslabel ::

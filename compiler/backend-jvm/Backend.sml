@@ -365,34 +365,43 @@ structure Backend=
 
 		fun get stamp' =
 		    let
-			fun geti stamp' =
-			    case StampHash.lookup (consts, stamp') of
-				(va as SOME (SOME (VarExp (_, (Id (_,stamp'',_)))))) =>
-				    (case geti stamp'' of
+			fun geti stamp'' =
+			    case StampHash.lookup (consts, stamp'') of
+				(va as SOME (SOME (VarExp (_, (Id (_,stamp''',_)))))) =>
+				    (case geti stamp''' of
 					 (s' as SOME (s'' as SOME _)) =>
-					     (StampHash.insert (consts, stamp', s'');
+					     (StampHash.insert (consts, stamp'', s'');
 					      s')
 				       | _ => va)
+			      | NONE => if stamp'=stamp'' then NONE else
+					 SOME (SOME (VarExp (dummyCoord, (Id (dummyCoord, stamp'', InId)))))
 			      | foo => foo
 		    in
 			if !OPTIMIZE >= 3 then
-			    case geti stamp' of
-				SOME (p as SOME (LitExp _
-			      | PrimExp _
-			      | NewExp _
-			      | VarExp _
-			      | ConExp _
-			      | RefExp _
-			      | SelExp _)) => p
-			      | _ => NONE
+			    (print ("getting "^Stamp.toString stamp'^": ");
+			     case geti stamp' of
+				 SOME (p as SOME (LitExp _
+			       | PrimExp _
+			       | NewExp _
+			       | VarExp _
+			       | ConExp _
+			       | RefExp _
+			      | SelExp _)) => (print "shortened.\n"; p)
+			      | _ => (print "left\n"; NONE))
 			else NONE
 		    end
 
+		fun getStamp stamp' =
+		    case StampHash.lookup (consts, stamp') of
+			SOME (SOME (VarExp (_, Id (_, stamp'', _)))) => getStamp stamp''
+		      | _ => stamp'
+
 		fun add (stamp', content) =
 		    if !OPTIMIZE >= 3 then
-			case StampHash.lookup (consts, stamp') of
-			    NONE => StampHash.insert (consts, stamp', SOME content)
-			  | SOME _ => StampHash.insert (consts, stamp', NONE)
+			(print ("inserting "^Stamp.toString stamp');
+			 case StampHash.lookup (consts, stamp') of
+			     NONE => (print "okay.\n"; StampHash.insert (consts, stamp', SOME content))
+			   | SOME _ => (print "crashed.\n"; StampHash.insert (consts, stamp', NONE)))
 		    else ()
 	    end
     end
