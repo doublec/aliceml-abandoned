@@ -86,7 +86,7 @@ $(LASTGENERATE) generate: $(INPUTFILE) $(GENERATOR)
 
 $(GENERATOR):
 	rm -f $(GENERATOR)
-	case `$(SML) </dev/null | grep "110\.0\.[0-9]"` in \
+	case `echo 'OS.Process.exit OS.Process.success' | $(SML) | grep "110\.0\.[0-9]"` in \
 	  *Jersey*) \
 	    echo "CM.make'" '"sources.cm"; GtkBinding.compile();' | $(SML) \
 	    ;; \
