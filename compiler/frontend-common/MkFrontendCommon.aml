@@ -3,8 +3,7 @@ functor MakeFrontendCommon(
 		structure Switches: SWITCHES
 	) : PHASE =
      ComposePhases(
-	structure Phase1  = MakeElaborationPhase(structure Composer = Composer
-						 structure Switches = Switches)
+	structure Phase1  = MakeElaborationPhase(structure Composer = Composer)
 	structure Phase2  = MakeTranslationPhase(structure Switches = Switches)
 	structure Context = Env
 	fun context1 E    = E
