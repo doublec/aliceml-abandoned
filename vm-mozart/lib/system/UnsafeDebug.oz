@@ -15,10 +15,18 @@ import
    System(show)
    Property(put get)
    Browser(browse)
-   Inspector(inspect)
+   Inspector(configure inspect)
 export
    'UnsafeDebug$': Debug
 define
+   local
+      CellContent = {NewName}
+   in
+      fun {ShowCellCont V W D}
+	 CellContent({Access V})
+      end
+   end
+
    Debug =
    'Debug'('setPrintDepth':
 	      fun {$ N} {Property.put 'print.depth' N} unit end
@@ -34,7 +42,15 @@ define
 	   'print':
 	      fun {$ X} {System.show X} unit end
 	   'inspect':
-	      fun {$ X} {Inspector.inspect X} unit end
+	      fun {$ X}
+		 {Inspector.configure cellMenu
+		  menu(nil
+		       nil
+		       [auto('Show Contents'(ShowCellCont))]
+		       nil)}
+		 {Inspector.inspect X}
+		 unit
+	      end
 	   'Print$':
 	      fun {$ X} {System.show X} unit end
 	   'Inspect$':
