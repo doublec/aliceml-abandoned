@@ -12,7 +12,7 @@
 
 import structure Url               from "../utility/Url"
 import structure Reflect           from "Reflect"
-import structure Signature         from "Signature"
+import structure Inf               from "../rtt/Inf"
 import signature COMPONENT_MANAGER from "COMPONENT_MANAGER-sig"
 
 signature COMPONENT =
@@ -28,10 +28,10 @@ signature COMPONENT =
 	functor Create(signature S
 		       structure X: S): (val component: component)
 
-	val create: Signature.t option * Reflect.value -> component (*--** unsafe! *)
+	val create: Inf.t option * Reflect.value -> component (*--** unsafe! *)
 	val load: Url.t -> component                      (* Io, Corrupt *)
 	val save: string * component -> unit              (* Io, Sited *)
-	val sign: component -> Signature.t option
+	val inf: component -> Inf.t option
 
 	functor MkManager(): COMPONENT_MANAGER where type component = component
     end

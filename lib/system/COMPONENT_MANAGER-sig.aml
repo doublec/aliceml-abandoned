@@ -10,13 +10,14 @@
  *   $Revision$
  *)
 
+import structure Inf       from "../rtt/Inf"
 import structure Url       from "../utility/Url"
 import structure Reflect   from "Reflect"
 
 signature COMPONENT_MANAGER =
     sig
 	exception Conflict
-	exception Mismatch
+	exception Mismatch of Url.t * Url.t option * Inf.mismatch
 
 	type component
 
