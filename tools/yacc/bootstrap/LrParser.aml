@@ -4,8 +4,8 @@
 
 (* replaced 'lexer' with 'lexxer' because of problems with hose *)
 
-import signature LR_TABLE from "lrTable"
-import structure LrTable from "lrTable"
+import signature LR_TABLE from "LrTable"
+import structure LrTable from "LrTable"
 
 signature TOKEN =
     sig
