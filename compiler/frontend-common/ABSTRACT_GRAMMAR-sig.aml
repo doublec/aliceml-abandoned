@@ -48,6 +48,7 @@ signature ABSTRACT_GRAMMAR =
 	| HandleExp of info * exp * match list	(* exception handling *)
 	| AnnExp    of info * exp * typ		(* type annotation *)
 	| LetExp    of info * dec list * exp	(* let *)
+	| PackExp   of info * mod		(* package introduction *)
 
     and 'a row   = Row   of info * 'a field list * bool
     and 'a field = Field of info * lab * 'a
@@ -88,6 +89,7 @@ signature ABSTRACT_GRAMMAR =
 	| ExtTyp    of info			(* extensible sum type *)
 	| AllTyp    of info * id * typ		(* universal quantification *)
 	| ExTyp     of info * id * typ		(* existential quantification *)
+	| PackTyp   of info * inf		(* package type *)
 	| SingTyp   of info * longid		(* singleton type *)
 
     and con =   Con of info * id * typ list	(* data constructor *)
@@ -104,6 +106,7 @@ signature ABSTRACT_GRAMMAR =
 	| AnnMod    of info * mod * inf		(* annotation *)
 	| UpMod     of info * mod * inf		(* coercion *)
 	| LetMod    of info * dec list * mod	(* let *)
+	| UnpackMod of info * exp * inf		(* package elimination *)
 
     (* Interfaces *)
 

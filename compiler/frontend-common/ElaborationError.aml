@@ -175,6 +175,12 @@ structure ElaborationError :> ELABORATION_ERROR =
 	    ["value",ppLab l,"is","not","a","constructor"]
       | ppMismatch'(Inf.MismatchTypSort(l,w1,w2)) =
 	    ["type",ppLab l,"is","not","an","open","datatype"]
+      | ppMismatch'(Inf.MismatchDom im) =
+	    ["functor","signature","is","incompatible","because","argument"]
+	    @ ppMismatch' im
+      | ppMismatch'(Inf.MismatchRan im) =
+	    ["functor","signature","is","incompatible","because","result"]
+	    @ ppMismatch' im
       | ppMismatch'(Inf.Incompatible(j1,j2)) =
 	    ["signatures","are","incompatible"]
       | ppMismatch'(Inf.IncompatibleArg(p1,p2)) =

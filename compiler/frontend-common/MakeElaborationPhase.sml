@@ -1,4 +1,5 @@
 (* UNFINISHED:
+   - packages
    - appropriate treatment of value paths
 *)
 
@@ -258,8 +259,7 @@ val _=print "\n"
 	let
 	    val (ts,exps') = elabExps(E, exps)
 	    val  t         = vecTyp(E, List.hd ts)
-	    val  _         = Type.unifyList ts
-			     handle Type.UnifyList(n,t1,t2) =>
+	    val  _         = Type.unifyList ts handle Type.UnifyList(n,t1,t2) =>
 				error(I.infoExp(List.nth(exps,n)),
 				      E.VecExpUnify(t, List.nth(ts,n), t1, t2))
 	in
@@ -282,12 +282,10 @@ val _=print "\n"
 	    val  t11       = Type.unknown Type.STAR
 	    val  t12       = Type.unknown Type.STAR
 	    val  t1'       = Type.inArrow(t11,t12)
-	    val  _         = Type.unify(t1,t1')
-			     handle Type.Unify(t3,t4) =>
+	    val  _         = Type.unify(t1,t1') handle Type.Unify(t3,t4) =>
 				error(I.infoExp exp1,
 				      E.AppExpFunUnify(t1, t1', t3, t4))
-	    val  _         = Type.unify(t11,t2)
-			     handle Type.Unify(t3,t4) =>
+	    val  _         = Type.unify(t11,t2) handle Type.Unify(t3,t4) =>
 				error(i, E.AppExpArgUnify(t11, t2, t3, t4))
 	in
 	    ( t12, O.AppExp(typInfo(i,t12), exp1', exp2') )
@@ -300,8 +298,7 @@ val _=print "\n"
 	    val (t2,exp2') = elabExp(E, exp2)
 	    val  _         = Type.openRowType t2 handle Type.Row =>
 				error(I.infoExp exp2, E.CompExpNoRow t2)
-	    val  _         = Type.unify(t1,t2)
-			     handle Type.Unify(t3,t4) =>
+	    val  _         = Type.unify(t1,t2) handle Type.Unify(t3,t4) =>
 				error(i, E.CompExpUnify(t2, t1, t4, t3))
 	in
 	    ( t1, O.CompExp(typInfo(i,t1), exp1', exp2') )
@@ -312,14 +309,10 @@ val _=print "\n"
 	    val (t1,exp1') = elabExp(E, exp1)
 	    val (t2,exp2') = elabExp(E, exp2)
 	    val  t         = boolTyp E
-	    val  _         = Type.unify(t1,t)
-			     handle Type.Unify(t3,t4) =>
-				error(I.infoExp exp1,
-				      E.AndExpUnify(t1, t, t3, t4))
-	    val  _         = Type.unify(t2,t)
-			     handle Type.Unify(t3,t4) =>
-				error(I.infoExp exp2,
-				      E.AndExpUnify(t2, t, t3, t4))
+	    val  _         = Type.unify(t1,t) handle Type.Unify(t3,t4) =>
+				error(I.infoExp exp1, E.AndExpUnify(t1,t,t3,t4))
+	    val  _         = Type.unify(t2,t) handle Type.Unify(t3,t4) =>
+				error(I.infoExp exp2, E.AndExpUnify(t2,t,t3,t4))
 	in
 	    ( t, O.AndExp(typInfo(i,t), exp1', exp2') )
 	end
@@ -329,14 +322,10 @@ val _=print "\n"
 	    val (t1,exp1') = elabExp(E, exp1)
 	    val (t2,exp2') = elabExp(E, exp2)
 	    val  t         = boolTyp E
-	    val  _         = Type.unify(t1,t)
-			     handle Type.Unify(t3,t4) =>
-				error(I.infoExp exp1,
-				      E.OrExpUnify(t1, t, t3, t4))
-	    val  _         = Type.unify(t2,t)
-			     handle Type.Unify(t3,t4) =>
-				error(I.infoExp exp2,
-				      E.OrExpUnify(t2, t, t3, t4))
+	    val  _         = Type.unify(t1,t) handle Type.Unify(t3,t4) =>
+				error(I.infoExp exp1, E.OrExpUnify(t1,t,t3,t4))
+	    val  _         = Type.unify(t2,t) handle Type.Unify(t3,t4) =>
+				error(I.infoExp exp2, E.OrExpUnify(t2,t,t3,t4))
 	in
 	    ( t, O.OrExp(typInfo(i,t), exp1', exp2') )
 	end
@@ -347,12 +336,10 @@ val _=print "\n"
 	    val (t2,exp2') = elabExp(E, exp2)
 	    val (t3,exp3') = elabExp(E, exp3)
 	    val  tb        = boolTyp E
-	    val  _         = Type.unify(t1,tb)
-			     handle Type.Unify(t4,t5) =>
+	    val  _         = Type.unify(t1,tb) handle Type.Unify(t4,t5) =>
 				error(I.infoExp exp1,
 				      E.IfExpCondUnify(t1, tb, t4, t5))
-	    val  _         = Type.unify(t2,t3)
-			     handle Type.Unify(t4,t5) =>
+	    val  _         = Type.unify(t2,t3) handle Type.Unify(t4,t5) =>
 				error(i, E.IfExpBranchUnify(t2, t3, t4, t5))
 	in
 	    ( t2, O.IfExp(typInfo(i,t2), exp1', exp2', exp3') )
@@ -364,8 +351,7 @@ val _=print "\n"
 	    val (t2,exp2') = elabExp(E, exp2)
 	    val  tb        = boolTyp E
 	    val  t         = Type.inTuple[]
-	    val  _         = Type.unify(t1,tb)
-			     handle Type.Unify(t3,t4) =>
+	    val  _         = Type.unify(t1,tb) handle Type.Unify(t3,t4) =>
 				error(I.infoExp exp1,
 				      E.WhileExpCondUnify(t1, tb, t3, t4))
 	in
@@ -394,8 +380,7 @@ val _=print "\n"
 	    val (t1,exp') = elabExp(E, exp)
 	    val  te       = exnTyp E
 	    val  t        = Type.unknown Type.STAR
-	    val  _        = Type.unify(t1,te)
-			    handle Type.Unify(t2,t3) =>
+	    val  _        = Type.unify(t1,te) handle Type.Unify(t2,t3) =>
 				error(I.infoExp exp,
 				      E.RaiseExpUnify(t1, te, t2, t3))
 	in
@@ -407,8 +392,7 @@ val _=print "\n"
 	let
 	    val (t1,exp')    = elabExp(E, exp)
 	    val (t2,matchs') = elabMatchs(E, exnTyp E, matchs)
-	    val  _           = Type.unify(t1,t2)
-			       handle Type.Unify(t3,t4) =>
+	    val  _           = Type.unify(t1,t2) handle Type.Unify(t3,t4) =>
 				error(i, E.HandleExpUnify(t1, t2, t3, t4))
 	in
 	    ( t1, O.HandleExp(typInfo(i,t1), exp', matchs') )
@@ -418,8 +402,7 @@ val _=print "\n"
 	let
 	    val (t1,exp') = elabExp(E, exp)
 	    val (t2,typ') = elabStarTyp(E, typ)
-	    val  _        = Type.unify(t1,t2)
-			    handle Type.Unify(t3,t4) =>
+	    val  _        = Type.unify(t1,t2) handle Type.Unify(t3,t4) =>
 				error(i, E.AnnExpUnify(t1, t2, t3, t4))
 	in
 	    ( t2, O.AnnExp(typInfo(i,t2), exp', typ') )
@@ -439,6 +422,15 @@ val _ = Inf.strengthenSig(Path.fromLab(Lab.fromString "?let"), s)
 	    ( t, O.LetExp(typInfo(i,t), decs', exp') )
 	end
 
+      | elabExp(E, I.PackExp(i, mod)) =
+	let
+	    val (j,mod') = elabMod(E, mod)
+	    (*UNFINISHED*)
+	    val  t       = Type.unknown(Type.STAR)
+	in
+	    unfinished i "elabExp" "packages";
+	    ( t, O.PackExp(typInfo(i,t), mod') )
+	end
 
     and elabExps(E, exps) =
 	ListPair.unzip(List.map (fn exp => elabExp(E,exp)) exps)
@@ -450,13 +442,11 @@ val _ = Inf.strengthenSig(Path.fromLab(Lab.fromString "?let"), s)
 	let
 	    val  _        = insertScope E
 	    val (t3,pat') = elabPat(E, Inf.empty(), pat)
-	    val  _        = Type.unify(t1,t3)
-			    handle Type.Unify(t5,t6) =>
+	    val  _        = Type.unify(t1,t3) handle Type.Unify(t5,t6) =>
 				error(I.infoPat pat,
 				      E.MatchPatUnify(t1, t3, t5, t6))
 	    val (t4,exp') = elabExp(E, exp)
-	    val  _        = Type.unify(t2,t4)
-			    handle Type.Unify(t5,t6) =>
+	    val  _        = Type.unify(t2,t4) handle Type.Unify(t5,t6) =>
 				error(I.infoExp exp,
 				      E.MatchExpUnify(t2, t4, t5, t6))
 	    val  _        = deleteScope E
@@ -510,11 +500,9 @@ val _ = Inf.strengthenSig(Path.fromLab(Lab.fromString "?let"), s)
 		    val  t11  = Type.unknown Type.STAR
 		    val  t12  = Type.unknown Type.STAR
 		    val  t1'  = Type.inArrow(t11,t12)
-		    val  _    = Type.unify(t1',t1)
-				handle Type.Unify(t3,t4) =>
+		    val  _    = Type.unify(t1',t1) handle Type.Unify(t3,t4) =>
 				    error(i, E.ConPatManyArgs(longid))
-		    val  _    = Type.unify(t11,t2)
-				handle Type.Unify(t3,t4) =>
+		    val  _    = Type.unify(t11,t2) handle Type.Unify(t3,t4) =>
 				    error(i, E.ConPatUnify(t11, t2, t3, t4))
 		in
 		    elabArgs(t12, ts)
@@ -555,8 +543,7 @@ val _ = Inf.strengthenSig(Path.fromLab(Lab.fromString "?let"), s)
 	let
 	    val (ts,pats') = elabPats(E, s, pats)
 	    val  t         = vecTyp(E, List.hd ts)
-	    val  _         = Type.unifyList ts
-			     handle Type.UnifyList(n,t1,t2) =>
+	    val  _         = Type.unifyList ts handle Type.UnifyList(n,t1,t2) =>
 				error(I.infoPat(List.nth(pats,n)),
 				      E.VecPatUnify(t, List.nth(ts,n), t1, t2))
 	in
@@ -567,8 +554,7 @@ val _ = Inf.strengthenSig(Path.fromLab(Lab.fromString "?let"), s)
 	let
 	    val (t1,pat1') = elabPat(E, s, pat1)
 	    val (t2,pat2') = elabPat(E, s, pat2)
-	    val  _         = Type.unify(t1,t2)
-			     handle Type.Unify(t3,t4) =>
+	    val  _         = Type.unify(t1,t2) handle Type.Unify(t3,t4) =>
 				error(i, E.AsPatUnify(t1, t2, t3, t4))
 	in
 	    ( t2, O.AsPat(typInfo(i,t2), pat1', pat2') )
@@ -578,8 +564,7 @@ val _ = Inf.strengthenSig(Path.fromLab(Lab.fromString "?let"), s)
 	let
 	    val (ts,pats') = elabPats(E, s, pats)
 	    val  t         = List.hd ts
-	    val  _         = Type.unifyList ts
-			     handle Type.UnifyList(n,t1,t2) =>
+	    val  _         = Type.unifyList ts handle Type.UnifyList(n,t1,t2) =>
 				error(I.infoPat(List.nth(pats,n)),
 				      E.AltPatUnify(t, List.nth(ts,n), t1, t2))
 	in
@@ -598,8 +583,7 @@ val _ = Inf.strengthenSig(Path.fromLab(Lab.fromString "?let"), s)
 	    val (t1,pat') = elabPat(E, s, pat)
 	    val (t2,exp') = elabExp(E, exp)
 	    val  tb       = boolTyp E
-	    val  _        = Type.unify(t2,tb)
-			    handle Type.Unify(t3,t4) =>
+	    val  _        = Type.unify(t2,tb) handle Type.Unify(t3,t4) =>
 				error(i, E.GuardPatUnify(t2, tb, t3, t4))
 	in
 	    ( t1, O.GuardPat(typInfo(i,t1), pat', exp') )
@@ -609,8 +593,7 @@ val _ = Inf.strengthenSig(Path.fromLab(Lab.fromString "?let"), s)
 	let
 	    val (t1,pat') = elabPat(E, s, pat)
 	    val (t2,typ') = elabStarTyp(E, typ)
-	    val  _        = Type.unify(t1,t2)
-			    handle Type.Unify(t3,t4) =>
+	    val  _        = Type.unify(t1,t2) handle Type.Unify(t3,t4) =>
 				error(i, E.AnnPatUnify(t1, t2, t3, t4))
 	in
 	    ( t2, O.AnnPat(typInfo(i,t2), pat', typ') )
@@ -844,6 +827,16 @@ val _=print "\n"
 	    ( t, O.ExTyp(typInfo(i,t), id', typ') )
 	end
 
+      | elabTyp(E, I.PackTyp(i, inf)) =
+	let
+	    val (j,inf') = elabInf(E, inf)
+	    (*UNFINISHED*)
+	    val  t       = Type.unknown(Type.STAR)
+	in
+	    unfinished i "elabTyp" "packages";
+	    ( t, O.PackTyp(typInfo(i,t), inf') )
+	end
+
       | elabTyp(E, I.SingTyp(i, longid)) =
 	let
 	    val (t,longid') = elabValLongid(E, longid)
@@ -1014,8 +1007,8 @@ val _=print "\n"
 	let
 	    val (j,longid') = elabModLongid(E, longid)
 	    val  s          = Inf.asSig j handle Inf.Interface =>
-					error(I.infoLongid longid,
-					      E.ModLongidInf(longid, j))
+				error(I.infoLongid longid,
+				      E.ModLongidInf(longid, j))
 	in
 	    ( s, longid' )
 	end
@@ -1040,7 +1033,7 @@ val _=print "\n"
 	    val s     = Inf.empty()
 	    val decs' = elabDecs(E, s, decs)
 	    val _     = Inf.close s handle Inf.Unclosed lnt =>
-			error(i, E.StrModUnclosed lnt)
+			    error(i, E.StrModUnclosed lnt)
 	    val j     = Inf.inSig s
 	in
 	    ( j, O.StrMod(infInfo(i,j), decs') )
@@ -1105,8 +1098,7 @@ print "\n\
 PrettyPrint.output(TextIO.stdOut, PPInf.ppInf j2, 75);
 print "\n"
 )*)
-	    val  rea        = Inf.match(j2,j11)
-			      handle Inf.Mismatch mismatch =>
+	    val  rea        = Inf.match(j2,j11) handle Inf.Mismatch mismatch =>
 				  error(i, E.AppModArgMismatch mismatch)
 	    val  _          = PathMap.insert(#mod_rea rea, p, p2)
 	    val  _          = Inf.realise(rea, j12)
@@ -1119,8 +1111,7 @@ print "\n"
 	let
 	    val (j1,mod') = elabMod(E, mod)
 	    val (j2,inf') = elabGroundInf(E, inf)
-	    val  _        = Inf.match(j1, j2)
-			    handle Inf.Mismatch mismatch =>
+	    val  _        = Inf.match(j1, j2) handle Inf.Mismatch mismatch =>
 				error(i, E.AnnModMismatch mismatch)
 	    val  j        = j2
 	in
@@ -1132,8 +1123,7 @@ print "\n"
 	    val (j1,mod') = elabMod(E, mod)
 	    val (j2,inf') = elabGroundInf(E, inf)
 	    val  j        = Inf.instance j2	(* opaque *)
-	    val  _        = Inf.match(j1, j2)
-			    handle Inf.Mismatch mismatch =>
+	    val  _        = Inf.match(j1, j2) handle Inf.Mismatch mismatch =>
 				error(i, E.AnnModMismatch mismatch)
 	in
 	    ( j, O.UpMod(infInfo(i,j), mod', inf') )
@@ -1152,6 +1142,17 @@ val p = Path.fromLab(Lab.fromString "?let")
 	    val  _       = deleteScope E
 	in
 	    ( j, O.LetMod(infInfo(i,j), decs', mod') )
+	end
+
+      | elabMod(E, I.UnpackMod(i, exp, inf)) =
+	let
+	    val (t,exp') = elabExp(E, exp)
+	    val (j,inf') = elabInf(E, inf)
+	    val  j'      = Inf.instance j
+	    (*UNFINISHED*)
+	in
+	    unfinished i "elabMod" "packages";
+	    ( j', O.UnpackMod(infInfo(i,j), exp', inf') )
 	end
 
 
@@ -1305,8 +1306,7 @@ print "\n\
 PrettyPrint.output(TextIO.stdOut, PPInf.ppInf j2, 75);
 print "\n"
 )*)
-	    val  j         = Inf.intersect(j1,j2)
-			     handle Inf.Mismatch mismatch =>
+	    val  j         = Inf.intersect(j1,j2) handle Inf.Mismatch mismatch=>
 				error(i, E.CompInfMismatch mismatch)
 (*val _ = (
 print "#### j =\n";
@@ -1407,8 +1407,7 @@ print "\n\
 	    val (t1,pat') = elabPat(E, s, pat)
 	    val  _        = Type.exitLevel()
 	    val  E'       = splitScope E
-	    val  _        = Type.unify(t1,t2)
-			    handle Type.Unify(t3,t4) =>
+	    val  _        = Type.unify(t1,t2) handle Type.Unify(t3,t4) =>
 				error(i, E.ValDecUnify(t1, t2, t3, t4))
 	    (* UNFINISHED: if pat = x and exp = y then equate x to y *)
 	    val  _        = appVals (generaliseVal
@@ -1547,8 +1546,7 @@ val p = Path.fromLab(Lab.fromString "?local")
     and generaliseVal (E, s, poo, isPoly) (x, {id, path=p, typ=t, sort=w}) =
 	let
 	    val t' = if isPoly then Type.close t
-			       else (Type.lift t ; t)
-			       handle Type.Lift a =>
+			       else (Type.lift t ; t) handle Type.Lift a =>
 				   error(I.infoId id, E.ValDecLift(id, a))
 	    val d  = Option.map (fn po => Option.getOpt(po, p)) poo
 	in
@@ -1602,8 +1600,7 @@ print(if w = Inf.CONSTRUCTOR then " (* constructor *)\n" else if isPoly then "\n
 	    val (t2,exp') = elabExp(E, exp)
 	    val  _        = deleteScope E
 	    val  _        = r := tpats'
-	    val  _        = Type.unify(t1,t2)
-			    handle Type.Unify(t3,t4) =>
+	    val  _        = Type.unify(t1,t2) handle Type.Unify(t3,t4) =>
 				error(i, E.ValDecUnify(t1, t2, t3, t4))
 	in
 	    O.ValDec(nonInfo(i), pat', exp')
@@ -1853,8 +1850,8 @@ val p = Path.fromLab(Lab.fromString "?localSpec")
 	    val imps' = elabImps(E, imps)
 	    val s     = Inf.empty()
 	    val decs' = elabDecs(E, s, decs)
-	    val _     = Inf.close s
-			handle Inf.Unclosed lnt => error(i, E.CompUnclosed lnt)
+	    val _     = Inf.close s handle Inf.Unclosed lnt =>
+			    error(i, E.CompUnclosed lnt)
 (*DEBUG*)
 val _ = print "Component signature:\n"
 val _ = PrettyPrint.output(TextIO.stdOut, PPInf.ppSig s, 78)

@@ -49,6 +49,7 @@ functor MakeAbstractGrammar(type info) :>
 	| HandleExp of info * exp * match list	(* exception handling *)
 	| AnnExp    of info * exp * typ		(* type annotation *)
 	| LetExp    of info * dec list * exp	(* let *)
+	| PackExp   of info * mod		(* package introduction *)
 
     and 'a row   = Row   of info * 'a field list * bool
     and 'a field = Field of info * lab * 'a
@@ -89,6 +90,7 @@ functor MakeAbstractGrammar(type info) :>
 	| ExtTyp    of info			(* extensible sum type *)
 	| AllTyp    of info * id * typ		(* universal quantification *)
 	| ExTyp     of info * id * typ		(* existential quantification *)
+	| PackTyp   of info * inf		(* package type *)
 	| SingTyp   of info * longid		(* singleton type *)
 
     and con =   Con of info * id * typ list	(* data constructor *)
@@ -105,6 +107,7 @@ functor MakeAbstractGrammar(type info) :>
 	| AnnMod    of info * mod * inf		(* annotation *)
 	| UpMod     of info * mod * inf		(* coercion *)
 	| LetMod    of info * dec list * mod	(* let *)
+	| UnpackMod of info * exp * inf		(* package elimination *)
 
     (* Interfaces *)
 
@@ -193,6 +196,7 @@ functor MakeAbstractGrammar(type info) :>
       | infoExp(HandleExp(i,_,_))	= i
       | infoExp(AnnExp(i,_,_))		= i
       | infoExp(LetExp(i,_,_))		= i
+      | infoExp(PackExp(i,_))		= i
 
     fun infoRow(Row(i,_,_))		= i
     fun infoField(Field(i,_,_))		= i
@@ -226,6 +230,7 @@ functor MakeAbstractGrammar(type info) :>
       | infoTyp(ExtTyp(i))		= i
       | infoTyp(AllTyp(i,_,_))		= i
       | infoTyp(ExTyp(i,_,_))		= i
+      | infoTyp(PackTyp(i,_))		= i
       | infoTyp(SingTyp(i,_))		= i
 
     fun infoCon(Con(i,_,_))		= i
@@ -239,6 +244,7 @@ functor MakeAbstractGrammar(type info) :>
       | infoMod(AnnMod(i,_,_))		= i
       | infoMod(UpMod(i,_,_))		= i
       | infoMod(LetMod(i,_,_))		= i
+      | infoMod(UnpackMod(i,_,_))	= i
 
     fun infoInf(TopInf(i))		= i
       | infoInf(AbsInf(i))		= i

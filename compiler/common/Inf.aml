@@ -341,7 +341,7 @@ structure InfPrivate =
 	let
 	    val p' = Path.instance PathMap.lookup (rea, p)
 	in
-	   (*UNFINISHED: do we need to make the check? *)
+	    (*UNFINISHED: do we need to make the check? *)
 	    if p' <> p then PathMap.insert(rea, p, p') else () ;
 	    p'
 	end
@@ -692,6 +692,8 @@ structure InfPrivate =
 	| MismatchInf of lab * mismatch
 	| MismatchValSort of lab * val_sort * val_sort
 	| MismatchTypSort of lab * typ_sort * typ_sort
+	| MismatchDom     of mismatch
+	| MismatchRan     of mismatch
 	| Incompatible    of inf * inf
 	| IncompatibleArg of path * path
 
@@ -820,18 +822,21 @@ structure InfPrivate =
       | match'(rea, ref(SIG s1), ref(SIG s2)) = matchSig(rea, s1, s2)
 
       | match'(rea, ref(ARR(p1,j11,j12)), ref(ARR(p2,j21,j22))) =
-	(*UNFINISHED*)
-	    ()
+	( realise(rea, j21)
+	; match'(rea, j21, j11) handle Mismatch mismatch =>
+		raise Mismatch(MismatchDom mismatch)
+	; realise(rea, j12)
+	; match'(rea, j12, j22) handle Mismatch mismatch =>
+		raise Mismatch(MismatchRan mismatch)
+	)
 
       | match'(rea, ref(LAM(p1,j11,j12)), ref(LAM(p2,j21,j22))) =
 	(*UNFINISHED*)
 	    ()
 
       | match'(rea, ref(APP(j11,p1,j12)), ref(APP(j21,p2,j22))) =
-	( match'(rea, j11, j21) ;
-	  if p1 = p2 then
-	      ()
-	  else
+	( match'(rea, j11, j21)
+	; if p1 = p2 then () else
 	      raise Mismatch(IncompatibleArg(p1,p2))
 	)
 
