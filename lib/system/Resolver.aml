@@ -249,13 +249,16 @@ structure Resolver: RESOLVER =
 
 	fun new (name, handlers) = (name, handlers)
 
+	fun existsFile url =
+	    (TextIO.closeIn (TextIO.openIn (Url.toStringRaw url)); true)
+	    handle IO.Io _ => false
+
 	fun exists url =
 	    (*--** we need something more general (also interpret scheme) *)
 	    case Url.getScheme url of
 		SOME "x-oz" => true   (*--** hack for the Mozart VM *)
-	      | _ =>
-		(TextIO.closeIn (TextIO.openIn (Url.toStringRaw url)); true)
-		handle IO.Io _ => false
+	      | SOME "file" => existsFile (Url.setScheme (url, NONE))
+	      | _ => existsFile url
 
 	fun localize (name, handlers) s =
 	    (trace ("[" ^ name ^ "] localize request: " ^ s ^ "\n");
