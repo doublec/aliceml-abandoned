@@ -10,6 +10,22 @@
  *   $Revision$
  *)
 
+import
+    structure Source
+from "../infrastructure/Source"
+
+import
+    signature CONTEXT
+from "../infrastructure/CONTEXT-sig"
+
+import
+    signature FLAT_GRAMMAR
+from "FLAT_GRAMMAR-sig"
+
+import
+    structure FlatGrammar
+from "FlatGrammar"
+
 signature LIVENESS_ANALYSIS_PHASE =
     sig
 	structure C: CONTEXT

@@ -47,14 +47,42 @@
  *     "\n"
  *)
 
-structure IdMap =
-    MakeHashImpMap(type t = FlatGrammar.id
-		   fun equals (FlatGrammar.Id (_, stamp1, _),
-			       FlatGrammar.Id (_, stamp2, _)) = stamp1 = stamp2
-		   fun hash (FlatGrammar.Id (_, stamp, _)) = Stamp.hash stamp)
+import
+    structure Stamp
+from "../common/Stamp"
 
-functor MakeEngine(val cmd: unit -> string * string list
-		   structure Code: CODE) :> ENGINE where type code = Code.t =
+import
+    structure Label
+from "../common/Label"
+
+import
+    functor MkHashImpMap
+from "../misc/MkHashImpMap"
+
+import
+    structure FlatGrammar
+from "FlatGrammar"
+
+import
+    signature CODE
+from "CODE-sig"
+
+import
+    signature ENGINE
+from "ENGINE-sig"
+
+import
+    signature CONTEXT
+from "../infrastructure/CONTEXT-sig"
+
+structure IdMap =
+    MkHashImpMap(type t = FlatGrammar.id
+		 fun equals (FlatGrammar.Id (_, stamp1, _),
+			     FlatGrammar.Id (_, stamp2, _)) = stamp1 = stamp2
+		 fun hash (FlatGrammar.Id (_, stamp, _)) = Stamp.hash stamp)
+
+functor MkEngine(val cmd: unit -> string * string list
+		 structure Code: CODE) :> ENGINE where type code = Code.t =
     struct
 	type valref = int
 

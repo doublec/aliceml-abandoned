@@ -10,6 +10,14 @@
  *   $Revision$
  *)
 
+import
+    structure Label
+from "../common/Label"
+
+import
+    structure MkLabelSort
+from "MkLabelSort"
+
 structure LabelSort =
-    MakeLabelSort(type 'a t = Label.t * 'a
-		  fun get (label, _) = label)
+    MkLabelSort(type 'a t = Label.t * 'a
+		fun get (label, _) = label)

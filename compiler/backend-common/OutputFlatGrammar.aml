@@ -10,6 +10,38 @@
  *   $Revision$
  *)
 
+import
+    structure Url
+from "../misc/Url"
+
+import
+    structure Stamp
+from "../common/Stamp"
+
+import
+    structure StampSet
+from "../common/StampSet"
+
+import
+    structure Name
+from "../common/Name"
+
+import
+    structure Label
+from "../common/Label"
+
+import
+    signature FLAT_GRAMMAR
+from "FLAT_GRAMMAR-sig"
+
+import
+    structure FlatGrammar
+from "FlatGrammar"
+
+import
+    signature OUTPUT_FLAT_GRAMMAR
+from "OUTPUT_FLAT_GRAMMAR-sig"
+
 structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
     struct
 	structure I = FlatGrammar

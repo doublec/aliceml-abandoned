@@ -34,6 +34,66 @@
  * kill-set of any statement on a path leading to S.
  *)
 
+import
+    structure PrettyPrint
+from "../misc/PrettyPrint"
+
+import
+    structure Crash
+from "../infrastructure/Crash"
+
+import
+    signature SWITCHES
+from "../infrastructure/SWITCHES-sig"
+
+import
+    signature CONTEXT
+from "../infrastructure/CONTEXT-sig"
+
+import
+    structure ComposePhases
+from "../infrastructure/ComposePhases"
+
+import
+    structure MkTracingPhase
+from "../infrastructure/MkTracingPhase"
+
+import
+    structure MkResultDumpingPhase
+from "../infrastructure/MkResultDumpingPhase"
+
+import
+    structure MkContextDumpingPhase
+from "../infrastructure/MkContextDumpingPhase"
+
+import
+    structure EmptyContext
+from "../infrastructure/EmptyContext"
+
+import
+    structure Stamp
+from "../common/Stamp"
+
+import
+    structure StampSet
+from "../common/StampSet"
+
+import
+    signature FLAT_GRAMMAR
+from "FLAT_GRAMMAR-sig"
+
+import
+    structure FlatGrammar
+from "FlatGrammar"
+
+import
+    structure OutputFlatGrammar
+from "OutputFlatGrammar"
+
+import
+    signature LIVENESS_ANALYSIS_PHASE
+from "LIVENESS_ANALYSIS_PHASE-sig"
+
 structure LivenessAnalysisPhase1 :>
     LIVENESS_ANALYSIS_PHASE where type C.t = unit =
     struct
@@ -354,14 +414,14 @@ structure LivenessAnalysisPhase2 :> LIVENESS_ANALYSIS_PHASE
 	     component)
     end
 
-functor MakeLivenessAnalysisPhase(Switches: SWITCHES) =
+functor MkLivenessAnalysisPhase(Switches: SWITCHES) =
     let
 	structure Phase1 =
-	    MakeTracingPhase(structure Phase = LivenessAnalysisPhase1
-			     structure Switches = Switches
-			     val name = "Liveness Analysis - Pass 1")
+	    MkTracingPhase(structure Phase = LivenessAnalysisPhase1
+			   structure Switches = Switches
+			   val name = "Liveness Analysis - Pass 1")
 	structure Phase1 =
-	    MakeResultDumpingPhase(
+	    MkResultDumpingPhase(
 		structure Phase = Phase1
 		structure Switches = Switches
 		val header = "Live Syntax with `use' sets"
@@ -369,11 +429,11 @@ functor MakeLivenessAnalysisPhase(Switches: SWITCHES) =
 		val switch = Switches.Debug.dumpLivenessAnalysisIntermediate)
 
 	structure Phase2 =
-	    MakeTracingPhase(structure Phase = LivenessAnalysisPhase2
-			     structure Switches = Switches
-			     val name = "Liveness Analysis - Pass 2")
+	    MkTracingPhase(structure Phase = LivenessAnalysisPhase2
+			   structure Switches = Switches
+			   val name = "Liveness Analysis - Pass 2")
 	structure Phase2 =
-	    MakeContextDumpingPhase(
+	    MkContextDumpingPhase(
 		structure Phase = Phase2
 		structure Switches = Switches
 		val header = "Set of defined stamps after liveness analysis"
@@ -390,13 +450,13 @@ functor MakeLivenessAnalysisPhase(Switches: SWITCHES) =
 		    end
 		val switch = Switches.Debug.dumpLivenessAnalysisContext)
 	structure Phase2 =
-	    MakeResultDumpingPhase(
+	    MkResultDumpingPhase(
 		structure Phase = Phase2
 		structure Switches = Switches
 		val header = "Live Syntax with `kill' sets"
 		val pp = PrettyPrint.text o OutputFlatGrammar.outputComponent
 		val switch = Switches.Debug.dumpLivenessAnalysisResult)
     in
-	ComposePhases'(structure Phase1 = Phase1
-		       structure Phase2 = Phase2)
+	ComposePhases(structure Phase1 = Phase1
+		      structure Phase2 = Phase2)
     end
