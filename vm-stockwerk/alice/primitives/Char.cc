@@ -5,7 +5,7 @@
 //
 // Copyright:
 //   Thorsten Brunklaus, 2000
-//   Leif Kornstaedt, 2000
+//   Leif Kornstaedt, 2000-2002
 //
 // Last Change:
 //   $Date$ by $Author$
@@ -13,7 +13,7 @@
 //
 
 #include <ctype.h>
-#include "emulator/Authoring.hh"
+#include "alice/primitives/Authoring.hh"
 
 #define INT_INT_TO_BOOL_OP(name, op)	\
   DEFINE2(name) {			\
