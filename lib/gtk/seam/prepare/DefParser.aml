@@ -42,7 +42,7 @@ structure DefParser =
                           case String.tokens (fn #"\"" => true | _ => false)
                                l of
                               (_::_::_::f::_) => parseFields' (f::acc) file
-                            | ts => (Print.printVal ts; raise Error ("6"^l))
+                            | ts => raise Error ("6"^l)
 
     fun parseFields file =
         case TextIO.inputLine file of

@@ -321,11 +321,7 @@ struct
 	     FUNCTION _        => false
 	   | ARRAY _           => false
 	   | POINTER (_, ARRAY _) => false
-           | t'         => ((print ("cSM "^structName^"."^s^": ");
-                             if PositiveList.member (structName, s) then
-                                 print "ok\n"
-                             else print "no\n";
-                             PositiveList.member (structName, s) andalso
+           | t'         => ((PositiveList.member (structName, s) andalso
                              (getAliceType t' ; true) handle _ => false)))
 
     fun checkEnumMember (_,v) = (LargeInt.toInt v ; true) handle _ => false
