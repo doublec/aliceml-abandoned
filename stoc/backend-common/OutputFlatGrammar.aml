@@ -51,7 +51,7 @@ structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
 		  | format' (ID (Id (_, stamp, Name.InId))) =
 		    "$" ^ Stamp.toString stamp
 		  | format' (ID (Id (_, stamp, Name.ExId s))) =
-		    s ^ "$" ^ Stamp.toString stamp
+		    "$" ^ Stamp.toString stamp ^ "[" ^ s ^ "]"
 		  | format' (IDDEF (IdDef id)) = format' (ID id)
 		  | format' (IDDEF Wildcard) = "_"
 		  | format' (CO s) = "   (* " ^ s ^ " *)"
