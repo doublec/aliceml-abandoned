@@ -1,4 +1,6 @@
 import signature ANTE from "ANTE-sig"
+import structure Instructions from "Instructions"
+import functor MkRedBlackMap from "x-alice:/lib/data/MkRedBlackMap"
 
 structure Ante : ANTE =
 struct
@@ -80,6 +82,16 @@ struct
       | flipn' _ [b]		= b
       | flipn' _ [b1,b2]	= flip 2 onyes b1 onno b2
       | flipn' n (b::bs)	= flip n onyes b onno (flipn' (n-1) bs)
+
+  (* Compilation *)
+
+    structure I = Instructions
+    structure E = MkRedBlackMap String
+
+    fun traverse n e i = []
+
+    fun compile (p,_,i) =
+	(fulfill (p, Fail); Vector.fromList (traverse 0 E.empty i))
 end
 
 
