@@ -239,7 +239,7 @@ structure List =
     fun filter f   nil   = nil
       | filter f (x::xs) =
 	let val b  = f x
-	    val ys = map f xs
+	    val ys = filter f xs
 	in if b then x::ys else ys end
 
     fun partition f l =
