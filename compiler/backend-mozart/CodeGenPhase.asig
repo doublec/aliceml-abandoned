@@ -11,10 +11,6 @@
  *)
 
 import
-    structure Inf
-from "../../lib/rtt/Inf"
-
-import
     structure Source
 from "../infrastructure/Source"
 
@@ -26,6 +22,10 @@ import
     structure FlatGrammar
 from "../backend-common/FlatGrammar"
 
+import
+    structure Signature
+from "../top/Signature"
+
 signature CODE_GEN_PHASE_COMPONENT =
     sig
 	structure CodeGenPhase:
@@ -35,7 +35,7 @@ signature CODE_GEN_PHASE_COMPONENT =
 		type t
 
 		val translate: C.t * Source.desc * FlatGrammar.component -> t
-		val sign: t -> Inf.sign
+		val sign: t -> Signature.t
 		val save: t * string * bool -> unit
 		val apply: t -> unit
 	    end

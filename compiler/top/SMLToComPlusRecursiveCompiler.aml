@@ -73,14 +73,16 @@ structure SMLToComPlusRecursiveCompiler =
 	structure ComPlusTarget = MkComPlusTarget(Signature)
 
 	structure FrontendSML =
-	    MkFrontendSML(fun loadSign (desc, url) = !f (desc, url)
+	    MkFrontendSML(fun loadSign (desc, url) = #2 (!f (desc, url))
 			  structure Switches = Switches)
 
 	structure FrontendCommon =
-	    MkFrontendCommon(fun loadSign (desc, url) = !f (desc, url)
+	    MkFrontendCommon(fun loadSign (desc, url) = #2 (!f (desc, url))
 			     structure Switches = Switches)
 
-	structure BackendCommon = MkBackendCommon(Switches)
+	structure BackendCommon =
+	    MkBackendCommon(fun loadSign (desc, url) = !f (desc, url)
+			    structure Switches = Switches)
 
 	structure BackendComPlus = MkBackendComPlus(ComPlusTarget)
 

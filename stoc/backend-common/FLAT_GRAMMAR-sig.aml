@@ -3,7 +3,7 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 1999-2000
+ *   Leif Kornstaedt, 1999-2001
  *
  * Last change:
  *   $Date$ by $Author$
@@ -42,6 +42,10 @@ import
     structure IntermediateInfo
     structure IntermediateGrammar
 from "../common/IntermediateGrammar"
+
+import
+    structure Signature
+from "../top/Signature"
 
 signature FLAT_GRAMMAR =
     sig
@@ -138,7 +142,7 @@ signature FLAT_GRAMMAR =
 	  | FunAppExp of exp_info * id * stamp * id args
 	withtype body = stm list
 
-	type sign = IntermediateGrammar.sign
+	type sign = Signature.t
 	type component =
 	     (idDef * sign * Url.t) vector * body * (label * id) vector * sign
 	type t = component

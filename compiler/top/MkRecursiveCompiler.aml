@@ -69,7 +69,7 @@ from "RECURSIVE_COMPILER-sig"
 functor MkRecursiveCompiler(structure Composer: COMPOSER
 				where type Sig.t = Signature.t
 			    structure Compiler: COMPILER
-				where Target.Sig = Signature
+				where type Target.Sig.t = Signature.t
 			    val extension: string): RECURSIVE_COMPILER =
     struct
 	structure Composer = Composer
@@ -176,14 +176,15 @@ functor MkRecursiveCompiler(structure Composer: COMPOSER
 			Compiler.compile (Compiler.empty, desc,
 					  Source.fromString s)
 		    val _ = TextIO.print "### done\n"
+		    val (stamp, sign) = Target.sign target
 		in
-		    case Inf.items (Target.sign target) of
+		    case Inf.items sign of
 			[item] =>
 			    let
 				val inf = valOf (#3 (Inf.asInfItem item))
 			    in
 				Inf.strengthen (Path.invent(), inf);
-				Inf.asSig inf
+				(stamp, Inf.asSig inf)
 			    end
 		      | _ => raise Crash.Crash "MkBatchCompiler.compileSign"
 		end
