@@ -52,4 +52,11 @@ fun towards_hill trailaction homeaction =
 	label "towards_hill2" ++
 	towards_hill' 2 trailaction homeaction
     )
+
+fun sync_trail action0 action1 action2 otherwise failaction =
+    sense2 here (marker trailmarker1) ifyes (
+	sense2 here (marker trailmarker2) ifyes action2 ifnot action0
+    ) ifnot (
+	sense2 here (marker trailmarker2) ifyes action1 ifnot failaction
+    )
 end
