@@ -186,10 +186,8 @@ struct
     (* adjusts layout and representation for an updated node tree *)
 
     fun layoutDrawTree(topnode,canvas,old_ydim,y_pos) = 
-	( GtkSupport.layoutFreeze(canvas)
-	 ; Layout.layout(topnode) 
+	( Layout.layout(topnode) 
 	 ; Draw.draw(topnode,0,y_pos,true) 
-	 ; GtkSupport.layoutThaw(canvas)
 	 ;let 
 	      val dy = get_ydim(topnode) - old_ydim
 	  in
@@ -260,10 +258,12 @@ struct
 	let
 	    val (topnode,old_ydim,y_pos) = 
 		(GtkSupport.busyButtonSetActive(true)
+		 ;GtkSupport.layoutFreeze(canvas)
 		 ;updateTree (no,va,f,g,canvas))
 	in
 	    (layoutDrawTree(topnode,canvas,old_ydim,y_pos) 
-	     ;GtkSupport.busyButtonSetActive(false))
+	     ;GtkSupport.busyButtonSetActive(false)
+	     ;GtkSupport.layoutThaw(canvas))
 	end
 			       
     (*  mechanism of update watching for FUTURES *)    
@@ -290,9 +290,11 @@ struct
 							    getAncIndex m)) 
 		li
 	in
-	    (updateCycle new_li
+	    (GtkSupport.layoutFreeze(canvas)
+	     ; updateCycle new_li
 	     ;(!resize)() 
 	     ; GtkSupport.busyButtonSetActive(false)
+	     ; GtkSupport.layoutThaw(canvas)
 	     ; Dictionaries.Transient.delete(Dictionaries.transdict,i) )
 	end
 
