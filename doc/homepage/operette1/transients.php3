@@ -34,7 +34,7 @@
     Transients are provided through the library structure 
     <A href="#sig"><TT>Transient</TT></A>. The structure
     <TT>Transient</TT> is opened by default, so all operations are available
-    unqualified.
+    unqualified on the top-level.
   </P>
 
   <P>
@@ -49,6 +49,11 @@
 	exception Promise 
   </PRE>
 
+  <P class=note>
+    Note: In Operette 1, operations block on promises as well, instead of raising
+    <TT>Promise</TT>.
+  </P>
+
   <P>
     The operation 
   </P>
@@ -62,7 +67,7 @@
   </P>
 
   <PRE>
-	val future: 'a -> 'a                    (* Future *) 
+	val future: 'a -> 'a                     (* Future *) 
   </PRE>
 
   <P>
@@ -104,6 +109,11 @@
   <P>
     is the identity for all non-transient arguments. On futures <TT>await</TT>
     blocks and on promises <TT>await</TT> raises <TT>Promise</TT>.
+  </P>
+
+  <P class=note>
+    Note: In Operette 1, <TT>await</TT> blocks on promises instead of raising
+    <TT>Promise</TT>.
   </P>
 
   <P>
@@ -165,6 +175,11 @@
     result that can replace the future, the by-need transient becomes
     succeeded.  If the triggered computation terminates but doesn't produce a
     result that can replace the future, the by-need transient becomes failed. 
+  </P>
+
+  <P class=note>
+    Note: In Operette 1, exception <TT>ByNeed</TT> will not be raised.
+    Instead, all operations accessing a failed by-need future will block.
   </P>
 
 

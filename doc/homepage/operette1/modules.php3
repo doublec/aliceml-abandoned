@@ -199,7 +199,7 @@
 	    end
   </PRE>
 
-  <FONT size = "-1">
+  <DIV class=note>
   <P>
     Note that this feature renders the type system of Alice undecidable
     (the same is true for O'Caml, which has a very similar module language).
@@ -233,7 +233,7 @@
     does during signature matching, so this example will actually make it loop
     until memory is exhausted.
   </P>
-  </FONT>
+  </DIV>
 
 
   <H2><A name="paramsig">parameterized signatures ___________</A></H2>
@@ -279,12 +279,10 @@
 	    end
   </PRE>
 
-  <FONT size="-1">
-  <P>
+  <P class=note>
     Caveat: parameterized signatures are not yet properly treated
     in Operette 1.
   </P>
-  </FONT>
 
 
   <H2><A name=wildcards>wildcards __________________________</A></H2>

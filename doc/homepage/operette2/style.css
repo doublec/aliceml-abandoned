@@ -48,6 +48,10 @@ A.url, TT {
 	font-family:	"Courier New", Courier, Monospace;
 }
 
+P.note, DIV.note {
+	font-size:	80%;
+}
+
 P.menu {
 	margin-left:	20px;
 	width:		100%;
