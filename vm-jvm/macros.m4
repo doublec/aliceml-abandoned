@@ -1,3 +1,15 @@
+dnl
+dnl Author:
+dnl      Daniel Simon, <dansim@ps.uni-sb.de>
+dnl
+dnl Copyright:
+dnl      Daniel Simon, 1999
+dnl
+dnl Last change:
+dnl    $Date$ by $Author$
+dnl $Revision$
+dnl
+dnl
 dnl Text-Tools
 define(capitalize,`translit(substr($1,0,1),a-z,A-Z)`'substr($1,1)')
 define(STRING,`de.uni_sb.ps.dml.runtime.String')
