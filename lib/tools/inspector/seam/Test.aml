@@ -3,7 +3,14 @@ import structure Inspector     from "Inspector"
 import signature GTK           from "x-alice:/lib/gtk/GTK-sig"
 import structure PervasiveType from "x-alice:/lib/rtt/PervasiveType"
 
+fun waitLine () = TextIO.inputLine TextIO.stdIn
+
 val _ = print "One.\n" 
+
+val _ = Inspector.inspect 100
+val _ = waitLine ()
+val _ = Inspector.inspect ()
+val _ = waitLine ()
 
 datatype tree =
   A | B | C of int * int | D of string list
@@ -12,7 +19,7 @@ datatype tree =
 fun longlist (n, l) = if n = 0 then l else longlist (n-1, n :: l)
 fun listn n = longlist (n, [])
 
-fun waitLine () = TextIO.inputLine TextIO.stdIn
+
 
 val recd = {aone = "1" ,
            btwo = 2 ,

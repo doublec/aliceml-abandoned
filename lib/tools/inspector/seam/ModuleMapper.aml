@@ -154,7 +154,7 @@ struct
         let
           val prefix = pVal :: (label, Prefs.labStyle) :: AbsTree.equalL
           val item = Common.Value (typ, value)
-          val tree = AbsTree.mapValue (depth + 1, item, typ, value)
+          val tree = AbsTree.mapValue (depth - 1, item, typ, value)
         in
           Concat {prefix, tree, suffix = [], orient = AbsTree.orientSonStrict}
         end
@@ -210,7 +210,7 @@ struct
         let
           val prefix = pMod :: (label, Prefs.labStyle) :: AbsTree.equalL
           val item = Common.Module (msig, mvalue)
-          val tree = AbsTree.map (depth + 1, item)
+          val tree = AbsTree.map (depth - 1, item)
         in
           Concat {prefix, tree, suffix = [], orient = AbsTree.orientSonStrict}
         end

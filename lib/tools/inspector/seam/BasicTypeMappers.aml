@@ -32,6 +32,10 @@ struct
       val length = case row' of 
                      Tuple typVec       => Vector.length typVec
                    | Record (_, typArr) => Array.length typArr
+    in
+    if length = 0 then AbsTree.unit
+    else
+    let
       val widthLimit = !Prefs.widthLimit
       val (limit, width) =
         if length > widthLimit then (true, widthLimit + 1) else (false, length)
@@ -54,6 +58,7 @@ struct
       val tree = Container {desc = item, limit, kids}
     in
       Concat {prefix, tree, suffix, orient = AbsTree.orientSon}
+    end
     end
 
   (* Type inspection helper. Directly from PPValue. *)
