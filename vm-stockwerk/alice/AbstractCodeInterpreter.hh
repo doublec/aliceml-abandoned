@@ -35,7 +35,6 @@ public:
   virtual Block *GetAbstractRepresentation(Block *blockWithHandler);
   // Frame Handling
   virtual void PushCall(TaskStack *taskStack, Closure *closure);
-  virtual void PurgeFrame(TaskStack *taskStack);
   // Execution
   virtual Result Run(word args, TaskStack *taskStack);
   virtual Result Handle(word exn, Backtrace *trace, TaskStack *taskStack);

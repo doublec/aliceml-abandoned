@@ -195,10 +195,6 @@ void AbstractCodeInterpreter::PushCall(TaskStack *taskStack,
   taskStack->PushFrame(frame->ToWord());
 }
 
-void AbstractCodeInterpreter::PurgeFrame(TaskStack *) {
-  return; // trivial, since we interpret Kill statements
-}
-
 Interpreter::Result
 AbstractCodeInterpreter::Run(word args, TaskStack *taskStack) {
   AbstractCodeFrame *frame =
