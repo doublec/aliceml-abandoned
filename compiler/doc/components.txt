@@ -76,6 +76,10 @@ import list and no computational effect (just returning the constant structure).
 Everything else remains as for typed pickles. There is no need to separate both
 concepts.
 
+Components are represented as curried functions over all import components.
+Components with no import are unary functions ignoring their argument. Any value
+is suitable to execute the component, in particular the function itself.
+
 Note: One could imagine building components at higher level on top of typed
 pickles. A component would be a structure with the following signature scheme:
 
