@@ -18,12 +18,12 @@
 
 #include "store/Store.hh"
 
-class Finalization {
+class DllExport Finalization {
 public:
   virtual void Finalize(word value) = 0;
 };
 
-class HashNode : private Block {
+class DllExport HashNode : private Block {
 private:
   static const u_int KEY_POS   = 0;
   static const u_int VALUE_POS = 1;
@@ -86,7 +86,7 @@ public:
   }
 };
 
-class BTListNode : private Block {
+class DllExport BTListNode : private Block {
 private:
   static const u_int TABLE_POS = 0;
   static const u_int NEXT_POS  = 1;
@@ -122,7 +122,7 @@ public:
 
 typedef void (*item_apply)(word key, word item);
 
-class WeakDictionary : private Block {
+class DllExport WeakDictionary : private Block {
 public:
   enum hashkeytype {
     INT_KEY,
@@ -252,14 +252,14 @@ public:
   }
 };
 
-class BlockHashTableFinalizer : public Finalization {
+class DllExport BlockHashTableFinalizer : public Finalization {
 public:
   BlockHashTableFinalizer() {}
 
   virtual void Finalize(word value);
 };
 
-class BlockHashTable : public WeakDictionary {
+class DllExport BlockHashTable : public WeakDictionary {
 protected:
   friend class Store;
   static word tables;
