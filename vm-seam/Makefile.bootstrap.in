@@ -415,9 +415,11 @@ BUILD1SOURCES = \
 	build1/tools/Linker.aml
 
 INSTALL1DIRS = build1/install build1/install/compiler
+INSTALL1BINFILES = alicec alicelink alicedep
 INSTALL1COMPILERFILES = CompilerMain.alc
 INSTALL1FILES = \
 	build1/install/tools/Linker.alc \
+	$(INSTALL1BINFILES:%=$(bindir)/%) \
 	$(INSTALL1COMPILERFILES:%=build1/install/compiler/%) \
 	$(LIBNATIVES:%=build1/install/%)
 
@@ -579,6 +581,9 @@ build1-install: build1-all $(INSTALL1DIRS) $(INSTALL1FILES)
 
 $(INSTALL1DIRS):
 	mkdir -p -m 775 $@
+
+$(bindir)/%: bin/%
+	install -c -m 555 $< $@
 
 build1/install/compiler/CompilerMain.alc:
 	(cd build1 && tar cf - `find . -name '*.alc'`) | \
