@@ -175,7 +175,7 @@ structure ListPair:
 	val all : ('a * 'b -> bool) -> 'a list * 'b list -> bool
     end
 
-structure Char:
+signature CHAR =
     sig
 	type char = char
 
@@ -187,10 +187,12 @@ structure Char:
 	val toCString : char -> bool
     end
 
+structure Char: CHAR
+
 val ord : char -> int
 val chr : int -> char
 
-structure String:
+signature STRING =
     sig
 	type string = string
 
@@ -208,6 +210,8 @@ structure String:
 	val compare : string * string -> order
 	val op< : string * string -> bool
     end
+
+structure String: STRING
 
 val str : string * string -> string
 val size : string * string -> string

@@ -1,0 +1,16 @@
+(* -*- sml -*- *)
+
+import
+
+structure Stamp: STAMP
+
+###common/INTERMEDIATE_GRAMMAR.sig
+functor MakeIntermediateGrammar(type info):
+  INTERMEDIATE_GRAMMAR where type info = info
+
+structure IntermediateGrammar: INTERMEDIATE_GRAMMAR
+
+###common/PREBOUND.sig
+structure Prebound: PREBOUND
+
+from "Common.ozf"

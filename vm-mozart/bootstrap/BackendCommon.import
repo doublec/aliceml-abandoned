@@ -1,0 +1,8 @@
+(* -*- sml -*- *)
+
+import
+
+###backend-common/IMPERATIVE_GRAMMAR.sig
+structure ImperativeGrammar: IMPERATIVE_GRAMMAR
+
+from "BackendCommon.ozf"

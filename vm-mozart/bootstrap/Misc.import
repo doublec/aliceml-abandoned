@@ -1,0 +1,41 @@
+(* -*- sml -*- *)
+
+import
+
+###misc/HASH_KEY.sig
+structure StringHashKey: HASH_KEY
+
+structure WideChar: CHAR = Char
+structure WideString: STRING = String
+
+###misc/MISC.sig
+structure Misc: MISC
+
+###misc/IMP_SET.sig
+functor MakeHashImpSet(Item: HASH_KEY): IMP_SET
+
+###misc/IMP_MAP.sig
+functor MakeHashImpMap(Key: HASH_KEY): IMP_MAP where type key = Key.t
+
+###misc/SCOPED_IMP_SET.sig
+functor MakeScopedImpSet(ImpSet: IMP_SET):
+  SCOPED_IMP_SET where type item = ImpSet.item
+
+functor MakeHashScopedImpSet(Item: HASH_KEY): SCOPED_IMP_SET
+
+###misc/SCOPED_IMP_MAP.sig
+functor MakeScopedImpMap(ImpMap: IMP_MAP):
+  SCOPED_IMP_MAP where type key = ImpMap.key
+
+functor MakeHashScopedImpMap(Key: HASH_KEY): SCOPED_IMP_MAP
+
+###misc/STAMP.sig
+functor MakeStamp(): STAMP
+
+###misc/PRETTY_PRINT.sig
+structure PrettyPrint: PRETTY_PRINT
+
+###misc/PP_MISC.sig
+structure PPMisc: PP_MISC
+
+from "Misc.ozf"

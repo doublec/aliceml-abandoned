@@ -1,0 +1,11 @@
+(* -*- sml -*- *)
+
+import
+
+###frontend-common/NAME.sig
+structure Name: NAME
+
+###frontend-common/ABSTRACT_GRAMMAR.sig
+structure AbstractGrammar: ABSTRACT_GRAMMAR
+
+from "FrontendCommon.ozf"

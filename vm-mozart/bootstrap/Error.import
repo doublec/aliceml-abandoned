@@ -1,0 +1,14 @@
+(* -*- sml -*- *)
+
+import
+
+###error/SOURCE.sig
+structure Source: SOURCE
+
+###error/CRASH.sig
+structure Crash: CRASH
+
+###error/ERROR.sig
+structure Error: ERROR
+
+from "Error.ozf"
