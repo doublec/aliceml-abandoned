@@ -234,6 +234,7 @@ DEFINE3(Array_update) {
 } END
 
 void PrimitiveTable::XCONCAT(Register,XArray)() {
+  ArrayTabulateWorker::Init();
   Register(XSTRINGIFY(XArray)".array", Array_array, 2);
   Register(XSTRINGIFY(XArray)".extract", Array_extract, 3);
   Register(XSTRINGIFY(XArray)".fromList", Array_fromList, 1);
