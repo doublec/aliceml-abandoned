@@ -21,6 +21,20 @@
 #include "generic/Scheduler.hh"
 #include "generic/Transients.hh"
 #include "generic/BindFutureWorker.hh"
+#include "generic/Thread.hh"
+
+#if DEBUGGER
+#include "generic/Debugger.hh"
+#include "generic/GenericDebuggerEvent.hh"
+
+static word GenerateUnCaughtEvent() {
+  GenericDebuggerEvent *event = 
+    GenericDebuggerEvent::New(GenericDebuggerEvent::UNCAUGHT,
+			      Scheduler::GetCurrentThread()->ToWord(),
+			      Scheduler::currentData);
+  return event->ToWord();
+}
+#endif
 
 // BindFutureFrame
 class BindFutureFrame: private StackFrame {
@@ -90,6 +104,13 @@ Worker::Result BindFutureWorker::Run(StackFrame *sFrame) {
 }
 
 Worker::Result BindFutureWorker::Handle(word) {
+#if DEBUGGER
+  // Uncaught Event Generation
+  if (Scheduler::GetCurrentThread()->GetDebugMode() == Thread::DEBUG) {
+    word event = GenerateUnCaughtEvent();
+    Debugger::SendEvent(event);
+  }
+#endif
   StackFrame *sFrame = Scheduler::GetFrame();
   BindFutureFrame *frame = static_cast<BindFutureFrame *>(sFrame);
   Assert(sFrame->GetWorker() == this);

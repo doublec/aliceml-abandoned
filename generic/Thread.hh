@@ -20,19 +20,36 @@
 #include <cstring>
 #include "store/Store.hh"
 #include "generic/TaskStack.hh"
+#if DEBUGGER
+#include "generic/GenericDebuggerEvent.hh"
+#include "generic/Debugger.hh"
+#endif
 
 class SeamDll Thread: private Block {
   friend class Scheduler;
 public:
   enum priority { HIGH, NORMAL, LOW };
+#if DEBUGGER
+  enum debugMode { NONE, DEBUG, DETACH};
+#endif
   enum state { BLOCKED, RUNNABLE, TERMINATED };
+
 private:
+
   static const u_int INITIAL_HANDLERS_SIZE = 10; // to be done
+#if DEBUGGER
+  enum {
+    PRIORITY_POS, STATE_POS, IS_SUSPENDED_POS,
+    TASK_STACK_POS, NARGS_POS, ARGS_POS,
+    FUTURE_POS, EXN_HANDLER_STACK_POS, DEBUG_MODE_POS, SIZE
+  };
+#else
   enum {
     PRIORITY_POS, STATE_POS, IS_SUSPENDED_POS,
     TASK_STACK_POS, NARGS_POS, ARGS_POS,
     FUTURE_POS, EXN_HANDLER_STACK_POS, SIZE
   };
+#endif
 
   void SetState(state s) {
     ReplaceArg(STATE_POS, s);
@@ -63,6 +80,9 @@ public:
     exnHandlerStack->InitArg(0, 0);
     exnHandlerStack->InitArg(1, Store::IntToWord(0));
     b->InitArg(EXN_HANDLER_STACK_POS, exnHandlerStack->ToWord());
+#if DEBUGGER
+    b->InitArg(DEBUG_MODE_POS, NONE);
+#endif
     return static_cast<Thread *>(b);
   }
   // Thread Untagging
@@ -81,6 +101,16 @@ public:
   priority GetPriority() {
     return static_cast<priority>(Store::DirectWordToInt(GetArg(PRIORITY_POS)));
   }
+#if DEBUGGER
+  debugMode GetDebugMode() {
+    return static_cast<debugMode>
+      (Store::DirectWordToInt(GetArg(DEBUG_MODE_POS)));
+  }
+
+  void SetDebugMode(debugMode mode) {
+    ReplaceArg(DEBUG_MODE_POS, mode);
+  }
+#endif
   state GetState() {
     return static_cast<state>(Store::DirectWordToInt(GetArg(STATE_POS)));
   }
@@ -109,11 +139,29 @@ public:
   void SetTerminated() {
     SetArgs(0, Store::IntToWord(0));
     SetState(TERMINATED);
+#if DEBUGGER
+    if (GetDebugMode() == DEBUG) {
+      GenericDebuggerEvent *event = 
+	GenericDebuggerEvent::New(GenericDebuggerEvent::TERMINATED, 
+				  this->ToWord(),
+				  Store::IntToWord(0));
+      Debugger::SendEvent(event->ToWord());
+    }
+#endif
   }
   void BlockOn(word future) {
     // Store the future we're blocking on, for unregistering:
     SetState(BLOCKED);
     ReplaceArg(FUTURE_POS, future);
+#if DEBUGGER
+    if(GetDebugMode() == DEBUG) {
+      GenericDebuggerEvent *event = 
+	GenericDebuggerEvent::New(GenericDebuggerEvent::BLOCKED, 
+				  this->ToWord(), 
+				  Store::IntToWord(0));
+      Debugger::SendEvent(event->ToWord());
+    }
+#endif
   }
   word GetFuture() {
     return GetArg(FUTURE_POS);
@@ -121,6 +169,15 @@ public:
   void Wakeup() {
     ReplaceArg(FUTURE_POS, 0);
     SetState(RUNNABLE);
+#if DEBUGGER
+    if(GetDebugMode() == DEBUG) {
+      GenericDebuggerEvent *event = 
+	GenericDebuggerEvent::New(GenericDebuggerEvent::RUNNABLE, 
+				  this->ToWord(),
+				  Store::IntToWord(0));
+      Debugger::SendEvent(event->ToWord());
+    }
+#endif
   }
 
   // Task Stack Operations
