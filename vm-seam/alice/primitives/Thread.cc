@@ -15,29 +15,24 @@
 #include "generic/Thread.hh"
 #include "generic/Scheduler.hh"
 #include "generic/Transients.hh"
-#include "alice/StackFrame.hh"
 #include "alice/Authoring.hh"
 
 class RaiseFrame: private StackFrame {
 private:
   enum { EXN_POS, SIZE };
 public:
-  using StackFrame::ToWord;
   // RaiseFrame Accessors
+  u_int GetSize() {
+    return StackFrame::GetSize() + SIZE;
+  }
   word GetExn() {
     return GetArg(EXN_POS);
   }
   // RaiseFrame Constructor
-  static RaiseFrame *New(Worker *worker, word exn) {
-    StackFrame *frame = StackFrame::New(RAISE_FRAME, worker, SIZE);
+  static RaiseFrame *New(Thread *thread, Worker *worker, word exn) {
+    NEW_THREAD_STACK_FRAME(frame, thread, worker, SIZE);
     frame->InitArg(EXN_POS, exn);
     return static_cast<RaiseFrame *>(frame);
-  }
-  // VectorTabulateFrame Untagging
-  static RaiseFrame *FromWordDirect(word frame) {
-    StackFrame *p = StackFrame::FromWordDirect(frame);
-    Assert(p->GetLabel() == RAISE_FRAME);
-    return static_cast<RaiseFrame *>(p);
   }
 };
 
@@ -53,13 +48,14 @@ public:
   }
   // Frame Handling
   static void PushFrame(Thread *thread, word exn) {
-    thread->PushFrame(RaiseFrame::New(self, exn)->ToWord());
+    RaiseFrame::New(thread, self, exn);
   }
+  virtual u_int GetFrameSize(StackFrame *sFrame);
   // Execution
-  virtual Result Run();
+  virtual Result Run(StackFrame *sFrame);
   // Debugging
   virtual const char *Identify();
-  virtual void DumpFrame(word frame);
+  virtual void DumpFrame(StackFrame *sFrame);
 };
 
 //
@@ -67,10 +63,19 @@ public:
 //
 RaiseWorker *RaiseWorker::self;
 
-Worker::Result RaiseWorker::Run() {
-  RaiseFrame *frame = RaiseFrame::FromWordDirect(Scheduler::GetAndPopFrame());
+u_int RaiseWorker::GetFrameSize(StackFrame *sFrame) {
+  RaiseFrame *frame = static_cast<RaiseFrame *>(sFrame);
+  Assert(sFrame->GetWorker() == this);
+  return frame->GetSize();
+}
+
+Worker::Result RaiseWorker::Run(StackFrame *sFrame) {
+  RaiseFrame *frame = static_cast<RaiseFrame *>(sFrame);
+  Assert(sFrame->GetWorker() == this);
   Scheduler::currentData = frame->GetExn();
-  Scheduler::currentBacktrace = Backtrace::New(frame->ToWord());
+  word wFrame = sFrame->Clone();
+  Scheduler::PopFrame(frame->GetSize());
+  Scheduler::currentBacktrace = Backtrace::New(wFrame);
   return Worker::RAISE;
 }
 
@@ -78,7 +83,7 @@ const char *RaiseWorker::Identify() {
   return "RaiseWorker";
 }
 
-void RaiseWorker::DumpFrame(word) {
+void RaiseWorker::DumpFrame(StackFrame *) {
   fprintf(stderr, "Raise\n");
 }
 
