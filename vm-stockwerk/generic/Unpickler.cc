@@ -54,16 +54,16 @@
 //
 // Stream Classes
 //
-class InputStreamBase {
+class InputStream {
 private:
   u_int hd, tl, rd, eob;
   u_char *buffer;
 public:
-  // InputStreamBase Constructor
-  InputStreamBase() : hd(0), tl(0), rd(0), eob(0) {
+  // InputStream Constructor
+  InputStream() : hd(0), tl(0), rd(0), eob(0) {
     buffer = INVALID_POINTER;
   }
-  // InputStreamBase Functions
+  // InputStream Functions
   u_int IsEOB() {
     if (eob) {
       eob = 0;
@@ -143,22 +143,22 @@ public:
   word ToWord() {
     return Store::UnmanagedPointerToWord(this);
   }
-  static InputStreamBase *FromWordDirect(word x) {
+  static InputStream *FromWordDirect(word x) {
     void *p = Store::DirectWordToUnmanagedPointer(x);
-    return static_cast<InputStreamBase *>(p);
+    return static_cast<InputStream *>(p);
   }
 };
 
 // FileInputStream
-class FileInputStream : public InputStreamBase { //--** finalization to be done
+class FileInputStream : public InputStream { //--** finalization to be done
 private:
   static const u_int rdSize = 8192;
   u_char *rdBuf;
-  FILE *file;
+  std::FILE *file;
   bool exception;
 public:
   // FileInputStream Constructor
-  FileInputStream(char *filename) : InputStreamBase() {
+  FileInputStream(char *filename) : InputStream() {
     rdBuf = reinterpret_cast<u_char *>(std::malloc(sizeof(u_char) * rdSize));
     file = std::fopen(filename, "r");
     exception = (file == NULL);
@@ -168,7 +168,7 @@ public:
     return exception;
   }
   virtual void Close() {
-    InputStreamBase::Close();
+    InputStream::Close();
     std::fclose(file);
     std::free(rdBuf);
   }
@@ -191,18 +191,18 @@ public:
 };
 
 // StringInputStream
-class StringInputStream : public InputStreamBase {
+class StringInputStream : public InputStream {
 private:
   word string;
 public:
   // StringInputStream Constructor
-  StringInputStream(Chunk *chunk) : InputStreamBase() {
+  StringInputStream(Chunk *chunk) : InputStream() {
     string = chunk->ToWord();
     RootSet::Add(string);
   }
   // StringInputStream Functions
   virtual void Close() {
-    InputStreamBase::Close();
+    InputStream::Close();
     RootSet::Remove(string);
   }
   virtual Interpreter::Result FillBuffer(word args, TaskStack *taskStack) {
@@ -233,7 +233,7 @@ public:
   using Block::ToWord;
 
   // PickleArgs Constructor
-  static PickleArgs *New(InputStreamBase *is, word env, int count) {
+  static PickleArgs *New(InputStream *is, word env, int count) {
     Block *p = Interpreter::TupArgs(SIZE);
     p->InitArg(STREAM_POS, is->ToWord());
     p->InitArg(ENV_POS, env);
@@ -248,8 +248,8 @@ public:
   }
 
   // PickleArgs Accessors
-  InputStreamBase *GetStream() {
-    return InputStreamBase::FromWordDirect(GetArg(STREAM_POS));
+  InputStream *GetStream() {
+    return InputStream::FromWordDirect(GetArg(STREAM_POS));
   }
   word GetEnv() {
     return GetArg(ENV_POS);
@@ -289,8 +289,8 @@ void InputInterpreter::PushFrame(TaskStack *taskStack) {
 }
 
 Interpreter::Result InputInterpreter::Run(word args, TaskStack *taskStack) {
-  PickleArgs *pargs   = PickleArgs::FromWord(args);
-  InputStreamBase *is = pargs->GetStream();
+  PickleArgs *pargs = PickleArgs::FromWord(args);
+  InputStream *is   = pargs->GetStream();
   return is->FillBuffer(args, taskStack);
 }
 
@@ -551,11 +551,11 @@ Interpreter::Result UnpickleInterpreter::Run(word args, TaskStack *taskStack) {
     CONTINUE(args);
   }
   else {
-    PickleArgs *pargs   = PickleArgs::FromWord(args);
-    InputStreamBase *is = pargs->GetStream();
-    word env            = pargs->GetEnv();
-    u_int count         = pargs->GetCount();
-    u_char tag          = is->GetByte();
+    PickleArgs *pargs = PickleArgs::FromWord(args);
+    InputStream *is   = pargs->GetStream();
+    word env          = pargs->GetEnv();
+    u_int count       = pargs->GetCount();
+    u_char tag        = is->GetByte();
     CHECK_EOB();
     switch ((Tag::PickleTags) tag) {
     case Tag::POSINT:
@@ -802,9 +802,9 @@ Interpreter::Result
 PickleLoadInterpreter::Run(word args, TaskStack *taskStack) {
   PickleLoadFrame *frame =
     PickleLoadFrame::FromWordDirect(taskStack->GetFrame());
-  PickleArgs *pargs   = PickleArgs::FromWord(args);
-  InputStreamBase *is = pargs->GetStream();
-  Tuple *x            = frame->GetTuple();
+  PickleArgs *pargs = PickleArgs::FromWord(args);
+  InputStream *is   = pargs->GetStream();
+  Tuple *x          = frame->GetTuple();
   is->Close();
   taskStack->PopFrame();
   CONTINUE(Interpreter::OneArg(x->Sel(0)));
@@ -835,7 +835,7 @@ static char *ExportCString(Chunk *s) {
 
 Interpreter::Result Unpickler::Unpack(Chunk *s, TaskStack *taskStack) {
   Tuple *x = Tuple::New(1);
-  InputStreamBase *is = new StringInputStream(s);
+  InputStream *is = new StringInputStream(s);
   Stack *env = Stack::New(INITIAL_TABLE_SIZE);
   taskStack->PopFrame();
   PickleUnpackInterpeter::PushFrame(taskStack, x);
