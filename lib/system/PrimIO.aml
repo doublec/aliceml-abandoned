@@ -29,8 +29,8 @@ functor PrimIO(structure V: MONO_VECTOR
 	type vector = A.Vector.vector
 	type array = A.array
 
-	type pos = pos
-	val compare = compare
+	type pos = (pos,int) alt
+	val compare = Alt.compare (compare, Int.compare)
 
 	datatype reader = RD of
 	    {name: string,
@@ -70,58 +70,64 @@ functor PrimIO(structure V: MONO_VECTOR
 
 	fun openVector v =
 	    let
-		val read = ref 0
+		val pos = ref 0
 		val closed = ref false
-		fun check f =
+		fun check f x =
 		    let
 			val p = Promise.promise ()
 		    in
 			if Ref.exchange (closed, Promise.future p) then
 			    (Promise.fulfill (p, true);
 			     raise IO.ClosedStream)
-			else (f () before Promise.fulfill (p, false))
+			else (f x before Promise.fulfill (p, false))
+		    end
+
+		fun readVec sz =
+		    let
+			val p = !pos
+			val n = Int.min (V.length v - p, sz)
+		    in
+			case Int.compare (n, 0) of
+			    LESS => raise General.Size
+			  | EQUAL => raise General.Domain
+			  | GREATER => (pos := p + n;
+					V.extract (v, p, SOME n))
+		    end
+
+		fun readArr {buf, i, sz} =
+		    let
+			val p = !pos
+			val sz = Option.getOpt (sz, A.length buf - i)
+			val n = Int.min (V.length v - p, sz)
+		    in
+			case Int.compare (n, 0) of
+			    LESS => raise General.Size
+			  | EQUAL => raise General.Domain
+			  | GREATER => (pos := p + n;
+					A.copyVec {src = v, si = p,
+						   len = SOME n,
+						   dst = buf, di = i};
+					n)
 		    end
 	    in
 		RD {name = "vector",
 		    chunkSize = V.length v,
-		    readVec = SOME (fn sz => check (fn () =>
-			let
-			    val r = !read
-			    val n = Int.min (V.length v - r, sz)
-			in
-			    if n < 0 then raise General.Subscript else ();
-			    if n = 0 then raise General.Domain else ();
-			    read := r + n;
-			    V.extract (v, r, SOME n)
-			end)),
-		    readArr = SOME (fn {buf, i, sz} => check (fn () =>
-			let
-			    val r = !read
-			    val sz = case sz of
-					 SOME sz => sz
-				       | NONE => A.length buf - i
-			    val n = Int.min (V.length v - r, sz)
-			in
-			    if n < 0 then raise General.Subscript else ();
-			    if n = 0 then raise General.Domain else ();
-			    read := r + n;
-			    V.appi (fn (j, x) => A.update (buf, i + j, x))
-				   (v, 0, NONE); n
-			end)),
-		    readVecNB = NONE,
-		    readArrNB = NONE,
-		    block = SOME (fn () => check (fn () => ())),
-		    canInput = NONE,
-		    avail = fn () => check (fn () =>
-			SOME (V.length v - !read)),
-		    getPos = NONE (*SOME (fn () => check (fn () => !read))*),
-		    setPos = NONE (*SOME (fn i => check (fn () =>
-			if i < 0 orelse i > V.length v then raise Subscript
-			else read := i))*),
-		    endPos = NONE (*SOME (fn () => check (fn () =>
-			V.length v))*),
-		    verifyPos = NONE (*SOME (fn () => check (fn () =>
-			!read))*),
+		    readVec = SOME (check readVec),
+		    readArr = SOME (check readArr),
+		    readVecNB = SOME (check (fn x => if Future.isFuture v
+						     then NONE
+						     else SOME (readVec x))),
+		    readArrNB = SOME (check (fn x => if Future.isFuture v
+						     then NONE
+						     else SOME (readArr x))),
+		    block = SOME (check (fn () => ignore (Future.await v))),
+		    canInput = SOME (check (fn () => not (Future.isFuture v))),
+		    avail = check (fn () => NONE),
+		    getPos = SOME (fn () => SND (!pos)),
+		    setPos = SOME (check (fn SND p => pos := p
+					   | FST _ => raise General.Domain)),
+		    endPos = SOME (check (fn () => SND (V.length v))),
+		    verifyPos = SOME (check (fn () => SND (!pos))),
 		    close = fn () => closed := true,
 		    ioDesc = NONE}
 	    end
@@ -130,13 +136,13 @@ functor PrimIO(structure V: MONO_VECTOR
 	    (if i < 0 orelse i > len then raise General.Subscript else ();
 	     case sz of
 		 SOME sz =>
-		     if sz > len - i then raise General.Subscript else sz
+		     if sz > len - i then raise General.Size else sz
 	       | NONE => len - i)
 
 	fun nullRd (): reader =
 	    let
 		val closed = ref false
-		fun check x =
+		fun check x _ =
 		    let
 			val p = Promise.promise ()
 		    in
@@ -147,18 +153,20 @@ functor PrimIO(structure V: MONO_VECTOR
 		    end
 	    in
 		RD {name = "null",
-		    chunkSize = 2,
-		    readVec = SOME (fn _ => check (V.fromList nil)),
-		    readArr = SOME (fn _ => check 0),
-		    readVecNB = SOME (fn _ => check (SOME (V.fromList nil))),
-		    readArrNB = SOME (fn _ => check (SOME 0)),
-		    block = SOME (fn () => check ()),
-		    canInput = SOME (fn () => check true),
-		    avail = fn () => check (SOME 0),
-		    getPos = NONE,
-		    setPos = NONE,
-		    endPos = NONE,
-		    verifyPos = NONE,
+		    chunkSize = 1,
+		    readVec = SOME (check (V.fromList nil)),
+		    readArr = SOME (check 0),
+		    readVecNB = SOME (check (SOME (V.fromList nil))),
+		    readArrNB = SOME (check (SOME 0)),
+		    block = SOME (check ()),
+		    canInput = SOME (check true),
+		    avail = check (SOME 0),
+		    getPos = SOME (fn () => SND 0),
+		    setPos = SOME (fn x =>
+				   check (fn SND 0 => ()
+					   | _ => raise General.Domain) () x),
+		    endPos = SOME (check (SND 0)),
+		    verifyPos = SOME (check (SND 0)),
 		    close = fn () => closed := true,
 		    ioDesc = NONE}
 	    end
@@ -166,34 +174,36 @@ functor PrimIO(structure V: MONO_VECTOR
 	fun nullWr (): writer =
 	    let
 		val closed = ref false
-		fun check x =
+		fun check f x =
 		    let
 			val p = Promise.promise ()
 		    in
 			if Ref.exchange (closed, Promise.future p) then
 			    (Promise.fulfill (p, true);
 			     raise IO.ClosedStream)
-			else (Promise.fulfill (p, false); x)
+			else (Promise.fulfill (p, false); f x)
 		    end
+		fun getPos () = SND 0
 	    in
 		WR {name = "null",
-		    chunkSize = 2,
+		    chunkSize = 1,
 		    writeVec = SOME (fn {buf, i, sz} =>
-					check (len (V.length buf, i, sz))),
+					check len (V.length buf, i, sz)),
 		    writeArr = SOME (fn {buf, i, sz} =>
-					check (len (A.length buf, i, sz))),
+					check len (A.length buf, i, sz)),
 		    writeVecNB =
 			SOME (fn {buf, i, sz} =>
-				 check (SOME (len (V.length buf, i, sz)))),
+				 check (SOME o len) (V.length buf, i, sz)),
 		    writeArrNB =
 			SOME (fn {buf, i, sz} =>
-				 check (SOME (len (A.length buf, i, sz)))),
-		    block = SOME (fn () => check ()),
-		    canOutput = SOME (fn () => check true),
-		    getPos = NONE,
-		    setPos = NONE,
-		    endPos = NONE,
-		    verifyPos = NONE,
+				 check (SOME o len) (A.length buf, i, sz)),
+		    block = SOME (check (fn () => ())),
+		    canOutput = SOME (check (fn () => true)),
+		    getPos = SOME getPos,
+		    setPos = SOME (check (fn SND 0 => ()
+					   | _ => raise General.Domain)),
+		    endPos = SOME (check getPos),
+		    verifyPos = SOME (check getPos),
 		    close = fn () => closed := true,
 		    ioDesc = NONE}
 	    end
