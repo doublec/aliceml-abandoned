@@ -32,7 +32,7 @@ structure BindEnvFromSig :> BIND_ENV_FROM_SIG =
 	    0
 
     fun isRef t =
-	#3(Type.asCon(#1(Type.asApply t))) = PreboundType.path_ref
+	Path.equals(#3(Type.asCon(#1(Type.asApply t))), PreboundType.path_ref)
 	handle Type.Type => false
 
     fun idStatusFromSort(Inf.VALUE, t)       = V
@@ -53,6 +53,13 @@ structure BindEnvFromSig :> BIND_ENV_FROM_SIG =
 		    C 1
 	    end
 
+    fun idStatusFromTyps []	= C 0
+      | idStatusFromTyps [t]	= if Type.isTuple t then
+					C(List.length(Type.asTuple t))
+				  else
+					C 1
+      | idStatusFromTyps ts	= C(List.length ts)
+
 
     fun envFromTyp(I,t) =
 	if Type.isSum t then
@@ -61,6 +68,15 @@ structure BindEnvFromSig :> BIND_ENV_FROM_SIG =
 	    envFromTyp(I, #2(Type.asLambda t))
 	else if Type.isMu t then
 	    envFromTyp(I, Type.asMu t)
+	else if Type.isCon t
+	andalso Path.equals(#3(Type.asCon t), PreboundType.path_ref) then
+	    let
+		val E   = new()
+		val x   = Stamp.new()
+		val vid = VId.fromString(Name.toString(Prebound.valname_ref))
+	    in
+		insertVal(E, vid, (I,x,R)) ; E
+	    end
 	else
 	    new()
 
@@ -71,16 +87,16 @@ structure BindEnvFromSig :> BIND_ENV_FROM_SIG =
 	    fun loop r =
 		if Type.isEmptyRow r then () else
 		let
-		    val (l,t) = Type.headRow r
-		    val  x    = Stamp.new()
-		    val  vid  = VId.fromString(Label.toString l)
-		    val  is   = idStatusFromSort(Inf.CONSTRUCTOR, List.hd t)
+		    val (a,ts) = Type.headRow r
+		    val  x     = Stamp.new()
+		    val  vid   = VId.fromString(Label.toString a)
+		    val  is    = idStatusFromTyps ts
 		in
 		    insertVal(E, vid, (I,x,is)) ;
 		    loop(Type.tailRow r)
 		end
 	in
-	    E
+	    loop r ; E
 	end
 
 
