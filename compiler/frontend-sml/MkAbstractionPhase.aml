@@ -2739,7 +2739,7 @@ struct
 		val (typ11',k)       = trTyo E tyo
 		val  typ12'          = apptyp(List.map varToTyp varids2', typ')
 		val  typ2'           = alltyp(varids2',
-					      if k = 0 then typ' else
+					      if k = 0 then typ12' else
 					      O.ArrTyp(O.infoTyp typ',
 						       typ11', typ12'))
 		val  spec2'          = O.ValSpec(i, valid2', typ2')
@@ -3214,7 +3214,7 @@ struct
 		val (typ11',k)       = trTyo E tyo
 		val  typ12'          = apptyp(List.map varToTyp varids2', typ')
 		val  typ2'           = alltyp(varids2',
-					      if k = 0 then typ' else
+					      if k = 0 then typ12' else
 					      O.ArrTyp(O.infoTyp typ',
 						       typ11', typ12'))
 		val  imp2'           = O.ValImp(i, valid2', O.SomeDesc(i,typ2'))
