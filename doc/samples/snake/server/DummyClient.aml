@@ -1,13 +1,14 @@
-import structure Protocol  from "../common/Protocol"
-import structure Color     from "../common/Color"
-import structure Pos       from "../common/Pos"
-import val log'            from "../common/Log"
-import structure Highscore from "../common/Highscore"
+import structure Protocol       from "../common/Protocol"
+import structure Color          from "../common/Color"
+import structure Pos            from "../common/Pos"
+import val log'                 from "../common/Log"
+import structure Highscore      from "../common/Highscore"
+
 
 local
     open Protocol
 
-    fun log'' t (f, v) = log' t ("Client", (f, v))
+    fun log'' t (f, v) = log' t ("Client." ^ f, v)
        
     __overload 'a log: string * 'a -> unit = log''
 
