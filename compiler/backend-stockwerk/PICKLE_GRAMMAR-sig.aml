@@ -41,7 +41,6 @@ signature PICKLE_GRAMMAR =
 	  | WideString of WideString.string
 	  | Real of Real.real
 	  | TaggedValue of LargeInt.int * value vector
-	  | Constructor of Stamp.t
 	  | Tuple of value vector
 	  | Vector of value vector
 	  | Closure of function * value vector
@@ -53,7 +52,7 @@ signature PICKLE_GRAMMAR =
 	  | PutVar of id * idRef * instr
 	  | PutNew of id * instr
 	  | PutTag of id * int * idRef vector * instr
-	  | PutCon of id * con * idRef vector * instr
+	  | PutCon of id * idRef * idRef vector * instr
 	  | PutRef of id * idRef * instr
 	  | PutTup of id * idRef vector * instr
 	  | PutVec of id * idRef vector * instr
@@ -77,14 +76,11 @@ signature PICKLE_GRAMMAR =
 				    * instr
 	  | TagTest of idRef * (int * instr) vector
 			     * (int * idDef vector * instr) vector * instr
-	  | ConTest of idRef * (con * instr) vector
-			     * (con * idDef vector * instr) vector * instr
+	  | ConTest of idRef * (idRef * instr) vector
+			     * (idRef * idDef vector * instr) vector * instr
 	  | VecTest of idRef * (idDef vector * instr) vector * instr
 	  | Shared of Stamp.t * instr
 	  | Return of idRef args
-	and con =
-	    Con of idRef
-	  | StaticCon of value
 
 	type t = value
     end

@@ -78,9 +78,6 @@ structure OutputPickle :> OUTPUT_PICKLE =
 		val try = TAG 28
 		val vecTest = TAG 29
 
-		val con = TAG 0
-		val staticCon = TAG 1
-
 		fun toInt ARRAY        = 0
 		  | toInt CELL         = 1
 		  | toInt CONSTRUCTOR  = 2
@@ -180,16 +177,6 @@ structure OutputPickle :> OUTPUT_PICKLE =
 	  | outputValue (context, TaggedValue (i, values)) =
 	    (outputBlock (context, Label.TAG i, Vector.length values);
 	     Vector.app (fn value => outputValue (context, value)) values)
-	  | outputValue (context as {shared, ...}, Constructor stamp) =
-	    (case StampMap.lookup (shared, stamp) of
-		 SOME id => outputReference (context, id)
-	       | NONE =>
-		     let
-			 val id = outputBlock (context, Label.CONSTRUCTOR, 1)
-		     in
-			 outputInt (context, 0); (*--** print name? *)
-			 StampMap.insertDisjoint (shared, stamp, id)
-		     end)
 	  | outputValue (context, Tuple values) =
 	    (outputTuple (context, Vector.length values);
 	     Vector.app (fn value => outputValue (context, value)) values)
@@ -230,9 +217,9 @@ structure OutputPickle :> OUTPUT_PICKLE =
 	     outputInt (context, LargeInt.fromInt tag);
 	     outputVector outputIdRef (context, idRefs);
 	     outputInstr (context, instr))
-	  | outputInstr (context, PutCon (id, con, idRefs, instr)) =
+	  | outputInstr (context, PutCon (id, idRef, idRefs, instr)) =
 	    (outputBlock (context, Label.putCon, 4); outputId (context, id);
-	     outputCon (context, con);
+	     outputIdRef (context, idRef);
 	     outputVector outputIdRef (context, idRefs);
 	     outputInstr (context, instr))
 	  | outputInstr (context, PutRef (id, idRef, instr)) =
@@ -361,13 +348,13 @@ structure OutputPickle :> OUTPUT_PICKLE =
 	  | outputInstr (context, ConTest (idRef, tests1, tests2, instr)) =
 	    (outputBlock (context, Label.conTest, 4);
 	     outputIdRef (context, idRef);
-	     outputVector (fn (context, (con, instr)) =>
+	     outputVector (fn (context, (idRef, instr)) =>
 			   (outputTuple (context, 2);
-			    outputCon (context, con);
+			    outputIdRef (context, idRef);
 			    outputInstr (context, instr))) (context, tests1);
-	     outputVector (fn (context, (con, idDefs, instr)) =>
+	     outputVector (fn (context, (idRef, idDefs, instr)) =>
 			   (outputTuple (context, 3);
-			    outputCon (context, con);
+			    outputIdRef (context, idRef);
 			    outputVector outputIdDef (context, idDefs);
 			    outputInstr (context, instr))) (context, tests2);
 	     outputInstr (context, instr))
@@ -393,11 +380,6 @@ structure OutputPickle :> OUTPUT_PICKLE =
 	  | outputInstr (context, Return args) =
 	    (outputBlock (context, Label.return, 1);
 	     outputArgs outputIdRef (context, args))
-	and outputCon (context, Con idRef) =
-	    (outputBlock (context, Label.con, 1); outputIdRef (context, idRef))
-	  | outputCon (context, StaticCon value) =
-	    (outputBlock (context, Label.staticCon, 1);
-	     outputValue (context, value))
 
 	fun output (outstream, value) =
 	    outputValue ({outstream = outstream, shared = StampMap.new ()},

@@ -53,10 +53,6 @@ structure CodeGenPhase: CODE_GEN_PHASE =
 	fun translateIdDef (IdDef id, env) = O.IdDef (declare (env, id))
 	  | translateIdDef (Wildcard, _) = O.Wildcard
 
-	fun translateCon (Con id, env) = O.Con (lookup (env, id))
-	  | translateCon (StaticCon stamp, _) =
-	    O.StaticCon (O.Constructor stamp)
-
 	fun translateArgs f (OneArg idDef, env) =
 	    O.OneArg (f (idDef, env))
 	  | translateArgs f (TupArgs idDefs, env) =
@@ -324,12 +320,12 @@ structure CodeGenPhase: CODE_GEN_PHASE =
 				   (Vector.toList conTests)
 	    in
 		O.ConTest (lookup (env, id),
-			   Vector.map (fn (con, _, body) =>
-				       (translateCon (con, env),
+			   Vector.map (fn (id', _, body) =>
+				       (lookup (env, id'),
 					translateBody (body, env)))
 				      (Vector.fromList nullaryTests),
-			   Vector.map (fn (con, args, body) =>
-				       (translateCon (con, env),
+			   Vector.map (fn (id', args, body) =>
+				       (lookup (env, id'),
 					translateConArgs (args, env),
 					translateBody (body, env)))
 				      (Vector.fromList naryTests),
@@ -389,12 +385,10 @@ structure CodeGenPhase: CODE_GEN_PHASE =
 	    O.PutConst (id, O.Int (LargeInt.fromInt tag), instr)
 	  | translateExp (TagExp (_, _, tag, args), id, instr, env) =
 	    O.PutTag (id, tag, translateIds (argsToVector args, env), instr)
-	  | translateExp (ConExp (_, Con id', TupArgs #[]), id, instr, env) =
+	  | translateExp (ConExp (_, id', TupArgs #[]), id, instr, env) =
 	    O.PutVar (id, lookup (env, id'), instr)
-	  | translateExp (ConExp (_, StaticCon s, TupArgs #[]), id, instr, _) =
-	    O.PutConst (id, O.Constructor s, instr)
-	  | translateExp (ConExp (_, con, args), id, instr, env) =
-	    O.PutCon (id, translateCon (con, env),
+	  | translateExp (ConExp (_, id', args), id, instr, env) =
+	    O.PutCon (id, lookup (env, id'),
 		      translateIds (argsToVector args, env), instr)
 	  | translateExp (TupExp (_, ids), id, instr, env) =
 	    O.PutTup (id, translateIds (ids, env), instr)
@@ -450,10 +444,9 @@ structure CodeGenPhase: CODE_GEN_PHASE =
 	  | translateIgnore (VarExp (_, _), instr, _) = instr
 	  | translateIgnore (TagExp (_, _, _, _), instr, _) = instr
 	  | translateIgnore (ConExp (_, _, TupArgs #[]), instr, _) = instr
-	  | translateIgnore (ConExp (_, Con id, _), instr, env) =
+	  | translateIgnore (ConExp (_, id, _), instr, env) =
 	    O.AppPrim ("Future.await", #[lookup (env, id)],
 		       SOME (O.Wildcard, instr))
-	  | translateIgnore (ConExp (_, StaticCon _, _), instr, _) = instr
 	  | translateIgnore (RefExp (_, _), instr, _) = instr
 	  | translateIgnore (TupExp (_, _), instr, _) = instr
 	  | translateIgnore (ProdExp (_, _), instr, _) = instr
