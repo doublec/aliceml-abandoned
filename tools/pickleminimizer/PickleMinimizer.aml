@@ -1,0 +1,25 @@
+(*
+ * Authors:
+ *   Guido Tack <tack@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Guido Tack, 2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Minimizer from "x-alice:/lib/system/Minimizer"
+import structure UnsafeComponent from "x-alice:/lib/system/UnsafeComponent"
+
+structure PickleMinimizer =
+  struct
+      fun minimize s = 
+	  let
+	      val c = UnsafeComponent.load s
+	  in
+	      Minimizer.minimize c;
+	      UnsafeComponent.save (s, c)
+	  end
+  end

@@ -1,0 +1,25 @@
+(*
+ * Authors:
+ *   Guido Tack <tack@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Guido Tack, 2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure PickleMinimizer from "PickleMinimizer"
+
+structure Main =
+    struct
+	fun main [s] = (PickleMinimizer.minimize s;
+			OS.Process.success)
+	  | main _ = (TextIO.output (TextIO.stdErr,
+				     "Usage: pminimize <file>\n"
+				     );
+		      OS.Process.failure)
+    end
+
+val _ = OS.Process.exit (Main.main (CommandLine.arguments()))
