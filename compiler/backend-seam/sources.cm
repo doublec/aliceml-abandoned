@@ -13,8 +13,10 @@ Group is
     OUTPUT_PICKLE-sig.aml
     OutputPickle.aml
     ENVIRONMENT-sig.aml
-    MkCodeGenContext.aml
     MkEnvironment.aml
+    LIVENESS-sig.aml
+    MkLiveness.aml
+    MkCodeGenContext.aml
     CODE_GEN_PHASE-sig.aml
     MkCodeGenPhase.aml
     MkBackendStockwerkCross.aml
