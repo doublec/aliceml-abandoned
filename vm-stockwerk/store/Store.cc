@@ -360,7 +360,7 @@ word Store::ResolveForwardPtr(word v) {
 
 inline void Store::HandleInterGenerationalPointers(Set *intgen_set, Set *new_intgen_set,
 						   u_int gcGen, u_int dst_gen, u_int cpy_gen) {
-  u_int rs_size = intgen_set->GetSize();
+  u_int rs_size = (1 + intgen_set->GetSize());
   
   new_intgen_set->MakeEmpty();
 
@@ -442,7 +442,7 @@ inline void Store::HandleInterGenerationalPointers(Set *intgen_set, Set *new_int
 
 inline Block *Store::HandleWeakDictionaries(Set *wkdict_set, Set *new_wkdict_set,
 					    u_int match_gen, u_int dst_gen, u_int cpy_gen) {
-  u_int rs_size = wkdict_set->GetSize();
+  u_int rs_size = (1 + wkdict_set->GetSize());
 
   new_wkdict_set->MakeEmpty();
 
