@@ -1,8 +1,0 @@
-(* -*- sml -*- *)
-
-import
-
-###backend-mozart/OZIFY_IMPERATIVE_GRAMMAR.sig
-structure OzifyImperativeGrammar: OZIFY_IMPERATIVE_GRAMMAR
-
-from "BackendMozart.ozf"

@@ -1,23 +1,21 @@
 (* -*- sml -*- *)
 
-__prebound Prebound0
-
 import
 
-type unit = {}
-datatype bool = datatype Prebound0.bool
-type int = Prebound0.int
-type word = Prebound0.word
-type real = Prebound0.real
-type string = Prebound0.string
-type char = Prebound0.char
-type 'a vector = 'a Prebound0.vector
-datatype list = datatype Prebound0.list
-datatype ref = datatype Prebound0.ref
-datatype exn = datatype Prebound0.exn
+type unit
+datatype bool
+type int
+type word
+type real
+type string
+type char
+type 'a vector
+datatype list
+datatype ref
+datatype exn
 
-exception Match = Prebound0.Match
-exception Bind = Prebound0.Bind
+exception Match
+exception Bind
 
 infix  7  * / div mod
 infix  6  + - ^
@@ -26,47 +24,23 @@ infix  4  = <> > >= < <=
 infix  3  := o
 infix  0  before
 
-val op=  : ''a * ''a -> bool
-val op<> : ''a * ''a -> bool
+val op=
+val op<>
 
-val op~ :	int -> int
+val op~
 
-val op+ :	int * int -> int
-val op- :	int * int -> int
-val op* :	int * int -> int
-val op div :	int * int -> int
-val op mod :	int * int -> int
+val op+
+val op-
+val op*
+val op div
+val op mod
 
-val op< :	int * int -> bool
-val op> :	int * int -> bool
-val op<= :	int * int -> bool
-val op>= :	int * int -> bool
+val op<
+val op>
+val op<=
+val op>=
 
-structure General:
-    sig
-	type unit = {}
-	type exn = exn
-
-	exception Bind
-	exception Chr
-	exception Div
-	exception Domain
-	exception Fail of string
-	exception Match
-	exception Overflow
-	exception Size
-	exception Span
-	exception Subscript
-
-	datatype order = LESS | EQUAL | GREATER
-
-	val ! : 'a ref -> 'a
-	val op:= : 'a ref * 'a -> unit
-
-	val op o : ('a -> 'b) * ('c -> 'a) -> ('c -> 'b)
-	val op before : 'a * unit -> 'a
-	val ignore : 'a -> unit
-    end
+structure General
 
 exception Chr
 exception Div
@@ -78,250 +52,65 @@ exception Size
 exception Span
 exception Subscript
 
-datatype order = datatype General.order
+datatype order
 
-val ! : 'a ref -> 'a
-val op:= : 'a ref * 'a -> unit
+val !
+val op:=
 
-val op o: ('a -> 'b) * ('c -> 'a) -> ('c -> 'b)
-val op before: 'a * unit -> 'a
-val ignore: 'a -> unit
+val op o
+val op before
+val ignore
 
-structure Option:
-    sig
-	datatype 'a option = NONE | SOME of 'a
+structure Option
+datatype option
+val getOpt
+val isSome
+val valOf
 
-	exception Option
+structure Bool
+val not
 
-	val getOpt: 'a option * 'a -> 'a
-	val isSome: 'a option -> bool
-	val valOf: 'a option -> 'a
-	val filter: ('a -> bool) -> 'a -> 'a option
-	val join: 'a option option -> 'a option
-	val map: ('a -> 'b) -> 'a option -> 'b option
-	val mapPartial: ('a -> 'b option) -> 'a option -> 'b option
-	val compose: ('a -> 'c) * ('b -> 'a option) -> 'b -> 'c option
-	val composePartial:
-	    ('a -> 'c option) * ('b -> 'a option) -> 'b -> 'c option
-    end
+structure List
+val null
+val hd
+val tl
+val length
+val rev
+val op@
+val app
+val map
+val foldl
+val foldr
 
-datatype option = datatype Option.option
+structure ListPair
 
-val getOpt: 'a option * 'a -> 'a
-val isSome: 'a option -> bool
-val valOf: 'a option -> 'a
+structure Char
+val ord
+val chr
 
-structure Bool:
-    sig
-	datatype bool = datatype bool
+structure String
+val op^
+val str
+val size
+val substring
+val explode
+val concat
+val implode
 
-	val not: bool -> bool
-	val toString: bool -> string
-    end
+structure StringCvt
 
-val not: bool -> bool
+structure Int
 
-structure List:
-    sig
-	datatype list = datatype list
+structure LargeInt
 
-	exception Empty
+structure Real
 
-	val null: 'a list -> bool
-	val length : 'a list -> int
-	val op@ : 'a list * 'a list -> 'a list
-	val hd : 'a list -> 'a
-	val tl : 'a list -> 'a list
-	val last : 'a list -> 'a
-	val getItem : 'a list -> ('a * 'a list) option
-	val nth : 'a list * int -> 'a
-	val rev : 'a list -> 'a list
-	val take : 'a list * int -> 'a list
-	val drop : 'a list * int -> 'a list
-	val concat : 'a list list -> 'a list
-	val revAppend : 'a list * 'a list -> 'a list
-	val app : ('a -> unit) -> 'a list -> unit
-	val map : ('a -> 'b) -> 'a list -> 'b list
-	val mapPartial : ('a -> 'b option) -> 'a list -> 'b list
-	val find : ('a -> bool) -> 'a list -> 'a option
-	val filter : ('a -> bool) -> 'a list -> 'a list
-	val partition : ('a -> bool) -> 'a list -> 'a list * 'a list
-	val foldl : ('a * 'b -> 'b) -> 'b -> 'a list -> 'b
-	val foldr : ('a * 'b -> 'b) -> 'b -> 'a list -> 'b
-	val exists : ('a -> bool) -> 'a list -> bool
-	val all : ('a -> bool) -> 'a list -> bool
-	val tabulate : int * (int -> 'a) -> 'a list
-    end
+structure LargeReal
 
-val null: 'a list -> bool
-val hd : 'a list -> 'a
-val tl : 'a list -> 'a list
-val length : 'a list -> int
-val rev : 'a list -> 'a list
-val op@ : 'a list * 'a list -> 'a list
-val app : ('a -> unit) -> 'a list -> unit
-val map : ('a -> 'b) -> 'a list -> 'b list
-val foldl : ('a * 'b -> 'b) -> 'b -> 'a list -> 'b
-val foldr : ('a * 'b -> 'b) -> 'b -> 'a list -> 'b
+structure Array
+type array
 
-structure ListPair:
-    sig
-	val zip : 'a list * 'b list -> ('a * 'b) list
-	val unzip : ('a * 'b) list -> 'a list * 'b list
-	val map : ('a * 'b -> 'c) -> 'a list * 'b list -> 'c list
-	val app : ('a * 'b -> unit) -> 'a list * 'b list -> unit
-	val foldl : ('a * 'b * 'c -> 'c) -> 'c -> 'a list * 'b list -> 'c
-	val foldr : ('a * 'b * 'c -> 'c) -> 'c -> 'a list * 'b list -> 'c
-	val exists : ('a * 'b -> bool) -> 'a list * 'b list -> bool
-	val all : ('a * 'b -> bool) -> 'a list * 'b list -> bool
-    end
+structure Vector
+val vector
 
-signature CHAR =
-    sig
-	type char = char
-
-	val ord : char -> int
-	val chr : int -> char
-
-	val isAlphaNum : char -> bool
-	val isDigit : char -> bool
-	val isHexDigit : char -> bool
-	val isSpace : char -> bool
-	val toLower : char -> char
-	val toCString : char -> string
-    end
-
-structure Char: CHAR
-
-val ord : char -> int
-val chr : int -> char
-
-signature STRING =
-    sig
-	type string = string
-
-	val op^ : string * string -> string
-	val toCString : string -> string
-	val str : char -> string
-	val size : string -> int
-	val substring : string * int * int -> string
-	val sub : string * int -> char
-	val explode : string -> char list
-	val extract : string * int * int option -> string
-	val concat : string list -> string
-	val implode : char list -> string
-	val map : (char -> char) -> string -> string
-	val compare : string * string -> order
-	val op< : string * string -> bool
-	val tokens : (char -> bool) -> string -> string list
-    end
-
-structure String: STRING
-
-val op^ : string * string -> string
-val str : char -> string
-val size : string -> int
-val substring : string * int * int -> string
-val explode : string -> char list
-val concat : string list -> string
-val implode : char list -> string
-
-structure StringCvt:
-    sig
-	datatype radix = BIN | OCT | DEC | HEX
-	type ('a, 'b) reader = 'b -> ('a * 'b) option
-	type cs
-
-	val dropl: (char -> bool) -> (char, 'a) reader -> 'a -> 'a
-	val skipWS: (char, 'a) reader -> 'a -> 'a
-	val scanString:
-	    ((char, cs) reader -> ('a, cs) reader) -> string -> 'a option
-    end
-
-signature INTEGER =
-    sig
-	type int = int
-
-	val op+ : int * int -> int
-	val scan :
-	    StringCvt.radix -> (char, 'a) StringCvt.reader ->
-	    (int, 'a) StringCvt.reader
-	val compare : int * int -> order
-	val toString : int -> string
-	val >= : int * int -> bool
-	val < : int * int -> bool
-	val fromString : string -> int option
-	val min : int * int -> int
-	val max : int * int -> int
-	val fromLarge : int -> int
-	val toLarge : int -> int
-    end
-
-structure Int: INTEGER
-
-structure LargeInt:
-    sig
-	(*--** include INTEGER *)
-	type int = int
-
-	val op+ : int * int -> int
-	val scan :
-	    StringCvt.radix -> (char, 'a) StringCvt.reader ->
-	    (int, 'a) StringCvt.reader
-	val compare : int * int -> order
-	val toString : int -> string
-	val >= : int * int -> bool
-	val < : int * int -> bool
-	val fromString : string -> int option
-	val max : int * int -> int
-	val fromLarge : int -> int
-	val toLarge : int -> int
-	val fromInt : int -> int
-    end
-
-signature REAL =
-    sig
-	type real = real
-
-	val scan : (char,'a) StringCvt.reader -> (real,'a) StringCvt.reader
-	val toString : real -> string
-	val fromString : string -> real option
-	val compare : real * real -> order
-	val trunc : real -> int
-	val op< : real * real -> bool
-    end
-
-structure Real: REAL
-
-structure LargeReal: REAL
-
-structure Array:
-    sig
-	eqtype 'a array
-
-	val array : int * 'a -> 'a array
-	val fromList : 'a list -> 'a array
-	val length : 'a array -> int
-	val sub : 'a array * int -> 'a
-	val update : 'a array * int * 'a -> unit
-	val copy :
-	    {di: int, dst: 'a array, len: int option, si: int, src: 'a array}
-	    -> unit
-	val foldl : ('a * 'b -> 'b) -> 'b -> 'a array -> 'b
-	val app : ('a -> unit) -> 'a array -> unit
-    end
-
-type array = Array.array
-
-structure Vector:
-    sig
-	type 'a vector = 'a vector
-
-	val fromList : 'a list -> 'a vector
-	val sub : 'a vector * int -> 'a
-	val tabulate : int * (int -> 'a) -> 'a vector
-    end
-
-val vector : 'a list -> 'a vector
-
-from "Base.ozf"
+from "lib/Base.ozf"
