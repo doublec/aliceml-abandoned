@@ -172,7 +172,11 @@ protected:
     INITIALIZATION_THREAD_POS, // Thread | int(0)
     BASE_SIZE
     // ... static fields
+    // ... static methods
   };
+public:
+  word GetStaticField(u_int index);
+  Closure *GetStaticMethod(u_int index);
 };
 
 class Object: private Block {
@@ -182,6 +186,43 @@ protected:
     BASE_SIZE
     // ... instance fields
   };
+public:
+  word GetInstanceField(u_int index);
+  Closure *GetVirtualMethod(u_int index);
 };
+
+//
+// Constant Pool Entries: (Formerly Symbolic) References
+//
+
+class StaticFieldRef: private Block {
+public:
+  Class *GetClass();
+  u_int GetIndex();
+};
+
+class InstanceFieldRef: private Block {
+public:
+  u_int GetIndex();
+};
+
+class StaticMethodRef: private Block {
+private:
+  enum {
+    CLASS_POS, // Class
+    INDEX_POS, // int
+    SIZE
+  }
+public:
+  Class *GetClass();
+  u_int GetIndex();
+};
+
+class VirtualMethodRef: private Block {
+private:
+public:
+  u_int GetIndex();
+};
+
 
 #endif
