@@ -154,7 +154,7 @@ define
 	       PickleParser, ParsePickle(_)   %--**
 	    end
 	 [] !CON_VAL then
-	    T = {MakeTuple vector Size}
+	    T = {MakeTuple con Size}
 	    for I in 1..Size do
 	       PickleParser, ParsePickle(?T.I)
 	    end
