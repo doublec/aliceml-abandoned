@@ -1,14 +1,27 @@
 Stockwerk:
--- Rename Pickle.oz to PrimPickle.oz
+-- rename Pickle.oz to PrimPickle.oz (what is the relation to UnsafeComponent?)
 -- proxies
--- non-blocking I/O (UnsafeIO.oz, UnsafeSocket.oz)
--- Component manager and spaces in path names => %20
+-- non-blocking I/O (Pickle, UnsafeIO, UnsafeSocket, UnsafeComponent)
+-- component manager and spaces in path names => %20
+-- globalize constructors
+-- what code annotations do we need for the JITter?
 
 Extended Basis Library:
 -- Future.byneed and Future.concur suspend on their argument
--- geworfene Exceptions sollen immer evaluiert sein
+-- raised exceptions should always be evaluated
    (Thread.raiseIn, Hole.fail, Raise instruction)
--- yield sollte immer auf currentThread operieren
+-- yield should always operate on the current thread
+-- document that pickling of a stateful data structure requires
+   it to be locked until the pickling operation is finished (else
+   concurrent modifications can cause an inconsistent data structure
+   to be made persistent)
+
+Library:
+-- add to signature PICKLE:
+      val pickleToFun: (Word8Vector.vector -> unit) -> package -> unit
+      val unpickleFromFun: (unit -> Word8Vector.vector) -> package
+   The Mozart backend can implement the first one by only calling the
+   function once.
 
 Mozart:
 -- Ozcar-Bug: wenn man ein 'unleash' macht und dabei eine
