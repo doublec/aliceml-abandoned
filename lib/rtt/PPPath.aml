@@ -14,6 +14,7 @@ import structure Name        from "Name"
 import structure Label       from "Label"
 import structure Path        from "Path"
 
+import structure Assert      from "../utility/Assert"
 import structure PrettyPrint from "../utility/PrettyPrint"
 import structure PPMisc      from "PPMisc"
 import signature PP_PATH     from "PP_PATH-sig"
@@ -29,30 +30,25 @@ struct
 
     infixr ^^
 
-    fun ppLab l =
-	let
-	    val s = Label.toString l
-	in
-	    if String.isPrefix Path.hiddenPrefix s
-	    then text(String.extract(s, String.size Path.hiddenPrefix, NONE))
-	    else text s
-	end
-
     fun ppPath' ps p =
 	if List.exists (fn p' => Path.equal(p,p')) ps then
 	    empty
+	else if isName p then
+	    text(Name.toString(asName p))
+	else if isHidden p then
+	    text "_" ^^ text "." ^^ text(Name.toString(asHidden p))
 	else if isDot p then
 	    let
 		val (p',l) = asDot p
 		val  doc1  = ppPath' ps p'
-		val  doc2  = ppLab l
+		val  doc2  = text(Label.toString l)
 	    in
 		if isEmpty doc1
 		then doc2
 		else doc1 ^^ text "." ^^ doc2
 	    end
 	else
-	    ppLab(toLab p) handle Domain => text "_"	(* may be InId *)
+	    raise Assert.failure
 
     fun ppPath p =
 	let
