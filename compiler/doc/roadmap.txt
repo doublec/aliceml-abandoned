@@ -78,11 +78,11 @@ FlatGrammar'
  V
 FlatGrammar''
  |
- | -------- backend-stockwerk ----------
+ | -------- backend-seam ---------------
  |
  | CodeGenPhase:
  |	- Code generation
  |
  | -------------------------------------
  V
-Stockwerk code
+Seam code
