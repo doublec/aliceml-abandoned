@@ -531,6 +531,8 @@ structure GuiMain =
 		case buf of
 		    NONE => ()
 		  | SOME buf =>
+	    Lock.sync Core.lock
+	    (fn () =>
 	    let
                 val lineCount = Gtk.textBufferGetLineCount buf
                 val startiter = Gtk.textIterNew()
@@ -553,10 +555,8 @@ structure GuiMain =
                           Gtk.widgetGrabFocus (Buffer.getView id))
                      else ())
                 else ()
-            end
+            end) ()
 	    end
-
-	fun jumpToError x = Lock.sync Core.lock jumpToError x
 
         fun findErrorStart' (iter, tag) =
             if Gtk.textIterHasTag(iter, tag) then
@@ -603,31 +603,36 @@ structure GuiMain =
                 val showError = Gtk.menuItemNewWithMnemonic("Jump to error location")
                 val buf = Gtk.textViewGetBuffer view
                 val cursor = Gtk.textBufferGetInsert(buf)
-                val iter = Gtk.textIterNew()
-                val _ = Gtk.textBufferGetIterAtMark(buf,iter,cursor)
-                val errorTag =
-                    Gtk.textTagTableLookup(Gtk.textBufferGetTagTable buf,
-                                           "error")
-                val onErrorLine = Gtk.textIterHasTag(iter, errorTag)
-            in
-                Gtk.widgetSetSensitive(showError,
-                                       onErrorLine);
-                if onErrorLine then
-                    let
-                        val _ = findErrorStart (iter, errorTag)
-                        val iter2 = Gtk.textIterCopy iter
-                        val _ = Gtk.textIterForwardLine iter2
-                        val str = Core.utf8ToLatin1 (Gtk.textIterGetText(iter, iter2))
-                        val coords = parseErrorCoords str
-                    in
-                        case coords of NONE => Gtk.widgetSetSensitive(showError,
-                                                                      false)
-
-                                     | SOME coords =>
-                                       (Gtk.signalConnect(showError, "activate", jumpToError coords);
-                                        ())
-                    end
-                else ();
+	    in
+		Lock.sync Core.lock
+		(fn () =>
+		 let
+		     val iter = Gtk.textIterNew()
+		     val _ = Gtk.textBufferGetIterAtMark(buf,iter,cursor)
+		     val errorTag =
+			 Gtk.textTagTableLookup(Gtk.textBufferGetTagTable buf,
+						"error")
+		     val onErrorLine = Gtk.textIterHasTag(iter, errorTag)
+		 in
+		     Gtk.widgetSetSensitive(showError,
+					    onErrorLine);
+		     if onErrorLine then
+			 let
+			     val _ = findErrorStart (iter, errorTag)
+			     val iter2 = Gtk.textIterCopy iter
+			     val _ = Gtk.textIterForwardLine iter2
+			     val str = Core.utf8ToLatin1 (Gtk.textIterGetText(iter, iter2))
+			     val coords = parseErrorCoords str
+			 in
+			     case coords of NONE => Gtk.widgetSetSensitive(showError,
+									   false)
+				 
+			   | SOME coords =>
+				 (Gtk.signalConnect(showError, "activate", jumpToError coords);
+				  ())
+			 end
+		     else ()
+		 end) ();
                 Gtk.widgetShow separator;
                 Gtk.widgetShow showError;
                 Gtk.containerAdd(menu, separator);
@@ -635,28 +640,26 @@ structure GuiMain =
             end
           | populatePopup _ = print "Gtk is crazy\n"
 
-	fun populatePopup x = Lock.sync Core.lock populatePopup x
-
 	fun jumpToLastError () =
-	    let
-		val buf = Gtk.textViewGetBuffer Gui.compilerout
-		val iter = Gtk.textIterNew();
-		val _ = Gtk.textBufferGetEndIter(buf, iter)
-                val errorTag =
-                    Gtk.textTagTableLookup(Gtk.textBufferGetTagTable buf,
-                                           "error")
-		val _ = findErrorStart (iter, errorTag)
-		val iter2 = Gtk.textIterCopy iter
-		val _ = Gtk.textIterForwardLine iter2
-		val str = Core.utf8ToLatin1 (Gtk.textIterGetText(iter, iter2))
-		val coords = parseErrorCoords str
-	    in
-		case coords of
-		    NONE => ()
-		  | SOME coords => jumpToError coords ()
-	    end
-
-	val jumpToLastError = Lock.sync Core.lock jumpToLastError
+	    Lock.sync Core.lock
+	    (fn () =>
+	     let
+		 val buf = Gtk.textViewGetBuffer Gui.compilerout
+		 val iter = Gtk.textIterNew();
+		 val _ = Gtk.textBufferGetEndIter(buf, iter)
+		 val errorTag =
+		     Gtk.textTagTableLookup(Gtk.textBufferGetTagTable buf,
+					    "error")
+		 val _ = findErrorStart (iter, errorTag)
+		 val iter2 = Gtk.textIterCopy iter
+		 val _ = Gtk.textIterForwardLine iter2
+		 val str = Core.utf8ToLatin1 (Gtk.textIterGetText(iter, iter2))
+		 val coords = parseErrorCoords str
+	     in
+		 case coords of
+		     NONE => ()
+		   | SOME coords => jumpToError coords ()
+	     end) ()
 
 	fun indentSelection indent =
 	    case getCurrentPage() of NONE => ()

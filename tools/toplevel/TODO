@@ -3,7 +3,7 @@ TODO list for the Alice IDE
 
 Bugs:
 
-* TextIter's are used (1) without freeing them, and (2) without locking (mostly). This can induce all kinds of space leaks and race conditions. Clean this up.
+* Gtk.textIterFree produces segfaults, so at the moment it seems we can't properly free iterators :-(
 
 Missing Features:
 

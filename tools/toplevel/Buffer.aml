@@ -178,17 +178,19 @@ structure Buffer =
       fun getSelection id =
           let
               val {buf,...} = BufferMap.lookupExistent(bufferMap, id)
-              val startiter = Gtk.textIterNew()
-              val enditer = Gtk.textIterNew()
+	      val (txt,equal) = Lock.sync Core.lock
+		  (fn () =>
+		   let
+		       val startiter = Gtk.textIterNew()
+		       val enditer = Gtk.textIterNew()
+		   in
+		       Gtk.textBufferGetSelectionBounds(buf, startiter, enditer);
+		       (Gtk.textBufferGetText(buf,startiter,enditer,false),
+			Gtk.textIterEqual(startiter, enditer))
+		   end) ()
           in
-              Gtk.textBufferGetSelectionBounds(buf, startiter, enditer);
-              if Gtk.textIterEqual(startiter, enditer) then NONE
-              else SOME (Gtk.textBufferGetText(buf,
-                                               startiter,enditer,
-                                               false))
+              if equal then NONE else SOME txt
           end
-
-      fun getSelection id = Lock.sync Core.lock getSelection id
 
       fun doIndent(buf, line, endline, indent) =
 	  if line > endline then ()
@@ -236,6 +238,8 @@ structure Buffer =
 	  end
 
       fun indentSelection(id, indent) =
+	  Lock.sync Core.lock
+	  (fn () =>
 	  let
               val {buf,...} = BufferMap.lookupExistent(bufferMap, id)
 	      val _ = selectWholeLines buf
@@ -250,9 +254,7 @@ structure Buffer =
 		       indent);
 	      selectWholeLines buf;
 	      Gtk.textBufferEndUserAction buf
-	  end
-
-      fun indentSelection args = Lock.sync Core.lock indentSelection args
+	  end) ()
 
       fun setUndoSaveMarker undo =
 	  undo := SAVE_MARKER::List.filter (fn x => x<>SAVE_MARKER) (!undo)
@@ -468,11 +470,16 @@ structure Buffer =
                             (if modified then
                                  let
                                      val file = TextIO.openOut f
-                                     val startiter = Gtk.textIterNew()
-                                     val _ = Gtk.textBufferGetStartIter(buf,startiter)
-                                     val enditer = Gtk.textIterNew()
-                                     val _ = Gtk.textBufferGetEndIter(buf,enditer)
-                                     val str = Gtk.textBufferGetText(buf, startiter, enditer, false)
+				     val str = Lock.sync Core.lock
+					 (fn () =>
+					  let
+					      val startiter = Gtk.textIterNew()
+					      val _ = Gtk.textBufferGetStartIter(buf,startiter)
+					      val enditer = Gtk.textIterNew()
+					      val _ = Gtk.textBufferGetEndIter(buf,enditer)
+					  in
+					      Gtk.textBufferGetText(buf, startiter, enditer, false)
+					  end) ()
                                      val str = Core.utf8ToLatin1 str
                                  in 
                                      TextIO.output(file, str);
@@ -483,7 +490,6 @@ structure Buffer =
                              else ();
                              true)
           end
-      fun save arg = Lock.sync Core.lock save arg
 
       fun saveAs (id, fileName) =
           let
@@ -536,6 +542,8 @@ structure Buffer =
 		 find' (iter, 0, txt, caseSensitive, true)))
 
       fun find(id, txt, caseSensitive) =
+	  Lock.sync Core.lock
+	  (fn () =>
           let
               val {view,buf,lastSearchPos,...} = BufferMap.lookupExistent(bufferMap, id)
               val iter = getCursorIter buf
@@ -555,11 +563,11 @@ structure Buffer =
 		      true
                   end
               else false
-          end
-
-      fun find arg = Lock.sync Core.lock find arg
+          end) ()
 
       fun replace(id, replaceString) =
+	  Lock.sync Core.lock
+	  (fn () =>
           let
               val {buf,...} = BufferMap.lookupExistent(bufferMap, id)
               val startiter = Gtk.textIterNew()
@@ -570,9 +578,7 @@ structure Buffer =
 	      Gtk.textBufferDelete(buf, startiter, enditer);
 	      Gtk.textBufferInsert(buf, startiter, replaceString, ~1);
 	      Gtk.textBufferEndUserAction buf
-          end
-
-      fun replace arg = Lock.sync Core.lock replace arg
+          end) ()
 
       fun changeFonts() =
           BufferMap.app (fn {view,...} =>

@@ -84,10 +84,6 @@ structure SearchDialog =
         val _ = Gtk.signalConnect(searchDialog, "delete-event", closeCallback)
         val _ = Gtk.signalConnect(cancelbutton1, "clicked", closeCallback)
 
-        val _ = Gtk.widgetAddAccelerator(searchDialog, "close",
-                                         accelGroup,
-                                         Key.keyvalToInt Key.K_Escape,
-                                         Gdk.CONTROL_MASK, Gtk.ACCEL_LOCKED)
         val _ = Gtk.windowAddAccelGroup(searchDialog,
                                         accelGroup);
 
