@@ -15,7 +15,7 @@
 
 #include "Seam.hh"
 
-#if defined(__MINGW32__) || defined(_MSC_VER)
+#if HAVE_DLLS
 # if defined(ALICE_FOREIGN)
 #  define AliceDll __declspec(dllimport)
 # else
