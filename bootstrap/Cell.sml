@@ -10,7 +10,7 @@
  *   $Revision$
  *)
 
-structure Cell :> CELL =
+structure Cell =
 struct
     structure Stamp		= MkStamp()
 
