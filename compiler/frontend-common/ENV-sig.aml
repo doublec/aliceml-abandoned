@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg, 2001-2003
  *
  * Last change:
  *   $Date$ by $Author$
@@ -43,6 +43,7 @@ sig
     exception Collision of stamp
     exception Lookup    of stamp
 
+    val env :		unit -> env
     val new :		unit -> env
     val clone :		env -> env
     val cloneScope :	env -> env

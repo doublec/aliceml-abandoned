@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg, 2001-2003
  *
  * Last change:
  *   $Date$ by $Author$
@@ -23,10 +23,11 @@ sig
     type env
     type t = env
 
-    exception Delete    of stamp
+    exception Unknown   of stamp
     exception Collision of stamp
     exception Pervasive
 
+    val env :			unit -> env
     val new :			unit -> env
     val clone :			env -> env
 

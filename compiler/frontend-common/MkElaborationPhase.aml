@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2002
+ *   Andreas Rossberg, 2001-2003
  *
  * Last change:
  *   $Date$ by $Author$
@@ -1084,7 +1084,7 @@ TextIO.print "\n";
 	    val j' = Future.byneed(fn() => Inf.sing(Inf.mod(p,j)))
 	    val u  = ref(if name = PervasiveType.name_pervasive
 			 then UseEnv.FULL
-			 else UseEnv.PARTIAL(UseEnv.new()))
+			 else UseEnv.PARTIAL(UseEnv.env()))
 	    val _  = Env.insertMod(E, stamp, {id=modid, path=p, inf=j', use=u})
 	in
 	    (* EXPERIMENTAL: make arguments non-generative
@@ -1141,7 +1141,7 @@ TextIO.print "\n";
 		case UseEnv.lookupMod(UE,l)
 		  of SOME use' => use'
 		   | NONE =>
-		     let val use' = UseEnv.PARTIAL(UseEnv.new())
+		     let val use' = UseEnv.PARTIAL(UseEnv.env())
 		     in UseEnv.insertMod(UE, l, use') ; use' end
 	in
 	    ( s, use', O.LongId(infInfo(i,j), modlongid', modlab') )
@@ -2197,7 +2197,7 @@ TextIO.print "\n";
 
     and stripAnn(E, O.ImpAnn({region,sign}, imps', url, b)) =
 	let
-	    val UE     = UseEnv.new()
+	    val UE     = UseEnv.env()
 	    val imps'' = stripImps(E, UE, imps')
 	in
 	    if UseEnv.isEmpty UE then NONE else (* avoid requesting sign! *)

@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg, 2001-2003
  *
  * Last change:
  *   $Date$ by $Author$
@@ -26,11 +26,12 @@ struct
 					     * longid' option ref
     type t			= env
 
-    exception Delete		= StampSet.Delete
+    exception Unknown		= StampSet.Unknown
     exception Collision		= StampSet.Collision
     exception Pervasive
 
-    fun new()			= (StampSet.new(), ref NONE, ref NONE)
+    fun env()			= (StampSet.set(), ref NONE, ref NONE)
+    val new			= env
     fun clone(s,xr,yr)		= (StampSet.clone s, ref(!xr), ref(!yr))
 
     fun insertMod((E,_,_), x)	= StampSet.insertDisjoint(E,x)

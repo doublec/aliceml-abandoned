@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2002
+ *   Andreas Rossberg, 2001-2003
  *
  * Last change:
  *   $Date$ by $Author$
@@ -162,7 +162,7 @@ struct
 
     fun compareField((l1,_), (l2,_)) = Label.compare(l1,l2)
 
-    val infHash  = Inf.Map.new() : Type.t Inf.Map.t
+    val infHash  = Inf.Map.map() : Type.t Inf.Map.t
 		(*UNFINISHED: remove this global variable! *)
 
     (* A proper translation of interface kinds would require
@@ -535,7 +535,7 @@ struct
 
     fun ids(E, ds) =
 	let
-	    val xs' = StringMap.new()
+	    val xs' = StringMap.map()
 	in
 	    idsDecs(E,ds,xs');
 	    Vector.fromList(StringMap.fold op:: [] xs')
@@ -589,7 +589,7 @@ struct
 	let
 	    val i'  = O.infoExp e'
 	    val i'' = nonInfo(#region i')
-	    val x'  = O.Id(i', Stamp.new(), Name.InId)
+	    val x'  = O.Id(i', Stamp.stamp(), Name.InId)
 	    val d'  = O.ValDec(origInfo(#region i',Aux), O.VarPat(i',x'), e')
 	    val row = Type.asProd(Type.unroll(#typ i'))
 	    val r'' = trUpdExp'(row, i'', idToExp x', r', Vector.toList r')
@@ -620,7 +620,7 @@ struct
 
 	    val e1' = trInf(E,j)
 	    val i1' = O.infoExp e1'
-	    val z1  = Stamp.new()
+	    val z1  = Stamp.stamp()
 	    val x1' = O.Id(i1', z1, Name.InId)
 	    val d1' = O.ValDec(origInfo(r,Aux), idToPat x1', e1')
 
@@ -630,7 +630,7 @@ struct
 
 	    val e2' = trOpaqCoerceMod(E, r, m, idToExp x1', #inf i1)
 	    val i2' = O.infoExp e2'
-	    val x2' = O.Id(i2', Stamp.new(), Name.InId)
+	    val x2' = O.Id(i2', Stamp.stamp(), Name.InId)
 	    val d2' = O.ValDec(origInfo(r,Aux), idToPat x2', e2')
 
 	    val e3' = O.TagExp(typInfo(r, typ_package(E,#typ i2')),
@@ -766,8 +766,8 @@ struct
 	    val t1  = infToTyp(E, #inf(I.infoInf j))
 	    val i'  = typInfo(r, typ_package(E,t1))
 	    val e1' = O.UnsealExp(i', trExp(E,e))
-	    val x1' = O.Id(typInfo(r,t1), Stamp.new(), Name.InId)
-	    val x2' = O.Id(typInfo(r,typ_inf E), Stamp.new(), Name.InId)
+	    val x1' = O.Id(typInfo(r,t1), Stamp.stamp(), Name.InId)
+	    val x2' = O.Id(typInfo(r,typ_inf E), Stamp.stamp(), Name.InId)
 	    val p'  = O.TagPat(i', O.Lab(nonInfo r, lab_package),
 			trStrictPat(trTuplePat(r, #[idToPat x1', idToPat x2'])))
 	    val d'  = O.ValDec(origInfo(r,Aux), p', e1')
@@ -793,7 +793,7 @@ struct
 	    val (t1,t2)  = Type.asArrow t
 	    val (l1,t11) = findFld(isModName, t1)
 	    val (l2,t12) = findFld(isInfName, t1)
-	    val  x'      = O.Id(typInfo(r,t11), Stamp.new(), Name.InId)
+	    val  x'      = O.Id(typInfo(r,t11), Stamp.stamp(), Name.InId)
 	    val  p'      = O.ProdPat(typInfo(r,t1),
 				#[O.Fld(i0', O.Lab(i0',l2),
 					O.JokPat(typInfo(r,t12))),
@@ -816,7 +816,7 @@ struct
 	    val (t1,t2)  = Type.asArrow t
 	    val (l1,t11) = findFld(isModName, t1)
 	    val (l2,t21) = findFld(isValName, t2)
-	    val  x1'     = O.Id(typInfo(r,t11), Stamp.new(), Name.InId)
+	    val  x1'     = O.Id(typInfo(r,t11), Stamp.stamp(), Name.InId)
 	    val  p'      = O.ProdPat(typInfo(r,t1),
 				     #[O.Fld(i0',O.Lab(i0',l1), idToPat x1')])
 	    val  e'      = O.ProdExp(typInfo(r,t2),
@@ -838,8 +838,8 @@ struct
 	    val (t1,t2)  = Type.asArrow t
 	    val (l1,t11) = findFld(isValName, t1)
 	    val (l2,t21) = findFld(isInfName, t2)
-	    val  x1'     = O.Id(typInfo(r,t11), Stamp.new(), Name.InId)
-	    val  x2'     = O.Id(typInfo(r,t21), Stamp.new(), Name.InId)
+	    val  x1'     = O.Id(typInfo(r,t11), Stamp.stamp(), Name.InId)
+	    val  x2'     = O.Id(typInfo(r,t21), Stamp.stamp(), Name.InId)
 	    val  p'      = O.ProdPat(typInfo(r,t1),
 				#[O.Fld(i0', O.Lab(i0',l1), idToPat x1'),
 				  O.Fld(i0', O.Lab(i0',l2), idToPat x2')])
@@ -861,7 +861,7 @@ struct
 	    val (t1,t2)  = Type.asArrow t
 	    val (l1,t11) = findFld(isInfName, t1)
 	    val (l2,t21) = findFld(isValName, t2)
-	    val  x1'     = O.Id(typInfo(r,t11), Stamp.new(), Name.InId)
+	    val  x1'     = O.Id(typInfo(r,t11), Stamp.stamp(), Name.InId)
 	    val  p'      = O.ProdPat(typInfo(r,t1),
 				     #[O.Fld(i0',O.Lab(i0',l1), idToPat x1')])
 	    val  e'      = O.ProdExp(typInfo(r,t2),
@@ -883,7 +883,7 @@ struct
 	    val (t1,t2)  = Type.asArrow t
 	    val (l1,t11) = findFld(isValName, t1)
 	    val (l2,t21) = findFld(isInfName, t2)
-	    val  x1'     = O.Id(typInfo(r,t11), Stamp.new(), Name.InId)
+	    val  x1'     = O.Id(typInfo(r,t11), Stamp.stamp(), Name.InId)
 	    val  p'      = O.ProdPat(typInfo(r,t1),
 				     #[O.Fld(i0',O.Lab(i0',l1), idToPat x1')])
 	    val  e'      = O.ProdExp(typInfo(r,t2),
@@ -954,7 +954,7 @@ struct
 	    val i0  = origInfo(r,Aux)
 	    val e1' = trMod(E,m)
 	    val i1  = O.infoExp e1'
-	    val x1' = O.Id(i1, Stamp.new(), Name.InId)
+	    val x1' = O.Id(i1, Stamp.stamp(), Name.InId)
 	    val x1  = O.ShortId(i1, x1')
 	    val j1  = #inf(I.infoMod m)
 	in
@@ -988,12 +988,12 @@ struct
 
 	    val e1' = trMod(E,m)
 	    val i1  = O.infoExp e1'
-	    val x1' = O.Id(i1, Stamp.new(), Name.InId)
+	    val x1' = O.Id(i1, Stamp.stamp(), Name.InId)
 	    val x1  = O.ShortId(i1, x1')
 	    val j1  = #inf(I.infoMod m)
 
 	    val i2  = typInfo(r, typ_inf E)
-	    val x2' = O.Id(i2, Stamp.new(), Name.InId)
+	    val x2' = O.Id(i2, Stamp.stamp(), Name.InId)
 	    val x2  = O.ShortId(i2, x2')
 	    val j2' = Inf.narrow(j1,j2)
 (*DEBUG*)handle e as Inf.Mismatch _ => (Error.warn'(r,"match1\n");raise e)
@@ -1055,7 +1055,7 @@ struct
 	    let
 		val s2' = Inf.asSig j2'
 		val i3  = typInfo(r, typ_sig E)
-		val x3' = O.Id(i3, Stamp.new(), Name.InId)
+		val x3' = O.Id(i3, Stamp.stamp(), Name.InId)
 		val x3o = Option.map (fn _ => O.ShortId(i3, x3')) x2o
 		val (isntIdentity',flds,row) =
 		    coerceStr(E, r, x1,s1, x3o, List.rev(Inf.items s2), s2',
@@ -1113,9 +1113,9 @@ struct
 		val i'' = origInfo(r,Aux)
 
 		val i5  = typInfo(r, typ_inf E)
-		val x3' = O.Id(i21, Stamp.new(), Name.InId)
-		val x4' = O.Id(i12, Stamp.new(), Name.InId)
-		val x5' = O.Id(i5, Stamp.new(), Name.InId)
+		val x3' = O.Id(i21, Stamp.stamp(), Name.InId)
+		val x4' = O.Id(i12, Stamp.stamp(), Name.InId)
+		val x5' = O.Id(i5, Stamp.stamp(), Name.InId)
 		val x3  = O.ShortId(i21, x3')
 		val x4  = O.ShortId(i12, x4')
 		val x5o = Option.map (fn _ => O.ShortId(i5, x5')) x2o
@@ -1255,7 +1255,7 @@ struct
 		val (x3o,mkE) = case x2o of NONE => (NONE, fn e=>e) | SOME x2 =>
 				let
 				    val i3 = typInfo(r, typ_inf E)
-				    val x3 = O.Id(i3, Stamp.new(), Name.InId)
+				    val x3 = O.Id(i3, Stamp.stamp(), Name.InId)
 				in
 				   (SOME(O.ShortId(i3,x3)),
 				    fn e0 =>
@@ -1530,7 +1530,7 @@ struct
 	let
 	    val r   = #region i
 	    val i'  = typInfo(r, typ_sig E)
-	    val s'  = O.Id(i', Stamp.new(), Name.InId)
+	    val s'  = O.Id(i', Stamp.stamp(), Name.InId)
 	    val e0' = callInf(E, lab_emptySig, trUnit r)
 	    val d'  = O.ValDec(origInfo(r,Aux), O.VarPat(i',s'), e0')
 	    val ss' = trSpecs(E, idToExp s', ss)
@@ -1627,7 +1627,7 @@ struct
 		    val r   = #region(I.infoId x)
 		    val i'  = origInfo(#region i, Aux)
 		    val i1' = typInfo(r, typ_path E)
-		    val p'  = O.Id(i1', Stamp.new(), Name.InId)
+		    val p'  = O.Id(i1', Stamp.stamp(), Name.InId)
 		    val e1' = trPath'(E, r)
 		    val d1' = O.ValDec(i', O.VarPat(i1',p'), e1')
 
@@ -1672,7 +1672,7 @@ struct
 	    val r   = #region i
 	    val i'  = origInfo(r,Aux)
 	    val i0' = typInfo(#region(I.infoId x), typ_path E)
-	    val x0' = O.Id(i0', Stamp.new(), Name.InId)
+	    val x0' = O.Id(i0', Stamp.stamp(), Name.InId)
 	    val e0' = trPath'(E, r)
 	    val d0' = O.ValDec(i', O.VarPat(i0',x0'), e0')
 
@@ -1685,7 +1685,7 @@ struct
 	    val _   = TranslationEnv.insertMod(E, z)
 	    val e2' = trInf'(E, j2)
 	    val i2' = typInfo(#region(I.infoInf j2), typ_inf E)
-	    val x2' = O.Id(i2', Stamp.new(), Name.InId)
+	    val x2' = O.Id(i2', Stamp.stamp(), Name.InId)
 	    val d2' = O.ValDec(i', O.VarPat(i2',x2'), e2')
 
 	    val e'  = callInf(E, a,
@@ -1783,7 +1783,7 @@ struct
 	 *)
 	let
 	    val r    = #region i
-	    val map  = StampMap.new()
+	    val map  = StampMap.map()
 	    val _    = freshTypids (E,map) ds
 	    val ds1' = trLHSRecDecs'(E,map, ds, ds')
 	    val d3'  = O.RecDec(origInfo(r,Val), trRecDecs(E,ds))
@@ -1797,7 +1797,7 @@ struct
 		val i0'  = i
 		val i1'  = typInfo(r,t')
 		val i2'  = typInfo(r, typ_unit)
-		val x'   = O.Id(i2', Stamp.new(), Name.InId)
+		val x'   = O.Id(i2', Stamp.stamp(), Name.InId)
 		val xx'  = idToExp x'
 		val p'   = O.TupPat(i2', #[])
 		val e'   = callTyp(E, lab_fix,
@@ -1826,7 +1826,7 @@ struct
     and freshTypids E_map ds = Vector.app (freshTypid E_map) ds
     and freshTypid (E,map) (I.TypDec(_, I.Id(i,z,n), t)) =
 	let
-	    val x = I.Id(i,Stamp.new(),n)
+	    val x = I.Id(i,Stamp.stamp(),n)
 	in
 	    StampMap.insert(map, z, (x, trTypid(E,x)))
 	end
@@ -1952,7 +1952,7 @@ struct
 	    val i'  = origInfo(r,Aux)
 
  	    val r0  = #region(I.infoId x)
-	    val p'  = O.Id(typInfo(r0, typ_path E), Stamp.new(), Name.InId)
+	    val p'  = O.Id(typInfo(r0, typ_path E), Stamp.stamp(), Name.InId)
 	    val pp' = idToExp p'
 	    val e0' = trPath(E, r0, I.name x)
 	    val d0' = O.ValDec(origInfo(r0,Aux), idToPat p', e0')
@@ -2008,7 +2008,7 @@ struct
 	    val i'  = origInfo(r,Aux)
 
  	    val r0  = #region(I.infoId x)
-	    val p'  = O.Id(typInfo(r0, typ_path E), Stamp.new(), Name.InId)
+	    val p'  = O.Id(typInfo(r0, typ_path E), Stamp.stamp(), Name.InId)
 	    val pp' = idToExp p'
 	    val e0' = trPath(E, r0, I.name x)
 	    val d0' = O.ValDec(i', idToPat p', e0')
@@ -2087,7 +2087,7 @@ struct
 	    val i'  = nonInfo r
 
  	    val r0  = #region(I.infoId x)
-	    val p'  = O.Id(typInfo(r0, typ_path E), Stamp.new(), Name.InId)
+	    val p'  = O.Id(typInfo(r0, typ_path E), Stamp.stamp(), Name.InId)
 	    val pp' = idToExp p'
 	    val e0' = trPath(E, r0, I.name x)
 	    val d'  = O.ValDec(origInfo(r0,Aux), idToPat p', e0')
@@ -2147,7 +2147,7 @@ struct
 	    val t      = if isPerv then Type.unknown(Type.starKind()) else t'
 			 (* to allow import of pervasive *)
 	    val i'     = typInfo(r,t)
-	    val x'     = O.Id(i', Stamp.new(), Name.InId)
+	    val x'     = O.Id(i', Stamp.stamp(), Name.InId)
 	    val ds''   = trImps(E, is, O.ShortId(i',x'), ds')
 	in
 	    if isPerv then Type.unify(t',t) else ();
