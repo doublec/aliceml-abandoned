@@ -42,10 +42,10 @@ veryclean:
 
 distclean:
 	for i in $(SUBDIRS); do (cd $$i && $(MAKE) distclean) || exit 1; done
-	rm -f $(OBJS) stow stow.exe Makefile.deps
+	rm -f $(OBJS) stow stow.exe Makefile.depend
 
-Makefile.deps: Makefile $(SRCS)
+Makefile.depend: Makefile $(SRCS)
 	cd store && $(MAKE) StoreConfig.hh || exit 1
-	$(MAKEDEPEND) $(SRCS) > Makefile.deps
+	$(MAKEDEPEND) $(SRCS) > Makefile.depend
 
-include Makefile.deps
+include Makefile.depend
