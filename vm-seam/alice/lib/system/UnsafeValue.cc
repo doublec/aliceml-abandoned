@@ -72,11 +72,6 @@ DEFINE1(UnsafeValue_conName) {
   RETURN(exId->ToWord());
 } END
 
-DEFINE1(UnsafeValue_conType) {
-  DECLARE_CONSTRUCTOR(constructor, x0);
-  RETURN(Store::IntToWord(0)); //--** unimplemented
-} END
-
 word UnsafeValue() {
   Record *record = Record::New(11);
   INIT_STRUCTURE(record, "UnsafeValue", "cast",
@@ -101,7 +96,5 @@ word UnsafeValue() {
 		 UnsafeValue_projConstructed, 3, true);
   INIT_STRUCTURE(record, "UnsafeValue", "conName",
 		 UnsafeValue_conName, 1, true);
-  INIT_STRUCTURE(record, "UnsafeValue", "conType",
-		 UnsafeValue_conType, 1, true);
   RETURN_STRUCTURE("UnsafeValue$", record);
 }
