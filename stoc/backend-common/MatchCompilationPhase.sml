@@ -319,48 +319,69 @@ structure Simplify :> SIMPLIFY =
 	fun makeShared (exp, ref 1) = exp
 	  | makeShared (exp, ref _) = share exp
 
+	(*--** compute meaningful coordinates *)
+
 	fun simplifyDec (ValDec (coord, ids, exp, isRecursive)) =
 	    S.ValRecDec (coord, ids, simplifyExp exp, isRecursive)
 	  | simplifyDec (ConDec (coord, id, hasArgs)) =
 	    S.ConDec (coord, id, hasArgs)
+	and simplifyTerm (VarExp (_, longid)) =
+	    (NONE, longid)
+	  | simplifyTerm exp =
+	    let
+		val coord = info_exp exp
+		val id' = freshId coord
+		val longid' = ShortId (coord, id')
+		val dec' = S.ValDec (coord, id', simplifyExp exp)
+	    in
+		(SOME dec', longid')
+	    end
 	and simplifyExp (LitExp (coord, lit)) =
 	    S.LitExp (coord, lit)
 	  | simplifyExp (VarExp (coord, longid)) =
 	    S.VarExp (coord, longid)
 	  | simplifyExp (ConExp (coord, longid, SOME exp)) =
 	    let
-		val id' = freshId Source.nowhere
-		val longid' = ShortId (Source.nowhere, id')
-		val dec' = S.ValDec (coord, id', simplifyExp exp)
+		val (decOpt, longid) = simplifyTerm exp
+		val exp' = S.ConExp (coord, longid, SOME longid)
 	    in
-		S.LetExp (Source.nowhere, [dec'],
-			  S.ConExp (coord, longid, SOME longid'))
+		case decOpt of
+		    NONE => exp'
+		  | SOME dec' => S.LetExp (Source.nowhere, [dec'], exp')
 	    end
 	  | simplifyExp (ConExp (coord, longid, NONE)) =
 	    S.ConExp (coord, longid, NONE)
 	  | simplifyExp (TupExp (coord, exps)) =
 	    let
-		val ids = List.map (fn _ => freshId Source.nowhere) exps
-		val decs' =
-		    ListPair.map (fn (id, exp) =>
-				  S.ValDec (Source.nowhere, id,
-					    simplifyExp exp)) (ids, exps)
-		val longids =
-		    List.map (fn id => ShortId (Source.nowhere, id)) ids
+		val (decs', longids) =
+		    List.foldr
+		    (fn (exp, (decs', longids)) =>
+		     let
+			 val (decOpt, longid) = simplifyTerm exp
+		     in
+			 case decOpt of
+			     NONE => (decs', longid::longids)
+			   | SOME dec' => (dec'::decs', longid::longids)
+		     end) (nil, nil) exps
+		val exp' = S.TupExp (coord, longids)
 	    in
-		S.LetExp (Source.nowhere, decs', S.TupExp (coord, longids))
+		case decs' of
+		    nil => exp'
+		  | _::_ => S.LetExp (Source.nowhere, decs', exp')
 	    end
 	  | simplifyExp (RecExp (coord, expFields)) =
 	    let
-		val ids = List.map (fn _ => freshId Source.nowhere) expFields
-		val decs' =
-		    ListPair.map (fn (id, Field (_, _, exp)) =>
-				  S.ValDec (Source.nowhere, id,
-					    simplifyExp exp)) (ids, expFields)
-		val fields =
-		    ListPair.map (fn (id, Field (_, lab, _)) =>
-				  (lab, ShortId (Source.nowhere, id)))
-		    (ids, expFields)
+		val (decs', fields) =
+		    List.foldr
+		    (fn (Field (_, lab, exp), (decs', fields)) =>
+		     let
+			 val (decOpt, longid) = simplifyTerm exp
+			 val field = (lab, longid)
+		     in
+			 case decOpt of
+			     NONE => (decs', field::fields)
+			   | SOME dec' => (dec'::decs', field::fields)
+		     end) (nil, nil) expFields
 		val exp' =
 		    case FieldLabelSort.sort fields of
 			(fields', FieldLabelSort.Tup _) =>
@@ -369,7 +390,9 @@ structure Simplify :> SIMPLIFY =
 		      | (fields', FieldLabelSort.Rec) =>
 			    S.RecExp (coord, fields)
 	    in
-		S.LetExp (Source.nowhere, decs', exp')
+		case decs' of
+		    nil => exp'
+		  | _::_ => S.LetExp (Source.nowhere, decs', exp')
 	    end
 	  | simplifyExp (SelExp (coord, lab)) =
 	    S.SelExp (coord, lab)
