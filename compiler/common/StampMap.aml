@@ -11,6 +11,6 @@
  *)
 
 import structure Stamp        from "Stamp"
-import structure MkHashImpMap from "../../lib/utility/MkHashImpMap"
+import structure MkHashImpMap from "../../lib/data/MkHashImpMap"
 
 structure StampMap = MkHashImpMap(Stamp)
