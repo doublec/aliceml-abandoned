@@ -43,7 +43,7 @@ signature SIMPLIFIED_GRAMMAR =
 	and exp =
 	    LitExp of coord * lit
 	  | VarExp of coord * longid
-	  | ConExp of coord * longid * longid option
+	  | ConExp of coord * longid * longid option * bool
 	  | TupExp of coord * longid list
 	  | RecExp of coord * (lab * longid) list
 	    (* sorted, all labels distinct, no tuple *)

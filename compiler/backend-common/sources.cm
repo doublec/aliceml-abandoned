@@ -8,7 +8,7 @@ Group is
     imperative-grammar.cm
 
     LABEL_SORT.sig
-    LabelSort.sml
+    MakeLabelSort.sml
     DEBUG.sig
     Debug.sml
     INTERMEDIATE_AUX.sig

@@ -54,7 +54,7 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 	end
 
 	structure StringLabelSort =
-	    LabelSort(type t = string fun get x = x)
+	    MakeLabelSort(type 'a t = string fun get x = x)
 
 	fun makeTestSeq (WildPat _, _, rest, mapping) = (rest, mapping)
 	  | makeTestSeq (LitPat (_, lit), pos, rest, mapping) =
@@ -140,8 +140,8 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 
 	fun testEq (LitTest lit1, LitTest lit2) = lit1 = lit2
 	  | testEq (ConTest (longid1, hasArgs1), ConTest (longid2, hasArgs2)) =
-	    longidEq (longid1, longid2)   (*--** too restrictive *)
-	    andalso hasArgs1 = hasArgs2
+	    (* approximation: consider constructors equal if same long id *)
+	    longidEq (longid1, longid2) andalso hasArgs1 = hasArgs2
 	  | testEq (TupTest n1, TupTest n2) = n1 = n2
 	  | testEq (RecTest labs1, RecTest labs2) = labs1 = labs2
 	  | testEq (_, _) = false
@@ -322,11 +322,11 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 			  end)
 	    end
 
-	(* Generate Simplified Ouput from Graph *)
+	(* Generate Simplified Output from Graph *)
 
 	structure FieldLabelSort =
-	    LabelSort(type t = lab * longid
-		      fun get (Lab (_, s), _) = s)
+	    MakeLabelSort(type 'a t = lab * longid
+			  fun get (Lab (_, s), _) = s)
 
 	type mapping = (pos * id) list
 
@@ -341,9 +341,8 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 	fun makeRaise (coord, longid) =
 	    O.RaiseExp (coord, O.VarExp (coord, longid))
 
-	fun share exp =
-	    (*--** replace Source.nowhere by O.infoExp exp *)
-	    O.SharedExp (Source.nowhere, exp, ref O.backendInfoDummy)
+	fun share exp = 
+	    O.SharedExp (O.coordOf exp, exp, ref O.backendInfoDummy)
 
 	fun makeShared (exp, ref 0) =
 	    Crash.crash "MatchCompilationPhase.makeShared"
@@ -358,12 +357,9 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 	    end
 
 	(*--** can this be improved? *)
-	structure ExpFieldSort =
-	    LabelSort(type t = exp field
-		      fun get (Field (_, Lab (_, s), _)) = s)
-	structure PatFieldSort =
-	    LabelSort(type t = pat field
-		      fun get (Field (_, Lab (_, s), _)) = s)
+	structure FieldSort =
+	    MakeLabelSort(type 'a t = 'a field
+			  fun get (Field (_, Lab (_, s), _)) = s)
 
 	fun select (Field (_, Lab (_, s), x)::fieldr, s') =
 	    if s = s' then SOME x else select (fieldr, s')
@@ -401,15 +397,15 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 		TupPat (coord, ListPair.map unify (pats1, pats2))
 	    else Error.error (coord, "pattern never matches")
 	  | unify (TupPat (coord, pats), RowPat (_, fieldPats, hasDots)) =
-	    (case PatFieldSort.sort fieldPats of
-		 (_, PatFieldSort.Tup i) =>
+	    (case FieldSort.sort fieldPats of
+		 (_, FieldSort.Tup i) =>
 		     if i = length pats then
 			 TupPat (coord,
 				 ListPair.map (fn (pat1, Field (_, _, pat2)) =>
 					       unify (pat1, pat2))
 				 (pats, fieldPats))
 		     else Error.error (coord, "pattern never matches")
-	       | (_, PatFieldSort.Rec) =>
+	       | (_, FieldSort.Rec) =>
 		     if hasDots then
 			 Crash.crash
 			 "MatchCompilationPhase.unify: not yet implemented 1"
@@ -419,8 +415,8 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 	  | unify (RowPat (coord, fieldPats1, false),
 		   RowPat (_, fieldPats2, false)) =
 	    let
-		val (fieldPats1', _) = PatFieldSort.sort fieldPats1
-		val (fieldPats2', _) = PatFieldSort.sort fieldPats2
+		val (fieldPats1', _) = FieldSort.sort fieldPats1
+		val (fieldPats2', _) = FieldSort.sort fieldPats2
 	    in
 		Crash.crash
 		"MatchCompilationPhase.unify: not yet implemented 2"
@@ -516,8 +512,8 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 				derec (pat, exp) @ rest) nil (pats, exps)
 	    else Error.error (coord, "pattern never matches")
 	  | derec (TupPat (coord, pats), RowExp (_, expFields)) =
-	    (case ExpFieldSort.sort expFields of
-		 (_, ExpFieldSort.Tup n) =>
+	    (case FieldSort.sort expFields of
+		 (_, FieldSort.Tup n) =>
 		     if length pats = n then
 			 List.foldr (fn (Field (_, Lab (_, s), exp), rest) =>
 				     let
@@ -526,11 +522,11 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 					 derec (List.nth (pats, i), exp) @ rest
 				     end) nil expFields
 		     else Error.error (coord, "pattern never matches")
-	       | (_, ExpFieldSort.Rec) =>
+	       | (_, FieldSort.Rec) =>
 		     Error.error (coord, "pattern never matches"))
 	  | derec (RowPat (coord, patFields, hasDots), TupExp (_, exps)) =
 	    let
-		val (patFields', arity) = PatFieldSort.sort patFields
+		val (patFields', arity) = FieldSort.sort patFields
 		val n = length exps
 	    in
 		if hasDots then
@@ -544,20 +540,20 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 		    else Error.error (coord, "pattern never matches")
 		else
 		    case arity of
-			PatFieldSort.Tup i =>
+			FieldSort.Tup i =>
 			    if i = n then
 				ListPair.foldr
 				(fn (Field (_, _, pat), exp, rest) =>
 				 derec (pat, exp) @ rest) nil
 				(patFields', exps)
 			    else Error.error (coord, "pattern never matches")
-		      | PatFieldSort.Rec =>
+		      | FieldSort.Rec =>
 			    Error.error (coord, "pattern never matches")
 	    end
 	  | derec (RowPat (coord, patFields, hasDots), RowExp (_, expFields)) =
 	    let
-		val (patFields', _) = PatFieldSort.sort patFields
-		val (expFields', _) = ExpFieldSort.sort expFields
+		val (patFields', _) = FieldSort.sort patFields
+		val (expFields', _) = FieldSort.sort expFields
 	    in
 		if hasDots then
 		    if isSubarity (patFields', expFields') then
@@ -661,10 +657,10 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 	    end
 	and simplifyExp (LitExp (coord, lit)) = O.LitExp (coord, lit)
 	  | simplifyExp (VarExp (coord, longid)) = O.VarExp (coord, longid)
-	  | simplifyExp (ConExp (coord, longid, _)) =
-	    O.ConExp (coord, longid, NONE)
+	  | simplifyExp (ConExp (coord, longid, hasArgs)) =
+	    O.ConExp (coord, longid, NONE, hasArgs)
 	  | simplifyExp (RefExp coord) =
-	    O.ConExp (coord, longid_ref, NONE)
+	    O.ConExp (coord, longid_ref, NONE, true)
 	  | simplifyExp (TupExp (coord, exps)) =
 	    let
 		val (decs', longids) =
@@ -715,7 +711,7 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 	  | simplifyExp (AppExp (coord, ConExp (_, longid, true), exp)) =
 	    let
 		val (decOpt, longid') = simplifyTerm exp
-		val exp' = O.ConExp (coord, longid, SOME longid')
+		val exp' = O.ConExp (coord, longid, SOME longid', true)
 	    in
 		case decOpt of
 		    NONE => exp'
@@ -724,7 +720,7 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 	  | simplifyExp (AppExp (coord, RefExp _, exp)) =
 	    let
 		val (decOpt, longid) = simplifyTerm exp
-		val exp' = O.ConExp (coord, longid_ref, SOME longid)
+		val exp' = O.ConExp (coord, longid_ref, SOME longid, true)
 	    in
 		case decOpt of
 		    NONE => exp'

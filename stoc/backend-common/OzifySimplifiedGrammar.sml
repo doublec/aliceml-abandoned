@@ -125,10 +125,11 @@ structure OzifySimplifiedGrammar :> OZIFY_SIMPLIFIED_GRAMMAR =
 	  | outputExp (q, VarExp (coord, longid)) =
 	    (f (q, "varExp"); outputCoord (q, coord); m q;
 	     outputLongid (q, longid); r q)
-	  | outputExp (q, ConExp (coord, longid, longidOpt)) =
+	  | outputExp (q, ConExp (coord, longid, longidOpt, hasArgs)) =
 	    (f (q, "conExp"); outputCoord (q, coord); m q;
 	     outputLongid (q, longid); m q;
-	     outputOption outputLongid (q, longidOpt); r q)
+	     outputOption outputLongid (q, longidOpt); m q;
+	     outputBool (q, hasArgs); r q)
 	  | outputExp (q, TupExp (coord, longids)) =
 	    (f (q, "tupExp"); outputCoord (q, coord); m q;
 	     outputList outputLongid (q, longids); r q)

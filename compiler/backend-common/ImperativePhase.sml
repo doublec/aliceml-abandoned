@@ -122,13 +122,13 @@ structure ImperativePhase :> IMPERATIVE_PHASE =
 	    in
 		stms @ f (O.VarExp (coord, id'))::translateCont cont
 	    end
-	  | translateExp (ConExp (coord, longid, NONE), f, cont) =
+	  | translateExp (ConExp (coord, longid, NONE, hasArgs), f, cont) =
 	    let
 		val (stms, id) = translateLongid longid
 	    in
-		stms @ f (O.VarExp (coord, id))::translateCont cont
+		stms @ f (O.ConExp (coord, id, hasArgs))::translateCont cont
 	    end
-	  | translateExp (ConExp (coord, longid, SOME longid'), f, cont) =
+	  | translateExp (ConExp (coord, longid, SOME longid', _), f, cont) =
 	    let
 		val (stms1, id) = translateLongid longid
 		val (stms2, id') = translateLongid longid'

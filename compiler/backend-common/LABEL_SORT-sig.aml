@@ -12,11 +12,11 @@
 
 signature LABEL_SORT =
     sig
-	type t
+	type 'a t
 
 	datatype arity =
 	    Rec
 	  | Tup of int
 
-	val sort: t list -> t list * arity
+	val sort: 'a t list -> 'a t list * arity
     end

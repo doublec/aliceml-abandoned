@@ -60,6 +60,7 @@ signature IMPERATIVE_GRAMMAR =
 	and exp =
 	    LitExp of coord * lit
 	  | VarExp of coord * id
+	  | ConExp of coord * id * bool
 	  | TupExp of coord * id list
 	  | RecExp of coord * (lab * id) list
 	    (* sorted, all labels distinct, no tuple *)

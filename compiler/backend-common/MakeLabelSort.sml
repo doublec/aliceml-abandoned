@@ -10,10 +10,10 @@
  *   $Revision$
  *)
 
-functor LabelSort(type t val get: t -> string) :> LABEL_SORT
-    where type t = t =
+functor MakeLabelSort(type 'a t val get: 'a t -> string) :> LABEL_SORT
+    where type 'a t = 'a t =
     struct
-	type t = t
+	type 'a t = 'a t
 
 	datatype arity =
 	    Rec

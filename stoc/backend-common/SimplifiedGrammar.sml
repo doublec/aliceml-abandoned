@@ -43,7 +43,7 @@ structure SimplifiedGrammar :> SIMPLIFIED_GRAMMAR =
 	and exp =
 	    LitExp of coord * lit
 	  | VarExp of coord * longid
-	  | ConExp of coord * longid * longid option
+	  | ConExp of coord * longid * longid option * bool
 	  | TupExp of coord * longid list
 	  | RecExp of coord * (lab * longid) list
 	    (* sorted, all labels distinct, no tuple *)
@@ -77,7 +77,7 @@ structure SimplifiedGrammar :> SIMPLIFIED_GRAMMAR =
 
 	fun coordOf (LitExp (coord, _)) = coord
 	  | coordOf (VarExp (coord, _)) = coord
-	  | coordOf (ConExp (coord, _, _)) = coord
+	  | coordOf (ConExp (coord, _, _, _)) = coord
 	  | coordOf (TupExp (coord, _)) = coord
 	  | coordOf (RecExp (coord, _)) = coord
 	  | coordOf (SelExp (coord, _, _)) = coord
