@@ -152,6 +152,56 @@ void Class::FillMethodHashTable(HashTable *methodHashTable) {
   }
 }
 
+static u_int CountInterfaces(Class *theClass) {
+  Assert(theClass != INVALID_POINTER);
+  Table *interfaces = theClass->GetClassInfo()->GetInterfaces();
+  u_int n = interfaces->GetCount();
+  for (u_int i = n; i--; )
+    n += CountInterfaces(Class::FromWord(interfaces->Get(i)));
+  Class *superClass = theClass->GetSuperClass();
+  if (superClass != INVALID_POINTER)
+    n += CountInterfaces(superClass);
+  return n;
+}
+
+static void FillInterfaceTable(Class *aClass, u_int &index,
+			       Table *interfaceTable,
+			       HashTable *methodHashTable,
+			       Table *virtualTable) {
+  Table *interfaces = aClass->GetClassInfo()->GetInterfaces();
+  for (u_int i = interfaces->GetCount(); i--; ) {
+    Class *interface = Class::FromWord(interfaces->Get(i));
+    Assert(interface != INVALID_POINTER);
+    Table *methods = interface->GetClassInfo()->GetMethods();
+    u_int nMethods = methods->GetCount();
+    Table *interfaceVirtualTable = Table::New(nMethods + 1);
+    interfaceVirtualTable->Init(0, interface->ToWord());
+    for (u_int j = nMethods; j--; ) {
+      MethodInfo *methodInfo = MethodInfo::FromWordDirect(methods->Get(j));
+      word wKey =
+	Class::MakeMethodKey(methodInfo->GetName(),
+			     methodInfo->GetDescriptor());
+      if (!methodHashTable->IsMember(wKey))
+	Error("NoSuchMethodError"); //--** throw
+      MethodRef *methodRef =
+	MethodRef::FromWordDirect(methodHashTable->GetItem(wKey));
+      if (methodRef->GetLabel() != JavaLabel::VirtualMethodRef)
+	Error("IncompatibleClassChangeError"); //--** throw
+      VirtualMethodRef *virtualMethodRef =
+	static_cast<VirtualMethodRef *>(methodRef);
+      word wClosure = virtualTable->Get(virtualMethodRef->GetIndex());
+      interfaceVirtualTable->Init(j + 1, wClosure);
+    }
+    interfaceTable->Init(index++, interfaceVirtualTable->ToWord());
+    FillInterfaceTable(interface, index, interfaceTable,
+		       methodHashTable, virtualTable);
+  }
+  Class *superClass = aClass->GetSuperClass();
+  if (superClass != INVALID_POINTER)
+    FillInterfaceTable(superClass, index, interfaceTable,
+		       methodHashTable, virtualTable);
+}
+
 Class *Class::New(ClassInfo *classInfo) {
   // Precondition: parent class has already been created
   word wSuper = classInfo->GetSuper();
@@ -180,6 +230,7 @@ Class *Class::New(ClassInfo *classInfo) {
   // Allocate class:
   Block *b = Store::AllocBlock(JavaLabel::Class,
 			       BASE_SIZE + nStaticFields + nStaticMethods);
+  b->InitArg(CLASS_INFO_POS, classInfo->ToWord());
   Class *theClass = static_cast<Class *>(b);
   // Build method hash table:
   HashTable *methodHashTable =
@@ -187,7 +238,7 @@ Class *Class::New(ClassInfo *classInfo) {
   if (super != INVALID_POINTER)
     super->FillMethodHashTable(methodHashTable);
   u_int nSuperVirtualMethods = methodHashTable->GetSize();
-  u_int nVirtualMethods = nSuperVirtualMethods;
+  u_int nVirtualMethods = nSuperVirtualMethods, iIndex = 0;
   for (nStaticMethods = 0, i = 0; i < nMethods; i++) {
     MethodInfo *methodInfo = MethodInfo::FromWordDirect(methods->Get(i));
     u_int nArgs = methodInfo->GetNumberOfArguments();
@@ -195,28 +246,28 @@ Class *Class::New(ClassInfo *classInfo) {
       MakeMethodKey(methodInfo->GetName(), methodInfo->GetDescriptor());
     word wMethodRef;
     if (methodInfo->IsStatic()) {
+      Assert(!classInfo->IsInterface());
       u_int index = nStaticFields + nStaticMethods;
       wMethodRef = StaticMethodRef::New(theClass, index, nArgs)->ToWord();
       nStaticMethods++;
+    } else if (methodHashTable->IsMember(wKey)) {
+      // overriding a method does not contribute a new virtual table entry
+      VirtualMethodRef *superMethodRef =
+	VirtualMethodRef::FromWordDirect(methodHashTable->GetItem(wKey));
+      u_int index = superMethodRef->GetIndex();
+      wMethodRef = VirtualMethodRef::New(theClass, index, nArgs)->ToWord();
+    } else if (classInfo->IsInterface()) {
+      // interface methods contribute no virtual table entry
+      wMethodRef =
+	InterfaceMethodRef::New(theClass, iIndex++, nArgs)->ToWord();
     } else {
-      u_int index;
-      if (!methodHashTable->IsMember(wKey))
-	index = nVirtualMethods++;
-      else {
-	printf("overriding with %s#%s%s\n",
-	       classInfo->GetName()->ExportC(),
-	       methodInfo->GetName()->ExportC(),
-	       methodInfo->GetDescriptor()->ExportC());
-	VirtualMethodRef *superMethodRef =
-	  VirtualMethodRef::FromWordDirect(methodHashTable->GetItem(wKey));
-	index = superMethodRef->GetIndex();
-      }
+      // add new virtual table entry
+      u_int index = nVirtualMethods++;
       wMethodRef = VirtualMethodRef::New(theClass, index, nArgs)->ToWord();
     }
     methodHashTable->InsertItem(wKey, wMethodRef);
   }
   // Initialize class:
-  b->InitArg(CLASS_INFO_POS, classInfo->ToWord());
   b->InitArg(METHOD_HASH_TABLE_POS, methodHashTable->ToWord());
   b->InitArg(NUMBER_OF_INSTANCE_FIELDS_POS, nInstanceFields);
   b->InitArg(LOCK_POS, Lock::New()->ToWord());
@@ -306,7 +357,7 @@ Class *Class::New(ClassInfo *classInfo) {
       StaticMethodRef *methodRef = StaticMethodRef::FromWordDirect(wMethodRef);
       Assert(methodRef->GetClass() == theClass);
       b->InitArg(BASE_SIZE + methodRef->GetIndex(), wClosure);
-    } else {
+    } else if (!theClass->IsInterface()) {
       VirtualMethodRef *methodRef =
 	VirtualMethodRef::FromWordDirect(wMethodRef);
       Assert(methodRef->GetClass() == theClass);
@@ -314,6 +365,18 @@ Class *Class::New(ClassInfo *classInfo) {
     }
   }
   b->InitArg(CLASS_INITIALIZER_POS, classInitializer);
+  // Construct interface table:
+  if (classInfo->IsInterface()) {
+    b->InitArg(INTERFACE_TABLE_POS, null);
+  } else {
+    u_int nInterfaces = CountInterfaces(theClass);
+    Table *interfaceTable = Table::New(nInterfaces);
+    i = 0;
+    FillInterfaceTable(theClass, i, interfaceTable,
+		       methodHashTable, virtualTable);
+    Assert(i == nInterfaces);
+    b->InitArg(INTERFACE_TABLE_POS, interfaceTable->ToWord());
+  }
   return theClass;
 }
 
@@ -332,6 +395,16 @@ Class *Class::GetSuperClass() {
   Class *super = Class::FromWord(wSuper);
   Assert(super != INVALID_POINTER);
   return super;
+}
+
+Closure *Class::GetInterfaceMethod(Class *interface, u_int index) {
+  Table *interfaceTable = GetInterfaceTable();
+  for (u_int i = interfaceTable->GetCount(); i--; ) {
+    Table *virtualTable = Table::FromWordDirect(interfaceTable->Get(i));
+    if (Class::FromWord(virtualTable->Get(0)) == interface)
+      return Closure::FromWordDirect(virtualTable->Get(index + 1));
+  }
+  return INVALID_POINTER;
 }
 
 Worker::Result Class::RunInitializer() {

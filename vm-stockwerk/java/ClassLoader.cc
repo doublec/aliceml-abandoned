@@ -258,9 +258,12 @@ public:
   static ResolveInterpreter *self;
 private:
   ResolveInterpreter() {}
+
+  static bool traceFlag;
 public:
   static void Init() {
     self = new ResolveInterpreter();
+    traceFlag = std::getenv("JAVA_TRACE_RESOLVER") != NULL;
   }
 
   virtual Result Run();
@@ -330,6 +333,7 @@ public:
 };
 
 ResolveInterpreter *ResolveInterpreter::self;
+bool ResolveInterpreter::traceFlag;
 
 Worker::Result ResolveInterpreter::Run() {
   ResolveFrame *frame = ResolveFrame::FromWordDirect(Scheduler::GetFrame());
@@ -337,7 +341,8 @@ Worker::Result ResolveInterpreter::Run() {
   case RESOLVE_CLASS:
     {
       JavaString *name = frame->GetName();
-      std::fprintf(stderr, "resolving class %s\n", name->ExportC());
+      if (traceFlag)
+	std::fprintf(stderr, "resolving class %s\n", name->ExportC());
       JavaString *filename = name->Concat(JavaString::New(".class"));
       ClassFile *classFile = ClassFile::NewFromFile(filename);
       if (classFile == INVALID_POINTER) {
@@ -370,9 +375,10 @@ Worker::Result ResolveInterpreter::Run() {
       }
       JavaString *name = frame->GetName();
       JavaString *descriptor = frame->GetDescriptor();
-      std::fprintf(stderr, "resolving field %s#%s:%s\n",
-		   theClass->GetClassInfo()->GetName()->ExportC(),
-		   name->ExportC(), descriptor->ExportC());
+      if (traceFlag)
+	std::fprintf(stderr, "resolving field %s#%s:%s\n",
+		     theClass->GetClassInfo()->GetName()->ExportC(),
+		     name->ExportC(), descriptor->ExportC());
       //--** look for field definitions in implemented interfaces
       ClassInfo *classInfo = theClass->GetClassInfo();
       Table *fields = classInfo->GetFields();
@@ -422,9 +428,10 @@ Worker::Result ResolveInterpreter::Run() {
       }
       JavaString *name = frame->GetName();
       JavaString *descriptor = frame->GetDescriptor();
-      std::fprintf(stderr, "resolving method %s#%s%s\n",
-		   theClass->GetClassInfo()->GetName()->ExportC(),
-		   name->ExportC(), descriptor->ExportC());
+      if (traceFlag)
+	std::fprintf(stderr, "resolving method %s#%s%s\n",
+		     theClass->GetClassInfo()->GetName()->ExportC(),
+		     name->ExportC(), descriptor->ExportC());
       HashTable *methodHashTable = theClass->GetMethodHashTable();
       word wKey = Class::MakeMethodKey(name, descriptor);
       if (methodHashTable->IsMember(wKey)) {
@@ -448,7 +455,45 @@ Worker::Result ResolveInterpreter::Run() {
       return CONTINUE;
     }
   case RESOLVE_INTERFACE_METHOD:
-    Error("interface methods not implemented yet"); //--**
+    {
+      word wClass = frame->GetClass();
+      Class *theClass = Class::FromWord(wClass);
+      if (theClass == INVALID_POINTER) {
+	Scheduler::currentData = wClass;
+	return REQUEST;
+      }
+      ClassInfo *classInfo = theClass->GetClassInfo();
+      if (!classInfo->IsInterface()) {
+	ThrowWorker::PushFrame(ThrowWorker::IncompatibleClassChangeError,
+			       classInfo->GetName());
+	Scheduler::nArgs = 0;
+	return CONTINUE;
+      }
+      JavaString *name = frame->GetName();
+      JavaString *descriptor = frame->GetDescriptor();
+      if (traceFlag)
+	std::fprintf(stderr, "resolving interface method %s#%s%s\n",
+		     theClass->GetClassInfo()->GetName()->ExportC(),
+		     name->ExportC(), descriptor->ExportC());
+      HashTable *methodHashTable = theClass->GetMethodHashTable();
+      word wKey = Class::MakeMethodKey(name, descriptor);
+      if (methodHashTable->IsMember(wKey)) {
+	word wMethodRef = methodHashTable->GetItem(wKey);
+	//--** is the method is abstract, but C is not abstract,
+	//--** throw AbstractMethodError
+	Assert(MethodRef::FromWordDirect(wMethodRef)->GetLabel() ==
+	       JavaLabel::InterfaceMethodRef);
+	Scheduler::PopFrame();
+	Scheduler::nArgs = Scheduler::ONE_ARG;
+	Scheduler::currentArgs[0] = wMethodRef;
+	return CONTINUE;
+      }
+      //--** we must attempt to locate the method in the superinterfaces
+      //--** of the original class, and in super (class Object)
+      ThrowWorker::PushFrame(ThrowWorker::NoSuchMethodError, name);
+      Scheduler::nArgs = 0;
+      return CONTINUE;
+    }
   default:
     Error("invalid resolution type");
   }

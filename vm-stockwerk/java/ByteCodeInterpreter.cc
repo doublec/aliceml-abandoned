@@ -546,7 +546,7 @@ class JavaDebug {
 public:
 #if defined(STORE_DEBUG)
   static void Print(const char *s) {
-    std::fprintf(stderr, "%s\n", s);
+    //std::fprintf(stderr, "%s\n", s);
   }
 #else
   static void Print(const char *) {}
@@ -1777,7 +1777,35 @@ Worker::Result ByteCodeInterpreter::Run() {
       break;
     case Instr::INVOKEINTERFACE:
       {
-	Error("not implemented");
+	JavaDebug::Print("INVOKEINTERFACE");
+	word wMethodRef = GET_POOL_VALUE(GET_POOL_INDEX());
+	InterfaceMethodRef *methodRef =
+	  InterfaceMethodRef::FromWord(wMethodRef);
+	if (methodRef == INVALID_POINTER)
+	  REQUEST(wMethodRef);
+	// Set continuation
+	frame->SetPC(-2);
+	frame->SetContPC(pc + 3);
+	u_int nArgs = methodRef->GetNumberOfArguments();
+	// to be done: support more arguments
+	Assert(nArgs + 1 < Scheduler::maxArgs);
+	// self becomes local0
+	if (nArgs == 0)
+	  Scheduler::nArgs = Scheduler::ONE_ARG;
+	else
+	  Scheduler::nArgs = nArgs + 1;
+	for (u_int i = nArgs + 1; i--;)
+	  Scheduler::currentArgs[i] = frame->Pop();
+	Object *object = Object::FromWord(Scheduler::currentArgs[0]);
+	if (object == INVALID_POINTER) {
+	  RAISE_VM_EXCEPTION(NullPointerException, "INVOKEINTERFACE");
+	}
+	Closure *closure = object->GetClass()->
+	  GetInterfaceMethod(methodRef->GetClass(), methodRef->GetIndex());
+	if (closure == INVALID_POINTER) {
+	  RAISE_VM_EXCEPTION(IncompatibleClassChangeError, "INVOKEINTERFACE");
+	}
+	return Scheduler::PushCall(closure->ToWord());
       }
       break;
     case Instr::INVOKESPECIAL:
@@ -1790,8 +1818,8 @@ Worker::Result ByteCodeInterpreter::Run() {
 	// Set continuation
 	frame->SetPC(-2);
 	frame->SetContPC(pc + 3);
-	// to be done: support more arguments
 	u_int nArgs = methodRef->GetNumberOfArguments();
+	// to be done: support more arguments
 	Assert(nArgs + 1 < Scheduler::maxArgs);
 	// self becomes local0
 	if (nArgs == 0)

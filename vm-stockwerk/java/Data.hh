@@ -54,16 +54,17 @@ public:
   static const BlockLabel InstanceFieldRef    = (BlockLabel) (base + 8);
   static const BlockLabel StaticMethodRef     = (BlockLabel) (base + 9);
   static const BlockLabel VirtualMethodRef    = (BlockLabel) (base + 10);
+  static const BlockLabel InterfaceMethodRef  = (BlockLabel) (base + 11);
   // Code
-  static const BlockLabel ExceptionTableEntry = (BlockLabel) (base + 11);
+  static const BlockLabel ExceptionTableEntry = (BlockLabel) (base + 12);
   // Types
-  static const BlockLabel Class               = (BlockLabel) (base + 12);
-  static const BlockLabel PrimitiveType       = (BlockLabel) (base + 13);
-  static const BlockLabel ArrayType           = (BlockLabel) (base + 14);
+  static const BlockLabel Class               = (BlockLabel) (base + 13);
+  static const BlockLabel PrimitiveType       = (BlockLabel) (base + 14);
+  static const BlockLabel ArrayType           = (BlockLabel) (base + 15);
   // Data layer
-  static const BlockLabel Lock                = (BlockLabel) (base + 15);
-  static const BlockLabel Object              = (BlockLabel) (base + 16);
-  static const BlockLabel ObjectArray         = (BlockLabel) (base + 17);
+  static const BlockLabel Lock                = (BlockLabel) (base + 16);
+  static const BlockLabel Object              = (BlockLabel) (base + 17);
+  static const BlockLabel ObjectArray         = (BlockLabel) (base + 18);
   static const BlockLabel BaseArray           = CHUNK_LABEL;
 };
 
@@ -136,6 +137,7 @@ protected:
     CLASS_INFO_POS, // ClassInfo
     METHOD_HASH_TABLE_POS, // HashTable(name x descriptor -> MethodRef)
     VIRTUAL_TABLE_POS, // Table(Closure)
+    INTERFACE_TABLE_POS, // Table(Table(Class Closure ...))
     LOCK_POS, // Lock
     CLASS_INITIALIZER_POS, // Closure | int(0)
     NUMBER_OF_INSTANCE_FIELDS_POS, // int
@@ -177,6 +179,10 @@ public:
   Closure *GetVirtualMethod(u_int index) {
     return Closure::FromWordDirect(GetVirtualTable()->Get(index));
   }
+  Table *GetInterfaceTable() {
+    return Table::FromWordDirect(GetArg(INTERFACE_TABLE_POS));
+  }
+  Closure *GetInterfaceMethod(Class *interface, u_int index);
   class Lock *GetLock();
   bool IsInitialized() {
     return GetArg(CLASS_INITIALIZER_POS) == null;
@@ -792,7 +798,6 @@ public:
 //
 // Runtime Constant Pool Entries
 //
-
 class DllExport RuntimeConstantPool: private Block {
 public:
   using Block::ToWord;
@@ -889,7 +894,15 @@ public:
     Block *b = Store::WordToBlock(x);
     Assert(b == INVALID_POINTER ||
 	   b->GetLabel() == JavaLabel::StaticMethodRef ||
-	   b->GetLabel() == JavaLabel::VirtualMethodRef);
+	   b->GetLabel() == JavaLabel::VirtualMethodRef ||
+	   b->GetLabel() == JavaLabel::InterfaceMethodRef);
+    return static_cast<MethodRef *>(b);
+  }
+  static MethodRef *FromWordDirect(word x) {
+    Block *b = Store::DirectWordToBlock(x);
+    Assert(b->GetLabel() == JavaLabel::StaticMethodRef ||
+	   b->GetLabel() == JavaLabel::VirtualMethodRef ||
+	   b->GetLabel() == JavaLabel::InterfaceMethodRef);
     return static_cast<MethodRef *>(b);
   }
 };
@@ -966,10 +979,46 @@ public:
   }
 };
 
-//
-// Implementation of Inline `Class' Methods
-//
+class DllExport InterfaceMethodRef: private MethodRef {
+protected:
+  enum { CLASS_POS, INDEX_POS, NUMBER_OF_ARGUMENTS_POS, SIZE };
+public:
+  using Block::ToWord;
 
+  static InterfaceMethodRef *New(Class *theClass, u_int index, u_int nArgs) {
+    Assert(theClass->IsInterface());
+    Block *b = Store::AllocBlock(JavaLabel::InterfaceMethodRef, SIZE);
+    b->InitArg(CLASS_POS, theClass->ToWord());
+    b->InitArg(INDEX_POS, index);
+    b->InitArg(NUMBER_OF_ARGUMENTS_POS, nArgs);
+    return static_cast<InterfaceMethodRef *>(b);
+  }
+  static InterfaceMethodRef *FromWord(word x) {
+    Block *b = Store::WordToBlock(x);
+    Assert(b == INVALID_POINTER ||
+	   b->GetLabel() == JavaLabel::InterfaceMethodRef);
+    return static_cast<InterfaceMethodRef *>(b);
+  }
+  static InterfaceMethodRef *FromWordDirect(word x) {
+    Block *b = Store::DirectWordToBlock(x);
+    Assert(b->GetLabel() == JavaLabel::InterfaceMethodRef);
+    return static_cast<InterfaceMethodRef *>(b);
+  }
+
+  Class *GetClass() {
+    return Class::FromWordDirect(GetArg(CLASS_POS));
+  }
+  u_int GetIndex() {
+    return Store::DirectWordToInt(GetArg(INDEX_POS));
+  }
+  u_int GetNumberOfArguments() {
+    return Store::DirectWordToInt(GetArg(NUMBER_OF_ARGUMENTS_POS));
+  }
+};
+
+//
+// Class Inline Member Functions
+//
 inline Lock *Class::GetLock() {
   return Lock::FromWordDirect(GetArg(LOCK_POS));
 }
