@@ -91,7 +91,7 @@ struct
 				  end
     and field'(f,  nil,  cs')	= (List.rev cs', nil)
       | field'(f, c::cs, cs') where (f c)
-      				= (List.rev cs', c::cs)
+      				= (List.rev cs', cs)
       | field'(f, c::cs, cs')	= field'(f, cs, c::cs')
 
     fun tokens  f   s		= tokens'(f, explode s, nil)
