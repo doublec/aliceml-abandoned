@@ -40,7 +40,7 @@ public:
     AppConst, AppPrim, AppVar, ConTest, EndHandle, EndTry, GetRef, GetTup,
     IntTest, Kill, LazySel, PutCon, PutConst, PutFun, PutNew, PutRef,
     PutTag, PutTup, PutVar, PutVec, Raise, RealTest, Reraise,
-    Return, Sel, Shared, StringTest, TagTest, Try, VecTest
+    Return, Sel, Shared, StringTest, TagTest, Try, VecTest, WideStringTest
   };
 
   enum function {
