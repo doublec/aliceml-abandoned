@@ -128,5 +128,6 @@ set_selectInter : setvar, const setvarargs&, setvar - void
 set_selectSets : setvar, const setvarargs&, intvar - void
 
 set_branch : const setvarargs&, SetBvarSel, SetBvalSel - void
+set_randomBranch : const setvarargs&, int - void
 
 set_print : setvar - void

@@ -117,5 +117,6 @@ sig
 
     val setvarbranch :  space *  setvar vector * fsb_var_sel *
 			fsb_val_sel -> unit
-				
+
+    val randomBranch : space * setvar vector * int -> unit
 end

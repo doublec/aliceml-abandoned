@@ -503,6 +503,12 @@ void GecodeSpace::set_branch(const IntArgs& vars, SetBvarSel varSel,
   ::branch(a, varSel, valSel);
 }
 
+void GecodeSpace::set_randomBranch(const IntArgs& vars, int seed) {
+  if (!enter()) return;
+  makefsvarargs(a, vars);
+  ::randomBranch(a, seed);
+}
+
 void GecodeSpace::set_print(int s) {
   if (!enter()) return;
   std::cout << fss[s];
