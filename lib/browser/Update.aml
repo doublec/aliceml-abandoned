@@ -102,11 +102,12 @@ struct
 	       val p = if isRelNode(getParent(n))
 			   then getParent(getParent(n))
 		       else getParent(n)
+	       val va_inf = UnsafeValue.cast va : Reflect.module
 	       val new =
 		   case getDesc(n) of
 		       VALUE(r) => f(va,#typ(r),p,getIndex(n),
 				     getDepth(n))
-		     | I_VALUE(r) => g(va,#typ(r),p,getIndex(n),
+		     | I_VALUE(r) => g(va_inf,#typ(r),p,getIndex(n),
 				       getDepth(n))
 		     | INTERPUNCT => raise UpdateError 
 	       val _ = updateChild(p,getIndex(n),new)
@@ -147,10 +148,15 @@ struct
     (* findRelNode *)
     and findRelNode(anc,va) = 
 	let val found = ref false
+	    val va_inf = UnsafeValue.cast va : Reflect.module
 	    val g = fn n => findRelNode(n,va)
-	    val f = fn n => if isRelNode n andalso va = getValue(getDesc(n))
+	    val f = fn n => if isRelNode n 
+		            andalso ( case getDesc(n) of
+				      VALUE(r) => va = #value(r)
+				    | I_VALUE(r) => va_inf = #value(r)
+				    | _ => raise UpdateError )
 				then ( found := true
-				     ; setDazzled n)
+				      ; setDazzled n)
 			    else ()
 	in ( case anc of
 	     Concat(r) => ( f anc
@@ -244,12 +250,13 @@ struct
 					(Dictionaries.dict,ind)) 
 	    val old_ydim = Layout.get_ydim(anc) 
 	    val va = getValue(getDesc(n))
+	    val va_inf = UnsafeValue.cast va : Reflect.module
 	    val new = 
 		case getDesc n of 
 		    INTERPUNCT => raise Match
 		  | VALUE(r) => f (va,#typ(r),getParent(n),getIndex(n),
 				   getDepth(n))
-		  | I_VALUE(r) => g (va,#typ(r),getParent(n),getIndex(n),
+		  | I_VALUE(r) => g (va_inf,#typ(r),getParent(n),getIndex(n),
 				     getDepth(n))
 	    val _ = updateChild(getParent(n),getIndex(n),new)  
 	    val node = if getParent(new) = Empty then new else anc
