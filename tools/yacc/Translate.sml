@@ -67,18 +67,46 @@ struct
 	    t2@t3
 	end
 
+
+    structure StringMap =
+	RedBlackMapFn (type ord_key = string val compare = String.compare)
+
+    fun removeDouble map ((x as (s, _, _)) :: xs) ys =
+	if StringMap.inDomain (map, s) then removeDouble map xs ys
+	else removeDouble (StringMap.insert (map, s, ())) xs (x :: ys)
+      | removeDouble _ _ ys = rev ys
+
+    fun enumDict i ((s, ty, _) :: xs) ys =
+	enumDict (i+1) xs (((s, ty), i) :: ys)
+      | enumDict i _ ys = rev ys
+
     fun mkNontermDict l =
-	let fun toDict i [] = [((start,NONE), i)]
+	let
+	    val l' = List.concat (List.map (fn A.RuleDec t =>  t | _ => []) l)
+	    val map = StringMap.empty
+	    val clean =
+		removeDouble map (rev ((start, NONE, AbsSyn.Skip) :: l')) []
+	in
+	    enumDict 0 (rev clean) []
+	end
+
+    (* seems to be rather inefficient :-(
+     * replaced by the one above
+     fun mkNontermDict l =
+         let
+	    fun toDict i [] = [((start,NONE), i)]
 	      | toDict i ((s,ty,_)::ss) = 
-	    let val d = toDict i ss 
-	    in 
-		if List.exists (fn ((s',_),_) => s'=s) d  
-		    then d
-		else ((s,ty),i)::(toDict (i+1) ss)
-	    end
+		let
+		    val d = toDict i ss 
+		in 
+		    if List.exists (fn ((s',_),_) => s'=s) d  
+			then d
+		    else ((s,ty),i)::(toDict (i+1) ss)
+		end
 	in 
 	    toDict 0 (List.concat(List.map (fn A.RuleDec t =>  t | _ => []) l))
 	end
+     *)
 
     fun termToString d (G.T n) = 
 	let val SOME ((str,_),_) = List.find (fn (_,m) => n=m) d 

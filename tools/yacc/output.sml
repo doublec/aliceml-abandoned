@@ -11,7 +11,7 @@ struct
     (* print error structure at the beginning ? *)
     val printErrorStruct = true
     (* print description file *)
-    val description = true
+    val description = false
 
     structure A = AbsSyn
 
@@ -213,19 +213,20 @@ struct
 	in (str, print) end
  
     fun output filename = 
-	let fun mkPrint init =
-	    let val str = ref init
-		val print = fn s => str := (!str)^s
-	    in (str, print) end
+	let
 	    val currParser = ref 0
+	    
 	    val (r,print) = mkPrint ""
+	    
 	    val p = (NormalForm.toNormalForm (Parse.parse filename))
+	    
 	    val Translate.TRANSLATE {grammar,
 				     stringToTerm,
 				     stringToNonterm,
 				     termlist,
 				     parsers,
 				     rules} = Translate.translate p
+	    
 	    val Grammar.GRAMMAR{terms,
 				nonterms,
 				termToString,
@@ -235,64 +236,88 @@ struct
 
 	    fun symbolToString (Grammar.NONTERM s) = nontermToString s
 	      | symbolToString (Grammar.TERM s) = termToString s
+	    
 	    val nontermlist = map nontermToString 
 		(List.tabulate (nonterms, fn x => Grammar.NT x))
+	    
 	    val (table,stateErrs,corePrint,errs) 
 		= MakeLrTable.mkTable (grammar,true)
+	    
 	    val entries = (PrintStruct.makeStruct {table=table,
 						   name="generatedLrTable",
 						   print=print,
 						   verbose=false})
+	    
 	    val lrTableString = !r
+	    
 	    val _ = issueWarnings errs
+	    
 	    val structureName = structureName ()
+	    
 	    val structureName2 = "rmConstrStatus"^(timeStamp())
+	    
 	    val structureName3 = "ErrorStruct"^(timeStamp())
 
 	    fun parserDecToString  [] = ""
 	      | parserDecToString  ((name,ty,sr)::ds) =
-		let val prefix = case ty of
-		    NONE => "val "^name^" "
-		  | SOME ty => "val "^name^" : lexxer -> "^ty^" "
-		    val decString = "\nlocal structure J = "^structureName^"\nin\n"
+		let
+		    val prefix =
+			case ty of
+			    NONE => "val " ^ name ^ " "
+			  | SOME ty =>
+				"val " ^ name ^ " : lexxer -> " ^ ty ^ " "
+		    
+		    val decString =
+			"\nlocal structure J = " ^ structureName ^ "\nin\n"
+
 		    val n = !currParser
-		    val s = decString^prefix^" = fn lexxer =>\n"
-			^"let val (a as (_,p1,p2)) = lexxer()\n"
-			^"    val f = fn _ => J.Token.TOKEN(J.LrTable.T "
-			^(Int.toString n)^", (J.SValue."
-			^((fn (a,_) => a)(List.nth (termlist,n)))^" (fn _ => ()),p1,p2))\n"
-			^"    val lexxer1 = J.Misc.mkGet (fn _ => a) lexxer\n"
-			^"    val lexxer2 = J.Misc.mkGet f (J.toInternalToken lexxer1)\n"
-			^"    val arg = ()\n"
-			^"    val table = J.generatedLrTable\n"
-			^"    val saction = J.SAction.actions\n"
-			^"    val void = J.SValue.VOID\n"
-			^"    val error = "
-			^(if printErrorStruct then structureName3^".error\n" else "parseError\n")
-			^"    fun extract (J.SValue."^(Translate.start)^" a) =\n"
-			^"        case a () of (J.SValue.S"^(Int.toString n)^" b) => b\n"
-			^"in\n    extract (J.LrParser.parse {arg=arg,\n" 
-			^"                            lexxer=lexxer2,\n"
-			^"                            saction=saction,\n"
-			^"                            table=table,\n"
-			^"                            void=void,\n"
-			^"                            error=error})\nend\nend\n"
+
+		    val s = decString ^ prefix ^ " = fn lexxer =>\n"
+			^ "let val (a as (_,p1,p2)) = lexxer()\n"
+			^ "    val f = fn _ => J.Token.TOKEN(J.LrTable.T "
+			^ (Int.toString n) ^ ", (J.SValue."
+			^ ((fn (a, _) => a) (List.nth (termlist, n)))
+			^ " (fn _ => ()),p1,p2))\n"
+			^ "    val lexxer1 = J.Misc.mkGet (fn _ => a) lexxer\n"
+			^ "    val lexxer2 = J.Misc.mkGet f (J.toInternalToken"
+			^ " lexxer1)\n"
+			^ "    val arg = ()\n"
+			^ "    val table = J.generatedLrTable\n"
+			^ "    val saction = J.SAction.actions\n"
+			^ "    val void = J.SValue.VOID\n"
+			^ "    val error = "
+			^ (if printErrorStruct then structureName3 ^ ".error\n"
+			   else "parseError\n")
+			^ "    fun extract (J.SValue." ^ (Translate.start)
+			^ " a) =\n"
+			^ "        case a () of (J.SValue.S" ^ (Int.toString n)
+			^ " b) => b\n"
+			^ "in\n    extract (J.LrParser.parse {arg=arg,\n" 
+			^ "                            lexxer=lexxer2,\n"
+			^ "                            saction=saction,\n"
+			^ "                            table=table,\n"
+			^ "                            void=void,\n"
+			^ "                            error=error})\n"
+			^ "end\nend\n"
 		in
 		    (currParser := !currParser + 1; cr s)
 		end
 
 	    val hack = 
 		"(* ---hack: remove constructor bindings in scope *)\n"
-		^"structure "^structureName2^" = \nstruct\n"
-		^(undoBinding termlist)^"end\n(* --- *)\n\n"
+		^ "structure " ^ structureName2 ^ " = \nstruct\n"
+		^ (undoBinding termlist) ^ "end\n(* --- *)\n\n"
+
 	    val errorDef =
 		if printErrorStruct then
-		    "(* ---error function for syntax errors: adapt to needs *)\n"
-		    ^"structure "^structureName3^" = \nstruct\n"
-		    ^"  exception ParseError\n\n"
-		    ^"  (* val error : position type -> parse result type *)\n" 
-		    ^"  val error = fn pos => raise ParseError\n"
-		    ^"end\n(* --- *)\n\n"
+		    "(* ---error function for syntax errors: adapt to needs *)"
+		    ^ "\n"
+		    ^ "structure "^structureName3^" = \nstruct\n"
+		    ^ "  exception ParseError\n\n"
+		    ^ "  (* val error : position type -> parse result type *)"
+		    ^ "\n" 
+		    ^ "  val error = fn pos => raise ParseError\n"
+		    ^ "end\n(* --- *)\n\n"
 		else ""
 
 	    fun insertErrHack x ((y as (A.MLCode _))::ys) =
@@ -306,68 +331,94 @@ struct
 	      | absSynToString _ (A.MLCode l) = A.expToString l
 	      | absSynToString _ (A.ParserDec l) = parserDecToString  l
 	      | absSynToString lrTable (A.RuleDec l) =
-		"\nstructure "^structureName^" =\nstruct\n" 
-		^"structure LrParser = LrParserEng\n"
-		^"structure Token = LrParser.Token\n"
-		^"structure LrTable = LrParser.LrTable\n\n"
-		^"\n(* LR table for all parsers in this file *)\n"
-		^"local structure Table =\nstruct\nopen LrTable\n\n"
-		^lrTable
-		^"end\nin val generatedLrTable = Table.generatedLrTable end\n\n"
-		^"structure SValue =\nstruct\n"
-		^(printSValue (termlist,nontermlist,parsers))
-		^"end\n\n"
-		(* use only "real" tokens, not the ones for distinguishing between parsers *)
-		^(printToIntTokenFn 
-		  (List.drop(termlist,parsers+1),stringToTerm,parsers))
-		^"\n(* semantic actions *)\n"
-		^"structure SAction =\nstruct\n"
-		^"open "^structureName2^"\n"
-		^"exception exnAction of int\n"
-		^"val actions =\n    fn (i392,defPos,stack,()) =>\n"
-		^"        case (i392,stack) of\n"
-		^(printActions stringToNonterm rules)
-		^"end\n"
-		^"\n(* additional useful fns, common to all parsers in the file *)\n"
-		^"structure Misc =\nstruct\n"
-		^"fun mkGet f g =\n    let val t = ref true\n" 
-		^"in\n    fn () => if !t then (t:=false; f ()) else g ()\nend"
-		^"\nend\nend (* end of structure "^structureName^" *)\n\n"
+		"\nstructure " ^ structureName ^ " =\nstruct\n" 
+		^ "structure LrParser = LrParserEng\n"
+		^ "structure Token = LrParser.Token\n"
+		^ "structure LrTable = LrParser.LrTable\n\n"
+		^ "\n(* LR table for all parsers in this file *)\n"
+		^ "local structure Table =\nstruct\nopen LrTable\n\n"
+		^ lrTable
+		^ "end\nin val generatedLrTable = Table.generatedLrTable end"
+		^ "\n\n"
+		^ "structure SValue =\nstruct\n"
+		^ (printSValue (termlist,nontermlist,parsers))
+		^ "end\n\n"
+		(* use only "real" tokens, not the ones for distinguishing
+		 * between parsers *)
+		^ (printToIntTokenFn 
+		   (List.drop(termlist,parsers+1),stringToTerm,parsers))
+		^ "\n(* semantic actions *)\n"
+		^ "structure SAction =\nstruct\n"
+		^ "open " ^ structureName2 ^ "\n"
+		^ "exception exnAction of int\n"
+		^ "val actions =\n    fn (i392,defPos,stack,()) =>\n"
+		^ "        case (i392,stack) of\n"
+		^ (printActions stringToNonterm rules)
+		^ "end\n"
+		^ "\n(* additional useful fns, common to all parsers in the"
+		^ " file *)\n"
+		^ "structure Misc =\nstruct\n"
+		^ "fun mkGet f g =\n    let val t = ref true\n" 
+		^ "in\n    fn () => if !t then (t:=false; f ()) else g ()\nend"
+		^ "\nend\nend (* end of structure " ^ structureName ^ " *)\n\n"
 	      | absSynToString _ _ = "" (* do not output assocDecs *)
 
-	    val code = List.foldr (fn (x,r) => x^" "^r) "\n" 
+	    val code = List.foldr (fn (x,r) => x ^ " " ^ r) "\n" 
 		         (List.map 
 			  (absSynToString  lrTableString)
 			  (removeRuleDecs true p))
-	    val outfile = TextIO.openOut (filename^".out")
+
+	    val outfile = TextIO.openOut (filename ^ ".out")
+
 	    val _ = TextIO.output(outfile,code)
+
 	    val _ = TextIO.flushOut outfile
+
 	    val _ = TextIO.closeOut outfile
 
 	in
-	    if description then
-			 let val f = TextIO.openOut (filename ^ ".desc")
-	     val say = fn s=> TextIO.output(f,s)
-	     val printRule =
-	        let val rules = Array.fromList grammarRules
-	        in fn say => 
-		   let val prRule = fn {lhs,rhs,precedence,rulenum} =>
-		     ((say o nontermToString) lhs; say " : ";
-		      app (fn s => (say (symbolToString s); say " ")) rhs)
-	           in fn i => prRule (Array.sub(rules,i))
-	           end
-	        end
-	 in Verbose.printVerbose
-	    {termToString=termToString,nontermToString=nontermToString,
-	     table=table, stateErrs=stateErrs,errs = errs,entries = entries,
-	     print=say, printCores=corePrint,printRule=printRule};
-	    TextIO.closeOut f;
-	    TextIO.print ("Written output to "^filename^".out\n"^
-			  "Written description file "^filename^".desc\n")
-	 end
+	    if description
+		then
+		    let
+			val f = TextIO.openOut (filename ^ ".desc")
+
+			val say = fn s=> TextIO.output(f,s)
+
+			val printRule =
+			    let
+				val rules = Array.fromList grammarRules
+			    in
+				fn say => 
+				let
+				    val prRule =
+					fn {lhs,rhs,precedence,rulenum} =>
+					((say o nontermToString) lhs; say " : ";
+					 app (fn s => (say (symbolToString s);
+						       say " ")) rhs)
+				in
+				    fn i => prRule (Array.sub(rules,i))
+				end
+			    end
+		    in
+			Verbose.printVerbose
+			{termToString=termToString,
+			 nontermToString=nontermToString,
+			 table=table,
+			 stateErrs=stateErrs,
+			 errs = errs,
+			 entries = entries,
+			 print=say,
+			 printCores=corePrint,
+			 printRule=printRule};
+			TextIO.closeOut f;
+			TextIO.print ("Written output to " ^ filename
+				      ^ ".out\n"
+				      ^ "Written description file " ^ filename
+				      ^ ".desc\n")
+		    end
 	    else
-		TextIO.print ("Written output to "^filename^".out\n")
-	end 
+		TextIO.print ("Written output to " ^ filename ^ ".out\n")
+	end
  (*   handle _ => 
 	TextIO.print ("Some error(s) occurred while processing "^filename^"\n")
        *)
