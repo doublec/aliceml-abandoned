@@ -4,18 +4,17 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 2002
- *   Andreas Rossberg, 2001
+ *   Leif Kornstaedt and Andreas Rossberg, 2001-2002
  *
  * Last change:
  *   $Date$ by $Author$
  *   $Revision$
  *)
 
-import structure __pervasive  from "Pervasive"
-import type int and list      from "ToplevelTypes"
-import structure Word8        from "Word8"
-import functor   MkMonoVector from "MkMonoVector"
+import structure __pervasive              from "Pervasive"
+import __primitive type int and list      from "ToplevelTypes"
+import __primitive structure Word8        from "Word8"
+import __primitive functor   MkMonoVector from "MkMonoVector"
 
 structure Word8Vector = MkMonoVector(
     type vector
