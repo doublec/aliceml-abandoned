@@ -159,7 +159,7 @@ struct
 	    abox(doc ^^
 		nest(ebreak ^^
 		     List.foldr (op ^/^) empty
-			[contain ("{|", "|}") (ppCommaList (fn x => x) docs)]
+			[contain ("{|", "|}") (ppCommaList id docs)]
 		)
 	    )
 	)
@@ -258,7 +258,7 @@ struct
 				) ds (ts,0,SOME n')
 	    in
 		paren(
-		    ppCommaList (fn doc => doc) docs'
+		    ppCommaList id docs'
 		)
 	    end
 	else
@@ -284,7 +284,7 @@ struct
 				 end) ds (ts,0,SOME n')
 	    in
 		brace(
-		    ppCommaList (fn doc => doc) docs'
+		    ppCommaList id docs'
 		)
 	    end
 
