@@ -84,27 +84,21 @@ struct
     val equal			= op =
     val collate			= CharVector.collate
 
-    fun fields  f  s		= fields'(f, explode s, nil)
-    and fields'(f, nil, ss)	= List.rev ss
-      | fields'(f, cs,  ss)	= let val (cs1,cs2) = field'(f,cs,nil) in
-				      fields'(f, cs2, implode(cs1)::ss)
-				  end
-    and field'(f,  nil,  cs')	= (List.rev cs', nil)
-      | field'(f, c::cs, cs') where (f c)
-      				= (List.rev cs', cs)
-      | field'(f, c::cs, cs')	= field'(f, cs, c::cs')
+    fun fields  f  s		= fields'(f, s, 0, 0, nil)
+    and fields'(f, s, i, j, ss) where (j = size s)
+				= List.rev(substring(s,i,j-i)::ss)
+      | fields'(f, s, i, j, ss) where (f(sub'(s,j)))
+      				= fields'(f,s,j+1,j+1, substring(s,i,j-i)::ss)
+      | fields'(f, s, i, j, ss)	= fields'(f,s,i,j+1,ss)
 
-    fun tokens  f   s		= tokens'(f, explode s, nil)
-    and tokens'(f,  nil,  ss)	= List.rev ss
-      | tokens'(f, c::cs, ss) where (f c)
-      				= tokens'(f,cs,ss)
-      | tokens'(f, c::cs, ss)	= let val (cs1,cs2) = token'(f,cs,nil) in
-				      tokens'(f, cs2, implode(c::cs1)::ss)
-				  end
-    and token'(f,  nil,  cs')	= (List.rev cs', nil)
-      | token'(f, c::cs, cs') where (f c)
-      				= (List.rev cs', c::cs)
-      | token'(f, c::cs, cs')	= token'(f, cs, c::cs')
+    fun tokens  f  s		= tokens'(f, s, 0, 0, nil)
+    and tokens'(f, s, i, j, ss)	where (j = size s)
+				= List.rev(if i = j then ss
+					   else substring(s,i,j-i)::ss)
+      | tokens'(f, s, i, j, ss) where (f(sub'(s,j)))
+      				= tokens'(f,s,j+1,j+1, if i = j then ss
+					  else substring(s,i,j-i)::ss)
+      | tokens'(f, s, i, j, ss)	= tokens'(f,s,i,j+1,ss)
 
     fun concatWith s' ss	= concat(concatWith'(s', ss))
     and concatWith'(s', nil)	= nil
