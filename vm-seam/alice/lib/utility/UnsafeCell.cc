@@ -324,7 +324,7 @@ Worker::Result CellMapIteratorWorker::Run(StackFrame *sFrame) {
     Scheduler::PopFrame(frame->GetSize());
   switch (op) {
   case app:
-    Scheduler::nArgs = Scheduler::ONE_ARG;
+    Scheduler::nArgs = 1;
     Scheduler::currentArgs[0] = entry->GetValue();
     break;
   case appi:
@@ -442,7 +442,7 @@ Worker::Result CellMapFindWorker::Run(StackFrame *sFrame) {
   CellMapEntry *entry = frame->GetEntry();
   word closure = frame->GetClosure();
   operation op = frame->GetOperation();
-  Assert(Scheduler::nArgs == Scheduler::ONE_ARG);
+  Assert(Scheduler::nArgs == 1);
   switch (Store::WordToInt(Scheduler::currentArgs[0])) {
   case 0: // false
     entry = entry->GetNext();
@@ -450,7 +450,7 @@ Worker::Result CellMapFindWorker::Run(StackFrame *sFrame) {
       frame->SetEntry(entry);
       switch (op) {
       case find:
-	Scheduler::nArgs = Scheduler::ONE_ARG;
+	Scheduler::nArgs = 1;
 	Scheduler::currentArgs[0] = entry->GetValue();
 	break;
       case findi:
@@ -462,7 +462,7 @@ Worker::Result CellMapFindWorker::Run(StackFrame *sFrame) {
       return Scheduler::PushCall(closure);
     } else {
       Scheduler::PopFrame(frame->GetSize());
-      Scheduler::nArgs = Scheduler::ONE_ARG;
+      Scheduler::nArgs = 1;
       Scheduler::currentArgs[0] = Store::IntToWord(0); // NONE
       return Worker::CONTINUE;
     }
@@ -481,7 +481,7 @@ Worker::Result CellMapFindWorker::Run(StackFrame *sFrame) {
 	some->Init(0, pair->ToWord());
 	break;
       }
-      Scheduler::nArgs = Scheduler::ONE_ARG;
+      Scheduler::nArgs = 1;
       Scheduler::currentArgs[0] = some->ToWord();
       return Worker::CONTINUE;
     }
@@ -571,7 +571,7 @@ DEFINE3(UnsafeCell_Map_removeWith) {
     cellMap->Remove(key);
     RETURN_UNIT;
   } else {
-    Scheduler::nArgs = Scheduler::ONE_ARG;
+    Scheduler::nArgs = 1;
     Scheduler::currentArgs[0] = key->ToWord();
     return Scheduler::PushCall(closure);
   }
@@ -648,7 +648,7 @@ DEFINE2(UnsafeCell_Map_find) {
   if (entry != INVALID_POINTER) {
     CellMapFindWorker::PushFrame(entry, closure,
 				 CellMapFindWorker::find);
-    Scheduler::nArgs = Scheduler::ONE_ARG;
+    Scheduler::nArgs = 1;
     Scheduler::currentArgs[0] = entry->GetValue();
     return Scheduler::PushCall(closure);
   } else {

@@ -111,12 +111,12 @@ Worker::Result VectorTabulateWorker::Run(StackFrame *sFrame) {
   vector->LateInit(i, wValue);
   if (++i == n) {
     Scheduler::PopFrame(frame->GetSize());
-    Scheduler::nArgs = Scheduler::ONE_ARG;
+    Scheduler::nArgs = 1;
     Scheduler::currentArgs[0] = vector->ToWord();
     return Worker::CONTINUE;
   } else {
     frame->UpdateIndex(i);
-    Scheduler::nArgs = Scheduler::ONE_ARG;
+    Scheduler::nArgs = 1;
     Scheduler::currentArgs[0] = Store::IntToWord(i);
     return Scheduler::PushCall(closure);
   }
@@ -212,7 +212,7 @@ DEFINE2(Vector_tabulate) {
     word wClosure = x1;
     XVector *vector = XVector::New(length);
     VectorTabulateWorker::PushFrame(vector, wClosure, 0, length);
-    Scheduler::nArgs = Scheduler::ONE_ARG;
+    Scheduler::nArgs = 1;
     Scheduler::currentArgs[0] = Store::IntToWord(0);
     return Scheduler::PushCall(wClosure);
   }

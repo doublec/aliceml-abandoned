@@ -112,12 +112,12 @@ Worker::Result ArrayTabulateWorker::Run(StackFrame *sFrame) {
   array->Update(i, wValue);
   if (++i == n) {
     Scheduler::PopFrame(frame->GetSize());
-    Scheduler::nArgs = Scheduler::ONE_ARG;
+    Scheduler::nArgs = 1;
     Scheduler::currentArgs[0] = array->ToWord();
     return Worker::CONTINUE;
   } else {
     frame->UpdateIndex(i);
-    Scheduler::nArgs = Scheduler::ONE_ARG;
+    Scheduler::nArgs = 1;
     Scheduler::currentArgs[0] = Store::IntToWord(i);
     return Scheduler::PushCall(closure);
   }
@@ -208,7 +208,7 @@ DEFINE2(Array_tabulate) {
     word wClosure = x1;
     XArray *array = XArray::New(length);
     ArrayTabulateWorker::PushFrame(array, wClosure, 0, length);
-    Scheduler::nArgs = Scheduler::ONE_ARG;
+    Scheduler::nArgs = 1;
     Scheduler::currentArgs[0] = Store::IntToWord(0);
     return Scheduler::PushCall(wClosure);
   }

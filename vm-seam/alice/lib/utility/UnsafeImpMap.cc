@@ -334,7 +334,7 @@ Worker::Result ImpMapIteratorWorker::Run(StackFrame *sFrame) {
     Scheduler::PopFrame(frame->GetSize());
   switch (op) {
   case app:
-    Scheduler::nArgs = Scheduler::ONE_ARG;
+    Scheduler::nArgs = 1;
     Scheduler::currentArgs[0] = entry->GetValue();
     break;
   case appi:
@@ -452,7 +452,7 @@ Worker::Result ImpMapFindWorker::Run(StackFrame *sFrame) {
   ImpMapEntry *entry = frame->GetEntry();
   word closure = frame->GetClosure();
   operation op = frame->GetOperation();
-  Assert(Scheduler::nArgs == Scheduler::ONE_ARG);
+  Assert(Scheduler::nArgs == 1);
   switch (Store::WordToInt(Scheduler::currentArgs[0])) {
   case 0: // false
     entry = entry->GetNext();
@@ -460,7 +460,7 @@ Worker::Result ImpMapFindWorker::Run(StackFrame *sFrame) {
       frame->SetEntry(entry);
       switch (op) {
       case find:
-	Scheduler::nArgs = Scheduler::ONE_ARG;
+	Scheduler::nArgs = 1;
 	Scheduler::currentArgs[0] = entry->GetValue();
 	break;
       case findi:
@@ -472,7 +472,7 @@ Worker::Result ImpMapFindWorker::Run(StackFrame *sFrame) {
       return Scheduler::PushCall(closure);
     } else {
       Scheduler::PopFrame(frame->GetSize());
-      Scheduler::nArgs = Scheduler::ONE_ARG;
+      Scheduler::nArgs = 1;
       Scheduler::currentArgs[0] = Store::IntToWord(0); // NONE
       return Worker::CONTINUE;
     }
@@ -491,7 +491,7 @@ Worker::Result ImpMapFindWorker::Run(StackFrame *sFrame) {
 	some->Init(0, pair->ToWord());
 	break;
       }
-      Scheduler::nArgs = Scheduler::ONE_ARG;
+      Scheduler::nArgs = 1;
       Scheduler::currentArgs[0] = some->ToWord();
       return Worker::CONTINUE;
     }
@@ -566,7 +566,7 @@ DEFINE3(UnsafeImpMap_removeWith) {
     impMap->Remove(key);
     RETURN_UNIT;
   } else {
-    Scheduler::nArgs = Scheduler::ONE_ARG;
+    Scheduler::nArgs = 1;
     Scheduler::currentArgs[0] = key;
     return Scheduler::PushCall(closure);
   }
@@ -643,7 +643,7 @@ DEFINE2(UnsafeImpMap_find) {
   if (entry != INVALID_POINTER) {
     ImpMapFindWorker::PushFrame(entry, closure,
 				 ImpMapFindWorker::find);
-    Scheduler::nArgs = Scheduler::ONE_ARG;
+    Scheduler::nArgs = 1;
     Scheduler::currentArgs[0] = entry->GetValue();
     return Scheduler::PushCall(closure);
   } else {
