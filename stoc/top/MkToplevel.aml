@@ -63,7 +63,7 @@ struct
     fun loop(compilerContext, targetContext) =
 	case readInput()
 	  of SOME source => loop(eval(source, compilerContext, targetContext))
-	   | NONE        => print "\n"
+	   | NONE        => TextIO.print "\n"
 
     fun stot'(_::_) = (usage(); OS.Process.failure)
       | stot' nil =
