@@ -463,20 +463,20 @@ struct
 
             fun ticker () = 
                 let
-                    val arena       = assert not (List.null levels) do 
-                                        List.hd levels ++ #1
+                    val (arena, pos)= assert not (List.null levels) do 
+                                        List.hd levels 
                     val oldArena    = Arena.emptyCopy arena
 
                     fun loop (levels, old, new) =
                         let 
-                            val _   = invokeSeveral (_file_, _line_)
-                                (allConnected (), #update, 
-                                            Arena.toDiffList new)
                             val (levels, old, new) = tick (levels, old, new)
                         in
                             Thread.sleep (#tick config);
                             loop (levels, old, new)
                         end
+        
+                    val (levels, oldA, newA) = startNextLevel (List.tl levels, 
+                            oldArena, arena, pos) 
                 in
                     loop (List.tl levels, oldArena, arena) 
                 end handle  TournamentFinished  => ()
