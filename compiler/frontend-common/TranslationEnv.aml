@@ -35,7 +35,7 @@ struct
     fun clone(s,xr,yr)		= (StampSet.clone s, ref(!xr), ref(!yr))
 
     fun insertMod((E,_,_), x)	= StampSet.insertDisjoint(E,x)
-    fun deleteMod((E,_,_), x)	= StampSet.deleteExistent(E,x)
+    fun removeMod((E,_,_), x)	= StampSet.removeExistent(E,x)
     fun memberMod((E,_,_), x)	= StampSet.member(E,x)
 
     fun insertPervasive((_,xr,_), x)		= xr := SOME x
