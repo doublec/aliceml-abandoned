@@ -104,7 +104,7 @@ define
 	 VHd = vMatch(_ {GetReg Id State} {NoElse Region $ nil State}
 		      [onRecord('#' Arity ThenVInstr)]
 		      {TranslateRegion Region State} nil)
-      [] handleStm(Region TryBody IdDef HandleBody) then
+      [] tryStm(Region TryBody IdDef HandleBody) then
 	 Reg1 Reg2 Coord TryVInstr HandleVInstr HandleVInter
       in
 	 {State.cs newReg(?Reg1)}

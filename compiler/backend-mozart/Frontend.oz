@@ -63,11 +63,13 @@ define
       [] refAppDec(_ _ _) then Stm
       [] tupDec(_ _ _) then Stm
       [] prodDec(_ _ _) then Stm
-      [] handleStm(Region Body1 IdDef Body2 Body3 Stamp) then
-	 handleStm(Region {ShareBody Body1 ShareDict} IdDef
-		   {ShareBody Body2 ShareDict} {ShareBody Body3 ShareDict}
-		   Stamp)
-      [] endHandleStm(_ _) then Stm
+      [] tryStm(Region TryBody IdDef HandleBody) then
+	 tryStm(Region {ShareBody TryBody ShareDict} IdDef
+		{ShareBody HandleBody ShareDict})
+      [] endTryStm(Region Body) then
+	 endTryStm(Region {ShareBody Body ShareDict})
+      [] endHandleStm(Region Body) then
+	 endHandleStm(Region {ShareBody Body ShareDict})
       [] testStm(Region Id Tests Body) then
 	 testStm(Region Id
 		 case Tests of litTests(LitBodyList) then
