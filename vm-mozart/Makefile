@@ -830,6 +830,7 @@ INSTALLDIRS = $(PREFIX) $(PREFIX)/bin $(PREFIX)/lib $(PREFIX)/lib/fundamental \
 INSTALLFILES = \
 	$(INSTALL3TOPFILES:%=$(PREFIX)/%) \
 	$(INSTALL3BINFILES:%=$(PREFIX)/bin/%) \
+	$(INSTALL3BINFILES:%=$(PREFIX)/bin/%.bat) \
 	$(INSTALL3LIBFILES:%=$(PREFIX)/lib/%) \
 	$(INSTALL3COMPILERFILES:%=$(PREFIX)/compiler/%) \
 	$(INSTALL3COMPILERTOPFILES:%=$(PREFIX)/compiler/top/%) \
@@ -845,6 +846,9 @@ $(INSTALL3TOPFILES:%=$(PREFIX)/%): $(PREFIX)/%: build3/install/%
 
 $(INSTALL3BINFILES:%=$(PREFIX)/bin/%): $(PREFIX)/%: build3/install/%
 	install -c -m 555 $< $@
+
+$(INSTALL3BINFILES:%=$(PREFIX)/bin/%.bat): $(PREFIX)/bin/%.bat: %.bat
+	install -c -m 444 $< $@
 
 $(INSTALL3LIBFILES:%=$(PREFIX)/lib/%): $(PREFIX)/%: build3/install/%
 	install -c -m 444 $< $@
