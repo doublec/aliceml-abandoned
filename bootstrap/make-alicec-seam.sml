@@ -4,7 +4,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt and Andreas Rossberg, 1999-2002
+ *   Leif Kornstaedt and Andreas Rossberg, 1999-2003
  *
  * Last change:
  *   $Date$ by $Author$
@@ -12,10 +12,10 @@
  *)
 
 SMLofNJ.Internals.GC.messages false;
-CM.make' "main-stockwerk.cm";
+CM.make' "main-seam.cm";
 
 local
-    fun main' args = SMLToStockwerkBatchCompiler.main args
+    fun main' args = SMLToSeamBatchCompiler.main args
 	handle e =>
 	let
 	    val hist  = List.rev(SMLofNJ.exnHistory e)
@@ -37,5 +37,5 @@ local
 
     fun main _ = OS.Process.exit (main' (SMLofNJ.getArgs ()))
 in
-    val _ = SMLofNJ.exportFn ("alicec-stockwerk", main)
+    val _ = SMLofNJ.exportFn ("alicec-seam", main)
 end;
