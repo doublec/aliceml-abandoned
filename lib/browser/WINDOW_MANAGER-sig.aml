@@ -13,6 +13,7 @@
  *
  *)
 
+import structure Types from "Types"
 import structure Gtk       from "x-alice:/lib/gtk/Gtk"
 
 signature WINDOW_MANAGER =
@@ -27,6 +28,7 @@ sig
     val canvasroot: Gtk.object ref
     val window: Gtk.object ref
     val show: (unit-> unit) ref
-    val resize: (unit -> unit) ref	
+    val resize: (unit -> unit) ref
+    val register : (string * (Types.node -> unit) -> unit) ref
 
 end

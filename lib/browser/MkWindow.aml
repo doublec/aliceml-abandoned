@@ -26,8 +26,8 @@ import structure NodeSearch from "NodeSearch"
 import structure DrawNodes from "DrawNodes"
 import structure Layout from "Layout"
 import structure Server from "Server"
-import structure Update from "Update" (* to be verified *)
-import structure NewNode from "NewNode" (* to be verified *)
+(* import structure Update from "Update" (* to be verified *)
+import structure NewNode from "NewNode" (* to be verified *) *)
 import signature MK_WINDOW from "MK_WINDOW-sig"
 
 local 
@@ -59,6 +59,24 @@ struct
 
     val vbox = Gtk.vboxNew( 0 ,4)
 
+    val handlers = Array.array(5,(fn n=> ()))
+
+    fun selectHandler "reinspect" = Array.sub(handlers,0)
+      | selectHandler "width"     = Array.sub(handlers,1)
+      | selectHandler "depth"     = Array.sub(handlers,2)
+      | selectHandler "shrink"    = Array.sub(handlers,3)
+      | selectHandler "expand"    = Array.sub(handlers,4)
+
+    fun register (str,handler) = let
+				     val i = case str of "reinspect" => 0
+				                       | "width" =>  1 
+						       | "depth" =>  2
+						       | "shrink" => 3
+						       | "expand" => 4
+				 in
+				     Array.update(handlers,i,handler)
+				 end
+					 
 
     (* "About..."-WindowHandler *)
     fun about _ = serve (fn () =>  
@@ -275,7 +293,7 @@ struct
 			  items = [],
 			  sensitive = true},
 		  MenuObj{title = "Actions",
-			  items = [EntryObj(LABEL("reinspect"),[],true)],
+			  items = [EntryObj(LABEL("reinspect"),r,true)],
 			  sensitive = true}])
 		;()))
 
@@ -295,8 +313,8 @@ struct
 	  | SOME(_,rect) => Gtk.objectDestroy(rect)  
 		
 	fun handleReinspect node = 
-	    fn _ => Update.reinspect(node,NewNode.createGraph)
-    
+	    fn _ =>
+	    (TextIO.print("reinspect"); (selectHandler("reinspect")) node)
 
  fun handleEvent [Gdk.EVENT(event)] = serve (fn () =>
      let

@@ -31,6 +31,7 @@ structure WindowManager :> WINDOW_MANAGER =
 	val window     = ref W.window
 	val show       = ref W.show
 	val resize     = ref W.resize
+	val register   = ref W.register
 
 	val act_line = ref 0
 
@@ -47,6 +48,7 @@ structure WindowManager :> WINDOW_MANAGER =
 				  val _ = window := W.window
 				  val _ = show:=  W.show
 				  val _ = resize:= W.resize
+				  val _ = register := W.register
 				  val _ = Settings.max_x :=0.0
 				  val _ = Settings.max_y :=0.0
 				  val _ = MainDictionary.dumpAll(Dictionaries.dict)

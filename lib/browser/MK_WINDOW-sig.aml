@@ -12,12 +12,16 @@
  *   $Revision$
  *
  *)
+
+import structure Types from "Types"
 import structure Gtk from "x-alice:/lib/gtk/Gtk"
 
 signature MK_WINDOW =
 sig
     type tag = Gtk.object
     val window: tag
+    val handlers :  (Types.node -> unit) Array.array
+    val register: string * (Types.node -> unit) -> unit
     val serve: (unit -> unit) -> unit
     val canvas: tag
     val canvasroot: tag

@@ -636,6 +636,7 @@ struct
 			      p,i,d,setGroup)
 	else f (va,t,p,i,d,ld)
 
+    val _ = !WindowManager.register("reinspect",fn n => Update.reinspect(n,createGraph))
 	    
 end (* struct end *)
  
