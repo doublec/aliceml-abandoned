@@ -1,9 +1,10 @@
 Group
 
-    structure ValuePropagationPhase
+    functor MkValuePropagationPhase
 
 is
 
+    ../../bootstrap/value.cm
     ../../lib/utility/sources.cm
     ../../lib/rtt/name.cm
     ../infrastructure/sources.cm
@@ -16,4 +17,4 @@ is
     PRIM_OPS-sig.aml
     PrimOps.aml
     VALUE_PROPAGATION_PHASE-sig.aml
-    ValuePropagationPhase.aml
+    MkValuePropagationPhase.aml

@@ -3,7 +3,7 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 2000-2001
+ *   Leif Kornstaedt, 2000-2002
  *
  * Last change:
  *   $Date$ by $Author$
@@ -11,6 +11,7 @@
  *)
 
 import structure Url                      from "../../lib/system/Url"
+import structure Reflect                  from "../../lib/system/Reflect"
 import structure PrettyPrint              from "../../lib/utility/PrettyPrint"
 import signature SWITCHES                 from "../infrastructure/SWITCHES-sig"
 import structure Source                   from "../infrastructure/Source"
@@ -25,10 +26,11 @@ import structure MkContextDumpingPhase
 import structure FlatGrammar     from "FlatGrammar"
 import structure OutputFlatGrammar        from "OutputFlatGrammar"
 import structure MkFlatteningPhase        from "MkFlatteningPhase"
-import structure ValuePropagationPhase    from "ValuePropagationPhase"
+import structure MkValuePropagationPhase  from "MkValuePropagationPhase"
 import structure MkLivenessAnalysisPhase  from "MkLivenessAnalysisPhase"
 
-functor MkBackendCommon(structure Switches: SWITCHES) =
+functor MkBackendCommon(val loadMod: Source.desc * Url.t -> Reflect.module
+			structure Switches: SWITCHES) =
     let
 	structure Phase1 =
 	    MkFlatteningPhase(structure Switches = Switches)
@@ -45,6 +47,8 @@ functor MkBackendCommon(structure Switches: SWITCHES) =
 		val switch = Switches.Debug.dumpFlatteningResult)
 	structure BackendCommon = Phase1
 
+	structure ValuePropagationPhase =
+	    MkValuePropagationPhase(val loadMod = loadMod)
 	structure Phase2 =
 	    MkTracingPhase(structure Phase = ValuePropagationPhase
 			   structure Switches = Switches

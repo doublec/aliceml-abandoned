@@ -21,6 +21,8 @@
  *)
 
 import structure TextIO (*--**DEBUG*)    from "../../lib/system/TextIO"
+import structure Url                     from "../../lib/system/Url"
+import structure Reflect                 from "../../lib/system/Reflect"
 import structure PrettyPrint             from "../../lib/utility/PrettyPrint"
 import structure Assert                  from "../../lib/utility/Assert"
 import signature HASH_KEY                from "../../lib/utility/HASH_KEY-sig"
@@ -122,7 +124,9 @@ functor MkScopedImpMap(ImpMap: IMP_MAP) :>
 functor MkHashScopedImpMap(Key: HASH_KEY) =
     MkScopedImpMap(MkHashImpMap(Key))
 
-structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
+functor MkValuePropagationPhase(val loadMod:
+				    Source.desc * Url.t -> Reflect.module) :>
+    VALUE_PROPAGATION_PHASE =
     struct
 	structure I = FlatGrammar
 	structure O = FlatGrammar
@@ -502,6 +506,7 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 	    if stamp = stamp' then value else UnknownVal
 	  | valueMin (value as CaughtExnVal id, CaughtExnVal id') =
 	    if idEq (id, id') then value else UnknownVal
+	  | valueMin (FailedVal, FailedVal) = FailedVal
 	  | valueMin (_, _) = UnknownVal
 
 	fun unionEnv (env', env) =
