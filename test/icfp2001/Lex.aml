@@ -1,0 +1,84 @@
+import structure Doc from "Doc"
+
+signature LEX =
+sig
+    datatype tag =
+	B | EM | I | PL | S | TT | U | SIZE of int | COLOR of Doc.color
+
+    datatype token =
+	TEXT of string | SPACE of string | OPEN of tag | CLOSE of tag | EOS
+
+    exception Invalid
+
+    val next : string * int -> token * int	(* Invalid *)
+end
+
+structure Lex : LEX =
+struct
+    datatype tag =
+	B | EM | I | PL | S | TT | U | SIZE of int | COLOR of Doc.color
+
+    datatype token =
+	TEXT of string | SPACE of string | OPEN of tag | CLOSE of tag | EOS
+
+    exception Invalid = Subscript
+
+    fun fetch(s,i0,i) = (String.substring(s,i0,i-i0), i)
+
+    fun space(s,i0,i) =
+	if i < String.size s andalso Char.isSpace(String.sub(s,i))
+	then space(s,i0,i+1)
+	else fetch(s,i0,i)
+	    
+    fun text(s,i0,i) =
+	if i < String.size s andalso
+	let val c = String.sub(s,i) in not(c = #"<" orelse Char.isSpace c) end
+	then text(s,i0,i+1)
+	else fetch(s,i0,i)
+
+    fun tag1(s,t,i) =
+	if String.sub(s,i) = #">"
+	then (t,i+1)
+	else raise Invalid
+
+    fun tag2(s,t,c,i) =
+	if String.sub(s,i) = c
+	then tag1(s,t,i+1)
+	else raise Invalid
+
+    fun tag(s,C,i) =
+	case String.sub(s,i)
+	  of #"B" => tag1(s, C B, i+1)
+	   | #"E" => tag2(s, C EM, #"M", i+1)
+	   | #"I" => tag1(s, C I, i+1)
+	   | #"P" => tag2(s, C PL, #"L", i+1)
+	   | #"S" => tag1(s, C S, i+1)
+	   | #"T" => tag2(s, C TT, #"T", i+1)
+	   | #"U" => tag1(s, C U, i+1)
+	   | #"r" => tag1(s, C(COLOR Doc.R), i+1)
+	   | #"g" => tag1(s, C(COLOR Doc.G), i+1)
+	   | #"b" => tag1(s, C(COLOR Doc.B), i+1)
+	   | #"c" => tag1(s, C(COLOR Doc.C), i+1)
+	   | #"m" => tag1(s, C(COLOR Doc.M), i+1)
+	   | #"y" => tag1(s, C(COLOR Doc.Y), i+1)
+	   | #"k" => tag1(s, C(COLOR Doc.K), i+1)
+	   | #"w" => tag1(s, C(COLOR Doc.W), i+1)
+	   |   c  => if Char.isDigit c
+		     then tag1(s, C(SIZE(ord c - ord #"0")), i+1)
+		     else raise Invalid
+	    
+    fun next(s,i) =
+	if i = String.size s then (EOS,i) else
+	let
+	    val c = String.sub(s,i)
+	in
+	    if c = #"<" then
+		if String.sub(s,i+1) = #"/"
+		then tag(s, CLOSE, i+2)
+		else tag(s, OPEN, i+1)
+	    else if Char.isSpace c then
+		space(s,i,i+1)
+	    else 
+		text(s,i,i+1)
+	end
+end

@@ -1,0 +1,75 @@
+import structure Doc from "Doc"
+import structure Lex from "Lex"
+
+signature PARSE =
+sig
+    exception Invalid
+
+    val parse : string -> Doc.doc	(* Invalid *)
+end
+
+structure Parse : PARSE =
+struct
+    exception Invalid = Lex.Invalid
+
+    type context = Doc.property
+
+    val initial =
+	{ b	= false
+	, em	= false
+	, i	= false
+	, s	= false
+	, tt	= false
+	, u	= 0
+	, size	= ~1		(* skolem *)
+	, color	= UNKNOWN	(* skolem *)
+	}
+
+    fun modify(context, Lex.B)  = {context where b = true}
+      | modify(context, Lex.EM) = if #s context then context : context else
+				  {context where em = not(#em context)}
+      | modify(context, Lex.I)  = {context where i = true}
+      | modify(context, Lex.PL) = {initial where size  = #size context,
+						 color = #color context}
+      | modify(context, Lex.S)  = {context where s = true, em = false}
+      | modify(context, Lex.TT) = {context where tt = true}
+      | modify(context, Lex.U)  = {context where u = Int.max(3, #u context + 1)}
+      | modify(context, Lex.SIZE n)  = {context where size = n}
+      | modify(context, Lex.COLOR c) = {context where color = c}
+
+    fun spacify(context : context) =
+	{initial where tt = #tt context, u = #u context, size = #size context,
+		       color = if #u context = 0 then Doc.W else #color context}
+
+    fun text(x, b, context, (xs, false, property) :: doc')
+	where (not b orelse context = property) =
+	    (x::xs, false, property) :: doc'
+      | text(x, b, context, doc) =
+	    ([x], false, context) :: doc
+
+    fun space(x, b, space_context, doc as (xs, spacy, property) :: doc')
+	where (not b orelse space_context = spacify property) =
+	    if not(#tt context) andalso (spacy orelse List.hd xs = x)
+	    then doc
+	    else (x::xs, spacy, property) :: doc'
+      | space(x, b, space_context, doc) =
+	    ([x], true, space_context) :: doc
+
+    fun parse'(s, i, b as contextHasProbablyChanged, context, stack, doc) =
+	case Lex.next(s,i)
+	  of (Lex.EOS, _) =>
+		doc
+	   | (Lex.TEXT x, i') =>
+		parse'(s, i', false, context, stack, text(x, b, context, doc))
+	   | (Lex.SPACE x, i') =>
+		parse'(s, i', false, context, stack,
+		       space(x, b, spacify context, doc))
+	   | (Lex.OPEN t, i') =>
+		parse'(s, i', true, modify(context,t), (context,t)::stack, doc)
+	   | (Lex.CLOSE t, i') =>
+		case stack of [] => raise Invalid | (context',t')::stack' =>
+		if t <> t' then raise Invalid else
+		parse'(s, i', true, context', stack', doc)
+
+    fun parse s = parse'(s, 0, false, initial, [], [])
+end

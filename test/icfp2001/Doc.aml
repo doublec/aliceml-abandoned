@@ -1,0 +1,22 @@
+structure Doc =
+struct
+    datatype color = R | G | B | C | M | Y | K | W | UNKNOWN
+
+    type property =
+	{ b :		bool
+	, em :		bool
+	, i :		bool
+	, s :		bool
+	, tt :		bool
+	, u :		int	(* 0..3 *)
+	, size :	int	(* 0..9 *)
+	, color :	color
+	}
+
+    (* All lists are reversed! *)
+
+    datatype item = string list * pool * property
+	(* The bool flag is true iff all strings are spaces. *)
+
+    type doc = item list
+end
