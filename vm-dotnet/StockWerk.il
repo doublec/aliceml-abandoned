@@ -148,6 +148,7 @@
       newobj instance void StockWerk.RefConstructor::.ctor()
       stsfld class StockWerk.StockWert StockWerk.Prebound::ref
       ldstr "false"
+      //--** use unique names
       newobj instance void StockWerk.NamedName::.ctor(class System.String)
       stsfld class StockWerk.StockWert StockWerk.Prebound::false
       ldstr "true"
@@ -726,10 +727,8 @@
     }
     .method public static class System.Object Globalize(class StockWerk.StockWert) {
       .locals(value class System.Guid)
-      ldloca.s 0
-      initobj System.Guid
-      ldloca.s 0
-      call instance void System.Guid::.ctor()
+      call value class System.Guid System.Guid::NewGuid()
+      stloc.0
       ldloca.s 0
       box System.Guid
       ldarg.0
@@ -1038,6 +1037,7 @@
     }
   }
 
+  //--** inherit from Name and store String as Guid
   .class sealed public UniqueName extends StockWerk.NamedName {
     .method public void .ctor(class System.String) {
       ldarg.0
@@ -2229,12 +2229,11 @@
   .class public sealed Array extends StockWerk.StockWert {
     .field public class StockWerk.StockWert[] Values
     .method public void .ctor(int32, class StockWerk.StockWert) {
-      .locals(class StockWerk.Stockwert[])
       ldarg.0
       call instance void StockWerk.StockWert::.ctor()
+      ldarg.0
       ldarg.1
       newarr class StockWerk.StockWert
-      stloc.0
     loop:
       ldarg.1
       ldc.i4.1
@@ -2243,14 +2242,12 @@
       ldarg.1
       ldc.i4.M1
       ble.s return
-      ldloc.0
+      dup
       ldarg.1
       ldarg.2
       stelem.ref
       br.s loop
     return:
-      ldarg.0
-      ldloc.0
       stfld class StockWerk.StockWert[] StockWerk.Array::Values
       ret
     }
