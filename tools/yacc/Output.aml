@@ -283,14 +283,12 @@ struct
 		    val n = !currParser
 
 		    val s = decString ^ prefix ^ " = fn lexxer =>\n"
-			^ "let val (a as (_,p1,p2)) = lexxer()\n"
-			^ "    val f = fn _ => J.Token.TOKEN(J.LrTable.T "
+			^ "let val dummypos = lazy (raise J.DummyPosAccessed)\n"
+                        ^ "    val start =  J.Token.TOKEN(J.LrTable.T "
 			^ (Int.toString n) ^ ", (J.SValue."
 			^ ((fn (a, _) => a) (List.nth (termlist, n)))
-			^ " (fn _ => ()),p1,p2))\n"
-			^ "    val lexxer1 = J.Misc.mkGet (fn _ => a) lexxer\n"
-			^ "    val lexxer2 = J.Misc.mkGet f (J.toInternalToken"
-			^ " lexxer1)\n"
+			^ " (fn _ => ()),dummypos,dummypos))\n"
+			^ "    val lexxer1 = J.toInternalToken lexxer\n"
 			^ "    val arg = ()\n"
 			^ "    val table = J.generatedLrTable\n"
 			^ "    val saction = J.SAction.actions\n"
@@ -303,7 +301,8 @@ struct
 			^ "        case a () of (J.SValue.S" ^ (Int.toString n)
 			^ " b) => b\n"
 			^ "in\n    extract (J.LrParser.parse {arg=arg,\n" 
-			^ "                            lexxer=lexxer2,\n"
+                        ^ "                            start=start,\n"
+			^ "                            lexxer=lexxer1,\n"
 			^ "                            saction=saction,\n"
 			^ "                            table=table,\n"
 			^ "                            void=void,\n"
@@ -342,6 +341,7 @@ struct
 	      | absSynToString _ (A.ParserDec l) = parserDecToString  l
 	      | absSynToString lrTable (A.RuleDec l) =
 		"\nstructure " ^ structureName ^ " =\nstruct\n" 
+                ^ "exception DummyPosAccessed\n"
 		^ "structure LrParser = LrParserEng\n"
 		^ "structure Token = LrParser.Token\n"
 		^ "structure LrTable = LrParser.LrTable\n\n"
@@ -365,12 +365,7 @@ struct
 		^ "        case (i392,stack) of\n"
 		^ (printActions stringToNonterm rules)
 		^ "end\n"
-		^ "\n(* additional useful fns, common to all parsers in the"
-		^ " file *)\n"
-		^ "structure Misc =\nstruct\n"
-		^ "fun mkGet f g =\n    let val t = ref true\n" 
-		^ "in\n    fn () => if !t then (t:=false; f ()) else g ()\nend"
-		^ "\nend\nend (* end of structure " ^ structureName ^ " *)\n\n"
+		^ "\nend (* end of structure " ^ structureName ^ " *)\n\n"
 	      | absSynToString _ _ = "" (* do not output assocDecs *)
 
 	    val code = (if smlMode 

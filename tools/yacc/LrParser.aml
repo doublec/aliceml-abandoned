@@ -24,6 +24,7 @@ signature LR_PARSER_ENG =
 	(* exception ParseError *)
 
 	val parse : {table : LrTable.table,
+                     start : ('_b, '_c) Token.token,
 		     lexxer : unit -> ('_b,'_c) Token.token,
 		     arg: 'arg,
 		     saction : int * '_c *
@@ -73,6 +74,7 @@ structure LrParserEng : LR_PARSER_ENG =
             | nil => ()
 
       val parse = fn {arg : 'a,
+                      start : ('_b, '_c) token,
 		      table : LrTable.table,
 		      lexxer : unit -> ('_b,'_c) token,
 		      saction : int * '_c * ('_b,'_c) stack * 'a ->
@@ -100,13 +102,11 @@ structure LrParserEng : LR_PARSER_ENG =
       val action = LrTable.action table
       val goto = LrTable.goto table
 
-      fun get f =  f ()
-
       fun parseStep(next as (TOKEN (terminal, value as (_,leftPos,_))),
 		    stack as (state,_) :: _ : ('_b ,'_c) stack) =
          case (if DEBUG then prAction(stack, next,action(state, terminal))
                else action(state, terminal))
-              of SHIFT s => parseStep(get lexxer, (s,value) :: stack)
+              of SHIFT s => parseStep(lexxer (), (s,value) :: stack)
                | REDUCE i =>
 		    let val (nonterm,value,stack as (state,_) :: _ ) =
 					 saction(i,leftPos,stack,arg)
@@ -118,8 +118,8 @@ structure LrParserEng : LR_PARSER_ENG =
   	       | ACCEPT => let val (_,(topvalue,_,_)) :: _ = stack
 			   in topvalue
 			   end
-      val next as (TOKEN (terminal,(_,leftPos,_))) = get lexxer
-   in parseStep(next,[(initialState table,(void,leftPos,leftPos))])
+      val (TOKEN (terminal,(_,leftPos,_))) = start
+   in parseStep(start,[(initialState table,(void,leftPos,leftPos))])
    end
 end;
 
