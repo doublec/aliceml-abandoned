@@ -99,7 +99,7 @@ PREFIX = /opt/stockhausen-devel
 
 VPATH = $(SRCTOP)
 
-ALICEC0 = $(BOOTSTRAPDIR)/alicec --profile
+ALICEC0 = $(BOOTSTRAPDIR)/alicec # --profile
 ALICEC1 = STOCKHOME=build1/install build1/install/bin/alicec
 ALICEC2 = STOCKHOME=build2/install build2/install/bin/alicec
 
