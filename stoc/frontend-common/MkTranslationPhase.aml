@@ -40,6 +40,16 @@ struct
 	Error.error(i, "Translation." ^ funname ^ ": " ^ casename ^
 		       " not implementeed yet")
 
+  (* Helpers *)
+
+    fun idToField idToX (x' as O.Id(i,_,n)) =
+	let
+	    val i' = nonInfo(#region i)
+	in
+	    O.Field(i', O.Lab(i', Label.fromName n), idToX x')
+	end
+
+
   (* Recognize sum type constructors (tags) *)
 
     fun decomposeConarrow t =
@@ -69,6 +79,8 @@ struct
     val trVarName		= trName'(fn s => "$" ^ s)
     val trModName		= trName'(fn s => s ^ "$")
     val trInfName		= trName'(fn s => "$" ^ s ^ "$")
+
+    fun isTypName' s		= String.sub(s,0) = #"$"
 
     fun trValLabel a		= Label.fromName(trValName(Label.toName a))
     fun trTypLabel a		= Label.fromName(trTypName(Label.toName a))
@@ -197,6 +209,7 @@ struct
     val varOp			= yOp(longid_type,      typ_var)
     val rowOp			= yOp(longid_type,      typ_row)
     val unitTypOp		= yOp(longid_type,      typ_unit)
+    val boolTypOp		= yOp(longid_type,      typ_bool)
     val pervTypeOp		= yOp(longid_pervType,  typ_con)
     val pervTypeVal		= yVal(longid_pervType, typ_typ)
     val sigOp			= yOp(longid_inf,       typ_sign)
@@ -628,20 +641,14 @@ struct
 
   (* Modules *)
 
-    and idToField(x' as O.Id(i,_,n)) =
-	let
-	    val i' = nonInfo(#region i)
-	in
-	    O.Field(i', O.Lab(i', Label.fromName n), idToExp x')
-	end
-
-    and trMod(I.PrimMod(i,s,j))		= O.PrimExp(trModInfo i, s)
+    and trMod(I.PrimMod(i,s,j))		= trPrimMod(i,s,j)
       | trMod(I.VarMod(i,x))		= idToExp(trModid x)
       | trMod(I.StrMod(i,ds))		= let val i'   = trModInfo i
 					      val ds'  = trDecs ds
 					      val ids' = ids ds
-					      val fs'  = Vector.map idToField
-								    ids'
+					      val fs'  = Vector.map
+							     (idToField idToExp)
+							     ids'
 					  in O.LetExp(i',ds',O.ProdExp(i',fs'))
 					  end
       | trMod(I.SelMod(i,l,m))		= O.SelExp(trModInfo i, trModlab l,
@@ -714,7 +721,7 @@ struct
 	    val i2  = trModInfo i
 	    val t1  = #typ i1
 	    val t2  = #typ i2
-	    val t3  = Vector.sub(Type.asTuple'(#typ(O.infoExp e2')), 2)
+	    val t3  = Vector.sub(Type.asTuple'(#typ(O.infoExp e2')), 1)
 
 	    val x1' = O.Id(i1, Stamp.new(), Name.InId)
 	    val x1  = O.ShortId(i1, x1')
@@ -736,6 +743,87 @@ struct
 		 in
 		     O.LetExp(i2, #[d1',d2'], e')
 		 end
+	end
+
+  (* Primitive modules *)
+
+    (*UNFINISHED: quick hack *)
+
+    and trPrimMod(i,"Pack",j) =
+	(* fn {[x]=x1,[t]=x2} -> cast (x1,x2) *)
+	(let
+	    val  i'     = trModInfo i
+	    val  r      = #region i'
+	    val  i0'    = nonInfo r
+	    val  t      = #typ i'
+	    val (t1,t2) = Type.asArrow' t
+	    val (l1,t11,l2,t12) = findValTyp(Type.asProd t1)
+	    val  x1'    = O.Id(typInfo(r,t11), Stamp.new(), Name.InId)
+	    val  x2'    = O.Id(typInfo(r,t12), Stamp.new(), Name.InId)
+	    val  p'     = O.ProdPat(typInfo(r,t1),
+				#[O.Field(i0', O.Lab(i0',l1), idToPat x1'),
+				  O.Field(i0', O.Lab(i0',l2), idToPat x2')])
+	    val  e'     = O.CastExp(typInfo(r,t2), 
+				O.TupExp(typInfo(r,Type.inTuple #[t11,t12]),
+					 #[idToExp x1', idToExp x2']))
+	in
+	    O.FunExp(i', #[O.Match(nonInfo r, p', e')])
+	end
+	handle Type.Type => raise Crash.Crash "trPrimMod: Pack")
+
+      | trPrimMod(i,"Unpack",j) =
+	(* fn {[x]=x1,[t]=x2} -> let (x11,x12) = cast x1 in
+	 *                           if Type.equals(x12,x2) then
+	 *                               {[x']=x11}
+	 *                           else
+	 *                               raise prim "General.Bind"
+	 *                       end *)
+	(let
+	    val  i'     = trModInfo i
+	    val  r      = #region i'
+	    val  i0'    = nonInfo r
+	    val  t      = #typ i'
+	    val (t1,t2) = Type.asArrow' t
+	    val (l1,t11,l2,t12) = findValTyp(Type.asProd' t1)
+	    val (l3,t21)        = Type.headRow(Type.asProd' t2)
+	    val  x1'    = O.Id(typInfo(r,t11), Stamp.new(), Name.InId)
+	    val  x2'    = O.Id(typInfo(r,t12), Stamp.new(), Name.InId)
+	    val  p'     = O.ProdPat(typInfo(r,t1),
+				#[O.Field(i0', O.Lab(i0',l1), idToPat x1'),
+				  O.Field(i0', O.Lab(i0',l2), idToPat x2')])
+
+	    val  x11'   = O.Id(typInfo(r,t21), Stamp.new(), Name.InId)
+	    val  x12'   = O.Id(typInfo(r,typ_typ), Stamp.new(), Name.InId)
+	    val  i1'    = typInfo(r, Type.inTuple #[t21,typ_typ])
+	    val  p1'    = O.TupPat(i1', #[idToPat x11', idToPat x12'])
+	    val  e1'    = O.CastExp(i1', idToExp x1')
+	    val  d'     = O.ValDec(nonInfo r, p1', e1')
+
+	    val  e1'    = boolTypOp(lab_equals, O.TupExp(typInfo(r,typ_typtyp),
+						  #[idToExp x12', idToExp x2']))
+	    val  i2'    = typInfo(r,t2)
+	    val  e2'    = O.ProdExp(i2',
+			    #[O.Field(i0', O.Lab(i0',l3), idToExp x11')])
+	    val  e3'    = O.RaiseExp(i2', (*UNFINISHED*)
+				O.PrimExp(typInfo(r,typ_exn), "General.Bind"))
+	    val  e'     = O.LetExp(i2', #[d'], O.IfExp(i2', e1', e2', e3'))
+	in
+	    O.FunExp(i', #[O.Match(nonInfo r, p', e')])
+	end
+	handle Type.Type => raise Crash.Crash "trPrimMod: Unpack")
+
+      | trPrimMod(i,s,j) =
+	O.PrimExp(trModInfo i, s)
+
+    and findValTyp r =
+	let
+	    val (l1,t1) = Type.headRow r
+	    val (l2,t2) = Type.headRow(Type.tailRow r)
+	in
+	    case (isTypName'(Label.toString l1), isTypName'(Label.toString l2))
+	      of (false,true) => (l1,t1,l2,t2)
+	       | (true,false) => (l2,t2,l1,t1)
+	       |  _           => raise Crash.Crash "TranslationPhase.findValTyp"
 	end
 
 
@@ -1341,7 +1429,7 @@ struct
 	    val d0' = O.ValDec(i', O.VarPat(i0',x0'), e0')
 
 	    val e1' = trInf' j1
-	    val t1  = Vector.sub(Type.asTuple'(#typ(O.infoExp e1')), 2)
+	    val t1  = Vector.sub(Type.asTuple'(#typ(O.infoExp e1')), 1)
 	    val ii' = typInfo(#region(I.infoId x), t1)
 	    val i1' = typInfo(#region(I.infoInf j1), typ_inf)
 	    val x'  = O.Id(ii', I.stamp x, trModName(I.name x))
@@ -1352,7 +1440,7 @@ struct
 
 	    val r2  = #region(I.infoInf j2)
 	    val e2' = trInf' j2
-	    val t2  = Vector.sub(Type.asTuple'(#typ(O.infoExp e2')), 2)
+	    val t2  = Vector.sub(Type.asTuple'(#typ(O.infoExp e2')), 1)
 	    val i2' = typInfo(r2, typ_inf)
 	    val i3' = typInfo(r2, t2)
 	    val x2' = O.Id(i2', Stamp.new(), Name.InId)
@@ -1671,7 +1759,7 @@ struct
 	let
 	    val r   = #region i
 	    val e1' = trInf' j
-	    val t1  = Vector.sub(Type.asTuple'(#typ(O.infoExp e1')), 2)
+	    val t1  = Vector.sub(Type.asTuple'(#typ(O.infoExp e1')), 1)
 	    val i'  = typInfo(#region(I.infoId x), t1)
 	    val i1' = typInfo(#region(I.infoInf j), typ_inf)
 	    val x'  = O.Id(i', I.stamp x, trModName(I.name x))
@@ -1936,22 +2024,17 @@ struct
 
   (* Components *)
 
-    fun idToRow(O.Id(i,_,n), r) = Type.extendRow(Label.fromName n, #typ i, r)
-
     fun trComp(I.Comp(i,a_s,ds)) =
 	let
 	    val (xsus',ds1') = trAnns a_s
 	    val  ds2'        = trDecs ds
 	    val  ds'         = Vector.append(ds1',ds2')
 	    val  ids'        = ids ds
-	    val  fs'         = Vector.map idToField ids'
-	    val  r           = Vector.foldl idToRow (Type.emptyRow()) ids'
-	    val  i'          = typInfo(#region i, Type.inProd r)
-	    val  exp'        = O.LetExp(i', ds', O.ProdExp(i', fs'))
+	    val  fs'         = Vector.map (idToField (fn x' => x')) ids'
 	    val  s           = #sign i
 	    val  _           = Inf.stripSig s
 	in
-	    ( xsus', (exp',s) )
+	    ( xsus', ds', fs', s )
 	end
 
     fun translate () (desc, component) =
