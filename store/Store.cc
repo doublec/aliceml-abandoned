@@ -132,7 +132,7 @@ static int IsInFromSpace(Heap *roots, char *p) {
   for (u_int i = STORE_GENERATION_NUM - 1; i--;) {
     HeapChunk *chunk = roots[i].GetChain();
     while (chunk != NULL) {
-      if ((chunk->GetBase() >= p) && (p <= chunk->GetTop()))
+      if ((chunk->GetBase() <= p) && (p <= chunk->GetTop()))
 	return 1;
       chunk = chunk->GetNext();
     }
@@ -226,6 +226,7 @@ void Store::RegisterWeakDict(WeakMap *v) {
 void Store::HandleInterGenerationalPointers(const u_int gen) {
 #if defined(STORE_GC_DEBUG)
   std::fprintf(stderr, "initial intgen_size is %d\n", intgenSet->GetSize());
+  std::fflush(stderr);
 #endif
   Set *intgen_set = intgenSet;
   u_int size      = intgen_set->GetSize();
@@ -269,6 +270,7 @@ void Store::HandleInterGenerationalPointers(const u_int gen) {
   }
 #if defined(STORE_GC_DEBUG)
   std::fprintf(stderr, "new_intgen_size is %d\n", intgenSet->GetSize());
+  std::fflush(stderr);
 #endif
 }
 
@@ -280,6 +282,7 @@ void Store::HandleInterGenerationalPointers(const u_int gen) {
 void Store::HandleWeakDictionaries(const u_int gen) {
 #if defined(STORE_DEBUG)
   std::fprintf(stderr, "initial weakdict_size is %d\n", wkDictSet->GetSize()); 
+  std::fflush(stderr);
 #endif
   // Clone wkDictSet and initialize finSet
   Set *wkdict_set = wkDictSet;
@@ -421,6 +424,7 @@ void Store::HandleWeakDictionaries(const u_int gen) {
   // Now successivly forward the finalized tree
 #if defined(STORE_DEBUG)
   std::fprintf(stderr, "HandleWeakDictionaries: performing cheney scan\n");
+  std::fflush(stderr);
 #endif
   if (gen == (STORE_GENERATION_NUM - 1))
     Store::FinalizeCheneyScan(chunk, scan);
@@ -428,6 +432,7 @@ void Store::HandleWeakDictionaries(const u_int gen) {
     Store::CheneyScan(chunk, scan, gen);
 #if defined(STORE_DEBUG)
   std::fprintf(stderr, "new_weakdict_size is %d\n", wkDictSet->GetSize());
+  std::fflush(stderr);
 #endif
 }
 
@@ -546,6 +551,7 @@ void Store::DoGCWithoutFinalize(word &root) {
 #endif
 #if defined(STORE_DEBUG)
   std::fprintf(stderr, "GC done.\n");
+  std::fflush(stderr);
 #endif
 }
 
