@@ -1,6 +1,6 @@
 Group is
 
-    ../lib/system/signature.cm
+    ../lib/rtt/interface.cm
     ../lib/utility/sources.cm
 
     UNSAFE_COMPONENT-sig.sml

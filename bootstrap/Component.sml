@@ -8,7 +8,7 @@ structure Component :> COMPONENT =
 	exception Sited
 	exception Corrupt
 
-	fun sign _ = NONE
+	fun inf _ = NONE
 	fun load _ = raise Corrupt
 	fun save (_, _) = raise Sited
 
