@@ -285,21 +285,22 @@ struct
 	NONE => Node.Empty
       | SOME(n,_,_) => n  
 
+    (* cleans out all dictionaries *)
     fun emptyAllDictionaries() = 
 	(Dictionaries.Main.dumpAll(Dictionaries.maindict)
 	 ;Dictionaries.RelMan.dumpAll(Dictionaries.reldict)
 	 ;Dictionaries.Transient.dumpAll(Dictionaries.transdict))
 
     (* handles the user's request to shut the window *)
-    fun DeleteWindow _ = 
+    fun DeleteWindow _ = Server.serve (fn () =>
 	(widgetHideAll(window)
 	 ;Update.screen_max_x := 0
 	 ;emptyAllDictionaries()
 	 ;act_line := 0
-	 ;alive:= false)
+	 ;alive:= false))
 	
     (* handles user request to clear everything *)
-    fun handleClear _ = 
+    fun handleClear _ = Server.serve (fn () =>
 	let
 	    val li = Dictionaries.Main.dict2list(Dictionaries.maindict)
 	in 
@@ -312,7 +313,7 @@ struct
 	     ;Update.screen_max_x := 0
 	     ;act_line := 0
 	     ;(!resize)())
-	end
+	end)
     
     (* needed to keep Gtk going when using MS Windows *)
     fun freezeThaw(x) = (layoutFreeze(x)
@@ -373,10 +374,10 @@ struct
 
      (***             Update Handler            ***)
 		
-     fun update_reinspect n = 
+     fun update_reinspect n = (
 	 Update.reinspect(n,
 			  CreateTree.createTree,
-			  CreateTree.createTreeInf,!canvasroot)
+			  CreateTree.createTreeInf,!canvasroot))
 	 
      (* handles reinspect request *)
      fun handleReinspect node = 
@@ -414,7 +415,7 @@ struct
 						 CreateTree.createTreeInf,
 						 !canvasroot)
 	 in
-	 update_expand (getSelectionNode())
+	     (update_expand (getSelectionNode()))
 	 end
 
      (* folds width *)
@@ -458,7 +459,12 @@ struct
 		 end
 	 else ()
 
-     fun handleForce node _ = forceTree (getSelectionNode())
+     fun handleForce node _ = case (!selection) of 
+	 SOME (n,re,re') =>(Server.serve 
+			    (fn () => (forceTree (getSelectionNode())
+			     ;destroySelectionMarkings()
+			     ; ())))
+       | NONE => ()
 	
      (***       Node Tree Deletion Mechanism     ***)
 
@@ -545,7 +551,7 @@ struct
 	 end
      
      (* inspects everything anew *)
-     fun re_inspect() = 
+     fun re_inspect() = Server.serve( fn () =>  
 	 let 
 	     val li = uninspect()
 	 in
@@ -553,7 +559,7 @@ struct
 		       VALUE(r) => (!inspectFct) (#value(r),#typ(r))
 		     | I_VALUE(r) => (!inspectInfFct)  (#value(r),#typ(r))
 		     | _ => ()) li
-	 end
+	 end)
 
      (* Handles ok Button in Preferences Window *)
      fun okHandler(w,
