@@ -186,12 +186,12 @@ LIBUTILITYSOURCES0 = \
 	RANDOM-sig.aml Random.aml STAT-sig.aml Stat.aml \
 	$(LIBUTILITYNATIVES0:%=%.aml)
 LIBRTTSOURCES0 = \
-	NAME-sig.aml Name.aml LABEL-sig.aml Label.aml PATH-sig.aml Path.aml \
-	PathSet.aml PathMap.aml FIXITY-sig.aml Fixity.aml TYPE-sig.aml \
-	Type.aml INF-sig.aml Inf.aml PERVASIVE_TYPE-sig.aml \
-	MkPervasiveType.aml PervasiveType.aml PP_MISC-sig.aml PPMisc.aml \
-	PP_PATH-sig.aml PPPath.aml PP_TYPE-sig.aml PPType.aml PP_INF-sig.aml \
-	PPInf.aml
+	NAME-sig.aml Name.aml LABEL-sig.aml Label.aml LabelSet.aml \
+	PATH-sig.aml Path.aml PathSet.aml PathMap.aml \
+	FIXITY-sig.aml Fixity.aml TYPE-sig.aml Type.aml INF-sig.aml Inf.aml \
+	PERVASIVE_TYPE-sig.aml MkPervasiveType.aml PervasiveType.aml \
+	PP_MISC-sig.aml PPMisc.aml PP_PATH-sig.aml PPPath.aml \
+	PP_TYPE-sig.aml PPType.aml PP_INF-sig.aml PPInf.aml
 LIBMLYACCSOURCES0 = base-sig.aml join.aml lrtable.aml stream.aml parser2.aml
 
 LIBSOURCES0 = \
