@@ -480,39 +480,67 @@ structure CodeGen =
 		val elselabel = Label.new ()
 		val stampcode' = stampCode stamp'
 
-		fun checkForTableSwitch (test', body'') =
+		fun switchNumber (LitTest (WordLit a)) =
+		    LargeWord.toLargeInt a
+		  | switchNumber (LitTest (IntLit a)) =
+		    a
+		  | switchNumber (LitTest (CharLit a)) =
+		    Int.toLarge (ord a)
+		  | switchNumber _ = 0
+
+		fun checkForSwitch (test', body'', whichSwitch) =
 		    (case body'' of
-			 TestStm (_, Id (_, stamp'', _), test'', body''', body'''')::_
-			 =>
-			 (if stamp' = stamp'' then
+			 (sh as SharedStm (_,b'', r as ref shared))::_ =>
+			     if shared <=0 then
+				 let
+				     val ret as (isSwitch,_,_) = checkForSwitch (test', b'', !r)
+				 in
+				     (if whichSwitch>0 andalso isSwitch then
+					  r := whichSwitch else ();
+					  ret)
+				 end
+			     else if shared = whichSwitch then
+				 (false, sh, switchNumber test')
+				  else (print ("Let him who has understanding reckon the number of the Leif, for it is a human's number: Its number is "^Int.toString shared^" and not "^Int.toString whichSwitch^".\n");
+					(false, sh, switchNumber test'))
+		       | IndirectStm (_,ref (SOME b''))::_ =>
+				      checkForSwitch (test', b'', whichSwitch)
+		       | (t as TestStm (_, Id (_, stamp'', _),
+					test'', body''', body''''))::_ =>
+			     (if stamp' = stamp'' then
 			      (case
 				   (test', test'') of
-				   (LitTest (WordLit a), LitTest (WordLit b)) =>
-				       LargeWord.+(a,Word.toLargeWord (Word.fromInt 1))=b
-				 | (LitTest (IntLit a), LitTest (IntLit b)) =>
-				       LargeInt.+(a,Int.toLarge 1)=b
-				 | (LitTest (CharLit a), LitTest (CharLit b)) => ord a+1 = ord b
-				 | _ => false)
-			  else false)
-		       | _ => false)
+				   (LitTest (WordLit a), LitTest (WordLit _)) =>
+				       (true, t, LargeWord.toLargeInt a)
+				 | (LitTest (IntLit a), LitTest (IntLit _)) =>
+				       (true, t, a)
+				 | (LitTest (CharLit a), LitTest (CharLit _)) =>
+				       (true, t, Int.toLarge (ord a))
+				 | _ => (false, t, switchNumber test'))
+			  else (false, t, switchNumber test'))
+		       | _ => (false, hd body'', switchNumber test'))
 
-		fun generateTableSwitch () =
+		fun generateSwitch begin =
 		    let
-			fun generateBody (akku, labelList, body', next as (test', body'')) =
+			fun generateBody (akku, switchlist, labelList, body',
+					  test', body'') =
 			    let
-				val lab = Label.new ()
+				val lab = Label.newSwitch ()
+				val (switch, inst, number) =
+				    checkForSwitch (test', body'', begin)
 			    in
-				if checkForTableSwitch next
+				if switch
 				    then
-					case body'' of
-					    TestStm (_, _, t'', b', b'') :: _
+					case inst of
+					    TestStm (_, _, t'',b',b'')
 					    => generateBody
 					    (Label lab ::
 					     Multi (decListCode body') ::
 					     akku,
+					     number::switchlist,
 					     lab :: labelList,
-					     b',
-					     (t'', b''))
+					     b', t'', b'')
+					  | _ => raise Match
 				else
 				    let
 					val behind = Label.new ()
@@ -522,40 +550,52 @@ structure CodeGen =
 					 Multi akku ::
 					 Label behind ::
 					 decListCode body'',
+					 number::switchlist,
 					 lab :: labelList,
 					 behind)
 				    end
 			    end
-			val (bod, labs, behind) = generateBody (nil, nil, body', (test', body''))
+
+			fun isTableSwitch (i::(rest as (j::_))) =
+			    if LargeInt.- (i,Int.toLarge 1) = j then
+				isTableSwitch rest
+			    else (false, 0)
+			  | isTableSwitch (i::nil) = (true, i)
+			  | isTableSwitch nil = (false, 0)
+
+			fun makeSwitch (bod, switchlist, labellist, behind) =
+			    (case isTableSwitch switchlist of
+				 (true, i) => Tableswitch (i, labellist, behind)
+			       | _ => Lookupswitch (switchlist, labellist, behind)) ::
+			     bod
+
+			val gb as (_, _, _, behind) = generateBody (nil, nil, nil, body', test', body'')
+			val sw = makeSwitch gb
 		    in
-			case test' of
-			    LitTest (WordLit startwert) =>
-				stampcode' ::
-				Instanceof CWord ::
-				Ifeq elselabel ::
-				stampcode' ::
-				Checkcast CWord ::
-				Getfield (CWord^"/value", [Intsig]) ::
-				Tableswitch (LargeWord.toInt startwert, labs, behind) ::
-				bod
-			  | LitTest (IntLit startwert) =>
-				stampcode' ::
-				Instanceof CInt ::
-				Ifeq elselabel ::
-				stampcode' ::
-				Checkcast CInt ::
-				Getfield (CInt^"/value", [Intsig]) ::
-				Tableswitch (LargeInt.toInt startwert, labs, behind) ::
-				bod
-			  | LitTest (CharLit startwert) =>
-				stampcode' ::
-				Instanceof CChar ::
-				Ifeq elselabel ::
-				stampcode' ::
-				Checkcast CChar ::
-				Getfield (CChar^"/value", [Charsig]) ::
-				Tableswitch (ord startwert, labs, behind) ::
-				bod
+			Label (Label.fromNumber begin) ::
+			stampcode' ::
+			(case test' of
+			     LitTest (WordLit startwert) =>
+				 Instanceof CWord ::
+				 Ifeq behind ::
+				 stampcode' ::
+				 Checkcast CWord ::
+				 Getfield (CWord^"/value", [Intsig]) ::
+				 sw
+			   | LitTest (IntLit startwert) =>
+				 Instanceof CInt ::
+				 Ifeq behind ::
+				 stampcode' ::
+				 Checkcast CInt ::
+				 Getfield (CInt^"/value", [Intsig]) ::
+				 sw
+			   | LitTest (CharLit startwert) =>
+				 Instanceof CChar ::
+				 Ifeq behind ::
+				 stampcode' ::
+				 Checkcast CChar ::
+				 Getfield (CChar^"/value", [Charsig]) ::
+				 sw)
 		    end
 
 		fun testCode (LitTest lit') =
@@ -759,11 +799,9 @@ structure CodeGen =
 
 		  | testCode (test') = raise Debug (Test test')
 
-	    in
-		if checkForTableSwitch (test', body'')
-		    then
-			generateTableSwitch ()
-		else
+		val begin = Label.newNumber ()
+
+		fun normalTest () =
 		    Multi (testCode test') ::
 		    Multi
 		    (decListCode body') ::
@@ -772,6 +810,12 @@ structure CodeGen =
 		    Multi
 		    (decListCode body'') ::
 		    [Label danach]
+	    in
+		if !OPTIMIZE >=3 then
+		    case checkForSwitch (test', body'', 0) of
+			(true, _, _) => generateSwitch begin
+		      | _ => normalTest ()
+		else normalTest ()
 	    end
 
 	  | decCode (SharedStm(_,body',da as ref schonda)) =

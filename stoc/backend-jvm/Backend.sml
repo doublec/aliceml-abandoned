@@ -60,17 +60,23 @@ structure Backend=
 		val stack : (int list) ref= ref nil
 		val handleStack : (string list) ref = ref nil
 
-		fun new () =
-		    (labelcount := !labelcount + 1;
-		     "label"^Int.toString(!labelcount))
-		fun push () =
-		    (stack := (!labelcount :: (!stack));
-		     labelcount := 0)
-		fun pop () = (labelcount:=hd(!stack);
-				    stack:=tl(!stack))
 		fun newNumber () =
 		    (labelcount := !labelcount + 1;
 		     !labelcount)
+
+		fun new () =
+		    "label"^Int.toString (newNumber ())
+
+		fun newSwitch () =
+		    "switch"^Int.toString (newNumber ())
+
+		fun push () =
+		    (stack := (!labelcount :: (!stack));
+		     labelcount := 0)
+
+		fun pop () = (labelcount:=hd(!stack);
+				    stack:=tl(!stack))
+
 		fun fromNumber i = "label"^Int.toString i
 
 		fun pushANewHandle () =
@@ -80,6 +86,7 @@ structure Backend=
 			handleStack := label'::(!handleStack);
 			label'
 		    end
+
 		fun popHandle () =
 		    hd (!handleStack) before handleStack := tl (!handleStack)
 	    end

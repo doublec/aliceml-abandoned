@@ -237,6 +237,7 @@ structure ToJasmin =
 		    in
 			Array.update(!regmap, 0, 0);
 			Array.update(!regmap, 1, 1);
+			Array.update(!jvmto, 1, Array.sub (!to, 1));
 			assign 2
 		    end
 
@@ -293,15 +294,12 @@ structure ToJasmin =
 		fun fuse (x,u) =
 		    let
 			val (a,b) = if u = 1 then (u,x) else (x,u)
+			val ori = getOrigin a
 		    in
-			(if Array.sub(!defines, b)<2 then
-			     (Array.update(!fusedwith, b, a);
-			      if Array.sub (!from, a) > Array.sub (!from, b)
-				  then Array.update(!from, a, Array.sub(!from, b)) else ();
-				      if Array.sub (!to, a) > Array.sub (!to, b)
-					  then Array.update(!to, a, Array.sub(!to, b)) else ();
-					      true)
-			 else false)
+			if Array.sub(!defines, u)<2 then
+			    (Array.update(!fusedwith, b, ori);
+			     true)
+			 else false
 		    end
 
 		(* How often is a register defined? Most registers are defined only once.
@@ -380,6 +378,10 @@ structure ToJasmin =
 			     | Ifne l' => LabelMerge.setReachable l'
 			     | Ifnull l' => LabelMerge.setReachable l'
 			     | Tableswitch (_, ls, l) =>
+				   List.app
+				   LabelMerge.setReachable
+				   (l::ls)
+			     | Lookupswitch (_, ls, l) =>
 				   List.app
 				   LabelMerge.setReachable
 				   (l::ls)
@@ -618,6 +620,7 @@ structure ToJasmin =
 	  | stackNeedInstruction (Sipush _) = 1
 	  | stackNeedInstruction Swap = 0
 	  | stackNeedInstruction (Tableswitch _) = ~1
+	  | stackNeedInstruction (Lookupswitch _) = ~1
 	  | stackNeedInstruction (Var _) = 0
 
 	local
@@ -713,6 +716,18 @@ structure ToJasmin =
 	      | instructionToJasmin (Ldc(JVMInt i),_) = "ldc "^int32ToString i
 	      | instructionToJasmin (Ldc(JVMWord w),_) = "ldc "^word32ToString w
 	      | instructionToJasmin (Ldc(JVMChar c),_) = "ldc "^Int.toString (Char.ord c)
+	      | instructionToJasmin (Lookupswitch (switchlist, labellist, default), _) =
+			     let
+				 fun flatten (switch::switches, lab::labels) =
+				     flatten (switches, labels)^
+				     ("\t"^int32ToString switch^
+				      LabelMerge.condJump lab^"\n")
+				   | flatten _ = ""
+			     in
+				 "lookupswitch\n"^
+				 flatten (switchlist, labellist)^
+				 "default: "^LabelMerge.condJump default
+			     end
 	      | instructionToJasmin (Multi _,_) = raise Error ""
 	      | instructionToJasmin (New cn,_) = "new "^cn
 	      | instructionToJasmin (Nop, _) = "nop"
@@ -724,14 +739,18 @@ structure ToJasmin =
 	      | instructionToJasmin (Return,_) = "return"
 	      | instructionToJasmin (Sipush i,_) = "sipush "^intToString i
 	      | instructionToJasmin (Swap,_) = "swap"
-	      | instructionToJasmin (Tableswitch(low,labellist, label),_) =
+	      | instructionToJasmin (Tableswitch(low,labellist, default),_) =
 			     let
-				 fun flatten (lab::labl) = ("\t"^(LabelMerge.condJump lab)^"\n")^(flatten labl)
+				 (* We have to reverse the labellist here, because
+				  CodeGen generates it from right to left *)
+				 fun flatten (lab::labl) =
+				     (flatten labl)^
+				     ("\t"^(LabelMerge.condJump lab)^"\n")
 				   | flatten nil = ""
 			     in
-				 "tableswitch "^(Int.toString low)^"\n"^
+				 "tableswitch "^(int32ToString low)^"\n"^
 				 (flatten labellist)^
-				 "default: "^(LabelMerge.condJump label)
+				 "default: "^(LabelMerge.condJump default)
 			     end
 	      |  instructionToJasmin (Var (number', name', descriptor', from', to'), isStatic) =
 			     if (!DEBUG >= 1) then
@@ -782,6 +801,11 @@ structure ToJasmin =
 			      | Label label =>
 				    (lastLabel := label;
 				     LabelMerge.checkSizeAt (label, sizeAfter))
+			      | Lookupswitch (_, labs, label) =>
+				    foldr
+				    LabelMerge.checkSizeAt
+				    sizeAfter
+				    (label::labs)
 			      | Return => LabelMerge.leaveMethod (sizeAfter, is)
 			      | Tableswitch (_, labs, label) =>
 				    foldr
@@ -821,7 +845,7 @@ structure ToJasmin =
 		fun interfaceToJasmin (i,akku) = akku^".implements "^i^"\n"
 		fun methodToJasmin (Method(access,methodname,methodsig,Locals perslocs,
 					   instructions, catches, staticapply)) =
-		    ((*if methodname = "run" then raise Debug (SIs ("", instructions)) else ();*)
+		    ((*if methodname = "emilclass27" then raise Debug (SIs ("", instructions)) else ();*)
 		     JVMreg.new perslocs;
 		     TextIO.output(io,".method "^
 				   (mAccessToString access)^

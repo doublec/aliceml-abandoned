@@ -80,6 +80,7 @@ structure JVMInst =
 	  | Label of label
 	  | Lcmp
 	  | Ldc of JVMBASETYPE
+	  | Lookupswitch of LargeInt.int list * label list * label
 	  | Multi of INSTRUCTION list
 	  | New of classname
 	  | Nop
@@ -89,7 +90,7 @@ structure JVMInst =
 	  | Return
 	  | Sipush of int
 	  | Swap
-	  | Tableswitch of int * (label list) * label
+	  | Tableswitch of LargeInt.int * (label list) * label
 	  | Var of int * string * ARG list * label * label
 	and CLASS =
 	    Class of CLASSACCESS list * classname * classname * classname list * FIELD list * METHOD list
