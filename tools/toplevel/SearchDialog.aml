@@ -1,3 +1,16 @@
+(*
+ * Authors:
+ *   Guido Tack <tack@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Guido Tack, 2005
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
 import structure Gtk from "x-alice:/lib/gtk/Gtk"
 import structure Gdk from "x-alice:/lib/gtk/Gdk"
 import structure Key from "x-alice:/lib/gtk/Key"
@@ -34,15 +47,15 @@ structure SearchDialog =
         val _ = Gtk.widgetShow table1
         val _ = Gtk.tableSetRowSpacings(table1,0)
         val _ = Gtk.tableSetColSpacings(table1,20)
-        val checkbutton1 = Gtk.checkButtonNewWithMnemonic("case sensitive")
+        val checkbutton1 = Gtk.checkButtonNewWithMnemonic("Case sensitive")
         val _ = Gtk.toggleButtonSetActive(checkbutton1,true)
         val _ = Gtk.widgetShow checkbutton1
-        val checkbutton2 = Gtk.checkButtonNewWithMnemonic("backwards")
+        val checkbutton2 = Gtk.checkButtonNewWithMnemonic("Backwards")
         val _ = Gtk.widgetShow checkbutton2
-        val checkbutton3 = Gtk.checkButtonNewWithMnemonic("from cursor position")
+        val checkbutton3 = Gtk.checkButtonNewWithMnemonic("From cursor position")
         val _ = Gtk.toggleButtonSetActive(checkbutton3,true)
         val _ = Gtk.widgetShow checkbutton3
-        val checkbutton4 = Gtk.checkButtonNewWithMnemonic("whole words")
+        val checkbutton4 = Gtk.checkButtonNewWithMnemonic("Whole words")
         val _ = Gtk.widgetSetSensitive(checkbutton4,false)
         val _ = Gtk.widgetSetSensitive(checkbutton3,false)
         val _ = Gtk.widgetSetSensitive(checkbutton2,false)

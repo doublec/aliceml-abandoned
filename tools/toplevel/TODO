@@ -5,9 +5,11 @@ Bugs:
 
 * output stream synchronisation (how?)
 * paste should delete tags
-* highlighting displaced due to prompt
+* highlighting displaced due to prompt (ok?)
 * jump-to-error does not work for compile
-* undo after open deletes buffer
+  (how do we detect whether we feeded something from a buffer or used
+  the toplevel directly? We have to give eval a filename for buffers!)
+* undo after open deletes buffer (ok?)
 * scroll to bottom after layout change or resize
 * propagate output width on init and after resize
 * gui hangs when files are given on command line
@@ -15,7 +17,7 @@ Bugs:
 * undo shortcut not shown in menu
 * colorize compiler output?
 * dialogues at mouse position
-* about dialogue missing
+* about dialogue missing (ok?)
 
 Missing Features:
 

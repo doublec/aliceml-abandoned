@@ -1,0 +1,197 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2005
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
+import functor MkRedBlackSet from "x-alice:/lib/data/MkRedBlackSet"
+import signature TEXT_ITERATOR from "TEXT_ITERATOR-sig"
+
+signature HIGHLIGHT =
+sig
+    type iter
+
+    datatype style = PLAIN | RESERVED | STRING | COMMENT | ERRONEOUS
+
+    val scan : iter -> (style * int * int) list
+end
+
+functor MkHighlight (Iter : TEXT_ITERATOR) : HIGHLIGHT
+                                               where type iter=Iter.iter =
+struct
+    open Iter
+
+    datatype style = PLAIN | RESERVED | STRING | COMMENT | ERRONEOUS
+
+    (* Reserved words *)
+
+    structure SubstringSet = MkRedBlackSet Substring
+
+    val reservedWords = (SubstringSet.fromVector o Vector.map Substring.full)
+	#["_file_", "_line_",
+	  "abstype", "and", "andalso", "any", "as", "assert",
+	  "assert0", "assert1", "assert2", "assert3", "assert4",
+	  "assert5", "assert6", "assert7", "assert8", "assert9",
+	  "case", "constructor",
+	  "datatype", "do",
+	  "else", "end", "eqtype", "exception", "exttype",
+	  "fct", "finally", "fn", "from", "fun", "functor",
+	  "handle",
+	  "if", "import", "in", "include", "infix", "infixr",
+	  "lazy", "let", "local",
+	  "non", "nonfix",
+	  "of", "op", "open", "orelse",
+	  "pack",
+	  "raise", "rec",
+	  "sharing", "sig", "signature", "spawn", "struct", "structure",
+	  "then", "type",
+	  "unpack",
+	  "val",
+	  "where", "while", "with", "withfun", "withtype", "withval"
+	 ]
+
+    fun isReserved ss = SubstringSet.member (reservedWords, ss)
+
+    fun isIdChar c = Char.isAlphaNum c orelse c = #"_" orelse c = #"'"
+
+    fun merge (style,s1,s2, (style',s1',s2')::rs) where (style = style') =
+	    (style,s1',getPos s2)::rs
+      | merge (style,s1,s2, rs) = (style,getPos s1,getPos s2)::rs
+
+    fun checkReserved (s1, s2, rs) =
+	if getChar s1 = #"_"
+	orelse isReserved (getText(s1,s2))
+	then merge (RESERVED, s1, s2, rs)
+	else merge (PLAIN, s1, s2, rs)
+
+    (* Scanning *)
+
+    fun scanPlain (s', s, rs) =
+	if isFinished s then
+	    merge (PLAIN, s', s, rs)
+	else let
+	    val c = getChar s
+	in
+	    if isIdChar c then
+		let
+                    val rs' = merge (PLAIN, s', s, rs)
+                in
+                    move(s', s);
+                    forwardChar s;
+                    scanId (s', s, rs')
+                end
+	    else if c = #"\"" then
+		let
+                    val rs' = merge (PLAIN, s', s, rs)
+                in
+                    move(s', s);
+                    forwardChar s;
+                    scanString (s', s, rs')
+                end
+	    else if c = #"(" andalso lookAhead(s, 1) = SOME #"*" then
+		let
+                    val rs' = merge (PLAIN, s', s, rs)
+                in
+                    move(s', s);
+                    forwardChar s; forwardChar s;
+                    scanComment 1 (s', s, rs')
+                end
+	    else
+		(forwardChar s; scanPlain (s', s, rs))
+	end
+    and scanString (s', s, rs) =
+	if isFinished s then
+	    merge (ERRONEOUS, s', s, rs)
+	else let
+	    val c = getChar s
+	in
+	    if c = #"\"" then
+		let
+                    val _ = forwardChar s
+                    val rs' = merge (STRING, s', s, rs)
+                in
+                    move(s', s);
+                    scanPlain (s', s, rs')
+                end
+	    else if c = #"\\" then
+		if isAtEnd s
+		orelse Char.isSpace (valOf (lookAhead(s, 1)))
+		then (forwardChar s; scanStringGap (s', s, rs))
+		else (forwardChar s; forwardChar s; scanString (s', s, rs))
+	    else if Char.ord c < 32 then
+		let
+                    val _ = forwardChar s
+                    val rs' = merge (ERRONEOUS, s', s, rs)
+                in
+                    move(s', s);
+                    scanPlain (s', s, rs')
+                end
+	    else
+		(forwardChar s; scanString (s', s, rs))
+	end
+    and scanStringGap (s', s, rs) =
+	if isFinished s then
+	    merge (ERRONEOUS, s', s, rs)
+	else let
+	    val c = getChar s
+	in
+	    if c = #"\\" then
+		(forwardChar s; scanString (s', s, rs))
+	    else if Char.isSpace c then
+		(forwardChar s; scanStringGap (s', s, rs))
+	    else
+		let
+                    val _ = forwardChar s
+                    val rs' = merge (ERRONEOUS, s', s, rs)
+                in
+                    move(s', s);
+                    scanPlain (s', s, rs')
+                end
+	end
+    and scanId (s', s, rs) =
+	if isFinished s then
+	    checkReserved (s', s, rs)
+	else if isIdChar (getChar s) then
+	    (forwardChar s; scanId (s', s, rs))
+	else
+            let
+                val rs' = checkReserved (s', s, rs)
+            in
+	        move(s',s);
+                scanPlain (s', s, rs')
+            end
+    and scanComment nesting (s', s, rs) =
+	if nesting = 0 then
+            let
+                val rs' = merge (COMMENT, s', s, rs)
+            in
+                move (s', s);
+	        scanPlain (s', s, rs')
+            end
+	(* last character cannot end or start a comment *)
+	else if isAtEnd s then
+	    merge (ERRONEOUS, s', s, rs)
+	else let
+	    val c = getChar s
+	in
+	    if c = #"*" andalso lookAhead(s,1) = SOME #")" then
+		(forwardChar s; forwardChar s;
+                 scanComment (nesting-1) (s', s, rs))
+	    else if c = #"(" andalso lookAhead(s,1) = SOME #"*" then
+		(forwardChar s; forwardChar s;
+		 scanComment (nesting+1) (s', s, rs))
+	    else
+		(forwardChar s; scanComment nesting (s', s, rs))
+	end
+
+    (* Export *)
+
+    fun scan s = List.rev (scanPlain (s, clone s, nil))
+end

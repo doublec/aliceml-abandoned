@@ -1,3 +1,16 @@
+(*
+ * Authors:
+ *   Guido Tack <tack@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Guido Tack, 2005
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
 import structure MkHashImpMap from "x-alice:/lib/data/MkHashImpMap"
 import structure Gtk from "x-alice:/lib/gtk/Gtk"
 import structure Core from "x-alice:/lib/gtk/Core"
@@ -181,10 +194,6 @@ structure Buffer =
                          tags=makeTags buf,
                          undo=ref nil,
                          lastSearchPos=ref 0}
-              val _ = Gtk.signalConnect(buf, "modified-changed", modifiedChanged id)
-              val _ = Gtk.textBufferConnectSpecialSignals buf
-              val _ = Gtk.signalConnect(buf, "delete-text", deleteText id)
-              val _ = Gtk.signalConnect(buf, "insert-text", insertText id)
           in
               if loadFile then
               case file of NONE => ()
@@ -201,6 +210,10 @@ structure Buffer =
                                Gtk.textBufferPlaceCursor(buf, iter)
                            end handle IO.Io _ => FileDialog.message "IO error. Could not open file."
               else ();
+              Gtk.signalConnect(buf, "modified-changed", modifiedChanged id);
+              Gtk.textBufferConnectSpecialSignals buf;
+              Gtk.signalConnect(buf, "delete-text", deleteText id);
+              Gtk.signalConnect(buf, "insert-text", insertText id);
               BufferMap.insertDisjoint(bufferMap, id, ret);
               ret
           end

@@ -1,3 +1,16 @@
+(*
+ * Authors:
+ *   Guido Tack <tack@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Guido Tack, 2005
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
 import structure Stream from "x-alice:/lib/data/Stream"
 import structure Gui from "Gui"
 import structure Gtk from "x-alice:/lib/gtk/Gtk"
@@ -384,7 +397,7 @@ structure GuiMain =
                 NONE => ()
               | SOME s => Promise.fulfill(s,Evaluator.STOP)
 
-        fun jumpToError (row, col, row', col') _ =
+        fun jumpToError (file, row, col, row', col') _ =
             case getCurrentPage() of NONE => ()
                                    | SOME id =>
             let
@@ -417,13 +430,17 @@ structure GuiMain =
 
         fun parseErrorCoords s =
             let
+                val (file, error) =
+                    case String.tokens (fn #":" => true | _ => false) s of
+                        [s1,s2] => (NONE, s1)
+                      | [s1,s2,s3] => (SOME s1, s2)
+                      | _ => raise Match (* make compiler happy *)
                 val (s11,s12,s21,s22) =
                     case
-                    String.tokens (fn #":" => true
-                                    | #"-" => true
+                    String.tokens (fn #"-" => true
                                     | #"." => true
-                                    | _ => false) s
-                    of (s11::s12::s21::s22::_) => (s11,s12,s21,s22)
+                                    | _ => false) error
+                    of [s11,s12,s21,s22] => (s11,s12,s21,s22)
                      | _ => raise Match (* make compiler happy *)
                 val s11 = Int.fromString s11
                 val s12 = Int.fromString s12
@@ -434,7 +451,7 @@ structure GuiMain =
                    isNone s21 orelse isNone s22 then
                     NONE
                 else
-                    SOME (valOf s11, valOf s12, valOf s21, valOf s22)
+                    SOME (file, valOf s11, valOf s12, valOf s21, valOf s22)
             end handle Match => NONE
 
         fun populatePopup (view, [Gtk.OBJECT menu]) =

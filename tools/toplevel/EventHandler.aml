@@ -1,5 +1,19 @@
+(*
+ * Authors:
+ *   Guido Tack <tack@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Guido Tack, 2005
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
 import signature GUISIGNALS_SIG from "GuiSignals"
 import structure GuiMain from "GuiMain"
+import structure AboutDialog from "AboutDialog"
 import structure Gtk from "x-alice:/lib/gtk/Gtk"
 
 structure EventHandler : GUISIGNALS_SIG =
@@ -25,7 +39,7 @@ structure EventHandler : GUISIGNALS_SIG =
         fun on_feedfile_activate _ = GuiMain.feedFile()
         fun on_stop_activate _ = GuiMain.stopEval()
         fun on_break_activate _ = GuiMain.breakEval()
-        val on_about1_activate = const()
+        fun on_about1_activate _ = AboutDialog.openDialog()
         fun on_notebook1_switch_page (object,_) =
             let
                 val curPage = Gtk.notebookGetCurrentPage(object)

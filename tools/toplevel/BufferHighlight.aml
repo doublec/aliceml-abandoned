@@ -1,3 +1,16 @@
+(*
+ * Authors:
+ *   Guido Tack <tack@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Guido Tack, 2005
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
 import structure Gtk from "x-alice:/lib/gtk/Gtk"
 import structure Core from "x-alice:/lib/gtk/Core"
 import structure Highlight from "HighlightString"
@@ -9,7 +22,7 @@ structure BufferHighlight =
               open Highlight
               val startiter = Gtk.textIterNew()
               val _ = Gtk.textBufferGetStartIter(buf,startiter)
-              val _ = Gtk.textIterSetLine(startiter, offset)
+              val _ = Gtk.textIterSetOffset(startiter, offset)
               val _ = Gtk.textIterForwardChars(startiter, x)
               val enditer = Gtk.textIterNew()
               val _ = Gtk.textBufferGetStartIter(buf,enditer)
@@ -30,7 +43,7 @@ structure BufferHighlight =
           if Gtk.textIterGetChar startiter = ord #"#" then ()
           else
               let
-                  val offset = Gtk.textIterGetLine startiter
+                  val offset = Gtk.textIterGetOffset startiter
                   val str = Gtk.textBufferGetText(buf, startiter, enditer, false)
                   val str = Core.utf8ToLatin1 str
                   val regions = Highlight.scan str

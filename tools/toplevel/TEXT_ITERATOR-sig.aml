@@ -1,0 +1,35 @@
+(*
+ * Authors:
+ *   Guido Tack <tack@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Guido Tack, 2005
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
+signature TEXT_ITERATOR =
+   sig
+       type elem
+       type iter
+
+       val iter : elem -> iter
+
+       val forwardChar : iter -> bool
+       val backwardChar: iter -> bool
+       val isAtEnd     : iter -> bool
+       val isFinished  : iter -> bool
+                                 
+       val getChar: iter -> char
+       val lookAhead   : iter * int -> char option
+
+       val getText : iter * iter -> Substring.substring
+       val getPos : iter -> int
+
+       val move : iter * iter -> unit
+
+       val clone: iter -> iter
+   end

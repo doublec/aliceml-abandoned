@@ -1,0 +1,71 @@
+(*
+ * Authors:
+ *   Guido Tack <tack@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Guido Tack, 2005
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
+import signature TEXT_ITERATOR from "TEXT_ITERATOR-sig"
+import structure Gtk from "x-alice:/lib/gtk/Gtk"
+
+structure BufferTextIterator :> TEXT_ITERATOR where type elem = Gtk.object =
+    struct
+
+    type elem = Gtk.object
+    type iter = Gtk.object
+
+    fun iter s =
+        let
+            val iter = Gtk.textIterNew()
+        in
+            iter
+            before Gtk.textBufferGetStartIter(s, iter)
+        end
+
+    val forwardChar = Gtk.textIterForwardChar
+    val backwardChar = Gtk.textIterBackwardChar
+
+    fun isFinished iter = Gtk.textIterIsEnd iter
+    fun isAtEnd iter = 
+        isFinished iter orelse
+        Gtk.textIterForwardChar iter
+        before ignore (Gtk.textIterBackwardChar iter)
+
+    fun getChar iter =
+        let
+            val c = Gtk.textIterGetChar iter
+        in
+            if c < Char.maxOrd then
+                chr c
+            else
+                #"Ä" (* should be invalid for keywords... Hack alert! *)
+        end
+    fun lookAhead (iter,off) =
+        if isFinished iter then NONE else
+        let
+            val back = Gtk.textIterGetOffset iter
+        in
+            (if Gtk.textIterForwardChars(iter,off) then
+                 SOME (getChar iter)
+             else NONE)
+            before
+            ignore (Gtk.textIterSetOffset(iter, back))
+        end
+
+    fun getText (iter1, iter2) =
+        Substring.full (Gtk.textIterGetText(iter1, iter2))
+
+    val getPos = Gtk.textIterGetOffset
+
+    fun move (iter1, iter2) =
+        Gtk.textIterSetOffset(iter1, Gtk.textIterGetOffset iter2)
+
+    fun clone iter = Gtk.textIterCopy iter
+
+    end
