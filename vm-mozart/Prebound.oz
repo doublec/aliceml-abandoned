@@ -46,10 +46,6 @@ define
       end
    end
 
-   fun {ToOct C}
-      C mod 8 + &0
-   end
-
    Hex = hex(&0 &1 &2 &3 &4 &5 &6 &7 &8 &9 &a &b &c &d &e &f)
 
    fun {ToHex X}
@@ -118,24 +114,6 @@ define
       'Char.isPunct': Char.isPunct
       'Char.isSpace': Char.isSpace
       'Char.isUpper': Char.isUpper
-      'Char.toCString':
-	 fun {$ C}
-	    {ByteString.make
-	     case C of &\\ then "\\\\"
-	     [] &" then "\\\""
-	     [] &? then "\\?"
-	     [] &' then "\\'"
-	     [] &\a then "\\a"
-	     [] &\b then "\\b"
-	     [] &\t then "\\t"
-	     [] &\n then "\\n"
-	     [] &\v then "\\v"
-	     [] &\f then "\\f"
-	     [] &\r then "\\r"
-	     elseif {Char.isPrint C} then [C]
-	     else [&\\ {ToOct C div 64} {ToOct C div 8} {ToOct C}]
-	     end}
-	 end
       'Char.toLower': Char.toLower
       'Char.toUpper': Char.toUpper
       'Future.Future': FutureException
@@ -359,6 +337,7 @@ define
 	 fun {$ S1 S2} {StringCompare S1 S2} \= 'LESS' end
       'String.compare': StringCompare
       'String.explode': ByteString.toString
+      'String.implode': ByteString.make
       'String.maxSize': 0x7FFFFFFF
       'String.size': ByteString.length
       'String.sub':
