@@ -299,6 +299,7 @@ prepare
       'Hole.Hole': {NewUniqueName 'Promise.Promise'}
       'Hole.fail':
 	 fun {$ X E}
+	    {Wait E}
 	    try
 	       X = {Value.byNeedFail error(alice(E))}
 	    catch _ then
@@ -492,6 +493,7 @@ prepare
       'Thread.isSuspended': Thread.isSuspended
       'Thread.raiseIn':
 	 fun {$ T E}
+	    {Wait E}
 	    try {Thread.injectException T error(alice(E) debug: unit)}
 	    catch kernel(deadThread _) then
 	       {Exception.raiseError alice(BuiltinTable.'Thread.Terminated')}
