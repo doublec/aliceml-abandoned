@@ -133,50 +133,6 @@ functor MkFlatteningPhase(structure Switches: SWITCHES) :> FLATTENING_PHASE =
 	      | (Type.All _ | Type.Exist _ | Type.Lambda _) =>
 		    raise Crash.Crash "MkFlatteningPhase.typToOutArity"
 
-	(* Helper Functions for Inspecting Types *)
-
-	fun makeArrowType (argTyp, resultTyp) =
-	    case Type.inspect resultTyp of
-		Type.All (var, typ) =>
-		    Type.all (var, makeArrowType (argTyp, typ))
-	      | _ => Type.arrow (argTyp, resultTyp)
-
-	fun getResultType typ =
-	    case Type.inspect typ of
-		Type.Arrow (_, typ) => typ
-	      | Type.All (_, typ) => getResultType typ
-	      | _ => raise Crash.Crash "MkFlatteningPhase.getResultType"
-
-	(* The set of pathes of abstract types known not to be product types *)
-	val nonProdTypesSet =
-	    let
-		val set = PathSet.set ()
-	    in
-		Vector.app (fn path => PathSet.insert (set, path))
-			   #[PervasiveType.path_int,
-			     PervasiveType.path_word,
-			     PervasiveType.path_real,
-			     PervasiveType.path_char,
-			     PervasiveType.path_string,
-			     PervasiveType.path_vec,
-			     PervasiveType.path_array,
-			     PervasiveType.path_ref,
-			     PervasiveType.path_exn];
-	        set
-	    end
-
-	fun typToOutArity typ =
-	    case Type.inspect typ of
-		(Type.Prod _ | Type.Apply _ | Type.Unknown _) => NONE
-	      | Type.Con path =>
-		    if PathSet.member (nonProdTypesSet, path) then
-			SOME Arity.Unary
-		    else NONE
-	      | (Type.Var _ | Type.Arrow _ | Type.Sum _) => SOME Arity.Unary
-	      | Type.Mu typ => typToOutArity typ
-	      | (Type.All _ | Type.Exist _ | Type.Lambda _) =>
-		    raise Crash.Crash "MkFlatteningPhase.typToOutArity"
-
 	(* Matching arity up with args *)
 
 	fun testArity (args as O.OneArg _, Arity.Unary, app, body) =
