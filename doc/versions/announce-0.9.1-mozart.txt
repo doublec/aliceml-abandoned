@@ -1,5 +1,5 @@
 We are happy to announce the release of version 0.9.1 of
-the Alice programming system. It is available from the
+the Alice Programming System. It is available from the
 Alice home page:
 
         http://www.ps.uni-sb.de/alice/
