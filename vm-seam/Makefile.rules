@@ -14,7 +14,7 @@
 .PHONY: all clean veryclean distclean
 
 %.o: %.cc
-	$(CXX) -I$(TOPDIR) $(CXXFLAGS) -c $< -o $@
+	$(CXX) -I$(TOPDIR) $(EXTRA_INCLUDES) $(CXXFLAGS) -c $< -o $@
 
 %.s: %.cc
-	$(CXX) -I$(TOPDIR) $(CXXFLAGS) -S $< -o $@
+	$(CXX) -I$(TOPDIR) $(EXTRA_INCLUDES) $(CXXFLAGS) -S $< -o $@
