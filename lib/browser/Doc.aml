@@ -356,7 +356,7 @@ struct
 	    val inva = UnsafeValue.cast fut : Reflect.value
 	    val inty = #2(Type.asApply(t))
 	in 
-	    CONCAT{desc = INTERPUNCT, 
+	    CONCAT{desc = descr,
 		   kids = 
 		   #[SIMPLE{desc = INTERPUNCT,
 			    rep = "Promise{|",
