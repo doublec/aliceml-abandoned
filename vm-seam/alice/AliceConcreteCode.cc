@@ -14,8 +14,6 @@
 #pragma implementation "alice/AliceConcreteCode.hh"
 #endif
 
-#include "generic/Transform.hh"
-#include "generic/Tuple.hh"
 #include "alice/AbstractCode.hh"
 #include "alice/AliceConcreteCode.hh"
 #include "alice/AliceLanguageLayer.hh"
