@@ -20,7 +20,7 @@ structure Target :> TARGET =
 struct
     datatype t =
 	COMPONENT of {component: unit -> Component.t,
-		      eval: Url.t -> Reflect.value}
+		      eval: Url.t -> Reflect.module}
       | FOREIGN of {inf: Inf.t,
 		    save: string -> unit}
 end
