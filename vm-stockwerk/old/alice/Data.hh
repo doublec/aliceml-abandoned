@@ -12,11 +12,11 @@
 //   $Revision$
 //
 
-#ifndef __DATALAYER__ALICEDATA_HH__
-#define __DATALAYER__ALICEDATA_HH__
+#ifndef __DATALAYER__ALICE_HH__
+#define __DATALAYER__ALICE_HH__
 
 #if defined(INTERFACE)
-#pragma interface "datalayer/alicedata.hh"
+#pragma interface "datalayer/Alice.hh"
 #endif
 
 #include "store/Store.hh"
@@ -408,4 +408,4 @@ public:
 
 #undef WORDS_NEEDED
 
-#endif __DATALAYER__ALICEDATA_HH__
+#endif __DATALAYER__ALICE_HH__

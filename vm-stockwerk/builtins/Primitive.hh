@@ -18,7 +18,7 @@
 #endif
 
 #include "adt/HashTable.hh"
-#include "datalayer/alicedata.hh"
+#include "datalayer/Alice.hh"
 #include "scheduler/Interpreter.hh"
 
 class TaskStack;

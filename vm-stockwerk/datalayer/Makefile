@@ -3,14 +3,15 @@ TOPDIR = ..
 include $(TOPDIR)/Makefile.vars
 include $(TOPDIR)/Makefile.rules
 
-OBJS = alicedata.o
+OBJS = Alice.o
 
 all: libdatalayer.a
 
 libdatalayer.a: $(OBJS)
 	ar rc $@ $(OBJS) && ranlib $@ 
 
-alicedata.o: alicedata.cc alicedata.hh
+#--** dependencies should be auto-generated
+Alice.o: Alice.cc Alice.hh
 
 clean:
 	rm -f $(OBJS)
