@@ -19,7 +19,8 @@
 #endif
 
 #include "adt/IntMap.hh"
+#include "store/BaseMap.cc"
 #include "adt/Queue.hh"
 #include "adt/Stack.hh"
 
-template BaseMap<IntKey>;
+template class BaseMap<IntKey>;

@@ -15,6 +15,6 @@
 #endif
 
 #include "store/WeakMap.hh"
-#include "store/MapNode.hh"
+#include "store/BaseMap.cc"
 
-template BaseMap<TokenKey>;
+template class BaseMap<TokenKey>;

@@ -16,8 +16,9 @@
 
 #include <cstring>
 #include "adt/ChunkMap.hh"
+#include "store/BaseMap.cc"
 
-template BaseMap<ChunkKey>;
+template class BaseMap<ChunkKey>;
 
 // String hashing function is taken from
 // 'Aho, Sethi, Ullman: Compilers..., page 436

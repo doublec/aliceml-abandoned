@@ -16,10 +16,10 @@
 #endif
 
 #include "store/Map.hh"
-#include "store/MapNode.hh"
+#include "store/BaseMap.cc"
 #include "store/GCHelper.hh"
 
-template BaseMap<WordKey>;
+template class BaseMap<WordKey>;
 
 class ListNode : private Block {
 protected:

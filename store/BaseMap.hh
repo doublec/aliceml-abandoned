@@ -18,14 +18,10 @@ typedef void (*item_apply)(word key, word item);
 
 class MapNode;
 
-template <class T>
-class BaseMap : public Block {
+template <typename T>
+class SeamDll BaseMap : public Block {
 protected:
   enum { COUNTER_POS, PERCENT_POS, TABLE_POS, RESERVED_POS, SIZE };
-
-  // Adjust these two values to optimize runtime behaviour
-  static const u_int INC_STEP    = 5;
-  static const double FILL_RATIO = 0.75;
 
   u_int GetCounter() {
     return static_cast<u_int>(Store::DirectWordToInt(GetArg(COUNTER_POS)));
@@ -61,12 +57,12 @@ protected:
   void RemoveEntry(u_int i, word prev, MapNode *node);
   SeamDll void Resize();
 public:
-  void SeamDll Put(word key, word value);
-  void SeamDll Remove(word key);
+  SeamDll void Put(word key, word value);
+  SeamDll void Remove(word key);
 
-  bool SeamDll IsMember(word key);
-  word SeamDll Get(word key);
-  word SeamDll CondGet(word key, word alternative); 
+  SeamDll bool IsMember(word key);
+  SeamDll word Get(word key);
+  SeamDll word CondGet(word key, word alternative); 
 
   u_int GetSize() {
     return (u_int) Store::WordToInt(GetArg(COUNTER_POS));
@@ -88,8 +84,5 @@ public:
 
   static SeamDll BaseMap<T> *New(BlockLabel l, u_int size);
 };
-
-// Hack Alert
-#include "BaseMap.cc"
 
 #endif
