@@ -16,11 +16,12 @@
  *)
 
 import structure __pervasive                               from "Pervasive"
-import type int and word and real and char and string
-       type vector and array
+import __primitive
+       type int and word and real and char and string
+       type vector and array and package
        datatype exn and ref
        datatype bool and order and alt and option and list from "ToplevelTypes"
-import infix  0 before
+import __primitive infix  0 before
        infix  3 := :=: o
        infix  4 = <> < > >= <=
        infixr 5 :: @
@@ -31,17 +32,17 @@ import infix  0 before
        val op < and op > and op <= and op >=
        val ~ and abs and op + and op -
        val op * and op / and op div and op mod             from "ToplevelValues"
-import structure General                                   from "General"
-import structure Bool                                      from "Bool"
-import structure Alt                                       from "Alt"
-import structure Option                                    from "Option"
-import structure List                                      from "List"
-import structure Real                                      from "Real"
-import structure Char                                      from "Char"
-import structure String                                    from "String"
-import structure Substring                                 from "Substring"
-import structure Vector                                    from "Vector"
-import structure Future                                    from "Future"
+import __primitive structure General                       from "General"
+import __primitive structure Bool                          from "Bool"
+import __primitive structure Alt                           from "Alt"
+import __primitive structure Option                        from "Option"
+import __primitive structure List                          from "List"
+import __primitive structure Real                          from "Real"
+import __primitive structure Char                          from "Char"
+import __primitive structure String                        from "String"
+import __primitive structure Substring                     from "Substring"
+import __primitive structure Vector                        from "Vector"
+import __primitive structure Future                        from "Future"
 
 
 structure Toplevel =						(**)
@@ -61,6 +62,7 @@ struct
     type substring	= Substring.t
     type vector		= vector
     type array		= array
+    type package	= package
 
     datatype exn	= datatype exn
     datatype ref	= datatype ref
