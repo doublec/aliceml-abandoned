@@ -31,7 +31,9 @@ static int TranslateSignal(int signal) {
 #if HAVE_CONSOLECTRL
   switch (signal) {
   case ALICE_SIGINT:
+#if ALICE_SIGINT != CTRL_C_EVENT
   case CTRL_C_EVENT:
+#endif
     return CTRL_C_EVENT;
   default:
     Error("Unknown Signal");
