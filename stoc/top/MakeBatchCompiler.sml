@@ -83,7 +83,13 @@ functor MakeMain(structure Composer: COMPOSER'
 		    val _ = TextIO.print "### done\n"
 		in
 		    case Inf.items (Compiler.Target.sign target) of
-			[item] => Inf.asSig (valOf (#3 (Inf.asInfItem item)))
+			[item] =>
+			let
+			    val inf = (valOf (#3 (Inf.asInfItem item)))
+			in
+			    Inf.strengthen(Path.invent(), inf);
+			    Inf.asSig inf
+			end
 		      | _ => raise Crash.Crash "MakeMain.compileSign"
 		end
 	in
