@@ -32,9 +32,11 @@ sig
     val emptyCopy : arena -> arena
 
     val copy : arena -> arena
-
+    
+    
     val placeSnakes : arena * Snake.snake list -> 
-            Snake.snake list * Snake.snake list * Snake.snake list 
+        { dead: Snake.snake list, grown: Snake.snake list, 
+          finished: Snake.snake list }
     (** places the snakes on the arena, returns all snakes
        which died, have eaten a goodie, are half-finished.
        

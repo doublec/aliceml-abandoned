@@ -353,7 +353,7 @@ struct
 	in
 	    List.app placeHead snakes;
 	    List.app placeBody snakes;
-	    (!died, !eaters, !fin)
+	    { dead = !died, grown = !eaters, finished = !fin }
 	end
     
     fun emptyCopy a =

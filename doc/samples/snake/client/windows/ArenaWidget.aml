@@ -399,7 +399,7 @@ struct
 	end
 
 
-    fun changeView (a, (x, y)) =
+    fun changeView (a, (y, x)) =
 	let
 	    val minX = 0
 	    val maxX = arenaWidth a - windowWidth2
