@@ -1248,8 +1248,10 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 	    let
 		val q = TextIO.openOut "vpdebug.txt"
 	    in
-		TextIO.output
-		(q, "\n" ^ OutputFlatGrammar.outputComponent component ^ "\n");
+		TextIO.output (q,
+			       "\n" ^
+			       OutputFlatGrammar.componentToString component ^
+			       "\n");
 		TextIO.closeOut q
 	    end
 

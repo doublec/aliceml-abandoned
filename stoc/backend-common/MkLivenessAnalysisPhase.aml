@@ -427,7 +427,7 @@ functor MkLivenessAnalysisPhase(Switches: SWITCHES) =
 		structure Phase = Phase1
 		structure Switches = Switches
 		val header = "Live Syntax with `use' sets"
-		val pp = PrettyPrint.text o OutputFlatGrammar.outputComponent
+		val pp = PrettyPrint.text o OutputFlatGrammar.componentToString
 		val switch = Switches.Debug.dumpLivenessAnalysisIntermediate)
 
 	structure Phase2 =
@@ -456,7 +456,7 @@ functor MkLivenessAnalysisPhase(Switches: SWITCHES) =
 		structure Phase = Phase2
 		structure Switches = Switches
 		val header = "Live Syntax with `kill' sets"
-		val pp = PrettyPrint.text o OutputFlatGrammar.outputComponent
+		val pp = PrettyPrint.text o OutputFlatGrammar.componentToString
 		val switch = Switches.Debug.dumpLivenessAnalysisResult)
     in
 	ComposePhases(structure Phase1 = Phase1

@@ -23,5 +23,6 @@ signature OUTPUT_FLAT_GRAMMAR =
 	structure I: FLAT_GRAMMAR = FlatGrammar
 
 	val idToString: I.id -> string
-	val outputComponent: I.component -> string
+	val bodyToString: I.body -> string
+	val componentToString: I.component -> string
     end

@@ -3,7 +3,7 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 1999-2000
+ *   Leif Kornstaedt, 1999-2001
  *
  * Last change:
  *   $Date$ by $Author$
@@ -112,89 +112,89 @@ structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
 
 	val sort = StampSet.fold insert nil
 
-	fun outputLiveness (ref Unknown) = NULL
-	  | outputLiveness (ref (Use set)) =
+	fun formatLiveness (ref Unknown) = NULL
+	  | formatLiveness (ref (Use set)) =
 	    SEQ #[S (List.foldl (fn (stamp, s) =>
 				 s ^ " " ^ Stamp.toString stamp)
 		     "(* use" (sort set)), S " *)", NL]
-	  | outputLiveness (ref (Kill set)) =
+	  | formatLiveness (ref (Kill set)) =
 	    SEQ #[S (List.foldl (fn (stamp, s) =>
 				 s ^ " " ^ Stamp.toString stamp)
 		     "(* kill" (sort set)), S " *)", NL]
 
-	fun outputInfo ({liveness, ...}: stm_info) = outputLiveness liveness
+	fun formatInfo ({liveness, ...}: stm_info) = formatLiveness liveness
 
-	fun outputLit (WordLit w) = SEQ #[S "0w", S (LargeWord.toString w)]
-	  | outputLit (IntLit i) = S (LargeInt.toString i)
-	  | outputLit (CharLit c) =
+	fun formatLit (WordLit w) = SEQ #[S "0w", S (LargeWord.toString w)]
+	  | formatLit (IntLit i) = S (LargeInt.toString i)
+	  | formatLit (CharLit c) =
 	    SEQ #[S "#\"", S (WideChar.toString c), S "\""]
-	  | outputLit (StringLit s) =
+	  | formatLit (StringLit s) =
 	    SEQ #[S "\"", S (String.toString s), S "\""]
-	  | outputLit (RealLit r) = S (LargeReal.toString r)
+	  | formatLit (RealLit r) = S (LargeReal.toString r)
 
-	fun outputArgs outputX (OneArg x) = outputX x
-	  | outputArgs outputX (TupArgs xs) =
-	    SEQ #[S "(", SEP (S ", ", Vector.map outputX xs), S ")"]
-	  | outputArgs outputX (ProdArgs labelXVector) =
+	fun formatArgs formatX (OneArg x) = formatX x
+	  | formatArgs formatX (TupArgs xs) =
+	    SEQ #[S "(", SEP (S ", ", Vector.map formatX xs), S ")"]
+	  | formatArgs formatX (ProdArgs labelXVector) =
 	    SEQ #[S "{", SEP (S ", ",
 			      Vector.map (fn (label, x) =>
 					  SEQ #[S (Label.toString label),
-						S "=", outputX x])
+						S "=", formatX x])
 			      labelXVector), S "}"]
 
-	fun outputStm (ValDec (_, idDef, exp), _) =
-	    SEQ #[S "val ", IDDEF idDef, S " = ", IN, outputExp exp, EX]
-	  | outputStm (RefAppDec (_, idDef, id'), _) =
+	fun formatStm (ValDec (_, idDef, exp), _) =
+	    SEQ #[S "val ", IDDEF idDef, S " = ", IN, formatExp exp, EX]
+	  | formatStm (RefAppDec (_, idDef, id'), _) =
 	    SEQ #[S "val ref ", IDDEF idDef, S " = ", ID id']
-	  | outputStm (TupDec (_, idDefs, id), _) =
+	  | formatStm (TupDec (_, idDefs, id), _) =
 	    SEQ #[S "val (", SEP (S ", ", Vector.map IDDEF idDefs),
 		  S ") = ", ID id]
-	  | outputStm (ProdDec (_, labelIdDefVector, id), _) =
+	  | formatStm (ProdDec (_, labelIdDefVector, id), _) =
 	    SEQ #[S "val {",
 		  SEP (S ", ",
 		       Vector.map (fn (label, idDef) =>
 				   SEQ #[S (Label.toString label), S "=",
 					 IDDEF idDef]) labelIdDefVector),
 		  S "} = ", ID id]
-	  | outputStm (TryStm (_, tryBody, idDef1, idDef2, handleBody),
+	  | formatStm (TryStm (_, tryBody, idDef1, idDef2, handleBody),
 		       shared) =
 	    let
-		val handleOutput = outputBody (handleBody, shared)
+		val handleFormat = formatBody (handleBody, shared)
 	    in
-		SEQ #[S "try", IN, NL, outputBody (tryBody, shared), EX, NL,
+		SEQ #[S "try", IN, NL, formatBody (tryBody, shared), EX, NL,
 		      S "handle ", IDDEF idDef1, S ", ", IDDEF idDef2, IN, NL,
-		      handleOutput]
+		      handleFormat]
 	    end
-	  | outputStm (EndTryStm (_, body), shared) =
-	    SEQ #[S "(* end try *)", NL, outputBody (body, shared)]
-	  | outputStm (EndHandleStm (_, body), shared) =
-	    SEQ #[S "(* end handle *)", EX, NL, outputBody (body, shared)]
-	  | outputStm (TestStm (_, id, tests, body), shared) =
+	  | formatStm (EndTryStm (_, body), shared) =
+	    SEQ #[S "(* end try *)", NL, formatBody (body, shared)]
+	  | formatStm (EndHandleStm (_, body), shared) =
+	    SEQ #[S "(* end handle *)", EX, NL, formatBody (body, shared)]
+	  | formatStm (TestStm (_, id, tests, body), shared) =
 	    SEQ #[S "case ", ID id, S " of", IN, NL,
-		  outputTests (tests, shared),
-		  S "else", IN, NL, outputBody (body, shared), EX, EX]
-	  | outputStm (RaiseStm (_, id), _) = SEQ #[S "raise ", ID id]
-	  | outputStm (ReraiseStm (_, id), _) = SEQ #[S "reraise ", ID id]
-	  | outputStm (SharedStm (_, body, stamp), shared) =
+		  formatTests (tests, shared),
+		  S "else", IN, NL, formatBody (body, shared), EX, EX]
+	  | formatStm (RaiseStm (_, id), _) = SEQ #[S "raise ", ID id]
+	  | formatStm (ReraiseStm (_, id), _) = SEQ #[S "reraise ", ID id]
+	  | formatStm (SharedStm (_, body, stamp), shared) =
 	    if visit (stamp, shared) then
 		SEQ #[S "label ", S (Stamp.toString stamp), S ":", NL,
-		      outputBody (body, shared)]
+		      formatBody (body, shared)]
 	    else
 		SEQ #[S "goto ", S (Stamp.toString stamp)]
-	  | outputStm (ReturnStm (_, exp), _) =
-	    SEQ #[S "return ", IN, outputExp exp, EX]
-	  | outputStm (IndirectStm (_, ref NONE), _) =
+	  | formatStm (ReturnStm (_, exp), _) =
+	    SEQ #[S "return ", IN, formatExp exp, EX]
+	  | formatStm (IndirectStm (_, ref NONE), _) =
 	    S "indirect (* uninitialized *)"
-	  | outputStm (IndirectStm (_, ref (SOME body)), shared) =
-	    SEQ #[S "indirect", NL, outputBody (body, shared)]
-	  | outputStm (ExportStm (_, exp), _) =
-	    SEQ #[S "export ", IN, outputExp exp, EX]
-	and outputTests (LitTests litBodyVector, shared) =
+	  | formatStm (IndirectStm (_, ref (SOME body)), shared) =
+	    SEQ #[S "indirect", NL, formatBody (body, shared)]
+	  | formatStm (ExportStm (_, exp), _) =
+	    SEQ #[S "export ", IN, formatExp exp, EX]
+	and formatTests (LitTests litBodyVector, shared) =
 	    SEQ (Vector.map (fn (lit, body) =>
-			     SEQ #[outputLit lit, S " =>", IN, NL,
-				   outputBody (body, shared), EX, NL])
+			     SEQ #[formatLit lit, S " =>", IN, NL,
+				   formatBody (body, shared), EX, NL])
 		 litBodyVector)
-	  | outputTests (TagTests tagBodyVector, shared) =
+	  | formatTests (TagTests tagBodyVector, shared) =
 	    SEQ (Vector.map (fn (label, n, conArgs, body) =>
 			     SEQ #[case conArgs of
 				       NONE =>
@@ -205,94 +205,98 @@ structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
 					   SEQ #[S "(tag ",
 						 S (Label.toString label),
 						 S "/", I n, S ") ",
-						 outputArgs IDDEF args],
+						 formatArgs IDDEF args],
 				   S " =>", IN, NL,
-				   outputBody (body, shared), EX, NL])
+				   formatBody (body, shared), EX, NL])
 		 tagBodyVector)
-	  | outputTests (ConTests conBodyVector, shared) =
+	  | formatTests (ConTests conBodyVector, shared) =
 	    SEQ (Vector.map (fn (con, conArgs, body) =>
 			     SEQ #[case (con, conArgs) of
 				       (Con id, NONE) =>
 					   SEQ #[S "con ", ID id]
 				     | (Con id, SOME args) =>
 					   SEQ #[S "(con ", ID id, S ") ",
-						 outputArgs IDDEF args]
+						 formatArgs IDDEF args]
 				     | (StaticCon stamp, NONE) =>
 					   SEQ #[S "con ",
 						 S (Stamp.toString stamp)]
 				     | (StaticCon stamp, SOME args) =>
 					   SEQ #[S "(con ",
 						 S (Stamp.toString stamp),
-						 S ") ", outputArgs IDDEF args],
+						 S ") ",
+						 formatArgs IDDEF args],
 				   S " =>", IN, NL,
-				   outputBody (body, shared), EX, NL])
+				   formatBody (body, shared), EX, NL])
 		 conBodyVector)
-	  | outputTests (VecTests idDefsBodyVector, shared) =
+	  | formatTests (VecTests idDefsBodyVector, shared) =
 	    SEQ (Vector.map (fn (idDefs, body) =>
 			     SEQ #[S "#[",
 				   SEP (S ", ", Vector.map IDDEF idDefs),
 				   S "]", S " =>", IN, NL,
-				   outputBody (body, shared), EX, NL])
+				   formatBody (body, shared), EX, NL])
 		 idDefsBodyVector)
-	and outputExp (LitExp (_, lit)) = outputLit lit
-	  | outputExp (PrimExp (_, name)) = SEQ #[S "prim \"", S name, S "\""]
-	  | outputExp (NewExp _) = S "new"
-	  | outputExp (VarExp (_, id)) = ID id
-	  | outputExp (TagExp (_, label, n)) =
+	and formatExp (LitExp (_, lit)) = formatLit lit
+	  | formatExp (PrimExp (_, name)) = SEQ #[S "prim \"", S name, S "\""]
+	  | formatExp (NewExp _) = S "new"
+	  | formatExp (VarExp (_, id)) = ID id
+	  | formatExp (TagExp (_, label, n)) =
 	    SEQ #[S "tag ", S (Label.toString label), S "/", I n]
-	  | outputExp (ConExp (_, con)) =
+	  | formatExp (ConExp (_, con)) =
 	    SEQ #[S "con ",
 		  case con of
 		      Con id => ID id
 		    | StaticCon stamp => S (Stamp.toString stamp)]
-	  | outputExp (TupExp (_, ids)) =
+	  | formatExp (TupExp (_, ids)) =
 	    SEQ #[S "(", SEP (S ", ", Vector.map ID ids), S ")"]
-	  | outputExp (ProdExp (_, labelIdVector)) =
+	  | formatExp (ProdExp (_, labelIdVector)) =
 	    SEQ #[S "{", SEP (S ", ",
 			      Vector.map (fn (label, id) =>
 					  SEQ #[S (Label.toString label),
 						S "=", ID id]) labelIdVector),
 		  S "}"]
-	  | outputExp (VecExp (_, ids)) =
+	  | formatExp (VecExp (_, ids)) =
 	    SEQ #[S "#[", SEP (S ", ", Vector.map ID ids), S "]"]
-	  | outputExp (FunExp (_, _, _, args, body)) =
-	    SEQ #[NL, S "fn ", outputArgs IDDEF args, S " =>",
-		  IN, NL, outputBody (body, StampSet.new ()), EX]
-	  | outputExp (PrimAppExp (_, name, ids)) =
+	  | formatExp (FunExp (_, _, _, args, body)) =
+	    SEQ #[NL, S "fn ", formatArgs IDDEF args, S " =>",
+		  IN, NL, formatBody (body, StampSet.new ()), EX]
+	  | formatExp (PrimAppExp (_, name, ids)) =
 	    SEQ #[S "prim \"", S name, S "\" (",
 		  SEP (S ", ", Vector.map ID ids), S ")"]
-	  | outputExp (VarAppExp (_, id, args)) =
-	    SEQ #[ID id, S " ", outputArgs ID args]
-	  | outputExp (TagAppExp (_, label, n, args)) =
+	  | formatExp (VarAppExp (_, id, args)) =
+	    SEQ #[ID id, S " ", formatArgs ID args]
+	  | formatExp (TagAppExp (_, label, n, args)) =
 	    SEQ #[S "(tag ", S (Label.toString label), S "/", I n, S ") ",
-		  outputArgs ID args]
-	  | outputExp (ConAppExp (_, con, args)) =
+		  formatArgs ID args]
+	  | formatExp (ConAppExp (_, con, args)) =
 	    SEQ #[S "(con ",
 		  case con of
 		      Con id => ID id
 		    | StaticCon stamp => S (Stamp.toString stamp), S ") ",
-		  outputArgs ID args]
-	  | outputExp (RefAppExp (_, id)) =
+		  formatArgs ID args]
+	  | formatExp (RefAppExp (_, id)) =
 	    SEQ #[S "ref ", ID id]
-	  | outputExp (SelAppExp (_, _, label, n, id)) =
+	  | formatExp (SelAppExp (_, _, label, n, id)) =
 	    SEQ #[S "#", S (Label.toString label), S "/", I n, S " ", ID id]
-	  | outputExp (LazySelAppExp (_, _, label, n, id)) =
+	  | formatExp (LazySelAppExp (_, _, label, n, id)) =
 	    SEQ #[S "lazy#", S (Label.toString label),
 		  S "/", I n, S " ", ID id]
-	  | outputExp (FunAppExp (_, id, _, args)) =
-	    SEQ #[ID id, S " ", outputArgs ID args]
-	  | outputExp (FailExp _) = S "fail"
-	and outputBody (stms, shared) =
+	  | formatExp (FunAppExp (_, id, _, args)) =
+	    SEQ #[S "funapp ", ID id, S " ", formatArgs ID args]
+	  | formatExp (FailExp _) = S "fail"
+	and formatBody (stms, shared) =
 	    SEP (NL, Vector.fromList (List.map
 				      (fn stm =>
-				       SEQ #[outputInfo (infoStm stm),
-					    outputStm (stm, shared)]) stms))
+				       SEQ #[formatInfo (infoStm stm),
+					    formatStm (stm, shared)]) stms))
 
-	fun outputComponent (importVector, body, _, _) =
+	fun bodyToString body =
+	    format (SEQ #[formatBody (body, StampSet.new ()), NL])
+
+	fun componentToString (importVector, body, _, _) =
 	    format (SEQ #[SEQ (Vector.map
 			       (fn (idDef, _, url) =>
 				SEQ #[S "import ", IDDEF idDef,
 				      S " from ", S (Url.toString url),
 				      S "\n"]) importVector),
-			  outputBody (body, StampSet.new ()), NL])
+			  formatBody (body, StampSet.new ()), NL])
     end

@@ -81,7 +81,7 @@ functor MkBackendCommon(val loadSign: Source.desc * Url.t -> FlatGrammar.sign
 		structure Phase = Phase1
 		structure Switches = Switches
 		val header = "Flat Syntax"
-		val pp = PrettyPrint.text o OutputFlatGrammar.outputComponent
+		val pp = PrettyPrint.text o OutputFlatGrammar.componentToString
 		val switch = Switches.Debug.dumpFlatteningResult)
 	structure BackendCommon = Phase1
 
@@ -101,7 +101,7 @@ functor MkBackendCommon(val loadSign: Source.desc * Url.t -> FlatGrammar.sign
 		structure Phase = Phase2
 		structure Switches = Switches
 		val header = "Propagated Syntax"
-		val pp = PrettyPrint.text o OutputFlatGrammar.outputComponent
+		val pp = PrettyPrint.text o OutputFlatGrammar.componentToString
 		val switch = Switches.Debug.dumpValuePropagationResult)
 	structure BackendCommon =
 	    ComposePhases(structure Phase1 = BackendCommon
@@ -121,7 +121,7 @@ functor MkBackendCommon(val loadSign: Source.desc * Url.t -> FlatGrammar.sign
 		structure Phase = Phase4
 		structure Switches = Switches
 		val header = "Undead Syntax"
-		val pp = PrettyPrint.text o OutputFlatGrammar.outputComponent
+		val pp = PrettyPrint.text o OutputFlatGrammar.componentToString
 		val switch = Switches.Debug.dumpDeadCodeEliminationResult)
 	structure BackendCommon =
 	    ComposePhases(structure Phase1 = BackendCommon
