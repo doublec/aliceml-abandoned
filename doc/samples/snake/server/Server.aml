@@ -235,11 +235,32 @@ struct
                     raise P.Protocol (procName ^ ": unknown client " ^ 
                             Int.toString id)
             
+                
+            fun kill id =
+                let val part        = PMap.lookupExistent (!participants, id)
+                    val playerInfo  = Part.playerInfo part
+                    val (name, 
+                        color)      = Part.nameNColor part
+                    val points      = ! $ #points playerInfo
+                in
+                    (Part.state part) := Part.DEAD (playerInfo, ref NONE); (*FIXME*)
+                    #deathCount playerInfo := !(#deathCount playerInfo) 
+                                                + 1;
+                    (* reset gamepoints to zero, points are not changed
+                       as the snake died before entering the gate *)
+                    #gamePoints playerInfo := 0
+
+                    (*TODO: send playersFinished / dead signal? *)
+                end
+
 
             fun disconnect id = Lock.sync lock (
-                withParticipant () ("disconnect", id, fn (part, ()) =>
-                    () 
-                ))
+                withParticipant () ("disconnect", id, fn (part, ()) => (
+                    (case !(Part.state part) of
+                        Part.PLAYING _ => kill id
+                    |   _              => ());
+                    Part.state part := Part.DISCONNECTED
+                )))
 
             
             fun computePointsList () =
@@ -335,7 +356,12 @@ struct
 
             fun giveUp id = Lock.sync lock (
                 withParticipant () ("giveUp", id, fn (part, ()) => 
-                    not_yet_implemented ("giveUp")
+                    case ! (Part.state part) of
+                        Part.PLAYING (state, _) =>
+                        (kill id; 
+                         (* TODO: send player finished signal *)
+                         sendPoints (_file_, _line_))
+                    |   _                       => ()
                 ))
 
            
@@ -435,7 +461,7 @@ struct
                             findEmptySpot (arena, nTriesLeft - 1)
                     end
 
-                
+                            
             fun mayPlaceGoody (arena, g) = 
                 Option.app 
                     (fn (r, c) => Array2.update (arena, r, c, P.GOODY 5)) g
@@ -550,25 +576,14 @@ struct
                     List.map (fn sn =>
                         let val part        = PMap.lookupExistent 
                                                 (!participants, Snake.id sn)        
-                            val playerInfo  = Part.playerInfo part
-                            val (name, 
-                                color)      = Part.nameNColor part
-                            val points      = ! $ #points playerInfo
                         in
-                            (Part.state part) := Part.DEAD (playerInfo, ref NONE); (*FIXME*)
-                            #deathCount playerInfo := !(#deathCount playerInfo) 
-                                                        + 1;
-                            (* reset gamepoints to zero, points are not changed
-                               as the snake died before entering the gate *)
-                            if !(#gamePoints playerInfo) <> 0 then (
-                                #gamePoints playerInfo := 0;
-                                pointsChanged := true
-                            ) else ();
+                            kill (Snake.id sn);
+                            pointsChanged := true;
 
                             (* build list of names and colors of dead snakes *)
                             Part.nameNColor part
                         end) deadSnakes ++
-                            
+        
                     (* inform the snakes, if any corpses are around *)
                     mayAppList (fn deads => invokeSeveral (_file_, _line_)
                         (Part.allConnected $ ! participants, #playersDied, deads));
