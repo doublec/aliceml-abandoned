@@ -397,7 +397,7 @@ struct
 	 Server.serve
 	 ( fn () 
 	   => let
-		  val update_shrink = fn n  
+		  val updateShrink = fn n  
 		      => let 
 			     val diff = getDepth(n) - 
 				 Update.findHighestDepth n
@@ -409,23 +409,31 @@ struct
 						   CreateTree.createTreeInf,
 						   !canvasroot)
 			 end
+		  val selection_node = getSelectionNode()
 	      in
-		   (update_shrink (getSelectionNode())
-		    ; selection:=NONE)
+		   (if selection_node = Node.Empty 
+			then () 
+		    else updateShrink selection_node
+			; destroySelectionMarkings()
+			; selection:=NONE)
 	      end)
 
      (* handles expand request *)
      fun handleExpandSelection _  = 
 	 Server.serve (fn () 
 		       =>let
-			     val update_expand =  fn n 
-				 => Update.foldDepth(n,1,
+			     val updateExpand =  fn n 
+				 => Update.foldDepth(n,!Settings.max_depth,
 						     CreateTree.createTree,
 						     CreateTree.createTreeInf,
 						     !canvasroot)
+			     val selection_node = getSelectionNode()
 			 in
-			     (update_expand (getSelectionNode())
-			      ; selection :=NONE)
+			     (if selection_node = Node.Empty 
+				  then () 
+			      else updateExpand (getSelectionNode())
+				  ; destroySelectionMarkings()
+				  ; selection :=NONE)
 			 end)
 
      (* folds width *)
@@ -611,7 +619,7 @@ struct
 	      val width_lab = labelNew("Set Width Limit to...")	       
 	      val width_s = createSpinButton{init =(!Settings.max_width) , 
 					     lower = 0, 
-					     upper = 100, 
+					     upper = 1000, 
 					     inc = 1, 
 					     dec = 0}
 	      val depth_s = createSpinButton{init =(!Settings.max_depth) , 
@@ -788,7 +796,11 @@ struct
 		val delete_active = getParent(n) = Empty orelse 
 		    (isRelNode(getParent(n)) 
 		     andalso getParent(getParent(n)) = Empty)
-		val width_item_list = [EntryObj(LABEL("-5"),
+		val width_item_list = [EntryObj(LABEL("-10"),
+						[Handler("activate",w(~10))],
+						true),
+				       EntryObj(SEP,[],true),
+				       EntryObj(LABEL("-5"),
 						[Handler("activate",w(~5))],
 						true),
 				       EntryObj(LABEL("-4"),
@@ -822,7 +834,10 @@ struct
 				       EntryObj(SEP,[],true),
 				       EntryObj(LABEL("+10"),
 						[Handler("activate",w(10))],
-						true) 
+						true), 
+				       EntryObj(LABEL("+50"),
+						[Handler("activate",w(50))],
+						true)
 				       ]
 		val depth_item_list = [EntryObj(LABEL("-5"),
 						[Handler("activate",d(~5))],
@@ -953,7 +968,8 @@ struct
 				    |  3 =>( makePopup n; ())
 				    | _   => () ) 
 				end
-			  | NONE => ( setSelectionMenuSensitive(bar,false)
+			  | NONE => (  postType("")
+				     ; setSelectionMenuSensitive(bar,false)
 				     ; destroySelectionMarkings()
 					 ; selection := NONE))
 			 end
@@ -973,16 +989,18 @@ struct
 
 	(* Creation / Reopening of the Window (a new canvas gets attached) *)
 	    
-	fun new _ = if !alive then()
-		    else
-			let
-			    val _ = if !canvas =GtkSupport.uglyNULL
+	fun new _ = 
+	    Server.serve 
+	    (fn _ => if !alive then()
+		     else
+			 let
+			     val _ = if !canvas =GtkSupport.uglyNULL
 					then ()
-				    else objectDestroy(!canvas)
-			    structure DA  =  
-				MkDrawingArea(val xsize = getScreenMaxX() 
-					      val ysize = getScreenMaxY()) 
-				: DRAWING_AREA
+				     else objectDestroy(!canvas)
+			     structure DA  =  
+				 MkDrawingArea(val xsize = getScreenMaxX() 
+					       val ysize = getScreenMaxY()) 
+				 : DRAWING_AREA
 			in
 			    (canvas := DA.canvas
 			     ;canvasroot := DA.root
@@ -1001,7 +1019,7 @@ struct
 			     ;signalConnect(DA.canvas,"event",handleEvent)
 			     ;widgetShowAll(window)
 			     ; alive :=true) 
-			end
+			end)
 		 
 	val _ = new() (* creates initial window *)
 
@@ -1050,71 +1068,75 @@ struct
 	(*******         Inspection            *******)
 
 	fun inspect(v,t) = 
-	    let
-		val va = UnsafeValue.cast v: Reflect.value
-		val i = Dictionaries.Main.
-		    getHighestIndexAssigned(Dictionaries.maindict) +1
-		val root = (new()
-			    ; relnumber := 0
-			    ;!canvasroot)
-		val save_settings = (!Settings.max_width,!Settings.max_depth)
-		val n = (stopButtonSetActive(true)
-			 ;CreateTree.createTree(NONE,va,t,Empty,i,0,root))
-		val line = (stopButtonSetActive(false)
-			    ; if !stopflag 
-				  then ( Settings.set_width(#1(save_settings))
+	    Server.serve 
+	    (fn _ => 
+	     let
+		 val va = UnsafeValue.cast v: Reflect.value
+		 val i = Dictionaries.Main.
+		     getHighestIndexAssigned(Dictionaries.maindict) +1
+		 val root = (new()
+			     ; relnumber := 0
+			     ;!canvasroot)
+		 val save_settings = (!Settings.max_width,!Settings.max_depth)
+		 val n = (stopButtonSetActive(true)
+			  ;CreateTree.createTree(NONE,va,t,Empty,i,0,root))
+		 val line = (stopButtonSetActive(false)
+			     ; if !stopflag 
+				   then ( Settings.set_width(#1(save_settings))
 					; Settings.set_depth(#2(save_settings))
 					; stopflag := false )
-			      else ()
-				  ;Layout.layout(n)
-				  ;setScreenX(get_xdim(n))
-				  ;createSepLine(root,
-						 !act_line,canvaswidth(hadj),
-						 Settings.getFontHeight()))
-	    in
-		( Draw.draw(n,0,!act_line,false)
-		 ; incr_act_line(get_ydim(n) + 1)
-		 ; (!resize)()
-		 ; show()
-		 ; Dictionaries.Main.insertI(Dictionaries.maindict,(n,line)) 
-		 ;())
-	    end 
+			       else ()
+				   ;Layout.layout(n)
+				   ;setScreenX(get_xdim(n))
+				   ;createSepLine(root,
+						  !act_line,canvaswidth(hadj),
+						  Settings.getFontHeight()))
+	     in
+		 ( Draw.draw(n,0,!act_line,false)
+		  ; incr_act_line(get_ydim(n) + 1)
+		  ; (!resize)()
+		  ; show()
+		  ; Dictionaries.Main.insertI(Dictionaries.maindict,(n,line)) 
+		  ;())
+	     end)
 	
     fun inspectMod(v,t) = 
-	let
-	    val va = UnsafeValue.cast v: Reflect.module
-	    val i = Dictionaries.Main.
-		        getHighestIndexAssigned(Dictionaries.maindict) +1
-	    val root = (new()
-			;stopButtonSetActive(true)
-			; relnumber := 0
-			;!canvasroot)
-	    val save_settings = (!Settings.max_width,!Settings.max_depth)
-	    val n = (stopButtonSetActive(true)
-		     ;CreateTree.createTreeInf(va,t,Empty,i,0,root))
-            val line =(stopButtonSetActive(false) 
-		       ; if !stopflag 
+	Server.serve 
+	(fn _ => 
+	 let
+	     val va = UnsafeValue.cast v: Reflect.module
+	     val i = Dictionaries.Main.
+		 getHighestIndexAssigned(Dictionaries.maindict) +1
+	     val root = (new()
+			 ;stopButtonSetActive(true)
+			 ; relnumber := 0
+			 ;!canvasroot)
+	     val save_settings = (!Settings.max_width,!Settings.max_depth)
+	     val n = (stopButtonSetActive(true)
+		      ;CreateTree.createTreeInf(va,t,Empty,i,0,root))
+	     val line =(stopButtonSetActive(false) 
+			; if !stopflag 
 			      then ( Settings.set_width(#1(save_settings))
 				    ; Settings.set_depth(#2(save_settings))
 				    ; stopflag := false )
-				  else ()
-		       ;Layout.layout(n)
-		       ;setScreenX(get_xdim(n))
-		       ;createSepLine(root,!act_line,canvaswidth(hadj),
-				      Settings.getFontHeight() ))
-	in
-	    ( Draw.draw(n,0,!act_line,false)
-	    ; incr_act_line(get_ydim(n) + 1)
-	    ; (!resize)()
-            ; show()
-	    ; stopButtonSetActive(false)
-	    ; Dictionaries.Main.insertI(Dictionaries.maindict,(n,line)); ())
-	end 
-
+			  else ()
+			      ;Layout.layout(n)
+			      ;setScreenX(get_xdim(n))
+			      ;createSepLine(root,!act_line,canvaswidth(hadj),
+					     Settings.getFontHeight() ))
+	 in
+	     ( Draw.draw(n,0,!act_line,false)
+	      ; incr_act_line(get_ydim(n) + 1)
+	      ; (!resize)()
+	      ; show()
+	      ; stopButtonSetActive(false)
+	      ; Dictionaries.Main.insertI(Dictionaries.maindict,(n,line)); ())
+	 end)
+     
     val _ = ( inspectFct := inspect
 	     ; inspectModFct := inspectMod
 	     ; initGtk () )
-	 
+	
 	
 end (* structure Widget end *)
 

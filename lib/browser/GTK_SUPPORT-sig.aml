@@ -29,7 +29,6 @@ signature GTK_SUPPORT =
 	val windowSetPolicy:         tag * int * int * int -> unit
 	val windowSetDefaultSize:    tag * int * int -> unit
 	val widgetSetUsize:          tag * int * int -> unit
-	val widgetSetDefaultSize:    tag * int * int -> unit
 	val widgetSetSensitive:      tag * bool -> unit
 	val widgetShowAll:           tag -> unit 
 	val widgetHideAll:           tag -> unit

@@ -36,7 +36,6 @@ structure GtkSupport :> GTK_SUPPORT  =
 	val windowSetPolicy = Gtk.windowSetPolicy
 	val windowSetDefaultSize = Gtk.windowSetDefaultSize
 	val widgetSetUsize =  Gtk.widgetSetUsize
-	val widgetSetDefaultSize = Gtk.windowSetDefaultSize
 	val widgetSetSensitive = Gtk.widgetSetSensitive
 	val widgetShowAll = Gtk.widgetShowAll 
 	val widgetHideAll = Gtk.widgetHideAll
