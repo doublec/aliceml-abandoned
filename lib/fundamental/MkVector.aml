@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 1999-2004
+ *   Andreas Rossberg, 1999-2005
  *
  * Last change:
  *   $Date$ by $Author$
@@ -44,7 +44,8 @@ struct
     val toList		= toList
     val concat		= concat
 
-    fun update(v,i,x)	= tabulate(length v, fn j => if j=i then x else sub(v,j))
+    fun update(v,i,x)	= if i<0 orelse length v <= i then raise Subscript else
+			  tabulate(length v, fn j => if j=i then x else sub(v,j))
     fun map f v		= tabulate(length v, fn i => f(sub(v,i)))
     fun mapi f v	= tabulate(length v, fn i => f(i,sub(v,i)))
     fun rev v		= tabulate(length v, fn i => sub(v,length(v)-i-1))
