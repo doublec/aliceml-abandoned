@@ -1,22 +1,19 @@
 
 *** Allgemein/Ideen ***
 
-setenv ALICE_TRACE_COMPONENT 1
-setenv ALICE_TRACE_RESOLVER 1
-
-* stockwerk-gtk-binding in den CVS main trunk
-- stockhausen neu bauen -> Problem!!
-* datatype arg auch in GtkUnsafe verfuegbar machen
-* Makefile hat noch ein Problem (Aenderungen an .cc fuehren nicht zum Rebuild)
-
-
 * Enums
 - GC (Weak Dictionary)
 * datatypes/Signals bauen
-* Dateien komplett umbenennen, 
+* Dateien komplett umbenennen
 * libgnomecanvas statt GtkCanvas installieren
-- GnomeCanvas-Bindings
+* GnomeCanvas-Bindings
+- get/set-Funktionen
 - Windows
+
+* stockwerk-gtk-binding in den CVS main trunk
+* stockhausen neu bauen -> Problem!!
+* datatype arg auch in GtkUnsafe verfuegbar machen
+* Makefile hat noch ein Problem (Aenderungen an .cc fuehren nicht zum Rebuild)
 
 * Test-Programm besser
 * Makefile besser: Gtk.aml haengt von GtkCore.aml ab usw.
@@ -38,6 +35,9 @@ Ideen fuer GtkTreeTypes:
 
 CLASSES... enthaelt *alle* Klassen
   nur fuer STRUCTUREs, die auch in CLASSES sind, gibt es get/set-Funktionen 
+
+setenv ALICE_TRACE_COMPONENT 1
+setenv ALICE_TRACE_RESOLVER 1
 
 
 
@@ -92,7 +92,7 @@ X Marshaller-Rueckgabewert?
 
 * UnsafeGtk als DLL
 
-- was tun mit valists?
+* was tun mit valists?
 * object-Typueberpruefung: in UnsafeGtk.cc! ueber GType-Funktionen
     bei Fehlschlag: exception liefern
 

@@ -7,7 +7,6 @@ signature SPECIAL =
         val changedFuns :    TypeTree.decl list
         val ignoreSafeFuns : string list
 
-
         val isIgnored :      TypeTree.decl -> bool
         val isIgnoredSafe :  TypeTree.decl -> bool
     end

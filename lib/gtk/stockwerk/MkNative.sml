@@ -65,6 +65,7 @@ functor MkNative(structure TypeManager : TYPE_MANAGER
 	    local
 		fun inDeclare (NUMERIC(_,false,_))= "DECLARE_INT"
 		  | inDeclare (NUMERIC(_,true, _))= "DECLARE_CDOUBLE"
+		  | inDeclare (ELLIPSES true)     = "DECLARE_ELLIPSES"
 		  | inDeclare (ELLIPSES false)    = "DECLARE_VALIST"
 		  | inDeclare BOOL                = "DECLARE_BOOL"
 		  | inDeclare (POINTER _)         = "DECLARE_UNMANAGED_POINTER"
@@ -128,6 +129,13 @@ functor MkNative(structure TypeManager : TYPE_MANAGER
 	    local
 		fun cArgList' (OUT,name,t) = 
 		    "reinterpret_cast<"^getCType t^"*>(&"^name^")"
+		  | cArgList' (IN,name,(ELLIPSES true)) = 
+                    let
+			val nums = List.tabulate(20, 
+				      (fn i => name^"["^Int.toString(i)^"]"))
+		    in
+			Util.makeTuple ", " "" nums
+		    end
 		  | cArgList' (IN,name,t) =
 		    let
 			fun staticCast t v  = "static_cast<"^t^">("^v^")"

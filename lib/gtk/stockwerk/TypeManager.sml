@@ -46,8 +46,7 @@ struct
     end
 
     fun getAliceType VOID                  = "unit"
-      | getAliceType (ELLIPSES true)       = raise EEllipses
-      | getAliceType (ELLIPSES false)      = "arg list"
+      | getAliceType (ELLIPSES _)          = "arg list"
       | getAliceType BOOL                  = "bool"
       | getAliceType (NUMERIC (_,false,_)) = "int"
       | getAliceType (NUMERIC (_,true,_))  = "real"
@@ -161,10 +160,10 @@ struct
     in
 	( map getAliceType (ret::arglist) ; true )
 	handle
-	   EEllipses => error "ellipses in argument list"
-	 | EStruct   => error "struct in arglist or retval"
+	   EStruct   => error "struct in arglist or retval"
 	 | EUnion    => error "union in arglist or retval"
       (* | EFunction => warning "function in arglist or retval"
+	 | EEllipses => error "ellipses in argument list"
          | EArray    => warning "array in arglist or retval" *)
     end		    
       | checkItem _ = true

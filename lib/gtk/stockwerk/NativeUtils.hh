@@ -57,6 +57,7 @@ word createExn(void *pointer, const gchar *tname, const gchar* funname,
 enum { BOOL, INT, LIST, OBJECT, REAL, STRING };
 
 #define VDATA_MAX_LEN 1024
+#define ELLIP_MAX_ARGS 10
 
 #define __PUT_VALUE(vtype, F, x, pos) {    \
   F(value, x);                             \
@@ -64,27 +65,44 @@ enum { BOOL, INT, LIST, OBJECT, REAL, STRING };
   pos += sizeof(vtype);                    \
 }
 
-#define __PUT_VALIST_ITEM(pos, end, tv) {       \
-  if (pos < end) {                              \
-    switch (tv->GetTag()) {                     \
-    case BOOL: __PUT_VALUE(bool, DECLARE_BOOL, tv->Sel(0), pos);              \
-    case INT:  __PUT_VALUE(int,  DECLARE_INT, tv->Sel(0), pos);               \
-    case LIST: __PUT_VALUE(void*, DECLARE_UNMANAGED_POINTER, NULL, pos);      \
+#define __DECLARE_OBJECTGLIST(l, x) \
+    DECLARE_GLIST(l, x, GList, g_list, DECLARE_UNMANAGED_POINTER)
+
+#define __PUT_VALIST_ITEM(pos, end, listitem) {     \
+  TagVal *tv = TagVal::FromWord(listitem->Sel(0));  \
+  if (pos < end) {                                  \
+    switch (tv->GetTag()) {                         \
+    case BOOL: __PUT_VALUE(bool, DECLARE_BOOL, tv->Sel(0), pos); break;       \
+    case INT:  __PUT_VALUE(int,  DECLARE_INT, tv->Sel(0), pos);  break;       \
+    case LIST: __PUT_VALUE(void*, __DECLARE_OBJECTGLIST, tv->Sel(0), pos);    \
+                 break; \
     case OBJECT: __PUT_VALUE(void*,DECLARE_UNMANAGED_POINTER,tv->Sel(0),pos); \
-    case REAL: __PUT_VALUE(double, DECLARE_CDOUBLE, tv->Sel(0), pos);         \
-    case STRING: __PUT_VALUE(char*, DECLARE_CSTRING, tv->Sel(0), pos);        \
+                 break; \
+    case REAL: __PUT_VALUE(double, DECLARE_CDOUBLE, tv->Sel(0), pos); break;  \
+    case STRING: __PUT_VALUE(char*, DECLARE_CSTRING, tv->Sel(0), pos); break; \
     }                                                                         \
   }                                                                           \
 }
 
 #define DECLARE_VALIST(l, x)                                \
-  gint8 l[VDATA_MAX_LEN];                                   \
+  gint8 l[VDATA_MAX_LEN+20];                                \
+  memset(l, 0, sizeof(l));                                  \
   {                                                         \
     gint8 *l##__pos = l, *l##__end = &(l[VDATA_MAX_LEN]);   \
     DECLARE_LIST_ELEMS(l##__tagval, l##__length, x,         \
       __PUT_VALIST_ITEM(l##__pos, l##__end, l##__tagval) ); \
   }                                                       
 
+#define DECLARE_ELLIPSES(l, x)                              \
+  int l[ELLIP_MAX_ARGS+1];                                  \
+  memset(l, 0, sizeof(l));                                  \
+  {                                                         \
+    gint8 *l##__pos = (gint8*)l, *l##__end = (gint8*)&(l[ELLIP_MAX_ARGS]);  \
+    DECLARE_LIST_ELEMS(l##__tagval, l##__length, x,         \
+      __PUT_VALIST_ITEM(l##__pos, l##__end, l##__tagval) ); \
+  }                                                         
+
+/***********************************************************************/
 
 
 #define DECLARE_GLIST(l, x, ltype, ltype2, F)               \
