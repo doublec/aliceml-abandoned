@@ -337,6 +337,8 @@ IODesc::result IODesc::Close() {
 #endif
   }
   InitArg(FLAGS_POS, (flags & ~TYPE_MASK) | TYPE_CLOSED);
+  u_int key = Store::DirectWordToInt(GetArg(FINALIZATION_KEY_POS));
+  finalizationSet->Unregister(key);
   return res;
 }
 
