@@ -551,19 +551,24 @@ Worker::Result ByteCodeInterpreter::Run() {
       break;
     case Instr::ANEWARRAY:
       {
-	// to be done: what is with the index bytes?
-	int count = Store::DirectWordToInt(frame->Pop());
+	word wType = GET_POOL_VALUE(GET_POOL_INDEX());
+	Type *type = Type::FromWord(wType);
+	if (type == INVALID_POINTER)
+	  REQUEST(wType);
+	int count = JavaInt::FromWord(frame->Pop());
 	if (count >= 0) {
-	  ObjectArrayType *type = INVALID_POINTER; // to be done
-	  ObjectArray *arr = ObjectArray::New(type, count);
+	  ObjectArrayType *arrayType = ObjectArrayType::New(type->ToWord(), 1);
+	  ObjectArray *arr           = ObjectArray::New(arrayType, count);
 	  for (u_int i = count; i--;)
-	    arr->Init(i, Store::IntToWord(0));
+	    arr->Init(i, null);
 	  frame->Push(arr->ToWord());
 	}
 	else {
-	  // to be done: thow invalid something
+	  // to be done: raise NegativeArraySizeException
+	  Error("NegativeArraySizeException");
 	}
       }
+      pc += 3;
       break;
     case Instr::ARETURN:
     case Instr::DRETURN: // reals are boxed
@@ -831,6 +836,7 @@ Worker::Result ByteCodeInterpreter::Run() {
 	frame->Push(v1);
 	frame->Push(v2);
 	frame->Push(v1);
+	pc += 1;
       }
       break;
     case Instr::DUP_X2:
@@ -858,6 +864,7 @@ Worker::Result ByteCodeInterpreter::Run() {
 	frame->Push(v1);
 	frame->Push(v2);
 	frame->Push(v1);
+	pc += 1;
       }
       break;
     case Instr::DUP2_X1:
@@ -871,6 +878,7 @@ Worker::Result ByteCodeInterpreter::Run() {
 	frame->Push(v3);
 	frame->Push(v2);
 	frame->Push(v1);
+	pc += 1;
       }
       break;
     case Instr::DUP2_X2:
@@ -886,6 +894,7 @@ Worker::Result ByteCodeInterpreter::Run() {
 	frame->Push(v3);
 	frame->Push(v2);
 	frame->Push(v1);
+	pc += 1;
       }
       break;
     case Instr::F2D:
