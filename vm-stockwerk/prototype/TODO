@@ -1,5 +1,6 @@
 Stockwerk:
 -- Closures need to remember their abstract representation.
+-- Thread.raiseIn can raise an exception (Terminated)
 
 Mozart:
 -- Ozcar-Bug: wenn man ein 'unleash' macht und dabei eine
