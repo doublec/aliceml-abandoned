@@ -87,6 +87,8 @@ Library:
 * Remote:
   - Added functor Proxy to conveniently wrap a whole module into proxies.
   - Added function execute, made the Execute functor a trivial wrapper.
+* Minimizer: new structure for minimizing the store representation of
+  Alice values.
 
 Tools:
 
