@@ -49,6 +49,7 @@ private:
   static void RegisterUnsafe();
   static void RegisterVector();
   static void RegisterWord8();
+  static void RegisterWord8Array();
   static void RegisterWord8Vector();
   static void RegisterWord31();
   static word Lookup(word table, Chunk *name);

@@ -72,6 +72,7 @@ void PrimitiveTable::Init() {
   RegisterUnsafe();
   RegisterVector();
   RegisterWord8();
+  RegisterWord8Array();
   RegisterWord8Vector();
   RegisterWord31();
   //  std::fprintf(stderr, "%d functions, %d values\n",
