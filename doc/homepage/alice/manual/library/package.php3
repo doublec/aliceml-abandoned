@@ -63,7 +63,7 @@
 
   <DL>
     <DT>
-      <TT>type package</TT> <BR>
+      <TT>type <A name="package">package</A></TT> <BR>
       <TT>type t = package</TT>
     </DT>
     <DD>
