@@ -1525,71 +1525,6 @@
     }
   }
 
-  .class public Vector extends StockWerk.StockWert {
-    .field public class StockWerk.StockWert[] Values
-    .method public void .ctor(class StockWerk.StockWert[]) {
-      ldarg.0
-      call instance void StockWerk.StockWert::.ctor()
-      ldarg.0
-      ldarg.1
-      stfld class StockWerk.StockWert[] StockWerk.Vector::Values
-      ret
-    }
-    .method virtual public bool Equals(class System.Object) {
-      .locals(class StockWerk.StockWert[], class StockWerk.StockWert[], int32)
-    retry:
-      ldarg.1
-      isinst StockWerk.Vector
-      brfalse.s testTransient
-      ldarg.1
-      castclass StockWerk.Vector
-      ldfld class StockWerk.StockWert[] StockWerk.Vector::Values
-      dup
-      stloc.1
-      ldlen
-      ldarg.0
-      ldfld class StockWerk.StockWert[] StockWerk.Vector::Values
-      dup
-      stloc.0
-      ldlen
-      bne.un.s retFalse
-      ldc.i4.0
-      stloc.2
-    loop:
-      ldloc.2
-      ldloc.0
-      ldlen
-      bge.s retTrue
-      ldloc.0
-      ldloc.2
-      ldelem.ref
-      ldloc.1
-      ldloc.2
-      ldelem.ref
-      callvirt instance bool System.Object::Equals(class System.Object)
-      brfalse.s retFalse
-      ldloc.2
-      ldc.i4.1
-      add
-      stloc.2
-      br.s loop
-    testTransient:
-      ldarg.1
-      isinst StockWerk.Transient
-      brfalse.s retFalse
-      ldarg.1
-      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
-      starg.s 1
-      br.s retry
-    retFalse:
-      ldc.i4.0
-      ret
-    retTrue:
-      ldc.i4.1
-      ret
-    }
-  }
-
   //
   // Transients
   //
@@ -2268,7 +2203,69 @@
     }
   }
 
-  .class public sealed Vector extends StockWerk.StockWert {
+  .class sealed public Vector extends StockWerk.StockWert {
+    .field public class StockWerk.StockWert[] Values
+    .method public void .ctor(class StockWerk.StockWert[]) {
+      ldarg.0
+      call instance void StockWerk.StockWert::.ctor()
+      ldarg.0
+      ldarg.1
+      stfld class StockWerk.StockWert[] StockWerk.Vector::Values
+      ret
+    }
+    .method virtual public bool Equals(class System.Object) {
+      .locals(class StockWerk.StockWert[], class StockWerk.StockWert[], int32)
+    retry:
+      ldarg.1
+      isinst StockWerk.Vector
+      brfalse.s testTransient
+      ldarg.1
+      castclass StockWerk.Vector
+      ldfld class StockWerk.StockWert[] StockWerk.Vector::Values
+      dup
+      stloc.1
+      ldlen
+      ldarg.0
+      ldfld class StockWerk.StockWert[] StockWerk.Vector::Values
+      dup
+      stloc.0
+      ldlen
+      bne.un.s retFalse
+      ldc.i4.0
+      stloc.2
+    loop:
+      ldloc.2
+      ldloc.0
+      ldlen
+      bge.s retTrue
+      ldloc.0
+      ldloc.2
+      ldelem.ref
+      ldloc.1
+      ldloc.2
+      ldelem.ref
+      callvirt instance bool System.Object::Equals(class System.Object)
+      brfalse.s retFalse
+      ldloc.2
+      ldc.i4.1
+      add
+      stloc.2
+      br.s loop
+    testTransient:
+      ldarg.1
+      isinst StockWerk.Transient
+      brfalse.s retFalse
+      ldarg.1
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 1
+      br.s retry
+    retFalse:
+      ldc.i4.0
+      ret
+    retTrue:
+      ldc.i4.1
+      ret
+    }
   }
 
   //
