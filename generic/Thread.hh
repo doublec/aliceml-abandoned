@@ -31,7 +31,7 @@ private:
   enum {
     PRIORITY_POS, STATE_POS, IS_SUSPENDED_POS,
     TASK_STACK_POS, NARGS_POS, ARGS_POS,
-    FUTURE_POS, EXN_HANDLER_STACK_POS, MAXIMAL_SIZE, SIZE
+    FUTURE_POS, EXN_HANDLER_STACK_POS, SIZE
   };
 
   void SetState(state s) {
@@ -63,16 +63,7 @@ public:
     exnHandlerStack->InitArg(0, 0);
     exnHandlerStack->InitArg(1, Store::IntToWord(0));
     b->InitArg(EXN_HANDLER_STACK_POS, exnHandlerStack->ToWord());
-    b->InitArg(MAXIMAL_SIZE, Store::IntToWord(0));
     return static_cast<Thread *>(b);
-  }
-  void SetMax(u_int max) {
-    u_int curMax = Store::DirectWordToInt(GetArg(MAXIMAL_SIZE));
-    if (max > curMax) {
-      ReplaceArg(MAXIMAL_SIZE, max);
-//        fprintf(stderr, "%d --> %d\n", curMax, max);
-//        fflush(stderr);
-    }
   }
   // Thread Untagging
   static Thread *FromWord(word x) {
