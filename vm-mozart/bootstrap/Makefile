@@ -77,7 +77,7 @@ ALLFILES = \
 	$(BACKENDCOMMONFILES) backend-mozart/CodeGenPhase.ozf.sig top/Main.sml
 
 INSTALLDIRS = $(PREFIX) $(PREFIX)/bin $(PREFIX)/lib
-INSTALLFILES0 = stoc.ozf Base.import
+INSTALLFILES0 = Init.ozf stoc.ozf Base.import
 INSTALLBINFILES0 = stoc stow
 INSTALLLIBFILES0 = Base.ozf IO.ozf TextIO.ozf OS.ozf Unix.ozf CommandLine.ozf
 INSTALLFILES = \
@@ -88,7 +88,7 @@ MINIMALINSTALL = $(PREFIX)/bin/stoc $(PREFIX)/bin/stow $(PREFIX)/stoc.ozf
 
 .PHONY: all install clean
 
-all: $(ALLFILES) backend-mozart/CodeGenPhase.ozf top/Main.ozf stoc.ozf
+all: $(ALLFILES) backend-mozart/CodeGenPhase.ozf top/Main.ozf stoc.ozf Init.ozf
 
 stoc.ozf: top/Main.ozf
 	OZ_LOAD=prefix=x-alice\\:/=./:prefix=http\\://www.mozart-oz.org/home-1.1.1/=$(OZHOME)/ \
