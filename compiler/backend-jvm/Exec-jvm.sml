@@ -17,7 +17,7 @@ fun dmlc (_, debug::verbose::optimize::tits::lmaa::lines::wait::x) =
     let
 	val v=valOf (Int.fromString (String.substring(verbose, 2,1)))
 	fun dc (fi::rest) =
-	    (if v >= 1 then print ("Compiling "^fi^"...\n") else ();
+	    (if v >= 1 then print ("compiling "^fi^"...\n") else ();
 	    (CodeGen.genComponentCode
 	     (valOf (Int.fromString (String.substring(debug, 2,1))),
 	      v,
@@ -32,8 +32,8 @@ fun dmlc (_, debug::verbose::optimize::tits::lmaa::lines::wait::x) =
 	     dc (rest)))
 	  | dc nil = 0
     in
-	(dc x) handle _ => (print "fehler beim Kompilieren"; 1)
+	(dc x) handle _ => (print "compilation error."; 1)
     end
-  | dmlc _ = (print "ungültiger Parameter"; 2)
+  | dmlc _ = (print "unexpected parameter"; 2)
 
 val _ = SMLofNJ.exportFn (".dmlc", dmlc)
