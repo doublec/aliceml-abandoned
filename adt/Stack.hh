@@ -9,13 +9,14 @@
 //   $Date$ by $Author$
 //   $Revision$
 //
-#ifndef __STACK_HH__
-#define __STACK_HH__
+#ifndef __ADT__STACK_HH__
+#define __ADT__STACK_HH__
 
 #if defined(INTERFACE)
-#pragma interface
+#pragma interface "adt/Stack.hh"
 #endif
 
+#include "store/store.hh"
 #include <cstring>
 
 class Stack : private Block {
@@ -24,14 +25,9 @@ private:
   static const u_int TOP_POS = 1;
   static const u_int ARR_POS = 2;
 protected:
-  enum labels {
-    STACK_LABEL      = MIN_HELPER_LABEL,
-    STACKARRAY_LABEL = (MIN_HELPER_LABEL + 1)
-  };
-
   void Enlarge(u_int oldsize, u_int newsize) {
     Block *oa = Store::UnsafeWordToBlock(GetArg(ARR_POS));
-    Block *na = Store::AllocBlock((BlockLabel) STACKARRAY, newsize);
+    Block *na = Store::AllocBlock((BlockLabel) STACKARRAY_LABEL, newsize);
 
     std::memcpy(na->GetBase(), oa->GetBase(), oldsize * sizeof(word));
     ReplaceArg(ARR_POS, na->ToWord());
@@ -157,4 +153,4 @@ public:
   }
 };
 
-#endif
+#endif __ADT__STACK_HH__

@@ -4,7 +4,8 @@ include $(TOPDIR)/Makefile.vars
 include $(TOPDIR)/Makefile.rules
 
 OBJS = \
-	Outline.o
+	Outline.o \
+	Hashtable.o
 
 all: libadt.a
 
