@@ -6,6 +6,7 @@ Group
 
 is
 
+	../misc/sources.cm
 	intermediate-grammar.cm
 
 	Stamp.sml
