@@ -19,6 +19,9 @@ struct
 
   (* Be slow for the demo ! *)
   val slow = not(Word31.compare (dbZero, TreeNode.mask && dbSlow) = EQUAL)
+  val _ = if slow
+          then print "Warning: The search is slow because dbSlow is set.\n"
+          else ()
 
   type path = TreeNode.solution Path.t
   exception NotAssigned
