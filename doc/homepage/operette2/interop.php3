@@ -126,6 +126,9 @@
       <TR><TD><TT>array</TT><TD>Array
       <TR><TD><TT>vector</TT><TD>Tuple with label <TT>'#'</TT>
       <TR><TD><TT>Thread.thread</TT><TD>Thread
+      <TR>
+	<TD><TT>TextIO.instream</TT>, <TT>TextIO.outstream</TT>
+	<TD>Instanced of <TT>Open.file</TT>
     </TABLE>
   </CENTER>
 
