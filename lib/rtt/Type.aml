@@ -133,6 +133,12 @@ struct
 	| RHO   of int ref * row
 	| FIELD of lab * typ * row
 
+    (*TODO: I would rather delete TUPLE types and change row to
+     *   TUPLE  of typ vector
+     * | RECORD of (lab * typ) list * int option ref
+     * On the other hand, this is probably less compatible with poly records...
+     *)
+
     withtype typ = (typ' * Stamp.t) ref			(* [tau,t] *)
     and      var = (typ' * Stamp.t) ref			(* [alpha,a] *)
 
@@ -505,9 +511,9 @@ struct
     fun inCon c		= new(CON c)
     fun inAll at	= new(ALL at)
     fun inExist at	= new(EXIST at)
-    fun inLambda at	= new(LAMBDA at)
+    fun inLambda at	= let val t = new(LAMBDA at) in reduceEta t ; t end
     fun inApply(t1,t2)	= let val t = new(APPLY(t1,t2)) in reduce t ; t end
-    fun inMu t		= new(MU t)
+    fun inMu t		= new(MU t)	(* t must be lambdas of sum/prod/tuple*)
     fun inAbbrev(t1,t2)	= new(ABBREV(t1,t2))
 
     fun var k		= new(VAR(k, !level))
@@ -592,7 +598,7 @@ struct
     fun asType t =
 	case typ' t
 	  of (LINK t | ABBREV(_,t))	=> asType t
-	   | t' as LAMBDA _		=> if reduceEta t then asType t else t'
+(*NEW	   | t' as LAMBDA _		=> if reduceEta t then asType t else t' *)
 	   | t'				=> t'
 
     fun isUnknown t	= case asType t of HOLE _   => true | _ => false
@@ -630,7 +636,7 @@ struct
 	  of (LINK t1 | MU t1 | ABBREV(_,t1))
 				=> isType t1
 	   | APPLY _		=> isTypeApply(t,0)
-	   | t' as LAMBDA _	=> if reduceEta t then isType t else t'
+(*NEW	   | t' as LAMBDA _	=> if reduceEta t then isType t else t'*)
 	   | t'			=> t'
     and isTypeApply(t, n) =
 	case typ' t
@@ -665,7 +671,7 @@ struct
 	  of (LINK t1 | MU t1 | ABBREV(_,t1))
 					=> asType t1
 	   | t' as APPLY _		=> asTypeApply(t',t,[])
-	   | t' as LAMBDA _		=> if reduceEta t then asType t else t'
+(*NEW	   | t' as LAMBDA _		=> if reduceEta t then asType t else t'*)
 	   | t'				=> t'
     (* Note that we can only legally have a LAMBDA node following an APPLY
        node if there is a MU node inbetween. *)
@@ -968,18 +974,18 @@ struct
 					       else raise Unify(t1,t2)
 
 		       | (APPLY(tt1), APPLY(tt2)) =>
-			 (* Note that we do not allow general lambdas during
+(*NEW			 (* Note that we do not allow general lambdas during
 			  * unification, so application is considered to be
 			  * in normal form. *)
-			 recur unifyPair (tt1,tt2)
+*)			 recur unifyPair (tt1,tt2)
 
 		       | (LAMBDA(a1,t11), LAMBDA(a2,t21)) =>
-			 (* The only place lambdas might occur during
+(*NEW			 (* The only place lambdas might occur during
 			  * unification is below mu and as arguments to
 			  * abstract type constructors. The type functions
 			  * must be equal in both cases. *)
 			 (*UNFINISHED: do we need eta reduction?*)
-			 recurBinder(a1, a2, t11, t21)
+*)			 recurBinder(a1, a2, t11, t21)
 
 		       | ( (ALL(a1,t11), ALL(a2,t21))
 			 | (EXIST(a1,t11), EXIST(a2,t21)) ) =>
@@ -1145,17 +1151,18 @@ struct
 			 recur equalsPair (tt1,tt2)
 
 		       | (LAMBDA(a1,t11), LAMBDA(a2,t21)) =>
-			 if reduceEta t1 orelse reduceEta t2 then
+(*NEW			 if reduceEta t1 orelse reduceEta t2 then
 			     equals(t1,t2)
 			 else
-			     recurBinder(a1, a2, t11, t21)
+*)
+			 recurBinder(a1, a2, t11, t21)
 
-		       | (LAMBDA _, _) =>
+(*		       | (LAMBDA _, _) =>
 			 reduceEta t1 andalso equals(t1,t2)
 
 		       | (_, LAMBDA _) =>
 			 reduceEta t2 andalso equals(t1,t2)
-
+*)
 		       | ( (ALL(a1,t11),   ALL(a2,t21))
 			 | (EXIST(a1,t11), EXIST(a2,t21)) ) =>
 			 recurBinder(a1, a2, t11, t21)
@@ -1208,6 +1215,7 @@ struct
     fun realise(rea, t) =
 	let
 	    val apps = ref[]
+	    val lams = ref[]
 
 	    fun realise1 t1 =
 		case typ' t1
@@ -1217,9 +1225,12 @@ struct
 				       | NONE    => ()
 				   )
 	      | APPLY _		=> apps := t1::(!apps)
+	      | LAMBDA _	=> lams := t1::(!lams)
 	      | _		=> ()
 	in
-	    app realise1 t ; List.app reduce (!apps)
+	    app realise1 t;
+	    List.app reduce (!apps);
+	    List.app (ignore o reduceEta) (!lams)
 	end
 
     (*DEBUG*)

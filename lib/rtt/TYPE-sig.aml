@@ -84,19 +84,19 @@ sig
     val isApply :	typ -> bool
     val isMu :		typ -> bool
     val isAbbrev :	typ -> bool	(* precise *)
-
+(*
     val isUnknown' :	typ -> bool	(* modulo unrolling *)
     val isArrow' :	typ -> bool
-    val isTuple' :	typ -> bool
+*)    val isTuple' :	typ -> bool
     val isProd' :	typ -> bool
     val isSum' :	typ -> bool
-    val isVar' :	typ -> bool
+(*    val isVar' :	typ -> bool
     val isCon' :	typ -> bool
     val isAll' :	typ -> bool
     val isExist' :	typ -> bool
     val isLambda' :	typ -> bool
     val isApply' :	typ -> bool
-
+*)
 
   (* Projections *)
 
@@ -114,17 +114,18 @@ sig
     val asApply :	typ -> typ * typ		(* [Type] *)
     val asMu :		typ -> typ			(* [Type] *)
     val asAbbrev : 	typ -> typ * typ		(* [Type] *)
-
+(*
     val asArrow' :	typ -> typ * typ		(* [Type] *)
-    val asTuple' :	typ -> typ vector		(* [Type] *)
+*)    val asTuple' :	typ -> typ vector		(* [Type] *)
     val asProd' :	typ -> row			(* [Type] *)
     val asSum' :	typ -> row			(* [Type] *)
-    val asVar' :	typ -> var			(* [Type] *)
+(*    val asVar' :	typ -> var			(* [Type] *)
     val asCon' :	typ -> con			(* [Type] *)
     val asAll' :	typ -> var * typ		(* [Type] *)
     val asExist' :	typ -> var * typ		(* [Type] *)
     val asLambda' :	typ -> var * typ		(* [Type] *)
     val asApply' :	typ -> typ * typ		(* [Type] *)
+*)
 
   (* Complex extractions *)
 
