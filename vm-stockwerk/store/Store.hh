@@ -143,7 +143,8 @@ public:
 #endif
 };
 
-// Defined Store Values Classes
+// Defined Store Value Classes
 #include "store/Value.hh"
+#include "store/WeakDictionary.hh"
 
 #endif __STORE__STORE_HH__
