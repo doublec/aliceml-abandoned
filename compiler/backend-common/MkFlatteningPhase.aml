@@ -386,13 +386,13 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 	    in
 		simplifyCase (coord, exp, matches', id_Match)
 	    end
-	  | translateExp (RaiseExp (coord, exp), _, _) =
+	  | translateExp (RaiseExp (coord, exp), _, cont) =
 	    let
 		val r = ref NONE
 		val rest = [O.IndirectStm (coord, r)]
 		val (stms, id) = unfoldTerm (exp, Goto rest)
 	    in
-		r := SOME [O.RaiseStm (coord, id)];
+		r := SOME (O.RaiseStm (coord, id)::translateCont cont);
 		stms
 	    end
 	  | translateExp (HandleExp (coord, exp, matches), f, cont) =

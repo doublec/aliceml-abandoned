@@ -53,11 +53,11 @@ structure ImperativeGrammar :> IMPERATIVE_GRAMMAR =
 	    (* all ids distinct *)
 	  | ConDec of coord * id * hasArgs * isToplevel
 	  | EvalStm of coord * exp
+	  | RaiseStm of coord * id
 	  (* the following must always be last *)
 	  | HandleStm of coord * body * id * body
 	  | EndHandleStm of coord * body
 	  | TestStm of coord * id * test * body * body
-	  | RaiseStm of coord * id
 	  | SharedStm of coord * body * shared   (* used at least twice *)
 	  | ReturnStm of coord * exp
 	  | IndirectStm of coord * body option ref
