@@ -383,32 +383,33 @@ DEFINE3(UnsafeMkRefMap_foldi) {
 // Build Export Structure
 //
 
-word UnsafeMkRefMap(void) {
+word UnsafeMkRefMap() {
   RefMapIteratorInterpreter::Init();
-  Tuple *t = Tuple::New(12);
-  t->Init(0, Primitive::MakeClosure("UnsafeMkRefMap.app",
-				    UnsafeMkRefMap_app, 2, true));
-  t->Init(1, Primitive::MakeClosure("UnsafeMkRefMap.appi",
-				    UnsafeMkRefMap_appi, 2, true));
-  t->Init(2, Primitive::MakeClosure("UnsafeMkRefMap.clone",
-				    UnsafeMkRefMap_clone, 1, true));
-  t->Init(3, Primitive::MakeClosure("UnsafeMkRefMap.delete",
-				    UnsafeMkRefMap_delete, 2, true));
-  t->Init(4, Primitive::MakeClosure("UnsafeMkRefMap.deleteAll",
-				    UnsafeMkRefMap_deleteAll, 1, true));
-  t->Init(5, Primitive::MakeClosure("UnsafeMkRefMap.fold",
-				    UnsafeMkRefMap_fold, 3, true));
-  t->Init(6, Primitive::MakeClosure("UnsafeMkRefMap.foldi",
-				    UnsafeMkRefMap_foldi, 3, true));
-  t->Init(7, Primitive::MakeClosure("UnsafeMkRefMap.insert",
-				    UnsafeMkRefMap_insert, 3, true));
-  t->Init(8, Primitive::MakeClosure("UnsafeMkRefMap.isEmpty",
-				    UnsafeMkRefMap_isEmpty, 1, true));
-  t->Init(9, Primitive::MakeClosure("UnsafeMkRefMap.lookup",
-				    UnsafeMkRefMap_lookup, 2, true));
-  t->Init(10, Primitive::MakeClosure("UnsafeMkRefMap.member",
-				    UnsafeMkRefMap_member, 2, true));
-  t->Init(11, Primitive::MakeClosure("UnsafeMkRefMap.new",
-				    UnsafeMkRefMap_new, 0, true));
-  RETURN_STRUCTURE(t);
+
+  Record *record = Record::New(12);
+  INIT_STRUCTURE(record, "UnsafeMkRefMap", "new",
+		 UnsafeMkRefMap_new, 0, true);
+  INIT_STRUCTURE(record, "UnsafeMkRefMap", "clone",
+		 UnsafeMkRefMap_clone, 1, true);
+  INIT_STRUCTURE(record, "UnsafeMkRefMap", "insert",
+		 UnsafeMkRefMap_insert, 3, true);
+  INIT_STRUCTURE(record, "UnsafeMkRefMap", "delete",
+		 UnsafeMkRefMap_delete, 2, true);
+  INIT_STRUCTURE(record, "UnsafeMkRefMap", "deleteAll",
+		 UnsafeMkRefMap_deleteAll, 1, true);
+  INIT_STRUCTURE(record, "UnsafeMkRefMap", "lookup",
+		 UnsafeMkRefMap_lookup, 2, true);
+  INIT_STRUCTURE(record, "UnsafeMkRefMap", "member",
+		 UnsafeMkRefMap_member, 2, true);
+  INIT_STRUCTURE(record, "UnsafeMkRefMap", "isEmpty",
+		 UnsafeMkRefMap_isEmpty, 1, true);
+  INIT_STRUCTURE(record, "UnsafeMkRefMap", "app",
+		 UnsafeMkRefMap_app, 2, true);
+  INIT_STRUCTURE(record, "UnsafeMkRefMap", "appi",
+		 UnsafeMkRefMap_appi, 2, true);
+  INIT_STRUCTURE(record, "UnsafeMkRefMap", "fold",
+		 UnsafeMkRefMap_fold, 3, true);
+  INIT_STRUCTURE(record, "UnsafeMkRefMap", "foldi",
+		 UnsafeMkRefMap_foldi, 3, true);
+  RETURN_STRUCTURE("UnsafeDictionary$", record);
 }

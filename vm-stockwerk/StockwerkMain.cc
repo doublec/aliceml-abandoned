@@ -113,10 +113,9 @@ int main(int argc, char *argv[]) {
     // Link and Execute Component
     word module = BootLinker::Link(bootUrl); // might yield GC
     if (module != Store::IntToWord(0)) {
-      Tuple *tuple    = Tuple::FromWord(module);
-      tuple->AssertWidth(1);
-      Scheduler::NewThread(tuple->Sel(0), // Module Closure
-			   Scheduler::ONE_ARG, Properties::rootUrl,
+      Record *record = Record::FromWord(module);
+      word boot = record->PolySel(UniqueString::New(String::New("boot")));
+      Scheduler::NewThread(boot, Scheduler::ONE_ARG, Properties::rootUrl,
 			   TaskStack::New());
       // Restart Scheduler to execute module
       Scheduler::Run();
