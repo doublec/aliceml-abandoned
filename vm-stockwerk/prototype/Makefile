@@ -10,6 +10,8 @@
 ###   $Revision$
 ###
 
+PLATFORM = $(shell oztool platform)
+
 SRCS = \
 	PrimitiveTable.oz \
 	Pickle.oz \
@@ -18,10 +20,16 @@ SRCS = \
 	Linker.oz \
 	Main.oz
 
+%.o: %.cc
+	oztool c++ -c $< -o $@
+
+%.so-$(PLATFORM): %.o
+	oztool ld -o $@ $<
+
 %.ozf: %.oz
 	ozc -c $< -o $@
 
-all: $(SRCS:%.oz=%.ozf)
+all: FloatChunk.so-$(PLATFORM) $(SRCS:%.oz=%.ozf)
 
 clean:
 	-rm -f $(SRCS:%.oz=%.ozf)

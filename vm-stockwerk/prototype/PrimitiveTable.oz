@@ -11,14 +11,15 @@
 %%%
 
 functor
-export
-   ImportOzModule
-   Table
 import
    BootName(newUnique: NewUniqueName '<' hash) at 'x-oz://boot/Name'
    BootFloat(fPow) at 'x-oz://boot/Float'
    BootWord at 'x-oz://boot/Word'
+   FloatChunk(toOz fromOz) at 'FloatChunk.so{native}'
    Scheduler(object)
+export
+   ImportOzModule
+   Table
 define
    NONE = 0
    %SOME = 1
@@ -26,6 +27,17 @@ define
    EQUAL   = 0
    GREATER = 1
    LESS    = 2
+
+   fun {C2F S}
+      case {ByteString.toString S} of [A B C D E F G H] then
+	 {FloatChunk.toOz A B C D E F G H}
+      end
+   end
+
+   fun {F2C X} A B C D E F G H in
+      {FloatChunk.fromOz X ?A ?B ?C ?D ?E ?F ?G ?H}
+      {ByteString.make [A B C D E F G H]}
+   end
 
    fun {Deref X}
       case X of transient(TransientState) then
@@ -352,57 +364,62 @@ define
 		    end
 		 end
 	      'List.Empty': {NewUniqueName 'List.Empty'}
-	      'Math.acos': Acos
-	      'Math.acosh': Float.acosh
-	      'Math.asin': Asin
-	      'Math.asinh': Float.asinh
-	      'Math.atan': Atan
-	      'Math.atanh': Float.atanh
-	      'Math.atan2': Atan2
-	      'Math.cos': Cos
-	      'Math.cosh': Float.cosh
-	      'Math.e': 2.71828182846
-	      'Math.exp': Exp
-	      'Math.ln': Log
-	      'Math.pi': 3.14159265359
-	      'Math.pow': BootFloat.fPow
-	      'Math.sin': Sin
-	      'Math.sinh': Float.sinh
-	      'Math.sqrt': Sqrt
-	      'Math.tan': Tan
-	      'Math.tanh': Float.tanh
+	      'Math.acos': fun {$ X} {F2C {Acos {C2F X}}} end
+	      'Math.acosh': fun {$ X} {F2C {Float.acosh {C2F X}}} end
+	      'Math.asin': fun {$ X} {F2C {Asin {C2F X}}} end
+	      'Math.asinh': fun {$ X} {F2C {Float.asinh {C2F X}}} end
+	      'Math.atan': fun {$ X} {F2C {Atan {C2F X}}} end
+	      'Math.atanh': fun {$ X} {F2C {Float.atanh {C2F X}}} end
+	      'Math.atan2': fun {$ X Y} {F2C {Atan2 {C2F X} {C2F Y}}} end
+	      'Math.cos': fun {$ X} {F2C {Cos {C2F X}}} end
+	      'Math.cosh': fun {$ X} {F2C {Float.cosh {C2F X}}} end
+	      'Math.e': {F2C 2.71828182846}
+	      'Math.exp': fun {$ X} {F2C {Exp {C2F X}}} end
+	      'Math.ln': fun {$ X} {F2C {Log {C2F X}}} end
+	      'Math.pi': {F2C 3.14159265359}
+	      'Math.pow':
+		 fun {$ X Y} {F2C {BootFloat.fPow {C2F X} {C2F Y}}} end
+	      'Math.sin': fun {$ X} {F2C {Sin {C2F X}}} end
+	      'Math.sinh': fun {$ X} {F2C {Float.sinh {C2F X}}} end
+	      'Math.sqrt': fun {$ X} {F2C {Sqrt {C2F X}}} end
+	      'Math.tan': fun {$ X} {F2C {Tan {C2F X}}} end
+	      'Math.tanh': fun {$ X} {F2C {Float.tanh {C2F X}}} end
 	      'Option.Option': {NewUniqueName 'Option.Option'}
-	      'Real.~': Number.'~'
-	      'Real.+': Number.'+'
-	      'Real.-': Number.'-'
-	      'Real.*': Number.'*'
-	      'Real./': Float.'/'
-	      'Real.<': fun {$ X Y} if X < Y then 1 else 0 end end
-	      'Real.>': fun {$ X Y} if X > Y then 1 else 0 end end
-	      'Real.<=': fun {$ X Y} if X =< Y then 1 else 0 end end
-	      'Real.>=': fun {$ X Y} if X >= Y then 1 else 0 end end
+	      'Real.~': fun {$ X} {F2C ~{C2F X}} end
+	      'Real.+': fun {$ X Y} {F2C {C2F X} + {C2F Y}} end
+	      'Real.-': fun {$ X Y} {F2C {C2F X} - {C2F Y}} end
+	      'Real.*': fun {$ X Y} {F2C {C2F X} * {C2F Y}} end
+	      'Real./': fun {$ X Y} {F2C {C2F X} / {C2F Y}} end
+	      'Real.<': fun {$ X Y} if {C2F X} < {C2F Y} then 1 else 0 end end
+	      'Real.>': fun {$ X Y} if {C2F X} > {C2F Y} then 1 else 0 end end
+	      'Real.<=':
+		 fun {$ X Y} if {C2F X} =< {C2F Y} then 1 else 0 end end
+	      'Real.>=':
+		 fun {$ X Y} if {C2F X} >= {C2F Y} then 1 else 0 end end
 	      'Real.ceil':
 		 fun {$ R}
-		    {FloatToInt {Ceil R}}
+		    {FloatToInt {Ceil {C2F R}}}
 		 end
-	      'Real.compare': NumberCompare
+	      'Real.compare': fun {$ X Y} {NumberCompare {C2F X} {C2F Y}} end
 	      'Real.floor':
 		 fun {$ R}
-		    {FloatToInt {Floor R}}
+		    {FloatToInt {Floor {C2F R}}}
 		 end
-	      'Real.fromInt': IntToFloat
+	      'Real.fromInt': fun {$ X} {F2C {IntToFloat X}} end
 	      'Real.precision': 52
-	      'Real.realCeil': Ceil
-	      'Real.realFloor': Floor
-	      'Real.realRound': Round
+	      'Real.realCeil': fun {$ X} {F2C {Ceil {C2F X}}} end
+	      'Real.realFloor': fun {$ X} {F2C {Floor {C2F X}}} end
+	      'Real.realRound': fun {$ X} {F2C {Round {C2F X}}} end
 	      'Real.realTrunc':
-		 fun {$ R} if R >= 0.0 then {Floor R} else {Ceil R} end end
-	      'Real.rem': Float.'mod'
-	      'Real.round': fun {$ R} {FloatToInt {Round R}} end
+		 fun {$ R0} R = {C2F R0} in
+		    {F2C if R >= 0.0 then {Floor R} else {Ceil R} end}
+		 end
+	      'Real.rem': fun {$ X Y} {F2C {Float.'mod' {C2F X} {C2F Y}}} end
+	      'Real.round': fun {$ R} {FloatToInt {Round {C2F R}}} end
 	      'Real.toString':
-		 fun {$ R} {ByteString.make {FloatToString R}} end
+		 fun {$ R} {ByteString.make {FloatToString {C2F R}}} end
 	      'Real.trunc':
-		 fun {$ R}
+		 fun {$ R0} R = {C2F R0} in
 		    {FloatToInt if R >= 0.0 then {Floor R} else {Ceil R} end}
 		 end
 	      'Ref.:=':
