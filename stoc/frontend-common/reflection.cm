@@ -1,0 +1,25 @@
+Group
+
+	structure LabelReflection
+	structure PathReflection
+	structure TypeReflection
+(*
+	structure InfReflection
+*)
+is
+
+	name.cm
+	path.cm
+	type.cm
+	interface.cm
+
+	LABEL_REFLECTION.sig
+	LabelReflection.sml
+	PATH_REFLECTION.sig
+	PathReflection.sml
+	TYPE_REFLECTION.sig
+	TypeReflection.sml
+(*
+	INF_REFLECTION.sig
+	InfReflection.sml
+*)

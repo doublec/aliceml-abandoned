@@ -4,9 +4,10 @@ Group is
 	../common/type.cm
 	../common/interface.cm
 	../common/intermediate-grammar.cm
+	../common/reflection.cm
 	typed-grammar.cm
 
 	StringMap.sml
 
 	TRANSLATION_PHASE.sig
-	TranslationPhase.sml
+	MakeTranslationPhase.sml

@@ -270,7 +270,8 @@ functor MakeMain(structure Composer: COMPOSER'
 	fun defaults () =
 	    (Switches.implicitImport := true;
 	     Switches.outputAssembly := false;
-	     Switches.printComponentSig := true)
+	     Switches.printComponentSig := true;
+	     Switches.rttLevel := Switches.NO_RTT)
 
 	fun stoc arguments =
 	    (defaults (); stoc' (options arguments))
@@ -287,6 +288,8 @@ functor MakeMain(structure Composer: COMPOSER'
 	    structure ElaborationPhase =
 		MakeElaborationPhase(structure Composer = Composer
 				     structure Switches = Switches)
+	    structure TranslationPhase =
+		MakeTranslationPhase(structure Switches = Switches)
 
 	    fun parse' x     = ParsingPhase.translate () x
 	    fun abstract' x  = AbstractionPhase.translate (BindEnv.new()) x

@@ -17,6 +17,7 @@ is
 
 	../misc/sources.cm
 	../infrastructure/crash.cm
+	id-stamp.cm
 	name.cm
 	path.cm
 

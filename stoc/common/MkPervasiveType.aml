@@ -29,6 +29,8 @@ functor MakePervasiveType(val labid_false :	string
     datatype kind	= datatype Type.kind
     datatype sort	= datatype Type.sort
 
+    val stamp_pervasive	= Stamp.new()
+
     val lab_false	= Label.fromString labid_false
     val lab_true	= Label.fromString labid_true
     val lab_nil		= Label.fromString labid_nil

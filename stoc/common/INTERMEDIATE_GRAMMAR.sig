@@ -61,6 +61,7 @@ UNFINISHED: obsolete after bootstrapping:
 	| CaseExp   of exp_info * exp * match list	(* case switch *)
 	| RaiseExp  of exp_info * exp			(* exception raise *)
 	| HandleExp of exp_info * exp * match list	(* exception handler *)
+	| FailExp   of exp_info				(* lazy failure *)
 	| LazyExp   of exp_info * exp			(* by-need suspension *)
 	| LetExp    of exp_info * dec list * exp	(* local binding *)
 

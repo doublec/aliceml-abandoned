@@ -221,7 +221,7 @@ structure ElaborationError :> ELABORATION_ERROR =
       | ppMismatch'(Inf.MismatchDom im) =
 	    break ^^
 	    textpar["functor","argument","signature","is","too","restrictive,",
-		"because","in","the","argument","signature","matched,"] ^^
+		"because"] ^^
 	    ppMismatch' im
       | ppMismatch'(Inf.MismatchRan im) =
 	    break ^^
