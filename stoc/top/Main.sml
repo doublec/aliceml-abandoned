@@ -35,19 +35,19 @@ structure Main :> MAIN =
 	    TextIO.output1 (outstream, #"\n")
 	end
 
+    fun debug outstream s =
+	let
+	    val s' = OutputImperativeGrammar.outputComponent (imperatify s)
+	in
+	    TextIO.output (outstream, s')
+	end
+
     fun comify outstream s =
 	let
 	    val component = ilify s
 	in
 	    IL.outputProgram (outstream, component);
 	    TextIO.output1 (outstream, #"\n")
-	end
-
-    fun debug outstream s =
-	let
-	    val s' = OutputImperativeGrammar.outputComponent (imperatify s)
-	in
-	    TextIO.output (outstream, s')
 	end
 
     val parseString		= processString parse
@@ -71,8 +71,11 @@ structure Main :> MAIN =
     fun ozifyStringToFile(s,n)	= processString (toFile ozify n) s
     fun ozifyFileToFile(n1,n2)	= processFile (toFile ozify n2) n1
 
-    val debugString		= processString (debug TextIO.stdOut)
-    val debugFile		= processFile (debug TextIO.stdOut)
+    val debugStringToStdOut	= processString (debug TextIO.stdOut)
+    val debugFileToStdOut	= processFile (debug TextIO.stdOut)
+
+    fun debugStringToFile(s,n)	= processString (toFile debug n) s
+    fun debugFileToFile(n1,n2)	= processFile (toFile debug n2) n1
 
     val comifyStringToStdOut	= processString (comify TextIO.stdOut)
     val comifyFileToStdOut	= processFile (comify TextIO.stdOut)

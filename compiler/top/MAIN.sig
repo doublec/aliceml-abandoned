@@ -22,8 +22,11 @@ signature MAIN =
     val ozifyStringToFile :	string * string -> unit
     val ozifyFileToFile :	string * string -> unit
 
-    val debugString :		string -> unit
-    val debugFile :		string -> unit
+    val debugStringToStdOut :	string -> unit
+    val debugFileToStdOut :	string -> unit
+
+    val debugStringToFile :	string * string -> unit
+    val debugFileToFile :	string * string -> unit
 
     val comifyStringToStdOut :	string -> unit
     val comifyFileToStdOut :	string -> unit
