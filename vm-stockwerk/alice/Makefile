@@ -1,4 +1,3 @@
-## -*- Makefile -*-
 ##
 ## Authors:
 ##   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
@@ -18,71 +17,39 @@ TOPDIR = ..
 include $(TOPDIR)/Makefile.vars
 include $(TOPDIR)/Makefile.rules
 
-GENERICSRCS = \
-	RootSet.cc \
-	Outline.cc \
-	TaskStack.cc \
-	IOHandler.cc \
-	Scheduler.cc \
-	Transients.cc \
-	Interpreter.cc \
-	Guid.cc
-
-SERVICESSRCS = \
-	PushCallInterpreter.cc \
-	ByneedInterpreter.cc \
-	Unpickler.cc \
-	Pickler.cc \
-	BootLinker.cc
-
-ALICESRCS = \
-	Alice.cc \
-	LazySelectionInterpreter.cc \
-	AbstractCodeInterpreter.cc
-
-PRIMITIVES = \
+PRIMITIVE_MODULES = \
 	Unqualified Array Char Future General GlobalStamp Hole Int LargeWord \
 	List Math Option Real Ref String Thread Unsafe Vector Word
-PRIMITIVESSRCS = Primitive.cc PrimitiveTable.cc $(PRIMITIVES:%=%.cc)
+LIB_SYSTEM_MODULES = \
+	Config IO OS CommandLine Component Debug Rand Reflect Socket
+LIB_UTILITY_MODULES = MkRefMap
+LIB_DISTRIBUTION_MODULES = Remote
 
-UNSAFE_SYSTEM = Config IO OS CommandLine Component Debug Rand Reflect Socket
-UNSAFE_UTILITY = MkRefMap
-UNSAFE_DISTRIBUTION = Remote
-UNSAFESSRCS = \
-	$(UNSAFE_SYSTEM:%=Unsafe%.cc) \
-	$(UNSAFE_UTILITY:%=Unsafe%.cc) \
-	$(UNSAFE_DISTRIBUTION:%=Unsafe%.cc)
+SOURCES = \
+	Outline.cc Guid.cc PrimitiveTable.cc \
+	$(PRIMITIVE_MODULES:%=primitives/%.cc) \
+	$(LIB_SYSTEM_MODULES:%=lib/system/Unsafe%.cc) \
+	$(LIB_UTILITY_MODULES:%=lib/utility/Unsafe%.cc) \
+	$(LIB_DISTRIBUTION_MODULES:%=lib/distribution/Unsafe%.cc) \
+	LazySelInterpreter.cc AbstractCodeInterpreter.cc
 
-SRCS = \
-	$(GENERICSRCS) \
-	$(SERVICESSRCS) \
-	$(ALICESRCS) \
-	$(PRIMITIVESSRCS) \
-	$(UNSAFESSRCS) \
-	Debug.cc \
-	Base.cc \
-	Properties.cc \
-	Main.cc
+OBJS = $(SOURCES:%.cc=%.o)
 
-OBJS = $(SRCS:%.cc=%.o)
+all: libalice.a
 
-all: $(OBJS)
-	$(LD) $(CXXFLAGS) -o stow.exe $(OBJS) \
-	-L$(TOPDIR)/adt -L$(TOPDIR)/store -ladt -lstore $(EXTRA_LIBS)
-
-store:
-	cd $(TOPDIR)/store && $(MAKE) distclean && $(MAKE)
-
-adt:
-	cd $(TOPDIR)/adt && $(MAKE) distclean && $(MAKE)
+libalice.a: $(OBJS)
+	ar rc libalice.a $(OBJS) || exit 1
+	ranlib libalice.a
 
 clean:
-	rm -rf stow.exe $(OBJS)
+	rm -f $(OBJS)
 
-distclean: clean
-	rm -rf *~
+veryclean: clean
+	rm -f libalice.a
 
-Makefile.depend: Makefile $(SRCS)
-	$(MAKEDEPEND) $(SRCS) > Makefile.depend
+distclean: veryclean
+
+Makefile.depend: Makefile $(SOURCES)
+	$(MAKEDEPEND) $(SOURCES) > Makefile.depend
 
 include Makefile.depend

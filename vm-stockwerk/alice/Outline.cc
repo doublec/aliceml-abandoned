@@ -13,6 +13,9 @@
 //
 
 #if defined(INTERFACE)
-#pragma implementation "emulator/Alice.hh"
+#pragma implementation "alice/Data.hh"
+#pragma implementation "alice/AbstractCode.hh"
 #endif
-#include "emulator/Alice.hh"
+
+#include "alice/Data.hh"
+#include "alice/AbstractCode.hh"
