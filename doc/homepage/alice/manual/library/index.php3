@@ -233,6 +233,7 @@ types, exceptions and values that are available unqualified.</P>
     <TR> <TD><A href="prim-io.php3">BinPrimIO</A></TD> </TR>
     <TR> <TD><A href="command-line.php3">CommandLine</A></TD> </TR>
     <TR> <TD><A href="component.php3">Component</A></TD> </TR>
+    <TR> <TD><A href="component-manager.php3">ComponentManager</A></TD> </TR>
     <TR> <TD><A href="config.php3">Config</A></TD> </TR>
     <TR> <TD><A href="http.php3">Http</A></TD> </TR>
     <TR> <TD><A href="http-client.php3">HttpClient</A></TD> </TR>

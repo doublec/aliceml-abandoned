@@ -5,6 +5,7 @@
 <?php section("synopsis", "synopsis") ?>
 
   <PRE>
+    structure ComponentManager : COMPONENT_MANAGER
     signature COMPONENT_MANAGER</PRE>
 
   <P>
@@ -23,6 +24,10 @@
     URLs given to any of the functions below are first resolved with
     respect to the current working directory and stripped of their query
     and fragment constituents.
+  </P>
+
+  <P>
+    The structure <TT>ComponentManager</TT> is the root component manager.
   </P>
 
   <P>
