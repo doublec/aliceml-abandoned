@@ -32,4 +32,6 @@ structure Inspector (* : INSPECTOR *) =
 	    in
 		(val _ = UnsafeInspector.inspectMod (M.x, I.x))
 	    end
+
+	val registerType = UnsafeInspector.registerType
     end
