@@ -28,7 +28,7 @@ LDLIBS = $(SUBDIRS:%=-L%) $(SUBDIRSR:%=-l%) \
 
 .PHONY: all-subdirs depend-local
 
-all: all-subdirs $(TARGETS)
+all: all-subdirs $(TARGETS) java.exe
 
 ifdef WINDOWS
 stow.exe: Main.o stow.dll
@@ -37,6 +37,9 @@ else
 stow.exe: Main.o $(OBJS) $(LIBS)
 	$(LD) $(LDFLAGS) -o $@ Main.o $(OBJS) $(LDLIBS)
 endif
+
+java.exe: JavaMain.o Base.o $(LIBS)
+	$(LD) $(LDFLAGS) -o $@ $< Base.o $(LDLIBS)
 
 %.def: $(OBJS) $(LIBS)
 	$(DLLTOOL) --output-def $@ --dllname $*.dll $^
