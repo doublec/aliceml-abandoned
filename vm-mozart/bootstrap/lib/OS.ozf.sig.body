@@ -16,6 +16,11 @@ signature OS_COMPONENT =
 	    sig
 		structure Process:
 		    sig
+			eqtype status
+
+			val success: status
+			val failure: status
+			val exit: status -> 'a
 			val getEnv: string -> string option
 		    end
 	    end
