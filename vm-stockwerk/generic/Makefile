@@ -40,8 +40,9 @@ veryclean: clean
 	rm -f libgeneric.a
 
 distclean: veryclean
+	rm -f Makefile.depend
 
 Makefile.depend: Makefile $(SOURCES)
-	$(MAKEDEPEND) $(SOURCES) > Makefile.depend
+	$(MAKEDEPEND) $(SOURCES) > $@
 
 include Makefile.depend

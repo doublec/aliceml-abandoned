@@ -61,8 +61,9 @@ veryclean: clean
 	rm -f libalice.a
 
 distclean: veryclean
+	rm -f Makefile.depend
 
 Makefile.depend: Makefile $(SOURCES)
-	$(MAKEDEPEND) $(SOURCES) > Makefile.depend
+	$(MAKEDEPEND) $(SOURCES) > $@
 
 include Makefile.depend
