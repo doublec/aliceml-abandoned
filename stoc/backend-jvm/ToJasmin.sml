@@ -38,6 +38,8 @@ structure ToJasmin =
 		  | enter nil = ()
 		fun deadCode (Label lab'::Goto lab''::rest, false) =
 		    Goto (directJump lab'')::deadCode (rest, true)
+		  | deadCode (Label _::Goto _::rest, true) =
+		    deadCode (rest, true)
 		  | deadCode (Label lab'::(rest as (Label lab''::_)), dead) =
 		    deadCode (rest,dead)
 		  | deadCode ((l as Label _)::rest, true) =
