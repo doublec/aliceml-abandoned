@@ -23,6 +23,8 @@
 #include "java/ClassLoader.hh"
 #include "java/ClassFile.hh"
 
+//--** check loading constraints
+
 class ClassTable: private HashTable {
 private:
   static const u_int initialTableSize = 19; //--** to be determined
@@ -123,7 +125,8 @@ Worker::Result BuildClassWorker::Run() {
     //--** superinterfaces of C is not in fact an interface, loading
     //--** throws an IncompatibleClassChangeError
   }
-  //--** if (!classInfo->Verify()) raise VerifyError
+  if (!classInfo->Verify())
+    Error("VerifyError"); //--** raise VerifyError
   Scheduler::PopFrame();
   Scheduler::nArgs = Scheduler::ONE_ARG;
   Scheduler::currentArgs[0] = classInfo->Prepare()->ToWord();
@@ -228,9 +231,9 @@ Worker::Result ResolveInterpreter::Run() {
       ClassFile *classFile = ClassFile::NewFromFile(name);
       ClassInfo *classInfo = classFile->Parse(frame->GetClassLoader());
       if (classInfo == INVALID_POINTER)
-	; //--** raise ClassFormatError
+	Error("ClassFormatError"); //--** raise ClassFormatError
       if (!classInfo->GetName()->Equals(name))
-	; //--** raise NoClassDefFoundError
+	Error("NoClassDefFoundError"); //--** raise NoClassDefFoundError
       Scheduler::PopFrame();
       BuildClassWorker::PushFrame(classInfo);
       return Worker::CONTINUE;
@@ -368,7 +371,6 @@ word ClassLoader::ResolveType(JavaString *name) {
 
 word ClassLoader::ResolveFieldRef(JavaString *className, JavaString *name,
 				  JavaString *descriptor) {
-  //--** also maintain a dictionary?
   ConcreteCode *concreteCode = ConcreteCode::New(ResolveInterpreter::self, 0);
   Closure *closure = Closure::New(concreteCode->ToWord(), 5);
   closure->Init(0, ToWord());
@@ -381,7 +383,6 @@ word ClassLoader::ResolveFieldRef(JavaString *className, JavaString *name,
 
 word ClassLoader::ResolveMethodRef(JavaString *className, JavaString *name,
 				   JavaString *descriptor) {
-  //--** also maintain a dictionary?
   ConcreteCode *concreteCode = ConcreteCode::New(ResolveInterpreter::self, 0);
   Closure *closure = Closure::New(concreteCode->ToWord(), 5);
   closure->Init(0, ToWord());
@@ -395,7 +396,6 @@ word ClassLoader::ResolveMethodRef(JavaString *className, JavaString *name,
 word ClassLoader::ResolveInterfaceMethodRef(JavaString *className,
 					    JavaString *name,
 					    JavaString *descriptor) {
-  //--** also maintain a dictionary?
   ConcreteCode *concreteCode = ConcreteCode::New(ResolveInterpreter::self, 0);
   Closure *closure = Closure::New(concreteCode->ToWord(), 5);
   closure->Init(0, ToWord());
