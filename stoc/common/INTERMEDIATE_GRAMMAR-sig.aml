@@ -73,7 +73,7 @@ signature INTERMEDIATE =
     (* Declarations *)
 
     and dec =
-	  ValDec    of info * id list * exp
+	  ValDec    of info * id list * exp * bool (* recursive *)
 	  		(* - all ids distinct
 			 * - id list either empty
 			 *   or exp has appropriate tuple type *)

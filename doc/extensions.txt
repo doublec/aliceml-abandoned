@@ -5,6 +5,7 @@ Core language:
 
 - var annotations in types?
 - curried fn? (grammar overhead)
+- allow with type instead of withtype?
 + more liberal syntax in fun
 + more liberal datatype declaration syntax
 + punning in record expressions

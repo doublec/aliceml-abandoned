@@ -74,7 +74,7 @@ functor Intermediate(type info
     (* Declarations *)
 
     and dec =
-	  ValDec    of info * id list * exp
+	  ValDec    of info * id list * exp * bool (* recursive *)
 	  		(* - all ids distinct
 			 * - id list either empty
 			 *   or exp has appropriate tuple type *)
@@ -155,7 +155,7 @@ functor Intermediate(type info
       | info_pat(GuardPat(i,_,_))	= i
       | info_pat(WithPat(i,_,_))	= i
 
-    fun info_dec(ValDec(i,_,_))		= i
+    fun info_dec(ValDec(i,_,_,_))	= i
       | info_dec(ConDec(i,_,_))		= i
 
   end
