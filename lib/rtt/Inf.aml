@@ -29,7 +29,7 @@ structure InfPrivate =
 
 
     datatype inf' =
-	  ANY					(* top *)
+	  TOP					(* top *)
 	| CON of con				(* interface constructor *)
 	| SIG of sign				(* signature *)
 	| ARR of path * inf * inf		(* arrow (functor) *)
@@ -234,7 +234,7 @@ structure InfPrivate =
     and realise (rea: rea, j as ref j')	= j := realise'(rea, j')
 
     and realise'(rea, LINK j)		= realise'(rea, !j)
-      | realise'(rea, ANY)		= ANY
+      | realise'(rea, TOP)		= TOP
       | realise'(rea, CON c)		= realiseCon(rea, c)
       | realise'(rea, j' as SIG s)	= ( realiseSig(rea, s)
 					  ; j'
@@ -300,7 +300,7 @@ structure InfPrivate =
 
     and instanceInf (rea, ref j')	= ref(instanceInf'(rea, j'))
     and instanceInf'(rea, LINK j)	= instanceInf'(rea, !j)
-      | instanceInf'(rea, ANY)		= ANY
+      | instanceInf'(rea, TOP)		= TOP
       | instanceInf'(rea, CON c)	= CON(instanceCon(rea, c))
       | instanceInf'(rea, SIG s)	= SIG(instanceSig(rea, s))
       | instanceInf'(rea, ARR(p,j1,j2))	= ARR(instancePath(rea, p),
@@ -402,7 +402,7 @@ structure InfPrivate =
 
     and singletonInf (rea, ref j')	= ref(singletonInf'(rea, j'))
     and singletonInf'(rea, LINK j)	= singletonInf'(rea, !j)
-      | singletonInf'(rea, ANY)		= ANY
+      | singletonInf'(rea, TOP)		= TOP
       | singletonInf'(rea, CON c)	= CON(singletonCon(rea, c))
       | singletonInf'(rea, SIG s)	= SIG(singletonSig(rea, s))
       | singletonInf'(rea,ARR(p,j1,j2))	= ARR(singletonPath(rea, p),
@@ -496,7 +496,7 @@ structure InfPrivate =
 
     fun clone(ref j')		= ref(clone' j')
     and clone'(LINK j)		= clone'(!j)
-      | clone'(ANY)		= ANY
+      | clone'(TOP)		= TOP
       | clone'(CON c)		= CON(cloneCon c)
       | clone'(SIG s)		= SIG(cloneSig s)
       | clone'(ARR(p,j1,j2))	= ARR(p, clone j1, clone j2)
@@ -538,7 +538,7 @@ structure InfPrivate =
 
   (* Creation and injections *)
 
-    fun inAny()		= ref ANY
+    fun inTop()		= ref TOP
     fun inCon c		= ref(CON c)
     fun inSig s		= ref(SIG s)
     fun inArrow pjj	= ref(ARR pjj)
@@ -556,7 +556,7 @@ structure InfPrivate =
 
     fun asInf j		= !(follow j)
 
-    fun isAny j		= case asInf j of ANY   => true | _ => false
+    fun isTop j		= case asInf j of TOP   => true | _ => false
     fun isCon j		= case asInf j of CON _ => true | _ => false
     fun isSig j		= case asInf j of SIG _ => true | _ => false
     fun isArrow j	= case asInf j of ARR _ => true | _ => false
@@ -642,7 +642,7 @@ structure InfPrivate =
       | asDependent _		= raise Kind
 
     fun kind(ref j')		= kind' j'
-    and kind'( ANY
+    and kind'( TOP
 	     | SIG _
 	     | ARR _ )		= inGround()
       | kind'(CON(k,p))		= k
@@ -786,7 +786,7 @@ structure InfPrivate =
 	    raise Mismatch(MismatchTypSort(l, w1, w2))
 
 
-    and match'(rea, _, ref ANY) = ()
+    and match'(rea, _, ref TOP) = ()
       | match'(rea, j1 as ref(CON(_,p1)), j2 as ref(CON(_,p2))) =
 	if p1 = p2 then
 	    ()
@@ -978,8 +978,8 @@ structure InfPrivate =
 	    CLOSED
 
 
-    and intersect'(rea, j1, ref ANY) = j1
-      | intersect'(rea, ref ANY, j2) = j2
+    and intersect'(rea, j1, ref TOP) = j1
+      | intersect'(rea, ref TOP, j2) = j2
       | intersect'(rea, j1 as ref(CON(_,p1)), j2 as ref(CON(_,p2))) =
 	if p1 = p2 then
 	    j1

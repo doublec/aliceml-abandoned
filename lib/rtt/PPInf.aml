@@ -31,8 +31,8 @@ structure PPInf :> PP_INF =
 
     fun ppInf(ref j') = fbox(below(ppInf' j'))
 
-    and ppInf'(ANY) =
-	    text "ANY"
+    and ppInf'(TOP) =
+	    text "TOP"
 
       | ppInf'(CON c) =
 	    ppCon c

@@ -34,7 +34,7 @@ signature INF =
 
   (* Injections *)
 
-    val inAny :		unit		 -> inf
+    val inTop :		unit		 -> inf
     val inCon :		con		 -> inf
     val inSig :		sign		 -> inf
     val inArrow :	path * inf * inf -> inf
@@ -43,7 +43,7 @@ signature INF =
 
   (* Inquiries *)
 
-    val isAny :		inf -> bool
+    val isTop :		inf -> bool
     val isCon :		inf -> bool
     val isSig :		inf -> bool
     val isArrow :	inf -> bool

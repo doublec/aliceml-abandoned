@@ -109,7 +109,7 @@ functor MakeAbstractGrammar(type info) :>
     (* Interfaces *)
 
     and inf =
-	  AnyInf    of info			(* top interface *)
+	  TopInf    of info			(* top interface *)
 	| AbsInf    of info			(* abstract interface *)
 	| ConInf    of info * longid		(* interface constructor *)
 	| SigInf    of info * spec list		(* signature *)
@@ -240,7 +240,7 @@ functor MakeAbstractGrammar(type info) :>
       | infoMod(UpMod(i,_,_))		= i
       | infoMod(LetMod(i,_,_))		= i
 
-    fun infoInf(AnyInf(i))		= i
+    fun infoInf(TopInf(i))		= i
       | infoInf(AbsInf(i))		= i
       | infoInf(ConInf(i,_))		= i
       | infoInf(SigInf(i,_))		= i

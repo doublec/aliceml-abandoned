@@ -3,68 +3,103 @@ structure Env0 :> ENV0 =
 
     open Env
 
-    structure P = Prebound
+    structure P   = Prebound
+    datatype id   = datatype AbstractGrammar.id
+    datatype kind = datatype Type.kind
+    datatype sort = datatype Type.sort
 
-    datatype id = datatype AbstractGrammar.id
 
-    (* Prebound *)
+  (* Prebound *)
 
     val E0 = new()
 
-    (* Type environment *)
 
-    val path_word    = Path.fromLab(Lab.fromString "word")
-    val path_int     = Path.fromLab(Lab.fromString "int")
-    val path_char    = Path.fromLab(Lab.fromString "char")
-    val path_string  = Path.fromLab(Lab.fromString "string")
-    val path_real    = Path.fromLab(Lab.fromString"real")
-    val path_bool    = Path.fromLab(Lab.fromString"bool")
-    val path_exn     = Path.fromLab(Lab.fromString"exn")
-    val path_ref     = Path.fromLab(Lab.fromString"ref")
-    val path_vec     = Path.fromLab(Lab.fromString"vector")
-    val path_list    = Path.fromLab(Lab.fromString"list")
+  (* Type environment *)
 
-    val con_word     = (Type.STAR, Type.CLOSED, path_word)
-    val con_int      = (Type.STAR, Type.CLOSED, path_int)
-    val con_char     = (Type.STAR, Type.CLOSED, path_char)
-    val con_string   = (Type.STAR, Type.CLOSED, path_string)
-    val con_real     = (Type.STAR, Type.CLOSED, path_real)
-    val con_bool     = (Type.STAR, Type.CLOSED, path_bool)
-    val con_exn      = (Type.STAR, Type.CLOSED, path_exn)
-    val con_ref      = (Type.ARROW(Type.STAR,Type.STAR), Type.CLOSED, path_ref)
-    val con_vec      = (Type.ARROW(Type.STAR,Type.STAR), Type.CLOSED, path_vec)
-    val con_list     = (Type.ARROW(Type.STAR,Type.STAR), Type.CLOSED, path_list)
+    val s_int		= "int"
+    val s_word		= "word"
+    val s_char		= "char"
+    val s_string	= "string"
+    val s_real		= "real"
+    val s_bool		= "bool"
+    val s_exn		= "exn"
+    val s_ref		= "ref"
+    val s_vec		= "vector"
+    val s_list		= "list"
 
-    val typ_word     = Type.inCon con_word   (* Remember to maximise sharing! *)
-    val typ_int      = Type.inCon con_int
-    val typ_char     = Type.inCon con_char
-    val typ_string   = Type.inCon con_string
-    val typ_real     = Type.inCon con_real
-    val typ_bool     = Type.inCon con_bool
-    val typ_exn      = Type.inCon con_exn
-    val typ_ref      = Type.inCon con_ref
-    val typ_vec      = Type.inCon con_vec
-    val typ_list     = Type.inCon con_list
+    val path_int	= Path.fromLab(Lab.fromString s_int)
+    val path_word	= Path.fromLab(Lab.fromString s_word)
+    val path_char	= Path.fromLab(Lab.fromString s_char)
+    val path_string	= Path.fromLab(Lab.fromString s_string)
+    val path_real	= Path.fromLab(Lab.fromString s_real)
+    val path_bool	= Path.fromLab(Lab.fromString s_bool)
+    val path_exn	= Path.fromLab(Lab.fromString s_exn)
+    val path_ref	= Path.fromLab(Lab.fromString s_ref)
+    val path_vec	= Path.fromLab(Lab.fromString s_vec)
+    val path_list	= Path.fromLab(Lab.fromString s_list)
 
-    fun insertTyp'(stamp, typ, w, s) =
+    val con_word	= (STAR, CLOSED, path_word)
+    val con_int		= (STAR, CLOSED, path_int)
+    val con_char	= (STAR, CLOSED, path_char)
+    val con_string	= (STAR, CLOSED, path_string)
+    val con_real	= (STAR, CLOSED, path_real)
+    val con_bool	= (STAR, CLOSED, path_bool)
+    val con_exn		= (STAR, CLOSED, path_exn)
+    val con_ref		= (ARROW(STAR,STAR), CLOSED, path_ref)
+    val con_vec		= (ARROW(STAR,STAR), CLOSED, path_vec)
+    val con_list	= (ARROW(STAR,STAR), CLOSED, path_list)
+
+    val typ_int		= Type.inCon con_int	(* Always maximise sharing! *)
+    val typ_word	= Type.inCon con_word
+    val typ_char	= Type.inCon con_char
+    val typ_string	= Type.inCon con_string
+    val typ_real	= Type.inCon con_real
+    val typ_bool	= Type.inCon con_bool
+    val typ_exn		= Type.inCon con_exn
+    val typ_ref		= Type.inCon con_ref
+    val typ_vec		= Type.inCon con_vec
+    val typ_list	= Type.inCon con_list
+
+    fun insertTyp'(stamp, path, typ, sort, s) =
 	let
-	    val entry = ( Id(Source.nowhere, stamp, Name.ExId s), typ, w )
+	    val entry = { id   = Id(Source.nowhere, stamp, Name.ExId s)
+			, path = path
+			, typ  = typ
+			, sort = sort
+			}
 	in
 	    insertTyp(E0, stamp, entry)
 	end
 
-    val _ = insertTyp'(P.stamp_word,   typ_word,   Inf.CLOSED, "word")
-    val _ = insertTyp'(P.stamp_int,    typ_int,    Inf.CLOSED, "int")
-    val _ = insertTyp'(P.stamp_char,   typ_char,   Inf.CLOSED, "char")
-    val _ = insertTyp'(P.stamp_string, typ_string, Inf.CLOSED, "string")
-    val _ = insertTyp'(P.stamp_real,   typ_real,   Inf.CLOSED, "real")
-    val _ = insertTyp'(P.stamp_bool,   typ_bool,   Inf.CLOSED, "bool")
-    val _ = insertTyp'(P.stamp_exn,    typ_exn,    Inf.OPEN,   "exn")
-    val _ = insertTyp'(P.stamp_tref,   typ_ref,    Inf.CLOSED, "ref")
-    val _ = insertTyp'(P.stamp_vec,    typ_vec,    Inf.CLOSED, "vector")
-    val _ = insertTyp'(P.stamp_list,   typ_list,   Inf.CLOSED, "list")
+    val _ = insertTyp'(P.stamp_int,    path_int,   typ_int,    CLOSED, s_int)
+    val _ = insertTyp'(P.stamp_word,   path_word,  typ_word,   CLOSED, s_word)
+    val _ = insertTyp'(P.stamp_char,   path_char,  typ_char,   CLOSED, s_char)
+    val _ = insertTyp'(P.stamp_string, path_string,typ_string, CLOSED, s_string)
+    val _ = insertTyp'(P.stamp_real,   path_real,  typ_real,   CLOSED, s_real)
+    val _ = insertTyp'(P.stamp_bool,   path_bool,  typ_bool,   CLOSED, s_bool)
+    val _ = insertTyp'(P.stamp_exn,    path_exn,   typ_exn,    OPEN,   s_exn)
+    val _ = insertTyp'(P.stamp_tref,   path_ref,   typ_ref,    CLOSED, s_ref)
+    val _ = insertTyp'(P.stamp_vec,    path_vec,   typ_vec,    CLOSED, s_vec)
+    val _ = insertTyp'(P.stamp_list,   path_list,  typ_list,   CLOSED, s_list)
 
-    (* Value environment *)
+
+  (* Value environment *)
+
+    val s_false		= "false"
+    val s_true		= "true"
+    val s_nil		= "nil"
+    val s_cons		= "cons"
+    val s_ref		= "ref"
+    val s_match		= "Match"
+    val s_bind		= "Bind"
+
+    val path_false	= Path.fromLab(Lab.fromString s_false)
+    val path_true	= Path.fromLab(Lab.fromString s_true)
+    val path_nil	= Path.fromLab(Lab.fromString s_nil)
+    val path_cons	= Path.fromLab(Lab.fromString s_cons)
+    val path_ref	= Path.fromLab(Lab.fromString s_ref)
+    val path_match	= Path.fromLab(Lab.fromString s_match)
+    val path_bind	= Path.fromLab(Lab.fromString s_bind)
 
     fun poly typF =
 	let
@@ -83,20 +118,23 @@ structure Env0 :> ENV0 =
     val typ_Match = typ_exn
     val typ_Bind  = typ_exn
 
-    fun insertCon'(stamp, typ, s) =
+    fun insertCon'(stamp, path, typ, s) =
 	let
-	    val entry = ( Id(Source.nowhere, stamp, Name.ExId s),
-			  typ, Inf.CONSTRUCTOR )
+	    val entry = { id   = Id(Source.nowhere, stamp, Name.ExId s)
+			, path = path
+			, typ  = typ
+			, sort = Inf.CONSTRUCTOR
+			}
 	in
 	    insertVal(E0, stamp, entry)
 	end
 
-    val _ = insertCon'(P.stamp_false, typ_false, "false")
-    val _ = insertCon'(P.stamp_true,  typ_true,  "true")
-    val _ = insertCon'(P.stamp_nil,   typ_nil,   "nil")
-    val _ = insertCon'(P.stamp_cons,  typ_cons,  "::")
-    val _ = insertCon'(P.stamp_ref,   typ_ref,   "ref")
-    val _ = insertCon'(P.stamp_Match, typ_Match, "Match")
-    val _ = insertCon'(P.stamp_Bind,  typ_Bind,  "Bind")
+    val _ = insertCon'(P.stamp_false, path_false, typ_false, s_false)
+    val _ = insertCon'(P.stamp_true,  path_true,  typ_true,  s_true)
+    val _ = insertCon'(P.stamp_nil,   path_nil,   typ_nil,   s_nil)
+    val _ = insertCon'(P.stamp_cons,  path_cons,  typ_cons,  s_cons)
+    val _ = insertCon'(P.stamp_ref,   path_ref,   typ_ref,   s_ref)
+    val _ = insertCon'(P.stamp_Match, path_match, typ_Match, s_match)
+    val _ = insertCon'(P.stamp_Bind,  path_bind,  typ_Bind,  s_bind)
 
   end

@@ -108,7 +108,7 @@ signature ABSTRACT_GRAMMAR =
     (* Interfaces *)
 
     and inf =
-	  AnyInf    of info			(* top interface *)
+	  TopInf    of info			(* top interface *)
 	| AbsInf    of info			(* abstract interface *)
 	| ConInf    of info * longid		(* interface constructor *)
 	| SigInf    of info * spec list		(* signature *)

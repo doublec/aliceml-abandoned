@@ -11,11 +11,11 @@ signature ENV =
     type env
     type t = env
 
-    type val_entry = id * typ * Inf.val_sort
-    type typ_entry = id * typ * Inf.typ_sort
-    type var_entry = id * var
-    type mod_entry = id * inf
-    type inf_entry = id * inf
+    type val_entry = { id: id, path: path, typ: typ, sort: Inf.val_sort }
+    type typ_entry = { id: id, path: path, typ: typ, sort: Inf.typ_sort }
+    type var_entry = { id: id, var: var }
+    type mod_entry = { id: id, path: path, inf: inf }
+    type inf_entry = { id: id, path: path, inf: inf }
 
     exception Collision of stamp
     exception Lookup    of stamp
