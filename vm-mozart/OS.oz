@@ -12,6 +12,7 @@
 
 functor
 import
+   BootValue(byNeedFail: ByNeedFail) at 'x-oz://boot/Value'
    OS(system getEnv)
    Application(exit)
 export
@@ -19,7 +20,8 @@ export
 define
    OS_Module =
    'OS'('Process$':
-	   'Process'('success': 0
+	   'Process'('$status': {ByNeedFail rttNotImplemented}
+		     'success': 0
 		     'failure': 1
 		     'system': OS.system
 		     'exit':
