@@ -52,6 +52,11 @@ static void InitAliceEnvironment() {
   SetEnv("ALICE_LOAD", strdup(buffer));
 }
 
+static void usage() {
+  fprintf(stderr, "Usage: alicerun <name> <args> ...\n");
+  exit(1);
+}
+
 int main(int argc, char *argv[]) {
   InitSeam();
   InitAliceEnvironment();

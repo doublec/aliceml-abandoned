@@ -7,10 +7,14 @@ CXXFLAGS = -O2 -march=pentium3 -mcpu=pentium3
 LD = g++ -mno-cygwin
 LDFLAGS = -L$(PREFIX)/lib -lseam
 
-EXES = alice.exe alicec.exe aliceserv.exe alicelink.exe alicedep.exe
+EXES = alicerun.exe alice.exe alicec.exe aliceserv.exe alicelink.exe alicedep.exe
 SCRIPTS = $(EXES:%.exe=$(BINDIR)/%)
 
 all: $(EXES)
+
+alicerun.o:
+	$(CXX) $(CXXFLAGS) -DROOT='--argc?(argv[1],argv++):usage()' \
+        -c alicex.cc -o alicerun.o
 
 alice.o:
 	$(CXX) $(CXXFLAGS) -DROOT='"x-alice:/compiler/ToplevelMain"' \
