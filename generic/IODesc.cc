@@ -199,6 +199,10 @@ IODescFinalizationSet *IODesc::finalizationSet;
 
 void IODesc::Init() {
   finalizationSet = new IODescFinalizationSet();
+#ifdef DEBUG_CHECK
+  FreeConsole();
+  AllocConsole();
+#endif
 }
 
 IODesc *IODesc::NewClosed(String *name) {
@@ -324,9 +328,11 @@ IODesc::result IODesc::Close() {
   switch (flags & TYPE_MASK) {
   case TYPE_CLOSED: break;
   case TYPE_FD:
-    Interruptible(res0, closesocket(GetFD()));
-    if (res0) res = result_socket_error;
-    break;
+    {
+      Interruptible(res0, closesocket(GetFD()));
+      if (res0) res = result_socket_error;
+      break;
+    }
 #if defined(__MINGW32__) || defined(_MSC_VER)
   case TYPE_HANDLE:
     if (CloseHandle(GetHandle()) == FALSE) res = result_system_error;
