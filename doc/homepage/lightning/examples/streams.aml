@@ -53,10 +53,10 @@ fun main() =
 
 	open Tools
 	val ty		= RecordTy #[("A",	ListTy IntTy),
-				     ("B",	ListTy IntTy),
 				     ("AplusB",	ListTy IntTy),
-				     ("AzipB",	ListTy IntTy),
 				     ("AtoChar",ListTy CharTy),
+				     ("AzipB",	ListTy IntTy),
+				     ("B",	ListTy IntTy),
 				     ("Bdiv10",	ListTy RealTy)
 				    ]
     in

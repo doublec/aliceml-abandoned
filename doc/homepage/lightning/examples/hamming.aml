@@ -1,3 +1,5 @@
+import structure TextIO from "x-alice:TextIO.dll"
+
 open Hole
 
 fun nth (x::_, 0) = x
@@ -29,5 +31,4 @@ val hamming =
 	hamming
     end
 
-val _ = Tools.print (List.nth (hamming, 1500))
-val _ = OS.Process.exit OS.Process.success
+val _ = TextIO.print (Int.toString (List.nth (hamming, 1500)) ^ "\n")

@@ -29,4 +29,15 @@
   </UL>
 
 
+<?php section("more", "more") ?>
+
+  <P>
+    You will find some more examples in:
+  </P>
+
+  <UL>
+    <LI> <A href="examples/"><TT>examples/</TT></A> </LI>
+  </UL>
+
+
 <?php footing() ?>

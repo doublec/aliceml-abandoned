@@ -1,3 +1,7 @@
+import structure TextIO from "x-alice:TextIO.dll"
+import structure Tools  from "x-alice:Tools.dll"
+
+
 open Hole
 
 fun append' (nil, ys, p) = fill (p, ys)
@@ -22,5 +26,4 @@ fun rev nil = nil
 fun makeList (0, _) = nil
   | makeList (n, x) = x::makeList (n - 1, x + 1)
 
-val _ = Tools.print (rev (makeList (2000, 0)))
-val _ = OS.Process.exit OS.Process.success
+val _ = TextIO.print (Tools.toString (rev (makeList (2000, 0))))

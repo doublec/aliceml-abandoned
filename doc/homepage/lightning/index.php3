@@ -39,6 +39,12 @@
     <A href="http://www.research.microsoft.com/">Microsoft Research</A>.
   </P>
 
+  <P>
+    Currently, the system uses
+    <A href="http://cm.bell-labs.com/cm/cs/what/smlnj/">SML/NJ</A>
+    to build itself.
+  </P>
+
 
 
 <?php section("people", "people") ?>

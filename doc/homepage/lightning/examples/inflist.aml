@@ -1,3 +1,5 @@
+import val print from "x-alice:TextIO.dll"
+
 fun enumFrom n = byneed(fn() => n :: enumFrom(n+1))
 
 val _ = List.app (fn n => print(Int.toString n ^ "\n")) (enumFrom 0)

@@ -28,6 +28,7 @@ INSTALLFILES_LIGHTNING_0 = \
 	incompatibilities.php3 usage.php3 libraries.php3 interop.php3 \
 	examples.php3
 INSTALLFILES_LIGHTNING_EXAMPLES_0 = \
+	concfib.aml hamming.aml infer.aml inflist.aml nrev.aml \
 	streams.aml smolka.aml
 INSTALLFILES = \
 	$(INSTALLFILES_0:%=$(PREFIX)/%) \
