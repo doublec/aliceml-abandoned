@@ -194,6 +194,7 @@ protected:
 public:
   // RegisterBank Static Constructor
   static void Init() {
+    Assert(ALICE_REGISTER_NB == 3); // else adapt this function
     regs[1] = new RegisterNode(0);
     regs[2] = new RegisterNode(1);
     regs[3] = new RegisterNode(2);
