@@ -17,7 +17,7 @@
 #include "java/Authoring.hh"
 
 DEFINE0(registerNatives) {
-  RETURN0;
+  RETURN_VOID;
 } END
 
 DEFINE0(currentTimeMillis) {

@@ -14,24 +14,24 @@
 #include "java/Authoring.hh"
 
 DEFINE0(registerNatives) {
-  RETURN0;
+  RETURN_VOID;
 } END
 
 DEFINE1(dump_I) {
   DECLARE_INT(i, x0);
   std::printf("%d\n", i);
-  RETURN0;
+  RETURN_VOID;
 } END
 
 DEFINE1(dump_Object) {
   Debug::Dump(x0);
-  RETURN0;
+  RETURN_VOID;
 } END
 
 DEFINE1(dump_String) {
   DECLARE_JAVA_STRING(string, x0);
   std::printf("%s\n", string->ExportC());
-  RETURN0;
+  RETURN_VOID;
 } END
 
 void NativeMethodTable::java_lang_Object(JavaString *className) {
