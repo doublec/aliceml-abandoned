@@ -66,6 +66,15 @@ AC_SEAM_CHECK_DECLSPEC
 AC_SEAM_CHECK_CXXFLAG(-pipe)
 AC_SEAM_CHECK_LDFLAG([-Wl,--export-dynamic])
 
+AC_SEAM_CHECK_LDFLAG([-shared],
+  [SEAMTOOL_SHAREDLIBFLAG="-shared"],
+  [AC_SEAM_CHECK_LDFLAG([-dynamic -dynamiclib],
+  [SEAMTOOL_SHAREDLIBFLAG="-dynamic -dynamiclib"],
+  [AC_MSG_ERROR([don't know how to build shared libraries])]
+  )])
+
+AC_SUBST(SEAMTOOL_SHAREDLIBFLAG)
+
 # checks for library functions
 
 AC_CHECK_DECL(VirtualAlloc,
@@ -128,6 +137,8 @@ AC_SEAM_ARG_ENABLE_WARNINGS
 # -------------------------------------------------------------------------
 # Output files
 # -------------------------------------------------------------------------
+
+AC_SEAM_SEAMTOOL_COMMANDS
 
 AC_CONFIG_FILES([
    Makefile

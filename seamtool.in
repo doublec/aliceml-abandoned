@@ -21,8 +21,6 @@ includedir=@includedir@
 pkgincludedir=@includedir@/@PACKAGE@
 libdir=@libdir@
 
-DEFAULT_INCLUDES="${DEFAULT_INCLUDES}${DEFAULT_INCLUDES:+ }-I. -I${pkgincludedir}"
-
 usage () {
     echo "Usage: $0 [OPTION]... MODE [MODE-ARG]...                   " >&2
     echo "Compilation utility for SEAM                               " >&2
@@ -92,13 +90,16 @@ shift
 
 case "$mode" in
     makedepend)
-	cmd @CXX@ -M ${DEFAULT_INCLUDES} @SEAMTOOL_CXXFLAGS@ "$@"
+	cmd @SEAMTOOL_MAKEDEPEND_CMD_PREAMBLE@ "$@" \
+            @SEAMTOOL_MAKEDEPEND_CMD_POSTAMBLE@
 	;;
     compile)
-	cmd @CXX@ ${DEFAULT_INCLUDES} @SEAMTOOL_CXXFLAGS@ -L${libdir} "$@"
+	cmd @SEAMTOOL_COMPILE_CMD_PREAMBLE@ "$@" \
+            @SEAMTOOL_COMPILE_CMD_POSTAMBLE@
 	;;
     link)
-	cmd @CXX@ @SEAMTOOL_LDFLAGS@ "$@" -shared -L${libdir} -lseam
+        cmd @SEAMTOOL_LINK_CMD_PREAMBLE@ "$@" \
+            @SEAMTOOL_LINK_CMD_POSTAMBLE@
 	;;
     config)
 	case "$1" in
