@@ -321,11 +321,11 @@ signature PARSER_DATA =
 	structure Token : TOKEN where LrTable = LrTable
     end
 
-functor Join(structure Lex : LEXER
-	     structure ParserData: PARSER_DATA
-where type svalue = Lex.UserDeclarations.svalue
-where type pos = Lex.UserDeclarations.pos
-where type ('a,'b) Token.token = ('a,'b) Lex.UserDeclarations.token
+functor Join(structure ParserData: PARSER_DATA
+	     structure Lex : LEXER
+where type UserDeclarations.svalue = ParserData.svalue
+where type UserDeclarations.pos = ParserData.pos
+where type ('a,'b) UserDeclarations.token = ('a,'b) ParserData.Token.token
 	     structure LrParser : LR_PARSER
 where type ('a,'b) LrTable.pairlist = ('a,'b) ParserData.LrTable.pairlist
 where type LrTable.state = ParserData.LrTable.state
@@ -344,11 +344,11 @@ where type ('a,'b) Token.token = ('a,'b) ParserData.Token.token
 )
   = struct end
 
-functor Join(structure Lex : LEXER
-	     structure ParserData: PARSER_DATA
-		where type svalue = Lex.UserDeclarations.svalue
-		where type pos = Lex.UserDeclarations.pos
-	where type ('a,'b) Token.token = ('a,'b) Lex.UserDeclarations.token
+functor Join(structure ParserData: PARSER_DATA
+	     structure Lex : LEXER
+where type UserDeclarations.svalue = ParserData.svalue
+where type UserDeclarations.pos = ParserData.pos
+where type ('a,'b) UserDeclarations.token = ('a,'b) ParserData.Token.token
 	     structure LrParser : LR_PARSER
 		where LrTable = ParserData.LrTable
 		where Token = ParserData.Token
