@@ -1,0 +1,40 @@
+(*
+ * Authors:
+ *   Gabor Szokoli <szokoli@ps.uni-sb.de>
+ *   Guido Tack <tack@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Gabor Szokoli and Guido Tack, 2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure GecodeTest from "GecodeTest"
+import structure TestSuite from "TestSuite"
+
+structure RunTests =
+  struct
+  open TestSuite
+
+  val max = 5
+  val seeds = [1]
+
+  val testsuite =
+      List.map (fn t => t max seeds)
+      [union, inter, subset,
+       noSubset, (* failed! *)
+       superOfInter, (* ok *)
+       subOfUnion, (* ok *)
+       diff, (* failed *)
+       disjoint, (* ok *)
+       (*distinct,*) (* gecode assertion! *)
+       partition, (* ok *)
+       equals, (* ok *)
+       convexHull (* failed *)
+       ]
+
+  val _ = GecodeTest.runTests testsuite
+  val _ = OS.Process.exit OS.Process.success
+  end

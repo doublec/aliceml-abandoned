@@ -1,0 +1,120 @@
+(*
+ * Authors:
+ *   Guido Tack <tack@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Guido Tack, 2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+import structure Test from "x-alice:/lib/test/Test"
+import structure Report from "x-alice:/lib/test/Report"
+
+import structure Space     from "x-alice:/lib/gecode/Space"
+import structure FS        from "x-alice:/lib/gecode/FS"
+
+structure GecodeTest :
+  sig
+      val binarySet : 
+          string * int * int list *
+          (Space.space * FS.setvar * FS.setvar -> unit)
+          * (FS.setvar * FS.setvar -> Space.space -> bool)
+          -> (string * (unit -> unit) list)
+      val ternarySet : 
+          string * int * int list *
+          (Space.space * FS.setvar * FS.setvar * FS.setvar -> unit)
+          * (FS.setvar * FS.setvar * FS.setvar -> Space.space -> bool)
+          -> (string * (unit -> unit) list)
+
+      val runTests : (string * (unit -> unit) list) list
+                     -> unit
+  end
+  =
+  struct
+
+  (* Generic search engine with verification *)
+  fun testVerify s v f =
+      let
+	  fun dfe (s,d) =
+	      case Space.status s of
+		  Space.FAILED => (f (); Space.discard s)
+		| Space.SOLVED => ((*assert (v s);*)
+		                   Space.discard s)
+		| Space.BRANCH =>
+		  let
+		      val c = Space.clone s
+		  in
+		      Space.commit(s, 1);
+		      Space.commit(c, 2);
+		      (dfe (s,d+1));
+		      (dfe (c,d+1))
+		  end
+	in
+	    dfe (s,0)
+	end
+
+  (* What to do when failure is found *)
+  fun testVerifySimple (s, v) = testVerify s v (fn () => assert false)	
+  fun testVerifyComplex (s, v) = testVerify s v (fn () => ())	
+
+  (* Translate propagator calling convention *)
+  fun mkBinary prop = fn (s,#[a,b]) => prop(s,a,b) | _ => raise Subscript
+  fun mkTernary prop = fn (s,#[a,b,c]) => prop(s,a,b,c) | _ => raise Subscript
+
+                                                                     
+  (* A test case for set constraints *)
+  fun mkSetTest arity prop max seed =
+      let
+	  val space = Space.new()
+	  val root = FS.setvarVec (space, arity)
+	  val top = FS.Value.make (space,#[(0,max)])
+      in
+          Vector.app (fn v => FS.subset (space, v, top)) root;
+          prop(space, root);
+	  FS.randomBranch(space, root, seed);
+	  (root, space)
+      end
+
+  (* Test case generation for binary set constraints *)
+  fun binarySet (name, max, seeds, propagator, verifier) =
+      let
+          val mkMyTest = mkSetTest 2 (mkBinary propagator) max
+          val tests = 
+              List.map (fn s => fn () =>
+                           let
+                               val (root, space) = mkMyTest s
+                               val v = verifier (case root of #[a,b] => (a,b)
+                                                            | _ => raise Subscript)
+                           in
+                               testVerifySimple (space, v)
+                               before Space.discard space
+                           end) seeds
+      in
+          (name, tests)
+      end
+
+  (* Test case generation for ternary set constraints *)
+  fun ternarySet (name, max, seeds, propagator, verifier) =
+      let
+          val mkMyTest = mkSetTest 3 (mkTernary propagator) max
+          val tests = 
+              List.map (fn s => fn () =>
+                           let
+                               val (root, space) = mkMyTest s
+                               val v = verifier (case root of #[a,b,c] => (a,b,c)
+                                                            | _ => raise Subscript)
+                           in
+                               testVerifySimple (space, v)
+                           end) seeds
+      in
+          (name, tests)
+      end
+
+          
+  (* running test suites *)
+  fun runTests testsuite = Report.runAll TextIO.stdOut
+                                         Test.defaultConfig testsuite
+
+  end
