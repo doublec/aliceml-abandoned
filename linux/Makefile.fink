@@ -1,9 +1,10 @@
-URL = http://www.ps.uni-sb.de/~tack/download
+URL = http://www.ps.uni-sb.de/alice/download
 
 REVISION = 1
-PACKAGES = gecode-0.9 seam-1.0.0 alice-1.0.1 \
-	alice-gecode-1.0.1 alice-gtk-1.0.1 \
-	alice-runtime-1.0.1
+PACKAGES = gecode-0.9 seam-1.1 alice-1.1 \
+	alice-gecode-1.1 alice-gtk-1.1 \
+	alice-sqlite-1.1 alice-xml-1.1 \
+	alice-runtime-1.1
 
 all: $(PACKAGES:%=%.tar.gz)
 
@@ -15,6 +16,8 @@ $(PACKAGES:%=%.tar.gz): %:
 	  $(@:%.tar.gz=%)-$(REVISION).info
 	sudo cp $(@:%.tar.gz=%)-$(REVISION).info \
 	  /sw/fink/dists/local/main/finkinfo/
+	sudo cp $@ /sw/src/
+	sudo rm -rf /sw/src/$(@:%.tar.gz=%)-$(REVISION)
 	fink validate $(@:%.tar.gz=%)-$(REVISION).info
 	fink build $(@:%.tar.gz=%)-$(REVISION)
 	fink install $(@:%.tar.gz=%)-$(REVISION)
