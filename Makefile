@@ -62,6 +62,10 @@ bootstrap-smlnj:
 docs:
 	(cd doc/manual && make PREFIX=$(PREFIX)/doc) || exit 1
 
+# this requires help2man, see http://www.gnu.org/software/help2man/
+docs-man:
+	(cd doc/man && make PREFIX=$(PREFIX) all install) || exit 1
+
 ##
 ## Clean-up
 ##
