@@ -92,7 +92,6 @@ functor MakeIntermediateGrammar(type info) :>
 	| ConDec    of info * id * bool (* has args *)
 	| PrimDec   of info * id * string
 	| RecDec    of info * dec list
-			(* may only contain ValDec *)
 
     (* Programs *)
 

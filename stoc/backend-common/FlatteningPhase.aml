@@ -89,9 +89,13 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 	    in
 		simplifyCase (coord, exp, matches, id_Bind)
 	    end
+	  | translateDec (ConDec (coord, id, hasArgs), cont) =
+	    O.ConDec (coord, id, hasArgs, false)::translateCont cont
+	  | translateDec (PrimDec (coord, id, string), cont) =
+	    O.PrimDec (coord, id, string, false)::translateCont cont
 	  | translateDec (RecDec (coord, decs), cont) =
 	    let
-		val (conDecs, constraints, idExpList, subst) =
+		val (preDecs, constraints, idExpList, subst) =
 		    SimplifyRec.derec decs
 		val aliasDecs =
 		    List.map (fn (fromId, toId) =>
@@ -119,7 +123,7 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 		val rest =
 		    O.RecDec (coord, idExpList', false)::aliasDecs @
 		    translateCont cont
-		val rest' = translateCont (Decs (conDecs, Goto rest))
+		val rest' = translateCont (Decs (preDecs, Goto rest))
 		val errStms = share [O.RaiseStm (coord, id_Bind)]
 	    in
 		List.foldr
@@ -145,8 +149,6 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 				      rest, errStms)])
 		 end) rest' constraints
 	    end
-	  | translateDec (ConDec (coord, id, hasArgs), cont) =
-	    O.ConDec (coord, id, hasArgs, false)::translateCont cont
 	and unfoldTerm (VarExp (_, longid), cont) =
 	    let
 		val (stms, id) = translateLongid longid

@@ -96,6 +96,9 @@ structure OutputImperativeGrammar :> OUTPUT_IMPERATIVE_GRAMMAR =
 	fun outputStm (ValDec (_, id, exp, isToplevel)) =
 	    SEQ [S "val ", ID id, S " = ", IN, outputExp exp, EX,
 		 if isToplevel then CO "toplevel" else NULL]
+	  | outputStm (PrimDec (_, id, s, isToplevel)) =
+	    SEQ [S "prim ", ID id, S (" = \"" ^ s ^ "\""),
+		 if isToplevel then CO "toplevel" else NULL]
 	  | outputStm (RecDec (_, idExpList, isToplevel)) =
 	    SEQ [S "rec", IN, if isToplevel then CO "toplevel" else NULL,
 		 SEQ (List.map (fn (id, exp) =>
@@ -157,7 +160,7 @@ structure OutputImperativeGrammar :> OUTPUT_IMPERATIVE_GRAMMAR =
 	    SEQ [S ("#" ^ s ^ " "), ID id]
 	  | outputExp (ConAppExp (_, id1, id2)) =
 	    SEQ [S "(con ", ID id1, S ") ", ID id2]
-	  | outputExp (BuiltinAppExp (_, s, ids)) =
+	  | outputExp (PrimAppExp (_, s, ids)) =
 	    SEQ [S (s ^ " "), SEP (S ", ", List.map ID ids)]
 	  | outputExp (AdjExp (_, id1, id2)) =
 	    SEQ [S "adj ", ID id1, S ", ", ID id2]

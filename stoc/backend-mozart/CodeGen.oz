@@ -275,7 +275,7 @@ define
 				Pos VInter2)
 	 VInter2 = vInlineDot(_ ResReg 1 {GetReg Id2 State} false Pos VInter3)
 	 VInter3 = vUnify(_ Reg ResReg VTl)
-      [] buitinAppExp(Coord Builtinname Ids) then Value Regs in
+      [] primAppExp(Coord Builtinname Ids) then Value Regs in
 	 Value = Prebound.builtinTable.Builtinname
 	 Regs = {FoldR Ids fun {$ Id Regs} {GetReg Id State}|Regs end [Reg]}
 	 if {CompilerSupport.isBuiltin Value} then
