@@ -1,35 +1,51 @@
-import structure GtkCore    from "x-alice:/lib/gtk/GtkCore"
-import structure Gtk        from "x-alice:/lib/gtk/Gtk"
+(*
+ * Authors:
+ *   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Thorsten Brunklaus, 2000
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
 import structure Gdk        from "x-alice:/lib/gtk/Gdk"
-import structure Canvas     from "x-alice:/lib/gtk/Canvas"
+import structure Gtk        from "x-alice:/lib/gtk/Gtk"
+import structure GtkCanvas  from "x-alice:/lib/gtk/GtkCanvas"
 import structure GtkBuilder from "GtkBuilder"
 
 local
-    open GtkCore
+    datatype event = datatype Gtk.event
+    datatype arg   = datatype Gtk.arg
+
     open GtkBuilder
 
     (* Create Canvas and obtain the Root Group *)
     val canvas = MakeWidget (Canvas {width=600, height=360})
-    val root   = Canvas.root canvas
+    val root   = GtkCanvas.root canvas
 
     (* Set up the Colors
      * 1. Obtain the system colormap
      * 2. Allocate the Colorstructure with R, G, B preset
-     * 3. Try to alloc appropriate system colors, non-writeable and with best-match
+     * 3. Try to alloc appropriate system colors,
+     *    non-writeable and with best-match
      * 4. Use color black and white
      *)
     val colormap = Gdk.colormapGetSystem ()
-    val black    = Gdk.allocateGdkColor(0,0,0);
-    val white    = Gdk.allocateGdkColor(65535,65535,65535);
-    val _        = Gdk.colormapAllocColor(colormap, black, false, true);
-    val _        = Gdk.colormapAllocColor(colormap, white, false, true);
+    val black    = Gdk.allocColor(0,0,0)
+    val white    = Gdk.allocColor(65535,65535,65535)
+    val _        = Gdk.colormapAllocColor(colormap, black, 0, 1)
+    val _        = Gdk.colormapAllocColor(colormap, white, 0, 1)
 
     (* Create Text Item *)
     val textItem = MakeCanvasItem
-	(CText {parent=root, x=10.0, y=10.0,
-		text="Press Button to move Canvas Item below",
-		font="-adobe-helvetica-medium-r-normal--12-*-72-72-p-*-iso8859-1",
-		fill_color=black, anchor=Gtk.ANCHOR_NORTH_WEST})
+	(CText
+	 {parent=root, x=10.0, y=10.0,
+	  text="Press Button to move Canvas Item below",
+	  font="-adobe-helvetica-medium-r-normal--12-*-72-72-p-*-iso8859-1",
+	  fill_color=black, anchor=Gtk.ANCHOR_NORTH_WEST})
 
     (* Create Rectangle Item *)
     val rectItem = MakeCanvasItem
@@ -39,15 +55,15 @@ local
     (* Create Rectangle Handler *)
     local
 	fun toggleColor(item, fill, outline) =
-	    (Canvas.itemSet(item, "fill_color_gdk", fill);
-	     Canvas.itemSet(item, "outline_color_gdk", outline))
+	    (GtkCanvas.itemSet(item, "fill_color_gdk", OBJECT fill);
+	     GtkCanvas.itemSet(item, "outline_color_gdk", OBJECT outline))
 
 	val pressed = ref false
 	val buttonx = ref (0.0)
 	val buttony = ref (0.0) 
     in
 	fun rectangleHandler(item, event) =
-	    (case Gdk.getGdkEvent event of
+	    (case event of
 		 GDK_BUTTON_PRESS {button=button, x=x, y=y, ...}  =>
 		     (case button of
 			  1 => (toggleColor(item, white, black);
@@ -62,7 +78,7 @@ local
 			      val newx = Real.- (x, !buttonx)
 			      val newy = Real.- (y, !buttony)
 			  in
-			      (Canvas.itemMove(item, newx, newy);
+			      (GtkCanvas.itemMove(item, newx, newy);
 			       buttonx := x;
 			       buttony := y)
 			  end
@@ -70,16 +86,20 @@ local
 	       | _                                 => ())
     end
 
-    (* Connect Event Handler to Rectangle Item; items only have the "event" Event;
+    (* Connect Event Handler to Rectangle Item;
+     * items only have the "event" Event;
      * All Events are passed via the Event Field of the event.
      *)
-    val _ = Gtk.signalConnect(rectItem, "event", fn event => rectangleHandler(rectItem, event))
+    val _ = Gtk.signalConnect(rectItem, "event",
+			      fn [EVENT(event)] =>
+			      rectangleHandler(rectItem, event))
 
-    fun destroyHandler _ = OS.Process.exit OS.Process.success
+    fun deleteHandler _ = OS.Process.exit OS.Process.success
 
     val widget = Toplevel {title="Canvas Item Demo",
 			   border=10,
-			   handler=[Handler("destroy", destroyHandler)], inner=Window canvas}
+			   handler=[Handler("delete-event", deleteHandler)],
+			   inner=Window canvas}
 in
     val _ = MakeWidget widget
 end
