@@ -1,0 +1,176 @@
+(*
+ * Authors:
+ *   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Thorsten Brunklaus, 2001
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
+import structure Inspector from "x-alice:/lib/tools/Inspector"
+import structure FD        from "x-alice:/lib/constraints/FD"
+import signature FD        from "x-alice:/lib/constraints/FD-sig"
+import structure FS        from "x-alice:/lib/constraints/FS"
+import signature FS        from "x-alice:/lib/constraints/FS-sig"
+import signature SCRIPT    from "x-alice:/lib/distribution/search/SCRIPT-sig"
+import structure ParSearch from "x-alice:/lib/distribution/search/ParSearch"
+
+structure Sample =
+    struct
+	(* SEND + MORE = MONEY Script *)
+	structure Money :> SCRIPT =
+	    struct
+		(* External Problem Result type *)
+		type sol = {S:int, E:int , N:int, D:int,
+			    M:int , O:int , R:int, Y:int}
+
+		functor MkScript(structure FD : FD structure FS : FS) =
+		    struct
+			(* Internal Problem Result type *)
+			type internal_sol = {S:FD.fd, E:FD.fd , N:FD.fd, D:FD.fd,
+					     M:FD.fd , O:FD.fd , R:FD.fd, Y:FD.fd}
+
+			(* Problem Description *)
+			fun script () =
+			    let
+				val ds as #[S, E, N, D, M, O, R, Y] = FD.rangeVec(8, (0, 9))
+				val send                            = FD.fd NONE
+				val more                            = FD.fd NONE
+				val money                           = FD.fd NONE
+				val zero                            = FD.fromInt 0
+			    in
+				FD.sumC(#[(1000, S), (100, E), (10, N), (1, D)],
+					FD.EQUAL, send);
+				FD.sumC(#[(1000, M), (100, O), (10, R), (1, E)],
+					FD.EQUAL, more);
+				FD.sumC(#[(10000, M), (1000, O), (100, N), (10, E), (1, Y)],
+					FD.EQUAL, money);
+				FD.notequal(S, zero);
+				FD.notequal(M, zero);
+				FD.distinct(ds);
+				FD.plus(send, more, money);
+				FD.distribute(FD.FIRSTFAIL, ds);
+				{S, E, N, D, M, O, R, Y}
+			    end
+
+			(* Order not necessary *)
+			fun order(_, _) = ()
+
+			(* Import Function *)
+			fun internalize sol =
+			    let
+				val {S=S, E=E, N=N, D=D, M=M, O=O, R=R, Y=Y} = sol
+			    in
+				{S=FD.fromInt S, E=FD.fromInt E, N=FD.fromInt N, D=FD.fromInt D,
+				 M=FD.fromInt M, O=FD.fromInt O, R=FD.fromInt R, Y=FD.fromInt Y}
+			    end
+			(* Export Function *)
+			fun externalize sol =
+			    let
+				val {S=S, E=E, N=N, D=D, M=M, O=O, R=R, Y=Y} = sol
+			    in
+				{S=FD.toInt S, E=FD.toInt E, N=FD.toInt N, D=FD.toInt D,
+				 M=FD.toInt M, O=FD.toInt O, R=FD.toInt R, Y=FD.toInt Y}
+			    end
+		    end
+	    end
+
+	(* Photo Alignment Script *)
+	structure Photo :> SCRIPT =
+	    struct
+		(* External Problem Result Type *)
+		type sol = {alice:int, bert:int, chris:int,
+			    deb:int, evan:int} * int vector * int
+
+		functor MkScript(structure FD : FD structure FS : FS) =
+		    struct
+			(* Internal Problem Result Type *)
+			type internal_sol = {alice:FD.fd, bert:FD.fd, chris:FD.fd,
+					     deb:FD.fd, evan:FD.fd} * FD.fd vector * FD.fd
+
+			(* Auxiliary Definitions *)
+			datatype person = ALICE | BERT | CHRIS | DEB | EVAN
+			    
+			val nPersons = 5
+			    
+			fun personIndex ALICE = 0
+			  | personIndex BERT  = 1
+			  | personIndex CHRIS = 2
+			  | personIndex DEB   = 3
+			  | personIndex EVAN  = 4
+			    
+			val prefs = #[(ALICE, CHRIS), (BERT, EVAN), (CHRIS, DEB), (CHRIS, EVAN),
+				      (DEB, ALICE), (DEB, EVAN), (EVAN, BERT)]
+		    
+			(* Problem Description *)
+			fun script () =
+			    let
+				val pos as #[alice, bert, chris, deb, evan] =
+				    FD.rangeVec(nPersons, (1, nPersons))
+				(* Best Values is 5; lowest 0 *)
+				val sat = FD.range(0, Vector.length prefs)
+				val ful = Vector.map
+				    (fn (a, b) =>
+				     let
+					 val c1     = FD.bin()
+					 val c2     = FD.bin()
+					 val result = FD.bin()
+					 val zero   = FD.fromInt 0
+					 val one    = FD.fromInt 1
+					 val posA   = Vector.sub(pos, personIndex a)
+					 val posB   = Vector.sub(pos, personIndex b)
+				     in
+					 FD.Reified.sumC(#[(1, one), (1, posA), (~1, posB)],
+							 FD.EQUAL, zero, c1);
+					 FD.Reified.sumC(#[(1, posA), (~1, posB)],
+							 FD.EQUAL, one, c2);
+					 FD.Reified.sum(#[c1, c2],
+							FD.EQUAL, one, result);
+					 result
+				     end) prefs
+			    in
+				FD.distinct pos;
+				FD.sum(ful, FD.EQUAL, sat);
+				FD.distribute(FD.NAIVE, pos);
+				({alice, bert, chris, deb, evan}, ful, sat)
+			    end
+			
+			(* Problem Order *)
+			fun order((_, _, a), (_, _, b)) = FD.lessEq(a, b)
+
+			(* Import Function *)
+			fun internalize sol =
+			    let
+				val ({alice=A, bert=B, chris=C, deb=D, evan=E}, F, G) = sol
+			    in
+				({alice=FD.fromInt A, bert=FD.fromInt B, chris=FD.fromInt C,
+				  deb=FD.fromInt D, evan=FD.fromInt E},
+				 Vector.map FD.fromInt F, FD.fromInt G)
+			    end
+			(* Export Function *)
+			fun externalize sol =
+			    let
+				val ({alice=A, bert=B, chris=C, deb=D, evan=E}, F, G) = sol
+			    in
+				({alice=FD.toInt A, bert=FD.toInt B, chris=FD.toInt C,
+				  deb=FD.toInt D, evan=FD.toInt E},
+				 Vector.map FD.toInt F, FD.toInt G)
+			    end
+		    end
+	    end
+	
+	(* Sample Main *)
+	local
+	    val hosts = ["localhost", "localhost", "localhost"]
+		
+	    structure PhotoEngine = ParSearch.MkEngine(structure Script = Photo)
+		
+	    val sols = PhotoEngine.engine(hosts, ParSearch.BEST)
+	in
+	    val _ = Inspector.inspect {len=(length sols), items=sols}
+	end
+    end
