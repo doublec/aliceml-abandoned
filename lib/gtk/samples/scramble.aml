@@ -93,7 +93,7 @@ local
 
     fun createCanvas () =
 	let
-	    val canvas = GtkCanvas.new ()
+	    val canvas = GtkCanvas.new 0
 	    val xDim   = (pieceSize * 4 + 1)
 	    val yDim   = (pieceSize * 4 + 1)
 	in
