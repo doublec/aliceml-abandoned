@@ -1520,7 +1520,7 @@
       ldarg.0
       callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
       ldarg.1
-      tail. callvirt instance bool StockWerk.StockWert::Select(class System.String)
+      tail. callvirt instance class StockWerk.StockWert StockWerk.StockWert::Select(class System.String)
       ret
     }
     .method virtual public value class System.Serialization.SerializationInfo GetObjectData(value class System.Serialization.StreamingContext) {
