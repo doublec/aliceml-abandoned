@@ -11,6 +11,7 @@
  *)
 
 import structure Name                  from "../../lib/rtt/Name"
+import structure Type                  from "../../lib/rtt/Type"
 import structure Crash                 from "../infrastructure/Crash"
 import structure Stamp                 from "../common/Stamp"
 import structure StampMap              from "../common/StampMap"
@@ -29,7 +30,7 @@ functor MkEnvironment(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 
 	type entry = {scope: scope,
 		      localIndex: index,
-		      localNames: string list,
+		      localNames: (string * Type.t) option list,
 		      globalIndex: index,
 		      globalIds: ids}
 
@@ -38,7 +39,7 @@ functor MkEnvironment(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 		  stack: entry list ref,
 		  scope: scope ref,
 		  localIndex: index ref,
-		  localNames: string list ref,
+		  localNames: (string * Type.t) option list ref,
 		  globalIndex: index ref,
 		  globalIds: ids ref,
 		  shared: AbstractCodeGrammar.instr StampMap.t}
@@ -108,7 +109,7 @@ functor MkEnvironment(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 	  | nameToString Name.InId = ""
 
 	fun declare ({scope, localIndex, localNames, ...}: t,
-		     FlatGrammar.Id (_, stamp, name)) =
+		     FlatGrammar.Id ({typ, ...}, stamp, name)) =
 	    case StampMap.lookup (!scope, stamp) of
 		SOME (AbstractCodeGrammar.Local id) => id
 	      | SOME (AbstractCodeGrammar.Immediate _ |
@@ -120,7 +121,8 @@ functor MkEnvironment(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 			val id = !localIndex
 		    in
 			localIndex := id + 1;
-			localNames := nameToString name::(!localNames);
+			localNames :=
+			    SOME (nameToString name, typ)::(!localNames);
 			StampMap.insertDisjoint
 			    (!scope, stamp, AbstractCodeGrammar.Local id);
 			id
@@ -130,7 +132,7 @@ functor MkEnvironment(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 	    let
 		val id = !localIndex
 	    in
-		localIndex := id + 1; localNames := ""::(!localNames); id
+		localIndex := id + 1; localNames := NONE::(!localNames); id
 	    end
 
 	fun idRefId (FlatGrammar.IdRef id) = id

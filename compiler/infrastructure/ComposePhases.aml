@@ -24,9 +24,9 @@ functor ComposePhases' (
 ) : PHASE =
 struct
     structure C = Context
-    structure I = Phase1.I
-    structure O = Phase2.O
-
+     structure I = Phase1.I
+     structure O = Phase2.O
+ 
     fun translate (desc, c, rep) =
 	let
 	    val (c1,rep1) = Phase1.translate (desc, context1 c, rep)
@@ -35,7 +35,7 @@ struct
 	    (context (c1,c2), rep2)
 	end
 end
-
+ 
 functor ComposePhases (
     structure Phase1 : PHASE
     structure Phase2 : PHASE where I = Phase1.O
@@ -45,7 +45,7 @@ let
     struct
 	type t    = Phase1.C.t * Phase2.C.t
 	val empty = (Phase1.C.empty, Phase2.C.empty)
-    end
+     end
 in
     ComposePhases' (
 	structure Phase1  = Phase1

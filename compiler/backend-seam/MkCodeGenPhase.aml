@@ -17,6 +17,8 @@ import structure MkHashImpMap          from "../../lib/data/MkHashImpMap"
 import structure Url                   from "../../lib/system/Url"
 import structure Name                  from "../../lib/rtt/Name"
 import structure Label                 from "../../lib/rtt/Label"
+import structure Type                  from "../../lib/rtt/Type"
+import structure PervasiveType         from "../../lib/rtt/PervasiveType"
 import structure Crash                 from "../infrastructure/Crash"
 import structure EmptyContext          from "../infrastructure/EmptyContext"
 import structure Source                from "../infrastructure/Source"
@@ -30,8 +32,10 @@ import structure MkCodeGenContext      from "MkCodeGenContext"
 import structure MkEnvironment         from "MkEnvironment"
 import structure MkLiveness            from "MkLiveness"
 import signature CODE_GEN_PHASE        from "CODE_GEN_PHASE-sig"
+import signature SWITCHES              from "../infrastructure/SWITCHES-sig"
 
-functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
+functor MkCodeGenPhase(structure AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR
+		       structure Switches: SWITCHES):
     CODE_GEN_PHASE =
     struct
 	structure C = MkCodeGenContext(type value = AbstractCodeGrammar.value)
@@ -136,7 +140,9 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 	    DECONSTRUCTED (idDefs, f instr)
 	  | detup' (result, _) = result
 
-	fun detup (O.Kill (ids, instr), id) =
+	fun detup (O.Entry (_, _, _), _) = UNKNOWN
+	  | detup (O.Exit (_, _, _, _), _) = UNKNOWN
+	  | detup (O.Kill (ids, instr), id) =
 	    if Vector.exists (fn id' => id = id') ids then KILLED
 	    else detup' (detup (instr, id), fn instr => O.Kill (ids, instr))
 	  | detup (O.PutVar (id, idRef, instr), id') =
@@ -265,10 +271,39 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 
 	structure IdSet' = IntermediateAux.IdSet
 
+	fun translateEntryPoint (ConEntry (typ, idRef, args), env) =
+	    O.ConEntry (typ, translateIdRef (idRef, env),
+			translateArgs translateIdRef (args, env))
+	  | translateEntryPoint (SelEntry (_, _, i, typ, idRef), env) =
+	    O.SelEntry (i, typ, translateIdRef (idRef, env))
+	  | translateEntryPoint (StrictEntry (typ, idRef), env) =
+	    O.StrictEntry (typ, translateIdRef (idRef, env))
+	  | translateEntryPoint (AppEntry (typ, idRef, args), env) =
+	    O.AppEntry (typ, translateIdRef (idRef, env),
+			translateArgs translateIdRef (args, env))
+	  | translateEntryPoint (CondEntry (typ, idRef), env) =
+	    O.CondEntry (typ, translateIdRef (idRef, env))
+	  | translateEntryPoint (RaiseEntry idRef, env) =
+	    O.RaiseEntry (translateIdRef (idRef, env))
+	  | translateEntryPoint (HandleEntry idRef, env) =
+	    O.HandleEntry (translateIdRef (idRef, env))
+	  | translateEntryPoint (SpawnEntry, _) = O.SpawnEntry
+
+	fun translateExitPoint ConExit = O.ConExit
+	  | translateExitPoint (SelExit typ) = O.SelExit typ
+	  | translateExitPoint StrictExit = O.StrictExit
+	  | translateExitPoint AppExit = O.AppExit
+	  | translateExitPoint (CondExit typ) = O.CondExit typ
+	  | translateExitPoint (RaiseExit typ) = O.RaiseExit typ
+	  | translateExitPoint (HandleExit typ) = O.HandleExit typ
+	  | translateExitPoint (SpawnExit typ) = O.SpawnExit typ
+
+	fun idEq (Id (_, stamp, _), Id (_, stamp', _)) = stamp = stamp'
+
 	fun translateBody ([stm], env) = translateStm (stm, env)
 	  | translateBody ((stm as ValDec (_, IdDef id, exp))::
 			   (stms as [RaiseStm (_, LastIdRef id')]), env) =
-	    if id = id' then
+	    if idEq (id, id') then
 		case exp of
 		    VarExp (_, idRef) => O.Raise (translateIdRef (idRef, env))
 		  | ConExp (_, idRef, TupArgs #[]) =>
@@ -281,7 +316,9 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 	and translateBody' (stm, stms, env) =
 	    (doDec (stm, env);
 	     translateDec (stm, translateBody (stms, env), env))
-	and doDec (LastUse (_, _), _) = ()
+	and doDec (Entry (_, _), _) = ()
+	  | doDec (Exit (_, _, _), _) = ()
+	  | doDec (LastUse (_, _), _) = ()
 	  | doDec (ValDec (_, IdDef id, _), env) = ignore (declare (env, id))
 	  | doDec (ValDec (_, Wildcard, _), _) = ()
 	  | doDec (RecDec (_, idDefExpVec), env) =
@@ -302,7 +339,13 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 		    SharedStm (_, _, _) | ReturnStm (_, _) |
 		    IndirectStm (_, _) | ExportStm (_, _)), _) =
 	    raise Crash.Crash "CodeGenPhase.doDec"
-	and translateDec (LastUse (_, ids), instr, env) =
+	and translateDec (Entry (((i, j), _), entryPoint), instr, env) =
+	    O.Entry ((filename env, i, j),
+		     translateEntryPoint (entryPoint, env), instr)
+	  | translateDec (Exit ((_, (i, j)), exitPoint, idRef), instr, env) =
+	    O.Exit ((filename env, i, j), translateExitPoint exitPoint,
+		    translateIdRef (idRef, env), instr)
+	  | translateDec (LastUse (_, ids), instr, env) =
 	    (*--** sort them? represent as ranges? *)
 	    let
 		val ids =
@@ -390,7 +433,8 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 	    end
 	  | recToHoles (nil, _, unallocated, _, instr) =
 	    (Assert.assert (IdSet'.isEmpty unallocated); instr)
-	and translateStm ((LastUse (_, _) | ValDec (_, _, _) |
+	and translateStm ((Entry (_, _) | Exit (_, _, _) |
+			   LastUse (_, _) | ValDec (_, _, _) |
 			   RecDec (_, _) | RefDec (_, _, _) |
 			   TupDec (_, _, _) | ProdDec (_, _, _)), _) =
 	    raise Crash.Crash "CodeGenPhase.translateStm"
@@ -547,7 +591,8 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 	    end
 	  | translateExp (VecExp (_, idRefs), id, instr, env) =
 	    O.PutVec (id, translateIdRefs (idRefs, env), instr)
-	  | translateExp (FunExp (region, _, flags, args, outArityOpt, body),
+	  | translateExp (FunExp (region, _, flags, typ, args, 
+				  outArityOpt, body),
 			  id, instr, env) =
 	    let
 		val isSpecialize =
@@ -588,8 +633,10 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 			    SOME (Vector.length labels)
 		val template =
 		    O.Template (coord, Vector.length globalIdRefs,
-				localNames, args', outArityOpt', bodyInstr,
-				liveness)
+				if (!Switches.CodeGen.debugMode)
+				    then O.Debug(localNames, typ)
+				else O.Simple(Vector.length localNames), 
+				args', outArityOpt', bodyInstr, liveness)
 	    in
 		if isSpecialize then
 		    O.Specialize (id, globalIdRefs, template, instr)
@@ -642,20 +689,20 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 	  | translateIgnore (ProdExp (_, _), instr, _) = instr
 	  | translateIgnore (PolyProdExp (_, _), instr, _) = instr
 	  | translateIgnore (VecExp (_, _), instr, _) = instr
-	  | translateIgnore (FunExp (_, _, _, _, _, _), instr, _) = instr
+	  | translateIgnore (FunExp (_, _, _, _, _, _, _), instr, _) = instr
 	  | translateIgnore (PrimAppExp (_, name, idRefs), instr, env) =
 	    O.AppPrim (V.prim name, translateIdRefs (idRefs, env),
 		       SOME (O.Wildcard, instr))
 	  | translateIgnore (VarAppExp (_, idRef, args), instr, env) =
 	    O.AppVar (translateIdRef (idRef, env),
 		      translateArgs translateIdRef (args, env),
-		      false,
-		      SOME (#[O.Wildcard], instr))
+ 		      false,
+ 		      SOME (#[O.Wildcard], instr))
 	  | translateIgnore (DirectAppExp (_, idRef, args), instr, env) =
-	    O.AppVar (translateIdRef (idRef, env),
-		      translateArgs translateIdRef (args, env),
-		      true,
-		      SOME (#[O.Wildcard], instr))
+ 	    O.AppVar (translateIdRef (idRef, env),
+ 		      translateArgs translateIdRef (args, env),
+ 		      true,
+ 		      SOME (#[O.Wildcard], instr))
 	  | translateIgnore (SelExp (_, _, _, _, idRef), instr, env) =
 	    O.AppPrim (V.prim "Future.await", #[translateIdRef (idRef, env)],
 		       SOME (O.Wildcard, instr))
@@ -767,26 +814,32 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 		    O.VecTest (O.LastUseLocal formalId,
 			       #[(idDefs, instr)], elseInstr)
 		val liveness = Liveness.analyze (args, bodyInstr)
-		val outArityOpt = SOME 1
+ 		val outArityOpt = SOME 1
+		val typ_mod = Type.unknown (Type.starKind ()) (*--** wrong *)
+		val typ_arg = Type.apply (PervasiveType.typ_vec, typ_mod)
+		val typ = Type.arrow (typ_arg, typ_mod)
 		val abstractCode =
-		    O.Function ((filename, 0, 0), #[], localNames,
+		    O.Function ((filename, 0, 0), #[], 
+				if (!Switches.CodeGen.debugMode) 
+				    then O.Debug(localNames, typ)
+				else O.Simple (Vector.length localNames),
 				args, outArityOpt, bodyInstr, liveness)
 		val exports =
 		    Vector.map (fn (label, Id (_, stamp, _)) => (stamp, label))
 			       exports
 	    in
-		(context',
-		 (* This is an instance of the component type
-		  * defined in lib/system/Component.aml:
-		  *)
-		 (V.taggedValue (#[Label.fromString "EVALUATED",
-				   Label.fromString "UNEVALUATED"], 1,
-				 #[(Label.fromString "body",
-				    V.closure (abstractCode, #[])),
-				   (Label.fromString "imports",
-				    V.vector imports'),
-				   (Label.fromString "sign",
-				    V.sign (SOME sign))]),
-		  exports))
+ 		(context',
+ 		 (* This is an instance of the component type
+ 		  * defined in lib/system/Component.aml:
+ 		  *)
+ 		 (V.taggedValue (#[Label.fromString "EVALUATED",
+ 				   Label.fromString "UNEVALUATED"], 1,
+ 				 #[(Label.fromString "body",
+ 				    V.closure (abstractCode, #[])),
+ 				   (Label.fromString "imports",
+ 				    V.vector imports'),
+ 				   (Label.fromString "sign",
+ 				    V.sign (SOME sign))]),
+ 		  exports))
 	    end
     end
