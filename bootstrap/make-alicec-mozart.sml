@@ -19,13 +19,21 @@ local
 	    (TextIO.output (TextIO.stdErr,
 			    "uncaught exception " ^ exnName e ^ "\n");
 	     OS.Process.failure)
-    fun stoc (_, []) =
+    fun getArgs () =
+	let
+	    val args = SMLofNJ.getArgs ()
+	in
+	    case SMLofNJ.SysInfo.getOSKind () of
+		SMLofNJ.SysInfo.WIN32 => tl args
+	      | _ => args
+	end
+    fun stoc nil =
 	hdl Main.ozifyStringToStdOut (TextIO.inputAll TextIO.stdIn)
-      | stoc (_, [infile]) =
+      | stoc [infile] =
 	hdl Main.ozifyFileToStdOut infile
-      | stoc (_, [infile, outfile]) =
+      | stoc [infile, outfile] =
 	hdl Main.ozifyFileToFile (infile, outfile)
-      | stoc (_, _) = OS.Process.failure
+      | stoc _ = OS.Process.failure
 in
-    val _ = SMLofNJ.exportFn ("stoc-frontend", stoc)
+    val _ = SMLofNJ.exportFn ("stoc-mozart", fn _ => stoc (getArgs ()))
 end;

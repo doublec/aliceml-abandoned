@@ -1,9 +1,10 @@
 SML = sml-cm
 PLATFORM = x86-linux
 
-.PHONY: stoc-frontend.$(PLATFORM)
+all: stoc-mozart.$(PLATFORM)
 
-all: stoc-frontend.$(PLATFORM)
+stoc-mozart.$(PLATFORM):
+	echo 'use "Exec-mozart.sml";' | $(SML)
 
-stoc-frontend.$(PLATFORM):
-	echo 'use "Executable.sml";' | $(SML)
+stoc-com+.$(PLATFORM):
+	echo 'use "Exec-com+.sml";' | $(SML)

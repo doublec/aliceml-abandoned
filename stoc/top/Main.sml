@@ -72,14 +72,17 @@ structure Main :> MAIN =
     fun ozifyString(s,os)	= processString (ozify os) s
     fun ozifyFile(n,os)		= processFile (ozify os) n
 
-    val ozifyStringToStdOut	= processString(ozify TextIO.stdOut)
-    val ozifyFileToStdOut	= processFile(ozify TextIO.stdOut)
+    val ozifyStringToStdOut	= processString (ozify TextIO.stdOut)
+    val ozifyFileToStdOut	= processFile (ozify TextIO.stdOut)
 
     fun ozifyStringToFile(s,n)	= processString (ozifyToFile n) s
     fun ozifyFileToFile(n1,n2)	= processFile (ozifyToFile n2) n1
 
     val debugString		= processString debug
     val debugFile		= processFile debug
+
+    val comifyStringToStdOut	= processString (comify TextIO.stdOut)
+    val comifyFileToStdOut	= processFile (comify TextIO.stdOut)
 
     fun comifyStringToFile(s,n)	= processString (comifyToFile n) s
     fun comifyFileToFile(n1,n2)	= processFile (comifyToFile n2) n1
