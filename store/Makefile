@@ -1,14 +1,20 @@
 CC     = g++
 CFLAGS = -DDEBUG_CHECK -Wall -ggdb #-DINTERFACE -finline-functions -fno-implement-inlines -O6
 
-SRCS = headerdef.cc store.cc
+SRCS = store.cc
 
-OBJS = headerdef.o store.o
+OBJS = store.o
 
 LIBPATH = /home/thor/devel/stockhausen/vm-stockwerk/store
 
-all: lib test.cc
-	$(CC) $(CFLAGS) -o test test.cc $(LIBPATH)/libstore.so
+.PHONY: header
+
+HEADERWIDTH      = 31
+TAGWIDTH         = 16
+SIZEWIDTH        = 11
+GENERATIONSWIDTH = 2
+
+all: lib
 
 %.o : %.cc base.hh types.hh headerdef.hh
 	$(CC) $(CFLAGS) -c -o $@ $<
@@ -16,8 +22,14 @@ all: lib test.cc
 lib: $(OBJS)
 	ld -shared -o libstore.so $(OBJS)
 
-headerdef.cc: headerdef.hh
+test: test.cc
+	$(CC) $(CFLAGS) -o test test.cc $(LIBPATH)/libstore.so
+
 store.cc: memchunk.hh store.hh headerop.hh pointerop.hh dataset.hh gchelper.hh
+
+header:
+	$(CC) $(CFLAGS) -o headerdef headerdef.cc
+	./headerdef $(HEADERWIDTH) $(TAGWIDTH) $(SIZEWIDTH) $(GENERATIONSWIDTH)
 
 clean:
 	rm -rf test $(OBJS) libstore.so

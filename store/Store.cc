@@ -137,7 +137,7 @@ static inline void AdjustMaxOld(Block *p, u_int gen) {
 Block *Store::CopyBlockToDst(Block *p, MemChain *dst) {
     u_int s = HeaderOp::BlankDecodeSize(p);
 
-  if (s == HeaderDef::MAX_HBSIZE) {
+  if (s == (u_int) MAX_HBSIZE) {
     Block *newp, *realnp;
     
     p      = (Block *) ((char *) p - 4);
@@ -178,7 +178,7 @@ void Store::ScanChunks(MemChain *dst, u_int match_gen, MemChunk *anchor, char *s
       }
       
       // Scan current tuple (if label != CHUNK)
-      if (curp->GetLabel() != BlockLabel::CHUNK) {
+      if (curp->GetLabel() != CHUNK) {
 	for (u_int i = 1; i <= cursize; i++) {
 	  word p    = PointerOp::Deref(curp->GetArg(i));
 	  Block *sp = PointerOp::RemoveTag(p);
@@ -197,7 +197,7 @@ void Store::ScanChunks(MemChain *dst, u_int match_gen, MemChunk *anchor, char *s
 	  }
 	}
       }
-      scan += (cursize + ((cursize > HeaderDef::MAX_HBSIZE) ? 2 : 1)) << 2;
+      scan += (cursize + ((cursize > (u_int) MAX_HBSIZE) ? 2 : 1)) << 2;
     }
     anchor = anchor->GetPrev();
     if (anchor != NULL) {
@@ -209,8 +209,6 @@ void Store::ScanChunks(MemChain *dst, u_int match_gen, MemChunk *anchor, char *s
 void Store::InitStore(StoreConfig *cfg) {
   config = cfg;
   roots  = (MemChain **) std::malloc(sizeof(MemChain) * cfg->max_gen);
-
-  HeaderDef::CreateHeader(cfg->word_width, cfg->tag_width, cfg->size_width, cfg->generation_width);
 
   for (u_int i = 0; i < cfg->max_gen; i++) {
     MemChain *chain = new MemChain();
@@ -254,7 +252,8 @@ static inline DataSet *CleanUpSet(DataSet *set) {
 }
 
 void Store::DoGC(DataSet *root_set, u_int gen) {
-  u_int match_gen  = HeaderDef::GEN_LIMIT[gen];
+  PLACEGENERATIONLIMIT;
+  u_int match_gen  = gen_limits[gen];
   u_int dst_gen    = (gen + 1);
   MemChain *dst    = roots[dst_gen];
   u_int rs_size    = root_set->GetSize();

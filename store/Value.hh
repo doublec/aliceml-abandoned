@@ -28,9 +28,9 @@ protected:
   word ar[2];
 public:
   word *GetBase() {
-    return ar;
+    return (ar + 1);
   }
-  t_label GetLabel() {
+  BlockLabel GetLabel() {
     return HeaderOp::DecodeLabel(this);
   }
   u_int GetSize() {
@@ -84,12 +84,12 @@ public:
 
 class Transient : private Block {
 protected:
-  void PerformBind(word v, t_label l) {
-    t_label label = GetLabel();
+  void PerformBind(word v, BlockLabel l) {
+    BlockLabel label = GetLabel();
 
-    if ((label == BlockLabel::PROMISE) || (label == BlockLabel::FUTURE)) {
+    if ((label == PROMISE) || (label == FUTURE)) {
       ReplaceArg(1, v);
-      HeaderOp::EncodeLabel(this, BlockLabel::REF);
+      HeaderOp::EncodeLabel(this, REF);
     }
     else {
       Assert(0);
@@ -125,10 +125,10 @@ public:
     return PointerOp::EncodeTransient(this);
   }
   void Bind(word v) {
-    PerformBind(v, BlockLabel::REF);
+    PerformBind(v, REF);
   }
   void Cancel(word ex) {
-    PerformBind(ex, BlockLabel::CANCELLED);
+    PerformBind(ex, CANCELLED);
   }
 };
 
@@ -136,7 +136,7 @@ class Stack : private Block {
 protected:
   Stack *Enlarge() {
     u_int size = Block::GetSize();
-    Stack *s   = (Stack *) Store::AllocBlock(BlockLabel::STACK, (size << 1));
+    Stack *s   = (Stack *) Store::AllocBlock(STACK, (size << 1));
     
     std::memcpy(s + 1, ar + 1, size * sizeof(word));
     std::memset(s + (size + 1), 1, size * sizeof(word));
@@ -244,7 +244,7 @@ public:
   }
 
   static Stack *New(u_int s) {
-    Stack *gs = (Stack *) Store::AllocBlock(BlockLabel::STACK, (s + 1));
+    Stack *gs = (Stack *) Store::AllocBlock(STACK, (s + 1));
 
     gs->InitStack();
     return gs;

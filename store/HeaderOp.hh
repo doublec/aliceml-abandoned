@@ -19,10 +19,10 @@
 #include "base.hh"
 #include "headerdef.hh"
 
-class HeaderOp : private HeaderDef {
+class HeaderOp {
 public:
   // Header Creation and Acess
-  static void EncodeHeader(Block *t, t_label l, u_int s, u_int g) {
+  static void EncodeHeader(Block *t, BlockLabel l, u_int s, u_int g) {
     Assert(t != NULL);
     ((u_int *) t)[0] =  0x00 | (s << SIZE_SHIFT) | (((u_int) l) << TAG_SHIFT)
       | (g << MAXOLD_SHIFT) | (g << GEN_SHIFT);
@@ -31,13 +31,13 @@ public:
     Assert(p != NULL); return *((u_int *) p);
   }
   // Label Access
-  static void EncodeLabel(Transient *p, t_label l) {
+  static void EncodeLabel(Transient *p, BlockLabel l) {
     Assert(p != NULL);
     ((u_int *) p)[0] = ((((u_int *) p)[0] & ~TAG_MASK) | (((u_int) l) << TAG_SHIFT));
   }
-  static t_label DecodeLabel(Block *p) {
+  static BlockLabel DecodeLabel(Block *p) {
     Assert(p != NULL);
-    return (t_label) ((((u_int *) p)[0] & TAG_MASK) >> TAG_SHIFT);
+    return (BlockLabel) ((((u_int *) p)[0] & TAG_MASK) >> TAG_SHIFT);
   }
   // Size Access
   static u_int BlankDecodeSize(Block *p) {
@@ -49,7 +49,7 @@ public:
     return (u_int) ((s < MAX_HBSIZE) ? s : (*((u_int *) ((char *) p - 4)) >> 1));
   }
   static void EncodeSize(Block *p, u_int s) {
-    if (HeaderOp::BlankDecodeSize(p) == HeaderDef::MAX_HBSIZE) {
+    if (HeaderOp::BlankDecodeSize(p) == MAX_HBSIZE) {
       *((u_int *) ((char *) p - 4)) = s;
     }
     else {
@@ -58,15 +58,15 @@ public:
   }
   // Generation Access
   static u_int DecodeGeneration(Block *p) {
-    Assert(p != NULL); return ((*((u_int *) p)) >> HeaderDef::GEN_SHIFT);
+    Assert(p != NULL); return ((*((u_int *) p)) >> GEN_SHIFT);
   }
   // GC Distance Access
   static void EncodeMaxOld(Block *p, u_int d) {
     Assert(p != NULL);
-    ((u_int *) p)[0] = ((((u_int *) p)[0] & ~MAXOLD_MASK) | (d << HeaderDef::MAXOLD_SHIFT));
+    ((u_int *) p)[0] = ((((u_int *) p)[0] & ~MAXOLD_MASK) | (d << MAXOLD_SHIFT));
   }
   static u_int DecodeMaxOld(Block *p) {
-    Assert(p != NULL); return ((*((u_int *) p)) >> HeaderDef::MAXOLD_SHIFT);
+    Assert(p != NULL); return ((*((u_int *) p)) >> MAXOLD_SHIFT);
   }
 };
 

@@ -57,8 +57,12 @@ public:
     return (word) ((((u_int) v) << 1) | (u_int) INTTAG);
   }
   static int DecodeInt(word v) {
-    Assert((((u_int) v) & INTMASK) == INTTAG);
-    return (int) ((u_int) v >> 1);
+    if ((((u_int) v) & INTMASK) != INTTAG) {
+      return (int) INVALID_INT;
+    }
+    else {
+      return (int) ((u_int) v >> 1);
+    }
   }
   // Deref Function
   static word Deref(word v) {
@@ -68,7 +72,7 @@ public:
       Assert(v != NULL);
       if ((vi & TAGMASK) == (u_int) TRTAG) {
 	vi -= (u_int) TRTAG;
-	if (HeaderOp::DecodeLabel((Block *) vi) == BlockLabel::REF) {
+	if (HeaderOp::DecodeLabel((Block *) vi) == REF) {
 	  v = ((word *) vi)[1];
 	}
 	else {

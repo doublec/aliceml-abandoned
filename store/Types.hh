@@ -15,6 +15,7 @@
 #include "headerdef.hh"
 
 #define INVALID_POINTER NULL
+#define INVALID_INT     (1 << 31)
 #define INVALID_TSIZE   0
 #define INVALID_FIELD   0
 
