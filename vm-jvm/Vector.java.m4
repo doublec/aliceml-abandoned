@@ -27,6 +27,10 @@ final public class Vector implements DMLValue {
     /** the java array that contains the vector entries */
     public DMLValue[] vec = null;
 
+    public Vector() {
+	;
+    }
+
     protected Vector(int n) {
 	if (n<0 || maxLength<n) {
 	    _RAISENAME(General.Size);
