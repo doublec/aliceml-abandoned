@@ -5556,6 +5556,7 @@
       castclass StockWerk.Int
       ldfld int32 StockWerk.Int::Value
       div
+      newobj instance void StockWerk.Int::.ctor(int32)
       ret
     testTransient1:
       ldarg.1
