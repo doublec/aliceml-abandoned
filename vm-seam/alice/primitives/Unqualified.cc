@@ -18,7 +18,7 @@ static int Compare(word x0, word x1) {
   Block *a = Store::WordToBlock(x0);
   Block *b = Store::WordToBlock(x1);
   if (a == INVALID_POINTER) { // x0 is Transient or int
-    int i = Store::WordToInt(x0);
+    s_int i = Store::WordToInt(x0);
     if (i == INVALID_INT) { // x0 is transient
       Scheduler::currentData = x0;
       return -1;
@@ -27,7 +27,7 @@ static int Compare(word x0, word x1) {
     if (b != INVALID_POINTER) // x1 is Block
       return 0;
     // x1 is Transient or int
-    int j = Store::WordToInt(x1);
+    s_int j = Store::WordToInt(x1);
     if (j == INVALID_INT) { // x1 is Transient
       Scheduler::currentData = x1;
       return -1;
@@ -35,7 +35,7 @@ static int Compare(word x0, word x1) {
     return (i == j);
   }
   if (b == INVALID_POINTER) { // x1 is Transient or int, but x0 is a block
-    int j = Store::WordToInt(x1);
+    s_int j = Store::WordToInt(x1);
     if (j == INVALID_INT) { // x1 is Transient
       Scheduler::currentData = x1;
       return -1;

@@ -25,7 +25,7 @@
 #define REAL_TO_INT(name, op)					\
   DEFINE1(name) {						\
     DECLARE_REAL(real, x0);					\
-    RETURN_INT(static_cast<int>(op(real->GetValue())));		\
+    RETURN_INT(static_cast<s_int>(op(real->GetValue())));	\
   } END
 
 #define REAL_REAL_TO_REAL_OP(name, op)					 \
@@ -47,7 +47,7 @@
     DECLARE_REAL(real1, x0);					\
     DECLARE_REAL(real2, x1);					\
     double result = op(real1->GetValue(), real2->GetValue());	\
-    RETURN_INT(static_cast<int>(result));			\
+    RETURN_INT(static_cast<s_int>(result));			\
   } END
 
 static inline double Trunc(double x) {

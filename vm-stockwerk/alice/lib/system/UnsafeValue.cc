@@ -39,7 +39,7 @@ DEFINE3(UnsafeValue_projTuple) {
 DEFINE2(UnsafeValue_tag) {
   TagVal *tagVal = TagVal::FromWord(x0);
   if (tagVal == INVALID_POINTER) {
-    int i = Store::WordToInt(x0);
+    s_int i = Store::WordToInt(x0);
     if (i == INVALID_INT) REQUEST(x0);
     DECLARE_VECTOR(labels, x1);
     RETURN(labels->Sub(i));

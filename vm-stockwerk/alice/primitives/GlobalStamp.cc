@@ -14,7 +14,7 @@
 #include "alice/Guid.hh"
 #include "alice/primitives/Authoring.hh"
 
-static int counter = 0;
+static s_int counter = 0;
 
 #define DECLARE_GLOBAL_STAMP(globalStamp, x)				\
   Block *globalStamp = Store::WordToBlock(x);				\
@@ -31,7 +31,7 @@ DEFINE2(GlobalStamp_compare) {
       String *string2 = static_cast<String *>(globalStamp2);
       u_int length1 = string1->GetSize();
       u_int length2 = string2->GetSize();
-      int length = length1 < length2? length1: length2;
+      u_int length = length1 < length2? length1: length2;
       int result =
 	std::memcmp(string1->GetValue(), string2->GetValue(), length);
       if (result < 0) {
@@ -93,12 +93,13 @@ DEFINE1(GlobalStamp_hash) {
   } else {
     Tuple *tuple = static_cast<Tuple *>(globalStamp);
     Guid *guid = Guid::FromWordDirect(tuple->Sel(0));
-    int counter = Store::DirectWordToInt(tuple->Sel(1));
+    s_int counter = Store::DirectWordToInt(tuple->Sel(1));
     RETURN_INT(guid->Hash() ^ counter);
   }
 } END
 
 DEFINE0(GlobalStamp_new) {
+  //--** handle counter overflow?
   RETURN2(Guid::vmGuid, Store::IntToWord(counter++));
 } END
 

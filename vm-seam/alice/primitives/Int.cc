@@ -75,8 +75,7 @@ DEFINE2(Int_div) {
   DECLARE_INT(j, x1);
   if (j == 0)
     RAISE(PrimitiveTable::General_Div);
-  int b1 = i >= 0;
-  int b2 = j >= 0;
+  bool b1 = i >= 0, b2 = j >= 0;
   if (b1 == b2) {
     RETURN_INT(i / j);
   } else if (b2) {
@@ -91,7 +90,7 @@ DEFINE2(Int_mod) {
   DECLARE_INT(j, x1);
   if (j == 0)
     RAISE(PrimitiveTable::General_Div);
-  int c = i % j;
+  s_int c = i % j;
   if (c == 0) {
     RETURN_INT(c);
   } else {

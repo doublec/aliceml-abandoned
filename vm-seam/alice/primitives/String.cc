@@ -18,8 +18,8 @@
 DEFINE2(String_opconcat) {
   DECLARE_STRING(string1, x0);
   DECLARE_STRING(string2, x1);
-  int length1 = string1->GetSize();
-  int length2 = string2->GetSize();
+  u_int length1 = string1->GetSize();
+  u_int length2 = string2->GetSize();
   String *newString = String::New(length1 + length2);
   u_char *base = newString->GetValue();
   std::memcpy(base, string1->GetValue(), length1);
@@ -28,8 +28,8 @@ DEFINE2(String_opconcat) {
 } END
 
 static inline int DoCompare(String *string1, String *string2) {
-  int length1 = string1->GetSize();
-  int length2 = string2->GetSize();
+  u_int length1 = string1->GetSize();
+  u_int length2 = string2->GetSize();
   int result = std::memcmp(string1->GetValue(), string2->GetValue(),
 			   length1 < length2? length1: length2);
   if (result == 0) {
