@@ -11,6 +11,8 @@
  *)
 
 import structure Pickle from "x-alice:/lib/system/Pickle"
+import structure Url    from "x-alice:/lib/utility/Url"
+import signature URL    from "x-alice:/lib/utility/URL-sig"
 
 structure PicklingSample =
 struct
@@ -22,7 +24,7 @@ struct
 
     val  susp  = byneed(fn() => print "Welcome to the world of pickling!\n")
     val  value = {a = 0, b = "Knob the dopp.", c = susp, d = [4, 0, 2, 42]}
-    type ty    = {a : int, b : string, c : unit, d : int list})
+    type ty    = {a : int, b : string, c : unit, d : int list}
 
     val file = "value." ^ Pickle.extension
     structure _ = Pickle.SaveVal(val file = file val x = value type t = ty)
@@ -110,18 +112,20 @@ struct
 
     val file = "Hello." ^ Pickle.extension
 
-    functor Hello(val who : string) =
+    functor MkHello(val who : string) =
     struct
-	val _ = print("Hello " ^ who ^ "!\n")
+	val s = "Hello " ^ who ^ "!\n"
     end
 
-    signature HELLO = fct(val who : string) -> any
+    signature MK_HELLO = fct(val who : string) -> sig val s : string end
 
-    structure  _     = Pickle.Save(val file = file
-				   structure X = Hello signature S = HELLO)
-    structure Hello' = Pickle.Load(val file = file signature S = HELLO)
+    structure _        = Pickle.Save(val file = file
+				     structure X = MkHello
+				     signature S = MK_HELLO)
+    structure MkHello' = Pickle.Load(val file = file signature S = MK_HELLO)
 
-    structure _      = Hello(val who = "World")
+    structure Hello    = MkHello'(val who = "World")
+    val       _        = print(Hello.s)
 
 
     (*
@@ -137,12 +141,12 @@ struct
     signature T      = fct(_ : any) -> sig    type t       end
     structure X :> T = fct(_ : any) => struct type t = int end
 
-    structure  _     = Pickle.Save(val file = modfile
-				   structure X = X signature S = T)
-    structure  _     = Pickle.Save(val file = sigfile
-				   structure X = (signature U = T)
-				   signature S = (signature U))
+    structure  _  = Pickle.Save(val file = modfile
+				structure X = X signature S = T)
 
+    structure  _  = Pickle.Save(val file = sigfile
+				structure X = (signature U = T)
+				signature S = (signature U))
     structure Sig = Pickle.Load(val file = sigfile
 				signature S = (signature U))
     structure Mod = Pickle.Load(val file = modfile
@@ -157,23 +161,22 @@ struct
      * a component because its content is completely evaluated.
      *)
 
-    val file = "String." ^ Pickle.extension
-    val comp = "x-alice:lib/fundamental/" ^ file
+    val file = "Url." ^ Pickle.extension
+    val comp = "x-alice:/lib/utility/" ^ file
 
-    signature S = sig structure String : STRING end
+    signature S = (structure Url : URL (*where type url = Url.t*))
 
-    structure String' = Pickle.Load(val file = comp signature S = S)
+    structure Url' = Pickle.Load(val file = comp signature S = S)
 
-    val _ = print("size \"bla\" = " ^ String'.size "bla" ^ "\n")
+    val _ = print(Url'.Url.toString(Url'.Url.fromString comp) ^ "\n")
 
     structure _ = Pickle.Save(val file = file
-			      structure X = String' signature S = S)
+			      structure X = Url' signature S = S)
 
     (*
      * Part ultimo:
      * A funny kind of recursion.
      *)
 
-    structure _ = Pickle.Load(val file = "PicklingSample." ^ Pickle.extension
-			      signature S = any)
+    structure _ = Pickle.Load(val file = "PicklingSample" signature S = any)
 end
