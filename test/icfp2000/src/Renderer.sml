@@ -199,9 +199,9 @@ structure Renderer :> RENDERER =
 	    diff (merge (intersect (obj1, base, dir),
 			 intersect (obj2, base, dir)), Outside)
 
-	fun isShadowed ((k', _, Entry)::_, k: real) = k < k'
+	fun isShadowed ((k', _, Entry)::_, k: real) = k' < k
 	  | isShadowed ((_, _, Exit)::_, _) = raise Crash
-	  | isShadowed (nil, _) = true
+	  | isShadowed (nil, _) = false
 
 	fun testLight (Directional (color, dir), scene, point) =
 	    if List.null (intersect (scene, point, dir)) then SOME (color, dir)
