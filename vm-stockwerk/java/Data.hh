@@ -37,16 +37,20 @@ public:
   // Runtime class representation
   static const BlockLabel RuntimeConstantPool = (BlockLabel) (base + 6);
   static const BlockLabel VirtualTable        = (BlockLabel) (base + 7);
+  static const BlockLabel StaticFieldRef      = (BlockLabel) (base + 8);
+  static const BlockLabel InstanceFieldRef    = (BlockLabel) (base + 9);
+  static const BlockLabel StaticMethodRef     = (BlockLabel) (base + 10);
+  static const BlockLabel VirtualMethodRef    = (BlockLabel) (base + 11);
   // Code
-  static const BlockLabel ExceptionTableEntry = (BlockLabel) (base + 8);
+  static const BlockLabel ExceptionTableEntry = (BlockLabel) (base + 12);
   // Types
-  static const BlockLabel Class               = (BlockLabel) (base + 9);
-  static const BlockLabel ObjectArrayType     = (BlockLabel) (base + 10);
-  static const BlockLabel BaseArrayType       = (BlockLabel) (base + 11);
+  static const BlockLabel Class               = (BlockLabel) (base + 13);
+  static const BlockLabel ObjectArrayType     = (BlockLabel) (base + 14);
+  static const BlockLabel BaseArrayType       = (BlockLabel) (base + 15);
   // Data layer
-  static const BlockLabel Lock                = (BlockLabel) (base + 12);
-  static const BlockLabel Object              = (BlockLabel) (base + 13);
-  static const BlockLabel ObjectArray         = (BlockLabel) (base + 14);
+  static const BlockLabel Lock                = (BlockLabel) (base + 16);
+  static const BlockLabel Object              = (BlockLabel) (base + 17);
+  static const BlockLabel ObjectArray         = (BlockLabel) (base + 18);
 };
 
 //
@@ -337,30 +341,112 @@ public:
   }
 };
 
-class DllExport FieldRef: private Block {
+class DllExport StaticFieldRef: private Block {
+protected:
+  enum { CLASS_POS, INDEX_POS, SIZE };
 public:
-  u_int GetIndex();
+  using Block::ToWord;
+
+  static StaticFieldRef *New(Class *theClass, u_int index) {
+    Block *b = Store::AllocBlock(JavaLabel::StaticFieldRef, SIZE);
+    b->InitArg(CLASS_POS, theClass->ToWord());
+    b->InitArg(INDEX_POS, index);
+    return static_cast<StaticFieldRef *>(b);
+  }
+  static StaticFieldRef *FromWord(word x) {
+    Block *b = Store::WordToBlock(x);
+    Assert(b->GetLabel() == JavaLabel::StaticFieldRef);
+    return static_cast<StaticFieldRef *>(b);
+  }
+
+  Class *GetClass() {
+    return Class::FromWordDirect(GetArg(CLASS_POS));
+  }
+  u_int GetIndex() {
+    return Store::DirectWordToInt(GetArg(INDEX_POS));
+  }
 };
 
-class DllExport StaticFieldRef: public FieldRef {
+class DllExport InstanceFieldRef: private Block {
+protected:
+  enum { INDEX_POS, SIZE };
 public:
-  Class *GetClass();
+  using Block::ToWord;
+
+  static InstanceFieldRef *New(u_int index) {
+    Block *b = Store::AllocBlock(JavaLabel::InstanceFieldRef, SIZE);
+    b->InitArg(INDEX_POS, index);
+    return static_cast<InstanceFieldRef *>(b);
+  }
+  static InstanceFieldRef *FromWord(word x) {
+    Block *b = Store::WordToBlock(x);
+    Assert(b->GetLabel() == JavaLabel::InstanceFieldRef);
+    return static_cast<InstanceFieldRef *>(b);
+  }
+
+  u_int GetIndex() {
+    return Store::DirectWordToInt(GetArg(INDEX_POS));
+  }
 };
 
-class DllExport InstanceFieldRef: public FieldRef {
-};
-
-class DllExport MethodRef: private Block {
+class DllExport StaticMethodRef: private Block {
+protected:
+  enum { CLASS_POS, INDEX_POS, NUMBER_OF_ARGUMENTS_POS, SIZE };
 public:
-  Class *GetClass();
-  u_int GetIndex();
-  u_int GetNumberOfArguments();
+  using Block::ToWord;
+
+  static StaticMethodRef *New(Class *theClass, u_int index, u_int nArgs) {
+    Block *b = Store::AllocBlock(JavaLabel::StaticMethodRef, SIZE);
+    b->InitArg(CLASS_POS, theClass->ToWord());
+    b->InitArg(INDEX_POS, index);
+    b->InitArg(NUMBER_OF_ARGUMENTS_POS, nArgs);
+    return static_cast<StaticMethodRef *>(b);
+  }
+  static StaticMethodRef *FromWord(word x) {
+    Block *b = Store::WordToBlock(x);
+    Assert(b->GetLabel() == JavaLabel::StaticMethodRef);
+    return static_cast<StaticMethodRef *>(b);
+  }
+
+  Class *GetClass() {
+    return Class::FromWordDirect(GetArg(CLASS_POS));
+  }
+  u_int GetIndex() {
+    return Store::DirectWordToInt(GetArg(INDEX_POS));
+  }
+  u_int GetNumberOfArguments() {
+    return Store::DirectWordToInt(GetArg(NUMBER_OF_ARGUMENTS_POS));
+  }
 };
 
-class DllExport StaticMethodRef: public MethodRef {
-};
+class DllExport VirtualMethodRef: private Block {
+protected:
+  enum { CLASS_POS, INDEX_POS, NUMBER_OF_ARGUMENTS_POS, SIZE };
+public:
+  using Block::ToWord;
 
-class DllExport VirtualMethodRef: public MethodRef {
+  static VirtualMethodRef *New(Class *theClass, u_int index, u_int nArgs) {
+    Block *b = Store::AllocBlock(JavaLabel::VirtualMethodRef, SIZE);
+    b->InitArg(CLASS_POS, theClass->ToWord());
+    b->InitArg(INDEX_POS, index);
+    b->InitArg(NUMBER_OF_ARGUMENTS_POS, nArgs);
+    return static_cast<VirtualMethodRef *>(b);
+  }
+  static VirtualMethodRef *FromWord(word x) {
+    Block *b = Store::WordToBlock(x);
+    Assert(b->GetLabel() == JavaLabel::VirtualMethodRef);
+    return static_cast<VirtualMethodRef *>(b);
+  }
+
+  Class *GetClass() {
+    return Class::FromWordDirect(GetArg(CLASS_POS));
+  }
+  u_int GetIndex() {
+    return Store::DirectWordToInt(GetArg(INDEX_POS));
+  }
+  u_int GetNumberOfArguments() {
+    return Store::DirectWordToInt(GetArg(NUMBER_OF_ARGUMENTS_POS));
+  }
 };
 
 #endif
