@@ -23,7 +23,6 @@ DEFINE0(UnsafeTime_now) {
   BigInt *res = BigInt::New((double)tv.tv_sec);
   mpz_mul_ui(res->big(), res->big(), 1000000UL);
   mpz_add_ui(res->big(), res->big(), tv.tv_usec);
-  mpz_div_ui(res->big(), res->big(), 1000UL);
   RETURN_INTINF(res);
 } END
 
@@ -31,13 +30,14 @@ DEFINE0(UnsafeTime_now) {
 
 #include <sys/timeb.h>
 
-// return current time in milliseconds.
+// return current time in microseconds.
 DEFINE0(UnsafeTime_now) {
   struct timeb tb;
   ftime (&tb);
   BigInt *res	= BigInt::New ((double)tb.time);
-  mpz_mul_ui (res->big (), res->big (), 1000UL);
-  mpz_add_ui (res->big (), res->big (), tb.millitm);
+  BigInt *milli = BigInt::New ((double)tb.millitm);
+  mpz_mul_ui (res->big (), res->big (), 1000000UL);
+  mpz_addmul_ui (res->big (), tb.millitm, 1000UL); 
   RETURN_INTINF(res);
 } END
 
