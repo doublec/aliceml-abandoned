@@ -316,6 +316,8 @@ structure Char =
     struct
 	type char = char
 
+	__primitive val <= : char * char -> bool = "Char.<="
+
 	__primitive val ord : char -> int = "Char.ord"
 	__primitive val chr : int -> char = "Char.chr"
 
@@ -437,7 +439,7 @@ signature INTEGER =
 	val toLarge: int -> int
     end
 
-structure Int :> INTEGER =
+structure Int :> INTEGER where type int = int =
     struct
 	type int = int
 
@@ -530,12 +532,12 @@ structure Real =
     struct
 	type real = real
 
-	val scan = 0   (*--** *)
-	val toString = 0   (*--** *)
-	val fromString = 0 (*--** *)
-	val compare = 0 (*--** *)
-	val trunc = 0 (*--** *)
-	val op < = 0 (*--** *)
+	fun scan(r: (char,'a) StringCvt.reader) = scan r   (*--** *)
+	fun toString(x: real) = ""   (*--** *)
+	fun fromString(s: string) = NONE (*--** *)
+	fun compare(x: real, y:real) = EQUAL (*--** *)
+	fun trunc(x: real) = 0 (*--** *)
+	fun (x: real) < (y: real) = false (*--** *)
     end
 
 structure LargeReal = Real
