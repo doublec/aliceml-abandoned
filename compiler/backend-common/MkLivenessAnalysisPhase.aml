@@ -197,13 +197,10 @@ structure LivenessAnalysisPhase1 :>
 			      union (lset, lset')
 			  end) (Copy (StampSet.new ())) tagBodyVec
 	  | scanTests (ConTests conBodyVec) =
-	    Vector.foldl (fn ((con, args, body), lset) =>
+	    Vector.foldl (fn ((id, args, body), lset) =>
 			  let
 			      val lset' = scanBody body
-			      val lset' =
-				  case con of
-				      Con id => ins (lset', id)
-				    | StaticCon _ => lset'
+			      val lset' = ins (lset', id)
 			      val lset' = processArgs (args, lset', delDef)
 			  in
 			      union (lset, lset')
@@ -222,10 +219,8 @@ structure LivenessAnalysisPhase1 :>
 	  | scanExp (VarExp (_, id), lset) = ins (lset, id)
 	  | scanExp (TagExp (_, _, _, args), lset) =
 	    processArgs (args, lset, ins)
-	  | scanExp (ConExp (_, Con id, args), lset) =
+	  | scanExp (ConExp (_, id, args), lset) =
 	    processArgs (args, ins (lset, id), ins)
-	  | scanExp (ConExp (_, StaticCon _, args), lset) =
-	    processArgs (args, lset, ins)
 	  | scanExp (RefExp (_, id), lset) = ins (lset, id)
 	  | scanExp (TupExp (_, ids), lset) = insVec (lset, ids)
 	  | scanExp (ProdExp (_, labIdVec), lset) =
