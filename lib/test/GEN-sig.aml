@@ -9,10 +9,14 @@
  *   $Date$ by $Author$
  *   $Revision$
  *)
+
 signature GEN =
 sig
     type 'a test    = 'a -> unit
     type 'a gen	    = int -> 'a
+
+    val randomize : unit -> unit
+    (* executes Random.randomize *)
 
     val try: int -> 'a gen -> 'a test -> unit
     (* [try num gen test] executes test num times 

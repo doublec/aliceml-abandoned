@@ -19,6 +19,8 @@ struct
     type 'a gen	    = int -> 'a
 
     exception Exhausted
+
+    val randomize = Random.randomize
     
     fun try n gen test =
 	    let fun for i =
