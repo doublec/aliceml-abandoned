@@ -3,23 +3,25 @@ functor MkSpecial(val space : Util.spaces) :> SPECIAL =
     struct
 	open TypeTree
 
-	val includeFiles =
+	val includeFile =
 	    case space of
-		Util.GTK => ["NativeGtkSpecial.hh"]
-	      | Util.GDK => ["NativeGdkSpecial.hh"]
-	      | Util.GNOMECANVAS => ["NativeGnomeCanvasSpecial.hh"]
-	      | _ => nil
+		Util.GTK => ("NativeGtkSpecial.hh", "NativeGtkSpecialInit", 2)
+	      | Util.GDK => ("NativeGdkSpecial.hh", "", 0)
+	      | Util.GNOMECANVAS => ("NativeGnomeCanvasSpecial.hh", "", 0)
+	      | _ => ("", "", 0)
 
-        (* ignoreFuns: do not generate any code for: *)
-	val ignoreFuns = 
+        (* ignoreItems: do not generate any code for: *)
+	val ignoreItems = 
 	    case space of
-		Util.GTK => ["gtk_init",
+		Util.GTK => ["gtk_init",  
 			     "gtk_init_check", 
-			     "gtk_true", 
-			     "gtk_false",
+			     "gtk_true",  
+			     "gtk_false", 
 			     "gtk_tree_store_new",
 			     "gtk_type_init" (**),
-			     "gtk_signal_compat_matched" (**)]
+			     "gtk_signal_compat_matched" (**),
+			     "_GtkSocket",
+			     "_GtkPlug"] (* not available for win32 *)
 	      | Util.GDK => ["gdk_init",
 			     "gdk_init_check",
 			     "gdk_pixbuf_new_from_xpm_data"]
@@ -79,8 +81,8 @@ functor MkSpecial(val space : Util.spaces) :> SPECIAL =
 		       LIST ("GList", STRING true)])]
 	 | _ => nil
 
-       (* ignoreSafeFuns: do not generate any safe code for: *)
-       val ignoreSafeFuns =
+       (* ignoreSafeItems: do not generate any safe code for: *)
+       val ignoreSafeItems =
 	   case space of
 	       Util.GTK => ["gtk_init",
 			    "gtk_get_event_stream",
@@ -95,13 +97,18 @@ functor MkSpecial(val space : Util.spaces) :> SPECIAL =
 	     | Util.GDK => ["gdk_init"]
 	     | _ => nil
 
-       fun isIgnored (FUNC (n,_,_)) = 
-	   (List.exists (fn n' => n=n') ignoreFuns) orelse
-           (List.exists (fn (FUNC (n',_,_)) => n=n' | _ => false) changedFuns)
-	 | isIgnored _              = false
 
-       fun isIgnoredSafe (FUNC (n,_,_)) = List.exists (fn n' => n=n') 
-	                                    ignoreSafeFuns
+
+       fun isIgnored (FUNC (n,_,_)) = 
+	   (Util.contains n ignoreItems) orelse
+           (List.exists (fn (FUNC (n',_,_)) => n=n' | _ => false) changedFuns)
+	 | isIgnored (STRUCT (n, _)) = Util.contains n ignoreItems
+	 | isIgnored (ENUM (n, _)) = Util.contains n ignoreItems
+	 | isIgnored _ = false
+
+       fun isIgnoredSafe (FUNC (n,_,_)) = Util.contains n ignoreSafeItems
+	 | isIgnoredSafe (STRUCT (n, _)) = Util.contains n ignoreSafeItems
+	 | isIgnoredSafe (ENUM (n, _)) = Util.contains n ignoreSafeItems
 	 | isIgnoredSafe _              = false
 
     end
