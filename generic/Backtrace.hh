@@ -25,24 +25,25 @@
 
 class DllExport Backtrace: private Queue {
 private:
-  static const u_int initialBacktraceSize = 16; // to be checked
+  static const u_int initialBacktraceSize = 12; // to be checked
 public:
   using Queue::ToWord;
   using Queue::Enqueue;
+  using Queue::GetNumberOfElements;
+  using Queue::GetNthElement;
 
-  // Backtrace Constuctor
+  static Backtrace *New() {
+    return static_cast<Backtrace *>(Queue::New(initialBacktraceSize));
+  }
   static Backtrace *New(word frame) {
-    Queue *trace = Queue::New(initialBacktraceSize);
-    trace->Enqueue(frame);
-    return static_cast<Backtrace *>(trace);
+    Backtrace *backtrace = New();
+    backtrace->Enqueue(frame);
+    return backtrace;
   }
-  // Backtrace Untagging
   static Backtrace *FromWordDirect(word x) {
-    Queue *q = Queue::FromWordDirect(x);
-    return static_cast<Backtrace *>(q);
+    return static_cast<Backtrace *>(Queue::FromWordDirect(x));
   }
 
-  // Backtrace Accessors
   void Dump() {
     while (!IsEmpty()) {
       word frame = Dequeue();
