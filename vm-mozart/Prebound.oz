@@ -468,11 +468,11 @@ prepare
 	 end
       'Thread.yield':
 	 fun {$ T} {Thread.preempt T} unit end
-      'UniqueString.unique': VirtualString.toAtom
-      'UniqueString.string':
-	 fun {$ A} {ByteString.make {Atom.toString A}} end
       'UniqueString.hash':
 	 fun {$ A} {StringHash {ByteString.make A}} end
+      'UniqueString.string':
+	 fun {$ A} {ByteString.make {Atom.toString A}} end
+      'UniqueString.unique': VirtualString.toAtom
       'Unsafe.Array.sub': Array.get
       'Unsafe.Array.update':
 	 fun {$ A I X} {Array.put A I X} unit end
