@@ -12,8 +12,8 @@
 //   $Revision$
 //
 
-#include "emulator/Authoring.hh"
-#include "emulator/Debug.hh"
+#include "generic/Debug.hh"
+#include "alice/primitives/Authoring.hh"
 
 DEFINE1(UnsafeDebug_print) {
   Debug::Dump(x0);
