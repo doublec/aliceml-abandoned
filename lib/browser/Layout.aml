@@ -13,11 +13,12 @@
  *
  *)
 
+import structure Doc from "Doc"
 import structure Node from "Node"
 
 import signature LAYOUT from "LAYOUT-sig"
 
-open Node
+open Doc Node
 
 structure Layout :> LAYOUT = 
 struct
