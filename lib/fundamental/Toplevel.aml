@@ -41,6 +41,7 @@ import __primitive structure Char                          from "Char"
 import __primitive structure String                        from "String"
 import __primitive structure Substring                     from "Substring"
 import __primitive structure Vector                        from "Vector"
+import __primitive structure Future                        from "Future"
 
 
 structure Toplevel =						(**)
@@ -136,6 +137,7 @@ struct
     val trunc		= Real.trunc
     val round		= Real.round
 
+    val await		= Future.await
     (*TODO (or not)
     __primitive val use : string -> unit = "use"
     *)
