@@ -896,7 +896,7 @@ structure String =
     __primitive val size : string -> int        = "String.size"
     __primitive val str :  char -> string       = "String.str"
     __primitive val sub :  string * int -> char = "String.sub"
-    __primitive val sub' : string * int -> char = "String.sub'"
+    __primitive val sub' : string * int -> char = "Unsafe.String.sub"
     __primitive val substring : string * int * int -> string
 						= "String.substring"
     fun extract(s, i, NONE)   = substring(s, i, size s - i)

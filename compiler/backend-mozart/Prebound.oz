@@ -348,7 +348,6 @@ define
 	       {Exception.raiseError BuiltinTable.'General.Subscript'} unit
 	    end
 	 end
-      'String.sub\'': ByteString.get
       'String.substring':
 	 fun {$ S I J}
 	    try
@@ -381,6 +380,7 @@ define
       'Unsafe.Array.sub': Array.get
       'Unsafe.Array.update':
 	 fun {$ A I X} {Array.put A I X} unit end
+      'Unsafe.String.sub': ByteString.get
       'Unsafe.Vector.sub':
 	 fun {$ V I} V.(I + 1) end
       'Unsafe.cast': fun {$ X} X end
