@@ -188,9 +188,7 @@ Interpreter::Result NativeCodeInterpreter::Run(TaskStack *taskStack) {
   return execute(frame);
 }
 
-Interpreter::Result
-NativeCodeInterpreter::Handle(word exn, Backtrace *trace,
-			      TaskStack *taskStack) {
+Interpreter::Result NativeCodeInterpreter::Handle(TaskStack *taskStack) {
   StackFrame *frame = StackFrame::FromWordDirect(taskStack->GetFrame());
   if (frame->GetLabel() == NATIVE_CODE_HANDLER_FRAME) {
     NativeCodeHandlerFrame *handlerFrame =
@@ -198,9 +196,10 @@ NativeCodeInterpreter::Handle(word exn, Backtrace *trace,
     NativeCodeFrame *codeFrame = handlerFrame->GetCodeFrame();
     codeFrame->SetPC(handlerFrame->GetPC());
     Tuple *package = Tuple::New(2);
+    word exn = Scheduler::currentData;
     package->Init(0, exn);
-    package->Init(1, trace->ToWord());
-    Scheduler::nArgs          = 2;
+    package->Init(1, Scheduler::currentBacktrace->ToWord());
+    Scheduler::nArgs = 2;
     Scheduler::currentArgs[0] = package->ToWord();
     Scheduler::currentArgs[1] = exn;
     taskStack->PopFrame();
@@ -208,10 +207,8 @@ NativeCodeInterpreter::Handle(word exn, Backtrace *trace,
     return Interpreter::CONTINUE;
   }
   else {
+    Scheduler::currentBacktrace->Enqueue(frame->ToWord());
     taskStack->PopFrame();
-    trace->Enqueue(frame->ToWord());
-    Scheduler::currentBacktrace = trace;
-    Scheduler::currentData      = exn;
     return Interpreter::RAISE;
   }
 }

@@ -52,7 +52,7 @@ public:
   virtual void PurgeFrame(word frame);
   // Execution
   virtual Result Run(TaskStack *taskStack) = 0;
-  virtual Result Handle(word exn, Backtrace *trace, TaskStack *taskStack);
+  virtual Result Handle(TaskStack *taskStack);
   // Debugging
   virtual const char *Identify() = 0;
   virtual void DumpFrame(word frame) = 0;

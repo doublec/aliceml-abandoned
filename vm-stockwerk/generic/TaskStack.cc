@@ -33,13 +33,13 @@
 #endif
 
 // Empty Interpreter
-class EmptyTaskInterpreter : public Interpreter {
+class EmptyTaskInterpreter: public Interpreter {
 public:
   // EmptyTaskInterpreter Constructor
-  EmptyTaskInterpreter() : Interpreter() {}
+  EmptyTaskInterpreter(): Interpreter() {}
   // Execution
-  virtual Result Run(TaskStack *);
-  virtual Result Handle(word, Backtrace *, TaskStack *);
+  virtual Result Run(TaskStack *taskStack);
+  virtual Result Handle(TaskStack *taskStack);
   // Debugging
   virtual const char *Identify();
   virtual void DumpFrame(word frame);
@@ -50,13 +50,12 @@ Interpreter::Result EmptyTaskInterpreter::Run(TaskStack *) {
   return Interpreter::TERMINATE;
 }
 
-Interpreter::Result EmptyTaskInterpreter::Handle(word exn, Backtrace *trace,
-						 TaskStack *taskStack) {
+Interpreter::Result EmptyTaskInterpreter::Handle(TaskStack *taskStack) {
   if (Properties::atExn == Store::IntToWord(0)) {
     fprintf(stderr, "uncaught exception:\n");
-    Debug::Dump(exn);
+    Debug::Dump(Scheduler::currentData);
     fprintf(stderr, "backtrace:\n");
-    trace->Dump();
+    Scheduler::currentBacktrace->Dump();
     exit(1);
   } else {
     return taskStack->PushCall(Properties::atExn);

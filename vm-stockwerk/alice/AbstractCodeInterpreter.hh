@@ -36,7 +36,7 @@ public:
   virtual void PushCall(TaskStack *taskStack, Closure *closure);
   // Execution
   virtual Result Run(TaskStack *taskStack);
-  virtual Result Handle(word exn, Backtrace *trace, TaskStack *taskStack);
+  virtual Result Handle(TaskStack *taskStack);
   // Debugging
   virtual const char *Identify();
   virtual void DumpFrame(word frame);

@@ -88,13 +88,10 @@ void Interpreter::PurgeFrame(word) {
   return; // default: nothing to do
 }
 
-Interpreter::Result
-Interpreter::Handle(word exn, Backtrace *trace, TaskStack *taskStack) {
+Interpreter::Result Interpreter::Handle(TaskStack *taskStack) {
   // default: pass the exception up the stack
-  trace->Enqueue(taskStack->GetFrame());
+  Scheduler::currentBacktrace->Enqueue(taskStack->GetFrame());
   taskStack->PopFrame();
-  Scheduler::currentBacktrace = trace;
-  Scheduler::currentData      = exn;
   return Interpreter::RAISE;
 }
 
