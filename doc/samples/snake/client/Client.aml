@@ -85,14 +85,10 @@ struct
                     FST ({ turn, changeView, giveUp }, promise)
                  else
                     SND "no more players are allowed")
-                handle e =>
-                    Gui.serverError e
                 
             fun watch () =
                 (invoke #watch ();
                  FST ({ turn, changeView, giveUp }, promise))
-            handle e =>
-                Gui.serverError e
 
             fun disconnect () = 
                  invoke #disconnect ()
