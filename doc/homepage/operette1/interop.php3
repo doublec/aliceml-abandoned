@@ -152,7 +152,7 @@
 	<TD>Dollar-prefixed identifier as atom,<BR>e.g., <TT>'$S'</TT>
     </TABLE>
   </CENTER>
-  <P>Signatures and types are not yet represented at run time.  Note that
+  <P>Signatures and types are not yet represented at run-time.  Note that
     signature coercion is not performed operationally, that is, all structure
     members are visible on the Oz side.</P>
 
@@ -168,7 +168,64 @@
     to the component considered as a single structure.</P>
 
 <?php section("ozfromalice", "oz from alice") ?>
+  <P>Alice compiled components are annotated with signatures denoting
+    the expected types of the component it imports and the actual type
+    of the structure it computes.  Compatibility of actual and expected
+    signatures is checked at link-time to guarantee type safety.
+    The actual export signature is also loaded at compile time to
+    perform binding analysis and type-checking.</P>
+  <P>For this reason, export signatures must first be provided for Oz
+    functors before they can be imported into Alice components.  This
+    will be shown by an example.</P>
+  <P>Assume the following Oz functor is stored at URL <TT>F.ozf</TT>:</P>
+  <PRE>
+        functor
+        import
+           System(show)
+        export
+           show: Show
+        define
+           fun {Show X} {System.show X} unit end
+        end</PRE>
+  <P>To import this component into Alice, we would write a signature
+    file <TT>F.sig</TT> containing:</P>
+  <PRE>
+        signature F_COMPONENT =
+            sig
+                val show: 'a -> unit
+            end</PRE>
+  <P>The Oz functor <TT>F.ozf</TT> can now be combined with the signature
+    at <TT>F.sig</TT> into a typed component <TT>TypedF.ozf</TT> by invoking
+    the Stockhausen compiler thus:</P>
+  <PRE>        stoc --replacesign F.ozf F.sig TypedF.ozf</PRE>
+  <P>We can now import the component into Alice using an import announcement
+    of the form</P>
+  <PRE>        import val show from "TypedF.ozf"</PRE>
+  <P>Note that the name of the signature is ignored.</P>
+  <P>If the signature does not truthfully describe the Oz component,
+    run-time type exceptions will be raised.</P>
 
 <?php section("alicefromoz", "alice from oz") ?>
+  <P>Since Oz does not type-check its imports at link-time, Alice components
+    can be directly imported into Oz functors without conversion.</P>
+  <P>For example, assume the following Alice component is available at
+    URL <TT>Example.ozf</TT>:</P>
+  <PRE>
+        structure Example =
+            struct
+                fun count f xs =
+                    List.foldr (fn (x, n) =>
+                                if f x then n + 1 else n) 0 xs
+            end</PRE>
+  <P>An Oz functor could now import it as follows:</P>
+  <PRE>
+        functor
+        import
+            System(show)
+            ExampleComponent('$Example': Example) at 'Example.ozf'
+        define
+            {System.show
+             {{Example.count fun {$ X} X == 0 end} [1 0 2 0]}}
+        end</PRE>
 
 <?php footing() ?>
