@@ -739,12 +739,42 @@ structure TypePrivate =
       | tailRow(RHO(n,r))		= RHO(n, tailRow r)
       | tailRow(NIL)			= raise Row
 
-    fun lookupRow(NIL, a)		= (print(Label.toString a);raise Row)
+    fun lookupRow(NIL, a)		= (print(Label.toString a); raise Row)
+(*DEBUG*)
       | lookupRow(RHO(_,r), a)		= lookupRow(r,a)
       | lookupRow(FIELD(a',t,r), a)	= case Label.compare(a',a)
 					    of EQUAL   => t
 					     | LESS    => lookupRow(r,a)
 					     | GREATER => raise Row
+
+
+  (* Hashing *)
+
+    val same = op=
+
+    fun plusHash(a,b)		= a + b handle Overflow =>
+					if a < b then plusHash(a, b mod a)
+						 else plusHash(a mod b, b)
+
+    fun hash t =
+	let
+	    fun hash(ref t', a)		= plusHash(hash' t', a)
+	    and hash'(HOLE(k,n))	= n
+	      | hash'(VAR(k,n))		= n
+	      | hash'(PROD r)		= hashRow r
+	      | hash'(SUM r)		= hashRow r
+	      | hash'(CON c)		= hashCon c
+	      | hash' _			= 0
+
+	    and hashRow NIL		= 0
+	      | hashRow(RHO(n,r))	= hashRow r
+	      | hashRow(FIELD(a,t,r))	= plusHash(Label.hash a, hashRow r)
+
+	    and hashCon(k,w,p)		= Path.hash p
+	in
+	    foldlNoAbbrevs hash 0 t
+	end
+
 
 
   (* Closure *)

@@ -156,6 +156,11 @@ signature TYPE =
     val equals :	typ * typ -> bool
     val matches :	typ * typ -> bool
 
+  (* Hashing *)
+
+    val hash :		typ -> int
+    val same :		typ * typ  -> bool	(* identitiy, yuck... *)
+
   (* Level management *)
 
     exception Lift of var
