@@ -1,4 +1,5 @@
 (* abstract syntax for parse tree of jacke input *)
+
 structure AbsSyn =
 struct
     datatype bnfexp =
@@ -21,6 +22,8 @@ struct
 	
     withtype 
 	rule = string * string option * bnfexp
+
+
 
     fun toString _ = ""   (* missing *)
 	
