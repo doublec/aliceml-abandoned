@@ -93,7 +93,7 @@ static int JavaMain(char *home, u_int argc, char *argv[]) {
 }
 
 int main(int argc, char *argv[]) {
-  char *home = std::getenv("STOCKHOME");
+  char *home = std::getenv("JAVA_HOME");
   if (home == NULL) {
     Error("could not determine installation directory");
   }
