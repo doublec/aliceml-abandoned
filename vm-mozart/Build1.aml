@@ -1,3 +1,4 @@
 import "lib/system/Boot"
 import "compiler/CompilerMain"
 import "compiler/CompileServerMain"
+import "linker/Main"
