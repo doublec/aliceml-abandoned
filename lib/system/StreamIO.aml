@@ -27,7 +27,8 @@ functor StreamIO(structure PrimIO: PRIM_IO
 	    where type elem = PrimIO.elem
 	      and type vector = PrimIO.vector
 	      and type reader = PrimIO.reader
-	      and type writer = PrimIO.writer =
+	      and type writer = PrimIO.writer
+	      and type pos = PrimIO.pos =
     struct
 	type elem = PrimIO.elem
 	type vector = PrimIO.vector
@@ -325,6 +326,7 @@ functor StreamIO(structure PrimIO: PRIM_IO
 		else if bufferMode = IO.LINE_BUF then
 		    case lineEnd (buf, bufLen - free, bufLen - free') of
 			SOME i =>
+(*--** only write up to i, then move *)
 			    (stillFree := bufLen;
 			     writeBuffer (buf, 0, bufLen - free',
 					  blocking writeArr))
