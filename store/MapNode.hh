@@ -48,7 +48,7 @@ public:
   }
 
   static MapNode *New(word key, word value, word next) {
-    Block *p = Store::AllocBlock(HASHNODE_LABEL, SIZE);
+    Block *p = Store::AllocMutableBlock(HASHNODE_LABEL, SIZE);
     p->InitArg(KEY_POS, key);
     p->InitArg(VALUE_POS, value);
     p->InitArg(NEXT_POS, next);

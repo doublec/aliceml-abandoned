@@ -48,7 +48,7 @@ namespace {
     using Block::ToWord;
 
     static Entry *New(int fd, Future *future) {
-      Block *block = Store::AllocBlock(ENTRY_LABEL, SIZE);
+      Block *block = Store::AllocMutableBlock(ENTRY_LABEL, SIZE);
       block->InitArg(FD_POS, fd);
       block->InitArg(FUTURE_POS, future->ToWord());
       return STATIC_CAST(Entry *, block);

@@ -61,7 +61,7 @@ public:
 
   // Thread Constructor
   static Thread *New(u_int nArgs, word args) {
-    Block *b = Store::AllocBlock(THREAD_LABEL, SIZE);
+    Block *b = Store::AllocMutableBlock(THREAD_LABEL, SIZE);
     b->InitArg(PRIORITY_POS, NORMAL);
     b->InitArg(STATE_POS, RUNNABLE);
     b->InitArg(IS_SUSPENDED_POS, false);
@@ -194,7 +194,8 @@ public:
     u_int size = exnHandlerStack->GetSize();
     if ((top + 2) >= size) {
       u_int newSize = size * 3 / 2;
-      DynamicBlock *newExnHandlerStack = Store::AllocDynamicBlock(newSize, top);
+      DynamicBlock *newExnHandlerStack =
+	Store::AllocDynamicBlock(newSize, top);
       std::memcpy(newExnHandlerStack->GetBase(), exnHandlerStack->GetBase(),
 		  size * sizeof(u_int));
       ReplaceArg(EXN_HANDLER_STACK_POS, newExnHandlerStack->ToWord());

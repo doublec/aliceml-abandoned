@@ -47,7 +47,7 @@ private:
     Block *oldArray = GetArray();
     u_int oldSize = oldArray->GetSize();
     u_int newSize = oldSize + threshold;
-    Block *newArray = Store::AllocBlock(MIN_DATA_LABEL, newSize);
+    Block *newArray = Store::AllocMutableBlock(MIN_DATA_LABEL, newSize);
     u_int index = GetReadIndex();
     Assert(index == GetWriteIndex());
     word *oldBase = oldArray->GetBase();
@@ -96,8 +96,8 @@ public:
   using Block::ToWord;
 
   static Queue *New(u_int initialSize) {
-    Block *b = Store::AllocBlock(QUEUE_LABEL, SIZE);
-    Block *array = Store::AllocBlock(MIN_DATA_LABEL, initialSize);
+    Block *b = Store::AllocMutableBlock(QUEUE_LABEL, SIZE);
+    Block *array = Store::AllocMutableBlock(MIN_DATA_LABEL, initialSize);
     b->InitArg(READ_INDEX_POS, 0);
     b->InitArg(WRITE_INDEX_POS, 0);
     b->InitArg(ARRAY_POS, array->ToWord());

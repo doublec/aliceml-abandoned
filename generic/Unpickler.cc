@@ -94,7 +94,7 @@ private:
 
   static InputStream *New(IN_STREAM_TYPE type, u_int size) {
     InputStream *is =
-      (InputStream *) Store::AllocBlock((BlockLabel) type, size);
+      (InputStream *) Store::AllocMutableBlock((BlockLabel) type, size);
     is->InitArg(HD_POS, 0);
     is->InitArg(RD_POS, 0);
     is->InitArg(EOB_POS, false);
@@ -114,7 +114,7 @@ public:
     is->InitArg(FILE_POS, Store::UnmanagedPointerToWord(file));
     if (file != NULL) {
       Chunk *buffer =
-	Store::AllocChunk(READ_BUFFER_SIZE + READ_BUFFER_OVERSHOOT);
+	Store::AllocMutableChunk(READ_BUFFER_SIZE + READ_BUFFER_OVERSHOOT);
       is->InitArg(BUFFER_POS, buffer->ToWord());
     }
     is->InitArg(TL_POS, 0);
@@ -272,9 +272,9 @@ public:
 	if (nread < 0) {
 	  Error("InputStream::FillBuffer"); //--** raise Io exception
 	} else if (nread == 0) { // at end of file: raise Corrupt exception
-	  Scheduler::currentData = Unpickler::Corrupt;
+	  Scheduler::SetCurrentData(Unpickler::Corrupt);
 	  StackFrame *frame = Scheduler::GetFrame();
-	  Scheduler::currentBacktrace = Backtrace::New(frame->Clone());
+	  Scheduler::SetCurrentBacktrace(Backtrace::New(frame->Clone()));
 	  Scheduler::PopFrame();
 	  return Worker::RAISE;
 	} else {
@@ -287,9 +287,9 @@ public:
     case STRING_INPUT_STREAM:
       {
 	// there is no more data: raise Corrupt exception
-	Scheduler::currentData = Unpickler::Corrupt;
+	Scheduler::SetCurrentData(Unpickler::Corrupt);
 	StackFrame *frame = Scheduler::GetFrame();
-	Scheduler::currentBacktrace = Backtrace::New(frame->Clone());
+	Scheduler::SetCurrentBacktrace(Backtrace::New(frame->Clone()));
 	Scheduler::PopFrame();
 	return Worker::RAISE;
       }
@@ -316,20 +316,20 @@ private:
   enum { STREAM_POS, RESULT_POS, SIZE };
 public:
   static void New(InputStream *is) {
-    Scheduler::nArgs = SIZE;
-    Scheduler::currentArgs[STREAM_POS] = is->ToWord();
-    Scheduler::currentArgs[RESULT_POS] = Store::IntToWord(0);
+    Scheduler::SetNArgs(SIZE);
+    Scheduler::SetCurrentArg(STREAM_POS, is->ToWord());
+    Scheduler::SetCurrentArg(RESULT_POS, Store::IntToWord(0));
   }
   static InputStream *GetInputStream() {
-    Assert(Scheduler::nArgs == SIZE);
-    return InputStream::FromWordDirect(Scheduler::currentArgs[STREAM_POS]);
+    Assert(Scheduler::GetNArgs() == SIZE);
+    return InputStream::FromWordDirect(Scheduler::GetCurrentArg(STREAM_POS));
   }
   static void SetResult(word result) {
-    Assert(Scheduler::nArgs == SIZE);
-    Scheduler::currentArgs[RESULT_POS] = result;
+    Assert(Scheduler::GetNArgs() == SIZE);
+    Scheduler::SetCurrentArg(RESULT_POS, result);
   }
   static word GetResult() {
-    return Scheduler::currentArgs[RESULT_POS];
+    return Scheduler::GetCurrentArg(RESULT_POS);
   }
 };
 
@@ -567,8 +567,8 @@ Worker::Result PickleUnpackWorker::Run(StackFrame *sFrame) {
   Scheduler::PopFrame(frame->GetSize());
   word result = UnpickleArgs::GetResult();
 
-  Scheduler::nArgs = 1;
-  Scheduler::currentArgs[0] = result;
+  Scheduler::SetNArgs(1);
+  Scheduler::SetCurrentArg(0, result);
   return Worker::CONTINUE;
 }
 
@@ -641,8 +641,8 @@ Worker::Result PickleLoadWorker::Run(StackFrame *sFrame) {
   
   word result = UnpickleArgs::GetResult();
 
-  Scheduler::nArgs = 1;
-  Scheduler::currentArgs[0] = result;
+  Scheduler::SetNArgs(1);
+  Scheduler::SetCurrentArg(0, result);
   return Worker::CONTINUE;
 }
 
@@ -750,7 +750,8 @@ public:
   static bool AllocBlock(BlockLabel label,
 			 u_int size,
 			 UnpickleFrame *frame,
-			 word *newBlock) {
+			 word *newBlock,
+			 bool allocMutable = false) {
     switch(label) {
     case TRANSFORM_LABEL:
       {
@@ -774,7 +775,9 @@ public:
       break;
     default:
       {
-	Block *b = Store::AllocBlock(label, size);
+	Block *b = allocMutable ?
+	  Store::AllocMutableBlock(label, size) :
+	  Store::AllocBlock(label, size);
 	for (u_int i=0; i<size; i++) {
 	  b->InitArg(i, frame->Pop());
 	}
@@ -785,8 +788,8 @@ public:
     }
   }
 
-
-  static word AnnounceBlock(BlockLabel label, u_int size) {
+  static word AnnounceBlock(BlockLabel label, u_int size,
+			    bool allocMutable=false) {
     switch(label) {
     case TRANSFORM_LABEL:
       {
@@ -803,7 +806,10 @@ public:
       break;
     default:
       {
-	return Store::AllocBlock(label, size)->ToWord();
+	if (allocMutable)
+	  return Store::AllocMutableBlock(label, size)->ToWord();
+	else
+	  return Store::AllocBlock(label, size)->ToWord();
       }
       break;
     }
@@ -850,7 +856,7 @@ void UnpickleWorker::PushFrame(int stackSize, int localsSize) {
 //--** to be done: more efficient solution
 #define NCHECK_EOB() {				\
   if (is->IsEOB()) {				\
-    InputWorker::PushFrame();		\
+    InputWorker::PushFrame();			\
     return Worker::CONTINUE;			\
   }						\
 }
@@ -862,13 +868,12 @@ void UnpickleWorker::PushFrame(int stackSize, int localsSize) {
     return Worker::CONTINUE;			\
 }
 
-#define NCORRUPT() {					\
-  Scheduler::currentData = Unpickler::Corrupt;		\
-  StackFrame *frame = Scheduler::GetFrame();            \
-  Scheduler::currentBacktrace =				\
-    Backtrace::New(frame->Clone());	                \
-  Scheduler::PopFrame();                                \
-  return Worker::RAISE;					\
+#define NCORRUPT() {							\
+  Scheduler::SetCurrentData(Unpickler::Corrupt);			\
+  StackFrame *frame = Scheduler::GetFrame();				\
+  Scheduler::SetCurrentBacktrace(Backtrace::New(frame->Clone()));	\
+  Scheduler::PopFrame();						\
+  return Worker::RAISE;							\
 }
 
 
@@ -948,6 +953,17 @@ Worker::Result UnpickleWorker::Run(StackFrame *sFrame) {
 	frame->Push(y->ToWord());
       }
       break;
+    case Pickle::MCHUNK: 
+      {
+	u_int size    = is->GetUInt(); NCHECK_EOB();
+
+	u_char *bytes = is->GetBytes(size); NCHECK_EOB();
+	is->Commit();
+	Chunk *y      = Store::AllocMutableChunk(size);
+	std::memcpy(y->GetBase(), bytes, size);
+	frame->Push(y->ToWord());
+      }
+      break;
     case Pickle::UNIQUE: 
       {
 	is->Commit();
@@ -956,6 +972,18 @@ Worker::Result UnpickleWorker::Run(StackFrame *sFrame) {
 	String *s = String::FromWordDirect(top);
 	word wUnique = UniqueString::New(s)->ToWord();
 	frame->Push(wUnique);
+      }
+      break;
+    case Pickle::MBLOCK: 
+      {
+	u_int label  = is->GetUInt(); NCHECK_EOB();
+	u_int size   = is->GetUInt(); NCHECK_EOB();
+	is->Commit();
+
+	mustContinue =
+	  StoreAbstraction::AllocBlock(STATIC_CAST(BlockLabel, label),
+				       size, frame, &newBlock, true);
+	frame->Push(newBlock);
       }
       break;
     case Pickle::BLOCK: 
@@ -1011,6 +1039,19 @@ Worker::Result UnpickleWorker::Run(StackFrame *sFrame) {
 	word block =
 	  StoreAbstraction::AnnounceBlock(STATIC_CAST(BlockLabel, label),
 					  size);
+	frame->PushStore(addr, block);
+      }
+      break;
+    case Pickle::aMBLOCK:
+      {
+	u_int label  = is->GetUInt(); NCHECK_EOB();
+	u_int size   = is->GetUInt(); NCHECK_EOB();
+	u_int addr   = is->GetUInt(); NCHECK_EOB();
+	is->Commit();
+
+	word block =
+	  StoreAbstraction::AnnounceBlock
+	  (STATIC_CAST(BlockLabel, label), size, true);
 	frame->PushStore(addr, block);
       }
       break;
@@ -1209,10 +1250,10 @@ Worker::Result Unpickler::Load(String *filename) {
   char *szFileName = filename->ExportC();
   InputStream *is = InputStream::NewFromFile(szFileName);
   if (is->HasException()) {
-    Scheduler::currentData = Store::IntToWord(0); // to be done
+    Scheduler::SetCurrentData(Store::IntToWord(0)); // to be done
     fprintf(stderr, "file '%s' not found\n", szFileName);
     StackFrame *frame = Scheduler::GetFrame();
-    Scheduler::currentBacktrace = Backtrace::New(frame->Clone());
+    Scheduler::SetCurrentBacktrace(Backtrace::New(frame->Clone()));
     Scheduler::PopFrame();
     return Worker::RAISE;
   }

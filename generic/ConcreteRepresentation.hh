@@ -28,7 +28,7 @@ public:
 
   static ConcreteRepresentation *New(ConcreteRepresentationHandler *handler,
 				     u_int size) {
-    Block *b = Store::AllocBlock(CONCRETE_LABEL, BASE_SIZE + size);
+    Block *b = Store::AllocMutableBlock(CONCRETE_LABEL, BASE_SIZE + size);
     b->InitArg(HANDLER_POS, Store::UnmanagedPointerToWord(handler));
     return STATIC_CAST(ConcreteRepresentation *, b);
   }

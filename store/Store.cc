@@ -71,6 +71,8 @@ double Store::sum_t;
 inline Block *Store::CloneBlock(Block *p, const u_int gen) {
   u_int size  = p->GetSize();
   Block *newp = (Block *) Store::Alloc(gen, p->GetLabel(), size);
+  if (HeaderOp::DecodeMutableFlag(p))
+    HeaderOp::EncodeMutableFlag(newp, 1);
   std::memcpy(newp->GetBase(), p->GetBase(), size * sizeof(u_int));
   GCHelper::MarkMoved(p, newp);
   return newp;
@@ -436,7 +438,7 @@ inline void Store::GC(word &root, const u_int gen) {
 }
 
 #if defined(STORE_DEBUG)
-static u_int gcCounter = 0;
+u_int Store::gcCounter = 0;
 #endif
 
 void Store::DoGCWithoutFinalize(word &root) {
@@ -713,7 +715,7 @@ static void Verify(Heap *roots, word x) {
       else
 	size = p->GetSize();
       for (u_int i = size; i--;) {
-  	word item = p->GetArg(i);
+	word item = p->GetArg(i);
   	path[depth++] = i;
   	Verify(roots, item);
   	depth--;

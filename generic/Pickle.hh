@@ -36,11 +36,13 @@
 //                   |  POSINT <uint>
 //                   |  NEGINT <uint>
 //                   |  CHUNK size <byte>*size
+//                   |  MCHUNK size <byte>*size
 //                   |  UNIQUE
 //   complexInstr  ::=  ANNOUNCE complexInstr' address
 // 	             |  FULFILL address
 //                   |  complexInstr'
 //   complexInstr' ::=  BLOCK label size
+//                   |  MBLOCK label size
 //                   |  TUPLE size
 //                   |  CLOSURE size
 //                   |  TRANSFORM
@@ -50,7 +52,7 @@
 
 class Pickle {
 public:
-  static const u_int majorVersion = 1;
+  static const u_int majorVersion = 2;
   static const u_int minorVersion = 0;
 
   enum Tag {
@@ -60,17 +62,20 @@ public:
     POSINT,       // 3
     NEGINT,       // 4
     CHUNK,        // 5
-    UNIQUE,       // 6
-    BLOCK,        // 7
-    TUPLE,        // 8
-    CLOSURE,      // 9
-    TRANSFORM,    // 10
-    aBLOCK,       // 11
-    aTUPLE,       // 12
-    aCLOSURE,     // 13
-    aTRANSFORM,   // 14
-    FULFILL,      // 15
-    ENDOFSTREAM   // 16
+    MCHUNK,       // 6
+    UNIQUE,       // 7
+    BLOCK,        // 8
+    MBLOCK,       // 9
+    TUPLE,        // 10
+    CLOSURE,      // 11
+    TRANSFORM,    // 12
+    aBLOCK,       // 13
+    aMBLOCK,      // 14
+    aTUPLE,       // 15
+    aCLOSURE,     // 16
+    aTRANSFORM,   // 17
+    FULFILL,      // 18
+    ENDOFSTREAM   // 19
   };
 
 };

@@ -19,7 +19,7 @@
 
 word StackFrame::Clone() {
   u_int size = GetWorker()->GetFrameSize(this);
-  Block *clone = Store::AllocBlock(MIN_DATA_LABEL, size);
+  Block *clone = Store::AllocMutableBlock(MIN_DATA_LABEL, size);
   for (u_int i = size; i--;)
     clone->InitArg(i, UnsafeGetArg(i));
   return clone->ToWord();

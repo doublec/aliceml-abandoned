@@ -69,7 +69,7 @@ public:
 
   // Stream Constructor
   static Stream *New() {
-    Block *b = Store::AllocBlock(STREAM_LABEL, SIZE);
+    Block *b = Store::AllocMutableBlock(STREAM_LABEL, SIZE);
     b->InitArg(STREAM_POS, Future::New()->ToWord());
     return STATIC_CAST(Stream *, b);
   }

@@ -356,6 +356,11 @@ public:
     u_int header = HeaderOp::EncodeHeader(label, size, 0);
     Alloc(Ptr, SIZEOF_BLOCK(size), header);
   }
+  void AllocMutableBlock(u_int Ptr, BlockLabel label, u_int size) {
+    size = HeaderOp::TranslateSize(size);
+    u_int header = HeaderOp::EncodeHeader(label, size, 0, 1);
+    Alloc(Ptr, SIZEOF_BLOCK(size), header);
+  }
   // Output: Ptr = chunk ptr
   void AllocChunk(u_int Ptr, u_int size) {
     u_int ws = (1 + (((size + sizeof(u_int)) - 1) / sizeof(u_int)));
@@ -363,9 +368,15 @@ public:
     jit_movi_ui(JIT_R0, PointerOp::EncodeInt(size));
     InitArg(Ptr, 0, JIT_R0);
   }
+  void AllocMutableChunk(u_int Ptr, u_int size) {
+    u_int ws = (1 + (((size + sizeof(u_int)) - 1) / sizeof(u_int)));
+    AllocMutableBlock(Ptr, CHUNK_LABEL, ws);
+    jit_movi_ui(JIT_R0, PointerOp::EncodeInt(size));
+    InitArg(Ptr, 0, JIT_R0);
+  }
   // Output: Ptr = transient ptr
   void AllocTransient(u_int Ptr, BlockLabel label) {
-    AllocBlock(Ptr, label, 1);
+    AllocMutableBlock(Ptr, label, 1);
   }
   //
   // Store Import/Export

@@ -43,7 +43,8 @@ void BaseMap<T>::Resize() {
   u_int newsize =  (3 * oldsize) >> 1;
   Assert(newsize > oldsize);
   Block *oldp   = GetTable();
-  Block *newp   = Store::AllocBlock((BlockLabel) HASHNODEARRAY_LABEL, newsize);
+  Block *newp   =
+    Store::AllocMutableBlock((BlockLabel) HASHNODEARRAY_LABEL, newsize);
   // Correct possibly blown up size
   newsize = newp->GetSize();
   u_int percent = (u_int) (1 + (newsize * MAP_FILL_RATIO));
@@ -144,8 +145,8 @@ void BaseMap<T>::Apply(item_apply func) {
 template <typename T>
 BaseMap<T> *BaseMap<T>::New(BlockLabel l, u_int size) {
   size = ((size < 2) ? 2 : size); // Enforce Invariant: size must be > 1
-  Block *map    = Store::AllocBlock(l, SIZE);
-  Block *arr    = Store::AllocBlock(HASHNODEARRAY_LABEL, size);
+  Block *map    = Store::AllocMutableBlock(l, SIZE);
+  Block *arr    = Store::AllocMutableBlock(HASHNODEARRAY_LABEL, size);
   u_int percent = STATIC_CAST(u_int, size * MAP_FILL_RATIO);
   map->InitArg(COUNTER_POS, 0);
   map->InitArg(PERCENT_POS, percent);

@@ -46,7 +46,7 @@ enum OUT_STREAM_TYPE {
 class OutputStream: private Block {
 public:
   static OutputStream *New(OUT_STREAM_TYPE type, u_int size) {
-    Block *p = Store::AllocBlock((BlockLabel) type, size);
+    Block *p = Store::AllocMutableBlock((BlockLabel) type, size);
     return STATIC_CAST(OutputStream *, p);
   }
   static OutputStream *FromWordDirect(word stream) {
@@ -279,10 +279,10 @@ public:
   using Block::ToWord;
 
   static OutputBuffer *New() {
-    Block *b = Store::AllocBlock(OBUF_LABEL, SIZE);
+    Block *b = Store::AllocMutableBlock(OBUF_LABEL, SIZE);
     b->InitArg(BUFFER_POS, Store::AllocChunk(initialSize)->ToWord());
 
-    Block *locBuf = Store::AllocBlock(MIN_DATA_LABEL, locInitialSize*2);
+    Block *locBuf = Store::AllocMutableBlock(MIN_DATA_LABEL, locInitialSize*2);
     locBuf->InitArg(0,Store::IntToWord(0));
     locBuf->InitArg(1,Store::IntToWord(0));
 
@@ -380,7 +380,7 @@ void OutputBuffer::ResizeLocals() {
 
   u_int pos  = Store::DirectWordToInt(GetArg(LOC_COUNT_POS));
   Block *buf = Store::DirectWordToBlock(GetArg(LOCALS_POS));
-  Block *newBuf = Store::AllocBlock(MIN_DATA_LABEL, newSize);
+  Block *newBuf = Store::AllocMutableBlock(MIN_DATA_LABEL, newSize);
   for (int i=pos+1; i--;) {
     newBuf->InitArg(i*2, buf->GetArg(i*2));
     newBuf->InitArg(i*2+1, buf->GetArg(i*2+1));
@@ -511,7 +511,7 @@ public:
 
   void Add(Block *v, int index) {
     Map *map     = Map::FromWordDirect(GetArg(TABLE_POS));
-    Block *b = Store::AllocBlock(MIN_DATA_LABEL, 2);
+    Block *b = Store::AllocMutableBlock(MIN_DATA_LABEL, 2);
     b->InitArg(0, Store::IntToWord(index));
     b->InitArg(1, Store::IntToWord(0));
     map->Put(v->ToWord(), b->ToWord());
@@ -617,48 +617,48 @@ private:
 	 TRANSIENT_FOUND_POS, SIZE };
 public:
   static void New(OutputStream *stream, word root) {
-    Scheduler::nArgs = SIZE;
-    Scheduler::currentArgs[STREAM_POS] = stream->ToWord();
-    Scheduler::currentArgs[BUFFER_POS] = OutputBuffer::New()->ToWord();
-    Scheduler::currentArgs[SEEN_POS] = Seen::New()->ToWord();
+    Scheduler::SetNArgs(SIZE);
+    Scheduler::SetCurrentArg(STREAM_POS, stream->ToWord());
+    Scheduler::SetCurrentArg(BUFFER_POS, OutputBuffer::New()->ToWord());
+    Scheduler::SetCurrentArg(SEEN_POS, Seen::New()->ToWord());
 
     PickleStack *ps = PickleStack::New();
     ps->Push(root);
 
-    Scheduler::currentArgs[STACK_POS] = ps->ToWord();
-    Scheduler::currentArgs[ROOT_POS] = root;
-    Scheduler::currentArgs[CUR_STACK_POS] = Store::IntToWord(0);
-    Scheduler::currentArgs[MAX_STACK_POS] = Store::IntToWord(0);
-    Scheduler::currentArgs[TRANSIENT_FOUND_POS] = Store::IntToWord(0);
+    Scheduler::SetCurrentArg(STACK_POS, ps->ToWord());
+    Scheduler::SetCurrentArg(ROOT_POS, root);
+    Scheduler::SetCurrentArg(CUR_STACK_POS, Store::IntToWord(0));
+    Scheduler::SetCurrentArg(MAX_STACK_POS, Store::IntToWord(0));
+    Scheduler::SetCurrentArg(TRANSIENT_FOUND_POS, Store::IntToWord(0));
   }
   static OutputStream *GetOutputStream() {
-    Assert(Scheduler::nArgs == SIZE);
-    return OutputStream::FromWordDirect(Scheduler::currentArgs[STREAM_POS]);
+    Assert(Scheduler::GetNArgs() == SIZE);
+    return OutputStream::FromWordDirect(Scheduler::GetCurrentArg(STREAM_POS));
   }
   static OutputBuffer *GetOutputBuffer() {
-    Assert(Scheduler::nArgs == SIZE);
-    return OutputBuffer::FromWordDirect(Scheduler::currentArgs[BUFFER_POS]);
+    Assert(Scheduler::GetNArgs() == SIZE);
+    return OutputBuffer::FromWordDirect(Scheduler::GetCurrentArg(BUFFER_POS));
   }
   static Seen *GetSeen() {
-    Assert(Scheduler::nArgs == SIZE);
-    return Seen::FromWordDirect(Scheduler::currentArgs[SEEN_POS]);
+    Assert(Scheduler::GetNArgs() == SIZE);
+    return Seen::FromWordDirect(Scheduler::GetCurrentArg(SEEN_POS));
   }
   static PickleStack *GetPickleStack() {
-    Assert(Scheduler::nArgs == SIZE);
-    return PickleStack::FromWordDirect(Scheduler::currentArgs[STACK_POS]);
+    Assert(Scheduler::GetNArgs() == SIZE);
+    return PickleStack::FromWordDirect(Scheduler::GetCurrentArg(STACK_POS));
   }
   static u_int GetMaxStackHeight() {
-    return Store::DirectWordToInt(Scheduler::currentArgs[MAX_STACK_POS]);
+    return Store::DirectWordToInt(Scheduler::GetCurrentArg(MAX_STACK_POS));
   }
   static u_int GetCurStackHeight() {
-    return Store::DirectWordToInt(Scheduler::currentArgs[CUR_STACK_POS]);
+    return Store::DirectWordToInt(Scheduler::GetCurrentArg(CUR_STACK_POS));
   }
   static void SimulatePush() {
     // Unpickler stack height simulation - push operation
     u_int cur = GetCurStackHeight() + 1;
-    Scheduler::currentArgs[CUR_STACK_POS] = Store::IntToWord(cur);
+    Scheduler::SetCurrentArg(CUR_STACK_POS, Store::IntToWord(cur));
     if (cur > GetMaxStackHeight()) {
-      Scheduler::currentArgs[MAX_STACK_POS] = Store::IntToWord(cur);
+      Scheduler::SetCurrentArg(MAX_STACK_POS, Store::IntToWord(cur));
     }
   }
   static void SimulatePop(u_int i) {
@@ -666,21 +666,22 @@ public:
     u_int cur = GetCurStackHeight();
     Assert(cur>0);
     cur -= i;
-    Scheduler::currentArgs[CUR_STACK_POS] = Store::IntToWord(cur);
+    Scheduler::SetCurrentArg(CUR_STACK_POS, Store::IntToWord(cur));
   }
   static bool GetTransientFound() {
-    return Store::DirectWordToInt(Scheduler::currentArgs[TRANSIENT_FOUND_POS])==1;
+    return
+      Store::DirectWordToInt(Scheduler::GetCurrentArg(TRANSIENT_FOUND_POS));
   }
   static void SetTransientFound() {
-    Scheduler::currentArgs[TRANSIENT_FOUND_POS] = Store::IntToWord(1);
+    Scheduler::SetCurrentArg(TRANSIENT_FOUND_POS, Store::IntToWord(1));
   }
   static void Reset() {
     GetOutputBuffer()->Reset();
     GetSeen()->Reset();
-    GetPickleStack()->Reset(Scheduler::currentArgs[ROOT_POS]);
-    Scheduler::currentArgs[CUR_STACK_POS] = Store::IntToWord(0);
-    Scheduler::currentArgs[MAX_STACK_POS] = Store::IntToWord(0);
-    Scheduler::currentArgs[TRANSIENT_FOUND_POS] = Store::IntToWord(0);
+    GetPickleStack()->Reset(Scheduler::GetCurrentArg(ROOT_POS));
+    Scheduler::SetCurrentArg(CUR_STACK_POS, Store::IntToWord(0));
+    Scheduler::SetCurrentArg(MAX_STACK_POS, Store::IntToWord(0));
+    Scheduler::SetCurrentArg(TRANSIENT_FOUND_POS, Store::IntToWord(0));
   }
 
 };
@@ -798,7 +799,10 @@ Worker::Result PickleWorker::Run(StackFrame *sFrame) {
 	break;
       default:
 	{
-	  outputBuffer->PutByte(Pickle::BLOCK);
+	  if (v->IsMutable())
+	    outputBuffer->PutByte(Pickle::MBLOCK);
+	  else
+	    outputBuffer->PutByte(Pickle::BLOCK);
 	  outputBuffer->PutUInt((u_int) l);
 	  outputBuffer->PutUInt(size);
 	  PickleArgs::SimulatePop(size-1);
@@ -817,7 +821,7 @@ Worker::Result PickleWorker::Run(StackFrame *sFrame) {
       //    consistent state
       PickleArgs::SetTransientFound();
 
-      Scheduler::currentData = x0;
+      Scheduler::SetCurrentData(x0);
       return Worker::REQUEST;
     }
 
@@ -890,7 +894,10 @@ Worker::Result PickleWorker::Run(StackFrame *sFrame) {
 	    break;
 	  default:
 	    {
-	      outputBuffer->PutByte(Pickle::aBLOCK);
+	      if (v->IsMutable())
+		outputBuffer->PutByte(Pickle::aMBLOCK);
+	      else
+		outputBuffer->PutByte(Pickle::aBLOCK);
 	      outputBuffer->PutUInt((u_int) v->GetLabel());
 	      u_int size = v->GetSize();
 	      outputBuffer->PutUInt(size);	
@@ -939,13 +946,16 @@ Worker::Result PickleWorker::Run(StackFrame *sFrame) {
       // If a transient gets bound and replaces the
       // sited value by something we can pickle,
       // we shouldn't reject that!
-      Scheduler::currentData      = Pickler::Sited;
-      Scheduler::currentBacktrace = Backtrace::New(sFrame->Clone());
+      Scheduler::SetCurrentData(Pickler::Sited);
+      Scheduler::SetCurrentBacktrace(Backtrace::New(sFrame->Clone()));
       return Worker::RAISE;
     case CHUNK_LABEL:
       {
 	Chunk *c = STATIC_CAST(Chunk *, v);
-	outputBuffer->PutByte(Pickle::CHUNK);
+	if (c->IsMutable())
+	  outputBuffer->PutByte(Pickle::MCHUNK);
+	else
+	  outputBuffer->PutByte(Pickle::CHUNK);
 	outputBuffer->PutUInt(c->GetSize());
 	outputBuffer->PutBytes(c);
 	u_int idx = outputBuffer->GetPos();
@@ -979,8 +989,8 @@ Worker::Result PickleWorker::Run(StackFrame *sFrame) {
 	  concrete->GetHandler()->GetAbstractRepresentation(concrete);
 	Block *ablock = Store::DirectWordToBlock(abstract->ToWord());
 	if (abstract == INVALID_POINTER) {
-	  Scheduler::currentData      = Pickler::Sited;
-	  Scheduler::currentBacktrace = Backtrace::New(sFrame->Clone());
+	  Scheduler::SetCurrentData(Pickler::Sited);
+	  Scheduler::SetCurrentBacktrace(Backtrace::New(sFrame->Clone()));
 	  return Worker::RAISE;
 	} else {
 	  seen->Add(ablock, Seen::NOT_WRITTEN);
@@ -994,8 +1004,8 @@ Worker::Result PickleWorker::Run(StackFrame *sFrame) {
     case TRANSFORM_LABEL:
       {
 	// must not occur anywhere but under a CONCRETE which is handled above
-	Scheduler::currentData      = Pickler::Sited;
-	Scheduler::currentBacktrace = Backtrace::New(sFrame->Clone());
+	Scheduler::SetCurrentData(Pickler::Sited);
+	Scheduler::SetCurrentBacktrace(Backtrace::New(sFrame->Clone()));
 	return Worker::RAISE;
       
       }
@@ -1147,7 +1157,7 @@ Worker::Result PickleSaveWorker::Run(StackFrame *sFrame) {
       STATIC_CAST(FileOutputStream *, os);
     
     outputStream->Close();
-    Scheduler::nArgs = 0;
+    Scheduler::SetNArgs(0);
     Scheduler::PopFrame(frame->GetSize());
     return Worker::CONTINUE;
   }
@@ -1227,8 +1237,8 @@ Worker::Result PicklePackWorker::Run(StackFrame *sFrame) {
   StringOutputStream *outputStream =
     STATIC_CAST(StringOutputStream *, os);
   
-  Scheduler::nArgs = 1;
-  Scheduler::currentArgs[0] = outputStream->Close();
+  Scheduler::SetNArgs(1);
+  Scheduler::SetCurrentArg(0, outputStream->Close());
 
   return Worker::CONTINUE;
 }
@@ -1260,9 +1270,9 @@ Worker::Result Pickler::Save(String *filename, word x) {
   FileOutputStream *os = FileOutputStream::New(szFileName);
   if (os->GetFile() == NULL) {
     delete os;
-    Scheduler::currentData = Store::IntToWord(0); // to be done: Io exn
+    Scheduler::SetCurrentData(Store::IntToWord(0)); // to be done: Io exn
     StackFrame *frame = Scheduler::GetFrame();
-    Scheduler::currentBacktrace = Backtrace::New(frame->Clone());
+    Scheduler::SetCurrentBacktrace(Backtrace::New(frame->Clone()));
     Scheduler::PopFrame();
     return Worker::RAISE;
   } else {

@@ -108,14 +108,14 @@ Worker::Result UncaughtExceptionWorker::Run(StackFrame *sFrame) {
   word exnHandlers = uncaughtExceptionFrame->GetExnHandlers();
   if (exnHandlers == Store::IntToWord(0)) {
     Scheduler::PopFrame(uncaughtExceptionFrame->GetSize());
-    Scheduler::nArgs = 0;
+    Scheduler::SetNArgs(0);
     return Worker::CONTINUE;
   } else {
     Tuple *cons = Tuple::FromWordDirect(exnHandlers);
     uncaughtExceptionFrame->SetExnHandlers(cons->Sel(1));
-    Scheduler::nArgs = 2;
-    Scheduler::currentArgs[0] = uncaughtExceptionFrame->GetExn();
-    Scheduler::currentArgs[1] = uncaughtExceptionFrame->GetBacktrace();
+    Scheduler::SetNArgs(2);
+    Scheduler::SetCurrentArg(0, uncaughtExceptionFrame->GetExn());
+    Scheduler::SetCurrentArg(1, uncaughtExceptionFrame->GetBacktrace());
     word closure = cons->Sel(0);
     return Scheduler::PushCall(closure);
   }
@@ -123,7 +123,7 @@ Worker::Result UncaughtExceptionWorker::Run(StackFrame *sFrame) {
 
 Worker::Result UncaughtExceptionWorker::Handle(word) {
   // Silently ignore exceptions caused by uncaught exception handlers
-  Scheduler::nArgs = 0;
+  Scheduler::SetNArgs(0);
   return Worker::CONTINUE;
 }
 
@@ -162,26 +162,26 @@ u_int EmptyTaskWorker::GetFrameSize(StackFrame *sFrame) {
 Worker::Result EmptyTaskWorker::Run(StackFrame *sFrame) {
   Assert(sFrame->GetWorker() == this);
   sFrame = sFrame; // Ignored
-  Scheduler::nArgs = 0;
+  Scheduler::SetNArgs(0);
   return Worker::TERMINATE;
 }
 
 Worker::Result EmptyTaskWorker::Handle(word) {
   if (TaskStack::uncaughtExceptionClosures == Store::IntToWord(0)) {
     std::fprintf(stderr, "uncaught exception:\n");
-    Debug::Dump(Scheduler::currentData);
+    Debug::Dump(Scheduler::GetCurrentData());
     std::fprintf(stderr, "backtrace:\n");
-    Scheduler::currentBacktrace->Dump();
+    Scheduler::GetCurrentBacktrace()->Dump();
     // Flush stderr (needed for redirection on windows (e.g. rxvt))
     std::fflush(stderr);
-    Scheduler::nArgs = 0;
+    Scheduler::SetNArgs(0);
     return Worker::TERMINATE;
   } else {
-    word exn = Scheduler::currentData;
-    word backtrace = Scheduler::currentBacktrace->ToWord();
+    word exn = Scheduler::GetCurrentData();
+    word backtrace = Scheduler::GetCurrentBacktrace()->ToWord();
     word exnHandlers = TaskStack::uncaughtExceptionClosures;
     UncaughtExceptionWorker::PushFrame(exn, backtrace, exnHandlers);
-    Scheduler::nArgs = 0;
+    Scheduler::SetNArgs(0);
     return Worker::CONTINUE;
   }
 }
@@ -213,7 +213,7 @@ void TaskStack::AddExnClosure(word closure) {
 void TaskStack::Init() {
   Worker *interpreter = new EmptyTaskWorker();
   emptyTask  = Store::UnmanagedPointerToWord(interpreter);
-  emptyStack = Store::AllocBlock(MIN_DATA_LABEL, 1)->ToWord();
+  emptyStack = Store::AllocMutableBlock(MIN_DATA_LABEL, 1)->ToWord();
   RootSet::Add(emptyStack);
 
   UncaughtExceptionWorker::Init();

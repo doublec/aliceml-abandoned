@@ -34,6 +34,7 @@ public:
     return (word) ((u_int) p | (u_int) BLKTAG);
   }
   static Block *DirectDecodeBlock(word p) {
+    AssertStore(((u_int) p & (u_int) TAGMASK) == (u_int) BLKTAG);
     return (Block *) ((char *) p - (u_int) BLKTAG);
   }
   static Block *DecodeBlock(word p) {
@@ -43,6 +44,7 @@ public:
       return (Block *) INVALID_POINTER;
   }
   static Chunk *DirectDecodeChunk(word p) {
+    AssertStore(((u_int) p & (u_int) TAGMASK) == (u_int) BLKTAG);
     return (Chunk *) ((char *) p - (u_int) BLKTAG);
   }
   static Chunk *DecodeChunk(word p) {
@@ -57,6 +59,7 @@ public:
     return (word) ((u_int) p | (u_int) TRTAG);
   }
   static Transient *DirectDecodeTransient(word p) {
+    AssertStore(((u_int) p & (u_int) TAGMASK) == (u_int) TRTAG);
     return (Transient *) ((char *) p - (u_int) TRTAG);
   }
   static Transient *DecodeTransient(word p) {
@@ -79,6 +82,7 @@ public:
     return (word) ((((u_int) v) << 1) | (u_int) INTTAG);
   }
   static s_int DirectDecodeInt(word v) {
+    AssertStore((((u_int) v) & INTMASK) == INTTAG);
     return (s_int) (((u_int) v & (1u << (STORE_WORD_WIDTH - 1))) ?
 		    ((1u << (STORE_WORD_WIDTH - 1)) | ((u_int) v >> 1)) :
 		    ((u_int) v >> 1));
@@ -94,10 +98,10 @@ public:
     return (word) ((u_int) v | (u_int) INTTAG); 
   }
   static void *DirectDecodeUnmanagedPointer(word v) {
+    AssertStore((u_int) v & INTMASK);
     return (void *) ((u_int) v ^ INTTAG);
   }
   static void *DecodeUnmanagedPointer(word v) {
-    AssertStore((u_int) v & INTMASK);
     return DirectDecodeUnmanagedPointer(v);
   }
   // Deref Function

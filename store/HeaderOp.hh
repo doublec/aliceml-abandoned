@@ -19,15 +19,22 @@
 class SeamDll HeaderOp {
 public:
   // Header Creation and Access
-  static u_int EncodeHeader(BlockLabel l, u_int s, u_int gen) {
+  static u_int EncodeHeader(BlockLabel l, u_int s, u_int gen,
+			    u_int mutableFlag=0) {
+    AssertStore((u_int) l <= MAX_STORE_LABEL);
+    AssertStore(gen < STORE_GENERATION_NUM);
+    AssertStore(mutableFlag == 0 || mutableFlag == 1);
     if (s > MAX_BLOCKSIZE) {
+      Assert(s <= MAX_BIGBLOCKSIZE);
       return (((gen + 1) << GEN_GC_SHIFT) |
 	      (1 << SIZESHIFT_SHIFT) |
 	      ((s >> SIZESHIFT_MASK) << SIZE_SHIFT) |
-	      (((u_int) l) << TAG_SHIFT));
+	      (((u_int) l) << TAG_SHIFT |
+	       mutableFlag << MUTABLE_SHIFT));
     }
     else {
-      return (((gen + 1) << GEN_GC_SHIFT) | (s << SIZE_SHIFT) | (((u_int) l) << TAG_SHIFT));
+      return (((gen + 1) << GEN_GC_SHIFT) | (s << SIZE_SHIFT) |
+	      (((u_int) l) << TAG_SHIFT | mutableFlag << MUTABLE_SHIFT));
     }
   }
   static u_int GetHeader(Block *p) {
@@ -37,25 +44,28 @@ public:
   // Label Creation and Access
   static void EncodeLabel(Transient *p, BlockLabel l) {
     AssertStore(p != INVALID_POINTER);
-    ((u_int *) p)[0] = ((((u_int *) p)[0] & ~TAG_MASK) | (((u_int) l) << TAG_SHIFT));
+    AssertStore((u_int) l <= MAX_STORE_LABEL);
+    ((u_int *) p)[0] =
+      ((((u_int *) p)[0] & ~TAG_MASK) | (((u_int) l) << TAG_SHIFT));
   }
   static BlockLabel DecodeLabel(Block *p) {
     AssertStore(p != INVALID_POINTER);
     return (BlockLabel) ((((u_int *) p)[0] & TAG_MASK) >> TAG_SHIFT);
   }
-  /*TODO: immutable flag disabled, since broken
-  static u_int DecodeImmutableFlag(Block *p) {
+  static u_int DecodeMutableFlag(Block *p) {
     AssertStore(p != INVALID_POINTER);
-    return (u_int) ((((u_int *) p)[0] & IMMUTABLE_MASK) >> IMMUTABLE_SHIFT);
+    return (u_int) ((((u_int *) p)[0] & MUTABLE_MASK) >> MUTABLE_SHIFT);
   }
-  static void EncodeImmutableFlag(Block *p, u_int f) {
+  static void EncodeMutableFlag(Block *p, u_int f) {
     AssertStore(p != INVALID_POINTER);
-    ((u_int *) p)[0] = ((((u_int *) p)[0] & ~IMMUTABLE_MASK) | (f << IMMUTABLE_SHIFT));
+    AssertStore(f<=1);
+    ((u_int *) p)[0] =
+      ((((u_int *) p)[0] & ~MUTABLE_MASK) | (f << MUTABLE_SHIFT));
   }
-  */
   // Size Creation and Access
   static void EncodeSize(Block *p, u_int s) {
     AssertStore(p != INVALID_POINTER);
+    AssertStore(s <= MAX_BLOCKSIZE);
     ((u_int *) p)[0] = ((((u_int *) p)[0] & ~SIZE_MASK) | (s << SIZE_SHIFT));
   }
   static u_int DecodeSize(Block *p) {

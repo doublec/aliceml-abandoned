@@ -213,14 +213,14 @@ void IODesc::Init() {
 }
 
 IODesc *IODesc::NewClosed(String *name) {
-  Block *p = Store::AllocBlock(IODESC_LABEL, SIZE);
+  Block *p = Store::AllocMutableBlock(IODESC_LABEL, SIZE);
   p->InitArg(FLAGS_POS, TYPE_CLOSED);
   p->InitArg(NAME_POS, name->ToWord());
   return STATIC_CAST(IODesc *, p);
 }
 
 IODesc *IODesc::NewFromFD(u_int dir, String *name, int fd) {
-  Block *p = Store::AllocBlock(IODESC_LABEL, SIZE);
+  Block *p = Store::AllocMutableBlock(IODESC_LABEL, SIZE);
   p->InitArg(FLAGS_POS, TYPE_FD|dir);
   p->InitArg(NAME_POS, name->ToWord());
   p->InitArg(FD_POS, fd);
@@ -230,7 +230,7 @@ IODesc *IODesc::NewFromFD(u_int dir, String *name, int fd) {
 
 #if USE_WINSOCK
 IODesc *IODesc::NewFromHandle(u_int dir, String *name, HANDLE handle) {
-  Block *p = Store::AllocBlock(IODESC_LABEL, SIZE);
+  Block *p = Store::AllocMutableBlock(IODESC_LABEL, SIZE);
   p->InitArg(FLAGS_POS, TYPE_HANDLE|dir);
   p->InitArg(NAME_POS, name->ToWord());
   Chunk *c = Store::AllocChunk(sizeof(HANDLE));
@@ -260,7 +260,7 @@ IODesc *IODesc::NewForwarded(u_int dir, String *name, HANDLE handle) {
   }
   unsigned long arg = true;
   ioctlsocket(fd, FIONBIO, &arg);
-  Block *p = Store::AllocBlock(IODESC_LABEL, SIZE);
+  Block *p = Store::AllocMutableBlock(IODESC_LABEL, SIZE);
   p->InitArg(FLAGS_POS, TYPE_FORWARDED | dir);
   p->InitArg(NAME_POS, name->ToWord());
   p->InitArg(FD_POS, fd);
@@ -437,11 +437,11 @@ IODesc::result IODesc::DoBlock() {
       Future *future = GetDir() == DIR_READER?
 	IOHandler::WaitReadable(GetFD()):
 	IOHandler::WaitWritable(GetFD());
-      Scheduler::nArgs = 0;
+      Scheduler::SetNArgs(0);
       if (future == INVALID_POINTER)
 	return result_ok;
       else {
-	Scheduler::currentData = future->ToWord();
+	Scheduler::SetCurrentData(future->ToWord());
 	return result_request;
       }
     }
@@ -603,7 +603,7 @@ IODesc::result IODesc::Read(u_char *buf, int n, int &out) {
 	if (WSAGetLastError() == WSAEWOULDBLOCK) {
 	  Future *future = IOHandler::WaitReadable(sock);
 	  if (future != INVALID_POINTER) {
-	    Scheduler::currentData = future->ToWord();
+	    Scheduler::SetCurrentData(future->ToWord());
 	    return result_request;
 	  } else
 	    goto retry;
@@ -629,7 +629,7 @@ IODesc::result IODesc::Read(u_char *buf, int n, int &out) {
 	if (errno == EWOULDBLOCK) {
 	  Future *future = IOHandler::WaitReadable(fd);
 	  if (future != INVALID_POINTER) {
-	    Scheduler::currentData = future->ToWord();
+	    Scheduler::SetCurrentData(future->ToWord());
 	    return result_request;
 	  } else
 	    goto retry;
@@ -659,7 +659,7 @@ IODesc::result IODesc::Write(const u_char *buf, int n, int &out) {
 	if (WSAGetLastError() == WSAEWOULDBLOCK) {
 	  Future *future = IOHandler::WaitWritable(sock);
 	  if (future != INVALID_POINTER) {
-	    Scheduler::currentData = future->ToWord();
+	    Scheduler::SetCurrentData(future->ToWord());
 	    return result_request;
 	  } else
 	    goto retry;
@@ -685,7 +685,7 @@ IODesc::result IODesc::Write(const u_char *buf, int n, int &out) {
 	if (errno == EWOULDBLOCK) {
 	  Future *future = IOHandler::WaitWritable(fd);
 	  if (future != INVALID_POINTER) {
-	    Scheduler::currentData = future->ToWord();
+	    Scheduler::SetCurrentData(future->ToWord());
 	    return result_request;
 	  } else
 	    goto retry;

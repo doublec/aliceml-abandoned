@@ -78,17 +78,17 @@ inline Worker::Result
 PrimitiveInterpreter::Run(PrimitiveInterpreter *interpreter) {
   switch (interpreter->inArity) {
   case 0:
-    if (Scheduler::nArgs == 1) {
-      Transient *t = Store::WordToTransient(Scheduler::currentArgs[0]);
+    if (Scheduler::GetNArgs() == 1) {
+      Transient *t = Store::WordToTransient(Scheduler::GetCurrentArg(0));
       if (t == INVALID_POINTER) { // is determined
-	Scheduler::nArgs = 0;
+	Scheduler::SetNArgs(0);
 	return interpreter->function();
       } else { // need to request
-	Scheduler::currentData = Scheduler::currentArgs[0];
+	Scheduler::SetCurrentData(Scheduler::GetCurrentArg(0));
 	return Worker::REQUEST;
       }
     } else {
-      Assert(Scheduler::nArgs == 0);
+      Assert(Scheduler::GetNArgs() == 0);
       return interpreter->function();
     }
   case 1:
@@ -99,7 +99,7 @@ PrimitiveInterpreter::Run(PrimitiveInterpreter *interpreter) {
       // Deconstruct has set Scheduler::currentData as a side-effect
       return Worker::REQUEST;
     } else {
-      Assert(Scheduler::nArgs == interpreter->inArity);
+      Assert(Scheduler::GetNArgs() == interpreter->inArity);
       return interpreter->function();
     }
   }

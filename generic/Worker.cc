@@ -31,10 +31,11 @@ Worker::Worker() {
 
 // Calling Convention Conversion
 void Worker::Construct() {
-  u_int nArgs = Scheduler::nArgs;
+  u_int nArgs = Scheduler::GetNArgs();
   switch (nArgs) {
   case 0:
-    Scheduler::currentArgs[0] = Store::IntToWord(0);
+    Scheduler::SetNArgs(1);
+    Scheduler::SetCurrentArg(0, Store::IntToWord(0));
     break;
   case 1:
     return;
@@ -42,33 +43,32 @@ void Worker::Construct() {
     {
       Tuple *tuple = Tuple::New(nArgs);
       for (u_int i = nArgs; i--; )
-	tuple->Init(i, Scheduler::currentArgs[i]);
-      Scheduler::currentArgs[0] = tuple->ToWord();
+	tuple->Init(i, Scheduler::GetCurrentArg(i));
+      Scheduler::SetNArgs(1);
+      Scheduler::SetCurrentArg(0, tuple->ToWord());
     }
     break;
   }
-  Scheduler::nArgs = 1;
 }
 
 u_int Worker::Deconstruct() {
-  switch (Scheduler::nArgs) {
+  switch (Scheduler::GetNArgs()) {
   case 0:
     return 0;
   case 1:
     {
-      word arg = Scheduler::currentArgs[0];
+      word arg = Scheduler::GetCurrentArg(0);
       Transient *t = Store::WordToTransient(arg);
       if (t == INVALID_POINTER) { // is determined
 	Tuple *tuple = Tuple::FromWord(arg);
 	Assert(tuple != INVALID_POINTER);
-	Scheduler::nArgs =
-	  Store::DirectWordToBlock(tuple->ToWord())->GetSize(); //--**
-	Assert(Scheduler::nArgs <= Scheduler::maxArgs);
-	for (u_int i = Scheduler::nArgs; i--; )
-	  Scheduler::currentArgs[i] = tuple->Sel(i);
+	Scheduler::SetNArgs
+	  (Store::DirectWordToBlock(tuple->ToWord())->GetSize()); //--**
+	for (u_int i = Scheduler::GetNArgs(); i--; )
+	  Scheduler::SetCurrentArg(i, tuple->Sel(i));
 	return 0;
       } else { // need to request
-	Scheduler::currentData = arg;
+	Scheduler::SetCurrentData(arg);
 	return 1;
       }
     }

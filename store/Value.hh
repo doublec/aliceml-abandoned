@@ -24,15 +24,13 @@ public:
   BlockLabel GetLabel() {
     return HeaderOp::DecodeLabel(this);
   }
-  /*TODO: immutable flag disabled, since broken
-  u_int IsImmutable() {
-    return HeaderOp::DecodeImmutableFlag(this);
+  u_int IsMutable() {
+    return HeaderOp::DecodeMutableFlag(this);
   }
-  void SetImmutable(u_int flag) {
+  void SetMutable(u_int flag) {
     AssertStore((flag == 0) || (flag == 1));
-    HeaderOp::EncodeImmutableFlag(this, flag);
+    HeaderOp::EncodeMutableFlag(this, flag);
   }
-  */
   u_int GetSize() {
     return HeaderOp::DecodeSize(this);
   }
@@ -51,9 +49,8 @@ public:
   void ReplaceArg(u_int f, word v) {
     AssertStore(f < GetSize());
     AssertStore(v != NULL);
-    /*TODO: immutable flag disabled, since broken
-    AssertStore(this->IsImmutable() == 0);
-    */
+    AssertStore(this->IsMutable() == 1);
+    ((word *) this)[f + 1] = v;
     if (!PointerOp::IsInt(v)) {
       u_int valgen = HeaderOp::DecodeGeneration(PointerOp::RemoveTag(v));
       u_int mygen  = HeaderOp::DecodeGeneration(this);
@@ -62,12 +59,9 @@ public:
 	Store::AddToIntgenSet(this);
       }
     }
-    ((word *) this)[f + 1] = v;
   }
   void ReplaceArg(u_int f, s_int v) {
-    /*TODO: immutable flag disabled, since broken
-    AssertStore(this->IsImmutable() == 0);
-    */
+    AssertStore(this->IsMutable() == 1);
     InitArg(f, Store::IntToWord(v));
   }
   word ToWord() {
@@ -124,10 +118,8 @@ public:
   static const u_int maxSize = (MAX_BIGBLOCKSIZE - BASE_SIZE) * sizeof(u_int);
 
   using Block::GetLabel;
-  /*TODO: immutable flag disabled, since broken
-  using Block::IsImmutable;
-  using Block::SetImmutable;
-  */
+  using Block::IsMutable;
+  using Block::SetMutable;
   using Block::ToWord;
 
   char *GetBase() {

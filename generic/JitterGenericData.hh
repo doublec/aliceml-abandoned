@@ -241,7 +241,7 @@ public:
 
   // Side-Effect: Scratches JIT_R0, JIT_FP
   void Closure_New(u_int This, u_int size) {
-    JITStore::AllocBlock(This, CLOSURE_LABEL, CLOSURE_BASE_SIZE + size);
+    JITStore::AllocMutableBlock(This, CLOSURE_LABEL, CLOSURE_BASE_SIZE + size);
   }
   void Closure_InitConcreteCode(u_int This, u_int Value) {
     JITStore::InitArg(This, CLOSURE_CONCRETE_CODE_POS, Value);
@@ -258,7 +258,7 @@ public:
 
   // Side-Effect: Scratches JIT_R0, JIT_FP
   void ConcreteCode_New(u_int This, Interpreter *interpreter, u_int size) {
-    JITStore::AllocBlock(This, CONCRETE_LABEL,
+    JITStore::AllocMutableBlock(This, CONCRETE_LABEL,
 			 CONCRETEREPRESENTATION_BASE_SIZE + size);
     ConcreteRepresentationHandler *handler = interpreter;
     (void) jit_movi_p(JIT_R0, Store::UnmanagedPointerToWord(handler));

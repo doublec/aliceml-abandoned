@@ -32,65 +32,65 @@
 
 #define DEFINE0(name)					\
   static Worker::Result name() {			\
-    Assert(Scheduler::nArgs == 0);			\
+    Assert(Scheduler::GetNArgs() == 0);			\
     POP_PRIM_SELF();
 #define DEFINE1(name)					\
   static Worker::Result name() {			\
-    Assert(Scheduler::nArgs == 1);	                \
+    Assert(Scheduler::GetNArgs() == 1);	                \
     POP_PRIM_SELF(); \
-    word x0 = Scheduler::currentArgs[0];
+    word x0 = Scheduler::GetCurrentArg(0);
 #define DEFINE2(name)					\
   static Worker::Result name() {			\
-    Assert(Scheduler::nArgs == 2);			\
+    Assert(Scheduler::GetNArgs() == 2);			\
     POP_PRIM_SELF(); \
-    word x0 = Scheduler::currentArgs[0];		\
-    word x1 = Scheduler::currentArgs[1];
+    word x0 = Scheduler::GetCurrentArg(0);		\
+    word x1 = Scheduler::GetCurrentArg(1);
 #define DEFINE3(name)					\
   static Worker::Result name() {			\
-    Assert(Scheduler::nArgs == 3);			\
+    Assert(Scheduler::GetNArgs() == 3);			\
     POP_PRIM_SELF(); \
-    word x0 = Scheduler::currentArgs[0];		\
-    word x1 = Scheduler::currentArgs[1];		\
-    word x2 = Scheduler::currentArgs[2];
+    word x0 = Scheduler::GetCurrentArg(0);		\
+    word x1 = Scheduler::GetCurrentArg(1);		\
+    word x2 = Scheduler::GetCurrentArg(2);
 #define DEFINE4(name)					\
   static Worker::Result name() {			\
-    Assert(Scheduler::nArgs == 4);			\
+    Assert(Scheduler::GetNArgs() == 4);			\
     POP_PRIM_SELF(); \
-    word x0 = Scheduler::currentArgs[0];		\
-    word x1 = Scheduler::currentArgs[1];		\
-    word x2 = Scheduler::currentArgs[2];		\
-    word x3 = Scheduler::currentArgs[3];
+    word x0 = Scheduler::GetCurrentArg(0);		\
+    word x1 = Scheduler::GetCurrentArg(1);		\
+    word x2 = Scheduler::GetCurrentArg(2);		\
+    word x3 = Scheduler::GetCurrentArg(3);
 #define DEFINE5(name)					\
   static Worker::Result name() {			\
-    Assert(Scheduler::nArgs == 5);			\
+    Assert(Scheduler::GetNArgs() == 5);			\
     POP_PRIM_SELF(); \
-    word x0 = Scheduler::currentArgs[0];		\
-    word x1 = Scheduler::currentArgs[1];		\
-    word x2 = Scheduler::currentArgs[2];		\
-    word x3 = Scheduler::currentArgs[3];		\
-    word x4 = Scheduler::currentArgs[4];
+    word x0 = Scheduler::GetCurrentArg(0);		\
+    word x1 = Scheduler::GetCurrentArg(1);		\
+    word x2 = Scheduler::GetCurrentArg(2);		\
+    word x3 = Scheduler::GetCurrentArg(3);		\
+    word x4 = Scheduler::GetCurrentArg(4);
 #define END }
 
 #define RETURN0 {				\
-  Scheduler::nArgs = 0;				\
+  Scheduler::SetNArgs(0);			\
   return Worker::CONTINUE;			\
 }
 #define RETURN1(w) {				\
-  Scheduler::nArgs = 1;	                        \
-  Scheduler::currentArgs[0] = w;		\
+  Scheduler::SetNArgs(1);                       \
+  Scheduler::SetCurrentArg(0, w);		\
   return Worker::CONTINUE;			\
 }
 #define RETURN2(w1, w2) {			\
-  Scheduler::nArgs = 2;				\
-  Scheduler::currentArgs[0] = w1;		\
-  Scheduler::currentArgs[1] = w2;		\
+  Scheduler::SetNArgs(2);			\
+  Scheduler::SetCurrentArg(0, w1);		\
+  Scheduler::SetCurrentArg(1, w2);		\
   return Worker::CONTINUE;			\
 }
 #define RETURN3(w1, w2, w3) {			\
-  Scheduler::nArgs = 3;				\
-  Scheduler::currentArgs[0] = w1;		\
-  Scheduler::currentArgs[1] = w2;		\
-  Scheduler::currentArgs[2] = w3;		\
+  Scheduler::SetNArgs(3);			\
+  Scheduler::SetCurrentArg(0, w1);		\
+  Scheduler::SetCurrentArg(1, w2);		\
+  Scheduler::SetCurrentArg(2, w3);		\
   return Worker::CONTINUE;			\
 }
 
@@ -99,30 +99,30 @@
 #define RETURN_INT(i) RETURN(Store::IntToWord(i));
 
 #define PREEMPT0 {				\
-  Scheduler::nArgs = 0;				\
+  Scheduler::SetNArgs(0);			\
   return Worker::PREEMPT;			\
 }
 
 #define SUSPEND return Worker::SUSPEND;
 
 #define RAISE(w) {						\
-  Scheduler::currentData = w;					\
+  Scheduler::SetCurrentData(w);					\
   PUSH_PRIM_SELF()						\
   word prim_wFrame = self_frame->Clone();			\
   Scheduler::PopFrame();					\
-  Scheduler::currentBacktrace = Backtrace::New(prim_wFrame);	\
+  Scheduler::SetCurrentBacktrace(Backtrace::New(prim_wFrame));	\
   return Worker::RAISE;						\
 }
 
 #define REQUEST(w) {				\
-  Scheduler::currentData = w;			\
+  Scheduler::SetCurrentData(w);			\
   PUSH_PRIM_SELF()				\
   return Worker::REQUEST;			\
 }
 
-#define EXIT(i) {				\
-  Scheduler::currentData = Store::IntToWord(i);	\
-  return Worker::EXIT;				\
+#define EXIT(i) {					\
+  Scheduler::SetCurrentData(Store::IntToWord(i));	\
+  return Worker::EXIT;					\
 }
 
 #define DECLARE_INT(i, x)			\

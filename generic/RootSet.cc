@@ -24,7 +24,7 @@ public:
   using Block::ToWord;
 
   static Element *New(word *pointer) {
-    Block *b = Store::AllocBlock(ROOTSETELEMENT_LABEL, SIZE);
+    Block *b = Store::AllocMutableBlock(ROOTSETELEMENT_LABEL, SIZE);
     b->InitArg(POINTER_POS, Store::UnmanagedPointerToWord(pointer));
     return STATIC_CAST(Element *, b);
   }

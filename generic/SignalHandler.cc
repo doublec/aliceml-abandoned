@@ -123,7 +123,7 @@ private:
   enum { TIME_POS, FUTURE_POS, NEXT_POS, SIZE };
 public:
   static TimerEntry *New(u_int time, Future *future) {
-    Block *entry = Store::AllocBlock(TIMER_ENTRY_LABEL, SIZE);
+    Block *entry = Store::AllocMutableBlock(TIMER_ENTRY_LABEL, SIZE);
     entry->InitArg(TIME_POS, time);
     entry->InitArg(FUTURE_POS, future->ToWord());
     entry->InitArg(NEXT_POS, 0);

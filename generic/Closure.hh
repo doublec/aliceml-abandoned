@@ -27,7 +27,7 @@ public:
 
   // Closure Constructor
   static Closure *New(word concreteCode, u_int size) {
-    Block *b = Store::AllocBlock(CLOSURE_LABEL, BASE_SIZE + size);
+    Block *b = Store::AllocMutableBlock(CLOSURE_LABEL, BASE_SIZE + size);
     b->InitArg(CONCRETE_CODE_POS, concreteCode);
     return STATIC_CAST(Closure *, b);
   }

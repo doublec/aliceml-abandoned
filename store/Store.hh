@@ -71,6 +71,9 @@ protected:
   }
   static void GC(word &root, const u_int gen);
 public:
+#if defined(STORE_DEBUG)
+  static u_int gcCounter;
+#endif
 #if (defined(STORE_DEBUG) || defined(STORE_PROFILE))
   static u_int totalMem;
   static u_int gcLiveMem;
@@ -104,19 +107,34 @@ public:
     AssertStore(l <= MAX_STORE_LABEL); // to be done
     return InternalAlloc(gen, l, s);
   }
+  static Block *AllocMutableBlock(BlockLabel l, u_int s, u_int gen = 0) {
+    Block *ret = AllocBlock(l, s, gen);
+    HeaderOp::EncodeMutableFlag(ret, 1);
+    return ret;
+  }
   static Chunk *AllocChunk(u_int s, u_int gen = 0) {
     u_int ws = (1 + (((s + sizeof(u_int)) - 1) / sizeof(u_int)));
     Block *p = Store::InternalAlloc(gen, CHUNK_LABEL, ws);
     ((word *) p)[1] = PointerOp::EncodeInt(s);
     return (Chunk *) p;
   }
+  static Chunk *AllocMutableChunk(u_int s, u_int gen = 0) {
+    u_int ws = (1 + (((s + sizeof(u_int)) - 1) / sizeof(u_int)));
+    Block *p = Store::InternalAlloc(gen, CHUNK_LABEL, ws);
+    ((word *) p)[1] = PointerOp::EncodeInt(s);
+    HeaderOp::EncodeMutableFlag(p, 1);
+    return (Chunk *) p;
+  }
   static Transient *AllocTransient(BlockLabel l) {
     AssertStore((l >= MIN_TRANSIENT_LABEL) && (l <= MAX_TRANSIENT_LABEL));
-    return (Transient *) Store::InternalAlloc(0, l, 1);
+    Block *p = Store::InternalAlloc(0, l, 1);
+    HeaderOp::EncodeMutableFlag(p, 1);
+    return (Transient *) p;
   }
   static DynamicBlock *AllocDynamicBlock(u_int size, u_int scan, u_int g = 0) {
     Block *p = Store::InternalAlloc(g, DYNAMIC_LABEL, size + 1);
     ((word *) p)[1] = PointerOp::EncodeInt(scan);
+    HeaderOp::EncodeMutableFlag(p, 1);
     return (DynamicBlock *) p;
   }
   // Conversion Functions

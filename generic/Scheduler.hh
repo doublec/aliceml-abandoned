@@ -29,6 +29,9 @@ class Backtrace;
 #define SCHEDULER_THREAD_PREEMPT_STATUS 1
 
 class SeamDll Scheduler {
+  friend class JITGeneric;
+public:
+  static const u_int maxArgs = 16;
 private:
   // ThreadQueue is root
   static word wThreadQueue;
@@ -36,20 +39,65 @@ private:
 
   static void SwitchToThread();
   static void FlushThread();
-public:
-  static const u_int maxArgs = 16;
 
-  // Scheduler public data
-  static TaskStack *currentTaskStack; // Task stack
-  static word *stackTop;              // Task stack top
-  static word *stackMax;              // Task stack max
   static u_int nArgs;                 // Number of arguments
   static word currentArgs[maxArgs];   // Arguments
   static word currentData;            // Transient or exception
   static Backtrace *currentBacktrace; // Backtrace
+
+  static TaskStack *currentTaskStack; // Task stack
+  static word *stackTop;              // Task stack top
+  static word *stackMax;              // Task stack max
+public:
+
 #if PROFILE
   static double gcTime;
 #endif
+
+  static void SetNArgs(u_int n) { 
+    Assert(n<=maxArgs);
+    nArgs = n;
+  }
+  static u_int GetNArgs(void) { return nArgs; }
+  static void SetCurrentArg(u_int n, word w) {
+    Assert(n < nArgs);
+    currentArgs[n] = w;
+  }
+  static word GetCurrentArg(u_int n) {
+    Assert(n < nArgs);
+    return currentArgs[n];
+  }
+  static void SetCurrentData(word w) {
+    currentData = w;
+  }
+  static word GetCurrentData(void) {
+    return currentData;
+  }
+  static void SetCurrentBacktrace(Backtrace *b) {
+    currentBacktrace = b;
+  }
+  static Backtrace *GetCurrentBacktrace(void) {
+    return currentBacktrace;
+  }
+  static void SetCurrentTaskStack(TaskStack *t) {
+    currentTaskStack = t;
+  }
+  static TaskStack *GetCurrentTaskStack(void) {
+    return currentTaskStack;
+  }
+  static void SetStackTop(word *w) {
+    stackTop = w;
+  }
+  static word *GetStackTop(void) {
+    return stackTop;
+  }
+  static void SetStackMax(word *w) {
+    stackMax = w;
+  }
+  static word *GetStackMax(void) {
+    return stackMax;
+  }
+
   // Scheduler Static Constructor
   static void Init();
 

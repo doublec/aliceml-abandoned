@@ -34,7 +34,7 @@ protected:
   }
   void Enlarge(u_int oldsize, u_int newsize) {
     Block *oa = GetArray();
-    Block *na = Store::AllocBlock(MIN_DATA_LABEL, newsize);
+    Block *na = Store::AllocMutableBlock(MIN_DATA_LABEL, newsize);
 
     std::memcpy(na->GetBase(), oa->GetBase(), oldsize * sizeof(u_int));
     ReplaceArg(ARR_POS, na->ToWord());
@@ -201,8 +201,8 @@ public:
     HeaderOp::EncodeSize(a, newmax);
   }
   static Stack *New(u_int s) {
-    Block *p = Store::AllocBlock(STACK_LABEL, SIZE);
-    Block *a = Store::AllocBlock(MIN_DATA_LABEL, s);
+    Block *p = Store::AllocMutableBlock(STACK_LABEL, SIZE);
+    Block *a = Store::AllocMutableBlock(MIN_DATA_LABEL, s);
     
     p->InitArg(TOP_POS, 0);
     p->InitArg(ARR_POS, a->ToWord());

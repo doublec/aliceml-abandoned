@@ -26,7 +26,8 @@ public:
     return ((Block **) p)[0];
   }
   static void MarkMoved(Block *p, Block *np) {
-    ((Block **) p)[0] = np; // test for 8 byte Alignment to be determined
+    Assert((((u_int)np) & GEN_GC_MASK) >> GEN_GC_SHIFT == 0);
+    ((Block **) p)[0] = np;
   }
   // Generation Encoding
   static void EncodeGen(Block *p, u_int gen) {

@@ -192,7 +192,8 @@ int Scheduler::Run() {
 	      {
 		Thread *newThread = NewThread(0, Store::IntToWord(0));
 		BindFutureWorker::PushFrame(newThread, transient);
-		PushCallWorker::PushFrame(newThread, transient->GetArg());
+		Closure *byneedClosure = STATIC_CAST(Byneed*, transient)->GetClosure();
+		PushCallWorker::PushFrame(newThread, byneedClosure->ToWord());
 		// The future's argument is an empty wait queue:
 		transient->Become(FUTURE_LABEL, Store::IntToWord(0));
 		FlushThread();
@@ -277,5 +278,5 @@ Worker::Result Scheduler::PushCall(word wClosure) {
 
 void DumpCurrentTaskStack() {
   u_int top = Scheduler::GetCurrentStackTop();
-  Scheduler::currentTaskStack->Dump(top);
+  Scheduler::GetCurrentTaskStack()->Dump(top);
 }

@@ -31,7 +31,7 @@ static word GenerateUnCaughtEvent() {
   GenericDebuggerEvent *event = 
     GenericDebuggerEvent::New(GenericDebuggerEvent::UNCAUGHT,
 			      Scheduler::GetCurrentThread()->ToWord(),
-			      Scheduler::currentData);
+			      Scheduler::GetCurrentData());
   return event->ToWord();
 }
 #endif
@@ -89,19 +89,19 @@ Worker::Result BindFutureWorker::Run(StackFrame *sFrame) {
   Scheduler::PopFrame(frame->GetSize());
   future->ScheduleWaitingThreads();
   Construct();
-  word arg = Scheduler::currentArgs[0];
+  word arg = Scheduler::GetCurrentArg(0);
   if (IsCyclic(arg, future)) { // cancel future with Cyclic exception
     Tuple *package = Tuple::New(2);
     Backtrace *backtrace = Backtrace::New();
     package->Init(0, Hole::cyclicExn);
     package->Init(1, backtrace->ToWord());
     future->Become(CANCELLED_LABEL, package->ToWord());
-    Assert(Scheduler::nArgs == 1);
-    Scheduler::currentArgs[0] = future->ToWord();
+    Assert(Scheduler::GetNArgs() == 1);
+    Scheduler::SetCurrentArg(0, future->ToWord());
     return Worker::CONTINUE;
   } else { // actually bind the future
     future->Become(REF_LABEL, arg);
-    Assert(Scheduler::nArgs == 1);
+    Assert(Scheduler::GetNArgs() == 1);
     // Scheduler::currentArgs[0] is already set to `arg'
     return Worker::CONTINUE;
   }
@@ -122,11 +122,11 @@ Worker::Result BindFutureWorker::Handle(word) {
   Scheduler::PopFrame(frame->GetSize());
   future->ScheduleWaitingThreads();
   Tuple *package = Tuple::New(2);
-  package->Init(0, Scheduler::currentData);
-  package->Init(1, Scheduler::currentBacktrace->ToWord());
+  package->Init(0, Scheduler::GetCurrentData());
+  package->Init(1, Scheduler::GetCurrentBacktrace()->ToWord());
   future->Become(CANCELLED_LABEL, package->ToWord());
-  Scheduler::nArgs = 1;
-  Scheduler::currentArgs[0] = future->ToWord();
+  Scheduler::SetNArgs(1);
+  Scheduler::SetCurrentArg(0, future->ToWord());
   return Worker::CONTINUE;
 }
 
