@@ -16,9 +16,9 @@ import structure Inf         from "../rtt/Inf"
 
 signature PP_COMPONENT =
 sig
-    type doc   = PrettyPrint.doc
-    type value = Reflect.value
-    type inf   = Inf.t
+    type doc    = PrettyPrint.doc
+    type module = Reflect.module
+    type inf    = Inf.t
 
-    val ppComp : value * inf -> doc
+    val ppComp : module * inf -> doc
 end
