@@ -14,21 +14,12 @@ functor
 import
    BootValue(byNeedFail: ByNeedFail) at 'x-oz://boot/Value'
    BootName(newUnique: NewUniqueName '<' hash) at 'x-oz://boot/Name'
+   BootFloat(fPow) at 'x-oz://boot/Float'
    BootWord at 'x-oz://boot/Word'
 export
    BuiltinTable
    Env
 define
-   fun {ExnName N}
-      case {VirtualString.toString {Value.toVirtualString {Label N} 0 0}}
-      of "<N>" then ""
-      elseof &<|&N|&:|& |Rest then
-	 case {Reverse Rest} of &>|Rest then
-	    {ByteString.make {Reverse Rest}}
-	 end
-      end
-   end
-
    fun {NumberCompare I J}
       if I == J then 'EQUAL'
       elseif I < J then 'LESS'
@@ -158,8 +149,16 @@ define
       'General.Subscript': {NewUniqueName 'General.Subscript'}
       'General.exchange':
 	 fun {$ C New} {Exchange C $ New} end
-      'General.exnName': ExnName
-      'General.exnMessage': ExnName
+      'General.exnName':
+	 fun {$ N}
+	    case {VirtualString.toString {Value.toVirtualString {Label N} 0 0}}
+	    of "<N>" then ""
+	    elseof &<|&N|&:|& |Rest then
+	       case {Reverse Rest} of &>|Rest then
+		  {ByteString.make {Reverse Rest}}
+	       end
+	    end
+	 end
       'GlobalStamp.new':
 	 fun {$ unit} {NewName} end
       'GlobalStamp.fromString':
@@ -207,30 +206,30 @@ define
 	 fun {$ I} {ByteString.make {Int.toString I}} end
       'List.Empty': {NewUniqueName 'List.Empty'}
       'Math.acos': Acos
+      'Math.acosh': Float.acosh
       'Math.asin': Asin
+      'Math.asinh': Float.asinh
       'Math.atan': Atan
+      'Math.atanh': Float.atanh
       'Math.atan2': Atan2
       'Math.cos': Cos
+      'Math.cosh': Float.cosh
       'Math.e': 2.71828182846
       'Math.exp': Exp
       'Math.ln': Log
       'Math.pi': 3.14159265359
+      'Math.pow': BootFloat.fPow
       'Math.sin': Sin
+      'Math.sinh': Float.sinh
       'Math.sqrt': Sqrt
       'Math.tan': Tan
+      'Math.tanh': Float.tanh
       'Option.Option': {NewUniqueName 'Option.Option'}
       'Real.~': Number.'~'
       'Real.+': Number.'+'
       'Real.-': Number.'-'
       'Real.*': Number.'*'
-      'Real./':
-	 fun {$ R1 R2}
-	    try
-	       R1 / R2
-	    catch _ then
-	       {Exception.raiseError BuiltinTable.'General.Div'} unit
-	    end
-	 end
+      'Real./': Float.'/'
       'Real.<': Value.'<'
       'Real.>': Value.'>'
       'Real.<=': Value.'=<'
@@ -245,6 +244,8 @@ define
 	    {FloatToInt {Floor R}}
 	 end
       'Real.fromInt': IntToFloat
+      'Real.negInf': ~1.0 / 0.0
+      'Real.posInf': 1.0 / 0.0
       'Real.precision': 52
       'Real.realCeil': Ceil
       'Real.realFloor': Floor
@@ -253,6 +254,7 @@ define
 	 fun {$ R}
 	    if R >= 0.0 then {Floor R} else {Ceil R} end
 	 end
+      'Real.rem': Float.'mod'
       'Real.round':
 	 fun {$ R}
 	    {FloatToInt {Round R}}
