@@ -61,9 +61,9 @@ define
 	    PrimitiveTable.table.{VirtualString.toAtom Name}
 	 end
       [] 'Alice.function' then
-	 case X of tag(0 NG NL IdDefArgs Instr)
+	 case X of tag(0 tuple(F L C) NG NL IdDefArgs Instr)
 	 then function(AbstractCodeInterpreter.interpreter
-		       NG NL IdDefArgs Instr)
+		       {VirtualString.toAtom F}#L#C NG NL IdDefArgs Instr)
 	 end
       end
    end
