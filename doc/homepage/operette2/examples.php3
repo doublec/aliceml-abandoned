@@ -8,7 +8,7 @@
 
   <P>
     This program does pairwise addition of the elements of two integer streams,
-    producing a third stream. The user can interactively put numbers on any
+    producing a third stream. The user can interactively put numbers on both
     of the two source streams. All three streams are displayed in the Mozart
     Browser.
   </P>
