@@ -187,6 +187,18 @@ DEFINE3(UnsafeValue_projTagged) {
   }
 } END
 
+DEFINE3(UnsafeValue_projTaggedTuple) {
+  DECLARE_INT(length, x1);
+  DECLARE_INT(i, x2);
+  if (Alice::IsBigTagVal(length)) {
+    DECLARE_BIGTAGVAL(bigTagVal, x0);
+    RETURN(bigTagVal->Sel(i));
+  } else {
+    DECLARE_TAGVAL(tagVal, x0);
+    RETURN(tagVal->Sel(i));
+  }
+} END
+
 DEFINE1(UnsafeValue_con) {
   DECLARE_CONVAL(conVal, x0);
   if (conVal->IsConVal()) {
@@ -358,7 +370,7 @@ AliceDll word UnsafeValue() {
   INIT_STRUCTURE(record, "UnsafeValue", "projTagged",
 		 UnsafeValue_projTagged, 3);
   INIT_STRUCTURE(record, "UnsafeValue", "projTaggedTuple",
-		 UnsafeValue_projTagged, 3);
+		 UnsafeValue_projTaggedTuple, 3);
   INIT_STRUCTURE(record, "UnsafeValue", "con",
 		 UnsafeValue_con, 1);
   INIT_STRUCTURE(record, "UnsafeValue", "projConstructed",
