@@ -36,7 +36,7 @@ public:
 
   virtual Result Run();
   virtual const char *Identify();
-  virtual void DumpFrame(word frame);
+  virtual void DumpFrame(word wFrame);
 };
 
 class RunMainFrame: private StackFrame {

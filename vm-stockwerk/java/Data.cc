@@ -71,6 +71,9 @@ Class *Class::New(ClassInfo *classInfo) {
   RuntimeConstantPool *runtimeConstantPool =
     classInfo->GetRuntimeConstantPool();
   i = 0, nStaticMethods = 0, nVirtualMethods = 0;
+  Closure *classInitializer = INVALID_POINTER;
+  JavaString *classInitializerName = JavaString::New("<clinit>");
+  JavaString *classInitializerDescriptor = JavaString::New("()V");
   while (i < nMethods) {
     MethodInfo *methodInfo = MethodInfo::FromWordDirect(methods->Get(i));
     JavaByteCode *byteCode = methodInfo->GetByteCode();
@@ -81,6 +84,11 @@ Class *Class::New(ClassInfo *classInfo) {
 	b->InitArg(BASE_SIZE + nStaticFields + nStaticMethods,
 		   closure->ToWord());
 	nStaticMethods++;
+	if (methodInfo->IsTheMethod(classInitializerName,
+				    classInitializerDescriptor)) {
+	  Assert(classInitializer == INVALID_POINTER);
+	  classInitializer = closure;
+	}
       } else {
 	virtualTable->InitArg(nSuperVirtualMethods + nVirtualMethods,
 			      closure->ToWord());
@@ -95,6 +103,11 @@ Class *Class::New(ClassInfo *classInfo) {
 	  b->InitArg(BASE_SIZE + nStaticFields + nStaticMethods,
 		     closure->ToWord());
 	  nStaticMethods++;
+	  if (methodInfo->IsTheMethod(classInitializerName,
+				      classInitializerDescriptor)) {
+	    Assert(classInitializer == INVALID_POINTER);
+	    classInitializer = closure;
+	  }
 	} else {
 	  virtualTable->InitArg(nSuperVirtualMethods + nVirtualMethods,
 				closure->ToWord());
@@ -113,6 +126,9 @@ Class *Class::New(ClassInfo *classInfo) {
     }
     i++;
   }
+  b->InitArg(CLASS_INITIALIZER_POS, 
+	     classInitializer == INVALID_POINTER?
+	     null: classInitializer->ToWord());
   return static_cast<Class *>(b);
 }
 

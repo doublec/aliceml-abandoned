@@ -24,17 +24,33 @@ class ThrowWorker: public Worker {
 private:
   ThrowWorker() {}
 public:
+  struct Throwable {
+    word wClass, wMethodRef;
+  };
+
   static ThrowWorker *self;
 
-  static word NoSuchMethodError;
+  static Throwable ArithmeticException;
+  static Throwable ArrayIndexOutOfBoundsException;
+  static Throwable ArrayStoreException;
+  static Throwable ClassCastException;
+  static Throwable ClassCircularityError;
+  static Throwable ClassFormatError;
+  static Throwable InstantiationError;
+  static Throwable NegativeArraySizeException;
+  static Throwable NoClassDefFoundError;
+  static Throwable NoSuchFieldError;
+  static Throwable NoSuchMethodError;
+  static Throwable NullPointerException;
+  static Throwable VerifyError;
 
   static void Init();
 
-  static void PushFrame(word exception, JavaString *detailMessage);
+  static void PushFrame(Throwable &throwable, JavaString *message);
 
   virtual Result Run();
   virtual const char *Identify();
-  virtual void DumpFrame(word frame);
+  virtual void DumpFrame(word wFrame);
 };
 
 #endif

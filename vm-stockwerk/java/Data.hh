@@ -86,6 +86,7 @@ protected:
     NUMBER_OF_INSTANCE_FIELDS_POS, // int
     VIRTUAL_TABLE_POS, // Block(Closure ... Closure)
     LOCK_POS, // Lock
+    CLASS_INITIALIZER_POS, // Closure | int(0)
     BASE_SIZE
     // ... static fields
     // ... static methods
@@ -122,6 +123,11 @@ public:
     return Closure::FromWordDirect(GetVirtualTable()->GetArg(index));
   }
   class Lock *GetLock();
+  Closure *GetClassInitializer() {
+    word wClassInitializer = GetArg(CLASS_INITIALIZER_POS);
+    if (wClassInitializer == Store::IntToWord(0)) return INVALID_POINTER;
+    return Closure::FromWordDirect(wClassInitializer);
+  }
   word GetStaticField(u_int index) {
     return GetArg(BASE_SIZE + index);
   }
@@ -252,7 +258,7 @@ public:
     Block *b = Store::AllocBlock(JavaLabel::Object, BASE_SIZE + size);
     b->InitArg(0, theClass->ToWord());
     //--** initialization incorrect for long/float/double
-    for (u_int i = size; i--; ) b->InitArg(BASE_SIZE + i, Store::IntToWord(0));
+    for (u_int i = size; i--; ) b->InitArg(BASE_SIZE + i, null);
     return static_cast<Object *>(b);
   }
   static Object *FromWord(word x) {
@@ -480,6 +486,17 @@ public:
   }
 };
 
+class DllExport FieldRef: public Block {
+public:
+  static FieldRef *FromWord(word x) {
+    Block *b = Store::WordToBlock(x);
+    Assert(b == INVALID_POINTER ||
+	   b->GetLabel() == JavaLabel::StaticFieldRef ||
+	   b->GetLabel() == JavaLabel::InstanceFieldRef);
+    return static_cast<FieldRef *>(b);
+  }
+};
+
 class DllExport StaticFieldRef: private Block {
 protected:
   enum { CLASS_POS, INDEX_POS, SIZE };
@@ -526,6 +543,17 @@ public:
 
   u_int GetIndex() {
     return Store::DirectWordToInt(GetArg(INDEX_POS));
+  }
+};
+
+class DllExport MethodRef: public Block {
+public:
+  static MethodRef *FromWord(word x) {
+    Block *b = Store::WordToBlock(x);
+    Assert(b == INVALID_POINTER ||
+	   b->GetLabel() == JavaLabel::StaticMethodRef ||
+	   b->GetLabel() == JavaLabel::VirtualMethodRef);
+    return static_cast<MethodRef *>(b);
   }
 };
 
