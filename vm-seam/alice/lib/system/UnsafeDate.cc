@@ -58,9 +58,16 @@ static inline void to_tm (Tuple *t, struct tm *tm) {
 
 
 DEFINE1(UnsafeDate_fromTimeLocal) {
-    DECLARE_INTINF(t, x0);
+    time_t time;
     struct tm *tm;
-    time_t time = static_cast<time_t> (mpz_get_d (t->big ()));
+    TEST_INTINF(i, x0);
+    if (i == INVALID_INT) {
+        DECLARE_INTINF(t, x0);
+        time = static_cast<time_t> (mpz_get_d (t->big ()));
+    } else {
+        time = static_cast<time_t> (i);
+    }
+
     tm = localtime (&time);
     if (tm == NULL) {
         RAISE_DATE;
@@ -71,10 +78,18 @@ DEFINE1(UnsafeDate_fromTimeLocal) {
 
 
 DEFINE1(UnsafeDate_fromTimeUniv) {
-    DECLARE_INTINF(t, x0);
     struct tm *tm;
-    time_t time = static_cast<time_t> (mpz_get_d (t->big ()));
+    time_t time;
+    TEST_INTINF(i, x0);
+    if (i == INVALID_INT) {
+        DECLARE_INTINF(t, x0);
+        time = static_cast<time_t> (mpz_get_d (t->big ()));
+    } else {
+        time = static_cast<time_t> (i);
+    }
+    
     tm = gmtime (&time);
+    
     if (tm == NULL) {
         RAISE_DATE;
     } else {
@@ -91,8 +106,13 @@ DEFINE1(UnsafeDate_toTime) {
     if (time == (time_t) -1) {
       RAISE_DATE;
     } else {
-      BigInt *ret = BigInt::New (static_cast<double> (time));
-      RETURN_INTINF(ret);
+        double d        = static_cast<double> (time);
+        if (d >= MIN_VALID_INT && d <= MAX_VALID_INT) {
+            RETURN_INT(static_cast<int> (d));
+        } else {
+            BigInt *ret = BigInt::New (static_cast<double> (time));
+            RETURN_INTINF(ret);
+        }
     }
 } END
 
