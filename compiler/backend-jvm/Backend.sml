@@ -30,7 +30,10 @@ structure Backend=
 	structure StampSet = MakeHashImpSet(type t=stamp val hash=Stamp.hash)
 
 	val toplevel = Stamp.new()
-	val illegalstamp = Stamp.new()
+	val illegalStamp = Stamp.new()
+	val illegalId = Id ((0,0), illegalStamp, InId)
+	val DEBUG = ref 0
+	val ECHO = ref 0
 
 	structure Lambda = MakeLambda(structure StampSet=StampSet
 				      structure StampHash=StampHash

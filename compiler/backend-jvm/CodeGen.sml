@@ -25,24 +25,31 @@ structure CodeGen =
 		    val free:ScopedStampSet.t= ScopedStampSet.new ()
 
 		    fun insert (Id (_,stamp',_)) =
-			(print ("Top "^(Stamp.toString (Lambda.top()))^
-				". insert free: "^(Stamp.toString stamp')^"\n");
+			(if !ECHO>=2 then
+			     print ("Top "^(Stamp.toString (Lambda.top()))^
+				    ". insert free: "^(Stamp.toString stamp')^"\n")
+			 else ();
+
 			 if stamp'=stamp_builtin orelse
 			     Lambda.isSelfCall stamp'
 			     then ()
 			 else
 			     ScopedStampSet.insert (free, stamp'))
 		    fun delete (Id (_,stamp',_)) =
-			(print ("Top "^(Stamp.toString (Lambda.top()))^
-				" delete free: "^(Stamp.toString stamp')^"\n");
+			(if !ECHO>=2 then
+			     print ("Top "^(Stamp.toString (Lambda.top()))^
+				    " delete free: "^(Stamp.toString stamp')^"\n")
+			 else ();
 			 ScopedStampSet.delete(free, stamp'))
 
 		    fun get () =
 			let
 			    val x = ScopedStampSet.foldScope (fn (x,xs) => x::xs) nil free
 			in
-			    print ("Top "^(Stamp.toString (Lambda.top())));
-			    printStampList x;
+			    if !ECHO>=2 then
+				(print ("Top "^(Stamp.toString (Lambda.top())));
+				 printStampList x)
+			    else ();
 			    x
 			end
 
@@ -69,11 +76,13 @@ structure CodeGen =
 		    fun freeVarsFun ((OneArg (id' as Id (_,stamp',name)),body')::idbodys') =
 			(fV.enter();
 			 Lambda.push id';
+			 Lambda.pushFun illegalId;
 			 freeVarsDecs body';
 			 fV.delete id';
 			 FreeVars.setVars (stamp',fV.get ());
 			 FreeVars.setFun (id', Lambda.top ());
 			 freeVarsFun idbodys';
+			 Lambda.popFun ();
 			 Lambda.setId();
 			 Lambda.pop ();
 			 case name of
@@ -185,12 +194,14 @@ structure CodeGen =
 	fun classNameFromId (Id (_,stamp',_)) = classNameFromStamp stamp'
 
 	(* Einstiegspunkt *)
-	fun genProgramCode (name, program) =
-	    (Class.setInitial name;
+	fun genProgramCode (debug, echo, name, program) =
+	    (DEBUG := debug;
+	     ECHO := echo;
+	     Class.setInitial name;
 	     let
 		 (* freie Variablen berechnen. *)
 		 val _ = app freeVarsDec program
-		 val _ = FreeVars.printFun ()
+		 val _ = if !ECHO>=2 then FreeVars.printFun () else ()
 		 val _ = Lambda.createIdsLambdaTable()
 		 (* val _ = app annotateTailDec program*)
 		 (* Alle Deklarationen übersetzen *)
@@ -239,37 +250,39 @@ structure CodeGen =
 				  Locals (Local.max()+1),
 				   iL @
 				   insts @
-				   [Getstatic ("java/lang/System/out",[Classsig "java/io/PrintStream"]),
-				    Aload (!mainpickle),
-				    Invokevirtual ("java/io/PrintStream","print",
-						   ([Classsig "java/lang/Object"],
-						   [Voidsig])),
-				    Getstatic CPickle,
-				    New CTuple,
-				    Dup,
-				    Iconst 2,
-				    Anewarray CVal,
-				    Dup,
-				    Iconst 0,
-				    New CStr,
-				    Dup,
-				    Ldc (JVMString (name^".pickle")),
-				    Invokespecial (CStr, "<init>",
-						   ([Classsig CString], [Voidsig])),
-				    Aastore,
-				    Dup,
-				    Iconst 1,
-				    Aload (!mainpickle),
-				    Aastore,
-				    Invokespecial (CTuple, "<init>",
-						   ([Arraysig, Classsig CVal],
-						    [Voidsig])),
-				    Invokeinterface (CVal, "apply",
-						     ([Classsig CVal],
-						      [Classsig CVal])),
-				    Pop,
-				    Return],
-				  Catch.top(), false)
+				   (if !ECHO >= 1 then
+					[Getstatic ("java/lang/System/out",[Classsig "java/io/PrintStream"]),
+					 Aload (!mainpickle),
+					 Invokevirtual ("java/io/PrintStream","print",
+							([Classsig "java/lang/Object"],
+							 [Voidsig]))]
+				    else nil) @
+				    [Getstatic CPickle,
+				     New CTuple,
+				     Dup,
+				     Iconst 2,
+				     Anewarray CVal,
+				     Dup,
+				     Iconst 0,
+				     New CStr,
+				     Dup,
+				     Ldc (JVMString (name^".pickle")),
+				     Invokespecial (CStr, "<init>",
+						    ([Classsig CString], [Voidsig])),
+				     Aastore,
+				     Dup,
+				     Iconst 1,
+				     Aload (!mainpickle),
+				     Aastore,
+				     Invokespecial (CTuple, "<init>",
+						    ([Arraysig, Classsig CVal],
+						     [Voidsig])),
+				     Invokeinterface (CVal, "apply",
+						      ([Classsig CVal],
+						       [Classsig CVal])),
+				     Pop,
+				     Return],
+				    Catch.top(), false)
 		 (* die Hauptklasse *)
 		 val class = Class([CPublic],
 				   name,
@@ -278,9 +291,9 @@ structure CodeGen =
 				   (RecordLabel.makefields ()),
 				   [main, clinit, init, run])
 	     in
-		 print "Erzeuge Hauptklasse...";
+		 if !ECHO >=2 then print "Erzeuge Hauptklasse..." else ();
 		 classToJasmin (class);
-		 print "ferdich\n"
+		 if !ECHO >=2 then print "Okay.\n" else ()
 	     end
 	 )
 
@@ -899,7 +912,7 @@ structure CodeGen =
 		     (* 2. Klasse erzeugen *)
 		     let
 			 val className = classNameFromStamp stamp'
-			 val freeVarList = FreeVars.getVars id' (* yyy*)
+			 val freeVarList = FreeVars.getVars id'
 			 (*			     val _ = (print "FunExpFree: ";printStampList freeVarList)*)
 			 (*		val _ = annotateTailExp exp'*)
 			 (* 1. *)
@@ -931,6 +944,7 @@ structure CodeGen =
 		     in
 			 Lambda.push id';
 			 Catch.push ();
+			 Lambda.pushFun illegalId;
 			 Label.push();
 			 Local.push();
 			 Class.push(className);
@@ -938,6 +952,7 @@ structure CodeGen =
 			 Class.pop();
 			 Local.pop();
 			 Label.pop();
+			 Lambda.popFun ();
 			 Catch.pop();
 			 Lambda.pop();
 			 object @ loadVars @
@@ -1113,14 +1128,17 @@ fun labeliter ((l,_)::rest,i) = labelcode (l,i) @ labeliter(rest,i+1)
 	and
 	    expCodeClass (OneArg id',body') =
 	    let
-		val _ = print ("create Class "^(Class.getCurrent())^"\n")
-		val e = (Getstatic ("java/lang/System/out", [Classsig "java/io/PrintStream"])::
-			 Ldc (JVMString "Betrete: (")::
-			 Invokevirtual ("java/io/PrintStream","print",([Classsig CObj],[Voidsig]))::
-			 Getstatic ("java/lang/System/out", [Classsig "java/io/PrintStream"])::
-			 Ldc (JVMString (nameFromId (Lambda.getFun ())))::
-			 Invokevirtual ("java/io/PrintStream","println",([Classsig CObj],[Voidsig]))::
-			 (List.concat (map decCode body')))
+		val _ = if !ECHO >=1 then print ("create Class "^(Class.getCurrent())^"\n") else ()
+		val e = if !DEBUG >=2 then
+		    (Getstatic ("java/lang/System/out", [Classsig "java/io/PrintStream"])::
+		     Ldc (JVMString "Betrete: (")::
+		     Invokevirtual ("java/io/PrintStream","print",([Classsig CObj],[Voidsig]))::
+		     Getstatic ("java/lang/System/out", [Classsig "java/io/PrintStream"])::
+		     Ldc (JVMString (nameFromId (Lambda.getOuterFun ())))::
+		     Invokevirtual ("java/io/PrintStream","println",([Classsig CObj],[Voidsig]))::
+		     (List.concat (map decCode body')))
+			else (List.concat (map decCode body'))
+
 		val className = classNameFromId id'
 		val freeVarList = FreeVars.getVars id'
 		(* baut die Felder, d.h. die freien Variablen der Klasse *)
@@ -1183,7 +1201,7 @@ fun labeliter ((l,_)::rest,i) = labelcode (l,i) @ labeliter(rest,i+1)
 		classToJasmin (class)
 	    end
 and
-    compile prog = genProgramCode ("Emil", imperatifyString prog)
+    compile prog = genProgramCode (0,0,"Emil", imperatifyString prog)
 and
-    compilefile f = genProgramCode ("Emil", imperatifyFile f)
+    compilefile f = genProgramCode (0,0,"Emil", imperatifyFile f)
     end

@@ -1,9 +1,9 @@
 (*
  * Author:
- *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *   Andy Walter <anwalt@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 1999
+ *   Andy Walter, 1999
  *
  * Last change:
  *   $Date$ by $Author$
@@ -13,21 +13,21 @@
 SMLofNJ.Internals.GC.messages false;
 CM.make();
 open String;
-local
-    val rec ds = fn
-	([prog]) =>
-	    (CodeGen.genProgramCode ("Emil", Main.imperatifyString prog); 0)
-    val rec dc = fn
-	(fi::rest) =>
-	    (CodeGen.genProgramCode (if (extract(fi, size fi-4, NONE)=".dml")
-					 then substring(fi, 0, size fi-4)
-				     else fi,
-					 Main.imperatifyFile fi); dc (rest))
-      | (nil) => 0
 
-    fun dmlc (_, []) =
-	(print "Syntax: \ndmlc file1 [file2..filen]\n"; 0)
-	| dmlc (_, x) = (dc x) handle _ => 1
-in
-    val _ = SMLofNJ.exportFn ("dmlc", dmlc)
-end;
+fun dmlc (_, debug::echo::x) =
+    let
+	fun dc (fi::rest) =
+	    (CodeGen.genProgramCode
+	     (valOf (Int.fromString (substring(debug, 2,1))),
+	      valOf (Int.fromString (substring(echo, 2,1))),
+	      if (extract(fi, size fi-4, NONE)=".dml")
+		  then substring(fi, 0, size fi-4)
+	      else fi,
+		  Main.imperatifyFile fi); dc (rest))
+	  | dc nil = 0
+    in
+	(dc x) handle _ => 1
+    end
+  | dmlc _ = 2
+
+val _ = SMLofNJ.exportFn ("dmlc", dmlc)

@@ -164,10 +164,12 @@ structure ToJasmin =
 		end
 	      | instructionToJasmin (Anewarray cn,_) = "anewarray "^cn
 	      | instructionToJasmin (Areturn,_) =
-		"getstatic java/lang/System/out Ljava/io/PrintStream;\n"^
-		"ldc \")\"\n"^
-		"invokevirtual java/io/PrintStream/print(Ljava/lang/Object;)V\n"^
-		"areturn"
+		if !DEBUG >=2 then
+		    "getstatic java/lang/System/out Ljava/io/PrintStream;\n"^
+		    "ldc \")\"\n"^
+		    "invokevirtual java/io/PrintStream/print(Ljava/lang/Object;)V\n"^
+		    "areturn"
+		    else "areturn"
 	      | instructionToJasmin (Arraylength,_) = "arraylength"
 	      | instructionToJasmin (Athrow,_) = "athrow"
 	      | instructionToJasmin (Bipush i,_) = "bipush "^intToString i
@@ -328,7 +330,8 @@ structure ToJasmin =
 			  print ("\n\nStack Verification Error. Stack="^Int.toString (!stackneed)^
 				 " in "^(!actclass)^"."^methodname^".\n"));
 		      TextIO.output(io,".limit locals "^Int.toString(perslocs+1)^"\n");
-		      TextIO.output(io,".limit stack "^Int.toString (2+(!stackmax))^"\n");
+		      TextIO.output(io,".limit stack "^Int.toString
+				    ((if !DEBUG>=2 then 2 else 0)+(!stackmax))^"\n");
 		      TextIO.output(io,".end method\n"))
 	    in
 		actclass:=name;

@@ -44,8 +44,12 @@ functor MakeLambda(structure StampSet:IMP_SET
 	fun pushFun ids = lambdaIdsStack:=(ids::(!lambdaIdsStack))
 	fun popFun () = lambdaIdsStack:=tl(!lambdaIdsStack)
 	fun getFun () = hd (!lambdaIdsStack)
+	fun getOuterFun () = case !lambdaIdsStack of
+	    _::id'::_ => id'
+	  | _ => raise Match
 
-	fun setId () = StampHash.insert(lambdas,top(),hd(!lambdaIdsStack))
+	fun setId () =
+	    StampHash.insert(lambdas,top(),hd(!lambdaIdsStack))
 
 	fun getId id' =
 	    case StampHash.lookup(lambdas, id')
