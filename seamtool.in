@@ -35,8 +35,18 @@ usage () {
     echo "MODE must be one of the following:                         " >&2
     echo "  compile          compile a source file                   " >&2
     echo "  link             create a library or an executable       " >&2
+    echo "  config           output standard configuration options   " >&2
     echo "                                                           " >&2
     echo "MODE-ARGs vary depending on the MODE.                      " >&2
+}
+
+config_usage () {
+    echo "Usage: $0 config [CONFIG-ARG]                              " >&2
+    echo "Compilation utility for SEAM                               " >&2
+    echo "                                                           " >&2
+    echo "CONFIG-ARG must be one of the following:                   " >&2
+    echo "  libdir           output directory where SEAM extension   " >&2
+    echo "                   libraries should be installed           " >&2
 }
 
 version () {
@@ -86,9 +96,26 @@ case "$mode" in
     link)
 	cmd @CXX@ @SEAMTOOL_LDFLAGS@ "$@" -shared -L${libdir} -lseam
 	;;
+    config)
+	case "$1" in
+	    --help)
+		config_usage
+		exit 0
+		;;
+	    libdir)
+		echo ${libdir}/seam
+		exit 0
+		;;
+	    *)
+		echo "$0: unknown config option '$1'." >&2
+		echo "Try '$0 config --help' for more information." >&2
+		exit 2
+		;;
+	esac
+	;;
     *)
-	echo "$0: unknown mode `$mode'" >&2
-	echo "Try `$0 --help' for more information." >&2
+	echo "$0: unknown mode '$mode'" >&2
+	echo "Try '$0 --help' for more information." >&2
 	exit 2
 	;;
 esac
