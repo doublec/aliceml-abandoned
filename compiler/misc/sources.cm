@@ -23,3 +23,5 @@ Group is
 
     PRETTY_PRINT.sig
     PrettyPrint.sml
+    PP_MISC.sig
+    PPMisc.sml
