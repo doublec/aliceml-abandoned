@@ -32,7 +32,7 @@ PRIMITIVE_MODULES = \
 	UniqueString Unsafe Vector Word
 LIB_SYSTEM_MODULES = \
 	Config IO OS CommandLine Component Debug Socket Rand Value Reflect
-LIB_UTILITY_MODULES = Cell
+LIB_UTILITY_MODULES = Cell Addr
 LIB_DISTRIBUTION_MODULES = Remote
 
 SOURCES = \
