@@ -6,11 +6,6 @@ import structure TextIO from "x-alice:TextIO.dll"
 import structure Tools  from "x-alice:Tools.dll"
 import val readLine     from "x-alice:Dialog.dll"
 
-import
- val IntFromString
- val StringTokens
-from "x-alice:Helper.dll"
-
 open TextIO
 open Promise
 
@@ -52,7 +47,7 @@ fun loop(p1, p2) =
       of ""   => ()
        | "\n" => loop(p1,p2)
        | s    =>
-    case StringTokens(s, " ")
+    case String.tokens Char.isSpace s
       of nil     => loop(p1,p2)
        | [s1,s2] =>
     case (Int.fromString s1, Int.fromString s2)
