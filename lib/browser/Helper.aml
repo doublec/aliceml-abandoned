@@ -90,7 +90,53 @@ struct
 	       else iterTake' (str,i+1, a ^ Char.toString(test))
 	    end  
 
+(* Test, ob bestimmte node-Art vorliegt *)
+
+    fun isSimple n = case n of
+	Simple _ => true
+      | _ => false
+
+    and isRelNode n = case n of
+	RelNode _ => true
+      | _ => false
+
+    and isRelRefNode n = case n of
+	RelRefNode _ => true
+      | _ => false
+
+    and isLimit n = case n of
+	Limit _ => true
+      | _ => false
+
 (* Zugriff auf bestimmte node-Felder *)
+
+    (* get_xdim *)
+    fun get_xdim n = case n of Simple(r) => !(#width(r))
+                             | Concat(r) => !(#width(r))
+                             | Container(r) => !(#width(r))
+                             | RelNode(r) => !(#width(r))
+                             | RelRefNode(r) => !(#width(r))
+			     | Limit(_) => 2
+                             | Empty => 0
+
+    (* get_ydim *)
+    fun get_ydim n = case n of Concat(r) => !(#height(r))
+                             | Container(r) => !(#height(r))
+                             | RelNode(r) => !(#height(r))
+                             | Empty => 0
+                             | _ => 1
+
+  
+    (* get_l_xdim *)
+    fun get_l_xdim (Container(r)) = !(#l_width(r))
+      | get_l_xdim (Concat(r))  =  !(#l_width(r))
+      | get_l_xdim (RelNode(r)) = (get_l_xdim(
+					    !(#content(r)))) + 
+				(if isSimple (!(#content(r)))
+				     orelse !(#counter(r)) = 1 
+				     then 0 
+				 else String.size(#rep(r)))
+      | get_l_xdim node = get_xdim node
 
     fun getDesc n = case n of Simple(r) => #desc(r)
                             | Concat(r) => #desc(r)
@@ -240,23 +286,7 @@ fun isByneed n = let
 				       | _ => checkConcKids (a,i+1) )
                                   | _ => checkConcKids (a,i+1) )
 
-(* Test, ob bestimmte node-Art vorliegt *)
 
-    fun isSimple n = case n of
-	Simple _ => true
-      | _ => false
-
-    and isRelNode n = case n of
-	RelNode _ => true
-      | _ => false
-
-    and isRelRefNode n = case n of
-	RelRefNode _ => true
-      | _ => false
-
-    and isLimit n = case n of
-	Limit _ => true
-      | _ => false
 
 (* RelNodes *)
 	    

@@ -18,7 +18,7 @@ import structure Helper from "Helper"
 import structure MainDictionary from "MainDictionary"
 import structure Dictionaries from "Dictionaries"
 import structure Settings from "Settings"
-import structure Window from "Window"
+(* import structure Window from "Window" *)
 import signature LAYOUT from "LAYOUT-sig"
 
 import structure Inspector from "x-alice:/lib/tools/Inspector"
@@ -27,34 +27,6 @@ open Types Helper
 
 structure Layout :> LAYOUT = 
 struct
-
-    (* get_xdim *)
-    fun get_xdim n = case n of Simple(r) => !(#width(r))
-                             | Concat(r) => !(#width(r))
-                             | Container(r) => !(#width(r))
-                             | RelNode(r) => !(#width(r))
-                             | RelRefNode(r) => !(#width(r))
-			     | Limit(_) => 2
-                             | Empty => 0
-
-    (* get_ydim *)
-    fun get_ydim n = case n of Concat(r) => !(#height(r))
-                             | Container(r) => !(#height(r))
-                             | RelNode(r) => !(#height(r))
-                             | Empty => 0
-                             | _ => 1
-
-  
-    (* get_l_xdim *)
-    fun get_l_xdim (Container(r)) = !(#l_width(r))
-      | get_l_xdim (Concat(r))  =  !(#l_width(r))
-      | get_l_xdim (RelNode(r)) = (get_l_xdim(
-					    !(#content(r)))) + 
-				(if isSimple (!(#content(r)))
-				     orelse !(#counter(r)) = 1 
-				     then 0 
-				 else String.size(#rep(r)))
-      | get_l_xdim node = get_xdim node
 
     fun st (a,_,_) = a
     fun nd (_,b,_) = b

@@ -40,7 +40,17 @@ sig
     (* Hilfsfunktion fuer Strings *)
     val iterTake : string -> string    
 
+    (* boolsche Tests auf nodes *)
+    val setsVertical : node -> bool (* nur bei Container moeglich! *)
+    val isSimple : node -> bool
+    val isRelNode : node -> bool
+    val isRelRefNode : node -> bool
+    val isLimit : node -> bool
+
     (* Rueckgabe der Inhalte bestimmter node-Felder *)
+    val get_xdim : node -> int
+    val get_ydim : node -> int
+    val get_l_xdim : node -> int
     val getDesc : node -> desc
     val getParent : node -> node
     val getIndex : node -> int
@@ -63,13 +73,7 @@ sig
     (* Hilfsfunktion zur Bestimmung von byneed-Futures *)
     val isByneed: node -> bool
 
-    (* boolsche Tests auf nodes *)
-    val setsVertical : node -> bool (* nur bei Container moeglich! *)
-    val isSimple : node -> bool
-    val isRelNode : node -> bool
-    val isRelRefNode : node -> bool
-    val isLimit : node -> bool
-
+    
     (* Operationen auf RelNodes (im RelationsModus) *)
     val setContent : node * node -> unit
     val incrCounter : node -> node
