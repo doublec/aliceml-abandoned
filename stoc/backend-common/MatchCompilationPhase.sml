@@ -279,7 +279,8 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 			    [(O.OneArg id,
 			      translateExp (exp, return, Goto nil))]
 	    in
-		f (O.FunExp (coord, nil, argsBodyList))::translateCont cont
+		f (O.FunExp (coord, Stamp.new (), nil, argsBodyList))::
+		translateCont cont
 	    end
 	  | translateExp (AppExp (coord, ConExp (_, longid, true), exp2),
 			  f, cont) =

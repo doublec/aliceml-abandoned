@@ -443,15 +443,12 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	     appi (fn (i, id) =>
 		   (emit Dup; emit (LdcI4 i); emitId id; emit StelemRef)) ids;
 	     emit Pop)
-	  | genExp (FunExp (_, _, argsBodyList), PREPARE) =
+	  | genExp (FunExp (_, stamp, _, argsBodyList), PREPARE) =
+	    (emit (Newobj (className stamp, nil));
+	     defineClass (stamp, StockWerk.Procedure, nil))
+	  | genExp (FunExp (_, stamp, _, argsBodyList), FILL) =
 	    (case argsBodyList of
-		 (OneArg (id as Id (_, stamp, _)), _)::_ =>
-		     (emit (Newobj (className stamp, nil));
-		      defineClass (stamp, StockWerk.Procedure, nil))
-	       | _ => Crash.crash "CodeGenPhase.genExp")
-	  | genExp (FunExp (_, _, argsBodyList), FILL) =
-	    (case argsBodyList of
-		 (OneArg (id as Id (_, stamp, _)), body)::rest =>
+		 (OneArg id, body)::rest =>
 		     (genFunBody (stamp, id, body, rest); emit Pop)
 	       | _ => Crash.crash "CodeGenPhase.genExp")
 	  | genExp (AppExp (_, id1, OneArg id2), BOTH) =

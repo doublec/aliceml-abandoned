@@ -85,7 +85,7 @@ signature IMPERATIVE_GRAMMAR =
 	    (* sorted, all labels distinct, no tuple *)
 	  | SelExp of coord * lab
 	  | VecExp of coord * id list
-	  | FunExp of coord * funFlag list * (id args * body) list
+	  | FunExp of coord * stamp * funFlag list * (id args * body) list
 	    (* all arities distinct; always contains a single OneArg *)
 	  | AppExp of coord * id * id args
 	  | SelAppExp of coord * lab * id

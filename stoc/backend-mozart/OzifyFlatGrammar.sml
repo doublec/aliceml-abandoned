@@ -212,8 +212,9 @@ structure OzifyImperativeGrammar :> OZIFY_IMPERATIVE_GRAMMAR =
 	  | outputExp (q, SelExp (coord, lab)) =
 	    (f (q, "selExp"); outputCoord (q, coord); m q;
 	     outputLab (q, lab); r q)
-	  | outputExp (q, FunExp (coord, flags, argsBodyList)) =
+	  | outputExp (q, FunExp (coord, stamp, flags, argsBodyList)) =
 	    (f (q, "funExp"); outputCoord (q, coord); m q;
+	     outputStamp (q, stamp); m q;
 	     outputList outputFunFlag (q, flags); m q;
 	     outputList (outputPair (outputArgs outputId, outputBody))
 	     (q, argsBodyList); r q)

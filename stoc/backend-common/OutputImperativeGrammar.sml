@@ -150,7 +150,7 @@ structure OutputImperativeGrammar :> OUTPUT_IMPERATIVE_GRAMMAR =
 	  | outputExp (SelExp (_, lab)) = SEQ [S ("#" ^ lab)]
 	  | outputExp (VecExp (_, ids)) =
 	    SEQ [S "#[", SEP (S ", ", List.map ID ids), S "]"]
-	  | outputExp (FunExp (_, s, argsBodyList)) =
+	  | outputExp (FunExp (_, _, s, argsBodyList)) =
 	    SEQ [NL, S "fn ", IN,
 		 SEP (SEQ [NL, S "| "],
 		      List.map (fn (args, body) =>
