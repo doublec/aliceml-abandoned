@@ -6,40 +6,53 @@ dnl Copyright:
 dnl   Leif Kornstaedt, 2003
 dnl
 
-dnl     Autoconf requirements
 AC_REVISION([$Id$])
 AC_PREREQ(2.53)
-
-dnl     information on the package
 AC_INIT(Seam, 1.0, stockhausen@ps.uni-sb.de)
 AC_CONFIG_SRCDIR(Seam.hh)
 AC_CONFIG_SUBDIRS([store adt generic])
 
-AC_ARG_WITH([lightning],
-	    AC_HELP_STRING([--with-lightning],
-			   [use GNU Lightning to enable run-time
-			    native code generation]),
-	    LIGHTNING=1, LIGHTNING=0)
-AC_SUBST(LIGHTNING)
-
-AC_ARG_ENABLE([profiler],
-	      AC_HELP_STRING([--enable-profiler],
-			     [build with user-level profiling support]),
-	      PROFILE=1, PROFILE=0)
-AC_SUBST(PROFILE)
-
-dnl     checks for programs
+dnl
+dnl  Programs
+dnl
 AC_PROG_MAKE_SET
 AC_PROG_CXX
 
-dnl     checks for libraries
-dnl     checks for header files
-dnl     checks for types
-dnl     checks for structures
-dnl     checks for compiler characteristics
-dnl     checks for library functions
-dnl     checks for system services
+dnl
+dnl  GNU Lightning
+dnl
+AC_MSG_CHECKING([whether to build with GNU Lightning])
+AC_ARG_WITH([lightning],
+	    AC_HELP_STRING([--with-lightning=DIR],
+			   [use GNU Lightning to enable run-time
+			    native code generation (default: no)]),
+	    LIGHTNING=1
+	    LIGHTNINGDIR="$with_lightning"
+	    result=yes,
+	    LIGHTNING=0
+	    LIGHTNINGDIR=""
+	    result=no)
+AC_MSG_RESULT($result)
+AC_SUBST(LIGHTNING)
+AC_SUBST(LIGHTNINGDIR)
 
+dnl
+dnl  Profiler
+dnl
+AC_MSG_CHECKING([whether to build with user-level profiling support])
+AC_ARG_ENABLE([profiler],
+	      AC_HELP_STRING([--enable-profiler],
+			     [build with user-level profiling support]),
+	      PROFILE=1
+	      result=yes,
+	      PROFILE=0
+	      result=no)
+AC_SUBST(PROFILE)
+AC_MSG_RESULT($result)
+
+dnl
+dnl  These are hacks!
+dnl
 case $(uname) in
     CYGWIN*)
 	SEAM_MACHINE_FLAGS=-mno-cygwin
