@@ -5,7 +5,7 @@
 //
 // Copyright:
 //   Thorsten Brunklaus, 2002
-//   Leif Kornstaedt, 2002
+//   Leif Kornstaedt, 2002-2003
 //
 // Last Change:
 //   $Date$ by $Author$
@@ -56,16 +56,16 @@ DEFINE1(UnsafeReflect_UnreflectSig) {
 word UnsafeReflect() {
   Record *record = Record::New(6);
   INIT_STRUCTURE(record, "UnsafeReflect", "cast",
-		 UnsafeReflect_cast, 1, true);
+		 UnsafeReflect_cast, 1);
   INIT_STRUCTURE(record, "UnsafeReflect", "realToVector",
-		 UnsafeReflect_realToVector, 1, true);
+		 UnsafeReflect_realToVector, 1);
   INIT_STRUCTURE(record, "UnsafeReflect", "Reflect$",
-		 UnsafeReflect_Reflect, 1, true);
+		 UnsafeReflect_Reflect, 1);
   INIT_STRUCTURE(record, "UnsafeReflect", "Unreflect$",
-		 UnsafeReflect_Unreflect, 1, true);
+		 UnsafeReflect_Unreflect, 1);
   INIT_STRUCTURE(record, "UnsafeReflect", "ReflectSig$",
-		 UnsafeReflect_ReflectSig, 1, true);
+		 UnsafeReflect_ReflectSig, 1);
   INIT_STRUCTURE(record, "UnsafeReflect", "UnreflectSig$",
-		 UnsafeReflect_UnreflectSig, 1, true);
+		 UnsafeReflect_UnreflectSig, 1);
   RETURN_STRUCTURE("UnsafeReflect$", record);
 }

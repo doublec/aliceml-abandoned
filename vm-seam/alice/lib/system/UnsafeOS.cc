@@ -5,7 +5,7 @@
 //
 // Copyright:
 //   Thorsten Brunklaus, 2002
-//   Leif Kornstaedt, 2002
+//   Leif Kornstaedt, 2002-2003
 //
 // Last Change:
 //   $Date$ by $Author$
@@ -285,27 +285,27 @@ DEFINE0(UnsafeOS_FileSys_tmpName) {
 static word UnsafeOS_FileSys() {
   Record *record = Record::New(11);
   INIT_STRUCTURE(record, "UnsafeOS.FileSys", "chDir",
-		 UnsafeOS_FileSys_chDir, 1, true);
+		 UnsafeOS_FileSys_chDir, 1);
   INIT_STRUCTURE(record, "UnsafeOS.FileSys", "getDir",
-		 UnsafeOS_FileSys_getDir, 0, true);
+		 UnsafeOS_FileSys_getDir, 0);
   INIT_STRUCTURE(record, "UnsafeOS.FileSys", "mkDir",
-		 UnsafeOS_FileSys_mkDir, 1, true);
+		 UnsafeOS_FileSys_mkDir, 1);
   INIT_STRUCTURE(record, "UnsafeOS.FileSys", "rmDir",
-		 UnsafeOS_FileSys_rmDir, 1, true);
+		 UnsafeOS_FileSys_rmDir, 1);
   INIT_STRUCTURE(record, "UnsafeOS.FileSys", "isDir",
-		 UnsafeOS_FileSys_isDir, 1, true);
+		 UnsafeOS_FileSys_isDir, 1);
   INIT_STRUCTURE(record, "UnsafeOS.FileSys", "isLink",
-		 UnsafeOS_FileSys_isLink, 1, true);
+		 UnsafeOS_FileSys_isLink, 1);
   INIT_STRUCTURE(record, "UnsafeOS.FileSys", "readLink",
-		 UnsafeOS_FileSys_readLink, 1, true);
+		 UnsafeOS_FileSys_readLink, 1);
   INIT_STRUCTURE(record, "UnsafeOS.FileSys", "fileSize",
-		 UnsafeOS_FileSys_fileSize, 1, true);
+		 UnsafeOS_FileSys_fileSize, 1);
   INIT_STRUCTURE(record, "UnsafeOS.FileSys", "modTime",
-		 UnsafeOS_FileSys_modTime, 1, true);
+		 UnsafeOS_FileSys_modTime, 1);
   INIT_STRUCTURE(record, "UnsafeOS.FileSys", "remove",
-		 UnsafeOS_FileSys_remove, 1, true);
+		 UnsafeOS_FileSys_remove, 1);
   INIT_STRUCTURE(record, "UnsafeOS.FileSys", "tmpName",
-		 UnsafeOS_FileSys_tmpName, 1, true);
+		 UnsafeOS_FileSys_tmpName, 1);
   return record->ToWord();
 }
 
@@ -354,13 +354,13 @@ static word UnsafeOS_Process() {
   record->Init("success", Store::IntToWord(0));
   record->Init("failure", Store::IntToWord(1));
   INIT_STRUCTURE(record, "UnsafeOS.Process", "system",
-		 UnsafeOS_Process_system, 1, true);
+		 UnsafeOS_Process_system, 1);
   INIT_STRUCTURE(record, "UnsafeOS.Process", "terminate",
-		 UnsafeOS_Process_terminate, 1, true);
+		 UnsafeOS_Process_terminate, 1);
   INIT_STRUCTURE(record, "UnsafeOS.Process", "atExn",
-		 UnsafeOS_Process_atExn, 1, true);
+		 UnsafeOS_Process_atExn, 1);
   INIT_STRUCTURE(record, "UnsafeOS.Process", "getEnv",
-		 UnsafeOS_Process_getEnv, 1, true);
+		 UnsafeOS_Process_getEnv, 1);
   return record->ToWord();
 }
 
@@ -391,9 +391,9 @@ word UnsafeOS() {
   Record *record = Record::New(5);
   record->Init("'SysErr", SysErrConstructor);
   INIT_STRUCTURE(record, "UnsafeOS", "SysErr",
-		 UnsafeOS_SysErr, 2, true);
+		 UnsafeOS_SysErr, 2);
   INIT_STRUCTURE(record, "UnsafeOS", "errorMsg",
-		 UnsafeOS_errorMsg, 1, true);
+		 UnsafeOS_errorMsg, 1);
   record->Init("FileSys$", UnsafeOS_FileSys());
   record->Init("Process$", UnsafeOS_Process());
   RETURN_STRUCTURE("UnsafeOS$", record);

@@ -3,7 +3,7 @@
 //   Leif Kornstaedt <kornstaedt@ps.uni-sb.de>
 //
 // Copyright:
-//   Leif Kornstaedt, 2002
+//   Leif Kornstaedt, 2002-2003
 //
 // Last Change:
 //   $Date$ by $Author$
@@ -424,68 +424,68 @@ word UnsafeIODesc() {
   record->Init("ClosedStream", ClosedStreamConstructor);
   // common operations supported by all readers/writers
   INIT_STRUCTURE(record, "UnsafeIODesc", "hash",
-		 UnsafeIODesc_hash, 1, true);
+		 UnsafeIODesc_hash, 1);
   INIT_STRUCTURE(record, "UnsafeIODesc", "compare",
-		 UnsafeIODesc_compare, 2, true);
+		 UnsafeIODesc_compare, 2);
   INIT_STRUCTURE(record, "UnsafeIODesc", "kind",
-		 UnsafeIODesc_kind, 1, true);
+		 UnsafeIODesc_kind, 1);
   INIT_STRUCTURE(record, "UnsafeIODesc", "name",
-		 UnsafeIODesc_name, 1, true);
+		 UnsafeIODesc_name, 1);
   INIT_STRUCTURE(record, "UnsafeIODesc", "chunkSize",
-		 UnsafeIODesc_chunkSize, 1, true);
+		 UnsafeIODesc_chunkSize, 1);
   INIT_STRUCTURE(record, "UnsafeIODesc", "close",
-		 UnsafeIODesc_close, 1, true);
+		 UnsafeIODesc_close, 1);
   // common operations not supported by all readers/writers
   INIT_STRUCTURE(record, "UnsafeIODesc", "capabilities",
-		 UnsafeIODesc_capabilities, 1, true);
+		 UnsafeIODesc_capabilities, 1);
   INIT_STRUCTURE(record, "UnsafeIODesc", "block",
-		 UnsafeIODesc_block, 1, true);
+		 UnsafeIODesc_block, 1);
   INIT_STRUCTURE(record, "UnsafeIODesc", "setPos",
-		 UnsafeIODesc_setPos, 2, true);
+		 UnsafeIODesc_setPos, 2);
   INIT_STRUCTURE(record, "UnsafeIODesc", "endPos",
-		 UnsafeIODesc_endPos, 1, true);
+		 UnsafeIODesc_endPos, 1);
   INIT_STRUCTURE(record, "UnsafeIODesc", "verifyPos",
-		 UnsafeIODesc_verifyPos, 1, true);
+		 UnsafeIODesc_verifyPos, 1);
   // reader operations supported by all readers
   INIT_STRUCTURE(record, "UnsafeIODesc", "avail",
-		 UnsafeIODesc_avail, 1, true);
+		 UnsafeIODesc_avail, 1);
   // reader operations not supported by all readers
   INIT_STRUCTURE(record, "UnsafeIODesc", "readerCapabilities",
-		 UnsafeIODesc_readerCapabilities, 1, true);
+		 UnsafeIODesc_readerCapabilities, 1);
   INIT_STRUCTURE(record, "UnsafeIODesc", "readVec",
-		 UnsafeIODesc_readVec, 2, true);
+		 UnsafeIODesc_readVec, 2);
   INIT_STRUCTURE(record, "UnsafeIODesc", "readArr",
-		 UnsafeIODesc_readArr, 4, true);
+		 UnsafeIODesc_readArr, 4);
   INIT_STRUCTURE(record, "UnsafeIODesc", "readVecNB",
-		 UnsafeIODesc_readVecNB, 2, true);
+		 UnsafeIODesc_readVecNB, 2);
   INIT_STRUCTURE(record, "UnsafeIODesc", "readArrNB",
-		 UnsafeIODesc_readArrNB, 4, true);
+		 UnsafeIODesc_readArrNB, 4);
   INIT_STRUCTURE(record, "UnsafeIODesc", "canInput",
-		 UnsafeIODesc_canInput, 1, true);
+		 UnsafeIODesc_canInput, 1);
   // writer operations not supported by all writers
   INIT_STRUCTURE(record, "UnsafeIODesc", "writerCapabilities",
-		 UnsafeIODesc_writerCapabilities, 1, true);
+		 UnsafeIODesc_writerCapabilities, 1);
   INIT_STRUCTURE(record, "UnsafeIODesc", "writeVec",
-		 UnsafeIODesc_writeVec, 4, true);
+		 UnsafeIODesc_writeVec, 4);
   INIT_STRUCTURE(record, "UnsafeIODesc", "writeArr",
-		 UnsafeIODesc_writeArr, 4, true);
+		 UnsafeIODesc_writeArr, 4);
   INIT_STRUCTURE(record, "UnsafeIODesc", "writeVecNB",
-		 UnsafeIODesc_writeVecNB, 4, true);
+		 UnsafeIODesc_writeVecNB, 4);
   INIT_STRUCTURE(record, "UnsafeIODesc", "writeArrNB",
-		 UnsafeIODesc_writeArrNB, 4, true);
+		 UnsafeIODesc_writeArrNB, 4);
   INIT_STRUCTURE(record, "UnsafeIODesc", "canOutput",
-		 UnsafeIODesc_canOutput, 1, true);
+		 UnsafeIODesc_canOutput, 1);
   // creating tty iodescs
   record->Init("stdIn", IODesc::NewFromStdIn()->ToWord());
   record->Init("stdOut", IODesc::NewFromStdOut()->ToWord());
   record->Init("stdErr", IODesc::NewFromStdErr()->ToWord());
   // creating file iodescs
   INIT_STRUCTURE(record, "UnsafeIODesc", "openIn",
-		 UnsafeIODesc_openIn, 1, true);
+		 UnsafeIODesc_openIn, 1);
   INIT_STRUCTURE(record, "UnsafeIODesc", "openOut",
-		 UnsafeIODesc_openOut, 1, true);
+		 UnsafeIODesc_openOut, 1);
   INIT_STRUCTURE(record, "UnsafeIODesc", "openAppend",
-		 UnsafeIODesc_openAppend, 1, true);
+		 UnsafeIODesc_openAppend, 1);
 
   //--** creating pipe iodescs
 

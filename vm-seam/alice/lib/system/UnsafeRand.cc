@@ -3,7 +3,7 @@
 //   Leif Kornstaedt <kornstae@ps.uni-sb.de>
 //
 // Copyright:
-//   Leif Kornstaedt, 2002
+//   Leif Kornstaedt, 2002-2003
 //
 // Last Change:
 //   $Date$ by $Author$
@@ -34,10 +34,10 @@ DEFINE0(UnsafeRand_randLimits) {
 word UnsafeRand() {
   Record *record = Record::New(3);
   INIT_STRUCTURE(record, "UnsafeRand", "rand",
-		 UnsafeRand_rand, 0, true);
+		 UnsafeRand_rand, 0);
   INIT_STRUCTURE(record, "UnsafeRand", "srand",
-		 UnsafeRand_srand, 1, true);
+		 UnsafeRand_srand, 1);
   INIT_STRUCTURE(record, "UnsafeRand", "randLimits",
-		 UnsafeRand_randLimits, 0, true);
+		 UnsafeRand_randLimits, 0);
   RETURN_STRUCTURE("UnsafeRand$", record);
 }
