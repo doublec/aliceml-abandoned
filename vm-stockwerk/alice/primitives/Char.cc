@@ -35,8 +35,7 @@ INT_INT_TO_BOOL_OP(Char_opgreaterEq, >=)
 
 DEFINE1(Char_chr) {
   DECLARE_INT(c, x0);
-  if (static_cast<unsigned char>(c) != c)
-    RAISE(PrimitiveTable::General_Chr);
+  if (static_cast<u_char>(c) != c) RAISE(PrimitiveTable::General_Chr);
   RETURN(x0);
 } END
 
