@@ -36,7 +36,7 @@
 (*	  datdesc  ::= tyvarseq tycon						*)
 (*	  dcondesc ::= vid <of ty> : tyvarseq longtycon <and dcondesc>		*)
 (*		   ::= vid = longvid <and dcondesc>				*)
-(*   - abstract type declartions:						*)
+(*   - abstract type declarations:						*)
 (*	  typbind  ::= tyvarseq tycon						*)
 (*	  dec      ::= eqtype typbind						*)
 (*   - straightified type specifications:					*)
@@ -46,6 +46,8 @@
 (*	  sigexp ::= sigexp where longstrid_1 = longstrid_2			*)
 (*   - definitional structure specifications:					*)
 (*	  strdesc ::= strid <: sigexp> = longstrid <and strdesc>		*)
+(*   - top signature:								*)
+(*	  sigexp ::= any							*)
 (*   - parenthesised structure and signature expressions (derived forms):	*)
 (*        strexp ::= ( strexp )							*)
 (*        sigexp ::= ( sigexp )							*)
@@ -181,6 +183,7 @@
 	| LPAR | RPAR | LBRACK | RBRACK | LBRACE | RBRACE | COMMA | COLON
 	| SEMICOLON | DOTS | UNDERBAR | BAR | EQUALS | DARROW | ARROW | HASH
 	| CONSTRUCTOR | NON | WITHFUN | WITHVAL | DOT | HASHBRACK
+	| ANY | FCT | PACK | UNPACK
 	| IMPORT | FROM
 	| PRIMITIVE | OVERLOAD | INSTANCE | PREBOUND | EQEQTYPE
 
@@ -205,6 +208,7 @@
 	 EQTYPE FUNCTOR INCLUDE SHARING SIG
 	 SIGNATURE STRUCT STRUCTURE WHERE
 	 CONSTRUCTOR NON WITHFUN WITHVAL
+	 ANY FCT PACK UNPACK
 	 IMPORT FROM
 	 PRIMITIVE OVERLOAD INSTANCE PREBOUND EQEQTYPE
 
@@ -1130,7 +1134,8 @@
 			( WHERETYPESigExp(I(sigexpleft,tyreadescright),
 					  sigexp, tyreadesc) )
      sigexp':
-	  SIG spec END	( SIGSigExp(I(SIGleft,ENDright), spec) )
+	  ANY		( ANYSigExp(I(ANYleft,ANYright)) )
+	| SIG spec END	( SIGSigExp(I(SIGleft,ENDright), spec) )
 	| longsigid	( LONGSIGIDSigExp(I(longsigidleft,longsigidright),
 					  longsigid) )
 	| LPAR sigexp RPAR

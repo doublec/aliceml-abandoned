@@ -26,6 +26,7 @@
  *   - signature synonym specifications
  *   - straightified type specifications (synonyms are kept)
  *   - where for structures
+ *   - top signature
  *   - sharing and where for signatures
  *   - definitional structure specifications
  *   - fixity directives in signatures
@@ -238,8 +239,9 @@ functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
     (* Signatures *)
 
     and SigExp =
-          SIGSigExp       of Info * Spec
-        | LONGSIGIDSigExp of Info * LongSigId
+	  ANYSigExp       of Info
+	| SIGSigExp       of Info * Spec
+	| LONGSIGIDSigExp of Info * LongSigId
 	| WHERESigExp     of Info * SigExp * SigExp
 
     (* Specifications *)
@@ -449,7 +451,8 @@ functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
       | infoStrExp(APPStrExp(I,_,_))			= I
       | infoStrExp(LETStrExp(I,_,_))			= I
 
-    fun infoSigExp(SIGSigExp(I,_))			= I
+    fun infoSigExp(ANYSigExp(I))			= I
+      | infoSigExp(SIGSigExp(I,_))			= I
       | infoSigExp(LONGSIGIDSigExp(I,_))		= I
       | infoSigExp(WHERESigExp(I,_,_))			= I
 

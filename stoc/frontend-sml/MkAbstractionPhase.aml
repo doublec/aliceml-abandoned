@@ -1098,7 +1098,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		val  _            = insertStr(E, strid', (i2, stamp2, E1))
 		val (inf2',E2)    = trSigExp E sigexp2
 		val  _            = deleteScope E
-		val  inf'         = O.ArrInf(i, id1', inf1', inf2')
+		val  inf'         = O.ArrInf(i, id2', inf1', inf2')
 		val  mod'         = O.PrimMod(i, s, inf')
 		val  dec'         = O.ModDec(i, id1', mod')
 		val  _            = insertFun(E, funid', (i1, stamp1, E2))
@@ -1833,7 +1833,14 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
     (* Signatures and specifications *)
 
     and trSigExp E =
-	fn SIGSigExp(i, spec) =>
+	fn ANYSigExp(i) =>
+	   let
+		val E' = Env.new()
+	   in
+		( O.TopInf(i), E' )
+	   end
+
+	 | SIGSigExp(i, spec) =>
 	   let
 		val _      = insertScope E
 		val specs' = trSpec E spec

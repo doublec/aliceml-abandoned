@@ -12,6 +12,9 @@
  *   - CONSTRUCTOR keyword for constructor declarations
  *   - NON keyword added for negated patterns
  *   - WITHVAL and WITHFUN keywords for bindings inside pattern
+ *   - FCT keyword for functor expressions and signatures
+ *   - ANY keyword for top signature
+ *   - PACK and UNPACK keyword for first class structures
  *   - IMPORT and FROM keywords added
  *   - PRIMITIVE, OVERLOAD, INSTANCE, PREBOUND, and EQEQTYPE keywords added
  *
@@ -273,6 +276,7 @@
   <INITIAL>"abstype"	=> ( token(ABSTYPE,   yypos, yytext) );
   <INITIAL>"and"	=> ( token(AND,       yypos, yytext) );
   <INITIAL>"andalso"	=> ( token(ANDALSO,   yypos, yytext) );
+  <INITIAL>"any"	=> ( token(ANY,       yypos, yytext) );
   <INITIAL>"as"		=> ( token(AS,        yypos, yytext) );
   <INITIAL>"case"	=> ( token(CASE,      yypos, yytext) );
   <INITIAL>"constructor"=> ( token(CONSTRUCTOR,yypos, yytext) );
@@ -282,6 +286,7 @@
   <INITIAL>"end"	=> ( token(END,       yypos, yytext) );
   <INITIAL>"eqtype"	=> ( token(EQTYPE,    yypos, yytext) );
   <INITIAL>"exception"	=> ( token(EXCEPTION, yypos, yytext) );
+  <INITIAL>"fct"       	=> ( token(FCT,       yypos, yytext) );
   <INITIAL>"fn"		=> ( token(FN,        yypos, yytext) );
   <INITIAL>"from"	=> ( token(FROM,      yypos, yytext) );
   <INITIAL>"fun"	=> ( token(FUN,       yypos, yytext) );
@@ -301,6 +306,7 @@
   <INITIAL>"op"		=> ( token(OP,        yypos, yytext) );
   <INITIAL>"open"	=> ( token(OPEN,      yypos, yytext) );
   <INITIAL>"orelse"	=> ( token(ORELSE,    yypos, yytext) );
+  <INITIAL>"pack"	=> ( token(PACK,      yypos, yytext) );
   <INITIAL>"raise"	=> ( token(RAISE,     yypos, yytext) );
   <INITIAL>"rec"	=> ( token(REC,       yypos, yytext) );
   <INITIAL>"sharing"	=> ( token(SHARING,   yypos, yytext) );
@@ -310,6 +316,7 @@
   <INITIAL>"structure"	=> ( token(STRUCTURE, yypos, yytext) );
   <INITIAL>"then"	=> ( token(THEN,      yypos, yytext) );
   <INITIAL>"type"	=> ( token(TYPE,      yypos, yytext) );
+  <INITIAL>"unpack"	=> ( token(UNPACK,    yypos, yytext) );
   <INITIAL>"val"	=> ( token(VAL,       yypos, yytext) );
   <INITIAL>"where"	=> ( token(WHERE,     yypos, yytext) );
   <INITIAL>"while"	=> ( token(WHILE,     yypos, yytext) );

@@ -26,6 +26,7 @@
  *   - signature synonym specifications
  *   - straightified type specifications (synonyms are kept)
  *   - where for structures
+ *   - top signature
  *   - sharing and where for signatures
  *   - definitional structure specifications
  *   - fixity directives in signatures
@@ -238,8 +239,9 @@ signature INPUT_GRAMMAR =
     (* Signatures *)
 
     and SigExp =
-          SIGSigExp       of Info * Spec
-        | LONGSIGIDSigExp of Info * LongSigId
+	  ANYSigExp       of Info
+	| SIGSigExp       of Info * Spec
+	| LONGSIGIDSigExp of Info * LongSigId
 	| WHERESigExp     of Info * SigExp * SigExp
 
     (* Specifications *)
