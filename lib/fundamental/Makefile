@@ -17,13 +17,14 @@ STOC_OPTS	=
 
 TOPS		= RTT Pervasive ToplevelTypes ToplevelValues
 SIGS		= ALT ARRAY BOOL CELL CHAR FUTURE GENERAL HOLE IEEE_REAL \
-		  INTEGER LIST LIST_PAIR MATH OPTION PAIR PROMISE REAL REF \
-		  STRING STRING_CVT SUBSTRING THREAD TIME VECTOR VECTOR_PAIR \
-		  WORD
+		  INTEGER LIST LIST_PAIR LOCK MATH OPTION PAIR PROMISE REAL \
+		  REF STRING STRING_CVT SUBSTRING THREAD TIME VECTOR \
+		  VECTOR_PAIR WORD
 STRUCTS		= Alt Array Bool Cell Char Future General Hole Int \
-		  LargeInt LargeReal LargeWord List ListPair Math Option Pair \
-		  Position Promise Real Ref String StringCvt Substring Thread \
-		  Time Toplevel Vector VectorPair WideChar WideString Word
+		  LargeInt LargeReal LargeWord List ListPair Lock Math Option \
+		  Pair Position Promise Real Ref String StringCvt Substring \
+		  Thread Time Toplevel Vector VectorPair WideChar WideString \
+		  Word
 
 SIGFILES	= $(SIGS:%=%-sig.ozf)
 STRUCTFILES	= $(STRUCTS:%=%.ozf)
@@ -80,6 +81,8 @@ LIST-sig.ozf:
 List.ozf:		General.ozf LIST-sig.ozf
 LIST_PAIR-sig.ozf:	
 ListPair.ozf:		List.ozf LIST_PAIR-sig.ozf
+LOCK-sig.ozf:		
+Lock.ozf:		Ref.ozf Promise.ozf Future.ozf LOCK-sig.ozf
 MATH-sig.ozf:		
 Math.ozf:		Real.ozf MATH-sig.ozf
 OPTION-sig.ozf:		
