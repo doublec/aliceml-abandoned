@@ -2,12 +2,15 @@ Language:
 
 * Implemented overloading (except for literals).
 * Implemented a simple form of intensional polymorphism that enables
-  generic library functions like printValue or inspect.
+  generic library functions like printVal or inspect.
 
 Library:
 
-* Sync'ed with latest updates to Basis spec.
+* Sync'ed with latest updates to Basis spec
+  (see http://sml.sourceforge.net/Basis/history.html).
 * Fixed {*VectorSlice,Substring}.splitr (also fixes OS.Path.split*).
+* Fixed CharArraySlice.
+* Fixed PrimIO.augment{Reader,Writer}.
 * Moved Atom to lib/data.
 
 
