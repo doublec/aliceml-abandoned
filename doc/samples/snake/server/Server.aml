@@ -674,7 +674,8 @@ struct
                                 #playerDisconnected, 
                                 PState.nameNColor state)
                          else ();
-                         Channel.destroy (#rpcs pdesc);
+                         Channel.close (#rpcs pdesc);
+                         (* Channel.destroy (#rpcs pdesc); *)
                          PState.disconnect state)
                     else 
                         #disconnected ev := true
