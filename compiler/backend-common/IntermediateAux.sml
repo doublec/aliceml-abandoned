@@ -364,27 +364,23 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 		      | (_, _) =>
 			    raise Crash.Crash "IntermediateAux.parseRow 2"
 	in
-	    fun makeConArity (info: I.exp_info, isNAry) =
-		let
-		    val typ = #typ info
-		in
-		    if Type.isArrow typ then
-			if isNAry then
-			    let
-				val (argTyp, _) = Type.asArrow typ
-			    in
-				if Type.isTuple argTyp then
-				    Tuple (List.length (Type.asTuple argTyp))
-				else if Type.isProd argTyp then
-				    case LabelSort.sort
-					(parseRow (Type.asProd typ)) of
-					(_, LabelSort.Tup i) => Tuple i
-				      | (labelTypList, LabelSort.Rec) =>
-					    Record (List.map #1 labelTypList)
-				     else Unary
-			    end
-			else Unary
-		    else Nullary
-		end
+	    fun makeConArity ({typ, ...}: I.exp_info, isNAry) =
+		if Type.isArrow typ then
+		    if isNAry then
+			let
+			    val (argTyp, _) = Type.asArrow typ
+			in
+			    if Type.isTuple argTyp then
+				Tuple (List.length (Type.asTuple argTyp))
+			    else if Type.isProd argTyp then
+				case LabelSort.sort
+					(parseRow (Type.asProd argTyp)) of
+				    (_, LabelSort.Tup i) => Tuple i
+				  | (labelTypList, LabelSort.Rec) =>
+					Record (List.map #1 labelTypList)
+			    else Unary
+			end
+		    else Unary
+		else Nullary
 	end
     end
