@@ -86,10 +86,10 @@ $(DIRS):
 	mkdir -p $@
 
 $(PREFIX)/%.html: %.html macros.php3
-	(echo '<?php $$platform = "$(PLATFORM)"; ?>'; cat $<) | \
-	php -q > $<.static
+	(echo '<?php $$platform = "$(PLATFORM)"; ?>'; cat $<) > $<.static.in
+	php -f $<.static.in > $<.static
 	install -c -m 444 $<.static $@
-	rm -f $<.static
+	rm -f $<.static.in $<.static
 
 $(PREFIX)/%: %
 	install -c -m 444 $< $@
