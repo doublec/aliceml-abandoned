@@ -16,10 +16,12 @@ else
 EXTRA_CC_OPTS =
 endif
 
-PACKAGES = gtk+-2.0 libgnomecanvas-2.0
+ifndef PC_OPTS
+PC_OPTS = gtk+-2.0 libgnomecanvas-2.0
+endif
 
 GCC = gcc -E -Wall -undef -U__GNUC__  $(EXTRA_CC_OPTS) \
-          `pkg-config --cflags $(PACKAGES)`
+          `pkg-config --cflags $(PC_OPTS)`
 ALICEC = alicec --dump-phases
 INSTALL = ../myinstall -v -m 644
 
