@@ -2,9 +2,10 @@
  * Authors:
  *   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Thorsten Brunklaus and Leif Kornstaedt, 2001
+ *   Thorsten Brunklaus and Leif Kornstaedt and Andreas Rossberg, 2001-2004
  *
  * Last Change:
  *   $Date$ by $Author$
@@ -19,10 +20,12 @@ signature REMOTE =
 	type ticket = string
 
 	exception Ticket
-	exception Sited
-	exception Protocol of int * string
+	exception Proxy of exn
+	exception SitedArgument			(* only as proxy cause *)
+	exception SitedResult			(* only as proxy cause *)
+	exception Protocol of string		(* only as proxy cause *)
 
-	(*--** once-only offer and proxy *)
+	(*--** once-only offer and proxy are missing *)
 	val proxy: ('a -> 'b) -> 'a -> 'b
 	val offer: Package.package -> ticket              (* Pickle.Sited *)
 	val take: ticket -> Package.package               (* Ticket *)

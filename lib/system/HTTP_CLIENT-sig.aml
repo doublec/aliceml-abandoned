@@ -19,7 +19,7 @@ signature HTTP_CLIENT =
 
 	exception Authority
 
-	val request: Url.t * Http.request -> Http.response  (* Authority *)
-	val get: Url.t -> Http.response                     (* Authority *)
-	val post: Url.t * document -> Http.response         (* Authority *)
+	val request: Url.t * Http.request -> Http.response  (* Io, Authority *)
+	val get: Url.t -> Http.response                     (* Io, Authority *)
+	val post: Url.t * document -> Http.response         (* Io, Authority *)
     end

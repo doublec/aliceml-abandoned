@@ -11,6 +11,7 @@
  *)
 
 import structure UnsafeSocket from "UnsafeSocket"
+import structure IO           from "IO"
 import signature SOCKET       from "SOCKET-sig"
 
 structure Socket :> SOCKET =
@@ -40,14 +41,22 @@ structure Socket :> SOCKET =
 		(serverSocket, serverPort)
 	    end
 
-	val client = UnsafeSocket.client
+	fun client (host, port) =
+	    UnsafeSocket.client (host, port)
+	    handle UnsafeSocket.Io {name, function, cause} =>
+		raise IO.Io {name, function, cause}
 
-	val input1 = UnsafeSocket.input1
+	fun input1 socket =
+	    UnsafeSocket.input1 socket
+	    handle UnsafeSocket.Io {name, function, cause} =>
+		raise IO.Io {name, function, cause}
 
 	fun inputN (socket, n) = String.concat (inputN' (socket, n))
 	and inputN' (socket, n) =
 	    let
 		val s = UnsafeSocket.inputN (socket, n)
+			handle UnsafeSocket.Io {name, function, cause} =>
+			    raise IO.Io {name, function, cause}
 		val i = String.size s
 	    in
 		if i = 0 orelse i = n then [s]
@@ -55,18 +64,24 @@ structure Socket :> SOCKET =
 	    end
 
 	fun inputLine socket =
-	    case UnsafeSocket.input1 socket of
-		SOME c => SOME (String.implode (c::inputLine' socket))
-	      | NONE => NONE
+	    case input1 socket of
+		 SOME c => SOME (String.implode (c::inputLine' socket))
+	       | NONE => NONE
 	and inputLine' socket =
-	    case UnsafeSocket.input1 socket of
+	    case input1 socket of
 		SOME #"\n" => [#"\n"]
 	      | SOME c => c::inputLine' socket
 	      | NONE => [#"\n"]
 
-	val output1 = UnsafeSocket.output1
+	fun output1 (socket, c) =
+	    UnsafeSocket.output1 (socket, c)
+	    handle UnsafeSocket.Io {name, function, cause} =>
+		raise IO.Io {name, function, cause}
 
-	fun output (socket, s) = output' (socket, s, 0)
+	fun output (socket, s) =
+	    output' (socket, s, 0)
+	    handle UnsafeSocket.Io {name, function, cause} =>
+		raise IO.Io {name, function, cause}
 	and output' (socket, s, i) =
 	    if i = String.size s then ()
 	    else output' (socket, s, i + UnsafeSocket.output (socket, s, i))

@@ -14,6 +14,8 @@ signature UNSAFE_SOCKET_COMPONENT =
     sig
 	structure UnsafeSocket:
 	    sig
+		exception Io of {name: string, function: string, cause: exn}
+
 		val server: 'port -> 'socket * 'port
 		val accept: 'socket -> 'socket * 'host * 'port
 		val client: 'host * 'port -> 'socket

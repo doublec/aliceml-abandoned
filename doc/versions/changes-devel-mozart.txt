@@ -16,16 +16,21 @@ Library:
   (see http://sml.sourceforge.net/Basis/history.html).
 * Added lib/system/Print and toplevel printVal, printType for generic
   value and type printing.
-* Implemented directory streams of OS.FileSys.
+* OS.FileSys: implemented directory streams.
+* Socket: fixed handling of IO exceptions.
+* Http{,Client,Server}: more uniform exception treatment.
+* Remote: fixed connection timeout bug for proxies.
+* Remote: more precise exception scheme wrt failure on proxy calls.
+* Pickle: Added exception Corrupt.
 * Added intersect and difference functions to map types.
 * Added disjoint function to set and map types.
-* Moved Atom to lib/data.
-* Added Real.checkFloat.
-* Fixed Real.isFinite.
-* Fixed exception handling in Thread structure.
-* Fixed {*VectorSlice,Substring}.splitr (also fixes OS.Path.split*).
-* Fixed CharArraySlice.
-* Fixed PrimIO.augment{Reader,Writer}.
+* Atom: moved to lib/data.
+* Real: added checkFloat.
+* Real: fixed isFinite.
+* Thread: fixed exception handling.
+* *VectorSlice,Substring: fixed splitr (also fixes OS.Path.split*).
+* CharArraySlice: fixed.
+* PrimIO: fixed augment{Reader,Writer}.
 
 
 Alice 0.9.2 (Stockhausen Operette 3 Remix 2) - 2003/07/25

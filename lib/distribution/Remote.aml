@@ -28,14 +28,16 @@ signature REMOTE_PORT =
 	type ticket = Url.t
 
 	exception Ticket
-	exception Sited
-	exception Protocol of int * string
+	exception Proxy of exn
+	exception SitedArgument			(* only as proxy cause *)
+	exception SitedResult			(* only as proxy cause *)
+	exception Protocol of string		(* only as proxy cause *)
 
 	val export: string -> ticket
 	val download: ticket -> string
 
 	val exportFn: (string -> string) -> ticket
-	val call: ticket -> string -> string
+	val call: ticket * string -> string
     end
 
 structure HttpRemotePort :> REMOTE_PORT =
@@ -43,8 +45,10 @@ structure HttpRemotePort :> REMOTE_PORT =
 	type ticket = Url.t
 
 	exception Ticket
-	exception Sited = Component.Sited
-	exception Protocol of int * string
+	exception Proxy of exn
+	exception SitedArgument
+	exception SitedResult
+	exception Protocol of string
 
 	val pickleContentType = "application/x-alice-pickle"
 
@@ -135,7 +139,7 @@ structure HttpRemotePort :> REMOTE_PORT =
 		register handler
 	    end
 
-	fun call url packedValue =
+	fun call (url, packedValue) =
 	    let
 		val response =
 		    HttpClient.post (url, {contentType = pickleContentType,
@@ -145,14 +149,15 @@ structure HttpRemotePort :> REMOTE_PORT =
 		(*--** check "content-type" header *)
 		case #statusCode response of
 		    200 => #body response
-		  | statusCode =>
-			raise Protocol (statusCode, #reasonPhrase response)
+		  | statusCode => raise Protocol (#reasonPhrase response)
 	    end
     end
 
 functor MkRemote(RemotePort: REMOTE_PORT) :> REMOTE =
     struct
-	exception Sited = RemotePort.Sited
+	exception Proxy = RemotePort.Proxy
+	exception SitedArgument = RemotePort.SitedArgument
+	exception SitedResult = RemotePort.SitedResult
 	exception Protocol = RemotePort.Protocol
 
 	(*--------------------------------------------------------------
@@ -161,12 +166,23 @@ functor MkRemote(RemotePort: REMOTE_PORT) :> REMOTE =
 
 	datatype 'a result = RETURN of 'a | RAISE of exn
 
-	fun proxyCallback (url, x) =
+	fun proxyCallback (url, unpackedArgument) =
 	    let
-		val packedValue =
-		    RemotePort.call url (UnsafeRemote.packValue x)
+		val packedArgument = UnsafeRemote.packValue unpackedArgument
+				     handle Pickle.Sited =>
+					 raise Proxy SitedArgument
+					(*--** Sited may originate from a
+					 failed future *)
+		val packedResult = RemotePort.call (url, packedArgument)
+				   handle e => raise Proxy e
+		val unpackedResult = UnsafeRemote.unpackValue packedResult
+				     handle _ =>
+					raise Proxy (IO.Io
+						     {name = "Remote",
+						      function = "proxy",
+						      cause = Pickle.Corrupt})
 	    in
-		case UnsafeRemote.unpackValue packedValue of
+		case unpackedResult of
 		    RETURN y => y
 		  | RAISE e => raise e
 	    end
@@ -178,15 +194,25 @@ functor MkRemote(RemotePort: REMOTE_PORT) :> REMOTE =
 
 	fun proxy f =
 	    let
-		fun f' x =
-		    UnsafeRemote.packValue
-			(RETURN (f (UnsafeRemote.unpackValue x))
-			 handle e => RAISE e)
-		    handle Sited => UnsafeRemote.packValue (RAISE Sited)
-			     | e => (*--** *)
-				   UnsafeRemote.packValue (RAISE e)
-				   handle _ =>
-				       UnsafeRemote.packValue (RAISE Sited)
+		fun f' packedArgument =
+		    let
+			val unpackedArgument =
+			    UnsafeRemote.unpackValue packedArgument
+			    handle _ => raise Proxy (IO.Io
+						     {name = "Remote",
+						      function = "proxy",
+						      cause = Pickle.Corrupt})
+			val unpackedResult = RETURN (f unpackedArgument)
+		    in
+			UnsafeRemote.packValue unpackedResult
+			handle Pickle.Sited => raise Proxy SitedResult
+					(*--** Sited may originate from a
+					 failed future *)
+		    end
+		    handle e =>
+			UnsafeRemote.packValue (RAISE e)
+			handle _ => UnsafeRemote.packValue
+					(RAISE (Proxy SitedResult))
 		val url = RemotePort.exportFn f'
 	    in
 		fn x => dynamicCall (url, x)

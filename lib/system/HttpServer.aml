@@ -16,6 +16,7 @@ import structure TextIO        from "TextIO"
 import structure Url           from "Url"
 import structure Socket        from "Socket"
 import structure Http          from "Http"
+import structure IO            from "IO"
 import signature HTTP_SERVER   from "HTTP_SERVER-sig"
 
 structure HttpServer :> HTTP_SERVER =
@@ -26,7 +27,7 @@ structure HttpServer :> HTTP_SERVER =
 
 	fun trace s =
 	    case !logOut of
-		SOME q => TextIO.output (q, s)
+		SOME q => (TextIO.output (q, s); TextIO.flushOut q)
 	      | NONE => ()
 
 	val idleTime = ref (Time.fromSeconds 30)
@@ -80,30 +81,44 @@ structure HttpServer :> HTTP_SERVER =
 		in order to work around infamous thread space leak
 		(particularly under Mozart). *)
 	fun closeIdle (tokens, socket) =
-	    (Future.awaitEither (Future.alarm (!idleTime), !tokens);
-	     if Future.isDetermined (!tokens) then
-		 case !tokens of
-		     ()::tokens' => (tokens := tokens';
-				     closeIdle (tokens, socket))
-		   | nil =>
-			(trace "explicitly closing connection\n";
-			 Socket.close socket)
-	     else
-		 (trace "closing idle connection\n";
-		  Socket.close socket))
+	    case Future.awaitEither (Future.alarm (!idleTime), !tokens) of
+		SND (()::tokens') =>
+		    (tokens := tokens';
+		     closeIdle (tokens, socket))
+	      | SND nil =>
+		    (trace "explicitly closing connection\n";
+		     Socket.close socket)
+	      | FST _ =>
+		    (*--** This does not work, at least not under Mozart!
+		     * Sockets are synchronized, so the close will
+		     * be performed *after* the concurrent blocking read
+		     * stemming from readRequest in handleConnection
+		     * has returned - i.e. when the next request arrives.
+		     * This is not only useless but completely wrong,
+		     * because it causes that request to fail (the response
+		     * cannot be sent back).
+		     * There seems to be no way in the Mozart API to implement
+		     * the timeout properly, so for now, we simply keep
+		     * conncections live forever.
+		    (trace "closing idle connection";
+		     Socket.close socket)
+		    *)
+		    ()
 
 	fun handleConnection (socket, host, port) =
 	    let
 		val (stream, tokens) = Stream.stream ()
 	    in
+		trace ("connection from " ^ host ^ ":" ^
+		       Int.toString port ^ "\n");
 		spawn handleConnection' (socket, host, port, stream);
 		spawn closeIdle (ref tokens, socket)
 	    end
 	and handleConnection' (socket, host, port, stream) =
 	    let
-		val _ = trace ("connection from " ^ host ^ ":" ^
-			       Int.toString port ^ "\n")
 		val request = Http.readRequest socket
+		val _ = trace ("request from " ^ host ^ ":" ^
+			       Int.toString port ^ "\n")
 		val p = Promise.promise ()
 		val _ = Stream.send (stream, Promise.future p)
 		val handler = findHandler (#uri request)
@@ -120,10 +135,13 @@ structure HttpServer :> HTTP_SERVER =
 		    Stream.close stream
 		else handleConnection' (socket, host, port, stream)
 	    end
-	    handle Http.Format =>
+	    handle (Http.Format | IO.Io {cause = Http.Format, ...}) =>
 		       Stream.close stream
 		       before trace "protocol error\n"
-		 | Http.Closed => ()
+		 | IO.Io {cause = Http.Closed, ...} =>
+		       trace "connection closed"
+		 | IO.Io {...} =>
+		       trace "i/o error\n"
 
 	fun start portOpt =
 	    let

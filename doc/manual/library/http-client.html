@@ -89,7 +89,9 @@
 	></TT>, issues a <TT>GET</TT> request, and returns the response.
 	Closes the connection immediately after reading the response.  Raises
 	<TT><A href="#Authority">Authority</A></TT> if <TT><I>url</I></TT>
-	does not specify a well-formed authority.</P>
+	does not specify a well-formed authority.
+	Raises <A href="io.html"><TT>IO.Io</TT></A> if
+	an error occurs during communication.</P>
     </DD>
 
     <DT>
@@ -100,7 +102,9 @@
 	></TT>, issues a <TT>POST</TT> request with <TT><I>doc</I></TT>, and
 	returns the response.  Closes the connection immediately after reading
 	the response.  Raises <TT><A href="#Authority">Authority</A></TT>
-	if <TT><I>url</I></TT> does not specify a well-formed authority.</P>
+	if <TT><I>url</I></TT> does not specify a well-formed authority.
+	Raises <A href="io.html"><TT>IO.Io</TT></A> if
+	an error occurs during communication.</P>
     </DD>
   </DL>
 

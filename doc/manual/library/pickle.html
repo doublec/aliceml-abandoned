@@ -62,6 +62,7 @@
     signature PICKLE =
     sig
 	exception Sited
+	exception Corrupt
 
 	val extension : string
 
@@ -86,10 +87,21 @@
     </DT>
     <DD>
       <P>used by the <TT>save</TT> operation to indicate
-	that a first-class component contains sited data structures.  This
+	that the argument contains sited data structures.  This
 	exception is never raised directly; it only appears as the <TT
 	>cause</TT> of an <TT><A href="io.html">IO.Io</A></TT> exception.
 	Equal to <TT>Component.Sited</TT>.</P>
+    </DD>
+
+    <DT>
+      <TT>exception Corrupt</TT>
+    </DT>
+    <DD>
+      <P>used by the <TT>load</TT> operation to indicate
+	that pickle file does have an invalid format.  This
+	exception is never raised directly; it only appears as the <TT
+	>cause</TT> of an <TT><A href="io.html">IO.Io</A></TT> exception.
+	Equal to <TT>Component.Corrupt</TT>.</P>
     </DD>
 
     <DT>

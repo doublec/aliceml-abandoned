@@ -46,9 +46,11 @@
     sig
 	type <A href="#ticket">ticket</A> = string
 
+	exception <A href="#Proxy-exn">Proxy</A> of exn
+	exception <A href="#SitedArgument-exn">SitedArgument</A>
+	exception <A href="#SitedResult-exn">SitedResult</A>
+	exception <A href="#Protocol">Protocol</A> of string
 	exception <A href="#Ticket-exn">Ticket</A>
-	exception <A href="#Sited-exn">Sited</A>
-	exception <A href="#Protocol">Protocol</A> of int * string
 
 	val <A href="#proxy">proxy</A> : ('a -> 'b) -> ('a -> 'b)
 
@@ -84,19 +86,25 @@
     </DD>
 
     <DT>
-      <TT>exception <A name="Sited-exn">Sited</A></TT>
+      <TT>exception <A name="Proxy-exn">Proxy</A> of exn</TT>
     </DT>
     <DD>
-      <P>indicates that the argument or result of a call to a proxy contained
-      a sited value. Same as <A
-      href="component.html#Sited"><TT>Component.Sited</TT></A>.</P>
+      <P>indicates that a call through a proxy has failed. The argument
+      exception describes the specific cause of failure.</P>
     </DD>
 
     <DT>
-      <TT>exception <A name="Protocol">Protocol</A></TT>
+      <TT>exception <A name="SitedArgument-exn">SitedArgument</A></TT> <BR>
+      <TT>exception <A name="SitedResult-exn">SitedResult</A></TT> <BR>
+      <TT>exception <A name="Protocol">Protocol</A> of string</TT>
     </DT>
     <DD>
-      <P>indicates a protocol error.</P>
+      <P>the former two exceptions indicate that the argument or result of
+      a call to a proxy contained a sited value. The third exception
+      indicates an internal protocol error during execution of a proxy call,
+      where the string describes the error condition in text form.
+      These exception are never raised directly, but
+      occurs only as the argument of a <TT>Proxy</TT> exception.
     </DD>
 
     <DT>
@@ -107,27 +115,53 @@
 	from&nbsp;<TT><I>f</I></TT> in that:</P>
       <UL>
 	<LI><P>the argument to the proxy is cloned before&nbsp;<TT><I>f</I
-	  ></TT> is applied to it; if it contains a sited value, the
-	  exception <A href="#Sited-exn"><TT>Sited</TT></A> will be raised;
-	  if it contains a failed future, the causing exception will be
-	  raised;</P>
-	<LI><P>the return value from&nbsp;<I>f</I> is cloned before
-	  it is returned from the proxy; if it contains a sited value, the
-	  exception <A href="#Sited-exn"><TT>Sited</TT></A> will be raised;
-	  if it contains a failed future, the causing exception will be
-	  raised; if the causing exception itself contains a sited value
-	  or a failed future, the exception <A href="#Sited-exn"><TT>Sited</TT></A>
-	  will be raised instead;</P>
-	<LI><P>when the proxy is cloned, a reference to the running site is
-	  cloned which does not contain a clone of&nbsp;<TT><I>f</I></TT>;</P>
-	<LI><P>when the proxy is applied no matter on which site, this
+	  ></TT> is applied to it; it may not contain sited values;</P>
+	<LI><P>the result of&nbsp;<I>f</I> (either a value or an exception)
+	  is cloned before it is delivered to the caller; it may not contain
+	  sited values;
+	<LI><P>whenever the proxy itself is cloned, only a reference to the
+	  running site is cloned which does not contain a clone
+	  of&nbsp;<TT><I>f</I></TT>;</P>
+	<LI><P>when the proxy is applied, no matter on which site, this
 	  causes <TT><I>f</I></TT> to be applied on the site on which the
-	  proxy was created.</P>
+	  proxy was created, if necessary by transferring argument and
+	  result between the sites.</P>
       </UL>
-      <P>When the site on which the proxy was created terminates,
-	the proxy becomes invalid.  Applications of the proxy on other
-	sites will raise the <TT><A href="#Ticket-exn">Ticket</A></TT>
-	exception.</P>
+      <P>The cloning performed when applying proxies implies that any <A
+        href="../futures.html">future</A> in the
+        argument value or result is requested. That
+	may raise an exception due to a failed future, which then becomes
+	the result of the call. In either case, this is
+	considered regular execution of the proxy call.</P>
+      <P>But proxy calls may also fail, for a number of reasons. In each case,
+        the exception <TT><A href="#Proxy-exn">Proxy</A></TT> is raised to
+	indicate failed execution of the call, with the actual cause as an
+	argument. The following causes are possible:</P>
+      <UL>
+	<LI><P>The argument to the proxy contains a sited value. In that
+	  case, <TT>Proxy(<A
+	  href="#SitedArgument-exn">SitedArgument</A>)</TT> will be
+	  raised.</P>
+	<LI><P>The result of applying <TT>f</TT> (a value or raised exception)
+	  contains a sited value, or it contains a failed future that
+	  carries an exception with a sited value or another failed
+	  future. In all cases, <TT>Proxy(<A
+	  href="#SitedResult-exn">SitedResult</A>)</TT> will be raised.
+	  (Secondary failed futures are captured to prevent divergence in
+	  the case of circular data structures.)</P>
+	<LI><P>The process in which the proxy was created has terminated.
+	  In this case, <TT>Proxy(<A 
+	  href="#Ticket-exn">Ticket</A>)</TT> will be raised.</P>
+	<LI><P>A protocol failure occurs in the lower communication layers.
+	  In this case, <TT>Proxy(<A 
+	  href="#Protocol-exn">Protocol</A> <I>s</I>)</TT> will be raised,
+	  with <TT><I>s</I></TT> describing the error condition.</P>
+	<LI><P>An I/O problem occurs in the lower communication layers.
+	  In this case, <TT>Proxy(<A 
+	  href="io.html">Io</A> <I>args</I>)</TT> will be raised, with
+	  <TT><I>args</I></TT> carrying further information.</P>
+      </UL>
+      <P>Other causes for raising <TT>Proxy</TT> are possible.</P>
     </DD>
 
     <DT>

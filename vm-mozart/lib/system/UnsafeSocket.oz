@@ -18,9 +18,14 @@ import
 export
    'UnsafeSocket$': Socket
 define
-   IoException = {NewUniqueName 'IO.Io'}   %--** does not exit any more
+   IoException = {NewUniqueName 'UnsafeSocket.Io'}
 
-   Socket = 'Socket'(server:
+   Socket = 'Socket'('Io':
+		 	fun {$ N F C}
+			    IoException(name: N function: F cause: C)
+			end
+   		     '\'Io': IoException
+		     server:
 			fun {$ TakePort} Socket Port in
 			   Socket = {New Open.socket init()}
 			   if TakePort \= 0 then

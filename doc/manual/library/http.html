@@ -135,7 +135,10 @@
     </DT>
     <DD>
       <P>indicates that the socket connection was closed while the functions
-	in this structure attempted to read an HTTP request or response.</P>
+	in this structure attempted to read an HTTP request or response.
+	This exception is never raised directly but only appears as the cause
+	argument to <A href="io.html"><TT>IO.Io</TT></A> exceptions raised
+	by the functions below.</P>
     </DD>
 
     <DT>
@@ -152,10 +155,13 @@
     </DT>
     <DD>
       <P>attempts to read an HTTP request from <TT><I>sock</I></TT>, parses
-	it, and returns it.  Raises <TT><A href="#Closed">Closed</A></TT>
-	or <TT><A href="#Format">Format</A></TT> if the connection was
-	closed or the request was malformed, respectively.  Any linear white
-	space in header field values is translated to a single space.</P>
+	it, and returns it. Any consecutive white
+	space in header field values is translated to a single space.
+	Raises <A href="io.html"><TT>IO.Io</TT></A> if
+	an error occurs. In particular, a <TT>cause</TT> field with
+	exception <TT><A href="#Closed">Closed</A></TT> indicates that
+	the connection was closed, and <TT><A href="#Format">Format</A></TT>
+	indicates that the response was malformed.<P>
     </DD>
 
     <DT>
@@ -163,10 +169,13 @@
     </DT>
     <DD>
       <P>attempts to read an HTTP response from <TT><I>sock</I></TT>, parses
-	it, and returns it.  Raises <TT><A href="#Closed">Closed</A></TT>
-	or <TT><A href="#Format">Format</A></TT> if the connection was
-	closed or the response was malformed, respectively.  Any linear white
-	space in header field values is translated to a single space.</P>
+	it, and returns it. Any consecutive white
+	space in header field values is translated to a single space.
+	Raises <A href="io.html"><TT>IO.Io</TT></A> if
+	an error occurs. In particular, a <TT>cause</TT> field with
+	exception <TT><A href="#Closed">Closed</A></TT> indicates that
+	the connection was closed, and <TT><A href="#Format">Format</A></TT>
+	indicates that the response was malformed.<P>
     </DD>
 
     <DT>
@@ -175,7 +184,9 @@
     </DT>
     <DD>
       <P>formats <TT><I>request</I></TT> according to the HTTP protocol,
-	Version 1.1, and writes it to <TT><I>sock</I></TT>.</P>
+	Version 1.1, and writes it to <TT><I>sock</I></TT>.
+	Raises <A href="io.html"><TT>IO.Io</TT></A> if
+	an error occurs.</P>
     </DD>
 
     <DT>
@@ -184,7 +195,9 @@
     </DT>
     <DD>
       <P>formats <TT><I>response</I></TT> according to the HTTP protocol,
-	Version 1.1, and writes it to <TT><I>sock</I></TT>.</P>
+	Version 1.1, and writes it to <TT><I>sock</I></TT>.
+	Raises <A href="io.html"><TT>IO.Io</TT></A> if
+	an error occurs.</P>
     </DD>
 
     <DT>

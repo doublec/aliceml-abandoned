@@ -13,6 +13,7 @@
 import structure MkHashImpMap from "../data/MkHashImpMap"
 import structure Url          from "Url"
 import structure Socket       from "Socket"
+import structure IO           from "IO"
 import signature HTTP         from "HTTP-sig"
 
 structure Http :> HTTP =
@@ -40,7 +41,11 @@ structure Http :> HTTP =
 
 	fun readLine socket =
 	    let
-		val s = valOf (Socket.inputLine socket) handle _ => raise Closed
+		val s = case Socket.inputLine socket of
+			    SOME s => s
+			  | NONE => raise IO.Io {name = "Http",
+						 function = "readLine",
+						 cause = Closed}
 		val n = String.size s
 	    in
 		if n < 2
@@ -127,6 +132,9 @@ structure Http :> HTTP =
 		       handle Url.Malformed => raise Format,
 		 protocol, headers, body}
 	    end
+	    handle Format => raise IO.Io {name = "Http",
+					  function = "readRequest",
+					  cause = Format}
 
 	fun parseResponseLine s =
 	    let
@@ -151,6 +159,9 @@ structure Http :> HTTP =
 	    in
 		{protocol, statusCode, reasonPhrase, headers, body}
 	    end
+	    handle Format => raise IO.Io {name = "Http",
+					  function = "readResponse",
+					  cause = Format}
 
 	fun writeRequest (socket, {method, uri, protocol, headers, body}) =
 	    Socket.output

@@ -33,14 +33,14 @@ signature HTTP =
 	  | COMMENT of string
 	  | QUOTED_STRING of string
 
-	exception Closed (*--** why not just IO.Io? *)
+	exception Closed     (* only as Io cause *)
 	exception Format
 
-	fun readRequest: Socket.socket -> request      (* Closed, Format *)
-	fun readResponse: Socket.socket -> response    (* Closed, Format *)
+	fun readRequest: Socket.socket -> request            (* IO.Io *)
+	fun readResponse: Socket.socket -> response          (* IO.Io *)
 
-	fun writeRequest: Socket.socket * request -> unit
-	fun writeResponse: Socket.socket * response -> unit
+	fun writeRequest: Socket.socket * request -> unit    (* IO.Io *)
+	fun writeResponse: Socket.socket * response -> unit  (* IO.Io *)
 
 	fun reasonPhrase: int -> string
 	fun makeResponse: simple_response -> response
