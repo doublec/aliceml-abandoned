@@ -56,8 +56,10 @@ struct
     end
 
   (*** REFERENCES ***)
-  val refPrefix = (Prefs.refL, Prefs.refStyle) :: AbsTree.openParenthesisL
-  val refSuffix = AbsTree.closeParenthesisL
+  (* Indices may be dynamically enabled/disabled in the gui.
+   * As a consequence, the prefix for references is split into
+   * two prefixes, namely 'ref' and the parenthesis. *)
+  val refPrefix = (Prefs.refL, Prefs.refStyle) :: []
 
   fun reference (depth, item, path, targs, value) =
     let
@@ -67,8 +69,12 @@ struct
       val tree  = AbsTree.mapValue (depth - 1, item', argType, x)
       val item  = case item of AbsTree.Value (t,v,_) => Value (t,v, Reference)
                              | _ => assert false
+      val tree = Concat {prefix = AbsTree.openParenthesisL,
+			 tree,
+			 suffix = AbsTree.closeParenthesisL,
+			 orient = AbsTree.orientParent}
     in
-      AbsTree.makeBox {prefix = refPrefix, tree, suffix = refSuffix, item}
+      AbsTree.makeBox {prefix = refPrefix, tree, suffix = [], item}
     end
 
   (*** PROMISE ***)

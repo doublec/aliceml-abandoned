@@ -5,10 +5,18 @@ import structure PervasiveType from "x-alice:/lib/rtt/PervasiveType"
 
 fun waitLine () = TextIO.inputLine TextIO.stdIn
 
-val _ = print "One.\n" 
+val _ = Inspector.inspect ()
 
-val _ = Inspector.inspect 100
+val r1 = ref 5
+val r2 = ref 5
+
+val _ = Inspector.inspect [r1, r2, r2, r2, r1]
+val _ = Inspector.inspect [r1, r2, r2, r2, r1]
+val _ = Inspector.inspect [r1, r2, r2, r2, r1]
 val _ = waitLine ()
+val _ = Inspector.inspect [r1, r2, r2, r2, r1]
+val _ = waitLine ()
+
 val _ = Inspector.inspect ()
 val _ = waitLine ()
 

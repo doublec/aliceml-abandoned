@@ -80,7 +80,7 @@ and tree =
 		    parent       : tree,
 		    index        : int,
                     depth        : int,
-		    prefix       : garment list,
+		    prefix       : garment list, (* reversed order *)
 		    tree         : tree ref,
 		    orient       : orient ref,
 		    prefixWidth  : int,
