@@ -187,9 +187,9 @@ protected:
 public:
   using Block::ToWord;
 
-  static ArrayType *New(word type) {
+  static ArrayType *New(word wType) {
     Block *b = Store::AllocBlock(JavaLabel::ArrayType, SIZE);
-    b->InitArg(TYPE_POS, type);
+    b->InitArg(TYPE_POS, wType);
     return static_cast<ArrayType *>(b);
   }
 };
@@ -532,29 +532,6 @@ public:
     Assert(GetBaseType() == BaseType::Double);
     return Double::NewFromNetworkRepresentation(GetElementPointer(index, 8));
   }
-  word Load(u_int index) {
-    //--** remove
-    switch (GetBaseType()) {
-    case BaseType::Boolean:
-      return Store::IntToWord(LoadBoolean(index));
-    case BaseType::Byte:
-      return Store::IntToWord(LoadByte(index));
-    case BaseType::Char:
-      return Store::IntToWord(LoadChar(index));
-    case BaseType::Short:
-      return Store::IntToWord(LoadShort(index));
-    case BaseType::Int:
-      return Store::IntToWord(LoadInt(index));
-    case BaseType::Long:
-      return LoadLong(index)->ToWord();
-    case BaseType::Float:
-      return LoadFloat(index)->ToWord();
-    case BaseType::Double:
-      return LoadDouble(index)->ToWord();
-    default:
-      Error("invalid base type");
-    }
-  }
 
   void StoreBoolean(u_int index, u_int value) {
     Assert(GetBaseType() == BaseType::Boolean);
@@ -598,37 +575,6 @@ public:
     Assert(GetBaseType() == BaseType::Double);
     std::memcpy(GetElementPointer(index, 8),
 		value->GetNetworkRepresentation(), 8);
-  }
-  void Store(u_int index, word value) {
-    //--** remove
-    switch (GetBaseType()) {
-    case BaseType::Boolean:
-      StoreBoolean(index, Store::DirectWordToInt(value));
-      break;
-    case BaseType::Byte:
-      StoreByte(index, Store::DirectWordToInt(value));
-      break;
-    case BaseType::Char:
-      StoreChar(index, Store::DirectWordToInt(value));
-      break;
-    case BaseType::Short:
-      StoreShort(index, Store::DirectWordToInt(value));
-      break;
-    case BaseType::Int:
-      StoreInt(index, Store::DirectWordToInt(value));
-      break;
-    case BaseType::Long:
-      StoreLong(index, JavaLong::FromWordDirect(value));
-      break;
-    case BaseType::Float:
-      StoreFloat(index, Float::FromWordDirect(value));
-      break;
-    case BaseType::Double:
-      StoreDouble(index, Double::FromWordDirect(value));
-      break;
-    default:
-      Error("invalid base type");
-    }
   }
 };
 
@@ -797,14 +743,15 @@ public:
 
 class DllExport StaticFieldRef: private FieldRef {
 protected:
-  enum { CLASS_POS, INDEX_POS, SIZE };
+  enum { CLASS_POS, INDEX_POS, NUMBER_OF_REQUIRED_SLOTS_POS, SIZE };
 public:
   using Block::ToWord;
 
-  static StaticFieldRef *New(Class *theClass, u_int index) {
+  static StaticFieldRef *New(Class *theClass, u_int index, u_int nSlots) {
     Block *b = Store::AllocBlock(JavaLabel::StaticFieldRef, SIZE);
     b->InitArg(CLASS_POS, theClass->ToWord());
     b->InitArg(INDEX_POS, index);
+    b->InitArg(NUMBER_OF_REQUIRED_SLOTS_POS, nSlots);
     return static_cast<StaticFieldRef *>(b);
   }
   static StaticFieldRef *FromWord(word x) {
@@ -819,17 +766,21 @@ public:
   u_int GetIndex() {
     return Store::DirectWordToInt(GetArg(INDEX_POS));
   }
+  u_int GetNumberOfRequiredSlots() {
+    return Store::DirectWordToInt(GetArg(NUMBER_OF_REQUIRED_SLOTS_POS));
+  }
 };
 
 class DllExport InstanceFieldRef: private FieldRef {
 protected:
-  enum { INDEX_POS, SIZE };
+  enum { INDEX_POS, NUMBER_OF_REQUIRED_SLOTS_POS, SIZE };
 public:
   using Block::ToWord;
 
-  static InstanceFieldRef *New(u_int index) {
+  static InstanceFieldRef *New(u_int index, u_int nSlots) {
     Block *b = Store::AllocBlock(JavaLabel::InstanceFieldRef, SIZE);
     b->InitArg(INDEX_POS, index);
+    b->InitArg(NUMBER_OF_REQUIRED_SLOTS_POS, nSlots);
     return static_cast<InstanceFieldRef *>(b);
   }
   static InstanceFieldRef *FromWord(word x) {
@@ -841,6 +792,9 @@ public:
 
   u_int GetIndex() {
     return Store::DirectWordToInt(GetArg(INDEX_POS));
+  }
+  u_int GetNumberOfRequiredSlots() {
+    return Store::DirectWordToInt(GetArg(NUMBER_OF_REQUIRED_SLOTS_POS));
   }
 };
 
