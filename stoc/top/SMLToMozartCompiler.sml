@@ -15,7 +15,9 @@ structure SMLToMozartCompiler =
     let
 	structure Switches = MakeSwitches()
 
-	structure MozartTarget = MakeMozartTarget(Signature)
+	structure MozartTarget =
+	    MakeMozartTarget(structure Switches = Switches
+			     structure Sig = Signature)
 
 	structure FrontendSML = MakeFrontendSML(Composer)
 

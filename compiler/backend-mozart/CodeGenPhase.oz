@@ -258,11 +258,11 @@ define
       {F close()}
    end
 
-   fun {Save OutFilename F#VS#_}
+   fun {Save OutFilename OutputAssembly F#VS#_}
       {Pickle.saveWithCells F OutFilename '' 0}
-%      if {Access Switches.outputAssembly} then
-%	 {WriteFile VS OutFilename#'.ozm'}
-%      end
+      if OutputAssembly then
+	 {WriteFile VS OutFilename#'.ozm'}
+      end
       unit
    end
 

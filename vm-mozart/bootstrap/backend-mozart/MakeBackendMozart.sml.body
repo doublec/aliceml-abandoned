@@ -13,6 +13,10 @@
  *)
 
 import
+    signature SWITCHES
+from "x-alice:/infrastructure/SWITCHES.ozf"
+
+import
     signature PHASE
 from "x-alice:/infrastructure/PHASE.ozf"
 
@@ -36,8 +40,9 @@ import
     structure CodeGenPhase
 from "x-alice:/backend-mozart/CodeGenPhase.ozf"
 
-functor MakeMozartTarget(Sig: SIGNATURE where type t = FlatGrammar.sign):
-    TARGET =
+functor MakeMozartTarget(structure Switches: SWITCHES
+			 structure Sig: SIGNATURE
+			     where type t = FlatGrammar.sign): TARGET =
     struct
 	structure C = EmptyContext
 	structure Sig = Sig
@@ -49,7 +54,7 @@ functor MakeMozartTarget(Sig: SIGNATURE where type t = FlatGrammar.sign):
 	fun apply () component = CodeGenPhase.apply component
 
 	fun save () filename component =
-	    CodeGenPhase.save (filename, component)
+	    CodeGenPhase.save (filename, !Switches.outputAssembly, component)
     end
 
 functor MakeBackendMozart(MozartTarget: TARGET

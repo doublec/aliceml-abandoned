@@ -32,8 +32,9 @@ structure MozartTargetContext: CONTEXT =
 	fun clone engine = engine
     end
 
-functor MakeMozartTarget(Sig: SIGNATURE where type t = FlatGrammar.sign):
-    TARGET =
+functor MakeMozartTarget(structure Switches: SWITCHES
+			 structure Sig: SIGNATURE
+			     where type t = FlatGrammar.sign): TARGET =
     struct
 	structure C = MozartTargetContext
 	structure Sig = Sig

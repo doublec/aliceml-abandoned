@@ -33,6 +33,6 @@ signature CODE_GEN_PHASE_COMPONENT =
 		val translate: Source.desc * FlatGrammar.component -> t
 		val sign: t -> Inf.sign
 		val apply: t -> unit
-		val save: string * t -> unit
+		val save: string * bool * t -> unit
 	    end
     end
