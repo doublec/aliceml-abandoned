@@ -16,15 +16,6 @@ SMLofNJ.Internals.GC.messages false;
 CM.make' "main-mozart.cm";
 
 local
-    fun getArgs () =
-	let
-	    val args = SMLofNJ.getArgs ()
-	in
-	    case SMLofNJ.SysInfo.getOSKind () of
-		SMLofNJ.SysInfo.WIN32 => tl args
-	      | _ => args
-	end
-
     fun main' ("--profile"::args) =
 	(Compiler.Profile.setTimingMode true;
 	 Compiler.Profile.reset ();
@@ -49,7 +40,7 @@ local
 	    OS.Process.failure
 	end
 
-    fun main _ = OS.Process.exit (main' (getArgs ()))
+    fun main _ = OS.Process.exit (main' (SMLofNJ.getArgs ()))
 in
     val _ = SMLofNJ.exportFn ("alicec-mozart", main)
 end;
