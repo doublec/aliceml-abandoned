@@ -885,19 +885,11 @@ Interpreter::Result AbstractCodeInterpreter::Run(TaskStack *taskStack) {
 	  {
 	    Vector *returnIdRefs = Vector::FromWordDirect(returnArgs->Sel(0));
 	    u_int nArgs = returnIdRefs->GetLength();
-	    if (nArgs < Scheduler::maxArgs) {
-	      Scheduler::nArgs = nArgs;
-	      for (u_int i = nArgs; i--; )
-		Scheduler::currentArgs[i] =
-		  GetIdRefKill(returnIdRefs->Sub(i), globalEnv, localEnv);
-	    } else {
-	      Tuple *tuple = Tuple::New(nArgs);
-	      for (u_int i = nArgs; i--; )
-		tuple->Init(i, GetIdRefKill(returnIdRefs->Sub(i),
-					    globalEnv, localEnv));
-	      Scheduler::nArgs = Scheduler::ONE_ARG;
-	      Scheduler::currentArgs[0] = tuple->ToWord();
-	    }
+	    Assert(nArgs <= Scheduler::maxArgs);
+	    Scheduler::nArgs = nArgs;
+	    for (u_int i = nArgs; i--; )
+	      Scheduler::currentArgs[i] =
+		GetIdRefKill(returnIdRefs->Sub(i), globalEnv, localEnv);
 	  }
 	  break;
 	}
