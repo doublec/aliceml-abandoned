@@ -120,7 +120,7 @@ ALICEDEP = sml @SMLload=$(BOOTSTRAPDIR)/alicedep
 OZC = ozc
 MLLEX = ml-lex
 MLYACC = ml-yacc
-M4 = m4
+M4 = m4 -DSEAM
 
 ##
 ## Enumerate All Files Making Up the Source Tree
@@ -176,7 +176,7 @@ LIBDATASOURCES0 = \
 	IMP_SET-sig.aml IMP_MAP-sig.aml MkHashImpSet.aml MkHashImpMap.aml \
 	MkRedBlackImpSet.aml MkRedBlackImpMap.aml \
 	STACK-sig.aml Stack.aml STREAM-sig.aml Stream.aml \
-	UNSAFE_MAP-sig.aml UnsafeMap.aml
+	REF_MAP-sig.aml RefMap.aml
 LIBSYSTEMSOURCES0 = \
 	$(LIBSYSTEMNATIVES0:%=Unsafe%.asig) UnsafeValue.asig \
 	CONFIG-sig.aml IO-sig.aml IO.aml PRIM_IO-sig.aml PrimIO.aml \
@@ -454,6 +454,9 @@ build1/lib/%.asig: lib/%.asig Rel2.import
 
 build1/lib/%.aml: lib/%.aml Rel2.import
 	cat Rel2.import $< > $@
+
+build1/lib/%.aml: lib/%.aml.m4 Rel2.import
+	cat Rel2.import $< | $(M4) > $@
 
 build1/compiler/infrastructure/%.aml: compiler/infrastructure/%.aml Rel2.import
 	cat Rel2.import $< > $@

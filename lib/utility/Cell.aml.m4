@@ -10,8 +10,64 @@
  *   $Revision$
  *)
 
+changequote([[,]])
+
+import signature CELL from "CELL-sig"
+
+ifdef([[SEAM]],[[
+
+import structure RefMap from "../data/RefMap"
+
+structure Cell : CELL =
+struct
+    type 'a cell		= 'a ref
+    type 'a t			= 'a cell
+
+    val cell			= ref
+    val content			= op!
+    val replace			= op:=
+    val equal			= op=
+
+    functor MkMap(type t)	=
+    struct
+	type t'			= t
+	open RefMap
+	type key		= t' ref
+	type 'a map		= (t','a) map
+	type 'a t		= 'a map
+
+	exception Unknown of key
+	exception Collision of key
+
+	fun insertDisjoint(m,r,x) = RefMap.insertDisjoint(m,r,x)
+	    handle RefMap.Collision => raise Collision r
+	fun removeExistent(m,r) = RefMap.removeExistent(m,r)
+	    handle RefMap.Unknown => raise Unknown r
+	fun lookupExistent(m,r) = RefMap.lookupExistent(m,r)
+	    handle RefMap.Unknown => raise Unknown r
+	fun unionDisjoint(m1,m2) = appi (fn(r,x) => insertDisjoint(m1,r,x)) m2
+
+	fun fromVector v = RefMap.fromVector v
+	    handle RefMap.Collision => (* lame way to get precise exn *)
+	    let
+		val m = map()
+	    in
+		Vector.app (fn(r,x) => insertDisjoint(m,r,x)) v; m
+	    end
+
+	fun fromList l = RefMap.fromList l
+	    handle RefMap.Collision => (* lame way to get precise exn *)
+	    let
+		val m = map()
+	    in
+		List.app (fn(r,x) => insertDisjoint(m,r,x)) l; m
+	    end
+    end
+end
+
+]],[[
+
 import structure UnsafeCell from "UnsafeCell"
-import signature CELL       from "CELL-sig"
 
 structure Cell :> CELL =
 struct
@@ -464,3 +520,5 @@ struct
     end
 end
 *)
+
+]])

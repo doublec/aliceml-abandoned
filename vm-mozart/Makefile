@@ -119,7 +119,7 @@ OZC = $(OZHOME)/bin/ozc
 OZL = $(OZHOME)/bin/ozl
 MLLEX = ml-lex
 MLYACC = ml-yacc
-M4 = m4 -DFUTURE_AWAIT_EITHER_IS_PRIMITIVE
+M4 = m4 -DMOZART -DFUTURE_AWAIT_EITHER_IS_PRIMITIVE
 
 ##
 ## Enumerate All Files Making Up the Source Tree
@@ -445,6 +445,9 @@ build1/lib/utility/%.asig: lib/utility/%.asig Rel2.import
 
 build1/lib/%.aml: lib/%.aml Rel2.import
 	cat Rel2.import $< > $@
+
+build1/lib/%.aml: lib/%.aml.m4 Rel2.import
+	cat Rel2.import $< | $(M4) > $@
 
 build1/compiler/infrastructure/%.aml: compiler/infrastructure/%.aml Rel2.import
 	cat Rel2.import $< > $@

@@ -32,4 +32,5 @@ structure PervasiveType = MkPervasiveType(val labid_false	= "false"
 					  val valid_bind	= "Bind"
 					  val modid_pervasive	= "__pervasive"
 					  val prefix_arrow	= "'a "
+					  val prefix_arrow2	= "('a,'b) "
 					 )

@@ -37,6 +37,7 @@ functor MkPervasiveType(val labid_false :	string
 			val valid_bind :	string
 			val modid_pervasive :	string
 			val prefix_arrow :	string
+			val prefix_arrow2 :	string
 			) :> PERVASIVE_TYPE =
 struct
     type lab		= Label.t
@@ -96,6 +97,7 @@ struct
     val kind_star	= Type.starKind()
     val kind_ext	= Type.extKind()
     val kind_arrow	= Type.arrowKind(kind_star, kind_star)
+    val kind_arrow2	= Type.arrowKind(kind_star, kind_arrow)
 
     val typ_int		= Type.con(path_int,      kind_star)
     val typ_word	= Type.con(path_word,     kind_star)
@@ -137,5 +139,8 @@ struct
 	if String.isPrefix prefix_arrow s
 	then Type.con(Path.pervasive(String.extract(s, String.size prefix_arrow,
 						    NONE)), kind_arrow)
+	else if String.isPrefix prefix_arrow2 s
+	then Type.con(Path.pervasive(String.extract(s, String.size prefix_arrow2,
+						    NONE)), kind_arrow2)
 	else Type.con(Path.pervasive s, kind_star)
 end

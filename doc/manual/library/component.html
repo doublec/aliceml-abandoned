@@ -63,6 +63,7 @@
 			       request : <A href="url.html#t">Url.t</A> option,
 			       cause : Inf.mismatch}
 	exception <A href="#Eval">Eval</A> of exn
+	exception <A href="#Internal">Internal</A> of exn
 	exception <A href="#Failure">Failure</A> of <A href="url.html#t">Url.t</A> * exn
 
 	val <A href="#extension">extension</A> : string
@@ -143,6 +144,17 @@
       <P>indicates that a component raised an exception during
 	initialization, that is, while its declarations were being
 	evaluated.  This is never raised directly, but packaged in
+	a <TT><A href="#Failure">Failure</A></TT> exception instead.</P>
+    </DD>
+
+    <DT>
+      <TT>exception <A name="Eval">Eval</A> of exn</TT>
+    </DT>
+    <DD>
+      <P>indicates that the component manager failed internally
+        with the given exception, either due to a failure to acquire
+	essential runtime components, or because of an internal inconsistency.
+        This is never raised directly, but packaged in
 	a <TT><A href="#Failure">Failure</A></TT> exception instead.</P>
     </DD>
 
