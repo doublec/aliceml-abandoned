@@ -11,7 +11,6 @@
 //
 
 #include <cstdlib>
-#include "generic/Tuple.hh"
 #include "alice/Authoring.hh"
 
 DEFINE0(UnsafeRand_rand) {
@@ -31,7 +30,7 @@ DEFINE0(UnsafeRand_randLimits) {
   RETURN(limits->ToWord());
 } END
 
-word UnsafeRand() {
+AliceDll word UnsafeRand() {
   Record *record = Record::New(3);
   INIT_STRUCTURE(record, "UnsafeRand", "rand",
 		 UnsafeRand_rand, 0);

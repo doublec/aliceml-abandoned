@@ -53,7 +53,7 @@ DEFINE1(UnsafeReflect_ReifySig) {
   RETURN(record->ToWord());
 } END
 
-word UnsafeReflect() {
+AliceDll word UnsafeReflect() {
   Record *record = Record::New(6);
   INIT_STRUCTURE(record, "UnsafeReflect", "cast",
 		 UnsafeReflect_cast, 1);
