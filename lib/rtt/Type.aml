@@ -1500,6 +1500,7 @@ val _ = checkMuFwd := checkMu
 	    val _   = matchKindCont'(i,ms,rea, kind t2, k1)
 		      handle KindMismatch _ => raise Mismatch(t1,t2)
 	    val _   = liftAndCheck(n1,t1,t2)
+		      handle Lift _ => raise Mismatch(t1,t2)
 	    val t2' = case rea
 			of NONE      => canonical t2
 			 | SOME rea' =>
