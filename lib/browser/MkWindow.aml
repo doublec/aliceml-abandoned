@@ -42,7 +42,7 @@ open WindowHelper
 val serve' = Server.newServer () 
 
 (* "About..."-WindowHandler *)
-fun about _ = serve' (fn () =>  
+fun about _ = serve' (fn () =>  () (*
      let
 	 val dialog = Gtk.dialogNew()
 	 val ddialog = (fn _ =>  Gtk.widgetDestroy(dialog)) 
@@ -57,7 +57,7 @@ fun about _ = serve' (fn () =>
 			    ok)
 	 ; Gtk.containerAdd((Gtk.dialogGetFieldVbox(dialog)),l)
 	 ;Gtk.widgetShowAll(dialog))
-     end)
+     end) *) )
 
 (* Handles ok Button in Preferences Window *)
 fun okHandler(w,
@@ -156,22 +156,37 @@ fun Preferences _ = serve' (fn () =>
 		     ;Gtk.widgetShowAll(w))
 	end)
 
+fun getSelectionMenu bar = 
+    let
+	val menu_heading_items = UnsafeValue.cast 
+		(Gtk.containerChildren(bar)) : Gtk.object list
+	val menu_heading_selection = List.nth(menu_heading_items,1)
+    in
+	menu_heading_selection
+    end
+
 (* Switches "selection" menu on/off *)
 fun setSelectionMenuSensitive (bar,sensitive) = 
-	let
-	    val menu_heading_items = UnsafeValue.cast 
-		(Gtk.containerChildren(bar)) : Gtk.object list
-	    val menu_heading_selection = List.nth(menu_heading_items,1)
-	    val selection_menu = hd
+    let
+	val menu_heading_selection = getSelectionMenu bar
+	val selection_menu = hd
 		(UnsafeValue.cast 
 		 (Gtk.containerChildren(menu_heading_selection)) 
-		 : Gtk.object list)
-	    val submenu = Gtk.menuItemGetFieldSubmenu(menu_heading_selection)
-	in
-	    (setSensitive(submenu,sensitive)
-	     ; setSensitive(selection_menu,sensitive))
-	end
+		 : Gtk.object list)    
+    in
+	setSensitive(selection_menu,sensitive)
+    end
 
+fun setExpandSensitive (bar,sensitive)= 
+    let
+	val menu_heading_selection = getSelectionMenu bar
+	val submenu = Gtk.menuItemGetFieldSubmenu(menu_heading_selection)
+	val children = UnsafeValue.cast 
+		(Gtk.containerChildren(submenu)) : Gtk.object list
+	val expand = List.nth(children,0)
+    in
+	setSensitive(expand,sensitive)
+    end
 
 val selection = ref NONE
     
@@ -423,7 +438,7 @@ struct
 					      (PPType.ppTyp(#typ(r)),1000)
 				    in
 					if
-					    String.length(text) > 50 
+					   (String.size(text)) > 50 
 					    then
 		     postType("  " 
 			      ^String.extract(text, 0,SOME(50)))
@@ -437,7 +452,7 @@ struct
 						50),0,SOME(50)))
 		     ;())
 	 end
-	    
+    
      fun handleEvent [Gdk.EVENT(event)] = serve (fn () =>
      let
 	 val font_width = Services.fontWidth()
@@ -471,7 +486,11 @@ struct
 				    ; GtkCanvas.itemLowerToBottom(re) 
 				    ; destroySelectionMarkings() 
 				    ; selection := SOME (n,re) 
-				    ; setSelectionMenuSensitive(bar,true) 
+				    ; setSelectionMenuSensitive(bar,true)
+				    ; case n of
+				     Types.Limit(_) => 
+					 setExpandSensitive(bar,true)
+				       | _ => setExpandSensitive(bar,false)
 				    ; case b of
 				       1 => ()
 				    |  3 => 

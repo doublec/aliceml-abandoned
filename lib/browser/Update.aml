@@ -125,7 +125,7 @@ struct
 				    | NONE => []
 			  in ReinspectedRelDict.update(Dictionaries.ri_reldict,
 						       (ind,
-					            List.append([new],ri_rel)))
+					           [new]@ri_rel))
 			  end 
 		 else ()
 	       ; showChanges (anc,ancline,node,old_ydim,ind,y_pos) )

@@ -108,7 +108,7 @@ struct
 			 in (setContent (node,c)   
 			     ; RelManDictionary.update(reldict,
 						       (ind,
-						List.append([node],actrelman)))
+						[node]@actrelman))
 			     ; node )
 			 end     
 		    | SOME n (* Wert bereits dargestellt - Referenzbildung *)
@@ -145,7 +145,7 @@ struct
 			     val restlist = #2(part)
 			 in (RelManDictionary.update(reldict,
 						     (ind,
-						    List.append([m],restlist)))
+						    [m]@restlist))
 			     ; node)
 			 end)
 		 end
@@ -546,7 +546,7 @@ struct
 			    handle General.Match => false) of 
 	      SOME ((vv,li),i)   
 	      => TransientDictionary.update(transdict,  
-					    (i,(vv,List.append(li,[simple])))) 
+					    (i,(vv,li@[simple]))) 
             | NONE  
 	      => (TransientDictionary.insertI(transdict,(va,[simple]))
 		  ; Update.watcher(fut,va,createGraph,createGraphInf) ; ())
@@ -649,7 +649,7 @@ struct
 			       | _ => ( setContent (node,c)   
 				       ; RelManDictionary.update(reldict,
 								 (ind,
-		       			        List.append([node],actrelman)))
+		       			        [node]@actrelman))
 				       ; node ) )
 			     end     
 			| SOME n => let val rep = ( case n of 
@@ -671,7 +671,7 @@ struct
 					val restlist = #2(part)
 				    in (RelManDictionary.update(reldict,
 								(ind,
-	       					 List.append([m],restlist)))
+	       					[m]@restlist))
 					; node)
 				    end)
 		 end
