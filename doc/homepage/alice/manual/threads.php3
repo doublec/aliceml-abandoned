@@ -71,34 +71,8 @@
 
 <?php section("sig", "signature") ?>
 
-  <PRE>
-	structure Thread :
-	sig
-	    type thread
-
-	    datatype state = RUNNABLE
-		           | BLOCKED
-		           | TERMINATED
-
-	    exception Terminate
-
-	    val thread :      (unit -> unit) -> thread
-	    val spawn :       (unit -> 'a) -> thread * 'a
-
-	    val current :     unit -> thread
-	    val state :       thread -> state
-
-	    val yield :       thread -> unit
-	    val sleep :       int -> unit
-
-	    val raiseIn :     thread * exn -> unit
-	    val terminate :   thread -> unit
-
-	    val suspend :     thread -> unit
-	    val resume :      thread -> unit
-	    val isSuspended : thread -> bool
-	end
-  </PRE>
+  <P>The operations on threads are available in <A href="library/thread.php3"
+    >structure <TT>Thread</TT></A>.</P>
 
 
 <?php footing() ?>
