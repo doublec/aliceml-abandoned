@@ -275,13 +275,11 @@ COMPILERTOPSOURCES0 = \
 	BATCH_COMPILER-sig.aml MkBatchCompiler.aml \
 	SMLToMozartBatchCompiler.aml \
 	SMLToDotNetBatchCompiler.aml \
-	COMPILE_SERVER-sig.aml MkCompileServer.aml \
-	SMLToMozartCompileServer.aml \
 	INTERACTIVE_TOPLEVEL-sig.aml MkToplevel.aml \
 	SMLToMozartToplevel.aml
 COMPILERTOPSOURCES = $(COMPILERTOPSOURCES0:%=compiler/top/%)
 
-COMPILERSOURCES0 = CompilerMain.aml ToplevelMain.aml
+COMPILERSOURCES0 = CompilerMain.aml CompileServerMain.aml ToplevelMain.aml
 COMPILERSOURCES = \
 	$(COMPILERINFRASTRUCTURESOURCES) $(COMPILERCOMMONSOURCES) \
 	$(COMPILERFRONTENDCOMMONSOURCES) $(COMPILERFRONTENDSMLSOURCES) \
@@ -331,8 +329,8 @@ BUILD1SOURCES = \
 
 INSTALL1DIRS = build1/install build1/install/bin build1/install/compiler
 INSTALL1TOPFILES = VMMain.ozf
-INSTALL1BINFILES = alicerun alicec alicelink
-INSTALL1COMPILERFILES = CompilerMain.ozf
+INSTALL1BINFILES = alicerun alicec aliceserv alicelink
+INSTALL1COMPILERFILES = CompilerMain.ozf CompileServerMain.ozf
 INSTALL1FILES = \
 	$(INSTALL1TOPFILES:%=build1/install/%) \
 	$(INSTALL1BINFILES:%=build1/install/bin/%) \
@@ -434,7 +432,8 @@ build1/%.oz: %.oz
 ##
 
 build1-all: $(BUILD1DIRS) $(BUILD1SOURCES) \
-	build1/LinkedVMMain.ozf build1/compiler/LinkedCompilerMain.ozf
+	build1/LinkedVMMain.ozf build1/compiler/LinkedCompilerMain.ozf \
+	build1/compiler/LinkedCompileServerMain.ozf
 
 build1/%.ozf: build1/%.oz
 	$(OZC) -c $< -o $@
@@ -456,6 +455,10 @@ build1/compiler/LinkedCompilerMain.ozf: $(BUILD1OZLINPUTS)
 	$(ALICELINK0) $(ALICELINK_OPTS) --include=.. \
 	build1/compiler/CompilerMain.ozf -o $@
 
+build1/compiler/LinkedCompileServerMain.ozf: $(BUILD1OZLINPUTS)
+	$(ALICELINK0) $(ALICELINK_OPTS) --include=.. \
+	build1/compiler/CompileServerMain.ozf -o $@
+
 ##
 ## Installing Build 1
 ##
@@ -470,6 +473,10 @@ build1/install/VMMain.ozf: build1/LinkedVMMain.ozf
 
 build1/install/compiler/CompilerMain.ozf: \
 	build1/compiler/LinkedCompilerMain.ozf
+	install -c -m 444 $< $@
+
+build1/install/compiler/CompileServerMain.ozf: \
+	build1/compiler/LinkedCompileServerMain.ozf
 	install -c -m 444 $< $@
 
 build1/install/bin/%: %
@@ -490,9 +497,9 @@ INSTALL2DIRS = build2/install build2/install/bin \
 	build2/install/lib/rtt build2/install/lib/ml-yacc \
 	build2/install/compiler
 INSTALL2TOPFILES = VMMain.ozf alicec.import
-INSTALL2BINFILES = alicerun alicec alicelink
+INSTALL2BINFILES = alicerun alicec aliceserv alicelink
 INSTALL2LIBFILES = rtt/RTT.ozf
-INSTALL2COMPILERFILES = CompilerMain.ozf
+INSTALL2COMPILERFILES = CompilerMain.ozf CompileServerMain.ozf
 INSTALL2FILES = \
 	$(INSTALL2TOPFILES:%=build2/install/%) \
 	$(INSTALL2BINFILES:%=build2/install/bin/%) \
@@ -515,7 +522,8 @@ build2/%.aml: build1/%.aml
 build2/%.asig: build1/%.asig
 	cp $< $@
 
-build2/LinkedVMMain.ozf build2/compiler/LinkedCompilerMain.ozf: build2/%: \
+build2/LinkedVMMain.ozf build2/compiler/LinkedCompilerMain.ozf \
+			build2/compiler/LinkedCompileServerMain.ozf: build2/%: \
 	build1/%
 	cp $< $@
 
@@ -570,6 +578,10 @@ build2/install/compiler/CompilerMain.ozf: \
 	build1/install/compiler/CompilerMain.ozf
 	install -c -m 444 $< $@
 
+build2/install/compiler/CompileServerMain.ozf: \
+	build1/install/compiler/CompileServerMain.ozf
+	install -c -m 444 $< $@
+
 ########################################################################
 ### BUILD 3
 ########################################################################
@@ -618,6 +630,7 @@ build3-all: build2-install $(BUILD3DIRS) $(BUILD3SOURCES) \
 	$(LIBNATIVES:%=build3/%) \
 	build3/lib/fundamental/LinkedFundamental.ozf \
 	build3/compiler/LinkedCompilerMain.ozf \
+	build3/compiler/LinkedCompileServerMain.ozf \
 	build3/compiler/LinkedToplevelMain.ozf \
 	build3/compiler/top/LinkedSMLToMozartRecursiveCompiler.ozf \
 	build3/compiler/top/LinkedSMLToDotNetRecursiveCompiler.ozf \
@@ -657,6 +670,11 @@ build3/LinkedVMMain.ozf: build3/VMMain.ozf build3/lib/utility/Url.ozf \
 	$(ALICELINK0) $(ALICELINK_OPTS) --include=.. $< -o $@
 
 build3/compiler/LinkedCompilerMain.ozf: build3/compiler/CompilerMain.ozf
+	$(ALICELINK2) $(ALICELINK_OPTS) --rewrite=$(BUILD3)/=../ \
+	--exclude=$(TOP3)/SMLToMozartRecursiveCompiler \
+	--exclude=$(TOP3)/SMLToDotNetRecursiveCompiler $< -o $@
+
+build3/compiler/LinkedCompileServerMain.ozf: build3/compiler/CompileServerMain.ozf
 	$(ALICELINK2) $(ALICELINK_OPTS) --rewrite=$(BUILD3)/=../ \
 	--exclude=$(TOP3)/SMLToMozartRecursiveCompiler \
 	--exclude=$(TOP3)/SMLToDotNetRecursiveCompiler $< -o $@

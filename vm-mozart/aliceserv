@@ -1,0 +1,12 @@
+#!/bin/sh
+
+howcalled=$0
+
+if test -z "${STOCKHOME}"
+then
+  dir=`dirname $howcalled`
+  STOCKHOME=`(cd $dir; cd ..; /bin/pwd)`
+fi
+export STOCKHOME
+
+exec "$STOCKHOME/bin/alicerun" x-alice:/compiler/CompileServerMain "$@"
