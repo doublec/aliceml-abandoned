@@ -17,11 +17,10 @@ import
    System(printName)
    Narrator('class')
    ErrorListener('class')
-   CodeStore('class')
+   Compiler(codeStoreClass assemble)
    Prebound(builtinTable: BuiltinTable
 	    raiseAliceException: RaiseAliceException
 	    unwrapAliceException: UnwrapAliceException)
-   Assembler(assemble)
 export
    Translate
 define
@@ -311,7 +310,7 @@ define
       [] ['ReraiseStm'(Region Id)] then Coord VInter in
 	 %--** Mozart does not update the stack trace
 	 Coord = {TranslateRegion Region State}
-	 VHd = vCallBuiltin(_ 'Exception.\'raise\'' [{GetReg Id State}]
+	 VHd = vCallBuiltin(_ 'Exception.raise' [{GetReg Id State}]
 			    Coord VInter)
 	 VInter = if IsTry.1 then vPopEx(_ Coord nil)
 		  else nil
@@ -384,7 +383,7 @@ define
 	 vEquateRecord(_ '#[]' {Width Ids} Reg
 		       {Record.foldR Ids
 			fun {$ Id In} value({GetReg Id State})|In end nil} VTl)
-      [] 'FunExp'(Region _ _ 'TupArgs'(IdDefs) Body) andthen {Width IdDefs} > 0
+      [] 'FunExp'(Region _ _ 'TupArgs'(IdDefs) Body) andthen {Width IdDefs} > 1
       then PredId NLiveRegs ResReg FormalRegs BodyVInstr GRegs Code in
 	 PredId = pid({VirtualString.toAtom
 		       State.filename#':'#Region.1.1#'.'#Region.1.2#'/'#
@@ -418,6 +417,12 @@ define
 	    BodyVInstr = vTestConstant(_ ArgReg unit
 				       ThenVInstr ElseVInstr
 				       {TranslateRegion Region State} nil)
+	 [] 'TupArgs'('#[]'(IdDef)) then ThenVInstr0 in
+	    {State.cs newReg(?ArgReg)}
+	    BodyVInstr = vMatch(_ ArgReg ElseVInstr
+				[onRecord('#' 1 ThenVInstr0)]
+				{TranslateRegion Region State} nil)
+	    ThenVInstr0 = vGetVariable(_ {MakeReg IdDef State} ThenVInstr)
 	 [] 'ProdArgs'(LabelIdDefVec) then Arity ThenVInstr0 in
 	    {State.cs newReg(?ArgReg)}
 	    Arity = {Record.foldR LabelIdDefVec
@@ -480,6 +485,11 @@ define
 	 VInter = vCall(_ {GetReg Id State} [ArgReg Reg]
 			{TranslateRegion Region State} VTl)
 	 vEquateConstant(_ unit ArgReg VInter)
+      [] 'VarAppExp'(Region Id 'TupArgs'('#[]'(Id))) then ArgReg VInter in
+	 {State.cs newReg(?ArgReg)}
+	 VInter = vCall(_ {GetReg Id State} [ArgReg Reg]
+			{TranslateRegion Region State} VTl)
+	 vEquateRecord(_ '#' 1 ArgReg [value({GetReg Id State})] VInter)
       [] 'VarAppExp'(Region Id 'TupArgs'(Ids)) then
 	 vConsCall(_ {GetReg Id State}
 		   {Record.foldR Ids
@@ -590,7 +600,7 @@ define
    in
       NarratorObject = {New Narrator.'class' init(?Reporter)}
       _ = {New ErrorListener.'class' init(NarratorObject)}
-      CS = {New CodeStore.'class'
+      CS = {New Compiler.codeStoreClass
 	    init(proc {$ getSwitch(_ $)} false end Reporter)}
       State = state(regDict: {NewDictionary} shareDict: {NewDictionary} cs: CS
 		    filename: {VirtualString.toAtom Filename})
@@ -613,7 +623,7 @@ define
       case Code of Code1#Code2 then StartLabel EndLabel Res P VS in
 	 StartLabel = {NewName}
 	 EndLabel = {NewName}
-	 {Assembler.assemble
+	 {Compiler.assemble
 	  (lbl(StartLabel)|
 	   definition(x(0) EndLabel
 		      pid({VirtualString.toAtom 'Component '#Filename} 2

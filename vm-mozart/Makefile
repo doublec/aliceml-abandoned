@@ -253,8 +253,8 @@ COMPILERBACKENDCOMMONSOURCES = \
 	$(COMPILERBACKENDCOMMONSOURCES0:%=compiler/backend-common/%)
 
 COMPILERBACKENDMOZARTSOURCES0 = \
-	Builtins.oz Prebound.oz CodeEmitter.oz CodeStore.oz CodeGen.oz \
-	Assembler.oz CodeGenPhase.oz CodeGenPhase.asig MkBackendMozart.aml
+	Prebound.oz CodeGen.oz CodeGenPhase.oz \
+	CodeGenPhase.asig MkBackendMozart.aml
 COMPILERBACKENDMOZARTSOURCES = \
 	$(COMPILERBACKENDMOZARTSOURCES0:%=compiler/backend-mozart/%)
 
