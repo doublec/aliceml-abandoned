@@ -11,13 +11,17 @@
 //   $Date$ by $Author$
 //   $Revision$
 //
+
 #ifndef __STORE__HANDLER_HH__
 #define __STORE__HANDLER_HH__
+
+class Block;
 
 class Handler {
 public:
   virtual void PrepareForGC(Block *p) = 0;
   virtual void Finalize(word value) = 0;
+  virtual Block *GetAbstractRepresentation() = 0;
 };
 
 #endif __STORE__HANDLER_HH__
