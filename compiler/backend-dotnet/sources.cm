@@ -7,7 +7,7 @@ Group is
     ../common/name.cm
     ../common/type.cm
     ../backend-common/flat-grammar.cm
-    ../backend-common/liveness.cm
+    ../backend-common/liveness-analysis-phase.cm
 
     IL.sig
     IL.sml

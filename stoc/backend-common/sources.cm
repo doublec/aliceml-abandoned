@@ -1,33 +1,6 @@
-Group
-
-    structure FlatteningPhase
-    structure OutputFlatGrammar
-
-is
-
-    ../error/sources.cm
-    ../common/sources.cm
-    ../common/id-stamp.cm
-    ../common/name.cm
-    ../common/type.cm
-    ../top/phase.cm
+Group is
 
     flat-grammar.cm
-    liveness.cm
-
-    LABEL_SORT.sig
-    MakeLabelSort.sml
-    LabelSort.sml
-    INTERMEDIATE_AUX.sig
-    IntermediateAux.sml
-
-    SIMPLIFY_MATCH.sig
-    SimplifyMatch.sml
-    SIMPLIFY_REC.sig
-    SimplifyRec.sml
-
-    FLATTENING_PHASE.sig
-    FlatteningPhase.sml
-
-    OUTPUT_FLAT_GRAMMAR.sig
-    OutputFlatGrammar.sml
+    liveness-analysis-phase.cm
+    flattening-phase.cm
+    output-flat-grammar.cm

@@ -1,0 +1,14 @@
+group
+
+    structure OutputFlatGrammar
+
+is
+
+    ../misc/sources.cm
+    ../common/id-stamp.cm
+    ../common/name.cm
+
+    flat-grammar.cm
+
+    OUTPUT_FLAT_GRAMMAR.sig
+    OutputFlatGrammar.sml

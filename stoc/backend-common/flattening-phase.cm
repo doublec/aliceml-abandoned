@@ -1,0 +1,29 @@
+Group
+
+    structure FlatteningPhase
+
+is
+
+    ../error/sources.cm
+    ../misc/sources.cm
+    ../common/id-stamp.cm
+    ../common/type.cm
+    ../common/intermediate-grammar.cm
+    ../common/prebound.cm
+    ../top/phase.cm
+
+    flat-grammar.cm
+
+    LABEL_SORT.sig
+    MakeLabelSort.sml
+    LabelSort.sml
+    INTERMEDIATE_AUX.sig
+    IntermediateAux.sml
+
+    SIMPLIFY_MATCH.sig
+    SimplifyMatch.sml
+    SIMPLIFY_REC.sig
+    SimplifyRec.sml
+
+    FLATTENING_PHASE.sig
+    FlatteningPhase.sml

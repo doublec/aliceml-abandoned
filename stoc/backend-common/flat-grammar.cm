@@ -5,8 +5,11 @@ Group
 
 is
 
-    ../common/sources.cm
+    ../error/sources.cm
+    ../misc/sources.cm
     ../common/id-stamp.cm
+    ../common/type.cm
+    ../common/intermediate-grammar.cm
 
     FLAT_GRAMMAR.sig
     FlatGrammar.sml
