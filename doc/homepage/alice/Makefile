@@ -25,7 +25,9 @@ INSTALLFILES_MANUAL_0 = \
 	mozart_cartoon.jpg
 INSTALLFILES_MANUAL_LIBRARY_0 = \
 	style.css macros.php3 menu.php3 \
-	alt.php3 bool.php3 general.php3 option.php3 pair.php3 ref.php3
+	alt.php3 bool.php3 general.php3 option.php3 pair.php3 ref.php3 \
+	thread.php3 resolver-handler.php3 resolver.php3 component.php3 \
+	component-manager.php3
 INSTALLFILES_MANUAL_EXAMPLES_0 = \
 	streams.aml smolka.aml interpreter.tar
 INSTALLFILES_MANUAL_EXAMPLES_INTERPRETER_0 = \
