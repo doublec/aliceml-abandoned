@@ -18,35 +18,35 @@ alicerun.o: alicex.cc Makefile
 	$(CXX) $(CXXFLAGS) \
 		-DROOT='--argc>0?(--brokerArgc,*++argv):usage()' \
 		-DPRELOAD_GTK=0 \
-		-c alicex.cc -o alicerun.o
+		-c $< -o $@
+
+alicerunwin.exe: alicerun.exe
+	cp $< $@
+	editbin /subsystem:windows $@
 
 alice.o: alicex.cc Makefile
 	$(CXX) $(CXXFLAGS) \
 		-DROOT='"x-alice:/tools/Toplevel"' \
 		-DPRELOAD_GTK=0 \
-		-c alicex.cc -o alice.o
+		-c $< -o $@
 
 alicec.o: alicex.cc Makefile
 	$(CXX) $(CXXFLAGS) \
 		-DROOT='"x-alice:/compiler/CompilerMain"' \
 		-DPRELOAD_GTK=0 \
-		-c alicex.cc -o alicec.o
+		-c $< -o $@
 
 alicelink.o: alicex.cc Makefile
 	$(CXX) $(CXXFLAGS) \
 		-DROOT='"x-alice:/tools/Linker"' \
 		-DPRELOAD_GTK=0 \
-		-c alicex.cc -o alicelink.o
+		-c $< -o $@
 
 alicedep.o: alicex.cc Makefile
 	$(CXX) $(CXXFLAGS) \
 		-DROOT='"x-alice:/tools/Depend"' \
 		-DPRELOAD_GTK=0 \
-		-c alicex.cc -o alicedep.o
-
-alicerunwin.exe: alicerun.exe
-	cp $< $@
-	editbin /subsystem:windows $@
+		-c $< -o $@
 
 %.exe: %.o
 	$(LD) $< -o $@ $(LDFLAGS)
