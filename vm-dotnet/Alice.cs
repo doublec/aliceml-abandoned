@@ -719,6 +719,14 @@ namespace Alice {
 		return StaticApply(a);
 	    }
 	}
+	public class Char_isCntrl : Procedure {
+	    public static Object StaticApply(Object a) {
+		return CommonOp.BtI(!System.Char.IsPrintable(((System.Char) CommonOp.Sync(a))));
+	    }
+	    public override Object Apply(Object a) {
+		return StaticApply(a);
+	    }
+	}
 	public class Char_isDigit : Procedure {
 	    public static Object StaticApply(Object a) {
 		return CommonOp.BtI(System.Char.IsDigit(((System.Char) CommonOp.Sync(a))));
@@ -2437,6 +2445,7 @@ namespace Alice {
 	public static Object Char_chr         = new Char_chr();
 	public static Object Char_isAlpha     = new Char_isAlpha();
 	public static Object Char_isAlphaNum  = new Char_isAlphaNum();
+	public static Object Char_isCntrl     = new Char_isCntrl();
 	public static Object Char_isDigit     = new Char_isDigit();
 	public static Object Char_isGraph     = new Char_isGraph();
 	public static Object Char_isHexDigit  = new Char_isHexDigit();
