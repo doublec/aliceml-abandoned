@@ -28,6 +28,12 @@ href="manual/">manual</A> web pages.</P>
 <P><B>Note:</B> You have to uninstall all previous versions of Alice before
 installing the packages.</P>
 
+<P><B>Note 2:</B> If you install Alice as administrator and want to use it as a user, it may be necessary to set the following paths manually for the user account:
+<PRE>
+ALICE_HOME=C:\Program Files\Alice\share\alice
+PATH=<alice-dir>\bin;<alice-dir>\lib\seam;<alice-dir>\gtk\bin;<alice-dir>\gtk\lib:%PATH%</PRE>
+where <TT>&lt;alice-dir&gt;</TT>denotes the Alice installation directory. This will be fixed in future pakages.</P>
+
 <!--
 <P><B>Note:</B> Previous packages for Windows contained a misconfigured GMP library, causing problems on some Windows boxes when using large integers or time values. If you experienced these, please upgrade.</P>
 -->
@@ -152,28 +158,34 @@ installing the packages.</P>
 
 
 
-<?php section("emacs", "Patched Emacs mode") ?>
+<?php section("emacs", "Emacs mode for Alice") ?>
 
   <P>
-    In order to use the interactive Alice top-level from within Emacs, the
-    following set-up is necessary.
+    We provide a version of the SML-Mode for Emacs that is patched with
+    special support for Alice ML keywords, error messages, and file extensions.
+    It allows using the interactive Alice top-level from within Emacs.
   </P>
+
+  <UL>
+    <LI>Zip file: <A href="download/sml-mode-4.0+alice.zip"><TT>sml-mode-4.0+alice.zip</TT></A>
+
+    <LI>Tar file: <A href="download/sml-mode-4.0+alice.tgz"><TT>sml-mode-4.0+alice.tgz</TT></A>
+  </UL>
+
   <P>
-    If you are using the Mozart-based variant of Alice (version 0.9.x),
+    Please follow the instructions in the contained  <TT>INSTALL</TT> or
+    <TT>INSTALL-WINDOWS</TT> file for installation.
+  </P>
+
+  <DIV class=note>
+  <P>
+    <I>Note:</I> If you are using the Mozart-based variant of Alice (version 0.9.x),
     first make sure that the environment variables
     <TT>OZHOME</TT> and <TT>ALICE_HOME</TT>
     point to the installation directory of the Mozart system and
     the Alice system, respectively.
   </P>
-  <P>
-    To install the patched SML mode version 3.9.5, extract the
-    <A HREF="download/sml-mode-alice.tgz">mode archive file</A>
-    and follow the installation instructions given in
-    <TT>INSTALL</TT>.
-    Then invoke <TT>load-library</TT> with argument <TT>sml-proc</TT>.
-    Afterwards, invoke <TT>customize-group</TT> with argument <TT>sml</TT>
-    and adjust the settings <TT>sml-program-name</TT> to <TT>alice</TT>.
-  </P>
+  </DIV>
 
 
 <?php section("cvs", "Anonymous CVS") ?>

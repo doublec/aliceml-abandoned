@@ -1,3 +1,6 @@
+SML_MODE_VERSION = 4.0
+SML_MODE_PACKAGE = sml-mode-$(SML_MODE_VERSION)+alice
+
 PHP = php
 
 PREFIX = /services/ps/httpd/html/alice
@@ -21,7 +24,7 @@ INSTALLFILES = \
 
 DOWNLOADFILES = $(INSTALLFILES_DOWNLOAD_0:%=$(PREFIX)/download/%)
 
-.PHONY: install
+.PHONY: install install-sml-mode
 
 all: install
 
@@ -47,6 +50,16 @@ $(PREFIX)/%: %
 $(PREFIX)/alice.gif: \
 	../../misc/logo/alice-strikethrough-shadow-blue-254x80.gif
 	install -c -m 444 $< $@
+
+install-sml-mode:
+	mkdir $(SML_MODE_PACKAGE)
+	cp -r ../../misc/sml-mode/* $(SML_MODE_PACKAGE)
+	rm -rf $(SML_MODE_PACKAGE)/CVS
+	tar -czf $(SML_MODE_PACKAGE).tgz $(SML_MODE_PACKAGE)/*
+	zip  $(SML_MODE_PACKAGE).zip $(SML_MODE_PACKAGE)/*
+	install -c -m 444 $(SML_MODE_PACKAGE).tgz $(PREFIX)/download/
+	install -c -m 444 $(SML_MODE_PACKAGE).zip $(PREFIX)/download/
+	rm -rf $(SML_MODE_PACKAGE) $(SML_MODE_PACKAGE).tgz $(SML_MODE_PACKAGE).zip
 
 # Netscape workaround:
 $(PREFIX)/bg.gif: ../manual/bg.gif
