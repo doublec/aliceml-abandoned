@@ -2259,6 +2259,15 @@ TagVal *NativeCodeJitter::InstrCompactTagTest(TagVal *pc) {
  	// but we had to request the tag value
   	Tuple *tuple = Tuple::FromWordDirect(tests->Sub(0));
   	CompileBranch(TagVal::FromWordDirect(tuple->Sel(1)));
+      } else if (n == 2) {
+	// Invariant: No else, thus either of both always succeed
+	Tuple *tuple = Tuple::FromWordDirect(tests->Sub(0));
+	jit_insn *not_zero =
+	  jit_bnei_ui(jit_forward(), Arbiter, Store::IntToWord(0));
+	CompileBranch(TagVal::FromWordDirect(tuple->Sel(1)));
+	jit_patch(not_zero);
+	tuple = Tuple::FromWordDirect(tests->Sub(1));
+	return TagVal::FromWordDirect(tuple->Sel(1));
       } else {
 	DirectWordToInt(JIT_R0, Arbiter);
 	NullaryBranches(JIT_R0, tests);
