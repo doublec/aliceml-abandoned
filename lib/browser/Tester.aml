@@ -44,11 +44,47 @@ Array.update(my_array,1,"i");
 
 val test6 = NewNode.newNode(my_array, t_array);
 
+(* Record *)
+structure Rec1 = Reflect.ReflectType
+    (type t = {vec1: string vector , vec2: int vector}); 
+val t_rec1 = Rec1.x; 
+
+val test7 = NewNode.newNode({vec1 = #["Marvin","Berni"],vec2 = #[23,21]}, 
+			    t_rec1);
+
+(* Tupel *) 
+structure Rec2 = Reflect.ReflectType
+    (type t = string vector vector * int vector vector);
+val t_rec2 = Rec2.x;
+
+val test8 = NewNode.newNode({1 = #[#["hi","du"],#["guck","mal"]], 
+			     2 = #[#[0,8,1,5],#[4,7,1,1]]},
+			    t_rec2);
+
+(* Datentyp *)
+datatype S = A | B of int * int | C of real vector
+ | D of S | E of {bla: string, blubb: char}
+ | F of real vector vector;
+structure P = Reflect.ReflectType ( type t = S);
+val t_S = P.x;
+
+val test9A = NewNode.newNode(A, t_S);
+val test9B = NewNode.newNode(B (4,5), t_S);
+val test9C = NewNode.newNode (C #[5.0,7.0], t_S);
+val test9D = NewNode.newNode (D A, t_S);
+val test9E = NewNode.newNode (E {bla = "hello", blubb = #"w"}, t_S);
+val test9F = NewNode.newNode (F #[#[1.0,2.0],#[3.0,4.0]], t_S);
+
 (* Layout *)
 Layout.layout test3;
-
 Layout.layout test4;
-
 Layout.layout test5;
-
 Layout.layout test6;
+Layout.layout test7;
+Layout.layout test8;
+Layout.layout test9A;
+Layout.layout test9B;
+Layout.layout test9C;
+Layout.layout test9D;
+Layout.layout test9E;
+Layout.layout test9F;
