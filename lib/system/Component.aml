@@ -82,13 +82,15 @@ struct
 	    case localize name of
 		SOME (Resolver.FILE name') =>
 		    (UnsafeComponent.load name'
-		     handle e as IO.Io {cause = Corrupt, ...} =>
+		     handle Corrupt =>
 			 UnsafeComponent.linkNative name'
 			 handle cause as UnsafeComponent.Native msg =>
 				(trace ("linkNative: " ^ msg);
 				 raise IO.Io {name, function = "load", cause})
 			      | cause as Corrupt =>
-				raise IO.Io {name, function = "load", cause})
+				(trace ("linkNative: \
+					\could not resolve symbol");
+				 raise IO.Io {name, function = "load", cause}))
 	      | SOME (Resolver.STRING string) =>
 		    (UnsafeComponent.unpack_ string
 		     handle cause =>
