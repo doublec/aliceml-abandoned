@@ -98,14 +98,8 @@ word create_object(GType t, gpointer p) {
   return create_param(tag, value);
 }
 
-void generic_marshaller(GClosure *closure, GValue *return_value, 
-			guint n_param_values, const GValue *param_values, 
-			gpointer , gpointer marshal_data) {
-
-  int funid = GPOINTER_TO_INT(closure->data);
-  //  g_print("event occured: %d\n", funid);
-  //  g_print("event has %d params\n", n_param_values);
-
+void sendArgsToStream(gint connid, guint n_param_values, 
+		      const GValue *param_values) {
   Future *oldfuture = static_cast<Future*>(Store::WordToTransient(tail));
   tail = (Future::New())->ToWord();
   word stream = tail;
@@ -182,7 +176,7 @@ void generic_marshaller(GClosure *closure, GValue *return_value,
   }
   
   Tuple *tup = Tuple::New(3);
-  tup->Init(0,Store::IntToWord(funid));
+  tup->Init(0,Store::IntToWord(connid));
   tup->Init(1,Store::UnmanagedPointerToWord(widget));
   tup->Init(2,paramlist);
   
@@ -190,37 +184,39 @@ void generic_marshaller(GClosure *closure, GValue *return_value,
 
   oldfuture->ScheduleWaitingThreads();
   oldfuture->Become(REF_LABEL, stream);
-
-  //if (G_VALUE_HOLDS(return_value, G_TYPE_BOOLEAN))
-  //    g_value_set_boolean(return_value, FALSE);
 }
 
-DEFINE4(NativeGtk_signalConnect) {
+void generic_marshaller(GClosure *closure, GValue *return_value, 
+			guint n_param_values, const GValue *param_values, 
+			gpointer, gpointer marshal_data) {
+
+  gint connid = GPOINTER_TO_INT(marshal_data);
+  gint isDelete = GPOINTER_TO_INT(closure->data);
+
+  //  g_print("event occured: %d\n", connid);
+  //  g_print("delete?: %d\n", isDelete);
+
+  sendArgsToStream(connid,n_param_values,param_values);
+
+  if ((isDelete != 0) && G_VALUE_HOLDS(return_value, G_TYPE_BOOLEAN))
+      g_value_set_boolean(return_value, TRUE);
+}
+
+DEFINE3(NativeGtk_signalConnect) {
   DECLARE_UNMANAGED_POINTER(obj,x0);
   DECLARE_CSTRING(signalname,x1);
-  DECLARE_INT(funid,x2);
-  DECLARE_BOOL(after,x3);
+  DECLARE_BOOL(after,x2);
+
+  gint isDelete = !strcmp(signalname, "delete_event");
 
   GClosure *closure = g_cclosure_new(G_CALLBACK(generic_marshaller),
-				     GINT_TO_POINTER(funid), NULL);
-  g_closure_set_marshal(closure, generic_marshaller);
-  gulong ret = g_signal_connect_closure(G_OBJECT(obj), signalname, 
+  				     GINT_TO_POINTER(isDelete), NULL);
+  gulong connid = g_signal_connect_closure(G_OBJECT(obj), signalname, 
 					closure, after ? TRUE : FALSE); 
+  g_closure_set_meta_marshal(closure,GINT_TO_POINTER(connid),
+			     generic_marshaller);
   
-  RETURN(Store::IntToWord(static_cast<int>(ret)));
-} END
-
-DEFINE3(NativeGtk_signalConnectDelete) {
-  DECLARE_UNMANAGED_POINTER(obj,x0);
-  DECLARE_INT(funid,x1);
-
-  GClosure *closure = g_cclosure_new(G_CALLBACK(generic_marshaller),
-				     GINT_TO_POINTER(funid), NULL);
-  g_closure_set_marshal(closure, generic_marshaller);
-  gulong ret = g_signal_connect_closure(G_OBJECT(obj), "delete-event", 
-					closure, FALSE); 
-
-  RETURN(Store::IntToWord(static_cast<int>(ret)));
+  RETURN(Store::IntToWord(static_cast<int>(connid)));
 } END
 
 DEFINE2(NativeGtk_signalDisconnect) {

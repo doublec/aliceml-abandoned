@@ -15,8 +15,9 @@ fuer GtkObjects gilt:
   (keine Referenz mehr), ruft alle user-defined destroy-handler auf und
   loescht alle Handler, die an das Objekt gebunden sind
 
-
-
+- get/set-Methoden fuer GdkEvent-Structs, wie Typsicherheit herstellen?
+- Classes -> haben bereits set/get-Methoden
+- bestimmte Structs (z.B. GdkPoint) bekommen welche
 
 * Enums
 - GC (Weak Dictionary)
@@ -26,6 +27,8 @@ fuer GtkObjects gilt:
 * GnomeCanvas-Bindings
 - get/set-Funktionen
 - Windows
+- Namespace-Aufteilung: Gtk.Button.new ...
+- eigene Native-Hilfsfunktionen besser benennen
 
 * stockwerk-gtk-binding in den CVS main trunk
 * stockhausen neu bauen -> Problem!!
@@ -41,10 +44,6 @@ fuer GtkObjects gilt:
 * sind alle Out-Parameter reine Out-Parameter? ist es nicht sicherer,
   alle outs als ins UND outs zu deklarieren (dafuer mehr Arbeit beim User)
   -> zwei Varianten der Funktion: eine mit out-only, eine mit in-out
-
-- get/set-Methoden fuer GdkEvent-Structs, wie Typsicherheit herstellen?
-- Classes -> haben bereits set/get-Methoden
-- bestimmte Structs (z.B. GdkPoint) bekommen welche
 
 * GtkTrue und gtkFalse liefern int's (fuer bools true und false benutzen)
 
