@@ -36,6 +36,7 @@
     <TR> <TD><A href="mono-array.php3">MONO_ARRAY</A></TD> </TR>
     <TR> <TD><A href="mono-vector.php3">MONO_VECTOR</A></TD> </TR>
     <TR> <TD><A href="option.php3">OPTION</A></TD> </TR>
+    <TR> <TD><A href="package.php3">PACKAGE</A></TD> </TR>
     <TR> <TD><A href="pair.php3">PAIR</A></TD> </TR>
     <TR> <TD><A href="promise.php3">PROMISE</A></TD> </TR>
     <TR> <TD><A href="real.php3">REAL</A></TD> </TR>
@@ -116,6 +117,7 @@
     <TR> <TD><A href="lock.php3">Lock</A></TD> </TR>
     <TR> <TD><A href="math.php3">Math</A></TD> </TR>
     <TR> <TD><A href="option.php3">Option</A></TD> </TR>
+    <TR> <TD><A href="package.php3">Package</A></TD> </TR>
     <TR> <TD><A href="pair.php3">Pair</A></TD> </TR>
     <TR> <TD><A href="integer.php3">Position</A></TD> </TR>
     <TR> <TD><A href="promise.php3">Promise</A></TD> </TR>

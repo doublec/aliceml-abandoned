@@ -29,7 +29,7 @@ INSTALLFILES_MANUAL_LIBRARY_0 = \
 	general.php3 hole.php3 ieee-real.php3 integer.php3 \
 	list.php3 list-pair.php3 lock.php3 \
 	math.php3 mono-array.php3 mono-vector.php3 \
-	option.php3 pair.php3 promise.php3 real.php3 ref.php3 \
+	option.php3 package.php3 pair.php3 promise.php3 real.php3 ref.php3 \
 	string.php3 string-cvt.php3 substring.php3 time.php3 toplevel.php3 \
 	unique-string.php3 vector.php3 vector-pair.php3 word.php3 \
 	thread.php3 url.php3 config.php3 socket.php3 http.php3 \
