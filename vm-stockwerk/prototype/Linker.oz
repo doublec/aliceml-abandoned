@@ -15,8 +15,8 @@ import
 System(showError)
    URL(resolve toVirtualString toAtom)
    Module(manager)
-   OzPickle at 'x-oz://boot/Pickle'
-   Pickle at 'Pickle.ozf'
+   Property(get)
+   Pickle(load) at 'Pickle.ozf'
    PrimitiveTable(importOzModule)
    Scheduler(object)
 export
@@ -25,7 +25,29 @@ define
    EVALUATED   = 0
    UNEVALUATED = 1
 
+   local
+      LibSystemNatives = ['Config' 'IO' 'OS' 'Unix' 'CommandLine' 'Component'
+			  'Debug' 'Socket' 'Rand' 'Reflect']
+      LibUtilityNatives = ['MkRefMap' 'Addr']
+   in
+      Natives = {FoldR LibSystemNatives
+		 fun {$ X In} 'lib/system/Unsafe'#X|In end
+		 {Map LibUtilityNatives
+		  fun {$ X} 'lib/utility/Unsafe'#X end}}
+   end
+
    ModuleTable = {NewDictionary}
+
+   local
+      ModuleManager = {New Module.manager init}
+      AliceHome = {Property.get 'alice.home'}
+   in
+      for Url in Natives do OzModule Module in
+	 OzModule = {ModuleManager link(url: AliceHome#Url#'.ozf' $)}
+	 Module = {PrimitiveTable.importOzModule OzModule.module}
+	 ModuleTable.{VirtualString.toAtom Url} := Module
+      end
+   end
 
    fun {LinkInterpreterRun _ TaskStack}
       case TaskStack of linkFrame(_ Url)|Rest then Component in
@@ -68,37 +90,13 @@ define
 		   pushCall: LinkInterpreterPushCall
 		   abstract: LinkInterpreterAbstract)
 
-   local
-      ModuleManager = {New Module.manager init}
-   in
-      fun {LinkNative Url}
-	 try OzFunctor OzModule in
-	    OzFunctor = try {OzPickle.load Url}
-			catch _ then%error(dp(generic ...) ...) then
-			   {OzPickle.load Url#'.ozf'}
-			end
-	    OzModule = {ModuleManager apply(OzFunctor url: Url $)}
-	    {PrimitiveTable.importOzModule OzModule.module}
-	 catch error(url(load ...) ...) then unit
-	 [] error(dp(generic ...) ...) then unit
-	 end
-      end
-   end
-
-   proc {LinkAlice Url ?Module}
-      Closure = closure(link(LinkInterpreter) Url)
-   in
-      Module = transient({NewCell byneed(Closure)})
-   end
-
    proc {Link Url ?Module} Key in
       Key = {URL.toAtom Url}
       case {Dictionary.condGet ModuleTable Key unit} of unit then
 	 case {Dictionary.condGet ModuleTable {URL.toAtom Url#'.stc'} unit}
-	 of unit then
-	    Module = case {LinkNative Url} of unit then {LinkAlice Url}
-		     elseof M then M
-		     end
+	 of unit then Closure in
+	    Closure = closure(link(LinkInterpreter) Url)
+	    Module = transient({NewCell byneed(Closure)})
 	    ModuleTable.Key := Module
 	 elseof M then Module = M
 	 end
