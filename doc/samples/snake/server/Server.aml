@@ -478,10 +478,11 @@ struct
                     val dims    = Array2.dimensions arena
 		    val oldArena= Arena.copy arena
 		    val diffs   = Arena.toDiffList arena
-                in
+                    
+                    val positions =
                     (* set players state to playing and place snake *)
                     assert List.length p <= List.length startPos do
-                    ListPair.app 
+                    ListPair.map 
                         (fn (part, (pos, dir)) =>
                             let
                                 val state       = Part.state part
@@ -498,10 +499,11 @@ struct
                                 (#gatePos info) := pos;
                                 state := Part.PLAYING (info, snake);
                                 Events.add (!events, Snake.belly snake + 2, 
-                                                SOME g, SOME g)
+                                                SOME g, SOME g);
+                                (part, pos)
                             end
                         ) (p, startPos);
-
+                in
 		    log ("Server", "sending levelStarted");
                     invokeSeveral 
                         (Part.allConnected $ ! participants, #levelStarted,
@@ -511,9 +513,13 @@ struct
                     invokeSeveral 
                         (Part.allConnected $ ! participants, #update, diffs);
                     
+                    log ("Server", ("sending initial positions"));
+                    List.app (fn (part, pos) =>
+                        invoke (part, #headPosition, pos)) positions;
+
                     log ("Server", ("sending initial points"));
                     sendPoints ();
-                    
+
                     (* send countdown signals *)
                     countDown (countDownStart,
                         {levels, oldArena, ticks = 0, newArena=arena, goodies = 0})
