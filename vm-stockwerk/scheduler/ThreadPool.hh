@@ -17,20 +17,37 @@
 #pragma interface "scheduler/ThreadPool.hh"
 #endif
 
-#include "store/store.hh"
+#include "adt/Queue.hh"
+#include "scheduler/Thread.hh"
 
-class Thread;
+//--** thread priorities ignored for now
 
-class ThreadPool: private Block { // priority queue
+class ThreadPool: private Queue {
+private:
+  static const int threshold = 8;
 public:
-  using Block::ToWord;
+  using Queue::ToWord;
 
-  static ThreadPool *New(); //--** implement
-  static ThreadPool *FromWord(word w); //--** implement
+  static ThreadPool *New() {
+    return static_cast<ThreadPool *>(Queue::New(threshold));
+  }
+  static ThreadPool *FromWord(word x) {
+    return static_cast<ThreadPool *>(Queue::FromWord(x));
+  }
 
-  Thread *Dequeue(); //--** implement; returns INVALID_POINTER if queue empty
-  void Enqueue(Thread *thread); //--** implement
-  void PurgeAll(); //--** implement
+  Thread *Dequeue() {
+    if (IsEmpty())
+      return INVALID_POINTER;
+    else
+      return Thread::FromWord(Queue::Dequeue());
+  }
+  void Enqueue(Thread *thread) {
+    Queue::Enqueue(thread->ToWord());
+  }
+  void PurgeAll() {
+    Blank(threshold);
+    //--** walk through queue and apply Purge to all elements
+  }
 };
 
 #endif __SCHEDULER__THREADPOOL_HH__
