@@ -22,7 +22,7 @@
 #include <cstdio>
 #include "store/Store.hh"
 
-class Debug {
+class DllExport Debug {
 public:
   static u_int maxWidth, maxDepth;
   static void Dump(word x);
