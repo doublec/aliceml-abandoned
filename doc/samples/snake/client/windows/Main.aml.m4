@@ -59,13 +59,13 @@ fun highscoreToString score =
 	toString score
     end
 
-(* creates a string from a given time with format: h : m : s *)
+(* creates a string from a given time with : h : m : s *)
   fun timeToString t =
     let
 	val time    = Time.toSeconds t
-	val hours   = time div 3600
-	val minutes = (time mod 3600) div 60
-	val seconds = (time mod 3600) mod 60
+	val hours   = LargeInt.toInt (time div Int.toLarge 3600)
+	val minutes = LargeInt.toInt ((time mod Int.toLarge 3600) div Int.toLarge 60)
+	val seconds = LargeInt.toInt ((time mod Int.toLarge 3600) mod Int.toLarge 60)
         
         fun toStr d =
             (if d <= 9 
