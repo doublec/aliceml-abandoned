@@ -162,7 +162,7 @@ LIBSYSTEMSOURCES0 = \
 	OS-sig.aml UNIX-sig.aml COMMAND_LINE-sig.aml COMPONENT-sig.aml \
 	DEBUG-sig.aml SOCKET-sig.aml RAND-sig.aml REFLECT-sig.aml \
 	$(LIBSYSTEMNATIVES0:%=%.aml) \
-	PICKLE-sig.aml Pickle.aml SIGNATURE-sig.aml Signature.aml \
+	PICKLE-sig.aml Pickle.aml \
 	HTTP-sig.aml Http.aml HTTP_SERVER-sig.aml HttpServer.aml \
 	HTTP_CLIENT-sig.aml HttpClient.aml \
 	RESOLVER-sig.aml Resolver.aml URL_MAP-sig.aml UrlMap.aml \
@@ -286,7 +286,7 @@ COMPILERBACKENDSTOCKWERKSOURCES = \
 	$(COMPILERBACKENDSTOCKWERKSOURCES0:%=compiler/backend-stockwerk/%)
 
 COMPILERTOPSOURCES0 = \
-	COMPILER-sig.aml MkCompiler.aml SignTable.aml \
+	COMPILER-sig.aml MkCompiler.aml \
 	RECURSIVE_COMPILER-sig.aml MkRecursiveCompiler.aml \
 	SMLToMozartRecursiveCompiler.aml \
 	SMLToDotNetRecursiveCompiler.aml \
@@ -746,7 +746,7 @@ build3/lib/fundamental/LinkedFundamental.ozf: \
 	build3/lib/fundamental/Fundamental -o $@
 
 build3/LinkedVMMain.ozf: build3/VMMain.ozf build3/lib/utility/Url.ozf \
-	build3/lib/system/Signature.ozf build3/lib/system/Boot.ozf
+	build3/lib/system/Boot.ozf
 	$(ALICELINK0) $(ALICELINK0_OPTS) --include=.. $< -o $@
 
 build3/compiler/LinkedCompilerMain.ozf: build3/compiler/CompilerMain.ozf

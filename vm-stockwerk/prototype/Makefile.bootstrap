@@ -293,7 +293,7 @@ COMPILERBACKENDSTOCKWERKSOURCES = \
 	$(COMPILERBACKENDSTOCKWERKSOURCES0:%=compiler/backend-stockwerk/%)
 
 COMPILERTOPSOURCES0 = \
-	COMPILER-sig.aml MkCompiler.aml SignTable.aml \
+	COMPILER-sig.aml MkCompiler.aml \
 	RECURSIVE_COMPILER-sig.aml MkRecursiveCompiler.aml \
 	SMLToMozartRecursiveCompiler.aml \
 	SMLToDotNetRecursiveCompiler.aml \
