@@ -170,25 +170,45 @@ struct
 		 items = [EntryObj
 			  (LABEL "About...",
 			   [Handler("activate",
-				    about)]),
-			  EntryObj(SEP,[]),
+				    about)],true),
+			  EntryObj(SEP,[],true),
 			  EntryObj(LABEL "Close",
 				   [Handler("activate",
-					    Delete)])]},
+					    Delete)],true)],
+		 sensitive = true},
 		MenuObj
 		{title = "Selection",
 		 items = [EntryObj(LABEL "Expand",
-				   []),
+				   [],true),
 			  EntryObj(LABEL "Shrink",
-				   []),
-			  EntryObj(SEP, []),
+				   [],true),
+			  EntryObj(SEP, [],true),
 			  EntryObj(LABEL "Reinspect",
-				   [])] }   ,
+				   [],true)],
+		 sensitive = true}   ,
 		MenuObj
 		{title = "Options",
 		 items = [EntryObj(LABEL "Preferences...",
 				   [Handler("activate",
-					    Preferences)])] }])  
+					    Preferences)],true)],
+		 sensitive = true}])  
+	
+    fun setSelectionMenuSensitive (bar,sensitive) = 
+	let
+	    val menu_heading_items = UnsafeValue.cast 
+		(Gtk.containerChildren(bar)) : Gtk.object list
+	    val menu_heading_selection = List.nth(menu_heading_items,1)
+	    val selection_menu = hd
+		(UnsafeValue.cast 
+		 (Gtk.containerChildren(menu_heading_selection)) 
+		 : Gtk.object list)
+	    val submenu = Gtk.menuItemGetFieldSubmenu(menu_heading_selection)
+	in
+	    (setSensitive(submenu,sensitive)
+	     ; setSensitive(selection_menu,sensitive))
+	end
+
+     val _ = setSelectionMenuSensitive (bar,false)  
 	
     val _ = Gtk.boxPackStart(vbox,bar,0,0,0)    
     val status = Gtk.statusbarNew()
@@ -241,15 +261,20 @@ struct
 			  items = [MenuObj
 				   {title = "width",
 				    items = 
-				    [EntryObj(LABEL("+1"),[])]},
+				    [EntryObj(LABEL("+1"),[],true)],
+				    sensitive = true},
 				   MenuObj
 				   {title = "depth",
 				    items = 
-				    [EntryObj(LABEL("-2"),[])]}]},
+				    [EntryObj(LABEL("-2"),[],true)],
+				    sensitive = true}],
+			  sensitive = true},
 		  MenuObj{title = "Filter",
-			  items = []},
+			  items = [],
+			  sensitive = true},
 		  MenuObj{title = "Actions",
-			  items = [EntryObj(LABEL("reinspect"),[])]}])
+			  items = [EntryObj(LABEL("reinspect"),[],true)],
+			  sensitive = true}])
 		;()))
 
 
@@ -296,9 +321,13 @@ struct
 						   | SOME(_,rect) => Gtk.objectDestroy(rect)
 						 val _ = selection := SOME (n,re)
 					     in
-						 ()
+						 setSelectionMenuSensitive(bar,true)
 					     end
-				       | NONE => ()   )
+				       | NONE => ( setSelectionMenuSensitive(bar,false)
+						  ; case !selection of 
+						     NONE => ()
+						   | SOME(_,rect) => Gtk.objectDestroy(rect)
+						  ; selection := NONE))
 				end
 			  | 3 => let
 				     val x = Real.+ (#x(r),valueh)

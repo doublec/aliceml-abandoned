@@ -36,14 +36,16 @@ datatype Handler = Handler of string * (Gtk.arg list -> unit)
 datatype MenuConstructObj = 
     BarObj of MenuConstructObj list
   | PopupObj of MenuConstructObj list
-  | MenuObj of {title: string, items: MenuConstructObj list} 
-  | EntryObj of MenuLabel * Handler list 
+  | MenuObj of {title: string, items: MenuConstructObj list, sensitive: bool} 
+  | EntryObj of MenuLabel * Handler list * bool  
 
 (* Represents one radio button and associated handlers *)
 datatype RadioButtonObj = RBObj of string * Handler list
 
 val uglyNULL = UnsafeValue.cast () : Gtk.object
 
+fun setSensitive (widget,true) = Gtk.widgetSetSensitive(widget,1)
+  | setSensitive (widget,false) = Gtk.widgetSetSensitive(widget,0)
 
 
 fun createMenu (BarObj(l)) =let
@@ -78,21 +80,22 @@ fun createMenu (BarObj(l)) =let
 		val create = fn i => 
 		    Gtk.menuAppend(menu,createMenu i)
 	    in
-		(List.app create (#items(r));menu_item)
+		(List.app create (#items(r))
+		 ; setSensitive(menu_item,#sensitive(r)) 
+		 ; menu_item)
 	    end
-  | createMenu (EntryObj(label,handlerlist)) =
+  | createMenu (EntryObj(label,handlerlist,sensitive)) =
 	    let
 		val item = case label of
 		    SEP => Gtk.menuItemNew()
 		  | LABEL(label) => Gtk.menuItemNewWithLabel(label)
 		val connect = fn Handler(str,handler) 
 		    => (Gtk.signalConnect (item,str, handler);())
-		val _ = Gtk.widgetSetSensitive(item,0)
     in
-	(List.app connect handlerlist;item)
+	(List.app connect handlerlist
+	 ; setSensitive(item,sensitive)
+	 ; item)
     end
-
-
 
 (*
 

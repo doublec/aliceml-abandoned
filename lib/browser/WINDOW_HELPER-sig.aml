@@ -25,10 +25,12 @@ datatype Handler = Handler of string * (Gtk.arg list -> unit)
 datatype MenuConstructObj = 
     BarObj of MenuConstructObj list
   | PopupObj of MenuConstructObj list
-  | MenuObj of {title: string, items: MenuConstructObj list} 
-  | EntryObj of MenuLabel * Handler list 
+  | MenuObj of {title: string, items: MenuConstructObj list, sensitive: bool} 
+  | EntryObj of MenuLabel * Handler list * bool  
 
 datatype RadioButtonObj = RBObj of string * Handler list
+
+val setSensitive: Gtk.object * bool -> unit
 
 val createMenu:  MenuConstructObj -> Gtk.object
 val createCombo : string list -> Gtk.object 
