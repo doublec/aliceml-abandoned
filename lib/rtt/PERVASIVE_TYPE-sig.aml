@@ -43,6 +43,7 @@ sig
     val path_exn :	path
     val path_strict :	path
     val path_conarrow :	path
+    val path_package :	path
 
     val typ_bool :	typ
     val typ_int :	typ
@@ -56,6 +57,7 @@ sig
     val typ_exn :	typ
     val typ_strict :	typ
     val typ_conarrow :	typ
+    val typ_package :	typ
 
     val paths :		PathSet.t
 
