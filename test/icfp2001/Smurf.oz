@@ -364,8 +364,22 @@ define
       OldCost >: NewCost
    end
 
-   fun {Smurf Meaning NumberOfElements}
-      {ToDoc {Search.base.best {Script Meaning NumberOfElements} Order}.1}
+   local
+      proc {SmurfSub O Docs}
+	 case {O next($)} of [Res] then DocsRest in
+	    Docs = {ToDoc Res}|(!!DocsRest)
+	    {SmurfSub O DocsRest}
+	 [] nil then
+	    Docs = nil
+	 end
+      end
+   in
+      fun {Smurf Meaning NumberOfElements} O Docs in
+	 O = {New Search.object
+	      script({Script Meaning NumberOfElements} Order)}
+	 thread {SmurfSub O Docs} end
+	 !!Docs
+      end
    end
 
    SmurfModule = 'Smurf'(smurf: Smurf)
