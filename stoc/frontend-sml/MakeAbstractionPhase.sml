@@ -1232,10 +1232,11 @@ functor MakeAbstractionPhase(
 		val (modlongid', E') = trLongStrId E longstrid
 		val   _              = unionInf(E,E')
 	   in
-		(foldiVals (trOpenDecVal(E,i,SOME modlongid'))
-		(foldiTys  (trOpenDecTy (E,i,modlongid'))
-		(foldiStrs (trOpenDecStr(E,i,modlongid'))
-		(foldiSigs (trOpenDecSig(E,i,modlongid')) acc E') E') E') E')
+		(foldiInfs(trOpenDecInf(E,i))
+		(foldiVals(trOpenDecVal(E,i,SOME modlongid'))
+		(foldiTys (trOpenDecTy (E,i,modlongid'))
+		(foldiStrs(trOpenDecStr(E,i,modlongid'))
+		(foldiSigs(trOpenDecSig(E,i,modlongid')) acc E') E') E') E') E')
 	   end
 
 	 | EMPTYDec(i) =>
@@ -1411,6 +1412,22 @@ functor MakeAbstractionPhase(
 	   in
 		dec' :: acc
 	   end
+
+
+    and trOpenDecInf (E,i) (vid', (_,inf), acc) =
+	let
+	    val name    = VId.toString vid'
+	    val vallab' = O.Lab(i, Label.fromString name)
+	    val fix     = case inf of NONE => Fixity.NONFIX
+				    | SOME(Infix.LEFT, n) =>
+					Fixity.INFIX(n, Fixity.LEFT)
+				    | SOME(Infix.RIGHT, n) =>
+					Fixity.INFIX(n, Fixity.RIGHT)
+	    val fix'    = O.Fix(i, fix)
+	    val _       = insertInf(E, vid', (i,inf))
+	in
+	    O.FixDec(i, vallab', fix') :: acc
+	end
 
     and trOpenDecVal (E,i,modlongido') (vid', (_,stamp1,is), acc) =
 	let
