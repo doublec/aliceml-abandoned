@@ -12,8 +12,10 @@
 
 signature LIVENESS_ANALYSIS_PHASE =
     sig
+	structure C: CONTEXT = EmptyContext
 	structure I: FLAT_GRAMMAR = FlatGrammar
+	structure O: FLAT_GRAMMAR = FlatGrammar
 
-	val annotate: I.component -> unit
+	val translate: C.t -> Source.desc * I.t -> O.t
     end
 

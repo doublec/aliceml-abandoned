@@ -24,7 +24,10 @@
 
 structure LivenessAnalysisPhase :> LIVENESS_ANALYSIS_PHASE =
     struct
+	structure C = EmptyContext
 	structure I = FlatGrammar
+	structure O = FlatGrammar
+
 	open I
 
 	datatype 'a lazyCopy =
@@ -345,7 +348,8 @@ structure LivenessAnalysisPhase :> LIVENESS_ANALYSIS_PHASE =
 	       | ref (Kill _) => ())
 	  | initBody (nil, _) = ()
 
-	fun annotate (_, (body, _)) =
+	fun translate () (_, component as (_, (body, _))) =
 	    (scanBody (body, Copy (StampSet.new ()));
-	     initBody (body, StampSet.new ()))
+	     initBody (body, StampSet.new ());
+	     component)
     end
