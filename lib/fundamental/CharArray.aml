@@ -10,10 +10,10 @@
  *   $Revision$
  *)
 
-import structure __pervasive      from "Pervasive"
-import type int and list and unit from "ToplevelTypes"
-import structure CharVector       from "CharVector"
-import structure MkMonoArray      from "MkMonoArray"
+import structure __pervasive                  from "Pervasive"
+import __primitive type int and list and unit from "ToplevelTypes"
+import __primitive structure CharVector       from "CharVector"
+import __primitive structure MkMonoArray      from "MkMonoArray"
 
 structure CharArray = MkMonoArray(
     structure Vector = CharVector
