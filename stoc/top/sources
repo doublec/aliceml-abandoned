@@ -162,5 +162,6 @@
 ../backend-com+/CODE_GEN_PHASE.sig
 ../backend-com+/CodeGenPhase.sml
 ../top/Signature.sml
+../top/Composer.sml
 ../top/MAIN.sig
 ../top/Main.sml
