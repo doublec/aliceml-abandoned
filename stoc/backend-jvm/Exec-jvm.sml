@@ -32,7 +32,7 @@ fun dmlc (_, debug::verbose::optimize::tits::lmaa::lines::wait::x) =
 	     dc (rest)))
 	  | dc nil = 0
     in
-	(dc x) handle _ => (print "compilation error."; 1)
+	(dc x) handle _ => (print "compilation error.\n"; 1)
     end
   | dmlc _ = (print "unexpected parameter"; 2)
 
