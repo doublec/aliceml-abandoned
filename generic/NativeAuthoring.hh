@@ -101,11 +101,11 @@
   return Interpreter::REQUEST;			\
 }
 
-#define DECLARE_INT(i, x)						\
-  int i = Store::WordToInt(x);						\
+#define DECLARE_INT(i, x)			\
+  s_int i = Store::WordToInt(x);		\
   if (i == INVALID_INT) { REQUEST(x); } else {}
-#define DECLARE_BLOCKTYPE(t, a, x)					\
-  t *a = t::FromWord(x);						\
+#define DECLARE_BLOCKTYPE(t, a, x)			\
+  t *a = t::FromWord(x);				\
   if (a == INVALID_POINTER) { REQUEST(x); } else {}
 
 #define DECLARE_CLOSURE(closure, x) DECLARE_BLOCKTYPE(Closure, closure, x)
