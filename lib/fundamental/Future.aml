@@ -19,6 +19,7 @@
 
 import structure __pervasive      from "Pervasive"
 import type unit and bool and exn from "ToplevelTypes"
+import infix 4 = val op =         from "ToplevelValues"
 import structure Hole             from "Hole"
 import structure Time             from "Time"
 import signature FUTURE           from "FUTURE-sig"
@@ -26,6 +27,7 @@ import signature FUTURE           from "FUTURE-sig"
 
 structure Future : FUTURE =				(**)
 struct
+    datatype  status = FUTURE | FAILED | DETERMINED
     exception Cyclic = Hole.Cyclic
 
     __primitive val concur :	(unit -> 'a) -> 'a	= "Future.concur"
@@ -61,6 +63,10 @@ struct
 	    end
     end
 
-    __primitive val isFuture :	'a -> bool		= "Future.isFuture"
-    __primitive val isFailed :	'a -> bool		= "Future.isFailed"
+    __primitive val status : 'a -> status	= "Future.status"
+    __primitive val isLazy : 'a -> bool		= "Future.isByneed"
+
+    fun isFuture x	= status x = FUTURE
+    fun isFailed x	= status x = FAILED
+    fun isDetermined x	= status x = DETERMINED
 end

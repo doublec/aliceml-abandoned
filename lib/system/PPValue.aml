@@ -115,8 +115,7 @@ struct
 
     fun inspectList(n,x) = inspectList'(n,x,[])
     and inspectList'(n,x,xs) =
-	if Future.isFuture x orelse Future.isFailed x
-	   then Indet(List.rev xs, x) else
+	if not(Future.isDetermined x) then Indet(List.rev xs, x) else
 	if List.null x then Det(List.rev xs, false) else
 	if n = 0 then Det(List.rev xs, true) else
 	inspectList'(n-1, List.tl x, List.hd x :: xs)
@@ -124,13 +123,13 @@ struct
 
   (* Limits and precedences *)
 
-    val defaultDepth	= ref 8
-    val defaultWidth	= ref 16
-
     val rootPrec	= 0
     val keywordPrec	= 10
     val applyPrec	= 10
     val atomPrec	= 11
+
+    val defaultDepth	= ref 8
+    val defaultWidth	= ref 16
 
     fun default()	= {depth = !defaultDepth, width = !defaultWidth,
 			   prec = rootPrec}
@@ -175,8 +174,11 @@ struct
     fun ppVal  t x = ppVal' t (default()) x
     and ppVal' t fm x =
 	if #depth fm <= 0 then text "_" else
-	if Future.isFuture x then ppKeyword fm (text "future") else
-	if Future.isFailed x then ppKeyword fm (text "raise") else
+	case Future.status x
+	 of Future.FAILED => ppKeyword fm (text "raise") else
+	  | Future.FUTURE => ppKeyword fm (text(if Future.isLazy x
+						then "lazy" else "future"))
+	  | Future.DETERMINED =>
 	case inspect t
 	 of (Unknown | Var _) =>
 		ppKeyword fm absDoc
