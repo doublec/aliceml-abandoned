@@ -35,20 +35,20 @@
 	sig
 	    type object
 
-	    datatype inputSource =
+	    datatype input_source =
 		GDK_SOURCE_MOUSE
 	      | GDK_SOURCE_PEN
 	      | GDK_SOURCE_ERASER
 	      | GDK_SOURCE_CURSOR
 	      | GDK_SOURCE_ALICEDUMMY
 
-	    datatype crossingMode =
+	    datatype crossing_mode =
 		GDK_CROSSING_NORMAL
 	      | GDK_CROSSING_GRAB
 	      | GDK_CROSSING_UNGRAB
 	      | GDK_CROSSING_ALICEDUMMY
 
-	    datatype notifyType =
+	    datatype notify_type =
 		GDK_NOTIFY_ANCESTOR
 	      | GDK_NOTIFY_VIRTUAL
 	      | GDK_NOTIFY_INFERIOR
@@ -57,7 +57,7 @@
 	      | GDK_NOTIFY_UNKNOWN
 	      | GDK_NOTIFY_ALICEDUMMY
 
-	    datatype visibilityState =
+	    datatype visibility_state =
 		GDK_VISIBILITY_UNOBSCURED
 	      | GDK_VISIBILITY_PARTIAL
 	      | GDK_VISIBILITY_FULLY_OBSCURED
@@ -69,31 +69,31 @@
 		{window:object, send:bool, time:int,
 		 x:real, y:real, pressure:real,
 		 xtilt:real, ytilt:real,
-		 state:int, is_hint:int, source:inputSource,
+		 state:int, is_hint:int, source:input_source,
 		 deveceid:int, x_root:real, y_root:real}
 	      | GDK_BUTTON_PRESS of
 		{window:object, send:bool, time:int,
 		 x:real, y:real, pressure:real,
 		 xtilt:real, ytilt:real,
-		 state:int, button:int, source:inputSource,
+		 state:int, button:int, source:input_source,
 		 deveceid:int, x_root:real, y_root:real}
 	      | GDK_2BUTTON_PRESS of
 		{window:object, send:bool, time:int,
 		 x:real, y:real, pressure:real,
 		 xtilt:real, ytilt:real,
-		 state:int, button:int, source:inputSource,
+		 state:int, button:int, source:input_source,
 		 deveceid:int, x_root:real, y_root:real}
 	      | GDK_3BUTTON_PRESS of
 		{window:object, send:bool, time:int,
 		 x:real, y:real, pressure:real,
 		 xtilt:real, ytilt:real,
-		 state:int, button:int, source:inputSource,
+		 state:int, button:int, source:input_source,
 		 deveceid:int, x_root:real, y_root:real}
 	      | GDK_BUTTON_RELEASE of
 		{window:object, send:bool, time:int,
 		 x:real, y:real, pressure:real,
 		 xtilt:real, ytilt:real,
-		 state:int, button:int, source:inputSource,
+		 state:int, button:int, source:input_source,
 		 deveceid:int, x_root:real, y_root:real}
 	      | GDK_KEY_PRESS of
 		{window:object, send:bool, time:int, state:int,
@@ -104,19 +104,19 @@
 	      | GDK_ENTER_NOTIFY of
 		{window:object, send:bool, subwindow:object, time:int,
 		 x:real, y:real, x_root:real, y_root:real,
-		 mode:crossingMode, detail:notifyType,
+		 mode:crossing_mode, detail:notify_type,
 		 focus:bool, state:int}
 	      | GDK_LEAVE_NOTIFY of
 		{window:object, send:bool, subwindow:object, time:int,
 		 x:real, y:real, x_root:real, y_root:real,
-		 mode:crossingMode, detail:notifyType,
+		 mode:crossing_mode, detail:notify_type,
 		 focus:bool, state:int}
 	      | GDK_FOCUS_CHANGE of {window:object, send:bool, hasFocus:bool}
 	      | GDK_CONFIGURE    of
 		{window:object, send:bool, x:int, y:int,
 		 width:int, height:int}
 	      | GDK_VISIBILITY_NOTIFY of
-		{window: object, send: bool, state:visibilityState}
+		{window: object, send: bool, state:visibility_state}
 	      | GDK_NO_EXPOSE of
 		{window:object, send:bool, area:object, count:int}
 	      | GDK_NOTHING
