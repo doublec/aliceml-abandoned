@@ -151,13 +151,10 @@ structure LivenessAnalysisPhase1 :> LIVENESS_ANALYSIS_PHASE =
 	    setInfo (info, scanBody body)
 	  | scanBody [TestStm (info, id, tests, body)] =
 	    setInfo (info, ins (union (scanTests tests, scanBody body), id))
-	  | scanBody [SharedStm (info as {liveness = r as ref Unknown, ...},
-				 body, _)] =
-	    setInfo (info, scanBody body)
 	  | scanBody [SharedStm ({liveness = ref (Use set'), ...}, _, _)] =
 	    Orig set'
-	  | scanBody [SharedStm ({liveness = ref (Kill _), ...}, _, _)] =
-	    raise Crash.Crash "LivenessAnalysisPhase.scanStm 1"
+	  | scanBody [SharedStm (info, body, _)] =
+	    setInfo (info, scanBody body)
 	  | scanBody [ReturnStm (info, exp)] =
 	    setInfo (info, scanExp (exp, Copy (StampSet.new ())))
 	  | scanBody [IndirectStm (info, ref bodyOpt)] =
