@@ -25,84 +25,70 @@ import signature LIST_PAIR                         from "LIST_PAIR-sig"
 structure ListPair : LIST_PAIR =
 struct
     fun zip (xs1,xs2)			= zip'(xs1,xs2,nil)
-    and zip'( nil,    _,   zs)		= List.rev zs
-      | zip'(  _,    nil,  zs)		= List.rev zs
-      | zip'(x::xs, y::ys, zs)		= zip'(xs, ys, (x,y)::zs)
+    and zip'(x::xs, y::ys, zs)		= zip'(xs, ys, (x,y)::zs)
+      | zip'(  _,     _,   zs)		= List.rev zs
 
     fun unzip zs			= unzip'(zs,nil,nil)
-    and unzip'(     nil,  xs, ys)	= (List.rev xs, List.rev ys)
-      | unzip'((x,y)::zs, xs, ys)	= unzip'(zs, x::xs, y::ys)
+    and unzip'((x,y)::zs, xs, ys)	= unzip'(zs, x::xs, y::ys)
+      | unzip'(     nil,  xs, ys)	= (List.rev xs, List.rev ys)
 
     fun map f (xs,ys)			= map'(f,xs,ys)
-    and map'(f,  nil,    _  )		= nil
-      | map'(f,   _,    nil )		= nil
-      | map'(f, x::xs, y::ys)		= f(x,y) :: map'(f,xs,ys)
+    and map'(f, x::xs, y::ys)		= f(x,y) :: map'(f,xs,ys)
+      | map'(f,   _,     _  )		= nil
 
     fun mapi f (xs,ys)			= mapi'(f,0,xs,ys)		(**)
-    and mapi'(f, i,  nil,    _  )	= nil
-      | mapi'(f, i,   _,    nil )	= nil
-      | mapi'(f, i, x::xs, y::ys)	= f(i,x,y) :: mapi'(f,i+1,xs,ys)
+    and mapi'(f, i, x::xs, y::ys)	= f(i,x,y) :: mapi'(f,i+1,xs,ys)
+      | mapi'(f, i,   _,     _  )	= nil
 
-    fun mapPartial  f (xs,ys)		= mapPartial'(f,xs,ys)
-    and mapPartial'(f,  nil,    _  )	= nil
-      | mapPartial'(f,   _,    nil )	= nil
-      | mapPartial'(f, x::xs, y::ys)	= case f(x,y)
+    fun mapPartial  f (xs,ys)		= mapPartial'(f,xs,ys)		(**)
+    and mapPartial'(f, x::xs, y::ys)	= (case f(x,y)
 					    of NONE   => mapPartial'(f,xs,ys)
 					     | SOME z => z::mapPartial'(f,xs,ys)
+					  )
+      | mapPartial'(f,   _,     _  )	= nil
 
     fun app f (xs,ys)			= app'(f,xs,ys)
-    and app'(f,  nil,    _  )		= ()
-      | app'(f,   _,    nil )		= ()
-      | app'(f, x::xs, y::ys)		= (f(x,y) ; app'(f,xs,ys))
+    and app'(f, x::xs, y::ys)		= (f(x,y) ; app'(f,xs,ys))
+      | app'(f,   _,     _  )		= ()
 
     fun appr  f (xs,ys)			= appr'(f,xs,ys)		(**)
-    and appr'(f,  nil,    _  )		= ()
-      | appr'(f,   _,    nil )		= ()
-      | appr'(f, x::xs, y::ys)		= (appr'(f,xs,ys) ; f(x,y))
+    and appr'(f, x::xs, y::ys)		= (appr'(f,xs,ys) ; f(x,y))
+      | appr'(f,   _,     _  )		= ()
 
     fun appi  f (xs,ys)			= appi'(f,0,xs,ys)		(**)
-    and appi'(f, i,  nil,    _  )	= ()
-      | appi'(f, i,   _,    nil )	= ()
-      | appi'(f, i, x::xs, y::ys)	= (f(i,x,y) ; appi'(f,i+1,xs,ys))
+    and appi'(f, i, x::xs, y::ys)	= (f(i,x,y) ; appi'(f,i+1,xs,ys))
+      | appi'(f, i,   _,     _  )	= ()
 
     fun appri  f (xs,ys)		= appri'(f,0,xs,ys)		(**)
-    and appri'(f, i,  nil,    _  )	= ()
-      | appri'(f, i,   _,    nil )	= ()
-      | appri'(f, i, x::xs, y::ys)	= (appri'(f,i+1,xs,ys) ; f(i,x,y))
+    and appri'(f, i, x::xs, y::ys)	= (appri'(f,i+1,xs,ys) ; f(i,x,y))
+      | appri'(f, i,   _,     _  )	= ()
 
     fun foldl  f  z (xs,ys)		= foldl'(f,z,xs,ys)
-    and foldl'(f, z,  nil,    _  )	= z
-      | foldl'(f, z,   _,    nil )	= z
-      | foldl'(f, z, x::xs, y::ys)	= foldl'(f, f(x,y,z), xs, ys)
+    and foldl'(f, z, x::xs, y::ys)	= foldl'(f, f(x,y,z), xs, ys)
+      | foldl'(f, z,   _,     _  )	= z
 
     fun foldr  f  z (xs,ys)      	= foldr'(f,z,xs,ys)
-    and foldr'(f, z,  nil,    _  ) 	= z
-      | foldr'(f, z,   _,    nil ) 	= z
-      | foldr'(f, z, x::xs, y::ys) 	= f(x, y, foldr'(f,z,xs,ys))
+    and foldr'(f, z, x::xs, y::ys) 	= f(x, y, foldr'(f,z,xs,ys))
+      | foldr'(f, z,   _,     _  ) 	= z
 
     fun foldli  f  z (xs,ys)		= foldli'(f,z,0,xs,ys)		(**)
-    and foldli'(f, z, i,  nil,    _  )	= z
-      | foldli'(f, z, i,   _,    nil )	= z
-      | foldli'(f, z, i, x::xs, y::ys)	= foldli'(f, f(i,x,y,z), i+1, xs, ys)
+    and foldli'(f, z, i, x::xs, y::ys)	= foldli'(f, f(i,x,y,z), i+1, xs, ys)
+      | foldli'(f, z, i,   _,     _  )	= z
 
     fun foldri  f  z (xs,ys)      	= foldri'(f,z,0,xs,ys)		(**)
-    and foldri'(f, z, i,  nil,    _  ) 	= z
-      | foldri'(f, z, i,   _,    nil ) 	= z
-      | foldri'(f, z, i, x::xs, y::ys) 	= f(i, x, y, foldri'(f,z,i+1,xs,ys))
+    and foldri'(f, z, i, x::xs, y::ys) 	= f(i, x, y, foldri'(f,z,i+1,xs,ys))
+      | foldri'(f, z, i,   _,     _  ) 	= z
 
     fun all  f (xs,ys)			= all'(f,xs,ys)
-    and all'(f,  nil,    _  )		= true
-      | all'(f,   _,    nil )		= true
-      | all'(f, x::xs, y::ys)		= f(x,y) andalso all'(f,xs,ys)
+    and all'(f, x::xs, y::ys)		= f(x,y) andalso all'(f,xs,ys)
+      | all'(f,   _,     _  )		= true
 
     fun exists  f (xs,ys)        	= exists'(f,xs,ys)
-    and exists'(f,  nil,    _  ) 	= false
-      | exists'(f,   _,    nil ) 	= false
-      | exists'(f, x::xs, y::ys) 	= f(x,y) orelse exists'(f,xs,ys)
+    and exists'(f, x::xs, y::ys) 	= f(x,y) orelse exists'(f,xs,ys)
+      | exists'(f,   _,     _  ) 	= false
 
     fun find f (xs,ys)				= find'(f,xs,ys)	(**)
-    and find'(f,  nil,    _  )			= NONE
-      | find'(f,   _,    nil )			= NONE
-      | find'(f, x::xs, y::ys) where (f(x,y))	= SOME(x,y)
+    and find'(f, x::xs, y::ys) where (f(x,y))	= SOME(x,y)
       | find'(f, x::xs, y::ys) 			= find'(f,xs,ys)
+      | find'(f,   _,     _  )			= NONE
 end
