@@ -285,6 +285,9 @@ struct
                         { name, color, points, gamePoints }
                     end) (allPossiblePlayers ())
 
+            fun sendPoints p =
+                invokeSeveral p (allConnected (), #updatePoints, 
+                    computePointsList ())
 
             fun play id = Lock.sync lock (
                 withParticipant false ("play", id, fn (part, (name, color)) =>
@@ -394,16 +397,6 @@ struct
                     val dims    = Array2.dimensions arena
 		    val oldArena= Arena.copy arena
 		    val diffs   = Arena.toDiffList arena
-                    
-                    val points  = List.map (fn part => 
-                            let val (name, color)   = Part.nameNColor part
-                                val info            = Part.playerInfo part
-                                val _               =
-                                (#gamePoints info)  := 0
-                                val points          = ! (#points info)
-                            in
-                                { name, color, points, gamePoints = 0 }
-                            end) p
                 in
                     (* set players state to playing and place snake *)
                     assert List.length p <= List.length startPos do
@@ -435,7 +428,7 @@ struct
                     invokeSeveral (_file_, _line_) (allConnected (), #update, diffs);
                     
                     log ("Server", ("sending initial points"));
-                    invokeSeveral (_file_, _line_) (allConnected (), #updatePoints, points);
+                    sendPoints (_file_, _line_);
 
                     (levels, oldArena, arena)
                 end
@@ -546,6 +539,7 @@ struct
 
                     val _   = List.app (fn ((r, c), p) =>
                                     Array2.update (oldArena, r, c, p)) diffOld
+                    val pointsChanged   = ref false
                 in
                     (* broadcast differences *)
                     log ("Server", "broadcasting differences");
@@ -555,7 +549,7 @@ struct
                     (* change state of participants whose snake died to DEAD. *)
                     log ("Server", "check for dead snakes");
                     
-                    List.foldl (fn (sn, (namesNColors, pointsList)) =>
+                    List.map (fn sn =>
                         let val part        = PMap.lookupExistent 
                                                 (participants, Snake.id sn)        
                             val playerInfo  = Part.playerInfo part
@@ -567,21 +561,18 @@ struct
                             
                             (* reset gamepoints to zero, points are not changed
                                as the snake died before entering the gate *)
-                            #gamePoints playerInfo := 0;
+                            if !(#gamePoints playerInfo) <> 0 then (
+                                #gamePoints playerInfo := 0;
+                                pointsChanged := true
+                            ) else ();
 
-                            (* build list of names and colors of dead snakes,
-                               and list of the new points *)
-                            (Part.nameNColor part :: namesNColors,
-                                { name, color, points, gamePoints = 0 } ::
-                                    pointsList)
-                        end) ([],[]) deadSnakes ++
+                            (* build list of names and colors of dead snakes *)
+                            Part.nameNColor part
+                        end) deadSnakes ++
                             
                     (* inform the snakes, if any corpses are around *)
-                    (fn (deads, pts) => (
-                        mayAppList (fn deads => invokeSeveral (_file_, _line_)
-                                 (allConnected (), #playersDied, deads)) deads;
-                        mayAppList (fn pts => invokeSeveral (_file_, _line_)
-                                (allConnected (), #updatePoints, pts)) pts));
+                    mayAppList (fn deads => invokeSeveral (_file_, _line_)
+                                 (allConnected (), #playersDied, deads));
                 
 		    (* inform snake about their new head positions *)
 		    (* FIXME: do not send headPos to dead snakes *)
@@ -596,7 +587,7 @@ struct
                        snake has entered the gate completely we change
                        it to FINISHED *)
                     log ("Server", "check for finished snakes");
-                    List.foldl (fn (sn, (namesNColors, pointsList)) =>
+                    List.map (fn sn =>
                         let val id          = Snake.id sn
                             val part        = PMap.lookupExistent 
                                                 (participants, id)
@@ -619,25 +610,27 @@ struct
                             (* take the points made this game home *)
                             #points playerInfo := !(#points playerInfo) + 
                                     !(#gamePoints playerInfo);
-                            
+                            pointsChanged := true;
+ 
                             (* reset the gamePoints *)
                             #gamePoints playerInfo := 0;
                             
                             (* schedule animation of snake going into the gate *)
                             for (1, length, addPlaceBodyEvent);
                             
-                            ((name, color) :: namesNColors, 
-                                { name, color, points = ! $ #points playerInfo,
-                                    gamePoints = 0 } :: pointsList)
-                        end) ([],[]) finishedSnakes ++
+                            (name, color) 
+                        end) finishedSnakes ++
                         
                     (* inform the snakes *)
-                    (fn (nameColorList, pointsList) => (
+                    mayAppList (fn namesNColors =>
                         invokeSeveral (_file_, _line_)
-                            (allConnected (), #playersFinished, nameColorList);
-                        invokeSeveral (_file_, _line_)
-                            (allConnected (), #updatePoints, pointsList)));
+                            (allConnected (), #playersFinished, namesNColors));
                     
+                    (* send updated points list if necessary *)
+                    if !pointsChanged then
+                        sendPoints (_file_, _line_)
+                    else ();
+
                     (* check for completely finished participants 
                      *)
                     log ("Server", "check for completely finished snakes");
