@@ -929,6 +929,7 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 	  | vpBody ([ExportStm (info, exp)],
 		    {env, isToplevel = true,
 		     export = SOME (env', exportDesc), lazySels, ...}) =
+	    (*--** do multiple occurrences of ExportStm work by accident? *)
 	    let
 		val _ =
 		    Vector.app (fn (_, id) =>
@@ -1295,10 +1296,9 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 		val _ =
 		    Vector.app (fn (idDef, _, _) =>
 				declareUnknown (env', idDef, true)) imports
-		val topStamp = Stamp.new ()
 		val lazySels = IdMap.new ()
 		val body =
-		    vpBodyShared (body, topStamp,
+		    vpBodyShared (body, Stamp.new (),
 				  {env = env', isToplevel = true,
 				   export = SOME (env, exportDesc),
 				   lazySels = lazySels})
