@@ -533,6 +533,7 @@ INSTALL3STOCTOPFILES = Composer.ozf SMLToMozartRecursiveCompiler.ozf
 INSTALL3FILES = \
 	$(INSTALL3TOPFILES:%=build3/install/%) \
 	$(INSTALL3BINFILES:%=build3/install/bin/%) \
+	$(INSTALL3BINFILES:%=build3/install/bin/%.bat) \
 	$(INSTALL3LIBFILES:%=build3/install/lib/%) \
 	$(INSTALL3STOCFILES:%=build3/install/stoc/%) \
 	$(INSTALL3STOCTOPFILES:%=build3/install/stoc/top/%)
@@ -621,7 +622,10 @@ $(INSTALL3DIRS):
 $(INSTALL3TOPFILES:%=build3/install/%): build3/install/%: build3/%
 	install -c -m 444 $< $@
 
-$(INSTALL3BINFILES:%=build3/install/bin/%): build3/install/bin/%: %
+build3/install/bin/%.bat: %.bat
+	install -c -m 444 $< $@
+
+build3/install/bin/%: %
 	install -c -m 555 $< $@
 
 build3/install/lib/fundamental/Fundamental.ozf: \
