@@ -34,6 +34,7 @@ void NativeMethodTable::Init() {
   java_lang_System(JavaString::New("java/lang/System"));
   java_lang_Float(JavaString::New("java/lang/Float"));
   java_lang_Double(JavaString::New("java/lang/Double"));
+  java_lang_StrictMath(JavaString::New("java/lang/StrictMath"));
   java_io_FileDescriptor(JavaString::New("java/io/FileDescriptor"));
   java_io_FileOutputStream(JavaString::New("java/io/FileOutputStream"));
   java_security_AccessController

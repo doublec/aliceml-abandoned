@@ -45,6 +45,7 @@ private:
   static void java_lang_System(JavaString *className);
   static void java_lang_Float(JavaString *className);
   static void java_lang_Double(JavaString *className);
+  static void java_lang_StrictMath(JavaString *className);
   static void java_io_FileDescriptor(JavaString *className);
   static void java_io_FileOutputStream(JavaString *className);
   static void java_security_AccessController(JavaString *className);
