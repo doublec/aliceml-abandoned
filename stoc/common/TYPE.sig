@@ -1,6 +1,8 @@
 signature TYPE =
   sig
 
+  (* Types *)
+
     datatype con_sort = OPEN | CLOSED
 
     datatype kind = STAR | ARROW of kind * kind		(* [kappa,k] *)
@@ -9,16 +11,16 @@ signature TYPE =
     type path = Path.t					(* [pi,p] *)
     type con  = kind * con_sort * path			(* [chi,c] *)
 
-    type typ						(* [tau,t] *)
     type row						(* [rho,r] *)
     type alpha						(* [alpha,a] *)
-
+    type typ						(* [tau,t] *)
     type t = typ
 
-    type rea = typ PathMap.t
+    type subst = Path.subst
+    type rea   = typ PathMap.t
 
 
-    (* Injections *)
+  (* Injections *)
 
     val unknown :	kind        -> typ
     val inArrow :	typ * typ   -> typ
@@ -35,7 +37,7 @@ signature TYPE =
 
     val var :		kind -> alpha
 
-    (* Inquiries *)
+  (* Inquiries *)
 
     val isUnknown :	typ -> bool
     val isArrow :	typ -> bool
@@ -49,7 +51,7 @@ signature TYPE =
     val isLambda :	typ -> bool
     val isApp :		typ -> bool
 
-    (* Projections *)
+  (* Projections *)
 
     exception Type
 
@@ -64,14 +66,15 @@ signature TYPE =
     val asLambda :	typ -> alpha * typ	(* Type *)
     val asApp :		typ -> typ * typ	(* Type *)
 
-    (* Copying and instantiation *)
+  (* Copying and instantiation *)
 
     val instance :	typ -> typ
     val skolem :	typ -> typ
     val clone :		typ -> typ
-    val realise :	rea -> typ -> typ
+    val substitute :	subst * typ -> unit
+    val realise :	rea   * typ -> typ
 
-    (* Complex extractions *)
+  (* Complex extractions *)
 
     val kind :		typ   -> kind
     val kindVar :	alpha -> kind
@@ -81,7 +84,7 @@ signature TYPE =
 
     val paths :		typ -> PathSet.t
 
-    (* Operations on rows *)
+  (* Operations on rows *)
 
     exception Row
 
@@ -89,7 +92,7 @@ signature TYPE =
     val emptyRow :	unit -> row
     val extendRow :	lab * typ list * row -> row	(* Row *)
 
-    (* Unification and closure *)
+  (* Unification and closure *)
 
     exception Unify of typ * typ
     exception UnifyList of int * typ * typ
@@ -98,7 +101,7 @@ signature TYPE =
     val unifyList :	typ list -> unit		(* UnifyList *)
     val close :		typ -> typ
 
-    (* Level management *)
+  (* Level management *)
 
     val enterLevel :	unit -> unit
     val exitLevel :	unit -> unit

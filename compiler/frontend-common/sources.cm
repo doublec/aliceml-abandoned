@@ -15,11 +15,14 @@ is
 
 	PathSet.sml
 	StringMap.sml
+	StampMap.sml
 	TYPE.sig
 	Type.sml
-(*	INF.sig
+	SIGN.sig
+	Sign.sml
+	INF.sig
 	Inf.sml
-*)	ENV.sig
+	ENV.sig
 	Env.sml
 
 	ENV0.sig

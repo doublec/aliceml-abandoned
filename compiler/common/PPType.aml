@@ -24,13 +24,13 @@ structure PPType :> PP_TYPE =
 
     (* Simple objects *)
 
-    fun ppLab l			= text(Lab.toString l)
-    fun ppName n		= text(Name.toString n)
+    fun ppLab l				= text(Lab.toString l)
+    fun ppName n			= text(Name.toString n)
 
-    fun ppPath(Path.PLAIN(_,n))	= ppName n
-      | ppPath(Path.DOT(p,l))	= ppPath p ^^ text "." ^^ ppLab l
+    fun ppPath(Path.PLAIN(_,l,n))	= ppLab l
+      | ppPath(Path.DOT(p,l,n))		= ppPath p ^^ text "." ^^ ppLab l
 
-    fun ppCon (k,_,p)		= ppPath p
+    fun ppCon (k,_,p)			= ppPath p
 
     fun varToString(isBound, n) =
 	let
@@ -80,8 +80,8 @@ structure PPType :> PP_TYPE =
 		let
 		    val k = kindVar t
 		    val x = Stamp.new()
-		    val n = varToString(isBound, !a before a := !a+1)
-		    val c = (k, CLOSED, Path.PLAIN(x, Name.ExId n))
+		    val s = varToString(isBound, !a before a := !a+1)
+		    val c = (k, CLOSED, Path.PLAIN(x, Lab.fromString s, 1))
 		    val _ = t := CON c
 		    val _ = if isBound then () else trail := (t,t')::(!trail)
 		in

@@ -5,13 +5,15 @@
 structure TypePrivate =
   struct
 
-    datatype con_sort = OPEN | CLOSED
-
-    datatype kind = STAR | ARROW of kind * kind		(* [kappa,k] *)
+  (* Types *)
 
     type lab  = Lab.t					(* [lab,l] *)
     type path = Path.t					(* [pi,p] *)
-    type con  = kind * con_sort * path			(* [chi,c] *)
+
+    datatype kind = STAR | ARROW of kind * kind		(* [kappa,k] *)
+
+    datatype con_sort = OPEN | CLOSED
+    type     con      = kind * con_sort * path		(* [chi,c] *)
 
     datatype typ' =					(* [tau',t'] *)
 	  HOLE of kind * int	(* variable for inference *)
@@ -36,55 +38,58 @@ structure TypePrivate =
 
     type t = typ
 
-    type rea = typ PathMap.t
-
-(*DEBUG*)
-fun pr(ARR(t1,t2))	= "ARR"
-| pr(TUP ts)	= "TUP"
-| pr(ROW r)	= "ROW"
-| pr(SUM r)	= "SUM"
-| pr(CON c)	= "CON"
-| pr(ALL(a,t))	= "ALL"
-| pr(EX(a,t))	= "EX"
-| pr(LAM(a,t))	= "LAM"
-| pr(APP(t1,t2))= "APP"
-| pr(REC _) = "REC"
-| pr(LINK _) = "LINK"
-| pr(MARK _) = "MARK"
-| pr(HOLE _) = "HOLE"
-| pr(VAR _)  = "VAR"
+    type subst = Path.subst
+    type rea   = typ PathMap.t
 
     (*
      * We establish the following invariants:
      * - rows are sorted by label
-     * - types are always in normal form
+     * - types are always in head normal form
      * - directly nested ALLs appear in depth-first leftmost traversal order
      * - same for nested EXs
      *)
 
 
-    (* Level management *)
+(*DEBUG*)
+    fun pr(ARR _)	= "ARR"
+      | pr(TUP _)	= "TUP"
+      | pr(ROW _)	= "ROW"
+      | pr(SUM _)	= "SUM"
+      | pr(CON _)	= "CON"
+      | pr(VAR _)	= "VAR"
+      | pr(ALL _)	= "ALL"
+      | pr(EX  _)	= "EX"
+      | pr(LAM _)	= "LAM"
+      | pr(APP _)	= "APP"
+      | pr(REC _)	= "REC"
+      | pr(LINK _)	= "LINK"
+      | pr(MARK _)	= "MARK"
+      | pr(HOLE _)	= "HOLE"
+
+
+  (* Level management *)
 
     val level = ref 1
 
     fun enterLevel() = level := !level+1
-(*DEBUG*)
-before print(">> enter type level " ^ Int.toString(!level) ^ "\n")
     fun exitLevel()  = level := !level-1
-before print("<< exit type level " ^ Int.toString(!level+1) ^ "\n")
 
 
-    (* Follow a path of links (performing path compression on the fly) *)
+  (* Follow a path of links (performing path compression on the fly) *)
 
+    fun follow(ref(LINK t))	= follow t
+      | follow t		= t
+
+(*DEBUG
     fun follow'(ref(LINK t))	= follow' t
       | follow' t		= t
 
-(*DEBUG*)
-    fun follow(t as ref(LINK u))= follow u(*let val v = follow' u in t := LINK v ; v end*)
+    fun follow(t as ref(LINK u))= let val v = follow' u in t := LINK v ; v end
       | follow t		= t
+*)
 
 
-    (* Infer the kind of a type *)
+  (* Kind inference *)
 
     fun rangeKind(ARROW(k1,k2))	= k2
       | rangeKind  _		= Crash.crash "Type.rangeKind: kind mismatch"
@@ -104,7 +109,7 @@ before print("<< exit type level " ^ Int.toString(!level+1) ^ "\n")
     val kindVar			= kind
 
 
-    (* Traversal *)
+  (* Type graph traversal *)
 
     fun app1'(( HOLE _
 	      | VAR _
@@ -144,16 +149,15 @@ before print("<< exit type level " ^ Int.toString(!level+1) ^ "\n")
       | foldlRow(_, f, a)		= a
 
 
-    fun unmark(t as ref(MARK t')) 	= ( t := t' ; app1'(t', unmark) )
-(*DEBUG*)
-before (case t' of MARK _ => Crash.crash "Type.unmark: double mark" | _ =>())
-(*before print"MARK deleted\n"
-*)
+    fun unmark(t as ref(MARK t')) 	=
+(*ASSERT				  assert t' of MARK _ => *)
+( case t' of MARK _ => raise Assert.failure | _ =>
+					  ( t := t' ; app1'(t', unmark) )
+)
       | unmark _	            	= ()
 
 
     fun app f t =
-    (* If f wants to assign a note it has to use update! *)
 	let
 	    fun app(ref(MARK _)) = ()
 	      | app t =
@@ -161,9 +165,6 @@ before (case t' of MARK _ => Crash.crash "Type.unmark: double mark" | _ =>())
 		    val _  = f t
 		    val t' = !t
 		    val _  = t := MARK t'
-(*(*DEBUG*)
-before print"MARK set (by app)\n"
-*)
 		in
 		    app1'(t',app)
 		end
@@ -172,7 +173,6 @@ before print"MARK set (by app)\n"
 	end
 
     fun foldl f a t =
-    (* If f wants to assign a note it has to use update! *)
 	let
 	    fun fold(ref(MARK _), a) = a
 	      | fold(t, a) =
@@ -180,9 +180,6 @@ before print"MARK set (by app)\n"
 		    val a' = f(t,a)
 		    val t' = !t
 		    val _  = t := MARK t'
-(*(*DEBUG*)
-before print"MARK set (by foldl)\n"
-*)
 		in
 		    foldl1'(t',fold,a')
 		end
@@ -191,16 +188,18 @@ before print"MARK set (by foldl)\n"
 	end
 
 
-    fun update(t as ref(MARK _), t')	= t := MARK t'
-(*(*DEBUG*)
-before print"MARK updated\n"
-*)
-      | update(t, t')			= t := t'
+  (* Substitution *)
+
+    fun substitute(subst, t) =
+	app (fn (t as ref(CON(k,s,p))) =>
+		 t := CON(k, s, Path.substitute(subst,p))
+	      |  _  =>  ()
+	    ) t
 
 
-    (* Cloning under a type realisation *)
+  (* Cloning under a type realisation *)
 
-    fun realise phi t =
+    fun realise(rea, t) =
 	let
 	    (* We want to be able to handle recursive types, so we have to
 	     * implement graph copying here.
@@ -212,9 +211,6 @@ before print"MARK updated\n"
 		let
 		    val _   = trail := (t1,t1') :: !trail
 		    val t2  = ref(MARK t1')
-(*(*DEBUG*)
-before print"MARK set (by dup')\n"
-*)
 		    val _   = t1 := LINK t2
 		in
 		    t2
@@ -224,14 +220,8 @@ before print"MARK set (by dup')\n"
 		let
 		    val _   = trail := (t1,t1') :: !trail
 		    val t2  = ref(MARK t1')
-(*(*DEBUG*)
-before print"MARK set (by dup)\n"
-*)
 		    val _   = t1 := LINK t2
 		    val t2' = MARK(clone' t1')
-(*(*DEBUG*)
-before print"MARK updated (by dup)\n"
-*)
 		    val _   = t2 := t2'
 		in
 		    t2
@@ -272,60 +262,36 @@ before print"MARK updated (by dup)\n"
 	end
 
 
-    fun clone t = realise (PathMap.new()) t
+    fun clone t = realise(PathMap.new(), t)
 
 
-    (* Reduction to some sort of head normal form *)
+  (* Reduction to head normal form *)
 
     (*UNFINISHED: avoid multiple cloning of curried lambdas somehow *)
 
-    fun reduce(t as ref(APP(t1,t2)))	= 
-(*(print">reduce APP\n";*)
- reduceApp(t, t1, t2, false)
-(*;print"<reduce\n")*)
-      | reduce _			=
-(*(print">reduce\n";*)
- ()
-(*;print"<reduce\n")*)
+    fun reduce(t as ref(APP(t1,t2)))	= reduceApp(t, t1, t2, false)
+      | reduce _			= ()
 
-(*    fun reduce(t as ref(APP(t1,t2))) =
-	(case follow t1
-	   of t3 as ref(LAM _) =>
-		(case !(clone t3) of LAM(a,t4) =>
-		    ( a := LINK t2
-		    ; t := LINK t4
-		    ; reduce t
-		    )
-		| _ => Crash.crash "Type.reduce")
-
-	    | _ => ()
-	)
-      | reduce _ = ()
-*)
     and reduceApp(t, t1 as ref(LAM(a,_)), t2, r) =
 	( t := HOLE(kind a, !level)
 	; case !(clone t1)
 	    of LAM(a,t3) =>
 		( a := LINK t2
 		; t := (if r then REC else LINK) t3
-(*DEBUG*)
-(*;print"-reduce APP(LAM)\n"*)
 		; reduce t
 		)
 	    | _ => Crash.crash "Type.reduceApp"
 	)
-      | reduceApp(t, ref(LINK t3), t2, r) =
-	    reduceApp(t, follow t3, t2, r)
-(*DEBUG*)
-(*;print"-reduce APP(LINK)\n")*)
-      | reduceApp(t, ref(REC t3), t2, r) =
-	    reduceApp(t, follow t3, t2, true)
-(*DEBUG*)
-(*;print"-reduce APP(REC)\n")*)
+      | reduceApp(t, ref(LINK t11), t2, r) =
+	    reduceApp(t, follow t11, t2, r)
+
+      | reduceApp(t, ref(REC t11), t2, r) =
+	    reduceApp(t, follow t11, t2, true)
+
       | reduceApp(t, t1, t2, r) = ()
 
 
-    (* Creation and injections *)
+  (* Creation and injections *)
 
     fun unknown' k	= HOLE(k, !level)
     fun unknown k	= ref(unknown' k)
@@ -345,7 +311,7 @@ before print"MARK updated (by dup)\n"
     fun var k		= ref(VAR(k, !level))
 
 
-    (* Projections and extractions *)
+  (* Projections and extractions *)
 
     exception Type
 
@@ -383,11 +349,13 @@ before print"MARK updated (by dup)\n"
     fun path t		= pathCon(asCon t)
 
 
-    (* Instantiation: instantiate universally quantified types, skolemise
+  (* Instantiation *)
+
+    (* Instantiate universally quantified types, skolemise
      * existentially qualified types. If there is any quantification,
      * then we have to copy the type.
      * Skolemisation does it the other way round (needed for checking rank 2
-     * signature applications).
+     * signature applications and existential types).
      *)
 
     fun instance'(ref(ALL(a,t)))	= ( a := unknown'(kind a); instance' t )
@@ -397,21 +365,6 @@ before print"MARK updated (by dup)\n"
     fun instance(t as ref(ALL _| EX _))	= instance'(clone t)
       | instance(ref(LINK t))		= instance t
       | instance t			= t
-
-(*(*DEBUG*)
-    fun instance(t as ref(ALL(a,_)| EX(a,_))) =
-(case !a of VAR _ => () | _ => print"quantifier 1 ARGH!\n";
-let val t2 as ref(ALL(a2,_)|EX(a2,_)) = clone t in
-case !a2 of VAR _ => () 
-| MARK _ => print"quantifier 2 ARGH: MARK!\n"
-| _ => print"quantifier 2 ARGH!\n";
-if a = a2 then print"clone ARGH!\n" else ();
-instance' t2 before
-(case !a2 of HOLE _ => () | _ => print"instance ARGH!\n")
-end)
-      | instance(t as ref(LAM _))	= clone t
-      | instance t			= t
-*)
 
     fun skolem'(ref(ALL(a,t)))		= skolem' t
       | skolem'(ref(EX(a,t)))		= ( a := unknown' STAR ; skolem' t )
@@ -423,7 +376,7 @@ end)
 
 
 
-    (* Operations on rows *)
+  (* Operations on rows *)
 
     exception Row
 
@@ -446,7 +399,8 @@ end)
 	end
 
 
-    (* Closure *)
+
+  (* Closure *)
 
     fun close t =
     	let
@@ -454,7 +408,7 @@ end)
 
 	    fun close(a as ref(HOLE(k,n)), f) =
 		if n > !level then
-		    ( update(a, VAR(k,n)) ; fn t => f(inAll(a,t)) )
+		    ( a := VAR(k,n) ; fn t => f(inAll(a,t)) )
 		else f
 
 	      | close(a as ref(VAR(k,n)), f) =
@@ -477,7 +431,7 @@ end)
 	end
 
 
-    (* Shifting of hole variable levels *)
+  (* Shifting of hole variable levels *)
 
     fun shiftLevel(t,n) =
 	if n = !level then () else
@@ -490,13 +444,10 @@ end)
 	end
 
 
-    (* Occur check (2 versions: strict and weaker one used by unify) *)
+  (* Occur check (2 versions: strict and weaker one used by unify) *)
 
     fun occurs(t1,t2) =
 	let
-(*(*DEBUG*)
-val _=print">occurs\n"*)
-
 	    exception Occurs
 
 	    fun occurs t2 =
@@ -506,20 +457,13 @@ val _=print">occurs\n"*)
 		    case !t2
 		      of MARK _ => ()
 		       | t2'    =>
-(*(*DEBUG*)
-(print("MARK set (by occurs) at " ^ pr t2' ^ "\n");*)
 			 ( t2 := MARK t2' ; app1'(t2', occurs) )
 	in
 	    (( occurs t2 ; false ) handle Occurs => true) before unmark t2
-(*(*DEBUG*)
-before print"<occurs\n"*)
 	end
 
     fun occursIllegally(t1,t2) =
 	let
-(*(*DEBUG*)
-val _=print">occursIllegally\n"*)
-
 	    exception Occurs
 
 	    fun occurs t2 =
@@ -529,35 +473,106 @@ val _=print">occursIllegally\n"*)
 		    case !t2
 		      of (REC _ | MARK _) => ()
 		       | t2'              =>
-(*(*DEBUG*)
-(print("MARK set (by occursIllegally) at " ^ pr t2' ^ "\n");*)
 			 ( t2 := MARK t2' ; app1'(t2', occurs) )
 	in
 	    (( occurs t2 ; false ) handle Occurs => true) before unmark t2
-(*(*DEBUG*)
-before print"<occursIllegally\n"*)
 	end
 
 
-    (* Unification *)
+  (* Unification *)
 
     exception Unify of typ * typ
 
 
     fun unify(t1,t2) =
 	let
-	    val t1 as ref t1' = follow t1
-	    val t2 as ref t2' = follow t2
+	    val trail = ref []
 
-	    fun recurse f x =
-		( t1 := LINK t2
-		; f x handle Unify tt => ( t1 := t1' ; raise Unify tt )
-		)
+	    fun unify(t1,t2) =
+		let
+		    val t1 as ref t1' = follow t1
+		    val t2 as ref t2' = follow t2
 
-	    fun unifyPair((t11,t12), (t21,t22)) =
+		    fun recurse f x =
+			( t1 := LINK t2
+			; trail := (t1,t1') :: !trail
+			; f x
+			)
+		in
+		    if t1 = t2 then () else
+		    case (t1',t2')
+		      of (HOLE(k1,n1), HOLE(k2,n2)) =>
+(*ASSERT		 assert k1 = k2 =>*)
+if k1 <> k2 then raise Assert.failure else
+			 if n1 < n2 then t2 := LINK t1
+				    else t1 := LINK t2
+
+		       | (HOLE(k1,n), _) =>
+(*ASSERT		 assert k1 = kind' t2' =>*)
+if k1 <> kind' t2' then raise Assert.failure else
+			 if occursIllegally(t1,t2) then
+			     raise Unify(t1,t2)
+			 else
+			     ( shiftLevel(t2,n) ; t1 := LINK t2 )
+
+		       | (_, HOLE(k2,n)) =>
+(*ASSERT		 assert kind' t1' = k2 =>*)
+if kind' t1' <> k2 then raise Assert.failure else
+			 if occursIllegally(t2,t1) then
+			     raise Unify(t1,t2)
+			 else
+			     ( shiftLevel(t1,n) ; t2 := LINK t1 )
+
+		       | (REC(t11), REC(t21)) =>
+			 recurse unify (t11,t21)
+
+		       | (REC(t11), _) =>
+			 ( t2 := REC(ref t2') ; unify(t1,t2) )
+
+		       | (_, REC(t21)) =>
+			 ( t1 := REC(ref t1') ; unify(t1,t2) )
+
+		       | (ARR(tt1), ARR(tt2)) =>
+			 recurse unifyPair (tt1,tt2)
+
+		       | (TUP(ts1), TUP(ts2)) =>
+			 recurse (ListPair.app unify) (ts1,ts2)
+
+		       | (TUP(ts), ROW(r)) =>
+			 recurse unifyRow (tupToRow ts, r, ROW)
+
+		       | (ROW(r), TUP(ts)) =>
+			 recurse unifyRow (r, tupToRow ts, ROW)
+
+		       | (ROW(r1), ROW(r2)) =>
+			 recurse unifyRow (r1,r2,ROW)
+
+		       | (SUM(r1), SUM(r2)) =>
+			 recurse unifyRow (r1,r2,SUM)
+
+		       | (CON(_,_,p1), CON(_,_,p2)) =>
+			 if p1 = p2 then t1 := LINK t2
+				    else raise Unify(t1,t2)
+
+		       | (APP(tt1), APP(tt2)) =>
+			 recurse unifyPair (tt1,tt2)
+
+		       | (ALL(a1,t1), ALL(a2,t2)) =>
+			 Crash.crash "Type.unify: universal quantification"
+
+		       | (EX(a1,t1), EX(a2,t2)) =>
+			 Crash.crash "Type.unify: existential quantification"
+
+		       | (LAM(a1,t1), LAM(a2,t2)) =>
+			 Crash.crash "Type.unify: abstraction"
+
+		       | _ => raise Unify(t1,t2)
+		end
+
+	    and unifyPair((t11,t12), (t21,t22)) =
 		( unify(t11,t21) ; unify(t12,t22) )
 
-	    fun unifyRow(r1, r2, ROWorSUM) =
+	    and unifyRow(r1, r2, ROWorSUM) =
 		let
 		    fun loop(NIL, false, NIL, false) = NIL
 		      | loop(NIL, false, RHO, _    ) = NIL
@@ -580,84 +595,12 @@ before print"<occursIllegally\n"*)
 		    t2 := ROWorSUM(loop(r1,false, r2,false))
 		end
 	in
-	    if t1 = t2 then () else
-	    case (t1',t2')
-	      of (HOLE(k1,n1), HOLE(k2,n2)) =>
-(*DEBUG*)
-if k1 <> k2 then
-Crash.crash "Type.unify: kind mismatch"
-else
-		 if n1 < n2 then t2 := LINK t1
-			    else t1 := LINK t2
-
-	       | (HOLE(k1,n), _) =>
-(*DEBUG*)
-if k1 <> kind' t2' then
-Crash.crash "Type.unify: kind mismatch"
-else
-		 if occursIllegally(t1,t2) then
-		     raise Unify(t1,t2)
-		 else
-		     ( shiftLevel(t2,n) ; t1 := LINK t2 )
-
-	       | (_, HOLE(k2,n)) =>
-(*DEBUG*)
-if k2 <> kind' t1' then
-Crash.crash "Type.unify: kind mismatch"
-else
-		 if occursIllegally(t2,t1) then
-		     raise Unify(t1,t2)
-		 else
-		     ( shiftLevel(t1,n) ; t2 := LINK t1 )
-
-	       | (REC(t3), REC(t4)) =>
-		 recurse unify (t3,t4)
-
-	       | (REC(t3), _) =>
-		 ( t2 := REC(ref t2') ; unify(t1,t2) )
-
-	       | (_, REC(t3)) =>
-		 ( t1 := REC(ref t1') ; unify(t1,t2) )
-
-	       | (ARR(tt1), ARR(tt2)) =>
-		 recurse unifyPair (tt1,tt2)
-
-	       | (TUP(ts1), TUP(ts2)) =>
-		 recurse (ListPair.app unify) (ts1,ts2)
-
-	       | (TUP(ts), ROW(r)) =>
-		 recurse unifyRow (tupToRow ts, r, ROW)
-
-	       | (ROW(r), TUP(ts)) =>
-		 recurse unifyRow (r, tupToRow ts, ROW)
-
-	       | (ROW(r1), ROW(r2)) =>
-		 recurse unifyRow (r1,r2,ROW)
-
-	       | (SUM(r1), SUM(r2)) =>
-		 recurse unifyRow (r1,r2,SUM)
-
-	       | (CON(_,_,p1), CON(_,_,p2)) =>
-		 if p1 = p2 then t1 := LINK t2
-			    else raise Unify(t1,t2)
-
-	       | (ALL(a1,t1), ALL(a2,t2)) =>
-		 Crash.crash "Type.unify: universal quantification"
-
-	       | (EX(a1,t1), EX(a2,t2)) =>
-		 Crash.crash "Type.unify: existential quantification"
-
-	       | (LAM(a1,t1), LAM(a2,t2)) =>
-		 Crash.crash "Type.unify: abstraction"
-
-	       | (APP(tt1), APP(tt2)) =>
-		 recurse unifyPair (tt1,tt2)
-
-	       | _ => raise Unify(t1,t2)
+	    unify(t1,t2)
+	    handle Unify tt => ( List.app op:= (!trail) ; raise Unify tt )
 	end
 
 
-    (* Unification of lists *)
+  (* Unification of lists *)
 
     exception UnifyList of int * typ * typ
 
@@ -675,7 +618,7 @@ else
 	end
 
 
-    (* Extraction of holes and paths *)
+  (* Extraction of holes and paths *)
 (*
     fun holes t = foldl (fn(t as ref(HOLE _), a) => t::a | (t,a) => a) t
     fun paths t = foldl (fn(t as ref(CON c), a) => pathCon(c)::a | (t,a) => a) t

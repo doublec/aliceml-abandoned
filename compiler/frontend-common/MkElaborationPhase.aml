@@ -1,5 +1,4 @@
-(* TODO:
-   - add primitive constructors
+(* UNFINISHED:
    - reset type level on error
 *)
 
@@ -842,44 +841,40 @@ print"'_a (* not found *)\n";
     (*UNFINISHED: do full traversal to enter all nested constructors
     		  (not needed for SML frontend though...)  *)
 
-    and elabTypRep(E, id', t0, buildTyp, buildKind, I.ConTyp(i, longid)) =
+    and elabTypRep(E, p, t0, buildTyp, buildKind, I.ConTyp(i, longid)) =
 	let
 	    val (t,longid') = elabTypLongid(E, longid)
 	in
 	    ( buildTyp t, O.ConTyp(typInfo(i,t), longid') )
 	end
 
-      | elabTypRep(E, O.Id(_,stamp,name), t0, buildTyp, buildKind, I.AbsTyp(i))=
+      | elabTypRep(E, p, t0, buildTyp, buildKind, I.AbsTyp(i))=
 	let
-	    val p = Path.PLAIN(stamp, name)
-	    val t = Type.inCon (buildKind Type.STAR, Type.CLOSED, p)
+	    val t = Type.inCon(buildKind Type.STAR, Type.CLOSED, p)
 	in
 	    ( t, O.AbsTyp(typInfo(i,t)) )
 	end
 
-      | elabTypRep(E, O.Id(_,stamp,name), t0, buildTyp, buildKind, I.ExtTyp(i))=
+      | elabTypRep(E, p, t0, buildTyp, buildKind, I.ExtTyp(i))=
 	let
-	    val p = Path.PLAIN(stamp, name)
-	    val t = Type.inCon (buildKind Type.STAR, Type.OPEN, p)
+	    val t = Type.inCon(buildKind Type.STAR, Type.OPEN, p)
 	in
 	    ( t, O.AbsTyp(typInfo(i,t)) )
 	end
 
-      | elabTypRep(E, id', t0, buildTyp, buildKind, I.FunTyp(i, id, typ)) =
+      | elabTypRep(E, p, t0, buildTyp, buildKind, I.FunTyp(i, id, typ)) =
 	let
-	    val (a,id1') = elabVarId(E, Type.STAR, id)
+	    val (a,id')  = elabVarId(E, Type.STAR, id)
 	    val  k1      = Type.kindVar a
-	    val (t,typ') = elabTypRep(E, id', Type.inApp(t0, Type.inVar a),
+	    val (t,typ') = elabTypRep(E, p, Type.inApp(t0, Type.inVar a),
 				      fn t => Type.inLambda(a,t),
 				      fn k => Type.ARROW(k1, buildKind k), typ)
 	in
 	    ( t, O.FunTyp(typInfo(i,t), id', typ') )
 	end
 
-      | elabTypRep(E, id', t0, buildTyp, buildKind, I.SumTyp(i, cons)) =
+      | elabTypRep(E, p, t0, buildTyp, buildKind, I.SumTyp(i, cons)) =
 	let
-	    val O.Id(_,stamp,name) = id'
-	    val  p        = Path.PLAIN(stamp, name)
 	    val  t        = Type.inCon (buildKind Type.STAR, Type.CLOSED, p)
 	    val (_,cons') = elabConReps(E, t0, cons)
 	in
@@ -893,7 +888,7 @@ print"'_a (* not found *)\n";
 	end
 	*)
 
-      | elabTypRep(E, id', t0, buildTyp, buildKind, typ) =
+      | elabTypRep(E, p, t0, buildTyp, buildKind, typ) =
 	    elabTyp(E, typ)
 
 
@@ -933,7 +928,7 @@ print"'_a (* not found *)\n";
 		    handle Lookup _ =>
 			(*UNFINISHED*)
 			let val j = () in
-			    insertMod(E, stamp, (id,j,new())) ; j
+			    insertMod(E, stamp, (id,j)) ; j
 			end
 	in
 	    ( j, O.Id(infInfo(i,j), stamp, name) )
@@ -1049,7 +1044,7 @@ print"'_a (* not found *)\n";
 		    handle Lookup _ =>
 			(*UNFINISHED*)
 			let val j = () in
-			    insertInf(E, stamp, (id,j,new())) ; j
+			    insertInf(E, stamp, (id,j)) ; j
 			end
 	in
 	    ( j, O.Id(infInfo(i,j), stamp, name) )
@@ -1159,9 +1154,8 @@ print"'_a (* not found *)\n";
 	Crash.crash "Elab.elabInf: AbsInf"
 
 
-    and elabInfRep(E, O.Id(_,stamp,name), I.AbsInf(i)) =
+    and elabInfRep(E, p, I.AbsInf(i)) =
 	let
-	    val p = Path.PLAIN(stamp, name)
 	(*UNFINISHED*)
 	    val j = ()
 	in
@@ -1268,7 +1262,9 @@ val _=print "\n"
 	    val  _        = Type.enterLevel()
 	    val  k        = elabTypKind(E, typ)
 	    val (t1,id')  = elabTypId(E, k, id)
-	    val (t2,typ') = elabTypRep(E, id', t1, fn t => t, fn k => k, typ)
+	(*UNFINISHED: build real path*) val O.Id(_, z, O.ExId s) = id'
+	    val  p        = Path.PLAIN(z, Lab.fromString s, 1)
+	    val (t2,typ') = elabTypRep(E, p, t1, fn t => t, fn k => k, typ)
 	    val  _        = Type.exitLevel()
 	    val  E'       = splitScope E
 	    val  _        = Type.unify(t1,t2)
@@ -1508,7 +1504,9 @@ print "\n") andthen
 	    val  _        = Type.enterLevel()
 	    val  k        = elabTypKind(E, typ)
 	    val (t1,id')  = elabTypId(E, k, id)
-	    val (t2,typ') = elabTypRep(E, id', t1, fn t => t, fn k => k, typ)
+	(*UNFINISHED: build real path*) val O.Id(_, z, O.ExId s) = id'
+	    val  p        = Path.PLAIN(z, Lab.fromString s, 1)
+	    val (t2,typ') = elabTypRep(E, p, t1, fn t => t, fn k => k, typ)
 	    val  _        = Type.exitLevel()
 	    val  E'       = splitScope E
 	    val  _        = Type.unify(t1,t2)

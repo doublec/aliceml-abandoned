@@ -13,16 +13,17 @@ structure Env0 :> ENV0 =
 
     (* Type environment *)
 
-    val path_word    = Path.PLAIN(Prebound.stamp_word,   Name.ExId "word")
-    val path_int     = Path.PLAIN(Prebound.stamp_int,    Name.ExId "int")
-    val path_char    = Path.PLAIN(Prebound.stamp_char,   Name.ExId "char")
-    val path_string  = Path.PLAIN(Prebound.stamp_string, Name.ExId "string")
-    val path_real    = Path.PLAIN(Prebound.stamp_real,   Name.ExId "real")
-    val path_bool    = Path.PLAIN(Prebound.stamp_bool,   Name.ExId "bool")
-    val path_exn     = Path.PLAIN(Prebound.stamp_exn,    Name.ExId "exn")
-    val path_ref     = Path.PLAIN(Prebound.stamp_tref,   Name.ExId "ref")
-    val path_vec     = Path.PLAIN(Prebound.stamp_vec,    Name.ExId "vector")
-    val path_list    = Path.PLAIN(Prebound.stamp_list,   Name.ExId "list")
+    val path_word    = Path.PLAIN(Prebound.stamp_word, Lab.fromString"word", 1)
+    val path_int     = Path.PLAIN(Prebound.stamp_int,  Lab.fromString"int",  1)
+    val path_char    = Path.PLAIN(Prebound.stamp_char, Lab.fromString"char", 1)
+    val path_string  = Path.PLAIN(Prebound.stamp_string,
+  						       Lab.fromString"string",1)
+    val path_real    = Path.PLAIN(Prebound.stamp_real, Lab.fromString"real", 1)
+    val path_bool    = Path.PLAIN(Prebound.stamp_bool, Lab.fromString"bool", 1)
+    val path_exn     = Path.PLAIN(Prebound.stamp_exn,  Lab.fromString"exn",  1)
+    val path_ref     = Path.PLAIN(Prebound.stamp_tref, Lab.fromString"ref",  1)
+    val path_vec     = Path.PLAIN(Prebound.stamp_vec,  Lab.fromString"vector",1)
+    val path_list    = Path.PLAIN(Prebound.stamp_list, Lab.fromString"list", 1)
 
     val con_word     = (Type.STAR, Type.CLOSED, path_word)
     val con_int      = (Type.STAR, Type.CLOSED, path_int)

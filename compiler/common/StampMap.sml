@@ -1,0 +1,1 @@
+structure StampMap = MakeHashImpMap(Stamp)

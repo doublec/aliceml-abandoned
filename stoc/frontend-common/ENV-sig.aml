@@ -5,7 +5,7 @@ signature ENV =
     type id    = AbstractGrammar.id
     type typ   = Type.t
     type alpha = Type.alpha
-    type inf   = unit (*UNFINISHED*)
+    type inf   = unit
 
     type env
     type t = env
@@ -14,8 +14,8 @@ signature ENV =
     type con_entry = id * typ
     type typ_entry = id * typ
     type var_entry = id * alpha
-    type mod_entry = id * inf * env
-    type inf_entry = id * inf * env
+    type mod_entry = id * inf
+    type inf_entry = id * inf
 
     exception Collision of stamp
     exception Lookup    of stamp
