@@ -10,6 +10,8 @@
  *   $Revision$
  *)
 
+import structure Assert      from "../utility/Assert"
+
 import structure Label       from "Label"
 import structure Path        from "Path"
 import structure Type        from "Type"
