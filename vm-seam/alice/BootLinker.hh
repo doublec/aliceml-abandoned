@@ -12,8 +12,8 @@
 //   $Revision$
 //
 
-#ifndef __GENERIC__BOOT_LINKER_HH__
-#define __GENERIC__BOOT_LINKER_HH__
+#ifndef __ALICE__BOOT_LINKER_HH__
+#define __ALICE__BOOT_LINKER_HH__
 
 #if defined(INTERFACE)
 #pragma interface "alice/BootLinker.hh"
