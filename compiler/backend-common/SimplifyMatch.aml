@@ -78,7 +78,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	type pos = selector list
 
 	datatype test =
-	    LitTest of I.lit
+	    LitTest of lit
 	  | TagTest of Label.t * int * unit O.conArgs * Arity.t option
 	  | ConTest of I.longid * unit O.conArgs * Arity.t option
 	  | RefTest

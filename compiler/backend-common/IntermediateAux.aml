@@ -69,6 +69,12 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 
 	fun freshIntermediateId info = Id (info, Stamp.new (), Name.InId)
 
+	fun translateLit (I.IntLit i) = O.IntLit i
+	  | translateLit (I.WordLit w) = O.WordLit w
+	  | translateLit (I.CharLit c) = O.CharLit c
+	  | translateLit (I.StringLit s) = O.StringLit s
+	  | translateLit (RealLit r) = O.RealLit r
+
 	type subst = (Stamp.t * Stamp.t) list
 
 	fun lookup ((stamp, stamp')::subst, id0 as Id (info, stamp0, name)) =

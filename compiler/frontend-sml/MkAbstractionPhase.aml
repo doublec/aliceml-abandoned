@@ -1319,7 +1319,7 @@ struct
 		val fix     = Fixity.INFIX(n, Fixity.LEFT)
 		val fix'    = O.Fix(i, fix)
 		val dec'    = O.FixDec(i, vallab', fix')
-		val _       = insertInf(E, vid', (i', SOME(LEFT, n)))
+		val _       = insertInf(E, vid', (i', SOME(Infix.LEFT, n)))
 	   in
 		dec' :: acc
 	   end
@@ -1330,7 +1330,7 @@ struct
 		val fix     = Fixity.INFIX(n, Fixity.RIGHT)
 		val fix'    = O.Fix(i, fix)
 		val dec'    = O.FixDec(i, vallab', fix')
-		val _       = insertInf(E, vid', (i', SOME(RIGHT, n)))
+		val _       = insertInf(E, vid', (i', SOME(Infix.RIGHT, n)))
 	   in
 		dec' :: acc
 	   end
@@ -2491,7 +2491,7 @@ struct
 		val fix     = Fixity.INFIX(n, Fixity.LEFT)
 		val fix'    = O.Fix(i, fix)
 		val spec'   = O.FixSpec(i, vallab', fix')
-		val _       = insertDisjointInf(E, vid', (i', SOME(LEFT, n)))
+		val _       = insertDisjointInf(E,vid', (i',SOME(Infix.LEFT,n)))
 			      handle CollisionInf vid' =>
 				error(i', E.SpecFixDuplicate vid')
 	   in
@@ -2504,7 +2504,7 @@ struct
 		val fix     = Fixity.INFIX(n, Fixity.RIGHT)
 		val fix'    = O.Fix(i, fix)
 		val spec'   = O.FixSpec(i, vallab', fix')
-		val _       = insertDisjointInf(E, vid', (i', SOME(RIGHT, n)))
+		val _       = insertDisjointInf(E,vid',(i',SOME(Infix.RIGHT,n)))
 			      handle CollisionInf vid' =>
 				error(i', E.SpecFixDuplicate vid')
 	   in
@@ -2944,7 +2944,7 @@ struct
 		val fix     = Fixity.INFIX(n, Fixity.LEFT)
 		val fix'    = O.Fix(i, fix)
 		val imp'    = O.FixImp(i, vallab', O.SomeDesc(i,fix'))
-		val _       = insertDisjointInf(E, vid', (i', SOME(LEFT, n)))
+		val _       = insertDisjointInf(E, vid',(i',SOME(Infix.LEFT,n)))
 			      handle CollisionInf vid' =>
 				error(i', E.ImpFixDuplicate vid')
 	   in
@@ -2957,7 +2957,7 @@ struct
 		val fix     = Fixity.INFIX(n, Fixity.RIGHT)
 		val fix'    = O.Fix(i, fix)
 		val imp'    = O.FixImp(i, vallab', O.SomeDesc(i,fix'))
-		val _       = insertDisjointInf(E, vid', (i', SOME(RIGHT, n)))
+		val _       = insertDisjointInf(E,vid',(i',SOME(Infix.RIGHT,n)))
 			      handle CollisionInf vid' =>
 				error(i', E.ImpFixDuplicate vid')
 	   in

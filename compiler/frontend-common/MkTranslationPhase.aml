@@ -10,15 +10,6 @@
  *   $Revision$
  *)
 
-(*DEBUG*)
-
-import "../../lib/system/TextIO"
-import "../../lib/utility/PrettyPrint"
-import "../../lib/rtt/PPInf"
-(*
-import "../../../../install/lib/tools/Inspector"
-*)
-
 import structure TypedInfo
        structure TypedGrammar		from "TypedGrammar"
 import structure IntermediateGrammar	from "../common/IntermediateGrammar"
@@ -107,8 +98,12 @@ struct
     val trModName		= trName'(fn s => s ^ "$")
     val trInfName		= trName'(fn s => "$" ^ s ^ "$")
 
+    fun isValName' s		= String.sub(s,0) <> #"$" andalso
+				  String.sub(s, String.size s - 1) <> #"$"
     fun isTypName' s		= String.sub(s,0) = #"$" andalso
 				  String.sub(s, String.size s - 1) <> #"$"
+    fun isModName' s		= String.sub(s,0) <> #"$" andalso
+				  String.sub(s, String.size s - 1) = #"$"
     fun isInfName' s		= String.sub(s,0) = #"$" andalso
 				  String.sub(s, String.size s - 1) = #"$"
 
@@ -730,24 +725,118 @@ val _ = TextIO.inputLine(TextIO.stdIn)
 	(* ByNeed : (interface I; module F : any -> I) -> I *)
 	(* = fn {[I]=_, [F]=x} -> lazy x() *)
 	(let
-	    val  i'     = trModInfo i
-	    val  r      = #region i'
-	    val  i0'    = nonInfo r
-	    val  t      = #typ i'
-	    val (t1,t2) = Type.asArrow' t
-	    val (l1,t11,l2,t12) = findModInf(Type.asProd t1)
-	    val  x'     = O.Id(typInfo(r,t11), Stamp.new(), Name.InId)
-	    val  p'     = O.ProdPat(typInfo(r,t1),
+	    val  i'      = trModInfo i
+	    val  r       = #region i'
+	    val  i0'     = nonInfo r
+	    val  t       = #typ i'
+	    val (t1,t2)  = Type.asArrow' t
+	    val (l1,t11) = findField(isModName', Type.asProd t1)
+	    val (l2,t12) = findField(isInfName', Type.asProd t1)
+	    val  x'      = O.Id(typInfo(r,t11), Stamp.new(), Name.InId)
+	    val  p'      = O.ProdPat(typInfo(r,t1),
 				#[O.Field(i0', O.Lab(i0',l2),
 					  O.JokPat(typInfo(r,t12))),
 				  O.Field(i0', O.Lab(i0',l1), idToPat x')])
-	    val  i2'    = typInfo(r,t2)
-	    val  e'     = O.LazyExp(i2', O.AppExp(i2', idToExp x', trUnit r))
+	    val  i2'     = typInfo(r,t2)
+	    val  e'      = O.LazyExp(i2', O.AppExp(i2', idToExp x', trUnit r))
 	in
 	    O.FunExp(i', #[O.Match(nonInfo r, p', e')])
 	end
 	handle Type.Type => raise Crash.Crash "trPrimMod: ByNeed")
 
+      | trPrimMod(i,"Reflect",j) =
+	(* Reflect : (module X : any) -> (x : Value.t) *)
+	(* = fn {[X]=x1} -> {[x]=x1} *)
+	(let
+	    val  i'      = trModInfo i
+	    val  r       = #region i'
+	    val  i0'     = nonInfo r
+	    val  t       = #typ i'
+	    val (t1,t2)  = Type.asArrow' t
+	    val (l1,t11) = findField(isModName', Type.asProd t1)
+	    val (l2,t21) = findField(isValName', Type.asProd t2)
+	    val  x1'     = O.Id(typInfo(r,t11), Stamp.new(), Name.InId)
+	    val  p'      = O.ProdPat(typInfo(r,t1),
+				     #[O.Field(i0',O.Lab(i0',l1), idToPat x1')])
+	    val  e'      = O.ProdExp(typInfo(r,t2),
+				     #[O.Field(i0',O.Lab(i0',l2), idToExp x1')])
+	in
+	    O.FunExp(i', #[O.Match(nonInfo r, p', e')])
+	end
+	handle Type.Type => raise Crash.Crash "trPrimMod: Reflect")
+
+      | trPrimMod(i,"Unreflect",j) =
+	(* Unreflect : (x : Value.t; interface I) -> I *)
+	(* = fn {[x]=x1, [I]=x2} -> x1 *)
+	(let
+	    val  i'      = trModInfo i
+	    val  r       = #region i'
+	    val  i0'     = nonInfo r
+	    val  t       = #typ i'
+	    val (t1,t2)  = Type.asArrow' t
+	    val (l1,t11) = findField(isValName', Type.asProd t1)
+	    val (l2,t21) = findField(isInfName', Type.asProd t2)
+	    val  x1'     = O.Id(typInfo(r,t11), Stamp.new(), Name.InId)
+	    val  x2'     = O.Id(typInfo(r,t21), Stamp.new(), Name.InId)
+	    val  p'      = O.ProdPat(typInfo(r,t1),
+				#[O.Field(i0', O.Lab(i0',l1), idToPat x1'),
+				  O.Field(i0', O.Lab(i0',l2), idToPat x2')])
+	    val  e'      = idToExp x1'
+	in
+	    O.FunExp(i', #[O.Match(nonInfo r, p', e')])
+	end
+	handle Type.Type => raise Crash.Crash "trPrimMod: Reflect")
+
+      | trPrimMod(i,"ReflectSig",j) =
+	(* ReflectSig : (interface I) -> (x : Inf.t) *)
+	(* = fn {[X]=x1} -> {[x]= #1(x1())} *)
+	(let
+	    val  i'      = trModInfo i
+	    val  r       = #region i'
+	    val  i0'     = nonInfo r
+	    val  t       = #typ i'
+	    val (t1,t2)  = Type.asArrow' t
+	    val (l1,t11) = findField(isInfName', Type.asProd t1)
+	    val (l2,t21) = findField(isValName', Type.asProd t2)
+	    val  x1'     = O.Id(typInfo(r,t11), Stamp.new(), Name.InId)
+	    val  p'      = O.ProdPat(typInfo(r,t1),
+				     #[O.Field(i0',O.Lab(i0',l1), idToPat x1')])
+	    val  e1'     = O.SelExp(typInfo(r,t21),
+				    O.Lab(nonInfo r, Label.fromInt 1),
+				    O.AppExp(typInfo(r,t11),
+					     idToExp x1', trUnit r))
+	    val  e'      = O.ProdExp(typInfo(r,t2),
+				     #[O.Field(i0', O.Lab(i0',l2), e1')])
+	in
+	    O.FunExp(i', #[O.Match(nonInfo r, p', e')])
+	end
+	handle Type.Type => raise Crash.Crash "trPrimMod: Reflect")
+(*
+      | trPrimMod(i,"UnreflectSig",j) =
+	(* UnreflectSig : (x : Inf.t) -> (interface I) *)
+	(* = fn {[X]=x1} -> {[x]= #1(x1())} *)
+	(let
+	    val  i'      = trModInfo i
+	    val  r       = #region i'
+	    val  i0'     = nonInfo r
+	    val  t       = #typ i'
+	    val (t1,t2)  = Type.asArrow' t
+	    val (l1,t11) = findField(isInfName', Type.asProd t1)
+	    val (l2,t21) = findField(isValName', Type.asProd t2)
+	    val  x1'     = O.Id(typInfo(r,t11), Stamp.new(), Name.InId)
+	    val  p'      = O.ProdPat(typInfo(r,t1),
+				     #[O.Field(i0',O.Lab(i0',l1), idToPat x1')])
+	    val  e1'     = O.SelExp(typInfo(r,t21),
+				    O.Lab(nonInfo r, Label.fromInt 1),
+				    O.AppExp(typInfo(r,t11),
+					     idToExp x1', trUnit r)))
+	    val  e'      = O.ProdExp(typInfo(r,t2),
+				     #[O.Field(i0', O.Lab(i0',l2), e1')])
+	in
+	    O.FunExp(i', #[O.Match(nonInfo r, p', e')])
+	end
+	handle Type.Type => raise Crash.Crash "trPrimMod: Reflect")
+*)
       | trPrimMod(i,"Pack",j) =
 	(* Pack : (interface I; module X : I) -> (x : package) *)
 	(* = fn {[X]=x1,[I]=x2} ->
@@ -760,35 +849,36 @@ val _ = TextIO.inputLine(TextIO.stdIn)
 	else
 	(*UNFINISHED: abstraction of RTTs*)
 	(let
-	    val  i'     = trModInfo i
-	    val  r      = #region i'
-	    val  i0'    = nonInfo r
-	    val  t      = #typ i'
-	    val (t1,t2) = Type.asArrow' t
-	    val (l1,t11,l2,t12) = findModInf(Type.asProd t1)
-	    val (l3,t21)        = Type.headRow(Type.asProd' t2)
-	    val  x1'    = O.Id(typInfo(r,t11), Stamp.new(), Name.InId)
-	    val  x2'    = O.Id(typInfo(r,t12), Stamp.new(), Name.InId)
-	    val  t3     = #2(Type.asArrow t12)
-	    val  x3'    = O.Id(typInfo(r,typ_inf), Stamp.new(), Name.InId)
-	    val  p'     = O.ProdPat(typInfo(r,t1),
+	    val  i'      = trModInfo i
+	    val  r       = #region i'
+	    val  i0'     = nonInfo r
+	    val  t       = #typ i'
+	    val (t1,t2)  = Type.asArrow' t
+	    val (l1,t11) = findField(isModName', Type.asProd t1)
+	    val (l2,t12) = findField(isInfName', Type.asProd t1)
+	    val (l3,t21) = findField(isValName', Type.asProd t2)
+	    val  x1'     = O.Id(typInfo(r,t11), Stamp.new(), Name.InId)
+	    val  x2'     = O.Id(typInfo(r,t12), Stamp.new(), Name.InId)
+	    val  t3      = #2(Type.asArrow t12)
+	    val  x3'     = O.Id(typInfo(r,typ_inf), Stamp.new(), Name.InId)
+	    val  p'      = O.ProdPat(typInfo(r,t1),
 				#[O.Field(i0', O.Lab(i0',l1), idToPat x1'),
 				  O.Field(i0', O.Lab(i0',l2), idToPat x2')])
-	    val  a1'    = O.Lab(nonInfo r, Label.fromInt 1)
-	    val  d'     = O.ValDec(nonInfo r, idToPat x3',
-				   O.SelExp(typInfo(r,typ_inf), a1',
-					    O.AppExp(typInfo(r,t3),
-						     idToExp x2', trUnit r)))
-	    val  e0'    = unitInfOp(lab_strengthen,
-				    O.TupExp(typInfo(r,typ_pathinf),
-					     #[pathOp(lab_invent, trUnit r),
-					       idToExp x3']))
-	    val  e1'    = O.CastExp(typInfo(r,t21), 
+	    val  a1'     = O.Lab(nonInfo r, Label.fromInt 1)
+	    val  d'      = O.ValDec(nonInfo r, idToPat x3',
+				    O.SelExp(typInfo(r,typ_inf), a1',
+					     O.AppExp(typInfo(r,t3),
+						      idToExp x2', trUnit r)))
+	    val  e0'     = unitInfOp(lab_strengthen,
+				     O.TupExp(typInfo(r,typ_pathinf),
+					      #[pathOp(lab_invent, trUnit r),
+						idToExp x3']))
+	    val  e1'     = O.CastExp(typInfo(r,t21), 
 				O.TupExp(typInfo(r,Type.inTuple #[t11,t12]),
 					 #[idToExp x1', idToExp x3']))
-	    val  i2     = typInfo(r,t2)
-	    val  e2'    = O.ProdExp(i2, #[O.Field(i0', O.Lab(i0',l3), e1')])
-	    val  e'     = O.LetExp(i2, #[d'], O.SeqExp(i2, #[e0',e2']))
+	    val  i2      = typInfo(r,t2)
+	    val  e2'     = O.ProdExp(i2, #[O.Field(i0', O.Lab(i0',l3), e1')])
+	    val  e'      = O.LetExp(i2, #[d'], O.SeqExp(i2, #[e0',e2']))
 	in
 	    O.FunExp(i', #[O.Match(nonInfo r, p', e')])
 	end
@@ -805,34 +895,35 @@ val _ = TextIO.inputLine(TextIO.stdIn)
 	else
 	(*UNFINISHED: stripping*)
 	(let
-	    val  i'     = trModInfo i
-	    val  r      = #region i'
-	    val  i0'    = nonInfo r
-	    val  t      = #typ i'
-	    val (t1,t2) = Type.asArrow' t
-	    val (l1,t11,l2,t12) = findModInf(Type.asProd' t1)
-	    val  x1'    = O.Id(typInfo(r,t11), Stamp.new(), Name.InId)
-	    val  x2'    = O.Id(typInfo(r,t12), Stamp.new(), Name.InId)
-	    val  p'     = O.ProdPat(typInfo(r,t1),
+	    val  i'      = trModInfo i
+	    val  r       = #region i'
+	    val  i0'     = nonInfo r
+	    val  t       = #typ i'
+	    val (t1,t2)  = Type.asArrow' t
+	    val (l1,t11) = findField(isValName', Type.asProd t1)
+	    val (l2,t12) = findField(isInfName', Type.asProd t1)
+	    val  x1'     = O.Id(typInfo(r,t11), Stamp.new(), Name.InId)
+	    val  x2'     = O.Id(typInfo(r,t12), Stamp.new(), Name.InId)
+	    val  p'      = O.ProdPat(typInfo(r,t1),
 				#[O.Field(i0', O.Lab(i0',l1), idToPat x1'),
 				  O.Field(i0', O.Lab(i0',l2), idToPat x2')])
 
-	    val  i1'    = typInfo(r, Type.inTuple #[t2,typ_inf])
-	    val  i2'    = typInfo(r, t2)
-	    val  x11'   = O.Id(i2', Stamp.new(), Name.InId)
-	    val  x12'   = O.Id(typInfo(r,typ_typ), Stamp.new(), Name.InId)
-	    val  p1'    = O.TupPat(i1', #[idToPat x11', idToPat x12'])
-	    val  e1'    = O.CastExp(i1', idToExp x1')
-	    val  d'     = O.ValDec(nonInfo r, p1', e1')
+	    val  i1'     = typInfo(r, Type.inTuple #[t2,typ_inf])
+	    val  i2'     = typInfo(r, t2)
+	    val  x11'    = O.Id(i2', Stamp.new(), Name.InId)
+	    val  x12'    = O.Id(typInfo(r,typ_typ), Stamp.new(), Name.InId)
+	    val  p1'     = O.TupPat(i1', #[idToPat x11', idToPat x12'])
+	    val  e1'     = O.CastExp(i1', idToExp x1')
+	    val  d'      = O.ValDec(nonInfo r, p1', e1')
 
-	    val  t3     = #2(Type.asArrow t12)
-	    val  a1'    = O.Lab(nonInfo r, Label.fromInt 1)
-	    val  e11'   = O.AppExp(typInfo(r,t3), idToExp x2', trUnit r)
-	    val  e12'   = O.SelExp(typInfo(r,typ_inf), a1', e11')
-	    val  e1'    = reaInfOp(lab_match, O.TupExp(typInfo(r,typ_infinf),
-					      #[idToExp x12', e12']))
-	    val  e2'    = idToExp x11' (*UNFINISHED*)
-	    val  e'     = O.LetExp(i2', #[d'], O.SeqExp(i2', #[e1', e2']))
+	    val  t3      = #2(Type.asArrow t12)
+	    val  a1'     = O.Lab(nonInfo r, Label.fromInt 1)
+	    val  e11'    = O.AppExp(typInfo(r,t3), idToExp x2', trUnit r)
+	    val  e12'    = O.SelExp(typInfo(r,typ_inf), a1', e11')
+	    val  e1'     = reaInfOp(lab_match, O.TupExp(typInfo(r,typ_infinf),
+					       #[idToExp x12', e12']))
+	    val  e2'     = idToExp x11' (*UNFINISHED*)
+	    val  e'      = O.LetExp(i2', #[d'], O.SeqExp(i2', #[e1', e2']))
 	in
 	    O.FunExp(i', #[O.Match(nonInfo r, p', e')])
 	end
@@ -845,22 +936,23 @@ val _ = TextIO.inputLine(TextIO.stdIn)
 	    O.FailExp(trModInfo i)
 	else
 	(let
-	    val  i'     = trModInfo i
-	    val  r      = #region i'
-	    val  i0'    = nonInfo r
-	    val  t      = #typ i'
-	    val (t1,t2) = Type.asArrow' t
-	    val (l1,t11,l2,t12) = findValTyp(Type.asProd t1)
-	    val (l3,t21)        = Type.headRow(Type.asProd' t2)
-	    val  x1'    = O.Id(typInfo(r,t11), Stamp.new(), Name.InId)
-	    val  x2'    = O.Id(typInfo(r,t12), Stamp.new(), Name.InId)
-	    val  p'     = O.ProdPat(typInfo(r,t1),
+	    val  i'      = trModInfo i
+	    val  r       = #region i'
+	    val  i0'     = nonInfo r
+	    val  t       = #typ i'
+	    val (t1,t2)  = Type.asArrow' t
+	    val (l1,t11) = findField(isValName', Type.asProd t1)
+	    val (l2,t12) = findField(isTypName', Type.asProd t1)
+	    val (l3,t21) = findField(isValName', Type.asProd t2)
+	    val  x1'     = O.Id(typInfo(r,t11), Stamp.new(), Name.InId)
+	    val  x2'     = O.Id(typInfo(r,t12), Stamp.new(), Name.InId)
+	    val  p'      = O.ProdPat(typInfo(r,t1),
 				#[O.Field(i0', O.Lab(i0',l1), idToPat x1'),
 				  O.Field(i0', O.Lab(i0',l2), idToPat x2')])
-	    val  e1'    = O.CastExp(typInfo(r,t21), 
+	    val  e1'     = O.CastExp(typInfo(r,t21), 
 				O.TupExp(typInfo(r,Type.inTuple #[t11,t12]),
 					 #[idToExp x1', idToExp x2']))
-	    val  e'     = O.ProdExp(typInfo(r,t2),
+	    val  e'      = O.ProdExp(typInfo(r,t2),
 				    #[O.Field(i0', O.Lab(i0',l3), e1')])
 	in
 	    O.FunExp(i', #[O.Match(nonInfo r, p', e')])
@@ -879,34 +971,35 @@ val _ = TextIO.inputLine(TextIO.stdIn)
 	    O.FailExp(trModInfo i)
 	else
 	(let
-	    val  i'     = trModInfo i
-	    val  r      = #region i'
-	    val  i0'    = nonInfo r
-	    val  t      = #typ i'
-	    val (t1,t2) = Type.asArrow' t
-	    val (l1,t11,l2,t12) = findValTyp(Type.asProd' t1)
-	    val (l3,t21)        = Type.headRow(Type.asProd' t2)
-	    val  x1'    = O.Id(typInfo(r,t11), Stamp.new(), Name.InId)
-	    val  x2'    = O.Id(typInfo(r,t12), Stamp.new(), Name.InId)
-	    val  p'     = O.ProdPat(typInfo(r,t1),
+	    val  i'      = trModInfo i
+	    val  r       = #region i'
+	    val  i0'     = nonInfo r
+	    val  t       = #typ i'
+	    val (t1,t2)  = Type.asArrow' t
+	    val (l1,t11) = findField(isValName', Type.asProd t1)
+	    val (l2,t12) = findField(isTypName', Type.asProd t1)
+	    val (l3,t21) = findField(isValName', Type.asProd t2)
+	    val  x1'     = O.Id(typInfo(r,t11), Stamp.new(), Name.InId)
+	    val  x2'     = O.Id(typInfo(r,t12), Stamp.new(), Name.InId)
+	    val  p'      = O.ProdPat(typInfo(r,t1),
 				#[O.Field(i0', O.Lab(i0',l1), idToPat x1'),
 				  O.Field(i0', O.Lab(i0',l2), idToPat x2')])
 
-	    val  x11'   = O.Id(typInfo(r,t21), Stamp.new(), Name.InId)
-	    val  x12'   = O.Id(typInfo(r,typ_typ), Stamp.new(), Name.InId)
-	    val  i1'    = typInfo(r, Type.inTuple #[t21,typ_typ])
-	    val  p1'    = O.TupPat(i1', #[idToPat x11', idToPat x12'])
-	    val  e1'    = O.CastExp(i1', idToExp x1')
-	    val  d'     = O.ValDec(nonInfo r, p1', e1')
+	    val  x11'    = O.Id(typInfo(r,t21), Stamp.new(), Name.InId)
+	    val  x12'    = O.Id(typInfo(r,typ_typ), Stamp.new(), Name.InId)
+	    val  i1'     = typInfo(r, Type.inTuple #[t21,typ_typ])
+	    val  p1'     = O.TupPat(i1', #[idToPat x11', idToPat x12'])
+	    val  e1'     = O.CastExp(i1', idToExp x1')
+	    val  d'      = O.ValDec(nonInfo r, p1', e1')
 
-	    val  e1'    = boolTypOp(lab_equals, O.TupExp(typInfo(r,typ_typtyp),
+	    val  e1'     = boolTypOp(lab_equals, O.TupExp(typInfo(r,typ_typtyp),
 						  #[idToExp x12', idToExp x2']))
-	    val  i2'    = typInfo(r,t2)
-	    val  e2'    = O.ProdExp(i2',
+	    val  i2'     = typInfo(r,t2)
+	    val  e2'     = O.ProdExp(i2',
 			    #[O.Field(i0', O.Lab(i0',l3), idToExp x11')])
-	    val  e3'    = O.RaiseExp(i2', (*UNFINISHED*)
+	    val  e3'     = O.RaiseExp(i2', (*UNFINISHED*)
 				O.PrimExp(typInfo(r,typ_exn), "General.Bind"))
-	    val  e'     = O.LetExp(i2', #[d'], O.IfExp(i2', e1', e2', e3'))
+	    val  e'      = O.LetExp(i2', #[d'], O.IfExp(i2', e1', e2', e3'))
 	in
 	    O.FunExp(i', #[O.Match(nonInfo r, p', e')])
 	end
@@ -916,26 +1009,15 @@ val _ = TextIO.inputLine(TextIO.stdIn)
       | trPrimMod(i,s,j) =
 	O.PrimExp(trModInfo i, s)
 
-    and findModInf r =
+    and findField(isName', r) =
 	let
-	    val (l1,t1) = Type.headRow r
-	    val (l2,t2) = Type.headRow(Type.tailRow r)
+	    val (l,t) = Type.headRow r handle Type.Row =>
+			raise Crash.Crash "TranslationPhase.findField"
 	in
-	    case (isInfName'(Label.toString l1), isInfName'(Label.toString l2))
-	      of (false,true) => (l1,t1,l2,t2)
-	       | (true,false) => (l2,t2,l1,t1)
-	       |  _           => raise Crash.Crash "TranslationPhase.findModInf"
-	end
-
-    and findValTyp r =
-	let
-	    val (l1,t1) = Type.headRow r
-	    val (l2,t2) = Type.headRow(Type.tailRow r)
-	in
-	    case (isTypName'(Label.toString l1), isTypName'(Label.toString l2))
-	      of (false,true) => (l1,t1,l2,t2)
-	       | (true,false) => (l2,t2,l1,t1)
-	       |  _           => raise Crash.Crash "TranslationPhase.findValTyp"
+	    if isName'(Label.toString l) then
+		(l,t)
+	    else
+		findField(isName', Type.tailRow r)
 	end
 
 
@@ -1069,14 +1151,7 @@ val _ = TextIO.inputLine(TextIO.stdIn)
 		   | (NONE, NONE) => NONE
 	    end
 	else
-(*DEBUG*)
-(print"j1 = \n";
-PrettyPrint.output(TextIO.stdOut, PPInf.ppInf j1, 79);
-print"\nj2 = \n";
-PrettyPrint.output(TextIO.stdOut, PPInf.ppInf j2, 79);
-print"\n";
 	    raise Assert.failure
-)
 
     and upItems(isOpaque, isntIdentity, x1, s1, x2, [], r, fields) =
 	    (Vector.fromList fields, isntIdentity)
@@ -1469,9 +1544,9 @@ print"\n";
 	    val xx' = idToExp x'
 	    val l'  = O.Lab(nonInfo r, Label.fromInt 1)
 	    val e1' = O.SelExp(typInfo(#region(I.infoInf j1), typ_inf),
-			       l', trInf j1)
+			       l', trInf' j1)
 	    val e2' = O.SelExp(typInfo(#region(I.infoInf j2), typ_inf),
-			       l', trInf j2)
+			       l', trInf' j2)
 	    val e'  = infOp(lab_intersect,
 			    O.TupExp(typInfo(r,typ_infinf), #[e1',e2']))
 	    val d'  = O.ValDec(nonInfo r, idToPat x', e')
@@ -1501,10 +1576,38 @@ print"\n";
 	    O.LetExp(typInfo(#region i,t), trDecs ds, e')
 	end
 
+      | trInf'(I.SingInf(i, m as (I.AnnMod(_,_,j) | I.UpMod(_,_,j)))) =
+	(*UNFINISHED: quick hack to make it possible to bootstrap with RTTs *)
+	(* [sing (m : j)] = (#1[j], [m]) *)
+	let
+	    val r   = #region i
+	    val e1' = O.SelExp(typInfo(r,typ_inf),
+			       O.Lab(nonInfo r, Label.fromInt 1), trInf' j)
+	    val e2' = trMod m
+	    val t   = Type.inTuple #[#typ(O.infoExp e1'), #typ(O.infoExp e2')]
+	in
+	    O.TupExp(typInfo(r,t), #[e1',e2'])
+	end
+
       | trInf'(I.SingInf(i,m)) =
 	(* [sing m] = (Inf.inSing[m], ???) *)
 	(*UNFINISHED*)
-	unfinished (#region i) "trInf" "runtime singleton interfaces"
+	(*DEBUG*)
+	let
+	    val s = case m of I.VarMod _    => "VarMod"
+			    | I.PrimMod _   => "PrimMod"
+			    | I.StrMod _    => "StrMod"
+			    | I.SelMod _    => "SelMod"
+			    | I.FunMod _    => "FunMod"
+			    | I.AppMod _    => "AppMod"
+			    | I.AnnMod _    => "AnnMod"
+			    | I.UpMod _     => "UpMod"
+			    | I.LetMod _    => "LetMod"
+			    | I.UnpackMod _ => "UnpackMod"
+	in
+	    unfinished (#region i) "trInf"
+				   ("runtime singleton interfaces (" ^ s ^ ")")
+	end
 
       | trInf'(I.AbsInf(i)) =
 	raise Crash.Crash "TranslationPhase.trInf: AbsInf"
@@ -2171,7 +2274,7 @@ print"\n";
 	    val i'   = typInfo(r,t)
 	    val x'   = O.Id(i', Stamp.new(), Name.InId)
 	    val ds'' = trImps(is, O.ShortId(i',x'), ds')
-	    val _    = Inf.stripSig s
+	    val _    = Inf.compressSig s
 	in
 	    ( (x',s,u)::xsus', ds'' )
 	end
@@ -2196,7 +2299,7 @@ print"\n";
 	    val  ids'        = ids ds
 	    val  fs'         = Vector.map (idToField (fn x' => x')) ids'
 	    val  s           = #sign i
-	    val  _           = Inf.stripSig s
+	    val  _           = Inf.compressSig s
 	in
 	    ( xsus', ds', fs', s )
 	end

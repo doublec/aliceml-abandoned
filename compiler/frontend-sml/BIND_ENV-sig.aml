@@ -59,7 +59,7 @@ sig
     type Info  = Source.region
     type stamp = Stamp.t
 
-    datatype InfAssoc  = datatype Infix.Assoc
+    type     InfAssoc  = Infix.Assoc
     type     InfStatus = Infix.InfStatus
     datatype IdStatus  = V | T of int | C of int | R
 

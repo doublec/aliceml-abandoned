@@ -474,7 +474,7 @@ functor MkFlatteningPhase(val loadSign:
 		(stms, O.OneArg id)
 	    end
 	and translateExp (LitExp (info, lit), f, cont) =
-	    f (O.LitExp (id_info info, lit))::translateCont cont
+	    f (O.LitExp (id_info info, translateLit lit))::translateCont cont
 	  | translateExp (PrimExp (info, name), f, cont) =
 	    f (O.PrimExp (id_info info, name))::translateCont cont
 	  | translateExp (NewExp (info, isNAry), f, cont) =
