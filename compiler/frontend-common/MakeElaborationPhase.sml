@@ -1,5 +1,4 @@
 (* UNFINISHED:
-   - reset type level on error
    - appropriate treatment of value paths
 *)
 
@@ -25,7 +24,7 @@ structure ElaborationPhase :> ELABORATION_PHASE =
 
     val error = E.error
 
-  (* Until we are finished... *)
+  (* Under construction... *)
 
     fun unfinished i funname casename =
 	Error.warn(i, "Elab." ^ funname ^ ": " ^ casename ^ " not checked yet")
@@ -159,7 +158,7 @@ val x=case Name.toString(I.name id) of "?" => "?" | x => x
 val _=print("-- lookup val " ^ x ^ "(" ^ Stamp.toString stamp ^ ") : ")
 val _=PrettyPrint.output(TextIO.stdOut, PPType.ppTyp(#typ(lookupVal(E, stamp))), 60)
 val _=print "\n"
-*)
+"*)
 	    val t  = #typ(lookupVal(E, stamp))
 	in
 	    ( t, O.Id(typInfo(i,t), stamp, name) )
@@ -179,6 +178,16 @@ val _=print "\n"
 	    val  t          = Inf.lookupVal(s, l)
 	in
 	    ( t, O.LongId(typInfo(i,t), longid', lab') )
+	end
+
+    and elabValLongid_path(E, I.ShortId(_, I.Id(_, stamp, _))) =
+	    #path(lookupVal(E, stamp))
+
+      | elabValLongid_path(E, I.LongId(_, longid, I.Lab(_, l))) =
+	let
+	    val (s,_) = elabModLongid_path(E, longid)
+	in
+	    Inf.lookupValPath(s, Lab.fromString l)
 	end
 
 
@@ -285,7 +294,7 @@ val _=print "\n"
 	end
 
       | elabExp(E, I.CompExp(i, exp1, exp2)) =
-	(* UNFINISHED *)
+	(* UNFINISHED: more polymorphic treatment *)
 	let
 	    val (t1,exp1') = elabExp(E, exp1)
 	    val (t2,exp2') = elabExp(E, exp2)
@@ -1007,10 +1016,6 @@ val _=print "\n"
     and elabMod(E, I.PrimMod(i, s, inf)) =
 	let
 	    val (j,inf') = elabGroundInf(E, inf)
-(*DEBUG*)
-val _=print("-- primitive module \"" ^ s ^ "\" :\n")
-val _=PrettyPrint.output(TextIO.stdOut, PPInf.ppInf j, 75)
-val _=print "\n"
 	in
 	    ( j, O.PrimMod(infInfo(i,j), s, inf') )
 	end
@@ -1026,6 +1031,8 @@ val _=print "\n"
 	let
 	    val s     = Inf.empty()
 	    val decs' = elabDecs(E, s, decs)
+	    val _     = Inf.close s handle Inf.Unclosed lnt =>
+			error(i, E.StrModUnclosed lnt)
 	    val j     = Inf.inSig s
 	in
 	    ( j, O.StrMod(infInfo(i,j), decs') )
@@ -1065,7 +1072,9 @@ val _=print "\n"
 				 Inf.asArrow(Inf.instance j1)
 			      else
 				 error(I.infoMod mod1, E.AppModFunMismatch j1)
-	    val  p2         = Path.invent()
+	    val  p2         = case elabMod_path(E, mod2)
+				of SOME(p2,_) => p2
+				 | NONE       => Path.invent()
 	    val  _          = Inf.strengthen(p2, j2)
 	    val  rea        = Inf.match(j2,j11)
 			      handle Inf.Mismatch mismatch =>
@@ -1113,6 +1122,30 @@ val _=print "\n"
 	in
 	    ( j, O.LetMod(infInfo(i,j), decs', mod') )
 	end
+
+
+    and elabMod_path(E, I.VarMod(i, I.Id(_, stamp, _))) =
+	let
+	    val {path=p, inf=j, ...} = lookupMod(E, stamp)
+	in
+	    SOME (p,j)
+	end
+
+      | elabMod_path(E, I.SelMod(_, mod, I.Lab(_, l))) =
+	(case elabMod_path(E, mod)
+	   of NONE      => NONE
+	    | SOME(_,j) =>
+	      let
+		  val s = Inf.asSig j
+		  val l = Lab.fromString l
+		  val j = Inf.lookupMod(s, l)
+		  val p = Inf.lookupModPath(s, l)
+	      in
+		  SOME (p,j)
+	      end
+	)
+
+      | elabMod_path _ = NONE
 
 
   (* Interfaces *)
@@ -1356,8 +1389,11 @@ print "\n\
 	    val (l,ts,con') = elabConRep(E, s, t, con)
 	    val  _          = Type.exitLevel()
 	    val  E'         = splitScope E
-	    (* UNFINISHED: if typ is singleton then equate x to it *)
-	    val  _          = appVals (generaliseVal (E, s, SOME NONE, true)) E'
+	    val  d          = case typ
+				of I.SingTyp(_, longid) =>
+					SOME(elabValLongid_path(E, longid))
+				 | _ => NONE
+	    val  _          = appVals (generaliseVal (E, s, SOME d, true)) E'
 	in
 	    O.ConDec(nonInfo(i), con', typ')
 	end
@@ -1408,8 +1444,10 @@ val _=print "\n"
 	    val (j,mod') = elabMod(E, mod)
 	    val  _       = Inf.strengthen(p, j)
 	    val  id'     = elabModId_bind(E, p, j, id)
-	    (*UNFINISHED: if mod = y then equate p to y *)
-	    val  _       = Inf.extendMod(s, p, j, SOME p)
+	    val  p'      = case elabMod_path(E, mod)
+			     of SOME (p',_) => p'
+			      | NONE        => p
+	    val  _       = Inf.extendMod(s, p, j, SOME p')
 	in
 	    O.ModDec(nonInfo(i), id', mod')
 	end
@@ -1484,7 +1522,7 @@ val _=print "\n"
 in print("val " ^ x ^ " : ") end;
 PrettyPrint.output(TextIO.stdOut, PPType.ppTyp t', 60);
 print(if w = Inf.CONSTRUCTOR then " (* constructor *)\n" else if isPoly then "\n" else " (* not generalised *)\n")
-*)
+"*)
 	end
 
 
@@ -1579,10 +1617,13 @@ val _=print "\n"
 	    val  _          = enterVars(E, vars)
 	    val (t,typ')    = elabStarTyp(E, typ)
 	    val (l,ts,con') = elabConRep(E, s, t, con)
-	    (* UNFINISHED: if typ is singleton then equate x to it *)
 	    val  _          = Type.exitLevel()
 	    val  E'         = splitScope E
-	    val  _          = appVals (generaliseVal (E, s, NONE, true)) E'
+	    val  d          = case typ
+				of I.SingTyp(_, longid) =>
+					SOME(elabValLongid_path(E, longid))
+				 | _ => NONE
+	    val  _          = appVals (generaliseVal (E, s, SOME d, true)) E'
 	in
 	    O.ConSpec(nonInfo(i), con', typ')
 	end
@@ -1644,8 +1685,14 @@ print "\n\
 )*)
 	    (* UNFINISHED: revert renaming of paths somehow *)
 	    val  id'     = elabModId_bind(E, p, j', id)
-	    (* UNFINISHED: treat singleton infs *)
-	    val  _       = Inf.extendMod(s, p, j, NONE)
+	    val  d       = case inf
+			     of I.SingInf(i', mod) =>
+				(case elabMod_path(E, mod)
+				   of NONE       => error(i', E.SingInfPath)
+				    | SOME (p,_) => SOME p
+				)
+			      | _ => NONE
+	    val  _       = Inf.extendMod(s, p, j, d)
 	in
 	    O.ModSpec(nonInfo(i), id', inf')
 	end
@@ -1765,7 +1812,10 @@ print "\n\
 	    val imps' = elabImps(E, imps)
 	    val s     = Inf.empty()
 	    val decs' = elabDecs(E, s, decs)
+	    val _     = Inf.close s
+			handle Inf.Unclosed lnt => error(i, E.CompUnclosed lnt)
 (*DEBUG*)
+val _ = print "Component signature:\n"
 val _ = PrettyPrint.output(TextIO.stdOut, PPInf.ppSig s, 78)
 val _ = print "\n"
 	in
@@ -1791,6 +1841,10 @@ val _ = print "\n"
 	in
 	    impsdecs'
 	end
-	handle Error.Error x => ( deleteScope E ; raise Error.Error x )
+	handle Error.Error x =>
+	    ( deleteScope E
+	    ; Type.resetLevel()
+	    ; raise Error.Error x
+	    )
 
   end

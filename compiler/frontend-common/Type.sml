@@ -76,6 +76,7 @@ structure TypePrivate =
 
     fun enterLevel() = level := !level+1
     fun exitLevel()  = level := !level-1
+    fun resetLevel() = level := 1
 
 
   (* Follow a path of links (performing path compression on the fly) *)
@@ -389,6 +390,26 @@ structure TypePrivate =
 
     fun pathCon(_,_,p)	= p
     fun path t		= pathCon(asCon t)
+
+(*
+    fun holes t = foldl (fn(t as ref(HOLE _), a) => t::a | (t,a) => a) t
+    fun paths t = foldl (fn(t as ref(CON c), a) => pathCon(c)::a | (t,a) => a) t
+*)
+
+    fun paths t =
+    	let
+	    val s = PathSet.new()
+	in
+	    app (fn(ref(CON c)) => PathSet.insert(s, pathCon c) | _ => ()) t ;
+	    s
+	end
+
+
+    exception Unclosed
+
+    fun isClosed t =
+	( app (fn ref(HOLE _) => raise Unclosed | _ => ()) t ; true )
+	handle Unclosed => false
 
 
   (* Instantiation *)
@@ -754,21 +775,6 @@ if kind' t1' <> k2 then raise Assert.failure else
 	      | equalsRow _ = false
 	in
 	    equals(t1,t2) before List.app op:= (!trail)
-	end
-
-
-  (* Extraction of holes and paths *)
-(*
-    fun holes t = foldl (fn(t as ref(HOLE _), a) => t::a | (t,a) => a) t
-    fun paths t = foldl (fn(t as ref(CON c), a) => pathCon(c)::a | (t,a) => a) t
-*)
-
-    fun paths t =
-    	let
-	    val s = PathSet.new()
-	in
-	    app (fn(ref(CON c)) => PathSet.insert(s, pathCon c) | _ => ()) t ;
-	    s
 	end
 
 

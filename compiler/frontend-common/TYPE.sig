@@ -102,6 +102,7 @@ signature TYPE =
     val unifyList :	typ list  -> unit		(* UnifyList *)
     val intersect :	typ * typ -> unit
     val close :		typ -> typ
+    val isClosed :	typ -> bool
 
   (* Comparison *)
 
@@ -115,5 +116,6 @@ signature TYPE =
     val lift :		typ  -> unit			(* Lift *)
     val enterLevel :	unit -> unit
     val exitLevel :	unit -> unit
+    val resetLevel :	unit -> unit
 
   end

@@ -108,6 +108,15 @@ signature INF =
     val lookupMod' :	sign * lab * int -> inf
     val lookupInf' :	sign * lab * int -> inf
 
+    val lookupValPath :	sign * lab -> path
+    val lookupModPath :	sign * lab -> path
+
+  (* Closure check *)
+
+    exception Unclosed of lab * int * typ
+
+    val close :		sign -> unit			(* Unclosed *)
+
   (* Matching and intersection *)
 
     datatype mismatch =
