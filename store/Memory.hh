@@ -3,7 +3,7 @@
 //   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
 //
 // Copyright:
-//   Thorsten Brunklaus, 2000
+//   Thorsten Brunklaus, 2000-2001
 //
 // Last Change:
 //   $Date$ by $Author$
@@ -39,7 +39,11 @@ public:
     max    = (block + size);
     top    = (sizeof(u_int) - size);
     anchor = 0;
-    std::memset(block, 1, (u_int) size);
+    u_int *b = (u_int *) block;
+    b[0] = HeaderOp::EncodeHeader(REF_LABEL, 0, 0);
+    //    for (u_int i = (size / sizeof(u_int)); i--;) {
+    //  b[i] = HeaderOp::EncodeHeader(REF_LABEL, 0, 0);
+    //}
 #if (defined(STORE_DEBUG) || defined(STORE_PROFILE))
     id = counter++;
 #endif
@@ -51,15 +55,20 @@ public:
   }
 
   void Clear(){
-    u_int size = (max - block);
+    u_int size = (u_int) (max - block);
 
     top = (sizeof(u_int) - size);
-    std::memset(block, 1, size);
+    u_int *b = (u_int *) block;
+    b[0] = HeaderOp::EncodeHeader(REF_LABEL, 0, 0);
+    //    for (u_int i = (size / sizeof(u_int)); i--;) {
+    //   b[i] = HeaderOp::EncodeHeader(REF_LABEL, 0, 0);
+    //}
   }
   s_int GetTop()              { return top; }
   void SetTop(s_int top)      { MemChunk::top = top; } 
   char *GetMax()              { return max; }
   char *GetBottom()           { return block; }
+  u_int GetSize()             { return (u_int) (max - block); }
 
   MemChunk *GetNext()         { return next; }
   void SetNext(MemChunk *nxt) { next = nxt; }

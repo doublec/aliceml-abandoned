@@ -64,7 +64,7 @@ public:
     return (word) ((((u_int) v) << 1) | (u_int) INTTAG);
   }
   static int DecodeInt(word v) {
-    // somethings need to be done
+    // some things need to be done
     if ((((u_int) v) & INTMASK) != INTTAG) {
       return (int) INVALID_INT;
     }

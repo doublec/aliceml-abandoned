@@ -3,7 +3,7 @@
 //   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
 //
 // Copyright:
-//   Thorsten Brunklaus, 2000
+//   Thorsten Brunklaus, 2000-2001
 //
 // Last Change:
 //   $Date$ by $Author$
@@ -33,80 +33,62 @@
 #include "store/GCHelper.hh"
 #include "store/Set.hh"
 
-#if (defined(STORE_DEBUG) || defined(STORE_PROFILE))
-u_int MemChunk::counter = 0;
-struct timeval *Store::sum_t;
-#endif
-
 //
-// Helper Functions
+// Class Fields and Global Vars
 //
 
-// Returns the allocated usage and max
-static inline void ComputeMemUseMax(MemChunk *chunk, u_int &used, u_int &total) {
-  while (!chunk->IsAnchor()) {
-    u_int size = (anchor->GetMax() - anchor->GetBottom());
-
-    used  += (size + ((chunk == storeCurChunk) ? storeChunkTop : chunk->GetTop()));
-    total += size;
-    chunk = chunk->GetNext();
-  }
-}
-
-static inline void FreeMemory(MemChunk *chunk, u_int mem_space) {
-  while (!chunk->IsAnchor()) {
-    MemChunk *next = chunk->GetNext();
-
-    // retain mem_space amount
-    if (mem_space > 0) {
-      mem_space -= chunk->GetMemSpace();
-      chunk->Clear();
-    }
-    else {
-      MemChunk *prev = chunk->GetPrev();
-      
-      prev->SetNext(next);
-      next->SetPrev(prev);
-      delete chunk;
-    }
-    chunk = next;
-  }
-}
-
-//
-// Class Fields
-//
-
-MemChunk *Store::memChains[STORE_GENERATION_NUM];
+MemChunk *Store::roots[STORE_GENERATION_NUM];
 u_int Store::memMax[STORE_GENERATION_NUM];
 u_int Store::memFree;
+
+char *Store::curChunkMax;
+s_int Store::curChunkTop;
+MemChunk *Store::curChunk;
+u_int Store::hdrGen;
+u_int Store::dstGen;
 
 Set *Store::intgenSet = INVALID_POINTER;
 Set *Store::wkDictSet = INVALID_POINTER;
 u_int Store::needGC   = 0;
 
-char *Store::storeChunkMax;
-s_int Store::storeChunkTop;
-MemChunk *Store::storeCurChunk;
+u_int Store::totalMem = 0;
+u_int Store::oldTotalMem = 0;
+
+#if (defined(STORE_DEBUG) || defined(STORE_PROFILE))
+u_int MemChunk::counter =  0;
+struct timeval *Store::sum_t;
+#endif
 
 //
 // Method Implementations
 //
 
-inline void Store::SetInitMark(u_int size) {
-  ((u_int *) (storeChunkMax + storeChunkTop + size - sizeof(u_int)))[0] =
-    HeaderOp::EncodeHeader(REF_LABEL, 0, 0);
+static inline u_int GetMagicHeader() {
+  return HeaderOp::EncodeHeader(REF_LABEL, 0, 0);
 }
 
-inline void Store::SwitchToNewChunk(MemChunk *chunk) {
-  storeCurChunk->SetTop(storeChunkTop);
-  storeChunkTop = chunk->GetTop();
-  storeChunkMax = chunk->GetMax();
-  storeCurChunk = chunk;
+inline u_int Store::GetMemUsage(MemChunk *chunk) {
+  u_int size = 0;
+
+  chunk = chunk->GetNext();
+  while (!chunk->IsAnchor()) {
+    s_int top = (s_int) ((chunk == curChunk) ? curChunkTop : chunk->GetTop());
+    
+    size += (chunk->GetSize() + top);
+    chunk = chunk->GetNext();
+  }
+  return size;
+}
+
+inline void Store::SwitchToChunk(MemChunk *chunk) {
+  curChunk->SetTop(curChunkTop);
+  curChunkTop = chunk->GetTop();
+  curChunkMax = chunk->GetMax();
+  curChunk    = chunk;
 }
 
 inline void Store::AllocNewMemChunk(u_int size, const u_int gen) {
-  // Compute necessary MemChunk Size (size must fit in)
+  // Compute necessary MemChunk Size (requested size must fit in)
   u_int alloc_size = STORE_MEMCHUNK_SIZE;
   size += sizeof(u_int);
   if (alloc_size < size) {
@@ -114,41 +96,41 @@ inline void Store::AllocNewMemChunk(u_int size, const u_int gen) {
     alloc_size = ((d.quot + (d.rem ? 1 : 0)) * STORE_MEMCHUNK_SIZE);
   }
 
-  // Allocate a new Chunk
-  MemChunk *root     = memChains[gen];
-  MemChunk *newChunk = new MemChunk(root, storeCurChunk, alloc_size);
-  // Store new Chunk into Chain and prepare for next (Fast|GC)Alloc
-  root->SetNext(newChunk);
-  storeCurChunk->SetPrev(newChunk);
-  SwitchToNewChunk(newChunk);
-  SetInitMark(0); // neded for gc
+  // Allocate a Chunk
+  MemChunk *root  = roots[gen];
+  MemChunk *chunk = new MemChunk(root, curChunk, alloc_size);
+  // Store chunk into Chain and prepare for next (Fast|GC)Alloc
+  root->SetNext(chunk);
+  curChunk->SetPrev(chunk);
+  SwitchToChunk(chunk);
 
   // Generation Zero implies GC
-  if (gen == 0) {
-    needGC = 1;
-  }
+  needGC = (gen == 0);
 }
 
-inline char *Store::GCAlloc(u_int size, u_int header, u_int gen) {
+inline char *Store::GCAlloc(u_int size, u_int header) {
   for (;;) {
-    char *p      = (storeChunkMax + storeChunkTop);
-    s_int newtop = (storeChunkTop + size);
+    char *p      = (curChunkMax + curChunkTop);
+    s_int newtop = (curChunkTop + size);
 
     ((u_int *) p)[-1] = header;
     if (newtop >= 0) {
-      SetInitMark(0); // Restore old init mark
-      AllocNewMemChunk(size, gen); // gen != header_gen
+      ((u_int *) p)[-1] = GetMagicHeader();  // Restore old end mark
+      AllocNewMemChunk(size, Store::dstGen);
       continue;
     }
-    SetInitMark(size);
-    storeChunkTop = newtop;
+    curChunkTop = newtop;
+    FillBlock((u_int *) p, ((size / sizeof(u_int)) + 2));
+#if (defined(STORE_DEBUG) || defined(STORE_PROFILE))
+    totalMem += size;
+#endif
     return p;
   }
 }
 
-inline Block *Store::TempAlloc(u_int size, u_int dst_gen, u_int cpy_gen) {
-  u_int header = HeaderOp::EncodeHeader(MIN_DATA_LABEL, size, cpy_gen);
-  Block *p     = (Block *) Store::GCAlloc((size + 1) * sizeof(u_int), header, dst_gen);
+inline Block *Store::TempAlloc(u_int size) {
+  u_int header = HeaderOp::EncodeHeader(MIN_DATA_LABEL, size, hdrGen);
+  Block *p     = (Block *) Store::GCAlloc(BlockMemSize(size), header);
 
   AssertStore(p != INVALID_POINTER);
   // to be determined
@@ -157,7 +139,7 @@ inline Block *Store::TempAlloc(u_int size, u_int dst_gen, u_int cpy_gen) {
   return p;
 }
 
-inline Block *Store::AddToFinSet(Block *p, Handler *h, word value, u_int dst_gen, u_int cpy_gen) {
+inline Block *Store::AddToFinSet(Block *p, Handler *h, word value) {
   u_int size   = p->GetSize();
   u_int top    = Store::DirectWordToInt(p->GetArg(0));
   u_int newtop = (top + 2);
@@ -166,7 +148,7 @@ inline Block *Store::AddToFinSet(Block *p, Handler *h, word value, u_int dst_gen
   if (newtop >= size) {
     u_int newsize = ((size * 3) >> 1);
     
-    np = Store::TempAlloc(newsize, dst_gen, cpy_gen);
+    np = Store::TempAlloc(newsize);
     std::memcpy(np->GetBase(), p->GetBase(), (size * sizeof(u_int)));
   }
   else {
@@ -180,21 +162,46 @@ inline Block *Store::AddToFinSet(Block *p, Handler *h, word value, u_int dst_gen
 }
 
 void Store::AllocNewMemChunk() {
-  Block *p = (Block *) (storeChunkMax + storeChunkTop);
-  AllocNewMemChunk((HeaderOp::DecodeSize(p) + 1) * sizeof(u_int), HeaderOp::DecodeGeneration(p));
+  Block *p = (Block *) (curChunkMax + curChunkTop);
+  AllocNewMemChunk((1 + HeaderOp::DecodeSize(p)) * sizeof(u_int), HeaderOp::DecodeGeneration(p));
 }
 
-inline Block *Store::CopyBlockToDst(Block *p, u_int dst_gen, u_int cpy_gen) {
+inline void Store::FreeMemChunks(MemChunk *chunk, const u_int threshold) {
+  chunk = chunk->GetNext();
+
+  u_int used = 0;
+  while (!chunk->IsAnchor()) {
+    MemChunk *next = chunk->GetNext();
+    
+    if (used < threshold) {
+      used += chunk->GetSize();
+#if defined(STORE_DEBUG)
+      std::printf("clearing... %d\n", chunk->id);
+#endif
+      chunk->Clear();
+    }
+    else {
+      MemChunk *prev = chunk->GetPrev();
+
+      prev->SetNext(next);
+      next->SetPrev(prev);
+      delete chunk;
+    }
+    chunk = next;
+  }
+}
+
+inline Block *Store::CloneBlock(Block *p) {
   u_int size   = HeaderOp::DecodeSize(p);
-  u_int header = HeaderOp::EncodeHeader(HeaderOp::DecodeLabel(p), size, cpy_gen);
-  Block *newp  = (Block *) Store::GCAlloc(((1 + size) * sizeof(u_int)), header, dst_gen);
+  u_int header = HeaderOp::EncodeHeader(HeaderOp::DecodeLabel(p), size, hdrGen);
+  Block *newp  = (Block *) Store::GCAlloc(BlockMemSize(size), header);
 
   std::memcpy(newp, p, (size * sizeof(u_int)));
   GCHelper::MarkMoved(p, newp);
   return newp;
 }
 
-inline word Store::ForwardBlock(word p, u_int dst_gen, u_int cpy_gen) {
+inline word Store::ForwardWord(word p) {
   if (PointerOp::IsInt(p)) {
     return p;
   }
@@ -204,22 +211,22 @@ inline word Store::ForwardBlock(word p, u_int dst_gen, u_int cpy_gen) {
   if (GCHelper::AlreadyMoved(sp)) {
     return PointerOp::EncodeTag(GCHelper::GetForwardPtr(sp), PointerOp::DecodeTag(p));
   }
-  else if (HeaderOp::DecodeGeneration(sp) < dst_gen) {
-    return PointerOp::EncodeTag(CopyBlockToDst(sp, dst_gen, cpy_gen), PointerOp::DecodeTag(p));
+  else if (HeaderOp::DecodeGeneration(sp) < dstGen) {
+    return PointerOp::EncodeTag(CloneBlock(sp), PointerOp::DecodeTag(p));
   }
   else {
     return p;
   }
 }
 
-inline Block *Store::ForwardSet(Block *p, u_int cpy_gen, u_int dst_gen) {
-  return ((HeaderOp::DecodeGeneration(p) < dst_gen) ? CopyBlockToDst(p, dst_gen, cpy_gen) : p);
+inline Block *Store::ForwardSet(Block *p) {
+  return ((HeaderOp::DecodeGeneration(p) < dstGen) ? CloneBlock(p) : p);
 }
 
-inline void Store::ScanChunks(u_int dst_gen, u_int cpy_gen, MemChunk *anchor, Block *scan) {
-  while (!anchor->IsAnchor()) {
+inline void Store::CheneyScan(MemChunk *chunk, Block *scan) {
+  while (!chunk->IsAnchor()) {
     // Scan current MemChunk
-    while (HeaderOp::GetHeader(scan) != HeaderOp::EncodeHeader(REF_LABEL, 0, 0)) {
+    while (HeaderOp::GetHeader(scan) != GetMagicHeader()) {
       // Test for HandlerBlock must be done only once
       BlockLabel l = scan->GetLabel();
       if (l == HANDLERBLOCK_LABEL) {
@@ -230,19 +237,18 @@ inline void Store::ScanChunks(u_int dst_gen, u_int cpy_gen, MemChunk *anchor, Bl
       u_int cursize = HeaderOp::DecodeSize(scan);
       if ((l != CHUNK_LABEL) && (l != WEAK_DICT_LABEL)) {
 	for (u_int i = cursize; i--;) {
-	  scan->InitArg(i, Store::ForwardBlock(PointerOp::Deref(scan->GetArg(i)),
-					       dst_gen, cpy_gen));
+	  scan->InitArg(i, Store::ForwardWord(PointerOp::Deref(scan->GetArg(i))));
 	}
       }
-      scan = (Block *) ((char *) scan + ((cursize + 1) * sizeof(u_int)));
+      scan = (Block *) ((char *) scan + BlockMemSize(cursize));
     }
 
-    anchor = anchor->GetPrev();
-    scan   = (Block *) (anchor->GetBottom() + sizeof(u_int));
+    chunk = chunk->GetPrev();
+    scan  = (Block *) (chunk->GetBottom() + sizeof(u_int));
   }
 }
 
-void Store::InitStore(u_int memMax[STORE_GENERATION_NUM], u_int memFree) {
+void Store::InitStore(u_int mem_max[STORE_GENERATION_NUM], u_int mem_free) {
   for (u_int i = STORE_GENERATION_NUM; i--;) {
     MemChunk *lanchor  = new MemChunk();
     MemChunk *ranchor  = new MemChunk();
@@ -250,20 +256,19 @@ void Store::InitStore(u_int memMax[STORE_GENERATION_NUM], u_int memFree) {
 
     lanchor->SetNext(memChunk);
     ranchor->SetPrev(memChunk);
-    Store::memChains[i] = lanchor;
-    Store::memMax[i]    = memMax[i];
+    Store::roots[i]  = lanchor;
+    Store::memMax[i] = mem_max[i];
   }
-
+  Store::memFree = mem_free;
   // Prepare Fast Memory Allocation
-  MemChunk *anchor = memChains[0]->GetNext();
-  storeChunkTop  = anchor->GetTop();
-  storeChunkMax  = anchor->GetMax();
-  storeCurChunk  = anchor;
-  Store::memFree = memFree;
-
+  MemChunk *anchor = roots[0]->GetNext();
+  curChunkTop = anchor->GetTop();
+  curChunkMax = anchor->GetMax();
+  curChunk    = anchor;
   // Alloc Intgen- and WKDict-Set
   intgenSet = Set::New(STORE_INTGENSET_SIZE);
   wkDictSet = Set::New(STORE_WKDICTSET_SIZE);
+  totalMem = 0;
 #if (defined(STORE_DEBUG) || defined(STORE_PROFILE))
   sum_t = (struct timeval *) malloc(sizeof(struct timeval));
 #endif
@@ -271,12 +276,12 @@ void Store::InitStore(u_int memMax[STORE_GENERATION_NUM], u_int memFree) {
 
 void Store::CloseStore() {
   for (int i = (STORE_GENERATION_NUM - 1); i--;) {
-    MemChunk *chain = memChains[i];
+    MemChunk *chain = roots[i];
 
     while (chain != INVALID_POINTER) {
-      MemChunk *tmp = chain;
-      chain = chain->GetNext();
-      delete tmp;
+      MemChunk *tmp = chain->GetNext();
+      delete chain;
+      chain = tmp;
     }
   }
 }
@@ -303,7 +308,7 @@ word Store::ResolveForwardPtr(word v) {
   return dv;
 }
 
-inline void Store::HandleInterGenerationalPointers(u_int gcGen, u_int dst_gen, u_int cpy_gen) {
+inline void Store::HandleInterGenerationalPointers(u_int gen) {
   Set *intgen_set = intgenSet;
 #if defined(STORE_DEBUG)
   std::printf("initial intgen_size is %d\n", intgen_set->GetSize());
@@ -325,7 +330,7 @@ inline void Store::HandleInterGenerationalPointers(u_int gcGen, u_int dst_gen, u
 	u_int curgen = HeaderOp::DecodeGeneration(curp);
 
 	// Block is still old
-	if (curgen > gcGen) {
+	if (curgen > gen) {
 	  u_int hasyoungptrs = 0;
 
 	  // Traverse intgen_set entry for young references
@@ -346,10 +351,10 @@ inline void Store::HandleInterGenerationalPointers(u_int gcGen, u_int dst_gen, u
 		u_int curfgen = HeaderOp::DecodeGeneration(curfp);
 		
 		// found young ptr to be moved
-		if (curfgen <= gcGen) {
+		if (curfgen <= gen) {
 		  hasyoungptrs = 1;
-		  curp->InitArg(k, PointerOp::EncodeTag(CopyBlockToDst(curfp, dst_gen, cpy_gen),
-							PointerOp::DecodeTag(fp)));
+		  curp->InitArg(k,
+				PointerOp::EncodeTag(CloneBlock(curfp), PointerOp::DecodeTag(fp)));
 		}
 		// found young normal ptr
 		else if (curfgen < curgen) {
@@ -378,24 +383,24 @@ inline void Store::HandleInterGenerationalPointers(u_int gcGen, u_int dst_gen, u
 #endif
 }
 
-inline Block *Store::HandleWeakDictionaries(u_int dst_gen, u_int cpy_gen) {
+inline Block *Store::HandleWeakDictionaries() {
   Set *wkdict_set = wkDictSet;
 #if defined(STORE_DEBUG)
   std::printf("initial weakdict_size is %d\n", wkdict_set->GetSize()); 
 #endif
 
   // Alloc Fin Set
-  Block *finset = Store::TempAlloc(120, dst_gen, cpy_gen);
+  Block *finset = Store::TempAlloc(120);
   finset->InitArg(0, 1);
 
   u_int rs_size = wkdict_set->GetSize();
   wkdict_set->MakeEmpty();
-  Block *db_set = Store::TempAlloc((rs_size + 1), dst_gen, cpy_gen);
+  Block *db_set = Store::TempAlloc((rs_size + 1));
   std::memcpy(db_set->GetBase(), ((Block *) wkdict_set)->GetBase(),
 	      ((rs_size + 1) * sizeof(u_int)));
 
   // Phase One: Forward all Dictionaries but not the contents
-  for (u_int i = rs_size; i > 0; i--) {
+  for (u_int i = rs_size; i >= 1; i--) {
     word dict  = db_set->GetArg(i);
     Block *dp  = Store::DirectWordToBlock(dict);
     word ndict;
@@ -406,14 +411,14 @@ inline Block *Store::HandleWeakDictionaries(u_int dst_gen, u_int cpy_gen) {
       wkdict_set->Push(ndict);
     }
     // Dictionary might be finalized
-    else if (HeaderOp::DecodeGeneration(dp) < dst_gen) {
+    else if (HeaderOp::DecodeGeneration(dp) < dstGen) {
       Handler *h  = dp->GetHandler();
-      Block *newp = CopyBlockToDst(dp, dst_gen, cpy_gen);
+      Block *newp = CloneBlock(dp);
 	
       ndict = PointerOp::EncodeTag(newp, PointerOp::DecodeTag(dict));
       // Finalize only empty dict
       if (((WeakDictionary *) newp)->GetCounter() == 0) {
-	finset = Store::AddToFinSet(finset, h, ndict, dst_gen, cpy_gen);
+	finset = Store::AddToFinSet(finset, h, ndict);
       }
       // Keep it alive (thanks to Denys for pointing that out)
       else {
@@ -430,24 +435,24 @@ inline Block *Store::HandleWeakDictionaries(u_int dst_gen, u_int cpy_gen) {
 
     // Now Process Dict Table but NOT its content
     WeakDictionary *p = WeakDictionary::FromWordDirect(ndict);
-    word arr          = Store::ForwardBlock(p->GetTable()->ToWord(), dst_gen, cpy_gen);
+    word arr          = Store::ForwardWord(p->GetTable()->ToWord());
     Block *table      = Store::DirectWordToBlock(arr);
     u_int table_size  = table->GetSize();
 
     p->SetTable(arr);
     for (u_int k = table_size; k--;) {
-      table->InitArg(k, Store::ForwardBlock(table->GetArg(k), dst_gen, cpy_gen));
+      table->InitArg(k, Store::ForwardWord(table->GetArg(k)));
     }
   }
 
   // Phase Two: Forward Dictionary Contents and record Finalize Candiates
-  for (u_int i = rs_size; i > 0; i--) {
+  for (u_int i = rs_size; i >= 1; i--) {
     WeakDictionary *dict = WeakDictionary::FromWordDirect(db_set->GetArg(i));
     Handler *h           = dict->GetHandler();
     Block *table         = dict->GetTable();
     u_int table_size     = table->GetSize();
-    MemChunk *anchor     = storeCurChunk;
-    char *scan           = (storeChunkMax + storeChunkTop);
+    MemChunk *chunk      = curChunk;
+    char *scan           = (curChunkMax + curChunkTop);
 
     for (u_int k = table_size; k--;) {
       HashNode *node = HashNode::FromWord(table->GetArg(k));
@@ -464,26 +469,24 @@ inline Block *Store::HandleWeakDictionaries(u_int dst_gen, u_int cpy_gen) {
 						PointerOp::DecodeTag(val)));
 	  }
 	  // Value might be finalized
-	  else if (HeaderOp::DecodeGeneration(valp) < dst_gen) {
+	  else if (HeaderOp::DecodeGeneration(valp) < dstGen) {
 	    BlockLabel l = valp->GetLabel();
 
 	    // Value is non Dict or empty Dict ?
 	    if ((l != WEAK_DICT_LABEL) ||
 		((l == WEAK_DICT_LABEL) && ((WeakDictionary *) valp)->GetCounter() == 0)) {
 	      dict->RemoveEntry(node);
-	      finset = Store::AddToFinSet(finset, h,
-					  ForwardBlock(val, dst_gen, cpy_gen),
-					  dst_gen, cpy_gen);
+	      finset = Store::AddToFinSet(finset, h, ForwardWord(val));
 	    }
 	    // No, save it again
 	    else {
-	      node->SetValue(ForwardBlock(val, dst_gen, cpy_gen));
+	      node->SetValue(ForwardWord(val));
 	    }
 	  }
 	}
       }
     }
-    Store::ScanChunks(dst_gen, cpy_gen, anchor, (Block *) scan);
+    Store::CheneyScan(chunk, (Block *) scan);
   }
 #if defined(STORE_DEBUG)
   std::printf("new_weakdict_size is %d\n", wkdict_set->GetSize());
@@ -491,73 +494,69 @@ inline Block *Store::HandleWeakDictionaries(u_int dst_gen, u_int cpy_gen) {
   return finset;
 }
 
-inline void Store::DoGC(word &root, const u_int gcGen) {
-  u_int dst_gen = (gcGen + 1);
-  u_int cpy_gen = ((dst_gen == (STORE_GENERATION_NUM - 1)) ? gcGen : dst_gen);
+inline void Store::DoGC(word &root, const u_int gen) {
+  dstGen = (gen + 1);
+  hdrGen = ((dstGen == (STORE_GENERATION_NUM - 1)) ? gen : dstGen);
 
 #if defined(STORE_DEBUG)
-  std::printf("GCing all gens <= %d; dst_gen %d; cpy_gen %d\n", gcGen, dst_gen, cpy_gen);
+  std::printf("GCing all gens <= %d.\n", gen);
 
   std::printf("root_set   gen %d\n", HeaderOp::DecodeGeneration(Store::WordToBlock(root)));
   std::printf("intgen_set gen %d\n", HeaderOp::DecodeGeneration((Block *) intgenSet));
   std::printf("wkdict_set gen %d\n", HeaderOp::DecodeGeneration((Block *) wkDictSet));
 #endif
-  
+
   // Switch to the new Generation
-  SwitchToNewChunk(memChains[dst_gen]->GetNext());
-  SetInitMark(0);
+  SwitchToChunk(roots[dstGen]->GetNext());
 
   // Copy Root-, Intgen- and WeakDict-Set to New Memory (if appropriate)
-  Block *root_set = ForwardSet(Store::WordToBlock(root), cpy_gen, dst_gen);
-  intgenSet       = (Set *) ForwardSet((Block *) intgenSet, cpy_gen, dst_gen);
-  wkDictSet       = (Set *) ForwardSet((Block *) wkDictSet, cpy_gen, dst_gen);
+  Block *root_set = ForwardSet(Store::WordToBlock(root));
+  intgenSet       = (Set *) ForwardSet((Block *) intgenSet);
+  wkDictSet       = (Set *) ForwardSet((Block *) wkDictSet);
 
-  // Obtain scan anchor
-  MemChunk *anchor = storeCurChunk;
-  char *scan       = (storeChunkMax + storeChunkTop);
+  // Obtain scan start
+  MemChunk *chunk = curChunk;
+  char *scan      = (curChunkMax + curChunkTop);
 
-  // Copy matching memChainset entries
+  // Copy matching rootset entries
   for (u_int i = root_set->GetSize(); i--;) {
-    root_set->InitArg(i, Store::ForwardBlock(PointerOp::Deref(root_set->GetArg(i)),
-					     dst_gen, cpy_gen));
+    root_set->InitArg(i, Store::ForwardWord(PointerOp::Deref(root_set->GetArg(i))));
   }
   // Scanning chunks (root_set amount)
-  Store::ScanChunks(dst_gen, cpy_gen, anchor, (Block *) scan);
-  // Reset Anchor and Scan Ptr (to scan the new stuff)
-  anchor = storeCurChunk;
-  scan   = (storeChunkMax + storeChunkTop);
+  Store::CheneyScan(chunk, (Block *) scan);
+  // Obtain new scan start (to scan the new stuff)
+  chunk = curChunk;
+  scan  = (curChunkMax + curChunkTop);
 
   // Handle InterGenerational Pointers
-  Store::HandleInterGenerationalPointers(gcGen, dst_gen, cpy_gen);
+  Store::HandleInterGenerationalPointers(gen);
   // Scan chunks (intgen_set amount)
-  Store::ScanChunks(dst_gen, cpy_gen, anchor, (Block *) scan);
+  Store::CheneyScan(chunk, (Block *) scan);
 
   // Handle Weak Dictionaries, if any (performs scanning itself)
   Block *arr = INVALID_POINTER;
   if (wkDictSet->GetSize() != 0) {
-    arr = Store::HandleWeakDictionaries(dst_gen, cpy_gen);
+    arr = Store::HandleWeakDictionaries();
   }
-
-  // Clean up Collected regions
-  for (u_int i = dst_gen; i--;) {
-    FreeMemory(memChains[i]->GetNext(), memMax[i]);
-  }
-
-  // Compute GC Flag and Threshold (to be determined)
-  needGC = 0;
-  u_int usage = 0;
-  u_int total = 0;
-  memMax[dst_gen] = (ComputeMemUseMax(memChains[dst_gen]->GetNext(), usage, total))* 100) / (100 - memFree);
   
-  // Switch Semispaces
-  if (dst_gen == (STORE_GENERATION_NUM - 1)) {
-    MemChunk *tmp = memChains[STORE_GENERATION_NUM - 2];
-    memChains[STORE_GENERATION_NUM - 2] = memChains[STORE_GENERATION_NUM - 1];
-    memChains[STORE_GENERATION_NUM - 1] = tmp;
+  // Clean up Collected regions
+  for (u_int i = dstGen; i--;) {
+    Store::FreeMemChunks(roots[i], memMax[i]);
   }
+
+  // Switch Semispaces
+  if (dstGen == (STORE_GENERATION_NUM - 1)) {
+    MemChunk *tmp = roots[STORE_GENERATION_NUM - 2];
+    roots[STORE_GENERATION_NUM - 2] = roots[STORE_GENERATION_NUM - 1];
+    roots[STORE_GENERATION_NUM - 1] = tmp;
+  }
+
+  // Clear GC Flag and adjust Generation Limit
+  needGC         = 0;
+  memMax[hdrGen] = ((GetMemUsage(roots[hdrGen]) * 100) / (100 - memFree));
 
   // Switch back to Generation Zero and Adjust Root Set
-  SwitchToNewChunk(memChains[0]->GetNext());
+  SwitchToChunk(roots[0]->GetNext());
   root = root_set->ToWord();
 
   // Call Finalization Handler
@@ -568,6 +567,9 @@ inline void Store::DoGC(word &root, const u_int gcGen) {
       h->Finalize(arr->GetArg(i + 1));
     }
   }
+#if defined(STORE_DEBUG)
+  std::printf("Done GC.\n");
+#endif
 }
 
 void Store::DoGC(word &root) {
@@ -575,19 +577,19 @@ void Store::DoGC(word &root) {
   struct timeval start_t, end_t;
   gettimeofday(&start_t, INVALID_POINTER);
 #endif
-  u_int maxGcGen = (STORE_GENERATION_NUM - 2);
-
-  while ((maxGcGen > 0) && (ComputeMemUsage(memChains[maxGcGen]->GetNext()) <= memMax[maxGcGen])) {
-    maxGcGen--;
+  // Determine GC Range
+  u_int gen = (STORE_GENERATION_NUM - 2);
+  while ((gen > 0) && (GetMemUsage(roots[gen]) <= memMax[gen])) {
+    gen--;
   }
 
-  switch (maxGcGen) {
+  switch (gen) {
   case STORE_GEN_YOUNGEST:
     DoGC(root, STORE_GEN_YOUNGEST); break;
   case STORE_GEN_OLDEST:
     DoGC(root, STORE_GEN_OLDEST); break;
   default:
-    DoGC(root, maxGcGen); break;
+    DoGC(root, gen); break;
   }
 #if (defined(STORE_DEBUG) || defined(STORE_PROFILE))
   gettimeofday(&end_t, INVALID_POINTER);
@@ -599,10 +601,23 @@ void Store::DoGC(word &root) {
 #if (defined(STORE_DEBUG) || defined(STORE_PROFILE))
 void Store::MemStat() {
   std::printf("---\n");
+  std::printf("total allocated memory: %u\n", totalMem);
+  std::printf("ingen_set size: %u\n", intgenSet->GetSize());
+  std::printf("---\n");
   for (u_int i = 0; i < STORE_GENERATION_NUM; i++) {
-    std::printf("G%d --> Used: %8d; Gc-Limit: %8d; Total: %8d\n",
-		i, ComputeMemUsage(memChains[i]->GetNext()),
-		memMax[i], ComputeMemSpace(memChains[i]->GetNext()));
+    MemChunk *chunk = roots[i]->GetNext();
+    u_int used      = 0;
+    u_int total     = 0;
+
+    while (!chunk->IsAnchor()) {
+      u_int size = chunk->GetSize();
+      s_int top  = (s_int) ((chunk == curChunk) ? curChunkTop : chunk->GetTop());
+      
+      used += (size + top);
+      total += size;
+      chunk = chunk->GetNext();
+    }
+    std::printf("G%d --> Used: %8d; Total: %8d; GC-Limit: %8d.\n", i, used, total, memMax[i]);
   }
   std::printf("---\n");
   std::fflush(stdout);
@@ -610,6 +625,7 @@ void Store::MemStat() {
 
 void Store::ResetTime() {
   sum_t->tv_sec = sum_t->tv_usec = 0;
+  oldTotalMem = totalMem;
 }
 
 struct timeval *Store::ReadTime() {

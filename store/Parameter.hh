@@ -3,7 +3,7 @@
 //   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
 //
 // Copyright:
-//   Thorsten Brunklaus, 2000
+//   Thorsten Brunklaus, 2000-2001
 //
 // Last Change:
 //   $Date$ by $Author$
@@ -36,7 +36,7 @@
 //
 
 // Size of each allocated Memory Chunk
-#define STORE_MEMCHUNK_SIZE      (1024 * 128)
+#define STORE_MEMCHUNK_SIZE      (1024 * 1024)
 // Number of Memory Generations
 // (must fit in HEADER_GEN_GCMARK_WIDTH starting at 1; zero is reserved)
 #define STORE_GENERATION_NUM     ((1 << HEADER_GEN_GC_MARK_WIDTH) - 1)
@@ -44,13 +44,6 @@
 #define STORE_INITIAL_INTGEN     4
 // Initial Weak-Dictionary-Set Size
 #define STORE_INITIAL_WKDICT     4
-
-//
-// Configure Store Performance Settings
-//
-
-// ChunkTop pointer to be stored in register (0 or 1)
-#define STORE_CHUNKTOP_IN_REG    1
 
 //
 // Introduce Helper Block Label (without _LABEL suffix)
