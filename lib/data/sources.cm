@@ -13,9 +13,6 @@ Group is
 
 	HASH_KEY-sig.aml
 
-	SIMPLE_IMP_MAP-sig.aml
-	../../bootstrap/MkRefMap.sml
-
 	IMP_MAP-sig.aml
 	IMP_SET-sig.aml
 	MkHashImpMap.aml
@@ -27,7 +24,7 @@ Group is
 	MkScopedImpSet.aml
 
 	CELL-sig.aml
-	Cell.aml
+	../../bootstrap/Cell.sml
 
 	../../bootstrap/DummyHole.sml
 
