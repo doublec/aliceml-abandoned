@@ -15,6 +15,7 @@ import structure OS          from "../lib/system/OS"
 import structure TextIO      from "../lib/system/TextIO"
 import structure Assert      from "../lib/utility/Assert"
 import structure Parser      from "SMLParser"
+import structure Error       from "SMLError"
 import functor   MkAnalyzer  from "MkAnalyzer"
 import signature MAKE_DEPEND from "MAKE_DEPEND-sig"
 
@@ -63,6 +64,7 @@ struct
 					  "while processing " ^ filename ^
 					  ": assertion failure\n");
 			   raise FAIL)
+			| Error.Error _ => raise FAIL
 			| e =>
 			  (TextIO.output (TextIO.stdErr,
 					  "while processing " ^ filename ^
