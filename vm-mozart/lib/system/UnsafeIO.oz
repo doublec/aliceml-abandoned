@@ -103,7 +103,12 @@ define
       end
    end
 
-   class StdTextFile from TextFile StdText end
+   class StdTextFile from BaseFile StdText
+      meth init(name: S flags: F)
+	 Open.file, init(name: S flags: text|F)
+	 name <- {ByteString.make S}
+      end
+   end
 
    class BinFile from BaseFile
       meth init(name: S flags: F)
