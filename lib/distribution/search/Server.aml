@@ -1,0 +1,37 @@
+(*
+ * Authors:
+ *   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Thorsten Brunklaus, 2001
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
+import signature SERVER from "SERVER-sig"
+
+structure Server :> SERVER =
+    struct
+	fun server () =
+	    let
+		val tail   = Promise.promise ()
+		val stream = Cell.cell tail
+		    
+		fun process s = (case s of
+				     nil   => ()
+				   | p::pr => (p (); process pr))
+		fun send p =
+		    let
+			val newtail = Promise.promise ()
+			val tail    = Cell.exchange(stream, newtail)
+		    in
+			Promise.fulfill(tail, p::(Promise.future newtail))
+		    end
+	    in
+		(Thread.spawn (fn () => process(Promise.future tail));
+		 send)
+	    end
+    end
