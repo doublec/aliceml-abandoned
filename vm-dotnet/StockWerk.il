@@ -17,7 +17,7 @@
 //    identity.  Global implements IObjectReference, replacing itself by a
 //    unique instance of the entity if it was already present in the system
 // -- names and constructors extend Global
-// -- Promise implements ISerializable to throw an exception
+// -- Promise and Thread implement ISerializable to throw an exception
 // -- Future and ByNeed implement ISerializable to block until bound
 //    and then serialize a Ref object
 // -- Ref implements IObjectReference in order to remove the
@@ -55,45 +55,49 @@
       ldstr "ByNeed"
       newobj instance void StockWerk.NamedConstructor::.ctor(class System.String)
       stsfld class StockWerk.StockWert StockWerk.Prebound::ByNeed
-	  ret
-	}
+      ret
+    }
   }
 
   .class sealed public State extends System.Object {
+    //--** use WeakReference
     .field static private initonly class System.Collections.Hashtable GuidTable
-	.method public static void Initialize() {
-	  newobj instance void System.Collections.Hashtable::.ctor()
-	  stsfld class System.Collections.Hashtable StockWerk.State::GuidTable
-	  ret
-	}
-	.method public static void EnterGuid(class System.Object, class StockWerk.StockWert) {
-	  ldsfld class System.Collections.Hashtable StockWerk.State::GuidTable
-	  ldarg.0
-	  ldarg.1
-	  tail. call instance void System.Collections.Hashtable::Add(class System.Object, class System.Object)
-	  ret
-	}
-	.method public static class System.Object Globalize(class StockWerk.StockWert) {
-	  .locals(value class System.Guid, class System.Object)
+    .method public static void Initialize() {
+      newobj instance void System.Collections.Hashtable::.ctor()
+      stsfld class System.Collections.Hashtable StockWerk.State::GuidTable
+      ret
+    }
+    .method public static class System.Object Globalize(class StockWerk.StockWert) {
+      .locals(value class System.Guid, class System.Object)
       ldloca.s 0
       call instance void System.Guid::.ctor()
-	  ldloca.s 0
+      ldloca.s 0
       box System.Guid
-	  stloc.1
-	  ldsfld class System.Collections.Hashtable StockWerk.State::GuidTable
-	  ldloc.1
-	  ldarg.0
-	  call instance void System.Collections.Hashtable::Add(class System.Object, class System.Object)
-	  ldloc.1
-	  ret
-	}
-	.method public static class StockWerk.StockWert LookupGuid(class System.Object) {
-	  ldsfld class System.Collections.Hashtable StockWerk.State::GuidTable
-	  ldarg.0
-	  call instance class System.Object System.Collections.Hashtable::get$Item(class System.Object)
-	  castclass StockWerk.StockWert
-	  ret
-	}
+      stloc.1
+      ldsfld class System.Collections.Hashtable StockWerk.State::GuidTable
+      ldloc.1
+      ldarg.0
+      call instance void System.Collections.Hashtable::Add(class System.Object, class System.Object)
+      ldloc.1
+      ret
+    }
+    .method public static class StockWerk.StockWert Localize(class System.Object, class StockWerk.StockWert) {
+      ldsfld class System.Collections.Hashtable StockWerk.State::GuidTable
+      ldarg.0
+      call instance class System.Object System.Collections.Hashtable::get$Item(class System.Object)
+      dup
+      brfalse.s enter
+      castclass StockWerk.StockWert
+      ret
+    enter:
+      pop
+      ldsfld class System.Collections.Hashtable StockWerk.State::GuidTable
+      ldarg.0
+      ldarg.1
+      call instance void System.Collections.Hashtable::Add(class System.Object, class System.Object)
+      ldarg.1
+      ret
+    }
   }
 
   .class sealed public ExceptionWrapper extends System.RuntimeException {
@@ -146,44 +150,51 @@
   }
 
   .class abstract public Global extends StockWerk.StockWert
-  implements System.Serialization.IObjectReference {
+  implements System.Serialization.IObjectReference /*, System.Serialization.ISerializable */ {
     .field private class System.Object Guid
     .method public void .ctor() {
       ldarg.0
       call instance void StockWerk.StockWert::.ctor()
-	  ldarg.0
-	  ldnull
-	  stfld class System.Object StockWerk.Global::Guid
+      ldarg.0
+      ldnull
+      stfld class System.Object StockWerk.Global::Guid
       ret
     }
     .method public void MakeGuid() {
-	  ldarg.0
-	  ldfld class System.Object StockWerk.Global::Guid
-	  brtrue.s return
-	  ldarg.0
-	  dup
-	  call class System.Object StockWerk.State::Globalize(class StockWerk.StockWert)
-	  stfld class System.Object StockWerk.Global::Guid
-	return:
-	  ret
+      ldarg.0
+      ldfld class System.Object StockWerk.Global::Guid
+      brtrue.s return
+      ldarg.0
+      dup
+      call class System.Object StockWerk.State::Globalize(class StockWerk.StockWert)
+      stfld class System.Object StockWerk.Global::Guid
+    return:
+      ret
     }
-	.method public class System.Object GetRealObject() {
-	  .locals(class StockWerk.StockWert)
-	  ldarg.0
-	  ldfld class System.Object StockWerk.Global::Guid
-	  call class StockWerk.StockWert StockWerk.State::LookupGuid(class System.Object)
-	  dup
-	  brfalse.s enter
-	  ret
-	enter:
-	  pop
-	  ldarg.0
-	  ldfld class System.Object StockWerk.Global::Guid
-	  ldarg.0
-	  call void StockWerk.State::EnterGuid(class System.Object, class StockWerk.StockWert)
-	  ldarg.0
-	  ret
-	}
+    .method public class System.Object GetRealObject() {
+      .locals(class StockWerk.StockWert)
+      ldarg.0
+      ldfld class System.Object StockWerk.Global::Guid
+      ldarg.0
+      call class StockWerk.StockWert StockWerk.State::Localize(class System.Object, class StockWerk.StockWert)
+      ret
+    }
+    /*
+    .method public virtual class System.Reflection.MemberInfo[] GetMembers(value class System.Serialization.StreamingContext) {
+      ldnull
+      ret
+    }
+    .method public virtual value class System.Serialization.SerializationInfo GetObjectData(int32, value class System.Serialization.StreamingContext) {
+      ldnull
+      ret
+    }
+    .method public virtual void PopulateData(class System.Reflection.MemberInfo[], value class System.Variant[]) {
+      ret
+    }
+    .method public virtual void FixupMember(class System.Reflection.MemberInfo, class System.Object) {
+      ret
+    }
+    */
   }
 
   //
@@ -253,17 +264,14 @@
     }
   }
 
-//--**  .class sealed public UniqueName extends StockWerk.StockWert {
-//  }
-
   .class public Constructor extends StockWerk.Global {
     .field private class System.Object Guid
     .method public void .ctor() {
       ldarg.0
       call instance void StockWerk.Global::.ctor()
-	  ldarg.0
-	  ldnull
-	  stfld class System.Object StockWerk.Constructor::Guid
+      ldarg.0
+      ldnull
+      stfld class System.Object StockWerk.Constructor::Guid
       ret
     }
     .method virtual public class StockWerk.StockWert Apply(class StockWerk.StockWert) {
@@ -475,19 +483,19 @@
   implements System.Serialization.IObjectReference {
     // this class is only instantiated during serialization
     .field private class StockWerk.StockWert Ref
-	.method public void .ctor(class StockWerk.StockWert) {
-	  ldarg.0
-	  call instance void StockWerk.StockWert::.ctor()
-	  ldarg.0
-	  ldarg.1
-	  stfld class StockWerk.StockWert StockWerk.Ref::Ref
-	  ret
+    .method public void .ctor(class StockWerk.StockWert) {
+      ldarg.0
+      call instance void StockWerk.StockWert::.ctor()
+      ldarg.0
+      ldarg.1
+      stfld class StockWerk.StockWert StockWerk.Ref::Ref
+      ret
     }
     .method virtual public class System.Object GetRealObject() {
-	  ldarg.0
-	  ldfld class StockWerk.StockWert StockWerk.Ref::Ref
-	  ret
-	}
+      ldarg.0
+      ldfld class StockWerk.StockWert StockWerk.Ref::Ref
+      ret
+    }
   }
 
   .class sealed public ByNeed extends StockWerk.Transient {
@@ -595,6 +603,39 @@
       ret
     }
   }
+
+  //
+  // Thread
+  //
+
+  .class public sealed Thread extends StockWerk.StockWert {
+    .field private class StockWerk.StockWert Proc
+    .method public void .ctor(class StockWerk.StockWert) {
+      ldarg.0
+      call instance void StockWerk.StockWert::.ctor()
+      ldarg.0
+      ldarg.1
+      stfld class StockWerk.StockWert StockWerk.Thread::Proc
+      ldarg.0
+      ldftn instance void StockWerk.Thread::Body()
+      newobj instance void System.ThreadStart::.ctor(class System.Object, int32)
+      newobj instance void System.Thread::.ctor(class System.ThreadStart)
+      tail. callvirt instance void System.Thread::Start()
+      ret
+    }
+    .method private void Body() {
+      //--** catch and print exceptions?
+      ldarg.0
+      ldfld class StockWerk.StockWert StockWerk.Thread::Proc
+      ldarg.0
+      ldnull
+      stfld class StockWerk.StockWert StockWerk.Thread::Proc
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::Unit
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Apply(class StockWerk.StockWert)
+      pop
+      ret
+    }
+  }
 }
 
 .namespace StockWerk.Builtins {
@@ -690,6 +731,19 @@
       ret
     return:
       ldarg.0
+      ret
+    }
+  }
+
+  .class sealed public BIThread extends StockWerk.Procedure {
+    .method public void .ctor() {
+      ldarg.0
+      tail. call instance void StockWerk.Procedure::.ctor()
+      ret
+    }
+    .method public static class StockWerk.StockWert Apply1(class StockWerk.StockWert) {
+      ldarg.0
+      newobj instance void StockWerk.Thread::.ctor(class StockWerk.StockWert)
       ret
     }
   }
