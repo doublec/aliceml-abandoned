@@ -346,10 +346,6 @@ structure CodeGen =
 					Astore thisFun ::
 					nil
 				    end
-			      | n as NewExp _ =>
-				    Multi (expCode (n, illegalStamp, illegalStamp)) ::
-				    Astore stamp' ::
-				    nil
 
 			      (* constructor application *)
 			      (* xxx falsch! Erst leere Dummies bauen *)
@@ -400,8 +396,13 @@ structure CodeGen =
 					Astore stamp' ::
 					nil
 				    end
-			      | _ => raise Crash.crash "illegal expression in RecDec"
+
+			      | exp' =>
+				    Multi (expCode (exp', curFun, curCls)) ::
+				    Astore stamp' ::
+				    nil
 			in
+			    Comment "RecDec:" ::
 			    Multi one ::
 			    akku
 			end
@@ -968,41 +969,42 @@ structure CodeGen =
 		    specTups rest
 		  | specTups nil = nil
 	    in
-		if arity <= 4 andalso arity >= 2 then
-		    (case arity of
-			 2 => New CTuple2 ::
-			     Dup ::
-			     Multi (specTups ids) ::
-			     Invokespecial
-			     (CTuple2, "<init>",
-			      ([Classsig CVal, Classsig CVal],
+		Comment "create Tuple:" ::
+		(if arity <= 4 andalso arity >= 2 then
+		     (case arity of
+			  2 => New CTuple2 ::
+			      Dup ::
+			      Multi (specTups ids) ::
+			      Invokespecial
+			      (CTuple2, "<init>",
+			       ([Classsig CVal, Classsig CVal],
+				[Voidsig])) ::
+			      init
+			| 3 => New CTuple3 ::
+			      Dup ::
+			      Multi (specTups ids) ::
+			      Invokespecial
+			      (CTuple3, "<init>",
+			       ([Classsig CVal,
+				 Classsig CVal,
+				 Classsig CVal],
 			       [Voidsig])) ::
-			     init
-		       | 3 => New CTuple3 ::
-			     Dup ::
-			     Multi (specTups ids) ::
-			     Invokespecial
-			     (CTuple3, "<init>",
-			      ([Classsig CVal,
-				Classsig CVal,
-				Classsig CVal],
-			       [Voidsig])) ::
-			     init
+			      init
 		       | 4 => New CTuple4 ::
-			     Dup ::
-			     Multi (specTups ids) ::
-			     Invokespecial
-			     (CTuple4, "<init>",
-			      ([Classsig CVal,
+			      Dup ::
+			      Multi (specTups ids) ::
+			      Invokespecial
+			      (CTuple4, "<init>",
+			       ([Classsig CVal,
 				Classsig CVal,
-				Classsig CVal,
-				Classsig CVal],
-			       [Voidsig])) ::
-			     init
+				 Classsig CVal,
+				 Classsig CVal],
+				[Voidsig])) ::
+			      init
 		       | _ => raise Mitch)
-		else
-		    if arity = 0 then
-			Getstatic CUnit::init
+		 else
+		     if arity = 0 then
+			 Getstatic CUnit::init
 		    else
 			New CTuple ::
 			Dup ::
@@ -1013,7 +1015,7 @@ structure CodeGen =
 			   Invokespecial (CTuple, "<init>",
 					  ([Arraysig, Classsig CVal],
 					   [Voidsig])) ::
-			   init)
+			   init))
 	    end
 	and
 	    createRecord (labid,init) =
@@ -1057,11 +1059,17 @@ structure CodeGen =
 	    end
 
 	and
-	    idArgCode (OneArg id', curCls, init) = idCode (id', curCls) :: init
+	    idArgCode (OneArg id', curCls, init) =
+	    Comment "OneArg" ::
+	    idCode (id', curCls) ::
+	    init
 
-	  | idArgCode (TupArgs ids, curCls, init) = createTuple (ids, init, curCls)
+	  | idArgCode (TupArgs ids, curCls, init) =
+	    Comment "TupArgs" ::
+	    createTuple (ids, init, curCls)
 
 	  | idArgCode (RecArgs stringids, _, init) =
+	    Comment "RecArgs" ::
 	    createRecord (stringids, init)
 	and
 	    invokeRecApply (stamp', args, curFun, tailCallPos, curCls) =
@@ -1077,6 +1085,7 @@ structure CodeGen =
 
 		fun loadparms (p, ending)=
 		    if p<>parms orelse parms=1 then
+			Comment "loadparms:" ::
 			idArgCode (args, curCls, ending)
 		    else
 			List.foldr
@@ -1496,7 +1505,9 @@ structure CodeGen =
 
 		fun makeApplyMethod (parms, insts) =
 		    let
-			val ta = TupArgs (Vector.sub (parmIds, parms))
+			val ta = if parms = 1
+				     then OneArg parm1Id
+				 else TupArgs (Vector.sub (parmIds, parms))
 
 			val body' =
 			    if Lambda.isInRecApply (curFun, parms) then

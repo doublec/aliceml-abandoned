@@ -131,7 +131,11 @@ functor MakeLambda(structure StampSet:IMP_SET
 
 	fun insertRec (idexps as _::rest) =
 	    let
+		fun countFunExps ((_, FunExp _):: rest, n) = countFunExps (rest, n+1)
+		  | countFunExps (nil, n) = n
+
 		val dest = getDestClass idexps
+		val fncount = countFunExps (idexps, 0)
 		val actual = ref illegalStamp
 		val counter = ref 0
 
@@ -156,7 +160,8 @@ functor MakeLambda(structure StampSet:IMP_SET
 			     (actual := thisFun;
 			      print "rec': ";
 			      setId (thisFun, id');
-			      app insertInner idabodies)
+			      if fncount>1 then app insertInner idabodies
+				  else ())
 		       | _ => ())
 
 		fun countUp (0, akku) = akku
@@ -166,29 +171,28 @@ functor MakeLambda(structure StampSet:IMP_SET
 	    in
 		counter := 0;
 		app insertRec' idexps;
-		case rest of
-		    nil => ()
-		  | _ =>
-			StampHash.insert
-			(recApply,
-			 dest,
-			 if !counter <= 1 then
-			     []
-			 else
-			     [Iload 5,
-			      Lookupswitch (StampIntHash.foldi
-					    (fn (_, (stamp', pos', label'), (akku1, akku2)) =>
-					     if dest = stamp' then
-						 (LargeInt.fromInt pos'::akku1, label'::akku2) else (akku1, akku2))
-					    (nil, nil)
-					    recApplies,
-					    errorlabel),
-			      Label errorlabel,
-			      New ECompiler,
-			      Dup,
-			      Ldc (JVMString "unbekannte Funktion."),
-			      Invokespecial (ECompiler, "<init>", ([Classsig CString], [Voidsig])),
-			      Athrow])
+		if fncount > 1 then
+		    (StampHash.insert
+		     (recApply,
+		      dest,
+		      if !counter <= 1 then
+			  []
+		      else
+			  [Iload 5,
+			   Lookupswitch (StampIntHash.foldi
+					 (fn (_, (stamp', pos', label'), (akku1, akku2)) =>
+					  if dest = stamp' then
+					      (LargeInt.fromInt pos'::akku1, label'::akku2) else (akku1, akku2))
+					 (nil, nil)
+					 recApplies,
+					 errorlabel),
+			   Label errorlabel,
+			   New ECompiler,
+			   Dup,
+			   Ldc (JVMString "unbekannte Funktion."),
+			   Invokespecial (ECompiler, "<init>", ([Classsig CString], [Voidsig])),
+			   Athrow]))
+		    else ()
 	    end
 	  | insertRec nil = ()
 
