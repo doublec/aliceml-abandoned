@@ -31,6 +31,8 @@ Library:
 * *VectorSlice,Substring: fixed splitr (also fixes OS.Path.split*).
 * CharArraySlice: fixed.
 * PrimIO: fixed augment{Reader,Writer}.
+* Fixed GTK string list marshalling (e.g., for clist/ctree functions).
+* Added SPLIT_MIN/SPLIT_MAX distributor in constraints/FD.
 
 
 Alice 0.9.2 (Stockhausen Operette 3 Remix 2) - 2003/07/25
