@@ -1831,8 +1831,8 @@ Worker::Result ByteCodeInterpreter::Run() {
 	  {
 	    Class *aClass = static_cast<Class *>(type);
 	    Block *p = Store::WordToBlock(wObject);
-	    Assert(p != INVALID_POINTER);
-	    result = (p->GetLabel() == JavaLabel::Object &&
+	    result = (p == INVALID_POINTER ||
+		      p->GetLabel() == JavaLabel::Object &&
 		      Object::FromWordDirect(wObject)->IsInstanceOf(aClass));
 	  }
 	  break;
