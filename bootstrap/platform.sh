@@ -20,7 +20,7 @@ case $system in
 	OZARCH=win32-i486
 	SMLNJARCH=x86-win32
    ;;
-   *Power*Mac*Darwinblub*)
+   *Power*Mac*Darwin*)
         OZARCH=powermac-darwin
         SMLNJARCH=ppc-darwin
    ;;
