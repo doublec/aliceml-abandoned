@@ -209,6 +209,20 @@ This is an application of the \emph{sequenced union selection}
 constraint.  It combines the \emph{union selection} constraint with
 the sequentiality constraint.
 
+To further break symmetries and strengthen propagation, we can require
+that $\EQDOWN_E(w)$ be an interval.  In this fashion (1) the root of a
+subtree must be the min element of its $\EQDOWN_E$ and (2) we get
+stronger propagation since we know that there can be no hole in the
+$\EQDOWN_E$:
+\begin{gather*}
+\CONVEX(\EQDOWN_E(w))
+\end{gather*}
+Finally, we should require that the unused elements occur at the end
+of the precedence order, i.e.\ for $w_i,w_{i+1}\in E$:
+\begin{gather*}
+|\DOWN(w_i)|=0\quad\IMPLIES\quad|\DOWN(w_{i+1})|=0
+\end{gather*}
+
 Note that scope should also be constrained using the sequenced union
 selection constraint:
 \begin{gather*}
@@ -217,7 +231,11 @@ selection constraint:
 i.e.\ not only is the scope of the mother formed from the union of the
 scopes of its daughters, but these scopes must also occur in sequence
 according to the precedence order $\prec$ of elements (i.e.\ the
-indices used to encode them).
+indices used to encode them).  Note that, if we can identify $\pi(w)$
+with $w$ for $w\in C$, then we also have the following:
+\begin{gather*}
+\DOWN(w) = \DOWN_E(w)\UNION\sigma(w)
+\end{gather*}
 
 \paragraph*{Stacking Method.}
 This last method is concerned with symmetries of the following kind:
