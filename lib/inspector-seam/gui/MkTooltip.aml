@@ -155,7 +155,7 @@ struct
 
   val pps = PrettyPrint.toString
   fun pptype t = pps (PPType.ppTyp t, 80)
-  fun ppsig  s = pps (PPInf.ppInf s, 120)
+  fun ppsig  s = pps (PPInf.ppInf s, 120) (* TODO : Use ppInf' instead !!! *)
 
   fun tooltipDecl decl =
       case decl of
