@@ -131,6 +131,12 @@ structure OutputWriters =
           let
               val iter = Gtk.textIterNew()
               val _ = Gtk.textBufferGetEndIter(buffer,iter)
+	      val _ = Gtk.textIterBackwardChars(iter, 1)
+              val noInputYet = Gtk.textIterHasTag(iter, noed)
+	      val _ = Gtk.textIterForwardChars(iter, 1)
+	      val _ = if noInputYet
+		      then Gtk.textBufferGetEndIter(buffer, iter)
+		      else ignore (Gtk.textIterBackwardToTagToggle(iter, noed))
 	      val startOffset = Gtk.textIterGetOffset iter
 	      val start = Gtk.textIterCopy iter
               val textUtf8 = Core.latin1ToUtf8 text
@@ -138,14 +144,13 @@ structure OutputWriters =
               Core.signalHandlerBlock(buffer, handler);
 	      Gtk.textBufferInsert(buffer, iter, textUtf8, size textUtf8);
               Gtk.textBufferGetIterAtOffset (buffer, start, startOffset);
+              Gtk.textBufferGetIterAtOffset (buffer, iter, startOffset + size text);
               app (fn t => Gtk.textBufferApplyTag(buffer, t, start, iter)) tags;
               highlight (buffer, text, startOffset, start, iter);
-	      Gtk.textBufferGetStartIter(buffer, start);
               Gtk.textBufferApplyTag(buffer, noed, start, iter);
               Gtk.textBufferPlaceCursor(buffer,iter);
-              Gtk.textViewScrollToMark(view,
-                                       Gtk.textBufferGetInsert buffer,
-                                       0.0,false,0.0,0.0);
+              Gtk.textViewScrollToMark(view, Gtk.textBufferGetInsert buffer,
+                                       0.0, false, 0.0, 0.0);
               Core.signalHandlerUnblock(buffer, handler)
           end
 
