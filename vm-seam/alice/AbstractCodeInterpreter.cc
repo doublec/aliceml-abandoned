@@ -82,20 +82,20 @@ public:
     return Environment::FromWordDirect(StackFrame::GetArg(LOCAL_ENV_POS));
   }
   TagVal *GetFormalArgs() {
-    return TagVal::FromWordDirect(StackFrame::GetArg(FORMAL_ARGS_POS));
+    return TagVal::FromWord(StackFrame::GetArg(FORMAL_ARGS_POS));
   }
   // AbstractCodeFrame Constructor
   static AbstractCodeFrame *New(Interpreter *interpreter,
 				word pc,
 				Closure *closure,
 				Environment *env,
-				word args) {
+				word formalArgs) {
     StackFrame *frame =
       StackFrame::New(ABSTRACT_CODE_FRAME, interpreter, SIZE);
     frame->InitArg(PC_POS, pc);
     frame->InitArg(CLOSURE_POS, closure->ToWord());
     frame->InitArg(LOCAL_ENV_POS, env->ToWord());
-    frame->InitArg(FORMAL_ARGS_POS, args);
+    frame->InitArg(FORMAL_ARGS_POS, formalArgs);
     return static_cast<AbstractCodeFrame *>(frame);
   }
   // AbstractCodeFrame Untagging
@@ -128,12 +128,12 @@ public:
 // Interpreter Helper
 inline void PushState(TaskStack *taskStack,
 		      TagVal *pc,
-		      Closure *closure,
+		      Closure *globalEnv,
 		      Environment *localEnv,
 		      TagVal *formalArgs) {
   AbstractCodeFrame *frame =
     AbstractCodeFrame::New(AbstractCodeInterpreter::self, pc->ToWord(),
-			   closure, localEnv, formalArgs->ToWord());
+			   globalEnv, localEnv, formalArgs->ToWord());
   taskStack->PushFrame(frame->ToWord());
 }
 
@@ -141,10 +141,10 @@ inline void PushState(TaskStack *taskStack,
 		      TagVal *pc,
 		      Closure *globalEnv,
 		      Environment *localEnv) {
-  //--** formalArgs should only be constructed once
-  TagVal *formalArgs = TagVal::New(AbstractCode::TupArgs, 1);
-  formalArgs->Init(0, Vector::New(0)->ToWord());
-  PushState(taskStack, pc, globalEnv, localEnv, formalArgs);
+  AbstractCodeFrame *frame =
+    AbstractCodeFrame::New(AbstractCodeInterpreter::self, pc->ToWord(),
+			   globalEnv, localEnv, Store::IntToWord(0));
+  taskStack->PushFrame(frame->ToWord());
 }
 
 inline word GetIdRef(word idRef, Closure *globalEnv, Environment *localEnv) {
@@ -210,40 +210,50 @@ Interpreter::Result AbstractCodeInterpreter::Run(TaskStack *taskStack) {
     AbstractCodeFrame::FromWordDirect(taskStack->GetFrame());
   Assert(!frame->IsHandlerFrame());
   Assert(frame->GetInterpreter() == this);
-  TagVal *pc            = frame->GetPC();
-  Closure *globalEnv    = frame->GetClosure();
+  TagVal *pc = frame->GetPC();
+  Closure *globalEnv = frame->GetClosure();
   Environment *localEnv = frame->GetLocalEnv();
-  TagVal *formalArgs    = frame->GetFormalArgs();
-  // Calling convention conversion
-  switch (AbstractCode::GetArgs(formalArgs)) {
-  case AbstractCode::OneArg:
-    {
-      Construct();
-      TagVal *idDef = TagVal::FromWord(formalArgs->Sel(0));
-      if (idDef != INVALID_POINTER) // IdDef id
-	localEnv->Add(idDef->Sel(0), Scheduler::currentArgs[0]);
-    }
-    break;
-  case AbstractCode::TupArgs:
-    {
-      Vector *formalIdDefs = Vector::FromWordDirect(formalArgs->Sel(0));
-      u_int nArgs = formalIdDefs->GetLength();
-      if (nArgs != 0) {
-	if (Interpreter::Deconstruct()) {
-	  // Scheduler::currentData has been set by Interpreter::Deconstruct
-	  return Interpreter::REQUEST;
-	}
-	Assert(Scheduler::nArgs == nArgs);
-	for (u_int i = nArgs; i--; ) {
-	  TagVal *idDef = TagVal::FromWord(formalIdDefs->Sub(i));
-	  if (idDef != INVALID_POINTER) // IdDef id
-	    localEnv->Add(idDef->Sel(0), Scheduler::currentArgs[i]);
+  TagVal *formalArgs = frame->GetFormalArgs();
+  if (formalArgs != INVALID_POINTER) {
+    // Calling convention conversion
+    switch (AbstractCode::GetArgs(formalArgs)) {
+    case AbstractCode::OneArg:
+      {
+	Construct();
+	TagVal *idDef = TagVal::FromWord(formalArgs->Sel(0));
+	if (idDef != INVALID_POINTER) // IdDef id
+	  localEnv->Add(idDef->Sel(0), Scheduler::currentArgs[0]);
+      }
+      break;
+    case AbstractCode::TupArgs:
+      {
+	Vector *formalIdDefs = Vector::FromWordDirect(formalArgs->Sel(0));
+	u_int nArgs = formalIdDefs->GetLength();
+	if (nArgs == 0) {
+	  if (Scheduler::nArgs != 0) {
+	    Assert(Scheduler::nArgs == 1);
+	    word requestWord = Scheduler::currentArgs[0];
+	    if (Store::WordToInt(requestWord) == INVALID_INT)
+	      REQUEST(requestWord);
+	    Assert(Store::WordToInt(requestWord) == 0); // unit
+	  }
+	} else {
+	  if (Interpreter::Deconstruct()) {
+	    // Scheduler::currentData has been set by Interpreter::Deconstruct
+	    return Interpreter::REQUEST;
+	  }
+	  Assert(Scheduler::nArgs == nArgs);
+	  for (u_int i = nArgs; i--; ) {
+	    TagVal *idDef = TagVal::FromWord(formalIdDefs->Sub(i));
+	    if (idDef != INVALID_POINTER) // IdDef id
+	      localEnv->Add(idDef->Sel(0), Scheduler::currentArgs[i]);
+	  }
 	}
       }
+      break;
+    default:
+      Error("AbstractCodeInterpreter::Run: invalid formalArgs");
     }
-    break;
-  default:
-    Error("AbstractCodeInterpreter::Run: invalid formalArgs");
   }
   taskStack->PopFrame(); // Discard Frame
   // Execution
