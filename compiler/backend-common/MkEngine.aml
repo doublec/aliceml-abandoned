@@ -62,10 +62,7 @@ functor MkEngine(val cmd: unit -> string * string list
 	structure C: CONTEXT =
 	    struct
 		type t = Unix.proc option ref * valref IdMap.t
-
-		fun new () = (ref NONE, IdMap.map ())
-
-		fun clone (proc, map) = (proc, IdMap.clone map)
+		val empty = (ref NONE, IdMap.map ()) : t
 	    end
 
 	type code = Code.t
