@@ -1,0 +1,27 @@
+import
+    type ty
+    val inspect : 'a * ty -> unit
+    val makeArrowType : ty * ty -> ty
+    val makeBasicType : string -> ty
+    val makeListType : ty -> ty
+    val makeRecordType : (string * ty) vector -> ty
+    val makeTupleType : ty vector -> ty
+from "x-alice:Canvas.dll"
+
+import
+  val print
+from "x-alice:TextIO.dll"
+
+val _ = print("Entered Useil.aml\n")
+
+val myTy = makeTupleType(#[makeBasicType("int"), makeBasicType("int"), makeBasicType("string")])
+val l1Ty = makeTupleType(#[makeBasicType("a"), makeBasicType("int")])
+val l2Ty = makeTupleType(#[makeBasicType("b"), makeBasicType("bool")])
+val rcTy = makeRecordType(#[("a", makeBasicType("int")),
+		("b", makeBasicType("int"))])
+val _ = print ("Survived making Types\n")
+val _ = print ("Inspecting...\n")
+val _ = inspect((50,20, "Hallo,Welt!"), myTy)
+val _ = print ("Done")
+val _ = print( "Trying again...\n");
+val _ = inspect({a=4711, b=false}, rcTy)

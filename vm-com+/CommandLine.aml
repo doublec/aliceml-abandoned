@@ -1,0 +1,11 @@
+signature COMMAND_LINE =
+    sig
+	val name: unit -> string
+	val arguments: unit -> string list
+    end
+
+structure CommmandLine :> COMMAND_LINE =
+    struct
+	__primitive val name : unit -> string = "CommandLine.name";
+	__primitive val arguments : unit -> string list = "CommandLine.arguments";
+    end
