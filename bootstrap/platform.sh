@@ -20,8 +20,12 @@ case $system in
 	OZARCH=win32-i486
 	SMLNJARCH=x86-win32
    ;;
+   *Power*Mac*Darwinblub*)
+        OZARCH=powermac-darwin
+        SMLNJARCH=ppc-darwin
+   ;;
    *)
-	echo Cannot determine platform type for $system.
+	echo Cannot determine platform type for $system. >&2
 	exit 1
    ;;
 esac
@@ -33,6 +37,6 @@ elif [ "$1" = smlnj ]
 then
     echo $SMLNJARCH
 else
-    echo 'Usage: platform.sh (oz|smlnj)'
+    echo 'Usage: platform.sh (oz|smlnj)' >&2
     exit 2
 fi

@@ -14,6 +14,9 @@ SRCDIR=..
 
 SML := $(shell pwd)/smla
 PLATFORM := $(shell ./platform.sh smlnj)
+ifeq ("$(PLATFORM)", "")
+  $(error Unknown platform)
+endif
 
 OZC = ozc
 OZCFLAGS =
