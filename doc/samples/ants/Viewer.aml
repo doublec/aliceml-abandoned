@@ -170,7 +170,7 @@ struct
 
             fun drawTrail c =
                 (Gdk.gcSetForeground (gc, c);
-                 Gdk.drawLine (pixmap, gc, x+tileSize div 2, y+1, x+tileSize div 2, y+tileSize-3))
+                 Gdk.drawPoint (pixmap, gc, x+tileSize div 2, y+tileSize div 2))
 
 
             fun drawMarkers (m, c) =
