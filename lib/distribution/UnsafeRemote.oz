@@ -39,10 +39,6 @@ define
 		   end}
 		  unit
 	       end
-	    dynamicCall:
-	       fun {$ A B}
-		  {Alice.rpc A B}
-	       end
 	    packValue:
 	       fun {$ X}
 		  try {Pickle.packWithCells X}
