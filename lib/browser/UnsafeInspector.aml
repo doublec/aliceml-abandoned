@@ -40,6 +40,8 @@ struct
 
     type doc_creator = Doc.doc_creator
 
+    val createValue = Doc.createValue
+
     val registerType = registerType
 	       
     (***********************************************)

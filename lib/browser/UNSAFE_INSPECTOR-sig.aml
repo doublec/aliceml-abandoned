@@ -65,8 +65,10 @@ sig
 	
       | EMBEDDED_INF of Reflect.module * Inf.t
 
-    type doc_creator = int * int * Reflect.value * Type.t -> doc  
+    type doc_creator = int * int * Reflect.value * Type.t -> doc 
 
+    val createValue : Reflect.value * Type.t -> desc 
+ 
     val registerType : Path.path * doc_creator -> unit
 
     (***********************************************)
