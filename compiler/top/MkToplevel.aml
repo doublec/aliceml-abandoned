@@ -14,7 +14,10 @@
 import structure Foreign              from "../../lib/system/Foreign"
 import structure TextIO               from "../../lib/system/TextIO"
 import structure OS                   from "../../lib/system/OS"
+import structure IO                   from "../../lib/system/IO"
 import structure Url                  from "../../lib/system/Url"
+import structure Signal               from "../../lib/system/Signal"
+import structure Config               from "../../lib/system/Config"
 
 import structure Component            from "../../lib/system/Component"
 import structure PPComponent          from "../../lib/system/PPComponent"
@@ -36,11 +39,33 @@ struct
                                    "Usage: alice [options]\n" ^
 				   OptionParser.helpText)
 
-    val banner     = "Alice 0.9.3 (Stockhausen Operette 3 Remix 3)\n"
+    val banner     = "Alice 0.9.3+ (" ^
+		     (case Config.vm
+		       of "mozart" => "Stockhausen Operette 3 Remix 3 Extended"
+		        | "seam" => "Kraftwerk Album 1 Demo Tape"
+			| _ => "Alien Invaderz Breakbeats"
+		     ) ^ ")\n"
     val prompt     = "- "
     val contPrompt = "  "
 
     val useFiles: string list ref = ref nil
+    val interruptThread: Thread.t option ref = ref NONE
+
+    fun interruptHandler s =
+	(case Ref.exchange (interruptThread, NONE)
+	  of NONE => ()
+	   | SOME thread => Thread.terminate thread;
+	 Signal.register (s, interruptHandler))  (*--** currently auto-removed *)
+    val _ = Signal.register (Signal.SIGINT, interruptHandler)
+
+    fun interruptable f = (* only one interruptable thread at a time! *)
+	(interruptThread := SOME (Thread.current ());
+	 SOME (f ()) before
+	 interruptThread := NONE
+	) handle ( Thread.Terminate
+		 | IO.Io {cause=Thread.Terminate, ...}
+		 | Component.Failure (_, Component.Eval Thread.Terminate)) =>
+			NONE
 
     fun use filename =
 	let
@@ -50,7 +75,7 @@ struct
 	    Hole.fill (new, old @ [filename])
 	end
 
-    fun readInput() =
+    fun readInput () =
 	case readInput' prompt of [] => NONE
 				| ss => SOME(String.concat ss)
 
@@ -72,51 +97,60 @@ struct
 	Foreign.catch (fn _ => eval' compile (printSig, source, context),
 		       fn e =>
 			  (TextIO.output (TextIO.stdErr, Foreign.exnMessage e);
-			   context))
+			   SOME context))
     and eval' compile (printSig, source, context) =
-	(case compile (context, source) of
-	     (context, Target.COMPONENT {eval, component, ...}) =>
-		 let
-		     val str = eval (baseUrl ())
-		 in
-		     if not printSig then () else
-		     case Component.inf (component ()) of
-		          NONE => TextIO.print "[no result signature]\n"
-		        | SOME inf =>
-			      let
-				  val doc = PPComponent.ppComp (str, inf)
-			      in
-				  PrettyPrint.output(TextIO.stdOut, doc, 79);
-				  TextIO.print "\n"
-			      end;
-		     context
-		 end
-	   | (_, Target.FOREIGN _) =>
+	(case interruptable (fn _ => compile (context, source)) of
+	     SOME (context', Target.COMPONENT {eval, component, ...}) =>
+		 (case interruptable (eval o baseUrl) of
+		      NONE => NONE
+		    | SOME str =>
+		      if not printSig then SOME context' else
+		      case Component.inf (component ())
+		        of NONE =>
+			       (TextIO.print "[no result signature]\n";
+			        SOME context')
+		         | SOME inf =>
+			       interruptable
+			       (fn _ =>
+				let
+				    val doc = PPComponent.ppComp (str, inf)
+				in
+				    PrettyPrint.output(TextIO.stdOut, doc, 79);
+				    TextIO.print "\n";
+				    context'
+				end))
+	   | SOME (_, Target.FOREIGN _) =>
 		 raise RecursiveCompiler.Crash
-		     "MkToplevel.eval: cross-compilation not supported")
-	handle RecursiveCompiler.Error => context
+		     "Toplevel.eval: cross-compilation not supported"
+	   | NONE => NONE)
+	handle RecursiveCompiler.Error => SOME context
 	     | RecursiveCompiler.Crash s =>
 		   (TextIO.output (TextIO.stdErr,
 				   "internal failure at " ^ s ^ "\n");
-		    context)   (*--** is this cool or what? *)
+		    SOME context)   (*--** is this cool or what? *)
 	     | Component.Failure (_, Component.Eval exn) =>
 		   (TextIO.output (TextIO.stdErr,
 				   "uncaught exception " ^
 				   General.exnName exn ^ "\n");
-		    context)
+		    SOME context)
 	     | exn =>
 		   (TextIO.output (TextIO.stdErr,
 				   "internal exception " ^
 				   General.exnName exn ^ "\n");
-		    context)   (*--** is this cool or what? *)
+		    SOME context)   (*--** is this cool or what? *)
 
     val evalString = eval RecursiveCompiler.compileString
     val evalFile   = eval RecursiveCompiler.compileFile
 
     fun loop context =
-	case readInput() of
-	    SOME source => loopUses (evalString (true, source, context))
-	  | NONE => TextIO.print "\n"
+	case interruptable readInput
+	 of NONE => (TextIO.print "\ninterrupted\n"; loop context)
+	  | SOME NONE => TextIO.print "\nSee you later!\n"
+	  | SOME (SOME source) =>
+	case evalString (true, source, context)
+	 of NONE => (TextIO.print "interrupted\n"; loop context)
+	  | SOME context => loopUses context
+
     and loopUses context =
 	let
 	    val new = Hole.hole ()
@@ -125,7 +159,11 @@ struct
 	    case old of
 		filename::rest =>
 		    (Hole.fill (new, rest);
-		     loopUses (evalFile (true, filename, context)))
+		     case evalFile (true, filename, context)
+		       of SOME context' => loopUses context'
+		        | NONE => (TextIO.print "\ninterrupted\n";
+				   useFiles := nil;
+				   loop context))
 	      | nil =>
 		    (Hole.fill (new, nil);
 		     loop context)
@@ -141,12 +179,16 @@ struct
 	let
             val _ = TextIO.print banner;
 	    open RecursiveCompiler.Switches
-	    val context = evalString (false, "",
-				      RecursiveCompiler.Context.empty)
 	in
-	    Language.implicitImportFile := NONE;
-	    loop context;
-	    OS.Process.success
+	    case evalString (false, "", RecursiveCompiler.Context.empty) of
+	         NONE => 
+		    (TextIO.output (TextIO.stdErr,
+				    "alice: could not initialise environment\n");
+		     OS.Process.failure)
+	       | SOME context =>
+		    (Language.implicitImportFile := NONE;
+		     loop context;
+		     OS.Process.success)
 	end
 
     fun defaults () = (* override defaults from MkSwitches here *)

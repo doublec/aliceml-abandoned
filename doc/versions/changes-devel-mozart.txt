@@ -6,6 +6,10 @@ Compiler:
 
 * Warn about unsued imports.
 
+Interactive Toplevel:
+
+* Enable Ctrl-C for interrupting computations.
+
 
 Alice 0.9.3 (Stockhausen Operette 3 Remix 3) - 2004/04/15
 ---------------------------------------------------------
