@@ -28,7 +28,7 @@ import __primitive structure Int      from "Int"
 import __primitive structure Time     from "Time"
 import __primitive signature FUTURE   from "FUTURE-sig"
 
-structure Future :> FUTURE =				(**)
+structure Future : FUTURE =				(**)
 struct
     datatype  status = FUTURE | FAILED | DETERMINED
 
