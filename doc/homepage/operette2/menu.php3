@@ -1,10 +1,8 @@
-<IMG align="right" src="../stockhausen.gif">
-
 <P class="menu">
   <A href="index.php3">Home</A><BR>
   <BR>
   Alice, the Language:<BR>
-  <A href="transients.php3">Transients</A><BR>
+  <A href="futures.php3">Futures</A><BR>
   <A href="threads.php3">Threads</A><BR>
   <A href="components.php3">Components</A><BR>
   <A href="modules.php3">Higher-order Modules</A><BR>

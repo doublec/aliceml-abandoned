@@ -1,30 +1,11 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<?php include("macros.php3"); ?>
 
-<HTML>
-  <HEAD>
-    <TITLE>Stockhausen Operette 1 - Core Language Extensions</TITLE>
-    <LINK rel="stylesheet" type="text/css" href="style.css">
-  </HEAD>
+<?php heading("Stockhausen Operette 1 - Core Language Extensions",
+		"core <BR> language <BR> extensions") ?>
 
-  <BODY>
 
-  <H1>
-  stock<BR>
-  hausen.<BR>
-  <BR>
-  -<BR>
-  core<BR>
-  language<BR>
-  extensions<BR>
-  -
-  </H1>
 
-  <?php
-    include ("menu.php3")
-  ?>
-
-  <H2>overview ___________________________</H2>
-  <BR><BR>
+<?php section("overview", "overview") ?>
 
   <P>
     Besides <A href="modules.php3">extensions to the SML module system</A>,
@@ -32,6 +13,7 @@
   </P>
 
   <UL>
+    <LI> <A href="#data">structural datatypes</A> </LI>
     <LI> <A href="#opendata">open datatypes</A> </LI>
     <LI> <A href="#patterns">extended pattern language</A> </LI>
     <LI> <A href="#valrec">generalized <TT>val</TT> <TT>rec</TT></A> </LI>
@@ -47,8 +29,35 @@
   </P>
 
 
-  <H2><A name=opendata>open datatypes _____________________</A></H2>
-  <BR><BR>
+
+<?php section("data", "datatypes") ?>
+
+  <P>
+    In Alice datatypes are not generative. All datatypes that have
+    structurally equivalent definitions are compatible. For example, the
+    following program will elaborate:
+  </P>
+
+  <PRE>
+	datatype 'a t = A | B of 'a | C of 'a t
+	val x = C(B 0)
+
+	datatype 'a u = B of 'a | C of 'a u | A
+	val y = B 20
+
+	datatype 'a v = B of 'a | C of 'a t | A
+	val z = A
+
+	val l = [x,y,z]
+  </PRE>
+
+  <P>
+    This relaxation is particularly interesting for distributed programming.
+  </P>
+
+
+
+<?php section("opendata", "open datatypes") ?>
 
   <P>
     Open datatypes are a generalization of SML's exception type. In effect,
@@ -186,8 +195,7 @@
 
 
 
-  <H2><A name=patterns>patterns ___________________________</A></H2>
-  <BR><BR>
+<?php section("patterns", "patterns") ?>
 
   <P>
     The language provides several useful additions to SML's patterns:
@@ -288,8 +296,7 @@
 
 
 
-  <H2><A name=valrec>val rec ____________________________</A></H2>
-  <BR><BR>
+<?php section("valrec", "val rec") ?>
 
   <P>
     SML only allows function expressions on the right hand side of <TT>val</TT>
@@ -317,8 +324,7 @@
 
 
 
-  <H2><A name=vectors>vectors ____________________________</A></H2>
-  <BR><BR>
+<?php section("vectors", "vectors") ?>
 
   <P>
     Following SML/NJ, Alice provides vector expressions and patterns:
@@ -366,8 +372,7 @@
   
 
 
-  <H2><A name=records>records ____________________________</A></H2>
-  <BR><BR>
+<?php section("records", "records") ?>
 
   <P>
     There are two extensions for more comfortable handling of records.
@@ -442,14 +447,4 @@
   </PRE>
 
 
-  <BR>
-  <HR>
-  <DIV ALIGN=RIGHT>
-    <ADDRESS>
-       <A href="/~rossberg/">Andreas Rossberg</A> -
-       last modified <?php echo date("Y/m/d") ?>
-    </ADDRESS>
-  </DIV>
-
-  </BODY>
-</HTML>
+<?php footing() ?>

@@ -1,28 +1,11 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<?php include("macros.php3"); ?>
 
-<HTML>
-  <HEAD>
-    <TITLE>Stockhausen Operette 1 - Threads</TITLE>
-    <LINK rel="stylesheet" type="text/css" href="style.css">
-  </HEAD>
+<?php heading("Stockhausen Operette 1 - Libraries",
+		"libraries") ?>
 
-  <BODY>
 
-  <H1>
-  stock<BR>
-  hausen.<BR>
-  <BR>
-  -<BR>
-  libraries<BR>
-  -
-  </H1>
 
-  <?php
-    include ("menu.php3")
-  ?>
-
-  <H2>overview ___________________________</H2>
-  <BR><BR>
+<?php section("overview", "overview") ?>
 
   <P>
     Stockhausen is equipped with <A href="#basis">parts</A> of the
@@ -40,26 +23,26 @@
   </UL>
 
 
-  <H2><A name=basis>top-level __________________________</A></H2>
-  <BR><BR>
+
+<?php section("toplevel", "top-level") ?>
 
   <P>
     The Standard ML
     <A href="http://www.dina.kvl.dk/~sestoft/sml/top-level-chapter.html">
     top-level environment</A> has been implemented almost completely, except
-    for several functions dealing with the <TT>real</TT> type and the
+    <TT>print</TT> (you have to import it from <TT>TextIO</TT>) and the
     special purpose procedure <TT>use</TT>.
   </P>
 
   <P>
     Note however that Stockhausen does not currently support overloading,
-    so all overloaded operations in the top-level are only available at their
-    default type.
+    so all overloaded operations in the top-level evironment are only
+    available at their default type.
   </P>
 
 
-  <H2><A name=basis>basis library ______________________</A></H2>
-  <BR><BR>
+
+<?php section("basis", "basis library") ?>
 
   <P>
     Stockhausen Operette 1 only provides parts of the
@@ -86,6 +69,21 @@
     <LI>
       <TT>structure
       <A href="http://www.dina.kvl.dk/~sestoft/sml/list-pair.html">ListPair</A>
+      </TT>
+    </LI>
+    <LI>
+      <TT>structure
+      <A href="http://www.dina.kvl.dk/~sestoft/sml/vector.html">Vector</A>
+      </TT>
+    </LI>
+    <LI>
+      <TT>structure
+      <A href="http://www.dina.kvl.dk/~sestoft/sml/array.html">Array</A>
+      </TT>
+    </LI>
+    <LI>
+      <TT>structure
+      <A href="http://www.dina.kvl.dk/~sestoft/sml/math.html">Math</A>
       </TT>
     </LI>
     <LI>
@@ -153,12 +151,12 @@
     </LI>
     <LI>
       <TT>structure
-      <A href="http://www.dina.kvl.dk/~sestoft/sml/array.html">Array</A>
+      <A href="http://www.dina.kvl.dk/~sestoft/sml/ieee-float.html">IEEEReal</A>
       </TT>
     </LI>
     <LI>
       <TT>structure
-      <A href="http://www.dina.kvl.dk/~sestoft/sml/vector.html">Vector</A>
+      <A href="http://www.dina.kvl.dk/~sestoft/sml/time.html">Time</A>
       </TT>
     </LI>
     <LI>
@@ -188,6 +186,11 @@
   </UL>
 
   <P>
+    Structures from the Standard ML Basis Library not listed above are not
+    available in Operette 1.
+  </P>
+
+  <P>
     Some of the above structures must be imported explicitly. A program using
     the <TT>IO</TT> structure, for example, has to be
     prefixed by the following import announcement
@@ -199,14 +202,4 @@
   </PRE>
 
 
-  <BR>
-  <HR>
-  <DIV ALIGN=RIGHT>
-    <ADDRESS>
-       <A href="/~rossberg/">Andreas Rossberg</A> -
-       last modified <?php echo date("Y/m/d") ?>
-    </ADDRESS>
-  </DIV>
-
-  </BODY>
-</HTML>
+<?php footing() ?>

@@ -1,30 +1,10 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<?php include("macros.php3"); ?>
 
-<HTML>
-  <HEAD>
-    <TITLE>Stockhausen Operette 1 - Extended Module System</TITLE>
-    <LINK rel="stylesheet" type="text/css" href="style.css">
-  </HEAD>
+<?php heading("Stockhausen Operette 1 - Extended Module System",
+		"extended <BR> module <BR> system") ?>
 
-  <BODY>
 
-  <H1>
-  stock<BR>
-  hausen.<BR>
-  <BR>
-  -<BR>
-  extended<BR>
-  module<BR>
-  system<BR>
-  -
-  </H1>
-
-  <?php
-    include ("menu.php3")
-  ?>
-
-  <H2>overview ___________________________</H2>
-  <BR><BR>
+<?php section("overview", "overview") ?>
 
   <P>
     Alice extends the SML module system in various ways, by providing:
@@ -59,8 +39,7 @@
 
 
 
-  <H2><A name=local>local modules ______________________</A></H2>
-  <BR><BR>
+<?php section("local", "local modules") ?>
 
   <P>
     Alice discards SML's separation between core declarations
@@ -80,9 +59,8 @@
   </PRE>
 
 
-  <H2><A name=higher>higher-order functors ______________</A></H2>
-  <BR><BR>
 
+<?php section("higher", "higher-order functors") ?>
 
   <P>
     A direct consequence of allowing functors everywhere is the presence
@@ -164,8 +142,8 @@
   </PRE>
   
 
-  <H2><A name=sigmembers>signature members __________________</A></H2>
-  <BR><BR>
+
+<?php section("sigmembers", "signature members") ?>
 
   <P>
     Like structures and functors, signatures can also be declared anywhere.
@@ -236,8 +214,8 @@
   </DIV>
 
 
-  <H2><A name="paramsig">parameterized signatures ___________</A></H2>
-  <BR><BR>
+
+<?php section("paramsig", "parameterized signatures") ?>
 
   <P>
     Functors often require putting <TT>where</TT> constraints on signatures
@@ -285,8 +263,8 @@
   </P>
 
 
-  <H2><A name=wildcards>wildcards __________________________</A></H2>
-  <BR><BR>
+
+<?php section("wildcards", "wildcards") ?>
 
   <P>
     The module system can be abused to type some more delicate
@@ -327,8 +305,7 @@
 
 
 
-  <H2><A name=fixity>fixity _____________________________</A></H2>
-  <BR><BR>
+<?php section("fixity", "fixity") ?>
 
   <P>
     Signatures can contain fixity specifications:
@@ -369,8 +346,8 @@
   </P>
 
 
-  <H2><A name=syntax>syntax _____________________________</A></H2>
-  <BR><BR>
+
+<?php section("syntax", "syntax") ?>
 
   <P>
     The syntax for modules very much resembles the syntax of core
@@ -620,15 +597,4 @@
   </TABLE>
 
 
-
-  <BR>
-  <HR>
-  <DIV ALIGN=RIGHT>
-    <ADDRESS>
-       <A href="/~rossberg/">Andreas Rossberg</A> -
-       last modified <?php echo date("Y/m/d") ?>
-    </ADDRESS>
-  </DIV>
-
-  </BODY>
-</HTML>
+<?php footing() ?>

@@ -1,30 +1,11 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<?php include("macros.php3"); ?>
 
-<HTML>
-  <HEAD>
-    <TITLE>Stockhausen Operette 1 - SML Incompatibilities</TITLE>
-    <LINK rel="stylesheet" type="text/css" href="style.css">
-  </HEAD>
+<?php heading("Stockhausen Operette 1 - SML Incompatibilities",
+		"incompati <BR> bilities <BR> with SML") ?>
 
-  <BODY>
 
-  <H1>
-  stock<BR>
-  hausen.<BR>
-  <BR>
-  -<BR>
-  incompati<BR>
-  bilities<BR>
-  with SML<BR>
-  -
-  </H1>
 
-  <?php
-    include ("menu.php3")
-  ?>
-
-  <H2>overview ___________________________</H2>
-  <BR><BR>
+<?php section("overview", "overview") ?>
 
   <P>
     Most Alice extensions to SML'97 are conservative. There are some
@@ -41,8 +22,9 @@
     to the language in a later step.
   </P>
 
-  <H2><A name=keywords>reserved words _____________________</A></H2>
-  <BR><BR>
+
+
+<?php section("keywords", "reserved words") ?>
 
   <P>
     The following are reserved words in Alice and may not be used as
@@ -55,8 +37,8 @@
   </PRE>
 
 
-  <H2><A name=openinfix>open and infix _____________________</A></H2>
-  <BR><BR>
+
+<?php section("openinfix", "open and infix") ?>
 
   <P>
     Open pulls in infix status. Opening a structure that
@@ -124,8 +106,7 @@
 
 
 
-  <H2>val rec ____________________________</H2>
-  <BR><BR>
+<?php section("valrec", "val rec") ?>
 
   <P>
     Recursive value bindings do not remove constructor status on the
@@ -158,8 +139,7 @@
 
 
 
-  <H2>constructor arity __________________</H2>
-  <BR><BR>
+<?php section("conarity", "constructor arity") ?>
 
   <P>
     For interoperability reasons, Stockhausen currently has the concept of
@@ -266,8 +246,7 @@
 
 
 
-  <H2><A name=funid>namespaces _________________________</A></H2>
-  <BR><BR>
+<?php section("funid", "namespaces") ?>
 
   <P>
     Alice provides higher-order functors. To integrate them smoothly into
@@ -316,8 +295,7 @@
 
 
 
-  <H2>include ____________________________</H2>
-  <BR><BR>
+<?php section("include", "include") ?>
 
   <P>
     Because of syntactic ambiguity with uses of
@@ -358,8 +336,7 @@
 
 
 
-  <H2>sharing ____________________________</H2>
-  <BR><BR>
+<?php section("sharing", "sharing") ?>
 
   <P>
     In Alice, datatypes are not generative, but are just structural types
@@ -454,14 +431,4 @@
   </UL>
 
 
-  <BR>
-  <HR>
-  <DIV ALIGN=RIGHT>
-    <ADDRESS>
-       <A href="/~rossberg/">Andreas Rossberg</A> -
-       last modified <?php echo date("Y/m/d") ?>
-    </ADDRESS>
-  </DIV>
-
-  </BODY>
-</HTML>
+<?php footing() ?>

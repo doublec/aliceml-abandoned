@@ -1,70 +1,51 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<?php include("macros.php3"); ?>
 
-<HTML>
-  <HEAD>
-    <TITLE>Stockhausen Operette 1</TITLE>
-    <LINK rel="stylesheet" type="text/css" href="style.css">
-  </HEAD>
-
-  <BODY>
-
-  <H1>
-  stock<BR>
-  hausen.<BR>
-  <BR>
-  "operette 1"
-  </H1>
-
-  <?php
-    include ("menu.php3")
-  ?>
+<?php heading("Stockhausen Operette 1", "\"operette 1\"") ?>
 
 
-  <H2>overview _____________________</H2>
-  <BR><BR>
+
+<?php section("overview", "overview") ?>
 
   <P>
     We proudly present the first internal prototype release of the Stockhausen
-    system. We call it
-  </P>
-
-  <P class=quote>
-    "Operette&nbsp;1".
+    system. We call it <I>"Operette&nbsp;1"</I>.
   </P>
 
   <P>
-    Stockhausen implements the language <I>Alice</I>, which is based on 
-    <A href="http://cm.bell-labs.com/cm/cs/what/smlnj/sml.html">Standard ML</A>
-    but adds many of the interesting features from
-    <A href="http://www.mozart-oz.org/">Mozart</A>. Operette 1 already supports:
+    Stockhausen implements the language <I>Alice</I>, which integrates
+    features from <A href="http://www.mozart-oz.org/">Mozart</A> with the
+    language
+    <A href="http://cm.bell-labs.com/cm/cs/what/smlnj/sml.html">Standard ML</A>.
+    Moreover, Alice includes other interesting features found in neither of
+    both languages.
+    Besides implementing almost complete SML, Stockhausen Operette 1 already
+    supports:
   </P>
 
   <UL>
-    <LI> logic variables and lazy computations
-         (<A href="transients.php3"><I>transients</I></A>) </LI>
-    <LI> concurrency and distribution
-         (<A href="threads.php3"><I>threads</I></A>) </LI>
-    <LI> type-safe dynamic loading of modules
-         (<A href="components.php3"><I>components</I></A>) </LI>
+    <LI> <A href="modules.php3"><I>higher-order modules</I></A>:
+         a more powerful module language </LI>
+    <LI> <A href="components.php3"><I>components</I></A>:
+         type-safe dynamic loading of modules </LI>
+    <LI> <A href="laziness.php3"><I>laziness</I></A>:
+	 combining strict and lazy functional programming </LI>
+    <LI> <A href="futures.php3"><I>futures</I></A>:
+         "logic variables" and concurrency</LI>
   </UL>
 
   <P>
-    Moreover, Alice adds other interesting features neither found in
-    Mozart nor in SML, like typed <A href="modules.php3">higher-order
-    modules</A> and <A href="extensions.php3"">other extensions</A>.
-  </P>
-
-  <P>
+    Important design goals for Alice/Stockhausen were backward compatibility
+    with Standard ML, as well as interoperability with Mozart.
     Stockhausen Operette 1 is based on the
-    <A href="http://www.mozart-oz.org/">Mozart</A> engine. Operette 1 programs
-    can therefore <A href="interop.php3">interoperate</A> with Oz.
+    <A href="http://www.mozart-oz.org/">Mozart</A> virtual machine. Operette 1
+    programs can therefore <A href="interop.php3">interoperate</A> with Oz.
   </P>
 
   <P align="CENTER"> <IMG src="../mozart_cartoon.jpg"> </P>
 
 
-  <H2><A name="contact">contact ______________________</A></H2>
-  <BR><BR>
+
+<?php section("contact", "contact") ?>
 
   <P>
     Please send bug reports and other comments to:
@@ -85,8 +66,8 @@
   </UL>
 
 
-  <H2><A name="download">download _____________________</A></H2>
-  <BR><BR>
+
+<?php section("download", "download") ?>
 
   <P>
     You can download versions of the Stockhausen logo:
@@ -103,15 +84,4 @@
   </P>
 
 
-  <BR>
-  <HR>
-  <DIV ALIGN=RIGHT>
-    <ADDRESS>
-       <A href="/~kornstae/">Leif Kornstaedt</A>,
-       <A href="/~rossberg/">Andreas Rossberg</A> -
-       last modified <?php echo date("Y/m/d") ?>
-    </ADDRESS>
-  </DIV>
-
-  </BODY>
-</HTML>
+<?php footing() ?>

@@ -1,34 +1,17 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<?php include("macros.php3"); ?>
 
-<HTML>
-  <HEAD>
-    <TITLE>Stockhausen Operette 1 - Components</TITLE>
-    <LINK rel="stylesheet" type="text/css" href="style.css">
-  </HEAD>
+<?php heading("Stockhausen Operette 1 - Components", "components") ?>
 
-  <BODY>
 
-  <H1>
-  stock<BR>
-  hausen.<BR>
-  <BR>
-  -<BR>
-  components<BR>
-  -
-  </H1>
 
-  <?php
-    include ("menu.php3")
-  ?>
-
-  <H2>overview ___________________________</H2>
-  <BR><BR>
+<?php section("overview", "overview") ?>
 
   <P>
     SML does not deal with separate compilation. Alice repairs
     this by adding a component system to the language. Alice
-    components were inspired by Oz "functors". They support lazy linking
+    components were inspired by Mozart "functors". They support lazy linking
     and loading from remote URLs, but add static and dynamic type checking.
+    Components are architecture independent and can be executed on any system.
   </P>
 
   <P>
@@ -47,7 +30,7 @@
   </P>
 
   <PRE>
-	import structure Bla from "http://ps.uni-sb.de/stockhausen/bla.xtc"
+	import structure Foo from "http://ps.uni-sb.de/stockhausen/Foo.xtc"
   </PRE>
 
   <P>
@@ -70,6 +53,7 @@
 
   <PRE>
 	import structure Y from "other.xtc"
+
 	signature S = sig end
 	structure X :> S = struct end
   </PRE>
@@ -82,8 +66,7 @@
 
 
 
-  <H2><A name=local>execution __________________________</A></H2>
-  <BR><BR>
+<?php section("execution", "execution") ?>
 
   <P>
     A Stockhausen program is executed by starting a component. In general, a
@@ -110,9 +93,7 @@
 
 
 
-
-  <H2><A name=syntax>syntax _____________________________</A></H2>
-  <BR><BR>
+<?php section("syntax", "syntax") ?>
 
   <TABLE>
     <TR>
@@ -332,15 +313,4 @@
   </P>
 
 
-
-  <BR>
-  <HR>
-  <DIV ALIGN=RIGHT>
-    <ADDRESS>
-       <A href="/~rossberg/">Andreas Rossberg</A> -
-       last modified <?php echo date("Y/m/d") ?>
-    </ADDRESS>
-  </DIV>
-
-  </BODY>
-</HTML>
+<?php footing() ?>

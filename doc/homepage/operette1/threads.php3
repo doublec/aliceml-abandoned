@@ -1,62 +1,27 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<?php include("macros.php3"); ?>
 
-<HTML>
-  <HEAD>
-    <TITLE>Stockhausen Operette 1 - Threads</TITLE>
-    <LINK rel="stylesheet" type="text/css" href="style.css">
-  </HEAD>
+<?php heading("Stockhausen Operette 1 - Threads", "threads") ?>
 
-  <BODY>
 
-  <H1>
-  stock<BR>
-  hausen.<BR>
-  <BR>
-  -<BR>
-  threads<BR>
-  -
-  </H1>
 
-  <?php
-    include ("menu.php3")
-  ?>
-
-  <H2>overview ___________________________</H2>
-  <BR><BR>
+<?php section("overview", "overview") ?>
 
   <P>
     Alice provides concurrency as a fundamental language feature. The
     concurrency model is tightly coupled with
-    <A href="transients.php3">transients</A>.
+    <A href="futures.php3">futures</A>.
     The library design regarding threads is not finalized in Operette 1.
     Currently, the basic primitive is:
   </P>
 
   <PRE>
-	val spawn: (unit -> 'a) -> 'a
+	val concur: (unit -> 'a) -> 'a
   </PRE>
 
   <P>
     It immediately returns a fresh future. The procedure will be applied
     in a new thread. When the application terminates the future is replaced
     with the result.
-<!--
-    If the application
-    terminates with an exception <I>e</I>, the by-need transient is marked as
-    failed and all operations accessing its future will raise 
-  </P>
-
-  <PRE>
-	exception Aborted of exn
-  </PRE>
-
-  <P>
-    with <I>e</I> as argument.  If the application terminates with the future
-    of the by-need transient as result, the by-need transient is marked as
-    failed and all operations accessing the future will raise the exception
-    <TT>ByNeed(Fulfill)</TT>.
-    Note that <TT>spawn</TT> behaves very similar to <TT>byNeed</TT>.
--->
   </P>
 
   <P>
@@ -65,18 +30,17 @@
   </P>
 
 
-  <H2><A name=sig>signature __________________________</A></H2>
-  <BR><BR>
+
+<?php section("sig", "signature") ?>
 
   <PRE>
 	structure Thread:
 	    sig
 	        type thread
 
-		datatype state =
-		    RUNNABLE
-		  | BLOCKED
-		  | TERMINATED
+		datatype state = RUNNABLE
+		               | BLOCKED
+		               | TERMINATED
 
 		exception Terminate
 
@@ -97,14 +61,5 @@
 	    end
   </PRE>
 
-  <BR>
-  <HR>
-  <DIV ALIGN=RIGHT>
-    <ADDRESS>
-       <A href="/~rossberg/">Andreas Rossberg</A> -
-       last modified <?php echo date("Y/m/d") ?>
-    </ADDRESS>
-  </DIV>
 
-  </BODY>
-</HTML>
+<?php footing() ?>

@@ -1,34 +1,18 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<?php include("macros.php3"); ?>
 
-<HTML>
-  <HEAD>
-    <TITLE>Stockhausen Operette 1 - Transients</TITLE>
-    <LINK rel="stylesheet" type="text/css" href="style.css">
-  </HEAD>
+<?php heading("Stockhausen Operette 1 - Futures", "futures") ?>
 
-  <BODY>
 
-  <H1>
-  stock<BR>
-  hausen.<BR>
-  <BR>
-  -<BR>
-  transients<BR>
-  -
-  </H1>
 
-  <?php
-    include ("menu.php3")
-  ?>
-
-  <H2>overview ___________________________</H2>
-  <BR><BR>
+<?php section("overview", "overview") ?>
 
   <P>
-    One of the main novel concepts relative to SML are <I>transients</I>.
-    Transients bring the basic idea of "logic variables" as found in
-    logic programming languages like Oz into the functional world of ML.
+    One of the main novel concepts relative to SML are <I>futures</I>.
+    Futures in Alice bring the basic idea of "logic variables" as found in
+    logic programming languages into the typed functional world of ML.
   </P>
+
+  <P><B>Under construction! - Old version below.</B></P>
 
   <P>
     Transients are provided through the library structure 
@@ -184,8 +168,7 @@
 
 
 
-  <H2><A name=sig>signature __________________________</A></H2>
-  <BR><BR>
+<?php section("sig", "signature") ?>
 
   <PRE>
 	structure Transient:
@@ -208,15 +191,5 @@
 	    end
   </PRE>
 
-  <BR>
-  <HR>
-  <DIV ALIGN=RIGHT>
-    <ADDRESS>
-       <A href="/~rossberg/">Andreas Rossberg</A>,
-       <A href="/~smolka/">Gert Smolka</A> -
-       last modified <?php echo date("Y/m/d") ?>
-    </ADDRESS>
-  </DIV>
 
-  </BODY>
-</HTML>
+<?php footing() ?>
