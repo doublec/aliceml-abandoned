@@ -43,6 +43,13 @@ structure PrimPickle :> PRIM_PICKLE =
 
 	type label = int
 	type size = int
+
+        val majorVersion = 1
+        val minorVersion = 0
+        val magicS = Word8.fromInt (Char.ord #"s")
+        val magicE = Word8.fromInt (Char.ord #"e")
+        val magicA = Word8.fromInt (Char.ord #"a")
+        val magicM = Word8.fromInt (Char.ord #"m")
 	
 	val tINIT        = Word8.fromInt 0
 	val tSTORE       = Word8.fromInt 1
@@ -195,7 +202,13 @@ structure PrimPickle :> PRIM_PICKLE =
 	    let
 		val charVector = Word8Buffer.getVector buffer
 	    in
-		(streamOutputByte (q, tINIT);
+                (streamOutputByte (q, magicS);
+                 streamOutputByte (q, magicE);
+                 streamOutputByte (q, magicA);
+                 streamOutputByte (q, magicM);
+		 streamOutputUInt (q, majorVersion);
+		 streamOutputUInt (q, minorVersion);
+                 streamOutputByte (q, tINIT);
 		 streamOutputUInt (q, !maxStack);
 		 streamOutputUInt (q, nextRegister q);
 		 BinIO.output (stream, charVector);
