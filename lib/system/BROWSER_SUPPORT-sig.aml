@@ -1,0 +1,16 @@
+(*
+ * Author:
+ *   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Thorsten Brunklaus, 2002
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+signature BROWSER_SUPPORT =
+sig
+    val waitRequest : 'a -> 'a
+end
