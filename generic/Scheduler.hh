@@ -25,6 +25,8 @@
 
 class Backtrace;
 
+#define SCHEDULER_THREAD_PREEMPT_STATUS 1
+
 class Scheduler {
 private:
   static word root;
@@ -41,7 +43,6 @@ public:
   static word currentArgs[maxArgs];   // Arguments
   static word currentData;            // Transient or Exception
   static Backtrace *currentBacktrace; // Backtrace
-  static bool preempt;
   // Scheduler Static Constructor
   static void Init();
 
@@ -86,8 +87,8 @@ public:
 	ScheduleThread(thread);
     }
   }
-  static bool TestPreempt() {
-    return preempt;
+  static u_int PreemptStatus() {
+    return (1 << SCHEDULER_THREAD_PREEMPT_STATUS);
   }
 };
 

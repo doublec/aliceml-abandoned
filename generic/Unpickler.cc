@@ -506,7 +506,7 @@ word SelFromEnv(word env, u_int index) {
   } else {}
 
 #define CONTINUE()					\
-  if (Scheduler::TestPreempt() || Store::NeedGC())	\
+  if (StatusWord::GetStatus(Store::GCStatus() | Scheduler::PreemptStatus())) \
     return Interpreter::PREEMPT;			\
   else							\
     return Interpreter::CONTINUE;

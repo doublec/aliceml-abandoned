@@ -341,7 +341,7 @@ void PicklingInterpreter::PushFrame(TaskStack *taskStack, word data) {
 }
 
 #define CONTINUE()					\
-  if (Scheduler::TestPreempt() || Store::NeedGC())	\
+  if (StatusWord::GetStatus(Store::GCStatus() | Scheduler::PreemptStatus())) \
     return Interpreter::PREEMPT;			\
   else							\
     return Interpreter::CONTINUE;

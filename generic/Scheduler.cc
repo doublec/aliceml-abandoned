@@ -31,7 +31,6 @@
 word Scheduler::root;
 ThreadQueue *Scheduler::threadQueue;
 Thread *Scheduler::currentThread;
-bool Scheduler::preempt;
 
 u_int Scheduler::nArgs;
 word Scheduler::currentArgs[Scheduler::maxArgs];
@@ -39,7 +38,7 @@ word Scheduler::currentData;
 Backtrace *Scheduler::currentBacktrace;
 
 void Scheduler::Timer() {
-  preempt = true;
+  StatusWord::SetStatus(PreemptStatus());
 }
 
 void Scheduler::Init() {
@@ -101,7 +100,7 @@ void Scheduler::Run() {
     GetThreadArgs(currentThread);
     bool nextThread = false;
     while (!nextThread) {
-      preempt = false;
+      StatusWord::ClearStatus(PreemptStatus());
 #if PROFILE
       Profiler::SampleHeap();
       StackFrame *frame = StackFrame::FromWordDirect(taskStack->GetFrame());
