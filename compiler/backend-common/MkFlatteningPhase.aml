@@ -372,6 +372,9 @@ functor MkFlatteningPhase(structure Switches: SWITCHES) :> FLATTENING_PHASE =
 	    translateCont cont
 	  | translateExp (PrimExp (info, name), f, cont) =
 	    f (O.VarExp (#region info, O.Prim name))::translateCont cont
+	  | translateExp (ImmExp (info, value), f, cont) =
+	    f (O.VarExp (#region info, O.Value (value, true)))::
+	    translateCont cont
 	  | translateExp (NewExp info, f, cont) =
 	    f (O.NewExp (#region info, Name.InId))::translateCont cont
 	  | translateExp (VarExp (info, longid), f, cont) =

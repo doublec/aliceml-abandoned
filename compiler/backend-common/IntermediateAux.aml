@@ -59,6 +59,7 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	    RecDec (info, Vector.map (fn dec => substDec' (dec, subst)) decs)
 	and substExp' (exp as LitExp (_, _), _) = exp
 	  | substExp' (exp as PrimExp (_, _), _) = exp
+	  | substExp' (exp as ImmExp (_, _), _) = exp
 	  | substExp' (exp as NewExp _, _) = exp
 	  | substExp' (VarExp (info, longid), subst) =
 	    VarExp (info, substLongId (longid, subst))
