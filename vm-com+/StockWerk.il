@@ -531,9 +531,8 @@
     .field private int32 State
     .field private class StockWerk.StockWert Ref
     // State = 0: delaying - Ref holds pointer to procedure
-    //         1: executing - Ref is undefined
-    //         2: failed - Ref holds pointer to exception
-    //         3: bound - Ref holds pointer to value
+    //         1: failed - Ref holds pointer to exception
+    //         2: bound - Ref holds pointer to value
     .method public void .ctor(class StockWerk.StockWert) {
       ldarg.0
       call instance void StockWerk.Transient::.ctor()
@@ -563,20 +562,10 @@
       .locals(class StockWerk.StockWert)
       ldarg.0
       call void System.CriticalSection::Enter(class System.Object)
-    retry:
       ldarg.0
       ldfld int32 StockWerk.ByNeed::State
-      switch(apply, wait, raise, deref)
-    wait:
-      ldarg.0
-      call instance void System.Object::Wait()
-      br.s retry
+      switch(apply, raise, deref)
     apply:
-      ldarg.0
-      ldc.i4 1
-      stfld int32 StockWerk.ByNeed::State
-      ldarg.0
-      call void System.CriticalSection::Exit(class System.Object)
       .try {
         ldarg.0
         ldfld class StockWerk.StockWert StockWerk.ByNeed::Ref
@@ -588,13 +577,15 @@
         callvirt instance bool StockWerk.StockWert::IsVariantOf(class StockWerk.Transient)
         brtrue.s raiseFulfill
         ldarg.0
+        ldc.i4 2
+        stfld int32 StockWerk.ByNeed::State
+        ldarg.0
         ldloc.0
         stfld class StockWerk.StockWert StockWerk.ByNeed::Ref
         ldarg.0
-        ldc.i4 3
-        stfld int32 StockWerk.ByNeed::State
-        ldarg.0
         call instance void System.Object::NotifyAll()
+        ldarg.0
+        call void System.CriticalSection::Exit(class System.Object)
         ldloc.0
         ret
       raiseFulfill:
@@ -605,11 +596,13 @@
         ldfld class StockWerk.StockWert StockWerk.ExceptionWrapper::Value
         stloc.0
         ldarg.0
-        ldc.i4 3
+        ldc.i4 1
         stfld int32 StockWerk.ByNeed::State
         ldarg.0
         ldloc.0
         stfld class StockWerk.StockWert StockWerk.ByNeed::Ref
+        ldarg.0
+        call void System.CriticalSection::Exit(class System.Object)
         ldloc.0
         newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
         throw
