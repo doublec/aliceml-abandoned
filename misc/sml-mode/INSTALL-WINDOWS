@@ -10,8 +10,8 @@ you have to install the SML mode by hand.
 4) In the site-lisp subdirectory, edit the file site-start.el and add the
    following two lines:
 
-	(add-to-list 'load-path "C:\Program Files\Emacs\site-lisp\sml-mode")
-	(load "sml-mode\sml-mode-startup")
+	(add-to-list 'load-path "C:/Program Files/Emacs/site-lisp/sml-mode")
+	(load "sml-mode/sml-mode-startup")
 
    (Adapt the path to your installation directory.)
 
