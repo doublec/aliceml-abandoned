@@ -30,13 +30,14 @@ class Alice {
 public:
   enum label {
     MIN_LABEL    = MIN_DATALABELSIZE,
-    MAX_LABEL    = MAX_DATALABELSIZE - 11,
+    MAX_LABEL    = MAX_DATALABELSIZE - 12,
 
-    Array        = MAX_DATALABELSIZE - 10,
-    ArrayZero    = MAX_DATALABELSIZE - 9,
-    Cell         = MAX_DATALABELSIZE - 8,
-    Constructor  = MAX_DATALABELSIZE - 7,
-    ConVal       = MAX_DATALABELSIZE - 6,
+    Array        = MAX_DATALABELSIZE - 11,
+    ArrayZero    = MAX_DATALABELSIZE - 10,
+    Cell         = MAX_DATALABELSIZE - 9,
+    Constructor  = MAX_DATALABELSIZE - 8,
+    ConVal       = MAX_DATALABELSIZE - 7,
+    GlobalStamp  = MAX_DATALABELSIZE - 6,
     Real         = MAX_DATALABELSIZE - 5,
     String       = MAX_DATALABELSIZE - 4,
     Tuple        = MAX_DATALABELSIZE - 3,
@@ -249,21 +250,6 @@ public:
   }
 };
 
-class UniqueConstructor: public Constructor {
-public:
-  static UniqueConstructor *New(String *id) {
-    Block *b = Store::AllocBlock(Alice::ToBlockLabel(Alice::Constructor), 1);
-    b->InitArg(1, id->ToWord());
-    return static_cast<UniqueConstructor *>(b);
-  }
-  static UniqueConstructor *FromWord(word x) {
-    Block *b = Store::WordToBlock(x);
-    Assert(b == INVALID_POINTER ||
-	   b->GetLabel() == Alice::ToBlockLabel(Alice::Constructor));
-    return static_cast<UniqueConstructor *>(b);
-  }
-};
-
 class TagVal: private Block {
 public:
   using Block::ToWord;
@@ -315,6 +301,57 @@ public:
   }
   word Sel(u_int index) {
     return GetArg(index + 1);
+  }
+};
+
+class UniqueConstructor: public Constructor {
+public:
+  static UniqueConstructor *New(String *id) {
+    Block *b = Store::AllocBlock(Alice::ToBlockLabel(Alice::Constructor), 1);
+    b->InitArg(1, id->ToWord());
+    return static_cast<UniqueConstructor *>(b);
+  }
+  static UniqueConstructor *FromWord(word x) {
+    Block *b = Store::WordToBlock(x);
+    Assert(b == INVALID_POINTER ||
+	   b->GetLabel() == Alice::ToBlockLabel(Alice::Constructor));
+    return static_cast<UniqueConstructor *>(b);
+  }
+};
+
+class GlobalStamp: private Block {
+private:
+  static const u_int SIZE = 2;
+  static const u_int HASH_CODE_POS = 1;
+  static const u_int NAME_POS = 2;
+
+  static u_int hashCode;
+public:
+  using Block::ToWord;
+
+  static GlobalStamp *New() {
+    Block *b = Store::AllocBlock(Alice::ToBlockLabel(Alice::GlobalStamp), SIZE);
+    b->InitArg(HASH_CODE_POS, Store::IntToWord(hashCode++));
+    return static_cast<GlobalStamp *>(b);
+  }
+  static GlobalStamp *New(String *name) {
+    Block *b = Store::AllocBlock(Alice::ToBlockLabel(Alice::GlobalStamp), SIZE);
+    b->InitArg(HASH_CODE_POS, Store::IntToWord(hashCode++));
+    b->InitArg(NAME_POS, name->ToWord());
+    return static_cast<GlobalStamp *>(b);
+  }
+  static GlobalStamp *FromWord(word x) {
+    Block *b = Store::WordToBlock(x);
+    Assert(b == INVALID_POINTER ||
+	   b->GetLabel() == Alice::ToBlockLabel(Alice::GlobalStamp));
+    return static_cast<GlobalStamp *>(b);
+  }
+
+  u_int GetHashCode() {
+    return Store::WordToInt(GetArg(HASH_CODE_POS));
+  }
+  String *GetName() {
+    return static_cast<String *>(Store::WordToBlock(GetArg(NAME_POS)));
   }
 };
 

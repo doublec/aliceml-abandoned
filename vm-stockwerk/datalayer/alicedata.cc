@@ -14,3 +14,5 @@
 #pragma implementation "datalayer/alicedata.hh"
 #endif
 #include "datalayer/alicedata.hh"
+
+u_int GlobalStamp::hashCode = 0;
