@@ -28,6 +28,7 @@ public:
   using Block::ToWord;
   using WeakDictionary::GetSize;
   using WeakDictionary::Clear;
+  using WeakDictionary::IsEmpty;
 
   void InsertItem(word key, word value) {
     WeakDictionary::InsertItem(key, value);
