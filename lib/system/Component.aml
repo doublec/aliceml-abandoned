@@ -40,6 +40,15 @@ struct
 
     val extension = UnsafeComponent.extension
 
+    local
+	val b = Option.isSome (OS.Process.getEnv "ALICE_TRACE_COMPONENT")
+    in
+	fun trace s =
+	    if b then TextIO.output (TextIO.stdErr,
+				     "[component manager] " ^ s ^ "\n")
+	    else ()
+    end
+
     fun create (inf, mod) = EVALUATED {inf, mod}
 
     functor Create(signature S structure X: S) =
@@ -67,7 +76,11 @@ struct
 	    val s = Url.toStringRaw url   (*--** use getLocalPath instead *)
 	in
 	    case localize s of
-		SOME (Resolver.FILE s') => UnsafeComponent.load s'
+		SOME (Resolver.FILE s') =>
+		    (UnsafeComponent.load s'
+		     handle Corrupt => UnsafeComponent.linkNative s'
+		     handle UnsafeComponent.Native msg =>
+			    (trace ("linkNative: " ^ msg); raise Corrupt))
 	      | SOME (Resolver.STRING s') => UnsafeComponent.unpack_ s'
 	      | NONE =>
 		    raise IO.Io {name = s,
@@ -86,15 +99,6 @@ struct
 	exception Mismatch of Url.t * Url.t option * Inf.mismatch
 
 	datatype component = datatype component
-
-	local
-	    val b = Option.isSome (OS.Process.getEnv "ALICE_TRACE_COMPONENT")
-	in
-	    fun trace s =
-		if b then TextIO.output (TextIO.stdErr,
-					 "[component manager] " ^ s ^ "\n")
-		else ()
-	end
 
 	val map: (inf * mod) UrlMap.t =
 	    UrlMap.new (Vector.map (fn (s, inf, mod) =>
