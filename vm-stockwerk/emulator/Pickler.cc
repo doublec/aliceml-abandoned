@@ -345,7 +345,6 @@ Interpreter::Result PicklingInterpreter::Run(word args, TaskStack *taskStack) {
 	Scheduler::currentBacktrace = Backtrace::New(frame->ToWord());
 	return Interpreter::RAISE;
       } else {
-	std::fprintf(stderr, "handlerblock: label %d\n", block->GetLabel());
 	Assert(block->GetLabel() == TRANSFORM_LABEL);
 	PicklingInterpreter::PushFrame(taskStack, block->ToWord());
 	CONTINUE(args);
