@@ -5,7 +5,7 @@
 //
 // Copyright:
 //   Thorsten Brunklaus, 2002
-//   Leif Kornstaedt, 2002
+//   Leif Kornstaedt, 2002-2003
 //
 // Last Change:
 //   $Date$ by $Author$
@@ -27,22 +27,22 @@ DEFINE1(UnsafeDebug_unimplemented) {
 word UnsafeDebug() {
   Record *record = Record::New(9);
   INIT_STRUCTURE(record, "UnsafeDebug", "setPrintDepth",
-		 UnsafeDebug_unimplemented, 1, true);
+		 UnsafeDebug_unimplemented, 1);
   INIT_STRUCTURE(record, "UnsafeDebug", "setPrintWidth",
-		 UnsafeDebug_unimplemented, 1, true);
+		 UnsafeDebug_unimplemented, 1);
   INIT_STRUCTURE(record, "UnsafeDebug", "toString",
-		 UnsafeDebug_unimplemented, 1, true);
+		 UnsafeDebug_unimplemented, 1);
   INIT_STRUCTURE(record, "UnsafeDebug", "print",
-		 UnsafeDebug_print, 1, true);
+		 UnsafeDebug_print, 1);
   INIT_STRUCTURE(record, "UnsafeDebug", "inspect",
-		 UnsafeDebug_unimplemented, 1, true);
+		 UnsafeDebug_unimplemented, 1);
   INIT_STRUCTURE(record, "UnsafeDebug", "Print$",
-		 UnsafeDebug_unimplemented, 1, true);
+		 UnsafeDebug_unimplemented, 1);
   INIT_STRUCTURE(record, "UnsafeDebug", "Inspect$",
-		 UnsafeDebug_unimplemented, 1, true);
+		 UnsafeDebug_unimplemented, 1);
   INIT_STRUCTURE(record, "UnsafeDebug", "InspectType$",
-		 UnsafeDebug_unimplemented, 1, true);
+		 UnsafeDebug_unimplemented, 1);
   INIT_STRUCTURE(record, "UnsafeDebug", "InspectSig$",
-		 UnsafeDebug_unimplemented, 1, true);
+		 UnsafeDebug_unimplemented, 1);
   RETURN_STRUCTURE("UnsafeDebug$", record);
 }
