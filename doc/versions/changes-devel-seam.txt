@@ -34,6 +34,7 @@ Interactive Toplevel:
 
 * Enable Ctrl-C for interrupting a computation.
 * Enable Ctrl-Z for putting a computation into background.
+* Function exit() for as an alternative for Ctrl-D in broken environments.
 
 Runtime system:
 
