@@ -19,7 +19,7 @@
 
 #include "generic/Interpreter.hh"
 
-class PushCallInterpreter: public Interpreter {
+class DllExport PushCallInterpreter: public Interpreter {
 private:
   // PushCallInterpreter Constructor
   PushCallInterpreter(): Interpreter() {}

@@ -22,7 +22,7 @@
 class Thread;
 class Transient;
 
-class ByneedInterpreter: public Interpreter {
+class DllExport ByneedInterpreter: public Interpreter {
 private:
   // ByneedInterpreter Constructor
   ByneedInterpreter(): Interpreter() {}

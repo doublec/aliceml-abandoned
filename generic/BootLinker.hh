@@ -25,13 +25,13 @@
 
 class String;
 
-struct NativeComponent {
+struct DllExport NativeComponent {
   const char *name;
   word (*init)(void);
 };
 
 // Component
-class Component: private Block {
+class DllExport Component: private Block {
 private:
   static const u_int ENTRY_LABEL = MIN_DATA_LABEL;
   enum { SIGN_POS, STR_POS, SIZE };
@@ -59,7 +59,7 @@ public:
   }
 };
 
-class BootLinker {
+class DllExport BootLinker {
 private:
   static word componentTable;
   static word keyQueue;
