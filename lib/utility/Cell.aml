@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2002
+ *   Andreas Rossberg, 2001-2003
  *
  * Last change:
  *   $Date$ by $Author$
@@ -18,7 +18,7 @@ struct
     type 'a cell
     type 'a t			= 'a cell
 
-    val new			= UnsafeCell.new
+    val cell			= UnsafeCell.cell
     val content			= UnsafeCell.content
     val replace			= UnsafeCell.replace
     val equal			= op=
@@ -29,11 +29,10 @@ struct
 	type 'a map
 	type 'a t		= 'a map
 
-	exception Delete    of key
+	exception Unknown   of key
 	exception Collision of key
-	exception Lookup    of key
 
-	val new			= UnsafeCell.Map.new
+	val map			= UnsafeCell.Map.map
 	val clone		= UnsafeCell.Map.clone
 	val size		= UnsafeCell.Map.size
 	val isEmpty		= UnsafeCell.Map.isEmpty
@@ -44,17 +43,33 @@ struct
 	fun insertWithi	f (m,c,x) = UnsafeCell.Map.insertWithi(f,m,c,x)
 	fun app f m		= UnsafeCell.Map.app(f,m)
 	fun appi f m		= UnsafeCell.Map.appi(f,m)
+(*--** TODO: should be primitive
+	fun modify f m		= UnsafeCell.Map.modify(f,m)
+	fun modifyi f m		= UnsafeCell.Map.modifyi(f,m)
+*)
 	fun fold f x m		= UnsafeCell.Map.fold(f,x,m)
 	fun foldi f x m		= UnsafeCell.Map.foldi(f,x,m)
+(*--** TODO: should be primitive
+	fun filter f m		= UnsafeCell.Map.filter(f,m)
+	fun filteri f m		= UnsafeCell.Map.filteri(f,m)
+*)
 	fun find f m		= UnsafeCell.Map.find(f,m)
 	fun findi f m		= UnsafeCell.Map.findi(f,m)
+	fun choose m		= find (fn _ => true) m
+	fun choosei m		= findi (fn _ => true) m
+
+	fun exists f m		= Option.isSome(find f m)
+	fun existsi f m		= Option.isSome(findi f m)
+	fun all f m		= not(Option.isSome(find (fn x => not(f x)) m))
+	fun alli f m		= not(Option.isSome
+					(findi (fn(x,y) => not(f(x,y))) m))
 
 	fun lookupExistent(m,c)	= case lookup(m,c) of SOME x => x
-						    | NONE   => raise Lookup c
+						    | NONE   => raise Unknown c
 
 	fun member(m,c)		= Option.isSome(lookup(m,c))
 	fun delete(m,c)		= deleteWith ignore (m,c)
-	fun deleteExistent(m,c)	= deleteWith(fn c => raise Delete c) (m,c)
+	fun deleteExistent(m,c)	= deleteWith(fn c => raise Unknown c) (m,c)
 	fun insertWith f	= insertWithi(fn(c,x1,x2) => f(x1,x2))
 	fun insert(m,c,x)	= insertWithi #3 (m,c,x)
 	fun insertDisjoint ar	= insertWithi(fn(c,_,_) => raise Collision c) ar
@@ -64,6 +79,35 @@ struct
 	fun unionDisjoint(m1,m2) = union' insertDisjoint (m1,m2)
 	fun unionWith f		= union'(insertWith f)
 	fun unionWithi f	= union'(insertWithi f)
+
+	fun submap eq (m1,m2)	= alli (fn(k,a) => case lookup(m2,k)
+						     of NONE => false
+						      | SOME a' => eq(a,a')) m1
+	fun equal eq (m1,m2)	= submap eq (m1,m2) andalso submap eq (m2,m1)
+
+	fun fromList kas	= let val m = map() in
+				      List.app (fn (c,x) =>
+						insertDisjoint(m,c,x)) kas;
+				      m
+				  end
+	fun toList m		= foldi (fn(c,x,cxs) => (c,x)::cxs) nil m
+
+	fun fromVector kas	= let val m = map() in
+				      Vector.app (fn (c,x) =>
+						  insertDisjoint(m,c,x)) kas;
+				      m
+				  end
+	fun toVector m		= Vector.fromList(toList m)
+
+(*--** TODO: should be primitive *)
+	fun modify f m		= List.app (fn(k,a) =>
+					    insert(m,k,f a)) (toList m)
+	fun modifyi f m		= List.app (fn(k,a) =>
+					    insert(m,k,f(k,a))) (toList m)
+	fun filter f m		= List.app (fn(k,a) => if f a then () else
+					    deleteExistent(m,k)) (toList m)
+	fun filteri f m		= List.app (fn(k,a) => if f(k,a) then () else
+					    deleteExistent(m,k)) (toList m)
     end
 end
 
@@ -92,7 +136,7 @@ struct
 				   printStamp z; print ","; printAddr r;
 				   print ")")
 
-    fun new x			= (UnsafeCell.new x, Stamp.new())
+    fun cell x			= (UnsafeCell.new x, Stamp.stamp())
     fun content (c, _, r)	= let val x1 = UnsafeCell.content c
 				      and x2 = !r
 				  in
@@ -148,9 +192,8 @@ struct
 	type 'a map = (t cell * 'a) map' * 'a Map.t
 	type 'a t   = 'a map
 
-	exception Delete    of key
+	exception Unknown   of key
 	exception Collision of key
-	exception Lookup    of key
 
 	fun compareMapEntry(((c1,_,_),_,_), ((c2,_,_),_,_)) =
 	    Int.compare(Addr.addr c1, Addr.addr c2)
@@ -228,7 +271,7 @@ struct
 
 	fun checked s p = (check s p; p)
 
-	fun new() = checked "new" (UnsafeCell.Map.new(), Map.new())
+	fun cell() = checked "cell" (UnsafeCell.Map.new(), Map.map())
 
 	fun clone(m',m) =
 	    (check "clone 1" (m',m);
@@ -333,7 +376,7 @@ struct
 	    end
 
 	fun lookupExistent(m,q)	= case lookup(m,q) of SOME x => x
-						    | NONE   => raise Lookup q
+						    | NONE   => raise Unknown q
 
 	fun member(m,q)		= Option.isSome(lookup(m,q))
 	fun delete(m,q)		= deleteWith ignore (m,q)
