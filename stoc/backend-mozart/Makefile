@@ -1,7 +1,7 @@
 OZC = ozc
 OZCFLAGS =
 
-FUNCTORS = Intermediate FrontEnd Info Predefined Annotate
+FUNCTORS = Intermediate FrontEnd Info Predefined Annotate PatternMatching
 
 all: $(FUNCTORS:%=%.ozf)
 
