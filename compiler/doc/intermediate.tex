@@ -53,10 +53,9 @@ The syntax given here should be read as an abstract syntax. The meaning of most 
 
 A long identifier expression $\longid.\lab$ is equivalent to the expression $(\f{lazy}\; \#\lab(\longid))$, ie. it represents lazy selection. The reason for having long identifiers separate is that they can appear in patterns.
 
-The expression $(\f{new})$ generates a new constructor name for an extensible datatype. The long identifier in expressions of the form $@\longid(\exp)$ or patterns $@\longid(\pat)$ must denote such a generative constructor. On the other hand, $`\lab(\exp)$ and $`\lab(\pat)$ denote constructed values of closed (structural) datatypes. Strict expressions force evaluation of the argument. The dual strict pattern establishes the invariant that the value matched has been evaluated strictly and can thus not be a future. These constructs are particularly used to encode strictness of tags and constructor such that the backend can unbox them.
+The expression $(\f{new}\;\exp)$ generates a new constructor name for an extensible datatype, with an attribute expression used for runtime type information. The long identifier in expressions of the form $@\longid(\exp)$ or patterns $@\longid(\pat)$ must denote such a generative constructor. On the other hand, $`\lab(\exp)$ and $`\lab(\pat)$ denote constructed values of closed (structural) datatypes. Strict expressions force evaluation of the argument. The dual strict pattern establishes the invariant that the value matched has been evaluated strictly and can thus not be a future. These constructs are particularly used to encode strictness of tags and constructor such that the backend can unbox them.
 
 The expression $(\f{prim}\;s)$ is needed for binding primitive (builtin) values, which are named by a string. The $(\f{fail})$ expression marks an unused value. Forcing it always is an error. It is used during bootstrapping as a placeholder for runtime types.
-
 The \f{seal} and \f{unseal} expressions are needed for typing purposes only and are described in section \ref{typing}.
 
 \begin{center}
@@ -88,7 +87,7 @@ $\longid$	&$:=$&	$\id$			& short identifier \\
 $\exps$	&$:=$&	$\exp_1,\cdots,\exp_n$		& expressions $(n\geq0)$ \\
 $\exp$	&$:=$&	$\lit$				& literal expression \\
 	&&	$\f{prim}\;\x{s}$		& primitive value \\
-	&&	$\f{new}$			& constructor generation \\
+	&&	$\f{new}\;\exp$			& constructor generation \\
 	&&	$\longid$			& variable \\
 	&&	$\#\lab(\exp)$			& product projection \\
 	&&	$`\lab(\exp)$			& sum injection \\
@@ -366,11 +365,13 @@ E \vdash \f{prim}\;s : t \Rightarrow t
 
 \begin{equation}
 \frac{
+E \vdash \exp : t'
+\qquad
 t = t_0 \conarrow c(t_1)\cdots(t_n)
 \qquad
 \mbox{$c$ extensible}
 }{
-E \vdash \f{new} : t \Rightarrow t
+E \vdash \f{new}\;\exp : t \Rightarrow t
 }
 \end{equation}
 

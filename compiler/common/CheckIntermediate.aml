@@ -291,13 +291,14 @@ end
 		t
 	   end
 
-	(* t = conarrow (t1->t2)    t2 extensible
-	 * --------------------------------------
-	 *         E |- new : t => t
+	(* E |- exp : tt    t = conarrow (t1->t2)    t2 extensible
+	 * -------------------------------------------------------
+	 *                E |- new exp : t => t
 	 *)
-	 | NewExp(i) =>
+	 | NewExp(i, exp) =>
 	   let
 		val  t       = #typ i
+		val  tt      = chExp E exp
 		val (t',t3)  = checked Type.asApply t
 			      (i, "NewExp application type", #[TYPE t])
 		val (t1,t2)  = checked Type.asArrow t3

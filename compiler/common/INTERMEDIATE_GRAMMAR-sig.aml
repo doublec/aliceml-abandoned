@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg, 2001-2002
  *
  * Last change:
  *   $Date$ by $Author$
@@ -53,7 +53,7 @@ sig
 	  LitExp    of exp_info * lit			(* literal *)
 	| VarExp    of exp_info * longid		(* variable *)
 	| PrimExp   of exp_info * string		(* primitive value *)
-	| NewExp    of exp_info				(* new constructor *)
+	| NewExp    of exp_info * exp			(* new constructor *)
 	| TagExp    of exp_info * lab * exp		(* tagged value *)
 	| ConExp    of exp_info * longid * exp		(* constructed value *)
 	| RefExp    of exp_info	* exp			(* reference *)
