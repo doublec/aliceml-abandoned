@@ -9,6 +9,11 @@
 *
 *)
 
+import structure Highscore from "../common/Highscore"
+import structure Pos       from "../common/Pos"
+import structure Color     from "../common/Color"
+import structure Protocol  from "../common/Protocol"
+
 signature GUI =
 sig
     type gui
@@ -44,7 +49,7 @@ sig
 
     type game_ui_in = 
 	{
-	 update : (Pos.pos * field) list -> unit,
+	 update : (Pos.pos * Protocol.field) list -> unit,
 	 updatePoints : Highscore.points list -> unit,
 	 gameFinished : Highscore.highscore -> unit
 	 }

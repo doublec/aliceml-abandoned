@@ -12,6 +12,28 @@ import structure Color     from "Color"
 import structure Pos       from "Pos"
 import structure Highscore from "Highscore"
 
+(** Protocol Overview:
+
+ S.connect
+ S.play / S.watch / S.disconnect
+    C.playersJoined
+    C.playerDisconnected
+ S.startGame
+ C.tournamentStarted
+  C.levelStarted
+   C.update (* whole level *)
+   C.countdown
+   C.countdown 0
+    C.tick
+    S.turn / S.giveUp / S.changeView
+    C.playersDied / C.playersFinished / C.updatePoints
+  C.levelFinished
+  C.levelStarted
+    ...
+  C.levelFinished
+ C.tournamentFinished
+*)
+
 
 structure Protocol =
 struct
@@ -110,15 +132,21 @@ struct
 
 
         (* GENERIC *)
-        playerDisconnected : (string * Color.color) option -> unit,
+        playerDisconnected : string * Color.color -> unit,
         abort :              unit    -> unit,
 
         (* PLAY MODE *)
+	countdown :         int -> unit,
+	(** [countdown n] is called before a level starts. [n] is the time
+	    till gamestart. n = 0 => levels starts *)
         update :            (Pos.pos * field) list -> unit,
         tick :              Time.time option -> unit,
         (** [tick t] is called to notify the client that a new tick has
 	    started and he has to update the gui. [t] is the time left
 	    until level ends, NONE if time is not limited *)
+
+	playersDied :        (string * Color.color) list -> unit,
+	playersFinished :    (string * Color.color) list -> unit,
 
         levelFinished :     unit -> unit,
 	(** levelFinished is called when a level is finished *)
