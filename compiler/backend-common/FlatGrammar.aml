@@ -52,6 +52,7 @@ structure ImperativeGrammar :> IMPERATIVE_GRAMMAR =
 	  | SharedStm of coord * body * shared   (* used at least twice *)
 	  | ReturnStm of coord * exp
 	  | IndirectStm of coord * body option ref
+	  | ExportStm of coord * id list
 	and exp =
 	    LitExp of coord * lit
 	  | VarExp of coord * id

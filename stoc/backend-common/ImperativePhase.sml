@@ -53,6 +53,7 @@ structure ImperativePhase :> IMPERATIVE_PHASE =
 	    Decs of dec list * continuation
 	  | Goto of O.body
 	  | Share of O.body option ref * continuation
+	  | Export of id list
 
 	fun freshId coord = Id (coord, Stamp.new (), InId)
 
@@ -90,6 +91,7 @@ structure ImperativePhase :> IMPERATIVE_PHASE =
 		r := SOME stms; stms
 	    end
 	  | translateCont (Share (ref (SOME stms), _)) = stms
+	  | translateCont (Export ids) = [O.ExportStm (Source.nowhere, ids)]
 	and translateDec (OneDec (coord, id, exp), cont) =
 	    translateExp (exp, fn exp' => O.ValDec (coord, id, exp'), cont)
 	  | translateDec (ValDec (_, _, exp), cont) =
@@ -287,6 +289,5 @@ structure ImperativePhase :> IMPERATIVE_PHASE =
 	  | translateExp (SharedExp (_, _, ref i), _, _) = lookupShared i
 	  | translateExp (DecExp (_, _), _, cont) = translateCont cont
 
-	fun translate (decs, _) = translateCont (Decs (decs, Goto nil))
-	    (*--** preserve declared ids in output *)
+	fun translate (decs, ids) = translateCont (Decs (decs, Export ids))
     end

@@ -177,6 +177,9 @@ structure OzifyImperativeGrammar :> OZIFY_IMPERATIVE_GRAMMAR =
 	  | outputStm (q, IndirectStm (_, ref bodyOpt)) =
 	    List.app (fn stm => (outputStm (q, stm); output1 (q, #" ")))
 	    (valOf bodyOpt)
+	  | outputStm (q, ExportStm (coord, ids)) =
+	    (f (q, "exportStm"); outputCoord (q, coord); m q;
+	     outputList outputId (q, ids); r q)
 	and outputExp (q, LitExp (coord, lit)) =
 	    (f (q, "litExp"); outputCoord (q, coord); m q;
 	     outputLit (q, lit); r q)
