@@ -19,9 +19,9 @@
 #include <cstring>
 
 typedef enum {
-  STACK,
-  STACKARRAY
-} HelperLabel;
+  STACK_LABEL      = MIN_HELPER_LABEL,
+  STACKARRAY_LABEL = (MIN_HELPER_LABEL + 1)
+} StackLabel;
 
 class Stack : private Block {
 private:
@@ -39,6 +39,9 @@ protected:
 public:
   using Block::ToWord;
 
+  u_int GetStackSize() {
+    return (u_int) (Store::UnsafeWordToInt(GetArg(TOP_POS)) - 1);
+  }
   void AllocArgFrame(u_int fsize) {
     u_int top  = (u_int) Store::UnsafeWordToInt(GetArg(TOP_POS));
     u_int max  = Store::UnsafeWordToBlock(GetArg(ARR_POS))->GetSize();
@@ -139,8 +142,8 @@ public:
     return (Stack *) x;
   }
   static Stack *New(u_int s) {
-    Block *p = Store::AllocBlock((BlockLabel) STACK, SIZE);
-    Block *a = Store::AllocBlock((BlockLabel) STACKARRAY, s);
+    Block *p = Store::AllocBlock((BlockLabel) STACK_LABEL, SIZE);
+    Block *a = Store::AllocBlock((BlockLabel) STACKARRAY_LABEL, s);
     
     p->InitArg(TOP_POS, Store::IntToWord(1));
     p->InitArg(ARR_POS, a->ToWord());
@@ -150,7 +153,7 @@ public:
   static Stack *FromWord(word x) {
     Block *p = Store::WordToBlock(x);
 
-    Assert((p == INVALID_POINTER) || (p->GetLabel() == (BlockLabel) STACK));
+    Assert((p == INVALID_POINTER) || (p->GetLabel() == (BlockLabel) STACK_LABEL));
     return FromBlock(p);
   }
 };
