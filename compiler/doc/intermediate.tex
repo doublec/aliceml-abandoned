@@ -57,7 +57,7 @@ The expression $(\f{new})$ generates a new constructor name for an extensible da
 
 The expression $(\f{prim}\;s)$ is needed for binding primitive (builtin) values, which are named by a string. The $(\f{fail})$ expression marks an unused value. Forcing it always is an error. It is used during bootstrapping as a placeholder for runtime types.
 
-The \f{abs} and \f{unabs} expressions are needed for typing purposes only and are described in section \ref{typing}.
+The \f{seal} and \f{unseal} expressions are needed for typing purposes only and are described in section \ref{typing}.
 
 \begin{center}
 \begin{tabular}{lcll}
@@ -112,8 +112,8 @@ $\exp$	&$:=$&	$\lit$				& literal expression \\
 	&&	$\f{lazy}\;\exp$		& lazy evaluation \\
 	&&	$\f{spawn}\;\exp$		& concurrent evaluation \\
 	&&	$\f{let}\;\decs\;\f{in}\;\exp$	& local declarations \\
-	&&	$\f{abs}\;\exp$			& abstraction \\
-	&&	$\f{unabs}\;\exp$		& coabstraction \\
+	&&	$\f{seal}\;\exp$		& sealing \\
+	&&	$\f{unseal}\;\exp$		& unsealing \\
 \ \\
 
 $\flds^x$&$:=$&	$\fld^x_1,\cdots,\fld^x_n$	& row $(n\geq0)$ \\
@@ -225,7 +225,7 @@ Note that identifiers themselves are annotated with their full polymorphic type,
 
 Note also that the rules enforce that there is no shadowing of bound identifiers. In fact we demand an even stronger invariant which is not captured by the rules, namely that all bound identifiers have to be disjoint. The only exception are disjunctive patterns where every arm must contain the same bound identifiers.
 
-Any expression that does not contain \f{prim} or \f{abs} and \f{unabs} expressions is type-safe. Abstraction and co-abstraction are sort of weak casts that only allow constructor names to be replaced by concrete types in one direction. They are used for translated module expressions (abstraction, functor application, and packages). The rules for these expressions just require the existence of an appropriate realisation $\varphi$ (a mapping from constructor names to types). Unfortunately, this is undecidable in general since it requires higher-order unification. The current verifier uses an approximation that is correct for first-order cases and accepts any higher-order ones. This can be repaired by annotating the expressions with the actual substitution which is known at translation time.
+Any expression that does not contain \f{prim} or \f{seal} and \f{unseal} expressions is type-safe. Sealing and unsealing are sort of weak casts that only allow constructor names to be replaced by concrete types in one direction. They are used for translated module expressions (sealing, functor application, and packages). The rules for these expressions just require the existence of an appropriate realisation $\varphi$ (a mapping from constructor names to types). Unfortunately, this is undecidable in general since it requires higher-order unification. The current verifier uses an approximation that is correct for first-order cases and accepts any higher-order ones. This can be repaired by annotating the expressions with the actual substitution which is known at translation time.
 
 The reason we use casts is that the presence of first-class signatures in Stockhausen requires a more expressive type system --- without first-class signatures modules could be translated to the intermediate language in a sound way, as shown by Russo. However, we would need polymorphic kinds and record kinds to express first-class signatures. For packages we need some sort of cast anyway.
 
@@ -612,7 +612,7 @@ E \vdash \exp \Rightarrow t'
 \qquad
 \exists \varphi . \varphi(t) = t'
 }{
-E \vdash \f{abs}\;\exp : t \Rightarrow t
+E \vdash \f{seal}\;\exp : t \Rightarrow t
 }
 \end{equation}
 
@@ -622,7 +622,7 @@ E \vdash \exp \Rightarrow t'
 \qquad
 \exists \varphi . \varphi(t') = t
 }{
-E \vdash \f{unabs}\;\exp : t \Rightarrow t
+E \vdash \f{unseal}\;\exp : t \Rightarrow t
 }
 \end{equation}
 
