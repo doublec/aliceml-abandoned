@@ -1,0 +1,60 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2002
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure OS from "OS"
+
+signature IO_DESC =
+    sig
+	type ('vector, 'array, 'pos) reader =
+	    {name: string,
+	     chunkSize: int,
+	     readVec: (int -> 'vector) option,
+	     readArr: ({buf: 'array, i: int, sz: int option} -> int) option,
+	     readVecNB: (int -> 'vector option) option,
+	     readArrNB:
+		 ({buf: 'array, i: int, sz: int option} -> int option) option,
+	     block: (unit -> unit) option,
+	     canInput: (unit -> bool) option,
+	     avail: unit -> int option,
+	     getPos: (unit -> 'pos) option,
+	     setPos: ('pos -> unit) option,
+	     endPos: (unit -> 'pos) option,
+	     verifyPos: (unit -> 'pos) option,
+	     close: unit -> unit,
+	     ioDesc: OS.IO.iodesc option}
+
+	type ('vector, 'array, 'pos) writer =
+	    {name: string,
+	     chunkSize: int,
+	     writeVec: ({buf: 'vector, i: int, sz: int option} -> int) option,
+	     writeArr: ({buf: 'array, i: int, sz: int option} -> int) option,
+	     writeVecNB:
+		 ({buf: 'vector, i: int, sz: int option} -> int option) option,
+	     writeArrNB:
+		 ({buf: 'array, i: int, sz: int option} -> int option) option,
+	     block: (unit -> unit) option,
+	     canOutput: (unit -> bool) option,
+	     getPos: (unit -> 'pos) option,
+	     setPos: ('pos -> unit) option,
+	     endPos: (unit -> 'pos) option,
+	     verifyPos: (unit -> 'pos) option,
+	     close: unit -> unit,
+	     ioDesc: OS.IO.iodesc option}
+
+	val stdIn: ('vector, 'array, 'pos) reader
+	val stdOut: ('vector, 'array, 'pos) writer
+	val stdErr: ('vector, 'array, 'pos) writer
+
+	val openIn: string -> ('vector, 'array, 'pos) reader
+	val openOut: string -> ('vector, 'array, 'pos) writer
+	val openAppend: string -> ('vector, 'array, 'pos) writer
+    end
