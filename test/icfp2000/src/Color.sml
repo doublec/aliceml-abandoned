@@ -37,5 +37,8 @@ structure Color :> COLOR =
 
 	fun nclamp {red, green, blue} =
 	    {red = nclamp' red, green = nclamp' green, blue = nclamp' blue}
-	and nclamp' x = if x < 0.0 then 0.0 else x
+	and nclamp' x =
+	    if Real.isNan x orelse not (Real.isFinite x) orelse x < 0.0 then
+		0.0
+	    else x
     end

@@ -329,15 +329,16 @@ structure Renderer :> RENDERER =
 	  | testLight (Point (color, pos), scene, point) =
 	    let
 		val dir = subVec (pos, point)
+		val dist2 = mulVec (dir, dir)
 	    in
-		if isShadowed (intersect (scene, point, dir), 1.0) then NONE
+		if dist2 < epsilon orelse
+		    isShadowed (intersect (scene, point, dir), 1.0) then NONE
 		else
 		    let
-			val dist = absVec dir
-			val attenuation = 100.0 / (99.0 + dist * dist)
+			val attenuation = 100.0 / (99.0 + dist2)
 		    in
 			SOME (Color.scale (attenuation, color),
-			      normalizeVec dir)
+			      mulScalVec (1.0 / Math.sqrt dist2, dir))
 		    end
 	    end
 	  | testLight (Spot (color, pos, at, cutoff, exp), scene, point) =
@@ -381,6 +382,9 @@ structure Renderer :> RENDERER =
 			val {color = c, diffuse = kd,
 			     specular = ks, phong = exp} =
 			    surface (mulMatPoint (w2o, p))
+			    handle Domein =>
+				{color = Color.black, diffuse = 0.0,
+				 specular = 0.0, phong = 1.0}
 			val intensityDirList =
 			    if Real.== (kd, 0.0) andalso Real.== (ks, 0.0)
 			    then nil
@@ -420,7 +424,8 @@ structure Renderer :> RENDERER =
 			     end) (ks, reflected) intensityDirList
 		    in
 			Color.prod (Color.add (diffuseLighting,
-					       specularLighting), c)
+					       specularLighting),
+				    Color.nclamp c)
 		    end
 	      | nil => Color.black
 
@@ -441,7 +446,7 @@ structure Renderer :> RENDERER =
 			       1.0)
 		    val c = trace (base, dir, ambient, lights, scene', depth)
 		in
-		    Color.clamp c
+		    Color.nclamp (Color.clamp c)
 		end
 	    end
     end
