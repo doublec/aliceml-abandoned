@@ -221,4 +221,153 @@ final public class General {
 
     // val exnName : exn -> string 
     // val exnMessage : exn -> string
+
+    //  /*
+//   * $Date$
+//   * $Revision$
+//   * $Author$
+//   */
+
+//  package de.uni_sb.ps.dml.builtin;
+
+//  import de.uni_sb.ps.dml.runtime.*;
+
+//  final public class Not extends Builtin {
+
+//      final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
+//  	val = val.request();
+//  	if (val == Constants.dmltrue) return Constants.dmlfalse;
+//  	if (val == Constants.dmlfalse) return Constants.dmltrue;
+//  	return Constants.runtimeError.apply(new de.uni_sb.ps.dml.runtime.String("primitive not operation failed\nBAD ARGUMENT: "+val)).raise();
+//      }
+//  }
+//  /*
+//   * $Date$
+//   * $Revision$
+//   * $Author$
+//   */
+
+//  package de.uni_sb.ps.dml.builtin;
+
+//  import de.uni_sb.ps.dml.runtime.*;
+//  /** <code>exchange : ref * 'a -> 'b</code>
+//   *  stopft Argument #2 in die Referenz, die als #1 übergeben wurde;
+//   *  gibt den vorherigen Inhalt zurück
+//   */
+//  final public class Exchange extends Builtin {
+
+//    final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
+//        // soll das hier synchronized sein auf val?
+//        val = val.request();
+//        synchronized (val) {
+//  	  if (val instanceof DMLTuple) {
+//  	      DMLTuple tuple = (DMLTuple) val;
+//  	      if (tuple.getArity()==2) {
+//  		  DMLValue v = tuple.getByIndex(0).request();
+//  		  if (v instanceof DMLConVal) {
+//  		      DMLConVal ref = (DMLConVal) v;
+//  		      return ref.assign(tuple.getByIndex(1));
+//  		  }
+//  		  else {
+//  		      DMLValue[] err = {
+//  			  new de.uni_sb.ps.dml.runtime.String("bad argument #2 for exchange"),
+//  			  val};
+//  		      return Constants.runtimeError.apply(new Tuple(err)).raise();
+//  		  }
+//  	      }
+//  	      else {
+//  		  DMLValue[] err = {
+//  		      new de.uni_sb.ps.dml.runtime.String("wrong number of arguments for exchange"),
+//  		      val};
+//  		  return Constants.runtimeError.apply(new Tuple(err)).raise();
+//  	      }
+
+//  	  }
+//  	  else {
+//  	      DMLValue[] err = {
+//  		  new de.uni_sb.ps.dml.runtime.String("bad argument for deref"),
+//  		  val};
+//  	      return Constants.runtimeError.apply(new Tuple(err)).raise();
+//  	  }
+//        }
+//    }
+//  }
+//  /*
+//   * $Date$
+//   * $Revision$
+//   * $Author$
+//   */
+
+//  package de.uni_sb.ps.dml.builtin;
+
+//  import de.uni_sb.ps.dml.runtime.*;
+//  /** gibt Future von logischer Variable oder Wert selbst */
+//  final public class GetFuture extends Builtin {
+
+//    final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
+//      if (val instanceof LVar)
+//        return new Future((LVar)val);
+//      else
+//        return val;
+//    }
+//  }
+//  /*
+//   * $Date$
+//   * $Revision$
+//   * $Author$
+//   */
+
+//  package de.uni_sb.ps.dml.builtin;
+
+//  import de.uni_sb.ps.dml.runtime.*;
+
+//  final public class Bind extends Builtin {
+
+//      final synchronized public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
+//  	val = val.request();
+//  	if (val instanceof Record) {
+//  	    Record r=(Record) val;
+//  	    if (r.getArity() == 2) {
+//  		DMLValue car=r.getByIndex(0);
+//  		if (car instanceof LVar) {
+//  		    ((LVar) car).bind(r.getByIndex(1));
+//  		    return Constants.dmlunit;
+//  		}
+//  		else
+//  		    return Constants.runtimeError.apply(new de.uni_sb.ps.dml.runtime.String("bind tried on non-lval "+r.getByIndex(0)+" with "+r.getByIndex(1))).raise();
+//  	    }
+//  	    else
+//  		return Constants.runtimeError.apply(new de.uni_sb.ps.dml.runtime.String("invalid record length for bind in "+val)).raise();
+//  	}
+//  	return Constants.runtimeError.apply(new de.uni_sb.ps.dml.runtime.String("bind applied to non-record "+val)).raise();
+//      }
+//  }
+/*
+ * $Date$
+ * $Revision$
+ * $Author$
+ */
+
+package de.uni_sb.ps.dml.builtin;
+
+import de.uni_sb.ps.dml.runtime.*;
+
+final public class BoolFromString extends Builtin {
+
+  final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
+      val = val.request();
+      if (val instanceof de.uni_sb.ps.dml.runtime.String) {
+	  java.lang.String s=((de.uni_sb.ps.dml.runtime.String) val).getString();
+	  if (s.equalsIgnoreCase("TRUE"))
+	      return Constants.dmltrue;
+	  else if (s.equalsIgnoreCase("FALSE"))
+	      return Constants.dmlfalse;
+	  else
+	      return Constants.runtimeError.apply(new de.uni_sb.ps.dml.runtime.String("NoBoolException"+val)).raise();
+	  }
+      else
+	  return Constants.runtimeError.apply(new de.uni_sb.ps.dml.runtime.String("invalid argument for primitive boolfromstring operation in "+val)).raise();
+  }
+}
+
 }
