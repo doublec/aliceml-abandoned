@@ -351,8 +351,8 @@ GENERICINCLUDES0 = \
 	ThreadQueue.hh Tuple.hh String.hh StackFrame.hh Backtrace.hh \
 	Pickle.hh Debug.hh RootSet.hh UniqueString.hh Properties.hh \
 	TaskStack.hh IOHandler.hh SignalHandler.hh Scheduler.hh \
-	Transients.hh Interpreter.hh Primitive.hh PushCallInterpreter.hh \
-	ByneedInterpreter.hh Unpickler.hh Pickler.hh BootLinker.hh \
+	Transients.hh Worker.hh Interpreter.hh Primitive.hh PushCallWorker.hh \
+	BindFutureWorker.hh Unpickler.hh Pickler.hh BootLinker.hh \
 	Profiler.hh Authoring.hh
 ALICEINCLUDES0 = \
 	Guid.hh Data.hh AbstractCode.hh AbstractCodeInterpreter.hh \

@@ -79,7 +79,7 @@ protected:
   enum { PC_POS, CLOSURE_POS, LOCAL_ENV_POS, FORMAL_ARGS_POS, SIZE };
 public:
   using Block::ToWord;
-  using StackFrame::GetInterpreter;
+
   // AbstractCodeFrame Accessors
   bool IsHandlerFrame() {
     if (GetLabel() == ABSTRACT_CODE_HANDLER_FRAME) {
@@ -249,17 +249,17 @@ void AbstractCodeInterpreter::PushCall(Closure *closure) {
   PushState(pc, globalEnv, localEnv);		\
   Scheduler::currentData = w;			\
   Scheduler::nArgs = 0;				\
-  return Interpreter::REQUEST;			\
+  return Worker::REQUEST;			\
 }
 
 #define CHECK_PREEMPT() {			\
   if (StatusWord::GetStatus() != 0)		\
-    return Interpreter::PREEMPT;		\
+    return Worker::PREEMPT;			\
   else						\
-    return Interpreter::CONTINUE;		\
+    return Worker::CONTINUE;			\
 }
 
-Interpreter::Result AbstractCodeInterpreter::Run() {
+Worker::Result AbstractCodeInterpreter::Run() {
   AbstractCodeFrame *frame =
     AbstractCodeFrame::FromWordDirect(Scheduler::GetAndPopFrame());
   Assert(frame->GetInterpreter() == this);
@@ -292,10 +292,10 @@ Interpreter::Result AbstractCodeInterpreter::Run() {
 	    Assert(Store::WordToInt(requestWord) == 0); // unit
 	  }
 	} else {
-	  if (Interpreter::Deconstruct()) {
-	    // Scheduler::currentData has been set by Interpreter::Deconstruct
+	  if (Worker::Deconstruct()) {
+	    // Scheduler::currentData has been set by Worker::Deconstruct
 	    Scheduler::PushFrameNoCheck(frame->ToWord());
-	    return Interpreter::REQUEST;
+	    return Worker::REQUEST;
 	  }
 	  Assert(Scheduler::nArgs == nArgs);
 	  for (u_int i = nArgs; i--; ) {
@@ -536,9 +536,9 @@ Interpreter::Result AbstractCodeInterpreter::Run() {
 	  break;
 	}
 	if (StatusWord::GetStatus() != 0) {
-	  Interpreter::Result res =
+	  Worker::Result res =
 	    Scheduler::PushCall(GetIdRefKill(pc->Sel(0), globalEnv, localEnv));
-	  return res == Interpreter::CONTINUE? Interpreter::PREEMPT: res;
+	  return res == Worker::CONTINUE? Worker::PREEMPT: res;
 	} else {
 	  word closure = GetIdRefKill(pc->Sel(0), globalEnv, localEnv);
 	  return Scheduler::PushCall(closure);
@@ -617,7 +617,7 @@ Interpreter::Result AbstractCodeInterpreter::Run() {
       {
 	Scheduler::currentData = GetIdRefKill(pc->Sel(0), globalEnv, localEnv);
 	Scheduler::currentBacktrace = Backtrace::New(frame->ToWord());
-	return Interpreter::RAISE;
+	return Worker::RAISE;
       }
       break;
     case AbstractCode::Reraise: // of idRef
@@ -628,7 +628,7 @@ Interpreter::Result AbstractCodeInterpreter::Run() {
 	Scheduler::currentData = package->Sel(0);
 	Scheduler::currentBacktrace =
 	  Backtrace::FromWordDirect(package->Sel(1));
-	return Interpreter::RAISE;
+	return Worker::RAISE;
       }
     case AbstractCode::Try: // of instr * idDef * idDef * instr
       {
@@ -921,7 +921,7 @@ Interpreter::Result AbstractCodeInterpreter::Run() {
   }
 }
 
-Interpreter::Result AbstractCodeInterpreter::Handle() {
+Worker::Result AbstractCodeInterpreter::Handle() {
   AbstractCodeFrame *frame =
     AbstractCodeFrame::FromWordDirect(Scheduler::GetAndPopFrame());
   if (frame->IsHandlerFrame()) {
@@ -937,10 +937,10 @@ Interpreter::Result AbstractCodeInterpreter::Handle() {
 			     frame->GetClosure(), frame->GetLocalEnv(),
 			     frame->GetFormalArgs()->ToWord());
     Scheduler::PushFrameNoCheck(newFrame->ToWord());
-    return Interpreter::CONTINUE;
+    return Worker::CONTINUE;
   } else {
     Scheduler::currentBacktrace->Enqueue(frame->ToWord());
-    return Interpreter::RAISE;
+    return Worker::RAISE;
   }
 }
 
@@ -957,10 +957,10 @@ void AbstractCodeInterpreter::DumpFrame(word frameWord) {
   TagVal *abstractCode = concreteCode->GetAbstractCode();
   Tuple *coord = Tuple::FromWordDirect(abstractCode->Sel(0));
   String *name = String::FromWordDirect(coord->Sel(0));
-  fprintf(stderr, "Alice %s %.*s, line %d\n",
-	  frame->IsHandlerFrame()? "handler": "function",
-	  (int) name->GetSize(), name->GetValue(),
-	  Store::DirectWordToInt(coord->Sel(1)));
+  std::fprintf(stderr, "Alice %s %.*s, line %d\n",
+	       frame->IsHandlerFrame()? "handler": "function",
+	       (int) name->GetSize(), name->GetValue(),
+	       Store::DirectWordToInt(coord->Sel(1)));
 }
 
 #if PROFILE

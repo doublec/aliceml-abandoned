@@ -25,8 +25,8 @@
 #include "generic/Pickler.hh"
 #include "generic/BootLinker.hh"
 #include "generic/Properties.hh"
-#include "generic/PushCallInterpreter.hh"
-#include "generic/ByneedInterpreter.hh"
+#include "generic/PushCallWorker.hh"
+#include "generic/BindFutureWorker.hh"
 #include "alice/AliceLanguageLayer.hh"
 
 #if PROFILE
@@ -93,8 +93,8 @@ DllExport int StockwerkMain(char *home, u_int argc, char *argv[]) {
   Profiler::Init();
 #endif
   // Set up interpreters and services:
-  PushCallInterpreter::Init();
-  ByneedInterpreter::Init();
+  PushCallWorker::Init();
+  BindFutureWorker::Init();
   Unpickler::Init();
   Pickler::Init();
   // Set up Alice Language Layer:

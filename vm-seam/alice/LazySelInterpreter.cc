@@ -28,7 +28,6 @@ private:
   enum { RECORD_POS, LABEL_POS, SIZE };
 public:
   using Block::ToWord;
-  using StackFrame::GetInterpreter;
 
   static LazySelFrame *New(Interpreter *interpreter, word record,
 			   UniqueString *label) {
@@ -64,7 +63,7 @@ void LazySelInterpreter::PushCall(Closure *closure0) {
   Scheduler::PushFrame(frame->ToWord());
 }
 
-Interpreter::Result LazySelInterpreter::Run() {
+Worker::Result LazySelInterpreter::Run() {
   LazySelFrame *frame = LazySelFrame::FromWordDirect(Scheduler::GetFrame());
   word wRecord = frame->GetRecord();
   Transient *transient = Store::WordToTransient(wRecord);
@@ -73,10 +72,10 @@ Interpreter::Result LazySelInterpreter::Run() {
     Scheduler::nArgs = Scheduler::ONE_ARG;
     Scheduler::currentArgs[0] =
       Record::FromWord(wRecord)->PolySel(frame->GetLabel());
-    return Interpreter::CONTINUE;
+    return Worker::CONTINUE;
   } else { // need to request
     Scheduler::currentData = wRecord;
-    return Interpreter::REQUEST;
+    return Worker::REQUEST;
   }
 }
 
