@@ -86,34 +86,6 @@ DEFINE1(String_hash) {
   RETURN_INT(string->Hash());
 } END
 
-DEFINE1(String_implode) {
-  DECLARE_LIST_ELEMS(tagVal, length, x0, DECLARE_INT(c, tagVal->Sel(0)));
-  if (length > String::maxSize)
-    RAISE(PrimitiveTable::General_Size);
-  String *string = String::New(length);
-  u_char *base = string->GetValue();
-  u_int i = 0;
-  while (tagVal != INVALID_POINTER) {
-    base[i++] = Store::WordToInt(tagVal->Sel(0));
-    tagVal = TagVal::FromWord(tagVal->Sel(1));
-  }
-  Assert(i == length);
-  RETURN(string->ToWord());
-} END
-
-DEFINE1(String_size) {
-  DECLARE_STRING(string, x0);
-  RETURN_INT(string->GetSize());
-} END
-
-DEFINE2(String_sub) {
-  DECLARE_STRING(string, x0);
-  DECLARE_INT(index, x1);
-  if (static_cast<u_int>(index) >= string->GetSize())
-    RAISE(PrimitiveTable::General_Subscript);
-  RETURN_INT(string->GetValue()[index]);
-} END
-
 DEFINE3(String_substring) {
   DECLARE_STRING(string, x0);
   DECLARE_INT(startIndex, x1);
@@ -144,10 +116,6 @@ void PrimitiveTable::RegisterString() {
   Register("String.compare", String_compare, 2);
   Register("String.explode", String_explode, 1);
   Register("String.hash", String_hash, 1);
-  Register("String.implode", String_implode, 1);
-  Register("String.maxSize", Store::IntToWord(String::maxSize));
-  Register("String.size", String_size, 1);
-  Register("String.sub", String_sub, 2);
   Register("String.substring", String_substring, 3);
   Register("String.str", String_str, 1);
 }
