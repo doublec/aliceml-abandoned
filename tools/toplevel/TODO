@@ -1,6 +1,24 @@
 TODO list for the Alice IDE
 ===========================
 
+Bugs:
+
+* paste should delete tags
+* highlighting displaced due to prompt
+* compile output in wrong buffer
+* jump-to-error does not work for compile
+* undo after open deletes buffer
+* scroll to bottom after layout change or resize
+* propagate output width on init and after resize
+* switch layout compiler and i/o buffer
+* button texts in dialogues are not capitalized
+* undo shortcut not shown in menu
+* colorize compiler output?
+* about dialogue missing
+
+Missing Features:
+
+* signal shortcuts
 * cumulative undo
 * redo
 * overwrapping search
