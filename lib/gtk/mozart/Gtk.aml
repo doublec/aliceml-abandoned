@@ -13,8 +13,9 @@
 
 import structure GtkTypes  from "GtkTypes"
 import structure UnsafeGTK from "UnsafeGTK"
+import signature GTK       from "GTK-sig"
 
-structure Gtk =
+structure Gtk :> GTK =
     struct
 	open GtkTypes
 	open UnsafeGTK

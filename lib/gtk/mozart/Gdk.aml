@@ -13,8 +13,9 @@
 
 import structure GtkTypes  from "GtkTypes"
 import structure UnsafeGDK from "UnsafeGDK"
+import signature GDK       from "GDK-sig"
 
-structure Gdk =
+structure Gdk :> GDK =
     struct
 	open GtkTypes
 	open UnsafeGDK
