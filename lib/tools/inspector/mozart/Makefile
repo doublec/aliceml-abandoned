@@ -1,51 +1,86 @@
-## -*- Makefile -*-
+###
+### Authors:
+###   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
+###   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+### 
+### Copyright:
+###   Thorsten Brunklaus, 2000
+###   Leif Kornstaedt, 2001
+### 
+### Last change:
+###   $Date$ by $Author$
+###   $Revision$
+### 
+
+# Configurable directories
+
+PREFIX = /opt/stockhausen-devel
+
+SRCTOP = ../..
+
+# No configuration needed from here
+
+SRCDIR = $(SRCTOP)/lib/inspector
+VPATH = $(SRCDIR)
+
+OZC = ozc
+OZCOPTS =
+OZL = ozl
+OZLOPTS =
+STOC = stoc
+STOCOPTS = --no-dump-elaboration-sig
+
+OZSOURCES = \
+	CreateObjects.oz LayoutObjects.oz DrawObjects.oz TreeNodes.oz \
+	Helper.oz InspectorMain.oz
+
+OZLINPUTS = $(OZSOURCES:%.oz=%.ozf)
+
+INSTALLDIRS = $(PREFIX)/lib/tools
+INSTALLFILES = $(PREFIX)/lib/tools/Inspector.ozf
+
+.PHONY: all depend install clean veryclean distclean
+
 ##
-## Author:
-##   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
-## 
-## Copyright:
-##   Thorsten Brunklaus, 2000
-## 
-## Last change:
-##   $Date$ by $Author$
-##   $Revision$
-## 
+## Building
+##
 
-OZC      = ozc
-OZFLAGS  = -z9
-OZL      = ozl
-OZLFLAGS = -z9
-SMLC     = stoc
-SMLFLAGS =
+all: Inspector.ozf
 
-OZSRCS   = CreateObjects.oz \
-           LayoutObjects.oz \
-           DrawObjects.oz   \
-           TreeNodes.oz     \
-           Helper.oz        \
-           InspectorMain.oz
+depend:
+	touch Makefile.depend
 
-OZOBJS   = CreateObjects.ozf \
-           LayoutObjects.ozf \
-           DrawObjects.ozf   \
-           TreeNodes.ozf     \
-           Helper.ozf        \
-           InspectorMain.ozf
+UntypedInspector.ozf: $(OZLINPUTS)
+	$(OZL) $(OZLOPTS) InspectorMain.ozf -o $@
 
-SOURCES  = Inspector.ozf.sig
+Inspector.ozf: UntypedInspector.ozf Inspector.asig
+	$(STOC) $(STOCOPTS) --replacesign $^ $@
 
-PREFIX=/opt/stockhausen-devel0
+%.ozf: %.oz
+	$(OZC) $(OZCOPTS) -c $< -o $@
 
-all: $(OZOBJS) $(SMLOBJS)
-	$(OZL) $(OZLFLAGS) InspectorMain.ozf -o Inspector.ozf
+-include Makefile.depend
 
-%.ozf : %.oz
-	$(OZC) $(OZFLAGS) -c $< -o $@
+##
+## Installation
+##
+
+install: $(INSTALLDIRS) $(INSTALLFILES)
+
+$(INSTALLDIRS):
+	mkdir -p $@
+
+$(PREFIX)/lib/tools/%.ozf: %.ozf
+	install -c -m 444 $< $@
+
+##
+## Cleaning Up
+##
 
 clean:
-	rm -f $(OZOBJS) $(SMLOBJS) *.ozm *.ozp
+	-rm -f $(OZLINPUTS) UntypedInspector.ozf Inspector.ozf
 
-install: all
-	(cd $(PREFIX)/lib && rm -f Inspector.ozf Inspector.ozf.sig) || exit 1
-	cp Inspector.ozf $(PREFIX)/lib
-	cp $(SOURCES) $(PREFIX)/lib
+veryclean: clean
+
+distclean: veryclean
+	-rm -f Makefile.depend
