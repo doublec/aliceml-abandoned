@@ -11,7 +11,7 @@ fi
 case `uname -s` in
     CYGWIN*)
 	sep=\;
-        STOCKHOME=`cygpath -w "$STOCKHOME"`
+	STOCKHOME=`cygpath -w "$STOCKHOME"`
 	;;
     *)
 	sep=:
