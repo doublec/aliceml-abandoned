@@ -21,7 +21,7 @@ import structure Resolver           from "../../lib/system/Resolver"
 import structure Reflect            from "../../lib/system/Reflect"
 import signature COMPONENT_MANAGER  from "../../lib/system/COMPONENT_MANAGER-sig"
 import structure Component          from "../../lib/system/Component"
-import structure MkHashImpMap       from "../../lib/utility/MkHashImpMap"
+import structure MkHashImpMap       from "../../lib/data/MkHashImpMap"
 import structure Path               from "../../lib/rtt/Path"
 import structure Inf                from "../../lib/rtt/Inf"
 
@@ -70,12 +70,12 @@ functor MkRecursiveCompiler(structure ComponentManager: COMPONENT_MANAGER
 	    end
 
 	val sourceResolver =
-	    Resolver.new {name = "source",
-			  handlers =
-			      case OS.Process.getEnv "ALICE_SOURCE_PATH" of
-				  SOME s => Resolver.Handler.parse s
-				| NONE => [Resolver.Handler.default],
-			  memoize = false}
+	    Resolver.resolver
+	    {name = "source",
+	     handlers = case OS.Process.getEnv "ALICE_SOURCE_PATH" of
+			     SOME s => Resolver.Handler.parse s
+			   | NONE => [Resolver.Handler.default],
+	     memoize = false}
 
 	fun readUrl url =
 	    case Resolver.localize sourceResolver url of
@@ -273,7 +273,7 @@ functor MkRecursiveCompiler(structure ComponentManager: COMPONENT_MANAGER
 
 	structure UrlMap = MkHashImpMap(Url)
 
-	val sigTable: Inf.sign UrlMap.t = UrlMap.new ()
+	val sigTable: Inf.sign UrlMap.t = UrlMap.map ()
 
 	fun loadSig url = Component.inf (ComponentManager.link url)
 

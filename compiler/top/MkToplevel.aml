@@ -35,7 +35,7 @@ struct
     fun usage() = TextIO.output(TextIO.stdErr, "Usage: alice [options]\n" ^
 						OptionParser.helpText)
 
-    val banner     = "Alice 0.9.1 (Stockhausen Operette 3 Remix 1)\n"
+    val banner     = "Alice 0.9.1+ (Stockhausen Operette 3 Remix 1+)\n"
     val prompt     = "- "
     val contPrompt = "  "
 
@@ -87,7 +87,7 @@ struct
 		          NONE => TextIO.print "[no result signature]\n"
 		        | SOME inf =>
 			      let
-				  val doc = PPComponent.ppComp (str, inf);
+				  val doc = PPComponent.ppComp (str, inf)
 			      in
 				  PrettyPrint.output(TextIO.stdOut, doc, 79);
 				  TextIO.print "\n"
