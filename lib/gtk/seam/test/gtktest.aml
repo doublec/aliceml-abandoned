@@ -1,6 +1,6 @@
 import structure Gdk from "../Gdk"
 import structure Gtk from "../Gtk"
-import structure GnomeCanvas from "../GnomeCanvas"
+import structure Canvas from "../Canvas"
 import structure Image from "Image"
 
 local
@@ -26,11 +26,11 @@ in
 
   val combo = comboNew()
   val _ = comboSetPopdownStrings(combo, ["Auswahl 1", "Auswahl 2"])
-  val canvas = GnomeCanvas.new()
+  val canvas = Canvas.new()
   val _ = widgetSetSizeRequest(canvas, 100, 100)
-  val root = GnomeCanvas.root canvas
+  val root = Canvas.root canvas
 
-  val rect = GnomeCanvas.itemCreate(root, GnomeCanvas.rectGetType(),
+  val rect = Canvas.itemCreate(root, Canvas.rectGetType(),
   	         [("fill_color", STRING "white"),
 		  ("x1", REAL 5.0),
 		  ("y1", REAL 5.0),
@@ -38,7 +38,7 @@ in
 		  ("y2", REAL 95.0),
 		  ("outline_color", STRING "black")])
 
-  val circle = GnomeCanvas.itemCreate(root, GnomeCanvas.ellipseGetType(),
+  val circle = Canvas.itemCreate(root, Canvas.ellipseGetType(),
 		 [("fill_color", STRING "blue"),
 		  ("x1", REAL 10.0),
 		  ("y1", REAL 10.0),
@@ -46,7 +46,7 @@ in
 		  ("y2", REAL 90.0),
 		  ("outline_color", STRING "black")])
 
-  val text = GnomeCanvas.itemCreate(root, GnomeCanvas.textGetType(),
+  val text = Canvas.itemCreate(root, Canvas.textGetType(),
 		 [("fill_color", STRING "white"),
 		  ("text", STRING "Canvas"),
 		  ("x", REAL 50.0),

@@ -24,7 +24,7 @@ struct
     open CanvasEnums 
     open CanvasUnsafe
 
-    (* Create a GnomeCanvasItem *)
+    (* Create a CanvasItem *)
     fun itemCreate (root, ty, arglist) =
     let
 	fun flatten nil = nil
@@ -38,7 +38,7 @@ struct
 	item
     end
 
-    (* Get a GnomeCanvasPoints* array from a coordinate list *)
+    (* Get a CanvasPoints* array from a coordinate list *)
     fun makePoints plist =
     let
 	val plist' = if (length plist) mod 2 = 0 then plist else plist@[0]
