@@ -226,6 +226,8 @@ libs-seam:
 	(cd lib/gecode && make generate GECODEDIR=$(GECODEDIR)) || exit ;\
 	(cd lib/gecode && make depend GECODEDIR=$(GECODEDIR)) || exit ;\
 	(cd lib/gecode && make all install GECODEDIR=$(GECODEDIR)) || exit ;\
+	(cd lib/gecode/search-factory && make depend) || exit ;\
+	(cd lib/gecode/search-factory && make all install) || exit ;\
 	(cd lib/postscript && make all install) || exit 1 ;\
 	(cd lib/tools/explorer/seam && touch ExplorerGUI.aml ExplorerGUISignals.aml) || exit 1 ;\
 	(cd lib/tools/explorer/seam && make depend) || exit 1 ;\
