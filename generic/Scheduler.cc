@@ -199,12 +199,12 @@ void Scheduler::Run(bool waitForever = false) {
     IOHandler::Poll();
   }
   // Check for both incoming signals and io
-  do {
+  while (waitForever) {
     IOHandler::Block();
     SignalHandler::HandlePendingSignals();
     if ((currentThread = threadQueue->Dequeue()) != INVALID_POINTER)
       goto retry;
-  } while (waitForever);
+  }
 }
 
 Interpreter::Result Scheduler::PushCall(word wClosure) {
