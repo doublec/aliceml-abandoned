@@ -26,6 +26,8 @@ struct
     fun toString(GEN(n,_))	= Int.toString n
       | toString(STR s)		= s
 
+    val equal			= op =
+
     fun hash(GEN(n,_))		= n
-      | hash(STR s)		= StringHashKey.hash s
+      | hash(STR s)		= String.hash s
 end
