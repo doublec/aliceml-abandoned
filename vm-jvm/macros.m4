@@ -69,4 +69,4 @@ define(_APPLY,`
 	// apply
 	final public DMLValue apply(DMLValue $1) throws java.rmi.RemoteException' )
 dnl FIELD(fieldname)
-define(_FIELD,`final public static capitalize($1) $1 = new capitalize($1)()')
+define(_FIELD,`final public static DMLValue $1 = new capitalize($1)()')

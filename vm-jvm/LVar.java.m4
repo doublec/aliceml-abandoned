@@ -6,7 +6,10 @@
 
 package de.uni_sb.ps.dml.runtime;
 
-public class LVar extends java.rmi.server.UnicastRemoteObject implements DMLRemoteValue {
+import java.rmi.server.UnicastRemoteObject;
+
+public class LVar extends UnicastRemoteObject
+    implements DMLLVar {
 
     protected DMLValue ref=null;
 

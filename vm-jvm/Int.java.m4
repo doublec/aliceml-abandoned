@@ -123,10 +123,10 @@ final public class Int extends SCon {
     _FIELD(mod);
 
     /** <code>val quot : (int * int) -> int </code>*/
-    final public static Div quot = div;
+    final public static DMLValue quot = div;
 
     /** <code>val rem : (int * int) -> int </code>*/
-    final public static Mod rem = mod;
+    final public static DMLValue rem = mod;
 
     _BUILTIN(Plus) {
 	_APPLY(val) {

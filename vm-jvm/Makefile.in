@@ -36,7 +36,7 @@ files = $(CLASSROOT)$(RUNTIME)Array.class \
 	$(CLASSROOT)$(RUNTIME)DMLConVal.class \
 	$(CLASSROOT)$(RUNTIME)DMLPort.class \
 	$(CLASSROOT)$(RUNTIME)DMLReference.class \
-	$(CLASSROOT)$(RUNTIME)DMLRemoteValue.class \
+	$(CLASSROOT)$(RUNTIME)DMLLVar.class \
 	$(CLASSROOT)$(RUNTIME)DMLTuple.class \
 	$(CLASSROOT)$(RUNTIME)DMLValue.class \
 	$(CLASSROOT)$(RUNTIME)ExceptionWrapper.class \
@@ -63,7 +63,6 @@ files = $(CLASSROOT)$(RUNTIME)Array.class \
 	$(CLASSROOT)$(RUNTIME)Record.class \
 	$(CLASSROOT)$(RUNTIME)RecordArity.class \
 	$(CLASSROOT)$(RUNTIME)Reference.class \
-	$(CLASSROOT)$(RUNTIME)RemotePort.class \
 	$(CLASSROOT)$(RUNTIME)SCon.class \
 	$(CLASSROOT)$(RUNTIME)SManager.class \
 	$(CLASSROOT)$(RUNTIME)ServerManager.class \
@@ -85,7 +84,7 @@ rmifil=	$(CLASSROOT)$(RUNTIME)LVar_Stub.class \
 	$(CLASSROOT)$(RUNTIME)ServerManager_Stub.class \
 	$(CLASSROOT)$(RUNTIME)ClientManager_Stub.class \
 	$(CLASSROOT)$(RUNTIME)Exporter_Stub.class \
-	$(CLASSROOT)$(RUNTIME)DMLPort_Stub.class
+	$(CLASSROOT)$(RUNTIME)Port_Stub.class
 
 all:	link $(files) rmi
 

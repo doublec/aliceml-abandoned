@@ -7,6 +7,7 @@
 package de.uni_sb.ps.dml.runtime;
 
 import java.rmi.RemoteException;
+import java.rmi.server.UnicastRemoteObject;
 
 final public class Port extends UnicastRemoteObject
     implements DMLPort {
@@ -14,7 +15,7 @@ final public class Port extends UnicastRemoteObject
     DMLValue first = null;
     LVar last = null;
 
-    public DMLPort() throws RemoteException {
+    public Port() throws RemoteException {
 	last = new LVar();
 	first = last;
     }
@@ -63,7 +64,7 @@ final public class Port extends UnicastRemoteObject
 	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 	    DMLValue[] args=fromTuple(val,1,"Port.newPort");
 	    try {
-		return new DMLPort();
+		return new Port();
 	    } catch (RemoteException r) {
 		System.err.println(r);
 		return null;
