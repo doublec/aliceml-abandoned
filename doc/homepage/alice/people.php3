@@ -24,7 +24,10 @@
   </P>
 
   <UL>
+    <LI><A HREF="/~blum/">Bernadette Blum</A>
+    <LI><A HREF="/~grabow/">Robert Grabowski</A>
     <LI><A HREF="/~jens/">Jens Regenberg</A>
+    <LI><A HREF="/~schiller/">Marvin Schiller</A>
     <LI><A HREF="/~jan/">Jan Schwinghammer</A> (formerly)
     <LI><A HREF="http://www.czy.de/">Gerhard Schneider</A> (formerly)
   </UL>
