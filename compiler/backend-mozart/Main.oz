@@ -74,6 +74,12 @@ define
       {F close()}
    end
 
+   fun {ParseDumpTarget Args}
+      case Args of "DumpTarget"#OzmFilename|Rest then OzmFilename#Rest
+      else unit#Args
+      end
+   end
+
    fun {ParsePairList Args ParseX ParseY}
       case Args of X|Y|Rest then
 	 {ParseX X}#{ParseY Y}|{ParsePairList Rest ParseX ParseY}
@@ -83,30 +89,20 @@ define
 
    proc {Loop File}
       case {ReadCommand File} of "Command"#"link"|"Code"#Code|Rest then
-	 case {Pickle.load Code} of unit then
-	    {System.printInfo 'Error:could not load pickle\n\n'}
-	 [] Filename#AST then
-	    case {CodeGen.translate Filename AST
-		  {ParsePairList Rest
-		   fun {$ "Id"#S} {String.toInt S} end
-		   fun {$ "Valref"#S} {Get {String.toInt S}} end}}
-	    of F#VS then
-	       {WriteFile VS Filename#'.ozm'}
-	       {System.printInfo 'Valref:'#{Put F}#'\n\n'}
-	    end
+	 Filename#AST = {Pickle.load Code}
+	 OzmFilename#Rest2 = {ParseDumpTarget Rest}
+	 F#VS = {CodeGen.translate Filename AST
+		 {ParsePairList Rest2
+		  fun {$ "Id"#S} {String.toInt S} end
+		  fun {$ "Valref"#S} {Get {String.toInt S}} end}}
+      in
+	 case OzmFilename of unit then skip
+	 else {WriteFile VS OzmFilename}
 	 end
+	 {System.printInfo 'Valref:'#{Put F}#'\n\n'}
       [] ["Command"#"save" "Valref"#S "String"#OutFilename] then
 	 {Pickle.saveWithCells {Get {String.toInt S}} OutFilename '' 9}
 	 {System.printInfo '\n'}
-      [] "Command"#"apply"|"Valref"#S|Rest then
-	 case {Get {String.toInt S}} of F then M in
-	    [M] = {Module.apply [F]}
-	    {List.forAll Rest
-	     proc {$ "Label"#S}
-		{System.printInfo 'Valref:'#{Put M.{String.toAtom S}}#'\n'}
-	     end}
-	    {System.printInfo '\n'}
-	 end
       [] nil then
 	 {Application.exit 0}
       elseof X then raise format(loop X) end
@@ -117,5 +113,11 @@ define
    end
 
    {Property.put 'gc.free' 50}
-   {Loop {New TextFile init(name: stdin flags: [read])}}
+   try
+      {Loop {New TextFile init(name: stdin flags: [read])}}
+   catch E then
+      {System.printInfo
+       'Error:'#{Value.toVirtualString E 10 5}#'\n\n'}
+      {Application.exit 1}
+   end
 end

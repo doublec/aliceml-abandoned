@@ -18,6 +18,7 @@ import
    Open(file)
    CodeGen(translate) at 'CodeGen'
    UrlComponent('Url$': Url) at '../../lib/utility/Url'
+   UnsafeComponent(functorToComponent) at '../../lib/system/UnsafeComponent'
 export
    'CodeGenPhase$': CodeGenPhase
 define
@@ -226,26 +227,15 @@ define
       end
    end
 
-   fun {Sign F#_#_#_}
-      case F.'export' of sig(Sign) then Sign end
+   fun {DumpTarget _#VS#_#_}
+      {ByteString.make VS}
    end
 
-   proc {WriteFile VS File} F in
-      F = {New Open.file init(name: File flags: [write create truncate])}
-      {F write(vs: VS)}
-      {F close()}
+   fun {ToComponent F#_#_#_}
+      {UnsafeComponent.functorToComponent F}
    end
 
-   fun {Save F#VS#_#_ OutFilename OutputAssembly}
-      {Pickle.saveWithCells F OutFilename '' 9}
-      if OutputAssembly then
-	 {WriteFile VS OutFilename#'.ozm'}
-      end
-      unit
-   end
-
-   fun {Apply F#_#ExportDesc#Env} M in
-      {{Property.get 'alice.modulemanager'} apply(F ?M)}
+   fun {Eval _#_#ExportDesc#Env M}
       {Wait M}
       {Record.forAll ExportDesc
        proc {$ Label#'Id'(_ Stamp _)}
@@ -261,7 +251,7 @@ define
    CodeGenPhase =
    'CodeGenPhase'('C$': C
 		  translate: Translate
-		  sign: Sign
-		  save: Save
-		  apply: Apply)
+		  dumpTarget: DumpTarget
+		  eval: Eval
+		  component: ToComponent)
 end
