@@ -2,9 +2,9 @@
 
 General:
 
-- Consistent error design
 - Improve pretty-printing
 - Consistent state cleanup (especially on errors)
+- Copyright notices
 
 Missing from Standard Core Language:
 
@@ -19,11 +19,8 @@ Missing from Standard Module Language:
 
 - Matching of datatype constructors does not check equality of constructor sets
   [deferred until decision on structural datatypes is made]
-- Sharing constraints (have to be substituted by where constraints)
-  [should be translated into where constraints automatically - but is this
-   always possible?]
 - Include (no work-around)
-  [maybe will also be translated into where expressions]
+  [might be translated into where expressions]
 
 Missing from Extended Core Language:
 
@@ -48,6 +45,8 @@ Missing from Extended Core Language:
 
 Missing from Extended Module Language:
 
+- Treating fixity directives during signature matching
+  [would carry frontend stuff into the backend - is this semantics necessary?]
 - Syntax for functor expressions and signatures (use functor
   declarations and specifications for now)
   [easy, provided we give up separation of StrId and FunId as well as
