@@ -11,19 +11,133 @@
  *)
 
 import structure UnsafeSQLite from "UnsafeSQLite"
+import structure UnsafeValue from "x-alice:/lib/system/UnsafeValue"
+import structure Type from "x-alice:/lib/rtt/Type"
+import structure Label from "x-alice:/lib/rtt/Label"
+import structure Path from "x-alice:/lib/rtt/Path"
+import structure Name from "x-alice:/lib/rtt/Name"
+
 import signature SQLITE from "SQLITE-sig"
 
-structure SQLite :> SQLITE = struct
+structure SQLite' :> SQLITE = struct
     type db
     type row
+    type row_result
+    type converter = row * int -> row_result
     datatype c_type = BLOB | INT | NULL | REAL | TEXT 
 
     open UnsafeSQLite
     datatype res = BUSY | DONE | ROW
 
-    fun query (db, sql, q) =
+    val cast = UnsafeValue.cast
+    exception TypeError of string
+
+    (* test whether t1 is an option type *)
+    (* if it is, construct a wrapper for t2 option *)
+    fun option (t1,t2) =
+        let
+            val (l1,_,r) =
+                Type.asFieldRow(Type.asSum (#2 (Type.asLambda(Type.asMu t1))))
+            val (l2,_,r) = Type.asFieldRow r
+        in
+            if Type.isEmptyRow r andalso
+               Label.toString l1 = "NONE" andalso
+               Label.toString l2 = "SOME" then
+                let
+                    val wrap = typeToWrapper false t2
+                in
+                 cast (fn (row, i) => (case c_type(row,i) of
+                                           NULL => NONE
+                                         | _ => SOME (wrap(row,i))))
+                end
+            else raise TypeError "unsupported type"
+        end handle (Type.Type | Type.Row) =>
+                   raise TypeError "unsupported type"
+                                             
+    (* construct a column wrapper for type t
+     * opt is a boolean that indicates if the constructed type
+     * is already below an option type, because we do not allow
+     * nested options
+     *)
+    and typeToWrapper opt t =
+        case Type.inspect t of
+            Type.Con p => (case Path.inspect p of
+                               Path.Name (Name.ExId "int") =>
+                               cast c_int
+                             | Path.Name (Name.ExId "real") =>
+                               cast c_real
+                             | Path.Name (Name.ExId "string") =>
+                               cast c_text
+                             | _ => raise TypeError "unsupported type")
+          | Type.Prod row => if Type.isEmptyRow row then
+                                 cast ignore
+                             else raise TypeError "unsupported type"
+          | Type.Apply(t1,t2) => if opt then
+                                     raise TypeError "unsupported type"
+                                 else option(t1,t2)
+          | _ => raise TypeError "unsupported type"
+
+    (* construct a wrapper for the whole row,
+     * using the individual column wrappers (converters)
+     *)
+    fun wrapper converters row =
+        if c_count row < Vector.length converters then
+            raise TypeError "more types than columns"
+        else
+            case converters of
+                (#[(l,_,c)] where (isSome (Label.toInt l))) =>
+                c(row,0)
+              | _ =>
+            UnsafeValue.prod
+                (Vector.map (fn (l,i,c) => (l, c(row,i))) converters)
+
+    fun rowToList r =
+        case Type.inspectRow r of
+            Type.EmptyRow => nil
+          | Type.UnknownRow => raise TypeError "unknown row"
+          | Type.FieldRow(l,t,row) => (l, t)::rowToList row
+
+    (* The dict is used to look up field names for matching them
+     * with record labels
+     *)
+    fun dict stmt =
+        Vector.tabulate (c_count stmt, fn i => (i, c_name(stmt, i)))
+    fun lookup dict s =
+        case (Vector.find (fn (i, s') => s=s') dict) of
+            SOME (i, _) => i
+          | NONE => raise TypeError ("field "^s^" not known")
+
+    fun constructWrapper dict t =
+        let
+            val v = if Type.isTuple t
+                    then Vector.mapi (fn (i,t) => (Label.fromInt (i+1), i, t))
+                                     (Type.asTuple t)
+                    else
+                        if Type.isProd t then
+                            let
+                                val rs = rowToList (Type.asProd t)
+                            in
+                                Vector.fromList (
+                                List.mapi (fn (i,(l,t)) =>
+                                                (l,
+                                                 lookup dict
+                                                        (Label.toString l),
+                                                 t)) rs)
+                            end
+                        else #[(Label.fromInt 0, 0, t)]
+            val converters : (Label.lab * int * converter) vector =
+                Vector.map (fn (l,i,t) => (l,i,typeToWrapper false t)) v
+            val w = wrapper converters
+        in
+            w
+        end
+
+    fun query' t (db,sql) =
 	let
-	    val stmt = prepare(db, sql)
+            val stmt = prepare(db, sql)
+            val d = dict stmt
+	    val q = cast (constructWrapper d t)
+
 	    fun lazy next () = 
 		     case step stmt of
 			 BUSY => (Thread.sleep (Time.fromMilliseconds 
@@ -34,5 +148,17 @@ structure SQLite :> SQLITE = struct
 	in
 	    next()
 	end
-
 end
+
+structure SQLite =
+  struct
+      type db = SQLite'.db
+
+      exception SQLError of string
+      exception TypeError of string
+
+      val opendb : string -> db = SQLite'.opendb
+      val closedb : db -> unit = SQLite'.closedb
+      __overload 'a query : (db * string) -> 'a list = SQLite'.query'
+
+  end

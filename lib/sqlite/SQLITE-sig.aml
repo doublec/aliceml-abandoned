@@ -10,24 +10,14 @@
  *   $Revision$
  *)
 
+import structure Type from "x-alice:/lib/rtt/Type"
+
 signature SQLITE = sig
     type db
-    type row
     exception SQLError of string
-
-    datatype c_type = BLOB | INT | NULL | REAL | TEXT 
 
     val opendb : string -> db
     val closedb : db -> unit
-    val query : db * string * (row -> 'a) -> 'a list
+    val query' : Type.t -> db * string -> 'a list
 
-    (* Accessors for columns in a result row *)
-    val c_blob : row * int -> string
-    val c_int : row * int -> int
-    val c_real : row * int -> real
-    val c_text : row * int -> string
-
-    val c_type : row * int -> c_type
-    val c_name : row * int -> string
-    val c_count : row -> int
 end

@@ -17,13 +17,13 @@
 #define DECLARE_SQLITEDB(db, x)                       \
   sqlite3 *db;                                                  \
   if (Store::WordToTransient(x) != INVALID_POINTER) { REQUEST(x); } \
-  { ConcreteRepresentation *cr = ConcreteRepresentation::FromWordDirect(x); \
+  { ConcreteRepresentation *cr = ConcreteRepresentation::FromWord(x); \
     db = (sqlite3 *) Store::WordToUnmanagedPointer(cr->Get(0)); }
 
 #define DECLARE_SQLITESTMT(stmt, x)                       \
   sqlite3_stmt *stmt;                                                  \
   if (Store::WordToTransient(x) != INVALID_POINTER) { REQUEST(x); } \
-  { ConcreteRepresentation *cr = ConcreteRepresentation::FromWordDirect(x); \
+  { ConcreteRepresentation *cr = ConcreteRepresentation::FromWord(x); \
     stmt = (sqlite3_stmt *) Store::WordToUnmanagedPointer(cr->Get(0)); }
 
 
@@ -44,7 +44,7 @@ public:
 static SQLiteFinalizationSet *sqliteFinalizationSet;
 
 void SQLiteFinalizationSet::Finalize(word value) {
-  ConcreteRepresentation *cr = ConcreteRepresentation::FromWordDirect(value);
+  ConcreteRepresentation *cr = ConcreteRepresentation::FromWord(value);
   word ptr = cr->Get(0);
 }
 
@@ -59,7 +59,6 @@ static word MakeSQLError(String *err) {
 
 DEFINE1(sql_open) {
   DECLARE_STRING(filename, x0);
-
   sqlite3 *db;
   int ret = sqlite3_open(filename->ExportC(), &db);
   if (ret!=SQLITE_OK) {
@@ -67,6 +66,7 @@ DEFINE1(sql_open) {
     word exn = MakeSQLError(String::New(errmsg));
     RAISE(exn);
   }
+
 
   ConcreteRepresentation *cr = ConcreteRepresentation::New(sqliteHandler, 2);
   cr->Init(0, Store::UnmanagedPointerToWord(db));
@@ -80,6 +80,7 @@ DEFINE1(sql_close) {
   int ret = sqlite3_close(db);
   if (ret!=SQLITE_OK) {
     const char *errmsg = sqlite3_errmsg(db);
+    fprintf(stderr, "not ok: %s\n", errmsg);
     word exn = MakeSQLError(String::New(errmsg));
     RAISE(exn);
   }
@@ -122,22 +123,6 @@ DEFINE1(sql_step) {
     {
       RETURN_INT(2);
       break;
-//       Vector *values = Vector::New(cols);
-//       Vector *columnNames = Vector::New(cols);
-//       for (u_int i=0; i<cols; i++) {
-// 	if (pazValue[i]==0) {
-// 	  values->Init(i, Store::IntToWord(0));
-// 	} else {
-// 	  TagVal *tv = TagVal::New(1,1);
-// 	  tv->Init(0, String::New(pazValue[i])->ToWord());
-// 	  values->Init(i, tv->ToWord());
-// 	}
-// 	columnNames->Init(i, String::New(pazColName[i])->ToWord());
-//       }
-//       TagVal *ret = TagVal::New(2, 2); // datatype res = ... | ROW of ...
-//       ret->Init(0, values->ToWord());
-//       ret->Init(1, columnNames->ToWord());
-//       RETURN(ret->ToWord());
     }
     break;
   case SQLITE_DONE:
@@ -235,9 +220,8 @@ DEFINE2(sql_c_name) {
   RETURN(String::New(text)->ToWord());
 } END
 
-DEFINE2(sql_c_count) {
+DEFINE1(sql_c_count) {
   DECLARE_SQLITESTMT(stmt, x0);
-  DECLARE_INT(col, x1);
 
   int cols = sqlite3_column_count(stmt);
   RETURN_INT(cols);
@@ -279,7 +263,7 @@ word InitComponent() {
   INIT_STRUCTURE(record, "UnsafeSQLite", "c_name",
 		 sql_c_name, 2);
   INIT_STRUCTURE(record, "UnsafeSQLite", "c_count",
-		 sql_c_name, 1);
+		 sql_c_count, 1);
 
   record->Init("'SQLError", SQLErrorConstructor);
   INIT_STRUCTURE(record, "UnsafeSQLite", "SQLError",
