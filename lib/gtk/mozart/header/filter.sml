@@ -21,11 +21,21 @@ structure Filter : FILTER =
 	fun doPurify tokens =
 	    (case tokens of
 		 "__extension__"::sr         => doPurify sr
-	       | "__attribute__((format"::sr => ";\n"
+	       | "__ssize_t"::sr             => "unsigned int " ^ (doPurify sr)
+	       | "__const"::sr               => "const " ^ (doPurify sr)
+	       | "(__const"::sr              => "(const " ^ (doPurify sr)
+	       | "*__const"::sr              => "* " ^ (doPurify sr)
+	       | "__attribute__"::sr         => ";"
+	       | "__attribute__((format"::sr => ";"
 	       | s::sr                       => s ^ " " ^ (doPurify sr)
 	       | nil                         => "")
 
-	fun purify s = doPurify (String.tokens (fn #" " => true | _ => false) s)
+	fun sepToken #" "  = true
+	  | sepToken #"\t" = true
+	  | sepToken #"\n" = true
+	  | sepToken _     = false
+
+	fun purify s = doPurify (String.tokens sepToken s)
 
 	fun isNoCodeLine s =
 	    (case String.explode s of
@@ -41,8 +51,10 @@ structure Filter : FILTER =
 		     in
 			 case isNoCodeLine s of
 			     true  => doFiltering(rs, ws)
-			   | false => (TextIO.output (ws, purify s);
-				       doFiltering(rs, ws))
+			   | false =>
+				 (case purify s of
+				      "" => doFiltering(rs, ws)
+				    | l  =>(TextIO.output (ws, (l ^ "\n")); doFiltering(rs, ws)))
 		     end)
 		 
 	fun filterFile inFile outFile =
