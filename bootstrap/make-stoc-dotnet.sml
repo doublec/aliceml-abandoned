@@ -22,7 +22,7 @@ local
 	     OS.Process.failure)
 
     fun defaults () =
-	(SMLToComPlusMain.Switches.printComponentSig := false;
+	(SMLToComPlusMain.Switches.printComponentSig := true;
 	 SMLToComPlusMain.Switches.defaultImport := true)
 
     fun stoc nil =   (* for testing bootstrapping *)
@@ -36,7 +36,7 @@ local
 	 hdl SMLToComPlusMain.compile (infile, outfile, ""))
       | stoc _ = OS.Process.failure
 
-    fun main _ = stoc (CommandLine.arguments ())
+    fun main _ = stoc (tl(CommandLine.arguments ()))
 in
     val _ = SMLofNJ.exportFn ("stoc-com+", main)
 end;

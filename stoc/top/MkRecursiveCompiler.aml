@@ -40,7 +40,9 @@ functor MakeMain(structure Composer: COMPOSER'
 	    in
 		case Source.url desc of
 		    SOME url =>
-			stockhome ^ "lib/Base.aml" = Url.toString url
+			(* Pfusch beseitigt *)
+			url = Url.fromString(stockhome ^ "/Base.aml")
+			orelse url = Url.fromString(stockhome ^ "/Base.dll.sig")
 		  | NONE => false
 	    end
 
@@ -136,7 +138,7 @@ functor MakeMain(structure Composer: COMPOSER'
 		    Url.toString (Url.setScheme (url, NONE))
 	      | (SOME "x-alice", NONE) =>
 		    (case OS.Process.getEnv "STOCKHOME" of
-			 SOME s => s
+			 SOME s => s ^ "/"
 		       | NONE => "") ^
 		    Url.toString (Url.setScheme (Url.makeRelativePath url,
 						 NONE))
