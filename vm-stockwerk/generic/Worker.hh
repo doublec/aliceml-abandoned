@@ -29,7 +29,7 @@ class String;
 class DllExport Worker {
 public:
   enum Result {
-    CONTINUE, PREEMPT, SUSPEND, RAISE, REQUEST, TERMINATE
+    CONTINUE, PREEMPT, SUSPEND, RAISE, REQUEST, TERMINATE, EXIT
   };
   // Worker Constructor
   Worker() {}
