@@ -408,22 +408,24 @@ define
 			     case TaskStack of Frame|Rest then
 				exception(Frame|Debug Exn Rest)
 			     end
-			  end)
-
-   fun {PicklePackInterpreterRun args(_ OutputStream _) TaskStack}
-      case TaskStack of picklePack(_)|Rest then
-	 continue(arg({OutputStream close($)}) Rest)
-      end
-   end
+			  end
+		       toString: fun {$ _} 'Pickling Task' end)
 
    PicklePackInterpreter =
-   picklePackInterpreter(run: PicklePackInterpreterRun
-			 handle:
-			    fun {$ Debug Exn TaskStack}
-			       case TaskStack of Frame|Rest then
-				  exception(Frame|Debug Exn Rest)
-			       end
-			    end)
+   picklePackInterpreter(
+      run:
+	 fun {$ args(_ OutputStream _) TaskStack}
+	    case TaskStack of picklePack(_)|Rest then
+	       continue(arg({OutputStream close($)}) Rest)
+	    end
+	 end
+      handle:
+	 fun {$ Debug Exn TaskStack}
+	    case TaskStack of Frame|Rest then
+	       exception(Frame|Debug Exn Rest)
+	    end
+	 end
+      toString: fun {$ _} 'Pickle Pack' end)
 
    fun {Pack X TaskStack}
       continue(args(0 {New StringOutputStream init()} nil)
@@ -431,21 +433,22 @@ define
 	       picklePack(PicklePackInterpreter)|TaskStack.2)
    end
 
-   fun {PickleSaveInterpreterRun args(_ OutputStream _) TaskStack}
-      case TaskStack of pickleSave(_)|Rest then
-	 {OutputStream close()}
-	 continue(args() Rest)
-      end
-   end
-
    PickleSaveInterpreter =
-   pickleSaveInterpreter(run: PickleSaveInterpreterRun
-			 handle:
-			    fun {$ Debug Exn TaskStack}
-			       case TaskStack of Frame|Rest then
-				  exception(Frame|Debug Exn Rest)
-			       end
-			    end)
+   pickleSaveInterpreter(
+      run:
+	 fun {$ args(_ OutputStream _) TaskStack}
+	    case TaskStack of pickleSave(_)|Rest then
+	       {OutputStream close()}
+	       continue(args() Rest)
+	    end
+	 end
+      handle:
+	 fun {$ Debug Exn TaskStack}
+	    case TaskStack of Frame|Rest then
+	       exception(Frame|Debug Exn Rest)
+	    end
+	 end
+      toString: fun {$ _} 'Pickle Save' end)
 
    fun {Save Filename X TaskStack}
       continue(args(0 {New FileOutputStream init(Filename)} nil)

@@ -70,5 +70,6 @@ define
    end
 
    Me = byneedInterpreter(run: ByneedInterpreterRun
-			  handle: ByneedInterpreterHandle)
+			  handle: ByneedInterpreterHandle
+			  toString: fun {$ _} 'Byneed' end)
 end

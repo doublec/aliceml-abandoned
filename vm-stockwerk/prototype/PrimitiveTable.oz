@@ -725,39 +725,46 @@ define
       end
    end
 
-   fun {VectorTabulateInterpreterRun Args TaskStack}
-      case TaskStack of vectorTabulate(_ V F I N)|Rest then
-	 V.I = {Construct Args}
-	 if I == N then continue(arg(V) Rest)
-	 else NewFrame in
-	    NewFrame = vectorTabulate(VectorTabulateInterpreter V F I + 1 N)
-	    continue(arg(I) {F.1.1.pushCall F NewFrame|Rest})
-	 end
-      end
-   end
-
    VectorTabulateInterpreter =
-   vectorTabulateInterpreter(run: VectorTabulateInterpreterRun
-			     handle:
-				fun {$ Debug Exn TaskStack}
-				   case TaskStack of Frame|Rest then
-				      exception(Frame|Debug Exn Rest)
-				   end
-				end)
+   vectorTabulateInterpreter(
+      run:
+	 fun {$ Args TaskStack}
+	    case TaskStack of vectorTabulate(_ V F I N)|Rest then
+	       V.I = {Construct Args}
+	       if I == N then continue(arg(V) Rest)
+	       else NewFrame in
+		  NewFrame = vectorTabulate(VectorTabulateInterpreter
+					    V F I + 1 N)
+		  continue(arg(I) {F.1.1.pushCall F NewFrame|Rest})
+	       end
+	    end
+	 end
+      handle:
+	 fun {$ Debug Exn TaskStack}
+	    case TaskStack of Frame|Rest then
+	       exception(Frame|Debug Exn Rest)
+	    end
+	 end
+      toString:
+	 fun {$ vectorTabulate(_ _ _ I N)}
+	    'Vector Tabulate '#I#' of '#N
+	 end)
 
    ThreadRaiseInInterpreter =
-   threadRaiseInInterpreter(run:
-			       fun {$ _ TaskStack}
-				  case TaskStack of raiseIn(_ Exn)|Rest then
-				     exception(nil Exn Rest)
-				  end
-			       end
-			    handle:
-				fun {$ Debug Exn TaskStack}
-				   case TaskStack of Frame|Rest then
-				      exception(Frame|Debug Exn Rest)
-				   end
-				end)
+   threadRaiseInInterpreter(
+      run:
+	 fun {$ _ TaskStack}
+	    case TaskStack of raiseIn(_ Exn)|Rest then
+	       exception(nil Exn Rest)
+	    end
+	 end
+      handle:
+	 fun {$ Debug Exn TaskStack}
+	    case TaskStack of Frame|Rest then
+	       exception(Frame|Debug Exn Rest)
+	    end
+	 end
+      toString: fun {$ _} 'Raise In' end)
 
    fun {PrimitiveInterpreterRun Args TaskStack}
       case TaskStack of primitive(_ F Spec _)|Rest then
@@ -941,6 +948,10 @@ define
 			   fun {$ primitive(_ _ _ Transform)}
 			      %--** how to signal sitedness?
 			      Transform
+			   end
+			toString:
+			   fun {$ primitive(_ _ _ transform(_ tag(0 S)))}
+			      'Primitive '#S
 			   end)
 
    fun {ImportField F X}
