@@ -87,8 +87,8 @@
       <TT>exception <A name="Terminate-exn">Terminate</A></TT>
     </DT>
     <DD>
-      <P>This exception is raised by <TT><A href="#terminate">terminate</A
-	></TT> to terminate a thread.  Should never be raised explicitly.</P>
+      <P>raised by <TT><A href="#terminate">terminate</A></TT> to
+	terminate a thread.  Should never be raised explicitly.</P>
     </DD>
 
     <DT>
@@ -104,18 +104,19 @@
       <TT><A name="thread">thread</A> <I>f</I></TT>
     </DT>
     <DD>
-      <P>spawns a new thread <I>thr</I> which computes <I>f</I>&nbsp;().
-	Returns <I>thr</I>.</P>
+      <P>spawns a new thread <TT><I>thr</I></TT> which computes
+	<TT><I>f</I>&nbsp;()</TT>.  Returns <TT><I>thr</I></TT>.</P>
     </DD>
 
     <DT>
       <TT><A name="spawnThread">spawnThread</A> <I>f</I></TT>
     </DT>
     <DD>
-      <P>spawns a new thread <I>thr</I> which computes <I>f</I>&nbsp;().
-	Returns a pair of <I>thr</I> and the result of applying&nbsp;<I>f</I
-	>, which is a future which will be bound to the result of
-	<I>f</I>&nbsp;().</P>
+      <P>spawns a new thread <TT><I>thr</I></TT> which computes
+	<TT><I>f</I>&nbsp;()</TT>.  Returns a pair of <TT><I>thr</I></TT>
+	and the result of applying&nbsp;<TT><I>f</I></TT>, which is a
+	future which will be bound to the result of <TT><I>f</I
+	>&nbsp;()</TT>.</P>
     </DD>
 
     <DT>
@@ -130,17 +131,17 @@
       <TT><A name="state">state</A> <I>thr</I></TT>
     </DT>
     <DD>
-      <P>returns the current state of&nbsp;<I>thr</I>.</P>
+      <P>returns the current state of&nbsp;<TT><I>thr</I></TT>.</P>
     </DD>
 
     <DT>
       <TT><A name="yield">yield</A> <I>thr</I></TT>
     </DT>
     <DD>
-      <P>causes the scheduler to stop executing thread&nbsp;<I>thr</I>,
-	if it is currently being executed, and select another thread
-	for execution.  Has no effect if <I>thr</I> is not currently being
-	executed.</P>
+      <P>causes the scheduler to stop executing thread&nbsp;<TT><I>thr</I
+	></TT>, if it is currently being executed, and select another thread
+	for execution.  Has no effect if <TT><I>thr</I></TT> is not currently
+	being executed.</P>
     </DD>
 
     <DT>
@@ -148,8 +149,9 @@
     </DT>
     <DD>
       <P>causes the calling thread to stop executing and not be rescheduled
-	for the time specified by&nbsp;<I>t</I>.  If <I>t</I> is zero or
-	negative, immediately returns.  This is equivalent to</P>
+	for the time specified by&nbsp;<TT><I>t</I></TT>.  If <TT><I>t</I
+	></TT> is zero or negative, immediately returns.  This is equivalent
+	to</P>
       <PRE><A href="future.php3#await">Future.await</A
 	> (<A href="future.php3#alarm">Future.alarm</A> t)</PRE>
     </DD>
@@ -158,17 +160,18 @@
       <TT><A name="raiseIn">raiseIn</A> (<I>thr</I>, <I>ex</I>)</TT>
     </DT>
     <DD>
-      <P>raises the exception <I>ex</I> in thread <I>thr</I>.
-	If <I>thr</I> is terminated, instead raises <TT><A href="#Terminated"
-	>Terminated</A></TT> in the calling thread.  If <I>thr</I> is blocked,
-	makes <I>thr</I> runnable again.</P>
+      <P>raises the exception <TT><I>ex</I></TT> in thread <TT><I>thr</I></TT>.
+	If <TT><I>thr</I></TT> is terminated, instead raises <TT><A
+	href="#Terminated">Terminated</A></TT> in the calling thread.
+	If <TT><I>thr</I></TT> is blocked, makes <TT><I>thr</I></TT>
+	runnable again.</P>
     </DD>
 
     <DT>
       <TT><A name="terminate">terminate</A> <I>thr</I></TT>
     </DT>
     <DD>
-      <P>attempts to terminate <I>thr</I> by raising exception
+      <P>attempts to terminate <TT><I>thr</I></TT> by raising exception
 	<TT><A href="#Terminated">Terminated</A></TT> in it.  Can be
 	implemented as</P>
       <PRE><A href="#raiseIn">raiseIn</A> (<I>thr</I>, <A href="#Terminated"
@@ -179,28 +182,28 @@
       <TT><A name="suspend">suspend</A> <I>thr</I></TT>
     </DT>
     <DD>
-      <P>suspends <I>thr</I>.  If <I>thr</I> is being executed, then
-	it yields.  <I>thr</I> is not rescheduled until resumed again.
-	Note that this does not change the status of <I>thr</I>,
-	that is, <I>thr</I> can be suspended <EM>and</EM> at the same
-	time be runnable, blocked, or terminated.</P>
+      <P>suspends <TT><I>thr</I></TT>.  If <TT><I>thr</I></TT> is being
+	executed, then it yields.  <TT><I>thr</I></TT> is not rescheduled
+	until resumed again.  Note that this does not change the status of
+	<TT><I>thr</I></TT>, that is, <TT><I>thr</I></TT> can be suspended
+	<EM>and</EM> at the same time be runnable, blocked, or terminated.</P>
     </DD>
 
     <DT>
       <TT><A name="resume">resume</A> <I>thr</I></TT>
     </DT>
     <DD>
-      <P>resumes <I>thr</I>.  If <I>thr</I> is runnable, makes <I>thr</I>
-	available for scheduling again.  Does not change the status of
-	<I>thr</I>.</P>
+      <P>resumes <TT><I>thr</I></TT>.  If <TT><I>thr</I></TT> is runnable,
+	makes <TT><I>thr</I></TT> available for scheduling again.  Does not
+	change the status of <TT><I>thr</I></TT>.</P>
     </DD>
 
     <DT>
       <TT><A name="isSuspended">isSuspended</A> <I>thr</I></TT>
     </DT>
     <DD>
-      <P>returns <TT>true</TT> if <I>thr</I> is suspended, <TT>false</TT>
-	otherwise.</P>
+      <P>returns <TT>true</TT> if <TT><I>thr</I></TT> is suspended,
+	<TT>false</TT> otherwise.</P>
     </DD>
   </DL>
 
