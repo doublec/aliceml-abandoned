@@ -80,6 +80,11 @@ int GecodeSpace::vmax(int var) {
   return is[var].max();
 }
 
+VarRanges<IntVar> GecodeSpace::vranges(int var) {
+  VarRanges<IntVar> r(is[var]);
+  return r;
+}
+
 // Domain
 void GecodeSpace::dom(int var, DomSpec& ds) {
   if (!enter()) return;

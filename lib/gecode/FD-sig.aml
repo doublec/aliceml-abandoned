@@ -43,6 +43,10 @@ sig
     (* Domain constraints *)
     val dom :  space * intvar * (int * int) vector -> unit
 
+
+    (* debugging *)
+    (*val varStamp : intvar -> int*)
+
     (* *********** *)
     (* PROPAGATORS *)
     (* *********** *)
@@ -138,7 +142,7 @@ sig
 (*	    val nextLarger : space * fd * int -> int *)
 (*	    val nextSmaller : space * fd * int -> int *)
 (*	    val size : space * intvar -> int *)
-(*	    val dom : fd -> domain *)
+	    val dom : space * intvar -> domain
 (*	    val domList : fd -> int list *)
 (*	    val nbSusps : fd -> int *)
 (*	    val eq : fd * fd -> bool (* token eq *) *)

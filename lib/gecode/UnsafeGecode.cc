@@ -50,6 +50,13 @@
  t->Init(1,Store::IntToWord(j)); \
  RETURN(t->ToWord()); }
 
+#define RETURN_GECODE_VAR(i,j)   \
+{Tuple *t = Tuple::New(3);       \
+ t->Init(0,Store::IntToWord(i)); \
+ t->Init(1,Store::IntToWord(j)); \
+ t->Init(2,UnsafeGecode::SitedMarker);   \
+ RETURN(t->ToWord()); }
+
 #define DECLARE_SPACE(s, stamp, pstamp, x)                                  \
   GecodeSpace *s;                                                           \
   int stamp, pstamp;                                                        \
@@ -73,12 +80,7 @@
     word x5 = Scheduler::currentArgs[5];
 
 
-static word InvalidSpaceConstructor;
-#define CHECK_SPACE(s) if (!s) RAISE(InvalidSpaceConstructor);
-
-static s_int SpaceStamp = 0;
-
-static word InvalidVarConstructor;
+#define CHECK_SPACE(s) if (!s) RAISE(UnsafeGecode::InvalidSpaceConstructor);
 
 #define DECLARE_VAR(v, stamp, pstamp, x)                \
  u_int v;                                               \
@@ -86,7 +88,7 @@ static word InvalidVarConstructor;
    DECLARE_TUPLE(varIntern, x);                         \
    s_int myStamp = Store::DirectWordToInt(varIntern->Sel(1)); \
    if (myStamp != stamp && myStamp != pstamp)           \
-     RAISE(InvalidVarConstructor);                      \
+     RAISE(UnsafeGecode::InvalidVarConstructor);                      \
    v = Store::DirectWordToInt(varIntern->Sel(0));             \
  } \
  DBGMSG("DECLARE_VAR done.");
@@ -94,6 +96,11 @@ static word InvalidVarConstructor;
 
 namespace UnsafeGecode {
 
+  static word SitedMarker;
+  static word InvalidVarConstructor;
+  static word InvalidSpaceConstructor;
+  static s_int SpaceStamp = 0;
+  
   class VectorValIterator {
   private:
     Vector *v;
@@ -200,7 +207,7 @@ DEFINE0(gc_makespace) {
     ConcreteRepresentation::New(UnsafeGecode::gecodeHandler,3);
   cr->Init(0, Store::UnmanagedPointerToWord(s));
   cr->Init(1, Store::IntToWord(-1));
-  cr->Init(2, Store::IntToWord(SpaceStamp++));
+  cr->Init(2, Store::IntToWord(UnsafeGecode::SpaceStamp++));
   UnsafeGecode::gecodeFinalizationSet->Register(cr->ToWord());
   DBGMSG("done");
   RETURN(cr->ToWord());
@@ -228,7 +235,7 @@ DEFINE2(gc_fdvar) {
   DomSpec ds(pairs, noOfPairs);
   int newVar = s->AddIntVariable(ds);
   DBGMSG("done");
-  RETURN_IPAIR(newVar, stamp);
+  RETURN_GECODE_VAR(newVar, stamp);
 } END
 
 DEFINE3(gc_fdvarr) {
@@ -255,7 +262,7 @@ DEFINE3(gc_fdvarr) {
   DomSpec ds(pairs, noOfPairs);
   int newVar = s->AddIntVariableR(ds, boolVar);
   DBGMSG("done");
-  RETURN_IPAIR(newVar, stamp);
+  RETURN_GECODE_VAR(newVar, stamp);
 } END
 
 DEFINE1(gc_boolvar) {
@@ -267,7 +274,7 @@ DEFINE1(gc_boolvar) {
 
   int newVar = s->AddBoolVariable();
   DBGMSG("done");
-  RETURN_IPAIR(newVar, stamp);
+  RETURN_GECODE_VAR(newVar, stamp);
 } END
 
 DEFINE2(gc_getmin) {
@@ -288,6 +295,33 @@ DEFINE2(gc_getmax) {
   DECLARE_VAR(var, stamp, pstamp, x1);
   DBGMSG("done");
   RETURN_INT(s->vmax(var));
+} END
+
+DEFINE2(gc_getdom) {
+  DBGMSG("getdom");
+  DECLARE_SPACE(s, stamp, pstamp, x0);
+  CHECK_SPACE(s);
+
+  DECLARE_VAR(var, stamp, pstamp, x1);
+  DBGMSG("done");
+
+  VarRanges<IntVar> r1 = s->vranges(var);
+  int size=0;
+  for (; r1(); ++r1, size++);
+
+  DBGMSG("ranges");
+
+  VarRanges<IntVar> r2 = s->vranges(var);
+
+  Vector *v = Vector::New(size);
+  for(int count=0; r2(); ++r2, count++) {
+    Tuple *t = Tuple::New(2);
+    t->Init(0, Store::IntToWord(r2.min()));
+    t->Init(1, Store::IntToWord(r2.max()));
+    v->Init(count, t->ToWord());
+  }
+  DBGMSG("return");
+  RETURN(v->ToWord());
 } END
 
 DEFINE3(gc_dom) {
@@ -711,7 +745,7 @@ DEFINE1(gc_clone) {
 
   if (stamp==-1) {
     ConcreteRepresentation *cr = ConcreteRepresentation::FromWordDirect(x0);
-    cr->Replace(1, Store::IntToWord(SpaceStamp++));
+    cr->Replace(1, Store::IntToWord(UnsafeGecode::SpaceStamp++));
   }
 
   ConcreteRepresentation *cr =
@@ -723,7 +757,7 @@ DEFINE1(gc_clone) {
   DBGMSG("clone successful");
 
   cr->Init(0, Store::UnmanagedPointerToWord(newSpace));
-  cr->Init(1, Store::IntToWord(SpaceStamp++));
+  cr->Init(1, Store::IntToWord(UnsafeGecode::SpaceStamp++));
   cr->Init(2, Store::IntToWord(pstamp));
   UnsafeGecode::gecodeFinalizationSet->Register(cr->ToWord());
 
@@ -1051,7 +1085,7 @@ DEFINE1(gc_fsvar) {
 
   int newVar = s->AddSetVariable();
   DBGMSG("done");
-  RETURN_IPAIR(newVar,stamp);
+  RETURN_GECODE_VAR(newVar,stamp);
 } END
 
 DEFINE2(gc_fsUB) {
@@ -1651,7 +1685,7 @@ DEFINE1(gc_fsUniversal) {
   s->fs_lowerBound(newVar,full);
 
   DBGMSG("done");
-  RETURN_IPAIR(newVar,stamp);
+  RETURN_GECODE_VAR(newVar,stamp);
 } END
 
 DEFINE2(gc_fsIs) {
@@ -1843,20 +1877,20 @@ DEFINE2(gc_fsPrint) {
 
 static word UnsafeGecodeBase() {
   Record *record = Record::New(13);
-  InvalidSpaceConstructor =
+  UnsafeGecode::InvalidSpaceConstructor =
     UniqueConstructor::New("InvalidSpace",
 			   "UnsafeGecode.UnsafeGecodeBase.InvalidSpace")->ToWord();
-  RootSet::Add(InvalidSpaceConstructor);
+  RootSet::Add(UnsafeGecode::InvalidSpaceConstructor);
 
-  InvalidVarConstructor =
+  UnsafeGecode::InvalidVarConstructor =
     UniqueConstructor::New("InvalidVar",
 			   "UnsafeGecode.UnsafeGecodeBase.InvalidVar")->ToWord();
-  RootSet::Add(InvalidVarConstructor);
-  record->Init("'InvalidSpace", InvalidSpaceConstructor);
-  record->Init("InvalidSpace", InvalidSpaceConstructor);
+  RootSet::Add(UnsafeGecode::InvalidVarConstructor);
+  record->Init("'InvalidSpace", UnsafeGecode::InvalidSpaceConstructor);
+  record->Init("InvalidSpace", UnsafeGecode::InvalidSpaceConstructor);
 
-  record->Init("'InvalidVar", InvalidVarConstructor);
-  record->Init("InvalidVar", InvalidVarConstructor);
+  record->Init("'InvalidVar", UnsafeGecode::InvalidVarConstructor);
+  record->Init("InvalidVar", UnsafeGecode::InvalidVarConstructor);
   INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeBase", "makeSpace",
 		 gc_makespace, 0);
   INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeBase", "fail",
@@ -1879,7 +1913,7 @@ static word UnsafeGecodeBase() {
 }
 
 static word UnsafeGecodeFD() {
-  Record *record = Record::New(40);
+  Record *record = Record::New(41);
 
   INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeFD", "intvar",
 		 gc_fdvar, 2);
@@ -1891,6 +1925,8 @@ static word UnsafeGecodeFD() {
 		 gc_getmin, 2);
   INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeFD", "getMax",
 		 gc_getmax, 2);
+  INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeFD", "getDom",
+		 gc_getdom, 2);  
   INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeFD", "distinct",
 		 gc_distinct, 3);
   INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeFD", "distinctOffset",
@@ -2070,7 +2106,14 @@ word InitComponent() {
   DBGMSG("init gecode");
   UnsafeGecode::gecodeFinalizationSet = new UnsafeGecode::GecodeFinalizationSet();
   UnsafeGecode::gecodeHandler = new UnsafeGecode::GecodeHandler();
-  
+
+  // This is used to mark variables as sited
+  ConcreteRepresentation *cr =
+    ConcreteRepresentation::New(UnsafeGecode::gecodeHandler,1);
+  cr->Init(0, Store::IntToWord(0));
+  UnsafeGecode::SitedMarker = cr->ToWord();
+  RootSet::Add(UnsafeGecode::SitedMarker);
+
   Record *record = Record::New(3);
 
   record->Init("UnsafeGecodeBase$", UnsafeGecodeBase());

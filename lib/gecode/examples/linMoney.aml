@@ -25,19 +25,19 @@ fun money cl =
 	val v = rangeVec(space, 8, (0,9))
 	val linv as #[s,e,n,d,m,o',r,y] = Vector.map (fn x=>FD(x)) v
 
-	val v1 =(`1000 `* s `+
-		    `100 `* e `+
-		    `10 `* n `+
-		    d `+
-		    `1000 `* m `+
-		    `100 `* o' `+
-		    `10 `* r `+
-		    e `=
-			`10000 `* m `+		    
-			`1000 `* o' `+
-		    `100 `* n `+
-		    `10 `* e `+
-		    y )
+	val v1 =(`1000 `* s  `+
+		  `100 `* e  `+
+		   `10 `* n  `+
+		          d  `+
+	         `1000 `* m  `+
+		  `100 `* o' `+
+		   `10 `* r  `+
+		          e  `=
+                `10000 `* m  `+		    
+                 `1000 `* o' `+
+		  `100 `* n  `+
+		   `10 `* e  `+
+		   y )
     in
 		post(space, s `<> `0, cl);
 		post(space, m `<> `0, cl);

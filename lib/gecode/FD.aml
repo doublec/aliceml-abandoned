@@ -59,6 +59,8 @@ struct
 
    type intvar
    type boolvar = intvar
+
+   val varStamp = UnsafeGecode.UnsafeGecodeBase.varStamp
 		 
    fun intvar(space,v) = UnsafeGecodeFD.intvar(space,
 					       v)
@@ -88,6 +90,7 @@ struct
        struct
            val min = UnsafeGecodeFD.getMin
 	   val max = UnsafeGecodeFD.getMax
+           val dom = UnsafeGecodeFD.getDom
 	   fun value (s,v) =
 	       let
 		   val min = min(s,v)

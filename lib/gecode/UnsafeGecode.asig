@@ -38,6 +38,7 @@ sig
 				    
 	    val getMin : 'space * 'intvar -> int
 	    val getMax : 'space * 'intvar -> int
+            val getDom : 'space * 'intvar -> (int * int) vector
 
 	    val distinct : 'space * 'intvar vector * 'conlevel -> unit
 	    val distinctOffset : 'space * (int * 'intvar) vector * 'conlevel -> unit

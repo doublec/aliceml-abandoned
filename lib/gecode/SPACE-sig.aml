@@ -30,4 +30,7 @@ sig
     val discard : space -> unit
     val alive   : space -> unit
     val fail    : space -> unit
+
+    (* debugging *)
+    (*val stamps  : space -> int * int*)
 end

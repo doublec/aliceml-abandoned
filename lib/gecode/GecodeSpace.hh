@@ -80,6 +80,7 @@ public:
   // Inspect variable information
   int vmin(int var);
   int vmax(int var);
+  VarRanges<IntVar> vranges(int var);
 
   // Domain
   void dom(int var, DomSpec& ds);
