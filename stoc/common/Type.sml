@@ -45,7 +45,7 @@ types but recursive type functions. It is not obvious whether type checking
 remains decidable in the general case (in our current scheme with lazy
 application unification might fail to terminate).
 
-To stay on the safe side we treat recursive type functions specially:
+To stay on the safe side we use an iso-recursive interpretation of types:
 applications to such functions are never reduced. That is, there is no implicit
 unrolling of recursive types, mu is completely structural. For two recursive
 types to be compatible they must therefor be constructed from equal type
@@ -56,8 +56,8 @@ the following example:
 	IntList = Nil | Cons(Int, IntList)
 
 Maybe this can be made a bit more permissive, but in general it seems
-impossible to have non-uniform datatypes as well as arbitrary recursive types -
-type checking would become undecidable.
+impossible to have non-uniform datatypes as well as arbitrary (equi) recursive
+types - type checking would become undecidable.
 
 It is also unclear to me whether some sort of hash-consing can be applied to
 recursive types or even recursive type functions.
@@ -527,6 +527,14 @@ structure TypePrivate =
 
     exception Type
 
+    fun function(ref(LINK t))		= function t
+      | function(ref(ABBREV(_,t)))	= function t
+      | function(ref(APPLY(t,_)))	= function t
+      | function t			= t
+
+    fun isAbbrev t	= case !(follow t) of ABBREV _  => true | _ => false
+    fun asAbbrev t	= case !(follow t) of ABBREV tt => tt | _ => raise Type
+
     fun asType(ref(LINK t))		= asType t
       | asType(ref(ABBREV(_,t)))	= asType t
       | asType(ref t')			= t'
@@ -556,8 +564,69 @@ structure TypePrivate =
     fun asApply t	= case asType t of APPLY tt  => tt | _ => raise Type
     fun asMu t		= case asType t of MU t      => t  | _ => raise Type
 
-    fun isAbbrev t	= case !(follow t) of ABBREV _  => true | _ => false
-    fun asAbbrev t	= case !(follow t) of ABBREV tt => tt | _ => raise Type
+    fun isType'(ref(LINK t))			= isType' t
+      | isType'(ref(ABBREV(_,t)))		= isType' t
+      | isType'(t as ref(APPLY _))		= isTypeApply'(t,0)
+      | isType'(ref(MU t))			= isType' t
+      | isType'(ref t')				= t'
+    and isTypeApply'(ref(APPLY(t1,t2)), n)	= isTypeApply'(t1,n+1)
+      | isTypeApply'(ref(ABBREV(t1,t2)), n)	= isTypeApply'(t2,n)
+      | isTypeApply'(ref(MU t1), n)		= isTypeApply''(t1,n)
+      | isTypeApply'(t, n)			= APPLY(t,t)	(*dummy*)
+    and isTypeApply''(ref(MU t1), n)		= isTypeApply''(t1,n)
+      | isTypeApply''(ref(ABBREV(t1,t2)), n)	= isTypeApply''(t2,n)
+      | isTypeApply''(ref t', 0)		= t'
+      | isTypeApply''(ref(LAMBDA(a,t1)), n)	= isTypeApply''(t1,n-1)
+      | isTypeApply''(t, n)			= APPLY(t,t)	(*dummy*)
+
+    fun isUnknown' t	= case isType' t of HOLE _   => true | _ => false
+    fun isArrow' t	= case isType' t of FUN _    => true | _ => false
+    fun isTuple' t	= case isType' t of TUPLE _  => true | _ => false
+    fun isProd' t	= case isType' t of PROD _   => true | _ => false
+    fun isSum' t	= case isType' t of SUM _    => true | _ => false
+    fun isVar' t	= case isType' t of VAR _    => true | _ => false
+    fun isCon' t	= case isType' t of CON _    => true | _ => false
+    fun isAll' t	= case isType' t of ALL _    => true | _ => false
+    fun isExist' t	= case isType' t of EXIST _  => true | _ => false
+    fun isLambda' t	= case isType' t of LAMBDA _ => true | _ => false
+    fun isApply' t	= case isType' t of APPLY _  => true | _ => false
+
+    fun asType'(ref(LINK t))			= asType' t
+      | asType'(ref(ABBREV(_,t)))		= asType' t
+      | asType'(t as ref(t' as APPLY _))	= asTypeApply'(t',t,[])
+      | asType'(ref(MU t))			= asType' t
+      | asType'(ref t')				= t'
+    (* Note that we can only legally have a LAMBDA node following an APPLY
+       node if there is a MU node inbetween. *)
+    and asTypeApply'(t', ref(APPLY(t1,t2)), ts)	= asTypeApply'(t', t1, t2::ts)
+      | asTypeApply'(t', ref(ABBREV(t1,t2)),ts)	= asTypeApply'(t', t2, ts)
+      | asTypeApply'(t', t as ref(MU _), ts)	=
+	let (* unroll *)
+	    val tt = clone t
+	    val t1 = asMu tt
+	in
+	    tt := LINK t; asTypeApply''(t1, ts)
+	end
+      | asTypeApply'(t', _, _)		= t'
+    and asTypeApply''(ref(MU t1), ts)	= asTypeApply''(t1,ts)
+      | asTypeApply''(ref(ABBREV(t1,t2)), ts)
+					= asTypeApply''(t2,ts)
+      | asTypeApply''(ref(LAMBDA(a,t1)), t::ts)
+					= (a := LINK t ; asTypeApply''(t1, ts))
+      | asTypeApply''(t1, t::ts)	= asTypeApply''(ref(APPLY(t1,t)), ts)
+      | asTypeApply''(ref t', [])	= t'
+
+    fun asArrow' t	= case asType' t of FUN tt    => tt | _ => raise Type
+    fun asTuple' t	= case asType' t of TUPLE ts  => ts | _ => raise Type
+    fun asProd' t	= case asType' t of PROD r    => r  | _ => raise Type
+    fun asSum' t	= case asType' t of SUM r     => r  | _ => raise Type
+    fun asVar' t	= case asType' t of VAR _     => t  | _ => raise Type
+    fun asCon' t	= case asType' t of CON c     => c  | _ => raise Type
+    fun asAll' t	= case asType' t of ALL at    => at | _ => raise Type
+    fun asExist' t	= case asType' t of EXIST at  => at | _ => raise Type
+    fun asLambda' t	= case asType' t of LAMBDA at => at | _ => raise Type
+    fun asApply' t	= case asType' t of APPLY tt  => tt | _ => raise Type
+
 
     fun pathCon(_,_,p)	= p
     fun path t		= pathCon(asCon t)

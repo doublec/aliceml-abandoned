@@ -585,7 +585,7 @@ functor MakeElaborationPhase(
 	let
 	    val tpat' as (t,pat') = elabAppPat(E, s, pat)
 	in
-	    if Type.isArrow t then
+	    if Type.isArrow' t then
 		error(I.infoPat pat, E.AppPatArrTyp(t))
 	    else
 		tpat'

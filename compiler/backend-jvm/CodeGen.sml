@@ -1335,7 +1335,7 @@ structure CodeGen =
 	    invokeRecApply (stamp', args, curFun, false, curCls, false)
 
 	  | expCode (NewExp (info, _), _, _) =
-	    if Type.isArrow (#typ info) then
+	    if Type.isArrow' (#typ info) then
 		[Line (lineRegion (#region info)),
 		 New CConstructor,
 		 Dup,

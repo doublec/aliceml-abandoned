@@ -47,7 +47,7 @@ signature TYPE =
 
   (* Inquiries *)
 
-    val isUnknown :	typ -> bool
+    val isUnknown :	typ -> bool	(* modulo abbreviations *)
     val isArrow :	typ -> bool
     val isTuple :	typ -> bool
     val isProd :	typ -> bool
@@ -59,11 +59,25 @@ signature TYPE =
     val isLambda :	typ -> bool
     val isApply :	typ -> bool
     val isMu :		typ -> bool
-    val isAbbrev :	typ -> bool
+    val isAbbrev :	typ -> bool	(* precise *)
+
+    val isUnknown' :	typ -> bool	(* modulo unrolling *)
+    val isArrow' :	typ -> bool
+    val isTuple' :	typ -> bool
+    val isProd' :	typ -> bool
+    val isSum' :	typ -> bool
+    val isVar' :	typ -> bool
+    val isCon' :	typ -> bool
+    val isAll' :	typ -> bool
+    val isExist' :	typ -> bool
+    val isLambda' :	typ -> bool
+    val isApply' :	typ -> bool
 
   (* Projections *)
 
     exception Type
+
+    val function :	typ -> typ
 
     val asArrow :	typ -> typ * typ		(* [Type] *)
     val asTuple :	typ -> typ vector		(* [Type] *)
@@ -77,6 +91,17 @@ signature TYPE =
     val asApply :	typ -> typ * typ		(* [Type] *)
     val asMu :		typ -> typ			(* [Type] *)
     val asAbbrev : 	typ -> typ * typ		(* [Type] *)
+
+    val asArrow' :	typ -> typ * typ		(* [Type] *)
+    val asTuple' :	typ -> typ vector		(* [Type] *)
+    val asProd' :	typ -> row			(* [Type] *)
+    val asSum' :	typ -> row			(* [Type] *)
+    val asVar' :	typ -> var			(* [Type] *)
+    val asCon' :	typ -> con			(* [Type] *)
+    val asAll' :	typ -> var * typ		(* [Type] *)
+    val asExist' :	typ -> var * typ		(* [Type] *)
+    val asLambda' :	typ -> var * typ		(* [Type] *)
+    val asApply' :	typ -> typ * typ		(* [Type] *)
 
   (* Complex extractions *)
 
@@ -124,9 +149,9 @@ signature TYPE =
     exception UnifyList of int * typ * typ
     exception Intersect
 
-    val fill :		typ * typ -> unit
-    val unify :		typ * typ -> unit		(* [Unify] *)
-    val unifyList :	typ list  -> unit		(* [UnifyList] *)
+    val fill :		typ * typ -> unit	(* does no occur check! *)
+    val unify :		typ * typ -> unit	(* [Unify] *)
+    val unifyList :	typ list  -> unit	(* [UnifyList] *)
     val intersect :	typ * typ -> unit
     val close :		typ -> typ
     val isClosed :	typ -> bool

@@ -391,8 +391,8 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	    else Unary
 
 	fun makeConArity (typ, isNAry) =
-	    if Type.isArrow typ then
-		SOME (if isNAry then typToArity (#1 (Type.asArrow typ))
+	    if Type.isArrow' typ then
+		SOME (if isNAry then typToArity (#1 (Type.asArrow' typ))
 		      else Unary)
 	    else NONE
 
@@ -417,6 +417,6 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	    valOf (findLabel (typToArity typ, label))
 
 	fun tagIndex (typ, label) =
-	    selIndex (if Type.isArrow typ then #2 (Type.asArrow typ) else typ,
+	    selIndex (if Type.isArrow' typ then #2 (Type.asArrow' typ) else typ,
 		      label)
     end

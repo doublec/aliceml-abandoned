@@ -41,13 +41,10 @@ functor MakeTranslationPhase(structure Switches: SWITCHES):> TRANSLATION_PHASE =
   (* Recognize sum type constructors (tags) *)
 
     fun isTagType t =
-	Type.isArrow t  andalso isTagType(#2(Type.asArrow t))  orelse
-	Type.isAll t    andalso isTagType(#2(Type.asAll t))    orelse
-	Type.isExist t  andalso isTagType(#2(Type.asExist t))  orelse
-	Type.isLambda t andalso isTagType(#2(Type.asLambda t)) orelse
-	Type.isApply t  andalso isTagType(#1(Type.asApply t))  orelse
-	Type.isMu t     andalso isTagType(Type.asMu t)         orelse
-	Type.isSum t
+	Type.isArrow' t andalso isTagType(#2(Type.asArrow' t)) orelse
+	Type.isAll' t   andalso isTagType(#2(Type.asAll' t))   orelse
+	Type.isExist' t andalso isTagType(#2(Type.asExist' t)) orelse
+	Type.isSum' t
 
 
   (* Names and labels *)
@@ -799,13 +796,13 @@ UNFINISHED: obsolete after bootstrapping:
 	(* [forall x => t] = let val {[x]} = Type.var <<kind x>>
 	 *                   in Type.inAll([x],[t]) end
 	 *)
-	trBindTyp lab_inAll (i,x,t, Type.kindVar(#1(Type.asAll(#typ i))))
+	trBindTyp lab_inAll (i,x,t, Type.kindVar(#1(Type.asAll'(#typ i))))
 
       | trTyp'(I.ExTyp(i,x,t)) =
 	(* [exists x => t] = let val {[x]} = Type.var <<kind x>>
 	 *                   in Type.inExists([x],[t]) end
 	 *)
-	trBindTyp lab_inExist (i,x,t, Type.kindVar(#1(Type.asExist(#typ i))))
+	trBindTyp lab_inExist (i,x,t, Type.kindVar(#1(Type.asExist'(#typ i))))
 
       | trTyp'(I.PackTyp(i,j)) =
 	(* [pack j] = Type.inPack[j] *)
@@ -824,7 +821,7 @@ UNFINISHED: obsolete after bootstrapping:
 	    val l'  = O.Lab(nonInfo r, lab_closed)
 	    val e1' = trKind r (Type.kind(#typ i))
 	    val e2' = O.TagExp(typInfo(r, typ_sort), l', false)
-	    val a   = Path.toLab(#3(Type.asCon(#typ i)))
+	    val a   = Path.toLab(#3(Type.asCon'(#typ i)))
 	    val lit = O.StringLit(String.toWide(Label.toString a))
 	    val e3' = pathOp(lab_fromLab, labOp(lab_fromString,
 					O.LitExp(typInfo(r,typ_string), lit)))
@@ -840,7 +837,7 @@ UNFINISHED: obsolete after bootstrapping:
 	    val l'  = O.Lab(nonInfo r, lab_open)
 	    val e1' = trKind r (Type.kind(#typ i))
 	    val e2' = O.TagExp(typInfo(r, typ_sort), l', false)
-	    val a   = Path.toLab(#3(Type.asCon(#typ i)))
+	    val a   = Path.toLab(#3(Type.asCon'(#typ i)))
 	    val lit = O.StringLit(String.toWide(Label.toString a))
 	    val e3' = pathOp(lab_fromLab, labOp(lab_fromString,
 					O.LitExp(typInfo(r,typ_string), lit)))

@@ -365,11 +365,11 @@ structure SimplifyRec :> SIMPLIFY_REC =
 	    let
 		val typ = #typ info
 		val labelTypList =
-		    if Type.isTuple typ then
+		    if Type.isTuple' typ then
 			Vector.foldri (fn (i, typ, rest) =>
 				       (Label.fromInt (i + 1), typ)::rest)
-			nil (Type.asTuple typ, 0, NONE)
-		    else parseRow (Type.asProd typ)
+			nil (Type.asTuple' typ, 0, NONE)
+		    else parseRow (Type.asProd' typ)
 		fun adjoin (labelTyp as (label, _), patFields as
 			    (Field (_, Lab (_, label'), _)::rest)) =
 		    if label = label' then patFields

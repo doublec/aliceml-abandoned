@@ -88,11 +88,11 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	    fun getRow typ =
 		let
 		    val (labelTypList, hasDots) =
-			if Type.isProd typ then parseRow (Type.asProd typ)
+			if Type.isProd' typ then parseRow (Type.asProd' typ)
 			else
 			    (Vector.foldri (fn (i, typ, rest) =>
 					    (Label.fromInt (i + 1), typ)::rest)
-			     nil (Type.asTuple typ, 0, NONE), false)
+			     nil (Type.asTuple' typ, 0, NONE), false)
 		    val (labelTypList', arity) = LabelSort.sort labelTypList
 		in
 		    (labelTypList', arity, hasDots)
@@ -582,10 +582,10 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 			convert (Type.tailRow row)
 	    in
 		fun typToArity typ =
-		    if Type.isTuple typ then
-			TUP (Vector.toList (Type.asTuple typ))
-		    else if Type.isProd typ then
-			(case LabelSort.sort (convert (Type.asProd typ)) of
+		    if Type.isTuple' typ then
+			TUP (Vector.toList (Type.asTuple' typ))
+		    else if Type.isProd' typ then
+			(case LabelSort.sort (convert (Type.asProd' typ)) of
 			     (labelTypList, LabelSort.Tup _) =>
 				 TUP (List.map #2 labelTypList)
 			   | (labelTypList, LabelSort.Prod) =>

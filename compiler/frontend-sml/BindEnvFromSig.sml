@@ -23,32 +23,21 @@ structure BindEnvFromSig :> BIND_ENV_FROM_SIG =
 
     fun idStatusFromSort(Inf.VALUE,         t) = V
       | idStatusFromSort(Inf.CONSTRUCTOR k, t) = idStatusFromArity(k,t)
-
     and idStatusFromArity(k, t) =
-	if Type.isAll t then
-	    idStatusFromArity(k, #2(Type.asAll t))
-	else if Type.isExist t then
-	    idStatusFromArity(k, #2(Type.asExist t))
-	else if Type.isArrow t then
-	    idStatusFromArity(k, #2(Type.asArrow t))
-	else if Type.isLambda t then
-	    idStatusFromArity(k, #2(Type.asLambda t))
-	else if Type.isApply t then
-	    idStatusFromArity(k, #1(Type.asApply t))
+	(* Check whether constructor is of type ref, otherwise use k *)
+	if      Type.isAll t   then idStatusFromArity(k, #2(Type.asAll t))
+	else if Type.isArrow t then idStatusFromArity(k, #2(Type.asArrow t))
+	else if Type.isApply t then idStatusFromArity(k, #1(Type.asApply t))
 	else if Type.isCon t
 	andalso Path.equals(#3(Type.asCon t), PervasiveType.path_ref) then
 	    R
 	else
 	    C k
 
-
     fun envFromTyp(I,s,t) =
-	if Type.isSum t then
-	    envFromRow(I, s, Type.asSum t)
-	else if Type.isLambda t then
-	    envFromTyp(I, s, #2(Type.asLambda t))
-	else if Type.isMu t then
-	    envFromTyp(I, s, Type.asMu t)
+	if      Type.isSum t    then envFromRow(I, s, Type.asSum t)
+	else if Type.isLambda t then envFromTyp(I, s, #2(Type.asLambda t))
+	else if Type.isMu t     then envFromTyp(I, s, Type.asMu t)
 	else if Type.isCon t
 	andalso Path.equals(#3(Type.asCon t), PervasiveType.path_ref) then
 	    let
