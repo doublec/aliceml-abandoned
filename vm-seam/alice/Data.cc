@@ -91,3 +91,24 @@ Transform *Constructor::GetTransform() {
     return Transform::FromWordDirect(transformWord);
   }
 }
+
+//
+// Record
+//
+
+void Record::Init(const char *s, word value) {
+  UniqueString *label = UniqueString::New(String::New(s));
+  u_int n = Store::DirectWordToInt(GetArg(WIDTH_POS));
+  Assert(n != 0);
+  u_int index = label->Hash() % n;
+  u_int i = index;
+  while (true) {
+    if (Store::WordToInt(GetArg(BASE_SIZE + i * 2)) != INVALID_INT) {
+      InitArg(BASE_SIZE + i * 2, label->ToWord());
+      InitArg(BASE_SIZE + i * 2 + 1, value);
+      return;
+    }
+    i = (i + 1) % n;
+    Assert(i != index);
+  }
+}
