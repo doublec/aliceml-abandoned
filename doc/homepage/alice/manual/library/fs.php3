@@ -318,14 +318,14 @@
       <tt>Int.min (<I>x</I>,<I>y</I>)</TT>
     </DT>
     <DD>
-      <P><I>y></I> is contained to denote the minimal element of <I>x</I>.
+      <P><I>y></I> is constrained to denote the minimal element of <I>x</I>.
     </P></DD>
 
     <DT>
       <tt>Int.max (<I>x</I>,<I>y</I>)</TT>
     </DT>
     <DD>
-      <P><I>y></I> is contained to denote the maximal element of <I>x</I>.
+      <P><I>y</I> is constrained to denote the maximal element of <I>x</I>.
     </P></DD>
 
     <DT>
@@ -376,7 +376,7 @@
     </P></DD>
 
     <DT>
-      <TT>Reified.incl (<I>x</I>,<I>y/I>,<I>c</I>)</TT>
+      <TT>Reified.incl (<I>x</I>,<I>y</I>,<I>c</I>)</TT>
     </DT>
     <DD>
       <P><I>c</I> reifies the presence of <I>x</I> in <I>y</I>.
