@@ -51,13 +51,18 @@ Class *Class::New(ClassInfo *classInfo) {
     super->GetVirtualTable();
   for (i = nSuperVirtualMethods; i--; )
     virtualTable->InitArg(i, superVirtualTable->GetArg(i));
+  // Create the class lock:
+  Lock *lock = Lock::New();
+  Future *future = lock->AcquireLock();
+  Assert(future == INVALID_POINTER); future = future;
+  // Allocate class proper:
   Block *b = Store::AllocBlock(JavaLabel::Class,
 			       BASE_SIZE + nStaticFields + nStaticMethods);
   b->InitArg(CLASS_INFO_POS, classInfo->ToWord());
   b->InitArg(NUMBER_OF_VIRTUAL_METHODS_POS, nVirtualMethods);
   b->InitArg(NUMBER_OF_INSTANCE_FIELDS_POS, nInstanceFields);
   b->InitArg(VIRTUAL_TABLE_POS, virtualTable->ToWord());
-  b->InitArg(LOCK_POS, Lock::New()->ToWord());
+  b->InitArg(LOCK_POS, lock->ToWord());
   for (i = nStaticFields; i--; )
     //--** initialization incorrect for long/float/double
     b->InitArg(BASE_SIZE + i, Store::IntToWord(0));

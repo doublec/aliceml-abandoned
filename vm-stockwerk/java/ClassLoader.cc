@@ -134,16 +134,18 @@ Worker::Result BuildClassWorker::Run() {
   }
   if (!classInfo->Verify())
     Error("VerifyError"); //--** raise VerifyError
-  word theClass = classInfo->Prepare()->ToWord();
+  Class *theClass = classInfo->Prepare();
+  word wClass = theClass->ToWord();
   Scheduler::PopFrame();
   Scheduler::nArgs = Scheduler::ONE_ARG;
-  Scheduler::currentArgs[0] = theClass;
+  Scheduler::currentArgs[0] = wClass;
   // Run static initializer:
   JavaString *name = JavaString::New("<clinit>");
   JavaString *descriptor = JavaString::New("()V");
   word methodRef =
-    frame->GetClassLoader()->ResolveMethodRef(theClass, name, descriptor);
+    frame->GetClassLoader()->ResolveMethodRef(wClass, name, descriptor);
   //--** run methodRef
+  theClass->GetLock()->ReleaseLock();
   return Worker::CONTINUE;
 }
 

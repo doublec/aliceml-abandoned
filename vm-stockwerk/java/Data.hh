@@ -190,18 +190,18 @@ public:
     return static_cast<Lock *>(b);
   }
 
-  bool AcquireLock() {
+  Future *AcquireLock() {
     u_int count = Store::DirectWordToInt(GetArg(COUNT_POS));
     if (count == 0) {
       ReplaceArg(COUNT_POS, 1);
       ReplaceArg(THREAD_POS, Scheduler::GetCurrentThread()->ToWord());
       ReplaceArg(FUTURE_POS, 0);
-      return true;
+      return INVALID_POINTER;
     } else {
       Thread *thread = Thread::FromWordDirect(GetArg(THREAD_POS));
       if (thread == Scheduler::GetCurrentThread()) {
 	ReplaceArg(COUNT_POS, count + 1);
-	return true;
+	return INVALID_POINTER;
       } else {
 	word wFuture = GetArg(FUTURE_POS);
 	Future *future;
@@ -214,7 +214,7 @@ public:
 	}
 	future->AddToWaitQueue(thread);
 	Scheduler::currentData = future->ToWord();
-	return false;
+	return future;
       }
     }
   }
