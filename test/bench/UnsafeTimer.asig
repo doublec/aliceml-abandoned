@@ -1,0 +1,7 @@
+signature UNSAFE_TIMER_COMPONENT =
+sig
+  structure UnsafeTimer :
+	    sig
+	      val time : 'a
+	    end
+end
