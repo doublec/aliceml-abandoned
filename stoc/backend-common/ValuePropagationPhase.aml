@@ -766,9 +766,7 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 	  | vpStm (ExportStm (info, exp),
 		   env, isToplevel, shared, SOME (env', exportDesc)) =
 	    (Vector.app (fn (_, id) =>
-			 IdMap.insert (env', id,
-				       IdMap.lookupExistent (env, id)))
-	     exportDesc;
+			 declareUnknown (env', IdDef id, true)) exportDesc;
 	     ExportStm (info, vpExp (exp, env, isToplevel, shared)))
 	  | vpStm (ExportStm (_, _), _, _, _, NONE) =
 	    raise Crash.Crash "ValuePropagationPhase.vpStm"
