@@ -19,41 +19,35 @@
     Types are checked during unpickling.
   </P>
 
+
+<?php section("semantics", "semantics") ?>
+
   <P>
-    There are some restrictions to pickling though. We distinguish
-    three sorts of values:
+    Most Alice values can be pickled. There are some semantic implications
+    and necessary restrictions, though. We distinguish three sorts of values:
   </P>
 
   <UL>
-    <LI> functional,
-    <LI> stateful, and
-    <LI> sited.
+    <LI> <I>Functional</I>
+	values do not contain any stateful objects. They can be
+	freely pickled and unpickled. After putting a functional object in
+	a pickle and reextracting it it is indistinguishable from the original
+	object.
+
+    <LI> <I>Stateful</I>
+	 values do contain objects like references or arrays. Stateful
+	 data can also be pickled freely. However, pickling of stateful objects
+	 has a copying semantics: each time such an object is extracted from
+	 a pickle a fresh copy of the object is created.
+
+    <LI> <I>Sited</I>
+	 objects are connected to a parent process. They refer to certain
+	 resources that are not available outside the process. An example
+	 is the input stream of an open file.
+	 Consequently, sited objects may not be pickled.
+	 Any attempt to pickle values containing sited objects will result
+	 in a runtime exception.
   </UL>
-
-  <P>
-    <I>Functional</I> values do not contain any stateful objects. They can be
-    freely pickled and unpickled. After putting a functional object in
-    a pickle and reextracting it it is indistinguishable from the original
-    object.
-  </P>
-
-  <P>
-    <I>Stateful</I> data does contain objects like references or arrays.
-    Stateful
-    objects can also be pickled freely. However, pickling of stateful values
-    has a copying semantics: each time a stateful value is extracted from
-    a pickle a fresh copy of the object is created.
-  </P>
-
-  <P>
-    <I>Sited</I> objects are connected to a parent process. They refer to
-    certain
-    resources that are not available outside the process. An example
-    is the input stream of an open file.
-    Consequently, sited data may not be pickled.
-    Any attempt to pickle values containing sited objects will result
-    in a runtime exception.
-  </P>
 
   <P>
     Note that higher-order values (ie. function closures) may contain
@@ -66,7 +60,8 @@
     <A href="futures.php3">Futures</A> are never pickled. Instead, the
     pickling operation will suspend on all unavailable futures that are
     contained in the value to be pickled. In the case of by-need futures
-    this of course will force evaluation.
+    this of course will force evaluation. A failed future will cause an
+    exception, respectively.
   </P>
 
 
@@ -139,7 +134,7 @@
 
   <P>
     If loading is successful, <TT>Url'</TT> will be bound to a structure
-    with the signature <TT>URL</TT>.
+    with signature <TT>URL</TT>.
   </P>
 
   <P>
@@ -290,7 +285,7 @@
 
   <UL>
     <LI> The component's signature need not be specified explicitly in import
-         announcements, as the compiler fetches it automatically from
+         announcements, since the compiler fetches it automatically from
 	 the component during compilation. This requires that the component
 	 exists at compile time, however, which is not the case for
 	 the load mechanism.
