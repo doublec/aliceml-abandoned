@@ -97,7 +97,7 @@ inline void Interpreter::PushTailFrame(u_int size) {
   for (u_int i = rsize; i--;) {
     s->PutFrameArg(i, 0);
   }
-  s->ClearArgFrame(rsize);
+  s->ClearArgFrameZero(rsize);
   rsize = (size + 1);
   s->AllocArgFrame(rsize);
   s->PutFrameArg(0, rsize);
@@ -110,7 +110,7 @@ inline void Interpreter::PopFrame() {
   for (u_int i = size; i--;) {
     s->PutFrameArg(i, 0);
   }
-  s->ClearArgFrame(size);
+  s->ClearArgFrameZero(size);
 }
 
 // Push and Pop Closures
