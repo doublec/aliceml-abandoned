@@ -13,28 +13,21 @@
 #ifndef __TASKSTACK_HH__
 #define __TASKSTACK_HH__
 
-#include "Scheduler.hh"
-#include "Interpreter.hh"
-
-#define TASK_STACK_INITIAL_SIZE 8
+#include "scheduler/Scheduler.hh"
 
 class TaskStack: private Block {
 public:
   using Block::ToWord;
 
-  static TaskStack *New(u_int initialSize);
+  static TaskStack *New();
 
-  void PushFrame(Interpreter *interpreter, u_int size);
-  void PopFrame();
-
+  // Handling stack frames:
+  void PushFrame(u_int size);
+  void PopFrame(u_int size);
   bool IsEmpty();
+  void Clear();
 
-  // Exception handling:
-  void PushMark();
-  void PopToMark();
-
-  Interpreter *GetInterpreter();
-
+  // Accessing the current frame:
   void PutWord(u_int offset, word v);
   word GetWord(u_int offset);
   void PutInt(u_int offset, int i) {
@@ -43,10 +36,10 @@ public:
   int GetInt(u_int offset) {
     return Store::WordToInt(GetWord(offset));
   }
-  void PutPointer(u_int offset, void *pointer) {
+  void PutUnmanagedPointer(u_int offset, void *pointer) {
     PutWord(offset, Store::UnmanagedPointerToWord(pointer));
   }
-  void *GetPointer(u_int offset) {
+  void *GetUnmanagedPointer(u_int offset) {
     return Store::WordToUnmanagedPointer(GetWord(offset));
   }
 };
