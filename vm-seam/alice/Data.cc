@@ -136,6 +136,7 @@ UniqueString *UniqueString::New(String *string) {
   } else {
     ConcreteRepresentation *b = ConcreteRepresentation::New(handler, SIZE);
     b->Init(STRING_POS, key);
+    b->Init(HASH_VALUE_POS, Store::IntToWord(string->Hash()));
     b->Init(TRANSFORM_POS, MakeUniqueStringTransform(key)->ToWord());
     hashTable->InsertItem(key, b->ToWord());
     return static_cast<UniqueString *>(b);
