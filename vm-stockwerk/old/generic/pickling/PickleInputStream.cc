@@ -24,6 +24,7 @@ public:
 
 void PickleInputStreamHandler::PrepareForGC(Block *) {}
 
+//--** needs to be registered for finalization by means of a weak dictionary
 void PickleInputStreamHandler::Finalize(word w) {
   std::fclose(PickleInputStream::FromWordDirect(w)->GetFile());
 }
