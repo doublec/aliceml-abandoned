@@ -150,9 +150,9 @@ void Primitive::RegisterUniqueConstructor(const char *name) {
 word Primitive::Lookup(String *name) {
   word key = name->ToWord();
   if (!table->IsMember(key)) {
-    char message[80 + strlen(name->GetValue())];
-    sprintf(message, "Primitive::Lookup: unknown primitive `%s'",
-	    name->GetValue());
+    char message[80 + name->GetLength()];
+    sprintf(message, "Primitive::Lookup: unknown primitive `%.*s'",
+	    name->GetLength(), name->GetValue());
     Error(message);
   }
   return table->GetItem(key);
