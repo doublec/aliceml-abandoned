@@ -76,6 +76,7 @@ import structure CharVector	from "CharVector"
 import structure Word8Vector	from "Word8Vector"
 import signature ARRAY		from "ARRAY-sig"
 import structure Array		from "Array"
+import signature MONO_ARRAY	from "MONO_ARRAY-sig"
 
 import signature TIME		from "TIME-sig"
 import structure Time		from "Time"
@@ -162,6 +163,7 @@ structure CharVector	= CharVector
 structure Word8Vector	= Word8Vector
 signature ARRAY		= ARRAY
 structure Array		= Array
+signature MONO_ARRAY	= MONO_ARRAY
 
 signature TIME		= TIME
 structure Time		= Time
