@@ -34,11 +34,24 @@ struct
 			    val n = NewNode.newNode(v,t)
 			in
 			    ( Layout.layout(n)
-			     ;  DrawNodes.draw(n,0,!WindowManager.act_line)
-			     ; WindowManager.incr_act_line
-			             (Layout.get_ydim(n) + 1)
-			     ; (!WindowManager.show) () )
-			end 
+                            ;  DrawNodes.draw(n,0,!WindowManager.act_line)
+                            ; WindowManager.incr_act_line
+			                     (Layout.get_ydim(n) + 1)
+			    ; if Real.>(( Real.fromInt(8 * Layout.get_xdim(n))), 
+					     (!(Settings.max_x))) 
+				  then Settings.max_x := 
+				      Real.fromInt(8 * Layout.get_xdim(n))
+					     else ()
+			    ; let
+				  val a =(!(Settings.max_y))
+				  val b = Real.fromInt(13*(Layout.get_ydim(n) +1))
+				  val c = Real.+(a,b)
+			      in 
+				  Settings.max_y := c
+			      end
+			    ; (!WindowManager.resize())
+			    ; (!WindowManager.show) () )
+			end
 			    
     fun set_width w = Settings.max_width := w
 
@@ -68,7 +81,7 @@ struct
                   ; registerColor(EQU_COLOR, allocColor(0,0,0))
                   ; registerColor(LIMIT_COLOR, allocColor (65535,10000,0))
                   ; registerColor(BRACK_COLOR, allocColor (0,5000,47000))
-	          ; registerColor(REL_COLOR, allocColor (60000,20000,0))
+	          ; registerColor(REL_COLOR, allocColor (0,60000,20000))
                   ; registerColor(DEFAULT, allocColor(0,0,0)) )
 	
     val _  = init ()

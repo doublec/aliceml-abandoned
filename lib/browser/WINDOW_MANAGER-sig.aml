@@ -27,5 +27,6 @@ sig
     val canvasroot: Gtk.object ref
     val window: Gtk.object ref
     val show: (unit-> unit) ref
+    val resize: (unit -> unit) ref	
 
 end
