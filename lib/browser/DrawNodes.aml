@@ -24,6 +24,7 @@ import structure ColorMap from "ColorMap"
 import structure WindowHelper from "WindowHelper"
 import structure Settings from "Settings"
 import structure MkColorTable from "MkColorTable"
+import structure GtkCanvas from "x-alice:/lib/gtk/GtkCanvas"
 
 open Types Helper Layout 
 
@@ -387,8 +388,8 @@ struct
     and move (n,x,y) = 
 	let
 	    val group = getGroup(n)
-	    val old_x = itemGetFieldX1(group)
-	    val old_y = itemGetFieldY1(group)
+	    val (old_x,old_y) = Services.getPosition(group,
+						     !Settings.font)
 	    val dx = x - old_x
 	    val dy = y - old_y
             (*
