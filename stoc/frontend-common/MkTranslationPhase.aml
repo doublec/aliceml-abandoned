@@ -829,7 +829,10 @@ val _ = TextIO.inputLine(TextIO.stdIn)
 	 *   in Inf.strengthen(Path.invent(), x3);
 	 *      {[x'] = cast (CoerceOpaq (?,x3) x1, x3)}
 	 *   end *)
-	(*UNFINISHED*)
+	if !Switches.Language.rttLevel <> Switches.Language.FULL_RTT then
+	    O.FailExp(trModInfo i)
+	else
+	(*UNFINISHED: abstraction of RTTs*)
 	(let
 	    val  i'     = trModInfo i
 	    val  r      = #region i'
@@ -871,6 +874,10 @@ val _ = TextIO.inputLine(TextIO.stdIn)
 	 *                             Inf.match(x12, #1(x2()));
 	 *                             CoerceTrans (x12,x2) x11
 	 *                         end *)
+	if !Switches.Language.rttLevel <> Switches.Language.FULL_RTT then
+	    O.FailExp(trModInfo i)
+	else
+	(*UNFINISHED: stripping*)
 	(let
 	    val  i'     = trModInfo i
 	    val  r      = #region i'
@@ -908,6 +915,9 @@ val _ = TextIO.inputLine(TextIO.stdIn)
       | trPrimMod(i,"PackVal",j) =
 	(* PackVal : (type t; x : t) -> (x : package) *)
 	(* = fn {[x]=x1,[t]=x2} -> {[x']=cast (x1,x2)} *)
+	if !Switches.Language.rttLevel = Switches.Language.NO_RTT then
+	    O.FailExp(trModInfo i)
+	else
 	(let
 	    val  i'     = trModInfo i
 	    val  r      = #region i'
@@ -939,6 +949,9 @@ val _ = TextIO.inputLine(TextIO.stdIn)
 	 *                             else
 	 *                                 raise prim "???"
 	 *                         end *)
+	if !Switches.Language.rttLevel = Switches.Language.NO_RTT then
+	    O.FailExp(trModInfo i)
+	else
 	(let
 	    val  i'     = trModInfo i
 	    val  r      = #region i'
@@ -1504,7 +1517,7 @@ print"\n";
 	    val e3' = infOp(lab_inTop, trUnit r)	(* UNFINISHED! *)
 	    val e'  = O.TupExp(typInfo(r, typ_infpathinf), #[e1',e2',e3'])
 	in
-	    infOp(lab_inApply, e')
+	    infOp(lab_inApply, e') (*UNFINISHED: wrong type*)
 	end
 
       | trInf'(I.CompInf(i,j1,j2)) =
@@ -1543,7 +1556,12 @@ print"\n";
 
       | trInf'(I.LetInf(i,ds,j)) =
 	(* [let ds in j end] = let [ds] in [j] end *)
-	O.LetExp(typInfo(#region i, typ_inf), trDecs ds, trInf' j)
+	let
+	    val e' = trInf' j
+	    val t  = #typ(O.infoExp e')
+	in
+	    O.LetExp(typInfo(#region i,t), trDecs ds, e')
+	end
 
       | trInf'(I.SingInf(i,m)) =
 	(* [sing m] = (Inf.inSing[m], ???) *)
