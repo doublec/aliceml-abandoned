@@ -11,9 +11,6 @@
 //   $Revision$
 //
 
-#include "generic/Tuple.hh"
-#include "generic/Transients.hh"
-#include "generic/ConcreteCode.hh"
 #include "alice/Authoring.hh"
 
 DEFINE2(UnsafeForeign_catch) {
@@ -29,7 +26,7 @@ DEFINE1(UnsafeForeign_exnMessage) {
   RETURN_UNIT;
 } END
 
-word UnsafeForeign() {
+AliceDll word UnsafeForeign() {
   Record *record = Record::New(2);
   INIT_STRUCTURE(record, "UnsafeForeign", "catch",
 		 UnsafeForeign_catch, 2);
