@@ -616,9 +616,9 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	    genExp (ProdExp (Source.nowhere, labelIdRefVec))
 	and genBody body = List.app genStm body
 
-	fun translate () (desc, component as (imports, body, _, sign)) =
+	fun translate () (desc, component as {imports, body, exports, sign}) =
 	    (init #[];
-	     Vector.app (fn (id, _, url) =>
+	     Vector.app (fn (id, _, url, _) =>
 			 (emit (Ldarg 0); emit (Castclass Alice.KomponistTy);
 			  emit (Ldstr (Url.toString url));
 			  emit (Call (true, Alice.Komponist, "Import",
