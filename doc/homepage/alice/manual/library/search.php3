@@ -2,17 +2,20 @@
 <?php heading("The Search structure", "The <TT>Search</TT> structure"); ?>
 
 <?php section("synopsis", "synopsis"); ?>
+  <PRE>
+    signature SEARCH
+    structure Search : SEARCH</PRE>
+
+  <P>
+    The <TT>Search</TT> structure gives access to predefined inference
+    engines, including one solution, all solution and best solution search.
+  </P>
 
 <?php section("import", "import"); ?>
 
   <PRE>
     import signature SEARCH from "x-alice:/lib/constraints/SEARCH-sig"
     import structure Search from "x-alice:/lib/constraints/Search"</PRE>
-
-  <P>
-    The <TT>Search</TT> structure gives access to predefined inference
-    engines, including one solution, all solution and best solution search.
-  </P>
 
 <?php section("interface", "interface"); ?>
   <PRE>

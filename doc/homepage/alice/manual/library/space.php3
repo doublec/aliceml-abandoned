@@ -3,17 +3,21 @@
 
 <?php section("synopsis", "synopsis"); ?>
 
-<?php section("import", "import"); ?>
-
   <PRE>
-    import signature SPACE from "x-alice:/lib/constraints/SPACE-sig"
-    import structure Space from "x-alice:/lib/constraints/Space"</PRE>
+    signature SPACE
+    structure Space : SPACE</PRE>
 
   <P>
     The <TT>Space</TT> structure provides access to first class computation
     spaces. First class computation spaces can be used to program inference
     engines for problem solving.
   </P>
+
+<?php section("import", "import"); ?>
+
+  <PRE>
+    import signature SPACE from "x-alice:/lib/constraints/SPACE-sig"
+    import structure Space from "x-alice:/lib/constraints/Space"</PRE>
 
 <?php section("interface", "interface"); ?>
   <PRE>
