@@ -82,13 +82,20 @@ define
       {Application.exit 0}
    end
 
+   proc {WriteFile VS File} F in
+      F = {New Open.file init(name: File flags: [write create truncate])}
+      {F write(vs: VS)}
+      {F close()}
+   end
+
    proc {Loop File}
       case {ReadCommand File} of 'buildFunctor'#[Code] then
 	 case {Frontend.translateVirtualString Code} of unit then
 	    {System.printInfo 'Result: ~1\n\n'}
-	 [] Filename#AST then Id in
-	    Id = {Put {CodeGen.translate Filename AST Filename#'.ozm'}}
-	    {System.printInfo 'Result: '#Id#'\n\n'}
+	 [] Filename#AST then F VS in
+	    F#VS = {CodeGen.translate Filename AST}
+	    {WriteFile VS Filename#'.ozm'}
+	    {System.printInfo 'Result: '#{Put F}#'\n\n'}
 	 end
       [] 'saveValue'#[OutFilename Id] then
 	 {Pickle.saveWithCells {Get {String.toInt Id}} OutFilename '' 0}

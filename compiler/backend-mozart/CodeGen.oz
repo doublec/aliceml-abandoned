@@ -17,7 +17,6 @@ import
    System(printName)
    Narrator('class')
    ErrorListener('class')
-   Open(file)
    CodeStore('class')
    Prebound(builtinTable env)
    Assembler(assemble)
@@ -201,36 +200,24 @@ define
 	       VHd = vTestBuiltin(_ 'Value.\'==\''
 				  [Reg {GetReg Id State} {State.cs newReg($)}]
 				  ThenVInstr ElseVInstr VTl)
-	    [] conAppTest(Id1 oneArg(Id2) tuple(0)) then ThenVInstr0 in
-	       VHd = vTestBuiltin(_ 'Value.\'==\''
-				  [Reg {GetReg Id1 State} {State.cs newReg($)}]
-				  ThenVInstr0 ElseVInstr VTl)
-	       ThenVInstr0 = vEquateConstant(_ unit {MakeReg Id2 State}
-					     ThenVInstr)
-	    [] conAppTest(Id tupArgs(nil) _) then
+	    [] conAppTest(Id tupArgs(nil)) then
 	       VHd = vTestBuiltin(_ 'Value.\'==\''
 				  [Reg {GetReg Id State} {State.cs newReg($)}]
 				  ThenVInstr ElseVInstr VTl)
-	    [] conAppTest(Id Args ConArity) then ThenVInstr0 in
+	    [] conAppTest(Id Args) then ThenVInstr0 in
 	       VHd = vTestBuiltin(_ 'Record.testLabel'
 				  [Reg {GetReg Id State} {State.cs newReg($)}]
 				  ThenVInstr0 ElseVInstr VTl)
-	       case Args#ConArity of oneArg(Id)#unary then
+	       case Args of oneArg(Id) then
 		  ThenVInstr0 = vInlineDot(_ Reg 1 {MakeReg Id State} true
 					   Coord ThenVInstr)
-	       [] oneArg(Id)#_ then LabelReg ThenVInstr1 in
-		  {State.cs newReg(?LabelReg)}
-		  ThenVInstr0 = vEquateConstant(_ '#' LabelReg ThenVInstr1)
-		  ThenVInstr1 = vCallBuiltin(_ 'Record.adjoin'
-					     [Reg LabelReg {MakeReg Id State}]
-					     Coord ThenVInstr)
-	       [] tupArgs(Ids=_|_)#_ then
+	       [] tupArgs(Ids=_|_) then
 		  {List.foldLInd Ids
 		   proc {$ I VHd Id VTl}
 		      VHd = vInlineDot(_ Reg I {MakeReg Id State} true
 				       Coord VTl)
 		   end ThenVInstr0 ThenVInstr}
-	       [] recArgs(LabelIdList)#_ then
+	       [] recArgs(LabelIdList) then
 		  {FoldL LabelIdList
 		   proc {$ VHd Label#Id VTl}
 		      VHd = vInlineDot(_ Reg Label {MakeReg Id State} true
@@ -529,13 +516,7 @@ define
        end VHd VTl}
    end
 
-   proc {WriteFile VS File} F in
-      F = {New Open.file init(name: File flags: [write create truncate])}
-      {F write(vs: VS)}
-      {F close()}
-   end
-
-   fun {Translate Filename Import#(Body#Sign) AssemblyFilename}
+   fun {Translate Filename Import#(Body#Sign)}
       NarratorObject Reporter CS RegDict Prebound ImportReg ExportReg
       State VInstr VInter GRegs Code NLiveRegs
    in
@@ -571,9 +552,6 @@ define
 	   {Append Code2 [lbl(EndLabel) unify(x(0) g(0)) return]})
 	  Res|{Map GRegs fun {$ Reg} Prebound.Reg end}
 	  switches ?P ?VS}
-	 case AssemblyFilename of unit then skip
-	 else {WriteFile VS AssemblyFilename}
-	 end
 	 {P}
 	 {Functor.new
 	  {List.toRecord 'import'
@@ -581,7 +559,7 @@ define
 	    fun {$ id(_ Stamp _)#Sign#URL}
 	       {VirtualString.toAtom Stamp}#info('from': URL 'type': sig(Sign))
 	    end}}
-	  sig(Sign) Res}
+	  sig(Sign) Res}#VS
       end
    end
 end
