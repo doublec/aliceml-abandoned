@@ -19,7 +19,7 @@ import structure Path from "x-alice:/lib/rtt/Path"
 import structure Label from "x-alice:/lib/rtt/Label"
 import structure Reflect from "x-alice:/lib/system/Reflect"
 import structure Types from "Types"
-import structure Dictionary from "Dictionary"
+import structure MainDictionary from "MainDictionary"
 
 local
 
@@ -33,7 +33,7 @@ sig
     
     val max_depth: int ref 
 	
-    val dict: Dictionary.dictionary
+    val dict: MainDictionary.dictionary
 
     val newNode: 'a * Type.t -> node
     

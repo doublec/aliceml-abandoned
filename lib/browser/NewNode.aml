@@ -22,7 +22,7 @@ import structure Reflect from "x-alice:/lib/system/Reflect"
 import structure UnsafeValue from "x-alice:/lib/system/UnsafeValue"
 import structure Types from "Types"
 import structure Helper from "Helper"
-import structure Dictionary from "Dictionary"
+import structure MainDictionary from "MainDictionary"
 import structure MkPathTable from "MkPathTable"
 import signature NEW_NODE from "NEW_NODE-sig"
 
@@ -38,15 +38,16 @@ struct
     
     val max_width = ref 15
     val max_depth = ref 5
-    val dict = Dictionary.empty
+
+    val dict = MainDictionary.empty
 	
     exception createGraph_unknownNode
     
     (* newNode *)
     fun newNode (v,t) = let val va = UnsafeValue.cast v: Reflect.value
-                            val i = Dictionary.insert(Empty,dict)
+                            val i = MainDictionary.insert(Empty,dict)
 			    val node =  createGraph (va,t,Empty,i,0)
-			in (Dictionary.insert(node,dict) ; node)
+			in (MainDictionary.insert(node,dict) ; node)
 			end
 
     (* createGraph *)
