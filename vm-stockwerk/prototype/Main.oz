@@ -13,12 +13,12 @@
 functor
 import
    Application(getArgs exit)
-   System(showError)
+   System(showError show)
    Property(get)
    Linker(link)
 define
    case {Application.getArgs plain} of [ComponentName] then
-      _ = {Linker.link ComponentName}
+      {System.show {Linker.link ComponentName}}
       {Application.exit 1}
    else
       {System.showError
