@@ -57,10 +57,6 @@
 ## build2-all:
 ##    Libraries implemented in Alice are compiled using the system
 ##    installed in Pass 1.
-## build2-install:
-##    A system with libraries (as far as they are needed to build
-##    a system with runtime type information) is installed to
-##    subdirectory build2/install.
 ##
 ## Pass 3
 ## ------
@@ -366,14 +362,15 @@ GENERICINCLUDES0 = \
 	FinalizationSet.hh Transform.hh ConcreteRepresentationHandler.hh \
 	ConcreteRepresentation.hh ConcreteCode.hh Closure.hh Thread.hh \
 	ThreadQueue.hh Tuple.hh String.hh StackFrame.hh Backtrace.hh \
-	Pickle.hh Debug.hh RootSet.hh UniqueString.hh Properties.hh \
-	TaskStack.hh IOHandler.hh IODesc.hh SignalHandler.hh Scheduler.hh \
-	Transients.hh Worker.hh Interpreter.hh Primitive.hh PushCallWorker.hh \
-	BindFutureWorker.hh Unpickler.hh Pickler.hh BootLinker.hh \
-	Profiler.hh Authoring.hh
+	Pickle.hh Float.hh Double.hh Debug.hh RootSet.hh UniqueString.hh \
+	Properties.hh TaskStack.hh IOHandler.hh IODesc.hh SignalHandler.hh \
+	Scheduler.hh Transients.hh Worker.hh Interpreter.hh Primitive.hh \
+	PushCallWorker.hh BindFutureWorker.hh Unpickler.hh Pickler.hh \
+	BootLinker.hh Profiler.hh Authoring.hh
 ALICEINCLUDES0 = \
-	Guid.hh Data.hh Types.hh AbstractCode.hh AbstractCodeInterpreter.hh \
-	AliceConcreteCode.hh NativeCodeInterpreter.hh LivenessInformation.hh \
+	Guid.hh Data.hh StackFrame.hh Types.hh AbstractCode.hh \
+	AbstractCodeInterpreter.hh AliceConcreteCode.hh \
+	NativeCodeInterpreter.hh LivenessInformation.hh \
 	NativeConcreteCode.hh PrimitiveTable.hh AliceLanguageLayer.hh \
 	Authoring.hh
 INCLUDES = \
@@ -415,16 +412,14 @@ BUILD1SOURCES = \
 	build1/Build1.aml build1/lib/fundamental/RTT.aml \
 	$(ALLSOURCES:%=build1/%)
 
-INSTALL1DIRS = build1/install build1/install/bin build1/install/lib \
-	build1/install/lib/system build1/install/compiler build1/install/linker
+INSTALL1DIRS = build1/install build1/install/bin \
+	build1/install/compiler build1/install/linker
 INSTALL1TOPFILES = $(STOCKWERKFILES)
 INSTALL1BINFILES = alicerun alicec alicelink
-INSTALL1LIBFILES = system/ComponentManager.stc
 INSTALL1COMPILERFILES = CompilerMain.stc
 INSTALL1FILES = \
 	$(INSTALL1TOPFILES:%=build1/install/%) \
 	$(INSTALL1BINFILES:%=build1/install/bin/%) \
-	$(INSTALL1LIBFILES:%=build1/install/lib/%) \
 	$(INSTALL1COMPILERFILES:%=build1/install/compiler/%) \
 	$(LIBNATIVES:%=build1/install/%)
 
@@ -575,9 +570,6 @@ $(INSTALL1DIRS):
 $(STOCKWERKFILES:%=build1/install/%): build1/install/%: %
 	install -c -m 555 $< $@
 
-build1/install/lib/%: build1/lib/%
-	install -c -m 444 $< $@
-
 build1/install/compiler/CompilerMain.stc:
 	(cd build1 && tar cf - `find . -name '*.stc'`) | \
 	(cd build1/install && tar xvf -)
@@ -595,21 +587,6 @@ BUILD2DIRS = \
 BUILD2SOURCES = \
 	build2/lib/fundamental/RTT.aml build2/lib/rtt/RTT.aml \
 	$(LIBSOURCES:%=build2/%)
-
-INSTALL2DIRS = build2/install build2/install/bin \
-	build2/install/lib build2/install/lib/fundamental \
-	build2/install/lib/system build2/install/lib/utility \
-	build2/install/lib/rtt build2/install/lib/ml-yacc \
-	build2/install/compiler
-INSTALL2TOPFILES = alicec.import
-INSTALL2BINFILES = alicerun alicec alicelink alicedep
-INSTALL2LIBFILES = rtt/RTT.stc system/ComponentManager.stc
-INSTALL2COMPILERFILES = 
-INSTALL2FILES = \
-	$(INSTALL2TOPFILES:%=build2/install/%) \
-	$(INSTALL2BINFILES:%=build2/install/bin/%) \
-	$(INSTALL2LIBFILES:%=build2/install/lib/%) \
-	$(INSTALL2COMPILERFILES:%=build2/install/compiler/%)
 
 ##
 ## Creating the Source Tree for Build 2
@@ -650,24 +627,6 @@ build2/lib/rtt/LinkedRTT.stc: build2/lib/rtt/RTT.stc
 	--exclude build2/lib/system/Unsafe \
 	--include build2 --rewrite build2/lib/=../ -o $@
 
-##
-## Installing Build 2
-##
-
-build2-install: build2-all $(INSTALL2DIRS) $(INSTALL2FILES)
-
-$(INSTALL2DIRS):
-	mkdir -p $@
-
-build2/install/%.import: build2/%.import
-	install -c -m 444 $< $@
-
-$(INSTALL2BINFILES:%=build2/install/bin/%): build2/%: build1/%
-	install -c -m 555 $< $@
-
-$(INSTALL2LIBFILES:%=build2/install/lib/%): build2/install/%: build2/%
-	install -c -m 444 $< $@
-
 ########################################################################
 ### BUILD 3
 ########################################################################
@@ -685,13 +644,13 @@ INSTALL3DIRS = \
 	build3/install/compiler build3/install/compiler/top \
 	build3/install/linker build3/install/depend
 INSTALL3INCLUDEFILES = $(INCLUDES)
-INSTALL3TOPFILES = $(INSTALL2TOPFILES) alice.import
-INSTALL3BINFILES = $(INSTALL2BINFILES) alice
+#---**
+INSTALL3TOPFILES = alicec.import alice.import
+INSTALL3BINFILES = alicerun alice alicec alicelink alicedep alicetool
 INSTALL3LIBFILES = \
 	$(LIBSOURCES0:%.aml=%.stc) \
 	fundamental/Fundamental.stc
-INSTALL3COMPILERFILES = $(INSTALL2COMPILERFILES) \
-	CompilerMain.stc ToplevelMain.stc
+INSTALL3COMPILERFILES = CompilerMain.stc ToplevelMain.stc
 INSTALL3COMPILERTOPFILES = \
 	SMLToStockwerkRecursiveCompiler.stc
 INSTALL3LINKERFILES = Main.stc
@@ -721,7 +680,7 @@ $(BUILD3SOURCES): build3/%: build1/%
 ## Performing Build 3
 ##
 
-build3-all: build2-install $(BUILD3DIRS) $(BUILD3SOURCES) \
+build3-all: build2-all $(BUILD3DIRS) $(BUILD3SOURCES) \
 	$(LIBNATIVES:%=build3/%) \
 	build3/lib/fundamental/LinkedFundamental.stc \
 	build3/lib/system/Boot.stc \
