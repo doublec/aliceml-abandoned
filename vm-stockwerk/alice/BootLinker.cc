@@ -19,6 +19,7 @@
 #include <cstdio>
 #include "generic/BootLinker.hh"
 #include "generic/RootSet.hh"
+#include "generic/Tuple.hh"
 #include "generic/Interpreter.hh"
 #include "generic/StackFrame.hh"
 #include "generic/Scheduler.hh"

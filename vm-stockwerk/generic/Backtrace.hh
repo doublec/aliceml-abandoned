@@ -23,7 +23,7 @@
 #include "generic/Interpreter.hh"
 #include "generic/StackFrame.hh"
 
-class Backtrace: private Queue {
+class DllExport Backtrace: private Queue {
 private:
   static const u_int initialBacktraceSize = 16; // to be checked
 public:
