@@ -1,31 +1,31 @@
 import
     structure Source
-from "../infrastructure/Source.ozf"
+from "../infrastructure/Source"
 
 import
     structure Fixity
-from "../common/Fixity.ozf"
+from "../common/Fixity"
 
 import
     structure Name
-from "../common/Name.ozf"
+from "../common/Name"
 
 import
     structure Label
-from "../common/Label.ozf"
+from "../common/Label"
 
 import
     structure Stamp
-from "../common/Stamp.ozf"
+from "../common/Stamp"
 
 import
     structure Type
-from "../common/Type.ozf"
+from "../common/Type"
 
 import
     structure Inf
-from "../common/Inf.ozf"
+from "../common/Inf"
 
 import
     structure AbstractGrammar
-from "AbstractGrammar.ozf"
+from "AbstractGrammar"

@@ -1,1 +1,1 @@
-import structure PrettyPrint from "../misc/PrettyPrint.ozf"
+import structure PrettyPrint from "../misc/PrettyPrint"

@@ -1,27 +1,27 @@
 import
     structure Crash
-from "../infrastructure/Crash.ozf"
+from "../infrastructure/Crash"
 
 import
     structure Source
-from "../infrastructure/Source.ozf"
+from "../infrastructure/Source"
 
 import
     structure EmptyContext
-from "../infrastructure/EmptyContext.ozf"
+from "../infrastructure/EmptyContext"
 
 import
     structure StampSet
-from "../common/StampSet.ozf"
+from "../common/StampSet"
 
 import
     structure StampMap
-from "../common/StampMap.ozf"
+from "../common/StampMap"
 
 import
     structure FlatGrammar
-from "FlatGrammar.ozf"
+from "FlatGrammar"
 
 import
     signature DEAD_CODE_ELIMINATION_PHASE
-from "DEAD_CODE_ELIMINATION_PHASE.ozf"
+from "DEAD_CODE_ELIMINATION_PHASE"

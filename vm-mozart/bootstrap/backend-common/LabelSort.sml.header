@@ -1,7 +1,7 @@
 import
     structure Label
-from "../common/Label.ozf"
+from "../common/Label"
 
 import
     structure MakeLabelSort
-from "MakeLabelSort.ozf"
+from "MakeLabelSort"

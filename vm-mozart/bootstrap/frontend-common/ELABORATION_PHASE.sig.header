@@ -1,23 +1,23 @@
 import
     structure Source
-from "../infrastructure/Source.ozf"
+from "../infrastructure/Source"
 
 import
     signature CONTEXT
-from "../infrastructure/CONTEXT.ozf"
+from "../infrastructure/CONTEXT"
 
 import
     structure Env
-from "Env.ozf"
+from "Env"
 
 import
     signature ABSTRACT_GRAMMAR
-from "ABSTRACT_GRAMMAR.ozf"
+from "ABSTRACT_GRAMMAR"
 
 import
     structure AbstractGrammar
-from "AbstractGrammar.ozf"
+from "AbstractGrammar"
 
 import
     structure TypedGrammar
-from "TypedGrammar.ozf"
+from "TypedGrammar"

@@ -1,11 +1,11 @@
 import
     structure Source
-from "../infrastructure/Source.ozf"
+from "../infrastructure/Source"
 
 import
     signature SWITCHES
-from "../infrastructure/SWITCHES.ozf"
+from "../infrastructure/SWITCHES"
 
 import
     signature TARGET
-from "../infrastructure/TARGET.ozf"
+from "../infrastructure/TARGET"

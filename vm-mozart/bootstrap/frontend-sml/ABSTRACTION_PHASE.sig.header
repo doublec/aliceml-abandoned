@@ -1,27 +1,27 @@
 import
     structure Source
-from "../infrastructure/Source.ozf"
+from "../infrastructure/Source"
 
 import
     signature CONTEXT
-from "../infrastructure/CONTEXT.ozf"
+from "../infrastructure/CONTEXT"
 
 import
     signature ABSTRACT_GRAMMAR
-from "../frontend-common/ABSTRACT_GRAMMAR.ozf"
+from "../frontend-common/ABSTRACT_GRAMMAR"
 
 import
     structure AbstractGrammar
-from "../frontend-common/AbstractGrammar.ozf"
+from "../frontend-common/AbstractGrammar"
 
 import
     signature INPUT_GRAMMAR
-from "INPUT_GRAMMAR.ozf"
+from "INPUT_GRAMMAR"
 
 import
     structure InputGrammar
-from "InputGrammar.ozf"
+from "InputGrammar"
 
 import
     structure BindEnv
-from "BindEnv.ozf"
+from "BindEnv"

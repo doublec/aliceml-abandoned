@@ -1,27 +1,27 @@
 import
     val print
-from "../lib/TextIO.ozf"
+from "../lib/TextIO"
 
 import
     structure Assert
-from "../misc/Assert.ozf"
+from "../misc/Assert"
 
 import
     structure Label
-from "Label.ozf"
+from "Label"
 
 import
     structure Path
-from "Path.ozf"
+from "Path"
 
 import
     structure PathSet
-from "PathSet.ozf"
+from "PathSet"
 
 import
     structure PathMap
-from "PathMap.ozf"
+from "PathMap"
 
 import
     signature TYPE
-from "TYPE.ozf"
+from "TYPE"

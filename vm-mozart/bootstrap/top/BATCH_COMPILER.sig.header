@@ -1,39 +1,39 @@
 import
     structure OS
-from "../lib/OS.ozf"
+from "../lib/OS"
 
 import
     structure Url
-from "../misc/Url.ozf"
+from "../misc/Url"
 
 import
     structure Source
-from "../infrastructure/Source.ozf"
+from "../infrastructure/Source"
 
 import
     signature SWITCHES
-from "../infrastructure/SWITCHES.ozf"
+from "../infrastructure/SWITCHES"
 
 import
     signature COMPOSER
-from "../infrastructure/COMPOSER.ozf"
+from "../infrastructure/COMPOSER"
 
 import   (*--**DEBUG*)
     structure IntermediateGrammar
-from "../common/IntermediateGrammar.ozf"
+from "../common/IntermediateGrammar"
 
 import   (*--**DEBUG*)
     structure AbstractGrammar
-from "../frontend-common/AbstractGrammar.ozf"
+from "../frontend-common/AbstractGrammar"
 
 import   (*--**DEBUG*)
     structure TypedGrammar
-from "../frontend-common/TypedGrammar.ozf"
+from "../frontend-common/TypedGrammar"
 
 import   (*--**DEBUG*)
     structure InputGrammar
-from "../frontend-sml/InputGrammar.ozf"
+from "../frontend-sml/InputGrammar"
 
 import   (*--**DEBUG*)
     structure FlatGrammar
-from "../backend-common/FlatGrammar.ozf"
+from "../backend-common/FlatGrammar"

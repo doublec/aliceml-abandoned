@@ -1,32 +1,32 @@
 import
     structure Source
-from "../infrastructure/Source.ozf"
+from "../infrastructure/Source"
 
 import
     structure Url
-from "../misc/Url.ozf"
+from "../misc/Url"
 
 import
     structure Stamp
-from "../common/Stamp.ozf"
+from "../common/Stamp"
 
 import
     structure StampSet
-from "../common/StampSet.ozf"
+from "../common/StampSet"
 
 import
     structure Name
-from "../common/Name.ozf"
+from "../common/Name"
 
 import
     structure Label
-from "../common/Label.ozf"
+from "../common/Label"
 
 import
     structure Type
-from "../common/Type.ozf"
+from "../common/Type"
 
 import
     structure IntermediateInfo
     structure IntermediateGrammar
-from "../common/IntermediateGrammar.ozf"
+from "../common/IntermediateGrammar"

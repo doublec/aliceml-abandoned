@@ -1,31 +1,31 @@
 import
     structure Url
-from "../misc/Url.ozf"
+from "../misc/Url"
 
 import
     structure Stamp
-from "../common/Stamp.ozf"
+from "../common/Stamp"
 
 import
     structure StampSet
-from "../common/StampSet.ozf"
+from "../common/StampSet"
 
 import
     structure Name
-from "../common/Name.ozf"
+from "../common/Name"
 
 import
     structure Label
-from "../common/Label.ozf"
+from "../common/Label"
 
 import
     signature FLAT_GRAMMAR
-from "FLAT_GRAMMAR.ozf"
+from "FLAT_GRAMMAR"
 
 import
     structure FlatGrammar
-from "FlatGrammar.ozf"
+from "FlatGrammar"
 
 import
     signature OUTPUT_FLAT_GRAMMAR
-from "OUTPUT_FLAT_GRAMMAR.ozf"
+from "OUTPUT_FLAT_GRAMMAR"

@@ -190,4 +190,4 @@ import
     signature THREAD
     structure Thread
 
-from "x-alice:/lib/Base.ozf"
+from "x-alice:/lib/Base"

@@ -1,7 +1,7 @@
 import
     functor MakeHashImpMap
-from "../misc/MakeHashImpMap.ozf"
+from "../misc/MakeHashImpMap"
 
 import
     structure StringHashKey
-from "../misc/StringHashKey.ozf"
+from "../misc/StringHashKey"

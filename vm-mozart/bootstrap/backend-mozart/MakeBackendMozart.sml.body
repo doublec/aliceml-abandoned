@@ -14,35 +14,35 @@
 
 import
     signature SWITCHES
-from "../infrastructure/SWITCHES.ozf"
+from "../infrastructure/SWITCHES"
 
 import
     signature PHASE
-from "../infrastructure/PHASE.ozf"
+from "../infrastructure/PHASE"
 
 import
     structure EmptyContext
-from "../infrastructure/EmptyContext.ozf"
+from "../infrastructure/EmptyContext"
 
 import
     signature SIGNATURE
-from "../infrastructure/SIGNATURE.ozf"
+from "../infrastructure/SIGNATURE"
 
 import
     structure MakeTracingPhase
-from "../infrastructure/MakeTracingPhase.ozf"
+from "../infrastructure/MakeTracingPhase"
 
 import
     signature TARGET
-from "../infrastructure/TARGET.ozf"
+from "../infrastructure/TARGET"
 
 import
     structure FlatGrammar
-from "../backend-common/FlatGrammar.ozf"
+from "../backend-common/FlatGrammar"
 
 import
     structure CodeGenPhase
-from "CodeGenPhase.ozf"
+from "CodeGenPhase"
 
 functor MakeMozartTarget(structure Switches: SWITCHES
 			 structure Sig: SIGNATURE

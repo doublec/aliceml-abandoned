@@ -1,15 +1,15 @@
 import
     structure Source
-from "../infrastructure/Source.ozf"
+from "../infrastructure/Source"
 
 import
     signature LEXER
-from "../lib/ml-yacc/base.ozf"
+from "../lib/ml-yacc/base"
 
 import
     structure LrParser
-from "../lib/ml-yacc/parser2.ozf"
+from "../lib/ml-yacc/parser2"
 
 import
     signature LEXER_ERROR
-from "LEXER_ERROR.ozf"
+from "LEXER_ERROR"

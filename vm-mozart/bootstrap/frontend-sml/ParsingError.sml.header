@@ -1,23 +1,23 @@
 import
     structure Error
-from "../infrastructure/Error.ozf"
+from "../infrastructure/Error"
 
 import
     structure PrettyPrint
-from "../misc/PrettyPrint.ozf"
+from "../misc/PrettyPrint"
 
 import
     structure PPMisc
-from "../misc/PPMisc.ozf"
+from "../misc/PPMisc"
 
 import
     structure Source
-from "../infrastructure/Source.ozf"
+from "../infrastructure/Source"
 
 import
     structure VId
-from "Ids.ozf"
+from "Ids"
 
 import
     signature PARSING_ERROR
-from "PARSING_ERROR.ozf"
+from "PARSING_ERROR"

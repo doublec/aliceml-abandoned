@@ -1,11 +1,11 @@
 import signature INTERMEDIATE_GRAMMAR
-from "INTERMEDIATE_GRAMMAR.ozf"
+from "INTERMEDIATE_GRAMMAR"
 import signature PP_INTERMEDIATE_GRAMMAR
-from "PP_INTERMEDIATE_GRAMMAR.ozf"
+from "PP_INTERMEDIATE_GRAMMAR"
 
-import structure Stamp from "Stamp.ozf"
-import structure Name  from "Name.ozf"
-import structure Label from "Label.ozf"
+import structure Stamp from "Stamp"
+import structure Name  from "Name"
+import structure Label from "Label"
 
-import structure PrettyPrint from "../misc/PrettyPrint.ozf"
-import structure PPMisc      from "../misc/PPMisc.ozf"
+import structure PrettyPrint from "../misc/PrettyPrint"
+import structure PPMisc      from "../misc/PPMisc"

@@ -1,62 +1,62 @@
 import
     structure Assert
-from "../misc/Assert.ozf"
+from "../misc/Assert"
 
 import
     structure Crash
-from "../infrastructure/Crash.ozf"
+from "../infrastructure/Crash"
 
 import
     structure Source
-from "../infrastructure/Source.ozf"
+from "../infrastructure/Source"
 
 import
     structure Stamp
-from "../common/Stamp.ozf"
+from "../common/Stamp"
 
 import
     structure Name
-from "../common/Name.ozf"
+from "../common/Name"
 
 import
     structure Label
-from "../common/Label.ozf"
+from "../common/Label"
 
 import
     structure Fixity
-from "../common/Fixity.ozf"
+from "../common/Fixity"
 
 import
     structure Path
-from "../common/Path.ozf"
+from "../common/Path"
 
 import
     structure Type
-from "../common/Type.ozf"
+from "../common/Type"
 
 import
     structure Inf
-from "../common/Inf.ozf"
+from "../common/Inf"
 
 import
     structure PervasiveType
-from "../common/PervasiveType.ozf"
+from "../common/PervasiveType"
 
 import
     structure VId
     structure TyCon
     structure SigId
     structure StrId
-from "Ids.ozf"
+from "Ids"
 
 import
     structure Infix
-from "Infix.ozf"
+from "Infix"
 
 import
     structure BindEnv
-from "BindEnv.ozf"
+from "BindEnv"
 
 import
     signature BIND_ENV_FROM_SIG
-from "BIND_ENV_FROM_SIG.ozf"
+from "BIND_ENV_FROM_SIG"

@@ -1,26 +1,26 @@
 import
     structure Crash
-from "../infrastructure/Crash.ozf"
+from "../infrastructure/Crash"
 
 import
     structure Source
-from "../infrastructure/Source.ozf"
+from "../infrastructure/Source"
 
 import
     structure StringHashKey
-from "../misc/StringHashKey.ozf"
+from "../misc/StringHashKey"
 
 import
     structure MakeHashScopedImpMap
-from "../misc/MakeHashScopedImpMap.ozf"
+from "../misc/MakeHashScopedImpMap"
 
 import
     structure Stamp
-from "../common/Stamp.ozf"
+from "../common/Stamp"
 
 import
     structure Lab
-from "Lab.ozf"
+from "Lab"
 
 import
     structure VId
@@ -28,12 +28,12 @@ import
     structure TyCon
     structure SigId
     structure StrId
-from "Ids.ozf"
+from "Ids"
 
 import
     structure Infix
-from "Infix.ozf"
+from "Infix"
 
 import
     signature BIND_ENV
-from "BIND_ENV.ozf"
+from "BIND_ENV"

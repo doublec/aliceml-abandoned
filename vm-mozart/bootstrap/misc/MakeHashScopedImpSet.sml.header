@@ -1,11 +1,11 @@
 import
     signature HASH_KEY
-from "HASH_KEY.ozf"
+from "HASH_KEY"
 
 import
     structure MakeScopedImpSet
-from "MakeScopedImpSet.ozf"
+from "MakeScopedImpSet"
 
 import
     structure MakeHashImpSet
-from "MakeHashImpSet.ozf"
+from "MakeHashImpSet"

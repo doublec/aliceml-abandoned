@@ -1,63 +1,63 @@
 import
     structure LrParser
-from "../lib/ml-yacc/parser2.ozf"
+from "../lib/ml-yacc/parser2"
 
 import
     structure Join
-from "../lib/ml-yacc/join.ozf"
+from "../lib/ml-yacc/join"
 
 import
     signature SOURCE
-from "../infrastructure/SOURCE.ozf"
+from "../infrastructure/SOURCE"
 
 import
     structure Source
-from "../infrastructure/Source.ozf"
+from "../infrastructure/Source"
 
 import
     signature CONTEXT
-from "../infrastructure/CONTEXT.ozf"
+from "../infrastructure/CONTEXT"
 
 import
     signature SWITCHES
-from "../infrastructure/SWITCHES.ozf"
+from "../infrastructure/SWITCHES"
 
 import
     structure EmptyContext
-from "../infrastructure/EmptyContext.ozf"
+from "../infrastructure/EmptyContext"
 
 import
     signature INPUT_GRAMMAR
-from "INPUT_GRAMMAR.ozf"
+from "INPUT_GRAMMAR"
 
 import
     structure InputGrammar
-from "InputGrammar.ozf"
+from "InputGrammar"
 
 import
     structure DerivedForms
-from "DerivedForms.ozf"
+from "DerivedForms"
 
 import
     structure LrVals
-from "Parser.ozf"
+from "Parser"
 
 import
     structure LexerError
-from "LexerError.ozf"
+from "LexerError"
 
 import
     structure ParsingError
-from "ParsingError.ozf"
+from "ParsingError"
 
 import
     structure Lexer
-from "Lexer.lex.ozf"
+from "Lexer.lex"
 
 import
     structure CountPosLexer
-from "CountPosLexer.ozf"
+from "CountPosLexer"
 
 import
     signature PARSING_PHASE
-from "PARSING_PHASE.ozf"
+from "PARSING_PHASE"

@@ -1,7 +1,7 @@
 import
     signature CONTEXT
-from "CONTEXT.ozf"
+from "CONTEXT"
 
 import
     signature PHASE
-from "PHASE.ozf"
+from "PHASE"

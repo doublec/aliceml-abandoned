@@ -1,18 +1,18 @@
 import
     signature TOKEN
-from "../lib/ml-yacc/base.ozf"
+from "../lib/ml-yacc/base"
 
 import
     structure Source
-from "../infrastructure/Source.ozf"
+from "../infrastructure/Source"
 
 import
     structure SCon
-from "SCon.ozf"
+from "SCon"
 
 import
     structure Lab
-from "Lab.ozf"
+from "Lab"
 
 import
     structure VId
@@ -20,16 +20,16 @@ import
     structure TyVar
     structure SigId
     structure StrId
-from "Ids.ozf"
+from "Ids"
 
 import
     structure InputGrammar
-from "InputGrammar.ozf"
+from "InputGrammar"
 
 import
     signature DERIVED_FORMS
-from "DERIVED_FORMS.ozf"
+from "DERIVED_FORMS"
 
 import
     signature Parser_TOKENS
-from "PARSER.ozf"
+from "PARSER"

@@ -1,23 +1,23 @@
 import
     structure Source
-from "../infrastructure/Source.ozf"
+from "../infrastructure/Source"
 
 import
     structure Type
-from "Type.ozf"
+from "Type"
 
 import
     structure Inf
-from "Inf.ozf"
+from "Inf"
 
 import
     structure MakeIntermediateGrammar
-from "MakeIntermediateGrammar.ozf"
+from "MakeIntermediateGrammar"
 
 import
     structure MakePPIntermediateGrammar
-from "MakePPIntermediateGrammar.ozf"
+from "MakePPIntermediateGrammar"
 
 import
     structure PrettyPrint
-from "../misc/PrettyPrint.ozf"
+from "../misc/PrettyPrint"

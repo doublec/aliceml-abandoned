@@ -1,115 +1,115 @@
 import
     structure TextIO
-from "../lib/TextIO.ozf"
+from "../lib/TextIO"
 
 import
     structure IO
-from "../lib/IO.ozf"
+from "../lib/IO"
 
 import
     structure OS
-from "../lib/OS.ozf"
+from "../lib/OS"
 
 import
     structure Pickle
-from "../lib/Pickle.ozf"
+from "../lib/Pickle"
 
 import
     structure Url
-from "../misc/Url.ozf"
+from "../misc/Url"
 
 import
     structure Crash
-from "../infrastructure/Crash.ozf"
+from "../infrastructure/Crash"
 
 import
     structure Source
-from "../infrastructure/Source.ozf"
+from "../infrastructure/Source"
 
 import
     structure Error
-from "../infrastructure/Error.ozf"
+from "../infrastructure/Error"
 
 import
     signature COMPOSER
-from "../infrastructure/COMPOSER.ozf"
+from "../infrastructure/COMPOSER"
 
 import
     structure Path
-from "../common/Path.ozf"
+from "../common/Path"
 
 import
     structure Inf
-from "../common/Inf.ozf"
+from "../common/Inf"
 
 import   (*DEBUG*)
     structure PPInf
-from "../common/PPInf.ozf"
+from "../common/PPInf"
 
 import   (*DEBUG*)
     structure MakeParsingPhase
-from "../frontend-sml/ParsingPhase.ozf"
+from "../frontend-sml/ParsingPhase"
 
 import   (*DEBUG*)
     structure BindEnv
-from "../frontend-sml/BindEnv.ozf"
+from "../frontend-sml/BindEnv"
 
 import   (*DEBUG*)
     structure BindEnvFromSig
-from "../frontend-sml/BindEnvFromSig.ozf"
+from "../frontend-sml/BindEnvFromSig"
 
 import   (*DEBUG*)
     structure MakeAbstractionPhase
-from "../frontend-sml/MakeAbstractionPhase.ozf"
+from "../frontend-sml/MakeAbstractionPhase"
 
 import   (*DEBUG*)
     structure Env
-from "../frontend-common/Env.ozf"
+from "../frontend-common/Env"
 
 import   (*DEBUG*)
     structure MakeElaborationPhase
-from "../frontend-common/MakeElaborationPhase.ozf"
+from "../frontend-common/MakeElaborationPhase"
 
 import   (*DEBUG*)
     structure TypedGrammar
-from "../frontend-common/TypedGrammar.ozf"
+from "../frontend-common/TypedGrammar"
 
 import   (*DEBUG*)
     structure PPAbstractGrammar
-from "../frontend-common/AbstractGrammar.ozf"
+from "../frontend-common/AbstractGrammar"
 
 import   (*DEBUG*)
     structure MakeTranslationPhase
-from "../frontend-common/MakeTranslationPhase.ozf"
+from "../frontend-common/MakeTranslationPhase"
 
 import   (*DEBUG*)
     structure PPIntermediateGrammar
-from "../common/IntermediateGrammar.ozf"
+from "../common/IntermediateGrammar"
 
 import   (*DEBUG*)
     structure FlatteningPhase
-from "../backend-common/FlatteningPhase.ozf"
+from "../backend-common/FlatteningPhase"
 
 import   (*DEBUG*)
     structure MakeTracingPhase
-from "../infrastructure/MakeTracingPhase.ozf"
+from "../infrastructure/MakeTracingPhase"
 
 import   (*DEBUG*)
     structure MakeDumpingPhase
-from "../infrastructure/MakeDumpingPhase.ozf"
+from "../infrastructure/MakeDumpingPhase"
 
 import
     structure MakeBackendCommon
-from "../backend-common/MakeBackendCommon.ozf"
+from "../backend-common/MakeBackendCommon"
 
 import
     structure Signature
-from "Signature.ozf"
+from "Signature"
 
 import
     signature COMPILER
-from "COMPILER.ozf"
+from "COMPILER"
 
 import
     signature BATCH_COMPILER
-from "BATCH_COMPILER.ozf"
+from "BATCH_COMPILER"

@@ -1,11 +1,11 @@
 import
     signature STAMP
-from "../misc/STAMP.ozf"
+from "../misc/STAMP"
 
 import
     structure Stamp
-from "../common/Stamp.ozf"
+from "../common/Stamp"
 
 import
     signature ID
-from "ID.ozf"
+from "ID"

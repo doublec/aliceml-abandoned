@@ -1,7 +1,7 @@
 import
     structure PrettyPrint
-from "../misc/PrettyPrint.ozf"
+from "../misc/PrettyPrint"
 
 import
     structure Inf
-from "Inf.ozf"
+from "Inf"

@@ -1,26 +1,26 @@
 import structure Crash
-from "../infrastructure/Crash.ozf"
+from "../infrastructure/Crash"
 
 import structure Source
-from "../infrastructure/Source.ozf"
+from "../infrastructure/Source"
 
 import structure IntermediateGrammar
-from "IntermediateGrammar.ozf"
+from "IntermediateGrammar"
 
 import structure Type
-from "Type.ozf"
+from "Type"
 
 import structure PervasiveType
-from "PervasiveType.ozf"
+from "PervasiveType"
 
 import structure Stamp
-from "Stamp.ozf"
+from "Stamp"
 
 import functor MakeHashScopedImpMap
-from "../misc/MakeHashScopedImpMap.ozf"
+from "../misc/MakeHashScopedImpMap"
 
 import functor FromEqHashKey
-from "../misc/HASH_KEY.ozf"
+from "../misc/HASH_KEY"
 
 import signature CHECK_INTERMEDIATE
-from "CHECK_INTERMEDIATE.ozf"
+from "CHECK_INTERMEDIATE"

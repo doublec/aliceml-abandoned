@@ -1,15 +1,15 @@
 import
     functor MakeAbstractGrammar
-from "MakeAbstractGrammar.ozf"
+from "MakeAbstractGrammar"
 
 import
     functor MakePPAbstractGrammar
-from "MakePPAbstractGrammar.ozf"
+from "MakePPAbstractGrammar"
 
 import
     structure PrettyPrint
-from "../misc/PrettyPrint.ozf"
+from "../misc/PrettyPrint"
 
 import
     structure Source
-from "../infrastructure/Source.ozf"
+from "../infrastructure/Source"

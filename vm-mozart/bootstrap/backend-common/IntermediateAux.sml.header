@@ -1,51 +1,51 @@
 import
     functor MakeHashImpSet
-from "../misc/MakeHashImpSet.ozf"
+from "../misc/MakeHashImpSet"
 
 import
     structure Crash
-from "../infrastructure/Crash.ozf"
+from "../infrastructure/Crash"
 
 import
     structure Stamp
-from "../common/Stamp.ozf"
+from "../common/Stamp"
 
 import
     structure StampSet
-from "../common/StampSet.ozf"
+from "../common/StampSet"
 
 import
     structure Name
-from "../common/Name.ozf"
+from "../common/Name"
 
 import
     structure Label
-from "../common/Label.ozf"
+from "../common/Label"
 
 import
     structure Path
-from "../common/Path.ozf"
+from "../common/Path"
 
 import
     structure Type
-from "../common/Type.ozf"
+from "../common/Type"
 
 import
     structure IntermediateGrammar
-from "../common/IntermediateGrammar.ozf"
+from "../common/IntermediateGrammar"
 
 import
     structure PervasiveType
-from "../common/PervasiveType.ozf"
+from "../common/PervasiveType"
 
 import
     structure Arity
-from "Arity.ozf"
+from "Arity"
 
 import
     structure FlatGrammar
-from "FlatGrammar.ozf"
+from "FlatGrammar"
 
 import
     signature INTERMEDIATE_AUX
-from "INTERMEDIATE_AUX.ozf"
+from "INTERMEDIATE_AUX"

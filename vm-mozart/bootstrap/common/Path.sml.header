@@ -1,19 +1,19 @@
 import
     structure Crash
-from "../infrastructure/Crash.ozf"
+from "../infrastructure/Crash"
 
 import
     structure GlobalStamp
-from "../misc/GlobalStamp.ozf"
+from "../misc/GlobalStamp"
 
 import
     structure Label
-from "Label.ozf"
+from "Label"
 
 import
     structure Name
-from "Name.ozf"
+from "Name"
 
 import
     signature PATH
-from "PATH.ozf"
+from "PATH"

@@ -1,11 +1,11 @@
 import
     structure FromEqHashKey
-from "../misc/HASH_KEY.ozf"
+from "../misc/HASH_KEY"
 
 import
     structure MakeHashImpMap
-from "../misc/MakeHashImpMap.ozf"
+from "../misc/MakeHashImpMap"
 
 import
     structure Stamp
-from "Stamp.ozf"
+from "Stamp"

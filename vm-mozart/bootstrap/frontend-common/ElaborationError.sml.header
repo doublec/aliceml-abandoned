@@ -1,55 +1,55 @@
 import
     structure Error
-from "../infrastructure/Error.ozf"
+from "../infrastructure/Error"
 
 import
     structure Fixity
-from "../common/Fixity.ozf"
+from "../common/Fixity"
 
 import
     structure Name
-from "../common/Name.ozf"
+from "../common/Name"
 
 import
     structure Label
-from "../common/Label.ozf"
+from "../common/Label"
 
 import
     structure Stamp
-from "../common/Stamp.ozf"
+from "../common/Stamp"
 
 import
     structure Type
-from "../common/Type.ozf"
+from "../common/Type"
 
 import
     structure Inf
-from "../common/Inf.ozf"
+from "../common/Inf"
 
 import
     structure AbstractGrammar
-from "AbstractGrammar.ozf"
+from "AbstractGrammar"
 
 import
     structure PrettyPrint
-from "../misc/PrettyPrint.ozf"
+from "../misc/PrettyPrint"
 
 import
     structure PPMisc
-from "../misc/PPMisc.ozf"
+from "../misc/PPMisc"
 
 import
     structure PPPath
-from "../common/PPPath.ozf"
+from "../common/PPPath"
 
 import
     structure PPType
-from "../common/PPType.ozf"
+from "../common/PPType"
 
 import
     structure PPInf
-from "../common/PPInf.ozf"
+from "../common/PPInf"
 
 import
     signature ELABORATION_ERROR
-from "ELABORATION_ERROR.ozf"
+from "ELABORATION_ERROR"

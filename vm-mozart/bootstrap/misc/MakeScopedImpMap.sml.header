@@ -1,7 +1,7 @@
 import
     signature IMP_MAP
-from "IMP_MAP.ozf"
+from "IMP_MAP"
 
 import
     signature SCOPED_IMP_MAP
-from "SCOPED_IMP_MAP.ozf"
+from "SCOPED_IMP_MAP"

@@ -1,7 +1,7 @@
 import
     signature HASH_KEY
-from "HASH_KEY.ozf"
+from "HASH_KEY"
 
 import
     signature IMP_SET
-from "IMP_SET.ozf"
+from "IMP_SET"

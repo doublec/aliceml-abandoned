@@ -1,15 +1,15 @@
 import
     structure Label
-from "Label.ozf"
+from "Label"
 
 import
     structure Path
-from "Path.ozf"
+from "Path"
 
 import
     structure PathSet
-from "PathSet.ozf"
+from "PathSet"
 
 import
     structure PathMap
-from "PathMap.ozf"
+from "PathMap"

@@ -1,7 +1,7 @@
 import
     structure Source
-from "../infrastructure/Source.ozf"
+from "../infrastructure/Source"
 
 import
     structure VId
-from "Ids.ozf"
+from "Ids"

@@ -1,29 +1,29 @@
 import
     structure Source
-from "../infrastructure/Source.ozf"
+from "../infrastructure/Source"
 
 import
     structure Lab
-from "Lab.ozf"
+from "Lab"
 
 import
     structure VId
     structure TyCon
     structure StrId
-from "Ids.ozf"
+from "Ids"
 
 import
     signature INPUT_GRAMMAR
-from "INPUT_GRAMMAR.ozf"
+from "INPUT_GRAMMAR"
 
 import
     structure InputGrammar
-from "InputGrammar.ozf"
+from "InputGrammar"
 
 import
     structure ParsingError
-from "ParsingError.ozf"
+from "ParsingError"
 
 import
     signature DERIVED_FORMS
-from "DERIVED_FORMS.ozf"
+from "DERIVED_FORMS"

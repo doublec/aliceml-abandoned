@@ -1,80 +1,80 @@
 import
     structure Assert
-from "../misc/Assert.ozf"
+from "../misc/Assert"
 
 import
     signature HASH_KEY
     structure FromEqHashKey
-from "../misc/HASH_KEY.ozf"
+from "../misc/HASH_KEY"
 
 import
     signature IMP_MAP
-from "../misc/IMP_MAP.ozf"
+from "../misc/IMP_MAP"
 
 import
     structure MakeHashImpMap
-from "../misc/MakeHashImpMap.ozf"
+from "../misc/MakeHashImpMap"
 
 import
     structure MakeDepthFirstSearch
-from "../misc/MakeDepthFirstSearch.ozf"
+from "../misc/MakeDepthFirstSearch"
 
 import
     structure Crash
-from "../infrastructure/Crash.ozf"
+from "../infrastructure/Crash"
 
 import
     structure Source
-from "../infrastructure/Source.ozf"
+from "../infrastructure/Source"
 
 import
     structure Error
-from "../infrastructure/Error.ozf"
+from "../infrastructure/Error"
 
 import
     structure EmptyContext
-from "../infrastructure/EmptyContext.ozf"
+from "../infrastructure/EmptyContext"
 
 import
     structure Stamp
-from "../common/Stamp.ozf"
+from "../common/Stamp"
 
 import
     structure StampSet
-from "../common/StampSet.ozf"
+from "../common/StampSet"
 
 import
     structure StampMap
-from "../common/StampMap.ozf"
+from "../common/StampMap"
 
 import   (*--**DEBUG*)
     structure Name
-from "../common/Name.ozf"
+from "../common/Name"
 
 import
     structure Label
-from "../common/Label.ozf"
+from "../common/Label"
 
 import
     structure Arity
-from "Arity.ozf"
+from "Arity"
 
 import
     structure FlatGrammar
-from "FlatGrammar.ozf"
+from "FlatGrammar"
 
 import
     structure OutputFlatGrammar
-from "OutputFlatGrammar.ozf"
+from "OutputFlatGrammar"
 
 import
     structure PrimOps
-from "PrimOps.ozf"
+from "PrimOps"
 
 import
     signature VALUE_PROPAGATION_PHASE
-from "VALUE_PROPAGATION_PHASE.ozf"
+from "VALUE_PROPAGATION_PHASE"
 
 import   (*--**DEBUG*)
     structure TextIO
-from "../lib/TextIO.ozf"
+from "../lib/TextIO"

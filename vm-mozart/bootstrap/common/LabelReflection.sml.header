@@ -1,19 +1,19 @@
 import
     structure Name
-from "Name.ozf"
+from "Name"
 
 import
     structure Label
-from "Label.ozf"
+from "Label"
 
 import
     structure Path
-from "Path.ozf"
+from "Path"
 
 import
     structure Type
-from "Type.ozf"
+from "Type"
 
 import
     signature LABEL_REFLECTION
-from "LABEL_REFLECTION.ozf"
+from "LABEL_REFLECTION"

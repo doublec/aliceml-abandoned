@@ -1,7 +1,7 @@
 import
     structure PrettyPrint
-from "PrettyPrint.ozf"
+from "PrettyPrint"
 
 import
     signature PP_MISC
-from "PP_MISC.ozf"
+from "PP_MISC"

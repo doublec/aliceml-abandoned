@@ -1,7 +1,7 @@
 import
     signature SIGNATURE
-from "../infrastructure/SIGNATURE.ozf"
+from "../infrastructure/SIGNATURE"
 
 import
     structure Inf
-from "../common/Inf.ozf"
+from "../common/Inf"

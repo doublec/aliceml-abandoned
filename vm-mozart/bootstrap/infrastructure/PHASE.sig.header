@@ -1,15 +1,15 @@
 import
     structure Error
-from "Error.ozf"
+from "Error"
 
 import
     structure Source
-from "Source.ozf"
+from "Source"
 
 import
     signature CONTEXT
-from "CONTEXT.ozf"
+from "CONTEXT"
 
 import
     signature REPRESENTATION
-from "REPRESENTATION.ozf"
+from "REPRESENTATION"

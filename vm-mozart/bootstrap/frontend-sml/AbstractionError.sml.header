@@ -1,38 +1,38 @@
 import
     structure Source
-from "../infrastructure/Source.ozf"
+from "../infrastructure/Source"
 
 import
     structure Error
-from "../infrastructure/Error.ozf"
+from "../infrastructure/Error"
 
 import
     structure PrettyPrint
-from "../misc/PrettyPrint.ozf"
+from "../misc/PrettyPrint"
 
 import
     structure PPMisc
-from "../misc/PPMisc.ozf"
+from "../misc/PPMisc"
 
 import
     structure Url
-from "../misc/Url.ozf"
+from "../misc/Url"
 
 import
     structure Label
-from "../common/Label.ozf"
+from "../common/Label"
 
 import
     structure Name
-from "../common/Name.ozf"
+from "../common/Name"
 
 import
     structure AbstractGrammar
-from "../frontend-common/AbstractGrammar.ozf"
+from "../frontend-common/AbstractGrammar"
 
 import
     structure Lab
-from "Lab.ozf"
+from "Lab"
 
 import
     structure VId
@@ -40,8 +40,8 @@ import
     structure TyCon
     structure SigId
     structure StrId
-from "Ids.ozf"
+from "Ids"
 
 import
     signature ABSTRACTION_ERROR
-from "ABSTRACTION_ERROR.ozf"
+from "ABSTRACTION_ERROR"

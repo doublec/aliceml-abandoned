@@ -1,58 +1,58 @@
 import
     structure Url
-from "../misc/Url.ozf"
+from "../misc/Url"
 
 import
     structure Crash
-from "../infrastructure/Crash.ozf"
+from "../infrastructure/Crash"
 
 import
     structure Source
-from "../infrastructure/Source.ozf"
+from "../infrastructure/Source"
 
 import
     signature CONTEXT
-from "../infrastructure/CONTEXT.ozf"
+from "../infrastructure/CONTEXT"
 
 import
     structure Stamp
-from "../common/Stamp.ozf"
+from "../common/Stamp"
 
 import
     structure Name
-from "../common/Name.ozf"
+from "../common/Name"
 
 import
     structure Label
-from "../common/Label.ozf"
+from "../common/Label"
 
 import
     structure Fixity
-from "../common/Fixity.ozf"
+from "../common/Fixity"
 
 import
     structure PervasiveType
-from "../common/PervasiveType.ozf"
+from "../common/PervasiveType"
 
 import
     structure Inf
-from "../common/Inf.ozf"
+from "../common/Inf"
 
 import
     signature ABSTRACT_GRAMMAR
-from "../frontend-common/ABSTRACT_GRAMMAR.ozf"
+from "../frontend-common/ABSTRACT_GRAMMAR"
 
 import
     structure AbstractGrammar
-from "../frontend-common/AbstractGrammar.ozf"
+from "../frontend-common/AbstractGrammar"
 
 import
     structure SCon
-from "SCon.ozf"
+from "SCon"
 
 import
     structure Lab
-from "Lab.ozf"
+from "Lab"
 
 import
     structure VId
@@ -60,36 +60,36 @@ import
     structure TyVar
     structure SigId
     structure StrId
-from "Ids.ozf"
+from "Ids"
 
 import
     signature INPUT_GRAMMAR
-from "INPUT_GRAMMAR.ozf"
+from "INPUT_GRAMMAR"
 
 import
     structure InputGrammar
-from "InputGrammar.ozf"
+from "InputGrammar"
 
 import
     structure Infix
-from "Infix.ozf"
+from "Infix"
 
 import
     structure BindEnv
-from "BindEnv.ozf"
+from "BindEnv"
 
 import
     structure BindEnvFromSig
-from "BindEnvFromSig.ozf"
+from "BindEnvFromSig"
 
 import
     structure Sharing
-from "Sharing.ozf"
+from "Sharing"
 
 import
     structure AbstractionError
-from "AbstractionError.ozf"
+from "AbstractionError"
 
 import
     signature ABSTRACTION_PHASE
-from "ABSTRACTION_PHASE.ozf"
+from "ABSTRACTION_PHASE"

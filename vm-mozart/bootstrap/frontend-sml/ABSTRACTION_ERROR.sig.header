@@ -1,18 +1,18 @@
 import
     structure Source
-from "../infrastructure/Source.ozf"
+from "../infrastructure/Source"
 
 import
     structure Url
-from "../misc/Url.ozf"
+from "../misc/Url"
 
 import
     structure AbstractGrammar
-from "../frontend-common/AbstractGrammar.ozf"
+from "../frontend-common/AbstractGrammar"
 
 import
     structure Lab
-from "Lab.ozf"
+from "Lab"
 
 import
     structure VId
@@ -20,4 +20,4 @@ import
     structure TyCon
     structure SigId
     structure StrId
-from "Ids.ozf"
+from "Ids"

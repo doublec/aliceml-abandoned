@@ -1,8 +1,8 @@
-import structure Name  from "Name.ozf"
-import structure Label from "Label.ozf"
-import structure Type  from "Type.ozf"
+import structure Name  from "Name"
+import structure Label from "Label"
+import structure Type  from "Type"
 
-import structure PervasiveType from "PervasiveType.ozf"
+import structure PervasiveType from "PervasiveType"
 
 import signature PERVASIVE_TYPE_REFLECTION
-from "PERVASIVE_TYPE_REFLECTION.ozf"
+from "PERVASIVE_TYPE_REFLECTION"

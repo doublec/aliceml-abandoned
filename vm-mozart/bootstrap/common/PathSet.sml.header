@@ -1,7 +1,7 @@
 import
     structure MakeHashImpSet
-from "../misc/MakeHashImpSet.ozf"
+from "../misc/MakeHashImpSet"
 
 import
     structure Path
-from "Path.ozf"
+from "Path"

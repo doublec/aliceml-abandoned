@@ -1,11 +1,11 @@
 import
     signature HASH_KEY
-from "HASH_KEY.ozf"
+from "HASH_KEY"
 
 import
     structure MakeScopedImpMap
-from "MakeScopedImpMap.ozf"
+from "MakeScopedImpMap"
 
 import
     structure MakeHashImpMap
-from "MakeHashImpMap.ozf"
+from "MakeHashImpMap"

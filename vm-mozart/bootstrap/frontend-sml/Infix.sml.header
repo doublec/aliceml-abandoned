@@ -1,31 +1,31 @@
 import
     structure Crash
-from "../infrastructure/Crash.ozf"
+from "../infrastructure/Crash"
 
 import
     structure Source
-from "../infrastructure/Source.ozf"
+from "../infrastructure/Source"
 
 import
     structure VId
-from "Ids.ozf"
+from "Ids"
 
 import
     signature INPUT_GRAMMAR
-from "INPUT_GRAMMAR.ozf"
+from "INPUT_GRAMMAR"
 
 import
     structure InputGrammar
-from "InputGrammar.ozf"
+from "InputGrammar"
 
 import
     structure ParsingError
-from "ParsingError.ozf"
+from "ParsingError"
 
 import
     structure AbstractionError
-from "AbstractionError.ozf"
+from "AbstractionError"
 
 import
     signature INFIX
-from "INFIX.ozf"
+from "INFIX"

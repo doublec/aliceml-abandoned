@@ -1,6 +1,6 @@
 import
     structure Lab
-from "Lab.ozf"
+from "Lab"
 
 import
     structure VId
@@ -8,8 +8,8 @@ import
     structure TyVar
     structure SigId
     structure StrId
-from "Ids.ozf"
+from "Ids"
 
 import
     structure SCon
-from "SCon.ozf"
+from "SCon"

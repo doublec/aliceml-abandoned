@@ -1,15 +1,15 @@
 import
     structure Label
-from "Label.ozf"
+from "Label"
 
 import
     structure Name
-from "Name.ozf"
+from "Name"
 
 import
     structure Path
-from "Path.ozf"
+from "Path"
 
 import
     structure Type
-from "Type.ozf"
+from "Type"

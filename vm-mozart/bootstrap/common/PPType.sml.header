@@ -1,36 +1,36 @@
 import
     structure Crash
-from "../infrastructure/Crash.ozf"
+from "../infrastructure/Crash"
 
 import
     structure PrettyPrint
-from "../misc/PrettyPrint.ozf"
+from "../misc/PrettyPrint"
 
 import
     structure PPMisc
-from "../misc/PPMisc.ozf"
+from "../misc/PPMisc"
 
 import
     structure Label
-from "Label.ozf"
+from "Label"
 
 import
     structure Path
-from "Path.ozf"
+from "Path"
 
 import
     structure PPPath
-from "PPPath.ozf"
+from "PPPath"
 
 import
     structure Type
     structure TypePrivate
-from "Type.ozf"
+from "Type"
 
 import
     signature PP_TYPE
-from "PP_TYPE.ozf"
+from "PP_TYPE"
 
 import
     structure PervasiveType
-from "PervasiveType.ozf"
+from "PervasiveType"

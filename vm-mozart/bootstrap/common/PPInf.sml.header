@@ -1,40 +1,40 @@
 import
     structure PrettyPrint
-from "../misc/PrettyPrint.ozf"
+from "../misc/PrettyPrint"
 
 import
     structure PPMisc
-from "../misc/PPMisc.ozf"
+from "../misc/PPMisc"
 
 import
     structure Label
-from "Label.ozf"
+from "Label"
 
 import
     structure Path
-from "Path.ozf"
+from "Path"
 
 import
     structure PPPath
-from "PPPath.ozf"
+from "PPPath"
 
 import
     structure Type
-from "Type.ozf"
+from "Type"
 
 import
     structure PPType
-from "PPType.ozf"
+from "PPType"
 
 import
     structure Fixity
-from "Fixity.ozf"
+from "Fixity"
 
 import
     structure Inf
     structure InfPrivate
-from "Inf.ozf"
+from "Inf"
 
 import
     signature PP_INF
-from "PP_INF.ozf"
+from "PP_INF"

@@ -1,27 +1,27 @@
 import
     structure Crash
-from "../infrastructure/Crash.ozf"
+from "../infrastructure/Crash"
 
 import
     signature COMPOSER
-from "../infrastructure/COMPOSER.ozf"
+from "../infrastructure/COMPOSER"
 
 import
     structure FromEqHashKey
-from "../misc/HASH_KEY.ozf"
+from "../misc/HASH_KEY"
 
 import
     structure MakeHashImpMap
-from "../misc/MakeHashImpMap.ozf"
+from "../misc/MakeHashImpMap"
 
 import
     structure Url
-from "../misc/Url.ozf"
+from "../misc/Url"
 
 import
     structure Inf
-from "../common/Inf.ozf"
+from "../common/Inf"
 
 import
     structure Signature
-from "Signature.ozf"
+from "Signature"

@@ -1,15 +1,15 @@
 import
     structure Url
-from "../misc/Url.ozf"
+from "../misc/Url"
 
 import
     structure Name
-from "Name.ozf"
+from "Name"
 
 import
     structure Label
-from "Label.ozf"
+from "Label"
 
 import
     structure Stamp
-from "Stamp.ozf"
+from "Stamp"

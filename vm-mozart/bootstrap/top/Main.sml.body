@@ -14,14 +14,14 @@
 
 import
     structure OS
-from "../lib/OS.ozf"
+from "../lib/OS"
 
 import
     structure CommandLine
-from "../lib/CommandLine.ozf"
+from "../lib/CommandLine"
 
 import
     structure SMLToMozartMain
-from "SMLToMozartMain.ozf"
+from "SMLToMozartMain"
 
 val _ = OS.Process.exit (SMLToMozartMain.stoc (CommandLine.arguments ()))

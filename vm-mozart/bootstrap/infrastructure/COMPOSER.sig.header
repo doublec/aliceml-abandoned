@@ -1,7 +1,7 @@
 import
     signature SIGNATURE
-from "SIGNATURE.ozf"
+from "SIGNATURE"
 
 import
     structure Url
-from "../misc/Url.ozf"
+from "../misc/Url"

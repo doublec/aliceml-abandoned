@@ -1,11 +1,11 @@
 import
     structure Name
-from "Name.ozf"
+from "Name"
 
 import
     structure Label
-from "Label.ozf"
+from "Label"
 
 import
     structure Type
-from "Type.ozf"
+from "Type"

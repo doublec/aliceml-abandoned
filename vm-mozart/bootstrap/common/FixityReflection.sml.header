@@ -1,7 +1,7 @@
-import structure Fixity from "Fixity.ozf"
-import structure Name   from "Name.ozf"
-import structure Label  from "Label.ozf"
-import structure Type   from "Type.ozf"
-import structure PervasiveType from "PervasiveType.ozf"
+import structure Fixity from "Fixity"
+import structure Name   from "Name"
+import structure Label  from "Label"
+import structure Type   from "Type"
+import structure PervasiveType from "PervasiveType"
 
-import signature FIXITY_REFLECTION from "FIXITY_REFLECTION.ozf"
+import signature FIXITY_REFLECTION from "FIXITY_REFLECTION"

@@ -1,55 +1,55 @@
 import
     structure Url
-from "../misc/Url.ozf"
+from "../misc/Url"
 
 import
     structure Source
-from "../infrastructure/Source.ozf"
+from "../infrastructure/Source"
 
 import
     signature SWITCHES
-from "../infrastructure/SWITCHES.ozf"
+from "../infrastructure/SWITCHES"
 
 import
     signature PHASE
-from "../infrastructure/PHASE.ozf"
+from "../infrastructure/PHASE"
 
 import
     functor ComposePhases
-from "../infrastructure/ComposePhases.ozf"
+from "../infrastructure/ComposePhases"
 
 import
     functor MakeTracingPhase
-from "../infrastructure/MakeTracingPhase.ozf"
+from "../infrastructure/MakeTracingPhase"
 
 import
     functor MakeDumpingPhase
-from "../infrastructure/MakeDumpingPhase.ozf"
+from "../infrastructure/MakeDumpingPhase"
 
 import
     structure TypedGrammar
-from "TypedGrammar.ozf"
+from "TypedGrammar"
 
 import
     structure Inf
-from "../common/Inf.ozf"
+from "../common/Inf"
 
 import
     structure PPInf
-from "../common/PPInf.ozf"
+from "../common/PPInf"
 
 import
     structure PPIntermediateGrammar
-from "../common/IntermediateGrammar.ozf"
+from "../common/IntermediateGrammar"
 
 import
     structure MakeElaborationPhase
-from "MakeElaborationPhase.ozf"
+from "MakeElaborationPhase"
 
 import
     structure MakeTranslationPhase
-from "MakeTranslationPhase.ozf"
+from "MakeTranslationPhase"
 
 import
     structure Env
-from "Env.ozf"
+from "Env"

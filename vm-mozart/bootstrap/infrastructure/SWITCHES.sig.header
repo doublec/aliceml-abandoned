@@ -1,1 +1,1 @@
-import structure TextIO from "../lib/TextIO.ozf"
+import structure TextIO from "../lib/TextIO"

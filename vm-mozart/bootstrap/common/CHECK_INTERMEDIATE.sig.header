@@ -1,2 +1,2 @@
 import structure IntermediateGrammar
-from "IntermediateGrammar.ozf"
+from "IntermediateGrammar"

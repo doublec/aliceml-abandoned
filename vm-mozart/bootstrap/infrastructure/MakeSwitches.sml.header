@@ -1,2 +1,2 @@
-import structure TextIO   from "../lib/TextIO.ozf"
-import signature SWITCHES from "SWITCHES.ozf"
+import structure TextIO   from "../lib/TextIO"
+import signature SWITCHES from "SWITCHES"

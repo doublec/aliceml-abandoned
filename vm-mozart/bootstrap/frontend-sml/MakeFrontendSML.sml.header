@@ -1,47 +1,47 @@
 import
     structure Url
-from "../misc/Url.ozf"
+from "../misc/Url"
 
 import
     structure Source
-from "../infrastructure/Source.ozf"
+from "../infrastructure/Source"
 
 import
     signature SWITCHES
-from "../infrastructure/SWITCHES.ozf"
+from "../infrastructure/SWITCHES"
 
 import
     signature PHASE
-from "../infrastructure/PHASE.ozf"
+from "../infrastructure/PHASE"
 
 import
     structure ComposePhases
-from "../infrastructure/ComposePhases.ozf"
+from "../infrastructure/ComposePhases"
 
 import
     structure MakeTracingPhase
-from "../infrastructure/MakeTracingPhase.ozf"
+from "../infrastructure/MakeTracingPhase"
 
 import
     structure MakeDumpingPhase
-from "../infrastructure/MakeDumpingPhase.ozf"
+from "../infrastructure/MakeDumpingPhase"
 
 import
     structure Inf
-from "../common/Inf.ozf"
+from "../common/Inf"
 
 import
     structure PPAbstractGrammar
-from "../frontend-common/AbstractGrammar.ozf"
+from "../frontend-common/AbstractGrammar"
 
 import
     structure MakeParsingPhase
-from "ParsingPhase.ozf"
+from "ParsingPhase"
 
 import
     structure MakeAbstractionPhase
-from "MakeAbstractionPhase.ozf"
+from "MakeAbstractionPhase"
 
 import
     structure BindEnv
-from "BindEnv.ozf"
+from "BindEnv"

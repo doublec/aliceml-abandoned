@@ -1,7 +1,7 @@
 import
     structure Label
-from "../common/Label.ozf"
+from "../common/Label"
 
 import
     signature ARITY
-from "ARITY.ozf"
+from "ARITY"

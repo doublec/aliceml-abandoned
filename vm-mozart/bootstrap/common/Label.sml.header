@@ -1,15 +1,15 @@
 import
     structure Name
-from "Name.ozf"
+from "Name"
 
 import
     structure StringHashKey
-from "../misc/StringHashKey.ozf"
+from "../misc/StringHashKey"
 
 import
     structure LargeIntHashKey
-from "../misc/LargeIntHashKey.ozf"
+from "../misc/LargeIntHashKey"
 
 import
     signature LABEL
-from "LABEL.ozf"
+from "LABEL"
