@@ -13,8 +13,9 @@
     components.  To this aim, every component manager maintains its
     <EM>component table</EM>, which is a mapping from URLs to components.
     All loading, linking, evaluating, and signature matching is performed
-    lazily.  For this reason components are initially returned as by-need
-    futures, which can either be bound (on success) or failed.  See the
+    lazily.  For this reason components are initially returned as lazy
+    futures, which either get replaced by the component export (on success)
+    or failed.  See the
     description of exception <TT><A href="component.php3#Failure"
     >Component.Failure</A></TT> to see how these "asynchronous"
     exceptions are handled.

@@ -69,6 +69,7 @@ programming language (SML), as defined in</P>
   <UL>
     <LI> <A href="components.php3#source">separate compilation</A> </LI>
     <LI> <A href="components.php3#execution">lazy linking</A> </LI>
+    <LI> <A href="components.php3#managers">customized execution environments</A> </LI>
   </UL>
   </LI>
 
@@ -81,7 +82,7 @@ programming language (SML), as defined in</P>
   <UL>
     <LI> <A href="constraints.php3#fd">finite domain constraints</A> </LI>
     <LI> <A href="constraints.php3#fs">finite set contraints</A> </LI>
-    <LI> <A href="constraints.php3#spaces">spaces</A> </LI>
+    <LI> <A href="constraints.php3#spaces">first-class computation spaces</A> </LI>
   </UL>
   </LI>
 

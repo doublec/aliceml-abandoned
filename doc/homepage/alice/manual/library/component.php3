@@ -147,10 +147,10 @@
       <TT>exception <A name="Failure">Failure</A> of <A href="url.php3#t">Url.t</A> * exn</TT>
     </DT>
     <DD>
-      <P>indicates that the loading, evaluating or signature matching
+      <P>indicates that the loading, evaluation or type checking
 	of a component failed.  The URL is that of the component.  If
 	loading failed, the exception is an <TT><A href="io.php3">IO.Io</A
-	></TT> exception.  If evaluating failed, the exception is an
+	></TT> exception.  If evaluation failed, the exception is an
 	<TT><A href="#Eval">Eval</A></TT> exception.  If signature matching
 	failed, the exception is a <TT><A href="#Mismatch">Mismatch</A></TT>
 	exception.</P>

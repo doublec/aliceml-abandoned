@@ -112,74 +112,25 @@ val n = T.f V.x
 href="packages.php3#package-sharing">sharing across packages</A>.</P>
 
 
-<?php section("components", "unpickling components") ?>
+<?php section("components", "pickles and components") ?>
 
 <P>Pickles are closely related to <A href="components.php3">components</A>.
-In fact, a pickle is a special case of a component, and arbitrary
-components may be loaded as pickles.</P>
+In fact, a pickle is the special case of an <A
+href="components.php3#evaluated">evaluated component</A>, residing in a file.
+Pickles can thus be imported through <A href="components.php3#source">import
+announcements</A>.</P>
 
-<P>A pickle is an <I>evaluated</I> component (and we will use both terms
-as synonyms in the following). An evaluated component only
-contains the fully evaluated export, it will not be executed during
-load. This particularly means that loading it will neither generate
-any side effects, nor produce new generative entities like types or
-exceptions. An evaluated component does not import any other component.</P>
+<P>The load operations for pickles can access arbitrary components. The file
+name argument is interpreted as an URI. If the file at the designated location
+does not contain a plain pickle, the component will get linked and evaluated by
+the current component manager and its export is returned. That may imply
+arbitrary side effects. In particular, it may trigger additional components
+being loaded transitively, if respective imports are required.</P>
 
-<P>
-    A pickle is a component that just contains a module <TT>X</TT>
-    which is the one passed to the <TT>Save</TT> functor. If necessary,
-    you can thus import a pickle through an import announcement.
-  </P>
+<P>Note that evaluation of components causes the creation of new <A
+href="packages.php3#dynamic">generative types</A>. So if a non-pickle component
+is loaded twice, any generative type contained in its export will be
+incompatible between both instances. Similarly for exceptions.</P>
 
-  <P>
-    On the other hand, arbitrary components may be loaded through
-    <TT>Pickle.Load</TT> as long as they contain a module X
-    with appropriate signature.
-    The file name passed to the functor may actually be a
-    full URI, which will be resolved just like the URI in an import
-    announcement of a <A href="components.php3">component</A>.
-    If the component at the URI is not a pickle, it will be
-    executed before the functor returns. This may cause other
-    components to be loaded, if respective imports are required.
-  </P>
-
-  <P>
-    Note that execution
-    causes the creation of new <A href="packages.php3#dynamic">generative
-    types</A>. So if a non-pickle
-    component is loaded twice, any generative type contained in
-    its export will be incompatible between both instances.
-    Similarly for exceptions.
-  </P>
-
-  <P>
-    In some sense, import announcements may be seen as syntactic sugar for
-    appropriate applications of <TT>Pickle.Load</TT>. However, there are
-    important differences between both mechanisms:
-  </P>
-
-  <UL>
-    <LI> The component's signature need not be specified explicitly in import
-         announcements, since the compiler fetches it automatically from
-	 the component during compilation. This requires that the component
-	 exists at compile time, however, which is not the case for
-	 the load mechanism.
-    <LI> Linking of imports happens lazily, while the <TT>Load</TT>
-         functor executes at least the root component eagerly. (Lazy execution
-	 can be achieved through the use of the
-	 <A href="laziness.php3#modules"><TT>ByNeed</TT></A> functor though.)
-    <LI> Components imported via import announcements are only linked
-         in once in a given process, regardless how many import announcements
-	 exist for the same component. <TT>Load</TT> will always reload
-	 the requested component.
-    <LI> Import announcements allow the import of arbitrary and multiple
-         entities from a component while the <TT>Load</TT> functor can only
-	 load modules (whose name is fixed to <TT>X</TT>).
-  </UL>
-
-  <P>
-    It may be desirable to unify both mechanisms even more. This is likely
-    to be done for some future release.
-  </P>
 
 <?php footing() ?>
