@@ -135,8 +135,8 @@ functor MakeAbstractGrammar(type info) :>
 	| InfDec    of info * id * inf		(* interface *)
 	| RecDec    of info * dec list		(* recursive declarations *)
 	| OpenDec   of info * mod		(* open (inheritance) *)
-	| TypvarDec of info * id		(* scoped type variable *)
-	| LocalDec  of info * dec		(* local declaration *)
+	| TypvarDec of info * id * dec list	(* scoped type variable *)
+	| LocalDec  of info * dec list		(* local declaration *)
 
     (* Specifications *)
 
@@ -246,7 +246,7 @@ functor MakeAbstractGrammar(type info) :>
       | infoDec(InfDec(i,_,_))		= i
       | infoDec(RecDec(i,_))		= i
       | infoDec(OpenDec(i,_))		= i
-      | infoDec(TypvarDec(i,_))		= i
+      | infoDec(TypvarDec(i,_,_))	= i
       | infoDec(LocalDec(i,_))		= i
 
     fun infoSpec(ValSpec(i,_,_))	= i
