@@ -429,6 +429,7 @@ signature INTEGER =
 
 	val fromString: string -> int option
 
+	val min: int * int -> int
 	val max: int * int -> int
 
 	val fromInt: int -> int
@@ -512,6 +513,7 @@ structure Int :> INTEGER =
 
 	val fromString = scanString (scan DEC)   (*--** crashes *)
 
+	fun min (i, j) = if i > j then j else i
 	fun max (i, j) = if i < j then j else i
 
 	fun fromInt i = i
