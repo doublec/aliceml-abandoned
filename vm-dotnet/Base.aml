@@ -763,11 +763,42 @@ val vector = Vector.fromList
 
 structure Transient =
     struct
-	__primitive val await: 'a -> 'a = "Transient.await"
+	__primitive exception Promise = "Transient.Promise"
+	__primitive exception Future = "Transient.Future"
+	__primitive exception Fulfill = "Transient.Fulfill"
+	__primitive exception ByNeed of exn = "Transient.ByNeed"
+
 	__primitive val promise: unit -> 'a = "Transient.promise"
 	__primitive val fulfill: 'a * 'a -> unit = "Transient.fulfill"
+
 	__primitive val future: 'a -> 'a = "Transient.future"
 	__primitive val byNeed: (unit -> 'a) -> 'a = "Transient.byNeed"
+
+	__primitive val await: 'a -> 'a = "Transient.await"
+
+	__primitive val isPromise: 'a -> bool = "Transient.isPromise"
+	__primitive val isFuture: 'a -> bool = "Transient.isFuture"
+    end
+
+structure Transient' =
+    struct
+	type 'a promise
+
+	__primitive exception Promise = "Transient.Promise"
+	__primitive exception Future = "Transient.Future"
+	__primitive exception Fulfill = "Transient.Fulfill"
+	__primitive exception ByNeed of exn = "Transient.ByNeed"
+
+	__primitive val promise: unit -> 'a promise = "Transient.promise"
+	__primitive val fulfill: 'a promise * 'a -> unit = "Transient.fulfill"
+
+	__primitive val future: 'a promise -> 'a = "Transient.future"
+	__primitive val byNeed: (unit -> 'a) -> 'a = "Transient.byNeed"
+
+	__primitive val await: 'a -> 'a = "Transient.await"
+
+	__primitive val isPromise: 'a promise -> bool = "Transient.isPromise"
+	__primitive val isFuture: 'a -> bool = "Transient.isFuture"
     end
 
 

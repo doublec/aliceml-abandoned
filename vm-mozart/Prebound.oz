@@ -237,14 +237,32 @@ define
 	 fun {$ P} thread {P unit} end end
       'Thread.suspend':
 	 fun {$ T} {Thread.suspend T} unit end
+      'Transient.ByNeed': {NewUniqueName 'Transient.ByNeed'}
+      'Transient.Fulfill': {NewUniqueName 'Transient.Fulfill'}
+      'Transient.Future': {NewUniqueName 'Transient.Future'}
+      'Transient.Promise': {NewUniqueName 'Transient.Promise'}
       'Transient.await':
 	 fun {$ X} {Wait X} X end
       'Transient.byNeed':
 	 fun {$ P} {ByNeed fun {$} {P unit} end} end
       'Transient.fulfill':
-	 fun {$ P X} P = X unit end
+	 fun {$ P X}
+	    if {IsFree P} then
+	       P = X
+	    else
+	       {Exception.raiseError BuiltinTable.'Transient.Fulfill'}
+	    end
+	    unit
+	 end
       'Transient.future':
-	 fun {$ P} !!P end
+	 fun {$ P}
+	    if {IsFree P} then !!P
+	    else
+	       {Exception.raiseError BuiltinTable.'Transient.Future'} unit
+	    end
+	 end
+      'Transient.isFuture': IsFuture
+      'Transient.isPromise': IsFree
       'Transient.promise':
 	 fun {$ unit} _ end
       'Unsafe.cast': fun {$ X} X end
