@@ -204,13 +204,18 @@ define
 	 end
 	 L.Id := NewClosure
 	 {Emulate NextInstr Closure L TaskStack}
-      [] tag(!AppPrim Op IdRefs IdDefInstrOpt) then N Args in
-	 N = {Width IdRefs}
-	 Args = {MakeTuple args N}
-	 for J in 1..N do
-	    Args.J = case IdRefs.J of tag(!Local Id) then L.Id
-		     [] tag(!Global K) then Closure.(K + 1)
-		     end
+      [] tag(!AppPrim Op IdRefs IdDefInstrOpt) then Args in
+	 case {Width IdRefs} of 1 then
+	    Args = arg(case IdRefs.1 of tag(!Local Id) then L.Id
+		       [] tag(!Global K) then Closure.(K + 1)
+		       end)
+	 elseof N then
+	    Args = {MakeTuple args N}
+	    for J in 1..N do
+	       Args.J = case IdRefs.J of tag(!Local Id) then L.Id
+			[] tag(!Global K) then Closure.(K + 1)
+			end
+	    end
 	 end
 	 case IdDefInstrOpt of !NONE then   % tail call
 	    continue(Args {Op.1.1.pushCall Op TaskStack})
