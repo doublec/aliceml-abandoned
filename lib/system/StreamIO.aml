@@ -429,7 +429,7 @@ functor StreamIO(structure PrimIO: PRIM_IO
 			 flush (buf, stillFree, valOf writeArr)
 			 handle cause =>
 			     raise IO.Io
-				 {name, function="getWriter", cause};
+				 {name, function = "getWriter", cause};
 			 (writer, bufferMode))
 		  | TERMINATED name =>
 			(Promise.fulfill (p, state);
@@ -449,16 +449,41 @@ functor StreamIO(structure PrimIO: PRIM_IO
 			 handle cause =>
 			     (Promise.fulfill (p, state);
 			      raise IO.Io
-				  {name, function="getPosOut", cause});
+				  {name, function = "getPosOut", cause});
 			 (f, valOf getPos ()) before
 			 Promise.fulfill (p, state)
 			 handle cause =>
 			     (Promise.fulfill (p, state);
 			      raise IO.Io
-				  {name, function="getPosOut", cause}))
+				  {name, function = "getPosOut", cause}))
 		  | TERMINATED name =>
 			(Promise.fulfill (p, state);
 			 raise IO.Io {name, function = "getPosOut",
+				      cause = IO.ClosedStream})
+	    end
+
+	fun setPosOut (outstream, pos) =
+	    let
+		val p = Promise.promise ()
+		val state = Ref.exchange (f, Promise.future p)
+	    in
+		case state of
+		    WRITER (writer as PrimIO.WR {name, writeArr, setPos, ...},
+			    buf, stillFree, bufferMode) =>
+			(flush (buf, stillFree, valOf writeArr)
+			 handle cause =>
+			     (Promise.fulfill (p, state);
+			      raise IO.Io
+				  {name, function = "setPosOut", cause});
+			 valOf setPos pos before
+			 (Promise.fulfill (p, state); f)
+			 handle cause =>
+			     (Promise.fulfill (p, state);
+			      raise IO.Io
+				  {name, function = "setPosOut", cause}))
+		  | TERMINATED name =>
+			(Promise.fulfill (p, state);
+			 raise IO.Io {name, function = "setPosOut",
 				      cause = IO.ClosedStream})
 	    end
     end
