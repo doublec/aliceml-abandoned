@@ -450,7 +450,7 @@ structure Buffer =
 			   Gtk.textBufferPlaceCursor(buf, iter)
 		       end) ()
 		    end
-		handle IO.Io _ => FileDialog.message "IO error. Could not open file."
+		handle IO.Io _ => FileDialog.message ("I/O error: Could not open file " ^ f)
               else ();
               Gtk.signalConnect(buf, "modified-changed", modifiedChanged id);
               Gtk.textBufferConnectSpecialSignals buf;
@@ -503,7 +503,7 @@ structure Buffer =
                                      TextIO.closeOut file;
                                      Gtk.textBufferSetModified(buf, false);
 				     setUndoSaveMarker undo
-                                 end handle IO.Io _ => FileDialog.message "IO Error. Could not save file."
+                                 end handle IO.Io _ => FileDialog.message ("I/O error: Could not save file " ^ f)
                              else ();
                              true)
           end
