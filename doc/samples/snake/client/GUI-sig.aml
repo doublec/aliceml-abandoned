@@ -1,69 +1,89 @@
-(* Alice Snake 2.0 - GUI
-*
-*  Authors: Benedikt Grundmann / Sebastian Germesin
-*
-*  $Revision$
-*
-*  Last updated: $Date$ by $Author$
-* 
-*
-*)
-
-import structure Highscore from "../common/Highscore"
-import structure Pos       from "../common/Pos"
-import structure Color     from "../common/Color"
-import structure Protocol  from "../common/Protocol"
+import structure Protocol   from "../common/Protocol"
+import structure Config     from "../server/Config"
+import structure Color      from "../common/Color"
+import structure Pos        from "../common/Pos"
+import structure Highscore  from "../common/Highscore"
 
 signature GUI =
 sig
-    type gui
+type error = string
 
-    type initial_ui_out = 
-	{
-	 quit : unit -> unit,
-	 connect : string -> string option,
-	 startServer : unit -> string option
-	 }
+type model_initial = 
+    {
+     connect : string -> error option,
+     (* connect to an existing server. If successful i.e
+      NONE is returned the gui displays the select snake
+      dialog. Otherwise it shows the error message and
+      stays in the initial mode.
+      *)
 
-    type join_ui_out =
-	{
-	 quit : unit -> unit,
-	 play : string * Color.color -> string option,
-	 watch : unit -> string option
-	 }
+     startServer : Config.config -> error option
+     (* start a new server and display the snake selection
+      dialog (in server mode i.e. with the ability to
+      start a tournament)
+      *)
+     }
 
-    type join_ui_in =
-	{
-	 playersJoined : (string * Color.color) list -> unit,
-	 playerDisconnected : (string * Color.color) option -> unit,
-	 gameStarted : unit -> unit
-	 }
+type model_join = 
+    {
+     play :  string * Color.color -> error option,
+     
+     watch : unit -> error option
+     }
 
-    type game_ui_out =
-	{
-	 quit : unit -> unit,
-	 turn : Protocol.direction -> unit,
-	 giveUp : unit -> unit,
-	 changeView : Protocol.view_hint -> unit
-	 }
+type model_game = 
+    {
+     turn       : Protocol.direction -> unit,
+     changeView : Protocol.view_hint -> unit,
+     giveUp     : unit -> unit
+     }
+    
+(* register a callback here to get notified, when some event
+ is triggered by the gui.  
+ *)
 
-    type game_ui_in = 
-	{
-	 update : (Pos.pos * Protocol.field) list -> unit,
-	 updatePoints : Highscore.points list -> unit,
-	 gameFinished : Highscore.highscore -> unit
-	 }
+type  model = 
+    {
+     quit :  unit -> unit,
+     (* user wants to quit. *)
+     
+     initial:    model_initial,
+     join:       model_join,
+     game:       model_game
+     }
+    
+(* call these functions provided by the gui, if something
+ happens to the model.
+ *)
+    
+type gui_join = 
+    {
+     playersJoined : (string * Color.color) list -> unit,
+     playerDisconnected : string * Color.color -> unit,
+     gameStarted : unit -> unit
+     }
 
-    val gui: unit -> gui
+type gui_game = 
+    {
+     update       : (Pos.pos * Protocol.field) list -> unit,
+     updatePoints : Highscore.points list -> unit,
+     gameFinished : Highscore.highscore -> unit
+     }
 
-    val displayInitUI : gui * initial_ui_out -> unit
-(*
-    val displayJoinUI : gui * join_ui_out -> join_ui_in
+type gui =  
+    {
+     reset : (string * string) option -> unit
+     (* [reset NONE] reset's the gui to show the inital
+      startup screen.  
+      [reset (SOME (title, msg))] first shows an messagebox
+      with title [title] displaying message [message] and
+      reset's the gui afterwards
+      *)
+     
+     }
 
-    val displayGameUI : gui * game_ui_out -> game_ui_in
-*)
 
-    val displayJoinUI : gui * join_ui_out * join_ui_in Promise.promise -> unit
 
-    val displayGameUI : gui * game_ui_out * game_ui_in Promise.promise -> unit
+val execute: model * gui Promise.promise -> unit
+
 end
