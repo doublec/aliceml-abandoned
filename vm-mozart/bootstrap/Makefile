@@ -122,9 +122,11 @@ boot-%:
 bootstrap: lib/boot-Base.ozf boot-all
 
 stoc.ozf: top/Main.ozf
+	OZ_LOAD=pattern='?{x}'='?{x}'.ozf:cache=$(OZHOME)/cache/ \
 	$(OZL) -z9 --include=..,../../.. -v $< -o $@
 
 stow.ozf: Init.ozf
+	OZ_LOAD=pattern='?{x}'='?{x}'.ozf:cache=$(OZHOME)/cache/ \
 	$(OZL) -z9 --include=.. -v $< -o $@
 
 %.ozf: %.oz
