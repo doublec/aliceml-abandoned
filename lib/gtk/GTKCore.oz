@@ -12,7 +12,7 @@
 
 functor
 import
-   Native at 'GTK.so{native}'
+   Native at 'x-oz://system/GTK.so{native}'
 export
    'GTKCore$' : GTKCore
 define

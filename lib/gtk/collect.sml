@@ -13,7 +13,7 @@
 
 signature COLLECT =
     sig
-	val alicegtk : string -> unit
+	val alicegtk : string list -> OS.Process.status
     end
 
 structure Collect : COLLECT =
@@ -347,15 +347,15 @@ structure Collect : COLLECT =
 
 	val wrpGTKFile = "GTKWrapper.oz"
 	val expGTKFile = "GTKExport.oz"
-	val sigGTKFile = "GTK.ozf.sig"
+	val sigGTKFile = "GTK.asig"
 
 	val wrpGDKFile = "GDKWrapper.oz"
 	val expGDKFile = "GDKExport.oz"
-	val sigGDKFile = "GDK.ozf.sig"
+	val sigGDKFile = "GDK.asig"
 
 	val wrpCanvasFile = "CanvasWrapper.oz"
 	val expCanvasFile = "CanvasExport.oz"
-	val sigCanvasFile = "Canvas.ozf.sig"
+	val sigCanvasFile = "Canvas.asig"
 
 	val wrpGTKPrefix = ["%%%\n",
 			    "%%% Notice:\n",
@@ -408,7 +408,7 @@ structure Collect : COLLECT =
 	     " *\n",
 	     " *)\n",
 	     "\n",
-	     "import structure GTKCore from \"x-alice:/lib/gtk/GTKCore.ozf\"\n\n",
+	     "import structure GTKCore from \"GTKCore\"\n\n",
 	     "signature GTK_COMPONENT =\n",
 	     "    sig\n",
 	     "        signature GTK =\n",
@@ -432,7 +432,7 @@ structure Collect : COLLECT =
 	     " *\n",
 	     " *)\n",
 	     "\n",
-	     "import structure GTKCore from \"x-alice:/lib/gtk/GTKCore.ozf\"\n\n",
+	     "import structure GTKCore from \"GTKCore\"\n\n",
 	     "signature GDK_COMPONENT =\n",
 	     "    sig\n",
 	     "        signature GDK =\n",
@@ -475,7 +475,7 @@ structure Collect : COLLECT =
 	     " *\n",
 	     " *)\n",
 	     "\n",
-	     "import structure GTKCore from \"x-alice:/lib/gtk/GTKCore.ozf\"\n\n",
+	     "import structure GTKCore from \"GTKCore\"\n\n",
 	     "signature CANVAS_COMPONENT =\n",
 	     "    sig\n",
 	     "        signature CANVAS =\n",
@@ -488,7 +488,7 @@ structure Collect : COLLECT =
 	     "        structure Canvas : CANVAS\n",
 	     "    end\n"]
 
-	fun alicegtk inFile =
+	fun alicegtk [inFile] =
 	    let
 		val (gtks, gtkcs, gdks, gdkcs, gcvs, gcvcs) = collect inFile
 		val ws                                      = ref (TextIO.openOut wrpGTKFile)
@@ -498,39 +498,36 @@ structure Collect : COLLECT =
 		val pis                                     = fn s => TextIO.output(!is, s)
 		val sis                                     = fn s => TextIO.output(!ss, s)
 	    in
-		(writeText(pws, wrpGTKPrefix);
-		 writeText(pis, expGTKPrefix);
-		 writeText(sis, sigGTKPrefix);
-		 app (fn x => emitWrapperInterface(pws, pis, sis, x)) gtks;
-		 app (fn x => emitWrapperInterface(pws, pis, sis, x)) gtkcs;
-		 writeText(pis, expGTKEnd); writeText(sis, sigGTKEnd);
-		 TextIO.closeOut(!ws); TextIO.closeOut(!is); TextIO.closeOut(!ss);
-		 ws := (TextIO.openOut wrpGDKFile);
-		 is := (TextIO.openOut expGDKFile);
-		 ss := (TextIO.openOut sigGDKFile);
-		 writeText(pws, wrpGDKPrefix);
-		 writeText(pis, expGDKPrefix);
-		 writeText(sis, sigGDKPrefix);
-		 app (fn x => emitWrapperInterface(pws, pis, sis, x)) gdks;
-		 app (fn x => emitWrapperInterface(pws, pis, sis, x)) gdkcs;
-		 writeText(pis, expGDKEnd); writeText(sis, sigGDKEnd);
-		 TextIO.closeOut(!ws); TextIO.closeOut(!is); TextIO.closeOut(!ss);
-		 ws := (TextIO.openOut wrpCanvasFile);
-		 is := (TextIO.openOut expCanvasFile);
-		 ss := (TextIO.openOut sigCanvasFile);
-		 writeText(pws, wrpCanvasPrefix);
-		 writeText(pis, expCanvasPrefix);
-		 writeText(sis, sigCanvasPrefix);
-		 app (fn x => emitWrapperInterface(pws, pis, sis, x)) gcvs;
-		 app (fn x => emitWrapperInterface(pws, pis, sis, x)) gcvcs;
-		 writeText(pis, expCanvasEnd); writeText(sis, sigCanvasEnd);
-		 TextIO.closeOut(!ws); TextIO.closeOut(!is); TextIO.closeOut(!ss))
+		writeText(pws, wrpGTKPrefix);
+		writeText(pis, expGTKPrefix);
+		writeText(sis, sigGTKPrefix);
+		app (fn x => emitWrapperInterface(pws, pis, sis, x)) gtks;
+		app (fn x => emitWrapperInterface(pws, pis, sis, x)) gtkcs;
+		writeText(pis, expGTKEnd); writeText(sis, sigGTKEnd);
+		TextIO.closeOut(!ws); TextIO.closeOut(!is); TextIO.closeOut(!ss);
+		ws := (TextIO.openOut wrpGDKFile);
+		is := (TextIO.openOut expGDKFile);
+		ss := (TextIO.openOut sigGDKFile);
+		writeText(pws, wrpGDKPrefix);
+		writeText(pis, expGDKPrefix);
+		writeText(sis, sigGDKPrefix);
+		app (fn x => emitWrapperInterface(pws, pis, sis, x)) gdks;
+		app (fn x => emitWrapperInterface(pws, pis, sis, x)) gdkcs;
+		writeText(pis, expGDKEnd); writeText(sis, sigGDKEnd);
+		TextIO.closeOut(!ws); TextIO.closeOut(!is); TextIO.closeOut(!ss);
+		ws := (TextIO.openOut wrpCanvasFile);
+		is := (TextIO.openOut expCanvasFile);
+		ss := (TextIO.openOut sigCanvasFile);
+		writeText(pws, wrpCanvasPrefix);
+		writeText(pis, expCanvasPrefix);
+		writeText(sis, sigCanvasPrefix);
+		app (fn x => emitWrapperInterface(pws, pis, sis, x)) gcvs;
+		app (fn x => emitWrapperInterface(pws, pis, sis, x)) gcvcs;
+		writeText(pis, expCanvasEnd); writeText(sis, sigCanvasEnd);
+		TextIO.closeOut(!ws); TextIO.closeOut(!is); TextIO.closeOut(!ss);
+		OS.Process.success
 	    end
-
+	  | alicegtk _ =
+	    (TextIO.output (TextIO.stdErr, "Usage: collect <infile>\n");
+	     OS.Process.failure)
     end
-
-local
-    fun main _ = (Collect.alicegtk "header/gtkheader.c"; OS.Process.success)
-in
-    val _ = SMLofNJ.exportFn("collect", main)
-end

@@ -12,8 +12,8 @@
 
 functor
 import
-   GTKCoreComponent('GTKCore$' : GTKCore) at 'GTKCore.ozf'
-   Native at 'GDK.so{native}'
+   GTKCoreComponent('GTKCore$' : GTKCore) at 'GTKCore'
+   Native at 'x-oz://system/GDK.so{native}'
 export
    'GDK$' : GDK
 define

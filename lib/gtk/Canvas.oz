@@ -12,8 +12,8 @@
 
 functor
 import
-   GTKCoreComponent('GTKCore$' : GTKCore) at 'GTKCore.ozf'
-   Native at 'Canvas.so{native}'
+   GTKCoreComponent('GTKCore$' : GTKCore) at 'GTKCore'
+   Native at 'x-oz://system/Canvas.so{native}'
 export
    'Canvas$' : CANVAS
 define

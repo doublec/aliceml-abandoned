@@ -1,1 +1,7 @@
-CM/
+CM
+Makefile.depend
+collect.x86-linux
+GTKWrapper.oz GTKExport.oz GTK.asig
+GDKWrapper.oz GDKExport.oz GDK.asig
+CanvasWrapper.oz CanvasExport.oz Canvas.asig
+*.ozf
