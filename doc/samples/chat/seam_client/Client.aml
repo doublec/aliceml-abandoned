@@ -1,0 +1,188 @@
+                    import structure Remote         from "x-alice:/lib/distribution/Remote"
+import structure Protocol       from "../common/Protocol"
+import structure Gtk            from "x-alice:/lib/gtk/Gtk"
+import structure Gdk            from "x-alice:/lib/gtk/Gdk"
+
+
+structure P = Protocol
+
+
+structure StrList :>
+sig
+    type str_list
+
+    type t = str_list
+
+    val strList: string -> str_list
+
+    val getAll: str_list -> string list
+
+    val setAll: str_list * string list -> unit
+
+    val toWidget: str_list  -> Gtk.object
+end
+=
+struct
+    type str_list = Gtk.object * string list ref
+   
+    type t = str_list
+
+    fun strList title =
+        let
+            val clist   = Gtk.clistNew 1
+            val _       = Gtk.clistSetColumnTitle (clist, 0, title)
+        in
+            (clist, ref [])
+        end
+
+    fun getAll (_, ref l) = l
+
+    fun setAll ((clist, l), lst) = 
+        let fun add s = 
+            (* doesn't work right now: Gtk.clistAppend: object * object -> int
+                should be GtkclistAppend object * string list -> int
+            *) 
+            (Gtk.clistAppend (clist, #[s]); ())
+        in
+            l := lst;
+            Gtk.clistClear clist;
+            List.app add lst
+        end
+
+    fun toWidget (clist, _) = clist
+end
+
+
+fun insert cmp (v, l) =
+    case l of
+        []  => [v]
+    | v'::l => 
+        case cmp (v', v) of
+            LESS    => v' :: insert cmp (v, l)
+        |   EQUAL   => v::l
+        |   GREATER => v :: v' :: l
+
+
+fun remove cmp (v, l) =
+    case l of
+        []  => []
+    | v'::l =>
+        case cmp (v', v) of
+            LESS    => v' :: remove cmp (v, l)
+        |   EQUAL   => v' :: l
+        |   GREATER => v' :: l
+
+
+fun connectClient (nick, ticket) =
+    let
+        val serverPromise   = Promise.promise () 
+        val server          = Promise.future serverPromise : P.server_interface
+
+        val win     = Gtk.windowNew Gtk.WINDOW_TOPLEVEL
+        val _       = Gtk.windowSetTitle (win, "Chat: " ^ nick)
+        val vbox    = Gtk.vboxNew (false, 3)
+        val _       = Gtk.containerAdd (win, vbox)
+
+        val hbox    = Gtk.hboxNew (false, 2)
+        val _       = Gtk.containerAdd (vbox, hbox)
+        
+        val person_list = StrList.strList "persons" 
+        val _       = Gtk.widgetSetUsize (StrList.toWidget person_list, 200, ~1)
+        val _       = Gtk.boxPackStart (hbox, StrList.toWidget person_list, false, true, 0)
+
+        val adjHor  = Gtk.adjustmentNew (0.0, 0.0, 1.0, 1.0, 10.0, 1.0)
+        val adjVer  = Gtk.adjustmentNew (0.0, 0.0, 1.0, 1.0, 10.0, 1.0)
+        val text    = Gtk.textViewNew ()
+        val _       = Gtk.containerAdd (hbox, text)
+
+        (*FIXME: create appropriate tags of name tag-others, tag-you and use
+            Gtk.textBufferInsertWithTagsByName
+          *)
+        fun appendText tag person msg =
+            Gtk.textBufferInsertAtCursor (Gtk.textViewGetBuffer text, person ^ msg ^ "\n", ~1)
+        
+        val entry   = Gtk.entryNewWithMaxLength 40
+        val _       = Gtk.boxPackStart (vbox, entry, false, true, 0)
+        
+
+        val quitBt  = Gtk.buttonNewWithLabel "Quit"
+        val _       = Gtk.boxPackStart (vbox, quitBt, false, true, 0)
+
+
+
+        fun accepted s = (
+            Promise.fulfill (serverPromise, s);
+            print ("was accepted :-)\n");
+            Gtk.widgetShowAll win
+        )
+
+        fun receive (msg: P.message) =
+            appendText "tag-others" (#sender msg ^ "> ") (#content msg)
+
+
+        fun connected nick = (
+            print (nick ^ " connected\n");
+            StrList.setAll (person_list, insert String.compare 
+                    (nick, StrList.getAll person_list)) 
+        )
+        
+        fun disconnected nick = (
+            print (nick ^ " disconnected\n");
+            StrList.setAll (person_list, remove String.compare
+                (nick, StrList.getAll person_list)) 
+        )
+        
+
+        fun error (msg:string):unit   =
+            print ("error: " ^ msg ^ "\n")
+
+        val lock        = Lock.lock ()
+        
+        val interface   = {
+            nick            = nick,
+            accepted        = Remote.proxy (Lock.sync lock accepted),
+            receive         = Remote.proxy (Lock.sync lock receive),
+            connected       = Remote.proxy (Lock.sync lock connected),
+            disconnected    = Remote.proxy (Lock.sync lock disconnected),
+            error           = Remote.proxy (Lock.sync lock error)
+        }
+
+        (*--------- gui callbacks --------------*)
+
+        val _       = Gtk.signalConnect (win, "destroy",
+                fn args => Gtk.widgetDestroy win)
+
+        val _       = Gtk.signalConnect (quitBt, "clicked",
+                fn args => Gtk.widgetDestroy win)
+
+        val _       = Gtk.signalConnect (entry, "activate",
+                fn args => 
+                    let 
+                        val text = Gtk.entryGetText entry
+                    in
+                        appendText "tag-you" "you> " text;
+                        Gtk.entrySetText (entry, "");
+                        (#send server { kind    = P.M_BROADCAST, 
+                                        sender  = nick, 
+                                        content = text
+                                      }) 
+                        handle e =>
+                            print "sending failed"
+                    end
+                )
+ 
+        structure C = unpack (Remote.take ticket) : P.SERVER_CONNECTOR
+    in
+        C.connect interface
+    end
+   
+
+fun main () =
+    case CommandLine.arguments () of
+        [nick, ticket]    =>
+        connectClient (nick, ticket)
+    |   _   =>
+        print ("usage: " ^ CommandLine.name () ^ " <nick> <ticket>\n")
+
+
+val _ = main ()
