@@ -21,7 +21,7 @@
 #include <cstring>
 #include "generic/Closure.hh"
 
-typedef unsigned short u_wchar; //--**
+typedef unsigned short u_wchar; //--** ensure that this is always 16-bit
 
 class JavaLabel {
 private:
@@ -120,7 +120,7 @@ public:
 static const word null = Store::IntToWord(0);
 
 class DllExport Lock: private Block {
-  // to be determined
+  //--** to be determined
 };
 
 class DllExport Object: private Block {
