@@ -33,7 +33,13 @@ struct
     fun ispawn (file, line) f a = 
         let
             (* print error message and terminate process *)
-            fun crashWith exn =
+            fun crashWith (Assert (afile, aline)) =
+                (TextIO.output (TextIO.stdErr,
+                    "ispawn failed at " ^ file ^ ":" ^ Int.toString line ^
+                      " due to failed assert at " ^ afile ^ ":" ^ 
+                        Int.toString aline ^ "\n");
+                 OS.Process.exit OS.Process.failure)
+              | crashWith exn =
                 (TextIO.output (TextIO.stdErr,
                     "ispawn failed with exception " ^ exnName exn ^ " at "
                         ^ file ^ ":" ^ Int.toString line ^ "\n");
