@@ -1,0 +1,33 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2002
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Url       from "x-alice:/lib/utility/Url"
+import structure Signature from "x-alice:/lib/system/Signature"
+import structure Label     from "x-alice:/lib/rtt/Label"
+
+signature MY_COMPONENT =
+    sig
+	type component
+	type t = component
+
+	type sign = Signature.t option
+	type str
+
+	val load: Url.t -> t                      (* Io, Corrupt *)
+	val save: string * t -> unit              (* Io, Sited *)
+
+	val imports: t -> (Label.t * string * sign) vector
+	val body: t -> ((Label.t * str) vector -> str)
+	val sign: t -> sign
+
+	val stripImportSigns: t -> t
+    end

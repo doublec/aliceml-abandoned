@@ -1,0 +1,43 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2002
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature IMP_MAP     from "x-alice:/lib/utility/IMP_MAP-sig"
+import structure Url         from "x-alice:/lib/utility/Url"
+import structure MyComponent from "MyComponent"
+
+signature LINK =
+    sig
+	structure UrlMap: IMP_MAP
+
+	datatype boundary =
+	    INCLUDE of string
+	  | EXCLUDE of string
+
+	exception Empty
+	exception Mismatch of Url.t * Url.t
+	exception Conflict of Url.t
+	exception Cyclic
+
+	val collect: boundary vector -> Url.t ->
+		     {componentMap: MyComponent.t UrlMap.t,
+		      includeMap: Url.t vector UrlMap.t,
+		      excludeMap: MyComponent.sign UrlMap.t}
+		     (* Empty, Mismatch, Conflict *)
+
+	val sort: Url.t vector UrlMap.t -> Url.t list
+		     (* Cyclic *)
+
+	val link: {root: Url.t,
+		   boundary: boundary vector,
+		   rewrite: (string * string) vector} -> MyComponent.t
+		     (* Empty, Mismatch, Conflict, Cyclic *)
+    end

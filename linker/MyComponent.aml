@@ -1,0 +1,80 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2002
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Url             from "x-alice:/lib/utility/Url"
+import structure Signature       from "x-alice:/lib/system/Signature"
+import structure Label           from "x-alice:/lib/rtt/Label"
+import structure IO              from "x-alice:/lib/system/IO"
+import structure OS              from "x-alice:/lib/system/OS"
+import structure Reflect         from "x-alice:/lib/system/Reflect"
+(*import structure Resolver        from "x-alice:/lib/system/Resolver"*)
+import structure UnsafeComponent from "x-alice:/lib/system/UnsafeComponent"
+import signature MY_COMPONENT    from "MY_COMPONENT-sig"
+
+structure MyComponent :> MY_COMPONENT =
+struct
+    type sign = Signature.t option
+    type str = Reflect.value
+
+    datatype component =
+	UNEVALUATED of { imports: (Label.t * string * sign) vector,
+			 body:    (Label.t * str) vector -> str,
+			 sign:    sign }
+      | EVALUATED of sign * str
+    type t = component
+
+    fun localize s = SOME s
+(*
+    val localize =
+	let
+	    val handlers =
+		case OS.Process.getEnv "ALICE_LOAD" of
+		    SOME s => Resolver.Handler.parse s
+		  | NONE => [Resolver.Handler.default]
+	    val resolver = Resolver.new ("load", handlers)
+	in
+	    Resolver.localize resolver
+	end
+*)
+
+    fun load url =
+	let
+	    val s = Url.toStringRaw url   (*--** use getLocalPath instead *)
+	in
+	    case localize s of
+		SOME s' => UnsafeComponent.load s'
+	      | NONE =>
+		    raise IO.Io {name = s,
+				 function = "load",
+				 cause = Option.Option}
+	end
+
+    val save = UnsafeComponent.save
+
+    fun imports (UNEVALUATED {imports, ...}) = imports
+      | imports (EVALUATED (_, _)) = #[]
+
+    fun body (UNEVALUATED {body, ...}) = body
+      | body (EVALUATED (_, str)) = fn #[] => str
+
+    fun sign (UNEVALUATED {sign, ...}) = sign
+      | sign (EVALUATED (sign, _)) = sign
+
+    fun stripImportSigns (UNEVALUATED {imports, body, sign}) =
+	let
+	    val imports' =
+		Vector.map (fn (label, s, _) => (label, s, NONE)) imports
+	in
+	    UNEVALUATED {imports = imports', body, sign}
+	end
+      | stripImportSigns (component as EVALUATED (_, _)) = component
+end

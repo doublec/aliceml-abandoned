@@ -1,0 +1,132 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2002
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Signature          from "x-alice:/lib/system/Signature"
+import structure FromEqHashKey      from "x-alice:/lib/utility/HASH_KEY-sig"
+import structure MkHashImpMap       from "x-alice:/lib/utility/MkHashImpMap"
+import structure MkDepthFirstSearch from "x-alice:/lib/utility/MkDepthFirstSearch"
+import structure Url                from "x-alice:/lib/utility/Url"
+import signature LINK               from "LINK-sig"
+import structure MyComponent        from "MyComponent"
+
+structure Link :> LINK =
+    struct
+	datatype boundary =
+	    INCLUDE of string
+	  | EXCLUDE of string
+
+	exception Empty
+	exception Mismatch of Url.t * Url.t
+	exception Conflict of Url.t
+	exception Cyclic
+
+	structure UrlHashKey = FromEqHashKey(Url)
+	structure UrlMap = MkHashImpMap(UrlHashKey)
+
+	fun signMatches (SOME s1, SOME s2) = Signature.matches (s1, s2)
+	  | signMatches (_, _) = true
+
+	fun signIntersect (sign1, sign2) = SOME sign1   (*--** *)
+
+	fun isExcluded (url, boundary) =
+	    isExcluded' (Url.toString url, boundary, 0, Vector.length boundary)
+	and isExcluded' (s, boundary, i, n) =
+	    if i = n then true
+	    else
+		case Vector.sub (boundary, i) of
+		    INCLUDE s' => if String.isPrefix s' s then false
+				  else isExcluded' (s, boundary, i + 1, n)
+		  | EXCLUDE s' => if String.isPrefix s' s then true
+				  else isExcluded' (s, boundary, i + 1, n)
+
+	fun collect boundary root =
+	    let
+		val componentMap = UrlMap.new ()
+		val includeMap = UrlMap.new ()
+		val excludeMap = UrlMap.new ()
+
+		fun collect' (url, parent, expectedSign) =
+		    if UrlMap.member (componentMap, url) then
+			let
+			    val component =
+				UrlMap.lookupExistent (componentMap, url)
+			    val actualSign = MyComponent.sign component
+			in
+			    if signMatches (actualSign, expectedSign) then ()
+			    else raise Mismatch (url, parent)
+			end
+		    else if UrlMap.member (excludeMap, url) then
+			let
+			    val sign' = UrlMap.lookupExistent (excludeMap, url)
+			in
+			    case signIntersect (expectedSign, sign') of
+				SOME sign'' =>
+				    UrlMap.insert (excludeMap, url, sign'')
+			      | NONE => raise Conflict url
+			end
+		    else if isExcluded (url, boundary) then
+			UrlMap.insert (excludeMap, url, expectedSign)
+		    else
+			let
+			    val component = MyComponent.load url
+			    val actualSign = MyComponent.sign component
+			    val _ = if signMatches (actualSign, expectedSign)
+				    then () else raise Mismatch (url, parent)
+			    val component' =
+				if url = root then component
+				else MyComponent.stripImportSigns component
+			    val _ =
+				UrlMap.insert (componentMap, url, component')
+			    val resolve = Url.resolve url
+			    val importUrls =
+				Vector.map
+				(fn (label, s, sign) =>
+				    let
+					val url' = resolve (Url.fromString s)
+				    in
+					collect' (url', url, sign); url'
+				    end) (MyComponent.imports component)
+			in
+			    UrlMap.insert (includeMap, url, importUrls)
+			end
+	    in
+		collect' (root, Url.empty, NONE);
+		if UrlMap.isEmpty includeMap then raise Empty else ();
+		{componentMap, includeMap, excludeMap}
+	    end
+
+	structure DepthFirstSearch =
+	    MkDepthFirstSearch(structure Key = UrlHashKey
+			       structure Map = UrlMap)
+
+	fun sort includeMap =
+	    let
+		val graph = UrlMap.new ()
+	    in
+		UrlMap.appi
+		    (fn (url, urls) =>
+			UrlMap.insert (graph, url, Vector.toList urls))
+		    includeMap;
+		List.map (fn urls =>
+			     case urls of
+				 [url] => url
+			       | _ => raise Cyclic)
+			 (DepthFirstSearch.search graph)
+	    end
+
+	fun link {root, boundary, rewrite} =
+	    let
+		val res = collect boundary root
+	    in
+		UrlMap.lookupExistent (#componentMap res, root) (*--** UNFINISHED *)
+	    end
+    end
