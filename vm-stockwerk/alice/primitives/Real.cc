@@ -16,10 +16,10 @@
 #include <cstdio>
 #include "alice/Authoring.hh"
 
-#define REAL_TO_REAL(name, op)				\
-  DEFINE1(name) {					\
-    DECLARE_REAL(real, x0);				\
-    RETURN(Real::New(op(real->GetValue()))->ToWord());	\
+#define REAL_TO_REAL(name, op)			\
+  DEFINE1(name) {				\
+    DECLARE_REAL(real, x0);			\
+    RETURN_REAL(op(real->GetValue()));		\
   } END
 
 #define REAL_TO_INT(name, op)					\
@@ -28,11 +28,11 @@
     RETURN_INT(static_cast<s_int>(op(real->GetValue())));	\
   } END
 
-#define REAL_REAL_TO_REAL_OP(name, op)					 \
-  DEFINE2(name) {							 \
-    DECLARE_REAL(real1, x0);						 \
-    DECLARE_REAL(real2, x1);						 \
-    RETURN(Real::New(real1->GetValue() op real2->GetValue())->ToWord()); \
+#define REAL_REAL_TO_REAL_OP(name, op)				\
+  DEFINE2(name) {						\
+    DECLARE_REAL(real1, x0);					\
+    DECLARE_REAL(real2, x1);					\
+    RETURN_REAL(real1->GetValue() op real2->GetValue());	\
   } END
 
 #define REAL_REAL_TO_BOOL_OP(name, op)				\
@@ -59,9 +59,9 @@ static inline double Trunc(double x) {
 
 REAL_TO_REAL(Real_opnegate, -)
 REAL_REAL_TO_REAL_OP(Real_opadd, +)
-REAL_REAL_TO_REAL_OP(Real_opsub, +)
-REAL_REAL_TO_REAL_OP(Real_opmul, +)
-REAL_REAL_TO_REAL_OP(Real_opdiv, +)
+REAL_REAL_TO_REAL_OP(Real_opsub, -)
+REAL_REAL_TO_REAL_OP(Real_opmul, *)
+REAL_REAL_TO_REAL_OP(Real_opdiv, /)
 REAL_REAL_TO_BOOL_OP(Real_opless, <)
 REAL_REAL_TO_BOOL_OP(Real_opgreater, >)
 REAL_REAL_TO_BOOL_OP(Real_oplessEq, <=)
@@ -86,7 +86,7 @@ REAL_TO_INT(Real_floor, std::floor)
 
 DEFINE1(Real_fromInt) {
   DECLARE_INT(i, x0);
-  RETURN(Real::New(static_cast<double>(i))->ToWord());
+  RETURN_REAL(static_cast<double>(i));
 } END
 
 REAL_TO_REAL(Real_realCeil, std::ceil)
@@ -111,10 +111,24 @@ REAL_REAL_TO_INT(Real_rem, std::fmod)
 REAL_TO_INT(Real_round, Rint)
 
 DEFINE1(Real_toString) {
-  //--** not elegant; string is traversed twice
+  //--** inf, ~inf, nan not formatted correctly
   static char buf[50];
   DECLARE_REAL(real, x0);
-  std::sprintf(buf, "%g", real->GetValue());
+  std::sprintf(buf, "%.12G", real->GetValue());
+  bool hasDecimalPoint = false, done = false;
+  u_int i = 0;
+  while (!done)
+    switch (buf[i++]) {
+    case '\0':
+      done = true;
+      break;
+    case '-':
+      buf[i - 1] = '~';
+      break;
+    case '.':
+      hasDecimalPoint = true;
+    }
+  if (!hasDecimalPoint) std::strcpy(&buf[i - 1], ".0");
   RETURN(String::New(buf)->ToWord());
 } END
 
