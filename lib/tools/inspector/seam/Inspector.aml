@@ -92,7 +92,7 @@ struct
   datatype orientation = datatype Prefs.orientation
 
   (* Concatenation. *)
-  fun concat (prefix, tree, suffix, orient) =
+  fun concat {prefix, tree, suffix, orient} =
     let val orient = case orient of Parent => AbsTree.orientParent
                                   | Son => AbsTree.orientSon
                                   | SonStrict => AbsTree.orientSonStrict
@@ -115,5 +115,50 @@ struct
 
   type 'a user = int * 'a * Type.typ * Type.typ * Type.typ list -> AbsTree.tree
   __overload 'a register  : 'a user -> unit = register'
+
+  (* Predefined values. *)
+  val openParenthesis   = AbsTree.openParenthesis
+  val openParenthesisL  = AbsTree.openParenthesisL
+  val spaceParenthesis  = AbsTree.spaceParenthesis
+  val spaceParenthesisL = AbsTree.spaceParenthesisL
+  val space             = AbsTree.space
+  val spaceL            = AbsTree.spaceL
+  val closeParenthesis  = AbsTree.closeParenthesis
+  val closeParenthesisL = AbsTree.closeParenthesisL
+  val openBracket       = AbsTree.openBracket
+  val openBracketL      = AbsTree.openBracketL
+  val closeBracket      = AbsTree.closeBracket
+  val closeBracketL     = AbsTree.closeBracketL
+  val openSBracket      = AbsTree.openSBracket
+  val openSBracketL     = AbsTree.openSBracketL
+  val closeSBracket     = AbsTree.closeSBracket
+  val closeSBracketL    = AbsTree.closeSBracketL
+  val comma             = AbsTree.comma
+  val commaL            = AbsTree.commaL
+  val equal             = AbsTree.equal
+  val equalL            = AbsTree.equalL
+
+  val lazyStyle    = Prefs.lazyStyle
+  val futureStyle  = Prefs.futureStyle
+  val failStyle    = Prefs.failStyle
+  val consStyle    = Prefs.consStyle
+  val labelStyle   = Prefs.labelStyle
+  val intStyle     = Prefs.intStyle
+  val realStyle    = Prefs.realStyle
+  val charStyle    = Prefs.charStyle
+  val strStyle     = Prefs.strStyle
+  val wordStyle    = Prefs.wordStyle
+  val refStyle     = Prefs.refStyle
+  val vecStyle     = Prefs.vecStyle
+  val exnStyle     = Prefs.exnStyle
+  val sepStyle     = Prefs.sepStyle
+  val sepColor     = Prefs.sepColor
+  val brackStyle   = Prefs.brackStyle
+  val structStyle  = Prefs.structStyle
+  val fixStyle     = Prefs.fixStyle
+  val valStyle     = Prefs.valStyle
+  val labStyle     = Prefs.labStyle
+  val defaultStyle = Prefs.defaultStyle
+
 
 end

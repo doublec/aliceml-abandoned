@@ -15,6 +15,28 @@ sig
   (* newStyle  (style-name, color, editable) *)
   val newStyle : string * color * bool -> style
 
+  (* Predefined styles. *)
+  val lazyStyle    : style
+  val futureStyle  : style
+  val failStyle    : style
+  val consStyle    : style
+  val labelStyle   : style
+  val intStyle     : style
+  val realStyle    : style
+  val charStyle    : style
+  val strStyle     : style
+  val wordStyle    : style
+  val refStyle     : style
+  val vecStyle     : style
+  val exnStyle     : style
+  val sepStyle     : style
+  val brackStyle   : style
+  val structStyle  : style
+  val fixStyle     : style
+  val valStyle     : style
+  val labStyle     : style
+  val defaultStyle : style
+
   (* An item is either a value or a nested hidden item. *)
   datatype 'a item = Hidden | Value of 'a * Type.typ
 
@@ -33,13 +55,34 @@ sig
 		       | Son        (* Aim at itself (including the son) *)
 		       | SonStrict  (* Only the son is highlighted. *)
 
-  (* TREE : Creates a concatenation
-   * concat (prefix, son, suffix, orientation) *)
-  val concat : text list * tree * text list * orientation -> tree
-
+  (* TREE : Creates a concatenation *)
+  val concat : {prefix: text list, suffix: text list,
+                son: tree, orient: orientation} -> tree
 
   (* TREE : Creates a container *)
   val container : 'a item * tree array -> tree
+
+  val openParenthesis   : text
+  val openParenthesisL  : text list
+  val spaceParenthesis  : text
+  val spaceParenthesisL : text list
+  val space             : text
+  val spaceL            : text list
+  val closeParenthesis  : text
+  val closeParenthesisL : text list
+  val openBracket       : text
+  val openBracketL      : text list
+  val closeBracket      : text
+  val closeBracketL     : text list
+  val openSBracket      : text
+  val openSBracketL     : text list
+  val closeSBracket     : text
+  val closeSBracketL    : text list
+  val comma             : text
+  val commaL            : text list
+  val equal             : text
+  val equalL            : text list
+
 
   (* Registers a user-defined type-mapper. *)
   (* mapper is a function of type 'a user

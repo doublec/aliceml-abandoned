@@ -1,6 +1,7 @@
-import structure Atom      from "x-alice:/lib/data/Atom"
-import structure Inspector from "Inspector"
-import signature GTK       from "x-alice:/lib/gtk/GTK-sig"
+import structure Atom          from "x-alice:/lib/data/Atom"
+import structure Inspector     from "Inspector"
+import signature GTK           from "x-alice:/lib/gtk/GTK-sig"
+import structure PervasiveType from "x-alice:/lib/rtt/PervasiveType"
 
 val _ = print "One.\n" 
 
@@ -181,7 +182,58 @@ val _ =
    Inspector.inspect (100, 999) ; waitLine () ;
    Inspector.inspect (Atom.atom "Foo") ; waitLine () ;
    ())
+
+signature COMPLEX =
+  sig
+    type complex
+    val getReal : complex -> real
+    val getIm   : complex -> real
+    val create : real * real -> complex
+  end
+
+structure Complex :> COMPLEX =
+  struct
+    type complex = {real : real,
+                    im   : real}
+    fun getReal {real, im} = real
+    fun getIm   {real, im} = im
+    fun create (real, im) = {real, im}
+  end
+
+val typReal = PervasiveType.typ_real
+
+fun makeReal x =
+  Inspector.simple (Inspector.Value (x, typReal),
+                    (Real.toString x, Inspector.realStyle))
+
+val plusImL = [("+ ", Inspector.sepStyle)]
+val iImL = [("i", Inspector.labelStyle)]
+
+fun mapComplex (depth, value, t, _, _) =
+  let
+    val real = Complex.getReal value
+    val im   = Complex.getIm value
+    val leftSon = makeReal real
+    val rightSon = Inspector.concat {prefix = plusImL,
+                                     tree = makeReal im,
+                                     suffix = iImL,
+                                     orient = Inspector.Parent}
+
+    val kids = Array.array (2, leftSon) 
+    val son = Inspector.container (Inspector.Value (value, t), kids)
+  in
+    Array.update (kids, 1, rightSon) ;
+    Inspector.concat {prefix = Inspector.openBracketL,
+                      tree = son,
+                      suffix = Inspector.closeBracketL,
+                      orient = Inspector.Son}
+  end
+
+val _ = Inspector.register mapComplex
   
+val cx = Complex.create (1.0, ~3.14159)
+val _ = Inspector.inspect cx
+
 structure MyS = struct type t1 = int type t2 = int type t3 = int
 		       datatype t4 = Zero | One of int | Two of int * int
                        exception Foobar
