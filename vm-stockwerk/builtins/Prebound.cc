@@ -13,11 +13,8 @@
 #include "datalayer/alicedata.hh"
 #include "Prebound.hh"
 
-<<<<<<< Prebound.cc
 typedef void *(*FUNPTR)();
 
-=======
->>>>>>> 1.5
 namespace Builtins {
   namespace Prebound {
     namespace Array {
