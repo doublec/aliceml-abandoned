@@ -21,7 +21,7 @@ COMPILER_TARGETS = $(COMPILER_COMPONENTS:%=%.stc)
 SOURCES = $(SIMULATOR_SOURCES) $(COMPILER_SOURCES)
 TARGETS = $(SIMULATOR_TARGETS) $(COMPILER_TARGETS)
 
-.PHONY: all simulator compiler depend clean distclean
+.PHONY: all simulator compiler parsec depend clean distclean
 
 all: simulator compiler
 
@@ -30,6 +30,14 @@ simulator: $(SIMULATOR_TARGETS) $(COMPILER_TARGETS)
 %.stc: %.aml
 	$(ALICEC) $<
 
+parsec/Makefile.depend:
+	(cd parsec && $(MAKE) depend)
+
+parsec/CharParser.stc: parsec
+
+parsec: parsec/Makefile.depend
+	(cd parsec && $(MAKE))
+	
 depend:
 	$(ALICEDEP) $(SOURCES) > Makefile.depend
 
