@@ -47,7 +47,6 @@ structure JVMInst =
 	  | Ificmplt of label
 	  | Ifneq of label
 	  | Ifnull of label
-	  | Iinc of int * int
 	  | Iload of int
 	  | Instanceof of classname
 	  | Invokeinterface of classname * methodname * (ARG list * ARG)
@@ -90,5 +89,5 @@ structure JVMInst =
 	    MPublic | MPrivate | MProtected | MStatic | MFinal | MSynchronized | MNative | MAbstract
 	and
 	    LIMITS =
-	    Limits of int * int (* locals, stack *)
+	    Locals of int (* locals, stack *)
     end
