@@ -14,9 +14,17 @@ signature UNSAFE_OS_COMPONENT =
     sig
 	structure UnsafeOS:
 	    sig
+		exception SysErr of string * int option
+
 		structure FileSys:
 		    sig
+			val chDir: string -> unit		(* OS.SysErr *)
 			val getDir: unit -> string
+			val mkDir: string -> unit		(* OS.SysErr *)
+			val isDir: string -> bool		(* OS.SysErr *)
+			val fileSize: string -> Position.int	(* OS.SysErr *)
+			val modTime: string -> Time.time	(* OS.SysErr *)
+			val remove: string -> unit		(* OS.SysErr *)
 			val tmpName: unit -> string
 		    end
 

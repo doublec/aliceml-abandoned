@@ -12,7 +12,9 @@
 
 functor
 import
-   OzOS(getCWD system getEnv tmpnam) at 'x-oz://system/OS.ozf'
+   BootName(newUnique: NewUniqueName) at 'x-oz://boot/Name'
+   OzOS(chDir getCWD mkDir stat unlink tmpnam system getEnv)
+   at 'x-oz://system/OS.ozf'
    Property(put)
    Error(printException)
    System(onToplevel)
@@ -20,11 +22,83 @@ import
 export
    'UnsafeOS$': OS
 define
+   SysErr = {NewUniqueName 'OS.SysErr'}
+
    OS =
-   'OS'('FileSys$':
-	   'FileSys'('getDir':
+   'OS'('\'SysErr': SysErr
+	'SysErr': fun {$ A B} SysErr(A B) end
+	'FileSys$':
+	   'FileSys'('chDir':
+			fun {$ Name}
+			   try
+			      {OzOS.chDir Name}
+			   catch system(os(os ...) ...) then
+			      {Exception.raiseError
+			       alice(SysErr('chDir: cannot change directory'
+					    'NONE'))}
+			   end
+			   unit
+			end
+		     'getDir':
 			fun {$ unit}
 			   {ByteString.make {OzOS.getCWD}}
+			end
+		     'mkDir':
+			fun {$ Name}
+			   try
+			      {OzOS.mkDir Name ['S_IRUSR' 'S_IWUSR' 'S_IXUSR'
+						'S_IRGRP' 'S_IWGRP' 'S_IXGRP'
+						'S_IROTH' 'S_IWOTH' 'S_IXOTH']}
+			   catch system(os(os ...) ...) then
+			      {Exception.raiseError
+			       alice(SysErr('mkDir: cannot create directory'
+					    'NONE'))}
+			   end
+			   unit
+			end
+		     'isDir':
+			fun {$ Name}
+			   try
+			      {OzOS.stat Name}.type == dir
+			   catch system(os(os ...) ...) then
+			      {Exception.raiseError
+			       alice(SysErr('isDir: cannot get file attributes'
+					    'NONE'))}
+			      unit
+			   end
+			end
+		     'fileSize':
+			fun {$ Name}
+			   try
+			      {OzOS.stat Name}.size
+			   catch system(os(os ...) ...) then
+			      {Exception.raiseError
+			       alice(SysErr('fileSize: cannot get file size'
+					    'NONE'))}
+			      unit
+			   end
+			end
+		     'modTime':
+			fun {$ Name}
+			   try
+			      {OzOS.stat Name}.mtime * 1000000
+			   catch system(os(os ...) ...) then
+			      {Exception.raiseError
+			       alice(SysErr('modTime: cannot get file time'
+					    'NONE'))}
+			      unit
+			   end
+			end
+		     'remove':
+			fun {$ Name}
+			   try
+			      {OzOS.unlink Name}
+			   catch system(os(os ...) ...) then
+			      {Exception.raiseError
+			       alice(SysErr('remove: cannot remove file'
+					    'NONE'))}
+			   end
+			   unit
 			end
 		     'tmpName':
 			fun {$ unit}

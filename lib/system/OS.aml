@@ -16,12 +16,26 @@ import signature OS       from "OS-sig"
 
 structure OS : OS =
     struct
+	type syserror = int
+	exception SysErr = UnsafeOS.SysErr
+
+	fun errorMsg  _ = ""
+	fun errorName _ = ""
+	fun syserror  _ = NONE
+
+	structure FileSys =
+	    struct
+		type dirstream
+		eqtype file_id
+		datatype access_mode = A_READ | A_WRITE | A_EXEC
+
+		open UnsafeOS.FileSys
+	    end
+
 	structure Process =
 	    struct
 		eqtype status
 
 		open UnsafeOS.Process
 	    end
-
-	structure FileSys = UnsafeOS.FileSys
     end
