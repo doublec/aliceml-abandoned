@@ -112,8 +112,8 @@ structure PickleFlatGrammar :> CODE
 	    (outputTuple (q, "RealLit", 1); outputLargeReal (q, r))
 
 	fun outputLabel (q, label) =
-	    case Label.toLargeInt label of
-		SOME n => outputLargeInt (q, n)
+	    case Label.toInt label of
+		SOME n => outputInt (q, n)
 	      | NONE =>
 		    case Label.toString label of
 			"true" => ignore (outputBool (q, true))
