@@ -24,8 +24,9 @@ functor MkUnsafe(structure TypeManager : TYPE_MANAGER
 		  "\n",
 		  "signature ", Util.strUpper unsafeName, " =\n",
 		  "sig\n",
-		  sigIndent, "type object = GtkTypes.object\n" ,
-		  sigIndent, "exception TypeMismatch of string\n",
+		  "(**)", sigIndent, "type object = GtkTypes.object\n" ,
+		  "(**)", sigIndent, "exception TypeMismatch of string\n",
+		  "(**)", sigIndent, "type arg = GtkTypes.arg\n",
 		  sigIndent, "\n"] ,
 	      outro =
 		 ["end\n\n"]
@@ -46,23 +47,44 @@ functor MkUnsafe(structure TypeManager : TYPE_MANAGER
 		 Util.strUpper unsafeName, " =\n",
 		 Util.indent 1, "struct\n",
 		 wrIndent, "type object = GtkTypes.object\n",
-		 wrIndent, "exception TypeMismatch = GtkTypes.TypeMismatch",
-		 "\n\n"],
+		 wrIndent, "exception TypeMismatch = GtkTypes.TypeMismatch\n",
+		 wrIndent, "type arg = GtkTypes.arg\n\n",
+		 wrIndent, "open GtkEnums\n",
+		 wrIndent, "open GdkEnums\n",
+		 "\n"],
 	     outro = 
 		 [Util.indent 1, "end\n\n"]
             } : Util.fileInfo
 
+
+        local
+	    val enumDecls = ref nil
+	    fun addToList n = if not (List.exists (fn n'=>n=n') (!enumDecls))
+		                   then (enumDecls := (n::(!enumDecls)) ; true)
+                                   else false
+	    fun addEnum (ENUMREF n)     = 
+		if addToList n then
+		    [if space = getEnumSpace n then "(**)" else "", 
+		     sigIndent, "type ", n, " = ", 
+		     Util.spaceName(getEnumSpace n), "Enums.",n, "\n"] 
+		else nil
+	      | addEnum (TYPEREF (_,t)) = addEnum t
+	      | addEnum _               = nil
+	    fun getType (_,_,t) = t
+	in
+	    fun sigEnumDecls (ret,arglist) = 
+		List.concat (map addEnum (ret::(map getType arglist)))
+	end
+
 	(* SIGNATURE CODE GENERATION *)
 	fun sigEntry(funName, ret, arglist, doinout) =
         let
-	    fun convEnum (ENUMREF n)= Util.spaceName(getEnumSpace n)^"Enums."^n
-	      | convEnum (TYPEREF (_,t)) = convEnum t
-	      | convEnum t               = getAliceType t
 	    val wname = Util.computeWrapperName(space,funName)^
 		          (if doinout then "'" else "")
-	    val aType = getAliceFunType (wname,ret,arglist,doinout) convEnum
+	    val aType = getAliceFunType(wname,ret,arglist,doinout) getAliceType
 	    val cType = getCFunType(funName,ret,arglist,true)
 	in
+	    sigEnumDecls (ret,arglist) @
 	    [sigIndent, "(* ", cType, " *)\n",
 	     sigIndent, aType, "\n\n"]
 	end
@@ -80,9 +102,8 @@ functor MkUnsafe(structure TypeManager : TYPE_MANAGER
 	    fun convEnum toReal (_,vname, t) =
 	       (case removeTypeRefs t of
 		    ENUMREF ename =>
-			Util.spaceName(getEnumSpace ename)^"Enums."^
-			    (if toReal then ename^"ToReal" else "RealTo"^ename)
-			    ^" "^vname
+			(if toReal then ename^"ToReal" else "RealTo"^ename)
+			^" "^vname
 	         | _ => vname)
 	in
 	    if generateSimple

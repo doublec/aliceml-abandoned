@@ -1,8 +1,11 @@
 import structure GtkTypes from "GtkTypes"
-import structure GdkEnums from "GdkEnums"
 
 signature GDK =
 sig
+
+    type object = GtkTypes.object
+    exception TypeMismatch of string
+    type arg = GtkTypes.arg
 
 <<< "GDK_ENUMS-sig.aml" >>>
 <<< "GDK_UNSAFE-sig.aml" >>>

@@ -3,8 +3,8 @@
 
 * stockwerk-gtk-binding in den CVS main trunk
 - stockhausen neu bauen -> Problem!!
-- datatype arg auch in GtkUnsafe verfuegbar machen
-- Makefile hat noch ein Problem (Aenderungen an .cc fuehren nicht zum Rebuild)
+* datatype arg auch in GtkUnsafe verfuegbar machen
+* Makefile hat noch ein Problem (Aenderungen an .cc fuehren nicht zum Rebuild)
 
 
 * Enums

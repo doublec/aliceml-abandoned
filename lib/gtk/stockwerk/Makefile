@@ -1,6 +1,6 @@
 
-COMPS = Gtk Gdk
-COMPSCAP = GTK GDK
+COMPS = Gdk Gtk
+COMPSCAP = GDK GTK
 NATIVES = $(COMPS:%=Native%)
 
 ENUMS = $(COMPSCAP:%=%_ENUMS-sig.aml) $(COMPS:%=%Enums.aml)
@@ -24,6 +24,9 @@ INSTALL = install -C -v -m 666
 .PHONY: all generate compile depend docs clean veryclean distclean
 
 all: compile
+
+# setenv ALICE_TRACE_COMPONENT 1
+# setenv ALICE_TRACE_RESOLVER 1
 
 #################################################
 
@@ -58,24 +61,25 @@ compile: $(NATIVES:%=%.dll) $(COMPS:%=%.stc)
 
 #################################################
 
-depend: Makefile $(CPPSOURCES) $(ALICESOURCES)
+depend: Makefile.depend
+
+Makefile.depend: Makefile $(CPPSOURCES) $(ALICESOURCES)
 	gcc -M -I ../../../vm-stockwerk `pkg-config --cflags gtk+-2.0` \
 	    $(CPPSOURCES) > Makefile.depend
 	echo  \
          'CM.make();depend("Makefile.depend","$$(LASTGENERATE)",CM.names());' \
          | sml
 	gawk -f alicedepend.awk $(ALICESOURCES) >> Makefile.depend
+#	alicedep --stockwerk $(ALICESOURCES) >> Makefile.depend
 
 include Makefile.depend
 
 #################################################
 
-
 docs:
 	(cd doc; $(MAKE) )
 
 #################################################
-
 
 clean:
 	rm -f $(GENFILES)

@@ -3,18 +3,12 @@ import structure GtkTypes from "GtkTypes"
 signature GTK_CORE =
 sig
 (**)type object = GtkTypes.object
+(**)exception TypeMismatch of string
+(**)type arg = GtkTypes.arg
 
     val NULL : object
     val TRUE : int
     val FALSE : int
-
-    datatype arg = 
-	BOOL of bool
-      | INT of int
-      | REAL of real
-      | STRING of string
-      | OBJECT of object
-      | LIST of object list
 
     type callBackFunction = object * arg list -> unit
     val signalConnect      : object * string * callBackFunction -> int

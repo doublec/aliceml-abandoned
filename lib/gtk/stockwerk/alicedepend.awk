@@ -7,13 +7,11 @@ function exists(file) {
 
 {
   if (match ($0, /^\w*import.*\".*\"\w*$/))
-    if (exists($2 ".aml"))
-      depends[FILENAME] = depends[FILENAME] " " $2 ".stc"
+    depends[FILENAME] = depends[FILENAME] " \\\n         " \
+      $2 (exists($2 ".asig") ? ".asig" : ".stc")
 }
 
 END {
-  for (file in depends) {
-    file_stc = gensub(/\.aml$/, ".stc", "g", file)
-    print file_stc ": " file depends[file]
-  }
+  for (file in depends)
+    print (gensub(/\.aml$/, ".stc", "g", file)) ": " file depends[file] "\n"
 }

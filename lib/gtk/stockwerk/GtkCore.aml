@@ -9,15 +9,8 @@ struct
     val FALSE = NativeGtk.gtkFalse()
 
     type object = GtkTypes.object
-
-    datatype arg = 
-	BOOL of bool
-      | INT of int
-      | REAL of real
-      | STRING of string
-      | OBJECT of object
-      | LIST of object list
-
+    exception TypeMismatch = GtkTypes.TypeMismatch
+    type arg = GtkTypes.arg
     type callBackFunction = object * arg list -> unit
 
     local
