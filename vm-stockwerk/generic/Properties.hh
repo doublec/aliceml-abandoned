@@ -21,7 +21,7 @@
 
 #include "store/Store.hh"
 
-class Properties {
+class DllExport Properties {
 public:
   static word aliceHome;
   static word rootUrl;
