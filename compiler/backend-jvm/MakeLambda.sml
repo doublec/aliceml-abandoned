@@ -47,6 +47,9 @@ functor MakeLambda(structure StampSet:IMP_SET
 	(* remember which (non-dummy) apply functions are created. *)
 	val normalApplies = StampIntSet.new () (* xxx not in use yet. *)
 
+	(* remember which stamps are parameters of a function *)
+	val parmStamps: (stamp * stamp) StampHash.t = StampHash.new ()
+
 	(* remember subfunctions of functions. This information is needed for pickling. *)
 	fun markForPickling (stamp', upperFun) =
 	    let
@@ -277,4 +280,15 @@ functor MakeLambda(structure StampSet:IMP_SET
 	      print ("Function "^Stamp.toString fn'^":"^Int.toString parms'^" stored in "^
 		     Stamp.toString dest'^" at "^Int.toString pos'^"(label"^Int.toString label'^")\n"))
 	     recApplies)
+
+	fun setParmStamp (funstamp:stamp, parmstamp:stamp, parm:stamp) =
+	    (print ("set ("^Stamp.toString funstamp^","^Stamp.toString parmstamp^","^Stamp.toString parm^"\n");
+	     StampHash.insert (parmStamps, parmstamp, (funstamp, parm)))
+
+	fun getParmStamp (funstamp, stamp') =
+	    case StampHash.lookup (parmStamps, stamp') of
+		NONE => stamp'
+	      | SOME (funstamp', parm) => if funstamp=funstamp'
+					      then parm
+					  else stamp'
     end
