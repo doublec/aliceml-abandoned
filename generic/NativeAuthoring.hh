@@ -13,6 +13,7 @@
 #ifndef __GENERIC__NATIVE_TASK_AUTHORING_HH__
 #define __GENERIC__NATIVE_TASK_AUTHORING_HH__
 
+#include "adt/HashTable.hh"
 #include "emulator/TaskStack.hh"
 #include "emulator/Interpreter.hh"
 #include "emulator/Scheduler.hh"
@@ -83,6 +84,10 @@
 #define DECLARE_BLOCKTYPE(t, a, x)					\
   t *a = t::FromWord(x);						\
   if (a == INVALID_POINTER) { REQUEST(x); } else {}
+
 #define DECLARE_CLOSURE(closure, x) DECLARE_BLOCKTYPE(Closure, closure, x)
+
+#define DECLARE_HASH_TABLE(hashtable, x) \
+  DECLARE_BLOCKTYPE(HashTable, hashtable, x)
 
 #endif
