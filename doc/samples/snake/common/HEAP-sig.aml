@@ -1,0 +1,18 @@
+
+signature HEAP =
+sig
+    type heap
+    type t = heap
+    type elem
+    
+    exception Empty
+    
+    val heap :      unit -> t
+    
+    val insert :    heap * elem -> unit
+    val isEmpty :   heap -> bool
+    val size :      heap -> int
+    
+    val minimum :   heap -> elem    (* Empty *)
+    val remove :    heap -> unit    (* Empty *)
+end

@@ -1,0 +1,39 @@
+import signature HEAP       from "HEAP-sig"
+import signature ORDERED    from "x-alice:/lib/data/ORDERED-sig"
+
+
+functor MkHeap (Elem: ORDERED): HEAP =
+struct
+    exception Empty
+
+    type elem = Elem.t
+       
+    type heap   = elem list ref
+    type t      = heap
+
+    fun heap () = ref []
+
+    fun insert (h, e) =
+        let
+            fun insert' []      = [e]
+              | insert' (x::xs) = 
+                case Elem.compare (e, x) of
+                    (LESS|EQUAL)    => e :: x :: xs
+                |   GREATER         => x :: insert' xs
+        in
+            h := insert' (! h)
+        end
+
+    fun isEmpty (ref [])    = true
+      | isEmpty _           = false
+
+    fun size (ref l)        = List.length l
+
+    fun minimum (ref [])        = raise Empty
+      | minimum (ref (x::xs))   = x
+
+    fun remove (ref [])             = raise Empty
+      | remove (r as (ref (_::l)))  = r := l
+
+end
+
