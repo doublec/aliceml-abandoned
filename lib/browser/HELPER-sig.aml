@@ -50,6 +50,9 @@ sig
 
     (* Zugriff auf Node-Felder *)
     val getKids : node -> node Array.array
+    val getParent : node -> node
+    val getIndex : node -> int
+    val getAncIndex : node -> int
 
     val checkContKids : node array * int -> bool
     val checkConcKids : node array * int -> bool

@@ -100,6 +100,28 @@ struct
                             | Container(r) => #kids(r)
 			    | _ => (Array.array(0,Empty))
 
+    fun getParent n = case n of Concat(r) => #parent(r)
+                              | Container(r) => #parent(r)
+                              | Simple(r) => #parent(r) 
+                              | Limit(r) => #parent(r)
+                              | RelNode(r) => #parent(r)
+                              | RelRefNode(r) => #parent(r)
+                              | _ => raise Match
+
+    fun getIndex n = case n of Concat(r) => #index(r)
+                             | Container(r) => #index(r)
+                             | Simple(r) => #index(r)
+                             | Limit(r) => #index(r)
+                             | RelNode(r) => #index(r) 
+                             | RelRefNode(r) => #index(r)
+                             | _ => raise Match
+
+    fun getAncIndex n = if n = Empty 
+			    then raise Match
+			else if getParent n = Empty 
+				 then getIndex n
+			     else getAncIndex (getParent(n))
+				 
     fun checkContKids (a,i) = if i >=  Array.length(a) 
 				  then false
 			      else (case Array.sub(a,i) of
