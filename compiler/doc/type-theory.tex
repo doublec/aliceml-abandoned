@@ -150,7 +150,7 @@ Note that, for uniformity, all datatypes are encoded as recursive sums, even if 
 \label{coreequiv}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-We have the following equivalence rules:\footnote{As is standard, we use square brackets for both, substitutions and sum types, but the notations are distinguishable from context.}
+Equivalence is defined as the greatest (co-inductive) fixpoint w.r.t.~the following rules:\footnote{As is standard, we use square brackets for both, substitutions and sum types, but the notations are distinguishable from context.}
 \begin{eqnarray}
 \label{mualpha} \mu \alpha_1.t &=& \mu \alpha_2.t[\alpha_2/\alpha_1] \\
 \label{mushao}  \mu \alpha.t &=& \mu \alpha.t[\mu \alpha.t/\alpha] \\
