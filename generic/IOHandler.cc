@@ -10,11 +10,6 @@
 //   $Revision$
 //
 
-extern "C" {
-#include <sys/types.h>
-#include <sys/socket.h>
-}
-
 #if defined(INTERFACE)
 #pragma implementation "emulator/IOHandler.hh"
 #endif
