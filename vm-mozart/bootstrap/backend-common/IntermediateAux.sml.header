@@ -35,10 +35,6 @@ import
 from "x-alice:/backend-common/MakeLabelSort.ozf"
 
 import
-    structure LabelSort
-from "x-alice:/backend-common/LabelSort.ozf"
-
-import
     signature FLAT_GRAMMAR
 from "x-alice:/backend-common/FLAT_GRAMMAR.ozf"
 
