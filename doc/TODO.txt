@@ -151,14 +151,20 @@ steps 3 and 4):
 
 4. Get vm-mozart-bootstrap to work again. (LK)
 
-   Instead of concatenating headers and sources, copy the files
-   from the Alice codebase as-is.  Use --implicit-import-file instead
-   of --no-implicit-import.
+   For most files, a simple copy suffices instead of concatenating
+   with headers - the import of the fundamental library will be handled
+   by replacing --no-implicit-import by --implicit-import-file.
 
-   For the ml-lex/ml-yacc generated files, add import headers.
+   Exceptions to this are:
+   -- Lexer.aml, PARSER-sig.aml, Parser.sml, generated via ml-lex/ml-yacc:
+      Concatenate as before, because our imports are not supported.
 
-   Question: What should happen to the files in
-   vm-mozart/bootstrap/backend-mozart/*.oz vs. stoc/backend-mozart/*.oz?
+   To handle the special treatment of the basic library files
+   (for now: only Base.aml), add a new option
+
+      --no-implicit-import-for <file>,<file>,...
+
+   to the batch compiler.
 
 5. Provide a new place for all files formerly in lib/bootstrap. (LK)
 
@@ -201,3 +207,8 @@ steps 3 and 4):
 
    This involves building a stodep tool and invoking it to
    build dependencies for the build2 and build3 directories.
+
+13. Let stoc lose its special status.
+
+   Move the Makefile one level up.  The files are then
+   generated within the toplevel directory.
