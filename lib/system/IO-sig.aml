@@ -19,7 +19,9 @@ sig
     exception NonblockingNotSupported
     exception RandomAccessNotSupported
     exception TerminatedStream
+*)
     exception ClosedStream
+(*TODO
     datatype buffer_mode = NO_BUF | LINE_BUF | BLOCK_BUF
 *)
 end

@@ -16,4 +16,5 @@ import signature IO       from "IO-sig"
 structure IO :> IO =
     struct
 	exception Io = UnsafeIO.Io
+	exception ClosedStream = UnsafeIO.ClosedStream
     end
