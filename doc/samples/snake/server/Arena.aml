@@ -331,21 +331,7 @@ struct
 
             fun hitOtherSnake [] s          = false
               | hitOtherSnake (s2::sns) s   = 
-                let
-                    val head = Snake.head s2 
-                    exception Hit
-                in
-                    (* hit OTHER snake s2 on the head *)
-                    (Snake.head s = head andalso Snake.id s <> Snake.id s2) 
-                        orelse 
-                        (* or hit some snake (maybe even ourself) on the body *) 
-                        (Snake.appBody (fn p => 
-                            if Snake.head s = p 
-                                then raise Hit
-                                else () ) s2; false) handle Hit => true orelse 
-                            (* or hit one of the remaining snakes *)
-                            hitOtherSnake sns s
-                end
+                Snake.hit (s, s2) orelse hitOtherSnake sns s
                   
             (* determine all snakes which died cause they hit a snake.
                Snakes which already entered a gate cannot hit another snake

@@ -130,4 +130,17 @@ struct
 
     fun shrink (s as SN { body, ... }) = (Q.remove body; assert valid s; ())
 
+    fun hit (SN { id = id1, body = b1, ... }, SN { id=id2, body = b2, ... }) =
+        let
+            val head1   = Q.head b1 
+            val head2   = Q.head b2            
+            val bodyLen = Q.size b2 - 1
+        in
+            (id1 <> id2 andalso head1 = head2) orelse
+                #1 ( Q.fold (fn (x, (f, i)) =>
+                    if f orelse i > bodyLen
+                        then (f, i)
+                        else (head1 = x, i + 1)) (false, 1) b2 )
+        end
+
 end

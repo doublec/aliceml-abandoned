@@ -63,4 +63,8 @@ sig
       *)
 
     val shrink :    snake -> unit 
+
+    val hit :       snake * snake -> bool
+    (** [hit (a, b)] has snake a hit snake b ? *)
+
 end
