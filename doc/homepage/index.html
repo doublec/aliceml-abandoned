@@ -5,7 +5,7 @@
 ?>
 
 
-<H1><A href="download.html#packages"><I><B><FONT color="#ff8800">Alice 0.9.3 has been
+<H1><A href="download.html#packages"><I><B><FONT color="#ff8800">Alice 1.0 has been
 released!</FONT></B></I></A></H1>
 
 
@@ -14,27 +14,27 @@ released!</FONT></B></I></A></H1>
   <P>
     <I>Alice</I> is a functional programming language based on
     <A href="http://cm.bell-labs.com/cm/cs/what/smlnj/sml.html">Standard ML</A>,
-    extended with support for concurrent, distributed,
+    extended with rich support for concurrent, distributed,
     and constraint programming. Alice extends Standard ML with
     several new features:
   </P>
 
   <UL>
-    <LI> <A href="manual/futures.html#lazy"><I>Laziness</I></A>:
-	 combining strict and transparent lazy functional programming
     <LI> <A href="manual/futures.html"><I>Futures</I></A>:
-	 "logic variables" and concurrency
+	 laziness and concurrency with data-flow synchronisation
     <LI> <A href="manual/modules.html"><I>Higher-order modules</I></A>:
-	 a more powerful module language
-    <LI> <A href="manual/components.html"><I>Components</I></A>:
-	 platform-independence and type-safe dynamic loading of modules
+	 higher-order functors and abstract signatures
     <LI> <A href="manual/packages.html"><I>Packages</I></A>:
 	 integrating static with dynamic typing and first class modules
     <LI> <A href="manual/pickling.html"><I>Pickling</I></A>:
-	 higher-order and platform-independent, type-safe persistence
+	 higher-order type-safe, generic & platform-independent persistence
+    <LI> <A href="manual/components.html"><I>Components</I></A>:
+	 platform-independence and type-safe dynamic loading of modules
+    <LI> <A href="manual/distribution.html"><I>Distribution</I></A>:
+	 type-safe cross-platform remote functions and network mobility
     <LI> <A href="manual/constraints.html"><I>Constraints</I></A>:
-	 solving combinatorical problems using constraints and programmable
-	 search
+	 solving combinatorical problems using constraint propagation and
+	 programmable search
   </UL>
 
   <P>
@@ -43,6 +43,8 @@ released!</FONT></B></I></A></H1>
   </P>
 
   <UL>
+    <LI> <A href="manual/machine.html"><I>Virtual machine</I></A>:
+	 a portable VM with support for just-in-time compilation
     <LI> <A href="manual/interactive.html"><I>Interactive system</I></A>:
 	 an interpreter-like interactive toplevel
     <LI> <A href="manual/compiler.html"><I>Batch compiler</I></A>:
@@ -57,6 +59,7 @@ released!</FONT></B></I></A></H1>
 	 a binding for the Gnome toolkit GUI library
   </UL>
 
+<!--
   <P>
     Alice builds on our experience with developing the
     <A href="http://www.mozart-oz.org/">Mozart</A> system.
@@ -64,17 +67,20 @@ released!</FONT></B></I></A></H1>
     Alice programs can therefore <A href="manual/interop.html"
     >interoperate</A> with Oz.
   </P>
+-->
 
-  <UL>
-    <LI>Be our guest on the <B><A href="manual/tour.html">Short Tour to Alice</A></B>!
-  </UL>
+  <P>
+    Be our guest on the <B><A href="manual/tour.html">Short Tour to Alice</A></B>!
+  </P>
 
 <H2>News</H2>
 
   <UL>
+    <LI> 2004/12/22: <B><A href="download.html#packages">Alice 1.0</A> released!</B> Featuring a <A href="/seam/">SEAM</A>-based VM and the <A href="http://www.gecode.org">GECODE</A> constraint library
+    <LI> 2004/12/22: New paper, <A href="/Papers/abstracts/alice-looking-glass.html">Alice Through the Looking Glass</A>, presenting the Alice ML language design
     <LI> 2004/10/07: <A href="/seam/">SEAM homepage</A> online
     <LI> 2004/05/05: Parsec parsing combinator library on <A href="contribs.html">contributions page</A>
-    <LI> 2004/04/15: <B><A href="download.html#packages">Alice 0.9.3</A> released!</B>
+    <LI> 2004/04/15: <B>Alice 0.9.3 released!</B>
     <LI> 2003/08/22: Regular Expression and SQLite library on <A href="contribs.html">contributions page</A>
     <LI> 2003/07/25: <B>Alice 0.9.2 released!</B>
     <LI> 2003/07/23: Set up <A href="contribs.html">contributions page</A>
@@ -100,7 +106,7 @@ released!</FONT></B></I></A></H1>
 <H2>Funding</H2>
 
   <P>
-    The Alice Project is partially funded by the DFG (<A
+    The Alice Project has been partially funded by the DFG (<A
     href="http://www.coli.uni-sb.de/sfb378/">SFB
     378</A>, Project <A
     href="http://www.coli.uni-sb.de/sfb378/2002-2004/projects.phtml?action=2&w=16">MI

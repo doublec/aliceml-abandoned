@@ -4,10 +4,70 @@
 
 <?php section("requirements", "requirements") ?>
 
+<P>Current versions of the Alice system are somewhat resource-hungry. We
+hence recommend a system with at least 700 MHz and 256 MB Ram. The installation
+requires approximately 15 MB of Harddisk space.</P>
 
-<?php subsection("prerequisites", "Prerequisites") ?>
 
-<P>Alice is based on the <A href="http://www.mozart-oz.org/">Mozart Programming
+<?php section("packages", "Packages") ?>
+
+<P>The following packages provide <A href="download/CHANGES">version 1.0</A>
+of the Alice programming system. All packages include the full <A
+href="manual/">manual</A> web pages.</P>
+
+<?php subsection("packages-windows", "Windows") ?>
+
+<P>As Windows Installer package (MSI):</P>
+
+<UL>
+  <LI><A href="download/alice-1.0.msi"><TT>alice-1.0.msi</TT></A></LI>
+</UL>
+
+<P>Or as self installing executable:</P>
+
+<UL>
+  <LI><A href="download/alice-1.0.exe"><TT>alice-1.0.exe</TT></A></LI>
+</UL>
+
+<P><B>Note:</B> You have to uninstall all previous versions of Alice before
+installing the packages.</P>
+
+
+<?php subsection("packages-unix", "Unix") ?>
+
+<P>For Red Hat Linux:</P>
+
+<UL>
+  <LI><A href="download/alice-seam-1.0-1.noarch.rpm"><TT>alice-seam-1.0-1.noarch.rpm</TT></A></LI>
+</UL>
+
+<P>For Debian Linux:</P>
+
+<UL>
+  <LI><A HREF="download/alice-seam_1.0-1_all.deb"><TT>alice-seam_1.0-1_all.deb</TT></A></LI>
+</UL>
+
+<P>For Mac OS X:</P>
+
+<UL>
+  <LI>Soon to come.</LI>
+</UL>
+
+
+<?php subsection("license", "License") ?>
+
+<P>The Alice system is free software. See the <A
+href="download/COPYING">license</A> for details.</P>
+
+
+<?php section("mozart-packages", "Previous version") ?>
+
+<P>The following packages provide the previous <A href="download/CHANGES">version 0.9.3</A>
+of the Alice programming system, which runs on the <A href="http://www.mozart-oz.org/">Mozart</A> VM and allows interoperability with Oz code.</P>
+
+<?php subsection("mozart-prerequisites", "Prerequisites") ?>
+
+<P>This version of Alice is based on the <A href="http://www.mozart-oz.org/">Mozart Programming
 system</A>. It hence is necessary to install Mozart before installation of Alice
 itself. You will need:</P>
 
@@ -22,20 +82,7 @@ available from the <A href="http://www.mozart-oz.org/download/">Mozart download
 site</A>.</P>
 
 
-<?php subsection("recommendations", "System recommendations") ?>
-
-<P>The current version of the Alice system is somewhat resource-hungry. We
-hence recommend a system with at least 700 MHz and 128 MB Ram. The installation
-requires approximately 30 MB of Harddisk space (including Mozart).</P>
-
-
-<?php section("packages", "Packages") ?>
-
-<P>The following packages provide <A href="download/CHANGES">version 0.9.3</A>
-of the Alice programming system. All packages include the full <A
-href="manual/">manual</A> web pages.</P>
-
-<?php subsection("packages-windows", "Windows") ?>
+<?php subsection("mozart-packages-windows", "Windows") ?>
 
 <P>As Windows Installer package (MSI):</P>
 
@@ -43,7 +90,7 @@ href="manual/">manual</A> web pages.</P>
   <LI><A href="download/alice-0.9.3.msi"><TT>alice-0.9.3.msi</TT></A></LI>
 </UL>
 
-<P>As self installing executable:</P>
+<P>Or as self installing executable:</P>
 
 <UL>
   <LI><A href="download/alice-0.9.3.exe"><TT>alice-0.9.3.exe</TT></A></LI>
@@ -53,7 +100,7 @@ href="manual/">manual</A> web pages.</P>
 installing the packages.</P>
 
 
-<?php subsection("packages-unix", "Unix") ?>
+<?php subsection("mozart-packages-unix", "Unix") ?>
 
 <P>For Red Hat Linux:</P>
 
@@ -89,11 +136,6 @@ installing the packages.</P>
   </LI>
 </UL>
 
-
-<?php subsection("license", "License") ?>
-
-<P>The Alice system is free software. See the <A
-href="download/COPYING">license</A> for details.</P>
 
 
 <?php section("emacs", "Patched Emacs mode") ?>
@@ -138,7 +180,7 @@ Password: anoncvs</PRE>
 <P>The tag for the current release branch is:</P>
 
 <PRE class=code>
-release-0-9-3</PRE>
+release-1-0</PRE>
 
 
 <?php subsection("cvs-example", "Example session") ?>
@@ -155,11 +197,14 @@ CVS password: anoncvs
 <P>From the CVS repository you can also access the released version:</P>
 
 <PRE class=code>
-% cvs -d :pserver:anoncvs@cvs.ps.uni-sb.de:/services/alice/CVS get -r release-0-9-3 alice</PRE>
+% cvs -d :pserver:anoncvs@cvs.ps.uni-sb.de:/services/alice/CVS get -r release-1-0 alice</PRE>
 
+<P>Note that you also need <A href="/seam/">SEAM</A> and <A href="http://www.gecode.org">Gecode</A> to be able to actually build Alice. See the <A href="/alice/wiki/HowToBuildForSEAM">Alice Wiki</A> for details.</P>
+
+<!--
 <P>You can likewise access the <A
 href="http://www.mozart-oz.org/download/view.cgi?action=cvs">Mozart CVS repository</A>.</P>
-
+-->
 
 <?php section("contribs", "Contributions") ?>
 
