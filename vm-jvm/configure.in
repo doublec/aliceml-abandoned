@@ -123,10 +123,11 @@ AC_SUBST(dmllib)
 policy="$PWD/bin/policy"
 AC_SUBST(policy)
 
-AC_OUTPUT(Makefile benchmarks/Makefile java/Makefile java/src/Makefile java/src/runtime/Makefile Compiler/Makefile Compiler/Backend/Makefile bin/dmlc bin/dml bin/policy)
+AC_OUTPUT(Makefile benchmarks/Makefile java/Makefile java/src/Makefile java/src/runtime/Makefile Compiler/Makefile Compiler/Backend/Makefile bin/dmlc bin/dml bin/policy benchmarks/bench)
 
 echo "Now making scripts executable..."
 (cd bin; chmod +x dmlc dml)
+(cd benchmarks; chmod +x bench)
 echo "Done."
 
 echo "Creating classes subdirectory."
