@@ -1,4 +1,16 @@
 (*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(*
  * Standard ML special constants
  *
  * Definition, section 2.2
@@ -10,8 +22,7 @@
 
 
 signature SCON =    
-  sig 
-
+sig 
     datatype SCon =
 	  INT    of LargeInt.int
 	| WORD   of LargeWord.word
@@ -22,5 +33,4 @@ signature SCON =
     type t = SCon
 
     val toString: SCon -> string
-
-  end
+end

@@ -1,13 +1,26 @@
 (*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(*
  * Standard ML special constants
  *
  * Definition, section 2.2
  *)
 
+import signature SCON from "SCON-sig"
+
 
 structure SCon :> SCON =
-  struct
-
+struct
     datatype SCon =
 	  INT    of LargeInt.int
 	| WORD   of LargeWord.word
@@ -22,5 +35,4 @@ structure SCon :> SCON =
       | toString(STRING s) = "\""  ^ WideString.toCString s ^ "\""
       | toString(CHAR c)   = "\"#" ^ WideChar.toCString c   ^ "\""
       | toString(REAL r)   = LargeReal.toString r
-
-  end
+end

@@ -1,4 +1,16 @@
 (*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(*
  * Stockhausen input grammar
  *
  * Extensions and modifications to core language:
@@ -57,8 +69,18 @@
  *   have been kept because they cannot be derived purely syntactically.
  *)
 
-functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
-  struct
+import structure SCon  from "SCon"
+import structure Lab   from "Lab"
+import structure VId
+       structure TyCon
+       structure TyVar
+       structure SigId
+       structure StrId from "Ids"
+import signature INPUT_GRAMMAR from "INPUT_GRAMMAR-sig"
+
+
+functor MkInputGrammar(type Info) : INPUT_GRAMMAR =
+struct
 
     (* Import *)
 
@@ -613,4 +635,4 @@ functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
     and explodeLong'(SHORTLong(_,id),      ids)	= id::ids
       | explodeLong'(DOTLong(_,longid,id), ids)	= explodeLong'(longid, id::ids)
 
-  end
+end

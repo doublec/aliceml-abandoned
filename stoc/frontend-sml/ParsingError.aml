@@ -1,5 +1,17 @@
+(*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
 structure ParsingError :> PARSING_ERROR =
-  struct
+struct
 
   (* Pretty printer *)
 
@@ -9,8 +21,6 @@ structure ParsingError :> PARSING_ERROR =
     infixr ^^ ^/^
 
   (* Types *)
-
-    type VId = VId.t
 
     datatype error =
 	(* Lexer *)
@@ -76,4 +86,4 @@ structure ParsingError :> PARSING_ERROR =
     fun error(region, e)  = Error.error(region, errorToString e)
     fun warn(region, w)   = Error.warn(region, warningToString w)
 
-  end
+end

@@ -8,18 +8,18 @@ Group is
 	../common/name.cm
 	../common/interface.cm
 
-	BIND_ENV.sig
-	BindEnv.sml
-	BIND_ENV_FROM_SIG.sig
-	BindEnvFromSig.sml
+	BIND_ENV-sig.aml
+	BindEnv.aml
+	BIND_ENV_FROM_SIG-sig.aml
+	BindEnvFromSig.aml
 
-	ABSTRACTION_ERROR.sig
-	AbstractionError.sml
+	ABSTRACTION_ERROR-sig.aml
+	AbstractionError.aml
 
-	INFIX.sig
-	Infix.sml
-	SHARING.sig
-	Sharing.sml
+	INFIX-sig.aml
+	Infix.aml
+	SHARING-sig.aml
+	Sharing.aml
 
-	ABSTRACTION_PHASE.sig
-	MakeAbstractionPhase.sml
+	ABSTRACTION_PHASE-sig.aml
+	MkAbstractionPhase.aml

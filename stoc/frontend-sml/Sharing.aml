@@ -1,4 +1,16 @@
 (*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(*
  * Translation of sharing constraints.
  *
  * The algorithm takes a list of specs and a list of longids inducing sharing
@@ -14,8 +26,17 @@
  *    even type sharing constraints with longids effect only structure specs.
  *)
 
+import structure Crash            from "../infrastructure/Crash"
+import structure Source           from "../infrastructure/Source"
+import structure Stamp            from "../common/Stamp"
+import structure Label            from "../common/Label"
+import structure AbstractGrammar  from "../frontend-common/AbstractGrammar"
+import structure AbstractionError from "AbstractionError"
+import signature SHARING          from "SHARING-sig"
+
+
 structure Sharing :> SHARING =
-  struct
+struct
 
     open AbstractGrammar
 
@@ -215,4 +236,4 @@ structure Sharing :> SHARING =
     fun shareSig(specs, inflongids) = share(specs, List.map Inf inflongids)
     fun shareStr(specs, modlongids) = share(specs, List.map Mod modlongids)
 
-  end
+end

@@ -1,4 +1,16 @@
 (*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(*
  * Standard ML identifiers
  *
  * Definition, section 2.4
@@ -8,19 +20,20 @@
  *   for labels tyvars).
  *)
 
+import signature STAMP from "../misc/STAMP-sig"
+import signature ID    from "ID-sig"
 
-functor MakeId(Stamp: STAMP) : (*DEBUG :>*) ID =
-  struct
 
+functor MkId(Stamp: STAMP) :> ID =
+struct
     type Id = string
     type t  = Id
 
-    fun invent()    = "_id" ^ Stamp.toString(Stamp.new())
-    fun inventAs id = "_" ^ id ^ Stamp.toString(Stamp.new())
+    fun invent()     = "_id" ^ Stamp.toString(Stamp.new())
+    fun inventAs id  = "_" ^ id ^ Stamp.toString(Stamp.new())
 
     fun fromString s = s
     fun toString s   = s
 
-    val compare = String.compare
-
-  end
+    val compare      = String.compare
+end
