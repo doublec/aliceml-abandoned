@@ -23,4 +23,8 @@
 # define AliceDll
 #endif
 
+#if LIGHTNING
+#define ALICE_USE_JITTER 1
+#endif
+
 #endif
