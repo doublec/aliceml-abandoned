@@ -7,6 +7,7 @@
 
 <HTML>
   <HEAD>
+    <META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
     <TITLE> <?php echo "Alice Library Manual - $title" ?></TITLE>
     <LINK rel="stylesheet" type="text/css" href="style.css">
   </HEAD>
@@ -31,7 +32,7 @@
   <BR>
   </H1>
 
-  <IMG align="right" src="../alice.gif">
+  <IMG align="right" src="../alice.gif" alt="Alice">
 
   <?php
     include("menu.php3")

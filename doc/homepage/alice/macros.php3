@@ -7,6 +7,7 @@
 
 <HTML>
   <HEAD>
+    <META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
     <TITLE> <?php echo $title ?></TITLE>
     <LINK rel="stylesheet" type="text/css" href="style.css">
   </HEAD>
@@ -21,7 +22,7 @@
   <BR>
   </H1>
 
-  <IMG align="right" src="alice.gif"><BR><BR>&nbsp;
+  <IMG align="right" src="alice.gif" alt="Alice"><BR><BR>&nbsp;
 
 <!--
   <?php
