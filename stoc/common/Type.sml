@@ -163,11 +163,19 @@ structure TypePrivate =
 *)
 
 
-  (* Kind inference *)
+  (* Kinds *)
 
-    fun rangeKind(ARROW(k1,k2))	= k2
-      | rangeKind  _		= raise Crash.Crash "Type.rangeKind: \
-						    \kind mismatch"
+    exception Kind
+
+    fun isStar STAR		= true
+      | isStar _		= false
+
+    fun domKind(ARROW(k1,k2))	= k1
+      | domKind STAR		= raise Kind
+
+    fun ranKind(ARROW(k1,k2))	= k2
+      | ranKind STAR		= raise Kind
+
 
     fun kind(ref t')		= kind' t'
 
@@ -177,7 +185,7 @@ structure TypePrivate =
       | kind'(VAR(k,_))		= k
       | kind'(CON(k,_,_))	= k
       | kind'(LAMBDA(a,t))	= ARROW(kind a, kind t)
-      | kind'(APPLY(t1,t2))	= rangeKind(kind t1)
+      | kind'(APPLY(t1,t2))	= ranKind(kind t1)
       | kind'(MARK t')		= kind' t'
       | kind' _			= STAR
 
@@ -192,19 +200,19 @@ structure TypePrivate =
 
     fun app1'(( HOLE _
 	      | VAR _
-	      | CON _ ), f)		= ()
+	      | CON _ ), f, b)		= ()
       | app1'(( LINK t
 	      | MU t
 	      | ALL(_,t)
 	      | EXIST(_,t)
-	      | LAMBDA(_,t) ), f)	= f t
+	      | LAMBDA(_,t) ), f, b)	= f t
       | app1'(( FUN(t1,t2)
-	      | APPLY(t1,t2) ), f)	= (f t1 ; f t2)
-      | app1'(( ABBREV(t1,t2) ), f)	= f t2
-      | app1'(( TUPLE ts ), f)		= Vector.app f ts
+	      | APPLY(t1,t2) ), f, b)	= (f t1 ; f t2)
+      | app1'(( ABBREV(t1,t2) ), f, b)	= if b then (f t1 ; f t2) else f t2
+      | app1'(( TUPLE ts ), f, b)	= Vector.app f ts
       | app1'(( PROD r
-	      | SUM r ), f)		= appRow(r,f)
-      | app1'(( MARK _ ), f)		= raise Crash.Crash "Type.app: MARK"
+	      | SUM r ), f, b)		= appRow(r,f)
+      | app1'(( MARK _ ), f, b)		= raise Assert.failure
 
     and appRow(FIELD(_,ts,r), f)	= (Vector.app f ts ; appRow(r,f))
       | appRow(RHO(_,r), f)		= appRow(r,f)
@@ -213,34 +221,34 @@ structure TypePrivate =
 
     fun foldl1'(( HOLE _
 		| VAR _
-		| CON _ ), f, a)	= a
+		| CON _ ), f,a,b)	= a
       | foldl1'(( LINK t
 		| MU t
 		| ALL(_,t)
 		| EXIST(_,t)
-		| LAMBDA(_,t) ), f, a)	= f(t,a)
+		| LAMBDA(_,t) ), f,a,b)	= f(t,a)
       | foldl1'(( FUN(t1,t2)
-		| APPLY(t1,t2) ), f, a)	= f(t2, f(t1,a))
-      | foldl1'(( ABBREV(t1,t2)), f, a)	= f(t2,a)
-      | foldl1'(( TUPLE ts ), f, a)	= Vector.foldl f a ts
+		| APPLY(t1,t2)), f,a,b)	= f(t2, f(t1,a))
+      | foldl1'(( ABBREV(t1,t2)),f,a,b)	= if b then f(t2, f(t1,a)) else f(t2,a)
+      | foldl1'(( TUPLE ts ), f,a,b)	= Vector.foldl f a ts
       | foldl1'(( PROD r
-		| SUM r ), f, a)	= foldlRow(r,f,a)
-      | foldl1'(( MARK _ ), f, a)	= raise Crash.Crash "Type.foldl: MARK"
+		| SUM r ), f,a,b)	= foldlRow(r,f,a)
+      | foldl1'(( MARK _ ), f,a,b)	= raise Assert.failure
 
-    and foldlRow(FIELD(_,ts,r), f, a)	= foldlRow(r, f, Vector.foldl f a ts)
-      | foldlRow(RHO(_,r), f, a)	= foldlRow(r, f, a)
-      | foldlRow(NIL, f, a)		= a
+    and foldlRow(FIELD(_,ts,r), f,a)	= foldlRow(r, f, Vector.foldl f a ts)
+      | foldlRow(RHO(_,r), f,a)		= foldlRow(r, f, a)
+      | foldlRow(NIL, f,a)		= a
 
 
     fun unmark(t as ref(MARK t')) 	=
 (*ASSERT				  assert t' of non MARK _ => *)
 ( case t' of MARK _ => raise Assert.failure | _ =>
-					  ( t := t' ; app1'(t', unmark) )
+					  ( t := t' ; app1'(t', unmark, true) )
 )
       | unmark _	            	= ()
 
 
-    fun app f t =
+    fun appHow b f t =
 	let
 	    fun app(ref(MARK _)) = ()
 	      | app t =
@@ -249,13 +257,16 @@ structure TypePrivate =
 		    val t' = !t
 		    val _  = t := MARK t'
 		in
-		    app1'(t',app)
+		    app1'(t',app,b)
 		end
 	in
 	    app t before unmark t handle e => ( unmark t ; raise e )
 	end
 
-    fun foldl f a t =
+    fun app f		= appHow true f
+    fun appNoAbbrevs f	= appHow false f
+
+    fun foldlHow b f a t =
 	let
 	    fun fold(ref(MARK _), a) = a
 	      | fold(t, a) =
@@ -264,11 +275,14 @@ structure TypePrivate =
 		    val t' = !t
 		    val _  = t := MARK t'
 		in
-		    foldl1'(t',fold,a')
+		    foldl1'(t',fold,a',b)
 		end
 	in
 	    fold(t,a) before unmark t handle e => ( unmark t ; raise e )
 	end
+
+    fun foldl f		= foldlHow true f
+    fun foldlNoAbbrevs f= foldlHow false f
 
 
   (* Cloning *)
@@ -318,7 +332,7 @@ structure TypePrivate =
 	      | clone'(APPLY(t1,t2))	= APPLY(clone t1, clone t2)
 	      | clone'(MU t)		= MU(clone t)
 	      | clone'(ABBREV(t1,t2))	= ABBREV(clone t1, clone t2)
-	      | clone' _		= raise Crash.Crash "Type.clone"
+	      | clone' _		= raise Assert.failure
 
 	    and cloneRow(FIELD(a,ts,r))	= FIELD(a, Vector.map clone ts,
 						cloneRow r)
@@ -382,7 +396,7 @@ structure TypePrivate =
 	      | clone'(APPLY(t1,t2))	= APPLY(clone t1, clone t2)
 	      | clone'(MU t)		= MU(clone t)
 	      | clone'(ABBREV(t1,t2))	= ABBREV(clone t1, clone t2)
-	      | clone' _		= raise Crash.Crash "Type.clone"
+	      | clone' _		= raise Assert.failure
 
 	    and cloneRow(FIELD(a,ts,r))	= FIELD(a, Vector.map clone ts,
 						cloneRow r)
@@ -424,7 +438,7 @@ structure TypePrivate =
 				   | SOME t => ABBREV(ref(APPLY(t,t2)), t11) )
 			; reduce t
 			)
-		    | _ => raise Crash.Crash "Type.reduceApply"
+		    | _ => raise Assert.failure
 		)
 	      | reduceApply(ref(LINK t11), to) =
 		    reduceApply(follow t11, to)
@@ -573,7 +587,7 @@ structure TypePrivate =
       | checkClosed' _			= ()
 
     fun isClosed t =
-	( app (fn ref t' => checkClosed' t') t ; true )
+	( appNoAbbrevs (fn ref t' => checkClosed' t') t ; true )
 	handle Unclosed => false
 
 
@@ -718,7 +732,7 @@ if not(isVar a) then raise Assert.failure else
 (*ASSERT		 		= assert k1 = kind' t2' =>*)
 if k <> kind t2 then raise Assert.failure else
 					  t1 := LINK t2
-      | fill    _			= raise Crash.Crash "Type.fill"
+      | fill    _			= raise Assert.failure
 
 
   (* Unification *)
@@ -732,8 +746,8 @@ if k <> kind t2 then raise Assert.failure else
 		    t := MARK(if n' <= n then t' else HOLE(k,n))
 	      | lift(ref(MARK _)) = ()
 	      | lift(t as ref(t' as (PROD r | SUM r))) =
-		    ( liftRow r ; t := MARK t' ; app1'(t', lift) )
-	      | lift(t as ref t') = ( t := MARK t' ; app1'(t', lift) )
+		    ( liftRow r ; t := MARK t' ; app1'(t', lift, true) )
+	      | lift(t as ref t') = ( t := MARK t' ; app1'(t', lift, true) )
 
 	    and liftRow(RHO(n',r)) = if !n' > n then n' := n else ()
 	      | liftRow _          = ()
@@ -744,8 +758,8 @@ if k <> kind t2 then raise Assert.failure else
 		else case t'
 		  of HOLE(k,n') => t := MARK(if n' <= n then t' else HOLE(k,n))
 		   | MARK _     => ()
-		   | MU _       => ( t := MARK t' ; app1'(t', lift) )
-		   | _          => ( t := MARK t' ; app1'(t', check) )
+		   | MU _       => ( t := MARK t' ; app1'(t', lift, true) )
+		   | _          => ( t := MARK t' ; app1'(t', check, true) )
 	in
 	    check t2 ; unmark t2
 	end
@@ -834,11 +848,9 @@ if kind' t1' <> k2 then raise Assert.failure else
 			  * must be equal in that case. *)
 			 recurBinder(a1, a2, t11, t21)
 
-		       | (ALL(a1,t11), ALL(a2,t21)) =>
-			 raise Crash.Crash "Type.unify: universal quantifier"
-
-		       | (EXIST(a1,t11), EXIST(a2,t21)) =>
-			 raise Crash.Crash "Type.unify: existential quantifier"
+		       | ( (ALL(a1,t11), ALL(a2,t21))
+			 | (EXIST(a1,t11), EXIST(a2,t21)) ) =>
+			 recurBinder(a1, a2, t11, t21)
 
 		       | (ABBREV(t11,t12), _) =>
 			 unify (t12,t2)

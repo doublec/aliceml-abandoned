@@ -19,6 +19,14 @@ signature TYPE =
     type typ_rea  = typ PathMap.t
 
 
+  (* Kinds *)
+
+    exception Kind
+
+    val isStar :	kind -> bool
+    val domKind :	kind -> kind			(* [Kind] *)
+    val ranKind :	kind -> kind			(* [Kind] *)
+
   (* Injections *)
 
     val unknown :	kind      -> typ
@@ -57,25 +65,25 @@ signature TYPE =
 
     exception Type
 
-    val asArrow :	typ -> typ * typ		(* Type *)
-    val asTuple :	typ -> typ vector		(* Type *)
-    val asProd :	typ -> row			(* Type *)
-    val asSum :		typ -> row			(* Type *)
-    val asVar :		typ -> var			(* Type *)
-    val asCon :		typ -> con			(* Type *)
-    val asAll :		typ -> var * typ		(* Type *)
-    val asExist :	typ -> var * typ		(* Type *)
-    val asLambda :	typ -> var * typ		(* Type *)
-    val asApply :	typ -> typ * typ		(* Type *)
-    val asMu :		typ -> typ			(* Type *)
-    val asAbbrev : 	typ -> typ * typ		(* Type *)
+    val asArrow :	typ -> typ * typ		(* [Type] *)
+    val asTuple :	typ -> typ vector		(* [Type] *)
+    val asProd :	typ -> row			(* [Type] *)
+    val asSum :		typ -> row			(* [Type] *)
+    val asVar :		typ -> var			(* [Type] *)
+    val asCon :		typ -> con			(* [Type] *)
+    val asAll :		typ -> var * typ		(* [Type] *)
+    val asExist :	typ -> var * typ		(* [Type] *)
+    val asLambda :	typ -> var * typ		(* [Type] *)
+    val asApply :	typ -> typ * typ		(* [Type] *)
+    val asMu :		typ -> typ			(* [Type] *)
+    val asAbbrev : 	typ -> typ * typ		(* [Type] *)
 
   (* Complex extractions *)
 
     val kind :		typ -> kind
     val kindVar :	var -> kind
 
-    val path :		typ -> path			(* Type *)
+    val path :		typ -> path			(* [Type] *)
     val pathCon :	con -> path
 
     val paths :		typ -> PathSet.t
@@ -86,14 +94,14 @@ signature TYPE =
 
     val unknownRow :	unit -> row
     val emptyRow :	unit -> row
-    val extendRow :	lab * typ vector * row -> row	(* Row *)
+    val extendRow :	lab * typ vector * row -> row	(* [Row] *)
 
-    val openRowType :	typ -> unit			(* Row *)
+    val openRowType :	typ -> unit			(* [Row] *)
 
     val isEmptyRow :	row -> bool
     val isUnknownRow :	row -> bool
-    val headRow :	row -> lab * typ vector		(* Row *)
-    val tailRow :	row -> row			(* Row *)
+    val headRow :	row -> lab * typ vector		(* [Row] *)
+    val tailRow :	row -> row			(* [Row] *)
 
   (* Copying and instantiation *)
 
@@ -116,8 +124,8 @@ signature TYPE =
     exception Intersect
 
     val fill :		typ * typ -> unit
-    val unify :		typ * typ -> unit		(* Unify *)
-    val unifyList :	typ list  -> unit		(* UnifyList *)
+    val unify :		typ * typ -> unit		(* [Unify] *)
+    val unifyList :	typ list  -> unit		(* [UnifyList] *)
     val intersect :	typ * typ -> unit
     val close :		typ -> typ
     val isClosed :	typ -> bool
@@ -131,7 +139,7 @@ signature TYPE =
 
     exception Lift of var
 
-    val lift :		typ  -> unit			(* Lift *)
+    val lift :		typ  -> unit			(* [Lift] *)
     val enterLevel :	unit -> unit
     val exitLevel :	unit -> unit
     val resetLevel :	unit -> unit
