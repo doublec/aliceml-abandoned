@@ -1,0 +1,44 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure MkHashImpMap  from "../utility/MkHashImpMap"
+import structure FromEqHashKey from "../utility/HASH_KEY-sig"
+import structure Url           from "../utility/Url"
+import signature URL_MAP       from "URL_MAP-sig"
+
+structure UrlMap :> URL_MAP =
+    struct
+	structure UrlMap = MkHashImpMap(FromEqHashKey(Url))
+
+	type 'a t = Lock.lock * 'a UrlMap.t
+
+	datatype 'a lookup_result =
+	    EXISTING of 'a
+	  | NEW of 'a Promise.promise
+
+	fun new () = (Lock.lock (), UrlMap.new ())
+
+	fun lookup ((lock, map), url) = Lock.sync lock UrlMap.lookup (map, url)
+
+	fun lookupNew ((lock, map), url) =
+	    Lock.sync lock lookupNew' (map, url)
+	and lookupNew' (map, url) =
+	    case UrlMap.lookup (map, url) of
+		SOME x => EXISTING x
+	      | NONE =>
+		    let
+			val p = Promise.promise ()
+		    in
+			UrlMap.insertDisjoint (map, url, Promise.future p);
+			NEW p
+		    end
+    end

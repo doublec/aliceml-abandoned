@@ -1,0 +1,44 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Inf           from "../rtt/Inf"
+import structure UnsafeReflect from "UnsafeReflect"
+import signature REFLECT       from "REFLECT-sig"
+
+structure Reflect :> REFLECT =
+    struct
+	type value
+
+	functor Reflect(signature S structure X: S) =
+	    let
+		structure Str = UnsafeReflect.Reflect(signature S = S
+						      structure X = X)
+	    in
+		(val x = UnsafeReflect.cast Str.x)
+	    end
+
+	functor Unreflect(val x: value signature S) =
+	    UnsafeReflect.Unreflect(val x = UnsafeReflect.cast x
+				    signature S = S)
+
+	functor ReflectSig(signature S) =
+	    let
+		structure Sig = UnsafeReflect.ReflectSig(signature S = S)
+	    in
+		(val x = UnsafeReflect.cast Sig.x)
+	    end
+
+(*
+	functor UnreflectSig(val x: Inf.t) =
+	    UnsafeReflect.UnreflectSig(val x = UnsafeReflect.cast x)
+*)
+    end
