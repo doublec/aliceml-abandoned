@@ -40,7 +40,7 @@ DEFINE2(Thread_raiseIn) {
 	int frameSize = nargs == -1? 2: nargs + 1;
 	otherTaskStack->PopFrame(frameSize);
 	otherTaskStack->
-	  PushCall(Closure::FromWord(GlobalPrimitives::Internal_raise));
+	  PushCall(Closure::FromWordDirect(GlobalPrimitives::Internal_raise));
 	otherTaskStack->PushFrame(1);
 	otherTaskStack->PutWord(0, x1);
 	break;
@@ -74,6 +74,7 @@ DEFINE1(Thread_state) {
 
 DEFINE1(Thread_suspend) {
   //--** remove from runnable queue if it's in there
+  //--** check if argument is current thread
   DECLARE_THREAD(thread, x0);
   thread->Suspend();
   thread->GetTaskStack()->Purge();

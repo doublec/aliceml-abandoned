@@ -48,7 +48,8 @@ DEFINE1(Future_concur) {
   Thread *thread = Thread::New(Scheduler::GetCurrentThread()->GetPriority());
   TaskStack *newTaskStack = thread->GetTaskStack();
   //--** push toplevel exception handler on taskStack
-  newTaskStack->PushCall(Closure::FromWord(GlobalPrimitives::Future_await));
+  newTaskStack->
+    PushCall(Closure::FromWordDirect(GlobalPrimitives::Future_await));
   newTaskStack->PushFrame(1);
   newTaskStack->PutWord(0, byneed);
   Scheduler::AddThread(thread);

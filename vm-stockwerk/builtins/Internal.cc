@@ -26,8 +26,9 @@ DEFINE1(Internal_bind) {
 } END
 
 DEFINE1(Internal_byneedHandler) {
-  ConVal *exn =
-    ConVal::New(Constructor::FromWord(GlobalPrimitives::Future_Future), 1);
+  Constructor *constructor =
+    Constructor::FromWordDirect(GlobalPrimitives::Future_Future);
+  ConVal *exn = ConVal::New(constructor, 1);
   exn->Init(0, x0);
   Transient *result = Store::AllocTransient(CANCELLED_LABEL);
   result->InitArg(exn->ToWord());

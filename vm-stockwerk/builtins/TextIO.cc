@@ -31,7 +31,7 @@ public:
     return static_cast<FILE *>(Store::WordToUnmanagedPointer(w));
   }
   const char *GetName() {
-    return String::FromWord(GetArg(NAME_POS))->GetValue();
+    return String::FromWordDirect(GetArg(NAME_POS))->GetValue();
   }
 
   static Stream *New(FILE *fs, String *name) {

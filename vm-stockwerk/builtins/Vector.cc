@@ -50,16 +50,15 @@ DEFINE2(Vector_tabulate) {
   taskStack->PutWord(1, Vector::New(length)->ToWord());
   taskStack->PutWord(2, closure->ToWord());
   taskStack->
-    PushCall(Closure::FromWord(GlobalPrimitives::Vector_tabulate_cont));
+    PushCall(Closure::FromWordDirect(GlobalPrimitives::Vector_tabulate_cont));
   taskStack->PushCall(closure);
   RETURN_INT(0);
 } END
 
 DEFINE1(Vector_tabulate_cont) {
-  //--** could use Unsafe variants
-  u_int index = Store::WordToInt(taskStack->GetWord(0));
-  Vector *vector = Vector::FromWord(taskStack->GetWord(1));
-  Closure *closure = Closure::FromWord(taskStack->GetWord(2));
+  u_int index = Store::DirectWordToInt(taskStack->GetWord(0));
+  Vector *vector = Vector::FromWordDirect(taskStack->GetWord(1));
+  Closure *closure = Closure::FromWordDirect(taskStack->GetWord(2));
   vector->Init(index, x0); //--** must use ReplaceArg!
   index++;
   if (index == vector->GetLength())
@@ -69,7 +68,7 @@ DEFINE1(Vector_tabulate_cont) {
   taskStack->PutWord(1, vector->ToWord());
   taskStack->PutWord(2, closure->ToWord());
   taskStack->
-    PushCall(Closure::FromWord(GlobalPrimitives::Vector_tabulate_cont));
+    PushCall(Closure::FromWordDirect(GlobalPrimitives::Vector_tabulate_cont));
   taskStack->PushCall(closure);
   RETURN_INT(index);
 } END

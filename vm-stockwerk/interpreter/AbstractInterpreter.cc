@@ -46,6 +46,9 @@ public:
   static Environment *FromWord(word w) {
     return static_cast<Environment *>(Array::FromWord(w));
   }
+  static Environment *FromWordDirect(word w) {
+    return static_cast<Environment *>(Array::FromWordDirect(w));
+  }
 
   void Add(word id, word value) {
     Update(Store::WordToInt(id), value);
@@ -79,7 +82,7 @@ static const u_int FORMAL_ARGS_POS = 4;
 void AbstractInterpreter::PushCall(TaskStack *taskStack, Closure *closure) {
   ConcreteCode *concreteCode = closure->GetConcreteCode();
   Assert(concreteCode->GetInterpreter() == this);
-  TagVal *function = TagVal::FromWord(concreteCode->GetAbstractCode());
+  TagVal *function = TagVal::FromWordDirect(concreteCode->GetAbstractCode());
   // datatype function = Function of int * int * idDef args * instr
   Assert(Store::WordToInt(function->Sel(0)) == closure->GetSize());
   taskStack->PushFrame(FRAME_SIZE);
@@ -141,13 +144,13 @@ Interpreter::Result
 AbstractInterpreter::Run(TaskStack *taskStack, int nargs) {
   u_int nslots = nargs == -1? 1: nargs;
   Assert(Store::WordToUnmanagedPointer(taskStack->GetWord(nslots + INTERPRETER_POS)) == this);
-  TagVal *pc = TagVal::FromWord(taskStack->GetWord(nslots + PC_POS));
+  TagVal *pc = TagVal::FromWordDirect(taskStack->GetWord(nslots + PC_POS));
   Closure *globalEnv =
-    Closure::FromWord(taskStack->GetWord(nslots + CLOSURE_POS));
+    Closure::FromWordDirect(taskStack->GetWord(nslots + CLOSURE_POS));
   Environment *localEnv =
-    Environment::FromWord(taskStack->GetWord(nslots + LOCAL_ENV_POS));
+    Environment::FromWordDirect(taskStack->GetWord(nslots + LOCAL_ENV_POS));
   TagVal *formalArgs =
-    TagVal::FromWord(taskStack->GetWord(nslots + FORMAL_ARGS_POS));
+    TagVal::FromWordDirect(taskStack->GetWord(nslots + FORMAL_ARGS_POS));
   // Calling convention conversion:
   switch (Pickle::GetArgs(formalArgs)) {
   case Pickle::OneArg:
@@ -174,7 +177,7 @@ AbstractInterpreter::Run(TaskStack *taskStack, int nargs) {
 	if (tuple == INVALID_POINTER) {
 	  taskStack->PopFrame(1);
 	  taskStack->
-	    PushCall(Closure::FromWord(GlobalPrimitives::Future_await));
+	    PushCall(Closure::FromWordDirect(GlobalPrimitives::Future_await));
 	  taskStack->PushFrame(1);
 	  taskStack->PutWord(0, suspendWord);
 	  return Result(Result::CONTINUE, 1);
@@ -315,7 +318,7 @@ AbstractInterpreter::Run(TaskStack *taskStack, int nargs) {
 	}
 	// Push a call frame for the primitive:
 	String *name = String::FromWord(pc->Sel(1));
-	taskStack->PushCall(Closure::FromWord(Primitive::Lookup(name)));
+	taskStack->PushCall(Closure::FromWordDirect(Primitive::Lookup(name)));
 	Vector *actualIdRefs = Vector::FromWord(pc->Sel(2));
 	u_int nargs = actualIdRefs->GetLength();
 	taskStack->PushFrame(nargs);

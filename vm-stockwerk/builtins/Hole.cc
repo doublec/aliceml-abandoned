@@ -17,8 +17,9 @@ DEFINE2(Hole_fail) {
   Transient *transient = Store::WordToTransient(x0);
   if (transient == INVALID_POINTER || transient->GetLabel() != HOLE_LABEL)
     RAISE(GlobalPrimitives::Hole_Hole);
-  ConVal *exn = 
-    ConVal::New(Constructor::FromWord(GlobalPrimitives::Future_Future), 1);
+  Constructor *constructor =
+    Constructor::FromWordDirect(GlobalPrimitives::Future_Future);
+  ConVal *exn = ConVal::New(constructor, 1);
   exn->Init(0, x1);
   transient->Become(CANCELLED_LABEL, exn->ToWord());
   RETURN_UNIT;

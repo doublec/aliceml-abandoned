@@ -62,7 +62,7 @@ PrimitiveInterpreter::Run(TaskStack *taskStack, int nargs) {
 	if (Store::WordToInt(suspendWord) == INVALID_INT) {
 	  taskStack->PopFrame(1);
 	  taskStack->
-	    PushCall(Closure::FromWord(GlobalPrimitives::Future_await));
+	    PushCall(Closure::FromWordDirect(GlobalPrimitives::Future_await));
 	  taskStack->PushFrame(1);
 	  taskStack->PutWord(0, suspendWord);
 	  return Result(Result::CONTINUE, 1);
@@ -73,7 +73,7 @@ PrimitiveInterpreter::Run(TaskStack *taskStack, int nargs) {
 	if (tuple == INVALID_POINTER) {
 	  taskStack->PopFrame(1);
 	  taskStack->
-	    PushCall(Closure::FromWord(GlobalPrimitives::Future_await));
+	    PushCall(Closure::FromWordDirect(GlobalPrimitives::Future_await));
 	  taskStack->PushFrame(1);
 	  taskStack->PutWord(0, suspendWord);
 	  return Result(Result::CONTINUE, 1);
