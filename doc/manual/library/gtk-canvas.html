@@ -1,14 +1,14 @@
 <?php include("macros.php3"); ?>
-<?php heading("The GnomeCanvas structure", "The <TT>GnomeCanvas</TT> structure"); ?>
+<?php heading("The Canvas structure", "The <TT>Canvas</TT> structure"); ?>
 
 <?php section("synopsis", "synopsis"); ?>
 
   <PRE>
-    signature GNOME_CANVAS
-    structure GnomeCanvas : GNOME_CANVAS</PRE>
+    signature CANVAS
+    structure Canvas : CANVAS</PRE>
 
  <P>
-   The <TT>GnomeCanvas</TT> structure provides access to a canvas implementation
+   The <TT>Canvas</TT> structure provides access to a canvas implementation
    based on the Tcl/Tk canvas widget.
  </P>
 
@@ -29,12 +29,12 @@
     import structure PangoEnums from "x-alice:/lib/gtk/PangoEnums"
     import structure GdkEnums from "x-alice:/lib/gtk/GdkEnums"
     import structure GtkEnums from "x-alice:/lib/gtk/GtkEnums"
-    import structure GnomeCanvasEnums from "x-alice:/lib/gtk/GnomeCanvasEnums"</PRE>
+    import structure CanvasEnums from "x-alice:/lib/gtk/CanvasEnums"</PRE>
 
   <?php section("interface", "interface"); ?>
 
   <PRE>
-signature GNOME_CANVAS =
+signature CANVAS =
 sig
     type object = Core.object
     datatype event =
