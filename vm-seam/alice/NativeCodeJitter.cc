@@ -1230,9 +1230,8 @@ void NativeCodeJitter::LoadArguments(Vector *actualIdRefs) {
 }
 
 static
-inline bool SkipCCC(u_int needInCCCTest,
-		    Vector *actualArgs, Vector *calleeArgs) {
-  return ((needInCCCTest == 0) ||
+inline bool SkipCCC(u_int isDirectIn, Vector *actualArgs, Vector *calleeArgs) {
+  return ((isDirectIn == Types::_true) ||
 	  (GetInArity(actualArgs) == GetInArity(calleeArgs)));
 }
 
@@ -1306,7 +1305,7 @@ TagVal *NativeCodeJitter::Apply(TagVal *pc, word wClosure) {
   JIT_APPLY_COUNT(applyCountedTotal);
   Closure *closure   = Closure::FromWord(wClosure);
   Vector *actualArgs = Vector::FromWordDirect(pc->Sel(1));
-  u_int needInCCCTest = Store::DirectWordToInt(pc->Sel(2));
+  u_int isDirectIn   = Store::DirectWordToInt(pc->Sel(2));
   CallInfo info;
   info.mode    = NORMAL_CALL;
   info.pc      = Store::DirectWordToInt(initialPC);
@@ -1318,7 +1317,7 @@ TagVal *NativeCodeJitter::Apply(TagVal *pc, word wClosure) {
       JIT_APPLY_COUNT(applySelf);
       info.mode    = SELF_CALL;
       info.closure = ImmediateEnv::Register(closure->ToWord());
-      if (SkipCCC(needInCCCTest, actualArgs, currentArgs))
+      if (SkipCCC(isDirectIn, actualArgs, currentArgs))
 	info.pc = Store::DirectWordToInt(initialNoCCCPC);
       info.nLocals = currentNLocals;
       goto no_request;
@@ -1335,7 +1334,7 @@ TagVal *NativeCodeJitter::Apply(TagVal *pc, word wClosure) {
 	info.mode    = NATIVE_CALL;
 	info.closure = ImmediateEnv::Register(closure->ToWord());
 	info.nLocals = nativeCode->GetNLocals();
-	if ((needInCCCTest == 0) || (calleeArity == actualArity))
+	if ((isDirectIn == Types::_true) || (calleeArity == actualArity))
 	  info.pc = nativeCode->GetSkipCCCPC();
 	goto no_request;
       }
@@ -1343,7 +1342,7 @@ TagVal *NativeCodeJitter::Apply(TagVal *pc, word wClosure) {
 	IntMap *inlineMap = IntMap::FromWordDirect(inlineTable);
 	word wCFunction = Store::UnmanagedPointerToWord(cFunction);
 	JIT_APPLY_COUNT(applyPrim);
-	if (((needInCCCTest == 0) || (calleeArity == actualArity)) &&
+	if (((isDirectIn == Types::_true) || (calleeArity == actualArity)) &&
 	    inlineMap->IsMember(wCFunction)) {
 	  Vector *actualIdRefs = actualArgs;
 	  u_int Result         = InlinePrimitive(wCFunction, actualIdRefs);
@@ -1385,7 +1384,7 @@ TagVal *NativeCodeJitter::Apply(TagVal *pc, word wClosure) {
 	  }
 	} else {
 	  LoadArguments(actualArgs);
-	  if (needInCCCTest && (calleeArity != actualArity))
+	  if ((isDirectIn == Types::_false) && (calleeArity != actualArity))
 	    CompileCCC(calleeArity);
 	  TagVal *idDefArgsInstrOpt = TagVal::FromWord(pc->Sel(3));
 #if PROFILE

@@ -138,6 +138,9 @@ structure OutputPickle :> OUTPUT_PICKLE =
 	    (output (context, x);
 	     outputBlock (context, Label.some, 1))
 
+	fun outputBool (context, b) =
+	    outputInt (context, if b then Label.true_ else Label.false_)
+
 	fun outputVector output (context, xs) =
 	    (Vector.app (fn x => output (context, x)) (Vector.rev xs);
 	     outputInt (context, LargeInt.fromInt (Vector.length xs));
@@ -299,14 +302,14 @@ structure OutputPickle :> OUTPUT_PICKLE =
 	     outputVector outputIdRef (context, idRefs);
 	     outputValue (context, value);
 	     outputBlock (context, Label.appPrim, 3))
-	  | outputInstr (context, AppVar
-				    (idRef, inArgs, inCCC, outArgsInstrOpt)) =
+	  | outputInstr (context,
+			 AppVar (idRef, inArgs, isDirectIn, outArgsInstrOpt)) =
 	    (outputOption (fn (context, (outArgs, instr)) =>
 			   (outputInstr (context, instr);
 			    outputArgs outputIdDef (context, outArgs);
 			    outputTuple (context, 2)))
 	     (context, outArgsInstrOpt);
-	     outputInt (context, if inCCC then Label.true_ else Label.false_);
+	     outputBool (context, isDirectIn);
 	     outputVector outputIdRef (context, inArgs);
 	     outputIdRef (context, idRef);
 	     outputBlock (context, Label.appVar, 4))
