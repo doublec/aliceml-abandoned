@@ -60,6 +60,14 @@
 #include "generic/DllLoader.hh"
 #include "generic/Authoring.hh"
 #include "generic/JitterGenericData.hh"
+#if DEBUGGER
+#include "generic/Debugger.hh"
+#include "generic/Stream.hh"
+#include "generic/DebugWorker.hh"
+#include "generic/DebugFrame.hh"
+#include "generic/DebuggerEvent.hh"
+#include "generic/GenericDebuggerEvent.hh"
+#endif
 
 extern "C" SeamDll void InitSeam();
 
