@@ -387,11 +387,13 @@ alicec1-%: build1-install
 BUILD1DIRS = build1 $(SOURCEDIRS:%=build1/%)
 BUILD1SOURCES = \
 	build1/Build1.aml build1/lib/fundamental/RTT.aml \
-	$(ALLSOURCES:%=build1/%)
+	$(ALLSOURCES:%=build1/%) \
+	build1/tools/Linker.aml
 
 INSTALL1DIRS = build1/install build1/install/compiler
 INSTALL1COMPILERFILES = CompilerMain.stc
 INSTALL1FILES = \
+	build1/install/tools/Linker.stc \
 	$(INSTALL1COMPILERFILES:%=build1/install/compiler/%) \
 	$(LIBNATIVES:%=build1/install/%)
 
@@ -495,6 +497,9 @@ build1/compiler/ToplevelMain.aml: compiler/ToplevelMainSeam.aml Rel1.import
 build1/compiler/%.aml: compiler/%.aml Rel1.import
 	cat Rel1.import $< > $@
 
+build1/tools/Linker.aml: tools/linker/Build1Linker.aml Rel1.import
+	cat Rel1.import $< > $@
+
 build1/tools/linker/%.aml: tools/linker/%.aml Rel2.import
 	cat Rel2.import $< > $@
 
@@ -520,9 +525,6 @@ build1/tools/depend/SMLParser.grm.aml: build1/tools/depend/SMLParser.grm.sml \
 	Rel2.import tools/depend/SMLParser.grm.aml.header
 	cat Rel2.import $(SRCTOP)/tools/depend/SMLParser.grm.aml.header $< > $@
 
-build1/%.oz: %.oz
-	cp $< $@
-
 ##
 ## Performing Build 1
 ##
@@ -544,9 +546,9 @@ $(INSTALL1DIRS):
 
 build1/install/compiler/CompilerMain.stc:
 	(cd build1 && tar cf - `find . -name '*.stc'`) | \
-	(cd build1/install && tar xvf -) | \
-	mv build1/install/tools/linker/*.stc build1/install/tools | \
-	mv build1/install/tools/Main.stc build1/install/tools/Linker.stc
+	(cd build1/install && tar xf -)
+
+build1/install/tools/Linker.stc:
 
 ########################################################################
 ### BUILD 2
