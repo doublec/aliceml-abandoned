@@ -21,23 +21,26 @@
 
 class MemChunk {
 private:
-#if defined(STORE_DEBUG)
+#if (defined(STORE_DEBUG) || defined(STORE_PROFILE))
   static u_int counter;
 #endif
 protected:
   MemChunk *prev, *next;
-  char *block, *top, *max;
-  int anchor;
+  char *block, *max;
+  s_int top;
+  u_int anchor;
 public:
-#if defined(STORE_DEBUG)
+#if (defined(STORE_DEBUG) || defined(STORE_PROFILE))
   u_int id;
 #endif
   MemChunk(MemChunk *prv, MemChunk *nxt, u_int size) : prev(prv), next(nxt) {
-    block = top = (char *) std::malloc(size); AssertStore(block != INVALID_POINTER);
-    max = (block + size);
+    block = (char *) std::malloc(size);
+    AssertStore(block != INVALID_POINTER);
+    max    = (block + size);
+    top    = (sizeof(u_int) - size);
     anchor = 0;
-    std::memset(block, 1, size);
-#if defined(STORE_DEBUG)
+    std::memset(block, 1, (u_int) size);
+#if (defined(STORE_DEBUG) || defined(STORE_PROFILE))
     id = counter++;
 #endif
   }
@@ -47,10 +50,15 @@ public:
     std::free(block);
   }
 
-  void Clear()                { top = block; std::memset(block, 1, (max - block)); }
-  char *GetTop()              { return top; }
-  char **GetTopAddr()         { return &top; }
-  void SetTop(char *top)      { MemChunk::top = top; } 
+  void Clear(){
+    s_int size = (s_int) (max - block);
+
+    top = (s_int) (sizeof(u_int) - size);
+    std::memset(block, 1, size);
+  }
+  s_int GetTop()              { return top; }
+  s_int *GetTopAddr()         { return &top; }
+  void SetTop(s_int top)      { MemChunk::top = top; } 
   char *GetMax()              { return max; }
   char *GetBottom()           { return block; }
 
@@ -58,7 +66,7 @@ public:
   void SetNext(MemChunk *nxt) { next = nxt; }
   MemChunk *GetPrev()         { return prev; }
   void SetPrev(MemChunk *prv) { prev = prv; }
-  int IsAnchor()              { return anchor; }
+  u_int IsAnchor()            { return anchor; }
 };
 
 #endif __STORE__MEMORY_HH__

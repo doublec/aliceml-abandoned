@@ -82,12 +82,12 @@ public:
     return (void *) ((u_int) v >> 1);
   }
   static void EncodeHandler(Block *p, Handler *h) {
-    AssertStore(HeaderOp::HasHandlerMark(p));
-    ((word *) p)[1] = PointerOp::EncodeUnmanagedPointer((void *) h);
+    AssertStore(p->GetLabel() == HANDLERBLOCK_LABEL);
+    ((word *) p)[0] = PointerOp::EncodeUnmanagedPointer((void *) h);
   }
   static Handler *DecodeHandler(Block *p) {
-    AssertStore(HeaderOp::HasHandlerMark(p));
-    return (Handler *) PointerOp::DecodeUnmanagedPointer(((word *) p)[1]);
+    AssertStore(p->GetLabel() == HANDLERBLOCK_LABEL);
+    return (Handler *) PointerOp::DecodeUnmanagedPointer(((word *) p)[0]);
   }
   // Deref Function
   static word Deref(word v) {
@@ -98,7 +98,7 @@ public:
       vi ^= (u_int) TRTAG;
       
       if (HeaderOp::DecodeLabel((Block *) vi) == REF_LABEL) {
-	v = ((word *) vi)[1];
+	v = ((word *) vi)[0];
 	goto loop;
       }
     }

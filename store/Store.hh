@@ -25,8 +25,8 @@
 class MemChunk;
 class Set;
 
-extern char *storeChunkTop;
 extern char *storeChunkMax;
+extern s_int storeChunkTop;
 extern MemChunk *storeCurChunk;
 
 class Store {
@@ -37,45 +37,44 @@ private:
   static word intgenSet;
   static word wkDictSet;
   static u_int needGC;
-  static u_int gcGen;
+  static u_int maxGcGen;
 
   static void Shrink(MemChunk *list, int threshold);
   static Block *CopyBlockToDst(Block *p, u_int dst_gen, u_int cpy_gen);
-  static word ForwardBlock(word p, u_int dst_gen, u_int cpy_gen, u_int match_gen);
-  static void ScanChunks(u_int dst_gen, u_int cpy_gen, u_int match_gen,
-			 MemChunk *anchor, char *scan);
+  static word ForwardBlock(word p, u_int dst_gen, u_int cpy_gen);
+  static void ScanChunks(u_int dst_gen, u_int cpy_gen, MemChunk *anchor, char *scan);
   static void HandleInterGenerationalPointers(Set *intgen_set, Set *new_intgen_set,
 					      u_int gcGen, u_int dst_gen, u_int cpy_gen);
   static Block *HandleWeakDictionaries(Set *wkdict_set, Set *new_wkdict_set,
-				       u_int match_gen, u_int dst_gen, u_int cpy_gen);
-  static char *GCAlloc(u_int s, u_int gen);
+				       u_int dst_gen, u_int cpy_gen);
+  static void SetInitMark(u_int size);
+  static char *GCAlloc(u_int s, u_int header, u_int gen);
   static Block *AllocFinSet(u_int size, u_int dst_gen, u_int cpy_gen);
   static Block *PushToFinSet(Block *p, Handler *h, word value, u_int dst_gen, u_int cpy_gen);
   static void SwitchToNewChunk(MemChunk *chunk);
+  static void AllocNewMemChunk();
   static void AllocNewMemChunk(u_int size, u_int gen);
   
-  static char *FastAlloc(u_int size) {
+  static char *FastAlloc(u_int size, u_int header) {
   retry:
-    char *top = storeChunkTop;
+    char *p      = (storeChunkMax + storeChunkTop);
+    s_int newtop = (storeChunkTop + size);
 
-    storeChunkTop += size;
-    if (storeChunkTop > storeChunkMax) {
-      AllocNewMemChunk(size, 0);
+    ((u_int *) p)[-1] = header;
+    if (newtop >= 0) {
+      AllocNewMemChunk();
       goto retry;
     }
+    storeChunkTop = newtop;
 
-    return top;
+    return p;
   }
   static Block *InternalAllocBlock(BlockLabel l, u_int s) {
     AssertStore(s > INVALID_BLOCKSIZE);
     AssertStore(s <= MAX_BLOCKSIZE);
-
-    Block *t = (Block *) Store::FastAlloc(((s + 1) * sizeof(u_int)));
-    AssertStore(t != INVALID_POINTER);
-    HeaderOp::EncodeHeader(t, l, s);
-
-    return t;
+    return (Block *) Store::FastAlloc(((s + 1) * sizeof(u_int)), HeaderOp::EncodeHeader(l, s, 0));
   }
+  static void DoGC(word &root, const u_int gcGen);
 public:
   // Init Functions
   static void InitStore(u_int mem_limits[STORE_GENERATION_NUM]);
@@ -106,17 +105,17 @@ public:
     u_int ws = (1 + (((s + sizeof(u_int)) - 1) / sizeof(u_int)));
     Block *p = Store::InternalAllocBlock(CHUNK_LABEL, ws);
 
-    ((word *) p)[1] = PointerOp::EncodeInt(s);
+    ((word *) p)[0] = PointerOp::EncodeInt(s);
     return (Chunk *) p;
   }
   static Transient *AllocTransient(BlockLabel l) {
     AssertStore((l >= MIN_TRANSIENT_LABEL) && (l <= MAX_TRANSIENT_LABEL));
     return (Transient *) Store::InternalAllocBlock(l, 1);
   }
-  static Block *AllocBlockWithHandler(BlockLabel l, u_int s, Handler *h) {
-    Block *t = Store::AllocBlock(l, (s + 1));
-    HeaderOp::SetHandlerMark(t);
-    PointerOp::EncodeHandler(t, h);
+  static Block *AllocBlockWithHandler(u_int s, Handler *h) {
+    Block *t = Store::InternalAllocBlock(HANDLERBLOCK_LABEL, (s + 1));
+
+    ((word *) t)[0] = PointerOp::EncodeUnmanagedPointer((void *) h);
     return t;
   }
   // Conversion Functions
@@ -156,7 +155,7 @@ public:
     AssertStore(((u_int) x & TAGMASK) == BLKTAG);
     return PointerOp::DecodeUnmanagedPointer(x);
   }
-#if defined(STORE_DEBUG)
+#if (defined(STORE_DEBUG) || defined(STORE_PROFILE))
   static void MemStat();
   static void ForceGCGen(u_int gen);
 #endif

@@ -96,7 +96,7 @@ inline u_int WeakDictionary::NextPrime(u_int p) {
 
 inline u_int WeakDictionary::FindKey(u_int i) {
   u_int size = GetTableSize();
-  u_int key  = (1 + (i % size));
+  u_int key  = (i % size);
 
  loop:
   HashNode *entry = GetEntry(key);
@@ -111,7 +111,7 @@ inline u_int WeakDictionary::FindKey(u_int i) {
 
 inline u_int WeakDictionary::FindKey(Block *b) {
   u_int size = GetTableSize();
-  u_int key  = (1 + HashBlock(b, size));
+  u_int key  = HashBlock(b, size);
 
  loop:
   HashNode *entry = GetEntry(key);
@@ -147,11 +147,11 @@ void WeakDictionary::Resize() {
   SetPercent(percent);
   ReplaceArg(TABLE_POS, newp->ToWord());
 
-  for (u_int i = 1; i <= newsize; i++) {
+  for (u_int i = newsize; i--;) {
     newp->InitArg(i, HashNode::New()->ToWord());
   }
   // this should be optimized later
-  for (u_int i = 1; i <= oldsize; i++) {
+  for (u_int i = oldsize; i--;) {
     HashNode *entry = HashNode::FromWord(oldp->GetArg(i));
     
     if (!entry->IsEmpty()) {
@@ -164,18 +164,20 @@ void WeakDictionary::Resize() {
 // Public Interface Methods
 //
 
-WeakDictionary *WeakDictionary::New(hashkeytype type, BlockLabel l, u_int size, word handler) {
+WeakDictionary *WeakDictionary::New(hashkeytype type, BlockLabel l, u_int size, Handler *handler) {
   size = NextPrime(size);
 
   Block *p      = Store::AllocBlock(l, SIZE);
   Block *arr    = Store::AllocBlock(HASHNODEARRAY_LABEL, size);
   u_int percent = (u_int) (1 + (size * FILL_RATIO));
 
-  if (handler != Store::IntToWord(0)) {
-    HeaderOp::SetHandlerMark(p);
+  if (handler == INVALID_POINTER) {
+    p->InitArg(HANDLER_POS, Store::IntToWord(0));
+  }
+  else {
+    p->InitArg(HANDLER_POS, Store::UnmanagedPointerToWord((void *) handler));
   }
 
-  p->InitArg(HANDLER_POS, handler);
   p->InitArg(COUNTER_POS, Store::IntToWord(0));
   p->InitArg(PERCENT_POS, Store::IntToWord(percent));
   p->InitArg(TYPE_POS, Store::IntToWord(type));

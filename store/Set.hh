@@ -18,7 +18,7 @@
 
 class Set : private Block {
 private:
-  static const u_int TOP_POS = 1;
+  static const u_int TOP_POS = 0;
 
   Set *Enlarge(u_int oldsize, u_int newsize) {
     Block *p = Store::AllocBlock(GENSET_LABEL, newsize);
@@ -32,15 +32,15 @@ public:
   using Block::ToWord;
 
   u_int GetSize() {
-    return (u_int) (Store::DirectWordToInt(GetArg(TOP_POS)) - 2);
+    return (u_int) (Store::DirectWordToInt(GetArg(TOP_POS)) - 1);
   }
   void MakeEmpty() {
-    ((Block *) this)->InitArg(TOP_POS, Store::IntToWord(2));
+    ((Block *) this)->InitArg(TOP_POS, Store::IntToWord((TOP_POS + 1)));
   }
   Set *Push(word v) {
     u_int top = Store::DirectWordToInt(GetArg(TOP_POS));
     u_int max = Block::GetSize();
-    Set *p    = ((top <= max) ? this : Enlarge(max, (max * 3) >> 1));
+    Set *p    = ((top < max) ? this : Enlarge(max, (max * 3) >> 1));
 
     p->InitArg(TOP_POS, Store::IntToWord(top + 1));
     p->InitArg(top, v);
@@ -50,7 +50,7 @@ public:
   static Set *New(u_int s) {
     Block *p = Store::AllocBlock(GENSET_LABEL, (s + 1));
 
-    p->InitArg(TOP_POS, Store::IntToWord(2));
+    p->InitArg(TOP_POS, Store::IntToWord((TOP_POS + 1)));
     return (Set *) p;
   }
   static Set *FromWord(word x) {

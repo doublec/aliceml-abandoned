@@ -18,18 +18,18 @@
 
 // Header Width in bits (e.g. 32 or 64)
 #define HEADER_FULL_WIDTH          32
-// Space used for Garbage-Collection Flags
-#define HEADER_GC_MARK_WIDTH       1
-// Space used for Handler-Flag
-#define HEADER_HANDLER_MARK_WIDTH  1
-// Space used for Block Tag (MAX_TAGSIZE = (2 ^ (HEADER_TAG_WIDTH) - 1))
-#define HEADER_TAG_WIDTH           11
+// Space used for Garbage-Collection (Generation and GCMark) Flags
+#define HEADER_GEN_GC_MARK_WIDTH   2
+// Space used for Forward Ptrs
+#define HEADER_FWDPTR_WIDTH        (HEADER_FULL_WIDTH - HEADER_GEN_GCMARK_WIDTH)
+// Space used for Block Size Shift Indicator
+#define HEADER_SIZESHIFT_WIDTH     1
 // Space used for Block Size (MAX_BLOCKSIZE = (2 ^ (HEADER_SIZE_WIDTH) - 1))
-#define HEADER_SIZE_WIDTH          16
-// Space used for Intgen-Marking
-#define HEADER_INTGEN_MARK_WIDTH   1
-// Space used for Generation
-#define HEADER_GENERATION_WIDTH    2
+#define HEADER_SIZE_WIDTH          22
+// Space used for Block Tag (MAX_TAGSIZE = (2 ^ (HEADER_TAG_WIDTH) - 1))
+#define HEADER_TAG_WIDTH           6
+// Space used for Intgen-Marking (Names thanks to Christian)
+#define HEADER_CHILDISH_WIDTH      1
 
 //
 // Configure Store Memory Settings
@@ -37,8 +37,9 @@
 
 // Size of each allocated Memory Chunk
 #define STORE_MEMCHUNK_SIZE      (1024 * 128)
-// Number of Memory Generations (must fit in HEADER_GENERATION_WIDTH starting at 0)
-#define STORE_GENERATION_NUM     3
+// Number of Memory Generations
+// (must fit in HEADER_GEN_GCMARK_WIDTH starting at 1; zero is reserved)
+#define STORE_GENERATION_NUM     ((1 << HEADER_GEN_GC_MARK_WIDTH) - 1)
 // Initial Intgen-Pointer-Set Size
 #define STORE_INITIAL_INTGEN     4
 // Initial Weak-Dictionary-Set Size
