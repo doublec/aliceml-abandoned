@@ -28,34 +28,35 @@ in
 signature CREATE_TREE_HELPER =
 sig
 
-    datatype 'a list_desc = Det of 'a list * bool (* ohne Future *)
-                          | Indet of 'a list * 'a list (* mit Future *)
+    datatype 'a list_desc = Det of 'a list * bool (* without any future *)
+                          | Indet of 'a list * 'a list (* with a future *)
     
-   (* Hilfsfunktionen zur Bestimmung und Zerlegung von "Apply"-Typen *)
-
-    val isApply: Type.desc -> bool	
+   (* identification and dissection of types *)
+ 
+    val isApply: Type.desc -> bool	 
     val unApply: Type.desc -> Type.desc * Type.t list 
 
-    val isAtomType: Type.t -> bool
+    val isAtomType: Type.t -> bool 
 
-    val itemToLabel: Inf.item -> Label.lab
+    (* convertion of items to labels *)
 
-  (* Behandlung von Listen *)
+    val itemToLabel: Inf.item -> Label.lab 
+
+    (* operations on lists *)
 	
-    val inspectList : int * 'a list  -> 'a list_desc 
-    val castList : 'a -> 'b list
+    val inspectList : int * 'a list  -> 'a list_desc  
+    val castList : 'a -> 'b list 
 
-   (* Operationen auf Rows *)
-    val row2list : Type.row -> (Label.lab * Type.typ) list
-    val labelvector : (Label.lab * Type.typ) list -> Label.lab Vector.vector
+   (* operations on rows *)
 
-    (* Operationen auf Arrays *)
+    val row2list : Type.row -> (Label.lab * Type.typ) list 
+    val labelvector : (Label.lab * Type.typ) list -> Label.lab Vector.vector 
+
+    (* operations on arrays *) 
+
     val copyArray: 'a Array.array * 'a Array.array  -> unit
 
-    (* Hilfsfunktion fuer Strings *)
-(*
-    val iterTake : string -> string   
-*)
+    (* calculates f(0,x_{0}),..., f(br,x_{br}) *)	
 
     val appi_break: (int * 'a -> 'b) * int * 'a list -> unit 	
 

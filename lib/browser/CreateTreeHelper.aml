@@ -33,10 +33,10 @@ in
 structure CreateTreeHelper :> CREATE_TREE_HELPER = 
 struct
 
-    datatype 'a list_desc = Det of 'a list * bool (* ohne Future *)
-                          | Indet of 'a list * 'a list (* mit Future *)
+    datatype 'a list_desc = Det of 'a list * bool (* without any future *)
+                          | Indet of 'a list * 'a list (* with a future *)
 
-   (* Bestimmung und Zerlegung von "Apply"-Typen *)   
+   (* identification and dissection of types *)   
 
     fun isApply t = case t of Type.Apply(_,_) => true
                            | _ => false 
@@ -48,8 +48,7 @@ struct
 
     fun isAtomType t = Type.isCon t andalso
 	               (let val path = Type.asCon t
-			in 
-			   Path.equal(path,PervasiveType.path_int) orelse
+			in Path.equal(path,PervasiveType.path_int) orelse
 			   Path.equal(path,PervasiveType.path_word) orelse
                            Path.equal(path,PervasiveType.path_real) orelse
                            Path.equal(path,PervasiveType.path_char) orelse
@@ -57,7 +56,7 @@ struct
 			   Path.equal(path,PervasiveType.path_exn)
 		       end)
 			    
-    (* itemToLabel *)
+    (* convertion of items to labels *)
 
     fun itemToLabel i = case Inf.inspectItem i of
 	Inf.FixItem(l,_) => l
@@ -73,25 +72,26 @@ struct
 			       end   
       | Inf.HiddenItem(i) => itemToLabel i
 
-    (* zur Behandlung von Listen *)
-    fun inspectList(n,x) = inspectList'(n,x,[])
+    (* operations on lists *)
+
+    fun inspectList(n,x) = inspectList'(n,x,[]) 
 	
-    and inspectList'(n,x,xs) =
-	if not(Future.isDetermined x) 
-	    then Indet(List.rev xs, x) 
-	else
+    and inspectList'(n,x,xs) = 
+	if not(Future.isDetermined x)  
+	    then Indet(List.rev xs, x)  
+	else 
 	    if List.null x 
-		then Det(List.rev xs, false) 
+		then Det(List.rev xs, false)  
 	    else
-		if n = 0 
-		    then Det(List.rev xs, true) 
-		else inspectList'(n-1, List.tl x, List.hd x :: xs)
-		    
-    fun castList value = UnsafeValue.cast value : 'a list    
+		if n = 0  
+		    then Det(List.rev xs, true)  
+		else inspectList'(n-1, List.tl x, List.hd x :: xs) 
+		     
+    fun castList value = UnsafeValue.cast value : 'a list     
 
-(* Rows *)
+    (* operations on rows *)
 
-    fun row2list row = case Type.inspectRow(row) of 
+    fun row2list row = case Type.inspectRow(row) of  
 	Type.EmptyRow => nil
       | Type.UnknownRow => nil
       | Type.FieldRow(lab,t,row2) => 
@@ -101,7 +101,7 @@ struct
 	Vector.tabulate ((List.length(ll)), 
 			 (fn i =>(#1( List.nth(ll,i))) ) )  
 
-    (* Operationen auf Arrays *)
+    (* operations on arrays *)
 
     fun copyArray' (a, b, i) = if i = Array.length(a) 
 				   then ()
@@ -113,8 +113,7 @@ struct
 			      then raise Match 
 				  else copyArray'(a,b,0)
 
-    (* berechnet f(0,x_{0}), f(1,x_{1}), ......, f(br,x_{br}) *)
-    (* wird benutzt von setItems *)
+    (* calculates f(0,x_{0}),..., f(br,x_{br}) *)
 
     fun appi_break' (f,br,l,i) = if i <=br
 				     then (f (i,hd(l))
@@ -123,7 +122,7 @@ struct
 				     
     fun appi_break (f,br,l) = appi_break'(f,br,l,0)    
 
-end (* struct *)
+end 
 
 end
     
