@@ -38,8 +38,8 @@ functor MakeLambda(structure StampSet:IMP_SET
 
 	(* map Pairs of (crosswise recursive function) stamps and number
 	 of parameters to the stamp of the class in which the function code
-	     is stored and the position in its apply method *)
-	val recApplies: (stamp * label) StampIntHash.t = StampIntHash.new ()
+	     is stored, the position in its apply method and the corresponding label *)
+	val recApplies: (stamp * int * label) StampIntHash.t = StampIntHash.new ()
 
 	(* map stamps to recApply function code *)
 	val recApply: INSTRUCTION list StampHash.t = StampHash.new ()
@@ -71,10 +71,6 @@ functor MakeLambda(structure StampSet:IMP_SET
 	    case StampHash.lookup(ids, stamp') of
 		NONE => stamp'
 	      | SOME stamp'' => stamp''
-
-	(* checks whether a function call is self recursive. xxx *)
-	fun isSelfCall (stamp', stamp'') =
-	    getLambda stamp'= stamp''
 
 	(* create a field name for a stamp *)
 	fun fname stamp' = "f"^(Stamp.toString stamp')
@@ -119,94 +115,89 @@ functor MakeLambda(structure StampSet:IMP_SET
 	 recursive functions are merged in one single apply *)
 	fun getClassStamp (stamp', params) =
 	    case StampIntHash.lookup (recApplies, (stamp', methParms params)) of
-		SOME (stamp'', _) => stamp''
+		SOME (stamp'', _, _) => stamp''
 	      | NONE => stamp'
 
 	fun isInRecApply (stamp', params) =
 	    isSome (StampIntHash.lookup (recApplies, (stamp', methParms params)))
 
-	local
-	    val actual = ref illegalStamp
-	    val dest = ref illegalStamp
-	    val counter = ref 0
-	    fun insertInner (OneArg _, _) =
-		(StampIntHash.insert (recApplies, (!actual, 1),(!dest, !counter));
-		 if !VERBOSE >= 1 then
-		     print ("inserting "^Stamp.toString (!actual)^
-			    ":1 for "^Stamp.toString (!dest)^" at "^
-			    Int.toString (!counter)^"\n") else ();
-		 counter := !counter + 1)
-	      | insertInner (TupArgs ids, _) =
-		let
-		    val i = methParms (length ids)
-		in
-		    if isSome (StampIntHash.lookup (recApplies, (!actual, i)))
-			then ()
-		    else
-			(StampIntHash.insert (recApplies, (!actual, i), (!dest, !counter));
-			 if !VERBOSE >= 1 then
-			     print ("inserting "^Stamp.toString (!actual)^
-				    ":"^Int.toString i^" for "^Stamp.toString (!dest)^" at "^
-				    Int.toString (!counter)^"\n") else ();
-			 counter := !counter +1)
-		end
-	      | insertInner (RecArgs _, _) =
-		if isSome (StampIntHash.lookup (recApplies, (!actual, 1)))
-		    then ()
-		else
-		    (StampIntHash.insert (recApplies, (!actual, 1), (!dest, !counter));
-		     if !VERBOSE >= 1 then
-			 print ("inserting "^Stamp.toString (!actual)^
-				":1 for "^Stamp.toString (!dest)^" at "^
-				Int.toString (!counter)^"\n") else ();
-		     counter := !counter + 1)
+	fun getDestClass ((_,FunExp (_,thisFun,_,_))::_) = thisFun
+	  | getDestClass (_::rest) = getDestClass rest
+	  | getDestClass nil = Crash.crash "RecDec ohne FunExp"
 
-	    fun insertRec' (id' as Id (_,stamp',_), exp') =
-		(case exp' of
-		     FunExp (_,thisFun,_,idabodies) =>
-			 (if !dest=illegalStamp then
-			      dest := thisFun else ();
-			  actual := thisFun;
-			  print "rec': ";
-			  setId (thisFun, id');
-			  app insertInner idabodies)
-		   | _ => ())
+	fun argSize (OneArg _) = 1
+	  | argSize (RecArgs _) = 1
+	  | argSize (TupArgs i) = methParms (length i)
 
-	    fun countUp (0, akku) = akku
-	      | countUp (n, akku) = countUp (n-1, (n-1)::akku)
+	fun insertRec (idexps as _::rest) =
+	    let
+		val dest = getDestClass idexps
+		val actual = ref illegalStamp
+		val counter = ref 0
 
-	    val errorlabel = Label.new ()
-	in
-	    fun insertRec (idexps as _::rest) =
-		(dest := illegalStamp;
-		 counter := 0;
-		 app insertRec' idexps;
-		 case rest of
-		     nil => ()
-		   | _ =>
-			 StampHash.insert
-			 (recApply,
-			  !dest,
-			  if !counter <= 1 then
-			      []
-			  else
-			      [Iload 5,
-			       Tableswitch (0, countUp (!counter-1, nil), errorlabel),
-			       Label errorlabel,
-			       New ECompiler,
-			       Dup,
-			       Ldc (JVMString "unbekannte Funktion."),
-			       Invokespecial (ECompiler, "<init>", ([Classsig CString], [Voidsig])),
-			       Athrow]))
-	      | insertRec nil = ()
-	end
+		fun insertInner (args, _) =
+		    let
+			val i = argSize args
+		    in
+			if isSome (StampIntHash.lookup (recApplies, (!actual, i)))
+			    then ()
+			else
+			    (StampIntHash.insert (recApplies, (!actual, i),(dest, !counter, Label.new ()));
+			     if !VERBOSE >= 1 then
+				 print ("inserting "^Stamp.toString (!actual)^
+					":"^Int.toString i^" for "^Stamp.toString (dest)^" at "^
+					Int.toString (!counter)^"\n") else ();
+				 counter := !counter + 1)
+		    end
+
+		fun insertRec' (id' as Id (_,stamp',_), exp') =
+		    (case exp' of
+			 FunExp (_,thisFun,_,idabodies) =>
+			     (actual := thisFun;
+			      print "rec': ";
+			      setId (thisFun, id');
+			      app insertInner idabodies)
+		       | _ => ())
+
+		fun countUp (0, akku) = akku
+		  | countUp (n, akku) = countUp (n-1, (n-1)::akku)
+
+		val errorlabel = Label.new ()
+	    in
+		counter := 0;
+		app insertRec' idexps;
+		case rest of
+		    nil => ()
+		  | _ =>
+			StampHash.insert
+			(recApply,
+			 dest,
+			 if !counter <= 1 then
+			     []
+			 else
+			     [Iload 5,
+			      Lookupswitch (StampIntHash.foldi
+					    (fn (_, (stamp', pos', label'), (akku1, akku2)) =>
+					     if dest = stamp' then
+						 (LargeInt.fromInt pos'::akku1, label'::akku2) else (akku1, akku2))
+					    (nil, nil)
+					    recApplies,
+					    errorlabel),
+			      Label errorlabel,
+			      New ECompiler,
+			      Dup,
+			      Ldc (JVMString "unbekannte Funktion."),
+			      Invokespecial (ECompiler, "<init>", ([Classsig CString], [Voidsig])),
+			      Athrow])
+	    end
+	  | insertRec nil = ()
 
 	fun addToRecApply (insts, stamp', parms) =
 	    let
-		val (destStamp, label') =
+		val (destStamp, _, label') =
 		    case StampIntHash.lookup (recApplies, (stamp', parms)) of
 			SOME v => v
-		      | NONE => (illegalStamp, ~1)
+		      | NONE => (illegalStamp, ~1, ~1)
 
 		val oleRecApply =
 		    case StampHash.lookup (recApply, destStamp) of
@@ -214,23 +205,20 @@ functor MakeLambda(structure StampSet:IMP_SET
 		      | SOME code' => code'
 	    in
 		print ("addToRecApply: "^Stamp.toString stamp'^":"^Int.toString parms^"\n");
-		if label'= ~1 then ()
+		if label' = ~1 then ()
 		    else StampHash.insert (recApply, destStamp,
 					   Multi oleRecApply ::
 					   Label label' ::
 					   insts)
 	    end
 
-	fun invokeRecApply (stamp', parms, tailCallPos) =
+	fun invokeRecApply (stamp', parms) =
 	    let
 		val p = methParms parms
 	    in
 		case StampIntHash.lookup (recApplies, (stamp', p)) of
-		    SOME (destStamp, label') =>
-			if stamp' = destStamp andalso tailCallPos then
-			    GotoLabel (p, label')
-			else
-			    InvokeRecApply (p, destStamp, label')
+		    SOME (destStamp, pos', label') =>
+			InvokeRecApply (p, destStamp, pos', label')
 		  | NONE => NormalApply p
 	    end
 
@@ -253,8 +241,8 @@ functor MakeLambda(structure StampSet:IMP_SET
 	fun showRecApplies () =
 	    (print "Merged functions:\n";
 	     StampIntHash.appi
-	     (fn ((fn', parms'),(dest', label')) =>
+	     (fn ((fn', parms'),(dest', pos', label')) =>
 	      print ("Function "^Stamp.toString fn'^":"^Int.toString parms'^" stored in "^
-		     Stamp.toString dest'^" at "^Int.toString label'^"\n"))
+		     Stamp.toString dest'^" at "^Int.toString pos'^"(label"^Int.toString label'^")\n"))
 	     recApplies)
     end

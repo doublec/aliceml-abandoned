@@ -58,22 +58,38 @@ structure Backend=
 	(* structure for free variabes *)
 	structure FreeVars =
 	    struct
-		(* assign (function) ids to free variable list *)
-		val free:stamp list StampHash.t=StampHash.new ()
+		(* assign (function) ids to free variable sets *)
+		val free:StampSet.set StampHash.t=StampHash.new ()
 
 		(* Assign ids to their defining function. *)
 		val defFun:stamp StampHash.t=StampHash.new ()
 
 		(* assign stamps to free variables *)
-		fun setVars (stamp', freeVarList) =
-		    StampHash.insert (free, stamp', freeVarList)
+		fun addVars (stamp', freeVarSet) =
+		    case StampHash.lookup (free, stamp') of
+			NONE => StampHash.insert (free, stamp', freeVarSet)
+		      | SOME freeVars =>
+			(print ("setVars twice for "^Stamp.toString stamp'^"\n");
+			 StampSet.app
+			 (fn stamp' => StampSet.insert(freeVars, stamp'))
+			 freeVarSet)
 
-		(* get free variable list of an id. If not set previously,
+		(* get free variable set of an id. If not set previously,
 		 raise exception Mitch. *)
 		fun getVars stamp' =
 		    case StampHash.lookup (free, stamp') of
-			NONE => raise Mitch
-		      | SOME v => v
+			NONE => let
+				    val f = StampSet.new ()
+				in
+				    print "unset freevars";
+				    StampSet.insert (f, Lambda.getClassStamp (stamp', 1));
+				    StampHash.insert(free, stamp', f);
+				    f
+				end
+		      | SOME v => (print ("FreeVars for "^Stamp.toString stamp'^": ");
+				   StampSet.app (fn stamp'' => print (Stamp.toString stamp'')) v;
+				   print "\n";
+				   v)
 
 		(* assign ids to their defining function closure. *)
 		fun setFun (Id (_,stamp',_), stamp'') =

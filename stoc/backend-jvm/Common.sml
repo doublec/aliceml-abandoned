@@ -30,9 +30,6 @@ structure Common=
 		val stack = ref [""]
 		val initial = ref ""
 
-		fun getCurrent () = case !stack of (x::xs) => x | _ => Crash.crash "Class.getCurrent"
-		fun push name = stack := name::(!stack)
-		fun pop () =  case !stack of (x::xs) => stack := xs | _ => Crash.crash "Class.pop"
 		fun setInitial name = ((stack := [name]); initial := name)
 		fun getInitial () = (!initial)
 		fun getLiteralName() = getInitial()^"classLiberal"
@@ -101,8 +98,8 @@ structure Common=
 	 datatype APPLY =
 	     (* Goto (# of params, label) *)
 	     GotoLabel of int * label
-	  (* Invokevirtual recapply (# of params, code class, code position)*)
-	  | InvokeRecApply of int * stamp * label
+	  (* Invokevirtual recapply (# of params, code class, code position, code label)*)
+	  | InvokeRecApply of int * stamp * int * label
 	  (* Invokeinterface apply or apply0/2/3/4. (# of params) *)
 	  | NormalApply of int
 

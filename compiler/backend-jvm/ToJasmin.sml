@@ -501,7 +501,7 @@ structure ToJasmin =
 				   List.app
 				   LabelMerge.setReachable
 				   (l::ls)
-			     | Lookupswitch (_, ls, l) =>
+			     | Lookupswitch ((_, ls), l) =>
 				   List.app
 				   LabelMerge.setReachable
 				   (l::ls)
@@ -587,32 +587,58 @@ structure ToJasmin =
 
 		fun flatten (inst, akku) =
 		    (case inst of
-			 Nop => akku
-		       | Ifstatic (meth, then', else') =>
+			 Aload reg => Aload (Lambda.getLambda reg)::akku
+		       | Astore reg =>
+			     (JVMreg.countDefine reg;
+			      Astore (Lambda.getLambda reg)::akku)
+		       | Call (cls, meth, goto', apply') =>
 			     List.foldr
 			     flatten
 			     akku
-			     (*(if Lambda.isStatic meth
-				  then then'
-			      else *)else' (* ) *) (* xxx *)
-		       | Multi insts =>
-			     List.foldr
-			     flatten
-			     akku
-			     insts
+			     (if !actclass = cls andalso !actmeth = meth
+				  then goto'
+			      else apply')
 		       | Get insts =>
 			     List.foldr
 			     flatten
 			     akku
 			     insts
-		       | Astore reg =>
-			     (JVMreg.countDefine reg;
-			      Astore (Lambda.getLambda reg)::akku)
+		       (* sort lookupswitches. if possible, change to tableswitch *)
+		       | Lookupswitch (keylabs, def) =>
+			     let
+				 fun show (k::ks, l::ls) =
+				     (print ("("^LargeInt.toString k^", "^
+					     Int.toString l^") ");
+				      show (ks, ls))
+				   | show _ = ()
+				 val (key, labs) = MergeSort.sort keylabs
+				 val _ = (print "before sort: ";
+					  show keylabs;
+					  print "\nafter sort: ";
+					  show (key, labs))
+				 fun isTable (last, nil) = (true, last)
+				   | isTable (last, next::rest) =
+				     if last - 1 = next
+					 then isTable (next, rest)
+				     else (false, last)
+			     in
+				 case key of
+				     nil => akku
+				   | (first :: rest) =>
+					 case isTable (first, rest) of
+					     (true, beg) => Tableswitch (beg, labs, def) :: akku
+					   | (_, _) => Lookupswitch ((key, labs), def) :: akku
+			     end
+		       | Iload reg => Iload (Lambda.getLambda reg)::akku
 		       | Istore reg =>
 			     (JVMreg.countDefine reg;
 			     Istore (Lambda.getLambda reg)::akku)
-		       | Aload reg => Aload (Lambda.getLambda reg)::akku
-		       | Iload reg => Iload (Lambda.getLambda reg)::akku
+		       | Multi insts =>
+			     List.foldr
+			     flatten
+			     akku
+			     insts
+		       | Nop => akku
 		       | _ =>
 			     inst ::
 			     akku)
@@ -701,6 +727,7 @@ structure ToJasmin =
 	  | stackNeedInstruction Arraylength = 0
 	  | stackNeedInstruction Athrow = ~1
 	  | stackNeedInstruction (Bipush _) = 1
+	  | stackNeedInstruction (Call _) = 0
 	  | stackNeedInstruction (Catch _) = 0
 	  | stackNeedInstruction (Checkcast _) = 0
 	  | stackNeedInstruction (Comment _) = 0
@@ -720,7 +747,6 @@ structure ToJasmin =
 	  | stackNeedInstruction (Ificmpne _) = ~2
 	  | stackNeedInstruction (Ifne _) = ~1
 	  | stackNeedInstruction (Ifnull _) = ~1
-	  | stackNeedInstruction (Ifstatic _) = 0
 	  | stackNeedInstruction (Iload _) = 1
 	  | stackNeedInstruction (Instanceof _) = 0
 	  | stackNeedInstruction (Invokeinterface (_,_, (arglist,[Voidsig]))) = ~1-(siglength arglist)
@@ -780,6 +806,8 @@ structure ToJasmin =
 		".catch "^cn^" from "^LabelMerge.condJump from^
 		" to "^LabelMerge.condJump to^" using "^
 		LabelMerge.condJump use
+	      | instructionToJasmin (Call _,_) =
+					 Crash.crash "IntructionToJasmin: unresolved Ifstatic"
 	      | instructionToJasmin (Checkcast cn,_) = "checkcast "^cn
 	      | instructionToJasmin (Comment c,_) =
 		    if !DEBUG>=1
@@ -809,8 +837,6 @@ structure ToJasmin =
 	      | instructionToJasmin (Ificmpne l,_) = "if_icmpne "^(LabelMerge.condJump l)
 	      | instructionToJasmin (Ifne l,_) = "ifne "^(LabelMerge.condJump l)
 	      | instructionToJasmin (Ifnull l,_) = "ifnull "^(LabelMerge.condJump l)
-	      | instructionToJasmin (Ifstatic _,_) =
-					 Crash.crash "IntructionToJasmin: unresolved Ifstatic"
 	      | instructionToJasmin (Iload j,s) =
 					 let
 					     val i = if s then JVMreg.get j-1 else JVMreg.get j
@@ -845,11 +871,11 @@ structure ToJasmin =
 	      | instructionToJasmin (Ldc(JVMInt i),_) = "ldc "^int32ToString i
 	      | instructionToJasmin (Ldc(JVMWord w),_) = "ldc "^word32ToString w
 	      | instructionToJasmin (Ldc(JVMChar c),_) = "ldc "^Int.toString (Char.ord c)
-	      | instructionToJasmin (Lookupswitch (switchlist, labellist, default), _) =
+	      | instructionToJasmin (Lookupswitch ((switchlist, labellist), default), _) =
 			     let
 				 fun flatten (switch::switches, lab::labels) =
 				     flatten (switches, labels)^
-				     ("\t"^int32ToString switch^" "^
+				     ("\t"^int32ToString switch^": "^
 				      LabelMerge.condJump lab^"\n")
 				   | flatten _ = ""
 			     in
@@ -932,7 +958,7 @@ structure ToJasmin =
 			      | Label label =>
 				    (lastLabel := label;
 				     LabelMerge.checkSizeAt (label, sizeAfter))
-			      | Lookupswitch (_, labs, label) =>
+			      | Lookupswitch ((_, labs), label) =>
 				    foldr
 				    LabelMerge.checkSizeAt
 				    sizeAfter

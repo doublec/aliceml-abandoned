@@ -46,6 +46,7 @@ structure JVMInst =
 	  | Athrow
 	  | Bipush of int
 	  | Catch of classname * label * label * label
+	  | Call of classname * methodname * INSTRUCTION list * INSTRUCTION list
 	  | Checkcast of classname
 	  | Comment of string
 	  | Dup
@@ -64,7 +65,6 @@ structure JVMInst =
 	  | Ificmpne of label
 	  | Ifne of label
 	  | Ifnull of label
-	  | Ifstatic of ((stamp *int) * INSTRUCTION list * INSTRUCTION list)
 	  | Iload of stamp
 	  | Instanceof of classname
 	  | Invokeinterface of classname * methodname * (ARG list * ARG list)
@@ -76,7 +76,7 @@ structure JVMInst =
 	  | Label of label
 	  | Lcmp
 	  | Ldc of JVMBASETYPE
-	  | Lookupswitch of LargeInt.int list * label list * label
+	  | Lookupswitch of (LargeInt.int list * label list) * label
 	  | Multi of INSTRUCTION list
 	  | New of classname
 	  | Nop
