@@ -132,7 +132,7 @@ struct
 	  | getAliceType (NUMERIC (_,true,_))  = "real"
 	  | getAliceType (POINTER _)           = "Core.object"
 	  | getAliceType (STRING _)            = "string"
-	  | getAliceType (ARRAY (_,t))         = (getAliceType t) ^ " array"
+	  | getAliceType (ARRAY (_,t))         = (getAliceType t) ^ " vector"
 	  | getAliceType (LIST (_,t))          = (getAliceType t) ^ " list"
 	  | getAliceType (FUNCTION _)          = "Core.object"
 	  | getAliceType (STRUCTREF _)         = raise EStruct
