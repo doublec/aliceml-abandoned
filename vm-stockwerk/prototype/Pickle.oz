@@ -55,8 +55,9 @@ define
    ARRAY        = 0
    CELL         = 1
    CON_VAL      = 2
-   VECTOR       = 3
-   LabelOffset  = 4
+   RECORD       = 3
+   VECTOR       = 4
+   LabelOffset  = 5
 
    IoException = {NewUniqueName 'IO.Io'}
    CorruptException = {NewUniqueName 'Component.Corrupt'}
@@ -537,6 +538,14 @@ define
 			    fun {$ Y Rest}
 			       pickling(PicklingInterpreter Y)|Rest
 			    end Rest})
+	       [] record then
+		  {OutputStream putByte(TUPLE)}
+		  {OutputStream putUInt({Width X})}
+		  continue(args(Id + 1 OutputStream X#Id|Seen)
+			   {Record.foldR X
+			    fun {$ Y Rest}
+			       pickling(PicklingInterpreter Y)|Rest
+			    end Rest})
 	       [] vector then
 		  {OutputStream putByte(BLOCK)}
 		  {OutputStream putUInt(VECTOR)}
@@ -563,6 +572,9 @@ define
 		  continue(Args
 			   pickling(PicklingInterpreter {X.1.abstract X})|Rest)
 	       [] primitive then
+		  continue(Args
+			   pickling(PicklingInterpreter {X.1.abstract X})|Rest)
+	       [] uniqueString then
 		  continue(Args
 			   pickling(PicklingInterpreter {X.1.abstract X})|Rest)
 	       [] transform then

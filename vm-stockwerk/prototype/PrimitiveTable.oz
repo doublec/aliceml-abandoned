@@ -144,6 +144,30 @@ define
       end
    end
 
+   local
+      W = 32
+      W4 = {BootWord.make W 4}
+      W24 = {BootWord.make W 24}
+      FourHOBits = {BootWord.'<<' {BootWord.make W 0xF0} W24}
+   in
+      fun {StringHash S}
+	 N = {ByteString.length S}
+	 fun {Iter I H}
+	    if I == N then H
+	    else
+	       C = {ByteString.get S I}
+	       H2 = {BootWord.'+' {BootWord.'<<' H W4} {BootWord.make W C}}
+	       G = {BootWord.andb H2 FourHOBits}
+	       H3 = {BootWord.xorb {BootWord.xorb H2 {BootWord.'>>' G W24}} G}
+	    in
+	       {Iter I + 1 H3}
+	    end
+	 end
+      in
+	 {BootWord.toInt {Iter 0 {BootWord.make W 0}}}
+      end
+   end
+
    fun {AllEqual X Y I N}
       if I > N then true
       elsecase {Equals X.I Y.I} of Request=request(_) then Request
@@ -572,6 +596,7 @@ define
 	      'String.compare': StringCompare#rr_v
 	      'String.explode':
 		 fun {$ S} {StringExplode S 0 {ByteString.length S}} end#r_v
+	      'String.hash': StringHash#r_v
 	      'String.implode':
 		 fun {$ Cs TaskStack}
 		    case {RequestListAndElements Cs}
@@ -654,6 +679,16 @@ define
 	      'Thread.yield':
 		 %--** thread argument
 		 fun {$ TaskStack} preempt(args() TaskStack.2) end#n_t
+	      'UniqueString.hash':
+		 fun {$ uniqueString(A)}
+		    {StringHash {ByteString.make {Atom.toString A}}}
+		 end#r_v
+	      'UniqueString.string':
+		 fun {$ uniqueString(A)}
+		    {ByteString.make {Atom.toString A}}
+		 end#r_v
+	      'UniqueString.unique':
+		 fun {$ S} uniqueString({String.toAtom S}) end#r_v
 	      'Unsafe.Array.sub': Array.get#rr_v
 	      'Unsafe.Array.update':
 		 fun {$ A I X} {Array.put A I X} tuple() end#rrr_v

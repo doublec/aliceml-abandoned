@@ -40,25 +40,26 @@ define
    GetTup         = 10
    IntTest        = 11
    Kill           = 12
-   LazySel        = 13
+   LazyPolySel    = 13
    PutCon         = 14
    PutNew         = 15
    PutRef         = 16
    PutTag         = 17
    PutTup         = 18
-   PutVar         = 19
-   PutVec         = 20
-   Raise          = 21
-   RealTest       = 22
-   Reraise        = 23
-   Return         = 24
-   Sel            = 25
-   Shared         = 26
-   Specialize     = 27
-   StringTest     = 28
-   TagTest        = 29
-   Try            = 30
-   VecTest        = 31
+   PutPolyRec     = 19
+   PutVar         = 20
+   PutVec         = 21
+   Raise          = 22
+   RealTest       = 23
+   Reraise        = 24
+   Return         = 25
+   Sel            = 26
+   Shared         = 27
+   Specialize     = 28
+   StringTest     = 29
+   TagTest        = 30
+   Try            = 31
+   VecTest        = 32
 
    Global       = 0
    Immediate    = 1
@@ -84,15 +85,21 @@ define
       end
    end
 
+   fun {PolySel T A I}
+      if T.(2 * I) == A then T.(2 * I + 1)
+      elseif I \= T.1 then {PolySel T A I + 1}
+      end
+   end
+
    LazySelInterpreter =
    lazySelInterpreter(
       run:
 	 fun {$ Args TaskStack}
-	    case TaskStack of lazySelFrame(_ X I)|Rest then
+	    case TaskStack of lazySelFrame(_ X uniqueString(A))|Rest then
 	       case {Deref X} of Transient=transient(_) then
 		  request(Transient Args TaskStack)
 	       elseof T then
-		  continue(arg(T.(I + 1)) Rest)
+		  continue(arg({PolySel T A 1}) Rest)
 	       end
 	    end
 	 end
@@ -104,14 +111,12 @@ define
 	 end
       pushCall:
 	 fun {$ Closure _ TaskStack}
-	    case Closure of closure(_ X I) then
-	       lazySelFrame(LazySelInterpreter X I)|TaskStack
+	    case Closure of closure(_ X Label) then
+	       lazySelFrame(LazySelInterpreter X Label)|TaskStack
 	    end
 	 end
       toString:
-	 fun {$ lazySelFrame(_ _ I)}
-	    'Select #'#I
-	 end)
+	 fun {$ lazySelFrame(_ _ uniqueString(A))} 'Select '#A end)
 
    fun {GetIdRef IdRef Closure L}
       case IdRef of tag(!Immediate X) then X
@@ -232,6 +237,16 @@ define
 	 end
 	 L.Id := T
 	 {Emulate NextInstr Closure L TaskStack}
+      [] tag(!PutPolyRec Id Labels IdRefs NextInstr) then
+	 N = {Width Labels}
+	 R = {MakeTuple record N * 2 + 1}
+	 R.1 = N
+	 for J in 1..N do
+	    R.(J * 2) = Labels.J
+	    R.(J * 2 + 1) = {GetIdRefKill IdRefs.J Closure L}
+	 end
+	 L.Id := R
+	 {Emulate NextInstr Closure L TaskStack}
       [] tag(!PutVec Id IdRefs NextInstr) then N T in
 	 N = {Width IdRefs}
 	 T = {MakeTuple vector N}
@@ -335,9 +350,9 @@ define
 	    L.Id := T.(I + 1)
 	    {Emulate NextInstr Closure L TaskStack}
 	 end
-      [] tag(!LazySel Id IdRef I NextInstr) then X NewClosure in
+      [] tag(!LazyPolySel Id IdRef Label NextInstr) then X NewClosure in
 	 X = {GetIdRefKill IdRef Closure L}
-	 NewClosure = closure(lazySel(LazySelInterpreter) X I)
+	 NewClosure = closure(lazySel(LazySelInterpreter) X Label)
 	 L.Id := transient({NewCell byneed(NewClosure)})
 	 {Emulate NextInstr Closure L TaskStack}
       [] tag(!Raise IdRef) then Exn in
