@@ -23,6 +23,9 @@ DOWNLOADFILES = $(INSTALLFILES_DOWNLOAD_0:%=$(PREFIX)/download/%)
 all: install
 
 install: $(DIRS) $(INSTALLFILES)
+	(cd ../manual && make PREFIX=$(PREFIX)/manual-devel)
+
+release: install
 	(cd ../manual && make PREFIX=$(PREFIX)/manual)
 
 download: $(DOWNLOADFILES)
