@@ -10,6 +10,10 @@
  *   $Revision$
  *)
 
+import
+    structure Arity
+from "Arity"
+
 signature PRIM_OPS =
     sig
 	exception UnknownPrim
