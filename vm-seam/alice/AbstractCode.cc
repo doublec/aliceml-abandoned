@@ -14,11 +14,6 @@
 #pragma implementation "alice/AbstractCode.hh"
 #endif
 
-#include "store/Map.hh"
-#include "adt/Stack.hh"
-#include "adt/Queue.hh"
-#include "generic/Tuple.hh"
-#include "generic/Debug.hh"
 #include "alice/AbstractCode.hh"
 
 static const char *opcodeNames[AbstractCode::nInstrs] = {
