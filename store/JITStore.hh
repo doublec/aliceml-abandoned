@@ -177,13 +177,13 @@ public:
   }
 #if defined(JIT_STORE_DEBUG)
   // Logging Support
-  static void InitLoggging();
-  static void LogMesg(const char *mesg);
-  static void LogReg(u_int Value);
-  static void DumpReg(u_int Value, value_plotter plotter);
-  static void LogRead(u_int Dest, u_int Ptr, u_int Index);
-  static void LogWrite(u_int Ptr, u_int index, u_int Value);
-  static void LogSetArg(u_int pos, u_int Value);
+  static SeamDll void InitLoggging();
+  static SeamDll void LogMesg(const char *mesg);
+  static SeamDll void LogReg(u_int Value);
+  static SeamDll void DumpReg(u_int Value, value_plotter plotter);
+  static SeamDll void LogRead(u_int Dest, u_int Ptr, u_int Index);
+  static SeamDll void LogWrite(u_int Ptr, u_int index, u_int Value);
+  static SeamDll void LogSetArg(u_int pos, u_int Value);
 #endif
   // Input: word ptr
   // Output: derefed word ptr and jmp to the corresponding path

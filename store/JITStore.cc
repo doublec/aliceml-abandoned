@@ -90,7 +90,7 @@ void JITStore::InitLoggging() {
     Error("unable to open exec log");
 }
 
-u_int jitDebug = 0;
+SeamDll u_int jitDebug = 0;
 
 #define JIT_BEG_COND() \
   jit_pushr_ui(JIT_R0); \
