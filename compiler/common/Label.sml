@@ -7,23 +7,23 @@ structure Label :> LABEL =
 
     (* Conversions *)
 
-    fun fromInt n		= NUM(LargeInt.fromInt n)
-    fun fromLargeInt n		= NUM n
-    fun fromString s		= case LargeInt.fromString s
-				    of SOME n => NUM n
-				     | NONE   => ALPHA s
+    fun fromInt n			= NUM(LargeInt.fromInt n)
+    fun fromLargeInt n			= NUM n
+    fun fromString s			= case LargeInt.fromString s
+					    of SOME n => NUM n
+					     | NONE   => ALPHA s
 
-    fun fromName(Name.ExId s)	= fromString s
-      | fromName(Name.InId)	= raise Domain
+    fun fromName(Name.ExId s)		= fromString s
+      | fromName(Name.InId)		= raise Domain
 
-    fun toName(ALPHA s)		= Name.ExId s
-      | toName(NUM n)		= Name.ExId(LargeInt.toString n)
+    fun toName(ALPHA s)			= Name.ExId s
+      | toName(NUM n)			= Name.ExId(LargeInt.toString n)
 
-    fun toString(NUM n)		= LargeInt.toString n
-      | toString(ALPHA s)	= s
+    fun toString(NUM n)			= LargeInt.toString n
+      | toString(ALPHA s)		= s
 
-    fun toLargeInt(NUM n)	= SOME n
-      | toLargeInt(ALPHA s)	= NONE
+    fun toLargeInt(NUM n)		= SOME n
+      | toLargeInt(ALPHA s)		= NONE
 
 
     (* Ordering and hashing *)
