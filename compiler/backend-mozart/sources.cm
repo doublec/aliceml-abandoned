@@ -3,7 +3,7 @@ Group
     structure OzifyFlatGrammar
     structure MozartTargetInitialContext
     functor MakeMozartTarget
-    functor MakeMozartGenerationPhase
+    functor MakeBackendMozart
 
 is
 
@@ -17,4 +17,4 @@ is
     (* Externalisation (into Oz syntax) *)
 
     OzifyFlatGrammar.sml
-    MozartGenerationPhase.sml
+    MakeBackendMozart.sml

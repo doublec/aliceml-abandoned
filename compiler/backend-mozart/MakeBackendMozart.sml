@@ -48,14 +48,14 @@ functor MakeMozartTarget(Sig: SIGNATURE where type t = FlatGrammar.sign):
 	fun sign (_, (_, (_, exportSign))) = exportSign
 
 	fun apply engine component =
-	    raise Crash.Crash "MozartTarget.eval: not implemented"
+	    raise Crash.Crash "MozartTarget.apply: not implemented"
 
 	fun save engine filename component =
 	    MozartEngine.saveValue engine filename
 	    (MozartEngine.buildFunctor engine component)
     end
 
-functor MakeMozartGenerationPhase
+functor MakeBackendMozart
     (MozartTarget: TARGET where type t = string * FlatGrammar.t): PHASE =
     struct
 	structure C = EmptyContext
