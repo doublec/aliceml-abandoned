@@ -1,0 +1,148 @@
+package sun.rmi.server;
+
+import java.io.*;
+import java.rmi.Remote;
+import sun.rmi.transport.Utils;
+
+import de.uni_sb.ps.dml.runtime.PickleClassLoader;
+/**
+ * A MarshalOutputStream extends ObjectOutputStream to add functions
+ * specific to marshaling of remote object references. If it is
+ * necessary to serialize remote objects or objects that contain
+ * references to remote objects a MarshalOutputStream must be used
+ * instead of ObjectOutputStream. <p>
+ *
+ * A new MarshalOutputStream is constructed to serialize remote
+ * objects or graphs containing remote objects. Objects are written to
+ * the stream using the ObjectOutputStream.writeObject method. <p>
+ *
+ * MarshalOutputStream maps remote objects to the corresponding remote
+ * stub and embeds the location from which to load the stub
+ * classes. The location may be ignored by the client but is supplied.
+ */
+public class MarshalOutputStream extends ObjectOutputStream
+{
+    final static Class fcn;
+    final static String host;
+    static {
+	// System.out.println("RMIClassLoader");
+	Class cl = null;
+	try{
+	    cl=Class.forName("de.uni_sb.ps.dml.runtime.Function");
+	    // System.err.println("Class zum Vergleichen: "+fcn);
+	} catch (ClassNotFoundException e) {
+	    System.err.println("Function must be accessable by the same ClassLoader as java.lang.ObjectOutputStream.");
+	    e.printStackTrace();
+	}
+	fcn = cl;
+	java.net.InetAddress i = null;
+	try {
+	    i=java.net.InetAddress.getLocalHost();
+	} catch (java.net.UnknownHostException u) {
+	    System.err.println(u);
+	    u.printStackTrace();
+	}
+	host = "!"+i.getHostAddress();
+    }
+
+    /** Create a marshaling stream to handle RMI marshaling
+     */
+    public MarshalOutputStream(OutputStream out) throws IOException {
+	super(out);
+	this.useProtocolVersion(ObjectStreamConstants.PROTOCOL_VERSION_1);
+	java.security.AccessController.doPrivileged(
+				    new java.security.PrivilegedAction() {
+	    public Object run() {
+		privilegedEnableReplaceObject();
+		return null;
+	    }
+	});
+    }
+
+    private void privilegedEnableReplaceObject()
+    {
+	enableReplaceObject(true);
+    }
+
+
+    /** replaceObject is extended to check for instances of Remote
+     * that need to be serialized as proxy objects.  RemoteProxy.getProxy
+     * is called to check for and find the stub.
+     */
+    protected Object replaceObject(Object obj) throws IOException {
+	if (obj instanceof Remote) {
+	    obj = RemoteProxy.getProxy((Remote)obj);
+	}
+	return obj;
+    }
+
+    /**
+     * annotateClass is extended to serialize a location from which
+     * to load the the specified class.
+     */
+    protected void annotateClass(Class cl) throws IOException {
+	if (fcn.isAssignableFrom(cl.getSuperclass())) { // cl instanceof Function
+	    // we transfer class code by need, i.e. we annotate the class with the ip of
+	    // the server that knows the byte code. the byte code is stored in the PickleClassLoader
+	    String className = cl.getName();
+	    if (PickleClassLoader.loader.getBytes(className) == null) { // code not yet in loader
+		// enter code into loader
+		byte[] bytes = null;
+		ClassLoader loader = cl.getClassLoader();
+		if (loader==ClassLoader.getSystemClassLoader()) {
+		    java.io.InputStream in = null;
+		    java.io.DataInputStream din = null;
+		    try {
+			in = loader.getResourceAsStream(className+".class");
+			din = new java.io.DataInputStream(in);
+			bytes = new byte[din.available()];
+			din.readFully(bytes); // NICHT: read
+		    }
+		    catch (Exception e) {
+			System.err.println("This should never happen.");
+			e.printStackTrace();
+		    }
+		    finally {
+			try {
+			    if (in!=null)
+				in.close();
+			    if (din!=null)
+				din.close();
+			} catch (java.io.IOException e) {
+			    e.printStackTrace();
+			}
+		    }
+		} else if (loader instanceof java.net.URLClassLoader) { // Klasse wurde über Netz geladen
+		    java.net.URL[] urls = ((java.net.URLClassLoader) loader).getURLs();
+		    for(int i=0; i<urls.length; i++) {
+			try {
+			    // System.out.println("Trying: "+urls[i]);
+			    java.io.DataInputStream in =new java.io.DataInputStream(urls[i].openStream());
+			    bytes=new byte[in.available()];
+			    in.readFully(bytes);
+			    break;  // bei Erfolg for verlassen
+			} catch (java.io.IOException io) {
+			    System.err.println(urls[i]+" IOException");
+			    io.printStackTrace();
+			}
+		    }
+		}
+		PickleClassLoader.loader.enter(className,bytes);
+	    }
+	    // write the host; format: !134.96.186.121
+	    writeLocation(host);
+	} else {
+	    // write the specified location (may be null).
+	    writeLocation(java.rmi.server.RMIClassLoader.getClassAnnotation(cl));
+	}
+    }
+
+    /**
+     * Write the location for the class into the stream.  This method can
+     * be overridden by subclasses that store this annotation somewhere
+     * else than as the next object in the stream, as is done by this class.
+     */
+    protected void writeLocation(String location) throws IOException {
+	writeObject(location);
+    }
+}
