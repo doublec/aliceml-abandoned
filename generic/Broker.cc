@@ -56,7 +56,7 @@ static void *LoadLanguageLayer(String *languageId) {
 #if defined(__MINGW32__) || defined(_MSC_VER)
       (void *) LoadLibrary(languageId->ExportC());
 #else
-      dlopen(filename->ExportC(), RTLD_NOW | RTLD_GLOBAL);
+      dlopen(languageId->ExportC(), RTLD_NOW | RTLD_GLOBAL);
 #endif
     if (handle != NULL)
       languageLayerTable->Put(wLanguageId,
