@@ -14,6 +14,7 @@ functor
 import
    System(showError)
    Application(exit)
+   Debug(dumpTaskStack: DumpTaskStack)
    PrimitiveTable(values)
    ByneedInterpreter(interpreter)
 export
@@ -126,14 +127,9 @@ define
 	    Interpreter = Frame.1
 	    Scheduler, Result({Interpreter.handle Debug Exn TaskStack})
 	 [] nil then
-	    %--** display the stack
 	    {System.showError
 	     'uncaught exception: '#{Value.toVirtualString Exn 5 5}}
-	    {System.showError 'Stack Trace:'}
-	    {List.forAllInd {Reverse Debug}
-	     proc {$ I Frame}
-		{System.showError '  #'#I#': '#{Frame.1.toString Frame}}
-	     end}
+	    {DumpTaskStack {Reverse Debug}}
 	    {Application.exit 1}
 	 end
       end
