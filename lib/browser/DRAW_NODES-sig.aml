@@ -21,21 +21,27 @@ signature DRAW_NODES =
 
         exception  MissingColor
 	exception DrawError
+
+	datatype intention = DRAW | SEARCH of int * int
 	
-	val atomDraw   :   node * int * int -> int * int
+	val atomDraw   :   node * int * int -> int * int 
 
-	val drawSimple :   node * int * int -> int * int
+	val atomSearch: node * int * int * intention -> int * int * node option
 
-	val drawLimit  :   node * int * int -> int * int
+	val atomSearch': node * int * int * int * int * string * desc -> int * int * node option
 
-	val drawConcat :   node * int * int -> int * int
+	val drawSimple :   node * int * int * intention -> int * int * node option
 
-	val drawContainer: node * int * int -> int * int
+	val drawLimit  :   node * int * int * intention-> int * int * node option
+
+	val drawConcat :   node * int * int * intention -> int * int * node option
+
+	val drawContainer: node * int * int * intention -> int * int * node option
         
-        val drawRelNode : node * int * int -> int * int
+        val drawRelNode : node * int * int * intention-> int * int * node option
 
-        val drawRelRefNode : node * int * int -> int * int
+        val drawRelRefNode : node * int * int  * intention -> int * int * node option
 
-	val draw : node * int * int -> int * int
+	val draw : node * int * int * intention-> int * int * node option
        
     end

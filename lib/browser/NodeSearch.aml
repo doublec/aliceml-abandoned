@@ -7,7 +7,7 @@
  *   Marvin Schiller, 2002
  *
  * Last Change:
- *   $Date$ by $Author$
+ datatype intention = DRAW | SEARCH of int * int *   $Date$ by $Author$
  *   $Revision$
  *
  *)
@@ -19,6 +19,7 @@ import structure Layout from "Layout"
 import structure Helper from "Helper"
 import structure WindowHelper from "WindowHelper"
 import structure Settings from "Settings"
+import structure DrawNodes from "DrawNodes"
 import signature NODE_SEARCH from "NODE_SEARCH-sig"
 
 local
@@ -193,7 +194,7 @@ exception unknown
       | SOME node => let val _ = TextIO.print("starting iteration with cur_pos_y: " 
 					       ^Int.toString(cur_pos_y) ^ "\n")
 			 val (new_x,new_y,nodefound) = 
-			     treeSearch(node,x,y,0,cur_pos_y)
+			     DrawNodes.draw(node,0,cur_pos_y,DrawNodes.SEARCH(x,y))
 		     in
 			 case nodefound of
         NONE => iterate (dict,x,y,new_y+2,i+1,highest_i)
