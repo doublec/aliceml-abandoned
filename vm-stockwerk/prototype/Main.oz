@@ -14,6 +14,7 @@ functor
 import
    Application(getArgs exit)
    System(showError)
+   OS(getEnv)
    Property(get put)
    URL(make resolve toString)
    Linker(link)
@@ -23,10 +24,11 @@ define
    Spec = record(booturl(single type: string default: 'lib/system/Boot'))
    Args = {Application.getArgs Spec}
 
-   local
+   case {OS.getEnv 'STOCKHOME'} of false then U in
       U = {URL.make {Property.get 'application.url'}}
-   in
       {Property.put 'alice.home' {URL.toString {URL.resolve U ''}}}
+   elseof S then
+      {Property.put 'alice.home' S#'/'}
    end
 
    case Args.1 of RootUrl|Rest then
