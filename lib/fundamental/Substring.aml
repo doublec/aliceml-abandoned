@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg, 2001-2002
  *
  * Last change:
  *   $Date$ by $Author$
@@ -23,7 +23,9 @@ import infix 6 + - infix 4 = <> < >
 import structure General                           from "General"
 import structure Option                            from "Option"
 import structure List                              from "List"
+import structure Char                              from "Char"
 import structure String                            from "String"
+import structure CharVectorSlice                   from "CharVectorSlice"
 import signature SUBSTRING                         from "SUBSTRING-sig"
 
 structure Substring :> SUBSTRING where type string = string
@@ -31,93 +33,60 @@ structure Substring :> SUBSTRING where type string = string
 struct
     type char			= char
     type string			= string
-    type substring		= string * int * int
+    type substring		= CharVectorSlice.slice
     type t			= substring
 
-    fun base ss			= ss : substring
-    fun string ss		= String.substring(base ss)
-    fun size ss			= #3(base ss)
-    fun sub(ss, i)		= String.sub(string ss, i)
-
-    fun substring(s, i, j)	= (if i < 0 orelse j < 0 orelse
-				     String.size s < i + j
-				   then raise General.Subscript
-				   else (s, i, j)
-				  ) handle General.Overflow =>
-					   raise General.Subscript
-    fun extract(s, i, NONE)	= substring(s, i, String.size s - i)
-      | extract(s, i, SOME j)	= substring(s, i, j)
-    fun full s			= substring(s, 0, String.size s)
+    open CharVectorSlice
+    val size			= length
     val all			= full
-
-    fun isEmpty (s,i,n)		= n = 0
-
-    fun getc (s,i,0)		= NONE
-      | getc (s,i,n)		= SOME (String.sub(s, i), (s, i+1, n-1))
+    val string			= vector
+    val extract			= slice
+    val slice			= subslice
+    fun substring(s,i,n)	= extract(s, i, SOME n)
+    val getc			= getItem
     fun first ss		= Option.map #1 (getc ss)
+    val explode			= toList
 
-    fun Int_min(i, j)		= if i < j then i else j
-    fun Int_max(i, j)		= if i > j then i else j
-    fun triml k (s,i,n)		= if k < 0 then raise General.Subscript else
-				  (s, i + Int_min(k, n), Int_max(n-k, 0))
-    fun trimr k (s,i,n)		= if k < 0 then raise General.Subscript else
-				  (s, i, Int_max(n-k, 0))
-
-    fun slice(ss, i, SOME m)	= slice'(ss, i, m)
-      | slice(ss, i, NONE)	= slice'(ss, i, size ss - i)
-    and slice'((s,i,n), j, m)	= if j + m > n then raise General.Subscript else
-				  substring(s, i+j, m)
+    fun hash ss			= String.hash(#1(base ss))
+    val equal			= equal op=
+    val compare			= collate Char.compare
 
     (*INEFFICIENT*)
-    fun concat sss		= String.concat(List.map string sss)
     fun concatWith s sss	= String.concatWith s (List.map string sss)
-    fun explode	ss		= String.explode(string ss)
     fun translate f ss		= String.concat(List.map f (explode ss))
-    fun isPrefix s ss		= String.isPrefix s (string ss)
-    fun isSuffix s ss		= String.isSuffix s (string ss)
-    fun isSubstring s ss	= String.isSubstring s (string ss)
-    fun hash ss			= String.hash(string ss)
-    fun equal(ss, st)		= string ss = string st
-    fun compare(ss, st)		= String.compare(string ss, string st)
-    fun collate f (ss, st)	= String.collate f (string ss, string st)
 
-    fun splitAt((s,i,n), j)	= if j < 0 orelse j> n
-				  then raise General.Subscript
-				  else ((s,i,j), (s, i+j, n-j))
+    fun span(ss1,ss2)		= let
+				      val (s1,i1,n1) = base ss1
+				      val (s2,i2,n2) = base ss2
+				  in
+				      if s1 <> s2 orelse i2+n2 < i1
+				      then raise General.Span
+				      else substring(s1, i1, (i2+n2)-i1)
+				  end
 
-    fun splitl f (s,i,n)	= splitl'(f, s, i, n, i)
-    and splitl'(f, s, i, n, j)	= if j = i+n then
-				      ((s,i,n), (s,j,0))
-				  else if f(String.sub(s, j)) then
-				      splitl'(f, s, i, n, j+1)
-				  else
-				      ((s, i, j-i), (s, j, n-(j-i)))
+    fun isPrefix s ss		= isPrefix'(s,ss,0)
+    and isPrefix'(s,ss,i)	= i = String.size s orelse
+				  i <> size ss andalso
+				  String.sub(s,i) = sub(ss,i)
+				  andalso isPrefix'(s,ss,i+1)
 
-    fun splitr f (s,i,n)	= splitr'(f, s, i, n, i+n-1)
-    and splitr'(f, s, i, n, j)	= if j < i then
-				      ((s,i,0), (s,i,n))
-				  else if f(String.sub(s, j)) then
-				      splitr'(f, s, i, n, j-1)
-				  else
-				      ((s, i, j-i+1), (s, j, n-(j-i+1)))
+    fun isSuffix s ss		= isSuffix'(s, ss, String.size(s)-1, size(ss)-1)
+    and isSuffix'(s,ss,i1,i2)	= i1 = ~1 orelse
+				  i2 <> ~1 andalso
+				  String.sub(s,i1) = sub(ss,i1)
+				  andalso isSuffix'(s,ss,i1-1,i2-1)
 
-    fun takel p ss		= #1(splitl p ss)
-    fun dropl p ss		= #2(splitl p ss)
-    fun taker p ss		= #2(splitr p ss)
-    fun dropr p ss		= #1(splitr p ss)
+    fun isSubstring s ss	= isSubstring'(s,ss,0)
+    and isSubstring'(s,ss,i)	= i + String.size s < size ss
+				  andalso isSubstring''(s,ss,i,0)
+				  orelse isSubstring'(s,ss,i+1)
+    and isSubstring''(s,ss,i,j)	= j = String.size s orelse
+				  String.sub(s,i) = sub(ss,i+j) andalso
+				  isSubstring''(s,ss,i,j+1)
 (*
     fun position 
-*)
-    fun span((s,i,n), (s',i',n'))
-				= if s <> s' orelse i'+n' < i
-				  then raise General.Span
-				  else (s, i, (i'+n')-i)
-(*
+
     fun tokens
     fun fields
 *)
-    fun foldl f a ss		= List.foldl f a (explode ss)	(*INEFFICIENT*)
-    fun foldr f a ss		= List.foldr f a (explode ss)
-    fun app f ss		= List.app f (explode ss)
-    fun appr f ss		= List.appr f (explode ss)
 end
