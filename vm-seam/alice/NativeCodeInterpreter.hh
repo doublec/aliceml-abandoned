@@ -40,6 +40,7 @@ public:
   // Execution
   virtual Result Run();
   virtual Result Handle();
+  virtual u_int GetInArity(ConcreteCode *concreteCode);
   // Debugging
   virtual const char *Identify();
   virtual void DumpFrame(word frame);
