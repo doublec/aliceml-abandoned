@@ -49,23 +49,7 @@
     type lexresult     = (svalue, pos) token
 
 
-  (* Handling nested comments *)
-
-    val nesting = ref 0		(* non-reentrant side-effect way :-P *)
-
-
-    fun eof() =
-	if !nesting = 0 then
-	    raise LexerError.EOF(fn i => Tokens.EOF i)
-	else
-	    raise LexerError.EOF(fn i => error(i, E.UnclosedComment))
-
-
-
-  (* Some helpers to create tokens *)
-
-    open Tokens
-
+  (* Source positions *)
 
     fun toLRPos(yypos, yytext) =
 	let
@@ -73,6 +57,28 @@
 	in
 	    (yypos, yypos + String.size yytext)
 	end
+
+
+  (* Handling nested comments *)
+
+    val nesting = ref [] : int list ref
+
+    fun nest yypos = nesting := yypos :: !nesting
+    fun unnest ()  = ( nesting := List.tl(!nesting) ; List.null(!nesting) )
+
+    fun eof() =
+	case !nesting
+	  of []    => raise LexerError.EOF(fn i => Tokens.EOF i)
+	   | i0::_ =>
+		raise LexerError.EOF(fn(i1,i2) =>
+					error((i0,i2), E.UnclosedComment))
+
+
+
+  (* Some helpers to create tokens *)
+
+    open Tokens
+
 
     fun token(TOKEN, yypos, yytext) =
         TOKEN(toLRPos(yypos, yytext))
@@ -343,10 +349,9 @@
   <INITIAL>{symbolicid}	=> ( tokenOf(SYMBOL,  toId,     yypos, yytext) );
 
 
-  <INITIAL>"(*"		=> ( nesting := 1 ; YYBEGIN COMMENT ; continue() );
-  <COMMENT>"(*"		=> ( nesting := !nesting+1 ; continue() );
-  <COMMENT>"*)"		=> ( nesting := !nesting-1 ;
-			     if !nesting = 0 then YYBEGIN INITIAL else () ;
+  <INITIAL>"(*"		=> ( nest(yypos-2) ; YYBEGIN COMMENT ; continue() );
+  <COMMENT>"(*"		=> ( nest(yypos-2) ; continue() );
+  <COMMENT>"*)"		=> ( if unnest() then YYBEGIN INITIAL else () ;
 			     continue() );
   <COMMENT>.		=> ( continue() );
   <COMMENT>"\n"		=> ( continue() );
