@@ -22,7 +22,7 @@
 
 #include <cstring>
 
-#if defined(__MINGW32__) || defined(_MSC_VER)
+#if HAVE_VIRTUALALLOC
 #include <windows.h>
 
 void HeapChunk::Alloc(u_int size) {
