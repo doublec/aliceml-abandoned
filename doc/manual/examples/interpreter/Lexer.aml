@@ -4,13 +4,11 @@
  * 2000/02/12 Andreas Rossberg
  *)
 
-
 import structure Token from "Token"
 import signature LEXER from "LEXER-sig"
 
-
 structure Lexer :> LEXER =
-  struct
+struct
     open Token
     open Char
 
@@ -18,7 +16,7 @@ structure Lexer :> LEXER =
 
     fun digit c					= ord c - ord #"0"
 
-    fun idOrRes l				= idOrRes'(implode(List.rev l))
+    fun idOrRes l				= idOrRes'(implode (List.rev l))
     and idOrRes' "if"				= IF
       | idOrRes' "then"				= THEN
       | idOrRes' "else"				= ELSE
@@ -50,6 +48,5 @@ structure Lexer :> LEXER =
     and con' ts n (c::cs) where (isDigit c)	= con' ts (10*n + digit c) cs
       | con' ts n   cs				= munch (CON n :: ts) cs
 
-
     fun lex s					= munch [] (String.explode s)
-  end
+end
