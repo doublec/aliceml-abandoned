@@ -368,12 +368,11 @@ struct
 	    val x1 = ref nil
 	    val x2 = ref nil
 
-	    fun f1 x = x1 := (x :: !x1)
-	    fun f2 x = x2 := (x :: !x2)
+	    fun f y x = y := (x :: !y)
 	in
 	    Gen.try 10 (Gen.vector Gen.int)
-	      (Test.test (fn v => (List.app f1 (Vector.toList v);
-				   Vector.app f2 v;
+	      (Test.test (fn v => (List.app (f x1) (Vector.toList v);
+				   Vector.app (f x2) v;
 				    let
 					val b = !x1 = !x2
 				    in 
@@ -387,12 +386,11 @@ struct
 	    val x1 = ref nil
 	    val x2 = ref nil
 
-	    fun f1 x = x1 := (x :: !x1)
-	    fun f2 x = x2 := (x :: !x2)
+	    fun f y x = y := (x :: !y)
 	in
 	    Gen.try 10 (Gen.vector Gen.int)
-	      (Test.test (fn v => (List.appr f1 (Vector.toList v);
-				    Vector.appr f2 v;
+	      (Test.test (fn v => (List.appr (f x1) (Vector.toList v);
+				    Vector.appr (f x2) v;
 				    let
 					val b = !x1 = !x2
 				    in 
@@ -406,12 +404,11 @@ struct
 	    val x1 = ref nil
 	    val x2 = ref nil
 
-	    fun f1 (i, x) = x1 := ((i + x) :: !x1)
-	    fun f2 (i, x) = x2 := ((i + x) :: !x2)
+	    fun f y (i, x) = y := ((i + x) :: !y)
 	in
 	    Gen.try 10 (Gen.vector Gen.int)
-	      (Test.test (fn v => (List.appi f1 (Vector.toList v);
-				   Vector.appi f2 v;
+	      (Test.test (fn v => (List.appi (f x1) (Vector.toList v);
+				   Vector.appi (f x2) v;
 				    let
 					val b = !x1 = !x2
 				    in 
@@ -425,12 +422,11 @@ struct
 	    val x1 = ref nil
 	    val x2 = ref nil
 
-	    fun f1 (i, x) = x1 := ((i + x) :: !x1)
-	    fun f2 (i, x) = x2 := ((i + x) :: !x2)
+	    fun f y (i, x) = y := ((i + x) :: !y)
 	in
 	    Gen.try 10 (Gen.vector Gen.int)
-	      (Test.test (fn v => (List.appri f1 (Vector.toList v);
-				    Vector.appri f2 v;
+	      (Test.test (fn v => (List.appri (f x1) (Vector.toList v);
+				    Vector.appri (f x2) v;
 				    let
 					val b = !x1 = !x2
 				    in 
@@ -442,20 +438,34 @@ struct
 
     fun testMap () =
 	let
-	    fun t i = i + 5
+	    val x1 = ref nil
+	    val x2 = ref nil
+
+	    fun t x i = (x := i :: !x; i + 5)
+
 	in
 	    Gen.try 100 (Gen.vector Gen.int) 
-	       (Test.test (fn v => Vector.toList (Vector.map t v) =
-			           List.map t (Vector.toList v)))
+	       (Test.test (fn v => (x1 := nil;
+				    x2 := nil;
+				    Vector.toList (Vector.map (t x1) v) =
+				    List.map (t x2) (Vector.toList v) andalso
+				    !x1 = !x2 andalso 
+				    !x1 = List.rev (Vector.toList v))))
 	end
 
     fun testMapi () =
 	let
-	    fun t (a, i) = a + i + 5
+	    val x1 = ref nil
+	    val x2 = ref nil
+
+	    fun t x (a, i) = (x := i :: !x; a + i + 5)
 	in
 	    Gen.try 100 (Gen.vector Gen.int) 
-	       (Test.test (fn v => Vector.toList (Vector.mapi t v) =
-			           List.mapi t (Vector.toList v)))
+	       (Test.test (fn v => (x1 := nil; x2 := nil;
+				    Vector.toList (Vector.mapi (t x1) v) =
+				    List.mapi (t x2) (Vector.toList v) andalso
+				    !x1 = !x2 andalso
+				    !x2 = List.rev (Vector.toList v))))
 	end
 
     val suite = ("Vector", [("maxLen", testMaxLen),

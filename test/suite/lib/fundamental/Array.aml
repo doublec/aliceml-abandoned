@@ -233,34 +233,6 @@ struct
 	in
 	    Gen.try 1000 (Gen.array Gen.int) (Test.test t)
 	end
-(* TODO: is Array.extract still existing?
-    fun testExtract () =
-	let
-	    fun t' (a, i, x) bs = 
-		          if i > x then Vector.fromList (List.rev bs)
-			  else t' (a, i + 1, x) ((Array.sub (a, i))::bs)
-
-	    fun t (a, i, NONE)   = 
-		    if i < 0 orelse Array.length a < i
-			then NONE
-		    else SOME (t' (a, i, Array.length a) [])
-	      | t (a, i, SOME x) = 
-			if i < 0 orelse Array.length a < i
-			         orelse x < i 
-				 orelse Array.length a < x
-			    then NONE
-				else SOME (t' (a, i, x) [])
-	in
-	    Gen.try 1000 (Gen.triple (Gen.array Gen.int, 
-				      Gen.int, 
-				      Gen.option Gen.int)) 
-	    (Test.test (fn x => let
-				    val r = t x
-				in Array.extract x = valOf r
-				    handle Subscript => Option.isNone r
-				end))
-	end
-*)
 
     fun testCopy () =
 	let
@@ -382,46 +354,51 @@ struct
 	     (Test.test (fn a => Array.findi f a = t f a))
 	end
 
-    fun testModify () =
+    fun mkTestModify t f m =
 	let
-	    fun t f a i = if i = Array.length a
-			      then ()
-			  else (Array.update (a, i, f (Array.sub (a, i)));				t f a (i + 1))
-
-	    fun f x = x + 5
-
+	    val x1 = ref nil
+	    val x2 = ref nil
 	in
 	    Gen.try 1000 (Gen.array Gen.int)
 	      (Test.test (fn a => let
 				      val t1 = Array.fromList (Array.toList a)
 				      val t2 = Array.fromList (Array.toList a)
+				      val t3 = Array.toList a
 				  in
-				      t f t1 0;
-				      Array.modify f t2;
+				      x1 := nil;
+				      x2 := nil;
+				      t (f x1) t1 0;
+				      m (f x2) t2;
+				      !x1 = !x2 andalso 
+				      !x1 = List.rev t3 andalso
 				      Array.equal Int.equal (t1, t2)
 				  end))
+	end
+
+    fun testModify () = 
+	let
+	    fun f y x= (y := x :: !y; x + 5)
+
+	    fun t x a i = if i = Array.length a
+			      then ()
+			  else (Array.update (a, i, x (Array.sub (a, i)));
+				t x a (i + 1))
+	in
+	    mkTestModify t f Array.modify
 	end
 
     fun testModifyi () =
 	let
+	    fun f y (i, x) = (y := x :: !y; i + x + 5)
+
 	    fun t f a i = if i = Array.length a
 			      then ()
 			  else (Array.update (a, i, f (i, Array.sub (a, i)));
 				t f a (i + 1))
-
-	    fun f (i, x) = i + x + 5
-
 	in
-	    Gen.try 1000 (Gen.array Gen.int)
-	      (Test.test (fn a => let
-				      val t1 = Array.fromList (Array.toList a)
-				      val t2 = Array.fromList (Array.toList a)
-				  in
-				      t f t1 0;
-				      Array.modifyi f t2;
-				      Array.equal Int.equal (t1, t2)
-				  end))
+	    mkTestModify t f Array.modifyi
 	end
+
 
     fun testFoldl () =
 	let
@@ -629,8 +606,7 @@ struct
 			   ("equal", testEqual),
 			   ("collate", testCollate),
 			   ("swap", testSwap),
-			   ("rev", testRev)(*,
-			   ("extract", testExtract)*),
+			   ("rev", testRev),
 			   ("copy", testCopy),
 			   ("copyVec", testCopyVec),
 			   ("all", testAll),

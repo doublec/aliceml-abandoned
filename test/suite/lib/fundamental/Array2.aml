@@ -1,0 +1,152 @@
+(*
+ * Authors:
+ *   Sebastian Germesin <germi@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Sebastian Germesin, 2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature TESTSUITE from "../../src/TESTSUITE-sig"
+
+import structure Random    from "x-alice:/lib/utility/Random"
+import structure Gen       from "x-alice:/lib/test/Gen"
+import structure Test      from "../../src/Test"
+
+structure TestArray2 :> TESTSUITE =
+struct
+
+    val randomize = Gen.randomize
+
+    fun testSub () =
+	let
+	    fun t (xss, a, r, c) = if List.null xss orelse 
+		                   c < 0 orelse Array2.nCols a <= c orelse
+		                   r < 0 orelse Array2.nRows a <= r
+				       then NONE
+				   else SOME (List.nth (List.nth (xss, r), c))
+	in
+	   Gen.try 100 (Gen.triple (Gen.list (Gen.list Gen.int), 
+				     Gen.int, Gen.int))
+	      (Test.test (fn (xss, r, c) => 
+			        let
+				    val a = Array2.fromList xss
+				    val res = t (xss, a, r, c)
+				in
+				    Array2.sub (a, r, c) = valOf res
+				      handle Subscript => Option.isNone res
+				end))
+	end
+
+    fun testUpdate () =
+	let
+	    fun t (xss, a, r, c) = 
+		       if List.null xss orelse r < 0 orelse c < 0 orelse 
+			   Array2.nCols a <= c orelse
+			   Array2.nRows a <= r
+			   then true
+		       else false
+	in
+	    Gen.try 100 (Gen.triple (Gen.list (Gen.list Gen.int), 
+				     Gen.int, Gen.int))
+	      (Test.test (fn (xss, r, c) => let
+						val x = Gen.int (r + c)
+						val a = Array2.fromList xss
+					    in
+						(Array2.update (a, r, c, x);
+						 Array2.sub (a, r, c) = x)
+						 handle Subscript =>
+						       t (xss, a, r, c)
+					    end))
+	end
+
+    fun testEqual () = 
+	let
+	    (* TODO: testen auf eihaltung der richtung *)
+	    fun t (xss1, xss2) = List.equal (List.equal Int.equal) (xss1, xss2)
+	in
+	    Gen.try 100 (Gen.pair (Gen.list (Gen.list Gen.int),
+				   Gen.list (Gen.list Gen.int)))
+	      (Test.test (fn (xss1, xss2) => 
+			      let
+				  val a1 = Array2.fromList xss1
+				  val a2 = Array2.fromList xss2
+				  val eq1 = Array2.equal Array2.RowMajor 
+				                         Int.equal (a1, a2)
+				  val eq2 = Array2.equal Array2.ColMajor
+				                         Int.equal (a1, a2)
+			      in
+				  eq1 = eq2 andalso 
+				  eq1 = t (xss1, xss2)
+			      end))
+	end
+    fun testArray () =
+	let
+	    fun t (r, c, x) = let 
+				  val a = Array2.array (r, c, x)
+			      in
+				  Array2.nRows a = r andalso
+				  Array2.nCols a = c andalso
+				  Array2.sub (a, Gen.int r,
+					      Gen.int c) = x
+				   handle Subscript => r = 0 orelse c = 0
+			      end
+	in
+	    Gen.try 1000 (Gen.triple (Gen.int, Gen.int, Gen.int))
+	      (Test.test t)
+	end
+
+    fun testFromList () =
+	let
+	    fun t' nil         (_, _, a) = a
+	      | t' (nil :: xs) (r, c, a) = t' xs (r + 1, 0, a)
+	      | t' (x   :: xs) (r, c, a) = 
+		                 (Array2.update (a, r, c, List.hd x);				  t' ((List.tl x) :: xs) (r, c + 1, a))
+
+	    fun t nil = SOME (Array2.array (0, 0, 0))
+	      | t  xs =
+		  if List.all (fn x => (List.length (List.hd xs)) = 
+			                List.length x) xs
+		  then SOME (t' xs (0, 0, (Array2.array (List.length xs, 
+					   List.length (List.hd xs), 0))))
+		  else NONE
+	in
+	    Gen.try 100 (Gen.list (Gen.list Gen.int))
+	      (Test.test (fn xs => 
+			       let
+				   val r = t xs
+			       in 
+				   if Option.isSome r
+				       then Array2.equal Array2.RowMajor 
+					        Int.equal 
+					        (Array2.fromList xs,
+						 valOf r)
+				   else false
+				       handle Size => Option.isNone r
+			       end))
+	end
+
+    fun testToList () = 
+	let
+	    fun t xs = Array2.toList (Array2.fromList xs) = xs
+	in
+	    Gen.try 100 (Gen.list (Gen.list Gen.int)) (Test.test t)
+	end
+
+
+    val suite = ("Array2", [("array", testArray),
+			    ("toList", testToList),
+			    ("fromList", testFromList),
+			    ("sub", testSub),
+			    ("update", testUpdate)(*,
+			    ("all", testAll),
+			    ("alli", testAlli),
+			    ("exists", testExists),
+			    ("existsi", testExistsi),
+			    ("contains", testContains),
+			    ("notContains", testNotContains)*),
+			    ("equal", testEqual)])
+end

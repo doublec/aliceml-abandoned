@@ -27,6 +27,7 @@ import structure TestIntInf   from "lib/fundamental/IntInf"
 import structure TestByte     from "lib/fundamental/Byte"
 import structure TestList     from "lib/fundamental/List"
 import structure TestArray    from "lib/fundamental/Array"
+import structure TestArray2   from "lib/fundamental/Array2"
 import structure TestVector   from "lib/fundamental/Vector"
 import structure TestTime     from "lib/system/Time"
 import structure TestCompiler from "lib/compiler/Compiler"
@@ -47,7 +48,8 @@ fun randomizeTests () =
 			TestIntInf.randomize,
 			TestByte.randomize,
 			TestList.randomize,
-			TestTime.randomize]
+			TestTime.randomize,
+			TestArray2.randomize]
     in
 	List.app (fn x => x ()) allTests
     end
@@ -57,9 +59,10 @@ val allTests = [TestCompiler.suite,
 		TestBool.suite,
 		TestGeneral.suite,
 		TestOption.suite, 
+		TestList.suite,
+		TestArray2.suite,
 		TestArray.suite,
 		TestVector.suite,
-		TestList.suite,
 		TestChar.suite,
 		TestString.suite,
 		TestIEEEReal.suite,
