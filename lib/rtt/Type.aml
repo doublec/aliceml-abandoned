@@ -135,7 +135,7 @@ We do eager reduction, so all types are always in normal form. We thus define
 a type t to be well-formed (wf) iff is well-kinded, all nested types and rows
 are wf, and
 
-	t = HOLE(k,_,_)	and k <> SING _
+	t = HOLE(k,_,_,_)	and k <> SING _
 	t = VAR(k,_,_)	and k <> SING _
 	t = CON(_,k)	and k <> SING _
 	t = LINK t'
@@ -226,6 +226,7 @@ struct
     type lab  = Label.t					(* [lab,l] *)
     type path = Path.t					(* [pi,p] *)
 
+    datatype rigidity = Rigid | Flex
     datatype constraint =				(* [c] *)
 	  Unconstrained
 	| Intensional
@@ -233,7 +234,7 @@ struct
 
     datatype typ' =					(* [tau',t'] *)
 	  LINK   of typ		(* forward (needed for unification) *)
-	| HOLE   of kind * int * constraint	(* variable for inference *)
+	| HOLE   of kind * int * constraint * rigidity (* inference variable *)
 	| VAR    of kind * int * constraint	(* bound var or skolem types *)
 	| CON    of path * kind	(* constructor (of arbitrary kind) *)
 	| FUN    of typ * typ	(* arrow type *)
@@ -346,7 +347,8 @@ struct
 	fn t =>	if Hole.isHole t then "_" else
 	case t
 	of LINK t	=> "LINK(" ^ typ ads t ^ ")"
-	 | HOLE(_,n,c)	=> "HOLE_" ^ Int.toString n ^ cnstr c
+	 | HOLE(_,n,c,r)=> "HOLE_" ^ Int.toString n ^ cnstr c
+				   ^ (if r = Rigid then "!" else "")
 	 | VAR(_,n,c)	=> "VAR_" ^ Int.toString n ^ cnstr c
 	 | CON(p,_)	=> "CON(" ^ pth p ^ ")"
 	 | FUN(t1,t2)	=> "FUN(" ^ typ ads t1 ^ "," ^ typ ads t2 ^ ")"
@@ -458,7 +460,7 @@ struct
 	case content t
 	  of ( LINK t | MU t
 	     | ABBREV(_,t) )	=> kind t
-	   | HOLE(k,_,_)	=> k
+	   | HOLE(k,_,_,_)	=> k
 	   | VAR(k,_,_)		=> k
 	   | CON(_,k)		=> k
 	   | LAMBDA(a,t)	=> arrowKind(kind a, kind t)
@@ -537,12 +539,12 @@ struct
 	    case content t'
 	      of VAR(k,n,c)		=> if n = boundLevel then ()
 					   else replace(t', VAR(k,boundLevel,c))
-	       | HOLE(k,n,c)		=> replace(t', VAR(k,boundLevel,c))
+	       | HOLE(k,n,c,_)		=> replace(t', VAR(k,boundLevel,c))
 	       | _			=> raise Type;
 	    t'
 	end
 
-    fun unknown'(k,c)	= new(HOLE(k, !level, c))
+    fun unknown'(k,c,r)	= new(HOLE(k, !level, c, r))
     fun newVar'(k,c)	= new(VAR(k, !level, c))
 
     fun con'(p,k)	= new(CON(p,k))
@@ -591,7 +593,7 @@ struct
 	   | (LINK t1 | ABBREV(_,t1)) =>
 		reduceEta(a,t1)
 	   (* Not needed, since k is never singleton
-	   | (HOLE(k,_,_) | VAR(k,_,_) | CON(_,k)) =>
+	   | (HOLE(k,_,_,_) | VAR(k,_,_) | CON(_,k)) =>
 		(case content k
 		 of SING t1 => reduceEta(a,t1)
 		  | _       => new(LAMBDA(a,t))
@@ -624,7 +626,7 @@ struct
 	   | ABBREV(t11,t12) =>
 		reduceBeta(t1, t12, t2, SOME(Option.getOpt(to,t11)))
 	   (* Not needed, since k is never singleton
-	   | (HOLE(k,_,_) | VAR(k,_,_) | CON(_,k)) =>
+	   | (HOLE(k,_,_,_) | VAR(k,_,_) | CON(_,k)) =>
 		(case content k
 		 of SING t3 => reduceBeta(t1,t3,t2,to)
 		  | _       => new(APPLY(t1,t2))
@@ -647,7 +649,7 @@ struct
 			  end
 
     fun unknown k	= if isSingKind k then asSingKind k
-			  else unknown'(k, Unconstrained)
+			  else unknown'(k, Unconstrained, Flex)
     val newVar		= newVar'
     fun var a		= let val k = kind a in
 			      if isSingKind k then asSingKind k else a
@@ -852,7 +854,7 @@ struct
     fun inspect t =
 	case content t
 	  of (LINK t2 | ABBREV(_,t2))	=> inspect t2
-	   | HOLE(_,_,c)		=> Unknown c
+	   | HOLE(_,_,c,_)		=> Unknown c
 	   | VAR _			=> Var t
 	   | CON(p,_)			=> Con p
 	   | FUN tt			=> Arrow tt
@@ -1086,7 +1088,8 @@ val _ = checkMuFwd := checkMu
 	   | MU t1		=> if not(hasFree(ref [t], mt,mk, rea, t1))
 				   then buildOld(mt, t)
 				   else let
-				       val t0' = unknown'(kind t1,Unconstrained)
+				       val t0' = unknown'(kind t1,
+							  Unconstrained, Flex)
 				       val t'  = buildNew(mt, t, mu' t0')
 				       val t1' = build(mt,mk, rea, t1)
 				   in
@@ -1266,38 +1269,41 @@ val _ = checkMuFwd := checkMu
 
     (* Instantiate universally quantified types, skolemise
      * existentially qualified types.
-     * Skolemisation does it the other way round (needed for checking rank 2
-     * signature applications and existential types).
+     * Skolemisation does it the other way round.
      *
      * For instance'/skolem', the map may already contain bound variables
      * if called from matchCont!
      *)
 
-    fun instance t = instance'(subst, Map.map(), t, NONE)
-    and instance'(f,m,t,to) =
+    fun skolemVar a = newVar'(kind a, constraintVar a)
+    fun instanceVar(a,r) =
+	let
+	    val c = constraintVar a
+	in
+	    unknown'(kind a, c, case c of Unconstrained => Flex | _ => r)
+	end
+
+    fun instance t = instance'(subst, Map.map(), t, NONE, Flex)
+    and instance'(f,m,t,to,r) =
 	case content t
-	  of LINK t	=> instance'(f,m,t,to)
-	   | ABBREV(t1,t2) => instance'(f,m,t2, SOME(Option.getOpt(to,t1)))
-	   | ALL(a,t)	=> (Map.insert(m, canonical a,
-					  unknown'(kind a, constraintVar a));
-			    instance'(f,m,t,to))
-	   | EXIST(a,t)	=> (Map.insert(m, canonical a,
-					  newVar'(kind a, constraintVar a));
-			    instance'(f,m,t,to))
+	  of LINK t	=> instance'(f,m,t,to,r)
+	   | ABBREV(t1,t2) => instance'(f,m,t2, SOME(Option.getOpt(to,t1)), r)
+	   | ALL(a,t)	=> (Map.insert(m, canonical a, instanceVar(a,r));
+			    instance'(f,m,t,to,r))
+	   | EXIST(a,t)	=> (Map.insert(m, canonical a, skolemVar a);
+			    instance'(f,m,t,to,r))
 	   | _		=> case to of NONE    => f(m,t)
 				    | SOME t1 => f(m,abbrev'(t1,t))
 
-    fun skolem t = skolem'(subst, Map.map(), t, NONE)
-    and skolem'(f,m,t,to) =
+    fun skolem t = skolem'(subst, Map.map(), t, NONE, Flex)
+    and skolem'(f,m,t,to,r) =
 	case content t
-	  of LINK t	=> skolem'(f,m,t,to)
-	   | ABBREV(t1,t2) => skolem'(f,m,t2, SOME(Option.getOpt(to,t1)))
-	   | ALL(a,t)	=> (Map.insert(m, canonical a,
-					  newVar'(kind a, constraintVar a));
-			    skolem'(f,m,t,to))
-	   | EXIST(a,t)	=> (Map.insert(m, canonical a,
-					  unknown'(kind a, constraintVar a));
-			    skolem'(f,m,t,to))
+	  of LINK t	=> skolem'(f,m,t,to,r)
+	   | ABBREV(t1,t2) => skolem'(f,m,t2, SOME(Option.getOpt(to,t1)), r)
+	   | ALL(a,t)	=> (Map.insert(m, canonical a, skolemVar a);
+			    skolem'(f,m,t,to,r))
+	   | EXIST(a,t)	=> (Map.insert(m, canonical a, instanceVar(a,r));
+			    skolem'(f,m,t,to,r))
 	   | _		=> case to of NONE    => f(m,t)
 				    | SOME t1 => f(m,abbrev'(t1,t))
 
@@ -1353,7 +1359,7 @@ val _ = checkMuFwd := checkMu
 
     and close1(t, f) =
 	case content t
-	 of HOLE(k,n,c) =>
+	 of HOLE(k,n,c,_) =>
 	    if n <= !level then f else
 	    (case c
 	     of Unconstrained    => (fn t2 => f(all'(t,t2)))
@@ -1380,8 +1386,8 @@ val _ = checkMuFwd := checkMu
 		if Map.member(m,t) then () else
 		Map.insert(m,t,()) before
 		(case content t
-		  of HOLE(k,n',c) =>
-			if n' <= n then () else replace(t, HOLE(k,n,c))
+		  of HOLE(k,n',c,r) =>
+			if n' <= n then () else replace(t, HOLE(k,n,c,r))
 		   | VAR(k,n',c) => if n' <= n then () else raise Lift t
 		   | PROD r	=> liftRow(t, PROD, r)
 		   | SUM r	=> liftRow(t, SUM, r)
@@ -1443,16 +1449,26 @@ val _ = checkMuFwd := checkMu
       | subsumesConstraint(Extensional(p1,ps1), Extensional(p2,ps2)) =
 	Path.equal(p1,p2) andalso List.all (fn p => memberPath(p,ps2)) ps1
 
-    fun meetsConstraint(t, Unconstrained)    = true
-      | meetsConstraint(t, c as Intensional) =
+    fun equalsConstraint(c1,c2) =
+	subsumesConstraint(c1,c2) andalso subsumesConstraint(c2,c1)
+
+    fun meetsConstraint'(t, Unconstrained)    = true
+      | meetsConstraint'(t, c as Intensional) =
 	(case asType' t
-	 of (HOLE(_,_,c') | VAR(_,_,c')) => subsumesConstraint(c',c)
-	  |  _                           => false
+	 of (HOLE(_,_,c',_) | VAR(_,_,c')) => subsumesConstraint(c',c)
+	  |  _                             => false
 	)
-      | meetsConstraint(t, c as Extensional(p,ps)) =
+      | meetsConstraint'(t, c as Extensional(p,ps)) =
 	(case asType' t
-	 of (HOLE(_,_,c') | VAR(_,_,c')) => subsumesConstraint(c',c)
+	 of (HOLE(_,_,c',_) | VAR(_,_,c')) => subsumesConstraint(c',c)
 	  | CON(p',_) => Path.equal(p',p) orelse memberPath(p',ps)
+	  | _ => false
+	)
+
+    fun meetsConstraint(t,c,Flex)  = meetsConstraint'(t,c)
+      | meetsConstraint(t,c,Rigid) =
+	(case asType' t
+	 of (HOLE(_,_,c',Rigid) | VAR(_,_,c')) => equalsConstraint(c',c)
 	  | _ => false
 	)
 
@@ -1578,7 +1594,7 @@ val _ = checkMuFwd := checkMu
 		(mergeBind' m; 0)
 	end
 
-    fun bind(i,ms,rea, n1,t1,t2,k1,c) =
+    fun bind(i,ms,rea, n1,t1,t2,k1,c,r) =
 	(* Merge at level i - this is a conservative approximation that
 	 * avoids calculating the level of t2. *)
 	let
@@ -1602,7 +1618,7 @@ case rea of NONE => TextIO.print("rea = -\n")
 List.appri (fn(i,m) => TextIO.print("m"^Int.toString i^" = {\n" ^ substToString m ^ "}\n")) ms;
 TextIO.print("i = "^Int.toString i^"\n");
 *)
-	    if meetsConstraint(t2',c) then () else raise Mismatch(t1,t2');
+	    if meetsConstraint(t2',c,r) then () else raise Mismatch(t1,t2');
 	    liftAndCheck(n1,t1,t2') handle Lift _ => raise Mismatch(t1,t2');
 	    replace(t1, LINK t2');
 	    merge(ms,t1,t2',i)
@@ -1701,16 +1717,17 @@ handle e =>
 		then merge(ms,t1,t2,0)
 		else raise Mismatch(t1,t2)
 
-	  | (HOLE(k1,n1,c1), HOLE(k2,n2,c2)) =>
+	  | (HOLE(k1,n1,c1,r1), HOLE(k2,n2,c2,r2)) =>
 	    let
-		val c' = conjunctConstraint(c1,c2)
+		val c' = if r1 = Rigid then c1 else if r2 = Rigid then c2 else
+			 conjunctConstraint(c1,c2)
 			 handle Constraint => raise Mismatch(t1,t2)
 	    in
-		bind(i,ms,rea,n1,t1,t2,k1,c') handle Mismatch _ =>
-		bind(i,ms,rea,n2,t2,t1,k2,c')
+		bind(i,ms,rea,n1,t1,t2,k1,c',r1) handle Mismatch _ =>
+		bind(i,ms,rea,n2,t2,t1,k2,c',r2)
 	    end
-	  | (HOLE(k1,n1,c1), _) => bind(i,ms,rea, n1,t1,t2,k1,c1)
-	  | (_, HOLE(k2,n2,c2)) => bind(i,ms,rea, n2,t2,t1,k2,c2)
+	  | (HOLE(k1,n1,c1,r1), _) => bind(i,ms,rea, n1,t1,t2,k1,c1,r1)
+	  | (_, HOLE(k2,n2,c2,r2)) => bind(i,ms,rea, n2,t2,t1,k2,c2,r2)
 
 	  | (ABBREV(_,t1'), _) => unify''(i,ms,rea,t1',t2)
 	  | (_, ABBREV(_,t2')) => unify''(i,ms,rea,t1,t2')
@@ -1872,9 +1889,9 @@ equal(t1,t2)
 	if Cell.equal(t1,t2) then () else
 	let
 	    val m   = Map.map()
-	    val t1' = instance'(#2, m, t1, NONE)
+	    val t1' = instance'(#2, m, t1, NONE, Rigid)
 (*DEBUG*)handle e => raise e
-	    val t2' = skolem'(#2, m, t2, NONE)
+	    val t2' = skolem'(#2, m, t2, NONE, Rigid)
 (*DEBUG*)handle e => raise e
 	    val ms' = if Map.isEmpty m then ms else m::ms
 	in
