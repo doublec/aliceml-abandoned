@@ -206,13 +206,14 @@ in
     local
 	fun MakeHandler s = fn _ => Inspector.inspect s
 
-	val child   = Text {xdim=50.0, ydim=50.0, text=nil}
+	val child   = MakeWidget (Text {xdim=50.0, ydim=50.0, text=nil})
 	val widget  =
 	    Toplevel {title="TextWidget Test", border=10,
 		      handler=[Handler("delete-event",
 				       MakeHandler "Toplevel::delete")],
-		      inner=child}
+		      inner=Window child}
     in
+        val _ = Gtk.textSetEditable(child, true);
 	val _ = MakeWidget widget
     end
 end
