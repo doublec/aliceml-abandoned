@@ -994,16 +994,21 @@ struct
 					       val scrollX = getScreenMaxX ()
 					       val scrollY = getScreenMaxY ())
 				 : DRAWING_AREA
-			     val updateFun = mkUpdate (DA.update false)
+			     val updateFun' = mkUpdate (DA.update true)
+			     fun updateFun () =
+				 (updateFun' ();
+			   	  resizeSepLines (Dictionaries.maindict,
+						  canvaswidth hadj))
+			     val resizeFun' = mkUpdate (DA.update false)
 			     fun resizeFun () =
-				 (updateFun ();
+				 (resizeFun' ();
 			   	  resizeSepLines (Dictionaries.maindict,
 						  canvaswidth hadj))
 			in
 			    (canvas := DA.canvas
 			     ;canvasroot := DA.root
-			     ;resize := (mkUpdate (DA.update true))
-  			     ;Update.resize := updateFun
+			     ;resize := updateFun
+  			     ;Update.resize := resizeFun
 			     ;signalConnect(scrolled,"size_allocate",
 					    fn _ => Server.serve resizeFun)
 (*  			     ;signalConnect(hadj,"value_changed",fn _ =>  *)
