@@ -437,16 +437,11 @@ structure CodeGen =
 		val loc = Register.assign(id',Register.nextFree())
 	    in
 		if hasArgs then
-		    let
-			val constructorName = "constructor"^(Stamp.toString stamp')
-		    in
-			[New CConstructor,
-			 Dup,
-			 Ldc (JVMString constructorName),
-			 Invokespecial (CConstructor, "<init>",
-					([Classsig CString],[Voidsig])),
-			 Astore loc]
-		    end
+		    [New CConstructor,
+		     Dup,
+		     Invokespecial (CConstructor, "<init>",
+				    ([],[Voidsig])),
+		     Astore loc]
 		else
 		    let
 			val nameName = "name"^(Stamp.toString stamp')
