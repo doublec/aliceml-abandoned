@@ -33,9 +33,11 @@ public:
   static void Block();
   static void Purge();
 
+  static bool IsReadable(int fd);
+  static bool IsWritable(int fd);
   // These return INVALID_POINTER if the fd is already readable/writable:
-  static Future *CheckReadable(int fd);
-  static Future *CheckWritable(int fd);
+  static Future *WaitReadable(int fd);
+  static Future *WaitWritable(int fd);
 };
 
 #endif
