@@ -20,8 +20,6 @@ import
    Error(registerFormatter)
    ComposerComponent('Composer$': Composer) at 'stoc/top/Composer'
 define
-   {Property.put 'errors.depth' 100}
-
    Spec = record(mode: start
 		 typecheck(rightmost type: bool default: true))
 
