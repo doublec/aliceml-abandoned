@@ -24,7 +24,6 @@ jit_state lightning;
 //
 #if defined(JIT_STORE_DEBUG)
 static FILE *execLog;
-#endif
 
 static const char *RegToString(u_int Reg) {
   switch (Reg) {
@@ -67,7 +66,6 @@ static void RestoreContext() {
   jit_popr_ui(JIT_R0);
 }
 
-#if defined(JIT_STORE_DEBUG)
 static void ShowMessage(const char *info) {
   fprintf(execLog, info);
   fflush(execLog);
