@@ -38,7 +38,8 @@
 
 static word wBufferString;
 
-static word SysErrConstructor;
+// Also Needed for UnsafeUnix
+word SysErrConstructor;
 #include "SysErr.icc"
 
 //
