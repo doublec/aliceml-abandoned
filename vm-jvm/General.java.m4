@@ -142,6 +142,38 @@ final public class General {
     /** <code>val equals : ('a * 'b) -> bool</code>*/
     final public static Equals equals = new Equals();
 
+    final public static class Pickle extends DMLBuiltin {
+	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
+	    DMLValue[] args=fromTuple(val,2,"General.pickle");
+	    DMLValue fst=args[0].request();
+	    if (!(fst instanceof DMLString))
+		return error("argument #1 not DMLString",val);
+	    java.lang.String whereto=((DMLString) fst).getString();
+	    DMLValue ex=null;
+	    java.io.FileOutputStream outf=null;
+	    DMLObjectOutputStream out=null;
+	    try{
+		outf=new java.io.FileOutputStream(whereto);
+		out=new DMLObjectOutputStream(outf);
+		out.flush();
+		out.writeObject(args[1]);
+	    } catch (Exception e) {
+		ex=DMLConstants.runtimeError.apply(new DMLString(e.getMessage()));
+	    }
+	    finally {
+		try {
+		    outf.close();
+		} catch (Exception e) {
+		System.err.println(e);}
+		if (ex != null)
+		    ex.raise();
+	    }
+	    return DMLConstants.dmlunit;
+	}
+    }
+
+    final public static Pickle pickle = new Pickle();
+
     // val exnName : exn -> string 
     // val exnMessage : exn -> string
 
