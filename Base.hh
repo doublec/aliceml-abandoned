@@ -30,7 +30,6 @@
 
 #include <cstdio>
 #include <cstdlib>
-#include <unistd.h>
 
 #if HAVE_DLLS
 # if defined(SEAM_FOREIGN)
