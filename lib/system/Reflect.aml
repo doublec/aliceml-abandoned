@@ -18,6 +18,9 @@ structure Reflect :> REFLECT =
     struct
 	type value
 
+	fun realToVector r =
+	    Vector.map Word8.fromInt (UnsafeReflect.realToVector r)
+
 	functor Reflect(signature S structure X: S) =
 	    let
 		structure Str = UnsafeReflect.Reflect(signature S = S
