@@ -42,7 +42,7 @@ public:
     u_int max = Block::GetSize();
     Set *p    = ((top < max) ? this : Enlarge(max, (max * 3) >> 1));
 
-    p->InitArg(TOP_POS, Store::IntToWord(top + 1));
+    p->InitArg(TOP_POS, (top + 1));
     p->InitArg(top, v);
     return p;
   }
