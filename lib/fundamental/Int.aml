@@ -28,6 +28,7 @@ import __primitive
        and op > and op < and op >= and op <=
        val   ~  and abs  and op +  and op -
        and op * and op div and op mod              from "ToplevelValues"
+import __primitive structure General               from "General"
 import __primitive structure Option                from "Option"
 import __primitive structure Char                  from "Char"
 import __primitive structure String                from "String"
