@@ -12,7 +12,7 @@
 
 #include <cstdio>
 #include <cstring>
-#if defined(__MINGW32__) || defined(_MSC_VER)
+#if !HAVE_DLOPEN
 #include <windows.h>
 #else
 #include <dlfcn.h>
@@ -31,7 +31,7 @@ static word NativeConstructor;
 // Error Handling
 //
 static word MakeNativeError() {
-#if defined(__MINGW32__) || defined(_MSC_VER)
+#if !HAVE_DLOPEN
   DWORD errorCode = GetLastError();
   char *lpMsgBuf;
   int n = FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER |
@@ -128,7 +128,7 @@ DEFINE1(UnsafeComponent_load) {
 
 DEFINE1(UnsafeComponent_linkNative) {
   DECLARE_STRING(filename, x0);
-#if defined(__MINGW32__) || defined(_MSC_VER)
+#if !HAVE_DLOPEN
   //--** this can produce the error message "... is not a valid Windows image."
   HMODULE hModule = LoadLibrary(filename->ExportC());
   if (hModule == NULL) RAISE(MakeNativeError());
