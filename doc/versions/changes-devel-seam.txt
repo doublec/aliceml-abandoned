@@ -89,6 +89,7 @@ Library:
 * Channel: new module for concurrent message channels.
 * RefMap: new module for stable polymorphic hash tables over references.
 * Print: added function register for hooking user-defined printing functions.
+* Config: added buildDate.
 * Remote:
   - Added functor Proxy to conveniently wrap a whole module into proxies.
   - Added function execute, made the Execute functor a trivial wrapper.
@@ -101,6 +102,7 @@ Tools:
 * Reimplemented inspector:
   - Type tooltips.
   - Inspection of modules.
+  - Indicates sharing between references, futures, etc.
   - Copy selection to clipboard.
   - User-defined layout for abstract types.
   - Many miscellaneous improvements to user interface.

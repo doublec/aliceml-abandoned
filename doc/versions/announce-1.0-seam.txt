@@ -53,7 +53,7 @@ The highlights of this release are:
      dynamic.
   Standard Library
      Now contains all mandatory modules of the Standard ML Basis
-     (not all fully complete yet). [www.standardml.org/Basis]
+     (not all fully complete). [www.standardml.org/Basis]
 
 For more information, please visit the Alice project homepage:
 

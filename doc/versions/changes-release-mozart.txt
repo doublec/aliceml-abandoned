@@ -32,7 +32,7 @@ Library:
 * Real: added checkFloat.
 * Real: fixed isFinite.
 * Thread: fixed exception handling.
-* *VectorSlice,Substring: fixed splitr (also fixes OS.Path.split*).
+* VectorSlice,Substring: fixed splitr (also fixes OS.Path.split*).
 * CharArraySlice: fixed.
 * PrimIO: fixed augment{Reader,Writer}.
 * Gtk: fixed string list marshalling (e.g. for clist/ctree functions).
