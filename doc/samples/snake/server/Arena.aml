@@ -9,11 +9,13 @@
  *
  *)
 
+import structure Random   from "x-alice:/lib/utility/Random"
+
 import signature ARENA    from "ARENA-sig"
 import structure Protocol from "../common/Protocol"
 import structure Snake    from "Snake"
 import structure Pos      from "../common/Pos"
-import structure Random   from "x-alice:/lib/utility/Random"
+import structure Color    from "../common/Color"
 
 structure Arena :> ARENA =
 struct
@@ -389,7 +391,37 @@ struct
         let
             val _   = assert Array2.dimensions old = Array2.dimensions new
 
-            val (rows, cols) = Array2.dimensions old       
+            val (rows, cols) = Array2.dimensions old
+
+	    fun goodyEqual (P.GOODY n1, 
+			    P.GOODY n2) = Int.equal (n1, n2)
+	      | goodyEqual (_, _)       = false
+		
+	    fun gateEqual (P.GATE (c1, s1),
+			   P.GATE (c2, s2)) =
+		(Color.equal (c1, c2) andalso s1 = s2)
+	      | gateEqual (_, _)            = false
+
+	    fun headEqual (P.SNAKE_HEAD (d1, c1), 
+			   P.SNAKE_HEAD (d2, c2)) =
+		(Color.equal (c1, c2) andalso d1 = d2)
+	      | headEqual (_, _)                  = false
+
+	    fun bodyEqual (P.SNAKE_BODY c1, 
+			   P.SNAKE_BODY c2) = 
+		Color.equal (c1, c2)
+	      | bodyEqual (_, _)            = false
+
+	    fun fieldEqual (P.WALL, P.WALL)   = true
+	      | fieldEqual (P.EMPTY, P.EMPTY) = true
+	      | fieldEqual (field1, field2)   =
+		(case field1 of
+		    P.GOODY      _ => goodyEqual (field1, field2)
+		  | P.GATE       _ => gateEqual  (field1, field2)
+		  | P.SNAKE_HEAD _ => headEqual  (field1, field2)
+		  | P.SNAKE_BODY _ => bodyEqual  (field1, field2)
+		  |       _        => false)
+
 
             fun help ((r, c), xs) = 
                 assert 0 <= r andalso r <= rows andalso 
@@ -408,7 +440,7 @@ struct
 				(P.SNAKE_HEAD _ | P.SNAKE_BODY _) =>
 				    Array2.update (old, r, c, P.EMPTY)
 			    |   _ => ();
-		            if f = Array2.sub (new, r, c)
+		            if fieldEqual (f, Array2.sub (new, r, c))
 			       then help ((r + 1, c), xs)
 		            else 
                                help ((r + 1, c),
@@ -422,7 +454,7 @@ struct
 
 end
 
-
+(*
 local
     fun for (low, upp, f) =
         if low > upp then ()
@@ -445,4 +477,4 @@ in
             )
         end
 end
-
+*)
