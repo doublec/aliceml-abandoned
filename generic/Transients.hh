@@ -92,6 +92,14 @@ public:
     Become(REF_LABEL, w);
     return true;
   }
+  void Fail(word exn) {
+    Transient *future = Store::WordToTransient(GetArg());
+    if (future != INVALID_POINTER) { // eliminate associated future
+      static_cast<Future *>(future)->ScheduleWaitingThreads();
+      future->Become(CANCELLED_LABEL, exn);
+    }
+    Become(CANCELLED_LABEL, exn);
+  }
   // Hole Constructor
   static Hole *New() {
     Transient *transient = Store::AllocTransient(HOLE_LABEL);
