@@ -25,6 +25,8 @@ class DllExport ClassLoader: private Block {
 protected:
   enum { CLASS_TABLE_POS, SIZE };
 private:
+  static word bootstrapClassLoader;
+
   ClassTable *GetClassTable();
 public:
   using Block::ToWord;
@@ -36,6 +38,10 @@ public:
     Block *b = Store::DirectWordToBlock(x);
     Assert(b->GetLabel() == JavaLabel::ClassLoader);
     return static_cast<ClassLoader *>(b);
+  }
+
+  static ClassLoader *GetBootstrapClassLoader() {
+    return ClassLoader::FromWordDirect(bootstrapClassLoader);
   }
 
   word ResolveClass(JavaString *name); // Class or Future

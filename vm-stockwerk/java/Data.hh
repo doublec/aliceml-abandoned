@@ -190,7 +190,7 @@ public:
     return static_cast<Lock *>(b);
   }
 
-  Future *AcquireLock() {
+  Future *Acquire() {
     u_int count = Store::DirectWordToInt(GetArg(COUNT_POS));
     if (count == 0) {
       ReplaceArg(COUNT_POS, 1);
@@ -218,7 +218,7 @@ public:
       }
     }
   }
-  void ReleaseLock() {
+  void Release() {
     u_int count = Store::DirectWordToInt(GetArg(COUNT_POS));
     Assert(count > 0);
     Assert(Thread::FromWordDirect(GetArg(THREAD_POS)) ==
@@ -289,6 +289,7 @@ public:
   }
 };
 
+//--** problem: always store in big-endian format
 class DllExport JavaString: private Chunk {
 public:
   using Chunk::ToWord;

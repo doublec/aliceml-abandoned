@@ -93,7 +93,7 @@ void RunMainWorker::DumpFrame(word) {
 
 void Startup() {
   RunMainWorker::Init();
-  ClassLoader *classLoader = ClassLoader::New();
+  ClassLoader *classLoader = ClassLoader::GetBootstrapClassLoader();
   char buf[512];
   std::sprintf(buf, "%s",
 	       String::FromWordDirect(Properties::rootUrl)->ExportC());

@@ -333,7 +333,7 @@ public:
 class UnlockWorker : public Worker {
 public:
   static void PushFrame(Lock *lock);
-  static void ReleaseLock();
+  static void Release();
   
   virtual Result Run();
   virtual Result Handle();
@@ -372,19 +372,19 @@ void UnlockWorker::PushFrame(Lock *lock) {
   Scheduler::PushFrame(UnlockFrame::New(self, lock)->ToWord());
 }
 
-void UnlockWorker::ReleaseLock() {
+void UnlockWorker::Release() {
   UnlockFrame *frame = UnlockFrame::FromWordDirect(Scheduler::GetAndPopFrame());
   Lock *lock = frame->GetLock();
-  lock->ReleaseLock();
+  lock->Release();
 }
 
 Worker::Result UnlockWorker::Run() {
-  ReleaseLock();
+  Release();
   return Worker::CONTINUE;
 }
 
 Worker::Result UnlockWorker::Handle() {
-  ReleaseLock();
+  Release();
   return Worker::RAISE;
 }
 
@@ -1267,11 +1267,11 @@ Worker::Result ByteCodeInterpreter::Run() {
 	Class *classObj = fieldRef->GetClass();
 	Assert(classObj != INVALID_POINTER);
 	Lock *lock = classObj->GetLock();
-	Future *future = lock->AcquireLock();
+	Future *future = lock->Acquire();
 	if (future != INVALID_POINTER)
 	  REQUEST(future->ToWord());
 	word value = classObj->GetStaticField(fieldRef->GetIndex());
-	lock->ReleaseLock();
+	lock->Release();
 	frame->Push(value);
 	pc += 3;
       }
@@ -1645,7 +1645,7 @@ Worker::Result ByteCodeInterpreter::Run() {
 	Class *classObj = methodRef->GetClass();
 	Assert(classObj != INVALID_POINTER);
 	Lock *lock = classObj->GetLock();
-	Future *future = lock->AcquireLock();
+	Future *future = lock->Acquire();
 	if (future != INVALID_POINTER)
 	  REQUEST(future->ToWord());
 	// Set continuation
@@ -1879,7 +1879,7 @@ Worker::Result ByteCodeInterpreter::Run() {
 	Object *object = Object::FromWord(frame->Pop());
 	if (object != INVALID_POINTER) {
 	  Lock *lock     = INVALID_POINTER; // to be done: object->GetLock();
-	  Future *future = lock->AcquireLock();
+	  Future *future = lock->Acquire();
 	  if (future != INVALID_POINTER) {
 	    frame->Push(object->ToWord());
 	    REQUEST(future->ToWord());
@@ -1899,7 +1899,7 @@ Worker::Result ByteCodeInterpreter::Run() {
 	  Lock *lock = INVALID_POINTER; // to be done: object->GetLock();
 	  // This is safe for verified code; otherwise
 	  // IllegalMonitorStateException might be raised
-	  lock->ReleaseLock();
+	  lock->Release();
 	}
 	else {
 	  // to be done: raise NullPointerException
@@ -1942,13 +1942,13 @@ Worker::Result ByteCodeInterpreter::Run() {
 	  {
 	    Class *classObj = static_cast<Class *>(type);
 	    Lock *lock = classObj->GetLock();
-	    Future *future = lock->AcquireLock();
+	    Future *future = lock->Acquire();
 	    if (future != INVALID_POINTER)
 	      REQUEST(future->ToWord());
 	    Object *object = Object::New(classObj);
 	    Assert(object != INVALID_POINTER);
 	    frame->Push(object->ToWord());
-	    lock->ReleaseLock();
+	    lock->Release();
 	  }
 	  break;
 	case JavaLabel::BaseType:
@@ -2039,11 +2039,11 @@ Worker::Result ByteCodeInterpreter::Run() {
 	Class *classObj = fieldRef->GetClass();
 	Assert(classObj != INVALID_POINTER);
 	Lock *lock = classObj->GetLock();
-	Future *future = lock->AcquireLock();
+	Future *future = lock->Acquire();
 	if (future != INVALID_POINTER)
 	  REQUEST(future->ToWord());
 	classObj->PutStaticField(fieldRef->GetIndex(), frame->Pop());
-	lock->ReleaseLock();
+	lock->Release();
 	pc += 3;
       }
       break;

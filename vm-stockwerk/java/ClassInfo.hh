@@ -161,6 +161,9 @@ public:
   bool IsStatic() {
     return GetAccessFlags() & ACC_STATIC;
   }
+  bool IsNative() {
+    return GetAccessFlags() & ACC_NATIVE;
+  }
   JavaString *GetName() {
     return JavaString::FromWordDirect(GetArg(NAME_POS));
   }

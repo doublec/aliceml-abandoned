@@ -15,6 +15,7 @@
 #endif
 
 #include "java/ClassInfo.hh"
+#include "java/NativeMethodTable.hh"
 
 Class *Class::New(ClassInfo *classInfo) {
   // Precondition: parent class has already been created
@@ -53,7 +54,7 @@ Class *Class::New(ClassInfo *classInfo) {
     virtualTable->InitArg(i, superVirtualTable->GetArg(i));
   // Create the class lock:
   Lock *lock = Lock::New();
-  Future *future = lock->AcquireLock();
+  Future *future = lock->Acquire();
   Assert(future == INVALID_POINTER); future = future;
   // Allocate class proper:
   Block *b = Store::AllocBlock(JavaLabel::Class,
@@ -85,12 +86,30 @@ Class *Class::New(ClassInfo *classInfo) {
 			      closure->ToWord());
 	nVirtualMethods++;
       }
-    } else {
-      //--** bind native methods
-      if (methodInfo->IsStatic())
-	nStaticMethods++;
-      else
-	nVirtualMethods++;
+    } else if (methodInfo->IsNative()) {
+      Closure *closure =
+	NativeMethodTable::Lookup(classInfo->GetName(), methodInfo->GetName(),
+				  methodInfo->GetDescriptor());
+      if (closure != INVALID_POINTER) {
+	if (methodInfo->IsStatic()) {
+	  b->InitArg(BASE_SIZE + nStaticFields + nStaticMethods,
+		     closure->ToWord());
+	  nStaticMethods++;
+	} else {
+	  virtualTable->InitArg(nSuperVirtualMethods + nVirtualMethods,
+				closure->ToWord());
+	  nVirtualMethods++;
+	}
+      } else {
+	; //--** Error("LinkageError"); //--** throw
+	if (methodInfo->IsStatic())
+	  nStaticMethods++;
+	else
+	  nVirtualMethods++;
+      }
+    } else { // is abstract
+      Assert(!methodInfo->IsStatic());
+      nVirtualMethods++;
     }
     i++;
   }

@@ -14,11 +14,15 @@
 #pragma implementation "java/JavaLanguageLayer.hh"
 #endif
 
+#include "java/ThrowWorker.hh"
+#include "java/NativeMethodTable.hh"
 #include "java/ClassLoader.hh"
-#include "java/JavaLanguageLayer.hh"
 #include "java/ByteCodeInterpreter.hh"
+#include "java/JavaLanguageLayer.hh"
 
 void JavaLanguageLayer::Init() {
+  NativeMethodTable::Init();
   ClassLoader::Init();
+  ThrowWorker::Init();
   ByteCodeInterpreter::Init();
 }
