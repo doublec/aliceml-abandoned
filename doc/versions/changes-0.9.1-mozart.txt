@@ -18,6 +18,7 @@ Inspector:
 * Display values more consistently with interactive toplevel.
 * References are now updated correctly.
 
+
 Runtime system:
 
 * Renamed environment variable STOCKHOME to ALICE_HOME.
