@@ -60,12 +60,18 @@ signature ELABORATION_ERROR =
 	| CompInfMismatch	of inf_mismatch
 	| SingInfPath
 	(* Imports *)
-	| ValItemMismatch	of lab * typ * typ
-	| ConItemMismatch	of lab * typ * typ
-	| TypItemMismatch	of lab * kind * kind
-	| ModItemMismatch	of lab * inf_mismatch
-	| InfItemMismatch	of lab * inf_mismatch
-	| FixItemMismatch	of lab * fix * fix
+	| ValImpUnbound		of lab
+	| ConImpUnbound		of lab
+	| TypImpUnbound		of lab
+	| ModImpUnbound		of lab
+	| InfImpUnbound		of lab
+	| FixImpUnbound		of lab
+	| ValImpMismatch	of lab * typ * typ
+	| ConImpMismatch	of lab * typ * typ
+	| TypImpMismatch	of lab * kind * kind
+	| ModImpMismatch	of lab * inf_mismatch
+	| InfImpMismatch	of lab * inf_mismatch
+	| FixImpMismatch	of lab * fix * fix
 	(* Components *)
 	| CompUnclosed		of lab * int * typ
 

@@ -1921,7 +1921,8 @@ and elabRHSRecSpec' bla =
 	let
 	    val (t0,p,id') = elabValId_bind(E, s, Inf.VALUE, id)
 	    val  a         = Label.fromName(O.name id')
-	    val  t1        = Inf.lookupVal(s, a)
+	    val  t1        = Inf.lookupVal(s, a) handle Inf.Lookup =>
+				error(I.infoId id, E.ValImpUnbound a)
 	    val (t2,desc') = case desc
 				of I.NoDesc(i') =>
 				   (t1, O.NoDesc(typInfo(i',t1)))
@@ -1932,7 +1933,7 @@ and elabRHSRecSpec' bla =
 				      if Type.matches(t2,t1) then
 					  (t2, O.SomeDesc(typInfo(i',t2), typ'))
 				      else
-					  error(i, E.ValItemMismatch(a,t2,t1))
+					  error(i, E.ValImpMismatch(a,t2,t1))
 				   end
 	    val  _         = Type.unify(t2,t0)
 	in
@@ -1943,7 +1944,8 @@ and elabRHSRecSpec' bla =
 	let
 	    val (t0,p,id')  = elabValId_bind(E, s, Inf.CONSTRUCTOR, id)
 	    val  a          = Label.fromName(O.name id')
-	    val  t1         = Inf.lookupVal(s, a)
+	    val  t1         = Inf.lookupVal(s, a) handle Inf.Lookup =>
+				error(I.infoId id, E.ConImpUnbound a)
 	    (*UNFINISHED: check that it is constructor*)
 	    (*UNFINISHED: check that type is extensible or an appropriate sum *)
 	    val (t2,desc') = case desc
@@ -1956,7 +1958,7 @@ and elabRHSRecSpec' bla =
 				      if Type.matches(t2,t1) then
 					  (t2, O.SomeDesc(typInfo(i',t2), typ'))
 				      else
-					  error(i, E.ValItemMismatch(a,t2,t1))
+					  error(i, E.ValImpMismatch(a,t2,t1))
 				   end
 	    val  _         = Type.unify(t2,t0)
 	in
@@ -1968,7 +1970,8 @@ and elabRHSRecSpec' bla =
 	    (*UNFINISHED: have to check (or disallow) manifest type *)
 	    val  a            = Label.fromName(I.name id)
 	    val  p            = Inf.newTyp(s, a)
-	    val  t1           = Inf.lookupTyp(s, a)
+	    val  t1           = Inf.lookupTyp(s, a) handle Inf.Lookup =>
+				    error(I.infoId id, E.TypImpUnbound a)
 	    val  w1           = Inf.lookupTypSort(s, a)
 	    val (t2,w2,desc') = case desc
 				of I.NoDesc(i') =>
@@ -1983,7 +1986,7 @@ and elabRHSRecSpec' bla =
 				      if k2 = k1 then
 					 (t1,w1,O.SomeDesc(typInfo(i',t1),typ'))
 				      else
-					 error(i, E.TypItemMismatch(a,k2,k1))
+					 error(i, E.TypImpMismatch(a,k2,k1))
 				   end
 	    val  id'       = elabTypId_bind(E, p, t2, w2, id)
 	in
@@ -1994,7 +1997,8 @@ and elabRHSRecSpec' bla =
 	let
 	    val  a         = Label.fromName(I.name id)
 	    val  p         = Inf.newMod(s, a)
-	    val  j1        = Inf.lookupMod(s, a)
+	    val  j1        = Inf.lookupMod(s, a) handle Inf.Lookup =>
+				error(I.infoId id, E.ModImpUnbound a)
 	    val (j2,desc') = case desc
 				of I.NoDesc(i') =>
 				   (j1, O.NoDesc(infInfo(i',j1)))
@@ -2005,7 +2009,7 @@ and elabRHSRecSpec' bla =
 				       val  _        = Inf.strengthen(p, j2')
 				   in
 				       Inf.match(j2,j1) handle Inf.Mismatch m =>
-					   error(i, E.ModItemMismatch(a, m)) ;
+					   error(i, E.ModImpMismatch(a, m)) ;
 				       (j2', O.SomeDesc(infInfo(i',j2'), inf'))
 				   end
 	    val id'        = elabModId_bind(E, p, j2, id)
@@ -2017,7 +2021,8 @@ and elabRHSRecSpec' bla =
 	let
 	    val  a         = Label.fromName(I.name id)
 	    val  p         = Inf.newInf(s, a)
-	    val  j1        = Inf.lookupInf(s, a)
+	    val  j1        = Inf.lookupInf(s, a) handle Inf.Lookup =>
+				error(I.infoId id, E.InfImpUnbound a)
 	    val (j2,desc') = case desc
 				of I.NoDesc(i') =>
 				   (j1, O.NoDesc(infInfo(i',j1)))
@@ -2029,7 +2034,7 @@ and elabRHSRecSpec' bla =
 				   in
 					Inf.equaliseKind(k2, Inf.kind j1)
 					handle Inf.Mismatch m =>
-					    error(i, E.InfItemMismatch(a,m)) ;
+					    error(i, E.InfImpMismatch(a,m)) ;
 					(j1, O.SomeDesc(infInfo(i',j1), inf'))
 				   end
 	    val  id'       = elabInfId_bind(E, p, j2, id)
@@ -2041,7 +2046,8 @@ and elabRHSRecSpec' bla =
 	let
 	    val a     = Label.fromName(I.name id)
 	    val id'   = elabValId_bind'(E, id)
-	    val f1    = Inf.lookupFix(s, a)
+	    val f1    = Inf.lookupFix(s, a) handle Inf.Lookup =>
+			    error(I.infoId id, E.FixImpUnbound a)
 	    val desc' = case desc
 			  of I.NoDesc(i')       => O.NoDesc(fixInfo(i',f1))
 			   | I.SomeDesc(i',fix) =>
@@ -2051,7 +2057,7 @@ and elabRHSRecSpec' bla =
 				    if f2 = f1 then
 					O.SomeDesc(fixInfo(i',f2), fix')
 				    else
-					error(i, E.FixItemMismatch(a,f2,f1))
+					error(i, E.FixImpMismatch(a,f2,f1))
 				end
 	in
 	    O.FixImp(nonInfo(i), id', desc')
@@ -2079,7 +2085,8 @@ and elabRHSRecSpec' bla =
 	let
 	    val a  = Label.fromName(I.name id)
 	    val p  = Inf.newTyp(s, a)
-	    val t1 = Inf.lookupTyp(s, a)
+	    val t1 = Inf.lookupTyp(s, a) handle Inf.Lookup =>
+			error(I.infoId id, E.TypImpUnbound a)
 	    val k1 = Type.kind t1
 	    val w1 = Inf.lookupTypSort(s, a)
 	    val _  = case desc
@@ -2089,7 +2096,7 @@ and elabRHSRecSpec' bla =
 				val k2 = elabTypKind(E, typ)
 			   in
 				if k2 = k1 then () else
-				    error(i, E.TypItemMismatch(a,k2,k1))
+				    error(i, E.TypImpMismatch(a,k2,k1))
 			   end
 	    val _  = elabTypId_bind(E, p, t1, w1, id)
 	in
