@@ -1,13 +1,7 @@
 structure Main :> MAIN =
   struct
 
-    fun failure(Crash.Crash s)        = TextIO.print(s ^ "\n")
-      | failure(Error.Error((l,r),s)) =
-	TextIO.print(Int.toString l ^ "-" ^ Int.toString r ^ ": " ^ s ^ "\n")
-      | failure _ = ()
-
-    fun processString process source =
-	process (source ^ ";") handle x => ( failure x; raise x )
+    fun processString process source = process (source ^ ";")
 
     fun processFile process name =
 	let

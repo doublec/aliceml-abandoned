@@ -3,7 +3,7 @@ structure BindEnv0 :> BIND_ENV0 =
 
     open BindEnv
 
-    structure P = Prebound
+    structure P  = Prebound
     structure P' = Prebound'
 
     val E0 = new()
