@@ -11,7 +11,7 @@
  *)
 
 SMLofNJ.Internals.GC.messages false;
-CM.make();
+CM.make' "top/main-com+.cm";
 
 local
     fun hdl f x =
