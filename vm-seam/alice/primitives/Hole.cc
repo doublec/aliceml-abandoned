@@ -10,7 +10,6 @@
 //   $Revision$
 //
 
-#include "generic/Transients.hh"
 #include "alice/Authoring.hh"
 
 DEFINE2(Hole_fail) {
