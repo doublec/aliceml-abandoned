@@ -171,6 +171,16 @@
     </DD>
 
     <DT>
+      <TT>awaitQuiet <I>v</I></TT>
+    </DT>
+    <DD>
+      <P>Like <TT>await</TT>, but does not itself request <TT><I>v</I></TT>.
+      The function will simply block until the future has been
+      determined or failed. It can be utilized to write procedures that are
+      invoked upon status change of a future.</P>
+    </DD>
+
+    <DT>
       <TT>awaitEither (<I>v1</I>, <I>v2</I>)</TT>
     </DT>
     <DD>
@@ -180,17 +190,6 @@
       function never raises an exception, even if one of the arguments is failed.
       Further inspection using <TT>await</TT> or <TT>isFailed</TT> is required
       to find out whether that argument is failed.</P>
-    </DD>
-
-    <DT>
-      <TT>awaitQuiet <I>v</I></TT>
-    </DT>
-    <DD>
-      <P>Like <TT>await</TT>, but does not request <TT><I>v</I></TT> if it is
-      a lazy future. Instead, the function will block until the future has been
-      determined or failed because another thread requested it. This function
-      is very special purpose and can be utilized to write procedures that are
-      invoked upon status change of a future.</P>
     </DD>
 
     <DT>
