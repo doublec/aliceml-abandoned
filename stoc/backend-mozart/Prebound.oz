@@ -182,7 +182,7 @@ define
       'GlobalStamp.fromString':
 	 fun {$ S} {NewUniqueName {VirtualString.toAtom S}} end
       'GlobalStamp.toString':
-	 fun {$ N} {ByteString.make {Value.toVirtualString N}} end
+	 fun {$ N} {ByteString.make {Value.toVirtualString N 0 0}} end
       'GlobalStamp.compare':
 	 fun {$ N1 N2}
 	    if N1 == N2 then 'EQUAL'
