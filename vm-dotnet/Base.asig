@@ -1,0 +1,1218 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2000
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+
+(*
+ *  Items marked with (**) are extensions to the Standard Basis.
+ *)
+
+
+__prebound Prebound
+
+
+signature BASIS = sig
+
+(*****************************************************************************
+ * Top-level, part 1
+ *****************************************************************************)
+
+(* Hardwired *)
+
+type     unit	= {}
+datatype bool	= datatype Prebound.bool
+type     int	= Prebound.int
+type     word	= Prebound.word
+type     real	= Prebound.real
+type     string	= Prebound.string
+type     char	= Prebound.char
+type  'a vector	= 'a Prebound.vector
+datatype list	= datatype Prebound.list
+datatype ref	= datatype Prebound.ref
+datatype exn	= datatype Prebound.exn
+
+exception Match	= Prebound.Match
+exception Bind	= Prebound.Bind
+
+
+(* Fixity *)
+
+infix  7  * / div mod
+infix  6  + - ^
+infixr 5  :: @
+infix  4  = <> > >= < <=
+infix  3  := o
+infix  3  :=:			(**)
+infix  0  before
+
+
+(* Generic and overloaded Identifiers (but we don't overload them :-P) *)
+
+val op =  :	''a * ''a -> bool
+val op <> :	''a * ''a -> bool
+
+val ~ :		int -> int
+val op + :	int * int -> int
+val op - :	int * int -> int
+val op * :	int * int -> int
+val op / :	real * real -> real
+val op div :	int * int -> int
+val op mod :	int * int -> int
+
+val abs :	int -> int
+
+val op < :	int * int -> bool
+val op > :	int * int -> bool
+val op <= :	int * int -> bool
+val op >= :	int * int -> bool
+
+
+
+(*****************************************************************************
+ * General
+ *****************************************************************************)
+
+signature GENERAL =
+  sig
+    (*!!eqtype*) type unit (*!!*)= unit
+    type exn (*!!*)= exn
+
+    exception Bind
+    exception Chr
+    exception Div
+    exception Domain
+    exception Fail of string
+    exception Match
+    exception Overflow
+    exception Size
+    exception Span
+    exception Subscript
+
+    val exnName :	exn -> string
+    val exnMessage :	exn -> string
+
+    datatype order =	LESS | EQUAL | GREATER
+
+    val ! :		'a ref -> 'a
+    val op := :		'a ref * 'a -> unit
+    val op :=: :	'a ref * 'a ref -> unit		(**)
+
+    val op o :		('b -> 'c) * ('a -> 'b) -> 'a -> 'c
+    val before :	'a * unit -> 'a
+    val ignore :	'a -> unit
+  end
+
+
+structure General : GENERAL (*!!where type unit = unit
+			    where type exn  = exn*)
+
+datatype order = datatype General.order
+
+
+(*****************************************************************************
+ * Ref
+ *****************************************************************************)
+
+signature REF =								(**)
+  sig
+    datatype ref = datatype ref
+    type  'a t   = 'a ref
+
+    val new :		'a -> 'a ref
+    val ! :		'a ref -> 'a
+    val := :		'a ref * 'a -> unit
+    val :=: :		'a ref * 'a ref -> unit
+    val exchange :	'a ref * 'a -> 'a
+
+    val map: ('a -> 'a) -> 'a ref -> 'a ref
+  end
+
+
+structure Ref : REF
+
+
+(*****************************************************************************
+ * Bool
+ *****************************************************************************)
+
+signature BOOL =
+  sig
+    datatype bool = (*!!false | true*) datatype bool
+    type     t    = bool			(**)
+
+    val not :		bool -> bool
+
+    val toString :	bool -> string
+(*MISSING
+    val fromString : 	string -> bool option
+    val scan :		(char,'a) StringCvt.reader -> (bool,'a) StringCvt.reader
+*)
+  end
+
+
+structure Bool : BOOL (*!!where type bool = bool*)
+
+
+
+(*****************************************************************************
+ * Pair
+ *****************************************************************************)
+
+signature PAIR =							(**)
+  sig
+    type ('a,'b) pair = 'a * 'b
+    type ('a,'b) t    = ('a,'b) pair
+
+    val fst :		('a,'b) pair -> 'a
+    val snd :		('a,'b) pair -> 'b
+
+    val app :		('a -> unit) * ('b -> unit) -> ('a,'b) pair -> unit
+    val appFst :	('a -> unit) -> ('a,'b) pair -> unit
+    val appSnd :	('b -> unit) -> ('a,'b) pair -> unit
+    val map :		('a -> 'c) * ('b -> 'd) -> ('a,'b) pair -> ('c,'d) pair
+    val mapFst :	('a -> 'c) -> ('a,'b) pair -> ('c,'b) pair
+    val mapSnd :	('b -> 'c) -> ('a,'b) pair -> ('a,'c) pair
+  end
+
+
+structure Pair : PAIR							(**)
+
+
+
+(*****************************************************************************
+ * Alt
+ *****************************************************************************)
+
+signature ALT =								(**)
+  sig
+    datatype ('a,'b) alt = FST of 'a | SND of 'b
+    type     ('a,'b) t   = ('a,'b) alt
+
+    exception Alt
+
+    val isFst :		('a,'b) alt -> bool
+    val isSnd :		('a,'b) alt -> bool
+    val fst :		('a,'b) alt -> 'a		(* [Alt] *)
+    val snd :		('a,'b) alt -> 'b		(* [Alt] *)
+    val getFst :	('a,'b) alt * 'a -> 'a
+    val getSnd :	('a,'b) alt * 'b -> 'b
+
+    val app :		('a -> unit) * ('b -> unit) -> ('a,'b) alt -> unit
+    val appFst :	('a -> unit) -> ('a,'b) alt -> unit
+    val appSnd :	('b -> unit) -> ('a,'b) alt -> unit
+    val map :		('a -> 'c) * ('b -> 'd) -> ('a,'b) alt -> ('c,'d) alt
+    val mapFst :	('a -> 'c) -> ('a,'b) alt -> ('c,'b) alt
+    val mapSnd :	('b -> 'c) -> ('a,'b) alt -> ('a,'c) alt
+  end
+
+
+structure Alt : ALT							(**)
+
+
+
+(*****************************************************************************
+ * Option
+ *****************************************************************************)
+
+signature OPTION =
+  sig
+    datatype 'a option = NONE | SOME of 'a
+    type     'a t      = 'a option					(**)
+
+    exception Option
+
+    val getOpt :	'a option * 'a -> 'a
+    val isSome :	'a option -> bool
+    val isNone :	'a option -> bool				(**)
+    val valOf :		'a option -> 'a
+    val filter :	('a -> bool) -> 'a -> 'a option
+    val join :		'a option option -> 'a option
+    val app :		('a -> unit) -> 'a option -> unit		(**)
+    val map :		('a -> 'b) -> 'a option -> 'b option
+    val mapPartial :	('a -> 'b option) -> 'a option -> 'b option
+    val fold :		('a * 'b -> 'b) -> 'b -> 'a option -> 'b	(**)
+    val compose :	('a -> 'c) * ('b -> 'a option) -> 'b -> 'c option
+    val composePartial:	('a -> 'c option) * ('b -> 'a option) -> 'b -> 'c option
+  end
+
+
+structure Option : OPTION
+
+
+datatype option = datatype Option.option
+
+
+
+(*****************************************************************************
+ * List
+ *****************************************************************************)
+
+signature LIST =
+  sig
+(*!!    datatype 'a list = :: of 'a * 'a list | nil*)
+    datatype list    = datatype list
+    type     'a t    = 'a list						(**)
+
+    exception Empty
+
+    val null :		'a list -> bool
+    val length :	'a list -> int
+
+    val hd :		'a list -> 'a
+    val tl :		'a list -> 'a list
+    val last :		'a list -> 'a
+    val getItem :	'a list -> ('a * 'a list) option
+    val nth :		'a list * int -> 'a
+    val sub :		'a list * int -> 'a				(**)
+    val take :		'a list * int -> 'a list
+    val drop :		'a list * int -> 'a list
+
+    val rev :		'a list -> 'a list
+    val @ :		'a list * 'a list -> 'a list
+    val append :	'a list * 'a list -> 'a list			(**)
+    val revAppend :	'a list * 'a list -> 'a list
+    val concat :	'a list list -> 'a list
+
+    val app :		('a -> unit) -> 'a list -> unit
+    val appr :		('a -> unit) -> 'a list -> unit			(**)
+    val appi :		(int * 'a -> unit) -> 'a list -> unit		(**)
+    val appri :		(int * 'a -> unit) -> 'a list -> unit		(**)
+    val map :		('a -> 'b) -> 'a list -> 'b list
+    val mapi :		(int * 'a -> 'b) -> 'a list -> 'b list		(**)
+    val mapPartial :	('a -> 'b option) -> 'a list -> 'b list
+    val find :		('a -> bool) -> 'a list -> 'a option
+    val filter :	('a -> bool) -> 'a list -> 'a list
+    val partition :	('a -> bool) -> 'a list -> 'a list * 'a list
+    val foldl :		('a * 'b -> 'b) -> 'b -> 'a list -> 'b
+    val foldr :		('a * 'b -> 'b) -> 'b -> 'a list -> 'b
+    val foldli :	(int * 'a * 'b -> 'b) -> 'b -> 'a list -> 'b	(**)
+    val foldri :	(int * 'a * 'b -> 'b) -> 'b -> 'a list -> 'b	(**)
+    val all :		('a -> bool) -> 'a list -> bool
+    val exists :	('a -> bool) -> 'a list -> bool
+
+    val tabulate :	int * (int -> 'a) -> 'a list
+  end
+
+
+structure List : LIST (*!!where type 'a list = 'a list*)
+
+
+
+(*****************************************************************************
+ * ListPair
+ *****************************************************************************)
+
+signature LIST_PAIR =
+  sig
+    val zip :		'a list * 'b list -> ('a * 'b) list
+    val unzip :		('a * 'b) list -> 'a list * 'b list
+
+    val app :		('a * 'b -> unit) -> 'a list * 'b list -> unit
+    val map :		('a * 'b -> 'c) -> 'a list * 'b list -> 'c list
+    val foldl :		('a * 'b * 'c -> 'c) -> 'c -> 'a list * 'b list -> 'c
+    val foldr :		('a * 'b * 'c -> 'c) -> 'c -> 'a list * 'b list -> 'c
+    val all :		('a * 'b -> bool) -> 'a list * 'b list -> bool
+    val exists :	('a * 'b -> bool) -> 'a list * 'b list -> bool
+
+    (**)
+    val appr :		('a * 'b -> unit) -> 'a list * 'b list -> unit
+    val appi :		(int * 'a * 'b -> unit) -> 'a list * 'b list -> unit
+    val appri :		(int * 'a * 'b -> unit) -> 'a list * 'b list -> unit
+    val mapi :		(int * 'a * 'b -> 'c) -> 'a list * 'b list -> 'c list
+    val mapPartial :	('a * 'b -> 'c option) -> 'a list * 'b list -> 'c list
+    val foldli :	(int * 'a * 'b * 'c -> 'c) -> 'c
+						   -> 'a list * 'b list ->'c
+    val foldri :	(int * 'a * 'b * 'c -> 'c) -> 'c
+						   -> 'a list * 'b list -> 'c
+    val find :		('a * 'b -> bool) -> 'a list * 'b list -> ('a*'b) option
+  end
+
+
+structure ListPair : LIST_PAIR
+
+
+
+(*****************************************************************************
+ * Char
+ *****************************************************************************)
+
+signature CHAR =
+  sig
+    (*!!eq*)type char (*!!*)= char
+    (*!!eq*)type string (*!!*)= string
+    type t = char					(**)
+
+    val minChar :	char
+    val maxChar :	char
+    val maxOrd :	int
+
+    val chr :		int -> char
+    val ord :		char -> int
+
+    val pred :		char -> char
+    val succ :		char -> char
+
+    val op < :		char * char -> bool
+    val op <= :		char * char -> bool
+    val op > :		char * char -> bool
+    val op >= :		char * char -> bool
+    val compare :	char * char -> order
+
+    val contains :	string -> char -> bool
+    val notContains :	string -> char -> bool
+
+    val toLower :	char -> char
+    val toUpper :	char -> char
+
+    val isLower :	char -> bool
+    val isUpper :	char -> bool
+    val isAlpha :	char -> bool
+    val isAlphaNum :	char -> bool
+    val isDigit :	char -> bool
+    val isHexDigit :	char -> bool
+    val isPunct :	char -> bool
+    val isPrint :	char -> bool
+    val isGraph :	char -> bool
+    val isSpace :	char -> bool
+    val isCntrl :	char -> bool
+    val isAscii :	char -> bool
+
+    val toWide :	char -> char		(**)
+    val fromWide :	char -> char		(**)
+
+    val toString :	char -> string
+    val toCString :	char -> string
+(*MISSING
+    val fromString :	string -> char option
+    val fromCString :	string -> char option
+    val scan :		(char,'a) StringCvt.reader -> (char,'a) StringCvt.reader
+*)
+  end
+
+
+structure Char     : CHAR (*!!where type char   = char
+			  where type string = string*)
+
+structure WideChar : CHAR (*!!where type char   = char
+			  where type string = string*)
+
+
+
+(*****************************************************************************
+ * String
+ *****************************************************************************)
+
+signature STRING =
+  sig
+    type string (*!!*)= string
+    type t = string							(**)
+
+    structure Char :	CHAR
+
+    val maxSize :	int
+    val maxLen :	int						(**)
+
+    val size :		string -> int
+    val length :	string -> int					(**)
+    val str :		Char.char -> string
+    val sub :		string * int -> Char.char
+    val substring :	string * int * int -> string
+    val extract :	string * int * int option -> string
+
+    val ^ :		string * string -> string
+    val append :	string * string -> string			(**)
+    val concat :	string list -> string
+    val implode :	Char.char list -> string
+    val explode :	string -> Char.char list
+    val fromList :	Char.char list -> string			(**)
+    val toList :	string -> Char.char list			(**)
+    val tabulate :	int * (int -> Char.char) -> string		(**)
+
+    val map :		(Char.char -> Char.char) -> string -> string
+    val translate :	(Char.char -> string) -> string -> string
+    val fields :	(Char.char -> bool) -> string -> string list
+    val tokens :	(Char.char -> bool) -> string -> string list
+
+    val op < :		string * string -> bool
+    val op > :		string * string -> bool
+    val op <= :		string * string -> bool
+    val op >= :		string * string -> bool
+    val compare :	string * string -> order
+    val collate :	(Char.char * Char.char -> order) -> string * string
+							 -> order
+    val isPrefix :	string -> string -> bool
+    val isSuffix :	string -> string -> bool			(**)
+
+    val toWide :	string -> string				(**)
+    val fromWide :	string -> string				(**)
+
+    val toString :	string -> string
+    val toCString :	string -> string
+(*MISSING
+    val fromString :	string -> string option
+    val fromCString :	string -> string option
+*)
+  end
+
+
+structure String     : STRING (*!!where type string = string
+			      where Char = Char*)
+
+structure WideString : STRING (*!!where type string = string
+			      where Char = WideChar*)
+
+
+
+(*****************************************************************************
+ * Substring
+ *****************************************************************************)
+
+signature SUBSTRING =
+  sig
+    structure String :	STRING
+
+    type substring
+    type t = substring							(**)
+
+    val base :		substring -> String.string * int * int
+    val string :	substring -> String.string
+    val substring :	String.string * int * int -> substring
+    val extract :	String.string * int * int option -> substring
+
+    val isEmpty :	substring -> bool
+    val size :		substring -> int
+
+    val all :		String.string -> substring
+    val getc :		substring -> (String.Char.char * substring) option
+    val first :		substring -> String.Char.char option
+    val triml :		int -> substring -> substring
+    val trimr :		int -> substring -> substring
+    val sub :		substring * int -> char
+    val slice :		substring * int * int option -> substring
+    val concat :	substring list -> String.string
+    val explode :	substring -> String.Char.char list
+
+    val isPrefix :	String.string -> substring -> bool
+    val compare :	substring * substring -> order
+    val collate :	(String.Char.char * String.Char.char -> order) ->
+					substring * substring -> order
+
+    val splitl :	(String.Char.char -> bool) -> substring
+						   -> substring * substring
+    val splitr :	(String.Char.char -> bool) -> substring
+						   -> substring * substring
+    val splitAt :	substring * int -> substring * substring
+    val dropl :		(String.Char.char -> bool) -> substring -> substring
+    val dropr :		(String.Char.char -> bool) -> substring -> substring
+    val takel :		(String.Char.char -> bool) -> substring -> substring
+    val taker :		(String.Char.char -> bool) -> substring -> substring
+    val position :	String.string -> substring -> substring * substring
+    val span :		substring * substring -> substring
+    val translate :	(String.Char.char -> String.string) -> substring
+							   -> String.string
+    val tokens :	(String.Char.char -> bool) -> substring -> substring list
+    val fields :	(String.Char.char -> bool) -> substring -> substring list
+
+    val app :		(String.Char.char -> unit) -> substring -> unit
+    val foldl :		(String.Char.char * 'a -> 'a) -> 'a -> substring -> 'a
+    val foldr :		(String.Char.char * 'a -> 'a) -> 'a -> substring -> 'a
+  end
+
+
+(*MISSING
+structure Substring : SUBSTRING (*!!where String = String*)
+*)
+
+
+
+(*****************************************************************************
+ * StringCvt
+ *****************************************************************************)
+
+signature STRING_CVT =
+  sig
+    datatype radix      = BIN | OCT | DEC | HEX
+    datatype realfmt    = EXACT
+			| SCI of int option
+			| FIX of int option
+			| GEN of int option
+
+    type ('a,'b) reader = 'b -> ('a * 'b) option
+    type cs
+
+(*MISSING
+    val padLeft :	char -> int -> string -> string
+    val padRight :	char -> int -> string -> string
+    val splitl :	(char -> bool) -> (char,'a) reader ->'a -> (string * 'a)
+    val takel :		(char -> bool) -> (char,'a) reader -> 'a -> string
+*)
+    val dropl :		(char -> bool) -> (char,'a) reader -> 'a -> 'a
+    val skipWS :	(char,'a) reader -> 'a -> 'a
+    val scanString:	((char,cs) reader -> ('a,cs) reader) -> string
+							     -> 'a option
+  end
+
+
+structure StringCvt : STRING_CVT
+
+
+
+(*****************************************************************************
+ * Int
+ *****************************************************************************)
+
+signature INTEGER =
+  sig
+    (*!!eq*)type int (*!!*)= int
+    type t = int							(**)
+
+    val minInt :	int option
+    val maxInt :	int option
+    val precision :	int option
+
+    val toInt :		int -> int
+    val fromInt :	int -> int
+    val toLarge :	int -> int
+    val fromLarge :	int -> int
+
+    val ~ :		int -> int
+    val op + :		int * int -> int
+    val op - :		int * int -> int
+    val op * :		int * int -> int
+    val op div :	int * int -> int
+    val op mod :	int * int -> int
+    val op quot :	int * int -> int
+    val op rem :	int * int -> int
+
+    val op < :		int * int -> bool
+    val op > :		int * int -> bool
+    val op <= :		int * int -> bool
+    val op >= :		int * int -> bool
+    val compare :	int * int -> order
+
+    val abs :		int -> int
+    val min :		int * int -> int
+    val max :		int * int -> int
+    val sign :		int -> int
+    val sameSign :	int * int -> bool
+
+    val toString :	int -> string
+    val fromString:	string -> int option
+(*MISSING
+    val fmt :		StringCvt.radix -> int -> string
+*)
+    val scan :		StringCvt.radix -> (char,'a) StringCvt.reader -> 'a
+					-> (int * 'a) option
+  end
+
+
+structure Int      : INTEGER (*!!where type int = int*)
+structure LargeInt : INTEGER (*!!where type int = int*)
+structure Position : INTEGER = Int
+
+
+
+(*****************************************************************************
+ * Word
+ *****************************************************************************)
+
+signature WORD =
+  sig
+    (*!!eq*)type word (*!!*)= word
+    type t = word							(**)
+
+    val wordSize :	int
+
+    val toLargeWord :	word -> word
+(*MISSING
+    val toLargeWordX :	word -> word
+*)
+    val fromLargeWord :	word -> word
+    val toLargeInt :	word -> LargeInt.int
+    val toLargeIntX :	word -> LargeInt.int
+    val fromLargeInt :	LargeInt.int -> word
+    val toInt :		word -> Int.int
+    val toIntX :	word -> Int.int
+    val fromInt :	Int.int -> word
+
+    val notb :		word -> word
+    val orb :		word * word -> word
+    val xorb :		word * word -> word
+    val andb :		word * word -> word
+    val << :		word * word -> word
+    val >> :		word * word -> word
+    val ~>> :		word * word -> word
+
+    val + :		word * word -> word
+    val - :		word * word -> word
+    val * :		word * word -> word
+    val div :		word * word -> word
+    val mod :		word * word -> word
+
+(*MISSING
+    val op > :		word * word -> bool
+    val op < :		word * word -> bool
+    val op >= :		word * word -> bool
+    val op <= :		word * word -> bool
+    val compare :	word * word -> order
+
+    val min :		word * word -> word
+    val max :		word * word -> word
+*)
+
+    val toString :	word -> string
+(*MISSING
+    val fromString :	string -> word option
+    val fmt :		StringCvt.radix -> word -> string
+*)
+    val scan :		StringCvt.radix -> (char,'a) StringCvt.reader
+					-> (word,'a) StringCvt.reader
+  end
+
+
+structure Word      : WORD (*!!where type word = word*)
+structure LargeWord : WORD (*!!where type word = word*)
+
+
+
+(*****************************************************************************
+ * IEEEReal
+ *****************************************************************************)
+
+signature IEEE_REAL =
+  sig
+     exception Unordered
+
+     datatype real_order	= LESS | EQUAL | GREATER | UNORDERED
+     datatype nan_mode		= QUIET | SIGNALLING
+     datatype float_class	= NAN of nan_mode
+				| INF
+				| ZERO
+				| NORMAL
+				| SUBNORMAL
+     datatype rounding_mode	= TO_NEAREST
+				| TO_NEGINF
+				| TO_POSINF
+				| TO_ZERO
+
+(*MISSING
+     val setRoundingMode :	rounding_mode -> unit
+     val getRoundingMode :	unit -> rounding_mode
+*)
+
+     type decimal_approx	= { kind : float_class, sign : bool,
+				    digits : int list,  exp : int }
+
+(*MISSING
+     val toString :		decimal_approx -> string
+     val fromString :		string -> decimal_approx option
+*)
+  end
+
+
+structure IEEEReal : IEEE_REAL
+
+
+
+(*****************************************************************************
+ * Math
+ *****************************************************************************)
+
+signature MATH =
+  sig
+    (*!!eq*)type real (*!!*)= real
+
+    val e :		real
+    val pi :		real
+
+    val sqrt :		real -> real
+    val exp :		real -> real
+    val pow :		real * real -> real
+    val ln :		real -> real
+    val log10 :		real -> real
+
+    val sin :		real -> real
+    val cos :		real -> real
+    val tan :		real -> real
+    val asin :		real -> real
+    val acos :		real -> real
+    val atan :		real -> real
+    val atan2 :		real * real -> real
+    val sinh :		real -> real
+    val cosh :		real -> real
+    val tanh :		real -> real
+    val asinh :		real -> real					(**)
+    val acosh :		real -> real					(**)
+    val atanh :		real -> real					(**)
+  end
+
+
+structure Math : MATH (*!!where type real = real*)
+
+
+
+(*****************************************************************************
+ * Real
+ *****************************************************************************)
+
+signature REAL =
+  sig
+    (*!!eq*)type real (*!!*)= real
+    type t = real							(**)
+
+    structure Math :	MATH (*!!where type real = real*)
+
+(*MISSING
+    val radix :		int
+    val precision :	int
+    val maxFinite :	real
+    val minPos :	real
+    val minNormalPos :	real
+
+    val posInf :	real
+    val negInf :	real
+*)
+
+    val ~ :		real -> real
+    val op + :		real * real -> real
+    val op - :		real * real -> real
+    val op * :		real * real -> real
+    val op / :		real * real -> real
+    val rem :		real * real -> real
+    val *+ :		real * real * real -> real
+    val *- :		real * real * real -> real
+
+    val abs :		real -> real
+    val min :		real * real -> real
+    val max :		real * real -> real
+    val sign :		real -> int
+    val signBit :	real -> bool
+    val sameSign :	real * real -> bool
+    val copySign :	real * real -> real
+
+    val op < :		real * real -> bool
+    val op > :		real * real -> bool
+    val op <= :		real * real -> bool
+    val op >= :		real * real -> bool
+    val compare :	real * real -> order
+    val compareReal :	real * real -> IEEEReal.real_order
+
+    val == :		real * real -> bool
+    val != :		real * real -> bool
+    val ?= :		real * real -> bool
+(*MISSING
+    val unordered :	real * real -> bool
+
+    val isFinite :	real -> bool
+    val isNan :		real -> bool
+    val isNormal :	real -> bool
+    val class :		real -> IEEEReal.float_class
+*)
+
+    val ceil :		real -> Int.int
+    val floor :		real -> Int.int
+    val trunc :		real -> Int.int
+    val round :		real -> Int.int
+    val realFloor :	real -> real
+    val realCeil :	real -> real
+    val realTrunc :	real -> real
+    val realRound :	real -> real					(**)
+
+(*MISSING
+    val nextAfter :	real * real -> real
+    val checkFloat :	real -> real
+*)
+
+(*MISSING
+    val toManExp :	real -> {exp:int, man:real}
+    val fromManExp :	{exp:int, man:real} -> real
+    val split :		real -> {frac:real, whole:real}
+    val realMod :	real -> real
+*)
+
+    val toInt :		IEEEReal.rounding_mode -> real -> int
+    val toLargeInt :	IEEEReal.rounding_mode -> real -> LargeInt.int
+    val fromInt :	int -> real
+    val fromLargeInt :	LargeInt.int -> real
+    val toLarge :	real -> real
+    val fromLarge :	IEEEReal.rounding_mode -> real -> real
+(*MISSING
+    val toDecimal :	real -> IEEEReal.decimal_approx
+    val fromDecimal :	IEEEReal.decimal_approx -> real
+*)
+
+    val toString :	real -> string
+    val fromString :	string -> real option
+(*MISSING
+    val fmt :		StringCvt.realfmt -> real -> string
+*)
+    val scan :		(char,'a) StringCvt.reader -> (real,'a) StringCvt.reader
+  end
+
+
+structure Real      : REAL (*!!where type real = real*)
+structure LargeReal : REAL (*!!where type real = real*)
+
+
+
+(*****************************************************************************
+ * Vector
+ *****************************************************************************)
+
+signature VECTOR =
+  sig
+    (*!!eq*)type 'a vector (*!!*)= 'a vector
+    type   'a t = 'a vector						(**)
+
+    val maxLen :	int
+
+    val toList :	'a vector -> 'a list				(**)
+    val fromList :	'a list -> 'a vector
+    val tabulate :	int * (int -> 'a) -> 'a vector
+
+    val length :	'a vector -> int
+    val sub :		'a vector * int -> 'a
+    val replace :	'a vector * int * 'a -> 'a vector		(**)
+    val extract :	'a vector * int * int option -> 'a vector
+    val append :	'a vector * 'a vector -> 'a vector		(**)
+    val concat :	'a vector list -> 'a vector
+    val rev :		'a vector -> 'a vector				(**)
+
+    val app :		('a -> unit) -> 'a vector -> unit
+    val appr :		('a -> unit) -> 'a vector -> unit		(**)
+    val map :		('a -> 'b) -> 'a vector -> 'b vector
+    val foldl :		('a * 'b -> 'b) -> 'b -> 'a vector -> 'b
+    val foldr :		('a * 'b -> 'b) -> 'b -> 'a vector -> 'b
+    val appi :		(int * 'a -> unit) -> 'a vector * int * int option
+					   -> unit
+    val appri :		(int * 'a -> unit) -> 'a vector * int * int option (**)
+					   -> unit
+    val mapi :		(int * 'a -> 'b) -> 'a vector * int * int option
+					 -> 'b vector
+    val foldli :	(int * 'a * 'b -> 'b) -> 'b
+				       -> 'a vector * int * int option -> 'b
+    val foldri :	(int * 'a * 'b -> 'b) -> 'b
+				       -> 'a vector * int * int option -> 'b
+
+    val all :		('a -> bool) -> 'a vector -> bool		(**)
+    val exists :	('a -> bool) -> 'a vector -> bool		(**)
+    val find :		('a -> bool) -> 'a vector -> 'a option		(**)
+  end
+
+
+structure Vector : VECTOR (*!!where type 'a vector = 'a vector*)
+
+
+
+(*****************************************************************************
+ * Array
+ *****************************************************************************)
+
+signature ARRAY =
+  sig
+    type 'a array
+    type 'a vector (*!!*)= 'a vector
+    type 'a t = 'a array						(**)
+
+    val maxLen :	int
+
+    val array :		int * 'a -> 'a array
+    val new :		int * 'a -> 'a array				(**)
+    val toList :	'a array -> 'a list				(**)
+    val fromList :	'a list -> 'a array
+    val toVector :	'a array -> 'a vector				(**)
+    val fromVector :	'a vector -> 'a array				(**)
+    val tabulate :	int * (int -> 'a) -> 'a array
+
+    val length :	'a array -> int
+    val sub :		'a array * int -> 'a
+    val update :	'a array * int * 'a -> unit
+    val swap :		'a array * int * int -> unit			(**)
+    val reverse :	'a array -> unit				(**)
+    val extract :	'a array * int * int option -> 'a vector
+    val copy :		{di:int, dst:'a array, len:int option,
+			 si:int, src:'a array} -> unit
+    val copyVec :	{di:int, dst:'a array, len:int option,
+			 si:int, src:'a vector} -> unit
+
+    val app :		('a -> unit) -> 'a array -> unit
+    val appr :		('a -> unit) -> 'a array -> unit		(**)
+    val modify :	('a -> 'a) -> 'a array -> unit
+    val foldl :		('a * 'b -> 'b) -> 'b -> 'a array -> 'b
+    val foldr :		('a * 'b -> 'b) -> 'b -> 'a array -> 'b
+    val appi :		(int * 'a -> unit)
+					-> 'a array * int * int option -> unit
+    val appri :		(int * 'a -> unit) -> 'a array * int * int option  (**)
+					   -> unit
+    val modifyi :	(int * 'a -> 'a) -> 'a array * int * int option -> unit
+    val foldli :	(int * 'a * 'b -> 'b) -> 'b
+					-> 'a array * int * int option -> 'b
+    val foldri :	(int * 'a * 'b -> 'b) -> 'b
+					-> 'a array * int * int option -> 'b
+
+    val all :		('a -> bool) -> 'a array -> bool		(**)
+    val exists :	('a -> bool) -> 'a array -> bool		(**)
+    val find :		('a -> bool) -> 'a array -> 'a option		(**)
+  end
+
+
+structure Array : ARRAY (*!!where type 'a vector = 'a vector*)
+
+
+
+(*****************************************************************************
+ * Time
+ *****************************************************************************)
+
+signature TIME =
+  sig
+    eqtype time
+    type t = time							(**)
+
+    exception Time
+
+    val zeroTime :		time
+(*MISSING
+    val now :			unit -> time
+*)
+
+    val fromReal :		LargeReal.real -> time
+    val toReal :		time -> LargeReal.real
+    val toSeconds :		time -> LargeInt.int
+    val toMilliseconds :	time -> LargeInt.int
+    val toMicroseconds :	time -> LargeInt.int
+    val fromSeconds :		LargeInt.int -> time
+    val fromMilliseconds :	LargeInt.int -> time
+    val fromMicroseconds :	LargeInt.int -> time
+
+    val op + :			time * time -> time
+    val op - :			time * time -> time
+
+    val op < :			time * time -> bool
+    val op > :			time * time -> bool
+    val op <= :			time * time -> bool
+    val op >= :			time * time -> bool
+    val compare :		time * time -> order
+
+(*MISSING
+    val toString :	time -> string
+    val fromString :	string -> time option
+    val fmt :		int -> time -> string
+    val scan :		(char,'a) StringCvt.reader -> 'a -> (time * 'a) option
+*)
+  end
+
+
+structure Time : TIME
+
+
+
+(*****************************************************************************
+ * Cell
+ *****************************************************************************)
+
+signature CELL =
+  sig
+    __eqtype 'a cell
+
+    val cell :		'a -> 'a cell
+    val exchange :	'a cell * 'a -> 'a
+  end
+
+
+structure Cell : CELL
+
+
+
+(*****************************************************************************
+ * Hole
+ *****************************************************************************)
+
+signature HOLE =
+  sig
+    exception Hole
+    exception Cyclic
+
+    val hole :		unit -> 'a
+    val future :	'a -> 'a
+
+    val fill :		'a * 'a  -> unit	(* Hole, Cyclic *)
+    val fail :		'a * exn -> unit	(* Hole *)
+
+    val isHole :	'a -> bool
+    val isFailed :	'a -> bool
+  end
+
+
+structure Hole : HOLE
+
+
+
+(*****************************************************************************
+ * Future
+ *****************************************************************************)
+
+signature FUTURE =
+  sig
+    exception Future of exn
+    exception Cyclic
+
+    val concur :	(unit -> 'a) -> 'a
+    val byneed :	(unit -> 'a) -> 'a
+    val alarm :		Time.time -> unit
+
+    val await :		'a -> 'a
+    val awaitOne :	'a * 'b -> 'a
+
+    val isFuture :	'a -> bool
+    val isFailed :	'a -> bool
+  end
+
+
+structure Future : FUTURE
+
+
+
+(*****************************************************************************
+ * Promise
+ *****************************************************************************)
+
+signature PROMISE =
+  sig
+    type 'a promise
+
+    exception Promise
+
+    val promise :	unit -> 'a promise
+    val future :	'a promise -> 'a
+
+    val fulfill :	'a promise * 'a  -> unit	(* Promise, Cyclic *)
+    val fail :		'a promise * exn -> unit	(* Promise *)
+  end
+
+
+structure Promise : PROMISE
+
+
+
+(*****************************************************************************
+ * Thread
+ *****************************************************************************)
+
+signature THREAD =
+  sig
+    type thread
+    datatype state = RUNNABLE | BLOCKED | TERMINATED
+
+    exception Terminate
+
+    val spawn :		(unit -> 'a) -> thread * 'a
+    val current :	unit -> thread
+    val state :		thread -> state
+
+    val yield :		thread -> unit
+    val sleep :		Time.time -> unit
+
+    val raiseIn :	thread * exn -> unit
+    val terminate :	thread -> unit
+
+    val suspend :	thread -> unit
+    val resume :	thread -> unit
+    val isSuspended :	thread -> bool
+  end
+
+
+structure Thread : THREAD
+
+
+
+(*****************************************************************************
+ * Top-level, part 2
+ *****************************************************************************)
+
+type ('a,'b) alt	= ('a,'b) Alt.alt			(**)
+type 'a array		= 'a Array.array
+
+exception Chr		= General.Chr
+exception Div		= General.Div
+exception Domain	= General.Domain
+exception Fail		= General.Fail
+exception Overflow	= General.Overflow
+exception Size		= General.Size
+exception Span		= General.Span
+exception Subscript	= General.Subscript
+exception Alt		= Alt.Alt				(**)
+exception Option	= Option.Option
+exception Empty		= List.Empty
+
+val exnName :		exn -> string
+val exnMessage :	exn -> string
+val ! :			'a ref -> 'a
+val op := :		'a ref * 'a -> unit
+val op :=: :		'a ref * 'a ref -> unit			(**)
+val op o :		('b -> 'c) * ('a -> 'b) -> 'a -> 'c
+val before :		'a * unit -> 'a
+val ignore :		'a -> unit
+
+val not	:		bool -> bool
+
+val fst	:		('a,'b) alt -> 'a			(**)
+val snd	:		('a,'b) alt -> 'b			(**)
+val isFst :		('a,'b) alt -> bool			(**)
+val isSnd :		('a,'b) alt -> bool			(**)
+
+val getOpt :		'a option * 'a -> 'a
+val isSome :		'a option -> bool
+val isNone :		'a option -> bool			(**)
+val valOf :		'a option -> 'a
+
+val null :		'a list -> bool
+val length :		'a list -> int
+val hd :		'a list -> 'a
+val tl :		'a list -> 'a list
+val rev :		'a list -> 'a list
+val op @ :		'a list * 'a list -> 'a list
+val app :		('a -> unit) -> 'a list -> unit
+val map :		('a -> 'b) -> 'a list -> 'b list
+val foldl :		('a * 'b -> 'b) -> 'b -> 'a list -> 'b
+val foldr :		('a * 'b -> 'b) -> 'b -> 'a list -> 'b
+
+val chr :		int -> char
+val ord :		char -> int
+
+val str :		Char.char -> string
+val size :		string -> int
+val op ^ :		string * string -> string
+val concat :		string list -> string
+val explode :		string -> Char.char list
+val implode :		Char.char list -> string
+val substring :		string * int * int -> string
+
+val vector :		'a list -> 'a vector
+
+val real :		int -> real
+val ceil :		real -> Int.int
+val floor :		real -> Int.int
+val trunc :		real -> Int.int
+val round :		real -> Int.int
+
+(*MISSING
+val use :		string -> unit
+*)
+
+exception Future	= Future.Future				(**)
+exception Cyclic	= Future.Cyclic				(**)
+
+val concur :		(unit -> 'a) -> 'a			(**)
+val byneed :		(unit -> 'a) -> 'a			(**)
+
+
+end (* sig *)
