@@ -55,6 +55,7 @@ signature ABSTRACTION_ERROR =
 	| ConDescDuplicate	of VId
 	| DconDescNonCon
 	(* Imports and items *)
+	| ImpFixDuplicate	of VId
 	| ImpVIdDuplicate	of VId
 	| ImpTyConDuplicate	of TyCon
 	| ImpStrIdDuplicate	of StrId

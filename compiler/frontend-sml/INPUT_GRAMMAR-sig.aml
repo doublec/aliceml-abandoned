@@ -327,6 +327,9 @@ signature INPUT_GRAMMAR =
 	| SIGNATUREImp    of Info * SigItem
 	| EMPTYImp        of Info
 	| SEQImp          of Info * Imp * Imp
+	| INFIXImp        of Info * int * VId
+	| INFIXRImp       of Info * int * VId
+	| NONFIXImp       of Info * VId
 
     and ValItem =
 	  PLAINValItem    of Info * Op * VId * ValItem option

@@ -2388,6 +2388,45 @@ functor MakeAbstractionPhase(
 	 | SEQImp(i, imp1, imp2) =>
 		trImp' (E,E', trImp' (E,E',acc) imp1) imp2
 
+	 | INFIXImp(i, n, vid as VId(i',vid')) =>
+	   let
+		val id'  = trVId_bind' E vid
+		val fix  = Fixity.INFIX(n, Fixity.LEFT)
+		val fix' = O.Fix(i, fix)
+		val imp' = O.FixImp(i, id', O.SomeDesc(i,fix'))
+		val _    = insertDisjointInf(E, vid', (i', SOME(LEFT, n)))
+			   handle CollisionInf vid' =>
+				   error(i', E.ImpFixDuplicate vid')
+	   in
+		imp' :: acc
+	   end
+
+	 | INFIXRImp(i, n, vid as VId(i',vid')) =>
+	   let
+		val id'  = trVId_bind' E vid
+		val fix  = Fixity.INFIX(n, Fixity.RIGHT)
+		val fix' = O.Fix(i, fix)
+		val imp' = O.FixImp(i, id', O.SomeDesc(i,fix'))
+		val _    = insertDisjointInf(E, vid', (i', SOME(RIGHT, n)))
+			   handle CollisionInf vid' =>
+				   error(i', E.ImpFixDuplicate vid')
+	   in
+		imp' :: acc
+	   end
+
+	 | NONFIXImp(i, vid as VId(i',vid')) =>
+	   let
+		val id'  = trVId_bind' E vid
+		val fix  = Fixity.NONFIX
+		val fix' = O.Fix(i, fix)
+		val imp' = O.FixImp(i, id', O.SomeDesc(i,fix'))
+		val _    = insertDisjointInf(E, vid', (i', NONE))
+			   handle CollisionInf vid' =>
+				   error(i', E.ImpFixDuplicate vid')
+	   in
+		imp' :: acc
+	   end
+
 
     and trOpenImpVal (E,i) (vid', (_,_,is), acc) =
 	let

@@ -326,6 +326,9 @@ functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
 	| SIGNATUREImp    of Info * SigItem
 	| EMPTYImp        of Info
 	| SEQImp          of Info * Imp * Imp
+	| INFIXImp        of Info * int * VId
+	| INFIXRImp       of Info * int * VId
+	| NONFIXImp       of Info * VId
 
     and ValItem =
 	  PLAINValItem    of Info * Op * VId * ValItem option
@@ -572,6 +575,9 @@ functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
       | infoImp(SIGNATUREImp(I,_))			= I
       | infoImp(EMPTYImp(I))				= I
       | infoImp(SEQImp(I,_,_))				= I
+      | infoImp(INFIXImp(I,_,_))			= I
+      | infoImp(INFIXRImp(I,_,_))			= I
+      | infoImp(NONFIXImp(I,_))				= I
 
     fun infoValItem(PLAINValItem(I,_,_,_))		= I
       | infoValItem(DESCValItem(I,_,_,_,_))		= I

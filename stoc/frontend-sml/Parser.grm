@@ -2176,6 +2176,15 @@
 			( SIGNATUREImp(I(SIGNATUREleft,sigitemright), sigitem))
 	| FUNCTOR funitem
 			( FUNCTORImp(I(FUNCTORleft,funitemright), funitem))
+	| INFIX d_opt vid_list1
+			( INFIXMULTIImp(I(INFIXleft,vid_list1right), d_opt,
+					vid_list1) )
+	| INFIXR d_opt vid_list1
+			( INFIXRMULTIImp(I(INFIXRleft,vid_list1right), d_opt,
+					 vid_list1) )
+	| NONFIX vid_list1
+			( NONFIXMULTIImp(I(NONFIXleft,vid_list1right),
+					 vid_list1) )
 
 
   (* Components: Items *)

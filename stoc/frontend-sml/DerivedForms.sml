@@ -724,6 +724,23 @@ structure DerivedForms :> DERIVED_FORMS =
     val PLAINExItem  = G.PLAINDconItem
     val PLAINFunItem = G.PLAINStrItem
 
+    fun INFIXMULTIImp(I, _, [])          = G.EMPTYImp(I)
+      | INFIXMULTIImp(I, NONE, longvids) = INFIXMULTIImp(I, SOME 0, longvids)
+      | INFIXMULTIImp(I, SOME d, longvid::longvids) =
+	    G.SEQImp(I, G.INFIXImp(I, d, longvid),
+			INFIXMULTIImp(I, SOME d, longvids))
+
+    fun INFIXRMULTIImp(I, _, [])          = G.EMPTYImp(I)
+      | INFIXRMULTIImp(I, NONE, longvids) = INFIXRMULTIImp(I, SOME 0, longvids)
+      | INFIXRMULTIImp(I, SOME d, longvid::longvids) =
+	    G.SEQImp(I, G.INFIXRImp(I, d, longvid),
+			INFIXRMULTIImp(I, SOME d, longvids))
+
+    fun NONFIXMULTIImp(I, [])                = G.EMPTYImp(I)
+      | NONFIXMULTIImp(I, longvid::longvids) =
+	    G.SEQImp(I, G.NONFIXImp(I,longvid), NONFIXMULTIImp(I,longvids))
+
+
     fun DESCExItem(I, op_opt, vid, ty, dconitem_opt) =
 	    G.DESCDconItem(I, op_opt, vid, SOME ty, G.Seq(I,[]),
 			      longtycon_EXN(I), dconitem_opt)

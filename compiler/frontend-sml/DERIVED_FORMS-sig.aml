@@ -233,6 +233,9 @@ signature DERIVED_FORMS =
     val FUNImp:           Info * ValItem                           -> Imp
     val EXCEPTIONImp:     Info * ExItem                            -> Imp
     val FUNCTORImp:       Info * FunItem                           -> Imp
+    val INFIXMULTIImp:    Info * int option * VId list             -> Imp
+    val INFIXRMULTIImp:   Info * int option * VId list             -> Imp
+    val NONFIXMULTIImp:   Info * VId list                          -> Imp
 
     val PLAINExItem:      Info * Op * VId * ExItem option          -> ExItem
     val DESCExItem:       Info * Op * VId * Ty * ExItem option     -> ExItem

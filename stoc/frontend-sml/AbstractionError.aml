@@ -64,6 +64,7 @@ structure AbstractionError :> ABSTRACTION_ERROR =
 	| ConDescDuplicate	of VId
 	| DconDescNonCon
 	(* Imports and items *)
+	| ImpFixDuplicate	of VId
 	| ImpVIdDuplicate	of VId
 	| ImpTyConDuplicate	of TyCon
 	| ImpStrIdDuplicate	of StrId
@@ -223,6 +224,9 @@ structure AbstractionError :> ABSTRACTION_ERROR =
 	  textpar["non-constructor","on","constructor","description",
 		  "right","hand","side"]
       (* Imports and items *)
+      | ppError(ImpFixDuplicate vid) =
+	  textpar(["duplicate","fixity","for"] @ #2 classVId @
+		  [ppVId vid,"in","import"])
       | ppError(ImpVIdDuplicate vid) =
 	  textpar(["duplicate"] @ #2 classVId @ [ppVId vid,"in","import"])
       | ppError(ImpTyConDuplicate tycon) =
