@@ -406,8 +406,14 @@ namespace Alice {
 	}
 	public class Exception : SystemException {
 	    public Object Value;
+	    public int Line;
 	    public Exception(Object obj) {
 		Value = obj;
+		Line  = -1;
+	    }
+	    public Exception(Object obj, int line) {
+		Value = obj;
+		Line = line;
 	    }
 	}
 	public class TagConstructor : Procedure {
@@ -2399,14 +2405,6 @@ namespace Alice {
     }
     public class Prebound {
 	public static Object unit = null;
-	public static Object Future_Future     = "Future.Future";
-	public static Object Future_alarmQuote = new Future_alarmQuote();
-	public static Object Future_await      = new Future_await();
-	public static Object Future_awaitOne   = new Future_awaitOne();
-	public static Object Future_byneed     = new Future_byneed();
-	public static Object Future_concur     = new Future_concur();
-	public static Object Future_isFailed   = new Future_isFailed();
-	public static Object Future_isFuture   = new Future_isFuture();
 
 	public static Object Bool_false = (Int32) 0;
 	public static Object Bool_true  = (Int32) 1;
@@ -2414,6 +2412,9 @@ namespace Alice {
 	public static Object List_Empty = "List.Empty";
 	public static Object List_nil   = (Int32) 1;
 	public static Object List_cons  = (Int32) 0;
+
+	public static Object opeq    = new Builtins.opeq();
+	public static Object opnoteq = new Builtins.opnoteq();
 
 	public static Object Array_array    = new Array_array();
 	public static Object Array_fromList = new Array_fromList();
@@ -2439,6 +2440,15 @@ namespace Alice {
 	public static Object Char_isUpper     = new Char_isUpper();
 	public static Object Char_toLower     = new Char_toLower();
 	public static Object Char_toUpper     = new Char_toUpper();
+
+	public static Object Future_Future     = "Future.Future";
+	public static Object Future_alarmQuote = new Future_alarmQuote();
+	public static Object Future_await      = new Future_await();
+	public static Object Future_awaitOne   = new Future_awaitOne();
+	public static Object Future_byneed     = new Future_byneed();
+	public static Object Future_concur     = new Future_concur();
+	public static Object Future_isFailed   = new Future_isFailed();
+	public static Object Future_isFuture   = new Future_isFuture();
 
 	public static Object General_Chr       = "General.Chr";
 	public static Object General_Div       = "General.Div";

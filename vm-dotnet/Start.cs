@@ -5,13 +5,24 @@ class Start {
 	Alice.Komponist k = new Alice.Komponist();
 	Alice.Komponist.global_k = k;
 	
-	if (args.Length < 2) {
-	    Console.Write("usage: ");
-	    Console.Write(args[0]);
-	    Console.WriteLine(" dll progargs");
+	if (args.Length < 1) {
+	    Console.WriteLine("usage: start dll progargs");
 	}
 	else {
-	    Alice.Builtins.Future_await.StaticApply(k.Import(args[1]));
+	    try {
+		Alice.Builtins.Future_await.StaticApply(k.Import(args[0]));
+	    }
+	    catch (System.Reflection.TargetInvocationException e) {
+		System.Exception ei = e.InnerException;
+
+		if (ei is Alice.Values.Exception) {
+		    Alice.Values.Exception ai = (Alice.Values.Exception) ei;
+		    Console.Write("line ");
+		    Console.Write(ai.Line);
+		    Console.Write(": ");
+		    Console.WriteLine(ai.Value);
+		}
+	    }
 	}
     }
 }
