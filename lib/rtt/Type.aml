@@ -103,7 +103,7 @@ structure TypePrivate =
 	| LAMBDA of var * typ	(* abstraction (type function) *)
 	| APPLY  of typ * typ	(* application *)
 	| MU     of typ		(* recursive type barrier *)
-	| ABBREV of typ * typ	(* abbreviations *)
+	| ABBREV of typ * typ	(* abbreviations (#2 is unabbreviated type) *)
 
     and row =						(* [rho,r] *)
 	  NIL
@@ -944,6 +944,12 @@ if kind' t1' <> k2 then raise Assert.failure else
 if isLambda t1 then raise Assert.failure else
 			 ( liftAndCheck(n,t2,t1) ; t2 := LINK t1 )
 
+		       | (ABBREV(t11,t12), _) =>
+			 unify (t12,t2)
+
+		       | (_, ABBREV(t21,t22)) =>
+			 unify (t1,t22)
+
 		       | (MU(t11), MU(t21)) =>
 			 recur unify (t11,t21)
 		       (*
@@ -986,19 +992,15 @@ if isLambda t1 then raise Assert.failure else
 
 		       | (LAMBDA(a1,t11), LAMBDA(a2,t21)) =>
 			 (* The only place lambdas might occur during
-			  * unification is below mu. The type functions
-			  * must be equal in that case. *)
+			  * unification is below mu and as arguments to
+			  * abstract type constructors. The type functions
+			  * must be equal in both cases. *)
+			 (*UNFINISHED: do we need eta reduction?*)
 			 recurBinder(a1, a2, t11, t21)
 
 		       | ( (ALL(a1,t11), ALL(a2,t21))
 			 | (EXIST(a1,t11), EXIST(a2,t21)) ) =>
 			 recurBinder(a1, a2, t11, t21)
-
-		       | (ABBREV(t11,t12), _) =>
-			 unify (t12,t2)
-
-		       | (_, ABBREV(t21,t22)) =>
-			 unify (t1,t22)
 
 		       | _ => raise Unify(t1,t2)
 		end
@@ -1122,7 +1124,13 @@ end*)
 		in
 		    t1 = t2 orelse
 		    case (t1',t2')
-		      of (MU(t11), MU(t21)) =>
+		      of (ABBREV(t11,t12), _) =>
+			 equals(t12,t2)
+
+		       | (_, ABBREV(t21,t22)) =>
+			 equals(t1,t22)
+
+		       | (MU(t11), MU(t21)) =>
 			 recur equals (t11,t21)
 		       (*
 		       | (MU(t11), _) =>
@@ -1168,12 +1176,6 @@ end*)
 		       | ( (ALL(a1,t11),   ALL(a2,t21))
 			 | (EXIST(a1,t11), EXIST(a2,t21)) ) =>
 			 recurBinder(a1, a2, t11, t21)
-
-		       | (ABBREV(t11,t12), _) =>
-			 equals(t12,t2)
-
-		       | (_, ABBREV(t21,t22)) =>
-			 equals(t1,t22)
 
 		       | _ => false
 		end
