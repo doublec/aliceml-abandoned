@@ -156,11 +156,9 @@ structure Main :> MAIN =
 		(String.substring (s, 0, i), String.extract (s, i + 1, NONE))
 	    else fet' (s, i + 1, n)
 
-	fun main ("-h"::_) = help ()
-	  | main ("-v"::rest) = main ("--verbose"::rest)
-	  | main ("--verbose"::rest) = (verbose := true; main rest)
-	  | main ("-d"::rest) = main ("--dumpsig"::rest)
-	  | main ("--dumpsig"::rest) = (dumpsig := true; main rest)
+	fun main (("-h"|"-?"|"--help"|"--usage")::_) = help ()
+	  | main (("-v"|"--verbose")::rest) = (verbose := true; main rest)
+	  | main (("-d"|"--dumpsig")::rest) = (dumpsig := true; main rest)
 	  | main ("--include"::includes::rest) =
 	    (boundary := (!boundary @ List.map Link.INCLUDE (csl includes));
 	     main rest)
@@ -170,8 +168,7 @@ structure Main :> MAIN =
 	  | main ("--rewrite"::rules::rest) =
 	    ((rewrite := (!rewrite @ List.map fet (csl rules)); main rest)
 	     handle Syntax => usageError "illegal rewrite rule syntax")
-	  | main ("-o"::rest) = main ("--output"::rest)
-	  | main ("--output"::name::rest) =
+	  | main (("-o"|"--output")::name::rest) =
 	    (case !outputFile of
 		 NONE => (outputFile := SOME name; main rest)
 	       | SOME _ => usageError "only one output file name may be given")
