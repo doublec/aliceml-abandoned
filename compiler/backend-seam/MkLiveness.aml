@@ -10,7 +10,6 @@
  *   $Revision$
  *)
 
-import structure MkListSort            from "../../lib/utility/MkListSort"
 import structure IntMap                from "../infrastructure/IntMap"
 import structure StampSet              from "../common/StampSet"
 import signature ABSTRACT_CODE_GRAMMAR from "ABSTRACT_CODE_GRAMMAR-sig"
@@ -22,12 +21,10 @@ functor MkLiveness(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR): LIVENESS =
 
 	open AbstractCodeGrammar
 
-	structure ListSort =
-	    MkListSort(type 'a t = int * int * int
-		       fun compare ((id, min, max), (id', min', max')) =
-			   case Int.compare (min, min') of
-			       EQUAL => Int.compare (id, id')
-			     | order => order)
+	fun compareInterval ((id, min, max), (id', min', max')) =
+	    case Int.compare (min, min') of
+		EQUAL => Int.compare (id, id')
+	      | order => order
 
 	fun analyze (idDefArgs, instr) =
 	    let
@@ -196,10 +193,11 @@ functor MkLiveness(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR): LIVENESS =
 		val n = lIdDefArgs (idDefArgs, lInstr (instr, 0))
 
 		val intervals =
-		    ListSort.sort (IntMap.foldi
-				       (fn (id, (min, max), rest) =>
-					   (id, n - max, n - min)::rest)
-				       nil ranges)
+		    List.sort compareInterval
+			      (IntMap.foldi
+				   (fn (id, (min, max), rest) =>
+				       (id, n - max, n - min)::rest)
+				   nil ranges)
 	    in
 (*
 		List.app (fn (id, min, max) =>
