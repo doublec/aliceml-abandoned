@@ -5,5 +5,8 @@ Group is
     ../infrastructure/crash.cm
     compiler.cm
 
+    DEPENDENCY-sig.aml
+    Dependency.aml
+
     RECURSIVE_COMPILER-sig.aml
     MkRecursiveCompiler.aml
