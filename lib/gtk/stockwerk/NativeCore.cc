@@ -419,7 +419,7 @@ void generic_marshaller(GClosure *closure, GValue *return_value,
   gint connid = GPOINTER_TO_INT(marshal_data);
 
   //  g_print("event occured: %d\n", connid);
-  had_events = 1;
+  had_events = true;
 
   sendArgsToStream(connid,n_param_values,param_values);
 
@@ -607,7 +607,7 @@ DEFINE0(NativeCore_handlePendingEvents) {
   while (gtk_events_pending())
     gtk_main_iteration();
   bool ret = had_events;
-  had_events = 0;
+  had_events = false;
   RETURN(BOOL_TO_WORD(ret));
 } END
 
