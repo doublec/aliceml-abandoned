@@ -70,7 +70,6 @@
 
 #define RAISE(w) {							\
   Scheduler::currentData = w;                                           \
-  taskStack->PushFrame(prim_self);                                      \
   Scheduler::currentBacktrace = Backtrace::New(prim_self);              \
   return Interpreter::RAISE;		                                \
 }
