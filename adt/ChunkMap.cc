@@ -17,6 +17,8 @@
 #include <cstring>
 #include "adt/ChunkMap.hh"
 
+template BaseMap<ChunkKey>;
+
 // String hashing function is taken from
 // 'Aho, Sethi, Ullman: Compilers..., page 436
 static inline u_int HashString(const char *s, u_int len, u_int size) {

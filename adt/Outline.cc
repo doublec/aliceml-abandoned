@@ -21,3 +21,5 @@
 #include "adt/IntMap.hh"
 #include "adt/Queue.hh"
 #include "adt/Stack.hh"
+
+template BaseMap<IntKey>;
