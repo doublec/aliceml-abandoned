@@ -31,6 +31,8 @@ signature SIMPLIFY_MATCH =
 	  | DecTest of mapping * I.dec list
 	withtype mapping = (pos * I.id) list
 
+	val longidToLabel: I.longid -> Label.t
+
 	datatype testGraph =
 	    Node of pos * test * testGraph ref * testGraph ref * nodeStatus ref
 	  | Leaf of O.body * O.body option ref

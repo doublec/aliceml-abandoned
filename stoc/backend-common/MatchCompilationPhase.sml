@@ -572,14 +572,14 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 	    let
 		val (stms, id) = translateLongid longid
 		val id' = freshId (Source.nowhere, SOME typ)
-		val mapping' = ((Label.fromString ""::pos), id')::mapping
+		val mapping' = (longidToLabel longid::pos, id')::mapping
 	    in
 		(stms, O.ConTest (id, SOME id'), mapping')
 	    end
 	  | translateTest (RefTest typ, pos, mapping) =
 	    let
 		val id = freshId (Source.nowhere, SOME typ)
-		val mapping' = ((Label.fromString ""::pos), id)::mapping
+		val mapping' = (Label.fromString "ref"::pos, id)::mapping
 	    in
 		(nil, O.RefTest id, mapping')
 	    end

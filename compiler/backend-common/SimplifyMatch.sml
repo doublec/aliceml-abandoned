@@ -52,6 +52,12 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 
 	fun typPat pat = valOf (IntermediateInfo.typ (infoPat pat))
 
+	fun longidToLabel (ShortId (_, Id (_, _, Name.ExId s))) =
+	    Label.fromString s
+	  | longidToLabel (ShortId (_, Id (_, _, Name.InId))) =
+	    raise Crash.Crash "SimplifyMatch.longIdToLabel"
+	  | longidToLabel (LongId (_, _, Lab (_, label))) = label
+
 	fun makeTestSeq (WildPat _, _, rest, mapping) = (rest, mapping)
 	  | makeTestSeq (LitPat (_, lit), pos, rest, mapping) =
 	    (Test (pos, LitTest lit)::rest, mapping)
@@ -60,13 +66,13 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	  | makeTestSeq (ConPat (_, longid, patOpt, _), pos, rest, mapping) =
 	    (case patOpt of
 		 SOME pat =>
-		     makeTestSeq (pat, Label.fromString ""::pos,
+		     makeTestSeq (pat, longidToLabel longid::pos,
 				  Test (pos,
 					ConTest (longid, SOME (typPat pat)))::
 				  rest, mapping)
 	       | NONE => (Test (pos, ConTest (longid, NONE))::rest, mapping))
 	  | makeTestSeq (RefPat (_, pat), pos, rest, mapping) =
-	    makeTestSeq (pat, Label.fromString ""::pos,
+	    makeTestSeq (pat, Label.fromString "ref"::pos,
 			 Test (pos, RefTest (typPat pat))::rest, mapping)
 	  | makeTestSeq (TupPat (_, pats), pos, rest, mapping) =
 	    Misc.List_foldli
@@ -167,40 +173,18 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 
 	(* Construction of Test Trees Needing Backtracking *)
 
-	fun labEq (Lab (_, s1), Lab (_, s2)) = s1 = s2
-
-	fun longidEq (ShortId (_, id1), ShortId (_, id2)) = idEq (id1, id2)
-	  | longidEq (LongId (_, longid1, lab1), LongId (_, longid2, lab2)) =
-	    longidEq (longid1, longid2) andalso labEq (lab1, lab2)
-	  | longidEq (_, _) = false
-
-	(*--** the following can be rewritten to assume type consistency *)
-
 	fun testEq (LitTest lit1, LitTest lit2) = lit1 = lit2
-	  | testEq (ConTest (longid1, hasArgs1), ConTest (longid2, hasArgs2)) =
-	    (* approximation: consider constructors equal if same long id *)
-	    longidEq (longid1, longid2) andalso hasArgs1 = hasArgs2
-	  | testEq (TupTest n1, TupTest n2) = n1 = n2
-	  | testEq (RecTest labs1, RecTest labs2) = labs1 = labs2
-	  | testEq (VecTest n1, VecTest n2) = n1 = n2
+	  | testEq (ConTest (longid1, _), ConTest (longid2, _)) =
+	    longidToLabel longid1 = longidToLabel longid2
+	  | testEq (TupTest _, _) = true
+	  | testEq (RecTest _, _) = true
+	  | testEq (VecTest typs1, VecTest typs2) =
+	    List.length typs1 = List.length typs2
 	  | testEq (_, _) = false
 
 	fun areParallelTests (LitTest lit1, LitTest lit2) = lit1 <> lit2
-	  | areParallelTests (LitTest _, TupTest _) = true
-	  | areParallelTests (TupTest _, LitTest _) = true
-	  | areParallelTests (LitTest _, RecTest _) = true
-	  | areParallelTests (RecTest _, LitTest _) = true
-	  | areParallelTests (LitTest _, VecTest _) = true
-	  | areParallelTests (VecTest _, LitTest _) = true
-	  | areParallelTests (TupTest n1, TupTest n2) = n1 <> n2
-	  | areParallelTests (TupTest _, RecTest _) = true
-	  | areParallelTests (RecTest _, TupTest _) = true
-	  | areParallelTests (VecTest _, TupTest _) = true
-	  | areParallelTests (TupTest _, VecTest _) = true
-	  | areParallelTests (VecTest _, RecTest _) = true
-	  | areParallelTests (RecTest _, VecTest _) = true
-	  | areParallelTests (RecTest labs1, RecTest labs2) = labs1 <> labs2
-	  | areParallelTests (VecTest n1, VecTest n2) = n1 <> n2
+	  | areParallelTests (VecTest typs1, VecTest typs2) =
+	    List.length typs1 <> List.length typs2
 	  | areParallelTests (_, _) = false
 
 	local
@@ -384,14 +368,19 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 
 	(*
 	 * Check whether the match rules of a function define
-	 * a cartesian n-ary function; if it is, convert it
-	 * to one represented explicitly as such.
+	 * a cartesian n-ary function; if they do, represent
+	 * the cartesian arity explicitly.
 	 *
-	 * This is the case if no pattern binds the whole argument
-	 * to a variable; furthermore, the first pattern must not
-	 * be a wildcard in the presence of transients: it could
-	 * then perform some computation before requesting the
-	 * actual tuple or record.
+	 * Preconditions:
+	 * -- No pattern binds the whole argument value
+	 *    to a variable.
+	 * -- The first pattern is not a wildcard.
+	 *    If it was, the function might perform some arbitrary
+	 *    action before deconstructing the tuple or record.
+	 *    This order would be reversed if the function was
+	 *    translated to an n-ary function; however, in the
+	 *    presence of transients, the deconstruction may have
+	 *    a side effect.
 	 *)
 
 	type bodyFun = unit -> O.body
