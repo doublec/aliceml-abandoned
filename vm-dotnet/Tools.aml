@@ -2,20 +2,19 @@ import
     val inspect
     val makeArrowType
     val makeBasicType
-    val makeRecordType
     val makeListType
+    val makeRecordType
     val makeTupleType
 from "x-alice:Canvas.dll"
 
-
 signature TOOLS =
     sig
-	type label = string
+  	type label = string
 
 	datatype ty =
 	    IntTy | WordTy | CharTy | StringTy | RealTy
 	  | TupleTy of ty vector | RecordTy of (label * ty) vector
-	  | SumTy of (label * ty option) vector
+	  | SumTy of (string * ty option) vector
 	  | ArrayTy of ty | VectorTy of ty
 	  | ArrowTy of ty * ty
 	  | ListTy of ty | BoolTy
@@ -26,16 +25,15 @@ signature TOOLS =
 
 structure Tools :> TOOLS =
     struct
-	type label = string
+ 	type label = string
 
 	datatype ty =
 	    IntTy | WordTy | CharTy | StringTy | RealTy
 	  | TupleTy of ty vector | RecordTy of (label * ty) vector
-	  | SumTy of (label * ty option) vector
+	  | SumTy of (string * ty option) vector
 	  | ArrayTy of ty | VectorTy of ty
 	  | ArrowTy of ty * ty
 	  | ListTy of ty | BoolTy
-
 
 	fun tyToTy IntTy		= makeBasicType "int"
 	  | tyToTy WordTy		= makeBasicType "word"
@@ -43,13 +41,14 @@ structure Tools :> TOOLS =
 	  | tyToTy StringTy		= makeBasicType "string"
 	  | tyToTy RealTy		= makeBasicType "real"
 	  | tyToTy(TupleTy tys)		= makeTupleType(Vector.map tyToTy tys)
+	  | tyToTy(RecordTy tys)        = makeRecordType(Vector.map recordHelper tys)
 	  | tyToTy(ArrowTy(ty1,ty2))	= makeArrowType(tyToTy ty1, tyToTy ty2)
 	  | tyToTy BoolTy		= makeBasicType "bool"
 	  | tyToTy(ListTy ty)		= makeListType(tyToTy ty)
 	  | tyToTy _			= raise Domain
+        and recordHelper(l,t)          = makeTupleType(#[makeBasicType(l), tyToTy(t)])
 
 	val inspect = fn(x,ty) => inspect(x, tyToTy ty)
-
 
 	__primitive val cast: 'a -> 'b = "Unsafe.cast"
 	__primitive val getTag: 'a -> int = "Unsafe.getTag"
