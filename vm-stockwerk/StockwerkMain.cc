@@ -26,12 +26,8 @@
 #include "generic/PushCallInterpreter.hh"
 #include "generic/ByneedInterpreter.hh"
 
-#include "alice/Data.hh"
-#include "alice/PrimitiveTable.hh"
-#include "alice/Guid.hh"
-#include "alice/LazySelInterpreter.hh"
-#include "alice/AbstractCodeInterpreter.hh"
-#include "alice/AliceConcreteCode.hh"
+#include "alice/Data.hh" //--**
+#include "alice/AliceLanguageLayer.hh"
 
 extern word UnsafeConfig(void);
 extern word UnsafeIO(void);
@@ -95,11 +91,7 @@ int main(int argc, char *argv[]) {
   Pickler::Init();
   BootLinker::Init(nativeComponents);
   // Setup Alice Layer
-  PrimitiveTable::Init();
-  Guid::Init();
-  LazySelInterpreter::Init();
-  AbstractCodeInterpreter::Init();
-  AliceConcreteCode::Init();
+  AliceLanguageLayer::Init();
   // Parse command line
   if (argc < 2) {
     fprintf(stderr, "usage: %s component\n", argv[0]);
