@@ -385,7 +385,7 @@ static word UnsafeOS_Process() {
   INIT_STRUCTURE(record, "UnsafeOS.Process", "terminate",
 		 UnsafeOS_Process_terminate, 1);
   INIT_STRUCTURE(record, "UnsafeOS.Process", "atExn",
-		 UnsafeOS_Process_atExn, 1);
+		 UnsafeOS_Process_atExn, 2);
   INIT_STRUCTURE(record, "UnsafeOS.Process", "getEnv",
 		 UnsafeOS_Process_getEnv, 1);
   return record->ToWord();
