@@ -269,12 +269,7 @@ steps 3 and 4):
    as by specifying that Int = IntInf or LargeInt = Int31.
    Includes solving the cycle problem regarding Pervasive.
 
-15. Let stoc lose its special status. (AR)
-
-   Move the Makefile one level up.  The files are then
-   generated within the toplevel directory.
-
-16. Factorize vm-mozart/bootstrap/Makefile into vm-specific and generic stuff.
+15. Factorize vm-mozart/bootstrap/Makefile into vm-specific and generic stuff.
 
    A new file Makefile.vars will contain all vm-specific stuff.
    BACKENDMOZARTSOURCES0 will be renamed to BACKENDSPECIFICSOURCES0
@@ -283,6 +278,6 @@ steps 3 and 4):
    The same can be done for FRONTENDSMLSOURCES0, which would
    become FRONTENDSPECIFICFILES0.
 
-17. Clean up lib/system/UnsafePickle.
+16. Clean up lib/system/UnsafePickle.
 
    The Pickle component needs Url, which also should move to system.
