@@ -16,6 +16,7 @@ import structure IO          from "../lib/system/IO"
 import structure OS          from "../lib/system/OS"
 import structure CommandLine from "../lib/system/CommandLine"
 import structure Url         from "../lib/system/Url"
+import structure Resolver    from "../lib/system/Resolver"
 import structure PrettyPrint from "../lib/utility/PrettyPrint"
 import structure PPInf       from "../lib/rtt/PPInf"
 import structure Inf         from "../lib/rtt/Inf"
@@ -37,7 +38,7 @@ structure Main :> MAIN =
 	val dumpsig = ref false
 	val typeCheck = ref true
 	val boundary: Link.boundary list ref = ref nil
-	val rewrite: (string * string) list ref = ref nil
+	val rewrite: Resolver.Handler.t list ref = ref nil
 
 	fun error s =
 	    (TextIO.output (TextIO.stdErr, "alicelink: " ^ s);
@@ -64,7 +65,8 @@ structure Main :> MAIN =
 	      \--exclude PREFIX,...,PREFIX\n\
 	      \    Exclude components at URLs with the given prefixes.\n\
 	      \--rewrite FROM=TO,...,FROM=TO\n\
-	      \    Replace URL prefixes in the output component.\n");
+	      \    Rewrite imports URLs of the output component.\n\
+	      \    FROM and TO are patterns; ?{x} denotes a variable.\n");
 	     status)
 
 	fun help () = usage (NONE, OS.Process.success)
@@ -106,7 +108,7 @@ structure Main :> MAIN =
 			       verbose = !verbose,
 			       typeCheck = !typeCheck,
 			       boundary = Vector.fromList (!boundary),
-			       rewrite = Vector.fromList (!rewrite)}
+			       rewrite = !rewrite @ [Resolver.Handler.default]}
 	    in
 		MyComponent.save (outputFile, component);
 		if !dumpsig then printComponentSigs (outputFile, component)
@@ -125,6 +127,13 @@ structure Main :> MAIN =
 			      \   " ^ Url.toString url ^ "\n\
 			      \imported multiply \
 			      \with incompatible signatures\n")
+		 | Link.Rewrite (url1, url2, url) =>
+		       error ("rewrites ambiguates urls\n\
+			      \   " ^ Url.toString url1 ^ "\n\
+			      \and\n\
+			      \   " ^ Url.toString url2 ^ "\n\
+			      \to\n\
+			      \   " ^ Url.toString url ^ "\n")
 		 | Link.Io (url, _) =>
 		       error ("could not load component\n\
 			      \   " ^ Url.toString url ^ "\n")
@@ -142,12 +151,12 @@ structure Main :> MAIN =
 	fun csl s = String.tokens (fn c => c = #",") s
 
 	(* Parse from-equals-to *)
-	fun fet s = fet' (s, 0, String.size s)
-	and fet' (s, i, n) =
-	    if i = n then raise Syntax
-	    else if String.sub (s, i) = #"=" then
-		(String.substring (s, 0, i), String.extract (s, i + 1, NONE))
-	    else fet' (s, i + 1, n)
+	fun fet s =
+	    case CharVector.findi (fn (_, c) => c = #"=") s of
+		SOME (i, _) =>
+		    Resolver.Handler.pattern (String.substring (s, 0, i),
+					      String.extract (s, i + 1, NONE))
+	      | NONE => raise Syntax
 
 	fun main (("-h"|"-?"|"--help"|"--usage")::_) = help ()
 	  | main (("-v"|"--verbose")::rest) = (verbose := true; main rest)
