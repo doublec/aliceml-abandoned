@@ -61,20 +61,30 @@ inline void print_type(char *s, void *obj) {
 	    G_OBJECT(p)->ref_count);
 }
 
+inline const char *getObjectType(int type) {
+  switch (type) {
+  case TYPE_GTK_OBJECT: return "TYPE_GTK_OBJECT";
+  case TYPE_G_OBJECT: return "TYPE_G_OBJECT";
+  case TYPE_OWN: return "TYPE_OWN";
+  case TYPE_UNKNOWN: return "TYPE_UNKNOWN";
+  default: return "STRANGE_TYPE";
+  }
+}
+
 // Increase reference count of a pointer, depending on type.
 inline void __refObject(void *p, int type) {
   if (!p) return;
-  //g_message("reffing: %p (type %d)", p, type);
+//    g_message("reffing: %p (type %s)", p, getObjectType(type));
   switch (type) {
   case TYPE_GTK_OBJECT: 
     g_object_ref(G_OBJECT(p));
     //(see GTK documentation for purpose of gtk_object_sink)
     gtk_object_sink(GTK_OBJECT(p)); 
-    //print_type("gtk-object-reffed", p);
     break;
   case TYPE_G_OBJECT: 
     g_object_ref(p);
-    //print_type("gobject-reffed", p);
+    break;
+  default:
     break;
   }
 }
@@ -82,16 +92,16 @@ inline void __refObject(void *p, int type) {
 // Decrease reference count of a pointer, depending on type.
 inline void __unrefObject(void *p, int type) {
   if (!p) return;
-  //g_message("unreffing: %p (type %d)", p, type);
+//    g_message("unreffing: %p (type %s)", p, getObjectType(type));
   switch (type) {
   case TYPE_GTK_OBJECT: 
   case TYPE_G_OBJECT: 
-    //print_type("about to unref", p);
     g_object_unref(G_OBJECT(p));
     break;
   case TYPE_OWN:
-    //g_message("about to delete: %p", p);
     delete (int*)p;
+    break;
+  default:
     break;
   }
 }
@@ -216,4 +226,3 @@ inline word GSLIST_STRING_TO_WORD(GSList *list) {
 #define ENUM_TO_WORD INT_TO_WORD
 
 #endif
-
