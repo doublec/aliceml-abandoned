@@ -16,6 +16,7 @@ Core language:
 + alternative patterns
 - negated patterns?
 + generalized layered patterns
+- with patterns
 * nonlinear patterns? (better not, requires structural equality)
 
 * overloaded literals?
@@ -27,6 +28,7 @@ Core language:
 
 Module language:
 
+- local around fundecs and sigdecs
 - parenthesized structure and signature expressions
 - more liberal type specification syntax
 - more liberal datatype specification syntax

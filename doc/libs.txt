@@ -2,9 +2,14 @@ type *.t
 *.new
 
 Option.isNone: 'a option -> bool
-Option.app: 'a option -> unit
+Option.app: ('a -> unit) -> 'a option -> unit
+
+OptionPair
 
 ListPair.find: ('a * 'b -> bool) -> 'a list * 'b list -> ('a * 'b) option 
+
+Array.all: ('a -> bool) -> 'a array -> bool
+Array.exists: ('a -> bool) -> 'a array -> bool
 
 Assert structure?
 
