@@ -98,7 +98,7 @@ all:    link @runtime@ @patch@
 	rm @patch@; \
 	(cd $(CLASSROOT); jar cf @patch@ sun)
 
-link:   $(CLASSROOT)
+link:
 	test -d $(CLASSROOT) || mkdir $(CLASSROOT)
 	(test -d $(CLASSROOT)$(RUNTIME) || for a in $(SRCDIR)/*.java.m4 ; do \
 	$(M4) $(M4INCL) $$a > `basename $$a .m4` ; done)
@@ -111,9 +111,12 @@ clean:
 	exit 0
 
 distclean: clean
-	rm -r $(CLASSROOT) \
-	rm Makefile ;\
+	rm -r $(CLASSROOT) ; \
+	rm @patch@ @runtime@ ; \
 	exit 0
+
+veryclean:      distclean
+	rm Makefile; exit 0
 
 $(files): $(CLASSROOT)$(RUNTIME)%.class : $(SRCDIR)/%.java.m4
 	$(M4) $(M4INCL) $< > `basename $< .m4`
