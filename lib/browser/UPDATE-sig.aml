@@ -27,47 +27,82 @@ in
 signature UPDATE = 
     sig
           
-        (* Operationen, die auf die Funktionalitaet von Widget zurueckgreifen
-           - werden beim Starten des Inspectors "gefuellt" *)
+        (* operations that make use of the funcionality of Widget - 
+           are being filled at start of the inspector *)
+
 	val incrActLine: (int -> unit) ref
 	val resize:      (unit -> unit) ref
 
+	(* flag for stop button *)
+
 	val stopflag: bool ref
+
+	(* width of the widest tree *)
 
 	val screen_max_x: int ref
 
-	val iterMove: int * int -> unit
+	(* is used in Widget for the "shrink" operation *)
 
-        (* constraint watcher *) 
-        val watcher: 
-	    'a  * Reflect.value * int *
-	    (int option * Reflect.value * Type.t  * node * int * int * GtkSupport.tag -> node) * 
-	    (Reflect.module * Inf.t  * node * int * int * GtkSupport.tag -> node) *
-	    GtkSupport.tag -> Thread.thread
+	val findHighestDepth : node -> int
+        
+	(* ajustment of the width of the window *)  
+  
+	val setVisible : int  -> unit
 
-	val reinspect:
+        (* displacement of all "successor" trees after every update *)
+
+	val iterMove : int * int -> unit
+
+	(***************************************************)
+
+	(* update watcher for FUTURES *) 
+
+        val watcher : 
+	    'a  * 
+	    Reflect.value * 
+	    int *
+	    (int option * Reflect.value * Type.t  * node * 
+	                  int * int * GtkSupport.tag -> node) * 
+	    (Reflect.module * Inf.t  * node * 
+	                      int * int * GtkSupport.tag -> node) *
+	    GtkSupport.tag 
+	    -> Thread.thread
+
+	(* REINSPECT *)
+
+	val reinspect :
 	    node * 
-	    (int option * Reflect.value * Type.t * node * int * int * GtkSupport.tag -> node) * 
-	    (Reflect.module* Inf.t * node * int * int * GtkSupport.tag -> node) *
-	    GtkSupport.tag -> unit
+	    (int option * Reflect.value * Type.t * node * 
+	                  int * int * GtkSupport.tag -> node) * 
+	    (Reflect.module * Inf.t * node * 
+	                     int * int * GtkSupport.tag -> node) *
+	    GtkSupport.tag 
+	    -> unit
 
-	val foldDepth: 
-	    node * int * 
-	    (int option * Reflect.value * Type.t * node * int * int  * GtkSupport.tag -> node) *
-	    (Reflect.module * Inf.t * node * int * int * GtkSupport.tag -> node) *
-	    GtkSupport.tag -> unit
+	(* folding of DEPTH *)
 
-	val foldWidth: 
-	    node * int * 
-	    (int option * Reflect.value * Type.t * node * int * int  * GtkSupport.tag -> node) *
-	    (Reflect.module * Inf.t * node * int * int * GtkSupport.tag -> node) *
-	    GtkSupport.tag -> unit
+	val foldDepth : 
+	    node * 
+	    int * 
+	    (int option * Reflect.value * Type.t * node * 
+	                  int * int  * GtkSupport.tag -> node) *
+	    (Reflect.module * Inf.t * node * 
+	                      int * int * GtkSupport.tag -> node) *
+	    GtkSupport.tag 
+	    -> unit
 
-       (* wird in Init bei "shrink" benoetigt *)
-	val findHighestDepth: node -> int
+	(* folding of WIDTH *)
 
-	val setVisible: int  -> unit
-
+	val foldWidth : 
+	    node * 
+	    int * 
+	    (int option * Reflect.value * Type.t * node * 
+	                  int * int  * GtkSupport.tag -> node) *
+	    (Reflect.module * Inf.t * node * 
+	                      int * int * GtkSupport.tag -> node) *
+	    GtkSupport.tag 
+	    -> unit
+   
 end
 
 end
