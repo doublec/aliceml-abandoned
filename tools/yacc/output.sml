@@ -155,6 +155,7 @@ struct
 	    let val str = ref init
 		val print = fn s => str := (!str)^s
 	    in (str, print) end
+	    val currParser = ref 0
 	    val (r,print) = mkPrint ""
 	    val p = (NormalForm.toNormalForm (Parse.parse filename))
 	    val Translate.TRANSLATE {grammar,
@@ -177,12 +178,13 @@ struct
 	    val structureName = structureName ()
 		
 	    (* to be done: code for parser *)
-	    fun parserDecToString n  [] = ""
-	      | parserDecToString n  ((name,ty,sr)::ds) =
+	    fun parserDecToString  [] = ""
+	      | parserDecToString  ((name,ty,sr)::ds) =
 		let val prefix = case ty of
 		    NONE => "val "^name^" "
 		  | SOME ty => "val "^name^" : lexer -> "^ty^" "
 		    val decString = "\nlocal structure J = "^structureName^"\nin\n"
+		    val n = !currParser
 		    val s = decString^prefix^" = fn lexer =>\n"
 			^"let val (a as (_,p1,p2)) = lexer()\n"
 			^"    val f = fn _ => J.Token.TOKEN(J.LrTable.T "
@@ -202,13 +204,12 @@ struct
 			^"                            table=table,\n"
 			^"                            void=void})\nend\nend\n"
 		in
-		    cr s
+		    (currParser := !currParser + 1; cr s)
 		end
 	    
 	    fun absSynToString _ (A.TokenDec l) = tokenDecToString l
 	      | absSynToString _ (A.MLCode l) = List.foldr (fn (x,r) => x^" "^r) "" l
-	      | absSynToString _ (A.ParserDec l) = 
-		parserDecToString 0  l
+	      | absSynToString _ (A.ParserDec l) = parserDecToString  l
 	      | absSynToString lrTable (A.RuleDec l) =
 		"\nstructure "^structureName^" =\nstruct\n" 
 		^"structure LrParser = LrParserEng\n"

@@ -17,7 +17,7 @@ struct
       | TIMES => (op*)
 
     parser eval = exp
-    (*    parser eval2 = oper *)
+        parser eval2 = oper(* *)
     
     val lexer = 
 	let val t = [NUM 5, PLUS, NUM 3, TIMES, NUM (~2), EOP]
