@@ -265,7 +265,7 @@ DWORD __stdcall IOSupport::ReaderThread(void *p) {
     DWORD count;
     if (ReadFile(in, buf, BUFFER_SIZE, &count, NULL) == FALSE) {
       if (GetLastError() != ERROR_BROKEN_PIPE)
-	std::fprintf(stderr, "ReadFile failed: %d\n", GetLastError());
+	std::fprintf(stderr, "ReadFile failed: %ld\n", GetLastError());
       break;
     }
     if (count == 0)
@@ -306,7 +306,7 @@ DWORD __stdcall IOSupport::WriterThread(void *p) {
   loop:
     DWORD count;
     if (WriteFile(out, &buf[totalWritten], got, &count, 0) == FALSE) {
-      std::fprintf(stderr, "WriteFile failed: %d\n", GetLastError());
+      std::fprintf(stderr, "WriteFile failed: %ld\n", GetLastError());
       break;
     }
     totalWritten += count;
