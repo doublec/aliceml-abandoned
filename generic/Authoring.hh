@@ -73,7 +73,11 @@
 
 #define RETURN_INT(i) RETURN(Store::IntToWord(i));
 
-#define PREEMPT return Interpreter::PREEMPT;
+#define PREEMPT0 {				\
+  Scheduler::nArgs = 0;				\
+  return Interpreter::PREEMPT;			\
+}
+
 #define SUSPEND return Interpreter::SUSPEND;
 
 #define RAISE(w) {						\
