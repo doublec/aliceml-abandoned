@@ -105,7 +105,7 @@ define
 		      [onRecord('#' Arity ThenVInstr)]
 		      {TranslateRegion Region State} nil)
       [] handleStm(Region TryBody IdDef HandleBody) then
-	 Reg1 Reg2 Coord TryVInstr HandleVInstr HandleVInter VInter
+	 Reg1 Reg2 Coord TryVInstr HandleVInstr HandleVInter
       in
 	 {State.cs newReg(?Reg1)}
 	 Reg2 = {MakeReg IdDef State}
@@ -118,7 +118,7 @@ define
       [] endTryStm(Region Body) then VInter in
 	 VHd = vPopEx(_ {TranslateRegion Region State} VInter)
 	 {TranslateBody Body VInter VTl State ReturnReg}
-      [] endHandleStm(Region Body) then
+      [] endHandleStm(_ Body) then
 	 {TranslateBody Body VHd VTl State ReturnReg}
       [] testStm(Region Id litTests(LitBodyList=wordLit(_)#_|_) ElseBody) then
 	 IntReg Coord Matches VInter ElseVInstr
