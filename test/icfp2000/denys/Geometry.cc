@@ -482,13 +482,21 @@ OZ_BI_define(matrix_vector_mul,2,1)
 }
 OZ_BI_end
 
-OZ_BI_define(vector_mul,2,1)
+OZ_BI_define(vector_scal_mul,2,1)
+{
+  OZ_declareVector(0,x);
+  OZ_declareFloat(1,y);
+  Vector * v = new Vector
+    (x->v1*y,x->v2*y,x->v3*y);
+  OZ_RETURN(OZ_extension(v));
+}
+OZ_BI_end
+
+OZ_BI_define(vector_dot_prod,2,1)
 {
   OZ_declareVector(0,x);
   OZ_declareVector(1,y);
-  Vector * v = new Vector
-    (x->v1*y->v1,x->v2*y->v2,x->v3*y->v3);
-  OZ_RETURN(OZ_extension(v));
+  OZ_RETURN(OZ_float(x->v1*y->v1+x->v2*y->v2+x->v3*y->v3));
 }
 OZ_BI_end
 
@@ -550,7 +558,8 @@ OZ_C_proc_interface * oz_init_module(void)
     {"vector_normalize",1,1,vector_normalize},
     {"matrix_point_mul",2,1,matrix_point_mul},
     {"matrix_vector_mul",2,1,matrix_vector_mul},
-    {"vector_mul",2,1,vector_mul},
+    {"vector_scal_mul",2,1,vector_scal_mul},
+    {"vector_dot_prod",2,1,vector_dot_prod},
     {"vector_sub",2,1,vector_sub},
     {"vector_add",2,1,vector_add},
     {"vector_rez",1,1,vector_rez},
