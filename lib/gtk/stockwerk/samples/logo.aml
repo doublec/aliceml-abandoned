@@ -1,0 +1,37 @@
+(*
+ * Authors:
+ *   Robert Grabowski <grabow@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Robert Grabowski, 2003
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
+import structure Gtk       from "../Gtk"
+
+local
+    val image = Gtk.imageNewFromFile("logo.jpg")
+    val ibox = Gtk.eventBoxNew()
+
+    fun hello _   = print "Hello, World!\n"
+    
+    fun toBlue    _ = (Gtk.imageSetFromFile(image, "logo-blue.jpg");hello())
+    fun toRainbow _ = Gtk.imageSetFromFile(image, "logo.jpg")
+
+    fun delete _  = OS.Process.exit OS.Process.success
+    val window    = Gtk.windowNew Gtk.WINDOW_TOPLEVEL
+
+in
+    val _ = (Gtk.windowSetTitle (window, "Hello Demo");
+	     Gtk.containerSetBorderWidth (window, 10);
+	     Gtk.signalConnect(window, "delete-event", delete);
+	     Gtk.signalConnect(ibox, "button_press_event", toBlue);
+	     Gtk.signalConnect(ibox, "button_release_event", toRainbow);
+	     Gtk.containerAdd(ibox, image);
+	     Gtk.containerAdd (window, ibox);
+	     Gtk.widgetShowAll window)
+end
