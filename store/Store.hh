@@ -23,10 +23,6 @@
 #include "store/StatusWord.hh"
 #include "store/Heap.hh"
 
-#if defined(STORE_PROFILE)
-struct timeval;
-#endif
-
 class WeakMap;
 class JITStore;
 class Profiler;
@@ -42,8 +38,8 @@ protected:
   static u_int memFree;
   static u_int memTolerance;
   static u_int nbBlkTables;
-#if defined(STORE_PROFILE)
-  static struct timeval *sum_t;
+#if defined(STORE_PROFILE) || defined(STORE_NOGCBENCH)
+  static double sum_t;
 #endif
   static Block *CloneBlock(Block *p, const u_int gen);
   static word ForwardBlock(word p, const u_int gen);
@@ -181,9 +177,9 @@ public:
 #if defined(STORE_GC_DEBUG)
   static void VerifyGC(word root);
 #endif
-#if defined(STORE_PROFILE)
-  static void ResetTime();
-  static struct timeval *ReadTime();
+#if defined(STORE_PROFILE) || defined(STORE_NOGCBENCH)
+  static SeamMemberDll void ResetTime();
+  static SeamMemberDll double ReadTime();
 #endif
 };
 

@@ -13,11 +13,6 @@
 #include <cstring>
 #include <cstdio>
 
-#if defined(STORE_PROFILE)
-#include <sys/time.h>
-#include <unistd.h>
-#endif
-
 #if defined(INTERFACE)
 #pragma implementation "store/StatusWord.hh"
 #pragma implementation "store/HeaderOp.hh"
@@ -35,6 +30,10 @@
 #include "store/Map.hh"
 #include "store/WeakMap.hh"
 #include "store/MapNode.hh"
+
+#if defined(STORE_PROFILE) || defined(STORE_NOGCBENCH)
+#include "generic/Time.hh"
+#endif
 
 // Using Set in a anonymous namespace prevents
 // class Set from appearing outside
@@ -59,8 +58,12 @@ u_int Store::memTolerance;
 #if defined(STORE_PROFILE)
 u_int Store::totalMem  = 0;
 u_int Store::gcLiveMem = 0;
-struct timeval *Store::sum_t;
 #endif
+
+#if defined(STORE_PROFILE) || defined(STORE_NOGCBENCH)
+double Store::sum_t;
+#endif
+
 
 //
 // Method Implementations
@@ -199,8 +202,8 @@ void Store::InitStore(u_int mem_max[STORE_GENERATION_NUM],
   // Enable BlockHashTables
   Map::Init();
 #if defined(STORE_PROFILE)
+  Time::Init();
   totalMem = 0;
-  sum_t    = (struct timeval *) malloc(sizeof(struct timeval));
 #endif
 }
 
@@ -469,9 +472,9 @@ void Store::DoGC(word &root) {
   VerifyGC(root);
   std::fprintf(stderr, "passed.\n");
 #endif
-#if defined(STORE_PROFILE)
-  struct timeval start_t, end_t;
-  gettimeofday(&start_t, INVALID_POINTER);
+#if defined(STORE_PROFILE) || defined(STORE_NOGCBENCH)
+  double start_t, end_t;
+  start_t = Time::GetElapsedMicroseconds();
 #endif
   // Determine GC Range
   u_int gen = (STORE_GENERATION_NUM - 2);
@@ -531,11 +534,12 @@ void Store::DoGC(word &root) {
       (Finalization *) Store::DirectWordToUnmanagedPointer(set->GetArg(i--));
     handler->Finalize(set->GetArg(i));
   }
+#if defined(STORE_PROFILE) || defined(STORE_NOGCBENCH)
+  end_t  = Time::GetElapsedMicroseconds();
+  sum_t += (end_t - start_t);
+#endif
 #if defined(STORE_PROFILE)
-  gettimeofday(&end_t, INVALID_POINTER);
-  sum_t->tv_sec  += (end_t.tv_sec - start_t.tv_sec);
-  sum_t->tv_usec += (end_t.tv_usec - start_t.tv_usec);
-  gcLiveMem      += (GetMemUsage(roots[hdrGen]) - memUsage);
+  gcLiveMem += (GetMemUsage(roots[hdrGen]) - memUsage);
 #endif
 #if defined(STORE_GC_DEBUG)
   std::fprintf(stderr, "Post-GC checking...\n");
@@ -778,23 +782,26 @@ void Store::JITReplaceArg(u_int i, Block *p, word v) {
   p->InitArg(i, v);
 }
 
-#if defined(STORE_PROFILE)
+#if defined(STORE_PROFILE) || defined(STORE_NOGCBENCH)
 void Store::ResetTime() {
-  sum_t->tv_sec = sum_t->tv_usec = 0;
+  sum_t = 0;
+#if defined(STORE_PROFILE)
   totalMem = 0;
   for (u_int i = STORE_GENERATION_NUM; i--;) {
     totalMem += roots[i].GetSize();
   }
   gcLiveMem = 0;
+#endif
 }
 
-struct timeval *Store::ReadTime() {
+double Store::ReadTime() {
+#if defined(STORE_PROFILE)
   u_int total = 0;
-
   for (u_int i = STORE_GENERATION_NUM; i--;) {
     total += roots[i].GetSize();
   }
   totalMem = (total - totalMem);
+#endif
   return sum_t;
 }
 #endif
