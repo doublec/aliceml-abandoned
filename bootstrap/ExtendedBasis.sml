@@ -1307,6 +1307,22 @@ structure Time : TIME =
 
 
 (*****************************************************************************
+ * OS
+ *****************************************************************************)
+
+structure OS =
+  struct
+    open OS
+    structure Path =
+      struct
+	open Path
+	val mkAbsolute = fn{path, relativeTo} => mkAbsolute(path, relativeTo)
+	val mkRelative = fn{path, relativeTo} => mkRelative(path, relativeTo)
+      end
+  end
+
+
+(*****************************************************************************
  * Top-level
  *****************************************************************************)
 
