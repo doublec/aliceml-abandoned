@@ -338,7 +338,8 @@ functor MakeTranslationPhase(structure Switches: SWITCHES):> TRANSLATION_PHASE =
 		val    l'     = O.Lab(i', trTypLabel a)
 		val    y      = O.LongId(typInfo(r,NONE), x, l')
 		val (exp,b')  =
-		    if not abs orelse Option.isSome d then
+		    if not abs orelse Option.isSome d
+			       orelse !Switches.rttLevel = Switches.NO_RTT then
 			(O.VarExp(i,y), b)
 		    else let
 			val l'  = O.Lab(i', case w of Type.CLOSED => lab_closed
