@@ -55,7 +55,7 @@ gtkclean.c:
 
 #################################################
 
-compile: depend $(NATIVES:%=%.dll) $(COMPS:%=%.stc)
+compile: $(NATIVES:%=%.dll) $(COMPS:%=%.stc)
 
 %.dll: %.o
 	$(ALICETOOL) -v ld -Wl,-S `pkg-config --libs $(LIBS)` $< -o $@
