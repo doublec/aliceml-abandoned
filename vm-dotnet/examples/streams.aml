@@ -1,6 +1,6 @@
-import
-    structure Tools
-from "x-alice:Tools.dll"
+import structure TextIO from "x-alice:TextIO.dll"
+import structure Tools  from "x-alice:Tools.dll"
+
 
 open TextIO
 open Promise
@@ -62,7 +62,7 @@ fun main() =
 				     ("Bdiv10",	tyRealList)
 				    ]
     in
-	Tools.inspect({A, B, AplusB, AzipB, AtoChar, Bdiv10}, tyrecord) ;
+	Tools.inspect({A, B, AplusB, AzipB, AtoChar, Bdiv10}, tyRecord) ;
 	loop(p1,p2) ;
 	OS.Process.exit(OS.Process.success)
     end

@@ -1,7 +1,10 @@
 import
     val inspect
     val makeBasicType
+    val makeArrowType
     val makeTupleType
+    val makeRecordType
+    val makeListType
 from "Canvas.dll"
 
 
@@ -15,7 +18,7 @@ signature TOOLS =
 	  | SumTy of (label * ty option) vector
 	  | ArrayTy of ty | VectorTy of ty
 	  | ArrowTy of ty * ty
-	  | ListTy of Ty | BoolTy
+	  | ListTy of ty | BoolTy
 
 	val toString: 'a * ty -> string
 	val inspect:  'a * ty -> unit
@@ -31,7 +34,7 @@ structure Tools :> TOOLS =
 	  | SumTy of (label * ty option) vector
 	  | ArrayTy of ty | VectorTy of ty
 	  | ArrowTy of ty * ty
-	  | ListTy of Ty | BoolTy
+	  | ListTy of ty | BoolTy
 
 
 	fun tyToTy IntTy		= makeBasicType "int"
