@@ -21,7 +21,6 @@
 
 #include "emulator/ThreadQueue.hh"
 #include "emulator/Thread.hh"
-#include "emulator/PushCallInterpreter.hh"
 #include "emulator/ByneedInterpreter.hh"
 
 class Scheduler {
@@ -36,6 +35,7 @@ public:
   // Scheduler public data
   static word currentData; // Transient or Exception
   static word currentArgs; // Arguments
+  static word vmGUID;
   // Scheduler Main Function
   static void Run();
   // Scheduler Accessors
@@ -47,7 +47,7 @@ public:
     static word zero     = Store::IntToWord(0);
     TaskStack *taskStack = taskStack0;
     if (closure != zero) {
-      PushCallInterpreter::PushFrame(taskStack, closure);
+      taskStack->PushCall(closure);
     }
     Thread *thread = Thread::New(args, taskStack);
     threadQueue->Enqueue(thread);
