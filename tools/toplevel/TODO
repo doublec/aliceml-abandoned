@@ -3,7 +3,6 @@ TODO list for the Alice IDE
 
 Bugs:
 
-* File not saved message appears twice
 * Not all dialogue buttons have icons
 * Reconsider implicit imports
 * Proper save changes treatment at quit?

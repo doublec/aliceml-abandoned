@@ -704,16 +704,19 @@ structure GuiMain =
 		    Buffer.setSyntaxHighlighting
 		    (id, Gtk.checkMenuItemGetActive Gui.syntax_colouring)
 
+	val reallyQuit = ref false
 	fun doQuit () = (Config.saveHistory (History.get(),
 					     Buffer.getFileNames());
+			 reallyQuit := true;
 			 OS.Process.exit OS.Process.success)
-        fun quit () = if Buffer.haveModified ()
-			  then
-			      FileDialog.modifiedWarning
-			      ("There are modified files.",
-			       "Discard changes and quit anyway or cancel?",
-			       doQuit, () )
-		      else doQuit ()
+        fun quit () = if !reallyQuit then ()
+		      else if Buffer.haveModified ()
+			       then
+				   FileDialog.modifiedWarning
+				   ("There are modified files.",
+				    "Discard changes and quit anyway or cancel?",
+				    doQuit, () )
+			   else doQuit ()
 
         fun init notebookSwitchEventId =
             (Gtk.signalConnect(Gui.compilerout, "populate-popup", populatePopup);
