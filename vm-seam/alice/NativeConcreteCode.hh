@@ -18,6 +18,7 @@
 #endif
 
 #include "generic/ConcreteCode.hh"
+#include "generic/Tuple.hh"
 #include "alice/Data.hh"
 #include "alice/NativeCodeInterpreter.hh"
 #include "alice/LivenessInformation.hh"
@@ -41,7 +42,7 @@ public:
   virtual void DumpFrame(word frame);
 };
 
-class NativeConcreteCode : private ConcreteCode {
+class DllExport NativeConcreteCode : private ConcreteCode {
 protected:
   static const u_int TRANSFORM_POS     = 0;
   static const u_int NATIVE_CODE_POS   = 1;

@@ -21,7 +21,7 @@
 
 typedef Interpreter::Result (*native_fun)(class NativeCodeFrame *);
 
-class NativeCodeInterpreter : public Interpreter {
+class DllExport NativeCodeInterpreter : public Interpreter {
 public:
   // Exported NativeCodeInterpreter Instance
   static NativeCodeInterpreter *self;
