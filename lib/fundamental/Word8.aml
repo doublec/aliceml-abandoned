@@ -24,9 +24,9 @@ structure Word8 = MkWord(
     __primitive val toInt :   word    -> Int.int = "Word8.toInt"
     __primitive val toIntX :  word    -> Int.int = "Word8.toIntX"
 
-    __primitive val fromLargeWord : LargeWord.word -> word = "Word8.fromLargeWord"
-    __primitive val toLargeWord :   word -> LargeWord.word = "Word8.toLargeWord"
-    __primitive val toLargeWordX :  word -> LargeWord.word = "Word8.toLargeWordX"
+    __primitive val fromLarge : LargeWord.word -> word = "Word8.fromLarge"
+    __primitive val toLarge :   word -> LargeWord.word = "Word8.toLarge"
+    __primitive val toLargeX :  word -> LargeWord.word = "Word8.toLargeX"
 
     __primitive val op + :   word * word -> word = "Word8.+"
     __primitive val op - :   word * word -> word = "Word8.-"

@@ -28,9 +28,9 @@ sig
 
     val wordSize :	int
 
-    val toLargeWord :	word -> LargeWord.word
-    val toLargeWordX :	word -> LargeWord.word
-    val fromLargeWord :	LargeWord.word -> word
+    val toLarge :	word -> LargeWord.word
+    val toLargeX :	word -> LargeWord.word
+    val fromLarge :	LargeWord.word -> word
     val toLargeInt :	word -> LargeInt.int
     val toLargeIntX :	word -> LargeInt.int
     val fromLargeInt :	LargeInt.int -> word

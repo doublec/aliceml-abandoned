@@ -39,7 +39,6 @@ struct
 
     open CharVectorSlice
     val size			= length
-    val all			= full
     val string			= vector
     val extract			= slice
     val slice			= subslice
