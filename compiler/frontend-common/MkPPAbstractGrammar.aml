@@ -43,9 +43,9 @@ functor MkPPAbstractGrammar(
 	val ppPatInfo :       AbstractGrammar.pat_info -> PrettyPrint.doc
 	val ppRowInfo :       ('a -> PrettyPrint.doc) ->
 			      'a AbstractGrammar.row_info -> PrettyPrint.doc
-	val ppFieldInfo :     ('a -> PrettyPrint.doc) ->
-			      'a AbstractGrammar.field_info -> PrettyPrint.doc
-	val ppMatchInfo :     AbstractGrammar.match_info -> PrettyPrint.doc
+	val ppFldInfo :       ('a -> PrettyPrint.doc) ->
+			      'a AbstractGrammar.fld_info -> PrettyPrint.doc
+	val ppMatInfo :       AbstractGrammar.mat_info  -> PrettyPrint.doc
 	val ppTypInfo :       AbstractGrammar.typ_info  -> PrettyPrint.doc
 	val ppModInfo :       AbstractGrammar.mod_info  -> PrettyPrint.doc
 	val ppInfInfo :       AbstractGrammar.inf_info  -> PrettyPrint.doc
@@ -56,7 +56,6 @@ functor MkPPAbstractGrammar(
 	val ppCompInfo :      AbstractGrammar.comp_info -> PrettyPrint.doc
     ) : PP_ABSTRACT_GRAMMAR =
 struct
-
   (* Import *)
 
     open AbstractGrammar
@@ -182,13 +181,13 @@ struct
 
   (* Rows and Fields *)
 
-    fun ppRow ppX (Row(i, fields, b))	= tree "Row" (ppRowInfo ppX i) (
+    fun ppRow ppX (Row(i, flds, b))	= tree "Row" (ppRowInfo ppX i) (
 					    ppBool b ^/^
-					    ppFields ppX fields
+					    ppFlds ppX flds
 					  )
 
-    and ppFields ppX fields		= vec(Vector.map (ppField ppX) fields)
-    and ppField ppX (Field(i,vallab,x))	= tree "Field" (ppFieldInfo ppX i) (
+    and ppFlds ppX flds			= vec(Vector.map (ppFld ppX) flds)
+    and ppFld ppX (Fld(i,vallab,x))	= tree "Fld" (ppFldInfo ppX i) (
 					    ppVallab vallab ^/^
 					    ppX x
 					  )
@@ -253,8 +252,8 @@ struct
       | ppExp(VecExp(i, exps))		= exptree "Vec" i (
 					    ppExps exps
 					  )
-      | ppExp(FunExp(i, matchs))	= exptree "Fun" i (
-					    ppMatchs matchs
+      | ppExp(FunExp(i, mats))		= exptree "Fun" i (
+					    ppMats mats
 					  )
       | ppExp(AppExp(i, exp1, exp2))	= exptree "App" i (
 					    ppExp exp1 ^/^
@@ -277,13 +276,13 @@ struct
 					    ppExp exp1 ^/^
 					    ppExp exp2
 					  )
-      | ppExp(CaseExp(i, exp, matchs))	= exptree "Case" i (
+      | ppExp(CaseExp(i, exp, mats))	= exptree "Case" i (
 					    ppExp exp ^/^
-					    ppMatchs matchs
+					    ppMats mats
 					  )
-      | ppExp(HandleExp(i, exp,matchs))	= exptree "Handle" i (
+      | ppExp(HandleExp(i, exp, mats))	= exptree "Handle" i (
 					    ppExp exp ^/^
-					    ppMatchs matchs
+					    ppMats mats
 					  )
       | ppExp(RaiseExp(i, exp))		= exptree "Raise" i (
 					    ppExp exp
@@ -307,8 +306,8 @@ struct
 					    ppMod mod
 					  )
 
-    and ppMatchs matchs			= vec(Vector.map ppMatch matchs)
-    and ppMatch(Match(i, pat, exp))	= tree "Match" (ppMatchInfo i) (
+    and ppMats mats			= vec(Vector.map ppMat mats)
+    and ppMat(Mat(i, pat, exp))		= tree "Mat" (ppMatInfo i) (
 					    ppPat pat ^/^
 					    ppExp exp
 					  )
@@ -498,7 +497,7 @@ struct
 					    ppInf inf ^/^
 					    ppMod mod
 					  )
-      | ppInf(CompInf(i, inf1, inf2))	= inftree "Comp" i (
+      | ppInf(InterInf(i, inf1, inf2))	= inftree "Inter" i (
 					    ppInf inf1 ^/^
 					    ppInf inf2
 					  )
@@ -517,12 +516,17 @@ struct
 					  )
       | ppInf(AbsInf(i))		= inftree "Abs" i empty
 
+
   (* Declarations *)
 
     and dectree head i body		= tree (head ^ "Dec") (ppDecInfo i) body
 
     and ppDecs decs			= vec(Vector.map ppDec decs)
-    and ppDec(ValDec(i, pat, exp))	= dectree "Val" i (
+    and ppDec(FixDec(i, vallab, fix))	= dectree "Fix" i (
+					    ppVallab vallab ^/^
+					    ppFix fix
+					  )
+      | ppDec(ValDec(i, pat, exp))	= dectree "Val" i (
 					    ppPat pat ^/^
 					    ppExp exp
 					  )
@@ -537,10 +541,6 @@ struct
       | ppDec(InfDec(i, infid, inf))	= dectree "Inf" i (
 					    ppInfid infid ^/^
 					    ppInf inf
-					  )
-      | ppDec(FixDec(i, vallab, fix))	= dectree "Fix" i (
-					    ppVallab vallab ^/^
-					    ppFix fix
 					  )
       | ppDec(VarDec(i, varid, dec))	= dectree "Var" i (
 					    ppVarid varid ^/^
@@ -558,7 +558,11 @@ struct
     and spectree head i body		= tree (head ^ "Spec") (ppSpecInfo i)
 						body
     and ppSpecs specs			= vec(Vector.map ppSpec specs)
-    and ppSpec(ValSpec(i, valid, typ))	= spectree "Val" i (
+    and ppSpec(FixSpec(i, vallab, fix))	= spectree "Fix" i (
+					    ppVallab vallab ^/^
+					    ppFix fix
+					  )
+      | ppSpec(ValSpec(i, valid, typ))	= spectree "Val" i (
 					    ppValid valid ^/^
 					    ppTyp typ
 					  )
@@ -574,10 +578,6 @@ struct
 					    ppInfid infid ^/^
 					    ppInf inf
 					  )
-      | ppSpec(FixSpec(i, vallab, fix))	= spectree "Fix" i (
-					    ppVallab vallab ^/^
-					    ppFix fix
-					  )
       | ppSpec(RecSpec(i, specs))	= spectree "Rec" i (
 					    ppSpecs specs
 					  )
@@ -590,7 +590,11 @@ struct
     and imptree head i body		= tree (head ^ "Imp") (ppImpInfo i) body
 
     and ppImps imps			= vec(Vector.map ppImp imps)
-    and ppImp(ValImp(i, valid,typdesc))	= imptree "Val" i (
+    and ppImp(FixImp(i,vallab,fixdesc))	= imptree "Fix" i (
+					    ppVallab vallab ^/^
+					    ppDesc (ppFixInfo,ppFix) fixdesc
+					  )
+      | ppImp(ValImp(i, valid,typdesc))	= imptree "Val" i (
 					    ppValid valid ^/^
 					    ppDesc (ppTypInfo,ppTyp) typdesc
 					  )
@@ -605,10 +609,6 @@ struct
       | ppImp(InfImp(i, infid,infdesc))	= imptree "Inf" i (
 					    ppInfid infid ^/^
 					    ppDesc (ppInfInfo,ppInf) infdesc
-					  )
-      | ppImp(FixImp(i,vallab,fixdesc))	= imptree "Fix" i (
-					    ppVallab vallab ^/^
-					    ppDesc (ppFixInfo,ppFix) fixdesc
 					  )
       | ppImp(RecImp(i, imps))		= imptree "Rec" i (
 					    ppImps imps
