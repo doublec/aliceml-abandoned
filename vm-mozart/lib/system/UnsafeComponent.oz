@@ -91,27 +91,30 @@ define
       end
    end
 
-   fun {FunctorToComponent F} Ari in
+   fun {FunctorToComponent F} Rec Body in
       if {Not {Functor.is F}} then
 	 {Exception.raiseError alice(CorruptException)}
       end
-      Ari = {Arity {Record.make '#' {Record.foldRInd F.'import'
-				     fun {$ Fea _ Rest} Fea|Rest end nil}}}
+      Rec = {Record.make '#' {Record.foldRInd F.'import'
+			      fun {$ Fea _ Rest} Fea|Rest end nil}}
+      Body = if {IsTuple Rec} then F.apply
+	     else Ari in
+		Ari = {Arity Rec}
+		fun {$ IMPORT} {F.apply {ReplaceArity IMPORT Ari}} end
+	     end
       'UNEVALUATED'(imports:
 		       {List.toTuple '#[]'
 			{Record.foldRInd F.'import'
 			 fun {$ ModName Desc Rest}
 			    {ByteString.make
-			     case {CondSelect Desc 'from' unit}
-			     of unit then
+			     case {CondSelect Desc 'from' unit} of unit then
 				{OzURL.toVirtualString
 				 {DefaultURL.nameToUrl ModName}}
 			     [] URL then URL
 			     end}#
 			    {OzToSig {CondSelect Desc 'type' nil}}|Rest
 			 end nil}}
-		    body:
-		       fun {$ IMPORT} {F.apply {ReplaceArity IMPORT Ari}} end
+		    body: Body
 		    sign: {OzToSig F.'export'})
    end
 
