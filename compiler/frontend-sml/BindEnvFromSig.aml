@@ -104,7 +104,7 @@ struct
 	let
 	    val (t1,t2) = Type.asApply t
 	in
-	    if not(Type.equals(t1, PervasiveType.typ_strict))
+	    if not(Type.equal(t1, PervasiveType.typ_strict))
 	    then t
 	    else t2
 	end
@@ -124,7 +124,7 @@ struct
 	let
 	    val (t1,t2) = Type.asApply t
 	in
-	    if Type.equals(t1, PervasiveType.typ_strict) then
+	    if Type.equal(t1, PervasiveType.typ_strict) then
 		if Type.isTuple t2 andalso Vector.length(Type.asTuple t2) = 0
 		then NULLARY
 		else NARY
@@ -133,7 +133,7 @@ struct
 
 
     fun envFromTyp(I,E,s,t,tycon) =
-	if Type.equals(t, PervasiveType.typ_ref) then
+	if Type.equal(t, PervasiveType.typ_ref) then
 	    let
 		(* Constructor needs to have the same name as the tycon,
 		 * because we have no way of knowing its real name. *)
@@ -145,8 +145,8 @@ struct
 		val (t3,t4) = Type.asApply t2
 		val vid     = VId.fromString name
 	    in
-		if Type.isUnknown t1 andalso Type.equals(t1,t4)
-				     andalso Type.equals(t3, t)
+		if Type.isUnknown t1 andalso Type.equal(t1,t4)
+				     andalso Type.equal(t3, t)
 		then insertVal(E', vid, (I, Stamp.new(), R))
 		else ();
 		E'
