@@ -86,9 +86,10 @@ functor MakeIntermediateGrammar(type info) :>
     and dec =
 	  ValDec    of info * pat * exp
 	  		(* if inside RecDec, then
-			 * (1) pat may not contain WithPat
+			 * (1) pat may not contain AltPat, NegPat, GuardPat,
+			 *     WithPat
 			 * (2) exp may only contain LitExp, VarExp, ConExp,
-			 *     RefExp, TupExp, RowExp, FunExp
+			 *     RefExp, TupExp, RowExp, VecExp, FunExp, AppExp
 			 * (3) AppExps may only contain ConExp or RefExp
 			 *     as first argument
 			 * (4) if an VarExp on the LHS structurally corresponds
