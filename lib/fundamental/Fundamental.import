@@ -5,7 +5,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg, 2001-2002
  *
  * Last change:
  *   $Date$ by $Author$
@@ -16,4 +16,7 @@
  *  This file is prepended to every file compiled.
  *)
 
-import "x-alice:/lib/fundamental/Fundamental"
+import structure __pervasive	from "x-alice:/lib/fundamental/Pervasive"
+import __primitive		     "x-alice:/lib/fundamental/Core"
+import signature PACKAGE	from "x-alice:/lib/fundamental/PACKAGE-sig"
+import structure Package	from "x-alice:/lib/fundamental/Package"
