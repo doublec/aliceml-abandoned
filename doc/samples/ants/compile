@@ -1,0 +1,8 @@
+#!/bin/sh
+
+PATH=/opt/alice-devel/bin:$PATH
+
+INFILE=$1
+OUTFILE=`basename $INFILE .aml`.ant
+
+alice <$INFILE >$OUTFILE

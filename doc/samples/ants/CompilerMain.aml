@@ -1,0 +1,3 @@
+use (List.hd (CommandLine.arguments ()));
+Instructions.output ignore (TextIO.stdOut, compile ant);
+OS.Process.exit OS.Process.success;

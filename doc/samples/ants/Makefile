@@ -1,6 +1,7 @@
 PATH := /opt/alice-devel/bin:$(PATH)
-ALICEC = alicec --no-warn-conventions
+ALICEC = alicec --no-warn-conventions --no-warn-unused-imports
 ALICEDEP =  alicedep
+ALICERUN = alicerun
 
 SIMULATOR_COMPONENTS = \
 	Ant \
@@ -15,7 +16,7 @@ SIMULATOR_SOURCES = $(SIMULATOR_COMPONENTS:%=%.aml)
 SIMULATOR_TARGETS = $(SIMULATOR_COMPONENTS:%=%.stc)
 
 COMPILER_COMPONENTS = \
-	ANTE-sig Ante
+	ANTE-sig Ante CompilerMain
 
 COMPILER_SOURCES = $(COMPILER_COMPONENTS:%=%.aml)
 COMPILER_TARGETS = $(COMPILER_COMPONENTS:%=%.stc)
@@ -27,8 +28,8 @@ TARGETS = $(SIMULATOR_TARGETS) $(COMPILER_TARGETS)
 
 all: simulator compiler
 
-test: testant.stc all
-	alicerun testant
+anton: anton.stc all
+	$(ALICERUN) anton
 
 simulator: $(SIMULATOR_TARGETS) $(COMPILER_TARGETS)
 
