@@ -3,8 +3,16 @@
 OZVERSION=1.1.1
 OZHOME=/opt/mozart-$OZVERSION
 
-PATH=$OZHOME/bin:$PATH
-OZ_LOAD=prefix=x-alice\\:/=./:prefix=http\\://www.mozart-oz.org/home-$OZVERSION/=$OZHOME/
+howcalled=$0
+
+if test -z "${STOCKHOME}"
+then
+  dir=`dirname $howcalled`
+  STOCKHOME=`(cd $dir; cd ..; /bin/pwd)`
+fi
+
+PATH=$OZHOME/bin:$STOCKHOME/bin:$PATH
+OZ_LOAD=prefix=x-alice\\:=$STOCKHOME/:prefix=http\\://www.mozart-oz.org/home-$OZVERSION/=$OZHOME/
 
 export OZHOME PATH OZ_LOAD
 

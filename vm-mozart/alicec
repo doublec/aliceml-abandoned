@@ -1,3 +1,11 @@
 #!/bin/sh
 
-exec ./stow stoc-mozart "$@"
+howcalled=$0
+
+if test -z "${STOCKHOME}"
+then
+  dir=`dirname $howcalled`
+  STOCKHOME=`(cd $dir; cd ..; /bin/pwd)`
+fi
+
+exec $STOCKHOME/bin/stow x-alice:/stoc.ozf "$@"
