@@ -210,17 +210,13 @@ structure ImperativePhase :> IMPERATIVE_PHASE =
 	    in
 		stms @ translateDec (OneDec (coord', id2, exp), Goto stms')
 	    end
-	  | translateExp (AdjExp (coord, exp1, exp2), f, cont) =
+	  | translateExp (AdjExp (coord, longid1, longid2), f, cont) =
 	    let
-		val coord1 = coordOf exp1
-		val id1 = freshId coord1
-		val coord2 = coordOf exp2
-		val id2 = freshId coord2
-		val stms1 = f (O.AdjExp (coord, id1, id2))::translateCont cont
-		val stms2 =
-		    translateDec (OneDec (coord2, id2, exp2), Goto stms1)
+		val (stms1, id1) = translateLongid longid1
+		val (stms2, id2) = translateLongid longid2
+		val stms' = f (O.AdjExp (coord, id1, id2))::translateCont cont
 	    in
-		translateDec (OneDec (coord1, id1, exp1), Goto stms2)
+		stms1 @ stms2 @ stms'
 	    end
 	  | translateExp (WhileExp (coord, exp1, exp2), f, cont) =
 	    let

@@ -52,7 +52,7 @@ structure SimplifiedGrammar :> SIMPLIFIED_GRAMMAR =
 	  | FunExp of coord * string * (id args * exp) list
 	    (* all arities distinct; always contains a single OneArg *)
 	  | AppExp of coord * longid * exp * bool ref   (* is tail *)
-	  | AdjExp of coord * exp * exp
+	  | AdjExp of coord * longid * longid
 	  | WhileExp of coord * exp * exp
 	  | SeqExp of coord * exp list
 	  | TestExp of coord * longid * test * exp * exp

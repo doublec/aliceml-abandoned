@@ -86,9 +86,13 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 				  O.OneDec (infoId fromId, fromId, toExp)
 			      end) subst
 		val idExpList' =
-		    List.map (fn (id, exp) =>   (*--** simplifyExp is wrong! *)
-			      (id, simplifyExp (substExp (exp, subst))))
-		    idExpList
+		    List.foldr (fn ((id, exp), bindings) =>
+				let
+				    val (bindings', exp') =
+					unfoldExp (substExp (exp, subst))
+				in
+				    (id, exp')::bindings'
+				end) nil idExpList
 	    in
 		simplifyDecs conDecs @
 		(*--** generate constraints *)
@@ -106,130 +110,129 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 	    in
 		(SOME dec', ShortId (coord, id'))
 	    end
-	and simplifyExp (LitExp (coord, lit)) = O.LitExp (coord, lit)
-	  | simplifyExp (VarExp (coord, longid)) = O.VarExp (coord, longid)
-	  | simplifyExp (ConExp (coord, longid, hasArgs)) =
-	    O.ConExp (coord, longid, NONE, hasArgs)
-	  | simplifyExp (RefExp coord) =
-	    O.ConExp (coord, longid_ref, NONE, true)
-	  | simplifyExp (TupExp (coord, exps)) =
+	and simplifyExp exp =
+	    case unfoldExp exp of
+		(nil, exp') => exp'
+	      | (bindings as _::_, exp') =>
+		    O.LetExp (infoExp exp,
+			      List.map (fn (id, exp) =>
+					O.OneDec (infoId id, id, exp))
+			      bindings, exp')
+	and unfoldTerm (VarExp (_, longid)) = (nil, longid)
+	  | unfoldTerm exp =
 	    let
-		val (decs', longids) =
-		    List.foldr
-		    (fn (exp, (decs', longids)) =>
-		     let
-			 val (decOpt, longid) = simplifyTerm exp
-		     in
-			 case decOpt of
-			     NONE => (decs', longid::longids)
-			   | SOME dec' => (dec'::decs', longid::longids)
-		     end) (nil, nil) exps
-		val exp' = O.TupExp (coord, longids)
+		val coord = infoExp exp
+		val id' = freshId coord
+		val (bindings, exp') = unfoldExp exp
 	    in
-		case decs' of
-		    nil => exp'
-		  | _::_ => O.LetExp (coord, decs', exp')
+		(bindings @ [(id', exp')], ShortId (coord, id'))
 	    end
-	  | simplifyExp (RowExp (coord, expFields)) =
+	and unfoldExp (LitExp (coord, lit)) = (nil, O.LitExp (coord, lit))
+	  | unfoldExp (VarExp (coord, longid)) =
+	    (nil, O.VarExp (coord, longid))
+	  | unfoldExp (ConExp (coord, longid, hasArgs)) =
+	    (nil, O.ConExp (coord, longid, NONE, hasArgs))
+	  | unfoldExp (RefExp coord) =
+	    (nil, O.ConExp (coord, longid_ref, NONE, true))
+	  | unfoldExp (TupExp (coord, exps)) =
 	    let
-		val (decs', fields) =
+		val (bindings, longids) =
 		    List.foldr
-		    (fn (Field (_, lab, exp), (decs', fields)) =>
+		    (fn (exp, (bindings, longids)) =>
 		     let
-			 val (decOpt, longid) = simplifyTerm exp
-			 val field = (lab, longid)
+			 val (bindings', longid) = unfoldTerm exp
 		     in
-			 case decOpt of
-			     NONE => (decs', field::fields)
-			   | SOME dec' => (dec'::decs', field::fields)
+			 (bindings' @ bindings, longid::longids)
+		     end) (nil, nil) exps
+	    in
+		(bindings, O.TupExp (coord, longids))
+	    end
+	  | unfoldExp (RowExp (coord, expFields)) =
+	    let
+		val (bindings, fields) =
+		    List.foldr
+		    (fn (Field (_, lab, exp), (bindings, fields)) =>
+		     let
+			 val (bindings', longid) = unfoldTerm exp
+		     in
+			 (bindings' @ bindings, (lab, longid)::fields)
 		     end) (nil, nil) expFields
 		val exp' =
 		    case FieldLabelSort.sort fields of
 			(fields', FieldLabelSort.Tup _) =>
-			    O.TupExp (coord,
-				      List.map (fn (_, exp') => exp') fields')
+			    O.TupExp (coord, List.map #2 fields')
 		      | (fields', FieldLabelSort.Rec) =>
 			    O.RecExp (coord, fields')
 	    in
-		case decs' of
-		    nil => exp'
-		  | _::_ => O.LetExp (coord, decs', exp')
+		(bindings, exp')
 	    end
-	  | simplifyExp (SelExp (coord, lab)) = O.SelExp (coord, lab, NONE)
-	  | simplifyExp (VecExp (coord, exps)) =
+	  | unfoldExp (SelExp (coord, lab)) =
+	    (nil, O.SelExp (coord, lab, NONE))
+	  | unfoldExp (VecExp (coord, exps)) =
 	    let
-		val (decs', longids) =
+		val (bindings, longids) =
 		    List.foldr
-		    (fn (exp, (decs', longids)) =>
+		    (fn (exp, (bindings, longids)) =>
 		     let
-			 val (decOpt, longid) = simplifyTerm exp
+			 val (bindings', longid) = unfoldTerm exp
 		     in
-			 case decOpt of
-			     NONE => (decs', longid::longids)
-			   | SOME dec' => (dec'::decs', longid::longids)
+			 (bindings' @ bindings, longid::longids)
 		     end) (nil, nil) exps
-		val exp' = O.VecExp (coord, longids)
 	    in
-		case decs' of
-		    nil => exp'
-		  | _::_ => O.LetExp (coord, decs', exp')
+		(bindings, O.VecExp (coord, longids))
 	    end
-	  | simplifyExp (FunExp (coord, id, exp)) =
+	  | unfoldExp (FunExp (coord, id, exp)) =
 	    (*--** name propagation, multiple argument optimization *)
-	    O.FunExp (coord, "", [(O.OneArg id, simplifyExp exp)])
-	  | simplifyExp (AppExp (coord, ConExp (_, longid, true), exp)) =
+	    (nil, O.FunExp (coord, "", [(O.OneArg id, simplifyExp exp)]))
+	  | unfoldExp (AppExp (coord, ConExp (_, longid, true), exp)) =
 	    let
-		val (decOpt, longid') = simplifyTerm exp
-		val exp' = O.ConExp (coord, longid, SOME longid', true)
+		val (bindings, longid') = unfoldTerm exp
 	    in
-		case decOpt of
-		    NONE => exp'
-		  | SOME dec' => O.LetExp (coord, [dec'], exp')
+		(bindings, O.ConExp (coord, longid, SOME longid', true))
 	    end
-	  | simplifyExp (AppExp (coord, RefExp _, exp)) =
+	  | unfoldExp (AppExp (coord, RefExp _, exp)) =
 	    let
-		val (decOpt, longid) = simplifyTerm exp
-		val exp' = O.ConExp (coord, longid_ref, SOME longid, true)
+		val (bindings, longid) = unfoldTerm exp
 	    in
-		case decOpt of
-		    NONE => exp'
-		  | SOME dec' => O.LetExp (coord, [dec'], exp')
+		(bindings, O.ConExp (coord, longid_ref, SOME longid, true))
 	    end
-	  | simplifyExp (AppExp (coord, exp1, exp2)) =
+	  | unfoldExp (AppExp (coord, exp1, exp2)) =
 	    let
-		val (decOpt, longid) = simplifyTerm exp1
-		val exp' =
-		    O.AppExp (coord, longid, simplifyExp exp2, ref false)
+		val (bindings, longid) = unfoldTerm exp1
 	    in
-		case decOpt of
-		    NONE => exp'
-		  | SOME dec' => O.LetExp (coord, [dec'], exp')
+		(bindings,
+		 O.AppExp (coord, longid, simplifyExp exp2, ref false))
 	    end
-	  | simplifyExp (AdjExp (coord, exp1, exp2)) =
-	    O.AdjExp (coord, simplifyExp exp1, simplifyExp exp2)
-	  | simplifyExp (AndExp (coord, exp1, exp2)) =
-	    simplifyExp (IfExp (coord, exp1,
-				exp2, VarExp (coord, longid_false)))
-	  | simplifyExp (OrExp (coord, exp1, exp2)) =
-	    simplifyExp (IfExp (coord, exp1,
-				VarExp (coord, longid_true), exp2))
-	  | simplifyExp (IfExp (_, exp1, exp2, exp3)) =
-	    simplifyIf (exp1, simplifyExp exp2, simplifyExp exp3)
-	  | simplifyExp (WhileExp (coord, exp1, exp2)) =
-	    O.WhileExp (coord, simplifyExp exp1, simplifyExp exp2)
-	  | simplifyExp (SeqExp (coord, exps)) =
-	    O.SeqExp (coord, List.map simplifyExp exps)
-	  | simplifyExp (CaseExp (coord, exp, matches)) =
+	  | unfoldExp (AdjExp (coord, exp1, exp2)) =
+	    let
+		val (bindings1, longid1) = unfoldTerm exp1
+		val (bindings2, longid2) = unfoldTerm exp2
+	    in
+		(bindings1 @ bindings2, O.AdjExp (coord, longid1, longid2))
+	    end
+	  | unfoldExp (AndExp (coord, exp1, exp2)) =
+	    unfoldExp (IfExp (coord, exp1,
+			      exp2, VarExp (coord, longid_false)))
+	  | unfoldExp (OrExp (coord, exp1, exp2)) =
+	    unfoldExp (IfExp (coord, exp1,
+			      VarExp (coord, longid_true), exp2))
+	  | unfoldExp (IfExp (_, exp1, exp2, exp3)) =
+	    (nil, simplifyIf (exp1, simplifyExp exp2, simplifyExp exp3))
+	  | unfoldExp (WhileExp (coord, exp1, exp2)) =
+	    (nil, O.WhileExp (coord, simplifyExp exp1, simplifyExp exp2))
+	  | unfoldExp (SeqExp (coord, exps)) =
+	    (nil, O.SeqExp (coord, List.map simplifyExp exps))
+	  | unfoldExp (CaseExp (coord, exp, matches)) =
 	    let
 		val matches' =
 		    List.map (fn Match (_, pat, exp) =>
 			      (infoExp exp, pat, simplifyExp exp)) matches
 	    in
-		simplifyCase (coord, exp, matches', longid_Match)
+		(nil, simplifyCase (coord, exp, matches', longid_Match))
 	    end
-	  | simplifyExp (RaiseExp (coord, exp)) =
-	    O.RaiseExp (coord, simplifyExp exp)
-	  | simplifyExp (HandleExp (coord, exp, matches)) =
+	  | unfoldExp (RaiseExp (coord, exp)) =
+	    (nil, O.RaiseExp (coord, simplifyExp exp))
+	  | unfoldExp (HandleExp (coord, exp, matches)) =
 	    let
 		val id = freshId coord
 		val longid = ShortId (coord, id)
@@ -237,12 +240,12 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 		val matches' =
 		    List.map (fn Match (_, pat, exp) =>
 			      (infoExp exp, pat, simplifyExp exp)) matches
+		val exp' = simplifyCase (coord, varExp, matches', longid)
 	    in
-		O.HandleExp (coord, simplifyExp exp, id,
-			     simplifyCase (coord, varExp, matches', longid))
+		(nil, O.HandleExp (coord, simplifyExp exp, id, exp'))
 	    end
-	  | simplifyExp (LetExp (coord, decs, exp)) =
-	    O.LetExp (coord, simplifyDecs decs, simplifyExp exp)
+	  | unfoldExp (LetExp (coord, decs, exp)) =
+	    (nil, O.LetExp (coord, simplifyDecs decs, simplifyExp exp))
 	and simplifyIf (AndExp (_, exp1, exp2), thenExp, elseExp) =
 	    let
 		val elseExp' = share elseExp
