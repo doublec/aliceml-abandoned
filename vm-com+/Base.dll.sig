@@ -20,10 +20,6 @@ local
 
 structure __pervasive =
   struct
-    __primitive type zero		= "zero"
-    __primitive type 'a succ		= "succ"
-    __primitive type ('a,'b) conarrow	= "conarrow"
-
     structure Label =
     struct
 	fun fromString x = fromString x
@@ -60,6 +56,14 @@ structure __pervasive =
     end
   end
 
+structure __pervasive =
+  struct
+    open __pervasive
+
+    __primitive type zero		= "zero"
+    __primitive type 'a succ		= "succ"
+    __primitive type ('a,'b) conarrow	= "conarrow"
+  end
 
 structure __pervasive =
   struct
