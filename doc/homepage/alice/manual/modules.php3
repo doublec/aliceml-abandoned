@@ -16,6 +16,7 @@
   <LI> <A href="3#paramsig">Parameterized signatures</A> </LI>
   <LI> <A href="#singleton">Singleton signatures</A> </LI>
 -->
+  <LI> <A href="#package">Dynamic typing and modules as 1st-class values</A> </LI>
   <LI> <A href="#lazy">Lazy evaluation</A> </LI>
   <LI> <A href="#fixity">Fixity specifications</A> </LI>
   <LI> <A href="#sugar">Syntax enhancements</A> </LI>
@@ -237,6 +238,15 @@ make it loop.</P>
     in the Alice implementation.
   </P>
 -->
+
+
+<?php section("package", "Dynamic typing and modules as 1st-class values") ?>
+
+<P>Modules can be wrapped up and passed as first-class values as so-called
+<EM>packages</EM>. The signature of packed modules can be dynamically chaked
+against given signatures. See the section on <A
+href="packages.php3">packages</A> for a description of the package
+mechanism.</P>
 
 
 <?php section("lazy", "laziness") ?>

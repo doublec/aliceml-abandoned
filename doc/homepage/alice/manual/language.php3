@@ -51,8 +51,10 @@ programming language (SML), as defined in</P>
   </UL>
   </LI>
 
-  <LI> <A href="packages.php3">Dynamic typing:</A>
+  <LI> <A href="packages.php3">Packages:</A>
   <UL>
+    <LI> <A href="packages.php3#firstclass">first-class modules</A> </LI>
+    <LI> <A href="packages.php3#dynamic">dynamic typing</A> </LI>
   </UL>
   </LI>
 

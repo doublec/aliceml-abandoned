@@ -88,10 +88,181 @@ unpacking is quite robust with respect to extensions to interfaces of modules
 packed elsewhere. In particular, arbitrary items may be added.</P>
 
 
+<?php subsection("package-sharing", "Sharing") ?>
 
 <P>The package signature of <TT>p</TT> is <TT>WORD</TT>. That signature does not
 specify anything about the identity of the contained <TT>word</TT> type.
-Consequently
+Consequently, it will be abstract and incompatible with the original type after
+unpacking:</P>
+
+<PRE class=code>
+Word'.toString (Word8.fromInt 255)   (* static type error! *)</PRE>
+
+<P>In order to make the package signature compatible with <TT>Word8</TT>, it has
+to be specified more specifically:</P>
+
+<PRE class=code>
+val p = pack Word8 :> (WORD where type word = Word8.t)</PRE>
+
+<P>Now the package can be unpacked similarly as</P>
+
+<PRE class=code>
+structure Word8' = unpack p : (WORD where type word = Word8.t)</PRE>
+
+<P>enabling</P>
+
+<PRE class=code>
+Word8'.toString (Word8.fromInt 255)</PRE>
+
+<P>Due to subtyping, it is still valid to unpack it abstractly:</P>
+
+<PRE class=code>
+structure Word' = unpack p : WORD</PRE>
+
+<P>but of course, <TT>Word'.word</TT> again is statically different from
+<TT>Word8.word</TT>.
+
+<P>Type constraints can also be used to specify sharing between different
+packages:</P>
+
+<PRE class=code>
+signature S = (type t  val x : t  val f : t -> int)
+
+fun g(p1, p2) =
+    let
+	structure X1 = unpack p1 : S
+	structure X2 = unpack p2 : (S where type t = X1.t)
+    in
+	X2.f X1.x
+    end</PRE>
+
+<P>In this example, the type <TT>t</TT> in both packages is unknown. However,
+they might be known to be equal. The second <TT>unpack</TT> expression enforces
+this requirement dynamically, by specifying the necessary type equivalence.</P>
+
+
+<?php section("firstclass", "first-class modules") ?>
+
+<P>Packages can be used for encoding idioms requiring first-class modules. For
+example, the implementation of a map module may be chosen dependent on some
+condition, assuming the alternative implementations satisfy a common
+signature:</P>
+
+<PRE class=code>
+structure Map = unpack (if maxElems < 100
+                        then pack BinTreeMap :> MAP)
+			else pack HashTableMap :> MAP) : MAP</PRE>
+
+<P>The main application for first-class structures in the form of packages is
+in combination with <A href="pickling.php3">pickling</A> where they allow making
+implementations of abstract types or whole programs persistent, and with <A
+href="distribution.php3">distributed programming</A>, where they enable
+transfer of program components to remote locations.</A>
+
+<P>Another application is to use structures for object-oriented style
+programming. Consider there is a signature</P>
+
+<PRE class=code>
+signature SHAPE =
+sig
+    type t
+    type vec = int * int
+    val self : t
+    val pos :  t -> vec
+    val move : t * vec -> unit
+end</PRE>
+
+<P>and several functors</P>
+
+<PRE class=code>
+functor Rect    (val h : int val w : int) : sig include SHAPE (* ... *) end
+functor Circle  (val r : int)             : sig include SHAPE (* ... *) end
+functor Polygon (val ps : vec list)       : sig include SHAPE (* ... *) end</PRE>
+
+<P>These functors can be thought of as classes, while the structures they
+return are objects of the corresponding classes. By packing object structures
+they can be stored in a list, for example:</P>
+
+<PRE class=code>
+val shapes = [pack Rect :> SHAPE, pack Circle :> SHAPE, pack Polygon :> SHAPE]</PRE>
+
+<P>It is possible to iterate over <TT>l</TT> without knowing the concrete object
+types:</P>
+
+<PRE class=code>
+List.app (fn p => let structure S = unpack p : SHAPE
+                  in S.move (S.self, (~4,~2))) shapes</PRE>
+
+
+<?php section("dynamic", "runtime typing") ?>
+
+<P>The semantics of packages relies on runtime typing. Consequently, all type
+expressions have an operational semantics. Mostly, this is straight-forward,
+but type abstraction via <TT>:></TT> deserves particular attention. It is an
+important property of the Alice type system that all abstraction guarantees
+carry over from the static type system to dynamic typing: no type abstraction
+can be broken by using packages.</P>
+
+<P>For example, the following declarations will not evaluate successfully:</P>
+
+<PRE class=code>
+signature S = sig type t  val x : t end
+structure X :> S = struct type t = int val x = 9 end
+
+val p = pack X :> S
+
+structure X' = unpack p : S where type t = int</PRE>
+
+<P>The unpacking as shown here will always fail, since the type <TT>X.t</TT> is
+dynamically abstract. Unpacking succeeds if <TT>t</TT> is kept abstract:<P>
+
+<PRE class=code>
+structure X1 = unpack p : S</PRE>
+
+<P>The only possibility to make <TT>t</TT> specific is by expressing sharing
+with the package signature itself, if the package already has been unpacked
+once:</P>
+
+<PRE class=code>
+structure X2 = unpack p : S where type t = X1.t</PRE>
+
+However, this is <EM>not</EM> the most specific signature that can be used
+upon unpacking of <TT>p</TT>. To express sharing, it is possible 
+
+<!--
+<P>To ensure consistency between a package signature and embedded type, the
+pack operation actually performs type abstraction itself (as suggested by the
+<TT>:></TT> syntax).</P>
+-->
+
+- make pack/unpack proper
+
+
+<?php subsection("dynamic-analysis", "Dynamic type analysis") ?>
+
+<P>Packages can be abused to investigate types dynamically. This is particularly
+interesting for functor arguments:</P>
+
+<PRE class=code>
+functor GetMonoVector(type t) =
+    let
+	val t = pack (type t = t) :> (type t = t)
+	val p = let structure _ = unpack t : (type t = char) in
+		    pack CharVector :> (MONO_VECTOR where type elem = char) end
+		handle Package.Mismatch _ =>
+		let structure _ = unpack t : (type t = Word8.t) in
+		    pack Word8Vector :> (MONO_VECTOR where type elem = Word8.t) end
+		handle Package.Mismatch _ =>
+		    pack (type elem = t
+			  open Vector
+			  type vector = elem vector
+			  type t = vector
+			  fun contains eq xs y = exists (fn x => x = y) xs
+			  fun notContains eq xs = not o contains eq xs) :>
+			 (MONO_VECTOR where type elem = t)
+    in
+	unpack p : MONO_VECTOR where type elem = t
+    end</PRE>
 
   <P>
     Packages are provided through the structure

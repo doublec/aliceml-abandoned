@@ -97,7 +97,7 @@ P.note, DIV.note {
 	font-size:	80%;
 }
 
-P.center, DIV.center {
+P.centered, DIV.centered {
 	text-align:	center;
 	font-size:	120%;
 	font-family:	arial, helvetica, sans-serif;
