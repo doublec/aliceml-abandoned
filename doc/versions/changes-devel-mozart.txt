@@ -3,11 +3,31 @@ Language:
 * Nicer syntax (derived forms) for functors.
 * Lazy and spawn syntax for modules.
 * Pack can now use a transparent annotation, as this is usually more convenient.
+* Fully dynamic component typing: link-time type checking now is fully
+  parametric in abstract import types and takes into account the *dynamic*
+  types exported by respective components. This implies at least two things:
+  - Less need for recompilation. Recompilation of a component exporting
+    abstract types no longer forces recompilation of dependent components.
+  - Smooth interaction with pickles. Abstract types in compiled components are
+    no longer incompatible with abstract types in pickled components.
 
 Compiler:
 
 * Dynamic sealing has been implemented.
-* Warn about unsued imports.
+* Warn about unused imports (switch --(no-)warn-unused-imports).
+* Warn about inaccessible type and signature names appearing in inferred
+  component signature (switch --(no-)warn-inaccessible-exports).
+* Inaccessible types occuring in inferred import signatures are now an error.
+* To accommodate with the new dynamic import typing, the compiler now closes
+  over all implicit import signatures, by potentially inserting additional
+  imports for abstract types and signatures imported transitively. Optional
+  warnings for added imports (switch --warn-added-imports).
+
+Linker:
+
+* Rewritten to soundly support dynamic component typing.
+* Disallowing cyclic linking.
+* Print free type names appearing in component signature with -d option.
 
 Interactive Toplevel:
 
@@ -16,10 +36,19 @@ Interactive Toplevel:
 
 Library:
 
+* ComponentManager: added load function, and logStream reference to configure
+  trace destinations. Preconfigurable by value with ALICE_TRACE_COMPONENT.
+  Trace messages are more informative trace messages, particularly wrt
+  signature mismatches. Also added exception Internal.
 * Promise: fulfilling with a cycle no longer fails the promise.
+* Alt: added mapBoth.
+* Pair: added mapBoth.
 * VectorSlice: fixed toVector.
 * ByNeed: moved to Future structure.
 * Future: added ByNeed and Concur functors.
+* GlobalStamp: fixed toString.
+* Channel: new module for concurrent message channels.
+* Gtk library: simplified structure, all types are now defined in GtkTypes.
 
 
 Alice 0.9.3 (Stockhausen Operette 3 Remix 3) - 2004/04/15

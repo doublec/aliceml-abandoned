@@ -3,11 +3,31 @@ Language:
 * Nicer syntax (derived forms) for functors.
 * Lazy and spawn syntax for modules.
 * Pack can now use a transparent annotation, as this is usually more convenient.
+* Fully dynamic component typing: link-time type checking now is fully
+  parametric in abstract import types and takes into account the *dynamic*
+  types exported by respective components. This implies at least two things:
+  - Less need for recompilation. Recompilation of a component exporting
+    abstract types no longer forces recompilation of dependent components.
+  - Smooth interaction with pickles. Abstract types in compiled components are
+    no longer incompatible with abstract types in pickled components.
 
 Compiler:
 
 * Dynamic sealing has been implemented.
-* Warn about unsued imports.
+* Warn about unused imports (switch --(no-)warn-unused-imports).
+* Warn about inaccessible type and signature names appearing in inferred
+  component signature (switch --(no-)warn-inaccessible-exports).
+* Inaccessible types occuring in inferred import signatures are now an error.
+* To accommodate with the new dynamic import typing, the compiler now closes
+  over all implicit import signatures, by potentially inserting additional
+  imports for abstract types and signatures imported transitively. Optional
+  warnings for added imports (switch --warn-added-imports).
+
+Linker:
+
+* Rewritten to soundly support dynamic component typing.
+* Disallowing cyclic linking.
+* Print free type names appearing in component signature with -d option.
 
 Interactive Toplevel:
 
@@ -17,7 +37,7 @@ Interactive Toplevel:
 Runtime system:
 
 * Completely new VM called Seam (Simple Efficient Abstract Machine).
-  It uses just-in-time compilation and a 3 generation garbage collector,
+  It uses just-in-time compilation and a 3-generation garbage collector,
   rendering it up to 5 times faster than Alice on Mozart.
 * Completely new, extended constraint library based on Gecode
   (Generic Constraint Development Environment). It adds
@@ -27,21 +47,29 @@ Runtime system:
 
 Library:
 
-* New interface to the constraint library, due to Gecode.
-* A new binding for Gtk 2, with a lot of interface changes.
+* Constraint library now based on Gecode, with changed interface.
+* A new binding for Gtk 2.2, with a lot of interface changes.
 * Default int type is now 31 bit, infinite precision integers are
   available through the IntInf structure.
 * FixedInt added.
+* ComponentManager: added load function, and logStream reference to configure
+  trace destinations. Preconfigurable by value with ALICE_TRACE_COMPONENT.
+  Trace messages are more informative trace messages, particularly wrt
+  signature mismatches. Also added exception Internal.
 * Hole: fixed semantics of synchronisation on holes.
 * Promise: fulfilling with a cycle no longer fails the promise.
+* Alt: added mapBoth.
+* Pair: added mapBoth.
 * VectorSlice: fixed toVector.
 * ByNeed: moved to Future structure.
 * Future: added ByNeed and Concur functors.
+* Channel: new module for concurrent message channels.
+* RefMap: new module for stable polymorphic hash tables over references.
 
 Tools:
 
-* Reimplemented inspector can show type information and inspect modules.
-* Reimplemented explorer can do auto-zooming and anti-aliasing and has
+* Reimplemented inspector, can show type information and inspect modules.
+* Reimplemented explorer, can do auto-zooming and anti-aliasing and has
   support for visualizing distributed search.
 
 
