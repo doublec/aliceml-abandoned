@@ -42,5 +42,5 @@ fun boot url =
 	val component = Component.create (NONE, Str.x)
 	val _ = ComponentManager.enter (componentManagerUrl, component)
     in
-	ComponentManager.start url
+	ComponentManager.start (Url.fromString url)
     end
