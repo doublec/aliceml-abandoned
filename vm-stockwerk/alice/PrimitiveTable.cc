@@ -17,7 +17,7 @@
 #endif
 
 #include <cstdio>
-#include "adt/HashTable.hh"
+#include "adt/ChunkMap.hh"
 #include "generic/RootSet.hh"
 #include "generic/Transform.hh"
 #include "generic/Closure.hh"
@@ -42,8 +42,8 @@ void PrimitiveTable::Init() {
   // The following values have been derived from the count of
   // 190 functions, 217 values (see the fprintf below)
   // with a fill ratio of ca. 2/3
-  valueTable    = HashTable::New(HashTable::BLOCK_KEY, 325)->ToWord();
-  functionTable = HashTable::New(HashTable::BLOCK_KEY, 285)->ToWord();
+  valueTable    = ChunkMap::New(325)->ToWord();
+  functionTable = ChunkMap::New(285)->ToWord();
   RootSet::Add(valueTable);
   RootSet::Add(functionTable);
   RootSet::Add(PrimitiveTable::Future_Cyclic);
@@ -79,13 +79,12 @@ void PrimitiveTable::Init() {
   RegisterWord8Vector();
   RegisterWord31();
   //  std::fprintf(stderr, "%d functions, %d values\n",
-  //	       HashTable::FromWordDirect(functionTable)->GetSize(),
-  //	       HashTable::FromWordDirect(valueTable)->GetSize());
+  //	       ChunkMap::FromWordDirect(functionTable)->GetSize(),
+  //	       ChunkMap::FromWordDirect(valueTable)->GetSize());
 }
 
 void PrimitiveTable::Register(const char *name, word value) {
-  HashTable::FromWordDirect(valueTable)->
-    InsertItem(String::New(name)->ToWord(), value);
+  ChunkMap::FromWordDirect(valueTable)->Put(String::New(name)->ToWord(), value);
 }
 
 void PrimitiveTable::Register(const char *name,
@@ -97,8 +96,8 @@ void PrimitiveTable::Register(const char *name,
   word function = Primitive::MakeFunction(name, value, arity, abstract);
   word closure  = Closure::New(function, 0)->ToWord();
   Register(name, closure);
-  HashTable::FromWordDirect(functionTable)->
-    InsertItem(String::New(name)->ToWord(), function);
+  ChunkMap::FromWordDirect(functionTable)->
+    Put(String::New(name)->ToWord(), function);
 }
 
 void PrimitiveTable::RegisterUniqueConstructor(const char *name) {
@@ -108,14 +107,14 @@ void PrimitiveTable::RegisterUniqueConstructor(const char *name) {
 word PrimitiveTable::Lookup(word table, Chunk *name) {
   Assert(name != INVALID_POINTER);
   word key = name->ToWord();
-  HashTable *t = HashTable::FromWordDirect(table);
+  ChunkMap *t = ChunkMap::FromWordDirect(table);
   if (!t->IsMember(key)) {
     char message[80 + name->GetSize()];
     sprintf(message, "PrimitiveTable::Lookup: unknown primitive `%.*s'",
 	    static_cast<int>(name->GetSize()), name->GetBase());
     Error(message);
   }
-  return t->GetItem(key);
+  return t->Get(key);
 }
 
 word PrimitiveTable::LookupValue(Chunk *name) {

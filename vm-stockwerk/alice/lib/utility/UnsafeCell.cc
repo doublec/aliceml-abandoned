@@ -11,7 +11,7 @@
 //
 
 #include <cstdio>
-#include "store/WeakDictionary.hh"
+#include "store/Map.hh"
 #include "generic/Tuple.hh"
 #include "alice/StackFrame.hh"
 #include "alice/Authoring.hh"
@@ -91,15 +91,15 @@ private:
 
   static const u_int initialSize = 8; //--** to be determined
 
-  BlockHashTable *GetHashTable() {
-    return BlockHashTable::FromWordDirect(GetArg(HASHTABLE_POS));
+  Map *GetHashTable() {
+    return Map::FromWordDirect(GetArg(HASHTABLE_POS));
   }
 public:
   using Block::ToWord;
 
   static CellMap *New() {
     Block *b = Store::AllocBlock(CELLMAP_LABEL, SIZE);
-    b->InitArg(HASHTABLE_POS, BlockHashTable::New(initialSize)->ToWord());
+    b->InitArg(HASHTABLE_POS, Map::New(initialSize)->ToWord());
     b->InitArg(HEAD_POS, 0);
     return static_cast<CellMap *>(b);
   }
@@ -111,7 +111,7 @@ public:
   }
 
   void Insert(Cell *key, word value) {
-    BlockHashTable *hashTable = GetHashTable();
+    Map *hashTable = GetHashTable();
     word wKey = key->ToWord();
     Assert(!hashTable->IsMember(wKey));
     word head = GetArg(HEAD_POS);
@@ -119,15 +119,15 @@ public:
       INVALID_POINTER: CellMapEntry::FromWordDirect(head);
     CellMapEntry *entry = CellMapEntry::New(key, value, headEntry);
     ReplaceArg(HEAD_POS, entry->ToWord());
-    hashTable->InsertItem(wKey, entry->ToWord());
+    hashTable->Put(wKey, entry->ToWord());
   }
   void Delete(Cell *key) {
     word wKey = key->ToWord();
-    BlockHashTable *hashTable = GetHashTable();
+    Map *hashTable = GetHashTable();
     Assert(hashTable->IsMember(wKey));
     CellMapEntry *entry =
-      CellMapEntry::FromWordDirect(hashTable->GetItem(wKey));
-    hashTable->DeleteItem(wKey);
+      CellMapEntry::FromWordDirect(hashTable->Get(wKey));
+    hashTable->Remove(wKey);
     word result = entry->Unlink();
     if (result != Store::IntToWord(1))
       ReplaceArg(HEAD_POS, result);
@@ -138,17 +138,17 @@ public:
   }
   CellMapEntry *LookupEntry(Cell *key) {
     word wKey = key->ToWord();
-    BlockHashTable *hashTable = GetHashTable();
+    Map *hashTable = GetHashTable();
     Assert(hashTable->IsMember(wKey));
-    return CellMapEntry::FromWordDirect(hashTable->GetItem(wKey));
+    return CellMapEntry::FromWordDirect(hashTable->Get(wKey));
   }
   word Lookup(Cell *key) {
     word wKey = key->ToWord();
-    BlockHashTable *hashTable = GetHashTable();
+    Map *hashTable = GetHashTable();
     if (hashTable->IsMember(wKey)) {
       TagVal *some = TagVal::New(1, 1); // SOME ...
       CellMapEntry *entry =
-	CellMapEntry::FromWordDirect(hashTable->GetItem(wKey));
+	CellMapEntry::FromWordDirect(hashTable->Get(wKey));
       some->Init(0, entry->GetValue());
       return some->ToWord();
     } else {
