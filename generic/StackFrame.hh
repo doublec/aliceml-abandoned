@@ -10,11 +10,11 @@
 //   $Revision$
 //
 
-#ifndef __EMULATOR_STACKFRAME_HH__
-#define __EMULATOR_STACKFRAME_HH__
+#ifndef __GENERIC__STACK_FRAME_HH__
+#define __GENERIC__STACK_FRAME_HH__
 
 #if defined(INTERFACE)
-#pragma interface "emulator/StackFrame.hh"
+#pragma interface "generic/StackFrame.hh"
 #endif
 
 #include "store/Store.hh"
