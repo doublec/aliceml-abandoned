@@ -15,6 +15,7 @@ is
     ../infrastructure/source.cm
     ../common/id-stamp.cm
     ../common/intermediate-grammar.cm
+    arity.cm
 
     FLAT_GRAMMAR-sig.aml
     FlatGrammar.aml

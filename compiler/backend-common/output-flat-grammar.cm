@@ -8,6 +8,7 @@ is
     ../../lib/system/sources.cm
     ../../lib/utility/sources.cm
     ../common/id-stamp.cm
+    arity.cm
 
     flat-grammar.cm
 
