@@ -19,7 +19,7 @@
 #pragma interface "datalayer/alicedata.hh"
 #endif
 
-#include "store/store.hh"
+#include "store/Store.hh"
 
 #define WORDS_NEEDED(n, t) \
   ((sizeof(t) * n + sizeof(word) - 1) / sizeof(word))
@@ -29,18 +29,18 @@ typedef unsigned short w_char;
 class Alice {
 public:
   enum label {
-    MIN_LABEL    = MIN_DATALABELSIZE,
-    MAX_LABEL    = MAX_DATALABELSIZE - 9,
+    MIN_LABEL    = MIN_DATA_LABEL,
+    MAX_LABEL    = MAX_DATA_LABEL - 9,
 
-    Array        = MAX_DATALABELSIZE - 8,
-    ArrayZero    = MAX_DATALABELSIZE - 7,
-    Cell         = MAX_DATALABELSIZE - 6,
-    Constructor  = MAX_DATALABELSIZE - 5,
-    ConVal       = MAX_DATALABELSIZE - 4,
-    GlobalStamp  = MAX_DATALABELSIZE - 3,
-    Tuple        = MAX_DATALABELSIZE - 2,
-    Vector       = MAX_DATALABELSIZE - 1,
-    VectorZero   = MAX_DATALABELSIZE,
+    Array        = MAX_DATA_LABEL - 8,
+    ArrayZero    = MAX_DATA_LABEL - 7,
+    Cell         = MAX_DATA_LABEL - 6,
+    Constructor  = MAX_DATA_LABEL - 5,
+    ConVal       = MAX_DATA_LABEL - 4,
+    GlobalStamp  = MAX_DATA_LABEL - 3,
+    Tuple        = MAX_DATA_LABEL - 2,
+    Vector       = MAX_DATA_LABEL - 1,
+    VectorZero   = MAX_DATA_LABEL,
     LAST_LABEL   = VectorZero
   };
   
@@ -198,7 +198,7 @@ public:
   static Real *FromWord(word x) {
     Block *b = Store::WordToBlock(x);
     Assert(b == INVALID_POINTER ||
-	   b->GetLabel() == CHUNK && b->GetSize() == SIZE);
+	   b->GetLabel() == CHUNK_LABEL && b->GetSize() == SIZE);
     return static_cast<Real *>(b);
   }
 
@@ -217,25 +217,25 @@ public:
 
   static String *New(u_int len) {
     Block *b = Store::AllocChunk(WORDS_NEEDED(len, char) + 1);
-    b->InitArg(LEN_POS, Store::IntToWord(len));
+    b->InitArg(LEN_POS, len);
     return static_cast<String *>(b);
   }
   static String *New(const char *str) {
     u_int len  = strlen(str);
     Block *b = Store::AllocChunk(WORDS_NEEDED(len, char) + 1);
-    b->InitArg(LEN_POS, Store::IntToWord(len));
+    b->InitArg(LEN_POS, len);
     memcpy(reinterpret_cast<char *>(b->GetBase() + 1), str, len);
     return static_cast<String *>(b);
   }
   static String *New(const char *str, u_int len) {
     Block *b = Store::AllocChunk(WORDS_NEEDED(len, char) + 1);
-    b->InitArg(LEN_POS, Store::IntToWord(len));
+    b->InitArg(LEN_POS, len);
     memcpy(reinterpret_cast<char *>(b->GetBase() + 1), str, len);
     return static_cast<String *>(b);
   }
   static String *FromWord(word x) {
     Block *b = Store::WordToBlock(x);
-    Assert(b == INVALID_POINTER || b->GetLabel() == CHUNK);
+    Assert(b == INVALID_POINTER || b->GetLabel() == CHUNK_LABEL);
     return static_cast<String *>(b);
   }
 
@@ -243,7 +243,7 @@ public:
     return reinterpret_cast<char *>(GetBase() + 1);
   }
   u_int GetLength() {
-    return Store::WordToInt(GetArg(LEN_POS));
+    return Store::UnsafeWordToInt(GetArg(LEN_POS));
   }
 };
 
@@ -328,12 +328,12 @@ public:
 
   static GlobalStamp *New() {
     Block *b = Store::AllocBlock(Alice::ToBlockLabel(Alice::GlobalStamp), SIZE);
-    b->InitArg(HASH_CODE_POS, Store::IntToWord(hashCode++));
+    b->InitArg(HASH_CODE_POS, hashCode++);
     return static_cast<GlobalStamp *>(b);
   }
   static GlobalStamp *New(String *name) {
     Block *b = Store::AllocBlock(Alice::ToBlockLabel(Alice::GlobalStamp), SIZE);
-    b->InitArg(HASH_CODE_POS, Store::IntToWord(hashCode++));
+    b->InitArg(HASH_CODE_POS, hashCode++);
     b->InitArg(NAME_POS, name->ToWord());
     return static_cast<GlobalStamp *>(b);
   }
@@ -345,10 +345,10 @@ public:
   }
 
   u_int GetHashCode() {
-    return Store::WordToInt(GetArg(HASH_CODE_POS));
+    return Store::UnsafeWordToInt(GetArg(HASH_CODE_POS));
   }
   String *GetName() {
-    return static_cast<String *>(Store::WordToBlock(GetArg(NAME_POS)));
+    return static_cast<String *>(Store::UnsafeWordToBlock(GetArg(NAME_POS)));
   }
 };
 
@@ -397,7 +397,7 @@ public:
   }
   static WideString *FromWord(word x) {
     Block *b = Store::WordToBlock(x);
-    Assert(b == INVALID_POINTER || b->GetLabel() == CHUNK);
+    Assert(b == INVALID_POINTER || b->GetLabel() == CHUNK_LABEL);
     return static_cast<WideString *>(b);
   }
 
