@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg, 2001-2002
  *
  * Last change:
  *   $Date$ by $Author$
@@ -39,6 +39,7 @@ import structure List                                      from "List"
 import structure Real                                      from "Real"
 import structure Char                                      from "Char"
 import structure String                                    from "String"
+import structure Substring                                 from "Substring"
 import structure Vector                                    from "Vector"
 import structure Future                                    from "Future"
 
@@ -57,6 +58,7 @@ struct
     type real		= real
     type char		= char
     type string		= string
+    type substring	= Substring.t
     type vector		= vector
     type array		= array
 
@@ -136,9 +138,4 @@ struct
     (*TODO (or not)
     __primitive val use : string -> unit = "use"
     *)
-
-    exception Cyclic	= Future.Cyclic				(**)
-
-    val byneed		= Future.byneed				(**)
-    val concur		= Future.concur				(**)
 end
