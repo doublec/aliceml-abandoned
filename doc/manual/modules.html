@@ -36,12 +36,12 @@ consequence, structures can be declared local to an expression (via
 For example: </P>
 
 <PRE class=code>
-fun sortIntList ns =
-    let
-        structure Tree = MkBinTree (type t = int)
-    in
-	Tree.toList (foldl Tree.insert Tree.empty ns)
-    end</PRE>
+fun sortWithoutDups compare l =
+let
+    structure Set = MkRedBlackSet (type t = string; val compare = compare)
+in
+    Set.toList (foldr (flip Set.insert) Set.empty l)
+end</PRE>
 
 
 
