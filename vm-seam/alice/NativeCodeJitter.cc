@@ -1956,7 +1956,7 @@ TagVal *NativeCodeJitter::InstrTagTest(TagVal *pc) {
   return TagVal::FromWordDirect(pc->Sel(3));
 }
 
-// CompactTagTest of idRef * tagTests * instr
+// CompactTagTest of idRef * tagTests * instr option
 TagVal *NativeCodeJitter::InstrCompactTagTest(TagVal *pc) {
   PrintPC("CompactTagTest\n");
   word instrPC = Store::IntToWord(GetRelativePC());
@@ -1969,11 +1969,15 @@ TagVal *NativeCodeJitter::InstrCompactTagTest(TagVal *pc) {
   jit_patch(have_constructor);
   JITAlice::TagVal::GetTag(tagVal);
   jit_patch(skip_tagload);
-  Vector *tests      = Vector::FromWordDirect(pc->Sel(1));
-  u_int nTests       = tests->GetLength();
-  jit_insn *else_ref = jit_bgei_ui(jit_forward(), JIT_R0, nTests);
-  Tuple *branches    = Tuple::New(nTests);
-  u_int i1           = ImmediateEnv::Register(branches->ToWord());
+  Vector *tests         = Vector::FromWordDirect(pc->Sel(1));
+  u_int nTests          = tests->GetLength();
+  TagVal *someElseInstr = TagVal::FromWord(pc->Sel(2));
+  jit_insn *else_ref    = NULL;
+  if (someElseInstr != INVALID_POINTER) {
+    else_ref = jit_bgei_ui(jit_forward(), JIT_R0, nTests);
+  }
+  Tuple *branches       = Tuple::New(nTests);
+  u_int i1              = ImmediateEnv::Register(branches->ToWord());
   jit_pushr_ui(tagVal); // Save int/tagval ptr
   ImmediateSel(JIT_V1, JIT_V2, i1);
   Generic::Tuple::IndexSel(JIT_R0, JIT_V1, JIT_R0); // R0 holds branch offset
@@ -1999,8 +2003,12 @@ TagVal *NativeCodeJitter::InstrCompactTagTest(TagVal *pc) {
     CompileBranch(TagVal::FromWordDirect(tuple->Sel(1)));
   }
   // else branch
-  jit_patch(else_ref);
-  return TagVal::FromWordDirect(pc->Sel(2));
+  if (someElseInstr != INVALID_POINTER) {
+    jit_patch(else_ref);
+    return TagVal::FromWordDirect(someElseInstr->Sel(0));
+  } else {
+    return INVALID_POINTER;
+  }
 }
 
 // ConTest of idRef * (idRef * instr) vector
