@@ -16,7 +16,7 @@
 DEFINE2(UnsafeForeign_catch) {
   DECLARE_CLOSURE(closure, x0);
   x1 = x1; // unused: this VM has no foreign exceptions
-  Scheduler::nArgs = 0;
+  Scheduler::SetNArgs(0);
   return Scheduler::PushCall(closure->ToWord());
 } END
 

@@ -68,9 +68,9 @@ Worker::Result LazyCompileInterpreter::Run(StackFrame *sFrame) {
   Assert(sFrame->GetWorker() == this);
   LazyCompileClosure *closure = frame->GetClosure();
   Scheduler::PopFrame(frame->GetSize());
-  Scheduler::nArgs = 1;
+  Scheduler::SetNArgs(1);
   NativeCodeJitter jitter;
-  Scheduler::currentArgs[0] = jitter.Compile(closure);
+  Scheduler::SetCurrentArg(0, jitter.Compile(closure));
   return Worker::CONTINUE;
 }
 

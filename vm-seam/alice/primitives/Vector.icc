@@ -101,23 +101,23 @@ Worker::Result VectorTabulateWorker::Run(StackFrame *sFrame) {
   u_int i         = frame->GetIndex();
   u_int n         = frame->GetNumberOfElements();
   Construct();
-  word wValue = Scheduler::currentArgs[0];
+  word wValue = Scheduler::GetCurrentArg(0);
 #if REQUEST_ELEMS_INT
   if (Store::WordToInt(wValue) == INVALID_INT) {
-    Scheduler::currentData = wValue;
+    Scheduler::SetCurrentData(wValue);
     return Worker::REQUEST;
   }
 #endif
   vector->LateInit(i, wValue);
   if (++i == n) {
     Scheduler::PopFrame(frame->GetSize());
-    Scheduler::nArgs = 1;
-    Scheduler::currentArgs[0] = vector->ToWord();
+    Scheduler::SetNArgs(1);
+    Scheduler::SetCurrentArg(0, vector->ToWord());
     return Worker::CONTINUE;
   } else {
     frame->UpdateIndex(i);
-    Scheduler::nArgs = 1;
-    Scheduler::currentArgs[0] = Store::IntToWord(i);
+    Scheduler::SetNArgs(1);
+    Scheduler::SetCurrentArg(0, Store::IntToWord(i));
     return Scheduler::PushCall(closure);
   }
 }
@@ -212,8 +212,8 @@ DEFINE2(Vector_tabulate) {
     word wClosure = x1;
     XVector *vector = XVector::New(length);
     VectorTabulateWorker::PushFrame(vector, wClosure, 0, length);
-    Scheduler::nArgs = 1;
-    Scheduler::currentArgs[0] = Store::IntToWord(0);
+    Scheduler::SetNArgs(1);
+    Scheduler::SetCurrentArg(0, Store::IntToWord(0));
     return Scheduler::PushCall(wClosure);
   }
 } END

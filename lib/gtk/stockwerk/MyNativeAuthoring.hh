@@ -22,171 +22,171 @@
 #include "Alice.hh"
 
 // extending the existing DEFINE0..DEFINE5
-#define DEFINE6(name)					\
-  static Worker::Result name() {			\
-    Assert(Scheduler::nArgs == 6);			\
-    POP_PRIM_SELF(); \
-    word x0 = Scheduler::currentArgs[0];		\
-    word x1 = Scheduler::currentArgs[1];		\
-    word x2 = Scheduler::currentArgs[2];		\
-    word x3 = Scheduler::currentArgs[3];                \
-    word x4 = Scheduler::currentArgs[4];                \
-    word x5 = Scheduler::currentArgs[5];
-#define DEFINE7(name)					\
-  static Worker::Result name() {			\
-    Assert(Scheduler::nArgs == 7);			\
-    POP_PRIM_SELF(); \
-    word x0 = Scheduler::currentArgs[0];		\
-    word x1 = Scheduler::currentArgs[1];		\
-    word x2 = Scheduler::currentArgs[2];		\
-    word x3 = Scheduler::currentArgs[3];                \
-    word x4 = Scheduler::currentArgs[4];                \
-    word x5 = Scheduler::currentArgs[5];                \
-    word x6 = Scheduler::currentArgs[6];                
-#define DEFINE8(name)					\
-  static Worker::Result name() {			\
-    Assert(Scheduler::nArgs == 8);			\
-    POP_PRIM_SELF(); \
-    word x0 = Scheduler::currentArgs[0];		\
-    word x1 = Scheduler::currentArgs[1];		\
-    word x2 = Scheduler::currentArgs[2];		\
-    word x3 = Scheduler::currentArgs[3];                \
-    word x4 = Scheduler::currentArgs[4];                \
-    word x5 = Scheduler::currentArgs[5];                \
-    word x6 = Scheduler::currentArgs[6];                \
-    word x7 = Scheduler::currentArgs[7];                
-#define DEFINE9(name)					\
-  static Worker::Result name() {			\
-    Assert(Scheduler::nArgs == 9);			\
-    POP_PRIM_SELF(); \
-    word x0 = Scheduler::currentArgs[0];		\
-    word x1 = Scheduler::currentArgs[1];		\
-    word x2 = Scheduler::currentArgs[2];		\
-    word x3 = Scheduler::currentArgs[3];                \
-    word x4 = Scheduler::currentArgs[4];                \
-    word x5 = Scheduler::currentArgs[5];                \
-    word x6 = Scheduler::currentArgs[6];                \
-    word x7 = Scheduler::currentArgs[7];                \
-    word x8 = Scheduler::currentArgs[8];                
-#define DEFINE10(name)					\
-  static Worker::Result name() {			\
-    Assert(Scheduler::nArgs == 10);			\
-    POP_PRIM_SELF(); \
-    word x0 = Scheduler::currentArgs[0];		\
-    word x1 = Scheduler::currentArgs[1];		\
-    word x2 = Scheduler::currentArgs[2];		\
-    word x3 = Scheduler::currentArgs[3];                \
-    word x4 = Scheduler::currentArgs[4];                \
-    word x5 = Scheduler::currentArgs[5];                \
-    word x6 = Scheduler::currentArgs[6];                \
-    word x7 = Scheduler::currentArgs[7];                \
-    word x8 = Scheduler::currentArgs[8];                \
-    word x9 = Scheduler::currentArgs[9];                
-#define DEFINE11(name)					\
-  static Worker::Result name() {			\
-    Assert(Scheduler::nArgs == 11);			\
-    POP_PRIM_SELF(); \
-    word x0 = Scheduler::currentArgs[0];		\
-    word x1 = Scheduler::currentArgs[1];		\
-    word x2 = Scheduler::currentArgs[2];		\
-    word x3 = Scheduler::currentArgs[3];                \
-    word x4 = Scheduler::currentArgs[4];                \
-    word x5 = Scheduler::currentArgs[5];                \
-    word x6 = Scheduler::currentArgs[6];                \
-    word x7 = Scheduler::currentArgs[7];                \
-    word x8 = Scheduler::currentArgs[8];                \
-    word x9 = Scheduler::currentArgs[9];                \
-    word x10= Scheduler::currentArgs[10];               
-#define DEFINE12(name)					\
-  static Worker::Result name() {			\
-    Assert(Scheduler::nArgs == 12);			\
-    POP_PRIM_SELF(); \
-    word x0 = Scheduler::currentArgs[0];		\
-    word x1 = Scheduler::currentArgs[1];		\
-    word x2 = Scheduler::currentArgs[2];		\
-    word x3 = Scheduler::currentArgs[3];                \
-    word x4 = Scheduler::currentArgs[4];                \
-    word x5 = Scheduler::currentArgs[5];                \
-    word x6 = Scheduler::currentArgs[6];                \
-    word x7 = Scheduler::currentArgs[7];                \
-    word x8 = Scheduler::currentArgs[8];                \
-    word x9 = Scheduler::currentArgs[9];                \
-    word x10= Scheduler::currentArgs[10];               \
-    word x11= Scheduler::currentArgs[11];               
-#define DEFINE13(name)					\
-  static Worker::Result name() {			\
-    Assert(Scheduler::nArgs == 13);			\
-    POP_PRIM_SELF(); \
-    word x0 = Scheduler::currentArgs[0];		\
-    word x1 = Scheduler::currentArgs[1];		\
-    word x2 = Scheduler::currentArgs[2];		\
-    word x3 = Scheduler::currentArgs[3];                \
-    word x4 = Scheduler::currentArgs[4];                \
-    word x5 = Scheduler::currentArgs[5];                \
-    word x6 = Scheduler::currentArgs[6];                \
-    word x7 = Scheduler::currentArgs[7];                \
-    word x8 = Scheduler::currentArgs[8];                \
-    word x9 = Scheduler::currentArgs[9];                \
-    word x10= Scheduler::currentArgs[10];               \
-    word x11= Scheduler::currentArgs[11];               \
-    word x12= Scheduler::currentArgs[12];               
-#define DEFINE14(name)					\
-  static Worker::Result name() {			\
-    Assert(Scheduler::nArgs == 14);			\
-    POP_PRIM_SELF(); \
-    word x0 = Scheduler::currentArgs[0];		\
-    word x1 = Scheduler::currentArgs[1];		\
-    word x2 = Scheduler::currentArgs[2];		\
-    word x3 = Scheduler::currentArgs[3];                \
-    word x4 = Scheduler::currentArgs[4];                \
-    word x5 = Scheduler::currentArgs[5];                \
-    word x6 = Scheduler::currentArgs[6];                \
-    word x7 = Scheduler::currentArgs[7];                \
-    word x8 = Scheduler::currentArgs[8];                \
-    word x9 = Scheduler::currentArgs[9];                \
-    word x10= Scheduler::currentArgs[10];               \
-    word x11= Scheduler::currentArgs[11];               \
-    word x12= Scheduler::currentArgs[12];               \
-    word x13= Scheduler::currentArgs[13];               
-#define DEFINE15(name)					\
-  static Worker::Result name() {			\
-    Assert(Scheduler::nArgs == 15);			\
-    POP_PRIM_SELF(); \
-    word x0 = Scheduler::currentArgs[0];		\
-    word x1 = Scheduler::currentArgs[1];		\
-    word x2 = Scheduler::currentArgs[2];		\
-    word x3 = Scheduler::currentArgs[3];                \
-    word x4 = Scheduler::currentArgs[4];                \
-    word x5 = Scheduler::currentArgs[5];                \
-    word x6 = Scheduler::currentArgs[6];                \
-    word x7 = Scheduler::currentArgs[7];                \
-    word x8 = Scheduler::currentArgs[8];                \
-    word x9 = Scheduler::currentArgs[9];                \
-    word x10= Scheduler::currentArgs[10];               \
-    word x11= Scheduler::currentArgs[11];               \
-    word x12= Scheduler::currentArgs[12];               \
-    word x13= Scheduler::currentArgs[13];               \
-    word x14= Scheduler::currentArgs[14];               
-#define DEFINE16(name)					\
-  static Worker::Result name() {			\
-    Assert(Scheduler::nArgs == 16);			\
-    POP_PRIM_SELF(); \
-    word x0 = Scheduler::currentArgs[0];		\
-    word x1 = Scheduler::currentArgs[1];		\
-    word x2 = Scheduler::currentArgs[2];		\
-    word x3 = Scheduler::currentArgs[3];                \
-    word x4 = Scheduler::currentArgs[4];                \
-    word x5 = Scheduler::currentArgs[5];                \
-    word x6 = Scheduler::currentArgs[6];                \
-    word x7 = Scheduler::currentArgs[7];                \
-    word x8 = Scheduler::currentArgs[8];                \
-    word x9 = Scheduler::currentArgs[9];                \
-    word x10= Scheduler::currentArgs[10];               \
-    word x11= Scheduler::currentArgs[11];               \
-    word x12= Scheduler::currentArgs[12];               \
-    word x13= Scheduler::currentArgs[13];               \
-    word x14= Scheduler::currentArgs[14];               \
-    word x15= Scheduler::currentArgs[15];               
+#define DEFINE6(name)				\
+  static Worker::Result name() {		\
+    Assert(Scheduler::GetNArgs() == 6);		\
+    POP_PRIM_SELF();				\
+    word x0 = Scheduler::GetCurrentArg(0);	\
+    word x1 = Scheduler::GetCurrentArg(1);	\
+    word x2 = Scheduler::GetCurrentArg(2);	\
+    word x3 = Scheduler::GetCurrentArg(3);	\
+    word x4 = Scheduler::GetCurrentArg(4);	\
+    word x5 = Scheduler::GetCurrentArg(5);
+#define DEFINE7(name)						\
+  static Worker::Result name() {				\
+    Assert(Scheduler::GetNArgs() == 7);				\
+    POP_PRIM_SELF();						\
+    word x0 = Scheduler::GetCurrentArg(0);			\
+    word x1 = Scheduler::GetCurrentArg(1);			\
+    word x2 = Scheduler::GetCurrentArg(2);			\
+    word x3 = Scheduler::GetCurrentArg(3);			\
+    word x4 = Scheduler::GetCurrentArg(4);			\
+    word x5 = Scheduler::GetCurrentArg(5);			\
+    word x6 = Scheduler::GetCurrentArg(6);                
+#define DEFINE8(name)						\
+  static Worker::Result name() {				\
+    Assert(Scheduler::GetNArgs() == 8);				\
+    POP_PRIM_SELF();						\
+    word x0 = Scheduler::GetCurrentArg(0);			\
+    word x1 = Scheduler::GetCurrentArg(1);			\
+    word x2 = Scheduler::GetCurrentArg(2);			\
+    word x3 = Scheduler::GetCurrentArg(3);			\
+    word x4 = Scheduler::GetCurrentArg(4);			\
+    word x5 = Scheduler::GetCurrentArg(5);			\
+    word x6 = Scheduler::GetCurrentArg(6);			\
+    word x7 = Scheduler::GetCurrentArg(7);                
+#define DEFINE9(name)						\
+  static Worker::Result name() {				\
+    Assert(Scheduler::GetNArgs() == 9);				\
+    POP_PRIM_SELF();						\
+    word x0 = Scheduler::GetCurrentArg(0);			\
+    word x1 = Scheduler::GetCurrentArg(1);			\
+    word x2 = Scheduler::GetCurrentArg(2);			\
+    word x3 = Scheduler::GetCurrentArg(3);			\
+    word x4 = Scheduler::GetCurrentArg(4);			\
+    word x5 = Scheduler::GetCurrentArg(5);			\
+    word x6 = Scheduler::GetCurrentArg(6);			\
+    word x7 = Scheduler::GetCurrentArg(7);			\
+    word x8 = Scheduler::GetCurrentArg(8);                
+#define DEFINE10(name)						\
+  static Worker::Result name() {				\
+    Assert(Scheduler::GetNArgs() == 10);			\
+    POP_PRIM_SELF();						\
+    word x0 = Scheduler::GetCurrentArg(0);			\
+    word x1 = Scheduler::GetCurrentArg(1);			\
+    word x2 = Scheduler::GetCurrentArg(2);			\
+    word x3 = Scheduler::GetCurrentArg(3);			\
+    word x4 = Scheduler::GetCurrentArg(4);			\
+    word x5 = Scheduler::GetCurrentArg(5);			\
+    word x6 = Scheduler::GetCurrentArg(6);			\
+    word x7 = Scheduler::GetCurrentArg(7);			\
+    word x8 = Scheduler::GetCurrentArg(8);			\
+    word x9 = Scheduler::GetCurrentArg(9);                
+#define DEFINE11(name)						\
+  static Worker::Result name() {				\
+    Assert(Scheduler::GetNArgs() == 11);			\
+    POP_PRIM_SELF();						\
+    word x0 = Scheduler::GetCurrentArg(0);			\
+    word x1 = Scheduler::GetCurrentArg(1);			\
+    word x2 = Scheduler::GetCurrentArg(2);			\
+    word x3 = Scheduler::GetCurrentArg(3);			\
+    word x4 = Scheduler::GetCurrentArg(4);			\
+    word x5 = Scheduler::GetCurrentArg(5);			\
+    word x6 = Scheduler::GetCurrentArg(6);			\
+    word x7 = Scheduler::GetCurrentArg(7);			\
+    word x8 = Scheduler::GetCurrentArg(8);			\
+    word x9 = Scheduler::GetCurrentArg(9);			\
+    word x10= Scheduler::GetCurrentArg(10);               
+#define DEFINE12(name)						\
+  static Worker::Result name() {				\
+    Assert(Scheduler::GetNArgs() == 12);			\
+    POP_PRIM_SELF();						\
+    word x0 = Scheduler::GetCurrentArg(0);			\
+    word x1 = Scheduler::GetCurrentArg(1);			\
+    word x2 = Scheduler::GetCurrentArg(2);			\
+    word x3 = Scheduler::GetCurrentArg(3);			\
+    word x4 = Scheduler::GetCurrentArg(4);			\
+    word x5 = Scheduler::GetCurrentArg(5);			\
+    word x6 = Scheduler::GetCurrentArg(6);			\
+    word x7 = Scheduler::GetCurrentArg(7);			\
+    word x8 = Scheduler::GetCurrentArg(8);			\
+    word x9 = Scheduler::GetCurrentArg(9);			\
+    word x10= Scheduler::GetCurrentArg(10);			\
+    word x11= Scheduler::GetCurrentArg(11);               
+#define DEFINE13(name)						\
+  static Worker::Result name() {				\
+    Assert(Scheduler::GetNArgs() == 13);			\
+    POP_PRIM_SELF();						\
+    word x0 = Scheduler::GetCurrentArg(0);			\
+    word x1 = Scheduler::GetCurrentArg(1);			\
+    word x2 = Scheduler::GetCurrentArg(2);			\
+    word x3 = Scheduler::GetCurrentArg(3);			\
+    word x4 = Scheduler::GetCurrentArg(4);			\
+    word x5 = Scheduler::GetCurrentArg(5);			\
+    word x6 = Scheduler::GetCurrentArg(6);			\
+    word x7 = Scheduler::GetCurrentArg(7);			\
+    word x8 = Scheduler::GetCurrentArg(8);			\
+    word x9 = Scheduler::GetCurrentArg(9);			\
+    word x10= Scheduler::GetCurrentArg(10);			\
+    word x11= Scheduler::GetCurrentArg(11);			\
+    word x12= Scheduler::GetCurrentArg(12);               
+#define DEFINE14(name)						\
+  static Worker::Result name() {				\
+    Assert(Scheduler::GetNArgs() == 14);			\
+    POP_PRIM_SELF();						\
+    word x0 = Scheduler::GetCurrentArg(0);			\
+    word x1 = Scheduler::GetCurrentArg(1);			\
+    word x2 = Scheduler::GetCurrentArg(2);			\
+    word x3 = Scheduler::GetCurrentArg(3);			\
+    word x4 = Scheduler::GetCurrentArg(4);			\
+    word x5 = Scheduler::GetCurrentArg(5);			\
+    word x6 = Scheduler::GetCurrentArg(6);			\
+    word x7 = Scheduler::GetCurrentArg(7);			\
+    word x8 = Scheduler::GetCurrentArg(8);			\
+    word x9 = Scheduler::GetCurrentArg(9);			\
+    word x10= Scheduler::GetCurrentArg(10);			\
+    word x11= Scheduler::GetCurrentArg(11);			\
+    word x12= Scheduler::GetCurrentArg(12);			\
+    word x13= Scheduler::GetCurrentArg(13);               
+#define DEFINE15(name)						\
+  static Worker::Result name() {				\
+    Assert(Scheduler::GetNArgs() == 15);			\
+    POP_PRIM_SELF();						\
+    word x0 = Scheduler::GetCurrentArg(0);			\
+    word x1 = Scheduler::GetCurrentArg(1);			\
+    word x2 = Scheduler::GetCurrentArg(2);			\
+    word x3 = Scheduler::GetCurrentArg(3);			\
+    word x4 = Scheduler::GetCurrentArg(4);			\
+    word x5 = Scheduler::GetCurrentArg(5);			\
+    word x6 = Scheduler::GetCurrentArg(6);			\
+    word x7 = Scheduler::GetCurrentArg(7);			\
+    word x8 = Scheduler::GetCurrentArg(8);			\
+    word x9 = Scheduler::GetCurrentArg(9);			\
+    word x10= Scheduler::GetCurrentArg(10);			\
+    word x11= Scheduler::GetCurrentArg(11);			\
+    word x12= Scheduler::GetCurrentArg(12);			\
+    word x13= Scheduler::GetCurrentArg(13);			\
+    word x14= Scheduler::GetCurrentArg(14);               
+#define DEFINE16(name)						\
+  static Worker::Result name() {				\
+    Assert(Scheduler::GetNArgs() == 16);			\
+    POP_PRIM_SELF();						\
+    word x0 = Scheduler::GetCurrentArg(0);			\
+    word x1 = Scheduler::GetCurrentArg(1);			\
+    word x2 = Scheduler::GetCurrentArg(2);			\
+    word x3 = Scheduler::GetCurrentArg(3);			\
+    word x4 = Scheduler::GetCurrentArg(4);			\
+    word x5 = Scheduler::GetCurrentArg(5);			\
+    word x6 = Scheduler::GetCurrentArg(6);			\
+    word x7 = Scheduler::GetCurrentArg(7);			\
+    word x8 = Scheduler::GetCurrentArg(8);			\
+    word x9 = Scheduler::GetCurrentArg(9);			\
+    word x10= Scheduler::GetCurrentArg(10);			\
+    word x11= Scheduler::GetCurrentArg(11);			\
+    word x12= Scheduler::GetCurrentArg(12);			\
+    word x13= Scheduler::GetCurrentArg(13);			\
+    word x14= Scheduler::GetCurrentArg(14);			\
+    word x15= Scheduler::GetCurrentArg(15);               
 
 
 
@@ -218,58 +218,58 @@
 
 // extending the existing RETURN0..RETURN3
 #define RETURN4(w1, w2, w3, w4) {		\
-  Scheduler::nArgs = 4;				\
-  Scheduler::currentArgs[0] = w1;		\
-  Scheduler::currentArgs[1] = w2;		\
-  Scheduler::currentArgs[2] = w3;		\
-  Scheduler::currentArgs[3] = w4;		\
+  Scheduler::SetNArgs(4);			\
+  Scheduler::SetCurrentArg(0, w1);		\
+  Scheduler::SetCurrentArg(1, w2);		\
+  Scheduler::SetCurrentArg(2, w3);		\
+  Scheduler::SetCurrentArg(3, w4);		\
   return Worker::CONTINUE;			\
 }
 
 #define RETURN5(w1, w2, w3, w4, w5) {		\
-  Scheduler::nArgs = 5;				\
-  Scheduler::currentArgs[0] = w1;		\
-  Scheduler::currentArgs[1] = w2;		\
-  Scheduler::currentArgs[2] = w3;		\
-  Scheduler::currentArgs[3] = w4;		\
-  Scheduler::currentArgs[4] = w5;		\
+  Scheduler::SetNArgs(5);			\
+  Scheduler::SetCurrentArg(0, w1);		\
+  Scheduler::SetCurrentArg(1, w2);		\
+  Scheduler::SetCurrentArg(2, w3);		\
+  Scheduler::SetCurrentArg(3, w4);		\
+  Scheduler::SetCurrentArg(4, w5);		\
   return Worker::CONTINUE;			\
 }
 
 #define RETURN6(w1, w2, w3, w4, w5, w6) {	\
-  Scheduler::nArgs = 6;				\
-  Scheduler::currentArgs[0] = w1;		\
-  Scheduler::currentArgs[1] = w2;		\
-  Scheduler::currentArgs[2] = w3;		\
-  Scheduler::currentArgs[3] = w4;		\
-  Scheduler::currentArgs[4] = w5;		\
-  Scheduler::currentArgs[5] = w6;		\
+  Scheduler::SetNArgs(6);			\
+  Scheduler::SetCurrentArg(0, w1);		\
+  Scheduler::SetCurrentArg(1, w2);		\
+  Scheduler::SetCurrentArg(2, w3);		\
+  Scheduler::SetCurrentArg(3, w4);		\
+  Scheduler::SetCurrentArg(4, w5);		\
+  Scheduler::SetCurrentArg(5, w6);		\
   return Worker::CONTINUE;			\
 }
 
 #define RETURN7(w1, w2, w3, w4, w5, w6, w7) {	\
-  Scheduler::nArgs = 7;				\
-  Scheduler::currentArgs[0] = w1;		\
-  Scheduler::currentArgs[1] = w2;		\
-  Scheduler::currentArgs[2] = w3;		\
-  Scheduler::currentArgs[3] = w4;		\
-  Scheduler::currentArgs[4] = w5;		\
-  Scheduler::currentArgs[5] = w6;		\
-  Scheduler::currentArgs[6] = w7;		\
+  Scheduler::SetNArgs(7);			\
+  Scheduler::SetCurrentArg(0, w1);		\
+  Scheduler::SetCurrentArg(1, w2);		\
+  Scheduler::SetCurrentArg(2, w3);		\
+  Scheduler::SetCurrentArg(3, w4);		\
+  Scheduler::SetCurrentArg(4, w5);		\
+  Scheduler::SetCurrentArg(5, w6);		\
+  Scheduler::SetCurrentArg(6, w7);		\
   return Worker::CONTINUE;			\
 }
 
 #define RETURN8(w1, w2, w3, w4, w5, w6, w7, w8) {	\
-  Scheduler::nArgs = 8;				\
-  Scheduler::currentArgs[0] = w1;		\
-  Scheduler::currentArgs[1] = w2;		\
-  Scheduler::currentArgs[2] = w3;		\
-  Scheduler::currentArgs[3] = w4;		\
-  Scheduler::currentArgs[4] = w5;		\
-  Scheduler::currentArgs[5] = w6;		\
-  Scheduler::currentArgs[6] = w7;		\
-  Scheduler::currentArgs[7] = w8;		\
-  return Worker::CONTINUE;			\
+  Scheduler::SetNArgs(8);				\
+  Scheduler::SetCurrentArg(0, w1);			\
+  Scheduler::SetCurrentArg(1, w2);			\
+  Scheduler::SetCurrentArg(2, w3);			\
+  Scheduler::SetCurrentArg(3, w4);			\
+  Scheduler::SetCurrentArg(4, w5);			\
+  Scheduler::SetCurrentArg(5, w6);			\
+  Scheduler::SetCurrentArg(6, w7);			\
+  Scheduler::SetCurrentArg(7, w8);			\
+  return Worker::CONTINUE;				\
 }
 
 // General macros that wrap the heterogenous "ToWord" conversion

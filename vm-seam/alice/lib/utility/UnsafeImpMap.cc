@@ -30,7 +30,7 @@ public:
   using Block::ToWord;
 
   static ImpMapEntry *New(word key, word value, ImpMapEntry *next) {
-    Block *b = Store::AllocBlock(ENTRY_LABEL, SIZE);
+    Block *b = Store::AllocMutableBlock(ENTRY_LABEL, SIZE);
     b->InitArg(KEY_POS, key);
     b->InitArg(VALUE_POS, value);
     b->InitArg(PREV_POS, 0);
@@ -98,7 +98,7 @@ public:
   using Block::ToWord;
 
   static ImpMap *New() {
-    Block *b = Store::AllocBlock(IMPMAP_LABEL, SIZE);
+    Block *b = Store::AllocMutableBlock(IMPMAP_LABEL, SIZE);
     b->InitArg(HASHTABLE_POS, Map::New(initialSize)->ToWord());
     b->InitArg(HEAD_POS, 0);
     return STATIC_CAST(ImpMap *, b);
@@ -240,8 +240,8 @@ Worker::Result ImpMapInsertWorker::Run(StackFrame *sFrame) {
   ImpMapEntry *entry = frame->GetEntry();
   Scheduler::PopFrame(frame->GetSize());
   Construct();
-  entry->SetValue(Scheduler::currentArgs[0]);
-  Scheduler::nArgs = 0;
+  entry->SetValue(Scheduler::GetCurrentArg(0));
+  Scheduler::SetNArgs(0);
   return Worker::CONTINUE;
 }
 
@@ -334,26 +334,26 @@ Worker::Result ImpMapIteratorWorker::Run(StackFrame *sFrame) {
     Scheduler::PopFrame(frame->GetSize());
   switch (op) {
   case app:
-    Scheduler::nArgs = 1;
-    Scheduler::currentArgs[0] = entry->GetValue();
+    Scheduler::SetNArgs(1);
+    Scheduler::SetCurrentArg(0, entry->GetValue());
     break;
   case appi:
-    Scheduler::nArgs = 2;
-    Scheduler::currentArgs[0] = entry->GetKey();
-    Scheduler::currentArgs[1] = entry->GetValue();
+    Scheduler::SetNArgs(2);
+    Scheduler::SetCurrentArg(0, entry->GetKey());
+    Scheduler::SetCurrentArg(1, entry->GetValue());
     break;
   case fold:
     Construct();
-    Scheduler::nArgs = 2;
-    Scheduler::currentArgs[1] = Scheduler::currentArgs[0];
-    Scheduler::currentArgs[0] = entry->GetValue();
+    Scheduler::SetNArgs(2);
+    Scheduler::SetCurrentArg(1, Scheduler::GetCurrentArg(0));
+    Scheduler::SetCurrentArg(0, entry->GetValue());
     break;
   case foldi:
     Construct();
-    Scheduler::nArgs = 3;
-    Scheduler::currentArgs[2] = Scheduler::currentArgs[0];
-    Scheduler::currentArgs[0] = entry->GetKey();
-    Scheduler::currentArgs[1] = entry->GetValue();
+    Scheduler::SetNArgs(3);
+    Scheduler::SetCurrentArg(2, Scheduler::GetCurrentArg(0));
+    Scheduler::SetCurrentArg(0, entry->GetKey());
+    Scheduler::SetCurrentArg(1, entry->GetValue());
     break;
   }
   return Scheduler::PushCall(closure);
@@ -452,28 +452,28 @@ Worker::Result ImpMapFindWorker::Run(StackFrame *sFrame) {
   ImpMapEntry *entry = frame->GetEntry();
   word closure = frame->GetClosure();
   operation op = frame->GetOperation();
-  Assert(Scheduler::nArgs == 1);
-  switch (Store::WordToInt(Scheduler::currentArgs[0])) {
+  Assert(Scheduler::GetNArgs() == 1);
+  switch (Store::WordToInt(Scheduler::GetCurrentArg(0))) {
   case 0: // false
     entry = entry->GetNext();
     if (entry != INVALID_POINTER) {
       frame->SetEntry(entry);
       switch (op) {
       case find:
-	Scheduler::nArgs = 1;
-	Scheduler::currentArgs[0] = entry->GetValue();
+	Scheduler::SetNArgs(1);
+	Scheduler::SetCurrentArg(0, entry->GetValue());
 	break;
       case findi:
-	Scheduler::nArgs = 2;
-	Scheduler::currentArgs[0] = entry->GetKey();
-	Scheduler::currentArgs[1] = entry->GetValue();
+	Scheduler::SetNArgs(2);
+	Scheduler::SetCurrentArg(0, entry->GetKey());
+	Scheduler::SetCurrentArg(1, entry->GetValue());
 	break;
       }
       return Scheduler::PushCall(closure);
     } else {
       Scheduler::PopFrame(frame->GetSize());
-      Scheduler::nArgs = 1;
-      Scheduler::currentArgs[0] = Store::IntToWord(0); // NONE
+      Scheduler::SetNArgs(1);
+      Scheduler::SetCurrentArg(0, Store::IntToWord(0)); // NONE
       return Worker::CONTINUE;
     }
   case 1: // true
@@ -491,12 +491,12 @@ Worker::Result ImpMapFindWorker::Run(StackFrame *sFrame) {
 	some->Init(0, pair->ToWord());
 	break;
       }
-      Scheduler::nArgs = 1;
-      Scheduler::currentArgs[0] = some->ToWord();
+      Scheduler::SetNArgs(1);
+      Scheduler::SetCurrentArg(0, some->ToWord());
       return Worker::CONTINUE;
     }
   case INVALID_INT:
-    Scheduler::currentData = Scheduler::currentArgs[0];
+    Scheduler::SetCurrentData(Scheduler::GetCurrentArg(0));
     return Worker::REQUEST;
   default:
     Error("ImpMapFindWorker: boolean expected");
@@ -547,10 +547,10 @@ DEFINE4(UnsafeImpMap_insertWithi) {
   if (impMap->Member(key)) {
     ImpMapEntry *entry = impMap->LookupEntry(key);
     ImpMapInsertWorker::PushFrame(entry);
-    Scheduler::nArgs = 3;
-    Scheduler::currentArgs[0] = key;
-    Scheduler::currentArgs[1] = entry->GetValue();
-    Scheduler::currentArgs[2] = value;
+    Scheduler::SetNArgs(3);
+    Scheduler::SetCurrentArg(0, key);
+    Scheduler::SetCurrentArg(1, entry->GetValue());
+    Scheduler::SetCurrentArg(2, value);
     return Scheduler::PushCall(closure);
   } else {
     impMap->Insert(key, value);
@@ -566,8 +566,8 @@ DEFINE3(UnsafeImpMap_removeWith) {
     impMap->Remove(key);
     RETURN_UNIT;
   } else {
-    Scheduler::nArgs = 1;
-    Scheduler::currentArgs[0] = key;
+    Scheduler::SetNArgs(1);
+    Scheduler::SetCurrentArg(0, key);
     return Scheduler::PushCall(closure);
   }
 } END
@@ -643,8 +643,8 @@ DEFINE2(UnsafeImpMap_find) {
   if (entry != INVALID_POINTER) {
     ImpMapFindWorker::PushFrame(entry, closure,
 				 ImpMapFindWorker::find);
-    Scheduler::nArgs = 1;
-    Scheduler::currentArgs[0] = entry->GetValue();
+    Scheduler::SetNArgs(1);
+    Scheduler::SetCurrentArg(0, entry->GetValue());
     return Scheduler::PushCall(closure);
   } else {
     RETURN_INT(0); // NONE
@@ -658,9 +658,9 @@ DEFINE2(UnsafeImpMap_findi) {
   if (entry != INVALID_POINTER) {
     ImpMapFindWorker::PushFrame(entry, closure,
 				 ImpMapFindWorker::findi);
-    Scheduler::nArgs = 2;
-    Scheduler::currentArgs[0] = entry->GetKey();
-    Scheduler::currentArgs[1] = entry->GetValue();
+    Scheduler::SetNArgs(2);
+    Scheduler::SetCurrentArg(0, entry->GetKey());
+    Scheduler::SetCurrentArg(1, entry->GetValue());
     return Scheduler::PushCall(closure);
   } else {
     RETURN_INT(0); // NONE

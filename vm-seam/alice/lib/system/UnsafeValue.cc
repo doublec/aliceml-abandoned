@@ -87,8 +87,8 @@ Worker::Result RequestInterpreter::Run(StackFrame *sFrame) {
     return Worker::CONTINUE;
   } else {
     frame->SetAgain();
-    Scheduler::nArgs = 1;
-    Scheduler::currentArgs[0] = Store::IntToWord(0);
+    Scheduler::SetNArgs(1);
+    Scheduler::SetCurrentArg(0, Store::IntToWord(0));
     return Scheduler::PushCall(frame->GetClosure());
   }
 }
@@ -148,13 +148,13 @@ DEFINE1(UnsafeValue_awaitRequest) {
       requestClosure->Init(1, closure->ToWord());
       transient->ReplaceArg(requestClosure->ToWord());
     }
-    Scheduler::nArgs          = 1;
-    Scheduler::currentArgs[0] = Store::IntToWord(0);
+    Scheduler::SetNArgs(1);
+    Scheduler::SetCurrentArg(0, Store::IntToWord(0));
     REQUEST(wFuture);
   }
   else {
-    Scheduler::nArgs          = 1;
-    Scheduler::currentArgs[0] = Store::IntToWord(0);
+    Scheduler::SetNArgs(1);
+    Scheduler::SetCurrentArg(0, Store::IntToWord(0));
     REQUEST(x0);
   }
 } END

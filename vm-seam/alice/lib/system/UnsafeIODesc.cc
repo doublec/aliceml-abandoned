@@ -33,15 +33,15 @@ static word SysErrConstructor;
 //
 // Primitives
 //
-#define INTERPRET_RESULT(result) {				\
-  switch (result) {						\
-  case IODesc::result_ok: RETURN_UNIT;				\
-  case IODesc::result_closed: RAISE(ClosedStreamConstructor);	\
-  case IODesc::result_request: REQUEST(Scheduler::currentData);	\
-  case IODesc::result_system_error: RAISE_SYS_ERR();		\
-  case IODesc::result_socket_error: RAISE_SOCK_ERR();		\
-  default: Error("invalid result");				\
-  }								\
+#define INTERPRET_RESULT(result) {					\
+  switch (result) {							\
+  case IODesc::result_ok: RETURN_UNIT;					\
+  case IODesc::result_closed: RAISE(ClosedStreamConstructor);		\
+  case IODesc::result_request: REQUEST(Scheduler::GetCurrentData());	\
+  case IODesc::result_system_error: RAISE_SYS_ERR();			\
+  case IODesc::result_socket_error: RAISE_SOCK_ERR();			\
+  default: Error("invalid result");					\
+  }									\
 }
 
 #define x_buf x0

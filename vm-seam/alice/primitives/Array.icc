@@ -102,23 +102,23 @@ Worker::Result ArrayTabulateWorker::Run(StackFrame *sFrame) {
   u_int i         = frame->GetIndex();
   u_int n         = frame->GetNumberOfElements();
   Construct();
-  word wValue = Scheduler::currentArgs[0];
+  word wValue = Scheduler::GetCurrentArg(0);
 #if REQUEST_ELEMS_INT
   if (Store::WordToInt(wValue) == INVALID_INT) {
-    Scheduler::currentData = wValue;
+    Scheduler::SetCurrentData(wValue);
     return Worker::REQUEST;
   }
 #endif
   array->Update(i, wValue);
   if (++i == n) {
     Scheduler::PopFrame(frame->GetSize());
-    Scheduler::nArgs = 1;
-    Scheduler::currentArgs[0] = array->ToWord();
+    Scheduler::SetNArgs(1);
+    Scheduler::SetCurrentArg(0, array->ToWord());
     return Worker::CONTINUE;
   } else {
     frame->UpdateIndex(i);
-    Scheduler::nArgs = 1;
-    Scheduler::currentArgs[0] = Store::IntToWord(i);
+    Scheduler::SetNArgs(1);
+    Scheduler::SetCurrentArg(0, Store::IntToWord(i));
     return Scheduler::PushCall(closure);
   }
 }
@@ -141,7 +141,7 @@ DEFINE2(Array_array) {
   DECLARE_INT(length, x0);
 #if REQUEST_ELEMS_INT
   if (Store::WordToInt(x1) == INVALID_INT) {
-    Scheduler::currentData = x1;
+    Scheduler::SetCurrentData(x1);
     return Worker::REQUEST;
   }
 #endif
@@ -214,8 +214,8 @@ DEFINE2(Array_tabulate) {
     word wClosure = x1;
     XArray *array = XArray::New(length);
     ArrayTabulateWorker::PushFrame(array, wClosure, 0, length);
-    Scheduler::nArgs = 1;
-    Scheduler::currentArgs[0] = Store::IntToWord(0);
+    Scheduler::SetNArgs(1);
+    Scheduler::SetCurrentArg(0, Store::IntToWord(0));
     return Scheduler::PushCall(wClosure);
   }
 } END

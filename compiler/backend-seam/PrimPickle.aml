@@ -44,7 +44,7 @@ structure PrimPickle :> PRIM_PICKLE =
 	type label = int
 	type size = int
 
-        val majorVersion = 1
+        val majorVersion = 2
         val minorVersion = 0
         val magicS = Word8.fromInt (Char.ord #"s")
         val magicE = Word8.fromInt (Char.ord #"e")
@@ -57,17 +57,20 @@ structure PrimPickle :> PRIM_PICKLE =
 	val tPOSINT      = Word8.fromInt 3
 	val tNEGINT      = Word8.fromInt 4
 	val tCHUNK       = Word8.fromInt 5
-	val tUNIQUE      = Word8.fromInt 6
-	val tBLOCK       = Word8.fromInt 7
-	val tTUPLE       = Word8.fromInt 8
-	val tCLOSURE     = Word8.fromInt 9
-	val tTRANSFORM   = Word8.fromInt 10
-	val tPROMBLOCK   = Word8.fromInt 11
-	val tPROMTUPLE   = Word8.fromInt 12
-	val tPROMCLOSURE = Word8.fromInt 13
-	val tPROMTRANSFORM = Word8.fromInt 14
-	val tFULFIL      = Word8.fromInt 15
-	val tENDOFSTREAM = Word8.fromInt 16
+	val tMCHUNK      = Word8.fromInt 6
+	val tUNIQUE      = Word8.fromInt 7
+	val tBLOCK       = Word8.fromInt 8
+	val tMBLOCK      = Word8.fromInt 9
+	val tTUPLE       = Word8.fromInt 10
+	val tCLOSURE     = Word8.fromInt 11
+	val tTRANSFORM   = Word8.fromInt 12
+	val taBLOCK      = Word8.fromInt 13
+	val taMBLOCK     = Word8.fromInt 14
+	val taTUPLE      = Word8.fromInt 15
+	val taCLOSURE    = Word8.fromInt 16
+	val taTRANSFORM  = Word8.fromInt 17
+	val tFULFIL      = Word8.fromInt 18
+	val tENDOFSTREAM = Word8.fromInt 19
 
 	fun streamOutputByte ({stream, ...}: outstream, w) =
 	    BinIO.output1 (stream, w)
@@ -136,11 +139,23 @@ structure PrimPickle :> PRIM_PICKLE =
 	     Word8Vector.app (fn b => outputByte (q, b)) bytes;
 	     push q)
 
+	fun outputMChunk (q, bytes) =
+	    (outputByte (q, tMCHUNK);
+	     outputUInt (q, Word8Vector.length bytes);
+	     Word8Vector.app (fn b => outputByte (q, b)) bytes;
+	     push q)
+
 	fun outputUnique q =
 	    (outputByte (q, tUNIQUE))
 	    
 	fun outputBlock (q, label, size) =
 	    (outputByte (q, tBLOCK);
+	     outputUInt (q, label);
+	     outputUInt (q, size);
+	     pop (q, size-1))
+
+	fun outputMBlock (q, label, size) =
+	    (outputByte (q, tMBLOCK);
 	     outputUInt (q, label);
 	     outputUInt (q, size);
 	     pop (q, size-1))

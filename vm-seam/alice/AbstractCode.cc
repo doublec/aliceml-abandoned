@@ -175,6 +175,8 @@ private:
     case AbstractCode::Global:
       std::fprintf(file, " Global(%d)", Store::DirectWordToInt(idRef->Sel(0)));
       break;
+    default:
+      Assert(false);
     }
   }
   void IdDefInstr(word w) {

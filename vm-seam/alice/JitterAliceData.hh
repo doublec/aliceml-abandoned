@@ -27,7 +27,7 @@ protected:
   enum { BIGTAGVAL_TAG_POS, BIGTAGVAL_BASE_SIZE };
 public:
   void Cell_New(u_int This) {
-    JITStore::AllocBlock(This, Alice::Cell, CELL_SIZE);
+    JITStore::AllocMutableBlock(This, Alice::Cell, CELL_SIZE);
   }
   void Cell_Put(u_int This, u_int Value) {
     JITStore::InitArg(This, CELL_VALUE_POS, Value);

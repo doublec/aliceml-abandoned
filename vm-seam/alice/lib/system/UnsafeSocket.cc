@@ -155,9 +155,9 @@ DEFINE2(UnsafeSocket_client) {
       Future *future = IOHandler::WaitWritable(sock);
       if (future != INVALID_POINTER) {
 	// Don't use macro REQUEST here, as we wish to drop our frame:
-	Scheduler::currentData = future->ToWord();
-	Scheduler::nArgs = 1;
-	Scheduler::currentArgs[0] = Store::IntToWord(sock);
+	Scheduler::SetCurrentData(future->ToWord());
+	Scheduler::SetNArgs(1);
+	Scheduler::SetCurrentArg(0, Store::IntToWord(sock));
 	return Worker::REQUEST;
       }
     } else {

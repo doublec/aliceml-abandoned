@@ -55,7 +55,7 @@ inline void KillIdRef(word idRef, TagVal *pc,
 #if DEBUGGER
 #define SUSPEND() {                                     \
   PushState(pc, globalEnv, localEnv);                   \
-  Scheduler::nArgs = 0;                                 \
+  Scheduler::SetNArgs(0);                               \
   return Worker::SUSPEND;                               \
 }
 
@@ -321,8 +321,8 @@ void AbstractCodeInterpreter::PushCall(Closure *closure) {
 #define REQUEST(w) {				\
   Scheduler::PopFrame(frame->GetSize());        \
   PushState(pc, globalEnv, localEnv);		\
-  Scheduler::currentData = w;			\
-  Scheduler::nArgs = 0;				\
+  Scheduler::SetCurrentData(w);			\
+  Scheduler::SetNArgs(0);			\
   return Worker::REQUEST;			\
 }
 
@@ -358,16 +358,16 @@ Worker::Result AbstractCodeInterpreter::Run(StackFrame *sFrame) {
 	Construct();
 	TagVal *idDef = TagVal::FromWord(formalArgs->Sub(0));
 	if (idDef != INVALID_POINTER) // IdDef id
-	  localEnv->Add(idDef->Sel(0), Scheduler::currentArgs[0]);
+	  localEnv->Add(idDef->Sel(0), Scheduler::GetCurrentArg(0));
       }
       break;
     default:
       {
 	Vector *formalIdDefs = formalArgs;
 	if (nArgs == 0) {
-	  if (Scheduler::nArgs != 0) {
-	    Assert(Scheduler::nArgs == 1);
-	    word requestWord = Scheduler::currentArgs[0];
+	  if (Scheduler::GetNArgs() != 0) {
+	    Assert(Scheduler::GetNArgs() == 1);
+	    word requestWord = Scheduler::GetCurrentArg(0);
 	    if (Store::WordToInt(requestWord) == INVALID_INT)
 	      REQUEST(requestWord);
 	    Assert(Store::WordToInt(requestWord) == 0); // unit
@@ -377,11 +377,11 @@ Worker::Result AbstractCodeInterpreter::Run(StackFrame *sFrame) {
 	    // Scheduler::currentData has been set by Worker::Deconstruct
 	    return Worker::REQUEST;
 	  }
-	  Assert(Scheduler::nArgs == nArgs);
+	  Assert(Scheduler::GetNArgs() == nArgs);
 	  for (u_int i = nArgs; i--; ) {
 	    TagVal *idDef = TagVal::FromWord(formalIdDefs->Sub(i));
 	    if (idDef != INVALID_POINTER) // IdDef id
-	      localEnv->Add(idDef->Sel(0), Scheduler::currentArgs[i]);
+	      localEnv->Add(idDef->Sel(0), Scheduler::GetCurrentArg(i));
 	  }
 	}
       }
@@ -667,10 +667,10 @@ Worker::Result AbstractCodeInterpreter::Run(StackFrame *sFrame) {
 	// Push a call frame for the primitive
 	Vector *actualIdRefs = Vector::FromWordDirect(pc->Sel(1));
 	u_int nArgs = actualIdRefs->GetLength();
-	Scheduler::nArgs = nArgs;
+	Scheduler::SetNArgs(nArgs);
 	for (u_int i = nArgs; i--; )
-	  Scheduler::currentArgs[i] =
-	    GetIdRefKill(actualIdRefs->Sub(i), pc, globalEnv, localEnv);
+	  Scheduler::SetCurrentArg(i,
+	    GetIdRefKill(actualIdRefs->Sub(i), pc, globalEnv, localEnv));
 	return Scheduler::PushCall(pc->Sel(0));
       }
       break;
@@ -688,10 +688,10 @@ Worker::Result AbstractCodeInterpreter::Run(StackFrame *sFrame) {
 	}
 	Vector *actualIdRefs = Vector::FromWordDirect(pc->Sel(1));
 	u_int nArgs = actualIdRefs->GetLength();
-	Scheduler::nArgs = nArgs;
+	Scheduler::SetNArgs(nArgs);
 	for (u_int i = nArgs; i--; )
-	  Scheduler::currentArgs[i] =
-	    GetIdRefKill(actualIdRefs->Sub(i), pc, globalEnv, localEnv);
+	  Scheduler::SetCurrentArg(i,
+	    GetIdRefKill(actualIdRefs->Sub(i), pc, globalEnv, localEnv));
 	if (StatusWord::GetStatus() != 0) {
 	  Worker::Result res =
 	    Scheduler::PushCall(GetIdRefKill(pc->Sel(0), pc,
@@ -777,8 +777,8 @@ Worker::Result AbstractCodeInterpreter::Run(StackFrame *sFrame) {
 	Transient *transient = Store::WordToTransient(requestWord);
 	if (transient != INVALID_POINTER) REQUEST(transient->ToWord());
 	KillIdRef(pc->Sel(0), pc, globalEnv, localEnv);
-	Scheduler::currentData = requestWord;
-	Scheduler::currentBacktrace = Backtrace::New(frame->Clone());
+	Scheduler::SetCurrentData(requestWord);
+	Scheduler::SetCurrentBacktrace(Backtrace::New(frame->Clone()));
 	return Worker::RAISE;
       }
       break;
@@ -788,9 +788,9 @@ Worker::Result AbstractCodeInterpreter::Run(StackFrame *sFrame) {
 	  Tuple::FromWordDirect(GetIdRefKill(pc->Sel(0), pc,
 					     globalEnv, localEnv));
 	package->AssertWidth(2);
-	Scheduler::currentData = package->Sel(0);
-	Scheduler::currentBacktrace =
-	  Backtrace::FromWordDirect(package->Sel(1));
+	Scheduler::SetCurrentData(package->Sel(0));
+	Scheduler::SetCurrentBacktrace
+	  (Backtrace::FromWordDirect(package->Sel(1)));
 	return Worker::RAISE;
       }
     case AbstractCode::Try: // of instr * idDef * idDef * instr
@@ -1080,11 +1080,10 @@ Worker::Result AbstractCodeInterpreter::Run(StackFrame *sFrame) {
       {
 	Vector *returnIdRefs = Vector::FromWordDirect(pc->Sel(0));
 	u_int nArgs = returnIdRefs->GetLength();
-	Assert(nArgs <= Scheduler::maxArgs);
-	Scheduler::nArgs = nArgs;
+	Scheduler::SetNArgs(nArgs);
 	for (u_int i = nArgs; i--; )
-	  Scheduler::currentArgs[i] =
-	    GetIdRefKill(returnIdRefs->Sub(i), pc, globalEnv, localEnv);
+	  Scheduler::SetCurrentArg(i,
+	    GetIdRefKill(returnIdRefs->Sub(i), pc, globalEnv, localEnv));
 	CHECK_PREEMPT();
       }
       break;
@@ -1099,12 +1098,12 @@ Worker::Result AbstractCodeInterpreter::Handle(word data) {
   Assert(sFrame->GetWorker() == this);
   AbstractCodeFrame *frame = STATIC_CAST(AbstractCodeFrame *, sFrame);
   Tuple *package = Tuple::New(2);
-  word exn = Scheduler::currentData;
+  word exn = Scheduler::GetCurrentData();
   package->Init(0, exn);
-  package->Init(1, Scheduler::currentBacktrace->ToWord());
-  Scheduler::nArgs = 2;
-  Scheduler::currentArgs[0] = package->ToWord();
-  Scheduler::currentArgs[1] = exn;
+  package->Init(1, Scheduler::GetCurrentBacktrace()->ToWord());
+  Scheduler::SetNArgs(2);
+  Scheduler::SetCurrentArg(0, package->ToWord());
+  Scheduler::SetCurrentArg(1, exn);
   Tuple *exnData = Tuple::FromWordDirect(data);
   frame->SetPC(TagVal::FromWordDirect(exnData->Sel(0)));
   frame->SetFormalArgs(exnData->Sel(1));

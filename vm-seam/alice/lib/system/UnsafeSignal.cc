@@ -137,9 +137,9 @@ Worker::Result SignalTranslationInterpreter::Run(StackFrame *sFrame) {
   } else {
     word wClosure = frame->GetClosure();
     frame->SetEntered();
-    u_int nativeSignal = Store::DirectWordToInt(Scheduler::currentArgs[0]);
-    Scheduler::currentArgs[0] =
-      Store::IntToWord(NativeSignalToAliceSignal(nativeSignal));
+    u_int nativeSignal = Store::DirectWordToInt(Scheduler::GetCurrentArg(0));
+    Scheduler::SetCurrentArg(0,
+      Store::IntToWord(NativeSignalToAliceSignal(nativeSignal)));
     return Scheduler::PushCall(wClosure);
   }
 }
@@ -151,8 +151,8 @@ Worker::Result SignalTranslationInterpreter::Handle(word) {
     STATIC_CAST(SignalTranslationFrame *, sFrame);
   Assert(sFrame->GetWorker() == this);
   Scheduler::PopFrame(frame->GetSize());
-  Scheduler::nArgs = 1;
-  Scheduler::currentArgs[0] = Store::IntToWord(0);
+  Scheduler::SetNArgs(1);
+  Scheduler::SetCurrentArg(0, Store::IntToWord(0));
   return Worker::CONTINUE;
 }
 

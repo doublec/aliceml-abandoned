@@ -20,7 +20,7 @@ static int Compare(word x0, word x1) {
   if (a == INVALID_POINTER) { // x0 is Transient or int
     s_int i = Store::WordToInt(x0);
     if (i == INVALID_INT) { // x0 is transient
-      Scheduler::currentData = x0;
+      Scheduler::SetCurrentData(x0);
       return -1;
     }
     // x0 is int
@@ -39,7 +39,7 @@ static int Compare(word x0, word x1) {
     // x1 is Transient or int
     s_int j = Store::WordToInt(x1);
     if (j == INVALID_INT) { // x1 is Transient
-      Scheduler::currentData = x1;
+      Scheduler::SetCurrentData(x1);
       return -1;
     }
     return (i == j);
@@ -47,7 +47,7 @@ static int Compare(word x0, word x1) {
   if (b == INVALID_POINTER) { // x1 is Transient or int, but x0 is a block
     s_int j = Store::WordToInt(x1);
     if (j == INVALID_INT) { // x1 is Transient
-      Scheduler::currentData = x1;
+      Scheduler::SetCurrentData(x1);
       return -1;
     } // x1 is int
     // test if x0 is a bigInt
@@ -95,6 +95,13 @@ static int Compare(word x0, word x1) {
     }
   case CHUNK_LABEL:
     {
+      if (a->IsMutable()) {
+	if (b->IsMutable()) {
+	  return (a == b);
+	} else {
+	  return 0;
+	}
+      }
       Chunk *ac = STATIC_CAST(Chunk *, a);
       Chunk *bc = STATIC_CAST(Chunk *, b);
       u_int size = ac->GetSize();
@@ -102,6 +109,13 @@ static int Compare(word x0, word x1) {
 	!std::memcmp(ac->GetBase(), bc->GetBase(), size);
     }
   default:
+    if (a->IsMutable()) {
+      if (b->IsMutable()) {
+	return (a == b);
+      } else {
+	return 0;
+      }
+    }
     if (Alice::IsTag(label)) {
       goto structural_equality;
     } else // fall back to identity-based equality

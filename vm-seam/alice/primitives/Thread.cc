@@ -68,10 +68,10 @@ u_int RaiseWorker::GetFrameSize(StackFrame *sFrame) {
 Worker::Result RaiseWorker::Run(StackFrame *sFrame) {
   RaiseFrame *frame = STATIC_CAST(RaiseFrame *, sFrame);
   Assert(sFrame->GetWorker() == this);
-  Scheduler::currentData = frame->GetExn();
+  Scheduler::SetCurrentData(frame->GetExn());
   word wFrame = sFrame->Clone();
   Scheduler::PopFrame(frame->GetSize());
-  Scheduler::currentBacktrace = Backtrace::New(wFrame);
+  Scheduler::SetCurrentBacktrace(Backtrace::New(wFrame));
   return Worker::RAISE;
 }
 
@@ -140,7 +140,7 @@ DEFINE1(Thread_state) {
 DEFINE1(Thread_suspend) {
   DECLARE_THREAD(thread, x0);
   if (thread == Scheduler::GetCurrentThread()) {
-    Scheduler::nArgs = 0;
+    Scheduler::SetNArgs(0);
     SUSPEND;
   } else {
     Scheduler::SuspendThread(thread);

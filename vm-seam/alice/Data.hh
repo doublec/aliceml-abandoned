@@ -62,7 +62,7 @@ public:
   using Block::ToWord;
 
   static Array *New(u_int length) {
-    Block *b = Store::AllocBlock(Alice::Array, BASE_SIZE + length);
+    Block *b = Store::AllocMutableBlock(Alice::Array, BASE_SIZE + length);
     b->InitArg(LENGTH_POS, length);
     return STATIC_CAST(Array *, b);
   }
@@ -81,12 +81,15 @@ public:
     return Store::DirectWordToInt(GetArg(LENGTH_POS));
   }
   void Init(u_int index, word value) {
+    Assert(index <= Store::DirectWordToInt(GetArg(LENGTH_POS)));
     InitArg(BASE_SIZE + index, value);
   }
   void Update(u_int index, word value) {
+    Assert(index <= Store::DirectWordToInt(GetArg(LENGTH_POS)));
     ReplaceArg(BASE_SIZE + index, value);
   }
   word Sub(u_int index) {
+    Assert(index <= Store::DirectWordToInt(GetArg(LENGTH_POS)));
     return GetArg(BASE_SIZE + index);
   }
 };
@@ -98,10 +101,10 @@ public:
   using Block::ToWord;
 
   static Cell *New() {
-    return STATIC_CAST(Cell *, Store::AllocBlock(Alice::Cell, SIZE));
+    return STATIC_CAST(Cell *, Store::AllocMutableBlock(Alice::Cell, SIZE));
   }
   static Cell *New(word value) {
-    Block *b = Store::AllocBlock(Alice::Cell, SIZE);
+    Block *b = Store::AllocMutableBlock(Alice::Cell, SIZE);
     b->InitArg(VALUE_POS, value);
     return STATIC_CAST(Cell *, b);
   }
@@ -336,31 +339,35 @@ public:
   }
   void LateInit(u_int index, word value) {
     // This is only meant to be called by Vector.tabulate
+    SetMutable(1);
     ReplaceArg(BASE_SIZE + index, value);
+    SetMutable(0);
   }
   word Sub(u_int index) {
     return GetArg(BASE_SIZE + index);
   }
 };
 
-class AliceDll Word8Array: private String {
-  //--** deriving from String yields wrong equality (must be token equality)
+class AliceDll Word8Array: private Chunk {
 public:
   static const u_int maxLen = String::maxSize;
 
-  using String::ToWord;
-  using String::GetValue;
+  using Chunk::ToWord;
 
   static Word8Array *New(u_int length) {
-    return STATIC_CAST(Word8Array *, String::New(length));
+    Chunk *c = Store::AllocMutableChunk(length);
+    return STATIC_CAST(Word8Array *, c);
   }
   static Word8Array *FromWord(word x) {
-    return STATIC_CAST(Word8Array *, String::FromWord(x));
+    return STATIC_CAST(Word8Array *, Store::WordToChunk(x));
   }
   static Word8Array *FromWordDirect(word x) {
-    return STATIC_CAST(Word8Array *, String::FromWordDirect(x));
+    return STATIC_CAST(Word8Array *, Store::DirectWordToChunk(x));
   }
 
+  u_char *GetValue() {
+    return reinterpret_cast<u_char *>(GetBase());
+  }
   u_int GetLength() {
     return GetSize();
   }

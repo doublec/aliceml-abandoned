@@ -27,7 +27,7 @@ public:
   using Block::ToWord;
 
   static CellMapEntry *New(Cell *key, word value, CellMapEntry *next) {
-    Block *b = Store::AllocBlock(ENTRY_LABEL, SIZE);
+    Block *b = Store::AllocMutableBlock(ENTRY_LABEL, SIZE);
     b->InitArg(KEY_POS, key->ToWord());
     b->InitArg(VALUE_POS, value);
     b->InitArg(PREV_POS, 0);
@@ -95,7 +95,7 @@ public:
   using Block::ToWord;
 
   static CellMap *New() {
-    Block *b = Store::AllocBlock(CELLMAP_LABEL, SIZE);
+    Block *b = Store::AllocMutableBlock(CELLMAP_LABEL, SIZE);
     b->InitArg(HASHTABLE_POS, Map::New(initialSize)->ToWord());
     b->InitArg(HEAD_POS, 0);
     return STATIC_CAST(CellMap *, b);
@@ -230,8 +230,8 @@ Worker::Result CellMapInsertWorker::Run(StackFrame *sFrame) {
   CellMapEntry *entry = frame->GetEntry();
   Scheduler::PopFrame(frame->GetSize());
   Construct();
-  entry->SetValue(Scheduler::currentArgs[0]);
-  Scheduler::nArgs = 0;
+  entry->SetValue(Scheduler::GetCurrentArg(0));
+  Scheduler::SetNArgs(0);
   return Worker::CONTINUE;
 }
 
@@ -324,26 +324,26 @@ Worker::Result CellMapIteratorWorker::Run(StackFrame *sFrame) {
     Scheduler::PopFrame(frame->GetSize());
   switch (op) {
   case app:
-    Scheduler::nArgs = 1;
-    Scheduler::currentArgs[0] = entry->GetValue();
+    Scheduler::SetNArgs(1);
+    Scheduler::SetCurrentArg(0, entry->GetValue());
     break;
   case appi:
-    Scheduler::nArgs = 2;
-    Scheduler::currentArgs[0] = entry->GetKey()->ToWord();
-    Scheduler::currentArgs[1] = entry->GetValue();
+    Scheduler::SetNArgs(2);
+    Scheduler::SetCurrentArg(0, entry->GetKey()->ToWord());
+    Scheduler::SetCurrentArg(1, entry->GetValue());
     break;
   case fold:
     Construct();
-    Scheduler::nArgs = 2;
-    Scheduler::currentArgs[1] = Scheduler::currentArgs[0];
-    Scheduler::currentArgs[0] = entry->GetValue();
+    Scheduler::SetNArgs(2);
+    Scheduler::SetCurrentArg(1, Scheduler::GetCurrentArg(0));
+    Scheduler::SetCurrentArg(0, entry->GetValue());
     break;
   case foldi:
     Construct();
-    Scheduler::nArgs = 3;
-    Scheduler::currentArgs[2] = Scheduler::currentArgs[0];
-    Scheduler::currentArgs[0] = entry->GetKey()->ToWord();
-    Scheduler::currentArgs[1] = entry->GetValue();
+    Scheduler::SetNArgs(3);
+    Scheduler::SetCurrentArg(2, Scheduler::GetCurrentArg(0));
+    Scheduler::SetCurrentArg(0, entry->GetKey()->ToWord());
+    Scheduler::SetCurrentArg(1, entry->GetValue());
     break;
   }
   return Scheduler::PushCall(closure);
@@ -442,28 +442,28 @@ Worker::Result CellMapFindWorker::Run(StackFrame *sFrame) {
   CellMapEntry *entry = frame->GetEntry();
   word closure = frame->GetClosure();
   operation op = frame->GetOperation();
-  Assert(Scheduler::nArgs == 1);
-  switch (Store::WordToInt(Scheduler::currentArgs[0])) {
+  Assert(Scheduler::GetNArgs() == 1);
+  switch (Store::WordToInt(Scheduler::GetCurrentArg(0))) {
   case 0: // false
     entry = entry->GetNext();
     if (entry != INVALID_POINTER) {
       frame->SetEntry(entry);
       switch (op) {
       case find:
-	Scheduler::nArgs = 1;
-	Scheduler::currentArgs[0] = entry->GetValue();
+	Scheduler::SetNArgs(1);
+	Scheduler::SetCurrentArg(0, entry->GetValue());
 	break;
       case findi:
-	Scheduler::nArgs = 2;
-	Scheduler::currentArgs[0] = entry->GetKey()->ToWord();
-	Scheduler::currentArgs[1] = entry->GetValue();
+	Scheduler::SetNArgs(2);
+	Scheduler::SetCurrentArg(0, entry->GetKey()->ToWord());
+	Scheduler::SetCurrentArg(1, entry->GetValue());
 	break;
       }
       return Scheduler::PushCall(closure);
     } else {
       Scheduler::PopFrame(frame->GetSize());
-      Scheduler::nArgs = 1;
-      Scheduler::currentArgs[0] = Store::IntToWord(0); // NONE
+      Scheduler::SetNArgs(1);
+      Scheduler::SetCurrentArg(0, Store::IntToWord(0)); // NONE
       return Worker::CONTINUE;
     }
   case 1: // true
@@ -481,12 +481,12 @@ Worker::Result CellMapFindWorker::Run(StackFrame *sFrame) {
 	some->Init(0, pair->ToWord());
 	break;
       }
-      Scheduler::nArgs = 1;
-      Scheduler::currentArgs[0] = some->ToWord();
+      Scheduler::SetNArgs(1);
+      Scheduler::SetCurrentArg(0, some->ToWord());
       return Worker::CONTINUE;
     }
   case INVALID_INT:
-    Scheduler::currentData = Scheduler::currentArgs[0];
+    Scheduler::SetCurrentData(Scheduler::GetCurrentArg(0));
     return Worker::REQUEST;
   default:
     Error("CellMapFindWorker: boolean expected");
@@ -552,10 +552,10 @@ DEFINE4(UnsafeCell_Map_insertWithi) {
   if (cellMap->Member(key)) {
     CellMapEntry *entry = cellMap->LookupEntry(key);
     CellMapInsertWorker::PushFrame(entry);
-    Scheduler::nArgs = 3;
-    Scheduler::currentArgs[0] = key->ToWord();
-    Scheduler::currentArgs[1] = entry->GetValue();
-    Scheduler::currentArgs[2] = value;
+    Scheduler::SetNArgs(3);
+    Scheduler::SetCurrentArg(0, key->ToWord());
+    Scheduler::SetCurrentArg(1, entry->GetValue());
+    Scheduler::SetCurrentArg(2, value);
     return Scheduler::PushCall(closure);
   } else {
     cellMap->Insert(key, value);
@@ -571,8 +571,8 @@ DEFINE3(UnsafeCell_Map_removeWith) {
     cellMap->Remove(key);
     RETURN_UNIT;
   } else {
-    Scheduler::nArgs = 1;
-    Scheduler::currentArgs[0] = key->ToWord();
+    Scheduler::SetNArgs(1);
+    Scheduler::SetCurrentArg(0, key->ToWord());
     return Scheduler::PushCall(closure);
   }
 } END
@@ -648,8 +648,8 @@ DEFINE2(UnsafeCell_Map_find) {
   if (entry != INVALID_POINTER) {
     CellMapFindWorker::PushFrame(entry, closure,
 				 CellMapFindWorker::find);
-    Scheduler::nArgs = 1;
-    Scheduler::currentArgs[0] = entry->GetValue();
+    Scheduler::SetNArgs(1);
+    Scheduler::SetCurrentArg(0, entry->GetValue());
     return Scheduler::PushCall(closure);
   } else {
     RETURN_INT(0); // NONE
@@ -663,9 +663,9 @@ DEFINE2(UnsafeCell_Map_findi) {
   if (entry != INVALID_POINTER) {
     CellMapFindWorker::PushFrame(entry, closure,
 				 CellMapFindWorker::findi);
-    Scheduler::nArgs = 2;
-    Scheduler::currentArgs[0] = entry->GetKey()->ToWord();
-    Scheduler::currentArgs[1] = entry->GetValue();
+    Scheduler::SetNArgs(2);
+    Scheduler::SetCurrentArg(0, entry->GetKey()->ToWord());
+    Scheduler::SetCurrentArg(1, entry->GetValue());
     return Scheduler::PushCall(closure);
   } else {
     RETURN_INT(0); // NONE

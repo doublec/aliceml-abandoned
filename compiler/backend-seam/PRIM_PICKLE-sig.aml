@@ -55,8 +55,10 @@ signature PRIM_PICKLE =
 	val outputInt: outstream * int -> unit
 	val outputFixedInt: outstream * FixedInt.int -> unit
 	val outputChunk: outstream * Word8Vector.t -> unit
+	val outputMChunk: outstream * Word8Vector.t -> unit
 	val outputUnique: outstream -> unit
 	val outputBlock: outstream * label * size -> unit
+	val outputMBlock: outstream * label * size -> unit
 	val outputTuple: outstream * size -> unit
 	val outputClosure: outstream * size -> unit
 	val outputLoad: outstream * register -> unit

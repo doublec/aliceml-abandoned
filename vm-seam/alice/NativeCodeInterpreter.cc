@@ -129,12 +129,12 @@ Worker::Result NativeCodeInterpreter::Handle(word data) {
   Assert(sFrame->GetWorker() == this);
   frame->SetPC(Store::DirectWordToInt(data));
   Tuple *package = Tuple::New(2);
-  word exn = Scheduler::currentData;
+  word exn = Scheduler::GetCurrentData();
   package->Init(0, exn);
-  package->Init(1, Scheduler::currentBacktrace->ToWord());
-  Scheduler::nArgs = 2;
-  Scheduler::currentArgs[0] = package->ToWord();
-  Scheduler::currentArgs[1] = exn;
+  package->Init(1, Scheduler::GetCurrentBacktrace()->ToWord());
+  Scheduler::SetNArgs(2);
+  Scheduler::SetCurrentArg(0, package->ToWord());
+  Scheduler::SetCurrentArg(1, exn);
   return Worker::CONTINUE;
 }
 

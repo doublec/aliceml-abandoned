@@ -14,11 +14,13 @@
 #include "store/Map.hh"
 
 // TODO: This needs a design
-#define DECLARE_UNSAFE_MAP_KEY(value, x)	\
-  word value = PointerOp::Deref(x);		\
-  if (PointerOp::IsTransient(value)) {		\
-    REQUEST(value);				\
-  }
+#define DECLARE_UNSAFE_MAP_KEY(value, x)				\
+  word value = PointerOp::Deref(x);					\
+  if (PointerOp::IsTransient(value)) {					\
+    REQUEST(value);							\
+  }									\
+  Assert(Store::DirectWordToBlock(value) != INVALID_POINTER);		\
+  Assert(Store::DirectWordToBlock(value)->GetLabel() == Alice::Cell);
 
 //
 // UnsafeMapHandler

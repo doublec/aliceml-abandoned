@@ -132,7 +132,7 @@ structure OutputPickle :> OUTPUT_PICKLE =
 		  | toInt TRANSFORM = 245
 
 		(* alice/Data.hh: Alice::MAX_TAG - Alice::MIN_TAG *)
-		val maxSmallTag = 221 (*TODO: 94 for immutable flag disabled*)
+		val maxSmallTag = 94
 
 		fun isBigTagValue nLabels = nLabels > maxSmallTag
 	    end
@@ -148,7 +148,10 @@ structure OutputPickle :> OUTPUT_PICKLE =
 	    PrimPickle.outputInt (outstream, i)
 	fun outputChunk ({outstream, ...}: context, words) =
 	    PrimPickle.outputChunk (outstream, words)
-	fun outputBlock ({outstream, ...}: context, label, size) =
+	fun outputBlock ({outstream, ...}: context, 
+			 label as (Label.ARRAY|Label.CELL), size) =
+	    PrimPickle.outputMBlock (outstream, Label.toInt label, size)
+	  | outputBlock ({outstream, ...}: context, label, size) =
 	    PrimPickle.outputBlock (outstream, Label.toInt label, size)
 	fun outputTuple ({outstream, ...}: context, size) =
 	    PrimPickle.outputTuple (outstream, size)

@@ -76,9 +76,9 @@ Worker::Result CatchWorker::Handle(word) {
   CatchWorkerFrame *catchWorkerFrame = STATIC_CAST(CatchWorkerFrame *, sFrame);
   word handler = catchWorkerFrame->GetHandler();
   Scheduler::PopFrame(catchWorkerFrame->GetSize());
-  Scheduler::nArgs          = 2;
-  Scheduler::currentArgs[0] = Scheduler::currentData;
-  Scheduler::currentArgs[1] = Scheduler::currentBacktrace->ToWord();
+  Scheduler::SetNArgs(2);
+  Scheduler::SetCurrentArg(0, Scheduler::GetCurrentData());
+  Scheduler::SetCurrentArg(1, Scheduler::GetCurrentBacktrace()->ToWord());
   return Scheduler::PushCall(handler);
 }
 
@@ -115,17 +115,17 @@ DEFINE2(Exn_catch) {
   CatchWorker::PushFrame(handler);
   word data = Store::IntToWord(0); // Unused
   Scheduler::PushHandler(data);
-  Scheduler::nArgs = 1;
-  Scheduler::currentArgs[0] = Store::IntToWord(0); // Unit
+  Scheduler::SetNArgs(1);
+  Scheduler::SetCurrentArg(0, Store::IntToWord(0)); // Unit
   return Scheduler::PushCall(closure);
 } END
 
 DEFINE2(Exn_reraise) {
   word exn = x0;
   word backtrace = x1;
-  Scheduler::nArgs            = 0;
-  Scheduler::currentData      = exn;
-  Scheduler::currentBacktrace = Backtrace::FromWord(backtrace);
+  Scheduler::SetNArgs(0);
+  Scheduler::SetCurrentData(exn);
+  Scheduler::SetCurrentBacktrace(Backtrace::FromWord(backtrace));
   return Worker::RAISE;
 } END
 
