@@ -1,7 +1,10 @@
 (* ML-Yacc Parser Generator (c) 1989 Andrew W. Appel, David R. Tarditi 
  *
  * $Log$
- * Revision 1.3  1999-11-15 12:21:54  rossberg
+ * Revision 1.4  2001-01-17 13:38:46  kornstae
+ * Fixed to work with --rtt-level=full (thanks to Andreas).
+ *
+ * Revision 1.3  1999/11/15 12:21:54  rossberg
  * Reverted to original state because we can deal with sharing now.
  *
  * Revision 1.2  1999/11/02 15:52:03  rossberg
@@ -110,7 +113,7 @@ signature LR_PARSER =
 	structure Stream: STREAM
 	structure LrTable : LR_TABLE
 	structure Token : TOKEN
-	sharing LrTable = Token.LrTable
+	sharing type LrTable.table = Token.LrTable.table
 
 	exception ParseError
 
@@ -210,7 +213,7 @@ signature PARSER_DATA =
 
 	structure LrTable : LR_TABLE
 	structure Token : TOKEN
-	sharing Token.LrTable = LrTable
+	sharing type LrTable.table = Token.LrTable.table
 
 	(* structure Actions contains the functions which mantain the
 	   semantic values stack in the parser.  Void is used to provide

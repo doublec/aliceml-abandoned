@@ -1,7 +1,10 @@
 (* ML-Yacc Parser Generator (c) 1989 Andrew W. Appel, David R. Tarditi 
  *
  * $Log$
- * Revision 1.7  2001-01-15 17:52:20  kornstae
+ * Revision 1.8  2001-01-17 13:38:46  kornstae
+ * Fixed to work with --rtt-level=full (thanks to Andreas).
+ *
+ * Revision 1.7  2001/01/15 17:52:20  kornstae
  * Imports do not need to mention the extension any more.
  *
  * Revision 1.6  2001/01/15 15:42:05  kornstae
@@ -53,8 +56,8 @@ from "base-sig"
 functor Join(structure ParserData: PARSER_DATA
 	     structure Lex : LEXER
 	     structure LrParser : LR_PARSER
-	     sharing ParserData.LrTable = LrParser.LrTable
-	     sharing ParserData.Token = LrParser.Token
+	     sharing type ParserData.LrTable.table = LrParser.LrTable.table
+	     sharing type ParserData.Token.LrTable.table = LrParser.Token.LrTable.table
 	     sharing type Lex.UserDeclarations.svalue = ParserData.svalue
 	     sharing type Lex.UserDeclarations.pos = ParserData.pos
 	     sharing type Lex.UserDeclarations.token = ParserData.Token.token
@@ -98,8 +101,8 @@ end
 functor JoinWithArg(structure ParserData: PARSER_DATA
 	     structure Lex : ARG_LEXER
 	     structure LrParser : LR_PARSER
-	     sharing ParserData.LrTable = LrParser.LrTable
-	     sharing ParserData.Token = LrParser.Token
+	     sharing type ParserData.LrTable.table = LrParser.LrTable.table
+	     sharing type ParserData.Token.LrTable.table = LrParser.Token.LrTable.table
 	     sharing type Lex.UserDeclarations.svalue = ParserData.svalue
 	     sharing type Lex.UserDeclarations.pos = ParserData.pos
 	     sharing type Lex.UserDeclarations.token = ParserData.Token.token
