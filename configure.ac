@@ -65,6 +65,7 @@ AC_SEAM_CHECK_DECLSPEC
 
 AC_SEAM_CHECK_CXXFLAG(-pipe)
 AC_SEAM_CHECK_LDFLAG([-Wl,--export-dynamic])
+AC_SEAM_CHECK_CXXFLAG(-fno-coalesce-templates)
 
 AC_SEAM_CHECK_LDFLAG([-shared],
   [SEAMTOOL_SHAREDLIBFLAG="-shared"],

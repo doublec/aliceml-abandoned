@@ -299,9 +299,8 @@ AC_DEFUN([AC_SEAM_SEAMTOOL_COMMANDS],
     case $host_os in
        darwin*)
           ac_seam_tmp="$CXX"
-          ac_seam_tmp="${ac_seam_tmp} -dynamic"
-          ac_seam_tmp="${ac_seam_tmp} -dynamiclib"
-          ac_seam_tmp="${ac_seam_tmp} -single_module"
+          ac_seam_tmp="${ac_seam_tmp} -bundle"
+          ac_seam_tmp="${ac_seam_tmp} -bundle_loader ${bindir}/seam"
           ac_seam_tmp="${ac_seam_tmp} -undefined suppress"
           ac_seam_tmp="${ac_seam_tmp} -flat_namespace"
           SEAMTOOL_LINK_CMD_PREAMBLE="${ac_seam_tmp}"
