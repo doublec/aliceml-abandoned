@@ -165,26 +165,37 @@ structure OutputWriters =
 
         fun compilerInsert (eval, noedit, bold)
 		(buf, [Gtk.INT off, Gtk.STRING txt, Gtk.INT size]) =
-            if String.sub(txt, String.size txt - 1) = #"\n" then
-	       if lastChar(buf, off+size-1) = SOME (ord #";")
-        	then
-                    let
-                	val enditer = Gtk.textIterNew()
-                	val cursor = Gtk.textBufferGetInsert buf
-                	val _ = Gtk.textBufferGetIterAtMark(buf,enditer,cursor)
+	    let
+                val enditer = Gtk.textIterNew()
+                val cursor = Gtk.textBufferGetInsert buf
+                val _ = Gtk.textBufferGetIterAtMark(buf,enditer,cursor)
+                val startiter = Gtk.textIterCopy enditer
+	    in
+		if String.sub(txt, String.size txt - 1) = #"\n" then
+		   if lastChar(buf, off+size-1) = SOME (ord #";")
+        	    then
+                	let
+                	    val startiter = Gtk.textIterCopy enditer
+                	    val _ = Gtk.textIterBackwardToTagToggle(startiter, noedit)
+                	    val str = Gtk.textBufferGetText(buf, startiter, enditer, false)
+                	    val _ = highlight(buf, startiter, enditer, false)
+                	    val str = Core.utf8ToLatin1 str
+                	    val _ = eval str
+                	in
+                	    Gtk.textBufferApplyTag(buf, bold, startiter, enditer);
+                	    Gtk.textBufferApplyTag(buf, noedit, startiter, enditer)
+                	end
+		    else
+			Gtk.textBufferInsertAtCursor(buf, "  ", ~1)
+        	else
+		    let
                 	val startiter = Gtk.textIterCopy enditer
-                	val _ = Gtk.textIterBackwardToTagToggle(startiter, noedit)
-                	val str = Gtk.textBufferGetText(buf, startiter, enditer, false)
-                	val _ = highlight(buf, startiter, enditer, false)
-                	val str = Core.utf8ToLatin1 str
-                	val _ = eval str
-                    in
-                	Gtk.textBufferApplyTag(buf, noedit, startiter, enditer);
-                	Gtk.textBufferApplyTag(buf, bold, startiter, enditer)
-                    end
-		else
-		    Gtk.textBufferInsertAtCursor(buf, "  ", ~1)
-            else ()
+		    in
+                        Gtk.textBufferGetIterAtOffset(buf, startiter, off);
+			Gtk.textBufferRemoveAllTags(buf, startiter, enditer);
+                        Gtk.textBufferApplyTag(buf, bold, startiter, enditer)
+		    end
+	    end
           | compilerInsert _ _ = () (* Gtk is crazy *)
 
       fun makeWriters eval =
