@@ -19,23 +19,23 @@ exception Future
 exception Fulfill
 exception ByNeed of exn
 
-__primitive op+ : int * int -> int = "+"
-__primitive op- : int * int -> int = "-"
+__primitive val op+ : int * int -> int = "+"
+__primitive val op- : int * int -> int = "-"
 
-__primitive exchange: 'a ref * 'a -> 'a = "General.exchange"
+__primitive val exchange: 'a ref * 'a -> 'a = "General.exchange"
 
-__primitive spawn: (unit -> 'a) -> unit = "Thread.spawn"
-__primitive sleep: int -> unit = "Thread.sleep"
+__primitive val spawn: (unit -> 'a) -> unit = "Thread.spawn"
+__primitive val sleep: int -> unit = "Thread.sleep"
 
-__primitive promise: unit -> 'a = "Transient.promise"
-__primitive future: 'a -> 'a = "Transient.future"
-__primitive fulfill: 'a * 'a -> unit = "Transient.fulfill"
-__primitive await: 'a -> 'a = "Transient.await"
-__primitive byNeed: (unit -> 'a) -> 'a = "Transient.byNeed"
+__primitive val promise: unit -> 'a = "Transient.promise"
+__primitive val future: 'a -> 'a = "Transient.future"
+__primitive val fulfill: 'a * 'a -> unit = "Transient.fulfill"
+__primitive val await: 'a -> 'a = "Transient.await"
+__primitive val byNeed: (unit -> 'a) -> 'a = "Transient.byNeed"
 
-__primitive exit: int -> 'a = "Application.exit"
+__primitive val exit: int -> 'a = "Application.exit"
 
-__primitive show: (unit -> 'a) -> 'a = "show"
+__primitive val show: (unit -> 'a) -> 'a = "show"
 
 fun concurrent f =
     let
