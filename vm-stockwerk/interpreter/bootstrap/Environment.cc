@@ -31,8 +31,10 @@ word Environment::Lookup(word id) {
   int stamp = Store::WordToInt(id);
   int index = stamp % GetLength();
   Array *entry = Array::FromWord(Sub(index));
-  while (entry->Sub(ID_POS) != id)
+  while (entry->Sub(ID_POS) != id) {
     entry = Array::FromWord(entry->Sub(CDR_POS));
+    Assert(entry != INVALID_POINTER);
+  }
   return entry->Sub(VALUE_POS);
 }
 
@@ -40,7 +42,9 @@ void Environment::Kill(word id) {
   int stamp = Store::WordToInt(id);
   int index = stamp % GetLength();
   Array *entry = Array::FromWord(Sub(index));
-  while (entry->Sub(ID_POS) != id)
+  while (entry->Sub(ID_POS) != id) {
     entry = Array::FromWord(entry->Sub(CDR_POS));
+    Assert(entry != INVALID_POINTER);
+  }
   entry->Update(CDR_POS, entry->Sub(CDR_POS));
 }

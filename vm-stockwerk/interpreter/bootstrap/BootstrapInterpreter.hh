@@ -17,14 +17,9 @@
 
 class BootstrapInterpreter: public Interpreter {
 public:
-  // Handling code:
-  virtual ConcreteCode *Prepare(word abstractCode);
-
-  // Handling stack frames:
+  ConcreteCode *Prepare(word abstractCode);
   void PushCall(TaskStack *taskStack, word closure);
   void PopFrame(TaskStack *taskStack);
-
-  // Execution:
   Result Run(TaskStack *taskStack, int nargs);
 };
 
