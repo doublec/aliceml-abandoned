@@ -21,7 +21,7 @@
   <BR>
   </H1>
 
-  <IMG align="right" src=alice.gif">.
+  <IMG align="right" src="alice.gif"><BR><BR>&nbsp;
 
 <!--
   <?php
