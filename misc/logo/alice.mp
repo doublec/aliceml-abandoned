@@ -10,10 +10,6 @@
 %%%   $Revision$
 %%%
 
-color orange, yellow;
-orange = 1/2[red,yellow];
-yellow = red+green;
-
 def drawcurve suffix $ =
   begingroup
     z$a = z$ shifted (-(xthick-xextra)/2,u-yshadow);
@@ -71,11 +67,13 @@ enddef;
 
 def drawalicewithshadow(expr nsteps) =
   begingroup
+    save rectangular; pen rectangular;
+    rectangular = pensquare xscaled xthick yscaled ythick;
     save yshadow; numeric yshadow;
     for i = nsteps downto 1:
       yshadow := i * 1mm/nsteps;
       drawalice(alice[i],xbase+i*xshadowsize/nsteps,ybase,
-	(i-1)/(nsteps-1),white);
+	(i-1)/(nsteps-1),background);
     endfor;
     yshadow := 0;
     drawalice(alice0,xbase,ybase,1.0,col0);
@@ -87,40 +85,13 @@ def drawalicewithshadow(expr nsteps) =
   endgroup
 enddef;
 
-beginfig(1)
-  numeric u, xthick, ythick, xseriflen, yseriflen, xshadowsize, xextra;
-  u = 30mm;
-  xthick = 8mm;
-  ythick = 4mm;
-  xseriflen = 3mm;
-  yseriflen = ythick;
-  xshadowsize = 9mm;
-  xextra = 1/4xthick;
-
-  numeric xbase, ybase, xsize, ysize, ydot;
-  xbase = ythick;
-  ybase = ythick;
-  xsize = 23/4u-3/2xextra; %% 23 * 7.5mm - 3mm + 8mm = 2096 pixels at 300dpi
-  ysize = 1.6u;
-  ydot = 1.4u;
-
-  color col[];
-  col0 = black;
-  col1 = 1/4[3/4red,white];
-  col2 = 1/4[3/4orange,white];
-  col3 = 1/4[3/4yellow,white];
-  col4 = 1/4[3/4green,white];
-  col5 = 1/4[3/4blue,white];
-
-  pen rectangular;
-  rectangular = pensquare xscaled xthick yscaled ythick;
-
-  drawalicewithshadow(32);
-
+def strikethrough =
   pickup pensquare scaled ythick;
   draw (lft xbase,ybase+u/2)--(rt xbase+xsize,ybase+u/2)--
     (rt xbase+xsize,bot ybase)--(lft xbase,bot ybase)--cycle
     withpen pensquare scaled (ythick/8) withcolor col0;
-endfig;
+enddef;
 
-end;
+numeric u, xthick, ythick, xseriflen, yseriflen, xshadowsize, xextra;
+numeric xbase, ybase, xsize, ysize, ydot;
+color col[];
