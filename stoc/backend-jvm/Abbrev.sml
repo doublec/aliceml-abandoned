@@ -71,7 +71,7 @@ structure Abbrev  =
 	(* runtime methods *)
 	val MRequest       = (ITransient, "request", ([], [Classsig IVal]))
 	val MPickle = ("de/uni_sb/ps/dml/runtime/General$Pickle","apply",
-		       ([Classsig CString, Classsig IVal, Classsig IVal], [Classsig IVal]))
+		       ([Classsig CString, Classsig IVal], [Classsig IVal]))
 	val MApply = (IVal, "apply", ([Classsig IVal], [Classsig IVal]))
 	fun mApply n = (IVal, applyName n, (valList n, [Classsig IVal]))
 	val MGetBuiltin = (CBuiltin, "getBuiltin", ([Classsig CStr], [Classsig IVal]))

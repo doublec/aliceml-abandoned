@@ -849,7 +849,6 @@ structure CodeGen =
 				     Invokevirtual MPrint]
 			  else Nop),
 			 Ldc (JVMString (Class.getInitial()^".pickle")),
-			 Aconst_null,
 			 Aload stamp',
 			 Invokestatic MPickle,
 			 Pop]
