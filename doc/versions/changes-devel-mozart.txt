@@ -8,11 +8,12 @@ Library:
 * Renamed UniqueString to Atom.
 * Added WideText and WideChar{Vector,Array}[Slice].
 * Added List.split.
-* Correct treatment of exceptions in Lock.sync.
+* Corrected treatment of exceptions in Lock.sync.
 * FD and FS set constructors now perform domain checking.
 * FD and FS now raise Tell exception on toplevel constraints.
 * Fixed broken GTK signal handling (disconnect/block/unblock/emit).
 * Fixed broken string type in GTK.
+* Renamed some GTK types to meet SML conventions.
 
 Compiler:
 
