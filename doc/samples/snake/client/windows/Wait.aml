@@ -74,10 +74,8 @@ struct
 		end
 		
 	    (* the mainQuit procedure resets also the used refs *)
-	    fun mainQuit () = 
-		(disconnect ();
-		 Gtk.widgetDestroy waiting;
-		 reset NONE)
+	    fun mainQuit () = (disconnect (); Gtk.widgetDestroy waiting;
+		               reset NONE)
 		
 		
 	    (* inserts all connected players into text widget *)

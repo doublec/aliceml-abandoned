@@ -133,9 +133,7 @@ struct
 		mkhScale (levelsHBox, "Levels", 50.0, 1.0, 31.0)
 
 
-	    fun mainQuit () = 
-		(Gtk.widgetDestroy serverSettings;
-		 reset NONE)
+	    fun mainQuit () = (Gtk.widgetDestroy serverSettings; reset NONE)
 		
 	    fun changedNameText () = 
 		if Gtk.entryGetText nameText = ""
@@ -269,9 +267,7 @@ struct
 				    (Gtk.comboGetFieldEntry (colorCombo)))
 			    in
 				alreadyConn := [(name, color)];
-				startServer 
-				(SOME (name, color),
-				 config)
+				startServer (SOME (name, color), config)
 			    end) handle Error.Error msg => SND msg
 
 		in
@@ -280,10 +276,8 @@ struct
 			FST (mStart, guiJoin, serverUrl) => 
 			           Wait.mkWaitingWindow 
 				       (!alreadyConn, mStart, 
-					guiJoin, serverUrl, 
-					{reset, gameMode})
-		      | SND     errorMsg => 
-			    reset (SOME ("ERROR!!", errorMsg))
+					guiJoin, serverUrl, {reset, gameMode})
+		      | SND     errorMsg => reset (SOME ("ERROR!!", errorMsg))
 		end
 
 	in

@@ -129,18 +129,21 @@ struct
 	    val radarWidget    = RadarWidget.toObject radar
 
 	    (* resets the window in START mode *)
-	    fun reset' () =
-		(Gtk.widgetSetSensitive (menuGiveUpItem, false);
+	(*    fun reset' () =
+		(print "resetting window\n";
+                 Gtk.widgetSetSensitive (menuGiveUpItem, false);
 		 Gtk.widgetSetSensitive (menuMenuItem, true);
 		 Gtk.widgetHide canvas;
 		 Gtk.widgetHide rightHBox;
                  Gtk.widgetHide radarWidget;
-		 mode := START)
+		 mode := START)*)
+
+	    fun reset' () = mkMainWindow ({connect, startServer}, gui)
 
 	    (* resets window and also shows [msg] when needed *)
 	    fun reset NONE = reset' ()
-	      | reset (SOME (title, msg)) =
-		(Text.mkTextWindow (title, msg); reset' ())
+	      | reset (SOME (title, msg)) = (Text.mkTextWindow (title, msg);
+                                             reset' ())
 		
 	    val _ = if (Future.isFuture $ Promise.future gui) 
 		        then Promise.fulfill (gui, {reset}) else ()
@@ -279,18 +282,19 @@ struct
 		     
 			
 	    (* procedure called by pressing Client - button *)
-	    fun startClient () = Connection.mkConnectToServer ({connect},
-		                                             {reset, gameMode})
-
+	    fun startClient () = 
+                  Connection.mkConnectToServer ({connect}, {reset, gameMode})
+ 	               handle Error.Error msg => reset (SOME ("Error!", msg))
 	    (* procedure called by pressing Server - button *)
 	    fun startMultiPlayer () = 
-		          ServerSettings.mkServerSettings ({startServer},
-	                                                     {reset, gameMode})
-
+		  ServerSettings.mkServerSettings ({startServer}, 
+                                                             {reset, gameMode})
+ 	               handle Error.Error msg => reset (SOME ("Error!", msg))
             (* procedure called by pressing SinglePlayer - button *)
 	    fun startSinglePlayer () = 
-		           EnterName.mkEnterName {startServer, reset, gameMode}
- 			
+		  EnterName.mkEnterName {startServer, reset, gameMode}
+ 	               handle Error.Error msg => reset (SOME ("Error!", msg))
+
 	    (* converts canvasEvents into direction or view_hint *)
 	    fun key keyval = 
 		 (case !mode of

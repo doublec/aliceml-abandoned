@@ -31,7 +31,7 @@ struct
 	    val okButton    	= Gtk.buttonNewWithLabel "  OK  "
 	    val cancelButton    = Gtk.buttonNewWithLabel "Cancel"
 	    val buttonHBox	= Gtk.hboxNew (true, 10)
-	    val clientUrl = Gtk.entryNew ()
+	    val clientUrl       = Gtk.entryNew ()
 
 	    fun mainQuit () = (Gtk.widgetDestroy connectToServer;
 			       reset NONE)
@@ -48,7 +48,7 @@ struct
 			 FST (mJoin, guiJoin) => 
 			     (PlayerSettings.mkPlayerSettings 
 			       (mJoin, guiJoin, {reset, gameMode}))
-		  | SND    errorMsg      => reset (SOME ("ERROR!!", errorMsg))
+		       | SND    errorMsg => reset (SOME ("ERROR!!", errorMsg))
 		 end)
 	
 	in

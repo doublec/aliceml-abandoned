@@ -74,7 +74,7 @@ fun main () =
             |   Remote.Proxy Remote.Ticket =>
                 (* Server has been terminated! *)
                 SND ("Ticket no longer valid.  Server has been terminated.")
-            |   Remote.Proxy _ =>
+            |   Remote.Proxy e =>
                 (* lowlevel error. *)
                 SND (exnName e)
             |   IO.Io { name, function, cause } =>

@@ -152,10 +152,7 @@ struct
 	    (* the mainQuit procedure. disconnects the client from the game
 	       and returns to the main window *)
 	    fun mainQuit () = 
-		(disconnect ();
-		 Gtk.widgetDestroy playerSettings;
-		 reset NONE)
-
+		(disconnect (); Gtk.widgetDestroy playerSettings; reset NONE)
 
 	    (* called, if the client has changed the nameText widget.
 	       if nameText = "" -> you can't press the ready-button,
