@@ -181,7 +181,7 @@ LIBSYSTEMSOURCES0 = \
 	RESOLVER_HANDLER-sig.aml RESOLVER-sig.aml Resolver.aml \
 	URL_MAP-sig.aml UrlMap.aml COMPONENT_MANAGER-sig.aml \
 	ComponentManager.aml Boot.aml PP_VALUE-sig.aml PPValue.aml \
-	PP_COMPONENT-sig.aml PPComponent.aml RTTTracer.aml
+	PP_COMPONENT-sig.aml PPComponent.aml
 LIBUTILITYSOURCES0 = \
 	$(LIBUTILITYNATIVES0:%=Unsafe%.asig) \
 	ASSERT-sig.aml Assert.aml STAMP-sig.aml MkStamp.aml \
@@ -687,8 +687,7 @@ build3-all: build2-all $(BUILD3DIRS) $(BUILD3SOURCES) \
 	build3/lib/system/Boot.stc \
 	build3/compiler/LinkedCompilerMain.stc \
 	build3/compiler/LinkedToplevelMain.stc \
-	build3/compiler/top/LinkedSMLToStockwerkRecursiveCompiler.stc \
-	build3/lib/system/RTTTracer.stc
+	build3/compiler/top/LinkedSMLToStockwerkRecursiveCompiler.stc
 
 build3/lib/fundamental/RTT.stc: build2/lib/rtt/LinkedRTT.stc
 	cp $< $@
