@@ -85,6 +85,11 @@ fun direct() =
       switch (List.tabulate(6,markWithState))
     )
 
+fun markTrail() =
+    sense here (marker validmarker) ifnot (
+      switch (List.tabulate(6,markWithState))
+    )
+
 fun head n =
     switch (List.tabulate(6,turnTo n))
 end
@@ -135,21 +140,16 @@ end
 (*     ) *)
 
 
-val deliver_food =
+fun deliver_food explorer =
     gohome (mark foodmarker)
-           (drop ++ lost)
+           (drop ++ explorer)
 
 (* Pioneer, build straight streets *)
 (* should only be some ants on the edge of the hill *)
 fun pioneer explorer =
-    let
-        val direct1 = direct()
-    in
-        loopx (fn break =>
-                  direct1 ++
-                  domove otherwise explorer
-              )
-    end
+    loop (direct() ++
+          domove otherwise explorer
+    )
 
 fun myturnto tl1 tl2 tr1 tr2 c ifyes b =
 	letlabel (fn l1 =>
@@ -173,31 +173,33 @@ fun myturnto tl1 tl2 tr1 tr2 c ifyes b =
 		on(rightahead, c) tr2
 	    ] otherwise b
 
+fun turnToFree () =
+    sense rightahead home ifnot (turn right) ++ 
+    sense rightahead home ifnot (turn right) ++ 
+    sense rightahead home ifnot (turn right) ++
+    sense rightahead home ifnot (turn right) ++
+    sense rightahead home ifnot (turn right) ++
+    sense rightahead friend ifnot (turn right) ++
+    sense rightahead friend ifnot (turn right) ++
+    sense rightahead friend ifnot (turn right) ++
+    sense rightahead friend ifnot (turn right) ++
+    sense rightahead friend ifnot (turn right)
+    
+
 (* Explorer, run around wildly and seek food *)
 fun explorer (probTurn) collector =
-    let
-        val direct1 = direct()
-        val turn1 = turn left
-        val turn2 = turn left
-        val tl1 = turn left
-        val tl2 = turn left
-        val tr1 = turn right
-        val tr2 = turn right
-        val ttf = myturnto tl1 tl2 tr1 tr2 food ifyes collector
-    in
-        loopx (fn break =>
-                  direct1 ++
-                  ttf ++
-                  flip probTurn ifyes turn1 ++             
-                  domove otherwise turn2
+        loop (markTrail() ++
+              myturnto (turn left) (turn left)
+                       (turn right) (turn right) food ifyes collector ++
+              flip probTurn ifyes (turn left) ++             
+              domove otherwise (turnToFree())
               )
-    end
 
 (* Collector, follow streets with food marker and bring food home *)
 fun collector explorer =
     domove otherwise explorer ++
     pick ifnot explorer ++
-    deliver_food
+    deliver_food explorer
 
 val ant =
     proc "pioneer" (pioneer (goto "explorer")) ++
