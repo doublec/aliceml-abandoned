@@ -36,7 +36,7 @@ structure Builtins :> BUILTINS =
 		Map.insert (map, "Word.<<", "Word$shr");
 		Map.insert (map, "Word.>>", "Word$lsr");
 		Map.insert (map, "Word.~>>", "Word$asr");
-		Map.insert (map, "Word.fromInt'", "Word.fromInt2");
+		Map.insert (map, "Word.fromInt'", "Word$fromInt2");
 		map
 	    end
 
