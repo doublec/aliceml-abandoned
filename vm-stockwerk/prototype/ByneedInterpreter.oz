@@ -49,7 +49,7 @@ define
 		cancelled(PrimitiveTable.table.'Hole.Cyclic')}
 	       exception(nil PrimitiveTable.table.'Hole.Cyclic' Rest)
 	    else
-	       for T in Ts do {Scheduler.object enqueue(T)} end
+	       for T in Ts do {Scheduler.object wakeup(T)} end
 	       {Assign TransientState ref(X)}
 	       continue(arg(Transient) Rest)
 	    end
@@ -62,7 +62,7 @@ define
       case TaskStack
       of byneedFrame(_ Transient=transient(TransientState))|Rest then
 	 case {Access TransientState} of future(Ts) then
-	    for T in Ts do {Scheduler.object enqueue(T)} end
+	    for T in Ts do {Scheduler.object wakeup(T)} end
 	    {Assign TransientState cancelled(Exn)}
 	    continue(arg(Transient) Rest)
 	 end
