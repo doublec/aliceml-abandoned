@@ -318,7 +318,7 @@ structure LivenessAnalysisPhase :> LIVENESS_ANALYSIS_PHASE =
 	       | (_, ref (Kill _)) => ())
 	  | initBody (nil, _) = ()
 
-	fun annotate (_, _, body) =
+	fun annotate (_, (body, _)) =
 	    (scanBody (body, Copy (StampSet.new ()));
 	     initBody (body, StampSet.new ()))
     end

@@ -621,12 +621,12 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	     genStm stm; genBody stms)
 	  | genBody nil = ()
 
-	fun genComponent (component as (imports, _, body)) =
+	fun genComponent (component as (imports, (body, _))) =
 	    (LivenessAnalysisPhase.annotate component;
 	     init ["Test"];
-	     List.app (fn (id, string) =>
+	     List.app (fn (id, _, url) =>
 		       (emit (Ldarg 0);
-			emit (Ldstr string);
+			emit (Ldstr (Url.toString url));
 			emit (Call (true, StockWerk.Komponist, "Import",
 				    [System.StringTy], StockWerk.StockWertTy));
 			declareLocal id)) imports;

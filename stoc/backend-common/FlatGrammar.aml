@@ -104,7 +104,8 @@ structure ImperativeGrammar: IMPERATIVE_GRAMMAR =
 	  | AdjExp of coord * id * id
 	withtype body = stm list
 
-	type component = (id * string) list * id list * body
+	type sign = IntermediateGrammar.sign
+	type component = (id * sign * Url.t) list * (body * sign)
 
 	fun infoStm (ValDec (info, _, _, _)) = info
 	  | infoStm (RecDec (info, _, _)) = info

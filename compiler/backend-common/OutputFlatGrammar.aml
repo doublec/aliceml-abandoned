@@ -195,10 +195,10 @@ structure OutputImperativeGrammar :> OUTPUT_IMPERATIVE_GRAMMAR =
 		 List.map (fn stm =>
 			   SEQ [outputInfo (infoStm stm), outputStm stm]) stms)
 
-	fun outputComponent (idStringList, _, body) =
+	fun outputComponent (importList, (body, _)) =
 	    format (SEQ [SEQ (List.map
-			      (fn (id, string) =>
+			      (fn (id, _, url) =>
 			       SEQ [S "import ", ID id,
-				    S (" from " ^ string ^ "\n")])
-			      idStringList), outputBody body, NL])
+				    S (" from " ^ Url.toString url ^ "\n")])
+			      importList), outputBody body, NL])
     end

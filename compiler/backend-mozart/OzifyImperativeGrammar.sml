@@ -241,10 +241,11 @@ structure OzifyImperativeGrammar :> OZIFY_IMPERATIVE_GRAMMAR =
 	     outputId (q, id1); m q; outputId (q, id2); r q)
 	and outputBody (q, stms) = outputList outputStm (q, stms)
 
-	fun outputComponent (q, (idStringList, ids, stms)) =
+	fun outputComponent (q, (importList, (stms, _))) =
 	    (output1 (q, #"(");
-	     outputList (outputPair (outputId, outputString))
-	     (q, idStringList); output1 (q, #"#");
-	     outputList outputId (q, ids); output1 (q, #"#");
+	     outputList (fn (q, (id, _, url)) =>
+			 outputPair (outputId, outputString)
+			 (q, (id, Url.toString url))) (q, importList);
+	     output1 (q, #"#");
 	     outputList outputStm (q, stms); output1 (q, #")"))
     end
