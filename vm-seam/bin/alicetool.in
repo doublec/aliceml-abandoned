@@ -83,7 +83,7 @@ case "$mode" in
 	exec seamtool ${verbose} compile "${gmpincludes}" -I"${includedir}" "$@"
 	;;
     link)
-    if [[ -n "${alicedll}" ]] ; then
+    if test -n "${alicedll}" ; then
 	  exec seamtool ${verbose} link "$@" "${alicedll}" "${gmplib}";
     else
       exec seamtool ${verbose} link "$@" "${gmplib}";
