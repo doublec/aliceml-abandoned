@@ -650,7 +650,7 @@ atomic exchange although the new value actually depends on the previous one.
 Any concurrent <TT>get</TT> operation will block automatically (in <TT>tl</TT>)
 until the future is eliminated by fulfilling the promise. Consequently, no
 <TT>get</TT> operation can proceed before the former has determined the new
-queue. That ensures thread-safity.<P>
+queue. That ensures thread-safety.<P>
 
 <P>Likewise, when the queue is empty, <TT>get</TT> encounters a future for
 <TT>xs</TT> and will block. This time, the future is eliminated by the next
