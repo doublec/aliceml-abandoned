@@ -4,7 +4,7 @@
 //   Leif Kornstaedt <kornstae@ps.uni-sb.de>
 //
 // Copyright:
-//   Thorsten Brunklaus and Leif Kornstaedt, 2000
+//   Thorsten Brunklaus and Leif Kornstaedt, 2000-2003
 //
 // Last change:
 //   $Date$ by $Author$
@@ -18,7 +18,7 @@ class Start {
 	Uri baseUri = new Uri(System.IO.Directory.GetCurrentDirectory() + "/");
 	Alice.Komponist k = new Alice.Komponist(baseUri);
 	if (args.Length < 1) {
-	    Console.WriteLine("Usage: stow <application dll> <arguments ...>");
+	    Console.WriteLine("Usage: alicerun <application dll> <arguments ...>");
 	    Environment.Exit(2);
 	} else {
 	    try {
