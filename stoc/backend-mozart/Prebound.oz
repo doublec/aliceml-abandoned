@@ -83,7 +83,7 @@ define
 	 fun {$ A I}
 	    try
 	       {Array.get A I}
-	    catch _ then
+	    catch error(kernel(array ...) ...) then
 	       {Exception.raiseError BuiltinTable.'General.Subscript'} unit
 	    end
 	 end
@@ -91,7 +91,7 @@ define
 	 fun {$ A I X}
 	    try
 	       {Array.put A I X}
-	    catch _ then
+	    catch error(kernel(array ...) ...) then
 	       {Exception.raiseError BuiltinTable.'General.Subscript'}
 	    end
 	    unit
@@ -244,7 +244,11 @@ define
       'Int.div':
 	 fun {$ X1 X2}
 	    try
-	       X1 div X2
+	       if {Int.isNat X1} == {Int.isNat X2} then
+		  X1 div X2
+	       else
+		  (X1 - X2 + 1) div X2
+	       end
 	    catch _ then
 	       {Exception.raiseError BuiltinTable.'General.Div'} unit
 	    end
@@ -252,6 +256,23 @@ define
       'Int.maxInt': 'NONE'
       'Int.minInt': 'NONE'
       'Int.mod':
+	 fun {$ X1 X2}
+	    try A in
+	       A = X1 mod X2
+	       if A < 0 then A + X2 else A end
+	    catch _ then
+	       {Exception.raiseError BuiltinTable.'General.Div'} unit
+	    end
+	 end
+      'Int.quot':
+	 fun {$ X1 X2}
+	    try
+	       X1 div X2
+	    catch _ then
+	       {Exception.raiseError BuiltinTable.'General.Div'} unit
+	    end
+	 end
+      'Int.rem':
 	 fun {$ X1 X2}
 	    try
 	       X1 mod X2
@@ -340,7 +361,7 @@ define
 	 fun {$ S I}
 	    try
 	       {ByteString.get S I}
-	    catch _ then
+	    catch system(kernel('ByteString.get' ...) ...) then
 	       {Exception.raiseError BuiltinTable.'General.Subscript'} unit
 	    end
 	 end
@@ -348,7 +369,7 @@ define
 	 fun {$ S I J}
 	    try
 	       {ByteString.slice S I I + J}
-	    catch _ then
+	    catch system(kernel('ByteString.slice' ...) ...) then
 	       {Exception.raiseError BuiltinTable.'General.Subscript'} unit
 	    end
 	 end
@@ -387,7 +408,7 @@ define
 	 fun {$ V I}
 	    try
 	       V.(I + 1)
-	    catch _ then
+	    catch error(kernel('.' ...) ...) then
 	       {Exception.raiseError BuiltinTable.'General.Subscript'} unit
 	    end
 	 end
