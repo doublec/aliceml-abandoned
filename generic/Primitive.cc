@@ -59,25 +59,25 @@ public:
     frame = PrimitiveFrame::New(this)->ToWord();
     RootSet::Add(frame);
   }
+
+  virtual Transform *GetAbstractRepresentation(ConcreteRepresentation *);
+
+  virtual Result Run();
+  virtual void PushCall(Closure *closure);
+  virtual const char *Identify();
+  virtual void DumpFrame(word frame);
+
+  virtual u_int GetInArity(ConcreteCode *concreteCode);
+  virtual Interpreter::function GetCFunction();
+
+  static Result Run(PrimitiveInterpreter *interpreter);
+
   Interpreter::function GetFunction() {
     return function;
   }
   word GetFrame() {
     return frame;
   }
-  static Result Run(PrimitiveInterpreter *interpreter);
-  // Handler Methods
-  virtual Transform *GetAbstractRepresentation(ConcreteRepresentation *);
-  // Frame Handling
-  virtual void PushCall(Closure *closure);
-  // Execution
-  virtual Result Run();
-  // Debugging
-  virtual const char *Identify();
-  virtual void DumpFrame(word frame);
-  // Runtime compilation
-  virtual u_int GetArity();
-  virtual Interpreter::function GetCFunction();
 };
 
 //
@@ -142,8 +142,8 @@ void PrimitiveInterpreter::DumpFrame(word) {
   std::fprintf(stderr, "%s\n", name);
 }
 
-u_int PrimitiveInterpreter::GetArity() {
-  return arity;
+u_int PrimitiveInterpreter::GetInArity(ConcreteCode *) {
+  return arity == 1? Scheduler::ONE_ARG: arity;
 }
 
 Interpreter::function PrimitiveInterpreter::GetCFunction() {
