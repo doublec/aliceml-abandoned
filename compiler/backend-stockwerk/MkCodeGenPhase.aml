@@ -209,7 +209,7 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 	fun translatePolyProd (labelIdRefVec, env) =
 	    let
 		val n = Vector.length labelIdRefVec
-		val layout = Array.new (n, NONE)
+		val layout = Array.array (n, NONE)
 
 		fun insertPolyProd (label, idRef) =
 		    insertPolyProd' (UniqueString.hash label mod n,

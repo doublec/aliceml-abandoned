@@ -350,8 +350,8 @@ structure IL :> IL =
 	fun outputSep _ (_, #[], _) = ()
 	  | outputSep outputX (q, xs, sep) =
 	    (outputX (q, Vector.sub (xs, 0));
-	     Vector.appi (fn (_, x) => (output (q, sep); outputX (q, x)))
-	     (xs, 1, NONE))
+	     VectorSlice.app (fn x => (output (q, sep); outputX (q, x)))
+	     (VectorSlice.slice (xs, 1, NONE)))
 
 	fun outputDottedname (q, dottedname) =
 	    (case Vector.sub (dottedname, 0) of

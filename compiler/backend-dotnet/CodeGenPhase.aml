@@ -130,7 +130,7 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 		    Vector.foldli (fn (i, idDef, rest) =>
 				   case idDef of
 				       IdDef _ => (i, idDef)::rest
-				     | Wildcard => rest) nil (idDefs, 0, NONE)
+				     | Wildcard => rest) nil idDefs
 	    in
 		if await then emitAwait () else ();
 		case indexIdDefList of
@@ -293,7 +293,7 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 			     raise Crash.Crash "CodeGenPhase.genTests 4"
 		     in
 			 emit (Castclass StringTy);
-			 Vector.appi gen (litBodyVec, 0, NONE);
+			 Vector.appi gen litBodyVec;
 			 genBody elseBody
 		     end
 	       | (RealLit _, _) =>
@@ -315,7 +315,7 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 		     in
 			 emit (Castclass System.DoubleTy);
 			 emit (Unbox System.Double); emit LdindR8;
-			 Vector.appi gen (litBodyVec, 0, NONE);
+			 Vector.appi gen litBodyVec;
 			 genBody elseBody
 		     end)
 	  | genTests (TagTests tagBodyVec, elseBody) =
@@ -367,7 +367,7 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 		emit (B (FALSE, contLabel)); emit (Castclass Alice.ConValTy);
 		emit (Call (true, Alice.ConVal, "GetId", #[], ObjectTy));
 		emit (Label contLabel);
-		Vector.appi gen (conBodyVec, 0, NONE);
+		Vector.appi gen conBodyVec;
 		emit Pop; genBody elseBody
 	    end
 	  | genTests (VecTests vecBodyVec, elseBody) =
@@ -472,7 +472,7 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	    (emit (LdcI4 (Vector.length idRefs)); emit (Newarr ObjectTy);
 	     Vector.appi (fn (i, idRef) =>
 			     (emit Dup; emit (LdcI4 i); emitIdRef idRef;
-			      emit StelemRef)) (idRefs, 0, NONE))
+			      emit StelemRef)) idRefs)
 	  | genExp (ProdExp (info, labelIdRefVec)) =
 	    genExp (TupExp (info, Vector.map #2 labelIdRefVec))
 	  | genExp (PolyProdExp (info, labelIdRefVec)) =
@@ -481,7 +481,7 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	     Vector.appi (fn (i, (label, _)) =>
 			     (emit Dup; emit (LdcI4 i);
 			      emit (Ldstr (Label.toString label));
-			      emit StelemRef)) (labelIdRefVec, 0, NONE);
+			      emit StelemRef)) labelIdRefVec;
 	     emit (Newobj (Alice.Record, #[ArrayTy StringTy]));
 	     Vector.app (fn (label, idRef) =>
 			    (emit Dup;

@@ -83,8 +83,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	    (*--** this looks irregular *)
 	  | makeConArgs (TupPat (_, pats), Arity.Tuple _, pos) =
 	    (Vector.mapi (fn (i, pat) =>
-			  (LABEL (Label.fromInt (i + 1))::pos, pat))
-	     (pats, 0, NONE),
+			  (LABEL (Label.fromInt (i + 1))::pos, pat)) pats,
 	     O.TupArgs (Vector.map ignore pats))
 	  | makeConArgs (ProdPat (info, patFlds), Arity.Product _, pos) =
 	    (case typToArity (#typ info) of
@@ -144,7 +143,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	     makeTestSeq (pat, LABEL (Label.fromInt (i + 1))::pos,
 			  rest, mapping))
 	    (Test (pos, TupTest (Vector.length pats))::rest, mapping)
-	    (pats, 0, NONE)
+	    pats
 	  | makeTestSeq (ProdPat (info, patFlds), pos, rest, mapping) =
 	    Vector.foldl (fn (Fld (_, Lab (_, label), pat),
 			      (rest, mapping)) =>
@@ -162,7 +161,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	     makeTestSeq (pat, LABEL (Label.fromInt (i + 1))::pos,
 			  rest, mapping))
 	    (Test (pos, VecTest (Vector.length pats))::rest, mapping)
-	    (pats, 0, NONE)
+	    pats
 	  | makeTestSeq (AsPat (_, pat1, pat2), pos, rest, mapping) =
 	    let
 		val (rest', mapping') = makeTestSeq (pat1, pos, rest, mapping)
@@ -566,7 +565,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 			Vector.foldri (fn (i, id, mapping) =>
 					  ([LABEL (Label.fromInt (i + 1))],
 					   O.IdRef id)::mapping)
-				      nil (ids, 0, NONE)
+				      nil ids
 		    val idDefs = Vector.map O.IdDef ids
 		in
 		    (O.TupArgs idDefs, graph, mapping, consequents)

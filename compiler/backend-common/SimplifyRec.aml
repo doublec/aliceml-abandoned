@@ -353,7 +353,7 @@ structure SimplifyRec :> SIMPLIFY_REC =
 		    if Type.isTupleRow row then
 			Vector.foldri (fn (i, typ, rest) =>
 				       (Label.fromInt (i + 1), typ)::rest)
-			nil (Type.asTupleRow row, 0, NONE)
+			nil (Type.asTupleRow row)
 		    else parseRow row
 		fun adjoin (labelTyp as (label, _), patFlds as
 			    (Fld (_, Lab (_, label'), _)::rest)) =

@@ -159,13 +159,11 @@ structure Link :> LINK =
 		val _ =
 		    Vector.appi (fn (i, url) =>
 				    UrlMap.insert (urlToIndexMap, url,
-						   (true, i)))
-				(includes, 0, NONE)
+						   (true, i))) includes
 		val _ =
 		    Vector.appi (fn (i, url) =>
 				    UrlMap.insert (urlToIndexMap, url,
-						   (false, i)))
-				(excludes, 0, NONE)
+						   (false, i))) excludes
 		val imports =
 		    Vector.map (fn url =>
 				   (rewrite (Url.toString url),
@@ -210,7 +208,7 @@ structure Link :> LINK =
 				val str = lazy body actuals
 			    in
 				Hole.fill (Vector.sub (strs, i), str)
-			    end) (includeTable, 0, NONE);
+			    end) includeTable;
 			Vector.sub (strs, rootIndex)
 		    end
 		val inf = MyComponent.inf (getComponent root)

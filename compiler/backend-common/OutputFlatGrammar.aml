@@ -85,8 +85,8 @@ structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
 		  | format' (SEP (f, #[])) = ()
 		  | format' (SEP (f, fs)) =
 		    (format' (Vector.sub (fs, 0));
-		     Vector.appi (fn (_, fi) => (format' f; format' fi))
-		     (fs, 1, NONE))
+		     VectorSlice.app (fn fi => (format' f; format' fi))
+		     (VectorSlice.slice (fs, 1, NONE)))
 	    in
 		format' f; String.concat (List.rev (!r))
 	    end
