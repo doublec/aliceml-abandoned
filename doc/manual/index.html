@@ -9,7 +9,19 @@
     <IMG src="logo-large.gif" border=0 alt="Alice Project">
   </A>
 </P>
+</DIV>
 
+<P align=center>These pages describe the current implementation of <A
+href="http://www.ps.uni-sb.de/alice/">Alice</A> (nick-named
+<I>Kraftwerk</I>), which is based on the
+<?php if ($platform == "seam") { ?>
+<A href="http://www.ps.uni-sb.de/seam/">SEAM</A>
+<?php } else { ?>
+<A href="http://www.mozart-oz.org/">Mozart</A>
+<?php } ?>
+virtual machine.</P>
+
+<DIV class=centered>
 <P align=center>
   <A href="features.html">Features</A> <BR>
   <A href="tour.html">A Short Tour of Alice</A> <BR>
@@ -21,27 +33,18 @@
   <A href="migration.html">Oz-to-Alice Migration</A> <BR>
   <?php } ?>
 </P>
-
 </DIV>
-
-<P align=center>These pages describe the current implementation of <A
-href="http://www.ps.uni-sb.de/alice/">Alice</A> (nick-named
-<I>Stockhausen</I>), which is based on the
-<?php if ($platform == "seam") { ?>
-SEAM
-<?php } else { ?>
-<A href="http://www.mozart-oz.org/">Mozart</A>
-<?php } ?>
-virtual machine.</P>
 
 <P align=center class=centered>
   The Alice Project,
   <A href="http://www.ps.uni-sb.de/alice/"><TT>http://www.ps.uni-sb.de/alice/</TT></A> <BR>
 </P>
 
+<?php if ($platform == "mozart") { ?>
 <P align=center>
   <IMG src="mozart_cartoon.jpg">
 </P>
+<?php } ?>
 
 <P align=center class=note>
   The Alice System (c) 2002-2004 Programming System Lab, Saarland University
