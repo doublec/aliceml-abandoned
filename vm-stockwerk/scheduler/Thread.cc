@@ -10,4 +10,6 @@
 //   $Revision$
 //
 
-#include "Thread.hh"
+#include "scheduler/Thread.hh"
+
+//--** method implementations missing

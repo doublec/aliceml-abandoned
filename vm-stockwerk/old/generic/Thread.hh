@@ -19,16 +19,25 @@ class TaskStack;
 
 class Thread: private Block {
 public:
-  typedef enum {
-    HIGH, MEDIUM, LOW
-  } priority;
+  enum priority {
+    HIGH, NORMAL, LOW
+  };
+
+  enum state {
+    BLOCKED, RUNNABLE, TERMINATED
+  };
 
   using Block::ToWord;
 
-  static Thread *New(priority, TaskStack *);
+  static Thread *New(priority);
+  static Thread *FromWord(word);
   priority GetPriority();
   TaskStack *GetTaskStack();
-  void UpdateTaskStack(TaskStack *);
+  void Suspend();
+  void Resume();
+  bool IsSuspended();
+  void SetState(state);
+  state GetState();
 };
 
 #endif __THREAD_HH__
