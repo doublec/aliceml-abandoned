@@ -24,10 +24,10 @@
   </P>
 
   <P>
-    If the environment variable <TT>ALICE_TRACE_RESOLVER</TT> is set,
-    then every localization act will output trace messages about what
-    handlers were called on what resource and with what result.
-    These messages are printed to the standard error output stream
+    If the environment variable <TT>ALICE_TRACE_RESOLVER</TT> is defined
+    (its value does not matter), then every localization act will output trace
+    messages about what handlers were called on what resource and with what
+    result.  These messages are printed to the standard error output stream
     <TT><A href="text-io.html">TextIO.stdErr</A></TT>.
   </P>
 
@@ -138,10 +138,13 @@
       <TT><A name="localize">localize</A> <I>resolver</I> <I>name</I></TT>
     </DT>
     <DD>
-      <P>performs a localization act, using <TT><I>resolver</I></TT>, to
-	localize the resource with symbolic name <TT><I>name</I></TT>.
+      <P>performs a localization act, using <TT><I>resolver</I></TT>,
+	to localize the resource with symbolic name <TT><I>name</I></TT>.
 	Returns <TT>SOME _</TT>, if localization was successful, <TT>NONE</TT>
-	otherwise.</P>
+	otherwise.  Prints tracing messages for every handler that has been
+	tested for applicability, along with its result, if the variable
+	<TT>ALICE_TRACE_RESOLVER</TT> is defined in the process
+	environment.</P>
     </DD>
   </DL>
 
