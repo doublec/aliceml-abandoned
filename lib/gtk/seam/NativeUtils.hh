@@ -89,6 +89,14 @@ inline void __refObject(void *p, int type) {
   }
 }
 
+inline void __refObject(word wParent) {
+  Tuple *parent = Tuple::FromWord(wParent);
+  if (parent != INVALID_POINTER) {
+    __refObject(Store::DirectWordToUnmanagedPointer(parent->Sel(0)),
+		Store::DirectWordToInt(parent->Sel(1)));
+  }
+}
+
 // Decrease reference count of a pointer, depending on type.
 inline void __unrefObject(void *p, int type) {
   if (!p) return;
@@ -104,6 +112,25 @@ inline void __unrefObject(void *p, int type) {
   default:
     break;
   }
+}
+
+inline void __unrefObject(word wParent) {
+  Tuple *parent = Tuple::FromWord(wParent);
+  if (parent != INVALID_POINTER) {
+    __unrefObject(Store::DirectWordToUnmanagedPointer(parent->Sel(0)),
+		  Store::DirectWordToInt(parent->Sel(1)));
+  }
+}
+
+// Manage parental relations to ensure parent objects are freed last
+inline void __parentObject(word wContainer, word wWidget) {
+  Tuple *widget = Tuple::FromWord(wWidget);
+  // Release old container object
+  __unrefObject(widget->Sel(2));
+  // Strengthen new container object
+  __refObject(wContainer);
+  // TODO: tuple with update?
+  STATIC_CAST(Block *, widget)->ReplaceArg(2, wContainer);
 }
 
 // Convert a C pointer to an object tuple.

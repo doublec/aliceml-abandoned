@@ -32,7 +32,9 @@ DEFINE2(NativeGnomeCanvas_itemNew) {
   GnomeCanvasItem *ret = gnome_canvas_item_new(
 		           static_cast<GnomeCanvasGroup*>(parent), 
 			   static_cast<GtkType>(type), NULL);
-  RETURN(OBJECT_TO_WORD(ret,TYPE_GTK_OBJECT));
+  word item = OBJECT_TO_WORD(ret,TYPE_GTK_OBJECT);
+  __parentObject(x0, item);
+  RETURN(item);
 } END
 
 DEFINE2(NativeGnomeCanvas_setBackgroundColor) {

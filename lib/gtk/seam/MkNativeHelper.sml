@@ -170,8 +170,26 @@ functor MkNativeHelper(structure TypeManager : TYPE_MANAGER
 		(* Alice always requires a return value *)
 		val returnSuffix = if  numOuts = 0 then "_UNIT"
 				   else Int.toString numOuts
+	        val retLine' =
+		    [wrIndent, "RETURN", returnSuffix, retList', ";\n"]
+		(* Parent objects must be finalized last *)
+		(* TODO: Add missing parent/child connectors *)
+		val (containerRef, retLine'') =
+		    (case funName of
+			 ("gtk_container_add" |
+			  "gtk_container_add_with_properties") =>
+			 ([wrIndent, "__parentObject(x0, x1);\n"], retLine')
+		       | "gtk_widget_reparent" =>
+			 ([wrIndent, "__parentObject(x1, x0);\n"], retLine')
+		       | "gnome_canvas_root" =>
+			 ([wrIndent,
+			   "word root = OBJECT_TO_WORD(ret, TYPE_GTK_OBJECT);\n",
+			   wrIndent, "__parentObject(x0, root);\n",
+			   wrIndent, "RETURN(root);\n"],
+			  nil)
+		       | _ => (nil, retLine'))
 	    in
-	        val retLine = [wrIndent, "RETURN", returnSuffix, retList', ";\n"]
+	        val retLine = containerRef @ retLine''
 	    end
 
             (* end line *)

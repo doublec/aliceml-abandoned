@@ -497,29 +497,6 @@ public:
   }
 };
 
-DEFINE1(NativeCore_weakMapAdd) {
-  // x0 = (pointer, type)
-  WeakMap::FromWordDirect(weakDict)->Put(Tuple::FromWord(x0)->Sel(0),x0);  
-  //DECLARE_OBJECT_WITH_TYPE(obj,type,x0);
-  //g_message("added Tuple %d = (Pointer: %p, Type: %d)", x0, obj, type);
-  RETURN_UNIT;
-} END
-
-DEFINE1(NativeCore_weakMapIsMember) {
-  // x0 = (pointer, type)
-  //DECLARE_OBJECT_WITH_TYPE(obj,type,x0);
-  //g_message("is member? Tuple %d = (Pointer: %p, Type: %d)", x0, obj, type);
-  RETURN(BOOL_TO_WORD
-	 (WeakMap::FromWordDirect(weakDict)->IsMember(
-					   Tuple::FromWord(x0)->Sel(0))));
-} END
-
-DEFINE2(NativeCore_weakMapCondGet) {
-  // x0 = (pointer, type), x1 = alternative  
-  RETURN(WeakMap::FromWordDirect(weakDict)->CondGet(
-					   Tuple::FromWord(x0)->Sel(0),x1));
-} END
-
 ///////////////////////////////////////////////////////////////////////
 // OBJECT HANDLING
 
@@ -528,9 +505,10 @@ word OBJECT_TO_WORD_implementation(const void *pointer, int type) {
   void *pointer_ = const_cast<void *>(pointer);
   word key = Store::UnmanagedPointerToWord(pointer_);
   if (pointer == NULL) {
-    Tuple *object = Tuple::New(2);
+    Tuple *object = Tuple::New(3);
     object->Init(0, key);
     object->Init(1, Store::IntToWord(type));
+    object->Init(2, Store::IntToWord(0));
     return object->ToWord();
   } else {
     WeakMap *objectMap = WeakMap::FromWordDirect(weakDict);
@@ -545,9 +523,10 @@ word OBJECT_TO_WORD_implementation(const void *pointer, int type) {
       return object->ToWord();
     }
     else {
-      Tuple *object = Tuple::New(2);
+      Tuple *object = Tuple::New(3);
       object->Init(0, key);
       object->Init(1, Store::IntToWord(type));
+      object->Init(2, Store::IntToWord(0));
       objectMap->Put(key, object->ToWord());
       __refObject(pointer_, type);
       // Register default destroy event for gtk objects
