@@ -42,38 +42,38 @@ private:
   static void Shrink(MemChunk *list, int threshold);
   static Block *CopyBlockToDst(Block *p, u_int dst_gen, u_int cpy_gen);
   static word ForwardBlock(word p, u_int dst_gen, u_int cpy_gen);
-  static void ScanChunks(u_int dst_gen, u_int cpy_gen, MemChunk *anchor, char *scan);
-  static void HandleInterGenerationalPointers(Set *intgen_set, Set *new_intgen_set,
+  static void ScanChunks(u_int dst_gen, u_int cpy_gen, MemChunk *anchor, Block *scan);
+  static void HandleInterGenerationalPointers(Set *intgen_set,
 					      u_int gcGen, u_int dst_gen, u_int cpy_gen);
-  static Block *HandleWeakDictionaries(Set *wkdict_set, Set *new_wkdict_set,
-				       u_int dst_gen, u_int cpy_gen);
+  static Block *HandleWeakDictionaries(Set *wkdict_set, u_int dst_gen, u_int cpy_gen);
   static void SetInitMark(u_int size);
   static char *GCAlloc(u_int s, u_int header, u_int gen);
   static Block *AllocFinSet(u_int size, u_int dst_gen, u_int cpy_gen);
   static Block *PushToFinSet(Block *p, Handler *h, word value, u_int dst_gen, u_int cpy_gen);
   static void SwitchToNewChunk(MemChunk *chunk);
   static void AllocNewMemChunk();
-  static void AllocNewMemChunk(u_int size, u_int gen);
+  static void AllocNewMemChunk(u_int size, const u_int gen);
   
   static char *FastAlloc(u_int size, u_int header) {
-  retry:
-    char *p      = (storeChunkMax + storeChunkTop);
-    s_int newtop = (storeChunkTop + size);
+    for (;;) {
+      char *p      = (storeChunkMax + storeChunkTop);
+      s_int newtop = (storeChunkTop + size);
 
-    ((u_int *) p)[-1] = header;
-    if (newtop >= 0) {
-      AllocNewMemChunk();
-      goto retry;
+      ((u_int *) p)[-1] = header;
+      if (newtop >= 0) {
+	AllocNewMemChunk();
+	continue;
+      }
+      storeChunkTop = newtop;
+      return p;
     }
-    storeChunkTop = newtop;
-
-    return p;
   }
   static Block *InternalAllocBlock(BlockLabel l, u_int s) {
     AssertStore(s > INVALID_BLOCKSIZE);
     AssertStore(s <= MAX_BLOCKSIZE);
     return (Block *) Store::FastAlloc(((s + 1) * sizeof(u_int)), HeaderOp::EncodeHeader(l, s, 0));
   }
+  static Block *ForwardSet(Block *p, u_int cpy_gen, u_int dst_gen);
   static void DoGC(word &root, const u_int gcGen);
 public:
   // Init Functions

@@ -35,7 +35,7 @@ public:
     return (u_int) (Store::DirectWordToInt(GetArg(TOP_POS)) - 1);
   }
   void MakeEmpty() {
-    ((Block *) this)->InitArg(TOP_POS, Store::IntToWord((TOP_POS + 1)));
+    ((Block *) this)->InitArg(TOP_POS, 1);
   }
   Set *Push(word v) {
     u_int top = Store::DirectWordToInt(GetArg(TOP_POS));
