@@ -312,8 +312,8 @@ UNFINISHED: obsolete after bootstrapping:
 					  end
       | trMod(I.FunMod(i,x,j,m))	= O.FunExp(trInfo i, trId' x, trMod m)
       | trMod(I.AppMod(i,m1,m2))	= O.AppExp(trInfo i, trMod m1, trMod m2)
-      | trMod(I.AnnMod(i,m,j))		= trMod m
-      | trMod(I.UpMod(i,m,j))		= trMod m
+      | trMod(I.AnnMod(i,m,j))		= O.UpExp(trInfo i, trMod m)
+      | trMod(I.UpMod(i,m,j))		= O.UpExp(trInfo i, trMod m)
       | trMod(I.LetMod(i,ds,m))		= O.LetExp(trInfo i, trDecs ds, trMod m)
       | trMod(I.UnpackMod(i,e,j))	= trExp e
 
