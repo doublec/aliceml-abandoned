@@ -65,7 +65,7 @@ define
 			end
 		     end
 		  'save':
-		     fun {$ Filename Value Type}
+		     fun {$ Filename Type Value}
 			{Pickle.saveWithCells
 			 {Functor.new 'import' sig({NewName}#Type)
 			  fun {$ _} Value end} Filename '' 9}
