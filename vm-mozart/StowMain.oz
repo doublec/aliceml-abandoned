@@ -82,9 +82,13 @@ define
 	  error(kind: T
 		items: [hint(l: 'Exception' m: oz(E))
 			hint(l: 'Raised at' m: Coord)])
-       [] alice(E ...) then
+       [] alice(failed F I J) then
 	  error(kind: T
-		items: (hint(l: 'Exception' m: E)|
+		msg: 'Evaluated failed expression'
+		items: [hint(l: 'At' m: pos(F I J))])
+       [] alice(InnerE ...) then
+	  error(kind: T
+		items: (hint(l: 'Exception' m: oz(InnerE))|
 			{List.mapInd {Record.toList E}.2
 			 fun {$ I X} hint(l: 'Debug '#I m: oz(X)) end}))
        else
