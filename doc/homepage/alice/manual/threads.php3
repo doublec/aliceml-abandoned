@@ -26,10 +26,47 @@
   </P>
 
   <P>
-    Other operations are provided through the structure
+    Other operations on threads are provided through the structure
     <A href="#sig"><TT>Thread</TT></A>.
   </P>
 
+
+<?php section("state", "state") ?>
+
+  <P>
+    To deal with state in a thread-safe way, the structure <TT>Ref</TT>
+    provides an atomic exchange operation for references:
+  </P>
+
+  <PRE>
+	val exchange : 'a ref * 'a -> 'a
+  </PRE>
+
+  <P>
+    With <TT>exchange</TT>, the content of a cell can be
+    replaced by a new value. The old value is returned. The <TT>exchange</TT>
+    operation is atomic, and can thus be used for synchronisation.
+    As an example, here is the implementation of a generic lock generator:
+  </P>
+
+  <PRE>
+	(* mkLock : unit -> ('a -> 'b) -> ('a -> 'b) *)
+
+	fun mkLock() =
+	    let
+		val r = Ref.ref()
+	    in
+		fn f => fn x =>
+		let
+		    val new = Promise.promise()
+		    val old = Ref.exchange(r, Promise.future new)
+		in
+		    await old;
+		    f x before
+		    Promise.fulfill(new, ()))
+		end
+	    end
+  </PRE>
 
 
 <?php section("sig", "signature") ?>
