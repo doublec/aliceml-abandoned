@@ -153,7 +153,7 @@ LIBFUNDAMENTALSOURCES0 = \
 	WideChar.aml WideString.aml Word.aml Word8.aml Word8Vector.aml \
 	Package.aml ByNeed.aml
 LIBSYSTEMSOURCES0 = \
-	$(LIBSYSTEMNATIVES0:%=Unsafe%.asig) \
+	$(LIBSYSTEMNATIVES0:%=Unsafe%.asig) UnsafeValue.asig \
 	CONFIG-sig.aml IO-sig.aml BIN_IO-sig.aml BinIO.aml \
 	TEXT_IO-sig.aml TextIO.aml OS_FILE_SYS-sig.aml OS_PROCESS-sig.aml \
 	OS-sig.aml UNIX-sig.aml COMMAND_LINE-sig.aml COMPONENT-sig.aml \
