@@ -29,24 +29,29 @@ final public class Connection {
 	    }
 
 	    if (export==null) { // starten des Servers
+		java.util.Properties prop = System.getProperties();
+		java.lang.String home = (java.lang.String) prop.get("user.home");
+		java.lang.String name = (java.lang.String) prop.get("user.name");
+		// System.out.println("setze properties");
+		prop.put("java.rmi.server.codebase",
+			 "http://"+i.getHostName()+"/~"+name+"/codebase/"); // der letzte / ist wichtig
+		prop.put("java.security.policy",
+			 "http://"+i.getHostName()+"/~"+name+"/codebase/policy");
+		// System.out.println("schreibe klassen");
+		PickleClassLoader.loader.writeCodebase(home+"/public_html/codebase");
+
 		if (System.getSecurityManager() == null) {
+		    System.out.println("starte security manager");
 		    System.setSecurityManager(new RMISecurityManager());
 		}
 		export = new java.util.Hashtable();
 		exp = new Exporter(export);
 		rand = new java.util.Random(42);
-		//hier noch properties setzen, evtl. Klassen in die codebase schreiben
 
-		java.util.Properties prop = System.getProperties();
-		java.lang.String home = (java.lang.String) prop.get("user.home");
-		java.lang.String name = (java.lang.String) prop.get("user.name");
-		prop.put("java.rmi.server.codebase",
-			 "http://"+i.getHostName()+"/~"+name+"/codebase/"); // der letzte / ist wichtig
-		prop.put("java.security.policy",
-			 "http://"+i.getHostName()+"/~"+name+"/codebase/policy");
-		PickleClassLoader.loader.writeCodebase(home+"/public_html/codebase");
+		// System.out.println("starte registry");
 		java.rmi.registry.LocateRegistry.createRegistry(1099); // am Standardport
 		try {
+		    // System.out.println("binde exporter in registry");
 		    Naming.rebind("//localhost/exporter",exp);
 		} catch (java.net.MalformedURLException m) {
 		    System.err.println(m);
@@ -68,11 +73,15 @@ final public class Connection {
 		_error("argument not String",val);
 	    }
 	    java.lang.String ti = ((STRING) val).value;
+	    // System.out.println("ti = "+ti);
 	    java.lang.String ip = ti.substring(0,ti.indexOf('\\'));
+	    // System.out.println("ip = "+ip);
 	    java.lang.String ticket = ti.substring(ti.indexOf('\\')+1);
-	    Exporter exp = null;
+	    // System.out.println("ticket = "+ticket);
+	    Export exp = null;
 	    try {
-		exp = (Exporter) Naming.lookup("//"+ip+"/exporter");
+		// System.out.println("looking for "+ticket+" on "+ip);
+		exp = (Export) Naming.lookup("//"+ip+"/exporter");
 	    } catch (java.rmi.NotBoundException n) {
 		_error("ticket not bound",val);
 	    } catch (java.net.MalformedURLException m) {
