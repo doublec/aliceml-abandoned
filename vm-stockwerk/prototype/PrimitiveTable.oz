@@ -637,11 +637,15 @@ define
 		    end
 		 end#rr_t
 	      'Vector.tabulate':
-		 fun {$ N F TaskStack} V NewFrame in
-		    V = {Tuple.make vector N}
-		    NewFrame = vectorTabulate(VectorTabulateInterpreter
-					      V F 1 N)
-		    continue(arg(0) {F.1.1.pushCall F NewFrame|TaskStack.2})
+		 fun {$ N F TaskStack}
+		    if N > 0 then V NewFrame in
+		       V = {Tuple.make vector N}
+		       NewFrame = vectorTabulate(VectorTabulateInterpreter
+						 V F 1 N)
+		       continue(arg(0) {F.1.1.pushCall F NewFrame|TaskStack.2})
+		    else
+		       continue(arg(vector()) TaskStack.2)
+		    end
 		 end#rr_t
 	      'Word.+':
 		 fun {$ X Y} {W2I {BootWord.'+' {I2W X} {I2W Y}}} end#rr_v
