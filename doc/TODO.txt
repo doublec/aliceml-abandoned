@@ -1,0 +1,138 @@
+Dependency graph for the steps outlined below - for Operette 2:
+
+               now
+             /  |  \
+            1   2   3
+             \  |   |
+              \ 5   4
+               \ \ /
+                \-6
+                  |
+                  7
+                 / \
+                8   9
+
+Steps to be performed after Operette 2: 10, 11, 12
+
+Individual steps, each probably resulting in a checkin
+(note - the system is inconsistent only once, namely in-between
+steps 3 and 4):
+
+1. Do not use CM to generate files. (LK)
+
+   This means that vm-mozart/bootstrap/Makefile does not copy the
+   source files generated via CM, but instead explicitly calls ml-lex
+   and ml-yacc.  This means we have to automate patching Parser.grm.sig
+   for Alice, using something like the following awk script:
+
+   {
+     if (match ($0, /^structure Tokens : Parser_TOKENS$/))
+       savedline = $0;
+     else {
+       print $0;
+       if (match ($0, /^structure ParserData:PARSER_DATA$/))
+         print savedline;
+   }
+
+2. Use subdirectories for bootstrapping. (LK)
+
+   Every bootstrapping pass uses its own local build and install
+   directories (for sources and linked components, respectively).
+   The directory structure within the build directories corresponds
+   to the source structure below stockhausen, including the stoc
+   directory.  Adapt make.sh to reflect new build procedure.
+
+   In order to enable pass 2 (below), clean up the way replacesign
+   is used.  Also, the *.oz files have to be part of BACKENDMOZARTSOURCES.
+
+   Documentation about the following passes should be added to the
+   vm-mozart/bootstrap/Makefile:
+
+   Pass 1:
+      Build a stoc using the hybrid SML/NJ+Mozart compiler.
+      Sources are copied to subdirectory build1;
+      files are installed to subdirectory build1/install.
+      (Corresponds to the current $(MINIMALINSTALL).
+
+   Pass 2:
+      Build versions of components Base.ozf and TextIO.ozf (et al.)
+      with export signatures.  Sources are copied to subdirectory build2;
+      files are installed to subdirectory build2/install.
+
+   Pass 3:
+      Build a bootstrapped version of /everything/ (including stot).
+      Sources are copied to subdirectory build3;
+      files are installed to subdirectory build3/install.
+
+   Install:
+      Install all files as found in subdirectory build3/install.
+
+3. Move codebase to Alice. (AR)
+
+   This concerns all files mentioned in vm-mozart/bootstrap/Makefile.
+   If a *.header file exists, the Alice source is the concatenation
+   of the header and the current SML source.  If a *.body file exists,
+   it is the Alice source; the current SML source becomes a dummy for SML/NJ.
+
+   The SML/NJ sources should be generated into subdirectories named NJ
+   to avoid cluttering up the source directories.  The *.cm files need
+   to be modified accordingly.
+
+   Alternatively, generate SML/NJ sources as temporaries only.
+
+   Maybe we want to do some renamings at the same time:
+
+      Make* -> Mk*
+      CountPosLexer -> MkCountPosLexer
+      ParsingPhase -> MkParsingPhase
+
+4. Get vm-mozart-bootstrap to work again. (LK)
+
+   Instead of concatenating headers and sources, copy the files
+   from the Alice codebase as-is.  Use --implicit-import-file instead
+   of --no-implicit-import.
+
+   For the ml-lex/ml-yacc generated files, add import headers.
+
+   Question: What should happen to the files in
+   vm-mozart/bootstrap/backend-mozart/*.oz vs. stoc/backend-mozart/*.oz?
+
+5. Provide a new place for all files formerly in lib/bootstrap. (LK)
+
+   This means that TextIO.sig (et al.) are moved to lib/system.
+   The vm-mozart/bootstrap/Makefile needs to be adapted.
+
+6. Use fragmented library. (AR)
+
+   This step gets rid of lib/bootstrap/Bootstrap.aus.
+   This file has to be moved to vm-com+, since that runtime
+   still needs it.
+
+7. Implement pass 2. (AR)
+
+8. Test runtime types. (AR)
+
+9. Enrich native components with runtime types. (LK)
+
+   Natively implemented components that export types, such
+   as TextIO.outstream, are assigned runtime types by wrapping
+   them in an Alice component.
+
+10. Provide fundamental library as building-blocks. (AR/LK)
+
+   Every runtime instantiates `holes' in the library, such
+   as by specifying that Int = IntInf or LargeInt = Int31.
+   Includes solving the cycle problem regarding Pervasive.
+
+11. Compiler uses lib. (AR)
+
+   Currently we have two copies of some modules - one for the
+   Alice codebase, one as the SML/NJ source.  This is the
+   case for some sources formerly residing in stoc/misc and
+   stoc/common.  These sources should now be handled using
+   aml2sml.
+
+12. Generate dependencies automatically. (AR)
+
+   This involves building a stodep tool and invoking it to
+   build dependencies for the build2 and build3 directories.
