@@ -21,6 +21,12 @@ struct
     val toNonterm = List.find 
     val toTerm = List.find
 
+    fun timeStamp () =
+	let val time = Time.fmt 0 (Time.now ())
+	in 
+	    time
+	end
+
     fun mkNewNamefunction s m =
 	let val r = ref m 
 	in 
@@ -29,18 +35,22 @@ struct
 
     val newTokenname = mkNewNamefunction "TOKEN" 675
     val newRulename = mkNewNamefunction "startrule" 675
-    val eop = "EOP"
+    val eop = "EOP"^(timeStamp ())
+    val start = "NewStartSymbol"^(timeStamp ())    
 
     (* ML yacc assumes 
      - nonterms numbered 0,...,|nonterms|,
      - terms numbered 0,...,|terms|
      - rules numbered 0,...,|rules|
      - start nonterm not in any rhs
-     - higher prec means tighter binding 
+     - higher prec means tighter binding
+
+     additionally: DummyTok1,...DummyTokn,EOPToken,origTokens... 
      *)
 
     (* tl: new tokens to distinguish between different parsers *)
     (* eop to the end *) 
+
     fun mkTermDict tl l = 
 	let fun toDict i [] = []
 	      | toDict i (to::toks) = (to,i)::(toDict (i+1) toks)
@@ -58,7 +68,7 @@ struct
 	end
 
     fun mkNontermDict l =
-	let fun toDict i [] = [((N.start,NONE), i)]
+	let fun toDict i [] = [((start,NONE), i)]
 	      | toDict i ((s,ty,_)::ss) = 
 	    let val d = toDict i ss 
 	    in 
@@ -104,7 +114,7 @@ struct
 	      | toRule tl (((pname,_,stsym),pnum)::l) =
 		let val tok = newTokenname () 
 		    val (tl,rules) = toRule tl l
-		in (tok::tl,(N.start,NONE,A.Transform
+		in (tok::tl,(start,NONE,A.Transform
 			     (A.Seq [A.As(tok,A.Symbol(tok)),
 				     A.As(stsym,A.Symbol(stsym)),
 				     A.As(eop,A.Symbol(eop))],
@@ -214,7 +224,7 @@ struct
 	    val td = mkTermDict ts x
 	    val ntd = mkNontermDict x
 	    val stringToSymbol = stringToSymbol td ntd
-	    val start = stringToNonterm ntd N.start
+	    val start = stringToNonterm ntd start
 	    val eop = [stringToTerm td eop]
 	    val terms = List.length td
 	    val nonterms = List.length ntd
