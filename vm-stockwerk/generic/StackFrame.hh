@@ -96,8 +96,14 @@ public:
   word GetArg(u_int pos) {
     return Block::GetArg(BASE_SIZE + pos);
   }
+  void InitArg(u_int pos, int value) {
+    Block::InitArg(BASE_SIZE + pos, value);
+  }
   void InitArg(u_int pos, word value) {
     Block::InitArg(BASE_SIZE + pos, value);
+  }
+  void ReplaceArg(u_int pos, int value) {
+    Block::ReplaceArg(BASE_SIZE + pos, value);
   }
   void ReplaceArg(u_int pos, word value) {
     Block::ReplaceArg(BASE_SIZE + pos, value);
