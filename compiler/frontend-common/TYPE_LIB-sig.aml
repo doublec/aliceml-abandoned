@@ -45,6 +45,4 @@ sig
     val lab_extendRow :	Label.t
 
     val lab_fix :	Label.t
-
-    val lab_equals :	Label.t  
 end
