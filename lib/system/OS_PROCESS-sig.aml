@@ -1,0 +1,26 @@
+(*
+ * Authors:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt and Andreas Rossberg, 2000-2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+signature OS_PROCESS =
+sig
+    eqtype status
+
+    val success :	status
+    val failure :	status
+
+    val system :	string -> status
+(*  val terminate :	status -> 'a TODO*)
+    val exit :		status -> 'a
+(*  val atExit :	(unit -> unit) -> unit TODO*)
+    val getEnv :	string -> string option
+end
