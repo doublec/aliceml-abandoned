@@ -14,43 +14,16 @@ EXTRA_LIBS = -lxml2
 
 EXTRA_INCLUDES = -I/usr/include/libxml2
 
-CXX_WARNING_FLAGS = \
-	-Wall -W -Wundef -Wpointer-arith -Wcast-qual -Wcast-align \
-	-Wwrite-strings -Wconversion -Wstrict-prototypes \
-	-Wmissing-prototypes -Winline -Wsynth -Woverloaded-virtual \
-	-Wsign-promo
-
-CXX_DEBUG_FLAGS = \
-	-DINTERFACE -DDEBUG_CHECK -DSTORE_DEBUG -DJAVA_INTERPRETER_DEBUG \
-	-fno-inline-functions -fimplement-inlines -ggdb
-
-CXX_OPTIMIZE_FLAGS = \
-	-pipe -march=i686 -O3 -fomit-frame-pointer \
-	-fno-keep-static-consts
-
-CXX_MACHINE_FLAGS = -mcpu=pentium
-
-LD_OPTIMIZE_FLAGS = -Wl,-S
-
-ALLFLAGS =  $(CXX_MACHINE_FLAGS) $(CXX_WARNING_FLAGS) $(CXX_OPTIMIZE_FLAGS)
-#ALLFLAGS =  $(CXX_MACHINE_FLAGS) $(CXX_WARNING_FLAGS) $(CXX_DEBUG_FLAGS)
-
-LDFLAGS = $(LD_OPTIMIZE_FLAGS)
-#LDFLAGS =
-
-MAKEDEPEND = alicetool -v cc -M $(DEFINES) $(INCLUDES)
-
-
 all: $(NATIVES:%=%.dll) $(TARGETS)
 
 AliceXML.dll: $(SOURCES:%.cc=%.o)
 
 %.o: %.cc
-	alicetool compile $(ALLFLAGS) $(EXTRA_INCLUDES) \
+	alicetool compile $(EXTRA_INCLUDES) \
 	-c  $< -o $@
 
 %.dll: %.o
-	alicetool link $(LDFLAGS) $(EXTRA_LIBS) $(SOURCES:%.cc=%.o) -o $@
+	alicetool link $(EXTRA_LIBS) $(SOURCES:%.cc=%.o) -o $@
 
 %.stc: %.aml
 	alicec -c $< -o $@
@@ -67,7 +40,6 @@ distclean: veryclean
 
 depend:
 	alicedep *.aml > Makefile.depend
-#	$(MAKEDEPEND) $(SOURCES) >> Makefile.depend
 
 install: all
 	install -d $(INSTALLTO)
