@@ -18,5 +18,5 @@ signature LABEL_SORT =
 	    Tup of int
 	  | Prod
 
-	val sort: 'a t list -> 'a t list * arity
+	val sort: 'a t list -> 'a t vector * arity
     end

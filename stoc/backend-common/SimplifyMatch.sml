@@ -24,35 +24,29 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	    LABEL of Label.t
 	  | LONGID of Stamp.t * Label.t list
 	type pos = selector list
-	type typ = Type.t
 
 	datatype test =
 	    LitTest of I.lit
-	  | TagTest of Label.t * int
-	  | TagAppTest of Label.t * int * typ O.args * O.conArity
-	  | ConTest of I.longid
-	  | ConAppTest of I.longid * typ O.args * O.conArity
-	  | RefAppTest of typ
-	  | TupTest of typ list
-	  | ProdTest of (Label.t * typ) list
+	  | TagTest of Label.t * int * unit O.conArgs * O.conArity
+	  | ConTest of I.longid * unit O.conArgs * O.conArity
+	  | RefTest
+	  | TupTest of int
+	  | ProdTest of Label.t vector
 	    (* sorted, all labels distinct, no tuple *)
-	  | LabTest of Label.t * int * typ
-	  | VecTest of typ list
+	  | VecTest of int
 	  | GuardTest of mapping * I.exp
-	  | DecTest of mapping * I.dec list
-	withtype mapping = (pos * id) list
+	  | DecTest of mapping * I.dec vector
+	withtype mapping = (pos * I.id) list
 
 	(* Test Sequences *)
 
 	datatype testSeqElem =
 	    Test of pos * test
 	  | Neg of testSeq
-	  | Alt of testSeq list
+	  | Alt of testSeq vector
 	withtype testSeq = testSeqElem list
 
 	(* Test Sequence Construction *)
-
-	fun typPat pat = #typ (infoPat pat)
 
 	local
 	    fun longidToSelector' (ShortId (_, Id (_, stamp, _))) =
@@ -72,124 +66,104 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 		end
 	end
 
-	local
-	    fun parseRow row =
-		if Type.isEmptyRow row then (nil, Type.isUnknownRow row)
-		else
-		    let
-			val (rest, hasDots) = parseRow (Type.tailRow row)
-		    in
-			case Type.headRow row of
-			    (label, #[typ]) => ((label, typ)::rest, hasDots)
-			  | (_, _) =>
-				raise Crash.Crash "SimplifyMatch.parseRow"
-		    end
-	in
-	    fun getRow typ =
-		let
-		    val (labelTypList, hasDots) =
-			if Type.isProd' typ then parseRow (Type.asProd' typ)
-			else
-			    (Vector.foldri (fn (i, typ, rest) =>
-					    (Label.fromInt (i + 1), typ)::rest)
-			     nil (Type.asTuple' typ, 0, NONE), false)
-		    val (labelTypList', arity) = LabelSort.sort labelTypList
-		in
-		    (labelTypList', arity, hasDots)
-		end
-	end
+	structure LabelSort =
+	    MakeLabelSort(type 'a t = Label.t
+			  fun get label = label)
 
-	fun makeAppArgs (TupPat (_, pats), true, pos) =
-	    (List.mapi (fn (i, pat) =>
-			(LABEL (Label.fromInt (i + 1))::pos, pat)) pats,
-	     O.TupArgs (List.map typPat pats))
-	  | makeAppArgs (pat as ProdPat (info, patFields), true, pos) =
+	fun getRow typ =
+	    if Type.isProd typ then
+		let
+		    val labels = rowLabels (Type.asProd typ)
+		    val (labels', arity) = LabelSort.sort labels
+		in
+		    (labels', arity)
+		end
+	    else
+		let
+		    val n = Vector.length (Type.asTuple typ)
+		in
+		    (Vector.tabulate (n, fn i => Label.fromInt (i + 1)),
+		     LabelSort.Tup n)
+		end
+
+	fun makeAppConArgs (TupPat (_, pats), true, pos) =
+	    (Vector.mapi (fn (i, pat) =>
+			  (LABEL (Label.fromInt (i + 1))::pos, pat))
+	     (pats, 0, NONE),
+	     SOME (O.TupArgs (Vector.map ignore pats)))
+	  | makeAppConArgs (pat as ProdPat (info, patFields), true, pos) =
 	    (case getRow (#typ info) of
-		 (_, _, true) => ([(pos, pat)], O.OneArg (#typ info))
-	       | (labelTypList, LabelSort.Tup _, false) =>
-		     (List.map (fn Field (_, Lab (_, label), pat) =>
-				(LABEL label::pos, pat)) patFields,
-		      O.TupArgs (List.map #2 labelTypList))
-	       | (labelTypList, LabelSort.Prod, false) =>
-		     (List.map (fn Field (_, Lab (_, label), pat) =>
-				(LABEL label::pos, pat)) patFields,
-		      O.ProdArgs labelTypList))
-	  | makeAppArgs (pat, _, pos) = ([(pos, pat)], O.OneArg (typPat pat))
+		 (_, LabelSort.Tup n) =>
+		     (Vector.map (fn Field (_, Lab (_, label), pat) =>
+				  (LABEL label::pos, pat)) patFields,
+		      SOME (O.TupArgs (Vector.tabulate (n, ignore))))
+	       | (labels, LabelSort.Prod) =>
+		     (Vector.map (fn Field (_, Lab (_, label), pat) =>
+				  (LABEL label::pos, pat)) patFields,
+		      SOME (O.ProdArgs (Vector.map (fn label => (label, ()))
+					labels))))
+	  | makeAppConArgs (pat, _, pos) =
+	    if isZeroTyp (#typ (infoPat pat)) then (#[], NONE)
+	    else (#[(pos, pat)], SOME (O.OneArg ()))
 
 	fun makeTestSeq (JokPat _, _, rest, mapping) = (rest, mapping)
 	  | makeTestSeq (LitPat (_, lit), pos, rest, mapping) =
 	    (Test (pos, LitTest lit)::rest, mapping)
 	  | makeTestSeq (VarPat (_, id), pos, rest, mapping) =
 	    (rest, (pos, id)::mapping)
-	  | makeTestSeq (TagPat (info, Lab (_, label), _),
+	  | makeTestSeq (TagPat (info, Lab (_, label), pat, isNAry),
 			 pos, rest, mapping) =
 	    let
-		val n = tagIndex (#typ info, label)
-	    in
-		(Test (pos, TagTest (label, n))::rest, mapping)
-	    end
-	  | makeTestSeq (AppPat (_, TagPat (info, Lab (_, label), isNAry),
-				 pat), pos, rest, mapping) =
-	    let
-		val (posPatList, args) =
-		    makeAppArgs (pat, isNAry, LABEL label::pos)
+		val (posPatVector, conArgs) =
+		    makeAppConArgs (pat, isNAry, LABEL label::pos)
 		val typ = #typ info
 		val n = tagIndex (typ, label)
 		val conArity = makeConArity (typ, isNAry)
 	    in
-		List.foldl (fn ((pos, pat), (rest, mapping)) =>
-			    makeTestSeq (pat, pos, rest, mapping))
-		(Test (pos, TagAppTest (label, n, args, conArity))::rest,
-		 mapping) posPatList
+		Vector.foldl (fn ((pos, pat), (rest, mapping)) =>
+			      makeTestSeq (pat, pos, rest, mapping))
+		(Test (pos, TagTest (label, n, conArgs, conArity))::rest,
+		 mapping) posPatVector
 	    end
-	  | makeTestSeq (ConPat (_, longid, _), pos, rest, mapping) =
-	    (Test (pos, ConTest longid)::rest, mapping)
-	  | makeTestSeq (AppPat (_, ConPat (info, longid, isNAry), pat),
+	  | makeTestSeq (ConPat (info, longid, pat, isNAry),
 			 pos, rest, mapping) =
 	    let
-		val (posPatList, args) =
-		    makeAppArgs (pat, isNAry, longidToSelector longid::pos)
-		val typ = Type.inArrow (typPat pat, #typ info)
-		val conArity = makeConArity (typ, isNAry)
+		val (posPatVector, conArgs) =
+		    makeAppConArgs (pat, isNAry, longidToSelector longid::pos)
+		val conArity = makeConArity (#typ info, isNAry)
 	    in
-		List.foldl (fn ((pos, pat), (rest, mapping)) =>
-			    makeTestSeq (pat, pos, rest, mapping))
-		(Test (pos, ConAppTest (longid, args, conArity))::rest,
-		 mapping) posPatList
+		Vector.foldl (fn ((pos, pat), (rest, mapping)) =>
+			      makeTestSeq (pat, pos, rest, mapping))
+		(Test (pos, ConTest (longid, conArgs, conArity))::rest,
+		 mapping) posPatVector
 	    end
-	  | makeTestSeq (AppPat (_, RefPat _, pat), pos, rest, mapping) =
+	  | makeTestSeq (RefPat (_, pat), pos, rest, mapping) =
 	    makeTestSeq (pat, LABEL (Label.fromString "ref")::pos,
-			 Test (pos, RefAppTest (typPat pat))::rest, mapping)
+			 Test (pos, RefTest)::rest, mapping)
 	  | makeTestSeq (TupPat (_, pats), pos, rest, mapping) =
-	    List.foldli
+	    Vector.foldli
 	    (fn (i, pat, (rest, mapping)) =>
 	     makeTestSeq (pat, LABEL (Label.fromInt (i + 1))::pos,
 			  rest, mapping))
-	    (Test (pos, TupTest (List.map typPat pats))::rest, mapping) pats
+	    (Test (pos, TupTest (Vector.length pats))::rest, mapping)
+	    (pats, 0, NONE)
 	  | makeTestSeq (ProdPat (info, patFields), pos, rest, mapping) =
-	    List.foldl (fn (Field (_, Lab (_, label), pat), (rest, mapping)) =>
-			makeTestSeq (pat, LABEL label::pos, rest, mapping))
+	    Vector.foldl (fn (Field (_, Lab (_, label), pat),
+			      (rest, mapping)) =>
+			  makeTestSeq (pat, LABEL label::pos, rest, mapping))
 	    (case getRow (#typ info) of
-		 (labelTypList, _, true) =>
-		     List.foldl (fn ((label, typ), rest) =>
-				 let
-				     val n = selIndex (#typ info, label)
-				 in
-				     Test (pos, LabTest (label, n, typ))::rest
-				 end)
-		     rest labelTypList
-	       | (labelTypList, LabelSort.Tup _, false) =>
-		     Test (pos, TupTest (List.map #2 labelTypList))::rest
-	       | (labelTypList, LabelSort.Prod, false) =>
-		     Test (pos, ProdTest labelTypList)::rest, mapping)
+		 (_, LabelSort.Tup n) =>
+		     Test (pos, TupTest n)::rest
+	       | (labels, LabelSort.Prod) =>
+		     Test (pos, ProdTest labels)::rest, mapping)
 	    patFields
 	  | makeTestSeq (VecPat (_, pats), pos, rest, mapping) =
-	    List.foldli
+	    Vector.foldli
 	    (fn (i, pat, (rest, mapping)) =>
 	     makeTestSeq (pat, LABEL (Label.fromInt (i + 1))::pos,
 			  rest, mapping))
-	    (Test (pos, VecTest (List.map typPat pats))::rest, mapping)
-	    pats
+	    (Test (pos, VecTest (Vector.length pats))::rest, mapping)
+	    (pats, 0, NONE)
 	  | makeTestSeq (AsPat (_, pat1, pat2), pos, rest, mapping) =
 	    let
 		val (rest', mapping') = makeTestSeq (pat1, pos, rest, mapping)
@@ -197,13 +171,13 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 		makeTestSeq (pat2, pos, rest', mapping')
 	    end
 	  | makeTestSeq (AltPat (_, pats), pos, rest, mapping) =
-	    (Alt (List.map (fn pat =>
-			    let
-				val (rest', _) =
-				    makeTestSeq (pat, pos, nil, mapping)
-			    in
-				List.rev rest'
-			    end) pats)::rest, mapping)
+	    (Alt (Vector.map (fn pat =>
+			      let
+				  val (rest', _) =
+				      makeTestSeq (pat, pos, nil, mapping)
+			      in
+				  List.rev rest'
+			      end) pats)::rest, mapping)
 	  | makeTestSeq (NegPat (_, pat), pos, rest, mapping) =
 	    let
 		val (rest', _) = makeTestSeq (pat, pos, nil, mapping)
@@ -222,8 +196,6 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	    in
 		(Test (pos, DecTest (mapping', decs))::rest', mapping')
 	    end
-	  | makeTestSeq ((RefPat _ | AppPat (_, _, _)), _, _, _) =
-	    raise Crash.Crash "SimplifyMatch.makeTestSeq"
 
 	(* Test Graphs *)
 
@@ -243,7 +215,6 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 
 	(* Debugging *)
 
-(*--**DEBUG
 	fun posToString' (LABEL l::rest) =
 	    Label.toString l ^ "." ^ posToString' rest
 	  | posToString' (LONGID _::rest) =
@@ -262,30 +233,27 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	  | litToString (RealLit s) = s
 
 	fun testToString (LitTest lit) = "lit " ^ litToString lit
-	  | testToString (TagTest (label, n) |
-			  TagAppTest (label, n, O.OneArg _, _)) =
-	    "tag " ^ Label.toString label ^ "/" ^ Int.toString n
-	  | testToString (TagAppTest (label, n, O.TupArgs typs, _)) =
+	  | testToString (TagTest (label, n, NONE, _)) =
+	    "tag0 " ^ Label.toString label ^ "/" ^ Int.toString n
+	  | testToString (TagTest (label, n, SOME (O.OneArg _), _)) =
+	    "tag " ^ Label.toString label ^ "/" ^ Int.toString n ^ " one"
+	  | testToString (TagTest (label, n, SOME (O.TupArgs xs), _)) =
 	    "tag " ^ Label.toString label ^ "/" ^ Int.toString n ^
-	    " tup " ^ Int.toString (List.length typs)
-	  | testToString (TagAppTest (label, n, O.ProdArgs labelTypList, _)) =
+	    " tup " ^ Int.toString (Vector.length xs)
+	  | testToString (TagTest (label, n, SOME (O.ProdArgs _), _)) =
 	    "tag " ^ Label.toString label ^ "/" ^ Int.toString n ^ " prod"
-	  | testToString (ConTest _ | ConAppTest (_, O.OneArg _, _)) = "con"
-	  | testToString (ConAppTest (_, O.TupArgs typs, _)) =
-	    "con tup " ^ Int.toString (List.length typs)
-	  | testToString (ConAppTest (_, O.ProdArgs labelTypList, _)) =
-	    "con prod"
-	  | testToString (RefAppTest _) = "ref"
-	  | testToString (TupTest typs) =
-	    "tup " ^ Int.toString (List.length typs)
+	  | testToString (ConTest (_, NONE, _)) = "con0"
+	  | testToString (ConTest (_, SOME (O.OneArg _), _)) = "con"
+	  | testToString (ConTest (_, SOME (O.TupArgs xs), _)) =
+	    "con tup " ^ Int.toString (Vector.length xs)
+	  | testToString (ConTest (_, SOME (O.ProdArgs _), _)) = "con prod"
+	  | testToString RefTest = "ref"
+	  | testToString (TupTest n) = "tup " ^ Int.toString n
 	  | testToString (ProdTest labelTyplist) = "prod"
-	  | testToString (LabTest (label, n, _)) =
-	    "lab " ^ Label.toString label ^ "/" ^ Int.toString n
-	  | testToString (VecTest typs) =
-	    "vec " ^ Int.toString (List.length typs)
+	  | testToString (VecTest n) = "vec " ^ Int.toString n
 	  | testToString (GuardTest (_, _)) = "guard"
 	  | testToString (DecTest (_, decs)) =
-	    "dec " ^ Int.toString (List.length decs)
+	    "dec " ^ Int.toString (Vector.length decs)
 
 	fun posTestListToString ((pos, test)::rest) =
 	    posToString pos ^ ": " ^ testToString test ^
@@ -328,43 +296,38 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	    "<neg>\n" ^ testSeqToString' testSeq ^ "</neg>\n" ^
 	    testSeqToString' rest
 	  | testSeqToString' (Alt testSeqs::rest) =
-	    List.foldr (fn (testSeq, s) =>
-			"<alt>\n" ^ testSeqToString' testSeq ^ s)
+	    Vector.foldr (fn (testSeq, s) =>
+			  "<alt>\n" ^ testSeqToString' testSeq ^ s)
 	    "</alt>\n" testSeqs ^
 	    testSeqToString' rest
 	  | testSeqToString' nil = ""
 
 	fun testSeqToString testSeq =
 	    "<seq>\n" ^ testSeqToString' testSeq ^ "</seq>\n"
-*)
 
 	(* Construction of Backtracking Test Trees *)
 
-	fun argsEq (O.OneArg _, O.OneArg _) = true
-	  | argsEq (O.TupArgs _, O.TupArgs _) = true
-	  | argsEq (O.ProdArgs _, O.ProdArgs _) = true
-	  | argsEq (_, _) = false
+	fun conArgsEq (NONE, NONE) = true
+	  | conArgsEq (SOME (O.OneArg _), SOME (O.OneArg _)) = true
+	  | conArgsEq (SOME (O.TupArgs _), SOME (O.TupArgs _)) = true
+	  | conArgsEq (SOME (O.ProdArgs _), SOME (O.ProdArgs _)) = true
+	  | conArgsEq (_, _) = false
 
 	fun testEq (LitTest lit1, LitTest lit2) = lit1 = lit2
-	  | testEq (TagTest (_, n1), TagTest (_, n2)) = n1 = n2
-	  | testEq (TagAppTest (_, n1, args1, _),
-		    TagAppTest (_, n2, args2, _)) =
-	    n1 = n2 andalso argsEq (args1, args2)
-	  | testEq (ConTest longid1, ConTest longid2) =
-	    longidToSelector longid1 = longidToSelector longid2
-	  | testEq (ConAppTest (longid1, args1, _),
-		    ConAppTest (longid2, args2, _)) =
+	  | testEq (TagTest (_, n1, conArgs1, _),
+		    TagTest (_, n2, conArgs2, _)) =
+	    n1 = n2 andalso conArgsEq (conArgs1, conArgs2)
+	  | testEq (ConTest (longid1, conArgs1, _),
+		    ConTest (longid2, conArgs2, _)) =
 	    longidToSelector longid1 = longidToSelector longid2 andalso
-	    argsEq (args1, args2)
+	    conArgsEq (conArgs1, conArgs2)
 	  | testEq (TupTest _, TupTest _) = true
 	  | testEq (ProdTest _, ProdTest _) = true
-	  | testEq (VecTest typs1, VecTest typs2) =
-	    List.length typs1 = List.length typs2
+	  | testEq (VecTest n1, VecTest n2) = n1 = n2
 	  | testEq (_, _) = false
 
 	fun areParallelTests (LitTest lit1, LitTest lit2) = lit1 <> lit2
-	  | areParallelTests (VecTest typs1, VecTest typs2) =
-	    List.length typs1 <> List.length typs2
+	  | areParallelTests (VecTest n1, VecTest n2) = n1 <> n2
 	  | areParallelTests (_, _) = false
 
 	local
@@ -403,7 +366,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 		(*--** this may create duplicate code in some cases. *)
 		(* This could be removed by reconstructing the whole graph *)
 		(* using hash-consing. *)
-		List.foldr
+		Vector.foldr
 		(fn (testSeq, elseTree) =>
 		 mergeIntoTree (testSeq @ testSeqRest, thenTree, elseTree))
 		elseTree testSeqs
@@ -522,23 +485,24 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	end
 
 	type consequent = Source.region * O.body option ref
+	type mapping' = (pos * O.id) list
 
 	fun buildGraph (matches, elseBody) =
 	    let
 		val (graph, consequents) =
-		    List.foldr (fn ((region, pat, thenBody),
-				    (elseTree, consequents)) =>
-				let
-				    val pat' = separateAlt pat
-				    val (testSeq, _) =
-					makeTestSeq (pat', nil, nil, nil)
-				    val r = ref NONE
-				    val leaf = Leaf (thenBody, r)
-				in
-				    (mergeIntoTree (List.rev testSeq,
-						    leaf, elseTree),
-				     (region, r)::consequents)
-				end) (Default, nil) matches
+		    Vector.foldr (fn ((region, pat, thenBody),
+				      (elseTree, consequents)) =>
+				  let
+				      val pat' = separateAlt pat
+				      val (testSeq, _) =
+					  makeTestSeq (pat', nil, nil, nil)
+				      val r = ref NONE
+				      val leaf = Leaf (thenBody, r)
+				  in
+				      (mergeIntoTree (List.rev testSeq,
+						      leaf, elseTree),
+				       (region, r)::consequents)
+				  end) (Default, nil) matches
 		val elseGraph = Leaf (elseBody, ref NONE)
 	    in
 		case graph of
@@ -563,36 +527,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	 *)
 
 	local
-	    datatype arity =
-		ONE
-	      | TUP of typ list
-	      | PROD of (Label.t * typ) list
-
 	    exception MustBeUnary
-
-	    local
-		fun convert row =
-		    if Type.isEmptyRow row then
-			if Type.isUnknownRow row then raise MustBeUnary
-			else nil
-		    else
-			(case Type.headRow row of
-			     (label, #[typ]) => (label, typ)
-			   | (_, _) => raise MustBeUnary)::
-			convert (Type.tailRow row)
-	    in
-		fun typToArity typ =
-		    if Type.isTuple' typ then
-			TUP (Vector.toList (Type.asTuple' typ))
-		    else if Type.isProd' typ then
-			(case LabelSort.sort (convert (Type.asProd' typ)) of
-			     (labelTypList, LabelSort.Tup _) =>
-				 TUP (List.map #2 labelTypList)
-			   | (labelTypList, LabelSort.Prod) =>
-				 PROD labelTypList)
-			handle MustBeUnary => ONE
-		else ONE
-	    end
 
 	    exception BindsAll     (* precondition 1 not satisfied *)
 	    exception SideEffect   (* precondition 2 not satisfied *)
@@ -601,16 +536,16 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	    fun deconstructs (JokPat _) = false
 	      | deconstructs (LitPat _) = raise NotNAry
 	      | deconstructs (VarPat (_, _)) = raise BindsAll
-	      | deconstructs (TagPat (_, _, _)) = raise NotNAry
-	      | deconstructs (ConPat (_, _, _)) = raise NotNAry
+	      | deconstructs (TagPat (_, _, _, _)) = raise NotNAry
+	      | deconstructs (ConPat (_, _, _, _)) = raise NotNAry
 	      | deconstructs (RefPat _) = raise NotNAry
 	      | deconstructs (TupPat (_, _)) = true
 	      | deconstructs (ProdPat (_, _)) = true
 	      | deconstructs (VecPat (_, _)) = raise NotNAry
-	      | deconstructs (AppPat (_, _, _)) = raise NotNAry
 	      | deconstructs (AsPat (_, pat1, pat2)) =
 		deconstructs pat1 orelse deconstructs pat2
-	      | deconstructs (AltPat (_, pats)) = List.exists deconstructs pats
+	      | deconstructs (AltPat (_, pats)) =
+		Vector.exists deconstructs pats
 	      | deconstructs (NegPat (_, pat)) = deconstructs pat
 	      | deconstructs (GuardPat (_, pat, _)) =
 		deconstructs pat orelse raise SideEffect
@@ -618,64 +553,61 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 		deconstructs pat orelse raise SideEffect
 
 	    fun checkMatches matches =
-		(List.foldl (fn ((_, pat, _), b) =>
-			     deconstructs pat orelse b) false matches)
+		(Vector.foldl (fn ((_, pat, _), b) =>
+			       deconstructs pat orelse b) false matches)
 		handle (BindsAll | SideEffect | NotNAry) => false
 
-	    fun process (ONE, graph, consequents, info) =
+	    fun process (O.Unary, graph, consequents, info) =
 		let
-		    val id = freshId (id_info info)
+		    val id = O.freshId (id_info info)
 		in
 		    (O.OneArg (O.IdDef id), graph, [(nil, id)], consequents)
 		end
-	      | process (TUP typs, Node (nil, TupTest _, ref graph, _, _),
+	      | process (O.TupArity n, Node (nil, TupTest _, ref graph, _, _),
 			 consequents, _) =
 		let
 		    val ids =
-			List.map (fn _ => freshId {region = Source.nowhere})
-			typs
-		    val labelIdList =
-			List.mapi (fn (i, id) =>
-				   (Label.fromInt (i + 1), id)) ids
+			Vector.tabulate
+			(n, fn _ => O.freshId {region = Source.nowhere})
 		    val mapping =
-			List.foldr (fn ((label, id), mapping) =>
-				    ([LABEL label], id)::mapping)
-			nil labelIdList
-		    val idDefs = List.map O.IdDef ids
+			Vector.foldri (fn (i, id, mapping) =>
+				       ([LABEL (Label.fromInt (i + 1))], id)::
+				       mapping) nil (ids, 0, NONE)
+		    val idDefs = Vector.map O.IdDef ids
 		in
 		    (O.TupArgs idDefs, graph, mapping, consequents)
 		end
-	      | process (PROD labelTypList,
+	      | process (O.ProdArity labels,
 			 Node (nil, ProdTest _, ref graph, _, _),
 			 consequents, _) =
 		let
-		    val labelIdList =
-			List.map (fn (label, _) =>
-				  (label, freshId {region = Source.nowhere}))
-			labelTypList
+		    val labelIdVec =
+			Vector.map (fn label =>
+				    (label,
+				     O.freshId {region = Source.nowhere}))
+			labels
 		    val mapping =
-			List.foldr (fn ((label, id), mapping) =>
-				    ([LABEL label], id)::mapping)
-			nil labelIdList
-		    val labelIdDefList =
-			List.map (fn (label, id) => (label, O.IdDef id))
-			labelIdList
+			Vector.foldr (fn ((label, id), mapping) =>
+				      ([LABEL label], id)::mapping)
+			nil labelIdVec
+		    val labelIdDefVec =
+			Vector.map (fn (label, id) => (label, O.IdDef id))
+			labelIdVec
 		in
-		    (O.ProdArgs labelIdDefList, graph, mapping, consequents)
+		    (O.ProdArgs labelIdDefVec, graph, mapping, consequents)
 		end
 	      | process (_, _, _, _) =
 		raise Crash.Crash "SimplifyMatch.process"
 	in
-	    fun buildFunArgs (matches as (_, pat, _)::_, errStms) =
+	    fun buildFunArgs (matches, errStms) =
 		let
+		    val info = infoPat (#2 (Vector.sub (matches, 0)))
 		    val arity =
-			if checkMatches matches then typToArity (typPat pat)
-			else ONE
+			if checkMatches matches then typToArity (#typ info)
+			else O.Unary
 		    val (graph, consequents) = buildGraph (matches, errStms)
 		in
-		    process (arity, graph, consequents, infoPat pat)
+		    process (arity, graph, consequents, info)
 		end
-	      | buildFunArgs (nil, _) =
-		raise Crash.Crash "SimplifyMatch.buildFunArgs"
 	end
     end

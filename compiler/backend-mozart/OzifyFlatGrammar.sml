@@ -65,6 +65,12 @@ structure OzifyFlatGrammar :> CODE where type t = string * FlatGrammar.t =
 		      (outputX (q, x); case xr of nil => () | _ =>  m q)) xs;
 	     output1 (q, #"]"))
 
+	fun outputVector _ (q, #[]) = output (q, "nil")
+	  | outputVector outputX (q, xs) =
+	    (output1 (q, #"["); outputX (q, Vector.sub (xs, 0));
+	     Vector.appi (fn (_, x) => (m q; outputX (q, x))) (xs, 1, NONE);
+	     output1 (q, #"]"))
+
 	fun outputChar (q, c) = output (q, Int.toString (WideChar.ord c))
 
 	fun outputString (q, s) =
@@ -145,17 +151,17 @@ structure OzifyFlatGrammar :> CODE where type t = string * FlatGrammar.t =
 	  | outputArity (q, TupArity i) =
 	    (f (q, "tupArity"); output (q, Int.toString i); r q)
 	  | outputArity (q, ProdArity labels) =
-	    (f (q, "prodArity"); outputList outputLabel (q, labels); r q)
+	    (f (q, "prodArity"); outputVector outputLabel (q, labels); r q)
 
 	val outputConArity = outputOption outputArity
 
 	fun outputArgs outputX (q, OneArg id) =
 	    (f (q, "oneArg"); outputX (q, id); r q)
 	  | outputArgs outputX (q, TupArgs ids) =
-	    (f (q, "tupArgs"); outputList outputX (q, ids); r q)
-	  | outputArgs outputX (q, ProdArgs labelIdList) =
+	    (f (q, "tupArgs"); outputVector outputX (q, ids); r q)
+	  | outputArgs outputX (q, ProdArgs labelIdVec) =
 	    (f (q, "prodArgs");
-	     outputList (outputPair (outputLabel, outputX)) (q, labelIdList);
+	     outputVector (outputPair (outputLabel, outputX)) (q, labelIdVec);
 	     r q)
 
 	fun outputConArgs outputX = outputOption (outputArgs outputX)
@@ -163,21 +169,21 @@ structure OzifyFlatGrammar :> CODE where type t = string * FlatGrammar.t =
 	fun outputStm (q, ValDec (info, idDef, exp)) =
 	    (f (q, "valDec"); outputStmInfo (q, info); m q;
 	     outputIdDef (q, idDef); m q; outputExp (q, exp); r q)
-	  | outputStm (q, RecDec (info, idDefExpList)) =
+	  | outputStm (q, RecDec (info, idDefExpVec)) =
 	    (f (q, "recDec"); outputStmInfo (q, info); m q;
-	     outputList (outputPair (outputIdDef, outputExp))
-	     (q, idDefExpList); r q)
+	     outputVector (outputPair (outputIdDef, outputExp))
+	     (q, idDefExpVec); r q)
 	  | outputStm (q, RefAppDec (info, idDef, id)) =
 	    (f (q, "refAppDec"); outputStmInfo (q, info); m q;
 	     outputIdDef (q, idDef); m q; outputId (q, id); r q)
 	  | outputStm (q, TupDec (info, idDefs, id)) =
 	    (f (q, "tupDec"); outputStmInfo (q, info); m q;
-	     outputList outputIdDef (q, idDefs); m q;
+	     outputVector outputIdDef (q, idDefs); m q;
 	     outputId (q, id); r q)
-	  | outputStm (q, ProdDec (info, labelIdDefList, id)) =
+	  | outputStm (q, ProdDec (info, labelIdDefVec, id)) =
 	    (f (q, "prodDec"); outputStmInfo (q, info); m q;
-	     outputList (outputPair (outputLabel, outputIdDef))
-	     (q, labelIdDefList); m q; outputId (q, id); r q)
+	     outputVector (outputPair (outputLabel, outputIdDef))
+	     (q, labelIdDefVec); m q; outputId (q, id); r q)
 	  | outputStm (q, HandleStm (info, body1, idDef, body2, body3,
 				     stamp)) =
 	    (f (q, "handleStm"); outputStmInfo (q, info); m q;
@@ -213,23 +219,23 @@ structure OzifyFlatGrammar :> CODE where type t = string * FlatGrammar.t =
 	  | outputStm (q, ExportStm (info, exp)) =
 	    (f (q, "exportStm"); outputStmInfo (q, info); m q;
 	     outputExp (q, exp); r q)
-	and outputTests (q, LitTests litBodyList) =
+	and outputTests (q, LitTests litBodyVec) =
 	    (f (q, "litTests");
-	     outputList (outputPair (outputLit, outputBody)) (q, litBodyList);
+	     outputVector (outputPair (outputLit, outputBody)) (q, litBodyVec);
 	     r q)
-	  | outputTests (q, TagTests tagBodyList) =
+	  | outputTests (q, TagTests tagBodyVec) =
 	    (f (q, "tagTests");
-	     outputList (outputQuadruple (outputLabel, outputInt,
-					  outputConArgs outputIdDef,
-					  outputBody)) (q, tagBodyList); r q)
-	  | outputTests (q, ConTests conBodyList) =
+	     outputVector (outputQuadruple (outputLabel, outputInt,
+					    outputConArgs outputIdDef,
+					    outputBody)) (q, tagBodyVec); r q)
+	  | outputTests (q, ConTests conBodyVec) =
 	    (f (q, "conTests");
-	     outputList (outputTriple (outputCon, outputConArgs outputIdDef,
-				       outputBody)) (q, conBodyList); r q)
-	  | outputTests (q, VecTests vecBodyList) =
+	     outputVector (outputTriple (outputCon, outputConArgs outputIdDef,
+					 outputBody)) (q, conBodyVec); r q)
+	  | outputTests (q, VecTests vecBodyVec) =
 	    (f (q, "vecTests");
-	     outputList (outputPair (outputList outputIdDef, outputBody))
-	     (q, vecBodyList); r q)
+	     outputVector (outputPair (outputVector outputIdDef, outputBody))
+	     (q, vecBodyVec); r q)
 	and outputExp (q, LitExp (info, lit)) =
 	    (f (q, "litExp"); outputExpInfo (q, info); m q;
 	     outputLit (q, lit); r q)
@@ -253,14 +259,14 @@ structure OzifyFlatGrammar :> CODE where type t = string * FlatGrammar.t =
 	    (f (q, "refExp"); outputExpInfo (q, info); r q)
 	  | outputExp (q, TupExp (info, ids)) =
 	    (f (q, "tupExp"); outputExpInfo (q, info); m q;
-	     outputList outputId (q, ids); r q)
-	  | outputExp (q, ProdExp (info, labelIdList)) =
+	     outputVector outputId (q, ids); r q)
+	  | outputExp (q, ProdExp (info, labelIdVec)) =
 	    (f (q, "prodExp"); outputExpInfo (q, info); m q;
-	     outputList (outputPair (outputLabel, outputId)) (q, labelIdList);
+	     outputVector (outputPair (outputLabel, outputId)) (q, labelIdVec);
 	     r q)
 	  | outputExp (q, VecExp (info, ids)) =
 	    (f (q, "vecExp"); outputExpInfo (q, info); m q;
-	     outputList outputId (q, ids); r q)
+	     outputVector outputId (q, ids); r q)
 	  | outputExp (q, SelExp (info, label, n)) =
 	    (f (q, "selExp"); outputExpInfo (q, info); m q;
 	     outputLabel (q, label); m q; outputInt (q, n); r q)
@@ -271,7 +277,7 @@ structure OzifyFlatGrammar :> CODE where type t = string * FlatGrammar.t =
 	     outputArgs outputIdDef (q, args); m q; outputBody (q, body); r q)
 	  | outputExp (q, PrimAppExp (info, name, ids)) =
 	    (f (q, "primAppExp"); outputExpInfo (q, info); m q;
-	     outputAtom (q, name); m q; outputList outputId (q, ids); r q)
+	     outputAtom (q, name); m q; outputVector outputId (q, ids); r q)
 	  | outputExp (q, VarAppExp (info, id, args)) =
 	    (f (q, "varAppExp"); outputExpInfo (q, info); m q;
 	     outputId (q, id); m q; outputArgs outputId (q, args); r q)
@@ -295,14 +301,14 @@ structure OzifyFlatGrammar :> CODE where type t = string * FlatGrammar.t =
 	     outputArgs outputId (q, args); r q)
 	and outputBody (q, stms) = outputList outputStm (q, stms)
 
-	fun externalize (q, (filename, (importList, (stms, _)))) =
+	fun externalize (q, (filename, (imports, (stms, _)))) =
 	    (init ();
 	     outputString (q, filename); h q; l q;
-	     outputList (fn (q, (idDef, _, url)) =>
-			 (l q; outputIdDef (q, idDef);
-			  h q; output (q, "unit");
-			  h q; outputString (q, Url.toString url); r q))
-	     (q, importList);
-	     h q; l q; outputList outputStm (q, stms); h q;
+	     outputVector (fn (q, (idDef, _, url)) =>
+			   (l q; outputIdDef (q, idDef);
+			    h q; output (q, "unit");
+			    h q; outputString (q, Url.toString url); r q))
+	     (q, imports);
+	     h q; l q; outputBody (q, stms); h q;
 	     output (q, "unit"); r q; r q)
     end
