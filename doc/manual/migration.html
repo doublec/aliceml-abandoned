@@ -1,0 +1,128 @@
+<!--mozart-->
+<?php include("macros.php3"); ?>
+
+<?php heading("Oz to Alice Migration",
+	      "oz-to-alice\nmigration") ?>
+
+<?php section("overview", "overview") ?>
+  <P>Alice's component system has a lot in common with that of Oz.  As
+    described in the <A href="interop.html">interoperability document</A>,
+    Alice components are actually mapped to Oz functors.  However, we want
+    to bring a number of differences to the attention of the prospective
+    Alice user who knows Oz.</P>
+
+<?php section("resolvers", "resolvers") ?>
+  <P>Just like Oz, Alice uses <A href="library/resolver.html">resolvers</A>
+    to locate resources.  In particular, localizing of components and pickles
+    is performed under a resolver.  Where Oz initializes this resolver from
+    the value of the <TT>OZ_LOAD</TT> environment variable, Alice uses the
+    environment variable called <TT>ALICE_LOAD</TT> instead.</P>
+  <P><TT>alicerun</TT> initializes <TT>OZ_LOAD</TT>, unless set, in the
+    same way that <TT>ozengine</TT> does.  <TT>ALICE_LOAD</TT>, in contrast,
+    is much richer and is initialized, always, with the following methods:</P>
+  <LI>
+    <LI><P>If the URL uses the <TT>x-oz</TT> scheme, it is tried as-is,
+      for compatibility with Oz.</P>
+    <LI><P>Otherwise, the URL is tried with the platform's default component
+      extension appended, which is <TT>.ozf</TT>.</P>
+    <LI><P>If that fails, the URL is tried as-is, for compatibility with
+      Oz.</P>
+    <LI><P>If the URL uses the <TT>x-alice</TT> scheme, the remainder of
+      the URL is used as a path below Alice's installation directory, first
+      with <TT>.ozf</TT> appended, then without.</P>
+  </LI>
+  <P>This behaviour can be influenced by the two environment variables
+    <TT>ALICE_LOAD_PREFIX</TT> and <TT>ALICE_LOAD_SUFFIX</TT>.  The
+    resolution methods specified by their contents are prepended resp.
+    appended to the methods enumerated above.</P>
+
+<?php section("componentmanagers", "component managers") ?>
+  <P>Alice provides its own <A href="library/component-manager.html">component
+    managers</A>, which are similar to Oz module managers.  However, they have
+    distinct implementations and may behave differently.</P>
+  <UL>
+    <LI><P>Alice component managers do perform type-checking at link time,
+      as opposed to Oz module managers.</P>
+    <LI><P>The fact that a component is native is not indicated, as in Oz,
+      by the <TT>{native}</TT> annotation.  Instead, the localized file is
+      inspected to determine whether it is a pickled component or a native
+      component and linked accordingly.</P>
+    <LI><P>Exceptions raised during evaluation of components are wrapped
+      inside a <TT><A href="component.html#Failure">Component.Failure</A></TT>
+      exception.  Oz module managers just propagate the exception as-is
+      to all clients.</P>
+  </UL>
+
+<?php section("alicerun", "alicerun vs. ozengine") ?>
+  <P>Alice provides its own command-line tool <TT>alicerun</TT> to run
+    applications as a replacement to <TT>ozengine</TT> as used by Oz.
+    Both perform the same tasks of determining the installation directories,
+    initializing environment variables, and launching the virtual machine
+    to evaluate the component whose URL is given on the command line, along
+    with further command line arguments.</P>
+  <P>There are, of course, a number of differences.  <TT>ozengine</TT>
+    uses an Oz module manager, using the <TT>OZ_LOAD</TT> resolver,
+    while <TT>alicerun</TT> uses an Alice component manager, using the
+    <TT>ALICE_LOAD</TT> resolver.  Because Alice component managers can
+    link Oz functors, Oz applications can be started by <TT>alicerun</TT>
+    without any change.  The converse, running Alice applications using
+    <TT>ozengine</TT>, however requires the <TT>OZ_LOAD</TT> environment
+    variable to be set to include all resolving methods enumerated above
+    for <TT>ALICE_LOAD</TT>.  Note that this loses link-time type-checking
+    however.</P>
+
+<?php section("alicelink", "alicelink vs. ozl") ?>
+  <P>Alice uses its own <TT>alicelink</TT> tool as a replacement for
+    <TT>ozl</TT>.  The tools differ in their behaviour as follows.</P>
+  <UL>
+    <LI><P><TT>alicelink</TT> uses the <TT>ALICE_LOAD</TT> resolver instead
+      of the <TT>OZ_LOAD</TT> resolver, with all the implications detailed
+      above.</P>
+    <LI><P><TT>alicelink</TT> does not include any components by default.
+      In particular, you need to explicitly specify an <TT>--include</TT>
+      option for the root component.</P>
+    <LI><P><TT>alicelink</TT> does not support anything similar to
+      <TT>ozl</TT>'s <TT>--relative</TT> option (which is <TT>ozl</TT>'s
+      default behaviour).  Resolved URLs may have to be made relative
+      using explicit <TT>--rewrite</TT> options instead.</P>
+    <LI><P>Rewriting in <TT>alicelink</TT> is more general.  It is based
+      on patterns as defined by resolving instead of prefix replacement.
+      Accordingly, you need to use <TT>--rewrite from?{x}=to?{x}</TT>
+      instead of <TT>--rewrite from=to</TT> to achieve the same effect
+      as <TT>ozl</TT>.  (Note that prefix matching as performed by
+      <TT>--include</TT> and <TT>--exlude</TT> is not affected by this.)<P>
+    <LI><P>Native components are not automatically excluded.  They need
+      to be explicitly exluded using <TT>--exclude</TT> options.</P>
+    <LI><P>Linked functors produced by <TT>ozl</TT> always evaluate all
+      contained functors directly, either concurrently (one thread is started
+      per functor) or sequentially (in case there are no cyclic dependencies,
+      in an order consistent with topological dependencies).  In contrast,
+      <TT>alicelink</TT> retains the same lazy evaluation order as the
+      non-statically linked version.</P>
+  </UL>
+  <P>A close approximation for</P>
+  <PRE>ozl Foo.ozf -o LinkedFoo.ozf</PRE>
+  <P>would be</P>
+  <PRE>alicelink ./Foo --include ./ -o LinkedFoo.ozf</PRE>
+
+<?php section("miscellaneous", "miscellaneous") ?>
+  <P>As described above, the Alice resolver for components specified by
+    <TT>ALICE_LOAD</TT> appends file extensions.  This is because in Alice,
+    file extensions should always be omitted in component URLs such as in
+    import announcements.  This is in contrast to Oz, which requires them.
+    Alice deviates from Oz for improved cross-platform compatibility.
+    The upcoming virtual machine for Alice uses a different file extension.</P>
+  <P>Abstract types in components carry strong identities.  Consequently,
+    clients require recompilation when the definition of an abstract type
+    they use is recompiled.  This is different from Oz, where a recompiled
+    functor remains compatible to the previous compiled functor.</P>
+  <P><TT>alicec</TT> does not support cyclic imports, as opposed to Oz.
+    Alice component managers and the Alice static linker can handle cyclic
+    imports, however.  You can implement cyclic Alice components using
+    tricks.  This is not recommended, however.</P>
+  <P><TT>alicec</TT> and <TT>alicelink</TT> do not yet implement an
+    <TT>--executable</TT> option as Oz does.  The same effect can be
+    achieved however by manually prepending a shell script or executable,
+    as Oz does.</P>
+
+<?php footing() ?>
