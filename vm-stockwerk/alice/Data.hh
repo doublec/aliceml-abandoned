@@ -167,9 +167,9 @@ protected:
 public:
   using Block::ToWord;
 
-  static ConVal *New(Constructor *cons, u_int n) {
+  static ConVal *New(Block *constructor, u_int n) {
     Block *b = Store::AllocBlock(Alice::ConVal, BASE_SIZE + n);
-    b->InitArg(CON_POS, cons->ToWord());
+    b->InitArg(CON_POS, constructor->ToWord());
     return static_cast<ConVal *>(b);
   }
   static ConVal *FromWord(word x) {
@@ -189,9 +189,9 @@ public:
   bool IsConVal() { // as opposed to a Constructor, see FromWord
     return GetLabel() == Alice::ConVal;
   }
-  Constructor *GetConstructor() {
+  Block *GetConstructor() {
     Assert(GetLabel() == Alice::ConVal);
-    return Constructor::FromWordDirect(GetArg(CON_POS));
+    return Store::DirectWordToBlock(GetArg(CON_POS));
   }
   void AssertWidth(u_int n) {
     Assert(Store::SizeToBlockSize(BASE_SIZE + n) == GetSize()); n = n;

@@ -364,7 +364,7 @@ Worker::Result AbstractCodeInterpreter::Run(StackFrame *sFrame) {
 	Vector *idRefs = Vector::FromWordDirect(pc->Sel(2));
 	u_int nargs = idRefs->GetLength();
 	word requestWord = GetIdRef(pc->Sel(1), globalEnv, localEnv);
-	Constructor *constructor = Constructor::FromWord(requestWord);
+	Block *constructor = Store::WordToBlock(requestWord);
 	if (constructor == INVALID_POINTER) REQUEST(requestWord);
 	KillIdRef(pc->Sel(1), pc, globalEnv, localEnv);
 	ConVal *conVal = ConVal::New(constructor, nargs);
@@ -841,13 +841,13 @@ Worker::Result AbstractCodeInterpreter::Run(StackFrame *sFrame) {
 	ConVal *conVal = ConVal::FromWord(requestWord);
 	if (conVal == INVALID_POINTER) REQUEST(requestWord);
 	if (conVal->IsConVal()) { // non-nullary constructor
-	  Constructor *constructor = conVal->GetConstructor();
+	  Block *constructor = conVal->GetConstructor();
 	  Vector *tests = Vector::FromWordDirect(pc->Sel(2));
 	  u_int ntests = tests->GetLength();
 	  for (u_int i = 0; i < ntests; i++) {
 	    Tuple *triple = Tuple::FromWordDirect(tests->Sub(i));
 	    requestWord = GetIdRef(triple->Sel(0), globalEnv, localEnv);
-	    Constructor *testConstructor = Constructor::FromWord(requestWord);
+	    Block *testConstructor = Store::WordToBlock(requestWord);
 	    if (testConstructor == INVALID_POINTER) REQUEST(requestWord);
 	    if (testConstructor == constructor) {
 	      Vector *idDefs = Vector::FromWordDirect(triple->Sel(1));
@@ -864,14 +864,13 @@ Worker::Result AbstractCodeInterpreter::Run(StackFrame *sFrame) {
 	    }
 	  }
 	} else { // nullary constructor
-	  Constructor *constructor =
-	    static_cast<Constructor *>(static_cast<Block *>(conVal));
+	  Block *constructor = Store::DirectWordToBlock(conVal->ToWord());
 	  Vector *tests = Vector::FromWordDirect(pc->Sel(1));
 	  u_int ntests = tests->GetLength();
 	  for (u_int i = 0; i < ntests; i++) {
 	    Tuple *pair = Tuple::FromWordDirect(tests->Sub(i));
 	    requestWord = GetIdRef(pair->Sel(0), globalEnv, localEnv);
-	    Constructor *testConstructor = Constructor::FromWord(requestWord);
+	    Block *testConstructor = Store::WordToBlock(requestWord);
 	    if (testConstructor == INVALID_POINTER) REQUEST(requestWord);
 	    if (testConstructor == constructor) {
 	      KillIdRef(pc->Sel(0), pc,

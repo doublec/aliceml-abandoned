@@ -32,7 +32,6 @@
   }
 #define DECLARE_ARRAY(array, x) DECLARE_BLOCKTYPE(Array, array, x)
 #define DECLARE_CELL(cell, x) DECLARE_BLOCKTYPE(Cell, cell, x)
-#define DECLARE_CONVAL(conVal, x) DECLARE_BLOCKTYPE(ConVal, conVal, x)
 #define DECLARE_CONSTRUCTOR(constructor, x) \
   DECLARE_BLOCKTYPE(Constructor, constructor, x)
 #define DECLARE_REAL(real, x) DECLARE_DOUBLE(real, x)

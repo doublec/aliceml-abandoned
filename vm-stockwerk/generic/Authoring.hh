@@ -133,6 +133,10 @@
   if (Store::WordToTransient(x) != INVALID_POINTER) { REQUEST(x); }	\
   else { pointer = Store::WordToUnmanagedPointer(x); }     
 
+#define DECLARE_BLOCK(block, x)				\
+  Block *block = Store::WordToBlock(x);			\
+  if (block == INVALID_POINTER) { REQUEST(x); } else {}
+
 #define DECLARE_BLOCKTYPE(t, a, x)			\
   t *a = t::FromWord(x);				\
   if (a == INVALID_POINTER) { REQUEST(x); } else {}

@@ -15,10 +15,18 @@
 #include "alice/Authoring.hh"
 
 DEFINE1(General_exnName) {
-  DECLARE_CONVAL(conVal, x0);
-  Constructor *constructor =
-    conVal->IsConVal()? conVal->GetConstructor(): Constructor::FromWord(x0);
-  RETURN(constructor->GetName()->ToWord());
+  DECLARE_BLOCK(conVal, x0);
+ retry:
+  switch (conVal->GetLabel()) {
+  case UNIQUESTRING_LABEL:
+    RETURN(UniqueString::FromWordDirect(conVal->ToWord())->
+	   ToString()->ToWord());
+  case Alice::ConVal:
+    conVal = ConVal::FromWordDirect(conVal->ToWord())->GetConstructor();
+    goto retry;
+  default:
+    RETURN(Constructor::FromWordDirect(conVal->ToWord())->GetName()->ToWord());
+  }
 } END
 
 void PrimitiveTable::RegisterGeneral() {
