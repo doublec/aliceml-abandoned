@@ -1,0 +1,65 @@
+(* Calc -- A alicelex / aliceyacc sample 
+ *
+ *  Authors: Benedikt Grundmann (bgrund@ps.uni-sb.de) 
+ *
+ *  $Revision$
+ *
+ *  Last updated: $Date$ by $Author$
+ * 
+ *)
+
+import structure Lexer          from "x-alice:/lib/lex/Lexer"
+import structure TextIO         from "x-alice:/lib/system/TextIO"
+import structure CalcLexer      from "CalcLexer"
+import structure CalcParser     from "CalcParser"
+import structure OS             from "x-alice:/lib/system/OS"
+
+
+(* Print the line containing the error and and a marker below *)
+fun markError (l, p) =
+    let val prefix = "Syntax error near: "
+    in
+        print (prefix ^ l ^ "\n");
+        print (String.tabulate (String.size prefix + p - 1, const #" ") ^ "^\n")
+    end
+    
+    
+(* Evaluate a command line.  Print result or error as needed. *)
+fun evalAndPrint l =
+    let
+        val r = CalcParser.eval (CalcLexer.lex (Lexer.fromString l))
+    in
+        print (LargeInt.toString r ^ "\n") 
+    end
+    handle Lexer.RegMatch s               => 
+           (* lexer errors are already reported in a fashion 
+              suitable for display *)
+           print s
+         | CalcParser.ParseError (line, col)  => 
+           markError (l, col)
+         | Div =>
+           (* every interactive calculator should handle that *)
+           print "Error: division by zero.\n"
+         
+
+
+(* Remove the newline character at the end of a line returned by 
+   TextIO.inputLine *)
+fun stripNewline l =
+    String.substring (l, 0, String.size l - 1)
+    
+
+(* Main loop evaluate user input until end of input. *)
+fun evalLoop prompt =
+    (print prompt;
+     case TextIO.inputLine TextIO.stdIn of
+        NONE    => print "bye\n"
+      | SOME l  => (evalAndPrint (stripNewline l); evalLoop prompt) )
+         
+
+fun main () =
+    (evalLoop "> "; OS.Process.exit OS.Process.success)
+
+
+val _ = main ()
+    
