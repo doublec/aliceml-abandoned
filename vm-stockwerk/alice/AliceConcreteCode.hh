@@ -40,16 +40,14 @@ public:
   void Disassemble(std::FILE *file);
 
   static AliceConcreteCode *FromWord(word x) {
-    Block *b = Store::WordToBlock(x);
+    ConcreteCode *b = ConcreteCode::FromWord(x);
     Assert(b == INVALID_POINTER ||
-	   b->GetLabel() == HANDLERBLOCK_LABEL &&
-	   b->GetHandler() == AbstractCodeInterpreter::self);
+	   b->GetInterpreter() == AbstractCodeInterpreter::self);
     return static_cast<AliceConcreteCode *>(b);
   }
   static AliceConcreteCode *FromWordDirect(word x) {
-    Block *b = Store::DirectWordToBlock(x);
-    Assert(b->GetLabel() == HANDLERBLOCK_LABEL &&
-	   b->GetHandler() == AbstractCodeInterpreter::self);
+    ConcreteCode *b = ConcreteCode::FromWordDirect(x);
+    Assert(b->GetInterpreter() == AbstractCodeInterpreter::self);
     return static_cast<AliceConcreteCode *>(b);
   }
 };
