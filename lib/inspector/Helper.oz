@@ -435,7 +435,7 @@ define
 	    then
 	       dirty <- false
 	       {Visual printXY(X Y @string @tag reclabel)}
-	       {Visual printXY((X + SDim) Y '=' @secTag record)}
+	       {Visual printXY((X + SDim + 1) Y '=' @secTag record)}
 	    else {Visual doublePlace(X Y SDim @tag @secTag)}
 	    end
 	    if {{Node getParent($)} getHorzMode($)}
