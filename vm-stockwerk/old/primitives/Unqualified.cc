@@ -36,7 +36,6 @@ static TaskManager::Result Compare(TaskStack *taskStack, u_int frameSize,
   case TUPLE_LABEL:
   case Alice::ConVal:
   case Alice::Vector:
-  case Alice::VectorZero:
     {
       u_int size = a->GetSize();
       if (b->GetSize() != size)
