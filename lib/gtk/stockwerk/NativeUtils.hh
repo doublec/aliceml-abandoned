@@ -69,7 +69,7 @@ word createExn(void *pointer, const gchar *tname, const gchar* funname,
 
 /***********************************************************************/
 
-enum { BOOL, INT, LIST, OBJECT, REAL, STRING };
+enum { BOOL, EVENT, INT, LIST, OBJECT, REAL, STRING };
 
 #define VDATA_MAX_LEN 1024
 #define ELLIP_MAX_ARGS 10
@@ -80,17 +80,14 @@ enum { BOOL, INT, LIST, OBJECT, REAL, STRING };
   pos += sizeof(vtype);                    \
 }
 
-#define __DECLARE_OBJECTGLIST(l, x) \
-    DECLARE_GLIST(l, x, GList, g_list, DECLARE_UNMANAGED_POINTER)
-
 #define __PUT_VALIST_ITEM(pos, end, listitem) {     \
   TagVal *tv = TagVal::FromWord(listitem->Sel(0));  \
   if (pos < end) {                                  \
     switch (tv->GetTag()) {                         \
     case BOOL: __PUT_VALUE(bool, DECLARE_BOOL, tv->Sel(0), pos); break;       \
+    case EVENT:  break; \
     case INT:  __PUT_VALUE(int,  DECLARE_INT, tv->Sel(0), pos);  break;       \
-    case LIST: __PUT_VALUE(void*, __DECLARE_OBJECTGLIST, tv->Sel(0), pos);    \
-                 break; \
+    case LIST:   break; \
     case OBJECT: __PUT_VALUE(void*,DECLARE_UNMANAGED_POINTER,tv->Sel(0),pos); \
                  break; \
     case REAL: __PUT_VALUE(double, DECLARE_CDOUBLE, tv->Sel(0), pos); break;  \
