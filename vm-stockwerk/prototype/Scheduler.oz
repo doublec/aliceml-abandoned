@@ -17,22 +17,24 @@ import
    Primitives(table)
    AbstractCodeInterpreter
 export
-   Scheduler
+   Object
 define
    class Scheduler
-      attr QueueHd: unit QueueTl: unit
+      attr QueueHd: unit QueueTl: unit CurrentThread: unit
       meth init() Empty in
 	 QueueHd <- Empty
 	 QueueTl <- Empty
       end
-      meth newThread(Closure)
-	 case Closure of closure(function(_ NL IdDefArgs BodyInstr) G) then
+      meth newThread(Closure ?Res)
+	 case Closure of closure(function(_ NL IdDefArgs BodyInstr) ...) then
 	    %--** parameterize over interpreter
 	    L = {NewArray 0 NL - 1 unit}
-	    TaskStack = [frame(AbstractCodeInterpreter
-			       IdDefArgs BodyInstr G L)]
+	    TaskStack = [frame(AbstractCodeInterpreter   %--** pushCall
+			       IdDefArgs BodyInstr Closure L)]
 	 in
-	    Scheduler, Enqueue('thread'(tuple TaskStack))
+	    Scheduler, Enqueue('thread'(args: args()
+					stack: TaskStack
+					result: Res))
 	 end
       end
       meth Enqueue(T) Hd Rest in
@@ -42,8 +44,9 @@ define
       meth run() Hd = @QueueHd in
 	 if {IsFree Hd} then
 	    skip   %--** wait for I/O
-	 elsecase Hd of 'thread'(Args TaskStack)|Tr then
+	 elsecase Hd of T='thread'(args: Args stack: TaskStack ...)|Tr then
 	    QueueHd <- Tr
+	    CurrentThread <- T
 	    Scheduler, Run(Args TaskStack)
 	    Scheduler, run()
 	 end
@@ -52,23 +55,34 @@ define
 	 case TaskStack of Frame|_ then Interpreter in
 	    Interpreter = Frame.1
 	    Scheduler, Result({Interpreter.run Args TaskStack})
+	 [] nil then
+	    @CurrentThread.result = case Args of arg(X) then X
+				    [] args(...) then {Adjoin Args tuple}
+				    end
 	 end
       end
       meth Handle(Debug Exn TaskStack)
 	 case TaskStack of Frame|_ then Interpreter in
 	    Interpreter = Frame.1
 	    Scheduler, Result({Interpreter.handle Debug Exn TaskStack})
+	 [] nil then
+	    %--** display the stack
+	    {System.showError 'uncaught exception'}
+	    {Application.exit 1}
 	 end
       end
       meth Result(Res)
+	 %--** add a `request' result
 	 case Res of continue(Args TaskStack) then
 	    Scheduler, Run(Args TaskStack)
 	 [] preempt(Args TaskStack) then
-	    Scheduler, Enqueue('thread'(Args TaskStack))
+	    Scheduler, Enqueue({Adjoin @CurrentThread
+				'thread'(args: Args stack: TaskStack)})
 	 [] exception(Debug Exn TaskStack) then
 	    Scheduler, Handle(Debug Exn TaskStack)
-	 [] terminate then skip
 	 end
       end
    end
+
+   Object = {New Scheduler init()}
 end
