@@ -3,6 +3,6 @@
 PATH=/opt/alice-devel/bin:$PATH
 
 INFILE=$1
-OUTFILE=`basename $INFILE .aml`.ant
+OUTFILE=`basename $INFILE .ante`.ant
 
 ANTINFILE=$INFILE ANTOUTFILE=$OUTFILE alice <CompilerMain.aml >/dev/null
