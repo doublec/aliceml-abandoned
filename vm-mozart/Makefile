@@ -389,7 +389,7 @@ INSTALL1COMPILERFILES = CompilerMain.ozf
 INSTALL1TOOLSFILES = Linker.ozf
 INSTALL1FILES = \
 	$(INSTALL1BINFILES:%=build1/install/bin/%) \
-	$(BUILD1OZSOURCES:%.oz=%.ozf) \
+	$(BUILD1OZSOURCES:%.oz=%.ozf) build1/install/VMMain.ozf \
 	$(INSTALL1COMPILERFILES:%=build1/install/compiler/%) \
 	$(INSTALL1TOOLSFILES:%=build1/install/tools/%)
 
@@ -525,7 +525,7 @@ build1/%.oz: %.oz
 ## Performing Build 1
 ##
 
-build1-all: build1-src build1/VMMain.ozf build1/Build1.ozf
+build1-all: build1-src build1/LinkedVMMain.ozf build1/Build1.ozf
 
 build1/%.ozf: build1/%.oz
 	$(OZC) -c $< -o $@
@@ -549,6 +549,9 @@ $(INSTALL1DIRS):
 build1/install/compiler/CompilerMain.ozf:
 	(cd build1 && tar cf - `find . -name '*.ozf'`) | \
 	(cd build1/install && tar xvf -)
+
+build1/install/VMMain.ozf: build1/LinkedVMMain.ozf
+	install -c -m 444 $< $@
 
 build1/install/bin/%: %
 	install -c -m 555 $< $@
