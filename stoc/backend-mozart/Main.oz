@@ -13,7 +13,7 @@
 functor
 import
    Open(file text)
-   System(printInfo printError)
+   System(printInfo printError gcDo)
    Application(getArgs exit)
    Property(get)
    Pickle(save)
@@ -99,6 +99,8 @@ define
 	 {Application.exit 0}
       elseof X then raise format(loop X) end
       end
+      {System.gcDo}
+      {System.gcDo}
       {Loop File}
    end
 
