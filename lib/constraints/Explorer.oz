@@ -13,7 +13,7 @@
 functor
 import
    Explorer(object one best all)
-   Inspector(inspect)
+   Inspector(inspect) at 'x-alice:/lib/tools/Inspector'
 export
    'Explorer$' : AliceExplorer
 define
