@@ -53,25 +53,20 @@ inline void KillIdRef(word idRef, TagVal *pc,
 }
 
 #if DEBUGGER
-//
-// Debugging Support
-//
-// Debugger event generation
-
-#define APP_LABEL     0
-#define CON_APP_LABEL APP_LABEL
-#define COND_LABEL    1
-#define HANDLE_LABEL  2
-#define RAISE_LABEL   3
-#define SEL_LABEL     COND_LABEL
-#define STRICT_LABEL  COND_LABEL
-#define SPAWN_LABEL   4
-
 #define SUSPEND() {                                     \
   PushState(pc, globalEnv, localEnv);                   \
   Scheduler::nArgs = 0;                                 \
   return Worker::SUSPEND;                               \
 }
+
+//
+// Debugging Support
+//
+// Debugger event generation
+//
+
+enum {APP_LABEL, COND_LABEL, CON_LABEL, HANDLE_LABEL, RAISE_LABEL,
+      SEL_LABEL, SPAWN_LABEL, STRICT_LABEL};
 
 static word IdRefVecToValueVec(word wIdRef, 
 			       AbstractCodeFrame::Environment *localEnv,
@@ -83,6 +78,30 @@ static word IdRefVecToValueVec(word wIdRef,
   }
   return values->ToWord();
 }
+
+// static void write(char *s) {
+//   fprintf(stderr, "%s\n", s);
+//   fflush(stderr);
+// }
+
+// static  bool mooFlag = false;
+
+// static void DumpEntryType(AbstractCode::entryPoint point) {
+//   if (mooFlag) {
+//     switch(point) {
+//     case AbstractCode::AppEntry: write("AppEntry"); break;
+//     case AbstractCode::ConEntry: write("ConEntry"); break;
+//     case AbstractCode::CondEntry: write("CondEntry"); break;
+//     case AbstractCode::HandleEntry: write("HandleEntry"); break;
+//     case AbstractCode::RaiseEntry: write("RaiseEntry"); break;
+//     case AbstractCode::SelEntry: write("SelEntry"); break;
+//     case AbstractCode::SpawnEntry: write("SpwawnEntry"); break;
+//     case AbstractCode::StrictEntry: write("StrictEntry"); break;
+//     default:
+//       write("stupid Entry");
+//     }
+//   }
+// }
 
 static word GenerateEntryEvent(word coord, word stepPoint, 
 			       AbstractCodeFrame::Environment *localEnv, 
@@ -100,7 +119,7 @@ static word GenerateEntryEvent(word coord, word stepPoint,
   entryEvent->Init(1, coord);
   TagVal *entryPoint = TagVal::FromWord(stepPoint);
   if(entryPoint == INVALID_POINTER) {
-    // spawn 
+    // spawn (0-ary Constructor) 
     entryEvent->Init(2, Store::IntToWord(SPAWN_LABEL));
     AliceDebuggerEvent *event = AliceDebuggerEvent::New(entryEvent->ToWord());
     return event->ToWord();
@@ -118,7 +137,7 @@ static word GenerateEntryEvent(word coord, word stepPoint,
     }
   case AbstractCode::ConEntry:
     {
-      stepPointCon = TagVal::New(CON_APP_LABEL, 3);
+      stepPointCon = TagVal::New(CON_LABEL, 3);
       stepPointCon->Init(0, GetIdRef(entryPoint->Sel(1), globalEnv, localEnv));
       stepPointCon->Init(1, entryPoint->Sel(0));
       stepPointCon->Init(2, IdRefVecToValueVec(entryPoint->Sel(2), 
@@ -146,9 +165,10 @@ static word GenerateEntryEvent(word coord, word stepPoint,
     }
   case AbstractCode::SelEntry:
     {
-      stepPointCon = TagVal::New(SEL_LABEL, 2);
-      stepPointCon->Init(0, GetIdRef(entryPoint->Sel(2), globalEnv, localEnv));
-      stepPointCon->Init(1, entryPoint->Sel(1));
+      stepPointCon = TagVal::New(SEL_LABEL, 3);
+      stepPointCon->Init(0, entryPoint->Sel(0));
+      stepPointCon->Init(1, GetIdRef(entryPoint->Sel(2), globalEnv, localEnv));
+      stepPointCon->Init(2, entryPoint->Sel(1));
       break;
     }
   case AbstractCode::StrictEntry:
@@ -402,15 +422,14 @@ Worker::Result AbstractCodeInterpreter::Run(StackFrame *sFrame) {
 	word event =
 	  GenerateEntryEvent(pc->Sel(0), pc->Sel(1), localEnv, globalEnv);
 	// TODO: Introduce PushUnder on Stack
-// 	Assert(frame == (StackFrame *) Scheduler::stackTop);
  	Scheduler::PopFrame(frame->GetSize());
 	DebugWorker::PushFrame(event);
- 	frame = AbstractCodeFrame::New(self, pc->ToWord(), globalEnv, 
- 				       localEnv, formalArgs->ToWord());
 	pc = TagVal::FromWordDirect(pc->Sel(2));
+  	PushState(pc, globalEnv, localEnv, formalArgs);
+	frame = STATIC_CAST(AbstractCodeFrame *, Scheduler::GetFrame());
 	if (Scheduler::GetCurrentThread()->GetDebugMode() == Thread::DEBUG) {
 	  Debugger::SendEvent(event);
-	  SUSPEND();
+	  return Worker::SUSPEND;
 	}
 #else
 	pc = TagVal::FromWordDirect(pc->Sel(2));
@@ -421,22 +440,24 @@ Worker::Result AbstractCodeInterpreter::Run(StackFrame *sFrame) {
       {
 #if DEBUGGER
 	// Pop current Frame
+	Worker *w = frame->GetWorker();
+	u_int top = Scheduler::GetCurrentStackTop();
 	Scheduler::PopFrame(frame->GetSize());
 	// Check for and pop DebugFrame
 	StackFrame *dFrame = Scheduler::GetFrame();
 	Assert(dFrame->GetWorker() == DebugWorker::self);
 	DebugFrame *debugFrame = STATIC_CAST(DebugFrame *, dFrame);
 	Scheduler::PopFrame(debugFrame->GetSize());
- 	frame = AbstractCodeFrame::New(self, pc->ToWord(), globalEnv, 
- 				       localEnv, formalArgs->ToWord());
 	word coord = pc->Sel(0);
 	word stepPoint = pc->Sel(1);
 	word idRef = pc->Sel(2);
 	pc = TagVal::FromWordDirect(pc->Sel(3));
+  	PushState(pc, globalEnv, localEnv, formalArgs);
+	frame = STATIC_CAST(AbstractCodeFrame *,Scheduler::GetFrame());
 	if (Scheduler::GetCurrentThread()->GetDebugMode() == Thread::DEBUG) {
 	  word idRefRes = GetIdRef(idRef, globalEnv, localEnv);
 	  Debugger::SendEvent(GenerateExitEvent(coord, idRefRes, stepPoint));
-	  SUSPEND();
+	  return Worker::SUSPEND;
 	}
 #else 
 	pc = TagVal::FromWordDirect(pc->Sel(3));

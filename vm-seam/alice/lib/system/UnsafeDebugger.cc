@@ -124,14 +124,13 @@ DEFINE1(UnsafeDebugger_readEventStream) {
 
 DEFINE1(UnsafeDebugger_singleStep) {
   DECLARE_THREAD(thread, x0);
-//   if(thread->GetDebugMode() != Thread::DEBUG) {
-//     RAISE_UNKNOWN_THREAD;
-//   }
+  if(thread->GetDebugMode() != Thread::DEBUG) {
+    RAISE_UNKNOWN_THREAD;
+  }
 
-//   if(!(thread->IsSuspended())) {
-//     RAISE_INVALID_THREAD_STATE;
-//   }
-  
+  if(!(thread->IsSuspended())) {
+    RAISE_INVALID_THREAD_STATE;
+  }  
   Debugger::SingleStep(thread);
   RETURN0;
 } END
