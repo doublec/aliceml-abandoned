@@ -47,12 +47,11 @@ public:
 
   // Handling stack frames:
   virtual void PushCall(TaskStack *taskStack, Closure *closure) = 0;
-  virtual void PopFrame(TaskStack *taskStack) = 0; //--** remove
-  //--** virtual u_int PurgeFrame(TaskStack *taskStack, u_int offset) = 0;
+  virtual u_int PurgeFrame(TaskStack *taskStack, u_int offset) = 0;
 
   // Execution:
+  virtual Result Handle(TaskStack *taskStack) = 0;
   virtual Result Run(TaskStack *taskStack, int nargs) = 0;
-  //--** virtual Result Handle(TaskStack *taskStack, word exn) = 0;
 };
 
 #endif __GENERIC__TASK_MANAGER_HH__

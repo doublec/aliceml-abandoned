@@ -51,6 +51,7 @@ void Scheduler::Run() {
       Assert(taskManager != NULL);
       preempt = false;
       TaskManager::Result result = taskManager->Run(taskStack, nargs);
+    interpretResult:
       switch (result.code) {
       case TaskManager::Result::CONTINUE:
 	nargs = result.nargs;
@@ -63,24 +64,10 @@ void Scheduler::Run() {
 	break;
       case TaskManager::Result::RAISE:
       raise:
-	{
-	  word exn = taskStack->GetWord(0);
-	  taskStack->PopFrame(1);
-	  while (true) {
-	    Assert(!taskStack->IsEmpty());
-	    taskManager =
-	      static_cast<TaskManager *>(taskStack->GetUnmanagedPointer(0));
-	    if (taskManager == NULL) {
-	      // This is a mark that an exception handler follows.
-	      // We require that there always is one that will finally
-	      // handle the exception.
-	      taskStack->PutWord(0, exn);
-	      break;
-	    }
-	    taskManager->PopFrame(taskStack);
-	  }
-	}
-	break;
+	taskManager =
+	  static_cast<TaskManager *>(taskStack->GetUnmanagedPointer(1));
+	result = taskManager->Handle(taskStack);
+	goto interpretResult;
       case TaskManager::Result::REQUEST:
 	{
 	  int nvars = result.nargs;

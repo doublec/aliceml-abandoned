@@ -44,14 +44,21 @@ Closure *NativeTaskManager::ToClosure() {
   return Closure::New(concreteCode, 0);
 }
 
+u_int NativeTaskManager::PurgeFrame(TaskStack */*taskStack*/, u_int offset) {
+  return offset + frameSize;
+}
+
 void NativeTaskManager::PushCall(TaskStack *taskStack, Closure *closure) {
   Assert(closure->GetConcreteCode()->GetTaskManager() == this);
   taskStack->PushFrame(1);
   taskStack->PutUnmanagedPointer(0, this);
 }
 
-void NativeTaskManager::PopFrame(TaskStack *taskStack) {
-  taskStack->PopFrame(frameSize);
+TaskManager::Result NativeTaskManager::Handle(TaskStack *taskStack) {
+  word exn = taskStack->GetWord(0);
+  taskStack->PopFrame(frameSize + 1);
+  taskStack->PutWord(0, exn);
+  return Result(Result::RAISE);
 }
 
 TaskManager::Result NativeTaskManager::Run(TaskStack *taskStack, int nargs) {

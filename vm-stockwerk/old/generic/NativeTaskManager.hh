@@ -32,7 +32,8 @@ public:
   Closure *ToClosure();
 
   virtual void PushCall(TaskStack *taskStack, Closure *closure);
-  virtual void PopFrame(TaskStack *taskStack);
+  virtual u_int PurgeFrame(TaskStack *taskStack, u_int offset);
+  virtual Result Handle(TaskStack *taskStack);
   virtual Result Run(TaskStack *taskStack, int nargs);
 };
 
