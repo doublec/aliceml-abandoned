@@ -41,11 +41,13 @@ final public class RecordArity implements java.io.Serializable {
     }
 
     final public boolean equals(java.lang.Object o) {
-	if (!(o instanceof RecordArity))
+	if (!(o instanceof RecordArity)) {
 	    return false;
+	}
 	RecordArity other = (RecordArity) o;
-	if (labels.length != other.labels.length)
+	if (labels.length != other.labels.length) {
 	    return false;
+	}
 	int l = labels.length;
 	for(int i=0; i<l; i++) {
 	    if (!labels[i].equals(other.getLabel(i)))
