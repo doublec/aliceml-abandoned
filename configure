@@ -793,10 +793,10 @@ Optional Features:
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
-  --with-zlib=DIR         use the zlib file compression library (default: yes
+  --with-zlib=DIR         use the zlib file compression library (default: yes,
                           if found)
   --with-lightning=DIR    use GNU Lightning to enable run-time native code
-                          generation (default: yes if found)
+                          generation (default: yes, if found)
 
 Some influential environment variables:
   CXX         C++ compiler command
@@ -1822,24 +1822,18 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
 
 
-echo "$as_me:$LINENO: checking whether to build with zlib" >&5
-echo $ECHO_N "checking whether to build with zlib... $ECHO_C" >&6
-if test "${seam_cv_with_zlib+set}" = set; then
+echo "$as_me:$LINENO: checking whether linker understands --export-dynamic" >&5
+echo $ECHO_N "checking whether linker understands --export-dynamic... $ECHO_C" >&6
+if test "${seam_cv_ldflags_export_dynamic+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
+  seam_save_LDFLAGS="$LDFLAGS"
+   LDFLAGS="$LDFLAGS -Wl,--export-dynamic"
 
-
-# Check whether --with-zlib or --without-zlib was given.
-if test "${with_zlib+set}" = set; then
-  withval="$with_zlib"
-  seam_cv_with_zlib="$with_zlib"
-else
-  ac_save_LIBS="$LIBS"
-     LIBS="-lz $LIBS"
-     cat >conftest.$ac_ext <<_ACEOF
+cat >conftest.$ac_ext <<_ACEOF
 #line $LINENO "configure"
 #include "confdefs.h"
-#include <zlib.h>
+
 #ifdef F77_DUMMY_MAIN
 #  ifdef __cplusplus
      extern "C"
@@ -1849,7 +1843,7 @@ else
 int
 main ()
 {
-gzFile f = gzopen("a", "rb");
+
   ;
   return 0;
 }
@@ -1866,31 +1860,281 @@ if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
   ac_status=$?
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); }; }; then
-  seam_cv_with_zlib=yes
+  seam_cv_ldflags_export_dynamic=yes
 else
   echo "$as_me: failed program was:" >&5
 cat conftest.$ac_ext >&5
-LIBS="$ac_save_LIBS"
-		    seam_cv_with_zlib=no
+seam_cv_ldflags_export_dynamic=no
+fi
+rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext,
+   LDFLAGS="$seam_save_LDFLAGS"
+fi
+echo "$as_me:$LINENO: result: $seam_cv_ldflags_export_dynamic" >&5
+echo "${ECHO_T}$seam_cv_ldflags_export_dynamic" >&6
+
+case "$seam_cv_ldflags_export_dynamic" in
+    no)
+	;;
+    yes)
+	LDFLAGS="$LDFLAGS -Wl,--export-dynamic"
+	;;
+esac
+
+
+echo "$as_me:$LINENO: checking for main in -lwsock32" >&5
+echo $ECHO_N "checking for main in -lwsock32... $ECHO_C" >&6
+if test "${ac_cv_lib_wsock32_main+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lwsock32  $LIBS"
+cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+#include "confdefs.h"
+
+
+#ifdef F77_DUMMY_MAIN
+#  ifdef __cplusplus
+     extern "C"
+#  endif
+   int F77_DUMMY_MAIN() { return 1; }
+#endif
+int
+main ()
+{
+main ();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+         { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_lib_wsock32_main=yes
+else
+  echo "$as_me: failed program was:" >&5
+cat conftest.$ac_ext >&5
+ac_cv_lib_wsock32_main=no
 fi
 rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
-fi;
+LIBS=$ac_check_lib_save_LIBS
 fi
-echo "$as_me:$LINENO: result: $seam_cv_with_zlib" >&5
-echo "${ECHO_T}$seam_cv_with_zlib" >&6
-
-case "$seam_cv_with_zlib" in
-    yes)
-	cat >>confdefs.h <<\_ACEOF
-#define HAVE_ZLIB 1
+echo "$as_me:$LINENO: result: $ac_cv_lib_wsock32_main" >&5
+echo "${ECHO_T}$ac_cv_lib_wsock32_main" >&6
+if test $ac_cv_lib_wsock32_main = yes; then
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBWSOCK32 1
 _ACEOF
 
-	;;
+  LIBS="-lwsock32 $LIBS"
+
+fi
+
+
+echo "$as_me:$LINENO: checking for dlopen in -ldl" >&5
+echo $ECHO_N "checking for dlopen in -ldl... $ECHO_C" >&6
+if test "${ac_cv_lib_dl_dlopen+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-ldl  $LIBS"
+cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+#include "confdefs.h"
+
+/* Override any gcc2 internal prototype to avoid an error.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+/* We use char because int might match the return type of a gcc2
+   builtin and then its argument prototype would still apply.  */
+char dlopen ();
+#ifdef F77_DUMMY_MAIN
+#  ifdef __cplusplus
+     extern "C"
+#  endif
+   int F77_DUMMY_MAIN() { return 1; }
+#endif
+int
+main ()
+{
+dlopen ();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+         { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_lib_dl_dlopen=yes
+else
+  echo "$as_me: failed program was:" >&5
+cat conftest.$ac_ext >&5
+ac_cv_lib_dl_dlopen=no
+fi
+rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+echo "$as_me:$LINENO: result: $ac_cv_lib_dl_dlopen" >&5
+echo "${ECHO_T}$ac_cv_lib_dl_dlopen" >&6
+if test $ac_cv_lib_dl_dlopen = yes; then
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBDL 1
+_ACEOF
+
+  LIBS="-ldl $LIBS"
+
+fi
+
+
+echo "$as_me:$LINENO: checking for fabs in -lm" >&5
+echo $ECHO_N "checking for fabs in -lm... $ECHO_C" >&6
+if test "${ac_cv_lib_m_fabs+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lm  $LIBS"
+cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+#include "confdefs.h"
+
+/* Override any gcc2 internal prototype to avoid an error.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+/* We use char because int might match the return type of a gcc2
+   builtin and then its argument prototype would still apply.  */
+char fabs ();
+#ifdef F77_DUMMY_MAIN
+#  ifdef __cplusplus
+     extern "C"
+#  endif
+   int F77_DUMMY_MAIN() { return 1; }
+#endif
+int
+main ()
+{
+fabs ();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+         { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_lib_m_fabs=yes
+else
+  echo "$as_me: failed program was:" >&5
+cat conftest.$ac_ext >&5
+ac_cv_lib_m_fabs=no
+fi
+rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+echo "$as_me:$LINENO: result: $ac_cv_lib_m_fabs" >&5
+echo "${ECHO_T}$ac_cv_lib_m_fabs" >&6
+if test $ac_cv_lib_m_fabs = yes; then
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBM 1
+_ACEOF
+
+  LIBS="-lm $LIBS"
+
+fi
+
+
+echo "$as_me:$LINENO: checking whether to build with zlib" >&5
+echo $ECHO_N "checking whether to build with zlib... $ECHO_C" >&6
+
+# Check whether --with-zlib or --without-zlib was given.
+if test "${with_zlib+set}" = set; then
+  withval="$with_zlib"
+  seam_with_zlib="$with_zlib"
+else
+  seam_save_LIBS="$LIBS"
+   LIBS="-lz $LIBS"
+   cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+#include "confdefs.h"
+#include <zlib.h>
+#ifdef F77_DUMMY_MAIN
+#  ifdef __cplusplus
+     extern "C"
+#  endif
+   int F77_DUMMY_MAIN() { return 1; }
+#endif
+int
+main ()
+{
+gzFile f = gzopen("foo", "rb");
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+         { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  seam_with_zlib=yes
+else
+  echo "$as_me: failed program was:" >&5
+cat conftest.$ac_ext >&5
+seam_with_zlib=no
+fi
+rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
+   LIBS="$seam_save_LIBS"
+fi;
+echo "$as_me:$LINENO: result: $seam_with_zlib" >&5
+echo "${ECHO_T}$seam_with_zlib" >&6
+
+case "$seam_with_zlib" in
     no)
 	cat >>confdefs.h <<\_ACEOF
 #define HAVE_ZLIB 0
 _ACEOF
 
+	;;
+    yes)
+	cat >>confdefs.h <<\_ACEOF
+#define HAVE_ZLIB 1
+_ACEOF
+
+	LIBS="-lz $LIBS"
 	;;
     *)
 	cat >>confdefs.h <<\_ACEOF
@@ -1898,110 +2142,105 @@ _ACEOF
 _ACEOF
 
 	INCLUDES="$INCLUDES -I$seam_cv_with_zlib/include"
-	LIBS="$LIBS -L$seam_cv_with_zlib/lib -lz"
+	LIBS="-L$seam_with_zlib/lib -lz $LIBS"
 	;;
 esac
 
 echo "$as_me:$LINENO: checking whether to build with GNU Lightning" >&5
 echo $ECHO_N "checking whether to build with GNU Lightning... $ECHO_C" >&6
-if test "${seam_cv_with_lightning+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
 
 # Check whether --with-lightning or --without-lightning was given.
 if test "${with_lightning+set}" = set; then
   withval="$with_lightning"
-  seam_cv_with_lightning="$with_lightning"
+  seam_with_lightning="$with_lightning"
 else
   cat >conftest.$ac_ext <<_ACEOF
 #line $LINENO "configure"
 #include "confdefs.h"
 #include <lightning.h>
+#ifdef F77_DUMMY_MAIN
+#  ifdef __cplusplus
+     extern "C"
+#  endif
+   int F77_DUMMY_MAIN() { return 1; }
+#endif
+int
+main ()
+{
+jit_state lightning;
+  ;
+  return 0;
+}
 _ACEOF
-rm -f conftest.$ac_objext
-if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
-  (eval $ac_compile) 2>&5
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>&5
   ac_status=$?
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); } &&
-         { ac_try='test -s conftest.$ac_objext'
+         { ac_try='test -s conftest$ac_exeext'
   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
   (eval $ac_try) 2>&5
   ac_status=$?
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); }; }; then
-  seam_cv_with_lightning=yes
+  seam_with_lightning=yes
 else
   echo "$as_me: failed program was:" >&5
 cat conftest.$ac_ext >&5
-seam_cv_with_lightning=no
+seam_with_lightning=no
 fi
-rm -f conftest.$ac_objext conftest.$ac_ext
+rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
 fi;
-fi
-echo "$as_me:$LINENO: result: $seam_cv_with_lightning" >&5
-echo "${ECHO_T}$seam_cv_with_lightning" >&6
+echo "$as_me:$LINENO: result: $seam_with_lightning" >&5
+echo "${ECHO_T}$seam_with_lightning" >&6
 
-case "$seam_cv_with_lightning" in
-    yes)
-	cat >>confdefs.h <<\_ACEOF
-#define HAVE_LIGHTNING 1
-_ACEOF
-
-	;;
+case "$seam_with_lightning" in
     no)
 	cat >>confdefs.h <<\_ACEOF
 #define HAVE_LIGHTNING 0
 _ACEOF
 
 	;;
+    yes)
+	cat >>confdefs.h <<\_ACEOF
+#define HAVE_LIGHTNING 1
+_ACEOF
+
+	;;
     *)
 	cat >>confdefs.h <<\_ACEOF
 #define HAVE_LIGHTNING 1
 _ACEOF
 
-	INCLUDES="$INCLUDES -I$seam_cv_with_lightning/include"
+	INCLUDES="$INCLUDES -I$seam_with_lightning/include"
 	;;
 esac
 
 echo "$as_me:$LINENO: checking whether to build with user-level profiling support" >&5
 echo $ECHO_N "checking whether to build with user-level profiling support... $ECHO_C" >&6
-if test "${seam_cv_enable_profiler+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  # Check whether --enable-profiler or --disable-profiler was given.
+# Check whether --enable-profiler or --disable-profiler was given.
 if test "${enable_profiler+set}" = set; then
   enableval="$enable_profiler"
-  seam_cv_enable_profiler="$enable_profiler"
+  seam_enable_profiler="$enable_profiler"
 else
-  seam_cv_enable_profiler=no
+  seam_enable_profiler=no
 fi;
-fi
-echo "$as_me:$LINENO: result: $seam_cv_enable_profiler" >&5
-echo "${ECHO_T}$seam_cv_enable_profiler" >&6
+echo "$as_me:$LINENO: result: $seam_enable_profiler" >&5
+echo "${ECHO_T}$seam_enable_profiler" >&6
 
-case "$seam_cv_enable_profiler" in
-    yes)
-	cat >>confdefs.h <<\_ACEOF
-#define PROFILE 1
-_ACEOF
-
-	;;
+case "$seam_enable_profiler" in
     no)
 	cat >>confdefs.h <<\_ACEOF
 #define PROFILE 0
 _ACEOF
 
 	;;
-esac
+    yes)
+	cat >>confdefs.h <<\_ACEOF
+#define PROFILE 1
+_ACEOF
 
-case $(uname) in
-    CYGWIN*)
-	LIBS="$LIBS -lwsock32"
-	;;
-    *)
-	LDFLAGS="$LDFLAGS -Wl,--export-dynamic -Ur"
-	LIBS="$LIBS -lm -ldl"
 	;;
 esac
 
