@@ -61,6 +61,7 @@
   <BR>
   <A href="download.php3">Download</A> -
   <A href="manual/">Manual</A> -
+  <A href="bugzilla/">Bugs</A> -
   <A href="papers.php3">Papers</A> -
   <A href="people.php3">People and Contact</A>
   <BR>
@@ -69,6 +70,7 @@
 <?php section("news", "news") ?>
 
   <UL>
+    <LI> 2001/04/20: <A href="bugzilla/">bug-tracking system</A> online
     <LI> 2001/03/14: new Alice home page
   </UL>
 
