@@ -169,7 +169,7 @@
 	If <TT><I>thr</I></TT> is terminated, instead raises <TT><A
 	href="#Terminated">Terminated</A></TT> in the calling thread.
 	If <TT><I>thr</I></TT> is blocked, makes <TT><I>thr</I></TT>
-	runnable again.</P>
+	runnable again.  Requests <TT><I>exn</I></TT>.</P>
     </DD>
 
     <DT>
