@@ -73,7 +73,14 @@ DEFINE1(UnsafeRemote_unpackValue) {
 } END
 
 AliceDll word UnsafeRemote() {
+  SitedConstructor =
+    UniqueConstructor::New("UnsafeRemote.Sited",
+			   "UnsafeRemote.Sited")->ToWord();
+  RootSet::Add(SitedConstructor);
+
   Record *record = Record::New(4);
+  record->Init("'Sited", SitedConstructor);
+  record->Init("Sited", SitedConstructor);
   INIT_STRUCTURE(record, "UnsafeRemote", "getLocalIP",
 		 UnsafeRemote_getLocalIP, 0);
   INIT_STRUCTURE(record, "UnsafeRemote", "setCallback",
