@@ -18,6 +18,7 @@ import
    FloatChunk(toOz fromOz) at 'FloatChunk.so{native}'
    Scheduler(object)
    ByneedInterpreter(interpreter)
+   AbstractCodeInterpreter(interpreter)
 require
    Helper(deref: Deref construct: Construct deconstruct: Deconstruct
 	  pushCall: PushCall)
@@ -26,6 +27,9 @@ export
    Values
    Functions
 define
+   AlicePrimitiveFunction = {ByteString.make 'Alice.primitive.function'}
+   AliceFunction = {ByteString.make 'Alice.function'}
+
    NONE = 0
    %SOME = 1
 
@@ -622,12 +626,18 @@ define
 	      'Unsafe.makeClosure':
 		 fun {$ Function Vs} Closure in
 		    Closure = {MakeTuple closure {Width Vs} + 1}
-		    Closure.1 = Function
+		    case Function
+		    of tag(0 tuple(F L C) NG NL IdDefArgs Instr) then
+		       Closure.1 = function(AbstractCodeInterpreter.interpreter
+					    {VirtualString.toAtom F}#L#C
+					    NG NL IdDefArgs Instr
+					    transform(AliceFunction Function))
+		    end
 		    for I in 1..{Width Vs} do
 		       Closure.(I + 1) = Vs.I
 		    end
 		    Closure
-		 end#ri_v
+		 end#rr_v
 	      'Unsafe.makeTaggedValue':
 		 fun {$ I Vs} T in
 		    T = {MakeTuple tag {Width Vs} + 1}
@@ -928,8 +938,6 @@ define
 	 end
       end
    end
-
-   AlicePrimitiveFunction = {ByteString.make 'Alice.primitive.function'}
 
    Interpreter =
    primitiveInterpreter(run: PrimitiveInterpreterRun

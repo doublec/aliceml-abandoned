@@ -71,6 +71,8 @@ define
    %% Unpickling
    %%-------------------------------------------------------------------
 
+   AliceFunction = {ByteString.make 'Alice.function'}
+
    fun {ApplyTransform F X}
       %--** registration of transformers
       %--** implement using byneeds
@@ -83,9 +85,10 @@ define
 	    PrimitiveTable.functions.{VirtualString.toAtom Name}
 	 end
       [] 'Alice.function' then
-	 case X of tag(0 tuple(F L C) NG NL IdDefArgs Instr)
-	 then function(AbstractCodeInterpreter.interpreter
-		       {VirtualString.toAtom F}#L#C NG NL IdDefArgs Instr)
+	 case X of tag(0 tuple(F L C) NG NL IdDefArgs Instr) then
+	    function(AbstractCodeInterpreter.interpreter
+		     {VirtualString.toAtom F}#L#C NG NL IdDefArgs Instr
+		     transform(AliceFunction X))
 	 end
       end
    end

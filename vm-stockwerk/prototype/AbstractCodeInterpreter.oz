@@ -533,32 +533,26 @@ define
       end
    end
 
-   AliceFunction = {ByteString.make 'Alice.function'}
-
    Me =
    abstractCodeInterpreter(
       run: Run
       handle: Handle
       pushCall:
 	 fun {$ Closure Function TaskStack}
-	    case Function of function(_ _ _ NL IdDefArgs BodyInstr) then L in
+	    case Function of function(_ _ _ NL IdDefArgs BodyInstr _) then L in
 	       L = {NewArray 0 NL - 1 uninitialized}
 	       frame(Me IdDefArgs BodyInstr Closure L)|TaskStack
 	    end
 	 end
-      abstract:
-	 fun {$ function(_ F#L#C NG NL IdDefArgs Instr)}
-	    transform(AliceFunction tag(0 tuple({ByteString.make F} L C)
-					NG NL IdDefArgs Instr))
-	 end
+      abstract: fun {$ function(_ _ _ _ _ _ Transform)} Transform end
       toString:
 	 fun {$ Frame}
 	    case Frame of frame(_ _ _ closure(Function ...) _) then
-	       case {Deref Function} of function(_ F#L#C _ _ _ _) then
+	       case {Deref Function} of function(_ F#L#C _ _ _ _ _) then
 		  'Alice function '#F#', line '#L#', column '#C
 	       end
 	    [] handler(_ _ _ _ closure(Function ...) _) then
-	       case Function of function(_ F#L#C _ _ _ _) then
+	       case Function of function(_ F#L#C _ _ _ _ _) then
 		  'Alice handler '#F#', line '#L#', column '#C
 	       end
 	    end
