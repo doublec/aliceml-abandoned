@@ -120,8 +120,6 @@ import __primitive functor   ByNeed		from "ByNeed"
 
 import __primitive signature LOCK		from "LOCK-sig"
 import __primitive structure Lock		from "Lock"
-import __primitive signature STREAM		from "STREAM-sig"
-import __primitive structure Stream		from "Stream"
 
 
 open Toplevel
@@ -231,5 +229,3 @@ structure ByNeed		= ByNeed
 
 signature LOCK			= LOCK
 structure Lock			= Lock
-signature STREAM		= STREAM
-structure Stream		= Stream
