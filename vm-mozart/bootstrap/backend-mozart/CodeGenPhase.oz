@@ -19,8 +19,6 @@ import
    PreboundComponent('$Prebound': Prebound) at 'x-alice:/common/Prebound.ozf'
    CodeGen(translate) at '../../../stoc/backend-mozart/CodeGen.ozf'
    UrlComponent('$Url': Url) at 'x-alice:/misc/Url.ozf'
-   SwitchesComponent('$Switches': Switches)
-   at 'x-alice:/infrastructure/Switches.ozf'
 export
    '$CodeGenPhase': CodeGenPhase
 define
@@ -236,9 +234,9 @@ define
 
    fun {Save OutFilename F#VS#_}
       {Pickle.saveWithCells F OutFilename '' 0}
-      if {Access Switches.outputAssembly} then
-	 {WriteFile VS OutFilename#'.ozm'}
-      end
+%      if {Access Switches.outputAssembly} then
+%	 {WriteFile VS OutFilename#'.ozm'}
+%      end
       unit
    end
 
