@@ -19,6 +19,25 @@ structure ToJasmin =
 	fun word32ToString i = LargeWord.toString i
 	fun realToString r = if Real.<(r,0.0) then "-"^Real.toString(~r) else Real.toString r
 
+	val labelMerge: string StringHash.t ref = ref (StringHash.new())
+
+	fun mergeLabels insts =
+	    let
+		fun merge (Label lab'::Goto lab''::rest) =
+		    (StringHash.insert (!labelMerge, lab', lab'');
+		     merge rest)
+		  | merge (_::rest) = merge rest
+		  | merge nil = ()
+	    in
+	    labelMerge := StringHash.new();
+	    merge insts
+	    end
+
+	fun directJump lab' =
+	    case StringHash.lookup (!labelMerge, lab') of
+		NONE => lab'
+	      | SOME lab'' => directJump lab''
+
 	local
 	    val linecount = ref 0
 	in
@@ -203,7 +222,7 @@ structure ToJasmin =
 			     "aload_0"
 	      | instructionToJasmin (Getstatic(fieldn, arg),_) = "getstatic "^fieldn^" "^
 			     (desclist2string arg)
-	      | instructionToJasmin (Goto l,_) = "goto "^l
+	      | instructionToJasmin (Goto l,_) = "goto "^(directJump l)
 	      | instructionToJasmin (Iconst i,_) =
 			     if i = ~1 then "iconst_m1" else "iconst_"^Int.toString i
 	      | instructionToJasmin (Iadd,_) = "iadd"
@@ -293,7 +312,7 @@ structure ToJasmin =
 					  then'
 				      else else',
 					  need, max);
-				     recurse (is, !stackneed,!stackmax))
+					  recurse (is, !stackneed,!stackmax))
 			      | _ =>
 				    let
 					val ins = instructionToJasmin (i, staticapply)
@@ -330,9 +349,10 @@ structure ToJasmin =
 		fun interfaceToJasmin (i,akku) = akku^".implements "^i^"\n"
 		fun methodToJasmin (Method(access,methodname,methodsig,Locals perslocs,
 					   instructions, catches, staticapply)) =
-		  (* apply hat derzeit oft ein doppeltes Areturn am Ende.
-		   Wird spaeter wegoptimiert. *)
-		    (TextIO.output(io,".method "^
+		    (* apply hat derzeit oft ein doppeltes Areturn am Ende.
+		     Wird spaeter wegoptimiert. *)
+		    (mergeLabels(instructions);
+		     TextIO.output(io,".method "^
 				   (mAccessToString access)^
 				   methodname^
 				   (descriptor2string methodsig)^"\n");
