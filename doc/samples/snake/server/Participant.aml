@@ -2,7 +2,7 @@ import signature PARTICIPANT   from "PARTICIPANT-sig"
 import structure Protocol      from "../common/Protocol"
 import structure Color         from "../common/Color"
 import structure Snake         from "Snake"
-
+import structure MkRedBlackMap from "x-alice:/lib/data/MkRedBlackMap"
 
 structure Participant :> PARTICIPANT =
 struct
@@ -59,4 +59,54 @@ struct
             (name, color)
         end
 
+
+    structure Map = MkRedBlackMap (Int)
+    
+    type pmap = participant Map.map
+    
+    (* [allParticpants p] returns all participants which 
+       satisfy the predicate [p].  
+     *)
+    fun allParticipants p map = List.filter p ( List.map #2  (Map.toList map) )
+    
+    (* [allPlayers ()] returns all snakes which are 
+       still playing.
+     *)
+    fun allPlayers p   = allParticipants 
+            (fn p =>
+                case !(state p) of
+                    PLAYING _              => true
+                |   _                      => false) p
+    
+    fun allHalfFinished p  = allParticipants 
+            (fn p => 
+                case !(state p) of 
+                    HALF_FINISHED _        => true
+                |   _                      => false) p
+
+
+    fun allNonFinished p   = allParticipants 
+            (fn p =>
+                case !(state p) of
+                    PLAYING _              => true
+                |   HALF_FINISHED _        => true
+                |   _                      => false) p
+
+
+    fun allConnected p = allParticipants
+            (fn p =>
+                case !(state p) of
+                    DISCONNECTED   => false
+                |   _              => true) p
+
+    fun allWithPoints p = allParticipants 
+            (fn p =>
+                case !(state p) of
+                    PLAYING _              => true
+                |   FINISHED _             => true
+                |   HALF_FINISHED _        => true
+                |   DEAD _                 => true
+                |   _                      => false) p
+
+ 
 end

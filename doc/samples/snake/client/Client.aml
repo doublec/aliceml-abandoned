@@ -36,7 +36,7 @@ struct
             
 	    fun headPosition p = #headPosition guiGame p
 
-            fun tick remainingTime = () 
+            fun tick remainingTime = ()
             
             fun playersDied players = ()
 

@@ -15,7 +15,6 @@ import structure Pos            from "../common/Pos"
 
 import structure Participant    from "Participant"
 import structure Remote         from "x-alice:/lib/distribution/Remote"
-import structure MkHashImpMap   from "x-alice:/lib/data/MkHashImpMap"
 import structure Arena          from "Arena"
 import structure Random         from "x-alice:/lib/utility/Random"
 import structure Snake          from "Snake"
@@ -112,7 +111,8 @@ struct
          *)
 
 
-    structure PMap      = MkHashImpMap (Int)
+    structure Part      = Participant
+    structure PMap      = Part.Map
 
     
     fun tabulateStream (n, f) =
@@ -142,10 +142,9 @@ struct
 
     fun startServer (client, config : Protocol.config) =
         let
-            structure Part  = Participant
             structure P     = Protocol
    
-            val participants    = PMap.map () : Participant.participant PMap.map
+            val participants    = ref PMap.empty : Part.pmap ref 
 
             val state           = ref ST_JOIN
             val events          = ref (Events.events ())
@@ -160,45 +159,10 @@ struct
                 |   g :: gs => (startPos := gs; SOME g)
            
 
-            (* [allParticpants p] return all participants which 
-               satisfy the predicate p.  
-             *)
-            fun allParticipants p = List.map #2 (List.filter p 
-                                    (PMap.toList participants))
-            
-            (* [allPlayers ()] returns all snakes which are 
-               still playing.
-             *)
-            fun allPlayers ()   = allParticipants 
-                    (fn (_, p) =>
-                        case !(Part.state p) of
-                            Part.PLAYING _              => true
-                        |   _                           => false)
-            
-            fun allHalfFinished ()  = allParticipants 
-                    (fn (_, p) => 
-                        case !(Part.state p) of 
-                            Part.HALF_FINISHED _        => true
-                        |   _                           => false)
-
-
-            fun allNonFinished ()   = allParticipants 
-                    (fn (_, p) =>
-                        case !(Part.state p) of
-                            Part.PLAYING _              => true
-                        |   Part.HALF_FINISHED _        => true
-                        |   _                           => false)
-
-
-            fun allConnected () = allParticipants
-                    (fn (_, p) =>
-                        case !(Part.state p) of
-                            Part.DISCONNECTED   => false
-                        |   _                   => true)
-
-
-            fun allPossiblePlayers () = allParticipants
-                    (fn (_, p) =>
+            val lock        = Lock.lock ()
+               
+            fun allPossiblePlayers part = Part.allParticipants
+                    (fn p =>
                         case !(Part.state p) of
                             Part.PLAYING _                      => true
                         |   Part.FINISHED _                     => true
@@ -206,11 +170,9 @@ struct
                         |   Part.DEAD ({deathCount,...},_)  
                             where (isNone (#lives config) orelse
                             !deathCount < valOf (#lives config))=> true
-                        |   _                                   => false)
+                        |   _                                   => false) part
 
-
-            val lock        = Lock.lock ()
-            
+ 
 	    (* RPC call.  
                - Synchronized so that there can always be
                  only one call to a given client.
@@ -264,7 +226,7 @@ struct
                on f unless that participant is disconnected.
              *)
             fun withParticipant default (procName, id, f) a =
-                let val p = PMap.lookupExistent (participants, id)
+                let val p = PMap.lookupExistent (!participants, id)
                 in
                     case !(Part.state p) of 
                         Part.DISCONNECTED   => default
@@ -289,11 +251,11 @@ struct
                         val gamePoints = ! $ #gamePoints info
                     in
                         { name, color, points, gamePoints }
-                    end) (allPossiblePlayers ())
+                    end) (Part.allWithPoints (! participants) )
 
             fun sendPoints p =
-                invokeSeveral p (allConnected (), #updatePoints, 
-                    computePointsList ())
+                invokeSeveral p (Part.allConnected $ ! participants , 
+                    #updatePoints, computePointsList ())
 
             fun play id = Lock.sync lock (
                 withParticipant false ("play", id, fn (part, (name, color)) =>
@@ -317,7 +279,7 @@ struct
                                         nextDir     = ref dir
                                     }
                                 val snake   = Snake.snake (id, color, pos, dir)
-                                val players = allPlayers () 
+                                val players = Part.allPlayers $ ! participants
                             in
                                 (Part.state part) := Part.PLAYING 
                                                         (playerState, snake);
@@ -339,7 +301,7 @@ struct
 
                     |   Part.CONNECTED  =>
                         let
-                            val players = allPlayers ()
+                            val players = Part.allPlayers $ ! participants
                         in
                             (Part.state part) := Part.WATCHING (ref NONE);
                             (* inform the NEW player of the other 
@@ -384,7 +346,8 @@ struct
                                         computePointsList (), 0) (*FIXME*)
                 in
                     invokeSeveral (_file_, _line_)
-                        (allConnected (), #tournamentFinished, highscore);
+                        (Part.allConnected $ ! participants, #tournamentFinished, 
+                            highscore);
                     raise TournamentFinished
                 end
 
@@ -393,7 +356,7 @@ struct
                 let
                     val _   = events := Events.events ()
                     (* get all players who are allowed to play another level *)
-                    val p   = allPossiblePlayers ()
+                    val p   = allPossiblePlayers $ ! participants
 
                     (* dimensions of the new level *)
                     val dims    = Array2.dimensions arena
@@ -424,10 +387,12 @@ struct
 
 		    log ("Server", "sending levelStarted");
                     invokeSeveral (_file_, _line_) 
-                        (allConnected (), #levelStarted,{ dimensions = dims });
+                        (Part.allConnected $ ! participants, #levelStarted,
+                                { dimensions = dims });
                     
 		    log ("Server", (">>>>sending initial Difflist<<<<<<", diffs));
-                    invokeSeveral (_file_, _line_) (allConnected (), #update, diffs);
+                    invokeSeveral (_file_, _line_) 
+                        (Part.allConnected $ ! participants, #update, diffs);
                     
                     log ("Server", ("sending initial points"));
                     sendPoints (_file_, _line_);
@@ -439,11 +404,11 @@ struct
             fun finishLevel (levels) =
                 (* called when no players are left *)
                 let
-                    val _   = assert null (allPlayers ())
+                    val _   = assert null (Part.allPlayers $ ! participants)
                 in
                     (* send level finished signal *)
                     invokeSeveral (_file_, _line_) 
-                        (allConnected (), #levelFinished, ());
+                        (Part.allConnected $ ! participants, #levelFinished, ());
 
                     case levels of
                         []  =>      (* no more levels -- tournament ended *)
@@ -480,7 +445,7 @@ struct
                                                 ticks, goodies} =>
                 let
                     val _       = log ("Server", "tick")
-                    val players = allPlayers ()
+                    val players = Part.allPlayers $ ! participants
 
                     fun movePlayer (p, moved) =
                         let val snake   = Part.snake p
@@ -506,7 +471,7 @@ struct
                     (* open gates if necessary *)
                     val gates   =   List.foldl (fn (sn, res) =>
                         let val part    = PMap.lookupExistent 
-                                                (participants, Snake.id sn)
+                                                (!participants, Snake.id sn)
                             val info    = Part.playerInfo part
                             val pos     = !(#gatePos info)
                             val color   = #color info
@@ -573,14 +538,14 @@ struct
                     (* broadcast differences *)
                     log ("Server", "broadcasting differences");
                     invokeSeveral (_file_, _line_) 
-                        (allConnected (), #update, changes);
+                        (Part.allConnected $ ! participants, #update, changes);
                     
                     (* change state of participants whose snake died to DEAD. *)
                     log ("Server", "check for dead snakes");
                     
                     List.map (fn sn =>
                         let val part        = PMap.lookupExistent 
-                                                (participants, Snake.id sn)        
+                                                (!participants, Snake.id sn)        
                             val playerInfo  = Part.playerInfo part
                             val (name, 
                                 color)      = Part.nameNColor part
@@ -602,7 +567,7 @@ struct
                             
                     (* inform the snakes, if any corpses are around *)
                     mayAppList (fn deads => invokeSeveral (_file_, _line_)
-                                 (allConnected (), #playersDied, deads));
+                        (Part.allConnected $ ! participants, #playersDied, deads));
                 
 		    (* inform snake about their new head positions *)
 		    (* FIXME: do not send headPos to dead snakes *)
@@ -620,7 +585,7 @@ struct
                     List.map (fn sn =>
                         let val id          = Snake.id sn
                             val part        = PMap.lookupExistent 
-                                                (participants, id)
+                                                (!participants, id)
                             val playerInfo  = Part.playerInfo part
                             val length      = Snake.length sn - 1
                             val body        = Snake.body sn
@@ -654,7 +619,8 @@ struct
                     (* inform the snakes *)
                     mayAppList (fn namesNColors =>
                         invokeSeveral (_file_, _line_)
-                            (allConnected (), #playersFinished, namesNColors));
+                            (Part.allConnected $ ! participants, 
+                                #playersFinished, namesNColors));
                     
                     (* send updated points list if necessary *)
                     if !pointsChanged then
@@ -671,16 +637,17 @@ struct
                                     (*FIXME: find snake to watch *)
                         |   Part.HALF_FINISHED (info, n) => n := !n - 1
                         |   _           => assert false
-                    ) (allHalfFinished ());
+                    ) (Part.allHalfFinished $ ! participants);
                     
                         
                     (* send tick signal *)
                     log ("Server", "send tick signal");
-                    invokeSeveral 
-                        (_file_, _line_) (allConnected (), #tick, SOME timeLeft);
+                    invokeSeveral (_file_, _line_) 
+                        (Part.allConnected $ ! participants, #tick, 
+                            SOME timeLeft);
   
                     (* test wether there are any living snakes left *)
-                    case allNonFinished () of
+                    case Part.allNonFinished (!participants) of
                         []  => 
                         (* no more players left --> finish *)
                         finishLevel levels
@@ -726,7 +693,7 @@ struct
                 
                 (* send startTournament signal *)
                 invokeSeveral (_file_, _line_)
-                    (allConnected (), #tournamentStarted, ());
+                    (Part.allConnected $ ! participants, #tournamentStarted, ());
                 
                 (* start tick signal sender *)
                 ispawn (_file_, _line_) ticker ()
@@ -740,16 +707,16 @@ struct
                                     else raise P.Protocol "game already running"
 
                     (* determine id *)
-                    val id      = PMap.size participants 
+                    val id      = PMap.size $ ! participants 
                     val uc      = Part.participant (id, client_interface)
                 in
                     (* insert into participant map *)
-                    PMap.insertDisjoint (participants, id, uc);
+                    participants := PMap.insertDisjoint (!participants, id, uc);
                     (* inform the NEW player of the other 
                        already connected players *)
                     ispawn (_file_, _line_) 
                         invoke (uc, #playersJoined, 
-                                List.map Part.nameNColor (allPlayers ()));
+                                List.map Part.nameNColor (Part.allPlayers $ ! participants));
                     (* return adapted server interface.
                        NOTE: UCs are not allowed to call startGame
                         therefore startGame = NONE
@@ -777,7 +744,8 @@ struct
                     startGame   = SOME (Remote.proxy startGame)
                 }
             (* add server to the participant map *)
-            val _ = PMap.insertDisjoint (participants, pc_id, pc)
+            val _ = participants := 
+                PMap.insertDisjoint (!participants, pc_id, pc)
 
             (* offer the connect procedure to allow other clients
                (UCs) to connect

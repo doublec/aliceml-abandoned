@@ -12,6 +12,7 @@
 import structure Protocol from "../common/Protocol"
 import structure Color    from "../common/Color"
 import structure Snake    from "Snake"
+import signature MAP      from "x-alice:/lib/data/MAP-sig"
 
 signature PARTICIPANT =
 sig
@@ -49,6 +50,24 @@ sig
     val state :             participant -> state ref
     
     val nameNColor :        participant -> string * Color.color
+
+
+    (******* operations on a participant map *)
+
+    structure Map : MAP where type key = id
+    type pmap = participant Map.map
+    
+    val allParticipants :   (participant -> bool) -> pmap -> participant list
+
+    val allPlayers :        pmap -> participant list
+
+    val allHalfFinished :   pmap -> participant list
+
+    val allConnected :      pmap -> participant list
+
+    val allWithPoints :     pmap -> participant list
+    
+    val allNonFinished :    pmap -> participant list
 end
 
 

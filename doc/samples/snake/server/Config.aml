@@ -20,11 +20,11 @@ struct
 
     val defaultSingle = 
 	{
-         tick           = Time.fromMilliseconds 300,
+         tick           = Time.fromMilliseconds 120,
 	 timeout        = Time.fromSeconds 100,
 	 dimensions     = (50,50),
 	 goodie         = 5,
-	 lives          = NONE,
+	 lives          = SOME 5,
 	 maxPlayers     = 1,
 	 goodieProb     = 0.2,   
 	 levels         = NONE,
@@ -33,7 +33,7 @@ struct
 
     val defaultMulti = 
 	{
-         tick           = Time.fromMilliseconds 100,
+         tick           = Time.fromMilliseconds 120,
 	 timeout        = Time.fromSeconds 100,
 	 dimensions     = (50,50),
 	 goodie         = 5,

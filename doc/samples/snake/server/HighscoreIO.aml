@@ -17,7 +17,7 @@ import structure Inspector    from "x-alice:/lib/tools/Inspector"
 structure HighscoreIO :> HIGHSCORE_IO =
 struct
 
-    val path = OS.Path.currentArc ^ "/highscore/highscore.hs"
+    val path = OS.Path.currentArc ^ "/highscore.hs"
 
     fun load () = 
 	let
