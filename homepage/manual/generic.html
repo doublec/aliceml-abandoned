@@ -20,14 +20,20 @@
 <PRE>
 class Scheduler {
 public:
-  // Scheduler public data
-  static TaskStack *currentTaskStack; // Task stack
-  static word *stackTop;              // Task stack top
-  static word *stackMax;              // Task stack max
-  static u_int nArgs;                 // Number of arguments
-  static word currentArgs[maxArgs];   // Arguments
-  static word currentData;            // Transient or exception
-  static Backtrace *currentBacktrace; // Backtrace
+  static void SetNArgs(u_int n);
+  static u_int GetNArgs();
+  static void SetCurrentArg(u_int n, word w);
+  static word GetCurrentArg(u_int n);
+  static void SetCurrentData(word w);
+  static word GetCurrentData(void);
+  static void SetCurrentBacktrace(Backtrace *b);
+  static Backtrace *GetCurrentBacktrace(void);
+  static void SetCurrentTaskStack(TaskStack *t);
+  static TaskStack *GetCurrentTaskStack(void);
+  static void SetStackTop(word *w);
+  static word *GetStackTop(void);
+  static void SetStackMax(word *w);
+  static word *GetStackMax(void);
 
   static void Init();
   static int Run();
@@ -463,7 +469,9 @@ public:
          arguments. If <TT>Scheduler::nArgs</TT> denotes a value greater than
          one this function constructs a tuple containing the arguments stored in
          <TT>Scheduler::currentArgs</TT> and rewrites the argument registers
-         accordingly.</P>
+         accordingly. <TT>Scheduler::nArgs</TT> and
+         <TT>Scheduler::currentArgs</TT> are available through the
+         corresponding accessor functions.</P>
   </DD>
   <DT><TT>Deconstruct</TT>
   </DT>

@@ -355,8 +355,8 @@ Worker::Result AbstractCodeInterpreter::Run(StackFrame *sFrame) {
 	Transient *transient = Store::WordToTransient(requestWord);
 	if (transient != INVALID_POINTER) REQUEST(transient->ToWord());
 	KillIdRef(pc->Sel(0), pc, globalEnv, localEnv);
-	Scheduler::currentData = requestWord;
-	Scheduler::currentBacktrace = Backtrace::New(frame->Clone());
+	Scheduler::SetCurrentData(requestWord);
+	Scheduler::SetCurrentBacktrace(Backtrace::New(frame->Clone()));
 	return Worker::RAISE;
       }
       break;
