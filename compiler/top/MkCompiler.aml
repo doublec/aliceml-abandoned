@@ -1,4 +1,17 @@
 (*
+ * Authors:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt and Andreas Rossberg, 2000
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(*
  * Mmh, how about parameterization of Phases over error output formatting...?
  * And shouldn't the Composer also be applied here?
  * Problem is, this requires applicative functors with extended paths.

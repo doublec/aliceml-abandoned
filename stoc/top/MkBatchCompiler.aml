@@ -4,8 +4,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 1999-2000
- *   Andreas Rossberg, 1999-2000
+ *   Leif Kornstaedt and Andreas Rossberg, 1999-2000
  *
  * Last change:
  *   $Date$ by $Author$
@@ -38,9 +37,14 @@ functor MakeMain(structure Composer: COMPOSER'
 	     if !Switches.implicitImport then
 		 case OS.Process.getEnv "STOCKHOME" of
 		     SOME homedir =>
-			 String.map (fn #"\n" => #" " | c => c)
-			 (readFile (homedir ^ "/Default.import")) ^ "\n" ^ s
-		       | NONE =>
+			 if Source.url desc =
+			     SOME (Url.fromString (homedir ^ "/Base.dll.sig"))
+			 then s
+			 else
+			     String.map (fn #"\n" => #" " | c => c)
+			     (readFile (homedir ^ "/Default.import")) ^
+			     "\n" ^ s
+		   | NONE =>
 			 (TextIO.print
 			  "### warning: Default.import not found\n"; s)
 	     else s)
