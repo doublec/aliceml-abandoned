@@ -76,7 +76,13 @@ struct
 
     and ppInf' j =
 	if isAbbrev j then
+(*DEBUG
+	    paren(
+*)
 	    ppInf'(#1(asAbbrev j))
+(*
+	    ^/^ text "as" ^/^ ppInf'(#2(asAbbrev j)) )
+*)
 	else if isTop j then
 	    text "any"
 	else if isCon j then
