@@ -13,7 +13,7 @@
 //
 
 #include <cstring>
-#include "alice/primitives/Authoring.hh"
+#include "alice/Authoring.hh"
 
 DEFINE2(String_opconcat) {
   DECLARE_STRING(string1, x0);
