@@ -67,7 +67,7 @@ char *getAliceHome(bool toUnix)
   return ret;
 }
 
-static char *mozartKey = "SOFTWARE\\Mozart Consortium\\Mozart\\1.2.4";
+static char *mozartKey = "SOFTWARE\\Mozart Consortium\\Mozart\\1.2.5";
 
 char *getOzHome(bool toUnix)
 {
