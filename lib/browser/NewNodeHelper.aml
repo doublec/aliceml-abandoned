@@ -22,11 +22,10 @@ import structure UnsafeValue from "x-alice:/lib/system/UnsafeValue"
 import structure Component from "x-alice:/lib/system/Component"
 import structure ComponentManager from "x-alice:/lib/system/ComponentManager"
 import structure Url from "x-alice:/lib/system/Url" 
-import structure Gtk from "x-alice:/lib/gtk/Gtk"
-import structure GtkCanvas from "x-alice:/lib/gtk/GtkCanvas"
 import structure Types from "Types"
 import structure Helper from "Helper"
 import structure Settings from "Settings"
+import structure GtkSupport from "GtkSupport"
 import structure Window from "Window"
 import signature NEW_NODE_HELPER from "NEW_NODE_HELPER-sig"
 
@@ -52,25 +51,19 @@ struct
 			       end   
       | Inf.HiddenItem(i) => itemToLabel i
 
-    fun createGroupItem (parent,x,y) = 
-	           GtkCanvas.itemNew(parent, 
-				     GtkCanvas.GROUP,
-				     [("x", Gtk.DOUBLE y), 
-				      ("y", Gtk.DOUBLE y)])
-   
     (* setGroup *) 
     fun setGroup pnode = case pnode of 
-	Simple(r)    => createGroupItem(#group(r),0.0,0.0) 
-      | Container(r) => createGroupItem(#group(r),0.0,0.0) 
-      | Concat(r)    => createGroupItem(#group(r),0.0,0.0) 
-      | Limit(r)     => createGroupItem(#group(r),0.0,0.0) 
-      | RelNode(r) => createGroupItem(#group(r),0.0,0.0) 
-      | RelRefNode(r) => createGroupItem(#group(r),0.0,0.0) 
+	Simple(r)    => GtkSupport.newTag(#group(r),0.0,0.0) 
+      | Container(r) => GtkSupport.newTag(#group(r),0.0,0.0) 
+      | Concat(r)    => GtkSupport.newTag(#group(r),0.0,0.0) 
+      | Limit(r)     => GtkSupport.newTag(#group(r),0.0,0.0) 
+      | RelNode(r) => GtkSupport.newTag(#group(r),0.0,0.0) 
+      | RelRefNode(r) => GtkSupport.newTag(#group(r),0.0,0.0) 
       | Empty        => let  val _ = Window.new()
-			in createGroupItem(!Window.canvasroot,0.0,0.0)
+			in GtkSupport.newTag(!Window.canvasroot,0.0,0.0)
 			end
-      | RelNode(r) => createGroupItem(#group(r),0.0,0.0) 
-      | RelRefNode(r) => createGroupItem(#group(r),0.0,0.0) 
+      | RelNode(r) => GtkSupport.newTag(#group(r),0.0,0.0) 
+      | RelRefNode(r) => GtkSupport.newTag(#group(r),0.0,0.0) 
    
    (* low-level-Konstruktion der verschiedenen node-Arten *)
 
