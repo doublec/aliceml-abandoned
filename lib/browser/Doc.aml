@@ -14,23 +14,49 @@
  *)
 
 import structure Inf from "x-alice:/lib/rtt/Inf"
+import structure Label from "x-alice:/lib/rtt/Label"
 import structure Name from "x-alice:/lib/rtt/Name"
-import structure Type from "x-alice:/lib/rtt/Type"
 import structure PathMap from "x-alice:/lib/rtt/PathMap"
+import structure Type from "x-alice:/lib/rtt/Type"
+
+import structure Component from "x-alice:/lib/system/Component"
+import structure ComponentManager from "x-alice:/lib/system/ComponentManager"
 import structure Reflect from "x-alice:/lib/system/Reflect" 
 import structure UnsafeValue from "x-alice:/lib/system/UnsafeValue"
+import structure Url from "x-alice:/lib/system/Url" 
 
-import structure Node from "Node"
 import structure Settings from "Settings" 
 
 import signature DOC from "DOC-sig"
 
-local open Node
-
-in
-
 structure Doc :> DOC =
 struct
+
+    datatype limit = DEPTH_LIMIT | WIDTH_LIMIT
+
+    datatype color_class = INT_COLOR 
+                         | REAL_COLOR
+                         | CHAR_COLOR
+                         | STR_COLOR
+                         | WORD_COLOR
+                         | EXN_COLOR
+                         | REF_COLOR
+                         | LABEL_COLOR
+                         | SEP_COLOR
+                         | EQU_COLOR
+                         | LIMIT_COLOR
+                         | BRACK_COLOR
+                         | REL_COLOR
+                         | DEFAULT
+
+    (* datatype for storage of value and type information in nodes *)
+	
+    datatype desc = 
+	INTERPUNCT
+      | VALUE of {value : Reflect.value,
+		  typ : Type.typ}
+      | I_VALUE of {value : Reflect.module,
+		    typ : Inf.t} 
 
     (* datatype representing the hierarchy of a datastructure 
        without being specific *)
@@ -58,17 +84,64 @@ struct
     (* functiontype for functions creating instances of doc *)
 	
     type doc_creator = int * int * Reflect.value * Type.t -> doc  
-	
-	
+
+    (***************************************)
+
+    (***** storage (& registration) for doc creator functions *****)
+		
     (* map storing doc creator functions *)
 	
     val pathTable = PathMap.new() 
-	
+
+    (* identification of the path of promises and packages *)
+
+    val coreSign = Inf.asSig(Option.valOf 
+	     (Component.inf(ComponentManager.link 
+	       (Url.fromString "x-alice:/lib/fundamental/Core")))) 
+
+    val packageSign = Inf.asSig(Option.valOf 
+		(Component.inf(ComponentManager.link 
+		  (Url.fromString "x-alice:/lib/fundamental/Package")))) 
+
+    (* returns the path (used for promises and packages) *)
+
+     fun lookupPath(sign, modLab, typLab) =
+	 let val sign' = Inf.asSig(Inf.lookupMod(sign, 
+						 Label.fromString modLab))
+	     val typ   = Inf.lookupTyp'(sign', Label.fromString typLab)
+	     val typ'  = if Type.isApply typ 
+			     then #1(Type.asApply typ) 
+			 else typ
+	 in Type.asCon typ'
+	 end
+
+     (***************************************)
 	
     (* registration function for pathTable *)
 	
     fun registerType (path, f) = PathMap.insert (pathTable, path, f) 
 
+
+    (* operations on desc *)
+
+    fun createValue(va,t) = VALUE{value = va,
+				  typ = t}
+	
+    fun createIValue(va,t) = I_VALUE{value = va,
+				     typ = t}
+	
+    fun getValue desc = case desc of VALUE(r) => #value(r)
+                                   | _ => raise Match
+	
+    fun getInfValue desc = case desc of I_VALUE(r) => #value(r)
+	                              | _ => raise Match
+
+    fun getTyp desc = case desc of VALUE(r) => #typ(r)
+                                 | _ => raise Match
+
+    fun getInf desc = case desc of I_VALUE(r) => #typ(r)
+                                 | _ => raise Match  
+ 
 
     (* auxiliaries for casting values *)
 
@@ -371,6 +444,5 @@ struct
 	in handlePackages (d,va,t,inner_doc) 
 	end 
 
-end (* structure *)
+end 
 
-end
