@@ -11,9 +11,9 @@
  *
  *) 
 
-signature ALICE_XML =
+signature NATIVE_XML =
     sig
-	structure NativeAliceXML:
+	structure NativeXML:
 	    sig
 		val parse : string -> 'xml_doc_ptr
 		val isNull : 'xml_node_ptr -> bool

@@ -234,27 +234,27 @@ word InitComponent() {
   xmlTypeMapping[20] = 19;
   xmlTypeMapping[21] = 4;
 
-  INIT_STRUCTURE(record, "NativeAliceXML", "parse",
+  INIT_STRUCTURE(record, "NativeXML", "parse",
 		 xml_parse, 1);
-  INIT_STRUCTURE(record, "NativeAliceXML", "isNull",
+  INIT_STRUCTURE(record, "NativeXML", "isNull",
 		 xml_isNull, 1);
-  INIT_STRUCTURE(record, "NativeAliceXML", "children",
+  INIT_STRUCTURE(record, "NativeXML", "children",
 		 xml_children, 1);
-  INIT_STRUCTURE(record, "NativeAliceXML", "parent",
+  INIT_STRUCTURE(record, "NativeXML", "parent",
 		 xml_parent, 1);
-  INIT_STRUCTURE(record, "NativeAliceXML", "next",
+  INIT_STRUCTURE(record, "NativeXML", "next",
 		 xml_next, 1);
-  INIT_STRUCTURE(record, "NativeAliceXML", "prev",
+  INIT_STRUCTURE(record, "NativeXML", "prev",
 		 xml_prev, 1);
-  INIT_STRUCTURE(record, "NativeAliceXML", "properties",
+  INIT_STRUCTURE(record, "NativeXML", "properties",
 		 xml_properties, 1);
-  INIT_STRUCTURE(record, "NativeAliceXML", "name",
+  INIT_STRUCTURE(record, "NativeXML", "name",
 		 xml_name, 1);
-  INIT_STRUCTURE(record, "NativeAliceXML", "getType",
+  INIT_STRUCTURE(record, "NativeXML", "getType",
 		 xml_getType, 1);
-  INIT_STRUCTURE(record, "NativeAliceXML", "getProp",
+  INIT_STRUCTURE(record, "NativeXML", "getProp",
 		 xml_getProp, 2);
-  INIT_STRUCTURE(record, "NativeAliceXML", "nodeListGetString",
+  INIT_STRUCTURE(record, "NativeXML", "nodeListGetString",
 		 xml_nodeListGetString, 2);
-  RETURN_STRUCTURE("NativeAliceXML$", record);
+  RETURN_STRUCTURE("NativeXML$", record);
 }

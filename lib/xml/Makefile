@@ -4,12 +4,12 @@ INSTALLDIR = `alice-config --alicelibdir`/xml
 
 LIBXMLDIR = /usr
 
-NATIVES = NativeAliceXML
+NATIVES = NativeXML
 
 SOURCES = \
-	NativeAliceXML.cc
+	NativeXML.cc
 
-TARGETS = AliceXML.alc
+TARGETS = XML.alc
 
 VERSION = 1.0.1
 DISTFILES = $(SOURCES) Makefile debian
@@ -22,7 +22,7 @@ all: compiledll compilealice
 compiledll: $(NATIVES:%=%.dll)
 compilealice: $(TARGETS)
 
-AliceXML.dll: $(SOURCES:%.cc=%.o)
+XML.dll: $(SOURCES:%.cc=%.o)
 
 %.o: %.cc
 	alicetool compile $(EXTRA_INCLUDES) \
