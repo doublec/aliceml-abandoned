@@ -36,7 +36,7 @@ public:
   static void PushFrame(TaskStack *taskStack, Transient *future);
   // Execution
   virtual Result Run(TaskStack *taskStack);
-  virtual Result Handle(word exn, Backtrace *debug, TaskStack *taskStack);
+  virtual Result Handle(TaskStack *taskStack);
   // Debugging
   virtual const char *Identify();
   virtual void DumpFrame(word frame);

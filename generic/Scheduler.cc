@@ -129,13 +129,11 @@ void Scheduler::Run() {
 	  Profiler::SampleHeap();
 	  frame = StackFrame::FromWordDirect(taskStack->GetFrame());
 	  interpreter = frame->GetInterpreter();
-	  result =
-	    interpreter->Handle(currentData, currentBacktrace, taskStack);
+	  result = interpreter->Handle(taskStack);
 	  Profiler::AddHeap(frame);
 #else
 	  interpreter = taskStack->GetInterpreter();
-	  result =
-	    interpreter->Handle(currentData, currentBacktrace, taskStack);
+	  result = interpreter->Handle(taskStack);
 #endif
 	  goto interpretResult;
 	}

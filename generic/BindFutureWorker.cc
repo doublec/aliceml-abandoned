@@ -87,13 +87,12 @@ Interpreter::Result ByneedInterpreter::Run(TaskStack *taskStack) {
   }
 }
 
-Interpreter::Result
-ByneedInterpreter::Handle(word exn, Backtrace *, TaskStack *taskStack) {
+Interpreter::Result ByneedInterpreter::Handle(TaskStack *taskStack) {
   Future *future =
     ByneedFrame::FromWordDirect(taskStack->GetFrame())->GetFuture();
   taskStack->PopFrame();
   future->ScheduleWaitingThreads();
-  future->Become(CANCELLED_LABEL, exn);
+  future->Become(CANCELLED_LABEL, Scheduler::currentData);
   Scheduler::nArgs = Scheduler::ONE_ARG;
   Scheduler::currentArgs[0] = future->ToWord();
   return Interpreter::CONTINUE;
