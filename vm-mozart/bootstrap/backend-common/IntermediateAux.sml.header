@@ -1,10 +1,18 @@
 import
+    functor MakeHashImpSet
+from "x-alice:/misc/MakeHashImpSet.ozf"
+
+import
     structure Crash
 from "x-alice:/infrastructure/Crash.ozf"
 
 import
     structure Stamp
 from "x-alice:/common/Stamp.ozf"
+
+import
+    structure StampSet
+from "x-alice:/common/StampSet.ozf"
 
 import
     structure Name

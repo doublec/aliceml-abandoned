@@ -37,3 +37,7 @@ from "x-alice:/backend-common/ValuePropagationPhase.ozf"
 import
     structure MakeLivenessAnalysisPhase
 from "x-alice:/backend-common/MakeLivenessAnalysisPhase.ozf"
+
+import
+    structure DeadCodeEliminationPhase
+from "x-alice:/backend-common/DeadCodeEliminationPhase.ozf"

@@ -1,4 +1,8 @@
 import
+    signature IMP_SET
+from "x-alice:/misc/IMP_SET.ozf"
+
+import
     structure Stamp
 from "x-alice:/common/Stamp.ozf"
 
