@@ -169,7 +169,7 @@ LIBSYSTEMSOURCES0 = \
 	COMPONENT-sig.aml DEBUG-sig.aml SOCKET-sig.aml RAND-sig.aml \
 	REFLECT-sig.aml \
 	$(LIBSYSTEMNATIVES0:%=%.aml) \
-	PICKLE-sig.aml Pickle.aml \
+	PICKLE-sig.aml Pickle.aml URL-sig.aml Url.aml \
 	HTTP-sig.aml Http.aml HTTP_SERVER-sig.aml HttpServer.aml \
 	HTTP_CLIENT-sig.aml HttpClient.aml \
 	RESOLVER_HANDLER-sig.aml RESOLVER-sig.aml Resolver.aml \
@@ -179,7 +179,7 @@ LIBSYSTEMSOURCES0 = \
 LIBUTILITYSOURCES0 = \
 	$(LIBUTILITYNATIVES0:%=Unsafe%.asig) \
 	ASSERT-sig.aml Assert.aml STAMP-sig.aml MkStamp.aml \
-	GLOBAL_STAMP-sig.aml GlobalStamp.aml URL-sig.aml Url.aml \
+	GLOBAL_STAMP-sig.aml GlobalStamp.aml \
 	HASH_KEY-sig.aml \
 	IMP_SET-sig.aml MkHashImpSet.aml IMP_MAP-sig.aml MkHashImpMap.aml \
 	SCOPED_IMP_SET-sig.aml MkScopedImpSet.aml SCOPED_IMP_MAP-sig.aml \
@@ -756,7 +756,7 @@ build3/lib/fundamental/LinkedFundamental.ozf: \
 	--include build3 \
 	build3/lib/fundamental/Fundamental -o $@
 
-build3/LinkedVMMain.ozf: build3/VMMain.ozf build3/lib/utility/Url.ozf \
+build3/LinkedVMMain.ozf: build3/VMMain.ozf build3/lib/system/Url.ozf \
 	build3/lib/system/Boot.ozf
 	$(ALICELINK0) $(ALICELINK0_OPTS) --include=.. $< -o $@
 

@@ -10,7 +10,7 @@
  *   $Revision$
  *)
 
-import structure Url                      from "../../lib/utility/Url"
+import structure Url                      from "../../lib/system/Url"
 import structure PrettyPrint              from "../../lib/utility/PrettyPrint"
 import signature SWITCHES                 from "../infrastructure/SWITCHES-sig"
 import structure Source                   from "../infrastructure/Source"
