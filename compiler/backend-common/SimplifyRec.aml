@@ -144,7 +144,7 @@ structure SimplifyRec :> SIMPLIFY_REC =
 	fun derec' (JokPat _, exp) = (nil, [(nil, exp)])
 	  | derec' (LitPat (info, lit1), LitExp (_, lit2)) =
 	    if O.litEq (lit1, lit2) then (nil, nil)
-	    else Error.error (#region info, "pattern never matches")
+	    else Error.error' (#region info, "pattern never matches")
 	  | derec' (VarPat (_, id), exp) = (nil, [([id], exp)])
 	  | derec' (TagPat (info, Lab (_, label1), pat),
 		    TagExp (_, Lab (_, label2), exp)) =
@@ -152,7 +152,7 @@ structure SimplifyRec :> SIMPLIFY_REC =
 		val (constraints, idsExpList) = derec' (pat, exp)
 	    in
 		if label1 = label2 then (constraints, idsExpList)
-		else Error.error (#region info, "pattern never matches")
+		else Error.error' (#region info, "pattern never matches")
 	    end
 	  | derec' (ConPat (_, longid1, pat),
 		    ConExp (_, longid2, exp)) =
@@ -227,7 +227,7 @@ structure SimplifyRec :> SIMPLIFY_REC =
 	  | unify (pat1, JokPat _) = (nil, pat1)
 	  | unify (pat1 as LitPat (info, lit1), LitPat (_, lit2)) =
 	    if O.litEq (lit1, lit2) then (nil, pat1)
-	    else Error.error (#region info, "pattern never matches")
+	    else Error.error' (#region info, "pattern never matches")
 	  | unify (VarPat (info, id), pat2) = (nil, AsPat (info, id, pat2))
 	  | unify (pat1, VarPat (info, id)) = (nil, AsPat (info, id, pat1))
 	  | unify (TagPat (info, lab as Lab (_, label), pat1),
@@ -237,7 +237,7 @@ structure SimplifyRec :> SIMPLIFY_REC =
 	    in
 		if label = label' then
 		    (constraints, TagPat (info, lab, pat))
-		else Error.error (#region info, "pattern never matches")
+		else Error.error' (#region info, "pattern never matches")
 	    end
 	  | unify (ConPat (info, longid, pat1),
 		   ConPat (_, longid', pat2)) =
@@ -294,7 +294,7 @@ structure SimplifyRec :> SIMPLIFY_REC =
 		in
 		    (constraints, VecPat (info, Vector.fromList pats))
 		end
-	    else Error.error (#region info, "pattern never matches")
+	    else Error.error' (#region info, "pattern never matches")
 	  | unify (AsPat (info, id, pat1), pat2) =
 	    let
 		val (constraints, pat) = unify (pat1, pat2)
@@ -303,7 +303,7 @@ structure SimplifyRec :> SIMPLIFY_REC =
 	    end
 	  | unify (pat1, pat2 as AsPat (_, _, _)) = unify (pat2, pat1)
 	  | unify (pat, _) =
-	    Error.error (#region (infoPat pat), "pattern never matches")
+	    Error.error' (#region (infoPat pat), "pattern never matches")
 
 	fun parseRow row =
 	    case Type.inspectRow row of
@@ -408,17 +408,17 @@ structure SimplifyRec :> SIMPLIFY_REC =
 		(constraints1 @ constraints2 @ constraints3, pat')
 	    end
 	  | preprocess (I.AltPat (info, _, _)) =
-	    Error.error (#region info,
-			 "alternative pattern not allowed in val rec")
+	    Error.error' (#region info,
+			  "alternative pattern not allowed in val rec")
 	  | preprocess (I.NegPat (info, _)) =
-	    Error.error (#region info,
-			 "negated pattern not allowed in val rec")
+	    Error.error' (#region info,
+			  "negated pattern not allowed in val rec")
 	  | preprocess (I.GuardPat (info, _, _)) =
-	    Error.error (#region info,
-			 "guard pattern not allowed in val rec")
+	    Error.error' (#region info,
+			  "guard pattern not allowed in val rec")
 	  | preprocess (I.WithPat (info, _, _)) =
-	    Error.error (#region info,
-			 "with pattern not allowed in val rec")
+	    Error.error' (#region info,
+			  "with pattern not allowed in val rec")
 
 	fun derec (ValDec (_, pat, exp)::decr) =
 	    let
