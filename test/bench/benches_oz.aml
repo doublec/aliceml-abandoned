@@ -29,6 +29,23 @@ fun randlistaux(0,_,l) = l
 
 fun randlist(n) = randlistaux(n,0,nil);
 
+local
+  fun app'(nil, ys, p)   = Promise.fulfill(p, ys)
+    | app'(x::xr, ys, p) =
+      let
+	val p' = Promise.promise ()
+      in
+	Promise.fulfill(p, x::(Promise.future p'));
+	app'(xr, ys, p')
+      end
+in
+  fun appTail(xs, ys) =
+      let
+	val p = Promise.promise ()
+      in
+	app'(xs, ys, p); Promise.future p
+      end
+end
 
 fun app(nil,ys)   = ys
   | app(x::xr,ys) = x::app(xr,ys);
@@ -77,10 +94,17 @@ fun dobenchavrg2(name,n,sz,proc1,proc2) =
 
 (* Benches *)
 
-fun fib(n) = 
-    if (2<n) 
-    then fib(n-2)+fib(n-1) 
-    else 1;
+fun fib (0|1) = 1
+  | fib n = fib(n-2)+fib(n-1);
+
+fun concfib (0|1) = 1
+  | concfib n =
+    let
+      val n1 = spawn concfib(n - 1)
+      val n2 = spawn concfib(n - 2)
+    in
+      n1 + n2
+    end;
 
 fun fibf(n:real) = 
     if Real.<(2.0, n) 
@@ -111,6 +135,9 @@ fun cpstak(x,y,z) = cpstakaux(x,y,z,fn(a)=>a);
 
 fun nrev(nil)   = nil
   | nrev(a::bs) = app(nrev(bs),[a]);
+
+fun nrevTail(nil)   = nil
+  | nrevTail(a::bs) = appTail(nrevTail(bs),[a]);
 
 (**************************************************************)
 
@@ -322,15 +349,22 @@ fun nthderiv(0,exp,x) = exp
 fun goderiv(n) =
    dotimes(n, fn()=> nthderiv(6,Exp(Div(Const(1),Var(1)), 3),1));
 
+(**************************************************************)
 
+fun threadcrea 0 = ()
+  | threadcrea n =
+    (Future.await (spawn ()); threadcrea (n - 1))
 
 (**************************************************************)
 
 fun getit("fib",n)    = (fn()=>fib(n))
+  | getit("concfib",n) = (fn()=> Future.await (concfib n))
+  | getit("threadcrea",n) = (fn()=> (threadcrea n;1))
   | getit("fibf",n)   = (fn()=>(fibf(real(n));1))
   | getit("tak",n)    = (fn()=>(tak(3*n,2*n,n)))
   | getit("cpstak",n) = (fn()=>(cpstak(3*n,2*n,n)))
   | getit("nrev",n)   = (fn()=>(nrev(genlist(n));1))
+  | getit("nrevtail",n)   = (fn()=>(nrevTail(genlist(n));1))
   | getit("quick",n)  = let val l=randlist(5000) in 
     fn()=>dotimes(n,fn()=>quick(l)) end
   | getit("quickho",n)  = let val l=randlist(5000) in 
@@ -355,7 +389,12 @@ fun printBench(name, n, (mean, times)) =
 
 
 fun doit(bench,iter,n) =
-    printBench (bench,n,dobenchavrg(iter,getit(bench,n)));
+    let
+      val proc = getit(bench, n)
+    in
+      proc ();
+      printBench (bench,n,dobenchavrg(iter, proc))
+    end
 
 fun doitall(iter) =
     ( doit("fib",iter,31),
@@ -374,17 +413,19 @@ fun doitall(iter) =
 fun benches(iter) =
     [doit("fib",iter,31),
 (*     doit("fibf",iter,31), *)
+     doit("concfib",iter,20),
+     doit("threadcrea",iter,100000),
      doit("tak",iter,8),
-     doit("cpstak",iter,8),
+(*       doit("cpstak",iter,8), *)
      doit("nrev",iter,3000),
-     doit("quick",iter,30),
-     doit("quickho",iter,30),
-     doit("quickarray",iter,30),
-     doit("queens",iter,10),
+(*       doit("quick",iter,30), *)
+(*       doit("quickho",iter,30), *)
+(*       doit("quickarray",iter,30), *)
+(*       doit("queens",iter,10), *)
 (*       doit("mandel",iter,4711), *)
      doit("deriv",iter,30)
      ]
 
-val _ = benches 5
+val _ = benches 8
 
 val _ = OS.Process.exit OS.Process.success
