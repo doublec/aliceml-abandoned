@@ -30,18 +30,6 @@ public class Constructor implements DMLValue {
 	return new ConVal(this,val);
     }
 
-    final public DMLValue getValue() {
-	return this;
-    }
-
-    final public DMLValue request() {
-	return this;
-    }
-
-    final public DMLValue raise() {
-	throw new ExceptionWrapper(this);
-    }
-
     /** Falls der Constructor noch keinen GName hat, wird jetzt ein
      *  neuer GName erzeugt und der Constructor wird unter dem GName in
      *  der globalen Hashtabelle eingetragen.
@@ -72,4 +60,8 @@ public class Constructor implements DMLValue {
 	    return o;
 	}
     }
+
+    _request_id ;
+    _getValue_id ;
+    _raise ;
 }

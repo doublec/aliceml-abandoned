@@ -97,22 +97,6 @@ final public class Reference implements DMLConVal, DMLReference {
 	//	return (content==null?"remote":content.toString())+" : ref";
     }
 
-    final public DMLValue getValue() {
-	return this;
-    }
-
-    final public DMLValue request() {
-	return this;
-    }
-
-    final public DMLValue apply(DMLValue v) throws java.rmi.RemoteException {
-	return Constants.runtimeError.apply(new de.uni_sb.ps.dml.runtime.String("cannot apply "+this+" to "+v)).raise();
-    }
-
-    final public DMLValue raise() {
-	throw new ExceptionWrapper(this);
-    }
-
     final public Constructor getConstructor() {
 	return Constants.reference;
     }
@@ -159,4 +143,9 @@ final public class Reference implements DMLConVal, DMLReference {
 	in.defaultReadObject();
 	cmgr = new ClientManager(this);
     }
+
+    _apply_fails ;
+    _request_id ;
+    _getValue_id ;
+    _raise ;
 }

@@ -5,6 +5,7 @@ package de.uni_sb.ps.dml.runtime;
  *  implementiert wird, können sie wie andere Werte in DML verwendet werden.
  *  @see DMLValue
  */
+
 public class Thread extends java.lang.Thread implements DMLValue {
     /** Hier wird die Continuation für die Tail-Calls übergeben. */
     public DMLValue tail=null;
@@ -37,8 +38,12 @@ public class Thread extends java.lang.Thread implements DMLValue {
      *  verworfen.
      */
     public void run() {
+	DMLValue v = null;
 	try {
-	    fcn.apply(Constants.dmlunit);
+	    v = fcn.apply(Constants.dmlunit);
+	    while(tail!=null) {
+		v=tail.apply(v);
+	    }
 	} catch (java.rmi.RemoteException r) {
 	    System.err.println(r);
 	}
@@ -54,29 +59,6 @@ public class Thread extends java.lang.Thread implements DMLValue {
 	    +"Is interrupted: "+this.isInterrupted();
     }
 
-    /** Liefert sich selbst. */
-    final public DMLValue getValue() {
-	return this;
-    }
-
-    /** Liefert sich selbst. */
-    final public DMLValue request() {
-	return this;
-    }
-
-    /** Erzeugt Laufzeitfehler.
-     *  @param val wird nicht requested
-     *  @return DMLValue es wird immer eine Exception geworfen.
-     */
-    final public DMLValue apply(DMLValue v) throws java.rmi.RemoteException {
-	return Constants.runtimeError.apply(new de.uni_sb.ps.dml.runtime.String("cannot apply "+this+" to "+v)).raise();
-    }
-
-    /** Verpackt den java.lang.Thread und wirft den ExceptionWrapper. */
-    final public DMLValue raise() {
-	throw new ExceptionWrapper(this);
-    }
-
     private Object writeReplace()
 	throws java.io.ObjectStreamException {
 	if (ng==null) { // falls zum ersten Mal serialisiert
@@ -88,4 +70,9 @@ public class Thread extends java.lang.Thread implements DMLValue {
 	    return ng;
 	}
     }
+
+    _apply_fails ;
+    _request_id ;
+    _getValue_id ;
+    _raise ;
 }

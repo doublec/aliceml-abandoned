@@ -26,10 +26,10 @@ final public class ConValTuple3 implements DMLConVal {
 
     /** Gleichheit der  und Inhalte */
     final public boolean equals(java.lang.Object val) {
-	return (val instanceof ConValTuple5) &&
-	    fst.equals(((ConValTuple5) val).fst) &&
-	    snd.equals(((ConValTuple5) val).snd) &&
-	    thr.equals(((ConValTuple5) val).thr);
+	return (val instanceof ConValTuple3) &&
+	    fst.equals(((ConValTuple3) val).fst) &&
+	    snd.equals(((ConValTuple3) val).snd) &&
+	    thr.equals(((ConValTuple3) val).thr);
     }
 
     final public DMLValue getContent() {
@@ -49,28 +49,9 @@ final public class ConValTuple3 implements DMLConVal {
 	return constructor+"("+fst+", "+snd+", "+thr+") : constructed value";
     }
 
-    final public DMLValue getValue() {
-	return this;
-    }
-
-    final public DMLValue request() {
-	return this;
-    }
-
-    final public DMLValue apply(DMLValue v) {
-	try {
-	    return Constants.runtimeError.apply(new de.uni_sb.ps.dml.runtime.String("cannot apply "+this+" to "+v)).raise();
-	} catch (java.rmi.RemoteException r) {
-	    System.out.println(r);
-	    return null;
-	}
-    }
-
-    final public DMLValue raise() {
-	throw new ExceptionWrapper(this);
-    }
-
-    final public Constructor getConstructor() {
-	return constructor;
-    }
+    _getConstructor ;
+    _apply_fails ;
+    _request_id ;
+    _getValue_id ;
+    _raise ;
 }

@@ -57,19 +57,8 @@ public class Tuple implements DMLTuple {
 	return vals;
     }
 
-    final public DMLValue getValue() {
-	return this;
-    }
-
-    final public DMLValue request() {
-	return this;
-    }
-
-    final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException {
-	return Constants.runtimeError.apply(new de.uni_sb.ps.dml.runtime.String("cannot apply "+this+" to "+val)).raise();
-    }
-
-    final public DMLValue raise() {
-	throw new ExceptionWrapper(this);
-    }
+    _apply_fails ;
+    _request_id ;
+    _getValue_id ;
+    _raise ;
 }

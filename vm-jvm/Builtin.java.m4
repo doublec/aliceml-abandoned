@@ -14,15 +14,7 @@ abstract public class Builtin implements DMLValue {
 	return "builtin function: "+this.getClass();
     }
 
-    final public DMLValue getValue() {
-	return this;
-    }
-
-    final public DMLValue request() {
-	return this;
-    }
-
-    final public DMLValue raise() {
-	throw new ExceptionWrapper(this);
-    }
+    _request_id ;
+    _getValue_id ;
+    _raise ;
 }

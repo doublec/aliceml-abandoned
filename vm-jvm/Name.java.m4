@@ -25,22 +25,6 @@ public class Name implements DMLValue {
 	return (this == o);
     }
 
-    final public DMLValue getValue() {
-	return this;
-    }
-
-    final public DMLValue request() {
-	return this;
-    }
-
-    final public DMLValue apply(DMLValue v) throws java.rmi.RemoteException {
-	return Constants.runtimeError.apply(new de.uni_sb.ps.dml.runtime.String("cannot apply "+this+" to "+v)).raise();
-    }
-
-    final public DMLValue raise() {
-	throw new ExceptionWrapper(this);
-    }
-
     /** Falls der Name noch keinen GName hat, wird jetzt ein
      *  neuer GName erzeugt und der Name wird unter dem GName in
      *  der globalen Hashtabelle eingetragen.
@@ -71,4 +55,9 @@ public class Name implements DMLValue {
 	    return o;
 	}
     }
+
+    _apply_fails ;
+    _request_id ;
+    _getValue_id ;
+    _raise ;
 }

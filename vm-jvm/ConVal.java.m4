@@ -73,27 +73,6 @@ final public class ConVal implements DMLConVal {
 	return constructor+"("+content+") : constructed value";
     }
 
-    final public DMLValue getValue() {
-	return this;
-    }
-
-    final public DMLValue request() {
-	return this;
-    }
-
-    final public DMLValue apply(DMLValue v) throws java.rmi.RemoteException {
-	try {
-	    return Constants.runtimeError.apply(new de.uni_sb.ps.dml.runtime.String("cannot apply "+this+" to "+v)).raise();
-	} catch (java.rmi.RemoteException r) {
-	    System.out.println(r);
-	    return null;
-	}
-    }
-
-    final public DMLValue raise() {
-	throw new ExceptionWrapper(this);
-    }
-
     final private void writeObject(java.io.ObjectOutputStream out) throws java.io.IOException {
 	if (this.constructor == Constants.reference)
 	    Constants.runtimeError.apply(new de.uni_sb.ps.dml.runtime.String("cannot pickle referencev")).raise();
@@ -101,7 +80,9 @@ final public class ConVal implements DMLConVal {
 	    out.defaultWriteObject();
     }
 
-    final public Constructor getConstructor() {
-	return constructor;
-    }
+    _getConstructor ;
+    _apply_fails ;
+    _request_id ;
+    _getValue_id ;
+    _raise ;
 }
