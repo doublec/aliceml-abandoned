@@ -25,7 +25,7 @@ structure Egg =
 		fun it () =
 		    let
 		     	val mw = Gtk.windowNew(Gtk.WINDOW_TOPLEVEL)
-		     	val _ = Gtk.windowSetTitle(mw,"Alice")
+		     	val _ = Gtk.windowSetTitle(mw,"Alice Herself")
 			val (buf,_) = Gdk.pixbufNewFromInline(~1, str, false)
 			val img = Gtk.imageNewFromPixbuf buf
 		    in
