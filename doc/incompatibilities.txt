@@ -73,8 +73,8 @@ compatible way.
 
   Examples:
 
-	val rec true = fn x => x
-	fun true x = x
+	val rec NONE = fn x => x
+	fun NONE x = x
 
   This is legal in SML (though SML/NJ for example does not allow it either).
   In Stockhausen it produces a type clash (due to the extended val rec).
