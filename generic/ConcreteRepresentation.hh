@@ -20,7 +20,7 @@
 #include "store/Store.hh"
 #include "generic/ConcreteRepresentationHandler.hh"
 
-class DllExport ConcreteRepresentation: private Block {
+class SeamDll ConcreteRepresentation: private Block {
 protected:
   enum { HANDLER_POS, BASE_SIZE };
 public:

@@ -20,7 +20,7 @@
 #include <cstring>
 #include "store/Store.hh"
 
-class DllExport Double: private Chunk {
+class SeamDll Double: private Chunk {
 public:
   using Chunk::ToWord;
 

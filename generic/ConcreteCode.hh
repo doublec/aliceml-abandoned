@@ -20,7 +20,7 @@
 #include "generic/ConcreteRepresentation.hh"
 #include "generic/Interpreter.hh"
 
-class DllExport ConcreteCode: private ConcreteRepresentation {
+class SeamDll ConcreteCode: private ConcreteRepresentation {
 public:
   using Block::ToWord;
   using ConcreteRepresentation::Init;

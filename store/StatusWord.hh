@@ -19,7 +19,7 @@
 #include "store/Base.hh"
 #include "store/Types.hh"
 
-class DllExport StatusWord {
+class SeamDll StatusWord {
 protected:
   static u_int status;
 public:

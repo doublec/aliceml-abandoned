@@ -21,7 +21,7 @@ class Block;
 class Transform;
 class ConcreteRepresentation;
 
-class DllExport ConcreteRepresentationHandler {
+class SeamDll ConcreteRepresentationHandler {
 public:
   // returns INVALID_POINTER if there is none
   virtual Transform *GetAbstractRepresentation(ConcreteRepresentation *) = 0;

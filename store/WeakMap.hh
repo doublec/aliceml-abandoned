@@ -29,12 +29,12 @@ public:
   }
 };
 
-class DllExport Finalization {
+class SeamDll Finalization {
 public:
   virtual void Finalize(word value) = 0;
 };
 
-class DllExport WeakMap : public BaseMap<TokenKey> {
+class SeamDll WeakMap : public BaseMap<TokenKey> {
 protected:
   friend class Store;
 

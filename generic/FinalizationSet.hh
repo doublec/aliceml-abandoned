@@ -20,7 +20,7 @@
 #include "store/WeakMap.hh"
 #include "generic/RootSet.hh"
 
-class DllExport FinalizationSet: public Finalization {
+class SeamDll FinalizationSet: public Finalization {
 private:
   static const u_int initialSize = 4; //--** to be determined
 

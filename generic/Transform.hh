@@ -17,7 +17,7 @@
 
 #include "store/Store.hh"
 
-class DllExport Transform: private Block {
+class SeamDll Transform: private Block {
 protected:
   enum { NAME_POS, ARGUMENT_POS, SIZE };
 public:

@@ -26,7 +26,7 @@ class StackFrame;
 class String;
 #endif
 
-class DllExport Worker {
+class SeamDll Worker {
 public:
   enum Result {
     CONTINUE, PREEMPT, SUSPEND, RAISE, REQUEST, TERMINATE, EXIT
@@ -34,17 +34,17 @@ public:
   // Worker Constructor
   Worker() {}
   // Calling Convention Conversion
-  static void Construct();
+  static SeamDll void Construct();
   //   Deconstruct returns 1 iff argument needs to be requested,
   //   in which case it sets Scheduler::currentData as a side-effect;
   //   returns 0 iff deconstruction was immediately successful
-  static u_int Deconstruct();
+  static SeamDll u_int Deconstruct();
   // Frame Handling
   virtual u_int GetFrameSize(StackFrame *sFrame) = 0;
-  virtual void PurgeFrame(StackFrame *sFrame);
+  virtual SeamDll void PurgeFrame(StackFrame *sFrame);
   // Execution
   virtual Result Run(StackFrame *sFrame) = 0;
-  virtual Result Handle(word data);
+  virtual SeamDll Result Handle(word data);
   // Debugging
   virtual const char *Identify() = 0;
   virtual void DumpFrame(StackFrame *sFrame) = 0;

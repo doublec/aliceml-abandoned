@@ -21,7 +21,7 @@
 #include "store/Store.hh"
 #include "generic/TaskStack.hh"
 
-class DllExport Thread: private Block {
+class SeamDll Thread: private Block {
   friend class Scheduler;
 public:
   enum priority { HIGH, NORMAL, LOW };

@@ -27,7 +27,7 @@ class StackFrame;
 class ConcreteCode;
 class TagVal;
 
-class DllExport Profiler {
+class SeamDll Profiler {
 protected:
   static word table;
   static u_int heapUsage;

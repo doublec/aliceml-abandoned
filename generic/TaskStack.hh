@@ -21,7 +21,7 @@
 
 class StackFrame;
 
-class DllExport TaskStack: private DynamicBlock {
+class SeamDll TaskStack: private DynamicBlock {
 private:
   static const u_int INITIAL_SIZE = 20;
   static word emptyTask, emptyStack;

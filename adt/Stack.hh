@@ -19,7 +19,7 @@
 #include "store/Store.hh"
 #include <cstring>
 
-class DllExport Stack : private Block {
+class SeamDll Stack: private Block {
 protected:
   enum { TOP_POS, ARR_POS, SIZE };
 protected:

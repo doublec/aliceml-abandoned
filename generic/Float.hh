@@ -20,7 +20,7 @@
 #include <cstring>
 #include "store/Store.hh"
 
-class DllExport Float: private Chunk {
+class SeamDll Float: private Chunk {
 public:
   using Chunk::ToWord;
 

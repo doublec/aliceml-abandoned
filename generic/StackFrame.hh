@@ -20,7 +20,7 @@
 #include "store/Store.hh"
 class Worker;
 
-class DllExport StackFrame {
+class SeamDll StackFrame {
 protected:
   enum {WORKER_POS, BASE_SIZE};
 
@@ -66,7 +66,7 @@ public:
   void ReplaceArg(u_int pos, s_int value) {
     InitArg(pos, value);
   }
-  word Clone();
+  SeamDll word Clone();
 };
 
 // to be done: better solution

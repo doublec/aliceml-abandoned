@@ -24,7 +24,7 @@
 #include "generic/StackFrame.hh"
 #include "generic/Scheduler.hh"
 
-class DllExport Backtrace: private Queue {
+class SeamDll Backtrace: private Queue {
 private:
   static const u_int initialBacktraceSize = 12; // to be checked
 public:

@@ -33,7 +33,7 @@ class Profiler;
 
 #define STORE_NEED_GC_STATUS 0
 
-class DllExport Store : public StatusWord {
+class SeamDll Store : public StatusWord {
 protected:
   friend class Map;
   friend class JITStore;
@@ -88,7 +88,7 @@ public:
   static void DoGC(word &root);
   static void SetGCParams(u_int mem_free, u_int mem_tolerance);
   static void AddToIntgenSet(Block *v);
-  static DllExport void RegisterWeakDict(WeakMap *v);
+  static SeamDll void RegisterWeakDict(WeakMap *v);
   static u_int GCStatus() {
     return (1 << STORE_NEED_GC_STATUS);
   }

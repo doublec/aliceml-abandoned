@@ -24,7 +24,7 @@
 class Thread;
 class Transient;
 
-class DllExport BindFutureWorker: public Worker {
+class SeamDll BindFutureWorker: public Worker {
 private:
   // BindFutureWorker Constructor
   BindFutureWorker(): Worker() {}

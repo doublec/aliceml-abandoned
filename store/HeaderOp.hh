@@ -16,7 +16,7 @@
 #pragma interface "store/HeaderOp.hh"
 #endif
 
-class DllExport HeaderOp {
+class SeamDll HeaderOp {
 public:
   // Header Creation and Access
   static u_int EncodeHeader(BlockLabel l, u_int s, u_int gen) {

@@ -28,7 +28,7 @@ class Backtrace;
 
 #define SCHEDULER_THREAD_PREEMPT_STATUS 1
 
-class DllExport Scheduler {
+class SeamDll Scheduler {
 private:
   static word root;
   static ThreadQueue *threadQueue;

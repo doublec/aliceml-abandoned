@@ -28,7 +28,7 @@ public:
   }
 };
 
-class DllExport Map : public BaseMap<WordKey> {
+class SeamDll Map : public BaseMap<WordKey> {
 protected:
   static word mapLs;
 
