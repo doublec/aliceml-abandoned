@@ -12,6 +12,8 @@
 
 signature PICKLE =
     sig
+	(*--** sizes of constants? *)
+
 	structure C: CONTEXT = EmptyContext
 
 	datatype value =
@@ -57,6 +59,7 @@ signature PICKLE =
 	  | PutFun of id * idRef vector * function * instr
 	  | AppPrim of idDef * string * idRef vector * instr option
 	  | AppVar of idDef args * idRef * idRef args * instr option
+	  | AppConst of idDef args * value * idRef args * instr option
 	  | GetRef of id * idRef * instr
 	  | GetTup of idDef vector * idRef * instr
 	  | Raise of idRef
