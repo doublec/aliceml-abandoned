@@ -62,7 +62,7 @@ OBJS = $(SRCS:%.cc=%.o)
 
 all: $(OBJS)
 	$(LD) $(CXXFLAGS) -o stow.exe $(OBJS) \
-        -L$(TOPDIR)/adt -L$(TOPDIR)/store -ladt -lstore
+	-L$(TOPDIR)/adt -L$(TOPDIR)/store -ladt -lstore $(EXTRA_LIBS)
 
 store:
 	cd $(TOPDIR)/store && $(MAKE) distclean && $(MAKE)
