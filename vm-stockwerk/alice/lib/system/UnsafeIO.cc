@@ -21,16 +21,16 @@
 #if defined(__MINGW32__) || defined(_MSC_VER)
 #include <windows.h>
 #include <winsock.h>
-#define GetLastError() WSAGetLastError()
+#define GetLastSocketError() WSAGetLastError()
 #define Interruptible(res, call) int res = call; res = res;
 #else
 #include <sys/socket.h>
-#define GetLastError() errno
-#define Interruptible(res, call)		\
-  int res;					\
-  do {						\
-    res = call;					\
-  } while (res < 0 && GetLastError() == EINTR);
+#define GetLastSocketError() errno
+#define Interruptible(res, call)			\
+  int res;						\
+  do {							\
+    res = call;						\
+  } while (res < 0 && GetLastSocketError() == EINTR);
 #endif
 
 #include "store/Store.hh"
@@ -274,7 +274,7 @@ DWORD __stdcall IOSupport::ReaderThread(void *p) {
   loop:
     Interruptible(sent, send(out, &buf[totalSent], count, 0));
     if (sent == SOCKET_ERROR) {
-      std::fprintf(stderr, "send(%d) failed: %d\n", out, GetLastError());
+      std::fprintf(stderr, "send(%d) failed: %d\n", out, GetLastSocketError());
       break;
     }
     count -= sent;
@@ -297,7 +297,7 @@ DWORD __stdcall IOSupport::WriterThread(void *p) {
   while (true) {
     Interruptible(got, recv(in, buf, BUFFER_SIZE, 0));
     if (got == SOCKET_ERROR) {
-      std::fprintf(stderr, "recv(%d) failed: %d\n", in, GetLastError());
+      std::fprintf(stderr, "recv(%d) failed: %d\n", in, GetLastSocketError());
       break;
     }
     if (got == 0)
@@ -306,7 +306,7 @@ DWORD __stdcall IOSupport::WriterThread(void *p) {
   loop:
     DWORD count;
     if (WriteFile(out, &buf[totalWritten], got, &count, 0) == FALSE) {
-      Error("WriteFile failed\n");
+      std::fprintf(stderr, "WriteFile failed: %d\n", GetLastError());
       break;
     }
     totalWritten += count;
@@ -358,7 +358,7 @@ public:
 #endif
     if (rdBytes < 0) {
       // to be done: raise io something here
-      Error("FdIO::Fill: critical io error\n");
+      Error("FdIO::Fill: critical io error");
     } else if (rdBytes == 0) { // eof
       eof = true;
     } else
@@ -681,28 +681,23 @@ word UnsafeIO() {
   // to be done: Windows need sockets here; moved from UnsafeSocket
   WSADATA wsa_data;
   WORD req_version = MAKEWORD(1, 1);
-  if (WSAStartup(req_version, &wsa_data) != 0) {
-    Error("No usable WinSock DLL found");
-  }
+  if (WSAStartup(req_version, &wsa_data) != 0)
+    Error("no usable WinSock DLL found");
   // We need select on stdin
   int sv[2];
-  if (IOSupport::SocketPair(PF_UNIX, SOCK_STREAM, 0, sv) == -1) {
-    std::fprintf(stderr, "UnsafeIO: socket pair failed\n");
-    exit(1);
-  }
+  if (IOSupport::SocketPair(PF_UNIX, SOCK_STREAM, 0, sv) == -1)
+    Error("socket pair failed");
   IOSupport::CreateReader(sv[0], GetStdHandle(STD_INPUT_HANDLE));
   handle = sv[1];
 #else
   handle = fileno(stdin);
   // Try to make stdin nonblocking
   int flags = fcntl(handle, F_GETFL, 0);
-  if (flags == -1) {
-    Error("Unable to query stdin flags\n");
-  }
+  if (flags == -1)
+    Error("unable to query stdin flags");
   flags |= O_NONBLOCK;
-  if (fcntl(handle, F_SETFL, flags) == -1) {
-    Error("Unable to make stdin nonblocking\n");
-  }
+  if (fcntl(handle, F_SETFL, flags) == -1)
+    Error("unable to make stdin nonblocking");
 #endif
   stdinWrapper = new FdIO(handle); //--** also for stdout, stderr
   IOHandler::SetDefaultBlockFD(handle);
