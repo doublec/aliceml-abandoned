@@ -12,7 +12,6 @@
 
 functor
 import
-   BootValue(byNeedFail: ByNeedFail) at 'x-oz://boot/Value'
    Open(pipe text)
 export
    'Unix$': Unix
@@ -21,7 +20,7 @@ define
 
    Unix =
    'Unix'(
-      '$proc': {ByNeedFail rttNotImplemented}
+      '$proc': {Value.byNeedFail rttNotImplemented}
       'execute':
 	 fun {$ Cmd Args} P in
 	    P = {New TextPipe init(cmd: Cmd args: Args)}

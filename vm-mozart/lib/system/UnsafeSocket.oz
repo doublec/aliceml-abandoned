@@ -12,17 +12,16 @@
 
 functor
 import
-   BootValue(byNeedFail: ByNeedFail) at 'x-oz://boot/Value'
    Open(socket)
    System(show)
 export
    'Socket$': Socket
 define
-   Socket = 'Socket'('$t': {ByNeedFail rttNotImplemented}
-		     '$vector': {ByNeedFail rttNotImplemented}
-		     '$elem': {ByNeedFail rttNotImplemented}
-		     '$host': {ByNeedFail rttNotImplemented}
-		     '$port': {ByNeedFail rttNotImplemented}
+   Socket = 'Socket'('$t': {Value.byNeedFail rttNotImplemented}
+		     '$vector': {Value.byNeedFail rttNotImplemented}
+		     '$elem': {Value.byNeedFail rttNotImplemented}
+		     '$host': {Value.byNeedFail rttNotImplemented}
+		     '$port': {Value.byNeedFail rttNotImplemented}
 		     server:
 			fun {$ PortOpt F} Socket Port in
 			   Socket = {New Open.socket init()}

@@ -12,7 +12,6 @@
 
 functor
 import
-   BootValue(byNeedFail: ByNeedFail) at 'x-oz://boot/Value'
    BootName(newUnique: NewUniqueName) at 'x-oz://boot/Name'
    System(printInfo)
    Open(file text)
@@ -39,10 +38,10 @@ define
 
    TextIO =
    'TextIO'(
-      '$instream': {ByNeedFail rttNotImplemented}
-      '$oustream': {ByNeedFail rttNotImplemented}
-      '$vector': {ByNeedFail rttNotImplemented}
-      '$elem': {ByNeedFail rttNotImplemented}
+      '$instream': {Value.byNeedFail rttNotImplemented}
+      '$oustream': {Value.byNeedFail rttNotImplemented}
+      '$vector': {Value.byNeedFail rttNotImplemented}
+      '$elem': {Value.byNeedFail rttNotImplemented}
       'stdIn':
 	 {New TextFile init(name: stdin flags: [read])}
       'openIn':
