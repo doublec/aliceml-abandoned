@@ -1,0 +1,23 @@
+import
+    structure Name
+from "x-alice:/common/Name.ozf"
+
+import
+    structure Label
+from "x-alice:/common/Label.ozf"
+
+import
+    structure Path
+from "x-alice:/common/Path.ozf"
+
+import
+    structure Type
+from "x-alice:/common/Type.ozf"
+
+import
+    structure PathReflection
+from "x-alice:/common/PathReflection.ozf"
+
+import
+    signature TYPE_REFLECTION
+from "x-alice:/common/TYPE_REFLECTION.ozf"

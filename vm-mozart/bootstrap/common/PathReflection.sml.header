@@ -1,14 +1,10 @@
 import
-    structure Stamp
-from "x-alice:/common/Stamp.ozf"
+    structure Name
+from "x-alice:/common/Name.ozf"
 
 import
     structure Label
 from "x-alice:/common/Label.ozf"
-
-import
-    structure Name
-from "x-alice:/common/Name.ozf"
 
 import
     structure Path
@@ -17,3 +13,7 @@ from "x-alice:/common/Path.ozf"
 import
     structure Type
 from "x-alice:/common/Type.ozf"
+
+import
+    signature PATH_REFLECTION
+from "x-alice:/common/PATH_REFLECTION.ozf"

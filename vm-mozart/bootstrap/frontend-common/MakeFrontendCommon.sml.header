@@ -23,8 +23,8 @@ import
 from "x-alice:/frontend-common/MakeElaborationPhase.ozf"
 
 import
-    structure TranslationPhase
-from "x-alice:/frontend-common/TranslationPhase.ozf"
+    structure MakeTranslationPhase
+from "x-alice:/frontend-common/MakeTranslationPhase.ozf"
 
 import
     structure Env

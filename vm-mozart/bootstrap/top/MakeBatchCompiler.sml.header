@@ -63,8 +63,8 @@ import   (*DEBUG*)
 from "x-alice:/frontend-common/MakeElaborationPhase.ozf"
 
 import   (*DEBUG*)
-    structure TranslationPhase
-from "x-alice:/frontend-common/TranslationPhase.ozf"
+    structure MakeTranslationPhase
+from "x-alice:/frontend-common/MakeTranslationPhase.ozf"
 
 import   (*DEBUG*)
     structure FlatteningPhase

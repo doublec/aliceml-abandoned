@@ -1,10 +1,14 @@
 import
-    structure Crash
-from "x-alice:/infrastructure/Crash.ozf"
+    structure Assert
+from "x-alice:/misc/Assert.ozf"
 
 import
     structure MakeHashImpMap
 from "x-alice:/misc/MakeHashImpMap.ozf"
+
+import
+    structure Crash
+from "x-alice:/infrastructure/Crash.ozf"
 
 import
     structure Name

@@ -40,15 +40,18 @@ COMMONSOURCES = \
 	PP_PATH.sig PPPath.sml PP_TYPE.sig PPType.sml FIXITY.sig Fixity.sml \
 	INF.sig Inf.sml PP_INF.sig PPInf.sml INTERMEDIATE_GRAMMAR.sig \
 	MakeIntermediateGrammar.sml IntermediateGrammar.sml \
-	PERVASIVE_TYPE.sig MakePervasiveType.sml PervasiveType.sml
+	PERVASIVE_TYPE.sig MakePervasiveType.sml PervasiveType.sml \
+	LABEL_REFLECTION.sig LabelReflection.sml \
+	PATH_REFLECTION.sig PathReflection.sml \
+	TYPE_REFLECTION.sig TypeReflection.sml
 COMMONFILES = $(COMMONSOURCES:%=common/%)
 
 FRONTENDCOMMONSOURCES = \
 	StringMap.sml ABSTRACT_GRAMMAR.sig MakeAbstractGrammar.sml \
 	AbstractGrammar.sml TypedGrammar.sml ENV.sig Env.sml \
 	ELABORATION_ERROR.sig ElaborationError.sml ELABORATION_PHASE.sig \
-	MakeElaborationPhase.sml TRANSLATION_PHASE.sig TranslationPhase.sml \
-	MakeFrontendCommon.sml
+	MakeElaborationPhase.sml TRANSLATION_PHASE.sig \
+	MakeTranslationPhase.sml MakeFrontendCommon.sml
 FRONTENDCOMMONFILES = $(FRONTENDCOMMONSOURCES:%=frontend-common/%)
 
 FRONTENDSMLSOURCES = \

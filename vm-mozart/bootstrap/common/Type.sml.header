@@ -3,10 +3,6 @@ import
 from "x-alice:/lib/TextIO.ozf"
 
 import
-    structure Crash
-from "x-alice:/infrastructure/Crash.ozf"
-
-import
     structure Assert
 from "x-alice:/misc/Assert.ozf"
 

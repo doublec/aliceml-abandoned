@@ -3,6 +3,14 @@ import
 from "x-alice:/infrastructure/Crash.ozf"
 
 import
+    structure Source
+from "x-alice:/infrastructure/Source.ozf"
+
+import
+    signature SWITCHES
+from "x-alice:/infrastructure/SWITCHES.ozf"
+
+import
     structure EmptyContext
 from "x-alice:/infrastructure/EmptyContext.ozf"
 
@@ -28,12 +36,32 @@ import
 from "x-alice:/common/Stamp.ozf"
 
 import
+    structure Path
+from "x-alice:/common/Path.ozf"
+
+import
     structure Type
 from "x-alice:/common/Type.ozf"
 
 import
     structure Inf
 from "x-alice:/common/Inf.ozf"
+
+import
+    structure PervasiveType
+from "x-alice:/common/PervasiveType.ozf"
+
+import
+    structure LabelReflection
+from "x-alice:/common/LabelReflection.ozf"
+
+import
+    structure PathReflection
+from "x-alice:/common/PathReflection.ozf"
+
+import
+    structure TypeReflection
+from "x-alice:/common/TypeReflection.ozf"
 
 import
     structure StringMap
