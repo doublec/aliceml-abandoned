@@ -358,7 +358,7 @@ define
 	end}
 */
 
-   fun {Translate Filename Import#Export#Body}
+   fun {Translate Filename Import#Body}
       NarratorObject Reporter CS RegDict Prebound ImportReg ExportReg
       State VInstr VInter GRegs Code NLiveRegs
    in
@@ -399,11 +399,7 @@ define
 				      {VirtualString.toAtom Stamp}#
 				      info('from': URL)
 				   end}}
-	  {List.toRecord 'export' {Map Export
-				   fun {$ id(_ _ exId(PN))}
-				      PN#value
-				   end}}
-	  Res}
+	  'export' Res}
       end
    end
 end
