@@ -427,7 +427,7 @@ INSTALL2FILES = \
 $(BUILD2DIRS):
 	mkdir -p $@
 
-build2/%: build1/%
+build2/stow.ozf build2/stoc.ozf: build2/%: build1/%
 	cp $< $@
 
 build2/Default.import: ../../lib/fundamental/Fundamental.import Other.import
