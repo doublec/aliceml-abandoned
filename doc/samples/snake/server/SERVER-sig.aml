@@ -1,0 +1,18 @@
+(* Alice Snake 2.0 - Server
+*
+*  Authors: Benedikt Grundmann / Sebastian Germesin
+*
+*  $Revision$
+*
+*  Last updated: $Date$ by $Author$
+* 
+*
+*)
+
+signature SERVER =
+sig
+
+    val startServer: client_interface -> server_interface
+    (** POST: isSome (#startGame server_interface) *)
+
+end

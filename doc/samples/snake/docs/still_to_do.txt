@@ -1,0 +1,28 @@
+Server:
+
+++Snake
+
+****Arena
+
+****Level
+
+++Participant
+
+Server
+
+****Highscore
+
+****Config   (* magic numbers *)
+
+'Move'
+
+
+GUI (* Start a game GUI *)
+
+
+Client:
+
+GUI
+
+Client (* Remote - GUI *)
+

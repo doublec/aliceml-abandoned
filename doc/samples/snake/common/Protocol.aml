@@ -1,0 +1,102 @@
+(* Alice Snake 2.0 - Protocol
+ *
+ *  Authors: Benedikt Grundmann / Sebastian Germesin
+ *
+ *  $Revision$
+ *
+ *  Last updated: $Date$ by $Author$
+ * 
+ *
+ *)
+import structure Color     from "Color"
+import structure Pos       from "Pos"
+import structure Highscore from "Highscore"
+
+
+structure Protocol =
+struct
+
+    exception Protocol of string
+
+    (* absolute (i.e screen not snake relativ) *)
+    datatype direction =
+        UP
+      | DOWN
+      | LEFT
+      | RIGHT
+
+    datatype field =
+        EMPTY
+      | WALL
+      | GATE of Color.color (* only snakes of this color can pass this gate *)
+      | GOODIE of int       (* number of elements the snake will increase by *)
+      | SNAKE_HEAD of direction * Color.color
+      | SNAKE_BODY of Color.color
+
+    (** the server_interface will be transmitted to the
+        clients by connecting to the server.
+	'disconnect', a procedure with that a
+	client can disconnect himself from the game,
+        with 'play' a client can send his choosen name and
+	color, unless he wants to be in spectating mode,
+        in which case 'watch' has to be called,
+        in a running game the client can turn
+        by calling 'turn'
+    *)
+
+    datatype view_hint = 
+        PREV 
+      | NEXT
+
+    type server_interface = {
+        (* GENERIC *)
+        disconnect:     unit -> unit,
+
+        (* PRE GAME MODE *)
+        play:   string * Color.color -> unit,
+        watch:  unit -> unit,
+        
+        (* PLAY MODE *)
+        turn:   direction -> unit,
+
+        changeView: view_hint -> unit,
+
+        giveUp: unit -> unit,
+        (* user turns in spectator mode *)
+
+        startGame: (unit -> unit) option
+    }
+
+
+    type client_interface = {
+        (* JOIN MODE *)
+        playersJoined :     (string * Color.color) list -> unit,
+        (** [playersJoined nameNcolorList] gets called to inform this
+            client that other players have joined the game. The client
+            should than update his display accordingly including the list
+            of available colors to choose from.
+          *)
+
+        gameStarted :       int * int -> unit,
+	(** sends arena dimensions to client *)
+
+        (* GENERIC *)
+        playerDisconnected : (string * Color.color) option -> unit,
+        abort :              unit    -> unit,
+
+        (* PLAY MODE *)
+        update :            (Pos.pos * field) list -> unit,
+        tick :              Time.time -> unit,
+
+        gameFinished :      Highscore.highscore -> unit,
+        updatePoints :      Highscore.points list -> unit
+    }
+
+    signature SERVER_CONNECTOR =
+    sig
+        val connect :       client_interface -> server_interface  (* Protocol *)
+    end
+
+end
+
+

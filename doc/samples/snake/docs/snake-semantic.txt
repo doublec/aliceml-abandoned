@@ -1,0 +1,81 @@
+MP:
+
+1 client startet einen server
+
+nur dieser priviligerte client (PC) kann das spiel starten, nachdem er die 
+spielparameter ausgewählt hat (Anzahl Level, Timeout, Spielfeldgröße, 
+Goodie-Frequenz, Goodie-Wert, Anzahl Leben, usw) oder die Default
+Werte übernimmt.
+
+andere clients können nur solange connecten, solange das tournament noch nicht
+gestartet ist.
+
+sobald sie ihre farbe, namen und spectator-mode ausgewählt haben, werden die
+eingabefelder inaktiv und die spieler sehen, wer sich noch connected und warten
+auf den beginn des tournaments.
+
+der PC kann auch schon die Werte auswählen und sich anmelden. Ihm wird auch ein
+"Wait"-Fenster angezeigt, wobei er noch auf Start drücken muß um das Tournament
+endgültig zu starten.
+
+während dem spiel haben die unterpriviligerten clients (UCs) nur die Möglich-
+keiten aufzugeben (in den spectator-mode wechseln) oder vollständig sich zu
+disconnecten. Dies wird den anderen Spielern angezeigt. In beiden Fällen
+erhält man keine Punkte und wird nicht in der higshcore verewigt.
+
+Wird ein Client unvorhergesehen disconnected, so wird dies natürlich abgefangen
+und das spiel normal fortgesetzt.
+
+Der PC kann ebenfalls in den spectator-mode wechseln oder aber auch das tournament
+UND den Server beenden.
+
+Im Spectator-mode kann der der Spieler mit den Pfeiltasten zwischen den 
+spielenden Schlangen hin- & herwechseln, oder sich disconnecten.
+
+Ein tournament besteht aus einer Reihe von Leveln, die nacheinander generiert
+werden. sie werden zu beginn eines neuen spiels erzeugt.
+
+Während eines Levels werden jedem Client die bisherigen Punkte des Tournaments
+und die bisherigen Punkte des aktuellen Levels aller Clients angezeigt.
+
+Während jedem Level kann jeder spielende Client (SC) nach folgender Formel
+Punkte erlangen:
+
+P: Platz (als wievielter man ins Tor gelaufen (erster = 0) ist (in diesem Level))
+G: Punkte durch Goodies (Ein standard Goodie enthält 5 Punkte)
+F: Faktor (default: F = 20)
+
+((Anzahl der SCs) - P) * F + G
+
+Sollte man gar nicht ins Tor laufen erhält man 0 Punkte.
+
+Pro Level gibt es einen globalen Timeout, wer innerhalb dieser Zeit sein Tor
+nicht erreicht hat, bekommt keine Punkte.
+
+Zwischen 2 Spielen kann der PC auch das aktuelle Tournament beenden. Es wird
+dann das Tournament normal beendet.
+
+Geänderte Punkte werden immer direkt allen Clients angezeigt. In jedem Level
+werden die Punkte aus dem Level davor übernommen (beim ersten Level eines
+Spieles fängt man mit 0 Punkten an).
+
+Am ende eines spiels wird von dem Server eine neue Highscore berechnet. 
+Diese wird aus der bisherigen Highscore und dem endgültigen Punktestand wie 
+folgt berechnet:
+
+N: max. Anzahl der Einträge in der Highscore
+H: letzte Highscore aus vorherigen Spielen, nach Punkten sortiert
+P: endgültiger Punktestand, nach Punkten sortiert
+
+take(N,merge(H,P))
+
+Die Highscore wird nur auf dem Server verwaltet und gespeichert. Hier werden
+auch die wichtigsten Tournament-Parameter (Anzahl Gegener, Anzahl Level usw.)
+angezeigt.
+
+
+
+SP:
+
+Ein Quickstart für ein MP-Tournament mit unbegrenzter Anzahl Level und begrenzter
+Anzahl Leben.

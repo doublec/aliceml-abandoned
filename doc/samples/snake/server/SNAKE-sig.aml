@@ -1,0 +1,53 @@
+(* Alice Snake 2.0 - Snake abstract data type
+ *
+ *  Authors: Benedikt Grundmann / Sebastian Germesin
+ *
+ *  $Revision$
+ *
+ *  Last updated: $Date$ by $Author$
+ * 
+ *
+ *)
+
+signature SNAKE =
+sig
+    type snake
+    type t = snake
+
+    val snake :     Pos.pos * Protocol.direction -> snake
+    (** [snake (p, d)] returns a snake of length 1 (just the head) 
+        at position [p] with an empty belly looking into direction [d]. *)
+
+    val belly :     snake -> int
+
+    val eat :       snake * int -> unit
+    (** [eat (s, c)] ...
+        PRE: c >= 0
+        POST: belly s = old (belly s) + c
+      *)
+
+    val direction : snake -> Protocol.direction
+    
+    val move :      snake * Protocol.direction -> unit
+    (** [move (s, d)] moves the snake one field into direction [d]
+        unless [d] is opposite to the snakes current direction.
+        In that case the snake is moved in that direction and 
+        it's direction is not changed. If the belly is non empty
+        (> 0) it's decreased by one and the snake's length is increased
+        by the same amount.
+      *) 
+
+    val head :      snake -> Pos.pos
+
+    val body :      snake -> Pos.pos list
+
+    val appBody :   (Pos.pos -> unit) -> snake -> unit
+    (** [appBody f s] is equivalent to [List.app f (body s)], but
+        possibly more efficient
+      *)
+
+    val length :    snake -> int
+    (** [length s] is equivalent to [List.length (body s) + 1], but
+        possibly more efficient
+      *)
+end

@@ -1,0 +1,47 @@
+import structure Color   from "Color"
+
+signature HIGHSCORE =
+sig
+    type highscore
+    type t = highscore
+
+    type entry = 
+	{
+	 name:       string,
+	 color:      Color.color,
+	 points:     int,
+	 player:     int,
+	 level:      int
+	 }
+
+
+    type points = 
+	{ 
+	 name:       string,
+	 color:      Color.color,
+	 points:     int,        (* total points (excluding gamePoints) *)
+	 gamePoints: int         (* points made this game 
+				  but not yet taken home *)
+	 }
+
+    val empty: highscore
+
+    val load:   unit -> highscore
+    (* load the highscore, create a new one iff no highscore exists *)
+
+    val save:   highscore -> unit
+
+    val merge:  highscore * points list -> highscore
+    (** [merge h p] merges the highscore [h] with the result of a tournament 
+        [p] creating a new highscore. [p] does NOT need to be sorted.
+      *)
+
+    val foldl:  (entry * 'a -> 'a) -> 'a -> highscore -> 'a 
+    (** [foldl f init h]
+     
+        Sequentially applies f to the tuple of each highscore entry and the
+	result of the previous application, starting with initial value a. 
+	Folding is performed in decreasing points order.
+      *)
+end
+

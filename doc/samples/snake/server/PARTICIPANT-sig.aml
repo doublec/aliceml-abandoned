@@ -1,0 +1,43 @@
+(* Alice Snake 2.0 - Participant
+*
+*  Authors: Benedikt Grundmann / Sebastian Germesin
+*
+*  $Revision$
+*
+*  Last updated: $Date$ by $Author$
+* 
+*
+*)
+
+import structure Protocol from "../common/Protocol"
+import structure Snake    from "Snake"
+
+signature PARTICIPANT =
+sig
+
+    type id = int
+
+    type player_info = {
+	       points     : int ref,
+               gamePoints : int ref,
+	       name       : string,
+	       color      : Protocol.color,
+	       nextDir    : Snake.direction ref,
+	       deathCount : int ref 
+			(* number of times this snake has died already *)
+		       }
+
+    datatype state =
+	CONNNECTED
+      | PLAYING  of player_info * Snake.snake
+      | FINISHED of player_info * id ref
+      | DEAD     of player_info * id ref
+      | WATCHING of id ref
+      | DISCONNECTED    (* TODO: Do we need it? *)
+
+
+    type participant = (Protocol.client_interface * state ref)
+
+end
+
+

@@ -1,0 +1,122 @@
+import structure Protocol       from "../common/Protocol"
+import structure Participant    from "Participant"
+
+
+structure Server =
+struct
+    
+    datatype state = 
+        ST_JOIN         
+        (* valid calls by a client:
+            disconnect,
+            play,
+            watch,
+         PC may also:
+            startGame
+         *)
+    |   ST_GAME 
+        (* valid calls by a client:
+            disconnect,
+            turn,
+            changeView,
+            giveUp
+         *)
+    |   ST_LEVEL_FINISHED 
+        (* valid calls by a client:
+            disconnect,
+            giveUp
+         *)
+    |   ST_TOURNAMENT_FINISHED
+        (* valid calls by a client:
+            disconnect
+         *)
+
+
+    structure PMap      = MkHashImpMap (Int)
+
+    val participants    = PMap.map ()
+    val state           = ref state
+    
+    val pc_id           = 0
+    
+
+    fun startServer client =
+        let
+            val lock        = Lock.lock ()
+            
+           fun disconnect id = Lock.sync ((fn () => 
+                ) handle PMap.Unknown id => 
+                    raise Protocol ("disconnect: unknown client " ^ 
+                            Int.toString id))
+
+            fun play id = Lock.sync ((fn () => 
+                ()
+                ) handle PMap.Unknown id =>
+                    raise Protocol ("play: unknown client " ^ 
+                            Int.toString id))
+                
+            fun watch id = Lock.sync ((fn () => 
+                ()
+                ) handle PMap.Unknown id =>
+                    raise Protocol ("watch: unknown client " ^ 
+                            Int.toString id))
+
+            fun turn id = Lock.sync ((fn dir => 
+                ()
+                ) handle PMap.Unknown id =>
+                    raise Protocol ("turn: unknown client " ^
+                            Int.toString id))
+
+            fun changeView id = Lock.sync ((fn hint => 
+                ()
+                ) handle PMap.Unknown id =>
+                    raise Protocol ("changeView: unknown client " ^
+                            Int.toString id))
+
+            fun giveUp id = Lock.sync ((fn () => 
+                ()
+                ) handle PMap.Unknown id =>
+                    raise Protocol ("changeView: unknown client " ^
+                            Int.toString id))
+
+            val startGame = Lock.sync (fn () =>
+                ()
+                )
+
+            fun connect id = Lock.sync (fn client_interface =>
+                (* connect is only called by UCs. *)
+                let (* determine id *)
+                    val id      = PMap.size participants 
+                    val uc      = (client_interface, ref CONNECTED)
+                in
+                    (* insert into participant map *)
+                    PMap.insertDisjoint (participants, id, uc);
+                    (* return adapted server interface.
+                       NOTE: UCs are not allowed to call startGame
+                        therefore startGame = NONE
+                    *)
+                    {   disconnect  = disconnect id,
+                        play        = play id,
+                        turn        = turn id,
+                        changeView  = changeView id,
+                        giveUp      = giveUp id,
+                        startGame   = NONE
+                    }
+                end)
+            
+        (* create PC representation & return special
+           PC interface
+         *)
+            val pc  =   (client, ref CONNECTED)
+        in
+            PMap.insertDisjoint (participants, pc_id, pc);
+            {   disconnect  = disconnect pc_id,
+                play        = play pc_id,
+                turn        = turn pc_id,
+                changeView  = changeView pc_id,
+                giveUp      = giveUp pc_id,
+                startGame   = SOME startGame
+            }
+        end
+        
+end

@@ -1,0 +1,64 @@
+(* Alice Snake 2.0 - GUI
+*
+*  Authors: Benedikt Grundmann / Sebastian Germesin
+*
+*  $Revision$
+*
+*  Last updated: $Date$ by $Author$
+* 
+*
+*)
+
+signature GUI =
+sig
+    type gui
+
+    type initial_ui_out = 
+	{
+	 quit : unit -> unit,
+	 connect : string -> string option,
+	 startServer : unit -> string option
+	 }
+
+    type join_ui_out =
+	{
+	 quit : unit -> unit,
+	 play : string * Color.color -> string option,
+	 watch : unit -> string option
+	 }
+
+    type join_ui_in =
+	{
+	 playersJoined : (string * Color.color) list -> unit,
+	 playerDisconnected : (string * Color.color) option -> unit,
+	 gameStarted : unit -> unit
+	 }
+
+    type game_ui_out =
+	{
+	 quit : unit -> unit,
+	 turn : Protocol.direction -> unit,
+	 giveUp : unit -> unit,
+	 changeView : Protocol.view_hint -> unit
+	 }
+
+    type game_ui_in = 
+	{
+	 update : (Pos.pos * field) list -> unit,
+	 updatePoints : Highscore.points list -> unit,
+	 gameFinished : Highscore.highscore -> unit
+	 }
+
+    val gui: unit -> gui
+
+    val displayInitUI : gui * initial_ui_out -> unit
+(*
+    val displayJoinUI : gui * join_ui_out -> join_ui_in
+
+    val displayGameUI : gui * game_ui_out -> game_ui_in
+*)
+
+    val displayJoinUI : gui * join_ui_out * join_ui_in Promise.promise -> unit
+
+    val displayGameUI : gui * game_ui_out * game_ui_in Promise.promise -> unit
+end

@@ -1,0 +1,54 @@
+(* Alice Snake 2.0 - Arena
+ *
+ *  Authors: Benedikt Grundmann / Sebastian Germesin
+ *
+ *  $Revision$
+ *
+ *  Last updated: $Date$ by $Author$
+ * 
+ *
+ *)
+
+import structure Protocol from "../common/Protocol"
+import structure Snake    from "Snake"
+import structure Pos      from "../common/Pos"
+
+
+signature ARENA =
+sig
+
+    type arena = Protocol.field Array2.array (* MUTABLE *)
+
+
+    type config = {
+        dimensions: int * int,
+	players: int
+        (* MAGIC NUMBERs ... *)
+    }
+    
+    val random :    config -> arena * Pos.pos list
+
+
+    val placeSnakes : arena * Snake.snake list -> 
+            Snake.snake list * Snake.snake list
+    (** places the snakes on the arena, returns all snakes
+       which died and all finished.
+       
+       PRE: arena contains NO snakes 
+       POST: arena contains NO snake which is contained
+       in the first returned list. 
+     *)
+
+    val removeSnakes :  arena * Snake.snake list -> unit
+    (** removes all snakes *)
+
+    val diff : arena * arena -> (Pos.pos * Protocol.field) list
+
+end
+
+
+
+
+
+
+

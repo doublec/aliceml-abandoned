@@ -1,0 +1,44 @@
+(* Alice Snake 2.0 - Config
+*
+*  Authors: Benedikt Grundmann / Sebastian Germesin
+*
+*  $Revision$
+*
+*  Last updated: $Date$ by $Author$
+* 
+*
+*)
+
+
+
+signature CONFIG =
+sig
+
+    type config = {
+	 timeout : time,   (* after how many seconds a game has to end *)
+	 dimensions : int * int, 
+		   (* the dimensions of the arenas created in the tounament *)
+	 goodie : int, (* the average amount of appearing goodies *)
+	 lives : int, (* the amount of lives a client has  in the tournament *)
+	 maxPlayer : int, 
+	      (* how many clients can actively participate in the tournament *)
+	 goodieFrequency : int (* how often goodies appear *)
+}
+
+    val defaultSingle : config
+    (* the default configuration with
+       timeout = T,
+       dimensions = (R,C),
+       goodie = G,
+       lives = L,
+       maxPlayer = M,
+       goodieFrequency = F
+    *)
+
+    val defaultMulti : config
+
+    val saveConfig : config -> unit
+
+    val loadConfig : unit -> config
+
+end
