@@ -24,15 +24,17 @@ structure DeadCodeEliminationPhase :> DEAD_CODE_ELIMINATION_PHASE =
 	      | _ => raise Crash.Crash "DeadCodeEliminationPhase.killSet"
 
 	fun elim (info: stm_info, body) =
-	    case !(#liveness info) of
-		Kill fromSet =>
-		    let
-			val toSet = killSet body
-		    in
-			StampSet.app (fn stamp =>
-				      StampSet.insert (toSet, stamp)) fromSet
-		    end
-	      | _ => ()
+	    (*--** do not merge kills into a SharedStm *)
+	    (case !(#liveness info) of
+		 Kill fromSet =>
+		     let
+			 val toSet = killSet body
+		     in
+			 StampSet.app (fn stamp =>
+				       StampSet.insert (toSet, stamp)) fromSet
+		     end
+	       | _ => ();   (*--** when does this happen? *)
+	     body)
 
 	fun killIdDef (idDef as IdDef (Id (_, stamp, _)), set) =
 	    if StampSet.member (set, stamp) then
@@ -63,37 +65,37 @@ structure DeadCodeEliminationPhase :> DEAD_CODE_ELIMINATION_PHASE =
 	  | deadExp (RefAppExp (_, _)) = NONE
 	  | deadExp exp = SOME exp
 
-	fun liveBody (ValDec (info, idDef, exp)::rest) =
+	fun liveBody (ValDec (info, idDef, exp)::rest, shared) =
 	    let
-		val rest = liveBody rest
+		val rest = liveBody (rest, shared)
 	    in
 		case killIdDef (idDef, killSet rest) of
 		    idDef as IdDef _ =>
-			ValDec (info, idDef, liveExp exp)::rest
+			ValDec (info, idDef, liveExp (exp, shared))::rest
 		  | Wildcard =>
 			(case deadExp exp of
 			     SOME exp =>
 				 ValDec (info, Wildcard, exp)::rest
-			   | NONE => (elim (info, rest); rest))
+			   | NONE => elim (info, rest))
 	    end
-	  | liveBody (RefAppDec (info, idDef, id)::rest) =
+	  | liveBody (RefAppDec (info, idDef, id)::rest, shared) =
 	    let
-		val rest = liveBody rest
+		val rest = liveBody (rest, shared)
 	    in
 		RefAppDec (info, killIdDef (idDef, killSet rest), id)::rest
 	    end
-	  | liveBody (TupDec (info, idDefs, id)::rest) =
+	  | liveBody (TupDec (info, idDefs, id)::rest, shared) =
 	    let
-		val rest = liveBody rest
+		val rest = liveBody (rest, shared)
 		val set = killSet rest
 		val idDefs =
 		    Vector.map (fn idDef => killIdDef (idDef, set)) idDefs
 	    in
 		TupDec (info, idDefs, id)::rest
 	    end
-	  | liveBody (ProdDec (info, labelIdDefVec, id)::rest) =
+	  | liveBody (ProdDec (info, labelIdDefVec, id)::rest, shared) =
 	    let
-		val rest = liveBody rest
+		val rest = liveBody (rest, shared)
 		val set = killSet rest
 		val labelIdDefVec =
 		    Vector.map (fn (label, idDef) =>
@@ -101,35 +103,35 @@ structure DeadCodeEliminationPhase :> DEAD_CODE_ELIMINATION_PHASE =
 	    in
 		ProdDec (info, labelIdDefVec, id)::rest
 	    end
-	  | liveBody (body as [RaiseStm (_, _)]) = body
-	  | liveBody (body as [ReraiseStm (_, _)]) = body
-	  | liveBody [TryStm (info, tryBody, idDef, handleBody)] =
-	    (case liveBody tryBody of
+	  | liveBody (body as [RaiseStm (_, _)], _) = body
+	  | liveBody (body as [ReraiseStm (_, _)], _) = body
+	  | liveBody ([TryStm (info, tryBody, idDef, handleBody)], shared) =
+	    (case liveBody (tryBody, shared) of
 		 [EndTryStm (_, body)] => body
 	       | tryBody =>
 		     let
-			 val handleBody = liveBody handleBody
+			 val handleBody = liveBody (handleBody, shared)
 			 val idDef = killIdDef (idDef, killSet handleBody)
 		     in
 			 [TryStm (info, tryBody, idDef, handleBody)]
 		     end)
-	  | liveBody [EndTryStm (info, body)] =
-	    [EndTryStm (info, liveBody body)]
-	  | liveBody [EndHandleStm (info, body)] =
-	    [EndHandleStm (info, liveBody body)]
-	  | liveBody [TestStm (info, id, tests, body)] =
+	  | liveBody ([EndTryStm (info, body)], shared) =
+	    [EndTryStm (info, liveBody (body, shared))]
+	  | liveBody ([EndHandleStm (info, body)], shared) =
+	    [EndHandleStm (info, liveBody (body, shared))]
+	  | liveBody ([TestStm (info, id, tests, body)], shared) =
 	    let
 		val tests =
 		    case tests of
 			LitTests tests =>
 			    LitTests (Vector.map
-				      (fn (lit, body) => (lit, liveBody body))
-				      tests)
+				      (fn (lit, body) =>
+				       (lit, liveBody (body, shared))) tests)
 		      | TagTests tests =>
 			    TagTests (Vector.map
 				      (fn (label, tag, conArgs, body) =>
 				       let
-					   val body = liveBody body
+					   val body = liveBody (body, shared)
 					   val set = killSet body
 					   val conArgs =
 					       killConArgs (conArgs, set)
@@ -140,7 +142,7 @@ structure DeadCodeEliminationPhase :> DEAD_CODE_ELIMINATION_PHASE =
 			    ConTests (Vector.map
 				      (fn (con, conArgs, body) =>
 				       let
-					   val body = liveBody body
+					   val body = liveBody (body, shared)
 					   val set = killSet body
 					   val conArgs =
 					       killConArgs (conArgs, set)
@@ -151,42 +153,49 @@ structure DeadCodeEliminationPhase :> DEAD_CODE_ELIMINATION_PHASE =
 			    VecTests (Vector.map
 				      (fn (idDefs, body) =>
 				       let
-					   val body = liveBody body
+					   val body = liveBody (body, shared)
 					   val set = killSet body
 				       in
 					   (Vector.map (fn idDef =>
 							killIdDef (idDef, set))
 					    idDefs, body)
 				       end) tests)
-		val body = liveBody body
 	    in
-		[TestStm (info, id, tests, body)]
+		[TestStm (info, id, tests, liveBody (body, shared))]
 	    end
-	  | liveBody [SharedStm (info, body, stamp)] =
-	    [SharedStm (info, liveBody body, stamp)]
-	  | liveBody [ReturnStm (info, exp)] =
-	    [ReturnStm (info, liveExp exp)]
-	  | liveBody [IndirectStm (info, ref (SOME body))] =
-	    (elim (info, body); liveBody body)
-	  | liveBody [IndirectStm (_, ref NONE)] =
-	    raise Crash.Crash "DeadCodeEliminationPhase.liveBody 1"
-	  | liveBody [ExportStm (info, exp)] =
-	    [ExportStm (info, liveExp exp)]
-	  | liveBody ((RaiseStm (_, _) | ReraiseStm (_, _) |
-		       TryStm (_, _, _, _) | EndTryStm (_, _) |
-		       EndHandleStm (_, _) | TestStm (_, _, _, _) |
-		       SharedStm (_, _, _) | ReturnStm (_, _) |
-		       IndirectStm (_, _) | ExportStm (_, _))::_::_ | nil) =
+	  | liveBody ([SharedStm (info, body, stamp)], shared) =
+	    (*--** remove trivial shared statements? *)
+	    (case StampMap.lookup (shared, stamp) of
+		 SOME body => body
+	       | NONE =>
+		     let
+			 val body' =
+			     [SharedStm (info, liveBody (body, shared), stamp)]
+		     in
+			 StampMap.insert (shared, stamp, body'); body'
+		     end)
+	  | liveBody ([ReturnStm (info, exp)], shared) =
+	    [ReturnStm (info, liveExp (exp, shared))]
+	  | liveBody ([IndirectStm (info, ref bodyOpt)], shared) =
+	    elim (info, liveBody (valOf bodyOpt, shared))
+	  | liveBody ([ExportStm (info, exp)], shared) =
+	    [ExportStm (info, liveExp (exp, shared))]
+	  | liveBody (((RaiseStm (_, _) | ReraiseStm (_, _) |
+			TryStm (_, _, _, _) | EndTryStm (_, _) |
+			EndHandleStm (_, _) | TestStm (_, _, _, _) |
+			SharedStm (_, _, _) | ReturnStm (_, _) |
+			IndirectStm (_, _) | ExportStm (_, _))::_::_ | nil),
+		      _) =
 	    raise Crash.Crash "DeadCodeEliminationPhase.liveBody 2"
-	and liveExp (FunExp (info, stamp, funFlags, args, body)) =
+	and liveExp (FunExp (info, stamp, funFlags, args, body), shared) =
 	    let
-		val body = liveBody body
+		val body = liveBody (body, shared)
 	    in
-		FunExp (info, stamp, funFlags, killArgs (args, killSet body),
-			body)
+		FunExp (info, stamp, funFlags,
+			killArgs (args, killSet body), body)
 	    end
-	  | liveExp exp = exp
+	  | liveExp (exp, _) = exp
 
 	fun translate () (_, component as (imports, (body, sign))) =
-	    (imports, (liveBody body, sign))
+	    (imports, (liveBody (body, StampMap.new ()), sign))
     end
