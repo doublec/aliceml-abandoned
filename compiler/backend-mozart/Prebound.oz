@@ -218,8 +218,8 @@ define
 	       X = Y
 	    catch _ then
 	       {Exception.raiseError alice(BuiltinTable.'Hole.Hole' pos('Prebound.oz' 220 15))}
-	       unit
 	    end
+	    unit
 	 end
       'Hole.future':
 	 fun {$ X}
