@@ -426,8 +426,10 @@ structure Url :> URL =
 		String.concat l
 	    end
 (* The following creates incorrect dependencies in alicedep.
- * Besides, nobody should use this feature. *)
-(*	  | toLocalFile ({scheme = SOME "x-alice", authority = NONE,
+ * Besides, nobody should use this feature.
+ * ...
+ * But alice cannot be compiled now ! I put the feature back, temporarily. *)
+	  | toLocalFile ({scheme = SOME "x-alice", authority = NONE,
 			  device = NONE, path, ...}: url) =
 	    let
 		val windows = Config.platform = Config.WIN32
@@ -437,7 +439,7 @@ structure Url :> URL =
 				   nil path
 	    in
 		String.concat (Config.homeDir ()::slash::l)
-	    end *)
+	    end
 
 	  | toLocalFile _ = raise NotLocal
 
