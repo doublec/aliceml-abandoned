@@ -265,18 +265,60 @@ Die Struktur ``Gtk'' stellt folgende Konstanten zu Verf"ugung:
       ein \texttt{int} verlangen, aber trotzdem ein TRUE oder FALSE erwarten.
 \end{itemize}
 
-\subsection{String-Listen}
+\subsection{String-Listen und -Arrays}
 
 Bei manchen Funktionen wird ein Parameter vom Typ \texttt{GList*} oder 
 \texttt{GSList*} nicht auf den Typ \texttt{object list}, sondern auf den Typ
 \texttt{string list} abgebildet.
 So erwartet zum Beispiel Gtk.comboSetPopdownStrings eine \texttt{string list}.
 
+\subsection{Konstruktor-Funktionen}
+
+Einige Datenstrukturen wie GdkColor werden nicht "uber eine 
+Konstruktor-Funktion erstellt, sondern werden unter C einfach direkt als
+Variable deklariert, was in Alice nicht m"oglich ist. F"ur andere
+Datenstrukturen wiederum gibt es Konstruktoren, die leider sehr unpraktisch
+f"ur den Gebrauch in Alice sind. Deshalb bietet die Schnittstelle folgende
+zus"atzliche/ge"anderte Konstruktoren an:
+
+\begin{itemize}
+\item val Gdk.colorNew : int * int * int -> object\\
+      liefert einen Zeiger auf eine neu erstellte GdkColor-Struktur, die mit
+      den angebenen Werten f"ur rot, gr"un und blau initialisiert ist.
+\item val Gdk.rectangleNew : int * int * int * int -> object\\
+      liefert einen Zeiger auf eine neu erstellte GdkRectangle-Struktur, die
+      mit den angegeben Werten f"ur x1, y1, x2 und y2 initialisiert ist.
+\item val Gtk.textIterNew : unit -> object\\
+      liefert einen Zeiger auf einen neuen, unintialisierten GtkTextIter.
+\item val Gtk.treeIterNew : unit -> object\\
+      liefert einen Zeiger auf einen neuen, unintialisierten GtkTreeIter.
+\item val Gtk.treeStoreNew : unit -> object\\
+      liefert einen Zeiger auf einen GtkTreeStore. Die Baumrepr"asentation
+      enth"alt dabei nur eine Spalte von Typ string.
+\item val GnomeCanvas.itemNew : object * int -> object\\
+      verh"alt sich wie die urspr"ungliche Version mit der Ausnahme, dass
+      keine Attribute angegeben werden k"onnen. Dies kann mit
+      GnomeCanvas.itemSetValist geschehen.
+\end{itemize}
+
+\subsection{Zus"atzliche Funktionen}
+
+Folgende Funktionen sind zus"atzlich verf"ugbar:
+
+\begin{itemize}
+\item val Gtk.treeViewGetSelectedString : object -> string\\
+      liefert den Eintrag, der im angegeben Baum markiert ist, oder ````, falls
+      nichts markiert ist.
+\item val GnomeCanvas.pointsSetCoords : object * int * int\\
+      Beispiel: pointsSetCoords(p, 4, 100) setzt die 4. Koordinate im
+      GnomeCanvasPoints-Array p auf 100 (Z"ahlung beginnt bei 0).
+\end{itemize}
+
 \subsection{Nicht verf"ugbare Funktionen}
 
 Folgende Funktionen sind nicht verf"ugbar:
 \begin{itemize}
-\item Alle Funktionen, die nur als Makro definiert sind.
+\item Alle Funktionen, die nur als C-Makro definiert sind.
 \item gtk\_true und gtk\_false. Ihr Verhalten l"asst sich aber mit
       \texttt{(fn () => Gtk.TRUE)} bzw. \texttt{(fn () => Gtk.FALSE)}
       nachbilden.
