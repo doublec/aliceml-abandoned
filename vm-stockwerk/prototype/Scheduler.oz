@@ -15,6 +15,7 @@ import
    System(showError)
    Application(exit)
    PrimitiveTable(table)
+   ByneedInterpreter(interpreter)
 export
    Object
 define
@@ -74,7 +75,7 @@ define
 				'thread'(args: Args stack: TaskStack)})
 	 [] exception(Debug Exn TaskStack) then
 	    Scheduler, Handle(Debug Exn TaskStack)
-	 [] request(transient(TransientState) Args TaskStack) then
+	 [] request(Transient=transient(TransientState) Args TaskStack) then
 	    case {Access TransientState} of hole(_) then
 	       %--** currently an Alice-specific exception:
 	       Scheduler, Handle(nil PrimitiveTable.table.'Hole.Hole'
@@ -87,17 +88,16 @@ define
 	       {Assign TransientState
 		future([{Adjoin @CurrentThread
 			 'thread'(args: Args stack: TaskStack)}])}
-	       Scheduler, Byneed(TransientState Closure)
+	       Scheduler, Byneed(Transient Closure)
 	    [] cancelled(Exn) then
 	       Scheduler, Handle(nil Exn TaskStack)
 	    end
 	 end
       end
-      meth Byneed(TransientState Closure)
+      meth Byneed(Transient Closure)
+	 %--** when can this be done in the current thread?
 	 case Closure of closure(Function ...) then
-	    TaskStack0 = nil
-	    %--** push a handler task (TransientState := cancelled(...))
-	    %--** push a new task (TransientState := ref(...))
+	    TaskStack0 = [byneedFrame(ByneedInterpreter.interpreter Transient)]
 	    TaskStack = {Function.1.pushCall Closure TaskStack0}
 	 in
 	    Scheduler, enqueue('thread'(args: args()
