@@ -118,7 +118,7 @@ structure ToJasmin =
 				    ()
 				    else
 					if notfused then
-					    assignNextFree 2
+					    assignNextFree 1
 					else
 					    ();
 				if register+1<Array.length(!to)
@@ -183,15 +183,19 @@ structure ToJasmin =
 			else default
 		    end
 
-		fun fuse (a,b) =
-		    (if Array.sub(!defines, b)<2 then
-			 (Array.update(!fusedwith, b, a);
-			  if Array.sub (!from, a) > Array.sub (!from, b)
-			      then Array.update(!from, a, Array.sub(!from, b)) else ();
-			   if Array.sub (!to, a) > Array.sub (!to, b)
-			       then Array.update(!to, a, Array.sub(!to, b)) else ();
-				   true)
-		     else false)
+		fun fuse (x,u) =
+		    let
+			val (a,b) = if u = 1 then (u,x) else (x,u)
+		    in
+			(if Array.sub(!defines, b)<2 then
+			     (Array.update(!fusedwith, b, a);
+			      if Array.sub (!from, a) > Array.sub (!from, b)
+				  then Array.update(!from, a, Array.sub(!from, b)) else ();
+				      if Array.sub (!to, a) > Array.sub (!to, b)
+					  then Array.update(!to, a, Array.sub(!to, b)) else ();
+					      true)
+			 else false)
+		    end
 
 		fun countDefine reg =
 		    Array.update (!defines, reg,
@@ -294,7 +298,9 @@ structure ToJasmin =
 		     prepareLifeness (insts,pos+1))
 		  | prepareLifeness (_::insts, pos) =
 		    prepareLifeness (insts,pos+1)
-		  | prepareLifeness (nil, _) = ()
+		  | prepareLifeness (nil, pos) =
+		(* Register 0 must not be overwritten. *)
+		    JVMreg.use (0,pos)
 
 		fun lifeness (Goto label'::insts, pos) =
 		    (JVMreg.addJump(pos, label');
@@ -386,6 +392,11 @@ structure ToJasmin =
 		    let
 			val d' = fuse (Store, flattened)
 		    in
+			(* Register 0 ('this'-Pointer) and
+			 register 1 (formal Parameter) are
+			 defined when entering a method *)
+			JVMreg.define(0, 0);
+			JVMreg.define(1, 0);
 			prepareLifeness (d', 0);
 			lifeness (d', 0);
 			JVMreg.assignAll();
