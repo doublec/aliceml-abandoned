@@ -10,6 +10,8 @@
  *   $Revision$
  *)
 
+import structure Url from "Url"
+
 signature RESOLVER_HANDLER =
     sig
 	type handler
@@ -22,6 +24,7 @@ signature RESOLVER_HANDLER =
 	val cache: string -> handler
 	val prefix: string * string -> handler
 	val pattern: string * string -> handler    (* Syntax *)
+	val custom: string * (string -> Url.t option) -> handler
 
 	val parse: string -> handler list          (* Syntax *)
     end
