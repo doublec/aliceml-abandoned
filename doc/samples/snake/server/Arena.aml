@@ -9,10 +9,10 @@
  *
  *)
 
+import signature ARENA    from "ARENA-sig"
 import structure Protocol from "../common/Protocol"
 import structure Snake    from "Snake"
 import structure Pos      from "../common/Pos"
-import signature ARENA    from "ARENA-sig"
 import structure Random   from "x-alice:/lib/utility/Random"
 
 structure Arena :> ARENA =
@@ -149,15 +149,66 @@ struct
 	    (arena,startpointlist)
 	end
 
-    val pregamefield  = ref (Array2.array(0,0,P.EMPTY))
-    val postgamefield = ref (Array2.array(0,0,P.EMPTY))
-
-    fun placeSnakes (a,snakes) =
+    fun placeSnakes (a,snakes,directions) =
 	let
-	    val _ = pregamefield := a
-	    val testsnakes = List.foldl (fn(s,xs) => s::xs) nil snakes
+	    val died = ref nil
+	    val halffin = ref nil
+	    val fin = ref nil
+
+	    fun merge nil nil xs = xs
+	      | merge (s::slist) (d::dlist) xs = 
+		                merge slist dlist ((s,d)::xs)
+
+	    val movedsnakes = List.map 
+		                (fn x => Snake.move x (* snakes net mutable machen *)) 
+				      (merge snakes directions nil)
+
+	    fun placeHead snake =
+		let
+		    val (r,c) = Snake.head snake
+		    val color = Snake.color snake
+		    val dir   = Snake.direction snake
+		    val collObject = Array2.sub(a,r,c)
+		    fun hitSnake s     nil     = false
+		      | hitSnake s (sn::slist) = 
+			let
+			    val bodyhead = (Snake.head sn)::(Snake.body sn)
+			in
+			    if List.exists (fn x => Snake.head s = x) bodyhead
+				then true
+			    else hitSnake s slist
+			end
+			
+		    val othersnakes = 
+			    List.filter (fn x => not (snake = x)) movedsnakes
+		    val hit = hitSnake snake othersnakes
+		in
+		    if hit
+			then died := snake::(!died)
+		    else case collObject of
+			P.EMPTY    => ()
+		      | P.GOODIE n => Snake.eat snake
+		      | P.WALL     => died := snake::(!died)
+		      | P.GATE c   => if c = color
+					  then halffin := snake::(!halffin)
+				      else died := snake::(!died)
+		      |    _       => died := snake::(!died);
+		      Array2.update(a,r,c,P.SNAKE_HEAD(dir,color))
+		end
+
+	    fun placeBody snake = 
+		let
+		    val color = Snake.color snake
+		    val body =  Snake.body snake
+		in
+		    List.app (fn(r,c) => 
+			      Array2.update(a,r,c,P.SNAKE_BODY(color))) body
+		end
+		
 	in
-            raise Fail "not yet implemented"
+	    List.app placeHead movedsnakes;
+	    List.app placeBody movedsnakes;
+	    (died,halffin,fin)
 	end
     
     fun emptyCopy a =

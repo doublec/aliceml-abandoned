@@ -31,7 +31,7 @@ sig
 
     val emptyCopy : arena -> arena
 
-    val placeSnakes : arena * Snake.snake list -> 
+    val placeSnakes : arena * Snake.snake list * Protocol.direction list -> 
             Snake.snake list * Snake.snake list * Snake.snake list
     (** places the snakes on the arena, returns all snakes
        which died, half-finished and all totally finished.
