@@ -330,24 +330,20 @@ struct
 	  Gdk.GDK_BUTTON_PRESS({button = 1, ...} as r) => 
 		    let 
 			val (x,y) = calcAbsolutePosition(#x(r),#y(r))
-			val (node_x,node_y,node) = 
-			    NodeSearch.search(Dictionaries.dict,x,y)
-			val (node_x_real,node_y_real) = 
-					     (Real.fromInt(font_width* node_x),
-					      Real.fromInt(font_height *node_y))      
+			val node = 
+			    NodeSearch.search(Dictionaries.dict,x,y)      
 		    in 
 		       (case node of 
 			    SOME(n) => 
 				let
-				    val x2 = Real.+(node_x_real,
-						    Real.fromInt(font_width 
-								 * Layout.get_xdim(n)))
-				    val y2 = Real.+ (node_y_real,
-						     Real.fromInt(font_height 
-								  *Layout.get_ydim(n)))
-				    val re =createRectangle(lowest_layer,
-							    node_x_real,
-							    node_y_real,
+				    val group = Helper.getGroup(n)
+				    val x2 = Real.fromInt(font_width 
+					    	* Layout.get_xdim(n))
+				    val y2 = Real.fromInt(font_height 
+						  *Layout.get_ydim(n))
+				    val re =createRectangle(group,
+							    0.0,
+							    0.0,
 							    x2,
 							    y2)
 				    val _ = GtkCanvas.itemLowerToBottom(re)
@@ -363,7 +359,7 @@ struct
 	| Gdk.GDK_BUTTON_PRESS({button = 3, ...} as r) =>
 		    let
 			val (x,y) = calcAbsolutePosition(#x(r),#y(r))
-			val (node_x,node_y,node) = 
+			val node = 
 			    NodeSearch.search(Dictionaries.dict,x,y)
 		    in
 		    (case node of 
