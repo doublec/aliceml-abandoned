@@ -19,7 +19,111 @@ define
    %% Type Variables
    %% To come soon
 
+   %% Global Helper Functions
+   local
+      fun {MakeOzValue V}
+	 case V
+	 of 'SINGLE'(X)  then X
+	 [] 'RANGE'(L U) then L#U
+	 end
+      end
+      fun {Cons X Y}
+	 {MakeOzValue X}|Y
+      end
+   in
+      fun {AliceDomainToOzDomain D}
+	 {Record.foldR D Cons nil}
+      end
+   end
+   fun {OzDomainToAliceDomain Ds}
+      V = {MakeTuple '#[]' {Length Ds}}
+   in
+      {List.forAllInd Ds proc {$ X I}
+			    V.I = case X
+				  of L#U then 'RANGE'(L U)
+				  else 'SINGLE'(X)
+				  end
+			 end}
+      V
+   end
+   
    %% Interface Functions
+   fun {FsFun D1 D2}
+      {FS.var.bounds {AliceDomainToOzDomain D1} {AliceDomainToOzDomain D2}}
+   end
+   fun {FsVectorFun D1 D2 I}
+      {FS.var.tuple.bounds '#[]' I {AliceDomainToOzDomain D1} {AliceDomainToOzDomain D2}}
+   end
+   fun {DeclFun _}
+      {FS.var.decl}
+   end
+
+   %% Create AliceInt Interface
+   local
+      fun {MinFun M D}
+	 {FS.int.min M D}
+	 unit
+      end
+      fun {MaxFun M D}
+	 {FS.int.max M D}
+	 unit
+      end
+      fun {ConvexFun M}
+	 {FS.int.convex M}
+	 unit
+      end
+      fun {MatchFun M Dv}
+	 {FS.int.match M Dv}
+	 unit
+      end
+      fun {MinNFun M DV}
+	 {FS.int.minN M DV}
+	 unit
+      end
+      fun {MaxNFun M DV}
+	 {FS.int.maxN M DV}
+	 unit
+      end
+   in
+      AliceInt = 'Int'('min'    : MinFun
+		       'max'    : MaxFun
+		       'convex' : ConvexFun
+		       'match'  : MatchFun
+		       'minN'   : MinNFun
+		       'maxN'   : MaxNFun)
+   end
+
+   fun {ComplFun M1 M2}
+      {FS.compl M1 M2}
+      unit
+   end
+   fun {ComplInFun M1 M2 M3}
+      {FS.complIn M1 M2 M3}
+      unit
+   end
+   fun {IncludeFun D M}
+      {FS.include D M}
+      unit
+   end
+   fun {ExcludeFun D M}
+      {FS.exclude D M}
+      unit
+   end
+   fun {CardFun M D}
+      {FS.card M D}
+      unit
+   end
+   fun {CardRangeFun I1 I2 M}
+      {FS.cardRange I1 I2 M}
+      unit
+   end
+   fun {IsInFun I M}
+      {FS.isIn I M}
+   end
+   fun {EmptyFun M}
+      {FS.empty M}
+   end
+   
    fun {DiffFun M1 M2 M3}
       {FS.diff M1 M2 M3}
       unit
@@ -64,12 +168,108 @@ define
       {FS.partition MV M}
       unit
    end
+
+   %% Create Value Interface
+   local
+      fun {EmptyFun _}
+	 {FS.value.empty}
+      end
+      fun {UniversalFun _}
+	 {FS.value.universal}
+      end
+      fun {SinglFun I}
+	 {FS.value.singl I}
+      end
+      fun {MakeFun S}
+	 {FS.value.make {AliceDomainToOzDomain S}}
+      end
+      fun {IsFun V}
+	 {FS.value.is V}
+      end
+   in
+      AliceValue = 'Value'('empty'     : EmptyFun
+			   'universal' : UniversalFun
+			   'singl'     : SinglFun
+			   'make'      : MakeFun
+			   'is'        : IsFun)
+   end
+
+   %% Create Reified Interface
+   local
+      fun {IsInFun I M B}
+	 {FS.reified.isIn I M B}
+	 unit
+      end
+      fun {AreInFun Is M Ds}
+	 {FS.reified.areIn Is M Ds}
+	 unit
+      end
+      fun {IncludeFun D M B}
+	 {FS.reified.include D M B}
+	 unit
+      end
+      fun {EqualFun M1 M2 B}
+	 {FS.reified.equal M1 M2 B}
+	 unit
+      end
+      fun {PartitionFun Ms Is M Bs}
+	 {FS.reified.partition Ms Is M Bs}
+	 unit
+      end
+   in
+      AliceReified = 'Reified'('isIn'      : IsInFun
+			       'areIn'     : AreInFun
+			       'include\'' : IncludeFun
+			       'equalFun'  : EqualFun
+			       'partition' : PartitionFun)
+   end
+   
+   %% Create Reflect Interface
+   local
+      fun {CardFun X}
+	 case {FS.reflect.card X}
+	 of L#U then '#[]'('RANGE'(L U))
+	 [] I   then '#[]'('SINGLE'(I))
+	 end
+      end
+      fun {LowerBoundFun X}
+	 {OzDomainToAliceDomain {FS.reflect.lowerBound X}}
+      end
+      fun {UnknownFun X}
+	 {OzDomainToAliceDomain {FS.reflect.unknown X}}
+      end
+      fun {UpperBoundFun X}
+	 {OzDomainToAliceDomain {FS.reflect.upperBound X}}
+      end
+
+      AliceCardOf = 'CardOf'('lowerBound' : FS.reflect.cardOf.lowerBound
+			     'unknown'    : FS.reflect.cardOf.unknown
+			     'upperBound' : FS.reflect.cardOf.upperBound)
+   in
+      AliceReflect = 'Reflect'('card'       : CardFun
+			       'lowerBound' : LowerBoundFun
+			       'unknown'    : UnknownFun
+			       'upperBound' : UpperBoundFun
+			       'CardOf$'    : AliceCardOf)
+   end
    
    %% Create FS Interface
    AliceFS = 'FS'('$fs'        : _
+		  'fs'         : FsFun
+		  'fsvector'   : FsVectorFun
+		  'decl'       : DeclFun
+		  'Int$'       : AliceInt
+		  'compl'      : ComplFun
+		  'complIn'    : ComplInFun
+		  'include\''  : IncludeFun
+		  'exclude'    : ExcludeFun
+		  'card'       : CardFun
+		  'cardRange'  : CardRangeFun
+		  'isIn'       : IsInFun
+		  'empty'      : EmptyFun
 		  'diff'       : DiffFun
 		  'intersect'  : IntersectFun
-		  'intersectN' : IntersecNFun
+		  'intersectN' : IntersectNFun
 		  'union'      : UnionFun
 		  'unionN'     : UnionNFun
 		  'subset'     : SubsetFun
@@ -77,5 +277,8 @@ define
 		  'disjointN'  : DisjointNFun
 		  'distinct'   : DistinctFun
 		  'distinctN'  : DistinctNFun
-		  'partition'  : PartitionFun)
+		  'partition'  : PartitionFun
+		  'Value$'     : AliceValue
+		  'Reified$'   : AliceReified
+		  'Reflect$'   : AliceReflect)
 end

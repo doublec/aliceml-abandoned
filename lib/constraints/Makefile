@@ -17,14 +17,17 @@ SMLC     = stoc
 SMLFLAGS =
 
 OZSRCS   = FD.oz    \
+           FS.oz    \
            Space.oz \
            Explorer.oz
 
 OZOBJS   = FD.ozf    \
+           FS.ozf    \
            Space.ozf \
            Explorer.ozf
 
 SOURCES  = FD.ozf.sig       \
+           FS.ozf.sig       \
            Space.ozf.sig    \
            Explorer.ozf.sig \
            Search.sml       \

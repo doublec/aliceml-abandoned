@@ -16,7 +16,7 @@ signature FD_COMPONENT =
 	signature FD =
 	    sig
 		type fd
-		type bool
+		type bin
 
 		datatype domain_element =
 		    SINGLE of int
@@ -36,12 +36,12 @@ signature FD_COMPONENT =
 		val fd : domain -> fd
 		val fdvector : domain * int -> fd vector
 		val decl : unit -> fd
-		val bool : unit -> bool
-		val boolvector : int -> bool
+		val bin : unit -> bin
+		val binvector : int -> bin
 
 		(* Conversion *)
-		val toBool : fd -> bool option
-		val fromBool : bool -> fd
+		val toBin : fd -> bin option
+		val fromBin : bin -> fd
 		val toInt : fd -> int option
 		val fromInt : int -> fd
 
@@ -80,8 +80,8 @@ signature FD_COMPONENT =
 		val greater : fd * fd -> unit (* X >: Y *)
 		val greaterEq : fd * fd -> unit (* X >=: Y *)
 		val disjoint : fd * int * fd * int -> unit
-		val disjointC : fd * int * fd * int * bool -> unit
-		val tasksOverlap : fd * int * fd * int * bool -> unit
+		val disjointC : fd * int * fd * int * bin -> unit
+		val tasksOverlap : fd * int * fd * int * bin -> unit
 
 		(* Non-Linear Propagators *)
 		val distinct : fd vector -> unit
@@ -93,28 +93,28 @@ signature FD_COMPONENT =
 		val element : fd * int vector * fd -> unit
 
 		(* 0/1 Propagators *)
-		val conj : bool * bool * bool -> unit
-		val disj : bool * bool * bool -> unit
-		val exor : bool * bool * bool -> unit
-		val nega : bool * bool -> unit
-		val impl : bool * bool * bool -> unit
-		val equi : bool * bool * bool -> unit
+		val conj : bin * bin * bin -> unit
+		val disj : bin * bin * bin -> unit
+		val exor : bin * bin * bin -> unit
+		val nega : bin * bin -> unit
+		val impl : bin * bin * bin -> unit
+		val equi : bin * bin * bin -> unit
 		    
 		(* Reified Constraints *)
 		structure Reified :
 		    sig
 			(* Reified Variable is returned *)
-			val int : domain * bool -> fd
+			val int : domain * bin -> fd
 			(* Reified Vector of Variables is returned *)
-			val dom : domain * int * bool -> fd vector
+			val dom : domain * int * bin -> fd vector
 			(* Same as in Oz *)
-			val card : int * bool vector * int * bool -> unit
-			val distance : fd * fd * propagator * fd * bool -> unit
-			val sum : fd vector * propagator * fd * bool -> unit
-			val sumC : int vector * fd vector * propagator * fd * bool -> unit
-			val sumAC : int vector * fd vector * propagator * fd * bool -> unit
-			val sumCN : int vector * fd vector vector * propagator * fd * bool -> unit
-			val sumACN : int vector * fd vector vector * propagator * fd * bool -> unit
+			val card : int * bin vector * int * bin -> unit
+			val distance : fd * fd * propagator * fd * bin -> unit
+			val sum : fd vector * propagator * fd * bin -> unit
+			val sumC : int vector * fd vector * propagator * fd * bin -> unit
+			val sumAC : int vector * fd vector * propagator * fd * bin -> unit
+			val sumCN : int vector * fd vector vector * propagator * fd * bin -> unit
+			val sumACN : int vector * fd vector vector * propagator * fd * bin -> unit
 		    end
 
 		(* Reflection *)
@@ -134,9 +134,9 @@ signature FD_COMPONENT =
 		(* Watching *)
 		structure Watch :
 		    sig
-			val min : fd * int -> bool
-			val max : fd * int -> bool
-			val size : fd * int -> bool
+			val min : fd * int -> bin
+			val max : fd * int -> bin
+			val size : fd * int -> bin
 		    end
 
 		(* Distribution *)

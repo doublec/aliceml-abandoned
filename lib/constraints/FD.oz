@@ -381,7 +381,7 @@ define
    
    %% Create FD Interface
    AliceFD = 'FD'('$fd'            : _
-		  '$bool'          : _
+		  '$bin'           : _
 		  '$domain'        : _
 		  '$propagator'    : _
 		  '$dist_mode'     : _
@@ -406,8 +406,8 @@ define
 		  'decl'           : DeclFun
 		  'bool'           : BoolFun
 		  'boolvector'     : BoolVectorFun
-		  'toBool'         : ToBoolFun
-		  'fromBool'       : FromBoolFun
+		  'toBin'          : ToBoolFun
+		  'fromBin'        : FromBoolFun
 		  'toInt'          : ToIntFun
 		  'fromInt'        : FromIntFun
 		  'sum'            : SumFun

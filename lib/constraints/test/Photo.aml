@@ -11,11 +11,11 @@
  *
  *)
 
-import structure FD from "x-alice:/lib/constraints/FD.ozf"
-import structure Space from "x-alice:/lib/constraints/Space.ozf"
+import structure FD       from "x-alice:/lib/constraints/FD.ozf"
+import structure Space    from "x-alice:/lib/constraints/Space.ozf"
 import structure Explorer from "x-alice:/lib/constraints/Explorer.ozf"
-import structure Search from "x-alice:/lib/constraints/Search.ozf"
-import structure Tools from "x-alice:/lib/Tools.ozf"
+import structure Search   from "x-alice:/lib/constraints/Search.ozf"
+import structure Tools    from "x-alice:/lib/Tools.ozf"
 
 structure Photo =
     struct
