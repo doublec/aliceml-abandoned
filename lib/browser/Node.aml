@@ -473,7 +473,7 @@ struct
 			 val future = case getDesc(n) of
 			     VALUE(r) => UnsafeValue.cast (#value(r)) 
 			   | I_VALUE(r) => UnsafeValue.cast (#value(r)) 
-			   | INTERPUNCT => raise Match
+			   | INTERPUNCT => false
 		     in
 			 (Future.isLazy(future)) handle _ => false
 		     end

@@ -21,11 +21,11 @@ UnsafeInspector.inspect(y,SList.x);
    geeignet *)
 
 structure STuple = Reflect.ReflectType 
-    (type t = int * real * string * word * exn * char);
+    (type t = int * real * string * word * char * exn * int ref);
 val s_tuple = STuple.x;
-exception Error;
+exception Hello;
 
-UnsafeInspector.inspect ((111,5.0,"hi",0w17,Error,#"d"),s_tuple);
+UnsafeInspector.inspect ((111,5.0,"hi",0w17,#"d",Hello,ref 44),s_tuple);
 
 (* Record mit Referenz, Vektor und Array - zum Testen des RelModus mit
    struktureller Gleichheit geeignet *)

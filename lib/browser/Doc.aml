@@ -264,7 +264,7 @@ struct
 				     then LIMIT{desc = INTERPUNCT,
 						sort = WIDTH_LIMIT}
 			 else if i = l - 1
-				  then (* with separator *)
+				  then (* without separator *)
 				      CONCAT{desc = INTERPUNCT, 
 					     kids = 
 					     #[SIMPLE{desc = INTERPUNCT,
@@ -275,7 +275,7 @@ struct
 						      color = EQU_COLOR},
 					       EMBEDDED(Array.sub(arr,i),
 							arr_typ)] }
-			      else (* without separator *)
+			      else (* with separator *)
 				  CONCAT{desc = INTERPUNCT,
 					 kids = 
 					 #[SIMPLE{desc = INTERPUNCT,

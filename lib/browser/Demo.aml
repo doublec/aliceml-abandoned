@@ -1,0 +1,149 @@
+import structure UnsafeInspector from "UnsafeInspector";
+import structure Reflect from "x-alice:/lib/system/Reflect";
+
+import signature GTK from "x-alice:/lib/gtk/GTK-sig";
+import structure Gtk from "x-alice:/lib/gtk/Gtk";
+
+(****************************************************)
+
+(************** DEMO **************)
+
+(*** tuple with different atomic values -
+     appropriate for testing the width filter ***)
+
+exception Hello;
+
+structure STuple = Reflect.ReflectType 
+    (type t = int * real * string * word * char * exn * int ref);
+val s_tuple = STuple.x;
+
+UnsafeInspector.inspect ((111,5.0,"hi",0w17,#"d",Hello,ref 44),
+			 s_tuple);
+
+(****************************************************)
+
+(*** record that contains an array an a vector ***)
+
+val my_array = Array.tabulate (35,fn i => Real.fromInt(i));
+
+structure Record = Reflect.ReflectType
+    (type t = {arr: real array, vector: int vector});
+val record = Record.x;
+
+UnsafeInspector.inspect({arr = my_array,
+			 vector = #[23,34,45,56,67,78]},
+			record);
+
+(****************************************************)
+
+(*** matrix filled with byneeds ***)
+
+val alazy = lazy 77;
+val my_vector = Vector.tabulate(10,fn _ => alazy );
+val my_matrix = Vector.tabulate(10,fn _ => my_vector);
+
+structure Matrix = Reflect.ReflectType(type t = int vector vector);
+val matrix = Matrix.x;
+
+UnsafeInspector.inspect(my_matrix,matrix);
+
+(* Future.await(alazy); *)
+
+(****************************************************)
+
+(*** datatype ***)
+
+datatype foo = A 
+             | B of foo
+             | C of foo * foo
+
+structure DataType = Reflect.ReflectType (type t = foo);
+val data_type = DataType.x;
+
+UnsafeInspector.inspect(C(C(A,A),B(A)),data_type);
+
+(****************************************************)
+
+(*** list ***)
+
+val prom = Promise.promise();
+val fut = Promise.future(prom);
+
+structure List =  Reflect.ReflectType
+    (type t = (string * string Promise.promise) list);
+val list = List.x;
+
+UnsafeInspector.inspect([(fut,prom),(fut,prom),(fut,prom),(fut,prom)],
+			list);
+
+(*  Promise.fulfill(prom,"here I am");  *)
+
+(****************************************************)
+
+(*** circular lists ***)
+
+val rec a = 1::a;
+val b = 5::6::a;
+val c = [b,b];
+
+structure CList =  Reflect.ReflectType(type t = int list);
+val clist = CList.x;
+
+structure CircList =  Reflect.ReflectType(type t = int list list);
+val circlist = CircList.x;
+
+UnsafeInspector.inspect(b,clist);
+
+UnsafeInspector.inspect(c,circlist);
+
+(****************************************************)
+
+(*** datastructure with many similarities ***)
+
+structure Similarities =  Reflect.ReflectType
+              (type t = {gulp: int list * int list * int list,
+			 gnup: int ref * int ref * int ref * int ref});
+val similarities = Similarities.x;
+
+val a = [1,2,3];
+val b = ref 1;
+
+UnsafeInspector.inspect({gulp = (a,a,[1,2,3]),
+			 gnup = (b,b,ref 1, ref 1)},similarities);
+
+
+(****************************************************)
+
+(* Package *)
+
+signature TEST =
+sig
+    type t
+    val test: string
+    val foo: string -> string
+    signature S
+end;
+
+structure Test = 
+struct
+    type t = string
+    val test = "hi"
+    fun foo str = str^"@"
+    signature S = sig
+		      val x : string
+		  end
+end;
+
+structure P = Package.Pack (signature S = TEST structure X = Test);
+structure Pack = Reflect.ReflectType (type t = Package.package);
+
+UnsafeInspector.inspect(P.package,Pack.x);
+
+(****************************************************)
+      
+(*** structure Gtk ***)
+
+structure V = Reflect.Reflect(signature S = GTK structure X = Gtk);
+structure T = Reflect.ReflectSig(signature S = GTK);
+
+UnsafeInspector.inspectInf (V.x,T.x);
