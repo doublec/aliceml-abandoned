@@ -56,6 +56,7 @@
 	val <A href="#parse">parse</A> : string -> handler list
 
 	val <A href="#apply">apply</A> : <A href="url.html#t">Url.t</A> -> handler list -> (<A href="url.html#t">Url.t</A> * handler list) option
+	val <A href="#tracingApply">tracingApply</A> : (string -> unit) -> <A href="url.html#t">Url.t</A> -> handler list -> (<A href="url.html#t">Url.t</A> * handler list) option
     end</PRE>
 
 <?php section("description", "description") ?>
@@ -145,7 +146,8 @@
     <DD>
       <P>returns a handler that causes an attempt to locate the resource using
 	the custom function&nbsp;<TT><I>f</I></TT>.  <TT><I>s</I></TT>&nbsp;is
-	a name for the handler for use in trace messages.  The handler is
+	a name for the handler for use in trace messages (see <A
+	href="#tracingApply"><TT>tracingApply</TT></A>.  The handler is
 	applicable if <TT><I>f</I></TT> returns <TT>SOME _</TT>.  It is not
 	applicable if <TT><I>f</I></TT> returns <TT>NONE</TT> or raises an
 	exception.</P>
