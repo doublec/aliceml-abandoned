@@ -2,7 +2,8 @@ functor
 import
    FD
    FS
-   Explorer
+   Search
+   Inspector
    Select at 'x-ozlib://duchier/cp/Select.ozf'
 export
    'Smurf$': SmurfModule
@@ -124,8 +125,33 @@ define
       V
    end
 
+   local
+      fun {ToDocSub Daughters V}
+	 {List.foldR {FS.reflect.lowerBoundList Daughters}
+	  fun {$ I In}
+	     case V.I of dataItem(text: Text ...) then
+		'TEXT'(Text)|In
+	     [] element(tag: !Epsilon ...) then In
+	     [] element(tag: Tag daughters: Daughters ...) then
+		'TAGGED'(Tags.Tag {ToDocSub Daughters V})|In
+	     end
+	  end nil}
+      end
+   in
+      fun {ToDoc V}
+	 {ToDocSub V.RootI.daughters V}
+      end
+   end
+
    fun {Smurf Meaning NumberOfElements}
-      nil   %--** implement
+      {ToDoc {Search.base.one
+	      proc {$ V}
+		 V = {Constrain {Reverse Meaning} NumberOfElements}
+		 {FS.distribute naive
+		  for I in 0..{Width V} - 1 collect: Collect do
+		     {Collect V.I.daughters}
+		  end}
+	      end}.1}
    end
 
    SmurfModule = 'Smurf'(smurf: Smurf)
@@ -136,11 +162,5 @@ define
 		    [{ByteString.make 'b'}]#false#SampleProperty
 		    [{ByteString.make 'a'}]#false#SampleProperty]
 
-   {Explorer.one proc {$ V}
-		    V = {Constrain {Reverse SampleMeaning} 5}
-		    {FS.distribute naive
-		     for I in 0..{Width V} - 1 collect: Collect do
-			{Collect V.I.daughters}
-		     end}
-		 end}
+   {Inspector.inspect {Smurf SampleMeaning 5}}
 end
