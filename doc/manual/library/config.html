@@ -29,7 +29,7 @@
 	val <A href="#platform">platform</A> : platform
 	val <A href="#vm">vm</A> : string
 
-	val <A href="#homeDir">homeDir</A> : string option
+	val <A href="#homeDir">homeDir</A> : unit -> string
 
 	val <A href="#pathEscape">pathEscape</A> : char option
 	val <A href="#pathSeparator">pathSeparator</A> : char
@@ -64,8 +64,7 @@
       <TT><A name="homeDir">homeDir</A></TT>
     </DT>
     <DD>
-      <P>The installation directory of the Alice system, if known.
-	Initialized from the <TT>ALICE_HOME</TT> environment variable.</P>
+      <P>returns the installation directory of the Alice system.</P>
     </DD>
 
     <DT>
