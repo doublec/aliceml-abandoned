@@ -1,0 +1,64 @@
+We are happy to announce version 1.0 of the Alice programming
+system:
+
+        http://www.ps.uni-sb.de/alice/
+
+Alice ML is a functional programming language that enriches the
+statically typed, closed functional world of ML with rich support
+for type-safe programming of concurrent, distributed and open
+systems. It also features cutting-edge constraint programming
+technology in the tradition of Oz/Mozart.
+
+Alice ML is a mostly conservative extension of Standard ML
+featuring:
+
+  Futures
+     selective laziness and light-weight concurrency with
+     implicit dataflow synchronisation
+  Higher-order modules
+     higher-order functors and abstract signatures
+  Packages
+     dynamically typed ML modules as first-class values
+  Pickling
+     type-safe, generic & platform-independent marshalling,
+     including code, types and full modules
+  Components
+     type-safe lazy dynamic linking across the Internet
+  Distribution
+     type-safe remote functions and network mobility
+  Constraints
+     concurrent constraints and programmable search for
+     hard combinatorical problems
+  Virtual Machine
+     portable implementation with support for just-in-time
+     compilation
+  Interactive tools
+     graphical browsers for data structures and search spaces
+
+The highlights of this release are:
+
+  Seam Virtual Machine
+     A newly designed VM with support for just-in-time compilation
+     improves execution speed by a factor of up to 5 compared to
+     previous versions. Mozart is no longer required to run Alice
+     (and no longer compatible with it). [www.ps.uni-sb.de/seam/]
+  Gecode Constraint Library
+     Constraints are now based on Gecode, an up-coming, cutting-edge
+     constraint library that is more than 10 times faster than the
+     previous implementation and features a significant number of
+     novel constraints. [www.gecode.org]
+  Component Model Overhaul
+     The component system has been cleaned up and is now more
+     flexible and more powerful. Components have become fully
+     dynamic.
+  Standard Library
+     Now contains all mandatory modules of the Standard ML Basis
+     (not all fully complete yet). [www.standardml.org/Basis]
+
+For more information, please visit the Alice project homepage:
+
+        http://www.ps.uni-sb.de/alice/
+
+Enjoy,
+
+        - The Alice Team
