@@ -103,11 +103,16 @@ import
 from "SimplifyRec"
 
 import
+    signature SWITCHES
+from "../infrastructure/SWITCHES-sig"
+
+import
     signature FLATTENING_PHASE
 from "FLATTENING_PHASE-sig"
 
 functor MkFlatteningPhase(val loadSign:
-			      Source.desc * Url.t -> FlatGrammar.sign) :>
+			      Source.desc * Url.t -> FlatGrammar.sign
+			  structure Switches: SWITCHES) :>
     FLATTENING_PHASE =
     struct
 	structure C = EmptyContext
@@ -733,7 +738,10 @@ functor MkFlatteningPhase(val loadSign:
 			   O.IdDef (translateId exnId), handleBody)]
 	    end
 	  | translateExp (FailExp info, f, cont) =
-	    f (O.FailExp {region = #region info})::translateCont cont
+	    if !Switches.Language.silentFailExp then
+		f (O.TupExp ({region = #region info}, #[]))::translateCont cont
+	    else
+		f (O.FailExp {region = #region info})::translateCont cont
 	  | translateExp (LazyExp (info as {region, typ}, exp), f, cont) =
 	    let
 		val r = ref NONE

@@ -24,6 +24,7 @@ sig
 	datatype rtt_level = NO_RTT | CORE_RTT | FULL_RTT
 
 	val rttLevel :				rtt_level ref
+	val silentFailExp :			bool ref
 	val reexportImport :			bool ref
 	val implicitImport :			bool ref
 	val implicitImportFile :		string option ref

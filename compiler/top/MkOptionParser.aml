@@ -45,6 +45,8 @@ functor MkOptionParser(Switches: SWITCHES) :> OPTION_PARSER =
 	    \\t\tDo only generate code for core runtime types.\n\
 	    \\t--rtt-level=full\n\
 	    \\t\tFull support for runtime types.\n\
+	    \\t--(no-)silent-fail\n\
+	    \\t\tWhether FailExp's should be translated to failed futures.\n\
 	    \Debug options:\n\
 	    \\t--version\n\
 	    \\t\tPrint compiler version.\n\
@@ -85,6 +87,7 @@ functor MkOptionParser(Switches: SWITCHES) :> OPTION_PARSER =
 	    [("warn-shadowing", Warn.shadowing),
 	     ("reexport-import", Language.reexportImport),
 	     ("implicit-import", Language.implicitImport),
+	     ("silent-fail", Language.silentFailExp),
 	     ("dump-phases", Debug.dumpPhases),
 	     ("dump-abstraction-result", Debug.dumpAbstractionResult),
 	     ("dump-elaboration-result", Debug.dumpElaborationResult),
