@@ -574,7 +574,7 @@ define
 		    filename: {VirtualString.toAtom Filename})
       RegToValueMapping = {Dictionary.new}
       {ForAll StampValueList
-       proc {$ Stamp Value} Reg in
+       proc {$ Stamp#Value} Reg in
 	  Reg = {InitReg Stamp State}
 	  {Dictionary.put RegToValueMapping Reg Value}
        end}
