@@ -1,9 +1,13 @@
+import structure Print from "x-alice:/lib/system/Print"
+
 open Promise
 
 fun pause () = TextIO.inputLine TextIO.stdIn
 
+fun nl () = print "\n"
+
 fun alice s = (TextIO.print ("\n\nAlice: " ^ s ^ "\n"); pause ())
-fun oz x = (TextIO.print "Oz: "; Tools.print x; pause ())
+fun oz x = (TextIO.print "Oz: "; Print.printVal x; nl (); pause ())
 
 val _ = alice "1"
 val _ = oz 1
