@@ -25,6 +25,7 @@ __primitive eqtype 'a vector	= "vector"
 __primitive __eqeqtype 'a array	= "array"
 __primitive exttype exn		= "exn"
 __primitive __reftype 'a ref	= ref of 'a
+__primitive type package	= "package"
 
 type unit			= {}
 type ('a,'b) pair		= 'a * 'b
