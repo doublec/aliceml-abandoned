@@ -39,7 +39,7 @@ struct
     __primitive exception Size			= "General.Size"
     __primitive exception Span			= "General.Span"
     __primitive exception Subscript		= "General.Subscript"
-    exception Unordered
+    __primitive exception Unordered             = "General.Unordered"
 
     __primitive val exnName : exn -> string	= "Exn.name"
     val exnMessage				= exnName

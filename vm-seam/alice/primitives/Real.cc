@@ -22,17 +22,32 @@
     RETURN_REAL(op(real->GetValue()));		\
   } END
 
-#define REAL_TO_INT(name, op)					\
-  DEFINE1(name) {						\
-    DECLARE_REAL(real, x0);					\
-    RETURN_INT(STATIC_CAST(s_int, op(real->GetValue())));	\
+#define REAL_TO_INT(name, op)				\
+  DEFINE1(name) {					\
+    DECLARE_REAL(real, x0);				\
+    double value = real->GetValue();			\
+    if (isnan(value))					\
+      RAISE(PrimitiveTable::General_Domain);      	\
+    double result = op(value);				\
+    if (result > STATIC_CAST(double, MAX_VALID_INT) ||	\
+	result < STATIC_CAST(double, MIN_VALID_INT)) {	\
+      RAISE(PrimitiveTable::General_Overflow);      	\
+    }							\
+    RETURN_INT(STATIC_CAST(s_int, result));		\
   } END
 
-#define REAL_TO_INTINF(name, op)				\
-  DEFINE1(name) {						\
-    DECLARE_REAL(real, x0);					\
-    BigInt *b = BigInt::New(op(real->GetValue()));              \
-    RETURN_INTINF(b);                                           \
+#define REAL_TO_INTINF(name, op)		\
+  DEFINE1(name) {				\
+    DECLARE_REAL(real, x0);			\
+    double value = real->GetValue();		\
+    if (isnan(value))				\
+      RAISE(PrimitiveTable::General_Domain);	\
+    double result = op(value);			\
+    if (isinf(result)) {			\
+      RAISE(PrimitiveTable::General_Overflow);	\
+    }						\
+    BigInt *b = BigInt::New(result);		\
+    RETURN_INTINF(b);				\
   } END
 
 #define REAL_REAL_TO_REAL_OP(name, op)				\
@@ -85,8 +100,10 @@ DEFINE2(Real_compare) {
     RETURN_INT(Types::EQUAL);
   } else if (x < y) {
     RETURN_INT(Types::LESS);
-  } else { // x > y
+  } else if (x > y) {
     RETURN_INT(Types::GREATER);
+  } else {
+    RAISE(PrimitiveTable::General_Unordered);
   }
 } END
 
@@ -128,11 +145,11 @@ REAL_TO_INT(Real_round, Rint)
 REAL_TO_INTINF(Real_largeRound, Rint)
 
 DEFINE1(Real_toString) {
-  //--** inf, ~inf, nan not formatted correctly
   static char buf[50];
   DECLARE_REAL(real, x0);
   // TODO: This sometimes inserts ',' instead of '.' as decimalpoint
-  std::sprintf(buf, "%.12G", real->GetValue());
+  double value = real->GetValue();
+  std::sprintf(buf, "%.12G", value);
   bool hasDecimalPoint = false, done = false;
   u_int i = 0;
   while (!done)
@@ -150,7 +167,9 @@ DEFINE1(Real_toString) {
     case '.':
       hasDecimalPoint = true;
     }
-  if (!hasDecimalPoint) std::strcpy(&buf[i - 1], ".0");
+  if (!hasDecimalPoint &&
+      !isnan(value) &&
+      !isinf(value)) std::strcpy(&buf[i - 1], ".0");
   RETURN(String::New(buf)->ToWord());
 } END
 

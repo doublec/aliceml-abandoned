@@ -68,6 +68,7 @@ public:
   static word General_Overflow;
   static word General_Size;
   static word General_Subscript;
+  static word General_Unordered;
   static word Hole_Hole;
   static word Thread_Terminated;
   static word UnsafeMap_IllegalKey;

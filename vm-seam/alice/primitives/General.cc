@@ -27,6 +27,8 @@ void PrimitiveTable::RegisterGeneral() {
     UniqueConstructor::New("Size", "General.Size")->ToWord();
   PrimitiveTable::General_Subscript =
     UniqueConstructor::New("Subscript", "General.Subscript")->ToWord();
+  PrimitiveTable::General_Unordered =
+    UniqueConstructor::New("Unordered", "General.Unordered")->ToWord();
 
   RegisterUniqueConstructor("Assert", "General.Assert");
   RegisterUniqueConstructor("Bind", "General.Bind");
@@ -39,4 +41,5 @@ void PrimitiveTable::RegisterGeneral() {
   Register("General.Size", PrimitiveTable::General_Size);
   RegisterUniqueConstructor("Span", "General.Span");
   Register("General.Subscript", PrimitiveTable::General_Subscript);
+  Register("General.Unordered", PrimitiveTable::General_Unordered);
 }

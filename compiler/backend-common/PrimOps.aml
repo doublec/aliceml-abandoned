@@ -100,6 +100,7 @@ structure PrimOps :> PRIM_OPS =
 		ins ("General.Size", NONE);
 		ins ("General.Span", NONE);
 		ins ("General.Subscript", NONE);
+		ins ("General.Unordered", NONE);
 		ins ("GlobalStamp.new", SOME (Tuple 0));
 		ins ("GlobalStamp.fromString", SOME Unary);
 		ins ("GlobalStamp.toString", SOME Unary);
