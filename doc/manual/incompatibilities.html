@@ -119,6 +119,51 @@ expect.</P>
 </UL>
 
 
+<?php section("matching", "pattern matching") ?>
+
+<P>Since Alice is a concurrent language, matches containing impure patterns -
+particularly <TT>ref</TT> patterns - may behave slightly oddly. Patterns that
+are exhaustive in plain SML may not necessarily be so in Alice. Also, pattern
+matching may trigger side-effects, when a <A href="futures.html#lazy">lazy
+future</A> is <A href="futures.html#request">requested</A> by matching and the
+corresponding computation contains effects.</P>
+
+<?php subsection("matching-example", "Example") ?>
+
+<PRE class=code>
+fun f (ref false) = 1
+  | f (ref true)  = 2</PRE>
+
+<P>The match in this declaration will be flagged as unexhaustive by the Alice
+compiler. The reason is that pattern matching is not atomic, so a concurrent
+thread may have altered the reference between both tests - making them both
+fail! A particular example of a non-matching application is the following:</P>
+
+<PRE class=code>
+val rec r = ref (lazy (r := false; true))
+f r</PRE>
+
+<P>In this example, testing for the first clause will first dereference
+<TT>r</TT> and then request the lazy future, which determines to <TT>true</TT>,
+so that the clause does not match. In the meantime, the triggered computation
+has set <TT>r</TT> to <TT>false</TT>, hence the consecutive test, which
+dereferences <TT>r</TT> for a second time, will see <TT>false</TT> and fail
+likewise.</P>
+
+<?php subsection("matching-fix", "Workaround") ?>
+
+<UL>
+  <LI> Be careful with using <TT>ref</TT> patterns (and other potentially impure
+  patterns, such as <A href="sugar.html#patterns-guard">guards</A>). If a
+  reference access has to be atomic, make sure it is only matched once, or
+  accessed via <TT>!</TT> in one operation.
+  <P>Be aware that patterns with <TT>ref</TT> are only
+  ever considered exhaustive by the compiler if the argument pattern is
+  exhaustive in itself - information from different matches for the same
+  reference cannot be accumulated. </LI>
+</UL>
+
+
 <?php section("datatypes", "datatypes") ?>
 
 <P>Alice' <A href="types.html#structural">structural datatypes</A> come with
