@@ -109,7 +109,7 @@ struct
     fun initialize () = 
 	{
 	 canvas = GtkCanvas.new 0,
-	 state  = ref (Array2.array(1, 1, (Gtk.null () , P.EMPTY)))
+	 state  = ref (Array2.array(1, 1, (Gtk.null , P.EMPTY)))
 	 }
 	
     fun toObject ({canvas, ... } : arena_widget) : Gtk.object  = canvas
@@ -130,7 +130,7 @@ struct
 				    ("y2", Gtk.DOUBLE (real (rows * cellSize))),
 				    ("fill_color_gdk", Gtk.OBJECT green),
 				    ("outline_color_gdk", Gtk.OBJECT green)])
-	    val arena = Array2.array (rows, cols, (Gtk.null (), P.EMPTY))
+	    val arena = Array2.array (rows, cols, (Gtk.null, P.EMPTY))
 	in
 	    state  := arena
 	end
@@ -272,10 +272,13 @@ struct
 				    ("outline_color_gdk", Gtk.OBJECT black)])
 
 	    val cross = 
-		GtkCanvas.itemNew (gate, GtkCanvas.LINE,
-				   [("points",Gdk.POINTS [1,20,400]),
-				    ("fill_color_gdk",Gtk.OBJECT black),
-				    ("width_pixels",Gtk.INT 2)])
+		GtkCanvas.itemNew (gate, GtkCanvas.RECTANGLE,
+				   [("x1",Gtk.DOUBLE 3.0),
+				    ("y1", Gtk.DOUBLE 3.0),
+				    ("x2", Gtk.DOUBLE (real (cellSize - 3))),
+				    ("y2", Gtk.DOUBLE (real (cellSize - 3))),
+				    ("fill_color_gdk", Gtk.OBJECT gatecol),
+				    ("outline_color_gdk", Gtk.OBJECT black)])
 	in
 	    gate
 	end
@@ -332,13 +335,13 @@ struct
                     val y = cellSize * r
                 in
                     (* destroy old object if existing *)
-                    if oldObj <> Gtk.null () 
+                    if oldObj <> Gtk.null 
 			then Gtk.objectDestroy oldObj
                     else ();
                     (* place the new one *)
                     case field of
 		        P.EMPTY     => 
-                            Array2.update (arena, r, c, (Gtk.null (), field))
+                            Array2.update (arena, r, c, (Gtk.null, field))
                     |   P.WALL      => Array2.update (arena, r, c, 
                                         (insertWall (can, x, y), field))
                     | P.GOODY n    => Array2.update (arena, r, c, 
