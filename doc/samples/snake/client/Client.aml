@@ -1,71 +1,58 @@
 import structure Protocol   from "../common/Protocol"
 import structure Gui        from "Gui"
 
+structure Client =
+struct
+    (* [startClient (gui, server)] starts the core client given a server,
+       which can be a future
+     *)
+    fun startClient (gui, server : Protocol.server_interface) : 
+            Protocol.client_interface =
+        let
+            fun playersJoined players = ()
 
-(* [startClient (gui, server)] starts the core client given a server,
-   which can be a future
- *)
-fun startClient (gui, server : Protocol.server_interface) : 
-        Protocol.client_interface =
-    let
-        fun playersJoined players = ()
+            fun tournamentStarted () = ()
 
-        fun tournamentStarted () = ()
+            fun levelStarted level_info = ()
 
-        fun levelStarted level_info = ()
+            fun playerDisconnected (name, color) = ()
 
-        fun playerDisconnected (name, color) = ()
+            fun abort () = ()
 
-        fun abort () = ()
+            fun countdown n = ()
 
-        fun countdown n = ()
+            fun update diffs = ()
 
-        fun update diffs = ()
+            fun tick remainingTime = ()
+            
+            fun playersDied players = ()
 
-        fun tick remainingTime = ()
+            fun playersFinished players = ()
+
+            fun levelFinished () = ()
+
+            fun tournamentFinished highscore = ()
+
+            fun updatePoints points = ()
         
-        fun playersDied players = ()
-
-        fun playersFinished players = ()
-
-        fun levelFinished () = ()
-
-        fun tournamentFinished highscore = ()
-
-        fun updatePoints points = ()
-    
-        val lock = Lock.lock ()
-    in
-        {
-           playersJoined        = Lock.sync lock playersJoined,
-           tournamentStarted    = Lock.sync lock tournamentStarted,
-           levelStarted         = Lock.sync lock levelStarted,
-           playerDisconnected   = Lock.sync lock playerDisconnected,
-           abort                = Lock.sync lock abort,
-           countdown            = Lock.sync lock countdown,
-           update               = Lock.sync lock update,
-           tick                 = Lock.sync lock tick,
-           playersDied          = Lock.sync lock playersDied,
-           playersFinished      = Lock.sync lock playersFinished,
-           levelFinished        = Lock.sync lock levelFinished,
-           tournamentFinished   = Lock.sync lock tournamentFinished,
-           updatePoints         = Lock.sync lock updatePoints
-        }
-    end
-   
-
-fun main () =
-    let
-        val gui = Gui.gui ()
-    
-        fun quit () = OS.Process.exit OS.Process.success
-
-        fun connect ticket = SOME "connect not yet implemented"
-
-        fun startServer () = SOME "startServer not yet implemented"
-    in
-        Gui.displayInitUI (gui, { quit, connect, startServer })
-    end
-
-
-val _ = main ()
+            val lock = Lock.lock ()
+        in
+            (* return locked but not yet proxied client interface! *)
+            {
+               playersJoined        = Lock.sync lock playersJoined,
+               tournamentStarted    = Lock.sync lock tournamentStarted,
+               levelStarted         = Lock.sync lock levelStarted,
+               playerDisconnected   = Lock.sync lock playerDisconnected,
+               abort                = Lock.sync lock abort,
+               countdown            = Lock.sync lock countdown,
+               update               = Lock.sync lock update,
+               tick                 = Lock.sync lock tick,
+               playersDied          = Lock.sync lock playersDied,
+               playersFinished      = Lock.sync lock playersFinished,
+               levelFinished        = Lock.sync lock levelFinished,
+               tournamentFinished   = Lock.sync lock tournamentFinished,
+               updatePoints         = Lock.sync lock updatePoints
+            }
+        end
+       
+end

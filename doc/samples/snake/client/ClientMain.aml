@@ -1,0 +1,46 @@
+import structure Gui        from "Gui"
+import structure Client     from "Client"
+import structure Server     from "../server/Server"
+import structure Config     from "../server/Config"
+
+
+fun main () =
+    let
+        (* create gui *)
+        val gui = Gui.gui ()
+    
+        (* called when user wants to quit *)
+        fun quit () = OS.Process.exit OS.Process.success
+
+        (* called when user wants to connect to some existing server *) 
+        fun connect ticket = SOME "connect not yet implemented"
+
+        (* called when user wants to create own server *)
+        fun startServer () = 
+            let
+                (* TODO: ask user: kind of game, size of levels, ... *)
+                val config  = Config.defaultSingle
+
+                (* both creation of client and creation of server
+                   depends on each other, but Client.startClient
+                   is required to not use server before it has
+                   returned, i.e only in threads it spawns or closures
+                   it returns
+                 *)
+                val server  = Promise.promise ()
+                val client  = Client.startClient (Promise.future server)
+            in
+                (* TODO: error handling *)
+                Promise.fulfill (server, Server.startServer (config, client));
+                (* creation was successful return no error *)
+                NONE
+            end
+                
+            SOME "startServer not yet implemented"
+    in
+        (* display initial GUI and wait for callback *)
+        Gui.displayInitUI (gui, { quit, connect, startServer })
+    end
+
+(* start it *)
+val _ = main ()
