@@ -13,6 +13,7 @@
 //
 
 #include <cmath>
+#include <cstdio>
 
 #include "builtins/Authoring.hh"
 

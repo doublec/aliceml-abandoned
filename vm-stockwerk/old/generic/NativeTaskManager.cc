@@ -14,6 +14,7 @@
 #pragma implementation "builtin/Primitive.hh"
 #endif
 
+#include <cstdio>
 #include "scheduler/Closure.hh"
 #include "scheduler/TaskStack.hh"
 #include "builtins/Primitive.hh"

@@ -10,6 +10,7 @@
 //   $Revision$
 //
 
+#include <cstdio>
 #include "builtins/Authoring.hh"
 
 DEFINE2(GlobalStamp_compare) {

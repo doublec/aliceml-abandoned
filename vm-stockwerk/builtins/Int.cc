@@ -12,8 +12,7 @@
 //   $Revision$
 //
 
-#include <cstdlib>
-
+#include <cstdio>
 #include "builtins/Authoring.hh"
 
 //--** overflow checking missing everywhere

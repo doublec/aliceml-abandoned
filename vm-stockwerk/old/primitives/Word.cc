@@ -12,6 +12,7 @@
 //   $Revision$
 //
 
+#include <cstdio>
 #include "builtins/Authoring.hh"
 
 #define WORD_WORD_TO_WORD_OP(name, op)		\
