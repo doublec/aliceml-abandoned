@@ -38,7 +38,10 @@ define
 
    local
       fun {StringCompareSub S1 S2 L1 L2 N}
-	 if N >= L1 then 'LESS'
+	 if N >= L1 then
+	    if L1 == L2 then 'EQUAL'
+	    else 'LESS'
+	    end
 	 elseif N >= L2 then 'GREATER'
 	 elsecase {NumberCompare {ByteString.get S1 N} {ByteString.get S2 N}}
 	 of 'EQUAL' then {StringCompareSub S1 S2 L1 L2 N + 1}
@@ -203,6 +206,18 @@ define
       'Int.toString':
 	 fun {$ I} {ByteString.make {Int.toString I}} end
       'List.Empty': {NewUniqueName 'List.Empty'}
+      'Math.acos': Acos
+      'Math.asin': Asin
+      'Math.atan': Atan
+      'Math.atan2': Atan2
+      'Math.cos': Cos
+      'Math.e': 2.71828182846
+      'Math.exp': Exp
+      'Math.ln': Log
+      'Math.pi': 3.14159265359
+      'Math.sin': Sin
+      'Math.sqrt': Sqrt
+      'Math.tan': Tan
       'Option.Option': {NewUniqueName 'Option.Option'}
       'Real.~': Number.'~'
       'Real.+': Number.'+'
@@ -304,7 +319,7 @@ define
       'Transient.Fulfill': {NewUniqueName 'Transient.Fulfill'}
       'Transient.Future': {NewUniqueName 'Transient.Future'}
       'Transient.Promise': {NewUniqueName 'Transient.Promise'}
-      'Transient.alarm':
+      'Transient.alarm\'':
 	 fun {$ X} {Alarm (X + 500) div 1000} end
       'Transient.await':
 	 fun {$ X} {Wait X} X end
