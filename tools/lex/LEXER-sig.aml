@@ -10,8 +10,6 @@ signature LEXER =
 	 *)
 	exception RegMatch of string
 
-        type position = int * int       (* (line, col) *)
-
 	val lexer :
 	    (* the automaton *)
 	    (int vector              (* pointer to the transition table *)

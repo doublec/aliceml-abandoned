@@ -6,9 +6,6 @@ structure Lexer :> LEXER =
 
 	exception RegMatch of string 
     
-        type position = int * int
-
-
 	fun lError s = raise RegMatch ("Lex Error: " ^ s ^ "\n")
 
 	(* lexer :
@@ -134,13 +131,11 @@ structure Lexer :> LEXER =
 						    lines := !lines + 1);
 						   !firstPos - hd (!newLines) ) 
                                          val yyline = !lineNum - !lines
-                                         val pos    = (yyline, yycol)
 				      in
 					  stateStack := [1];
 					  numBack := 0;
 					  newLines := [hd (!newLines)];
-					  ( action (x, p, yytext,
-					   	  !lineNum - !lines, yycol), pos, pos )
+					  action (x, p, yytext, yyline, yycol)
 				      end))
 
 
