@@ -6,7 +6,7 @@ DIRS = $(PREFIX) \
 
 INSTALLFILES_0 = \
 	style.css bg.gif alice.gif macros.php3 project.html \
-	index.html people.html papers.html download.html contact.html download-old.html
+	index.html people.html papers.html download.html contact.html
 INSTALLFILES_DOWNLOAD_0 = \
 	stockhausen-devel.tgz mozart-devel.tgz sml-mode.tgz COPYING
 INSTALLFILES_PAPERS_0 = \

@@ -4,12 +4,11 @@
 
 <?php section("packages", "Precompiled packages") ?>
 
-<P>Alice is currently based on the <A href="http://www.mozart-oz.org/">Mozart
-Programming system</A>. You either need to have the <A
-href="http://www.mozart-oz.org/download/cvs.html">CVS version</A> of Mozart
-installed, or download and install the Mozart packages provided below before
-you install Alice itself. Note that the release version 1.2.x of Mozart cannot
-run Alice!</P>
+<P>Alice is based on the upcoming version 1.2.5 of the <A
+href="http://www.mozart-oz.org/">Mozart Programming system</A>, which has to be
+installed before you can install Alice itself. Previous Mozart versions cannot
+run Alice! We provide snapshot packages of Mozart 1.2.5 below until it has been
+officially released.</P>
 
 <P>All packages include the full <A href="manual/">manual</A> web pages.</P>
 
@@ -19,24 +18,47 @@ run Alice!</P>
 <P>Red Hat 7.2:</P>
 
 <UL>
-  <LI><A href="download/mozart-devel.rpm"><TT>mozart-devel.rpm</TT></A></LI>
-  <LI><A href="download/alice-0.9.rpm"><TT>alice-0.9.rpm</TT></A></LI>
+  <LI>Mozart 1.2.5 is not yet available as an RPM, please use the tarball below.</LI>
+<!--
+  <LI><A href="download/mozart-1.2.5-20021218.rpm"><TT>mozart-1.2.5-20021218.rpm</TT></A></LI>
+-->
+  <LI><A href="download/alice-0.9-1.noarch.rpm"><TT>alice-0.9-1.noarch.rpm</TT></A></LI>
 </UL>
+
 
 <P>Debian 3.0:</P>
 
 <UL>
+  <LI>Soon to come, use tarball below for now.</LI>
+<!--
   <LI><A href="download/mozart-devel.rpm"><TT>mozart-devel.rpm</TT></A></LI>
   <LI><A href="download/alice-0.9.rpm"><TT>alice-0.9.rpm</TT></A></LI>
+-->
+</UL>
+
+<P>Other Unices (tarballs):</P>
+
+<UL>
+  <LI><A href="download/mozart-1.2.5-20021218.tgz"><TT>mozart-1.2.5-20021218.tgz</TT></A></LI>
+  <LI><A href="download/alice-0.9-20021220.tgz"><TT>alice-0.9-20021220.tgz</TT></A></LI>
 </UL>
 
 
 <?php subsection("windows", "Windows") ?>
 
 <UL>
-  <LI><A href="download/mozart-1.3.0-alice.exe"><TT>mozart-1.3.0-alice.exe</TT></A></LI>
-  <LI><A href="download/alice-0.9-20021126.exe"><TT>alice-0.9-20021126.exe</TT></A></LI>
+  <LI><A href="download/mozart-1.2.5-20021218.exe"><TT>mozart-1.2.5-20021218.exe</TT></A></LI>
+  <LI><A href="download/alice-0.9-20021220.exe"><TT>alice-0.9-20021220.exe</TT></A></LI>
 </UL>
+
+<P>
+  If you use non-standard installation paths for either package, you have to set
+  the following environment variables appropriately:
+</P>
+
+<PRE class=code>
+OZHOME = &lt;your mozart installation directory&gt;
+STOCKHOME = &lt;your alice installation directory&gt;</PRE>
 
 <P>
   If you have trouble installing Mozart, please read the
@@ -110,5 +132,8 @@ CVS password: anoncvs
 
 <PRE class=code>
 % cvs -d :pserver:anoncvs@cvs.ps.uni-sb.de:/services/alice/CVS get -r operette3 alice</PRE>
+
+<P>You can likewise access the <A
+href="http://www.mozart-oz.org/download/cvs">Mozart CVS repository</A>.</P>
 
 <?php footing() ?>
