@@ -12,6 +12,7 @@
  *   - CON keyword for constructor declarations
  *   - WHEN keyword for guarded patterns
  *   - NON keyword added for negated patterns
+ *   - WITHVAL and WITHFUN keywords for bindings inside pattern
  *
  * Notes:
  *   Since all lexical classes must be disjoint:
@@ -318,7 +319,9 @@
   <INITIAL>"where"	=> ( token(WHERE,     yypos, yytext) );
   <INITIAL>"while"	=> ( token(WHILE,     yypos, yytext) );
   <INITIAL>"with"	=> ( token(WITH,      yypos, yytext) );
+  <INITIAL>"withfun"	=> ( token(WITHFUN,   yypos, yytext) );
   <INITIAL>"withtype"	=> ( token(WITHTYPE,  yypos, yytext) );
+  <INITIAL>"withval"	=> ( token(WITHVAL,   yypos, yytext) );
 
   <INITIAL>"0"		=> ( token  (ZERO,              yypos, yytext) );
   <INITIAL>[1-9]	=> ( tokenOf(DIGIT,   toDigit,  yypos, yytext) );

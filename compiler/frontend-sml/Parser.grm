@@ -19,7 +19,8 @@
 (*   - negated patterns:							*)
 (*	  pat ::= non pat							*)
 (*   - with patterns:								*)
-(*	  pat ::= pat with dec end						*)
+(*	  pat ::= pat withval valbind end					*)
+(*	      ::= pat withfun fvalbind end	(derived form)			*)
 (*   - open datatypes (exception declarations become a derived form),		*)
 (*     constructor synonym specifications:					*)
 (*        dec      ::= con dconbind						*)
@@ -123,7 +124,7 @@
 	| RAISE | REC | THEN | TYPE | VAL | WITH | WITHTYPE | WHILE
 	| LPAR | RPAR | LBRACK | RBRACK | LBRACE | RBRACE | COMMA | COLON
 	| SEMICOLON | DOTS | UNDERBAR | BAR | EQUALS | DARROW | ARROW | HASH
-	| CON | NON | WHEN | DOT | HASHBRACK
+	| CON | NON | WHEN | WITHFUN | WITHVAL | DOT | HASHBRACK
 
 	(* Additional reserved words for the modules language *)
 	| EQTYPE | FUNCTOR | INCLUDE | SHARING | SIG
@@ -165,7 +166,8 @@
 %right ORELSE
 %right ANDALSO
 %left  WHEN
-%left  WITH
+%left  WITHVAL
+%left  WITHFUN
 %right AS
 %right NON		(* L/R is arbitrary *)
 %left  COLON
@@ -814,8 +816,10 @@
 	| pat AS pat	( ASPat(I(pat1left,pat2right), pat1, pat2) )
 	| pat WHEN atexp
 			( WHENPat(I(patleft,atexpright), pat, atexp) )
-	| pat WITH dec END
-			( WITHPat(I(patleft,ENDright), pat, dec) )
+	| pat WITHVAL valbind END
+			( WITHVALPat(I(patleft,ENDright), pat, valbind) )
+	| pat WITHFUN fvalbind END
+			( WITHFUNPat(I(patleft,ENDright), pat, fvalbind) )
 
 
 
