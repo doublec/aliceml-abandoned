@@ -3,38 +3,34 @@ TOPDIR = ..
 include $(TOPDIR)/Makefile.vars
 include $(TOPDIR)/Makefile.rules
 
-SRCS = store.cc
+SRCS = Store.cc
 OBJS = $(SRCS:%.cc=%.o)
 
 .PHONY: all clean distclean
 
-HEADERWIDTH      = 31
-TAGWIDTH         = 16
-SIZEWIDTH        = 12
-GENERATIONSWIDTH = 2
-
 all: libstore.a #test
 
-libstore.a: headerdef.hh $(OBJS)
+libstore.a: StoreConfig.hh $(OBJS)
 	ar rc libstore.a $(OBJS) || exit 1
 	ranlib libstore.a
 
 test: test.o
-	$(CXX) $(CXXFLAGS) -o $@ $< -L../store -lstore
+#	$(CXX) $(CXXFLAGS) -I.. -o test.o test.cc
+	$(LD) $(CXXFLAGS) -o $@ $< -L../adt -L../store -lstore -ladt
 
-headerdef.hh: headerdef
-	./headerdef $(HEADERWIDTH) $(TAGWIDTH) $(SIZEWIDTH) $(GENERATIONSWIDTH)
+StoreConfig.hh: StoreConfig
+	./StoreConfig
 
-headerdef: headerdef.o
-	$(CXX) $(CXXFLAGS) -o $@ $<
+StoreConfig: StoreConfig.cc
+	$(CXX) $(CXXFLAGS) -o StoreConfig StoreConfig.cc
 
-$(OBJS): headerdef.hh
+$(OBJS): StoreConfig.hh
 
 clean:
-	rm -f headerdef.o headerdef headerdef.exe
+	rm -f StoreConfig.o StoreConfig StoreConfig.exe
 	rm -f $(OBJS)
 
 veryclean: clean
-	rm -f test headerdef.hh libstore.a
+	rm -f test StoreConfig.hh libstore.a
 
 distclean: veryclean
