@@ -10,8 +10,8 @@
  *   $Revision$
  *)
 
-import structure Socket      from "x-alice:/lib/system/Socket"
-import structure Url         from "x-alice:/lib/utility/Url"
+import structure Socket      from "Socket"
+import structure Url         from "../utility/Url"
 import structure Http        from "Http"
 import signature HTTP_CLIENT from "HTTP_CLIENT-sig"
 
