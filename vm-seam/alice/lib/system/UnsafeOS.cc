@@ -215,7 +215,7 @@ word UnsafeOS(void) {
   RootSet::Add(SysErrConstructor);
 
   Tuple *t = Tuple::New(4);
-  t->Init(0, Primitive::MakeClosure(UnsafeOS_SysErr, 2));
+  t->Init(0, Primitive::MakeClosure("UnsafeOS.SysErr", UnsafeOS_SysErr, 2));
   t->Init(1, FileSys());
   t->Init(2, Process());
   t->Init(3, SysErrConstructor);

@@ -13,6 +13,7 @@
 //
 
 #include <cstdio>
+#include <cstdlib>
 #include "emulator/RootSet.hh"
 #include "emulator/Transients.hh"
 #include "emulator/TaskStack.hh"
@@ -75,9 +76,13 @@ int main(int argc, char *argv[]) {
   VectorTabulateInterpreter::Init();
   AbstractCodeInterpreter::Init();
   Unpickler::Init();
-  BootLinker::Init(
-		   "c:/cygwin/home/bruni/devel/stockhausen/vm-stockwerk/emulator/test/install/",
-		   builtins);
+  char *aliceHome = getenv("STOCKHOME");
+  if (aliceHome == NULL) {
+    Error("could not determine installation directory\n");
+  }
+  char *aliceHomeSl = (char *) malloc(sizeof(char) * (strlen(aliceHome) + 2));  
+  sprintf(aliceHomeSl, "%s/", aliceHome);
+  BootLinker::Init(aliceHomeSl, builtins);
   BootLinker::SetTraceMode(1);
   if (argc < 2) {
     fprintf(stderr, "usage: %s component\n", argv[0]);

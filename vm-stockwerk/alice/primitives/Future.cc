@@ -33,10 +33,10 @@ DEFINE1(Future_byneed) {
 } END
 
 DEFINE1(Future_concur) {
-  Future *future       = Future::New();
-  TaskStack *taskStack = TaskStack::New();
-  ByneedInterpreter::PushFrame(taskStack, future);
-  Scheduler::NewThread(x0, Interpreter::EmptyArg(), taskStack);
+  Future *future = Future::New();
+  TaskStack *newTaskStack = TaskStack::New();
+  ByneedInterpreter::PushFrame(newTaskStack, future);
+  Scheduler::NewThread(x0, Interpreter::EmptyArg(), newTaskStack);
   RETURN(future->ToWord());
 } END
 

@@ -43,9 +43,8 @@ public:
   }
   // Scheduler Functions
   static void NewThread(word closure, word args, TaskStack *taskStack0) {
-    static word zero     = Store::IntToWord(0);
     TaskStack *taskStack = taskStack0;
-    if (closure != zero) {
+    if (closure != Store::IntToWord(0)) {
       taskStack->PushCall(closure);
     }
     Thread *thread = Thread::New(args, taskStack);

@@ -49,12 +49,14 @@ public:
 // PrimitiveInterpreter: An interpreter that runs primitives
 class PrimitiveInterpreter : public Interpreter {
 private:
+  const char *name;
   Primitive::function function;
   u_int arity;
   u_int frameSize;
 public:
-  PrimitiveInterpreter(Primitive::function f, u_int n, u_int m):
-    function(f), arity(n), frameSize(m + 1) {}
+  PrimitiveInterpreter(const char *s, Primitive::function f,
+		       u_int n, u_int m):
+    name(s), function(f), arity(n), frameSize(m + 1) {}
   // Frame Handling
   virtual void PushCall(TaskStack *taskStack, Closure *closure);
   // Execution
@@ -99,25 +101,33 @@ Interpreter::Result PrimitiveInterpreter::Run(word args, TaskStack *taskStack) {
 }
 
 const char *PrimitiveInterpreter::Identify() {
-  return "PrimitiveInterpreter";
+  return name? name: "PrimitiveInterpreter";
 }
 
 void PrimitiveInterpreter::DumpFrame(word) {
-  //--** include the name of the primitive
-  fprintf(stderr, "Primitive\n");
+  if (name)
+    fprintf(stderr, "Primitive %s\n", name);
+  else
+    fprintf(stderr, "Primitive\n");
 }
 
 //
 // Primitive Functions
 //
-word Primitive::MakeFunction(Primitive::function value, u_int arity) {
+word Primitive::MakeFunction(const char *name,
+			     Primitive::function value, u_int arity) {
   // to be done (transforms)
   ConcreteCode *concreteCode =
-    ConcreteCode::New(new PrimitiveInterpreter(value, arity, 0), 0);
+    ConcreteCode::New(new PrimitiveInterpreter(name, value, arity, 0), 0);
   return concreteCode->ToWord();
 }
 
-word Primitive::MakeClosure(Primitive::function value, u_int arity) {
-  word concreteCode = MakeFunction(value, arity);
+word Primitive::MakeClosure(const char *name, 
+			    Primitive::function value, u_int arity) {
+  word concreteCode = MakeFunction(name, value, arity);
   return Closure::New(concreteCode, 0)->ToWord();
+}
+
+word Primitive::MakeClosure(Primitive::function value, u_int arity) {
+  return MakeClosure(NULL, value, arity);
 }

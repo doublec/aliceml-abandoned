@@ -70,7 +70,7 @@ void PrimitiveTable::Register(const char *name, word value) {
 void PrimitiveTable::Register(const char *name,
 			      Primitive::function value, u_int arity,
 			      u_int frameSize) {
-  word function = Primitive::MakeFunction(value, arity);
+  word function = Primitive::MakeFunction(name, value, arity);
   word closure  = Closure::New(function, 0)->ToWord();
   Register(name, closure);
   HashTable::FromWordDirect(functionTable)->
