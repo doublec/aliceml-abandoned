@@ -169,6 +169,9 @@ functor MkRemote(RemotePort: REMOTE_PORT) :> REMOTE =
 
 	val _ = UnsafeRemote.setCallback proxyCallback
 
+	__primitive val dynamicCall : HttpRemotePort.ticket * 'a -> 'b =
+	    "Remote.dynamicCall"
+
 	fun proxy f =
 	    let
 		fun f' x =
@@ -177,7 +180,7 @@ functor MkRemote(RemotePort: REMOTE_PORT) :> REMOTE =
 			 handle e => RAISE e)
 		val url = RemotePort.exportFn f'
 	    in
-		fn x => UnsafeRemote.dynamicCall (url, x)
+		fn x => dynamicCall (url, x)
 	    end
 
 	(*--------------------------------------------------------------
