@@ -102,7 +102,7 @@ clean-common:
 	(cd bootstrap && make clean) || exit 1
 	rm -f time[1-3]
 
-veryclean: clean
+veryclean: clean-mozart clean-seam
 	(cd bootstrap && make veryclean) || exit 1
 	rm -rf */CM */*/CM */*/*/CM */.cm */*/.cm */*/*/.cm
 
