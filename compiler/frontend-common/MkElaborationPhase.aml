@@ -76,6 +76,9 @@ struct
     val error = E.error
     val warn  = E.warn
 
+    fun warnUnused((_,(0,_)), warning) = ()
+      | warnUnused(region, warning)    = warn(region, warning)
+
   (* UNFINISHED... *)
 
     (*DEBUG helpers
@@ -2320,7 +2323,7 @@ TextIO.print "\n";
 		)
 	    else
 		( if not(!Switches.Warn.unusedImport) then () else
-		     warn(#region i, E.ValImpUnused l)
+		     warnUnused(#region i, E.ValImpUnused l)
 		; NONE
 		)
 	end
@@ -2336,7 +2339,7 @@ TextIO.print "\n";
 		)
 	    else
 		( if not(!Switches.Warn.unusedImport) then () else
-		     warn(#region i, E.TypImpUnused l)
+		     warnUnused(#region i, E.TypImpUnused l)
 		; NONE
 		)
 	end
@@ -2353,12 +2356,13 @@ TextIO.print "\n";
 		 )
 	       | UseEnv.PARTIAL UE' =>
 		 if not(UseEnv.isEmpty UE') then
-		    ( UseEnv.insertMod(UE, l, !use)
+		    ( UseEnv.insertMod(UE, l, case desc' of O.NoDesc _ => !use
+		    				 | O.SomeDesc _ => UseEnv.FULL)
 		    ; SOME imp'
 		    )
 		 else
 		    ( if not(!Switches.Warn.unusedImport) then () else
-			 warn(#region i, E.ModImpUnused l)
+			 warnUnused(#region i, E.ModImpUnused l)
 		    ; NONE
 		    )
 	end
@@ -2374,7 +2378,7 @@ TextIO.print "\n";
 		)
 	    else
 		( if not(!Switches.Warn.unusedImport) then () else
-		     warn(#region i, E.InfImpUnused l)
+		     warnUnused(#region i, E.InfImpUnused l)
 		; NONE
 		)
 	end

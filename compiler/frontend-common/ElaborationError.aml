@@ -549,13 +549,17 @@ struct
 	  textpar["component","is","not","closed:"], lt)
 
     fun ppWarning(ValImpUnused l) =
-	  textpar["imported","value",ppLab l,"is","not","used"]
+	  textpar["imported","value",ppLab l,"is","not","used",
+		  "and","has","been","dropped"]
       | ppWarning(TypImpUnused l) =
-	  textpar["imported","type",ppLab l,"is","not","used"]
+	  textpar["imported","type",ppLab l,"is","not","used",
+		  "and","has","been","dropped"]
       | ppWarning(ModImpUnused l) =
-	  textpar["imported","structure",ppLab l,"is","not","used"]
+	  textpar["imported","structure",ppLab l,"is","not","used",
+		  "and","has","been","dropped"]
       | ppWarning(InfImpUnused l) =
-	  textpar["imported","signature",ppLab l,"is","not","used"]
+	  textpar["imported","signature",ppLab l,"is","not","used",
+		  "and","has","been","dropped"]
       | ppWarning(NotGeneralized(x,t)) =
 	vbox(
 	    textpar["type","of",ppId x,"cannot","be","generalized","due","to",

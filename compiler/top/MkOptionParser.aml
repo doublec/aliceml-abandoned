@@ -32,7 +32,7 @@ functor MkOptionParser(Switches: SWITCHES) :> OPTION_PARSER =
 	    \\t\tWhether to warn about naming convention violations.\n\
 	    \\t--warn-shadowing\n\
 	    \\t\tWhether to warn about shadowing of identifiers.\n\
-	    \\t--warn-unused-import\n\
+	    \\t--warn-unused-imports\n\
 	    \\t\tWhether to warn about unused imports.\n\
 	    \Language options:\n\
 	    \\t--assert <int>\n\
@@ -90,7 +90,7 @@ functor MkOptionParser(Switches: SWITCHES) :> OPTION_PARSER =
 	     ("trace-component-access", Global.traceComponentAccess),
 	     ("warn-conventions", Warn.conventions),
 	     ("warn-shadowing", Warn.shadowing),
-	     ("warn-unused-import", Warn.unusedImport),
+	     ("warn-unused-imports", Warn.unusedImport),
 	     ("rtt", Language.supportRtt),
 	     ("reexport-import", Language.reexportImport),
 	     ("retain-full-import", Language.retainFullImport),

@@ -28,7 +28,7 @@ struct
     struct
 	val conventions				= ref true
 	val shadowing				= ref false
-	val unusedImport			= ref false
+	val unusedImport			= ref true
     end
 
     structure Language =

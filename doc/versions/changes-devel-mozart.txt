@@ -2,6 +2,10 @@ Language:
 
 * Nicer syntax (derived forms) for functors.
 
+Compiler:
+
+* Warn about unsued imports.
+
 
 Alice 0.9.3 (Stockhausen Operette 3 Remix 3) - 2004/04/15
 ---------------------------------------------------------
