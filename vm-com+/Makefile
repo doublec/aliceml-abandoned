@@ -26,7 +26,7 @@ Base.aml: ../lib/bootstrap/Bootstrap.aus
 	copy ..\lib\bootstrap\Bootstrap.aus Base.aml
 
 Base.dll: Base.aml stoc-com+.x86-win32 Skeleton.il
-	stoc --no-implicit-import -c Base.aml -o $@
+	stoc --no-implicit-import --no-dump-elaboration-sig -c Base.aml -o $@
 
 IO.dll: IO.cs
 	csc -nologo -t:library IO.cs
@@ -64,10 +64,10 @@ Dialog.dll: Dialog.cs Win32.dll Alice.dll
 	csc -nologo -t:library -r:Win32.dll -r:Alice.dll Dialog.cs
 
 Tools.dll: Tools.aml stoc-com+.x86-win32 Skeleton.il Base.dll.sig
-	stoc -c Tools.aml -o $@
+	stoc --no-dump-elaboration-sig -c Tools.aml -o $@
 
 streams.dll: examples/streams.aml stoc-com+.x86-win32 Skeleton.il Base.dll.sig
-	stoc -c examples/streams.aml -o $@
+	stoc --no-dump-elaboration-sig -c examples/streams.aml -o $@
 
 clean:
 	@-del /F /Q *.pdb
