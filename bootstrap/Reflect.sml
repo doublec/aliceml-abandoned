@@ -2,7 +2,8 @@
 
 structure Reflect =
     struct
-	type value = unit
+	type value  = unit
+	type module = unit
 
 	fun realToVector r =
 	    let

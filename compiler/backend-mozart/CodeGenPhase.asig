@@ -29,7 +29,7 @@ signature CODE_GEN_PHASE_COMPONENT =
 
 		val translate: 'C_t * Source.desc * FlatGrammar.component -> 't
 		val dumpTarget: 't -> string
-		val eval: 't * Reflect.value -> unit
+		val eval: 't * Reflect.module -> unit
 		val component: 't -> Component.t
 	    end
     end

@@ -33,7 +33,7 @@ functor MkBackendStockwerk(structure ComponentManager:
 
 	type value = AbstractCodeGrammar.value
 	__primitive val cast: value -> Component.t = "Unsafe.cast"
-	__primitive val selRecord: Reflect.value * UniqueString.t -> value =
+	__primitive val selRecord: Reflect.module * UniqueString.t -> value =
 	    "Unsafe.selRecord"
 
 	structure ThePhase =
