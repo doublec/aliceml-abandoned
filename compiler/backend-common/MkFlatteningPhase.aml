@@ -67,39 +67,25 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 	    end
 	  | simplifyDecs (RecDec (coord, decs)::decr) =
 	    let
-		fun getConDecs (decs, rest) =
-		    List.foldr (fn (dec, rest) =>
-				case dec of
-				    ValDec (_, _, _) => rest
-				  | RecDec (_, decs) => getConDecs (decs, rest)
-				  | ConDec (_, _, _) => dec::rest)
-		    rest decs
-		fun simplifyRec (ValDec (_, pat, exp), rest) =
-		    (*--** don't ignore constraints *)
-		    (#2 (SimplifyRec.derec (pat, exp))) @ rest
-		  | simplifyRec (RecDec (_, decs), rest) =
-		    List.foldr simplifyRec rest decs
-		  | simplifyRec (ConDec (_, _, _), rest) = rest
-		val idsExpList = List.foldr simplifyRec nil decs
-		val (nonRecIdsExpList, recIdsExpList) =
-		    List.partition (fn (ids, _) => List.null ids) idsExpList
-		val subst =
-		    List.foldr (fn ((ids, _), subst) =>
-				let
-				    val toId = List.hd ids
-				in
-				    List.foldr (fn (fromId, subst) =>
-						(fromId, toId)::subst)
-				    subst (List.tl ids)
-				end) nil recIdsExpList
-		val idExpList =
-		    List.map (fn (ids, exp) =>
-			      (List.hd ids,   (*--** simplifyExp is wrong! *)
-			       simplifyExp (substExp (exp, subst))))
-		    recIdsExpList
+		val (conDecs, constraints, idExpList, subst) =
+		    SimplifyRec.derec decs
+		val aliasDecs =
+		    List.map (fn (fromId, toId) =>
+			      let
+				  val coord = infoId toId
+				  val toExp =
+				      O.VarExp (coord, ShortId (coord, toId))
+			      in
+				  O.OneDec (infoId fromId, fromId, toExp)
+			      end) subst
+		val idExpList' =
+		    List.map (fn (id, exp) =>   (*--** simplifyExp is wrong! *)
+			      (id, simplifyExp (substExp (exp, subst))))
+		    idExpList
 	    in
-		simplifyDecs (getConDecs (decs, nil)) @
-		O.RecDec (coord, idExpList)::simplifyDecs decr
+		simplifyDecs conDecs @
+		(*--** generate constraints *)
+		O.RecDec (coord, idExpList')::(aliasDecs @ simplifyDecs decr)
 	    end
 	  | simplifyDecs (ConDec (coord, id, hasArgs)::decr) =
 	    O.ConDec (coord, id, hasArgs)::simplifyDecs decr

@@ -16,6 +16,10 @@ structure SimplifyRec :> SIMPLIFY_REC =
 
 	open I
 
+	type constraint = longid * longid
+	type binding = id * exp
+	type alias = id * id
+
 	datatype pat =
 	    WildPat of info
 	  | LitPat of info * lit
@@ -320,11 +324,39 @@ structure SimplifyRec :> SIMPLIFY_REC =
 	  | preprocess (I.WithPat (coord, _, _)) =
 	    Error.error (coord, "with pattern not allowed in val rec")
 
-	fun derec (pat, exp) =
+	fun derec (ValDec (_, pat, exp)::decr) =
 	    let
 		val (constraints, pat') = preprocess pat
 		val (constraints', idsExpList) = derec' (pat', exp)
+		val (idExpList, aliases) =
+		    List.foldr (fn ((ids, exp), (rest, subst)) =>
+				let
+				    val toId = List.hd ids
+				in
+				    ((toId, exp)::rest,
+				     List.foldr
+				     (fn (fromId, subst) =>
+				      (fromId, toId)::subst)
+				     subst (List.tl ids))
+				end) (nil, nil) idsExpList
+		val (conDecs, constraints'', idExpList', aliases') = derec decr
 	    in
-		(constraints @ constraints', idsExpList)
+		(conDecs, constraints @ constraints' @ constraints'',
+		 idExpList @ idExpList', aliases @ aliases')
 	    end
+	  | derec (RecDec (_, decs)::decr) =
+	    let
+		val (conDecs, constraints, idExpList, aliases) = derec decs
+		val (conDecs', constraints', idExpList', aliases') = derec decr
+	    in
+		(conDecs @ conDecs', constraints @ constraints',
+		 idExpList @ idExpList', aliases @ aliases')
+	    end
+	  | derec ((dec as ConDec (_, _, _))::decr) =
+	    let
+		val (conDecs, constraints, idExpList, aliases) = derec decr
+	    in
+		(dec::conDecs, constraints, idExpList, aliases)
+	    end
+	  | derec nil = (nil, nil, nil, nil)
     end
