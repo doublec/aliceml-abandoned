@@ -136,7 +136,7 @@ structure Simulator :
                     if showWorlds then printWorld world else ();
                     if drawWorlds then drawWorld world else ();
                     if showStatus then
-                        if r mod 1 = 0 
+                        if r mod 1000 = 0 
                         then print ("round "^Int.toString r^"\n")
                         else ()
                     else ();
