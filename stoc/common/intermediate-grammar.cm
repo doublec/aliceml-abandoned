@@ -8,8 +8,11 @@ Group
 	structure Type
 	signature INTERMEDIATE_GRAMMAR
 	functor MakeIntermediateGrammar
+	signature PP_INTERMEDIATE_GRAMMAR
+	functor MakePPIntermediateGrammar
 	structure IntermediateInfo
 	structure IntermediateGrammar
+	structure PPIntermediateGrammar
 
 is
 
@@ -21,4 +24,7 @@ is
 
 	INTERMEDIATE_GRAMMAR.sig
 	MakeIntermediateGrammar.sml
+	PP_INTERMEDIATE_GRAMMAR.sig
+	MakePPIntermediateGrammar.sml
+
 	IntermediateGrammar.sml
