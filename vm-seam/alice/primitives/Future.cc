@@ -20,6 +20,7 @@
 
 DEFINE1(Future_alarmQuote) {
   DECLARE_INT(microseconds, x0);
+  if (microseconds <= 0) RETURN_UNIT;
   // RegisterAlarm expects milliseconds
   RETURN(SignalHandler::RegisterAlarm(microseconds / 1000)->ToWord());
 } END
