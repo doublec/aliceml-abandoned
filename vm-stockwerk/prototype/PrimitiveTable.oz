@@ -132,33 +132,35 @@ prepare
 		 fun {$ X} {Wait X} X end
 	      'Future.awaitOne':
 		 fun {$ Args} X = Args.1 in {WaitOr X Args.2} X end
-/*--**
-      'Future.byneed':
-	 fun {$ P}
-	    {ByNeed fun {$}
-		       try
-			  {P unit}
-		       catch error(AliceE=alice(InnerE ...) ...) then
-			  {Value.byNeedFail
-			   error({AdjoinAt AliceE 1 FutureException(InnerE)})}
-		       [] error(InnerE ...) then
-			  {Value.byNeedFail error(FutureException(InnerE))}
-		       end
-		    end}
-	 end
-      'Future.concur':
-	 fun {$ P}
-	    !!thread
-		 try
-		    {P unit}
-		 catch error(AliceE=alice(InnerE ...) ...) then
-		    {Value.byNeedFail
-		     error({AdjoinAt AliceE 1 FutureException(InnerE)})}
-		 [] error(InnerE ...) then
-		    {Value.byNeedFail error(FutureException(InnerE))}
-		 end
+	      'Future.byneed': unit   %--**
+/*
+	      fun {$ P}
+		 {ByNeed fun {$}
+			    try
+			       {P unit}
+			    catch error(AliceE=alice(InnerE ...) ...) then
+			       {Value.byNeedFail
+				error({AdjoinAt AliceE 1 FutureException(InnerE)})}
+			    [] error(InnerE ...) then
+			       {Value.byNeedFail error(FutureException(InnerE))}
+			    end
+			 end}
 	      end
-	 end
+*/
+	      'Future.concur': unit   %--**
+/*
+	      fun {$ P}
+		 !!thread
+		      try
+			 {P unit}
+		      catch error(AliceE=alice(InnerE ...) ...) then
+			 {Value.byNeedFail
+			  error({AdjoinAt AliceE 1 FutureException(InnerE)})}
+		      [] error(InnerE ...) then
+			 {Value.byNeedFail error(FutureException(InnerE))}
+		      end
+		   end
+	      end
 */
 	      'Future.isFailed': fun {$ X} 0 end   %--** unimplemented
 	      'Future.isFuture':
@@ -175,22 +177,22 @@ prepare
 	      'General.Size': {NewUniqueName 'General.Size'}
 	      'General.Span': {NewUniqueName 'General.Span'}
 	      'General.Subscript': {NewUniqueName 'General.Subscript'}
-/*--**
-      'General.exnName':
-	 fun {$ N}
-	    case {VirtualString.toString {Value.toVirtualString {Label N} 0 0}}
-	    of "<N>" then {ByteString.make "<unknown>"}
-	    elseof &<|&N|&:|& |&'|Rest then
-	       case {Reverse Rest} of &>|Rest then
-		  {ByteString.make {Reverse Rest}}
-	       end
-	    elseof &<|&N|&:|& |Rest then
-	       case {Reverse Rest} of &>|Rest then
-		  {ByteString.make {Reverse Rest}}
-	       end
-	    elseof S then {ByteString.make S}
-	    end
-	 end
+	      'General.exnName': unit   %--**
+/*
+	      fun {$ N}
+		 case {VirtualString.toString {Value.toVirtualString {Label N} 0 0}}
+		 of "<N>" then {ByteString.make "<unknown>"}
+		 elseof &<|&N|&:|& |&'|Rest then
+		    case {Reverse Rest} of &>|Rest then
+		       {ByteString.make {Reverse Rest}}
+		    end
+		 elseof &<|&N|&:|& |Rest then
+		    case {Reverse Rest} of &>|Rest then
+		       {ByteString.make {Reverse Rest}}
+		    end
+		 elseof S then {ByteString.make S}
+		 end
+	      end
 */
 	      'GlobalStamp.new': fun {$ _} {NewName} end
 	      'GlobalStamp.fromString':
@@ -207,36 +209,42 @@ prepare
 	      'GlobalStamp.hash': BootName.hash
 	      'Hole.Cyclic': {NewUniqueName 'Future.Cyclic'}
 	      'Hole.Hole': {NewUniqueName 'Promise.Promise'}
-/*--**
-      'Hole.fail':
-	 fun {$ X E}
-	    try
-	       X = {Value.byNeedFail error(alice(FutureException(E)))}
-	    catch _ then
-	       {Exception.raiseError alice(BuiltinTable.'Hole.Hole')}
-	    end
-	    unit
-	 end
-      'Hole.fill':
-	 fun {$ X Y}
-	    if {IsDet X} then   %--** test and bind must be atomic
-	       {Exception.raiseError alice(BuiltinTable.'Hole.Hole')}
-	    end
-	    try
-	       X = Y
-	    catch _ then
-	       {Exception.raiseError alice(BuiltinTable.'Hole.Hole')}
-	    end
-	    unit
-	 end
-      'Hole.future':
-	 fun {$ X}
-	    if {IsFuture X} then
-	       skip   %--** wait until it is bound to a hole
-	    end
-	    !!X
-	 end
-      'Hole.hole':
+	      'Hole.fail': unit   %--**
+/*
+	      fun {$ X E}
+		 try
+		    X = {Value.byNeedFail error(alice(FutureException(E)))}
+		 catch _ then
+		    {Exception.raiseError alice(BuiltinTable.'Hole.Hole')}
+		 end
+		 unit
+	      end
+*/
+	      'Hole.fill': unit   %--**
+/*
+	      fun {$ X Y}
+		 if {IsDet X} then   %--** test and bind must be atomic
+		    {Exception.raiseError alice(BuiltinTable.'Hole.Hole')}
+		 end
+		 try
+		    X = Y
+		 catch _ then
+		    {Exception.raiseError alice(BuiltinTable.'Hole.Hole')}
+		 end
+		 unit
+	      end
+*/
+	      'Hole.future': unit   %--**
+/*
+	      fun {$ X}
+		 if {IsFuture X} then
+		    skip   %--** wait until it is bound to a hole
+		 end
+		 !!X
+	      end
+*/
+	      'Hole.hole': unit   %--**
+/*
 	 fun {$ unit} _ end
 */
 	      'Hole.isFailed': fun {$ X} 0 end   %--** unimplemented
@@ -325,6 +333,7 @@ prepare
 	      'Real.+': fun {$ Args} Args.1 + Args.2 end
 	      'Real.-': fun {$ Args} Args.1 - Args.2 end
 	      'Real.*': fun {$ Args} Args.1 * Args.2 end
+	      'Real./': fun {$ Args} Args.1 / Args.2 end
 	      'Real.<': fun {$ Args} if Args.1 < Args.2 then 1 else 0 end end
 	      'Real.>': fun {$ Args} if Args.1 > Args.2 then 1 else 0 end end
 	      'Real.<=': fun {$ Args} if Args.1 =< Args.2 then 1 else 0 end end
@@ -398,26 +407,34 @@ prepare
 		 end
 	      'String.str':
 		 fun {$ C} {ByteString.make [C]} end
-/*--**
-      'Thread.Terminate': kernel(terminate)
-      'Thread.current':
-	 fun {$ unit} {Thread.this} end
-      'Thread.isSuspended': Thread.isSuspended
-      'Thread.raiseIn':
-	 fun {$ T E} {Thread.injectException T E} unit end
-      'Thread.resume':
-	 fun {$ T} {Thread.resume T} unit end
-      'Thread.state':
-	 fun {$ T}
-	    case {Thread.state T} of runnable then 'RUNNABLE'
-	    [] blocked then 'BLOCKED'
-	    [] terminated then 'TERMINATED'
-	    end
-	 end
-      'Thread.suspend':
-	 fun {$ T} {Thread.suspend T} unit end
-      'Thread.yield':
-	 fun {$ T} {Thread.preempt T} unit end
+	      'Thread.Terminate': unit   %--**
+	      'Thread.current': unit   %--**
+	      'Thread.isSuspended': unit   %--**
+	      'Thread.raiseIn': unit   %--**
+	      'Thread.resume': unit   %--**
+	      'Thread.state': unit   %--**
+	      'Thread.suspend': unit   %--**
+	      'Thread.yield': unit   %--**
+/*
+	      'Thread.Terminate': kernel(terminate)
+	      'Thread.current':
+		 fun {$ unit} {Thread.this} end
+	      'Thread.isSuspended': Thread.isSuspended
+	      'Thread.raiseIn':
+		 fun {$ T E} {Thread.injectException T E} unit end
+	      'Thread.resume':
+		 fun {$ T} {Thread.resume T} unit end
+	      'Thread.state':
+		 fun {$ T}
+		    case {Thread.state T} of runnable then 'RUNNABLE'
+		    [] blocked then 'BLOCKED'
+		    [] terminated then 'TERMINATED'
+		    end
+		 end
+	      'Thread.suspend':
+		 fun {$ T} {Thread.suspend T} unit end
+	      'Thread.yield':
+		 fun {$ T} {Thread.preempt T} unit end
 */
 	      'Unsafe.Array.sub': fun {$ Args} {Array.get Args.1 Args.2} end
 	      'Unsafe.Array.update':
@@ -437,8 +454,8 @@ prepare
 		       exception(Primitives.'General.Subscript')
 		    end
 		 end
-/*--**
-	      'Vector.tabulate':
+	      'Vector.tabulate': unit   %--**
+/*
 		 fun {$ Args} N = Args.1 F = Args.2 V in
 		    V = {Tuple.make vector N}
 		    {For 1 N 1 proc {$ I} V.I = {F I - 1} end}
