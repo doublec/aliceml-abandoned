@@ -30,16 +30,6 @@ in
 	    val get_ydim : node -> int
 	    val get_l_xdim : node -> int
 		
-	    val set_xdim : node -> unit
-	    val set_ydim : node -> unit
-	    val set_l_xdim : node -> unit
-		
-	    val calc_ydim : node -> int
-	    val calc_xdim : node -> int 
-	    val calc_l_xdim : node -> int 
-		
-	    val set_dirty : node -> unit
-		
-	    val layout : node -> unit
+	    val layout : node -> int * int * int
 	end
 end
