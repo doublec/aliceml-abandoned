@@ -132,6 +132,9 @@ define
 	 @PendingSignalsTl = Id|NewTl
 	 PendingSignalsTl <- NewTl
       end
+      meth waitForSignal()
+	 {Wait @PendingSignalsHd}
+      end
    end
 
    class Scheduler from SignalManager
@@ -168,9 +171,10 @@ define
 	 @CurrentThread
       end
       meth run() Hd = @QueueHd in
-	 Scheduler, processPendingSignals()
+	 SignalManager, processPendingSignals()
 	 if {IsFree Hd} then
-	    skip   %--** wait for I/O or asynchronous signals
+	    SignalManager, waitForSignal()
+	    Scheduler, run()
 	 elsecase Hd of T|Tr then
 	    QueueHd <- Tr
 	    if {Not {T isSuspended($)}} then
