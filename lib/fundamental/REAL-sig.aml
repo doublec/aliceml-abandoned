@@ -65,18 +65,19 @@ sig
     val equal :		real * real -> bool				(**)
     val compare :	real * real -> order
     val compareReal :	real * real -> IEEEReal.real_order
+    val hash :		real -> int					(**)
 
     val == :		real * real -> bool
     val != :		real * real -> bool
     val ?= :		real * real -> bool
 (*TODO
     val unordered :	real * real -> bool
+*)
 
     val isFinite :	real -> bool
     val isNan :		real -> bool
     val isNormal :	real -> bool
     val class :		real -> IEEEReal.float_class
-*)
 
     val ceil :		real -> int
     val floor :		real -> int

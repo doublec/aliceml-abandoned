@@ -85,6 +85,17 @@ struct
     fun x != y				= Bool.not(x == y)
     fun x ?= y				= x == y
 
+    fun isNan x				= x != x
+    fun isFinite x			= abs x = 1.0/0.0
+    fun isNormal x			= isFinite x andalso abs x <> 0.0
+
+    fun class x  = class'(abs x)
+    and class' x =
+	if x != x then IEEEReal.NAN IEEEReal.QUIET else
+	if x = 1.0/0.0 then IEEEReal.INF else
+	if x = 0.0 then IEEEReal.ZERO else
+	IEEEReal.NORMAL	(* TODO: detect SUBNORMAL *)
+
     __primitive val ceil :	real -> int	= "Real.ceil"
     __primitive val floor :	real -> int	= "Real.floor"
     __primitive val trunc :	real -> int	= "Real.trunc"
@@ -107,6 +118,15 @@ struct
     fun toLarge x				= x
     fun fromLarge mode x			= x
 
+    fun hash x = hash'(abs x)	(* TODO: more appropriate implementation *)
+    and hash' x =
+	if isNan x then 0 else
+	if Bool.not(isFinite x) then 1 else
+	toInt IEEEReal.TO_NEAREST (
+	    case Int.maxInt
+	      of NONE   => x
+	       | SOME n => rem(x, fromInt n)
+	)
 
     (* Math *)
 
