@@ -28,8 +28,12 @@ void AssertOutline(const char *file, int line, const char *message);
 #endif
 
 //--** should be removed
+#ifdef DEBUG_CHECK
 #define Assert(Cond)							\
   if (!(Cond)) AssertOutline(__FILE__, __LINE__, #Cond); else;
+#else
+#define Assert(Cond)
+#endif
 
 void ErrorOutline(const char *file, int line, const char *message);
 #define Error(message) ErrorOutline(__FILE__, __LINE__, message); exit(0);
