@@ -6,7 +6,15 @@ signature PARSE =
 sig
     exception Invalid
 
-    val parse : string -> Meaning.meaning * int	(* Invalid *)
+    val splitCost : int
+
+    val parse : string -> (Meaning.meaning * int * string list) list
+	(* Produces a _list_ partitioning the complete document wrt the
+	 * splitCost bound: no part has a higher cost than splitCost.
+	 * Each part is given by its meaning, its cost, and a simple
+	 * space-optimized version of the original thing that we can use
+	 * for emergency (ie. if we do not find a `real' solution before
+	 * timeout). *)
 end
 
 structure Parse : PARSE =
@@ -15,7 +23,7 @@ struct
 
     type context = Meaning.property
 
-    val splitCost = 500
+    val splitCost = 40
 
     val initial =
 	{ b	= false
@@ -44,36 +52,74 @@ struct
 	{initial where tt = #tt context, u = #u context, size = #size context,
 		       color = if #u context = 0 then Tag.W else #color context}
 
-    fun text(x, context, (xs, false, property) :: doc')
-	where (context = property) =
-	    (x::xs, false, property) :: doc'
-      | text(x, context, doc) =
-	    ([x], false, context) :: doc
 
-    fun space(x, space_context, doc as (xs, spacy, property) :: doc')
+    fun stackCost stack =
+	List.foldl (fn((_,t), sum) => Tag.cost t + sum) 0 stack
+
+    fun close(stack, ss) =
+	List.foldl (fn((_,t), ss) => Tag.toStringClose t::ss) ss stack
+
+    fun reopen(stack, ss) =
+	List.foldr (fn((_,t), ss) => Tag.toStringOpen t::ss) ss stack
+
+
+    val empty = []
+
+    fun text(x, context, (xs, false, property) :: doc', ss)
+	where (context = property) =
+	    ((x::xs, false, property) :: doc', x::ss)
+      | text(x, context, doc, ss) =
+	    (([x], false, context) :: doc, x::ss)
+
+    fun space(x, space_context, doc as (xs, spacy, property) :: doc', ss)
 	where (space_context = spacify property) =
 	    if not(#tt space_context) andalso (spacy orelse List.hd xs = " ")
-	    then doc
-	    else (x::xs, spacy, property) :: doc'
-      | space(x, space_context, doc) =
-	    ([x], true, space_context) :: doc
+	    then (doc, ss)
+	    else ((x::xs, spacy, property) :: doc', x::ss)
+      | space(x, space_context, doc, ss) =
+	    (([x], true, space_context) :: doc, x::ss)
 
-    fun parse'( [],   context, stack, doc, cost) = (doc, cost)
-      | parse'(t::ts, context, stack, doc, cost) =
+    fun addPart([],  cost, ss, parts) = parts
+      | addPart(doc, cost, ss, parts) = (doc,cost,ss)::parts
+
+    fun parse'([], context, [], doc, cost, ss, parts) =
+	    List.rev(addPart(doc, cost, ss, parts))
+      | parse'([], context, stack, doc, cost, ss, parts) =
+	    raise Invalid
+      | parse'(t::ts, context, stack, doc, cost, ss, parts) =
 	case t of
 	     Lex.TEXT x =>
-		parse'(ts, context, stack, text(x, context, doc), cost)
+	     let
+		val (doc',ss') = text(x, context, doc, ss)
+	     in
+		parse'(ts, context, stack, doc', cost, ss', parts)
+	     end
 	   | Lex.SPACE x =>
-		parse'(ts, context, stack, space(if #tt context then x else " ",
-						 spacify context, doc), cost)
+	     let
+		val (doc',ss') = space(if #tt context then x else " ",
+				       spacify context, doc, ss)
+	     in
+		parse'(ts, context, stack, doc', cost, ss', parts)
+	     end
 	   | Lex.OPEN t =>
-		parse'(ts, modify(context,t),
-		       (context,t)::stack, doc, cost + Tag.cost t)
+	     let
+		val context' = modify(context,t)
+		val stack'   = (context,t)::stack
+		val cost'    = cost + Tag.cost t
+		val s        = Tag.toStringOpen t
+	     in
+		if cost' <= splitCost
+		then parse'(ts, context', stack', doc, cost', s::ss, parts)
+		else parse'(ts, context', stack', empty,
+			    stackCost stack, s::reopen(stack, []),
+			    addPart(doc, cost, close(stack, ss), parts))
+	     end
 	   | Lex.CLOSE t =>
 		case stack of [] => raise Invalid | (context',t')::stack' =>
 		if t <> t' then raise Invalid else
-		parse'(ts, context', stack', doc, cost)
+		parse'(ts, context', stack', doc, cost,
+		       Tag.toStringClose t'::ss, parts)
 
-    fun parse s = parse'(Lex.lex s, initial, [], [], 0)
+    fun parse s = parse'(Lex.lex s, initial, [], empty, 0, [], [])
 		  handle Future.Future(Invalid) => raise Invalid
 end
