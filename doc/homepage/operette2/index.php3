@@ -26,28 +26,36 @@
   </P>
 
   <UL>
-    <LI>runtime types
-    <LI>pickling and type-safe unpickling
-    <LI><A href="usage.php3#stot">an interactive toplevel</A>
-    <LI>new libraries for constraint programming and
-      building graphical user interfaces
-    <LI>a new tool for dynamically inspecting Alice values
+    <LI> <A href="constraints.php3"><I>constraints</I></A>:
+	 solving hard problems through a powerful search mechanism
+    <LI> <A href="packages.php3"><I>packages</I></A>:
+	 dynamic typing and first class modules
+    <LI> <A href="pickling.php3"><I>pickling</I></A>:
+	 higher-order, type-safe, and platform-independent persistency
+    <LI> <A href="inspector.php3"><I>inspector</I></A>:
+         a tool for dynamically inspecting Alice values
+    <LI> <A href="usage.php3#stot"><I>interactive development</I></A>:
+	 an interpreter-like interactive toplevel
+    <LI> <A href="usage.php3#stol"><I>static linking</I></A>:
+	 type-safe bundling of components
+    <LI> <A href="gtk.php3"><I>Gtk+</I></A>:
+	 a binding for the Gnome toolkit GUI library
   </UL>
 
   <P>
     Just like Operette 1, besides implementing almost complete SML,
-    Stockhausen Operette 2 continues to sport:
+    Stockhausen Operette 2 also features:
   </P>
 
   <UL>
-    <LI> <A href="modules.php3"><I>higher-order modules</I></A>:
-         a more powerful module language </LI>
-    <LI> <A href="components.php3"><I>components</I></A>:
-         type-safe dynamic loading of modules </LI>
     <LI> <A href="laziness.php3"><I>laziness</I></A>:
 	 combining strict and lazy functional programming </LI>
     <LI> <A href="futures.php3"><I>futures</I></A>:
          "logic variables" and concurrency</LI>
+    <LI> <A href="modules.php3"><I>higher-order and lazy modules</I></A>:
+         a more powerful module language </LI>
+    <LI> <A href="components.php3"><I>components</I></A>:
+         platform-independency and type-safe dynamic loading of modules </LI>
   </UL>
 
   <P>
