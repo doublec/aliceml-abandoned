@@ -379,6 +379,8 @@ struct
                     val _   = log ("Server", ("calculating differences", oldArena, newArena))
                     val changes = Arena.diff (oldArena, newArena)
                     val _   = log ("Server", ("differences", changes))
+                
+
                 in
                     (* broadcast differences *)
                     log ("Server", "broadcasting differences");
@@ -387,15 +389,20 @@ struct
                     
                     (* change state of participants whose snake died to DEAD. *)
                     log ("Server", "check for dead snakes");
-                    List.app (fn sn =>
+                    
+                    List.foldl (fn (sn, l) =>
                         let val part        = PMap.lookupExistent 
                                                 (participants, Snake.id sn)        
                             val playerInfo  = Part.playerInfo part
                         in
                             (Part.state part) := Part.DEAD (playerInfo, ref ~1) (*FIXME*)
-                        end) deadSnakes;
+                            (* build list of names and colors of dead snakes *)
+                            Part.nameNColor part :: l
+                        end) [] deadSnakes ++
                             
                     (* inform the snakes *)
+                    (fn deads => invokeSeveral (_file_, _line_)
+                        (callConnected (), #playersDied, deads));
                     (* TODO *)
                     
                     (* change state of participants whose snake 

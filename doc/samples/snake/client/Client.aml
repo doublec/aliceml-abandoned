@@ -18,7 +18,8 @@ struct
             
             fun tournamentStarted () = ()
 
-            fun levelStarted levelInfo = ()
+            fun levelStarted levelInfo = 
+                #startLevel guiGame levelInfo
 
             fun playerDisconnected (name, color) = ()
 
@@ -36,7 +37,8 @@ struct
 
             fun levelFinished () = ()
 
-            fun tournamentFinished highscore = ()
+            fun tournamentFinished highscore = 
+                #gameFinished guiGame highscore
 
             fun updatePoints points = #updatePoints guiGame points
 
