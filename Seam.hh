@@ -15,8 +15,10 @@
 
 #define SEAM_FOREIGN
 
+#include "Base.hh"
 #include "generic/SignalHandler.hh"
 #include "store/Store.hh"
+#include "store/JITStore.hh"
 #include "store/Map.hh"
 #include "store/WeakMap.hh"
 #include "adt/IntMap.hh"
@@ -54,14 +56,9 @@
 #include "generic/Unpickler.hh"
 #include "generic/Pickler.hh"
 #include "generic/Profiler.hh"
+#include "generic/JitterGenericData.hh"
 #include "generic/Authoring.hh"
 
-#if defined(__MINGW32__) || defined(_MSC_VER)
-// This cannot use the DllExport macro
-// (DllExport sometimes expands to __declspec(dllimport) when it shoudln't)
-extern "C" __declspec(dllexport) word InitComponent();
-#else
-extern "C" word InitComponent();
-#endif
+extern "C" SeamDll void InitSeam();
 
 #endif
