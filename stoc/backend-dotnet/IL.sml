@@ -599,9 +599,10 @@ structure IL :> IL =
 		val _ = initPeephole ty
 		val instrs = peephole instrs
 	    in
-		Map.deleteAll map; outputInstrs (q, instrs, nil);
-		output (q, ".maxstack "); output (q, Int.toString (!maxSize));
-		output (q, "\n")
+		Map.deleteAll map;
+		output (q, ".maxstack ");
+		output (q, Int.toString (!maxSize)); output (q, "\n");
+		outputInstrs (q, instrs, nil)
 	    end
 
 	local
