@@ -46,22 +46,11 @@ functor MakeBackendCommon(Switches: SWITCHES) =
 			  fun context1 () = ()
 			  fun context2 () = ())
 
-	structure Phase3 =
-	    MakeTracingPhase(structure Phase = LivenessAnalysisPhase
-			     structure Switches = Switches
-			     val name = "Liveness Analysis")
-	structure Phase3' =
-	    MakeDumpingPhase(structure Phase = Phase3
-			     structure Switches = Switches
-			     val header = "Live Syntax"
-			     val pp =
-				 PrettyPrint.text
-				 o OutputFlatGrammar.outputComponent
-			     val switch =
-				 Switches.Debug.dumpLivenessAnalysisResult)
+	structure Phase3 = MakeLivenessAnalysisPhase(Switches)
+
 	structure BackendCommon =
 	    ComposePhases(structure Phase1 = BackendCommon
-			  structure Phase2  = Phase3'
+			  structure Phase2 = Phase3
 			  structure Context = EmptyContext
 			  fun context1 () = ()
 			  fun context2 () = ())

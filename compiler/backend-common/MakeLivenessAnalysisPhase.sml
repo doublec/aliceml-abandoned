@@ -34,13 +34,15 @@
  * kill-set of any statement on a path leading to S.
  *)
 
-structure LivenessAnalysisPhase :> LIVENESS_ANALYSIS_PHASE =
+structure LivenessAnalysisPhase1 :> LIVENESS_ANALYSIS_PHASE =
     struct
 	structure C = EmptyContext
 	structure I = FlatGrammar
 	structure O = FlatGrammar
 
 	open I
+
+	(* Annotate `use' set at each statement *)
 
 	datatype 'a lazyCopy =
 	    Orig of 'a
@@ -54,8 +56,6 @@ structure LivenessAnalysisPhase :> LIVENESS_ANALYSIS_PHASE =
 	    Vector.foldl (fn (id, lset) => x (lset, id)) lset ids
 	  | processArgs (ProdArgs labIdVec, lset, x) =
 	    Vector.foldl (fn ((_, id), lset) => x (lset, id)) lset labIdVec
-
-	(* Compute `Use' Sets *)
 
 	fun delDef (lset as (Orig set), IdDef (Id (_, stamp, _))) =
 	    if StampSet.member (set, stamp) then
@@ -103,8 +103,6 @@ structure LivenessAnalysisPhase :> LIVENESS_ANALYSIS_PHASE =
 	  | setInfo ({liveness = ref (Use _), ...}, _) = ()
 	  | setInfo ({liveness = ref (Kill _), ...}, _) =
 	    raise Crash.Crash "LivenessAnalysisPhase.setInfo"
-
-	(* Annotate the `Use' set at each statement *)
 
 	fun scanBody (ValDec (i, idDef, exp)::stms) =
 	    let
@@ -310,7 +308,19 @@ structure LivenessAnalysisPhase :> LIVENESS_ANALYSIS_PHASE =
 	  | scanExp (FunAppExp (_, id, _, args), lset) =
 	    processArgs (args, ins (lset, id), ins)
 
-	(* Compute `Def' and `Kill' sets *)
+	fun translate () (_, component as (_, (body, _))) =
+	    (scanBody body; component)
+    end
+
+structure LivenessAnalysisPhase2 :> LIVENESS_ANALYSIS_PHASE =
+    struct
+	structure C = EmptyContext
+	structure I = FlatGrammar
+	structure O = FlatGrammar
+
+	open I
+
+	(* Annotate `kill' set at each statement *)
 
 	fun processArgs (OneArg id, set, x) = x (set, id)
 	  | processArgs (TupArgs ids, set, x) =
@@ -407,5 +417,42 @@ structure LivenessAnalysisPhase :> LIVENESS_ANALYSIS_PHASE =
 	  | initBody (nil, _) = ()
 
 	fun translate () (_, component as (_, (body, _))) =
-	    (scanBody body; initBody (body, StampSet.new ()); component)
+	    (initBody (body, StampSet.new ()); component)
+    end
+
+functor MakeLivenessAnalysisPhase(Switches: SWITCHES) =
+    let
+	structure Phase1 =
+	    MakeTracingPhase(structure Phase = LivenessAnalysisPhase1
+			     structure Switches = Switches
+			     val name = "Liveness Analysis - Pass 1")
+	structure Phase1' =
+	    MakeDumpingPhase(structure Phase = Phase1
+			     structure Switches = Switches
+			     val header = "Live Syntax with `use' sets"
+			     val pp =
+				 PrettyPrint.text
+				 o OutputFlatGrammar.outputComponent
+			     val switch =
+				 Switches.Debug.dumpLivenessAnalysisIntermediate)
+
+	structure Phase2 =
+	    MakeTracingPhase(structure Phase = LivenessAnalysisPhase2
+			     structure Switches = Switches
+			     val name = "Liveness Analysis - Pass 2")
+	structure Phase2' =
+	    MakeDumpingPhase(structure Phase = Phase2
+			     structure Switches = Switches
+			     val header = "Live Syntax with `kill' sets"
+			     val pp =
+				 PrettyPrint.text
+				 o OutputFlatGrammar.outputComponent
+			     val switch =
+				 Switches.Debug.dumpLivenessAnalysisResult)
+    in
+	ComposePhases(structure Phase1 = Phase1'
+		      structure Phase2 = Phase2'
+		      structure Context = EmptyContext
+		      fun context1 () = ()
+		      fun context2 () = ())
     end
