@@ -256,13 +256,13 @@ struct
    fun iterTake str = iterTake'(str,0,"")
  
    and iterTake' (str,i,a) = 
-       if i >= (String.length(str)) 
+       if i >= (String.size(str)) 
 	   then a
        else
 	   let val test = String.sub(str,i) 
 	   in if Char.equal(#" ",test)
 		  then a
-	      else iterTake' (str,i+1, String.append(a,Char.toString(test)))
+	      else iterTake' (str,i+1, a ^ Char.toString(test))
 	   end  
 
    fun castPromise value = UnsafeValue.cast value 
