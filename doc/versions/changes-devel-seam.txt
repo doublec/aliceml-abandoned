@@ -1,3 +1,14 @@
+Runtime system:
+
+* Completely new VM called Seam (Simple Efficient Abstract Machine).
+  It uses just-in-time compilation and a 3-generation garbage collector,
+  rendering it up to 5 times faster than Alice on Mozart.
+* Completely new, extended constraint library based on Gecode
+  (Generic Constraint Development Environment). It adds
+  selection constraints, batch recomputation and distributed search.
+  Propagation and search is more than 10 times faster than with Mozart.
+* Mozart is no longer required to run Alice (and no longer compatible with it).
+
 Language:
 
 * Nicer syntax (derived forms) for functors.
@@ -17,7 +28,7 @@ Compiler:
 * Warn about unused imports (switch --(no-)warn-unused-imports).
 * Warn about inaccessible type and signature names appearing in inferred
   component signature (switch --(no-)warn-inaccessible-exports).
-* Inaccessible types occuring in inferred import signatures are now an error.
+* Inaccessible types occuring in inferred /import/ signatures are now an error.
 * To accommodate with the new dynamic import typing, the compiler now closes
   over all implicit import signatures, by potentially inserting additional
   imports for abstract types and signatures imported transitively. Optional
@@ -27,26 +38,15 @@ Compiler:
 Linker:
 
 * Rewritten to soundly support dynamic component typing.
-* Disallowing cyclic linking.
+* Disallow cyclic linking.
 * Print free type names appearing in component signature with -d option.
 
 Interactive Toplevel:
 
 * Enable Ctrl-C for interrupting a computation.
-* Enable Ctrl-Z for putting a computation into background.
-* Function exit() for as an alternative for Ctrl-D in broken environments.
+* Enable Ctrl-Z for putting a computation into background (new Alice thread).
+* Function exit() as an alternative for Ctrl-D in broken environments.
 * Value printer is customizable for abstract types.
-
-Runtime system:
-
-* Completely new VM called Seam (Simple Efficient Abstract Machine).
-  It uses just-in-time compilation and a 3-generation garbage collector,
-  rendering it up to 5 times faster than Alice on Mozart.
-* Completely new, extended constraint library based on Gecode
-  (Generic Constraint Development Environment). It adds
-  selection constraints, batch recomputation and distributed search.
-  Propagation and search is more than 10 times faster than with Mozart.
-* Mozart is no longer required to run Alice (and no longer compatible with it).
 
 Library:
 
@@ -57,9 +57,9 @@ Library:
 * FixedInt added.
 * Word32 added. LargeWord = Word32 now, but Word = Word31 remains.
 * ComponentManager: added load function, and logStream reference to configure
-  trace destinations. Preconfigurable by value with ALICE_TRACE_COMPONENT.
-  Trace messages are more informative trace messages, particularly wrt
-  signature mismatches. Also added exception Internal.
+  trace destinations. Preconfigurable through value of ALICE_TRACE_COMPONENT.
+  Trace messages are more informative, particularly wrt signature mismatches.
+  Also added exception Internal.
 * Hole: fixed semantics of synchronisation on holes.
 * Promise: fulfilling with a cycle no longer fails the promise.
 * Alt: added mapBoth.
@@ -69,7 +69,7 @@ Library:
 * Future: added ByNeed and Concur functors.
 * Channel: new module for concurrent message channels.
 * RefMap: new module for stable polymorphic hash tables over references.
-* Print: new function register for hooking user-defined printing functions.
+* Print: added function register for hooking user-defined printing functions.
 * Remote: added functor Proxy to conveniently wrap a whole module into proxies.
 
 Tools:
