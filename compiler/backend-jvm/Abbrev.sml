@@ -6,8 +6,8 @@ structure Abbrev  =
 			     [Classsig "de/uni_sb/ps/dml/runtime/DMLValue"])
 	val CAssign       = ("de/uni_sb/ps/dml/runtime/General/assign",
 			     [Classsig "de/uni_sb/ps/dml/runtime/DMLValue"])
-	val CRef          = ("de/uni_sb/ps/dml/runtime/General/ref",
-			      [Classsig "de/uni_sb/ps/dml/runtime/DMLValue"])
+	val CRef          = ("de/uni_sb/ps/dml/runtime/Constants/reference",
+			      [Classsig "de/uni_sb/ps/dml/runtime/Constructor"])
 	val CBind          = ("de/uni_sb/ps/dml/runtime/General/bind",
 			      [Classsig "de/uni_sb/ps/dml/runtime/Name"])
 	val CCons          = ("de/uni_sb/ps/dml/runtime/List/cons",
