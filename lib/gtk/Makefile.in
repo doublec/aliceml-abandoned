@@ -118,7 +118,7 @@ Linked%.ozf: %.ozf
 
 .PHONY: all clean veryclean distclean binding
 
-all: $(TARGETS) binding $(COMPONENTS:%=Linked%)
+all: $(TARGETS) binding $(COMPONENTS)
 
 #---------------------------------------------------------------------
 # Read GTK C Sources
@@ -157,6 +157,7 @@ $(PREFIX)/lib/gtk/%: Linked%
 
 clean veryclean:
 	-$(RM) $(ALICEOBJS) $(OZWRPSRCS) $(OZWRPSIGS) $(OZWRPOBJS) $(WRPOBJS)
+	-$(RM) $(COMPONENTS)
 
 wrapper_clean:
 	-$(RM) $(WRPOBJS)
