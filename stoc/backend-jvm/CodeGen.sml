@@ -43,7 +43,7 @@ structure CodeGen =
 	  | Exp of exp
 	exception Debug of deb
 
-
+	val d = ref nil:ImperativeGrammar.program ref
 	(* Labelzähler, aNewLabel liefert einen neuen String "label?", ? ist Zahl.
 	 Den ersten Stack brauchen wir, damit für jede Klasse wieder bei label1
 	 begonnen wird. *)
@@ -167,11 +167,11 @@ structure CodeGen =
 		    valOf (StampHash.lookup (free, stamp'))
 
 		(* Umgebende Funktion einer Id setzen oder auslesen *)
-		fun setFun (Id(_,stamp',_)) =
+		fun setFun (Id(_,stamp',_), stamp'') =
 		    if (isSome (StampHash.lookup(defFun, stamp')))
 			then print "setFun twice!"
 		    else
-			StampHash.insert(defFun, stamp', Lambda.top ())
+			 StampHash.insert(defFun, stamp', stamp'')
 		fun getFun stamp' =
 		    case StampHash.lookup (defFun, stamp') of
 			NONE => toplevel
@@ -214,12 +214,13 @@ structure CodeGen =
 		    (Class.getInitial ()^"/"^(fieldname number), CLabel, 1)
 
 		(* Hinzufügen einer Recordarity *)
-		fun insert strings =
-		    case StringListHash.lookup (arity, strings) of
-			NONE => (number := ((!number)+1);
-				 StringListHash.insert (arity, strings, !number);
-				 staticfield (!number))
-		      | SOME number' => staticfield number'
+		fun insert (strings as (s::rest)) =
+		     case StringListHash.lookup (arity, strings) of
+			 NONE => (
+				  number := ((!number)+1);
+				  StringListHash.insert (arity, strings, !number);
+				  staticfield (!number))
+		       | SOME number' => staticfield number'
 
 		(* Generieren aller Recordarities zur Übersetzungszeit *)
 		fun generate () =
@@ -336,25 +337,19 @@ structure CodeGen =
 			 if Lambda.isSelfCall stamp'
 			     then ()
 			 else
-			     (print ("eintrage stamp "^(Stamp.toString stamp')^"... ");
-			      ScopedStampSet.insert (free, stamp');
-			      print ("okay.\n"));
+			      ScopedStampSet.insert (free, stamp')
 		    fun delete (Id (_,stamp',_)) =
-			(print ("loesche stamp "^(Stamp.toString stamp')^"... ");
-			 ScopedStampSet.delete(free, stamp');
-			 print ("okay.\n"))
+			 ScopedStampSet.delete(free, stamp')
 
 		    fun get () = ScopedStampSet.foldScope (fn (x,xs) => x::xs) nil free
 
 		    (* Betreten einer neuen Subfunktion. *)
 		    fun enter () =
-			(print "ENTER scope\n";
-			 ScopedStampSet.insertScope free)
+			 ScopedStampSet.insertScope free
 
 		    (* Verlassen der Subfunktion. *)
 		    fun exit () =
-			(print "LEAVE scope\n";
-			 ScopedStampSet.mergeScope free)
+			 ScopedStampSet.mergeScope free
 		end
 	in
 	    fun freeVarsExp (LitExp _) = ()
@@ -371,7 +366,7 @@ structure CodeGen =
 			 freeVarsDecs body';
 			 fV.delete id';
 			 FreeVars.setVars (stamp',fV.get ());
-			 FreeVars.setFun id';
+			 FreeVars.setFun (id', Lambda.top ());
 			 freeVarsFun idbodys';
 			 Lambda.setId();
 			 Lambda.pop ();
@@ -403,7 +398,7 @@ structure CodeGen =
 	      | freeVarsDec (HandleStm(_,body',id',body'')) =
 		(freeVarsDecs body'';
 		 freeVarsDecs body';
-		 FreeVars.setFun id';
+		 FreeVars.setFun (id', Lambda.top());
 		 fV.delete id')
 	      | freeVarsDec (EndHandleStm(_,body')) = freeVarsDecs body'
 	      | freeVarsDec (TestStm(_,id',test',body',body'')) =
@@ -416,7 +411,7 @@ structure CodeGen =
 	      | freeVarsDec (ValDec(_,id',exp', _)) =
 		(Lambda.pushFun id';
 		 freeVarsExp exp';
-		 FreeVars.setFun id';
+		 FreeVars.setFun (id', Lambda.top());
 		 fV.delete id';
 		 Lambda.popFun ())
 	      | freeVarsDec (RecDec(_,idsexps, _)) =
@@ -424,7 +419,7 @@ structure CodeGen =
 		    fun freeVarsRecDec ((id',exp')::rest) =
 			(Lambda.pushFun id';
 			 freeVarsExp exp';
-			 FreeVars.setFun id';
+			 FreeVars.setFun (id',Lambda.top());
 			 freeVarsRecDec rest;
 			 fV.delete id';
 			 Lambda.popFun ())
@@ -433,7 +428,7 @@ structure CodeGen =
 		    freeVarsRecDec idsexps
 		end
 	      | freeVarsDec (ConDec(_,id',_, _)) = (fV.delete id';
-						 FreeVars.setFun id')
+						 FreeVars.setFun (id', Lambda.top()))
 	      | freeVarsDec (EvalStm(_, exp')) = freeVarsExp exp'
 	      | freeVarsDec (ReturnStm(_,exp')) = freeVarsExp exp'
 	      | freeVarsDec (ExportStm _) = ()
@@ -493,11 +488,9 @@ structure CodeGen =
 		 (* freie Variablen berechnen. *)
 		 val _ = app freeVarsDec program
 		 val _ = Lambda.createIdsLambdaTable()
-		 val _ = print "freie Variablen berechnet.\n"
 		 (* val _ = app annotateTailDec program*)
 		 (* Alle Deklarationen übersetzen *)
 		 val insts = decListCode program
-		 val _ = print "decListCode done.\n"
 
 		 (* JVM-Register initialisieren. *)
 		 fun initializeLocals 0 = [Label afterInit]
@@ -600,11 +593,10 @@ structure CodeGen =
 	    let
 		val loc = Local.assign(id', Local.nextFree())
 	    in
-		print "ValDec\n";
-		Lambda.pushFun id';
-		(expCode exp' @
-		 [Comment "Store 2", Astore loc])
-		before Lambda.popFun()
+		(Lambda.pushFun id';
+		 (expCode exp' @
+		  [Comment "Store 2", Astore loc])
+		 before Lambda.popFun())
 	    end
 	  | decCode (RecDec (_, nil, _)) = nil
 	  | decCode (RecDec (_,idexps as ((recid,_)::_),_)) =
@@ -758,7 +750,7 @@ structure CodeGen =
 		  | testCode (ConTest(id'',SOME id''')) =
 		    let
 			val loc = Local.assign(id''',Local.nextFree())
-			val _ = FreeVars.setFun id'''
+			val _ = FreeVars.setFun (id''', Lambda.top())
 		    in
 			Comment "Hi9" ::
 			 (idCode id') @
@@ -784,7 +776,7 @@ structure CodeGen =
 			fun bindit ((_,id'')::nil,i) =
 			    let
 				val loc = Local.assign(id'',Local.nextFree())
-				val _ = FreeVars.setFun id''
+				val _ = FreeVars.setFun (id'', Lambda.top())
 			    in
 				(atCodeInt i) ::
 				Aaload ::
@@ -793,7 +785,7 @@ structure CodeGen =
 			  | bindit ((_,id'')::rest,i) =
 			    let
 				val loc = Local.assign(id'',Local.nextFree())
-				val _ = FreeVars.setFun id''
+				val _ = FreeVars.setFun (id'',Lambda.top())
 			    in
 				Dup ::
 				(atCodeInt i) ::
@@ -828,7 +820,7 @@ structure CodeGen =
 			fun bindit (id''::nil,i) =
 			    let
 				val loc = Local.assign(id'',Local.nextFree())
-				val _ = FreeVars.setFun id''
+				val _ = FreeVars.setFun (id'',Lambda.top())
 
 			    in
 				(atCodeInt i) ::
@@ -839,7 +831,7 @@ structure CodeGen =
 			  | bindit (id''::rest,i) =
 			    let
 				val loc = Local.assign(id'',Local.nextFree())
-				val _ = FreeVars.setFun id''
+				val _ = FreeVars.setFun (id'',Lambda.top())
 			    in
 				Dup ::
 				(atCodeInt i) ::
@@ -865,10 +857,10 @@ structure CodeGen =
 	    in
 		(*zuerst @ *)
 		(testCode test') @
-		(List.concat (map decCode body')) @
+		List.concat (map decCode body') @
 		[Goto danach,
 		 Label elselabel] @
-		(List.concat (map decCode body'')) @
+		List.concat (map decCode body'') @
 		[Label danach]
 	    end
 
@@ -877,13 +869,12 @@ structure CodeGen =
 		then
 		    let
 			val _ = da := Label.newNumber ()
-			val e = List.concat (map decCode body')
 		    in
 			(Label (Label.fromNumber (!da)))::
 			(List.concat (map decCode body'))
 		    end
 	    else
-		[Goto (Label.fromNumber schonda)]
+		 [Goto (Label.fromNumber schonda)]
 
 	  | decCode (ReturnStm (_,ap as AppExp(_,id' as (Id (_,stamp',_)),arg'))) =
 		(* Tailcall Applikation *)
@@ -1180,18 +1171,17 @@ structure CodeGen =
 					 if FreeVars.getFun stamp'' = Lambda.top() then
 					     if stamp'' <> stampFromId(Lambda.getId stamp')
 						 then
-						     (print ("mache "^Stamp.toString stamp'^" in "^Stamp.toString(Lambda.top())^"\n");
-						      (* if Local.get id' = ~1 then
+						     (* if Local.get id' = ~1 then
 						       raise Debug (Ias FreeVars.array)
 					     else *)
-						      [Dup,
-						       Comment ("Hi3: id="^Int.toString (Local.get stamp'')),
-						       Aload (Local.get stamp''),
-						       Putfield(className^"/"^(Local.fieldNameFromStamp stamp''),CVal, 0),
-						       Comment ("load local variable")])
+						     [Dup,
+						      Comment ("Hi3: id="^Int.toString (Local.get stamp'')),
+						      Aload (Local.get stamp''),
+						      Putfield(className^"/"^(Local.fieldNameFromStamp stamp''),CVal, 0),
+						      Comment ("load local variable")]
 					     else nil
 					 else
-					     (print ("bearbeite "^Stamp.toString stamp'^" in "^Stamp.toString(Lambda.top())^"\n");
+					     (Lambda.noSapply ();
 					      [Dup,
 					       Aload 0,
 					       Comment ("Getfield 1; (FreeVars.getFun stamp'' = "^
@@ -1201,11 +1191,9 @@ structure CodeGen =
 					       Putfield(className^"/"^(Local.fieldNameFromStamp stamp''),CVal, 0)])
 				 end
 			 in
-			     val _ = print "Jetzt kommen die Loadvars\n"
 			     val loadVars = List.concat (map loadFreeVar freeVarList)
 			 end
 		     in
-			 print "funexp";
 			 Lambda.push id';
 			 Catch.push ();
 			 Label.push();
@@ -1436,5 +1424,7 @@ fun labeliter ((l,_)::rest,i) = labelcode (l,i) @ labeliter(rest,i+1)
 and
     compile prog = genProgramCode ("Emil", imperatifyString prog)
 and
-    compilefile f = genProgramCode ("Emil", imperatifyFile f)
+    compilefile f = (d:=(imperatifyFile f);
+		     genProgramCode ("Emil", !d);
+		     !d)
     end

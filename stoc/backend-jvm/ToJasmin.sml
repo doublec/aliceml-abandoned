@@ -158,7 +158,7 @@ structure ToJasmin =
 		    else "aload "^Int.toString i
 		end
 	      | instructionToJasmin (Anewarray cn,_) = "anewarray "^cn
-	      | instructionToJasmin (Areturn,_) = (print (!actclass);"areturn")
+	      | instructionToJasmin (Areturn,_) = "areturn"
 	      | instructionToJasmin (Arraylength,_) = "arraylength"
 	      | instructionToJasmin (Athrow,_) = "athrow"
 	      | instructionToJasmin (Bipush i,_) = "bipush "^intToString i
@@ -260,25 +260,22 @@ structure ToJasmin =
 					 then'
 				     else else',
 					 need, max)^
-					 (instructionToJasmin(i,staticapply))^"\n"^
-					 (if nd<0 then
-					      recurse (is, nd+(!stackneed),!stackmax)
-					  else
-					      recurse (is, nd+(!stackneed),
-						       Int.max(nd+(!stackneed),!stackmax)))
-			      | _ =>
-					      if noStack i then "" else
-						  ((*"\t\t.line "^line()^*)
-						  "\t; Stack: "^Int.toString need^" Max: "^Int.toString max)^"\n"^
-						 (instructionToJasmin (i, staticapply))^"\n"^
-						 (if nd<0 then
-						      recurse (is, nd+need, max)
-						  else recurse (is, nd+need, Int.max(nd+need,max)))
+					 recurse (is, !stackneed,!stackmax)
+			      | _ => (if noStack i
+					  then ""
+				      else
+					  ((*"\t\t.line "^line()^*)
+					   "\t; Stack: "^Int.toString need^
+					   " Max: "^Int.toString max))
+					      ^"\n"^
+					      (instructionToJasmin (i, staticapply))^"\n"^
+					      (if nd<0 then
+						   recurse (is, nd+need, max)
+					       else recurse (is, nd+need, Int.max(nd+need,max)))
 			end
 		      | recurse (nil,need,max) =
 			(stackneed:= need;
 			 stackmax := max;
-			 print ("Stack: "^(Int.toString max));
 			 "")
 		in
 		    recurse (insts, need, max)
@@ -310,7 +307,7 @@ structure ToJasmin =
 		val catchinsts = instructionsToJasmin(catches,0,0, staticapply)
 		(* Seiteneffekt: stackneed und stackmax werden gesetzt *)
 		val insts = instructionsToJasmin(instructions,0,0, staticapply)
-(*		val _ = if methodname="sapply" then
+		(*val _ = if methodname="apply" then
 		    raise Debug (methodname, instructions) else ()*)
 	    in
 		(* apply hat derzeit immer ein doppeltes Areturn am Ende.
