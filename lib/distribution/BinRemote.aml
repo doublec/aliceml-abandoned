@@ -10,6 +10,7 @@
  *   $Revision$
  *)
 
+import structure Component         from "x-alice:/lib/system/Component"
 import signature COMPONENT_MANAGER
     from "x-alice:/lib/system/COMPONENT_MANAGER-sig"
 import structure Unix              from "x-alice:/lib/system/Unix"
@@ -27,6 +28,7 @@ signature REMOTE_PORT =
 	type ticket = Url.t
 
 	exception Ticket
+	exception Sited
 	exception Protocol of int * string
 
 	val export: string -> ticket
@@ -41,6 +43,7 @@ structure HttpRemotePort :> REMOTE_PORT =
 	type ticket = Url.t
 
 	exception Ticket
+	exception Sited = Component.Sited
 	exception Protocol of int * string
 
 	val pickleContentType = "application/x-alice-pickle"
@@ -149,6 +152,7 @@ structure HttpRemotePort :> REMOTE_PORT =
 
 functor MkRemote(RemotePort: REMOTE_PORT) :> REMOTE =
     struct
+	exception Sited = RemotePort.Sited
 	exception Protocol = RemotePort.Protocol
 
 	(*--------------------------------------------------------------
@@ -178,6 +182,11 @@ functor MkRemote(RemotePort: REMOTE_PORT) :> REMOTE =
 		    UnsafeRemote.packValue
 			(RETURN (f (UnsafeRemote.unpackValue x))
 			 handle e => RAISE e)
+		    handle Sited => UnsafeRemote.packValue (RAISE Sited)
+			     | e => (*--** *)
+				   UnsafeRemote.packValue (RAISE e)
+				   handle _ =>
+				       UnsafeRemote.packValue (RAISE Sited)
 		val url = RemotePort.exportFn f'
 	    in
 		fn x => dynamicCall (url, x)

@@ -45,6 +45,7 @@ define
 		  catch error(dp(generic 'pickle:nogoods' ...) ...) then
 		     {Exception.raiseError alice(SitedException)} unit
 		  end
+		  %--** should handle pickle:resources for holes
 	       end
 	    unpackValue: Pickle.unpack)
 end

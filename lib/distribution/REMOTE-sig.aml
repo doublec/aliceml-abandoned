@@ -19,6 +19,7 @@ signature REMOTE =
 	type ticket = string
 
 	exception Ticket
+	exception Sited
 	exception Protocol of int * string
 
 	(*--** once-only offer and proxy *)
