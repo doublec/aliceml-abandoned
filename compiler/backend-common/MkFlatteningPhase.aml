@@ -982,7 +982,7 @@ functor MkFlatteningPhase(structure Switches: SWITCHES) :> FLATTENING_PHASE =
 		(Vector.fromList labelIdDefList, mapping)
 	    end
 
-	fun translate () (desc, (imports, decs, idFlds, sign)) =
+	fun translate (desc, _, (imports, decs, idFlds, sign)) =
 	    let
 		val imports' =
 		    Vector.map (fn (id, sign, url, compileTime) =>
@@ -1000,7 +1000,7 @@ functor MkFlatteningPhase(structure Switches: SWITCHES) :> FLATTENING_PHASE =
 		val body' = translateCont (Decs (Vector.toList decs, cont))
 	    in
 		IntermediateAux.reset ();
-		{imports = imports', body = body',
-		 exports = exports', sign = sign}
+		((), {imports = imports', body = body',
+		      exports = exports', sign = sign})
 	    end
     end
