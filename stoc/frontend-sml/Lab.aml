@@ -5,7 +5,7 @@
  *)
 
 
-functor Lab() :> LAB =
+structure Lab :> LAB =
   struct
 
     type Lab = string

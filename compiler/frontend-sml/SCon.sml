@@ -5,7 +5,7 @@
  *)
 
 
-functor SCon() :> SCON =
+structure SCon :> SCON =
   struct
 
     datatype SCon =
