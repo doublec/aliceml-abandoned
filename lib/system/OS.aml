@@ -16,7 +16,7 @@ import structure UnsafeOS     from "UnsafeOS"
 import signature OS           from "OS-sig"
 import signature OS_PATH      from "OS_PATH-sig"
 
-structure OS :> OS =
+structure OS : OS =
 struct
     type syserror = int
     exception SysErr = UnsafeOS.SysErr
@@ -28,8 +28,8 @@ struct
 
     structure FileSys =
     struct
-	type dirstream
-	eqtype file_id
+	__primitive type dirstream = "OS.FileSys.dirstream"
+	__primitive eqtype file_id = "OS.FileSys.file_id"
 	datatype access_mode = A_READ | A_WRITE | A_EXEC
 
 	open UnsafeOS.FileSys
@@ -37,7 +37,7 @@ struct
 
     structure Process =
     struct
-	eqtype status
+	__primitive eqtype status = "OS.Process.status"
 
 	val success = UnsafeOS.Process.success
 	val failure = UnsafeOS.Process.failure
@@ -88,7 +88,7 @@ struct
 
     structure IO =
     struct
-	eqtype iodesc
+	__primitive eqtype iodesc = "OS.IO.iodesc"
 
 	fun hash iodesc = Word.fromInt (UnsafeIODesc.hash iodesc)
 	val compare = UnsafeIODesc.compare
