@@ -10,7 +10,7 @@
   </PRE>
 
   <P>
-    The <TT>Thread</TT> module provides access to first-class threads.
+    The <TT>Thread</TT> structure provides access to first-class threads.
     A thread encapsulates a concurrent computation.  The <TT>concur</TT>
     keyword starts a new thread, as does triggering a by-need future.
     A thread is initially created in state <TT>RUNNABLE</TT>.  The
@@ -18,8 +18,9 @@
     computation requests the value of a future, the thread becomes
     <TT>BLOCKED</TT> until the future is bound, whereafter it becomes
     <TT>RUNNABLE</TT> again.  When the computation has been fully
-    performed, the thread becomes <TT>TERMINATED</TT>; we say that
-    the thread has <I>died</I>.
+    performed (or an exception is raised for which there is no handler),
+    the thread becomes <TT>TERMINATED</TT>; we say that the thread has
+    <I>died</I>.
   </P>
 
   <P>
@@ -68,7 +69,7 @@
 
   <DL>
     <DT>
-      <TT>type thread</TT>
+      <TT>type thread</TT><BR>
       <TT>type t = thread</TT>
     </DT>
     <DD>
@@ -122,7 +123,7 @@
       <TT>current ()</TT>
     </DT>
     <DD>
-      <P>returns the thread currently executing, that is, the thread
+      <P>returns the calling thread, that is, the thread
 	executing <TT>current&nbsp;()</TT>.</P>
     </DD>
 
@@ -158,8 +159,8 @@
     </DT>
     <DD>
       <P>raises the exception <I>ex</I> in thread <I>thr</I>.
-	If <I>thr</I> is terminated, raises <TT>Terminated</TT> in the
-	calling thread instead.  If <I>thr</I> is blocked, makes <I>thr</I>
+	If <I>thr</I> is terminated, instead raises <TT>Terminated</TT>
+	in the calling thread.  If <I>thr</I> is blocked, makes <I>thr</I>
 	runnable again.</P>
     </DD>
 
