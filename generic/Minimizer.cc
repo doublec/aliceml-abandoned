@@ -930,7 +930,7 @@ void Partition::FollowBack(int block, int edge) {
   }
 
   // if this block was split, perform the postponed split operations
-  while (Store::DirectWordToInt(ownSplit) == INVALID_INT) {
+  while (Store::WordToInt(ownSplit) == INVALID_INT) {
     Tuple *cons = Tuple::FromWordDirect(ownSplit);
     splitBlockAtNode(block, Store::DirectWordToInt(cons->Sel(0)));
     ownSplit = cons->Sel(1);
@@ -998,6 +998,10 @@ void Partition::Minimize() {
   // has already filled the partition
 
   // Initialize & sort the blocks
+  DynNodeArray *na = DynNodeArray::FromWordDirect(GetArg(NA_POS));
+  if (na->GetCount() < 2)
+    return;
+
   InitBlocks();
 
   Stack *agenda = Stack::New(100);  
