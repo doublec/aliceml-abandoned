@@ -34,8 +34,10 @@ define
 		      end
 		   'inspect':
 		      fun {$ X} {Inspector.inspect X} unit end
-		   'Inspect$':
+		   'InspectType$':
 		      fun {$ X} {Inspector.inspect X} unit end
+		   'Inspect$':
+		      fun {$ S X} {Inspector.inspect X} unit end
 		   'browse':
 		      fun {$ X} {Browser.browse X} unit end)
 end

@@ -22,7 +22,8 @@ signature TOOLS_COMPONENT =
 		val browse: 'a -> unit
 		val inspect: 'a -> unit
 
-		functor Inspect(_: any): any
+		functor InspectType(type t): any
+		functor Inspect(signature S structure X: S): any
 	    end
 
 	structure Tools: TOOLS
