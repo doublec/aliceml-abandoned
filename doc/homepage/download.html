@@ -34,8 +34,8 @@ run Alice!</P>
 <?php subsection("windows", "Windows") ?>
 
 <UL>
-  <LI><A href="download/mozart-1.3.0-20020424.exe"><TT>mozart-1.3.0-20020424.exe</TT></A></LI>
-  <LI><A href="download/alice-0.9.exe"><TT>alice-0.9.exe</TT></A></LI>
+  <LI><A href="download/mozart-1.3.0-alice.exe"><TT>mozart-1.3.0-alice.exe</TT></A></LI>
+  <LI><A href="download/alice-0.9-20021126.exe"><TT>alice-0.9-20021126.exe</TT></A></LI>
 </UL>
 
 <P>
@@ -53,13 +53,25 @@ href="download/COPYING">license</A> for details.</A>
 
 <?php section("emacs", "Patched Emacs mode") ?>
 
-<P>Users of Emacs might want to use the following version of the SML mode, which
-has been extended to provide better support for Alice:</P>
-
-<UL>
-  <LI><A href="download/sml-mode-alice.tgz"><TT>sml-mode-alice.tgz</TT></A></LI>
-</UL>
-
+  <P>
+    In order to use the interactive Alice top-level from within Emacs, the
+    following set-up is necessary.</P>
+  </P>
+  <P>
+    First make sure that the environment variables
+    <TT>OZHOME</TT> and <TT>STOCKHOME</TT>
+    point to the installation directory of the Mozart system and
+    the Alice system, respectively.</P>
+  </P>
+  <P>
+    To install the patched SML mode version 3.9.5, extract the
+    <A HREF="download/sml-mode-alice.tgz">mode archive file</A>
+    and follow the installation instructions given in
+    <TT>INSTALL</TT>.
+    Then invoke <TT>load-library</TT> with argument <TT>sml-proc</TT>.
+    Afterwards, invoke <TT>customize-group</TT> with argument <TT>sml</TT>
+    and adjust the settings <TT>sml-program-name</TT> to <TT>alice</TT>.</P>
+  </P>
 
 <?php section("cvs", "Anonymous CVS") ?>
 
