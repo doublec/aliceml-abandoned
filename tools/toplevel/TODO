@@ -6,7 +6,6 @@ Bugs:
 * gtk-critical when using history for the first time
 * font in prog pane
 * propagate output width on init and after resize
-* cannot make window smaller
 
 Missing Features:
 

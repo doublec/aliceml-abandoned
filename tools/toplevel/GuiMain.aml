@@ -642,6 +642,9 @@ structure GuiMain =
 	     Promise.fulfill(notebookSwitchEventIdP, notebookSwitchEventId);
 	     OutputWriters.makeWriters (eval false);
 	     Gtk.textViewSetEditable(Gui.compilerout, false);
+	     Gtk.windowSetDefaultSize(Gui.mainwidget,
+				      Config.sizeX,Config.sizeY);
+	     Gtk.widgetShowAll Gui.mainwidget;
              Gtk.widgetGrabFocus (Gui.compilerout)
              )                      
 
