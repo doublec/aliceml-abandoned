@@ -430,7 +430,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 
 	    fun testSetIntersect ((pos, test)::testSetRest, testSet') =
 		if testSetMember (pos, test, testSet') then
-		    (pos, test)::(testSetIntersect (testSetRest, testSet'))
+		    (pos, test)::testSetIntersect (testSetRest, testSet')
 		else testSetIntersect (testSetRest, testSet')
 	      | testSetIntersect (nil, _) = nil
 
@@ -453,13 +453,13 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 			     val (trueSet, falseSet) = getSets status
 			 in
 			     if isTrue then
-				 testSetIntersect
-				 ((pos, test)::trueSet, falseSet)
+				 testSetIntersect ((pos, test)::trueSet,
+						   falseSet)
 			     else
-				 testSetIntersect
-				 (trueSet, (pos, test)::falseSet)
+				 testSetIntersect (trueSet,
+						   (pos, test)::falseSet)
 			 end
-		   | _ => raise Crash.Crash "SimplifyMatch.cook")
+		   | _ => raise Crash.Crash "SimplifyMatch.makePosTestList")
 		nil graphs
 
 	    fun disentailed (pos, test, (pos', test')::rest) =
