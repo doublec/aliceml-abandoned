@@ -72,7 +72,7 @@ DEFINE1(UnsafeValue_conName) {
 } END
 
 word UnsafeValue() {
-  Record *record = Record::New(9);
+  Record *record = Record::New(11);
   INIT_STRUCTURE(record, "UnsafeValue", "cast",
 		 UnsafeValue_cast, 1, true);
   INIT_STRUCTURE(record, "UnsafeValue", "same",
