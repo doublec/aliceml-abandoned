@@ -5,6 +5,9 @@ structure ToJasmin =
 	exception Error of string
 	exception Debug of string*INSTRUCTION list
 
+	val actclass= ref ""
+	val actmeth = ref ""
+
 	fun intToString i = if i<0 then "-"^Int.toString(~i) else Int.toString i
 
 	local
@@ -38,8 +41,6 @@ structure ToJasmin =
 	  | mAccessToString (MNative::rest)        =  "native "^mAccessToString rest
 	  | mAccessToString (MAbstract::rest)      =  "abstract "^mAccessToString rest
 	  | mAccessToString nil = ""
-
-	val perslocals = ref 0
 
 	fun descriptor2string (arglist, arg) =
 	    let
@@ -108,7 +109,6 @@ structure ToJasmin =
 	  | stackNeedInstruction Swap = 0
 	  | stackNeedInstruction (Tableswitch _) = ~1
 
-	    val dies= ref nil: INSTRUCTION list ref
 	fun stackNeed (inst::insts,need,max) =
 				  let
 				      val nd = stackNeedInstruction inst
@@ -118,30 +118,28 @@ structure ToJasmin =
 				      else stackNeed (insts, nd+need, Int.max(nd+need,max))
 				  end
 	  | stackNeed (nil, need, max) =
-				  (*if need <> 0 then
-				      raise Debug (("Stack Verification Error. Stack="^Int.toString need^" Max="^Int.toString max), !dies)
-				  else*) max
+			 (* apply hat derzeit immer ein doppeltes Areturn am Ende.
+			  Wird spaeter wegoptimiert. *)
+				  (if need <> 0 andalso (!actmeth<>"apply") orelse
+				       need <> ~1 andalso (!actmeth="apply") then
+				       print ("\n\nStack Verification Error. Stack="^Int.toString need^
+					      " Max="^Int.toString max^" in "^(!actclass)^"."^
+					      (!actmeth)^".\n")
+				   else ();
+				       max)
 
 	local
-	    fun instructionToJasmin (Astore i) =
-		let
-		    val j=if i<0 then (!perslocals-i) else i
-		in
-		    if j<4 then
-			"astore_"^Int.toString j
-		    else "astore "^Int.toString j
-		end
+	    fun instructionToJasmin (Astore j) =
+		if j<4 then
+		    "astore_"^Int.toString j
+		else "astore "^Int.toString j
 	      | instructionToJasmin Aastore  = "aastore"
 	      | instructionToJasmin Aaload = "aaload"
 	      | instructionToJasmin Aconst_null = "aconst_null"
-	      | instructionToJasmin (Aload i) =
-		let
-		    val j=if i<0 then (!perslocals-i) else i
-		in
+	      | instructionToJasmin (Aload j) =
 		    if j<4 then
 			"aload_"^Int.toString j
 		    else "aload "^Int.toString j
-		end
 	      | instructionToJasmin (Anewarray cn) = "anewarray "^cn
 	      | instructionToJasmin Areturn = "areturn"
 	      | instructionToJasmin Arraylength = "arraylength"
@@ -170,20 +168,14 @@ structure ToJasmin =
 	      | instructionToJasmin (Ificmplt l) = "if_icmplt "^l
 	      | instructionToJasmin (Ifneq l) = "ifne "^l
 	      | instructionToJasmin (Ifnull l) = "ifnull "^l
-	      | instructionToJasmin (Iload i) =
-			     let val j=if i<0 then (!perslocals-i) else i
-				 in
-				     if j<4 then
-					 "iload_"^Int.toString j
-				     else "iload "^Int.toString j
-			     end
-	      | instructionToJasmin (Istore i) =
-			     let val j=if i<0 then (!perslocals-i) else i
-				 in
-				     if j<4 then
-					 "istore_"^Int.toString j
-				     else "istore "^Int.toString j
-			     end
+	      | instructionToJasmin (Iload j) =
+			     if j<4 then
+				 "iload_"^Int.toString j
+			     else "iload "^Int.toString j
+	      | instructionToJasmin (Istore j) =
+				 if j<4 then
+				     "istore_"^Int.toString j
+				 else "istore "^Int.toString j
 	      | instructionToJasmin Ireturn = "ireturn"
 	      | instructionToJasmin (Instanceof cn) = "instanceof "^cn
 	      | instructionToJasmin (Invokeinterface(cn,mn,ms as (arg,ret))) =
@@ -255,8 +247,7 @@ structure ToJasmin =
 	    let
 		val mcc = mAccessToString access
 	    in
-		dies:=instructions;
-		perslocals := perslocs;
+		actmeth:=methodname;
 		".method "^mcc^methodname^(descriptor2string methodsig)^"\n"^
 		".limit locals "^Int.toString(perslocs+1)^"\n"^
 		".limit stack "^Int.toString(stackNeed (instructions,0,0))^"\n"^
@@ -271,6 +262,7 @@ structure ToJasmin =
 	    let
 		val acc = cAccessToString(access)
 	    in
+		actclass:=name;
 		".class "^acc^name^"\n"^
 		".super "^super^"\n"^
 		fieldsToJasmin(fields)^
