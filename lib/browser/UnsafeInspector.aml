@@ -27,10 +27,13 @@ open Types MkColorTable CreateDoc Gdk
 structure UnsafeInspector :> UNSAFE_INSPECTOR = 
 struct
     
+    (* inspect *)
     fun inspect (v,t) = let 
 			    val n = NewNode.newNode(v,t)
 			in
-			    (Layout.layout(n))(* !!!!! *)
+			    ( Layout.layout(n)
+                            ; (* the draw function is still missing here *) ()
+                            ; Layout.incr_act_line(Layout.get_ydim(n) + 1) )
 			end
 			    
     fun set_width w = NewNode.max_width := w

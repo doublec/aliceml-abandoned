@@ -14,9 +14,24 @@
  *)
 import structure Types from "Types"
 
+open Types
+
 signature DRAW_NODES =
     sig
-	type node = Types.node
+
+        exception  MissingColor
+	exception DrawError
 	
-	val draw : node * real * real -> unit
+	val atomDraw   :   node * int * int -> int * int
+
+	val drawSimple :   node * int * int -> int * int
+
+	val drawLimit  :   node * int * int -> int * int
+
+	val drawConcat :   node * int * int -> int * int
+
+	val drawContainer: node * int * int -> int * int
+
+	val draw : node * int * int -> int * int
+       
     end

@@ -15,31 +15,135 @@
 
 import structure Services from "Services"
 import structure Types from "Types"
+import structure Helper from "Helper"
+import structure Layout from "Layout"
 import signature DRAW_NODES from "DRAW_NODES-sig"
 import structure ColorMap from "ColorMap"
 import structure MkColorTable from "MkColorTable"
 
-       structure DrawNodes :> DRAW_NODES =
-	   struct
-	       exception  MissingColor
-	       type node = Types.node
-		   
-	       fun draw (node,x,y)  = case node of
-		   Types.Simple(r) =>( let
-					   val color = case ColorMap.lookup
-					       (MkColorTable.colorTable,
-						#color(r))
-					       of 
-						   SOME x => x
-						 | NONE   => raise MissingColor
-					   val _ = Services.printXY (#rep(r),
-								     #group(r),
-								     x,
-								     y,
-								     color,
-								     "8x13")
-				       in ()	
-				       end )
-		 | _ => ()
-	   end
+open Types Helper Layout 
+
+structure DrawNodes :> DRAW_NODES =
+struct
+
+    exception  MissingColor
+    exception DrawError
+    	   
+    (* atomDraw *)
+    fun atomDraw (node,x,y)  = case node of
+	Types.Simple(r) 
+	=>   ( let val (rx,ry) =  (Real.fromInt(x* 8 +2),
+				   Real.fromInt(y*13 +2))
+		   val color = case ColorMap.lookup(MkColorTable.colorTable,
+						    #color(r))
+		       of SOME x => x
+		     | NONE   => raise MissingColor
+		   val _ = Services.printXY (#rep(r),
+					     #group(r),
+					     rx,
+					     ry,
+					     color,
+					     "8x13")
+		   val _ = #status(r) := Types.CLEAN
+	       in (x+String.length(#rep(r)),y)
+	       end )
+      | Types.Limit(r) 
+	=> (let val (rx,ry) =  (Real.fromInt(x* 8 +2),
+				Real.fromInt(y*13 +2))
+		val color = case ColorMap.lookup(MkColorTable.colorTable,
+						 LIMIT_COLOR)
+		    of SOME x => x
+		  | NONE   => raise MissingColor
+		val limitsig = if #sort(r) = Types.DEPTH_LIMIT
+				   then "*" 
+			       else "@"
+		val _ = Services.printXY (limitsig,
+					  #group(r),
+					  rx,
+					  ry,
+					  color,
+					  "8x13")
+		val _ = #status(r) := Types.CLEAN     
+	    in (x+1,y)
+	    end )
+      | _ => raise DrawError
+							
+    (* drawSimple *)
+    and drawSimple (n,x,y) = case n of
+	Simple(r) => if !(#status(r)) = DIRTY
+			 then atomDraw (n,x,y)
+		     else (x+get_xdim(n),y+get_ydim(n))
+      | _ => raise DrawError
+
+    (* drawLimit *)
+    and drawLimit (n,x,y) = case n of
+	Limit(r) => if !(#status(r)) = Types.DIRTY 
+			then atomDraw(n,x,y) 
+		    else (x + get_xdim(n),y + get_ydim(n))
+      | _ => raise DrawError
+			
+    (* drawConcat *) 
+    and drawConcat (n,x,y) = case n of
+	Concat(r) 
+	=> if !(#status(r)) = DIRTY 
+	       then let val kids_list = Array.toList(#kids(r))
+			val l = List.length(kids_list) - 1
+			val i = ref 0
+		    in ( while !i <= l do
+                        (let val li = List.take(kids_list,!i)
+                             val sum_xdim = sum_up(li,get_xdim)
+                             val sum_ydim = sum_up(li,get_ydim)
+                         in draw (List.nth(kids_list,!i),
+				   x+sum_xdim,
+				   y+sum_ydim)			     
+			 end ; i := !i + 1)
+                       ; #status(r) := CLEAN
+		       ; (x+get_xdim(n),y+get_ydim(n)) )
+		    end
+						
+	   else (x+get_xdim(n),y+get_ydim(n))
+      | _ => raise DrawError
+
+    (* drawContainer *)
+    and drawContainer(n,x,y) =  case n of
+       Container(r) 
+       => if !(#status(r)) = DIRTY
+	      then (let             
+			val _ = #status(r) := Types.CLEAN
+			val hor_funct = (fn (a,(x,y)) 
+					 => draw(a,x,y))
+			val ver_funct = (fn (a,(x,y)) 
+					 => let
+						val (x1,y1) = 
+						    draw(a,x,y)
+					    in
+						(x,y1+1)
+					    end)
+			val funct = if setsVertical(n) 
+					then ver_funct
+				    else hor_funct
+		    in
+			Array.foldl funct (x,y) (#kids(r))
+		    end)
+	  else 
+	      (x + get_xdim(n), y + get_ydim(n)) 
+    | _ => raise DrawError
+       
+    (* draw *)
+    and draw (n,x,y) = case n of
+	Simple(r) => if !(#status(r)) = DIRTY
+			 then drawSimple (n,x,y)
+		     else (x+get_xdim(n),y+get_ydim(n))
+      | Concat(r) => if !(#status(r)) = DIRTY
+			 then drawConcat (n,x,y)
+		     else (x+get_xdim(n),y+get_ydim(n))
+      | Container(r) => if !(#status(r)) = DIRTY
+			    then drawContainer (n,x,y)
+			else (x+get_xdim(n),y+get_ydim(n))
+      | Limit(r) => if !(#status(r)) = DIRTY
+			then drawLimit (n,x,y)
+		    else (x+get_xdim(n),y+get_ydim(n))
+      | Empty => (x,y)
+
+end
        

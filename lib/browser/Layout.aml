@@ -1,4 +1,4 @@
-(*
+(*(x+get_xdim(node),y+get_ydim(node))
  * Authors:
  *   Bernadette Blum <blum@ps.uni-sb.de>
  *   Marvin Schiller <schiller@ps.uni-sb.de>
@@ -23,6 +23,8 @@ structure Layout :> LAYOUT =
 struct
 
     exception LayoutError
+
+    val act_line = ref 0
 
     fun sum_up (li,f) = if List.length(li) = 0
 			    then 0
@@ -51,22 +53,38 @@ struct
                                | _ => raise LayoutError
 
     and set_xdim n = case n of 
-        Concat(r) => (#width(r) := calc_xdim n ; array_map(set_xdim,#kids(r)) )
+        Concat(r) 
+	=> (if !(#status(r)) = DAZZLED
+		then #width(r) := calc_xdim n 
+	    else ()
+	   ; array_map(set_xdim,#kids(r)) )
       | Container(r) 
-	=> (#width(r) := calc_xdim n ; array_map(set_xdim,#kids(r)) )
+	=> (if !(#status(r)) = DAZZLED 
+		then #width(r) := calc_xdim n 
+	    else ()
+	   ; array_map(set_xdim,#kids(r)) )
       | _ => ()
 	    
     and set_ydim n = case n of 
 	Concat(r) 
-	=> (#height(r) := calc_ydim n ; array_map(set_ydim,#kids(r)) )
+	=> (if !(#status(r)) = DAZZLED
+		then #height(r) := calc_ydim n 
+	    else ()
+	   ; array_map(set_ydim,#kids(r)) )
       | Container(r) 
-	=> (#height(r) := calc_ydim n ; array_map(set_ydim,#kids(r)) )
-      | _ => ()	  
+	=> (if !(#status(r)) = DAZZLED 
+		then #height(r) := calc_ydim n 
+	    else ()
+	   ; array_map(set_ydim,#kids(r)) )
+      | _ => ()  
 
     and set_l_xdim n = case n of
 	Concat(r) => array_map(set_l_xdim,#kids(r))
-      | Container(r) => ( #l_width(r) := calc_l_xdim n 
-                        ; array_map(set_l_xdim,#kids(r)) )
+      | Container(r) 
+	=> (if !(#status(r)) = DAZZLED 
+		then #l_width(r) := calc_l_xdim n 
+	    else ()
+	   ; array_map(set_l_xdim,#kids(r)) )
       | _ => ()
 
     and calc_xdim n = case n of
@@ -92,6 +110,25 @@ struct
         Container(r) => calc_xdim (List.last(Array.toList(#kids(r))) )
       | _ => raise LayoutError
 
-    fun layout n = (set_xdim n; set_ydim n; set_l_xdim n)
+    and set_dirty n = case n of 
+	Simple(r) => if !(#status(r)) = DIRTY 
+			 then () 
+		     else #status(r) := DIRTY
+      | Concat(r) => (if !(#status(r)) = DIRTY
+			  then ()
+		      else #status(r) := DIRTY
+                     ; array_map(set_dirty,#kids(r)) )
+      | Container(r) => (if !(#status(r)) = DIRTY
+			     then ()
+			 else #status(r) := DIRTY
+			; array_map(set_dirty,#kids(r)) )
+      | Limit(r) => if !(#status(r)) = DIRTY 
+			then () 
+		    else #status(r) := DIRTY 
+      | Empty => ()
+
+    and incr_act_line dy = act_line := !act_line + dy
+
+    fun layout n = (set_xdim n; set_ydim n; set_l_xdim n ; set_dirty n)
 
 end
