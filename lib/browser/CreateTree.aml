@@ -182,7 +182,10 @@ struct
 		    val cont = createContainer (desc,p,i,d,na,canvas)
 		    val nodearray = listElemArray(l,length,inty,
 						  cont,d+1,true,canvas)
-		    val future = createFutureNode(fva,t,cont,length,d,canvas)
+		    val future = if length >= !(Settings.max_width) 
+				     then createLimit(INTERPUNCT,WIDTH_LIMIT,
+						      cont,length,d+1,canvas)
+				 else createFutureNode(fva,t,cont,length,d,canvas)
 		in ( Array.update(na,length,future)
 		    ; copyArray(nodearray,na)
 		    ; cont )
