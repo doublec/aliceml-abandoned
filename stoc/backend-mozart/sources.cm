@@ -2,5 +2,7 @@ Group is
 
     ../backend-common/imperative-grammar.cm
 
+    (* Externalisation (into Oz syntax) *)
+
     OZIFY_IMPERATIVE_GRAMMAR.sig
     OzifyImperativeGrammar.sml
