@@ -8,7 +8,7 @@
 
 <P>For particular programming tasks - especially when transferring date between
 different processes - it is desirable to relax the strict static rules of ML
-and shift some of the type checking to runtime. For this purpose, Alice
+and shift some of the type checking to runtime. For this purpose, Alice ML
 provides runtime typing through the concept of <EM>packages</EM>.
 
 <P>A package is a value of abstract type <TT>package</TT> that encapsulates
@@ -66,7 +66,7 @@ type-safe.</P>
 <PRE class=code>
 val p = pack Word8 :> WORD</PRE>
 
-<P>This package may then be passed to some client who may unpack it as
+<P>This package may then be passed to some client that may unpack it as
 follows:</P>
 
 <PRE class=code>
