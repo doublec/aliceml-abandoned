@@ -54,26 +54,6 @@ static const char *RegToString(u_int Reg) {
   }
 }
 
-static void SaveContext() {
-  jit_pushr_ui(JIT_FP);
-  jit_pushr_ui(JIT_R0);
-  jit_pushr_ui(JIT_R1);
-  jit_pushr_ui(JIT_R2);
-  jit_pushr_ui(JIT_V0);
-  jit_pushr_ui(JIT_V1);
-  jit_pushr_ui(JIT_V2);
-}
-
-static void RestoreContext() {
-  jit_popr_ui(JIT_V2);
-  jit_popr_ui(JIT_V1);
-  jit_popr_ui(JIT_V0);
-  jit_popr_ui(JIT_R2);
-  jit_popr_ui(JIT_R1);
-  jit_popr_ui(JIT_R0);
-  jit_popr_ui(JIT_FP);
-}
-
 static void ShowMessage(const char *info) {
   fprintf(execLog, info);
   fflush(execLog);
@@ -110,6 +90,7 @@ void JITStore::InitLoggging() {
 #endif
 }
 
+#if defined(JIT_STORE_DEBUG)
 u_int jitDebug = 0;
 
 #define JIT_BEG_COND() \
@@ -120,14 +101,15 @@ u_int jitDebug = 0;
 #define JIT_END_COND() \
   jit_patch(no_debug); \
   jit_popr_ui(JIT_R0);
+#endif
   
 
 void JITStore::LogMesg(const char *info) {
 #if defined(JIT_STORE_DEBUG)
   JIT_BEG_COND();
-  SaveContext();
+  JITStore::SaveAllRegs();
   CompileMessage(info);
-  RestoreContext();
+  JITStore::RestoreAllRegs();
   JIT_END_COND();
 #else
   // Avoid compiler warnings
@@ -138,9 +120,9 @@ void JITStore::LogMesg(const char *info) {
 void JITStore::LogReg(u_int Value) {
 #if defined(JIT_STORE_DEBUG)
   JIT_BEG_COND();
-  SaveContext();
+  JITStore::SaveAllRegs();
   CompileRegister(Value);
-  RestoreContext();
+  JITStore::RestoreAllRegs();
   JIT_END_COND();
 #else
   // Avoid compiler warnings
@@ -151,11 +133,11 @@ void JITStore::LogReg(u_int Value) {
 void JITStore::DumpReg(u_int Value, value_plotter plotter) {
 #if defined(JIT_STORE_DEBUG)
   JIT_BEG_COND();
-  SaveContext();
+  JITStore::SaveAllRegs();
   CompileRegister(Value);
   jit_pushr_ui(Value);
   Call(1, (void *) plotter);
-  RestoreContext();
+  JITStore::RestoreAllRegs();
   JIT_END_COND();
 #else
   // Avoid compiler warnings
@@ -168,12 +150,12 @@ void JITStore::LogRead(u_int Dest, u_int Ptr, u_int Index) {
 #if defined(JIT_STORE_DEBUG)
   JIT_BEG_COND();
   static char buffer[256];
-  SaveContext();
+  JITStore::SaveAllRegs();
   CompileRegister(Ptr);
   sprintf(buffer, "%s <- %s[%d]...",
 	  RegToString(Dest), RegToString(Ptr), Index);
   CompileMessage(strdup(buffer));
-  RestoreContext();
+  JITStore::RestoreAllRegs();
   JIT_END_COND();
 #else
   // Avoid Compiler warnings
@@ -187,7 +169,7 @@ void JITStore::LogWrite(u_int Ptr, u_int index, u_int Value) {
 #if defined(JIT_STORE_DEBUG)
   JIT_BEG_COND();
   static char buffer[256];
-  SaveContext();
+  JITStore::SaveAllRegs();
   CompileMessage("---\n");
   jit_pushr_ui(Value);
   CompileRegister(Ptr);
@@ -196,7 +178,7 @@ void JITStore::LogWrite(u_int Ptr, u_int index, u_int Value) {
   sprintf(buffer, "%s[%d] <- %s...",
 	  RegToString(Ptr), index, RegToString(Value));
   CompileMessage(strdup(buffer));
-  RestoreContext();
+  JITStore::RestoreAllRegs();
   JIT_END_COND();
 #else
   // Avoid compiler warnings
@@ -210,13 +192,13 @@ void JITStore::LogSetArg(u_int pos, u_int Value) {
 #if defined(JIT_STORE_DEBUG)
   JIT_BEG_COND();
   static char buffer[256];
-  SaveContext();
+  JITStore::SaveAllRegs();
   CompileMessage("---\n");
   CompileRegister(Value);
   sprintf(buffer, "Scheduler::currentArgs[%d] = %s\n",
 	  pos, RegToString(Value));
   CompileMessage(strdup(buffer));
-  RestoreContext();
+  JITStore::RestoreAllRegs();
   JIT_END_COND();
 #else
   pos = pos;

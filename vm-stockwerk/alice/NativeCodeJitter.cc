@@ -49,38 +49,6 @@
 #include "generic/Profiler.hh"
 #endif
 
-static void SaveContext() {
-  jit_pushr_ui(JIT_R0);
-  jit_pushr_ui(JIT_R1);
-  jit_pushr_ui(JIT_R2);
-  jit_pushr_ui(JIT_V0);
-  jit_pushr_ui(JIT_V1);
-  jit_pushr_ui(JIT_V2);
-  jit_pushr_ui(JIT_FP);
-}
-
-static void RestoreContext() {
-  jit_popr_ui(JIT_FP);
-  jit_popr_ui(JIT_V2);
-  jit_popr_ui(JIT_V1);
-  jit_popr_ui(JIT_V0);
-  jit_popr_ui(JIT_R2);
-  jit_popr_ui(JIT_R1);
-  jit_popr_ui(JIT_R0);
-}
-
-static void SignalWithinCode(char *pos) {
-  fprintf(stderr, "%s\n", pos);
-  fflush(stderr);
-}
-
-#define CORE_LOG(str) \
-  SaveContext(); \
-  jit_movi_p(JIT_R1, str); \
-  jit_pushr_ui(JIT_R1); \
-  JITStore::Call(1, (void *) SignalWithinCode); \
-  RestoreContext();
-
 static inline u_int GetArity(TagVal *args) {
   switch (AbstractCode::GetArgs(args)) {
   case AbstractCode::OneArg:
@@ -2444,12 +2412,6 @@ NativeConcreteCode *NativeCodeJitter::Compile(TagVal *abstractCode) {
   AbstractCode::Disassemble(stderr, pc);
   }
 #endif
-  Tuple *coord1 = Tuple::FromWordDirect(abstractCode->Sel(0));
-  char *filename = String::FromWordDirect(coord1->Sel(0))->ExportC();
-  if (!strcmp(filename, "file:d:/cygwin/home/bruni/devel/alice/vm-stockwerk/build1/compiler/backend-stockwerk/MkCodeGenPhase.aml") && (Store::DirectWordToInt(coord1->Sel(1)) == 528)) {
-    extern u_int jitDebug;
-    jitDebug = 1;
-  }
 #if defined(JIT_CODE_SIZE_PROFILE)
   static u_int codeSize       = 0;
   static u_int totalSize      = 0;

@@ -22,16 +22,6 @@
 #include "alice/JitterImmediateEnv.hh"
 
 namespace Generic {
-  class TaskStack : public ::DynamicBlock {
-  public:
-    static void GetTop(u_int This, u_int Dest) {
-      JITStore::GetArg(Dest, This, ACTIVE_SIZE);
-    }
-    static void SetTop(u_int This, u_int Value) {
-      JITStore::InitArg(This, ACTIVE_SIZE, Value);
-    }
-  };
-
   class Scheduler {
   protected:
     static void Sel(void *addr, u_int Dest) {
@@ -106,6 +96,25 @@ namespace Generic {
       jit_subi_p(Dest, Dest, sizeof(word));
 #endif
     }
+    // Side Effect: Scratches JIT_R0
+    static void PushFrameNoCheck(u_int Dest, u_int size) {
+#if defined(JIT_ASSERT_INDEX)
+      JITStore::SaveAllRegs();
+      jit_movi_ui(JIT_R0, size);
+      jit_pushr_ui(JIT_R0);
+      JITStore::Call(1, (void *) ::Scheduler::PushFrame);
+      jit_sti_p(&JITStore::loadedWord, JIT_RET);
+      JITStore::RestoreAllRegs();
+      jit_ldi_p(Dest, &JITStore::loadedWord);
+#else
+      Assert(Dest != JIT_R0);
+      jit_ldi_p(JIT_R0, &::Scheduler::stackTop);
+      jit_addi_p(JIT_R0, JIT_R0, size * sizeof(word));
+      jit_sti_p(&::Scheduler::stackTop, JIT_R0);
+      jit_movr_p(Dest, JIT_R0);
+      jit_subi_p(Dest, Dest, sizeof(word));
+#endif
+    }
     // Side-Effect: Scratches JIT_R0, JIT_FP
     static void GetFrame(u_int This) {
 #if defined(JIT_ASSERT_INDEX)
@@ -118,25 +127,6 @@ namespace Generic {
       jit_ldi_p(This, &::Scheduler::stackTop);
       jit_subi_p(This, This, sizeof(word));
 #endif
-    }
-    // Side-Effect: Scratches JIT_R0
-//      static void PopFrame() {
-//  #if defined(JIT_ASSERT_INDEX)
-//        JITStore::SaveAllRegs();
-//        JITStore::Call(0, (void *) ::Scheduler::PopFrame);
-//        JITStore::RestoreAllRegs();
-//  #else
-//        JITStore::Prepare();
-//        JITStore::Call(0, (void *) ::Scheduler::PopFrame);
-//        JITStore::Finish();
-//  #endif
-//      }
-    static void PrintPopFrame(u_int size) {
-      fprintf(stderr, "NativeCode: Scheduler::PopFrame(%d)\n", size);
-      fflush(stderr);
-    }
-    static void SlowPopFrame() {
-      ::Scheduler::PopFrame();
     }
     static void PopFrame(u_int size) {
       jit_ldi_p(JIT_R0, &::Scheduler::stackTop);
@@ -160,6 +150,13 @@ namespace Generic {
     static void New(u_int This, u_int size, Worker *worker) {
       u_int frSize = BASE_SIZE + size;
       Scheduler::PushFrame(This, frSize);
+      jit_movi_p(JIT_R0, Store::UnmanagedPointerToWord(worker));
+      InitArg(This, WORKER_POS, JIT_R0);
+    }
+    // Side Effect: Scratches JIT_R0
+    static void NewNoCheck(u_int This, u_int size, Worker *worker) {
+      u_int frSize = BASE_SIZE + size;
+      Scheduler::PushFrameNoCheck(This, frSize);
       jit_movi_p(JIT_R0, Store::UnmanagedPointerToWord(worker));
       InitArg(This, WORKER_POS, JIT_R0);
     }

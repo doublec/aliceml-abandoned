@@ -80,7 +80,6 @@ inline void Scheduler::FlushThread() {
     static_cast<u_int>(stackTop - (word *) currentTaskStack->GetFrame(0));
   currentTaskStack->SetTop(top);
   currentThread->SetTaskStack(currentTaskStack);
-  currentThread->SetMax(top);
   Assert(nArgs == ONE_ARG || nArgs < maxArgs);
   switch (nArgs) {
   case 0:
