@@ -17,39 +17,42 @@
 
 #include "scheduler/Closure.hh"
 
-#define TASK_STACK_INITIAL_SIZE 8 /* words */
-
-#define TASK_STACK_LABEL Store::MakeLabel(0) //--**
-
-//--** we'll want to implement this in terms of class Stack
-
-class TaskStack: private Block {
+class TaskStack: private Stack {
+private:
+  static const u_int initialSize = 8; // words
 public:
-  using Block::ToWord;
+  using Stack::ToWord;
+  using Stack::IsEmpty;
 
   static TaskStack *New() {
-    Block *b = Store::AllocBlock(TASK_STACK_LABEL, TASK_STACK_INITIAL_SIZE);
-    b->InitArg(1, Store::IntToWord(0));
-    return static_cast<TaskStack *>(b);
+    return static_cast<TaskStack *>(Stack::New(initialSize));
   }
   static TaskStack *FromWord(word x) {
-    Block *b = Store::WordToBlock(x);
-    Assert(b == INVALID_POINTER || b->GetLabel() == TASK_STACK_LABEL);
-    return static_cast<TaskStack *>(b);
+    return static_cast<TaskStack *>(Stack::FromWord(x));
   }
 
   // Handling stack frames:
-  void PushFrame(u_int size); //--** implement; size may be 0
-  void PopFrame(u_int size); //--** implement
-  bool IsEmpty(); //--** implement
-  void Clear(); //--** implement
+  void PushFrame(u_int size) {
+    AllocArgFrame(size);
+  }
+  void PopFrame(u_int size) {
+    ClearFrame(size);
+  }
+  void Clear() {
+    ClearFrame(GetSize());
+    Blank(0);
+  }
   void PushCall(Closure *closure) {
     closure->GetConcreteCode()->GetInterpreter()->PushCall(this, closure);
   }
 
   // Accessing the current frame:
-  void PutWord(u_int offset, word v); //---** implement
-  word GetWord(u_int offset); //--** implement
+  void PutWord(u_int offset, word value) {
+    PutFrameArg(offset, value);
+  }
+  word GetWord(u_int offset) {
+    return GetFrameArg(offset);
+  }
   void PutInt(u_int offset, int i) {
     PutWord(offset, Store::IntToWord(i));
   }
