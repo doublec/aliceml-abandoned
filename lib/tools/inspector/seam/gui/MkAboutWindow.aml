@@ -20,11 +20,11 @@ local
   val vbox = Gtk.dialogGetFieldVbox dialog
   val label1 = Gtk.labelNew ""
   val label2 = Gtk.labelNew "by"
-  val label3 = Gtk.labelNew "The ALICE Team"
+  val label3 = Gtk.labelNew "The Alice Team"
   val label4 = Gtk.labelNew ""
   val text1  =
     "      <span size=\"large\" foreground=\"blue\">" ^
-    "ALICE Inspector</span>      "
+    "Alice Inspector</span>      "
   val text4 = "     <tt><u>http://www.ps.uni-sb.de/alice/</u></tt>     "
   fun close _ =
     (Gtk.widgetDestroy dialog ;
