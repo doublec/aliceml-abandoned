@@ -134,6 +134,8 @@ structure BindEnv :> BIND_ENV =
 	  handle VIdMap.Collision vid => raise CollisionInf vid
 	)
 
+    fun unionInf(ENV{IE,...}, ENV{IE=IE',...}) = VIdMap.union(IE,IE')
+
 
     fun insertInf(ENV{IE,...}, id, x)	= VIdMap.insert(IE, id, x)
     fun insertVar(ENV{UE,...}, id, x)	= TyVarMap.insert(UE, id, x)

@@ -68,6 +68,9 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 
     (* Constants and identifiers *)
 
+    fun toFunName s   = "$" ^ s
+    fun fromFunName s = String.extract(s,1,NONE)
+
     fun trSCon E =
 	fn SCon(i, SCon.INT n)		=> O.IntLit n
 	 | SCon(i, SCon.WORD w)		=> O.WordLit w
@@ -107,7 +110,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
     val trSigId = trId(lookupSig, infoSigId, idSigId,
 			SigId.toString, errorSigId, "signature")
     val trFunId = trId(lookupFun, infoFunId, idFunId,
-			FunId.toString, errorFunId, "functor")
+			toFunName o FunId.toString, errorFunId, "functor")
 
 
     fun trId_bind (infoId,idId,toString) (E: Env) id =
@@ -121,7 +124,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
     val trTyCon_bind = trId_bind(infoTyCon, idTyCon, TyCon.toString)
     val trStrId_bind = trId_bind(infoStrId, idStrId, StrId.toString)
     val trSigId_bind = trId_bind(infoSigId, idSigId, SigId.toString)
-    val trFunId_bind = trId_bind(infoFunId, idFunId, FunId.toString)
+    val trFunId_bind = trId_bind(infoFunId, idFunId, toFunName o FunId.toString)
 
     fun trVId_bind E (vid as VId(i,vid')) =
 	case VId.toString vid'
@@ -866,10 +869,13 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	 | OPENDec(i, longstrid) =>
 	   let
 		val (longid', E') = trLongStrId E longstrid
-		val  _            = union(E,E')
+		val   _           = unionInf(E,E')
 	   in
-		(* UNFINISHED [O.OpenDec(i, longidToMod longid')]*)
-		[]
+		(foldVals (trOpenVal(E,i,longid')) 
+		(foldTys  (trOpenTy (E,i,longid'))
+		(foldStrs (trOpenStr(E,i,longid'))
+		(foldFuns (trOpenFun(E,i,longid'))
+		(foldSigs (trOpenSig(E,i,longid')) [] E') E') E') E') E')
 	   end
 
 	 | EMPTYDec(i) =>
@@ -892,6 +898,74 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		( insertInf(E, vid', (i', NONE))
 		; []
 		)
+
+
+    and trOpenVal (E,i,longid) (vid, (_,stamp,is), decs') =
+	let
+	    val name    = VId.toString vid
+	    val id'     = O.Id(i, stamp, O.ExId name)
+	    val lab'    = O.Lab(i, name)
+	    val longid' = O.LongId(i, longid, lab')
+	    val pat'    = O.VarPat(i, id')
+	    val exp'    = O.VarExp(i, longid')
+	    val _       = insertVal(E, vid, (i,stamp,is))
+	    (* BUG: detect hiding and make correspondings decs local *)
+	in
+	    O.ValDec(i, pat', exp') :: decs'
+	end
+
+    and trOpenTy (E,i,longid) (tycon, (_,stamp,E'), decs') =
+	let
+	    val name    = TyCon.toString tycon
+	    val id'     = O.Id(i, stamp, O.ExId name)
+	    val lab'    = O.Lab(i, name)
+	    val longid' = O.LongId(i, longid, lab')
+	    val typ'    = O.ConTyp(i, longid')
+	    val _       = insertTy(E, tycon, (i,stamp,E'))
+	    (* BUG: detect hiding and make correspondings decs local *)
+	in
+	    O.TypDec(i, id', typ') :: decs'
+	end
+
+    and trOpenStr (E,i,longid) (strid, (_,stamp,E'), decs') =
+	let
+	    val name    = StrId.toString strid
+	    val id'     = O.Id(i, stamp, O.ExId name)
+	    val lab'    = O.Lab(i, name)
+	    val longid' = O.LongId(i, longid, lab')
+	    val mod'    = longidToMod longid'
+	    val _       = insertStr(E, strid, (i,stamp,E'))
+	    (* BUG: detect hiding and make correspondings decs local *)
+	in
+	    O.ModDec(i, id', mod') :: decs'
+	end
+
+    and trOpenFun (E,i,longid) (funid, (_,stamp,E'), decs') =
+	let
+	    val name    = FunId.toString funid
+	    val id'     = O.Id(i, stamp, O.ExId(fromFunName name))
+	    val lab'    = O.Lab(i, name)
+	    val longid' = O.LongId(i, longid, lab')
+	    val mod'    = longidToMod longid'
+	    val _       = insertFun(E, funid, (i,stamp,E'))
+	    (* BUG: detect hiding and make correspondings decs local *)
+	in
+	    O.ModDec(i, id', mod') :: decs'
+	end
+
+    and trOpenSig (E,i,longid) (sigid, (_,stamp,E'), decs') =
+	let
+	    val name    = SigId.toString sigid
+	    val id'     = O.Id(i, stamp, O.ExId name)
+	    val lab'    = O.Lab(i, name)
+	    val longid' = O.LongId(i, longid, lab')
+	    val inf'    = O.ConInf(i, longid')
+	    val _       = insertSig(E, sigid, (i,stamp,E'))
+	    (* BUG: detect hiding and make correspondings decs local *)
+	in
+	    O.InfDec(i, id', inf') :: decs'
+	end
+
 
 
     (* Value bindings *)
