@@ -44,7 +44,7 @@
 
 	val length :      vector -> int
 	val sub :         vector * int -> elem
-	val replace :     vector * int * elem -> vector
+	val update :      vector * int * elem -> vector
 	val concat :      vector list -> vector
 	val rev :         vector -> vector
 
@@ -87,7 +87,7 @@
   <P>
     Note that, unlike polymorphic vectors, monomorphic vectors are strict in
     their elements. I.e., all constructor functions taking individual element
-    values (<TT>fromList</TT>, <TT>tabulate</TT>, <TT>replace</TT>) will request
+    values (<TT>fromList</TT>, <TT>tabulate</TT>, <TT>update</TT>) will request
     any potential futures immediately.
   </P>
 
