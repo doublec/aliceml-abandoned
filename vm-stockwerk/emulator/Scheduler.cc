@@ -71,7 +71,6 @@ void Scheduler::Run() {
       preempt = false;
       Interpreter *interpreter = taskStack->GetInterpreter();
       //      fprintf(stderr, "Executing frame %s\n", interpreter->Identify());
-      Assert(currentThread->GetArgs() != (word) 0);
       Interpreter::Result result =
 	interpreter->Run(currentThread->GetArgs(), taskStack);
     interpretResult:
