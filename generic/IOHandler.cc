@@ -14,6 +14,8 @@
 #pragma implementation "generic/IOHandler.hh"
 #endif
 
+#include <cstdlib>
+#include <cstring>
 #include <errno.h>
 #if defined(__MINGW32__) || defined(_MSC_VER)
 #include <winsock.h>
