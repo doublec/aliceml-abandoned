@@ -83,3 +83,4 @@ clean:
 veryclean: clean
 
 distclean: veryclean
+	-rm -f Makefile.depend
