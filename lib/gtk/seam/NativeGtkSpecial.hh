@@ -220,4 +220,11 @@ DEFINE1(NativeGtk_textBufferConnectSpecialSignals) {
   RETURN_UNIT;
 } END
 
+DEFINE1(NativeGtk_pangoFontDescriptionFromString) {
+  DECLARE_STRING(str, x0);
+  PangoFontDescription *fontDesc =
+    pango_font_description_from_string(str->ExportC());
+  RETURN(OBJECT_TO_WORD(fontDesc, TYPE_UNKNOWN));
+} END
+
 #endif

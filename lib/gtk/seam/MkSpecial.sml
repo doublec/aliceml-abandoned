@@ -143,6 +143,9 @@ functor MkSpecial(val space : Util.spaces) :> SPECIAL =
 		 FUNC("gtk_radio_menu_item_new_with_mnemonic",
 		      POINTER (false, STRUCTREF "_GtkRadioMenuItem"),
 		      [POINTER (false, VOID), STRING (true, true)]),
+		 FUNC("gtk_pango_font_description_from_string",
+                      POINTER (false, VOID),
+		      [STRING(false,false)]),
 		 FUNC("gtk_text_buffer_connect_special_signals",
                       VOID,
 		      [POINTER (false, STRUCTREF "_GktTextBuffer")])]

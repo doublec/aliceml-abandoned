@@ -4,8 +4,8 @@
 VERSION = 1.0.1
 
 # The generator creates full code for the following name spaces
-COMPS = Gdk Gtk Canvas 
-COMPSCAP = GDK GTK CANVAS 
+COMPS = Gdk Gtk Canvas
+COMPSCAP = GDK GTK CANVAS
 
 # The generator creates only enum components for the following name spaces
 ENUMCOMPS = Pango Misc
