@@ -1123,7 +1123,7 @@ if isLambda t1 then raise Assert.failure else
 
 		    fun recur p x =
 			( t1 := LINK t2
-			; trail := (t1,!t1) :: !trail
+			; trail := (t1,t1') :: !trail
 			; p x
 			)
 
