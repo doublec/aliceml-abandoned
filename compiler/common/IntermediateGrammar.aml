@@ -30,6 +30,8 @@ import structure PrettyPrint           from "../../lib/utility/PrettyPrint"
 
 structure IntermediateInfo =
 struct
+    datatype origin	= Val | Mod | Typ | Inf | Aux
+
     type lab_info	= { region: Source.region }
     type id_info	= { region: Source.region, typ: Type.t }
     type longid_info	= { region: Source.region, typ: Type.t }
@@ -37,7 +39,9 @@ struct
     type pat_info	= { region: Source.region, typ: Type.t }
     type 'a fld_info	= { region: Source.region }
     type mat_info	= { region: Source.region }
-    type dec_info	= { region: Source.region }
+    type dec_info	= { region: Source.region, origin: origin }
+
+    fun origInfo(r,or)	= { region = r, origin = or }
 end
 
 structure IntermediateGrammar = MkIntermediateGrammar(
