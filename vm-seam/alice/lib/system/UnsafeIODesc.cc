@@ -84,10 +84,43 @@ static word MakeSysErr(int errorCode, String *message) {
 //
 // Primitives
 //
+#define INTERPRET_RESULT(result, fct) {				\
+  switch (result) {						\
+  case IODesc::result_ok: RETURN_UNIT;				\
+  case IODesc::result_closed: RAISE(ClosedStreamConstructor);	\
+  case IODesc::result_request: return Worker::REQUEST;		\
+  case IODesc::result_system_error: RAISE_SYS_ERR();		\
+  case IODesc::result_socket_error: RAISE_SOCK_ERR();		\
+  default: Error("invalid result");				\
+  }								\
+}
+
 #define x_buf x0
 #define x_i x1
 #define x_iodesc x2
 #define x_sz x3
+
+#define DECLARE_BUF(DECLARE_X)						\
+  DECLARE_IODESC(ioDesc, x_iodesc);					\
+  DECLARE_X(x, x_buf);							\
+  DECLARE_INT(i, x_i);							\
+  u_int length = x->GetLength();					\
+  if (i < 0 || static_cast<u_int>(i) > length)				\
+    RAISE(PrimitiveTable::General_Subscript);				\
+  TagVal *tagVal = TagVal::FromWord(x_sz);				\
+  int sz;								\
+  if (tagVal == INVALID_POINTER) {					\
+    DECLARE_INT(none, x_sz); Assert(none == Types::NONE); none = none;	\
+    sz = length - i;							\
+  } else {								\
+    DECLARE_INT(sz0, tagVal->Sel(0));					\
+    if (sz0 < 0) RAISE(PrimitiveTable::General_Size);			\
+    if (static_cast<u_int>(sz0) > length)				\
+      RAISE(PrimitiveTable::General_Subscript);				\
+    sz = sz0;								\
+  }									\
+  if (sz == 0) RAISE(PrimitiveTable::General_Domain);			\
+  u_char *buf = x->GetValue() + i;
 
 DEFINE1(UnsafeIODesc_hash) {
   DECLARE_IODESC(ioDesc, x0);
@@ -136,8 +169,7 @@ DEFINE1(UnsafeIODesc_chunkSize) {
 
 DEFINE1(UnsafeIODesc_close) {
   DECLARE_IODESC(ioDesc, x0);
-  ioDesc->Close();
-  RETURN_UNIT;
+  INTERPRET_RESULT(ioDesc->Close(), "close");
 } END
 
 DEFINE1(UnsafeIODesc_capabilities) {
@@ -149,17 +181,6 @@ DEFINE1(UnsafeIODesc_capabilities) {
   result->Init(Types::verifyPos, BOOL_TO_WORD(ioDesc->SupportsGetPos()));
   RETURN(result->ToWord());
 } END
-
-#define INTERPRET_RESULT(result, fct) {				\
-  switch (result) {						\
-  case IODesc::result_ok: RETURN_UNIT;				\
-  case IODesc::result_closed: RAISE(ClosedStreamConstructor);	\
-  case IODesc::result_request: return Worker::REQUEST;		\
-  case IODesc::result_system_error: RAISE_SYS_ERR();		\
-  case IODesc::result_socket_error: RAISE_SOCK_ERR();		\
-  default: Error("invalid result");				\
-  }								\
-}
 
 DEFINE1(UnsafeIODesc_block) {
   DECLARE_IODESC(ioDesc, x0);
@@ -204,9 +225,9 @@ DEFINE1(UnsafeIODesc_readerCapabilities) {
   bool supportsNonblocking = ioDesc->SupportsNonblocking();
   Tuple *result = Tuple::New(Types::READER_CAPABILITIES_SIZE);
   result->Init(Types::readVec, BOOL_TO_WORD(true));
-  result->Init(Types::readArr, BOOL_TO_WORD(false)); //--**
+  result->Init(Types::readArr, BOOL_TO_WORD(true));
   result->Init(Types::readVecNB, BOOL_TO_WORD(supportsNonblocking));
-  result->Init(Types::readArrNB, BOOL_TO_WORD(false)); //--**
+  result->Init(Types::readArrNB, BOOL_TO_WORD(supportsNonblocking));
   result->Init(Types::canInput, BOOL_TO_WORD(supportsNonblocking));
   RETURN(result->ToWord());
 } END
@@ -217,17 +238,23 @@ DEFINE2(UnsafeIODesc_readVec) {
   if (n < 0 || static_cast<u_int>(n) > Vector::maxLen)
     RAISE(PrimitiveTable::General_Size);
   if (n == 0) RAISE(PrimitiveTable::General_Domain);
-  char buf[n];
+  String *string0 = String::New(n);
+  u_char *buf = string0->GetValue();
   int out;
   IODesc::result result = ioDesc->Read(buf, n, out);
   if (result != IODesc::result_ok) INTERPRET_RESULT(result, "readVec");
+  if (out == n) RETURN(string0->ToWord());
   String *string = String::New(out);
   std::memcpy(string->GetValue(), buf, out);
   RETURN(string->ToWord());
 } END
 
 DEFINE4(UnsafeIODesc_readArr) {
-  Error("readArr not implemented"); //--** we need MONO_ARRAYs
+  DECLARE_BUF(DECLARE_WORD8ARRAY);
+  int out;
+  IODesc::result result = ioDesc->Read(buf, sz, out);
+  if (result != IODesc::result_ok) INTERPRET_RESULT(result, "readArr");
+  RETURN_INT(out);
 } END
 
 DEFINE2(UnsafeIODesc_readVecNB) {
@@ -236,10 +263,12 @@ DEFINE2(UnsafeIODesc_readVecNB) {
   if (n < 0 || static_cast<u_int>(n) > Vector::maxLen)
     RAISE(PrimitiveTable::General_Size);
   if (n == 0) RAISE(PrimitiveTable::General_Domain);
-  char buf[n];
+  String *string0 = String::New(n);
+  u_char *buf = string0->GetValue();
   int out;
   IODesc::result result = ioDesc->ReadNonblocking(buf, n, out);
   if (result == IODesc::result_ok) {
+    if (out == n) RETURN(string0->ToWord());
     String *string = String::New(out);
     std::memcpy(string->GetValue(), buf, out);
     TagVal *some = TagVal::New(Types::SOME, 1);
@@ -251,7 +280,16 @@ DEFINE2(UnsafeIODesc_readVecNB) {
 } END
 
 DEFINE4(UnsafeIODesc_readArrNB) {
-  Error("readArrNB not implemented"); //--** we need MONO_ARRAYs
+  DECLARE_BUF(DECLARE_WORD8ARRAY);
+  int out;
+  IODesc::result result = ioDesc->ReadNonblocking(buf, sz, out);
+  if (result == IODesc::result_ok) {
+    TagVal *some = TagVal::New(Types::SOME, 1);
+    some->Init(0, Store::IntToWord(out));
+    RETURN(some->ToWord());
+  } else if (result == IODesc::result_would_block) {
+    RETURN_INT(Types::NONE);
+  } else INTERPRET_RESULT(result, "readArrNB");
 } END
 
 DEFINE1(UnsafeIODesc_canInput) {
@@ -267,66 +305,33 @@ DEFINE1(UnsafeIODesc_writerCapabilities) {
   bool supportsNonblocking = ioDesc->SupportsNonblocking();
   Tuple *result = Tuple::New(Types::WRITER_CAPABILITIES_SIZE);
   result->Init(Types::writeVec, BOOL_TO_WORD(true));
-  result->Init(Types::writeArr, BOOL_TO_WORD(false)); //--**
+  result->Init(Types::writeArr, BOOL_TO_WORD(true));
   result->Init(Types::writeVecNB, BOOL_TO_WORD(supportsNonblocking));
-  result->Init(Types::writeArrNB, BOOL_TO_WORD(false)); //--**
+  result->Init(Types::writeArrNB, BOOL_TO_WORD(supportsNonblocking));
   result->Init(Types::canOutput, BOOL_TO_WORD(supportsNonblocking));
   RETURN(result->ToWord());
 } END
 
 DEFINE4(UnsafeIODesc_writeVec) {
-  DECLARE_IODESC(ioDesc, x_iodesc);
-  DECLARE_STRING(buf, x_buf);
-  DECLARE_INT(i, x_i);
-  u_int length = buf->GetSize();
-  if (i < 0 || static_cast<u_int>(i) > length)
-    RAISE(PrimitiveTable::General_Subscript);
-  TagVal *tagVal = TagVal::FromWord(x_sz);
-  int sz;
-  if (tagVal == INVALID_POINTER) {
-    DECLARE_INT(none, x_sz); Assert(none == Types::NONE); none = none;
-    sz = length - i;
-  } else {
-    DECLARE_INT(sz0, tagVal->Sel(0));
-    if (sz0 < 0) RAISE(PrimitiveTable::General_Size);
-    if (static_cast<u_int>(sz0) > length)
-      RAISE(PrimitiveTable::General_Subscript);
-    sz = sz0;
-  }
-  if (sz == 0) RAISE(PrimitiveTable::General_Domain);
+  DECLARE_BUF(DECLARE_WORD8VECTOR);
   int out;
-  IODesc::result result = ioDesc->Write((char *) buf->GetValue() + i, sz, out);
+  IODesc::result result = ioDesc->Write(buf, sz, out);
   if (result != IODesc::result_ok) INTERPRET_RESULT(result, "writeVec");
   RETURN_INT(out);
 } END
 
 DEFINE4(UnsafeIODesc_writeArr) {
-  Error("writeArr not implemented"); //--** we need MONO_ARRAYs
+  DECLARE_BUF(DECLARE_WORD8ARRAY);
+  int out;
+  IODesc::result result = ioDesc->Write(buf, sz, out);
+  if (result != IODesc::result_ok) INTERPRET_RESULT(result, "writeArr");
+  RETURN_INT(out);
 } END
 
 DEFINE4(UnsafeIODesc_writeVecNB) {
-  DECLARE_IODESC(ioDesc, x_iodesc);
-  DECLARE_STRING(buf, x_buf);
-  DECLARE_INT(i, x_i);
-  u_int length = buf->GetSize();
-  if (i < 0 || static_cast<u_int>(i) > length)
-    RAISE(PrimitiveTable::General_Subscript);
-  TagVal *tagVal = TagVal::FromWord(x_sz);
-  int sz;
-  if (tagVal == INVALID_POINTER) {
-    DECLARE_INT(none, x_sz); Assert(none == Types::NONE); none = none;
-    sz = length - i;
-  } else {
-    DECLARE_INT(sz0, tagVal->Sel(0));
-    if (sz0 < 0) RAISE(PrimitiveTable::General_Size);
-    if (static_cast<u_int>(sz0) > length)
-      RAISE(PrimitiveTable::General_Subscript);
-    sz = sz0;
-  }
-  if (sz == 0) RAISE(PrimitiveTable::General_Domain);
+  DECLARE_BUF(DECLARE_WORD8VECTOR);
   int out;
-  IODesc::result result =
-    ioDesc->WriteNonblocking((char *) buf->GetValue() + i, sz, out);
+  IODesc::result result = ioDesc->WriteNonblocking(buf, sz, out);
   if (result == IODesc::result_ok) {
     TagVal *some = TagVal::New(Types::SOME, 1);
     some->Init(0, Store::IntToWord(out));
@@ -337,7 +342,16 @@ DEFINE4(UnsafeIODesc_writeVecNB) {
 } END
 
 DEFINE4(UnsafeIODesc_writeArrNB) {
-  Error("writeArrNB not implemented"); //--** we need MONO_ARRAYs
+  DECLARE_BUF(DECLARE_WORD8ARRAY);
+  int out;
+  IODesc::result result = ioDesc->WriteNonblocking(buf, sz, out);
+  if (result == IODesc::result_ok) {
+    TagVal *some = TagVal::New(Types::SOME, 1);
+    some->Init(0, Store::IntToWord(out));
+    RETURN(some->ToWord());
+  } else if (result == IODesc::result_would_block) {
+    RETURN_INT(Types::NONE);
+  } else INTERPRET_RESULT(result, "writeArrNB");
 } END
 
 DEFINE1(UnsafeIODesc_canOutput) {
@@ -459,9 +473,9 @@ word UnsafeIODesc() {
   INIT_STRUCTURE(record, "UnsafeIODesc", "canOutput",
 		 UnsafeIODesc_canOutput, 1, true);
   // creating tty iodescs
-  record->Init("stdIn", IODesc::NewFromStdIn()->ToWord());
-  record->Init("stdOut", IODesc::NewFromStdOut()->ToWord());
-  record->Init("stdErr", IODesc::NewFromStdErr()->ToWord());
+  //--** record->Init("stdIn", IODesc::NewFromStdIn()->ToWord());
+  //--** record->Init("stdOut", IODesc::NewFromStdOut()->ToWord());
+  //--** record->Init("stdErr", IODesc::NewFromStdErr()->ToWord());
   // creating file iodescs
   INIT_STRUCTURE(record, "UnsafeIODesc", "openIn",
 		 UnsafeIODesc_openIn, 1, true);
