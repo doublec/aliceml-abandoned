@@ -3,7 +3,7 @@
 ###   Leif Kornstaedt <kornstae@ps.uni-sb.de>
 ###
 ### Copyright:
-###   Leif Kornstaedt, 1999-2001
+###   Leif Kornstaedt, 1999-2002
 ###
 ### Last change:
 ###   $Date$ by $Author$
@@ -48,8 +48,9 @@
 ## The outcome of this pass is a working system with libraries.
 ## The components in the libraries carry export signatures.
 ##
-## build2-all:
+## build2-src:
 ##    A source tree for the libraries is created in subdirectory build2.
+## build2-all:
 ##    Libraries implemented in Alice are compiled using the system
 ##    installed in Pass 1.
 ## build2-install:
@@ -301,14 +302,19 @@ COMPILERSOURCES = \
 	$(COMPILERBACKENDCOMMONSOURCES) $(COMPILERBACKENDMOZARTSOURCES) \
 	$(COMPILERBACKENDDOTNETSOURCES) $(COMPILERBACKENDSTOCKWERKSOURCES) \
 	$(COMPILERTOPSOURCES) $(COMPILERSOURCES0:%=compiler/%)
-ALLSOURCES = VMMain.oz $(LIBSOURCES) $(COMPILERSOURCES)
+
+LINKERSOURCES0 = \
+	MY_COMPONENT-sig.aml MyComponent.aml LINK-sig.aml Link.aml Main.aml
+LINKERSOURCES = $(LINKERSOURCES0:%=linker/%)
+
+ALLSOURCES = $(VMSOURCES) $(LIBSOURCES) $(COMPILERSOURCES) $(LINKERSOURCES)
 
 SOURCEDIRS = \
 	lib lib/fundamental lib/system lib/utility lib/rtt lib/ml-yacc \
 	compiler compiler/infrastructure compiler/common compiler/top \
 	compiler/frontend-common compiler/frontend-sml \
 	compiler/backend-common compiler/backend-mozart \
-	compiler/backend-dotnet compiler/backend-stockwerk
+	compiler/backend-dotnet compiler/backend-stockwerk linker
 
 ##
 ## Main Target and Generally Applicable Rules
@@ -342,7 +348,8 @@ BUILD1SOURCES = \
 	build1/Build1.aml build1/lib/fundamental/RTT.aml \
 	$(ALLSOURCES:%=build1/%)
 
-INSTALL1DIRS = build1/install build1/install/bin build1/install/compiler
+INSTALL1DIRS = build1/install build1/install/bin \
+	build1/install/compiler build1/install/linker
 INSTALL1TOPFILES = VMMain.ozf
 INSTALL1BINFILES = alicerun alicec aliceserv alicelink
 INSTALL1COMPILERFILES = CompilerMain.ozf CompileServerMain.ozf
@@ -354,6 +361,8 @@ INSTALL1FILES = \
 ##
 ## Creating the Source Tree for Build 1
 ##
+
+build1-src: $(BUILD1DIRS) $(BUILD1SOURCES)
 
 $(BUILD1DIRS):
 	mkdir -p $@
@@ -443,14 +452,15 @@ build1/compiler/top/%.aml: compiler/top/%.aml Rel2.import
 build1/compiler/%.aml: compiler/%.aml Rel1.import
 	cat Rel1.import $< > $@
 
+build1/linker/%.aml: linker/%.aml Rel1.import
+	cat Rel1.import $< > $@
+
 build1/%.oz: %.oz
 	cp $< $@
 
 ##
 ## Performing Build 1
 ##
-
-build1-src: $(BUILD1DIRS) $(BUILD1SOURCES)
 
 build1-all: build1-src \
 	build1/LinkedVMMain.ozf build1/compiler/LinkedCompilerMain.ozf \
@@ -531,6 +541,8 @@ INSTALL2FILES = \
 ## Creating the Source Tree for Build 2
 ##
 
+build2-src: build1-install $(BUILD2DIRS) $(BUILD2SOURCES) \
+
 $(BUILD2DIRS):
 	mkdir -p $@
 
@@ -560,8 +572,7 @@ $(LIBNATIVES:%.ozf=build2/%.asig): build2/%: build1/%
 ## Performing Build 2
 ##
 
-build2-all: build1-install $(BUILD2DIRS) $(BUILD2SOURCES) \
-	build2/lib/rtt/LinkedRTT.ozf
+build2-all: build2-src build2/lib/rtt/LinkedRTT.ozf
 
 build2/%.ozf: build2/%.aml
 	$(ALICEC1) $(ALICEC_OPTS) --no-rtt -c $< -o $@
