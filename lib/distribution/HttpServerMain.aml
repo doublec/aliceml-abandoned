@@ -23,6 +23,8 @@ signature HTTP_SERVER_MAIN =
 
 structure HttpServerMain :> HTTP_SERVER_MAIN =
     struct
+	structure StringMap = HttpServer.StringMap
+
 	val documentRoot = "/tmp/httproot"
 
 	fun documentHandler (request: HttpServer.request) =
@@ -35,11 +37,20 @@ structure HttpServerMain :> HTTP_SERVER_MAIN =
 		{code = 200, contentType = "text/plain", content}
 	    end
 
+	fun debugHandler (request: HttpServer.request) =
+	    {code = 200, contentType = "text/plain",
+	     content = (#method request ^ " " ^ Url.toString (#uri request) ^
+			" " ^ #protocol request ^ "\n" ^
+			StringMap.foldi
+			    (fn (name, value, rest) =>
+				name ^ ": " ^ value ^ "\n" ^ rest)
+			    "" (#headers request))}
+
 	val blackHole: unit = Promise.future (Promise.promise ())
 
 	fun start port =
 	    (HttpServer.start (SOME port);
-	     HttpServer.registerFor (Url.fromString "/", documentHandler);
+	     HttpServer.registerFor (Url.fromString "/", debugHandler);
 	     Future.await blackHole)
 
 	fun usage s =

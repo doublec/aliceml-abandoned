@@ -29,9 +29,11 @@ structure HttpServer :> HTTP_SERVER =
 	type handler = request -> response
 
 	exception Closed
+	exception Format
 
 	fun dropCRLF [#"\r", #"\n"] = nil
 	  | dropCRLF (c::cr) = c::dropCRLF cr
+	  | dropCRLF nil = raise Format
 
 	fun readLine socket =
 	    let
@@ -57,15 +59,34 @@ structure HttpServer :> HTTP_SERVER =
 		"" => ()
 	      | s =>
 		    let
-			val i = Option.valOf (charOffset (s, #":"))
+			val i =
+			    case charOffset (s, #":") of
+				SOME i => i
+			      | NONE => raise Format
 			val name =
 			    String.map Char.toLower
 				       (String.substring (s, 0, i))
 			val value = trim (String.extract (s, i + 1, NONE))
 		    in
-			StringMap.insertDisjoint (headers, name, value);
+			if StringMap.member (headers, name) then raise Format
+			else StringMap.insertDisjoint (headers, name, value);
 			readHeaders (socket, headers)
 		    end
+
+	fun readContent (socket, headers) =
+	    case StringMap.lookup (headers, "contentLength") of
+		SOME s =>
+		    ((case Int.fromString s of
+			  SOME n =>
+			      let
+				  val content = Socket.inputN (socket, n)
+			      in
+				  if String.size content <> n then raise Format
+				  else content
+			      end
+		        | NONE => raise Format)
+		     handle Overflow => raise Format)
+	      | NONE => ""
 
 	fun readRequest socket =
 	    let
@@ -73,21 +94,18 @@ structure HttpServer :> HTTP_SERVER =
 		val rl =
 		    case String.tokens (fn c => c = #" ") requestLine of
 			[method, requestURI, protocol] =>
-			    {method, uri = Url.fromString requestURI, protocol}
+			    {method, uri = requestURI, protocol}
 		      | [method, requestURI] =>
-			    {method, uri = Url.fromString requestURI,
-			     protocol = "HTTP/1.0"}
-		      | _ => raise Match
+			    {method, uri = requestURI, protocol = "HTTP/1.0"}
+		      | _ => raise Format
 		val headers = StringMap.new ()
 		val _ = readHeaders (socket, headers)
-		val content =
-		    case StringMap.lookup (headers, "content-length") of
-			SOME s =>
-			    Socket.inputN (socket,
-					   Option.valOf (Int.fromString s))
-		      | NONE => ""
+		val content = readContent (socket, headers)
 	    in
-		{method = #method rl, uri = #uri rl, protocol = #protocol rl,
+		{method = #method rl,
+		 uri = Url.fromString (#uri rl)
+		       handle Url.Malformed => raise Format,
+		 protocol = #protocol rl,
 		 headers, content}
 	    end
 
@@ -124,16 +142,17 @@ structure HttpServer :> HTTP_SERVER =
 	    in
 		Socket.output (socket,
 			       #protocol request ^ " " ^ Int.toString code ^
-			       " foo\r\n");   (*--** message *)
-		Socket.output (socket,
-			       "Content-type: " ^ contentType ^ "\r\n");
-		Socket.output (socket,
+			       " foo\r\n" ^
+			       "Content-type: " ^ contentType ^ "\r\n" ^
 			       "Content-length: " ^
-			       Int.toString (String.size content) ^ "\r\n");
-		Socket.output (socket, "\r\n");
-		Socket.output (socket, content);
+			       Int.toString (String.size content) ^ "\r\n" ^
+			       "\r\n" ^
+			       content);
 		Socket.close socket
 	    end
+	    handle Format =>
+		(TextIO.print "format error\n";
+		 Socket.close socket)
 
 	val rootURI: Url.t option ref = ref NONE
 
@@ -154,10 +173,7 @@ structure HttpServer :> HTTP_SERVER =
 			rootURI := SOME url; url
 		    end
 
-	fun getRootURI () =
-	    case !rootURI of
-		SOME uri => uri
-	      | NONE => start NONE
+	fun getRootURI () = start NONE
 
 	fun registerFor (uri, handler) =
 	    let
@@ -169,11 +185,12 @@ structure HttpServer :> HTTP_SERVER =
 	val counter = ref 0
 
 	fun register handler =
-	    let (*--** thread-safety *)
-		val n = !counter
+	    let
+		val p = Promise.promise ()
+		val n = Ref.exchange (counter, Promise.future p)
 		val uri = Url.setPath (Url.empty, ["export", Int.toString n])
 	    in
-		counter := n + 1;
+		Promise.fulfill (p, n + 1);
 		registerFor (uri, handler);
 		uri
 	    end
