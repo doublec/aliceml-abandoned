@@ -3,9 +3,9 @@ Group
 	structure LabelReflection
 	structure PathReflection
 	structure TypeReflection
-(*
+	structure FixityReflection
 	structure InfReflection
-*)
+
 is
 
 	name.cm
@@ -19,7 +19,7 @@ is
 	PathReflection.sml
 	TYPE_REFLECTION.sig
 	TypeReflection.sml
-(*
+	FIXITY_REFLECTION.sig
+	FixityReflection.sml
 	INF_REFLECTION.sig
 	InfReflection.sml
-*)

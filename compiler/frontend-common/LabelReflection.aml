@@ -3,7 +3,7 @@ structure LabelReflection :> LABEL_REFLECTION =
 
   (* Types *)
 
-    val path_lab	= Path.pervasive "lab"		(*UNFINISHED*)
+    val path_lab	= Path.pervasive "lab"			(*UNFINISHED*)
     val typ_lab		= Type.inCon(Type.STAR, Type.CLOSED, path_lab)
 
   (* The module *)

@@ -19,8 +19,7 @@ structure TypeReflection :> TYPE_REFLECTION =
 					 Type.emptyRow()))
     val typ_sort	= Type.inMu(Type.inSum row_sort)
     datatype sort	= datatype Type.sort			(* verify *)
-    val _		= OPEN : sort				(* verify *)
-    val _		= CLOSED : sort				(* verify *)
+    val (OPEN | CLOSED)	= OPEN : sort				(* verify *)
 
     val lab_star	= Label.fromString "STAR"
     val lab_arrow	= Label.fromString "ARROW"
@@ -31,8 +30,8 @@ structure TypeReflection :> TYPE_REFLECTION =
 					 Type.emptyRow()))
     val _		= Type.fill(typ_kind, Type.inMu(Type.inSum row_kind))
     datatype kind	= datatype Type.kind			(* verify *)
-    val _		= STAR : kind				(* verify *)
-    val _		= ARROW(STAR,STAR) : kind		(* verify *)
+    val (STAR | ARROW(_ : kind * kind))				(* verify *)
+			= STAR : kind
 
     val typ_con		= Type.inTuple #[typ_kind, typ_sort, typ_path]
     type con		= Type.con				(* verify *)

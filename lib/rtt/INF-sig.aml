@@ -4,7 +4,6 @@ signature INF =
   (* Types *)
 
     type lab   = Label.t
-    type name  = Name.t
     type path  = Path.t
     type typ   = Type.t
     type tkind = Type.kind

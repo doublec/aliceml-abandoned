@@ -3,7 +3,7 @@ structure PathReflection :> PATH_REFLECTION =
 
   (* Types *)
 
-    val path_path	= Path.pervasive "path"		(*UNFINISHED*)
+    val path_path	= Path.pervasive "path"			(*UNFINISHED*)
     val typ_path	= Type.inCon(Type.STAR, Type.CLOSED, path_path)
 
   (* The module *)
