@@ -106,7 +106,6 @@ structure HttpClient :> HTTP_CLIENT =
 		Http.StringMap.insert (headers, "Host",
 				       Option.valOf (Url.getAuthority url));
 		Http.StringMap.insert (headers, "User-Agent", userAgent);
-		Http.StringMap.insert (headers, "Connection", "close");
 		(*--** Date *)
 		request (url, {method = "GET",
 			       uri = localUrl url,
@@ -124,7 +123,6 @@ structure HttpClient :> HTTP_CLIENT =
 		Http.StringMap.insert (headers, "Content-Type", contentType);
 		Http.StringMap.insert (headers, "Content-Length",
 				       Int.toString (String.size body));
-		Http.StringMap.insert (headers, "Connection", "close");
 		(*--** Date *)
 		request (url, {method = "POST",
 			       uri = localUrl url,
