@@ -114,6 +114,7 @@ ALICEDEP = sml @SMLload=$(BOOTSTRAPDIR)/alicedep
 OZC = $(OZHOME)/bin/ozc
 MLLEX = ml-lex
 MLYACC = ml-yacc
+M4 = m4 -DFUTURE_AWAIT_EITHER_IS_PRIMITIVE
 
 ##
 ## Enumerate All Files Making Up the Source Tree
@@ -410,6 +411,9 @@ build1/lib/fundamental/RTT.aml: lib/fundamental/DummyRTT.aml
 
 build1/lib/fundamental/%.aml: lib/fundamental/%.aml
 	cp $< $@
+
+build1/lib/fundamental/%.aml: lib/fundamental/%.aml.m4
+	$(M4) $< > $@
 
 build1/%.oz: vm-mozart/%.oz
 	cp $< $@

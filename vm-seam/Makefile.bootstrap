@@ -117,6 +117,7 @@ ALICEDEP = sml @SMLload=$(BOOTSTRAPDIR)/alicedep
 OZC = ozc
 MLLEX = ml-lex
 MLYACC = ml-yacc
+M4 = m4
 
 ##
 ## Enumerate All Files Making Up the Source Tree
@@ -454,6 +455,9 @@ build1/lib/fundamental/RTT.aml: lib/fundamental/DummyRTT.aml
 
 build1/lib/fundamental/%.aml: lib/fundamental/%.aml
 	cp $< $@
+
+build1/lib/fundamental/%.aml: lib/fundamental/%.aml.m4
+	$(M4) $< > $@
 
 build1/lib/%.asig: lib/%.asig Rel2.import
 	cat Rel2.import $< > $@
