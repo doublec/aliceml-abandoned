@@ -259,7 +259,9 @@ struct
 	    val (_,l,n,e) = traverse (ref 0) 0 E.empty () (f Fail)
 	in
 	    assert n <= 10_000 do
-	    assert E.all (Future.isDetermined o future o #1) e do
+	    E.appi (fn (l,(p,_)) =>
+			if Future.isDetermined (future p) then ()
+			else raise Malformed ("goto " ^ l)) e;
 	    Vector.fromList l
 	end
 end
