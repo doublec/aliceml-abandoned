@@ -23,6 +23,7 @@ import structure FlatGrammar           from "../backend-common/FlatGrammar"
 import signature ABSTRACT_CODE_GRAMMAR from "ABSTRACT_CODE_GRAMMAR-sig"
 import structure MkCodeGenContext      from "MkCodeGenContext"
 import structure MkEnvironment         from "MkEnvironment"
+import structure MkLiveness            from "MkLiveness"
 import signature CODE_GEN_PHASE        from "CODE_GEN_PHASE-sig"
 
 functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
@@ -33,6 +34,8 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 	structure O = AbstractCodeGrammar
 
 	structure Environment = MkEnvironment(AbstractCodeGrammar)
+	structure Liveness = MkLiveness(AbstractCodeGrammar)
+
 	structure IdSet = MkHashImpSet(Int)
 	structure LargeIntMap = MkHashImpMap(LargeInt)
 
@@ -404,6 +407,7 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 		    else startClose env
 		val args' = translateArgs translateIdDef (args, env)
 		val bodyInstr = translateBody (body, env)
+		val liveness = Liveness.analyze (args', bodyInstr)
 		val (globalIds, nlocals) = endFn env
 		val kills = IdSet.new ()
 		val instr =
@@ -432,7 +436,7 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 		    let
 			val template =
 			    O.Template (coord, Vector.length globalIdRefs,
-					nlocals, args', bodyInstr)
+					nlocals, args', bodyInstr, liveness)
 		    in
 			O.Specialize (id, globalIdRefs, template, instr)
 		    end
@@ -440,7 +444,7 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 		    let
 			val abstractCode =
 			    O.Function (coord, Vector.length globalIdRefs,
-					nlocals, args', bodyInstr)
+					nlocals, args', bodyInstr, liveness)
 			val concreteCode = V.concreteCode abstractCode
 		    in
 			O.Close (id, globalIdRefs, concreteCode, instr)
@@ -600,12 +604,14 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 		val elseInstr =
 		    O.PutVar (raiseId, O.Immediate (V.prim "General.Match"),
 			      O.Raise (O.LastUseLocal raiseId))
+		val args = O.OneArg (O.IdDef formalId)
 		val bodyInstr =
 		    O.VecTest (O.LastUseLocal formalId,
 			       #[(idDefs, instr)], elseInstr)
+		val liveness = Liveness.analyze (args, bodyInstr)
 		val abstractCode =
 		    O.Function ((filename, 0, 0), 0, nlocals,
-				O.OneArg (O.IdDef formalId), bodyInstr)
+				args, bodyInstr, liveness)
 		val concreteCode = V.concreteCode abstractCode
 		val exportDesc =
 		    Vector.map (fn (_, Id (_, stamp, _)) => stamp) exportDesc

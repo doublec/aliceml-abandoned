@@ -33,6 +33,8 @@ functor MkAbstractCodeGrammar(Value: VALUE): ABSTRACT_CODE_GRAMMAR =
 
 	type coord = string * int * int
 
+	type liveness = int vector
+
 	datatype instr =
 	    Kill of id vector * instr
 	  | PutVar of id * idRef * instr
@@ -76,10 +78,11 @@ functor MkAbstractCodeGrammar(Value: VALUE): ABSTRACT_CODE_GRAMMAR =
 	  | Global of int
 	  | Toplevel of int
 	and template =
-	    Template of coord * int * int * idDef args * instr
+	    Template of coord * int * int * idDef args * instr * liveness
 	and abstractCode =
-	    Function of coord * int * int * idDef args * instr
-	  | Specialized of coord * value vector * int * idDef args * instr
+	    Function of coord * int * int * idDef args * instr * liveness
+	  | Specialized of coord * value vector * int * idDef args * instr *
+			   liveness
 	withtype value = abstractCode Value.t
 
 	type t = value * Stamp.t vector

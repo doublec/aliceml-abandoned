@@ -144,6 +144,11 @@ structure OutputPickle :> OUTPUT_PICKLE =
 	     outputInt (context, LargeInt.fromInt line);
 	     outputInt (context, LargeInt.fromInt column))
 
+	fun outputLiveness (context, is) =
+	    outputVector (fn (context, i) =>
+			     outputInt (context, LargeInt.fromInt i))
+			 (context, is)
+
 	fun outputWideString (context, s) =
 	    outputChunk (context,
 			 Vector.fromList
@@ -400,29 +405,30 @@ structure OutputPickle :> OUTPUT_PICKLE =
 	  | outputIdRef (context, Toplevel i) =
 	    (outputBlock (context, Label.toplevel, 1); outputId (context, i))
 	and outputTemplate (context, Template (coord, ntoplevels, nlocals,
-					       args, body)) =
-	    (outputBlock (context, Label.template, 5);
+					       args, body, liveness)) =
+	    (outputBlock (context, Label.template, 6);
 	     outputCoord (context, coord);
 	     outputInt (context, LargeInt.fromInt ntoplevels);
 	     outputInt (context, LargeInt.fromInt nlocals);
 	     outputArgs outputIdDef (context, args);
-	     outputInstr (context, body))
+	     outputInstr (context, body); outputLiveness (context, liveness))
 	and outputAbstractCode (context, Function (coord, nglobals, nlocals,
-						   args, body)) =
-	    (outputBlock (context, Label.function, 5);
+						   args, body, liveness)) =
+	    (outputBlock (context, Label.function, 6);
 	     outputCoord (context, coord);
 	     outputInt (context, LargeInt.fromInt nglobals);
 	     outputInt (context, LargeInt.fromInt nlocals);
 	     outputArgs outputIdDef (context, args);
-	     outputInstr (context, body))
+	     outputInstr (context, body); outputLiveness (context, liveness))
 	  | outputAbstractCode (context, Specialized (coord, toplevels,
-						      nlocals, args, body)) =
-	    (outputBlock (context, Label.specialized, 5);
+						      nlocals, args, body,
+						      liveness)) =
+	    (outputBlock (context, Label.specialized, 6);
 	     outputCoord (context, coord);
 	     outputVector outputValue (context, toplevels);
 	     outputInt (context, LargeInt.fromInt nlocals);
 	     outputArgs outputIdDef (context, args);
-	     outputInstr (context, body))
+	     outputInstr (context, body); outputLiveness (context, liveness))
 
 	fun output (outstream, value) =
 	    outputValue ({outstream = outstream, shared = StampMap.new ()},
