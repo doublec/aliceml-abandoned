@@ -204,70 +204,72 @@ static inline word SimpleEvent(int label) {
 }
 
 word GdkEventToDatatype(GdkEvent *event) {
-  enum { _2BUTTON_PRESS, _3BUTTON_PRESS, BUTTON_PRESS, BUTTON_RELEASE, 
-	 CLIENT_EVENT,
-	 CONFIGURE,
-	 DELETE, DESTROY,
-	 DRAG_ENTER, DRAG_LEAVE, DRAG_MOTION, DRAG_STATUS,
-	 DROP_FINISHED, DROP_START, 
-	 ENTER_NOTIFY, 
-	 EXPOSE,
-	 FOCUS_CHANGE, 
-	 KEY_PRESS, KEY_RELEASE,
-	 LEAVE_NOTIFY, 
-	 MAP,
-	 MOTION_NOTIFY,
-	 NOTHING,
-	 NO_EXPOSE,
-	 PROPERTY_NOTIFY,
-	 PROXIMITY_IN, PROXIMITY_OUT,
-	 SCROLL, 
-	 SELECTION_CLEAR, SELECTION_NOTIFY, SELECTION_REQUEST, 
-	 SETTING, 
-	 UNMAP,
-	 UNSUPPORTED, 
-	 VISIBILITY_NOTIFY, 
-	 WINDOW_STATE };
+  enum { EVENT_2BUTTON_PRESS, EVENT_3BUTTON_PRESS, 
+	   EVENT_BUTTON_PRESS, EVENT_BUTTON_RELEASE, 
+	 EVENT_CLIENT_EVENT,
+	 EVENT_CONFIGURE,
+	 EVENT_DELETE, EVENT_DESTROY,
+	 EVENT_DRAG_ENTER, EVENT_DRAG_LEAVE, 
+	   EVENT_DRAG_MOTION, EVENT_DRAG_STATUS,
+	 EVENT_DROP_FINISHED, EVENT_DROP_START, 
+	 EVENT_ENTER_NOTIFY, 
+	 EVENT_EXPOSE,
+	 EVENT_FOCUS_CHANGE, 
+	 EVENT_KEY_PRESS, EVENT_KEY_RELEASE,
+	 EVENT_LEAVE_NOTIFY, 
+	 EVENT_MAP,
+	 EVENT_MOTION_NOTIFY,
+	 EVENT_NOTHING,
+	 EVENT_NO_EXPOSE,
+	 EVENT_PROPERTY_NOTIFY,
+	 EVENT_PROXIMITY_IN, EVENT_PROXIMITY_OUT,
+	 EVENT_SCROLL, 
+	 EVENT_SELECTION_CLEAR, EVENT_SELECTION_NOTIFY,EVENT_SELECTION_REQUEST,
+	 EVENT_SETTING, 
+	 EVENT_UNMAP,
+	 EVENT_UNSUPPORTED, 
+	 EVENT_VISIBILITY_NOTIFY, 
+	 EVENT_WINDOW_STATE };
 
   switch (event->type) {
-  case GDK_NOTHING: return SimpleEvent(NOTHING);
-  case GDK_DELETE: return SimpleEvent(DELETE);
-  case GDK_DESTROY: return SimpleEvent(DESTROY);
-  case GDK_EXPOSE: return ExposeEvent(event, EXPOSE);
-  case GDK_MOTION_NOTIFY: return MotionEvent(event, MOTION_NOTIFY);
-  case GDK_BUTTON_PRESS: return ButtonEvent(event, BUTTON_PRESS);
-  case GDK_2BUTTON_PRESS:return ButtonEvent(event, _2BUTTON_PRESS);
-  case GDK_3BUTTON_PRESS:return ButtonEvent(event, _3BUTTON_PRESS);
-  case GDK_BUTTON_RELEASE: return ButtonEvent(event, BUTTON_RELEASE);
-  case GDK_KEY_PRESS: return KeyEvent(event, KEY_PRESS);
-  case GDK_KEY_RELEASE: return KeyEvent(event, KEY_RELEASE);
-  case GDK_ENTER_NOTIFY: return CrossingEvent(event, ENTER_NOTIFY);
-  case GDK_LEAVE_NOTIFY: return CrossingEvent(event, LEAVE_NOTIFY);
-  case GDK_FOCUS_CHANGE: return FocusEvent(event, FOCUS_CHANGE);
-  case GDK_CONFIGURE: return ConfigureEvent(event, CONFIGURE);
-  case GDK_MAP: return SimpleEvent(MAP);
-  case GDK_UNMAP: return SimpleEvent(UNMAP);
-  case GDK_PROPERTY_NOTIFY: return SimpleEvent(PROPERTY_NOTIFY);
-  case GDK_SELECTION_CLEAR: return SimpleEvent(SELECTION_CLEAR);
-  case GDK_SELECTION_REQUEST: return SimpleEvent(SELECTION_REQUEST);
-  case GDK_SELECTION_NOTIFY: return SimpleEvent(SELECTION_NOTIFY);
-  case GDK_PROXIMITY_IN: return SimpleEvent(PROXIMITY_IN);
-  case GDK_PROXIMITY_OUT: return SimpleEvent(PROXIMITY_OUT);
-  case GDK_DRAG_ENTER: return SimpleEvent(DRAG_ENTER);
-  case GDK_DRAG_LEAVE: return SimpleEvent(DRAG_LEAVE);
-  case GDK_DRAG_MOTION: return SimpleEvent(DRAG_MOTION);
-  case GDK_DRAG_STATUS: return SimpleEvent(DRAG_STATUS);
-  case GDK_DROP_START: return SimpleEvent(DROP_START);
-  case GDK_DROP_FINISHED: return SimpleEvent(DROP_FINISHED);
-  case GDK_CLIENT_EVENT: return SimpleEvent(CLIENT_EVENT);
+  case GDK_NOTHING: return SimpleEvent(EVENT_NOTHING);
+  case GDK_DELETE: return SimpleEvent(EVENT_DELETE);
+  case GDK_DESTROY: return SimpleEvent(EVENT_DESTROY);
+  case GDK_EXPOSE: return ExposeEvent(event, EVENT_EXPOSE);
+  case GDK_MOTION_NOTIFY: return MotionEvent(event, EVENT_MOTION_NOTIFY);
+  case GDK_BUTTON_PRESS: return ButtonEvent(event, EVENT_BUTTON_PRESS);
+  case GDK_2BUTTON_PRESS:return ButtonEvent(event, EVENT_2BUTTON_PRESS);
+  case GDK_3BUTTON_PRESS:return ButtonEvent(event, EVENT_3BUTTON_PRESS);
+  case GDK_BUTTON_RELEASE: return ButtonEvent(event, EVENT_BUTTON_RELEASE);
+  case GDK_KEY_PRESS: return KeyEvent(event, EVENT_KEY_PRESS);
+  case GDK_KEY_RELEASE: return KeyEvent(event, EVENT_KEY_RELEASE);
+  case GDK_ENTER_NOTIFY: return CrossingEvent(event, EVENT_ENTER_NOTIFY);
+  case GDK_LEAVE_NOTIFY: return CrossingEvent(event, EVENT_LEAVE_NOTIFY);
+  case GDK_FOCUS_CHANGE: return FocusEvent(event, EVENT_FOCUS_CHANGE);
+  case GDK_CONFIGURE: return ConfigureEvent(event, EVENT_CONFIGURE);
+  case GDK_MAP: return SimpleEvent(EVENT_MAP);
+  case GDK_UNMAP: return SimpleEvent(EVENT_UNMAP);
+  case GDK_PROPERTY_NOTIFY: return SimpleEvent(EVENT_PROPERTY_NOTIFY);
+  case GDK_SELECTION_CLEAR: return SimpleEvent(EVENT_SELECTION_CLEAR);
+  case GDK_SELECTION_REQUEST: return SimpleEvent(EVENT_SELECTION_REQUEST);
+  case GDK_SELECTION_NOTIFY: return SimpleEvent(EVENT_SELECTION_NOTIFY);
+  case GDK_PROXIMITY_IN: return SimpleEvent(EVENT_PROXIMITY_IN);
+  case GDK_PROXIMITY_OUT: return SimpleEvent(EVENT_PROXIMITY_OUT);
+  case GDK_DRAG_ENTER: return SimpleEvent(EVENT_DRAG_ENTER);
+  case GDK_DRAG_LEAVE: return SimpleEvent(EVENT_DRAG_LEAVE);
+  case GDK_DRAG_MOTION: return SimpleEvent(EVENT_DRAG_MOTION);
+  case GDK_DRAG_STATUS: return SimpleEvent(EVENT_DRAG_STATUS);
+  case GDK_DROP_START: return SimpleEvent(EVENT_DROP_START);
+  case GDK_DROP_FINISHED: return SimpleEvent(EVENT_DROP_FINISHED);
+  case GDK_CLIENT_EVENT: return SimpleEvent(EVENT_CLIENT_EVENT);
   case GDK_VISIBILITY_NOTIFY: 
-    return VisibilityEvent(event, VISIBILITY_NOTIFY);
-  case GDK_NO_EXPOSE: return NoExposeEvent(event, NO_EXPOSE);
-  case GDK_SCROLL: return ScrollEvent(event, SCROLL);
-  case GDK_WINDOW_STATE: return SimpleEvent(WINDOW_STATE);
-  case GDK_SETTING: return SimpleEvent(SETTING);
+    return VisibilityEvent(event, EVENT_VISIBILITY_NOTIFY);
+  case GDK_NO_EXPOSE: return NoExposeEvent(event, EVENT_NO_EXPOSE);
+  case GDK_SCROLL: return ScrollEvent(event, EVENT_SCROLL);
+  case GDK_WINDOW_STATE: return SimpleEvent(EVENT_WINDOW_STATE);
+  case GDK_SETTING: return SimpleEvent(EVENT_SETTING);
   default:
-    TagVal *tv = TagVal::New(UNSUPPORTED, 1);
+    TagVal *tv = TagVal::New(EVENT_UNSUPPORTED, 1);
     tv->Init(0, PointerToObjectRegister(event,TYPE_UNKNOWN));
     return tv->ToWord();  
   }
@@ -295,20 +297,20 @@ word create_object(GType t, gpointer p) {
   static const GType GDK_EVENT_TYPE = gdk_event_get_type();
   static const GType GTK_OBJECT_TYPE = g_type_from_name("GtkObject");
 
-  int tag = OBJECT;
+  int tag = gtkOBJECT;
   word value;
   if (g_type_is_a(t, G_LIST_TYPE)) {
-    tag = LIST;
+    tag = gtkLIST;
     value = GLIST_OBJECT_TO_WORD(static_cast<GList*>(p));
   }
   else
     if (g_type_is_a(t, G_SLIST_TYPE)) {
-      tag = LIST;
+      tag = gtkLIST;
       value = GSLIST_OBJECT_TO_WORD(static_cast<GSList*>(p));
     }
     else
       if (t == GDK_EVENT_TYPE) {
-	tag = EVENT;
+	tag = gtkEVENT;
 	value = GdkEventToDatatype(gdk_event_copy(static_cast<GdkEvent*>(p)));
       }
       else
@@ -340,48 +342,48 @@ void sendArgsToStream(gint connid, guint n_param_values,
     */
     switch(G_VALUE_TYPE(val)) {
     case G_TYPE_CHAR:   
-      value = create_param(INT, 
+      value = create_param(gtkINT, 
 		   INT_TO_WORD(static_cast<int>(g_value_get_char(val))));
       break;
     case G_TYPE_UCHAR:  
-      value = create_param(INT, 
+      value = create_param(gtkINT, 
                  INT_TO_WORD(static_cast<int>(g_value_get_uchar(val))));
       break;
     case G_TYPE_BOOLEAN:
-      value = create_param(BOOL, BOOL_TO_WORD(g_value_get_boolean(val)));
+      value = create_param(gtkBOOL, BOOL_TO_WORD(g_value_get_boolean(val)));
       break;
     case G_TYPE_INT:    
-      value = create_param(INT, INT_TO_WORD(g_value_get_int(val)));
+      value = create_param(gtkINT, INT_TO_WORD(g_value_get_int(val)));
       break;
     case G_TYPE_UINT:   
-      value = create_param(INT, INT_TO_WORD(g_value_get_uint(val)));
+      value = create_param(gtkINT, INT_TO_WORD(g_value_get_uint(val)));
       break;
     case G_TYPE_LONG:   
-      value = create_param(INT, INT_TO_WORD(g_value_get_long(val)));
+      value = create_param(gtkINT, INT_TO_WORD(g_value_get_long(val)));
       break;
     case G_TYPE_ULONG:  
-      value = create_param(INT, INT_TO_WORD(g_value_get_ulong(val)));
+      value = create_param(gtkINT, INT_TO_WORD(g_value_get_ulong(val)));
       break;
     case G_TYPE_INT64:  
-      value = create_param(INT, INT_TO_WORD(g_value_get_int64(val)));
+      value = create_param(gtkINT, INT_TO_WORD(g_value_get_int64(val)));
       break;
     case G_TYPE_UINT64: 
-      value = create_param(INT, INT_TO_WORD(g_value_get_uint64(val)));
+      value = create_param(gtkINT, INT_TO_WORD(g_value_get_uint64(val)));
       break;
     case G_TYPE_ENUM:   
-      value = create_param(INT, INT_TO_WORD(g_value_get_enum(val)));
+      value = create_param(gtkINT, INT_TO_WORD(g_value_get_enum(val)));
       break;
     case G_TYPE_FLAGS:  
-      value = create_param(INT, INT_TO_WORD(g_value_get_flags(val)));
+      value = create_param(gtkINT, INT_TO_WORD(g_value_get_flags(val)));
       break;
     case G_TYPE_FLOAT:  
-      value = create_param(REAL, REAL_TO_WORD(g_value_get_float(val)));
+      value = create_param(gtkREAL, REAL_TO_WORD(g_value_get_float(val)));
       break;
     case G_TYPE_DOUBLE: 
-      value = create_param(REAL, REAL_TO_WORD(g_value_get_double(val)));
+      value = create_param(gtkREAL, REAL_TO_WORD(g_value_get_double(val)));
       break;
     case G_TYPE_STRING: 
-     value = create_param(STRING, STRING_TO_WORD(g_value_get_string(val)));
+     value = create_param(gtkSTRING, STRING_TO_WORD(g_value_get_string(val)));
       break;
     default:
       if (i==0)
