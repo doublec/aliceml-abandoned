@@ -35,12 +35,14 @@ signature COMPONENT =
 	val load: Url.t -> component
 	val save: string * component -> unit
 	val inf: component -> Inf.t option
+	val imports: component -> (Url.t * Inf.t option) vector
 
 	functor MkManager() : (*COMPONENT_MANAGER*)
 	    sig
 		exception Conflict
 
 		val eval: Url.t * component -> Reflect.module
+		val load: Url.t -> component
 		val link: Url.t -> component
 		val enter: Url.t * component -> unit
 		val lookup: Url.t -> component option
