@@ -34,11 +34,14 @@ class CommandLine_arguments : Procedure {
 
 public class Execute {
     public static Object Main(Object obj) {
-	Object[] CommandLine = new Object[2];
+	Object[] res = new Object[1];
 
+	Object[] CommandLine = new Object[2];
 	CommandLine[0] = new CommandLine_arguments();   // arguments
 	CommandLine[1] = new CommandLine_name();        // name
 
-	return CommandLine;
+	res[0] = CommandLine;                           // $CommandLine
+
+	return res;
     }
 }

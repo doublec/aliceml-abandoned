@@ -41,16 +41,20 @@ class OS_Process_getEnv : Procedure {
 
 public class Execute {
     public static Object Main(Object obj) {
+	Object[] res = new Object[1];
+
 	Object[] OS = new Object[1];
+
 	Object[] OS_Process = new Object[5];
-
-	OS[0] = OS_Process;
-
 	OS_Process[0] = new OS_Process_exit();     // exit
 	OS_Process[1] = (Int32) 1;                 // failure
 	OS_Process[2] = new OS_Process_getEnv();   // getEnv
 	OS_Process[3] = (Int32) 0;                 // success
 	OS_Process[4] = new OS_Process_system();   // system
+
+	OS[0] = OS_Process;                        // $Process
+
+	res[0] = OS;                               // $OS
 
 	return OS;
     }

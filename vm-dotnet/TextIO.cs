@@ -205,8 +205,9 @@ class TextIO_print : Procedure {
 
 public class Execute {
     public static Object Main(Object obj) {
-	Object[] TextIO = new Object[13];
+	Object[] res = new Object[2];
 
+	Object[] TextIO = new Object[13];
 	TextIO[0] = new TextIO_closeIn();                        // closeIn
 	TextIO[1] = new TextIO_closeOut();                       // closeOut
 	TextIO[2] = new TextIO_flushOut();                       // flushOut
@@ -224,6 +225,9 @@ public class Execute {
 	TextIO[12] =
 	    new StreamWrapper("stdout", System.Console.Out);     // stdOut
 
-	return TextIO;
+	res[0] = TextIO;                                         // $TextIO
+	res[1] = TextIO[9];                                      // print
+
+	return res;
     }
 }

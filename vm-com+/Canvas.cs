@@ -1459,12 +1459,12 @@ public class Execute {
 	
 	Helper.PrintLn((System.String) "Entered Canvas::Main");
 	new Thread(new ThreadStart(insp.Run)).Start();
-	val[0] = new InspectApply();
-        val[1] = new MakeArrowType();
-	val[2] = new MakeBasicType();
-	val[3] = new MakeListType();
-	val[4] = new MakeRecordType();
-	val[5] = new MakeTupleType();
+        val[0] = new MakeArrowType();
+	val[1] = new MakeBasicType();
+	val[2] = new MakeListType();
+	val[3] = new MakeRecordType();
+	val[4] = new MakeTupleType();
+	val[5] = new InspectApply();
 	Helper.PrintLn((System.String) "Leaving Canvas::Main");
 	return val;
     }
