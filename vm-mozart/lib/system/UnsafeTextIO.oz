@@ -32,7 +32,7 @@ define
 	 end
       end
       fun {ConvertAll S}
-	 case S of &\n|&\r|Rest then &\n|{ConvertAll Rest}
+	 case S of &\r|&\n|Rest then &\n|{ConvertAll Rest}
 	 [] C|Cr then C|{ConvertAll Cr}
 	 [] nil then nil
 	 end
