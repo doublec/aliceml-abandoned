@@ -1,34 +1,36 @@
 //
 // Authors:
 //   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
+//   Leif Kornstaedt <kornstae@ps.uni-sb.de>
 //
 // Copyright:
 //   Thorsten Brunklaus, 2002
+//   Leif Kornstaedt, 2002
 //
 // Last Change:
 //   $Date$ by $Author$
 //   $Revision$
 //
 
-#ifndef __GENERIC__PUSH_CALL_INTERPRETER_HH__
-#define __GENERIC__PUSH_CALL_INTERPRETER_HH__
+#ifndef __GENERIC__PUSH_CALL_WORKER_HH__
+#define __GENERIC__PUSH_CALL_WORKER_HH__
 
 #if defined(INTERFACE)
-#pragma interface "generic/PushCallInterpreter.hh"
+#pragma interface "generic/PushCallWorker.hh"
 #endif
 
-#include "generic/Interpreter.hh"
+#include "generic/Worker.hh"
 
-class DllExport PushCallInterpreter: public Interpreter {
+class DllExport PushCallWorker: public Worker {
 private:
-  // PushCallInterpreter Constructor
-  PushCallInterpreter(): Interpreter() {}
+  // PushCallWorker Constructor
+  PushCallWorker(): Worker() {}
 public:
-  // Exported PushCallInterpreter Instance
-  static PushCallInterpreter *self;
-  // PushCallInterpreter Static Constructor
+  // Exported PushCallWorker Instance
+  static PushCallWorker *self;
+  // PushCallWorker Static Constructor
   static void Init() {
-    self = new PushCallInterpreter();
+    self = new PushCallWorker();
   }
   // Frame Handling
   static void PushFrame(word closure);
