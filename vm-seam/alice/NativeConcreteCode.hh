@@ -26,12 +26,11 @@ class LazyCompileInterpreter : public Interpreter {
 public:
   // Exported LazyCompileInterpreter Instance
   static LazyCompileInterpreter *self;
+  static word concreteCode;
   // LazyCompileInterpreter Constructor
   LazyCompileInterpreter() : Interpreter() {}
   // LazyCompileInterpreter Static Constructor
-  static void Init() {
-    self = new LazyCompileInterpreter();
-  }
+  static void Init();
   // Frame Handling
   //static void PushFrame(TaskStack *taskStack, TagVal *abstractCode);
   virtual void PushCall(Closure *closure);

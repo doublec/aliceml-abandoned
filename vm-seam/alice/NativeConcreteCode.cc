@@ -57,6 +57,13 @@ public:
 // LazyCompileInterpreter
 //
 LazyCompileInterpreter *LazyCompileInterpreter::self;
+word LazyCompileInterpreter::concreteCode;
+
+void LazyCompileInterpreter::Init() {
+  self = new LazyCompileInterpreter();
+  concreteCode = ConcreteCode::New(self, 0)->ToWord();
+  RootSet::Add(concreteCode);
+}
 
 void LazyCompileInterpreter::PushCall(Closure *closure) {
   Scheduler::PushFrame(LazyCompileFrame::New(self, closure)->ToWord());
@@ -90,9 +97,7 @@ public:
 };
 
 LazyCompileClosure *LazyCompileClosure::New(TagVal *abstractCode) {
-  ConcreteCode *concreteCode =
-    ConcreteCode::New(LazyCompileInterpreter::self, 0);
-  Closure *closure = Closure::New(concreteCode->ToWord(), 2);
+  Closure *closure = Closure::New(LazyCompileInterpreter::concreteCode, 2);
   closure->Init(0, abstractCode->ToWord());
   // closure->Init(1, byneed) done in NativeConcreteCode::New
   return static_cast<LazyCompileClosure *>(closure);
