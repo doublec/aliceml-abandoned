@@ -1,97 +1,37 @@
-signature VECTOR =
-    sig
-	type vector = real * real * real
-	type row = real * real * real * real
-	type matrix = row * row * row
-
-	val add: vector * vector -> vector
-	val sub: vector * vector -> vector
-	val scale: real * vector -> vector
-	val dotProd: vector * vector -> real
-	val transformPoint: matrix * vector -> vector
-	val transformVector: matrix * vector -> vector
-	val length: vector -> real
-	val toUnit: vector -> vector
-    end
-
-structure Vector :> VECTOR =
+structure Renderer :> RENDERER =
     struct
-	type vector = real * real * real
-	type row = real * real * real * real
+	type angle  = real (* radiant *)
+	type point  = Vector.t
+	type vector = Vector.t
+	type row    = real * real * real * real
 	type matrix = row * row * row
+	type color  = {red : real, green : real, blue : real}
 
-	fun add ((ax, ay, az), (bx, by, bz)): vector =
-	    (ax + bx, ay + by, az + bz)
+	datatype plane_face    = PlaneSurface
+	datatype sphere_face   = SphereSurface
+	datatype cube_face     =
+	    CubeBottom | CubeTop | CubeFront | CubeBack | CubeLeft | CubeRight
+	datatype cylinder_face = CylinderBottom | CylinderTop | CylinderSide
+	datatype cone_face     = ConeBase | ConeSide
 
-	fun sub ((ax, ay, az), (bx, by, bz)): vector =
-	    (ax - bx, ay - by, az - bz)
-
-	fun scale (k, (x, y, z)): vector = (k * x, k * y, k * z)
-
-	fun dotProd ((ax, ay, az), (bx, by, bz)): real =
-	    ax * bx + ay * by + az * bz
-
-	fun transformPoint (((a11, a12, a13, a14),
-			     (a21, a22, a23, a24),
-			     (a31, a32, a33, a34)), (b1, b2, b3)): vector =
-	    (a11 * b1 + a12 * b2 + a13 * b3 + a14,
-	     a21 * b1 + a22 * b2 + a23 * b3 + a24,
-	     a31 * b1 + a32 * b2 + a33 * b3 + a34)
-
-	fun transformVector (((a11, a12, a13, _),
-			      (a21, a22, a23, _),
-			      (a31, a32, a33, _)), (b1, b2, b3)): vector =
-	    (a11 * b1 + a12 * b2 + a13 * b3,
-	     a21 * b1 + a22 * b2 + a23 * b3,
-	     a31 * b1 + a32 * b2 + a33 * b3)
-
-	fun length (x, y, z): real = Math.sqrt (x * x + y * y + z * z)
-
-	fun toUnit (x, y, z) =
-	    let
-		val k = Math.sqrt (x * x + y * y + z * z)
-	    in
-		(k * x, k * y, k * z)
-	    end
-    end
-
-structure Renderer (*:> RENDERER*) =
-    struct
-    type angle  = real
-    type point  = real * real * real
-    type vector = real * real * real
-    type row    = real * real * real * real
-    type matrix = row * row * row
-    type color  = {red : real, green : real, blue : real}
-
-    datatype plane_face    = PlaneSurface
-    datatype sphere_face   = SphereSurface
-    datatype cube_face     = CubeBottom | CubeTop | CubeFront | CubeBack
-			   | CubeLeft | CubeRight
-    datatype cylinder_face = CylinderBottom | CylinderTop | CylinderSide
-    datatype cone_face     = ConeBase | ConeSide
-
-    type 'face surface =
+	type 'face surface =
 	    'face -> point ->
-	    { color :    color
-	    , diffuse :  real
-	    , specular : real
-	    , phong :    real }
+	    {color: color, diffuse: real, specular: real, phong: real}
 
-    datatype object =
-	      Plane      of matrix * matrix * plane_face surface
-	    | Sphere     of matrix * matrix * sphere_face surface
-	    | Cube       of matrix * matrix * cube_face surface     (* Tier 2 *)
-	    | Cylinder   of matrix * matrix * cylinder_face surface (* Tier 2 *)
-	    | Cone       of matrix * matrix * cone_face surface     (* Tier 2 *)
-	    | Union      of object * object
-	    | Intersect  of object * object                         (* Tier 3 *)
-	    | Difference of object * object                         (* Tier 3 *)
+	datatype object =
+	    Plane      of matrix * matrix * plane_face surface
+	  | Sphere     of matrix * matrix * sphere_face surface
+	  | Cube       of matrix * matrix * cube_face surface     (* Tier 2 *)
+	  | Cylinder   of matrix * matrix * cylinder_face surface (* Tier 2 *)
+	  | Cone       of matrix * matrix * cone_face surface     (* Tier 2 *)
+	  | Union      of object * object
+	  | Intersect  of object * object                         (* Tier 3 *)
+	  | Difference of object * object                         (* Tier 3 *)
 
-    datatype light =
-	      Directional of color * vector
-	    | Point       of color * point                          (* Tier 2 *)
-	    | Spot        of color * point * point * angle * real   (* Tier 3 *)
+	datatype light =
+	    Directional of color * vector
+	  | Point       of color * point                          (* Tier 2 *)
+	  | Spot        of color * point * point * angle * real   (* Tier 3 *)
 
 	exception Crash
 
