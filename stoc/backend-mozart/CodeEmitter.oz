@@ -290,15 +290,15 @@ in
 
       meth EmitAddr(Addr)
 \ifdef DEBUG_EMIT
-	 {System.printInfo '\nInstruction:\n  '}
+	 {System.printInfo 'Debug:\nDebug:Instruction:\nDebug:  '}
 	 {ShowVInstr Addr}
-	 {System.printInfo 'Continuation stack:\n'}
+	 {System.printInfo 'Debug:Continuation stack:\n'}
 	 case @continuations of nil then
-	    {System.printInfo '  nil\n'}
+	    {System.printInfo 'Debug:  nil\n'}
 	 elseof VInstrs then
 	    {ForAll VInstrs
 	     proc {$ VInstr}
-		{System.printInfo '  '}
+		{System.printInfo 'Debug:  '}
 		{ShowVInstr VInstr}
 	     end}
 	 end
@@ -2064,6 +2064,7 @@ in
 
       meth Emit(Instr) NewCodeTl in
 \ifdef DEBUG_EMIT
+	 {System.printInfo 'Debug:'}
 	 {System.show Instr}
 \endif
 	 @CodeTl = Instr|NewCodeTl
