@@ -11,12 +11,12 @@
 //
 
 #include <cstdio>
-#include "emulator/Closure.hh"
-#include "emulator/Thread.hh"
-#include "emulator/Scheduler.hh"
-#include "emulator/Authoring.hh"
-#include "emulator/StackFrame.hh"
-#include "emulator/Transients.hh"
+#include "generic/Closure.hh"
+#include "generic/Thread.hh"
+#include "generic/Scheduler.hh"
+#include "generic/StackFrame.hh"
+#include "generic/Transients.hh"
+#include "alice/primitives/Authoring.hh"
 
 class RaiseFrame: private StackFrame {
 private:
