@@ -591,14 +591,14 @@ define
 			   pickling(PicklingInterpreter X.1)|
 			   pickling(PicklingInterpreter X.2)|Rest)
 	       end
-	    [] array then
+	    [] array then N = {Array.high X} + 1 in
 	       {OutputStream putByte(BLOCK)}
 	       {OutputStream putUInt(ARRAY)}
-	       {OutputStream putUInt({Array.high X} + 2)}
+	       {OutputStream putUInt(N + 1)}
 	       {OutputStream putByte(POSINT)}
-	       {OutputStream putUInt({Width X})}
+	       {OutputStream putUInt(N)}
 	       continue(args(Id + 1 OutputStream X#Id|Seen)
-			{ForThread {Array.high X} 0 ~1
+			{ForThread N - 1 0 ~1
 			 fun {$ Rest I}
 			    pickling(PicklingInterpreter X.I)|Rest
 			 end Rest})
