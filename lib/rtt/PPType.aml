@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2002
+ *   Andreas Rossberg, 2001-2003
  *
  * Last change:
  *   $Date$ by $Author$
@@ -114,6 +114,13 @@ struct
 	    doc
 
 
+  (* Constraints *)
+
+    fun ppConstraint Unconstrained      = empty
+      | ppConstraint Intensional        = text "[...]"
+      | ppConstraint(Extensional(p,ps)) = brack(ppCommaList PPPath.ppPath(p::ps))
+
+
   (* Variables *)
 
     fun ppVar'(isBound,n,a) =
@@ -123,8 +130,9 @@ struct
 	in
 	    text((if isBound then "'" else "'_") ^
 		 (if i = 0 then c else c ^ Int.toString i) ^
-		 (if isExtKind(kindVar a) then "_ext" else ""))
-	end
+		 (if isExtKind(kindVar a) then "_ext" else "")) ^^
+	    ppConstraint(constraintVar a)
+ 	end
 
     fun ppVar(n,a) = ppVar'(true,n,a)
 
@@ -159,10 +167,11 @@ struct
 *)
 	    end
 	else case inspect t
-	 of Unknown =>
+	 of Unknown c =>
 	    let
 		val k   = kind t
 		val doc = text("'" ^ Int.toString(holeIndex t))
+			  ^^ ppConstraint c
 	    in
 		ppAnn(ps,i,j,m,prec,doc,k)
 	    end
@@ -172,7 +181,6 @@ struct
 		val doc = ppVar'(false,!j,a)
 	    in
 		j := !j+1;
-		Map.insert(m, canonical(var a), doc);
 		ppAnn(ps,i+1,j,m,prec,doc,k)
 	    end
 	  | Con p =>
@@ -244,7 +252,7 @@ struct
 	  | Mu t' =>
 	    let
 		val k   = kind t'
-		val doc = ppVar'(true, i, newVar k)
+		val doc = ppVar'(true, i, newVar(k, Unconstrained))
 	    in
 		Map.insert(m, canonical t, doc);
 		parenPrec prec (bindPrec,
