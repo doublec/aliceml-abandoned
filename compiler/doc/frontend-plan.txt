@@ -3,8 +3,11 @@
   - implement proper distinguished treatment of datatypes and exttypes in import
 
 - fixing mu representation (types):
-  - remove implicit unrolling
   - probably provide special deconstruction functions
+
+- deal with URL paths
+
+- hash strings in lexer to reduce pickles
 
 - move alpha renaming to translation phase
   1. do alpha renaming in translation phase
