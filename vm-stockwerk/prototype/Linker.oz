@@ -77,7 +77,7 @@ define
 			catch _ then%error(dp(generic ...) ...) then
 			   {OzPickle.load Url#'.ozf'}
 			end
-	    OzModule = {ModuleManager apply(OzFunctor $)}
+	    OzModule = {ModuleManager apply(OzFunctor url: Url $)}
 	    {PrimitiveTable.importOzModule OzModule.module}
 	 catch error(url(load ...) ...) then unit
 	 [] error(dp(generic ...) ...) then unit
