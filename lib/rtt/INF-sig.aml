@@ -55,6 +55,7 @@ sig
 
     val rea :		unit -> rea
     val isEmptyRea :	rea -> bool
+    val unionRea :	rea * rea -> unit
 
 
   (* Kinds *)
