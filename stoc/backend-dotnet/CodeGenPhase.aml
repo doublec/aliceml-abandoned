@@ -466,8 +466,6 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	  | genExp (ConExp (_, Con id), PREPARE) = emitId id
 	  | genExp (ConExp (_, StaticCon _), _) =   (*--** implement *)
 	    raise Crash.Crash "CodeGenPhase.genExp: ConExp/StaticCon"
-	  | genExp (RefExp info, PREPARE) =
-	    genExp (PrimExp (info, "General.ref"), PREPARE)
 	  | genExp (TupExp (info, #[]), PREPARE) =
 	    genExp (PrimExp (info, "unit"), PREPARE)
 	  | genExp (TupExp (_, #[]), FILL) = ()
@@ -491,8 +489,6 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 			   emit StelemRef)) (ids, 0, NONE))
 	  | genExp (ProdExp (info, labelIdVec), mode) =
 	    genExp (TupExp (info, Vector.map #2 labelIdVec), mode)
-	  | genExp (SelExp (_, _, n), BOTH) =
-	    (emit (LdcI4 n); emit (Newobj (Alice.Selector, [Int32Ty])))
 	  | genExp (VecExp (info, ids), mode) =
 	    genExp (TupExp (info, ids), mode)
 	  | genExp (FunExp (info, stamp, _, args, body), PREPARE) =

@@ -42,8 +42,6 @@ structure Alice =
 	val ConValTy = IL.ClassTy ConVal
 	val Exception = ["Alice", "Values", "Exception"]
 	val ExceptionTy = IL.ClassTy Exception
-	val Selector = ["Alice", "Values", "Selector"]
-	val SelectorTy = IL.ClassTy Selector
 	val Komponist = ["Alice", "Komponist"]
 	val KomponistTy = IL.ClassTy Komponist
     end

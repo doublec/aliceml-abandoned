@@ -118,12 +118,10 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 	  | expToValue (VarExp (_, id)) = VarVal id
 	  | expToValue (TagExp (_, label, n)) = TagVal (label, n, NONE)
 	  | expToValue (ConExp (_, con)) = ConVal (con, NONE)
-	  | expToValue (RefExp _) = RefVal
 	  | expToValue (TupExp (_, ids)) = TupVal (Vector.map IdDef ids)
 	  | expToValue (ProdExp (_, labelIdVec)) =
 	    ProdVal (Vector.map (fn (label, id) =>
 				 (label, IdDef id)) labelIdVec)
-	  | expToValue (SelExp (_, label, n)) = SelVal (label, n)
 	  | expToValue (VecExp (_, ids)) = VecVal (Vector.map IdDef ids)
 	  | expToValue (FunExp (_, stamp, funFlags, _, _)) =
 	    FunVal (stamp, funFlags)
@@ -316,7 +314,6 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 	      | (VarVal id', _) => getTerm (info, id', env)
 	      | (TagVal (label, n, NONE), _) => TagExp (info, label, n)
 	      | (ConVal (con, NONE), _) => ConExp (info, con)
-	      | (RefVal, _) => RefExp info
 	      | (_, _) => VarExp (info, id)
 
 	fun deref (id, env) =
@@ -777,7 +774,6 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 		  | (_, _) => ConExp (info, Con id)
 	    end
 	  | vpExp (exp as ConExp (_, StaticCon _), _, _, _) = exp
-	  | vpExp (exp as RefExp _, _, _, _) = exp
 	  | vpExp (TupExp (info, ids), env, _, _) =
 	    (*--** if TupExp took terms instead of ids -> getTerm *)
 	    TupExp (info, Vector.map (fn id => deref (id, env)) ids)
@@ -785,12 +781,11 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 	    (*--** if ProdExp took terms instead of ids -> getTerm *)
 	    ProdExp (info, Vector.map (fn (label, id) =>
 				       (label, deref (id, env))) labelIdVec)
-	  | vpExp (exp as SelExp (_, _, _), _, _, _) = exp
 	  | vpExp (VecExp (info, ids), env, _, _) =
 	    (*--** if VecExp took terms instead of ids -> getTerm *)
 	    VecExp (info, Vector.map (fn id => deref (id, env)) ids)
 	  | vpExp (FunExp (info, stamp, flags, args, body), env, _, _) =
-	    (*--** do eta-conversion for TagExp ConExp RefExp SelExp *)
+	    (*--** do eta-conversion for TagAppExp ConAppExp RefAppExp SelAppExp *)
 	    let
 		val _ = IdMap.insertScope env
 		val _ = declareArgs (env, args, false)

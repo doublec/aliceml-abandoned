@@ -211,7 +211,6 @@ structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
 		  case con of
 		      Con id => ID id
 		    | StaticCon stamp => S (Stamp.toString stamp)]
-	  | outputExp (RefExp _) = SEQ #[S "ref"]
 	  | outputExp (TupExp (_, ids)) =
 	    SEQ #[S "(", SEP (S ", ", Vector.map ID ids), S ")"]
 	  | outputExp (ProdExp (_, labelIdVector)) =
@@ -220,8 +219,6 @@ structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
 					  SEQ #[S (Label.toString label),
 						S "=", ID id]) labelIdVector),
 		  S "}"]
-	  | outputExp (SelExp (_, label, n)) =
-	    SEQ #[S "#", S (Label.toString label), S "/", I n]
 	  | outputExp (VecExp (_, ids)) =
 	    SEQ #[S "#[", SEP (S ", ", Vector.map ID ids), S "]"]
 	  | outputExp (FunExp (_, _, _, args, body)) =

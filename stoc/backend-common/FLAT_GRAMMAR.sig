@@ -86,11 +86,9 @@ signature FLAT_GRAMMAR =
 	  | VarExp of exp_info * id
 	  | TagExp of exp_info * label * int
 	  | ConExp of exp_info * con
-	  | RefExp of exp_info
 	  | TupExp of exp_info * id vector
 	  | ProdExp of exp_info * (label * id) vector
 	    (* sorted, all labels distinct, no tuple *)
-	  | SelExp of exp_info * label * int
 	  | VecExp of exp_info * id vector
 	  | FunExp of exp_info * stamp * funFlag list * idDef args * body
 	  | PrimAppExp of exp_info * string * id vector

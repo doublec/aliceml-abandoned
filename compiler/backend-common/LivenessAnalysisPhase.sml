@@ -274,11 +274,9 @@ structure LivenessAnalysisPhase :> LIVENESS_ANALYSIS_PHASE =
 	  | scanExp (TagExp (_, _, _), lset) = lset
 	  | scanExp (ConExp (_, Con id), lset) = ins (lset, id)
 	  | scanExp (ConExp (_, StaticCon _), lset) = lset
-	  | scanExp (RefExp _, lset) = lset
 	  | scanExp (TupExp (_, ids), lset) = insVec (lset, ids)
 	  | scanExp (ProdExp (_, labIdVec), lset) =
 	    Vector.foldl (fn ((_, id), lset) => ins (lset, id)) lset labIdVec
-	  | scanExp (SelExp (_, _, _), lset) = lset
 	  | scanExp (VecExp (_, ids), lset) = insVec (lset, ids)
 	  | scanExp (FunExp (_, _, _, args, body), lset) =
 	    let
