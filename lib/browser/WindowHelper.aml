@@ -247,9 +247,17 @@ fun createSpinButton {init = i, lower = l, upper = u, inc = ic, dec = d}
 	  Gtk.spinButtonNew(a,Real.fromInt(ic),d)
       end
 
-fun createVBox l = let
+fun createVBoxDefaults l = let
 		       val vbox = Gtk.vboxNew(0,4)
 		       val p = fn i =>  Gtk.boxPackStart(vbox,i,0,1,0)
+		   in
+		       (List.app p l
+			; vbox)
+		   end
+
+fun createVBox l = let
+		       val vbox = Gtk.vboxNew(0,4)
+		       val p = fn (a,i,j,k) =>  Gtk.boxPackStart(vbox,a,i,j,k)
 		   in
 		       (List.app p l
 			; vbox)
