@@ -24,19 +24,12 @@ define
    fun {MakeRegDict CS ?RegDict}
       RegDict = {NewDictionary}
       {List.toRecord prebound
-       {FoldR {Arity Prebound.env}
-	fun {$ X Rest} Reg in
-	   case Prebound.env.X of v#Value then
-	      {CS newReg(Reg)}
-	      {Dictionary.put RegDict X Reg}
-	      Reg#Value|Rest
-	   [] c#Value#Name then Reg1 Reg2 in
-	      {CS newReg(Reg1)}   % value identifier
-	      {CS newReg(Reg2)}   % constructor name
-	      {Dictionary.put RegDict X Reg1#Reg2}
-	      Reg1#Value|Reg2#Name|Rest
-	   end
-	end nil}}
+       {Map {Arity Prebound.env}
+	fun {$ X} Reg in
+	   {CS newReg(Reg)}
+	   {Dictionary.put RegDict X Reg}
+	   Reg#Prebound.env.X
+	end}}
    end
 
    proc {MakeReg id(_ Stamp _) State ?Reg}
@@ -44,20 +37,8 @@ define
       {Dictionary.put State.regDict Stamp Reg}
    end
 
-   proc {MakeConReg id(_ Stamp _) State ?Reg1 ?Reg2}
-      {State.cs newReg(?Reg1)}   % value identifier
-      {State.cs newReg(?Reg2)}   % constructor name
-      {Dictionary.put State.regDict Stamp Reg1#Reg2}
-   end
-
    fun {GetReg id(_ Stamp _) State}
-      case {Dictionary.get State.regDict Stamp} of Reg#_ then Reg
-      elseof Reg then Reg
-      end
-   end
-
-   fun {GetNameReg id(_ Stamp _) State}
-      case {Dictionary.get State.regDict Stamp} of _#Reg then Reg end
+      {Dictionary.get State.regDict Stamp}
    end
 
    fun {GetPrintName id(_ _ Name)}
@@ -92,28 +73,9 @@ define
 	  proc {$ VHd Id#Exp VTl}
 	     {TranslateExp Exp {GetReg Id State} VHd VTl State}
 	  end VHd VTl}
-      [] conDec(Coord Id false _) then
+      [] conDec(Coord Id _ _) then
 	 VHd = vCallBuiltin(_ 'Name.new' [{MakeReg Id State}]
 			    {TranslateCoord Coord} VTl)
-      [] conDec(Coord Id true _) then
-	 Reg Pos NameReg VInter PredId NLiveRegs ArgReg TmpReg ResReg
-	 VInstr VInter1 VInter2 GRegs Code
-      in
-	 {MakeConReg Id State ?Reg ?NameReg}
-	 Pos = {TranslateCoord Coord}
-	 VHd = vCallBuiltin(_ 'Name.new' [NameReg] Pos VInter)
-	 PredId = pid({GetPrintName Id} 2 Pos nil NLiveRegs)
-	 {State.cs startDefinition()}
-	 {State.cs newReg(?ArgReg)}
-	 {State.cs newReg(?TmpReg)}
-	 {State.cs newReg(?ResReg)}
-	 VInstr = vEquateConstant(_ 1 TmpReg VInter1)
-	 VInter1 = vCallBuiltin(_ 'Tuple.make' [NameReg TmpReg ResReg]
-				Pos VInter2)
-	 VInter2 = vInlineDot(_ ResReg 1 ArgReg false Pos nil)
-	 {State.cs
-	  endDefinition(VInstr [ArgReg ResReg] nil ?GRegs ?Code ?NLiveRegs)}
-	 VInter = vDefinition(_ Reg PredId unit GRegs Code VTl)
       [] evalStm(_ Exp) then
 	 {TranslateExp Exp {State.cs newReg($)} VHd VTl State}
       [] handleStm(Coord Body1 Id Body2) then Reg TryVInstr CatchVInstr in
@@ -152,7 +114,7 @@ define
 				       [Reg0 {MakeReg Id State}]
 				       {TranslateCoord Coord} ThenVInstr)
 	 [] conTest(Id1 some(Id2)) then NameReg ThenVInstr0 in
-	    NameReg = {GetNameReg Id1 State}
+	    NameReg = {GetReg Id1 State}
 	    VHd = vTestBuiltin(_ 'Record.testLabel'
 			       [Reg0 NameReg {State.cs newReg($)}]
 			       ThenVInstr0 ElseVInstr VTl)
@@ -215,8 +177,26 @@ define
 	 VHd = vEquateConstant(_ {TranslateLit Lit} Reg VTl)
       [] varExp(_ Id) then
 	 VHd = vUnify(_ Reg {GetReg Id State} VTl)
-      [] conExp(_ Id _) then
+      [] conExp(_ Id false) then
 	 VHd = vUnify(_ Reg {GetReg Id State} VTl)
+      [] conExp(Coord Id true) then
+	 Pos PredId NLiveRegs ArgReg TmpReg ResReg
+	 VInstr NameReg VInter1 VInter2 GRegs Code
+      in
+	 Pos = {TranslateCoord Coord}
+	 PredId = pid({GetPrintName Id} 2 Pos nil NLiveRegs)
+	 {State.cs startDefinition()}
+	 {State.cs newReg(?ArgReg)}
+	 {State.cs newReg(?TmpReg)}
+	 {State.cs newReg(?ResReg)}
+	 VInstr = vEquateConstant(_ 1 TmpReg VInter1)
+	 NameReg = {GetReg Id State}
+	 VInter1 = vCallBuiltin(_ 'Tuple.make' [NameReg TmpReg ResReg]
+				Pos VInter2)
+	 VInter2 = vInlineDot(_ ResReg 1 ArgReg false Pos nil)
+	 {State.cs
+	  endDefinition(VInstr [ArgReg ResReg] nil ?GRegs ?Code ?NLiveRegs)}
+	 VHd = vDefinition(_ Reg PredId unit GRegs Code VTl)
       [] tupExp(_ Ids) then
 	 VHd = vEquateRecord(_ '#' {Length Ids} Reg
 			     {Map Ids

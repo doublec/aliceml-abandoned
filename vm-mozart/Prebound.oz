@@ -106,17 +106,17 @@ define
    Match = {NewName}
    Bind = {NewName}
 
-   Env = env('false': v#false
-	     'true': v#true
-	     'nil': v#nil
-	     'cons': c#fun {$ X#Y} X|Y end#'|'
-	     'ref': v#fun {$ X} {NewCell X} end
-	     'Match': v#Match
-	     'Bind': v#Bind
-	     'eq': v#fun {$ X#Y} X == Y end
-	     'assign': v#fun {$ X#Y} {Assign X Y} '#' end
-	     'builtin': v#fun {$ S} BuiltinTable.{VirtualString.toAtom S} end
-	     '<': v#fun {$ X#Y} X < Y end   %--** remove
-	     '+': v#fun {$ X#Y} X + Y end   %--** remove
-	     '*': v#fun {$ X#Y} X * Y end)   %--** remove
+   Env = env('false': false
+	     'true': true
+	     'nil': nil
+	     'cons': '|'
+	     'ref': fun {$ X} {NewCell X} end
+	     'Match': Match
+	     'Bind': Bind
+	     'eq': fun {$ X#Y} X == Y end
+	     'assign': fun {$ X#Y} {Assign X Y} '#' end
+	     'builtin': fun {$ S} BuiltinTable.{VirtualString.toAtom S} end
+	     '<': fun {$ X#Y} X < Y end   %--** remove
+	     '+': fun {$ X#Y} X + Y end   %--** remove
+	     '*': fun {$ X#Y} X * Y end)   %--** remove
 end
