@@ -163,8 +163,6 @@ Class *Class::New(ClassInfo *classInfo) {
     super->GetVirtualTable();
   for (i = nSuperVirtualMethods; i--; )
     virtualTable->InitArg(i, superVirtualTable->GetArg(i));
-  // Create the class lock:
-  Lock *lock = Lock::New();
   // Allocate class proper:
   Block *b = Store::AllocBlock(JavaLabel::Class,
 			       BASE_SIZE + nStaticFields + nStaticMethods);
@@ -172,7 +170,7 @@ Class *Class::New(ClassInfo *classInfo) {
   b->InitArg(NUMBER_OF_VIRTUAL_METHODS_POS, nVirtualMethods);
   b->InitArg(NUMBER_OF_INSTANCE_FIELDS_POS, nInstanceFields);
   b->InitArg(VIRTUAL_TABLE_POS, virtualTable->ToWord());
-  b->InitArg(LOCK_POS, lock->ToWord());
+  b->InitArg(LOCK_POS, Lock::New()->ToWord());
   for (i = nStaticFields; i--; )
     //--** initialization incorrect for long/float/double
     b->InitArg(BASE_SIZE + i, Store::IntToWord(0));
@@ -235,13 +233,9 @@ Class *Class::New(ClassInfo *classInfo) {
     }
     i++;
   }
-  if (classInitializer == INVALID_POINTER) {
-    b->InitArg(CLASS_INITIALIZER_POS, null);
-  } else {
-    b->InitArg(CLASS_INITIALIZER_POS, classInitializer->ToWord());
-    Future *future = lock->Acquire(); // indicate pending initialization
-    Assert(future == INVALID_POINTER); future = future;
-  }
+  b->InitArg(CLASS_INITIALIZER_POS,
+	     classInitializer == INVALID_POINTER?
+	     null: classInitializer->ToWord());
   return static_cast<Class *>(b);
 }
 
@@ -262,13 +256,10 @@ Class *Class::GetSuperClass() {
   return super;
 }
 
-Worker::Result Class::Initialize(Future *future) {
+Worker::Result Class::RunInitializer() {
   word wClassInitializer = GetArg(CLASS_INITIALIZER_POS);
-  if (wClassInitializer == null) {
-    Scheduler::currentData = future->ToWord();
-    return Worker::REQUEST;
-  }
-  future->RemoveFromWaitQueue(Scheduler::GetCurrentThread());
+  Assert(wClassInitializer != null);
+  GetLock()->AssertAcquired();
   ReplaceArg(CLASS_INITIALIZER_POS, 0);
   word args;
   switch (Scheduler::nArgs) {

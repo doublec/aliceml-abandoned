@@ -61,10 +61,11 @@ public:
   static const BlockLabel BaseArray           = (BlockLabel) (base + 19);
 };
 
+static const word null = Store::IntToWord(0);
+
 //
 // Types
 //
-
 class DllExport Type: public Block {
 public:
   static Type *FromWord(word x) {
@@ -145,7 +146,10 @@ public:
   Closure *GetStaticMethod(u_int index) {
     return Closure::FromWordDirect(GetArg(BASE_SIZE + index));
   }
-  Worker::Result Initialize(Future *future);
+  bool IsInitialized() {
+    return GetArg(CLASS_INITIALIZER_POS) == null;
+  }
+  Worker::Result RunInitializer();
 };
 
 class DllExport BaseType: protected Type {
@@ -185,9 +189,6 @@ public:
 //
 // Data Layer
 //
-
-static const word null = Store::IntToWord(0);
-
 class DllExport JavaLong: private Chunk {
 protected:
   static const u_int SIZE = 64 / sizeof(char);
@@ -264,6 +265,10 @@ public:
       }
       ReplaceArg(COUNT_POS, 0);
     }
+  }
+  void AssertAcquired() {
+    Assert(Thread::FromWordDirect(GetArg(THREAD_POS)) ==
+	   Scheduler::GetCurrentThread());
   }
 };
 
