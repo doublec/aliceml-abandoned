@@ -12,7 +12,7 @@
 
 import
     structure TextIO
-from "x-alice:/lib/TextIO.ozf"
+from "TextIO"
 
 signature UNIX_COMPONENT =
     sig

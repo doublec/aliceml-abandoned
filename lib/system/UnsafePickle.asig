@@ -12,11 +12,11 @@
 
 import
     structure Url
-from "x-alice:/misc/Url.ozf"
+from "../misc/Url"
 
 import
     structure Inf
-from "x-alice:/common/Inf.ozf"
+from "../common/Inf"
 
 signature PICKLE_COMPONENT =
     sig
