@@ -219,7 +219,7 @@
   <P>The Oz functor <TT>UntypedF.ozf</TT> can now be combined with the
     signature at <TT>F.asig</TT> into a typed component <TT>F.ozf</TT> by
     invoking the Alice compiler thus:</P>
-  <PRE>        alic --replacesign UntypedF.ozf F.asig F.ozf</PRE>
+  <PRE>        alicec --replacesign UntypedF.ozf F.asig F.ozf</PRE>
   <P>We can now import the component into Alice using an import announcement
     of the form</P>
   <PRE>        import val show from "F"</PRE>
