@@ -106,7 +106,7 @@ define
 	 end
       end
       fun {DrawTrans Key}
-	 if Key == base then drawObject else {VirtualString.toAtom Key#'DrawObject'} end
+	 if Key == base then 'drawObject' else {VirtualString.toAtom Key#'DrawObject'} end
       end
       fun {GetDraw Key}
 	 case Key
@@ -123,9 +123,5 @@ define
    %% Create the Export Record
    Nodes = {Record.make nodes {Map NodeSpecs fun {$ F#_} F end}}
    %% Assign Classes to Export Record
-   case NodeSpecs
-   of (Feat#Desc)|NodeSpecR then
-      Nodes.Feat = Desc %% Assign all without mapping
-      {List.forAll NodeSpecR proc {$ Feat#Desc} Nodes.Feat = {MakeNode Desc} end}
-   end
+   {List.forAll NodeSpecs proc {$ Feat#Desc} Nodes.Feat = {MakeNode Desc} end}
 end
