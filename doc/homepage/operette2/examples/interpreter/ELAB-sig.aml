@@ -1,0 +1,17 @@
+(*
+ * Interpreter for F+rec - Elaboration
+ *
+ * 2000/02/12 Andreas Rossberg
+ *)
+
+
+import structure Syntax from "Syntax.ozf"
+import structure Type   from "Type.ozf"
+import structure Env    from "Env.ozf"
+
+
+signature ELAB =
+  sig
+    exception Error
+    val elab: Type.typ Env.env -> Syntax.exp -> Type.typ	(* [Error] *)
+  end
