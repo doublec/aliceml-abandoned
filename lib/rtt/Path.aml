@@ -10,11 +10,25 @@
  *   $Revision$
  *)
 
-(* Notes:
- * - Paths are shared, i.e. each path has to be unique.
- * - Since SML allows multiple definitions of the same id in a structure,
- *   labels are not enough for paths. So we added an index.
- *)
+(*******************************************************************************
+
+Paths are primarily globally unique stamps that identify objects like abstract
+type constructors etc. They carry some additional location information for
+purposes like pretty printing. See Inf for a description of their use.
+
+On Equality:
+
+Since paths must be unique across process boundaries (we pickle them), equality
+is defined in terms of an additional global stamp. Two paths with equal stamp
+should always contain the same location.
+
+On Hiding:
+
+We allow for hidden paths, i.e. such denoting unaccessible (shadowed) entities.
+They are marked by a magic prefix in the corresponding label/name in order to
+allow a pretty printer to perform some special action.
+
+*******************************************************************************)
 
 import structure GlobalStamp from "../utility/GlobalStamp"
 import structure Name        from "Name"
@@ -31,32 +45,37 @@ struct
     type lab	= Label.t
     type stamp	= GlobalStamp.t
 
-    datatype path' =
-	  PLAIN of name
-	| DOT   of path * lab * int
-
-    withtype path = stamp * path' ref
+    datatype path' = NAME of name | DOT of path * lab
+    withtype path  = stamp * path' ref
     type t = path
 
 
-  (* Creation and projection *)
+  (* Creation *)
 
-    fun invent()		= (GlobalStamp.new(), ref(PLAIN(Name.InId)))
-    fun fromLab l		= (GlobalStamp.new(), ref(PLAIN(Label.toName l)))
-    fun path pln		= (GlobalStamp.new(), ref(DOT pln))
-    fun pervasive s		= (GlobalStamp.fromString s,
-				   ref(PLAIN(Name.ExId s)))
+    fun pervasive s	= (GlobalStamp.fromString s, ref(NAME(Name.ExId s)))
+    fun new p'		= (GlobalStamp.new(), ref p')
+    fun invent()	= new(NAME(Name.InId))
+    fun name n		= new(NAME n)
+    fun dot pl		= new(DOT pl)
+    fun fromLab l	= new(NAME(Label.toName l))
+    fun fromString s	= new(NAME(Name.ExId s))
+
+  (* Inspection, projection *)
 
     exception Path
 
-    fun toLab (_, ref(PLAIN n))	= Label.fromName n
-      | toLab (_, ref(DOT pln))	= #2 pln
-
-    fun isDot (_, ref(DOT _))	= true
+    fun isName (_, ref(NAME _))	= true
+      | isName  _		= false
+    fun isDot  (_, ref(DOT _))	= true
       | isDot   _		= false
 
-    fun asDot (_, ref(DOT pln))	= pln
+    fun asName (_, ref(NAME n))	= n
+      | asName  _		= raise Path
+    fun asDot  (_, ref(DOT pl))	= pl
       | asDot   _		= raise Path
+
+    fun toLab (_, ref(NAME n))	= Label.fromName n
+      | toLab (_, ref(DOT pl))	= #2 pl
 
 
   (* Comparison and hashing *)
@@ -65,27 +84,12 @@ struct
     fun hash (stamp, _)			= GlobalStamp.hash stamp
 
 
-  (* Strengthening *)
+  (* Hiding *)
 
-    fun strengthen(p,l,n, (_, p' as ref(PLAIN _))) = p' := DOT(p,l,n)
-      | strengthen _                               = ()
+    val hiddenPrefix			= "\000"
 
-
-  (* Cloning *)
-
-    fun instance lookup (rea, p) =
-	let
-	    fun clone p1 =
-		case lookup(rea, p1)
-		 of SOME p2 => p2
-		  | NONE    =>
-		case !(#2 p1)
-		 of DOT(p,l,n) => (GlobalStamp.new(), ref(DOT(clone p, l, n)))
-		  | p'         => (GlobalStamp.new(), ref p')
-	in
-	    clone p
-	end
-
-    fun clone p = instance (fn _ => NONE) ((), p)
-
+    fun hide (_, r as ref p')		= r := hide' p'
+    and hide'(NAME Name.InId)		= NAME Name.InId
+      | hide'(NAME(Name.ExId s))	= NAME(Name.ExId(hiddenPrefix ^ s))
+      | hide'(DOT _)			= raise Path
 end
