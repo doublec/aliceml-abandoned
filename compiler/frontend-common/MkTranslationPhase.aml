@@ -38,8 +38,8 @@ import structure Assert                 from "../../lib/utility/Assert"
 import structure Crash			from "../infrastructure/Crash"
 import structure Error			from "../infrastructure/Error"
 import structure Source			from "../infrastructure/Source"
+import structure StampMap		from "../common/StampMap"
 import structure StringMap		from "../infrastructure/StringMap"
-import functor   MkHashImpMap		from "../../lib/utility/MkHashImpMap"
 import signature SWITCHES		from "../infrastructure/SWITCHES-sig"
 import signature TRANSLATION_PHASE	from "TRANSLATION_PHASE-sig"
 
@@ -1758,25 +1758,45 @@ struct
 
       | trDec E (I.RecDec(i,ds), ds') =
 	(* [rec ds] = [ds]'
-	 *            val _ = Type.fix #[[ds]'']
+	 *            val x = lazy Type.fix #[[ds]'']
+	 *            val x1 = lazy case x of () -> x1'
+	 *            ...
+	 *            val xn = lazy case x of () -> xn'
 	 *            rec [ds]
 	 *)
 	let
 	    val r    = #region i
-	    val ds1' = trLHSRecDecs'(E, ds, ds')
+	    val map  = StampMap.new()
+	    val _    = freshTypids (E,map) ds
+	    val ds1' = trLHSRecDecs'(E,map, ds, ds')
 	    val d3'  = O.RecDec(i, trRecDecs(E,ds))
 	in
 	    if not(!Switches.Language.supportRtt) then
 		d3' :: ds1'
 	    else let
-		val es'  = Vector.fromList(trRHSRecDecs(E, ds))
+		val es'  = Vector.fromList(trRHSRecDecs(E,map, ds))
 		val t'   = typ_typ E
+		val i0'  = i
+		val i1'  = typInfo(r,t')
+		val i2'  = typInfo(r, typ_unit)
+		val x'   = O.Id(i2', Stamp.new(), Name.InId)
+		val xx'  = idToExp x'
+		val p'   = O.TupPat(i2', #[])
 		val e'   = callTyp(E, lab_fix,
 				   trVector(r, Type.tuple #[t',t'], es'))
-		val d2'  = O.ValDec(nonInfo r,
-				    O.JokPat(typInfo(r, typ_unit)), e')
+		val d2'  = O.ValDec(i0', idToPat x', trLazy e')
 	    in
-		d3' :: d2' :: ds1'
+		StampMap.foldi
+		    (fn(z1, (_, x2' as O.Id(i,z2,n)), ds') =>
+			let
+			    val x1' = O.Id(i,z1,n)
+			    val m'  = O.Mat(i0', p', idToExp x2')
+			    val e'  = O.CaseExp(i1', xx', #[m'])
+			    val d'  = O.ValDec(i0', idToPat x1', trLazy e')
+			in
+			    d' :: ds'
+			end
+		    ) (d3' :: d2' :: ds1') map
 	    end
 	end
 
@@ -1784,6 +1804,16 @@ struct
       | trDec E (I.VarDec(i,x,d), ds')	= trDec E (d, ds')
       | trDec E (I.LocalDec(i,ds), ds')	= trDecs'(E, ds, ds')
 
+
+    and freshTypids E_map ds = Vector.app (freshTypid E_map) ds
+    and freshTypid (E,map) (I.TypDec(_, I.Id(i,z,n), t)) =
+	let
+	    val x = I.Id(i,Stamp.new(),n)
+	in
+	    StampMap.insert(map, z, (x, trTypid(E,x)))
+	end
+      | freshTypid E_map (I.RecDec(_,ds)) = freshTypids E_map ds
+      | freshTypid E_map  _               = ()
 
     and trRecDecs(E, ds) = Vector.rev(Vector.fromList(trRecDecs'(E,ds,[])))
     and trRecDecs'(E, ds, ds') = Vector.foldl (trRecDec E) ds' ds
@@ -1793,44 +1823,72 @@ struct
       | trRecDec E (d,ds')			= trDec E (d,ds')
 
 
-    and trLHSRecDecs'(E, ds, ds') = Vector.foldl (trLHSRecDec E) ds' ds
-    and trLHSRecDec E (I.TypDec(i,x,t), ds') =
-	(* [type x = t]' = val $x = Type.unknown(<<kind>>) *)
+    and trLHSRecDecs'(E,map, ds, ds') = Vector.foldl (trLHSRecDec(E,map)) ds' ds
+    and trLHSRecDec (E,map) (I.TypDec(i,x,t), ds') =
+	(* [type x = t]' = val $x' = Type.unknown(<<kind>>) *)
 	let
 	    val r  = #region i
-	    val e' = if not(!Switches.Language.supportRtt) then
-			 O.FailExp(trTypInfo(E, I.infoTyp t))
-		     else
-			 callTyp(E, lab_unknown,
-				 trKind(E, r, Type.kind(#typ(I.infoTyp t))))
-	    val d' = O.ValDec(nonInfo r, idToPat(trTypid(E,x)), e')
+	    val x' = if not(!Switches.Language.supportRtt)
+		     then trTypid(E,x)
+		     else #2(StampMap.lookupExistent(map, I.stamp x))
+	    val e' = if not(!Switches.Language.supportRtt)
+		     then O.FailExp(trTypInfo(E, I.infoTyp t))
+		     else callTyp(E, lab_unknown,
+				  trKind(E, r, Type.kind(#typ(I.infoTyp t))))
+	    val d' = O.ValDec(nonInfo r, idToPat x', e')
 	in
 	    d' :: ds'
         end
 
-      | trLHSRecDec E (I.RecDec(i,ds), ds') =
+      | trLHSRecDec (E,map) (I.RecDec(i,ds), ds') =
 	(* [rec ds]' = [ds]' *)
-	trLHSRecDecs'(E, ds, ds') @ ds'
+	trLHSRecDecs'(E,map, ds, ds') @ ds'
 
-      | trLHSRecDec E (d, ds') = ds'
+      | trLHSRecDec (E,map) (d, ds') = ds'
 
-    and trRHSRecDecs(E, ds) = Vector.foldl (trRHSRecDec E) [] ds
-    and trRHSRecDec E (I.TypDec(i,x,t), es') =
-	(* [type x = t]'' = ($x, lazy [t]) *)
+    and trRHSRecDecs(E,map, ds) = Vector.foldl (trRHSRecDec(E,map)) [] ds
+    and trRHSRecDec (E,map) (I.TypDec(i,x1,t), es') =
+	(* [type x = t]'' = ($x', [t[x'/x]]) *)
 	let
-	    val e1' = idToExp(trTypid(E,x))
-	    val e2' = (*trLazy*)(trTypRep(E,x,t))
+	    val x2' = #2(StampMap.lookupExistent(map, I.stamp x1))
+	    val e1' = idToExp x2'
+	    val e2' = trTypRep(E,x1, renameTyp map t)
 	    val e'  = trTuple(#region i, #[e1',e2'])
 	in
 	    e' :: es'
 	end
 
-      | trRHSRecDec E (I.RecDec(i,ds), es') =
+      | trRHSRecDec (E,map) (I.RecDec(i,ds), es') =
 	(* [rec ds]'' = [ds]'' *)
-	trRHSRecDecs(E, ds) @ es'
+	trRHSRecDecs(E,map, ds) @ es'
 
-      | trRHSRecDec E (d, es') = es'
+      | trRHSRecDec (E,map) (d, es') = es'
 
+    and renameTyp map (t as (I.JokTyp _ | I.VarTyp _ | I.PrimTyp _ |
+			     I.SingTyp _| I.AbsTyp _ )) = t
+      | renameTyp map (I.ConTyp(i,y))     = I.ConTyp(i, renameTyplongid map y)
+      | renameTyp map (I.FunTyp(i,a,t))   = I.FunTyp(i,a, renameTyp map t)
+      | renameTyp map (I.AppTyp(i,t1,t2)) =
+	   I.AppTyp(i, renameTyp map t1, renameTyp map t2)
+      | renameTyp map (I.TupTyp(i,ts))    =
+	   I.TupTyp(i, Vector.map (renameTyp map) ts)
+      | renameTyp map (I.ProdTyp(i,r))    = I.ProdTyp(i, renameRow map r)
+      | renameTyp map (I.SumTyp(i,r))     = I.SumTyp(i, renameRow map r)
+      | renameTyp map (I.ArrTyp(i,t1,t2)) =
+	   I.ArrTyp(i, renameTyp map t1, renameTyp map t2)
+      | renameTyp map (I.AllTyp(i,a,t))   = I.AllTyp(i,a, renameTyp map t)
+      | renameTyp map (I.ExTyp(i,a,t))    = I.ExTyp(i,a, renameTyp map t)
+      | renameTyp map (I.PackTyp(i,j))    =
+	   unfinished (#region i) "renameTyp" "package type"
+
+    and renameRow map (I.Row(i,fs,b)) = I.Row(i,Vector.map (renameFld map) fs,b)
+    and renameFld map (I.Fld(i,a,t))  = I.Fld(i, a, renameTyp map t)
+
+    and renameTyplongid map (y as I.LongId _) = y
+      | renameTyplongid map (I.ShortId(i,x))  = I.ShortId(i, renameTypid map x)
+    and renameTypid map (x as I.Id(i,z,n))    = case StampMap.lookup(map,z)
+						  of NONE     => x
+						   | SOME xx' => #1 xx'
 
 
   (* Specifications *)
