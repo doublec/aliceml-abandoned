@@ -52,7 +52,7 @@ public:
   }
 
   priority GetPriority() {
-    return static_cast<priority>(Store::UnsafeWordToInt(GetArg(PRIORITY_POS)));
+    return static_cast<priority>(Store::DirectWordToInt(GetArg(PRIORITY_POS)));
   }
   TaskStack *GetTaskStack() {
     return TaskStack::FromWord(GetArg(TASK_STACK_POS));
@@ -61,7 +61,7 @@ public:
     ReplaceArg(STATE_POS, s);
   }
   state GetState() {
-    return static_cast<state>(Store::UnsafeWordToInt(GetArg(STATE_POS)));
+    return static_cast<state>(Store::DirectWordToInt(GetArg(STATE_POS)));
   }
   void Suspend() {
     ReplaceArg(IS_SUSPENDED_POS, true);
@@ -70,7 +70,7 @@ public:
     ReplaceArg(IS_SUSPENDED_POS, false);
   }
   bool IsSuspended() {
-    return Store::UnsafeWordToInt(GetArg(IS_SUSPENDED_POS));
+    return Store::DirectWordToInt(GetArg(IS_SUSPENDED_POS));
   }
 };
 

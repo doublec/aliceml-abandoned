@@ -65,13 +65,13 @@ public:
     PutFrameArg(offset, Store::IntToWord(i)); //--** remove IntToWord
   }
   int GetInt(u_int offset) {
-    return Store::UnsafeWordToInt(GetWord(offset));
+    return Store::DirectWordToInt(GetWord(offset));
   }
   void PutUnmanagedPointer(u_int offset, void *pointer) {
     PutWord(offset, Store::UnmanagedPointerToWord(pointer));
   }
   void *GetUnmanagedPointer(u_int offset) {
-    return Store::WordToUnmanagedPointer(GetWord(offset)); //--** Unsafe
+    return Store::DirectWordToUnmanagedPointer(GetWord(offset));
   }
 };
 

@@ -243,7 +243,7 @@ public:
     return reinterpret_cast<char *>(GetBase() + 1);
   }
   u_int GetLength() {
-    return Store::UnsafeWordToInt(GetArg(LEN_POS));
+    return Store::DirectWordToInt(GetArg(LEN_POS));
   }
 };
 
@@ -345,10 +345,10 @@ public:
   }
 
   u_int GetHashCode() {
-    return Store::UnsafeWordToInt(GetArg(HASH_CODE_POS));
+    return Store::DirectWordToInt(GetArg(HASH_CODE_POS));
   }
   String *GetName() {
-    return static_cast<String *>(Store::UnsafeWordToBlock(GetArg(NAME_POS)));
+    return static_cast<String *>(Store::DirectWordToBlock(GetArg(NAME_POS)));
   }
 };
 
