@@ -18,6 +18,7 @@ structure Prebound :> PREBOUND =
     val stamp_string	= Stamp.new()
     val stamp_char	= Stamp.new()
     val stamp_list	= Stamp.new()
+    val stamp_vec	= Stamp.new()
     val stamp_exn	= Stamp.new()
 
   end
