@@ -28,7 +28,7 @@ DEFINE1(fillInStackTrace) {
       backtrace->Enqueue(frame->ToWord());
   }
   _this->PutInstanceField(0, backtrace->ToWord());
-  RETURN_VOID;
+  RETURN(_this->ToWord());
 } END
 
 DEFINE1(getStackTraceDepth) {
@@ -42,11 +42,8 @@ DEFINE2(getStackTraceElement) {
   DECLARE_OBJECT(_this, x0);
   DECLARE_INT(i, x1);
   word wBacktrace = _this->GetInstanceField(0);
-  if (wBacktrace == null) {
-    ThrowWorker::PushFrame(ThrowWorker::NullPointerException,
-			   JavaString::New("backtrace"));
-    RETURN_VOID;
-  }
+  if (wBacktrace == null)
+    THROW(NullPointerException, "backtrace");
   Class *stackTraceElementClass = Class::FromWord(wStackTraceElementClass);
   if (stackTraceElementClass == INVALID_POINTER)
     REQUEST(wStackTraceElementClass);
@@ -54,6 +51,8 @@ DEFINE2(getStackTraceElement) {
 	 StackTraceElement::SIZE);
   Backtrace *backtrace = Backtrace::FromWordDirect(wBacktrace);
   Object *stackTraceElement = Object::New(stackTraceElementClass);
+  if (i < 0 || static_cast<u_int>(i) >= backtrace->GetNumberOfElements())
+    THROW(ArrayIndexOutOfBoundsException, "backtrace");
   ByteCodeInterpreter::FillStackTraceElement(backtrace->GetNthElement(i),
 					     stackTraceElement);
   RETURN(stackTraceElement->ToWord());
@@ -64,7 +63,8 @@ void NativeMethodTable::java_lang_Throwable(JavaString *className) {
   wStackTraceElementClass =
     classLoader->ResolveClass(JavaString::New("java/lang/StackTraceElement"));
   RootSet::Add(wStackTraceElementClass);
-  Register(className, "fillInStackTrace", "()V", fillInStackTrace, 1, true);
+  Register(className, "fillInStackTrace", "()Ljava/lang/Throwable;",
+	   fillInStackTrace, 1, true);
   Register(className, "getStackTraceDepth", "()I", 
 	   getStackTraceDepth, 1, true);
   Register(className, "getStackTraceElement",
