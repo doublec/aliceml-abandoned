@@ -80,7 +80,8 @@
 	datatype dist_mode =
 	    NAIVE
 	  | FIRSTFAIL
-	  | SPLIT
+	  | SPLIT_MIN
+	  | SPLIT_MAX
 	  | NBSUSPS
 
 	datatype assign =
@@ -273,7 +274,7 @@
     </P></DD>
 
     <DT>
-      <TT>datatype dist_mode = NAIVE | FIRSTFAIL | SPLIT | NBSUSPS</TT>
+      <TT>datatype dist_mode = NAIVE | FIRSTFAIL | SPLIT_MIN | SPLIT_MAX | NBSUSPS</TT>
     </DT>
     <DD>
       <P>This datatype is used to denote the distribution stragety which is
@@ -952,10 +953,17 @@
             a choice point for <TT>x = l</TT> and
             <TT>x &lt;&gt; l</TT> where <I>l</I> is the lower bound
 	    of <I>x</I>.
-        <LI><TT>SPLIT</TT> considers only non-determined
+        <LI><TT>SPLIT_MIN</TT> considers only non-determined
             elements of <I>v</I>.
             Chooses the leftmost variable <I>x</I> in <I>v</I>,
-            whose domain is minimal and creates
+            whose domain size is minimal and creates
+            a choice point for <TT>x = m</TT> and
+            <TT>x &lt;&gt; m</TT> where <I>m</I>
+            is the middle of the domain of <I>x</I> (see <TT>Reflect.mid</TT>).
+        <LI><TT>SPLIT_MAX</TT> considers only non-determined
+            elements of <I>v</I>.
+            Chooses the leftmost variable <I>x</I> in <I>v</I>,
+            whose domain size is maximal and creates
             a choice point for <TT>x = m</TT> and
             <TT>x &lt;&gt; m</TT> where <I>m</I>
             is the middle of the domain of <I>x</I> (see <TT>Reflect.mid</TT>).
@@ -979,5 +987,3 @@
   </DL>
 
 <?php footing() ?>
-
-
