@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg, 2001-2003
  *
  * Last change:
  *   $Date$ by $Author$
@@ -16,22 +16,25 @@ sig
     eqtype 'a map
     type 'a t = 'a map
 
-    exception Delete    of key
+    exception Unknown of key
     exception Collision of key
-    exception Lookup    of key
 
-    val new :		unit -> 'a map
+    val map :		unit -> 'a map
     val clone :		'a map -> 'a map
-
-    val delete :	'a map * key -> unit
-    val deleteExistent:	'a map * key -> unit		(* Delete *)
-    val deleteWith :	(key -> unit) -> 'a map * key -> unit
-    val deleteAll :	'a map -> unit
+    val fromList :	(key * 'a) list -> 'a map	(* Collision *)
+    val fromVector :	(key * 'a) vector -> 'a map	(* Collision *)
+    val toList :	'a map -> (key * 'a) list
+    val toVector :	'a map -> (key * 'a) vector
 
     val insert :	'a map * key * 'a -> unit
     val insertDisjoint:	'a map * key * 'a -> unit	(* Collision *)
     val insertWith :	('a * 'a -> 'a) -> 'a map * key * 'a -> unit
     val insertWithi :	(key * 'a * 'a -> 'a) -> 'a map * key * 'a -> unit
+
+    val delete :	'a map * key -> unit
+    val deleteExistent:	'a map * key -> unit		(* Unknown *)
+    val deleteWith :	(key -> unit) -> 'a map * key -> unit
+    val deleteAll :	'a map -> unit
 
     val union :		'a map * 'a map -> unit
     val unionDisjoint :	'a map * 'a map -> unit		(* Collision *)
@@ -39,16 +42,30 @@ sig
     val unionWithi :	(key * 'a * 'a -> 'a) -> 'a map * 'a map -> unit
 
     val lookup :	'a map * key -> 'a option
-    val lookupExistent:	'a map * key -> 'a		(* Lookup *)
+    val lookupExistent:	'a map * key -> 'a		(* Unknown *)
 
     val member :	'a map * key -> bool
+    val choose :	'a map -> 'a option
+    val choosei :	'a map -> (key * 'a) option
+
     val size :		'a map -> int
     val isEmpty :	'a map -> bool
 
     val app :		('a -> unit) -> 'a map -> unit
+    val modify :	('a -> 'a) -> 'a map -> unit
     val fold :		('a * 'b -> 'b) -> 'b -> 'a map -> 'b
-    val appi :		(key * 'a -> unit) -> 'a map -> unit
-    val foldi :		(key * 'a * 'b -> 'b) -> 'b -> 'a map -> 'b
+    val all :		('a -> bool) -> 'a map -> bool
+    val exists :	('a -> bool) -> 'a map -> bool
     val find :		('a -> bool) -> 'a map -> 'a option
+    val filter :	('a -> bool) -> 'a map -> unit
+
+    val appi :		(key * 'a -> unit) -> 'a map -> unit
+    val modifyi :	(key * 'a -> 'a) -> 'a map -> unit
+    val foldi :		(key * 'a * 'b -> 'b) -> 'b -> 'a map -> 'b
+    val alli :		(key * 'a -> bool) -> 'a map -> bool
+    val existsi :	(key * 'a -> bool) -> 'a map -> bool
     val findi :		(key * 'a -> bool) -> 'a map -> (key * 'a) option
+    val filteri :	(key * 'a -> bool) -> 'a map -> unit
+
+    val equal :		('a * 'a -> bool) -> 'a map * 'a map -> bool
 end

@@ -3,32 +3,30 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg, 2001-2003
  *
  * Last change:
  *   $Date$ by $Author$
  *   $Revision$
  *)
 
-import signature HASH_KEY from "HASH_KEY-sig"
+import signature HASHABLE from "HASHABLE-sig"
 import signature IMP_MAP  from "IMP_MAP-sig"
 
-
-functor MkHashImpMap(Key: HASH_KEY) :> IMP_MAP where type key = Key.t =
+functor MkHashImpMap(Key: HASHABLE) :> IMP_MAP where type key = Key.t =
 struct
 
     type key    = Key.t
     type 'a map = (key * 'a) list array ref * int ref
     type 'a t   = 'a map
 
-    exception Delete    of key
+    exception Unknown   of key
     exception Collision of key
-    exception Lookup    of key
 
 
     val initialSize		= 19
 
-    fun new()			= (ref(Array.array(initialSize,[])), ref 0)
+    fun map()			= (ref(Array.array(initialSize,[])), ref 0)
     fun deleteAll (m,k)		= if !k = 0 then () else
 				  ( m := Array.array(initialSize,[]) ; k := 0 )
 
@@ -36,11 +34,17 @@ struct
     fun isEmpty(_, ref n)	= n = 0
 
     fun appi f (ref t, _)	= Array.app (List.app f) t
+    fun modifyi f (ref t, _)	= Array.modify
+				    (List.map (fn ka as (k,a) => (k, f ka))) t
     fun foldi f b (ref t, _)	= let fun f'((k,a),b) = f(k,a,b) in
 				      Array.foldl (fn(kas,b) =>
 							List.foldl f' b kas
 						  ) b t
 				  end
+    fun alli p (ref t, _)	= Array.all (List.all p) t
+    fun existsi p (ref t, _)	= Array.exists (List.exists p) t
+    fun filteri p (ref t, n)	= Array.modify (List.filter
+				    (fn ka => p ka orelse (n := !n-1; false))) t
     fun findi p (ref t, _)	= let val size   = Array.length t
 				      fun iter i =
 					  if i = size then NONE else
@@ -48,10 +52,16 @@ struct
 					    of NONE => iter(i+1)
 					     | some => some
 				  in iter 0 end
+    fun choosei m		= findi (fn _ => true) m
 
     fun app f			= appi(fn(k,a) => f a)
+    fun modify f		= modifyi(fn(k,a) => f a)
     fun fold f			= foldi(fn(k,a,b) => f(a,b))
+    fun all p			= alli(fn(k,a) => p a)
+    fun exists p		= existsi(fn(k,a) => p a)
+    fun filter p		= filteri(fn(k,a) => p a)
     fun find p m		= Option.map #2 (findi (fn(k,a) => p a) m)
+    fun choose m		= find (fn _ => true) m
 
 
     fun clone(ref t, ref n)	= let val t' = Array.array(Array.length t, [])
@@ -79,7 +89,7 @@ struct
     fun lookupExistent((ref t,_), k)
     				= let val kas = Array.sub(t, hash(t,k)) in
 				    case List.find (isEntryFor k) kas
-				      of NONE      => raise Lookup k
+				      of NONE      => raise Unknown k
 				       | SOME(k,a) => a
 				  end
 
@@ -100,7 +110,7 @@ struct
 				  end
 
     fun delete x		= deleteWith ignore x
-    fun deleteExistent x	= deleteWith(fn k => raise Delete k) x
+    fun deleteExistent x	= deleteWith(fn k => raise Unknown k) x
 
     fun reinsert t (ka as(k,_))	= let val i = hash(t,k) in
 				      Array.update(t, i, ka::Array.sub(t,i))
@@ -139,4 +149,22 @@ struct
     fun unionWith f		= union'(insertWith f)
     fun unionWithi f		= union'(insertWithi f)
 
+    fun submap eq (m1,m2)	= alli (fn(k,a) => case lookup(m2,k)
+						    of NONE => false
+						     | SOME a' => eq(a,a')) m1
+    fun equal eq (m1,m2)	= size m1 = size m2 andalso submap eq (m1,m2)
+
+    fun fromList kas		= let val m = map() in
+				      List.app (fn (k,a) =>
+						insertDisjoint(m,k,a)) kas;
+				      m
+				  end
+    fun toList m		= foldi (fn(k,a,kas) => (k,a)::kas) nil m
+
+    fun fromVector kas		= let val m = map() in
+				      Vector.app (fn (k,a) =>
+						  insertDisjoint(m,k,a)) kas;
+				      m
+				  end
+    fun toVector m		= Vector.fromList(toList m)
 end
