@@ -286,7 +286,7 @@ IODesc::kind IODesc::GetKind() {
     default:
       return UNKNOWN;
     }
-  case TYPE_FORWARDED: return PIPE;
+  case TYPE_FORWARDED: return SOCKET;
 #else
   case TYPE_FD:
     {
@@ -317,9 +317,42 @@ u_int IODesc::GetChunkSize() {
     //--** use GetDiskFreeSpace/ioctl to determine cluster size?
     return 512;
   case TTY:
-  case PIPE:
-  case SOCKET:
     return 1;
+  case PIPE:
+#if USE_WINSOCK
+    {
+      HANDLE pipeHandle = GetHandle();
+      DWORD inBufferSize, outBufferSize;
+      if (GetNamedPipeInfo(pipeHandle, NULL,
+			   &outBufferSize, &inBufferSize, NULL) != 0)
+	return (((GetFlags() & DIR_MASK) == DIR_WRITER) ?
+		outBufferSize : inBufferSize);
+      else
+	return 1;
+    }
+#else
+    return 1;
+#endif
+  case SOCKET:
+    {
+      int socket = GetFD();
+      s_int sockVal;
+#if USE_WINSOCK
+      s_int sockValSize = sizeof(s_int);
+#else
+      socklen_t sockValSize = (socklen_t) sizeof(s_int);
+#endif
+      u_int sockOptName =
+	((GetFlags() & DIR_MASK == DIR_WRITER) ? SO_SNDBUF : SO_RCVBUF);
+      Interruptible(ret,
+		    getsockopt(socket, SOL_SOCKET, sockOptName,
+			       (char *) &sockVal, &sockValSize));
+#if USE_WINSOCK
+      return ((ret == SOCKET_ERROR) ? 1 : sockVal);
+#else
+      return ((ret == -1) ? 1 : sockVal);
+#endif
+    }
   case CLOSED:
     return 2;
   case UNKNOWN:
@@ -609,6 +642,11 @@ IODesc::result IODesc::Write(const u_char *buf, int n, int &out) {
   case TYPE_FORWARDED:
     {
       int sock = GetFD();
+//        std::fprintf(stderr, "IODesc::Write start sending %d at '", n);
+//        for (int i = 0; i < n; i++)
+//  	std::fprintf(stderr, "%c", sys_buf[i]);
+//        std::fprintf(stderr, "'\n");
+//        std::fflush(stderr);
     retry:
       out = send(sock, sys_buf, n, 0);
       if (out == SOCKET_ERROR)
@@ -620,6 +658,8 @@ IODesc::result IODesc::Write(const u_char *buf, int n, int &out) {
 	  } else
 	    goto retry;
 	} else return result_socket_error;
+//        std::fprintf(stderr, "IODesc::Write written %d\n", out);
+//        std::fflush(stderr);
       return result_ok;
     }
   case TYPE_HANDLE:
