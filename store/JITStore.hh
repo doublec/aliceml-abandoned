@@ -69,11 +69,11 @@ public:
   }
   // Temporary Variable Abstraction
   void StoreTmp(u_int tmp, u_int Reg) {
-    Assert((tmp >= ST_TMP_R0) && (tmp <= ST_TMP_R5));
+    Assert((tmp >= ST_TMP_R0) && (tmp < ST_TOTAL));
     jit_stxi_p(tmp * sizeof(word), JIT_SP, Reg);
   }
   void LoadTmp(u_int tmp, u_int Reg) {
-    Assert((tmp >= ST_TMP_R0) && (tmp <= ST_TMP_R5));
+    Assert((tmp >= ST_TMP_R0) && (tmp < ST_TOTAL));
     jit_ldxi_p(Reg, JIT_SP, tmp * sizeof(word));
   }
   // Enter subroutine
