@@ -178,24 +178,25 @@ struct
 
     fun filter  f  xs		= filter'(f,xs)
     and filter'(f, nil)		= nil
-      | filter'(f, x::xs)	= let val zs = filter'(f,xs)
-				  in if f x then x::zs else zs end
+      | filter'(f, x::xs)	= let val b = f x val zs = filter'(f,xs)
+				  in if b then x::zs else zs end
 
     fun filteri  f  xs		= filteri'(f,0,xs)			(**)
     and filteri'(f, i, nil)	= nil
-      | filteri'(f, i, x::xs)	= let val zs = filteri'(f,i+1,xs)
-				  in if f(i,x) then (i,x)::zs else zs end
+      | filteri'(f, i, x::xs)	= let val b = f(i,x) val zs = filteri'(f,i+1,xs)
+				  in if b then (i,x)::zs else zs end
 
-    fun partition  f  xs		= partition'(f,xs)
+    fun partition  f  xs	= partition'(f,xs)
     and partition'(f, nil)	= (nil,nil)
-      | partition'(f, x::xs)	= let val (ys,zs) = partition'(f,xs)
-				  in if f x then (x::ys,zs) else (ys,x::zs) end
+      | partition'(f, x::xs)	= let val b = f x val (ys,zs) = partition'(f,xs)
+				  in if b then (x::ys,zs) else (ys,x::zs) end
 
     fun partitioni  f xs	= partitioni'(f,0,xs)			(**)
     and partitioni'(f,i, nil)	= (nil,nil)
-      | partitioni'(f,i, x::xs)	= let val (ys,zs) = partitioni'(f,i+1,xs)
-				  in if f(i,x) then ((i,x)::ys, zs)
-					       else (ys, (i,x)::zs) end
+      | partitioni'(f,i, x::xs)	= let val b = f(i,x)
+				      val (ys,zs) = partitioni'(f,i+1,xs)
+				  in if b then ((i,x)::ys, zs)
+					  else (ys, (i,x)::zs) end
 
     fun contains xs y		= contains'(y,xs)			(**)
     and contains'(y, nil)	= false
