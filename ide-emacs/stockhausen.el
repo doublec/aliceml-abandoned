@@ -83,30 +83,28 @@
 (defun run-stockhausen ()
   "Start the Stockhausen interactive toplevel."
   (interactive)
-  (let ((buffer (get-buffer stockhausen-stot-buffer)))
-    (save-excursion
-      (compilation-mode)
-;--**      (set (make-local-variable 'compilation-parse-errors-function)
-;--**	   'stockhausen-compilation-parse-errors)
-      )
+  (let ((buffer (get-buffer-create stockhausen-stot-buffer)))
     (comint-exec buffer stockhausen-stot-buffer
 		 stockhausen-stot-command nil nil)
+;;--** support compilation mode
+;    (save-excursion
+;      (set-buffer buffer)
+;      (compilation-mode)
+;      (set (make-local-variable 'compilation-parse-errors-function)
+;	   'stockhausen-compilation-parse-errors))
     (let ((proc (get-buffer-process buffer)))
       (process-kill-without-query proc nil)
-;--**      (set-process-filter proc 'stockhausen-stot-filter)
-      )
+      (set-process-filter proc nil)) ;--** 'stockhausen-stot-filter
     (stockhausen-show-buffer buffer)))
 
 (defun stockhausen-evaluate-string (string filename line)
+  ;;--** escape dots at start of line
   (let ((proc (get-buffer-process stockhausen-stot-buffer)))
     (if (not proc)
 	(error "Stockhausen is not running."))
-    (comint-send-string proc filename)
-    (comint-send-string "\n")
-    (comint-send-string proc (number-to-string line))
-    (comint-send-string "\n")
-    (comint-send-string proc string)
-    (comint-send-string proc (concat "\n\004\n"))))
+    (comint-send-string proc (concat filename "\n"
+				     (number-to-string line) "\n"
+				     string "\n;\n"))))
 
 (defun stockhausen-evaluate-region (start end)
   "Evaluate the current region in the Stockhausen interactive toplevel."
