@@ -16,7 +16,6 @@
 
 #if defined(__MINGW32__) || defined(_MSC_VER)
 #include <winsock.h>
-typedef int socklen_t;
 #else
 #include <errno.h>
 #include <netdb.h>
@@ -29,8 +28,14 @@ typedef int socklen_t;
 #include "emulator/IOHandler.hh"
 
 #if defined(__MINGW32__) || defined(_MSC_VER)
+typedef int socklen_t;
 #define EWOULDBLOCK WSAEWOULDBLOCK
 #define EINPROGRESS WSAEINPROGRESS
+#define GetLastError() (WSAGetLastError())
+#else
+#define ioctlsocket ioctl
+#define closesocket close
+#define GetLastError() errno
 #endif
 
 static char *ExportCString(String *s) {
@@ -44,19 +49,7 @@ static char *ExportCString(String *s) {
 
 static int SetNonBlocking(int sock, bool flag) {
   unsigned long arg = flag;
-#if defined(__MINGW32__) || defined(_MSC_VER)
   return ioctlsocket(sock, FIONBIO, &arg);
-#else
-  return ioctl(sock, FIONBIO, &arg);
-#endif
-}
-
-static int GetLastError() {
-#if defined(__MINGW32__) || defined(_MSC_VER)
-  return WSAGetLastError();
-#else
-  return errno;
-#endif
 }
 
 static const char *GetHostName(sockaddr_in *addr) {
@@ -281,13 +274,7 @@ DEFINE3(UnsafeSocket_output) {
 
 DEFINE1(UnsafeSocket_close) {
   DECLARE_INT(sock, x0);
-
-#if defined(__MINGW32__) || defined(_MSC_VER)
   closesocket(sock);
-#else
-  close(sock);
-#endif
-
   RETURN_UNIT;
 } END
 
