@@ -322,7 +322,7 @@ define
       'Transient.Future': {NewUniqueName 'Transient.Future'}
       'Transient.Promise': {NewUniqueName 'Transient.Promise'}
       'Transient.alarm\'':
-	 fun {$ X} {Alarm (X + 500) div 1000} end
+	 fun {$ X} !!{Alarm (X + 500) div 1000} end
       'Transient.await':
 	 fun {$ X} {Wait X} X end
       'Transient.awaitOne':
@@ -366,6 +366,9 @@ define
       'Transient.isPromise': IsFree
       'Transient.promise':
 	 fun {$ unit} _ end
+      'Unsafe.Array.sub': Array.get
+      'Unsafe.Array.update':
+	 fun {$ A I X} {Array.put A I X} unit end
       'Unsafe.cast': fun {$ X} X end
       'Vector.fromList':
 	 fun {$ Xs} {List.toTuple '#' Xs} end
