@@ -290,18 +290,6 @@ final public class Vector implements DMLValue {
 
     _apply_fails ;
 
-    final protected Object writeReplace()
-	throws java.io.ObjectStreamException {
-	if (ng == null) { // falls zum ersten Mal serialisiert
-	    GName gn = new GName();
-	    ng = new NoGood(gn);
-	    GName.gNames.put(gn, this);
-	    return ng;
-	} else {
-	    return ng;
-	}
-    }
-
     final public java.lang.String toString() {
 	java.lang.String s="["+vec[0];
 	int l = vec.length;
