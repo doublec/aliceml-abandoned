@@ -10,7 +10,9 @@
 //   $Revision$
 //
 
+#if defined(INTERFACE)
 #pragma implementation "interpreter/bootstrap/BootstrapInterpreter.hh"
+#endif
 
 #include "scheduler/Closure.hh"
 #include "scheduler/Scheduler.hh"

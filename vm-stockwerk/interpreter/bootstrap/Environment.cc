@@ -10,7 +10,9 @@
 //   $Revision$
 //
 
+#if defined(INTERFACE)
 #pragma implementation "interpreter/bootstrap/Environment.hh"
+#endif
 
 #include "interpreter/bootstrap/Environment.hh"
 

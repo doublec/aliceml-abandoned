@@ -13,7 +13,9 @@
 #ifndef __INTERPRETER__BOOTSTRAP__BOOTSTRAP_INTERPRETER_HH__
 #define __INTERPRETER__BOOTSTRAP__BOOTSTRAP_INTERPRETER_HH__
 
+#if defined(INTERFACE)
 #pragma interface "interpreter/bootstrap/BootstrapInterpreter.hh"
+#endif
 
 #include "scheduler/Interpreter.hh"
 

@@ -13,7 +13,9 @@
 #ifndef __INTERPRETER__BOOTSTRAP__ENVIRONMENT_HH__
 #define __INTERPRETER__BOOTSTRAP__ENVIRONMENT_HH__
 
+#if defined(INTERFACE)
 #pragma interface "interpreter/bootstrap/Environment.hh"
+#endif
 
 #include "datalayer/alicedata.hh"
 
