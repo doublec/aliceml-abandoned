@@ -242,6 +242,7 @@ define
 
    fun {Apply F#_#ExportDesc#Env} M in
       {{Property.get 'alice.modulemanager'} apply(F ?M)}
+      {Wait M}
       {Record.forAll ExportDesc
        proc {$ Label#'Id'(_ Stamp _)}
 	  {Dictionary.put Env Stamp M.Label}
