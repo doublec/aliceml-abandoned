@@ -16,6 +16,7 @@ structure Main :> MAIN =
     val abstract   = AbstractionPhase.translate BindEnv0.E0 o parse
     val translate  = TranslationPhase.translate o abstract
     val imperatify = MatchCompilationPhase.translate o translate
+    val ilify      = CodeGenPhase.genProgram o imperatify
 
     fun ozify outstream s =
 	let
@@ -30,6 +31,22 @@ structure Main :> MAIN =
 	    val file = TextIO.openOut name
 	in
 	    ozify file s handle x => ( TextIO.closeOut file ; raise x ) ;
+	    TextIO.closeOut file
+	end
+
+    fun comify outstream s =
+	let
+	    val prog = ilify s
+	in
+	    IL.outputProgram(outstream, prog) ;
+	    TextIO.output1(outstream, #"\n")
+	end
+
+    fun comifyToFile name s =
+	let
+	    val file = TextIO.openOut name
+	in
+	    comify file s handle x => ( TextIO.closeOut file ; raise x ) ;
 	    TextIO.closeOut file
 	end
 
@@ -63,5 +80,8 @@ structure Main :> MAIN =
 
     val debugString		= processString debug
     val debugFile		= processFile debug
+
+    fun comifyStringToFile(s,n)	= processString (comifyToFile n) s
+    fun comifyFileToFile(n1,n2)	= processFile (comifyToFile n2) n1
 
   end

@@ -11,6 +11,7 @@ is
     ../common/sources.cm
     ../backend-common/sources.cm
     ../backend-mozart/sources.cm
+    ../backend-com+/sources.cm
 
     MAIN.sig
     Main.sml
