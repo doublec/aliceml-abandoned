@@ -54,22 +54,10 @@ DEFINE0(UnsafeRemote_getLocalIP) {
   RETURN(String::New(inet_ntoa(addr))->ToWord());
 } END
 
-static word callback;
-
 DEFINE1(UnsafeRemote_setCallback) {
-  callback = x0;
+  Assert(AliceLanguageLayer::remoteCallback == Store::IntToWord(0));
+  AliceLanguageLayer::remoteCallback = x0;
   RETURN_UNIT;
-} END
-
-DEFINE2(UnsafeRemote_dynamicCall) {
-  if (callback == Store::IntToWord(0)) {
-    RAISE(PrimitiveTable::Hole_Hole); //--** to be done
-  } else {
-    Scheduler::nArgs = 2;
-    Scheduler::currentArgs[0] = x0;
-    Scheduler::currentArgs[1] = x1;
-    return Scheduler::PushCall(callback);
-  }
 } END
 
 DEFINE1(UnsafeRemote_packValue) {
@@ -84,20 +72,14 @@ DEFINE1(UnsafeRemote_unpackValue) {
 } END
 
 word UnsafeRemote() {
-  RootSet::Add(callback);
-  callback = Store::IntToWord(0);
-
-  //--** enter UnsafeRemote_dynamicCall into the PrimitiveTable
-  Record *record = Record::New(5);
+  Record *record = Record::New(4);
   INIT_STRUCTURE(record, "UnsafeRemote", "getLocalIP",
-		 UnsafeRemote_getLocalIP, 0, true);
+		 UnsafeRemote_getLocalIP, 0);
   INIT_STRUCTURE(record, "UnsafeRemote", "setCallback",
-		 UnsafeRemote_setCallback, 1, true);
-  INIT_STRUCTURE(record, "UnsafeRemote", "dynamicCall",
-		 UnsafeRemote_dynamicCall, 2, false);
+		 UnsafeRemote_setCallback, 1);
   INIT_STRUCTURE(record, "UnsafeRemote", "packValue",
-		 UnsafeRemote_packValue, 1, true);
+		 UnsafeRemote_packValue, 1);
   INIT_STRUCTURE(record, "UnsafeRemote", "unpackValue",
-		 UnsafeRemote_unpackValue, 1, true);
+		 UnsafeRemote_unpackValue, 1);
   RETURN_STRUCTURE("UnsafeRemote$", record);
 }
