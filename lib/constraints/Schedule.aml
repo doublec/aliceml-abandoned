@@ -1,0 +1,25 @@
+(*
+ * Authors:
+ *   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Thorsten Brunklaus, 2001
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
+import structure FD             from "FD"
+import structure UnsafeSchedule from "UnsafeSchedule"
+import signature SCHEDULE       from "SCHEDULE-sig"
+
+structure Schedule :> SCHEDULE =
+    struct
+	type tasks  = (string * string list) vector
+	type starts = (string * FD.fd) vector 
+	type specs  = (string * int) vector
+	    
+	open UnsafeSchedule
+    end
