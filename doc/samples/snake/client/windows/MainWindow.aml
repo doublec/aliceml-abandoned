@@ -142,13 +142,23 @@ struct
 
 	    fun updatePoints plist = 
 		let
-		    fun toString' ({name, 
+		    fun toString' (({name, 
 				    color, 
 				    points, 
-				    gamePoints}, str) =
+				    gamePoints},
+				    NONE), str) =
 			(str ^ name ^ ":  " 
 			 ^ (Int.toString points) ^ "  /  " 
 			 ^ (Int.toString gamePoints) ^ "\n\n")
+		      | toString' (({name, 
+				    color, 
+				    points, 
+				    gamePoints},
+				    SOME lives), str) =
+			(str ^ name ^ ":  " 
+			 ^ (Int.toString points) ^ "  /  " 
+			 ^ (Int.toString gamePoints)
+			 ^ " | lives: " ^ (Int.toString lives) ^ "\n\n")
 		    fun toString () = List.foldl toString' "" plist
 		in
 		    Gtk.labelSetText (!pointsLabel, toString ())

@@ -31,7 +31,7 @@ sig
 	{
 	 startLevel   : Protocol.level_info -> unit,
 	 update       : (Pos.pos * Protocol.field) list -> unit,
-	 updatePoints : Highscore.points list -> unit,
+	 updatePoints : (Highscore.points * int option) list -> unit,
 	 headPosition : Pos.pos -> unit,
 	 gameFinished : Highscore.highscore -> unit,
 	 tick         : Time.time -> unit
