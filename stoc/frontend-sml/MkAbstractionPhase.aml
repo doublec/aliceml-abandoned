@@ -35,7 +35,8 @@ __primitive
 constructor G of int : u = "s"	val 'G = prim "s": conarrow(int -> u)(succ zero)
 				val  G = fun x -> 'G(x)
 __primitive
-__reftype 'a r = ref of 'a	val  ref = fun x -> Ref(x)
+__reftype 'a r = ref of 'a	val 'ref = fail: conarrow('a->'a ref)(succ zero)
+				val  ref = fun x -> Ref(x)
 
 Expressions:
 A				A
@@ -1311,27 +1312,36 @@ functor MakeAbstractionPhase(
 	 | PRIMITIVEREFTYPEDec(i, tyvar, tycon as TyCon(i1',tycon'),
 				  _, vid as VId(i2',vid'), tyvar2) =>
 	   let
-		val (typid',stamp1) = trTyCon_bind E tycon
-		val (valid',stamp2) = trVId_bind E vid
-		val  _              = insertScope E
-		val  vartypid'      = trSeqTyVar E tyvar
-		val  vartypid2'     = trTyVar E tyvar2		(* ignore *)
-		val  _              = deleteScope E
-		val  typ'           = O.RefTyp(i1', varToTyp vartypid')
-		val  dec1'          = O.TypDec(i, typid',
-						  O.FunTyp(i, vartypid', typ'))
-		val  id'            = O.Id(i2', Stamp.new(), Name.InId)
-		val  pat'           = O.VarPat(i2', id')
-		val  exp'           = O.VarExp(i2', O.ShortId(i2', id'))
-		val  match'         = O.Match(i2', pat', O.RefExp(i2', exp'))
-		val  dec2'          = O.ValDec(i, O.VarPat(i2', valid'),
-						  O.FunExp(i, #[match']))
-		val  E'             = BindEnv.new()
-		val  _              = insertVal(E', vid', (i2', stamp2, R))
-		val  _              = insertTy(E, tycon', (i1', stamp1, E'))
-		val  _              = union(E,E')
+		val (typid', stamp0) = trTyCon_bind E tycon
+		val (valid1',stamp1) = trConVId_bind' E vid
+		val (valid2',stamp2) = trVId_bind E vid
+		val  _               = insertScope E
+		val  vartypid'       = trSeqTyVar E tyvar
+		val  vartypid2'      = trTyVar E tyvar2
+		val  _               = deleteScope E
+		val  typ'            = O.RefTyp(i1', varToTyp vartypid')
+		val  dec0'           = O.TypDec(i, typid',
+						   O.FunTyp(i, vartypid', typ'))
+		val  vartyp'         = varToTyp vartypid2'
+		val  contyp'         = conarrowtyp E (i, vartyp',
+						      O.RefTyp(i2', vartyp'), 1)
+		val  exp1'           = O.FailExp(i2')
+		val  dec1'           = O.ValDec(i, O.VarPat(i2', valid1'),
+						   O.AnnExp(i, exp1', contyp'))
+		val  id'             = O.Id(i2', Stamp.new(), Name.InId)
+		val  pat'            = O.VarPat(i2', id')
+		val  exp2'           = O.VarExp(i2', O.ShortId(i2', id'))
+		val  match'          = O.Match(i2', pat', O.RefExp(i2', exp2'))
+		val  dec2'           = O.ValDec(i, O.VarPat(i2', valid2'),
+						   O.FunExp(i, #[match']))
+		val  E'              = BindEnv.new()
+		val  _               = insertVal(E', vid', (i2', stamp2, R))
+		val  _               = insertVal(E', conVId vid',
+						     (i2', stamp1, V))
+		val  _               = insertTy(E, tycon', (i1', stamp0, E'))
+		val  _               = union(E,E')
 	   in
-		dec2' :: dec1' :: acc
+		dec2' :: vardec([vartypid2'], dec1') :: dec0' :: acc
 	   end
 
 	 | PRIMITIVECONSTRUCTORDec
