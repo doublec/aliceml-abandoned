@@ -16,38 +16,63 @@ structure Builtins :> BUILTINS =
 
 	val builtinTable =
 	    let
-		val map: (string * IL.ty) Map.t = Map.new ()
-		val ty = StockWerk.StockWertTy
+		val map: (IL.dottedname * string) Map.t = Map.new ()
+		val Char = ["Char"]
+		val General = ["General"]
+		val GlobalStamp = ["GlobalStamp"]
+		val Int = ["Int"]
+		val Real = ["Real"]
+		val String = ["String"]
+		val Word = ["Word"]
 	    in
-		Map.insert (map, "=", ("eq", ty));
-		Map.insert (map, "<>", ("ne", ty));
-		Map.insert (map, "~", ("Int$uminus", ty));
-		Map.insert (map, "+", ("Int$plus", ty));
-		Map.insert (map, "-", ("Int$minus", ty));
-		Map.insert (map, "*", ("Int$times", ty));
-		Map.insert (map, "div", ("Int$div", ty));
-		Map.insert (map, "mod", ("Int$mod", ty));
-		Map.insert (map, "<", ("Int$lt", ty));
-		Map.insert (map, ">", ("Int$gt", ty));
-		Map.insert (map, "<=", ("Int$le", ty));
-		Map.insert (map, ">=", ("Int$ge", ty));
-		Map.insert (map, ":=", ("General$assign", ty));
-		Map.insert (map, "Char.<=", ("Char$le", ty));
-		Map.insert (map, "String.^", ("String$conc", ty));
-		Map.insert (map, "Word.+", ("Word$plus", ty));
-		Map.insert (map, "Word.-", ("Word$minus", ty));
-		Map.insert (map, "Word.*", ("Word$times", ty));
-		Map.insert (map, "Word.<<", ("Word$shl", ty));
-		Map.insert (map, "Word.>>", ("Word$lsr", ty));
-		Map.insert (map, "Word.~>>", ("Word$asr", ty));
-		Map.insert (map, "Word.fromInt'", ("Word$fromInt2", ty));
+		Map.insert (map, "=", (nil, "opeq"));
+		Map.insert (map, "<>", (nil, "opnoteq"));
+		Map.insert (map, "Char.<", (Char, "opless"));
+		Map.insert (map, "Char.>", (Char, "opgreater"));
+		Map.insert (map, "Char.<=", (Char, "oplessEq"));
+		Map.insert (map, "Char.>=", (Char, "opgreaterEq"));
+		Map.insert (map, "General.:=", (General, "assign"));
+		Map.insert (map, "Int.~", (Int, "opnegate"));
+		Map.insert (map, "Int.+", (Int, "opadd"));
+		Map.insert (map, "Int.-", (Int, "opsub"));
+		Map.insert (map, "Int.*", (Int, "opmul"));
+		Map.insert (map, "Int.<", (Int, "opless"));
+		Map.insert (map, "Int.>", (Int, "opgreater"));
+		Map.insert (map, "Int.<=", (Int, "oplessEq"));
+		Map.insert (map, "Int.>=", (Int, "opgreaterEq"));
+		Map.insert (map, "Real.~", (Real, "opnegate"));
+		Map.insert (map, "Real.+", (Real, "opadd"));
+		Map.insert (map, "Real.-", (Real, "opsub"));
+		Map.insert (map, "Real.*", (Real, "opmul"));
+		Map.insert (map, "Real./", (Real, "opdiv"));
+		Map.insert (map, "Real.<", (Real, "opless"));
+		Map.insert (map, "Real.>", (Real, "opgreater"));
+		Map.insert (map, "Real.<=", (Real, "oplessEq"));
+		Map.insert (map, "Real.>=", (Real, "opgreaterEq"));
+		Map.insert (map, "String.^", (String, "append"));
+		Map.insert (map, "String.<", (String, "opless"));
+		Map.insert (map, "String.>", (String, "opgreater"));
+		Map.insert (map, "String.<=", (String, "oplessEq"));
+		Map.insert (map, "String.>=", (String, "opgreaterEq"));
+		Map.insert (map, "String.sub'", (String, "subquote"));
+		Map.insert (map, "Word.fromInt'", (Word, "fromIntQuote"));
+		Map.insert (map, "Word.+", (Word, "opadd"));
+		Map.insert (map, "Word.-", (Word, "opsub"));
+		Map.insert (map, "Word.*", (Word, "opmul"));
+		Map.insert (map, "Word.<<", (Word, "shl"));
+		Map.insert (map, "Word.>>", (Word, "shr"));
+		Map.insert (map, "Word.~>>", (Word, "arithshr"));
 		map
 	    end
 
 	fun lookup name =
 	    case Map.lookup (builtinTable, name) of
-		SOME (id, ty) => (id, ty)
+		SOME res => res
 	      | NONE =>
-		    (String.map (fn c => if c = #"." then #"$" else c) name,
-		     StockWerk.StockWertTy)
+		    let
+			val ids =
+			    List.rev (String.tokens (fn c => c = #".") name)
+		    in
+			(List.rev (List.tl ids), List.hd ids)
+		    end
     end

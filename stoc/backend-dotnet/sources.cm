@@ -14,7 +14,8 @@ is
 
     IL.sig
     IL.sml
-    StockWerk.sml
+    System.sml
+    Alice.sml
     BUILTINS.sig
     Builtins.sml
     CODE_STORE.sig

@@ -23,7 +23,7 @@ structure CodeStore :> CODE_STORE =
 	  | Fld of index
 	  | Arg of index
 	  | Loc of index
-	  | Prebound of IL.id * IL.ty
+	  | Prebound of IL.dottedname * IL.id * IL.ty
 	withtype index = int
 
 	type class = stamp
@@ -49,15 +49,17 @@ structure CodeStore :> CODE_STORE =
 	    let
 		open Prebound
 		val scope = ScopedMap.new ()
-		val ty = StockWerk.StockWertTy
+		fun prebind (stamp, dottedname, id) =
+		    ScopedMap.insert
+		    (scope, stamp, Prebound (dottedname, id, System.ObjectTy))
 	    in
-		ScopedMap.insert (scope, valstamp_false, Prebound ("false", ty));
-		ScopedMap.insert (scope, valstamp_true, Prebound ("true", ty));
-		ScopedMap.insert (scope, valstamp_nil, Prebound ("nil", ty));
-		ScopedMap.insert (scope, valstamp_cons, Prebound ("cons", ty));
-		ScopedMap.insert (scope, valstamp_ref, Prebound ("ref", ty));
-		ScopedMap.insert (scope, valstamp_match, Prebound ("General$Match", ty));
-		ScopedMap.insert (scope, valstamp_bind, Prebound ("General$Bind", ty));
+		prebind (valstamp_false, Alice.Prebound, "false");
+		prebind (valstamp_true, Alice.Prebound, "true");
+		prebind (valstamp_nil, Alice.Prebound, "nil");
+		prebind (valstamp_cons, Alice.Prebound, "cons");
+		prebind (valstamp_ref, Alice.Prebound, "ref");
+		prebind (valstamp_match, Alice.Prebound.General, "Match");
+		prebind (valstamp_bind, Alice.Prebound.General, "Bind");
 		scope
 	    end
 
@@ -156,15 +158,15 @@ structure CodeStore :> CODE_STORE =
 		case lookup (!env, stamp) of
 		    SFld i =>
 			emit (Ldsfld (currentClosure (), sfldName i,
-				      StockWerk.StockWertTy))
+				      System.ObjectTy))
 		  | Fld i =>
 			(emit (Ldarg 0);
 			 emit (Ldfld (currentClosure (), fldName i,
-				      StockWerk.StockWertTy)))
+				      System.ObjectTy)))
 		  | Loc i => emit (Ldloc i)
 		  | Arg i => emit (Ldarg i)
-		  | Prebound (id, ty) =>
-			emit (Ldsfld (StockWerk.Prebound, id, ty))
+		  | Prebound (dottedname, id, ty) =>
+			emit (Ldsfld (dottedname, id, ty))
 	end
 
 	fun emitId (Id (_, stamp, _)) =
@@ -220,7 +222,7 @@ structure CodeStore :> CODE_STORE =
 		indicesRef := indices
 	    end
 
-	fun args n = List.tabulate (n, fn _ => StockWerk.StockWertTy)
+	fun args n = List.tabulate (n, fn _ => System.ObjectTy)
 
 	fun closeMethod () =
 	    case !env of
@@ -233,7 +235,7 @@ structure CodeStore :> CODE_STORE =
 			val _ = env := envr
 			val method =
 			    Method (id, (Public, Virtual),
-				    args narg, StockWerk.StockWertTy,
+				    args narg, System.ObjectTy,
 				    (args nloc, false), List.rev instrs)
 			val newClassDecls =
 			    ScopedMap.foldi
@@ -243,20 +245,20 @@ structure CodeStore :> CODE_STORE =
 				     (emit Dup;
 				      emitStamp stamp;
 				      emit (Stsfld (className', sfldName i,
-						    StockWerk.StockWertTy));
+						    System.ObjectTy));
 				      ScopedMap.insertDisjoint (scope, stamp,
 								reg);
 				      Field (sfldName i, (Public, true, false),
-					     StockWerk.StockWertTy)::classDecls)
+					     System.ObjectTy)::classDecls)
 			       | Fld i =>
 				     (emit Dup;
 				      emitStamp stamp;
 				      emit (Stfld (className', fldName i,
-						   StockWerk.StockWertTy));
+						   System.ObjectTy));
 				      ScopedMap.insertDisjoint (scope, stamp,
 								reg);
 				      Field (fldName i, (Public, false, false),
-					     StockWerk.StockWertTy)::classDecls)
+					     System.ObjectTy)::classDecls)
 			   | _ => classDecls) (!classDeclsRef) delta
 		    in
 			classDeclsRef := method::newClassDecls
@@ -270,10 +272,8 @@ structure CodeStore :> CODE_STORE =
 			[(_, id, 0, (_, _, ref n, _), ref instrs)] =>
 			    Class (["Main"], (true, SealedClass),
 				   ["System", "Object"], nil,
-				   [Method (id, (Public, Static),
-					    [StockWerk.KomponistTy],
-					    StockWerk.StockWertTy,
-					    (args n, false),
+				   [Method (id, (Public, Static), nil,
+					    System.ObjectTy, (args n, false),
 					    List.rev instrs)])
 		      | _ => raise Crash.Crash "CodeStore.close"
 	    in

@@ -93,10 +93,11 @@ signature IL =
 	  | AddOvf
 	  | And
 	  | B of cond * label
+	  | Box of dottedname
 	  | Br of label
 	  | Call of isInstance * dottedname * id * ty list * ty
 	  | Callvirt of dottedname * id * ty list * ty
-	  | Castclass of dottedname
+	  | Castclass of ty
 	  | Ceq
 	  | Cgt
 	  | CgtUn
@@ -144,6 +145,7 @@ signature IL =
 	  | Tail
 	  | Throw
 	  | Try of label * label * dottedname * label * label
+	  | Unbox of dottedname
 	  | Xor
 
 	(* Top-Level Declarations *)
@@ -166,6 +168,7 @@ signature IL =
 	    id * isPublic * ty list * ty * isEntrypoint * locals * instr list
 
 	type program = decl list
+	type t = program
 
 	val outputProgram: TextIO.outstream * program -> unit
     end

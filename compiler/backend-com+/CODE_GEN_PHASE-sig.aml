@@ -12,8 +12,9 @@
 
 signature CODE_GEN_PHASE =
     sig
+	structure C: CONTEXT = EmptyContext
 	structure I: FLAT_GRAMMAR = FlatGrammar
 	structure O: IL = IL
 
-	val genComponent: I.component -> O.program
+	val translate: C.t -> Source.desc * I.component -> O.t
     end

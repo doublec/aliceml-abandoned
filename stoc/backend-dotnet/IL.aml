@@ -93,10 +93,11 @@ structure IL :> IL =
 	  | AddOvf
 	  | And
 	  | B of cond * label
+	  | Box of dottedname
 	  | Br of label
 	  | Call of isInstance * dottedname * id * ty list * ty
 	  | Callvirt of dottedname * id * ty list * ty
-	  | Castclass of dottedname
+	  | Castclass of ty
 	  | Ceq
 	  | Cgt
 	  | CgtUn
@@ -144,6 +145,7 @@ structure IL :> IL =
 	  | Tail
 	  | Throw
 	  | Try of label * label * dottedname * label * label
+	  | Unbox of dottedname
 	  | Xor
 
 	(* Top-Level Declarations *)
@@ -166,6 +168,7 @@ structure IL :> IL =
 	    id * isPublic * ty list * ty * isEntrypoint * locals * instr list
 
 	type program = decl list
+	type t = program
 
 	(* Output to File *)
 
@@ -239,6 +242,7 @@ structure IL :> IL =
 	fun eval (Add | AddOvf) = (pop 2; push 1)
 	  | eval And = (pop 2; push 1)
 	  | eval (B ((TRUE | FALSE), label)) = (pop 1; branch label)
+	  | eval (Box _) = (pop 1; push 1)
 	  | eval (B (_, label)) = (pop 2; branch label)
 	  | eval (Br label) = (branch label; invalidate ())
 	  | eval (Call (isInstance, _, _, tys, ty)) =
@@ -287,6 +291,7 @@ structure IL :> IL =
 	  | eval Throw = (pop 1; invalidate ())
 	  | eval (Try (tryLabel, _, _, catchLabel, _)) =
 	    (branch tryLabel; catch catchLabel)
+	  | eval (Unbox _) = (pop 1; push 1)
 	  | eval Xor = (pop 2; push 1)
 
 	fun outputMaxStack (q, instrs, ty) =
@@ -418,6 +423,8 @@ structure IL :> IL =
 	    (output (q, "brtrue "); outputLabel (q, label))
 	  | outputInstr (q, B (FALSE, label)) =   (*--** short form? *)
 	    (output (q, "brfalse "); outputLabel (q, label))
+	  | outputInstr (q, Box dottedname) =
+	    (output (q, "box "); outputDottedname (q, dottedname))
 	  | outputInstr (q, Br label) =   (*--** short form? *)
 	    (output (q, "br "); outputLabel (q, label))
 	  | outputInstr (q, Call (isInstance, dottedname, id, tys, ty)) =
@@ -433,8 +440,8 @@ structure IL :> IL =
 	     outputDottedname (q, dottedname); output (q, "::");
 	     outputId (q, id); output1 (q, #"(");
 	     outputTys (q, tys); output1 (q, #")"))
-	  | outputInstr (q, Castclass dottedname) =
-	    (output (q, "castclass "); outputDottedname (q, dottedname))
+	  | outputInstr (q, Castclass ty) =
+	    (output (q, "castclass "); outputTy (q, ty))
 	  | outputInstr (q, Ceq) = output (q, "ceq")
 	  | outputInstr (q, Cgt) = output (q, "cgt")
 	  | outputInstr (q, CgtUn) = output (q, "cgt.un")
@@ -538,6 +545,8 @@ structure IL :> IL =
 	     output (q, " catch "); outputDottedname (q, dottedname);
 	     output (q, " handler "); outputLabel (q, label3);
 	     output (q, " to "); outputLabel (q, label4))
+	  | outputInstr (q, Unbox dottedname) =
+	    (output (q, "unbox "); outputDottedname (q, dottedname))
 	  | outputInstr (q, Xor) = output (q, "xor")
 
 	fun outputInstrs (q, (instr as Try (_, _, _, _, _))::instrr, trys) =
