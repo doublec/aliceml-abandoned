@@ -33,6 +33,12 @@
     <LI> Andreas Rossberg:
 	 <A href="papers/intermediate.ps">The Stockhausen Intermediate
 	 Language</A>, Tech Report, 2001
+    <LI> Jan Schwinghammer:
+	 <A href="/Papers/abstracts/Schwinghammer-Diplom.html">A concurrent
+	 lambda calculus with promises and futures</A>, Diplomarbeit, 2002
+    <LI> Andreas Rossberg:
+	 <A href="papers/opaque.ps">Opaque Types and Generativity</A>,
+	 Tech Report, 2002
   </UL>
 
   <P>
