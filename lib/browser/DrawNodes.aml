@@ -13,6 +13,7 @@
  *
  *)
 
+import structure Inspector from "x-alice:/lib/tools/Inspector"
 import structure TextIO from "x-alice:/lib/system/TextIO"
 import structure Services from "Services"
 import structure Types from "Types"
@@ -20,24 +21,30 @@ import structure Helper from "Helper"
 import structure Layout from "Layout"
 import signature DRAW_NODES from "DRAW_NODES-sig"
 import structure ColorMap from "ColorMap"
+import structure WindowHelper from "WindowHelper"
+import structure Settings from "Settings"
 import structure MkColorTable from "MkColorTable"
+import structure GtkCanvas from "x-alice:/lib/gtk/GtkCanvas" (* to be removed *)
 
 open Types Helper Layout 
 
 structure DrawNodes :> DRAW_NODES =
 struct
 
-    exception  MissingColor
+    exception MissingColor
     exception DrawError
     exception NodeFound of int * int * node
-    exception Scream
 
     datatype intention = DRAW | SEARCH of int * int
     	   
     (* atomDraw *)
     fun atomDraw (node,x,y)  = case node of
 	Simple(r) 
-	=> (let val (rx,ry) = (Real.fromInt(x* 8 +2),Real.fromInt(y*13 +2))
+	=> (let 
+		val w = WindowHelper.fontWidth(!Settings.font)
+		val h = WindowHelper.fontHeight(!Settings.font)
+		val (rx,ry) = (Real.fromInt(x* w),Real.fromInt(y*h)) 
+	 (*	val _ = Services.positionGroup(#group(r), rx , ry)  	*) 
 		val color = case ColorMap.lookup(MkColorTable.colorTable,
 						 #color(r)) of 
 		            SOME x => x
@@ -47,12 +54,18 @@ struct
 					  rx,
 					  ry,
 					  color,
-					  "8x13")
+					  !Settings.font)
 		val _ = #status(r) := Types.CLEAN
-	    in (x+String.length(#rep(r)),y)
+	(*	val _ = Inspector.inspect (GtkCanvas.itemGetBounds(#group(r),
+	 0.0 , 0.0 , 0.0 , 0.0)) *)
+ 	    in (x+String.length(#rep(r)),y)
 	    end )
       | Limit(r) 
-	=> (let val (rx,ry) = (Real.fromInt(x* 8 +2),Real.fromInt(y*13 +2))
+	=> (let
+		val w = WindowHelper.fontWidth(!Settings.font)
+		val h = WindowHelper.fontHeight(!Settings.font)
+	        val (rx,ry) = (Real.fromInt(x* w),Real.fromInt(y*h)) 
+	(*	val _ = Services.positionGroup(#group(r), rx , ry) *)
 		val color = case ColorMap.lookup(MkColorTable.colorTable,
 						 LIMIT_COLOR) of 
 		            SOME x => x
@@ -65,12 +78,16 @@ struct
 					  rx,
 					  ry,
 					  color,
-					  "8x13")
+					  !Settings.font)
 		val _ = #status(r) := Types.CLEAN     
 	    in (x+1,y)
 	    end )
       | RelRefNode(r)
-        =>  ( let val (rx,ry) = (Real.fromInt(x* 8 +2),Real.fromInt(y*13 +2))
+        =>  ( let 	
+		  val w = WindowHelper.fontWidth(!Settings.font)
+		  val h = WindowHelper.fontHeight(!Settings.font)
+		  val (rx,ry) = (Real.fromInt(x* w),Real.fromInt(y*h)) 
+		 (* val _ = Services.positionGroup(#group(r), rx , ry) *) 
 		  val color = case ColorMap.lookup(MkColorTable.colorTable,
 						   #color(r)) of 
 		              SOME x => x
@@ -80,13 +97,17 @@ struct
 					    rx,
 					    ry,
 					    color,
-					    "8x13")
+					    !Settings.font)
 		  val _ = #status(r) := Types.CLEAN
 	      in (x+String.length(#rep(r)),y)
 	      end )
       | RelNode(r)
-	=> ( let val (rx,ry) =  (Real.fromInt(x* 8 +2),
-				 Real.fromInt(y*13 +2))
+	=> ( let 
+		 val w = WindowHelper.fontWidth(!Settings.font)
+		 val h = WindowHelper.fontHeight(!Settings.font)
+		 val (rx,ry) =  (Real.fromInt(x* w),
+				 Real.fromInt(y*h))
+	(*	 val _ = Services.positionGroup(#group(r), rx , ry)  *)
 		 val color = case ColorMap.lookup(MkColorTable.colorTable,
 						  #color(r)) of 
 		             SOME x => x
@@ -96,7 +117,7 @@ struct
 					   rx,
 					   ry,
 					   color,
-					   "8x13")
+					   !Settings.font)
 		 val _ = #status(r) := Types.CLEAN
 	     in (x+String.length(#rep(r)),y)
 	     end )
@@ -119,6 +140,17 @@ struct
 	    val in_bounding_box = sx >= x 
 		andalso sx < x + String.length(rep) 
 		andalso sy = y
+	    val _ = TextIO.print("Simple in bounding_box: "
+				    ^ Bool.toString(in_bounding_box)
+				    ^ " because sx ="
+				    ^ Int.toString(sx) 
+				    ^ " and sy ="
+				    ^ Int.toString(sy)
+				    ^ " and x ="
+				    ^ Int.toString(x)
+				    ^ " and y ="
+				     ^ Int.toString(y)
+				    ^ "\n")
 	    val interpunct = case desc of
 		INTERPUNCT => true
 	      | _ => false
@@ -134,9 +166,12 @@ struct
 		then (x (* + String.length(rep) *),
 		      y,
 		      SOME(n))
-	    else (x + String.length(rep),
-		  y,
-		  NONE)
+	    else if in_bounding_box then (x + String.length(rep),
+					  y,
+					  SOME(Helper.getParent(n)))
+		else (x + String.length(rep),
+		      y,
+		      NONE)
 	end
 		
     (* drawSimple *)
@@ -185,7 +220,7 @@ struct
 		   andalso sy < y + !(#height(r))
 	       val _ = TextIO.print("Concat in bounding_box: "
 				    ^ Bool.toString(in_bounding_box)
-				    ^ " beacuse sx ="
+				    ^ " because sx ="
 				    ^ Int.toString(sx) 
 				    ^ " and sy ="
 				    ^ Int.toString(sy)
@@ -225,13 +260,21 @@ struct
 				     val nothing_found = case new_found of
 					                 NONE => true
 						       | SOME _ => false
-				 in if search 
-				     andalso in_bounding_box 
-				     andalso nothing_found
-					then (x,y,SOME(n))
-				    else (new_x,new_y,new_found)
+				 in 
+				     if search then (* besserer Codeteil *)
+					 case new_found of 
+					     SOME(node_found) => (case #desc(r) of
+								      INTERPUNCT => if n = node_found
+											then  (x,y,SOME(getParent(n)))
+										    else (new_x,new_y,new_found)
+								    | _ => if n = node_found 
+									       then (x,y,SOME n)
+									   else (new_x,new_y,new_found))
+					   | NONE => (new_x,new_y,new_found)
+						 else
+						      (new_x,new_y,NONE)
 				 end
-			     end)
+			 end)
 	       else (x+get_xdim(n),y+get_ydim(n),NONE)
 	   end
       | _ => raise DrawError
@@ -288,7 +331,7 @@ struct
 				       ^ Bool.toString(setsVertical(n)) ^ "\n")
 			     in
 				 if search andalso not(in_bounding_box) 
-				     then (x+get_xdim(n),y+get_ydim(n),NONE) 
+				     then (x+get_xdim(n),y+get_ydim(n)-1,NONE)  (* -1 *)
 				 else
 				 let val (new_x',new_y',new_x2,new_found) = 
 				     (Array.foldl funct (x,y,0,NONE) 
@@ -308,11 +351,35 @@ struct
 					           andalso nothing_found 
 						      then new_y' -1
 						  else new_y'
-				 in if search 
-				     andalso in_bounding_box 
-				     andalso nothing_found
-					then (x,y,SOME(n))
-				    else (new_x,new_y,new_found)
+				 in
+				      if search then (* besserer Codeteil *)
+					 case new_found of 
+					     SOME(node_found) => (case #desc(r) of
+								      INTERPUNCT => if n = node_found
+											then  (x,y,SOME(getParent(n)))
+										    else (new_x,new_y,new_found)
+								    | _ => if n = node_found 
+									       then (x,y,SOME n)
+									   else (new_x,new_y,new_found))
+					   | NONE => (new_x,new_y,new_found)
+						 else
+						      (new_x,new_y,NONE)
+				     (* alter Code *)
+			(*	     if search then 
+					 case #desc(r) of
+					     INTERPUNCT => (case new_found of
+								SOME(node_found) => if n = node_found 
+											then (x,y,SOME(getParent(n)))
+										    else (new_x,new_y,new_found)
+							      | NONE => (new_x,new_y,NONE))
+					   | _ => (case new_found of
+						       SOME(node_found) => if n = node_found 
+									       then (x,y,SOME n)
+									   else (new_x,new_y,new_found)
+						     | NONE => (new_x,new_y,new_found))
+				     else
+					 (new_x,new_y,NONE)
+					 *)
 				 end
 			     end)
 	       else (x + get_xdim(n), y + get_ydim(n),NONE) 
@@ -367,6 +434,9 @@ struct
 			 else (x+String.length(#rep(r)),y,NONE)
 	  | SEARCH _ => atomSearch(n,x,y,intent) 
       | _ => raise DrawError
+
+    and move (n,x,y) = (Services.moveGroup(getGroup(n),x,y,!Settings.font)
+				    ;(x+get_xdim(n),y+get_ydim(n),NONE))
        
     (* draw *)
     and draw (n,x,y,intent) = case n of
@@ -374,37 +444,38 @@ struct
 			  DRAW =>
 			      if !(#status(r)) = DIRTY
 				  then drawSimple (n,x,y,intent)
-			      else (x+get_xdim(n),y+get_ydim(n),NONE)	
-			| SEARCH _ => drawSimple (n,x,y,intent))
+			      else move(n,x,y)	
+			| SEARCH _ =>  drawSimple (n,x,y,intent))
       | Concat(r) => (case intent of 
 			  DRAW => if !(#status(r)) = DIRTY
 			 then drawConcat (n,x,y,intent)
-		     else (x+get_xdim(n),y+get_ydim(n),NONE)
+		     else move(n,x,y)
 			  | SEARCH _ => drawConcat (n,x,y,intent))
       | Container(r) => (case intent of
 			     DRAW => if !(#status(r)) = DIRTY
 			    then drawContainer (n,x,y,intent)
-			else (x+get_xdim(n),y+get_ydim(n),NONE)
+			else move(n,x,y)
 		| SEARCH _ => drawContainer(n,x,y,intent))	     
       | Limit(r) => (case intent of
 			 DRAW => if !(#status(r)) = DIRTY
 			then drawLimit (n,x,y,intent)
-		    else (x+get_xdim(n),y+get_ydim(n),NONE)
+		    else move(n,x,y)
 		       | SEARCH _ => drawLimit (n,x,y,intent))
       | RelNode(r) 
 	    => (case intent of
 		    DRAW => (if !(#status(r)) = DIRTY
 				 then drawRelNode (n,x,y,intent)
-			     else ( case !(#counter(r)) of
+			     else (move(n,x,y)
+				   ;( case !(#counter(r)) of
 				   1 => (x+get_xdim(!(#content(r))),
 					 y+get_ydim(!(#content(r))),
 					 NONE)
-				 | _ => (x+get_xdim(n),y+get_ydim(n),NONE) ))
+				 | _ => (x+get_xdim(n),y+get_ydim(n),NONE) )))
 		  | SEARCH _ =>  drawRelNode (n,x,y,intent))
 	  | RelRefNode(r) => (case intent of
 			      DRAW => if !(#status(r)) = DIRTY
 					  then drawRelRefNode (n,x,y,intent)
-				      else (x+get_xdim(n),y+get_ydim(n),NONE)
+				      else move(n,x,y)
 			    | SEARCH _ =>  drawRelRefNode (n,x,y,intent))
 	  | Empty => (x,y,NONE)
 	    

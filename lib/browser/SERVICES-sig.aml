@@ -21,8 +21,10 @@ signature SERVICES =
 	type color = Gtk.object
 	type font = string
 	
-	val newTag  : tag * real * real -> tag
-	val move    : tag * real * real -> unit   
-	val printXY : string * tag * real * real * color * font -> tag
+	val newTag       : tag * real * real -> tag
+	val move         : tag * real * real -> unit   
+	val printXY      : string * tag * real * real * color * font -> tag
+	val positionGroup: tag * real * real -> unit
+	val moveGroup    : tag * int * int * string -> unit
 
     end 

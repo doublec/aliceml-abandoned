@@ -14,6 +14,7 @@
  *)
 import structure Gtk from "x-alice:/lib/gtk/Gtk"
 import structure GtkCanvas from "x-alice:/lib/gtk/GtkCanvas"
+import structure WindowHelper from "WindowHelper"
 import signature SERVICES from "SERVICES-sig"
 
        structure Services :> SERVICES =
@@ -41,6 +42,19 @@ import signature SERVICES from "SERVICES-sig"
 		   
 		   
 	       fun move(group,x,y) = GtkCanvas.itemMove(group,x,y)
+
+	       fun positionGroup (group,x,y) = (GtkCanvas.itemSet(group,"x", Gtk.DOUBLE x) 
+					       ;GtkCanvas.itemSet(group,"y", Gtk.DOUBLE y))
+					      
+
+	       fun moveGroup (group,x,y,font) = let
+						    val w = WindowHelper.fontWidth(font)
+						    val h = WindowHelper.fontHeight(font)
+						    val rx = Real.fromInt(x * w)
+						    val ry = Real.fromInt(y * h)
+						in
+						    positionGroup(group,rx,ry)
+						end
 		   
 		   
 	   end
