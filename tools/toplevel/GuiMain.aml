@@ -323,6 +323,7 @@ structure GuiMain =
 		 val _ = Gtk.textViewGetVisibleRect(Gui.progout,rq2)
 
 		 val buf = Gtk.textViewGetBuffer Gui.compilerout
+		 val progBuf = Gtk.textViewGetBuffer Gui.progout
 
 		 (* Hack alert: The scrollbar between the two panes *)
 		 (* seems to be about 18 pixels high...*)
@@ -350,7 +351,19 @@ structure GuiMain =
 			 Gtk.panedSetPosition(Gui.vpaned2,Real.round newPos);
 			 Gtk.widgetGrabFocus Gui.compilerout;
 			 Gtk.widgetSetSensitive(Gui.switch_to_editor, false)
-		     end
+		     end;
+		 (* Hack alert: scroll to end mark seems to have no effect if
+		  * performed immediately... so wait for a moment... *)
+		 spawn (
+		     await(Future.alarm(Time.fromMilliseconds(Int.toLarge 300)));
+		     Gtk.textViewScrollToMark(Gui.compilerout,
+					      Gtk.textBufferGetInsert buf,
+					      0.0, false, 0.0, 0.0);
+		     Gtk.textViewScrollToMark(Gui.progout,
+					      Gtk.textBufferGetInsert progBuf,
+					      0.0, false, 0.0, 0.0)
+		 );
+		 ()
 	     end
 
         fun new' file =

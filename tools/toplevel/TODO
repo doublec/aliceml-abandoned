@@ -3,7 +3,8 @@ TODO list for the Alice IDE
 
 Bugs:
 
-* scroll to bottom after layout change or resize
+* gtk-critical when using history for the first time
+* font in prog pane
 * propagate output width on init and after resize
 * cannot make window smaller
 
