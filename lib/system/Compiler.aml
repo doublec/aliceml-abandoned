@@ -1,0 +1,296 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2005
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure OS               from "OS"
+import structure IO               from "IO"
+import structure TextIO           from "TextIO"
+import structure TextPrimIO       from "TextPrimIO"
+import structure Url              from "Url"
+import structure Component        from "Component"
+import structure ComponentManager from "ComponentManager"
+
+import structure SMLToSeamRecursiveCompiler from "../../compiler/top/SMLToSeamRecursiveCompiler"
+
+import signature COMPILER from "COMPILER-sig"
+
+structure Compiler : COMPILER =
+struct
+    structure RecursiveCompiler = SMLToSeamRecursiveCompiler
+
+    (* Output stream *)
+
+    val outWidth  = RecursiveCompiler.Switches.Global.logWidth
+    val outStream = RecursiveCompiler.Switches.Global.logOut
+    val errWidth  = RecursiveCompiler.Switches.Global.errWidth
+    val errStream = RecursiveCompiler.Switches.Global.errOut
+    val traceStream = RecursiveCompiler.Switches.Debug.dumpOut
+
+    fun trace (s, fileOpt) =
+	TextIO.output (traceStream,
+		       "-- " ^ s ^
+		       (case fileOpt of NONE => "" | SOME name => " " ^ name) ^
+		       "...\n")
+    fun traceDone () = TextIO.output (traceStream, "-- Ready\n")
+
+
+    (* Environment *)
+
+    type env              = RecursiveCompiler.Context.t
+
+    val emptyEnv          = RecursiveCompiler.Context.empty
+    val initialEnvPromise = Promise.promise ()
+    val initialEnv        = Promise.future initialEnvPromise
+
+    val implicitImport    = "x-alice:/alicec.import"
+
+
+    (* Error handling *)
+
+    exception Error = RecursiveCompiler.Error
+
+    fun handleCompileError f x =
+	f x
+	handle RecursiveCompiler.Crash s =>
+		(TextIO.output (errStream, "internal failure at " ^ s ^ "\n");
+		 raise Error)
+	     | exn as non Error =>
+		(TextIO.output (errStream, "internal exception " ^
+					   General.exnName exn ^ "\n");
+		 raise Error)
+
+    fun handleEvalError f x =
+	Exn.catch
+	(fn p =>
+	    case Exn.fromPacket p
+	     of Component.Failure (url, Component.Eval exn) =>
+		if List.last (Url.getPath url) = ""
+		then Exn.reraise (Exn.update (p, exn))
+		else Exn.reraise p
+	      | _ => Exn.reraise p
+	)
+	(fn _ => f x)
+
+
+    (* Compiler switches *)
+
+    fun standalone f x =
+	let
+	    open RecursiveCompiler.Switches
+	    val implicitImportFile      = !Language.implicitImportFile
+	    val reexportImport          = !Language.reexportImport
+	    val retainFullImport        = !Language.retainFullImport
+	    val allowUnclosedComponents = !Language.allowUnclosedComponents
+	    val inaccessibleExport      = !Warn.inaccessibleExport
+	in
+	    Language.implicitImportFile      := SOME implicitImport;
+	    Language.reexportImport          := false;
+	    Language.retainFullImport        := false;
+	    Language.allowUnclosedComponents := false;
+	    Warn.inaccessibleExport          := true;
+	    f x finally
+	    (
+	    Language.implicitImportFile      := implicitImportFile;
+	    Language.reexportImport          := reexportImport;
+	    Language.retainFullImport        := retainFullImport;
+	    Language.allowUnclosedComponents := allowUnclosedComponents;
+	    Warn.inaccessibleExport          := inaccessibleExport
+	    )
+	end
+
+    fun incremental' importFile f x =
+	let
+	    open RecursiveCompiler.Switches
+	    val implicitImportFile      = !Language.implicitImportFile
+	    val reexportImport          = !Language.reexportImport
+	    val retainFullImport        = !Language.retainFullImport
+	    val allowUnclosedComponents = !Language.allowUnclosedComponents
+	    val inaccessibleExport      = !Warn.inaccessibleExport
+	in
+	    Language.implicitImportFile      := importFile;
+	    Language.reexportImport          := true;
+	    Language.retainFullImport        := true;
+	    Language.allowUnclosedComponents := true;
+	    Warn.inaccessibleExport          := false;
+	    f x finally
+	    (
+	    Language.implicitImportFile      := implicitImportFile;
+	    Language.reexportImport          := reexportImport;
+	    Language.retainFullImport        := retainFullImport;
+	    Language.allowUnclosedComponents := allowUnclosedComponents;
+	    Warn.inaccessibleExport          := inaccessibleExport
+	    )
+	end
+
+    fun incremental f = incremental' NONE f
+
+
+    (* Compilation *)
+
+    fun compileWith' (env, source) =
+	(trace ("Compiling", NONE);
+	 (case handleCompileError RecursiveCompiler.compileString (env, source)
+	  of (_, RecursiveCompiler.FOREIGN _) =>
+		raise RecursiveCompiler.Crash "cross-compilation not supported"
+	   | (_, RecursiveCompiler.COMPONENT {component, ...}) => component ()
+	 ) finally
+	 traceDone ()
+	)
+
+    fun compileFileWith' (env, infilename, outfilenameOpt) =
+	let
+	    val outfilename =
+		case outfilenameOpt
+		 of SOME name => name
+		  | NONE => OS.Path.joinBaseExt {base = OS.Path.base infilename,
+	    					 ext = SOME Component.extension}
+	in
+	    trace ("Compiling", SOME infilename);
+	    (case handleCompileError RecursiveCompiler.compileFile (env, infilename)
+	     of (_, RecursiveCompiler.FOREIGN _) =>
+		    raise RecursiveCompiler.Crash "cross-compilation not supported"
+	      | (_, RecursiveCompiler.COMPONENT {component, ...}) =>
+		    Component.save (outfilename, component ())
+	    ) finally
+	    traceDone ()
+	end
+
+    fun compile source =
+	standalone compileWith' (emptyEnv, source)
+    fun compileFile (infile, outfileOpt) =
+	standalone compileFileWith' (emptyEnv, infile, outfileOpt)
+    fun compileWith (env, source) =
+	incremental compileWith' (env, source)
+    fun compileFileWith (env, infile, outfileOpt) =
+	incremental compileFileWith' (env, infile, outfileOpt)
+
+
+    (* Evaluation *)
+
+    fun evalWith' (env, source) =
+	(trace ("Compiling", NONE);
+	 (case handleCompileError RecursiveCompiler.compileString (env, source)
+	  of (env', RecursiveCompiler.FOREIGN _) =>
+		raise RecursiveCompiler.Crash "cross-compilation not supported"
+	   | (env', RecursiveCompiler.COMPONENT {eval, ...}) =>
+	     let
+		val baseUrl =
+		    Url.setScheme (Url.fromString (OS.FileSys.getDir () ^ "/"),
+				   SOME "file")
+	     in
+		trace ("Evaluating", NONE);
+		(env', handleEvalError eval baseUrl)
+	     end
+	 ) finally
+	 traceDone ()
+	)
+
+    fun evalFileWith' (env, filename) =
+	(trace ("Compiling", SOME filename);
+	 (case handleCompileError RecursiveCompiler.compileFile (env, filename)
+	  of (env', RecursiveCompiler.FOREIGN _) =>
+		raise RecursiveCompiler.Crash "cross-compilation not supported"
+	   | (env', RecursiveCompiler.COMPONENT {eval, ...}) =>
+	     let
+		val baseUrl =
+		    Url.setScheme (Url.fromString (OS.Path.dir filename ^ "/"),
+				   SOME "file")
+	     in
+		trace ("Evaluating", SOME filename);
+		(env', handleEvalError eval baseUrl)
+	     end
+	 ) finally
+	 traceDone ()
+	)
+
+    fun eval source =
+	#2 (standalone evalWith' (emptyEnv, source))
+    fun evalFile filename =
+	#2 (standalone evalFileWith' (emptyEnv, filename))
+    fun evalWith (env, source) =
+	incremental evalWith' (env, source)
+    fun evalFileWith (env, filename) =
+	incremental evalFileWith' (env, filename)
+
+
+    (* Synchronisation *)
+
+    val lock		= Lock.lock ()
+
+    val compile		= Lock.sync lock compile
+    val compileWith	= Lock.sync lock compileWith
+    val compileFile	= Lock.sync lock compileFile
+    val compileFileWith	= Lock.sync lock compileFileWith
+
+    val eval		= Lock.sync lock eval
+    val evalWith	= Lock.sync lock evalWith
+    val evalFile	= Lock.sync lock evalFile
+    val evalFileWith	= Lock.sync lock evalFileWith
+
+(*
+    val withOutStream	= Lock.sync lock withOutStream
+    val withErrStream	= Lock.sync lock withErrStream
+    val withTraceStream	= Lock.sync lock withTraceStream
+    val withOutWidth	= Lock.sync lock withOutWidth
+    val withErrWidht	= Lock.sync lock withErrWidth
+*)
+
+    (* Redirection *)
+
+    fun withStream (stream, os) f x =
+	let
+	    val save = TextIO.getOutstream stream
+	in
+	    TextIO.setOutstream (stream, os);
+	    f x finally
+	    TextIO.setOutstream (stream, save)
+	end
+
+    fun withWidth (width, n) f x =
+	let
+	    val save = !width
+	in
+	    width := n;
+	    f x finally
+	    width := save
+	end
+
+    fun withOutStream os = Lock.sync lock withStream (outStream, os)
+    fun withErrStream os = Lock.sync lock withStream (errStream, os)
+    fun withTraceStream os = Lock.sync lock withStream (traceStream, os)
+
+    fun withOutWidth n = Lock.sync lock withWidth (outWidth, n)
+    fun withErrWidth n = Lock.sync lock withWidth (errWidth, n)
+
+
+    (* Initialization *)
+
+    val implicitImport = "x-alice:/alicec.import"
+
+    fun init () =
+	let
+	    open RecursiveCompiler.Switches
+	    val dumpPhases = !Debug.dumpPhases
+	    val null       = TextIO.StreamIO.mkOutstream
+				(TextPrimIO.nullWr (), IO.NO_BUF)
+	in
+	    TextIO.setOutstream (traceStream, null);
+	    Debug.dumpPhases := false;
+	    Language.unsafeImport := true;
+	    Promise.fulfill (initialEnvPromise,
+			     #1 (incremental' (SOME implicitImport)
+				 evalWith' (emptyEnv, "")));
+	    Language.unsafeImport := false;
+	    Debug.dumpPhases := dumpPhases
+	end
+
+    val _ = init ()
+end

@@ -1,0 +1,39 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2005
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure TextIO    from "TextIO"
+import structure Component from "Component"
+
+signature COMPILER =
+sig
+    type env
+
+    exception Error
+
+    val initialEnv	: env
+
+    val compile		: string -> Component.t
+    val compileWith	: env * string -> Component.t
+    val compileFile	: string * string option -> unit
+    val compileFileWith	: env * string * string option -> unit
+
+    val eval		: string -> package
+    val evalWith	: env * string -> env * package
+    val evalFile	: string -> package
+    val evalFileWith	: env * string -> env * package
+
+    val withTraceStream	: TextIO.StreamIO.outstream -> ('a -> 'b) -> 'a -> 'b
+    val withOutStream	: TextIO.StreamIO.outstream -> ('a -> 'b) -> 'a -> 'b
+    val withErrStream	: TextIO.StreamIO.outstream -> ('a -> 'b) -> 'a -> 'b
+    val withOutWidth	: int -> ('a -> 'b) -> 'a -> 'b
+    val withErrWidth	: int -> ('a -> 'b) -> 'a -> 'b
+end

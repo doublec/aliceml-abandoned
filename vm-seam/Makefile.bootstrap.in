@@ -198,6 +198,7 @@ LIBSYSTEMSOURCES0 = \
 	URL_MAP-sig.aml UrlMap.aml COMPONENT_MANAGER-sig.aml \
 	ComponentManager.aml Boot.aml PP_VALUE-sig.aml PPValue.aml \
 	PP_COMPONENT-sig.aml PPComponent.aml \
+	COMPILER-sig.aml Compiler.aml \
 	UnsafeDebugger.asig DEBUGGER-sig.aml Debugger.aml
 LIBUTILITYSOURCES0 = \
 	$(LIBUTILITYNATIVES0:%=Unsafe%.asig) \

@@ -73,9 +73,11 @@ Library:
 * StringCvt: fixed pad{Left,Right}.
 * ByNeed: moved to Future structure.
 * Future: added ByNeed and Concur functors.
+* Lock: sync is now re-entrant.
 * Package: deleted separate val_package type.
 * TextIO, StreamIO: fixed buffering of TTY output.
 * TextIO: implemented CR/NL translation properly.
+* PrimIO: new functions openVectorList{Rd,Wr}, useful for internal redirection.
 * GlobalStamp: fixed toString.
 * Channel: new module for concurrent message channels.
 * Print: added function register for hooking user-defined printing functions.

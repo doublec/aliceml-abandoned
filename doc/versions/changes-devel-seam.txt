@@ -18,7 +18,9 @@ Linker:
 Library:
 
 * [NEW] Date: added fromISO, toISO, scanISO for locale-independent date formats.
+* [NEW] PrimIO: functions openVectorList{Rd,Wr}, useful for redirection.
 * [NEW] Store: new low-level interface to runtime heap and garbage collector.
+* [CHG] Lock: sync is now re-entrant.
 * [CHG] Minimizer: removed, superseded by Store component.
 * [CHG] Http: ignore multiple headers; replace empty reguest URIs with "/".
 * [FIX] IntInf: fixed handling of division by 0.
