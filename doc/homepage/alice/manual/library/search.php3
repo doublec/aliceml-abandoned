@@ -152,7 +152,7 @@ signature SEARCH =
          to <I>bound</I>, but there might be solutions deeper in the tree,
          <TT>CUT</TT> is returned.
          In case the entire search tree has a depth less than
-         <I>bound<I> and no solution exists, <I>NONE</I> is returned.
+         <I>bound</I> and no solution exists, <I>NONE</I> is returned.
       </P>
     </DD>
 
