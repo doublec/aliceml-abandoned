@@ -24,9 +24,9 @@ SRCDIR = $(SRCTOP)/lib/inspector
 VPATH = $(SRCDIR)
 
 OZC = ozc
-OZCOPTS =
+OZCOPTS = -z9
 OZL = stol
-OZLOPTS =
+OZLOPTS = -z9
 STOC = stoc
 STOCOPTS = --no-dump-elaboration-sig
 
