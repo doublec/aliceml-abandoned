@@ -10,8 +10,8 @@
  *   $Revision$
  *)
 
-functor MakePickleTarget(structure Sig: SIGNATURE
-			     where type t = PickleGrammar.sign): TARGET =
+functor MkPickleTarget(structure Sig: SIGNATURE
+			   where type t = PickleGrammar.sign): TARGET =
     struct
 	structure C = EmptyContext
 	structure Sig = Sig
@@ -23,7 +23,7 @@ functor MakePickleTarget(structure Sig: SIGNATURE
 					PickleGrammar.Closure (_, #[]),
 					PickleGrammar.Sign exportSign]) =
 	    exportSign
-	  | sign _ = raise Crash.Crash "MakeBackendStockwerk.sign"
+	  | sign _ = raise Crash.Crash "MkBackendStockwerk.sign"
 
 	fun save () name value =
 	    let
@@ -34,19 +34,19 @@ functor MakePickleTarget(structure Sig: SIGNATURE
 	    end
 
 	fun apply () _ =
-	    raise Crash.Crash "MakeBackendStockwerk.apply: not implemented"
+	    raise Crash.Crash "MkBackendStockwerk.apply: not implemented"
     end
 
-functor MakeBackendStockwerk(structure Switches: SWITCHES
-			     structure PickleTarget: TARGET
+functor MkBackendStockwerk(structure Switches: SWITCHES
+			   structure PickleTarget: TARGET
 				where type t = PickleGrammar.t): PHASE =
-    MakeTracingPhase(structure Phase =
-			 struct
-			     structure C = EmptyContext
-			     structure I = FlatGrammar
-			     structure O = PickleTarget
+    MkTracingPhase(structure Phase =
+		       struct
+			   structure C = EmptyContext
+			   structure I = FlatGrammar
+			   structure O = PickleTarget
 
-			     val translate = CodeGenPhase.translate
-			 end
-		     structure Switches = Switches
-		     val name = "Emitting Pickle")
+			   val translate = CodeGenPhase.translate
+		       end
+		   structure Switches = Switches
+		   val name = "Emitting Pickle")
