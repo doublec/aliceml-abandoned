@@ -39,8 +39,6 @@ in
 structure NewNode :> NEW_NODE =
 struct
     
-    val relmode = ref false
-
     val dict = MainDictionary.empty
     val reldict = RelManDictionary.empty	
 
@@ -49,7 +47,7 @@ struct
     (* newNode *)
     fun newNode (v,t) = let val va = UnsafeValue.cast v: Reflect.value
                             val i = MainDictionary.insert(Empty,dict)
-			    val _ = RelManDictionary.insert(nil,reldict)
+			    val _ = RelManDictionary.update(i,reldict,nil)
 			    val node =  createGraph (va,t,Empty,i,0)
 			in (MainDictionary.insert(node,dict) ; node)
 			end
@@ -59,7 +57,33 @@ struct
 	if !relmode 
 	    then let val ind = if p = Empty then i else getAncIndex p
                      val relman = RelManDictionary.return(ind,reldict)
-		 in Empty end (* !!!!!!! *)
+                     val l = List.length(relman)
+                     val str = "Ref"^Int.toString(l)
+		 in 
+		     (case List.find (fn x   
+				     => if getDesc(x) = INTERPUNCT  
+					    then false  
+					else UnsafeValue.same(getValue  
+							      (getDesc(x)),  
+							      va) )  
+			            relman of   
+		      NONE 
+		      => let val desc = createValue(va,t,NO_ACTIONS)   
+			     val node =     
+				 createRelNode (desc,Empty,p,i,str,relman, 
+						setGroup)   
+			     val c = createUsualGraph (va,t,node,0,d)   
+			 in ( case c of    
+			     Simple(_) => c   
+                                | Empty => c    
+                                | _ => ( setContent (node,c)   
+					; RelManDictionary.update(ind,reldict, 
+			                     List.append(relman,[node]))  
+					; node ) )  
+			 end    
+		    | SOME n => createRelRefNode (INTERPUNCT,p,i,str^" as ",  
+						  n,setGroup) ) 
+		 end  
 	else createUsualGraph (va,t,p,i,d)
 
     (* createUsualGraph *)
@@ -380,9 +404,9 @@ struct
 				    if Path.equal(path,PervasiveType.path_ref)
 					then REF_COLOR
 				    else DEFAULT)
-			| _ => DEFAULT) )
-	      in createSimple (#desc(r),p,i,#rep(r),color,setGroup)
-	      end
+			| _ => DEFAULT) ) 
+	      in createSimple (#desc(r),p,i,#rep(r),color,setGroup) 
+	      end  
         | CONCAT(r) => let val na = Array.array(Vector.length(#kids(r)),
 						 Empty)
                             val concat = createConcat(#desc(r),p,i,na,~1,~1,
@@ -424,7 +448,7 @@ struct
 						      color = color, 
 						      status = ref DAZZLED,
 						      group = f(p)}
-
+ 
     (* createConcat *)
     and createConcat (desc,p,i,na,w,h,f) =  Concat {desc = desc,
 						    parent = p,
@@ -455,6 +479,33 @@ struct
 						   depth = d,
 						   status = ref DAZZLED,
 						   group = f(p)}
+
+    (* createRelNode *)
+    and createRelNode (desc,c,p,i,str,rman,f) = 
+	RelNode {desc = desc, 
+                 content = ref c,
+		 parent = p,  
+		 index = i, 
+		 counter = ref 1, 
+		 rep = str, 
+		 relman = ref rman, 
+		 width = ref ~1,
+		 height = ref ~1,
+		 color = REL_COLOR  , 
+		 status = ref DAZZLED, 
+		 group = f(p)}
+
+    (* createRelRefNode *)
+    and createRelRefNode (desc,p,i,str,rnode,f) = 
+	RelRefNode {desc = desc, 
+		    parent = p, 
+		    index = i, 
+		    rep = str, 
+		    relnode = rnode,
+		    width = ref(String.length(str)), 
+		    color = REF_COLOR, 
+		    status = ref DAZZLED,  
+		    group = f(p)}  
                                                     
     (* queryDepth *)
     and queryDepth (va,t,p,i,d,row,f) = 
