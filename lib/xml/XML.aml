@@ -6,6 +6,29 @@ signature ALICE_XML =
 
 	exception documentParsingError
 
+	datatype xmlNodeType =
+	    ATTRIBUTE_DECL
+	  | ATTRIBUTE_NODE
+	  | CDATA_SECTION_NODE
+	  | COMMENT_NODE
+	  | DOCB_DOCUMENT_NODE
+	  | DOCUMENT_FRAG_NODE
+	  | DOCUMENT_NODE
+	  | DOCUMENT_TYPE_NODE
+	  | DTD_NODE
+	  | ELEMENT_DECL
+	  | ELEMENT_NODE
+	  | ENTITY_DECL
+	  | ENTITY_NODE
+	  | ENTITY_REF_NODE
+	  | HTML_DOCUMENT_NODE
+	  | NAMESPACE_DECL
+	  | NOTATION_NODE
+	  | PI_NODE
+	  | TEXT_NODE
+	  | XINCLUDE_END
+	  | XINCLUDE_START
+
 	infix />
 	fun /> : xmlNode * (xmlNode -> 'a) -> 'a
 
@@ -15,6 +38,7 @@ signature ALICE_XML =
 	fun null : xmlNode -> bool
 	fun parent : xmlNode -> xmlNode
 	fun properties : xmlNode -> xmlNode list
+	fun getType : xmlNode -> xmlNodeType
 	fun getProp : xmlNode -> string -> string option
 	fun getContent : xmlNode -> bool -> string option
     end
@@ -24,6 +48,29 @@ structure AliceXML :> ALICE_XML =
 	type xmlNode
 
 	exception documentParsingError
+
+	datatype xmlNodeType =
+	    ATTRIBUTE_DECL
+	  | ATTRIBUTE_NODE
+	  | CDATA_SECTION_NODE
+	  | COMMENT_NODE
+	  | DOCB_DOCUMENT_NODE
+	  | DOCUMENT_FRAG_NODE
+	  | DOCUMENT_NODE
+	  | DOCUMENT_TYPE_NODE
+	  | DTD_NODE
+	  | ELEMENT_DECL
+	  | ELEMENT_NODE
+	  | ENTITY_DECL
+	  | ENTITY_NODE
+	  | ENTITY_REF_NODE
+	  | HTML_DOCUMENT_NODE
+	  | NAMESPACE_DECL
+	  | NOTATION_NODE
+	  | PI_NODE
+	  | TEXT_NODE
+	  | XINCLUDE_END
+	  | XINCLUDE_START
 
 	infix />
 	fun node /> f = f node
@@ -50,6 +97,7 @@ structure AliceXML :> ALICE_XML =
 	val null = X.isNull
 	val parent = X.parent
 	fun properties n = rev (getSiblingsList (X.properties n) nil)
+	val getType = X.getType
 	fun getProp n s = X.getProp(n, s)
 	fun getContent n f = X.nodeListGetString(X.children n,
 						 if f then 1 else 0)
