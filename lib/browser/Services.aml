@@ -1,0 +1,133 @@
+(*
+ * Authors:
+ *   Bernadette Blum <blum@ps.uni-sb.de>
+ *   Marvin Schiller <schiller@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Bernadette Blum, 2002
+ *   Marvin Schiller, 2002
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
+import structure TextIO from "x-alice:/lib/system/TextIO"
+import structure Inspector from "x-alice:/lib/tools/Inspector"
+import structure Gtk from "x-alice:/lib/gtk/Gtk"
+import structure GtkCanvas from "x-alice:/lib/gtk/GtkCanvas"
+import structure WindowHelper from "WindowHelper"
+import signature SERVICES from "SERVICES-sig"
+
+       structure Services :> SERVICES =
+	   struct
+	       type tag = Gtk.object
+	       type color = Gtk.object
+	       type font = string
+		   
+	       fun newTag(parent,x,y) = 
+		   GtkCanvas.itemNew(parent, 
+				     GtkCanvas.GROUP,
+				     [("x", Gtk.DOUBLE y), 
+				      ("y", Gtk.DOUBLE y)])
+		   
+		   
+		   
+	       fun printXY (str,group,x,y,c,font) =  
+		   GtkCanvas.itemNew(group, 
+				     GtkCanvas.TEXT, 
+				     [("text", Gtk.STRING str),
+				      ("font", Gtk.STRING font),
+				      ("x", Gtk.DOUBLE(x)), ("y", Gtk.DOUBLE(y)),
+				      ("fill_color_gdk", Gtk.OBJECT(c) ),
+				      ("anchor", Gtk.INT(2))]) 
+		   
+		   
+	 fun move(group,x,y) = GtkCanvas.itemMove(group,x,y)
+
+	 fun positionGroup (group,x,y) = 
+	     (GtkCanvas.itemSet(group,"x", Gtk.DOUBLE x) 
+	      ;GtkCanvas.itemSet(group,"y", Gtk.DOUBLE y))
+					      
+		   (*
+
+	 fun moveGroup (group,x,y,font) = 
+		    let
+			val w = WindowHelper.fontWidth(font)
+                        val h = WindowHelper.fontHeight(font)
+                        val rx = Real.fromInt(x * w)
+                        val ry = Real.fromInt(y * h)
+						in
+	       		    positionGroup(group,rx,ry)
+	   end *)
+		   
+	  fun moveGroup (group,x,y,font) = 
+	      let
+		  val w = WindowHelper.fontWidth(font)
+		  val h = WindowHelper.fontHeight(font)
+		  val rx = Real.fromInt(x * w)
+		  val ry = Real.fromInt(y * h)
+		  val _ = TextIO.print("ITEM MOVE BY " 
+					^ Real.toString(rx)
+					^ "/" 
+					^ Real.toString(ry)
+				         ^ "\n")
+	      in
+		  GtkCanvas.itemMove(group,rx,ry)
+	      end
+	  
+			     
+	   fun getCoordinates (group,font) = 
+	       let
+		   val w = WindowHelper.fontWidth(font)
+		   val h = WindowHelper.fontHeight(font)
+		   val (rx1,ry1,rx2,ry2) = 
+		       GtkCanvas.itemGetBounds(group, 0.0 , 0.0 , 0.0 , 0.0)
+		   val x1 = (Real.trunc rx1) div w
+		   val y1 = (Real.trunc ry1) div h
+		   val x2 = (Real.trunc rx2) div w
+		   val y2 = (Real.trunc ry2) div h
+	       in
+		   (x1,y1,x2,y2)
+	       end
+		   
+	   fun getPosition (group,font) = 
+	       let
+		   val w = WindowHelper.fontWidth(font)
+		   val h = WindowHelper.fontHeight(font)
+		   val (rx1,ry1,_,_) = 
+		       GtkCanvas.itemGetBounds(group, 0.0 , 0.0 , 0.0 , 0.0)
+		   val x1 = (Real.trunc rx1) div w
+		   val y1 = (Real.trunc ry1) div h
+	       in
+		   (x1,y1)
+	       end
+
+	   fun itemMoveTo (group,rx,ry) = 
+	       let
+		   val (rx1,ry1,_,_) = 
+		       GtkCanvas.itemGetBounds(group, 0.0 , 0.0 , 
+					       1000.0 , 1000.0)
+		   val (absx,absy) = GtkCanvas.itemI2w(group,rx1,ry1)
+		   val _ = if absy <> ry1 then TextIO.print("DIFFERENT!\n")
+			   else ()
+		   val dx = Real.- (rx, absx)
+		   val dy = Real.- (ry, absy)
+	       in
+		   if absx = rx andalso absy = ry
+		       then ()
+		   else (GtkCanvas.itemMove(group,dx,dy)
+			 ; TextIO.print("ITEM MOVE FROM " 
+					^ Real.toString(absx)
+					^ "/" 
+					^ Real.toString(absy)
+					^ " TO "
+					^ Real.toString(rx)
+					^ "/" 
+					^ Real.toString(ry)
+					^ "\n"))
+	       end
+
+	   end
+       
