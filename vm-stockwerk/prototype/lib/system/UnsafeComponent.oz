@@ -20,6 +20,8 @@ import
    Resolve(trace)
    System(printError)
    Pickle(load save) at '../../Pickle.ozf'
+require
+   Helper(pushCall: PushCall) at '../../Helper.ozf'
 export
    module: ComponentComponent
 define
@@ -119,7 +121,7 @@ define
 	    end#r_t
 	 I_apply:
 	    fun {$ Body Imports TaskStack}
-	       continue(arg({Record.map Imports fun {$ tuple(_ Str)} Str end})
-			{Body.1.1.pushCall Body TaskStack.2})
+	       {PushCall arg({Record.map Imports fun {$ tuple(_ Str)} Str end})
+		Body TaskStack.2}
 	    end#rr_t)
 end
