@@ -7,7 +7,9 @@ structure Extract :> EXTRACT=
 
 	exception Error of string
 
-	fun eError (e, po) = (print("Error in line " ^ posToString po ^ ": " ^ e ^ "\n");
+	val errorFile = ref "?"
+
+	fun eError (e, po) = (print("Error in file " ^ (!errorFile) ^ " in line " ^ posToString po ^ ": " ^ e ^ "\n");
 			      raise Error e)
 	fun ieError (e, po) = (print("Internal Error in structure Extract in position: " ^ posToString po ^ ": " ^ e ^ "\n");
 			       raise Error e)
@@ -112,8 +114,9 @@ structure Extract :> EXTRACT=
 	(* extract : lex list -> (regexp * atexp IntMap.map) StringMap.map,
 	 * returns a map containing for each key (found lex-id) the pair of regexp and finishing-action-map
 	 *)
-	fun extract ll = 
+	fun extract (ll, fileName) = 
 	    let
+		val _ = errorFile := fileName
 		val map = StringMap.empty
 		val map' = getLexer(ll, map)
 	    in

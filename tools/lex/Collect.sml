@@ -6,8 +6,9 @@ structure Collect :> COLLECT =
 
 	exception Error of string
 
+	val errorFile = ref "?"
 
-	fun cError (e, po) = (print("Error in line " ^ posToString po ^ ": " ^ e ^ "\n");  raise Error e)
+	fun cError (e, po) = (print("Error in file " ^ (!errorFile) ^ " in line " ^ posToString po ^ ": " ^ e ^ "\n");  raise Error e)
 
 
 	(* lookup : StringMap.map * string * position -> regexp,
@@ -134,10 +135,11 @@ structure Collect :> COLLECT =
 	  | substLruleList' (                       _ , map, result) = (rev result, map)
 		
 
-	(* collect : lex list -> lex list, replaces all regids with there value and removes their declaration
+	(* collect : lex list * string -> lex list, replaces all regids with there value and removes their declaration
 	 *)
-	fun collect lexlist = 
+	fun collect (lexlist, fileName) = 
 	    let
+		val _ = errorFile := fileName
 		val (ll, _ ) = substLexList ( lexlist,
 					     StringMap.singleton ("eof", 
 								  (CHARS (BoolVector.tabulate(257, fn x => x = 256), 0, (~1, ~1) ),

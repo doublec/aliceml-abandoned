@@ -14,10 +14,10 @@ structure Hose :> HOSE =
 			val input = TextIO.inputAll inputStream
 			val _ = TextIO.closeIn inputStream
 		    in
-			Collect.collect (Parse.parse input)
+			Collect.collect (Parse.parse input, !inFile)
 		    end
 
-		val lexMap  = Extract.extract lexList 
+		val lexMap  = Extract.extract (lexList, !inFile)
 
 		val autoMap = Table.makeAuto lexMap
 
@@ -55,7 +55,7 @@ structure Hose :> HOSE =
 		 | (IO.Io {name,function="inputAll",cause}) => (TextIO.output (TextIO.stdErr, "input file seems to be a directory\n");
 			   TextIO.flushOut TextIO.stdErr;
 			   OS.Process.exit OS.Process.failure)
-		 | exn => (TextIO.output(TextIO.stdErr, "Hose: unhandled internal exception " ^ General.exnName exn ^ "\n");
+		 | exn => (TextIO.output(TextIO.stdErr, "Hose: unhandled internal exception: " ^ General.exnName exn ^ "\n");
 			   OS.Process.exit OS.Process.failure)
        
     end
