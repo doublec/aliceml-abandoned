@@ -45,6 +45,7 @@
 	val sub :         'a list * int -> 'a
 	val take :        'a list * int -> 'a list
 	val drop :        'a list * int -> 'a list
+	val split :       'a list * int -> 'a list * 'a list
 
 	val rev :         'a list -> 'a list
 	val op @ :        'a list * 'a list -> 'a list
@@ -113,6 +114,18 @@
       synonym for <TT>nth</TT>, for consistency with other collection types
       like <A href="vector.html">vectors</A> and <A
       href="array.html">arrays</A>.</P>
+    </DD>
+
+    <DT>
+      <TT>split (<I>l</I>, <I>i</I>)</TT>
+    </DT>
+    <DD>
+      <P>Returns a pair <TT>(<I>l1</I>,<I>l2</I>)</TT> of lists, where
+      <TT><I>l1</I></TT> contains the first <TT><I>i</I></TT> of
+      <TT><I>l</I></TT> and <TT><I>l2</I></TT> the remaining ones. Raises
+      <TT>Subscript</TT> if <TT><I>i</I></TT> &lt; 0 or
+      <TT><I>i</I></TT> &gt;= <TT>length <I>l</I></TT>. Equivalent to
+      <TT>(take (<I>l</I>,<I>i</I>), drop (<I>l</I>,<I>i</I>)</TT>.
     </DD>
 
     <DT>
