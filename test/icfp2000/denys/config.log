@@ -1,0 +1,19 @@
+This file contains any messages produced by compilers while
+running configure, to aid debugging if configure makes a mistake.
+
+configure:556: checking host system type
+configure:577: checking whether make sets ${MAKE}
+configure:615: checking for ozinstall
+configure:672: checking for gzip
+configure:739: checking for oztool.exe
+configure:739: checking for oztool
+configure:835: checking for ozc.exe
+configure:835: checking for ozc
+configure:908: checking for ozl.exe
+configure:908: checking for ozl
+configure:981: checking for ozengine.exe
+configure:981: checking for ozengine
+configure:1054: checking for ozh.exe
+configure:1054: checking for ozh
+configure:1127: checking for zip.exe
+configure:1127: checking for zip
