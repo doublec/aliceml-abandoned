@@ -272,11 +272,13 @@ structure World =
 	fun cellToChar (c:cell) = 	
 	if #rocky(c) then "*"
 	else (case !(#ant c) of SOME(a) =>
-			(case (Ant.getColor a, Ant.getHasFood a) 
-			 of (Ant.Red, false) => "r"
-			 | (Ant.Red, true) => "R"
-			 | (Ant.Black, false) => "b"
-			 | (Ant.Black, true) => "B"		  
+			(case (Ant.getColor a, Ant.getHasFood a, !(#food c) ) 
+			 of (Ant.Red, false, 0) => "r"
+			 | (Ant.Red, false, _) => "m"
+			 | (Ant.Red, true, _) => "R"
+			 | (Ant.Black, false, 0) => "b"
+			 | (Ant.Black, false, _) => "c"			 
+			 | (Ant.Black, true, _) => "B"		  
 			)
 		| _ =>
 			if !(#food c) >0 then (Int.toString (!(#food c)) )
