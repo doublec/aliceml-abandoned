@@ -35,14 +35,14 @@ DEFINE1(getStackTraceDepth) {
   DECLARE_OBJECT(_this, x0);
   Assert(_this != INVALID_POINTER);
   word wBacktrace = _this->GetInstanceField(0);
-  if (wBacktrace == null) RETURN_INT(0);
-  RETURN_INT(Backtrace::FromWordDirect(wBacktrace)->GetNumberOfElements());
+  if (wBacktrace == null) RETURN_JINT(0);
+  RETURN_JINT(Backtrace::FromWordDirect(wBacktrace)->GetNumberOfElements());
 } END
 
 DEFINE2(getStackTraceElement) {
   DECLARE_OBJECT(_this, x0);
   Assert(_this != INVALID_POINTER);
-  DECLARE_INT(i, x1);
+  DECLARE_JINT(i, x1);
   word wBacktrace = _this->GetInstanceField(0);
   if (wBacktrace == null)
     THROW(NullPointerException, "backtrace");

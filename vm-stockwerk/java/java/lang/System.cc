@@ -214,16 +214,16 @@ DEFINE0(currentTimeMillis) {
     Error("SystemTimeToFileTime failed"); //--**
   RETURN2(JavaLong::New(ft.dwHighDateTime, ft.dwLowDateTime)->ToWord(), null);
 #else
-  RETURN_INT(0); //--**
+  RETURN_JINT(0); //--**
 #endif
 } END
 
 DEFINE5(arraycopy) {
   word wSrc = x0;
-  DECLARE_INT(srcPos, x1);
+  DECLARE_JINT(srcPos, x1);
   word wDest = x2;
-  DECLARE_INT(destPos, x3);
-  DECLARE_INT(length, x4);
+  DECLARE_JINT(destPos, x3);
+  DECLARE_JINT(length, x4);
   Block *destBlock = Store::WordToBlock(wDest);
   if (destBlock == INVALID_POINTER) {
     if (Store::WordToInt(wDest) == INVALID_POINTER) REQUEST(wDest);
