@@ -60,9 +60,19 @@ structure Debug :> DEBUG =
 	  | patToString (RefPat (_, pat)) = "(ref " ^ patToString pat ^ ")"
 	  | patToString (TupPat (_, pats)) =
 	    "(" ^ listToString patToString pats ^ ")"
-	  | patToString (RowPat (_, patFields)) =
+	  | patToString (RowPat (info, patFields)) =
 	    let
-		val hasDots = true   (*--** derive from info type *)
+		val row = Type.asRow (valOf (IntermediateInfo.typ info))
+		val n =
+		    let
+			fun length row =
+			    if Type.isEmptyRow row then 0
+			    else 1 + length (Type.tailRow row)
+		    in
+			length row
+		    end
+		val hasDots =
+		    n > List.length patFields orelse Type.isUnknownRow row
 	    in
 		"{" ^
 		listToString (fn Field (_, lab, pat) =>

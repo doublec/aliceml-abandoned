@@ -34,7 +34,7 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 	val longid_false = ShortId ((Source.nowhere, NONE), id_false)
 
 	structure FieldLabelSort =
-	    MakeLabelSort(type 'a t = Label.t * id
+	    MakeLabelSort(type 'a t = Label.t * 'a
 			  fun get (label, _) = label)
 
 	type mapping = (pos * id) list
@@ -217,13 +217,13 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 		val r = ref NONE
 		val rest = [O.IndirectStm (stmInfo info, r)]
 		val (stms, fields) =
-		    List.foldr (fn (Field (_, Lab (_, s), exp),
+		    List.foldr (fn (Field (_, Lab (_, label), exp),
 				    (stms, fields)) =>
 				let
 				    val (stms', id) =
 					unfoldTerm (exp, Goto stms)
 				in
-				    (stms', (s, id)::fields)
+				    (stms', (label, id)::fields)
 				end) (rest, nil) expFields
 		val exp' =
 		    case FieldLabelSort.sort fields of
@@ -235,8 +235,8 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 		r := SOME (f exp'::translateCont cont);
 		stms
 	    end
-	  | translateExp (SelExp (info, Lab (_, s)), f, cont) =
-	    f (O.SelExp (info, s))::translateCont cont
+	  | translateExp (SelExp (info, Lab (_, label)), f, cont) =
+	    f (O.SelExp (info, label))::translateCont cont
 	  | translateExp (VecExp (info, exps), f, cont) =
 	    let
 		val r = ref NONE
@@ -326,7 +326,7 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 		stms1
 	    end
 	  | translateExp (UpExp (_, exp), f, cont) =
-	    translateExp (exp, f, cont)   (*--** *)
+	    translateExp (exp, f, cont)   (*--** UpExp *)
 	  | translateExp (AndExp (info, exp1, exp2), f, cont) =
 	    translateExp (IfExp (info, exp1,
 				 exp2, VarExp (info, longid_false)), f, cont)
@@ -562,64 +562,63 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 	    end
 	and translateTest (LitTest lit, _, mapping) =
 	    (nil, O.LitTest lit, mapping)
-	  | translateTest (ConTest (longid, false), _, mapping) =
+	  | translateTest (ConTest (longid, NONE), _, mapping) =
 	    let
 		val (stms, id) = translateLongid longid
 	    in
 		(stms, O.ConTest (id, NONE), mapping)
 	    end
-	  | translateTest (ConTest (longid, true), pos, mapping) =
+	  | translateTest (ConTest (longid, SOME typ), pos, mapping) =
 	    let
 		val (stms, id) = translateLongid longid
-		val id' = freshId (Source.nowhere, NONE)   (*--** Type *)
+		val id' = freshId (Source.nowhere, SOME typ)
 		val mapping' = ((Label.fromString ""::pos), id')::mapping
 	    in
 		(stms, O.ConTest (id, SOME id'), mapping')
 	    end
-	  | translateTest (RefTest, pos, mapping) =
+	  | translateTest (RefTest typ, pos, mapping) =
 	    let
-		val id = freshId (Source.nowhere, NONE)   (*--** Type *)
+		val id = freshId (Source.nowhere, SOME typ)
 		val mapping' = ((Label.fromString ""::pos), id)::mapping
 	    in
 		(nil, O.RefTest id, mapping')
 	    end
-	  | translateTest (TupTest n, pos, mapping) =
+	  | translateTest (TupTest typs, pos, mapping) =
 	    let
 		val ids =
-		    List.tabulate (n, fn _ => freshId (Source.nowhere, NONE))
-		    (*--** type above *)
-		val labs = List.tabulate (n, fn i => Label.fromInt (i + 1))
+		    List.map (fn typ => freshId (Source.nowhere, SOME typ))
+		    typs
 		val mapping' =
 		    foldli (fn (i, id, mapping) =>
 			    (Label.fromInt i::pos, id)::mapping) mapping ids
 	    in
 		(nil, O.TupTest ids, mapping')
 	    end
-	  | translateTest (RecTest labs, pos, mapping) =
+	  | translateTest (RecTest labelTypList, pos, mapping) =
 	    let
-		val stringIdList =
-		    List.map (fn s => (s, freshId (Source.nowhere, NONE))) labs
-		    (*--** type above *)
+		val labelIdList =
+		    List.map (fn (label, typ) =>
+			      (label, freshId (Source.nowhere, SOME typ)))
+		    labelTypList
 		val mapping' =
-		    ListPair.foldr (fn (s, (_, i), mapping) =>
-				    (s::pos, i)::mapping)
-		    mapping (labs, stringIdList)
+		    ListPair.foldr (fn ((label, _), (_, i), mapping) =>
+				    (label::pos, i)::mapping)
+		    mapping (labelTypList, labelIdList)
 	    in
-		(nil, O.RecTest stringIdList, mapping')
+		(nil, O.RecTest labelIdList, mapping')
 	    end
-	  | translateTest (LabTest string, pos, mapping) =
+	  | translateTest (LabTest (label, typ), pos, mapping) =
 	    let
-		val id = freshId (Source.nowhere, NONE)   (*--** type *)
-		val mapping' = ((string::pos), id)::mapping
+		val id = freshId (Source.nowhere, SOME typ)
+		val mapping' = ((label::pos), id)::mapping
 	    in
-		(nil, O.LabTest (string, id), mapping')
+		(nil, O.LabTest (label, id), mapping')
 	    end
-	  | translateTest (VecTest n, pos, mapping) =
+	  | translateTest (VecTest typs, pos, mapping) =
 	    let
 		val ids =
-		    List.tabulate (n, fn _ => freshId (Source.nowhere, NONE))
-		    (*--** type above *)
-		val labs = List.tabulate (n, fn i => Label.fromInt (i + 1))
+		    List.map (fn typ => freshId (Source.nowhere, SOME typ))
+		    typs
 		val mapping' =
 		    foldli (fn (i, id, mapping) =>
 			    (Label.fromInt i::pos, id)::mapping) mapping ids
@@ -628,12 +627,6 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 	    end
 	  | translateTest ((GuardTest (_, _) | DecTest (_, _)), _, _) =
 	    raise Crash.Crash "MatchCompilationPhase.translateTest"
-
-	fun getPrintName (Id (_, _, name)) = Label.fromName name
-
-	structure IdSort =
-	    MakeLabelSort(type 'a t = id
-			  val get = getPrintName)
 
 	fun translate (imports, (exportExp, sign)) =
 	    let

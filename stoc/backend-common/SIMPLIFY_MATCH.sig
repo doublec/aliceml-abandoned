@@ -16,16 +16,17 @@ signature SIMPLIFY_MATCH =
 	structure O: IMPERATIVE_GRAMMAR = ImperativeGrammar
 
 	type pos = Label.t list
+	type typ = Type.t
 
 	datatype test =
 	    LitTest of I.lit
-	  | ConTest of I.longid * bool   (* has args *)
-	  | RefTest
-	  | TupTest of int
-	  | RecTest of Label.t list
+	  | ConTest of I.longid * typ option   (* has args *)
+	  | RefTest of typ
+	  | TupTest of typ list
+	  | RecTest of (Label.t * typ) list
 	    (* sorted, all labels distinct, no tuple *)
-	  | LabTest of Label.t
-	  | VecTest of int
+	  | LabTest of Label.t * typ
+	  | VecTest of typ list
 	  | GuardTest of mapping * I.exp
 	  | DecTest of mapping * I.dec list
 	withtype mapping = (pos * I.id) list

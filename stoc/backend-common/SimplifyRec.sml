@@ -50,13 +50,6 @@ structure SimplifyRec :> SIMPLIFY_REC =
 	    if s = s' then SOME x else select (fieldr, s')
 	  | select (nil, _) = NONE
 
-	fun isSubarity (xs as Field (_, Lab (_, s), _)::xr,
-			Field (_, Lab (_, s'), _)::yr) =
-	    if s = s' then isSubarity (xr, yr)
-	    else isSubarity (xs, yr)
-	  | isSubarity (nil, _) = true
-	  | isSubarity (_, nil) = false
-
 	fun unalias (WildPat _) = (nil, NONE)
 	  | unalias (VarPat (_, id)) = ([id], NONE)
 	  | unalias (AsPat (_, id, pat)) =
@@ -88,7 +81,7 @@ structure SimplifyRec :> SIMPLIFY_REC =
 	  | patToExp (RefPat (info, pat)) =
 	    let
 		val (pat', exp') = patToExp pat
-		val info' = (#1 info, NONE)   (*--** *)
+		val info' = (#1 info, NONE)   (*--** type of ref constructor *)
 	    in
 		(RefPat (info, pat'), AppExp (info, RefExp info', exp'))
 	    end
@@ -98,9 +91,23 @@ structure SimplifyRec :> SIMPLIFY_REC =
 	    in
 		(TupPat (info, pats'), TupExp (info, exps'))
 	    end
-	  | patToExp (RowPat (info, patFields, hasDots)) =
+	  | patToExp (RowPat (info, patFields, false)) =
+	    let
+		val (patFields', expFields') =
+		    List.foldr (fn (Field (info, lab, pat),
+				    (patFields, expFields)) =>
+				let
+				    val (pat', exp) = patToExp pat
+				in
+				    (Field (info, lab, pat')::patFields,
+				     Field (info, lab, exp)::expFields)
+				end) (nil, nil) patFields
+	    in
+		(RowPat (info, patFields', false), RowExp (info, expFields'))
+	    end
+	  | patToExp (RowPat (info, patFields, true)) =
 	    (*--** record patterns with dots must be resolved using the rhs *)
-	    raise Crash.Crash "SimplifyRec.patToExp"
+	    raise Crash.Crash "SimplifyRec.patToExp: not implemented"
 	  | patToExp (VecPat (info, pats)) =
 	    let
 		val (pats', exps') = ListPair.unzip (List.map patToExp pats)
@@ -128,79 +135,55 @@ structure SimplifyRec :> SIMPLIFY_REC =
 	  | derec' (RefPat (_, pat), AppExp (_, RefExp _, exp)) =
 	    derec' (pat, exp)
 	  | derec' (TupPat (info, pats), TupExp (_, exps)) =
-	    if length pats = length exps then
-		ListPair.foldr (fn (pat, exp, (cr, idsExpr)) =>
-				let
-				    val (cs, idsExps) = derec' (pat, exp)
-				in
-				    (cs @ cr, idsExps @ idsExpr)
-				end) (nil, nil) (pats, exps)
-	    else Error.error (region info, "pattern never matches")
+	    ListPair.foldr (fn (pat, exp, (cr, idsExpr)) =>
+			    let
+				val (cs, idsExps) = derec' (pat, exp)
+			    in
+				(cs @ cr, idsExps @ idsExpr)
+			    end) (nil, nil) (pats, exps)
 	  | derec' (TupPat (info, pats), RowExp (_, expFields)) =
 	    (case FieldSort.sort expFields of
-		 (expFields', FieldSort.Tup n) =>
-		     if length pats = n then
-			 ListPair.foldr
-			 (fn (pat, Field (_, _, exp), (cr, idsExpr)) =>
-			  let
-			      val (cs, idsExps) = derec' (pat, exp)
-			  in
-			      (cs @ cr, idsExps @ idsExpr)
-			  end) (nil, nil) (pats, expFields')
-		     else Error.error (region info, "pattern never matches")
+		 (expFields', FieldSort.Tup _) =>
+		     ListPair.foldr
+		     (fn (pat, Field (_, _, exp), (cr, idsExpr)) =>
+		      let
+			  val (cs, idsExps) = derec' (pat, exp)
+		      in
+			  (cs @ cr, idsExps @ idsExpr)
+		      end) (nil, nil) (pats, expFields')
 	       | (_, FieldSort.Rec) =>
-		     Error.error (region info, "pattern never matches"))
+		     raise Crash.Crash "SimplifyRec.derec' 1")
 	  | derec' (RowPat (info, _, false), TupExp (_, _)) =
-	    Error.error (region info, "pattern never matches")
+	    raise Crash.Crash "SimplifyRec.derec' 2"
 	  | derec' (RowPat (info, patFields, true), TupExp (_, exps)) =
-	    let
-		val n = length exps
-	    in
-		if List.all (fn Field (_, Lab (_, label), _) =>
-			     case Label.toInt label of
-				 SOME i => i >= 1 andalso i <= n
-			       | NONE => false) patFields
-		then
-		    raise Crash.Crash   (*--** *)
-		    "SimplifyRec.derec': not implemented 1"
-		else Error.error (region info, "pattern never matches")
-	    end
+	    raise Crash.Crash   (*--** *)
+		"SimplifyRec.derec': not implemented 1"
 	  | derec' (RowPat (info, patFields, false), RowExp (_, expFields)) =
 	    let
 		val (expFields', _) = FieldSort.sort expFields
 	    in
-		if length patFields = length expFields' then
-		    ListPair.foldr
-		    (fn (Field (_, Lab (_, s), pat),
-			 Field (_, Lab (_, s'), exp), (cr, idsExpr)) =>
-		     if s = s' then
-			 let
-			     val (cs, idsExps) = derec' (pat, exp)
-			 in
-			     (cs @ cr, idsExpr @ idsExpr)
-			 end
-		     else Error.error (region info, "pattern never matches"))
-		    (nil, nil) (patFields, expFields')
-		else Error.error (region info, "pattern never matches")
+		ListPair.foldr
+		(fn (Field (_, _, pat), Field (_, _, exp), (cr, idsExpr)) =>
+		 let
+		     val (cs, idsExps) = derec' (pat, exp)
+		 in
+		     (cs @ cr, idsExpr @ idsExpr)
+		 end) (nil, nil) (patFields, expFields')
 	    end
 	  | derec' (RowPat (info, patFields, true), RowExp (_, expFields)) =
 	    let
 		val (expFields', _) = FieldSort.sort expFields
 	    in
-		if isSubarity (patFields, expFields') then
-		    raise Crash.Crash   (*--** *)
+		raise Crash.Crash   (*--** *)
 		    "SimplifyRec.derec': not implemented 2"
-		else Error.error (region info, "pattern never matches")
 	    end
 	  | derec' (VecPat (info, pats), VecExp (_, exps)) =
-	    if length pats = length exps then
-		ListPair.foldr (fn (pat, exp, (cr, idsExpr)) =>
-				let
-				    val (cs, idsExps) = derec' (pat, exp)
-				in
-				    (cs @ cr, idsExps @ idsExpr)
-				end) (nil, nil) (pats, exps)
-	    else Error.error (region info, "pattern never matches")
+	    ListPair.foldr (fn (pat, exp, (cr, idsExpr)) =>
+			    let
+				val (cs, idsExps) = derec' (pat, exp)
+			    in
+				(cs @ cr, idsExps @ idsExpr)
+			    end) (nil, nil) (pats, exps)
 	  | derec' (pat as AsPat (_, _, _), exp) =
 	    let
 		val (ids, patOpt) = unalias pat
@@ -217,12 +200,12 @@ structure SimplifyRec :> SIMPLIFY_REC =
 			end
 	    end
 	  | derec' (pat, _) =
-	    Error.error (region (infoPat pat), "pattern never matches")
+	    raise Crash.Crash "SimplifyRec.derec' 3"
 
 	fun unify (WildPat _, pat2) = (nil, pat2)
 	  | unify (pat1, WildPat _) = (nil, pat1)
 	  | unify (pat1 as LitPat (info, lit1), LitPat (_, lit2)) =
-	    if lit1 = lit2 then (nil, pat1)   (*--** what about widths? *)
+	    if lit1 = lit2 then (nil, pat1)
 	    else Error.error (region info, "pattern never matches")
 	  | unify (VarPat (info, id), pat2) = (nil, AsPat (info, id, pat2))
 	  | unify (pat1, VarPat (info, id)) = (nil, AsPat (info, id, pat1))
@@ -244,19 +227,17 @@ structure SimplifyRec :> SIMPLIFY_REC =
 		(constraints, RefPat (info, pat))
 	    end
 	  | unify (TupPat (info, pats1), TupPat (_, pats2)) =
-	    if length pats1 = length pats2 then
-		let
-		    val (constraints, pats) =
-			ListPair.foldr (fn (pat1, pat2, (cr, patr)) =>
-					let
-					    val (cs, pat) = unify (pat1, pat2)
-					in
-					    (cs @ cr, pat::patr)
-					end) (nil, nil) (pats1, pats2)
-		in
-		    (constraints, TupPat (info, pats))
-		end
-	    else Error.error (region info, "pattern never matches")
+	    let
+		val (constraints, pats) =
+		    ListPair.foldr (fn (pat1, pat2, (cr, patr)) =>
+				    let
+					val (cs, pat) = unify (pat1, pat2)
+				    in
+					(cs @ cr, pat::patr)
+				    end) (nil, nil) (pats1, pats2)
+	    in
+		(constraints, TupPat (info, pats))
+	    end
 	  | unify (TupPat (_, _), RowPat (_, _, true)) =
 	    raise Crash.Crash "SimplifyRec.unify: not implemented 1"   (*--** *)
 	  | unify (pat1 as RowPat (_, _, _), pat2 as TupPat (_, _)) =
