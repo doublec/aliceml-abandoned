@@ -329,7 +329,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	  | testEq (_, _) = false
 
 	fun areParallelTests (LitTest lit1, LitTest lit2) =
-	    O.litEq (lit1, lit2)
+	    not (O.litEq (lit1, lit2))
 	  | areParallelTests (VecTest n1, VecTest n2) = n1 <> n2
 	  | areParallelTests (_, _) = false
 
