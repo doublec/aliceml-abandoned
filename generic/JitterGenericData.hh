@@ -24,14 +24,21 @@
 namespace Generic {
   class StackFrame : public ::StackFrame {
   public:
-    static void Sel(u_int Dest, u_int Ptr, u_int pos) {
-      JITStore::GetArg(Dest, Ptr, BASE_SIZE + pos);
+    static void New(u_int This,
+		    FrameLabel label, u_int size,
+		    Interpreter *interpreter) {
+      JITStore::AllocBlock(This, (BlockLabel) label, BASE_SIZE + size);
+      jit_movi_p(JIT_R0, Store::UnmanagedPointerToWord(interpreter));
+      JITStore::InitArg(This, INTERPRETER_POS, JIT_R0);
     }
-    static void Put(u_int Ptr, u_int pos, u_int Value) {
-      JITStore::InitArg(Ptr, BASE_SIZE + pos, Value);
+    static void Sel(u_int Dest, u_int This, u_int pos) {
+      JITStore::GetArg(Dest, This, BASE_SIZE + pos);
     }
-    static void Replace(u_int Ptr, u_int pos, u_int Value) {
-      JITStore::ReplaceArg(Ptr, BASE_SIZE + pos, Value);
+    static void Put(u_int This, u_int pos, u_int Value) {
+      JITStore::InitArg(This, BASE_SIZE + pos, Value);
+    }
+    static void Replace(u_int This, u_int pos, u_int Value) {
+      JITStore::ReplaceArg(This, BASE_SIZE + pos, Value);
     }
   };
 
@@ -81,6 +88,7 @@ namespace Generic {
     static void SetCurrentBacktrace(u_int Value) {
       Put(&::Scheduler::currentBacktrace, Value);
     }
+    // Side-Effect: Scratches JIT_R0
     static void PopFrames(u_int n) {
       jit_ldi_ui(JIT_R0, &::Scheduler::nFrames);
       jit_subi_ui(JIT_R0, JIT_R0, n);
@@ -90,79 +98,85 @@ namespace Generic {
 
   class Transform : public ::Transform {
   public:
-    static void New(u_int Ptr) {
-      JITStore::AllocBlock(Ptr, TRANSFORM_LABEL, SIZE);
+    // Side-Effect: Scratches JIT_R0, JIT_FP
+    static void New(u_int This) {
+      JITStore::AllocBlock(This, TRANSFORM_LABEL, SIZE);
     }
-    static void PutName(u_int Ptr, u_int Value) {
-      JITStore::InitArg(Ptr, NAME_POS, Value);
+    static void PutName(u_int This, u_int Value) {
+      JITStore::InitArg(This, NAME_POS, Value);
     }
-    static void PutArgument(u_int Ptr, u_int Value) {
-      JITStore::InitArg(Ptr, ARGUMENT_POS, Value);
+    static void PutArgument(u_int This, u_int Value) {
+      JITStore::InitArg(This, ARGUMENT_POS, Value);
     }
   };
 
   class Tuple {
   public:
-    static void New(u_int Ptr, u_int size) {
-      JITStore::AllocBlock(Ptr, TUPLE_LABEL, size);
+    // Side-Effect: Scratches JIT_R0, JIT_FP
+    static void New(u_int This, u_int size) {
+      JITStore::AllocBlock(This, TUPLE_LABEL, size);
     }
-    static void Sel(u_int Dest, u_int Ptr, u_int pos) {
-      JITStore::GetArg(Dest, Ptr, pos);
+    static void Sel(u_int Dest, u_int This, u_int pos) {
+      JITStore::GetArg(Dest, This, pos);
     }
-    static void Put(u_int Ptr, u_int pos, u_int Value) {
-      JITStore::InitArg(Ptr, pos, Value);
+    static void Put(u_int This, u_int pos, u_int Value) {
+      JITStore::InitArg(This, pos, Value);
     }
-    static void IndexSel(u_int Dest, u_int Ptr, u_int Pos) {
+    static void IndexSel(u_int Dest, u_int This, u_int Pos) {
       jit_addi_ui(Pos, Pos, 1);
       // to be done: compute log_2 sizeof(word)
       jit_lshi_ui(Pos, Pos, 2);
-      jit_ldxr_p(Dest, Ptr, Pos);
+      jit_ldxr_p(Dest, This, Pos);
     }
   };
 
   class Closure : public ::Closure {
   public:
-    static void New(u_int Ptr, u_int size) {
-      JITStore::AllocBlock(Ptr, CLOSURE_LABEL, BASE_SIZE + size);
+    // Side-Effect: Scratches JIT_R0, JIT_FP
+    static void New(u_int This, u_int size) {
+      JITStore::AllocBlock(This, CLOSURE_LABEL, BASE_SIZE + size);
     }
-    static void InitCC(u_int Ptr, u_int Value) {
-      JITStore::InitArg(Ptr, CONCRETE_CODE_POS, Value);
+    static void InitCC(u_int This, u_int Value) {
+      JITStore::InitArg(This, CONCRETE_CODE_POS, Value);
     }
-    static void Sel(u_int Ptr, u_int Dest, u_int pos) {
-      JITStore::GetArg(Dest, Ptr, BASE_SIZE + pos);
+    static void Sel(u_int This, u_int Dest, u_int pos) {
+      JITStore::GetArg(Dest, This, BASE_SIZE + pos);
     }
-    static void Put(u_int Ptr, u_int pos, u_int Value) {
-      JITStore::InitArg(Ptr, BASE_SIZE + pos, Value);
+    static void Put(u_int This, u_int pos, u_int Value) {
+      JITStore::InitArg(This, BASE_SIZE + pos, Value);
     }
   };
 
   class ConcreteCode : public ::ConcreteRepresentation {
   public:
-    static void New(u_int Ptr, Interpreter *interpreter, u_int size) {
-      JITStore::AllocBlock(Ptr, CONCRETE_LABEL, BASE_SIZE + size);
+    // Side-Effect: Scratches JIT_R0, JIT_FP
+    static void New(u_int This, Interpreter *interpreter, u_int size) {
+      JITStore::AllocBlock(This, CONCRETE_LABEL, BASE_SIZE + size);
       jit_movi_p(JIT_R0, Store::UnmanagedPointerToWord(interpreter));
-      JITStore::InitArg(Ptr, HANDLER_POS, JIT_R0);
+      JITStore::InitArg(This, HANDLER_POS, JIT_R0);
     }
-    static void Sel(u_int Dest, u_int Ptr, u_int pos) {
-      JITStore::GetArg(Dest, Ptr, BASE_SIZE + pos);
+    static void Sel(u_int Dest, u_int This, u_int pos) {
+      JITStore::GetArg(Dest, This, BASE_SIZE + pos);
     }
-    static void Put(u_int Ptr, u_int pos, u_int Value) {
-      JITStore::InitArg(Ptr, BASE_SIZE + pos, Value);
+    static void Put(u_int This, u_int pos, u_int Value) {
+      JITStore::InitArg(This, BASE_SIZE + pos, Value);
     }
   };
 
   class Byneed : public ::Transient {
   public:
-    static void New(u_int Ptr) {
-      JITStore::AllocTransient(Ptr, BYNEED_LABEL);
+    // Side-Effect: Scratches JIT_R0, JIT_FP
+    static void New(u_int This) {
+      JITStore::AllocTransient(This, BYNEED_LABEL);
     }
-    static void InitClosure(u_int Ptr, u_int Closure) {
-      JITStore::InitArg(Ptr, REF_POS, Closure);
+    static void InitClosure(u_int This, u_int Closure) {
+      JITStore::InitArg(This, REF_POS, Closure);
     }
   };
 
   class Primitive {
   public:
+    // Side-Effect: Scratches JIT_R0
     static void Return1(u_int Value) {
       Scheduler::PutZeroArg(Value);
       jit_movi_ui(JIT_R0, ::Scheduler::ONE_ARG);
