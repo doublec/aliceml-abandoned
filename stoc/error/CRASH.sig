@@ -6,7 +6,7 @@
 signature CRASH =
   sig
 
-    exception CRASH of string
+    exception Crash of string
 
     val crash: string -> 'a
 

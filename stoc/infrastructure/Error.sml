@@ -13,8 +13,8 @@ structure Error :> ERROR =
 
     (* Export *)
 
-    exception ERROR of position * string
+    exception Error of position * string
 
-    fun error(pos, message) = raise ERROR(pos, message)
+    fun error(pos, message) = raise Error(pos, message)
 
   end

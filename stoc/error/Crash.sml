@@ -6,8 +6,8 @@
 structure Crash :> CRASH =
   struct
 
-    exception CRASH of string
+    exception Crash of string
 
-    fun crash(message) = raise CRASH(message)
+    fun crash message = raise Crash message
 
   end

@@ -13,7 +13,7 @@ signature ERROR =
 
     (* Export *)
 
-    exception ERROR of position * string
+    exception Error of position * string
 
     val error: position * string -> 'a
 
