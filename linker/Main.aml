@@ -50,7 +50,7 @@ structure Main :> MAIN =
 	     (TextIO.stdErr,
 	      "Usage: alicelink [<option> ...] <root url> [<option> ...]\n\n\
 	      \Options:\n\
-	      \-?, -h, --help\n\
+	      \-?, -h, --help, --usage\n\
 	      \    Display this message.\n\
 	      \-o FILE, --output FILE\n\
 	      \    Specify the output file name (mandatory).\n\
