@@ -29,12 +29,7 @@ OBJS = $(SOURCES:%.cc=%.o)
 ##
 ## Enumerate seam.dll files
 ##
-ifdef LIGHTNING
-STORE_LIGHTNING_SOURCES = JITStore.cc
-else
-STORE_LIGHTNING_SOURCES =
-endif
-STORE_SOURCES = Map.cc WeakMap.cc Heap.cc Store.cc $(STORE_LIGHTNING_SOURCES)
+STORE_SOURCES = Map.cc WeakMap.cc Heap.cc Store.cc JITStore.cc
 STORE_OBJS = $(STORE_SOURCES:%.cc=store/%.o)
 ADT_SOURCES = ChunkMap.cc Outline.cc
 ADT_OBJS = $(ADT_SOURCES:%.cc=adt/%.o)
