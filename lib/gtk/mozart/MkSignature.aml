@@ -119,7 +119,8 @@ functor MkSignature(structure TypeManager : TYPE_MANAGER
 	(* CanvasItemNew and -Set Code *)
 	val canvasItemCode =
 	    [indent,
-	     "val itemNew : object * int * ((string * arg) list) -> object\n",
+	     "val itemNew : ",
+	     "object * canvas_item_type * ((string * arg) list) -> object\n",
 	     indent,
 	     "val itemSet : object * string * arg -> unit\n"]
 
