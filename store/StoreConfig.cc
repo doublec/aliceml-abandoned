@@ -99,7 +99,7 @@ static void CreateHeader(std::FILE *f, unsigned int header_size_width) {
   */
   unsigned long CHILDISH_MASK    = ComputeMask(CHILDISH_SHIFT, HEADER_CHILDISH_WIDTH);
   unsigned long BIGSIZE_MIN      = (1 << SIZESHIFT_MASK);
-  unsigned long MAX_BIGBLOCKSIZE = (MAX_BLOCKSIZE << SIZESHIFT_MASK);
+  unsigned long MAX_BIGBLOCKSIZE = ((MAX_BLOCKSIZE << SIZESHIFT_MASK)-1);
 
   std::fprintf(f, "typedef enum {\n");
 

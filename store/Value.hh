@@ -119,8 +119,10 @@ public:
 
 class SeamDll Chunk : private Block {
 private:
-  enum { BYTESIZE_POS };
+  enum { BYTESIZE_POS, BASE_SIZE };
 public:
+  static const u_int maxSize = (MAX_BIGBLOCKSIZE - BASE_SIZE) * sizeof(u_int);
+
   using Block::GetLabel;
   /*TODO: immutable flag disabled, since broken
   using Block::IsImmutable;

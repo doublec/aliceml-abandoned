@@ -20,13 +20,9 @@
 #include <cstring>
 #include "store/Store.hh"
 
-#define MAX_SIZE(t) \
-  (MAX_BIGBLOCKSIZE * sizeof(u_int) / sizeof(t))
-
 class SeamDll String: private Chunk {
 public:
-  static const u_int maxSize = MAX_SIZE(char);
-
+  using Chunk::maxSize;
   using Chunk::ToWord;
   using Chunk::GetSize;
   using Chunk::Hash;
