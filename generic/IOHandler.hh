@@ -38,6 +38,8 @@ public:
   // These return INVALID_POINTER if the fd is already readable/writable:
   static Future *WaitReadable(int fd);
   static Future *WaitWritable(int fd);
+
+  static void Close(int fd);
 };
 
 #endif
