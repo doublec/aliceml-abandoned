@@ -43,6 +43,7 @@ AC_DEFUN([AC_SEAM_ARG_ENABLE_CHECKED],
       AC_MSG_RESULT(yes)
       AC_SEAM_CHECK_CXXFLAG_SEAMTOOL(-fno-inline-functions)
       AC_SEAM_CHECK_CXXFLAG_SEAMTOOL(-fimplement-inlines)
+      AC_SEAM_CHECK_CXXFLAG_SEAMTOOL(-fno-rtti)
       AC_SEAM_CHECK_CXXFLAG_SEAMTOOL(-ggdb,
          AC_SEAM_ADD_TO_CXXFLAGS_SEAMTOOL(-ggdb),
          AC_SEAM_CHECK_CXXFLAG_SEAMTOOL(-g))
@@ -80,6 +81,7 @@ AC_DEFUN([AC_SEAM_ARG_ENABLE_OPTIMIZED],
                              -finline-limit=2500 -fno-implement-inlines \
                              -fno-keep-static-consts \
                              -fno-implicit-templates \
+                             -fno-rtti \
                              -fno-implicit-inline-templates)
       AC_SEAM_CHECK_LDFLAG_SEAMTOOL([[-Wl,-S]])
       AC_SEAM_CHECK_LDFLAG_SEAMTOOL([[-Wl,--stack=0x1000000]])
