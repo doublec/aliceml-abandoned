@@ -127,8 +127,12 @@ void InitializeClassWorker::DumpFrame(word wFrame) {
 //
 // Class Implementation
 //
+word Class::wClass;
+
 void Class::Init() {
   InitializeClassWorker::Init();
+  wClass = ClassLoader::PreloadClass("java/lang/Class");
+  RootSet::Add(wClass);
 }
 
 word Class::MakeMethodKey(JavaString *name, JavaString *descriptor) {
@@ -269,8 +273,9 @@ Class *Class::New(ClassInfo *classInfo) {
   }
   // Initialize class:
   b->InitArg(METHOD_HASH_TABLE_POS, methodHashTable->ToWord());
-  b->InitArg(NUMBER_OF_INSTANCE_FIELDS_POS, nInstanceFields);
   b->InitArg(LOCK_POS, Lock::New()->ToWord());
+  b->InitArg(NUMBER_OF_INSTANCE_FIELDS_POS, nInstanceFields);
+  b->InitArg(CLASS_OBJECT_POS, null);
   // Initialize static fields:
   i = 0, nStaticFields = 0;
   while (i < nFields) {
@@ -429,6 +434,18 @@ Worker::Result Class::RunInitializer() {
   }
   InitializeClassWorker::PushFrame(this, Scheduler::nArgs, args);
   return Scheduler::PushCall(wClassInitializer);
+}
+
+Object *Class::GetClassObject() {
+  word wObject = GetArg(CLASS_OBJECT_POS);
+  if (wObject != null) return Object::FromWordDirect(wObject);
+  Class *theClass = Class::FromWord(wClass);
+  Assert(theClass != INVALID_POINTER);
+  u_int index = theClass->GetNumberOfInstanceFields();
+  Object *classObject = Object::New(wClass, index + 1);
+  classObject->InitInstanceField(index, ToWord());
+  ReplaceArg(CLASS_OBJECT_POS, classObject->ToWord());
+  return classObject;
 }
 
 //

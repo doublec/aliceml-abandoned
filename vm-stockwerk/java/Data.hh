@@ -141,10 +141,13 @@ protected:
     LOCK_POS, // Lock
     CLASS_INITIALIZER_POS, // Closure | int(0)
     NUMBER_OF_INSTANCE_FIELDS_POS, // int
+    CLASS_OBJECT_POS, // Object | int(0)
     BASE_SIZE
     // ... static fields
     // ... static methods
   };
+private:
+  static word wClass;
 public:
   using Block::ToWord;
 
@@ -191,6 +194,7 @@ public:
   u_int GetNumberOfInstanceFields() {
     return Store::DirectWordToInt(GetArg(NUMBER_OF_INSTANCE_FIELDS_POS));
   }
+  class Object *GetClassObject();
   word GetStaticField(u_int index) {
     return GetArg(BASE_SIZE + index);
   }
@@ -401,6 +405,7 @@ public:
 };
 
 class DllExport Object: private Block {
+  friend class Class;
 protected:
   enum {
     CLASS_POS, // Class
@@ -670,6 +675,14 @@ public:
 		  srcArray->GetElementPointer(srcPos, elemSize),
 		  n * elemSize);
     }
+  }
+};
+
+class DllExport ClassObject: public Object {
+public:
+  Class *GetRepresentedClass() {
+    u_int index = GetClass()->GetNumberOfInstanceFields();
+    return Class::FromWordDirect(GetInstanceField(index));
   }
 };
 

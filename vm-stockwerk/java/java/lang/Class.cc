@@ -38,8 +38,18 @@ DEFINE3(forName0) {
     Scheduler::PushFrameNoCheck(prim_self);
     return theClass->RunInitializer();
   }
-  //--** return class object
-  RETURN(theClass->ToWord());
+  RETURN(theClass->GetClassObject()->ToWord());
+} END
+
+DEFINE1(isInterface) {
+  DECLARE_OBJECT(_this, x0);
+  ClassObject *classObject = static_cast<ClassObject *>(_this);
+  RETURN_BOOL(classObject->GetRepresentedClass()->IsInterface());
+} END
+
+DEFINE1(getClassLoader0) {
+  DECLARE_OBJECT(_this, x0);
+  RETURN(null); //--**
 } END
 
 DEFINE1(getPrimitiveClass) {
@@ -55,10 +65,12 @@ void NativeMethodTable::java_lang_Class(JavaString *className) {
 	   forName0, 3, false);
   //--** isInstance
   //--** isAssignableFrom
-  //--** isInterface
+  Register(className, "isInterface", "()Z", isInterface, 1, true);
   //--** isArray
   //--** isPrimitive
   //--** getName
+  Register(className, "getClassLoader0", "()Ljava/lang/ClassLoader;",
+	   getClassLoader0, 1, true);
   //--** getClassLoader0
   //--** getSuperclass
   //--** getInterfaces

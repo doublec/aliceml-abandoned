@@ -20,8 +20,7 @@ DEFINE0(registerNatives) {
 DEFINE1(getClass) {
   DECLARE_OBJECT(_this, x0);
   Assert(_this != INVALID_POINTER);
-  //--** return class object
-  RETURN(_this->GetClass()->ToWord());
+  RETURN(_this->GetClass()->GetClassObject()->ToWord());
 } END
 
 DEFINE1(hashCode) {
