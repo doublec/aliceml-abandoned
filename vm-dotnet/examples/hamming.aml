@@ -2,7 +2,7 @@
  * Computation of hamming numbers using lazy streams.
  *)
 
-import val print from "x-alice:/TextIO.dll"
+import val print from "x-alice:/TextIO"
 
 open Hole
 

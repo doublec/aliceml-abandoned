@@ -3,7 +3,7 @@
  * for every recursive invocation.
  *)
 
-import structure TextIO from "x-alice:/TextIO.dll"
+import structure TextIO from "x-alice:/TextIO"
 
 fun fib 0 = 1
   | fib 1 = 1

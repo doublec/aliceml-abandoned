@@ -2,10 +2,10 @@
  * Lazy streams demo.
  *)
 
-import val print        from "x-alice:/TextIO.dll"
-import structure OS     from "x-alice:/OS.dll"
-import structure Tools  from "x-alice:/Tools.dll"
-import val readLine     from "x-alice:/Dialog.dll"
+import val print        from "x-alice:/TextIO"
+import structure OS     from "x-alice:/OS"
+import structure Tools  from "x-alice:/Tools"
+import val readLine     from "x-alice:/Dialog"
 
 open Promise
 
