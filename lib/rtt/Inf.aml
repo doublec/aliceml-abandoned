@@ -94,8 +94,6 @@ import structure PPPath       from "PPPath"
 import structure PPType       from "PPType"
 (**)
 
-structure TextIO = struct fun print s = () end
-
 structure Inf :> INF =
 struct
   (* Types *)
