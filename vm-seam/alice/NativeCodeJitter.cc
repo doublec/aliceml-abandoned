@@ -85,7 +85,7 @@ namespace Outline {
 class NativeCodeFrame : private Generic::StackFrame {
 protected:
   enum {
-    SIZE_POS, PC_POS, CODE_POS, CLOSURE_POS, IMMEDIATE_ARGS_POS,
+    PC_POS, CODE_POS, CLOSURE_POS, IMMEDIATE_ARGS_POS,
     CONTINUATION_POS, BASE_SIZE
   };
 public:
@@ -97,11 +97,12 @@ public:
   static u_int GetFrameSize(u_int nLocals) {
     return (Generic::StackFrame::BASE_SIZE + BASE_SIZE + nLocals);
   }
-  static void GetSize(u_int Dest, u_int This) {
-    Sel(Dest, This, SIZE_POS);
+  static void GetImmediateArgs(u_int Dest, u_int This) {
+    Sel(Dest, This, IMMEDIATE_ARGS_POS);
   }
-  static void PutSize(u_int This, u_int Value) {
-    Put(This, SIZE_POS, Value);
+  static void GetSize(u_int Dest, u_int This) {
+    GetImmediateArgs(Dest, This);
+    Generic::Tuple::Sel(Dest, Dest, 0);
   }
   static void GetPC(u_int Dest, u_int This) {
     Sel(Dest, This, PC_POS);
@@ -120,9 +121,6 @@ public:
   }
   static void PutClosure(u_int This, u_int Value) {
     Put(This, CLOSURE_POS, Value);
-  }
-  static void GetImmediateArgs(u_int Dest, u_int This) {
-    Sel(Dest, This, IMMEDIATE_ARGS_POS);
   }
   static void PutImmediateArgs(u_int This, u_int Value) {
     Put(This, IMMEDIATE_ARGS_POS, Value);
@@ -684,9 +682,6 @@ void NativeCodeJitter::PushCall(CallInfo *info) {
       NativeCodeFrame::New(JIT_V1, currentNLocals);
       ImmediateSel(JIT_R0, JIT_V2, info->closure); // Closure
       NativeCodeFrame::PutClosure(JIT_V1, JIT_R0);
-      u_int size = NativeCodeFrame::GetFrameSize(currentNLocals);
-      jit_movi_p(JIT_R0, Store::IntToWord(size));
-      NativeCodeFrame::PutSize(JIT_V1, JIT_R0);
       NativeCodeFrame::GetImmediateArgs(JIT_R0, JIT_V2);
       NativeCodeFrame::PutImmediateArgs(JIT_V1, JIT_R0);
       jit_ldi_p(JIT_R0, &NativeCodeInterpreter::nativeContinuation);
@@ -2226,7 +2221,7 @@ char *NativeCodeJitter::CompileProlog(const char *info) {
   jit_prolog(1);
   int arg1 = jit_arg_p();
   jit_getarg_p(JIT_V2, arg1);
-  JIT_LOG_MESG(info);
+  JIT_LOG_MESG(info); info = info;
   JIT_LOG_REG(JIT_SP);
   RestoreRegister();
   NativeCodeFrame::GetPC(JIT_R0, JIT_V2);
@@ -2293,7 +2288,7 @@ void NativeCodeJitter::CompileInstr(TagVal *pc) {
     case AbstractCode::AppVar:
       pc = InstrAppVar(pc); break;
     case AbstractCode::DirectAppVar:
-      pc = InstrAppVar(pc); break;
+      pc = InstrDirectAppVar(pc); break;
     case AbstractCode::GetRef:
       pc = InstrGetRef(pc); break;
     case AbstractCode::GetTup:
@@ -2481,6 +2476,8 @@ NativeConcreteCode *NativeCodeJitter::Compile(TagVal *abstractCode) {
   currentArgs         = TagVal::FromWord(abstractCode->Sel(3));
   livenessTable       = LivenessTable::New(nSlots);
   livenessFreeList    = NULL;
+  u_int frameSize     = NativeCodeFrame::GetFrameSize(currentNLocals);
+  ImmediateEnv::Register(Store::IntToWord(frameSize));
   // Compile argument calling convention conversion
   u_int  currentArity = GetArity(currentArgs);
   CompileCCC(currentArity, true);

@@ -34,13 +34,16 @@
 class NativeCodeFrame : public StackFrame {
 protected:
   enum {
-    SIZE_POS, PC_POS, CODE_POS, CLOSURE_POS, IMMEDIATE_ARGS_POS,
+    PC_POS, CODE_POS, CLOSURE_POS, IMMEDIATE_ARGS_POS,
     CONTINUATION_POS, BASE_SIZE
   };
 public:
   // NativeCodeFrame Accessors
+  Tuple *GetImmediateArgs() {
+    return Tuple::FromWord(StackFrame::GetArg(IMMEDIATE_ARGS_POS));
+  }
   u_int GetSize() {
-    return Store::DirectWordToInt(StackFrame::GetArg(SIZE_POS));
+    return Store::DirectWordToInt(GetImmediateArgs()->Sel(0));
   }
   u_int GetPC() {
     return (u_int) Store::DirectWordToInt(StackFrame::GetArg(PC_POS));
@@ -51,17 +54,8 @@ public:
   Chunk *GetCode() {
     return Store::DirectWordToChunk(StackFrame::GetArg(CODE_POS));
   }
-  void SetCode(Chunk *code) {
-    StackFrame::ReplaceArg(CODE_POS, code->ToWord());
-  }
   Closure *GetClosure() {
     return Closure::FromWord(StackFrame::GetArg(CLOSURE_POS));
-  }
-  Tuple *GetImmediateArgs() {
-    return Tuple::FromWord(StackFrame::GetArg(IMMEDIATE_ARGS_POS));
-  }
-  void SetImmediateArgs(Tuple *immediateArgs) {
-    StackFrame::ReplaceArg(IMMEDIATE_ARGS_POS, immediateArgs->ToWord());
   }
   void InitLocalEnv(u_int index, word value) {
     StackFrame::InitArg(BASE_SIZE + index, value);
@@ -76,7 +70,6 @@ public:
 			      u_int nbLocals) {
     u_int frSize = BASE_SIZE + nbLocals;
     NEW_STACK_FRAME(frame, interpreter, frSize);
-    frame->InitArg(SIZE_POS, Store::IntToWord(frame->GetSize() + frSize));
     frame->InitArg(PC_POS, pc);
     frame->InitArg(CODE_POS, code->ToWord());
     frame->InitArg(CLOSURE_POS, closure->ToWord());
