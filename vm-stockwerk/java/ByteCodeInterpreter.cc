@@ -355,6 +355,9 @@ public:
   void Put(u_int i, unsigned char value) {
     ((unsigned char *) GetBase())[i] = value;
   }
+  u_int GetLength() {
+    return GetSize();
+  }
   static JavaByteArray *New(u_int size) {
     return static_cast<JavaByteArray *>(Store::AllocChunk(size));
   }
@@ -642,9 +645,26 @@ Worker::Result ByteCodeInterpreter::Run() {
     case Instr::ARRAYLENGTH:
       {
 	JavaDebug::Print("ARRAYLENGTH");
-	ObjectArray *arr = ObjectArray::FromWord(frame->Pop());
-	if (arr != INVALID_POINTER) {
-	  frame->Push(Store::IntToWord(arr->GetLength()));
+	Block *p = Store::WordToBlock(frame->Pop());
+	if (p != INVALID_POINTER) {
+	  u_int length;
+	  switch (p->GetLabel()) {
+	  case CHUNK_LABEL:
+	    {
+	      JavaByteArray *array = static_cast<JavaByteArray *>(p);
+	      length = array->GetLength();
+	    }
+	    break;
+	  case JavaLabel::ObjectArray:
+	    {
+	      ObjectArray *array = static_cast<ObjectArray *>(p);
+	      length = array->GetLength();
+	    }
+	    break;
+	  default:
+	    Error("unkown type");
+	  }
+	  frame->Push(Store::IntToWord(length));
 	  pc += 1;
 	}
 	else {
@@ -724,7 +744,7 @@ Worker::Result ByteCodeInterpreter::Run() {
 	u_int index          = Store::DirectWordToInt(frame->Pop());
 	JavaByteArray *array = JavaByteArray::FromWord(frame->Pop());
 	if (array != INVALID_POINTER) {
-	  if (index < array->GetSize()) {
+	  if (index < array->GetLength()) {
 	    frame->Push(Store::IntToWord(array->Get(index)));
 	    pc += 1;
 	  }
@@ -746,7 +766,7 @@ Worker::Result ByteCodeInterpreter::Run() {
 	u_int index          = Store::DirectWordToInt(frame->Pop());
 	JavaByteArray *array = JavaByteArray::FromWord(frame->Pop());
 	if (array != INVALID_POINTER) {
-	  if (index < array->GetSize()) {
+	  if (index < array->GetLength()) {
 	    array->Put(index, value);
 	    pc += 1;
 	  }
