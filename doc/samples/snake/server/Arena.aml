@@ -276,14 +276,21 @@ struct
 	    val fin     = ref nil
             val eaters  = ref nil
 
-	    fun killSnake s = 
+	    fun killHead s = 
 		let
-		    val hb = Snake.body s
+		    val (r, c) = Snake.head s
+		in
+		    Array2.update (a, r, c, P.EMPTY)
+		end
+
+	    fun killBody s = 
+		let
+		    val body = Snake.body s
 		in
 		    died := s :: (!died);
 		    List.app 
 		        (fn (r, c) => 
-                            Array2.update (a, r, c, P.EMPTY)) hb
+                            Array2.update (a, r, c, P.EMPTY)) body
 		end
 
 	    fun placeHead snake =
@@ -310,25 +317,25 @@ struct
 								       color)) 
                 in
 		    if hit
-			then killSnake snake
+			then (killHead snake; killBody snake)
 		    else 
 			case collObject of
 			 P.EMPTY    => place () 
 		       | P.GOODY n  => (Snake.eat (snake,n); 
                                         place ();
                                         eaters := snake :: !eaters)
-		       | P.WALL     => killSnake snake
-                       | P.GATE (_, P.CLOSED) => killSnake snake
+		       | P.WALL     => killBody snake
+                       | P.GATE (_, P.CLOSED) => killBody snake
 		       | P.GATE (col, P.OPEN) => 
                             if Color.equal (col, color)
 			        then (fin := snake :: (!fin);
-				        Array2.update(a, r, c, collObject))
-			    else killSnake snake
+				        Array2.update (a, r, c, collObject))
+			    else killBody snake
 		       | P.SNAKE_HEAD(_,col) => 
 				 if not (Color.equal (col, color))
-				     then killSnake snake
+				     then killBody snake
 				 else ()
-		       |     _      => killSnake snake
+		       |     _      => killBody snake
 		end
 
 	    fun placeBody snake =
@@ -344,7 +351,7 @@ struct
                       | place ((r, c) :: bodyRest) =
                         if (r, c) = headP then 
                             (* ouch! our head has hit ourself! *)
-                            killSnake snake
+                            killBody snake
                         else
                             (Array2.update (a, r, c, P.SNAKE_BODY color);
                              place bodyRest)
@@ -356,7 +363,7 @@ struct
 	in
 	    List.app placeHead snakes;
 	    List.app placeBody snakes;
-	    { dead = !died, grown = !eaters, finished = !fin }
+	    {dead = !died, grown = !eaters, finished = !fin}
 	end
     
     fun emptyCopy a =

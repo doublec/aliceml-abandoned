@@ -21,6 +21,7 @@ import structure Protocol             from "../../common/Protocol"
 import structure ArenaWidget          from "ArenaWidget"
 import structure HighscoreIO          from "../../server/HighscoreIO"
 import structure Highscore            from "../../common/Highscore"
+import signature GUI                  from "../GUI"
 
 import structure ConnectionWindow     from "ConnectionWindow"
 import structure ServerSettingsWindow from "ServerSettingsWindow"
@@ -221,12 +222,19 @@ struct
 	    fun startSinglePlayer () = 
 		case startServer (SOME ("Player", Color.fromString "yellow"), 
 				  Config.defaultSingle) of
-		    FST ({start, disconnect}, _, _) => 
-			(case start () of
-			     FST (mGame, guiGame) => 
-				 gameMode ({disconnect}, mGame, guiGame)
-			   | SND   errorMsg       => 
-				 reset (SOME ("ERROR!!", errorMsg)))
+		    FST ({start, disconnect}, guiJoinP, _) => 
+			let
+			    val guiJoin = {playersJoined = fn _ => (),
+					   playerDisconnected = fn _ => (),
+					   gameStarted = fn _ => ()}
+			in
+			    Promise.fulfill (guiJoinP, guiJoin);
+			    (case start () of
+				 FST (mGame, guiGame) => 
+				     gameMode ({disconnect}, mGame, guiGame)
+			       | SND   errorMsg       => 
+				     reset (SOME ("ERROR!!", errorMsg)))
+			end
 		  | SND    errorMsg       => reset (SOME ("ERROR!!", errorMsg))
 
 	    fun key keyval =

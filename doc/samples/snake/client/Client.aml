@@ -8,13 +8,14 @@ struct
     (* [startClient (gui, server)] starts the core client given a server,
        which can be a future
      *)
-    fun startClient (gui_join, server : Protocol.server_interface) : 
+    fun startClient (gui_join : Gui.gui_join, 
+		     server : Protocol.server_interface) : 
             Protocol.client_interface * Gui.model_join =
         let
             val promise     = Promise.promise () : Gui.gui_game Promise.promise
             val guiGame     = Promise.future promise
             
-            fun playersJoined players = ()
+            fun playersJoined players = #playersJoined gui_join players
             
             fun tournamentStarted () = ()
 

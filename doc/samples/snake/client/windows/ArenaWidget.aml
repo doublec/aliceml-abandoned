@@ -401,16 +401,23 @@ struct
 
     fun changeView (a, (y, x)) =
 	let
+	    val obj = toObject a
 	    val minX = 0
 	    val maxX = arenaWidth a
 	    val minY = 0
 	    val maxY = arenaHeight a
 	    val x    = x * cellSize - windowWidth2
 	    val y    = y * cellSize - windowHeight2
-	in 
-	    GtkCanvas.scrollTo(toObject a, x, y);
-	    GtkCanvas.requestRedraw (toObject a, minX, minY, 
-				     maxX, maxY)
+
+	    val _ = GtkCanvas.scrollTo (obj, x, y)
+
+	    val (x1, y1, x2, y2) = 
+		GtkCanvas.getScrollRegion (obj, 0.0, 0.0, 0.0, 0.0)
+	in
+	    GtkCanvas.requestRedraw (obj, Real.round x1, 
+				     Real.round y1, 
+				     Real.round x2, 
+				     Real.round y2)
 	end
 
 end
