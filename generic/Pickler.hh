@@ -24,6 +24,7 @@ class SeamDll Pickler {
 public:
   // Exceptions
   static word Sited;
+  static word IOError;
 
   static void Init();
 

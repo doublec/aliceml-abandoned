@@ -1231,6 +1231,7 @@ void PicklePackWorker::DumpFrame(StackFrame *) {
 // Pickler Functions
 //
 word Pickler::Sited;
+word Pickler::IOError;
 
 Worker::Result Pickler::Pack(word x) {
   StringOutputStream *os = StringOutputStream::New();
@@ -1245,8 +1246,7 @@ Worker::Result Pickler::Save(String *filename, word x) {
   char *szFileName     = filename->ExportC();
   FileOutputStream *os = FileOutputStream::New(szFileName);
   if (os->GetFile() == NULL) {
-    delete os;
-    Scheduler::SetCurrentData(Store::IntToWord(0)); // to be done: Io exn
+    Scheduler::SetCurrentData(Pickler::IOError);
     StackFrame *frame = Scheduler::GetFrame();
     Scheduler::SetCurrentBacktrace(Backtrace::New(frame->Clone()));
     Scheduler::PopFrame();
@@ -1267,4 +1267,6 @@ void Pickler::Init() {
   PicklePackWorker::Init();
   Sited = UniqueString::New(String::New("@Pickle.Sited"))->ToWord();
   RootSet::Add(Sited);
+  IOError = UniqueString::New(String::New("@Pickle.IOError"))->ToWord();
+  RootSet::Add(IOError);
 }

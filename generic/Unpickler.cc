@@ -33,6 +33,7 @@
 #include "generic/Transform.hh"
 #include "generic/Unpickler.hh"
 #include "generic/Pickle.hh"
+#include "generic/Pickler.hh"
 #include "generic/UniqueString.hh"
 #include "generic/Broker.hh"
 #include "generic/ZLib.hh"
@@ -270,7 +271,11 @@ public:
 	gzFile file = GetFile();
 	int nread = gzread(file, bytes, size);
 	if (nread < 0) {
-	  Error("InputStream::FillBuffer"); //--** raise Io exception
+	  Scheduler::SetCurrentData(Pickler::IOError);
+	  StackFrame *frame = Scheduler::GetFrame();
+	  Scheduler::SetCurrentBacktrace(Backtrace::New(frame->Clone()));
+	  Scheduler::PopFrame();
+	  return Worker::RAISE;
 	} else if (nread == 0) { // at end of file: raise Corrupt exception
 	  Scheduler::SetCurrentData(Unpickler::Corrupt);
 	  StackFrame *frame = Scheduler::GetFrame();
@@ -467,12 +472,11 @@ Worker::Result TransformWorker::Run(StackFrame *sFrame) {
       Store::DirectWordToUnmanagedPointer(map->Get(name->ToWord()));
     f->Become(REF_LABEL, handler(argument));
   } else {
-    Error("TransformWorker: unknown transform");
-//     Scheduler::currentData = Unpickler::Corrupt;
-//     Scheduler::currentBacktrace =
-//       Backtrace::New(STATIC_CAST(StackFrame *, frame)->Clone());
-//     Scheduler::PopFrame();
-//     return Worker::RAISE;
+    Scheduler::SetCurrentData(Unpickler::Corrupt);
+    Scheduler::SetCurrentBacktrace(
+      Backtrace::New(STATIC_CAST(StackFrame *, frame)->Clone()));
+    Scheduler::PopFrame();
+    return Worker::RAISE;
   }
 
   Scheduler::PopFrame(frame->GetSize());
@@ -1214,8 +1218,7 @@ Worker::Result Unpickler::Load(String *filename) {
   char *szFileName = filename->ExportC();
   InputStream *is = InputStream::NewFromFile(szFileName);
   if (is->HasException()) {
-    Scheduler::SetCurrentData(Store::IntToWord(0)); // to be done
-    fprintf(stderr, "file '%s' not found\n", szFileName);
+    Scheduler::SetCurrentData(Pickler::IOError); // to be done
     StackFrame *frame = Scheduler::GetFrame();
     Scheduler::SetCurrentBacktrace(Backtrace::New(frame->Clone()));
     Scheduler::PopFrame();
