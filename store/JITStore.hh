@@ -67,7 +67,7 @@ extern jit_state lightning;
   { jit_insn *dummy = jit_bner_ui(O1, O2, O3); dummy = dummy; }
 
 extern "C" {
-  void disassemble(FILE *, char *, char *);
+  void disassemble(std::FILE *, char *, char *);
 };
 typedef void (*value_plotter)(word);
 
