@@ -546,23 +546,33 @@ define
       end
    end
 
-   fun {PushCall Closure TaskStack}
-      case Closure of closure(function(_ _ _ NL IdDefArgs BodyInstr) ...) then
-	 L = {NewArray 0 NL - 1 uninitialized}
-      in
-	 frame(Me IdDefArgs BodyInstr Closure L)|TaskStack
-      end
-   end
-
    AliceFunction = {ByteString.make 'Alice.function'}
 
-   fun {Abstract function(_ F#L#C NG NL IdDefArgs Instr)}
-      transform(AliceFunction tag(0 tuple({ByteString.make F} L C)
-				  NG NL IdDefArgs Instr))
-   end
-
-   Me = abstractCodeInterpreter(run: Run
-				handle: Handle
-				pushCall: PushCall
-				abstract: Abstract)
+   Me =
+   abstractCodeInterpreter(
+      run: Run
+      handle: Handle
+      pushCall:
+	 fun {$ Closure TaskStack}
+	    case Closure
+	    of closure(function(_ _ _ NL IdDefArgs BodyInstr) ...) then
+	       L = {NewArray 0 NL - 1 uninitialized}
+	    in
+	       frame(Me IdDefArgs BodyInstr Closure L)|TaskStack
+	    end
+	 end
+      abstract:
+	 fun {$ function(_ F#L#C NG NL IdDefArgs Instr)}
+	    transform(AliceFunction tag(0 tuple({ByteString.make F} L C)
+					NG NL IdDefArgs Instr))
+	 end
+      toString:
+	 fun {$ Frame}
+	    case Frame
+	    of frame(_ _ _ closure(function(_ F#L#C _ _ _ _) ...) _) then
+	       'Alice function '#F#', line '#L#', column '#C
+	    [] handler(_ _ _ _ closure(function(_ F#L#C _ _ _ _) ...) _) then
+	       'Alice handler '#F#', line '#L#', column '#C
+	    end
+	 end)
 end
