@@ -63,6 +63,8 @@ Worker::Result EmptyTaskWorker::Handle(word) {
     Debug::Dump(Scheduler::currentData);
     std::fprintf(stderr, "backtrace:\n");
     Scheduler::currentBacktrace->Dump();
+    // Flush stderr (needed for redirection on windows (e.g. rxvt))
+    std::fflush(stderr);
     return Worker::TERMINATE;
   } else {
     //--** support multiple actions
