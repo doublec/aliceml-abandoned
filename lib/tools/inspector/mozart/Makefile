@@ -51,11 +51,13 @@ all: LinkedInspector.ozf
 depend:
 	$(STODEP) Inspector.aml INSPECTOR-sig.aml > Makefile.depend
 
-Inspector.ozf: UnsafeInspector.asig Inspector.aml
-	$(STOC) $(STOCOPTS) -c Inspector.aml -o Inspector.ozf
+%.ozf: %.aml
+	$(STOC) $(STOCOPTS) -c $< -o $@
 
-LinkedInspector.ozf: $(OZLINPUTS) Inspector.ozf
-	$(STOL) $(OZLOPTS) Inspector.ozf -o LinkedInspector.ozf
+Inspector.ozf: UnsafeInspector.asig Inspector.aml
+
+LinkedInspector.ozf: Inspector.ozf $(OZLINPUTS)
+	$(STOL) $(OZLOPTS) $< -o $@
 
 %.ozf: %.oz
 	$(OZC) $(OZCOPTS) -c $< -o $@
