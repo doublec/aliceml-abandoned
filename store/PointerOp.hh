@@ -88,11 +88,11 @@ public:
       return (int) INVALID_INT;
   }
   static word EncodeUnmanagedPointer(void *v) {
-    AssertStore(((u_int) v & (1 << (STORE_WORD_WIDTH - 1))) == 0);
-    return (word) (((u_int) v << 1) | (u_int) INTTAG); 
+    AssertStore(((u_int) v & INTMASK) == 0); // Require at least word alignment
+    return (word) ((u_int) v | (u_int) INTTAG); 
   }
   static void *DirectDecodeUnmanagedPointer(word v) {
-    return (void *) ((u_int) v >> 1);
+    return (void *) ((u_int) v ^ INTTAG);
   }
   static void *DecodeUnmanagedPointer(word v) {
     AssertStore((u_int) v & INTMASK);
