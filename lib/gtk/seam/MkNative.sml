@@ -197,15 +197,19 @@ functor MkNative(structure TypeManager : TYPE_MANAGER
 	    val stype = if null al then "" else getCType (#3(hd al))
 	    val svar  = if null al then "" else #2(hd al)
 	    val mvar  = if length al < 2 then "" else #2(hd(tl al))
-	    val isString = case mtype of STRING _ => true | _ => false
+	    val isConst = 
+		case mtype of 
+		    STRING _ => true
+		  | POINTER _ => true
+		  | _ => false
 	    val callLine =
 		if get then
-		    [if isString then "const " else "",
+		    [if isConst then "const " else "",
 		     getCType mtype, " ret = (static_cast<",
 		     stype, ">(", svar,"))->", mname,";\n"]
 		else
 		    ["(static_cast<", stype, ">(", svar,"))->", mname, " = ",
-		     if isString then "reinterpret_cast<" else "static_cast<",
+		     if isConst then "reinterpret_cast<" else "static_cast<",
 		     getCType mtype, ">(", mvar, ");\n"]
 	in
 	    wrapperEntry callLine (funName,ret,al,false)

@@ -37,7 +37,13 @@ CPPSOURCES = $(NATIVES:%=%.cc)
 ALICESOURCES = $(CORE) $(ENUMS) $(UNSAFE) $(GENSIGS) $(MAINFILES)
 
 # executable names
-GENERATOR = GtkBinding.smlc
+ifdef WINDOWS
+GENERATOR = GtkBinding.x86-win32
+EXTRAFLAGS = -mno-cygwin -mms-bitfields
+else
+GENERATOR = GtkBinding.x86-linux
+EXTRAFLAGS =
+endif
 
 SML = sml
 ALICEC = alicec --dump-phases
@@ -62,7 +68,7 @@ $(GENFILES): $(LASTGENERATE)
 
 $(LASTGENERATE) generate: $(INPUTFILE) $(GENERATOR)
 	if test ! -d $(OUTDIR) ; then mkdir $(OUTDIR) ; fi
-	$(SML) @SMLload=$(GENERATOR) $(OUTDIR) $(INPUTFILE)
+	$(SML) $(OUTDIR) $(INPUTFILE) @SMLload=$(GENERATOR)
 	$(INSTALL) $(GENFILES:%=$(OUTDIR)/%) .
 	rm -f $(OUTDIR)/*
 	rmdir $(OUTDIR)
@@ -71,10 +77,6 @@ $(LASTGENERATE) generate: $(INPUTFILE) $(GENERATOR)
 $(GENERATOR):
 	rm -f $(GENERATOR)
 	echo 'CM.make(); compile();' | $(SML)
-	if test -e GtkBinding.x86-linux ; then \
-	  mv -f GtkBinding.x86-linux $(GENERATOR) ; fi
-	if test -e GtkBinding.x86-win32 ; then \
-	  mv -f GtkBinding.x86-win32 $(GENERATOR) ; fi
 	test -e $(GENERATOR) || exit 1
 
 $(INPUTFILE):
@@ -89,10 +91,12 @@ $(INPUTFILE):
 compile: $(NATIVES:%=%.dll) $(COMPS:%=%.stc)
 
 %.dll: %.o
-	$(ALICETOOL) -v ld -Wl,-S $< -o $@ `pkg-config --libs $(CLIBS)`
+	$(ALICETOOL) -v ld -Wl,-S $< -o $@ \
+	 $(EXTRAFLAGS) `pkg-config --libs $(CLIBS)`
 
 %.o: %.cc
-	$(ALICETOOL) -v cc -c $< -o $@ `pkg-config --cflags $(CLIBS)`
+	$(ALICETOOL) -v cc -c $< -o $@ \
+	 $(EXTRAFLAGS) `pkg-config --cflags $(CLIBS)`
 
 %.stc: %.aml
 	$(ALICEC) $< -o $@
