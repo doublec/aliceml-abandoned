@@ -47,12 +47,8 @@ protected:
   static const u_int NATIVE_CODE_POS   = 1;
   static const u_int IMMEDIATE_ENV_POS = 2;
   static const u_int NLOCALS_POS       = 3;
-#if defined(ALICE_IMPLICIT_KILL)
-  static const u_int LIVENESS_INFO_POS = 4;
+  static const u_int SKIP_CCC_PC_POS   = 4;
   static const u_int SIZE              = 5;
-#else
-  static const u_int SIZE              = 4;
-#endif
 public:
   using Block::ToWord;
   using ConcreteCode::GetInterpreter;
@@ -66,11 +62,9 @@ public:
   u_int GetNLocals() {
     return (u_int) Store::DirectWordToInt(Get(NLOCALS_POS));
   }
-#if defined(ALICE_IMPLICIT_KILL)
-  LivenessInformation *GetLivenessInfo() {
-    return LivenessInformation::FromWordDirect(Get(LIVENESS_INFO_POS));
+  u_int GetSkipCCCPC() {
+    return (u_int) Store::DirectWordToInt(Get(SKIP_CCC_PC_POS));
   }
-#endif
   Block *GetAbstractRepresentation() {
     return Store::DirectWordToBlock(Get(TRANSFORM_POS));
   }
@@ -84,10 +78,8 @@ public:
   static NativeConcreteCode *NewInternal(TagVal *abstractCode,
 					 Chunk *code,
 					 word immediateEnv,
-#if defined(ALICE_IMPLICIT_KILL)
-					 word livenessInfo,
-#endif
-					 word nbLocals);
+					 word nbLocals,
+					 word skipCCCPC);
   // NativeConcreteCode Untagging
   static NativeConcreteCode *FromWord(word code) {
     ConcreteCode *concreteCode = ConcreteCode::FromWord(code);
