@@ -551,10 +551,11 @@ AC_DEFUN([AC_SEAM_ENABLE_LIGHTNING],
    AC_MSG_CHECKING(whether to use GNU lightning)
    if test "${enable_lightning:-yes}" = "yes"; then
       AC_REQUIRE([AC_CANONICAL_HOST])dnl
-      AC_CHECK_SIZEOF(long)
       if test -d "${srcdir}"/lightning; then
         have_lightning=yes
         AC_DEFINE(HAVE_LIGHTNING, 1)
+        AC_SEAM_ADD_TO_CXXFLAGS_SEAMTOOL(-DHAVE_LIGHTNING=1)
+        AC_MSG_RESULT(yes)
         case "$host_cpu" in
              i?86)	 cpu_subdir=i386                                ;;
              sparc*)	 cpu_subdir=sparc				;;
@@ -573,12 +574,14 @@ AC_DEFUN([AC_SEAM_ENABLE_LIGHTNING],
       else
         AC_MSG_ERROR(cannot find GNU lightning)
       fi
+      AC_CHECK_SIZEOF(long)
    else
       have_lightning=no
       AC_DEFINE(HAVE_LIGHTNING, 0)
+      AC_SEAM_ADD_TO_CXXFLAGS_SEAMTOOL(-DHAVE_LIGHTNING=1)
       AC_MSG_RESULT(no)
    fi
-   AM_CONDITIONAL(HAVE_LIGHTNING, test x$debug = xyes)
+   AM_CONDITIONAL(HAVE_LIGHTNING, test x$have_lightning = xyes)
    ])dnl
 
 # ---------------------------------------------------------------
