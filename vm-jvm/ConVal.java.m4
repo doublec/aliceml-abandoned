@@ -82,18 +82,6 @@ final public class ConVal implements DMLConVal {
 	return content;
     }
 
-    /** setzt Wert auf val und gibt alten Wert zurueck */
-    final public DMLValue assign(DMLValue val) throws java.rmi.RemoteException {
-	if (this.constructor == Constants.reference) {
-	    DMLValue v=this.content;
-	    this.content=val;
-	    return Constants.dmlunit;
-	}
-	else {
-	    _RAISE(runtimeError,new STRING ("cannot assign "+val+" to "+this));
-	}
-    }
-
     final public java.lang.String toString() {
 	return constructor+"("+content+")";
     }

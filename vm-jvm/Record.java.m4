@@ -17,30 +17,32 @@ final public class Record extends Tuple {
 
     public Record (Label[] ls, DMLValue[] vals) {
 	super(vals);
-	java.lang.Object ar=null;
 	RecordArity ra = new RecordArity(ls);
-	ar=arityHash.get(ra);
-	if (ar==null) {
+	Object ar=arityHash.get(ra);
+	if (ar == null) {
 	    arity = ra;
 	    arityHash.put(arity,arity);
 	} else {
-	    arity =(RecordArity) ar;
+	    arity = (RecordArity) ar;
 	}
     }
 
     /** funktioniert nur, wenn records unique sind. */
     final public boolean equals(java.lang.Object val) {
-	Record r=null;
-	int i=0;
-	if (!(val instanceof Record))
-	    return false;
-	else {
-	    r = (Record) val;
-	    if (!r.getRecordArity().equals(this.arity))
-		return false;
-	    for(i=0; i<vals.length; i++)
-		if (!vals[i].equals(r.vals[i])) return false;
-	    return true;
+	if (val instanceof Record) {
+	    Record r = (Record) val;
+	    if (arity == r.arity) {
+		for(int i=0; i<vals.length; i++) {
+		    if (!vals[i].equals(r.vals[i])) {
+			return false;
+		    }
+		}
+		return true;
+	    } else {
+		return true;
+	    }
+	} else {
+ 	    return false;
 	}
     }
 
@@ -76,17 +78,5 @@ final public class Record extends Tuple {
 	    return vals[index];
 	else
 	    return null;
-    }
-
-
-    /** @parameter: arity,
-	@returns: null, falls es diese Arity noch nicht gab,
-	Zeiger auf die bereits dagewesene Arity sonst */
-    final static public RecordArity getRecordArity(RecordArity arity) {
-	return  (RecordArity) arityHash.get(arity);
-    }
-
-    final public RecordArity getRecordArity() {
-	return arity;
     }
 }

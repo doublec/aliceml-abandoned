@@ -77,11 +77,6 @@ final public class ConValTuple2 implements DMLConVal {
 	}
     }
 
-    /** setzt Wert auf val und gibt alten Wert zurueck */
-    final public DMLValue assign(DMLValue val) throws java.rmi.RemoteException {
-	_RAISE(runtimeError,new STRING ("cannot assign "+val+" to "+this));
-    }
-
     final public java.lang.String toString() {
 	return constructor+"("+fst+", "+snd+") : constructed value";
     }

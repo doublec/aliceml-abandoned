@@ -29,10 +29,11 @@ final public class Reference implements DMLConVal, DMLReference {
 	if (content==null) {
 	    content=mgr.request(cmgr);
 	}
-	if (content instanceof Tuple)
-	    return ((Tuple) content).get0();
-	else
-	    throw new ArrayIndexOutOfBoundsException(); 
+	if (content instanceof DMLTuple) {
+	    return ((DMLTuple) content).get0();
+	} else {
+	    return content;
+	}
     }
 
 
@@ -40,9 +41,9 @@ final public class Reference implements DMLConVal, DMLReference {
 	if (content==null) {
 	    content=mgr.request(cmgr);
 	}
-	if (content instanceof Tuple)
-	    return ((Tuple) content).get1();
-	else
+	if (content instanceof DMLTuple) {
+	    return ((DMLTuple) content).get1();
+	} else
 	    throw new ArrayIndexOutOfBoundsException(); 
     }
 
@@ -50,8 +51,8 @@ final public class Reference implements DMLConVal, DMLReference {
 	if (content==null) {
 	    content=mgr.request(cmgr);
 	}
-	if (content instanceof Tuple)
-	    return ((Tuple) content).get2();
+	if (content instanceof DMLTuple)
+	    return ((DMLTuple) content).get2();
 	else
 	    throw new ArrayIndexOutOfBoundsException(); 
     }
@@ -60,8 +61,8 @@ final public class Reference implements DMLConVal, DMLReference {
 	if (content==null) {
 	    content=mgr.request(cmgr);
 	}
-	if (content instanceof Tuple)
-	    return ((Tuple) content).get3();
+	if (content instanceof DMLTuple)
+	    return ((DMLTuple) content).get3();
 	else
 	    throw new ArrayIndexOutOfBoundsException(); 
     }
@@ -70,8 +71,8 @@ final public class Reference implements DMLConVal, DMLReference {
 	if (content==null) {
 	    content=mgr.request(cmgr);
 	}
-	if (content instanceof Tuple)
-	    return ((Tuple) content).get4();
+	if (content instanceof DMLTuple)
+	    return ((DMLTuple) content).get4();
 	else
 	    throw new ArrayIndexOutOfBoundsException(); 
     }
@@ -154,7 +155,4 @@ final public class Reference implements DMLConVal, DMLReference {
     }
 
     _apply_fails ;
-    _request_id ;
-    _getValue_id ;
-    _raise ;
 }

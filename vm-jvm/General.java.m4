@@ -50,8 +50,8 @@ final public class General {
 	_APPLY(val) {
 	    _fromTuple(args,val,2,"assign");
 	    _REQUESTDEC(DMLValue car,args[0]);
-	    if (car instanceof DMLConVal) {
-		return ((DMLConVal) car).assign(args[1]);
+	    if (car instanceof Reference) {
+		return ((Reference) car).assign(args[1]);
 	    }
 	    else
 		_error("wrong argument 1 for assign",val);
