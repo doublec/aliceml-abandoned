@@ -17,12 +17,13 @@ include $(TOPDIR)/Makefile.rules
 
 JAVA_LANG_SOURCES = \
 	Class.cc Object.cc String.cc Throwable.cc System.cc ClassLoader.cc \
-	Float.cc Double.cc StrictMath.cc
+	Float.cc Double.cc StrictMath.cc Thread.cc
 JAVA_IO_SOURCES = \
 	FileDescriptor.cc FileInputStream.cc FileOutputStream.cc \
 	ObjectStreamClass.cc
 JAVA_SECURITY_SOURCES = AccessController.cc
-SUN_REFLECT_SOURCES = Reflection.cc
+SUN_MISC_SOURCES = AtomicLong.cc
+SUN_REFLECT_SOURCES = Reflection.cc NativeConstructorAccessorImpl.cc
 SOURCES = \
 	Outline.cc Data.cc ThrowWorker.cc ClassLoader.cc JavaByteCode.cc \
 	ClassInfo.cc NativeMethodTable.cc ClassFile.cc ByteCodeInterpreter.cc \
@@ -31,6 +32,7 @@ SOURCES = \
 	$(JAVA_LANG_SOURCES:%=java/lang/%) \
 	$(JAVA_IO_SOURCES:%=java/io/%) \
 	$(JAVA_SECURITY_SOURCES:%=java/security/%) \
+	$(SUN_MISC_SOURCES:%=sun/misc/%) \
 	$(SUN_REFLECT_SOURCES:%=sun/reflect/%)
 
 OBJS = $(SOURCES:%.cc=%.o)
