@@ -1,0 +1,323 @@
+2000-05-20 Mark Crichton  <crichton@gimp.org>
+
+        * configure.in: Bumped up to 1.9.8.1.
+        * README: Some info about this 1.9.8.1 release.
+
+2000-01-23 Miguel de Icaza   <miguel@gnu.org>
+
+	* configure.in: Add support for --disable-modules to disable
+	compiling the dynamic modules and create non-modular version of
+	imlib. 
+
+1999-10-16  Kjartan Maraas  <kmaraas@online.no>
+
+	* utils/imlib_config.c (main): Removed calls to bindtextdomain
+	and textdomain since the i18n support was removed.
+
+Sun Oct  3 12:12:30 PDT 1999 Manish Singh <yosh@gimp.org>
+
+	* acinclude.m4
+	* ltmain.sh
+	* ltconfig: libtool 1.3.3
+
+	* gdk_imlib/io-png.c
+	* Imlib/utils.c
+	* Imlib/load.c: remove broke image, comment out 1.0.2 check
+
+	* Imlib/save.c: correct bogus cjpeg call
+
+Mon Mar 29 21:03:57 PST 1999 Manish Singh <yosh@gimp.org>
+
+	* configure.in: check for "unknown" shared lib test
+
+Mon Mar 29 20:48:55 PST 1999 Manish Singh <yosh@gimp.org>
+
+	* acinclude.m4
+	* ltmain.sh
+	* ltconfig: upgraded to libtool 1.2f
+
+	* acconfig.h: remove WITH_SYMBOL_UNDERSCORE
+
+	* gdk_imlib/Makefile.am: rearrange stuff so automake doesn't whine
+
+1999-03-23  Raja R Harinath  <harinath@cs.umn.edu>
+
+	* utils/imlib_config.c: Include <locale.h> unconditionally.
+
+Wed Mar 17 01:33:44 1999  Timur Bakeyev <timur@gnu.org>
+
+	* configure.in: Fix a bug, that allow to link with libpng, if it's
+	version ne 1.0.2, even, if we found before, that it's not suitable.
+	(i.e. too old version).
+
+Sat Feb 20 13:05:04 PST 1999 Manish Singh <yosh@gimp.org>
+
+	* acinclude.m4
+	* ltmain.sh
+	* ltconfig: same as Jan 27th change, just got accidentally reverted
+
+Fri Feb 12 00:28:12 EST 1999 The Rasterman <raster@redhat.com>
+	* That's it. reverted all internationalisation changes to get imlib
+	  working & runing again withotu segfaults. If you made any commits
+	  that fix actual problems that dONT break imlib please commit and 
+	  patch them in again CAREFULLY. This rveert may revert your patch.
+	
+	* reduced xpm loader stack usage by a few 100 Kb :)
+
+
+Wed Jan 27 20:59:20 PST 1999 Manish Singh <yosh@gimp.org>
+
+	* acinclude.m4: Xsed isn't valid here, don't use it
+
+	* ltmain.sh
+	* ltconfig: better file magic regexp for Linux libs
+
+Thu Jan 21 19:37:43 EST 1999  Jeff Garzik  <jgarzik@pobox.com>
+
+	* gdk_imlib/utils.c:
+	64-bit-ness fixes.  sprintf formats were changed to correctly
+	match the types of their arguments.  This fixes bugs people
+	probably wouldn't have noticed anyway, since the strings are
+	only used as internal identifiers.
+
+Wed Jan 20 19:01:01 PST 1999 Manish Singh <yosh@gimp.org>
+
+	* configure.in: cosmetic change
+
+	* gdk_imlib/Makefile.am: rearrange stuff for automake 1.4
+
+Thu Jan 14 21:01:29 PST 1999 Manish Singh <yosh@gimp.org>
+
+	* configure.in: put back in my hack, it does work
+
+	* acconfig.h
+	* ltconfig
+	* ltmain.sh
+	* acinclude.m4: libtool 1.2d support
+
+1999-01-14  Christopher Blizzard  <blizzard@appliedtheory.com>
+
+	* configure.in (dynworks): comment out yosh's libtool hack since
+ 	it doesn't appear to work.
+
+Thu Jan 14 01:18:15 PST 1999 Manish Singh <yosh@gimp.org>
+
+	* configure.in: hack to see if libtool supports shared lib
+	dependencies and disable gmodule stuff if it doesn't.
+
+	* configure.in
+	* imlib-config.in
+	* utils/Makefile.am: give the graphics libs explicitly without
+	gmodule support
+
+	* autogen.sh: run autoheader
+
+	* config.h.in: removed autogened file
+
+	* gdk_imlib/gdk_imlib_private.h: add an #include guard to
+	prevent multiple inclusion
+
+	* gdk_imlib/io-jpeg.c
+	* gdk_imlib/io-png.c
+	* gdk_imlib/io-tiff.c: add some missing function stubs if the support
+	lib isn't there
+
+	* gdk_imlib/load.c: remove unused "broken" image
+
+1999-01-13  Jeff Garzik  <jgarzik@pobox.com>
+
+	* utils/imlib_config.c:
+	s/gtk_toggle_button_set_state/gtk_toggle_button_set_active/
+
+Fri Dec 25 23:41:30 EST 1998 Mandrake <mandrake@mandrake.net>
+	* Imlib/Makefile.am, gdk_imlib/Makefile.am:  fixed library file
+	rev numbers to 1.8.2 using libtool
+
+1998-12-17  James Henstridge  <james@daa.com.au>
+
+	* imlib.spec: small change so that imlib-config is put in the devel
+	package instead of with the config editor (this is where it should
+	have been).
+
+Sun Nov 22 20:38:23 PST 1998 Manish Singh <yosh@gimp.org>
+
+	* Imlib/utils.c
+	* gdk_imlib/utils.c: initilized Pixmap vars with proper types
+
+	* utils/imlib_config.c: use scrolled window for clist
+
+Fri Oct 30 01:02:34 PST 1998 Manish Singh <yosh@gimp.org>
+
+	* Imlib/misc.c
+	* gdk_imlib.c: initialize id->max_shm always
+
+Tue Oct 20 03:10:28 PDT 1998 Manish Singh <yosh@gimp.org>
+
+	* Imlib/snprintf.c: snprintf implementation for systems without it
+
+	* Imlib/Makefile.am, configure.in: support for snprintf.c
+
+	* Imlib/cache.c, Imlib/colors.c, Imlib/load.c, Imlib/misc.c,
+	Imlib/rend.c, Imlib/save.c, Imlib/utils.c: removed the #warning
+	crap (not portable) and #define snprintf my_snprintf for the no
+	snprintf case. Use snprintf unconditionally.
+	
+Wed Oct  7 20:58:07 PDT 1998 Manish Singh <yosh@gimp.org>
+
+	* imlib.m4: make it actually do the runtime test
+
+Wed Sep 30 11:31:03 GMT 1998 Gary V. Vaughan <gvaughan@oranda.demon.co.uk>
+
+	* configure.in: Check whether sysv ipc, shm and/or XShm are
+	available (mostly taken from gtk+ configure.in).
+
+	* acconfig.h: Added new preprocessor defines for the above (and
+	reran autoheader).
+
+	* Imlib/Imlib_private.h, Imlib/Imlib_types.h,
+	gdk_imlib/gdk_imlib_private.h: guard ipc.h, sys.h and XShm.h includes
+	with preprocessor defines from above.
+
+	* Imlib/misc.c, Imlib/rend.c, Imlib/utils.c, Imlib/Imlib_types.h,
+	gdk_imlib/misc.c, gdk_imlib/rend.c, gdk_imlib/utils.c,
+	gdk_imlib/gdk_imlib_types.h, utils/imlib_config.c: preprocessed 
+	away all of the code sections which cannot compile without shared 
+	memory and/or XShm headers.
+
+	* utils/imlib_config.c (main): Fixed typo Memery -> Memory.
+
+Tue Sep 15 14:35:40 CDT 1998 mej <mej@mw.3com.com>
+
+	* Fixed the spelling of "create" in the name of
+	  *_create_image_from_drawable functions
+	
+Sun Sep 13 18:53:32 PDT 1998 Manish Singh <yosh@gimp.org>
+
+	* configure.in: we check for jpeglib.h, not jpeg.h. Let the user
+	know this too.
+
+Tue Sep  8 10:17:37 1998  Owen Taylor  <otaylor@redhat.com>
+
+	* Makefile.am (EXTRA_DIST): Install imlib.m4
+
+Fri Sep  4 11:54:05 EDT 1998 Mandrake <mandrake@mandrake.net>
+
+	* changed imlib-config.in to put -lXext before -lX11 so that
+	systems which enforce link order will cease complaining
+	(i.e. BSD/OS)
+
+Thu Sep  3 13:08:12 1998  Tom Tromey  <tromey@cygnus.com>
+
+	* configure.in: Only make imlib-config executable if it is being
+	created.
+
+Mon Aug 31 23:55:33 CDT 1998 Frank Belew <frb@umr.edu>
+
+	* configure.in: removed AM_PROG_RANLIB
+	* imlib.m4: created
+	* Makefile.am: added lines to install imlib.m4
+
+Wed Aug 19 10:31:25 1998  Raph Levien  <raph@gtk.org>
+
+	* configure.in: added AM_MAINTAINER_MODE, and also fiddled with
+	png "too old" test to make it correctly reject more versions.
+
+1998-07-13  Raja R Harinath  <harinath@cs.umn.edu>
+
+	* imlib-config.in (--libs): Reorder libraries.
+	(--libs-gdk): Likewise.
+
+1998-06-28  Miguel de Icaza  <miguel@nuclecu.unam.mx>
+
+	* utils/imlib_config.c (read_imrc): Correctly handle the output of
+	sscanf.  This was broken, broken, broken.  The code is still
+	Raster-style though.  
+
+1998-06-27  Raja R Harinath  <harinath@cs.umn.edu>
+
+	* configure.in (AC_SUBST): Remove `config/imrc'.
+	* config/Makefile.am (imrc): `sed' in sysconfdir.
+	(EXTRA_DIST): Add `imrc.in'.
+	
+	* config/imrc.in (PaletteFile): Look in @sysconfdir@, not
+	@prefix@/etc. 
+
+Sun Jun  26 22:25:19 EDT 1998 Manish Vachharajani <mvachhar@vger.rutgers.edu>
+
+	* Imlib/misc.c: Tried to improve shared memory detection for
+	pixmaps.
+	* gdk_imlib/misc.c: Likewise.
+	
+Sun Jun  21 08:19:19 EDT 1998 Manish Vachharajani <mvachhar@vger.rutgers.edu>
+
+	* Imlib/misc.c: Made 24bit fast routines work correctly for when
+	clients and server match endianess.
+	* Imlib/rend.c: Likewise.
+	* gdk_imlib/misc.c: Likewise.
+	* gdk_imlib/rend.c: Likewise.
+	* gdk_imlib/gdk_imlib_private.h: Added byte and bit order fields
+	to Xdata.
+	* Imlib/Imlib_types.h: Likewise.
+
+Tue Jun  9 01:13:26 PDT 1998 Manish Singh <yosh@gimp.org>
+
+	* configure.in: Redid graphics lib checks, they are far
+	more robust now.
+
+1998-05-15  Raja R Harinath  <harinath@cs.umn.edu>
+
+	* config/Makefile.am (EXTRA_DIST): Add `im_palette.pal'.
+
+Sun Apr 19 09:38:36 EDT 1998 Gregory McLean <gregm@comstar.net>
+
+	* .cvsignore: updated to ignore generated files.
+
+1998-04-03  Raja R Harinath  <harinath@cs.umn.edu>
+
+	* configure.in (GX_LIBS): Rationalize Marc's changes.
+
+1998-04-03  Marc Ewing  <marc@.redhat.com>
+
+	* configure.in: cruft.  please fix it for me!
+
+Wed Mar 18 19:37:35 1998  Tom Tromey  <tromey@cygnus.com>
+
+	* Makefile.am (SUBDIRS): Don't include utils.  This is done in
+	configure.in.
+
+Sun Mar 15 12:33:01 1998  Owen Taylor <owt1@cornell.edu>
+
+	* utils/Makefile.am (INCLUDES): Include GTK_CFLAGS, not X_CFLAGS.
+	(LDADD): Include GTK_LIBS, not explicit gtk/X libraries.
+
+	* configure.in: Use AM_PATH_GTK to find gtk.  Don't use
+	AC_CHECK_LIB.
+
+	* Makefile.am (SUBDIRS): Conditionally build in gdk_imlib.
+
+1998-02-26  Mark Galassi  <rosalia@cygnus.com>
+
+	* general: removed all the old Makefile.in files, since raster has
+	now endorsed the automakification.
+
+1998-02-24  Raja R Harinath  <harinath@cs.umn.edu>
+
+	* utils/Makefile.am (INCLUDES): Also include $(X_CFLAGS).
+	(LDADD): Use `libtool', and also link in all those `gtk+' stuff.
+	Should probably autoconf this stuff a bit more.
+
+1998-02-24  Federico Mena Quintero  <federico@nuclecu.unam.mx>
+
+	* utils/Makefile.am (INCLUDES): Added INCLUDES so that it can find
+	the gdk_imlib headers.  I hope this is the right way to do it.
+
+1998-02-24  Mark Galassi  <rosalia@cygnus.com>
+
+	* configure.in: added AM_PROG_LIBTOOL so we can generate shared
+	libraries.
+
+	* Makefile.am, configure.in: put imlib under automake/autoconf.
+
+1998-02-21  Russell Nelson  <nelson@crynwr.com>
+
+	* *: Fix spelling mistakes.
