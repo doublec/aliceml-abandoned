@@ -245,24 +245,33 @@ structure OutputPickle :> OUTPUT_PICKLE =
 	    (outputBlock (context, Label.putFun, 4); outputId (context, id);
 	     outputVector outputIdRef (context, idRefs);
 	     outputFunction (context, function); outputInstr (context, instr))
-	  | outputInstr (context, AppPrim (idDef, name, idRefs, instrOpt)) =
-	    (outputBlock (context, Label.appPrim, 4);
-	     outputIdDef (context, idDef); outputString (context, name);
+	  | outputInstr (context, AppPrim (name, idRefs, idDefInstrOpt)) =
+	    (outputBlock (context, Label.appPrim, 3);
+	     outputString (context, name);
 	     outputVector outputIdRef (context, idRefs);
-	     outputOption outputInstr (context, instrOpt))
-	  | outputInstr (context, AppVar (outArgs, idRef, inArgs, instrOpt)) =
-	    (outputBlock (context, Label.appVar, 4);
-	     outputArgs outputIdDef (context, outArgs);
+	     outputOption (fn (context, (idDef, instr)) =>
+			   (outputBlock (context, Label.TUPLE, 2);
+			    outputIdDef (context, idDef);
+			    outputInstr (context, instr)))
+	     (context, idDefInstrOpt))
+	  | outputInstr (context, AppVar (idRef, inArgs, outArgsInstrOpt)) =
+	    (outputBlock (context, Label.appVar, 3);
 	     outputIdRef (context, idRef);
 	     outputArgs outputIdRef (context, inArgs);
-	     outputOption outputInstr (context, instrOpt))
-	  | outputInstr (context,
-			 AppConst (outArgs, value, inArgs, instrOpt)) =
-	    (outputBlock (context, Label.appConst, 4);
-	     outputArgs outputIdDef (context, outArgs);
+	     outputOption (fn (context, (outArgs, instr)) =>
+			   (outputBlock (context, Label.TUPLE, 2);
+			    outputArgs outputIdDef (context, outArgs);
+			    outputInstr (context, instr)))
+	     (context, outArgsInstrOpt))
+	  | outputInstr (context, AppConst (value, inArgs, outArgsInstrOpt)) =
+	    (outputBlock (context, Label.appConst, 3);
 	     outputValue (context, value);
 	     outputArgs outputIdRef (context, inArgs);
-	     outputOption outputInstr (context, instrOpt))
+	     outputOption (fn (context, (outArgs, instr)) =>
+			   (outputBlock (context, Label.TUPLE, 2);
+			    outputArgs outputIdDef (context, outArgs);
+			    outputInstr (context, instr)))
+	     (context, outArgsInstrOpt))
 	  | outputInstr (context, GetRef (id, idRef, instr)) =
 	    (outputBlock (context, Label.getRef, 3); outputId (context, id);
 	     outputIdRef (context, idRef); outputInstr (context, instr))

@@ -52,9 +52,9 @@ signature PICKLE_GRAMMAR =
 	  | PutTup of id * idRef vector * instr
 	  | PutVec of id * idRef vector * instr
 	  | PutFun of id * idRef vector * function * instr
-	  | AppPrim of idDef * string * idRef vector * instr option
-	  | AppVar of idDef args * idRef * idRef args * instr option
-	  | AppConst of idDef args * value * idRef args * instr option
+	  | AppPrim of string * idRef vector * (idDef * instr) option
+	  | AppVar of idRef * idRef args * (idDef args * instr) option
+	  | AppConst of value * idRef args * (idDef args * instr) option
 	  | GetRef of id * idRef * instr
 	  | GetTup of idDef vector * idRef * instr
 	  | Raise of idRef

@@ -128,9 +128,9 @@ structure CodeGenPhase: CODE_GEN_PHASE =
 	    if isIdInVec (idRefs, id') then USED
 	    else detup' (detup (instr, id'),
 			 fn instr => O.PutFun (id, idRefs, function, instr))
-	  | detup (O.AppPrim (_, _, _, _), _) = SIDE_EFFECTING
-	  | detup (O.AppVar (_, _, _, _), _) = SIDE_EFFECTING
-	  | detup (O.AppConst (_, _, _, _), _) = SIDE_EFFECTING
+	  | detup (O.AppPrim (_, _, _), _) = SIDE_EFFECTING
+	  | detup (O.AppVar (_, _, _), _) = SIDE_EFFECTING
+	  | detup (O.AppConst (_, _, _), _) = SIDE_EFFECTING
 	  | detup (O.GetRef (_, _, _), _) = SIDE_EFFECTING
 	  | detup (O.GetTup (idDefs, idRef, instr), id) =
 	    if isId (idRef, id) then
@@ -227,10 +227,10 @@ structure CodeGenPhase: CODE_GEN_PHASE =
 			     let
 				 val id' = fresh env
 				 val instr' =
-				     O.AppPrim (O.Wildcard, "Hole.fill",
+				     O.AppPrim ("Hole.fill",
 						#[O.Local id',
 						  lookup (env, id)],
-						SOME instr)
+						SOME (O.Wildcard, instr))
 			     in
 				 translateExp (exp, id', instr', env)
 			     end
@@ -238,8 +238,9 @@ structure CodeGenPhase: CODE_GEN_PHASE =
 		    instr idDefExpVec
 	    in
 		List.foldr (fn (id, instr) =>
-			    O.AppPrim (O.IdDef id, "Hole.hole", #[],
-				       SOME instr)) bodiesInstr ids
+			    O.AppPrim ("Hole.hole", #[],
+				       SOME (O.IdDef id, instr)))
+		bodiesInstr ids
 	    end
 	  | translateDec (RefAppDec (_, IdDef id, id'), instr, env) =
 	    O.GetRef (declare (env, id), translateId (id', env), instr)
@@ -247,7 +248,7 @@ structure CodeGenPhase: CODE_GEN_PHASE =
 	    let
 		val id' = lookup (env, id)
 	    in
-		O.AppPrim (O.Wildcard, "Future.await", #[id'], SOME instr)
+		O.AppPrim ("Future.await", #[id'], SOME (O.Wildcard, instr))
 	    end
 	  | translateDec (TupDec (_, idDefs, id), instr, env) =
 	    let
@@ -409,7 +410,7 @@ structure CodeGenPhase: CODE_GEN_PHASE =
 		O.PutFun (id, translateIds (globals, env), function, instr)
 	    end
 	  | translateExp (PrimAppExp (_, name, ids), id, instr, env) =
-	    O.AppPrim (O.IdDef id, name, translateIds (ids, env), SOME instr)
+	    O.AppPrim (name, translateIds (ids, env), SOME (O.IdDef id, instr))
 	  | translateExp (VarAppExp (_, id, args), id', instr, env) =
 	    (*--** also generate tail calls *)
 	    let
@@ -421,8 +422,9 @@ structure CodeGenPhase: CODE_GEN_PHASE =
 			    (O.OneArg (O.IdDef id'), instr)
 		      | KILLED => (O.OneArg O.Wildcard, instr)
 	    in
-		O.AppVar (returnArgs, lookup (env, id),
-			  translateArgs translateId (args, env), SOME instr)
+		O.AppVar (lookup (env, id),
+			  translateArgs translateId (args, env),
+			  SOME (returnArgs, instr))
 	    end
 	  | translateExp (TagAppExp (_, _, tag, args), id, instr, env) =
 	    O.PutTag (id, tag, translateIds (argsToVector args, env), instr)
@@ -458,19 +460,19 @@ structure CodeGenPhase: CODE_GEN_PHASE =
 	  | translateIgnore (VecExp (_, _), instr, _) = instr
 	  | translateIgnore (FunExp (_, _, _, _, _), instr, _) = instr
 	  | translateIgnore (PrimAppExp (_, name, ids), instr, env) =
-	    O.AppPrim (O.Wildcard, name, translateIds (ids, env), SOME instr)
+	    O.AppPrim (name, translateIds (ids, env), SOME (O.Wildcard, instr))
 	  | translateIgnore (VarAppExp (_, id, args), instr, env) =
-	    O.AppVar (O.OneArg O.Wildcard, lookup (env, id),
-		      translateArgs translateId (args, env), SOME instr)
+	    O.AppVar (lookup (env, id), translateArgs translateId (args, env),
+		      SOME (O.OneArg O.Wildcard, instr))
 	  | translateIgnore (TagAppExp (_, _, _, _), instr, _) = instr
 	  | translateIgnore (ConAppExp (_, Con id, _), instr, env) =
-	    O.AppPrim (O.Wildcard, "Future.await", #[lookup (env, id)],
-		       SOME instr)
+	    O.AppPrim ("Future.await", #[lookup (env, id)],
+		       SOME (O.Wildcard, instr))
 	  | translateIgnore (ConAppExp (_, StaticCon _, _), instr, _) = instr
 	  | translateIgnore (RefAppExp (_, _), instr, _) = instr
 	  | translateIgnore (SelAppExp (_, _, _, _, id), instr, env) =
-	    O.AppPrim (O.Wildcard, "Future.await", #[lookup (env, id)],
-		       SOME instr)
+	    O.AppPrim ("Future.await", #[lookup (env, id)],
+		       SOME (O.Wildcard, instr))
 	  | translateIgnore (FunAppExp (info, id, _, args), instr, env) =
 	    (*--** translate to AppConst *)
 	    translateIgnore (VarAppExp (info, id, args), instr, env)
