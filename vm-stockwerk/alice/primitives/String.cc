@@ -60,20 +60,20 @@ DEFINE2(String_compare) {
   DECLARE_STRING(string2, x1);
   int result = DoCompare(string1, string2);
   if (result < 0) {
-    RETURN_INT(2);   // LESS
+    RETURN_INT(Types::LESS);
   } else if (result == 0) {
-    RETURN_INT(0);   // EQUAL
+    RETURN_INT(Types::EQUAL);
   } else { // result > 0
-    RETURN_INT(1);   // GREATER
+    RETURN_INT(Types::GREATER);
   }
 } END
 
 DEFINE1(String_explode) {
   DECLARE_STRING(string, x0);
   u_char *base = string->GetValue();
-  word list = Store::IntToWord(1); // nil
+  word list = Store::IntToWord(Types::nil);
   for (u_int i = string->GetSize(); i--; ) {
-    TagVal *cons = TagVal::New(0, 2); // ::
+    TagVal *cons = TagVal::New(Types::cons, 2);
     cons->Init(0, Store::IntToWord(base[i]));
     cons->Init(1, list);
     list = cons->ToWord();
