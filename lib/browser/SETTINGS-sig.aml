@@ -23,5 +23,6 @@ sig
     val relmode: bool ref
     val relnumber: int ref
     val tokenmode: bool ref
+    val font: string ref
 
 end

@@ -46,18 +46,20 @@ struct
     
     (* newNode *)
     fun newNode (v,t) = let val va = UnsafeValue.cast v: Reflect.value
-                            val i = MainDictionary.insert(Empty,dict)
-			    val _ = RelManDictionary.update(i,reldict,nil)
+                            val i = MainDictionary.insertI(dict,Empty)
+			    val _ = RelManDictionary.update(reldict,(i,nil))
                             val _ = relnumber := 0
 			    val node =  createGraph (va,t,Empty,i,0)
-			in (MainDictionary.insert(node,dict) ; node)
+			in (MainDictionary.insert(dict,(i,node)) ; node)
 			end
   
     (* createGraph *)
     and createGraph (va,t,p,i,d) = 
 	if !relmode 
 	    then let val ind = if p = Empty then i else getAncIndex p
-                     val relman = RelManDictionary.return(ind,reldict)
+                     val relman = case RelManDictionary.lookup(reldict,ind)
+			 of SOME x => x
+		       | NONE => []
                      val str = "Ref"^Int.toString(!relnumber)
                      val f = if !tokenmode
 				 then fn x   
@@ -77,15 +79,18 @@ struct
 						       str^" as ",
 						       relman,setGroup)
 			     val c = createUsualGraph (va,t,node,0,d) 
-			     val actrelman = RelManDictionary.return(ind, 
-								     reldict) 
+			     val actrelman = case 
+				 RelManDictionary.lookup(reldict,
+							 ind)
+				 of SOME x => x
+			       | NONE => []
 			 in ( case c of     
 			      Simple(_) => c
 			    | Empty => c    
                             | _ => ( setContent (node,c)   
-				    ; RelManDictionary.update(ind,
-							      reldict, 
-					    List.append([node],actrelman))
+				    ; RelManDictionary.update(reldict,
+								  (ind,
+					        List.append([node],actrelman)))
 				    ; node ) )
 			 end     
 		    | SOME n => let val rep = ( case n of 
@@ -96,14 +101,16 @@ struct
 				    val node = 
 					createRelRefNode (INTERPUNCT,p,i,
 							  str,m,setGroup)
-				    val actrelman = 
-					RelManDictionary.return(ind,reldict)
+				    val actrelman = case 
+					RelManDictionary.lookup(reldict,ind)
+					of SOME x => x
+				      | NONE => []
 				    val part = List.partition (fn x => x = n)
 					                      actrelman
 				    val restlist = #2(part)
-				in (RelManDictionary.update(ind,
-							    reldict,
-					         List.append([m],restlist))
+				in (RelManDictionary.update(reldict,
+					         (ind,
+						  List.append([m],restlist)))
                                     ; node)
 				end)
 		 end

@@ -15,46 +15,88 @@
 
 import signature MK_DICTIONARY from "MK_DICTIONARY-sig"
 
-functor MkDictionary(type t val def: t) : MK_DICTIONARY 
-= 
+(* functor MkDictionary *)
+functor MkDictionary (type t val def: t) : MK_DICTIONARY=
 struct
-    type elemtyp = t
-
-    type dictionary = elemtyp array ref
-
-    val default = def
+    type elemtype = t
 	
-    val empty = (let val a = Array.array(0,default)
-                 in ref a end)
-
-    fun copy (a,b,j) = 
-	if j >= 0 
-        then (Array.update(b,j,Array.sub(a,j));copy(a,b,j-1)) 
-	else ()
+    type dictionary = ((int * elemtype) list Array.array ref) 
+	* int ref     (* counts no of elements *)
+	* int ref     (* next index to be assigned *)
+	
+    val default = def
+	    
+    val empty = let
+		    val a = ref(Array.array(5,[]))
+		    val fill_count = ref 0
+		    val next_i = ref 0
+		in
+		    (a, fill_count,next_i) 
+		end
+	
+    (* inserts with key given, adjusts size if necessary *)    
+    fun insert ((a,fill_count,_) as dict,(key,value)) = 
+	let
+	    val _ = fill_count := !fill_count + 1
+	    val _ = if !fill_count > (Array.length(!a) div 2)
+			then let
+				 val newsize = Array.length(!a) * 2 + 1
+				 val b = !a
+				 val _ = a:= Array.array(newsize,[])
+				 val _ = fill_count := 1
+				 val ins = fn (k,v) => insert(dict,(k,v))
+				 val _ = Array.app(fn slot  
+						   => (List.app ins  slot)) b 
+			     in
+				 ()
+			     end
+		    else ()
+	    val slot = key mod Array.length(!a)
+	    val liste = (key,value)::Array.sub(!a,slot)
+	in 
+	    Array.update(!a,slot,liste)
+	end
     
-    fun insert' (x,a,i) = (if Array.sub(!a,i) = default 
-                           then (Array.update(!a,i,x); i)
-                           else insert' (x,a,i+1))
-                           handle General.Subscript 
-                           => let val b = !a 
-                              in
-                              (a := Array.array(2*i+1,default)
-                              ; Array.update(!a,i,x); copy(b,!a,i-1); i)
-                              end 
+    (* searches for key *)
+    fun lookup ((a,fill_count,_),key) = 
+	let
+	    val slot = key mod Array.length(!a)
+	in
+	    case List.find (fn (i,value) => i = key) (Array.sub(!a,slot))
+		of
+		    SOME (k,v) => SOME v
+		  | NONE => NONE
+	end
+    
+    (* deletes all objects with specified key *)
+    fun delete  ((a,fill_count,_),key) = 
+	let
+	    val slot = key mod Array.length(!a)
+	    val (drop,take) = List.partition 
+		(fn (i,v) => i = key) 
+		(Array.sub(!a,slot))
+	    val _ = fill_count := !fill_count - List.length(drop)
+	in
+	    Array.update(!a,slot,take)
+	end
 
-    fun insert (x,a) = insert'(x,a,0)
-                           
-    fun delete (i,a) = Array.update(!a,i,default)   
-      
-    fun return (i,a) = Array.sub(!a,i)
+    (* inserts and assigns new key *)
+    fun insertI  ((a,fill_count,next_i) as d,value) =
+	let val key = !next_i
+	    val _ = next_i := !next_i + 1
+	    val _ = insert(d,(key,value))
+	in
+	    key
+	end
 
-    fun update (i,a,x) = Array.update(!a,i,x)
-	handle General.Subscript => let val b = !a
-				    in 
-				    (a := Array.array(2*i+1,default)
-                                    ; Array.update(!a,i,x); copy(b,!a,i-1) )
-				    end
-
-end
+    (* replaces value *)
+    fun update ((a,(k,v))) = let
+				 val _ = delete (a,k)
+				 val _ = insert (a,(k,v))
+			     in
+				 ()
+			     end
+    
+end;
 
 

@@ -23,5 +23,6 @@ struct
     val relmode = ref false
     val relnumber = ref 0
     val tokenmode = ref false
+    val font = ref "8x13"
 
 end

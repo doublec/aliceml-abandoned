@@ -13,18 +13,19 @@
  *
  *)
 
-signature MK_DICTIONARY = 
+signature MK_DICTIONARY  = 
 sig
-    type elemtyp
+    type elemtype
     type dictionary
 
-    val default : elemtyp
+    val default : elemtype
     val empty    : dictionary
 
-    val copy     : elemtyp array * elemtyp array * int  -> unit 
-    val insert'  : elemtyp * dictionary * int -> int  
-    val insert   : elemtyp * dictionary -> int 
-    val delete   : int * dictionary -> unit
-    val return   : int * dictionary -> elemtyp
-    val update   : int * dictionary * elemtyp -> unit
-end 
+    val insert   : dictionary * (int * elemtype) -> unit
+    val lookup   : dictionary * int -> elemtype option
+    val delete   : dictionary * int -> unit
+    val insertI  : dictionary * elemtype -> int
+    val update   : dictionary * (int * elemtype) -> unit
+
+    
+end ;
