@@ -32,25 +32,25 @@ enum ComponentTag {
 // Tracing
 static bool traceFlag;
 
-static void Trace(const char *prefix, Chunk *key) {
+static void Trace(const char *prefix, String *key) {
   if (traceFlag) {
     std::fprintf(stderr, "[boot-linker] %s %.*s\n", prefix,
-		 (int) key->GetSize(), key->GetBase());
+		 (int) key->GetSize(), key->GetValue());
   }
 }
 
 // File name handling: Resolving, Localizing
-static u_int ParentDir(char *s, u_int offset) {
+static u_int ParentDir(u_char *s, u_int offset) {
   while (offset && (s[--offset] != '/'));
   return offset;
 }
 
-static Chunk *Resolve(Chunk *base, Chunk *rel) {
+static String *Resolve(String *base, String *rel) {
   u_int bSize  = base->GetSize();
   u_int rSize  = rel->GetSize();
   u_int offset = bSize;
-  char *bPtr   = base->GetBase();
-  char *rPtr   = rel->GetBase();
+  u_char *bPtr = base->GetValue();
+  u_char *rPtr = rel->GetValue();
   while (true) {
     offset = ParentDir(bPtr, offset);
     if ((rSize < 3) || std::memcmp(rPtr, "../", 3)) {
@@ -62,13 +62,11 @@ static Chunk *Resolve(Chunk *base, Chunk *rel) {
     }
   }
   if (offset == 0) {
-    Chunk *path = Store::AllocChunk(rSize);
-    std::memcpy(path->GetBase(), rPtr, rSize);
-    return path;
+    return String::New(reinterpret_cast<char *>(rPtr), rSize);
   }
   else {
-    Chunk *path = Store::AllocChunk(offset + 1 + rSize);
-    char *pPtr  = path->GetBase();
+    String *path = String::New(offset + 1 + rSize);
+    u_char *pPtr = path->GetValue();
     std::memcpy(pPtr, bPtr, offset);
     pPtr[offset] = '/';
     std::memcpy(pPtr + offset + 1, rPtr, rSize);
@@ -76,17 +74,15 @@ static Chunk *Resolve(Chunk *base, Chunk *rel) {
   }
 }
 
-static Chunk *Localize(Chunk *key) {
-  //--** Hack to ensure NUL-terminated strings
-  Chunk *aliceHome = Store::DirectWordToChunk(Properties::aliceHome);
-  u_int hSize      = aliceHome->GetSize();
-  u_int kSize      = key->GetSize();
-  Chunk *path      = Store::AllocChunk(hSize + kSize + 5);
-  char *base       = path->GetBase();
-  std::memcpy(base, aliceHome->GetBase(), hSize);
-  std::memcpy(base + hSize, key->GetBase(), kSize);
-  std::memcpy(base + hSize + kSize, ".stc", 4);
-  base[hSize + kSize + 4] = '\0';
+static String *Localize(String *key) {
+  String *aliceHome = String::FromWordDirect(Properties::aliceHome);
+  u_int hSize       = aliceHome->GetSize();
+  u_int kSize       = key->GetSize();
+  String *path      = String::New(hSize + kSize + 4);
+  u_char *p         = path->GetValue();
+  std::memcpy(p, aliceHome->GetValue(), hSize);
+  std::memcpy(p + hSize, key->GetValue(), kSize);
+  std::memcpy(p + hSize + kSize, ".stc", 4);
   return path;
 }
 
@@ -104,7 +100,7 @@ public:
     self = new ApplyInterpreter();
   }
   // Frame Handling
-  static void PushFrame(TaskStack *taskStack, Chunk *key,
+  static void PushFrame(TaskStack *taskStack, String *key,
 			word closure, Vector *imports);
   // Execution
   virtual Result Run(TaskStack *taskStack);
@@ -124,7 +120,7 @@ public:
     self = new EnterInterpreter();
   }
   // Frame Handling
-  static void PushFrame(TaskStack *taskStack, Chunk *key, word sign);
+  static void PushFrame(TaskStack *taskStack, String *key, word sign);
   // Execution
   virtual Result Run(TaskStack *taskStack);
   // Debugging
@@ -143,7 +139,7 @@ public:
     self = new LinkInterpreter();
   }
   // Frame Handling
-  static void PushFrame(TaskStack *taskStack, Chunk *key);
+  static void PushFrame(TaskStack *taskStack, String *key);
   // Execution
   virtual Result Run(TaskStack *taskStack);
   // Debugging
@@ -162,7 +158,7 @@ public:
     self = new LoadInterpreter();
   }
   // Frame Handling
-  static void PushFrame(TaskStack *taskStack, Chunk *key);
+  static void PushFrame(TaskStack *taskStack, String *key);
   // Execution
   virtual Result Run(TaskStack *taskStack);
   // Debugging
@@ -182,8 +178,8 @@ private:
 public:
   using Block::ToWord;
   // ApplyFrame Accessors
-  Chunk *GetKey() {
-    return Store::WordToChunk(StackFrame::GetArg(KEY_POS));
+  String *GetKey() {
+    return String::FromWordDirect(StackFrame::GetArg(KEY_POS));
   }
   word GetClosure() {
     return StackFrame::GetArg(CLOSURE_POS);
@@ -192,7 +188,7 @@ public:
     return Vector::FromWordDirect(StackFrame::GetArg(IMPORTS_POS));
   }
   // ApplyFrame Constructor
-  static ApplyFrame *New(Interpreter *interpreter, Chunk *key,
+  static ApplyFrame *New(Interpreter *interpreter, String *key,
 			 word closure, Vector *imports) {
     StackFrame *frame = StackFrame::New(APPLY_FRAME, interpreter, SIZE);
     frame->InitArg(KEY_POS, key->ToWord());
@@ -216,14 +212,14 @@ private:
 public:
   using Block::ToWord;
   // EnterFrame Accessors
-  Chunk *GetKey() {
-    return Store::WordToChunk(StackFrame::GetArg(KEY_POS));
+  String *GetKey() {
+    return String::FromWordDirect(StackFrame::GetArg(KEY_POS));
   }
   word GetSign() {
     return StackFrame::GetArg(SIGN_POS);
   }
   // EnterFrame Constructor
-  static EnterFrame *New(Interpreter *interpreter, Chunk *key, word sign) {
+  static EnterFrame *New(Interpreter *interpreter, String *key, word sign) {
     StackFrame *frame = StackFrame::New(ENTER_FRAME, interpreter, SIZE);
     frame->InitArg(KEY_POS, key->ToWord());
     frame->InitArg(SIGN_POS, sign);
@@ -244,11 +240,11 @@ private:
 public:
   using Block::ToWord;
   // LinkFrame Accessors
-  Chunk *GetKey() {
-    return Store::WordToChunk(StackFrame::GetArg(KEY_POS));
+  String *GetKey() {
+    return String::FromWordDirect(StackFrame::GetArg(KEY_POS));
   }
   // LinkFrame Constructor
-  static LinkFrame *New(Interpreter *interpreter, Chunk *key) {
+  static LinkFrame *New(Interpreter *interpreter, String *key) {
     StackFrame *frame = StackFrame::New(LINK_FRAME, interpreter, SIZE);
     frame->InitArg(KEY_POS, key->ToWord());
     return static_cast<LinkFrame *>(frame);
@@ -268,11 +264,11 @@ private:
 public:
   using Block::ToWord;
   // LoadFrame Accessors
-  Chunk *GetKey() {
-    return Store::WordToChunk(StackFrame::GetArg(KEY_POS));
+  String *GetKey() {
+    return String::FromWordDirect(StackFrame::GetArg(KEY_POS));
   }
   // LoadFrame Constructor
-  static LoadFrame *New(Interpreter *interpreter, Chunk *key) {
+  static LoadFrame *New(Interpreter *interpreter, String *key) {
     StackFrame *frame = StackFrame::New(LOAD_FRAME, interpreter, SIZE);
     frame->InitArg(KEY_POS, key->ToWord());
     return static_cast<LoadFrame *>(frame);
@@ -291,14 +287,14 @@ public:
 // ApplyInterpreter
 ApplyInterpreter *ApplyInterpreter::self;
 
-void ApplyInterpreter::PushFrame(TaskStack *taskStack, Chunk *key,
+void ApplyInterpreter::PushFrame(TaskStack *taskStack, String *key,
 				 word closure, Vector *imports) {
   taskStack->PushFrame(ApplyFrame::New(self, key, closure, imports)->ToWord());
 }
 
 Interpreter::Result ApplyInterpreter::Run(TaskStack *taskStack) {
   ApplyFrame *frame = ApplyFrame::FromWordDirect(taskStack->GetFrame());
-  Chunk *key        = frame->GetKey();
+  String *key       = frame->GetKey();
   word closure      = frame->GetClosure();
   Vector *imports   = frame->GetImports(); // (string * sign) vector
   taskStack->PopFrame();
@@ -309,7 +305,7 @@ Interpreter::Result ApplyInterpreter::Run(TaskStack *taskStack) {
     Tuple *t = Tuple::FromWord(imports->Sub(i));
     Assert(t != INVALID_POINTER);
     t->AssertWidth(2);
-    Chunk *key2 = Resolve(key, Store::WordToChunk(t->Sel(0)));
+    String *key2 = Resolve(key, String::FromWordDirect(t->Sel(0)));
     Component *entry = BootLinker::LookupComponent(key2);
     Assert(entry != INVALID_POINTER);
     strs->Init(i, entry->GetStr());
@@ -325,20 +321,21 @@ const char *ApplyInterpreter::Identify() {
 
 void ApplyInterpreter::DumpFrame(word frameWord) {
   ApplyFrame *frame = ApplyFrame::FromWordDirect(frameWord);
-  Chunk *key = frame->GetKey();
-  std::fprintf(stderr, "Apply %.*s\n", (int) key->GetSize(), key->GetBase());
+  String *key = frame->GetKey();
+  std::fprintf(stderr, "Apply %.*s\n", (int) key->GetSize(), key->GetValue());
 }
 
 // EnterInterpreter
 EnterInterpreter *EnterInterpreter::self;
 
-void EnterInterpreter::PushFrame(TaskStack *taskStack, Chunk *key, word sign) {
+void
+EnterInterpreter::PushFrame(TaskStack *taskStack, String *key, word sign) {
   taskStack->PushFrame(EnterFrame::New(self, key, sign)->ToWord());
 }
 
 Interpreter::Result EnterInterpreter::Run(TaskStack *taskStack) {
   EnterFrame *frame = EnterFrame::FromWordDirect(taskStack->GetFrame());
-  Chunk *key        = frame->GetKey();
+  String *key       = frame->GetKey();
   word sign         = frame->GetSign();
   taskStack->PopFrame();
   Trace("entering", key);
@@ -353,20 +350,20 @@ const char *EnterInterpreter::Identify() {
 
 void EnterInterpreter::DumpFrame(word frameWord) {
   EnterFrame *frame = EnterFrame::FromWordDirect(frameWord);
-  Chunk *key = frame->GetKey();
-  std::fprintf(stderr, "Enter %.*s\n", (int) key->GetSize(), key->GetBase());
+  String *key = frame->GetKey();
+  std::fprintf(stderr, "Enter %.*s\n", (int) key->GetSize(), key->GetValue());
 }
 
 // LinkInterpreter
 LinkInterpreter *LinkInterpreter::self;
 
-void LinkInterpreter::PushFrame(TaskStack *taskStack, Chunk *key) {
+void LinkInterpreter::PushFrame(TaskStack *taskStack, String *key) {
   taskStack->PushFrame(LinkFrame::New(self, key)->ToWord());
 }
 
 Interpreter::Result LinkInterpreter::Run(TaskStack *taskStack) {
   LinkFrame *frame = LinkFrame::FromWordDirect(taskStack->GetFrame());
-  Chunk *key       = frame->GetKey();
+  String *key      = frame->GetKey();
   Trace("linking", key);
   taskStack->PopFrame();
   Interpreter::Construct();
@@ -400,8 +397,8 @@ Interpreter::Result LinkInterpreter::Run(TaskStack *taskStack) {
 	Tuple *t = Tuple::FromWord(imports->Sub(i));
 	Assert(t != INVALID_POINTER);
 	t->AssertWidth(2);
-	Chunk *rel  = Store::WordToChunk(t->Sel(0));
-	Chunk *key2 = Resolve(key, rel);
+	String *rel  = String::FromWordDirect(t->Sel(0));
+	String *key2 = Resolve(key, rel);
 	if (BootLinker::LookupComponent(key2) == INVALID_POINTER) {
 	  LoadInterpreter::PushFrame(taskStack, key2);
 	}
@@ -421,20 +418,20 @@ const char *LinkInterpreter::Identify() {
 
 void LinkInterpreter::DumpFrame(word frameWord) {
   LinkFrame *frame = LinkFrame::FromWordDirect(frameWord);
-  Chunk *key = frame->GetKey();
-  std::fprintf(stderr, "Link %.*s\n", (int) key->GetSize(), key->GetBase());
+  String *key = frame->GetKey();
+  std::fprintf(stderr, "Link %.*s\n", (int) key->GetSize(), key->GetValue());
 }
 
 // LoadInterpreter
 LoadInterpreter *LoadInterpreter::self;
 
-void LoadInterpreter::PushFrame(TaskStack *taskStack, Chunk *key) {
+void LoadInterpreter::PushFrame(TaskStack *taskStack, String *key) {
   taskStack->PushFrame(LoadFrame::New(self, key)->ToWord());
 }
 
 Interpreter::Result LoadInterpreter::Run(TaskStack *taskStack) {
   LoadFrame *frame = LoadFrame::FromWordDirect(taskStack->GetFrame());
-  Chunk *key       = frame->GetKey();
+  String *key      = frame->GetKey();
   taskStack->PopFrame();
   if (BootLinker::LookupComponent(key) != INVALID_POINTER) {
     Scheduler::nArgs = 0;
@@ -452,8 +449,8 @@ const char *LoadInterpreter::Identify() {
 
 void LoadInterpreter::DumpFrame(word frameWord) {
   LoadFrame *frame = LoadFrame::FromWordDirect(frameWord);
-  Chunk *key = frame->GetKey();
-  std::fprintf(stderr, "Load %.*s\n", (int) key->GetSize(), key->GetBase());
+  String *key = frame->GetKey();
+  std::fprintf(stderr, "Load %.*s\n", (int) key->GetSize(), key->GetValue());
 }
 
 //
@@ -481,15 +478,14 @@ void BootLinker::Init(NativeComponent *nativeComponents) {
   // Enter built-in native components
   while (nativeComponents->name != NULL) {
     word (*init)(void) = nativeComponents->init;
-    u_int n = std::strlen(nativeComponents->name);
-    Chunk *key = Store::AllocChunk(n);
-    std::memcpy(key->GetBase(), nativeComponents->name, n);
-    EnterComponent(key, Store::IntToWord(0), init()); // 0 = NONE
+    String *key = String::New(nativeComponents->name);
+    word sign = Store::IntToWord(0); // 0 = NONE
+    EnterComponent(key, sign, init());
     nativeComponents++;
   }
 }
 
-void BootLinker::EnterComponent(Chunk *key, word sign, word str) {
+void BootLinker::EnterComponent(String *key, word sign, word str) {
   Assert(!GetComponentTable()->IsMember(key->ToWord()));
   GetComponentTable()->InsertItem(key->ToWord(),
 				  Component::New(sign, str)->ToWord());
@@ -497,7 +493,7 @@ void BootLinker::EnterComponent(Chunk *key, word sign, word str) {
   numberOfEntries++;
 }
 
-Component *BootLinker::LookupComponent(Chunk *key) {
+Component *BootLinker::LookupComponent(String *key) {
   HashTable *componentTable = GetComponentTable();
   word keyWord = key->ToWord();
   if (componentTable->IsMember(keyWord)) {
@@ -509,7 +505,7 @@ Component *BootLinker::LookupComponent(Chunk *key) {
 
 static word urlWord;
 
-word BootLinker::Link(Chunk *url) {
+word BootLinker::Link(String *url) {
   traceFlag = getenv("ALICE_TRACE_BOOT_LINKER") != NULL;
   TaskStack *taskStack = TaskStack::New();
   LoadInterpreter::PushFrame(taskStack, url);
@@ -518,7 +514,7 @@ word BootLinker::Link(Chunk *url) {
   RootSet::Add(urlWord);
   Scheduler::Run();
   RootSet::Remove(urlWord);
-  Component *component = LookupComponent(Store::WordToChunk(urlWord));
+  Component *component = LookupComponent(String::FromWordDirect(urlWord));
   if (component == INVALID_POINTER) {
     return Store::IntToWord(0);
   }

@@ -21,6 +21,7 @@
 
 #include "adt/HashTable.hh"
 #include "adt/Queue.hh"
+#include "generic/String.hh"
 
 class String;
 
@@ -76,9 +77,9 @@ public:
   static u_int GetNumberOfEntries() {
     return numberOfEntries;
   }
-  static void EnterComponent(Chunk *key, word sign, word str);
-  static Component *LookupComponent(Chunk *key);
-  static word Link(Chunk *url);
+  static void EnterComponent(String *key, word sign, word str);
+  static Component *LookupComponent(String *key);
+  static word Link(String *url);
   // BootLinker Static Constructor
   static void Init(NativeComponent *nativeComponents);
 };
