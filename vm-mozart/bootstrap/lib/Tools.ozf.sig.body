@@ -20,6 +20,7 @@ signature TOOLS_COMPONENT =
 		val setPrintWidth: int -> unit
 
 		val print: 'a -> unit
+		val toString: 'a -> string
 		val browse: 'a -> unit
 		val inspect: 'a -> unit
 	    end
