@@ -16,7 +16,7 @@
 #pragma interface "store/Value.hh"
 #endif
 
-class Block {
+class DllExport Block {
 private:
   static const u_int HANDLER_POS = 0;
 public:
@@ -62,7 +62,7 @@ public:
   }
 };
 
-class Transient : private Block {
+class DllExport Transient : private Block {
 protected:
   static const u_int REF_POS = 0;
 public:
@@ -104,7 +104,7 @@ public:
   }
 };
 
-class Chunk : private Block {
+class DllExport Chunk : private Block {
 private:
   static const u_int BYTESIZE_POS = 0;
 public:
