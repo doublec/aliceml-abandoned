@@ -1,14 +1,15 @@
 #!/bin/sh
 
+dir=`dirname $0`
+dir=`(cd $dir && pwd)`
+
 case `uname -s` in
     CYGWIN*)
-	dir=`dirname $0`
-	dir=`(cd $dir && pwd)`
 	AML2SML="sh $dir/aml2sml"
 	sml="cmd /c sml-cm"
 	;;
     *)
-	AML2SML=`dirname $0`/aml2sml
+	AML2SML=$dir/aml2sml
 	sml=sml
 	;;
 esac
