@@ -130,9 +130,7 @@ struct
       | ppExp(PrimExp(i, s))		= exptree "Prim" i (
 					    ppString s
 					  )
-      | ppExp(NewExp(i, exp))		= exptree "New" i (
-					    ppExp exp
-					  )
+      | ppExp(NewExp(i))		= exptree "New" i empty
       | ppExp(TagExp(i, lab, exp))	= exptree "Tag" i (
 					    ppLab lab ^/^
 					    ppExp exp
