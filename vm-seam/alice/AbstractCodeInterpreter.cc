@@ -14,7 +14,6 @@
 
 #if defined(INTERFACE)
 #pragma implementation "alice/AbstractCodeInterpreter.hh"
-#pragma implementation "alice/AbstractCodeFrame.hh"
 #endif
 
 #include <cstdio>
