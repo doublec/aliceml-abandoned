@@ -292,74 +292,64 @@ functor MkRecursiveCompiler(structure Composer: COMPOSER
 
 	fun acquireSign (desc, url) =
 	    let
-		val url =
+		val url' =
 		    case Source.url desc of
 			SOME base => Url.resolve base url
 		      | NONE => resolveWrtCwd url
 	    in
-		case Composer.sign url of
+		case Composer.sign url' of
 		    SOME sign => sign
 		  | NONE =>
-		case Composer.sign (urlCeil url) of
+		case Composer.sign (urlCeil url') of
 		    SOME sign => sign
 		  | NONE =>
-		(case UnsafePickle.loadSign (Url.toString url) of
-		    (* this also looks for url ^ ext *)
-		    SOME sign =>
-			(trace ("loaded signature from " ^ Url.toString url);
-			 Composer.enterSign (urlCeil url, sign);
-			 sign)
-		  | NONE => (* not a Stockhausen component *)
-			if !Switches.Global.recursiveCompilation then
-			    acquireFromSource url
-			else
-			    Error.error (Source.nowhere,
-			        	 "no signature found in " ^
-					 Url.toString url)
-		) handle IO.Io _ =>
-			if !Switches.Global.recursiveCompilation then
-			    acquireFromSource url
-			else
-			    Error.error (Source.nowhere,
-			        	 "could not locate component " ^
-					 Url.toString url)
+		let
+		    val sign =
+			(valOf (UnsafePickle.loadSign (Url.toString url'))
+			 (* this also looks for url ^ ext *)
+			 before trace ("loaded signature from " ^
+				       Url.toString url'))
+			handle exn as (IO.Io _ | Option.Option) =>
+			       acquireFromSig (url', exn)
+		in
+		    Composer.enterSign (urlCeil url', sign); sign
+		end
 	    end
-	and acquireFromSource url =
+	and acquireFromSig (url, exn) =
 	    let
 		val targetFilename = parseUrl url
 		val sigFilename = pathFloor targetFilename ^ ".asig"
 	    in
-		if existsFile sigFilename then
-		    let
-			val sign = compileSign sigFilename
-		    in
-			Composer.enterSign (urlCeil url, sign); sign
-		    end
+		if existsFile sigFilename then compileSign sigFilename
+		else if !Switches.Global.recursiveCompilation
+		then acquireFromSource (url, targetFilename)
 		else
-		case acquireFromSource' (url, targetFilename, ".aml") of
-		    SOME sign => sign
-		  | NONE =>
-		case acquireFromSource' (url, targetFilename, ".sml") of
-		    SOME sign => sign
-		  | NONE =>
-		case acquireFromSource' (url, targetFilename, ".sig") of
-		    SOME sign => sign
-		  | NONE =>
-		Error.error (Source.nowhere,
-			     "could not locate source for " ^ targetFilename)
-	     end
+		    Error.error
+			(Source.nowhere,
+			 (case exn of
+			      IO.Io _ => "could not locate component "
+			    | Option.Option => "no signature found in "
+			    | _ => "") ^ Url.toString url)
+	    end
+	and acquireFromSource (url, targetFilename) =
+	    case acquireFromSource' (url, targetFilename, ".aml") of
+		SOME sign => sign
+	      | NONE =>
+	    case acquireFromSource' (url, targetFilename, ".sml") of
+		SOME sign => sign
+	      | NONE =>
+	    case acquireFromSource' (url, targetFilename, ".sig") of
+		SOME sign => sign
+	      | NONE =>
+	    Error.error (Source.nowhere,
+			 "could not locate source for " ^ targetFilename)
 	and acquireFromSource' (url, targetFilename, to) =
 	    let
 		val sourceFilename = pathFloor targetFilename ^ to
 	    in
 		if existsFile sourceFilename then
-		    let
-			val sign =
-			    compileFileToFile (sourceFilename,
-					       pathCeil targetFilename)
-		    in
-			Composer.enterSign (urlCeil url, sign); SOME sign
-		    end
+		    SOME (compileFileToFile (sourceFilename,
+					     pathCeil targetFilename))
 		else NONE
 	    end
 
