@@ -5,7 +5,7 @@
 ## 
 ## Copyright:
 ##   Thorsten Brunklaus, 2002
-##   Leif Kornstaedt, 2002
+##   Leif Kornstaedt, 2002-2003
 ## 
 ## Last change:
 ##   $Date$ by $Author$
@@ -23,20 +23,14 @@ SOURCES = \
 	Scheduler.cc Transients.cc Worker.cc Interpreter.cc \
 	Primitive.cc PushCallWorker.cc BindFutureWorker.cc \
 	Unpickler.cc Pickler.cc Profiler.cc
-
 OBJS = $(SOURCES:%.cc=%.o)
 
-all: libgeneric.a
-
-libgeneric.a: $(OBJS)
-	ar rc libgeneric.a $(OBJS) || exit 1
-	ranlib libgeneric.a
+all: $(OBJS)
 
 clean:
 	rm -f $(OBJS)
 
 veryclean: clean
-	rm -f libgeneric.a
 
 distclean: veryclean
 	rm -f Makefile.depend
