@@ -11,12 +11,14 @@
  *
  *)
 
-import structure Space from "Space.ozf"
-import signature SEARCH from "SEARCH.ozf"
-open Space
+import structure Space from "x-alice:/lib/constraints/Space.ozf"
+import signature SEARCH from "x-alice:/lib/constraints/SEARCH.ozf"
 
 structure Search :> SEARCH =
     struct
+	open Space
+	open List
+
 	type 'a order = 'a * 'a -> unit
 	    
 	local
@@ -54,7 +56,7 @@ structure Search :> SEARCH =
 			      doSearchAll(s) @ doSearchAll(c))
 			 end)
 	in
-	    fun searchAll p = List.map merge (doSearchAll (space p))
+	    fun searchAll p = map merge (doSearchAll (space p))
 	end
     
 	fun searchBest(p, ofun) =

@@ -17,11 +17,7 @@ export
    'FD$' : AliceFD
 define
    %% Type Variables
-   FDType
-   BoolType
-   DomainType
-   PropagatorType
-   DistModeType
+   %% To come soon
 
    %% Global Helper Functions
    local
@@ -64,11 +60,10 @@ define
       {FD.int {AliceDomainToOzDomain D}}
    end
    fun {FDVectorFun D I}
-      V = {MakeList I}
+      V = {MakeTuple '#[]' I}
    in
-      {FD.dom {AliceDomainToOzDomain D} V}
-      {List.toTuple '#[]' V}
-   end
+      {FD.dom {AliceDomainToOzDomain D} V} V
+    end
    fun {DeclFun}
       {FD.decl}
    end
@@ -76,10 +71,9 @@ define
       {FD.int 0#1} 
    end
    fun {BoolVectorFun I}
-      V = {MakeList I}
+      V = {MakeTuple '#[]' I}
    in
-      {FD.dom 0#1 V}
-      {List.toTuple '#[]' V}
+      {FD.dom 0#1 V} V
    end
 
    %% Conversion Functions
@@ -92,38 +86,44 @@ define
    fun {FromBoolFun X}
       X
    end
+   fun {ToIntFun X}
+      if {IsInt X} then 'SOME'(X) else 'NONE' end
+   end
+   fun {FromIntFun X}
+      X
+   end
    
    %% Standard Sums
    fun {SumFun XV P Y}
-      {FD.sum {VectorToList XV} {AlicePropToOzProp P} Y}
+      {FD.sum XV {AlicePropToOzProp P} Y}
       unit
    end
    fun {SumCFun IV XV P Y}
-      {FD.sumC {VectorToList IV} {VectorToList XV} {AlicePropToOzProp P} Y}
+      {FD.sumC IV XV {AlicePropToOzProp P} Y}
       unit
    end
    fun {SumACFun IV XV P Y}
-      {FD.sumAC {VectorToList IV} {VectorToList XV} {AlicePropToOzProp P} Y}
+      {FD.sumAC IV XV {AlicePropToOzProp P} Y}
       unit
    end
    fun {SumCNFun IV XVV P Y}
-      {FD.sumCN {VectorToList IV} {Map {VectorToList XVV} VectorToList} {AlicePropToOzProp P} Y}
+      {FD.sumCN IV XVV {AlicePropToOzProp P} Y}
       unit
    end
    fun {SumACNFun IV XVV P Y}
-      {FD.sumACN {VectorToList IV} {Map {VectorToList XVV} VectorToList} {AlicePropToOzProp P} Y}
+      {FD.sumACN IV XVV {AlicePropToOzProp P} Y}
       unit
    end
    fun {SumDFun XV P Y}
-      {FD.sumD {VectorToList XV} {AlicePropToOzProp P} Y}
+      {FD.sumD XV {AlicePropToOzProp P} Y}
       unit
    end
    fun {SumCDFun IV XV P Y}
-      {FD.sumCD {VectorToList IV} {VectorToList XV} {AlicePropToOzProp P} Y}
+      {FD.sumCD IV XV {AlicePropToOzProp P} Y}
       unit
    end
    
-   %% Propagator Functions
+   %% Propagator Functions with Interval Propagation
    fun {PlusFun X Y Z}
       {FD.plus X Y Z}
       unit
@@ -148,6 +148,30 @@ define
       {FD.modI X I Z}
       unit
    end
+
+   %% Propagator Functions with Domain Propagation
+   fun {PlusDFun X Y Z}
+      {FD.plusD X Y Z}
+      unit
+   end
+   fun {MinusDFun X Y Z}
+      {FD.minusD X Y Z}
+      unit
+   end
+   fun {TimesDFun X Y Z}
+      {FD.timesD X Y Z}
+      unit
+   end
+   fun {DivDFun X I Z}
+      {FD.divD X I Z}
+      unit
+   end
+   fun {ModDFun X I Z}
+      {FD.modD X I Z}
+      unit
+   end
+   
+   %% Other Propagators
    fun {MinFun X Y Z}
       {FD.min X Y Z}
       unit
@@ -164,20 +188,36 @@ define
       X \=: Y
       unit
    end
+   fun {DistanceFun X Y P Z}
+      {FD.distance X Y {AlicePropToOzProp P} Z}
+      unit
+   end
    fun {LessFun X Y}
-     {FD.less X Y}
+      {FD.less X Y}
       unit
    end
    fun {LessEqFun X Y}
-     {FD.lesseq X Y}
+      {FD.lesseq X Y}
       unit
    end
    fun {GreaterFun X Y}
-     {FD.greater X Y}
+      {FD.greater X Y}
       unit
    end
    fun {GreaterEqFun X Y}
-     {FD.greatereq X Y}
+      {FD.greatereq X Y}
+      unit
+   end
+   fun {DisjointFun X I1 Y I2}
+      {FD.disjoint X I1 Y I2}
+      unit
+   end
+   fun {DisjointCFun X I1 Y I2 Z}
+      {FD.disjointC X I1 Y I2 Z}
+      unit
+   end
+   fun {TasksOverlapFun X I1 Y I2 Z}
+      {FD.tasksOverlap X I1 Y I2 Z}
       unit
    end
 
@@ -213,27 +253,27 @@ define
 
    %% 0/1 Propagators
    fun {ConjFun X Y Z}
-     {FD.conj X Y Z}
+      {FD.conj X Y Z}
       unit
    end
    fun {DisjFun X Y Z}
-     {FD.disj X Y Z}
+      {FD.disj X Y Z}
       unit
    end
    fun {ExorFun X Y Z}
-     {FD.exor X Y Z}
+      {FD.exor X Y Z}
       unit
    end
    fun {NegaFun X Y}
-     {FD.nega X Y}
+      {FD.nega X Y}
       unit
    end
    fun {ImplFun X Y Z}
-     {FD.impl X Y Z}
+      {FD.impl X Y Z}
       unit
    end
    fun {EquiFun X Y Z}
-     {FD.equi X Y Z}
+      {FD.equi X Y Z}
       unit
    end
 
@@ -247,46 +287,59 @@ define
 	 {FD.reified.dom {AliceDomainToOzDomain D} V B}
 	 V
       end
+      fun {CardFun I1 XV I2 B}
+	 {FD.reified.card I1 XV I2 B}
+	 unit
+      end
+      fun {DistanceFun X Y P Z B}
+	 {FD.reified.distance X Y {AlicePropToOzProp P} Z B}
+	 unit
+      end
       fun {SumFun XV P Y B}
 	 {FD.reified.sum XV {AlicePropToOzProp P} Y B}
 	 unit
       end
       fun {SumCFun IV XV P Y B}
-	 {FD.reified.sumC {VectorToList IV} XV {AlicePropToOzProp P} Y B}
+	 {FD.reified.sumC IV XV {AlicePropToOzProp P} Y B}
+	 unit
+      end
+      fun {SumACFun IV XV P Y B}
+	 {FD.reified.sumAC IV XV {AlicePropToOzProp P} Y B}
+	 unit
+      end
+      fun {SumCNFun IV XVV P Y B}
+	 {FD.reified.sumCN IV XVV {AlicePropToOzProp P} Y B}
+	 unit
+      end
+      fun {SumACNFun IV XVV P Y B}
+	 {FD.reified.sumCN IV XVV {AlicePropToOzProp P} Y B}
 	 unit
       end
    in
       %% Create Reified Interface
-      AliceReified = 'Reified'('int'  : IntFun
-			       'dom'  : DomFun
-			       'sum'  : SumFun
-			       'sumC' : SumCFun)
+      AliceReified = 'Reified'('int'      : IntFun
+			       'dom'      : DomFun
+			       'card'     : CardFun
+			       'distance' : DistanceFun
+			       'sum'      : SumFun
+			       'sumC'     : SumCFun
+			       'sumAC'    : SumACFun
+			       'sumCN'    : SumCNFun
+			       'sumACN'   : SumACNFun)
    end
 
    local
       local
-	 local
-	    fun {MakeInt X}
-	       'SINGLE'(X)
-	    end
-	    fun {MakeRange L U}
-	       'RANGE'(L U)
-	    end
-	    fun {MakeVector L}
-	       {MakeTuple '#[]' L}
-	    end
+	 fun {OzDomainToAliceDomain Ds}
+	    V = {MakeTuple '#[]' {Length Ds}}
 	 in
-	    fun {OzDomainToAliceDomain Ds}
-	       V = {MakeVector {Length Ds}}
-	    in
-	       {List.forAllInd Ds proc {$ X I}
-				     V.I = case X
-					   of L#U then {MakeRange L U}
-					   else {MakeInt X}
-					   end
-				  end}
-	       V
-	    end
+	    {List.forAllInd Ds proc {$ X I}
+				  V.I = case X
+					of L#U then 'RANGE'(L U)
+					else 'SINGLE'(X)
+					end
+			       end}
+	    V
 	 end
       in
 	 fun {DomainFun X}
@@ -322,22 +375,41 @@ define
    in
       fun {DistFun M X}
 	 {FD.distribute {AliceDistToOzDist M} X}
+	 unit
       end
    end
    
    %% Create FD Interface
-   AliceFD = 'FD'('$fd'            : FDType
-		  '$bool'          : BoolType
-		  '$domain'        : DomainType
-		  '$propagator'    : PropagatorType
-		  '$dist_mode'     : DistModeType
+   AliceFD = 'FD'('$fd'            : _
+		  '$bool'          : _
+		  '$domain'        : _
+		  '$propagator'    : _
+		  '$dist_mode'     : _
+		  'SINGLE'         : fun {$ N} 'SINGLE'(N) end
+		  'RANGE'          : fun {$ L U} 'RANGE'(L U) end
+		  '\'SINGLE'       : _
+		  '\'RANGE'        : _
+		  'LESS'           : 'LESS'
+		  'LESSEQ'         : 'LESSEQ'
+		  'EQUAL'          : 'EQUAL'
+		  'NOTEQUAL'       : 'NOTEQUAL'
+		  'GREATER'        : 'GREATER'
+		  'GREATEREQ'      : 'GREATEREQ'
+		  '\'LESS'         : _
+		  '\'LESSEQ'       : _
+		  '\'EQUAL'        : _
+		  '\'NOTEQUAL'     : _
+		  '\'GREATER'      : _
+		  '\'GREATEREQ'    : _
 		  'fd'             : FDFun
 		  'fdvector'       : FDVectorFun
 		  'decl'           : DeclFun
 		  'bool'           : BoolFun
 		  'boolvector'     : BoolVectorFun
 		  'toBool'         : ToBoolFun
-		  'fromBool '      : FromBoolFun
+		  'fromBool'       : FromBoolFun
+		  'toInt'          : ToIntFun
+		  'fromInt'        : FromIntFun
 		  'sum'            : SumFun
 		  'sumC'           : SumCFun
 		  'sumAC'          : SumACFun
@@ -351,14 +423,23 @@ define
 		  'power'          : PowerFun
 		  'divI'           : DivIFun
 		  'modI'           : ModIFun
+		  'plusD'          : PlusDFun
+		  'minusD'         : MinusDFun
+		  'timesD'         : TimesDFun
+		  'divD'           : DivDFun
+		  'modD'           : ModDFun
 		  'min'            : MinFun
 		  'max'            : MaxFun
 		  'equal'          : EqualFun
 		  'notequal'       : NotEqualFun
+		  'distance'       : DistanceFun
 		  'less'           : LessFun
 		  'lessEq'         : LessEqFun
 		  'greater'        : GreaterFun
 		  'greaterEq'      : GreaterEqFun
+		  'disjoint'       : DisjointFun
+		  'disjointC'      : DisjointCFun
+		  'tasksOverlap'   : TasksOverlapFun
 		  'distinct'       : DistinctFun
 		  'distinctOffset' : DistinctOffsetFun
 		  'distinct2'      : Distinct2Fun
@@ -375,5 +456,11 @@ define
 		  'Reified$'       : AliceReified
 		  'Reflect$'       : AliceReflect
 		  'Watch$'         : AliceWatch
+		  'NAIVE'          : 'NAIVE'
+		  'FIRSTFAIL'      : 'FIRSTFAIL'
+		  'SPLIT'          : 'SPLIT'
+		  '\'NAIVE'        : _
+		  '\'FIRSTFAIL'    : _
+		  '\'SPLIT'        : _
 		  'distribute'     : DistFun)
 end

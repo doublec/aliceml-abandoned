@@ -14,7 +14,7 @@
 signature SEARCH =
     sig
 	type 'a order = 'a * 'a -> unit
-	    
+
 	val searchOne : (unit -> 'a) -> 'a option
 	val searchAll : (unit -> 'a) -> 'a list
 	val searchBest : (unit -> 'a) * 'a order -> 'a option

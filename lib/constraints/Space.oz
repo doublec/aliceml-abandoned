@@ -17,18 +17,19 @@ export
    'Space$' : AliceSpace
 define
    %% Type Variables
-   SpaceType
-   StatusType
-   ChoiceType
+   %% To come soon
    
    %% Interface Functions
    fun {SpaceFun P}
       {Space.new proc {$ Root}
-		    Root = {P unit}
+		    Root = case {Procedure.arity P}
+			   of 1 then {P}
+			   [] 2 then {P unit}
+			   end
 		 end}
    end
    fun {AskFun S}
-      case {Space.status S}
+      case {Space.ask S}
       of failed          then 'FAILED'
       [] succeeded       then 'SUCCEEDED'
       [] alternatives(N) then 'ALTERNATIVES'(N)
@@ -48,6 +49,7 @@ define
       {Space.inject S proc {$ Root}
 			 _ = {P Root}
 		      end}
+      unit
    end
    fun {MergeFun S}
       {Space.merge S}
@@ -55,16 +57,26 @@ define
    fun {EqFun A B}
       A == B
    end
-
+   
    %% Export Interface
-   AliceSpace = 'Space'('$space'  : SpaceType
-			'$status' : StatusType
-			'$choice' : ChoiceType
-			'space'   : SpaceFun
-			'ask'     : AskFun
-			'clone'   : CloneFun
-			'commit'  : CommitFun
-			'inject'  : InjectFun
-			'merge'   : MergeFun
-			'eq'      : EqFun)
+   AliceSpace = 'Space'('$space'         : _
+			'$status'        : _
+			'$choice'        : _
+			'FAILED'         : 'FAILED'
+			'SUCCEEDED'      : 'SUCCEEDED'
+			'ALTERNATIVES'   : fun {$ N} 'ALTERNATIVES'(N) end
+			'\'FAILED'       : _
+			'\'SUCCEEDED'    : _
+			'\'ALTERNATIVES' : _
+			'SINGLE'         : fun {$ N} 'SINGLE'(N) end
+			'RANGE'          : fun {$ L U} 'RANGE'(L U) end
+			'\'SINGLE'       : _
+			'\'RANGE'        : _
+			'space'          : SpaceFun
+			'ask'            : AskFun
+			'clone'          : CloneFun
+			'commit'         : CommitFun
+			'inject'         : InjectFun
+			'merge'          : MergeFun
+			'eq'             : EqFun)
 end
