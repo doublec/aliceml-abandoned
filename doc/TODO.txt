@@ -206,7 +206,6 @@ steps 3 and 4):
    as Component.asig instead of Component.<extension>.sig.
 
    This means that TextIO.sig (et al.) are moved to lib/system.
-   The Pickle component needs Url, which also should move to system.
    Pickle itself should be renamed to UnsafePickle.
    The vm-mozart/bootstrap/Makefile needs to be adapted.
 
@@ -278,3 +277,7 @@ steps 3 and 4):
 
    The same can be done for FRONTENDSMLSOURCES0, which would
    become FRONTENDSPECIFICFILES0.
+
+16. Clean up lib/system/UnsafePickle.
+
+   The Pickle component needs Url, which also should move to system.
