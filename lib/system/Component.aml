@@ -40,7 +40,7 @@ struct
 
     val extension = UnsafeComponent.extension
 
-    fun signFromInf inf = SOME (Signature.fromSig (Inf.asSig inf))
+    fun signFromInf inf = SOME (Signature.fromSig (lazy Inf.asSig inf))
 
     functor Create(signature S structure X: S) =
 	let
@@ -117,7 +117,7 @@ struct
 		    Url.toString url ^
 		    (case baseUrlOpt of
 			 SOME baseUrl =>
-			 " imported from " ^ Url.toString baseUrl
+			 " imported by " ^ Url.toString baseUrl
 		       | NONE => "")
 	    in
 		lazy (trace ("type-checking " ^ message);
