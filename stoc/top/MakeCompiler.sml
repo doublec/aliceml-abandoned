@@ -24,7 +24,7 @@ functor MakeCompiler(
 	structure FrontendCommon:   PHASE where I = FrontendSpecific.O
 	structure BackendCommon:    PHASE where I = FrontendCommon.O
 	structure BackendSpecific:  PHASE where I = BackendCommon.O
-					  where O = Target
+					  where type O.t = Target.t
        ) :> COMPILER where Target = Target
   =
   struct
