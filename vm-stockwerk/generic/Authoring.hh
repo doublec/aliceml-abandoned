@@ -10,8 +10,8 @@
 //   $Revision$
 //
 
-#ifndef __GENERIC__NATIVE_AUTHORING_HH__
-#define __GENERIC__NATIVE_AUTHORING_HH__
+#ifndef __GENERIC__AUTHORING_HH__
+#define __GENERIC__AUTHORING_HH__
 
 #include "adt/HashTable.hh"
 #include "generic/Interpreter.hh"
