@@ -546,7 +546,8 @@ define
 		    {GetArg IdRef State}|In
 		 end nil}
 	 vEquateRecord(_ '#[]' {Width IdRefs} Reg Args VTl)
-      [] 'FunExp'(Region _ _ 'TupArgs'(IdDefs) Body) andthen {Width IdDefs} > 1
+      [] 'FunExp'(Region _ _ 'TupArgs'(IdDefs) _ Body)
+	 andthen {Width IdDefs} > 1
       then PredId NLiveRegs ResReg FormalRegs BodyVInstr GRegs Code in
 	 PredId = pid({VirtualString.toAtom
 		       State.filename#':'#Region.1.1#'.'#Region.1.2#'/'#
@@ -562,7 +563,7 @@ define
 	 {State.cs
 	  endDefinition(BodyVInstr FormalRegs nil ?GRegs ?Code ?NLiveRegs)}
 	 vDefinition(_ Reg PredId unit GRegs Code VTl)
-      [] 'FunExp'(Region _ _ Args Body) then
+      [] 'FunExp'(Region _ _ Args _ Body) then
 	 PredId NLiveRegs ResReg FormalRegs ArgReg
 	 BodyVInstr ThenVInstr ElseVInstr MatchReg ElseVInter GRegs Code
       in

@@ -22,6 +22,7 @@ import structure Source          from "../infrastructure/Source"
 import structure Stamp           from "../infrastructure/Stamp"
 import structure StampMap        from "../infrastructure/StampMap"
 import structure FlatGrammar     from "../backend-common/FlatGrammar"
+import structure Arity           from "../backend-common/Arity"
 import signature CODE            from "../backend-common/CODE-sig"
 import structure PickleOutStream from "PickleOutStream"
 
@@ -130,6 +131,14 @@ structure PickleFlatGrammar :> CODE
 	    (outputTuple (q, "AuxiliaryOf", 1); outputStamp (q, stamp))
 	  | outputFunFlag (q, IsToplevel) =
 	    ignore (outputAtom (q, "IsToplevel"))
+
+	fun outputArity (q, Arity.Unary) =
+	    ignore (outputAtom (q, "Unary"))
+	  | outputArity (q, Arity.Tuple n) =
+	    (outputTuple (q, "Tuple", 1); outputInt (q, n))
+	  | outputArity (q, Arity.Product labels) =
+	    (outputTuple (q, "Product", 1);
+	     outputVector outputLabel (q, labels))
 
 	fun outputArgs outputX (q, OneArg id) =
 	    (outputTuple (q, "OneArg", 1); ignore (outputX (q, id)))
@@ -254,8 +263,10 @@ structure PickleFlatGrammar :> CODE
 	  | outputExp (q, VecExp (info, idRefs)) =
 	    (outputTuple (q, "VecExp", 2);
 	     outputVector outputIdRef (q, idRefs); outputExpInfo (q, info))
-	  | outputExp (q, FunExp (info, stamp, flags, args, body)) =
-	    (outputTuple (q, "FunExp", 5); outputBody (q, body);
+	  | outputExp (q, FunExp (info, stamp, flags, args, outArityOpt,
+				  body)) =
+	    (outputTuple (q, "FunExp", 6); outputBody (q, body);
+	     outputOption outputArity (q, outArityOpt);
 	     outputArgs outputIdDef (q, args);
 	     outputList outputFunFlag (q, flags);
 	     outputStamp (q, stamp); outputExpInfo (q, info))

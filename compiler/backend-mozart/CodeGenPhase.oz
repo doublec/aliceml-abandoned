@@ -179,9 +179,10 @@ define
 			   {TrLabel Label}#{TrIdRef IdRef}
 			end})
       [] 'VecExp'(Info IdRefs) then 'VecExp'(Info {Record.map IdRefs TrIdRef})
-      [] 'FunExp'(Info Stamp Flags Args Body) then
+      [] 'FunExp'(Info Stamp Flags Args OutArityOpt Body) then
 	 'FunExp'(Info Stamp {Map Flags TrFunFlag}
-		  {TrArgs Args TrIdDef} {TrBody Body $ nil ShareDict})
+		  {TrArgs Args TrIdDef} OutArityOpt
+		  {TrBody Body $ nil ShareDict})
       [] 'PrimAppExp'(Info String IdRefs) then
 	 'PrimAppExp'(Info {VirtualString.toAtom String}
 		      {Record.map IdRefs TrIdRef})
