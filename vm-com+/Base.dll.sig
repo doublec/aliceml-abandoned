@@ -258,7 +258,6 @@ datatype option = datatype Option.option
 signature LIST =
   sig
     datatype 'a list = :: of 'a * 'a list | nil
-    datatype list    = datatype list
     type     'a t    = 'a list						(**)
 
     exception Empty
