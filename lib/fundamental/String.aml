@@ -66,6 +66,40 @@ struct
     __primitive val op <= :	string * string -> bool  = "String.<="
     __primitive val op >= :	string * string -> bool  = "String.>="
     __primitive val compare :	string * string -> order = "String.compare"
+    __primitive val hash :	string -> int            = "String.hash"
+
+(*
+    local
+	infix << >> andb xorb
+	val plus = op +
+ 	__primitive val op + :	word * word -> word  = "Word.+"
+ 	__primitive val op << :	word * word -> word  = "Word.<<"
+ 	__primitive val op >> :	word * word -> word  = "Word.>>"
+ 	__primitive val op andb : word * word -> word  = "Word.andb"
+ 	__primitive val op xorb : word * word -> word  = "Word.xorb"
+	__primitive val fromInt': int * int -> word = "Word.fromInt'"
+	__primitive val toInt : word -> int = "Word.toInt"
+	__primitive val wordSize : int = "Word.wordSize"
+    in
+	fun hash s =	(* hashpjw [Aho/Sethi/Ullman "Compilers"] *)
+	    let
+		val n = size s
+
+		fun iter(i,h) =
+		    if i = n then h else
+		    let
+			val c  = fromInt'(wordSize, Char.ord(sub'(s,i)))
+			val h' = (h << 0w4) + c
+			val g  = h' andb 0wxf00000
+		    in
+			iter(plus(i,1), h' xorb g xorb (g >> 0w16))
+		    end
+	    in
+		toInt(iter(0,0w0))
+	    end
+    end
+*)
+    val equal			= op =
 
     fun collate  cmp (s1,s2)	= collate'(cmp,s1,s2,0)
     and collate'(cmp,s1,s2,i) where (i = size s1)

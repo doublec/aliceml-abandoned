@@ -58,6 +58,8 @@ struct
     fun explode	ss		= String.explode(string ss)
     fun translate f ss		= String.concat(List.map f (explode ss))
     fun isPrefix s ss		= String.isPrefix s (string ss)
+    fun hash ss			= String.hash(string ss)
+    fun equal(ss, st)		= string ss = string st
     fun compare(ss, st)		= String.compare(string ss, string st)
     fun collate f (ss, st)	= String.collate f (string ss, string st)
 
