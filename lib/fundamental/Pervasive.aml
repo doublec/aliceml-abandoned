@@ -10,65 +10,15 @@
  *   $Revision$
  *)
 
+import structure RTT from "RTT"
 
-(* Needed to bootstrap the library. *)
 
-
-(*
- * CAREFUL! Each pervasive type may only be mentioned in one primitive
- * declaration/specification, otherwise the compiler will crash!
- * Do only declare __pervasive on toplevel.
- *
- * Also note that __reftype should not declare a constructor named different
- * from the type constructor, otherwise it will not be suitably exported
- * into other components.
- *)
-
-(* Step 1: introduce dummys for type lib
+(* Step 1: Type lib
  *)
 
 structure __pervasive =
 struct
-    structure Label =
-    struct
-	fun fromString x = fromString x
-    end
-
-    structure Path =
-    struct
-	fun fromLab x = fromLab x
-	fun pervasive x = pervasive x
-    end
-
-    structure Type =
-    struct
-	fun var x = var x
-	fun inVar x = inVar x
-	fun inCon x = inCon x
-	fun inApply x = inApply x
-	fun inLambda x = inLambda x
-	fun inArrow x = inArrow x
-	fun inTuple x = inTuple x
-	fun inProd x = inProd x
-	fun inSum x = inSum x
-	fun inAll x = inCon x
-	fun inExist x = inExist x
-	fun unknown x = unknown x
-	fun fill x = fill x
-	fun unknownRow x = unknownRow x
-	fun emptyRow x = emptyRow x
-	fun extendRow x = extendRow x
-    end
-
-    structure Inf =
-    struct
-    end
-
-    structure PervasiveType =
-    struct
-	(*val typ_ref = 0	(* mmh... *)*)
-	fun lookup s = lookup s
-    end
+    open RTT
 end
 
 

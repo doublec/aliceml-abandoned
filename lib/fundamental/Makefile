@@ -2,7 +2,7 @@ SHELL		= /bin/sh
 STOC		= stoc --no-implicit-import
 STOC_OPTS	= 
 
-TOPS		= Pervasive ToplevelTypes ToplevelValues
+TOPS		= RTT Pervasive ToplevelTypes ToplevelValues
 SIGS		= ALT ARRAY BOOL CELL CHAR FUTURE GENERAL HOLE IEEE_REAL \
 		  INTEGER LIST LIST_PAIR MATH OPTION PAIR PROMISE REAL REF \
 		  STRING STRING_CVT SUBSTRING THREAD TIME VECTOR VECTOR_PAIR \
@@ -17,20 +17,21 @@ STRUCTFILES	= $(STRUCTS:%=%.ozf)
 TOPFILES	= $(TOPS:%=%.ozf)
 FILES		= $(TOPFILES) $(SIGFILES) $(STRUCTFILES)
 
-.PHONY:		all install clean
+.PHONY:			all install clean
 
-all:		Fundamental.ozf
+all:			Fundamental.ozf
 
-install:	all
+install:		all
 
 clean:
-	-rm *.ozf
+			-rm *.ozf
 
-%.ozf:		%.aml
-	$(STOC) $(STOC_OPTS) -c $*.aml
+%.ozf:			%.aml
+			$(STOC) $(STOC_OPTS) -c $*.aml -o $@
 
-Pervasive.aml:		PervasiveDummy.aml; cp $< $@
-Pervasive.ozf:
+RTT.aml:		RTTDummy.aml
+			cp $< $@
+Pervasive.ozf:		RTT.ozf
 ToplevelTypes.ozf:	Pervasive.ozf
 ToplevelValues.ozf:	Pervasive.ozf ToplevelTypes.ozf
 
@@ -74,7 +75,7 @@ Position.ozf:		Int.ozf INTEGER-sig.ozf
 PROMISE-sig.ozf:	
 Promise.ozf:		Cell.ozf Hole.ozf PROMISE-sig.ozf
 REAL-sig.ozf:		IEEEReal.ozf StringCvt.ozf MATH-sig.ozf
-Real.ozf:		IEEEReal.ozf Math.ozf Bool.ozf Int.ozf \
+Real.ozf:		IEEEReal.ozf Bool.ozf Int.ozf \
 			Char.ozf StringCvt.ozf REAL-sig.ozf
 REF-sig.ozf:		
 Ref.ozf:		REF-sig.ozf

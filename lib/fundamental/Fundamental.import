@@ -199,4 +199,5 @@ import
     signature THREAD				(**)
     structure Thread				(**)
 
-from "x-alice:/lib/Fundamental"
+(*TODO from "x-alice:/lib/Fundamental"*)
+from "../fundamental/Fundamental"
