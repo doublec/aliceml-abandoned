@@ -18,24 +18,47 @@
 #include "builtins/GlobalPrimitives.hh"
 
 #define DEFINE0(name)							\
-  static Interpreter::Result name(TaskStack *taskStack) {		\
-    taskStack->PopFrame(1);
+  static Interpreter::Result name(TaskStack *taskStack) {
 #define DEFINE1(name)							\
   static Interpreter::Result name(TaskStack *taskStack) {		\
     word x0 = taskStack->GetWord(0);					\
-    taskStack->PopFrame(2);
+    taskStack->PopFrame(1);
 #define DEFINE2(name)							\
   static Interpreter::Result name(TaskStack *taskStack) {		\
     word x0 = taskStack->GetWord(0);					\
     word x1 = taskStack->GetWord(1);					\
-    taskStack->PopFrame(3);
+    taskStack->PopFrame(2);
 #define DEFINE3(name)							\
   static Interpreter::Result name(TaskStack *taskStack) {		\
     word x0 = taskStack->GetWord(0);					\
     word x1 = taskStack->GetWord(1);					\
     word x2 = taskStack->GetWord(2);					\
-    taskStack->PopFrame(4);
+    taskStack->PopFrame(3);
 #define END }
+
+#define RAISE(w) {							\
+  taskStack->PutWord(0, w);						\
+  return Interpreter::Result(Interpreter::Result::RAISE);		\
+}
+
+#define RETURN(w) {							\
+  taskStack->PutWord(0, w);						\
+  return Interpreter::Result(Interpreter::Result::CONTINUE, -1);	\
+}
+#define RETURN_UNIT							\
+  taskStack->PopFrame(1);						\
+  return Interpreter::Result(Interpreter::Result::CONTINUE, 0);
+#define RETURN_INT(i) {							\
+  taskStack->PutInt(0, i);						\
+  return Interpreter::Result(Interpreter::Result::CONTINUE, -1);	\
+}
+#define RETURN_BOOL(b) RETURN_INT(b);
+
+#define REQUEST(w) {							\
+  taskStack->PushFrame(1);						\
+  taskStack->PutWord(0, w);						\
+  return Interpreter::Result(Interpreter::Result::REQUEST, 1);		\
+}
 
 #define DECLARE_INT(i, x)						\
   int i = Store::WordToInt(x);						\
@@ -68,31 +91,5 @@
 
 #define DECLARE_LIST(tagVal, length, x)					\
   DECLARE_LIST_ELEMS(tagVal, length, x, ;)
-
-#define RAISE(w) {							\
-  taskStack->PushFrame(1);						\
-  taskStack->PutWord(0, w);						\
-  return Interpreter::Result(Interpreter::Result::RAISE);		\
-}
-
-#define RETURN(w) {							\
-  taskStack->PushFrame(1);						\
-  taskStack->PutWord(0, w);						\
-  return Interpreter::Result(Interpreter::Result::CONTINUE, -1);	\
-}
-#define RETURN_UNIT \
-  return Interpreter::Result(Interpreter::Result::CONTINUE, 0);
-#define RETURN_INT(i) {							\
-  taskStack->PushFrame(1);						\
-  taskStack->PutInt(0, i);						\
-  return Interpreter::Result(Interpreter::Result::CONTINUE, -1);	\
-}
-#define RETURN_BOOL(b) RETURN_INT(b);
-
-#define REQUEST(w) {							\
-  taskStack->PushFrame(1);						\
-  taskStack->PutWord(0, w);						\
-  return Interpreter::Result(Interpreter::Result::REQUEST, 1);		\
-}
 
 #endif __BUILTINS__AUTHORING_HH__
