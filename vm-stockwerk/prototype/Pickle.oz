@@ -27,7 +27,7 @@
 functor
 import
    Open(file)
-   Primitives(table)
+   PrimitiveTable(table)
 export
    Load
    Unpack
@@ -55,7 +55,7 @@ define
 %      thread
 	 case F of 'Alice.primitive' then
 	    case X of tag(0 Name) then
-	       Primitives.table.{VirtualString.toAtom Name}
+	       PrimitiveTable.table.{VirtualString.toAtom Name}
 	    end
 	 [] 'Alice.function' then
 	    case X of tag(0 NG NL IdDefArgs Instr)

@@ -10,7 +10,7 @@
 ###   $Revision$
 ###
 
-SRCS = Primitives.oz Pickling.oz Emulator.oz
+SRCS = PrimitiveTable.oz Pickle.oz AbstractCodeInterpreter.oz Scheduler.oz
 
 %.ozf: %.oz
 	ozc -c $< -o $@

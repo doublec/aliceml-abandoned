@@ -11,10 +11,8 @@
 %%%
 
 functor
-import
-   System(showError)
-   Application(exit)
-   Primitives(table)
+export
+   Interpreter
 define
    NONE = 0
    SOME = 1
@@ -28,7 +26,7 @@ define
    OneArg  = 0
    TupArgs = 1
 
-   Function = 0
+   %Function = 0
 
    AppConst       = 0
    AppPrim        = 1
@@ -58,7 +56,7 @@ define
    TagTest        = 25
    Try            = 26
    VecTest        = 27
-   WideStringTest = 28
+   %--** WideStringTest = 28
 
    Con       = 0
    StaticCon = 1
@@ -115,48 +113,7 @@ define
       end
    end
 
-   proc {PopTask TaskStack Res}
-      case TaskStack of frame(IdDefArgs Instr G L)|Rest then
-	 case IdDefArgs of tag(!OneArg IdDef) then
-	    case IdDef of tag(!IdDef Id) then
-	       L.Id := Res
-	    [] !Wildcard then skip
-	    end
-	 [] tag(!TupArgs IdDefs) then N in
-	    {Wait Res}
-	    N = {Width IdDefs}
-	    for J in 1..N do
-	       case IdDefs.J of tag(!IdDef Id) then
-		  L.Id := Res.J
-	       [] !Wildcard then skip
-	       end
-	    end
-	 end
-	 {Emulate Instr G L Rest}
-      [] nil then skip   % terminate thread
-      end
-   end
-
-   proc {FindHandler TaskStack Debug Exn}
-      case TaskStack of frame(_ _ _ _)|Rest then
-	 {FindHandler Rest Debug Exn}
-      [] handler(IdDef1 IdDef2 Instr G L)|Rest then
-	 case IdDef1 of tag(!IdDef Id) then
-	    L.Id := package(Debug Exn)
-	 [] !Wildcard then skip
-	 end
-	 case IdDef2 of tag(!IdDef Id) then
-	    L.Id := Exn
-	 [] !Wildcard then skip
-	 end
-	 {Emulate Instr G L Rest}
-      [] nil then
-	 {System.showError 'uncaught exception'}
-	 {Application.exit 0}
-      end
-   end
-
-   proc {Emulate Instr G L TaskStack}
+   fun {Emulate Instr G L TaskStack}
       case Instr of tag(!Kill Ids NextInstr) then
 	 for I in 1..{Width Ids} do
 	    L.(Ids.I) := unit
@@ -235,28 +192,20 @@ define
 	 end
 	 L.Id := closure(Function NewG)
 	 {Emulate NextInstr G L TaskStack}
-      [] tag(!AppPrim Name IdRefs IdDefInstrOpt) then N Args in
+      [] tag(!AppPrim Op IdRefs IdDefInstrOpt) then N Args in
 	 N = {Width IdRefs}
-	 Args = {MakeTuple tuple N}
+	 Args = {MakeTuple args N}
 	 for J in 1..N do X in
 	    X = case IdRefs.J of tag(!Local Id) then L.Id
 		[] tag(!Global K) then G.K
 		end
-	    {Wait X}
 	    Args.J = X
 	 end
-	 case {Primitives.table.Name Args} of exception(Exn) then
-	    {FindHandler TaskStack nil Exn}
-	 elseof Res then
-	    case IdDefInstrOpt of !NONE then   % tail call
-	       {PopTask TaskStack Res}
-	    [] tag(!SOME tuple(IdDef NextInstr)) then
-	       case IdDef of tag(!IdDef Id) then
-		  L.Id := Res
-	       [] !Wildcard then skip
-	       end
-	       {Emulate NextInstr G L TaskStack}
-	    end
+	 case IdDefInstrOpt of !NONE then   % tail call
+	    continue(Args Op|TaskStack)
+	 [] tag(!SOME tuple(IdDef NextInstr)) then NewFrame in
+	    NewFrame = frame(Interpreter tag(!OneArg IdDef) NextInstr G L)
+	    continue(Args Op|NewFrame|TaskStack)
 	 end
       [] tag(!AppVar IdRef IdRefArgs IdDefArgsInstrOpt) then Op in
 	 Op = case IdRef of tag(!Local Id) then L.Id
@@ -266,68 +215,23 @@ define
       [] tag(!AppConst Op IdRefArgs IdDefArgsInstrOpt) then Args in
 	 %% construct argument:
 	 case IdRefArgs of tag(!OneArg IdRef) then
-	    Args = case IdRef of tag(!Local Id) then L.Id
-		   [] tag(!Global I) then G.I
-		   end
+	    Args = arg(case IdRef of tag(!Local Id) then L.Id
+		       [] tag(!Global I) then G.I
+		       end)
 	 [] tag(!TupArgs IdRefs) then N in
 	    N = {Width IdRefs}
-	    Args = {MakeTuple tuple N}
+	    Args = {MakeTuple args N}
 	    for J in 1..N do
 	       Args.J = case IdRefs.J of tag(!Local Id) then L.Id
 			[] tag(!Global K) then G.K
 			end
 	    end
 	 end
-	 case Op of closure(function(_ NL IdDefArgs BodyInstr) NewG) then
-	    %% apply function:
-	    NewL = {NewArray 0 NL - 1 unit}
-	 in
-	    %% deconstruct argument:
-	    case IdDefArgs of tag(!OneArg IdDef) then
-	       case IdDef of tag(!IdDef Id) then
-		  NewL.Id := Args
-	       [] !Wildcard then skip
-	       end
-	    [] tag(!TupArgs IdDefs) then N in
-	       {Wait Args}
-	       N = {Width IdDefs}
-	       for J in 1..N do
-		  case IdDefs.J of tag(!IdDef Id) then
-		     NewL.Id := Args.J
-		  [] !Wildcard then skip
-		  end
-	       end
-	    end
-	    case IdDefArgsInstrOpt of !NONE then   % tail call
-	       {Emulate BodyInstr NewG NewL TaskStack}
-	    [] tag(!SOME tuple(IdDefArgs NextInstr)) then
-	       {Emulate BodyInstr NewG NewL
-		frame(IdDefArgs NextInstr G L)|TaskStack}
-	    end
-	 else Res in
-	    %% apply primitive operation:
-	    Res = {Op Args}   %--** exceptional result
-	    case IdDefArgsInstrOpt of !NONE then   % tail call
-	       {PopTask TaskStack Res}
-	    [] tag(!SOME tuple(IdDefArgs NextInstr)) then
-	       %% deconstruct result:
-	       case IdDefArgs of tag(!OneArg IdDef) then
-		  case IdDef of tag(!IdDef Id) then
-		     L.Id := Res
-		  [] !Wildcard then skip
-		  end
-	       [] tag(!TupArgs IdDefs) then N in
-		  {Wait Res}
-		  N = {Width IdDefs}
-		  for J in 1..N do
-		     case IdDefs.J of tag(!IdDef Id) then
-			L.Id := Res.J
-		     [] !Wildcard then skip
-		     end
-		  end
-	       end
-	       {Emulate NextInstr G L TaskStack}
-	    end
+	 case IdDefArgsInstrOpt of !NONE then   % tail call
+	    continue(Args Op|TaskStack)
+	 [] tag(!SOME tuple(IdDefArgs NextInstr)) then NewFrame in
+	    NewFrame = frame(Interpreter IdDefArgs NextInstr G L)
+	    continue(Args Op|NewFrame|TaskStack)
 	 end
       [] tag(!GetRef Id IdRef NextInstr) then
 	 L.Id := {Access case IdRef of tag(!Local Id2) then L.Id2
@@ -338,7 +242,6 @@ define
 	 T = case IdRef of tag(!Local Id) then L.Id
 	     [] tag(!Global I) then G.I
 	     end
-	 {Wait T}
 	 N = {Width IdDefs}
 	 for J in 1..N do
 	    case IdDefs.J of tag(!IdDef Id) then
@@ -351,13 +254,13 @@ define
 	 Exn = case IdRef of tag(!Local Id) then L.Id
 	       [] tag(!Global I) then G.I
 	       end
-	 {FindHandler TaskStack nil Exn}
+	 exception(nil Exn TaskStack)
       [] tag(!Reraise IdRef) then X in
 	 X = case IdRef of tag(!Local Id) then L.Id
 	     [] tag(!Global I) then G.I
 	     end
 	 case X of package(Debug Exn) then
-	    {FindHandler TaskStack Debug Exn}
+	    exception(Debug Exn TaskStack)
 	 end
       [] tag(!Try TryInstr IdDef1 IdDef2 HandleInstr) then
 	 {Emulate TryInstr G L
@@ -453,50 +356,67 @@ define
 	 end
       [] tag(!Shared _ NextInstr) then
 	 {Emulate NextInstr G L TaskStack}
-      [] tag(!Return IdRefArgs) then Res in
+      [] tag(!Return IdRefArgs) then Args in
+	 %% construct arguments to call the continuation with:
 	 case IdRefArgs of tag(!OneArg IdRef) then
-	    Res = case IdRef of tag(!Local Id) then L.Id
-		  [] tag(!Global I) then G.I
-		  end
+	    Args = arg(case IdRef of tag(!Local Id) then L.Id
+		       [] tag(!Global I) then G.I
+		       end)
 	 [] tag(!TupArgs IdRefs) then N in
 	    N = {Width IdRefs}
-	    Res = {MakeTuple tuple N}
+	    Args = {MakeTuple args N}
 	    for J in 1..N do
-	       Res.J = case IdRefs.J of tag(!Local Id) then L.Id
-		       [] tag(!Global K) then G.K
-		       end
+	       Args.J = case IdRefs.J of tag(!Local Id) then L.Id
+			[] tag(!Global K) then G.K
+			end
 	    end
 	 end
-	 {PopTask TaskStack Res}
+	 continue(Args TaskStack)
       end
    end
 
-/*
-   class Scheduler
-      attr QueueHd: unit QueueTl: unit
-      meth init() Empty in
-	 QueueHd <- Empty
-	 QueueTl <- Empty
-      end
-      meth newThread(Closure)
-	 case Closure of closure(function(_ NL IdDefArgs BodyInstr) G) then
-	    L = {NewArray 0 NL - 1 unit}
-	    Hd Rest
-	 in
-	    Hd = (@QueueHd <- Rest)
-	    Hd = 'thread'([tuple frame(IdDefArgs BodyInstr G L)])|Rest
+   fun {Run Args TaskStack}
+      case TaskStack of frame(_ IdDefArgs Instr G L)|Rest then
+	 case IdDefArgs of tag(!OneArg IdDef) then
+	    case IdDef of tag(!IdDef Id) then
+	       L.Id := case Args of arg(X) then X
+		       [] args(...) then {Adjoin Args tuple}
+		       end
+	    [] !Wildcard then skip
+	    end
+	 [] tag(!TupArgs IdDefs) then T N in
+	    T = case Args of arg(X) then X
+		[] args(...) then Args
+		end
+	    N = {Width IdDefs}
+	    for J in 1..N do
+	       case IdDefs.J of tag(!IdDef Id) then
+		  L.Id := T.J
+	       [] !Wildcard then skip
+	       end
+	    end
 	 end
-      end
-      meth run() Hd = @QueueHd in
-	 if {IsFree Hd} then
-	    skip   %--** wait for I/O
-	 elsecase Hd of 'thread'(Res|TaskStack)|Tr then
-	    QueueHd <- Tr
-	    {PopTask TaskStack Res}
-	    %--** returns one of continue, preempt, raise, request, terminate
-	    Scheduler, run()
-	 end
+	 {Emulate Instr G L Rest}
+      [] nil then terminate
       end
    end
-*/
+
+   fun {Handle Debug Exn TaskStack}
+      case TaskStack of handler(IdDef1 IdDef2 Instr G L)|Rest then
+	 case IdDef1 of tag(!IdDef Id) then
+	    L.Id := package(Debug Exn)
+	 [] !Wildcard then skip
+	 end
+	 case IdDef2 of tag(!IdDef Id) then
+	    L.Id := Exn
+	 [] !Wildcard then skip
+	 end
+	 {Emulate Instr G L Rest}
+      [] Frame=frame(_ _ _ _ _)|Rest then
+	 exception(Frame|Debug Exn Rest)
+      end
+   end
+
+   Interpreter = abstractCodeInterpreter(run: Run
+					 handle: Handle)
 end

@@ -12,7 +12,7 @@
 
 functor
 export
-   table: Primitives
+   Table
 require
    BootName(newUnique: NewUniqueName '<' hash) at 'x-oz://boot/Name'
    BootFloat(fPow) at 'x-oz://boot/Float'
@@ -45,7 +45,7 @@ prepare
 	 end
       end
    in
-      fun {StringCompare Args} S1 = Args.1 S2 = Args.2 in
+      fun {StringCompare S1 S2}
 	 {StringCompareSub S1 S2
 	  {ByteString.length S1} {ByteString.length S2} 0}
       end
@@ -55,13 +55,13 @@ prepare
 
    Primitives =
    primitives('=':
-		 fun {$ Args} if Args.1 == Args.2 then 1 else 0 end end   %--**
+		 fun {$ X Y} if X == Y then 1 else 0 end end   %--**
 	      '<>':
-		 fun {$ Args} if Args.1 \= Args.2 then 1 else 0 end end   %--**
+		 fun {$ X Y} if X \= Y then 1 else 0 end end   %--**
 	      'Array.array':
-		 fun {$ Args} N = Args.1 in
+		 fun {$ N X}
 		    if 0 =< N andthen N < Primitives.'Array.maxLen' then
-		       {Array.new 0 N - 1 Args.2}
+		       {Array.new 0 N - 1 X}
 		    else exception(Primitives.'General.Size')
 		    end
 		 end
@@ -77,23 +77,23 @@ prepare
 	      'Array.length': fun {$ A} {Array.high A} + 1 end
 	      'Array.maxLen': 0x7FFFFFF
 	      'Array.sub':
-		 fun {$ Args}
-		    try {Array.get Args.1 Args.2}
+		 fun {$ A I}
+		    try {Array.get A I}
 		    catch error(kernel(array ...) ...) then
 		       exception(Primitives.'General.Subscript')
 		    end
 		 end
 	      'Array.update':
-		 fun {$ Args}
-		    try {Array.put Args.1 Args.2 Args.3} tuple
+		 fun {$ A I X}
+		    try {Array.put A I X} tuple
 		    catch error(kernel(array ...) ...) then
 		       exception(Primitives.'General.Subscript')
 		    end
 		 end
-	      'Char.<': fun {$ Args} if Args.1 < Args.2 then 1 else 0 end end
-	      'Char.>': fun {$ Args} if Args.1 > Args.2 then 1 else 0 end end
-	      'Char.<=': fun {$ Args} if Args.1 =< Args.2 then 1 else 0 end end
-	      'Char.>=': fun {$ Args} if Args.1 >= Args.2 then 1 else 0 end end
+	      'Char.<': fun {$ C1 C2} if C1 < C2 then 1 else 0 end end
+	      'Char.>': fun {$ C1 C2} if C1 > C2 then 1 else 0 end end
+	      'Char.<=': fun {$ C1 C2} if C1 =< C2 then 1 else 0 end end
+	      'Char.>=': fun {$ C1 C2} if C1 >= C2 then 1 else 0 end end
 	      'Char.ord': fun {$ C} C end
 	      'Char.chr':
 		 fun {$ C}
@@ -130,8 +130,10 @@ prepare
 		 fun {$ X} !!{Alarm (X + 500) div 1000} end
 	      'Future.await':
 		 fun {$ X} {Wait X} X end
-	      'Future.awaitOne':
-		 fun {$ Args} X = Args.1 in {WaitOr X Args.2} X end
+	      'Future.awaitOne': unit   %--**
+/*
+		 fun {$ X Y} {WaitOr X Y} X end
+*/
 	      'Future.byneed': unit   %--**
 /*
 	      fun {$ P}
@@ -177,30 +179,29 @@ prepare
 	      'General.Size': {NewUniqueName 'General.Size'}
 	      'General.Span': {NewUniqueName 'General.Span'}
 	      'General.Subscript': {NewUniqueName 'General.Subscript'}
-	      'General.exnName': unit   %--**
-/*
-	      fun {$ N}
-		 case {VirtualString.toString {Value.toVirtualString {Label N} 0 0}}
-		 of "<N>" then {ByteString.make "<unknown>"}
-		 elseof &<|&N|&:|& |&'|Rest then
-		    case {Reverse Rest} of &>|Rest then
-		       {ByteString.make {Reverse Rest}}
+	      'General.exnName':
+		 fun {$ N}
+		    case {VirtualString.toString
+			  {Value.toVirtualString {Label N} 0 0}}
+		    of "<N>" then {ByteString.make "<unknown>"}
+		    elseof &<|&N|&:|& |&'|Rest then
+		       case {Reverse Rest} of &>|Rest then
+			  {ByteString.make {Reverse Rest}}
+		       end
+		    elseof &<|&N|&:|& |Rest then
+		       case {Reverse Rest} of &>|Rest then
+			  {ByteString.make {Reverse Rest}}
+		       end
+		    elseof S then {ByteString.make S}
 		    end
-		 elseof &<|&N|&:|& |Rest then
-		    case {Reverse Rest} of &>|Rest then
-		       {ByteString.make {Reverse Rest}}
-		    end
-		 elseof S then {ByteString.make S}
 		 end
-	      end
-*/
 	      'GlobalStamp.new': fun {$ _} {NewName} end
 	      'GlobalStamp.fromString':
 		 fun {$ S} {NewUniqueName {VirtualString.toAtom S}} end
 	      'GlobalStamp.toString':
 		 fun {$ N} {ByteString.make {Value.toVirtualString N 0 0}} end
 	      'GlobalStamp.compare':
-		 fun {$ Args} N1 = Args.1 N2 = Args.2 in
+		 fun {$ N1 N2}
 		    if N1 == N2 then EQUAL
 		    elseif {BootName.'<' N1 N2} then LESS
 		    else GREATER
@@ -250,17 +251,17 @@ prepare
 	      'Hole.isFailed': fun {$ X} 0 end   %--** unimplemented
 	      'Hole.isHole': fun {$ X} if {IsFree X} then 1 else 0 end end
 	      'Int.~': Number.'~'
-	      'Int.+': fun {$ Args} Args.1 + Args.2 end
-	      'Int.-': fun {$ Args} Args.1 - Args.2 end
-	      'Int.*': fun {$ Args} Args.1 * Args.2 end
-	      'Int.<': fun {$ Args} if Args.1 < Args.2 then 1 else 0 end end
-	      'Int.>': fun {$ Args} if Args.1 > Args.2 then 1 else 0 end end
-	      'Int.<=': fun {$ Args} if Args.1 =< Args.2 then 1 else 0 end end
-	      'Int.>=': fun {$ Args} if Args.1 >= Args.2 then 1 else 0 end end
+	      'Int.+': Number.'+'
+	      'Int.-': Number.'-'
+	      'Int.*': Number.'*'
+	      'Int.<': fun {$ I J} if I < J then 1 else 0 end end
+	      'Int.>': fun {$ I J} if I > J then 1 else 0 end end
+	      'Int.<=': fun {$ I J} if I =< J then 1 else 0 end end
+	      'Int.>=': fun {$ I J} if I >= J then 1 else 0 end end
 	      'Int.abs': Abs
-	      'Int.compare': fun {$ Args} {NumberCompare Args.1 Args.2} end
+	      'Int.compare': NumberCompare
 	      'Int.div':
-		 fun {$ Args} X1 = Args.1 X2 = Args.2 in
+		 fun {$ X1 X2}
 		    try B1 B2 in
 		       B1 = {Int.isNat X1}
 		       B2 = {Int.isNat X2}
@@ -277,7 +278,7 @@ prepare
 	      'Int.maxInt': NONE
 	      'Int.minInt': NONE
 	      'Int.mod':
-		 fun {$ Args} X1 = Args.1 X2 = Args.2 in
+		 fun {$ X1 X2}
 		    try A in
 		       A = X1 mod X2
 		       if A == 0 then A
@@ -295,16 +296,14 @@ prepare
 		 end
 	      'Int.precision': NONE
 	      'Int.quot':
-		 fun {$ Args}
-		    try
-		       Args.1 div Args.2
+		 fun {$ I J}
+		    try I div J
 		    catch _ then exception(Primitives.'General.Div')
 		    end
 		 end
 	      'Int.rem':
-		 fun {$ Args}
-		    try
-		       Args.1 mod Args.2
+		 fun {$ I J}
+		    try I mod J
 		    catch _ then exception(Primitives.'General.Div')
 		    end
 		 end
@@ -315,14 +314,14 @@ prepare
 	      'Math.asinh': Float.asinh
 	      'Math.atan': Atan
 	      'Math.atanh': Float.atanh
-	      'Math.atan2': fun {$ Args} {Atan2 Args.1 Args.2} end
+	      'Math.atan2': Atan2
 	      'Math.cos': Cos
 	      'Math.cosh': Float.cosh
 	      'Math.e': 2.71828182846
 	      'Math.exp': Exp
 	      'Math.ln': Log
 	      'Math.pi': 3.14159265359
-	      'Math.pow': fun {$ Args} {BootFloat.fPow Args.1 Args.2} end
+	      'Math.pow': BootFloat.fPow
 	      'Math.sin': Sin
 	      'Math.sinh': Float.sinh
 	      'Math.sqrt': Sqrt
@@ -330,19 +329,19 @@ prepare
 	      'Math.tanh': Float.tanh
 	      'Option.Option': {NewUniqueName 'Option.Option'}
 	      'Real.~': Number.'~'
-	      'Real.+': fun {$ Args} Args.1 + Args.2 end
-	      'Real.-': fun {$ Args} Args.1 - Args.2 end
-	      'Real.*': fun {$ Args} Args.1 * Args.2 end
-	      'Real./': fun {$ Args} Args.1 / Args.2 end
-	      'Real.<': fun {$ Args} if Args.1 < Args.2 then 1 else 0 end end
-	      'Real.>': fun {$ Args} if Args.1 > Args.2 then 1 else 0 end end
-	      'Real.<=': fun {$ Args} if Args.1 =< Args.2 then 1 else 0 end end
-	      'Real.>=': fun {$ Args} if Args.1 >= Args.2 then 1 else 0 end end
+	      'Real.+': Number.'+'
+	      'Real.-': Number.'-'
+	      'Real.*': Number.'*'
+	      'Real./': Float.'/'
+	      'Real.<': fun {$ X Y} if X < Y then 1 else 0 end end
+	      'Real.>': fun {$ X Y} if X > Y then 1 else 0 end end
+	      'Real.<=': fun {$ X Y} if X =< Y then 1 else 0 end end
+	      'Real.>=': fun {$ X Y} if X >= Y then 1 else 0 end end
 	      'Real.ceil':
 		 fun {$ R}
 		    {FloatToInt {Ceil R}}
 		 end
-	      'Real.compare': fun {$ Args} {NumberCompare Args.1 Args.2} end
+	      'Real.compare': NumberCompare
 	      'Real.floor':
 		 fun {$ R}
 		    {FloatToInt {Floor R}}
@@ -354,7 +353,7 @@ prepare
 	      'Real.realRound': Round
 	      'Real.realTrunc':
 		 fun {$ R} if R >= 0.0 then {Floor R} else {Ceil R} end end
-	      'Real.rem': fun {$ Args} {Float.'mod' Args.1 Args.2} end
+	      'Real.rem': Float.'mod'
 	      'Real.round': fun {$ R} {FloatToInt {Round R}} end
 	      'Real.toString':
 		 fun {$ R} {ByteString.make {FloatToString R}} end
@@ -363,26 +362,25 @@ prepare
 		    {FloatToInt if R >= 0.0 then {Floor R} else {Ceil R} end}
 		 end
 	      'Ref.:=':
-		 fun {$ Args} {Assign Args.1 Args.2} tuple end
+		 fun {$ R X} {Assign R X} tuple end
 	      'Ref.exchange':
-		 fun {$ Args} {Exchange Args.1 $ Args.2} end
-	      'String.^':
-		 fun {$ Args} {ByteString.append Args.1 Args.2} end
+		 fun {$ R X} {Exchange R $ X} end
+	      'String.^': ByteString.append
 	      'String.<':
-		 fun {$ Args}
-		    if {StringCompare Args} == LESS then 1 else 0 end
+		 fun {$ S1 S2}
+		    if {StringCompare S1 S2} == LESS then 1 else 0 end
 		 end
 	      'String.>':
-		 fun {$ Args}
-		    if {StringCompare Args} == GREATER then 1 else 0 end
+		 fun {$ S1 S2}
+		    if {StringCompare S1 S2} == GREATER then 1 else 0 end
 		 end
 	      'String.<=':
-		 fun {$ Args}
-		    if {StringCompare Args} \= GREATER then 1 else 0 end
+		 fun {$ S1 S2}
+		    if {StringCompare S1 S2} \= GREATER then 1 else 0 end
 		 end
 	      'String.>=':
-		 fun {$ Args}
-		    if {StringCompare Args} \= LESS then 1 else 0 end
+		 fun {$ S1 S2}
+		    if {StringCompare S1 S2} \= LESS then 1 else 0 end
 		 end
 	      'String.compare': StringCompare
 	      'String.explode': ByteString.toString
@@ -390,17 +388,17 @@ prepare
 	      'String.maxSize': 0x7FFFFFFF
 	      'String.size': ByteString.length
 	      'String.sub':
-		 fun {$ Args}
+		 fun {$ S I}
 		    try
-		       {ByteString.get Args.1 Args.2}
+		       {ByteString.get S I}
 		    catch system(kernel('ByteString.get' ...) ...) then
 		       exception(Primitives.'General.Subscript')
 		    end
 		 end
 	      'String.substring':
-		 fun {$ Args}
-		    try I = Args.2 in
-		       {ByteString.slice Args.1 I I + Args.3}
+		 fun {$ S I J}
+		    try
+		       {ByteString.slice S I I + J}
 		    catch system(kernel('ByteString.slice' ...) ...) then
 		       exception(Primitives.'General.Subscript')
 		    end
@@ -436,20 +434,18 @@ prepare
 	      'Thread.yield':
 		 fun {$ T} {Thread.preempt T} unit end
 */
-	      'Unsafe.Array.sub': fun {$ Args} {Array.get Args.1 Args.2} end
+	      'Unsafe.Array.sub': Array.get
 	      'Unsafe.Array.update':
-		 fun {$ Args} {Array.put Args.1 Args.2 Args.3} tuple end
-	      'Unsafe.String.sub':
-		 fun {$ Args} {ByteString.get Args.1 Args.2} end
-	      'Unsafe.Vector.sub': fun {$ Args} Args.1.(Args.2 + 1) end
+		 fun {$ A I X} {Array.put A I X} tuple end
+	      'Unsafe.String.sub': ByteString.get
+	      'Unsafe.Vector.sub': fun {$ V I} V.(I + 1) end
 	      'Unsafe.cast': fun {$ X} X end
 	      'Vector.fromList': fun {$ Xs} {List.toTuple vector Xs} end
 	      'Vector.maxLen': 0x7FFFFFF
 	      'Vector.length': Width
 	      'Vector.sub':
-		 fun {$ Args}
-		    try
-		       Args.1.(Args.2 + 1)
+		 fun {$ V I}
+		    try V.(I + 1)
 		    catch error(kernel('.' ...) ...) then
 		       exception(Primitives.'General.Subscript')
 		    end
@@ -462,48 +458,110 @@ prepare
 		    V
 		 end
 */
-	      'Word.+': fun {$ Args} {BootWord.'+' Args.1 Args.2} end
-	      'Word.-': fun {$ Args} {BootWord.'-' Args.1 Args.2} end
-	      'Word.*': fun {$ Args} {BootWord.'*' Args.1 Args.2} end
-	      'Word.<<': fun {$ Args} {BootWord.'<<' Args.1 Args.2} end
-	      'Word.>>': fun {$ Args} {BootWord.'>>' Args.1 Args.2} end
-	      'Word.~>>': fun {$ Args} {BootWord.'~>>' Args.1 Args.2} end
+	      'Word.+': BootWord.'+'
+	      'Word.-': BootWord.'-'
+	      'Word.*': BootWord.'*'
+	      'Word.<<': BootWord.'<<'
+	      'Word.>>': BootWord.'>>'
+	      'Word.~>>': BootWord.'~>>'
 	      'Word.<':
-		 fun {$ Args}
-		    if {BootWord.'<' Args.1 Args.2} then 1 else 0 end
+		 fun {$ W1 W2}
+		    if {BootWord.'<' W1 W2} then 1 else 0 end
 		 end
 	      'Word.>':
-		 fun {$ Args}
-		    if {BootWord.'>' Args.1 Args.2} then 1 else 0 end
+		 fun {$ W1 W2}
+		    if {BootWord.'>' W1 W2} then 1 else 0 end
 		 end
 	      'Word.<=':
-		 fun {$ Args}
-		    if {BootWord.'<=' Args.1 Args.2} then 1 else 0 end
+		 fun {$ W1 W2}
+		    if {BootWord.'<=' W1 W2} then 1 else 0 end
 		 end
 	      'Word.>=':
-		 fun {$ Args}
-		    if {BootWord.'>=' Args.1 Args.2} then 1 else 0 end
+		 fun {$ W1 W2}
+		    if {BootWord.'>=' W1 W2} then 1 else 0 end
 		 end
-	      'Word.andb': fun {$ Args} {BootWord.'andb' Args.1 Args.2} end
+	      'Word.andb': BootWord.'andb'
 	      'Word.div':
-		 fun {$ Args}
+		 fun {$ W1 W2}
 		    try
-		       {BootWord.'div' Args.1 Args.2}
+		       {BootWord.'div' W1 W2}
 		    catch _ then exception(Primitives.'General.Div')
 		    end
 		 end
-	      'Word.fromInt\'': fun {$ Args} {BootWord.make Args.1 Args.2} end
+	      'Word.fromInt\'': BootWord.make
 	      'Word.mod':
-		 fun {$ Args}
-		    try
-		       {BootWord.'mod' Args.1 Args.2}
+		 fun {$ W1 W2}
+		    try {BootWord.'mod' W1 W2}
 		    catch _ then exception(Primitives.'General.Div')
 		    end
 		 end
 	      'Word.notb': BootWord.notb
-	      'Word.orb': fun {$ Args} {BootWord.orb Args.1 Args.2} end
+	      'Word.orb': BootWord.orb
 	      'Word.toInt': BootWord.toInt
 	      'Word.toIntX': BootWord.toIntX
 	      'Word.wordSize': 31
-	      'Word.xorb': fun {$ Args} {BootWord.'xorb' Args.1 Args.2} end)
+	      'Word.xorb': BootWord.'xorb')
+
+   fun {Construct Args}
+      case Args of arg(X) then X
+      [] args(...) then Args
+      end
+   end
+
+   fun {Deconstruct Args}
+      case Args of arg(X) then X
+      [] args(...) then Args
+      end
+   end
+
+   fun {Handle Debug Exn TaskStack}
+      case TaskStack of Frame|Rest then
+	 exception(Frame|Debug Exn Rest)
+      end
+   end
+
+   Table = {Record.map Primitives
+	    fun {$ X}
+	       if {IsProcedure X} then
+		  primitive(run:
+			       case {Procedure.arity X} of 1 then
+				  fun {$ Args TaskStack}
+				     _ = {Construct Args}
+				     case {X} of exception(Exn) then
+					exception(nil Exn TaskStack.2)
+				     elseof Res then Res
+				     end
+				  end
+			       [] 2 then
+				  fun {$ Args TaskStack}
+				     case {X {Construct Args}}
+				     of exception(Exn) then
+					exception(nil Exn TaskStack.2)
+				     elseof Res then Res
+				     end
+				  end
+			       [] 3 then
+				  fun {$ Args TaskStack}
+				     T = {Deconstruct Args}
+				  in
+				     case {X T.1 T.2} of exception(Exn) then
+					exception(nil Exn TaskStack.2)
+				     elseof Res then Res
+				     end
+				  end
+			       [] 4 then
+				  fun {$ Args TaskStack}
+				     T = {Deconstruct Args}
+				  in
+				     case {X T.1 T.2 T.3}
+				     of exception(Exn) then
+					exception(nil Exn TaskStack.2)
+				     elseof Res then Res
+				     end
+				  end
+			       end
+			    handle: Handle)
+	       else X
+	       end
+	    end}
 end
