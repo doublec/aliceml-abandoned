@@ -14,6 +14,7 @@
 
 #include <cstdio>
 #include "generic/Closure.hh"
+#include "alice/StackFrame.hh"
 #include "alice/Authoring.hh"
 
 #define STRINGIFY(x) #x

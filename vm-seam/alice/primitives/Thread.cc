@@ -14,8 +14,8 @@
 #include "generic/Closure.hh"
 #include "generic/Thread.hh"
 #include "generic/Scheduler.hh"
-#include "generic/StackFrame.hh"
 #include "generic/Transients.hh"
+#include "alice/StackFrame.hh"
 #include "alice/Authoring.hh"
 
 class RaiseFrame: private StackFrame {
