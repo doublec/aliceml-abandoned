@@ -16,9 +16,19 @@
 
 __prebound Prebound
 
-open Prebound
+type     unit   = {}
+datatype bool   = datatype Prebound.bool
+type     int    = Prebound.int
+type     word   = Prebound.word
+type     real   = Prebound.real
+type     string = Prebound.string
+type     char   = Prebound.char
+datatype list   = datatype Prebound.list
+datatype ref    = datatype Prebound.ref
+type     exn    = Prebound.exn
 
-type unit = {}
+exception Match = Prebound.Match
+exception Bind  = Prebound.Bind
 
 
 (* Toplevel *)
@@ -34,6 +44,7 @@ infix  0  before
 
 __primitive op=  : ''a * ''a -> bool = "="
 __primitive op<> : ''a * ''a -> bool = "<>"
+__primitive op:= : 'a ref * 'a -> unit = ":="
 
 
 (* Overloaded Identifiers *)
@@ -318,7 +329,7 @@ structure Char =
     struct
 	type char = char
 
-	__primitive ord : char -> ord = "Char.ord"
+	__primitive ord : char -> int = "Char.ord"
 	__primitive chr : int -> char = "Char.chr"
 
 	__primitive isDigit :    char -> bool = "Char.isDigit"
@@ -516,7 +527,7 @@ structure Int :> INT =
 	fun compare (i, j) =
 	    let
 		__primitive compare' : int * int -> int = "Int.compare'"
-		val n = Int.compare' (i, j)
+		val n = compare' (i, j)
 	    in
 		if n = 0 then EQUAL else if n < 0 then LESS else GREATER
 	    end
@@ -548,7 +559,7 @@ structure Word =
 	end
 
 	__primitive toInt : word -> int = "Word.toInt"
-	__primitive toLargeInt : word -> LargeInt.int = toInt
+	__primitive toLargeInt : word -> LargeInt.int = "Word.toInt"
 	__primitive toIntX : word -> int = "Word.toIntX"
 	__primitive orb : word * word -> word = "Word.orb"
 	__primitive xorb : word * word -> word = "Word.xorb"

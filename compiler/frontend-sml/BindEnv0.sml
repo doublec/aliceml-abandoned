@@ -5,9 +5,11 @@ structure BindEnv0 :> BIND_ENV0 =
 
     structure P = Prebound
 
-    val E = new()
-
     val i = Source.nowhere
+
+    (* Prebound *)
+
+    val E = new()
 
     (* Type environment *)
 
@@ -41,7 +43,7 @@ structure BindEnv0 :> BIND_ENV0 =
     val _ = insertVal(E, VId.fromString "Match", (i, P.stamp_Match, C 0))
     val _ = insertVal(E, VId.fromString "Bind",  (i, P.stamp_Bind,  C 0))
 
-    (* Prebound *)
+    (* Global *)
 
     val E0 = new()
 

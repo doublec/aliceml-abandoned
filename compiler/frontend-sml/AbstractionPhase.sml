@@ -44,10 +44,13 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 
     (* Miscellanous helpers *)
 
-    fun stamp_prebound E =
+    fun prebound E =
 	case lookupStr(E, StrId.fromString "")
-	  of SOME(_,stamp,_) => stamp
-	   | NONE => Crash.crash "AbstractionPhase: stamp of prebound not found"
+	  of SOME x => x
+	   | NONE   => Crash.crash "AbstractionPhase: prebounds not found"
+
+    fun stamp_prebound E = #2 (prebound E)
+    fun Env_prebound   E = #3 (prebound E)
 
     fun inventId i = O.Id(i, Stamp.new(), O.InId)
 
@@ -167,7 +170,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
     fun trLongStrId' E =
 	fn SHORTLong(i, strid) =>
 	   let
-		val (id',E')       = trStrId E strid
+		val (id',E') = trStrId E strid
 	   in
 		if O.stamp id' = stamp_prebound E then
 		    ( NONE, E' )
@@ -178,7 +181,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	 | DOTLong(i, longstrid, strid) =>
 	   let
 		val (longido',E') = trLongStrId' E longstrid
-		val (id',x)       = trStrId E strid
+		val (id',x)       = trStrId E' strid
 		val  longid'      =
 		     case longido'
 		       of SOME longid' => O.LongId(i, longid', idToLab id')
@@ -193,7 +196,10 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	   let
 		val (id',x) = trId E id
 	   in
-		( O.ShortId(i,id'), x )
+		if O.stamp id' = stamp_prebound E then
+		    error(i, "invalid use of pseudo structure")
+		else
+		    ( O.ShortId(i,id'), x )
 	   end
 
 	 | DOTLong(i, longstrid, id) =>
@@ -875,7 +881,10 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	 | PRIMITIVEDec(i, _, vid as VId(_,vid'), ty, scon) =>
 	   let
 		val (id',stamp) = trVId_bind E vid
-		val  typ'       = trTy E ty
+		val  _          = insertScope E
+		val  ids'       = trAllTy E ty
+		val  typ'       = alltyp(ids', trTy E ty)
+		val  _          = deleteScope E
 		val  lit'       = trSCon E scon
 		val  s          = case lit'
 				    of O.StringLit s => s
@@ -960,10 +969,9 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 
 	 | PREBOUNDDec(i, strid as StrId(i',strid')) =>
 	   let
-		val _     = trStrId_bind E strid
-		val E'    = Env.new() (*UNFINISHED*)
-		val stamp = stamp_prebound E
-		val _     = insertStr(E, strid', (i',stamp,E'))
+		val  _           = trStrId_bind E strid
+		val (_,stamp,E') = prebound E
+		val  _           = insertStr(E, strid', (i',stamp,E'))
 	   in
 		[]
 	   end
@@ -1000,8 +1008,6 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	   end
 
 	 | OPENDec(i, longstrid) =>
-	   (* When we allow arbitrary structure expressions in open then
-	    * we have to make sure to still allow open Prebound! *)
 	   let
 		val (longid', E') = trLongStrId E longstrid
 		val   _           = unionInf(E,E')
@@ -1695,12 +1701,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	   let
 		val (longid',E') = trLongStrId E longstrid
 	   in
-		case longid'
-		  of O.ShortId(_, id') =>
-			if O.stamp id' = stamp_prebound E then
-			    error(i, "illegal use of pseudo structure")
-			else ( longidToMod longid', E' )
-		   | _ => ( longidToMod longid', E' )
+		( longidToMod longid', E' )
 	   end
 
 	 | TRANSStrExp(i, strexp, sigexp) =>
@@ -1929,8 +1930,8 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		val  _          = insertScope E
 		val  ids'       = trAllTy E ty
 		val  typ'       = alltyp(ids', trTy E ty)
-		val  spec'      = O.ValSpec(i, id', typ')
 		val  _          = deleteScope E
+		val  spec'      = O.ValSpec(i, id', typ')
 		val  _          = insertDisjointVal(E, vid', (i', stamp, V))
 				  handle CollisionVal vid' =>
 				     errorVId("duplicate value or constructor ",
