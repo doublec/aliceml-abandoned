@@ -22,9 +22,9 @@ define
 	     'Unreflect$':
 		fun {$ '#'('x': X '$S$': _)} X end
 	     'ReflectSig$':
-		fun {$ '#'('$S$': S)} '#'('x': {S unit}.1) end
-%	     'UnreflectSig$':
-%		fun {$ '#'('x': X)} '#'('$S$': X) end
+		fun {$ '#'('$S$': S)} '#'('x': S) end
+	     'UnreflectSig$':
+		fun {$ '#'('x': X)} '#'('$S$': X) end
 
 	    )
 end
