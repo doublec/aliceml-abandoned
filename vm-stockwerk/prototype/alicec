@@ -5,7 +5,7 @@ howcalled=$0
 if test -z "${STOCKHOME}"
 then
   dir=`dirname $howcalled`
-  STOCKHOME=`(cd $dir; /bin/pwd)`
+  STOCKHOME=`(cd $dir; cd ..; /bin/pwd)`
 fi
 
-exec "$STOCKHOME/alicerun" x-alice:/compiler/CompilerMain "$@"
+exec "$STOCKHOME/bin/alicerun" x-alice:/compiler/CompilerMain "$@"
