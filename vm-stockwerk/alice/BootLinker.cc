@@ -20,7 +20,7 @@
 #include "generic/BootLinker.hh"
 #include "generic/RootSet.hh"
 #include "generic/Tuple.hh"
-#include "generic/Interpreter.hh"
+#include "generic/Worker.hh"
 #include "generic/StackFrame.hh"
 #include "generic/Scheduler.hh"
 #include "generic/Unpickler.hh"
@@ -89,17 +89,17 @@ static String *Localize(String *key) {
 }
 
 //
-// Interpreter Classes
+// Worker Classes
 //
-class ApplyInterpreter: public Interpreter {
+class ApplyWorker: public Worker {
 private:
-  static ApplyInterpreter *self;
+  static ApplyWorker *self;
 public:
-  // ApplyInterpreter Constructor
-  ApplyInterpreter(): Interpreter() {}
-  // ApplyInterpreter Static Constructor
+  // ApplyWorker Constructor
+  ApplyWorker(): Worker() {}
+  // ApplyWorker Static Constructor
   static void Init() {
-    self = new ApplyInterpreter();
+    self = new ApplyWorker();
   }
   // Frame Handling
   static void PushFrame(String *key, word closure, Vector *imports);
@@ -110,15 +110,15 @@ public:
   virtual void DumpFrame(word frame);
 };
 
-class EnterInterpreter: public Interpreter {
+class EnterWorker: public Worker {
 private:
-  static EnterInterpreter *self;
+  static EnterWorker *self;
 public:
-  // EnterInterpreter Constructor
-  EnterInterpreter(): Interpreter() {}
-  // EnterInterpreter Static Constructor
+  // EnterWorker Constructor
+  EnterWorker(): Worker() {}
+  // EnterWorker Static Constructor
   static void Init() {
-    self = new EnterInterpreter();
+    self = new EnterWorker();
   }
   // Frame Handling
   static void PushFrame(String *key, word sign);
@@ -129,15 +129,15 @@ public:
   virtual void DumpFrame(word frame);
 };
 
-class LinkInterpreter: public Interpreter {
+class LinkWorker: public Worker {
 private:
-  static LinkInterpreter *self;
+  static LinkWorker *self;
 public:
-  // LinkInterpreter Constructor
-  LinkInterpreter(): Interpreter() {}
-  // LinkInterpreter Static Constructor
+  // LinkWorker Constructor
+  LinkWorker(): Worker() {}
+  // LinkWorker Static Constructor
   static void Init() {
-    self = new LinkInterpreter();
+    self = new LinkWorker();
   }
   // Frame Handling
   static void PushFrame(String *key);
@@ -148,15 +148,15 @@ public:
   virtual void DumpFrame(word frame);
 };
 
-class LoadInterpreter: public Interpreter {
+class LoadWorker: public Worker {
 private:
-  static LoadInterpreter *self;
+  static LoadWorker *self;
 public:
-  // LoadInterpreter Constructor
-  LoadInterpreter(): Interpreter() {}
-  // LoadInterpreter Static Constructor
+  // LoadWorker Constructor
+  LoadWorker(): Worker() {}
+  // LoadWorker Static Constructor
   static void Init() {
-    self = new LoadInterpreter();
+    self = new LoadWorker();
   }
   // Frame Handling
   static void PushFrame(String *key);
@@ -168,15 +168,15 @@ public:
   virtual void DumpFrame(word frame);
 };
 
-class BootInterpreter: public Interpreter {
+class BootWorker: public Worker {
 private:
-  static BootInterpreter *self;
+  static BootWorker *self;
 public:
-  // BootInterpreter Constructor
-  BootInterpreter(): Interpreter() {}
-  // BootInterpreter Static Constructor
+  // BootWorker Constructor
+  BootWorker(): Worker() {}
+  // BootWorker Static Constructor
   static void Init() {
-    self = new BootInterpreter();
+    self = new BootWorker();
   }
   // Frame Handling
   static void PushFrame(Thread *thread, String *key);
@@ -188,7 +188,7 @@ public:
 };
 
 //
-// Interpreter Frames
+// Worker Frames
 //
 class ApplyFrame: private StackFrame {
 private:
@@ -206,9 +206,9 @@ public:
     return Vector::FromWordDirect(StackFrame::GetArg(IMPORTS_POS));
   }
   // ApplyFrame Constructor
-  static ApplyFrame *New(Interpreter *interpreter, String *key,
+  static ApplyFrame *New(Worker *worker, String *key,
 			 word closure, Vector *imports) {
-    StackFrame *frame = StackFrame::New(APPLY_FRAME, interpreter, SIZE);
+    StackFrame *frame = StackFrame::New(APPLY_FRAME, worker, SIZE);
     frame->InitArg(KEY_POS, key->ToWord());
     frame->InitArg(CLOSURE_POS, closure);
     frame->InitArg(IMPORTS_POS, imports->ToWord());
@@ -235,8 +235,8 @@ public:
     return StackFrame::GetArg(SIGN_POS);
   }
   // EnterFrame Constructor
-  static EnterFrame *New(Interpreter *interpreter, String *key, word sign) {
-    StackFrame *frame = StackFrame::New(ENTER_FRAME, interpreter, SIZE);
+  static EnterFrame *New(Worker *worker, String *key, word sign) {
+    StackFrame *frame = StackFrame::New(ENTER_FRAME, worker, SIZE);
     frame->InitArg(KEY_POS, key->ToWord());
     frame->InitArg(SIGN_POS, sign);
     return static_cast<EnterFrame *>(frame);
@@ -259,8 +259,8 @@ public:
     return String::FromWordDirect(StackFrame::GetArg(KEY_POS));
   }
   // LinkFrame Constructor
-  static LinkFrame *New(Interpreter *interpreter, String *key) {
-    StackFrame *frame = StackFrame::New(LINK_FRAME, interpreter, SIZE);
+  static LinkFrame *New(Worker *worker, String *key) {
+    StackFrame *frame = StackFrame::New(LINK_FRAME, worker, SIZE);
     frame->InitArg(KEY_POS, key->ToWord());
     return static_cast<LinkFrame *>(frame);
   }
@@ -282,8 +282,8 @@ public:
     return String::FromWordDirect(StackFrame::GetArg(KEY_POS));
   }
   // LoadFrame Constructor
-  static LoadFrame *New(Interpreter *interpreter, String *key) {
-    StackFrame *frame = StackFrame::New(LOAD_FRAME, interpreter, SIZE);
+  static LoadFrame *New(Worker *worker, String *key) {
+    StackFrame *frame = StackFrame::New(LOAD_FRAME, worker, SIZE);
     frame->InitArg(KEY_POS, key->ToWord());
     return static_cast<LoadFrame *>(frame);
   }
@@ -305,8 +305,8 @@ public:
     return String::FromWordDirect(StackFrame::GetArg(KEY_POS));
   }
   // BootFrame Constructor
-  static BootFrame *New(Interpreter *interpreter, String *key) {
-    StackFrame *frame = StackFrame::New(BOOT_FRAME, interpreter, SIZE);
+  static BootFrame *New(Worker *worker, String *key) {
+    StackFrame *frame = StackFrame::New(BOOT_FRAME, worker, SIZE);
     frame->InitArg(KEY_POS, key->ToWord());
     return static_cast<BootFrame *>(frame);
   }
@@ -319,16 +319,16 @@ public:
 };
 
 //
-// Interpreter Implementations
+// Worker Implementations
 //
-// ApplyInterpreter
-ApplyInterpreter *ApplyInterpreter::self;
+// ApplyWorker
+ApplyWorker *ApplyWorker::self;
 
-void ApplyInterpreter::PushFrame(String *key, word closure, Vector *imports) {
+void ApplyWorker::PushFrame(String *key, word closure, Vector *imports) {
   Scheduler::PushFrame(ApplyFrame::New(self, key, closure, imports)->ToWord());
 }
 
-Interpreter::Result ApplyInterpreter::Run() {
+Worker::Result ApplyWorker::Run() {
   ApplyFrame *frame = ApplyFrame::FromWordDirect(Scheduler::GetAndPopFrame());
   String *key = frame->GetKey();
   word closure = frame->GetClosure();
@@ -350,55 +350,55 @@ Interpreter::Result ApplyInterpreter::Run() {
   return Scheduler::PushCall(closure);
 }
 
-const char *ApplyInterpreter::Identify() {
-  return "ApplyInterpreter";
+const char *ApplyWorker::Identify() {
+  return "ApplyWorker";
 }
 
-void ApplyInterpreter::DumpFrame(word wFrame) {
+void ApplyWorker::DumpFrame(word wFrame) {
   ApplyFrame *frame = ApplyFrame::FromWordDirect(wFrame);
   String *key = frame->GetKey();
   std::fprintf(stderr, "Apply %.*s\n", (int) key->GetSize(), key->GetValue());
 }
 
-// EnterInterpreter
-EnterInterpreter *EnterInterpreter::self;
+// EnterWorker
+EnterWorker *EnterWorker::self;
 
-void EnterInterpreter::PushFrame(String *key, word sign) {
+void EnterWorker::PushFrame(String *key, word sign) {
   Scheduler::PushFrame(EnterFrame::New(self, key, sign)->ToWord());
 }
 
-Interpreter::Result EnterInterpreter::Run() {
+Worker::Result EnterWorker::Run() {
   EnterFrame *frame = EnterFrame::FromWordDirect(Scheduler::GetAndPopFrame());
   String *key = frame->GetKey();
   word sign = frame->GetSign();
   Trace("entering", key);
-  Interpreter::Construct();
+  Worker::Construct();
   BootLinker::EnterComponent(key, sign, Scheduler::currentArgs[0]);
-  return Interpreter::CONTINUE;
+  return Worker::CONTINUE;
 }
 
-const char *EnterInterpreter::Identify() {
-  return "EnterInterpreter";
+const char *EnterWorker::Identify() {
+  return "EnterWorker";
 }
 
-void EnterInterpreter::DumpFrame(word wFrame) {
+void EnterWorker::DumpFrame(word wFrame) {
   EnterFrame *frame = EnterFrame::FromWordDirect(wFrame);
   String *key = frame->GetKey();
   std::fprintf(stderr, "Enter %.*s\n", (int) key->GetSize(), key->GetValue());
 }
 
-// LinkInterpreter
-LinkInterpreter *LinkInterpreter::self;
+// LinkWorker
+LinkWorker *LinkWorker::self;
 
-void LinkInterpreter::PushFrame(String *key) {
+void LinkWorker::PushFrame(String *key) {
   Scheduler::PushFrame(LinkFrame::New(self, key)->ToWord());
 }
 
-Interpreter::Result LinkInterpreter::Run() {
+Worker::Result LinkWorker::Run() {
   LinkFrame *frame = LinkFrame::FromWordDirect(Scheduler::GetAndPopFrame());
   String *key = frame->GetKey();
   Trace("linking", key);
-  Interpreter::Construct();
+  Worker::Construct();
   TagVal *tagVal = TagVal::FromWord(Scheduler::currentArgs[0]);
   Assert(tagVal != INVALID_POINTER);
   switch (static_cast<ComponentTag>(tagVal->GetTag())) {
@@ -407,10 +407,10 @@ Interpreter::Result LinkInterpreter::Run() {
       tagVal->AssertWidth(2);
       word sign = tagVal->Sel(0);
       word str = tagVal->Sel(1);
-      EnterInterpreter::PushFrame(key, sign);
+      EnterWorker::PushFrame(key, sign);
       Scheduler::nArgs = 0;
       Scheduler::currentArgs[0] = str;
-      return Interpreter::CONTINUE;
+      return Worker::CONTINUE;
     }
     break;
   case UNEVALUATED:
@@ -420,8 +420,8 @@ Interpreter::Result LinkInterpreter::Run() {
       Vector *imports = Vector::FromWord(tagVal->Sel(1));
       word sign = tagVal->Sel(2);
       Assert(imports != INVALID_POINTER);
-      EnterInterpreter::PushFrame(key, sign);
-      ApplyInterpreter::PushFrame(key, closure, imports);
+      EnterWorker::PushFrame(key, sign);
+      ApplyWorker::PushFrame(key, closure, imports);
       // Push LoadFrames for imports: string * sign vector
       for (u_int i = imports->GetLength(); i--;) {
 	Tuple *t = Tuple::FromWord(imports->Sub(i));
@@ -430,10 +430,10 @@ Interpreter::Result LinkInterpreter::Run() {
 	String *rel = String::FromWordDirect(t->Sel(0));
 	String *key2 = Resolve(key, rel);
 	if (BootLinker::LookupComponent(key2) == INVALID_POINTER)
-	  LoadInterpreter::PushFrame(key2);
+	  LoadWorker::PushFrame(key2);
       }
       Scheduler::nArgs = 0;
-      return Interpreter::CONTINUE;
+      return Worker::CONTINUE;
     }
     break;
   default:
@@ -441,58 +441,58 @@ Interpreter::Result LinkInterpreter::Run() {
   }
 }
 
-const char *LinkInterpreter::Identify() {
-  return "LinkInterpreter";
+const char *LinkWorker::Identify() {
+  return "LinkWorker";
 }
 
-void LinkInterpreter::DumpFrame(word wFrame) {
+void LinkWorker::DumpFrame(word wFrame) {
   LinkFrame *frame = LinkFrame::FromWordDirect(wFrame);
   String *key = frame->GetKey();
   std::fprintf(stderr, "Link %.*s\n", (int) key->GetSize(), key->GetValue());
 }
 
-// LoadInterpreter
-LoadInterpreter *LoadInterpreter::self;
+// LoadWorker
+LoadWorker *LoadWorker::self;
 
-void LoadInterpreter::PushFrame(String *key) {
+void LoadWorker::PushFrame(String *key) {
   Scheduler::PushFrame(LoadFrame::New(self, key)->ToWord());
 }
 
-void LoadInterpreter::PushFrame(Thread *thread, String *key) {
+void LoadWorker::PushFrame(Thread *thread, String *key) {
   thread->PushFrame(LoadFrame::New(self, key)->ToWord());
 }
 
-Interpreter::Result LoadInterpreter::Run() {
+Worker::Result LoadWorker::Run() {
   LoadFrame *frame = LoadFrame::FromWordDirect(Scheduler::GetAndPopFrame());
   String *key = frame->GetKey();
   if (BootLinker::LookupComponent(key) != INVALID_POINTER) {
     Scheduler::nArgs = 0;
-    return Interpreter::CONTINUE;
+    return Worker::CONTINUE;
   }
   Trace("loading", key);
-  LinkInterpreter::PushFrame(key);
+  LinkWorker::PushFrame(key);
   Scheduler::PushFrame(frame->ToWord()); //--** what is this good for?
   return Unpickler::Load(Localize(key));
 }
 
-const char *LoadInterpreter::Identify() {
-  return "LoadInterpreter";
+const char *LoadWorker::Identify() {
+  return "LoadWorker";
 }
 
-void LoadInterpreter::DumpFrame(word wFrame) {
+void LoadWorker::DumpFrame(word wFrame) {
   LoadFrame *frame = LoadFrame::FromWordDirect(wFrame);
   String *key = frame->GetKey();
   std::fprintf(stderr, "Load %.*s\n", (int) key->GetSize(), key->GetValue());
 }
 
-// BootInterpreter
-BootInterpreter *BootInterpreter::self;
+// BootWorker
+BootWorker *BootWorker::self;
 
-void BootInterpreter::PushFrame(Thread *thread, String *key) {
+void BootWorker::PushFrame(Thread *thread, String *key) {
   thread->PushFrame(BootFrame::New(self, key)->ToWord());
 }
 
-Interpreter::Result BootInterpreter::Run() {
+Worker::Result BootWorker::Run() {
   BootFrame *frame = BootFrame::FromWordDirect(Scheduler::GetAndPopFrame());
   String *key = frame->GetKey();
   Component *component = BootLinker::LookupComponent(key);
@@ -505,11 +505,11 @@ Interpreter::Result BootInterpreter::Run() {
   return Scheduler::PushCall(boot);
 }
 
-const char *BootInterpreter::Identify() {
-  return "BootInterpreter";
+const char *BootWorker::Identify() {
+  return "BootWorker";
 }
 
-void BootInterpreter::DumpFrame(word wFrame) {
+void BootWorker::DumpFrame(word wFrame) {
   BootFrame *frame = BootFrame::FromWordDirect(wFrame);
   String *key = frame->GetKey();
   std::fprintf(stderr, "Boot %.*s\n", (int) key->GetSize(), key->GetValue());
@@ -532,12 +532,12 @@ void BootLinker::Init(NativeComponent *nativeComponents) {
     HashTable::New(HashTable::BLOCK_KEY, INITIAL_TABLE_SIZE)->ToWord();
   keyQueue = Queue::New(INITIAL_QUEUE_SIZE)->ToWord();
   numberOfEntries = 0;
-  // Initialize Interpreters
-  ApplyInterpreter::Init();
-  EnterInterpreter::Init();
-  LinkInterpreter::Init();
-  LoadInterpreter::Init();
-  BootInterpreter::Init();
+  // Initialize Workers
+  ApplyWorker::Init();
+  EnterWorker::Init();
+  LinkWorker::Init();
+  LoadWorker::Init();
+  BootWorker::Init();
   // Enter built-in native components
   while (nativeComponents->name != NULL) {
     word (*init)() = nativeComponents->init;
@@ -569,6 +569,6 @@ Component *BootLinker::LookupComponent(String *key) {
 void BootLinker::Link(String *url) {
   traceFlag = getenv("ALICE_TRACE_BOOT_LINKER") != NULL;
   Thread *thread = Scheduler::NewThread(0, Store::IntToWord(0));
-  BootInterpreter::PushFrame(thread, url);
-  LoadInterpreter::PushFrame(thread, url);
+  BootWorker::PushFrame(thread, url);
+  LoadWorker::PushFrame(thread, url);
 }

@@ -12,8 +12,8 @@
 
 #include "generic/Transients.hh"
 #include "generic/Closure.hh"
-#include "generic/ByneedInterpreter.hh"
-#include "generic/PushCallInterpreter.hh"
+#include "generic/BindFutureWorker.hh"
+#include "generic/PushCallWorker.hh"
 #include "generic/Scheduler.hh"
 #include "generic/SignalHandler.hh"
 #include "alice/Authoring.hh"
@@ -39,8 +39,8 @@ DEFINE1(Future_byneed) {
 DEFINE1(Future_concur) {
   Future *future = Future::New();
   Thread *thread = Scheduler::NewThread(0, Store::IntToWord(0));
-  ByneedInterpreter::PushFrame(thread, future);
-  PushCallInterpreter::PushFrame(thread, x0);
+  BindFutureWorker::PushFrame(thread, future);
+  PushCallWorker::PushFrame(thread, x0);
   RETURN(future->ToWord());
 } END
 

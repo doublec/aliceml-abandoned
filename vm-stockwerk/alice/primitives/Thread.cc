@@ -28,9 +28,8 @@ public:
     return GetArg(EXN_POS);
   }
   // RaiseFrame Constructor
-  static RaiseFrame *New(Interpreter *interpreter, word exn) {
-    StackFrame *frame =
-      StackFrame::New(RAISE_FRAME, interpreter, SIZE);
+  static RaiseFrame *New(Worker *worker, word exn) {
+    StackFrame *frame = StackFrame::New(RAISE_FRAME, worker, SIZE);
     frame->InitArg(EXN_POS, exn);
     return static_cast<RaiseFrame *>(frame);
   }
@@ -42,15 +41,15 @@ public:
   }
 };
 
-class RaiseInterpreter: public Interpreter {
+class RaiseWorker: public Worker {
 private:
-  static RaiseInterpreter *self;
+  static RaiseWorker *self;
 public:
-  // RaiseInterpreter Constructor
-  RaiseInterpreter(): Interpreter() {}
-  // RaiseInterpreter Static Constructor
+  // RaiseWorker Constructor
+  RaiseWorker(): Worker() {}
+  // RaiseWorker Static Constructor
   static void Init() {
-    self = new RaiseInterpreter();
+    self = new RaiseWorker();
   }
   // Frame Handling
   static void PushFrame(Thread *thread, word exn) {
@@ -64,22 +63,22 @@ public:
 };
 
 //
-// RaiseInterpreter Functions
+// RaiseWorker Functions
 //
-RaiseInterpreter *RaiseInterpreter::self;
+RaiseWorker *RaiseWorker::self;
 
-Interpreter::Result RaiseInterpreter::Run() {
+Worker::Result RaiseWorker::Run() {
   RaiseFrame *frame = RaiseFrame::FromWordDirect(Scheduler::GetAndPopFrame());
   Scheduler::currentData = frame->GetExn();
   Scheduler::currentBacktrace = Backtrace::New(frame->ToWord());
-  return Interpreter::RAISE;
+  return Worker::RAISE;
 }
 
-const char *RaiseInterpreter::Identify() {
-  return "RaiseInterpreter";
+const char *RaiseWorker::Identify() {
+  return "RaiseWorker";
 }
 
-void RaiseInterpreter::DumpFrame(word) {
+void RaiseWorker::DumpFrame(word) {
   fprintf(stderr, "Raise\n");
 }
 
@@ -103,7 +102,7 @@ DEFINE2(Thread_raiseIn) {
     if (state == Thread::TERMINATED) {
       RAISE(PrimitiveTable::Thread_Terminated);
     } else {
-      RaiseInterpreter::PushFrame(thread, x1);
+      RaiseWorker::PushFrame(thread, x1);
       thread->SetArgs(0, Store::IntToWord(0));
       if (state == Thread::BLOCKED) {
 	Future *future = static_cast<Future *>
@@ -152,7 +151,7 @@ DEFINE0(Thread_yield) {
 } END
 
 void PrimitiveTable::RegisterThread() {
-  RaiseInterpreter::Init();
+  RaiseWorker::Init();
   PrimitiveTable::Thread_Terminated =
     UniqueConstructor::New(String::New("Thread.Terminated"))->ToWord();
   RegisterUniqueConstructor("Thread.Terminate");
