@@ -14,12 +14,13 @@
  *  Items marked with (**) are extensions to the Standard Basis.
  *)
 
-import structure __pervasive             from "Pervasive"
-import __primitive type int and list     from "ToplevelTypes"
-import __primitive infix 4 = infix 6 -
-       val op = and op -                 from "ToplevelValues"
-import __primitive structure List        from "List"
-import __primitive functor MkRow         from "MkRow"
+import structure __pervasive                from "Pervasive"
+import __primitive type int and list        from "ToplevelTypes"
+import __primitive infix 4 = < <= infix 6 -
+       val op = and op < and op <= and op - from "ToplevelValues"
+import __primitive structure General        from "General"
+import __primitive structure List           from "List"
+import __primitive functor MkRow            from "MkRow"
 
 functor MkVector(type 'a vector
 		 type 'a dst_vector
@@ -44,7 +45,8 @@ struct
     val toList		= toList
     val concat		= concat
 
-    fun update(v,i,x)	= if i<0 orelse length v <= i then raise Subscript else
+    fun update(v,i,x)	= if i<0 orelse length v <= i
+			  then raise General.Subscript else
 			  tabulate(length v, fn j => if j=i then x else sub(v,j))
     fun map f v		= tabulate(length v, fn i => f(sub(v,i)))
     fun mapi f v	= tabulate(length v, fn i => f(i,sub(v,i)))
