@@ -7,11 +7,6 @@ using Alice;
 using Alice.Values;
 using Alice.Builtins;
 
-class UnmanagedIO {
-    [sysimport(dll="io.dll")]
-	public static extern String readline();
-}
-
 namespace Alice {
     namespace Values {
 	public class Array {
@@ -2298,7 +2293,7 @@ namespace Alice {
 		StreamWrapper wrapper = (StreamWrapper) CommonOp.Sync(a);
 		StreamReader r        = (StreamReader) wrapper.stream;
 		try {
-		    System.String line = UnmanagedIO.readline();
+		    System.String line = r.ReadLine();
 
 		    if (line == "") {
 			return line;
