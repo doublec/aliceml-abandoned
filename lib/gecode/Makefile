@@ -13,7 +13,9 @@
 
 # Makefile for alice gecode binding
 
-INSTALLTO=`alice-config --alicelibdir`/gecode
+VERSION=1.0.1
+
+INSTALLDIR=`alice-config --alicelibdir`/gecode
 GECODEDIR="/usr"
 
 NATIVES = UnsafeGecode
@@ -34,10 +36,17 @@ TARGETS = \
 	LINEAR-sig.alc \
 	Linear.alc \
 	CONSTRAINTS-sig.alc \
-	Constraints.alc \
-	DescParser.alc \
-	Generator.alc \
-	GeneratorMain.alc \
+	Constraints.alc
+
+DISTFILES = \
+	debian \
+	Makefile \
+	GecodeSpace.cc \
+	GecodeSpace.hh \
+	UnsafeGecode.cc \
+	UnsafeGecodeSpecial.hh
+
+distdir = alice-gecode-$(VERSION)
 
 MAKEDEPEND = alicetool makedepend
 
@@ -47,22 +56,21 @@ CPPFLAGS = -I$(GECODEDIR)/include/gecode
 LDFLAGS = -L$(GECODEDIR)/lib/gecode
 
 MY_CXXFLAGS=-O3 -finline-limit=3000 -DNDEBUG -pipe -DHAVE_CONFIG_H
+
 #MY_CXXFLAGS=-ggdb -pipe -DHAVE_CONFIG_H
 
-.PHONY: all generate clean veryclean distclean depend install
+.PHONY: all generate clean veryclean distclean depend install dist
 
-all: $(NATIVES:%=%.dll) $(TARGETS)
+all: compiledll compilealice
+
+compiledll: $(NATIVES:%=%.dll)
+compilealice: $(TARGETS)
 
 UnsafeGecode.dll: $(SOURCES:%.cc=%.o)
 
 GeneratorMain.alc: Generator.alc
 
 Generator.alc: DescParser.alc
-
-UnsafeGecode.cc: UnsafeGecode.dsc GeneratorMain.alc
-	alicerun GeneratorMain
-
-UnsafeGecode.asig: UnsafeGecode.cc
 
 %.o: %.cc
 	alicetool -v compile $(EXTRA_INCLUDES) $(CXXFLAGS) $(MY_CXXFLAGS) \
@@ -92,9 +100,25 @@ depend: UnsafeGecode.cc
 	$(MAKEDEPEND) $(EXTRA_INCLUDES) $(MY_CXXFLAGS) $(CXXFLAGS) $(SOURCES) \
 	$(CPPFLAGS) >> Makefile.depend
 
-install: all
-	mkdir -p -m 775 $(INSTALLTO)
-	install -c -m555 $(NATIVES:%=%.dll) $(INSTALLTO)
-	install -c -m444 $(TARGETS) $(INSTALLTO)
+install: installdll installalice
+
+installdll: compiledll
+	mkdir -p -m 775 $(INSTALLDIR)
+	install -c -m555 $(NATIVES:%=%.dll) $(INSTALLDIR)
+
+installalice: compilealice
+	mkdir -p -m 775 $(INSTALLDIR)
+	install -c -m444 $(TARGETS) $(INSTALLDIR)
+
+generate: UnsafeGecode.dsc GeneratorMain.alc
+	alicerun GeneratorMain
+
+distdir:
+	rm -rf $(distdir)
+	mkdir $(distdir)
+	cp -r $(DISTFILES) $(distdir)
+dist: distdir
+	tar chzf alice-gecode-$(VERSION).tar.gz $(distdir)
+	rm -r $(distdir)
 
 -include Makefile.depend
