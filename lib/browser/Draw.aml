@@ -13,10 +13,6 @@
  *
  *)
 
-import structure Inspector from "x-alice:/lib/tools/Inspector"
-import structure TextIO from "x-alice:/lib/system/TextIO"
-
-
 import structure Node from "Node"
 import structure GtkSupport from "GtkSupport"
 import structure Color from "Color"
@@ -36,28 +32,36 @@ struct
     exception DrawError
     exception NodeFound of int * int * node 
     	   
-    fun groupToPosition (node,x,y) = GtkSupport.moveGroup(getGroup(node),x,y,
-							  Settings.getFontHeight(),
-							  Settings.getFontWidth())
+    (* GtkSupport Functionality *)
+    
+    fun groupToPosition (node,x,y) = 
+	GtkSupport.moveGroup(getGroup(node),x,y,
+			     Settings.getFontHeight(),
+			     Settings.getFontWidth())
 
-    fun getCoordinates group =  GtkSupport.getCoordinates (group,
-							   Settings.getFontHeight(),
-							   Settings.getFontWidth()) 
+    fun getCoordinates group =  
+	GtkSupport.getCoordinates (group,
+				   Settings.getFontHeight(),
+				   Settings.getFontWidth()) 
 
-    fun moveGroup(group,dx,dy) = GtkSupport.moveGroup(group,dx,dy,
-						      Settings.getFontHeight(),
-						      Settings.getFontWidth()) 
+    fun moveGroup(group,dx,dy) = 
+	GtkSupport.moveGroup(group,dx,dy,
+			     Settings.getFontHeight(),
+			     Settings.getFontWidth()) 
 
-    fun createArrowDown (group,color) =  GtkSupport.createArrowDown(group,color,
-							    Settings.getFontHeight(),
-							    Settings.getFontWidth()) 
+    fun createArrowDown (group,color) =  
+	GtkSupport.createArrowDown(group,color,
+				   Settings.getFontHeight(),
+				   Settings.getFontWidth()) 
 
-    fun createArrowRight (group,color) =  GtkSupport.createArrowRight(group,color,
-							    Settings.getFontHeight(),
-							    Settings.getFontWidth()) 
+    fun createArrowRight (group,color) =  
+	GtkSupport.createArrowRight(group,color,
+				    Settings.getFontHeight(),
+				    Settings.getFontWidth()) 
 							    
-				      
-    fun move'(n,x,y) = let
+		
+    (* moves node to a specified position (in character units) *)
+    fun move(n,x,y) = let
 			   val group = getGroup(n)
 			   val (old_x,
 				old_y,
@@ -74,16 +78,17 @@ struct
 			    ; needs_printing)
 		       end
 
-    fun move(n,x,y) = (move'(n,x,y)
+    (* moves and returns right bottom corner coordinates *)
+    fun moveVerbose(n,x,y) = (move(n,x,y)
 		       ;(x+ Node.get_l_xdim(n),
 			 y+get_ydim(n)-1)) (* maybe get_l_xdim 
 					    is 
 					    not sufficient ! *)
 
-    (* atomDraw *)
+    (* Draws Atomic Nodes - Simple and RelRefNodes *)
     fun atomDraw (node,x,y,upd) = 
 	(if upd 
-	     then if move' (node,x,y)
+	     then if move (node,x,y)
 		      then (GtkSupport.print00(getRep(node),
 					     getGroup(node),
 					     Color.lookupColor(getColor(node)),
@@ -98,7 +103,7 @@ struct
 	     ;getStatus(node) := CLEAN
 	     ;(x+String.size(getRep(node)),y))
    
-    (* drawLimit *)
+    (* Draws Limit Nodes *)
     fun drawLimit (node,x,y,upd) = 
 	let 
 	    val createArrow = if getSort(node) = DEPTH_LIMIT
@@ -106,7 +111,7 @@ struct
 			      else createArrowRight
 	in
 	    (if upd 
-		 then if move'(node,x,y)
+		 then if move(node,x,y)
 			  then (createArrow(getGroup(node),
 					    Color.lookupColor(LIMIT_COLOR));())
 		      else ()
@@ -117,38 +122,41 @@ struct
 		   ;(x+2,y))
 	end
     
-    and concatHorFunct upd  =  (fn (a,(x,y))  => draw(a,x,y,upd)) 
+    (* Auxiliary for drawConcat *)
+    fun concatHorFunct upd  =  (fn (a,(x,y))  => draw(a,x,y,upd)) 
 
-    (* drawConcat *) 
+    (* DrawsConcats *) 
     and drawConcat (n,x,y,upd) = 
 	let 
 	    val (new_x,new_y) = (if upd 
-				     then (move'(n,x,y);()) 
+				     then (move(n,x,y);()) 
 				 else groupToPosition(n,x,y)
 				     ; (Array.foldl (concatHorFunct upd) 
 					(0,0) 
 					(getKids(n)))) 
-	(* changed sequence move <-> foldl on 12.March *)
 	in 
 	    (getStatus(n) := CLEAN
 	     ;(new_x+x,new_y+y))
 	end
 
-    and containerHorFunct upd =  (fn (a,(x,y,_))  => let
-						       val (new_x,new_y) 
-							   = draw(a,x,y,upd)
-						   in (new_x,new_y,0)
-						   end)
+    (* Auxiliaries for drawConcat *)
+    and containerHorFunct upd =  
+	(fn (a,(x,y,_))  => let
+				val (new_x,new_y) 
+				    = draw(a,x,y,upd)
+			    in (new_x,new_y,0)
+			    end)
 	
-    and containerVerFunct upd = (fn (a,(x,y,_)) 
-				  => let
-					 val (x1,y1) = 
-					     draw(a,x,y,upd)
-				     in
-				       (x,y1+1,x1)
-				     end)
+    and containerVerFunct upd = 
+	(fn (a,(x,y,_)) 
+	 => let
+		val (x1,y1) = 
+		    draw(a,x,y,upd)
+	    in
+		(x,y1+1,x1)
+	    end)
 	   
-    (* drawContainer *)
+    (* Draws Container Nodes *)
     and drawContainer(n,x,y,upd) =  
 	let 
 	    val vertical = setsVertical(n)
@@ -157,12 +165,11 @@ struct
 			else (containerHorFunct upd)
 	    val (new_x',new_y',new_x2) = 
 		(if upd 
-		     then (move'(n,x,y);()) 
+		     then (move(n,x,y);()) 
 		 else groupToPosition(n,x,y)
 		     ;(Array.foldl funct 
 		       (0,0,0) 
 		       (getKids(n)))) 
-	    (* changed sequence move <-> foldl on 12.March *)
 	    val (new_x,new_y) = if vertical 
 				    then (new_x2,new_y' -1)
 				else  (new_x',new_y') 
@@ -171,76 +178,81 @@ struct
 	     ;(new_x+x,new_y+y))
 	end 
     
-    
-    (* drawRelNode *)
-   and drawRelNode (n,x,y,upd) = case n of
+    (* Draws RelNodes *)
+    and drawRelNode (n,x,y,upd) = case n of
 	RelNode(r) 
-	=> if !(#counter(r)) = 1 orelse isSimple(!(#content(r)))
-		     then (if upd then (move'(n,x,y);()) 
-			   else groupToPosition(n,x,y) 
-			       ;let
-				   val (new_x,new_y) = 
-				       draw (!(#content(r)),0,0,upd)
-			       in
-				   (x+new_x,y+new_y)
-			       end)
-	   else if upd then let
-				val _ = if move'(n,x,y) 
-				    then (GtkSupport.print00 (#rep(r),
-						 getGroup(n),
-					         Color.lookupColor(getColor(n)),
-				       	     !Settings.fontname);()) 
-					else ()
-			  val content = !(#content(r))
-			  val (x2,y2) = draw (content,
-					      String.size(#rep(r))
-					      ,0
-					      ,upd)
-			     in
-				   (x+x2, y+y2)
-			     end
+	=> if !(#counter(r)) = 1 orelse isSimple(getContent(n))
+	       then (if upd then (move(n,x,y);()) 
+		     else groupToPosition(n,x,y) 
+			 ;let
+			      val (new_x,new_y) = 
+				  draw (getContent(n),0,0,upd)
+			  in
+			      (x+new_x,y+new_y)
+			  end)
+	   else if upd then 
+	       let
+		   val content = 
+		       (if move(n,x,y) 
+			    then (GtkSupport.print00 (getRep(n),
+					      getGroup(n),
+				              Color.lookupColor(getColor(n)),
+				    	      !Settings.fontname);()) 
+			else ()
+			    ;getContent(n))
+		   val (x2,y2) = draw (content,
+				       String.size(getRep(n))
+				       ,0
+				       ,upd)
+	       in
+		   (x+x2, y+y2)
+	       end
 		else (groupToPosition(n,x,y)
-		      ; GtkSupport.print00 (#rep(r),
+		      ; GtkSupport.print00 (getRep(n),
 					    getGroup(n),
 					    Color.lookupColor(getColor(n)),
 					    !Settings.fontname)
 		      ;let
-			   val content = !(#content(r))
+			   val content = getContent(n)
 			   val (x2,y2) = draw (content,
-					       String.size(#rep(r))
+					       String.size(getRep(n))
 					       ,0
 					       ,upd)
 		       in
 			   (x+x2, y+y2)
 		       end)
-
+		    
       | _ => raise DrawError
 
-    
-  
-    (* draw *)
+   
+    (* Draws Node Trees *)
     and draw (((Simple _ as n ) 
-	     | (RelRefNode _ as n)) ,x,y,upd) = if !(getStatus(n)) = DIRTY  
-						  then atomDraw (n,x,y,upd)
-					      else move(n,x,y)  	
-      | draw (Concat(_) as n,x,y,upd) = (if (!(getStatus(n))) = DIRTY  
-			 then drawConcat (n,x,y,upd)
-			  else move(n,x,y))  
-      | draw (Container(_) as n,x,y,upd) = (if (!(getStatus(n))) = DIRTY  
-			    then drawContainer (n,x,y,upd)
-				else move(n,x,y))
-      | draw (Limit(_) as n,x,y,upd) = if  (!(getStatus(n))) = DIRTY  
-			then drawLimit (n,x,y,upd)
-			 else move(n,x,y) 
-      | draw (RelNode(r) as n,x,y,upd) = (if  !(#status(r)) = DIRTY 
-				 then drawRelNode (n,x,y,upd)
-		      else ( move(n,x,y) 
-				   ;( case !(#counter(r)) of
-				   1 => (x+get_xdim(!(#content(r))),
-					 y+get_ydim(!(#content(r))))				 
-				 | _ => (x+get_xdim(n),y+get_ydim(n)) )))
+      | (RelRefNode _ as n)) ,x,y,upd) = 
+	if !(getStatus(n)) = DIRTY  
+	    then atomDraw (n,x,y,upd)
+	else moveVerbose(n,x,y)  	
+      | draw (Concat(_) as n,x,y,upd) 
+	    = (if (!(getStatus(n))) = DIRTY  
+		   then drawConcat (n,x,y,upd)
+	       else moveVerbose(n,x,y))  
+      | draw (Container(_) as n,x,y,upd) 
+	    = if (!(getStatus(n))) = DIRTY  
+		   then drawContainer (n,x,y,upd)
+	       else moveVerbose(n,x,y)
+      | draw (Limit(_) as n,x,y,upd) = 
+		   if  (!(getStatus(n))) = DIRTY  
+		       then drawLimit (n,x,y,upd)
+		   else moveVerbose(n,x,y) 
+      | draw (RelNode(r) as n,x,y,upd) = 
+		       if  !(#status(r)) = DIRTY 
+			   then drawRelNode (n,x,y,upd)
+		       else ( moveVerbose(n,x,y) 
+			     ;( case !(#counter(r)) of
+			       1 => (x+get_xdim(getContent(n)),
+				     y+get_ydim(getContent(n)))		 
+			     | _ => (x+get_xdim(n),y+get_ydim(n)) ))
       | draw  (Empty,x,y,upd) =  (x,y)
-     
+			   
 end (* structure *)
        
-end
+end (* local *)
