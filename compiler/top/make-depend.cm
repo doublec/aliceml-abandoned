@@ -3,4 +3,4 @@ Group is
     ../misc/sources.cm
     ../infrastructure/sources.cm
 
-    MakeDepend.sml
+    MakeDepend.aml
