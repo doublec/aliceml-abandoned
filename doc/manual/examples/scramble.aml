@@ -18,10 +18,9 @@
 
 import structure Gtk       from "x-alice:/lib/gtk/Gtk"
 import structure Gdk       from "x-alice:/lib/gtk/Gdk"
-import structure GnomeCanvas from "x-alice:/lib/gtk/GnomeCanvas"
+import structure Canvas    from "x-alice:/lib/gtk/Canvas"
 import structure Random    from "x-alice:/lib/utility/Random"
 
-structure Canvas = GnomeCanvas
 
 local
     (* A simple server abstraction *)
