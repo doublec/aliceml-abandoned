@@ -62,7 +62,7 @@ import
     structure CodeGenPhase
 from "CodeGenPhase"
 
-functor MkComPlusTarget(Sig: SIGNATURE where type t = FlatGrammar.sign):
+functor MkDotNetTarget(Sig: SIGNATURE where type t = FlatGrammar.sign):
     TARGET =
     struct
 	structure C = EmptyContext
@@ -88,17 +88,17 @@ functor MkComPlusTarget(Sig: SIGNATURE where type t = FlatGrammar.sign):
 	    end
 
 	fun apply () _ =
-	    raise Crash.Crash "MkBackendComPlus.apply: not implemented"
+	    raise Crash.Crash "MkBackendDotNet.apply: not implemented"
     end
 
-functor MkBackendComPlus(structure Switches: SWITCHES
-			 structure ComPlusTarget: TARGET
-			     where type t = IL.t): PHASE =
+functor MkBackendDotNet(structure Switches: SWITCHES
+			structure DotNetTarget: TARGET
+			    where type t = IL.t): PHASE =
     MkTracingPhase(structure Phase =
 		       struct
 			   structure C = EmptyContext
 			   structure I = FlatGrammar
-			   structure O = ComPlusTarget
+			   structure O = DotNetTarget
 
 			   val translate = CodeGenPhase.translate
 		       end

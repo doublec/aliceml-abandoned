@@ -44,9 +44,9 @@ import
 from "../backend-common/MkBackendCommon"
 
 import
-    structure MkComPlusTarget
-    structure MkBackendComPlus
-from "../backend-mozart/MkBackendComPlus"
+    structure MkDotNetTarget
+    structure MkBackendDotNet
+from "../backend-dotnet/MkBackendDotNet"
 
 import
     structure Inf
@@ -72,13 +72,13 @@ import
     structure MkRecursiveCompiler
 from "MkRecursiveCompiler"
 
-structure SMLToComPlusRecursiveCompiler =
+structure SMLToDotNetRecursiveCompiler =
     let
 	structure Switches = MkSwitches(val logOut = TextIO.stdOut)
 
 	val acquireSignRef: (Source.desc * Url.t -> Composer.Sig.t) ref =
 	    ref (fn _ => raise Crash.Crash
-				"SMLToComPlusRecursiveCompiler.acquireSignRef")
+				"SMLToDotNetRecursiveCompiler.acquireSignRef")
 
 	fun loadSign(desc, url) = !acquireSignRef(desc, url)
 	fun loadPlainSign(desc, url) =
@@ -87,7 +87,7 @@ structure SMLToComPlusRecursiveCompiler =
 		Error.error(Source.nowhere,
 			    "Pickle "^ Url.toString url ^" is not a component")
 
-	structure ComPlusTarget = MkComPlusTarget(Signature)
+	structure DotNetTarget = MkDotNetTarget(Signature)
 
 	structure FrontendSML =
 	    MkFrontendSML(val loadSign = loadPlainSign
@@ -101,17 +101,17 @@ structure SMLToComPlusRecursiveCompiler =
 	    MkBackendCommon(val loadSign = loadSign
 			    structure Switches = Switches)
 
-	structure BackendComPlus =
-	    MkBackendComPlus(structure Switches = Switches
-			     structure ComPlusTarget = ComPlusTarget)
+	structure BackendDotNet =
+	    MkBackendDotNet(structure Switches = Switches
+			    structure DotNetTarget = DotNetTarget)
 
 	structure Compiler =
 	    MkCompiler(structure Switches         = Switches
-		       structure Target           = ComPlusTarget
+		       structure Target           = DotNetTarget
 		       structure FrontendSpecific = FrontendSML
 		       structure FrontendCommon   = FrontendCommon
 		       structure BackendCommon    = BackendCommon
-		       structure BackendSpecific  = BackendComPlus)
+		       structure BackendSpecific  = BackendDotNet)
 
 	structure RecursiveCompiler =
 	    MkRecursiveCompiler(structure Composer = Composer

@@ -12,7 +12,7 @@
  *)
 
 SMLofNJ.Internals.GC.messages false;
-CM.make' "main-com+.cm";
+CM.make' "main-dotnet.cm";
 
 local
     fun getArgs () =
@@ -24,7 +24,7 @@ local
 	      | _ => args
 	end
 
-    fun stoc args = SMLToComPlusBatchCompiler.stoc args
+    fun stoc args = SMLToDotNetBatchCompiler.stoc args
 	handle e =>
 	let
 	    val hist  = List.rev(SMLofNJ.exnHistory e)
@@ -41,5 +41,5 @@ local
 
     fun main _ = OS.Process.exit (stoc (getArgs ()))
 in
-    val _ = SMLofNJ.exportFn ("stoc-com+", main)
+    val _ = SMLofNJ.exportFn ("stoc-dotnet", main)
 end;

@@ -51,9 +51,9 @@ stot-mozart.$(PLATFORM):
 	echo 'use "make-stot-mozart.sml";' | $(SML)
 	if [ ! -f $@ ]; then exit 1; fi
 
-stoc-com+.$(PLATFORM):
+stoc-dotnet.$(PLATFORM):
 	-rm -f $@
-	echo 'use "make-stoc-com+.sml";' | $(SML)
+	echo 'use "make-stoc-dotnet.sml";' | $(SML)
 	if [ ! -f $@ ]; then exit 1; fi
 
 clean:
@@ -61,6 +61,6 @@ clean:
 
 veryclean: clean
 	-rm -f stoc-mozart.exe
-	-rm -f stodep.* stoc-mozart.* stot-mozart.* stoc-com+.*
+	-rm -f stodep.* stoc-mozart.* stot-mozart.* stoc-dotnet.*
 
 distclean: veryclean
