@@ -53,7 +53,8 @@ struct
     __primitive val tabulate :	int * (int -> 'a) -> 'a vector
 							= "Vector.tabulate"
 
-    fun extract(v,i,no)		= tabulate(sliceLength(v,i,no),
+    fun extract(v,0,NONE)	= v
+      | extract(v,i,no)		= tabulate(sliceLength(v,i,no),
 					   fn k => sub'(v,i+k))
     fun concat vs		= fromList(List.concat(List.map toList vs))
     fun append(v1,v2)		= concat[v1,v2]				(**)
