@@ -49,6 +49,8 @@ infrastructure/REPRESENTATION.sig
 infrastructure/PHASE.sig
 infrastructure/PHASE_ERROR.sig
 infrastructure/ComposePhases.sml
+infrastructure/MakeTracingPhase.sml
+infrastructure/MakeDumpingPhase.sml
 infrastructure/EmptyContext.sml
 infrastructure/SIGNATURE.sig
 infrastructure/COMPOSER.sig
@@ -81,6 +83,8 @@ common/MakeIntermediateGrammar.sml
 common/PP_INTERMEDIATE_GRAMMAR.sig
 common/MakePPIntermediateGrammar.sml
 common/IntermediateGrammar.sml
+common/CHECK_INTERMEDIATE.sig
+common/CheckIntermediate.sml
 common/PERVASIVE_TYPE.sig
 common/MakePervasiveType.sml
 common/PervasiveType.sml
