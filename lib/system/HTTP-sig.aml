@@ -27,7 +27,7 @@ signature HTTP =
 	type simple_response =
 	     {statusCode: int, contentType: string, body: string}
 
-	exception Closed
+	exception Closed (*--** why not just IO.Io? *)
 	exception Format
 
 	fun readRequest: Socket.socket -> request      (* Closed, Format *)
