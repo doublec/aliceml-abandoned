@@ -50,92 +50,193 @@
 //
 // Streaming Classes
 //
-class OutputStream {
+typedef enum {
+  FILE_OUTPUT_STREAM   = MIN_DATA_LABEL,
+  STRING_OUTPUT_STREAM = (FILE_OUTPUT_STREAM + 1)
+} OUT_STREAM_TYPE;
+
+class OutputStream : public Block {
 public:
-  virtual void PutByte(u_char byte) = 0;
-  virtual void PutBytes(Chunk *c) = 0;
-  void PutUInt(u_int i) {
-    while (i >= 0x80) {
-      PutByte(i & 0x7F | 0x80);
-      i >>= 7;
-    }
-    PutByte(i);
+  // OutputStream Accessors
+  void PutByte(u_char byte);
+  void PutUInt(u_int i);
+  void PutBytes(Chunk *c);
+  // OutputStream Constructor
+  static OutputStream *New(OUT_STREAM_TYPE type, u_int size) {
+    Block *p =Store::AllocBlock((BlockLabel) type, size);
+    return static_cast<OutputStream *>(p);
   }
-  // Store Interface
-  word ToWord() {
-    return Store::UnmanagedPointerToWord(this);
-  }
+  // OutputStream Untagging
   static OutputStream *FromWordDirect(word stream) {
-    return static_cast<OutputStream *>
-      (Store::DirectWordToUnmanagedPointer(stream));
+    Block *p = Store::DirectWordToBlock(stream);
+    Assert(p != INVALID_POINTER);
+    Assert(p->GetLabel() == (BlockLabel) FILE_OUTPUT_STREAM ||
+	   p->GetLabel() == (BlockLabel) STRING_OUTPUT_STREAM);
+    return static_cast<OutputStream *>(p);
   }
 };
 
-class FileOutputStream : public OutputStream { //--** finalization to be done
+class FileOutputStream : public OutputStream {
 private:
-  std::FILE *file;
-  bool exception;
+  static const u_int FILE_POS      = 0;
+  static const u_int EXCEPTION_POS = 1;
+  static const u_int SIZE          = 2;
 public:
+  // FileOutputStream Accessors
+  FILE *GetFile() {
+    return (FILE *) Store::DirectWordToUnmanagedPointer(GetArg(FILE_POS));
+  }
+  void PutFile(FILE *file) {
+    InitArg(FILE_POS, Store::UnmanagedPointerToWord(file));
+  }
+  u_int GetException() {
+    return Store::DirectWordToInt(GetArg(EXCEPTION_POS));
+  }
+  void PutException(u_int exception) {
+    InitArg(EXCEPTION_POS, exception);
+  }
+  // FileOutputStream Methods
+  void PutByte(u_char byte);
+  void PutBytes(Chunk *c);
+  word Close();
   // FileOutputStream Constructor
-  FileOutputStream(char *filename) : OutputStream() {
-    file      = std::fopen(filename, "wb");
-    exception = (file == NULL);
-  }
-  // FileOutputStream Functions
-  bool GotException() {
-    return exception;
-  }
-  virtual void PutByte(u_char byte) {
-    std::fputc(byte, file); //--** to be done: I/O exceptions
-  }
-  virtual void PutBytes(Chunk *c) {
-    std::fwrite(c->GetBase(), 1, c->GetSize(), file);
-  }
-  void Close() {
-    std::fclose(file);
-  }
+  static FileOutputStream *New(char *filename);
 };
 
 class StringOutputStream : public OutputStream {
 private:
+  static const u_int POS_POS  = 0;
+  static const u_int SIZE_POS = 1;
+  static const u_int STR_POS  = 2;
+  static const u_int SIZE     = 3;
+
   static const u_int INITIAL_SIZE = 256;
-  u_int pos;
-  u_int size;
-  u_char *str;
-  void Enlarge() {
-    size = (size * 3) >> 1;
-    u_char *newStr = static_cast<u_char *>(std::malloc(sizeof(u_char) * size));
-    std::memcpy(newStr, str, pos);
-    std::free(str);
-    str = newStr;
-  }
+  void Enlarge();
 public:
+  // StringOutputStream Accessors
+  u_int GetPos() {
+    return Store::DirectWordToInt(GetArg(POS_POS));
+  }
+  void SetPos(u_int pos) {
+    InitArg(POS_POS, pos);
+  }
+  u_int GetSize() {
+    return Store::DirectWordToInt(GetArg(SIZE_POS));
+  }
+  void SetSize(u_int size) {
+    InitArg(SIZE_POS, size);
+  }
+  Chunk *GetStr() {
+    return Store::DirectWordToChunk(GetArg(STR_POS));
+  }
+  void SetStr(Chunk *s) {
+    ReplaceArg(STR_POS, s->ToWord());
+  }
+  // StringOutputStream Methods
+  void PutByte(u_char byte);
+  void PutBytes(Chunk *c);
+  word Close();
   // StringOutputStream Constructor
-  StringOutputStream() : pos(0), size(INITIAL_SIZE) {
-    str = static_cast<u_char *>(malloc(sizeof(u_char) * size));
-  }
-  // StringOutputStream Functions
-  virtual void PutByte(u_char byte) {
-    str[pos++] = byte;
-    if (pos == size) {
-      Enlarge();
-    }
-  }
-  virtual void PutBytes(Chunk *c) {
-    u_int cSize = c->GetSize();
-    while (pos + cSize >= size) {
-      Enlarge();
-    }
-    std::memcpy(str + pos, c->GetBase(), cSize);
-    pos += cSize;
-  }
-  word Close() {
-    Chunk *chunk = Store::AllocChunk(pos);
-    std::memcpy(chunk->GetBase(), str, pos);
-    std::free(str);
-    return chunk->ToWord();
-  }
+  static StringOutputStream *New();
 };
+
+// OutputStream Methods
+void OutputStream::PutByte(u_char byte) {
+  switch ((OUT_STREAM_TYPE) this->GetLabel()) {
+  case FILE_OUTPUT_STREAM:
+    ((FileOutputStream *) this)->PutByte(byte); break;
+  case STRING_OUTPUT_STREAM:
+    ((StringOutputStream *) this)->PutByte(byte); break;
+  }
+}
+
+void OutputStream::PutBytes(Chunk *c) {
+  switch ((OUT_STREAM_TYPE) this->GetLabel()) {
+  case FILE_OUTPUT_STREAM:
+    ((FileOutputStream *) this)->PutBytes(c); break;
+  case STRING_OUTPUT_STREAM:
+    ((StringOutputStream *) this)->PutBytes(c); break;
+  }
+}
+
+void OutputStream::PutUInt(u_int i) {
+  while (i >= 0x80) {
+    OutputStream::PutByte(i & 0x7F | 0x80);
+    i >>= 7;
+  }
+  OutputStream::PutByte(i);
+}
+
+// FileOutputStream Methods
+FileOutputStream *FileOutputStream::New(char *filename) {
+  FileOutputStream *stream =
+    (FileOutputStream *) OutputStream::New(FILE_OUTPUT_STREAM, SIZE);
+  FILE *f         = std::fopen(filename, "wb");
+  u_int exception = (f == NULL);
+  stream->PutFile(f);
+  stream->PutException(exception);
+  return stream;
+}
+
+void FileOutputStream::PutByte(u_char byte) {
+  std::fputc(byte, GetFile());
+}
+
+void FileOutputStream::PutBytes(Chunk *c) {
+  std::fwrite(c->GetBase(), 1, c->GetSize(), GetFile());
+}
+
+word FileOutputStream::Close() {
+  std::fclose(GetFile());
+  return Store::IntToWord(0);
+}
+
+// StringOutputStream Methods
+void StringOutputStream::Enlarge() {
+  u_int size = (GetSize() * 3) >> 1;
+  Chunk *c   = Store::AllocChunk(size);
+  Chunk *str = GetStr();
+  std::memcpy(c->GetBase(), str->GetBase(), GetPos());
+  SetSize(size);
+  SetStr(c);
+}
+
+void StringOutputStream::PutByte(u_char byte) {
+  u_char *c  = (u_char *) GetStr()->GetBase();
+  u_int pos  = GetPos();
+  u_int size = GetSize();
+  c[pos++] = byte;
+  SetPos(pos);
+  if (pos == size) {
+    Enlarge();
+  }
+}
+
+void StringOutputStream::PutBytes(Chunk *c) {
+  u_int cSize = c->GetSize();
+  u_int pos   = GetPos();
+  while (pos + cSize >= GetSize()) {
+    Enlarge();
+  }
+  char *str = GetStr()->GetBase();
+  std::memcpy(str + pos, c->GetBase(), cSize);
+  SetPos(pos + cSize);
+}
+
+word StringOutputStream::Close() {
+  Block *str = (Block *) GetStr();
+  HeaderOp::EncodeSize(str, GetPos());
+  return str->ToWord();
+}
+
+StringOutputStream *StringOutputStream::New() {
+  StringOutputStream *stream =
+    (StringOutputStream *) OutputStream::New(STRING_OUTPUT_STREAM, SIZE);
+  stream->SetPos(0);
+  stream->SetSize(INITIAL_SIZE);
+  stream->SetStr(Store::AllocChunk(INITIAL_SIZE));
+  return stream;
+}
 
 // to be done
 class Seen: private Queue {
@@ -525,8 +626,8 @@ Interpreter::Result Pickler::Pack(word x, TaskStack *taskStack) {
 Interpreter::Result
 Pickler::Save(Chunk *filename, word x, TaskStack *taskStack) {
   char *szFileName     = ExportCString(filename);
-  FileOutputStream *os = new FileOutputStream(szFileName);
-  if (os->GotException()) {
+  FileOutputStream *os = FileOutputStream::New(szFileName);
+  if (os->GetException()) {
     delete os;
     Scheduler::currentData      = Store::IntToWord(0); // to be done: Io exn
     Scheduler::currentBacktrace = Backtrace::New(taskStack->GetFrame());
