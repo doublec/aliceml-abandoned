@@ -19,7 +19,6 @@ import structure GtkCanvas from "x-alice:/lib/gtk/GtkCanvas"
 import structure Type      from "x-alice:/lib/rtt/Type"
 import structure Label     from "x-alice:/lib/rtt/Label"
 import structure Types     from "Types"
-import structure Window    from "Window"
 import structure WindowManager from "WindowManager"
 import signature HELPER    from "HELPER-sig"
 

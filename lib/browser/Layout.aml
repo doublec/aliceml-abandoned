@@ -24,8 +24,6 @@ struct
 
     exception LayoutError
 
-    val act_line = ref 0
-
     fun sum_up (li,f) = if List.length(li) = 0
 			    then 0
 			else f(hd(li)) + sum_up(tl(li),f) 
@@ -126,8 +124,6 @@ struct
 			then () 
 		    else #status(r) := DIRTY 
       | Empty => ()
-
-    and incr_act_line dy = act_line := !act_line + dy
 
     fun layout n = (set_xdim n; set_ydim n; set_l_xdim n ; set_dirty n)
 

@@ -22,8 +22,6 @@ sig
 
     exception LayoutError
 
-    val act_line : int ref
-
     val sum_up : node list * (node -> int) -> int
     val max : node list * (node -> int) -> int
 
@@ -40,8 +38,6 @@ sig
     val calc_l_xdim : node -> int 
 
     val set_dirty : node -> unit
-
-    val incr_act_line : int -> unit
 
     val layout : node -> unit
 

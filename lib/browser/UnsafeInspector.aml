@@ -14,7 +14,6 @@
  *)
 
 import structure PervasiveType from "x-alice:/lib/rtt/PervasiveType"
-import structure Gdk from "x-alice:/lib/gtk/Gdk"
 import structure Types from "Types"
 import structure MkColorTable from "MkColorTable"
 import structure CreateDoc from "CreateDoc"
@@ -24,7 +23,7 @@ import structure WindowManager from "WindowManager"
 import structure DrawNodes from "DrawNodes"
 import signature UNSAFE_INSPECTOR from "UNSAFE_INSPECTOR-sig"
 
-open Types MkColorTable CreateDoc Gdk
+open Types MkColorTable CreateDoc
 
 structure UnsafeInspector :> UNSAFE_INSPECTOR = 
 struct
@@ -34,8 +33,9 @@ struct
 			    val n = NewNode.newNode(v,t)
 			in
 			    ( Layout.layout(n)
-                            ;  DrawNodes.draw(n,0,!Layout.act_line)
-                            ; Layout.incr_act_line(Layout.get_ydim(n) + 1)
+                            ;  DrawNodes.draw(n,0,!WindowManager.act_line)
+                            ; WindowManager.incr_act_line
+			                     (Layout.get_ydim(n) + 1)
 			    ; (!WindowManager.show) () )
 			end
 			    
