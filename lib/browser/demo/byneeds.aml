@@ -1,0 +1,18 @@
+val alazy = lazy 77;
+val blazy = lazy 33;
+val clazy = lazy 11
+val my_vector1 = Vector.tabulate(12,fn _ => alazy );
+val my_vector2 = Vector.tabulate(12,fn _ => blazy );
+val my_vector3 = Vector.tabulate(12,fn _ => clazy );
+
+val my_matrix = Vector.tabulate(30,fn x =>
+				   case (x mod 3) of
+                                   0 => my_vector1
+                                 | 1 => my_vector2
+                                 | 2 => my_vector3);
+
+structure Matrix = Reflect.ReflectType(type t = int vector vector);
+val matrix = Matrix.x;
+
+UnsafeInspector.inspect(my_matrix,matrix);
+

@@ -1,0 +1,27 @@
+datatype foo = FooFoo of foo * foo
+             | LL of string list * string list
+             | A of string array
+             | R of {first: foo, second: foo} 
+             | S
+
+exception FooExn;
+
+val arr = Array.tabulate(4,fn x => Real.toString(Real.fromInt(4-x)));
+val rec li = "I'm"::"cyclic"::li
+
+val first =  FooFoo(R {first = A arr,second = LL (li,li)},
+		    A arr);
+
+val second = FooFoo(FooFoo(S,S),S);
+
+val rec tree = FooFoo(tree,tree)
+
+structure DataType = Reflect.ReflectType (type t = foo);
+val data_type = DataType.x;
+
+
+UnsafeInspector.inspect(first,data_type);
+
+UnsafeInspector.inspect(second,data_type);
+
+UnsafeInspector.inspect(tree,data_type);
