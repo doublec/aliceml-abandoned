@@ -14,7 +14,7 @@ functor
 export
    SetValRep
 define
-   proc {SetValRep Info X}
-      Info = X   %--**
+   proc {SetValRep _#_#InfoRest X}
+      InfoRest = X   %--**
    end
 end

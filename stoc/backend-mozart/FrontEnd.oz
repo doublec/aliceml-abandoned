@@ -12,14 +12,27 @@
 
 functor
 import
+   Open(text pipe)
    Compiler(engine interface)
 export
-   Translate
+   TranslateFile
 define
-   fun {Translate File} C in
+   class TextPipe from Open.pipe Open.text end
+
+   fun {StockhausenToIntermediate File} Pipe S in
+      Pipe = {New TextPipe
+	      init(cmd: 'sml-cm'
+		   args: ['@SMLload=../frontend/stoc-frontend' File])}
+      {Pipe getS(?S)}
+      {Pipe close()}
+      S
+   end
+
+   fun {TranslateFile File} C VS in
       C = {New Compiler.engine init()}
       _ = {New Compiler.interface init(C auto)}
       {C enqueue(setSwitch(expression true))}
-      {C enqueue(feedFile(File return(result: $)))}
+      VS = {StockhausenToIntermediate File}
+      {C enqueue(feedVirtualString(VS return(result: $)))}
    end
 end
