@@ -1636,7 +1636,7 @@ print"\n";
 	let
 	    val r   = #region i
 	    val e1' = mkKind(ikindOp(lab_inGround, trUnit r))
-	    val e3' = typOp(lab_inCon,
+	    val e3' = infOp(lab_inCon,
 			    O.TupExp(typInfo(r, typ_icon), #[e1',p']))
 	    val e4' = mkStr(trUnit r)
 	    val i'  = typInfo(r, Type.inTuple #[typ_con, #typ(O.infoExp e4')])
