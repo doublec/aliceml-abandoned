@@ -17,6 +17,7 @@
 #include "emulator/Transients.hh"
 #include "emulator/TaskStack.hh"
 #include "emulator/Scheduler.hh"
+#include "emulator/Guid.hh"
 #include "emulator/Primitive.hh"
 #include "emulator/PrimitiveTable.hh"
 #include "emulator/Unpickler.hh"
@@ -81,6 +82,7 @@ int main(int argc, char *argv[]) {
   Hole::Init();
   TaskStack::Init();
   Scheduler::Init();
+  Guid::Init();
   Primitive::Init();
   PrimitiveTable::Init();
   // Setup Interpreters

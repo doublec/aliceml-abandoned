@@ -42,7 +42,6 @@ public:
   static word currentArgs[maxArgs];   // Arguments
   static word currentData;            // Transient or Exception
   static Backtrace *currentBacktrace; // Backtrace
-  static word vmGUID;
   // Scheduler Static Constructor
   static void Init();
 

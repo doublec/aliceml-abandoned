@@ -18,20 +18,26 @@ TOPDIR = ..
 include $(TOPDIR)/Makefile.vars
 include $(TOPDIR)/Makefile.rules
 
-GENERICSRCS = RootSet.cc \
-              TaskStack.cc \
-              Scheduler.cc \
-              Transients.cc \
-              Alice.cc
+GENERICSRCS = \
+	RootSet.cc \
+	Outline.cc \
+	TaskStack.cc \
+	Scheduler.cc \
+	Transients.cc \
+	Interpreter.cc \
+	Guid.cc
 
-INTERPRETERSRCS = Interpreter.cc \
-                  PushCallInterpreter.cc \
-                  LazySelectionInterpreter.cc \
-                  ByneedInterpreter.cc \
-                  AbstractCodeInterpreter.cc \
-                  Unpickler.cc \
-                  Pickler.cc \
-                  BootLinker.cc
+SERVICESSRCS = \
+	PushCallInterpreter.cc \
+	ByneedInterpreter.cc \
+	Unpickler.cc \
+	Pickler.cc \
+	BootLinker.cc
+
+ALICESRCS = \
+	Alice.cc \
+	LazySelectionInterpreter.cc \
+	AbstractCodeInterpreter.cc
 
 PRIMITIVES = \
 	Unqualified Array Char Future General GlobalStamp Hole Int LargeWord \
@@ -42,15 +48,16 @@ UNSAFE_SYSTEM = Config IO OS CommandLine Component Debug Rand Reflect
 UNSAFE_UTILITY = MkRefMap
 UNSAFESSRCS = $(UNSAFE_SYSTEM:%=Unsafe%.cc) $(UNSAFE_UTILITY:%=Unsafe%.cc)
 
-SRCS = $(GENERICSRCS) \
-       $(PRIMITIVESSRCS) \
-       $(UNSAFESSRCS) \
-       $(INTERPRETERSRCS) \
-       Debug.cc \
-       Base.cc \
-       Outline.cc \
-       Properties.cc \
-       Main.cc
+SRCS = \
+	$(GENERICSRCS) \
+	$(SERVICESSRCS) \
+	$(ALICESRCS) \
+	$(PRIMITIVESSRCS) \
+	$(UNSAFESSRCS) \
+	Debug.cc \
+	Base.cc \
+	Properties.cc \
+	Main.cc
 
 OBJS = $(SRCS:%.cc=%.o)
 

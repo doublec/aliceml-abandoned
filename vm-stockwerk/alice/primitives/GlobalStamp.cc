@@ -3,7 +3,7 @@
 //   Leif Kornstaedt <kornstae@ps.uni-sb.de>
 //
 // Copyright:
-//   Leif Kornstaedt, 2000
+//   Leif Kornstaedt, 2000-2002
 //
 // Last Change:
 //   $Date$ by $Author$
@@ -12,66 +12,63 @@
 
 #include <cstdio>
 #include "emulator/Authoring.hh"
+#include "emulator/Guid.hh"
 
 static int counter = 0;
 
+#define DECLARE_GLOBAL_STAMP(globalStamp, x)				\
+  Block *globalStamp = Store::WordToBlock(x);				\
+  if (globalStamp == INVALID_POINTER) { REQUEST(x); } else {};		\
+  Assert(globalStamp->GetLabel() == CHUNK_LABEL ||			\
+	 globalStamp->GetLabel() == TUPLE_LABEL);
+
 DEFINE2(GlobalStamp_compare) {
-  Block *p = Store::WordToBlock(x0);
-  if (p == INVALID_POINTER) {
-    REQUEST(x0);
-  }
-  Block *q = Store::WordToBlock(x1);
-  if (q == INVALID_POINTER) {
-    REQUEST(x1);
-  }
-  // Both are Blocks
-  if (p->GetLabel() == CHUNK_LABEL) {
-    if (q->GetLabel() == CHUNK_LABEL) {
-      String *pc = static_cast<String *>(p);
-      String *qc = static_cast<String *>(q);
-      u_int pl = pc->GetSize();
-      u_int ql = qc->GetSize();
-      if (pl < ql) {
+  DECLARE_GLOBAL_STAMP(globalStamp1, x0);
+  DECLARE_GLOBAL_STAMP(globalStamp2, x1);
+  if (globalStamp1->GetLabel() == CHUNK_LABEL) {
+    if (globalStamp2->GetLabel() == CHUNK_LABEL) { // compare two strings
+      String *string1 = static_cast<String *>(globalStamp1);
+      String *string2 = static_cast<String *>(globalStamp2);
+      u_int length1 = string1->GetSize();
+      u_int length2 = string2->GetSize();
+      int length = length1 < length2? length1: length2;
+      int result =
+	std::memcmp(string1->GetValue(), string2->GetValue(), length);
+      if (result < 0) {
 	RETURN_INT(2); // LESS
-      }
-      else if (pl > ql) {
+      } else if (result > 0) {
 	RETURN_INT(1); // GREATER
+      } else if (length1 < length2) {
+	RETURN_INT(2); // LESS
+      } else if (length1 > length2) {
+	RETURN_INT(1); // GREATER
+      } else {
+	RETURN_INT(0); // EQUAL
       }
-      else {
-	switch (std::memcmp(pc->GetValue(), qc->GetValue(), ql)) {
-	case -1:
-	  RETURN_INT(2); // LESS
-	case 0:
-	  RETURN_INT(0); // EQUAL
-	case 1:
-	  RETURN_INT(1); // GREATER
-	default:
-	  Assert(0);
-	  RETURN_INT(0);
-	}
-      }
-    }
-    else {
+    } else {
       RETURN_INT(1); // GREATER
     }
-  }
-  else {
-    if (q->GetLabel() == CHUNK_LABEL) {
+  } else {
+    if (globalStamp2->GetLabel() == CHUNK_LABEL) {
       RETURN_INT(2); // LESS
-    }
-    else {
-      // GUID comparision: to be done
-      Tuple *pt = static_cast<Tuple *>(p);
-      Tuple *qt = static_cast<Tuple *>(q);
-      u_int pl = Store::WordToInt(pt->Sel(1));
-      u_int ql = Store::WordToInt(qt->Sel(1));
-      if (pl < ql) {
+    } else {
+      Tuple *tuple1 = static_cast<Tuple *>(globalStamp1);
+      Tuple *tuple2 = static_cast<Tuple *>(globalStamp2);
+      Guid *guid1 = Guid::FromWordDirect(tuple1->Sel(0));
+      Guid *guid2 = Guid::FromWordDirect(tuple2->Sel(0));
+      int result = Guid::Compare(guid1, guid2);
+      if (result < 0) {
 	RETURN_INT(2); // LESS
-      }
-      else if (pl > ql) {
+      } else if (result > 0) {
 	RETURN_INT(1); // GREATER
       }
-      else {
+      u_int counter1 = Store::DirectWordToInt(tuple1->Sel(1));
+      u_int counter2 = Store::DirectWordToInt(tuple2->Sel(1));
+      if (counter1 < counter2) {
+	RETURN_INT(2); // LESS
+      } else if (counter1 > counter2) {
+	RETURN_INT(1); // GREATER
+      } else {
 	RETURN_INT(0); // EQUAL
       }
     }
@@ -84,44 +81,40 @@ DEFINE1(GlobalStamp_fromString) {
 } END
 
 DEFINE1(GlobalStamp_hash) {
-  Block *p = Store::WordToBlock(x0);
-  if (p == INVALID_POINTER) {
-    REQUEST(x0);
-  }
-  if (p->GetLabel() == CHUNK_LABEL) {
-    String *pc = static_cast<String *>(p);
-    u_int size = p->GetSize();
+  DECLARE_GLOBAL_STAMP(globalStamp, x0);
+  if (globalStamp->GetLabel() == CHUNK_LABEL) {
+    String *string = static_cast<String *>(globalStamp);
+    u_int size = string->GetSize();
     if (size == 0) {
       RETURN_INT(0);
     }
-    u_char *pb = pc->GetValue();
-    RETURN_INT(pb[0] * pb[size - 1]); 
+    u_char *value = string->GetValue();
+    RETURN_INT(value[0] * value[size - 1]);
+  } else {
+    Tuple *tuple = static_cast<Tuple *>(globalStamp);
+    Guid *guid = Guid::FromWordDirect(tuple->Sel(0));
+    int counter = Store::DirectWordToInt(tuple->Sel(1));
+    RETURN_INT(guid->Hash() ^ counter);
   }
-  // GUID Hashing to be done
-  Tuple *pt = static_cast<Tuple *>(p);
-  RETURN_INT(Store::WordToInt(pt->Sel(1)));
 } END
 
 DEFINE0(GlobalStamp_new) {
-  Tuple *t = Tuple::New(2);
-  t->Init(0, Scheduler::vmGUID);
-  t->Init(1, Store::IntToWord(counter++));
-  RETURN(t->ToWord());
+  Tuple *tuple = Tuple::New(2);
+  tuple->Init(0, Guid::vmGuid);
+  tuple->Init(1, Store::IntToWord(counter++));
+  RETURN(tuple->ToWord());
 } END
 
 DEFINE1(GlobalStamp_toString) {
-  Block *p = Store::WordToBlock(x0);
-  if (p == INVALID_POINTER) {
-    REQUEST(x0);
+  DECLARE_GLOBAL_STAMP(globalStamp, x0);
+  if (globalStamp->GetLabel() == CHUNK_LABEL) {
+    RETURN(globalStamp->ToWord());
+  } else {
+    Tuple *tuple = static_cast<Tuple *>(globalStamp);
+    static char buf[20];
+    std::sprintf(buf, "%u", Store::DirectWordToInt(tuple->Sel(1)));
+    RETURN(String::New(buf)->ToWord());
   }
-  if (p->GetLabel() == CHUNK_LABEL) {
-    RETURN(x0);
-  }
-  Tuple *pt = static_cast<Tuple *>(p);
-  //--** not elegant: string is traversed twice
-  static char buf[20];
-  std::sprintf(buf, "%u", Store::WordToInt(pt->Sel(1)));
-  RETURN(String::New(buf)->ToWord());
 } END
 
 void PrimitiveTable::RegisterGlobalStamp() {

@@ -21,6 +21,7 @@
 #include "emulator/TaskStack.hh"
 #include "emulator/Transients.hh"
 #include "emulator/ByneedInterpreter.hh"
+#include "emulator/Guid.hh"
 
 word Scheduler::root;
 ThreadQueue *Scheduler::threadQueue;
@@ -31,7 +32,6 @@ u_int Scheduler::nArgs;
 word Scheduler::currentArgs[Scheduler::maxArgs];
 word Scheduler::currentData;
 Backtrace *Scheduler::currentBacktrace;
-word Scheduler::vmGUID;
 
 void Scheduler::Timer() {
   preempt = true;
@@ -39,9 +39,8 @@ void Scheduler::Timer() {
 
 void Scheduler::Init() {
   threadQueue = ThreadQueue::New();
-  RootSet::Add(root);
   root = Store::IntToWord(0);
-  vmGUID = Tuple::New(4)->ToWord(); // Hack alert: to be done
+  RootSet::Add(root);
 }
 
 static inline void SetThreadArgs(Thread *thread) {
