@@ -24,9 +24,15 @@ Interactive Toplevel:
 
 Library:
 
+* [NEW] aliceglade: use the glade GUI builder to graphically design user
+	interfaces, and aliceglade to generate Alice source code that
+	implements the interface.
+* [NEW] XML: A simple xml parser library based on libxml2
+* [NEW] SQLite: A binding to a flat-file database engine
 * [NEW] Compiler: new component that gives runtime access to the compiler,
         including a Lisp-style eval function on strings containg Alice programs.
 * [NEW] Store: new low-level interface to runtime heap and garbage collector.
+* [NEW] Explorer: one-step exploration
 * [NEW] Search-factory (Gecode): new gecode-based library that performs 
         search for constraint problems. Takes care of recomputation and
         Branch & Bound optimization.
