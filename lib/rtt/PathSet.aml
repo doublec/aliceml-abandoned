@@ -10,7 +10,7 @@
  *   $Revision$
  *)
 
-import structure MkHashImpSet from "../utility/MkHashImpSet"
+import structure MkHashImpSet from "../data/MkHashImpSet"
 import structure Path         from "Path"
 
 structure PathSet = MkHashImpSet(Path)

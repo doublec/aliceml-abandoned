@@ -10,7 +10,7 @@
  *   $Revision$
  *)
 
-import structure MkHashImpMap from "../utility/MkHashImpMap"
+import structure MkHashImpMap from "../data/MkHashImpMap"
 import structure Path         from "Path"
 
 structure PathMap = MkHashImpMap(Path)
