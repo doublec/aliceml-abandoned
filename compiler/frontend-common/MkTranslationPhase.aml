@@ -12,7 +12,8 @@
 
 import structure TypedInfo
        structure TypedGrammar		from "TypedGrammar"
-import structure IntermediateGrammar	from "../common/IntermediateGrammar"
+import structure IntermediateInfo
+       structure IntermediateGrammar	from "../common/IntermediateGrammar"
 import structure EmptyContext		from "../infrastructure/EmptyContext"
 
 import structure Stamp			from "../common/Stamp"
@@ -56,6 +57,7 @@ struct
     structure O = IntermediateGrammar
 
     open TypedInfo
+    open IntermediateInfo
 
   (* UNFINISHED... *)
 
@@ -560,7 +562,7 @@ struct
 	    val i'  = O.infoExp e'
 	    val i'' = nonInfo(#region i')
 	    val x'  = O.Id(i', Stamp.new(), Name.InId)
-	    val d'  = O.ValDec(i'', O.VarPat(i',x'), e')
+	    val d'  = O.ValDec(origInfo(#region i',Aux), O.VarPat(i',x'), e')
 	    val row = Type.asProd(Type.unroll(#typ i'))
 	    val r'' = trUpdExp'(row, i'', idToExp x', r', Vector.toList r')
 	in
@@ -849,7 +851,7 @@ struct
 	    else
 		let
 		    val  x3' = O.Id(typInfo(r,t12), Stamp.new(), Name.InId)
-		    val  d'  = O.ValDec(nonInfo r,
+		    val  d'  = O.ValDec(origInfo(r,Aux),
 				O.TupPat(typInfo(r, Type.tuple #[typ_inf E,
 								 typ_rea E]),
 					 #[idToPat x3',
@@ -895,7 +897,7 @@ struct
 	    val  x12'    = O.Id(typInfo(r, typ_inf E), Stamp.new(), Name.InId)
 	    val  p1'     = O.TupPat(i1', #[idToPat x11', idToPat x12'])
 	    val  e1'     = O.UnsealExp(i1', idToExp x1')
-	    val  d'      = O.ValDec(nonInfo r, p1', e1')
+	    val  d'      = O.ValDec(origInfo(r,Aux), p1', e1')
 	in
 	    if not(!Switches.Language.supportRtt) then
 		let
@@ -975,7 +977,7 @@ struct
 	 *           in [x1 : j1 :> _ = j2]
 	 *)
 	let
-	    val i0  = nonInfo r
+	    val i0  = origInfo(r,Aux)
 	    val e1' = trMod(E,m)
 	    val i1  = O.infoExp e1'
 	    val x1' = O.Id(i1, Stamp.new(), Name.InId)
@@ -1008,7 +1010,7 @@ struct
 	    end
 	else let
 	    val r   = #region i
-	    val i0  = nonInfo r
+	    val i0  = origInfo(r,Aux)
 	    val i'  = trModInfo(E,i)
 
 	    val e1' = trMod(E,m)
@@ -1099,7 +1101,8 @@ struct
 				val e1 = callInf(E, lab_asSig,
 						O.VarExp(O.infoLongid x2, x2))
 				val e2 = trLazy e1
-				val d1 = O.ValDec(nonInfo r, idToPat x3', e2)
+				val d1 = O.ValDec(origInfo(r,Aux),
+						  idToPat x3', e2)
 			    in
 				O.LetExp(O.infoExp e, #[d1], e)
 			    end)
@@ -1136,6 +1139,7 @@ struct
 		val i1  = typInfo(r, Type.arrow(#typ i11, #typ i12))
 		val i2  = typInfo(r, Type.arrow(#typ i21, #typ i22))
 		val i'  = nonInfo r
+		val i'' = origInfo(r,Aux)
 
 		val i5  = typInfo(r, typ_inf E)
 		val x3' = O.Id(i21, Stamp.new(), Name.InId)
@@ -1169,7 +1173,7 @@ struct
 					   | NONE => O.SealExp(i11, idToExp x3')
 			val e4 = O.AppExp(i12,O.UnsealExp(i1,longidToExp x1),e3)
 			val e6 = O.UnsealExp(i22, e2)
-			val d1 = O.ValDec(i', idToPat x4', e4)
+			val d1 = O.ValDec(i'', idToPat x4', e4)
 			val ds = case x2o of NONE => #[d1] | SOME x2 =>
 				 let
 				     val e51 = callInf(E, lab_asArrow,
@@ -1179,7 +1183,7 @@ struct
 							O.Lab(i',l), e51)
 				     val e5  = trLazy e52
 				     (*UNFINISHED: realise *)
-				     val d2  = O.ValDec(i', idToPat x5', e5)
+				     val d2  = O.ValDec(i'', idToPat x5', e5)
 				 in
 				     #[d1,d2]
 				 end
@@ -1196,8 +1200,7 @@ struct
 		coerceMod(E, r, x1,#2(Inf.asMod m1),x2o,j2,j2', isntIdentity)
 	  | (_, Inf.Sing m2) =>
 		coerceMod(E, r, x1,j1,x2o,#2(Inf.asMod m2),j2', isntIdentity)
-	  | ( ((Inf.Con _ | Inf.Lambda _ | Inf.Apply _), _)
-	    | (_, (Inf.Lambda _ | Inf.Apply _)) ) =>
+	  | (_, (Inf.Sig _ | Inf.Arrow _ | Inf.Lambda _ | Inf.Apply _)) =>
 		raise Assert.failure
 
     and coerceStr(E, r, x1,s1, x2o,[],s2', isntIdentity, flds, row) =
@@ -1293,7 +1296,8 @@ struct
 					val e3 = trTuple(r, #[e1,e2])
 					val e  = trLazy(
 						  callInf(E, lab_lookupMod, e3))
-					val d  = O.ValDec(i', idToPat x3, e)
+					val d  = O.ValDec(origInfo(r,Aux),
+							  idToPat x3, e)
 				    in
 					O.LetExp(O.infoExp e0, #[d], e0)
 				    end)
@@ -1509,7 +1513,7 @@ struct
 	let
 	    val r  = #region i
 	    val x' = trVarid(E,x)
-	    val d' = O.ValDec(nonInfo r, idToPat x',
+	    val d' = O.ValDec(origInfo(r,Aux), idToPat x',
 			      callTyp(E, lab_newVar, trKind(E,r,k)))
 	    val e' = callTyp(E, a, trTuple(r, #[idToExp x', trTyp'(E,t)]))
 	in
@@ -1561,7 +1565,7 @@ struct
 	    val i'  = typInfo(r, typ_sig E)
 	    val s'  = O.Id(i', Stamp.new(), Name.InId)
 	    val e0' = callInf(E, lab_emptySig, trUnit r)
-	    val d'  = O.ValDec(nonInfo r, O.VarPat(i',s'), e0')
+	    val d'  = O.ValDec(origInfo(r,Aux), O.VarPat(i',s'), e0')
 	    val ss' = trSpecs(E, idToExp s', ss)
 	    val e'  = callInf(E, lab_sig, idToExp s')
 	in
@@ -1654,7 +1658,7 @@ struct
 	    fun mkKind' k' =
 		let
 		    val r   = #region(I.infoId x)
-		    val i'  = nonInfo(#region i)
+		    val i'  = origInfo(#region i, Aux)
 		    val i1' = typInfo(r, typ_path E)
 		    val p'  = O.Id(i1', Stamp.new(), Name.InId)
 		    val e1' = trPath'(E, r)
@@ -1699,7 +1703,7 @@ struct
 	 *)
 	let
 	    val r   = #region i
-	    val i'  = nonInfo r
+	    val i'  = origInfo(r,Aux)
 	    val i0' = typInfo(#region(I.infoId x), typ_path E)
 	    val x0' = O.Id(i0', Stamp.new(), Name.InId)
 	    val e0' = trPath'(E, r)
@@ -1751,7 +1755,8 @@ struct
     and trDec E (I.ValDec(i,p,e), ds') =
 	(* [val p = e] = val [p] = [e] *)
 	(let
-	    val d' = O.ValDec(i, trPat(E,p), trExp(E,e))
+	    val i' = origInfo(#region i, Val)
+	    val d' = O.ValDec(i', trPat(E,p), trExp(E,e))
 	in
 	    d' :: ds'
 	end handle VirtualModule =>
@@ -1764,7 +1769,8 @@ struct
 	 *)
 	let
 	    val e' = trTypRep(E, x, t)
-	    val d' = O.ValDec(i, idToPat(trTypid(E,x)), trLazy e')
+	    val i' = origInfo(#region i, Typ)
+	    val d' = O.ValDec(i', idToPat(trTypid(E,x)), trLazy e')
 	in
 	    d' :: ds'
 	end
@@ -1780,7 +1786,8 @@ struct
 			      (trVirtModlongid(E,y), trVirtModid(E,x))
 			      before TranslationEnv.insertMod(E, I.stamp x)
 			  | _ => raise VirtualModule
-	    val d' = O.ValDec(i, idToPat x', O.SealExp(O.infoId x', e'))
+	    val i' = origInfo(#region i, Mod)
+	    val d' = O.ValDec(i', idToPat x', O.SealExp(O.infoId x', e'))
 	in
 	    updatePervasive'(E,x);
 	    d' :: ds'
@@ -1793,7 +1800,8 @@ struct
 	 *)
 	let
 	    val e' = trInfRep(E,x,j)
-	    val d' = O.ValDec(i, idToPat(trInfid(E,x)), trLazy e')
+	    val i' = origInfo(#region i, Inf)
+	    val d' = O.ValDec(i', idToPat(trInfid(E,x)), trLazy e')
 	in
 	    d' :: ds'
 	end
@@ -1811,13 +1819,14 @@ struct
 	    val map  = StampMap.new()
 	    val _    = freshTypids (E,map) ds
 	    val ds1' = trLHSRecDecs'(E,map, ds, ds')
-	    val d3'  = O.RecDec(i, trRecDecs(E,ds))
+	    val d3'  = O.RecDec(origInfo(r,Val), trRecDecs(E,ds))
 	in
 	    if List.null ds1' orelse not(!Switches.Language.supportRtt) then
 		d3' :: ds1'
 	    else let
 		val es'  = Vector.fromList(trRHSRecDecs(E,map, ds))
 		val t'   = typ_typ E
+		val i'   = origInfo(r,Typ)
 		val i0'  = i
 		val i1'  = typInfo(r,t')
 		val i2'  = typInfo(r, typ_unit)
@@ -1826,7 +1835,7 @@ struct
 		val p'   = O.TupPat(i2', #[])
 		val e'   = callTyp(E, lab_fix,
 				   trVector(r, Type.tuple #[t',t'], es'))
-		val d2'  = O.ValDec(i0', idToPat x', trLazy e')
+		val d2'  = O.ValDec(origInfo(r,Aux), idToPat x', trLazy e')
 	    in
 		StampMap.foldi
 		    (fn(z1, (_, x2' as O.Id(i,z2,n)), ds') =>
@@ -1834,7 +1843,7 @@ struct
 			    val x1' = O.Id(i,z1,n)
 			    val m'  = O.Mat(i0', p', idToExp x2')
 			    val e'  = O.CaseExp(i1', xx', #[m'])
-			    val d'  = O.ValDec(i0', idToPat x1', trLazy e')
+			    val d'  = O.ValDec(i', idToPat x1', trLazy e')
 			in
 			    d' :: ds'
 			end
@@ -1877,7 +1886,7 @@ struct
 		     then O.FailExp(trTypInfo(E, I.infoTyp t))
 		     else callTyp(E, lab_unknown,
 				  trKind(E, r, Type.kind(#typ(I.infoTyp t))))
-	    val d' = O.ValDec(nonInfo r, idToPat x', e')
+	    val d' = O.ValDec(origInfo(r,Aux), idToPat x', e')
 	in
 	    d' :: ds'
         end
@@ -1948,7 +1957,7 @@ struct
 	    val ll' = trLab(E, #region i1, l)
 	    val f'  = trFix(E, #region i2, f)
 	    val e'  = callInf(E, lab_extendFix, trTuple(r, #[s',ll',f']))
-	    val d'  = O.ValDec(nonInfo r, O.JokPat(O.infoExp e'), e')
+	    val d'  = O.ValDec(origInfo(r,Aux), O.JokPat(O.infoExp e'), e')
 	in
 	    d' :: ds'
 	end
@@ -1962,7 +1971,7 @@ struct
 	    val ll' = trLab(E, #region(I.infoId x), Label.fromName(I.name x))
 	    val t'  = trLazy(trTyp'(E,t))
 	    val e'  = callInf(E, lab_extendVal, trTuple(r, #[s',ll',t']))
-	    val d'  = O.ValDec(nonInfo r, O.JokPat(O.infoExp e'), e')
+	    val d'  = O.ValDec(origInfo(r,Aux), O.JokPat(O.infoExp e'), e')
 	in
 	    d' :: ds'
 	end
@@ -1975,13 +1984,13 @@ struct
 	 *)
 	let
 	    val r   = #region i
-	    val i'  = nonInfo r
+	    val i'  = origInfo(r,Aux)
 
  	    val r0  = #region(I.infoId x)
 	    val p'  = O.Id(typInfo(r0, typ_path E), Stamp.new(), Name.InId)
 	    val pp' = idToExp p'
 	    val e0' = trPath(E, r0, I.name x)
-	    val d0' = O.ValDec(nonInfo r0, idToPat p', e0')
+	    val d0' = O.ValDec(origInfo(r0,Aux), idToPat p', e0')
 
 	    val x'  = trTypid(E,x)
 	    val xx' = idToExp x'
@@ -1994,7 +2003,7 @@ struct
 				| NONE   => lab_singKind
 	    val k'  = callTyp(E, lab, xx')
 	    val e2' = callInf(E, lab_extendTyp, trTuple(r, #[s',pp',k']))
-	    val d2' = O.ValDec(nonInfo r, O.JokPat(O.infoExp e2'), e2')
+	    val d2' = O.ValDec(i', O.JokPat(O.infoExp e2'), e2')
 	in
 	    d2' :: d1' :: d0' :: ds'
 	end
@@ -2011,13 +2020,13 @@ struct
 	    val e1' = trInf'(E, j)
 	    val i'  = typInfo(#region(I.infoInf j), typ_inf E)
 	    val x'  = O.Id(i', z, trModName(I.name x))
-	    val d1' = O.ValDec(nonInfo r, O.VarPat(i',x'), e1')
+	    val d1' = O.ValDec(origInfo(r,Aux), O.VarPat(i',x'), e1')
 
  	    val r0  = #region(I.infoId x)
 	    val p'  = trPath(E, r0, I.name x)
 	    val j'  = idToExp x'
 	    val e2' = callInf(E, lab_extendMod, trTuple(r, #[s',p',j']))
-	    val d2' = O.ValDec(nonInfo r, O.JokPat(O.infoExp e2'), e2')
+	    val d2' = O.ValDec(origInfo(r,Aux), O.JokPat(O.infoExp e2'), e2')
 	in
 	    TranslationEnv.insertMod(E, z);
 	    d2' :: d1' :: ds'
@@ -2031,12 +2040,13 @@ struct
 	 *)
 	let
 	    val r   = #region i
+	    val i'  = origInfo(r,Aux)
 
  	    val r0  = #region(I.infoId x)
 	    val p'  = O.Id(typInfo(r0, typ_path E), Stamp.new(), Name.InId)
 	    val pp' = idToExp p'
 	    val e0' = trPath(E, r0, I.name x)
-	    val d0' = O.ValDec(nonInfo r0, idToPat p', e0')
+	    val d0' = O.ValDec(i', idToPat p', e0')
 
 	    val x'  = trInfid(E,x)
 	    val xx' = idToExp x'
@@ -2044,13 +2054,13 @@ struct
 	    val e1' = case jo' of NONE    => trInf'(E, j)
 			        | SOME j' => j'
 	    val r1  = #region(O.infoExp e1')
-	    val d1' = O.ValDec(nonInfo r1, idToPat x', trLazy e1')
+	    val d1' = O.ValDec(i', idToPat x', trLazy e1')
 
 	    val lab = case jo' of SOME _ => lab_kind	(* generative *)
 				| NONE   => lab_singKind
 	    val k'  = callInf(E, lab, xx')
 	    val e2' = callInf(E, lab_extendInf, trTuple(r, #[s',pp',k']))
-	    val d2' = O.ValDec(nonInfo r, O.JokPat(typInfo(r, typ_unit)), e2')
+	    val d2' = O.ValDec(i', O.JokPat(typInfo(r, typ_unit)), e2')
 	in
 	    d2' :: d1' :: d0' :: ds'
 	end
@@ -2067,7 +2077,8 @@ struct
 	    val t'   = typ_typ E
 	    val e'   = callTyp(E, lab_fix,
 			       trVector(r, Type.tuple #[t',t'], es'))
-	    val d2'  = O.ValDec(nonInfo r, O.JokPat(typInfo(r, typ_unit)), e')
+	    val d2'  = O.ValDec(origInfo(r,Aux),
+	 			O.JokPat(typInfo(r, typ_unit)), e')
 	in
 	    if not(!Switches.Language.supportRtt)
 	    then ds1'
@@ -2087,7 +2098,7 @@ struct
 	    val x' = trTypid(E,x)
 	    val e' = callTyp(E, lab_unknown,
 			     trKind(E, r, Type.kind(#typ(I.infoTyp t))))
-	    val d' = O.ValDec(nonInfo r, idToPat x', e')
+	    val d' = O.ValDec(origInfo(r,Aux), idToPat x', e')
 	in
 	    d' :: ds'
 	end
@@ -2114,7 +2125,7 @@ struct
 	    val p'  = O.Id(typInfo(r0, typ_path E), Stamp.new(), Name.InId)
 	    val pp' = idToExp p'
 	    val e0' = trPath(E, r0, I.name x)
-	    val d'  = O.ValDec(nonInfo r0, idToPat p', e0')
+	    val d'  = O.ValDec(origInfo(r0,Aux), idToPat p', e0')
 
 	    val x'  = trTypid(E,x)
 	    val xx' = idToExp x'
@@ -2146,10 +2157,10 @@ struct
 
     fun idToDec(x' as O.Id(i,_,n), y) =
 	let
-	    val i' = nonInfo(#region i)
-	    val y' = O.LongId(i, y, O.Lab(i', Label.fromName n))
+	    val r  = #region i
+	    val y' = O.LongId(i, y, O.Lab(nonInfo r, Label.fromName n))
 	in
-	    O.ValDec(i', idToPat x', O.VarExp(i, y'))
+	    O.ValDec(origInfo(r,Aux), idToPat x', O.VarExp(i, y'))
 	end
 
     fun trAnns(E, a_s) =
