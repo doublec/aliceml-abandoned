@@ -68,7 +68,7 @@
   }
 
   .class sealed public BuiltinTable extends System.Object {
-    .field static public initonly class System.Collections.Hashtable Table
+    .field static private initonly class System.Collections.Hashtable Table
     .method public static void .cctor() {
       .locals(class System.Collections.Hashtable)
       newobj instance void System.Collections.Hashtable::.ctor()
@@ -99,20 +99,27 @@
     }
   }
 
-  .class sealed public RecordArity extends System.Object {
-    .field public static class System.Collections.Hashtable ArityTable
-    .field public class System.String[] Labels
+  .class sealed public RecordArity extends System.Object implements System.Serialization.IObjectReference {
+    .field private static class System.Collections.Hashtable ArityTable
+    .field private class System.String[] Labels
     .method public static void .cctor() {
       newobj instance void System.Collections.Hashtable::.ctor()
       stsfld class System.Collections.Hashtable StockWerk.RecordArity::ArityTable
       ret
     }
-    .method public void .ctor(class System.String[]) {
+    .method private void .ctor(class System.String[]) {
       ldarg.0
       call instance void System.Object::.ctor()
       ldarg.0
       ldarg.1
       stfld class System.String[] StockWerk.RecordArity::Labels
+      ret
+    }
+    .method static public class StockWerk.RecordArity MakeRecordArity(class System.String[]) {
+      ldarg.0
+      newobj instance void StockWerk.RecordArity::.ctor()
+      call instance class System.Object StockWerk.RecordArity::GetRealObject()
+      castclass StockWerk.RecordArity
       ret
     }
     .method virtual public int32 GetHashCode() {
@@ -140,6 +147,66 @@
       br.s loop
     return:
       ldloc.1
+      ret
+    }
+    .method virtual bool Equals(class System.Object) {
+      .locals(class System.String[], class System.String[], int32)
+      ldarg.1
+      isinst StockWerk.RecordArity
+      brfalse.s retFalse
+      ldarg.1
+      castclass StockWerk.RecordArity
+      ldfld class System.String[] StockWerk.RecordArity::Labels
+      dup
+      stloc.0
+      ldlen
+      ldarg.0
+      ldfld class System.String[] StockWerk.RecordArity::Labels
+      dup
+      stloc.1
+      ldlen
+      bne.un.s retFalse
+      ldc.i4 0
+      stloc.2
+    loop:
+      ldloc.2
+      ldloc.0
+      ldlen
+      bge.s retTrue
+      ldloc.0
+      ldloc.2
+      ldelem.ref
+      ldloc.1
+      ldloc.2
+      ldelem.ref
+      call instance bool System.String::Equals(class System.Object)
+      brfalse.s retFalse
+      ldloc.2
+      ldc.i4 1
+      add
+      stloc.2
+      br.s loop
+    retFalse:
+      ldc.i4 0
+      ret
+    retTrue:
+      ldc.i4 1
+      ret
+    }
+    .method public virtual class System.Object GetRealObject() {
+      ldsfld class System.Collections.Hashtable StockWerk.RecordArity::ArityTable
+      ldarg.0
+      call instance class System.Object System.Collections.Hashtable::get$Item(class System.Object)
+      dup
+      brfalse.s enter
+      ret
+    enter:
+      pop
+      ldsfld class System.Collections.Hashtable StockWerk.RecordArity::ArityTable
+      ldarg.0
+      ldarg.0
+      call instance void System.Collections.Hashtable::Add(class System.Object, class System.Object)
+      ldarg.0
       ret
     }
   }
@@ -184,7 +251,7 @@
       brfalse.s retFalse
       ldarg.1
       castclass StockWerk.Transient
-      callvirt instance class StockWerk.StockWert StockWerk.Transient::Request()
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
       starg.s 1
       br.s retry
     retFalse:
@@ -193,6 +260,20 @@
     }
     .method virtual public bool IsVariantOf(class StockWerk.Transient) {
       ldc.i4 0
+      ret
+    }
+    .method public virtual class StockWerk.StockWert Future() {
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::Future
+      newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
+      throw
+    }
+    .method virtual public void Fulfill(class StockWerk.StockWert) {
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::Fulfill
+      newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
+      throw
+    }
+    .method virtual public class StockWerk.StockWert Await() {
+      ldarg.0
       ret
     }
     .method virtual public class System.Reflection.MemberInfo[0 ...] GetMembers(value class System.Serialization.StreamingContext) {
@@ -380,7 +461,7 @@
       brfalse.s retFalse
       ldarg.1
       castclass StockWerk.Transient
-      callvirt instance class StockWerk.StockWert StockWerk.Transient::Request()
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
       starg.s 1
       br.s retry
     retFalse:
@@ -479,7 +560,7 @@
       brfalse.s retFalse
       ldarg.1
       castclass StockWerk.Transient
-      callvirt instance class StockWerk.StockWert StockWerk.Transient::Request()
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
       starg.s 1
       br.s retry
     }
@@ -509,7 +590,7 @@
       brfalse.s retFalse
       ldarg.1
       castclass StockWerk.Transient
-      callvirt instance class StockWerk.StockWert StockWerk.Transient::Request()
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
       starg.s 1
       br.s retry
     retFalse:
@@ -528,7 +609,7 @@
       stfld class StockWerk.StockWert StockWerk.Ref::Value
       ret
     }
-    .method public class StockWerk.StockWert Deref() {
+    .method public class StockWerk.StockWert Access() {
       ldarg.0
       ldfld class StockWerk.StockWert StockWerk.Ref::Value
       ret
@@ -593,7 +674,7 @@
       brfalse.s retFalse
       ldarg.1
       castclass StockWerk.Transient
-      callvirt instance class StockWerk.StockWert StockWerk.Transient::Request()
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
       starg.s 1
       br.s retry
     retFalse:
@@ -656,7 +737,7 @@
       brfalse.s retFalse
       ldarg.1
       castclass StockWerk.Transient
-      callvirt instance class StockWerk.StockWert StockWerk.Transient::Request()
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
       starg.s 1
       br.s retry
     retFalse:
@@ -723,7 +804,7 @@
       brfalse.s retFalse
       ldarg.1
       castclass StockWerk.Transient
-      callvirt instance class StockWerk.StockWert StockWerk.Transient::Request()
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
       starg.s 1
       br.s retry
     retFalse:
@@ -745,10 +826,9 @@
       tail. call instance void StockWerk.StockWert::.ctor()
       ret
     }
-    .method abstract virtual public class StockWerk.StockWert Request() {}
     .method virtual public value class System.Serialization.SerializationInfo GetObjectData(int32, value class System.Serialization.StreamingContext) {
       ldarg.0
-      callvirt instance class StockWerk.StockWert StockWerk.Transient::Request()
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
       pop
       ldarg.0
       ldarg.1
@@ -758,7 +838,7 @@
     }
     .method virtual public class System.Object GetRealObject() {
       ldarg.0
-      tail. callvirt instance class StockWerk.StockWert StockWerk.Transient::Request()
+      tail. callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
       ret
     }
   }
@@ -773,68 +853,54 @@
       stfld class StockWerk.StockWert StockWerk.Promise::Ref
       ret
     }
-    .method public class StockWerk.StockWert GetFuture() {
-      ldarg.0
-      ldfld class StockWerk.StockWert StockWerk.Promise::Ref
-      brtrue.s raise
-      ldarg.0
-      newobj instance void StockWerk.Future::.ctor(class StockWerk.Promise)
-      ret
-    raise:
-      ldsfld class StockWerk.StockWert StockWerk.Prebound::Future
-      newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
-      throw
-    }
-    .method public class StockWerk.StockWert RequestInternal() {
+    .method public class StockWerk.StockWert FutureInternal() {
       ldarg.0
       call void System.CriticalSection::Enter(class System.Object)
       ldarg.0
       ldfld class StockWerk.StockWert StockWerk.Promise::Ref
-      brfalse.s return
+      brtrue.s forward
       ldarg.0
       call instance void System.Object::Wait()
-    return:
+    forward:
       ldarg.0
       call void System.CriticalSection::Exit(class System.Object)
       ldarg.0
       ldfld class StockWerk.StockWert StockWerk.Promise::Ref
+      tail. callvirt instance class StockWerk.StockWert StockWerk.StockWert::Future()
       ret
     }
-    .method public void Fulfill(class StockWerk.StockWert) {
+    .method public void FulfillInternal(class StockWerk.StockWert) {
       ldarg.0
       call void System.CriticalSection::Enter(class System.Object)
       ldarg.0
       ldfld class StockWerk.StockWert StockWerk.Promise::Ref
-      brtrue.s raise
-      ldarg.1
+      brtrue.s forward
       ldarg.0
-      callvirt instance bool StockWerk.StockWert::IsVariantOf(class StockWerk.Transient)
-      brtrue.s raise
+      call instance void System.Object::Wait()
+    forward:
       ldarg.0
-      ldarg.1
-      stfld class StockWerk.StockWert StockWerk.Promise::Ref
-      ldarg.0
-      call instance void System.Object::NotifyAll()
-      ldarg.0
-      tail. call void System.CriticalSection::Exit(class System.Object)
-      ret
-    raise:
-      ldsfld class StockWerk.StockWert StockWerk.Prebound::Fulfill
-      newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
-      throw
-    }
-    .method virtual public bool Equals(class StockWerk.StockWert) {
+      call void System.CriticalSection::Exit(class System.Object)
       ldarg.0
       ldfld class StockWerk.StockWert StockWerk.Promise::Ref
-      dup
-      brfalse.s raise
       ldarg.1
-      tail. callvirt instance bool StockWerk.StockWert::Equals(class StockWerk.StockWert)
+      tail. callvirt instance void StockWerk.StockWert::Fulfill(class StockWerk.StockWert)
       ret
-    raise:
-      ldsfld class StockWerk.StockWert StockWerk.Prebound::Promise
-      newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
-      throw
+    }
+    .method public class StockWerk.StockWert AwaitInternal() {
+      ldarg.0
+      call void System.CriticalSection::Enter(class System.Object)
+      ldarg.0
+      ldfld class StockWerk.StockWert StockWerk.Promise::Ref
+      brtrue.s forward
+      ldarg.0
+      call instance void System.Object::Wait()
+    forward:
+      ldarg.0
+      call void System.CriticalSection::Exit(class System.Object)
+      ldarg.0
+      ldfld class StockWerk.StockWert StockWerk.Promise::Ref
+      tail. callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      ret
     }
     .method virtual public class StockWerk.StockWert Apply(class StockWerk.StockWert) {
       ldarg.0
@@ -849,7 +915,15 @@
       newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
       throw
     }
-    .method virtual public class StockWerk.StockWert Request() {
+    .method virtual public bool Equals(class StockWerk.StockWert) {
+      ldarg.0
+      ldfld class StockWerk.StockWert StockWerk.Promise::Ref
+      dup
+      brfalse.s raise
+      ldarg.1
+      tail. callvirt instance bool StockWerk.StockWert::Equals(class StockWerk.StockWert)
+      ret
+    raise:
       ldsfld class StockWerk.StockWert StockWerk.Prebound::Promise
       newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
       throw
@@ -869,6 +943,42 @@
       ceq
       ret
     }
+    .method public virtual class StockWerk.StockWert Future() {
+      ldarg.0
+      ldfld class StockWerk.StockWert StockWerk.Promise::Ref
+      brtrue.s raise
+      ldarg.0
+      newobj instance void StockWerk.Future::.ctor(class StockWerk.Promise)
+      ret
+    raise:
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::Future
+      newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
+      throw
+    }
+    .method synchronized virtual public void Fulfill(class StockWerk.StockWert) {
+      ldarg.0
+      ldfld class StockWerk.StockWert StockWerk.Promise::Ref
+      brtrue.s raise
+      ldarg.1
+      ldarg.0
+      callvirt instance bool StockWerk.StockWert::IsVariantOf(class StockWerk.Transient)
+      brtrue.s raise
+      ldarg.0
+      ldarg.1
+      stfld class StockWerk.StockWert StockWerk.Promise::Ref
+      ldarg.0
+      call instance void System.Object::NotifyAll()
+      ret
+    raise:
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::Fulfill
+      newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
+      throw
+    }
+    .method virtual public class StockWerk.StockWert Await() {
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::Promise
+      newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
+      throw
+    }
   }
 
   .class sealed public Future extends StockWerk.Transient {
@@ -881,26 +991,20 @@
       stfld class StockWerk.Promise StockWerk.Future::Prom
       ret
     }
-    .method virtual public bool Equals(class StockWerk.StockWert) {
-      ldarg.0
-      ldfld class StockWerk.Promise StockWerk.Future::Prom
-      call instance class StockWerk.StockWert StockWerk.Promise::RequestInternal()
-      ldarg.1
-      tail. call instance bool StockWerk.StockWert::Equals(class StockWerk.StockWert)
-      ret
-    }
     .method virtual public class StockWerk.StockWert Apply(class StockWerk.StockWert) {
       ldarg.0
       ldfld class StockWerk.Promise StockWerk.Future::Prom
-      call instance class StockWerk.StockWert StockWerk.Promise::RequestInternal()
+      call instance class StockWerk.StockWert StockWerk.Promise::AwaitInternal()
       ldarg.1
-      tail. call instance class StockWerk.StockWert StockWerk.StockWert::Apply(class StockWerk.StockWert)
+      tail. callvirt instance class StockWerk.StockWert StockWerk.StockWert::Apply(class StockWerk.StockWert)
       ret
     }
-    .method virtual public class StockWerk.StockWert Request() {
+    .method virtual public bool Equals(class StockWerk.StockWert) {
       ldarg.0
       ldfld class StockWerk.Promise StockWerk.Future::Prom
-      tail. call instance class StockWerk.StockWert StockWerk.Promise::RequestInternal()
+      call instance class StockWerk.StockWert StockWerk.Promise::AwaitInternal()
+      ldarg.1
+      tail. callvirt instance bool StockWerk.StockWert::Equals(class StockWerk.StockWert)
       ret
     }
     .method virtual public bool IsVariantOf(class StockWerk.Transient) {
@@ -910,22 +1014,23 @@
       tail. callvirt instance bool StockWerk.StockWert::IsVariantOf(class StockWerk.Transient)
       ret
     }
-  }
-
-  .class sealed public Ref extends StockWerk.StockWert implements System.Serialization.IObjectReference {
-    // this class is only instantiated during serialization
-    .field private class StockWerk.StockWert Ref
-    .method public void .ctor(class StockWerk.StockWert) {
+    .method virtual public class StockWerk.StockWert Future() {
       ldarg.0
-      call instance void StockWerk.StockWert::.ctor()
-      ldarg.0
-      ldarg.1
-      stfld class StockWerk.StockWert StockWerk.Ref::Ref
+      ldfld class StockWerk.Promise StockWerk.Future::Prom
+      tail. call instance class StockWerk.StockWert StockWerk.Promise::FutureInternal()
       ret
     }
-    .method virtual public class System.Object GetRealObject() {
+    .method virtual public void Fulfill(class StockWerk.StockWert) {
       ldarg.0
-      ldfld class StockWerk.StockWert StockWerk.Ref::Ref
+      ldfld class StockWerk.Promise StockWerk.Future::Prom
+      ldarg.1
+      tail. call instance void StockWerk.Promise::FulfillInternal(class StockWerk.StockWert)
+      ret
+    }
+    .method virtual public class StockWerk.StockWert Await() {
+      ldarg.0
+      ldfld class StockWerk.Promise StockWerk.Future::Prom
+      tail. call instance class StockWerk.StockWert StockWerk.Promise::AwaitInternal()
       ret
     }
   }
@@ -947,21 +1052,40 @@
       stfld class StockWerk.StockWert StockWerk.ByNeed::Ref
       ret
     }
-    .method virtual public class StockWerk.StockWert Apply(class StockWerk.StockWert) {
-      ldarg.0
-      call instance class StockWerk.StockWert StockWerk.ByNeed::Request()
-      ldarg.1
-      tail. call instance class StockWerk.StockWert StockWerk.StockWert::Apply(class StockWerk.StockWert)
-      ret
-    }
     .method virtual public bool Equals(class StockWerk.StockWert) {
       ldarg.0
-      call instance class StockWerk.StockWert StockWerk.ByNeed::Request()
+      call instance class StockWerk.StockWert StockWerk.ByNeed::Await()
       ldarg.1
-      tail. call instance bool StockWerk.StockWert::Equals(class StockWerk.StockWert)
+      tail. callvirt instance bool StockWerk.StockWert::Equals(class StockWerk.StockWert)
       ret
     }
-    .method virtual public class StockWerk.StockWert Request() {
+    .method virtual public class StockWerk.StockWert Apply(class StockWerk.StockWert) {
+      ldarg.0
+      call instance class StockWerk.StockWert StockWerk.ByNeed::Await()
+      ldarg.1
+      tail. callvirt instance class StockWerk.StockWert StockWerk.StockWert::Apply(class StockWerk.StockWert)
+      ret
+    }
+    .method virtual public bool IsVariantOf(class StockWerk.Transient) {
+      ldarg.0
+      ldarg.1
+      ceq
+      ret
+    }
+    .method virtual public class StockWerk.StockWert Future() {
+      ldarg.0
+      call instance class StockWerk.StockWert StockWerk.ByNeed::Await()
+      tail. callvirt instance class StockWerk.StockWert StockWerk.StockWert::Future()
+      ret
+    }
+    .method virtual public void Fulfill(class StockWerk.StockWert) {
+      ldarg.0
+      call instance class StockWerk.StockWert StockWerk.ByNeed::Await()
+      ldarg.1
+      tail. callvirt instance void StockWerk.StockWert::Fulfill()
+      ret
+    }
+    .method virtual public class StockWerk.StockWert Await() {
       .locals(class StockWerk.StockWert)
       ldarg.0
       call void System.CriticalSection::Enter(class System.Object)
@@ -974,8 +1098,8 @@
         ldfld class StockWerk.StockWert StockWerk.ByNeed::Ref
         ldsfld class StockWerk.StockWert StockWerk.Prebound::Unit
         callvirt instance class StockWerk.StockWert StockWerk.StockWert::Apply(class StockWerk.StockWert)
-        ldloc.0
         stloc.0
+        ldloc.0
         ldarg.0
         callvirt instance bool StockWerk.StockWert::IsVariantOf(class StockWerk.Transient)
         brtrue.s raiseFulfill
@@ -985,8 +1109,6 @@
         ldarg.0
         ldloc.0
         stfld class StockWerk.StockWert StockWerk.ByNeed::Ref
-        ldarg.0
-        call instance void System.Object::NotifyAll()
         ldarg.0
         call void System.CriticalSection::Exit(class System.Object)
         ldloc.0
@@ -1022,12 +1144,7 @@
       call void System.CriticalSection::Exit(class System.Object)
       ldarg.0
       ldfld class StockWerk.StockWert StockWerk.ByNeed::Ref
-      ret
-    }
-    .method virtual public bool IsVariantOf(class StockWerk.Transient) {
-      ldarg.0
-      ldarg.1
-      ceq
+      tail. callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
       ret
     }
   }
@@ -1099,7 +1216,7 @@
       brfalse.s raise
       ldarg.1
       castclass StockWerk.Transient
-      callvirt instance class StockWerk.StockWert StockWerk.Transient::Request()
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
       starg.s 1
       br.s retry
     raise:
@@ -1137,7 +1254,7 @@
       brfalse.s raise
       ldarg.1
       castclass StockWerk.Transient
-      callvirt instance class StockWerk.StockWert StockWerk.Transient::Request()
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
       starg.s 1
       br.s retry
     raise:
@@ -1210,60 +1327,24 @@
       ret
     }
     .method public class StockWerk.StockWert Apply(class StockWerk.StockWert) {
-    retry:
       ldarg.1
-      isinst StockWerk.Promise
-      brfalse.s testFuture
-      ldarg.1
-      castclass StockWerk.Promise
-      tail. call instance class StockWerk.StockWert StockWerk.Promise::GetFuture()
+      tail. callvirt instance class StockWerk.StockWert StockWerk.StockWert::Future()
       ret
-    testFuture:
-      ldarg.1
-      isinst StockWerk.Future
-      brfalse.s raise
-      ldarg.1
-      castclass StockWerk.Future
-      call instance class StockWerk.StockWert StockWerk.Future::Request()
-      starg.s 1
-      br.s retry
-    raise:
-      ldsfld class StockWerk.StockWert StockWerk.Prebound::Future
-      newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
-      throw
     }
   }
 
   .class sealed public BIFulfill extends StockWerk.Procedure2 {
     .method public void .ctor() {
       ldarg.0
-      call instance void StockWerk.Procedure2::.ctor()
+      tail. call instance void StockWerk.Procedure2::.ctor()
       ret
     }
     .method public class StockWerk.StockWert Apply2(class StockWerk.StockWert, class StockWerk.StockWert) {
-    retry:
       ldarg.1
-      isinst StockWerk.Promise
-      brfalse.s testFuture
-      ldarg.1
-      castclass StockWerk.Promise
       ldarg.2
-      call instance void StockWerk.Promise::Fulfill(class StockWerk.StockWert)
+      callvirt instance void StockWerk.StockWert::Fulfill(class StockWerk.StockWert)
       ldsfld class StockWerk.StockWert StockWerk.Prebound::Unit
       ret
-    testFuture:
-      ldarg.1
-      isinst StockWerk.Future
-      brfalse.s raise
-      ldarg.1
-      castclass StockWerk.Future
-      call instance class StockWerk.StockWert StockWerk.Future::Request()
-      starg.s 1
-      br.s retry
-    raise:
-      ldsfld class StockWerk.StockWert StockWerk.Prebound::Future
-      newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
-      throw
     }
   }
 
@@ -1275,14 +1356,7 @@
     }
     .method public class StockWerk.StockWert Apply(class StockWerk.StockWert) {
       ldarg.1
-      isinst StockWerk.Transient
-      brfalse.s return
-      ldarg.1
-      castclass StockWerk.Transient
-      tail. call instance class StockWerk.StockWert StockWerk.Transient::Request()
-      ret
-    return:
-      ldarg.1
+      tail. callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
       ret
     }
   }
