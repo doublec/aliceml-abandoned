@@ -451,7 +451,7 @@
     </DD>
 
     <DT>
-      <TT>minus (<I>x</I>, <I>y<I>, <I>z</I>)</TT>
+      <TT>minus (<I>x</I>, <I>y</I>, <I>z</I>)</TT>
     </DT>
     <DD>
       <P><I>z</I> is the difference of <I>x</I> and <I>y</I>. The propagator
@@ -459,7 +459,7 @@
     </DD>
 
     <DT>
-      <TT>times (<I>x</I>, <I>y<I>, <I>z</I>)</TT>
+      <TT>times (<I>x</I>, <I>y</I>, <I>z</I>)</TT>
     </DT>
     <DD>
       <P><I>z</I> is the product of <I>x</I> and <I>y</I>. Coreferences are
@@ -508,7 +508,7 @@
     </DD>
 
     <DT>
-      <TT>plusD (<I>x</I>, <I>y<I>, <I>z</I>)</TT>
+      <TT>plusD (<I>x</I>, <I>y</I>, <I>z</I>)</TT>
     </DT>
     <DD>
       <P><I>z</I> is the sum of <I>x</I> and <I>y</I>. The propagator
@@ -517,7 +517,7 @@
     </DD>
 
     <DT>
-      <TT>minusD (<I>x</I>, <I>y<I>, <I>z</I>)</TT>
+      <TT>minusD (<I>x</I>, <I>y</I>, <I>z</I>)</TT>
     </DT>
     <DD>
       <P><I>z</I> is the difference of <I>x</I> and <I>y</I>. The propagator
@@ -526,7 +526,7 @@
     </DD>
 
     <DT>
-      <TT>timesD (<I>x</I>, <I>y<I>, <I>z</I>)</TT>
+      <TT>timesD (<I>x</I>, <I>y</I>, <I>z</I>)</TT>
     </DT>
     <DD>
       <P><I>z</I> is the product of <I>x</I> and <I>y</I>.
@@ -550,7 +550,7 @@
     </DD>
 
     <DT>
-      <TT>min (<I>x</I>, <I>y<I>, <I>z</I>)</TT>
+      <TT>min (<I>x</I>, <I>y</I>, <I>z</I>)</TT>
     </DT>
     <DD>
       <P><I>z</I> is the minimum of <I>x</I> modulus <I>y</I>.
@@ -559,7 +559,7 @@
     </DD>
 
     <DT>
-      <TT>max (<I>x</I>, <I>y<I>, <I>z</I>)</TT>
+      <TT>max (<I>x</I>, <I>y</I>, <I>z</I>)</TT>
     </DT>
     <DD>
       <P><I>z</I> is the maximum of <I>x</I> and <I>y</I>.
@@ -568,21 +568,21 @@
     </DD>
 
     <DT>
-      <tt>equal (<I>x</I>, <I>y<I>)</TT>
+      <tt>equal (<I>x</I>, <I>y</I>)</TT>
     </DT>
     <DD>
       <P>Post the constraint that <I>x</I> equals <I>y</I>.
     </DD>
 
     <DT>
-      <tt>notequal (<I>x</I>, <I>y<I>)</TT>
+      <tt>notequal (<I>x</I>, <I>y</I>)</TT>
     </DT>
     <DD>
       <P>Post the constraint that <I>x</I> does not equal <I>y</I>.
     </DD>
 
     <DT>
-      <tt>distance (<I>x</I>, <I>y<I>, <I>rel</I>, <I>z</I>)</TT>
+      <tt>distance (<I>x</I>, <I>y</I>, <I>rel</I>, <I>z</I>)</TT>
     </DT>
     <DD>
       <P>creates a propagator for
@@ -595,35 +595,35 @@
     </DD>
 
     <DT>
-      <tt>less (<I>x</I>, <I>y<I>)</TT>
+      <tt>less (<I>x</I>, <I>y</I>)</TT>
     </DT>
     <DD>
       <P>Post the constraint that <I>x</I> is less than <I>y</I>.
     </DD>
 
     <DT>
-      <tt>lessEq (<I>x</I>, <I>y<I>)</TT>
+      <tt>lessEq (<I>x</I>, <I>y</I>)</TT>
     </DT>
     <DD>
       <P>Post the constraint that <I>x</I> is less than or equal to <I>y</I>.
     </DD>
 
     <DT>
-      <tt>greater (<I>x</I>, <I>y<I>)</TT>
+      <tt>greater (<I>x</I>, <I>y</I>)</TT>
     </DT>
     <DD>
       <P>Post the constraint that <I>x</I> is greater than <I>y</I>.
     </DD>
 
     <DT>
-      <tt>greaterEq (<I>x</I>, <I>y<I>)</TT>
+      <tt>greaterEq (<I>x</I>, <I>y</I>)</TT>
     </DT>
     <DD>
       <P>Post the constraint that <I>x</I> is greater than or equal to <I>y</I>.
     </DD>
 
     <DT>
-      <tt>disjoint (<I>x</I>, <I>i1<I>, <I>y<I>, <I>i2<I>)</TT>
+      <tt>disjoint (<I>x</I>, <I>i1<I>, <I>y</I>, <I>i2</I>)</TT>
     </DT>
     <DD>
       <P>creates a propagator for
@@ -636,7 +636,7 @@
     </DD>
 
     <DT>
-      <tt>disjointC (<I>x</I>, <I>i1<I>, <I>y<I>, <I>i2<I>, <I>c</I>)</TT>
+      <tt>disjointC (<I>x</I>, <I>i1<I>, <I>y</I>, <I>i2</I>, <I>c</I>)</TT>
     </DT>
     <DD>
       <P>creates a propagator for
@@ -649,7 +649,7 @@
     </DD>
 
     <DT>
-      <tt>tasksOverlap (<I>x</I>, <I>i1<I>, <I>y<I>, <I>i2<I>, <I>c</I>)</TT>
+      <tt>tasksOverlap (<I>x</I>, <I>i1<I>, <I>y</I>, <I>i2</I>, <I>c</I>)</TT>
     </DT>
     <DD>
       <P>For operational semantics, see
