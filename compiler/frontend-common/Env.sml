@@ -4,6 +4,7 @@ structure Env :> ENV =
     type stamp = AbstractGrammar.stamp
     type id    = AbstractGrammar.id
     type typ   = Type.t
+    type alpha = Type.alpha
     type inf   = unit (*UNFINISHED*)
 
 
@@ -22,10 +23,14 @@ structure Env :> ENV =
     withtype val_entry = id * typ
     and      con_entry = id * typ
     and      typ_entry = id * typ
-    and      var_entry = id
+    and      var_entry = id * alpha
     and      mod_entry = id * inf * env
     and      inf_entry = id * inf * env
 
+    type t = env
+
+
+    (* Conversions *)
 
     fun asVal(VAL x) = x | asVal _ = raise Crash.crash "Env.asVal: inconsistent"
     fun asCon(CON x) = x | asCon _ = raise Crash.crash "Env.asCon: inconsistent"
@@ -59,6 +64,7 @@ structure Env :> ENV =
     fun copyScope(ENV E)		= ENV(Map.copyScope E)
     fun insertScope(ENV E)		= Map.insertScope E
     fun deleteScope(ENV E)		= Map.deleteScope E
+    fun mergeScope(ENV E)		= Map.mergeScope E
 
     fun union(ENV E1, ENV E2)		= Map.unionDisjoint(E1,E2)
 

@@ -4,14 +4,16 @@ signature ENV =
     type stamp = AbstractGrammar.stamp
     type id    = AbstractGrammar.id
     type typ   = Type.t
+    type alpha = Type.alpha
     type inf   = unit (*UNFINISHED*)
 
     type env
+    type t = env
 
     type val_entry = id * typ
     type con_entry = id * typ
     type typ_entry = id * typ
-    type var_entry = id
+    type var_entry = id * alpha
     type mod_entry = id * inf * env
     type inf_entry = id * inf * env
 
@@ -23,6 +25,7 @@ signature ENV =
     val copyScope :	env -> env
     val insertScope :	env -> unit
     val deleteScope :	env -> unit
+    val mergeScope :	env -> unit
 
     val union :		env * env -> unit		(* Collision *)
 

@@ -2,6 +2,8 @@ Group
 
 	signature STAMP
 	structure Stamp
+	signature NAME
+	structure Name
 	signature ABSTRACT_GRAMMAR
 	functor MakeAbstractGrammar
 	structure AbstractGrammar
@@ -12,6 +14,8 @@ is
 	../error/sources.cm
 	../common/prebound.cm
 
+	NAME.sig
+	Name.sml
 	ABSTRACT_GRAMMAR.sig
 	MakeAbstractGrammar.sml
 

@@ -16,10 +16,8 @@ signature ABSTRACT_GRAMMAR =
 
     (* Identifiers *)
 
-    type stamp      = Stamp.t
-
-    datatype name   = ExId of string | InId
-
+    type     stamp  = Stamp.t
+    datatype name   = datatype Name.name
     datatype lab    = Lab     of info * string
     datatype id     = Id      of info * stamp * name
     datatype longid = ShortId of info * id
@@ -150,6 +148,7 @@ signature ABSTRACT_GRAMMAR =
 
     val stamp :		id	-> stamp
     val lab :		lab	-> string
+    val idToLab :	id	-> lab
 
     val infoLab :	lab	-> info
     val infoId :	id	-> info

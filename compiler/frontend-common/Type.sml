@@ -10,7 +10,7 @@ structure Type :> TYPE =
     type con  = kind * con_sort * path			(* [chi,c] *)
 
     datatype typ' =					(* [tau',t'] *)
-	  HOLE of int		(* variable for inference (has kind STAR) *)
+	  HOLE of kind * int	(* variable for inference *)
 	| LINK of typ		(* forward (needed for unification) *)
 	| MARK of typ'		(* for traversal *)
 	| ARR  of typ * typ	(* arrow type *)
@@ -69,6 +69,7 @@ structure Type :> TYPE =
     fun kind(ref t')		= kind' t'
 
     and kind'(LINK t | REC t)	= kind t
+      | kind'(HOLE(k,_))	= k
       | kind'(VAR k)		= k
       | kind'(CON(k,_,_))	= k
       | kind'(LAM(a,t))		= ARROW(kind a, kind t)
@@ -104,8 +105,8 @@ structure Type :> TYPE =
 
     (* Creation and injections *)
 
-    fun unknown'()	= HOLE(!level)
-    fun unknown()	= ref(unknown'())
+    fun unknown' k	= HOLE(k, !level)
+    fun unknown k	= ref(unknown' k)
 
     fun inArrow tt	= ref(ARR tt)
     fun inTuple ts	= ref(TUP ts)
@@ -129,6 +130,19 @@ structure Type :> TYPE =
     fun asType(ref(LINK t | REC t))	= asType t
       | asType(t as ref(APP _ | LAM _))	= ( reduce1 t ; asType t )
       | asType(ref t')			= t'
+
+    fun isUnknown t	= case asType t of HOLE _ => true | _ => false
+    fun isArrow t	= case asType t of ARR _ => true | _ => false
+    fun isTuple t	= case asType t of TUP _ => true | _ => false
+    fun isRow t		= case asType t of ROW _ => true | _ => false
+    fun isSum t		= case asType t of SUM _ => true | _ => false
+    fun isVar t		= case asType t of VAR _ => true | _ => false
+    fun isCon t		= case asType t of CON _ => true | _ => false
+    fun isAll t		= case asType t of ALL _ => true | _ => false
+    fun isExist t	= case asType t of EX  _ => true | _ => false
+    fun isLambda t	= case asType t of LAM _ => true | _ => false
+    fun isApp t		= case asType t of APP _ => true | _ => false
+    fun isRec t		= case asType t of REC _ => true | _ => false
 
     fun asArrow t	= case asType t of ARR tt => tt | _ => raise Type
     fun asTuple t	= case asType t of TUP ts => ts | _ => raise Type
@@ -203,7 +217,7 @@ structure Type :> TYPE =
      * signature applications).
      *)
 
-    fun instance'(ref(ALL(a,t)))	= ( a := unknown'() ; instance' t )
+    fun instance'(ref(ALL(a,t)))	= ( a := unknown' STAR ; instance' t )
       | instance'(ref(EX(a,t)))		= instance' t
       | instance' t			= t
 
@@ -212,7 +226,7 @@ structure Type :> TYPE =
 
 
     fun skolem'(ref(ALL(a,t)))		= skolem' t
-      | skolem'(ref(EX(a,t)))		= ( a := unknown'() ; skolem' t )
+      | skolem'(ref(EX(a,t)))		= ( a := unknown' STAR ; skolem' t )
       | skolem' t			= t
 
     fun skolem(t as ref(ALL _| EX _))	= skolem'(clone t)
@@ -370,17 +384,24 @@ structure Type :> TYPE =
 	in
 	    if t1 = t2 then () else
 	    case (t1',t2')
-	      of (HOLE(n1), HOLE(n2)) =>
-		 if n1 < n2 then t2 := LINK t1
-			    else t1 := LINK t2
+	      of (HOLE(k1,n1), HOLE(k2,n2)) =>
+		 if k1 <> k2 then
+		     raise Unify(t1,t2)
+		 else
+		     if n1 < n2 then t2 := LINK t1
+				else t1 := LINK t2
 
-	       | (HOLE(_), _) =>
-		 if occurs(t1,t2) then raise Unify(t1,t2)
-				  else t1 := LINK t2
+	       | (HOLE(k1,_), _) =>
+		 if k1 <> kind' t2' orelse occurs(t1,t2) then
+		     raise Unify(t1,t2)
+		 else
+		     t1 := LINK t2
 
-	       | (_, HOLE(_)) =>
-		 if occurs(t2,t1) then raise Unify(t1,t2)
-				  else t2 := LINK t1
+	       | (_, HOLE(k2,_)) =>
+		 if k2 <> kind' t1' orelse occurs(t2,t1) then
+		     raise Unify(t1,t2)
+		 else
+		     t2 := LINK t1
 
 	       | (ARR(tt1), ARR(tt2)) =>
 		 recurse unifyPair (tt1,tt2)
@@ -423,6 +444,24 @@ structure Type :> TYPE =
 		 unify(t1,t2)
 
 	       | _ => raise Unify(t1,t2)
+	end
+
+
+    (* Unification of lists *)
+
+    exception UnifyList of int * typ * typ
+
+    fun unifyList  []    = ()
+      | unifyList(t::ts) = 
+	let
+	    fun loop(n,   []   ) = ()
+	      | loop(n, t'::ts') =
+	        ( unify(t,t')
+		  handle Unify(t1,t2) => raise UnifyList(n,t1,t2)
+		; loop(n+1, ts')
+		)
+	in
+	    loop(0,ts)
 	end
 
   end

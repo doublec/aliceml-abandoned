@@ -17,10 +17,8 @@ functor MakeAbstractGrammar(type info) :>
 
     (* Identifiers *)
 
-    type stamp      = Stamp.t
-
-    datatype name   = ExId of string | InId
-
+    type     stamp  = Stamp.t
+    datatype name   = datatype Name.name
     datatype lab    = Lab     of info * string
     datatype id     = Id      of info * stamp * name
     datatype longid = ShortId of info * id
@@ -150,8 +148,10 @@ functor MakeAbstractGrammar(type info) :>
     (* Projections *)
 
     fun stamp(Id(_,n,_))		= n
-
     fun lab(Lab(_,a))			= a
+
+    fun idToLab(Id(i,_,ExId n))		= Lab(i,n)
+      | idToLab _			= Crash.crash "AbstractGrammar.idToLab"
 
     fun infoLab(Lab(i,_))		= i
     fun infoId(Id(i,_,_))		= i

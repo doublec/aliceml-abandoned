@@ -8,8 +8,6 @@ is
 	../common/sources.cm
 	abstract-grammar.cm
 
-	NAME.sig
-	Name.sml
 	LAB.sig
 	Lab.sml
 	PATH.sig
@@ -22,8 +20,9 @@ is
 	Env.sml
 
 	TypedGrammar.sml
-(*	ELAB.sig
+	ElabError.sml
+	ELAB.sig
 	Elab.sml
-*)
+
 	TRANSLATION_PHASE.sig
 	TranslationPhase.sml

@@ -2,7 +2,6 @@ structure Name :> NAME =
   struct
 
     datatype name = ExId of string | InId
-
-    type t = name
+    type     t    = name
 
   end

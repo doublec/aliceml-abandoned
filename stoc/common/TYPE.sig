@@ -20,7 +20,7 @@ signature TYPE =
 
     (* Injections *)
 
-    val unknown :	unit        -> typ
+    val unknown :	kind        -> typ
     val inArrow :	typ * typ   -> typ
     val inTuple :	typ list    -> typ
     val inRow :		row         -> typ
@@ -34,6 +34,21 @@ signature TYPE =
     val inRec :		typ         -> typ
 
     val var :		kind -> alpha
+
+    (* Inquiries *)
+
+    val isUnknown :	typ -> bool
+    val isArrow :	typ -> bool
+    val isTuple :	typ -> bool
+    val isRow :		typ -> bool
+    val isSum :		typ -> bool
+    val isVar :		typ -> bool
+    val isCon :		typ -> bool
+    val isAll :		typ -> bool
+    val isExist :	typ -> bool
+    val isLambda :	typ -> bool
+    val isApp :		typ -> bool
+    val isRec :		typ -> bool
 
     (* Projections *)
 
@@ -79,8 +94,10 @@ signature TYPE =
     (* Unification and closure *)
 
     exception Unify of typ * typ
+    exception UnifyList of int * typ * typ
 
     val unify :		typ * typ -> unit	(* Unify *)
+    val unifyList :	typ list -> unit	(* UnifyList *)
     val close :		typ -> unit
 
     (* Level management *)
