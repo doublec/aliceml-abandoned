@@ -165,6 +165,26 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 	    in
 		(stms, id')
 	    end
+	and unfoldArgs (TupExp (_, exps), rest) =
+	    let
+		val (stms, ids) =
+		    List.foldr (fn (exp, (stms, ids)) =>
+				let
+				    val (stms', id) =
+					unfoldTerm (exp, Goto stms)
+				in
+				    (stms', id::ids)
+				end) (rest, nil) exps
+	    in
+		(stms, O.TupArgs ids)
+	    end
+	  (*--** RecArgs *)
+	  | unfoldArgs (exp, rest) =
+	    let
+		val (stms, id) = unfoldTerm (exp, Goto rest)
+	    in
+		(stms, O.OneArg id)
+	    end
 	and translateExp (LitExp (coord, lit), f, cont) =
 	    f (O.LitExp (coord, lit))::translateCont cont
 	  | translateExp (PrimExp (coord, s), f, cont) =
@@ -249,40 +269,49 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 		f (O.FunExp (coord, "", [(O.OneArg id, body)]))::
 		translateCont cont
 	    end
-	  | translateExp (AppExp (coord, exp1, exp2), f, cont) =
+	  | translateExp (AppExp (coord, ConExp (_, longid, true), exp2),
+			  f, cont) =
+	    let
+		val r = ref NONE
+		val rest = [O.IndirectStm (coord, r)]
+		val (stms2, args) = unfoldArgs (exp2, rest)
+		val (stms1, id1) = translateLongid longid
+	    in
+		r := SOME (f (O.ConAppExp (coord, id1, args))::
+			   translateCont cont);
+		stms1 @ stms2
+	    end
+	  | translateExp (AppExp (coord, RefExp _, exp2), f, cont) =
 	    let
 		val r = ref NONE
 		val rest = [O.IndirectStm (coord, r)]
 		val (stms2, id2) = unfoldTerm (exp2, Goto rest)
 	    in
-		case exp2 of
-		    ConExp (_, longid, true) =>
-			let
-			    val (stms1, id1) = translateLongid longid
-			in
-			    r := SOME (f (O.ConAppExp (coord, id1,
-						       O.OneArg id2))::
-				       translateCont cont);
-			    stms1 @ stms2
-			end
-		  | RefExp _ =>
-			(r := SOME (f (O.ConAppExp (coord, id_ref,
-						    O.OneArg id2))::
-				    translateCont cont);
-			 stms2)
-		  | SelExp (_, Lab (_, s)) =>
-			(r := SOME (f (O.SelAppExp (coord, s, id2))::
-				    translateCont cont);
-			 stms2)
-		  | _ =>
-			let
-			    val (stms1, id1) = unfoldTerm (exp1, Goto stms2)
-			in   (*--** TupArgs, RecArgs *)
-			    r := SOME (f (O.AppExp (coord, id1,
-						    O.OneArg id2))::
-				       translateCont cont);
-			    stms1
-			end
+		(r := SOME (f (O.ConAppExp (coord, id_ref, O.OneArg id2))::
+			    translateCont cont);
+		 stms2)
+	    end
+	  | translateExp (AppExp (coord, SelExp (_, Lab (_, s)), exp2),
+			  f, cont) =
+	    let
+		val r = ref NONE
+		val rest = [O.IndirectStm (coord, r)]
+		val (stms2, id2) = unfoldTerm (exp2, Goto rest)
+	    in
+		(r := SOME (f (O.SelAppExp (coord, s, id2))::
+			    translateCont cont);
+		 stms2)
+	    end
+	  | translateExp (AppExp (coord, exp1, exp2), f, cont) =
+	    let
+		val r = ref NONE
+		val rest = [O.IndirectStm (coord, r)]
+		val (stms2, args) = unfoldArgs (exp2, rest)
+		val (stms1, id1) = unfoldTerm (exp1, Goto stms2)
+	    in
+		r := SOME (f (O.AppExp (coord, id1, args))::
+			   translateCont cont);
+		stms1
 	    end
 	  | translateExp (AdjExp (coord, exp1, exp2), f, cont) =
 	    let
