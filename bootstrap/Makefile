@@ -24,43 +24,43 @@ FUNCTORS = \
 	Builtins.ozf Prebound.ozf CodeStore.ozf CodeEmitter.ozf \
 	CodeGen.ozf Assembler.ozf Main.ozf
 
-%.ozf: $(SRCDIR)/stoc/backend-mozart/%.oz
+%.ozf: $(SRCDIR)/compiler/backend-mozart/%.oz
 	$(OZC) $(OZCFLAGS) -c $< -o $@
 
 .PHONY: all clean
 
-all: stodep.$(PLATFORM) stoc-mozart.exe stoc-mozart.$(PLATFORM)
+all: alicedep.$(PLATFORM) alicec-mozart.exe alicec-mozart.$(PLATFORM)
 
-stoc-mozart.exe: $(FUNCTORS)
+alicec-mozart.exe: $(FUNCTORS)
 	$(OZL) $(OZLFLAGS) -x Main.ozf -o $@
 
-CodeStore.ozf: $(SRCDIR)/stoc/backend-mozart/CodeEmitter.oz
+CodeStore.ozf: $(SRCDIR)/compiler/backend-mozart/CodeEmitter.oz
 
-stodep.$(PLATFORM):
+alicedep.$(PLATFORM):
 	-rm -f $@
-	echo 'use "make-stodep.sml";' | $(SML)
+	echo 'use "make-alicedep.sml";' | $(SML)
 	if [ ! -f $@ ]; then exit 1; fi
 
-stoc-mozart.$(PLATFORM):
+alicec-mozart.$(PLATFORM):
 	-rm -f $@
-	echo 'use "make-stoc-mozart.sml";' | $(SML)
+	echo 'use "make-alicec-mozart.sml";' | $(SML)
 	if [ ! -f $@ ]; then exit 1; fi
 
-stot-mozart.$(PLATFORM):
+alice-mozart.$(PLATFORM):
 	-rm -f $@
-	echo 'use "make-stot-mozart.sml";' | $(SML)
+	echo 'use "make-alice-mozart.sml";' | $(SML)
 	if [ ! -f $@ ]; then exit 1; fi
 
-stoc-dotnet.$(PLATFORM):
+alicec-dotnet.$(PLATFORM):
 	-rm -f $@
-	echo 'use "make-stoc-dotnet.sml";' | $(SML)
+	echo 'use "make-alicec-dotnet.sml";' | $(SML)
 	if [ ! -f $@ ]; then exit 1; fi
 
 clean:
 	-rm -f *.ozf
 
 veryclean: clean
-	-rm -f stoc-mozart.exe
-	-rm -f stodep.* stoc-mozart.* stot-mozart.* stoc-dotnet.*
+	-rm -f alicec-mozart.exe
+	-rm -f alicedep.* alicec-mozart.* alice-mozart.* alicec-dotnet.*
 
 distclean: veryclean

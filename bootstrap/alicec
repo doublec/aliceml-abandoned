@@ -3,7 +3,7 @@
 dir=`dirname $0`
 dir=`(cd $dir && pwd)`
 
-STOC_MOZART=$dir/stoc-mozart.exe
+STOC_MOZART=$dir/alicec-mozart.exe
 export STOC_MOZART
 
-exec sml @SMLload=$dir/stoc-mozart "$@"
+exec sml @SMLload=$dir/alicec-mozart "$@"

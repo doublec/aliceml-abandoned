@@ -18,7 +18,7 @@ echo Trying to install Stockhausen to $prefix...
 
 PLATFORM=x86-linux
 
-rm -f bootstrap/stoc-mozart.$PLATFORM bootstrap/stodep.$PLATFORM
+rm -f bootstrap/alicec-mozart.$PLATFORM bootstrap/alicedep.$PLATFORM
 (cd bootstrap && make) || exit 1
 (cd vm-mozart && make depend) || exit 1
 (cd vm-mozart && make build3-install) || exit 1
