@@ -1,6 +1,6 @@
 package de.uni_sb.ps.DML.DMLRuntime;
 
-final public class DMLRecord implements DMLValue {
+final public class DMLRecord extends DMLValue {
 
     static private java.util.Hashtable arityHash = new java.util.Hashtable();
 
@@ -13,14 +13,6 @@ final public class DMLRecord implements DMLValue {
 	    arityHash.put(arity,arity);
 	else
 	    arity = (DMLRecordArity) ar;
-    }
-
-    final public DMLValue getValue() {
-	return this;
-    }
-
-    final public DMLValue request() {
-	return this;
     }
 
     /** funktioniert nur, wenn records unique sind. */

@@ -1,9 +1,9 @@
 package de.uni_sb.ps.DML.DMLRuntime;
 
-public class DMLLVal implements DMLValue {
+final public class DMLLVal extends DMLValue {
 
   public DMLLVal() {
-    super();
+      super();
     suspendVector = new java.util.Vector();
   }
 
