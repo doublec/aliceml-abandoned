@@ -21,7 +21,7 @@ if test $HASSML = "no";
 	smlcm="sml"
 fi
 AC_CHECK_PROG(HASSML,sml-cm,yes,no,$PATH)
-if test HASSML = "no";
+if test $HASSML = "no";
   then
 	AC_MSG_RESULT("No sml-cm. Cross fingers and hope it works with sml.");
   else
