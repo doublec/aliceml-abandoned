@@ -28,7 +28,7 @@ signature MAIN =
     val ozifyStringToFile :	string * string -> unit
     val ozifyFileToFile :	string * string -> unit
 
-    val compileForMozart :	string * string -> unit
+    val compileForMozart :	string * string -> IntermediateGrammar.sign
 
     val comifyStringToStdOut :	string -> unit
     val comifyFileToStdOut :	string -> unit

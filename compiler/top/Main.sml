@@ -58,11 +58,12 @@ structure Main :> MAIN =
 
     fun mozartify inFilename outFilename s =
 	let
-	    val component = flatten s
+	    val component as (_, (_, exportSign)) = flatten s
 	    val engine = MozartEngine.start ()
 	in
 	    MozartTarget.save engine outFilename
-	    (MozartGenerationPhase.translate inFilename component)
+	    (MozartGenerationPhase.translate inFilename component);
+	    exportSign
 	end
 
     fun comify outstream s =
