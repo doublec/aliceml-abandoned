@@ -94,3 +94,10 @@ then
 	make all install distclean
     ) || exit 1
 fi
+
+##
+## Clean up aclocal path mess
+##
+
+echo "### Clean up aclocal path mess" >&2
+cp "$prefix"/share/aclocal-1.7/* "$prefix"/share/aclocal/
