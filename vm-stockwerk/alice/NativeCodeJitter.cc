@@ -1169,7 +1169,7 @@ void NativeCodeJitter::LoadArguments(TagVal *actualArgs) {
   }
 }
 
-// App(Var|Const) of idRef * idRef args * (idDef args * instr) option
+// AppVar/DirectAppVar of idRef * idRef args * (idDef args * instr) option
 void NativeCodeJitter::AppVarPrim(TagVal *pc, Interpreter *interpreter) {
   TagVal *idDefArgsInstrOpt = TagVal::FromWord(pc->Sel(2));
   if (idDefArgsInstrOpt != INVALID_POINTER)
@@ -1187,7 +1187,7 @@ static inline bool SkipCCC(TagVal *actualArgs, TagVal *calleeArgs) {
     (AbstractCode::GetArgs(actualArgs) == AbstractCode::GetArgs(calleeArgs));
 }
 
-// App(Var|Const) of idRef * idRef args * (idDef args * instr) option
+// AppVar/DirectAppVar of idRef * idRef args * (idDef args * instr) option
 void NativeCodeJitter::AppVar(TagVal *pc, word wClosure) {
   Closure *appClosure = Closure::FromWord(wClosure);
   TagVal *actualArgs  = TagVal::FromWordDirect(pc->Sel(1));
