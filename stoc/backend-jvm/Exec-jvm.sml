@@ -36,4 +36,4 @@ fun dmlc (_, debug::verbose::optimize::tits::lmaa::lines::wait::x) =
     end
   | dmlc _ = (print "unexpected parameter"; 2)
 
-val _ = SMLofNJ.exportFn (".dmlc", dmlc)
+val _ = SMLofNJ.exportFn ("stoc-jvm", dmlc)
