@@ -35,44 +35,45 @@ fun markWithState 0 = doMark markW
 fun turnHome'(e,se,sw,w,nw,ne) =
     sense2 here (marker trailmarker1) ifyes (
       sense2 here (marker trailmarker2) ifyes (
-        w ()
+        w
       ) ifnot (
         sense2 here (marker trailmarker3) ifyes (
-          ne ()
+          ne
         ) ifnot (
-          se ()
+          se
         )
       )
     ) ifnot (
       sense2 here (marker trailmarker2) ifyes (
-        sw ()
+        sw
       ) ifnot (
         sense2 here (marker trailmarker3) ifyes (
-          nw ()
+          nw
         ) ifnot (
-          e ()
+          e
         )
       )
     )
 
-val turns = (fn _ => nop, fn _ => turn right,
-             fn _ => turn right ++ turn right,
-             fn _ => turn right ++ turn right ++ turn right,
-             fn _ => turn left ++ turn left,
-             fn _ => turn left)
+val turns = (nop,
+	     turn right,
+             turn right ++ turn right,
+             turn right ++ turn right ++ turn right,
+             turn left ++ turn left,
+             turn left)
 
 fun cycleTurns 0 t = t
   | cycleTurns n (a,b,c,d,e,f) = cycleTurns (n-1) (f,a,b,c,d,e)
 
 fun turnHome n = turnHome' (cycleTurns n turns)
 
-fun turnTo 0 n = (#1 (cycleTurns n turns))()
-  | turnTo 1 n = (#2 (cycleTurns n turns))()
-  | turnTo 2 n = (#3 (cycleTurns n turns))()
-  | turnTo 3 n = (#4 (cycleTurns n turns))()
-  | turnTo 4 n = (#5 (cycleTurns n turns))()
-  | turnTo 5 n = (#6 (cycleTurns n turns))()
-  | turnTo _ _       = raise Match
+fun turnTo 0 n = #1 (cycleTurns n turns)
+  | turnTo 1 n = #2 (cycleTurns n turns)
+  | turnTo 2 n = #3 (cycleTurns n turns)
+  | turnTo 3 n = #4 (cycleTurns n turns)
+  | turnTo 4 n = #5 (cycleTurns n turns)
+  | turnTo 5 n = #6 (cycleTurns n turns)
+  | turnTo _ _ = raise Match
 
 (* if we are on a vector, turn to the indicated direction *)
 (* if we are not, set a mark looking opposite to our direction *)
@@ -104,7 +105,7 @@ fun scan360for cond fail =
         nop
     end
 
-fun direct() =
+val direct =
     sense2 here (marker validmarker) ifyes (
       switch (List.tabulate(6,turnHome))
     ) ifnot (
@@ -112,7 +113,7 @@ fun direct() =
       scan360for (marker validmarker) nop
     )
 
-fun markTrail() =
+val markTrail =
     sense here (marker validmarker) ifnot (
       switch (List.tabulate(6,markWithState))
     )
@@ -137,10 +138,6 @@ fun domove otherwise evadeaction =
 
 
 fun gohome goaction homeaction =
-let
-    val direct = direct()
-    val turn_left = turn left
-in
     loopx (fn break =>
 	sense here home ifyes (
 	    homeaction ++
@@ -150,13 +147,12 @@ in
 	letlabel (fn tryagain =>
 	    label tryagain ++
 	    domove otherwise (
-		flip 6 ifyes turn_left ++
+		flip 6 ifyes (turn left) ++
 		goto tryagain
 	    )
 	) ++
 	goaction
     )
-end
 
 (* val fetch_food = *)
 (*     loop ( *)
@@ -177,7 +173,7 @@ fun deliver_food worker =
 (* Pioneer, build straight streets *)
 (* should only be some ants on the edge of the hill *)
 fun pioneer explorer =
-    loop (direct() ++
+    loop (direct ++
           domove otherwise explorer
     )
 
@@ -203,7 +199,7 @@ fun myturnto tl1 tl2 tr1 tr2 c ifyes b =
 		on(rightahead, c) tr2
 	    ] otherwise b
 
-fun turnToFree () =
+val turnToFree =
     sense rightahead home ifnot (turn right) ++ 
     sense rightahead home ifnot (turn right) ++ 
     sense rightahead home ifnot (turn right) ++
@@ -218,14 +214,14 @@ fun turnToFree () =
 
 (* Explorer, run around wildly and seek food *)
 fun explorer (probTurn) collector worker =
-        loop (markTrail() ++
+        loop (markTrail ++
               sense here home ifnot (
               myturnto (turn left) (turn left)
                        (turn right) (turn right) food ifyes collector
               ) ++
               flip probTurn ifyes (turn left) ++
               flip 20 ifyes worker ++
-              domove otherwise (turnToFree())
+              domove otherwise turnToFree
               )
 
 fun unroll_trail worker =
@@ -234,7 +230,7 @@ fun unroll_trail worker =
 
 fun follow_food_marks worker =
     loop (
-      direct() ++
+      direct ++
       turn right ++ turn right ++ turn right ++
       myturnto (turn left) (turn left)
                (turn right) (turn right) food ifyes worker ++
@@ -255,7 +251,7 @@ fun follow_food_marks worker =
     )
 
 fun worker (probTurn) follow_food_marks collector =
-        loop (markTrail() ++
+        loop (markTrail ++
               sense here home ifnot (
               myturnto (turn left) (turn left)
                        (turn right) (turn right) food ifyes collector ++
@@ -264,7 +260,7 @@ fun worker (probTurn) follow_food_marks collector =
                        follow_food_marks
               ) ++
               flip probTurn ifyes (turn left) ++             
-              domove otherwise (turnToFree())
+              domove otherwise turnToFree
               )
 
 (* Collector, follow streets with food marker and bring food home *)
