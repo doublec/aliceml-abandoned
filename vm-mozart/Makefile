@@ -275,6 +275,8 @@ COMPILERTOPSOURCES0 = \
 	BATCH_COMPILER-sig.aml MkBatchCompiler.aml \
 	SMLToMozartBatchCompiler.aml \
 	SMLToDotNetBatchCompiler.aml \
+	COMPILE_SERVER-sig.aml MkCompileServer.aml \
+	SMLToMozartCompileServer.aml \
 	INTERACTIVE_TOPLEVEL-sig.aml MkToplevel.aml \
 	SMLToMozartToplevel.aml
 COMPILERTOPSOURCES = $(COMPILERTOPSOURCES0:%=compiler/top/%)
