@@ -89,7 +89,7 @@ public:
     u_int readIndex = Store::WordToInt(GetArg(READ_INDEX_POS));
     u_int writeIndex = Store::WordToInt(GetArg(READ_INDEX_POS));
     u_int oldSize = array->GetSize();
-    u_int newSize = (writeIndex + size - readIndex) % size + threshold;
+    u_int newSize = (writeIndex + oldSize - readIndex) % oldSize + threshold;
     if (newSize < oldSize) {
       word *base = array->GetBase();
       if (readIndex < writeIndex) {
