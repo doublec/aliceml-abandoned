@@ -3,7 +3,7 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 1999-2001
+ *   Leif Kornstaedt, 1999-2002
  *
  * Last change:
  *   $Date$ by $Author$
@@ -19,7 +19,8 @@ import signature BATCH_COMPILER     from "BATCH_COMPILER-sig"
 import signature RECURSIVE_COMPILER from "RECURSIVE_COMPILER-sig"
 
 functor MkBatchCompiler(structure RecursiveCompiler: RECURSIVE_COMPILER
-			val executableHeader: string): BATCH_COMPILER =
+			val executableHeader: string
+			val extension: string): BATCH_COMPILER =
     struct
 	fun basename filename =
 	    let
@@ -71,7 +72,7 @@ functor MkBatchCompiler(structure RecursiveCompiler: RECURSIVE_COMPILER
 		OS.Process.success
 	    end
 	  | main' ([infile] | ["-c", infile]) =
-	    main_c (infile, basename infile ^ ".ozf")
+	    main_c (infile, basename infile ^ "." ^ extension)
 	  | main' ["-x", infile] =
 	    main_x (infile, basename infile)
 	  | main' ([infile, "-o", outfile] | ["-c", infile, "-o", outfile]) =
