@@ -3,19 +3,29 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 2000
+ *   Leif Kornstaedt, 2000-2001
  *
  * Last change:
  *   $Date$ by $Author$
  *   $Revision$
  *)
 
-signature DEBUG_COMPONENT =
+signature UNSAFE_DEBUG_COMPONENT =
     sig
-	structure Debug:
+	structure UnsafeDebug:
 	    sig
-		val show: 'a -> unit
+		val setPrintDepth: int -> unit
+		val setPrintWidth: int -> unit
 
-		structure Show: fct(S: any) -> sig end
+		val toString: 'a -> string
+
+		val print: 'a -> unit
+		val inspect: 'a -> unit
+
+		structure Print: fct(S: any) -> sig end
+		functor Inspect(signature S structure X: S): any
+
+		functor InspectType(type t): any
+		functor InspectSig(signature S): any
 	    end
     end
