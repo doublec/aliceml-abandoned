@@ -11,14 +11,14 @@ INSTALL_LIB_TO= `alice-config --alicelibdir`/yacc
 INSTALL_BIN_TO= `alice-config --alicebindir`
 INSTALL_TOOL_TO=`alice-config --alicetoolsdir`
 
-.PHONY: install all clean distclean aliceyacclib
+.PHONY: install all clean distclean aliceyacclib depend
 
 all:	$(LINKED_YACC) aliceyacclib
 
 aliceyacclib: $(ALICELIB:%.aml=%.alc)
 
 depend: $(GENERATED_AML_FILES)
-	alicedep $(AML_FILES:%.sml=%.aml) $(GENERATED_AML_FILES) > Makefile.depend
+	alicedep $(AML_FILES) $(GENERATED_AML_FILES) > Makefile.depend
 
 
 install: aliceyacclib $(LINKED_YACC) 
