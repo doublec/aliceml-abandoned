@@ -85,26 +85,26 @@ struct
 				  isSubstring''(s,ss,i,j+1)
 
     fun tokens  f s		= tokens'(f,s,0,0,nil)
-    and tokens'(f,s,i,j,ss)	where (j = size s)
+    and tokens'(f,s,i,j,ss) where (j = size s)
 				= List.rev(if i = j then ss
-					   else slice(s,i,NONE)::ss)
+					   else slice(s,i,SOME(j-i))::ss)
       | tokens'(f,s,i,j,ss) where (f(sub(s,j)))
-      				= tokens'(f,s,j+1,j+1, if i = j then ss
-				           else slice(s,i,NONE)::ss)
+				= tokens'(f,s,j+1,j+1, if i = j then ss
+				           else slice(s,i,SOME(j-i))::ss)
       | tokens'(f,s,i,j,ss)	= tokens'(f,s,i,j+1,ss)
 
     fun fields  f s		= fields'(f,s,0,0,nil)
     and fields'(f,s,i,j,ss) where (j = size s)
-	                        = List.rev(slice(s,i,SOME(j-i))::ss)
+				= List.rev(slice(s,i,SOME(j-i))::ss)
       | fields'(f,s,i,j,ss) where (f(sub(s,j)))
-      				= fields'(f,s,j+1,j+1, slice(s,i,SOME(j-i))::ss)
+				= fields'(f,s,j+1,j+1, slice(s,i,SOME(j-i))::ss)
       | fields'(f,s,i,j,ss)	= fields'(f,s,i,j+1,ss)
 
     fun position s ss           = position'(s,ss,0)
     and position'(s,ss,i)       where (i > (size ss)-String.size s)
-	                        = (ss,slice(ss,size ss,SOME 0))
+				= (ss,slice(ss,size ss,SOME 0))
       | position'(s,ss,i)       where (isPrefix s (slice(ss,i,NONE)))
-                                = (slice(ss,0,SOME i),
+				= (slice(ss,0,SOME i),
 				   slice(ss,i,NONE))
       | position'(s,ss,i)       = position'(s,ss,i+1)
 
