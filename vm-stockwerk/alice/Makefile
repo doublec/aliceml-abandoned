@@ -36,13 +36,13 @@ LIB_DISTRIBUTION_MODULES = Remote
 
 SOURCES = \
 	Data.cc Guid.cc AbstractCode.cc PrimitiveTable.cc \
+	LazySelInterpreter.cc AbstractCodeInterpreter.cc AliceConcreteCode.cc \
+	AliceLanguageLayer.cc \
+	$(LIGHTNING_SOURCES) \
 	$(PRIMITIVE_MODULES:%=primitives/%.cc) \
 	$(LIB_SYSTEM_MODULES:%=lib/system/Unsafe%.cc) \
 	$(LIB_UTILITY_MODULES:%=lib/utility/Unsafe%.cc) \
-	$(LIB_DISTRIBUTION_MODULES:%=lib/distribution/Unsafe%.cc) \
-	LazySelInterpreter.cc AbstractCodeInterpreter.cc AliceConcreteCode.cc \
-	AliceLanguageLayer.cc \
-	$(LIGHTNING_SOURCES)
+	$(LIB_DISTRIBUTION_MODULES:%=lib/distribution/Unsafe%.cc)
 
 OBJS = $(SOURCES:%.cc=%.o)
 

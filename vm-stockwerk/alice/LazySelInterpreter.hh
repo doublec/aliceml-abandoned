@@ -21,28 +21,27 @@
 #include "generic/Closure.hh"
 #include "alice/Data.hh"
 
-class LazySelInterpreter : public Interpreter {
+class LazySelInterpreter: public Interpreter {
 public:
   // Exported LazySelInterpreter Instance
   static LazySelInterpreter *self;
   // LazySelInterpreter Constructor
-  LazySelInterpreter() : Interpreter() {}
+  LazySelInterpreter(): Interpreter() {}
   // LazySelInterpreter Static Constructor
   static void Init() {
     self = new LazySelInterpreter();
   }
   // Frame Handling
-  static void PushFrame(TaskStack *taskStack,
-			word record, UniqueString *label);
-  virtual void PushCall(TaskStack *taskStack, Closure *closure);
+  static void PushFrame(word record, UniqueString *label);
+  virtual void PushCall(Closure *closure);
   // Execution
-  virtual Result Run(TaskStack *taskStack);
+  virtual Result Run();
   // Debugging
   virtual const char *Identify();
   virtual void DumpFrame(word frame);
 };
 
-class LazySelClosure : public Closure {
+class LazySelClosure: public Closure {
 public:
   static LazySelClosure *New(word tuple, UniqueString *label);
 };

@@ -34,13 +34,13 @@ public:
   // Handler Methods
   virtual Block *GetAbstractRepresentation(Block *blockWithHandler);
   // Frame Handling
-  virtual void PushCall(TaskStack *taskStack, Closure *closure);
+  virtual void PushCall(Closure *closure);
 #if defined(ALICE_IMPLICIT_KILL)
   virtual void PurgeFrame(word frame);
 #endif
   // Execution
-  virtual Result Run(TaskStack *taskStack);
-  virtual Result Handle(TaskStack *taskStack);
+  virtual Result Run();
+  virtual Result Handle();
   // Debugging
   virtual const char *Identify();
   virtual void DumpFrame(word frame);

@@ -34,9 +34,9 @@ public:
   }
   // Frame Handling
   //static void PushFrame(TaskStack *taskStack, TagVal *abstractCode);
-  virtual void PushCall(TaskStack *taskStack, Closure *closure);
+  virtual void PushCall(Closure *closure);
   // Execution
-  virtual Result Run(TaskStack *taskStack);
+  virtual Result Run();
   // Debugging
   virtual const char *Identify();
   virtual void DumpFrame(word frame);
@@ -75,6 +75,7 @@ public:
   Block *GetAbstractRepresentation() {
     return Store::DirectWordToBlock(Get(TRANSFORM_POS));
   }
+  void Disassemble(std::FILE *file);
   void UpdateCode(Chunk *chunk, word immediateEnv) {
     ConcreteCode::Init(NATIVE_CODE_POS, chunk->ToWord());
     ConcreteCode::Init(IMMEDIATE_ENV_POS, immediateEnv);
