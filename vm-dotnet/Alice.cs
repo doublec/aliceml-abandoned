@@ -347,6 +347,18 @@ namespace Alice {
 		return State == ByneedState.Failed;
 	    }
 	}
+	public class Selector: Procedure0 {
+	    object Value;
+	    int Index;
+	    public Selector(object x, int n) {
+		Value = x;
+		Index = n;
+	    }
+	    public override object Apply() {
+		System.Array array = (System.Array) CommonOp.Sync(Value);
+		return array.GetValue(Index);
+	    }
+	}
 	public class TagVal {
 	    int Tag;
 	    public object Value;
