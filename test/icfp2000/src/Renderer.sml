@@ -1,9 +1,8 @@
 structure Renderer :> RENDERER =
     struct
+	open Geometry
+
 	type angle  = real (* radiant *)
-	type point  = Vector.t
-	type vector = Vector.t
-	type matrix = Vector.matrix
 	type color  = Color.t
 
 	datatype plane_face    = PlaneSurface
@@ -18,17 +17,17 @@ structure Renderer :> RENDERER =
 	    {color: color, diffuse: real, specular: real, phong: real}
 
 	datatype object =
-	    Plane      of matrix * matrix * plane_face surface
-	  | Sphere     of matrix * matrix * sphere_face surface
-	  | Cube       of matrix * matrix * cube_face surface     (* Tier 2 *)
-	  | Cylinder   of matrix * matrix * cylinder_face surface (* Tier 2 *)
-	  | Cone       of matrix * matrix * cone_face surface     (* Tier 2 *)
+	    Plane      of mat * mat * plane_face surface
+	  | Sphere     of mat * mat * sphere_face surface
+	  | Cube       of mat * mat * cube_face surface           (* Tier 2 *)
+	  | Cylinder   of mat * mat * cylinder_face surface       (* Tier 2 *)
+	  | Cone       of mat * mat * cone_face surface           (* Tier 2 *)
 	  | Union      of object * object
 	  | Intersect  of object * object                         (* Tier 3 *)
 	  | Difference of object * object                         (* Tier 3 *)
 
 	datatype light =
-	    Directional of color * vector
+	    Directional of color * vec
 	  | Point       of color * point                          (* Tier 2 *)
 	  | Spot        of color * point * point * angle * real   (* Tier 3 *)
 
@@ -81,30 +80,29 @@ structure Renderer :> RENDERER =
 
 	fun intersect (Plane (o2w, w2o, surface), base, dir) =
 	    let
-		val (_, dy, _) = Vector.transformVector (w2o, dir)
+		val (_, dy, _) = mulMatVec (w2o, dir)
 	    in
 		if dy >= 0.0 then nil
 		else
 		    let
-			val (_, y, _) = Vector.transformPoint (w2o, base)
+			val (_, y, _) = mulMatPoint (w2o, base)
 		    in
 			[(y / ~dy,
 			  (surface PlaneSurface,
-			   fn _ =>
-			   Vector.transformVector (o2w, (0.0, 1.0, 0.0))),
+			   fn _ => mulMatVec (o2w, (0.0, 1.0, 0.0))),
 			  Entry)]
 		    end
 	    end
 	  | intersect (Sphere (o2w, w2o, surface), base, dir) =
 	    let
-		val base' = Vector.transformPoint (w2o, base)
-		val dir' = Vector.transformVector (w2o, dir)
-		val mtca = Vector.dotProd (dir', base')
+		val base' = mulMatPoint (w2o, base)
+		val dir' = mulMatVec (w2o, dir)
+		val mtca = mulVec (dir', base')
 	    in
 		if mtca > 0.0 then nil
 		else
 		    let
-			val d2 = Vector.dotProd (base', base') - mtca * mtca
+			val d2 = mulVec (base', base') - mtca * mtca
 		    in
 			if d2 > 1.0 then nil
 			else
@@ -113,9 +111,8 @@ structure Renderer :> RENDERER =
 				val thc = Math.sqrt (1.0 - d2)
 				val x = (surface SphereSurface,
 					 fn v =>
-					 Vector.transformVector
-					 (o2w, Vector.sub (v, base')))
-				val k = Vector.length dir'
+					 mulMatVec (o2w, subVec (v, base')))
+				val k = absVec dir'
 			    in
 				[((tca - thc) / k, x, Entry),
 				 ((tca + thc) / k, x, Exit)]
@@ -145,8 +142,8 @@ structure Renderer :> RENDERER =
 	     *)
 (*
 	    let
-		val base' as (x, y, z) = Vector.transformPoint (w2o, base)
-		val dir' as (dx, dy, dz) = Vector.transformVector (w2o, dir)
+		val base' as (x, y, z) = mulMatPoint (w2o, base)
+		val dir' as (dx, dy, dz) = mulMatVec (w2o, dir)
 	    in
 		if Real.= (dy, 0.0) then
 		    if y > 0.0 andalso y < 1.0 then
@@ -195,12 +192,12 @@ structure Renderer :> RENDERER =
 	    else NONE
 	  | intensity (Point (color, pos), scene, point) =
 	    let
-		val dir = Vector.sub (pos, point)
+		val dir = subVec (pos, point)
 	    in
 		if isShadowed (intersect (scene, point, dir), 1.0) then NONE
 		else
 		    let
-			val dist = Vector.length dir
+			val dist = absVec dir
 			val attenuation = 100.0 / (99.0 + dist * dist * dist)
 		    in
 			SOME (Color.scale (attenuation, color))
@@ -208,7 +205,7 @@ structure Renderer :> RENDERER =
 	    end
 	  | intensity (Spot (color, pos, at, cutoff, exp), scene, point) =
 	    let
-		val dir = Vector.sub (pos, point)
+		val dir = subVec (pos, point)
 	    in
 		(*--** at, cutoff, exp *)
 		if isShadowed (intersect (scene, point, dir), 1.0) then NONE
@@ -222,9 +219,9 @@ structure Renderer :> RENDERER =
 			(k, (surface, f), Entry)::_ =>
 			    let
 				val p =   (* intersection point *)
-				    Vector.add (base, Vector.scale (k, dir))
+				    addVec (base, mulScalVec (k, dir))
 				val n =   (* unit normal vector on surface *)
-				    Vector.toUnit (f p)
+				    normalizeVec (f p)
 				val {color = c, diffuse = kd,
 				     specular = ks, phong = exp} = surface p
 				val intensities =
