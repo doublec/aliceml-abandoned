@@ -26,7 +26,7 @@ SOURCES = \
 
 TARGETS = SQLite.alc SQLITE-sig.alc
 
-EXTRA_LIBS = -L$(SQLITEDIR)/lib -lsqlite
+EXTRA_LIBS = -L$(SQLITEDIR)/lib -lsqlite3
 EXTRA_INCLUDES = -I$(SQLITEDIR)/include
 
 MAKEDEPEND = alicetool makedepend

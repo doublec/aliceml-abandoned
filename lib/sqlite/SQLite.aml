@@ -15,20 +15,24 @@ import signature SQLITE from "SQLITE-sig"
 
 structure SQLite :> SQLITE = struct
     type db
+    type row
+    datatype c_type = BLOB | INT | NULL | REAL | TEXT 
 
     open UnsafeSQLite
+    datatype res = BUSY | DONE | ROW
 
-    fun query (db, sql) =
+    fun query (db, sql, q) =
 	let
-	    val vm = compile(db, sql)
+	    val stmt = prepare(db, sql)
 	    fun lazy next () = 
-		     case step vm of
+		     case step stmt of
 			 BUSY => (Thread.sleep (Time.fromMilliseconds 
 						(Int.toLarge 100));
 				  next())
-		       | DONE => (finalize vm; nil)
-		       | ROW v => v :: next()
+		       | DONE => (finalize stmt; nil)
+		       | ROW => (q stmt :: (next()))
 	in
 	    next()
 	end
+
 end

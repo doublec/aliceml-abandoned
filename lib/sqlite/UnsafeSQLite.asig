@@ -14,12 +14,20 @@ signature UNSAFESQLITE_SIG =
    sig
        structure UnsafeSQLite : sig
 	   exception SQLError of string
-	   datatype res = BUSY | DONE
-			| ROW of string option vector * string vector
 	   val opendb : string -> 'db
 	   val closedb : 'db -> unit
-	   val compile : 'db * string -> 'vm
-	   val step : 'vm  -> res
-	   val finalize : 'vm -> unit
+	   val prepare : 'db * string -> 'stmt
+	   val step : 'stmt  -> 'res
+	   val finalize : 'stmt -> unit
+	   val reset : 'stmt -> unit
+
+           val c_blob : 'query * int -> string
+           val c_int : 'query * int -> int
+           val c_real : 'query * int -> real
+           val c_text : 'query * int -> string
+                                       
+           val c_type : 'query * int -> 'c_type
+           val c_name : 'query * int -> string
+           val c_count : 'query -> int
        end
    end
