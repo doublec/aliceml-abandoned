@@ -49,7 +49,7 @@ DEFINE2(getStackTraceElement) {
   Class *stackTraceElementClass = Class::FromWord(wStackTraceElementClass);
   if (stackTraceElementClass == INVALID_POINTER)
     REQUEST(wStackTraceElementClass);
-  Assert(stackTraceElementClass->GetNumberOfInstanceFields() ==
+  Assert(stackTraceElementClass->GetInstanceFieldTypes()->GetSize() ==
 	 StackTraceElement::SIZE);
   Backtrace *backtrace = Backtrace::FromWordDirect(wBacktrace);
   Object *stackTraceElement = Object::New(stackTraceElementClass);

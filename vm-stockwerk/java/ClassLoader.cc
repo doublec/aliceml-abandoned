@@ -446,7 +446,7 @@ Worker::Result ResolveInterpreter::Run() {
       u_int sIndex = 0, iIndex = 0, nFields = fields->GetCount();
       word wSuper = classInfo->GetSuper();
       if (wSuper != null)
-	iIndex = Class::FromWord(wSuper)->GetNumberOfInstanceFields();
+	iIndex = Class::FromWord(wSuper)->GetInstanceFieldTypes()->GetSize();
       for (u_int i = 0; i < nFields; i++) {
 	FieldInfo *fieldInfo = FieldInfo::FromWordDirect(fields->Get(i));
 	if (fieldInfo->IsTheField(name, descriptor)) {

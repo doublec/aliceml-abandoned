@@ -134,6 +134,8 @@ public:
 };
 
 class DllExport Class: protected Type {
+public:
+  enum instanceFieldType { t_int, t_long, t_float, t_double, t_object };
 protected:
   enum {
     CLASS_INFO_POS, // ClassInfo
@@ -142,7 +144,7 @@ protected:
     INTERFACE_TABLE_POS, // Table(Table(Class Closure ...))
     LOCK_POS, // Lock
     CLASS_INITIALIZER_POS, // Closure | null
-    NUMBER_OF_INSTANCE_FIELDS_POS, // int
+    INSTANCE_FIELD_TYPES_POS, // Chunk(instanceFieldType)
     CLASS_OBJECT_POS, // Object | null
     BASE_SIZE
     // ... static fields
@@ -191,8 +193,8 @@ public:
     return GetArg(CLASS_INITIALIZER_POS) == null;
   }
   Worker::Result RunInitializer();
-  u_int GetNumberOfInstanceFields() {
-    return Store::DirectWordToInt(GetArg(NUMBER_OF_INSTANCE_FIELDS_POS));
+  Chunk *GetInstanceFieldTypes() {
+    return Store::DirectWordToChunk(GetArg(INSTANCE_FIELD_TYPES_POS));
   }
   class ClassObject *GetClassObject();
   word GetStaticField(u_int index) {
@@ -446,18 +448,45 @@ protected:
   };
 
   static Object *New(word wClass, u_int size) {
+    // does not initialize fields, since wClass need not be determined
     Block *b = Store::AllocBlock(JavaLabel::Object, BASE_SIZE + size);
     b->InitArg(CLASS_POS, wClass);
     b->InitArg(LOCK_POS, null);
-    //--** initialization incorrect for int/long/float/double
-    for (u_int i = size; i--; ) b->InitArg(BASE_SIZE + i, null);
     return static_cast<Object *>(b);
   }
 public:
   using Block::ToWord;
 
-  static Object *New(Class *theClass) {
-    return New(theClass->ToWord(), theClass->GetNumberOfInstanceFields());
+  static Object *New(Class *theClass, u_int nExtraFields = 0) {
+    Chunk *instanceFieldTypes = theClass->GetInstanceFieldTypes();
+    u_int size = instanceFieldTypes->GetSize();
+    Block *b =
+      Store::AllocBlock(JavaLabel::Object, BASE_SIZE + size + nExtraFields);
+    b->InitArg(CLASS_POS, theClass->ToWord());
+    b->InitArg(LOCK_POS, null);
+    char *p = instanceFieldTypes->GetBase();
+    for (u_int i = size; i--; ) {
+      word value;
+      switch (static_cast<Class::instanceFieldType>(p[i])) {
+      case Class::t_int:
+	value = JavaInt::ToWord(0);
+	break;
+      case Class::t_long:
+	value = JavaLong::New(0, 0)->ToWord();
+	break;
+      case Class::t_float:
+	value = Float::New(0.0)->ToWord();
+	break;
+      case Class::t_double:
+	value = Double::New(0.0L)->ToWord();
+	break;
+      case Class::t_object:
+	value = null;
+	break;
+      }
+      b->InitArg(BASE_SIZE + i, value);
+    }
+    return static_cast<Object *>(b);
   }
   static Object *FromWord(word x) {
     Block *b = Store::WordToBlock(x);
@@ -715,7 +744,7 @@ public:
   static ClassObject *New(Type *type);
 
   Type *GetRepresentedType() {
-    u_int index = GetClass()->GetNumberOfInstanceFields();
+    u_int index = GetClass()->GetInstanceFieldTypes()->GetSize();
     return Type::FromWordDirect(GetInstanceField(index));
   }
 };

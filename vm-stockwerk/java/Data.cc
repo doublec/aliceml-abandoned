@@ -247,17 +247,48 @@ Class *Class::New(ClassInfo *classInfo) {
   Class *super = wSuper == null? INVALID_POINTER: Class::FromWord(wSuper);
   // Count number of static and instance fields:
   Table *fields = classInfo->GetFields();
-  u_int nSuperInstanceFields = super == INVALID_POINTER? 0:
-    super->GetNumberOfInstanceFields();
+  Chunk *superInstanceFieldTypes = super == INVALID_POINTER?
+    INVALID_POINTER: super->GetInstanceFieldTypes();
+  u_int nSuperInstanceFields = superInstanceFieldTypes == INVALID_POINTER?
+    0: superInstanceFieldTypes->GetSize();
   u_int i, nStaticFields = 0, nInstanceFields = nSuperInstanceFields;
   u_int nFields = fields->GetCount();
-  for (i = nFields; i--; ) {
+  Chunk *instanceFieldTypes0 =
+    Store::AllocChunk(nFields); //--** pessimistic assumption
+  char *p = instanceFieldTypes0->GetBase(), *q = p;
+  for (i = 0; i < nFields; i++) {
     FieldInfo *fieldInfo = FieldInfo::FromWordDirect(fields->Get(i));
     if (fieldInfo->IsStatic())
       nStaticFields++;
-    else
+    else {
+      JavaString *descriptor = fieldInfo->GetDescriptor();
+      switch (descriptor->CharAt(0)) {
+      case 'B': case 'C': case 'S': case 'Z': case 'I':
+	*q++ = Class::t_int;
+	break;
+      case 'J':
+	*q++ = Class::t_long;
+	break;
+      case 'F':
+	*q++ = Class::t_float;
+	break;
+      case 'D':
+	*q++ = Class::t_double;
+	break;
+      case 'L': case '[':
+	*q++ = Class::t_object;
+	break;
+      default:
+	Error("invalid descriptor");
+      }
       nInstanceFields++;
+    }
   }
+  Chunk *instanceFieldTypes = Store::AllocChunk(nInstanceFields);
+  char *r = instanceFieldTypes->GetBase();
+  if (superInstanceFieldTypes != INVALID_POINTER)
+    std::memcpy(r, superInstanceFieldTypes->GetBase(), nSuperInstanceFields);
+  std::memcpy(r + nSuperInstanceFields, p, q - p);
   // Count number of static methods:
   Table *methods = classInfo->GetMethods();
   u_int nMethods = methods->GetCount(), nStaticMethods = 0;
@@ -309,7 +340,7 @@ Class *Class::New(ClassInfo *classInfo) {
   // Initialize class:
   b->InitArg(METHOD_HASH_TABLE_POS, methodHashTable->ToWord());
   b->InitArg(LOCK_POS, Lock::New()->ToWord());
-  b->InitArg(NUMBER_OF_INSTANCE_FIELDS_POS, nInstanceFields);
+  b->InitArg(INSTANCE_FIELD_TYPES_POS, instanceFieldTypes->ToWord());
   b->InitArg(CLASS_OBJECT_POS, null);
   // Initialize static fields:
   i = 0, nStaticFields = 0;
@@ -518,8 +549,8 @@ ClassObject *ClassObject::New(Type *type) {
   Assert(type != INVALID_POINTER);
   Class *theClass = Class::FromWord(wClass);
   Assert(theClass != INVALID_POINTER);
-  u_int index = theClass->GetNumberOfInstanceFields();
-  Object *classObject = Object::New(wClass, index + 1);
+  Object *classObject = Object::New(theClass, 1);
+  u_int index = theClass->GetInstanceFieldTypes()->GetSize();
   classObject->InitInstanceField(index, type->ToWord());
   return static_cast<ClassObject *>(classObject);
 }
