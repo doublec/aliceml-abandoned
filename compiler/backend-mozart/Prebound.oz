@@ -99,13 +99,13 @@ define
 	    else 1
 	    end
 	 end
-      'Int.toString': Int.toString
+      'Int.toString':
+	 fun {$ I} {ByteString.make {Int.toString I}} end
       'String.^':
 	 fun {$ S1#S2} {ByteString.append S1 S2} end
       'String.toCString':
 	 fun {$ X}
-	    {ByteString.make &"|{FoldR {ByteString.toString X}
-				 ToCString "\""}}
+	    {ByteString.make &"|{FoldR {ByteString.toString X} ToCString "\""}}
 	 end
       'String.str':
 	 fun {$ C} {ByteString.make [C]} end
@@ -132,7 +132,8 @@ define
       'Word.<<': fun {$ X#Y} {Word.'<<' X Y} end
       'Word.>>': fun {$ X#Y} {Word.'>>' X Y} end
       'Word.~>>': fun {$ X#Y} {Word.'~>>' X Y} end
-      'Word.toString': fun {$ X} {Value.toVirtualString X 0 0} end
+      'Word.toString':
+	 fun {$ X} {ByteString.make {Value.toVirtualString X 0 0}} end
       'Array.array':
 	 fun {$ N#Init} {Array.new 0 N - 1 Init} end
       'Array.fromList':
@@ -158,7 +159,8 @@ define
 	 fun {$ S}
 	    {New Open.file init(name: S flags: [read])}
 	 end
-      'TextIO.inputAll': TextIOInputAll
+      'TextIO.inputAll':
+	 fun {$ F} {ByteString.make {TextIOInputAll F}} end
       'TextIO.closeIn':
 	 fun {$ F} {F close()} '#' end
       'TextIO.stdOut':
@@ -188,7 +190,7 @@ define
 	     'eq': fun {$ X#Y} X == Y end
 	     'assign': fun {$ X#Y} {Assign X Y} '#' end
 	     'builtin': fun {$ S} BuiltinTable.{VirtualString.toAtom S} end
-	     '<': fun {$ X#Y} X < Y end   %--** remove
-	     '+': fun {$ X#Y} X + Y end   %--** remove
-	     '*': fun {$ X#Y} X * Y end)   %--** remove
+	     '<': BuiltinTable.'<'   %--** remove
+	     '+': BuiltinTable.'+'   %--** remove
+	     '*': BuiltinTable.'*')   %--** remove
 end
