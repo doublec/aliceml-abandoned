@@ -90,7 +90,7 @@ structure Infix :> INFIX =
 		    val x	= ATXx(i_vid, LONGVIDAtX(i_vid,WITHOp,longvid))
 		    val atx	= pair(x1,x2)
 		in
-		    APPx(Source.between(info x1, info x2), x, atx)
+		    APPx(Source.over(info x1, info x2), x, atx)
 		end
 
 
