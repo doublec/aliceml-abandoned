@@ -1,2 +1,139 @@
-import structure UnsafeInspector from "UnsafeInspector";
+import structure Type from "x-alice:/lib/rtt/Type"
 import structure Reflect from "x-alice:/lib/system/Reflect";
+import structure UnsafeValue from "x-alice:/lib/system/UnsafeValue";
+
+import structure UnsafeInspector from "UnsafeInspector";
+
+open UnsafeInspector;
+
+
+(*****************************************************************************)
+
+(******************************** DEMO 1 *************************************)
+
+(***** TUPLE *****)
+
+(* Array *)
+val arr = Array.tabulate(5,fn x => Real.toString(Real.fromInt(5-x)));
+(* Exception *)
+exception Hello; 
+(* Record *)
+val record = {eins = #"1", zwei = #"2"}
+
+(* type reflection *)
+
+structure Tuple = Reflect.ReflectType 
+    (type t = real * int ref * string * string array * word *  
+              char * exn * {eins: char, zwei: char});
+
+(* inspection *)
+
+inspect ((5.0,ref 111,"hi",arr,0w17,#"d",Hello,record),
+	 Tuple.x);
+
+
+(*****************************************************************************)
+
+(******************************** DEMO 2 *************************************)
+
+(***** REGISTRATION *****)
+
+(* abstract Type for complex numbers*)
+
+signature COMPLEX = 
+sig
+    type t 
+    val complex : real * real -> t
+    val add : t * t -> t
+    val mul : t * t -> t
+    val square : t -> t 
+end; 
+structure Complex :> COMPLEX = 
+struct
+    type t = real * real
+
+    fun complex x = x
+
+    fun add((a,b),(c,d)) = (Real.+(a,c),Real.+(b,d))
+
+    fun mul((a,b),(c,d)) = (Real.-(Real.*(a,c),Real.*(b,d)),
+			    Real.+(Real.*(a,d),Real.*(b,c)))
+
+    fun square(a,b) = (Real.-(Real.*(a,a),Real.*(b,b)),
+		       Real.*(2.0,Real.*(a,b)))
+end;
+
+(* transformation of complex numbers into Doc *)
+
+fun createComplex(w,d,va,t) = 
+    let 
+	val descr = createValue(va,t) (* value and type information *)
+	val (re,im) = UnsafeValue.cast va : real * real	
+	val repr = Real.toString(re)^" + "^Real.toString(im)^"*i"
+    in 
+	SIMPLE{desc = descr,
+	       rep = repr, 
+	       color = REAL_COLOR}
+    end;;    
+
+(* type reflection *)
+
+structure Comp = Reflect.ReflectType(type t = Complex.t);
+structure CList = Reflect.ReflectType(type t = Complex.t list);
+
+(* registration *)
+
+registerType(Type.asCon(Comp.x),createComplex);
+
+(* inspection *)
+
+inspect(Complex.complex(3.0,5.0),Comp.x);
+
+inspect([Complex.complex(3.0,5.0),
+	 Complex.complex(4.0,6.0),
+	 Complex.complex(5.0,7.0)],
+	CList.x); 
+
+(************)
+
+(* INSPECTION OF MODULES *)
+
+structure V = Reflect.Reflect(signature S = COMPLEX structure X = Complex);
+structure T = Reflect.ReflectSig(signature S = COMPLEX);
+
+(* inspection of structure Complex *)
+
+inspectMod (V.x,T.x);
+
+(*****************************************************************************)
+
+(******************************** DEMO 3 *************************************)
+
+
+
+(*****************************************************************************)
+
+(******************************** DEMO 4 *************************************)
+
+(* LAZINESS *)
+
+(* matrix with different lazy values *)
+val alazy = lazy 77;
+val blazy = lazy 33;
+val clazy = lazy 11
+val my_vector1 = Vector.tabulate(12,fn _ => alazy );
+val my_vector2 = Vector.tabulate(12,fn _ => blazy );
+val my_vector3 = Vector.tabulate(12,fn _ => clazy );
+val my_matrix = Vector.tabulate(30,fn x => case (x mod 3) 
+				           of 0 => my_vector1
+					    | 1 => my_vector2
+					    | 2 => my_vector3);
+
+(* type reflection *)
+
+structure Matrix = Reflect.ReflectType(type t = int vector vector);
+
+(* inspection *)
+
+inspect(my_matrix,Matrix.x);
+
