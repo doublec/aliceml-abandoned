@@ -3,7 +3,7 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 2002
+ *   Leif Kornstaedt, 2002-2003
  *
  * Last change:
  *   $Date$ by $Author$
@@ -29,18 +29,25 @@ structure Http :> HTTP =
 	type simple_response =
 	     {statusCode: int, contentType: string, body: string}
 
+	datatype word =
+	    TOKEN of string
+	  | SEPARATOR of char
+	  | COMMENT of string
+	  | QUOTED_STRING of string
+
 	exception Closed
 	exception Format
-
-	fun dropCRLF [#"\r", #"\n"] = nil
-	  | dropCRLF (c::cr) = c::dropCRLF cr
-	  | dropCRLF nil = raise Format
 
 	fun readLine socket =
 	    let
 		val s = Socket.inputLine socket handle _ => raise Closed
+		val n = String.size s
 	    in
-		String.implode (dropCRLF (String.explode s))
+		if n < 2
+		   orelse String.sub (s, n - 2) <> #"\r"
+		   orelse String.sub (s, n - 1) <> #"\n"
+		then raise Format
+		else String.substring (s, 0, n - 2)
 	    end
 
 	fun splitAt (s, c) = splitAt' (s, c, 0)
@@ -54,29 +61,38 @@ structure Http :> HTTP =
 	fun trim s = String.extract (s, dropSpaces (s, 0), NONE)
 	and dropSpaces (s, i) =
 	    if i = String.size s then i
-	    else if Char.isSpace (String.sub (s, i)) then dropSpaces (s, i + 1)
-	    else i
+	    else
+		case String.sub (s, i) of
+		    (#" " | #"\t") => dropSpaces (s, i + 1)
+		  | _ => i
 
 	fun readHeaders socket =
 	    let
 		val headers = StringMap.new ()
 	    in
-		readHeaders' (socket, headers);
+		readHeaders' (readLine socket, socket, headers);
 		headers
 	    end
-	and readHeaders' (socket, headers) =
+	and readHeaders' ("", _, _) = ()
+	  | readHeaders' (s, socket, headers) =
+	    let
+		val (name, value) = splitAt (s, #":")
+		val name = String.map Char.toLower name
+		val (values, s) = readFoldedValue ([value], socket)
+		val value = trim (String.concat (List.rev values))
+	    in
+		if StringMap.member (headers, name) then raise Format
+		else StringMap.insertDisjoint (headers, name, value);
+		readHeaders' (s, socket, headers)
+	    end
+	and readFoldedValue (values, socket) =
 	    case readLine socket of
-		"" => ()
+		"" => (values, "")
 	      | s =>
-		    let
-			val (name, value) = splitAt (s, #":")
-			val name = String.map Char.toLower name
-			val value = trim value
-		    in
-			if StringMap.member (headers, name) then raise Format
-			else StringMap.insertDisjoint (headers, name, value);
-			readHeaders' (socket, headers)
-		    end
+		    case String.sub (s, 0) of
+			(#" " | #"\t") =>
+			    readFoldedValue (" "::trim s::values, socket)
+		      | _ => (values, s)
 
 	fun readBody (socket, headers) =
 	    case StringMap.lookup (headers, "content-length") of
@@ -211,4 +227,56 @@ structure Http :> HTTP =
 		{protocol = "HTTP/1.1", statusCode,
 		 reasonPhrase = reasonPhrase statusCode, headers, body}
 	    end
+
+	fun isSeparator (#"(" | #")" | #"<" | #">" | #"@" |
+			 #"," | #";" | #":" | #"\\" | #"\"" |
+			 #"/" | #"[" | #"]" | #"?" | #"=" |
+			 #"{" | #"}") = true
+	  | isSeparator _ = false
+
+	fun isTokenChar c =
+	    if isSeparator c then false
+	    else Char.>= (c, #" ") andalso Char.< (c, #"\127")
+
+	fun parseFieldValue s = parseFieldValue' (String.explode s)
+	and parseFieldValue' (#" "::cs) = parseFieldValue' cs
+	  | parseFieldValue' (#"\t"::cs) = parseFieldValue' cs
+	  | parseFieldValue' (cs as c::rest) =
+	    if c = #"(" then parseComment (rest, 1, [c])
+	    else if c = #"\"" then parseQuotedString (rest, nil)
+	    else if isSeparator c then SEPARATOR c::parseFieldValue' rest
+	    else if isTokenChar c then parseToken (rest, [c])
+	    else raise Format
+	  | parseFieldValue' nil = nil
+	and parseToken (cs as c::rest, cs') =
+	    if isTokenChar c then parseToken (rest, c::cs')
+	    else parseToken' (cs', cs)
+	  | parseToken (nil, cs') = parseToken (cs', nil)
+	and parseToken' (cs, rest) =
+	    TOKEN (String.implode (List.rev cs))::parseFieldValue' rest
+	and parseComment ((c as #"(")::rest, depth, cs) =
+	    parseComment (rest, depth + 1, c::cs)
+	  | parseComment ((c as #")")::rest, 1, cs) =
+	    COMMENT (String.implode (List.rev (c::cs)))::parseFieldValue' rest
+	  | parseComment ((c as #")")::rest, depth, cs) =
+	    parseComment (rest, depth - 1, c::cs)
+	  | parseComment (#"\\"::c::rest, depth, cs) =
+	    if Char.> (c, #"\127") then raise Format
+	    else if depth = 1 then parseComment (rest, depth, c::cs)
+	    else parseComment (rest, depth, c:: #"\\"::cs)
+	  | parseComment (c::rest, depth, cs) =
+	    if c <> #"\t" andalso (Char.< (c, #" ") orelse c = #"\127") then
+		raise Format
+	    else parseComment (rest, depth, c::cs)
+	  | parseComment (nil, _, _) = raise Format
+	and parseQuotedString (#"\""::rest, cs) =
+	    QUOTED_STRING (String.implode (List.rev cs))::parseFieldValue' rest
+	  | parseQuotedString (#"\\"::c::rest, cs) =
+	    if Char.> (c, #"\127") then raise Format
+	    else parseQuotedString (rest, c::cs)
+	  | parseQuotedString (c::rest, cs) =
+	    if c <> #"\t" andalso (Char.< (c, #" ") orelse c = #"\127") then
+		raise Format
+	    else parseQuotedString (rest, c::cs)
+	  | parseQuotedString (nil, _) = raise Format
     end
