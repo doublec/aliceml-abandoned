@@ -1,4 +1,19 @@
+###
+### Authors:
+###  Guido Tack <tack@ps.uni-sb.de>
+###
+### Copyright:
+###  Guido Tack, 2003
+###
+###  Last change:
+###    $Date$ by $Author$
+###    $Revision$
+### 
+
+
 # Makefile for alice xml binding
+
+INSTALLTO=`alice-config --alicelibdir`/gecode
 
 NATIVES = UnsafeGecode
 
@@ -11,6 +26,8 @@ TARGETS = \
 	Space.stc \
 	FD-sig.stc \
 	FD.stc \
+	FS-sig.stc \
+	FS.stc \
 	SEARCH-sig.stc \
 	Search.stc \
 	LINEAR-sig.stc \
@@ -22,67 +39,23 @@ EXTRA_INCLUDES = -I../..
 MAKEDEPEND = alicetool makedepend
 
 GECODEOBJ = \
-	generic/kernel.o \
-	generic/memory-manager.o \
-	generic/statistics.o \
-	generic/relations.o \
-	generic/prop-heap.o \
-	generic/search.o \
-	support/memory.o \
-	support/scrap-heap.o \
-	support/memory-chunk.o \
-	int/bool/not.o \
-	int/bool/and.o \
-	int/bool/or.o \
-	int/bool/imp.o \
-	int/bool/xor.o \
-	int/bool/eq.o \
-	int/bool/post.o \
-	int/distinct/post.o \
-	int/rel/eq-nq.o \
-	int/rel/lq-le.o \
-	int/rel/dom.o \
-	int/rel/element-int.o \
-	int/rel/element-var.o \
-	int/rel/lex.o \
-	int/rel/post.o \
-	int/count/rel.o \
-	int/count/post.o \
-	int/combinators/select.o \
-	int/combinators/post.o \
-	int/arithmetic/abs.o \
-	int/arithmetic/minmax.o \
-	int/arithmetic/mult.o \
-	int/arithmetic/post.o \
-	int/arithmetic/power.o \
-	int/linear/novar.o \
-	int/linear/preprocess.o \
-	int/linear/supportset.o \
-	int/linear/post.o \
-	int/linear/post-01.o \
-	int/linear/boolean.o \
-	int/var.o \
-	int/var/rangelist.o \
-	int/var/domain.o \
-	int/var/dom-spec.o \
-	int/var/core.o \
-	int/var/print.o \
-	int/branching/branch.o \
-	int/branching/assign.o \
-	int/branching/posvaldesc.o
+	set/libgecodeset.a \
+	int/libgecodeint.a \
+	kernel/libgecodekernel.a
 
-CXXFLAGS=-O2 -Dforceinline=inline -DNDEBUG -pipe
+#CXXFLAGS=-O2 -Dforceinline=inline -DNDEBUG -pipe
+CXXFLAGS=-Dforceinline=inline -pipe -g
 
 all: $(NATIVES:%=%.dll) $(TARGETS)
 
 UnsafeGecode.dll: $(SOURCES:%.cc=%.o) $(GECODEOBJ:%=../../%)
 
 %.o: %.cc
-	alicetool compile $(EXTRA_INCLUDES) $(CXXFLAGS) \
+	alicetool -v compile $(EXTRA_INCLUDES) $(CXXFLAGS) \
 	-c  $< -o $@
 
 %.dll: %.o
-	alicetool link $(LDFLAGS) $(SOURCES:%.cc=%.o) $(GECODEOBJ:%=../../%) \
+	alicetool -v link -g $(LDFLAGS) $(SOURCES:%.cc=%.o) $(GECODEOBJ:%=../../%) \
 	$(EXTRA_LIBS) -o $@
 
 %.stc: %.aml
@@ -102,5 +75,9 @@ distclean: veryclean
 depend:
 	alicedep *.aml > Makefile.depend
 	$(MAKEDEPEND) $(EXTRA_INCLUDES) $(SOURCES) >> Makefile.depend
+
+install: all
+	install -d $(INSTALLTO)
+	install $(NATIVES:%=%.dll) $(TARGETS) $(INSTALLTO)
 
 -include Makefile.depend

@@ -17,9 +17,6 @@ import structure UnsafeValue  from "x-alice:/lib/system/UnsafeValue"
 
 structure FD :> FD =
 struct
-    exception NoFD
-    exception NoBool
-
     datatype relation =
 	     EQ (* Equality         == *)
 	   | NQ (* Disequality      != *)
@@ -29,8 +26,7 @@ struct
 	   | GR (* Greater          >  *)
 	     
     datatype conlevel = 
-	     BND | BND_EX | DEF | DOM | DOM_EX | 
-	     OTR | VAL | VAL_EX
+	     BND | DEF | DOM | VAL
 
     datatype avalsel = AVAL_MIN | AVAL_MED | AVAL_MAX
 
@@ -53,47 +49,55 @@ struct
 	   | B_SPLIT_MIN
 	   | B_VAL
 
-   open UnsafeGecode
+    exception NotAssigned
+              
+    type domain = (int * int) vector
+   
+   structure UnsafeGecodeFD = UnsafeGecode.UnsafeGecodeFD
+   open UnsafeGecodeFD
 
-   type fdvar
+   type intvar
    type boolvar
-
-   datatype domain_element =
-	    SINGLE of int
-	  | RANGE  of int * int
-		      
-   type domain = domain_element vector
 		 
-   fun fdvar(space,v) = UnsafeGecode.fdvar(space,
-					   Vector.map
-					       (fn SINGLE i => (i,i)
-						 | RANGE r => r) v)
-		 
-   fun fdvarR(space,v, b) = UnsafeGecode.fdvarR(space,
-						Vector.map
-						    (fn SINGLE i => (i,i)
-						      | RANGE r => r) v,
-						b)
-		      
-   fun fdvarVec(space,n, v) = Vector.tabulate (n, fn _ => fdvar(space,v))
-   fun fdvarVecR(space,n, v, b) = Vector.tabulate (n, fn _ => fdvarR(space,v,b))
-			    
-   fun range(space,r) = fdvar (space,#[RANGE r])
-   fun rangeVec(space,n,r) = fdvarVec(space, n, #[RANGE r])
-		       
-   fun boolvar space = UnsafeGecode.boolvar space
+   fun intvar(space,v) = UnsafeGecodeFD.intvar(space,
+					       v)
+   fun intvarVec(space,n, v) = Vector.tabulate (n, fn _ => intvar(space,v))
+   fun range(space,r) = intvar (space,#[r])
+   fun rangeVec(space,n,r) = intvarVec(space, n, #[r])
+   fun boolvar space = UnsafeGecodeFD.boolvar space
    fun boolvarVec(space,n) = Vector.tabulate (n, fn _ => boolvar space)
-		      
-   val boolvar2fdvar = UnsafeValue.cast
+		 
+   fun intvar2boolvar(space,d) = (dom(space,d,#[(0,1)]);
+				  UnsafeValue.cast d)
 
-   fun getVal (s,v) =
-       let
-	   val min = getMin(s,v)
-       in
-	   if min<>getMax(s,v) then raise NoFD
-	   else min
+   structure Reified =
+       struct
+           fun intvar(space,v, b) =
+	       UnsafeGecodeFD.intvarR(space,
+				      v, b)           
+	   fun intvarVec(space,n, v, b) =
+	       Vector.tabulate (n, fn _ => intvar(space,v,b))
+	   val dom = UnsafeGecodeFD.domR
+	   val rel = UnsafeGecodeFD.relR
+	   val relI = UnsafeGecodeFD.relIR
+	   val equal = UnsafeGecodeFD.equalR
+	   val equalV = UnsafeGecodeFD.equalVR
+	   val linear = UnsafeGecodeFD.linearR
        end
 
-   fun getBool v = getVal(boolvar2fdvar v)=1 handle NoFD => raise NoBool
+   structure Reflect =
+       struct
+           val min = UnsafeGecodeFD.getMin
+	   val max = UnsafeGecodeFD.getMax
+	   fun value (s,v) =
+	       let
+		   val min = min(s,v)
+	       in
+		   if min<>max(s,v) then raise NotAssigned
+		   else min
+	       end
+	   val boolvar2intvar = UnsafeValue.cast
+	   fun boolVal v = value(boolvar2intvar v)=1
+       end
 
 end

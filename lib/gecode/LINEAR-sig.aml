@@ -1,4 +1,16 @@
 (*
+ * Author:
+ *   Gabor Szokoli <szokoli@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Gabor Szokoli, 2003, 2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(*
  * First atttempt for gecode-FD linear wrapper
  *)
 
@@ -28,7 +40,7 @@ signature LINEAR =
 	type domain = domain_element list
 
 	datatype term =
-	    FD of FD.fdvar
+	    FD of FD.intvar
 	  | `  of int
 	  | `+ of term * term
 	  | `- of term * term

@@ -1,3 +1,15 @@
+(*
+ * Author:
+ *   Guido Tack <tack@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Guido Tack, 2003
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
 import structure FD        from "x-alice:/lib/gecode/FD"
 import structure Linear from "x-alice:/lib/gecode/Linear"
 import structure Search from "x-alice:/lib/gecode/Search"

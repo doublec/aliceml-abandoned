@@ -64,9 +64,6 @@ void GecodeSpace::EnlargeIntVarArray() {
   IntVarArray na(intArraySize*2, 0,0);
   for (int i=noOfIntVars; i--;)
     na[i] = is[i];
-  for (int i = noOfIntVars; i<intArraySize*2; i++) {
-    na[i] = tmpVar[0];
-  }
 
   is = na;
 
@@ -299,4 +296,209 @@ void GecodeSpace::branch(const IntArgs& vars,
 void GecodeSpace::fail() {
   if (!enter()) return;
   Space::fail();
+}
+
+// FS Variables
+
+int GecodeSpace::AddSetVariable() {
+  if (!enter()) return -1;
+
+  if (noOfSetVars >= fsArraySize) {
+    EnlargeSetVarArray();
+  }
+  
+  noOfSetVars++;
+  return noOfSetVars-1;
+}
+
+void GecodeSpace::EnlargeSetVarArray() {
+  if (!enter()) return;
+
+  SetVarArray na(fsArraySize*2);
+  for (int i=noOfSetVars; i--;)
+    na[i] = fss[i];
+
+  fss = na;
+
+  fsArraySize *= 2;
+
+  return;
+}
+
+RangesRangeList GecodeSpace::fs_upperBound(int s) {
+  enter();
+  return fss[s].rangesUpperBound();
+}
+RangesRangeList GecodeSpace::fs_lowerBound(int s) {
+  enter();
+  return fss[s].rangesLowerBound();
+}
+RangesMinus<RangesRangeList, RangesRangeList> GecodeSpace::fs_unknown(int s) {
+  enter();
+  RangesRangeList ub = fss[s].rangesUpperBound();
+  RangesRangeList lb = fss[s].rangesLowerBound();
+  RangesMinus<RangesRangeList, RangesRangeList> m(ub,lb);
+  return m;
+}
+
+unsigned int GecodeSpace::fs_upperBoundSize(int s) {
+  return fss[s].upperBoundSize();
+}
+unsigned int GecodeSpace::fs_lowerBoundSize(int s) {
+  return fss[s].lowerBoundSize();
+}
+
+int GecodeSpace::fs_cardinalityMin(int s) {
+  enter();
+  return fss[s].cardMin();
+}
+int GecodeSpace::fs_cardinalityMax(int s) {
+  enter();
+  return fss[s].cardMax();
+}
+bool GecodeSpace::fs_assigned(int s) {
+  enter();
+  return fss[s].assigned();
+}
+
+void GecodeSpace::fs_include(int d, int s) {
+  if (!enter()) return;
+  ::include(fss[s], is[d]);
+}
+void GecodeSpace::fs_exclude(int d, int s) {
+  if (!enter()) return;
+  ::exclude(fss[s], is[d]);
+}
+void GecodeSpace::fs_the(int d, int s) {
+  if (!enter()) return;
+  ::the(fss[s], is[d]);
+}
+void GecodeSpace::fs_min(int d, int s) {
+  if (!enter()) return;
+  ::minElement(fss[s], is[d]);
+}
+void GecodeSpace::fs_max(int d, int s) {
+  if (!enter()) return;
+  ::maxElement(fss[s], is[d]);
+}
+void GecodeSpace::fs_card(int s, int d) {
+  if (!enter()) return;
+  ::card(fss[s], is[d]);
+}
+void GecodeSpace::fs_cardRange(int s, int min, int max) {
+  if (!enter()) return;
+  ::cardRange(fss[s], min, max);
+}
+
+void GecodeSpace::fs_superOfInter(int s1, int s2, int s3) {
+  if (!enter()) return;
+  ::superOfInter(fss[s1], fss[s2], fss[s3]);
+}
+void GecodeSpace::fs_subOfUnion(int s1, int s2, int s3) {
+  if (!enter()) return;
+  ::subOfUnion(fss[s1], fss[s2], fss[s3]);
+}
+
+void GecodeSpace::fs_subset(int s1, int s2) {
+  if (!enter()) return;
+  ::subset(fss[s1], fss[s2]);
+}
+void GecodeSpace::fs_nosubset(int s1, int s2) {
+  if (!enter()) return;
+  ::noSubset(fss[s1], fss[s2]);
+}
+void GecodeSpace::fs_disjoint(int s1, int s2) {
+  if (!enter()) return;
+  ::disjoint(fss[s1], fss[s2]);
+}
+void GecodeSpace::fs_distinct(int s1, int s2) {
+  if (!enter()) return;
+  ::distinct(fss[s1], fss[s2]);
+}
+void GecodeSpace::fs_distinctn(const IntArgs& vars) {
+  if (!enter()) return;
+  makefsvararray(a, vars);
+  ::distinctn(a);
+}
+void GecodeSpace::fs_equals(int s1, int s2) {
+  if (!enter()) return;
+  ::equals(fss[s1], fss[s2]);
+}
+void GecodeSpace::fs_union(int s1, int s2, int s3) {
+  if (!enter()) return;
+  ::fsunion(fss[s1], fss[s2], fss[s3]);
+}
+void GecodeSpace::fs_complement(int s1, int s2) {
+  if (!enter()) return;
+  ::complement(fss[s1], fss[s2]);
+}
+void GecodeSpace::fs_intersection(int s1, int s2, int s3) {
+  if (!enter()) return;
+  ::intersection(fss[s1], fss[s2], fss[s3]);
+}
+void GecodeSpace::fs_difference(int s1, int s2, int s3) {
+  if (!enter()) return;
+  ::difference(fss[s1], fss[s2], fss[s3]);
+}
+void GecodeSpace::fs_partition(int s1, int s2, int s3) {
+  if (!enter()) return;
+  ::partition(fss[s1], fss[s2], fss[s3]);
+}
+void GecodeSpace::fs_unionn(const IntArgs& vars, int s) {
+  if (!enter()) return;
+  makefsvararray(a, vars);
+  ::unionn(a, fss[s]);
+}
+void GecodeSpace::fs_intersectionn(const IntArgs& vars, int s) {
+  if (!enter()) return;
+  makefsvararray(a, vars);
+  ::intersectionn(a, fss[s]);
+}
+void GecodeSpace::fs_partitionn(const IntArgs& vars, int s) {
+  if (!enter()) return;
+  makefsvararray(a, vars);
+  ::partitionn(a, fss[s]);
+}
+void GecodeSpace::fs_includeR(int d, int s, int b) {
+  if (!enter()) return;
+  ::includeR(fss[s],is[d],intvar2boolvar(is[b]));
+}
+void GecodeSpace::fs_includeRI(int i, int s, int b) {
+  if (!enter()) return;
+  ::includeR(fss[s],i,intvar2boolvar(is[b]));
+}
+void GecodeSpace::fs_equalR(int s1, int s2, int b) {
+  if (!enter()) return;
+  ::equalR(fss[s1],fss[s2],intvar2boolvar(is[b]));
+}
+void GecodeSpace::fs_subsetR(int s1, int s2, int b) {
+  if (!enter()) return;
+  ::subsetR(fss[s1],fss[s2],intvar2boolvar(is[b]));
+}
+void GecodeSpace::fs_selectUnion(int s, const IntArgs& vars, int ss) {
+  if (!enter()) return;
+  makefsvararray(a, vars);
+  ::selectUnion(fss[s], a, fss[ss]);
+}
+void GecodeSpace::fs_selectInter(int s, const IntArgs& vars, int ss) {
+  if (!enter()) return;
+  makefsvararray(a, vars);
+  ::selectUnion(fss[s], a, fss[ss]);
+}
+void GecodeSpace::fs_selectSets(int s, const IntArgs& vars, int d) {
+  if (!enter()) return;
+  makefsvararray(a, vars);
+  ::selectSets(fss[s], a, is[d]);
+}
+
+void GecodeSpace::fs_branch(const IntArgs& vars, SetBvarSel varSel, 
+			    SetBvalSel valSel) {
+  if (!enter()) return;
+  makefsvararray(a, vars);
+  ::branch(a, varSel, valSel);
+}
+
+void GecodeSpace::fs_print(int s) {
+  if (!enter()) return;
+  std::cout << fss[s];
 }

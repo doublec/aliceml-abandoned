@@ -1,5 +1,17 @@
-import structure Space     from "Space"
-import structure FD        from "FD"
+(*
+ * Author:
+ *   Guido Tack <tack@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Guido Tack, 2003
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Space     from "x-alice:/lib/gecode/Space"
+import structure FD        from "x-alice:/lib/gecode/FD"
 
 fun queens n cl =
     let
@@ -10,8 +22,8 @@ fun queens n cl =
 	val v1 = Vector.tabulate (n, fn n => (n, Vector.sub(v,n)))
 	val v2 = Vector.tabulate (n, fn n => (~n, Vector.sub(v,n)))
     in
-	distinctI(space, v1, cl);
-	distinctI(space, v2, cl);
+	distinctOffset(space, v1, cl);
+	distinctOffset(space, v2, cl);
 	distinct(space, v, cl);
 	branch(space, v, B_SIZE_MIN, B_MIN);
 	(v, space)
@@ -69,24 +81,24 @@ fun photo () =
 	       if n=(#n_prefs spec) then
 		   (~1, sat)
 	       else
-		   (1, boolvar2fdvar (Vector.sub(ful, n))))
+		   (1, Reflect.boolvar2intvar (Vector.sub(ful, n))))
 
 	fun better(s1, s2) =
-	    relI(s1, sat, GR, getVal(s2, sat))
+	    relI(s1, sat, GR, Reflect.value(s2, sat))
     in
 	Vector.appi (fn (i,(pa, pb)) =>
 			let
 			    val b = boolvarVec(space,2)
 			in
-			    linearR(space,
+			    Reified.linear(space,
 				    #[(1, Vector.sub(pos, pb)),
 				      (~1, Vector.sub(pos, pa))],
 				    EQ, 1, Vector.sub(b, 0), DEF);
-			    linearR(space,
+			    Reified.linear(space,
 				    #[(1, Vector.sub(pos, pa)),
 				      (~1, Vector.sub(pos, pb))],
 				    EQ, 1, Vector.sub(b, 1), DEF);
-			    bool_xor(space,
+			    exor(space,
 				     Vector.sub(b, 0),
 				     Vector.sub(b, 1),
 				     Vector.sub(ful, i))
@@ -122,7 +134,7 @@ fun golomb n cl =
 
 	fun better(s1, s2) =
 	    relI(s1, Vector.sub(k, n-1), LE,
-		 getVal(s2, Vector.sub(k, n-1)))
+		 Reflect.value(s2, Vector.sub(k, n-1)))
     in
 	relI(space, Vector.sub(k, 0), EQ, 0);
 

@@ -38,12 +38,17 @@
 // and every variable that is created in the original space after
 // cloning will not be considered a root variable.
 
-//#define DBGMSG(m) { fprintf(stderr,"---> "); \
-//  fprintf(stderr, m); fprintf(stderr, "\n"); }
-
 #define DBGMSG(m)
 
-#define RETURN_IPAIR(i,j) RETURN2(Store::IntToWord(i), Store::IntToWord(j));
+//#define DBGMSG(m) { fprintf(stderr,"---> "); \
+// fprintf(stderr, m); fprintf(stderr, "\n"); }
+
+
+#define RETURN_IPAIR(i,j)        \
+{Tuple *t = Tuple::New(2);       \
+ t->Init(0,Store::IntToWord(i)); \
+ t->Init(1,Store::IntToWord(j)); \
+ RETURN(t->ToWord()); }
 
 #define DECLARE_SPACE(s, stamp, pstamp, x)                                  \
   GecodeSpace *s;                                                           \
@@ -89,6 +94,30 @@ static word InvalidVarConstructor;
 
 namespace UnsafeGecode {
 
+  class VectorValIterator {
+  private:
+    Vector *v;
+    u_int pos;
+    u_int size;
+  public:
+    VectorValIterator(Vector *vv) : v(vv), pos(0), size(v->GetLength()) {}
+
+    void operator++(void);
+    bool operator()(void) const;
+    int val(void) const;
+  };
+
+  void VectorValIterator::operator++(void) {
+    pos++;
+  }
+  
+  bool VectorValIterator::operator()(void) const {
+    return pos<size; 
+  }
+
+  int VectorValIterator::val(void) const {
+    return Store::DirectWordToInt(v->Sub(pos));
+  }
 
 const BvarSel int2bvarsel[] =
   {
@@ -114,13 +143,27 @@ const reltype int2reltype[] =
 
 const conlevel int2cl[] =
   {
-    CL_BND, CL_BND_EX, CL_DEF, CL_DOM,
-    CL_DOM_EX, CL_OTR, CL_VAL, CL_VAL_EX
+    CL_BND, CL_DEF, CL_DOM,
+    CL_VAL
   };
 
 const AvalSel int2avalsel[] =
   {
     AVAL_MAX, AVAL_MED, AVAL_MIN
+  };
+
+const SetBvarSel int2fsbvarsel[] =
+  {
+    SETBVAR_MAX_CARD,
+    SETBVAR_MIN_CARD,
+    SETBVAR_MIN_UNKNOWN_ELEM,
+    SETBVAR_NONE
+  };
+
+const SetBvalSel int2fsbvalsel[] =
+  {
+    SETBVAL_MAX,
+    SETBVAL_MIN
   };
 
 class GecodeHandler : public ConcreteRepresentationHandler {
@@ -678,6 +721,7 @@ DEFINE2(gc_commit) {
   DECLARE_SPACE(s, stamp, pstamp, x0);
   CHECK_SPACE(s);
   DECLARE_INT(i, x1);
+  DBGMSG("commit");
   s->commit(i);
   DBGMSG("done");
   RETURN_UNIT;
@@ -695,10 +739,18 @@ DEFINE1(gc_clone) {
 
   ConcreteRepresentation *cr =
     ConcreteRepresentation::New(UnsafeGecode::gecodeHandler,3);
-  cr->Init(0, Store::UnmanagedPointerToWord(s->clone()));
+
+  Space *newSpace = s->clone();
+
+  CHECK_SPACE(newSpace);
+  DBGMSG("clone successful");
+
+  cr->Init(0, Store::UnmanagedPointerToWord(newSpace));
   cr->Init(1, Store::IntToWord(SpaceStamp++));
   cr->Init(2, Store::IntToWord(pstamp));
   UnsafeGecode::gecodeFinalizationSet->Register(cr->ToWord());
+
+
   DBGMSG("done");
   RETURN(cr->ToWord());
 } END
@@ -1012,6 +1064,731 @@ DEFINE1(gc_fail) {
   RETURN_UNIT;
 } END
 
+
+DEFINE1(gc_fsvar) {
+  DBGMSG("gc_fsvar");
+  DECLARE_SPACE(s, stamp, pstamp, x0);
+  CHECK_SPACE(s);
+  
+  if (stamp==-1) stamp=pstamp;
+
+  int newVar = s->AddSetVariable();
+  DBGMSG("done");
+  RETURN_IPAIR(newVar,stamp);
+} END
+
+DEFINE2(gc_fsUB) {
+  DBGMSG("fsUB");
+  DECLARE_SPACE(s, stamp, pstamp, x0);
+  CHECK_SPACE(s);
+
+  DECLARE_VAR(var, stamp, pstamp, x1);
+  DBGMSG("done");
+
+  unsigned int ubsize = 0;
+  for(RangesRangeList ubs = s->fs_upperBound(var);
+      ubs(); ++ubs) ubsize++;
+
+  RangesRangeList ub = s->fs_upperBound(var);
+  Vector *v = 
+    Vector::New(ubsize);
+  if(ubsize>0) {
+    u_int count = 0;
+    for (; ub(); ++ub) {
+      Tuple *t = Tuple::New(2);
+      t->Init(0, Store::IntToWord(ub.min()));
+      t->Init(1, Store::IntToWord(ub.max()));
+      v->Init(count, t->ToWord());
+      count++;
+    }
+  }
+
+  RETURN(v->ToWord());
+} END
+
+DEFINE2(gc_fsLB) {
+  DBGMSG("fsLB");
+  DECLARE_SPACE(s, stamp, pstamp, x0);
+  CHECK_SPACE(s);
+
+  DECLARE_VAR(var, stamp, pstamp, x1);
+  DBGMSG("done");
+
+  unsigned int lbsize = 0;
+  for(RangesRangeList lbs = s->fs_lowerBound(var);
+      lbs(); ++lbs) lbsize++;
+
+  RangesRangeList lb = s->fs_lowerBound(var);
+  Vector *v = 
+    Vector::New(lbsize);
+
+  if(lbsize>0) {
+    u_int count = 0;
+    for (; lb(); ++lb) {
+      Tuple *t = Tuple::New(2);
+      t->Init(0, Store::IntToWord(lb.min()));
+      t->Init(1, Store::IntToWord(lb.max()));
+      v->Init(count, t->ToWord());
+      count++;
+    }
+  }
+
+  RETURN(v->ToWord());
+} END
+
+DEFINE2(gc_fsUnknown) {
+  DBGMSG("fsLB");
+  DECLARE_SPACE(s, stamp, pstamp, x0);
+  CHECK_SPACE(s);
+
+  DECLARE_VAR(var, stamp, pstamp, x1);
+  DBGMSG("done");
+
+  RangesMinus<RangesRangeList, RangesRangeList> unknown =
+    s->fs_unknown(var);
+  RangesCache<RangesMinus<RangesRangeList, RangesRangeList> >
+    unknownC(unknown);
+
+  unsigned int usize = 0;
+  for(;unknownC(); ++unknownC) usize++;
+
+  Vector *v = 
+    Vector::New(usize);
+  unknownC.reset();
+
+  if(usize>0) {
+    u_int count = 0;
+    for (; unknownC(); ++unknownC) {
+      Tuple *t = Tuple::New(2);
+      t->Init(0, Store::IntToWord(unknownC.min()));
+      t->Init(1, Store::IntToWord(unknownC.max()));
+      v->Init(count, t->ToWord());
+      count++;
+    }
+  }
+
+  RETURN(v->ToWord());
+} END
+
+DEFINE2(gc_fsGetCard) {
+  DBGMSG("fsGetCard");
+  DECLARE_SPACE(s, stamp, pstamp, x0);
+  CHECK_SPACE(s);
+
+  DECLARE_VAR(var, stamp, pstamp, x1);
+  DBGMSG("done");
+  RETURN_IPAIR(s->fs_cardinalityMin(var),
+	       s->fs_cardinalityMax(var));
+} END
+
+DEFINE2(gc_fsGetCardLB) {
+  DBGMSG("fsGetCardLB");
+  DECLARE_SPACE(s, stamp, pstamp, x0);
+  CHECK_SPACE(s);
+
+  DECLARE_VAR(var, stamp, pstamp, x1);
+  DBGMSG("done");
+
+  RETURN_INT(s->fs_lowerBoundSize(var));
+} END
+
+DEFINE2(gc_fsGetCardUB) {
+  DBGMSG("fsGetCardUB");
+  DECLARE_SPACE(s, stamp, pstamp, x0);
+  CHECK_SPACE(s);
+
+  DECLARE_VAR(var, stamp, pstamp, x1);
+  DBGMSG("done");
+
+  RETURN_INT(s->fs_upperBoundSize(var));
+} END
+
+DEFINE2(gc_fsGetCardUnknown) {
+  DBGMSG("fsGetCardUnknown");
+  DECLARE_SPACE(s, stamp, pstamp, x0);
+  CHECK_SPACE(s);
+
+  DECLARE_VAR(var, stamp, pstamp, x1);
+  DBGMSG("done");
+
+  RangesMinus<RangesRangeList, RangesRangeList> unknown =
+    s->fs_unknown(var);
+
+  RETURN_INT(iteratorSize(unknown));
+} END
+
+DEFINE3(gc_fsLowerBound) {
+  DBGMSG("fsLowerBound");
+  DECLARE_SPACE(s, stamp, pstamp, x0);
+  CHECK_SPACE(s);
+
+  DECLARE_VAR(var1, stamp, pstamp, x1);
+
+  DECLARE_VECTOR(v, x2);
+  int setSize = v->GetLength();
+
+  // Request all futures so that we can iterate over the vector
+  for (int i=setSize; i--;) {
+    DECLARE_INT(tmp, v->Sub(i));
+  }
+
+  UnsafeGecode::VectorValIterator is(v);
+  ValuesToRanges<UnsafeGecode::VectorValIterator> is2(is);
+  s->fs_lowerBound(var1, is2);
+  
+  DBGMSG("done");
+  RETURN_UNIT;
+} END
+
+DEFINE3(gc_fsUpperBound) {
+  DBGMSG("fsUpperBound");
+  DECLARE_SPACE(s, stamp, pstamp, x0);
+  CHECK_SPACE(s);
+
+  DECLARE_VAR(var1, stamp, pstamp, x1);
+
+  DECLARE_VECTOR(v, x2);
+  int setSize = v->GetLength();
+
+  // Request all futures so that we can iterate over the vector
+  for (int i=setSize; i--;) {
+    DECLARE_INT(tmp, v->Sub(i));
+  }
+
+  UnsafeGecode::VectorValIterator is(v);
+  ValuesToRanges<UnsafeGecode::VectorValIterator> is2(is);
+  s->fs_upperBound(var1, is2);
+
+  DBGMSG("done");
+  RETURN_UNIT;
+} END
+
+DEFINE3(gc_fsInclude) {
+  DBGMSG("fsInclude");
+  DECLARE_SPACE(s, stamp, pstamp, x0);
+  CHECK_SPACE(s);
+
+  DECLARE_VAR(var1, stamp, pstamp, x1);
+  DECLARE_VAR(var2, stamp, pstamp, x2);
+  DBGMSG("done");
+  s->fs_include(var1, var2);
+  RETURN_UNIT;
+} END
+
+DEFINE3(gc_fsExclude) {
+  DBGMSG("fsExclude");
+  DECLARE_SPACE(s, stamp, pstamp, x0);
+  CHECK_SPACE(s);
+
+  DECLARE_VAR(var1, stamp, pstamp, x1);
+  DECLARE_VAR(var2, stamp, pstamp, x2);
+  DBGMSG("done");
+  s->fs_exclude(var1, var2);
+  RETURN_UNIT;
+} END
+
+DEFINE3(gc_fsThe) {
+  DBGMSG("fsThe");
+  DECLARE_SPACE(s, stamp, pstamp, x0);
+  CHECK_SPACE(s);
+
+  DECLARE_VAR(var1, stamp, pstamp, x1);
+  DECLARE_VAR(var2, stamp, pstamp, x2);
+  DBGMSG("done");
+  s->fs_the(var1, var2);
+  RETURN_UNIT;
+} END
+
+DEFINE3(gc_fsMin) {
+  DBGMSG("fsMin");
+  DECLARE_SPACE(s, stamp, pstamp, x0);
+  CHECK_SPACE(s);
+
+  DECLARE_VAR(var1, stamp, pstamp, x1);
+  DECLARE_VAR(var2, stamp, pstamp, x2);
+  DBGMSG("done");
+  s->fs_min(var1, var2);
+  RETURN_UNIT;
+} END
+
+DEFINE3(gc_fsMax) {
+  DBGMSG("fsMax");
+  DECLARE_SPACE(s, stamp, pstamp, x0);
+  CHECK_SPACE(s);
+
+  DECLARE_VAR(var1, stamp, pstamp, x1);
+  DECLARE_VAR(var2, stamp, pstamp, x2);
+  DBGMSG("done");
+  s->fs_max(var1, var2);
+  RETURN_UNIT;
+} END
+
+DEFINE3(gc_fsCard) {
+  DBGMSG("fsCard");
+  DECLARE_SPACE(s, stamp, pstamp, x0);
+  CHECK_SPACE(s);
+
+  DECLARE_VAR(var1, stamp, pstamp, x1);
+  DECLARE_VAR(var2, stamp, pstamp, x2);
+  DBGMSG("done");
+  s->fs_card(var1, var2);
+  RETURN_UNIT;
+} END
+
+DEFINE4(gc_fsCardRange) {
+  DBGMSG("fsCardRange");
+  DECLARE_SPACE(s, stamp, pstamp, x0);
+  CHECK_SPACE(s);
+
+  DECLARE_INT(min, x1);
+  DECLARE_INT(max, x2);
+  DECLARE_VAR(var1, stamp, pstamp, x3);
+
+  DBGMSG("done");
+  s->fs_cardRange(var1, min, max);
+  RETURN_UNIT;
+} END
+
+DEFINE4(gc_fsSuperOfInter) {
+  DBGMSG("fsSuperOfInter");
+  DECLARE_SPACE(s, stamp, pstamp, x0);
+  CHECK_SPACE(s);
+
+  DECLARE_VAR(var1, stamp, pstamp, x1);
+  DECLARE_VAR(var2, stamp, pstamp, x2);
+  DECLARE_VAR(var3, stamp, pstamp, x3);
+
+  DBGMSG("done");
+  s->fs_superOfInter(var1, var2, var3);
+  RETURN_UNIT;
+} END
+
+DEFINE4(gc_fsSubOfUnion) {
+  DBGMSG("fsSubOfUnion");
+  DECLARE_SPACE(s, stamp, pstamp, x0);
+  CHECK_SPACE(s);
+
+  DECLARE_VAR(var1, stamp, pstamp, x1);
+  DECLARE_VAR(var2, stamp, pstamp, x2);
+  DECLARE_VAR(var3, stamp, pstamp, x3);
+
+  DBGMSG("done");
+  s->fs_subOfUnion(var1, var2, var3);
+  RETURN_UNIT;
+} END
+
+DEFINE3(gc_fsSubset) {
+  DBGMSG("fsSubset");
+  DECLARE_SPACE(s, stamp, pstamp, x0);
+  CHECK_SPACE(s);
+
+  DECLARE_VAR(var1, stamp, pstamp, x1);
+  DECLARE_VAR(var2, stamp, pstamp, x2);
+
+  DBGMSG("done");
+  s->fs_subset(var1, var2);
+  RETURN_UNIT;
+} END
+
+DEFINE3(gc_fsNoSubset) {
+  DBGMSG("fsNoSubset");
+  DECLARE_SPACE(s, stamp, pstamp, x0);
+  CHECK_SPACE(s);
+
+  DECLARE_VAR(var1, stamp, pstamp, x1);
+  DECLARE_VAR(var2, stamp, pstamp, x2);
+
+  DBGMSG("done");
+  s->fs_nosubset(var1, var2);
+  RETURN_UNIT;
+} END
+
+DEFINE3(gc_fsDisjoint) {
+  DBGMSG("fsDisjoint");
+  DECLARE_SPACE(s, stamp, pstamp, x0);
+  CHECK_SPACE(s);
+
+  DECLARE_VAR(var1, stamp, pstamp, x1);
+  DECLARE_VAR(var2, stamp, pstamp, x2);
+
+  DBGMSG("done");
+  s->fs_disjoint(var1, var2);
+  RETURN_UNIT;
+} END
+
+DEFINE3(gc_fsDistinct) {
+  DBGMSG("fsDistinct");
+  DECLARE_SPACE(s, stamp, pstamp, x0);
+  CHECK_SPACE(s);
+
+  DECLARE_VAR(var1, stamp, pstamp, x1);
+  DECLARE_VAR(var2, stamp, pstamp, x2);
+
+  DBGMSG("done");
+  s->fs_distinct(var1, var2);
+  RETURN_UNIT;
+} END
+
+DEFINE2(gc_fsDistinctN) {
+  DBGMSG("fsDistinctN");
+  DECLARE_SPACE(s, stamp, pstamp, x0);
+  CHECK_SPACE(s);
+
+  DECLARE_VECTOR(v, x1);
+  int noOfVars = v->GetLength();
+
+  if (noOfVars==0) RETURN_UNIT;
+
+  IntArgs vars(noOfVars);
+  for (int i=noOfVars; i--;) {
+    DECLARE_VAR(tmp, stamp, pstamp, v->Sub(i));
+    vars[i] = tmp;
+  }
+
+  DBGMSG("done");
+  s->fs_distinctn(vars);
+  RETURN_UNIT;
+} END
+
+DEFINE3(gc_fsEquals) {
+  DBGMSG("fsEquals");
+  DECLARE_SPACE(s, stamp, pstamp, x0);
+  CHECK_SPACE(s);
+
+  DECLARE_VAR(var1, stamp, pstamp, x1);
+  DECLARE_VAR(var2, stamp, pstamp, x2);
+
+  DBGMSG("done");
+  s->fs_equals(var1, var2);
+  RETURN_UNIT;
+} END
+
+DEFINE4(gc_fsUnion) {
+  DBGMSG("fsUnion");
+  DECLARE_SPACE(s, stamp, pstamp, x0);
+  CHECK_SPACE(s);
+
+  DECLARE_VAR(var1, stamp, pstamp, x1);
+  DECLARE_VAR(var2, stamp, pstamp, x2);
+  DECLARE_VAR(var3, stamp, pstamp, x3);
+
+  DBGMSG("done");
+  s->fs_union(var1, var2, var3);
+  RETURN_UNIT;
+} END
+
+DEFINE3(gc_fsComplement) {
+  DBGMSG("fsComplement");
+  DECLARE_SPACE(s, stamp, pstamp, x0);
+  CHECK_SPACE(s);
+
+  DECLARE_VAR(var1, stamp, pstamp, x1);
+  DECLARE_VAR(var2, stamp, pstamp, x2);
+
+  DBGMSG("done");
+  s->fs_complement(var1, var2);
+  RETURN_UNIT;
+} END
+
+DEFINE4(gc_fsIntersection) {
+  DBGMSG("fsIntersection");
+  DECLARE_SPACE(s, stamp, pstamp, x0);
+  DBGMSG("declare done");
+  CHECK_SPACE(s);
+  DBGMSG("check done");
+
+  DECLARE_VAR(var1, stamp, pstamp, x1);
+  DBGMSG("var 1");
+  DECLARE_VAR(var2, stamp, pstamp, x2);
+  DBGMSG("var 2");
+  DECLARE_VAR(var3, stamp, pstamp, x3);
+  DBGMSG("var 3");
+
+  DBGMSG("done");
+  s->fs_intersection(var1, var2, var3);
+  RETURN_UNIT;
+} END
+
+DEFINE4(gc_fsDifference) {
+  DBGMSG("fsDifference");
+  DECLARE_SPACE(s, stamp, pstamp, x0);
+  CHECK_SPACE(s);
+
+  DECLARE_VAR(var1, stamp, pstamp, x1);
+  DECLARE_VAR(var2, stamp, pstamp, x2);
+  DECLARE_VAR(var3, stamp, pstamp, x3);
+
+  DBGMSG("done");
+  s->fs_difference(var1, var2, var3);
+  RETURN_UNIT;
+} END
+
+DEFINE4(gc_fsPartition) {
+  DBGMSG("fsPartition");
+  DECLARE_SPACE(s, stamp, pstamp, x0);
+  CHECK_SPACE(s);
+
+  DECLARE_VAR(var1, stamp, pstamp, x1);
+  DECLARE_VAR(var2, stamp, pstamp, x2);
+  DECLARE_VAR(var3, stamp, pstamp, x3);
+
+  DBGMSG("done");
+  s->fs_partition(var1, var2, var3);
+  RETURN_UNIT;
+} END
+
+DEFINE3(gc_fsUnionN) {
+  DBGMSG("fsUnionN");
+  DECLARE_SPACE(s, stamp, pstamp, x0);
+  CHECK_SPACE(s);
+
+  DECLARE_VECTOR(v, x1);
+  DECLARE_VAR(var1, stamp, pstamp, x2);
+
+  int noOfVars = v->GetLength();
+
+  if (noOfVars==0) RETURN_UNIT;
+
+  IntArgs vars(noOfVars);
+  for (int i=noOfVars; i--;) {
+    DECLARE_VAR(tmp, stamp, pstamp, v->Sub(i));
+    vars[i] = tmp;
+  }
+
+  DBGMSG("done");
+  s->fs_unionn(vars, var1);
+  RETURN_UNIT;
+} END
+
+DEFINE3(gc_fsIntersectionN) {
+  DBGMSG("fsIntersectionN");
+  DECLARE_SPACE(s, stamp, pstamp, x0);
+  CHECK_SPACE(s);
+
+  DECLARE_VECTOR(v, x1);
+  DECLARE_VAR(var1, stamp, pstamp, x2);
+
+  int noOfVars = v->GetLength();
+
+  if (noOfVars==0) RETURN_UNIT;
+
+  IntArgs vars(noOfVars);
+  for (int i=noOfVars; i--;) {
+    DECLARE_VAR(tmp, stamp, pstamp, v->Sub(i));
+    vars[i] = tmp;
+  }
+
+  DBGMSG("done");
+  s->fs_intersectionn(vars, var1);
+  RETURN_UNIT;
+} END
+
+DEFINE3(gc_fsPartitionN) {
+  DBGMSG("fsIntersectionN");
+  DECLARE_SPACE(s, stamp, pstamp, x0);
+  CHECK_SPACE(s);
+
+  DECLARE_VECTOR(v, x1);
+  DECLARE_VAR(var1, stamp, pstamp, x2);
+
+  int noOfVars = v->GetLength();
+
+  if (noOfVars==0) RETURN_UNIT;
+
+  IntArgs vars(noOfVars);
+  for (int i=noOfVars; i--;) {
+    DECLARE_VAR(tmp, stamp, pstamp, v->Sub(i));
+    vars[i] = tmp;
+  }
+
+  DBGMSG("done");
+  s->fs_partitionn(vars, var1);
+  RETURN_UNIT;
+} END
+
+DEFINE1(gc_fsUniversal) {
+  DBGMSG("fsUniversal");
+  DECLARE_SPACE(s, stamp, pstamp, x0);
+  CHECK_SPACE(s);
+
+  if (stamp==-1) stamp=pstamp;
+
+  int newVar = s->AddSetVariable();
+
+  // Creates a new set constant every time!
+  // How should we handle constants?
+
+  RangesFullSet full;
+  s->fs_upperBound(newVar,full);
+  s->fs_lowerBound(newVar,full);
+
+  DBGMSG("done");
+  RETURN_IPAIR(newVar,stamp);
+} END
+
+DEFINE2(gc_fsIs) {
+  DBGMSG("fsUniversal");
+  DECLARE_SPACE(s, stamp, pstamp, x0);
+  CHECK_SPACE(s);
+
+  DECLARE_VAR(var1, stamp, pstamp, x1);
+
+  RETURN_BOOL(s->fs_assigned(var1));
+} END
+
+DEFINE4(gc_fsIncludeR) {
+  DBGMSG("fsIncludeR");
+  DECLARE_SPACE(s, stamp, pstamp, x0);
+  CHECK_SPACE(s);
+
+  DECLARE_VAR(var1, stamp, pstamp, x1);
+  DECLARE_VAR(var2, stamp, pstamp, x2);
+  DECLARE_VAR(var3, stamp, pstamp, x3);
+
+  DBGMSG("done");
+  s->fs_includeR(var1, var2, var3);
+  RETURN_UNIT;
+} END
+
+DEFINE4(gc_fsIncludeRI) {
+  DBGMSG("fsIncludeRI");
+  DECLARE_SPACE(s, stamp, pstamp, x0);
+  CHECK_SPACE(s);
+  DECLARE_INT(i, x1);
+  DECLARE_VAR(var1, stamp, pstamp, x2);
+  DECLARE_VAR(var3, stamp, pstamp, x3);
+
+  DBGMSG("done");
+  s->fs_includeRI(i, var1, var3);
+  RETURN_UNIT;
+} END
+
+DEFINE4(gc_fsEqualR) {
+  DBGMSG("fsEqualR");
+  DECLARE_SPACE(s, stamp, pstamp, x0);
+  CHECK_SPACE(s);
+  DECLARE_VAR(var1, stamp, pstamp, x1);
+  DECLARE_VAR(var2, stamp, pstamp, x2);
+  DECLARE_VAR(var3, stamp, pstamp, x3);
+
+  DBGMSG("done");
+  s->fs_equalR(var1, var2, var3);
+  RETURN_UNIT;
+} END
+
+DEFINE4(gc_fsSubsetR) {
+  DBGMSG("fsSubsetR");
+  DECLARE_SPACE(s, stamp, pstamp, x0);
+  CHECK_SPACE(s);
+  DECLARE_VAR(var1, stamp, pstamp, x1);
+  DECLARE_VAR(var2, stamp, pstamp, x2);
+  DECLARE_VAR(var3, stamp, pstamp, x3);
+
+  DBGMSG("done");
+  s->fs_subsetR(var1, var2, var3);
+  RETURN_UNIT;
+} END
+
+
+DEFINE4(gc_fsSelectUnion) {
+  DBGMSG("fsSelectUnion");
+  DECLARE_SPACE(s, stamp, pstamp, x0);
+  CHECK_SPACE(s);
+
+  DECLARE_VAR(var1, stamp, pstamp, x1);
+  DECLARE_VECTOR(v, x2);
+  DECLARE_VAR(var2, stamp, pstamp, x3);
+
+  int noOfVars = v->GetLength();
+
+  if (noOfVars==0) RETURN_UNIT;
+
+  IntArgs vars(noOfVars);
+  for (int i=noOfVars; i--;) {
+    DECLARE_VAR(tmp, stamp, pstamp, v->Sub(i));
+    vars[i] = tmp;
+  }
+
+  DBGMSG("done");
+  s->fs_selectUnion(var1, vars, var2);
+  RETURN_UNIT;
+} END
+
+DEFINE4(gc_fsSelectInter) {
+  DBGMSG("fsSelectInter");
+  DECLARE_SPACE(s, stamp, pstamp, x0);
+  CHECK_SPACE(s);
+
+  DECLARE_VAR(var1, stamp, pstamp, x1);
+  DECLARE_VECTOR(v, x2);
+  DECLARE_VAR(var2, stamp, pstamp, x3);
+
+  int noOfVars = v->GetLength();
+
+  if (noOfVars==0) RETURN_UNIT;
+
+  IntArgs vars(noOfVars);
+  for (int i=noOfVars; i--;) {
+    DECLARE_VAR(tmp, stamp, pstamp, v->Sub(i));
+    vars[i] = tmp;
+  }
+
+  DBGMSG("done");
+  s->fs_selectInter(var1, vars, var2);
+  RETURN_UNIT;
+} END
+
+DEFINE4(gc_fsSelectSets) {
+  DBGMSG("fsSelectSets");
+  DECLARE_SPACE(s, stamp, pstamp, x0);
+  CHECK_SPACE(s);
+
+  DECLARE_VAR(var1, stamp, pstamp, x1);
+  DECLARE_VECTOR(v, x2);
+  DECLARE_VAR(var2, stamp, pstamp, x3);
+
+  int noOfVars = v->GetLength();
+
+  if (noOfVars==0) RETURN_UNIT;
+
+  IntArgs vars(noOfVars);
+  for (int i=noOfVars; i--;) {
+    DECLARE_VAR(tmp, stamp, pstamp, v->Sub(i));
+    vars[i] = tmp;
+  }
+
+  DBGMSG("done");
+  s->fs_selectSets(var1, vars, var2);
+  RETURN_UNIT;
+} END
+
+DEFINE4(gc_fsBranch) {
+  DBGMSG("fsBranch");
+  DECLARE_SPACE(s, stamp, pstamp, x0);
+  CHECK_SPACE(s);
+
+  DECLARE_VECTOR(v, x1);
+  DECLARE_INT(varsel, x2);
+  DECLARE_INT(valsel, x3);
+
+  int noOfVars = v->GetLength();
+
+  if (noOfVars==0) RETURN_UNIT;
+
+  IntArgs vars(noOfVars);
+  for (int i=noOfVars; i--;) {
+    DECLARE_VAR(tmp, stamp, pstamp, v->Sub(i));
+    vars[i] = tmp;
+  }
+
+  s->fs_branch(vars, UnsafeGecode::int2fsbvarsel[varsel],
+	       UnsafeGecode::int2fsbvalsel[valsel]);
+
+  DBGMSG("done");
+
+  RETURN_UNIT;
+} END
+
 // These are only for debugging purposes
 DEFINE1(gc_stamps) {
   DBGMSG("stamps");
@@ -1025,136 +1802,249 @@ DEFINE1(gc_varStamp) {
   DBGMSG("done");
   RETURN(var->Sel(1));
 } END
+DEFINE2(gc_fsPrint) {
+  DBGMSG("fsPrint");
+  DECLARE_SPACE(s, stamp, pstamp, x0);
+  CHECK_SPACE(s);
+
+  DECLARE_VAR(var1, stamp, pstamp, x1);
+
+  s->fs_print(var1);
+  RETURN_UNIT;
+} END
+
+static word UnsafeGecodeBase() {
+  Record *record = Record::New(13);
+  InvalidSpaceConstructor =
+    UniqueConstructor::New("InvalidSpace",
+			   "UnsafeGecode.UnsafeGecodeBase.InvalidSpace")->ToWord();
+  RootSet::Add(InvalidSpaceConstructor);
+
+  InvalidVarConstructor =
+    UniqueConstructor::New("InvalidVar",
+			   "UnsafeGecode.UnsafeGecodeBase.InvalidVar")->ToWord();
+  RootSet::Add(InvalidVarConstructor);
+  record->Init("'InvalidSpace", InvalidSpaceConstructor);
+  record->Init("InvalidSpace", InvalidSpaceConstructor);
+
+  record->Init("'InvalidVar", InvalidVarConstructor);
+  record->Init("InvalidVar", InvalidVarConstructor);
+  INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeBase", "makeSpace",
+		 gc_makespace, 0);
+  INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeBase", "fail",
+		 gc_fail, 1);
+  INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeBase", "status",
+		 gc_status, 1);
+  INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeBase", "commit",
+		 gc_commit, 2);
+  INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeBase", "clone",
+		 gc_clone, 1);
+  INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeBase", "discard",
+		 gc_discard, 1);
+  INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeBase", "alive",
+		 gc_alive, 1);
+  INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeBase", "stamps",
+		 gc_stamps, 1);
+  INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeBase", "varStamp",
+		 gc_varStamp, 1);
+  return record->ToWord();
+}
+
+static word UnsafeGecodeFD() {
+  Record *record = Record::New(41);
+
+  INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeFD", "intvar",
+		 gc_fdvar, 2);
+  INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeFD", "intvarR",
+		 gc_fdvarr, 3);
+  INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeFD", "boolvar",
+		 gc_boolvar, 1);
+  INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeFD", "getMin",
+		 gc_getmin, 2);
+  INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeFD", "getMax",
+		 gc_getmax, 2);
+  INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeFD", "distinct",
+		 gc_distinct, 3);
+  INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeFD", "distinctOffset",
+		 gc_distincti, 3);
+  INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeFD", "countII",
+		 gc_countii, 6);
+  INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeFD", "countVI",
+		 gc_countvi, 6);
+  INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeFD", "countIV",
+		 gc_countiv, 6);
+  INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeFD", "countVV",
+		 gc_countvv, 6);
+  INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeFD", "element",
+		 gc_element, 4);
+  INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeFD", "elementI",
+		 gc_elementi, 4);
+  INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeFD", "lex",
+		 gc_lex, 4);
+  INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeFD", "dom",
+		 gc_dom, 3);
+  INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeFD", "domR",
+		 gc_domr, 4);
+  INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeFD", "rel",
+		 gc_rel, 4);
+  INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeFD", "relI",
+		 gc_reli, 4);
+  INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeFD", "relR",
+		 gc_relr, 5);
+  INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeFD", "relIR",
+		 gc_relir, 5);
+  INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeFD", "equal",
+		 gc_eq, 4);
+  INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeFD", "equalV",
+		 gc_eqv, 3);
+  INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeFD", "equalR",
+		 gc_eqr, 5);
+  INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeFD", "equalVR",
+		 gc_eqvr, 4);
+  INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeFD", "linear",
+		 gc_linear, 5);  
+  INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeFD", "linearR",
+		 gc_linearr, 6);  
+  INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeFD", "min",
+		 gc_min, 3);
+  INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeFD", "max",
+		 gc_max, 3);
+  INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeFD", "abs",
+		 gc_abs, 4);
+  INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeFD", "mult",
+		 gc_mult, 4);
+  INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeFD", "power",
+		 gc_power, 4);
+  INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeFD", "nega",
+		 gc_bool_not, 3);
+  INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeFD", "conj",
+		 gc_bool_and, 4);
+  INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeFD", "disj",
+		 gc_bool_or, 4);
+  INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeFD", "impl",
+		 gc_bool_imp, 4);
+  INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeFD", "equi",
+		 gc_bool_eq, 4);
+  INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeFD", "exor",
+		 gc_bool_xor, 4);
+  INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeFD", "conjV",
+		 gc_bool_andv, 3);
+  INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeFD", "disjV",
+		 gc_bool_orv, 3);
+  INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeFD", "branch",
+		 gc_branch, 4);
+  INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeFD", "assign",
+		 gc_assign, 3);
+  
+  return record->ToWord();
+}
+
+static word UnsafeGecodeFS() {
+  Record *record = Record::New(44);
+
+  INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeFS", "setvar",
+		 gc_fsvar, 1);
+  INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeFS", "upperBound",
+		 gc_fsUpperBound, 3);
+  INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeFS", "lowerBound",
+		 gc_fsLowerBound, 3);
+  INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeFS", "incl",
+		 gc_fsInclude, 3);
+  INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeFS", "excl",
+		 gc_fsExclude, 3);
+  INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeFS", "the",
+		 gc_fsThe, 3);
+  INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeFS", "min",
+		 gc_fsMin, 3);
+  INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeFS", "max",
+		 gc_fsMax, 3);
+  INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeFS", "card",
+		 gc_fsCard, 3);
+  INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeFS", "cardRange",
+		 gc_fsCardRange, 4);
+  INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeFS", "superOfInter",
+		 gc_fsSuperOfInter, 4);
+  INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeFS", "subOfUnion",
+		 gc_fsSubOfUnion, 4);
+  INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeFS", "compl",
+		 gc_fsComplement, 3);
+  INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeFS", "difference",
+		 gc_fsDifference, 4);
+  INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeFS", "intersect",
+		 gc_fsIntersection, 4);
+  INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeFS", "intersectN",
+		 gc_fsIntersectionN, 3);
+  INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeFS", "union",
+		 gc_fsUnion, 4);
+  INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeFS", "unionN",
+		 gc_fsUnionN, 3);
+  INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeFS", "subset",
+		 gc_fsSubset, 3);
+  INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeFS", "noSubset",
+		 gc_fsNoSubset, 3);
+  INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeFS", "disjoint",
+		 gc_fsDisjoint, 3);
+  INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeFS", "distinct",
+		 gc_fsDistinct, 3);
+  INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeFS", "distinctN",
+		 gc_fsDistinctN, 2);
+  INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeFS", "equals",
+		 gc_fsEquals, 3);
+  INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeFS", "partition",
+		 gc_fsPartition, 4);
+  INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeFS", "partitionN",
+		 gc_fsPartitionN, 3);
+  INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeFS", "universal",
+		 gc_fsUniversal, 1);
+  INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeFS", "is",
+		 gc_fsIs, 2);
+  INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeFS", "inclR",
+		 gc_fsIncludeR, 4);
+  INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeFS", "isInR",
+		 gc_fsIncludeRI, 4);
+  INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeFS", "equalR",
+		 gc_fsEqualR, 4);
+  INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeFS", "subsetR",
+		 gc_fsSubsetR, 4);
+  INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeFS", "selectSetVar",
+		 gc_fsSelectSets, 4);
+  INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeFS", "selectUnion",
+		 gc_fsSelectUnion, 4);
+  INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeFS", "selectInter",
+		 gc_fsSelectInter, 4);
+  INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeFS", "getUpperBound",
+		 gc_fsUB, 2);
+  INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeFS", "getLowerBound",
+		 gc_fsLB, 2);
+  INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeFS", "getCard",
+		 gc_fsGetCard, 2);
+  INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeFS", "getUnknown",
+		 gc_fsUnknown, 2);
+  INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeFS", "getCardOfLowerBound",
+		 gc_fsGetCardLB, 2);
+  INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeFS", "getCardOfUpperBound",
+		 gc_fsGetCardUB, 2);
+  INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeFS", "getCardOfUnknown",
+		 gc_fsGetCardUnknown, 2);
+  INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeFS", "setvarbranch",
+		 gc_fsBranch, 4);
+  INIT_STRUCTURE(record, "UnsafeGecode.UnsafeGecodeFS", "print",
+		 gc_fsPrint, 2);
+
+  return record->ToWord();
+}
 
 word InitComponent() {
   DBGMSG("init gecode");
   UnsafeGecode::gecodeFinalizationSet = new UnsafeGecode::GecodeFinalizationSet();
   UnsafeGecode::gecodeHandler = new UnsafeGecode::GecodeHandler();
   
-  InvalidSpaceConstructor =
-    UniqueConstructor::New("InvalidSpace",
-			   "UnsafeGecode.InvalidSpace")->ToWord();
-  RootSet::Add(InvalidSpaceConstructor);
+  Record *record = Record::New(3);
 
-  InvalidVarConstructor =
-    UniqueConstructor::New("InvalidVar",
-			   "UnsafeGecode.InvalidVar")->ToWord();
-  RootSet::Add(InvalidVarConstructor);
+  record->Init("UnsafeGecodeBase$", UnsafeGecodeBase());
+  record->Init("UnsafeGecodeFD$", UnsafeGecodeFD());
+  record->Init("UnsafeGecodeFS$", UnsafeGecodeFS());
 
-  Record *record = Record::New(54);
-
-  record->Init("'InvalidSpace", InvalidSpaceConstructor);
-  record->Init("InvalidSpace", InvalidSpaceConstructor);
-
-  record->Init("'InvalidVar", InvalidVarConstructor);
-  record->Init("InvalidVar", InvalidVarConstructor);
-
-  INIT_STRUCTURE(record, "UnsafeGecode", "makeSpace",
-		 gc_makespace, 0);
-  INIT_STRUCTURE(record, "UnsafeGecode", "fdvar",
-		 gc_fdvar, 2);
-  INIT_STRUCTURE(record, "UnsafeGecode", "fdvarR",
-		 gc_fdvarr, 3);
-  INIT_STRUCTURE(record, "UnsafeGecode", "boolvar",
-		 gc_boolvar, 1);
-  INIT_STRUCTURE(record, "UnsafeGecode", "getMin",
-		 gc_getmin, 2);
-  INIT_STRUCTURE(record, "UnsafeGecode", "getMax",
-		 gc_getmax, 2);
-  INIT_STRUCTURE(record, "UnsafeGecode", "dom",
-		 gc_dom, 3);
-  INIT_STRUCTURE(record, "UnsafeGecode", "domR",
-		 gc_domr, 4);
-  INIT_STRUCTURE(record, "UnsafeGecode", "rel",
-		 gc_rel, 4);
-  INIT_STRUCTURE(record, "UnsafeGecode", "relI",
-		 gc_reli, 4);
-  INIT_STRUCTURE(record, "UnsafeGecode", "relR",
-		 gc_relr, 5);
-  INIT_STRUCTURE(record, "UnsafeGecode", "relIR",
-		 gc_relir, 5);
-  INIT_STRUCTURE(record, "UnsafeGecode", "eq",
-		 gc_eq, 4);
-  INIT_STRUCTURE(record, "UnsafeGecode", "eqV",
-		 gc_eqv, 3);
-  INIT_STRUCTURE(record, "UnsafeGecode", "eqR",
-		 gc_eqr, 5);
-  INIT_STRUCTURE(record, "UnsafeGecode", "eqVR",
-		 gc_eqvr, 4);
-  INIT_STRUCTURE(record, "UnsafeGecode", "distinct",
-		 gc_distinct, 3);
-  INIT_STRUCTURE(record, "UnsafeGecode", "distinctI",
-		 gc_distincti, 3);
-  INIT_STRUCTURE(record, "UnsafeGecode", "linear",
-		 gc_linear, 5);  
-  INIT_STRUCTURE(record, "UnsafeGecode", "linearR",
-		 gc_linearr, 6);  
-
-  INIT_STRUCTURE(record, "UnsafeGecode", "bool_not",
-		 gc_bool_not, 3);
-  INIT_STRUCTURE(record, "UnsafeGecode", "bool_and",
-		 gc_bool_and, 4);
-  INIT_STRUCTURE(record, "UnsafeGecode", "bool_or",
-		 gc_bool_or, 4);
-  INIT_STRUCTURE(record, "UnsafeGecode", "bool_imp",
-		 gc_bool_imp, 4);
-  INIT_STRUCTURE(record, "UnsafeGecode", "bool_eq",
-		 gc_bool_eq, 4);
-  INIT_STRUCTURE(record, "UnsafeGecode", "bool_xor",
-		 gc_bool_xor, 4);
-  INIT_STRUCTURE(record, "UnsafeGecode", "bool_andV",
-		 gc_bool_andv, 3);
-  INIT_STRUCTURE(record, "UnsafeGecode", "bool_orV",
-		 gc_bool_orv, 3);
-
-  INIT_STRUCTURE(record, "UnsafeGecode", "branch",
-		 gc_branch, 4);
-
-  INIT_STRUCTURE(record, "UnsafeGecode", "status",
-		 gc_status, 1);
-  INIT_STRUCTURE(record, "UnsafeGecode", "commit",
-		 gc_commit, 2);
-  INIT_STRUCTURE(record, "UnsafeGecode", "clone",
-		 gc_clone, 1);
-  INIT_STRUCTURE(record, "UnsafeGecode", "discard",
-		 gc_discard, 1);
-  INIT_STRUCTURE(record, "UnsafeGecode", "alive",
-		 gc_alive, 1);
-
-  INIT_STRUCTURE(record, "UnsafeGecode", "countII",
-		 gc_countii, 6);
-  INIT_STRUCTURE(record, "UnsafeGecode", "countVI",
-		 gc_countvi, 6);
-  INIT_STRUCTURE(record, "UnsafeGecode", "countIV",
-		 gc_countiv, 6);
-  INIT_STRUCTURE(record, "UnsafeGecode", "countVV",
-		 gc_countvv, 6);
-  INIT_STRUCTURE(record, "UnsafeGecode", "element",
-		 gc_element, 4);
-  INIT_STRUCTURE(record, "UnsafeGecode", "elementI",
-		 gc_elementi, 4);
-  INIT_STRUCTURE(record, "UnsafeGecode", "lex",
-		 gc_lex, 4);
-  INIT_STRUCTURE(record, "UnsafeGecode", "min",
-		 gc_min, 3);
-  INIT_STRUCTURE(record, "UnsafeGecode", "max",
-		 gc_max, 3);
-  INIT_STRUCTURE(record, "UnsafeGecode", "abs",
-		 gc_abs, 4);
-  INIT_STRUCTURE(record, "UnsafeGecode", "mult",
-		 gc_mult, 4);
-  INIT_STRUCTURE(record, "UnsafeGecode", "power",
-		 gc_power, 4);
-  INIT_STRUCTURE(record, "UnsafeGecode", "assign",
-		 gc_assign, 3);
-
-  INIT_STRUCTURE(record, "UnsafeGecode", "stamps",
-		 gc_stamps, 1);
-  INIT_STRUCTURE(record, "UnsafeGecode", "varStamp",
-		 gc_varStamp, 1);
-
-  INIT_STRUCTURE(record, "UnsafeGecode", "fail",
-		 gc_fail, 1);
   DBGMSG("done");
 
   RETURN_STRUCTURE("UnsafeGecode$", record);

@@ -15,7 +15,8 @@
 #define __GECODESPACE_HH__
 
 #include "gecode-int.hh"
-#include "gecode-search.hh"
+#include "gecode-set.hh"
+//#include "gecode-search.hh"
 
 #define makeintvararray(a,vars)                                 \
   IntVarArray a(vars.size(), 0,0);                              \
@@ -29,16 +30,23 @@
 { int s = vars.size(); for (int i=s; i--;) \
   a[i] = intvar2boolvar(is[vars[i]]); }
 
+#define makefsvararray(a,vars)                                 \
+  SetVarArgs a(vars.size());                              \
+{ int s = vars.size(); for (int i=s; i--;) a[i] = fss[vars[i]]; }
+
 class GecodeSpace : private Space {
 protected:
   IntVarArray is;
-  IntVarArray tmpVar;
   int noOfIntVars;
   int intArraySize;
+  
+  SetVarArray fss;
+  int noOfSetVars;
+  int fsArraySize;
 
   void EnlargeIntVarArray();
+  void EnlargeSetVarArray();
 
-  
 public:
   using Space::clone;
   using Space::status;
@@ -46,19 +54,20 @@ public:
   using Space::operator new;
   using Space::operator delete;
 
-  GecodeSpace() : tmpVar(1,0,0), is(10, 0,0), noOfIntVars(0),
-		  intArraySize(10)
-  {
-    for (int i=10; i--;)
-      is[i] = tmpVar[0];
-  }
+  GecodeSpace() : is(3, 0,0), noOfIntVars(0),
+		  intArraySize(3),
+		  fss(3), noOfSetVars(0), fsArraySize(3)
+  {}
 
   explicit
   GecodeSpace(GecodeSpace& s) : Space(s), 
 				is(s.is.copy()),
                                 noOfIntVars(s.noOfIntVars),
                                 intArraySize(s.intArraySize),
-                                tmpVar(s.tmpVar.copy()) {}
+ 				fss(s.fss.copy()),
+ 				noOfSetVars(s.noOfSetVars),
+ 				fsArraySize(s.fsArraySize)
+  {}
 
   virtual Space* copy(void) {
     return new GecodeSpace(*this);
@@ -143,6 +152,81 @@ public:
 
   // Faling
   void fail();
+
+  // Finite Set Variables / Constraints
+
+  int AddSetVariable();
+  
+  RangesRangeList fs_upperBound(int);
+  RangesRangeList fs_lowerBound(int);
+  RangesMinus<RangesRangeList, RangesRangeList> fs_unknown(int);
+  int fs_cardinalityMin(int);
+  int fs_cardinalityMax(int);
+  bool fs_assigned(int);
+
+  template<class I>
+  void fs_lowerBound(int s, I& i) {
+    if (!enter()) return;
+    if (Space::failed())
+      return;
+    
+    if ( (fss[s].includeI(i)) == ME_SET_FALSE)
+      Space::fail();
+  }
+
+  template<class I>
+  void fs_upperBound(int s, I& i) {
+    if (!enter()) return;
+    if (Space::failed())
+      return;
+    
+    if ( (fss[s].intersectI(i)) == ME_SET_FALSE)
+      Space::fail();
+  }
+
+
+  unsigned int fs_upperBoundSize(int);
+  unsigned int fs_lowerBoundSize(int);
+
+  void fs_include(int, int);
+  void fs_exclude(int, int);
+  void fs_the(int, int);
+  void fs_min(int, int);
+  void fs_max(int, int);
+  void fs_card(int, int);
+  void fs_cardRange(int, int, int);
+
+  void fs_superOfInter(int, int, int);
+  void fs_subOfUnion(int, int, int);
+  
+  void fs_subset(int, int);
+  void fs_nosubset(int, int);
+  void fs_disjoint(int, int);
+  void fs_distinct(int, int);
+  void fs_distinctn(const IntArgs&);
+  void fs_equals(int, int);
+  void fs_union(int, int, int);
+  void fs_complement(int, int);
+  void fs_intersection(int, int, int);
+  void fs_difference(int, int, int);
+  void fs_partition(int, int, int);
+  void fs_unionn(const IntArgs&, int);
+  void fs_intersectionn(const IntArgs&, int);
+  void fs_partitionn(const IntArgs&, int);
+
+  void fs_includeR(int, int, int);
+  void fs_includeRI(int, int, int);
+  void fs_equalR(int, int, int);
+  void fs_subsetR(int, int, int);
+
+  void fs_selectUnion(int, const IntArgs&, int);
+  void fs_selectInter(int, const IntArgs&, int);
+  void fs_selectSets(int, const IntArgs&, int);
+
+  void fs_branch(const IntArgs&, SetBvarSel, SetBvalSel);
+  
+  void fs_print(int);
+
 };
 
 #endif

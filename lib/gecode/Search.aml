@@ -37,7 +37,7 @@ struct
     fun searchOne s =
 	let
 	    exception Found of Space.space
-	    fun dfe s =
+	    fun dfe depth s =
 		case Space.status s of
 		    Space.FAILED => Space.discard s
 		  | Space.SOLVED => raise (Found s)
@@ -47,11 +47,11 @@ struct
 		    in
 			Space.commit(s, 1);
 			Space.commit(c, 2);
-			dfe s;
-			dfe c
+			dfe (depth+1) s;
+			dfe (depth+1) c
 		    end
 	in
-	    (dfe (Space.clone s); NONE) handle (Found s) => SOME s
+	    (dfe 0 (Space.clone s); NONE) handle (Found s) => SOME s
 	end
 
     fun bab (space, constrain) =

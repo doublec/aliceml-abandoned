@@ -1,4 +1,16 @@
 (*
+ * Author:
+ *   Gabor Szokoli <szokoli@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Gabor Szokoli, 2003, 2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(*
  * True oz programmers can write oz programs in any language, observe:
  *)
 
@@ -21,7 +33,7 @@ structure Linear :> LINEAR =
 	type domain = domain_element list
 
 	datatype term =
-	    FD of FD.fdvar
+	    FD of FD.intvar
 	  | `  of int
 	  | `+ of term * term
 	  | `- of term * term
@@ -80,11 +92,11 @@ fun boolterm2boolvarVect(BC _) = #[]
 exception NoWay
 (*FD stuff*)
 
-fun domain_elementConverter (``c) = FD.SINGLE c
+fun domain_elementConverter (``c) = (c,c)
 (*| domain_elementConverter (op`#(c,c)) = FD.SINGLE c *)
 | domain_elementConverter (op`#(a,b)) = 
-	if a=b then FD.SINGLE a 
-	else if a < b then FD.RANGE(a,b) else FD.RANGE(b,a)  
+	if a=b then (a,a)
+	else if a < b then (a,b) else (b,a)  
 
 
 fun fdterm (s,d)= 
@@ -92,8 +104,8 @@ fun fdterm (s,d)=
 		val fdd = Vector.fromList(List.map domain_elementConverter d)
 	in
 		(case fdd of 
-		#[FD.SINGLE i] =>  `i
-		|x => FD (FD.fdvar(s,x))
+		#[(i,j)] where (i=j) =>  `i
+		|x => FD (FD.intvar(s,x))
 		)
 	end		
  
@@ -102,8 +114,8 @@ fun fdtermVec (s,n,d)=
 		val fdd = Vector.fromList(List.map domain_elementConverter d)
 	in
 		(case fdd of 
-		#[FD.SINGLE i] => Vector.tabulate (n, (fn q => `i))
-		|x => Vector.map (fn v =>FD(v)) (FD.fdvarVec(s,n,x))
+		#[(i,j)] where (i=j) => Vector.tabulate (n, (fn q => `i))
+		|x => Vector.map (fn v =>FD(v)) (FD.intvarVec(s,n,x))
 		)
 	end
 
@@ -146,7 +158,7 @@ fun isProduct (FD _) = true
 
 
 	exception ShouldBeDNF
-	datatype leaf = VAR of FD.fdvar | CONST of int
+	datatype leaf = VAR of FD.intvar | CONST of int
 	type product = leaf list
 	type sum = product list
 	
@@ -242,7 +254,7 @@ fun isProduct (FD _) = true
 
 	fun post(s,r,e) = post'(s,r,e,FD.linear)	
 
-	fun postReified(s,r,c,e) = post'(s,r,e,(fn(s',a',r',b',e')=>FD.linearR(s',a',r',b',c,e')))
+	fun postReified(s,r,c,e) = post'(s,r,e,(fn(s',a',r',b',e')=>FD.Reified.linear(s',a',r',b',c,e')))
 
 (*boolean stuff*)
 
@@ -329,7 +341,7 @@ fun booltermVec(s,n) = Vector.map (fn b=>BV b) (FD.boolvarVec (s,n))
 	| groundToVar s (`!(BV (v))) = 
 		let
 			val nv = FD.boolvar(s)
-			val _ = FD.bool_not(s,v,nv)
+			val _ = FD.nega(s,v,nv)
 		in
 			nv
 		end
@@ -349,13 +361,13 @@ fun booltermVec(s,n) = Vector.map (fn b=>BV b) (FD.boolvarVec (s,n))
 	fun stripCNF(s,cnf) = List.map (List.map (groundToVar s)) cnf
 		
 	fun getTrue(s)= let val b=FD.boolvar(s) 
-		in FD.relI(s, FD.boolvar2fdvar b, FD.EQ, 1); b end
+		in FD.relI(s, FD.Reflect.boolvar2intvar b, FD.EQ, 1); b end
 
 	(*Rough version, especially if failed spaces allow post-mortem introspection*)
-	fun fail(s) = let val b = FD.fdvar(s,#[FD.SINGLE(42)]) in FD.relI(s,b,FD.EQ,57) end
+	fun fail(s) = let val b = FD.intvar(s,#[(42,42)]) in FD.relI(s,b,FD.EQ,57) end
 
 	fun postClause (s,t) nil = fail s
-	| postClause (s,t) clause = FD.bool_orV(s, Vector.fromList clause, t) 
+	| postClause (s,t) clause = FD.disjV(s, Vector.fromList clause, t) 
 	
 	fun postCNF(s,cnf) = 
 		let val t=getTrue(s)

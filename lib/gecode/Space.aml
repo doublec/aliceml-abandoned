@@ -19,6 +19,6 @@ struct
 
     datatype status = BRANCH | FAILED | SOLVED
 
-    open UnsafeGecode
+    open UnsafeGecode.UnsafeGecodeBase
     val new = makeSpace
 end

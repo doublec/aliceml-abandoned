@@ -1,0 +1,85 @@
+(*
+ * Author:
+ *   Guido Tack <tack@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Guido Tack, 2003
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Space     from "x-alice:/lib/gecode/Space"
+import structure FD        from "x-alice:/lib/gecode/FD"
+import structure FS        from "x-alice:/lib/gecode/FS"
+import structure Search    from "x-alice:/lib/gecode/Search"
+import structure Print     from "x-alice:/lib/system/Print"
+
+fun appTail f nil = ()
+  | appTail f (x::xr) = (f x xr;
+                         appTail f xr)
+
+fun cardProd f = appTail (fn x => List.app (fn y => f(x,y)))
+
+fun steiner n =
+    if n mod 6 <> 1 andalso n mod 6 <> 3 then
+        raise Empty
+    else
+        let
+            val n1 = n+1
+            val n1n1 = n1*n1
+            val len = (n*(n-1)) div 6
+            val nvec = Vector.tabulate (n, fn i => i+1)
+
+	    val space = Space.new()
+            val root = List.tabulate (len,
+                                        fn _ => FS.upperBound(space,nvec))
+        in
+            List.app (fn v => FS.cardRange(space,3,3,v)) root;
+            cardProd (fn (x,y) =>
+                           let
+                               val s = FS.setvar space
+                           in
+                               FS.cardRange(space,0,1,s);
+                               FS.intersect(space,s,x,y)
+                           end) root;
+            
+            (* breaking symmetries *)
+            cardProd (fn (x,y) =>
+                           let
+                               val s = FS.setvar space
+                               val #[x1,x2,x3,y1,y2,y3] =
+                                   FD.rangeVec(space,6,(1,n))
+                           in
+                               FS.Int.min(space,x1,x);
+                               FS.Int.incl(space,x2,x);
+                               FS.Int.max(space,x3,x);
+                               FS.Int.min(space,y1,y);
+                               FS.Int.incl(space,y2,y);
+                               FS.Int.max(space,y3,y);
+                               FD.rel(space,x1,FD.LE,x2);
+                               FD.rel(space,x2,FD.LE,x3);
+                               FD.rel(space,x1,FD.LE,x3);
+                               FD.rel(space,y1,FD.LE,y2);
+                               FD.rel(space,y2,FD.LE,y3);
+                               FD.rel(space,y1,FD.LE,y3);
+                               FD.linear(space,
+                                         #[(n1n1,x1),
+                                           (n1,x2),
+                                           (1,x3),
+                                           (~n1n1,y1),
+                                           (~n1,y2),
+                                           (~1,y3)],FD.LE,0,FD.DEF)
+                           end) root;
+
+            (* distribution *)
+            FS.setvarbranch(space,Vector.fromList root,FS.FSB_NONE,FS.FSB_MIN);
+            (Vector.fromList root,space)
+        end
+
+val (root,space) = steiner 9
+val (SOME sol) = Search.searchOne space
+val s = Vector.map (fn v => FS.Reflect.lowerBound(sol,v)) root
+val _ = Print.printVal s
+val _ = OS.Process.exit OS.Process.success

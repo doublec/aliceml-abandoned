@@ -1,0 +1,116 @@
+(*
+ * Author:
+ *   Guido Tack <tack@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Guido Tack, 2003
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Space from "Space"
+import structure FD from "FD"
+
+signature FS =
+sig
+    type setvar
+
+    (* Allocation of finite set variables *)
+    val setvar :  Space.space  ->  setvar
+    val setvarVec :  Space.space * int ->  setvar vector
+
+    val lowerBound : Space.space * int vector -> setvar
+    val upperBound : Space.space * int vector -> setvar
+    val bounds : Space.space * int vector * int vector -> setvar
+
+    (* Standard Propagators *)
+    val cardRange : Space.space * int * int * setvar -> unit
+    (* val isIn : Space.space * int * setvar -> bool *)
+
+    val superOfInter : Space.space * setvar * setvar * setvar -> unit
+    val subOfUnion : Space.space * setvar * setvar * setvar -> unit
+    val compl : Space.space * setvar * setvar -> unit
+    (* val complIn : Space.space * setvar * setvar * setvar -> unit *)
+    val difference : Space.space * setvar * setvar * setvar -> unit
+    val intersect : Space.space * setvar * setvar * setvar -> unit
+    val intersectN : Space.space * setvar vector * setvar -> unit
+    val union : Space.space * setvar * setvar * setvar -> unit
+    val unionN : Space.space * setvar vector * setvar -> unit
+    val subset : Space.space * setvar * setvar -> unit
+    val noSubset : Space.space * setvar * setvar -> unit
+    val disjoint : Space.space * setvar * setvar -> unit
+(*    val disjointN : Space.space * setvar vector -> unit *)
+    val distinct : Space.space * setvar * setvar -> unit
+    val distinctN : Space.space * setvar vector -> unit
+    val partition : Space.space * setvar * setvar * setvar -> unit
+    val partitionN : Space.space * setvar vector * setvar -> unit
+    val equals : Space.space * setvar * setvar -> unit
+
+
+    structure Value :
+	sig
+	    val make : Space.space * int vector -> setvar
+	    val empty : Space.space -> setvar
+	    val single : Space.space * int -> setvar
+	    val universal : Space.space -> setvar
+	    val is : Space.space* setvar -> bool
+	end
+
+    structure Int :
+        sig
+            val incl : Space.space * FD.intvar * setvar -> unit
+            val excl : Space.space * FD.intvar * setvar -> unit
+            val the : Space.space * FD.intvar * setvar -> unit
+	    val min : Space.space * FD.intvar * setvar -> unit
+	    val max : Space.space * FD.intvar * setvar -> unit
+            val card : Space.space * FD.intvar * setvar -> unit
+(*	    val convex : setvar -> unit *)
+(*	    val match : setvar * FD.intvar vector -> unit *)
+(*	    val minN : setvar * FD.intvar vector -> unit *)
+(*	    val maxN : setvar * FD.intvar vector -> unit *)
+	end
+
+    structure Reified : sig
+	val isIn : Space.space * int * setvar * FD.boolvar -> unit
+	val areIn : Space.space * (FD.boolvar * int) vector * setvar -> unit
+	val incl : Space.space * FD.intvar * setvar * FD.boolvar -> unit
+	val equal : Space.space * setvar * setvar * FD.boolvar -> unit
+        val subset : Space.space * setvar * setvar * FD.boolvar -> unit
+(*	val partition : setvar list * int list * setvar * bin list -> unit *)
+    end
+
+    structure Selection : sig
+	val setvar : Space.space * setvar * setvar vector * FD.intvar -> unit
+	val union : Space.space * setvar * setvar vector * setvar -> unit
+	val inter : Space.space * setvar * setvar vector * setvar -> unit
+    end
+	
+    structure Reflect : sig
+	val card : Space.space * setvar -> (int * int)
+	val lowerBound : Space.space * setvar -> (int*int) vector
+	val upperBound : Space.space * setvar -> (int*int) vector
+	val unknown : Space.space * setvar -> (int*int) vector
+	val cardOfLowerBound : Space.space * setvar -> int
+	val cardOfUpperBound : Space.space * setvar -> int
+	val cardOfUnknown : Space.space * setvar -> int
+        val print : Space.space * setvar -> unit (* DEBUGGING ONLY! *)
+    end
+
+    (* Branching strategies *)
+
+    datatype fsb_var_sel =
+	     FSB_MAX_CARD
+	   | FSB_MIN_CARD
+           | FSB_MIN_UNKNOWN_ELEM
+	   | FSB_NONE
+	     
+    datatype fsb_val_sel =
+	     FSB_MAX
+	   | FSB_MIN
+
+    val setvarbranch :  Space.space *  setvar vector * fsb_var_sel *
+			fsb_val_sel -> unit
+				
+end

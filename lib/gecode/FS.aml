@@ -1,0 +1,106 @@
+(*
+ * Author:
+ *   Guido Tack <tack@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Guido Tack, 2003
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature FS           from "FS-sig"
+import structure Space        from "Space"
+import structure UnsafeGecode from "UnsafeGecode"
+
+structure FS :> FS =
+struct
+   datatype fsb_var_sel =
+	    FSB_MAX_CARD
+	  | FSB_MIN_CARD
+          | FSB_MIN_UNKNOWN_ELEM
+	  | FSB_NONE
+	    
+   datatype fsb_val_sel =
+	    FSB_MAX
+	  | FSB_MIN
+
+   structure UnsafeGecodeFS = UnsafeGecode.UnsafeGecodeFS
+   open UnsafeGecodeFS
+
+   type setvar
+		      
+   fun setvarVec(space,n) = Vector.tabulate (n, fn _ => setvar(space))
+   fun bounds(space,lb,ub) =
+       let
+	   val v = setvar space
+       in
+	   UnsafeGecodeFS.lowerBound(space,v,lb);
+	   UnsafeGecodeFS.upperBound(space,v,ub);
+	   v
+       end
+   fun lowerBound(space,lb) =
+       let
+	   val v = setvar space
+       in
+	   UnsafeGecodeFS.lowerBound(space,v,lb);
+	   v
+       end
+   fun upperBound(space,ub) =
+       let
+	   val v = setvar space
+       in
+	   UnsafeGecodeFS.upperBound(space,v,ub);
+	   v
+       end
+
+   structure Value =
+       struct
+          fun make(space,v) = bounds(space,v,v)
+	  fun empty space = bounds(space,#[],#[])
+	  fun single(space,i) = make(space,#[i])
+	  val universal = UnsafeGecodeFS.universal
+	  val is = UnsafeGecodeFS.is
+       end
+
+   structure Int =
+       struct
+          val incl = UnsafeGecodeFS.incl
+          val excl = UnsafeGecodeFS.excl
+          val the  = UnsafeGecodeFS.the
+          val min  = UnsafeGecodeFS.min
+          val max  = UnsafeGecodeFS.max
+          val card = UnsafeGecodeFS.card
+       end
+
+   structure Reified =
+       struct
+          val isIn = UnsafeGecodeFS.isInR
+	  val incl = UnsafeGecodeFS.inclR
+	  fun areIn(space,v,set) = Vector.app
+				       (fn (b,i) => (isIn(space,i,set,b)))
+				       v
+          val equal = UnsafeGecodeFS.equalR
+          val subset = UnsafeGecodeFS.subsetR
+       end
+
+   structure Selection =
+       struct
+           val setvar = UnsafeGecodeFS.selectSetvar
+	   val union = UnsafeGecodeFS.selectUnion
+	   val inter = UnsafeGecodeFS.selectInter
+       end
+
+   structure Reflect =
+       struct
+           val card = UnsafeGecodeFS.getCard
+	   val lowerBound = UnsafeGecodeFS.getLowerBound
+	   val upperBound = UnsafeGecodeFS.getUpperBound
+	   val unknown = UnsafeGecodeFS.getUnknown
+	   val cardOfLowerBound = UnsafeGecodeFS.getCardOfLowerBound
+	   val cardOfUpperBound = UnsafeGecodeFS.getCardOfUpperBound
+	   val cardOfUnknown = UnsafeGecodeFS.getCardOfUnknown
+           val print = UnsafeGecodeFS.print
+       end
+end
