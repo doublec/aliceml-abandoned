@@ -115,10 +115,10 @@ define
    end
 
    fun {Emulate Instr Closure L TaskStack}
-{System.show emulating(Instr)}
+%--**{System.show emulating(Instr)}
       case Instr of tag(!Kill Ids NextInstr) then
 	 for I in 1..{Width Ids} do
-	    L.(Ids.I) := unit
+	    L.(Ids.I) := killed
 	 end
 	 {Emulate NextInstr Closure L TaskStack}
       [] tag(!PutConst Id X NextInstr) then
@@ -353,7 +353,6 @@ define
 	     [] tag(!Global I) then Closure.(I + 1)
 	     end
 	 %--** request V if necessary
-{System.show vecTest(V)}
 	 case {VecCase 1 {Width IdDefsInstrVec} {Width V} IdDefsInstrVec}
 	 of tuple(IdDefs ThenInstr) then N in
 	    N = {Width IdDefs}
@@ -433,7 +432,7 @@ define
 
    fun {PushCall Closure TaskStack}
       case Closure of closure(function(_ _ NL IdDefArgs BodyInstr) ...) then
-	 L = {NewArray 0 NL - 1 unit}
+	 L = {NewArray 0 NL - 1 uninitialized}
       in
 	 frame(Me IdDefArgs BodyInstr Closure L)|TaskStack
       end
