@@ -14,7 +14,7 @@ Group
 	structure PPIntermediateGrammar
 
 is
-	../misc/sources.cm
+	../../lib/utility/sources.cm
 	../infrastructure/source.cm
 	../infrastructure/pp-misc.cm
 	id-stamp.cm

@@ -7,7 +7,7 @@ Group
 
 is
 
-	../misc/sources.cm
+	../../lib/utility/sources.cm
 
 	Stamp.aml
 	StampSet.aml
