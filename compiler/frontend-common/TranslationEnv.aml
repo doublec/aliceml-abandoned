@@ -1,0 +1,51 @@
+(*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Stamp               from "../common/Stamp"
+import structure TypedGrammar        from "TypedGrammar"
+import structure IntermediateGrammar from "../common/IntermediateGrammar"
+
+import functor   MkHashImpSet        from "../../lib/utility/MkHashImpSet"
+import functor   FromEqHashKey       from "../../lib/utility/HASH_KEY-sig"
+import signature TRANSLATION_ENV     from "TRANSLATION_ENV-sig"
+
+
+structure TranslationEnv :> TRANSLATION_ENV =
+struct
+    type stamp			= Stamp.t
+    type modid			= TypedGrammar.modid
+    type longid'		= IntermediateGrammar.longid
+
+    structure Set		= MkHashImpSet(FromEqHashKey(Stamp))
+
+    type env			= Set.t * modid option ref * longid' option ref
+    type t			= env
+
+    exception Delete		= Set.Delete
+    exception Collision		= Set.Collision
+    exception Pervasive
+
+    fun new()			= (Set.new(), ref NONE, ref NONE)
+    fun clone(s,xr,yr)		= (Set.clone s, ref(!xr), ref(!yr))
+
+    fun insertMod((E,_,_), x)	= Set.insertDisjoint(E,x)
+    fun deleteMod((E,_,_), x)	= Set.deleteExistent(E,x)
+    fun memberMod((E,_,_), x)	= Set.member(E,x)
+
+    fun insertPervasive((_,xr,_), x)		= xr := SOME x
+    fun lookupPervasive(_, ref(SOME x), _)	= x
+      | lookupPervasive(_, ref NONE, _)		= raise Pervasive
+
+    fun insertPervasive'((_,_,yr), y')		= yr := SOME y'
+    fun lookupPervasive'(_, _, ref(SOME y'))	= y'
+      | lookupPervasive'(_, _, ref NONE)	= raise Pervasive
+end
