@@ -63,14 +63,14 @@ P.menu A {
 	font-size:	90%;
 }
 
+TABLE TR {
+	vertical-align:	baseline;
+}
 TABLE.bnf {
 	font-family:	"Times New Roman", Times, Helvetica, Serif;
 	border-style:	none;
 }
 
-TABLE.bnf TR {
-	vertical-align:	baseline;
-}
 
 TABLE.bnf TT {
 	font-family:	"Courier New", Courier, Monospace;
