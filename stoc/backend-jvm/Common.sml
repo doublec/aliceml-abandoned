@@ -80,13 +80,16 @@ structure Common=
 	 val parm2Stamp = Stamp.new ()
 	 val parm3Stamp = Stamp.new ()
 	 val parm4Stamp = Stamp.new ()
+	 val parm5Stamp = Stamp.new ()
 	 val parm1Id = Id (dummyPos, parm1Stamp, InId)
 	 val parm2Id = Id (dummyPos, parm2Stamp, InId)
 	 val parm3Id = Id (dummyPos, parm3Stamp, InId)
 	 val parm4Id = Id (dummyPos, parm4Stamp, InId)
+	 val parm5Id = Id (dummyPos, parm5Stamp, InId)
 	 val parmIds = #[nil, [parm1Id],[parm1Id,parm2Id],
 			 [parm1Id,parm2Id,parm3Id],
-			 [parm1Id,parm2Id,parm3Id,parm4Id]]
+			 [parm1Id,parm2Id,parm3Id,parm4Id],
+			 [parm1Id,parm2Id,parm3Id,parm4Id,parm5Id]]
 
 	 (* Stamp and Id for 'this'-Pointer *)
 	 val thisStamp = Stamp.new ()

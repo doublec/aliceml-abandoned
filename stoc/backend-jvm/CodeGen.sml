@@ -154,7 +154,8 @@ structure CodeGen =
 		  print ("parm1Stamp: "^Stamp.toString parm1Stamp^"\n");
 		  print ("parm2Stamp: "^Stamp.toString parm2Stamp^"\n");
 		  print ("parm3Stamp: "^Stamp.toString parm3Stamp^"\n");
-		  print ("parm4Stamp: "^Stamp.toString parm4Stamp^"\n"))
+		  print ("parm4Stamp: "^Stamp.toString parm4Stamp^"\n");
+		  print ("parm5Stamp: "^Stamp.toString parm5Stamp^"\n"))
 		 else ();
 	     let
 		 (* compute free variables. *)
@@ -263,6 +264,7 @@ structure CodeGen =
 					    stamp'=parm2Stamp orelse
 					    stamp'=parm3Stamp orelse
 					    stamp'=parm4Stamp orelse
+					    stamp'=parm5Stamp orelse
 					    stamp'=thisStamp then (Aload stamp', true) else
 					    (Nop,false)
 

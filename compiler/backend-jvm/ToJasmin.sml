@@ -180,6 +180,7 @@ structure ToJasmin =
 			StampHash.insert (r, parm2Stamp, 2);
 			StampHash.insert (r, parm3Stamp, 3);
 			StampHash.insert (r, parm4Stamp, 4);
+			StampHash.insert (r, parm5Stamp, 5);
 			ref r
 		    end
 
@@ -224,9 +225,17 @@ structure ToJasmin =
 
 		(* returns the JVM register on which a stamp is mapped *)
 		fun get reg =
-		    case StampHash.lookup (!regmap, getOrigin reg) of
-			NONE => Stamp.hash reg
-		      | SOME v => v
+		    let
+			val r = case StampHash.lookup (!regmap, getOrigin reg) of
+			    NONE => Stamp.hash reg
+			  | SOME v => v
+		    in
+			if !VERBOSE >=3 then
+			    print ("Accessing stamp "^Stamp.toString reg^" in "^
+				   "JVM register "^Int.toString r^"\n")
+			else ();
+			r
+		    end
 
 		(* returns Jasmin-code for astore/istore. May be pop for
 		 unread registers *)
@@ -267,21 +276,30 @@ structure ToJasmin =
 				val f' = lookup (!from, genuineReg)
 				val t' = lookup (!to, genuineReg)
 				fun assignNextFree act =
-				    if f' > lookupInt (!jvmto, act)
-					then (StampHash.insert (!regmap, genuineReg, act);
-					      IntHash.insert (!jvmto, act, t'))
+				    if f' > lookupInt (!jvmto, act) andalso
+					not (isSome (StampHash.lookup (!regmap, genuineReg)))
+					then (if !VERBOSE >=2 then
+						  print ("map "^Stamp.toString genuineReg^" to "^
+							 Stamp.toString act^"\n") else ();
+					      case StampHash.lookup (!regmap, genuineReg) of
+						      NONE =>
+							  (StampHash.insert (!regmap, genuineReg, act);
+							   IntHash.insert (!jvmto, act, t'))
+						    | SOME v => print ("ERROR: trying to overwrite old value"^
+								       Stamp.toString v^"\n"))
 				    else assignNextFree (act+1)
 			    in
-				if f'= ~1 then
-				    (* Never stored to this register. *)
-				    ()
+				if !VERBOSE >= 2 then
+				    print ("trying to assign "^Stamp.toString genuineReg^" from "^
+					   Int.toString f'^" to "^Int.toString t'^"\n") else ();
+				if f' <> ~1 andalso
+				    (* Register is written at least once. *)
+				    t' <> ~1 andalso
+				    (* If a register is never read,
+				     we don't have to store it *)
+				    notfused then
+				    assignNextFree 1
 				else
-				    if t' <> ~1 andalso
-					(* If a register is never read,
-					 we don't have to store it *)
-					notfused then
-					assignNextFree 1
-				    else
 					()
 			    end
 		    in
@@ -335,8 +353,13 @@ structure ToJasmin =
 		fun fuse (x,u) =
 		    let
 			val (a,b) = if u=parm1Stamp orelse u=parm2Stamp orelse u=parm3Stamp orelse
-			    u=parm4Stamp then (u,x) else (x,u)
+			    u=parm4Stamp orelse u=parm5Stamp
+					then (u,x) else (x,u)
 		    in
+			if !VERBOSE >= 2 then
+			    print ("fuse "^Stamp.toString x^" with "^Stamp.toString u^
+				   (if x=a then "\n" else " (parameter swapped)\n"))
+			    else ();
 			if lookup (!defines, u)<2 then
 			    (StampHash.insert(!fusedwith, b, getOrigin a);
 			     true)
@@ -660,10 +683,10 @@ structure ToJasmin =
 			val d' = fuse (Store, flattened)
 			val _ = if !VERBOSE >= 3 then print "done.\n" else ()
 		    in
-			(* (* Register 0 ('this'-Pointer) and
+			(* Register 0 ('this'-Pointer) and
 			 register 1 (formal Parameter) are
 			 defined when entering a method *)
-			JVMreg.define(0, 0);
+			(* JVMreg.define(0, 0);
 			JVMreg.define(1, 0);*)
 			if !VERBOSE >= 3 then print "preparing lifeness... " else ();
 			prepareLifeness (d', 0);

@@ -142,7 +142,9 @@ structure Backend=
 				     StampHash.insert (p, parm1Stamp, 1);
 				     StampHash.insert (p, parm2Stamp, 2);
 				     StampHash.insert (p, parm3Stamp, 3);
-				     StampHash.insert (p, parm4Stamp, 4))
+				     StampHash.insert (p, parm4Stamp, 4);
+				     StampHash.insert (p, parm5Stamp, 5))
+
 			in
 			    val parms = p
 			end *)

@@ -178,7 +178,7 @@ functor MakeLambda(structure StampSet:IMP_SET
 		      if !counter <= 1 then
 			  []
 		      else
-			  [Iload 5,
+			  [Iload parm5Stamp,
 			   Lookupswitch (StampIntHash.foldi
 					 (fn (_, (stamp', pos', label'), (akku1, akku2)) =>
 					  if dest = stamp' then
