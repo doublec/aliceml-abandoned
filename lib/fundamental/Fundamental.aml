@@ -62,6 +62,7 @@ import signature MATH		from "MATH-sig"
 import structure Math		from "Math"
 import signature IEEE_REAL	from "IEEE_REAL-sig"
 import structure IEEEReal	from "IEEEReal"
+import signature PACK_REAL	from "PACK_REAL-sig"
 
 import signature VECTOR		from "VECTOR-sig"
 import structure Vector		from "Vector"
@@ -138,10 +139,11 @@ structure LargeWord	= LargeWord
 signature REAL		= REAL
 structure Real		= Real
 structure LargeReal	= LargeReal
-signature IEEE_REAL	= IEEE_REAL
-structure IEEEReal	= IEEEReal
 signature MATH		= MATH
 structure Math		= Math
+signature IEEE_REAL	= IEEE_REAL
+structure IEEEReal	= IEEEReal
+signature PACK_REAL	= PACK_REAL
 
 signature VECTOR	= VECTOR
 structure Vector	= Vector
