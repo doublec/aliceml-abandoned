@@ -39,13 +39,11 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 	val label_true = Label.fromString "true"
 	val label_false = Label.fromString "false"
 
-	type mapping = (pos * id) list
-
 	fun lookup (pos, (pos', id)::mappingRest) =
 	    if pos = pos' then id
 	    else lookup (pos, mappingRest)
 	  | lookup (pos, nil) =
-	    raise Crash.Crash "MatchCompilationPhase.lookup"
+	    raise Crash.Crash "FlatteningPhase.lookup"
 
 	fun mappingsToSubst (mapping0, mapping) =
 	    List.map (fn (pos, id) => (id, lookup (pos, mapping))) mapping0
@@ -420,8 +418,8 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 		    if !isLast then
 			(case stms of
 			     nil => ()
-			   | _ =>
-			     raise Crash.Crash "ImperativePhase.translateExp";
+			   | _::_ =>
+			     raise Crash.Crash "FlatteningPhase.translateExp";
 			 isLast := false; translateExp (exp, f, cont))
 		    else
 			translateExp
@@ -552,7 +550,7 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 	    end
 	  | translateGraph (Leaf (_, ref (SOME stms)), _) = stms
 	  | translateGraph (_, _) =
-	    raise Crash.Crash "MatchCompilationPhase.translateGraph"
+	    raise Crash.Crash "FlatteningPhase.translateGraph"
 	and translateNode (pos, GuardTest (mapping0, exp),
 			   thenGraph, elseGraph, mapping) =
 	    let
@@ -671,7 +669,7 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 		(nil, O.VecTest ids, mapping')
 	    end
 	  | translateTest ((GuardTest (_, _) | DecTest (_, _)), _, _) =
-	    raise Crash.Crash "MatchCompilationPhase.translateTest"
+	    raise Crash.Crash "FlatteningPhase.translateTest"
 
 	fun translate () (imports, (exportExp, sign)) =
 	    let
