@@ -390,7 +390,7 @@ functor MkFlatteningPhase(structure Switches: SWITCHES) :> FLATTENING_PHASE =
 						     labelIdRefList)
 					 end) (rest, nil) expFlds
 		in
-		    case LabelSort.sort labelIdRefList of
+		    case LabelSort.sort #1 labelIdRefList of
 			(labelIdRefVec, LabelSort.Tup _) =>
 			    (stms, O.TupArgs (Vector.map #2 labelIdRefVec))
 		      | (labelIdRefVec, LabelSort.Prod) =>
@@ -556,7 +556,7 @@ functor MkFlatteningPhase(structure Switches: SWITCHES) :> FLATTENING_PHASE =
 				  in
 				      (stms', (label, idRef)::fields)
 				  end) (rest, nil) expFlds
-		val (fields', arity) = LabelSort.sort fields
+		val (fields', arity) = LabelSort.sort #1 fields
 		val exp' =
 		    if Type.isUnknownRow (Type.asProd typ) then
 			O.PolyProdExp (region, fields')
@@ -1028,7 +1028,7 @@ functor MkFlatteningPhase(structure Switches: SWITCHES) :> FLATTENING_PHASE =
 		    Vector.foldr (fn (Fld (_, Lab (_, label), id), rest) =>
 				     (label, translateId id)::rest)
 				 nil idFlds
-		val (exports', _) = LabelSort.sort labelIdList
+		val (exports', _) = LabelSort.sort #1 labelIdList
 		val labelIdRefVec =
 		    Vector.map (fn (label, id) => (label, O.IdRef id)) exports'
 		val exportExp = O.PolyProdExp (Source.nowhere, labelIdRefVec)
