@@ -45,7 +45,7 @@ public:
     b->InitArg(TASK_STACK_POS, TaskStack::New()->ToWord());
     b->InitArg(STATE_POS, Store::IntToWord(RUNNABLE));
     b->InitArg(IS_SUSPENDED_POS, Store::IntToWord(false));
-    return static_cast <Thread *>(b);
+    return static_cast<Thread *>(b);
   }
   static Thread *FromWord(word x) {
     Block *b = Store::WordToBlock(x);
