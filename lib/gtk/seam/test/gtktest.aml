@@ -8,6 +8,7 @@ local
 in
   (*val _ = widgetShow (colorSelectionDialogNew "Farbe auswaehlen...")*)
 
+  val gdkpic = Gdk.pixbufNewFromXpmData Image.pixmap
   val window = windowNew WINDOW_TOPLEVEL
   val _ = windowSetTitle(window, "Hallo Welt!")
   val _ = containerSetBorderWidth(window,10)

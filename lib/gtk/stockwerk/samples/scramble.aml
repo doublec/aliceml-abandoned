@@ -170,18 +170,18 @@ local
 			    ("anchor", Gtk.INT 0(*Gtk.ANCHOR_CENTER*)),
 			    ("fill_color_gdk", Gtk.OBJECT black)])
 			 
-	    fun pieceEvent (_, [Gdk.EVENT (Gdk.EVENT_UNSUPPORTED event)]) = serve
+	    fun pieceEvent (_, [Gdk.EVENT event]) = serve
 	        (fn () =>
-		     (case Gdk.eventAnyGetFieldType(event) of
-			  Gdk.ENTER_NOTIFY =>
+		     (case event of
+			  Gdk.EVENT_ENTER_NOTIFY _ =>
 			      GnomeCanvas.itemSetValist(text,
 						        "fill_color_gdk",
 						        [Gtk.OBJECT white])
-			| Gdk.LEAVE_NOTIFY =>
+			| Gdk.EVENT_LEAVE_NOTIFY _ =>
 			      GnomeCanvas.itemSetValist(text,
 						        "fill_color_gdk",
 							[Gtk.OBJECT black])
-			| Gdk.BUTTON_PRESS =>
+			| Gdk.EVENT_BUTTON_PRESS _ =>
 			  let
 			      val pos = Array.sub(posArr, i)
 			      val y   = pos div 4
