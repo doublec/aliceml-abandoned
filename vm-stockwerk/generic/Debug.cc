@@ -62,10 +62,6 @@ static const char *TransLabel(BlockLabel l) {
   }
 }
 
-static void Print(Chunk *c) {
-  std::fprintf(stderr, "'%.*s'\n", (int) c->GetSize(), c->GetBase());
-}
-
 static void
 PerformDump(FILE *file, word x, u_int index, u_int level, u_int depth) {
   word_data w;
@@ -87,9 +83,9 @@ PerformDump(FILE *file, word x, u_int index, u_int level, u_int depth) {
     std::fprintf(file, "%*cENDTRANSIENT\n", level, ' ');
   }
   else if ((w.pc = Store::WordToChunk(x)) != INVALID_POINTER) {
-    std::fprintf(file, "%*cCHUNK(%d)[%d]=", level, ' ',
-	    w.pc->GetSize(), index);
-    Print(w.pc);
+    std::fprintf(file, "%*cCHUNK(%d)[%d]='%.*s'\n", level, ' ',
+		 w.pc->GetSize(), index,
+		 (int) w.pc->GetSize(), w.pc->GetBase());
   }
   else if ((w.pb = Store::WordToBlock(x)) != INVALID_POINTER) {
     u_int size  = w.pb->GetSize();
