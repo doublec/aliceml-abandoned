@@ -130,9 +130,9 @@ local
 	in
 	    (Gtk.widgetSetUsize(text, Real.round xdim, Real.round ydim);
 	     Gtk.textSetAdjustments(text, xa, ya);
-	     Gdk.colormapAllocColor(map, black, 0, 1);
-	     Gdk.colormapAllocColor(map, white, 0, 1);
-	     Gdk.colormapAllocColor(map, kcol, 0, 1);
+	     Gdk.colormapAllocColor(map, black, false, true);
+	     Gdk.colormapAllocColor(map, white, false, true);
+	     Gdk.colormapAllocColor(map, kcol, false, true);
 	     insertLines((text, kcol, black, white, font), lines);
 	     Table {rows=1, columns=2, homogeneous=false, entries=entries})
 	end
