@@ -1,0 +1,25 @@
+#!/bin/sh
+
+OZVERSION=1.1.1
+OZHOME=/opt/mozart-$OZVERSION
+
+howcalled=$0
+
+if test -z "${STOCKHOME}"
+then
+  dir=`dirname $howcalled`
+  STOCKHOME=`(cd $dir; cd ..; /bin/pwd)`
+fi
+
+PATH=$OZHOME/bin:$STOCKHOME/bin:$PATH
+
+if test -z "${OZ_LOAD}"
+then
+  OZ_LOAD=prefix=http\\://www.mozart-oz.org/home-$OZVERSION/=$OZHOME/
+fi
+
+OZ_LOAD=prefix=x-alice\\:=$STOCKHOME/:$OZ_LOAD
+
+export OZHOME PATH OZ_LOAD
+
+exec ozengine "$@"

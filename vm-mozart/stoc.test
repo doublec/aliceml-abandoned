@@ -9,8 +9,8 @@ then
 fi
 
 export STOCKHOME
-export STOC = $STOCKHOME/stoc-mozart.exe
-export STOC_MOZART= $STOC
-export OZHOME = /opt/mozart-1.1.1
+export STOC=$STOCKHOME/stoc-mozart.exe
+export STOC_MOZART=$STOC
+export OZHOME=/opt/mozart-1.1.1
 
-exec sml @SMLload=../../stoc/stoc-mozart "$@"
+exec sml @SMLload=$PREFIX/stoc-mozart "$@"
