@@ -122,7 +122,7 @@ int main(int argc, char **argv) {
 
   argc = argc;
 
-  if ((f = fopen("StoreConfig.hh", "w")) == NULL) {
+  if ((f = std::fopen("StoreConfig.hh", "w")) == NULL) {
     std::fprintf(stderr, "%s: unable to open file storeconfig.hh\n", argv[0]);
     exit(1);
   }

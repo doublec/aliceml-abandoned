@@ -14,7 +14,7 @@
 
 #include "store/StoreConfig.hh"
 
-#define INVALID_POINTER   NULL
+#define INVALID_POINTER   0
 #define INVALID_INT       (1 << (STORE_WORD_WIDTH - 1))
 #define MIN_VALID_INT     (-(1 << (STORE_WORD_WIDTH - 2)))
 #define MAX_VALID_INT     ((1 << (STORE_WORD_WIDTH - 2)) - 1)

@@ -23,7 +23,7 @@
 #endif
 #include "store/Memory.hh"
 
-#if defined(DEBUG_CHECK)
+#if defined(STORE_DEBUG)
 u_int MemChunk::counter =  0;
 #endif
 
@@ -140,7 +140,7 @@ void Store::Shrink(MemChunk *list, int threshold) {
     MemChunk *next = list->GetNext();
 
     if (threshold-- > 0) {
-#if defined(DEBUG_CHECK)
+#if defined(STORE_DEBUG)
       std::printf("clearing... %d\n", list->id);
 #endif
       list->Clear();
@@ -156,7 +156,7 @@ void Store::Shrink(MemChunk *list, int threshold) {
   }
 }
 
-#if defined(DEBUG_CHECK)
+#if defined(STORE_DEBUG)
 static inline const char *LabelToString(Block *p) {
   switch (p->GetLabel()) {
   case MIN_DATA_LABEL:
@@ -180,7 +180,7 @@ inline Block *Store::CopyBlockToDst(Block *p, u_int dst_gen, u_int cpy_gen) {
   std::memcpy(newp, p, (size * sizeof(word)));
   GCHelper::EncodeGen(newp, cpy_gen);
 
-#if defined(DEBUG_CHECK)
+#if defined(STORE_DEBUG)
   std::printf("MOVING BLOCK: src: `%s' and dst: `%s'\n",
 	      LabelToString(p), LabelToString(newp));
 #endif
@@ -356,7 +356,7 @@ word Store::DoGC(word root) {
   rs_size = intgen_set->GetSize();
   new_intgen_set->MakeEmpty();
 
-#if defined(DEBUG_CHECK)
+#if defined(STORE_DEBUG)
   std::printf("intgen_size is %d\n", rs_size);
 #endif
 
@@ -365,25 +365,64 @@ word Store::DoGC(word root) {
     word p = PointerOp::Deref(intgen_set->GetArg(i));
 
     if (!PointerOp::IsInt(p)) {
-      word dp       = Store::ForwardBlock(p, dst_gen, cpy_gen, match_gen);
-      Block *curp   = PointerOp::RemoveTag(dp);
-      u_int cursize = curp->GetSize();
+      Block *curp  = PointerOp::RemoveTag(p);
+      u_int curgen = HeaderOp::DecodeGeneration(curp);
 
-      // Traverse intgen_set entry for references
-      for (u_int k = 1; k <= cursize; k++) {
-	word fp = PointerOp::Deref(curp->GetArg(k));
+      // Block is still old
+      if (curgen > gcGen) {
+	u_int cursize      = curp->GetSize();
+	u_int hasyoungptrs = 0;
+
+	// Traverse intgen_set entry for references
+	for (u_int k = 1; k <= cursize; k++) {
+	  word fp = PointerOp::Deref(curp->GetArg(k));
 	
-	if (!PointerOp::IsInt(fp)) {
-	  curp->InitArg(k, Store::ForwardBlock(fp, dst_gen, cpy_gen, match_gen));
+	  if (!PointerOp::IsInt(fp)) {
+	    Block *curfp  = PointerOp::RemoveTag(fp);
+	    u_int curfgen = HeaderOp::DecodeGeneration(curfp);
+
+	    // found young gc'ed ptr
+	    if (curfgen <= gcGen) {
+	      hasyoungptrs = 1;
+
+	      if (GCHelper::AlreadyMoved(curfp)) {
+		curp->InitArg(k, GCHelper::GetForwardPtr(curfp));
+	      }
+	      else {
+		Block *newsp = CopyBlockToDst(curfp, dst_gen, cpy_gen);
+		word newp    = PointerOp::EncodeTag(newsp, PointerOp::DecodeTag(fp));
+
+		GCHelper::MarkMoved(newsp, newp);
+		curp->InitArg(k, newp);
+	      }
+	    }
+	    // found young normal ptr 
+	    else if (curfgen < curgen) {
+	      hasyoungptrs = 1;
+	    }
+	    // ptr is equal or older
+	    else {
+	      // nothing to be done
+	    }
+	  }
+	}
+
+	// p contains young ptrs and remains within intgen_set
+	if (hasyoungptrs) {
+	  new_intgen_set->Push(p);
+	}
+	// p does not contain youngs ptr any longer
+	else {
+	  HeaderOp::ClearIntgenMark(curp);
 	}
       }
-
-      // Test for entry removal
-      if (HeaderOp::DecodeGeneration(curp) > gcGen) {
-	new_intgen_set->Push(dp);
+      // Block is no longer old and therefore must be alive and can't contain intgens any longer
+      else if (GCHelper::AlreadyMoved(curp)) {
+	HeaderOp::ClearIntgenMark(PointerOp::RemoveTag(GCHelper::GetForwardPtr(curp)));
       }
+      // Block is garbage
       else {
-	HeaderOp::ClearIntgenMark(curp);
+	// nothing to be done
       }
     }
   }
@@ -398,7 +437,7 @@ word Store::DoGC(word root) {
   for (u_int i = 0; i <= gcGen; i++) {
     u_int threshold = ((i == 0) ? 1 : 2);
 
-#if defined(DEBUG_CHECK)    
+#if defined(STORE_DEBUG)
     std::printf("Shrinking generation: %d\n", i);
 #endif
     Store::Shrink(roots[i], threshold);
@@ -428,7 +467,7 @@ word Store::DoGC(word root) {
   return new_root_set->ToWord();
 }
 
-#if defined(DEBUG_CHECK)
+#if defined(STORE_DEBUG)
 void Store::MemStat() {
   static const char *val[] = { "no", "yes" };
 

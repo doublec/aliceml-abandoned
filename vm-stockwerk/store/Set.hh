@@ -56,7 +56,7 @@ public:
   static Set *FromWord(word x) {
     Block *p = Store::DirectWordToBlock(x);
 
-    Assert((p == INVALID_POINTER) || (p->GetLabel() == GENSET_LABEL));
+    AssertStore((p == INVALID_POINTER) || (p->GetLabel() == GENSET_LABEL));
     return (Set *) p;
   }
 };

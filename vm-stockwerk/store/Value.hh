@@ -30,21 +30,21 @@ public:
     return HeaderOp::DecodeSize(this);
   }
   word GetArg(u_int f) {
-    Assert(f > INVALID_FIELD);
-    Assert(f <= GetSize());
+    AssertStore(f > INVALID_FIELD);
+    AssertStore(f <= GetSize());
     return ar[f];
   }
   void InitArg(u_int f, word v) {
-    Assert(f > INVALID_FIELD);
-    Assert(f <= GetSize());
+    AssertStore(f > INVALID_FIELD);
+    AssertStore(f <= GetSize());
     ar[f] = v;
   }
   void InitArg(u_int f, int v) {
     InitArg(f, Store::IntToWord(v));
   }
   void ReplaceArg(u_int f, word v) {
-    Assert(f > INVALID_FIELD);
-    Assert(f <= GetSize());
+    AssertStore(f > INVALID_FIELD);
+    AssertStore(f <= GetSize());
     if (!PointerOp::IsInt(v)) {
       u_int valgen = HeaderOp::DecodeGeneration(PointerOp::RemoveTag(v));
       u_int mygen  = HeaderOp::DecodeGeneration(this);
@@ -59,12 +59,8 @@ public:
     InitArg(f, Store::IntToWord(v));
   }
   Handler *GetHandler() {
-    if (GetLabel() != HANDLER_BLOCK_LABEL) {
-      return INVALID_POINTER;
-    }
-    else {
-      return (Handler *) Store::DirectWordToUnmanagedPointer(GetArg(1));
-    }
+    return (Handler *) ((GetLabel() != HANDLER_BLOCK_LABEL) ?
+			INVALID_POINTER : Store::DirectWordToUnmanagedPointer(GetArg(1)));
   }
   word ToWord() {
     return PointerOp::EncodeBlock(this);
@@ -96,18 +92,18 @@ public:
     Block::InitArg(REF_POS, w);
   }
   void Become(BlockLabel l, word w) {
-    Assert((GetLabel() >= MIN_TRANSIENT_LABEL) &&
-	   (GetLabel() <= MAX_TRANSIENT_LABEL) &&
-	   (GetLabel() != REF_LABEL));
-    Assert(l >= MIN_TRANSIENT_LABEL && l <= MAX_TRANSIENT_LABEL);
+    AssertStore((GetLabel() >= MIN_TRANSIENT_LABEL) &&
+		(GetLabel() <= MAX_TRANSIENT_LABEL) &&
+		(GetLabel() != REF_LABEL));
+    AssertStore(l >= MIN_TRANSIENT_LABEL && l <= MAX_TRANSIENT_LABEL);
     HeaderOp::EncodeLabel(this, l);
     Block::ReplaceArg(REF_POS, w);
   }
   void Become(BlockLabel l, int i) {
-    Assert((GetLabel() >= MIN_TRANSIENT_LABEL) &&
-	   (GetLabel() <= MAX_TRANSIENT_LABEL) &&
-	   (GetLabel() != REF_LABEL));
-    Assert(l >= MIN_TRANSIENT_LABEL && l <= MAX_TRANSIENT_LABEL);
+    AssertStore((GetLabel() >= MIN_TRANSIENT_LABEL) &&
+		(GetLabel() <= MAX_TRANSIENT_LABEL) &&
+		(GetLabel() != REF_LABEL));
+    AssertStore(l >= MIN_TRANSIENT_LABEL && l <= MAX_TRANSIENT_LABEL);
     HeaderOp::EncodeLabel(this, l);
     Block::ReplaceArg(REF_POS, i);
   }
