@@ -136,6 +136,7 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 			       val equal = idEq
 			       fun hash (Id (_, stamp, _)) =
 				   Stamp.hash stamp)
+	structure LabelMap = MkHashImpMap(Label)
 
 	(*
 	 * The `value' data type represents the approximation of the value
@@ -151,6 +152,7 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 	  | TagVal of label * int * id option args
 	  | ConVal of id * id option args
 	  | ProdVal of id option vector
+	  | PolyProdVal of id option LabelMap.t
 	  | VecVal of id option vector
 	  | FunVal of stamp * idDef args * body
 	  | CaughtExnVal of id
@@ -193,14 +195,24 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 	  | expToValue (ProdExp (_, labelIdRefVec)) =
 	    ProdVal (Vector.map (fn (_, idRef) => idRefIdOpt idRef)
 				labelIdRefVec)
+	  | expToValue (PolyProdExp (_, labelIdRefVec)) =
+	    let
+		val map = LabelMap.new ()
+	    in
+		Vector.app (fn (label, idRef) =>
+			       LabelMap.insertDisjoint
+				   (map, label, idRefIdOpt idRef))
+			   labelIdRefVec;
+		PolyProdVal map
+	    end
 	  | expToValue (VecExp (_, idRefs)) =
 	    VecVal (Vector.map idRefIdOpt idRefs)
 	  | expToValue (FunExp (_, stamp, _, args, body)) =
 	    FunVal (stamp, args, body)
 	  | expToValue (PrimAppExp (_, _, _)) = UnknownVal
 	  | expToValue (VarAppExp (_, _, _)) = UnknownVal
-	  | expToValue (SelAppExp (_, _, _, _, _)) = UnknownVal
-	  | expToValue (LazySelAppExp (_, _, _, _, _)) = UnknownVal
+	  | expToValue (SelExp (_, _, _, _, _)) = UnknownVal
+	  | expToValue (LazyPolySelExp (_, _, _)) = UnknownVal
 	  | expToValue (FunAppExp (_, _, _, _)) = UnknownVal
 	  | expToValue (FailExp _) = FailedVal
 
@@ -339,29 +351,21 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 	 * post-processing patching step.
 	 *)
 
-	fun prodToLabels (Tuple n) =
-	    Vector.tabulate (n, fn i => Label.fromInt (i + 1))
-	  | prodToLabels (Product labels) = labels
-
 	fun patchIdDef (Wildcard, _) = nil
 	  | patchIdDef (IdDef id, lazySels) =
 	    case IdMap.lookup (lazySels, id) of
-		SOME (prod, idDefs) =>
-		     Vector.foldri
-		     (fn (n, label, rest) =>
-		      case Array.sub (idDefs, n) of
-			  idDef as IdDef _ =>
-			      ValDec (Source.nowhere, idDef,
-				      LazySelAppExp (Source.nowhere, prod,
-						     label, n, IdRef id))::
-			      patchIdDef (idDef, lazySels) @ rest
-			| Wildcard => rest)
-		     nil (prodToLabels prod, 0, NONE)
+		SOME map =>
+		    LabelMap.foldi
+			(fn (label, id', rest) =>
+			    ValDec (Source.nowhere, IdDef id',
+				    LazyPolySelExp (Source.nowhere,
+						    label, IdRef id))::
+			    patchIdDef (IdDef id', lazySels) @ rest) nil map
 	      | NONE => nil
 
 	fun patchIdDefs (idDefs, lazySels) =
 	    Vector.foldr (fn (idDef, rest) =>
-			  patchIdDef (idDef, lazySels) @ rest) nil idDefs
+			     patchIdDef (idDef, lazySels) @ rest) nil idDefs
 
 	fun patchArgs (OneArg idDef, lazySels) =
 	    patchIdDef (idDef, lazySels)
@@ -369,8 +373,8 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 	    patchIdDefs (idDefs, lazySels)
 	  | patchArgs (ProdArgs labelIdDefVec, lazySels) =
 	    Vector.foldr (fn ((_, idDef), rest) =>
-			  patchIdDef (idDef, lazySels) @ rest) nil
-	    labelIdDefVec
+			     patchIdDef (idDef, lazySels) @ rest) nil
+			 labelIdDefVec
 
 	fun patchBody ((stm as ValDec (_, idDef, _))::stms, lazySels, shared) =
 	    stm::patchIdDef (idDef, lazySels) @
@@ -486,6 +490,8 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 				     if idOptEq (idOpt, idOpt')
 				     then idOpt else NONE)
 		     (idOpts, idOpts'))
+	  | valueMin (value as PolyProdVal map, PolyProdVal map') =
+	    if map = map' then value else UnknownVal
 	  | valueMin (VecVal idOpts, VecVal idOpts') =
 	    if Vector.length idOpts = Vector.length idOpts' then
 		VecVal (VectorPair.map (fn (idOpt, idOpt') =>
@@ -559,18 +565,18 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 		    Option.map IdRef (Vector.sub (idOpts, n))
 	      | (_, _) => NONE
 
-	fun doLazySel (id, idDefs, n, env, isToplevel) =
-	    case Array.sub (idDefs, n) of
-		Wildcard =>
+	fun doLazySel (id, label, map, env, isToplevel) =
+	    case LabelMap.lookup (map, label) of
+		SOME id => IdRef id
+	      | NONE =>
 		    let
 			val newId = freshId Source.nowhere
 		    in
 			IdMap.insertDeep (env, newId,
 					  (UnknownVal, isToplevel));
-			Array.update (idDefs, n, IdDef newId);
+			LabelMap.insert (map, label, newId);
 			IdRef newId
 		    end
-	      | IdDef id => IdRef id
 
 	(* Calling Convention Conversion *)
 
@@ -659,6 +665,8 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 	  | isSimple (TupExp (_, idRefs), env) =
 	    Vector.all (fn idRef => isNonlocal (idRef, env)) idRefs
 	  | isSimple (ProdExp (_, labelIdRefVec), env) =
+	    Vector.all (fn (_, idRef) => isNonlocal (idRef, env)) labelIdRefVec
+	  | isSimple (PolyProdExp (_, labelIdRefVec), env) =
 	    Vector.all (fn (_, idRef) => isNonlocal (idRef, env)) labelIdRefVec
 	  | isSimple (VecExp (_, idRefs), env) =
 	    Vector.all (fn idRef => isNonlocal (idRef, env)) idRefs
@@ -1088,6 +1096,11 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 	    (nil, ProdExp (info, Vector.map (fn (label, idRef) =>
 						(label, deref (idRef, env)))
 					    labelIdRefVec))
+	  | vpExp (PolyProdExp (info, labelIdRefVec), env, _, _) =
+	    (nil, PolyProdExp (info,
+			       Vector.map (fn (label, idRef) =>
+					      (label, deref (idRef, env)))
+					  labelIdRefVec))
 	  | vpExp (VecExp (info, idRefs), env, _, _) =
 	    (nil, VecExp (info, Vector.map (fn idRef => deref (idRef, env))
 					   idRefs))
@@ -1135,48 +1148,40 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 							  stamp, args))
 		  | (_, _) => (nil, VarAppExp (info, idRef, args))
 	    end
-	  | vpExp (SelAppExp (info, prod, label, n, idRef), env, _, _) =
+	  | vpExp (SelExp (info, prod, label, n, idRef), env, _, _) =
 	    let
 		val idRef = deref (idRef, env)
 	    in
 		case doSel (n, idRef, env) of
 		    SOME idRef => (nil, VarExp (info, idRef))
-		  | NONE => (nil, SelAppExp (info, prod, label, n, idRef))
+		  | NONE => (nil, SelExp (info, prod, label, n, idRef))
 	    end
-	  | vpExp (LazySelAppExp (info, prod, label, n, idRef),
+	  | vpExp (LazyPolySelExp (info, label, idRef),
 		   env, isToplevel, lazySels) =
 	    let
 		val idRef = deref (idRef, env)
 		val id = idRefId idRef
 	    in
 		case IdMap.lookupExistent (env, id) of
-		    (ProdVal idOpts, _) =>
-			(case Vector.sub (idOpts, n) of
-			     SOME id => (nil, VarExp (info, IdRef id))
-			   | NONE =>
-				 (nil, LazySelAppExp (info, prod,
-						      label, n, idRef)))
+		    (PolyProdVal map, _) =>
+			(case LabelMap.lookup (map, label) of
+			     SOME (SOME id) => (nil, VarExp (info, IdRef id))
+			   | (SOME NONE | NONE) =>
+				 (nil, LazyPolySelExp (info, label, idRef)))
 		  | (_, _) =>
 			(case IdMap.lookup (lazySels, id) of
-			     SOME (prod, idDefs) =>
+			     SOME map =>
 				 (nil, VarExp (info,
-					       doLazySel (idRef, idDefs, n,
+					       doLazySel (idRef, label, map,
 							  env, isToplevel)))
 			   | NONE =>
 				 let
-				     val m =
-					 case prod of
-					     Tuple i => i
-					   | Product labels =>
-						 Vector.length labels
-				     val idDefs =
-					 Array.tabulate (m, fn _ => Wildcard)
+				     val map = LabelMap.new ()
 				 in
-				     IdMap.insert (lazySels, id,
-						   (prod, idDefs));
+				     IdMap.insert (lazySels, id, map);
 				     (nil,
 				      VarExp (info,
-					      doLazySel (idRef, idDefs, n,
+					      doLazySel (idRef, label, map,
 							 env, isToplevel)))
 				 end)
 	    end

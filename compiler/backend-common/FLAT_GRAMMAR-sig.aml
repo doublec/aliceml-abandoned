@@ -103,12 +103,14 @@ signature FLAT_GRAMMAR =
 	  | TupExp of exp_info * idRef vector
 	  | ProdExp of exp_info * (label * idRef) vector
 	    (* sorted, all labels distinct, no tuple *)
+	  | PolyProdExp of exp_info * (label * idRef) vector
+	    (* sorted, all labels distinct *)
 	  | VecExp of exp_info * idRef vector
 	  | FunExp of exp_info * stamp * funFlag list * idDef args * body
 	  | PrimAppExp of exp_info * string * idRef vector       (* exact *)
 	  | VarAppExp of exp_info * idRef * idRef args
-	  | SelAppExp of exp_info * prod * label * int * idRef
-	  | LazySelAppExp of exp_info * prod * label * int * idRef
+	  | SelExp of exp_info * prod * label * int * idRef
+	  | LazyPolySelExp of exp_info * label * idRef
 	  | FunAppExp of exp_info * idRef * stamp * idRef args   (* exact *)
 	  | FailExp of exp_info
 	withtype body = stm list
